@@ -98,7 +98,7 @@ struct ParaAiv{
     HcclCMDType cmdType;
     u32 tag;
     u64 count;
-    u32 blockDim;
+    u32 numBlocks;
     u32 rankSize;
     void* flagMem;
     u64 flagMemSize;

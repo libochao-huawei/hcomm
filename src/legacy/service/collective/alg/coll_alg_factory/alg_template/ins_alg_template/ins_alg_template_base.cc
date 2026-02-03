@@ -331,12 +331,12 @@ HcclResult InsAlgTemplateBase::GetMaxTransPortDataSize(u64 &maxTransPortDataSize
     return HCCL_SUCCESS;
 }
 
-HcclResult InsAlgTemplateBase::CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit)
+HcclResult InsAlgTemplateBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {   
-    (void)blockDim;
+    (void)numBlocks;
     (void)dataSize;
-    (void)blockDimLimit;
-    HCCL_WARNING("CalBlockDim not support ins template.");
+    (void)numBlocksLimit;
+    HCCL_WARNING("CalNumBlocks not support ins template.");
     return HCCL_SUCCESS;
 }
 } // namespace Hccl

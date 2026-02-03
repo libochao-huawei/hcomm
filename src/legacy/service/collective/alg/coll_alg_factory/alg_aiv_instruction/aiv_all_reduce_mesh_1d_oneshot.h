@@ -77,14 +77,14 @@ public:
         this->curTag = static_cast<int32_t>(curTag);
         this->curCount = curCount;
 
-        for(uint32_t i=0;block_idx+i*blockdim_<rankSize_;i++){
-            targetRank = block_idx+i*blockdim_;
+        for(uint32_t i=0;block_idx+i*numBlocks_<rankSize_;i++){
+            targetRank = block_idx+i*numBlocks_;
             uint64_t outerOffset = rank_  * this->curCount * sizeof(T);
             outputOffset = reinterpret_cast<uint64_t>(GM_IN[targetRank]) + outerOffset;
             Producer();
         }
         
-        if(block_idx==blockdim_-1){
+        if(block_idx==numBlocks_-1){
           Consumer();
         }
     }

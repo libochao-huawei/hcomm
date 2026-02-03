@@ -136,7 +136,7 @@ typedef struct tagRtDvppTaskDesc {
 
 typedef struct tagRtAicpuTaskDesc {
     rtKernelLaunchNames_t kernelLaunchNames;
-    uint16_t blockDim;
+    uint16_t numBlocks;
     uint16_t isUnderstudyOp : 1; // dvpp op exist, set 1; otherwise set 0
     uint16_t resverved : 15;
     rtArgsEx_t argsInfo;
@@ -144,7 +144,7 @@ typedef struct tagRtAicpuTaskDesc {
 
 typedef struct tagRtAicpuTaskDescByHandle {
     void* funcHdl;
-    uint16_t blockDim;
+    uint16_t numBlocks;
     uint16_t isUnderstudyOp : 1; // dvpp op exist, set 1; otherwise set 0
     uint16_t resverved : 15;
     rtArgsEx_t argsInfo;

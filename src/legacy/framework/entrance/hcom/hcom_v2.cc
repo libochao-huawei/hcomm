@@ -1165,7 +1165,7 @@ HcclResult HcomSetAivClearEnableV2(const char *group, bool aivClearEnable)
 }
 
 HcclResult HcomCalcNumBlocksV2(const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
-        std::string &algName, u32 &blockDim)
+        std::string &algName, u32 &numBlocks)
 {
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
@@ -1180,7 +1180,7 @@ HcclResult HcomCalcNumBlocksV2(const char *group, HcclCMDType opType, u64 count,
     }
     Hccl::OpType optype = OP_TYPE_MAP.at(opType);
     Hccl::CollOpParams opParams = GetHcclOpParams(nullptr, nullptr, count, dataType, optype, HCCL_REDUCE_RESERVED,true);
-    CHK_RET(hcclComm->CalcBlockDim(opParams, aivCoreLimit, algName, blockDim));
+    CHK_RET(hcclComm->CalcNumBlocks(opParams, aivCoreLimit, algName, numBlocks));
     HCCL_INFO("[%s] end.", __func__);
     return HCCL_SUCCESS;
 }

@@ -550,16 +550,16 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
 HcclResult CommunicatorImpl::SetAivControledCoreNum(bool isAiv)
 {   
     if (isAiv) {
-        u32 blockDimLimit = MAX_BLOCK_DIM;
-        aclError acl_ret = aclrtGetResInCurrentThread(ACL_RT_DEV_RES_VECTOR_CORE, &blockDimLimit);
+        u32 numBlocksLimit = MAX_NUM_BLOCKS;
+        aclError acl_ret = aclrtGetResInCurrentThread(ACL_RT_DEV_RES_VECTOR_CORE, &numBlocksLimit);
         CHK_PRT_RET(acl_ret != ACL_SUCCESS,
             HCCL_ERROR("[CommunicatorImpl::SetAivControledCoreNum] aclrtGetResInCurrentThread failed, ret=[%d]", acl_ret),
             HCCL_E_PARA);
-        CHK_PRT_RET(blockDimLimit < 1,
-            HCCL_ERROR("[CommunicatorImpl::SetAivControledCoreNum] block num less than 1, block num[%d]", blockDimLimit),
+        CHK_PRT_RET(numBlocksLimit < 1,
+            HCCL_ERROR("[CommunicatorImpl::SetAivControledCoreNum] block num less than 1, block num[%d]", numBlocksLimit),
             HCCL_E_PARA);
-        currentCollOperator->blockDimLimit = blockDimLimit;
-        HCCL_INFO("[CommunicatorImpl::SetAivControledCoreNum] Aiv core limit is [%d].", blockDimLimit);
+        currentCollOperator->numBlocksLimit = numBlocksLimit;
+        HCCL_INFO("[CommunicatorImpl::SetAivControledCoreNum] Aiv core limit is [%d].", numBlocksLimit);
     }
     return HCCL_SUCCESS;
 }
@@ -857,7 +857,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         }
 
         if (isAiv) {
-            currentCollOperator->blockDimLimit = aivCoreLimit;
+            currentCollOperator->numBlocksLimit = aivCoreLimit;
             HCCL_INFO("[CommunicatorImpl::LoadOffloadCollOp] Aiv core limit is [%d].", aivCoreLimit);
         }
 
@@ -2960,7 +2960,7 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     kernelAttr.value.timeout = NOTIFY_DEFAULT_WAIT_TIME;
     cfg.numAttrs             = 1;
     cfg.attrs                = &kernelAttr;
-    constexpr u32 blockDim   = 1;
+    constexpr u32 numBlocks   = 1;
     hostArgsTemp.commId     = id;
     hostArgsTemp.memorySize = SHARE_HBM_MEMORY_SIZE;
     hostArgsTemp.hostMem    = hostShareBuf;
@@ -2973,7 +2973,7 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     size_t               argsSize = sizeof(hostArgsTemp);
     aclrtPlaceHolderInfo placeHolderArrays;
     size_t               placeHolderNum = 0;
-    if (aclrtLaunchKernelWithHostArgs(funcHandle, blockDim, dpuStream, &cfg, &hostArgsTemp, argsSize,
+    if (aclrtLaunchKernelWithHostArgs(funcHandle, numBlocks, dpuStream, &cfg, &hostArgsTemp, argsSize,
                                       &placeHolderArrays, placeHolderNum)
         != ACL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::%s] Launch Dpu Kernel Failed", __func__);
@@ -3554,13 +3554,13 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
     return HCCL_SUCCESS;
 }
 
-HcclResult CommunicatorImpl::CalcBlockDim(const CollOpParams &opParams, int32_t aivCoreLimit, std::string &algName,
-                                          u32 &blockDim) const
+HcclResult CommunicatorImpl::CalcNumBlocks(const CollOpParams &opParams, int32_t aivCoreLimit, std::string &algName,
+                                          u32 &numBlocks) const
 {
-    HCCL_INFO("[CommunicatorImpl::CalcBlockDim] count[%llu], dataType[%s], opType[%s], aivCoreLimit[%d], algName[%s].",
+    HCCL_INFO("[CommunicatorImpl::CalcNumBlocks] count[%llu], dataType[%s], opType[%s], aivCoreLimit[%d], algName[%s].",
               opParams.count, opParams.dataType.Describe().c_str(), opParams.opType.Describe().c_str(), aivCoreLimit,
               algName.c_str());
-    blockDim = aivCoreLimit;
+    numBlocks = aivCoreLimit;
     return HCCL_SUCCESS;
 }
 
@@ -3577,10 +3577,10 @@ HcclResult CommunicatorImpl::GetAlgExecParam(const CollOpParams &opParams, bool 
         return HCCL_E_NOT_SUPPORT;
     }
 
-    u32 blockDim = 0;
-    CHK_RET(CalcBlockDim(opParams, aivCoreLimit, algName, blockDim));
+    u32 numBlocks = 0;
+    CHK_RET(CalcNumBlocks(opParams, aivCoreLimit, algName, numBlocks));
 
-    return collService->GetAlgExecParam(clearEnable, blockDim, commContext, len);
+    return collService->GetAlgExecParam(clearEnable, numBlocks, commContext, len);
 }
 
 HcclResult DeregisterOffloadSlaveStreams(const std::string &opTag);

@@ -357,8 +357,8 @@ public:
     HcclResult CreateBarrierMemory(void *&sendBuf, void *&recvBuf, uint64_t count);
 
     HcclResult HcomSelectAlg(const CollOpParams &opParams, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
-    HcclResult CalcBlockDim(const CollOpParams &opParams, int32_t aivCoreLimit, std::string &algName,
-                            u32 &blockDim) const;
+    HcclResult CalcNumBlocks(const CollOpParams &opParams, int32_t aivCoreLimit, std::string &algName,
+                            u32 &numBlocks) const;
     HcclResult GetAlgExecParam(const CollOpParams &opParams, bool clearEnable, void *&commContext, u64 &len,
                                u32 aivCoreLimit);
     
