@@ -65,6 +65,7 @@ const map<uint8_t, map<uint8_t, string>> MISSION_SUB_STATUS_MAP{
 void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, uint16_t currIns, const ParaCcu &ccuTaskParam,
                                         std::vector<CcuErrorInfo> &errorInfo)
 {
+    const auto missionContext = GetCcuMissionContext(deviceId, ccuTaskParam.dieId, ccuTaskParam.execMissionId);
     if (missionStatus == 0) {
         HCCL_INFO("[CcuErrorHandler][%s] no err found, mission status is 0, deviceId[%d], dieId[%u], execMissionId[%u]",
             __func__, deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.execMissionId));
