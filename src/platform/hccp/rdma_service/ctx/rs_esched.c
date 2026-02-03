@@ -93,7 +93,7 @@ STATIC void RsEschedCleanAllResource(struct rs_cb *rscb)
          devCbCurr = devCbNext,
          devCbNext = list_entry(devCbNext->list.next, struct RsUbDevCb, list)) {
         hccp_info("logicId[%u] devIndex[%u] start clean", rscb->logicId, devCbCurr->index);
-        RsUbFreeJettyCbList(devCbCurr, &devCbCurr->jettyList, &devCbCurr->rjettyList);
+        RsUbFreeJettyCbList(devCbCurr, &devCbCurr->jettyList.list, &devCbCurr->rjettyList.list);
 
         ret = RsCtxCcuMissionKill(devCbCurr->devAttr.ub.dieId);
         if (ret != 0) {
