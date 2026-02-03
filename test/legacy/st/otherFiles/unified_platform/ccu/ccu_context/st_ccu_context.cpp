@@ -557,7 +557,11 @@ TEST_F(CcuContextTest, CtxTest)
         ctx->SetCcuInstrInfo(instrInfo);
 
         CcuTaskArgTest taskArg(0, 0, 100);
-        auto taskParam = ctx->GeneTaskParam(taskArg);
+        std::vector<CcuTaskParam> tmp;
+        auto ret = ctx->GeneTaskParam(taskArg, tmp);
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            THROW<CcuApiException>("GeneTaskParam is failed!");
+        }
     }
 }
 
@@ -628,7 +632,11 @@ void CreateTaskShareRes(CcuContextTestSharesRes& ctx, std::pair<uint64_t, uint64
     auto instrInfo = translator.Translate(ctx.GetRepSequence(), ctx.GetInstrId());
     ctx.SetCcuInstrInfo(instrInfo);
     CcuTaskArgSharedRes taskArg;
-    auto taskParam = ctx.GeneTaskParam(taskArg);
+    std::vector<CcuTaskParam> tmp;
+    auto ret = ctx->GeneTaskParam(taskArg, tmp);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("GeneTaskParam is failed!");
+    }
 }
 
 

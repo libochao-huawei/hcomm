@@ -23,7 +23,7 @@ namespace CcuRep {
 void AppendToContext(CcuRepContext* context, std::shared_ptr<CcuRep::CcuRepBase> rep);
 std::shared_ptr<CcuRep::CcuRepBlock> CurrentBlock(CcuRepContext* context);
 void SetCurrentBlock(CcuRepContext* context, std::shared_ptr<CcuRep::CcuRepBlock> repBlock);
-Variable CreateVariable(CcuRepContext* context);
+HcclResult CreateVariable(CcuRepContext* context, Variable &variable);
 
 }; // namespace CcuRep
 }; // namespace Hccl
