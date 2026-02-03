@@ -30,6 +30,21 @@ HcclResult CreateThread(CommEngine engine, StreamType streamType,
     return HCCL_SUCCESS;
 }
 
+HcclResult CommHostEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type)
+{
+    switch (engine) {
+        case COMM_ENGINE_CPU:
+        case COMM_ENGINE_CPU_TS:
+        case COMM_ENGINE_CCU:
+            type =  NotifyLoadType::HOST_NOTIFY;
+            break;
+        default:
+            HCCL_ERROR("[ThreadMgr] Unsupported comm engine type: %d", engine);
+            return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult CommEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type)
 {
     switch (engine) {
