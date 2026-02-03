@@ -64,7 +64,7 @@ SelectorStatus AllReduceAutoSelector::SelectMeshAlgo(const TopoInfo &topoInfo,
     if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
         if (IsInputOutputOverlap(op.inputMem, op.outputMem) == true) {
             return SelectorStatus::NOT_MATCH;
-        } 
+        }
         if (dataSize_ / rankSize_ > AR_ONESHOT_1D_MAX_DATA_SIZE) {
  	        primQueueGenName = "CcuAllReduceMesh1D";
  	    } else {
