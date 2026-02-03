@@ -1,8 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
- * Description: 算法模板AivTempAlltoAllVMesh1D类实现
- * Author: wuhongge
- * Create: 2025-12-15
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "hccl_aiv_utils.h"
@@ -11,7 +14,7 @@
 #include "executor_utils.h"
 
 namespace Hccl {
-constexpr u64 MAX_BLOCK_DIM_ALL_TO_ALL_V = 48; // 算法不交付控核
+constexpr u64 MAX_NUM_BLOCKS_ALL_TO_ALL_V = 48; // 算法不交付控核
 
 AivTempAlltoAllVMesh1D::AivTempAlltoAllVMesh1D(const RankId virtualRank, const u32 tempRankSize,
     const std::vector<std::vector<RankId>> &tempVTopo, const std::map<RankId, u32> &tempVirtRankMap)
@@ -67,7 +70,7 @@ HcclResult AivTempAlltoAllVMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
     aivAlltoAllVArgs.xRankSize = tempVTopo_[0].size();
     aivAlltoAllVArgs.yRankSize = 0;
     aivAlltoAllVArgs.zRankSize = 0;
-    aivAlltoAllVArgs.blockDim = MAX_BLOCK_DIM_ALL_TO_ALL_V;
+    aivAlltoAllVArgs.numBlocks = MAX_NUM_BLOCKS_ALL_TO_ALL_V;
 
     for (u64 i = 0; i < tempVTopo_[0].size(); i++) {
         aivAlltoAllVArgs.extraArgs.sendCounts[i] = static_cast<u64 *>(op_.all2AllVDataDes.sendCounts)[i];

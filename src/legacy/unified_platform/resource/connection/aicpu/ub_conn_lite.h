@@ -37,6 +37,7 @@ struct UbConnLiteParam {
     u64  sqCiAddr;    // 预留给 软件poll CQ 的Jetty使用
 
     Eid rmtEid;
+    Eid locEid;
 
     UbConnLiteParam(std::vector<char> &uniqueId);
 

@@ -79,6 +79,7 @@ target_include_directories(hccl_v2_utest PRIVATE
         ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/3rdparty/
         ${HCCL_LLT_ROOT}/common/virtual_topo_stub/
         ${HCCL_LLT_ROOT}/ut/framework/topo/ranktable/
+        ${HCCL_CODE_ROOT}/externel_depends/tsch
     )
 
 target_link_libraries(hccl_v2_utest PRIVATE

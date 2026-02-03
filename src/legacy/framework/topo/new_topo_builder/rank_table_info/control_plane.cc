@@ -1,8 +1,13 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
- * Description: Control Plane
- * Create: 2024-12-18
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
+
 #include <sstream>
 #include <vector>
 #include <string>
@@ -36,10 +41,11 @@ void ControlPlane::Deserialize(const nlohmann::json &controlPlaneJson)
     
     std::string address;
     std::string msgAddr = "error occurs when parser object of propName \"addr\"";
+    const int MAX_DISPLAY_LEN = 128;
     TRY_CATCH_THROW(InvalidParamsException, msgAddr, address = GetJsonProperty(controlPlaneJson, "addr"););
    
     if (address.length() < MIN_VALUE_ADDR || address.length() > MAX_VALUE_ADDR) {
-        THROW<InvalidParamsException>(StringFormat("addr [%s] length is out of range [%u] to [%u]", address.c_str(), MIN_VALUE_ADDR, MAX_VALUE_ADDR));
+        THROW<InvalidParamsException>(StringFormat("addr [%.*s] length is out of range [%u] to [%u]", MAX_DISPLAY_LEN, address.c_str(), MIN_VALUE_ADDR, MAX_VALUE_ADDR));
     }
 
     if (addrTypeStr == "IPV4") {
@@ -60,8 +66,10 @@ void ControlPlane::Deserialize(const nlohmann::json &controlPlaneJson)
 
 void ControlPlane::EidToAddr(std::string address)
 {
-    if (!IpAddress::IsEID(address)) {
-        THROW<InvalidParamsException>(StringFormat("[ControlPlane::%s] failed with rankAddrs is error. ", __func__));
+    if(address.length() != URMA_EID_LEN * URMA_EID_NUM_TWO) {
+        THROW<InvalidParamsException>(StringFormat("[ControlPlane::%s] failed with rankAddrs : error in length. ", __func__));
+    }else if(!IpAddress::IsEID(address)) {
+        THROW<InvalidParamsException>(StringFormat("[ControlPlane::%s] failed with rankAddrs : error in format. ", __func__));
     }
     Eid eid = IpAddress::StrToEID(address);
     IpAddress ipAddress0(eid);

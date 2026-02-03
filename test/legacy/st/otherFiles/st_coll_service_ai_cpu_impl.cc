@@ -978,11 +978,11 @@ TEST_F(CollServiceAiCpuImplTest, st_GetAlgExecParam_When_Aicpu_Expect_ReturnNotS
     CollServiceAiCpuImpl service(&comm);
  
     bool clearEnable = true;
-    int32_t blockDim = 2;
+    int32_t numBlocks = 2;
     void* commContext = nullptr;
     u64 len = 0;
 
-    EXPECT_EQ(service.GetAlgExecParam(clearEnable, blockDim, commContext, len), HCCL_E_NOT_SUPPORT);
+    EXPECT_EQ(service.GetAlgExecParam(clearEnable, numBlocks, commContext, len), HCCL_E_NOT_SUPPORT);
 }
 
 TEST_F(CollServiceAiCpuImplTest, test_LoadWithOffloadMode_Success)

@@ -114,7 +114,7 @@ typedef struct tagRtTaskCfgInfo {
     uint8_t partId;
     uint8_t schemMode; // rtschemModeType_t 0:normal;1:batch;2:sync
     bool d2dCrossFlag; // d2dCrossFlag true:D2D_CROSS flase:D2D_INNER
-    uint32_t blockDimOffset;
+    uint32_t numBlocksOffset;
     uint8_t dumpflag; // dumpflag 0:fault 2:RT_KERNEL_DUMPFLAG 4:RT_FUSION_KERNEL_DUMPFLAG
     uint8_t neverTimeout; // 1: never timeout, 0: will timeout
     uint8_t rev[2];
@@ -122,17 +122,17 @@ typedef struct tagRtTaskCfgInfo {
 } rtTaskCfgInfo_t;
 
 typedef struct tagRtLaunchTaskCfgInfo {
-    uint32_t blockDim;
+    uint32_t numBlocks;
     uint32_t dynamicShareMemSize;
     struct {
         uint32_t groupDim;
-        uint32_t groupBlockDim;
+        uint32_t groupNumBlocks;
     } Group;
     uint8_t qos;
     uint8_t partId;
     uint8_t schemMode; // rtschemModeType_t 0:normal;1:batch;2:sync
     uint8_t dumpflag; // dumpflag 0:fault 2:RT_KERNEL_DUMPFLAG
-    uint32_t blockDimOffset;
+    uint32_t numBlocksOffset;
 } LaunchTaskCfgInfo_t;
 
 /**

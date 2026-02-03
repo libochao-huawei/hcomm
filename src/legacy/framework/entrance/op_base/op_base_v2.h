@@ -168,7 +168,6 @@ HcclResult HcclGetRanksByTopoInstV2(HcclComm comm, uint32_t netLayer, uint32_t t
                                   uint32_t *rankNum);
 HcclResult HcommFlushV2();
 HcclResult HcclGetCclBuffer(HcclComm comm, uintptr_t &cclBufferAddr, size_t &cclBufferSize, HcclMemType &cclBufferMemType);
-HcclResult HostKFCServerInit(HcclComm comm);
 
 HcclResult HcclRankGraphGetEndpointNumV2(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *num);
 

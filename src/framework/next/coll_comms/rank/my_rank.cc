@@ -35,11 +35,18 @@ MyRank::MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& conf
     : binHandle_(binHandle), rankId_(rankId), config_(config)
 {
 }
+
 MyRank::~MyRank()
 {
-HCCL_INFO("[MyRank][~MyRank] MyRank deinit");
+    HCCL_INFO("[MyRank][~MyRank] MyRank deinit");
+    // 析构有时序要求
+    rankPairMgr_ = nullptr; // 内部会销毁channel，可能需要返还endpoint与ccu资源
+    endpointMgr_ = nullptr; // 内部会销毁endpoint，可能需要返回ccu资源
+    ccuResContainer_ = nullptr;  // 内部清理CCU资源，关闭CCU通道
+    commMems_ = nullptr;
 }
-HcclResult MyRank::Init(HcclMem cclBuffer)
+
+HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode)
 {
     // EXCEPTION_HANDLE_BEGIN
     // 创建通信内存管理器
@@ -48,8 +55,12 @@ HcclResult MyRank::Init(HcclMem cclBuffer)
     // 初始化通信内存
     CHK_RET(commMems_->Init(cclBuffer));
 
-//     // 创建通信引擎资源管理器
-//     // commEngineResMgr_ = std::make_shared<CommEngineResMgr>();
+    opExpansionMode_ = opExpansionMode;
+    if (!ccuResContainer_) {
+        ccuResContainer_.reset(new (std::nothrow)CcuResContainer(opExpansionMode_));
+        CHK_PTR_NULL(ccuResContainer_);
+        CHK_RET(ccuResContainer_->Init());
+    }
 
     // 创建端点管理器
     EXECEPTION_CATCH(endpointMgr_ = std::make_unique<hcomm::EndpointMgr>(), return HCCL_E_PTR);
@@ -91,6 +102,31 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
     return HCCL_SUCCESS;
 }
 
+constexpr uint32_t MEM_HANDLE_NUM_MAX = 256;  // memHandleNum的默认限制最大为256
+
+HcclResult MyRank::CheckChannelParam(CommEngine engine, const HcclChannelDesc &channelDesc, 
+    uint32_t index)
+{
+    if (engine == COMM_ENGINE_AIV) {
+        CHK_PRT_RET(
+            (channelDesc.memHandleNum > MEM_HANDLE_NUM_MAX), 
+            HCCL_ERROR("[%s]Channeldesc[%u] invalid memHandleNum, memHandleNum[%u], max channel num[%u]",
+            __func__, index, channelDesc.memHandleNum, MEM_HANDLE_NUM_MAX), HCCL_E_PARA
+        );
+        CHK_PRT_RET(
+            (channelDesc.memHandleNum != 0 && channelDesc.memHandles == nullptr), 
+            HCCL_ERROR("[%s]Channeldesc[%u] invalid memHandles, memHandles is null", 
+            __func__, index), HCCL_E_PARA
+        );
+    } else {
+        if (channelDesc.memHandleNum != 0) {
+            HCCL_WARNING("[%s]Channeldesc[%u] memHandleNum[%u] is non-zero, memHandle exchange is not supported.", 
+                __func__, index, channelDesc.memHandleNum);
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles)
 {
@@ -100,6 +136,9 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
     CHK_RET(commMems_->GetMemoryHandles(memVec));
 
     for (uint32_t i = 0; i < channelNum; ++i) {
+        // 参数检查
+        CHK_RET(CheckChannelParam(engine, channelDescs[i], i));
+
         const EndpointDesc &localEndpointDesc = channelDescs[i].localEndpoint;
         const EndpointDesc &remoteEndpointDesc = channelDescs[i].remoteEndpoint;
         uint32_t remoteRank = channelDescs[i].remoteRank;
@@ -119,7 +158,14 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         
         // 注册内存
         std::vector<MemHandle> memHandleVec;
-        CHK_RET(endpointMgr_->RegisterMemory(epHandle, "HcclBuffer", memVec, memHandleVec));
+        std::vector<std::string> memTag;
+        if (engine == COMM_ENGINE_AIV) {
+            memVec.clear();
+            CHK_RET(commMems_->GetTagMemoryHandles(channelDescs[i].memHandles, channelDescs[i].memHandleNum, memVec, memTag));
+        } else {
+            memTag.push_back("HcclBuffer");
+        }
+        CHK_RET(endpointMgr_->RegisterMemory(epHandle, memTag, memVec, memHandleVec));
         hcommDescs[i].exchangeAllMems = false;
         hcommDescs[i].memHandles = memHandleVec.data();
         hcommDescs[i].memHandleNum = memHandleVec.size();
@@ -189,20 +235,21 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     // 4. channel kernel launch
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
         CHK_RET(HcommChannelKernelLaunch(channelHandles, hostChannelHandleList, channelNum, commTag, binHandle_));
-    } else if (engine == COMM_ENGINE_CPU) {
-        for (uint64_t i = 0; i < channelNum; ++i) {
-            // channelD2HHandleMap_.insert({hostChannelHandleList[i], hostChannelHandleList[i]});
-        }
+        return HCCL_SUCCESS;
+    }
+    
+    if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CCU
+        || engine == COMM_ENGINE_AIV) {
         // TODO: Host侧 Channel 赋值到 channelHandles
         CHK_SAFETY_FUNC_RET(memcpy_s(channelHandles,
             channelNum * sizeof(ChannelHandle),
             hostChannelHandleList,
             channelNum * sizeof(ChannelHandle)));
-    } else {
-        // other process
+        return HCCL_SUCCESS;
     }
 
-    return HCCL_SUCCESS;
+    HCCL_ERROR("[MyRank][%s] unsupported comm engine[%d].", __func__, engine);
+    return HCCL_E_NOT_SUPPORT;
 }
 
 HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size)
@@ -233,4 +280,37 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
     return HCCL_SUCCESS;
 }
 
+HcclResult MyRank::ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char **memTag, uint32_t *memNum)
+{
+    CHK_PTR_NULL(remoteMem);
+    CHK_PTR_NULL(memTag);
+    CHK_PTR_NULL(memNum);
+    CHK_PRT_RET(
+        (*memNum == 0), HCCL_INFO("[%s] memNum is equal to 0, no need to get remoteMem",
+        __func__, *memNum), HCCL_SUCCESS);
+
+    uint32_t cclbufferNum = 1; // HcommChannelGetRemoteMem 会将cclbuffer也回传
+    uint32_t totalMem = *memNum + cclbufferNum;
+    std::vector<HcommMem *> remoteMemList(totalMem); 
+    std::vector<char *> tmpMemTags(totalMem);
+    CHK_RET(HcommChannelGetRemoteMem(channel, remoteMemList.data(), &totalMem, tmpMemTags.data()));
+    *memNum = totalMem - cclbufferNum;
+
+    uint32_t index = 0;
+    for (u32 i = 0; i < totalMem; i++) {
+        HCCL_INFO("%s memNum[%u] memTags[%s]", __func__, totalMem, tmpMemTags[i]);
+        if (strcmp(tmpMemTags[i], "HcclBuffer") != 0) {
+            (*remoteMem)[index].addr = remoteMemList[i]->addr;
+            (*remoteMem)[index].size = remoteMemList[i]->size;
+            (*remoteMem)[index].type = ConvertHcclToCommMemType(remoteMemList[i]->type);
+            HCCL_INFO("[%s] Found memNum at index %u: addr=%p, size=%llu",
+                __func__,
+                index,
+                remoteMemList[i]->addr,
+                remoteMemList[i]->size);
+            index++;
+        }
+    }
+    return HCCL_SUCCESS;
+}
 } // namespace hccl

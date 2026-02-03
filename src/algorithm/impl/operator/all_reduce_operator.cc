@@ -516,7 +516,8 @@ HcclResult AllReduceOperator::MeshTopoSelector(std::string& algName, u64 unitSiz
 
 HcclResult AllReduceOperator::NonDeterministicSelector(const OpParam& param, std::string& algName, u64 dataSize)
 {
-    if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+    const bool isOpbase = GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
+    if (isOpbase) {
         if (IsMultiMeshInlineReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType) &&
         algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) {
             algName = "AllReduceMeshOpbasePipelineExecutor";
@@ -531,6 +532,15 @@ HcclResult AllReduceOperator::NonDeterministicSelector(const OpParam& param, std
         IsMultiMeshInlineReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType) &&
         algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) {
             algName = "AllReduceMeshGraphPipelineExecutor";
+    }
+    if (!algName.empty() || !isOpbase) {
+        return HCCL_SUCCESS;
+    }
+    const bool isInlineReduce =
+        IsSupportSDMAReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType);
+    // 单算子 + 数据量小于512kB
+    if (dataSize < HCCL_SMALL_COUNT_512_KB && !isSingleMeshAggregation_ && isInlineReduce) {
+        algName = "AllReduceMeshOpbaseSmallCountDeterministicExecutor";
     }
     return HCCL_SUCCESS;
 }
