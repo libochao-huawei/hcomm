@@ -79,6 +79,5 @@ int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urm
     }
 
     *jfc = jfcOut;
-
     return ret;
 }

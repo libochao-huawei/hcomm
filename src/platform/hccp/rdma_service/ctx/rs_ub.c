@@ -1424,6 +1424,13 @@ STATIC void RsUbFillJfcInfo(struct RsCtxJfcCb *jfcCb, struct CtxCqInfo *info)
     info->ub.swdbAddr = jfcCb->swdbAddr;
 }
 
+static inline void CcuExtCfgSetValid(unsigned int logicId, struct CtxCqAttr *attr)
+{
+    if (RsGetProductType(logicId) == PRODUCT_TYPE_910_96) {
+        attr->ub.ccuExCfg.valid = true;
+    }
+}
+
 int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct CtxCqInfo *info)
 {
     struct RsCtxJfcCb *jfcCb = NULL;
@@ -1442,8 +1449,11 @@ int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct Ctx
     jfcCfg.user_ctx = attr->ub.userCtx;
     jfcCfg.ceqn = attr->ub.ceqn;
     jfcCfg.jfce = attr->chanAddr == 0 ? NULL : (urma_jfce_t *)(uintptr_t)attr->chanAddr;
+
     if (attr->ub.mode == JFC_MODE_STARS_POLL || attr->ub.mode == JFC_MODE_CCU_POLL ||
         attr->ub.mode == JFC_MODE_USER_CTL_NORMAL) {
+        CcuExtCfgSetValid(devCb->rscb->logicId, attr);
+    
         if (attr->ub.mode == JFC_MODE_CCU_POLL && attr->ub.ccuExCfg.valid) {
             jfcCb->ccuExCfg.valid = attr->ub.ccuExCfg.valid;
             jfcCb->ccuExCfg.cqeFlag = attr->ub.ccuExCfg.cqeFlag;
