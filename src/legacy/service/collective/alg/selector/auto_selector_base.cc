@@ -19,6 +19,7 @@ SelectorStatus AutoSelectorBase::Select(const CollAlgOperator &op, CollAlgParams
                                    std::string &primQueueGenName)
 {
     HCCL_DEBUG("[AutoSelectorBase][%s] start", __func__);
+
     TopoInfo topoInfo;
     HCCL_DEBUG("[AutoSelectorBase][%s] CalcTopoShape start", __func__);
     CalcTopoShape(topoInfo);
