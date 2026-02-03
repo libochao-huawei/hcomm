@@ -10,7 +10,10 @@
 #include <algorithm>
 #include "log.h"
 #include "hccl_ip_address.h"
-
+#include <regex>
+#include <log.h>
+#include "hccn_rping.h"
+#include "../../../legacy/common/utils/string_util.h"
 namespace hccl {
 
 HcclResult HcclIpAddress::SetBianryAddress(s32 family, const union HcclInAddr &address)
@@ -89,4 +92,73 @@ HcclResult HcclIpAddress::SetIfName(const std::string &name)
     }
     return HCCL_SUCCESS;
 }
+
+std::string  HcclIpAddress::Describe() const
+{
+    std::string desc = Hccl::StringFormat("IpAddress[%s, ", eid.Describe().c_str());
+    
+    if (family == AF_INET) {
+        desc += Hccl::StringFormat("AF=v4, addr=%s]", GetIpStr().c_str());
+    } else {
+        desc += Hccl::StringFormat("AF=v6, addr=%s, scopeId=0x%x]", GetIpStr().c_str(), scopeID);
+    }
+    return desc;
+}
+
+HcclIpAddress::HcclIpAddress(const Eid &eidInput)
+{
+    for (uint32_t i = 0; i < URMA_EID_LEN; i++) {
+        eid.raw[i] = eidInput.raw[i];
+    }
+
+    HCCL_INFO("[IpAddress] %s", eid.Describe().c_str());
+    // IPoURMA适配后，使用EID初始化时转为ipv6建链
+    family = AF_INET6;
+    (void)memcpy_s(binaryAddr.addr6.s6_addr, sizeof(eid.raw), eid.raw, sizeof(eid.raw));  
+    (void)SetBianryAddress(family, binaryAddr);
+}
+
+bool HcclIpAddress::IsEID(const std::string& str)
+{
+    if (str.length() == URMA_EID_LEN * URMA_EID_NUM_TWO) {
+        std::regex hexCharsRegex("[0-9a-fA-F]+");
+        return std::regex_match(str, hexCharsRegex);
+    }
+    return false;
+}
+
+Eid HcclIpAddress::StrToEID(const std::string& str)
+{
+    Eid tmpeEid{};
+    const int Base = 16;
+    for (size_t i = 0; i < URMA_EID_LEN; ++i) {
+        std::string byteString = str.substr(i * 2, 2);
+        tmpeEid.raw[i] = static_cast<uint8_t>(std::stoi(byteString, nullptr, Base));
+    }
+    return tmpeEid;
+}
+std::string HcclIpAddress::GetIpStr() const
+{
+    const void *src = nullptr;
+    if (family == AF_INET) {
+        src = &binaryAddr.addr;
+    } else if (family == AF_INET6) {
+        src = &binaryAddr.addr6;
+    } 
+    char        dst[INET6_ADDRSTRLEN];
+    const char *res = inet_ntop(family, src, dst, INET6_ADDRSTRLEN);
+    if (res == nullptr) {
+        // 转换失败处理：返回空字符串或抛异常
+        return "";  // 示例
+    }
+    return dst;
+}
+
+std::string Eid::Describe() const
+{
+    return Hccl::StringFormat("eid[%016llx:%016llx]",
+                        static_cast<unsigned long long>(be64toh(in6.subnetPrefix)),
+                        static_cast<unsigned long long>(be64toh(in6.interfaceId)));
+    }
+
 }

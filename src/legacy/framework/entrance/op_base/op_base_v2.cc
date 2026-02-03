@@ -389,17 +389,7 @@ HcclResult HcclCommInitClusterInfoConfigV2(
     HCCL_RUN_INFO("[HCCL_TRACE]%s success, take time [%lld]us, clusterInfo[%s], rank[%u], deviceLogicId[%d], commId[%s].",
         __func__, DURATION_US(TIME_NOW() - startut), clusterInfo, rank, deviceLogicId, config->hcclCommName);
 
-    // 拉起KFC kernel
-    CHK_RET(HostKFCServerInit(*comm));
-
     return HCCL_SUCCESS;
-}
-
-HcclResult HostKFCServerInit(HcclComm comm)
-{
-    CHK_PTR_NULL(comm);
-    Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
-    return communicator->LaunchDpuKernel();
 }
 
 HcclResult HcclTaskRegisterV2(HcclComm comm, const char *msgTag, Callback cb)

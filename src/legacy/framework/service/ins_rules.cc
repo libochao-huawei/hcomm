@@ -773,7 +773,7 @@ static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs
                     .cmdType     = aivOpArgs.cmdType,
                     .tag         = aivOpArgs.aivTag,
                     .count       = aivOpArgs.count,
-                    .blockDim    = aivOpArgs.blockDim,
+                    .numBlocks    = aivOpArgs.numBlocks,
                     .rankSize    = aivOpArgs.rankSize,
                     .flagMem     = aivOpArgs.isOpBase ? reinterpret_cast<void *>(comm.GetAivTagBuffer()->GetAddr() + AIV_FLAG_ADDR_OFFSET):
                                            reinterpret_cast<void *>(comm.GetAivOffloadTagBuffer()->GetAddr() + AIV_FLAG_ADDR_OFFSET),

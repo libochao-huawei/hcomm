@@ -30,6 +30,19 @@ public:
 
     HrtRaUbCreateJettyParam GetCreateJettyParam() const;
     HrtRaUbJettyCreatedOutParam GetJettyedOutParam() const;
+      
+    JettyHandle GetJettyHandle() const
+    {
+        return reinterpret_cast<JettyHandle>(jettyHandlePtr_);
+    }
+    RdmaHandle GetRdmaHandle() const
+    {
+        return rdmaHandle_;
+    }
+    uint16_t GetJettyId() const
+    {
+        return jettyInfo_.taJettyId;
+    }
     void Clean();
 
 private:

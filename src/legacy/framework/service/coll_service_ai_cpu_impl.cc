@@ -20,6 +20,7 @@
 #include "aicpu_res_package_helper.h"
 #include "alg_topo_package_helper.h"
 #include "dlprof_function.h"
+#include "task_exception_handler.h"
 namespace Hccl {
 
 template <class T, class U> u16 CalcFieldOffset(T *target, U *base)
@@ -152,7 +153,6 @@ HcclResult CollServiceAiCpuImpl::AllocCollOpResourceNoRegister(CollOperator &op,
     DevBuffer *mem = nullptr;
     comm->SetCommStatus(CommStatus::COMM_BUILDING);
     mem = OpBasedCollProcess(op, needUpdateRes, comm->GetCurAlgName());
-    AllocOpMem(op);
     auto info = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], AlgName[%s], opAlgTag[%s]",
                              op.opType.Describe().c_str(), comm->GetOpBaseOpIndex(), comm->GetId().c_str(),
                              comm->GetCurAlgName().c_str(), opAlgTag.c_str());
@@ -199,7 +199,7 @@ HcclResult CollServiceAiCpuImpl::AicpuMc2CommResourcePrepare(const CollOperator 
         param.kernel.binaryResSize = mem->GetSize();
     }
 
-    SetHcclKernelLaunchParam(param, comm);
+    SetHcclKernelLaunchParam(param, comm, false);
 
     comm->SetAicpuKernelLaunched(true);
     comm->GetStreamManager().ResetSlaveIndex(0);
@@ -268,7 +268,7 @@ void CollServiceAiCpuImpl::SetOffloadBufferParam(HcclKernelLaunchParam &param, C
     }
 }
 
-void CollServiceAiCpuImpl::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param, CommunicatorImpl *comm)
+void CollServiceAiCpuImpl::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param, CommunicatorImpl *comm, bool isLaunch)
 {
     CollOperator op = *comm->GetCurrentCollOperator();
 
@@ -295,9 +295,9 @@ void CollServiceAiCpuImpl::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param
     param.kernel.op.algOperator.dataType  = op.dataType;
     param.kernel.op.algOperator.dataCount = op.dataCount;
     param.kernel.op.algOperator.root      = op.root;
-    if (op.opType == OpType::ALLTOALL) {
+    if (op.opType == OpType::ALLTOALL && isLaunch) {
         param.kernel.op.algOperator.all2AllDataDes = op.all2AllDataDes;
-    } else if (op.opType == OpType::ALLTOALLV) {
+    } else if (op.opType == OpType::ALLTOALLV && isLaunch) {
         param.kernel.op.algOperator.all2AllVDataDes.sendCounts
             = reinterpret_cast<void *>(sendCountsMem[index].get()->GetAddr());
         param.kernel.op.algOperator.all2AllVDataDes.recvCounts
@@ -338,7 +338,17 @@ void CollServiceAiCpuImpl::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param
     }
 
     param.kernel.op.sendRecvRemoteRank = op.sendRecvRemoteRank;
-
+    Stream *streamPtr = nullptr;
+    if(op.opMode == OpMode::OPBASE) {
+        streamPtr = comm->GetStreamManager().opbase->GetMaster();
+    } else {
+        streamPtr = comm->GetStreamManager().offload->GetMaster(op.opTag);
+    }
+    if (streamPtr != nullptr) {
+        param.kernel.op.userStreamId = streamPtr -> GetId();
+    } else {
+        HCCL_WARNING("CollServiceAiCpuImpl::%s userStream is nullptr, userStreamId id in kernel param is invalid.", __func__);
+    }
     param.kernel.kfcControlTransferH2DParams = comm->GetKfcControlTransferH2D().GetCommunicateParams();
     param.kernel.kfcControlTransferD2HParams = comm->GetKfcStatusTransferD2H().GetCommunicateParams();
 
@@ -386,6 +396,7 @@ void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollO
 
 void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream, OpMode opMode)
 {
+    param.kernel.op.userStreamId = stream.GetId();
     rtHostInputInfo hostInputInfo;
     hostInputInfo.addrOffset = KERNEL_PARAM_ADDR_OFFSET;
     hostInputInfo.dataOffset = KERNEL_PARAM_DATA_OFFSET;
@@ -407,6 +418,11 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     AddPostToUserStream(stream);
     TaskParam taskParam {};
     taskParam.beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+
+    HCCL_INFO("[CollServiceAiCpuImpl::AicpuKernelLaunch] RegisterGetAicpuTaskExceptionCallBack streamId[%u], devLogicId[%u]", 
+              stream.GetId(), comm->GetDeviceLogicId());
+    auto getAicpuTaskExceptionCallBack = [this]() {return this->comm->GetAicpuTaskException();};
+    Hccl::RegisterGetAicpuTaskExceptionCallBackV2(stream.GetId(), comm->GetDeviceLogicId(), getAicpuTaskExceptionCallBack);
 
     HCCL_INFO("[CollServiceAiCpuImpl][%s] param.soName: %s, param.kernelName: %s",
               __func__, param.soName, param.kernelName);
