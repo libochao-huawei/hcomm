@@ -70,6 +70,7 @@ TEST_F(DevRdmaConnectionTest, rma_net_connection_get_status_return_ok)
     MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910A2));
     QpHandle fakeQpHandle = (void *)0x1000000;
     MOCKER(HrtRaQpCreate).stubs().with(any(), any(), any()).will(returnValue(fakeQpHandle));
+    MOCKER(HrtRaQpConnectAsync).stubs().with(any(), any()).will(returnValue(0));
     // construct DevRdmaConnection
     DevRdmaConnection devRdmaConnection(fakeSocket, rdmaHandle, OpMode::OPBASE);
 
@@ -142,7 +143,7 @@ TEST_F(DevRdmaConnectionTest, rma_net_connection_get_status_return_time_connecti
 
     MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910A2));
     MOCKER(HrtRaQpCreate).stubs().with(any(), any(), any()).will(returnValue(fakeQpHandle));
-
+    MOCKER(HrtRaQpConnectAsync).stubs().with(any(), any()).will(returnValue(0));
     // When
     DevRdmaConnection devRdmaConnection(fakeSocket, rdmaHandle, OpMode::OPBASE);
     MOCKER(HrtGetRaQpStatus).stubs().with(any()).will(returnValue(0)).then(returnValue(1));
