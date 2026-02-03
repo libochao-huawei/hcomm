@@ -287,14 +287,14 @@ STATIC int RsUbDevCbInit(struct CtxInitAttr *attr, struct RsUbDevCb *devCb, stru
     ret = pthread_mutex_init(&devCb->mutex, NULL);
     CHK_PRT_RETURN(ret != 0, hccp_err("mutex_init failed ret:%d", ret), -ESYSFUNC);
 
-    RS_INIT_LIST_HEAD(&devCb->asyncEventList);
-    RS_INIT_LIST_HEAD(&devCb->jfceList);
-    RS_INIT_LIST_HEAD(&devCb->jfcList);
-    RS_INIT_LIST_HEAD(&devCb->jettyList);
-    RS_INIT_LIST_HEAD(&devCb->rjettyList);
-    RS_INIT_LIST_HEAD(&devCb->tokenIdList);
-    RS_INIT_LIST_HEAD(&devCb->lsegList);
-    RS_INIT_LIST_HEAD(&devCb->rsegList);
+    RS_INIT_LIST_HEAD(&devCb->asyncEventList.list);
+    RS_INIT_LIST_HEAD(&devCb->jfceList.list);
+    RS_INIT_LIST_HEAD(&devCb->jfcList.list);
+    RS_INIT_LIST_HEAD(&devCb->jettyList.list);
+    RS_INIT_LIST_HEAD(&devCb->rjettyList.list);
+    RS_INIT_LIST_HEAD(&devCb->tokenIdList.list);
+    RS_INIT_LIST_HEAD(&devCb->lsegList.list);
+    RS_INIT_LIST_HEAD(&devCb->rsegList.list);
 
     ret = RsUbCreateCtx(devCb->urmaDev, attr->ub.eidIndex, &(devCb->urmaCtx));
     if (ret != 0) {
