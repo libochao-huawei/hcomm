@@ -1427,6 +1427,7 @@ STATIC void RsUbFillJfcInfo(struct RsCtxJfcCb *jfcCb, struct CtxCqInfo *info)
 int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct CtxCqInfo *info)
 {
     struct RsCtxJfcCb *jfcCb = NULL;
+    enum ProductType productType;
     urma_jfc_cfg_t jfcCfg = {0};
     urma_jfc_t *outJfc = NULL;
     int ret = 0;
@@ -1444,6 +1445,12 @@ int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct Ctx
     jfcCfg.jfce = attr->chanAddr == 0 ? NULL : (urma_jfce_t *)(uintptr_t)attr->chanAddr;
     if (attr->ub.mode == JFC_MODE_STARS_POLL || attr->ub.mode == JFC_MODE_CCU_POLL ||
         attr->ub.mode == JFC_MODE_USER_CTL_NORMAL) {
+        productType = RsGetProductType(jfcCb->devCb->rscb->logicId);
+        if (productType == PRODUCT_TYPE_910_96) {
+            attr->ub.ccuExCfg.valid == true;  
+            
+        }
+
         if (attr->ub.mode == JFC_MODE_CCU_POLL && attr->ub.ccuExCfg.valid) {
             jfcCb->ccuExCfg.valid = attr->ub.ccuExCfg.valid;
             jfcCb->ccuExCfg.cqeFlag = attr->ub.ccuExCfg.cqeFlag;
