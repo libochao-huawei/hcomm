@@ -7,13 +7,15 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef AICPU_TS_URMA_ENDPOINT_H
-#define AICPU_TS_URMA_ENDPOINT_H
+#ifndef URMA_ENDPOINT_H
+#define URMA_ENDPOINT_H
 
 #include <memory>
 #include <vector>
 #include <string>
 #include "endpoint.h"
+#include "ccu_channel_ctx_pool.h"
+#include "socket/socket.h"
 
 namespace hcomm {
 /**
@@ -34,12 +36,17 @@ public:
         return regedMemMgr_;
     }
 
+    CcuChannelCtxPool *GetCcuChannelCtxPool();
+
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
     HcclResult UnregisterMemory(void* memHandle) override;
     HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) override;
     HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;
     HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
+
+private:
+    std::unique_ptr<CcuChannelCtxPool> ccuChannelCtxPool_{nullptr};
 };
 }
 
-#endif // CPU_ROCE_ENDPOINT_H
+#endif // URMA_ENDPOINT_H
