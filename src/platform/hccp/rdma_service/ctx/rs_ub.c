@@ -274,6 +274,49 @@ STATIC int RsUbGetDevAttr(struct RsUbDevCb *devCb, struct DevBaseAttr *devAttr, 
     return 0;
 }
 
+STATIC int RsUbDevCbInitMutex(struct RsUbDevCb *devCb)
+{
+    int ret = 0;
+
+    ret = pthread_mutex_init(&devCb->asyncEventList.mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("asyncEventList mutexInit failed ret:%d", ret), -ESYSFUNC);
+
+    ret = pthread_mutex_init(&devCb->jfceList.mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("jfceList mutexInit failed ret:%d", ret), -ESYSFUNC);
+
+    ret = pthread_mutex_init(&devCb->jfcList.mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("jfcList mutexInit failed ret:%d", ret), -ESYSFUNC);
+
+    ret = pthread_mutex_init(&devCb->jettyList.mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("jettyList mutexInit failed ret:%d", ret), -ESYSFUNC);
+
+    ret = pthread_mutex_init(&devCb->rjettyList.mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rjettyList mutexInit failed ret:%d", ret), -ESYSFUNC);
+
+    ret = pthread_mutex_init(&devCb->tokenIdList.mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("tokenIdList mutexInit failed ret:%d", ret), -ESYSFUNC);
+
+    ret = pthread_mutex_init(&devCb->lsegList.mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("lsegList mutexInit failed ret:%d", ret), -ESYSFUNC);
+
+    ret = pthread_mutex_init(&devCb->rsegList.mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rsegList mutexInit failed ret:%d", ret), -ESYSFUNC);
+
+    return ret;
+}
+
+STATIC void RsUbDevCbDestroyMutex(struct RsUbDevCb *devCb)
+{
+    pthread_mutex_destroy(&devCb->asyncEventList.mutex);
+    pthread_mutex_destroy(&devCb->jfceList.mutex);
+    pthread_mutex_destroy(&devCb->jfcList.mutex);
+    pthread_mutex_destroy(&devCb->jettyList.mutex);
+    pthread_mutex_destroy(&devCb->rjettyList.mutex);
+    pthread_mutex_destroy(&devCb->tokenIdList.mutex);
+    pthread_mutex_destroy(&devCb->lsegList.mutex);
+    pthread_mutex_destroy(&devCb->rsegList.mutex);
+}
+
 STATIC int RsUbDevCbInit(struct CtxInitAttr *attr, struct RsUbDevCb *devCb, struct rs_cb *rscb,
     unsigned int *devIndex, struct DevBaseAttr *devAttr)
 {
@@ -284,17 +327,17 @@ STATIC int RsUbDevCbInit(struct CtxInitAttr *attr, struct RsUbDevCb *devCb, stru
     devCb->eidIndex = attr->ub.eidIndex;
     devCb->eid = attr->ub.eid;
 
-    ret = pthread_mutex_init(&devCb->mutex, NULL);
-    CHK_PRT_RETURN(ret != 0, hccp_err("mutex_init failed ret:%d", ret), -ESYSFUNC);
+    ret = RsUbDevCbInitMutex(devCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsUbDevCbInitMutex failed ret:%d", ret), ret);
 
-    RS_INIT_LIST_HEAD(&devCb->asyncEventList);
-    RS_INIT_LIST_HEAD(&devCb->jfceList);
-    RS_INIT_LIST_HEAD(&devCb->jfcList);
-    RS_INIT_LIST_HEAD(&devCb->jettyList);
-    RS_INIT_LIST_HEAD(&devCb->rjettyList);
-    RS_INIT_LIST_HEAD(&devCb->tokenIdList);
-    RS_INIT_LIST_HEAD(&devCb->lsegList);
-    RS_INIT_LIST_HEAD(&devCb->rsegList);
+    RS_INIT_LIST_HEAD(&devCb->asyncEventList.list);
+    RS_INIT_LIST_HEAD(&devCb->jfceList.list);
+    RS_INIT_LIST_HEAD(&devCb->jfcList.list);
+    RS_INIT_LIST_HEAD(&devCb->jettyList.list);
+    RS_INIT_LIST_HEAD(&devCb->rjettyList.list);
+    RS_INIT_LIST_HEAD(&devCb->tokenIdList.list);
+    RS_INIT_LIST_HEAD(&devCb->lsegList.list);
+    RS_INIT_LIST_HEAD(&devCb->rsegList.list);
 
     ret = RsUbCreateCtx(devCb->urmaDev, attr->ub.eidIndex, &(devCb->urmaCtx));
     if (ret != 0) {
@@ -321,7 +364,7 @@ epoll_del:
 close_dev:
     (void)RsUrmaDeleteContext(devCb->urmaCtx);
 destroy_mutex:
-    pthread_mutex_destroy(&devCb->mutex);
+    RsUbDevCbDestroyMutex(devCb);
     return ret;
 }
 
@@ -415,15 +458,18 @@ STATIC int RsUbGetJfcCb(struct RsUbDevCb *devCb, unsigned long long addr, struct
     struct RsCtxJfcCb *jfcCbCurr = NULL;
     struct RsCtxJfcCb *jfcCbNext = NULL;
 
+    RS_PTHREAD_MUTEX_LOCK(&devCb->jfcList.mutex);
     RS_LIST_GET_HEAD_ENTRY(jfcCbCurr, jfcCbNext, &devCb->jfcList, list, struct RsCtxJfcCb);
     for (; (&jfcCbCurr->list) != &devCb->jfcList;
         jfcCbCurr = jfcCbNext,
         jfcCbNext = list_entry(jfcCbNext->list.next, struct RsCtxJfcCb, list)) {
         if (jfcCbCurr->jfcAddr == addr) {
             *tempJfcCb = jfcCbCurr;
+            RS_PTHREAD_MUTEX_ULOCK(&devCb->jfcList.mutex);
             return 0;
         }
     }
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->jfcList.mutex);
 
     *tempJfcCb = NULL;
     hccp_err("jfc_cb for jfc_addr:0x%llx do not available!", addr);
@@ -436,8 +482,10 @@ STATIC int RsUbFreeJfcCb(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb)
     urma_jfc_t *urmaJfc = NULL;
     int ret = 0;
 
+    RS_PTHREAD_MUTEX_LOCK(&devCb->jfcList.mutex);
     RsListDel(&jfcCb->list);
     devCb->jfcCnt--;
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->jfcList.mutex);
 
     if (jfcCb->jfcType == JFC_MODE_STARS_POLL || jfcCb->jfcType == JFC_MODE_CCU_POLL ||
         jfcCb->jfcType == JFC_MODE_USER_CTL_NORMAL) {
@@ -464,7 +512,6 @@ int RsUbCtxJfcDestroy(struct RsUbDevCb *devCb, unsigned long long addr)
 
     hccp_info("[deinit][rs_jfc]destroy addr:0x%llx", addr);
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
     ret = RsUbGetJfcCb(devCb, addr, &jfcCb);
     if (ret != 0) {
         hccp_err("get jfc_cb failed, ret:%d, jfc addr:0x%llx", ret, addr);
@@ -473,7 +520,6 @@ int RsUbCtxJfcDestroy(struct RsUbDevCb *devCb, unsigned long long addr)
 
     ret = RsUbFreeJfcCb(devCb, jfcCb);
 out:
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
     return ret;
 }
 
@@ -1088,7 +1134,7 @@ int RsUbCtxDeinit(struct RsUbDevCb *devCb)
         hccp_err("rs_urma_delete_context failed, ret:%d", ret);
     }
 
-    pthread_mutex_destroy(&devCb->mutex);
+    RsUbDevCbDestroyMutex(devCb);
 
     RS_PTHREAD_MUTEX_LOCK(&devCb->rscb->mutex);
     RsListDel(&devCb->list);
@@ -1470,10 +1516,10 @@ int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct Ctx
 
     hccp_info("jfc addr:0x%llx", jfcCb->jfcAddr);
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->jfcList.mutex);
     jfcCb->devCb->jfcCnt++;
     RsListAddTail(&jfcCb->list, &devCb->jfcList);
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->jfcList.mutex);
 
     return 0;
 

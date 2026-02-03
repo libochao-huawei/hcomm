@@ -23,6 +23,12 @@
 #define CI_ADDR_BUFFER_ALIGN_4K_PAGE_SIZE 4096U
 #define WQE_BB_SIZE 64ULL
 
+struct RsCtxCbList {
+    pthread_mutex_t mutex;
+    unsigned int nodeCnt;
+    struct RsListHead list;
+};
+
 struct RsUbDevCb {
     struct rs_cb *rscb;
     unsigned int phyId;
@@ -36,23 +42,14 @@ struct RsUbDevCb {
     unsigned int cqeErrCnt;
     pthread_mutex_t cqeErrCntMutex;
 
-    pthread_mutex_t mutex;
-    unsigned int asyncEventCnt;
-    unsigned int jfceCnt;
-    unsigned int jfcCnt;
-    unsigned int jettyCnt;
-    unsigned int rjettyCnt;
-    unsigned int tokenIdCnt;
-    unsigned int lsegCnt;
-    unsigned int rsegCnt;
-    struct RsListHead asyncEventList;
-    struct RsListHead jfceList;
-    struct RsListHead jfcList;
-    struct RsListHead jettyList;
-    struct RsListHead rjettyList;
-    struct RsListHead tokenIdList;
-    struct RsListHead lsegList;
-    struct RsListHead rsegList;
+    struct RsCtxCbList asyncEventList;
+    struct RsCtxCbList jfceList;
+    struct RsCtxCbList jfcList;
+    struct RsCtxCbList jettyList;
+    struct RsCtxCbList rjettyList;
+    struct RsCtxCbList tokenIdList;
+    struct RsCtxCbList lsegList;
+    struct RsCtxCbList rsegList;
     struct RsListHead list;
 };
 
