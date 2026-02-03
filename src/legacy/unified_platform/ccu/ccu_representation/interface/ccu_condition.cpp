@@ -22,12 +22,16 @@ Condition::Condition(CcuRepContext *context, CcuRelationalOperator<Variable, uin
 {
     std::string label = "Condition";
     endLabel          = std::make_shared<CcuRepJumpLabel>(label);
-
+    Variable tmp;
+    auto ret = CreateVariable(context, tmp);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("CreateVariable failed!");
+    }
     // 当传入条件为真时, 执行Block, 对应不执行Jump
     if (rel.type == CcuRelationalOperatorType::NOT_EQUAL) {
-        jump = std::make_shared<CcuRepJumpEQ>(label, CreateVariable(context), rel.lhs, rel.rhs);
+        jump = std::make_shared<CcuRepJumpEQ>(label, tmp, rel.lhs, rel.rhs);
     } else if (rel.type == CcuRelationalOperatorType::EQUAL) {
-        jump = std::make_shared<CcuRepJumpNE>(label, CreateVariable(context), rel.lhs, rel.rhs);
+        jump = std::make_shared<CcuRepJumpNE>(label, tmp, rel.lhs, rel.rhs);
     } else {
         THROW<CcuApiException>("Unsupported relational operation");
     }
