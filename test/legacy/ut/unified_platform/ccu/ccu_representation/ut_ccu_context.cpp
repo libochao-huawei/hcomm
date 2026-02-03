@@ -180,7 +180,7 @@ TEST_F(CcuContextTest, CtxTest)
         };
     for (int i = 0; i < contextConstructors.size(); i++) {
         auto ctx = contextConstructors[i](ctxArg, transports, transportGroup);
-        ctx->Init();
+        CHK_PRT_RET_NULL(ctx->Init(), HCCL_INFO("Init is fail"));
 
         CcuResReq req = ctx->GetResourceRequest();
 
@@ -199,7 +199,11 @@ TEST_F(CcuContextTest, CtxTest)
         ctx->SetCcuInstrInfo(instrInfo);
 
         CcuTaskArgTest taskArg(0, 0, 100);
-        auto taskParam = ctx->GeneTaskParam(taskArg);
+        std::vector<CcuTaskParam> tmp;
+        auto ret = ctx->GeneTaskParam(taskArg, tmp);
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            THROW<CcuApiException>("GeneTaskParam is failed!");
+        }
     }
 }
 
@@ -241,7 +245,7 @@ TEST_F(CcuContextTest, TestSharedRes)
 
     CcuCtxArgSharedRes ctxArg0(0);
     auto ctx0 = CcuContextTestSharesRes(ctxArg0, transports0, transportGroup);
-    ctx0.Init();
+    CHK_PRT_RET_NULL(ctx0.Init(), HCCL_INFO("Init is fail"));
     ctx0.DumpReprestation();
     ctx0.GetResourceRequest();
     auto res0 = ctx0.GetResource();
@@ -251,7 +255,7 @@ TEST_F(CcuContextTest, TestSharedRes)
 
     CcuCtxArgSharedRes ctxArg1(1);
     auto ctx1 = CcuContextTestSharesRes(ctxArg1, transports0, transportGroup);
-    ctx1.Init();
+    CHK_PRT_RET_NULL(ctx1.Init(), HCCL_INFO("Init is fail"));
     ctx1.DumpReprestation();
     ctx1.GetResourceRequest();
     auto res1 = ctx1.GetResource();
@@ -264,7 +268,7 @@ TEST_F(CcuContextTest, TestSharedRes)
 
     CcuCtxArgSharedRes ctxArg2(2);
     auto ctx2 = CcuContextTestSharesRes(ctxArg2, transports1, transportGroup);
-    ctx2.Init();
+    CHK_PRT_RET_NULL(ctx2.Init(), HCCL_INFO("Init is fail"));
     ctx2.DumpReprestation();
     ctx2.GetResourceRequest();
     auto res2 = ctx2.GetResource();
@@ -312,7 +316,11 @@ TEST_F(CcuContextTest, TestSharedRes)
     auto instrInfo0 = translator0.Translate(ctx0.GetRepSequence(), ctx0.GetInstrId());
     ctx0.SetCcuInstrInfo(instrInfo0);
     CcuTaskArgSharedRes taskArg0;
-    auto taskParam0 = ctx0.GeneTaskParam(taskArg0);
+    std::vector<CcuTaskParam> tmp0;
+    auto ret0 = ctx0.GeneTaskParam(taskArg0, tmp0);
+    if (ret0 != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("GeneTaskParam is failed!");
+    }
 
     auto refManager1 = std::make_shared<CcuRepReferenceManager>(ctx1.GetDieId());
     std::array<uint16_t, 2> channels1 = {0, 0};
@@ -321,7 +329,11 @@ TEST_F(CcuContextTest, TestSharedRes)
     auto instrInfo1 = translator1.Translate(ctx1.GetRepSequence(), ctx1.GetInstrId());
     ctx1.SetCcuInstrInfo(instrInfo1);
     CcuTaskArgSharedRes taskArg1;
-    auto taskParam1 = ctx1.GeneTaskParam(taskArg1);
+    std::vector<CcuTaskParam> tmp1;
+    auto ret1 = ctx1.GeneTaskParam(taskArg1, tmp1);
+    if (ret1 != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("GeneTaskParam is failed!");
+    }
 
     auto refManager2 = std::make_shared<CcuRepReferenceManager>(ctx2.GetDieId());
     std::array<uint16_t, 2> channels2 = {0, 0};
@@ -330,7 +342,11 @@ TEST_F(CcuContextTest, TestSharedRes)
     auto instrInfo2 = translator2.Translate(ctx2.GetRepSequence(), ctx2.GetInstrId());
     ctx2.SetCcuInstrInfo(instrInfo2);
     CcuTaskArgSharedRes taskArg2;
-    auto taskParam2 = ctx2.GeneTaskParam(taskArg2);
+    std::vector<CcuTaskParam> tmp2;
+    auto ret2 = ctx2.GeneTaskParam(taskArg2, tmp2);
+    if (ret2 != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("GeneTaskParam is failed!");
+    }
 }
 
 class CcuContextTestLocalReduce : public CcuContext {
@@ -359,15 +375,15 @@ private:
 
 TEST_F(CcuContextTest, LocalReduce)
 {
-    EXPECT_NO_THROW(CcuContextTestLocalReduce(DataType::FP32, DataType::FP32, ReduceOp::SUM).Init());
-    EXPECT_NO_THROW(CcuContextTestLocalReduce(DataType::FP16, DataType::FP16, ReduceOp::SUM).Init());
+    EXPECT_EQ(CcuContextTestLocalReduce(DataType::FP32, DataType::FP32, ReduceOp::SUM).Init(), HCCL_SUCCESS);
+    EXPECT_EQ(CcuContextTestLocalReduce(DataType::FP16, DataType::FP16, ReduceOp::SUM).Init(), HCCL_SUCCESS);
 
-    EXPECT_NO_THROW(CcuContextTestLocalReduce(DataType::INT8, DataType::FP16, ReduceOp::SUM).Init());
+    EXPECT_EQ(CcuContextTestLocalReduce(DataType::INT8, DataType::FP16, ReduceOp::SUM).Init(), HCCL_SUCCESS);
 
-    EXPECT_NO_THROW(CcuContextTestLocalReduce(DataType::INT8, DataType::INT8, ReduceOp::MAX).Init());
+    EXPECT_EQ(CcuContextTestLocalReduce(DataType::INT8, DataType::INT8, ReduceOp::MAX).Init(), HCCL_SUCCESS);
 
-    EXPECT_THROW(CcuContextTestLocalReduce(DataType::INT8, DataType::INT8, ReduceOp::SUM).Init(), CcuApiException);
-    EXPECT_THROW(CcuContextTestLocalReduce(DataType::FP16, DataType::FP32, ReduceOp::SUM).Init(), CcuApiException);
-    EXPECT_THROW(CcuContextTestLocalReduce(DataType::FP16, DataType::FP32, ReduceOp::MAX).Init(), CcuApiException);
-    EXPECT_THROW(CcuContextTestLocalReduce(DataType::INT64, DataType::INT64, ReduceOp::MAX).Init(), CcuApiException);
+    EXPECT_EQ(CcuContextTestLocalReduce(DataType::INT8, DataType::INT8, ReduceOp::SUM).Init(), HCCL_E_INTERNAL);
+    EXPECT_EQ(CcuContextTestLocalReduce(DataType::FP16, DataType::FP32, ReduceOp::SUM).Init(), HCCL_E_INTERNAL);
+    EXPECT_EQ(CcuContextTestLocalReduce(DataType::FP16, DataType::FP32, ReduceOp::MAX).Init(), HCCL_E_INTERNAL);
+    EXPECT_EQ(CcuContextTestLocalReduce(DataType::INT64, DataType::INT64, ReduceOp::MAX).Init(), HCCL_E_INTERNAL);
 }
