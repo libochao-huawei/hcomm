@@ -195,6 +195,17 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
         if (ret != HCCL_SUCCESS) {
             THROW<InvalidParamsException>("SendErrorMessageReportToHost Failed.");
         }
+
+        // 2) send mbox to tsfw
+        ret = SendTaskExceptionByMBox(aicpuComm, exceptionInfo->errorCode);
+        HCCL_RUN_INFO("[TaskExceptionHandlerLite][SendTaskExceptionByMBox]group[%s]:"
+            "Try to send task exception by mailbox, errType[%u], errCode[%u], streamId[%d]",
+            aicpuComm->GetId().c_str(), exceptionInfo->sqeType, exceptionInfo->errorCode,
+            exceptionInfo->streamId);
+        CHK_PRT_CONT(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[TaskExceptionHandlerLite][SendTaskExceptionByMBox]group[%s]:"
+            "Send task exception by mailBox failed, streamId[%d]",
+            aicpuComm->GetId().c_str(), exceptionInfo->streamId));
         
         aicpuComm->SetErrorReported();
     }
