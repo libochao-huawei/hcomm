@@ -127,7 +127,7 @@ std::string PhyTopo::ConnInterface::Describe() const
         protocolStr += it->Describe();
     }
 
-    return StringFormat("ConnInterface[ports={%s}, pos=%s, protocols={%s}, linkType=%s]", portsStr.c_str(),
+    return StringFormat("ConnInterface[ports={%s}, pos=%s, protocols={%s}, linkType=%s], topoInstId=%u, topoType=%u", portsStr.c_str(),
                         pos.Describe().c_str(), protocolStr.c_str(), linkType.Describe().c_str());
 }
 
@@ -297,8 +297,8 @@ std::string PhyTopo::Link::Describe() const
         protocolStr += it->Describe();
     }
 
-    return StringFormat("PhyTopo::Link[type=%s, protocol=%s, source=%s, target=%s%s]", linkType.Describe().c_str(),
+    return StringFormat("PhyTopo::Link[type=%s, protocol=%s, source=%s, target=%s%s, topoInstId=%u, topoType=%u]", linkType.Describe().c_str(),
                         protocolStr.c_str(), source->Describe().c_str(), target->Describe().c_str(),
-                        iFace.str().c_str());
+                        iFace.str().c_str(), topoInstId, topoType);
 }
 }  // namespace Hccl
