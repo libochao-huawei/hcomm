@@ -408,3 +408,20 @@ HcclResult HcomCheckVOpParamV2(u32 rankId, u32 rankSize, u64 count, void *inCoun
         HCCL_E_PARA);
     return HCCL_SUCCESS;
 }
+
+void HcomGetHashFromSendCountMatrixV2(u64 &sendCountMatrixHash, const void *sendCountMatrix,
+    u64 rankSize, const std::string &tag)
+{
+    std::string sendCountMatrixStr;
+    std::hash<std::string> hashString;
+    for (u32 i = 0; i < rankSize; i++) {
+        for (u32 j = 0; j < rankSize; j++) {
+            std::string curSendCountStr =
+                std::to_string(*(static_cast<const u64 *>(sendCountMatrix) + i * rankSize + j));
+            sendCountMatrixStr += curSendCountStr + '_';
+        }
+    }
+    sendCountMatrixHash = hashString(sendCountMatrixStr.c_str());
+    HCCL_DEBUG("[HcomGetHashFromSendCountMatrix] tag[%s], sendCountMatrixHash[%llu]",
+        tag.c_str(), sendCountMatrixHash);
+}

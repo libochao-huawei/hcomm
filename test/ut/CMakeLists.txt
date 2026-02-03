@@ -18,6 +18,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/include/hccl
     ${HCCL_CODE_ROOT}/pkg_inc
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
+    ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
 
     # src/pub_inc 目录下头文件
     ${HCCL_CODE_ROOT}/src/pub_inc
@@ -197,6 +198,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/service/collective/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/external_system/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/socket/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu/
@@ -244,9 +246,35 @@ set(UT_COMMON_INCLUDE_LIST
 
     ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal
+
+    #next
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/api_c_adpt/
+
+    # ccu 头文件
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/adpt/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/common/
+ 
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/pub_inc/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_transport/
 )
 
 add_subdirectory(stub)
+add_subdirectory(framework/next)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(common/binary_package)
 add_subdirectory(misc)

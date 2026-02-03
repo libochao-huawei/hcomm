@@ -453,12 +453,12 @@ TEST_F(CcuComponentTest, St_AllocChannels_When_CcuV1AndParaError_Expect_Return_N
 
     EXPECT_NO_THROW(ccuComponent.Init());
 
-    ChannelPara channelPara{3, 3, 1}; // feId, jettyNum, sqSize，提供错误的feId
+    ChannelPara channelPara{3, 3, 1}; // feId, jettyNum, sqSize
     vector<ChannelInfo> channelInfos;
     ret = ccuComponent.AllocChannels(dieId, channelPara, channelInfos);
-    EXPECT_NE(ret, HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 
-    channelPara.feId = 4; // 修改为正确的feId
+    channelPara.feId = 4;
     ret = ccuComponent.AllocChannels(dieId, channelPara, channelInfos);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 

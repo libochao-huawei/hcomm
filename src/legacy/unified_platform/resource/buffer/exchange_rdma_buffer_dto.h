@@ -21,29 +21,31 @@ public:
     {
     }
 
-    ExchangeRdmaBufferDto(u64 addr, u64 size, u32 rkey) : addr(addr), size(size), rkey(rkey)
+    ExchangeRdmaBufferDto(u64 addr, u64 size, u32 rkey, const char *memTag)
+        : addr(addr), size(size), rkey(rkey), memTag(memTag)
     {
     }
 
     void Serialize(Hccl::BinaryStream &stream) override
     {
-        stream << addr << size << rkey;
+        stream << addr << size << rkey << memTag;
     }
 
     void Deserialize(Hccl::BinaryStream &stream) override
     {
-        stream >> addr >> size >> rkey;
+        stream >> addr >> size >> rkey >> memTag;
     }
 
     std::string Describe() const override
     {
-        return StringFormat("ExchangeRdmaBufferDto[addr=0x%llx, size=0x%llx, rkey=%lu]", addr, size, rkey);
+        return StringFormat("ExchangeRdmaBufferDto[addr=0x%llx, size=0x%llx, rkey=%lu, memTag=%s]", addr, size, rkey,
+                            memTag.c_str());
     }
 
     u64 addr{0};
     u32 size{0};
     u32 rkey{0};
-    u8  key[RDMA_MEM_KEY_MAX_LEN]{0};
+    std::string memTag{""};
 };
 
 } // namespace Hccl

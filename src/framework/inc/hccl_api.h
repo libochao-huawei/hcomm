@@ -1948,8 +1948,7 @@ extern HcclResult HcommMemUnReg(EndPointHandle endPointHandle, void *memHandle);
 /**
  * @brief 导出指定内存描述，用于交换
  */
-extern HcclResult HcommMemExport(EndPointHandle endPointHandle, const void *memHandle, void **memDesc,
-    uint32_t *memDescLen);
+extern HcclResult HcommMemExport(EndPointHandle endPointHandle, void *memHandle, void **memDesc, uint32_t *memDescLen);
 
 /**
  * @brief 基于内存描述，导入获得内存

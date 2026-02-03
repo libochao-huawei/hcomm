@@ -70,7 +70,7 @@ typedef struct tagRtDevBinary {
 
 typedef struct ProfilefDataInfo {
     const void *stubFunc;
-    uint32_t blockDim;
+    uint32_t numBlocks;
     const void *args;
     uint32_t argsSize;
     rtSmDesc_t *smDesc;
@@ -204,7 +204,7 @@ typedef struct tagRtDvppTaskDesc {
 
 typedef struct tagRtAicpuTaskDesc {
     rtKernelLaunchNames_t kernelLaunchNames;
-    uint16_t blockDim;
+    uint16_t numBlocks;
     uint16_t isUnderstudyOp : 1; // dvpp op exist, set 1; otherwise set 0
     uint16_t resverved : 15;
     rtArgsEx_t argsInfo;
@@ -212,7 +212,7 @@ typedef struct tagRtAicpuTaskDesc {
 
 typedef struct tagRtAicpuTaskDescByHandle {
     void* funcHdl;
-    uint16_t blockDim;
+    uint16_t numBlocks;
     uint16_t isUnderstudyOp : 1; // dvpp op exist, set 1; otherwise set 0
     uint16_t resverved : 15;
     rtArgsEx_t argsInfo;
@@ -246,7 +246,7 @@ typedef struct tagRtUncommonAicpuParams {
     rtArgsEx_t argsInfo;
     bool isUnderstudyOp;
     uint32_t kernelType;
-    uint32_t blockDim;
+    uint32_t numBlocks;
 } rtUncommonAicpuParams_t;
 
 /**
@@ -285,27 +285,27 @@ typedef enum tagRtBinBufferType {
 } rtBinBufferType_t;
 
 typedef union rtLaunchAttributeValue_union {
-    uint32_t blockDim;
+    uint32_t numBlocks;
     uint32_t dynamicShareMemSize;
     struct {
         uint32_t groupDim;
-        uint32_t groupBlockDim;
+        uint32_t groupNumBlocks;
     } Group;
     uint8_t qos;
     uint8_t partId;
     uint8_t schemMode; // rtschemModeType_t 0:normal;1:batch;2:sync
-    uint32_t blockDimOffset;
+    uint32_t numBlocksOffset;
     uint8_t dumpflag; // dumpflag 0:fault 2:RT_KERNEL_DUMPFLAG
 } rtLaunchAttributeValue_t;
 
 typedef enum rtLaunchAttributeId {
-    RT_LAUNCH_ATTRIBUTE_BLOCKDIM = 0,
+    RT_LAUNCH_ATTRIBUTE_NUMBLOCKS = 0,
     RT_LAUNCH_ATTRIBUTE_DYNAMIC_SHARE_MEM_SIZE = 1,
     RT_LAUNCH_ATTRIBUTE_GROUP = 2,
     RT_LAUNCH_ATTRIBUTE_QOS = 3,
     RT_LAUNCH_ATTRIBUTE_PARTID = 4,
     RT_LAUNCH_ATTRIBUTE_SCHEMMODE = 5,
-    RT_LAUNCH_ATTRIBUTE_BLOCKDIM_OFFSET = 6,
+    RT_LAUNCH_ATTRIBUTE_NUMBLOCKS_OFFSET = 6,
     RT_LAUNCH_ATTRIBUTE_DUMPFLAG = 7,
     RT_LAUNCH_ATTRIBUTE_MAX = 8,
 } rtLaunchAttributeId_t;
@@ -368,7 +368,7 @@ typedef struct tagRtAicoreTaskInfo {
 typedef struct tagRtAicpuTaskInfo {
     uint32_t kernelType;
     uint32_t flags;
-    uint32_t blockDim;
+    uint32_t numBlocks;
 } rtAicpuFusionInfo_t;
 
 typedef union {
@@ -617,12 +617,12 @@ RTS_API rtError_t rtQueryFunctionRegistered(const char_t *stubName);
  * @ingroup rt_kernel
  * @brief config data dump
  * @param [in] dumpSizePerBlock  dump size
- * @param [in] blockDim   block dimensions
+ * @param [in] numBlocks   block dimensions
  * @param [in] dumpBaseAddr   dump base addr
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
  */
-RTS_API rtError_t rtKernelConfigDump(uint32_t kind, uint32_t dumpSizePerBlock, uint32_t blockDim, void **dumpBaseAddr,
+RTS_API rtError_t rtKernelConfigDump(uint32_t kind, uint32_t dumpSizePerBlock, uint32_t numBlocks, void **dumpBaseAddr,
                                      rtStream_t stm);
 
 /**

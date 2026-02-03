@@ -33,6 +33,7 @@ public:
     void Grant(u32 pid);
 
     std::unique_ptr<Serializable> GetExchangeDto() override;
+    std::pair<uintptr_t, u64> GetBufferInfo() {return std::make_pair(buf->GetAddr(), buf->GetSize());}
 
 protected:
     char  name[RTS_IPC_MEM_NAME_LEN];

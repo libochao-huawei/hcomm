@@ -98,6 +98,20 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoints/server_socket/
+
+    # ccu 头文件
+    ${HCCL_BASE_DIR}/framework/next/comms/adpt
+
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/pub_inc/
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/ccu_comp
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1
+
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_transport/
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_kernel
 )
 
 target_include_directories(hcomm PRIVATE
@@ -117,6 +131,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../include/hccl
         ${HCCL_BASE_DIR}/../pkg_inc/
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
+        ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
         ${HCCL_BASE_DIR}/platform/common
         ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
         ${HCCL_BASE_DIR}/platform/legacy/inc
@@ -187,7 +202,8 @@ else()
         ${HCCL_BASE_DIR}/inc
         ${TOP_DIR}/inc/aicpu
         ${HCCL_BASE_DIR}/pkg_inc
-        ${HCCL_BASE_DIR}/platform/legacy/inc
+
+        ${TOP_DIR}/hcomm-legacy/src/platform/legacy/inc
     )
 endif()
 
@@ -471,7 +487,6 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather_v/coll_all_gather_v_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather_v/coll_all_gather_v_ring_for_910_93_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather_v/coll_aligned_all_gather_v_double_ring_for_910_93_executor.cc
-        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather_v/coll_all_gather_v_semi_ring_executor.cc
 
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_broadcast/coll_broadcast_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_broadcast/coll_broadcast_ring_for_910_93_executor.cc
@@ -517,7 +532,6 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter_v/coll_reduce_scatter_v_ring_for_910_93_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter_v/coll_aligned_reduce_scatter_v_double_ring_for_910_93_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter_v/coll_reduce_scatter_v_fast_double_ring_for_910_93_executor.cc
-        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter_v/coll_reduce_scatter_v_semi_ring_executor.cc
 
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_scatter/coll_scatter_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_scatter/coll_scatter_ring_executor.cc

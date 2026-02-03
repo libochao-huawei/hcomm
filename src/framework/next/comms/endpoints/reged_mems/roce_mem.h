@@ -18,6 +18,8 @@
 #include "buffer_key.h"
 #include "../../../../../legacy/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
 #include "remote_rma_buffer.h"
+#include "exchange_rdma_buffer_dto.h"
+#include "local_rdma_rma_buffer.h"
  
 namespace hcomm {
 /**
@@ -33,9 +35,12 @@ public:
  
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
     HcclResult UnregisterMemory(void* memHandle) override;
-    HcclResult MemoryExport(const EndpointDesc endpointDesc, const void *memHandle, void **memDesc, uint32_t *memDescLen) override;
+    HcclResult MemoryExport(const EndpointDesc endpointDesc, void *memHandle, void **memDesc, uint32_t *memDescLen) override;
     HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;
     HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
+    HcclResult GetMemDesc(const EndpointDesc endpointDesc, Hccl::LocalRdmaRmaBuffer *localRdmaRmaBuffer);
+    HcclResult GetParamsFromMemDesc(const void *memDesc, uint32_t descLen, 
+                                        EndpointDesc &endpointDesc, Hccl::ExchangeRdmaBufferDto &dto);
  
 private:
     std::unique_ptr<LocalRdmaRmaBufferMgr> localRdmaRmaBufferMgr_{};

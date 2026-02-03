@@ -9,6 +9,7 @@
  */
 
 #include "task_exception_func.h"
+ #include "communicator_impl_lite_manager.h"
 
 namespace Hccl {
 TaskExceptionFunc &TaskExceptionFunc::GetInstance()
@@ -180,24 +181,28 @@ void TaskExceptionFunc::Call()
     uint8_t tmpAddr[cqeSize] = {};     // cqe byte size
     recvInfo->cqe_addr = tmpAddr;  // 外部保证是有效的地址
     
-    for (auto &it : streamLiteMap_) {
-        if (it.second == nullptr) {
-            HCCL_ERROR("[TaskExceptionFunc]stream of streamLiteMap_ is nullptr");
-            continue;
-        }
-        if (GetReporterInfo(it.second, recvInfo) == 1) {
-            continue;
-        }
-        uint32_t reportNum = recvInfo->report_cqe_num;
-        if (reportNum > MAX_REPORT_CNT) {
-            HCCL_ERROR("[TaskExceptionFunc]report cqe num %u should not big than %u", reportNum, MAX_REPORT_CNT);
-            continue;
-        }
-        for (uint32_t idx = 0U; idx < reportNum; ++idx) {
-            auto &reportOfOne
-                = *((reinterpret_cast<rtLogicCqReport_t *>(recvInfo->cqe_addr)) + idx); // 外部保证是有效的地址
-            if (IsExceptionCqe(reportOfOne)) {
-                callback_(&reportOfOne);
+    std::vector<CommunicatorImplLite *> aicpuComms = CommunicatorImplLiteMgr::GetInstance().GetAll();
+    for (auto aicpuComm : aicpuComms) {
+        std::vector<StreamLite *> aicpuStreams = aicpuComm-> GetStreamLiteMgr()->GetAllStreams();
+        for (auto &aicpuStream : aicpuStreams) {
+            if (aicpuStream == nullptr) {
+                HCCL_ERROR("[TaskExceptionFunc]stream of in aicpuComm[%s] is nullptr", aicpuComm->GetId().c_str());
+                continue;
+            }
+            if (GetReporterInfo(aicpuStream, recvInfo)) {
+                continue;
+            }
+            uint32_t reportNum = recvInfo->report_cqe_num;
+            if (reportNum > MAX_REPORT_CNT) {
+                HCCL_ERROR("[TaskExceptionFunc]report cqe num %u should not big than %u", reportNum, MAX_REPORT_CNT);
+                continue;
+            }
+            for (uint32_t idx = 0U; idx < reportNum; ++idx) {
+                auto &reportOfOne
+                    = *((reinterpret_cast<rtLogicCqReport_t *>(recvInfo->cqe_addr)) + idx); // 外部保证是有效的地址
+                if (IsExceptionCqe(reportOfOne)) {
+                    callback_(aicpuComm, &reportOfOne);
+                }
             }
         }
     }
