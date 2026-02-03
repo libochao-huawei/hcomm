@@ -936,39 +936,48 @@ void CommunicatorImpl::CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sen
 
 void CommunicatorImpl::ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch)
 {
-    if (currentCollOperator) {
-        HCCL_INFO("ConvertCollOperatorA2A START");
-        if (opParams.opType == OpType::ALLTOALL) {
-            currentCollOperator->all2AllDataDes.sendCount = opParams.all2AllDataDes.sendCount;
-            currentCollOperator->all2AllDataDes.recvCount = opParams.all2AllDataDes.recvCount;
-            currentCollOperator->all2AllDataDes.sendType = opParams.all2AllDataDes.sendType;
-            currentCollOperator->all2AllDataDes.recvType = opParams.all2AllDataDes.recvType;
-            currentCollOperator->dataType = opParams.all2AllDataDes.sendType;
-            HCCL_INFO("sendCount[%llu], recvCount[%llu]", opParams.all2AllDataDes.sendCount, opParams.all2AllDataDes.recvCount);
-        } else if (opParams.opType == OpType::ALLTOALLV) {
-            currentCollOperator->all2AllVDataDes.sendCounts = opParams.all2AllVDataDes.sendCounts;
-            currentCollOperator->all2AllVDataDes.recvCounts = opParams.all2AllVDataDes.recvCounts;
-            currentCollOperator->all2AllVDataDes.sdispls = opParams.all2AllVDataDes.sdispls;
-            currentCollOperator->all2AllVDataDes.rdispls = opParams.all2AllVDataDes.rdispls;
-            currentCollOperator->all2AllVDataDes.sendType = opParams.all2AllVDataDes.sendType;
-            currentCollOperator->all2AllVDataDes.recvType = opParams.all2AllVDataDes.recvType;
-            currentCollOperator->dataType = opParams.all2AllVDataDes.sendType;
-        } else if (opParams.opType == OpType::ALLTOALLVC) {
-            currentCollOperator->all2AllVCDataDes.sendType = opParams.all2AllVCDataDes.sendType;
-            currentCollOperator->all2AllVCDataDes.recvType = opParams.all2AllVCDataDes.recvType;
-            currentCollOperator->all2AllVCDataDes.sendCountMatrix = opParams.all2AllVCDataDes.sendCountMatrix;
-            currentCollOperator->dataType = opParams.all2AllVCDataDes.sendType;
-        }
-        if (isLaunch) {
-            u64 sendSize = 0;
-            u64 recvSize = 0;
-            CalcA2ASendRecvMem(opParams, sendSize, recvSize);
-            HCCL_INFO("sendSize[%llu], recvSize[%llu]", sendSize, recvSize);
-            currentCollOperator->inputMem  = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.sendBuf), sendSize);
-            currentCollOperator->outputMem = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.recvBuf), recvSize);
-        }
-    } else {
-        HCCL_ERROR("currentCollOperator is nullptr");
+    if (currentCollOperator == nullptr) {
+        HCCL_WARNING("currentCollOperator is nullptr");
+        return;
+    }
+
+    HCCL_INFO("ConvertCollOperatorA2A START");
+    if (opParams.opType == OpType::ALLTOALL && isLaunch) {
+        currentCollOperator->all2AllDataDes.sendCount = opParams.all2AllDataDes.sendCount;
+        currentCollOperator->all2AllDataDes.recvCount = opParams.all2AllDataDes.recvCount;
+        currentCollOperator->all2AllDataDes.sendType = opParams.all2AllDataDes.sendType;
+        currentCollOperator->all2AllDataDes.recvType = opParams.all2AllDataDes.recvType;
+        currentCollOperator->dataType = opParams.all2AllDataDes.sendType;
+        HCCL_INFO("sendCount[%llu], recvCount[%llu]", opParams.all2AllDataDes.sendCount, opParams.all2AllDataDes.recvCount);
+    } else if (opParams.opType == OpType::ALLTOALL && (!isLaunch)) {
+        // MC2场景下只需默认值
+        currentCollOperator->all2AllDataDes.sendCount = 0;
+        currentCollOperator->all2AllDataDes.recvCount = 0;
+        currentCollOperator->all2AllDataDes.sendType = DataType::FP16;
+        currentCollOperator->all2AllDataDes.recvType = DataType::FP16;
+        currentCollOperator->dataType = DataType::FP16;
+    } else if (opParams.opType == OpType::ALLTOALLV) {
+        currentCollOperator->all2AllVDataDes.sendCounts = opParams.all2AllVDataDes.sendCounts;
+        currentCollOperator->all2AllVDataDes.recvCounts = opParams.all2AllVDataDes.recvCounts;
+        currentCollOperator->all2AllVDataDes.sdispls = opParams.all2AllVDataDes.sdispls;
+        currentCollOperator->all2AllVDataDes.rdispls = opParams.all2AllVDataDes.rdispls;
+        currentCollOperator->all2AllVDataDes.sendType = opParams.all2AllVDataDes.sendType;
+        currentCollOperator->all2AllVDataDes.recvType = opParams.all2AllVDataDes.recvType;
+        currentCollOperator->dataType = opParams.all2AllVDataDes.sendType;
+    } else if (opParams.opType == OpType::ALLTOALLVC) {
+        currentCollOperator->all2AllVCDataDes.sendType = opParams.all2AllVCDataDes.sendType;
+        currentCollOperator->all2AllVCDataDes.recvType = opParams.all2AllVCDataDes.recvType;
+        currentCollOperator->all2AllVCDataDes.sendCountMatrix = opParams.all2AllVCDataDes.sendCountMatrix;
+        currentCollOperator->dataType = opParams.all2AllVCDataDes.sendType;
+    }
+
+    if (isLaunch) {
+        u64 sendSize = 0;
+        u64 recvSize = 0;
+        CalcA2ASendRecvMem(opParams, sendSize, recvSize);
+        HCCL_INFO("sendSize[%llu], recvSize[%llu]", sendSize, recvSize);
+        currentCollOperator->inputMem  = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.sendBuf), sendSize);
+        currentCollOperator->outputMem = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.recvBuf), recvSize);
     }
 }
 
