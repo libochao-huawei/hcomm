@@ -47,6 +47,7 @@ struct RaRdmaOps {
     int (*raRdevInit)(
         struct RaRdmaHandle *rdmaHandle, unsigned int notifyType, struct rdev rdevInfo, unsigned int *rdevIndex);
     int (*raRdevGetPortStatus)(struct RaRdmaHandle *rdmaHandle, enum PortStatus *status);
+    int (*raGetLbMax)(struct RaRdmaHandle *rdmaHandle, int *lbMax);
     int (*raRdevDeinit)(struct RaRdmaHandle *rdmaHandle, unsigned int notifyType);
     int (*raSetTsqpDepth) (struct RaRdmaHandle *rdmaHandle, unsigned int tempDepth, unsigned int *qpNum);
     int (*raGetTsqpDepth) (struct RaRdmaHandle *rdmaHandle, unsigned int *tempDepth, unsigned int *qpNum);
@@ -65,6 +66,8 @@ struct RaRdmaOps {
         struct TypicalQp *remoteQpInfo);
     int (*raQpBatchModify)(struct RaRdmaHandle *handle, void *qpHdc[],
         unsigned int num, int expectStatus);
+    int (*raSetQpLbValue)(struct RaQpHandle *handle, int lbValue);
+    int (*raGetQpLbValue)(struct RaQpHandle *handle, int *lbValue);
     int (*raQpConnectAsync)(struct RaQpHandle *handle, const void *sockHandle);
     int (*raGetQpStatus)(struct RaQpHandle *handle, int *status);
     int (*raMrReg)(struct RaQpHandle *handle, struct MrInfoT *info);

@@ -827,3 +827,42 @@ void tc_ra_peer_loopback_single_qp_create()
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 }
+
+void tc_ra_peer_set_qp_lb_value()
+{
+    struct RaQpHandle qpHandle = {0};
+    int lbValue = 0;
+    int ret = 0;
+
+    mocker_clean();
+    mocker(RsSetQpLbValue, 10, -1);
+    ret = RaPeerSetQpLbValue(&qpHandle, lbValue);
+    EXPECT_INT_EQ(-1, ret);
+    mocker_clean();
+}
+
+void tc_ra_peer_get_qp_lb_value()
+{
+    struct RaQpHandle qpHandle = {0};
+    int lbValue = 0;
+    int ret = 0;
+
+    mocker_clean();
+    mocker(RsGetQpLbValue, 10, -1);
+    ret = RaPeerGetQpLbValue(&qpHandle, &lbValue);
+    EXPECT_INT_EQ(-1, ret);
+    mocker_clean();
+}
+
+void tc_ra_peer_get_lb_max()
+{
+    struct RaRdmaHandle rdmaHandle = {0};
+    int lbMax = 0;
+    int ret = 0;
+
+    mocker_clean();
+    mocker(RsGetLbMax, 10, -1);
+    ret = RaPeerGetLbMax(&rdmaHandle, &lbMax);
+    EXPECT_INT_EQ(-1, ret);
+    mocker_clean();
+}

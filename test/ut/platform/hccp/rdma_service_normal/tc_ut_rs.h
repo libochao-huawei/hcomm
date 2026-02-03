@@ -182,5 +182,7 @@ void tc_rs_free_dev_list(void);
 void tc_rs_free_rdev_list(void);
 void tc_rs_free_udev_list(void);
 void tc_rs_retry_timeout_exception_check();
-
+void tc_rs_set_qp_lb_value();
+void tc_rs_get_qp_lb_value();
+void tc_rs_get_lb_max();
 #endif
