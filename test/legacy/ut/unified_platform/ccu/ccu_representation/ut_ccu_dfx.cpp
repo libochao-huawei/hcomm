@@ -278,7 +278,11 @@ std::vector<CcuProfilingInfo> createCcuGroupBroadcastTest(uint32_t asize, uint32
     ctx.GroupBroadcast_expection_test();
     ccuTaskArgTest taskArg;
     taskArg.Init(5, 6, 7, 8, 9, 10, asize, bsize, 13, 14);
-    std::vector<CcuProfilingInfo> ccuprofilinginfo = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg());
+    std::vector<CcuProfilingInfo> ccuprofilinginfo;
+    auto ret = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg(), ccuprofilinginfo);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("GetCcuProfilingInfo is failed!");
+    }
     return ccuprofilinginfo;
 }
 
@@ -321,7 +325,11 @@ TEST_F(CcuDfxTest, localwait_block_test) {
     uint32_t bsize = 1024+1;
     ccuTaskArgTest taskArg;
     taskArg.Init(5, 6, 7, 8, 9, 10, asize, bsize, 13, 14);
-    std::vector<CcuProfilingInfo> ccuprofilinginfo = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg());
+    std::vector<CcuProfilingInfo> ccuprofilinginfo;
+    auto ret = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg(), ccuprofilinginfo);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("GetCcuProfilingInfo is failed!");
+    }
     EXPECT_EQ(ccuprofilinginfo.size(), 1);
 }
 
@@ -362,7 +370,11 @@ TEST_F(CcuDfxTest, localwait_test) {
     uint32_t bsize = 1024+1;
     ccuTaskArgTest taskArg;
     taskArg.Init(5, 6, 7, 8, 9, 10, asize, bsize, 13, 14);
-    std::vector<CcuProfilingInfo> ccuprofilinginfo = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg());
+    std::vector<CcuProfilingInfo> ccuprofilinginfo;
+    auto ret = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg(), ccuprofilinginfo);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("GetCcuProfilingInfo is failed!");
+    }
     EXPECT_EQ(ccuprofilinginfo.size(), 2);
     EXPECT_EQ(ccuprofilinginfo[1].name, "LocalWait");
     EXPECT_EQ(ccuprofilinginfo[1].ckeId, 1);
@@ -406,7 +418,11 @@ TEST_F(CcuDfxTest, RemoteWait_block_test)
     uint32_t bsize = 1024+1;
     ccuTaskArgTest taskArg;
     taskArg.Init(5, 6, 7, 8, 9, 10, asize, bsize, 13, 14);
-    std::vector<CcuProfilingInfo> ccuprofilinginfo = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg());
+    std::vector<CcuProfilingInfo> ccuprofilinginfo;
+    auto ret = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg(), ccuprofilinginfo);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("GetCcuProfilingInfo is failed!");
+    }
     EXPECT_EQ(ccuprofilinginfo.size(), 1);
 }
 
@@ -446,7 +462,11 @@ TEST_F(CcuDfxTest, RemoteWait_test)
     uint32_t bsize = 1024+1;
     ccuTaskArgTest taskArg;
     taskArg.Init(5, 6, 7, 8, 9, 10, asize, bsize, 13, 14);
-    std::vector<CcuProfilingInfo> ccuprofilinginfo = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg());
+    std::vector<CcuProfilingInfo> ccuprofilinginfo;
+    auto ret = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg(), ccuprofilinginfo);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("GetCcuProfilingInfo is failed!");
+    }
     EXPECT_EQ(ccuprofilinginfo.size(), 2);
     EXPECT_EQ(ccuprofilinginfo[1].name, "RemoteWait");
     EXPECT_EQ(ccuprofilinginfo[1].type, 1);
@@ -488,7 +508,11 @@ TEST_F(CcuDfxTest, GroupWait_block_Test)
     uint32_t bsize = 1024+1;
     ccuTaskArgTest taskArg;
     taskArg.Init(5, 6, 7, 8, 9, 10, asize, bsize, 13, 14);
-    std::vector<CcuProfilingInfo> ccuprofilinginfo = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg());
+    std::vector<CcuProfilingInfo> ccuprofilinginfo;
+    auto ret = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg(), ccuprofilinginfo);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("GetCcuProfilingInfo is failed!");
+    }
     EXPECT_EQ(ccuprofilinginfo.size(), 1);
 }
 
@@ -527,7 +551,11 @@ TEST_F(CcuDfxTest, GroupWait_Test)
     uint32_t bsize = 1024+1;
     ccuTaskArgTest taskArg;
     taskArg.Init(5, 6, 7, 8, 9, 10, asize, bsize, 13, 14);
-    std::vector<CcuProfilingInfo> ccuprofilinginfo = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg());
+    std::vector<CcuProfilingInfo> ccuprofilinginfo;
+    auto ret = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg(), ccuprofilinginfo);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("GetCcuProfilingInfo is failed!");
+    }
     EXPECT_EQ(ccuprofilinginfo.size(), 2);
     EXPECT_EQ(ccuprofilinginfo[1].name, "GroupWait");
     EXPECT_EQ(ccuprofilinginfo[1].type, 1);
@@ -574,7 +602,11 @@ TEST_F(CcuDfxTest, CcuContextProfiling_Perform_multiple_tasks)
     uint32_t bsize = 1024+1;
     ccuTaskArgTest taskArg;
     taskArg.Init(5, 6, 7, 8, 9, 10, asize, bsize, 13, 14);
-    std::vector<CcuProfilingInfo> ccuprofilinginfo = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg());
+    std::vector<CcuProfilingInfo> ccuprofilinginfo;
+    auto ret = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg(), ccuprofilinginfo);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("GetCcuProfilingInfo is failed!");
+    }
     EXPECT_EQ(ccuprofilinginfo.size(), 4);
 }
 TEST_F(CcuDfxTest, CcuContextProfilingTest_Test)
@@ -619,7 +651,11 @@ TEST_F(CcuDfxTest, CcuContextProfilingTest_Test)
     uint32_t bsize = 1024+1;
     ccuTaskArgTest taskArg;
     taskArg.Init(5, 6, 7, 8, 9, 10, asize, bsize, 13, 14);
-    std::vector<CcuProfilingInfo> ccuprofilinginfo = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg());
+    std::vector<CcuProfilingInfo> ccuprofilinginfo;
+    auto ret = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg(), ccuprofilinginfo);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("GetCcuProfilingInfo is failed!");
+    }
     EXPECT_EQ(ccuprofilinginfo.size(), 91);
 }
 TEST_F(CcuDfxTest, GroupBroadcastTest)
@@ -659,7 +695,11 @@ TEST_F(CcuDfxTest, GroupBroadcastTest)
     uint32_t bsize = 1024 + 1;
     ccuTaskArgTest taskArg;
     taskArg.Init(5, 6, 7, 8, 9, 10, asize, bsize, 13, 14);
-    std::vector<CcuProfilingInfo> ccuprofilinginfo = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg());
+    std::vector<CcuProfilingInfo> ccuprofilinginfo;
+    auto ret = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg(), ccuprofilinginfo);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("GetCcuProfilingInfo is failed!");
+    }
     DumpCcuProfilingInfo(ccuprofilinginfo);
     EXPECT_EQ(ccuprofilinginfo.size(), 2);
     EXPECT_EQ(ccuprofilinginfo[1].name, "GroupBroadcast");
@@ -705,7 +745,11 @@ TEST_F(CcuDfxTest, GroupReduceTest)
     ctx.GroupReduce_test();
     ccuTaskArgTest taskArg;
     taskArg.Init(5, 6, 7, 8, 9, 10, asize, bsize, 13, 14);
-    std::vector<CcuProfilingInfo> ccuprofilinginfo = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg());
+    std::vector<CcuProfilingInfo> ccuprofilinginfo;
+    auto ret = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg(), ccuprofilinginfo);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("GetCcuProfilingInfo is failed!");
+    }
     EXPECT_EQ(ccuprofilinginfo.size(), 2);
     EXPECT_EQ(ccuprofilinginfo[1].name, "GroupReduce");
     EXPECT_EQ(ccuprofilinginfo[1].channelId[0], 23);
