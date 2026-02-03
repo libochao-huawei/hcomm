@@ -14,7 +14,7 @@
 #include <vector>
 #include <string>
 #include "reged_mems/reged_mem_mgr.h"
-#include "socket.h"
+#include "socket/socket.h"
 #include "socket_handle_manager.h"
 #include "rdma_handle_manager.h"
 #include "../common/orion_adpt_utils.h"
@@ -58,7 +58,7 @@ public:
     virtual HcclResult UnregisterMemory(void* memHandle) = 0;
  
     // 导出指定内存描述，用于交换
-    virtual HcclResult MemoryExport(const void *memHandle, void **memDesc, uint32_t *memDescLen) = 0;
+    virtual HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) = 0;
  
     // 基于内存描述，导入获得内存
     virtual HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) = 0;

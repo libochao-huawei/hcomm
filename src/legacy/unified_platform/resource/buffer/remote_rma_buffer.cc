@@ -93,8 +93,8 @@ RemoteRdmaRmaBuffer::RemoteRdmaRmaBuffer(RdmaHandle rdmaHandle, const Serializab
     addr = dto.addr;
     size = dto.size;
     rkey = dto.rkey;
-    memTag = "HcclBuffer"; // TODO： 临时处理
-    HCCL_INFO("[RemoteRdmaRmaBuffer]addr = %llu; size = %u; rkey = %u", addr, size, rkey);
+    memTag = dto.memTag;
+    HCCL_INFO("[RemoteRdmaRmaBuffer]addr = %llu; size = %u; rkey = %u, memTag = %s", addr, size, rkey, memTag.c_str());
 }
 
 RemoteRdmaRmaBuffer::~RemoteRdmaRmaBuffer()

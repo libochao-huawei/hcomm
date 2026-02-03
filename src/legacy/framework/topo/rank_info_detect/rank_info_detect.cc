@@ -1,7 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
- * Description: rank info detect declaration
- * Create: 2025-09-16
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "rank_info_detect.h"
@@ -105,7 +109,7 @@ shared_ptr<Socket> RankInfoDetect::ServerInit()
     std::shared_ptr<Socket> serverSocket = std::make_shared<Socket>(
         hccpHostSocketHandle, hostIp_, hostPort_, hostIp_, "server", SocketRole::SERVER, NicType::HOST_NIC_TYPE);
     if (hostPort_ == HCCL_INVALID_PORT) {
-        auto portRange = EnvConfig::GetInstance().GetHostNicConfig().GetSocketPortRange();
+        auto portRange = EnvConfig::GetInstance().GetHostNicConfig().GetHostSocketPortRange();
         PreemptPortManager::GetInstance(devLogicId_).ListenPreempt(serverSocket, portRange, hostPort_);
     } else {
         serverSocket->Listen();
@@ -220,7 +224,7 @@ u32 RankInfoDetect::GetHostListenPort()
 {
     // 端口监听范围配置
     u32 listenPort = HCCL_INVALID_PORT;
-    auto portRange = EnvConfig::GetInstance().GetHostNicConfig().GetSocketPortRange();
+    auto portRange = EnvConfig::GetInstance().GetHostNicConfig().GetHostSocketPortRange();
     if (portRange.size() > 0) {
         HCCL_INFO("[RankInfoDetect::%s] SocketPortRange is configured.", __func__);
         return listenPort;

@@ -1,7 +1,7 @@
-/*
- * Copyright (c) 2024 Huawei Technologies Co., Ltd.
- * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -45,8 +45,8 @@ __aicore__ inline void InitCoreInfo(uint32_t stepTag)
     curTag             = static_cast<int32_t>(stepTag);
     uint64_t dataCount = len_; 
     // aiv core 划分
-    // 1D rankSize_ <=16； coreNumPerRank*(ranksize_+1)一定比blockdim_小，否则就需要一个aicore处理多个rank的数据
-    coreNumPerRank    = blockdim_ / (rankSize_ + 1);      
+    // 1D rankSize_ <=16； coreNumPerRank*(ranksize_+1)一定比numBlocks_小，否则就需要一个aicore处理多个rank的数据
+    coreNumPerRank    = numBlocks_ / (rankSize_ + 1);      
     coreNumFirstStage = coreNumPerRank * rankSize_;       
     coreNumTotal      = coreNumPerRank * (rankSize_ + 1); 
 
@@ -158,8 +158,8 @@ __aicore__ inline void SmallCoreReduceScatter(uint32_t stepTag)
     curTag                 = static_cast<int32_t>(stepTag);
 
     // scatter
-    for (uint32_t i = 0; block_idx + i * blockdim_ < rankSize_; i++) {
-        targetRank = block_idx + i * blockdim_;
+    for (uint32_t i = 0; block_idx + i * numBlocks_ < rankSize_; i++) {
+        targetRank = block_idx + i * numBlocks_;
         rankChunkSize
             = ((targetRank + 1) * rankChunkStride <= dataCount)
                   ? rankChunkStride
@@ -175,7 +175,7 @@ __aicore__ inline void SmallCoreReduceScatter(uint32_t stepTag)
         Record(targetRank, rank_, curTag);
     }
     // reduce
-    if (block_idx == blockdim_ - 1) {
+    if (block_idx == numBlocks_ - 1) {
         uint64_t myRankChuckSize
             = ((rank_ + 1) * rankChunkStride <= dataCount)
                   ? rankChunkStride
@@ -204,8 +204,8 @@ __aicore__ inline void SmallCoreReduceScatter(uint32_t stepTag)
 __aicore__ inline void SmallCoreAllgather()
 {
     uint64_t dataCount = len_;
-    for (uint32_t i = 0; block_idx + i * blockdim_ < rankSize_; i++) {
-        targetRank = block_idx + i * blockdim_;
+    for (uint32_t i = 0; block_idx + i * numBlocks_ < rankSize_; i++) {
+        targetRank = block_idx + i * numBlocks_;
         rankChunkSize
             = ((targetRank + 1) * rankChunkStride <= dataCount)
                   ? rankChunkStride

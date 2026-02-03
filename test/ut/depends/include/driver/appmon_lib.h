@@ -1,23 +1,11 @@
-/*******************************************************************************
- * Copyright (c) Huawei Technologies Co., Ltd. 2019-2021. All rights reserved.
- * Description:
- * Author: huawei
- * Create: 2019-10-15
- *                     ALL RIGHTS RESERVED
- *******************************************************************************/
-
-/* * @defgroup 应用程序心跳监控接口模块
- *  @brief   提供应用心跳监控接口
- *  @author
- *  @version 1.0
- *  @date    2019/06/14
- *
- *
- *  模块说明:
- *
- *  此模块描述了应用程序心跳监控接口.
- *
- *
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #ifndef _APPMON_LIB_H_

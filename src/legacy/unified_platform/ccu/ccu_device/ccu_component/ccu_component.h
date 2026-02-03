@@ -97,7 +97,7 @@ private:
     ~CcuComponent();
 
     void CheckDiesEnable();
-    void ChooseLoopEids();
+    void ChooseLoopEid(bool &dieDrvEnableFlag, uint8_t dieId);
     HcclResult GetLoopFeIpByDieId(const uint8_t dieId, uint32_t &feId, IpAddress &ipAddr);
     void CreateCcuRmaBuffer();
     void CreateResourceManagers();
