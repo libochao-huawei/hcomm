@@ -13,6 +13,7 @@
 #include <urma_types.h>
 #include <urma_opcode.h>
 #include <udma_u_ctl.h>
+#include <urma_types.h>
 #include "securec.h"
 #include "user_log.h"
 #include "dl_hal_function.h"
