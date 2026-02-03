@@ -1423,6 +1423,7 @@ STATIC void rs_ub_fill_jfc_info(struct rs_ctx_jfc_cb *jfc_cb, struct ctx_cq_info
 int rs_ub_ctx_jfc_create(struct rs_ub_dev_cb *dev_cb, struct ctx_cq_attr *attr, struct ctx_cq_info *info)
 {
     struct rs_ctx_jfc_cb *jfc_cb = NULL;
+    enum ProductType productType;
     urma_jfc_cfg_t jfc_cfg = {0};
     urma_jfc_t *out_jfc = NULL;
     int ret = 0;
@@ -1440,6 +1441,11 @@ int rs_ub_ctx_jfc_create(struct rs_ub_dev_cb *dev_cb, struct ctx_cq_attr *attr, 
     jfc_cfg.jfce = attr->chan_addr == 0 ? NULL : (urma_jfce_t *)(uintptr_t)attr->chan_addr;
     if (attr->ub.mode == JFC_MODE_STARS_POLL || attr->ub.mode == JFC_MODE_CCU_POLL ||
         attr->ub.mode == JFC_MODE_USER_CTL_NORMAL) {
+        productType = RsGetProductType(jfc_cb->dev_cb->rscb->logicId);
+        if (productType == PRODUCT_TYPE_910_96) {
+            attr->ub.ccu_ex_cfg.valid == true;
+        }
+
         if (attr->ub.mode == JFC_MODE_CCU_POLL && attr->ub.ccu_ex_cfg.valid) {
             jfc_cb->ccu_ex_cfg.valid = attr->ub.ccu_ex_cfg.valid;
             jfc_cb->ccu_ex_cfg.cqe_flag = attr->ub.ccu_ex_cfg.cqe_flag;
