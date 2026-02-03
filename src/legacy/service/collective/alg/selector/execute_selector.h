@@ -18,6 +18,7 @@
 #include "rank_gph.h"
 #include "coll_alg_params.h"
 #include "coll_operator.h"
+#include "mc2_selector.h"
 
 namespace Hccl {
 class ExecuteSelector {
@@ -31,6 +32,7 @@ public:
     ExecuteSelector &SetServerNum(u32 serverNum);
     ExecuteSelector &SetOpConfig(OpExecuteConfig opConfig);
     HcclResult       Run(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName);
+    AlgorithmType GetAlgorithmTypeForMC2(const std::string& name);
 
 protected:
     RankGraph *rankGraph_ = nullptr;
