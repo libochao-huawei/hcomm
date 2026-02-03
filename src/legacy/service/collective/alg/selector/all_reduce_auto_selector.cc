@@ -17,6 +17,7 @@ namespace Hccl {
 constexpr u64 AR_M2M_1D_MAX_DATA_SIZE = 16 * 1024 * 1024;
 constexpr u64 AR_AICPU_1D_SMALL_DATA_SIZE = 8 * 1024 * 1024;
 constexpr u64 AR_AICPU_1D_MAX_DATA_SIZE = 32 * 1024 * 1024;
+constexpr u64 AR_ONESHOT_1D_MAX_DATA_SIZE = 16 * 1024;
 
 SelectorStatus AllReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,
@@ -65,11 +66,14 @@ SelectorStatus AllReduceAutoSelector::SelectMeshAlgo(const TopoInfo &topoInfo,
 {
     (void)op;
     if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-        if (IsInputOutputOverlap(op.inputMem, op.outputMem) != true) {
-            primQueueGenName = "CcuAllReduceMesh1DOneShot";
-        } else {
+        if (IsInputOutputOverlap(op.inputMem, op.outputMem) == true) {
             return SelectorStatus::NOT_MATCH;
         }
+        if (dataSize_ / rankSize_ > AR_ONESHOT_1D_MAX_DATA_SIZE) {
+ 	        primQueueGenName = "CcuAllReduceMesh1D";
+ 	    } else {
+ 	        primQueueGenName = "CcuAllReduceMesh1DOneShot";
+ 	    }
     } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
         if (IsSmallData(dataSize_) && IsInputOutputOverlap(op.inputMem, op.outputMem) != true) {
             primQueueGenName = "CcuAllReduceMesh2DOneShot";
