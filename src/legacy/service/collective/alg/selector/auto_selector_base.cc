@@ -44,24 +44,18 @@ SelectorStatus AutoSelectorBase::Select(const CollAlgOperator &op, CollAlgParams
         }
     }
     if (params.opExecuteConfig.accState == AcceleratorState::AIV) {
-        if (op.opType == OpType::BARRIER) {
-            ret = SelectorStatus::NOT_MATCH;
-        } else {
+        if (op.opType != OpType::BARRIER) {
             ret = SelectAivAlgo(topoInfo, op, configAlgMap, primQueueGenName);
         }
-
-        if (ret == SelectorStatus::NOT_MATCH) {
-            params.opExecuteConfig.accState = AcceleratorState::CCU_FALLBACK;
-        } else {
+        if (ret == SelectorStatus::MATCH) {
             return ret;
         }
+        params.opExecuteConfig.accState = AcceleratorState::CCU_FALLBACK;
     }
 
     if (params.opExecuteConfig.accState == AcceleratorState::AIV_ONLY) {
-        if (op.opType == OpType::BARRIER) {
-            return SelectorStatus::NOT_MATCH;
-        }
-        return SelectAivAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+        return (op.opType == OpType::BARRIER) ? SelectorStatus::NOT_MATCH :
+               SelectAivAlgo(topoInfo, op, configAlgMap, primQueueGenName);
     }
     if (IsStarsState(params.opExecuteConfig)) {
         ret = SelectAicpuAlgo(topoInfo, op, configAlgMap, primQueueGenName);
