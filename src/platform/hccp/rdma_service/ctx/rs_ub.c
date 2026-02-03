@@ -12,6 +12,7 @@
 #include <dlfcn.h>
 #include <urma_opcode.h>
 #include <udma_u_ctl.h>
+#include <urma_types.h>
 #include "securec.h"
 #include "user_log.h"
 #include "dl_hal_function.h"
@@ -1745,6 +1746,17 @@ STATIC int rs_ub_ctx_drv_jetty_create(struct rs_ctx_jetty_cb *jetty_cb, struct r
     return 0;
 }
 
+#define CHECK_TYPES_MATCH(expr1, expr2)		\
+	((typeof(expr1) *)0 != (typeof(expr2) *)0)
+
+#define CONTAINER_OFF(containing_type, member)                                 \
+	offsetof(containing_type, member)
+#define CONTAINER_OF(member_ptr, containing_type, member)                      \
+	 ((containing_type *)                                                  \
+	  ((void *)(member_ptr)                                                \
+	   - CONTAINER_OFF(containing_type, member))                           \
+	  + (uint8_t)CHECK_TYPES_MATCH(*(member_ptr), ((containing_type *)0)->member))
+
 STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_create_info *jetty_info)
 {
     struct rs_jetty_key_info jetty_key_info = {0};
@@ -1764,6 +1776,12 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
     jetty_info->ub.db_token_id = jetty_cb->db_token_id;
     jetty_info->va = (uint64_t)(uintptr_t)jetty_cb->jetty;
     jetty_info->ub.ci_addr = jetty_cb->ci_addr;
+
+    udma_u_jetty * udma_jetty = CONTAINER_OF(jetty_cb->jetty, struct udma_u_jetty, base);
+    jetty_info->udma_jetty_sq.qbuf = udma_jetty.sq.qbuf;
+    jetty_info->udma_jetty_sq.qbuf_end = udma_jetty.sq.qbuf_end;
+    jetty_info->udma_jetty_sq.qbuf_size = udma_jetty.sq.qbuf_size;
+    jetty_info->udma_jetty_sq.qbuf_curr = udma_jetty.sq.qbuf_curr;
 
     return 0;
 }
