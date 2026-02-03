@@ -494,13 +494,18 @@ HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t noti
 {
     CHK_PTR_NULL(threads);
 
-    HCCL_INFO("[%s]HcclThreadAcquire begin. need threadNum[%u], notifyPerThread[%u]",
+    HCCL_INFO("[%s]HcommThreadAcquire begin. need threadNum[%u], notifyPerThread[%u]",
         __func__,
         threadNum,
         notifyNumPerThread);
+    uint32_t totalThread = threadNum + hcomm::g_ThreadMap.size();
+    if (threadNum == 0 || totalThread > HCOMM_THREADNUM_MAX_NUM) {
+        HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.Remaining threadNum is %u,threadNum must more than 0 and less than %u", threadNum, HCOMM_THREADNUM_MAX_NUM);
+        return HCCL_E_PARA;
+    }
 
-    if (threadNum == 0) {
-        HCCL_ERROR("[HcommThreadAlloc]threadNum is 0");
+    if (notifyNumPerThread > HCOMM_NOTIFY_MAX_NUM) {
+        HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.notifyNumPerThread is %u,notifyNumPerThread must  less than %u", notifyNumPerThread, HCOMM_NOTIFY_MAX_NUM);
         return HCCL_E_PARA;
     }
 
@@ -513,7 +518,7 @@ HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t noti
 
     for (uint32_t i = 0; i < threadNum; ++i) {
         std::shared_ptr<hccl::Thread> handle;
-        HCCL_INFO("[%s] AicpuTsThread notifyLoadType[%u], streamType[%u]",
+        HCCL_INFO("[%s] HcclThread notifyLoadType[%u], streamType[%u]",
             __func__,
             static_cast<int32_t>(notifyLoadType),
             static_cast<int32_t>(streamType));
@@ -570,7 +575,7 @@ HcclResult HcommThreadAllocWithStream(CommEngine engine,
 {
     CHK_PTR_NULL(thread);
     hccl::NotifyLoadType notifyLoadType;
-    CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
+    CHK_RET(CommHostEngineToNotifyLoadType(engine, notifyLoadType));
     std::shared_ptr<hccl::Thread> handle;
     EXECEPTION_CATCH(handle = std::make_shared<hccl::CpuTsThread>(stream, notifyNum, notifyLoadType), return HCCL_E_PTR);
     CHK_RET(handle->Init());
