@@ -1,0 +1,41 @@
+# ----------------------------------------------------------------------------
+# This program is free software, you can redistribute it and/or modify it.
+# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# This file is a part of the CANN Open Software.
+# Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
+# BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
+# the software repository for the full text of the License.
+# ----------------------------------------------------------------------------
+
+
+ABSEIL_URL="https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20250127.0/abseil-cpp-20250127.0.zip"
+wget --no-check-certificate -O "${OUTPUT_PATH}/pkg/abseil-cpp-20250127.0.zip" ${ABSEIL_URL}
+
+set(ABSEIL_NAME "abseil-cpp")
+set(ABSEIL_FILE "abseil-cpp-20250127.0.zip")
+set(ABSEIL_URL "https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20250127.0/${ABSEIL_FILE}")
+set(ABSEIL_PKG_PATH ${CANN_3RD_PKG_PATH}/${ABSEIL_FILE})
+set(ABSEIL_SRC_PATH ${CANN_3RD_LIB_PATH}/abseil-cpp)
+
+if(EXISTS ${ABSEIL_PKG_PATH})
+    # 离线编译场景，优先使用 pkg 目录下的包
+    message(STATUS "[ThirdParty] Found local abseil-cpp package: ${ABSEIL_PKG_PATH}")
+    set(ABSEIL_PROJECT_URL ${ABSEIL_PKG_PATH})
+else()
+    # 下载并解压
+    message(STATUS "[ThirdParty] Downloading ${ABSEIL_NAME} from ${ABSEIL_URL}")
+    set(ABSEIL_PROJECT_URL ${ABSEIL_URL})
+endif()
+
+include(ExternalProject)
+ExternalProject_Add(third_party_abseil_cpp
+    URL ${ABSEIL_PROJECT_URL}
+    DOWNLOAD_DIR ${CANN_3RD_PKG_PATH}
+    DOWNLOAD_NO_PROGRESS TRUE
+    DOWNLOAD_NO_EXTRACT TRUE    # 仅下载，不解压
+    CONFIGURE_COMMAND ""   # 无需解压，只需要下载
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+)

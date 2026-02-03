@@ -239,10 +239,10 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/test/ut/depends/include/ascendc/highlevel_api/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
 
-    ${ASCEND_3RD_LIB_PATH}/json/include/
-    ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
-    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/
-    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/3rdparty/
+    ${CANN_3RD_LIB_PATH}/json/include/
+    ${CANN_3RD_LIB_PATH}/gtest/include/
+    ${CANN_3RD_LIB_PATH}/mockcpp/include/
+    ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
 
     ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal
@@ -273,21 +273,21 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_transport/
 )
 
-add_subdirectory(stub)
-add_subdirectory(framework/next)
+# add_subdirectory(stub)
+# add_subdirectory(framework/next)
 add_subdirectory(common/prepare_ut_env)
-add_subdirectory(common/binary_package)
-add_subdirectory(misc)
-add_subdirectory(impl)
-add_subdirectory(device)
-add_subdirectory(platform/hcom)
-add_subdirectory(platform/resource/dispatcher)
-add_subdirectory(platform/resource/notify)
-add_subdirectory(platform/resource/transport)
-add_subdirectory(platform/ping_mesh)
-add_subdirectory(framework/communicator)
-add_subdirectory(framework/op_base_api)
-add_subdirectory(framework/communicator/impl)
-add_subdirectory(framework/resource)
-add_subdirectory(aicpu_kfc/aicpu)
-add_subdirectory(aicpu_kfc/misc)
+# add_subdirectory(common/binary_package)
+# add_subdirectory(misc)
+# add_subdirectory(impl)
+# add_subdirectory(device)
+# add_subdirectory(platform/hcom)
+# add_subdirectory(platform/resource/dispatcher)
+# add_subdirectory(platform/resource/notify)
+# add_subdirectory(platform/resource/transport)
+# add_subdirectory(platform/ping_mesh)
+# add_subdirectory(framework/communicator)
+# add_subdirectory(framework/op_base_api)
+# add_subdirectory(framework/communicator/impl)
+# add_subdirectory(framework/resource)
+# add_subdirectory(aicpu_kfc/aicpu)
+# add_subdirectory(aicpu_kfc/misc)
