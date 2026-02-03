@@ -398,26 +398,33 @@ void HcclOneSidedService::OneSidedAicpuKernelLaunch(HcclKernelLaunchParam &param
     hostInputInfo.addrOffset = KERNEL_PARAM_ADDR_OFFSET;
     hostInputInfo.dataOffset = KERNEL_PARAM_DATA_OFFSET;
 
-    rtAicpuArgsEx_t args;
-    args.args                 = static_cast<void *>(&param);
-    args.argsSize             = sizeof(HcclKernelLaunchParam);
-    args.hostInputInfoPtr     = &hostInputInfo;
-    args.hostInputInfoNum     = 0;
-    args.kernelOffsetInfoPtr  = nullptr;
-    args.kernelOffsetInfoNum  = 0;
-    args.kernelNameAddrOffset = CalcFieldOffset(param.kernelName, &param);
-    args.soNameAddrOffset     = CalcFieldOffset(param.soName, &param);
-    args.isNoNeedH2DCopy      = false;
+	std::string jsonPath;
+	if (GetKernelFilePath(jsonPath) != HCCL_SUCCESS)
+	{
+		THROW<InternalException>(StringFormat("AicpuKernelLaunch, GetKernelFilePath failed!"));
+	}
+	jsonPath += "ccl_kernel.json";
+	aclrtBinHandle binHandle;
+	HcclResult retCode = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0,
+		binHandle);
+	aclrtFuncHandle funcHandle;
+	aclError aclRet = aclrtBinaryGetFunction(binHandle, param.kernelName, &funcHandle);
+	constexpr u32 numBlocks = 1;
+
+	aclrtLaunchKernelCfg cfg;
+	aclrtLaunchKernelAttr attr;
+	cfg.numAttrs = 1;
+	cfg.attrs = &attr;
 
     AddPostToUserStream(stream);
 
     HCCL_INFO("[HcclOneSidedService::AicpuKernelLaunch] param.soName: %s, param.kernelName: %s", param.soName,
               param.kernelName);
 
-    HrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU, param.opName, 1, &args, nullptr,
-                                   comm_->GetAicpuStreamManager().GetFreeStream()->GetPtr(), 0);
+	HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, comm_->GetAicpuStreamManager().GetFreeStream()->GetPtr(),
+		&cfg, &param.kernel, sizeof(HcclKernelParamLite));
     HCCL_INFO("[HcclOneSidedService][AicpuKernelLaunch] param.kernel.algName: %s OPBASE mode "
-              "HrtAicpuKernelLaunchExWithArgs end!",
+              "HrtAicpuLaunchKernelWithHostArgs end!",
               param.kernel.algName);
 
     AddWaitToUserStream(stream);

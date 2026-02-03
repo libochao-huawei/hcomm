@@ -401,19 +401,14 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     hostInputInfo.addrOffset = KERNEL_PARAM_ADDR_OFFSET;
     hostInputInfo.dataOffset = KERNEL_PARAM_DATA_OFFSET;
 
-    rtAicpuArgsEx_t args;
-    args.args                 = reinterpret_cast<void *>(&param);
-    args.argsSize             = sizeof(HcclKernelLaunchParam);
-    args.hostInputInfoPtr     = &hostInputInfo;
-    args.hostInputInfoNum     = 0;
-    args.kernelOffsetInfoPtr  = nullptr;
-    args.kernelOffsetInfoNum  = 0;
-    args.kernelNameAddrOffset = CalcFieldOffset(param.kernelName, &param);
-    args.soNameAddrOffset     = CalcFieldOffset(param.soName, &param);
-    args.isNoNeedH2DCopy      = false;
-    auto timeoutCheck         = EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
-    args.timeout              = static_cast<u16>((timeoutCheck == 0) ? timeoutCheck : (timeoutCheck + 30)); // aicpu kernal超时时间: X+30s
-    HCCL_INFO("[CollServiceAiCpuImpl][%s] args timeout[%u]s", __func__, args.timeout);
+	aclrtLaunchKernelCfg cfg;
+	aclrtLaunchKernelAttr attr;
+	attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
+	auto timeoutCheck         = EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
+	attr.value.timeout = static_cast<u16>((timeoutCheck == 0) ? timeoutCheck : (timeoutCheck + 30)); // aicpu kernal超时时间: X+30s
+	cfg.numAttrs = 1;
+	cfg.attrs = &attr;
+    HCCL_INFO("[CollServiceAiCpuImpl][%s] args timeout[%u]s", __func__, attr.value.timeout);
 
     AddPostToUserStream(stream);
     TaskParam taskParam {};
@@ -426,18 +421,28 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
 
     HCCL_INFO("[CollServiceAiCpuImpl][%s] param.soName: %s, param.kernelName: %s",
               __func__, param.soName, param.kernelName);
-    if (opMode == OpMode::OPBASE) {
-        HrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU_KFC, param.opName, 1, &args, nullptr,
-                                       comm->GetAicpuStreamManager().GetFreeStream()->GetPtr(), RT_KERNEL_USE_SPECIAL_TIMEOUT);
-        HCCL_INFO("[CollServiceAiCpuImpl][%s] param.kernel.algName: %s OPBASE mode "
-                "HrtAicpuKernelLaunchExWithArgs end!",
-                __func__, param.kernel.algName);
-    } else if (opMode == OpMode::OFFLOAD) {
-        HrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU_KFC, param.opName, 1, &args, nullptr, stream.GetPtr(), RT_KERNEL_USE_SPECIAL_TIMEOUT);
-        HCCL_INFO("[CollServiceAiCpuImpl][%s] param.kernel.algName: %s OFFLOAD mode "
-                "HrtAicpuKernelLaunchExWithArgs end!",
-                __func__, param.kernel.algName);
-    }
+	std::string jsonPath;
+	if (GetKernelFilePath(jsonPath) != HCCL_SUCCESS)
+	{
+		THROW<InternalException>(StringFormat("AicpuKernelLaunch, GetKernelFilePath failed!"));
+	}
+	jsonPath += "ccl_kernel.json";
+	aclrtBinHandle binHandle;
+	HcclResult retCode = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, binHandle);
+	aclrtFuncHandle funcHandle;
+	constexpr u32 numBlocks = 1;
+	aclError aclRet = aclrtBinaryGetFunction(binHandle, param.kernelName, &funcHandle);
+	if (opMode == OpMode::OPBASE) {
+		HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, comm->GetAicpuStreamManager().GetFreeStream()->GetPtr(), &cfg,
+			&param.kernel, sizeof(HcclKernelParamLite));
+		HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s OPBASE mode "
+		          "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName);
+	} else if (opMode == OpMode::OFFLOAD) {
+		HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, stream.GetPtr(), &cfg,
+			&param.kernel, sizeof(HcclKernelParamLite));
+		HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s OFFLOAD mode "
+		          "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName);
+	}
     taskParam.taskType = TaskParamType::TASK_AICPU_KERNEL;
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
@@ -883,4 +888,42 @@ HcclResult CollServiceAiCpuImpl::ClearOpLoadedInfo(const std::string &opTag)
     return HCCL_SUCCESS;
 }
 
+void GetKernelFilePath(std::string &binaryPath)
+{
+    std::string libPath = SalGetEnv("ASCEND_HOME_PATH");
+    if (libPath.empty() || libPath == "EmptyString") {
+        HCCL_WARNING("[GetKernelFilePath]ENV:ASCEND_HOME_PATH is not set, use default:/usr/local/Ascend/cann/");
+        libPath = "/usr/local/Ascend/cann/";
+    }
+    libPath += "/opp/built-in/op_impl/aicpu/config/";
+    binaryPath = libPath;
+    HCCL_DEBUG("[GetKernelFilePath]kernel folder path[%s]", binaryPath.c_str());
+}
+
+void LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
+                                  aclrtBinHandle &binHandle)
+{
+    CHK_PRT_RET(binPath == nullptr,
+                HCCL_ERROR("[Load][Binary]binary path is nullptr"),
+                HCCL_E_PTR);
+
+    char realPath[PATH_MAX] = {0};
+    CHK_PRT_RET(realpath(binPath, realPath) == nullptr,
+                HCCL_ERROR("LoadBinaryFromFile: %s is not a valid real path, err[%d]", binPath, errno),
+                HCCL_E_INTERNAL);
+    HCCL_INFO("[LoadBinaryFromFile]realPath: %s", realPath);
+
+    aclrtBinaryLoadOptions loadOptions = {0};
+    aclrtBinaryLoadOption option;
+    loadOptions.numOpt = 1;
+    loadOptions.options = &option;
+    option.type = optionType;
+    option.value.cpuKernelMode = cpuKernelMode;
+    aclError aclRet = aclrtBinaryLoadFromFile(realPath, &loadOptions, &binHandle); // ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE
+    CHK_PRT_RET(aclRet != ACL_SUCCESS,
+                HCCL_ERROR("[LoadBinaryFromFile]errNo[0x%016llx] load binary from file error.", aclRet),
+                HCCL_E_OPEN_FILE_FAILURE);
+
+    return HCCL_SUCCESS;
+}
 } // namespace Hccl

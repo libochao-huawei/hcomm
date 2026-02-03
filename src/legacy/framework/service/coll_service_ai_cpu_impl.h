@@ -102,6 +102,10 @@ private:
     void AllocQNotifyForSingleQ(const InsQueue &insQueue) const override;
 };
 void InitAicpuLocBufLite(HcclAicpuLocBufLite &lite, u64 addr, u64 size, const string &desc);
+void GetKernelFilePath(std::string &binaryPath);
+
+void LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
+                                  aclrtBinHandle &binHandle);
 } // namespace Hccl
 
 #endif
