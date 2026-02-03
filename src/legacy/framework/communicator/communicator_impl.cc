@@ -1335,6 +1335,7 @@ void CommunicatorImpl::TryInitCcuFeature()
 {
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
     if (indOp != nullptr && strcmp(indOp, "") != 0) {
+        TpManager::GetInstance(devLogicId).Init();
         HCCL_RUN_INFO("[CommunicatorImpl][%s] passed, "
             "will use open source ccu feature.", __func__);
         return;
