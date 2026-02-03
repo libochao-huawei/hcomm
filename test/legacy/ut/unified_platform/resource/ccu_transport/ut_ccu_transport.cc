@@ -135,8 +135,8 @@ TransportTuple MockMakeCcuTransport(bool allocCkeUnavailFlag, bool allocXnUnavai
         ccuJettyPtrs.emplace_back(ccuJetty.get());
         ccuJettys.emplace_back(std::move(ccuJetty));
     }
-
-    unique_ptr<Socket> socket = make_unique<Socket>(nullptr, locAddr, 65001, rmtAddr,
+    SocketHandle socketHandle = reinterpret_cast<SocketHandle>(0x123);
+    unique_ptr<Socket> socket = make_unique<Socket>(socketHandle, locAddr, 65001, rmtAddr,
         string(), SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
     // 模拟CTP即可
     unique_ptr<CcuConnection> connection = make_unique<CcuCtpConnection>(
@@ -165,7 +165,7 @@ TEST_F(CcuTransportTest, Ut_GetStatus_When_InterfaceOk_Expect_Return_Ok)
     const vector<uint32_t> cntCkes(DEFAULT_CCU_RESOURCE_NUM);
     transport->SetCntCke(cntCkes);
 
-    const vector<char> handshakeMsg(128);
+    const vector<char> handshakeMsg(128, 'a');
     transport->SetHandshakeMsg(handshakeMsg);
 
     for (uint32_t i = 0; i < 2; i++) { // Connection切换2步
@@ -262,6 +262,7 @@ TEST_F(CcuTransportTest, Ut_GetStatusError_When_SocketSendError_Expect_Return_Er
 
 TEST_F(CcuTransportTest, Ut_GetStatusError_When_HandshakeMsgInvalid_Expect_Return_Error)
 {
+    MOCKER(HrtRaSocketSendAsync).stubs().with(any(), any(), any(), outBound(32)).will(reinterpret_cast<RequestHandle>(1));
     auto transportRes = MockMakeCcuTransport(true, true);
     auto transport = get<0>(transportRes).get();
     EXPECT_EQ(transport->Init(), HcclResult::HCCL_SUCCESS);
