@@ -46,19 +46,30 @@ void Mc2Compont::AllocCommResource(void *mc2Tiling, void **commContext)
         HCCL_WARNING("Comm[%s] rank size is 1, Mc2 not support", comm->GetId().c_str());
         return;
     }
-
+    HcclCombinOpParam combinOpParam{0};
     std::unordered_set<uint64_t> algoTemplateRequire;
     if (tilingVersion == UNKNOWN_TILING_V1) {
         // 申请deviceMem、通信域信息获取、commContext赋值
-        Alloc(commContext);
+        Alloc(commContext, combinOpParam);
         // 生成本次需要的算子模板
         GenerateAlgoTemplates(reinterpret_cast<Mc2Tiling *>(mc2Tiling), algoTemplateRequire);
     } else {
         // 申请deviceMem、通信域信息获取、commContext赋值
-        AllocV2(commContext);
+        AllocV2(commContext, combinOpParam);
         // 生成本次需要的算子模板
         GenerateAlgoTemplatesV2(reinterpret_cast<Mc2InitTilingInner *>(mc2Tiling), algoTemplateRequire);
     }
+
+    combinOpParam.algorithmType = comm->GetAlgorithmType();
+    HCCL_RUN_INFO("hcclCombinOpParam info: workSpace = [%llu], rankId = [%u], rankDim = [%u], xnAddr = [%llu],"
+              "ckeAddr = [%llu], winSize = [%llu], windowsOut[0] = [%llu], algorithmType = [%u]",
+              combinOpParam.workSpace, combinOpParam.rankId, combinOpParam.rankDim, combinOpParam.xnAddr,
+              combinOpParam.ckeAddr, combinOpParam.winSize, combinOpParam.windowsOut[0], combinOpParam.algorithmType);
+    auto paramSize = sizeof(HcclCombinOpParam);
+    combinOpParamBuffer = std::make_shared<DevBuffer>(paramSize);
+    HrtMemcpy(reinterpret_cast<void *>(combinOpParamBuffer->GetAddr()), paramSize, static_cast<void *>(&combinOpParam),
+              paramSize, RT_MEMCPY_HOST_TO_DEVICE);
+    *commContext = reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
 
     // 生成ccuServer指令，将注册得到的execId保存在curExecId，GetCcuTaskInfo时通过curExecId获取TaskParam
     GenerateCcuServer(algoTemplateRequire);
@@ -137,7 +148,7 @@ std::vector<CcuTaskParam> Mc2Compont::GetCcuTaskInfo(void *tilingData)
     return ccuTaskParam;
 }
 
-void Mc2Compont::Alloc(void **commContext)
+void Mc2Compont::Alloc(void **commContext, HcclCombinOpParam &combinOpParam)
 {
     // inputMem给算法编排使用，只需要申请一次，按照最大数据类型申请
     inputMem = std::make_shared<DevBuffer>(dataCount * DataTypeSizeGet(DataType::INT64) * comm->GetRankSize());
@@ -168,21 +179,11 @@ void Mc2Compont::Alloc(void **commContext)
     combinOpParam.winSize = static_cast<uint64_t>(comm->GetCclBuffer()->GetSize());
     combinOpParam.windowsOut[0] = static_cast<uint64_t>(comm->GetCclBuffer()->GetAddr());
 
-    HCCL_RUN_INFO("hcclCombinOpParam info: workSpace = [%llu], rankId = [%u], rankDim = [%u], xnAddr = [%llu],"
-                  "ckeAddr = [%llu], winSize = [%llu], windowsOut[0] = [%llu]",
-                  combinOpParam.workSpace, combinOpParam.rankId, combinOpParam.rankDim, combinOpParam.xnAddr,
-                  combinOpParam.ckeAddr, combinOpParam.winSize, combinOpParam.windowsOut[0]);
-
-    auto paramSize = sizeof(HcclCombinOpParam);
-    combinOpParamBuffer = std::make_shared<DevBuffer>(paramSize);
-    HrtMemcpy(reinterpret_cast<void *>(combinOpParamBuffer->GetAddr()), paramSize, static_cast<void *>(&combinOpParam),
-              paramSize, RT_MEMCPY_HOST_TO_DEVICE);
-    *commContext = reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
     tokenInfo    = CcuRep::GetTokenInfo(static_cast<uint64_t>(workspaceBuffer->GetAddr()),
                                         static_cast<uint64_t>(workspaceBuffer->GetSize()));
 }
 
-void Mc2Compont::AllocV2(void **commContext)
+void Mc2Compont::AllocV2(void **commContext, HcclCombinOpParam &combinOpParam)
 {
     inputMem = std::make_shared<DevBuffer>(dataCount * DataTypeSizeGet(DataType::INT64) * comm->GetRankSize());
     HCCL_INFO("[Mc2Compont][AllocV2]inputMem addr[%p] size = [%llu]", inputMem->GetAddr(), inputMem->GetSize());
@@ -212,16 +213,6 @@ void Mc2Compont::AllocV2(void **commContext)
     combinOpParam.winSize = static_cast<uint64_t>(comm->GetCclBuffer()->GetSize());
     combinOpParam.windowsOut[0] = static_cast<uint64_t>(comm->GetCclBuffer()->GetAddr());
 
-    HCCL_RUN_INFO("hcclCombinOpParam info: workSpace = [%llu], rankId = [%u], rankDim = [%u], xnAddr = [%llu],"
-                  "ckeAddr = [%llu], winSize = [%llu], windowsOut[0] = [%llu]",
-                  combinOpParam.workSpace, combinOpParam.rankId, combinOpParam.rankDim, combinOpParam.xnAddr,
-                  combinOpParam.ckeAddr, combinOpParam.winSize, combinOpParam.windowsOut[0]);
-
-    auto paramSize = sizeof(HcclCombinOpParam);
-    combinOpParamBuffer = std::make_shared<DevBuffer>(paramSize);
-    HrtMemcpy(reinterpret_cast<void *>(combinOpParamBuffer->GetAddr()), paramSize, static_cast<void *>(&combinOpParam),
-              paramSize, RT_MEMCPY_HOST_TO_DEVICE);
-    *commContext = reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
     tokenInfo    = CcuRep::GetTokenInfo(static_cast<uint64_t>(workspaceBuffer->GetAddr()),
                                         static_cast<uint64_t>(workspaceBuffer->GetSize()));
 }
@@ -251,9 +242,9 @@ void Mc2Compont::MC2Orchestrate(const CollAlgParams& params, std::shared_ptr<Ins
     }
 }
 
-void Mc2Compont::MC2AllocCommRes(const CollAlgParams &params, std::shared_ptr<InsQueue> &insQueue)
+void Mc2Compont::MC2AllocCommRes(const CollAlgParams &params, std::shared_ptr<InsQueue> &insQueue, uint8_t commEngine)
 {
-    MC2Orchestrate(params, insQueue);
+    MC2Orchestrate(params, insQueue, commEngine);
     // 获取LinkData
     auto collService = dynamic_cast<CollServiceDeviceMode *>(comm->GetCollService());
     auto ccuLinks    = collService->GetUniqueLinks(insQueue);
@@ -293,7 +284,7 @@ void Mc2Compont::GenerateAlgoTemplates(Mc2Tiling *mc2TilingPtr, std::unordered_s
         FillCollOperator(commConfig);
 
         auto insQueue = make_shared<InsQueue>();
-        MC2AllocCommRes(params, insQueue);
+        MC2AllocCommRes(params, insQueue, commConfig.communicationEngine);
 
         std::string algName = comm->GetCurAlgName();
         HCCL_INFO("Orchestrate: index = [%u], algName = [%s], templateSign = [%llu]", index, algName.c_str(),
@@ -346,7 +337,7 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
         FillCollOperatorV2(commConfig);
 
         auto insQueue = make_shared<InsQueue>();
-        MC2AllocCommRes(params, insQueue);
+        MC2AllocCommRes(params, insQueue, commConfig.communicationEngine);
 
         std::string algName = comm->GetCurAlgName();
         HCCL_INFO("Orchestrate: index = [%u], algName = [%s], templateSign = [%llu]", index, algName.c_str(),
