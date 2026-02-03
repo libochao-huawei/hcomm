@@ -18,6 +18,7 @@
 #include "local_ipc_notify.h"
 #include "remote_notify.h"
 #include "dispatcher.h"
+#include <array>
 
 namespace hccl {
 
