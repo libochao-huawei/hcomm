@@ -14,6 +14,7 @@
 #include "coll_service_device_mode.h"
 #include "aicpu_ins_preprocessor.h"
 #include "coll_service_ai_cpu_impl.h"
+#include "launch_device.h"
 
 namespace Hccl {
 
@@ -59,36 +60,33 @@ void AicpuKernelLauncher::AicpuKernelLaunch(const Stream &stream, const string &
 
     SetHcclKernelLaunchParam(param);
 
-    rtHostInputInfo hostInputInfo;
-    hostInputInfo.addrOffset = KERNEL_PARAM_ADDR_OFFSET;
-    hostInputInfo.dataOffset = KERNEL_PARAM_DATA_OFFSET;
-
-    rtAicpuArgsEx_t args;
-    args.args                 = reinterpret_cast<void *>(&param);
-    args.argsSize             = sizeof(HcclKernelLaunchParam);
-    args.hostInputInfoPtr     = &hostInputInfo;
-    args.hostInputInfoNum     = 0;
-    args.kernelOffsetInfoPtr  = nullptr;
-    args.kernelOffsetInfoNum  = 0;
-    args.kernelNameAddrOffset = CalcFieldOffset(param.kernelName, &param);
-    args.soNameAddrOffset     = CalcFieldOffset(param.soName, &param);
-    args.isNoNeedH2DCopy      = false;
-
     AddPostToUserStream(stream);
+    std::string jsonPath;
+    GetKernelFilePath(jsonPath);
+    jsonPath += "ccl_kernel.json";
+    aclrtBinHandle binHandle;
+   LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, binHandle);
+    aclrtFuncHandle funcHandle;
+    aclError aclRet = aclrtBinaryGetFunction(binHandle, param.kernelName, &funcHandle);
+	constexpr u32 numBlocks = 1;
+	aclrtLaunchKernelCfg cfg;
+	aclrtLaunchKernelAttr attr;
+	attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
+	attr.value.timeout = comm->GetNotifyTimeoutCfg().GetNotifyTimeout();
+	cfg.numAttrs = 1;
+	cfg.attrs = &attr;
     if (op->opMode == OpMode::OPBASE) {
-        HrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU, param.opName, 1, &args, nullptr,
-                                       comm->GetAicpuStreamManager().GetFreeStream()->GetPtr(), 0);
+        HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, comm->GetAicpuStreamManager().GetFreeStream()->GetPtr(), &cfg,
+			&param.kernel, sizeof(HcclKernelParamLite));
         HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s OPBASE mode "
-                   "HrtAicpuKernelLaunchExWithArgs end!",
-                   param.kernel.algName);
+                   "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName);
     } else if (op->opMode == OpMode::OFFLOAD) {
-        HrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU, param.opName, 1, &args, nullptr, stream.GetPtr(), 0);
+	    HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, stream.GetPtr(), &cfg,
+		    &param.kernel, sizeof(HcclKernelParamLite));
         HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s OFFLOAD mode "
-                   "HrtAicpuKernelLaunchExWithArgs end!",
-                   param.kernel.algName);
+                   "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName);
     }
     AddWaitToUserStream(stream);
-
     HCCL_INFO("[AicpuKernelLauncher::%s] end.", __func__);
 }
 
