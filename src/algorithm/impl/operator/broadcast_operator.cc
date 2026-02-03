@@ -200,13 +200,10 @@ HcclResult BroadCastOperator::SelectAlgfor91093(const OpParam& param, std::strin
 
     // 单机仅支持单算子
     bool isAivSingleNode = (serverNum_ == 1) && isSingleMeshAggregation_ && isOpbase && isCCLBufferGE16M;
-    // 跨机单算子或者图模式
-    bool isAivCrossNode  = (superPodNum_ == 1) && (serverNum_ > 1) && !GetExternalInputInterHccsDisable()
-        &&( (isOpbase && isCCLBufferGE16M) );
 
     isAivMode_ = topoMatcher_->GetAivModeConfig()
             && IsSupportAIVCopy(param.DataDes.dataType)
-            && (isAivSingleNode || isAivCrossNode);
+            && isAivSingleNode;
 
     bool smallCountOptimSingleServer =
         (serverNum_ == 1) &&
@@ -219,13 +216,9 @@ HcclResult BroadCastOperator::SelectAlgfor91093(const OpParam& param, std::strin
         (param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_1_MB * deviceNumPerAggregation_);
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_) && !retryEnable_; // 涉及ROCE平面
-    
+
     if (isAivMode_) {
-        if (isAivSingleNode){
-            algName = "BroadcastMeshAivExecutor";
-        }else {
-            algName = "BroadcastMeshAivFor91093Executor";
-        }
+        algName = "BroadcastMeshAivExecutor";
     } else if (multiModuleDiffDeviceNumMode_ || multiSuperPodDiffServerNumMode_) {
         algName = "BroadCastComm";
     } else if (smallCountOptimMultiServer || smallCountOptimMultiPod) {
