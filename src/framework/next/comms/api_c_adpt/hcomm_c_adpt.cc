@@ -490,6 +490,15 @@ HcclResult HcommChannelGetRemoteMem(ChannelHandle channelHandle, HcommMem **remo
     });
 }
 
+HcclResult HcommChannelGetUserRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+{
+    return hcomm::WithChannelByHandleLocked(channelHandle, [&](Channel &channel) -> HcclResult {
+        // 锁内调用，避免 destroy 并发释放
+        channel.GetUserRemoteMem(remoteMem, memTag, memNum);
+        return HcclResult::HCCL_SUCCESS;
+    });
+}
+
 HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads)
 {
     CHK_PTR_NULL(threads);

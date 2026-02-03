@@ -43,7 +43,9 @@ HcclResult HcommChannelGet(const ChannelHandle channelHandle, void **channel);
 HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum,  int32_t* statusList);
 
 HcclResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
- 	 
+
+HcclResult HcommChannelGetUserRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
+
 HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
 
 HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, uint32_t listNum,

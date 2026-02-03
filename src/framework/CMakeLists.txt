@@ -94,6 +94,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
     ${HCCL_BASE_DIR}/framework/next/coll_comms/
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/rank/comm_mems/
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank_pairs
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
