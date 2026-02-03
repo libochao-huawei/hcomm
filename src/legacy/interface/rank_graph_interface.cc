@@ -258,16 +258,11 @@ namespace Hccl {
 
             commLink.linkAttr.linkProtocol = commProtocol;
             commLink.linkAttr.hop = peer2net->GetHop();
-
             commLink.srcEndpointDesc.protocol = commProtocol;
             commLink.dstEndpointDesc.protocol = commProtocol;
 
             // 设置源端点
-            HcclResult result = SetCommAddress(commLink.srcEndpointDesc.commAddr, srcInterface->GetAddr());
-            if (result != HCCL_SUCCESS) {
-                HCCL_ERROR("[IRankGraph::%s] SetCommAddress FAILED for srcConn: %s.", __func__, srcInterface->Describe().c_str());
-                return result;
-            }
+            CHK_RET(SetCommAddress(commLink.srcEndpointDesc.commAddr, srcInterface->GetAddr()));
             CHK_RET(SetEndpointLoc(commLink.srcEndpointDesc.loc.locType, srcInterface->GetPos()));
             if (commLink.srcEndpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
                 std::shared_ptr<NetInstance::Node> srcNode = peer2net->GetSourceNode();
@@ -276,11 +271,7 @@ namespace Hccl {
             }
 
             // 设置目标端点
-            result = SetCommAddress(commLink.dstEndpointDesc.commAddr, dstInterface->GetAddr());
-            if (result != HCCL_SUCCESS) {
-                HCCL_ERROR("[IRankGraph::%s] SetCommAddress FAILED for dstConn: %s.", __func__, dstInterface->Describe().c_str());
-                return result;
-            }
+            CHK_RET(SetCommAddress(commLink.dstEndpointDesc.commAddr, dstInterface->GetAddr()));
             CHK_RET(SetEndpointLoc(commLink.dstEndpointDesc.loc.locType, dstInterface->GetPos()));
             if (commLink.dstEndpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
                 std::shared_ptr<NetInstance::Node> dstNode = peer2net->GetSourceNode();
