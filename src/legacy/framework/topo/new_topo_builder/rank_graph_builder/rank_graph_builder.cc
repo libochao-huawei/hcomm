@@ -431,6 +431,13 @@ void RankGraphBuilder::UpdateTopoInstForMyRankOnly()
         THROW<NullPtrException>(StringFormat("[RankGraphBuilder][UpdateTopoInstForMyRankOnly] phyTopoGraph is nullptr"));
     }
 
+    if (rankIds.size() == 1) {
+        // 单卡场景直接返回1DMESH
+        RankId singleId = *rankIds.begin();
+        tempNetInsts_[0][netInstId]->UpdateTopoInst(0, TopoType::MESH_1D, singleId);
+        return;
+    }
+
     for (const auto srcRankId : rankIds) {
         for (const auto dstRankId : rankIds) {
             // 只处理涉及 myRank_ 的边
