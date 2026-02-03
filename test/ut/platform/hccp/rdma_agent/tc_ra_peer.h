@@ -26,4 +26,7 @@ void tc_ra_peer_socket_batch_abort();
 void tc_ra_loopback_qp_create();
 void tc_ra_peer_loopback_qp_create();
 void tc_ra_peer_loopback_single_qp_create();
+void tc_ra_peer_set_qp_lb_value();
+void tc_ra_peer_get_qp_lb_value();
+void tc_ra_peer_get_lb_max();
 #endif
