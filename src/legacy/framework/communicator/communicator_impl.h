@@ -47,6 +47,7 @@
 #include "ccu_driver_handle.h"
 #include "hccl_common_v2.h"
 #include "hccl_rank_graph.h"
+#include "error_message_v2.h"
 
 namespace Hccl {
 
@@ -246,7 +247,7 @@ public:
 
     virtual u32 GetStep() const;
     bool        IsCommReady();
-    void CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode);
+    void CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode, bool isLaunch = true);
 
     virtual MirrorTaskManager &GetMirrorTaskManager() const;
     virtual ProfilingReporter &GetProfilingReporter() const;
@@ -365,6 +366,7 @@ public:
     HcclResult GetAicpuOpStreamNotify(rtStream_t *opStream, u8 aicpuNotifyNum, void** aicpuNotify) const;
     std::string GetTopoFilePath();
     std::vector<LinkData> GetFullMeshLinks() const;
+    ErrorMessageReport GetAicpuTaskException();
 private:
     std::string                                id;
     static std::atomic<u32>                    globalIndex; // 全局通信域唯一一个index, 对应锁保护
@@ -502,7 +504,7 @@ private:
     void TraceEndInfo(HcclUs startut, HcclUs endut, const CollOpParams &opParams) const;
     void RefreshSubmittedOpcnt();
     void SingleRankProc(const CollOpParams &opParams, void *stream) const;
-    void ConvertCollOperatorA2A(const CollOpParams &opParams);
+    void ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch = true);
     void ConvertCollOperatorMem(const CollOpParams &opParams, u64 size);
     void CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize) const;
     void ConvertCollOperatorMemV(const CollOpParams &opParams);

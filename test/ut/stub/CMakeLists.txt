@@ -28,6 +28,7 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_rts.cc
     ${HCCL_LLT_ROOT}/stub/legacy/interface_channel.cc
     ${HCCL_LLT_ROOT}/stub/llt_next_orion_stub.cc
+    ${HCCL_LLT_ROOT}/stub/llt_next_hccp_stub.cc
 )
 
 file(GLOB_RECURSE ALGORITHM_SOURCES "${HCCL_CODE_ROOT}/src/algorithm/*.cc")
@@ -71,19 +72,16 @@ list(REMOVE_ITEM PLATFORM_SOURCES ${EXCLUDE_PLATFORM_DEVICE_REGEX})
 list(FILTER PLATFORM_SOURCES EXCLUDE REGEX ".*src/platform/legacy/.*")
 list(FILTER PLATFORM_SOURCES EXCLUDE REGEX ".*src/platform/typical/.*")
 
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/.*")
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/coll_comms/.*")
+list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/coll_comms/rank_graphs/.*")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/comms/comm_engine_res/engine_ctxs/.*")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/comms/comm_engine_res/notifys/.*")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/comms/comm_engine_res/comm_engine_res.cc")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/comms/comm_engine_res/comm_engine_res_mgr.cc")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/comm_primitives/.*")
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/comms/endpoints/endpoint_mgr.cc")
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/comms/endpoints/reged_mems/reged_mems.cc")
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/comms/endpoint_pairs/.*")
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc")
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/communicator/impl/independent_op/data_api/sync_data_aicpu_ts.cc")
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/common/src/topo/topo_device/.*")
+list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/framework/communicator/impl/independent_op/data_api/sync_data_aicpu_ts.cc")
+list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/framework/common/src/topo/topo_device/topoinfo_ranktableParser_device.cc")
+list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc")
+list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/framework/common/src/topo/topo_device/.*")
 
 set(orion_list
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/aicpu_ts_thread.cc
@@ -132,6 +130,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/include/hccl/
     ${HCCL_CODE_ROOT}/pkg_inc
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
+    ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
     ${HCCL_CODE_ROOT}/externel_depends/tsch
     ${HCCL_CODE_ROOT}/src/pub_inc/
     ${HCCL_CODE_ROOT}/src/pub_inc/inner
@@ -327,16 +326,54 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/mem
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/socket/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu
     ${HCCL_CODE_ROOT}/src/legacy/service/collective
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator
+    ${HCCL_CODE_ROOT}/src/legacy/interface
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
+
+    #next
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs
-    ${HCCL_CODE_ROOT}/src/legacy/interface
-    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/api_c_adpt/
+
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/server_socket/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/reged_mems/
+
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/adpt/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/pub_inc/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_transport/
+ 
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_kernel
+
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_microcode
+ 
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/interface
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/context
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/arithmetic
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/common
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/control
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/data
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/loop
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/sync
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/translator
 )
 
 FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_CODE_ROOT}/src/legacy)
