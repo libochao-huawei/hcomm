@@ -31,8 +31,8 @@ public:
     HcclResult Get(EndpointDesc epDesc, EndpointHandle &handle);
 
     // 注册内存到端点
-    HcclResult RegisterMemory(EndpointHandle epHandle, const char* memTag, const std::vector<HcclMem>& memVec,
-        std::vector<MemHandle>& memHandleVec);
+    HcclResult RegisterMemory(EndpointHandle epHandle, const std::vector<std::string>& memTag, 
+        const std::vector<HcclMem>& memVec, std::vector<MemHandle>& memHandleVec);
 
     // 获取所有注册的内存信息
     HcclResult GetAllRegisteredMemory(EndpointHandle epHandle, std::vector<MemHandle>& memHandleVec);

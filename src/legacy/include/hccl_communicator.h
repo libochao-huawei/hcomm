@@ -1,10 +1,13 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
- * Description: hccl communicator pub header file
- * Author: limengjiao
- * Create: 2024-02-04
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef HCCLV2_COMMUNICATOR_PUB_H
 #define HCCLV2_COMMUNICATOR_PUB_H
  
@@ -119,7 +122,7 @@ public:
     HcclResult GetTopoInstsByLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
     HcclResult GetTopoType(uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType);
     HcclResult GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
-    HcclResult CalcBlockDim(const CollOpParams &opParams, int32_t aivCoreLimit, std::string &algName, u32 &blockDim);
+    HcclResult CalcNumBlocks(const CollOpParams &opParams, int32_t aivCoreLimit, std::string &algName, u32 &numBlocks);
     HcclResult GetAlgExecParam(const CollOpParams &opParams, bool clearEnable, void *&commContext, u64 &len, u32 aivCoreLimit);
     HcclResult ClearOpResource(const std::string &opTag);
     HcclResult GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num);

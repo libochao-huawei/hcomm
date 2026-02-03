@@ -594,15 +594,16 @@ UbConnLite::UbConnLite(const UbConnLiteParam &liteParam)
     tpn_             = liteParam.tpn;
 
     (void)memcpy_s(rmtEid_.raw, URMA_EID_LEN, liteParam.rmtEid.raw, URMA_EID_LEN);
+    (void)memcpy_s(locEid_.raw, URMA_EID_LEN, liteParam.locEid.raw, URMA_EID_LEN);
     HCCL_INFO("%s", Describe().c_str());
 }
 
 std::string UbConnLiteParam::Describe() const
 {
-    return StringFormat("UbConnLiteParam[dieId=%u, funcId=%u, jettyId=%u, dbAddr=0x%llx, sqVa=0x%llx, sqDepth=%u, "
-                        "jfcPollMode=%u, tpn=%u, dwqeCacheLocked=%d, sqCiAddr=0x%llx, eid=%s]",
+     return StringFormat("UbConnLiteParam[dieId=%u, funcId=%u, jettyId=%u, dbAddr=0x%llx, sqVa=0x%llx, sqDepth=%u, "
+                        "jfcPollMode=%u, tpn=%u, dwqeCacheLocked=%d, sqCiAddr=0x%llx, rmtEid=%s, localEid=%s]",
                         dieId, funcId, jettyId, dbAddr, sqVa, sqDepth, jfcPollMode, tpn, dwqeCacheLocked, sqCiAddr,
-                        Bytes2hex(rmtEid.raw, sizeof(rmtEid.raw)).c_str());
+                        Bytes2hex(rmtEid.raw, sizeof(rmtEid.raw)).c_str(), Bytes2hex(locEid.raw, sizeof(locEid.raw)).c_str());
 }
 
 UbConnLiteParam::UbConnLiteParam(std::vector<char> &uniqueId)

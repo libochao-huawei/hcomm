@@ -1,9 +1,13 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
- * Description: 算法库InsV2AlltoAllSoleExecutor类实现
- * Author: wuhongge
- * Create: 2025-08-15
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
+
 #include "ins_v2_all_to_all_sole_executor.h"
 #include "log.h"
 #include "ins_coll_alg_registry.h"
@@ -117,12 +121,12 @@ HcclResult InsV2AlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::GetTemplateR
 }
 
 template <typename AlgTopoMatch, typename InsAlgTemplate>
-HcclResult InsV2AlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalBlockDim(
-    u32& blockDim, u64 dataSize, u32 blockDimLimit)
+HcclResult InsV2AlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalNumBlocks(
+    u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {
     std::shared_ptr<InsAlgTemplate> algTemplate = nullptr;
     CHK_RET(CreateTemplates(algTemplate));
-    CHK_RET(algTemplate->CalBlockDim(blockDim, dataSize, blockDimLimit));
+    CHK_RET(algTemplate->CalNumBlocks(numBlocks, dataSize, numBlocksLimit));
     return HcclResult::HCCL_SUCCESS;
 }
 

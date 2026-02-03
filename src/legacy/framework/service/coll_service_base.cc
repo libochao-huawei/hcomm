@@ -437,7 +437,7 @@ void CollServiceBase::AllocQNotifyForSingleQ(const InsQueue &insQueue) const
     }
 }
 
-HcclResult CollServiceBase::GetAlgExecParam(bool clearEnable, u32 blockDim, void *&commContext, u64 &len)
+HcclResult CollServiceBase::GetAlgExecParam(bool clearEnable, u32 numBlocks, void *&commContext, u64 &len)
 {
     HCCL_ERROR("GetAlgExecParam was not support in this mode.");
     return HCCL_E_NOT_SUPPORT;

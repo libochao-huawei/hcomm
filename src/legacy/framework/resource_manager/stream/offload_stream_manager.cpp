@@ -64,8 +64,6 @@ void OffloadStreamManager::RegisterSlaves(const std::string &opTag, const std::v
         slaves[opTag][i] = std::make_unique<Stream>(slaveStreams[i]);
     }
 
-    currOpTag = opTag;
-
     HCCL_INFO("[OffloadStreamManager::%s] end, slaveNum[%d].", __func__, slaveNum);
 }
 
@@ -91,6 +89,11 @@ Stream *OffloadStreamManager::GetMaster(const std::string &opTag)
     HCCL_INFO("[OffloadStreamManager::%s] start, opTag[%s].", __func__, opTag.c_str());
 
     CheckOpTag(opTag);
+
+    if (masters.find(opTag) == masters.end()) {
+        HCCL_WARNING("[OffloadStreamManager::%s] master stream of opTag[%s] not found.", __func__, opTag.c_str());
+        return nullptr;
+    }
 
     HCCL_INFO("[OffloadStreamManager::%s] end", __func__);
     return masters[opTag].get();

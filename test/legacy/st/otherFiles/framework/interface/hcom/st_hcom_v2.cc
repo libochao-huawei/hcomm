@@ -1987,14 +1987,14 @@ TEST_F(HcomTest, st_HcomCalcNumBlocksV2_When_Normal_Expect_ReturnHCCL_SUCCESS)
     HcclReduceOp op = HCCL_REDUCE_SUM;
     int32_t aivCoreLimit = 2;
     std::string algName = "";
-    u32 blockDim = 0;
-
-    HcclResult ret = HcomCalcNumBlocksV2(group, opType, count, dataType, aivCoreLimit, algName, blockDim);
+    u32 numBlocks = 0;
+ 
+    HcclResult ret = HcomCalcNumBlocksV2(group, opType, count, dataType, aivCoreLimit, algName, numBlocks);
     EXPECT_EQ(HCCL_SUCCESS, ret);
-    EXPECT_EQ(blockDim, aivCoreLimit);
+    EXPECT_EQ(numBlocks, aivCoreLimit);
  
     opType = HcclCMDType::HCCL_CMD_INVALID;
-    ret = HcomCalcNumBlocksV2(group, opType, count, dataType, aivCoreLimit, algName, blockDim);
+    ret = HcomCalcNumBlocksV2(group, opType, count, dataType, aivCoreLimit, algName, numBlocks);
     EXPECT_EQ(HCCL_E_NOT_SUPPORT, ret);
 }
  
