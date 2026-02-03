@@ -885,8 +885,8 @@ void HrtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t numBlocks, rtArgsE
     rtError_t ret = rtKernelLaunchWithFlagV2(stubFunc, numBlocks, argsInfo, smDesc, stream, flags, cfgInfo);
     if (ret != RT_ERROR_NONE) {
         string msg = StringFormat("[hrtKernelLaunchWithFlagV2]execute kernel launch v2 failed, "
-                   "stubFunc[%p], blockDim[%u], argsInfo[%p], smDesc[%p], stream[%p], flags[%u], cfgInfo[%p], return[%d].", 
-                    stubFunc, blockDim, argsInfo, smDesc, stream, flags, cfgInfo, ret);
+                   "stubFunc[%p], numBlocks[%u], argsInfo[%p], smDesc[%p], stream[%p], flags[%u], cfgInfo[%p], return[%d].", 
+                    stubFunc, numBlocks, argsInfo, smDesc, stream, flags, cfgInfo, ret);
         MACRO_THROW(RuntimeApiException, msg);
     }
 }
