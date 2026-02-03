@@ -16,7 +16,7 @@
 
 using namespace AscendC;
 
-constexpr uint32_t MAX_RANK_SIZE = 16; // server内最大卡数
+constexpr uint32_t MAX_RANK_SIZE = 64; // server内最大卡数
 constexpr uint64_t BUFFER_OUT_ADDR_OFFSET = 16 * 1024;
 constexpr uint64_t TOPO_ADDR_OFFSET = 32 * 1024;
 constexpr uint64_t FLAG_ADDR_OFFSET = 40 * 1024;
