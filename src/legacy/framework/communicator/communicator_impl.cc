@@ -939,11 +939,20 @@ void CommunicatorImpl::ConvertCollOperatorA2A(const CollOpParams &opParams, bool
     if (currentCollOperator) {
         HCCL_INFO("ConvertCollOperatorA2A START");
         if (opParams.opType == OpType::ALLTOALL) {
-            currentCollOperator->all2AllDataDes.sendCount = opParams.all2AllDataDes.sendCount;
-            currentCollOperator->all2AllDataDes.recvCount = opParams.all2AllDataDes.recvCount;
-            currentCollOperator->all2AllDataDes.sendType = opParams.all2AllDataDes.sendType;
-            currentCollOperator->all2AllDataDes.recvType = opParams.all2AllDataDes.recvType;
-            currentCollOperator->dataType = opParams.all2AllDataDes.sendType;
+            if (isLaunch) {
+                currentCollOperator->all2AllDataDes.sendCount = opParams.all2AllDataDes.sendCount;
+                currentCollOperator->all2AllDataDes.recvCount = opParams.all2AllDataDes.recvCount;
+                currentCollOperator->all2AllDataDes.sendType = opParams.all2AllDataDes.sendType;
+                currentCollOperator->all2AllDataDes.recvType = opParams.all2AllDataDes.recvType;
+                currentCollOperator->dataType = opParams.all2AllDataDes.sendType;
+            } else {
+                // MC2场景下只需默认值
+                currentCollOperator->all2AllDataDes.sendCount = 0;
+                currentCollOperator->all2AllDataDes.recvCount = 0;
+                currentCollOperator->all2AllDataDes.sendType = DataType::FP16;
+                currentCollOperator->all2AllDataDes.recvType = DataType::FP16;
+                currentCollOperator->dataType = DataType::FP16;
+            }
             HCCL_INFO("sendCount[%llu], recvCount[%llu]", opParams.all2AllDataDes.sendCount, opParams.all2AllDataDes.recvCount);
         } else if (opParams.opType == OpType::ALLTOALLV) {
             currentCollOperator->all2AllVDataDes.sendCounts = opParams.all2AllVDataDes.sendCounts;
