@@ -636,6 +636,34 @@ int RaPeerTypicalQpModify(struct RaQpHandle *qpPeer, struct TypicalQp *localQpIn
     return ret;
 }
 
+int RaPeerSetQpLbValue(struct RaQpHandle *qpHandle, int lbValue)
+{
+    int ret = 0;
+
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpHandle->phyId]);
+    RsSetCtx(qpHandle->phyId);
+    ret = RsSetQpLbValue(qpHandle->phyId, qpHandle->rdevIndex, qpHandle->qpn, lbValue);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpHandle->phyId]);
+    if (ret != 0) {
+        hccp_err("[set][ra_peer_qp_lb_value]rs_set_qp_lb_value failed ret(%d)", ret);
+    }
+    return ret;
+}
+
+int RaPeerGetQpLbValue(struct RaQpHandle *qpHandle, int *lbValue)
+{
+    int ret = 0;
+
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpHandle->phyId]);
+    RsSetCtx(qpHandle->phyId);
+    ret = RsGetQpLbValue(qpHandle->phyId, qpHandle->rdevIndex, qpHandle->qpn, lbValue);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpHandle->phyId]);
+    if (ret != 0) {
+        hccp_err("[get][ra_peer_qp_lb_value]rs_get_qp_lb_value failed ret(%d)", ret);
+    }
+    return ret;
+}
+
 int RaPeerQpConnectAsync(struct RaQpHandle *qpPeer, const void *sockHandle)
 {
     int ret;
@@ -1209,6 +1237,21 @@ notify_base_addr_uninit:
     retVal = NotifyBaseAddrUninit(notifyType, rdevInfo.phyId);
     CHK_PRT_RETURN(retVal, hccp_err("[init][ra_peer_rdev] notify_base_addr_uninit failed, ret(%d)",
         retVal), retVal);
+    return ret;
+}
+
+int RaPeerGetLbMax(struct RaRdmaHandle *rdmaHandle, int *lbMax)
+{
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    int ret = 0;
+
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[phyId]);
+    RsSetCtx(phyId);
+    ret = RsGetLbMax(phyId, rdmaHandle->rdevIndex, lbMax);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[phyId]);
+    if (ret != 0) {
+        hccp_err("[get][ra_peer_lb_max]rs_get_lb_max failed ret(%d)", ret);
+    }
     return ret;
 }
 
