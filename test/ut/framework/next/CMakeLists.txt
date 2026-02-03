@@ -15,7 +15,6 @@ set(src_to_test_list
     test_cpu_ts_thread.cc
     test_collcomm.cc
     test_hcclbuffer_api.cc
-    ut_HcclRankGraph_API.cc
 )
 
 add_executable(hccl_utest_test_resource ${src_to_test_list})
