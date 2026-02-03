@@ -1399,7 +1399,7 @@ TEST_F(CommunicatorImplTest, Ut_LoadOffloadCollOp_When_Datatype_Not_Support_Expe
 TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error2)
 {
     MOCKER_CPP(&CommunicatorImpl::CovertToCurrentCollOperator).stubs().will(throws(InternalException("")));
-
+    fakeComm.status = CommStatus::COMM_ERROR;
     CollOpParams param = {};
     param.opType = OpType::ALLREDUCE;
     param.dataType = DataType::INT32;
@@ -1410,7 +1410,7 @@ TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error2)
 TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error3)
 {
     MOCKER_CPP(&CommunicatorImpl::CovertToCurrentCollOperator).stubs().will(throws(1));
-
+    fakeComm.status = CommStatus::COMM_ERROR;
     CollOpParams param = {};
     param.opType = OpType::ALLREDUCE;
     param.dataType = DataType::INT32;
@@ -1421,7 +1421,7 @@ TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error3)
 TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error4)
 {
     MOCKER_CPP(&CommunicatorImpl::CovertToCurrentCollOperator).stubs().will(throws(InternalException("")));
-
+    fakeComm.status = CommStatus::COMM_ERROR;
     CollOpParams param = {};
     std::string opTag = "";
     param.opType = OpType::ALLREDUCE;
@@ -1433,7 +1433,7 @@ TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error4)
 TEST_F(CommunicatorImplTest, should_fail_when_comm_status_error5)
 {
     MOCKER_CPP(&CommunicatorImpl::CovertToCurrentCollOperator).stubs().will(throws(1));
-
+    fakeComm.status = CommStatus::COMM_ERROR;
     CollOpParams param = {};
     std::string opTag = "";
     param.opType = OpType::ALLREDUCE;
