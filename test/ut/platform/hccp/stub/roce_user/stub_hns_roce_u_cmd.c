@@ -86,3 +86,18 @@ unsigned int roce_get_api_version(void)
 {
     return 0;
 }
+
+int roce_set_qp_lb_value(struct lbv_qp *qp, int lb_value)
+{
+    return 0;
+}
+
+int roce_get_qp_lb_value(struct lbv_qp *qp, int *lb_value)
+{
+    return 0;
+}
+
+int roce_get_qp_num(int *qp_num)
+{
+    return 0;
+}

@@ -263,3 +263,6 @@ TEST_M(RS, tc_rs_ub_get_tp_attr);
 TEST_M(RS, tc_rs_ub_set_tp_attr);
 TEST_M(RS, tc_rs_ctx_get_cr_err_info_list);
 TEST_M(RS, tc_rs_retry_timeout_exception_check);
+TEST_M(RS, tc_rs_set_qp_lb_value);
+TEST_M(RS, tc_rs_get_qp_lb_value);
+TEST_M(RS, tc_rs_get_lb_max);
