@@ -4340,8 +4340,8 @@ namespace hccl
         algDesc.isLastSelect = true;
         CHK_RET(algOperator->SelectAlg(opParam.tag, opParam, limit, algName, algDesc, newTag));
         if (isOnlyAiv_ && !algDesc.isAivMode) {
-            auto iter = HCOM_CMD_TYPE_STR_MAP.find(opType);
-            HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%s] not support aiv only", iter->second);
+            std::string opTypeName = GetCMDTypeEnumStr(opType);
+            HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%s] not support aiv only", opTypeName.c_str());
             return HCCL_E_NOT_SUPPORT;
         }
         CHK_RET(PrepareZeroCopy(algName, algDesc, opParam));
