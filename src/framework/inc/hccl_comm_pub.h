@@ -441,6 +441,7 @@ private:
     DevType devType_ = DevType::DEV_TYPE_COUNT;
 #ifndef CCL_KERNEL_AICPU
     // 独立算子专用成员变量
+    void BinaryUnLoad();
     IndependentOp independentOp_;
     #ifndef HCCD
         // A5CollComm
