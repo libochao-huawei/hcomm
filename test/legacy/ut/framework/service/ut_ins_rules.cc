@@ -373,6 +373,7 @@ TEST_F(InsRulesTest, Interpret_local_post_to)
     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
 
     RtsNotify *nullLocalNotify = nullptr;
 

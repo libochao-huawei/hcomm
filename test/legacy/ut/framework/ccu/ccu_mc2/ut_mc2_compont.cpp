@@ -49,6 +49,7 @@ protected:
 
     virtual void TearDown()
     {
+        MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
         GlobalMockObject::verify();
         MC2GlobalMirrorTasks::GetInstance().Clear();
         std::cout << "A Test case in Mc2CompontTest TearDown" << std::endl;
@@ -155,7 +156,6 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_generateCcuServer)
         .with(any(), any(), any())
         .will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(InsExeQue::DeregisterExtendInstruction).stubs().with(any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     // then
     std::unique_ptr<CommunicatorImpl> comm = std::make_unique<CommunicatorImpl>();
     Mc2Compont mc2Compont(comm.get());
@@ -181,7 +181,6 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_generateCcuServer_and_
         .with(any(), any(), any())
         .will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(InsExeQue::DeregisterExtendInstruction).stubs().with(any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     // then
     std::unique_ptr<CommunicatorImpl> comm = std::make_unique<CommunicatorImpl>();
     Mc2Compont mc2Compont(comm.get());
@@ -227,7 +226,6 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_generateCcuServer_and_
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(HcclResult::HCCL_SUCCESS));
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     // then
     std::unique_ptr<CommunicatorImpl> comm = std::make_unique<CommunicatorImpl>();
     Mc2Compont mc2Compont(comm.get());
@@ -299,7 +297,6 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_getCcuTaskInfo)
 
 TEST_F(Mc2CompontTest, func_FillCollOperator_test)
 {
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     Mc2Tiling mc2Tiling;
     mc2Tiling.version = UNKNOWN_TILING_V1;
     std::unique_ptr<CommunicatorImpl> comm = std::make_unique<CommunicatorImpl>();

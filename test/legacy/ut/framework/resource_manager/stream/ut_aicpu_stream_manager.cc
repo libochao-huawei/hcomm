@@ -38,7 +38,8 @@ protected:
     virtual void SetUp()
     {
         streamManager = new AicpuStreamManager();
-
+        
+        MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
         MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeId));
         MOCKER(HrtStreamGetSqId).stubs().will(returnValue(fakeSqId));
         MOCKER(HrtStreamDestroy).stubs();
@@ -79,7 +80,6 @@ TEST_F(AicpuStreamManagerTest, Ut_AclGraphCaptureFreeStream_When_GetStreamCaptur
 {
     // 前置条件
     MOCKER(&GetStreamCaptureInfo).stubs().will(returnValue(HCCL_E_RUNTIME));
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
 
     auto stream = std::make_unique<Stream>();
     // 执行测试步骤

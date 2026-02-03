@@ -86,6 +86,7 @@ std::vector<char> StubAivSocket::buf;
 
 TEST_F(UbMemoryTransportMgrTest, should_return_success_when_calling_TransportsConnect)
 {
+    MOCKER(HrtDevMemAlignWithPage).stubs().will(returnValue(static_cast<void*>(0)));
     cout<<1<<endl;
     CommunicatorImpl comm;
     comm.InitSocketManager();
@@ -123,7 +124,6 @@ TEST_F(UbMemoryTransportMgrTest, should_return_success_when_calling_TransportsCo
     MOCKER_CPP(&UbMemoryTransport::RecvMemInfo).stubs().will(ignoreReturnValue());
 
     u64 res = 1;
-    MOCKER(HrtDevMemAlignWithPage).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER(&CheckCollOperator).stubs().with().will(ignoreReturnValue());
     MOCKER(&HrtGetDevicePhyIdByIndex).stubs().with().will(returnValue(1));
     ReqHandleResult result = ReqHandleResult::COMPLETED;

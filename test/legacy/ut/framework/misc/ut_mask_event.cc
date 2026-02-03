@@ -35,6 +35,7 @@ protected:
 
     virtual void TearDown()
     {
+        MOCKER(HrtStreamGetMode).stubs().will(returnValue(static_cast<void*>(0)));
         GlobalMockObject::verify();
         std::cout << "A Test case in AdapterRts TearDown" << std::endl;
     }
@@ -71,7 +72,6 @@ TEST_F(MaskEventTest, MaskEventRecord_ok)
         .will(returnValue(1));
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
  	MOCKER(HrtEventDestroy).stubs().will(returnValue(static_cast<void*>(0)));
-    MOCKER(HrtStreamGetMode).stubs().will(returnValue(static_cast<void*>(0)));
     // when
     MaskEvent maskEvent;
     Stream stream;
