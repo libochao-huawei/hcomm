@@ -40,10 +40,11 @@ void AddressInfo::Deserialize(const nlohmann::json &addressInfoJson)
     
     std::string address;
     std::string msgAddr = "error occurs when parser object of propName \"addr\"";
+    const int MAX_DISPLAY_LEN = 128;
     TRY_CATCH_THROW(InvalidParamsException, msgAddr, address = GetJsonProperty(addressInfoJson, "addr"););
    
     if (address.length() < MIN_VALUE_ADDR_LENGRH || address.length() > MAX_VALUE_ADDR_LENGRH) {
-        THROW<InvalidParamsException>(StringFormat("addr [%s] length is out of range [%u] to [%u]", address.c_str(), MIN_VALUE_ADDR_LENGRH, MAX_VALUE_ADDR_LENGRH));
+        THROW<InvalidParamsException>(StringFormat("addr [%.*s] length is out of range [%u] to [%u]", MAX_DISPLAY_LEN, address.c_str(), MIN_VALUE_ADDR_LENGRH, MAX_VALUE_ADDR_LENGRH));
     }
 
     if (addrTypeStr == "IPV4") {
@@ -75,8 +76,10 @@ void AddressInfo::Deserialize(const nlohmann::json &addressInfoJson)
 
 void AddressInfo::EidToAddr(std::string address)
 {
-    if (!IpAddress::IsEID(address)) {
-        THROW<InvalidParamsException>(StringFormat("[AddressInfo::%s] failed with rankAddrs is error. ", __func__));
+    if(address.length() != URMA_EID_LEN * URMA_EID_NUM_TWO) {
+        THROW<InvalidParamsException>(StringFormat("[AddressInfo::%s] failed with rankAddrs : error in length. ", __func__));
+    }else if(!IpAddress::IsEID(address)) {
+        THROW<InvalidParamsException>(StringFormat("[AddressInfo::%s] failed with rankAddrs : error in format. ", __func__));
     }
     Eid eid = IpAddress::StrToEID(address);
     IpAddress ipAddress0(eid);
