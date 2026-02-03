@@ -200,8 +200,9 @@ inline HccnResult HccnRpingInitInputTargetAttr(HccnRpingTargetInfo *targetInter,
 
 inline HccnResult HccnRpingInitTargetAttr(HccnRpingTargetInfo *targetInter, RpingInput *inputInter, uint32_t &n) {
     HccnResult ret = HccnRpingInitInputTargetAttr(targetInter, inputInter, n);
-    if (ret != HCCN_SUCCESS){
+    if (ret != HCCN_SUCCESS) {
         HCCL_ERROR("[HccnRpingInitTargetAttr] invalid eid");
+        delete[] inputInter;
         return HCCN_E_PARA;
     }
     inputInter[n].srcPort = targetInter[n].srcPort;
@@ -261,6 +262,7 @@ HccnResult HccnRpingAddTargetWithCfg(HccnRpingCtx rpingCtx, uint32_t targetNum, 
         if (sRet != EOK) {
             HCCL_ERROR("[HccnRpingAddTarget]memcpy payload fail. errorno[%d] params:dstMaxSize[%u] srclen[%d]",
                 sRet, input[m].len, target[m].payloadLen);
+            delete[] input;
             return HCCN_E_MEM;
         }
     }
@@ -304,8 +306,9 @@ HccnResult HccnRpingRemoveTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, Hccn
     CHK_PRT_RET(input == nullptr, HCCL_ERROR("[HccnRpingRemoveTarget]memory alloc failed."), HCCN_E_FAIL);
     for (uint32_t in = 0; in < targetNum; in++) {
         HccnResult ret = HccnRpingInitInputTargetAttr(target, input, in);
-        if (ret != HCCN_SUCCESS){
+        if (ret != HCCN_SUCCESS) {
             HCCL_ERROR("[HccnRpingRemoveTarget] invalid eid");
+            delete[] input;
             return HCCN_E_PARA;
         }
         input[in].sl = target[in].sl;
@@ -377,7 +380,7 @@ HccnResult HccnRpingGetTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
     CHK_PRT_RET(input == nullptr, HCCL_ERROR("[HccnRpingGetTarget]memory alloc failed."), HCCN_E_MEM);
     for (uint32_t h = 0; h < targetNum; h++) {
         HccnResult ret = HccnRpingInitInputTargetAttr(target, input, h);
-        if (ret != HCCN_SUCCESS){
+        if (ret != HCCN_SUCCESS) {
             HCCL_ERROR("[HccnRpingGetTarget] invalid eid");
             delete[] input;
             return HCCN_E_FAIL;
@@ -466,7 +469,7 @@ inline void ConvertResultState(uint32_t state, HccnRpingResultState &resultState
 inline HccnResult ResultGetTarget(uint32_t &targetNumInter, HccnRpingTargetInfo *targetInter, RpingInput *inputInter) {
     for (uint32_t k = 0; k < targetNumInter; k++) {
         HccnResult ret = HccnRpingInitInputTargetAttr(targetInter, inputInter, k);
-        if (ret != HCCN_SUCCESS){
+        if (ret != HCCN_SUCCESS) {
             HCCL_ERROR("[ResultGetTarget] invalid eid");
             return HCCN_E_PARA;
         }
