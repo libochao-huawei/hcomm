@@ -1,10 +1,13 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
- * Description: hccl communicator pub header file
- * Author: limengjiao
- * Create: 2024-02-04
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef HCCLV2_COMMUNICATOR_PUB_H
 #define HCCLV2_COMMUNICATOR_PUB_H
  
@@ -16,6 +19,7 @@
 #include "rank_table_info.h"
 #include "hccl_rank_graph.h"
 #include "hccl_mem_defs.h"
+#include "trace.h"
  
 namespace Hccl {
 class CommunicatorImpl;
@@ -84,7 +88,7 @@ public:
     void RegisterPrintChannelInfoCallback(std::function<void()> callback);
     CommStatus GetCommStatus() const;
     // 设置加速模式
-    HcclResult SetAccelerator(int32_t accelerator, bool isCcuMsAvailable);
+    HcclResult SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable);
     HcclResult GetAccelerator(int32_t* accelerator) const;
     bool IsUsingCcuMs() const;
     bool IsUsingCcuSched() const;
@@ -108,8 +112,6 @@ public:
  
     HcclResult GetRankGraphV2(void *&rankGraph);
     HcclResult HcclGetCclBuffer(uintptr_t &cclBufferAddr, size_t &cclBufferSize, HcclMemType &cclBufferMemType);
-    // Dpu Kernel Launch
-    HcclResult LaunchDpuKernel();
     HcclResult GetConfigInCCLbufferSize(uint64_t *cclBufSize);
     HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
     HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
@@ -127,7 +129,8 @@ public:
     HcclResult GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t* descNum, EndpointDesc* endpointDesc);
     HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc* endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen,
                        void* info);
- 
+    Trace& GetTrace() const;
+
     u32 GetDeviceLogicId() const;
  
 private:

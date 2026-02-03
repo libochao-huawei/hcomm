@@ -234,7 +234,12 @@ HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t *size, 
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(size);
     CHK_PTR_NULL(addr);
-    HCCLV2_FUNC_RUN(HcclDevMemAcquireV2(comm, memTag, size, addr, newCreated));
+    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+    if (indOp == nullptr || strcmp(indOp, "") == 0) {
+        HCCLV2_FUNC_RUN(HcclDevMemAcquireV2(comm, memTag, size, addr, newCreated));
+    }
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    HCCLV2_FUNC_RUN(HcclDevMemAcquireV2(hcclComm->GetCommunicatorV2(), memTag, size, addr, newCreated));
     return HCCL_SUCCESS;
 }
 

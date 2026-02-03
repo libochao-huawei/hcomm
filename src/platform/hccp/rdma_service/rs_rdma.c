@@ -429,6 +429,10 @@ int RsEpollEventQpMrInHandle(struct rs_cb *rsCb, int fd)
     struct RsRdevCb *rdevCbTmp = NULL;
     struct RsRdevCb *rdevCbTmp2 = NULL;
 
+    if (rsCb->protocol != PROTOCOL_RDMA) {
+        return -ENODEV;
+    }
+
     RS_LIST_GET_HEAD_ENTRY(rdevCbTmp, rdevCbTmp2, &rsCb->rdevList, list, struct RsRdevCb);
     for (; (&rdevCbTmp->list) != &rsCb->rdevList;
         rdevCbTmp = rdevCbTmp2, rdevCbTmp2 = list_entry(rdevCbTmp2->list.next, struct RsRdevCb, list)) {

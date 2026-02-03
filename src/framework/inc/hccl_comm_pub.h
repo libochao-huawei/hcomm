@@ -364,7 +364,8 @@ public:
     HcclResult KernelLaunchAicpuCommInit();
     bool IsCommunicatorV2();
 #ifndef HCCD
-    HcclResult InitCollComm(void* commV2, void* rankGraph, uint32_t userRank, HcclMem cclBuffer, const std::string &commName);
+    HcclResult InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
+        HcclMem cclBuffer,const std::string &commName, HcclCommConfig *config);
 #endif
     void* GetCommunicatorV2();
 #ifndef CCL_KERNEL_AICPU

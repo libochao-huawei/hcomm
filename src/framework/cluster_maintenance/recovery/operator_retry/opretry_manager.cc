@@ -70,6 +70,7 @@ HcclResult OpRetryManager::RegisterAgentRetryMachine(OpRetryAgentParam &agentPar
     EXECEPTION_CATCH((agentOpRetry_[group].retryCtx =
         std::make_shared<RetryContext>(agentParam, retryPtr)), return HCCL_E_PTR);
     agentOpRetry_[group].startExec = true;
+    agentOpRetry_[group].retryCtx->SetRetryState(RETRY_STATE_AGENT_RUNNING, retryPtr);
 
     aclrtContext ctx = nullptr;
     CHK_RET(hrtCtxGetCurrent(&ctx));
@@ -100,6 +101,7 @@ HcclResult OpRetryManager::RegisterServerRetryMachine(const std::string& group,
     EXECEPTION_CATCH((serverOpRetry[group].retryCtx =
         std::make_shared<RetryContext>(serverConnections, retryPtr, agentInfo)), return HCCL_E_PTR);
     serverOpRetry[group].startExec = true;
+    serverOpRetry[group].retryCtx->SetRetryState(RETRY_STATE_SERVER_RUNNING, retryPtr);
 
     HcclRtContext ctx = nullptr;
     CHK_RET(hrtCtxGetCurrent(&ctx));
@@ -242,7 +244,7 @@ HcclResult OpRetryManager::ExitWaitResumeState(const std::string &group, bool is
         std::chrono::steady_clock::time_point curTime = std::chrono::steady_clock::now();
         const auto exitTime = std::chrono::duration_cast<std::chrono::seconds>(curTime - startTime);
         if (exitTime > exitTimeout) {
-            HCCL_ERROR("[OpRetryManager][ExitWaitResumeState]group[%s], server exit wait resume state timeout", group.c_str());
+            HCCL_ERROR("[OpRetryManager][ExitWaitResumeState]group[%s], state[%d], server exit wait resume state timeout", group.c_str(), serverOpRetry[group].retryCtx->GetRetryState());
             return HCCL_E_TIMEOUT;
         }
         isChangedLink = true;
@@ -251,7 +253,7 @@ HcclResult OpRetryManager::ExitWaitResumeState(const std::string &group, bool is
         std::chrono::steady_clock::time_point curTime = std::chrono::steady_clock::now();
         const auto exitTime = std::chrono::duration_cast<std::chrono::seconds>(curTime - startTime);
         if (exitTime > exitTimeout) {
-            HCCL_ERROR("[OpRetryManager][ExitWaitResumeState]group[%s], agent exit wait resume state timeout", group.c_str());
+            HCCL_ERROR("[OpRetryManager][ExitWaitResumeState]group[%s], state[%d], agent exit wait resume state timeout", group.c_str(), agentOpRetry_[group].retryCtx->GetRetryState());
             return HCCL_E_TIMEOUT;
         }
         if (agentOpRetry_[group].retryCtx->isRecivedCmdToCheckLink) {

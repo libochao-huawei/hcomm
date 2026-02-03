@@ -16,13 +16,10 @@
 #include "aiv_all_gather_crossnode_91093_graph.h"
 #include "aiv_reduce_scatter_crossnode_91093.h"
 #include "aiv_reduce_scatter_crossnode_91093_graph.h"
-#include "aiv_all_gather_v_crossnode_91093.h"
 #include "aiv_reduce_scatter_91093_deter.h"
-#include "aiv_reduce_scatter_v_crossnode_91093.h"
 #include "aiv_all_reduce_crossnode_91093.h"
 #include "aiv_all_reduce_91093_deter.h"
 #include "aiv_sync_91093.h"
-#include "aiv_broadcast_crossnode_91093.h"
 
 using namespace AscendC;
 
@@ -65,28 +62,6 @@ extern "C" __global__ __aicore__ void aiv_reduce_scatter_cn_##type(KERNEL_ARGS_D
 } \
 EXPORT_AIV_META_INFO(aiv_reduce_scatter_cn_##type)
 
-// aiv reducescatterv
-#define AIV_REDUCE_SCATTER_V_KERNEL_BATCH_DEF_A3(type) \
-extern "C" __global__ __aicore__ void aiv_reduce_scatter_v_cn_##type(EXTERN_KERNEL_ARGS_DEF_A3) { \
-    return aiv_reduce_scatter_v_crossnode_91093<type>(EXTERN_KERNEL_ARGS_CALL_A3); \
-} \
-EXPORT_AIV_META_INFO(aiv_reduce_scatter_v_cn_##type)
-
-// aiv allgatherv
-#define AIV_ALL_GATHER_V_KERNEL_BATCH_DEF_A3(type) \
-extern "C" __global__ __aicore__ void aiv_all_gather_v_cn_##type(EXTERN_KERNEL_ARGS_DEF_A3) { \
-    return aiv_all_gather_v_crossnode_91093<type>(EXTERN_KERNEL_ARGS_CALL_A3); \
-} \
-EXPORT_AIV_META_INFO(aiv_all_gather_v_cn_##type)
-
-
-//aiv broadcast
-#define AIV_BROADCAST_KERNEL_BATCH_DEF_A3(type) \
-extern "C" __global__ __aicore__ void aiv_broadcast_cn_##type(KERNEL_ARGS_DEF_A3) { \
-    return aiv_broadcast_crossnode_91093<type>(KERNEL_ARGS_CALL_A3); \
-} \
-EXPORT_AIV_META_INFO(aiv_broadcast_cn_##type)
-
 // aiv sync
 extern "C" __global__ __aicore__ void hccl_aiv_sync_cn(KERNEL_ARGS_DEF_A3) {
     return aiv_sync_91093_inner(KERNEL_ARGS_CALL_A3);
@@ -117,9 +92,6 @@ EXPORT_AIV_META_INFO(hccl_aiv_sync_cn);
 // 定义各算子各数据类型Kernel入口
 AIV_ATOMIC_DATA_TYPE_DEF_A3(AIV_ALL_REDUCE_KERNEL_BATCH_DEF_A3);
 AIV_ATOMIC_DATA_TYPE_DEF_A3(AIV_REDUCE_SCATTER_KERNEL_BATCH_DEF_A3);
-AIV_ATOMIC_DATA_TYPE_DEF_A3(AIV_REDUCE_SCATTER_V_KERNEL_BATCH_DEF_A3);
-AIV_COPY_DATA_TYPE_DEF_A3(AIV_ALL_GATHER_V_KERNEL_BATCH_DEF_A3);
 AIV_COPY_DATA_TYPE_DEF_A3(AIV_ALL_GATHER_KERNEL_BATCH_DEF_A3);
-AIV_COPY_DATA_TYPE_DEF_A3(AIV_BROADCAST_KERNEL_BATCH_DEF_A3);
 
 #endif  /* AIV_COMMUNICATION_H */

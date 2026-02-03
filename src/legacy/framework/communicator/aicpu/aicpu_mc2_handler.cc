@@ -1,5 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include <shared_mutex>
@@ -86,7 +92,7 @@ HcclResult AicpuMc2Handler::HcclGetTaskStatus(void *opHandle, HcclTaskStatus *st
     StreamLite *curStream = streamLiteMgr->GetMaster();
     CHK_PTR_NULL_WITH_MSG(curStream, "commId[%u].", communicatorImplLite->GetCommIdIndex());
     HCCL_INFO("[%s]commId[%u], stream[%u].", __func__, communicatorImplLite->GetCommIdIndex(), curStream->GetId());
-    if (AicpuUtils::GetInstance().GetException(curStream, GET_TASK_STATUS) == 1) {
+    if (AicpuUtils::GetInstance().GetException(curStream, GET_TASK_STATUS, communicatorImplLite) == 1) {
         *status = HcclTaskStatus::HCCL_CQE_ERROR;
         return HCCL_SUCCESS;
     }
@@ -95,7 +101,7 @@ HcclResult AicpuMc2Handler::HcclGetTaskStatus(void *opHandle, HcclTaskStatus *st
         curStream = streamLiteMgr->GetSlave(id);
         CHK_PTR_NULL_WITH_MSG(curStream, "commId[%u]", communicatorImplLite->GetCommIdIndex());
         HCCL_INFO("[%s]commId[%u], stream[%u].", __func__, communicatorImplLite->GetCommIdIndex(), curStream->GetId());
-        if (AicpuUtils::GetInstance().GetException(curStream, GET_TASK_STATUS) == 1) {
+        if (AicpuUtils::GetInstance().GetException(curStream, GET_TASK_STATUS, communicatorImplLite) == 1) {
             *status = HcclTaskStatus::HCCL_CQE_ERROR;
             return HCCL_SUCCESS;
         }
@@ -151,12 +157,12 @@ HcclResult AicpuMc2Handler::HcclPrintTaskExceptionAllComm(void *opHandle) const
 
         StreamLite *curStream = streamLiteMgr->GetMaster();
         string nullInfo = "streamLiteMgr->GetMaster is nullptr";
-        AicpuUtils::GetInstance().GetStreamException(curStream, nullInfo, additionInfo);
+        AicpuUtils::GetInstance().GetStreamException(curStream, nullInfo, communicatorImplLite, additionInfo);
 
         for (uint32_t id = 0; id < streamLiteMgr->SizeOfSlaves(); id++) {
             curStream = streamLiteMgr->GetSlave(id);
             nullInfo = "streamLiteMgr->GetSlave(" + to_string(id) + ") is nullptr";
-            AicpuUtils::GetInstance().GetStreamException(curStream, nullInfo, additionInfo);
+            AicpuUtils::GetInstance().GetStreamException(curStream, nullInfo, communicatorImplLite, additionInfo);
         }
     }
     return HCCL_SUCCESS;
