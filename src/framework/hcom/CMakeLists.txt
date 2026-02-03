@@ -14,6 +14,7 @@ set(src_list
 target_sources(hcomm PRIVATE
     ${src_list}
     ${CMAKE_CURRENT_SOURCE_DIR}/hcom.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/hcom_host_profiling.cc
 )
 
 add_subdirectory(gradient_segment)
