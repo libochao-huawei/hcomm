@@ -50,7 +50,7 @@ public:
     virtual void ReLoadWithOpBasedMode(CollOperator &op);
     virtual void ReLoadWithOffloadMode(CollOperator &op);
 
-    virtual HcclResult GetAlgExecParam(bool clearEnable, u32 blockDim, void *&commContext, u64 &len);
+    virtual HcclResult GetAlgExecParam(bool clearEnable, u32 numBlocks, void *&commContext, u64 &len);
 protected:
     void RegisterOpBufToBufMgr(CollOperator &op);
 

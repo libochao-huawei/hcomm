@@ -103,15 +103,15 @@ void AivAlgTemplateBase::IncSliceId()
     return;
 }
 
-HcclResult AivAlgTemplateBase::CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit)
+HcclResult AivAlgTemplateBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {
     (void) dataSize;
-    if (blockDimLimit >= tempRankSize_) {
-        blockDim = tempRankSize_;
+    if (numBlocksLimit >= tempRankSize_) {
+        numBlocks = tempRankSize_;
     } else {
-        blockDim = blockDimLimit;
+        numBlocks = numBlocksLimit;
     } 
-    HCCL_INFO("[AivAlgTemplateBase] Actually use core num[%u]", blockDim);
+    HCCL_INFO("[AivAlgTemplateBase] Actually use core num[%u]", numBlocks);
     return HCCL_SUCCESS;
 }
 

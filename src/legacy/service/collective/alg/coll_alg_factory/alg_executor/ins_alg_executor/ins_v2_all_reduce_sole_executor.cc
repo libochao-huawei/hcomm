@@ -147,10 +147,10 @@ HcclResult InsV2AllReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcResOffl
 }
 
 template <typename AlgTopoMatch, typename InsAlgTemplate>
-HcclResult InsV2AllReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit){
+HcclResult InsV2AllReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit){
     std::shared_ptr<InsAlgTemplate> algTemplate = nullptr;
     CHK_RET(CreateTemplates(algTemplate));
-    algTemplate->CalBlockDim(blockDim, dataSize, blockDimLimit);
+    algTemplate->CalNumBlocks(numBlocks, dataSize, numBlocksLimit);
     return HcclResult::HCCL_SUCCESS;
 }
 // HOST 侧算法入口

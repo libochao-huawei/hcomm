@@ -52,7 +52,7 @@ public:
                                       CollOffloadOpResReq &resReq);
     HcclResult CalcTaskNum(OpType opType, DataType dataType, u32 count, u32 &taskNum);
 
-    HcclResult CalBlockDim(u32& blockDim, u64 dataSize, OpType opType, string &algName, u32 blockDimLimit) const;
+    HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, OpType opType, string &algName, u32 numBlocksLimit) const;
     
     // for AICPU
     virtual std::vector<std::string> GetOpAlgNames(const OpType      &opType,

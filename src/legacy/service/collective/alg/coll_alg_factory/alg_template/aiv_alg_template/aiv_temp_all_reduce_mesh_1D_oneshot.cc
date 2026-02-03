@@ -42,14 +42,14 @@ u32 AivTempAllReduceMesh1DOneShot::CalcScratchMultiple(BufferType inBuffType, Bu
     return tempRankSize_;
 }
 
-HcclResult AivTempAllReduceMesh1DOneShot::CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit)
+HcclResult AivTempAllReduceMesh1DOneShot::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {   
     (void) dataSize;
-    if (blockDimLimit >= (tempRankSize_ + 1)) {
-        blockDim = tempRankSize_ + 1;
+    if (numBlocksLimit >= (tempRankSize_ + 1)) {
+        numBlocks = tempRankSize_ + 1;
     } else {
         // 如果要用更少的核心可以在这里折算，比如rankSize/2个核心
-        blockDim = blockDimLimit;
+        numBlocks = numBlocksLimit;
     }
     return HcclResult::HCCL_SUCCESS;
 }
@@ -81,8 +81,8 @@ HcclResult AivTempAllReduceMesh1DOneShot::GenExtIns(const TempFuncs &tempFuncs, 
     aivScatterArgs.xRankSize = tempVTopo_[0].size();
     aivScatterArgs.yRankSize = 0;
     aivScatterArgs.zRankSize = 0;
-    CalBlockDim(aivScatterArgs.blockDim, templateDataParams.sliceSize, op_.blockDimLimit);
-    HCCL_INFO("[AivTempAllReduceMesh1DOneShot] Actually use core num[%u]",aivScatterArgs.blockDim);
+    CalNumBlocks(aivScatterArgs.numBlocks, templateDataParams.sliceSize, op_.numBlocksLimit);
+    HCCL_INFO("[AivTempAllReduceMesh1DOneShot] Actually use core num[%u]",aivScatterArgs.numBlocks);
     for (u32 i = 0; i < tempVTopo_[0].size(); i++){
         aivScatterArgs.topo_[i] = tempVTopo_[0][i];
     }

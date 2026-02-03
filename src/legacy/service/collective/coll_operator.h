@@ -29,7 +29,7 @@ using BaseCollOperator = struct BaseCollOperatorDef {
     DataType outputDataType{DataType::INVALID}; // 低精度场景，存在指定输出数据类型
     u64      dataCount{0};
     u32      root{0};
-    u32      blockDimLimit{0};
+    u32      numBlocksLimit{0};
     RankId   sendRecvRemoteRank{0};
     std::shared_ptr<Buffer> inputMem{nullptr};
     std::shared_ptr<Buffer> outputMem{nullptr};

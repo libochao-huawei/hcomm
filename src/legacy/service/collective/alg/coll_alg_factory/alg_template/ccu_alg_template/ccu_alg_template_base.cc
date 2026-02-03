@@ -170,12 +170,12 @@ uint64_t CcuAlgTemplateBase::BufferTypeToAddr(const BufferType bufferType)
     }
 }
 
-HcclResult CcuAlgTemplateBase::CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit)
+HcclResult CcuAlgTemplateBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {   
-    (void) blockDim;
+    (void) numBlocks;
     (void) dataSize;
-    (void) blockDimLimit;
-    HCCL_WARNING("CalBlockDim not support ccu template.");
+    (void) numBlocksLimit;
+    HCCL_WARNING("CalNumBlocks not support ccu template.");
     return HCCL_SUCCESS;
 }
 

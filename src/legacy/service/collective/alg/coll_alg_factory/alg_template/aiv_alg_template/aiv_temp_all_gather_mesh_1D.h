@@ -30,7 +30,7 @@ public:
     }
 
     HcclResult CalcRes(AlgTempResReq &tempResReq) override;
-    HcclResult CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit) override;
+    HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit) override;
     HcclResult GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &templateDataParams, 
         const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues) override;
 };

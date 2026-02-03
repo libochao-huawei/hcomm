@@ -77,7 +77,7 @@ public:
     virtual HcclResult CalcResOffload(const RankGraph *rankGraph, const u64 &dataSize,
         CollOffloadOpResReq &resReq) = 0;
     virtual HcclResult CalcRes(const RankGraph *rankGraph, CollAlgResReq &algResReq) = 0;
-    virtual HcclResult CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit);
+    virtual HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit);
 
     // device
     virtual HcclResult Orchestrate(const AlgTopoInfo &topoInfo, const CollAlgOperator &op,

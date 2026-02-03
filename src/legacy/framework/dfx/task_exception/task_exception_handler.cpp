@@ -197,13 +197,13 @@ void TaskExceptionHandler::ProcessAivException(rtExceptionInfo_t* exceptionInfo,
     
     HCCL_ERROR("[TaskExceptionHandler][AIV]Task run failed, para information is "
                 "deviceId[%u] streamId[%u], TaskId[%u], cmdType[%u], "
-                "tag[%d],rank[%u],rankSize[%u], dataCount[%u], blockDim[%d],"
+                "tag[%d],rank[%u],rankSize[%u], dataCount[%u], numBlocks[%d],"
                 "dataType:[%u], beginTime:[%llu], flagMem[%p]",
                 exceptionInfo->deviceid, exceptionInfo->streamid, 
                 exceptionInfo->taskid, taskInfo.taskParam_.taskPara.Aiv.cmdType, 
                 taskInfo.taskParam_.taskPara.Aiv.tag, taskInfo.taskParam_.taskPara.Aiv.rank, 
                 taskInfo.taskParam_.taskPara.Aiv.rankSize, taskInfo.taskParam_.taskPara.Aiv.count, 
-                taskInfo.taskParam_.taskPara.Aiv.blockDim, taskInfo.taskParam_.taskPara.Aiv.dataType, 
+                taskInfo.taskParam_.taskPara.Aiv.numBlocks, taskInfo.taskParam_.taskPara.Aiv.dataType, 
                 taskInfo.taskParam_.beginTime, taskInfo.taskParam_.taskPara.Aiv.flagMem);
 
     // 打印算子flag 区域, flag区域比较大，需要通过LOG_TMPBUF_SIZE控制打印的长度
@@ -277,7 +277,7 @@ void TaskExceptionHandler::PrintAivPreviousTaskException(rtExceptionInfo_t *exce
         if ((**taskItorPtr)->taskId_ != taskId && (**taskItorPtr)->taskParam_.taskType == TaskParamType::TASK_AIV) {
                 HCCL_ERROR("[TaskExceptionHandler][AIV] "
                 "previous TaskId[%u],streamId[%u], cmdType[%u], "
-                "tag[%d],rank[%u],rankSize[%u], dataCount[%u], blockDim[%d],"
+                "tag[%d],rank[%u],rankSize[%u], dataCount[%u], numBlocks[%d],"
                 "dataType:[%u], beginTime:[%llu], flagMem[%p]",
                 (**taskItorPtr)->taskId_, 
                 (**taskItorPtr)->streamId_,
@@ -286,7 +286,7 @@ void TaskExceptionHandler::PrintAivPreviousTaskException(rtExceptionInfo_t *exce
                 (**taskItorPtr)->taskParam_.taskPara.Aiv.rank, 
                 (**taskItorPtr)->taskParam_.taskPara.Aiv.rankSize, 
                 (**taskItorPtr)->taskParam_.taskPara.Aiv.count, 
-                (**taskItorPtr)->taskParam_.taskPara.Aiv.blockDim,
+                (**taskItorPtr)->taskParam_.taskPara.Aiv.numBlocks,
                 (**taskItorPtr)->taskParam_.taskPara.Aiv.dataType, 
                 (**taskItorPtr)->taskParam_.beginTime,
                 (**taskItorPtr)->taskParam_.taskPara.Aiv.flagMem);

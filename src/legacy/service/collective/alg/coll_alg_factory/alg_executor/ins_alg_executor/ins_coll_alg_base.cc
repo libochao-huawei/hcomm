@@ -174,11 +174,11 @@ LinkReq InsCollAlgBase::GetSeqLinksUnion(const LinkReq &linkReq0, const LinkReq 
     return retLinkReq;
 }
 
-HcclResult InsCollAlgBase::CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit)
+HcclResult InsCollAlgBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {   
-    blockDim = 0;
+    numBlocks = 0;
     (void)dataSize;
-    (void)blockDimLimit;
+    (void)numBlocksLimit;
     HCCL_INFO("[InsCollAlgFactory] current excutor doesn't support controlling num of aiv cores.");
     return HcclResult::HCCL_SUCCESS;
 }

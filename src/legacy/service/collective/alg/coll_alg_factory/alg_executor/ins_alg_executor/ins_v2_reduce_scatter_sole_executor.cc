@@ -73,11 +73,11 @@ HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CreateT
 }
 
 template <typename AlgTopoMatch, typename InsAlgTemplate>
-HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit)
+HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {
     std::shared_ptr<InsAlgTemplate> algTemplate = nullptr;
     CHK_RET(CreateTemplates(algTemplate));
-    CHK_RET(algTemplate->CalBlockDim(blockDim, dataSize, blockDimLimit));
+    CHK_RET(algTemplate->CalNumBlocks(numBlocks, dataSize, numBlocksLimit));
     return HcclResult::HCCL_SUCCESS;
 }
 
