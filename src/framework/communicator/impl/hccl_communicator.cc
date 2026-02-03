@@ -306,6 +306,11 @@ namespace hccl
         }
         CHK_PTR_NULL(dispatcherCtx_);
 
+        hccl::DispatcherCtx *Ctx_tmp = static_cast<DispatcherCtx *>(dispatcherCtx_);
+        HCCL_INFO("[%s] RegisterLoadTaskCallBack Dispatcher = [%p], Ctx_tmp = [%p]", 
+            __func__, Ctx_tmp->GetDispatcher(), (void*)Ctx_tmp);
+        (void)RegisterLoadTaskCallBack(Ctx_tmp->GetDispatcher(), static_cast<void *>(profilerManager_.get()), TaskProfilerCallBack);
+
         CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_VIRTURAL, devicePhyId_, &vDispatcher_));
         CHK_SMART_PTR_NULL(vDispatcher_);
         CHK_RET(HcclSetExecTimeOut(vDispatcher_, commConfig_.GetConfigExecTimeOut()));
@@ -558,6 +563,11 @@ namespace hccl
     u32 HcclCommunicator::GetServerNum()
     {
         return serverNum_;
+    }
+
+    u32 HcclCommunicator::GetRealUserRank()
+    {
+        return realUserRank_;
     }
 
     u32 HcclCommunicator::GetModuleNum()
