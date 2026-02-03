@@ -172,3 +172,10 @@ set(INSTALL_DPU_KERNEL_JSON_DIR hcomm/built-in/data/op/dpu)
 set(INSTALL_DEVICE_TAR_DIR hcomm/Ascend/aicpu)
 
 set(CMAKE_SKIP_RPATH TRUE)
+
+if(NOT CANN_3RD_LIB_PATH)
+    set(CANN_3RD_LIB_PATH ${PROJECT_SOURCE_DIR}/third_party)
+endif()
+if(NOT CANN_3RD_PKG_PATH)
+    set(CANN_3RD_PKG_PATH ${CANN_3RD_LIB_PATH}/pkg)
+endif()

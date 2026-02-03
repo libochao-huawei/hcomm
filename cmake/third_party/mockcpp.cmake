@@ -12,8 +12,21 @@ unset(mockcpp_FOUND CACHE)
 unset(MOCKCPP_INCLUDE CACHE)
 unset(MOCKCPP_STATIC_LIBRARY CACHE)
 
-# 查找目录下是否已经安装，避免重复编译安装
+# 编译 mockcpp 需要 boost 库
+include(${CMAKE_CURRENT_LIST_DIR}/boost.cmake)
+# 设置依赖的 boost 库路径
+set(BOOST_INCLUDE_DIRS ${CANN_3RD_LIB_PATH}/boost)
+
+set(MOCKCPP_FILE "mockcpp-2.7.zip")
+set(MOCKCPP_URL "https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h2/${MOCKCPP_FILE}")
+set(MOCKCPP_PKG_PATH ${CANN_3RD_PKG_PATH}/${MOCKCPP_FILE})
 set(MOCKCPP_INSTALL_PATH ${CANN_3RD_LIB_PATH}/mockcpp)
+
+set(MOCKCPP_PATCH_FILE "mockcpp-2.7_py3.patch")
+set(MOCKCPP_PATCH_URL "https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h2/${MOCKCPP_PATCH_FILE}")
+set(MOCKCPP_PATCH_PATH ${CANN_3RD_PKG_PATH}/${MOCKCPP_PATCH_FILE})
+
+# 查找目录下是否已经安装，避免重复编译安装
 message(STATUS "[ThirdParty] MOCKCPP_INSTALL_PATH=${MOCKCPP_INSTALL_PATH}")
 find_path(MOCKCPP_INCLUDE
         NAMES mockcpp/mockcpp.hpp
@@ -38,84 +51,63 @@ find_package_handle_standard_args(mockcpp
 )
 message(STATUS "[ThirdParty] Found MockCpp: ${mockcpp_FOUND}")
 
-# 编译选项设置
-if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
-    set(mockcpp_CFLAGS   "-fPIC -D_GLIBCXX_USE_CXX11_ABI=0")
-    set(mockcpp_CXXFLAGS "-fPIC -D_GLIBCXX_USE_CXX11_ABI=0")
-else()
-    set(mockcpp_CFLAGS   "-fPIC -D_GLIBCXX_USE_CXX11_ABI=0")
-    set(mockcpp_CXXFLAGS "-fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -std=c++11")
-endif()
-
 if(mockcpp_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message(STATUS "[ThirdParty] MockCpp found in ${MOCKCPP_INSTALL_PATH}, and not force rebuild cann third_party")
 else()
-    set(REQ_URL "https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h2/mockcpp-2.7.zip")
-    set(PATCH_URL "https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h2/mockcpp-2.7_py3.patch")
-
-    # 设置依赖的 boost 路径
-    set(BOOST_INCLUDE_DIRS ${OPEN_SOURCE_DIR}/boost-1.87.0)
-
-    # 设置下载和源码目录
-    set(MOCKCPP_DOWNLOAD_DIR ${CANN_3RD_PKG_PATH})
-    set(MOCKCPP_SOURCE_DIR ${CANN_3RD_LIB_PATH}/../llt/third_party/mockcpp/mockcpp-2.7)
-
-    # 检查是否有本地源码
-    if(EXISTS ${MOCKCPP_SOURCE_DIR})
-        message(STATUS "[ThirdParty] Found local mockcpp source: ${MOCKCPP_SOURCE_DIR}")
-        set(MOCKCPP_USE_LOCAL_SRC TRUE)
+    # 编译选项设置
+    if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
+        set(MOCKCPP_CXXFLAGS "-fPIC -D_GLIBCXX_USE_CXX11_ABI=0")
+        set(MOCKCPP_CFLAGS   "-fPIC -D_GLIBCXX_USE_CXX11_ABI=0")
     else()
-        message(STATUS "[ThirdParty] Will download mockcpp from ${REQ_URL}")
-        set(MOCKCPP_USE_LOCAL_SRC FALSE)
+        set(MOCKCPP_CXXFLAGS "-fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -std=c++11")
+        set(MOCKCPP_CFLAGS   "-fPIC -D_GLIBCXX_USE_CXX11_ABI=0")
     endif()
 
-    # 设置 CMake 选项
     set(MOCKCPP_OPTS
         -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
         -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-        -DCMAKE_CXX_FLAGS=${mockcpp_CXXFLAGS}
-        -DCMAKE_C_FLAGS=${mockcpp_CFLAGS}
+        -DCMAKE_CXX_FLAGS=${MOCKCPP_CXXFLAGS}
+        -DCMAKE_C_FLAGS=${MOCKCPP_CFLAGS}
+        -DCMAKE_INSTALL_PREFIX=${MOCKCPP_INSTALL_PATH}
+        -DCMAKE_INSTALL_LIBDIR=lib
         -DBOOST_INCLUDE_DIRS=${BOOST_INCLUDE_DIRS}
         -DCMAKE_SHARED_LINKER_FLAGS=""
         -DCMAKE_EXE_LINKER_FLAGS=""
         -DBUILD_32_BIT_TARGET_BY_64_BIT_COMPILER=OFF
-        -DCMAKE_INSTALL_PREFIX=${MOCKCPP_INSTALL_PATH}
+        -DBUILD_TESTING=OFF
     )
-    
-    # 下载补丁文件
-    set(PATCH_FILE ${MOCKCPP_DOWNLOAD_DIR}/mockcpp-2.7_py3.patch)
-    if(NOT EXISTS ${PATCH_FILE})
-        message(STATUS "[ThirdParty] Downloading mockcpp patch from ${PATCH_URL}")
+
+    if(NOT EXISTS ${MOCKCPP_PATCH_PATH})
+        # 下载 patch 文件
+        message(STATUS "[ThirdParty] Downloading mockcpp patch from ${MOCKCPP_PATCH_URL}")
         file(DOWNLOAD
-            ${PATCH_URL}
-            ${PATCH_FILE}
+            ${MOCKCPP_PATCH_URL}
+            ${MOCKCPP_PATCH_PATH}
             TLS_VERIFY OFF
-            TIMEOUT 60
         )
     endif()
-    
-    include(ExternalProject)
-    if(MOCKCPP_USE_LOCAL_SRC)
-        ExternalProject_Add(third_party_mockcpp
-            SOURCE_DIR ${MOCKCPP_SOURCE_DIR}
-            PATCH_COMMAND git init && git apply ${PATCH_FILE}
-            CONFIGURE_COMMAND ${CMAKE_COMMAND} ${MOCKCPP_OPTS} <SOURCE_DIR>
-            BUILD_COMMAND ${MAKE_CMD}
-            INSTALL_COMMAND ${MAKE_CMD} install
-            EXCLUDE_FROM_ALL TRUE
-        )
+
+    if(EXISTS ${MOCKCPP_PKG_PATH})
+        # 离线编译场景，优先使用 pkg 目录下的包
+        message(STATUS "[ThirdParty] Found local mockcpp package: ${MOCKCPP_PKG_PATH}")
+        set(MOCKCPP_PROJECT_URL ${MOCKCPP_PKG_PATH})
     else()
-        ExternalProject_Add(third_party_mockcpp
-            URL ${REQ_URL}
-            TLS_VERIFY OFF
-            DOWNLOAD_DIR ${MOCKCPP_DOWNLOAD_DIR}
-            PATCH_COMMAND git init && git apply ${PATCH_FILE}
-            CONFIGURE_COMMAND ${CMAKE_COMMAND} ${MOCKCPP_OPTS} <SOURCE_DIR>
-            BUILD_COMMAND ${MAKE_CMD}
-            INSTALL_COMMAND ${MAKE_CMD} install
-            EXCLUDE_FROM_ALL TRUE
-        )
+        # 下载并编译安装
+        message(STATUS "[ThirdParty] Downloading MockCpp from ${MOCKCPP_URL}")
+        set(MOCKCPP_PROJECT_URL ${MOCKCPP_URL})
     endif()
+
+    include(ExternalProject)
+    ExternalProject_Add(third_party_mockcpp
+        URL ${MOCKCPP_PROJECT_URL}
+        TLS_VERIFY OFF
+        DOWNLOAD_DIR ${CANN_3RD_PKG_PATH}
+        PATCH_COMMAND patch -p1 < ${MOCKCPP_PATCH_PATH}     # 应用 patch
+        CONFIGURE_COMMAND ${CMAKE_COMMAND} ${MOCKCPP_OPTS} <SOURCE_DIR>
+        BUILD_COMMAND $(MAKE)
+        INSTALL_COMMAND $(MAKE) install
+        DEPENDS third_party_boost   # 依赖 boost 库
+    )
 endif()
 
 # 创建导入的目标

@@ -16,8 +16,12 @@ unset(GTEST_MAIN_STATIC_LIBRARY CACHE)
 unset(GMOCK_STATIC_LIBRARY CACHE)
 unset(GMOCK_MAIN_STATIC_LIBRARY CACHE)
 
-# 查找目录下是否已经安装，避免重复编译安装
+set(GTEST_FILE "googletest-1.14.0.tar.gz")
+set(GTEST_URL "https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/${GTEST_FILE}")
+set(GTEST_PKG_PATH ${CANN_3RD_PKG_PATH}/${GTEST_FILE})
 set(GTEST_INSTALL_PATH ${CANN_3RD_LIB_PATH}/gtest)
+
+# 查找目录下是否已经安装，避免重复编译安装
 message(STATUS "[ThirdParty] GTEST_INSTALL_PATH=${GTEST_INSTALL_PATH}")
 find_path(GTEST_INCLUDE
         NAMES gtest/gtest.h
@@ -66,44 +70,40 @@ message(STATUS "[ThirdParty] Found GTest: ${gtest_FOUND}")
 if(gtest_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message(STATUS "[ThirdParty] GTest found in ${GTEST_INSTALL_PATH}, and not force rebuild cann third_party")
 else()
-    set(REQ_URL "https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz")
+    set(GTEST_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
+    set(GTEST_CFLAGS   "-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
 
-    set(gtest_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
-    set(gtest_CFLAGS   "-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
-
-    include(ExternalProject)
     set(GTEST_OPTS
         -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
         -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-        -DCMAKE_CXX_FLAGS=${gtest_CXXFLAGS}
-        -DCMAKE_C_FLAGS=${gtest_CFLAGS}
+        -DCMAKE_CXX_FLAGS=${GTEST_CXXFLAGS}
+        -DCMAKE_C_FLAGS=${GTEST_CFLAGS}
         -DCMAKE_INSTALL_PREFIX=${GTEST_INSTALL_PATH}
         -DCMAKE_INSTALL_LIBDIR=lib
         -DBUILD_TESTING=OFF
         -DBUILD_SHARED_LIBS=OFF
     )
-    set(GTEST_LOCAL_SRC "${CANN_3RD_LIB_PATH}/../llt/third_party/gtest/googletest-1.10.x")
-    if(EXISTS ${GTEST_LOCAL_SRC})
-        message(STATUS "[ThirdParty] Found local gtest source: ${GTEST_LOCAL_SRC}")
-        ExternalProject_Add(third_party_gtest
-            SOURCE_DIR ${GTEST_LOCAL_SRC}
-            CONFIGURE_COMMAND ${CMAKE_COMMAND} ${GTEST_OPTS} <SOURCE_DIR>
-            BUILD_COMMAND $(MAKE)
-            INSTALL_COMMAND $(MAKE) install
-            EXCLUDE_FROM_ALL TRUE
-        )
+
+    if(EXISTS ${GTEST_PKG_PATH})
+        # 离线编译场景，优先使用 pkg 目录下的包
+        message(STATUS "[ThirdParty] Found local gtest package: ${GTEST_PKG_PATH}")
+        set(GTEST_PROJECT_URL ${GTEST_PKG_PATH})
     else()
-        message(STATUS "[ThirdParty] Downloading GTest from ${REQ_URL}")
-        ExternalProject_Add(third_party_gtest
-            URL ${REQ_URL}
-            TLS_VERIFY OFF
-            DOWNLOAD_DIR ${CANN_3RD_PKG_PATH}
-            CONFIGURE_COMMAND ${CMAKE_COMMAND} ${GTEST_OPTS} <SOURCE_DIR>
-            BUILD_COMMAND $(MAKE)
-            INSTALL_COMMAND $(MAKE) install
-            EXCLUDE_FROM_ALL TRUE
-        )
+        # 下载并编译安装
+        message(STATUS "[ThirdParty] Downloading GTest from ${GTEST_URL}")
+        set(GTEST_PROJECT_URL ${GTEST_URL})
     endif()
+
+    include(ExternalProject)
+    ExternalProject_Add(third_party_gtest
+        URL ${GTEST_PROJECT_URL}
+        TLS_VERIFY OFF
+        DOWNLOAD_DIR ${CANN_3RD_PKG_PATH}
+        CONFIGURE_COMMAND ${CMAKE_COMMAND} ${GTEST_OPTS} <SOURCE_DIR>
+        BUILD_COMMAND $(MAKE)
+        INSTALL_COMMAND $(MAKE) install
+        EXCLUDE_FROM_ALL TRUE
+    )
 endif()
 
 add_library(gtest STATIC IMPORTED)

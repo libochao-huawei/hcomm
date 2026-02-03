@@ -8,7 +8,6 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-
 add_library(intf_pub_base INTERFACE)
 
 target_compile_definitions(intf_pub_base INTERFACE
@@ -37,14 +36,13 @@ target_link_libraries(intf_pub_base INTERFACE
     $<$<BOOL:${ENABLE_GCOV}>:-lgcov>
 )
 
-
 add_library(intf_pub INTERFACE)
 
 target_link_libraries(intf_pub INTERFACE
     $<BUILD_INTERFACE:intf_pub_base>
     -Wl,--whole-archive
-    $<$<BOOL:${ENABLE_TEST}>:${ASCEND_3RD_LIB_PATH}/mockcpp_shared/lib/libmockcpp.a>
-    $<$<BOOL:${ENABLE_TEST}>:${ASCEND_3RD_LIB_PATH}/gtest_shared/lib/libgtest.so>
+    $<$<BOOL:${ENABLE_TEST}>:mockcpp>
+    $<$<BOOL:${ENABLE_TEST}>:gtest>
     -Wl,--no-whole-archive
     -Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib
 )
