@@ -379,6 +379,10 @@ HcclResult HcomGetWorkspaceMemSizeV2(
     const std::string &opType, u64 count, HcclDataType dataType, const char *group, u64 &memSize)
 {
     HCCL_INFO("[%s] start.", __func__);
+    if (group == nullptr || strlen(group) == 0) {
+        HCCL_ERROR("[%s] group is nullptr or empty.", __func__);
+        return HCCL_E_PARA;
+    }
     if ((dataType < HCCL_DATA_TYPE_INT8) || (dataType > HCCL_DATA_TYPE_FP8E8M0)) {
         HCCL_ERROR("[%s] not support data type[%s].", __func__, GetDataTypeEnumStrV2(dataType).c_str());
         return HCCL_E_PARA;
