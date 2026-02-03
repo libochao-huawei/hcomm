@@ -399,11 +399,7 @@ void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollO
 void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream, OpMode opMode)
 {
     param.kernel.op.userStreamId = stream.GetId();
-    rtHostInputInfo hostInputInfo;
-    hostInputInfo.addrOffset = KERNEL_PARAM_ADDR_OFFSET;
-    hostInputInfo.dataOffset = KERNEL_PARAM_DATA_OFFSET;
-
-	aclrtLaunchKernelCfg cfg;
+    aclrtLaunchKernelCfg cfg;
 	aclrtLaunchKernelAttr attr;
 	attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
 	auto timeoutCheck         = EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
@@ -431,6 +427,10 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
 	aclrtFuncHandle funcHandle;
 	constexpr u32 numBlocks = 1;
 	aclError aclRet = aclrtBinaryGetFunction(binHandle, param.kernelName, &funcHandle);
+    if(aclRet != ACL_SUCCESS)
+    {
+        THROW<RuntimeApiException>(StringFormat("Call aclrtBinaryGetFunction failed, with ret[%d]", aclRet));
+    }
 	if (opMode == OpMode::OPBASE) {
 		HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, comm->GetAicpuStreamManager().GetFreeStream()->GetPtr(), &cfg,
 			&param.kernel, sizeof(HcclKernelParamLite));

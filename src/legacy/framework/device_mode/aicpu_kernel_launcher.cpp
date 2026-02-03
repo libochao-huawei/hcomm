@@ -68,6 +68,10 @@ void AicpuKernelLauncher::AicpuKernelLaunch(const Stream &stream, const string &
    LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, binHandle);
     aclrtFuncHandle funcHandle;
     aclError aclRet = aclrtBinaryGetFunction(binHandle, param.kernelName, &funcHandle);
+    if(aclRet != ACL_SUCCESS)
+    {
+        THROW<RuntimeApiException>(StringFormat("Call aclrtBinaryGetFunction failed, with ret[%d]", aclRet));
+    }
 	constexpr u32 numBlocks = 1;
 	aclrtLaunchKernelCfg cfg;
 	aclrtLaunchKernelAttr attr;
