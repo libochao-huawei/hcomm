@@ -68,7 +68,7 @@ string LocalRdmaRmaBuffer::Describe() const
 std::unique_ptr<Serializable> LocalRdmaRmaBuffer::GetExchangeDto()
 {
     std::unique_ptr<ExchangeRdmaBufferDto> dto
-        = make_unique<ExchangeRdmaBufferDto>(buf->GetAddr(), buf->GetSize(), this->rkey);
+        = make_unique<ExchangeRdmaBufferDto>(buf->GetAddr(), buf->GetSize(), this->rkey, buf->GetMemTag());
     return std::unique_ptr<Serializable>(dto.release());
 }
 

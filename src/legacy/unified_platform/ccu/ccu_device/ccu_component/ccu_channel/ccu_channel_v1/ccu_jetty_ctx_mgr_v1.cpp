@@ -62,15 +62,14 @@ HcclResult CcuJettyCtxMgrV1::Alloc(const uint32_t feId, const uint32_t jettyNum,
 
 HcclResult CcuJettyCtxMgrV1::GetJettyAllocator(uint32_t feId, JettyAllocator* &allocatorHandle)
 {
-    if (allocatorMap.find(feId) == allocatorMap.end()) {
+    if (allocator_ == nullptr) {
+        HCCL_INFO("[CcuJettyCtxMgrV1][%s] allocator is null, create an allocator", __func__);
         PfeJettyStrategy strategy = {};
         CHK_RET(pfeMgr.GetPfeStrategy(feId, strategy)); // 如果strategy为0，后续按资源不足处理
-        std::unique_ptr<JettyAllocator> allocatorPtr = nullptr;
-        TRY_CATCH_RETURN(allocatorPtr = std::make_unique<JettyAllocator>(strategy));
-        allocatorMap[feId] = std::move(allocatorPtr);
+        TRY_CATCH_RETURN(allocator_ = std::make_unique<JettyAllocator>(strategy));
     }
 
-    allocatorHandle = allocatorMap[feId].get();
+    allocatorHandle = allocator_.get();
     CHK_PTR_NULL(allocatorHandle);
     return HcclResult::HCCL_SUCCESS;
 }

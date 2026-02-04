@@ -38,7 +38,7 @@ QueueType MirrorTaskManager::GetQueueType() const
 
 void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
 {
-    if (taskInfo == nullptr) {
+    if (UNLIKELY(taskInfo == nullptr)) {
         THROW<InternalException>(
             StringFormat("MirrorTaskManager::AddTaskInfo taskInfo is nullptr"));
     }
@@ -50,13 +50,16 @@ void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
     if (queueMap_.find(taskInfo->streamId_) == queueMap_.end()) {
         QueueType queueType            = GetQueueType();
         queueMap_[taskInfo->streamId_] = &(globalMirrorTasks_->CreateQueue(devId_, taskInfo->streamId_, queueType));
+        queueTaskNum[taskInfo->streamId_]=0;
     }
 
-    if(queueMap_[taskInfo->streamId_]->IsFull()) {
+    if(queueTaskNum[taskInfo->streamId_] == static_cast<u32>(queueMap_[taskInfo->streamId_]->Capacity())) {
         fullyCallBack_();
+        queueTaskNum[taskInfo->streamId_]=0;
     }
 
     queueMap_[taskInfo->streamId_]->Append(taskInfo);
+    queueTaskNum[taskInfo->streamId_]++;
 
     HCCL_INFO("[MirrorTaskManager][AddTaskInfo]add devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u]",
               devId_, taskInfo->streamId_, taskInfo->taskId_);
@@ -91,12 +94,12 @@ TaskInfoQueue *MirrorTaskManager::GetQueue(u32 streamId) const
     return queueMap_.find(streamId)->second;
 }
 
-std::map<u32, TaskInfoQueue *>::iterator MirrorTaskManager::Begin()
+std::unordered_map<u32, TaskInfoQueue *>::iterator MirrorTaskManager::Begin()
 {
     return queueMap_.begin();
 }
 
-std::map<u32, TaskInfoQueue *>::iterator MirrorTaskManager::End()
+std::unordered_map<u32, TaskInfoQueue *>::iterator MirrorTaskManager::End()
 {
     return queueMap_.end();
 }

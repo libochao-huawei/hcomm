@@ -99,10 +99,6 @@ private:
     std::shared_ptr<Buffer> cclBuffer; 
     std::shared_ptr<Buffer> aivTagBuffer;
     std::shared_ptr<Buffer> aivOffloadTagBuffer;
-    char                    bufferName[RTS_IPC_MEM_NAME_LEN]{0};
-    char                    aivTagName[RTS_IPC_MEM_NAME_LEN]{0};
-    char                    rmtBufferName[RTS_IPC_MEM_NAME_LEN]{0};
-    char                    rmtAivTagName[RTS_IPC_MEM_NAME_LEN]{0};
     Socket                 *socket{};
     int32_t                 deviceLogicId{0};
 

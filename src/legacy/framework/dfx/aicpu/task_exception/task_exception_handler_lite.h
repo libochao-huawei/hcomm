@@ -14,6 +14,8 @@
 #include "hccl/base.h"
 #include "global_mirror_tasks.h"
 #include "task_exception_func.h"
+#include "dlhal_function_v2.h"
+#include "communicator_impl_lite.h"
 
 namespace Hccl {
 class TaskExceptionHandlerLite {
@@ -21,7 +23,7 @@ public:
     // 获取单例实例的方法
     static TaskExceptionHandlerLite &GetInstance();
     // task exception处理逻辑
-    static void Process(rtLogicCqReport_t* exceptionInfo);
+    static void Process(CommunicatorImplLite *aicpuComm, rtLogicCqReport_t* exceptionInfo);
     static std::string GetGroupRankInfo(const TaskInfo& taskInfo);
     static void PrintTaskContextInfo(uint32_t sqId, uint32_t taskId);
 

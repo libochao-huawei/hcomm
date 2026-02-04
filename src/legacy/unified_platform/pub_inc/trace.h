@@ -24,6 +24,7 @@ public:
     ~Trace();
 
 private:
+    bool isClosingChar(const char& c) const;
     intptr_t    traceHandle{TRACE_INVALID_HANDLE};
 };
 } // namespace Hccl

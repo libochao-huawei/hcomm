@@ -302,7 +302,7 @@ typedef enum {
     // vector core使能使用
     RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE,
     // vector core使能使用
-    RT_LAUNCH_KERNEL_ATTR_BLOCKDIM_OFFSET,
+    RT_LAUNCH_KERNEL_ATTR_NUMBLOCKS_OFFSET,
     RT_LAUNCH_KERNEL_ATTR_BLOCK_TASK_PREFETCH,
     RT_LAUNCH_KERNEL_ATTR_DATA_DUMP,
     RT_LAUNCH_KERNEL_ATTR_TIMEOUT,
@@ -318,7 +318,7 @@ typedef union {
     uint8_t schemMode;
     uint32_t localMemorySize;
     rtEngineType engineType;
-    uint32_t blockDimOffset;
+    uint32_t numBlocksOffset;
     uint8_t isBlockTaskPrefetch;  // 任务下发时判断是否sqe后续需要刷新标记（tiling key依赖下沉场景）0:disable 1:enable
     uint8_t isDataDump; // 0:disable 1:enable
     uint16_t timeout;

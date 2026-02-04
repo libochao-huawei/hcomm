@@ -251,7 +251,7 @@ public:
 
     virtual u32 GetStep() const;
     bool        IsCommReady();
-    void CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode);
+    void CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode, bool isLaunch = true);
 
     virtual MirrorTaskManager &GetMirrorTaskManager() const;
     virtual ProfilingReporter &GetProfilingReporter() const;
@@ -288,7 +288,7 @@ public:
         return collAlgComponent.get();
     }
 
-    HcclResult SetAccelerator(int32_t accelerator, bool isCcuMsAvailable);
+    HcclResult SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable);
     HcclResult GetAccelerator(int32_t* accelerator) const;
     void ExecAlgSelect(const CollOpParams &opParams, const OpMode &opMode);
 
@@ -359,12 +359,10 @@ public:
     }
 
     HcclResult CreateBarrierMemory(void *&sendBuf, void *&recvBuf, uint64_t count);
-    // DPU
-    HcclResult InitAndLaunchDpuKernel();
 
     HcclResult HcomSelectAlg(const CollOpParams &opParams, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
-    HcclResult CalcBlockDim(const CollOpParams &opParams, int32_t aivCoreLimit, std::string &algName,
-                            u32 &blockDim) const;
+    HcclResult CalcNumBlocks(const CollOpParams &opParams, int32_t aivCoreLimit, std::string &algName,
+                            u32 &numBlocks) const;
     HcclResult GetAlgExecParam(const CollOpParams &opParams, bool clearEnable, void *&commContext, u64 &len,
                                u32 aivCoreLimit);
     
@@ -372,6 +370,7 @@ public:
     HcclResult GetAicpuOpStreamNotify(rtStream_t *opStream, u8 aicpuNotifyNum, void** aicpuNotify) const;
     std::string GetTopoFilePath();
     std::vector<LinkData> GetFullMeshLinks() const;
+    ErrorMessageReport GetAicpuTaskException();
 private:
     std::string                                id;
     static std::atomic<u32>                    globalIndex; // 全局通信域唯一一个index, 对应锁保护
@@ -437,6 +436,7 @@ private:
     bool isSuspended = false;
     bool isCleaned = false;
     bool isAicpuKernelLaunched = false;
+    bool isDpuKernelLaunched = false;
     bool isWorldGroup = false;
     bool aivClearEnable = false;
 
@@ -508,7 +508,9 @@ private:
     void TraceEndInfo(HcclUs startut, HcclUs endut, const CollOpParams &opParams) const;
     void RefreshSubmittedOpcnt();
     void SingleRankProc(const CollOpParams &opParams, void *stream) const;
-    void ConvertCollOperatorA2A(const CollOpParams &opParams);
+    void ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch = true);
+    void DefaultConvertCollOperatorA2A(const CollOpParams &opParams);
+    void LaunchConvertCollOperatorA2A(const CollOpParams &opParams);
     void ConvertCollOperatorMem(const CollOpParams &opParams, u64 size);
     void CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize) const;
     void ConvertCollOperatorMemV(const CollOpParams &opParams);
@@ -522,6 +524,7 @@ private:
     HcclResult PrepareDpuKernelResource(aclrtFuncHandle &funcHandle);
     HcclResult DestroyDpuKernelResource();
     HcclResult WaitDpuKernelThreadTerminate();
+    HcclResult InitAndLaunchDpuKernel();
 
     HcclResult Init(const CommParams &commParams, std::unique_ptr<RankGraph> &inputRankGraph, DevId inputDevLogicId);
     HcclResult Init(const CommParams &commParams, std::unique_ptr<RankGraph> &inputRankGraph,

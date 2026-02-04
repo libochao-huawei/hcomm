@@ -49,14 +49,10 @@ void CcuPfeCfgGenerator::Init(const int32_t deviceLogicId)
         return;
     }
 
-    bool dieEnableFlags[MAX_MODULE_DEVICE_NUM] = {false, false};
-    uint8_t interMaxJettyNums[MAX_CCU_IODIE_NUM]; // 优先计算出框可用jetty数量
-    uint32_t pfeCnts[MAX_CCU_IODIE_NUM];
+    bool dieEnableFlags[MAX_CCU_IODIE_NUM] = {false, false};
     for (uint8_t i = 0; i < MAX_CCU_IODIE_NUM; i++) {
         const auto &ccuResSpecs = CcuResSpecifications::GetInstance(devLogicId);
         (void)ccuResSpecs.GetDieEnableFlag(i, dieEnableFlags[i]);
-        pfeCnts[i] = 0; // CcuPfeCfgGenerator 基于默认配置生成分配策略，jettyCtx分配时校验资源是否不足
-        interMaxJettyNums[i] = CCU_PER_DIE_JETTY_RESERVED_NUM - INNER_MAX_TA_JETTY_ID_OFFSET;
     }
 
     // 不同die的feId独立分配，可能一致，需要die粒度去重
@@ -76,19 +72,16 @@ void CcuPfeCfgGenerator::Init(const int32_t deviceLogicId)
             continue; // 跳过已配置的feId
         }
 
-        uint32_t startJettyCtxId = feId > MAX_CCU_INNER_FE_IDX ?
-            INNER_MAX_TA_JETTY_ID_OFFSET : pfeCnts[dieId] * ONE_CCU_PFE_USE_JETTY_NUM;
-        uint32_t startTaJettyId = CCU_START_TA_JETTY_ID + startJettyCtxId;
-        uint8_t pfeJettyNum = feId > MAX_CCU_INNER_FE_IDX ? // 当前框内和出框jetty数量均为静态值
-            interMaxJettyNums[dieId] : ONE_CCU_PFE_USE_JETTY_NUM;
+        uint32_t startJettyCtxId = 0;
+        uint32_t startTaJettyId = CCU_START_TA_JETTY_ID;
+        uint8_t pfeJettyNum = CCU_PER_DIE_JETTY_RESERVED_NUM;
 
         PfeJettyCtxCfg cfg{feId, startJettyCtxId, startTaJettyId, pfeJettyNum};
         pfeJettyCtxCfgs[dieId].emplace_back(std::move(cfg));
         dieFuncIdSet[dieId].insert(feId);
-        pfeCnts[dieId] += 1;
 
-        HCCL_RUN_INFO("[CcuPfeCfgGenerator] new pfe cfg set: feId[%u] startJettyCtxId[%u] "
-            "startTaJettyId[%u] pfeJettyNum[%u].", feId, startJettyCtxId, startTaJettyId,
+        HCCL_RUN_INFO("[CcuPfeCfgGenerator] new pfe cfg set: dieId[%u] feId[%u] startJettyCtxId[%u] "
+            "startTaJettyId[%u] pfeJettyNum[%u].", dieId, feId, startJettyCtxId, startTaJettyId,
             pfeJettyNum);
     }
 

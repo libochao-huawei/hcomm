@@ -89,6 +89,7 @@ std::vector<char> DevUbConnection::GetUniqueId() const
     binaryStream << sqDepth;
     binaryStream << tpn;
     binaryStream << rmtEid.raw;
+    binaryStream << locEid.raw;
 
     std::vector<char> result;
     binaryStream.Dump(result);

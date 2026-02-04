@@ -279,7 +279,7 @@ extern HcclResult HcclRankGraphGetLinks(HcclComm comm, uint32_t netLayer, uint32
  * 
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern HcclResult HcclGetTopoInstsByLayer(HcclComm comm, uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
+extern HcclResult HcclRankGraphGetTopoInstsByLayer(HcclComm comm, uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
 
 /**
  * @brief 给定通信域和netLayer，myRank所在的指定topoInstId的topoInstance的topoType
@@ -291,13 +291,13 @@ extern HcclResult HcclGetTopoInstsByLayer(HcclComm comm, uint32_t netLayer, uint
  * @code {.c}
  * commTp = CreateComm([0,1,2,..,31]);
  * uint32_t topoType;
- * HcclGetTopoType(commTp, netLayer=0, topoInstId=0， &topoType); // topoType=1 (1DMesh)
- * HcclGetTopoType(commTp, netLayer=1, topoInstId=0， &topoType); // topoType=0 (clos)
+ * HcclRankGraphGetTopoType(commTp, netLayer=0, topoInstId=0， &topoType); // topoType=1 (1DMesh)
+ * HcclRankGraphGetTopoType(commTp, netLayer=1, topoInstId=0， &topoType); // topoType=0 (clos)
  * @endcode
  * 
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern HcclResult HcclGetTopoType(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType);
+extern HcclResult HcclRankGraphGetTopoType(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType);
 
 /**
  * @brief 给定通信域和netLayer，myRank所在的指定topoInstId的topoInstance中包含的rank信息
@@ -309,7 +309,7 @@ extern HcclResult HcclGetTopoType(HcclComm comm, uint32_t netLayer, uint32_t top
  * @note 使用参考：
  * @code {.c}
  * 8卡通信域，同一个8p Mesh内
- * HcclGetInstRanksByNetLayer( commTp, netLayer=0, topoInst=0,  &ranks, &rankNum )
+ * HcclRankGraphGetRanksByTopoInst( commTp, netLayer=0, topoInst=0,  &ranks, &rankNum )
  * // ranks = [0,1,2,…,7],  rankNum=8
  * @endcode
  * @warning 重要约束：
@@ -318,7 +318,7 @@ extern HcclResult HcclGetTopoType(HcclComm comm, uint32_t netLayer, uint32_t top
  * 
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern HcclResult HcclGetRanksByTopoInst(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
+extern HcclResult HcclRankGraphGetRanksByTopoInst(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
 
 /**
  * @brief 获取通信域的异构组网模式

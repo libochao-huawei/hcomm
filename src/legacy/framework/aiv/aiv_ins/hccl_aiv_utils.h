@@ -20,7 +20,7 @@
  
 namespace Hccl {
 constexpr u32 MAX_RANK_SIZE_ = 64; // 注意要和device侧的一致
-constexpr u32 MAX_BLOCK_DIM = 56; // 56-72
+constexpr u32 MAX_NUM_BLOCKS = 56; // 56-72
  
 constexpr s32 TAG_INIT_VALUE = 1;
 constexpr s32 TAG_RESET_COUNT = 1000;
@@ -63,7 +63,7 @@ struct OpCounterInfo {
 struct AivOpArgs {
     HcclCMDType cmdType = HcclCMDType::HCCL_CMD_MAX;
     std::string comm = {};
-    u32 blockDim = MAX_BLOCK_DIM;
+    u32 numBlocks = MAX_NUM_BLOCKS;
     rtStream_t stream = nullptr;
     uint64_t beginTime = 0;
     OpCounterInfo counter = {}; 
@@ -100,7 +100,7 @@ using AivSuperKernelArgs = struct AivSuperKernelArgsDef {
     u64 dataType{};
     u64 unitSize{};
     u64 reduceOp{};
-    u64 blockdim{};
+    u64 numBlocks{};
     s64 tag{}; // 第几次调用，定时重置成1
     s64 clearEnable{};
     uint64_t inputSliceStride{};
@@ -112,11 +112,11 @@ using AivSuperKernelArgs = struct AivSuperKernelArgsDef {
     u64 output{};
     u64 cclBufferSize{};
     AivSuperKernelArgsDef(u64 input, u64 output, u32 rank,
-        u32 rankSize, u64 len, u32 dataType, u64 unitSize, u32 reduceOp,u32 blockdim = 0, s32 tag = 0, bool clearEnable = true,
+        u32 rankSize, u64 len, u32 dataType, u64 unitSize, u32 reduceOp,u32 numBlocks = 0, s32 tag = 0, bool clearEnable = true,
         uint64_t inputSliceStride = 0, uint64_t outputSliceStride = 0, uint64_t repeatNum = 0,
         uint64_t inputRepeatStride = 0, uint64_t outputRepeatStride = 0, u64 cclBufferSize = 0)
         : rank(rank), rankSize(rankSize), len(len), dataType(dataType), unitSize(unitSize), 
-          reduceOp(reduceOp), blockdim(blockdim),tag(tag),
+          reduceOp(reduceOp), numBlocks(numBlocks),tag(tag),
           clearEnable(clearEnable), inputSliceStride(inputSliceStride), outputSliceStride(outputSliceStride),
           repeatNum(repeatNum), inputRepeatStride(inputRepeatStride), outputRepeatStride(outputRepeatStride),
           input(input), output(output), cclBufferSize(cclBufferSize)

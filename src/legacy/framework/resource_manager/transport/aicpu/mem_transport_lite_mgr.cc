@@ -23,7 +23,7 @@ bool MemTransportLiteMgr::IsOpbaseExist(const LinkData &linkData)
 
 MemTransportLite *MemTransportLiteMgr::GetOpbase(const LinkData &linkData)
 {
-    if (!IsOpbaseExist(linkData)) {
+    if (UNLIKELY(opBaseTranspMap.find(linkData) == opBaseTranspMap.end())) {
         HCCL_WARNING("OpBase linkData=%s find transport is null", linkData.Describe().c_str());
         return nullptr;
     }
@@ -66,8 +66,8 @@ void MemTransportLiteMgr::ParseOpbasePackedData(std::vector<char> &data)
 
 MemTransportLite *MemTransportLiteMgr::GetOffload(const std::string &opTag, const LinkData &linkData)
 {
-    if (offloadTranspMap.find(opTag) == offloadTranspMap.end()
-        || offloadTranspMap[opTag].find(linkData) == offloadTranspMap[opTag].end()) {
+    if (UNLIKELY(offloadTranspMap.find(opTag) == offloadTranspMap.end()
+        || offloadTranspMap[opTag].find(linkData) == offloadTranspMap[opTag].end())) {
         HCCL_WARNING("offload opTag=%s, linkData=%s find transport is null", opTag.c_str(), linkData.Describe().c_str());
         return nullptr;
     }

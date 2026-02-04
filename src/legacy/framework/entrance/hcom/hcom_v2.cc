@@ -24,6 +24,10 @@
 #include "hccl_common_v2.h"
 #include "types.h"
 #include "comm_topo_desc.h"
+#include "stream.h"
+#include "log.h"
+#include "env_config.h"
+#include "stream_utils.h"
 
 using namespace std;
 using namespace Hccl;
@@ -467,6 +471,17 @@ HcclResult HcomAlltoAllVCV2(const void *sendBuf, const void *sendCountMatrix, Hc
     u32 myRank = INVALID_VALUE_RANKID;
     CHK_RET(hcclComm->GetRankId(myRank));
     CHK_RET(HcomCheckAlltoAllVCExternalMemV2(sendBuf, sendCountMatrix, recvBuf, rankSize, myRank));
+
+    std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
+    s32 streamId = HrtGetStreamId(stream);
+    s32 deviceLogicId = HrtGetDevice();
+    u64 sendCountMatrixHash;
+    HcomGetHashFromSendCountMatrixV2(sendCountMatrixHash, sendCountMatrix, rankSize, tag);
+    /* 接口交互信息日志 */
+    HCCL_RUN_INFO("Entry-HcomAlltoAllVC:tag[%s], sendBuf[%p], sendCountMatrixHash[%llu], sendType[%s], "\
+               "recvBuf[%p], recvType[%s], group[%s], streamId[%d], deviceLogicId[%d]",
+               tag, sendBuf, sendCountMatrixHash, GetDataTypeEnumStrV2(sendType).c_str(),
+               recvBuf, GetDataTypeEnumStrV2(recvType).c_str(), strGroup.c_str(), streamId, deviceLogicId);
 
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(const_cast<void*>(sendBuf), const_cast<void*>(recvBuf), 
@@ -1150,7 +1165,7 @@ HcclResult HcomSetAivClearEnableV2(const char *group, bool aivClearEnable)
 }
 
 HcclResult HcomCalcNumBlocksV2(const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
-        std::string &algName, u32 &blockDim)
+        std::string &algName, u32 &numBlocks)
 {
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
@@ -1165,7 +1180,7 @@ HcclResult HcomCalcNumBlocksV2(const char *group, HcclCMDType opType, u64 count,
     }
     Hccl::OpType optype = OP_TYPE_MAP.at(opType);
     Hccl::CollOpParams opParams = GetHcclOpParams(nullptr, nullptr, count, dataType, optype, HCCL_REDUCE_RESERVED,true);
-    CHK_RET(hcclComm->CalcBlockDim(opParams, aivCoreLimit, algName, blockDim));
+    CHK_RET(hcclComm->CalcNumBlocks(opParams, aivCoreLimit, algName, numBlocks));
     HCCL_INFO("[%s] end.", __func__);
     return HCCL_SUCCESS;
 }

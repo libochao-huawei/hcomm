@@ -98,12 +98,6 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
 
     AllocQueueNotify(*insQueue);
 
-    // 日志打印
-    auto info
-        = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], AlgName[%s]", op.opType.Describe().c_str(),
-                       comm->GetOpBaseOpIndex(), comm->GetId().c_str(), comm->GetCurAlgName().c_str());
-    comm->GetTrace().Save(info);
-
     // 获取insQueue中所有Ins的linkDats
     std::vector<LinkData> uniqueLinks = GetUniqueLinks(insQueue);
     // 将通讯域设置为transport建链中状态
@@ -141,11 +135,6 @@ void CollServiceDeviceMode::LoadWithOffloadMode(CollOperator &op, std::unique_pt
     shared_ptr<InsQueue> insQueue = Orchestrate(op);
 
     AllocQueueNotify(*insQueue);
-
-    auto info
-        = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], AlgName[%s]", op.opType.Describe().c_str(),
-                       comm->GetOpBaseOpIndex(), comm->GetId().c_str(), comm->GetCurAlgName().c_str());
-    comm->GetTrace().Save(info);
     
     // 获取insQueue中所有Ins的linkDats
     std::vector<LinkData> uniqueLinks = GetUniqueLinks(insQueue);
@@ -507,7 +496,7 @@ HcclResult CollServiceDeviceMode::GenerateAivOpArgs(const AivInstruction &aivIns
     return HCCL_SUCCESS;
 }
 
-void CollServiceDeviceMode::GeneratorAivSuperKernelArgs(const AivOpArgs &aivOpArgs, bool clearEnable, u32 blockDim,
+void CollServiceDeviceMode::GeneratorAivSuperKernelArgs(const AivOpArgs &aivOpArgs, bool clearEnable, u32 numBlocks,
                                                         AivSuperKernelArgs &superArgs) const
 {
     auto op                      = comm->GetCurrentCollOperator();
@@ -527,7 +516,7 @@ void CollServiceDeviceMode::GeneratorAivSuperKernelArgs(const AivOpArgs &aivOpAr
     superArgs.dataType           = dataType;
     superArgs.unitSize           = SIZE_TABLE_ORION[dataType];
     superArgs.reduceOp           = op->reduceOp;
-    superArgs.blockdim           = blockDim;
+    superArgs.numBlocks           = numBlocks;
     superArgs.tag                = comm->GetAivTag();
     superArgs.clearEnable        = (clearEnable ? 1 : 0);
     superArgs.inputSliceStride   = 0;
@@ -539,11 +528,11 @@ void CollServiceDeviceMode::GeneratorAivSuperKernelArgs(const AivOpArgs &aivOpAr
     superArgs.output             = aivOpArgs.output;
     superArgs.cclBufferSize      = comm->GetBufferSize();
 
-    HCCL_INFO("[CollServiceDeviceMode::%s] Tag %llu, clearEnable %llu, blockdim %llu, dataCount %llu, cclBufferSize %llu.", __func__, superArgs.tag,
-              superArgs.clearEnable, superArgs.blockdim, dataCount, superArgs.cclBufferSize);
+    HCCL_INFO("[CollServiceDeviceMode::%s] Tag %llu, clearEnable %llu, numBlocks %llu, dataCount %llu, cclBufferSize %llu.", __func__, superArgs.tag,
+              superArgs.clearEnable, superArgs.numBlocks, dataCount, superArgs.cclBufferSize);
 }
 
-HcclResult CollServiceDeviceMode::GetAlgExecParam(bool clearEnable, u32 blockDim, void *&commContext, u64 &len)
+HcclResult CollServiceDeviceMode::GetAlgExecParam(bool clearEnable, u32 numBlocks, void *&commContext, u64 &len)
 {
     auto op = comm->GetCurrentCollOperator();
     HCCL_INFO("[CollServiceDeviceMode][%s] op[%p] sendCount[%u], recvCount[%u]",
@@ -570,7 +559,7 @@ HcclResult CollServiceDeviceMode::GetAlgExecParam(bool clearEnable, u32 blockDim
 
     // aivOpArgs转为aivSuperKernelArgs的参数
     AivSuperKernelArgs aivSuperKernelArgs{};
-    GeneratorAivSuperKernelArgs(aivOpArgs, clearEnable, blockDim, aivSuperKernelArgs);
+    GeneratorAivSuperKernelArgs(aivOpArgs, clearEnable, numBlocks, aivSuperKernelArgs);
 
     void *sendAlgParamMemPtr = nullptr;
     // alloc device 地址
