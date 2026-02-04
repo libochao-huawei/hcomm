@@ -8,23 +8,27 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef COLL_REDUCESCATTERV_SEMI_RING_EXECUTOR_H
-#define COLL_REDUCESCATTERV_SEMI_RING_EXECUTOR_H
+#ifndef HCCL_CCU_RES_H
+#define HCCL_CCU_RES_H
 
-#include "coll_reduce_scatter_semi_ring_executor.h"
+#include "hccl_types.h"
+#include "ccu_kernel.h"
 
-namespace hccl {
-class CollReduceScatterVSemiRingExecutor : public CollReduceScatterSemiRingExecutor {
-public:
-    CollReduceScatterVSemiRingExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceScatterVSemiRingExecutor() override = default;
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 
-private:
-    /* *************** 算法编排 *************** */
-    u64 CalcLoopMaxCount(const u32 unitSize) override;
-    bool IsHugeData(const u64 curSize, OpParam *param = nullptr) override;
-};
+extern HcclResult HcclCcuKernelRegister(HcclComm comm,
+    CcuKernelHandle *kernelHandle, void *kernelCreator, void *kernelArg);
 
-} // namespace hccl
+extern HcclResult HcclCcuKernelRegisterFinish(HcclComm comm);
+
+extern HcclResult HcclCcuKernelLaunch(HcclComm comm,
+    const ThreadHandle threadHandle, const CcuKernelHandle KernelHandle,
+    void *taskArgs);
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif

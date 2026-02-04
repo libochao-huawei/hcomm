@@ -134,7 +134,7 @@ typedef struct tagAicpuModelInfo {
 } rtAicpuModelInfo_t;
 
 typedef struct tagKernelTaskInfo {
-    uint16_t blockDim;
+    uint16_t numBlocks;
     uint16_t argsCount;
     uint16_t argsSize;
     uint16_t reserved;
@@ -145,7 +145,7 @@ typedef struct tagKernelTaskInfo {
 } rtKernelTaskInfo_t;
 
 typedef struct tagAllKernelTaskInfo {
-    uint16_t blockDim;
+    uint16_t numBlocks;
     uint16_t argsCount;
     uint16_t argsSize;
     uint16_t reserved;
@@ -404,7 +404,7 @@ typedef struct tagMdlExecute {
 
 typedef struct tagMdlTaskUpdateInfo {
     uint64_t *tilingKeyAddr;
-    uint64_t *blockDimAddr;
+    uint64_t *numBlocksAddr;
     void *hdl;
     rtFftsPlusTaskInfo_t *fftsPlusTaskInfo;
 } rtMdlTaskUpdateInfo_t;

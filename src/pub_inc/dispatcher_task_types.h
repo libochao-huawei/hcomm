@@ -56,6 +56,7 @@ enum class LinkType {
     LINK_SIO = 4,
     LINK_HCCS_SW = 5,
     LINK_STANDARD_ROCE = 6,
+    LINK_UB = 7,
     LINK_RESERVED = 255
 };
 

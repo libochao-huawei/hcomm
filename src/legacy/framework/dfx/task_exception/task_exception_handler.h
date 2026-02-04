@@ -19,8 +19,12 @@
 #include "ccu_dfx.h"
 #include "ccu_task_param.h"
 #include "hccl_common_v2.h"
+#include "error_message_v2.h"
+#include "orion_adapter_hccp.h"
+#include "rdma_handle_manager.h"
 
 namespace Hccl {
+using GetAicpuTaskExceptionCallBack = std::function<ErrorMessageReport()>; 
 class TaskExceptionHandler {
 public:
     // 构造函数使用初始化列表初始化devId_
@@ -32,6 +36,7 @@ public:
     void        Register() const;                                // 向rts注册异常处理方法
     void        UnRegister() const;                              // 向rts注销异常处理方法
     static void Process(rtExceptionInfo_t *exceptionInfo); // 处理异常信息
+    static void PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo);
 
 private:
     static std::string GetGroupRankInfo(const TaskInfo& taskInfo);
@@ -68,6 +73,8 @@ private:
     static std::string GetCcuErrorMsgBufLocWrite(const CcuErrorInfo& ccuErrorInfo, const TaskInfo& taskInfo);
     static std::string GetCcuErrorMsgBufReduce(const CcuErrorInfo& ccuErrorInfo, const TaskInfo& taskInfo);
     static RankId GetRankIdByChannelId(uint16_t channelId, const TaskInfo& taskInfo);
+    static void PrintGroupErrorMessage(ErrorMessageReport &errorMessage, TaskInfo &exceptionTaskInfo, string &groupRankContent, string &stageErrInfo);
+    static void PrintOpDataErrorMessage(u32 deviceId, ErrorMessageReport &errorMessage, string &stageErrInfo);
 
 private:
     uint32_t devId_; // 当前设备id
@@ -85,11 +92,25 @@ private:
     // 私有拷贝构造函数和赋值运算符，防止对象被拷贝
     TaskExceptionHandlerManager(const TaskExceptionHandlerManager &)            = delete;
     TaskExceptionHandlerManager &operator=(const TaskExceptionHandlerManager &) = delete;
+    void RegisterGetAicpuTaskException(u32 streamId, ErrorMessageReport errorMessageReport);
 
 private:
     // 全局静态数组，存储异常处理器指针
     static std::array<TaskExceptionHandler *, MAX_MODULE_DEVICE_NUM> handlers_;
 };
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+extern void RegisterGetAicpuTaskExceptionCallBackV2(s32 streamId, u32 deviceLogicId, Hccl::GetAicpuTaskExceptionCallBack p1);
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
+const std::string LOG_KEYWORDS_TIMEOUT = "Timeout";                       // 算子执行阶段超时
+const std::string LOG_KEYWORDS_RUN_FAILED = "RunFailed";                  // 算子执行阶段失败，如SDMA ERROR
+const std::string LOG_KEYWORDS_TASK_EXEC = "TaskExecStage";               // 算子执行阶段异常
+const std::string LOG_KEYWORDS_AICPU = "AICPU";
 } // namespace Hccl
 
 #endif // HCCL_TASK_EXCEPTION_HANDLER_H

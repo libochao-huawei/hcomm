@@ -152,7 +152,7 @@ void RtsqBase::ConfigDisableToEnable(u32 value)
 
 HcclResult RtsqBase::SetTaskIdBySqeId()
 {
-    if (aicpu::GetSqeId == nullptr) {
+    if (UNLIKELY(aicpu::GetSqeId == nullptr)) {
         HCCL_WARNING("[RtsqBase][SetTaskIdBySqeId] aicpu::GetSqeId is nullptr.");
         return HCCL_E_INTERNAL;
     }

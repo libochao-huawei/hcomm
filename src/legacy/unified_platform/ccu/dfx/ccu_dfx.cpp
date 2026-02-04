@@ -34,4 +34,12 @@ HcclResult GetCcuErrorMsg(s32 deviceId, uint16_t status, const ParaCcu &ccuTaskP
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult GetCcuJettys(s32 deviceLogicId, const ParaCcu& ccuTaskParam, std::vector<CcuJetty *>& ccuJettys)
+{
+    TRY_CATCH_RETURN(
+        CcuErrorHandler::GetCcuJettys(deviceLogicId, ccuTaskParam, ccuJettys);
+    );
+    return HcclResult::HCCL_SUCCESS;
+}
+
 } // namespace Hccl

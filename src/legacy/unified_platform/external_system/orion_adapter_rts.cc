@@ -804,11 +804,11 @@ void HrtRDMADBSend(uint32_t dbindex, uint64_t dbinfo, aclrtStream streamPtr)
     }
 }
 // 兜底extern, 正式适配待todo
-void HrtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t blockDim, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
+void HrtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t numBlocks, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
     rtStream_t stream, uint32_t flags, const rtTaskCfgInfo_t *cfgInfo)
 {
-    HCCL_INFO("[hrtKernelLaunchWithFlagV2]blockdim: [%u]", blockDim);
-    rtError_t ret = rtKernelLaunchWithFlagV2(stubFunc, blockDim, argsInfo, smDesc, stream, flags, cfgInfo);
+    HCCL_INFO("[hrtKernelLaunchWithFlagV2]numBlocks: [%u]", numBlocks);
+    rtError_t ret = rtKernelLaunchWithFlagV2(stubFunc, numBlocks, argsInfo, smDesc, stream, flags, cfgInfo);
     if (ret != RT_ERROR_NONE) {
         HCCL_ERROR("[hrtKernelLaunchWithFlagV2]execute kernel launch v2 failed");
         throw RuntimeApiException("call hrtKernelLaunchWithFlagV2 failed. ");
@@ -959,7 +959,7 @@ RtNotify_t HrtIpcOpenNotifyWithFlag(const char_t *name, uint32_t flags)
     return ptr;
 }
 // 兜底extern形式
-void HrtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uint32_t blockDim,
+void HrtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uint32_t numBlocks,
                                     const rtAicpuArgsEx_t *argsInfo, rtSmDesc_t * const smDesc, const rtStream_t stream,
                                     uint32_t flags)
 {
@@ -968,7 +968,7 @@ void HrtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uin
     tmp = reinterpret_cast<const char *>(argsInfo->args) + argsInfo->kernelNameAddrOffset;
     HCCL_INFO("HrtAicpuKernelLaunchExWithArgs: args.kernelName = %s", tmp);
 
-    rtError_t ret = rtAicpuKernelLaunchExWithArgs(kernelType, opName, blockDim, argsInfo, smDesc, stream, flags);
+    rtError_t ret = rtAicpuKernelLaunchExWithArgs(kernelType, opName, numBlocks, argsInfo, smDesc, stream, flags);
     if (ret != RT_ERROR_NONE) {
         THROW<RuntimeApiException>(StringFormat("Call rtAicpuKernelLaunchExWithArgs failed, with ret[%d]", ret));
     }

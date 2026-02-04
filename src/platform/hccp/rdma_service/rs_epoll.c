@@ -33,9 +33,7 @@
 #ifdef CONFIG_TLV
 #include "rs_adp_nslb.h"
 #endif
-#ifdef CONFIG_CONTEXT
 #include "rs_ub.h"
-#endif
 #include "rs_epoll.h"
 
 #define BIND_MIN_DCPU_NUM 1
@@ -356,34 +354,37 @@ STATIC void RsEpollEventInHandle(struct rs_cb *rsCb, struct epoll_event *events)
         return;
     }
 
-#ifdef CONFIG_CONTEXT
-    ret = rs_epoll_event_jfc_in_handle(rsCb, fd);
-    if (ret != -ENODEV) {
-        hccp_info("the fd:%d is for poll jfc, no need to go on, ret:%d", fd, ret);
-        return;
-    }
+    if (RsIsUdmaSupported()) {
+        ret = rs_epoll_event_jfc_in_handle(rsCb, fd);
+        if (ret != -ENODEV) {
+            hccp_info("the fd:%d is for poll jfc, no need to go on, ret:%d", fd, ret);
+            return;
+        }
 
-    ret = RsEpollEventUrmaAsyncEventInHandle(rsCb, fd);
-    if (ret != -ENODEV) {
-        hccp_info("the fd:%d is for urma async event, no need to go on, ret:%d", fd, ret);
-        return;
+        ret = RsEpollEventUrmaAsyncEventInHandle(rsCb, fd);
+        if (ret != -ENODEV) {
+            hccp_info("the fd:%d is for urma async event, no need to go on, ret:%d", fd, ret);
+            return;
+        }
     }
-#endif
 
     return;
 }
 
 STATIC void RsEpollEventHandleOne(struct rs_cb *rsCb, struct epoll_event *events)
 {
-    RS_CHECK_POINTER_NULL_RETURN_VOID(events);
+    int ret;
+
+    RS_CHECK_POINTER_NULL_RETURN_VOID(events);	 
     RS_CHECK_POINTER_NULL_RETURN_VOID(rsCb);
 
 #ifdef CONFIG_TLV
-    int ret;
-    ret = RsEpollNslbEventHandle(&rsCb->tlvCb.nslbCb, events->data.fd, events->events);
-    if (ret != -ENODEV) {
-        hccp_info("the fd:%d is nslb event, no need to go on, ret:%d", events->data.fd, ret);
-        return;
+    if (RsIsTlvSupported()) {
+        ret = RsEpollNslbEventHandle(&rsCb->tlvCb.nslbCb, events->data.fd, events->events);
+        if (ret != -ENODEV) {
+            hccp_info("the fd:%d is nslb event, no need to go on, ret:%d", events->data.fd, ret);
+            return;
+        }
     }
 #endif
 

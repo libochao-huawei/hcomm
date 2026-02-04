@@ -232,7 +232,7 @@ void UbTransportLiteImpl::BuildNotifyWaitTask(const StreamLite &stream, u32 noti
 
 Buffer UbTransportLiteImpl::GetRmtBuffer(u32 index)
 {
-    if (index >= rmtBufferVec.size()) {
+    if (UNLIKELY(index >= rmtBufferVec.size())) {
         THROW<InternalException>(StringFormat("UbTransportLiteImpl::GetRmtBuffer out-of-bounds. index=%u, size=%u",
             index, rmtBufferVec.size()));
     }
@@ -304,13 +304,13 @@ void UbTransportLiteImpl::ClearConnOut()
 // 检查connection不能为空
 void UbTransportLiteImpl::CheckConnVec(const std::string &desc)
 {
-    if (connVec.size() == 0) {
+    if (UNLIKELY(connVec.size() == 0)) {
         THROW<InternalException>(StringFormat("connVec size is 0 %s", desc.c_str()));
     }
 
     u32 idx = 0;
     for (auto &it : connVec) {
-        if (it == nullptr) {
+        if (UNLIKELY(it == nullptr)) {
             THROW<InternalException>(StringFormat("connVec[%u] is null %s", idx, desc.c_str()));
         }
         idx++;
@@ -443,7 +443,7 @@ HcclReduceOp ConvertReduceOpToHcclReduceOp(ReduceOp reduceOp)
                                                              {ReduceOp::PROD, HcclReduceOp::HCCL_REDUCE_PROD},
                                                              {ReduceOp::MAX, HcclReduceOp::HCCL_REDUCE_MAX},
                                                              {ReduceOp::MIN, HcclReduceOp::HCCL_REDUCE_MIN}};
-    if (reduceTypeMap.find(reduceOp) == reduceTypeMap.end()) {
+    if (UNLIKELY(reduceTypeMap.find(reduceOp) == reduceTypeMap.end())) {
         THROW<InternalException>(StringFormat("reduceOp[%u] is invalid", reduceOp));
     }
     return reduceTypeMap[reduceOp];
@@ -558,6 +558,8 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
     taskParam.taskPara.DMA.notifyID = GetRmtNotifySliceLite(withNotify.index_).GetAddr();
     taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
     taskParam.taskPara.DMA.dmaOp    = DmaOp::HCCL_DMA_WRITE;
+    taskParam.taskPara.DMA.locEid = GetLocEid();
+    taskParam.taskPara.DMA.rmtEid = GetRmtEid();
     callback_(stream.GetSqId(), taskId, taskParam);
 }
 
@@ -614,5 +616,24 @@ void UbTransportLiteImpl::BatchOneSidedWrite(const vector<RmaBufSliceLite> &loc,
     // 当前使用1个connection，下标为0
     connVec[0]->BatchOneSidedWrite(loc, rmt, cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
+}
+
+ 
+Eid UbTransportLiteImpl::GetLocEid() const
+{
+    Eid eid{};
+    if (!connVec.empty()) {
+        return connVec[0]->GetLocEid();
+    }
+    return eid;
+}
+
+Eid UbTransportLiteImpl::GetRmtEid() const
+{
+    Eid eid{};
+    if (!connVec.empty()) {
+        return connVec[0]->GetRmtEid();
+    }
+    return eid;
 }
 } // namespace Hccl
