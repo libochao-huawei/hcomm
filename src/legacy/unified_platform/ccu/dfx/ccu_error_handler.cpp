@@ -374,7 +374,9 @@ void CcuErrorHandler::GenErrorInfoRemWaitGroup(const ErrorInfoBase &baseInfo, sh
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
 
     const auto rep                           = static_pointer_cast<CcuRepWaitGroup>(repBase);
-    errorMsg.msg.waitSignal.signalId         = rep->transportGroup.GetCntCkeId(rep->semIndex);
+    u32 cntCkeId;
+    rep->transportGroup.GetCntCkeId(rep->semIndex, cntCkeId);
+    errorMsg.msg.waitSignal.signalId         = cntCkeId;
     errorMsg.msg.waitSignal.signalValue      = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, errorMsg.msg.waitSignal.signalId);
     errorMsg.msg.waitSignal.signalMask       = rep->mask;
     const vector<CcuTransport*> &transports  = rep->transportGroup.GetTransports();
