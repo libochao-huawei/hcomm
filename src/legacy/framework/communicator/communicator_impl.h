@@ -47,6 +47,7 @@
 #include "ccu_driver_handle.h"
 #include "hccl_common_v2.h"
 #include "hccl_rank_graph.h"
+#include "hccl_aiv_utils.h"
 #include "error_message_v2.h"
 
 namespace Hccl {
