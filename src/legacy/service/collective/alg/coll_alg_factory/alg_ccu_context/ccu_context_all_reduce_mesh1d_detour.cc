@@ -154,7 +154,7 @@ void CcuContextAllReduceMeshDetour1D::GroupReduceDetour(std::vector<CcuRep::Memo
     std::vector<CcuRep::Memory> &dst, DataType &dataType, DataType &outputDataType, ReduceOp &opType)
 {
     CreateMultiOpReduceDetour(dataType, outputDataType, opType);
-    uint32_t interLeave = pathNumPerPeer * rankSize;
+    uint32_t interLeave = 8;
 
     CCU_IF(iterNum_ != 0) {
         CcuRep::Variable loopParam = CreateVariable();
@@ -164,7 +164,7 @@ void CcuContextAllReduceMeshDetour1D::GroupReduceDetour(std::vector<CcuRep::Memo
         loopParam = CcuRep::GetLoopParam(0, singleTransportSize * moConfig.loopCount, 0);  // 下次迭代的偏移是单次总搬运量*loopNum
         loopParam += iterNum_;  // 加上loop的迭代次数构成完整loop参数
         paraCfg = CcuRep::GetParallelParam(moConfig.loopCount - 1, 0, 1);  // loop固定展开到128个
-        offsetCfg = CcuRep::GetOffsetParam(singleTransportSize, interLeave, 1);  // 下一个loop偏移量
+        offsetCfg = CcuRep::GetOffsetParam(singleTransportSize, interLeave, pathNumPerPeer);  // 下一个loop偏移量
         auto lc = Loop("reduceDetour_loop")(src, dst, lengths_);
         LoopGroup({lc}, {loopParam}, paraCfg, offsetCfg);
     }
@@ -240,7 +240,7 @@ void CcuContextAllReduceMeshDetour1D::GroupBroadcastDetour(std::vector<CcuRep::V
     std::vector<CcuRep::Memory> &dst)
 {
     CreateMultiOpBroadcastDetour();
-    uint32_t interLeave = pathNumPerPeer * 1;
+    uint32_t interLeave = 8;
 
     CCU_IF(iterNum_ != 0) {
         CcuRep::Variable loopParam = CreateVariable();
@@ -250,7 +250,7 @@ void CcuContextAllReduceMeshDetour1D::GroupBroadcastDetour(std::vector<CcuRep::V
         loopParam = CcuRep::GetLoopParam(0, singleTransportSize * moConfig.loopCount, 0);  // 偏移是单次总搬运量*loopNum
         loopParam += iterNum_;  // 加上loop的迭代次数构成完整loop参数
         paraCfg = CcuRep::GetParallelParam(moConfig.loopCount - 1, 0, 1);  // loop固定展开到128个
-        offsetCfg = CcuRep::GetOffsetParam(singleTransportSize, interLeave, 1);  // 下一个loop偏移量
+        offsetCfg = CcuRep::GetOffsetParam(singleTransportSize, interLeave, pathNumPerPeer);  // 下一个loop偏移量
         auto lc = Loop("broadcastDetour_loop")(src, dst, lengths);
         LoopGroup({lc}, {loopParam}, paraCfg, offsetCfg);
     }
