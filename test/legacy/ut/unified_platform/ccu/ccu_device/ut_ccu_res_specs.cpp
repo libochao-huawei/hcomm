@@ -180,10 +180,10 @@ void PrepareInitMocker()
 
 void MockRtGetDeviceInfo(int64_t outVal)
 {
-    MOCKER(rtGetDeviceInfo)
+    MOCKER(aclrtGetDeviceInfo)
         .stubs()
-        .with(any(), any(), any(), outBoundP(&outVal, sizeof(outVal)))
-        .will(returnValue(RT_ERROR_NONE));
+        .with(any(), any(), outBoundP(&outVal, sizeof(outVal)))
+        .will(returnValue(ACL_SUCCESS));
 }
 
 TEST_F(CcuResSpecsTest, Ut_Init_When_CcuDriverOk_Expect_Return_Ok)
