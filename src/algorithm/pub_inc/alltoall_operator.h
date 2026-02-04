@@ -41,7 +41,7 @@ public:
         const void *recvCounts, const void *rdispls, HcclDataType recvType,
         std::unique_ptr<PreProcessMetaInfo> &preMetaInfo);
     HcclResult PreparePreOpParam(OpParam& preProcessOpParam, const std::unique_ptr<PreProcessMetaInfo> &preMetaInfo,
-        Stream &preProcessStream, const CommConfig &commConfig);
+        Stream &preProcessStream);
     bool JudgeIfNeedPreProcessAndGetParam(const OpParam& param, std::unique_ptr<PreProcessMetaInfo> &preMetaInfo);
     void SetPreProcessResult(HostMem hostCollectBuffer);
     HcclResult SetExcutorExtraInfo(const std::string& algName, const OpParam& param);

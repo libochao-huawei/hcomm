@@ -4138,7 +4138,8 @@ namespace hccl
         // h to d
         CHK_RET(SetInfoToDevice(opParam, preMetaInfo, mode, preProcessStream));
         // opParam准备
-        CHK_RET(alltoAllOperator->PreparePreOpParam(preProcessOpParam, preMetaInfo, preProcessStream, commConfig_));
+        CHK_RET(alltoAllOperator->PreparePreOpParam(preProcessOpParam, preMetaInfo, preProcessStream));
+        preProcessOpParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && commConfig_.GetConfigAicpuUnfold();
 
         // 回归调用其它算子
         HCCL_INFO("[HcclCommunicator][RegressCalPreOp] Regression calls other operators and opType[%u]",
