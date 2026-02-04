@@ -35,10 +35,10 @@ HcclResult CollReceiveExecutor::Orchestrate(OpParam& param, AlgResourceResponse&
     }
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReceiveExecutor][Orchestrate]errNo[0x%016llx]recv excutor kernel run failed",
+        HCCL_ERROR("[CollReceiveExecutor][Orchestrate]errNo[0x%016llx]recv executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
-    HCCL_INFO("tag[%s], Receive Excutor orchestrate success, take time [%lld]us.",
+    HCCL_INFO("tag[%s], Receive Executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
@@ -107,6 +107,13 @@ HcclResult CollReceiveExecutor::CalcResRequest(const OpParam& param, AlgResource
     return HCCL_SUCCESS;
 }
 
+HcclResult CollReceiveExecutor::NotifyMainstream(OpParam &param, AlgResourceResponse &algRes)
+{
+    CHK_RET(LocalNotify::Post(param.stream, dispatcher_, algRes.notifiesMain[0], INVALID_VALUE_STAGE));
+    CHK_RET(LocalNotify::Wait(param.stream, dispatcher_, algRes.notifiesAux[0], INVALID_VALUE_STAGE));
+    return HCCL_SUCCESS;
+}
+
 HcclResult CollReceiveExecutor::RunLoop(OpParam &param, AlgResourceResponse &algRes)
 {
     HcclResult ret;
@@ -122,15 +129,23 @@ HcclResult CollReceiveExecutor::RunLoop(OpParam &param, AlgResourceResponse &alg
     u64 outputOffset = 0;
     u64 countLeft = param.DataDes.count;
     while (countLeft > 0) {
-        CHK_RET(InitTask(dispatcher_, param.stream, meta.isEnableCache, meta.GetCacheKey()));
+        if (!param.isGroupMode) {// 暂时走stars模式
+            CHK_RET(InitTask(dispatcher_, param.stream, meta.isEnableCache, meta.GetCacheKey())); 
+        }
         curOutputPtr += outputOffset;
         HCCL_DEBUG("RecvOutPlace:outputOffset[%llu]", outputOffset);
         u64 curCount = ((countLeft * unitSize) > commOutputSize) ? (commOutputSize / unitSize) : countLeft;
         u64 curSize = curCount * unitSize; // 单位 byte
         HCCL_DEBUG("RecvOutPlace:curOutputPtr[%p], curCount[%llu], curSize[%llu]", curOutputPtr, curCount, curSize);
 
-        if(topoAttr_.deviceType != DevType::DEV_TYPE_910_93 || topoAttr_.isDiffDeviceType ||
-            (topoAttr_.superPodNum > 1 || (topoAttr_.moduleNum > 1 && topoMatcher_->GetExternalInputInterHccsDisable()))) {
+        if(param.isGroupMode){ //在read之前同步，等待localcopy完成
+            CHK_RET(NotifyMainstream(param, algRes));
+        }
+        SubCommInfo commInfo = GetSubCommInfo(COMM_COMBINE, 0);
+        LINK transportLink = commInfo.links[0];
+        if ((topoAttr_.deviceType != DevType::DEV_TYPE_910_93 && !param.isGroupMode)  || topoAttr_.isDiffDeviceType ||
+            (topoAttr_.superPodNum > 1 || (topoAttr_.moduleNum > 1 && topoMatcher_->GetExternalInputInterHccsDisable())) ||
+            (topoAttr_.deviceType == DevType::DEV_TYPE_910B && param.isGroupMode && transportLink->GetLinkType() == LinkType::LINK_ROCE)) {
             // 非A3场景不做DMA消减；A3的RDMA场景，也不做DMA消减
             DeviceMem outCommMem(algRes.cclOutputMem.ptr(), curSize);
             DeviceMem outMem(curOutputPtr, curSize);
@@ -172,7 +187,11 @@ HcclResult CollReceiveExecutor::RunTemplate(const OpParam &param, DeviceMem &out
     SendReceive ReceiveExecutor(dispatcher_, transportLink);
     CHK_RET(ReceiveExecutor.ReceivePrepare(outputMem, param.srcRank, param.stream));
     CHK_RET(ReceiveExecutor.RegisterProfiler(0, PROF_STAGE_0, HCCL_EXEC_STEP_NOT_SET, param.stream));
-    CHK_RET(ReceiveExecutor.ReceiveRunAsync());
+    if (param.isGroupMode) {
+        CHK_RET(ReceiveExecutor.BatchReceiveRunAsync());
+    } else {
+        CHK_RET(ReceiveExecutor.ReceiveRunAsync());
+    }
 
     return HCCL_SUCCESS;
 }

@@ -17,7 +17,7 @@
 namespace hccl {
 struct RetryCtrl {
     std::unique_ptr<std::thread> thread;
-    std::shared_ptr<RetryContext> retryCtx;
+    std::shared_ptr<RetryContext> retryCtx = nullptr;
     bool startExec = false;
 };
 
@@ -40,7 +40,9 @@ public:
         const std::string &newTag, std::vector<u32> &remoteRankList);
     static HcclResult DeleteLinkInfoByIdentifier(s32 deviceLogicID, const std::string &identifier);
     HcclResult SetRetryStateToWaitResume(const std::string& group, bool isRoot);
-    HcclResult ExitWaitResumeState(const std::string& group, bool isRoot, bool& isChangedLink);
+    HcclResult ExitWaitResumeState(const std::string& group, bool isRoot, bool haveCommEnableBackupLink, bool& isChangedLink);
+    bool IsPaused(const std::string &group);
+    bool IsResumed(const std::string &group);
 private:
     HcclResult Init();
     HcclResult DeInit()

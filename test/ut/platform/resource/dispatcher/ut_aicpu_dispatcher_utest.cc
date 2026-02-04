@@ -25,7 +25,6 @@
 #include "queue_notify_manager.h"
 #include "llt_hccl_stub_mc2.h"
 #include "profiling_manager_device.h"
-#include "hccl_thread.h"
 
 #undef private
 #undef protected
@@ -36,50 +35,6 @@ using namespace hccl;
 
 extern HcclResult CommTaskPrepare(char *key, uint32_t keyLen);
 extern HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum);
-
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
-
-typedef enum tagRtClearStep {
-    RT_STREAM_STOP = 0,
-    RT_STREAM_CLEAR,
-} rtClearStep_t;
-
-rtError_t rtStreamClear(rtStream_t stm, rtClearStep_t step)
-{
-    return 0;
-}
-
-rtError_t rtGetPhyDeviceInfo(uint32_t phyId, int32_t moduleType, int32_t infoType, int64_t *val)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtGetPairDevicesInfo(uint32_t devId, uint32_t otherDevId, int32_t infoType, int64_t *val)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtEnableP2P(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t flag)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtDisableP2P(uint32_t devIdDes, uint32_t phyIdSrc)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtGetP2PStatus(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t *status)
-{
-    *status = 1;
-    return RT_ERROR_NONE;
-}
-
-#ifdef __cplusplus
-}
-#endif // __cplusplus
 
 class DispatcherAiCpu_UT : public testing::Test {
 protected:

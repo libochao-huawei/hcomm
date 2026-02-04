@@ -26,10 +26,12 @@ namespace hccl {
 class OpUnfoldCache {
 public:
     // 根据算子类型判断是否需要cache
-    static bool NeedCache(const HcclCMDType opType, const std::unordered_map<u32, bool>& isUsedRdmaMap, const bool isDeviceMode);
+    static bool NeedCache(const uint8_t aicpuCacheEnable, const HcclCMDType opType, const std::unordered_map<u32, bool>& isUsedRdmaMap, const bool isDeviceMode);
 
     explicit OpUnfoldCache();
     ~OpUnfoldCache();
+
+    bool IsCacheFull() const;
 
     HcclResult FindEntry(const OpUnfoldKey& key, OpUnfoldCacheEntry **entryPtrPtr) const; // 查看是否存在key对应的cache entry (如果不存在, *entryPtrPtr会被置为空)
     HcclResult AddEntry(const OpUnfoldKey& key, const std::vector<OpUnfoldMemRange>& userInputMemRanges, const std::vector<OpUnfoldMemRange>& userOutputMemRanges, OpUnfoldCacheEntry **entryPtrPtr); // 插入新的cache entry

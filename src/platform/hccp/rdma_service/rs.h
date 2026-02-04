@@ -254,6 +254,19 @@ enum RsConnRole {
     RS_CONN_ROLE_SERVER = 0,
     RS_CONN_ROLE_CLIENT = 1,
 };
+
+enum ProductType {
+    PRODUCT_TYPE_INVALID = -2,
+    PRODUCT_TYPE_NO_VALUE = -1,
+    PRODUCT_TYPE_310p = 0,
+    PRODUCT_TYPE_910,
+    PRODUCT_TYPE_910B,
+    PRODUCT_TYPE_910_93,
+    PRODUCT_TYPE_950,
+    PRODUCT_TYPE_910_96,
+    PRODUCT_TYPE_OTHERS,
+};
+
 enum RsSocketStatus {
     RS_SOCK_STATUS_NA = 0,
     RS_SOCK_STATUS_OK = 1,
@@ -310,6 +323,38 @@ RS_ATTRI_VISI_DEF int RsGetCqeErrInfoList(unsigned int phyId, unsigned int rdevI
     unsigned int *num);
 RS_ATTRI_VISI_DEF int RsDrvGetRandomNum(int *randNum);
 RS_ATTRI_VISI_DEF int RsGetSecRandom(unsigned int *value);
+// note: The FIRST invocation of this function MAY throw exceptions for each process
+RS_ATTRI_VISI_DEF enum ProductType RsGetProductType(int devId);
+
+static inline bool RsIsTlvSupported(void)
+{
+    enum ProductType productType;
+    productType = RsGetProductType(0); // Ensure that RsGetProductType has been called at least once
+    return (productType == PRODUCT_TYPE_910B || productType == PRODUCT_TYPE_910_93 ||
+        productType == PRODUCT_TYPE_950 || productType == PRODUCT_TYPE_910_96);
+}
+
+static inline bool RsIsRdmaSupported(void)
+{
+    enum ProductType productType;
+    productType = RsGetProductType(0);
+    return (productType == PRODUCT_TYPE_910B || productType == PRODUCT_TYPE_910_93 ||
+        productType == PRODUCT_TYPE_910);
+}
+
+static inline bool RsIsUdmaSupported(void)
+{
+    enum ProductType productType;
+    productType = RsGetProductType(0);
+    return (productType == PRODUCT_TYPE_950 || productType == PRODUCT_TYPE_910_96);
+}
+
+static inline bool RsIsCustomInterfaceSupported(void)
+{
+    enum ProductType productType;
+    productType = RsGetProductType(0);
+    return (productType != PRODUCT_TYPE_310p);
+}
 #ifdef __cplusplus
 }
 #endif

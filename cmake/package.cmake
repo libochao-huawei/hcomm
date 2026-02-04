@@ -1,13 +1,12 @@
-# ----------------------------------------------------------------------------
-# This program is free software, you can redistribute it and/or modify it.
+# -----------------------------------------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This file is a part of the CANN Open Software.
-# Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
-# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
-# BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------
 #### CPACK to package run #####
 
 # download makeself package
@@ -115,18 +114,26 @@ function(pack_built_in)
       ${CMAKE_SOURCE_DIR}/scripts/package/common/cfg/path.cfg
   )
 
-  if (FULL_MODE)
-    add_custom_target(version_info ALL
-        COMMAND cp -f ${CMAKE_SOURCE_DIR}/version.info ${CMAKE_CURRENT_BINARY_DIR}/version.info
-        COMMAND ${CMAKE_COMMAND} -E echo "host_only=false" >> ${CMAKE_CURRENT_BINARY_DIR}/version.info
-    )
-  else()
-    add_custom_target(version_info ALL
-        COMMAND cp -f ${CMAKE_SOURCE_DIR}/version.info ${CMAKE_CURRENT_BINARY_DIR}/version.info
-        COMMAND ${CMAKE_COMMAND} -E echo "host_only=true" >> ${CMAKE_CURRENT_BINARY_DIR}/version.info
-    )
+  set(HCOMM_VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/version/version.info)
+  set(HOST_ONLY "false")
+  if (NOT FULL_MODE)
+    set(HOST_ONLY "true")
   endif()
- install(FILES ${HCOMM_VERSION_FILE}
+  add_custom_command(
+    OUTPUT ${HCOMM_VERSION_FILE}
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/update_version_info/update_version_info.sh
+            ${CMAKE_CURRENT_SOURCE_DIR}/version.info
+            ${HCOMM_VERSION_FILE}
+    COMMAND ${CMAKE_COMMAND} -E echo "host_only=${HOST_ONLY}" >> ${HCOMM_VERSION_FILE}
+    DEPENDS 
+        ${CMAKE_CURRENT_SOURCE_DIR}/version.info
+    VERBATIM
+  )
+  add_custom_target(version_info ALL
+    DEPENDS ${HCOMM_VERSION_FILE}
+  )
+
+  install(FILES ${HCOMM_VERSION_FILE}
       DESTINATION share/info/hcomm
   )
   install(FILES ${CONF_FILES}

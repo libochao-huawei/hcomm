@@ -57,6 +57,11 @@ namespace hccl
     constexpr u32 DEVICE_FOUR = 4;
     constexpr u32 DEVICE_TWO = 2;
     constexpr u32 DEVICE_ONE = 1;
+    constexpr u64 KB2B = 1024;
+    constexpr u64 FACTOR_TWO = 2;
+    constexpr float BASE_COMM_LATENCY  = 13.0; // 通信静态时延（us）;
+    constexpr u64 MULTIPLIER_MS2US = 1000;  // 毫秒转换成微秒
+    constexpr u64 MULTIPLIER_S2MS = 1000;  // 秒转换成毫秒
 
     using ResDeviceMemMap = std::map<std::string, DeviceMem>;
 
@@ -252,6 +257,7 @@ namespace hccl
         bool is310PDuoCard_;
         bool multiModuleDiffDeviceNumMode_;
         bool multiSuperPodDiffServerNumMode_;
+        bool multiSuperPodDiffDeviceNumMode_;
         bool isUsedInterHccsMode_ = false;
         bool useSuperPodMode_ = false;
         s32 pid_ = 0;

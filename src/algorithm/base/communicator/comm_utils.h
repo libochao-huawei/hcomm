@@ -29,6 +29,9 @@ enum CommPlane {
     COMM_COMBINE_ORDER, // 打平通信域，按rank排序
     COMM_LEVEL0_ANYPATH_SDMA,  // anypath特性使用
     COMM_LEVEL1_ANYPATH_SDMA, // anypath特性使用
+    COMM_LEVEL0_LOGICAL, //环内
+    COMM_LEVEL1_LOGICAL, //环间
+    COMM_ARS, //超节点内给ARS使用
     COMM_LEVEL_RESERVED,
 };
 

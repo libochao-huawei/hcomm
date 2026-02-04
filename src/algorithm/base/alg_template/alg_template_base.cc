@@ -378,7 +378,8 @@ HcclResult ExecutorBase::Prepare(const Stream &mainStream, SubCommInfo &level0Co
 HcclResult ExecutorBase::Prepare(void *inputMemPtr, DeviceMem &cclInMem, DeviceMem &outputMem,
     const Stream &stream, std::vector<Stream> &subStreams,
     std::vector<std::shared_ptr<LocalNotify>> &meshSignal, std::vector<std::shared_ptr<LocalNotify>> &meshSignalAux,
-    GroupSlicesInfo &grouSlicesInfo, const HcclReduceOp reductionOp, u32 all2allOffset, const HcclDataType dataType, bool isNeedSpaceBorrow)
+    GroupSlicesInfo &grouSlicesInfo, const HcclReduceOp reductionOp, u32 all2allOffset, const HcclDataType dataType,
+    bool isNeedSpaceBorrow, bool reverseMemUsage)
 {
     (void) inputMemPtr;
     (void) all2allOffset;
@@ -555,6 +556,24 @@ HcclResult ExecutorBase::Prepare(SubCommInfo &outerCommInfoHccs, SubCommInfo &ou
         {
             return HCCL_E_PARA;
         }
+
+// ReduceScatterDeterPipeline
+HcclResult ExecutorBase::Prepare(HcomCollOpInfo *opInfo, DeviceMem &buffer, const u64 count,
+    const u64 offset, const std::vector<Slice> &slices, const SubCommInfo &level0CommInfo,
+    const SubCommInfo &level1CommInfo, Stream &mainStream, std::vector<Stream> &subStream,
+    std::vector<std::shared_ptr<LocalNotify>> &notifyMain, std::vector<std::shared_ptr<LocalNotify>> &notifySub)
+{
+    return HCCL_E_PARA;
+}
+
+// AllReduceDeterPipeline
+HcclResult ExecutorBase::Prepare(HcomCollOpInfo *opInfo, DeviceMem &inBuffer, DeviceMem &outBuffer, const u64 count,
+    const std::vector<Slice> &slices, const SubCommInfo &level0CommInfo,
+    const SubCommInfo &level1CommInfo, Stream &mainStream, std::vector<Stream> &subStream,
+    std::vector<std::shared_ptr<LocalNotify>> &notifyMain, std::vector<std::shared_ptr<LocalNotify>> &notifySub)
+{
+    return HCCL_E_PARA;
+}
 
 HcclResult ExecutorBase::RegisterProfiler(s32 planeId, s32 stage, s32 step, const Stream &stream)
 {

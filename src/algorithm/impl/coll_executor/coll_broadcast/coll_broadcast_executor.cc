@@ -59,7 +59,7 @@ HcclResult CollBroadcastExecutor::Orchestrate(OpParam& param, AlgResourceRespons
         execMem.outputMem = algRes.paramOutputMem;
         ret = KernelRunIntraServerPre(param, execMem);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[CollBroadcastExecutor][Orchestrate]errNo[0x%016llx]Broadcast excutor level0 failed",
+            HCCL_ERROR("[CollBroadcastExecutor][Orchestrate]errNo[0x%016llx]Broadcast executor level0 failed",
                 HCCL_ERROR_CODE(ret)), ret);
 
         // 在Level1和Level2执行RunLoop
@@ -85,7 +85,7 @@ HcclResult CollBroadcastExecutor::Orchestrate(OpParam& param, AlgResourceRespons
     }
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollBroadcastExecutor][Orchestrate]errNo[0x%016llx]broadcast excutor kernel run failed",
+        HCCL_ERROR("[CollBroadcastExecutor][Orchestrate]errNo[0x%016llx]broadcast executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     // Enforce task launch at the end of Orchestrate

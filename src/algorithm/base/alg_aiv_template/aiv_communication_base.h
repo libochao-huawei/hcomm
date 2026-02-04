@@ -13,12 +13,14 @@
 
 #include "kernel_operator.h"
 #include "sync_interface.h"
+#include "aiv_npu_direct_base.h"
 
 using namespace AscendC;
 
 constexpr uint32_t MAX_RANK_SIZE = 16; // server内最大卡数
 constexpr uint32_t MAX_RANK_SIZE_A3 = 768; // 超节点内最大卡数
 constexpr uint32_t MAX_TARGET_NUM = 20; // 最大轮数
+constexpr uint32_t MAX_RANK_SIZE_RDMA = 64; // A2跨机支持最大卡数
 
 struct ExtraArgs {
     uint64_t sendCountMatrix[MAX_RANK_SIZE * MAX_RANK_SIZE] = {};
@@ -45,10 +47,15 @@ using AivSuperKernelArgs = struct AivSuperKernelArgsDef {
     uint64_t dataType;
     uint64_t unitSize;
     uint64_t reduceOp;
-    int64_t blockdim;
+    int64_t numBlocks;
     int32_t tag; // 第几次调用，定时重置成1
     int64_t clearEnable;
 };
+
+using AivRdmaArgs = struct AivRdmaArgsDef {
+    GM_ADDR buffers[MAX_RANK_SIZE_RDMA * 2] = {}; // 注册的CCL地址，所有卡可访问
+};
+
 enum class AivNotifyType {
     ACK,
     DataSignal,
@@ -87,7 +94,8 @@ GM_ADDR buffOut12, GM_ADDR buffOut13, GM_ADDR buffOut14, GM_ADDR buffOut15, \
 GM_ADDR input, GM_ADDR output, uint32_t rank, uint32_t rankSize, uint64_t len, \
 uint32_t dataType, uint32_t reduceOp, uint32_t root, int32_t tag, bool isOpBase, uint64_t bufferSize, \
 int32_t aivRdmaStep, bool useAivRdmaSmall, int32_t serverNum, uint32_t devType, GM_ADDR headCountMem, \
-GM_ADDR tailCountMem, GM_ADDR addOneMem, uint32_t counterMemSize, bool isEnableCounter, uint32_t deterministic
+GM_ADDR tailCountMem, GM_ADDR addOneMem, uint32_t counterMemSize, bool isEnableCounter, uint32_t deterministic, \
+uint64_t rmaInfo
 
 #define KERNEL_ARGS_CALL \
 buffIn0, buffIn1, buffIn2, buffIn3, buffIn4, buffIn5, buffIn6, buffIn7, \
@@ -95,7 +103,7 @@ buffIn8, buffIn9, buffIn10, buffIn11, buffIn12, buffIn13, buffIn14, buffIn15, \
 buffOut0, buffOut1, buffOut2, buffOut3, buffOut4, buffOut5, buffOut6, buffOut7, \
 buffOut8, buffOut9, buffOut10, buffOut11, buffOut12, buffOut13, buffOut14, buffOut15, \
 input, output, rank, rankSize, len, dataType, reduceOp, root, tag, isOpBase, bufferSize, aivRdmaStep, useAivRdmaSmall, \
-serverNum, devType, headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter, deterministic
+serverNum, devType, headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter, deterministic, rmaInfo
 
 #define KERNEL_CLASS_INIT \
 buffIn0, buffIn1, buffIn2, buffIn3, buffIn4, buffIn5, buffIn6, buffIn7, \
@@ -163,15 +171,16 @@ constexpr uint64_t AIV_REDUCE_SCATTER_BIG_SIZE = 190 * 1024;
 constexpr uint32_t AIV_A3_CROSSNODE_TINY_SIZE = 28 * 1024;
 constexpr uint32_t AIV_A3_CROSSNODE_SMALL_SIZE = 112 * 1024;
 constexpr uint32_t AIV_A3_CROSSNODE_MID_SIZE = 448 * 1024;
-constexpr uint32_t BLOCK_DIM_THREE_PER_RANK_A3 = 3;
-constexpr uint32_t BLOCK_DIM_FOUR_PER_RANK_A3 = 4;
-constexpr uint32_t MAX_BLOCK_DIM = 48;
+constexpr uint32_t NUM_BLOCKS_THREE_PER_RANK_A3 = 3;
+constexpr uint32_t NUM_BLOCKS_FOUR_PER_RANK_A3 = 4;
+constexpr uint32_t MAX_NUM_BLOCKS = 48;
 
 constexpr uint32_t TAG_MOVE_LEFT_BITS = 15;
 
 constexpr uint64_t UB_ALIGN_SIZE = 32;
 constexpr uint64_t UB_FLAG_SIZE = 32;
 constexpr uint64_t UB_FLAG_SIZE_4 = UB_FLAG_SIZE * 4;
+constexpr uint64_t UB_FLAG_SIZE_7 = UB_FLAG_SIZE * 7;
 constexpr uint64_t UB_FLAG_SIZE_8 = UB_FLAG_SIZE * 8;
 constexpr uint64_t UB_MAX_DATA_SIZE = 190 * 1024;
 constexpr uint64_t UB_DB_DATA_BATCH_SIZE = UB_MAX_DATA_SIZE / 2;
@@ -184,11 +193,14 @@ constexpr uint64_t FLAG_ONE_OFFSET = 0;
 constexpr uint64_t FLAG_TWO_OFFSET = FLAG_SIZE;
 constexpr uint64_t FLAG_THREE_OFFSET = FLAG_SIZE * 2;
 constexpr uint64_t FLAG_FOUR_OFFSET = FLAG_SIZE * 3;
-constexpr uint32_t HALF_MAX_BLOCK_DIM = 24;
-constexpr uint32_t ONE_THIRD_MAX_BLOCK_DIM = 16;
-constexpr uint32_t ONE_FOURTH_MAX_BLOCK_DIM = 12;
-constexpr uint32_t ONE_SIXTH_MAX_BLOCK_DIM = 8;
-constexpr uint32_t ONE_EIGHTH_MAX_BLOCK_DIM = 6;
+constexpr uint64_t FLAG_FIVE_OFFSET = FLAG_SIZE * 4;
+constexpr uint64_t FLAG_SIX_OFFSET = FLAG_SIZE * 5;
+constexpr uint64_t FLAG_SEVEN_OFFSET = FLAG_SIZE * 6;
+constexpr uint32_t HALF_MAX_NUM_BLOCKS = 24;
+constexpr uint32_t ONE_THIRD_MAX_NUM_BLOCKS = 16;
+constexpr uint32_t ONE_FOURTH_MAX_NUM_BLOCKS = 12;
+constexpr uint32_t ONE_SIXTH_MAX_NUM_BLOCKS = 8;
+constexpr uint32_t ONE_EIGHTH_MAX_NUM_BLOCKS = 6;
 constexpr uint64_t DETERMINISTIC_RANKSIZE = 4;
 
 constexpr uint64_t IDX_0 = 0;
@@ -221,6 +233,7 @@ constexpr uint32_t MAX_FLAG_SIZE_PER_KERNEL = 6 * MAX_RANK_SIZE * FLAG_SIZE;
 #define AIV_REDUCE_SCATTER_DETER_910B_MIDDATA 3
 #define AIV_ALL_REDUCE_DETER_910B_BIGDATA 4
 #define AIV_REDUCE_SCATTER_DETER_910B_BIGDATA 5
+#define AIV_ALL_TO_ALL_910B_DIRECT_FULLMESH 6
 
 
 #define BASE_FLAG_OFFSET (MAX_FLAG_SIZE_PER_KERNEL)
@@ -259,13 +272,13 @@ public:
         tag_ = tag;
 
         useDoubleBuffer_ = useDoubleBuffer;
-        blockdim_ = block_num;
+        numBlocks_ = block_num;
 
-        localOffset = (rankSize_ * BLOCK_DIM_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
-        multiOffset = MAX_BLOCK_DIM * DOUBLE * FLAG_SIZE+ localOffset;
-        pingpongOffset = multiOffset + DOUBLE * DOUBLE * BLOCK_DIM_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
+        localOffset = (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
+        multiOffset = MAX_NUM_BLOCKS * DOUBLE * FLAG_SIZE+ localOffset;
+        pingpongOffset = multiOffset + DOUBLE * DOUBLE * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
         countOffset = DOUBLE * pingpongOffset;
-        seperateOffset = countOffset + BLOCK_DIM_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
+        seperateOffset = countOffset + NUM_BLOCKS_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
         logLevel_ = GetLogLevel();
         uint64_t offset = (logLevel_ == 1) ? (tag_ & 1 ? INFO_EVEN_BUFFER_OFFSET : INFO_ODD_BUFFER_OFFSET) : INFO_EVEN_BUFFER_OFFSET;
         AscendC::InitDump(false, GM_OUT[rank_] + offset, ONE_CORE_DUMP_SIZE);
@@ -305,7 +318,7 @@ public:
         tag_ = args->tag;
         dataType_ = args->dataType;
         unitSize_ = args->unitSize;
-        blockdim_ = args->blockdim;
+        numBlocks_ = args->numBlocks;
  
         pipe.InitBuffer(localFlagBuf, UB_FLAG_SIZE_4);
         localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_ONE_OFFSET);
@@ -313,11 +326,11 @@ public:
         localCheckGETensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_THREE_OFFSET);
         localGetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_FOUR_OFFSET);
 
-        localOffset = (rankSize_ * BLOCK_DIM_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
-        multiOffset = MAX_BLOCK_DIM * DOUBLE * FLAG_SIZE+ localOffset;
-        pingpongOffset = multiOffset + DOUBLE * DOUBLE * BLOCK_DIM_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
+        localOffset = (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
+        multiOffset = MAX_NUM_BLOCKS * DOUBLE * FLAG_SIZE+ localOffset;
+        pingpongOffset = multiOffset + DOUBLE * DOUBLE * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
         countOffset = DOUBLE * pingpongOffset;
-        seperateOffset = countOffset + BLOCK_DIM_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
+        seperateOffset = countOffset + NUM_BLOCKS_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
         
         if (len_ * (unitSize_) > threshold) {
             useDoubleBuffer_ = true;
@@ -374,6 +387,63 @@ public:
         GM_OUT[IDX_13] = buffOut13;
         GM_OUT[IDX_14] = buffOut14;
         GM_OUT[IDX_15] = buffOut15;
+    }
+
+    __aicore__ inline void InitForRDMA(GM_ADDR buffIn0, GM_ADDR buffIn1, GM_ADDR buffIn2, GM_ADDR buffIn3, GM_ADDR buffIn4,
+                                GM_ADDR buffIn5, GM_ADDR buffIn6, GM_ADDR buffIn7, GM_ADDR buffIn8, GM_ADDR buffIn9,
+                                GM_ADDR buffIn10, GM_ADDR buffIn11, GM_ADDR buffIn12, GM_ADDR buffIn13,
+                                GM_ADDR buffIn14, GM_ADDR buffIn15, GM_ADDR buffOut0, GM_ADDR buffOut1,
+                                GM_ADDR buffOut2, GM_ADDR buffOut3, GM_ADDR buffOut4, GM_ADDR buffOut5,
+                                GM_ADDR buffOut6, GM_ADDR buffOut7, GM_ADDR buffOut8, GM_ADDR buffOut9,
+                                GM_ADDR buffOut10, GM_ADDR buffOut11, GM_ADDR buffOut12, GM_ADDR buffOut13,
+                                GM_ADDR buffOut14, GM_ADDR buffOut15, uint32_t rank, uint32_t rankSize,
+                                uint32_t dataType, uint32_t reduceOp, uint32_t root, int32_t tag, GM_ADDR headCountMem,
+                                GM_ADDR tailCountMem, GM_ADDR addOneMem, uint32_t counterMemSize, bool isEnableCounter,
+                                bool useDoubleBuffer)
+    {
+        rank_ = rank;
+        rankSize_ = rankSize;
+        reduceOp_ = reduceOp;
+        useDoubleBuffer_ = useDoubleBuffer;
+        numBlocks_ = block_num;
+        tag_ = tag;
+
+        localOffset = (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
+        multiOffset = MAX_NUM_BLOCKS * DOUBLE * FLAG_SIZE+ localOffset;
+        pingpongOffset = multiOffset + DOUBLE * DOUBLE * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
+        countOffset = DOUBLE * pingpongOffset;
+        seperateOffset = countOffset + NUM_BLOCKS_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
+
+        pipe.InitBuffer(localFlagBuf, UB_FLAG_SIZE_7);
+        localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_ONE_OFFSET);
+        localCheckTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_TWO_OFFSET);
+        localCheckGETensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_THREE_OFFSET);
+        localGetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_FOUR_OFFSET);
+        ubLocal = localFlagBuf.GetWithOffset<uint64_t>(UB_FLAG_PAD_COUNT, FLAG_FIVE_OFFSET);
+        ubLocalHead = localFlagBuf.GetWithOffset<uint32_t>(UB_FLAG_PAD_COUNT, FLAG_SIX_OFFSET);
+        bufferArgsTensor = localFlagBuf.GetWithOffset<uint64_t>(UB_FLAG_PAD_COUNT, FLAG_SEVEN_OFFSET);
+
+        pipe.InitBuffer(flagBatchSetQue, 1, UB_FLAG_SIZE_8); // 最多支持同时set8个flag值，256B可存放32个u64，最多2组16rank
+        pipe.InitBuffer(flagBatchCheckQue, 1, UB_FLAG_SIZE_8); // 最多支持同时check8个flag值
+
+        if (useDoubleBuffer) {
+            pipe.InitBuffer(inOutQue, DOUBLE, UB_DB_DATA_BATCH_SIZE); // double buffer
+        } else {
+            pipe.InitBuffer(inOutQue, 1, UB_MAX_DATA_SIZE);
+        }
+
+        pipe.InitBuffer(flagInQue, AIV_PING_PONG_FACTOR_TWO, UB_FLAG_SIZE);
+        InitBuffArrayForRMDA(buffOut1);
+        InitOpCounter(headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter);
+    }
+
+    __aicore__ inline void InitBuffArrayForRMDA(GM_ADDR commInfoAddr)
+    {
+        __gm__ AivRdmaArgs* args = reinterpret_cast<__gm__ AivRdmaArgs*>(commInfoAddr);
+        for (uint32_t i = 0; i < MAX_RANK_SIZE_RDMA; i++) {
+            GM_IN_RDMA[i] = args->buffers[2 * i];
+            GM_OUT_RDMA[i] = args->buffers[2 * i + 1];
+        }
     }
 
     template<typename T>
@@ -434,6 +504,9 @@ public:
 
     __aicore__ inline int32_t CountWait(int32_t recordRank, int32_t index);
 
+    __aicore__ inline void AIVRDMAPostSend(GM_ADDR srcDmaAddr, GM_ADDR destDmaAddr, uint64_t destRankId,
+        uint64_t messageLen, __gm__ HcclRMAInfo* QpInfo, bool isLocalOutput, bool isRemoteOutput);
+
     __aicore__ inline void Barrier(uint32_t step);
  
     __aicore__ inline void ClearFlag();
@@ -472,6 +545,8 @@ public:
 //protected:
     GM_ADDR GM_IN[MAX_RANK_SIZE];
     GM_ADDR GM_OUT[MAX_RANK_SIZE];
+    GM_ADDR GM_IN_RDMA[MAX_RANK_SIZE_RDMA];
+    GM_ADDR GM_OUT_RDMA[MAX_RANK_SIZE_RDMA];
 
     uint32_t rank_;
     uint32_t rankSize_;
@@ -481,7 +556,7 @@ public:
  
     uint64_t len_;
     int32_t tag_;
-    int32_t blockdim_;
+    int32_t numBlocks_;
     int32_t logLevel_;
 
     bool useDoubleBuffer_;
@@ -492,6 +567,9 @@ public:
     LocalTensor<int32_t> localCheckTensor;
     LocalTensor<int32_t> localCheckGETensor;
     LocalTensor<int32_t> localGetTensor;
+    LocalTensor<uint64_t> ubLocal;
+    LocalTensor<uint32_t> ubLocalHead;
+    LocalTensor<uint64_t> bufferArgsTensor;
 
     TQue<QuePosition::VECOUT, 1> flagBatchSetQue;
     TQue<QuePosition::VECIN, 1> flagBatchCheckQue;
@@ -552,12 +630,12 @@ __aicore__ inline void AivCommBase::ClearFlag()
  
 __aicore__ inline void AivCommBase::BlockSync()
 {
-    uint32_t flagOffset = SYNC_BUFFER_OFFSET + 2 * FLAG_SIZE * blockdim_;
+    uint32_t flagOffset = SYNC_BUFFER_OFFSET + 2 * FLAG_SIZE * numBlocks_;
     __gm__ int32_t *ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset);
     if (GetBlockIdx() == 0) {
         //通知其他核
         pipe_barrier(PIPE_ALL);
-        for (int i = 1; i < blockdim_; i++) {
+        for (int i = 1; i < numBlocks_; i++) {
             SetSignalValue(ctrlFlagsGM + i * FLAG_SIZE, localSetTensor, 1);
         }
         pipe_barrier(PIPE_ALL);
@@ -796,7 +874,7 @@ __aicore__ inline void AivCommBase::Record(uint32_t tag, int32_t waitRank, AivNo
 __aicore__ inline void AivCommBase::LocalRecord(uint32_t tag, int32_t blockIdx, AivNotifyType notifyType, bool ifPingpong)
 {
     int32_t OffSet = ifPingpong ? pingpongOffset : 0;
-    int32_t recordOffset = localOffset + (int32_t(notifyType) * MAX_BLOCK_DIM + blockIdx) * FLAG_SIZE;
+    int32_t recordOffset = localOffset + (int32_t(notifyType) * MAX_NUM_BLOCKS + blockIdx) * FLAG_SIZE;
     __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[rank_]+ OffSet + recordOffset);
     SetSignalValue(ctrlFlagGM, localSetTensor, tag);
 }
@@ -804,8 +882,8 @@ __aicore__ inline void AivCommBase::LocalRecord(uint32_t tag, int32_t blockIdx, 
 __aicore__ inline void AivCommBase::Record1vN(uint32_t tag, CommPattern pattern, AivNotifyType notifyType, int32_t block, bool ifPingpong)
 {
     int32_t OffSet = ifPingpong ? pingpongOffset : 0;
-    int32_t recordOffset = multiOffset + (int32_t(pattern) * 2 * BLOCK_DIM_FOUR_PER_RANK_A3 +
-        int32_t(notifyType) * BLOCK_DIM_FOUR_PER_RANK_A3 + block) * ATOMIC_FLAG_SIZE;
+    int32_t recordOffset = multiOffset + (int32_t(pattern) * 2 * NUM_BLOCKS_FOUR_PER_RANK_A3 +
+        int32_t(notifyType) * NUM_BLOCKS_FOUR_PER_RANK_A3 + block) * ATOMIC_FLAG_SIZE;
     __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[rank_]+ OffSet + recordOffset);
     SetSignalValue(ctrlFlagGM, localSetTensor, tag);
 }
@@ -813,8 +891,8 @@ __aicore__ inline void AivCommBase::Record1vN(uint32_t tag, CommPattern pattern,
 __aicore__ inline void AivCommBase::RecordNv1(uint32_t tag, int32_t waitRank, AivNotifyType notifyType, int32_t block, bool ifPingpong)
 {
     int32_t OffSet = ifPingpong ? pingpongOffset : 0;
-    int32_t recordOffset = multiOffset + 2 * 2 * BLOCK_DIM_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE +
-        (int32_t(waitRank == rank_) * BLOCK_DIM_FOUR_PER_RANK_A3 * 2 + int32_t(notifyType) * BLOCK_DIM_FOUR_PER_RANK_A3
+    int32_t recordOffset = multiOffset + 2 * 2 * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE +
+        (int32_t(waitRank == rank_) * NUM_BLOCKS_FOUR_PER_RANK_A3 * 2 + int32_t(notifyType) * NUM_BLOCKS_FOUR_PER_RANK_A3
         + block) * ATOMIC_FLAG_SIZE;
     __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[waitRank]+ OffSet + recordOffset);
     AddSignalValue(ctrlFlagGM, localSetTensor, tag);
@@ -838,7 +916,7 @@ __aicore__ inline void AivCommBase::Wait(uint32_t tag, int32_t recordRank, AivNo
 __aicore__ inline void AivCommBase::LocalWait(uint32_t tag, int32_t blockIdx, AivNotifyType notifyType, bool ifpingpong)
 {
     int32_t OffSet = ifpingpong ? pingpongOffset : 0;
-    int32_t waitOffset = localOffset + (int32_t(notifyType) * MAX_BLOCK_DIM + blockIdx) * FLAG_SIZE;
+    int32_t waitOffset = localOffset + (int32_t(notifyType) * MAX_NUM_BLOCKS + blockIdx) * FLAG_SIZE;
     __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[rank_] + OffSet + waitOffset);
     WaitSignalValue(ctrlFlagGM, localCheckTensor, tag);
 }
@@ -846,8 +924,8 @@ __aicore__ inline void AivCommBase::LocalWait(uint32_t tag, int32_t blockIdx, Ai
 __aicore__ inline void AivCommBase::WaitNv1(uint32_t tag, int32_t recordRank, AivNotifyType notifyType, int32_t block, bool ifPingpong)
 {
     int32_t OffSet = ifPingpong ? pingpongOffset : 0;
-    int32_t waitOffset = multiOffset + (int32_t(recordRank == rank_) * BLOCK_DIM_FOUR_PER_RANK_A3 * 2 +
-        int32_t(notifyType) * BLOCK_DIM_FOUR_PER_RANK_A3 + block) * ATOMIC_FLAG_SIZE;
+    int32_t waitOffset = multiOffset + (int32_t(recordRank == rank_) * NUM_BLOCKS_FOUR_PER_RANK_A3 * 2 +
+        int32_t(notifyType) * NUM_BLOCKS_FOUR_PER_RANK_A3 + block) * ATOMIC_FLAG_SIZE;
     __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[recordRank]+ OffSet + waitOffset);
     WaitSignalValue(ctrlFlagGM, localCheckTensor, tag);
 }
@@ -855,9 +933,9 @@ __aicore__ inline void AivCommBase::WaitNv1(uint32_t tag, int32_t recordRank, Ai
 __aicore__ inline void AivCommBase::Wait1vN(uint32_t tag, CommPattern pattern, bool ifClear, AivNotifyType notifyType, int32_t block, bool ifPingpong)
 {
     int32_t OffSet = ifPingpong ? pingpongOffset : 0;
-    int32_t waitOffset = multiOffset + 2 * 2 * BLOCK_DIM_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE +
-        (int32_t(pattern) * BLOCK_DIM_FOUR_PER_RANK_A3 * 2 +
-        int32_t(notifyType) * BLOCK_DIM_FOUR_PER_RANK_A3 + block) * ATOMIC_FLAG_SIZE;
+    int32_t waitOffset = multiOffset + 2 * 2 * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE +
+        (int32_t(pattern) * NUM_BLOCKS_FOUR_PER_RANK_A3 * 2 +
+        int32_t(notifyType) * NUM_BLOCKS_FOUR_PER_RANK_A3 + block) * ATOMIC_FLAG_SIZE;
     __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[rank_]+ OffSet + waitOffset);
     WaitSignalValue(ctrlFlagGM, localCheckTensor, tag);
     PipeBarrier<PIPE_ALL>();
@@ -875,6 +953,94 @@ __aicore__ inline int32_t AivCommBase::CountWait(int32_t recordRank, int32_t ind
     wait_flag(PIPE_S, PIPE_MTE2, EVENT_ID0);
     flagInQue.FreeTensor(flag);
     return flagValue;
+}
+
+__aicore__ inline void AivCommBase::AIVRDMAPostSend(GM_ADDR srcDmaAddr, GM_ADDR destDmaAddr, uint64_t destRankId,
+    uint64_t messageLen, __gm__ HcclRMAInfo* QpInfo, bool isLocalOutput, bool isRemoteOutput)
+{
+    auto qpNum = ((__gm__ HcclRMAInfo*)QpInfo)->qpNum;
+    auto qp_ctx_entry = (__gm__ HcclAiRMAWQ*)(((__gm__ HcclRMAInfo*)QpInfo)->sqPtr +
+        destRankId * qpNum * (uint64_t)(((__gm__ HcclRMAInfo*)QpInfo)->sizeOfRMAWQ));
+    auto mem_info_table = ((__gm__ HcclRMAInfo*)QpInfo)->memPtr;
+    auto sizeof_memdetail = ((__gm__ HcclRMAInfo*)QpInfo)->sizeOfRMAMem;
+    auto cur_rank_id = (((__gm__ HcclRMAInfo*)QpInfo)->curRankId);
+    auto sqBaseAddr = qp_ctx_entry->bufAddr;
+    auto wqeSize = qp_ctx_entry->wqeSize;
+    auto curHardwareHead = qp_ctx_entry->headAddr;
+    cacheWriteThrough((__gm__ uint8_t*)curHardwareHead, 8);
+    uint64_t curHead = *(__gm__ uint32_t*)(curHardwareHead);
+    auto curHardwareTailAddr = qp_ctx_entry->tailAddr;
+    uint64_t shift = 15U;
+    auto QP_DEPTH = qp_ctx_entry->depth;
+    PipeBarrier<PIPE_ALL>();
+
+    // Make sure we don't overflow the SQ in an infinite loop - no need to mitigate endless loop as the host
+    // will timeout and kill the kernel, same as all2all krenel if it fails to complete (e.g. in case of link loss)
+    while(1) {
+        cacheWriteThrough((__gm__ uint8_t*)curHardwareTailAddr, 8);
+        if ((curHead - *(__gm__ uint32_t*)(curHardwareTailAddr)) < QP_DEPTH - 1) {
+            break;
+        }
+        int64_t systemCycleAfter = AscendC::GetSystemCycle(); // add this line to solve slow poll CQ issue
+    }
+
+    __gm__ uint8_t* wqeAddr = (__gm__ uint8_t*)(sqBaseAddr + wqeSize * (curHead % QP_DEPTH));
+
+    // Write the WQE to GM
+    uint64_t ownBit = (curHead >> shift) & 1U;
+    uint32_t byte_4 = 3U;                       // [0:4] opcode=0x3(RDMA_WRITE)
+    byte_4 |= ((~ownBit) << 7U) & (1U << 7U);   // [7] owner_bit
+    byte_4 |= 1U << 8U;                         // [8:8] IBV_SEND_SIGNALED
+
+    *(__gm__ uint32_t*)(wqeAddr) = byte_4;          // Control set by local parameter see above lines
+    *(__gm__ uint32_t*)(wqeAddr + 4) = messageLen;  // message size
+    *(__gm__ uint32_t*)(wqeAddr + 8) = 0;           // immtdata is always 0 till we provide poll CQ flow in AIV
+    *(__gm__ uint32_t*)(wqeAddr + 12) = 1U << 24U;  // [120:127] num_sge = 1
+    *(__gm__ uint32_t*)(wqeAddr + 16) = 0;          // [128:151] start_sge_idx = 0;
+    __gm__ HcclAiRMAMemInfo* memDetail = (__gm__ HcclAiRMAMemInfo*)(mem_info_table + sizeof_memdetail * destRankId);
+    HcclAiRMAMemType remoteType = isRemoteOutput ? HcclAiRMAMemType::REMOTE_OUTPUT : HcclAiRMAMemType::REMOTE_INPUT;
+    *(__gm__ uint32_t*)(wqeAddr + 20) = ((__gm__ MemDetails*)(memDetail->memDetailPtr +
+        memDetail->sizeOfMemDetails * static_cast<uint32_t>(remoteType)))->key;
+    *(__gm__ uint64_t*)(wqeAddr + 24) = (uint64_t)destDmaAddr; // destination VA
+
+    // Setup SGE and write to GM
+    __gm__ uint8_t* sgeAddr = wqeAddr + sizeof(struct hns_roce_rc_sq_wqe);
+    *(__gm__ uint32_t*)(sgeAddr) = messageLen;
+    memDetail = (__gm__ HcclAiRMAMemInfo*)(mem_info_table + sizeof_memdetail * destRankId);
+    HcclAiRMAMemType localType = isLocalOutput ? HcclAiRMAMemType::LOCAL_OUTPUT : HcclAiRMAMemType::LOCAL_INPUT;
+    *(__gm__ uint32_t*)(sgeAddr + sizeof(uint32_t)) = ((__gm__ MemDetails*)(memDetail->memDetailPtr +
+        memDetail->sizeOfMemDetails * static_cast<uint32_t>(localType)))->key; // L_Key
+    *(__gm__ uint64_t*)(sgeAddr + 2 * sizeof(uint32_t)) = (uint64_t)srcDmaAddr; // src VA addr memory registered by RNIC
+
+    // wqe & sge cache flush
+    cacheWriteThrough(wqeAddr, sizeof(struct hns_roce_rc_sq_wqe) + sizeof(struct hns_roce_lite_wqe_data_seg));
+    PipeBarrier<PIPE_ALL>();
+    curHead++;
+
+    uint64_t doorBellInfo = 0;
+    doorBellInfo |= qp_ctx_entry->wqn; // [0:23] DB_TAG (qp_num)
+    doorBellInfo |= 0UL << 24UL; // [24:27] DB_CMD = HNS_ROCE_V2_SQ_DB (0)
+    doorBellInfo |= (curHead % 65536UL) << 32UL; // [32:47] DB_PI = sq.head
+    doorBellInfo |= (uint64_t)(qp_ctx_entry->sl) << 48UL; // [48:50] DB_SL = qp.sl
+
+    __gm__ uint64_t* doorBellAddr = (__gm__ uint64_t* )(qp_ctx_entry->dbAddr);
+    PipeBarrier<PIPE_ALL>();
+
+    ubLocal.SetValue(0, doorBellInfo);
+    AscendC::GlobalTensor<uint64_t> DBGlobalTensor;
+    DBGlobalTensor.SetGlobalBuffer(doorBellAddr);
+    AscendC::DataCopyExtParams copyParams{1, 1 * sizeof(uint64_t), 0, 0, 0};
+    PipeBarrier<PIPE_ALL>();
+    AscendC::DataCopyPad(DBGlobalTensor, ubLocal, copyParams);
+    PipeBarrier<PIPE_ALL>();
+
+    ubLocalHead.SetValue(0, (uint32_t)curHead);
+    AscendC::GlobalTensor<uint32_t> HeadGlobalTensor;
+    HeadGlobalTensor.SetGlobalBuffer((__gm__ uint32_t*)curHardwareHead);
+    AscendC::DataCopyExtParams copyParamsHead{1, 1 * sizeof(uint32_t), 0, 0, 0};
+    PipeBarrier<PIPE_ALL>();
+    AscendC::DataCopyPad(HeadGlobalTensor, ubLocalHead, copyParamsHead);
+    PipeBarrier<PIPE_ALL>();
 }
 
 #endif  /* AIV_COMMUNICATION_BASE_H */

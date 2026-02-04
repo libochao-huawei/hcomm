@@ -72,9 +72,7 @@ public:
 
 private:
     bool ReadValidMsg(HcclApi::HcclMsg *rMsg, HcclApi::HcclMsg *msg, bool needReProcess, uint32_t msgPos, u32 rankSize);
-    uint64_t GenXorForMsgExt(int32_t idx, u32 rankSize);
     bool ReadValidMsgExtArea(int32_t idx, u32 rankSize);
-    void GenMsgByTaskParam(AivAicpuOpParam *outMsg);
 
 private:
     uint64_t workSpace_ = 0;
@@ -96,7 +94,7 @@ private:
     u32 blockNum_ = 1U;
     u32 totalQueueNum_ = 0U;
     BarrierInfo barrierFlags_[MAX_COMM_CTX_NUM][HcclApi::MAX_QUE_NUM];
-    u32 barrierFinishCnt_[MAX_AICPU_BLOCK_DIM];
+    u32 barrierFinishCnt_[MAX_AICPU_NUM_BLOCKS];
     u64 tilingBaseAddr_;
 };
 

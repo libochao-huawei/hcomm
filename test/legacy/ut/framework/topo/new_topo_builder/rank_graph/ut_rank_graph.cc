@@ -1,0 +1,430 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include "gtest/gtest.h"
+#include <mockcpp/mokc.h>
+#include <mockcpp/mockcpp.hpp>
+#include "rank_gph.h"
+#include "rank_graph_builder.h"
+#include "phy_topo_builder.h"
+#include "detour_service.h"
+ 
+using namespace Hccl;
+ 
+class RankGraphTest : public testing::Test {
+protected:
+    static void SetUpTestCase() {
+        if (setenv("HCCL_DETOUR", "detour:1", 1) == -1) {
+            perror("setenv");
+        }
+
+        // 获取环境变量
+        char *env_var = getenv("HCCL_DETOUR");
+        if (env_var != nullptr) {
+            std::cout << "HCCL_DETOUR: " << env_var << std::endl;
+        } else {
+            std::cout << "HCCL_DETOUR is not set" << std::endl;
+        }
+
+        std::cout << "VirtTopoBuilderTest SetUP" << std::endl;
+    }
+
+    static void TearDownTestCase() {
+        if (unsetenv("HCCL_DETOUR") == -1) {
+            perror("unsetenv");
+        }
+        char *env_var = getenv("HCCL_DETOUR");
+        if (env_var != nullptr) {
+            std::cout << "HCCL_DETOUR: " << env_var << std::endl;
+        } else {
+            std::cout << "HCCL_DETOUR has been successfully unset" << std::endl;
+        }
+
+        std::cout << "VirtTopoBuilderTest TearDown" << std::endl;
+    }
+ 
+    virtual void SetUp()
+    {
+        std::cout << "A Test case in RankGraphTest SetUP" << std::endl;
+    }
+ 
+    virtual void TearDown()
+    {
+        GlobalMockObject::verify();
+        std::cout << "A Test case in RankGraphTest TearDown" << std::endl;
+    }
+    RankId myRank = 0;
+};
+
+ // **单个测试用例命名**：`Ut_<API名称>_When_<测试条件>_Expect_<预期行为>`（大驼峰命名）  
+ // 例如：`ut_HcclGetCommName_When_Normal_Expect_ReturnIsHCCL_SUCCESS` 用例名应该要按照这个格式吧
+
+std::shared_ptr<NetInstance::Peer> createPeer(int rankId = 0, int localId = 0, DeviceId deviceId = 0) {
+    return std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
+}
+
+TEST_F(RankGraphTest, ut_AddPeer_When_Normal_Expect_SUCCESS) {
+    RankGraph rankGraph(myRank);
+    auto peer = createPeer();
+    EXPECT_NO_THROW(rankGraph.AddPeer(peer));
+    EXPECT_EQ(false, rankGraph.HasRank(3));
+    EXPECT_EQ(true, rankGraph.HasRank(peer->GetRankId()));
+}
+
+TEST_F(RankGraphTest, ut_AddPeer_When_NullPeer_Expect_NullPtrException) {
+    RankGraph rankGraph(myRank);
+    EXPECT_THROW(rankGraph.AddPeer(nullptr), NullPtrException);
+}
+
+TEST_F(RankGraphTest, ut_AddPeer_When_Init_Finshed_Expect_InternalException) {
+    RankGraph rankGraph(myRank);
+    rankGraph.InitFinish();
+    auto peer = createPeer();
+    EXPECT_THROW(rankGraph.AddPeer(peer), InternalException);
+}
+ 
+TEST_F(RankGraphTest, ut_AddNetInstance_When_Normal_Expect_SUCCESS) {
+    s32 netLayer = 0;
+    string netInstId = "test";
+    RankGraph rankGraph(myRank);
+    auto netInstance = std::make_shared<InnerNetInstance>(netLayer, netInstId);
+    EXPECT_NO_THROW(rankGraph.AddNetInstance(netInstance));
+    auto netInstResp = rankGraph.GetNetInstanceByNetInstId(netLayer, netInstId);
+    EXPECT_NE(nullptr, netInstResp);
+}
+
+TEST_F(RankGraphTest, ut_AddNetInstance_When_NullPeer_Expect_NullPtrException) {
+    RankGraph rankGraph(myRank);
+    EXPECT_THROW(rankGraph.AddNetInstance(nullptr), NullPtrException);
+}
+
+TEST_F(RankGraphTest, ut_AddNetInstance_When_Init_Finshed_Expect_InternalException) {
+    RankGraph rankGraph(myRank);
+    rankGraph.InitFinish();
+    auto netInstance = std::make_shared<InnerNetInstance>(0, "test");
+    EXPECT_THROW(rankGraph.AddNetInstance(netInstance), InternalException);
+}
+
+TEST_F(RankGraphTest, ut_AddNetInstance_When_Not_Include_NetInstance_RankId_Expect_InvalidParamsException) {
+    RankGraph rankGraph(myRank);
+    auto netInstance = std::make_shared<InnerNetInstance>(0, "test");
+    netInstance->AddRankId(1);
+    EXPECT_THROW(rankGraph.AddNetInstance(netInstance), InvalidParamsException);
+}
+ 
+TEST_F(RankGraphTest, ut_InitInnerRanks_When_NullPeer_Expect_NullPtrException) {
+    RankGraph rankGraph(myRank);
+    EXPECT_THROW(rankGraph.InitInnerRanks(), NullPtrException);
+}
+
+TEST_F(RankGraphTest, ut_InitInnerRanks_When_Normal_Expect_SUCCESS) {
+    RankGraph rankGraph(myRank);
+    std::shared_ptr<NetInstance> netInstance = std::make_shared<InnerNetInstance>(0, "test");
+    auto peer = createPeer(myRank, 0 , 0);
+    peer->AddNetInstance(netInstance);
+    rankGraph.AddNetInstance(netInstance);
+    rankGraph.AddPeer(peer);
+    EXPECT_NO_THROW(rankGraph.InitInnerRanks());
+}
+
+std::shared_ptr<RankGraph> create4pRankGraph(RankId myRank) {
+    RankGraph rankGraph(myRank);
+
+    s32 localId = 0;
+    DeviceId deviceId = 0;
+    IpAddress inputAddr(0);
+    std::set<std::string> ports = {"0/0", "0/2"};
+    std::set<LinkProtocol> protocals = {LinkProtocol::UB_CTP, LinkProtocol::UB_TP};
+    shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocals);
+    std::shared_ptr<NetInstance::Node> node = std::make_shared<NetInstance::Peer>(myRank, localId, localId, deviceId);
+    connInterface->SetLocalDieId(1);
+    std::shared_ptr<NetInstance> netInstLayer0_1 = std::make_shared<InnerNetInstance>(0, "layer0_1");
+    std::shared_ptr<NetInstance> netInstLayer0_2 = std::make_shared<InnerNetInstance>(0, "layer0_2");
+    std::shared_ptr<NetInstance> netInstLayer1_1 = std::make_shared<ClosNetInstance>(1, "layer1_1");
+    std::shared_ptr<NetInstance> netInstLayer1_2 = std::make_shared<ClosNetInstance>(1, "layer1_2");
+    std::shared_ptr<NetInstance> netInstLayer2 = std::make_shared<ClosNetInstance>(2, "layer2");
+    auto peer0 = createPeer(myRank, 0, 0);
+    auto peer1 = createPeer(1, 1, 1);
+    auto peer2 = createPeer(2, 2, 2);
+    auto peer3 = createPeer(3, 3, 3);
+    auto peer4 = createPeer(4, 4, 4);
+    peer0->AddConnInterface(0, connInterface);
+    peer1->AddConnInterface(0, connInterface);
+    peer2->AddConnInterface(0, connInterface);
+    peer3->AddConnInterface(0, connInterface);
+    peer0->AddNetInstance(netInstLayer0_1);
+    peer0->AddNetInstance(netInstLayer1_1);
+    peer0->AddNetInstance(netInstLayer2);
+    peer1->AddNetInstance(netInstLayer0_1);
+    peer1->AddNetInstance(netInstLayer1_1);
+    peer2->AddNetInstance(netInstLayer0_2);
+    peer2->AddNetInstance(netInstLayer1_1);
+    peer2->AddNetInstance(netInstLayer2);
+    peer3->AddNetInstance(netInstLayer0_2);
+    peer4->AddNetInstance(netInstLayer1_2);
+    
+    netInstLayer0_1->AddRankId(peer0->GetRankId());
+    netInstLayer0_1->AddRankId(peer1->GetRankId());
+    netInstLayer0_2->AddRankId(peer2->GetRankId());
+    netInstLayer0_2->AddRankId(peer3->GetRankId());
+    netInstLayer1_1->AddRankId(peer0->GetRankId());
+    netInstLayer1_1->AddRankId(peer1->GetRankId());
+    netInstLayer1_1->AddRankId(peer2->GetRankId());
+    netInstLayer2->AddRankId(peer0->GetRankId());
+    netInstLayer2->AddRankId(peer2->GetRankId());
+    netInstLayer1_2->AddRankId(peer4->GetRankId());
+
+    rankGraph.AddPeer(peer0);
+    rankGraph.AddPeer(peer1);
+    rankGraph.AddPeer(peer2);
+    rankGraph.AddPeer(peer3);
+    rankGraph.AddPeer(peer4);
+
+    rankGraph.AddNetInstance(netInstLayer0_1);
+    rankGraph.AddNetInstance(netInstLayer0_2);
+    rankGraph.AddNetInstance(netInstLayer1_1);
+    rankGraph.AddNetInstance(netInstLayer1_2);
+    rankGraph.AddNetInstance(netInstLayer2);
+    return std::make_shared<RankGraph>(rankGraph);
+}
+
+TEST_F(RankGraphTest, ut_GetLayerRanks_When_Normal_Expect_SUCCESS) {
+    auto rankGraph = create4pRankGraph(myRank);
+    EXPECT_EQ(4, rankGraph->GetLayerRanks(0));
+    EXPECT_EQ(4, rankGraph->GetLayerRanks(1));
+    EXPECT_EQ(2, rankGraph->GetLayerRanks(2));
+}
+
+TEST_F(RankGraphTest, ut_GetLocalInstRanks_When_Normal_Expect_SUCCESS) {
+    auto rankGraph = create4pRankGraph(myRank);
+    std::vector<u32> rankListLayer0;
+    std::vector<u32> rankListLayer1;
+    std::vector<u32> rankListLayer2;
+    u32 rankNumLayer0;
+    u32 rankNumLayer1;
+    u32 rankNumLayer2;
+    rankGraph->GetLocalInstRanks(0, rankListLayer0, rankNumLayer0);
+    rankGraph->GetLocalInstRanks(1, rankListLayer1, rankNumLayer1);
+    rankGraph->GetLocalInstRanks(2, rankListLayer2, rankNumLayer2);
+    
+    vector<u32> expectedRankList0 = {0, 1};
+    vector<u32> expectedRankList1 = {0, 1, 2};
+    vector<u32> expectedRankList2 = {0, 2};
+
+    EXPECT_EQ(expectedRankList0.size(), rankNumLayer0);
+    for (size_t i = 0; i < rankListLayer0.size(); ++i) {
+        EXPECT_EQ(rankListLayer0[i], rankListLayer0[i]);
+    }
+
+    EXPECT_EQ(expectedRankList1.size(), rankNumLayer1);
+    for (size_t i = 0; i < rankListLayer1.size(); ++i) {
+        EXPECT_EQ(rankListLayer1[i], rankListLayer1[i]);
+    }
+
+    EXPECT_EQ(expectedRankList2.size(), rankNumLayer2);
+    for (size_t i = 0; i < rankListLayer2.size(); ++i) {
+        EXPECT_EQ(rankListLayer2[i], rankListLayer2[i]);
+    }
+}
+
+TEST_F(RankGraphTest, ut_GetLocalInstSize_When_Normal_Expect_SUCCESS) {
+    auto rankGraph = create4pRankGraph(myRank);
+    EXPECT_EQ(2, rankGraph->GetLocalInstSize(0));
+    EXPECT_EQ(3, rankGraph->GetLocalInstSize(1));
+    EXPECT_EQ(2, rankGraph->GetLocalInstSize(2));
+}
+
+TEST_F(RankGraphTest, ut_GetNetType_When_Normal_Expect_SUCCESS) {
+    auto rankGraph = create4pRankGraph(myRank);
+    EXPECT_EQ(NetType::TOPO_FILE_DESC, rankGraph->GetNetType(0));
+    EXPECT_EQ(NetType::CLOS, rankGraph->GetNetType(1));
+    EXPECT_EQ(NetType::CLOS, rankGraph->GetNetType(2));
+}
+
+TEST_F(RankGraphTest, ut_GetNetInstanceList_When_Normal_Expect_SUCCESS) {
+    auto rankGraph = create4pRankGraph(myRank);
+    std::vector<u32> instSizeListLayer0;
+    std::vector<u32> instSizeListLayer1;
+    std::vector<u32> instSizeListLayer2;
+    u32 listSizeLayer0;
+    u32 listSizeLayer1;
+    u32 listSizeLayer2;
+    rankGraph->GetNetInstanceList(0, instSizeListLayer0, listSizeLayer0);
+    rankGraph->GetNetInstanceList(1, instSizeListLayer1, listSizeLayer1);
+    rankGraph->GetNetInstanceList(2, instSizeListLayer2, listSizeLayer2);
+    
+    vector<u32> expectedRankList0 = {2, 2};
+    vector<u32> expectedRankList1 = {3, 1};
+    vector<u32> expectedRankList2 = {2};
+
+    EXPECT_EQ(expectedRankList0.size(), listSizeLayer0);
+    for (size_t i = 0; i < instSizeListLayer0.size(); ++i) {
+        EXPECT_EQ(instSizeListLayer0[i], instSizeListLayer0[i]);
+    }
+
+    EXPECT_EQ(expectedRankList1.size(), listSizeLayer1);
+    for (size_t i = 0; i < instSizeListLayer1.size(); ++i) {
+        EXPECT_EQ(instSizeListLayer1[i], instSizeListLayer1[i]);
+    }
+
+    EXPECT_EQ(expectedRankList2.size(), listSizeLayer2);
+    for (size_t i = 0; i < instSizeListLayer2.size(); ++i) {
+        EXPECT_EQ(instSizeListLayer2[i], instSizeListLayer2[i]);
+    }
+}
+
+TEST_F(RankGraphTest, ut_IsSymmetric_When_Normal_Expect_SUCCESS) {
+    auto rankGraph = create4pRankGraph(myRank);
+    EXPECT_EQ(true, rankGraph->IsSymmetric(0));
+    EXPECT_EQ(false, rankGraph->IsSymmetric(1));
+    EXPECT_EQ(true, rankGraph->IsSymmetric(2));
+    EXPECT_THROW(rankGraph->IsSymmetric(3), NullPtrException);
+}
+
+TEST_F(RankGraphTest, ut_CreateSubRankGraph_When_Normal_Expect_SUCCESS) {
+    auto rankGraph = create4pRankGraph(myRank);
+    vector<u32> subRankIds = {0, 2};
+    std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(subRankIds);
+    subRankGraph->Dump();
+    EXPECT_EQ(1, subRankGraph->GetLocalInstSize(0));
+    EXPECT_EQ(2, subRankGraph->GetLocalInstSize(1));
+    EXPECT_EQ(2, subRankGraph->GetLocalInstSize(2));
+}
+
+TEST_F(RankGraphTest, ut_GetEndpointNum_When_Normal_Expect_SUCCESS)
+{
+    auto rankGraph = create4pRankGraph(myRank);
+    uint32_t num = 0;
+    uint32_t topoInstId = 0;
+    HcclResult ret = rankGraph->GetEndpointNum(0, topoInstId, &num);
+    EXPECT_EQ(num, 2);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankGraphTest, ut_GetEndpointNum_When_nullPeer_HCCL_E_PTR)
+{
+    RankGraph rankGraph(0);
+    uint32_t num = 0;
+    uint32_t topoInstId = 0;
+    HcclResult ret = rankGraph.GetEndpointNum(0, topoInstId, &num);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(RankGraphTest, ut_GetEndpointDesc_When_nullPeer_HCCL_E_PTR)
+{
+    RankGraph rankGraph(0);
+    uint32_t descNum = 1;
+    uint32_t topoInstId = 0;
+
+    EndpointDesc* endPointDesc = new EndpointDesc[descNum];
+    HcclResult ret = rankGraph.GetEndpointDesc(0, topoInstId, &descNum, endPointDesc);
+    delete[] endPointDesc;
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(RankGraphTest, ut_GetEndpointDesc_When_Normal_Expect_SUCCESS)
+{
+    auto rankGraph = create4pRankGraph(myRank);
+    uint32_t layer = 0;
+    uint32_t num = 2;
+    uint32_t topoInstId = 0;
+    HcclResult ret = rankGraph->GetEndpointNum(0, topoInstId, &num);
+    EXPECT_EQ(num, 2);
+
+    uint32_t descNum = num;
+    EndpointDesc* endPointDesc = new EndpointDesc[descNum];
+    ret = rankGraph->GetEndpointDesc(layer, topoInstId, &descNum, endPointDesc);
+    for (uint32_t i = 0; i < num; ++i) {
+        EXPECT_NE(endPointDesc[i].commAddr.type, COMM_ADDR_TYPE_RESERVED);
+        EXPECT_NE(endPointDesc[i].loc.locType, ENDPOINT_LOC_TYPE_RESERVED);
+        EXPECT_NE(endPointDesc[i].protocol, COMM_PROTOCOL_RESERVED);
+    }
+    delete[] endPointDesc;
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankGraphTest, ut_GetEndpointDesc_When_NumTooSmall_Expect_Return_HCCl_E_PARA) {
+    auto rankGraph = create4pRankGraph(myRank);
+    uint32_t layer = 0;
+    uint32_t topoInstId = 0;
+    uint32_t descNum = 1;
+    EndpointDesc* endPointDesc = new EndpointDesc[descNum];
+    HcclResult ret =  rankGraph->GetEndpointDesc(layer, topoInstId, &descNum, endPointDesc);
+
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    delete[] endPointDesc;
+}
+
+TEST_F(RankGraphTest, ut_GetInfo_When_Normal_Expect_SUCCESS)
+{
+    auto rankGraph = create4pRankGraph(myRank);
+    uint32_t layer = 0;
+    uint32_t num = 2;
+    uint32_t topoInstId = 0;
+
+    HcclResult ret = rankGraph->GetEndpointNum(0, topoInstId, &num);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(num, 2);
+
+    uint32_t descNum = num;
+    std::unique_ptr<EndpointDesc[]> endPointDesc(new EndpointDesc[descNum]);
+    ret = rankGraph->GetEndpointDesc(layer, topoInstId, &descNum, endPointDesc.get());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    for (uint32_t i = 0; i < num; ++i) {
+        uint32_t infoLen = sizeof(EndpointAttrBwCoeff);
+        EndpointAttrBwCoeff bwCoeff{};
+        ret = rankGraph->GetEndpointInfo(0, &endPointDesc[i], ENDPOINT_ATTR_BW_COEFF, infoLen, &bwCoeff);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+        EXPECT_EQ(bwCoeff, 2);
+
+        // 测试 DIE_ID
+        EndpointAttrDieId dieid{};
+        infoLen = sizeof(EndpointAttrDieId);
+        ret = rankGraph->GetEndpointInfo(0, &endPointDesc[i], ENDPOINT_ATTR_DIE_ID, infoLen, &dieid);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+        EXPECT_EQ(dieid, 1);
+
+        // 测试 POSITION
+        EndpointAttrLocation pos{};
+        infoLen = sizeof(EndpointAttrLocation);
+        ret = rankGraph->GetEndpointInfo(0, &endPointDesc[i], ENDPOINT_ATTR_LOCATION, infoLen, &pos);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+        EXPECT_EQ(pos, 0);
+    }
+}
+
+TEST_F(RankGraphTest, ut_GetInfo_When_infoLenTooSmall_Expect_Return_HCCL_E_PARA)
+{
+    auto rankGraph = create4pRankGraph(myRank);
+    uint32_t layer = 0;
+    uint32_t num = 2;
+    uint32_t topoInstId = 0;
+
+    HcclResult ret = rankGraph->GetEndpointNum(0, topoInstId, &num);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(num, 2);
+
+    uint32_t descNum = num;
+    std::unique_ptr<EndpointDesc[]> endPointDesc(new EndpointDesc[descNum]);
+    ret = rankGraph->GetEndpointDesc(layer, topoInstId, &descNum, endPointDesc.get());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 遍历每个端点，测试 infoLen 过小的情况
+    for (uint32_t i = 0; i < num; ++i) {
+        uint32_t actualSize = sizeof(EndpointAttrBwCoeff);
+        uint32_t infoLen = actualSize - 1;
+
+        EndpointAttrBwCoeff bwCoeff{};
+        ret = rankGraph->GetEndpointInfo(0, &endPointDesc[i], ENDPOINT_ATTR_BW_COEFF, infoLen, &bwCoeff);
+        EXPECT_EQ(ret, HCCL_E_PARA);
+    }
+}

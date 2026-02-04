@@ -384,7 +384,7 @@
 #endif
 
 /*
- * Add  the -DSECUREC_SUPPORT_FORMAT_WARNING=1  compiler option to supoort  -Wformat=2.
+ * Add  the -DSECUREC_SUPPORT_FORMAT_WARNING=1  compiler option to support  -Wformat=2.
  * Default does not check the format is that the same data type in the actual code.
  * In the product is different in the original data type definition of VxWorks and Linux.
  */

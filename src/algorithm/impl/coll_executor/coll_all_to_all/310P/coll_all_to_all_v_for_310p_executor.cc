@@ -34,12 +34,8 @@ HcclResult CollRunAlltoAllVFor310PExecutor::Orchestrate(OpParam& param, AlgResou
     ret = KernelRun(param, execMem);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollRunAlltoAllVFor310PExecutor][Orchestrate]errNo[0x%016llx]excutor run failed",
+        HCCL_ERROR("[CollRunAlltoAllVFor310PExecutor][Orchestrate]errNo[0x%016llx]executor run failed",
             HCCL_ERROR_CODE(ret)), ret);
-
-    // Enforce task launch at the end of Orchestrate
-    HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
-    CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
 
     HCCL_INFO("tag[%s], AlltoAllVFor310P orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
@@ -117,7 +113,7 @@ HcclResult CollRunAlltoAllVFor310PExecutor::KernelRun(const OpParam &param, Exec
 
     CHK_RET(executor->RunAsync());
 
-    HCCL_INFO("[CollRunAlltoAllVFor310PExecutor] excutor run success.");
+    HCCL_INFO("[CollRunAlltoAllVFor310PExecutor] executor run success.");
     return HCCL_SUCCESS;
 }
 

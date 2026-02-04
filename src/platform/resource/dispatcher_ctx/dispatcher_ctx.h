@@ -53,6 +53,8 @@ class DispatcherCtx {
 
         FftsCounterCallBack g_InitTaskCallback = nullptr;
         FftsCounterCallBack g_LaunchTaskCallback = nullptr;
+
+        std::mutex destroyMutex_;
     };
 }
 

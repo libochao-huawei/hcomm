@@ -230,7 +230,7 @@ int32_t WaitForShutDown(const uint32_t deviceId);
 * @param [in] vfId : vf id
 * @param [in] errCode : errCode: errMsg code produced by host
 * @param [in] errLen : errLen: errMsg code length
-* @return TSD_OK: sucess, other: error code
+* @return TSD_OK: success, other: error code
 */
 int32_t TsdReportStartOrStopErrCode(const uint32_t deviceId, const TsdWaitType waitType,
                                     const uint32_t hostPid, const uint32_t vfId,
@@ -245,7 +245,7 @@ int32_t TsdReportStartOrStopErrCode(const uint32_t deviceId, const TsdWaitType w
 * @param [in] hostPid :  host pid
 * @param [in] vfId : vf id
 * @param [in] msgInfo : capability
-* @return TSD_OK: sucess, other: error code
+* @return TSD_OK: success, other: error code
 */
 int32_t ReportMsgToTsd(const uint32_t deviceId, const TsdWaitType waitType,
                        const uint32_t hostPid, const uint32_t vfId,
@@ -255,7 +255,7 @@ int32_t ReportMsgToTsd(const uint32_t deviceId, const TsdWaitType waitType,
 * @ingroup tsd_event_client
 * @brief reg event call back func to tsdclient
 * @param [in] SubProcEventCallBackInfo : event id, callbackfunc
-* @return TSD_OK: sucess, other: error code
+* @return TSD_OK: success, other: error code
 */
 int32_t RegEventMsgCallBackFunc(const struct SubProcEventCallBackInfo *regInfo);
  
@@ -271,7 +271,7 @@ void UnRegEventMsgCallBackFunc(const uint32_t eventType);
 * @ingroup tsd_event_client
 * @brief reg event call back func to tsdclient
 * @param [in] SubProcEventCallBackInfo : event id, callbackfunc
-* @return TSD_OK: sucess, other: error code
+* @return TSD_OK: success, other: error code
 */
  
 /**
@@ -282,7 +282,7 @@ void UnRegEventMsgCallBackFunc(const uint32_t eventType);
 * @param [in] hostPid :  host pid
 * @param [in] vfId : vf id
 * @param [in] eventType : eventType
-* @return TSD_OK: sucess, other: error code
+* @return TSD_OK: success, other: error code
 */
 int32_t SubModuleProcessResponse(const uint32_t deviceId, const TsdWaitType waitType,
                                  const uint32_t hostPid, const uint32_t vfId,
@@ -295,22 +295,22 @@ int32_t SubModuleProcessResponse(const uint32_t deviceId, const TsdWaitType wait
 * @param [in] waitType : process type
 * @param [in] hostPid :  host pid
 * @param [in] vfId : vf id
-* @return TSD_OK: sucess, other: error code
+* @return TSD_OK: success, other: error code
 */
 int32_t StartUpRspAndWaitProcess(const uint32_t deviceId, const TsdWaitType waitType,
                                  const uint32_t hostPid, const uint32_t vfId);
  
 /**
 * @ingroup StopWaitForCustAicpu
-* @brief aicpu wait aicpu_cust_schedule attatch grp success
-* @return TSD_OK: sucess, other: error code
+* @brief aicpu wait aicpu_cust_schedule attach grp success
+* @return TSD_OK: success, other: error code
 */
 int32_t StopWaitForCustAicpu();
  
 /**
 * @ingroup tsd_event_client
 * @brief set tsd event dst pid
-* @return TSD_OK: sucess, other: error code
+* @return TSD_OK: success, other: error code
 */
 int32_t SetDstTsdEventPid(const uint32_t dstPid);
  
@@ -321,7 +321,7 @@ int32_t SetDstTsdEventPid(const uint32_t dstPid);
 * @param [in] waitType : process type
 * @param [in] hostPid :  host pid
 * @param [in] vfId : vf id
-* @return TSD_OK: sucess, other: error code
+* @return TSD_OK: success, other: error code
 */
 int32_t SendUpdateProfilingRspToTsd(const uint32_t deviceId, const uint32_t waitType,
                                     const uint32_t hostPid, const uint32_t vfId);
@@ -335,7 +335,7 @@ int32_t SendUpdateProfilingRspToTsd(const uint32_t deviceId, const uint32_t wait
 * @param [in] hostPid :  host pid
 * @param [in] vfId : vf id
 * @param [in] vfId : vf id
-* @return TSD_OK: sucess, other: error code
+* @return TSD_OK: success, other: error code
 */
 int32_t SetSubProcScheduleMode(const uint32_t deviceId, const uint32_t waitType,
                                const uint32_t hostPid, const uint32_t vfId,
@@ -373,7 +373,7 @@ int32_t SendStartUpFinishMsg(const uint32_t deviceId, const TsdWaitType waitType
 * @param [in] vfId : vf id
 * @param [in] errCode : errCode: errMsg code produced by host
 * @param [in] errLen : errLen: errMsg code length
-* @return TSD_OK: sucess, other: error code
+* @return TSD_OK: success, other: error code
 */
 int32_t ReportProcessStartUpErrorCode(const uint32_t deviceId, const TsdWaitType waitType,
                                       const uint32_t hostPid, const uint32_t vfId,

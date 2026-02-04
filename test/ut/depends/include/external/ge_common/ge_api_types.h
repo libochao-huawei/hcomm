@@ -1,11 +1,12 @@
-/* Copyright (c) 2024 Huawei Technologies Co., Ltd.
- * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
- * ===================================================================================================================*/
+ */
 
 #ifndef INC_EXTERNAL_GE_COMMON_GE_API_TYPES_H_
 #define INC_EXTERNAL_GE_COMMON_GE_API_TYPES_H_
@@ -341,13 +342,13 @@ const std::string GE_FE_FLAG = "ge.feFlag";
 // this option is to obtain stream max parallel num
 const std::string STREAM_MAX_PARALLEL_NUM = "ge.streamMaxParallelNum";
 
-// congigure outputDatatype to setting net output type
+// configure outputDatatype to setting net output type
 const std::string OUTPUT_DATATYPE = "ge.outputDatatype";
 
-// congigure opSelectImplmode to setting op select implmode
+// configure opSelectImplmode to setting op select implmode
 const std::string OP_SELECT_IMPL_MODE = "ge.opSelectImplmode";
 
-// congigure optypelist_for_implmode to setting which op use implmode
+// configure optypelist_for_implmode to setting which op use implmode
 const std::string OPTYPELIST_FOR_IMPLMODE = "ge.optypelistForImplmode";
 
 // configure whether to enable hcom parallel by session constructor options param,
@@ -443,7 +444,7 @@ const char_t *const ENABLE_PRINT_OP_PASS = "ge.enablePrintOpPass";
 const char_t *const DEBUG_DIR = "ge.debugDir";
 
 // Configure switch for op status check such as overflow
-// Its value should be true of flase
+// Its value should be true of false
 const char_t *const STATUS_CHECK = "ge.status_check";
 
 // Configure operator compiler cache path

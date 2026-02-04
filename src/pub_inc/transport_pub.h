@@ -517,10 +517,10 @@ class Transport {
 public:
     struct Buffer {
         const void *addr{nullptr};
-        u32 size{0};
+        u64 size{0};
 
         Buffer() : addr(nullptr), size(0) {}
-        Buffer(const void *addr, u32 size) : addr(addr), size(size) {}
+        Buffer(const void *addr, u64 size) : addr(addr), size(size) {}
     };
 
     Transport() {};

@@ -111,6 +111,7 @@ struct ExternalInput {
     bool enableEntryLog;
     bool interHccsDisable;
     bool aicpuUnfold;
+    uint8_t aicpuCacheEnable;
     bool aivMode;
     bool remoteIsHdc = false;
     bool hcclRetryConfig[HCCL_RETRY_ENABLE_LEVEL_NUM];
@@ -174,6 +175,7 @@ struct ExternalInput {
         enablePipline = false;
         enableEntryLog = false;
         interHccsDisable = false;
+        aicpuCacheEnable = 1; // 默认开启aicpu cache (只有当aicpuUnfold为true时才生效)
         opCounterEnable = true;
         logicSuperPodId = "";
         rdmaFastPost = false;
@@ -222,10 +224,6 @@ HcclResult ParseRdmaQpsPerConnection();
 HcclResult ParseMultiQpThreshold();
 
 HcclResult ParseCannVersion();
-
-HcclResult GetCannVersionPath(const std::string &cannEnvStr, const std::string &keyStr, std::string &cannVersionPath);
-
-HcclResult LoadCannVersionInfoFile(const std::string &realName, const std::string &keyStr);
 
 HcclResult ParseCclBufferSize();
 

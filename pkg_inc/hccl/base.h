@@ -26,7 +26,7 @@ typedef unsigned int u32;
 typedef unsigned long long u64;
 
 /**
- * @brief Horovod Reduction opperation
+ * @brief Horovod Reduction operation
  */
 typedef enum {
     HOROVOD_REDUCE_AVERAGE = 0, /**< average */

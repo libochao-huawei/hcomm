@@ -155,7 +155,7 @@ AicpuKfcRpcServerV2 *GetCommRpcServer(uint32_t idx)
     return &(g_commIdMap.instMap[idx].rpcServer);
 }
 
-static uint8_t g_expectPrepareId[MAX_QUE_NUM];
+static thread_local uint8_t g_expectPrepareId[MAX_QUE_NUM];
 void SetExpectPrepareId(uint8_t queueId, uint8_t msgId)
 {
     g_expectPrepareId[queueId] = msgId;
@@ -890,9 +890,9 @@ bool SetAlgTypeLevel1(HcclAlgoType algoConfig, AlgTypeLevel1 &algType, uint32_t 
             break;
         case HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH:
         case HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE:
-            HCCL_WARNING("level1:fullmesh algo is not suported. the config is ignored.");
+            HCCL_WARNING("level1:fullmesh algo is not supported. the config is ignored.");
         default:
-            HCCL_WARNING("algo is not suported. the config is ignored.");
+            HCCL_WARNING("algo is not supported. the config is ignored.");
             return false;
     }
     return true;
@@ -1451,7 +1451,6 @@ HcclResult KfcClearMsgArea(const std::vector<u64> &args)
         (void)memset_s(hcclMsgArea, sizeof(HcclMsgArea), 0, sizeof(HcclMsgArea));
     }
     hcclMsgArea->controlMsg.resetSeq = 1;
-    SetExpectPrepareId(0, 0);
     return HCCL_SUCCESS;
 }
 
@@ -1810,6 +1809,7 @@ u32 AicpuKfcProcess::AicpuRunRpcServerForMC2V2(KFCTaskV2 *task, const Mc2InitTil
         }
         initFlag = false;
         if (CheckNsStopLaunchStatus(groupIds) == HCCL_E_SUSPENDING) {
+            SetExpectPrepareId(0U, 0U);
             HCCL_INFO("mc2 opp is suspended");
             return AICPUSUSPENDING_ERROR;
         }
@@ -1832,6 +1832,7 @@ u32 AicpuKfcProcess::AicpuRunRpcServerForMC2(KFCTaskV2 *task)
         AicpuHcclProcess::AicpuReleaseCommbyGroup(group);
     }
     if (CheckNsStopLaunchStatus(groupIds) == HCCL_E_SUSPENDING) {
+        SetExpectPrepareId(0U, 0U);
         HCCL_INFO("mc2 opp is suspended");
         return AICPUSUSPENDING_ERROR;
     }

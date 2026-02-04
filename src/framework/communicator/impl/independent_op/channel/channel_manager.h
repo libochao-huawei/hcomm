@@ -32,7 +32,7 @@ namespace std {
             size_t hash = 0;
             // 仅区分remoteRank和protocol
             hash ^= std::hash<uint32_t>()(desc.remoteRank);
-            hash ^= std::hash<int32_t>()(static_cast<int32_t>(desc.protocol));
+            hash ^= std::hash<int32_t>()(static_cast<int32_t>(desc.channelProtocol));
             return hash;
         }
     };
@@ -42,14 +42,15 @@ namespace hccl {
 
 struct HcclChannelDescEqual {
     bool operator()(const HcclChannelDesc& lcd, const HcclChannelDesc& rcd) const {
-        return lcd.remoteRank == rcd.remoteRank && lcd.protocol == rcd.protocol;
+        // 需要扩展增加EndpointDesc的有关内容
+        return lcd.remoteRank == rcd.remoteRank && lcd.channelProtocol == rcd.channelProtocol;
     }
 };
 
 class ChannelManager {
 public:
-    ChannelManager();
-    ~ChannelManager();
+    ChannelManager() = default;
+    ~ChannelManager() = default;
     HcclResult Init(aclrtBinHandle binHandle, u32 userRank, const ManagerCallbacks& callbacks);
     HcclResult SetChannelCallbacks(const ChannelManagerCallbacks& channelCallbacks);
     HcclResult ChannelCommCreate(const std::string &commId, CommEngine engine,
@@ -58,6 +59,7 @@ public:
     HcclResult ChannelCommDestroy(ChannelHandle *channelList, uint32_t channelNum);
     HcclResult ChannelCommGetHcclBuffer(ChannelHandle channel, CommBuffer *buffer);
     HcclResult ChannelCommGetRemoteMem(ChannelHandle channel, HcclMem **remoteMem, uint32_t *memNum);
+    HcclResult ReleaseChannel();
 
 private:
     template <typename T>

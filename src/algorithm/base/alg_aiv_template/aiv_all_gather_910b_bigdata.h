@@ -168,7 +168,7 @@ template<typename T>
 __aicore__ inline void AivAllGatherBig910B::ProcessProxy(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag,
     uint64_t totalLen)
 {
-    if (blockdim_ == rankSize_){
+    if (numBlocks_ == rankSize_){
         ProcessSingleRanksizeCore<T>(input, output, len, tag, totalLen);
     }else{
         Process<T>(input, output, len, tag, totalLen);

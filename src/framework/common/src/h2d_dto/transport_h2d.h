@@ -11,38 +11,6 @@
 #ifndef H2D_DTO_TRANSPORT_H2D_H
 #define H2D_DTO_TRANSPORT_H2D_H
 
-// Transport 内存类型
-enum class HcclAiRMAMemType : u32 {
-    LOCAL_INPUT = 0,
-    REMOTE_INPUT,
-
-    LOCAL_OUTPUT,
-    REMOTE_OUTPUT,
-
-    // 可透传更多的内存，可在MAX_NUM之前追加，例如：
-    // LOCAL_EXP,
-    // REMOTE_EXP,
-    MAX_NUM
-};
-
-constexpr u32 GetAiMemTypeVal(HcclAiRMAMemType value) {
-    return static_cast<u32>(value);
-}
-
-constexpr u32 AiMemMaxNum = GetAiMemTypeVal(HcclAiRMAMemType::MAX_NUM);
-
-// Transport 内存信息
-struct HcclAiRMAMemInfo {
-    u32 memMaxNum;  // 最大内存数量，等于 HcclAiRMAMemType::MAX_NUM
-    u32 sizeOfMemDetails;  // sizeof(MemDetails)，用于内存校验和偏移计算
-    u64 memDetailPtr;  // MemDetails数组首地址, 个数: HcclAiRMAMemType::MAX_NUM
-    // 可追加字段
-
-    HcclAiRMAMemInfo() :
-        memMaxNum(0), sizeOfMemDetails(0), memDetailPtr(0)
-    {}
-};
-
 // 全部 Transport QP/Mem 信息
 struct HcclAiRMAInfo {
     u32 curRankId;  // 当前rankId

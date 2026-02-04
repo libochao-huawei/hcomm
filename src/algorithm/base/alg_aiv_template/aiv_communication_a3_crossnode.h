@@ -64,7 +64,7 @@ EXPORT_AIV_META_INFO(aiv_reduce_scatter_cn_##type)
 
 // aiv sync
 extern "C" __global__ __aicore__ void hccl_aiv_sync_cn(KERNEL_ARGS_DEF_A3) {
-    return aiv_sync_91093_inner(KERNEL_ARGS_CALL_A3); 
+    return aiv_sync_91093_inner(KERNEL_ARGS_CALL_A3);
 }
 EXPORT_AIV_META_INFO(hccl_aiv_sync_cn);
 

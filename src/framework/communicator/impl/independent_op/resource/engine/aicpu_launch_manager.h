@@ -13,7 +13,7 @@
 #include "hccl_common.h"
 #include "stream_pub.h"
 #include "aicpu_operator_pub.h"
-#include "hccl_thread.h"
+#include "thread.h"
 #include "hccl_api.h"
 #include "local_notify.h"
 #include "aicpu_init_param.h"
@@ -61,7 +61,7 @@ public:
     ~AicpuLaunchMgr() = default;
     template <typename OpParam, typename ApiParam>
     static HcclResult KernelLaunch(OpParam &opParam, ApiParam &apiParam, rtStream_t aicpuInitStream);
-    static HcclResult ThreadKernelLaunch(std::vector<std::shared_ptr<HcclThread>> &newThreads,
+    static HcclResult ThreadKernelLaunch(std::vector<std::shared_ptr<Thread>> &newThreads,
         const std::string commId, std::unique_ptr<ThreadHandle[]> &hostHandle, aclrtBinHandle binCustomHandle);
     static HcclResult NotifyKernelLaunchAlloc(std::vector<std::unique_ptr<LocalNotify>> &newNotifys,
         const std::string &commId, std::unique_ptr<NotifyHandle[]> &hostHandle, aclrtBinHandle binCustomHandle);

@@ -1,11 +1,11 @@
 /**
- * @dlog_pub.h
- *
- * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #ifndef DLOG_PUB_H_
@@ -23,7 +23,7 @@ extern "C" {
 
 /**
  * @brief           get module debug loglevel and enableEvent
- * @param [in]      moduleId       moudule id(see log_types.h, eg: CCE), others: invalid
+ * @param [in]      moduleId       module id(see log_types.h, eg: CCE), others: invalid
  * @param [out]     enableEvent    1: enable; 0: disable
  * @return          module level   0: debug, 1: info, 2: warning, 3: error, 4: null output
  */
@@ -31,7 +31,7 @@ LOG_FUNC_VISIBILITY int32_t dlog_getlevel(int32_t moduleId, int32_t *enableEvent
 
 /**
  * @brief           set module loglevel and enableEvent
- * @param [in]      moduleId       moudule id(see log_types.h, eg: CCE), -1: all modules, others: invalid
+ * @param [in]      moduleId       module id(see log_types.h, eg: CCE), -1: all modules, others: invalid
  * @param [in]      level          log level, eg: DLOG_ERROR/DLOG_WARN/DLOG_INFO/DLOG_DEBUG
  * @param [in]      enableEvent    1: enable; 0: disable, others:invalid
  * @return          0: SUCCEED, others: FAILED

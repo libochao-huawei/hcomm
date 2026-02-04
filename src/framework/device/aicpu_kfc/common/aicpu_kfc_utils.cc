@@ -294,6 +294,21 @@ void AicpuKfcUtils::PrintApiBufferByMsgPos(const HcclMsg &msg, uint32_t msgPos)
                                   "recvBuffer after comm " + std::to_string(msgPos));
 }
 
+uint64_t AicpuKfcUtils::GenXor(HcclMsgExt *msg, u32 rankSize) {
+    if (UNLIKELY(rankSize > HCCL_MAX_RANK_NUM_V2)) {
+        return 0UL;
+    }
+    uint64_t xorVal = 0U;
+    for (u32 i = 0U; i < rankSize; ++i) {
+        xorVal ^= msg->sendCounts[i];
+        xorVal ^= msg->sendOffset[i];
+        xorVal ^= msg->recvCounts[i];
+        xorVal ^= msg->recvOffset[i];
+    }
+    xorVal ^= msg->valid;
+    return xorVal;
+}
+
 void AicpuKfcUtils::PrintBuffer(const void * const buffer, uint32_t totalSize, const std::string &desc)
 {
     if (buffer == nullptr) {
@@ -504,11 +519,74 @@ HcclResult AicpuKfcUtils::TraceProfSubmit()
     return HCCL_SUCCESS;
 }
 
-void AicpuKfcUtils::PrintHcclCommParamDesc(const HcclCommParamDesc &desc)
+void AicpuKfcUtils::PrintHcclCommParamDesc(const CommKfcParamDesc &desc)
 {
-    HCCL_INFO("HcclCommParamDesc.version %lu", desc.version);
-    HCCL_INFO("HcclCommParamDesc.groupNum %lu", desc.groupNum);
-    HCCL_INFO("HcclCommParamDesc.hasFfts %lu", desc.hasFfts);
-    HCCL_INFO("HcclCommParamDesc.tilingOff %lu", desc.tilingOff);
-    HCCL_INFO("HcclCommParamDesc.isDyn %lu", desc.isDyn);
+    HCCL_INFO("CommKfcParamDesc.version %lu", desc.version);
+    HCCL_INFO("CommKfcParamDesc.itemNum %lu", desc.itemNum);
+    HCCL_INFO("CommKfcParamDesc.hasFfts %lu", desc.hasFfts);
+    HCCL_INFO("CommKfcParamDesc.tilingOff %lu", desc.tilingOff);
+    HCCL_INFO("CommKfcParamDesc.isDyn %lu", desc.isDyn);
+}
+
+HcclResult AicpuKfcUtils::ReadMsgFromMemory(HcclMsg *src, HcclMsg &dst)
+{
+#ifdef __aarch64__
+    __asm__ __volatile__("dsb ld" : : : "memory");
+#endif
+#ifdef __amd64__
+    __asm__ __volatile__("" : : : "memory");
+#endif
+    if (src->addMsg.v0Msg.valid != HCCL_MSG_VALID_MASK) {
+        return HCCL_E_AGAIN;
+    }
+    (void)memcpy_s(&dst, sizeof(dst), src, sizeof(HcclMsg));
+    const u32 xorVal = GenXor(&dst);
+    if (UNLIKELY(xorVal != src->addMsg.v0Msg.xorCheck)) {
+        static u32 cnt = 0;
+        if (cnt++ % MC2_API_XORCHECK_PRINT_NUM == 0) {
+            PrintMsg("Rcv src msg", *src, true);
+            PrintMsg("Rcv dst msg", dst, true);
+            HCCL_RUN_INFO("Data is modified, modified_xor:%u, origin_xor:%u.", xorVal, src->addMsg.v0Msg.xorCheck);
+        }
+        return HCCL_E_AGAIN;
+    }
+
+    src->addMsg.v0Msg.valid = ~HCCL_MSG_VALID_MASK;
+#ifdef __aarch64__
+    __asm__ __volatile__("dsb st" : : : "memory");
+#endif
+    PrintMsg("Read message", dst);
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuKfcUtils::ReadMsgFromMemory(HcclMsgExt *src, u32 rankSize, HcclMsgExt &dst)
+{
+#ifdef __aarch64__
+    __asm__ __volatile__("dsb ld" : : : "memory");
+#endif
+#ifdef __amd64__
+    __asm__ __volatile__("" : : : "memory");
+#endif
+    if (src->valid != HCCL_MSG_VALID_MASK) {
+        return HCCL_E_AGAIN;
+    }
+
+    CHK_PRT_RET(rankSize > HCCL_MAX_RANK_NUM_V2, HCCL_ERROR("Invalid rank size %u.", rankSize), HCCL_E_PARA);
+    (void)memcpy_s(&dst, sizeof(HcclMsgExt), src, sizeof(HcclMsgExt));
+    const u64 xorVal = GenXor(&dst, rankSize);
+    if (UNLIKELY(xorVal != src->xorCheck)) {
+        static u32 cnt = 0;
+        if (cnt++ % MC2_API_XORCHECK_PRINT_NUM == 0) {
+            HCCL_RUN_INFO("Rcv src ext msg %s", GetMsgSimpleStr(rankSize, *src).c_str());
+            HCCL_RUN_INFO("Rcv dst ext msg %s", GetMsgSimpleStr(rankSize, dst).c_str());
+            HCCL_RUN_INFO("Extended data is modified, modified_xor:%llu, origin_xor:%llu.", xorVal, src->xorCheck);
+        }
+        return HCCL_E_AGAIN;
+    }
+    src->valid = ~HCCL_MSG_VALID_MASK;
+#ifdef __aarch64__
+    __asm__ __volatile__("dsb st" : : : "memory");
+#endif
+    HCCL_INFO("Read extended message %s", GetMsgSimpleStr(rankSize, dst).c_str());
+    return HCCL_SUCCESS;
 }

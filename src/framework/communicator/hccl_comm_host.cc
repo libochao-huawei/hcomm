@@ -22,6 +22,9 @@
 #include "coll_alg_utils.h"
 #include "env_config.h"
 #include "i_hccl_one_sided_service.h"
+#include "comm_configer.h"
+#include "launch_aicpu.h"
+#include "launch_device.h"
 
 namespace hccl
 {
@@ -110,14 +113,14 @@ namespace hccl
 
     HcclResult hcclComm::RegistTaskAbortHandler() const
     {
-        HCCL_INFO("RegistTaskAbortHandler begin");
+        HCCL_RUN_INFO("RegistTaskAbortHandler begin, group[%s]", identifier_.c_str());
         CHK_RET(TaskAbortHandler::Init(communicator_.get()));
         return HCCL_SUCCESS;
     }
 
     HcclResult hcclComm::UnRegistTaskAbortHandler() const
     {
-        HCCL_INFO("UnRegistTaskAbortHandler begin");
+        HCCL_RUN_INFO("UnRegistTaskAbortHandler begin, group[%s]", identifier_.c_str());
         CHK_RET(TaskAbortHandler::DeInit(communicator_.get()));
         return HCCL_SUCCESS;
     }
@@ -153,11 +156,20 @@ namespace hccl
         CHK_RET(communicator_->GetHDCommunicate(kfcControlTransferH2DParams, kfcStatusTransferD2HParams));
         CHK_RET(communicator_->SetGetAicpuCommState(getAicpuCommState));
         CHK_RET(GetIndependentOp().SetIndependentOpConfig(commConfig, rankTable, topoAttr, binHandle,
-            kfcControlTransferH2DParams, kfcStatusTransferD2HParams));
+            kfcControlTransferH2DParams, kfcStatusTransferD2HParams, communicator_->GetCCLbufferManager()));
         return HCCL_SUCCESS;
     }
+
+    HcclResult hcclComm::ReleaseChannel()
+    {
+        return independentOp_.GetChannelManager().ReleaseChannel();
+    }
+
     HcclResult hcclComm::InitIndependentOp()
     {
+        if (communicator_ != nullptr) {
+            communicator_->SetReleaseChannel([this]() -> HcclResult { return this->ReleaseChannel(); });
+        }
         ChannelManagerCallbacks channelCallbacks;
         channelCallbacks.indOpTransportAlloc = [this](const std::string &tag, OpCommTransport &opCommTransport, 
             bool isAicpuModeEn) -> HcclResult {
@@ -253,4 +265,110 @@ namespace hccl
     {
         return communicator_->GetLinks(netLayer, srcRank, dstRank, linkList, listSize);
     }
+
+    HcclResult hcclComm::GetHeterogMode(HcclHeterogMode *mode)
+    {
+        return communicator_->GetHeterogMode(mode);
+    }
+
+    HcclResult hcclComm::InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
+        HcclMem cclBuffer, const std::string &commName, HcclCommConfig *config) {
+        // 不校验config，为空时配置默认加速模式
+
+        // aicpu侧初始化状态的回调函数
+        ManagerCallbacks callbacks;
+        callbacks.getAicpuCommState = [this]() {
+            return this->GetAicpuCommState();
+        };
+        callbacks.setAicpuCommState = [this](bool state) {
+            this->SetAicpuCommState(state);
+        };
+        callbacks.kernelLaunchAicpuCommInit = [this]() {
+            return this->KernelLaunchAicpuCommInit();
+        };
+
+        // Aicpu通信域初始化参数
+        auto ret = snprintf_s(commAicpuParam_.hcomId, HCOMID_MAX_SIZE, HCOMID_MAX_SIZE - 1, "%s", commName.c_str());
+        if (ret < 0) {
+            HCCL_ERROR("[InitCollComm]comm id snprintf_s fail, commId: %s, commId maxSize: %u", commName.c_str(),
+                    HCOMID_MAX_SIZE);
+            return HCCL_E_PARA;
+        }
+  
+        CHK_RET(hrtGetDevice(&(commAicpuParam_.deviceLogicId)));
+    
+        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(commAicpuParam_.deviceLogicId), commAicpuParam_.devicePhyId));
+      
+        CHK_RET(hrtGetDeviceType(devType_));
+        commAicpuParam_.deviceType = static_cast<u32>(devType_);
+
+        std::string jsonPath;
+      
+        CHK_RET(GetKernelFilePath(jsonPath));
+        jsonPath += "ccl_kernel.json";
+   
+        HcclResult retCode = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, binHandle_);
+        CHK_PRT_RET(retCode != HCCL_SUCCESS,
+            HCCL_ERROR("[InitCollComm]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
+                    "cpuKernelMode[%u].",
+                retCode,
+                jsonPath.c_str(),
+                ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE,
+                0),
+            retCode);
+        // EXECEPTION_CATCH(rankgraph_ = std::make_unique<RankGraphV2>(rankGraph), return HCCL_E_PTR);
+        CHK_PTR_NULL(commV2);
+
+        EXECEPTION_CATCH(collComm_ = std::make_unique<CollComm>(commV2, userRank, commName, callbacks),
+        return HCCL_E_PTR);
+
+        CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
+        return HCCL_SUCCESS;
+    }
+
+    bool hcclComm::GetAicpuCommState()
+    {
+        return isAicpuCommInit_;
+    }
+
+    void hcclComm::SetAicpuCommState(bool aicpuCommState)
+    {
+        isAicpuCommInit_ = aicpuCommState;
+        return;
+    }
+
+    HcclResult hcclComm::KernelLaunchAicpuCommInit()
+    {
+        // 创建局部流
+        Stream localStream(StreamType::STREAM_TYPE_ONLINE);
+        constexpr u32 aicpuStreamMode = 1;
+        CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
+
+        // 下kernel进行自定义算子aicpu侧通信域的公共初始化
+        std::string kernelName = "RunAicpuIndOpCommInit";
+        HCCL_INFO("AicpuAclKernelLaunch start");
+        CHK_RET(AicpuAclKernelLaunch(localStream.ptr(), reinterpret_cast<void *>(&commAicpuParam_),
+            sizeof(commAicpuParam_), binHandle_, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));
+        HCCL_INFO("AicpuAclKernelLaunch end, hcclStreamSynchronize start");
+        CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut("")));
+
+        // 打印增加初始化对应的参数
+        HCCL_RUN_INFO("[%s] KernelLaunchAicpuCommInit Success", __func__);
+        return HCCL_SUCCESS;
+    }
+
+    HcclComm hcclComm::GetCommunicatorV2()
+    {
+        if (collComm_ == nullptr) {
+            HCCL_ERROR("[HcclComm][GetCommunicatorV2]collComm_ is nullptr");
+            return nullptr;
+        }
+        return collComm_->GetCommunicatorV2();
+    }
+
+    CollComm* hcclComm::GetCollComm() 
+    {
+        return collComm_!= nullptr ? collComm_.get() : nullptr;
+    }
+
 } // namespace hccl

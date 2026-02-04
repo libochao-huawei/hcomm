@@ -37,7 +37,7 @@ sal_manage_class sal_manage;
 /* 检查SAL是否已经初始化完成，若没有则返回错误 */
 #define SAL_ERR_RET_IF_SAL_IS_NOT_ACTIVED(ret) do { \
     if (sal_manage.sal_active_get() != SAL_TRUE) {        \
-        HCCL_ERROR("sal is not available before actived"); \
+        HCCL_ERROR("sal is not available before activated"); \
         return ret;                                       \
     }                                                     \
 } while (0)
@@ -1213,7 +1213,7 @@ void sal_share_memory_destroy(void *ptr)
         }
     }
 
-    HCCL_DEBUG("destroy share mem[%s] sucess", uniqueId);
+    HCCL_DEBUG("destroy share mem[%s] success", uniqueId);
 
     return;
     // ptr 指针已经 unmap，共享内存也已销毁，pclint误报，此处屏蔽。
@@ -1269,7 +1269,7 @@ HcclResult sal_manage_class::sal_thread_regist(const thread_info_t *thread)
     sal_thread_list.push_back(node);
     len_of_thread_res++;
 
-    HCCL_DEBUG("thread Name[%s]\t PID[%08u] is registed", thread->name.c_str(), thread->pid);
+    HCCL_DEBUG("thread Name[%s]\t PID[%08u] is registered", thread->name.c_str(), thread->pid);
     return HCCL_SUCCESS;
 }
 
@@ -1297,7 +1297,7 @@ void sal_manage_class::sal_thread_unregist(const thread_info_t *thread)
     for (auto it = sal_thread_list.begin(); it != sal_thread_list.end(); ++it) {
         if (thread == (*it)->thread_info) {
             len_of_thread_res--;
-            HCCL_DEBUG("thread Name[%s]\t PID[%08u] is unregisted", (*it)->thread_info->name.c_str(),
+            HCCL_DEBUG("thread Name[%s]\t PID[%08u] is unregistered", (*it)->thread_info->name.c_str(),
                       (*it)->thread_info->pid);
 
             delete (*it);
@@ -1455,22 +1455,14 @@ HcclResult SalGetUniqueId(char *salUniqueId, int maxLen)
     static volatile u32 myCounter = 0;    // 静态变量保证每次获取到不同的计数。
     CHK_PTR_NULL(salUniqueId);
 
-    s32 sRet = memset_s(salUniqueId, SAL_UNIQUE_ID_BYTES, 0, SAL_UNIQUE_ID_BYTES);
-    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("In get unique id, mem set failed.errorno[%d], "\
-        "params: uniqueId[%p], dest max size[%d], set value[%d], set length[%d]", sRet, \
-        salUniqueId, SAL_UNIQUE_ID_BYTES, 0, SAL_UNIQUE_ID_BYTES), HCCL_E_MEMORY);
-
     u32 myPid = drvDeviceGetBarePid();    // 当前进程id
     u32 currentCounter = __sync_fetch_and_add(&myCounter, 1);   // 本次获取的唯一计数
-
     u32 currentTime = SalGetSysTime();  // 本次获取的唯一计数
-
-    s32 hcclRet = snprintf_s(salUniqueId, SAL_UNIQUE_ID_BYTES, SAL_UNIQUE_ID_BYTES - 1, "%08x-%08x-%08x",
-        myPid, currentTime, currentCounter);
+    s32 hcclRet = sprintf_s(salUniqueId, maxLen, "%08x-%08x-%08x", myPid, currentTime, currentCounter);
     if (hcclRet == -1) {
         HCCL_ERROR("In get unique id, printf failed.uniqueId[%s], "\
             "dest max size[%d] mypid[0x%08x] current time[0x%08x] current counter[0x%08x]", \
-            salUniqueId, SAL_UNIQUE_ID_BYTES, myPid, currentTime, currentCounter);
+            salUniqueId, maxLen, myPid, currentTime, currentCounter);
     }
 
     return HCCL_SUCCESS;

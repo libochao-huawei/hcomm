@@ -1,6 +1,11 @@
 /**
- * Copyright (c) Huawei Technologies Co., Ltd. 2020. All rights reserved.
- * Description: implement of bqs server
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #ifndef DGW_CLIENT_H
@@ -118,7 +123,7 @@ struct CommChannelAttr {
 // group attr
 struct GroupAttr {
     int32_t groupId;       // group id
-    GroupPolicy policy;    // only need set for dstination group
+    GroupPolicy policy;    // only need set for destination group
     uint32_t endpointNum;  // only used for query result
     uint32_t rootModelId;
 };
@@ -217,7 +222,7 @@ struct ReDeployConfig {
 
 // config info, group config or routes config
 struct ConfigInfo {
-    ConfigCmd cmd;               // query mode, user donot need fill this param
+    ConfigCmd cmd;               // query mode, user do not need fill this param
     union {
         GroupConfig groupCfg;     // group config
         RoutesConfig routesCfg;   // routes config
@@ -522,7 +527,7 @@ private:
     pid_t curPid_;
     // dgw client group id
     uint32_t curGroupId_;
-    // dgw client and qs server pipline queue id
+    // dgw client and qs server pipeline queue id
     uint32_t piplineQueueId_;
     // dgw initialized flag
     bool initFlag_;

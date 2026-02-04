@@ -105,10 +105,10 @@ typedef struct tagStarsFftsPlusHeader {
     uint8_t preP : 2;
     uint8_t postP : 2;
     uint8_t wrCqe : 1;
-    /* tell mcu if this subgraph is overflow-enabled and mcu will send this flag to aicpu when aicpu ctx is excuted */
+    /* tell mcu if this subgraph is overflow-enabled and mcu will send this flag to aicpu when aicpu ctx is executed */
     uint8_t overflowEn : 1;
 
-    uint16_t blockDim;
+    uint16_t numBlocks;
 
     uint16_t rtStreamId;
     uint16_t taskId;

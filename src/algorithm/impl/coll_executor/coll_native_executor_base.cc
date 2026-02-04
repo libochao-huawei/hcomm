@@ -43,6 +43,7 @@ HcclResult CollNativeExecutorBase::CalcResRequest(const OpParam& param, AlgResou
     };
 
     CHK_RET(CalcScratchMemSize(scratchMemSize));
+    CHK_RET(CalcOptimalIntraRing(param));
     CHK_RET(CalcStreamNum(streamNum));
     CHK_RET(CalcNotifyNum(streamNum, notifyNum));
     CHK_RET(CalcAivBufferRequest(aivBufferRequest));
@@ -96,6 +97,107 @@ HcclResult CollNativeExecutorBase::CalcAivBufferRequest(u64 &aivBufferRequest)
 
 HcclResult CollNativeExecutorBase::CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport)
 {
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollNativeExecutorBase::CalcOptimalIntraRing(const OpParam& param) {
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollNativeExecutorBase::SetCommInfoForARS(u32 ringSize)
+{
+    std::vector<u32> commPlaneVector = topoMatcher_->GetCommPlaneRanks(COMM_ARS)[0];
+    std::sort(commPlaneVector.begin(), commPlaneVector.end());
+    u32 intraRingsize = ringSize;
+    u32 userRank = topoAttr_.userRank;
+    u32 userRankSize = topoAttr_.userRankSize;
+    HCCL_DEBUG("[SetCommInfoForARS]set topo info for ARS, USERRANK:%u, userRankSize:%u", userRank, userRankSize);
+    
+    SetCommInfoForIntraARS(intraRingsize, commPlaneVector);
+    SetCommInfoForInterARS(intraRingsize, commPlaneVector);
+    topoMatcher_->SetRankMap();//一定要刷新RankMap
+    HCCL_DEBUG("[SetTopoInfoForARS] outer userRank[%u] ,COMM_LEVEL0_LOGICAL total num [%d]",
+        userRank, topoMatcher_->GetCommPlaneRanks(COMM_LEVEL0_LOGICAL).size());
+    HCCL_DEBUG("[SetTopoInfoForARS] outer userRank[%u] ,COMM_LEVEL1_LOGICAL total num [%d]",
+        userRank, topoMatcher_->GetCommPlaneRanks(COMM_LEVEL1_LOGICAL).size());
+    return HCCL_SUCCESS;
+}
+ 
+HcclResult CollNativeExecutorBase::SetCommInfoForIntraARS(u32 intraRingsize, std::vector<u32> commPlaneVector)
+{
+    std::vector<u32> comLevelARSVector = topoMatcher_->GetCommPlaneRanks(COMM_ARS)[0];
+    u32 superPodRankSize = commPlaneVector.size();
+    bool ringIntra = (comLevelARSVector.size() > 2 && topoAttr_.isARSDoubleRing);
+    std::vector<u32> ringVectorIntra;
+    for (u32 i = 0; i < superPodRankSize && ringIntra; i += intraRingsize) {
+        u32 maxValue = i + intraRingsize;
+        u32 rankval = topoAttr_.userRank % superPodRankSize;
+        if (rankval  < i || rankval >= maxValue) {
+            continue;
+        }
+        for (u32 j = 0; j < intraRingsize; j++) {
+            ringVectorIntra.push_back(commPlaneVector[i+j]);
+        }
+    }
+    std::vector<std::vector<u32>> ARSmultiOuterOrder;
+    std::vector<std::vector<u32>> intraRingVec;
+    if (ringIntra) {
+        ARSmultiOuterOrder = GetARSRingsOrder(intraRingsize, TopoType::TOPO_TYPE_NP_DOUBLE_RING, ringVectorIntra);
+        for (u32 ringIndex = 0; ringIndex < ARSmultiOuterOrder.size();ringIndex++) {
+            std::string outLogInfo = "userRank:";
+            std::vector<u32> tmpOuterVector;
+            for (u32 startIndex = 0; startIndex < ARSmultiOuterOrder[ringIndex].size();startIndex++) {
+                u32 userRank = ARSmultiOuterOrder[ringIndex][startIndex];
+                outLogInfo.append(std::to_string(userRank));
+                outLogInfo.append("/");
+                tmpOuterVector.push_back(userRank);
+            }
+            outLogInfo.append("; ");
+            intraRingVec.push_back(tmpOuterVector);
+            HCCL_INFO("[COMM_LEVEL0_LOGICAL]: userRank[%u], userRankSize[%u], topoRankInfo[%s]",
+                topoAttr_.userRank, topoAttr_.userRankSize, outLogInfo.c_str());
+        }
+    } else {
+        std::string outLogInfo = "userRank: ";
+        std::vector<u32> tmpOuterVector;
+        outLogInfo.append(std::to_string(topoAttr_.userRank));
+        tmpOuterVector.push_back(topoAttr_.userRank);
+        intraRingVec.push_back(tmpOuterVector);
+        HCCL_INFO("[COMM_LEVEL0_LOGICAL]: userRank[%u], userRankSize[%u], topoRankInfo[%s]",
+            topoAttr_.userRank, topoAttr_.userRankSize, outLogInfo.c_str());
+    }
+    topoMatcher_->EditCommPlaneVector(COMM_LEVEL0_LOGICAL, intraRingVec);
+    return HCCL_SUCCESS;
+}
+ 
+HcclResult CollNativeExecutorBase::SetCommInfoForInterARS(u32 intraRingsize, std::vector<u32> commPlaneVector)
+{
+    u32 superPodRankSize = commPlaneVector.size();
+    std::vector<u32> ringVectorInter;
+    std::vector<std::vector<u32>> ringVectorInterOrder;
+    for (u32 i = 0; i < intraRingsize; i++) {
+        ringVectorInter.clear();
+        for (u32 j = 0; j < superPodRankSize; j += intraRingsize) {
+            ringVectorInter.push_back(commPlaneVector[i + j]);
+        }
+        ringVectorInterOrder.push_back(ringVectorInter);
+    }
+    std::vector<std::vector<u32>> interRingVec;
+    for (u32 ringIndex = 0; ringIndex < ringVectorInterOrder.size();ringIndex++) {
+        std::string outLogInfo = "userRank: ";
+        std::vector<u32> tmpOuterVector;
+        for (u32 startIndex = 0; startIndex < ringVectorInterOrder[ringIndex].size();startIndex++) {
+            u32 userRank = ringVectorInterOrder[ringIndex][startIndex];
+            outLogInfo.append(std::to_string(userRank));
+            outLogInfo.append("/");
+            tmpOuterVector.push_back(userRank);
+        }
+        outLogInfo.append("; ");
+        interRingVec.push_back(tmpOuterVector);
+        HCCL_INFO("[COMM_LEVEL1_LOGICAL]:userRank[%u], userRankSize[%u], topoRankInfo[%s]",
+            topoAttr_.userRank, topoAttr_.userRankSize, outLogInfo.c_str());
+    }
+    topoMatcher_->EditCommPlaneVector(COMM_LEVEL1_LOGICAL, interRingVec);
     return HCCL_SUCCESS;
 }
 
@@ -165,7 +267,7 @@ HcclResult CollNativeExecutorBase::CalcLevel2CommInfo(TransportMemType inputType
 {
     if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
         algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE) {
-        HCCL_INFO("[%s] select AHC bypass level2 comm calulate", __func__);
+        HCCL_INFO("[%s] select AHC bypass level2 comm calculate", __func__);
         return HCCL_SUCCESS;
     }
 
@@ -673,7 +775,24 @@ HcclResult CollNativeExecutorBase::InplaceOpSync(OpParam &param, ExecMem &execMe
     
     return HCCL_SUCCESS;
 }
-
+ 
+std::vector<std::vector<u32>> GetARSRingsOrder(u32 ranksSize, TopoType topoType, std::vector<u32> &RingList)
+{
+    std::vector<std::vector<u32>> ARSmultiRingOrder;
+    std::vector<u32> tmpOuter0 = RingList; // 环0
+    if (topoType == TopoType::TOPO_TYPE_NP_DOUBLE_RING && ranksSize > FACTOR_TWO ) {  //两环
+        std::vector<u32> tmpOuter1;  // 环1
+        tmpOuter1.reserve(ranksSize);
+        tmpOuter1.push_back(RingList[0]);
+        tmpOuter1.insert(tmpOuter1.end(), tmpOuter0.rbegin(), tmpOuter0.rend() - 1);
+        ARSmultiRingOrder.push_back(tmpOuter0);
+        ARSmultiRingOrder.push_back(tmpOuter1);
+    } else {
+        ARSmultiRingOrder.push_back(tmpOuter0);
+    }
+    return ARSmultiRingOrder;
+}
+ 
 HcclResult CollNativeExecutorBase::CopyAivCommInfoToDevice(const CommPlane levelIndex, const u32 subLevelIndex,
     AlgResourceResponse& algResource)
 {

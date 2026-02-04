@@ -18,7 +18,15 @@
 
 namespace hccl {
 
-    bool OpUnfoldCache::NeedCache(const HcclCMDType opType, const std::unordered_map<u32, bool>& isUsedRdmaMap, const bool isDeviceMode) {
+    constexpr size_t OP_UNFOLD_CACHE_CAPACITY = 500; // Cache entry数目的上限
+
+    bool OpUnfoldCache::NeedCache(const uint8_t aicpuCacheEnable, const HcclCMDType opType, const std::unordered_map<u32, bool>& isUsedRdmaMap, const bool isDeviceMode) {
+        // 校验环境变量
+        if (aicpuCacheEnable == 0) {
+            HCCL_INFO("[OpUnfoldCache][NeedCache] disable aicpu cache for aicpuCacheEnable[%u]", aicpuCacheEnable);
+            return false;
+        }
+
         // 屏蔽MC2算子
         if (isDeviceMode) {
             HCCL_INFO("[OpUnfoldCache][NeedCache] MC2 op is not supported for operator unfolding cache");
@@ -75,6 +83,15 @@ namespace hccl {
         }
     }
 
+    bool OpUnfoldCache::IsCacheFull() const {
+        const size_t curSize = cacheHashMap_.size();
+        if (curSize >= OP_UNFOLD_CACHE_CAPACITY) {
+            HCCL_INFO("[OpUnfoldCache][IsCacheFull] cacheHashMap_.size[%u] >= capacity[%u]", cacheHashMap_.size(), OP_UNFOLD_CACHE_CAPACITY);
+            return true;
+        }
+        return false;
+    }
+
     HcclResult OpUnfoldCache::FindEntry(const OpUnfoldKey& key, OpUnfoldCacheEntry **entryPtrPtr) const {
         // 检查入参
         CHK_PTRPTR_NULL(entryPtrPtr); // 检查指针, entryPtrPtr不应该是null, 但*entryPtrPtr应该是null
@@ -118,7 +135,7 @@ namespace hccl {
 
             return HCCL_E_INTERNAL;
         } else {
-            HCCL_INFO("[OpUnfoldCache][AddEntry] add a new cache entry for key[%s]", key.getKeyString().c_str());
+            HCCL_INFO("[OpUnfoldCache][AddEntry] add a new cache entry for key[%s] cacheHashMap_.size[%u]", key.getKeyString().c_str(), cacheHashMap_.size());
 
             iter = insertResult.first;
             *entryPtrPtr = iter->second;
@@ -366,7 +383,7 @@ namespace hccl {
     HcclResult OpUnfoldCache::DumpSqeHeader(const rtStarsSqeHeader_t& sqeHeader) {
         PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeHeader] SQE header: type[%u] l1Lock[%u] l1Unlock[%u] ie[%u] preP[%u] postP[%u] wrCqe[%u]",
             sqeHeader.type, sqeHeader.l1Lock, sqeHeader.l1Unlock, sqeHeader.ie, sqeHeader.preP, sqeHeader.postP, sqeHeader.wrCqe);
-        PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeHeader] SQE header: reserved[%u] blockDim[%u] rtStreamId[%u] taskId[%u]",
+        PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeHeader] SQE header: reserved[%u] numBlocks[%u] rtStreamId[%u] taskId[%u]",
             sqeHeader.reserved, sqeHeader.blockDim, sqeHeader.rtStreamId, sqeHeader.taskId);
 
         return HCCL_SUCCESS;

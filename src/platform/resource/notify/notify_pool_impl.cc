@@ -17,6 +17,10 @@
 #include "notify_pool_impl.h"
 
 namespace hccl {
+constexpr u32 NOTIFY_NORMAL = 0; // 常规算子
+constexpr u32 NOTIFY_A2A = 1; // alltoall
+constexpr u32 NOTIFY_ALIGN = 2; // atomic write，需要8字节对齐的notify，暂不支持alltoall
+
 const std::string HCCL_ALLTOALL = "ALLTOALL";
 
 // notify的offset对齐标准
@@ -51,20 +55,14 @@ HcclResult NotifyPoolImpl::Init()
 HcclResult NotifyPoolImpl::Destroy()
 {
     HCCL_INFO("NotifyPoolImpl Destroy.");
-    CHK_RET(DestroyRegisteredOpMap());
-
-    CHK_RET(DestroyNotifyPoolIPCAsignedMapForA2A());
-    CHK_RET(DestroyNotifyPoolDeviceIPCAsignedMapForA2A());
-    CHK_RET(DestroyNotifyPoolIPCAsignedMap());
-    CHK_RET(DestroyNotifyPoolDeviceIPCAsignedMap());
-
-    CHK_RET(DestroyNotifyPoolNoIPCAsignedMapForA2A());
-    CHK_RET(DestroyNotifyPoolDeviceNoIPCAsignedMapForA2A());
-    CHK_RET(DestroyNotifyPoolNoIPCAsignedMap());
-    CHK_RET(DestroyNotifyPoolDeviceNoIPCAsignedMap());
-
+    for (u32 index = 0; index < NOTIFY_RES_MGR_NUM; ++index) {
+        CHK_RET(DestroyRegisteredOpMap(index));
+        CHK_RET(DestroyNotifyPoolIPCAsignedMap(index));
+        CHK_RET(DestroyNotifyPoolDevIPCAsignedMap(index));
+        CHK_RET(DestroyNotifyPoolNoIPCAsignedMap(index));
+        CHK_RET(DestroyNotifyPoolDevNoIPCAsignedMap(index));
+    }
     HCCL_INFO("NotifyPoolImpl Destroy success.");
-
     return HCCL_SUCCESS;
 }
 
@@ -123,113 +121,59 @@ HcclResult NotifyPoolImpl::CreateNotify(std::shared_ptr<LocalIpcNotify> &localNo
     return HCCL_SUCCESS;
 }
 
-HcclResult NotifyPoolImpl::DestroyNotifyPoolIPCAsignedMap()
+HcclResult NotifyPoolImpl::DestroyNotifyPoolIPCAsignedMap(u32 index)
 {
-    std::unique_lock<std::mutex> lock(notifyPoolIPCAsignedMutex_);
-
-    for (auto iter = notifyPoolIPCAsignedMap_.begin(); iter != notifyPoolIPCAsignedMap_.end(); iter++) {
+    std::unique_lock<std::mutex> lock(notifyResMgr_[index].notifyPoolIPCAsignedMutex);
+    auto &notifyPoolIPCAsignedMap = notifyResMgr_[index].notifyPoolIPCAsignedMap;
+    for (auto iter = notifyPoolIPCAsignedMap.begin(); iter != notifyPoolIPCAsignedMap.end(); iter++) {
         for (auto &it : iter->second) {
             CHK_RET(DestroyNotify(it));
         }
     }
-    notifyPoolIPCAsignedMap_.clear();
-    HCCL_DEBUG("destroy asigned notify pool(ipc).");
+    notifyPoolIPCAsignedMap.clear();
+    HCCL_INFO("%s index[%u] success", __func__, index);
     return HCCL_SUCCESS;
 }
 
-HcclResult NotifyPoolImpl::DestroyNotifyPoolDeviceIPCAsignedMap()
+HcclResult NotifyPoolImpl::DestroyNotifyPoolDevIPCAsignedMap(u32 index)
 {
-    std::unique_lock<std::mutex> lock(notifyPoolIPCAsignedMutex_);
-
-    for (auto iter = notifyPoolDeivceIPCAsignedMap_.begin(); iter != notifyPoolDeivceIPCAsignedMap_.end(); iter++) {
+    std::unique_lock<std::mutex> lock(notifyResMgr_[index].notifyPoolIPCAsignedMutex);
+    auto &notifyPoolDevIPCAsignedMap = notifyResMgr_[index].notifyPoolDevIPCAsignedMap;
+    for (auto iter = notifyPoolDevIPCAsignedMap.begin(); iter != notifyPoolDevIPCAsignedMap.end(); iter++) {
         for (auto &it : iter->second) {
             CHK_RET(DestroyNotify(it));
         }
     }
-    notifyPoolDeivceIPCAsignedMap_.clear();
-    HCCL_DEBUG("destroy asigned notify pool(device ipc).");
+    notifyPoolDevIPCAsignedMap.clear();
+    HCCL_INFO("%s index[%u] success", __func__, index);
     return HCCL_SUCCESS;
 }
 
-HcclResult NotifyPoolImpl::DestroyNotifyPoolIPCAsignedMapForA2A()
+HcclResult NotifyPoolImpl::DestroyNotifyPoolNoIPCAsignedMap(u32 index)
 {
-    std::unique_lock<std::mutex> lock(notifyPoolIPCAsignedMutexForA2A_);
-
-    for (auto iter = notifyPoolIPCAsignedMapForA2A_.begin(); iter != notifyPoolIPCAsignedMapForA2A_.end(); iter++) {
+    std::unique_lock<std::mutex> lock(notifyResMgr_[index].notifyPoolNoIPCAsignedMutex);
+    auto &notifyPoolNoIPCAsignedMap = notifyResMgr_[index].notifyPoolNoIPCAsignedMap;
+    for (auto iter = notifyPoolNoIPCAsignedMap.begin(); iter != notifyPoolNoIPCAsignedMap.end(); iter++) {
         for (auto &it : iter->second) {
             CHK_RET(DestroyNotify(it));
         }
     }
-    notifyPoolIPCAsignedMapForA2A_.clear();
-    HCCL_DEBUG("for a2a destroy asigned notify pool(ipc).");
+    notifyPoolNoIPCAsignedMap.clear();
+    HCCL_INFO("%s index[%u] success", __func__, index);
     return HCCL_SUCCESS;
 }
 
-HcclResult NotifyPoolImpl::DestroyNotifyPoolDeviceIPCAsignedMapForA2A()
+HcclResult NotifyPoolImpl::DestroyNotifyPoolDevNoIPCAsignedMap(u32 index)
 {
-    std::unique_lock<std::mutex> lock(notifyPoolIPCAsignedMutexForA2A_);
-
-    for (auto iter = notifyPoolDevIPCAsignedMapForA2A_.begin(); iter != notifyPoolDevIPCAsignedMapForA2A_.end();
-         iter++) {
+    std::unique_lock<std::mutex> lock(notifyResMgr_[index].notifyPoolNoIPCAsignedMutex);
+    auto &notifyPoolDevNoIPCAsignedMap = notifyResMgr_[index].notifyPoolDevNoIPCAsignedMap;
+    for (auto iter = notifyPoolDevNoIPCAsignedMap.begin(); iter != notifyPoolDevNoIPCAsignedMap.end(); iter++) {
         for (auto &it : iter->second) {
             CHK_RET(DestroyNotify(it));
         }
     }
-    notifyPoolDevIPCAsignedMapForA2A_.clear();
-    HCCL_DEBUG("for a2a destroy asigned notify pool(ipc).");
-    return HCCL_SUCCESS;
-}
-
-HcclResult NotifyPoolImpl::DestroyNotifyPoolNoIPCAsignedMap()
-{
-    std::unique_lock<std::mutex> lock(notifyPoolNoIPCAsignedMutex_);
-    for (auto iter = notifyPoolNoIPCAsignedMap_.begin(); iter != notifyPoolNoIPCAsignedMap_.end(); iter++) {
-        for (auto &it : iter->second) {
-            CHK_RET(DestroyNotify(it));
-        }
-    }
-    notifyPoolNoIPCAsignedMap_.clear();
-    HCCL_DEBUG("destroy asigned notify pool(no ipc).");
-    return HCCL_SUCCESS;
-}
-
-HcclResult NotifyPoolImpl::DestroyNotifyPoolDeviceNoIPCAsignedMap()
-{
-    std::unique_lock<std::mutex> lock(notifyPoolNoIPCAsignedMutex_);
-    for (auto iter = notifyPoolDeivceNoIPCAsignedMap_.begin(); iter != notifyPoolDeivceNoIPCAsignedMap_.end(); iter++) {
-        for (auto &it : iter->second) {
-            CHK_RET(DestroyNotify(it));
-        }
-    }
-    notifyPoolDeivceNoIPCAsignedMap_.clear();
-    HCCL_DEBUG("destroy asigned notify pool(device no ipc).");
-    return HCCL_SUCCESS;
-}
-
-HcclResult NotifyPoolImpl::DestroyNotifyPoolNoIPCAsignedMapForA2A()
-{
-    std::unique_lock<std::mutex> lock(notifyPoolNoIPCAsignedMutexForA2A_);
-    for (auto iter = notifyPoolNoIPCAsignedMapForA2A_.begin(); iter != notifyPoolNoIPCAsignedMapForA2A_.end(); iter++) {
-        for (auto &it : iter->second) {
-            CHK_RET(DestroyNotify(it));
-        }
-    }
-    notifyPoolNoIPCAsignedMapForA2A_.clear();
-    HCCL_DEBUG("for a2a destroy asigned notify pool(no ipc).");
-    return HCCL_SUCCESS;
-}
-
-HcclResult NotifyPoolImpl::DestroyNotifyPoolDeviceNoIPCAsignedMapForA2A()
-{
-    std::unique_lock<std::mutex> lock(notifyPoolNoIPCAsignedMutexForA2A_);
-    for (auto iter = notifyPoolDevNoIPCAsignedMapForA2A_.begin(); iter != notifyPoolDevNoIPCAsignedMapForA2A_.end();
-         iter++) {
-        for (auto &it : iter->second) {
-            CHK_RET(DestroyNotify(it));
-        }
-    }
-    notifyPoolDevNoIPCAsignedMapForA2A_.clear();
-    HCCL_DEBUG("for a2a destroy asigned notify pool(no ipc).");
+    notifyPoolDevNoIPCAsignedMap.clear();
+    HCCL_INFO("%s index[%u] success", __func__, index);
     return HCCL_SUCCESS;
 }
 
@@ -260,18 +204,23 @@ HcclResult NotifyPoolImpl::RegisterOp(const std::string &tag)
     std::transform(upTag.begin(), upTag.end(), upTag.begin(), ::toupper);
     bool hasAlltoAll = upTag.find(HCCL_ALLTOALL) != std::string::npos;
     HCCL_INFO("RegisterOp hasAlltoAll[%d]", hasAlltoAll);
-    std::mutex &registeredOpMapMutex = hasAlltoAll ? registeredOpMapMutexForA2A_ : registeredOpMapMutex_;
-    std::map<std::string, NotifyPoolIndicator> &registeredOpMap = hasAlltoAll ? registeredOpMapForA2A_ :
-        registeredOpMap_;
+    u32 notifyResIdx = hasAlltoAll ? NOTIFY_A2A : NOTIFY_NORMAL;
+    auto tagDev = "Dev_" + tag;
 
     /* 此处可能会与并发，加锁 */
-    std::unique_lock<std::mutex> lock(registeredOpMapMutex);
+    std::unique_lock<std::mutex> lock1(notifyResMgr_[notifyResIdx].registeredOpMapMutex);
+    CHK_RET(RegisterOpMap(tag, notifyResMgr_[notifyResIdx].registeredOpMap));
+    CHK_RET(RegisterOpMap(tagDev, notifyResMgr_[notifyResIdx].registeredOpMap));
+    lock1.unlock();
 
-    CHK_RET(RegisterOpMap(tag, registeredOpMap));
-    auto tagDev = "Dev_" + tag;
-    CHK_RET(RegisterOpMap(tagDev, registeredOpMap));
+    // ALIGN的资源池不支持alltoall算子
+    if (!hasAlltoAll) {
+        std::unique_lock<std::mutex> lock2(notifyResMgr_[NOTIFY_ALIGN].registeredOpMapMutex);
+        CHK_RET(RegisterOpMap(tag, notifyResMgr_[NOTIFY_ALIGN].registeredOpMap));
+        CHK_RET(RegisterOpMap(tagDev, notifyResMgr_[NOTIFY_ALIGN].registeredOpMap));
+        lock2.unlock();
+    }
     HCCL_INFO("register op[%s] to the notify pool success.", tag.c_str());
-
     return HCCL_SUCCESS;
 }
 
@@ -295,24 +244,30 @@ HcclResult NotifyPoolImpl::UnregisterOp(const std::string &tag)
     std::transform(upTag.begin(), upTag.end(), upTag.begin(), ::toupper);
     bool hasAlltoAll = upTag.find(HCCL_ALLTOALL) != std::string::npos;
     HCCL_INFO("UnregisterOp hasAlltoAll[%d]", hasAlltoAll);
-    std::mutex &registeredOpMapMutex = hasAlltoAll ? registeredOpMapMutexForA2A_ : registeredOpMapMutex_;
-    std::map<std::string, NotifyPoolIndicator> &registeredOpMap = hasAlltoAll ? registeredOpMapForA2A_ :
-        registeredOpMap_;
+    u32 notifyResIdx = hasAlltoAll ? NOTIFY_A2A : NOTIFY_NORMAL;
+    auto tagDev = "Dev_" + tag;
 
     /* 此处可能会与并发，加锁 */
-    std::unique_lock<std::mutex> lock(registeredOpMapMutex);
+    std::unique_lock<std::mutex> lock1(notifyResMgr_[notifyResIdx].registeredOpMapMutex);
+    CHK_RET(UnregisterOpMap(tag, notifyResMgr_[notifyResIdx].registeredOpMap));
+    CHK_RET(UnregisterOpMap(tagDev, notifyResMgr_[notifyResIdx].registeredOpMap));
+    lock1.unlock();
 
-    CHK_RET(UnregisterOpMap(tag, registeredOpMap));
-    auto tagDev = "Dev_" + tag;
-    CHK_RET(UnregisterOpMap(tagDev, registeredOpMap));
+    if (!hasAlltoAll) {
+        std::unique_lock<std::mutex> lock2(notifyResMgr_[NOTIFY_ALIGN].registeredOpMapMutex);
+        CHK_RET(UnregisterOpMap(tag, notifyResMgr_[NOTIFY_ALIGN].registeredOpMap));
+        CHK_RET(UnregisterOpMap(tagDev, notifyResMgr_[NOTIFY_ALIGN].registeredOpMap));
+        lock2.unlock();
+    }
     HCCL_INFO("unregister op[%s] from the notify pool success.", tag.c_str());
     return HCCL_SUCCESS;
 }
 
-HcclResult NotifyPoolImpl::DestroyRegisteredOpMap()
+HcclResult NotifyPoolImpl::DestroyRegisteredOpMap(u32 index)
 {
-    registeredOpMap_.clear();
-    registeredOpMapForA2A_.clear();
+    std::unique_lock<std::mutex> lock(notifyResMgr_[index].registeredOpMapMutex);
+    notifyResMgr_[index].registeredOpMap.clear();
+    HCCL_INFO("%s index[%u] success", __func__, index);
     return HCCL_SUCCESS;
 }
 
@@ -392,33 +347,48 @@ HcclResult NotifyPoolImpl::AllocIpc(const std::string &tag, s64 remote, s64 recv
     return HCCL_SUCCESS;
 }
 
-HcclResult NotifyPoolImpl::Alloc(const std::string &tag, s64 remote, s64 recvId, const s32 localDeviceId,
-    const s32 remoteDeviceId, const NotifyLoadType type, std::shared_ptr<LocalIpcNotify> &localNotify,
-    u32 offsetAlignSize)
+u32 NotifyPoolImpl::GetNotifyResIdx(const std::string &tag, u32 offsetAlignSize)
 {
     std::string upTag = tag;
     std::transform(upTag.begin(), upTag.end(), upTag.begin(), ::toupper);
     bool hasAlltoAll = upTag.find(HCCL_ALLTOALL) != std::string::npos;
-    HCCL_INFO("Alloc hasAlltoAll[%d]", hasAlltoAll);
-    std::mutex &registeredOpMapMutex = hasAlltoAll ? registeredOpMapMutexForA2A_ : registeredOpMapMutex_;
-    std::mutex &notifyPoolIPCAsignedMapMutex = hasAlltoAll ? notifyPoolIPCAsignedMutexForA2A_ : notifyPoolIPCAsignedMutex_;
-    std::map<std::string, NotifyPoolIndicator> &registeredOpMap =
-        hasAlltoAll ? registeredOpMapForA2A_ : registeredOpMap_;
+    u32 res = 0;
+    // alltoall算子不需要使用atomic write，因此固定使用A2A的资源池
+    if (hasAlltoAll) {
+        res = NOTIFY_A2A;
+    } else if (offsetAlignSize == NOTIFY_OFFSET_ALIGN_EIGHT) {
+        res = NOTIFY_ALIGN;
+    } else {
+        res = NOTIFY_NORMAL;
+    }
+    HCCL_INFO("%s tag[%s], offsetAlignSize[%u], res[%u]", __func__, tag.c_str(), offsetAlignSize, res);
+    return res;
+}
+
+HcclResult NotifyPoolImpl::Alloc(const std::string &tag, s64 remote, s64 recvId, const s32 localDeviceId,
+    const s32 remoteDeviceId, const NotifyLoadType type, std::shared_ptr<LocalIpcNotify> &localNotify,
+    u32 offsetAlignSize)
+{
+    u32 notifyResIdx = GetNotifyResIdx(tag, offsetAlignSize);
+    HCCL_INFO("[NotifyPoolImpl][Alloc]notifyResIdx[%u], tag[%s], remote[%lld], recvId[%lld], "\
+        "localDeviceId[%d], remoteDeviceId[%d], type[%d], offsetAlignSize[%u]",
+        notifyResIdx, tag.c_str(), remote, recvId, localDeviceId, remoteDeviceId, type, offsetAlignSize);
+
+    std::mutex &registeredOpMapMutex = notifyResMgr_[notifyResIdx].registeredOpMapMutex;
+    std::mutex &notifyPoolIPCAsignedMapMutex = notifyResMgr_[notifyResIdx].notifyPoolIPCAsignedMutex;
+    std::map<std::string, NotifyPoolIndicator> &registeredOpMap = notifyResMgr_[notifyResIdx].registeredOpMap;
     if (type == NotifyLoadType::HOST_NOTIFY) {
-        std::map<s64, NotifyPoolIPCSub> &notifyPoolIPCAsignedMap = hasAlltoAll ? notifyPoolIPCAsignedMapForA2A_ :
-        notifyPoolIPCAsignedMap_;
+        std::map<s64, NotifyPoolIPCSub> &notifyPoolIPCAsignedMap = notifyResMgr_[notifyResIdx].notifyPoolIPCAsignedMap;
         CHK_RET(AllocIpc(tag, remote, recvId, localDeviceId, remoteDeviceId, type, localNotify,
             registeredOpMapMutex, registeredOpMap, notifyPoolIPCAsignedMapMutex, notifyPoolIPCAsignedMap,
             offsetAlignSize));
     } else if (type == NotifyLoadType::DEVICE_NOTIFY) { // 申请device上使用的notify资源
-        std::map<s64, NotifyPoolIPCSub> &notifyPoolIPCAsignedMap = hasAlltoAll ? notifyPoolDevIPCAsignedMapForA2A_ :
-        notifyPoolDeivceIPCAsignedMap_;
+        std::map<s64, NotifyPoolIPCSub> &notifyPoolIPCAsignedMap = notifyResMgr_[notifyResIdx].notifyPoolDevIPCAsignedMap;
         auto tagDev = "Dev_" + tag;
         CHK_RET(AllocIpc(tagDev, remote, recvId, localDeviceId, remoteDeviceId, type, localNotify,
             registeredOpMapMutex, registeredOpMap, notifyPoolIPCAsignedMapMutex, notifyPoolIPCAsignedMap,
             offsetAlignSize));
     }
-
     return HCCL_SUCCESS;
 }
 
@@ -482,22 +452,19 @@ HcclResult NotifyPoolImpl::AllocNoIpc(const std::string &tag, s64 remote, const 
 HcclResult NotifyPoolImpl::Alloc(const std::string &tag, s64 remote, const s32 deviceId, const NotifyLoadType type,
     std::shared_ptr<LocalIpcNotify> &localNotify, u32 offsetAlignSize)
 {
-    std::string upTag = tag;
-    std::transform(upTag.begin(), upTag.end(), upTag.begin(), ::toupper);
-    bool hasAlltoAll = upTag.find(HCCL_ALLTOALL) != std::string::npos;
-    HCCL_INFO("Alloc hasAlltoAll[%d]", hasAlltoAll);
-    std::mutex &registeredOpMapMutex = hasAlltoAll ? registeredOpMapMutexForA2A_ : registeredOpMapMutex_;
-    std::mutex &notifyPoolNoIPCAsignedMapMutex = hasAlltoAll ? notifyPoolNoIPCAsignedMutexForA2A_ : notifyPoolNoIPCAsignedMutex_;
-    std::map<std::string, NotifyPoolIndicator> &registeredOpMap =
-        hasAlltoAll ? registeredOpMapForA2A_ : registeredOpMap_;
+    u32 notifyResIdx = GetNotifyResIdx(tag, offsetAlignSize);
+    HCCL_INFO("[NotifyPoolImpl][Alloc]notifyResIdx[%u], tag[%s], remote[%lld], deviceId[%d], type[%d], "\
+        "offsetAlignSize[%u]", notifyResIdx, tag.c_str(), remote, deviceId, type, offsetAlignSize);
+
+    std::mutex &registeredOpMapMutex = notifyResMgr_[notifyResIdx].registeredOpMapMutex;
+    std::mutex &notifyPoolNoIPCAsignedMapMutex = notifyResMgr_[notifyResIdx].notifyPoolNoIPCAsignedMutex;
+    std::map<std::string, NotifyPoolIndicator> &registeredOpMap = notifyResMgr_[notifyResIdx].registeredOpMap;
     if (type == NotifyLoadType::HOST_NOTIFY) {
-        std::map<s64, NotifyPoolNoIPCSub> &notifyPoolNoIPCAsignedMap = hasAlltoAll ? notifyPoolNoIPCAsignedMapForA2A_ :
-            notifyPoolNoIPCAsignedMap_;
+        std::map<s64, NotifyPoolNoIPCSub> &notifyPoolNoIPCAsignedMap = notifyResMgr_[notifyResIdx].notifyPoolNoIPCAsignedMap;
         CHK_RET(AllocNoIpc(tag, remote, deviceId, type, localNotify, registeredOpMapMutex, registeredOpMap,
             notifyPoolNoIPCAsignedMapMutex, notifyPoolNoIPCAsignedMap, offsetAlignSize));
     } else if (type == NotifyLoadType::DEVICE_NOTIFY) { // 申请device上使用的notify资源
-        std::map<s64, NotifyPoolNoIPCSub> &notifyPoolNoIPCAsignedMap =
-            hasAlltoAll ? notifyPoolDevNoIPCAsignedMapForA2A_ : notifyPoolDeivceNoIPCAsignedMap_;
+        std::map<s64, NotifyPoolNoIPCSub> &notifyPoolNoIPCAsignedMap = notifyResMgr_[notifyResIdx].notifyPoolDevNoIPCAsignedMap;
         auto tagDev = "Dev_" + tag;
         CHK_RET(AllocNoIpc(tagDev, remote, deviceId, type, localNotify, registeredOpMapMutex, registeredOpMap,
             notifyPoolNoIPCAsignedMapMutex, notifyPoolNoIPCAsignedMap, offsetAlignSize));
@@ -530,66 +497,63 @@ HcclResult NotifyPoolImpl::Alloc(const std::string &tag, const RemoteRankInfo &i
 }
 
 HcclResult NotifyPoolImpl::ResetNotifyForDestRank(s64 destRank) {
-    std::unique_lock<std::mutex> lockIPC(notifyPoolIPCAsignedMutex_);
-    const auto &notifyPoolDeivceIPCAsignedIt = notifyPoolDeivceIPCAsignedMap_.find(destRank);
-    if (notifyPoolDeivceIPCAsignedIt == notifyPoolDeivceIPCAsignedMap_.end()) {
-        HCCL_RUN_INFO("[ResetNotify]remoteRank[%d] is not in notifyPoolDeivceIPCAsignedMap_", destRank);
-    } else {
-        HCCL_RUN_INFO("[ResetNotify]reset notifyPoolDeivceIPCAsignedIt remoteRank=[%d]", destRank);
-        for (auto &it : notifyPoolDeivceIPCAsignedIt->second) {
-            CHK_RET(hrtNotifyReset(it->ptr()));
+    // send/recv场景需要单点重置和对端的notify
+    std::vector<u32> notifyResIdxs = {NOTIFY_NORMAL, NOTIFY_ALIGN};
+    for (u32 notifyResIdx : notifyResIdxs) {
+        std::unique_lock<std::mutex> lockIPC(notifyResMgr_[notifyResIdx].notifyPoolIPCAsignedMutex);
+        const auto &notifyPoolDevIPCAsignedIt = notifyResMgr_[notifyResIdx].notifyPoolDevIPCAsignedMap.find(destRank);
+        if (notifyPoolDevIPCAsignedIt == notifyResMgr_[notifyResIdx].notifyPoolDevIPCAsignedMap.end()) {
+            HCCL_RUN_INFO("[ResetNotify]remoteRank[%d] is not in notifyPoolDevIPCAsignedMap, notifyResIdx[%u]",
+                destRank, notifyResIdx);
+        } else {
+            HCCL_RUN_INFO("[ResetNotify]reset notifyPoolDevIPCAsignedIt remoteRank[%d], notifyResIdx[%u]",
+                destRank, notifyResIdx);
+            for (auto &it : notifyPoolDevIPCAsignedIt->second) {
+                CHK_RET(hrtNotifyReset(it->ptr()));
+            }
         }
-    }
-    lockIPC.unlock();
+        lockIPC.unlock();
 
-    // 根据destRank清理对端的notify
-    std::unique_lock<std::mutex> lockNoIPC(notifyPoolNoIPCAsignedMutex_);
-    const auto &notifyPoolDeivceNoIPCAsignedIt = notifyPoolDeivceNoIPCAsignedMap_.find(destRank);
-    if (notifyPoolDeivceNoIPCAsignedIt == notifyPoolDeivceNoIPCAsignedMap_.end()) {
-        HCCL_RUN_INFO("[ResetNotify]remoteRank[%d] is not in notifyPoolDeivceNoIPCAsignedMap_", destRank);
-    } else {
-        HCCL_RUN_INFO("[ResetNotify]reset notifyPoolDeivceNoIPCAsignedIt remoteRank=[%d]", destRank);
-        for (auto &it : notifyPoolDeivceNoIPCAsignedIt->second) {
-            CHK_RET(hrtNotifyReset(it->ptr()));
+        std::unique_lock<std::mutex> lockNoIPC(notifyResMgr_[notifyResIdx].notifyPoolNoIPCAsignedMutex);
+        const auto &notifyPoolDevNoIPCAsignedIt = notifyResMgr_[notifyResIdx].notifyPoolDevNoIPCAsignedMap.find(destRank);
+        if (notifyPoolDevNoIPCAsignedIt == notifyResMgr_[notifyResIdx].notifyPoolDevNoIPCAsignedMap.end()) {
+            HCCL_RUN_INFO("[ResetNotify]remoteRank[%d] is not in notifyPoolDevNoIPCAsignedMap, notifyResIdx[%u]",
+                destRank, notifyResIdx);
+        } else {
+            HCCL_RUN_INFO("[ResetNotify]reset notifyPoolDevNoIPCAsignedIt remoteRank[%d], notifyResIdx[%u]",
+                destRank, notifyResIdx);
+            for (auto &it : notifyPoolDevNoIPCAsignedIt->second) {
+                CHK_RET(hrtNotifyReset(it->ptr()));
+            }
         }
+        lockNoIPC.unlock();
     }
-    lockNoIPC.unlock();
     return HCCL_SUCCESS;
 }
 
 HcclResult NotifyPoolImpl::ResetNotify()
 {
     HCCL_DEBUG("NotifyPoolImpl ResetNotify");
-    std::unique_lock<std::mutex> lockIPC(notifyPoolIPCAsignedMutex_);
-    for (auto iter = notifyPoolDeivceIPCAsignedMap_.begin(); iter != notifyPoolDeivceIPCAsignedMap_.end(); iter++) {
-        for (auto &it : iter->second) {
-            CHK_RET(hrtNotifyReset(it->ptr()));
+    for (u32 notifyResIdx = 0; notifyResIdx < NOTIFY_RES_MGR_NUM; ++notifyResIdx) {
+        HCCL_INFO("NotifyPoolImpl ResetNotify, notifyResIdx[%u]", notifyResIdx);
+        std::unique_lock<std::mutex> lockIPC(notifyResMgr_[notifyResIdx].notifyPoolIPCAsignedMutex);
+        auto &notifyPoolDevIPCAsignedMap = notifyResMgr_[notifyResIdx].notifyPoolDevIPCAsignedMap;
+        for (auto iter = notifyPoolDevIPCAsignedMap.begin(); iter != notifyPoolDevIPCAsignedMap.end(); iter++) {
+            for (auto &it : iter->second) {
+                CHK_RET(hrtNotifyReset(it->ptr()));
+            }
         }
-    }
-    lockIPC.unlock();
-    std::unique_lock<std::mutex> lockNoIPC(notifyPoolNoIPCAsignedMutex_);
-    for (auto iter = notifyPoolDeivceNoIPCAsignedMap_.begin(); iter != notifyPoolDeivceNoIPCAsignedMap_.end(); iter++) {
-        for (auto &it : iter->second) {
-            CHK_RET(hrtNotifyReset(it->ptr()));
+        lockIPC.unlock();
+
+        std::unique_lock<std::mutex> lockNoIPC(notifyResMgr_[notifyResIdx].notifyPoolNoIPCAsignedMutex);
+        auto &notifyPoolDevNoIPCAsignedMap = notifyResMgr_[notifyResIdx].notifyPoolDevNoIPCAsignedMap;
+        for (auto iter = notifyPoolDevNoIPCAsignedMap.begin(); iter != notifyPoolDevNoIPCAsignedMap.end(); iter++) {
+            for (auto &it : iter->second) {
+                CHK_RET(hrtNotifyReset(it->ptr()));
+            }
         }
+        lockNoIPC.unlock();
     }
-    lockNoIPC.unlock();
-    std::unique_lock<std::mutex> lockIPCA2A(notifyPoolIPCAsignedMutexForA2A_);
-    for (auto iter = notifyPoolDevIPCAsignedMapForA2A_.begin(); iter != notifyPoolDevIPCAsignedMapForA2A_.end();
-         iter++) {
-        for (auto &it : iter->second) {
-            CHK_RET(hrtNotifyReset(it->ptr()));
-        }
-    }
-    lockIPCA2A.unlock();
-    std::unique_lock<std::mutex> lockNoIPCA2A(notifyPoolNoIPCAsignedMutexForA2A_);
-    for (auto iter = notifyPoolDevNoIPCAsignedMapForA2A_.begin(); iter != notifyPoolDevNoIPCAsignedMapForA2A_.end();
-         iter++) {
-        for (auto &it : iter->second) {
-            CHK_RET(hrtNotifyReset(it->ptr()));
-        }
-    }
-    lockNoIPCA2A.unlock();
     return HCCL_SUCCESS;
 }
 }  // namespace hccl

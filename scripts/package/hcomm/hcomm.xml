@@ -29,7 +29,7 @@
         <block name="CommLib"/>
     </block_info>
     <dir_info value="hcomm" install_path="hcomm" install_type="all">
-        <path value="share" install_mod="555"/>
+        <path value="share" install_mod="750"/>
         <path value="share/info" install_mod="750"/>
         <path value="share/info/hcomm" install_mod="750"/>
         <path value="share/info/hcomm/script" install_mod="550"/>

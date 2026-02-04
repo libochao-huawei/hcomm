@@ -1,13 +1,18 @@
 /**
- * @file hccp_async.h
- * @brief This module provides APIs async operations for HCCL
- * @version Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
- * @date 2025-02-17
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
+
 #ifndef HCCP_ASYNC_H
 #define HCCP_ASYNC_H
 
 #include "hccp_common.h"
+#include "hccp_ctx.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -110,6 +115,23 @@ HCCP_ATTRI_VISI_DEF int RaSocketSendAsync(const void *fdHandle, const void *data
 */
 HCCP_ATTRI_VISI_DEF int RaSocketRecvAsync(const void *fdHandle, void *data, unsigned long long size,
     unsigned long long *receivedSize, void **reqHandle);
+
+/**
+ * @ingroup libudma
+ * @brief get corresponding eid by ip async
+ * @param ctx_handle [IN] ctx handle
+ * @param ip [IN] ip array, see struct IpInfo
+ * @param eid [IN/OUT] eid array, see union hccp_eid
+ * @param num [IN/OUT] num of ip and eid array, max num is GET_EID_BY_IP_MAX_NUM
+ * @param req_handle [OUT] async request handle
+ * @see ra_get_async_req_result
+ * @see ra_ctx_init
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int ra_get_eid_by_ip_async(void *ctx_handle, struct IpInfo ip[], union hccp_eid eid[],
+    unsigned int *num, void **req_handle);
+
 #ifdef __cplusplus
 }
 #endif

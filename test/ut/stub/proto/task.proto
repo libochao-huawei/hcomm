@@ -77,7 +77,7 @@ message KernelDef {
     KernelContext context = 1;
 
     string stub_func = 10;
-    uint32 block_dim = 11;
+    uint32 num_blocks = 11;
     uint32 args_size = 12;
     bytes args = 13;
     bytes sm_desc = 14;
@@ -88,7 +88,7 @@ message KernelDef {
     uint32 kernel_ext_info_size = 19;
     repeated ArgsInfo args_info = 20;
     uint32 schedule_mode = 21;
-    uint32 block_dim_offset = 22; // vector core offset
+    uint32 num_blocks_offset = 22; // vector core offset
 }
 
 message KernelDefWithHandle {
@@ -96,7 +96,7 @@ message KernelDefWithHandle {
 
     uint64 handle = 10;
     string dev_func = 11;
-    uint32 block_dim = 12;
+    uint32 num_blocks = 12;
     uint32 args_size = 13;
     bytes args = 14;
     bytes sm_desc = 15;
@@ -104,7 +104,7 @@ message KernelDefWithHandle {
     string node_info = 17;
     repeated ArgsInfo args_info = 18;
     uint32 schedule_mode = 19;
-    uint32 block_dim_offset = 20; // vector core offset
+    uint32 num_blocks_offset = 20; // vector core offset
 }
 
 message KernelContext {
@@ -413,7 +413,7 @@ message FftsPlusSqeDef {
 message StarsSqeHeaderDef {
     uint32 l1_lock = 1;
     uint32 l1_unlock = 2;
-    uint32 block_dim = 3;
+    uint32 num_blocks = 3;
 }
 
 // ffts plus context
@@ -467,8 +467,8 @@ message FftsPlusAicAivCtxDef {
     uint32 thread_id = 15;
     uint32 thread_dim = 16;
 
-    uint32 non_tail_block_dim = 17;
-    uint32 tail_block_dim = 18;
+    uint32 non_tail_num_blocks = 17;
+    uint32 tail_num_blocks = 18;
 
     uint32 task_param_ptr_offset = 19;
     uint32 save_task_addr = 20;
@@ -508,8 +508,8 @@ message FftsPlusMixAicAivCtxDef {
     uint32 thread_id = 17;
     uint32 thread_dim = 18;
 
-    uint32 non_tail_block_dim = 19;
-    uint32 tail_block_dim = 20;
+    uint32 non_tail_num_blocks = 19;
+    uint32 tail_num_blocks = 20;
 
     uint32 aic_task_param_ptr_offset = 21;
     uint32 aiv_task_param_ptr_offset = 22;
@@ -627,8 +627,8 @@ message FftsPlusAicpuCtxDef {
     uint32 thread_id = 12;
     uint32 thread_dim = 13;
 
-    uint32 non_tail_block_dim = 14;
-    uint32 tail_block_dim = 15;
+    uint32 non_tail_num_blocks = 14;
+    uint32 tail_num_blocks = 15;
 
     uint32 sub_topic_id = 16;
     uint32 topic_id = 17;
@@ -966,30 +966,30 @@ message SubmodelStatus {
 message LaunchAttributeValue {
   message Group {
     uint32 group_dim = 1;
-    uint32 group_block_dim = 2;
+    uint32 group_num_blocks = 2;
   }
 
   oneof attribute_value {
-    uint32 block_dim = 1;
+    uint32 num_blocks = 1;
     uint32 dynamic_share_mem_size = 2;
     Group group = 3;
     uint32 qos = 4;
     uint32 part_id = 5;
     uint32 schem_model = 6;
-    uint32 block_dim_offset = 7;
+    uint32 num_blocks_offset = 7;
     uint32 dump_flag = 8;
   }
 }
 
 message LaunchAttribute {
     enum LaunchAttributeId {
-        BLOCKDIM = 0;
+        NUMBLOCKS = 0;
         DYNAMIC_SHARE_MEM_SIZE = 1;
         GROUP = 2;
         QOS = 3;
         PARTID = 4;
         SCHEMMODE = 5;
-        BLOCKDIM_OFFSET = 6;
+        NUMBLOCKS_OFFSET = 6;
         DUMPFLAG = 7;
         MAX = 8;
     }
@@ -1010,7 +1010,7 @@ message AicoreFusionTaskInfo {
 message AicpuFusionTaskInfo {
     KernelContext context = 1;
     uint32 flags = 2;
-    uint32 block_dim = 3;
+    uint32 num_blocks = 3;
     string so_name = 4;
     string kernel_name = 5;
     bytes kernel_ext_info = 6;

@@ -18,7 +18,7 @@ class CollAllReduceRingFor91093Executor : public CollAllReduceExecutor {
 
 public:
     CollAllReduceRingFor91093Executor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllReduceRingFor91093Executor() = default;
+    ~CollAllReduceRingFor91093Executor() override = default;
 
 private:
     /* *************** 资源计算 *************** */
@@ -49,6 +49,17 @@ private:
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
     HcclResult Getlevel1CommRank(SubCommInfo& level1CommInfo) override;
     HcclResult SelectTempAlg(std::unique_ptr<AlgTemplateBase> &level1TempAlg, u32 level1RankSize) override;
+    virtual HcclResult GetLevelCommInfo();
+    HcclResult GetNicList(std::vector<u32> &mockNicList);
+    HcclResult PrepareARSLevel1CommInfo(u32 &segmentIdx, u32 &commIndex, u64 &hdSize,
+                                                  const SubCommInfo &commInfo,
+                                                  const std::vector<std::vector<Slice>> &multRingsSliceZero,
+                                                  const std::string &tag, const std::vector<u32>& nicList);
+protected:
+    SubCommInfo logicalLevel0CommInfo_;
+    SubCommInfo logicalLevel1CommInfo_;
+    CommPlane logicalLevel0plane_;
+    CommPlane logicalLevel1plane_;
 };
 
 } // namespace hccl
