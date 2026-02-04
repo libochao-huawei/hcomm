@@ -17,6 +17,7 @@
 #include "task_param.h"
 
 #include "task_struct_v2.h"
+#include "task_scheduler_error.h"
 #include "orion_adapter_hal.h"
 
 namespace Hccl {
