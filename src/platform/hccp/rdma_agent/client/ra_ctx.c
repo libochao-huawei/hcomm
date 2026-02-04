@@ -602,6 +602,11 @@ HCCP_ATTRI_VISI_DEF int ra_ctx_qp_create(void *ctx_handle, struct qp_create_attr
         goto err;
     }
 
+    hccp_warn("@@@ info->va: %ld", info->va);
+    hccp_warn("@@@ info->udma_jetty_sq.qbuf: %ld", info->udma_jetty_sq.qbuf);
+    hccp_warn("@@@ info->udma_jetty_sq.qbuf_end: %ld", info->udma_jetty_sq.qbuf_end);
+    hccp_warn("@@@ info->udma_jetty_sq.qbuf_size: %ld", info->udma_jetty_sq.qbuf_size);
+    hccp_warn("@@@ info->udma_jetty_sq.qbuf_curr: %ld", info->udma_jetty_sq.qbuf_curr);
     *qp_handle = (void *)qp_handle_tmp;
     return 0;
 
