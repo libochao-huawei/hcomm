@@ -371,7 +371,6 @@ HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
 {
     CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[GetRemoteMem] remoteMem is nullptr"), HCCL_E_PTR);
     CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[GetRemoteMem] memNum is nullptr"), HCCL_E_PTR);
-    HCCL_RUN_INFO("GetRemoteMem begin");
     *memNum = 0;
 
     uint32_t totalCount = rmtRmaBuffers_.size();
@@ -396,7 +395,6 @@ HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
     }
 
     *memNum = totalCount;
-    HCCL_RUN_INFO("GetRemoteMem end");
     return HCCL_SUCCESS;
 }
 
@@ -636,6 +634,8 @@ HcclResult HostCpuRoceChannel::PrepareWriteWrResource(const void *dst, const voi
 HcclResult HostCpuRoceChannel::WriteWithNotify(
     void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx) const
 {
+    CHK_PTR_NULL(src);
+    CHK_PTR_NULL(dst);
     HCCL_INFO("[HostCpuRoceChannel::WriteWithNotify] WriteWithNotify start");
 
     CHK_PRT_RET(localRmaBuffers_.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] localRmaBuffer is Empty", __func__),
