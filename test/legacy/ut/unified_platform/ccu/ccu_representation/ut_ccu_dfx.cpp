@@ -659,9 +659,9 @@ TEST_F(CcuDfxTest, GroupBroadcastTest)
     taskArg.Init(5, 6, 7, 8, 9, 10, asize, bsize, 13, 14);
     std::vector<CcuProfilingInfo> ccuprofilinginfo = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg());
     DumpCcuProfilingInfo(ccuprofilinginfo);
-    EXPECT_EQ(ccuprofilinginfo.size(), 3);
+    EXPECT_EQ(ccuprofilinginfo.size(), 2);
     EXPECT_EQ(ccuprofilinginfo[1].name, "GroupBroadcast");
-    EXPECT_EQ(ccuprofilinginfo[2].dataSize, 1);
+    EXPECT_EQ(ccuprofilinginfo[2].dataSize, 48);
     EXPECT_EQ(ccuprofilinginfo[1].channelId[0], 23);
 }
 
@@ -703,9 +703,9 @@ TEST_F(CcuDfxTest, GroupReduceTest)
     ccuTaskArgTest taskArg;
     taskArg.Init(5, 6, 7, 8, 9, 10, asize, bsize, 13, 14);
     std::vector<CcuProfilingInfo> ccuprofilinginfo = ctx.GetCcuProfilingInfo(*taskArg.GetTaskArg());
-    EXPECT_EQ(ccuprofilinginfo.size(), 3);
+    EXPECT_EQ(ccuprofilinginfo.size(), 2);
     EXPECT_EQ(ccuprofilinginfo[1].name, "GroupReduce");
-    EXPECT_EQ(ccuprofilinginfo[2].dataSize, 1);
+    EXPECT_EQ(ccuprofilinginfo[2].dataSize, 48);
     EXPECT_EQ(ccuprofilinginfo[1].channelId[0], 23);
 }
 
@@ -777,7 +777,7 @@ TEST_F(CcuDfxTest, GetProfilingInfoTest_total_size_equals_256k__1)
     uint32_t asize = 255*1024;
     uint32_t bsize = 1024+1;
     std::vector<CcuProfilingInfo> profilingInfo = createCcuGroupBroadcastTest(asize,bsize);
-    EXPECT_EQ(profilingInfo.size(), 3);
+    EXPECT_EQ(profilingInfo.size(), 2);
     EXPECT_EQ(profilingInfo[1].name, "GroupBroadcast");
     EXPECT_EQ(profilingInfo[2].name, "GroupBroadcast");
 }
