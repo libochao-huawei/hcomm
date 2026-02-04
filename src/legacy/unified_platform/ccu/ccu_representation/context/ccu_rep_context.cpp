@@ -172,7 +172,9 @@ void CcuRepContext::AddProfiling(const CcuTransportGroup &transportGroup, const 
 {
     ccuProfilingInfoCache.type     = CcuProfilinType::CCU_WAITCKE_PROFILING;
     ccuProfilingInfoCache.name     = name;
-    ccuProfilingInfoCache.ckeId    = transportGroup.GetCntCkeId(signalIndex);
+    u32 cntCkeId;
+    transportGroup.GetCntCkeId(signalIndex, cntCkeId);
+    ccuProfilingInfoCache.ckeId    = cntCkeId;
     ccuProfilingInfoCache.mask     = mask;
 
     (void)memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId), INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId));
