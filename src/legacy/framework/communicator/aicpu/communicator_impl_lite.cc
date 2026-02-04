@@ -186,7 +186,7 @@ void CommunicatorImplLite::UpdateCommParam(HcclKernelParamLite *kernelParam)
         return;
     }
     myRank        = kernelParam->comm.myRank;
-    rankSize      = kernelParam->comm.rankSie;
+    rankSize      = kernelParam->comm.rankSize;
     devPhyId      = kernelParam->comm.devPhyId;
     devType       = kernelParam->comm.devType;
     opCounterAddr = kernelParam->comm.opCounterAddr;
@@ -278,8 +278,10 @@ void CommunicatorImplLite::UpdateOpRes(HcclKernelParamLite *kernelParam)
 
 void CommunicatorImplLite::UpdateHDCommnicate(HcclKernelParamLite *kernelParam)
 {
-    kfcControlTransferH2D->Init(kernelParam->kfcControlTransferH2DParams);
-    kfcStatusTransferD2H->Init(kernelParam->kfcControlTransferD2HParams);
+    CHK_RET_THROW(InternalException, StringFormat("[CommunicatorImplLite][%s] failed to init kfcControlTransferH2DParams", __func__), 
+            kfcControlTransferH2D->Init(kernelParam->kfcControlTransferH2DParams));
+    CHK_RET_THROW(InternalException, StringFormat("[CommunicatorImplLite][%s] failed to init kfcControlTransferD2HParams", __func__),
+            kfcStatusTransferD2H->Init(kernelParam->kfcControlTransferD2HParams));
     std::unique_lock<std::mutex> lock(hdcShmLock_);
     hdcHandler = make_unique<AicpuHdcHandler>(*kfcControlTransferH2D, *kfcStatusTransferD2H);
 }
