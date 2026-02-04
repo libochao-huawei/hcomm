@@ -1407,6 +1407,7 @@ namespace hccl
         opResPara_.localWindowsIn = reinterpret_cast<u64>(algResource.cclInputMem.ptr());
         opResPara_.localWindowsOut = reinterpret_cast<u64>(algResource.cclOutputMem.ptr());
         CHK_RET(BuildOpLocalScratchMemResParam(algResource, newTag, localResHostPtr));
+        CHK_RET(BuildAicpuOrderLaunchNotify());
         CHK_RET(BuildOpRemoteResParam(algResource, newTag, opType));
         CHK_RET(BuildZeroCopyParam());
         CHK_RET(CopyHostOpResToDeviceParam(newTag));

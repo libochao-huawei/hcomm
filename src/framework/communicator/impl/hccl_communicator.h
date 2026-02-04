@@ -1040,6 +1040,7 @@ private:
     // 按序下发notify的工作区
     DeviceMem aicpuOrderNotifyAddr_;
     u32 graphId_;
+    const u8 orderLaunchInvalidInHcom_ = 255;
 
     // alltoallv
     HostMem hostCollectBuffer_;
