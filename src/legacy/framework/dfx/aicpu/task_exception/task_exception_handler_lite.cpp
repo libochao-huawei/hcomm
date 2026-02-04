@@ -16,7 +16,8 @@
 #include "sqe_v82.h"
 #include "task_param.h"
 
-#include "task_struct.h"
+#include "task_struct_v2.h"
+#include "task_scheduler_error.h"
 #include "orion_adapter_hal.h"
 
 namespace Hccl {
@@ -99,11 +100,11 @@ uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode){
 }
 
 HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, const u32 tsId,
-    const s32 userStreamId, const u32 cqeErrCode)
+    const s32 userStreamId, const rtLogicCqReport_t* exceptionInfo)
 {
     CHK_PRT_RET((halEschedSubmitEvent == nullptr), HCCL_ERROR("halEschedSubmitEvent is nullptr, "
         "Does not support this interface."), HCCL_E_DRV);
-    ts_aicpu_sqe_t aicpuSqe = {};
+    ts_aicpu_msg_info_t aicpuSqe = {};
     u32 hostpid = 0;
     u32 vf_id = 0;
     int pid = getpid();
@@ -112,17 +113,17 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
     CHK_RET(HrtHalDrvQueryProcessHostPid(pid, nullptr, &vf_id, &hostpid, nullptr));
 
     aicpuSqe.pid = hostpid;
-    aicpuSqe.cmd_type = AICPU_RECORD;
+    aicpuSqe.cmd_type = TS_AICPU_RECORD;
     aicpuSqe.vf_id = vf_id;
     aicpuSqe.tid = 0U;  // notify is no need tid
-    aicpuSqe.u.aicpu_record.record_type = AICPU_MSG_NOTIFY_RECORD;
+    aicpuSqe.u.aicpu_record.record_type = AICPU_MSG_NOTIFY_RECORD_V2;
     aicpuSqe.u.aicpu_record.record_id = notifyId;
 
     aicpuSqe.ts_id = static_cast<uint8_t>(tsId);
 
-    aicpuSqe.u.aicpu_record.fault_stream_id = static_cast<uint16_t>(userStreamId);
+    aicpuSqe.u.aicpu_record.fault_task_id = ((uint32_t)(exceptionInfo->taskId) << 16) | (exceptionInfo->streamId);
 
-    aicpuSqe.u.aicpu_record.ret_code = SwitchSdmaCqeErrCodeToTsErrCode(cqeErrCode);
+    aicpuSqe.u.aicpu_record.ret_code = SwitchSdmaCqeErrCodeToTsErrCode(exceptionInfo->errorCode);
 
     struct event_summary event;
     event.dst_engine = TS_CPU;
@@ -131,7 +132,7 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
     event.grp_id = 0;
     event.event_id = EVENT_TS_CTRL_MSG;
     event.subevent_id = 0U;
-    event.msg_len = static_cast<uint32_t>(sizeof(ts_aicpu_sqe_t));
+    event.msg_len = static_cast<uint32_t>(sizeof(ts_aicpu_msg_info_t));
     event.msg = reinterpret_cast<char_t *>(&aicpuSqe);
     auto ret = halEschedSubmitEvent(localDeviceId, &event);
     if (ret != static_cast<int32_t>(DRV_ERROR_NONE)) {
@@ -141,11 +142,11 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
     }
     HCCL_RUN_INFO("[SendTaskExceptionByMBox]Send msg async to ts fininsh. streamId=%d, notifyId=%u, msg_size=%u, "
         "hostpid=%u, vf_id=%u, errCode=%u.", userStreamId, notifyId,
-        static_cast<uint32_t>(sizeof(ts_aicpu_sqe_t)),  hostpid, vf_id, cqeErrCode);
+        static_cast<uint32_t>(sizeof(ts_aicpu_msg_info_t)),  hostpid, vf_id, exceptionInfo->errorCode);
     return HCCL_SUCCESS;
 }
 
-HcclResult SendTaskExceptionByMBox(CommunicatorImplLite *aicpuComm, const uint16_t &rsErrorCode)
+HcclResult SendTaskExceptionByMBox(CommunicatorImplLite *aicpuComm, const rtLogicCqReport_t* exceptionInfo)
 {
     u32 localDeviceId = 0;
     u32 notifyId = aicpuComm->GetHostDeviceSyncNotifyLiteMgr()->GetHostWaitNotify()->GetId();
@@ -162,7 +163,7 @@ HcclResult SendTaskExceptionByMBox(CommunicatorImplLite *aicpuComm, const uint16
         devPhyId, localDeviceId);
 
     
-    CHK_RET(SendTaskExceptionByMBox(localDeviceId, notifyId, 0, aicpuComm->GetUserStreamId(), rsErrorCode));
+    CHK_RET(SendTaskExceptionByMBox(localDeviceId, notifyId, 0, aicpuComm->GetUserStreamId(), exceptionInfo));
     return HCCL_SUCCESS;
 }
 
@@ -195,6 +196,17 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
         if (ret != HCCL_SUCCESS) {
             THROW<InvalidParamsException>("SendErrorMessageReportToHost Failed.");
         }
+
+        // 2) send mbox to tsfw
+        ret = SendTaskExceptionByMBox(aicpuComm, exceptionInfo);
+        HCCL_RUN_INFO("[TaskExceptionHandlerLite][SendTaskExceptionByMBox]group[%s]:"
+            "Try to send task exception by mailbox, errType[%u], errCode[%u], streamId[%d]",
+            aicpuComm->GetId().c_str(), exceptionInfo->sqeType, exceptionInfo->errorCode,
+            exceptionInfo->streamId);
+        CHK_PRT_CONT(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[TaskExceptionHandlerLite][SendTaskExceptionByMBox]group[%s]:"
+            "Send task exception by mailBox failed, streamId[%d]",
+            aicpuComm->GetId().c_str(), exceptionInfo->streamId));
         
         aicpuComm->SetErrorReported();
     }
