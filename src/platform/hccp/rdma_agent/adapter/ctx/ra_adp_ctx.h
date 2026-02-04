@@ -61,6 +61,8 @@ struct RsCtxOps {
     int (*ctxGetAuxInfo)(struct RaRsDevInfo *devInfo, struct HccpAuxInfoIn *infoIn,
         struct HccpAuxInfoOut *infoOut);
     int (*ctxGetCrErrInfoList)(struct RaRsDevInfo *devInfo, struct CrErrInfo infoList[], unsigned int *num);
+    int (*ctxGetUbContext)(struct RaRsDevInfo *devInfo, unsigned int id, unsigned int contextType,
+        uint8_t context[], unsigned int *len);
 };
 
 int RaRsGetDevEidInfoNum(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
@@ -95,4 +97,5 @@ int RaRsCtxBatchSendWr(char *inBuf, char *outBuf, int *outLen, int *opResult, in
 int RaRsCustomChannel(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
 int RaRsCtxGetAuxInfo(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
 int RaRsCtxGetCrErrInfoList(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxGetUbContext(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
 #endif // RA_ADP_CTX_H
