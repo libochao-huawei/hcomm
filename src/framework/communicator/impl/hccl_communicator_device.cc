@@ -1590,4 +1590,16 @@ namespace hccl
     {
         return cclBufferManager_;
     }
+
+    void HcclCommunicator::SetHcclQos(u32 hcclQos)
+ 	{
+        HCCL_INFO("[HcclCommunicator][device][SetHcclQos] hcclQos[%u]", hcclQos);
+ 	    hcclQos_ = hcclQos;
+ 	}
+ 	 
+ 	u32 HcclCommunicator::GetHcclQos()
+ 	{
+        HCCL_INFO("[HcclCommunicator][device][GetHcclQos] hcclQos[%u]", hcclQos_);
+ 	    return hcclQos_;
+ 	}
 }

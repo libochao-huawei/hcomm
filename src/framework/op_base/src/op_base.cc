@@ -1455,6 +1455,13 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
             hcclNslbDp::GetInstance().SetGlobalCommTaskId(commConfig.GetConfigJobID());
             hcclNslbDp::GetInstance().SetGlobalCommNodeId(commConfig.GetConfigWorldRankID());
         }
+
+        // 设置HCCL QOS配置
+ 	    ret = pComm->SetHcclQos(commConfig.GetConfigHcclQos());
+ 	    CHK_PRT_BREAK(ret != HCCL_SUCCESS,
+ 	        HCCL_ERROR("[%s]errNo[0x%016llx] set hccl qos error.", __func__, HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+
         /* 设置AIV模式 */
         ret = pComm->SetAivModeConfig(commConfig.GetConfigAivMode());
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
