@@ -44,7 +44,7 @@ public:
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
     
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
-    HcclResult ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char **memTag, uint32_t *memNum);
+    HcclResult ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
 private:
     HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
         const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs);

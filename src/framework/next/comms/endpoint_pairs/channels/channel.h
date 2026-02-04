@@ -52,7 +52,7 @@ public:
     virtual HcclResult GetNotifyNum(uint32_t *notifyNum) const = 0;
     virtual HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) = 0;
     virtual ChannelStatus GetStatus() = 0;
-
+    virtual HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum);
     // ------------------ 数据面接口 ------------------
 
 

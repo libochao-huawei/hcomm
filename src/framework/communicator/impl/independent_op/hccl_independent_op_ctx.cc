@@ -90,10 +90,13 @@ HcclResult HcclEngineCtxCopy(HcclComm comm, CommEngine engine, const char *ctxTa
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(ctxTag);
     CHK_PTR_NULL(srcCtx);
+    printf("lkytest 1");
     CHK_PRT_RET(strlen(ctxTag) > HCCL_RES_TAG_MAX_LEN,
         HCCL_ERROR("[%s] ctxTag length exceeds maximum length, ctxTag length[%zu], max length[%d]",
             __func__,  strlen(ctxTag), HCCL_RES_TAG_MAX_LEN), HCCL_E_PARA);
+    printf("lkytest 2");
     CHK_PRT_RET(size == 0, HCCL_ERROR("[%s]Invalid size, size[%llu]", __func__, size), HCCL_E_PARA);
+    printf("lkytest 3");
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclResult ret = HCCL_SUCCESS;
     if (hcclComm->IsCommunicatorV2()) {
@@ -107,15 +110,17 @@ HcclResult HcclEngineCtxCopy(HcclComm comm, CommEngine engine, const char *ctxTa
         auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
         ret = contextMgr.CopyCommEngineCtx(std::string(ctxTag), engine, srcCtx, size, dstCtxOffset);
     }
-    
+    printf("lkytest 4");
     if (ret != HCCL_SUCCESS) {
         HCCL_WARNING("[%s] Failed to copy CommEngineCtx with ctxTag[%s], engine[%d], size[%llu], dstCtxOffset[%llu],"
             " ret[%d]", __func__, ctxTag, engine, size, dstCtxOffset, ret);
         return ret;
     }
+    printf("lkytest 5");
 
-    HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], srcCtx[%p], size[%llu], dstCtxOffset[%llu], group[%s]", 
-        __func__, ctxTag, engine, srcCtx, size, dstCtxOffset, hcclComm->GetIdentifier().c_str());
+    // HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], srcCtx[%p], size[%llu], dstCtxOffset[%llu], group[%s]", 
+    //   __func__, ctxTag, engine, srcCtx, size, dstCtxOffset, hcclComm->GetIdentifier().c_str());
+    
     return HCCL_SUCCESS;
 }
 
