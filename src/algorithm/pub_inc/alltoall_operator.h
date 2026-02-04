@@ -12,6 +12,7 @@
 #define ALLTOALL_OPERATOR_H
 
 #include "coll_alg_operator.h"
+#include "comm_config_pub.h"
 namespace hccl {
 class AlltoAllOperator : public CollAlgOperator {
 public:

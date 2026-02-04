@@ -2654,7 +2654,7 @@ TEST_F(OneSidedSt, regmem_without_deregmem)
     vNetDevCtx.nicType_ = NicType::VNIC_TYPE;
     vNetDevCtx.localIpcRmaBufferMgr_ = std::make_shared<LocalIpcRmaBufferMgr>();
     HcclNetDevCtx vDevCtx = &vNetDevCtx;
-   
+    
     unique_ptr<HcclSocketManager> socketManager = std::make_unique<HcclSocketManager>(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, 0);
     unique_ptr<NotifyPool> notifyPool = std::make_unique<NotifyPool>();
     HcclCommConfig commConfig("hccl_world_group");
