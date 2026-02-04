@@ -219,43 +219,56 @@ int RsEpollEventJfcInHandle(struct rs_cb *rsCb, int fd)
     return -ENODEV;
 }
 
-STATIC void RsUbGetAsyncEventResId(urma_async_event_t *event, struct RsUbDevCb *devCb,
-    unsigned int *resId)
+STATIC int RsUbFillAsyncEventCb(urma_async_event_t *event, struct RsUbDevCb *devCb,
+    struct RsCtxAsyncEventCb *asyncEventCb)
 {
+    int ret = 0;
+
     switch (event->event_type) {
         case URMA_EVENT_JFC_ERR:
-            *resId = event->element.jfc->jfc_id.id;
+            asyncEventCb->resId = event->element.jfc->jfc_id.id;
+            ret = RsUrmaGetJfcOpt(event->element.jfc, URMA_JFC_FULL_CTX, asyncEventCb->context,
+                JFC_CONTEXT_LEN);
+            CHK_PRT_RETURN(ret != 0, hccp_err("RsUrmaGetJfcOpt failed, ret:%d, jfcId:%u devIndex:0x%0x", ret,
+                event->element.jfc->jfc_id.id, devCb->index), -EOPENSRC);
+            asyncEventCb->len = JFC_CONTEXT_LEN;
             break;
         case URMA_EVENT_JFS_ERR:
-            *resId = event->element.jfs->jfs_id.id;
+            asyncEventCb->resId = event->element.jfs->jfs_id.id;
             break;
         case URMA_EVENT_JFR_ERR:
         case URMA_EVENT_JFR_LIMIT:
-            *resId = event->element.jfr->jfr_id.id;
+            asyncEventCb->resId = event->element.jfr->jfr_id.id;
             break;
         case URMA_EVENT_JETTY_ERR:
         case URMA_EVENT_JETTY_LIMIT:
-            *resId = event->element.jetty->jetty_id.id;
+            asyncEventCb->resId = event->element.jetty->jetty_id.id;
+            ret = RsUrmaGetJettyOpt(event->element.jetty, URMA_JETTY_FULL_CTX, asyncEventCb->context,
+                JETTY_CONTEXT_LEN);
+            CHK_PRT_RETURN(ret != 0, hccp_err("RsUrmaGetJettyOpt failed, ret:%d, jettyId:%u devIndex:0x%0x", ret,
+                event->element.jetty->jetty_id.id, devCb->index), -EOPENSRC);
+            asyncEventCb->len = JETTY_CONTEXT_LEN;
             break;
         case URMA_EVENT_JETTY_GRP_ERR:
-            *resId = event->element.jetty_grp->jetty_grp_id.id;
+            asyncEventCb->resId = event->element.jetty_grp->jetty_grp_id.id;
             break;
         case URMA_EVENT_PORT_ACTIVE:
         case URMA_EVENT_PORT_DOWN:
-            *resId = event->element.port_id;
+            asyncEventCb->resId = event->element.port_id;
             break;
         case URMA_EVENT_EID_CHANGE:
-            *resId = event->element.eid_idx;
+            asyncEventCb->resId = event->element.eid_idx;
             break;
         case URMA_EVENT_DEV_FATAL:
         case URMA_EVENT_ELR_ERR:
         case URMA_EVENT_ELR_DONE:
-            *resId = devCb->index;
+            asyncEventCb->resId = devCb->index;
             break;
         default:
-            hccp_warn("invalid event_type:%d dev_index:0x%x", event->event_type, devCb->index);
+            hccp_warn("invalid event_type:%d devIndex:0x%x", event->event_type, devCb->index);
             break;
     }
+    return ret;
 }
 
 STATIC int RsUbGetSaveAsyncEvent(struct RsUbDevCb *devCb)
@@ -265,21 +278,23 @@ STATIC int RsUbGetSaveAsyncEvent(struct RsUbDevCb *devCb)
     int ret = 0;
 
     asyncEventCb = calloc(1, sizeof(struct RsCtxAsyncEventCb));
-    CHK_PRT_RETURN(asyncEventCb == NULL, hccp_err("calloc async_event_cb failed"), -ENOMEM);
+    CHK_PRT_RETURN(asyncEventCb == NULL, hccp_err("calloc asyncEventCb failed"), -ENOMEM);
     asyncEventCb->devCb = devCb;
     event = &asyncEventCb->asyncEvent;
 
     ret = RsUrmaGetAsyncEvent(devCb->urmaCtx, event);
     if (ret != 0) {
-        hccp_err("rs_urma_get_async_event failed, ret:%d errno:%d devIndex:0x%x", ret, errno, devCb->index);
+        hccp_err("RsUrmaGetAsyncEvent failed, ret:%d errno:%d devIndex:0x%x", ret, errno, devCb->index);
         ret = -EOPENSRC;
         goto free_event_cb;
     }
     RsUrmaAckAsyncEvent(event);
 
-    RsUbGetAsyncEventResId(event, devCb, &asyncEventCb->resId);
-    hccp_run_info("get async_event_type:%d res_id:%u dev_index:0x%x", event->event_type, asyncEventCb->resId,
-        devCb->index);
+    ret = RsUbFillAsyncEventCb(event, devCb, asyncEventCb);
+    if (ret != 0) {
+        hccp_err("RsUbFillAsyncEventCb failed, ret:%d devIndex:0x%x", ret, devCb->index);
+        goto free_event_cb;
+    }
 
     RsListAddTail(&asyncEventCb->list, &devCb->asyncEventList);
     devCb->asyncEventCnt++;
@@ -320,11 +335,27 @@ int RsEpollEventUrmaAsyncEventInHandle(struct rs_cb *rsCb, int fd)
     return -ENODEV;
 }
 
+STATIC int RsUbCtxFillAsyncEvent(struct RsCtxAsyncEventCb *eventCb, struct AsyncEvent *asyncEvent)
+{
+    int ret = 0;
+
+    asyncEvent->resId = eventCb->resId;
+    asyncEvent->eventType = eventCb->asyncEvent.event_type;
+    asyncEvent->len = eventCb->len;
+
+    ret = memcpy_s(asyncEvent->context, CONTEXT_MAX_LEN, eventCb->context, eventCb->len);
+    CHK_PRT_RETURN(ret != 0, hccp_err("memcpy_s failed, ret:%d asyncEvent len:%u eventCb len:%u", ret,
+        CONTEXT_MAX_LEN, eventCb->len), -ESAFEFUNC);
+
+    return ret;
+}
+
 void RsUbCtxGetAsyncEvents(struct RsUbDevCb *devCb, struct AsyncEvent asyncEvents[], unsigned int *num)
 {
     struct RsCtxAsyncEventCb *eventCbCurr = NULL;
     struct RsCtxAsyncEventCb *eventCbNext = NULL;
     unsigned int expectedNum = *num;
+    int ret = 0;
 
     *num = 0;
     if (RsListEmpty(&devCb->asyncEventList)) {
@@ -335,8 +366,12 @@ void RsUbCtxGetAsyncEvents(struct RsUbDevCb *devCb, struct AsyncEvent asyncEvent
     RS_LIST_GET_HEAD_ENTRY(eventCbCurr, eventCbNext, &devCb->asyncEventList, list, struct RsCtxAsyncEventCb);
     for (; (&eventCbCurr->list) != &devCb->asyncEventList; eventCbCurr = eventCbNext,
         eventCbNext = list_entry(eventCbNext->list.next, struct RsCtxAsyncEventCb, list)) {
-        asyncEvents[*num].resId = eventCbCurr->resId;
-        asyncEvents[*num].eventType = eventCbCurr->asyncEvent.event_type;
+        ret = RsUbCtxFillAsyncEvent(eventCbCurr, &asyncEvents[*num]);
+        if (ret != 0) {
+            hccp_err("RsUbCtxFillAsyncEvent failed, ret:%d devIndex:0x%x", ret, devCb->index);
+            RsUbFreeAsyncEventCb(devCb, eventCbCurr);
+            break;
+        }
         (*num)++;
         RsUbFreeAsyncEventCb(devCb, eventCbCurr);
         if (*num == expectedNum) {
@@ -344,4 +379,19 @@ void RsUbCtxGetAsyncEvents(struct RsUbDevCb *devCb, struct AsyncEvent asyncEvent
         }
     }
     RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+}
+
+int RsUbGetJettyContext(struct RsUbDevCb *devCb, unsigned int id, uint8_t context[], unsigned int *len)
+{
+    struct RsCtxJettyCb *jettyCb = NULL;
+    int ret = 0;
+
+    ret = RsUbGetJettyCb(devCb, id, &jettyCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("get jettyCb failed, ret:%d, jettyId:%u", ret, id), ret);
+
+    ret = RsUrmaGetJettyOpt(jettyCb->jetty, URMA_JETTY_FULL_CTX, (void *)context, JETTY_CONTEXT_LEN);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsUrmaGetJettyOpt failed, ret:%d, jettyId:%u", ret, id), -EOPENSRC);
+
+    *len = JETTY_CONTEXT_LEN;
+    return ret;
 }

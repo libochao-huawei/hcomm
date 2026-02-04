@@ -97,7 +97,7 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_GET_DEV_EID_INFO_NUM, 1},
     {RA_RS_GET_DEV_EID_INFO_LIST, 1},
     {RA_RS_CTX_INIT, 1},
-    {RA_RS_CTX_GET_ASYNC_EVENTS, 1},
+    {RA_RS_CTX_GET_ASYNC_EVENTS, 2},
     {RA_RS_CTX_DEINIT, 1},
     {RA_RS_GET_EID_BY_IP, 1},
     {RA_RS_GET_TP_INFO_LIST, 1},
@@ -126,6 +126,7 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_CTX_UPDATE_CI, 1},
     {RA_RS_CTX_GET_AUX_INFO, 1},
     {RA_RS_CTX_GET_CR_ERR_INFO_LIST, 1},
+    {RA_RS_CTX_GET_UB_CONTEXT, 1},
 
     // inner opcode version
     {RA_RS_HDC_SESSION_CLOSE, 1},
