@@ -79,4 +79,8 @@ HcclResult AivUbMemChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, 
     return transport_->GetRemoteMem(remoteMem, memNum, memTags);
 }
 
+HcclResult AivUbMemChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+{
+    return transport_->GetUserRemoteMem(remoteMem, memTag, memNum);
+}
 }
