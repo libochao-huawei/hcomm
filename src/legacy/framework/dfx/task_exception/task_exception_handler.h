@@ -45,7 +45,7 @@ private:
     static void ProcessCcuMC2Exception(rtExceptionInfo_t* exceptionInfo);
     static std::vector<CcuTaskParam> GetMC2AlgTaskParam(const TaskInfo& taskInfo);
     static void ProcessCcuException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo);
- 	static void PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, uint16_t instrId, const TaskInfo& taskInfo);
+ 	static void PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, const TaskInfo& taskInfo);
     static void PrintCcuErrorLog(const std::vector<CcuErrorInfo>& errorInfos, const TaskInfo& taskInfo);
     static void ProcessAivException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo);
     static void PrintAivPreviousTaskException(rtExceptionInfo_t* exceptionInfo);
