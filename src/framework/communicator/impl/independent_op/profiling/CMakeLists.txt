@@ -8,25 +8,10 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_independent_op_ctx.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/independent_op_context_manager.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_independent_op_mem.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/independent_op.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_independent_op_channel.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/reg_mem_manager.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/comm_mem_manager.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_independent_rank_graph.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_independent_op_engine.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/profiling.cc
+
 )
  
 target_sources(hcomm PRIVATE
     ${src_list}
 )
-
-add_subdirectory(channel)
-add_subdirectory(data_api)
-add_subdirectory(resource)
-add_subdirectory(rank_graph)
-add_subdirectory(device)
-add_subdirectory(diag)
-add_subdirectory(profiling)
