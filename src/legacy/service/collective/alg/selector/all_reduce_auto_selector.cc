@@ -69,7 +69,18 @@ SelectorStatus AllReduceAutoSelector::SelectMeshAlgo(const TopoInfo &topoInfo,
         if (IsInputOutputOverlap(op.inputMem, op.outputMem) == true) {
             return SelectorStatus::NOT_MATCH;
         }
-        if (dataSize_ / rankSize_ > AR_ONESHOT_1D_MAX_DATA_SIZE) {
+        HcclDetourType detourType = EnvConfig::GetInstance().GetDetourConfig().GetDetourType();
+        if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == 2)||
+            (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == 4)) {
+            primQueueGenName = "CcuAllReduceMeshDetour1D";
+        } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ != 2)||
+            (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ != 4)) {
+            HCCL_WARNING("[Algo][AllReduceAutoSelector] detourType not match for rankSize.");
+            return SelectorStatus::NOT_MATCH;
+        } else if (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P_AND_4P) {
+            HCCL_WARNING("[Algo][AllGatherAutoSelector] HCCL_DETOUR_ENABLE_2P_AND_4P is not supported yet.");
+            return SelectorStatus::NOT_MATCH;
+        } else if (dataSize_ / rankSize_ > AR_ONESHOT_1D_MAX_DATA_SIZE) {
  	        primQueueGenName = "CcuAllReduceMesh1D";
  	    } else {
  	        primQueueGenName = "CcuAllReduceMesh1DOneShot";
