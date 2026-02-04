@@ -121,7 +121,7 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
 
     aicpuSqe.ts_id = static_cast<uint8_t>(tsId);
 
-    aicpuSqe.u.aicpu_record.fault_task_id = ((uint32_t)(exceptionInfo->streamId) << 16) | (exceptionInfo->taskId);
+    aicpuSqe.u.aicpu_record.fault_task_id = ((uint32_t)(exceptionInfo->taskId) << 16) | (exceptionInfo->streamId);
 
     aicpuSqe.u.aicpu_record.ret_code = SwitchSdmaCqeErrCodeToTsErrCode(exceptionInfo->errorCode);
 
