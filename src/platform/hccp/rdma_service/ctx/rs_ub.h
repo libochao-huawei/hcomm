@@ -93,4 +93,5 @@ int RsUbCtxGetAuxInfo(struct RsUbDevCb *devCb, struct HccpAuxInfoIn *infoIn, str
 int RsEpollEventJfcInHandle(struct rs_cb *rsCb, int fd);
 int RsEpollEventUrmaAsyncEventInHandle(struct rs_cb *rsCb, int fd);
 void RsUbCtxGetAsyncEvents(struct RsUbDevCb *devCb, struct AsyncEvent asyncEvents[], unsigned int *num);
+int rs_ub_get_jetty_context(struct RsUbDevCb *devCb, unsigned int id, char context[], unsigned int *len);
 #endif // RS_UB_H
