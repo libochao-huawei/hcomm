@@ -96,6 +96,7 @@ struct RaCtxOps {
         struct SendWrResp opResp[], unsigned int sendNum, unsigned int *completeNum);
     int (*raCtxUpdateCi)(struct RaCtxQpHandle *qpHandle, uint16_t ci);
     int (*raCtxGetAuxInfo)(struct RaCtxHandle *ctxHandle, struct HccpAuxInfoIn *in, struct HccpAuxInfoOut *out);
+    int (*raCtxGetJettyContext)(struct RaCtxQpHandle *qpHandle, uint8_t context[], unsigned int *len);
 };
 
 #endif // RA_CTX_H

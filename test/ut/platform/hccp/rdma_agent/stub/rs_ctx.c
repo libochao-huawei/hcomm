@@ -185,3 +185,9 @@ int RsCtxGetAsyncEvents(struct RaRsDevInfo *devInfo, struct AsyncEvent asyncEven
 {
     return 0;
 }
+
+int RsCtxGetJettyContext(struct RaRsDevInfo *devInfo, unsigned int id, uint8_t context[],
+    unsigned int *len)
+{
+    return 0;
+}
