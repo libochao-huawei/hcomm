@@ -19,28 +19,8 @@ namespace Hccl {
 HcclResult CcuCreateJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
     std::unique_ptr<CcuJetty> &ccuJetty)
 {
-    TRY_CATCH_RETURN(
-        ccuJetty = std::make_unique<CcuJetty>(ipAddr, jettyInfo);
-    );
-    return HcclResult::HCCL_SUCCESS;
-}
-
-CcuJetty::CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo)
-    : ipAddr_(ipAddr), jettyInfo_(jettyInfo)
-{
-    devLogicId_ = HrtGetDevice();
-    uint32_t devPhyId = HrtGetDevicePhyIdByIndex(devLogicId_);
-    auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
-    rdmaHandle_ = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
-    const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle_, HrtUbJfcMode::CCU_POLL);
-    const auto &tokenInfo = rdmaHandleMgr.GetTokenIdInfo(rdmaHandle_);
-    const auto tokenIdHandle = tokenInfo.first;
-    const auto tokenValue = GetUbToken();
-    const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
-
-    inParam_ = HrtRaUbCreateJettyParam{jfcHandle, jfcHandle, tokenValue,
-        tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
-        jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
+    HCCL_INFO("[CcuCreateJetty] ipaddr[%d], jettyInfo[%d], ccuJetty[%d].", ipAddr, jettyInfo, ccuJetty);
+    return CcuJetty::Create(ipAddr, jettyInfo, ccuJetty);
 }
 
 CcuJetty::~CcuJetty()
@@ -147,13 +127,15 @@ HrtRaUbJettyCreatedOutParam CcuJetty::GetJettyedOutParam() const
 
 void CcuJetty::Clean()
 {
-    if (isCreated_ && outParam_.handle != 0) {
-        HrtRaUbDestroyJetty(outParam_.handle);
-        isCreated_ = false;
-        reqHandle_ = 0;
-        jettyHandlePtr_ = nullptr;
-        reqDataBuffer_.clear();
-    }
-    isError_ = false;
+    TRY_CATCH_RETURN(
+        if (isCreated_ && outParam_.handle != 0) {
+            HrtRaUbDestroyJetty(outParam_.handle);
+            isCreated_ = false;
+            reqHandle_ = 0;
+            jettyHandlePtr_ = nullptr;
+            reqDataBuffer_.clear();
+        }
+        isError_ = false;);
+    return HcclResult::HCCL_SUCCESS;
 }
 } // namespace Hccl

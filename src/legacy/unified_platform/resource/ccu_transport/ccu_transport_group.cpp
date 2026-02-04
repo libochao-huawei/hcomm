@@ -16,6 +16,7 @@ namespace Hccl {
 
 bool CcuTransportGroup::CheckTransports(const vector<CcuTransport*> &transports)
 {
+    HCCL_INFO("[CheckTransports] size[%u].", transport.size);
     if (transports.size() == 0) {
         HCCL_ERROR("[CcuTransportGroup::%s] Transports size is 0, please check.", __func__);
         return false;
@@ -33,7 +34,11 @@ bool CcuTransportGroup::CheckTransports(const vector<CcuTransport*> &transports)
 
 bool CcuTransportGroup::CheckTransportCntCke()
 {
-    HcclResult allocResHandleReturnValue = CcuDeviceManager::AllocCke(HrtGetDevice(), cntCkesGroupDieId, cntCkeNumTransportGroupUse, ckeInfoTransportGroupUse);
+    HcclResult allocResHandleReturnValue = HCCL_SUCCESS;
+
+    TRY_CATCH_RETURN(allocResHandleReturnValue = CcuDeviceManager::AllocCke(HrtGetDevice(), 
+                    cntCkesGroupDieId, cntCkeNumTransportGroupUse, ckeInfoTransportGroupUse));
+                    
     if (allocResHandleReturnValue != HCCL_SUCCESS) {
         HCCL_ERROR("[CcuTransportGroup::%s] Failed to allocate cntCke resource, please check.", __func__);
         return false;
@@ -55,6 +60,7 @@ bool CcuTransportGroup::CheckTransportCntCke()
 
 CcuTransportGroup::CcuTransportGroup(const vector<CcuTransport*> &transports, u32 cntCkeNum):isDestroyed(false)
 {
+    HCCL_INFO("[CcuTransportGroup] cntCkeNum[%u].", cntCkeNum);
     if (!CheckTransports(transports)) {
         grpStatus = TransportGrpStatus::FAIL;
         HCCL_ERROR("[CcuTransportGroup::%s] Func CheckTransports failed, please check.", __func__);
@@ -76,6 +82,7 @@ CcuTransportGroup::CcuTransportGroup(const vector<CcuTransport*> &transports, u3
 
 TransportGrpStatus CcuTransportGroup::GetGrpStatus() const
 {
+    HCCL_INFO("[CcuTransportGroup] current group status [%s].", grpStatus);
     return grpStatus;
 }
 
@@ -103,13 +110,17 @@ void CcuTransportGroup::Destroy()
     transportsGrp.clear();
 }
 
-u32 CcuTransportGroup::GetCntCkeId(u32 index) const
+u32 CcuTransportGroup::GetCntCkeId(u32 index, u32 &cntCkeId) const
 {
+    HCCL_INFO("[GetCntCkeId] index[%u].", index);
     if (index >= cntCkesGroup.size()) {
-        THROW<InvalidParamsException>(StringFormat("[CcuTransportGroup::%s] Index[%u] is bigger than cntCkesGroup size[%u], please check.", 
-            __func__, index, cntCkesGroup.size()));
+        HCCL_ERROR("[GetCntCkeId] err[%s], index[%u] is bigger then cntCkesGroup size[%u], please check.",
+                __func__, index, cntCkesGroup.size());
+        return HcclResult::HCCL_E_PARA;
     }
-    return cntCkesGroup[index];
+
+    cntCkeId = cntCkesGroup[index];
+    return HcclResult::HCCL_SUCCESS;
 }
 
 const vector<CcuTransport*> &CcuTransportGroup::GetTransports() const

@@ -14,25 +14,45 @@ using namespace std;
 
 HcclResult HcclNetDevOpen(const HcclNetDevInfos *info, HcclNetDev *netDev)
 {
-    return HcclNetDevOpenV2(info, netDev);
+    CHK_PTR_NULL(netDev);
+    HcclResult ret = HcclNetDevOpenV2(info, netDev);
+    if(ret == HCCL_SUCCESS){
+        CHK_PTR_NULL(*netDev)
+        HCCL_DEBUG("HcclNetDevOpen: successfully opened netDev [%p]!", *netDev);
+    }
+    return ret;
 }
 
 HcclResult HcclNetDevClose(HcclNetDev netDev)
 {
+    HCCL_INFO("[HcclNetDevClose] netDev[%d].", netDev);
     return HcclNetDevCloseV2(netDev);
 }
 
 HcclResult HcclNetDevGetAddr(HcclNetDev netDev, HcclAddress *addr)
 {
-    return HcclNetDevGetAddrV2(netDev, addr);
+    HcclResult ret = HcclNetDevOpenV2(netDev, addr);
+    if(ret == HCCL_SUCCESS){
+        CHK_PTR_NULL(addr)
+        HCCL_DEBUG("HcclNetDevGetAddr: successfully got addr [%p]!", addr);
+    }
+    return ret;
 }
 
 HcclResult HcclNetDevGetBusAddr(HcclDeviceId dstDevId, HcclAddress *busAddr)
 {
-    return HcclNetDevGetBusAddrV2(dstDevId, busAddr);
+    HcclResult ret = HcclNetDevGetBusAddrV2(dstDevId, busAddr);
+    if(ret != HCCL_SUCCESS){
+        HCCL_ERROR("HcclNetDevGetBusAddr: failed to get bus addres for device %d, error code: %d", dstDevId, ret);
+    }
+    return ret;
 }
 
 HcclResult HcclNetDevGetNicAddr(int32_t devicePhyId, HcclAddress **addr, uint32_t *addrNum)
 {
-    return HcclNetDevGetNicAddrV2(devicePhyId, addr, addrNum);
+    HcclResult ret = HcclNetDevGetNicAddrV2(devicePhyId, addr, addrNum);
+    if(ret != HCCL_SUCCESS){
+        HCCL_ERROR("HcclNetDevGetBusAddr: failed to get NIC addres for device %d, error code: %d", devicePhyId, ret);
+    }
+    return ret;
 }
