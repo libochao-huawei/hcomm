@@ -36,8 +36,8 @@ public:
     u32 GetCcuMc2ServerNum();
 
 private:
-    void     Alloc(void **commContext);
-    void     AllocV2(void **commContext);
+    void     Alloc(void **commContext, HcclCombinOpParam &combinOpParam);
+    void     AllocV2(void **commContext, HcclCombinOpParam &combinOpParam);
     void     GenerateCcuServer(const std::unordered_set<uint64_t> &algoTemplateRequire);
     bool     FindCcuServer(const std::unordered_set<uint64_t> &algoTemplateRequire,
                            InsExeQue::ExtInsExeEntityId       &execId) const;
@@ -50,8 +50,8 @@ private:
     void     SaveMc2DfxTaskInfo(const CcuTaskParam& ccuTaskParam, uint64_t execId) const;
     bool     CompareMissionMap(const std::map<uint8_t, std::map<uint32_t, uint32_t>> &mapA,
                                const std::map<uint8_t, std::map<uint32_t, uint32_t>> &mapB) const;
-    void     MC2Orchestrate(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue);
-    void     MC2AllocCommRes(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue);
+    void     MC2Orchestrate(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue, uint8_t commEngine);
+    void     MC2AllocCommRes(const CollAlgParams &params, std::shared_ptr<InsQueue> &insQueue, uint8_t commEngine);
 private:
     const uint32_t dataCount = 1024;
     CommunicatorImpl *comm;

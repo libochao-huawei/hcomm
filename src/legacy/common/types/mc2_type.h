@@ -234,6 +234,7 @@ struct HcclCombinOpParam {
     uint64_t ckeAddr; // CKE寄存器其实地址
     uint64_t msAddr; // MS地址，预留
     uint64_t msSize; // 可写的MS个数，预留
+    uint8_t algorithmType;
 };
 
 struct Mc2ServerCfg {

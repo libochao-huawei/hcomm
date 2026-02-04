@@ -143,7 +143,7 @@ void CommunicatorImpl::InitCommResource(const CommParams &commParams)
     status = CommStatus::COMM_READY;
     SnapShotParser::GetInstance().SerializeCommonInfo(commParams, config, std::move(ranktableInfo), topoInfo, staticBinaryInfo);
     InitOneSidedService();
-    RegisterKernel();
+    //RegisterKernel();
     InitDpuKernel();
 }
 
@@ -234,7 +234,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitMirrorTaskManager();
             InitProfilingReporter();
             InitTaskExceptionHandler();
-            RegisterKernel();
+            //RegisterKernel();
             status = CommStatus::COMM_READY;
         } catch (HcclException &e) {
             HCCL_ERROR(e.what());
@@ -283,7 +283,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitMirrorTaskManager();
             InitProfilingReporter();
             InitTaskExceptionHandler();
-            RegisterKernel();
+            //RegisterKernel();
             status = CommStatus::COMM_READY;
             SnapShotParser::GetInstance().SerializeSubCommInfo(commParams, subConfig, rankIdsVec, staticBinaryInfo);
         );
@@ -2454,10 +2454,16 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
     params.opMode                     = opMode;
     params.maxTmpMemSize              = GetBufferSize();
     params.isMc2                      = opParams.isMc2;
+    HCCL_ERROR("[lyx][MC2AllocCommRes] params.isMc2[%d] opParams.commEngine[%s]", params.isMc2, opParams.commEngine.Describe().c_str());
     if (opParams.isMc2 && (opParams.commEngine == HcclAccelerator::AICPU || opParams.commEngine == HcclAccelerator::AICPU_TS)) {
         opExecuteConfig.accState = AcceleratorState::AICPU_TS;
-    } else if (opParams.isMc2 && opParams.commEngine != HcclAccelerator::AICPU) {
+    } else if (opParams.isMc2 && (opParams.commEngine == HcclAccelerator::CCU_SCHED || opParams.commEngine == HcclAccelerator::DEFAULT)){
+        opExecuteConfig.accState = AcceleratorState::CCU_SCHED;
+    } else if (opParams.isMc2 && opParams.commEngine == HcclAccelerator::CCU_MS) {
         opExecuteConfig.accState = AcceleratorState::CCU_MS;
+    } else {
+        opExecuteConfig.accState = AcceleratorState::CCU_SCHED;
+        // THROW<NotSupportException>("[CommunicatorImpl][ExecAlgSelect] not support commEngine type!");
     }
     OpExecuteConfig inOpExecuteConfig = opExecuteConfig;
     params.opExecuteConfig            = inOpExecuteConfig;
@@ -2482,6 +2488,7 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
             opExecuteConfig.accState.Describe().c_str(), opParams.dataType.Describe().c_str(),
             opParams.reduceOp.Describe().c_str(), curAlgName.c_str(), algos[0], algos[1], algos[2], algos[3], dataSize);
     }
+    algorithmType_ = collAlgComponent->GetAlgorithmTypeForMC2(curAlgName);
     auto opAcceStateCacheIt = opAcceStateCache.find({opParams.opType, curAlgName});
     if (opAcceStateCacheIt != opAcceStateCache.end()) {
         HCCL_INFO("[CommunicatorImpl][%s] opAcceStateCache find, reset accelerator[%s]", __func__,
@@ -2489,7 +2496,9 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
         inOpExecuteConfig.accState = opAcceStateCacheIt->second;
     }
     SetOpExecuteConfig(inOpExecuteConfig); // 算子粒度 ok
-    HCCL_RUN_INFO("[CommunicatorImpl][%s] current accelerator[%s], algName[%s]", __func__,
+    HCCL_INFO("[CommunicatorImpl][%s] current accelerator[%s], algName[%s], algorithmType[%u]", __func__,
+              opExecuteConfig.accState.Describe().c_str(), curAlgName.c_str(), algorithmType_);
+    HCCL_INFO("[CommunicatorImpl][%s] current accelerator[%s], algName[%s]", __func__,
               opExecuteConfig.accState.Describe().c_str(), curAlgName.c_str());
     SelectCollService();
 }
