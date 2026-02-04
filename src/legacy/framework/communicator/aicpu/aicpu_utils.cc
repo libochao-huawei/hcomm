@@ -340,13 +340,15 @@ HcclResult AicpuUtils::FillKernelParam(HcclOpData *data) const
          data->opType == HCCL_CMD_REDUCE_SCATTER || data->opType == HCCL_CMD_REDUCE_SCATTER_V){
         kernelParam_->op.algOperator.reduceOp       = HcclReduceOpToReduceOp(data->reduceOp);
     }
+    kernelParam_->op.algOperator.dataType = HcclDataTypeToDataType(data->dataType);
+    CHECK_DATA_TYPE(kernelParam_->op.algOperator.dataType);
     kernelParam_->op.algOperator.outputDataType = HcclDataTypeToDataType(data->outputDataType);
     CHECK_DATA_TYPE(kernelParam_->op.algOperator.outputDataType);
     kernelParam_->op.algOperator.dataCount          = data->dataCount;
     kernelParam_->op.algOperator.root               = data->root;
     kernelParam_->op.algOperator.sendRecvRemoteRank = data->sendRecvRemoteRank;
-    HCCL_INFO("[%s]opType=%s, reduceOp=%u, outputDataType=%u, dataCount=%u, root=%u, sendRecvRemoteRank=%u", __func__,
-              kernelParam_->op.algOperator.opType.Describe().c_str(), data->reduceOp, data->outputDataType, data->dataCount);
+    HCCL_INFO("[%s]opType=%s, reduceOp=%u, dataType=%u, outputDataType=%u, dataCount=%u, root=%u, sendRecvRemoteRank=%u", __func__,
+              kernelParam_->op.algOperator.opType.Describe().c_str(), data->reduceOp, data->dataType ,data->outputDataType, data->dataCount);
     if (kernelParam_->op.algOperator.opType == OpType::ALLTOALL) {
         kernelParam_->op.algOperator.all2AllDataDes.recvType = HcclDataTypeToDataType(data->all2AllDataDes.recvType);
         CHECK_DATA_TYPE(kernelParam_->op.algOperator.all2AllDataDes.recvType);
