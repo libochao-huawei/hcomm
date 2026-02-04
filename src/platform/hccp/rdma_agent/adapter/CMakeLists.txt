@@ -7,25 +7,20 @@ set(ra_adp_list
     ${BASIC_PATH}/rdma_agent/adapter/async/ra_adp_pool.c
     ${BASIC_PATH}/rdma_agent/adapter/async/ra_adp_async.c
     ${BASIC_PATH}/rdma_agent/adapter/ctx/ra_adp_ctx.c
+    ${BASIC_PATH}/common/dl_hal_function.c
+    ${BASIC_PATH}/common/ascend_hal_dl.c
+    $<$<STREQUAL:${PRODUCT_SIDE},device>:${TLV_DIR}/ra_adp_tlv.c>
 )
-
-if((("${PRODUCT}" STREQUAL "ascend910B") OR ("${PRODUCT}" STREQUAL "ascend")) AND
-   ("${PRODUCT_SIDE}" STREQUAL "device") AND
-   (NOT ${USE_ALOG}))
-    list(APPEND ra_adp_list
-        ${TLV_DIR}/ra_adp_tlv.c
-    )
-endif()
 
 #编译目标
 add_library(ra_adp SHARED
     ${ra_adp_list}
-    ${BASIC_PATH}/common/dl_hal_function.c
-    ${BASIC_PATH}/common/ascend_hal_dl.c
 )
 
-#添加头文件搜索路径
-target_compile_definitions(ra_adp PRIVATE OPEN_BUILD_PROJECT LOG_CPP CONFIG_CONTEXT)
+target_compile_definitions(ra_adp PRIVATE
+    LOG_CPP
+    $<$<STREQUAL:${PRODUCT_SIDE},device>:CONFIG_TLV>
+)
 
 target_include_directories(ra_adp PRIVATE
     ${BASIC_PATH}/external_depends/inc/driver
@@ -41,7 +36,8 @@ target_include_directories(ra_adp PRIVATE
     ${BASIC_PATH}/rdma_agent/adapter/async/
     ${BASIC_PATH}/rdma_service
     ${BASIC_PATH}/common
-
+    ${TLV_DIR}
+    ${BASIC_PATH}/rdma_service/tlv
     # cann头文件
     ${ASCEND_CANN_PACKAGE_PATH}/include/
 
@@ -49,8 +45,6 @@ target_include_directories(ra_adp PRIVATE
     ${BASIC_PATH}/external_depends/host_lite
 
     # HCCP Legacy
-    ${BASIC_PATH}/inc/network
-    ${BASIC_PATH}/inc/private/network
     ${BASIC_PATH}/rdma_agent/adapter/ctx
     ${BASIC_PATH}/rdma_service/ctx
 )
@@ -59,19 +53,6 @@ target_include_directories(ra_adp PRIVATE
 target_link_directories(ra_adp PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
 )
-
-if((("${PRODUCT}" STREQUAL "ascend910B") OR ("${PRODUCT}" STREQUAL "ascend")) AND
-   ("${PRODUCT_SIDE}" STREQUAL "device") AND
-   (NOT ${USE_ALOG}))
-    target_include_directories(ra_adp PRIVATE
-        ${TLV_DIR}
-        ${BASIC_PATH}/rdma_service/tlv
-    )
-
-    target_compile_definitions(ra_adp PRIVATE
-        CONFIG_TLV
-    )
-endif()
 
 #编译选项
 target_compile_options(ra_adp PRIVATE
