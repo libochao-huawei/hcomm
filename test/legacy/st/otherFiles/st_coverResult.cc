@@ -1351,7 +1351,7 @@ TEST(NotifyFixedValueTest, notify_fixed_value_get_addr_and_size)
     MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
 
     void *fakeAddr = new int[1];
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(fakeAddr));
+    MOCKER(HrtMalloc).stubs().with(any()).will(returnValue(fakeAddr));
 
     MOCKER(HrtMemcpy).stubs();
 
