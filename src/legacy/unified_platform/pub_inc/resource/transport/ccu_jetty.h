@@ -74,7 +74,7 @@ private:
         inParam_.tokenValue = tokenValue;
         inParam_.tokenIdHandle = tokenIdHandle;
         inParam_.jettyMode = jettyMode;
-        inParam_.JettyId = jettyInfo_.taJettyId;
+        inParam_.jettyId = jettyInfo_.taJettyId;
         inParam_.sqBufVa = jettyInfo_.sqBufVa;
         inParam_.sqBufSize = jettyInfo_.sqBufSize;
         inParam_.sqeBufIndex = jettyInfo_.wqeBBStartId;
