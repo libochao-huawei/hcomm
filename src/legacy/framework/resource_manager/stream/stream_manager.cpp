@@ -79,6 +79,8 @@ Stream *StreamManager::GetMaster() const
 
 void StreamManager::CaptureSlaveStream(const Stream *masterStream, const Stream *slaveStream) const
 {
+    HCCL_RUN_INFO("[StreamManager][%s] masterStream[%u] slaveStream[%u]", __func__,
+              masterStream->GetId(), slaveStream->GetId());
     rtModel_t rtModel = nullptr;
     bool isCapture = false;
     u32 modelId = 0;
@@ -86,6 +88,8 @@ void StreamManager::CaptureSlaveStream(const Stream *masterStream, const Stream 
     OpMode opMode  = op->opMode;
     if (opMode == OpMode::OPBASE) {
         auto ret = GetStreamCaptureInfo(masterStream->GetPtr(), rtModel, isCapture);
+        HCCL_INFO("[StreamManager][%s] isCapture[%u] rtModel[%p]", __func__,
+                  isCapture, rtModel);
         if (ret != HCCL_SUCCESS) {
             THROW<InternalException>(StringFormat("[StreamManager::%s] Failed to obtain masterStream capture status, "
                 "ret[%d]", __func__, ret));
@@ -97,6 +101,7 @@ void StreamManager::CaptureSlaveStream(const Stream *masterStream, const Stream 
             }
 
             ret = GetModelId(rtModel, modelId);
+            HCCL_INFO("[StreamManager][%s] get model id[%u]", __func__, modelId);
             if (ret != HCCL_SUCCESS) {
                 THROW<InternalException>(StringFormat("[StreamManager::%s] Failed to obtain the modelId corresponding "
                     "to the masterStream rtModel, ret[%d]", __func__, ret));
@@ -107,8 +112,8 @@ void StreamManager::CaptureSlaveStream(const Stream *masterStream, const Stream 
                 THROW<InternalException>(StringFormat("[StreamManager::%s] Adding the salveStream to the masterStream "
                     "failed, ret[%d]", __func__, ret));
             }
-            HCCL_INFO("[StreamManager::%s] Add stream[%u] to model[%u] success.",
-                __func__, slaveStream->GetId(), modelId);
+            HCCL_RUN_INFO("[StreamManager::%s] Add slaveStream[%u] to model[%u] success, masterStream[%u]",
+                __func__, slaveStream->GetId(), modelId, masterStream->GetId());
         }
     }
 }
