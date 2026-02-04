@@ -400,6 +400,21 @@ union op_ctx_get_cr_err_info_list_data {
     } rx_data;
 };
 
+union op_ctx_get_jetty_context_data {
+    struct {
+        unsigned int phy_id;
+        unsigned int dev_index;
+        unsigned int id;
+        unsigned int rsvd[RA_RSVD_NUM_4];
+    } tx_data;
+
+    struct {
+        char context[JETTY_CONTEXT_MAX_LEN];
+        unsigned int len;
+        unsigned int rsvd[RA_RSVD_NUM_4];
+    } rx_data;
+};
+
 int ra_hdc_get_dev_eid_info_num(struct RaInfo info, unsigned int *num);
 int ra_hdc_get_dev_eid_info_list(unsigned int phy_id, struct dev_eid_info info_list[], unsigned int *num);
 int ra_hdc_ctx_init(struct ra_ctx_handle *ctx_handle, struct ctx_init_attr *attr, unsigned int *dev_index,
@@ -447,4 +462,5 @@ int ra_hdc_ctx_update_ci(struct ra_ctx_qp_handle *qp_handle, uint16_t ci);
 int ra_hdc_custom_channel(unsigned int phy_id, struct custom_chan_info_in *in, struct custom_chan_info_out *out);
 int ra_hdc_ctx_get_aux_info(struct ra_ctx_handle *ctx_handle, struct aux_info_in *in, struct aux_info_out *out);
 int ra_hdc_ctx_get_cr_err_info_list(struct ra_ctx_handle *ctx_handle, struct CrErrInfo *info_list, unsigned int *num);
+int ra_hdc_ctx_get_jetty_context(struct ra_ctx_qp_handle *qp_handle, char context[], unsigned int *len);
 #endif // RA_HDC_CTX_H

@@ -2816,3 +2816,17 @@ void rs_ub_ctx_get_async_events(struct rs_ub_dev_cb *dev_cb, struct async_event 
     }
     RS_PTHREAD_MUTEX_ULOCK(&dev_cb->mutex);
 }
+
+int rs_ub_get_jetty_context(struct rs_ub_dev_cb *dev_cb, unsigned int id, char context[], unsigned int *len)
+{
+    struct rs_ctx_jetty_cb *jetty_cb = NULL;
+    int ret = 0;
+
+    ret = rs_ub_get_jetty_cb(dev_cb, id, &jetty_cb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("get jetty_cb failed, ret:%d, jetty_id:%u", ret, id), ret);
+
+    ret = rs_urma_get_jetty_opt(jetty_cb->jetty, URMA_JETTY_FULL_CTX, context, JETTY_CONTEXT_MAX_LEN);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_get_jetty_opt failed, ret:%d, jetty_id:%u", ret, id), -EOPENSRC);
+
+    return ret;
+}

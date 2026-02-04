@@ -41,6 +41,7 @@ struct ra_ctx_ops g_ra_hdc_ctx_ops = {
     .ra_ctx_update_ci = ra_hdc_ctx_update_ci,
     .ra_ctx_query_qp_batch = ra_hdc_ctx_qp_query_batch,
     .ra_ctx_get_aux_info = ra_hdc_ctx_get_aux_info,
+    .ra_ctx_get_jetty_context = ra_hdc_ctx_get_jetty_context,
 };
 
 struct ra_ctx_ops g_ra_peer_ctx_ops = {
@@ -68,6 +69,7 @@ struct ra_ctx_ops g_ra_peer_ctx_ops = {
     .ra_ctx_update_ci = NULL,
     .ra_ctx_query_qp_batch = NULL,
     .ra_ctx_get_aux_info = NULL,
+    .ra_ctx_get_jetty_context = ra_peer_ctx_get_jetty_context,
 };
 
 HCCP_ATTRI_VISI_DEF int ra_get_dev_eid_info_num(struct RaInfo info, unsigned int *num)
@@ -956,5 +958,28 @@ HCCP_ATTRI_VISI_DEF int ra_ctx_get_cr_err_info_list(void *ctx_handle, struct CrE
         "phy_id:%u dev_index:0x%x", ret, ctx_handle_tmp->attr.phy_id, ctx_handle_tmp->dev_index),
         ConverReturnCode(RDMA_OP, ret));
  
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
+HCCP_ATTRI_VISI_DEF int ra_ctx_get_jetty_context(void *qp_handle, char context[], unsigned int *len)
+{
+    struct ra_ctx_qp_handle *qp_handle_tmp = NULL;
+    int ret = 0;
+
+    CHK_PRT_RETURN(qp_handle == NULL || context == NULL || len == NULL,
+        hccp_err("[get][jetty_context]qp_handle or context or len is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(*len == 0 || *len > JETTY_CONTEXT_MAX_LEN, hccp_err("[get][jetty_context]len:%u must greater "
+        "than 0 and less or equal to %d", *len, JETTY_CONTEXT_MAX_LEN), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    qp_handle_tmp = (struct ra_ctx_qp_handle *)qp_handle;
+
+    hccp_run_info("Input parameters: phy_id:%u, dev_index:0x%x len:%u",
+        qp_handle_tmp->phy_id, qp_handle_tmp->ctx_handle->dev_index, *len);
+
+    ret = qp_handle_tmp->ctx_handle->ctx_ops->ra_ctx_get_jetty_context(qp_handle_tmp, context, len);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[get][jetty_context]ra_ctx_get_jetty_context failed, ret:%d phy_id:%u dev_index"
+        ":0x%x", ret, ctx_handle_tmp->attr.phy_id, ctx_handle_tmp->dev_index), ConverReturnCode(RDMA_OP, ret));
+
     return ConverReturnCode(RDMA_OP, ret);
 }

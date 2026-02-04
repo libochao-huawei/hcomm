@@ -103,6 +103,7 @@ struct ra_ctx_ops {
         struct send_wr_resp op_resp[], unsigned int send_num, unsigned int *complete_num);
     int (*ra_ctx_update_ci)(struct ra_ctx_qp_handle *qp_handle, uint16_t ci);
     int (*ra_ctx_get_aux_info)(struct ra_ctx_handle *ctx_handle, struct aux_info_in *in, struct aux_info_out *out);
+    int (*ra_ctx_get_jetty_context)(struct ra_ctx_qp_handle *qp_handle, char context[], unsigned int *len);
 };
 
 #endif // RA_CTX_H
