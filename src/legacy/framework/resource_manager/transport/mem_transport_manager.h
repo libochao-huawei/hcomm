@@ -12,6 +12,7 @@
 #include "base_mem_transport.h"
 #include "virtual_topo.h"
 #include "mem_transport_callback.h"
+#include "mc2_type.h"
 
 namespace Hccl {
 class MemTransportManager {
@@ -23,17 +24,20 @@ public:
     void BatchBuildOpbasedTransports(const vector<LinkData> &links);
     void BatchBuildOneSidedTransports(const vector<LinkData> &links);
     void BatchBuildOffloadTransports(const std::string &opTag, const vector<LinkData> &links);
+    void BatchBuildUrmaDirectTransports(const vector<LinkData> &links);
 
     void UpdateOffloadTransports();
 
     BaseMemTransport *GetOpbasedTransport(const LinkData &linkData);
     BaseMemTransport *GetOneSidedTransport(const LinkData &linkData);
     BaseMemTransport *GetOffloadTransport(const std::string &opTag, const LinkData &linkData);
+    BaseMemTransport *GetUrmaDirectTransport(const LinkData &linkData);
 
     bool IsAllTransportReady();
 
     void DumpNotReadyTransportsOpbased();
     void DumpNotReadyTransportsOffload(const std::string &opTag);
+    void DumpNotReadyTransportsUrma();
     bool IsAllOpbasedTransportReady();
     bool IsAllOneSidedTransportReady();
     bool IsAllOffloadTransportReady(const std::string &opTag);
@@ -42,6 +46,9 @@ public:
     std::vector<char> GetOffloadPackedData(const std::string &opTag);
     std::vector<char> GetOneSidedPackedData();
     std::vector<char> GetPackedAllTransportData();
+
+    std::vector<HcclAiRMAWQ> GetUrmaWqs();
+ 	std::vector<HcclAiRMACQ> GetUrmaCqs();
 
     void BatchRecoverOpbasedTransports(const vector<LinkData> &links);
     void BatchRecoverOffloadTransports(const std::string &opTag, const vector<LinkData> &links);
@@ -63,6 +70,7 @@ private:
     BaseMemTransport *CreateOneSidedTransport(const LinkData &linkData);
     BaseMemTransport *CreateOpbasedMemTransport(const LinkData &linkData);
     BaseMemTransport *CreateOffloadMemTransport(const std::string &opTag, const LinkData &linkData);
+    BaseMemTransport *CreateUrmaDirectTransport(const LinkData &linkData);
 
     void CreateOpbasedUbMemTransport(BaseMemTransport::CommonLocRes &locRes,
                               BaseMemTransport::Attribution &attr, const LinkData &linkData, const Socket &socket);
@@ -70,6 +78,8 @@ private:
                               BaseMemTransport::Attribution &attr, const LinkData &linkData, const Socket &socket);
     void CreateOneSidedUbMemTransport(BaseMemTransport::CommonLocRes &locRes, BaseMemTransport::Attribution &attr,
                                      const LinkData &linkData, const Socket &socket);
+    void CreateUrmaDirectTransport(BaseMemTransport::CommonLocRes &locRes, BaseMemTransport::Attribution &attr,
+ 	  	                           const LinkData &linkData, const Socket &socket);
 
     const CommunicatorImpl *comm;
 
@@ -78,6 +88,7 @@ private:
     MemTransportMap                                  opTagOpbasedMap;
     MemTransportMap                                  oneSidedMap;
     std::unordered_map<std::string, MemTransportMap> opTagOffloadMap;
+    MemTransportMap                                  urmaDirectMap_;
 
     std::unordered_map<LinkData, u32>                                  newOpbasedTransports; // 0：新增transports
     std::unordered_map<LinkData, u32>                                  newOneSidedTransports; // 0：新增transports
