@@ -16,19 +16,37 @@ target_compile_definitions(intf_pub_base INTERFACE
 
 target_compile_options(intf_pub_base INTERFACE
     -D_GLIBCXX_USE_CXX11_ABI=0
-    -g
-    --coverage
+    -Os
+    -O0 -g
     -w
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
-    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address,all -fno-stack-protector -fno-omit-frame-pointer -g>
-    $<$<BOOL:${ENABLE_GCOV}>:-fprofile-arcs -ftest-coverage>
     -fPIC
     -pipe
 )
 
+target_compile_options(intf_pub_base INTERFACE
+    $<$<BOOL:${ENABLE_ASAN}>:
+        -fsanitize=address           # 启用地址消毒器
+        -fsanitize=leak              # 启用内存泄漏检测
+        -fsanitize-recover=address   # 允许地址错误恢复
+        -fno-stack-protector         # 禁用栈保护
+        -fno-omit-frame-pointer      # 保留帧指针
+    >
+)
+
 target_link_options(intf_pub_base INTERFACE
-    -fprofile-arcs -ftest-coverage
-    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address>
+    $<$<BOOL:${ENABLE_ASAN}>:
+        -fsanitize=address           # 链接时启用地址消毒器
+        -fsanitize=leak              # 链接时启用内存泄漏检测
+        -fsanitize-recover=address   # 允许地址错误恢复
+    >
+)
+
+target_compile_options(intf_pub_base INTERFACE
+    $<$<BOOL:${ENABLE_GCOV}>:-fprofile-arcs -ftest-coverage>
+)
+
+target_link_options(intf_pub_base INTERFACE
     $<$<BOOL:${ENABLE_GCOV}>:-fprofile-arcs -ftest-coverage>
 )
 
