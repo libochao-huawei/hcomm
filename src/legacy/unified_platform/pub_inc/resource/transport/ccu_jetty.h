@@ -14,6 +14,7 @@
 #include "ip_address.h"
 #include "ccu_dev_mgr.h"
 #include "orion_adapter_hccp.h"
+#include "rdma_handle_manager.h"
 
 namespace Hccl {
 
@@ -22,7 +23,7 @@ public:
     CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo)
         : ipAddr_(ipAddr), jettyInfo_(jettyInfo){
         HCCL_DEBUG("CcuJetty: constructed with ipAdde [%s] and jettyInfo [%s]",
-                ipAddr_.ToString().c_str(), jettyInfo_.ToString().c_str());
+                ipAddr_.GetIpStr().c_str(), jettyInfo_.ToString().c_str());
     }
     ~CcuJetty();
     CcuJetty(const CcuJetty &that) = delete;
@@ -50,7 +51,7 @@ public:
     void Clean();
 
     static HcclResult Create(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
-                            std::unique_pte<CcuJetty> &ccuJetty){
+                            std::unique_ptr<CcuJetty> &ccuJetty){
                                 ccuJetty = std::make_unique<CcuJetty> (ipAddr, jettyInfo);
                                 TRY_CATCH_RETURN(ccuJetty->Initialize);
                                 return HcclResult::HCCL_SUCCESS;

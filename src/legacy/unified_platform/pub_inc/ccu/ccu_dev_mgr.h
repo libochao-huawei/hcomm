@@ -42,6 +42,12 @@ struct CcuJettyInfo {
 
     uint64_t sqBufVa{0};
     uint32_t sqBufSize{0};
+
+    std::string ToString() const {
+        return StringFormat("jettyType=%d, jettyCtxId=%d, taJettyId=%d, sqDepth=%d, "
+                            "wqeBBStartId=%d, sqBufVa=%d, sqBufSize=%d",
+            jettyType, jettyCtxId, taJettyId, sqDepth, wqeBBStartId, sqBufVa, sqBufSize);
+    }
 };
 
 struct CcuChannelInfo {
