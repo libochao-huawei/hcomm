@@ -29,7 +29,8 @@ enum CommConfigVersion {
     COMM_CONFIG_VERSION_SIX = 6,
     COMM_CONFIG_VERSION_SEVEN = 7,
     COMM_CONFIG_VERSION_EIGHT = 8,    
-    COMM_CONFIG_VERSION_NINE = 9                  // 当前支持的最高版本
+    COMM_CONFIG_VERSION_NINE = 9,
+    COMM_CONFIG_VERSION_TEN = 10                  // 当前支持的最高版本
 };
 
 enum CommConfigOpExpansion {
@@ -66,6 +67,7 @@ typedef struct CommConfigHandleDef {
     char hcclRetryEnable[COMM_RETRY_ENABLE_MAX_LENGTH]; // hccl_retry_enable
     char hcclRetryParams[COMM_RETRY_PARAMS_MAX_LENGTH]; // hccl_retry_params
     char bufferName[BUFFER_NAME_MAX_LENGTH];    // cclbuffer名称
+    u32 hcclQos = HCCL_COMM_QOS_CONFIG_NOT_SET;
 } CommConfigHandle;
 
 namespace hccl {
@@ -100,6 +102,7 @@ public:
     u32 GetConfigRetryIntervalTime() const;
     HcclResult SetConfigExecTimeOut(s32 execTimeOut);
     const std::string& GetConfigBufferName() const;
+    u32 GetConfigHcclQos() const;
 
 private:
     void InitAlgoConfig();
@@ -141,6 +144,7 @@ private:
     u32 retryHoldTime_;
     u32 retryIntervalTime_;    // 重执行间隔时间，配置范围[0,3600000]，默认值1000
     std::string bufferName_;    // CCL buffer名称
+    u32 hcclQos_;
 };
 }
 #endif /* HCCL_COMM_CONFIG_PUB_H */
