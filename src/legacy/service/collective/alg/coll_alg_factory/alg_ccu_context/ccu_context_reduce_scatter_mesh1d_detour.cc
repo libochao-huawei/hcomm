@@ -166,7 +166,7 @@ void CcuContextReduceScatterMeshDetour1D::GroupReduceDetour(std::vector<CcuRep::
         loopParam = CcuRep::GetLoopParam(0, singleTransportSize_ * moConfig.loopCount, 0);  // 下次迭代的偏移是单次总搬运量*loopNum
         loopParam += iterNum_;  // 加上loop的迭代次数构成完整loop参数
         paraCfg = CcuRep::GetParallelParam(moConfig.loopCount - 1, 0, 1);  // loop固定展开到128个
-        offsetCfg = CcuRep::GetOffsetParam(singleTransportSize_, interLeave, pathNumPerPeer);  // 下一个loop偏移量
+        offsetCfg = CcuRep::GetOffsetParam(singleTransportSize_, interLeave, pathNumPerPeer_);  // 下一个loop偏移量
         auto lc = Loop("reduceDetour_loop")(src, dst, lengths_);
         LoopGroup({lc}, {loopParam}, paraCfg, offsetCfg);
     }
