@@ -1,0 +1,539 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include "ccu_conn.h"
+
+#include <random>
+
+#include "hcom_common.h"
+#include "exception_handler.h"
+#include "eid_info_mgr.h"
+#include "adapter_rts.h"
+
+#include "hccp_ctx.h"
+
+#include "buffer.h"
+#include "local_ub_rma_buffer.h"
+#include "rdma_handle_manager.h"
+
+namespace hcomm {
+
+CcuConnection::CcuConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
+    : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys)
+{
+}
+
+CcuRtpConnection::CcuRtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
+    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys)
+{
+    tpProtocol_ = TpProtocol::RTP;
+}
+
+CcuCtpConnection::CcuCtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
+    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys)
+{
+    tpProtocol_ = TpProtocol::CTP;
+}
+
+HcclResult CcuConnection::Init()
+{
+    devLogicId_ = HcclGetThreadDeviceId();
+    uint32_t devPhyId{0};
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId_), devPhyId));
+
+    EXCEPTION_HANDLE_BEGIN
+    auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
+    Hccl::IpAddress ipAddr{};
+    CHK_RET(CommAddrToIpAddress(locAddr_, ipAddr));
+    ctxHandle_ = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
+
+    DevEidInfo eidInfo{};
+    CHK_RET(EidInfoMgr::GetInstance(devLogicId_).GetEidInfoByAddr(locAddr_, eidInfo));
+    dieId_ = static_cast<uint8_t>(eidInfo.dieId);
+
+    EXCEPTION_HANDLE_END
+
+    CHK_RET(GetLocalCcuRmaBufferInfo());
+
+    jettyNum_ = channelInfo_.jettyInfos.size();
+    CHK_PRT_RET(jettyNum_ == 0,
+        HCCL_ERROR("[CcuConnection][%s] failed, jetty num[0] is unexpected.", __func__),
+        HcclResult::HCCL_E_PARA);
+
+    GenerateLocalPsn();
+    status_ = CcuConnStatus::INIT;
+    innerStatus_ = InnerStatus::INIT;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+CcuConnStatus CcuConnection::GetStatus()
+{
+    if (status_ == CcuConnStatus::CONNECTED
+        || status_ == CcuConnStatus::CONN_INVALID) {
+        return status_;
+    }
+
+    if (StatusMachine() != HcclResult::HCCL_SUCCESS) {
+        status_ = CcuConnStatus::CONN_INVALID;
+        innerStatus_ = InnerStatus::CONN_INVALID;
+    }
+
+    return status_;
+}
+
+HcclResult CcuConnection::GetLocalCcuRmaBufferInfo()
+{
+    uint64_t ccuBufSize = 0; // 暂未使用
+    CHK_RET(CcuDevMgrImp::GetCcuResourceSpaceBufInfo(
+        devLogicId_, dieId_, ccuBufAddr_, ccuBufSize));
+
+    uint64_t tokenId = 0;
+    uint64_t tokenValue = 0;
+    CHK_RET(CcuDevMgrImp::GetCcuResourceSpaceTokenInfo(
+        devLogicId_, dieId_, tokenId, tokenValue));
+    ccuBufTokenId_ = static_cast<uint32_t>(tokenId);
+    ccuBufTokenValue_ = static_cast<uint32_t>(tokenValue);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuConnection::StatusMachine()
+{
+    if (status_ == CcuConnStatus::INIT) {
+        CHK_RET(UpdateInitStatus());
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    if (innerStatus_ == InnerStatus::JETTY_IMPORTING) {
+        CHK_RET(UpdateExchangeStatus());
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuConnection::UpdateInitStatus()
+{
+    switch (innerStatus_) {
+        case InnerStatus::INIT:
+        case InnerStatus::JETTY_CREATING: {
+            auto ret = CreateJetty();
+            if (ret == HcclResult::HCCL_E_AGAIN) {
+                innerStatus_ = InnerStatus::JETTY_CREATING;
+                break; // 状态不改变退出，下轮状态机进入继续执行
+            }
+            CHK_RET(ret);
+
+            ret = GetTpInfo(); // 不退出继续调用下个异步接口
+            if (ret == HcclResult::HCCL_E_AGAIN) {
+                innerStatus_ = InnerStatus::TP_INFO_GETTING;
+                break;
+            }
+            CHK_RET(ret);
+            // 如果有缓存的tp信息，可以直接完成
+            innerStatus_ = InnerStatus::EXCHANGEABLE;
+            status_      = CcuConnStatus::EXCHANGEABLE;
+            break;
+        }
+        case InnerStatus::TP_INFO_GETTING: {
+            auto ret = GetTpInfo(); // 不退出继续调用下个异步接口
+            if (ret == HcclResult::HCCL_E_AGAIN) {
+                break; // 状态不改变退出，下轮状态机进入继续执行
+            }
+            CHK_RET(ret);
+
+            innerStatus_ = InnerStatus::EXCHANGEABLE;
+            status_      = CcuConnStatus::EXCHANGEABLE;
+            break;
+        }
+        default:
+            return ReturnErrorStatus(std::string(__func__));
+    }
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuConnection::CreateJetty()
+{
+    if (isJettyCreated_) {
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    isJettyCreated_ = true;
+    for (size_t i = 0; i < jettyNum_; i++) {
+        auto ret = ccuJettys_[i]->CreateJetty();
+        if (ret == HcclResult::HCCL_E_AGAIN) {
+            // 不提供日志避免刷屏
+            isJettyCreated_ = isJettyCreated_ && false;
+            continue;
+        }
+
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            isJettyCreated_ = true;
+            HCCL_ERROR("[CcuConnection][%s] failed, hccl result[%d]", __func__, ret);
+            return HcclResult::HCCL_E_NETWORK;
+        }
+    }
+
+    return isJettyCreated_ ?
+        HcclResult::HCCL_SUCCESS: HcclResult::HCCL_E_AGAIN;
+}
+
+inline uint32_t GetRandomNum()
+{
+    uint32_t randNum = std::rand();
+    return randNum;
+}
+
+void CcuConnection::GenerateLocalPsn()
+{
+    jettyImportCfg_.localPsn = GetRandomNum();
+}
+
+HcclResult CcuConnection::GetTpInfo()
+{
+    if (tpProtocol_ == TpProtocol::INVALID) { // 不感知tp建链，当前默认不支持
+        HCCL_ERROR("[CcuConnection][%s] failed, tpProtocol[%s] is not expected.",
+            __func__, tpProtocol_.Describe().c_str());
+        return HcclResult::HCCL_E_PARA;
+    }
+
+    HcclResult ret = TpMgr::GetInstance(devLogicId_)
+        .GetTpInfo({locAddr_, rmtAddr_, tpProtocol_}, tpInfo_);
+    if (ret == HcclResult::HCCL_E_AGAIN) {
+        // 此处可能刷屏，非必要勿加日志
+        return ret;
+    }
+
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuConnection][%s] failed, hccl result[%d]", __func__, ret);
+        return HcclResult::HCCL_E_NETWORK;
+    }
+
+    jettyImportCfg_.localTpHandle = tpInfo_.tpHandle;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuConnection::Serialize(std::vector<char> &dtoData)
+{
+    if (status_ != CcuConnStatus::EXCHANGEABLE) {
+        HCCL_ERROR("[CcuConnection][%s] failed, not init completed yet, "
+            "status[%s].", __func__, status_.Describe().c_str());
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
+    Hccl::BinaryStream dtoStream;
+    dtoStream << ccuBufAddr_;
+    dtoStream << ccuBufTokenId_;
+    dtoStream << ccuBufTokenValue_;
+    HCCL_INFO("[CcuConnection][%s], ccuBufAddr[%llx]", __func__, ccuBufAddr_);
+
+    dtoStream << jettyNum_;
+    HCCL_INFO("[CcuConnection][%s], jettyNum[%u]", __func__, jettyNum_);
+    for (const auto &ccuJetty : ccuJettys_) {
+        dtoStream << ccuJetty->GetCreateJettyParam().tokenValue; 
+        const auto &outParam = ccuJetty->GetJettyedOutParam();
+        dtoStream << outParam.key; // 此处的qpKey是数组
+        dtoStream << outParam.keySize;
+    }
+
+    if (tpProtocol_ != TpProtocol::INVALID) {
+        dtoStream << jettyImportCfg_.localTpHandle;
+        dtoStream << jettyImportCfg_.localPsn;
+        HCCL_INFO("[CcuConnection][%s] tpProtocol[%s], localTpHandle[0x%llx], localPsn[%u].",
+            __func__, tpProtocol_.Describe().c_str(), jettyImportCfg_.localTpHandle,
+            jettyImportCfg_.localPsn);
+    }
+
+    dtoData.clear();
+    dtoStream.Dump(dtoData);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuConnection::Deserialize(const std::vector<char> &dtoData)
+{
+    if (status_ != CcuConnStatus::EXCHANGEABLE) {
+        HCCL_ERROR("[CcuConnection][%s] failed, not init completed yet, "
+            "status[%s].", __func__, status_.Describe().c_str());
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
+    std::vector<char> rmtDtoData = dtoData;
+    Hccl::BinaryStream dtoStream(rmtDtoData);
+    dtoStream >> rmtCcuBufAddr_;
+    dtoStream >> rmtCcuBufTokenId_;
+    dtoStream >> rmtCcuBufTokenValue_;
+    HCCL_INFO("[CcuConnection][%s], rmtCcuBufAddr[%llx].", __func__, rmtCcuBufAddr_);
+
+    uint32_t remoteJettySize{0};
+    dtoStream >> remoteJettySize;
+
+    importJettyCtxs_.clear();
+    importJettyCtxs_.resize(remoteJettySize);
+    HCCL_INFO("[CcuConnection][%s], remoteJettySize[%u].", __func__, remoteJettySize);
+
+    for (auto &importCtx : importJettyCtxs_) {
+        dtoStream >> importCtx.inParam.tokenValue;
+        dtoStream >> importCtx.remoteQpKey; // 保存key数组
+        importCtx.inParam.key = importCtx.remoteQpKey; // 保存指针用于接口调用
+        dtoStream >> importCtx.inParam.keyLen;
+    }
+
+    if (tpProtocol_ != TpProtocol::INVALID) {
+        dtoStream >> jettyImportCfg_.remoteTpHandle;
+        dtoStream >> jettyImportCfg_.remotePsn;
+
+        HCCL_INFO("[CcuConnection][%s] tpEnable, remoteTpHandle[0x%llx], remotePsn[%u].",
+            __func__, jettyImportCfg_.remoteTpHandle, jettyImportCfg_.remotePsn);
+    }
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuConnection::ImportJetty()
+{
+    if (isJettyImported_) {
+        HCCL_INFO("[CcuConnection][%s] taJettys has been imported already.", __func__);
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    if (innerStatus_ != InnerStatus::EXCHANGEABLE) {
+        return ReturnErrorStatus(std::string(__func__));
+    }
+
+    // importJettyCtxs_.resize(jettyNum_);
+    if (jettyNum_ != importJettyCtxs_.size()) {
+        HCCL_ERROR("[CcuConnection][%s] failed to ImportJetty, "
+            "jettyNum[%u] is not equal to importJettyCtxs.size[%u].",
+            __func__, jettyNum_, importJettyCtxs_.size());
+        return ReturnErrorStatus(std::string(__func__));
+    }
+
+    ResetRequestCtxs();
+    for (size_t i = 0; i < jettyNum_; i++) {
+        if (StartImportJettyRequest(i, reqHandles_[i]) != HcclResult::HCCL_SUCCESS) {
+            return ReturnErrorStatus(std::string(__func__));
+        }
+    }
+
+    innerStatus_ = InnerStatus::JETTY_IMPORTING;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+void CcuConnection::ResetRequestCtxs()
+{
+    reqHandles_.clear();
+    reqHandles_.resize(jettyNum_);
+
+    reqDataBuffers_.clear();
+    reqDataBuffers_.resize(jettyNum_);
+
+    remoteJettyHandlePtrs_.clear();
+    remoteJettyHandlePtrs_.resize(jettyNum_);
+}
+
+HcclResult CcuConnection::StartImportJettyRequest(uint32_t jettyIndex, RequestHandle &reqHandle)
+{
+    if (tpProtocol_ == TpProtocol::INVALID) {
+        return ReturnErrorStatus(std::string(__func__));
+    }
+
+    auto &importCtxInParam = importJettyCtxs_[jettyIndex].inParam;
+    importCtxInParam.jettyImportCfg = jettyImportCfg_;
+    importCtxInParam.jettyImportCfg.protocol = tpProtocol_;
+    CHK_RET(HccpUbTpImportJettyAsync(ctxHandle_, importCtxInParam, reqDataBuffers_[jettyIndex],
+        remoteJettyHandlePtrs_[jettyIndex], reqHandle));
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuConnection::CheckRequestResults()
+{
+    if (reqHandles_.size() == 0) {
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    // 检查所有下发异步请求是否完成
+    std::vector<size_t> completedReqs;
+    const uint32_t reqSize = reqHandles_.size();
+    for (size_t i = 0; i < reqSize; i++) {
+        RequestResult result = HccpGetAsyncReqResult(reqHandles_[i]);
+        if (result == RequestResult::NOT_COMPLETED) {
+            continue;
+        }
+
+        if (result != RequestResult::COMPLETED) {
+            HCCL_ERROR("[CcuConnection][%s] failed, result[%s] is unexpected.",
+                __func__, result.Describe().c_str());
+            return HcclResult::HCCL_E_NETWORK;
+        }
+
+        // 记录已完成的reqHandles
+        completedReqs.push_back(i);
+    }
+
+    // 删除已完成的reqHandles，避免重复查询
+    for (int i = completedReqs.size() - 1; i >= 0; --i) {
+        reqHandles_.erase(reqHandles_.begin() + completedReqs[i]);
+    }
+
+    // 检查是否有剩余reqHandles
+    return reqHandles_.size() == 0 ?
+        HcclResult::HCCL_SUCCESS : HcclResult::HCCL_E_AGAIN;
+}
+
+HcclResult CcuConnection::UpdateExchangeStatus()
+{
+    // 状态机保证为 InnerStatus::JETTY_IMPORTING
+    auto ret = CheckRequestResults();
+    if (ret == HcclResult::HCCL_E_AGAIN) {
+        return HcclResult::HCCL_SUCCESS; // 操作成功，保持当前状态
+    }
+    CHK_RET(ret);
+
+    for (size_t i = 0; i < jettyNum_; i++) {
+        auto &outParam = importJettyCtxs_[i].outParam;
+        struct qp_import_info_t *infoPtr =
+            reinterpret_cast<qp_import_info_t *>(reqDataBuffers_[i].data());
+        outParam.handle        =
+            reinterpret_cast<TargetJettyHandle>(remoteJettyHandlePtrs_[i]);
+        outParam.targetJettyVa = infoPtr->out.ub.tjetty_handle; // 该信息当前未使用
+        outParam.tpn           = infoPtr->out.ub.tpn;
+    }
+    isJettyImported_ = true;
+
+    CHK_RET(ConfigChannel());
+    status_ = CcuConnStatus::CONNECTED;
+    innerStatus_ = InnerStatus::CONNECTED;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuConnection::ConfigChannel()
+{
+    if (jettyNum_ != importJettyCtxs_.size()) {
+        HCCL_ERROR("[CcuConnection][%s] failed, jettyNum[%u] is not equal to "
+            "importJettyCtxs.size[%u].", __func__, jettyNum_, importJettyCtxs_.size());
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
+    ChannelCfg cfg{};
+    cfg.channelId = channelInfo_.channelId;
+    Hccl::IpAddress rmtAddr{};
+    CHK_RET(CommAddrToIpAddress(rmtAddr_, rmtAddr));
+    CHK_RET(IpAddressToReverseHccpEid(rmtAddr, cfg.remoteEid)); // 配置ccu硬件需要使用反向eid
+    cfg.tpn       = importJettyCtxs_[0].outParam.tpn; // tp handle复用所以tpn一致
+    cfg.remoteCcuVa   = rmtCcuBufAddr_;
+    cfg.memTokenId    = rmtCcuBufTokenId_;
+    cfg.memTokenValue = rmtCcuBufTokenValue_;
+
+    for (size_t i = 0; i < jettyNum_; i++) {
+        const auto &ccuJetty = ccuJettys_[i];
+        const auto &inParam = ccuJetty->GetCreateJettyParam();
+        const auto &outParam = ccuJetty->GetJettyedOutParam();
+        const auto &jettyInfo = channelInfo_.jettyInfos[i];
+        cfg.jettyCfgs.emplace_back(JettyCfg{
+            jettyInfo.jettyCtxId,
+            outParam.dbVa,
+            outParam.dbTokenId,
+            inParam.tokenValue}); // 安全问题，禁止打印token相关信息
+    }
+
+    CHK_RET(CcuDevMgrImp::ConfigChannel(devLogicId_, dieId_, cfg));
+    return HcclResult::HCCL_SUCCESS;
+}
+
+CcuConnection::~CcuConnection()
+{
+    (void)ReleaseConnRes();
+}
+
+HcclResult CcuConnection::ReleaseConnRes()
+{
+    for (auto &item : importJettyCtxs_) {
+        if (item.outParam.handle != 0) {
+            int32_t ret = ra_ctx_qp_unimport(ctxHandle_, item.outParam.handle);
+            if (ret != 0) {
+                HCCL_ERROR("[CcuComponent][%s] failed, ctxHandle[%p] "
+                    "remoteJettyHandle[%p], devLogicId[%d].", __func__,
+                    ctxHandle_, item.outParam.handle, devLogicId_);
+                return HcclResult::HCCL_E_NETWORK;
+            }
+            item.outParam.handle = 0;
+        }
+    }
+    importJettyCtxs_.clear();
+
+    if (tpInfo_.tpHandle != 0) { // tp handle 复用，只释放一次
+        (void)TpMgr::GetInstance(devLogicId_)
+            .ReleaseTpInfo({locAddr_, rmtAddr_, tpProtocol_}, tpInfo_);
+        tpInfo_.tpHandle = 0;
+    }
+
+    // CcuJetty 生命周期跟随通信域CcuJettyMgr
+    // 不需要connection主动销毁
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuConnection::ReturnErrorStatus(const std::string &funcName)
+{
+    std::string errMsg = Hccl::StringFormat("[CcuConnection][%s] failed, [%s].",
+        funcName.c_str(), Describe().c_str());
+    status_ = CcuConnStatus::CONN_INVALID;
+    innerStatus_ = InnerStatus::CONN_INVALID;
+    HCCL_ERROR("%s", errMsg.c_str());
+    return HcclResult::HCCL_E_INTERNAL;
+}
+
+std::string CcuConnection::Describe()
+{
+    Hccl::IpAddress locAddr{}, rmtAddr{};
+    (void)CommAddrToIpAddress(locAddr_, locAddr);
+    (void)CommAddrToIpAddress(rmtAddr_, rmtAddr);
+    return Hccl::StringFormat("[CcuConnection[locAddr=%s, rmtAddr=%s, protocol=%s, "
+        "status=%s, innerStatus=%s, [dieId=%u, channelId=%u, jettyNum=%u]]]",
+        locAddr.Describe().c_str(), rmtAddr.Describe().c_str(), tpProtocol_.Describe().c_str(),
+        status_.Describe().c_str(), innerStatus_.Describe().c_str(), dieId_, channelInfo_.channelId,
+        jettyNum_);
+}
+
+uint32_t CcuConnection::GetDieId() const
+{
+    return dieId_;
+}
+
+uint32_t CcuConnection::GetChannelId() const
+{
+    return channelInfo_.channelId;
+}
+
+int32_t CcuConnection::GetDevLogicId() const
+{
+    return devLogicId_;
+}
+
+HcclResult CcuConnection::Clean()
+{
+    status_ = CcuConnStatus::INIT;
+    innerStatus_ = InnerStatus::INIT;
+    isJettyCreated_ = false;
+    isJettyImported_ = false;
+    CHK_RET(ReleaseConnRes());
+    GenerateLocalPsn();
+
+    // 销毁jetty要在ReleaseConnRes之后
+    for (auto &ccuJetty : ccuJettys_) {
+        ccuJetty->Clean();
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+} // namespace hcomm

@@ -77,9 +77,14 @@ HcclResult CollAllGatherMeshAivExecutor::CalNumBlocks(u32& numBlocks, u32 rankSi
     CHK_PRT_RET(numBlocks_ < rankSize,
         HCCL_WARNING("[CollAllGatherMeshAivExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
         numBlocks_, rankSize), HCCL_E_PARA);
+    CHK_PRT_RET(isOpBase && numBlocks_ < bestNumBlocks,
+        HCCL_WARNING("[CollAllGatherMeshAivExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
+        numBlocks_, bestNumBlocks), HCCL_E_PARA);
+
     if (numBlocks_ < numBlocks) {
         numBlocks = numBlocks_ / rankSize * rankSize;
     }
+
     HCCL_INFO("[CollAllGatherMeshAivExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
         numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;

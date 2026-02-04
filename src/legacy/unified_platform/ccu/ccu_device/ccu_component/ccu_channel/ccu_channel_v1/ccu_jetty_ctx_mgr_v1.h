@@ -44,7 +44,7 @@ private:
         }
     };
 
-    std::unordered_map<uint32_t, std::unique_ptr<JettyAllocator>> allocatorMap;
+    std::unique_ptr<JettyAllocator> allocator_;
     HcclResult GetJettyAllocator(uint32_t feId, JettyAllocator* &allocatorHandle);
 };
 

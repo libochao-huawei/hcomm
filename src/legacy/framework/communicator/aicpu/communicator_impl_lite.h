@@ -31,6 +31,7 @@
 #include "rmt_data_buffer_mgr.h"
 #include "aicpu_hdc_handler.h"
 #include "one_sided_component_lite.h"
+#include "error_message_v2.h"
 
 namespace Hccl {
 
@@ -184,6 +185,23 @@ public:
         return profilingReporterLite.get();
     }
 
+    HcclResult SendErrorMessageReportToHost(ErrorMessageReport & errMsgInfo);
+    u32 GetUserStreamId() {
+        return userStreamId_;
+    }
+
+    bool IsErrorReported() {
+        return isErrorReported_;
+    }
+
+    void SetErrorReported() {
+        isErrorReported_ = true;
+    }
+
+    void ResetErrorReported() {
+        isErrorReported_ = false;
+    } 
+
     void UnfoldOp(HcclKernelParamLite *kernelParam);
     void RegisterRtsqCallback();
 #ifdef CCL_KERNEL
@@ -198,6 +216,7 @@ public:
     void CreateCollAlgComponentLite();
     void InitCurrentOp(HcclKernelParamLite *kernelParam);
     void UpdateOffloadRes(HcclKernelParamLite *kernelParam);
+    void UpdateUserStreamId(HcclKernelParamLite *kernelParam);
     std::shared_ptr<InsQueue> GetInsQueue(HcclKernelParamLite *kernelParam);
     void                      SetDfxOpInfo(uint64_t beginTime);
 
@@ -264,6 +283,8 @@ private:
     bool isUsed{false};
     bool isFirstUsed{true};
     std::mutex aicpuMc2Mutex;
+    u32 userStreamId_{0};
+    bool isErrorReported_{false};
 };
 
 } // namespace Hccl

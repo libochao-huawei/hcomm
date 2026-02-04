@@ -113,14 +113,14 @@ namespace hccl
 
     HcclResult hcclComm::RegistTaskAbortHandler() const
     {
-        HCCL_INFO("RegistTaskAbortHandler begin");
+        HCCL_RUN_INFO("RegistTaskAbortHandler begin, group[%s]", identifier_.c_str());
         CHK_RET(TaskAbortHandler::Init(communicator_.get()));
         return HCCL_SUCCESS;
     }
 
     HcclResult hcclComm::UnRegistTaskAbortHandler() const
     {
-        HCCL_INFO("UnRegistTaskAbortHandler begin");
+        HCCL_RUN_INFO("UnRegistTaskAbortHandler begin, group[%s]", identifier_.c_str());
         CHK_RET(TaskAbortHandler::DeInit(communicator_.get()));
         return HCCL_SUCCESS;
     }
@@ -271,8 +271,10 @@ namespace hccl
         return communicator_->GetHeterogMode(mode);
     }
 
-    HcclResult hcclComm::InitCollComm(void* commV2, void* rankGraph, uint32_t userRank, HcclMem cclBuffer, const std::string &commName) {
-      
+    HcclResult hcclComm::InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
+        HcclMem cclBuffer, const std::string &commName, HcclCommConfig *config) {
+        // 不校验config，为空时配置默认加速模式
+
         // aicpu侧初始化状态的回调函数
         ManagerCallbacks callbacks;
         callbacks.getAicpuCommState = [this]() {
@@ -320,7 +322,7 @@ namespace hccl
         EXECEPTION_CATCH(collComm_ = std::make_unique<CollComm>(commV2, userRank, commName, callbacks),
         return HCCL_E_PTR);
 
-        CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer));
+        CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
         return HCCL_SUCCESS;
     }
 

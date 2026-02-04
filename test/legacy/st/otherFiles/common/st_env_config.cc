@@ -414,7 +414,7 @@ TEST_F(EnvConfigTest, Ut_CastSocketPortRange_When_Config_Auto_Expect_Right)
             HCCL_SOCKET_PORT_RANGE_AUTO
         };
     rangs.push_back(autoSocketPortRange);
-    EXPECT_EQ(CastSocketPortRange(HCCL_AUTO_PORT_CONFIG), rangs);
+    EXPECT_EQ(CastSocketPortRange(HCCL_AUTO_PORT_CONFIG, "envName"), rangs);
 }
 
 TEST_F(EnvConfigTest, Ut_CastSocketPortRange_When_Config_Whitespace_Expect_Erase_Return_OK)
@@ -425,7 +425,7 @@ TEST_F(EnvConfigTest, Ut_CastSocketPortRange_When_Config_Whitespace_Expect_Erase
             60050
         };
     rangs.push_back(autoSocketPortRange);
-    EXPECT_EQ(CastSocketPortRange(" 60000-60050 "), rangs);
+    EXPECT_EQ(CastSocketPortRange(" 60000-60050 ", "envName"), rangs);
 }
 
 TEST_F(EnvConfigTest, Ut_CastSocketPortRange_When_Config_More_Expect_Return_OK)
@@ -434,20 +434,20 @@ TEST_F(EnvConfigTest, Ut_CastSocketPortRange_When_Config_More_Expect_Return_OK)
     rangs.push_back(SocketPortRange{50000, 50000});
     rangs.push_back(SocketPortRange{60000, 60050});
     rangs.push_back(SocketPortRange{60100, 60260});
-    EXPECT_EQ(CastSocketPortRange("50000,60000-60050, 60100-60260"), rangs);
+    EXPECT_EQ(CastSocketPortRange("50000,60000-60050, 60100-60260", "envName"), rangs);
 }
 
 TEST_F(EnvConfigTest, Ut_CastSocketPortRange_When_Config_Bound_Error_Expect_Throw)
 {
-    EXPECT_THROW(CastSocketPortRange("50000,60050-60000, 60100-60260"), InvalidParamsException);
-    EXPECT_THROW(CastSocketPortRange("50000,60000-60150,60100-60260"), InvalidParamsException);
+    EXPECT_THROW(CastSocketPortRange("50000,60050-60000, 60100-60260", "envName"), InvalidParamsException);
+    EXPECT_THROW(CastSocketPortRange("50000,60000-60150,60100-60260", "envName"), InvalidParamsException);
 }
 
 TEST_F(EnvConfigTest, Ut_CastSocketPortRange_When_Config_Invalid_Expect_Throw)
 {
-    EXPECT_THROW(CastSocketPortRange("60000-60050,0,60100-60260"), InvalidParamsException);
-    EXPECT_THROW(CastSocketPortRange("50000,60000-60050,0-0"), InvalidParamsException);
-    EXPECT_THROW(CastSocketPortRange("65536"), InvalidParamsException);
+    EXPECT_THROW(CastSocketPortRange("60000-60050,0,60100-60260", "envName"), InvalidParamsException);
+    EXPECT_THROW(CastSocketPortRange("50000,60000-60050,0-0", "envName"), InvalidParamsException);
+    EXPECT_THROW(CastSocketPortRange("65536", "envName"), InvalidParamsException);
 }
 
 TEST_F(EnvConfigTest, test_parse_HCCL_DFS_CONFIG_shoud_return_SUCCESS)

@@ -270,6 +270,9 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
             && algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) {
             algName = "ReduceScatterDeterPipelineExecutor";
         } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+            bool enableSmallCountDeterministicAlgo = !isSingleMeshAggregation_ &&
+                IsSupportSDMAReduce(cclBufferManager_.GetInCCLbuffer().ptr(),
+                cclBufferManager_.GetOutCCLbuffer().ptr(), param.DataDes.dataType, param.reduceType);
             if (SingleMeshInlineReduce(cclBufferManager_.GetInCCLbuffer().ptr(),
                 cclBufferManager_.GetOutCCLbuffer().ptr(), param.DataDes.dataType, param.reduceType)) {
                 if (topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE) {
@@ -282,10 +285,9 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
                 IsMultiMeshInlineReduce(cclBufferManager_.GetInCCLbuffer().ptr(),
                 cclBufferManager_.GetOutCCLbuffer().ptr(), param.DataDes.dataType, param.reduceType)) {
                 algName = "ReduceScatterMeshOpbasePipelineExecutor";
-            } else if (!isSingleMeshAggregation_ && topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_ENABLE && 
-                dataSize <= HCCL_SMALL_COUNT_512_KB &&
-                IsSupportSDMAReduce(cclBufferManager_.GetInCCLbuffer().ptr(), cclBufferManager_.GetOutCCLbuffer().ptr(),
-                    param.DataDes.dataType, param.reduceType)) {
+            } else if (enableSmallCountDeterministicAlgo && ((dataSize <= HCCL_SMALL_COUNT_512_KB &&
+                topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_ENABLE) ||
+                dataSize * userRankSize_< HCCL_SMALL_COUNT_512_KB)) {
                 algName = "ReduceScatterMeshOpbaseSmallCountDeterministicExecutor";
             }
         } else {

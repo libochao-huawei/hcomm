@@ -109,7 +109,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_001)
         = new Socket(hccpSocketHandle, GetAnIpAddress(), 0, GetAnIpAddress(), "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
     std::string  socketTag = impl.GetEstablishLinkSocketTag();
     SocketConfig socketConfig(remoteRank, linkData, socketTag);
-    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_unique<Socket>(hccpSocketHandle, GetAnIpAddress(),
+    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_shared<Socket>(hccpSocketHandle, GetAnIpAddress(),
                                                                                         0, GetAnIpAddress(), "stub",
                                                                                         SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
 
@@ -210,7 +210,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_002)
         = new Socket(hccpSocketHandle, GetAnIpAddress(), 0, GetAnIpAddress(), "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
     std::string  socketTag = impl.GetEstablishLinkSocketTag();
     SocketConfig socketConfig(remoteRank, linkData, socketTag);
-    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_unique<Socket>(hccpSocketHandle, GetAnIpAddress(),
+    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_shared<Socket>(hccpSocketHandle, GetAnIpAddress(),
                                                                                         0, GetAnIpAddress(), "stub",
                                                                                         SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
 
@@ -312,7 +312,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_003)
         = new Socket(hccpSocketHandle, GetAnIpAddress(), 0, GetAnIpAddress(), "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
     std::string  socketTag = impl.GetEstablishLinkSocketTag();
     SocketConfig socketConfig(remoteRank, linkData, socketTag);
-    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_unique<Socket>(hccpSocketHandle, GetAnIpAddress(),
+    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_shared<Socket>(hccpSocketHandle, GetAnIpAddress(),
                                                                                         0, GetAnIpAddress(), "stub",
                                                                                         SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
 
@@ -423,7 +423,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_004)
         = new Socket(hccpSocketHandle, GetAnIpAddress(), 0, GetAnIpAddress(), "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
     std::string  socketTag = impl.GetEstablishLinkSocketTag();
     SocketConfig socketConfig(remoteRank, linkData, socketTag);
-    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_unique<Socket>(hccpSocketHandle, GetAnIpAddress(),
+    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_shared<Socket>(hccpSocketHandle, GetAnIpAddress(),
                                                                                         0, GetAnIpAddress(), "stub",
                                                                                         SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
 
@@ -519,7 +519,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_005)
         = new Socket(hccpSocketHandle, GetAnIpAddress(), 0, GetAnIpAddress(), "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
     std::string  socketTag = impl.GetEstablishLinkSocketTag();
     SocketConfig socketConfig(remoteRank, linkData, socketTag);
-    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_unique<Socket>(hccpSocketHandle, GetAnIpAddress(),
+    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_shared<Socket>(hccpSocketHandle, GetAnIpAddress(),
                                                                                         0, GetAnIpAddress(), "stub",
                                                                                         SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
 
@@ -613,7 +613,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_006)
         = new Socket(hccpSocketHandle, GetAnIpAddress(), 0, GetAnIpAddress(), "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
     std::string  socketTag = impl.GetEstablishLinkSocketTag();
     SocketConfig socketConfig(remoteRank, linkData, socketTag);
-    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_unique<Socket>(hccpSocketHandle, GetAnIpAddress(),
+    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_shared<Socket>(hccpSocketHandle, GetAnIpAddress(),
                                                                                         0, GetAnIpAddress(), "stub",
                                                                                         SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
 
@@ -708,7 +708,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_007)
         = new Socket(hccpSocketHandle, GetAnIpAddress(), 0, GetAnIpAddress(), "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
     std::string  socketTag = impl.GetEstablishLinkSocketTag();
     SocketConfig socketConfig(remoteRank, linkData, socketTag);
-    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_unique<Socket>(hccpSocketHandle, GetAnIpAddress(),
+    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_shared<Socket>(hccpSocketHandle, GetAnIpAddress(),
                                                                                         0, GetAnIpAddress(), "stub",
                                                                                         SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
 

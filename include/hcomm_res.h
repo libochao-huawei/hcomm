@@ -30,7 +30,7 @@ extern HcclResult HcommMemReg(EndpointHandle endPointHandle, const char *memTag,
 extern HcclResult HcommMemUnreg(EndpointHandle endPointHandle, void *memHandle);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommMemExport(EndpointHandle endPointHandle, const void *memHandle, void **memDesc, uint32_t *memDescLen);
+extern HcclResult HcommMemExport(EndpointHandle endPointHandle, void *memHandle, void **memDesc, uint32_t *memDescLen);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, HcommMem *outMem);

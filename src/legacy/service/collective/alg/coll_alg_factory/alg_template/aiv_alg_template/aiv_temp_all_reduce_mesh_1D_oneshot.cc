@@ -1,8 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
- * Description: 算法模板AivTempAllReduceMesh1DOneShot类实现
- * Author: linyefeng
- * Create: 2025-09-18
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "hccl_aiv_utils.h"
@@ -39,14 +42,14 @@ u32 AivTempAllReduceMesh1DOneShot::CalcScratchMultiple(BufferType inBuffType, Bu
     return tempRankSize_;
 }
 
-HcclResult AivTempAllReduceMesh1DOneShot::CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit)
+HcclResult AivTempAllReduceMesh1DOneShot::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {   
     (void) dataSize;
-    if (blockDimLimit >= (tempRankSize_ + 1)) {
-        blockDim = tempRankSize_ + 1;
+    if (numBlocksLimit >= (tempRankSize_ + 1)) {
+        numBlocks = tempRankSize_ + 1;
     } else {
         // 如果要用更少的核心可以在这里折算，比如rankSize/2个核心
-        blockDim = blockDimLimit;
+        numBlocks = numBlocksLimit;
     }
     return HcclResult::HCCL_SUCCESS;
 }
@@ -78,8 +81,8 @@ HcclResult AivTempAllReduceMesh1DOneShot::GenExtIns(const TempFuncs &tempFuncs, 
     aivScatterArgs.xRankSize = tempVTopo_[0].size();
     aivScatterArgs.yRankSize = 0;
     aivScatterArgs.zRankSize = 0;
-    CalBlockDim(aivScatterArgs.blockDim, templateDataParams.sliceSize, op_.blockDimLimit);
-    HCCL_INFO("[AivTempAllReduceMesh1DOneShot] Actually use core num[%u]",aivScatterArgs.blockDim);
+    CalNumBlocks(aivScatterArgs.numBlocks, templateDataParams.sliceSize, op_.numBlocksLimit);
+    HCCL_INFO("[AivTempAllReduceMesh1DOneShot] Actually use core num[%u]",aivScatterArgs.numBlocks);
     for (u32 i = 0; i < tempVTopo_[0].size(); i++){
         aivScatterArgs.topo_[i] = tempVTopo_[0][i];
     }

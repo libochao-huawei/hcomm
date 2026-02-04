@@ -12,6 +12,7 @@
 #define HCCLV2_DATA_TYPE_H
 
 #include <map>
+#include <unordered_map>
 #include "types.h"
 #include "../utils/enum_factory.h"
 #include <hccl/hccl_types.h>
@@ -23,7 +24,7 @@ namespace Hccl {
 MAKE_ENUM(DataType, INT8, INT16, INT32, FP16, FP32, INT64, UINT64, UINT8, UINT16, UINT32, 
             FP64, BFP16, INT128, BF16_SAT, HIF8, FP8E4M3, FP8E5M2, FP8E8M0)
 
-const std::map<DataType, u32> DATA_TYPE_SIZE_MAP = {
+const std::unordered_map<DataType, u32, std::EnumClassHash> DATA_TYPE_SIZE_MAP = {
     {DataType::INT8, sizeof(s8)},
     {DataType::INT16, sizeof(s16)},
     {DataType::INT32, sizeof(s32)},
@@ -44,7 +45,7 @@ const std::map<DataType, u32> DATA_TYPE_SIZE_MAP = {
     {DataType::FP8E8M0, 1}
 };
 
-const std::map<DataType, HcclDataType> HCCL_DATA_TYPE_MAP = {
+const std::unordered_map<DataType, HcclDataType, std::EnumClassHash> HCCL_DATA_TYPE_MAP = {
     {DataType::INT8, HCCL_DATA_TYPE_INT8},
     {DataType::INT16, HCCL_DATA_TYPE_INT16},
     {DataType::INT32, HCCL_DATA_TYPE_INT32},
@@ -64,7 +65,7 @@ const std::map<DataType, HcclDataType> HCCL_DATA_TYPE_MAP = {
     {DataType::FP8E8M0, HCCL_DATA_TYPE_FP8E8M0},
 };
 
-const std::map<HcclDataType, DataType> DATA_TYPE_MAP = {
+const std::unordered_map<HcclDataType, DataType, std::EnumClassHash> DATA_TYPE_MAP = {
     {HCCL_DATA_TYPE_INT8, DataType::INT8},
     {HCCL_DATA_TYPE_INT16, DataType::INT16},
     {HCCL_DATA_TYPE_INT32, DataType::INT32},
@@ -84,14 +85,14 @@ const std::map<HcclDataType, DataType> DATA_TYPE_MAP = {
     {HCCL_DATA_TYPE_FP8E8M0, DataType::FP8E8M0},
 };
 
-const std::map<uint32_t, std::string> DATA_TYPE_TO_STRING_MAP
+const std::unordered_map<uint32_t, std::string> DATA_TYPE_TO_STRING_MAP
     = {{0, "INT8"}, {1, "INT16"}, {2, "INT32"}, {3, "FP16"}, {4, "FP32"}, {5, "INT64"}};
 
-const std::map<uint32_t, std::string> OP_TYPE_TO_STRING_MAP = {{0, "sum"}, {1, "mul"}, {2, "max"}, {3, "PROD"}};
+const std::unordered_map<uint32_t, std::string> OP_TYPE_TO_STRING_MAP = {{0, "sum"}, {1, "mul"}, {2, "max"}, {3, "PROD"}};
 
 inline u32 DataTypeSizeGet(DataType type)
 {
-    if (DATA_TYPE_SIZE_MAP.find(type) == DATA_TYPE_SIZE_MAP.end()) {
+    if (UNLIKELY(DATA_TYPE_SIZE_MAP.find(type) == DATA_TYPE_SIZE_MAP.end())) {
         THROW<InvalidParamsException>(StringFormat("%s type[%s] is not supported.", __func__, type.Describe().c_str()));
     }
     return DATA_TYPE_SIZE_MAP.at(type);
@@ -99,7 +100,7 @@ inline u32 DataTypeSizeGet(DataType type)
 
 inline HcclDataType DataTypeToHcclDataType(const DataType dataType)
 {
-    if (HCCL_DATA_TYPE_MAP.find(dataType) == HCCL_DATA_TYPE_MAP.end()) {
+    if (UNLIKELY(HCCL_DATA_TYPE_MAP.find(dataType) == HCCL_DATA_TYPE_MAP.end())) {
         THROW<InvalidParamsException>(StringFormat("%s type[%s] is not supported.", __func__, dataType.Describe().c_str()));
     }
     return HCCL_DATA_TYPE_MAP.at(dataType);
@@ -107,7 +108,7 @@ inline HcclDataType DataTypeToHcclDataType(const DataType dataType)
 
 inline DataType HcclDataTypeToDataType(const HcclDataType hcclDataType)
 {
-    if (DATA_TYPE_MAP.find(hcclDataType) == DATA_TYPE_MAP.end()) {
+    if (UNLIKELY(DATA_TYPE_MAP.find(hcclDataType) == DATA_TYPE_MAP.end())) {
         HCCL_ERROR("%s hcclDataType[%d] is not supported.", __func__, hcclDataType);
         return DataType::INVALID;
     }
@@ -116,7 +117,7 @@ inline DataType HcclDataTypeToDataType(const HcclDataType hcclDataType)
 
 inline std::string DataTypeToSerialString(const uint32_t dataType)
 {
-    if (DATA_TYPE_TO_STRING_MAP.find(dataType) == DATA_TYPE_TO_STRING_MAP.end()) {
+    if (UNLIKELY(DATA_TYPE_TO_STRING_MAP.find(dataType) == DATA_TYPE_TO_STRING_MAP.end())) {
         return "UNDEFINED";
     }
     return DATA_TYPE_TO_STRING_MAP.at(dataType);

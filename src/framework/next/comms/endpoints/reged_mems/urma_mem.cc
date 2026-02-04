@@ -38,10 +38,14 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
     
     // LocalUbRmaBuffer构造函数存在注册动作，在调用该构造函数前需检查是否注册过
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
-    if(localUbRmaBufferMgr_->Find(tempKey).first) {
+    auto findPair = localUbRmaBufferMgr_->Find(tempKey);
+    if(findPair.first) {
         // 内存再次注册时
         HCCL_INFO("[UbRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
                 "{%p, %llu}", mem.addr, mem.size);
+        std::shared_ptr<Hccl::LocalUbRmaBuffer> &localRegisteredBuffer = findPair.second;
+        CHK_SMART_PTR_NULL(localRegisteredBuffer);
+        *memHandle = static_cast<void *>(localRegisteredBuffer.get());
         return HCCL_E_AGAIN;
     }
 
@@ -83,7 +87,7 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
 
     auto bufferInfo = buffer->GetBufferInfo();
 
-    // 从LocalRamBuffer计数器删除HcclBuf
+    // 从LocalRamBuffer计数器删除
     hccl::BufferKey<uintptr_t, u64> tempKey(bufferInfo.first, bufferInfo.second);
     bool resultPair = false;
     EXECEPTION_CATCH(resultPair = this->localUbRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
@@ -96,14 +100,10 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult UbRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc, const void *memHandle, void **memDesc, uint32_t *memDescLen)
+HcclResult UbRegedMemMgr::GetMemDesc(const EndpointDesc endpointDesc, Hccl::LocalUbRmaBuffer *localUbRmaBuffer) 
 {
-    HCCL_INFO("[%s] Begin", __FUNCTION__);
-
-    // 获取序列化信息
-    const Hccl::LocalUbRmaBuffer *localUbRmaBuffer = reinterpret_cast<const Hccl::LocalUbRmaBuffer *>(memHandle);
-    auto                          dto = const_cast<Hccl::LocalUbRmaBuffer*>(localUbRmaBuffer)->GetExchangeDto();
-    Hccl::BinaryStream            localUbRmaBufferStream;
+    auto                      dto = localUbRmaBuffer->GetExchangeDto();
+    Hccl::BinaryStream        localUbRmaBufferStream;
     dto->Serialize(localUbRmaBufferStream);
     std::vector<char> tempLocalMemDesc;
     localUbRmaBufferStream.Dump(tempLocalMemDesc);
@@ -122,20 +122,31 @@ HcclResult UbRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc, const vo
     }
 
     tempLocalMemDesc.insert(tempLocalMemDesc.end(), 
-                    tempLocalEndpointDesc.begin(), 
-                    tempLocalEndpointDesc.end());
+                       tempLocalEndpointDesc.begin(), 
+                       tempLocalEndpointDesc.end());
 
     // 内存描述符拷贝
-    *memDescLen = tempLocalMemDesc.size();
-    if (memcpy_s(*memDesc, TRANSPORT_EMD_ESC_SIZE, tempLocalMemDesc.data(), tempLocalMemDesc.size()) != EOK) {
-        HCCL_ERROR("[UbRegedMemMgr][MemoryExport] [%s] tempLocalMemDesc copy error. aim size:[%llu]", __func__, tempLocalMemDesc.size());
-        return HCCL_E_INTERNAL;
-    }
+    localUbRmaBuffer->Desc = std::move(tempLocalMemDesc);
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc, void *memHandle, void **memDesc, uint32_t *memDescLen)
+{
+    HCCL_INFO("[%s] Begin", __FUNCTION__);
+
+    // 获取序列化信息
+    Hccl::LocalUbRmaBuffer *localUbRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memHandle);
+    
+    // 获取序列化信息
+    CHK_RET(GetMemDesc(endpointDesc, localUbRmaBuffer));
+
+    *memDescLen = static_cast<uint32_t>(localUbRmaBuffer->Desc.size());
+    *memDesc = static_cast<void *>(localUbRmaBuffer->Desc.data());
 
     return HCCL_SUCCESS;
 }
 
-HcclResult GetParamsFromMemDesc(const void *memDesc, uint32_t descLen, 
+HcclResult UbRegedMemMgr::GetParamsFromMemDesc(const void *memDesc, uint32_t descLen, 
                                                 EndpointDesc &endpointDesc, Hccl::ExchangeUbBufferDto &dto) 
 {
     const char *description = static_cast<const char *>(memDesc);

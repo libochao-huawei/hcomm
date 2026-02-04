@@ -759,6 +759,7 @@ int RaSocketSend(const void* handle, const void* data, u64 size, u64 *sentSize)/
 
 int RaTlvInit(struct TlvInitInfo *init_info, unsigned int *buffer_size, void **tlv_handle)
 {
+    *tlv_handle = (void*)0x12345678;
     return 0;
 }
  

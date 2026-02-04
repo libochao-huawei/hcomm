@@ -14,4 +14,5 @@ target_sources(hccl_v2_utest
 
         ${HCCL_V2_CODE_ROOT}/framework/dfx/aicpu/task_exception/task_exception_func.cpp
         ${HCCL_V2_CODE_ROOT}/framework/dfx/aicpu/task_exception/task_exception_handler_lite.cpp
+        ${HCCL_V2_CODE_ROOT}/unified_platform/common/orion_adapter_hal.cc
 )

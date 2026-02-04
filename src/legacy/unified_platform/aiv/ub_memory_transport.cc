@@ -223,10 +223,6 @@ std::string UbMemoryTransport::Describe() const
 
     description = StringFormat("deviceLogicId: %d", deviceLogicId);
     description += StringFormat(" , UBTransportStatus:  %u", static_cast<u32>(ubStatus));
-    description += StringFormat(" , BufferName: %s ", bufferName);
-    description += StringFormat(" , AivTagName: %s ", aivTagName);
-    description += StringFormat(" , RmtBufferName: %s ", rmtBufferName);
-    description += StringFormat(" , RmtAivTagName: %s ", rmtAivTagName);
     return description;
 }
 

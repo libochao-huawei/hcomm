@@ -1,8 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
- * Description: 算法模板AivTempReduceScatterMesh1D类实现
- * Author: chenluyao
- * Create: 2025-09-05
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "hccl_aiv_utils.h"
@@ -38,15 +41,15 @@ HcclResult AivTempReduceScatterMesh1D::CalcRes(AlgTempResReq &tempResReq)
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult AivTempReduceScatterMesh1D::CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit)
+HcclResult AivTempReduceScatterMesh1D::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {
     (void) dataSize;
-    blockDim = blockDimLimit;
+    numBlocks = numBlocksLimit;
     constexpr uint32_t stepNum = 2;
-    if (blockDim > stepNum * tempRankSize_) {
-        blockDim = stepNum * tempRankSize_;
+    if (numBlocks > stepNum * tempRankSize_) {
+        numBlocks = stepNum * tempRankSize_;
     }
-    HCCL_INFO("[AivTempReduceScatterMesh1D] Actually use core num[%u]", blockDim);
+    HCCL_INFO("[AivTempReduceScatterMesh1D] Actually use core num[%u]", numBlocks);
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -94,7 +97,7 @@ HcclResult AivTempReduceScatterMesh1D::GenExtIns(const TempFuncs &tempFuncs, con
     }
 
     u64 dataSize = op_.dataCount * DataTypeSizeGet(dataType_);
-    CHK_RET(CalBlockDim(aivReduceScatterArgs.blockDim, dataSize, op_.blockDimLimit));
+    CHK_RET(CalNumBlocks(aivReduceScatterArgs.numBlocks, dataSize, op_.numBlocksLimit));
 
     aivReduceScatterArgs.inputSliceStride = templateDataParams.inputSliceStride;
     aivReduceScatterArgs.outputSliceStride = templateDataParams.outputSliceStride;
