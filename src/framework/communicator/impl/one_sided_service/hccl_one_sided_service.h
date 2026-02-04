@@ -65,7 +65,7 @@ public:
     };
 
     HcclOneSidedService(std::unique_ptr<HcclSocketManager> &socketManager,
-        std::unique_ptr<NotifyPool> &notifyPool);
+        std::unique_ptr<NotifyPool> &notifyPool, const CommConfig &commConfig);
 
     // 父类Config()等已经完成必要参数的配置
     HcclOneSidedService() = default;
@@ -179,6 +179,8 @@ private:
     DeviceMem commResParaDevice_;
     DeviceMem execStreamContext_;
     aclrtBinHandle binHandle_ = nullptr;
+
+    CommConfig commConfig_;
 };
 }
 

@@ -435,7 +435,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitOneSidedService(const RankTable_t &rankTable)
     {
-        EXECEPTION_CATCH((oneSideService_ = std::make_unique<HcclOneSidedService>(socketManager_, notifyPool_)),
+        EXECEPTION_CATCH((oneSideService_ = std::make_unique<HcclOneSidedService>(socketManager_, notifyPool_, commConfig_)),
                          return HCCL_E_INTERNAL);
         hcclRankLinkInfo_.userRank = userRank_;
         hcclRankLinkInfo_.devicePhyId = devicePhyId_;
@@ -4138,7 +4138,7 @@ namespace hccl
         // h to d
         CHK_RET(SetInfoToDevice(opParam, preMetaInfo, mode, preProcessStream));
         // opParam准备
-        CHK_RET(alltoAllOperator->PreparePreOpParam(preProcessOpParam, preMetaInfo, preProcessStream));
+        CHK_RET(alltoAllOperator->PreparePreOpParam(preProcessOpParam, preMetaInfo, preProcessStream, commConfig_));
 
         // 回归调用其它算子
         HCCL_INFO("[HcclCommunicator][RegressCalPreOp] Regression calls other operators and opType[%u]",

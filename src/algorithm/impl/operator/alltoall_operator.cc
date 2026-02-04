@@ -397,7 +397,7 @@ HcclResult AlltoAllOperator::PrepareAlltoAllAddrInfo(const void *sendCounts, con
 }
 
 HcclResult AlltoAllOperator::PreparePreOpParam(OpParam& preProcessOpParam,
-    const std::unique_ptr<PreProcessMetaInfo> &preMetaInfo, Stream &preProcessStream)
+    const std::unique_ptr<PreProcessMetaInfo> &preMetaInfo, Stream &preProcessStream, const CommConfig &commConfig)
 {
     u64 stepSize = sizeof(u64) * userRankSize_;
     u32 perDataSize = SIZE_TABLE[HCCL_DATA_TYPE_UINT64];
@@ -410,7 +410,7 @@ HcclResult AlltoAllOperator::PreparePreOpParam(OpParam& preProcessOpParam,
     preProcessOpParam.DataDes.count = (preMetaInfo->outputSize / stepSize);
     preProcessOpParam.DataDes.dataType = HCCL_DATA_TYPE_UINT64;
     preProcessOpParam.stream = preProcessStream;
-    preProcessOpParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetExternalInputHcclAicpuUnfold();
+    preProcessOpParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && commConfig.GetConfigAicpuUnfold();
     return HCCL_SUCCESS;
 }
 
