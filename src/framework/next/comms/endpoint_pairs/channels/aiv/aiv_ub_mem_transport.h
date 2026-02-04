@@ -29,13 +29,18 @@ public:
     Hccl::TransportStatus GetStatus();
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
     HcclResult GetMemTag(char **memTag, uint32_t memNum);
+    HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
 
 private:
     Hccl::Socket *socket_{}; // 交换所用的socket
     HcommChannelDesc channelDesc_;
     uint32_t exchangeDataSize_{0};
     std::vector<HcclMem> remoteMems_;
-
+    std::vector<CommMem> remoteUserMems_;
+    std::vector<std::string> tagCopies_; //储存memTag字符串副本
+    std::vector<char*> tagPointers_; // 储存指针
+    bool cacheValid_ = false; // GetUserRemoteMem 的缓存标识
+    
     std::vector<Hccl::LocalIpcRmaBuffer *>  localRmaBufferVec_{};
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> localUserMemTag_{}; 
     std::vector<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> rmtBufferVec_{};

@@ -118,11 +118,12 @@ HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void *
 
 constexpr uint32_t MEM_NUM_MAX = 256;  // memNum的默认限制最大为256
 
-HcclResult HcclChannelGetRemoteMem(HcclComm comm, ChannelHandle channel, CommMem **remoteMem, char **memTag, uint32_t *memNum)
+HcclResult HcclChannelGetRemoteMems(HcclComm comm, ChannelHandle channel, uint32_t *memNum, CommMem **remoteMems,
+    char ***memTags)
 {
     CHK_PTR_NULL(comm);
-    CHK_PTR_NULL(remoteMem);
-    CHK_PTR_NULL(memTag);
+    CHK_PTR_NULL(remoteMems);
+    CHK_PTR_NULL(memTags);
     CHK_PTR_NULL(memNum);
     CHK_PRT_RET(
         (*memNum > MEM_NUM_MAX), HCCL_ERROR("[%s]Invalid memNum, memNum[%u], max memNum[%u]",
@@ -143,10 +144,10 @@ HcclResult HcclChannelGetRemoteMem(HcclComm comm, ChannelHandle channel, CommMem
             CHK_PTR_NULL(collComm);
             auto myRank = collComm->GetMyRank();
             CHK_PTR_NULL(myRank);
-            CHK_RET(myRank->ChannelGetRemoteMem(channel, remoteMem, memTag, memNum));
+            CHK_RET(myRank->ChannelGetRemoteMem(channel, remoteMems, memTags, memNum));
             return HCCL_SUCCESS;
         }());
 #endif
-    HCCL_RUN_INFO("HcclChannelGetRemoteMem is not supported.");
+    HCCL_RUN_INFO("HcclChannelGetRemoteMems is not supported.");
     return HCCL_SUCCESS;
 }

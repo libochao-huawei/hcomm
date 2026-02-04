@@ -13,6 +13,7 @@
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
 #include "../../../../../../legacy/unified_platform/resource/buffer/exchange_ipc_buffer_dto.h"
 #include "../../../../../../legacy/common/utils/string_util.h"
+#include "comm_mems.h"
 
 namespace hcomm {
 
@@ -235,4 +236,43 @@ HcclResult AivUbMemTransport::GetMemTag(char **memTag, uint32_t memNum)
     return HCCL_SUCCESS;
 }
 
+HcclResult AivUbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+{
+    CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetUserRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!memTags, HCCL_ERROR("[GetUserRemoteMem] memTags is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!memNum, HCCL_ERROR("[GetUserRemoteMem] memNum is nullptr"), HCCL_E_PARA);
+    *remoteMem = nullptr;
+    *memTags = nullptr;
+    *memNum = 0;
+    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
+    uint32_t cclbufferNum = 1;
+    uint32_t userMemCount = rmtBufferVec_.size() - cclbufferNum;
+    if (userMemCount == 0) {
+        HCCL_INFO("[GetUserRemoteMem] No user remote memory found");
+        return HCCL_SUCCESS;
+    }
+    // 检查是否有缓存
+    if (!cacheValid_) {
+        remoteUserMems_.resize(userMemCount);
+        tagCopies_.clear();
+        tagCopies_.reserve(userMemCount);
+        tagPointers_.clear();
+        tagPointers_.reserve(userMemCount);
+        for (uint32_t i = 0; i < userMemCount; i++) {
+            auto& rmtBuffer = rmtBufferVec_[i+cclbufferNum];
+            remoteUserMems_[i].type = hccl::ConvertHcclToCommMemType(rmtBuffer->GetMemType());
+            remoteUserMems_[i].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
+            remoteUserMems_[i].size = rmtBuffer->GetSize();
+            const char* src = remoteUserMemTag_[i].data();
+            std::string tagCopy(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
+            tagCopies_.push_back(std::move(tagCopy));
+            tagPointers_.push_back(const_cast<char*>(tagCopies_.back().c_str()));
+        }
+        cacheValid_ = true;
+    }
+    *remoteMem = remoteUserMems_.data();
+    *memTags = tagPointers_.data();
+    *memNum = userMemCount;
+    return HCCL_SUCCESS;
+}
 }

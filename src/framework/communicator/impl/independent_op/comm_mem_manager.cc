@@ -39,7 +39,7 @@ HcclResult CommMemMgr::CommRegMem(const std::string& memTag, const HcclMem& mem,
 
     // 组装句柄（仅域内管理，无进程级注册）
     Handle h;
-    EXECEPTION_CATCH(h = std::make_shared<HcclMemHandle>(), return HCCL_E_PTR);
+    EXECEPTION_CATCH(h = std::make_shared<HcclMemoryHandle>(), return HCCL_E_PTR);
     h->addr    = mem.addr;
     h->size    = static_cast<uint64_t>(mem.size);
     h->memType = static_cast<HcclMemType>(mem.type);
