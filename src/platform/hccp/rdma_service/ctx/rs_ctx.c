@@ -847,3 +847,25 @@ RS_ATTRI_VISI_DEF int RsCtxGetCrErrInfoList(struct RaRsDevInfo *devInfo, struct 
     *num = crErrIdx;
     return ret;
 }
+
+RS_ATTRI_VISI_DEF int RsCtxGetJettyContext(struct RaRsDevInfo *devInfo, unsigned int id, char context[],
+    unsigned int *len)
+{
+    struct RsUbDevCb *devCb = NULL;
+    struct rs_cb *rscb = NULL;
+    int ret = 0;
+
+    RS_CHECK_POINTER_NULL_RETURN_INT(devInfo);
+    RS_CHECK_POINTER_NULL_RETURN_INT(context);
+    RS_CHECK_POINTER_NULL_RETURN_INT(len);
+
+    ret = RsGetRsCb(devInfo->phyId, &rscb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("get rscb failed, ret:%d", ret), ret);
+
+    ret = RsUbGetDevCb(rscb, devInfo->devIndex, &devCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("get devCb failed, ret:%d devIndex:0x%x", ret, devInfo->devIndex), ret);
+
+    ret = RsUbGetJettyContext(devCb, id, context, len);
+
+    return ret;
+}
