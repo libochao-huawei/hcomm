@@ -304,6 +304,30 @@ s32 HrtGetDevicePhyIdByIndex(s32 deviceLogicId)
     return 1;
 }
 
+DevType HrtGetDeviceType()
+{
+    return DevType::DEV_TYPE_910_95;
+}
+
+RdmaHandle HrtRaRdmaInit(HrtNetworkMode netMode, RaInterface &in)
+{
+    return (RdmaHandle)0x12345678;
+}
+
+void HrtGetSocVer(std::string &socName)
+{
+    socName = "Ascend958B";
+}
+
+QpHandle HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode)
+{
+    return (QpHandle)0x12345678;
+}
+
+int HrtGetRaQpStatus(QpHandle qpHandle)
+{
+    return 0;
+}
 
 SocketHandle HostSocketHandleManager::Get(unsigned int, Hccl::IpAddress const &)
 {

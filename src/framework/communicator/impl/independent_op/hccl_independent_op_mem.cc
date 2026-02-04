@@ -21,10 +21,11 @@
 #include "hccl_comm_pub.h"
 #include "param_check_pub.h"
 #include "op_base_v2.h"
+#include "hccl_res.h"
 
 using namespace hccl;
 
-HcclResult HcclCommMemReg(HcclComm comm, const char *memTag, const CommMem *mem, void **memHandle)
+HcclResult HcclCommMemReg(HcclComm comm, const char *memTag, const CommMem *mem, HcclMemHandle *memHandle)
  
 {
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[HcclCommMemReg]comm is null"), HCCL_E_PARA);

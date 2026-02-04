@@ -33,7 +33,8 @@ CommConfig::CommConfig(const std::string &commName)
       retryMaxCnt_(GetExternalInputRetryMaxCnt()),
       retryHoldTime_(GetExternalInputRetryHoldTime()),
       retryIntervalTime_(GetExternalInputRetryIntervalTime()),
-      bufferName_("")
+      bufferName_(""),
+      hcclQos_(HCCL_COMM_QOS_CONFIG_NOT_SET)
 {
     InitAlgoConfig();
     InitRetryEnable();
@@ -54,7 +55,8 @@ CommConfig::CommConfig()
       execTimeOutSetByConfig_(false),
       retryMaxCnt_(GetExternalInputRetryMaxCnt()),
       retryHoldTime_(GetExternalInputRetryHoldTime()),
-      retryIntervalTime_(GetExternalInputRetryIntervalTime())
+      retryIntervalTime_(GetExternalInputRetryIntervalTime()),
+      hcclQos_(HCCL_COMM_QOS_CONFIG_NOT_SET)
 {
     InitAlgoConfig();
     InitRetryEnable();
@@ -113,8 +115,8 @@ HcclResult CommConfig::Load(const HcclCommConfig *userConfig)
     HCCL_RUN_INFO("[Load] comm config info of [%s]: configSize[%llu], version[%u], opExpansionMode[%u]", commName_.c_str(),
         configHandle.info.configSize, configHandle.info.version, configHandle.opExpansionMode);
     HCCL_RUN_INFO("[Load] comm config of [%s]: bufferSize[%llu], deterministic[%u], trafficClass[%u], serviceLevel[%u]"
-        ", execTimeOut[%u]s, bufferName[%s]",
-        commName_.c_str(), bufferSize_, deterministic_, trafficClass_, serviceLevel_, execTimeOut_, bufferName_.c_str());
+        ", execTimeOut[%u]s, bufferName[%s], hcclQos[%u]",
+        commName_.c_str(), bufferSize_, deterministic_, trafficClass_, serviceLevel_, execTimeOut_, bufferName_.c_str(), hcclQos_);
     return HCCL_SUCCESS;
 }
 
@@ -215,6 +217,11 @@ HcclResult CommConfig::SetConfigByVersion(const CommConfigHandle &config)
         // 版本大于等于9
         CHK_RET(SetConfigBufferName(config));
     }
+
+    if (config.info.version >= CommConfigVersion::COMM_CONFIG_VERSION_TEN) {
+ 	    // 版本大于等于10,支持配置通信域级别的AI CPU SDMA QOS
+ 	    hcclQos_ = config.hcclQos;
+ 	}
     HCCL_INFO("NSLBDP-VERSION config.info.version = [%u] .", config.info.version);
     return HCCL_SUCCESS;
 }
@@ -743,5 +750,11 @@ u32 CommConfig::GetConfigRetryIntervalTime() const
 const std::string& CommConfig::GetConfigBufferName() const
 {
     return bufferName_;
+}
+
+u32 CommConfig::GetConfigHcclQos() const
+{
+ 	HCCL_INFO("[GetConfigHcclQos] hcclQos = %u", hcclQos_);
+ 	return hcclQos_;
 }
 }

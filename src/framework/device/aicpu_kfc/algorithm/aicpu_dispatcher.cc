@@ -169,7 +169,7 @@ HcclResult AicpuDispatcher::CopyData(u16 streamId, void *src, void *dst, u32 len
         src = nullptr;
     }
     addOneMemcpySqe(streamInfo->actualStreamId, taskId, src, len, rtDataType, rtReduceOp, dst, 0, ctx->ssid, ctx->devId,
-        ctx->overflowAddr, static_cast<uint8_t>(LinkType::LINK_RESERVED), sqeBuffer, sqeTypeAddr);
+        ctx->overflowAddr, static_cast<uint8_t>(LinkType::LINK_RESERVED), sqeBuffer, sqeTypeAddr, SDMA_QOS_DEFAULT);
     CHK_RET(AicpuSqeContext::RecordAddInfo(streamId, (remoteRank << 16) + static_cast<uint32_t>(dataType)));  // 16 bit
     return HCCL_SUCCESS;
 }

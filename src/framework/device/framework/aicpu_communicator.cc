@@ -125,7 +125,7 @@ HcclResult HcclCommAicpu::Init(const HcclOpResParam *commParam, bool isCustom)
     CHK_RET(InitCclbuffer(commParam));
     CHK_RET(InitTopoInfo(commParam));
     CHK_RET(InitOpNotifyObj(commParam));
-    CHK_RET(HcclDispatcherAicpuInit(&dispatcher_,devId_, DispatcherType::DISPATCHER_AICPU));
+    CHK_RET(HcclDispatcherAicpuInit(&dispatcher_, devId_, commParam->hcclSdmaQos, DispatcherType::DISPATCHER_AICPU));
     CHK_RET(RegisterProfilingCallback());
     CHK_RET(InitLocalNotifyObj(commParam));
     CHK_RET(InitMainStreamObj(commParam));

@@ -1455,6 +1455,13 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
             hcclNslbDp::GetInstance().SetGlobalCommTaskId(commConfig.GetConfigJobID());
             hcclNslbDp::GetInstance().SetGlobalCommNodeId(commConfig.GetConfigWorldRankID());
         }
+
+        // 设置HCCL QOS配置
+ 	    ret = pComm->SetHcclQos(commConfig.GetConfigHcclQos());
+ 	    CHK_PRT_BREAK(ret != HCCL_SUCCESS,
+ 	        HCCL_ERROR("[%s]errNo[0x%016llx] set hccl qos error.", __func__, HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+
         /* 设置AIV模式 */
         ret = pComm->SetAivModeConfig(commConfig.GetConfigAivMode());
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
@@ -3480,12 +3487,12 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParam(tag.c_str(), 0, sendType, stream), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckDataType(recvType), tag.c_str());
 
-    u64 sendCountMatrixHash;
-    HcomGetHashFromSendCountMatrix(sendCountMatrixHash, sendCountMatrix, rankSize, tag);
-
     /* 接口交互信息日志 */
     char stackLogBuffer[LOG_TMPBUF_SIZE];
     if (GetExternalInputHcclEnableEntryLog()) {
+        u64 sendCountMatrixHash;
+        HcomGetHashFromSendCountMatrix(sendCountMatrixHash, sendCountMatrix, rankSize, tag);
+
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 

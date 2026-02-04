@@ -477,6 +477,9 @@ public:
     HcclResult GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte);
     HcclResult GroupSubstreamsSync();
     void SetReleaseChannel(std::function<HcclResult()> releaseChannel);
+
+    void SetHcclQos(u32 hcclQos);
+ 	u32 GetHcclQos();
 private:
 
     bool IsEnableRoce();
@@ -1120,6 +1123,8 @@ private:
     std::function<bool()> getAicpuCommState_; // 获取自定义算子aicpu通信域是否初始化
     bool isInvalidComm_ { false };
     std::function<HcclResult()> releaseChannel_ = nullptr;
+    
+    u32 hcclQos_ = EnvConfig::HCCL_QOS_DEFAULT;
 };
 }  // end namespace hccl
 #endif  // HCCL_IMPL_BASE_H
