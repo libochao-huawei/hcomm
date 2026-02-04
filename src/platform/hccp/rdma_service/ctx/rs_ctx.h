@@ -87,4 +87,6 @@ RS_ATTRI_VISI_DEF int rs_ctx_get_aux_info(struct RaRsDevInfo *dev_info, struct a
     struct aux_info_out *info_out);
 RS_ATTRI_VISI_DEF int rs_ctx_get_cr_err_info_list(struct RaRsDevInfo *dev_info, struct CrErrInfo info_list[],
     unsigned int *num);
+RS_ATTRI_VISI_DEF int rs_ctx_get_jetty_context(struct RaRsDevInfo *dev_info, unsigned int id, char context[],
+    unsigned int *len);
 #endif // RS_CTX_H

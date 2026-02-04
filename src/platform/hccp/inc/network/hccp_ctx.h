@@ -717,12 +717,16 @@ struct CrErrInfo {
     uint32_t resv[2U];
 };
 
+#define JETTY_CONTEXT_MAX_LEN 512U
+
 struct async_event {
     uint32_t res_id;
     uint32_t event_type;
+    char context[JETTY_CONTEXT_MAX_LEN];
+    unsigned int len;
 };
 
-#define ASYNC_EVENT_MAX_NUM 128U
+#define ASYNC_EVENT_MAX_NUM 4U
 
 /**
  * @ingroup libudma
@@ -1082,6 +1086,18 @@ HCCP_ATTRI_VISI_DEF int ra_ctx_get_aux_info(void *ctx_handle, struct aux_info_in
 */
 HCCP_ATTRI_VISI_DEF int ra_ctx_get_cr_err_info_list(void *ctx_handle, struct CrErrInfo *info_list,
     unsigned int *num);
+
+/**
+ * @ingroup libudma
+ * @brief get jetty context info by qp_handle
+ * @param qp_handle [IN] qp_handle
+ * @param context [IN/OUT] context buffer, max len is JETTY_CONTEXT_MAX_LEN
+ * @param len [IN/OUT] len of context
+ * @see ra_ctx_qp_create
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int ra_ctx_get_jetty_context(void *qp_handle, char context[], unsigned int *len);
 #ifdef __cplusplus
 }
 #endif

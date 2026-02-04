@@ -847,3 +847,28 @@ int ra_hdc_ctx_get_cr_err_info_list(struct ra_ctx_handle *ctx_handle, struct CrE
 
     return ret;
 }
+
+int ra_hdc_ctx_get_jetty_context(struct ra_ctx_qp_handle *qp_handle, char context[], unsigned int *len)
+{
+    union op_ctx_get_jetty_context_data op_data = {0};
+    unsigned int phy_id = qp_handle->phy_id;
+    unsigned int expected_len = *len;
+    int ret = 0;
+
+    op_data.tx_data.phy_id = phy_id;
+    op_data.tx_data.dev_index = qp_handle->dev_index;
+    op_data.tx_data.id = qp_handle->id;
+    ret = RaHdcProcessMsg(RA_RS_CTX_GET_JETTY_CONTEXT, phy_id, (char *)&op_data,
+        sizeof(union op_ctx_get_jetty_context_data));
+
+    CHK_PRT_RETURN(op_data.rx_data.len > expected_len, hccp_err("[get][jetty_context]rx_data.len:%u > expected_num:%u,"
+        " phy_id:%u dev_index:0x%x", op_data.rx_data.len, expected_len, phy_id, ctx_handle->dev_index), -EINVAL);
+
+    CHK_PRT_RETURN(ret != 0, hccp_err("[get][jetty_context]hdc message process failed ret:%d, phy_id:%u"
+        " dev_index:0x%x", ret, phy_id, ctx_handle->dev_index), ret);
+
+    ret = memcpy_s(context, expected_len, op_data.rx_data.context, op_data.rx_data.len);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[get][jetty_context]memcpy_s for context failed, ret:%d", ret), -ESAFEFUNC);
+    *len = op_data.rx_data.len;
+    return ret;
+}
