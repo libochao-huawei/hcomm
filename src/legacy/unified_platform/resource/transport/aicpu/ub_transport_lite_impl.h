@@ -94,7 +94,7 @@ private:
         u32         tokenValue;
         std::string Describe() const
         {
-            return StringFormat("LocUbBufLite[addr=0x%llx, size=0x%llx, tokenId=%u, tokenValue=%u]", addr, size, tokenId, tokenValue);
+            return StringFormat("LocUbBufLite[addr=0x%llx, size=0x%llx]", addr, size);
         }
     };
 
