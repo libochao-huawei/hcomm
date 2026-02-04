@@ -1783,7 +1783,11 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
     jetty_info->udma_jetty_sq.qbuf_end = udma_jetty->sq.qbuf_end;
     jetty_info->udma_jetty_sq.qbuf_size = udma_jetty->sq.qbuf_size;
     jetty_info->udma_jetty_sq.qbuf_curr = udma_jetty->sq.qbuf_curr;
-
+    hccp_warn("@@@ jetty_info->va: %ld", jetty_info->va);
+    hccp_warn("@@@ jetty_info->udma_jetty_sq.qbuf: %ld", jetty_info->udma_jetty_sq.qbuf);
+    hccp_warn("@@@ jetty_info->udma_jetty_sq.qbuf_end: %ld", jetty_info->udma_jetty_sq.qbuf_end);
+    hccp_warn("@@@ jetty_info->udma_jetty_sq.qbuf_size: %ld", jetty_info->udma_jetty_sq.qbuf_size);
+    hccp_warn("@@@ jetty_info->udma_jetty_sq.qbuf_curr: %ld", jetty_info->udma_jetty_sq.qbuf_curr);
     return 0;
 }
 
