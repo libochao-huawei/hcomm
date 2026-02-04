@@ -26,6 +26,7 @@ bool CcuRepWaitGroup::Translate(CcuInstr *&instr, uint16_t &instrId, const Trans
 {
     this->instrId = instrId;
     translated    = true;
+    u32 cntCkeId;
 
     // 需要profiling的使用SetCKEInstr, 否则使用ClearCKEInstr
     if (isProfiling) {

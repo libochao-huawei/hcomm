@@ -16,7 +16,7 @@ namespace Hccl {
 
 bool CcuTransportGroup::CheckTransports(const vector<CcuTransport*> &transports)
 {
-    HCCL_INFO("[CheckTransports] size[%u].", transport.size);
+    HCCL_INFO("[CheckTransports] size[%u].", transports.size());
     if (transports.size() == 0) {
         HCCL_ERROR("[CcuTransportGroup::%s] Transports size is 0, please check.", __func__);
         return false;
