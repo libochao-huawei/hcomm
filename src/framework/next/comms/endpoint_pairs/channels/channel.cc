@@ -62,4 +62,8 @@ HcclResult Channel::CreateChannel(
     return HCCL_SUCCESS;
 }
 
+HcclResult Channel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+{
+    return HCCL_SUCCESS;
+}
 } // namespace hcomm
