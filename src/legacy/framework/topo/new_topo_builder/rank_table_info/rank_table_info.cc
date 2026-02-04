@@ -238,6 +238,13 @@ vector<char> RankTableInfo::GetUniqueId(bool isContainLocId) const
 void RankTableInfo::UpdateRankTable(const RankTableInfo &localRankInfo)
 {
     // version
+    if (detour) {
+        CHK_PRT_THROW(localRankInfo.detour != true,
+            HCCL_ERROR("[%s] detour cfg is not same with other ranks.", __func__),
+            InvalidParamsException, 
+            "updateRankTableInfo error");
+    }
+    detour = localRankInfo.detour; 
     if (rankCount == 0) {
         version = localRankInfo.version;
     } else {
