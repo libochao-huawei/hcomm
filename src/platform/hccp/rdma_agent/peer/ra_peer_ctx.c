@@ -481,3 +481,20 @@ int RaPeerCtxQpUnbind(struct RaCtxQpHandle *qpHandle)
 
     return ret;
 }
+
+int RaPeerCtxGetJettyContext(struct RaCtxQpHandle *qpHandle, char context[], unsigned int *len)
+{
+    unsigned int phyId = qpHandle->phyId;
+    struct RaRsDevInfo devInfo = {0};
+    int ret = 0;
+
+    RaRsSetDevInfo(&devInfo, phyId, qpHandle->devIndex);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxGetJettyContext(&devInfo, qpHandle->id, context, len);
+    RaPeerMutexUnlock(phyId);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[get][jettyContext]RsCtxGetJettyContext failed, ret[%d] phyId[%u] devIndex[%u]",
+        ret, phyId, qpHandle->devIndex), ret);
+
+    return ret;
+}
