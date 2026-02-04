@@ -82,10 +82,9 @@ HcclResult RoceRegedMemMgr::UnregisterMemory(void* memHandle)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(this->localRdmaRmaBufferMgr_);
-
+    CHK_PTR_NULL(memHandle);
     Hccl::LocalRdmaRmaBuffer* buffer = static_cast<Hccl::LocalRdmaRmaBuffer*>(memHandle);
     auto bufferInfo = buffer->GetBufferInfo();
-    CHK_PTR_NULL(memHandle);
 
     // 从LocalRamBuffer计数器删除
     hccl::BufferKey<uintptr_t, u64> tempKey(bufferInfo.first, bufferInfo.second);
