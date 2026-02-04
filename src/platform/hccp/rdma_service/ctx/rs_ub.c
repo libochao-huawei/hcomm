@@ -2690,38 +2690,50 @@ int rs_epoll_event_jfc_in_handle(struct rs_cb *rs_cb, int fd)
     return -ENODEV;
 }
 
-STATIC void rs_ub_get_async_event_res_id(urma_async_event_t *event, struct rs_ub_dev_cb *dev_cb,
-    unsigned int *res_id)
+STATIC void rs_ub_fill_async_event_cb(urma_async_event_t *event, struct rs_ub_dev_cb *dev_cb,
+    struct rs_ctx_async_event_cb *async_event_cb)
 {
+    int ret = 0;
+
     switch (event->event_type) {
         case URMA_EVENT_JFC_ERR:
-            *res_id = event->element.jfc->jfc_id.id;
+            async_event_cb->res_id = event->element.jfc->jfc_id.id;
+            ret = rs_urma_get_jfc_opt(event->element.jfc, URMA_JFC_FULL_CTX, async_event_cb->context,
+                JETTY_CONTEXT_MAX_LEN);
+            CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_get_jfc_opt failed, ret:%d, jfc_id:%u", ret,
+                event->element.jfc->jfc_id.id), -EOPENSRC);
+            async_event_cb->len = JETTY_CONTEXT_MAX_LEN;
             break;
         case URMA_EVENT_JFS_ERR:
-            *res_id = event->element.jfs->jfs_id.id;
+            async_event_cb->res_id = event->element.jfs->jfs_id.id;
             break;
         case URMA_EVENT_JFR_ERR:
         case URMA_EVENT_JFR_LIMIT:
-            *res_id = event->element.jfr->jfr_id.id;
+            async_event_cb->res_id = event->element.jfr->jfr_id.id;
             break;
         case URMA_EVENT_JETTY_ERR:
         case URMA_EVENT_JETTY_LIMIT:
-            *res_id = event->element.jetty->jetty_id.id;
+            async_event_cb->res_id = event->element.jetty->jetty_id.id;
+            ret = rs_urma_get_jetty_opt(event->element.jetty, URMA_JETTY_FULL_CTX, async_event_cb->context,
+                JETTY_CONTEXT_MAX_LEN);
+            CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_get_jetty_opt failed, ret:%d, jetty_id:%u", ret,
+                event->element.jetty->jetty_id.id), -EOPENSRC);
+            async_event_cb->len = JETTY_CONTEXT_MAX_LEN;
             break;
         case URMA_EVENT_JETTY_GRP_ERR:
-            *res_id = event->element.jetty_grp->jetty_grp_id.id;
+            async_event_cb->res_id = event->element.jetty_grp->jetty_grp_id.id;
             break;
         case URMA_EVENT_PORT_ACTIVE:
         case URMA_EVENT_PORT_DOWN:
-            *res_id = event->element.port_id;
+            async_event_cb->res_id = event->element.port_id;
             break;
         case URMA_EVENT_EID_CHANGE:
-            *res_id = event->element.eid_idx;
+            async_event_cb->res_id = event->element.eid_idx;
             break;
         case URMA_EVENT_DEV_FATAL:
         case URMA_EVENT_ELR_ERR:
         case URMA_EVENT_ELR_DONE:
-            *res_id = dev_cb->index;
+            async_event_cb->res_id = dev_cb->index;
             break;
         default:
             hccp_err("invalid event_type:%d dev_index:0x%x", event->event_type, dev_cb->index);
@@ -2748,7 +2760,11 @@ STATIC int rs_ub_get_save_async_event(struct rs_ub_dev_cb *dev_cb)
     }
     rs_urma_ack_async_event(event);
 
-    rs_ub_get_async_event_res_id(event, dev_cb, &async_event_cb->res_id);
+    ret = rs_ub_fill_async_event_cb(event, dev_cb, &async_event_cb);
+    if (ret != 0) {
+        hccp_err("rs_urma_ack_async_event failed, ret:%d dev_index:0x%x", ret, dev_cb->index);
+        goto free_event_cb;
+    }
     hccp_run_info("get async_event_type:%d res_id:%u dev_index:0x%x", event->event_type, async_event_cb->res_id,
         dev_cb->index);
 
@@ -2791,11 +2807,27 @@ int RsEpollEventUrmaAsyncEventInHandle(struct rs_cb *rsCb, int fd)
     return -ENODEV;
 }
 
+STATIC rs_ub_ctx_fill_async_events(struct rs_ctx_async_event_cb *event_cb, struct async_event *async_event)
+{
+    int ret = 0;
+
+    async_event->res_id = event_cb->res_id;
+    async_event->event_type = event_cb->async_event.event_type;
+    async_event->len = event_cb->len;
+
+    ret = memcpy_s(async_event->context, JETTY_CONTEXT_MAX_LEN, event_cb->context, event_cb->len);
+    CHK_PRT_RETURN(ret != 0, hccp_err("memcpy_s failed, ret:%d async_event len:%u event_cb len:%u", ret,
+        JETTY_CONTEXT_MAX_LEN, event_cb->len), -ESAFEFUNC);
+
+    return ret;
+}
+
 void rs_ub_ctx_get_async_events(struct rs_ub_dev_cb *dev_cb, struct async_event async_events[], unsigned int *num)
 {
     struct rs_ctx_async_event_cb *event_cb_curr = NULL;
     struct rs_ctx_async_event_cb *event_cb_next = NULL;
     unsigned int expected_num = *num;
+    int ret = 0;
 
     *num = 0;
     if (RsListEmpty(&dev_cb->async_event_list)) {
@@ -2806,8 +2838,12 @@ void rs_ub_ctx_get_async_events(struct rs_ub_dev_cb *dev_cb, struct async_event 
     RS_LIST_GET_HEAD_ENTRY(event_cb_curr, event_cb_next, &dev_cb->async_event_list, list, struct rs_ctx_async_event_cb);
     for (; (&event_cb_curr->list) != &dev_cb->async_event_list; event_cb_curr = event_cb_next,
         event_cb_next = list_entry(event_cb_next->list.next, struct rs_ctx_async_event_cb, list)) {
-        async_events[*num].res_id = event_cb_curr->res_id;
-        async_events[*num].event_type = event_cb_curr->async_event.event_type;
+        ret = rs_ub_ctx_fill_async_events(event_cb_curr, &async_events[*num]);
+        if (ret != 0) {
+            hccp_err("rs_ub_ctx_fill_async_events failed, ret:%d dev_index:0x%x", ret, dev_cb->index);
+            rs_ub_free_async_event_cb(dev_cb, event_cb_curr);
+            break;
+        }
         (*num)++;
         rs_ub_free_async_event_cb(dev_cb, event_cb_curr);
         if (*num == expected_num) {
@@ -2815,4 +2851,18 @@ void rs_ub_ctx_get_async_events(struct rs_ub_dev_cb *dev_cb, struct async_event 
         }
     }
     RS_PTHREAD_MUTEX_ULOCK(&dev_cb->mutex);
+}
+
+int rs_ub_get_jetty_context(struct rs_ub_dev_cb *dev_cb, unsigned int id, char context[], unsigned int *len)
+{
+    struct rs_ctx_jetty_cb *jetty_cb = NULL;
+    int ret = 0;
+
+    ret = rs_ub_get_jetty_cb(dev_cb, id, &jetty_cb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("get jetty_cb failed, ret:%d, jetty_id:%u", ret, id), ret);
+
+    ret = rs_urma_get_jetty_opt(jetty_cb->jetty, URMA_JETTY_FULL_CTX, context, JETTY_CONTEXT_MAX_LEN);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_get_jetty_opt failed, ret:%d, jetty_id:%u", ret, id), -EOPENSRC);
+
+    return ret;
 }

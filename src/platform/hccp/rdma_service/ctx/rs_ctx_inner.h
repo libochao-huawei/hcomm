@@ -60,6 +60,8 @@ struct rs_ctx_async_event_cb {
     struct rs_ub_dev_cb *dev_cb;
     urma_async_event_t async_event;
     unsigned int res_id;
+    unsigned int len;
+    char context[JETTY_CONTEXT_MAX_LEN];
     struct RsListHead list;
 };
 

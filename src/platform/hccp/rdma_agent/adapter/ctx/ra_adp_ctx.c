@@ -52,6 +52,7 @@ struct rs_ctx_ops g_ra_rs_ctx_ops = {
     .ctx_update_ci = rs_ctx_update_ci,
     .ctx_get_aux_info = rs_ctx_get_aux_info,
     .ctx_get_cr_err_info_list = rs_ctx_get_cr_err_info_list,
+    .ctx_get_jetty_context = rs_ctx_get_jetty_context,
 };
 
 int ra_rs_get_dev_eid_info_num(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len)
@@ -669,5 +670,27 @@ int ra_rs_ctx_get_cr_err_info_list(char *in_buf, char *out_buf, int *out_len, in
             op_data->tx_data.phy_id);
     }
  
+    return 0;
+}
+
+int ra_rs_ctx_get_jetty_context(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len)
+{
+    union op_ctx_get_jetty_context_data *op_data_out =
+        (union op_ctx_get_jetty_context_data *)(out_buf + sizeof(struct MsgHead));
+    union op_ctx_get_jetty_context_data *op_data =
+        (union op_ctx_get_jetty_context_data *)(in_buf + sizeof(struct MsgHead));
+    struct RaRsDevInfo dev_info = {0};
+
+    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union op_ctx_get_jetty_context_data), sizeof(struct MsgHead), rcv_buf_len,
+        op_result);
+
+    ra_rs_set_dev_info(&dev_info, op_data->tx_data.phy_id, op_data->tx_data.dev_index);
+    *op_result = g_ra_rs_ctx_ops.ctx_get_cr_err_info_list(&dev_info, op_data->tx_data.id ,op_data_out->rx_data.context,
+        &op_data_out->rx_data.len);
+    if (*op_result != 0) {
+        hccp_err("[get][jetty_context]ctx_get_cr_err_info_list failed, ret:%d, phy_id:%u dev_index:0x%x", *op_result,
+            dev_info.phyId, dev_info.devIndex);
+    }
+
     return 0;
 }
