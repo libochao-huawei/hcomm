@@ -182,6 +182,7 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_CTX_UPDATE_CI, 1},
     {RA_RS_CTX_GET_AUX_INFO, 1},
     {RA_RS_CTX_GET_CR_ERR_INFO_LIST, 1},
+    {RA_RS_CTX_GET_JETTY_CONTEXT, 1},
 
     // inner opcode version
     {RA_RS_HDC_SESSION_CLOSE, 1},

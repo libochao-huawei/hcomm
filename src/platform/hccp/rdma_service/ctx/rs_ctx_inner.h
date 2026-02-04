@@ -23,6 +23,9 @@
 #define CI_ADDR_BUFFER_ALIGN_4K_PAGE_SIZE 4096U
 #define WQE_BB_SIZE 64ULL
 
+#define JETTY_CONTEXT_LEN 256U
+#define JFC_CONTEXT_LEN 128U
+
 struct RsUbDevCb {
     struct rs_cb *rscb;
     unsigned int phyId;
@@ -60,6 +63,8 @@ struct RsCtxAsyncEventCb {
     struct RsUbDevCb *devCb;
     urma_async_event_t asyncEvent;
     unsigned int resId;
+    unsigned int len;
+    char context[JETTY_CONTEXT_MAX_LEN];
     struct RsListHead list;
 };
 
