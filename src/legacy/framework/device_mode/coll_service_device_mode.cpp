@@ -82,6 +82,7 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
     HCCL_INFO("[CollServiceDeviceMode::%s] start.", __func__);
     // AIV aclgrah 流程
     if (comm->GetOpExecuteConfig().accState == AcceleratorState::AIV || comm->GetOpExecuteConfig().accState == AcceleratorState::AIV_ONLY) {
+        HCCL_INFO("[CollServiceDeviceMode][%s] enter AIV aclgraph, stream[%u]", __func__, stream->GetId());
         HandleAclGraphFirstOpAivBuff(stream->GetPtr());
     }
 
@@ -411,10 +412,12 @@ HcclResult CollServiceDeviceMode::HandleAclGraphFirstOpAivBuff(rtStream_t mainSt
     bool isCapture = false;
     u32 modelId = 0;
     CHK_RET(GetStreamCaptureInfo(mainStream, rtModel, isCapture));
+    HCCL_INFO("[CollServiceDeviceMode][%s] isCapture[%u]", __func__, isCapture);
     if (isCapture) {
         CHK_PTR_NULL(rtModel);
         // 获取不到modelId会报错
         CHK_RET(GetModelId(rtModel, modelId));
+        HCCL_INFO("[CollServiceDeviceMode][%s] modelId[%u]", __func__, modelId);
         if (captureModelIds.find(modelId) == captureModelIds.end()) {
             // aclgraph场景，首算子清理AIV buff
             comm->SetAivClearEnable(true);
