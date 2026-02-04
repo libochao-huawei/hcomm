@@ -22,6 +22,7 @@ target_sources(hccl_v2 PRIVATE
     aicpu_mc2_handler.cc
     hccl_mc2_ex.cc
     aicpu_utils.cc
+    launch_device.cc
 )
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))

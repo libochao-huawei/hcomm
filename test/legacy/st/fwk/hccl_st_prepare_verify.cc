@@ -56,10 +56,15 @@ void PrepareCtxForAllReduce(ThreadContext *ctx)
     auto count        = ctx->situation.GetCount();
 
     uint64_t memSize = (u64)dataTypeSize * (u64)count;
-    rtMalloc(&sendBuf, memSize, RT_MEMORY_P2P_HBM, 2);
-    rtMalloc(&recvBuf, memSize, RT_MEMORY_P2P_HBM, 2);
-    rtMalloc(&expectedResBuf, memSize, RT_MEMORY_P2P_HBM, 2);
-
+    constexpr int policy = static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH) | static_cast<int>
+    (ACL_MEM_MALLOC_HUGE_FIRST);
+    aclrtMallocAttrValue moduleIdValue;
+    moduleIdValue.moduleId = HCCL;
+    aclrtMallocAttribute attrs{.attr = ACL_RT_MEM_ATTR_MODULE_ID, .value = moduleIdValue};
+    aclrtMallocConfig cfg{.attrs = &attrs, .numAttrs = 1};
+    aclrtMallocWithCfg(&sendBuf, memSize, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
+    aclrtMallocWithCfg(&recvBuf, memSize, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
+    aclrtMallocWithCfg(&expectedResBuf, memSize, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
     ctx->sendBuf        = sendBuf;
     ctx->recvBuf        = recvBuf;
     ctx->expectedResBuf = expectedResBuf;
@@ -133,10 +138,16 @@ void PrepareCtxForAllgather(ThreadContext *ctx)
 
     uint64_t sendMemSize = (u64)dataTypeSize * (u64)count;
     uint64_t recvMemSize = (u64)dataTypeSize * (u64)count * (u64)ctx->situation.GetRankSize();
-    rtMalloc(&sendBuf, sendMemSize, RT_MEMORY_P2P_HBM, 2);
-    rtMalloc(&recvBuf, recvMemSize, RT_MEMORY_P2P_HBM, 2);
-    rtMalloc(&expectedResBuf, recvMemSize, RT_MEMORY_P2P_HBM, 2);
 
+    constexpr int policy = static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH) | static_cast<int>
+    (ACL_MEM_MALLOC_HUGE_FIRST);
+    aclrtMallocAttrValue moduleIdValue;
+    moduleIdValue.moduleId = HCCL;
+    aclrtMallocAttribute attrs{.attr = ACL_RT_MEM_ATTR_MODULE_ID, .value = moduleIdValue};
+    aclrtMallocConfig cfg{.attrs = &attrs, .numAttrs = 1};
+    aclrtMallocWithCfg(&sendBuf, sendMemSize, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
+    aclrtMallocWithCfg(&recvBuf, recvMemSize, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
+    aclrtMallocWithCfg(&expectedResBuf, recvMemSize, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
     ctx->sendBuf        = sendBuf;
     ctx->recvBuf        = recvBuf;
     ctx->expectedResBuf = expectedResBuf;
