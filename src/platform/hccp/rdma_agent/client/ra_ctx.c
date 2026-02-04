@@ -46,6 +46,7 @@ struct RaCtxOps gRaHdcCtxOps = {
     .raCtxUpdateCi = RaHdcCtxUpdateCi,
     .raCtxQueryQpBatch = RaHdcCtxQpQueryBatch,
     .raCtxGetAuxInfo = RaHdcCtxGetAuxInfo,
+    .raCtxGetJettyContext = RaHdcCtxGetJettyContext,
 };
 
 struct RaCtxOps gRaPeerCtxOps = {
@@ -73,6 +74,7 @@ struct RaCtxOps gRaPeerCtxOps = {
     .raCtxUpdateCi = NULL,
     .raCtxQueryQpBatch = NULL,
     .raCtxGetAuxInfo = NULL,
+    .raCtxGetJettyContext = RaPeerCtxGetJettyContext,
 };
 
 HCCP_ATTRI_VISI_DEF int RaGetDevEidInfoNum(struct RaInfo info, unsigned int *num)
@@ -957,5 +959,31 @@ HCCP_ATTRI_VISI_DEF int RaCtxGetCrErrInfoList(void *ctxHandle, struct CrErrInfo 
         "phyId:%u devIndex:0x%x", ret, ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex),
         ConverReturnCode(RDMA_OP, ret));
  
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
+HCCP_ATTRI_VISI_DEF int RaCtxGetJettyContext(void *qpHandle, char context[], unsigned int *len)
+{
+    struct RaCtxQpHandle *qpHandleTmp = NULL;
+    int ret = 0;
+
+    CHK_PRT_RETURN(qpHandle == NULL || context == NULL || len == NULL,
+        hccp_err("[get][jettyContext]qpHandle or context or len is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(*len == 0 || *len > JETTY_CONTEXT_MAX_LEN, hccp_err("[get][jettyContext]len:%u must greater "
+        "than 0 and less or equal to %d", *len, JETTY_CONTEXT_MAX_LEN), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    qpHandleTmp = (struct RaCtxQpHandle *)qpHandle;
+    CHK_PRT_RETURN(qpHandleTmp->ctxHandle == NULL || qpHandleTmp->ctxHandle->ctxOps == NULL ||
+        qpHandleTmp->ctxHandle->ctxOps->raCtxGetJettyContext == NULL, hccp_err("[get][jettyContext]ctxHandle or"
+            " ctxOps or raCtxGetJettyContext is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    hccp_run_info("Input parameters: phy_id:%u, dev_index:0x%x len:%u",
+        qpHandleTmp->phyId, qpHandleTmp->devIndex, *len);
+
+    ret = qpHandleTmp->ctxHandle->ctxOps->raCtxGetJettyContext(qpHandleTmp, context, len);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[get][jettyContext]raCtxGetJettyContext failed, ret:%d phy_id:%u dev_index"
+        ":0x%x", ret, qpHandleTmp->phyId, qpHandleTmp->devIndex), ConverReturnCode(RDMA_OP, ret));
+
     return ConverReturnCode(RDMA_OP, ret);
 }

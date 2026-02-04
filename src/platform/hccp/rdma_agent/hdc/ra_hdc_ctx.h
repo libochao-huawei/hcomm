@@ -400,6 +400,21 @@ union OpCtxGetCrErrInfoListData {
     } rxData;
 };
 
+union OpCtxGetJettyContextData {
+    struct {
+        unsigned int phyId;
+        unsigned int devIndex;
+        unsigned int id;
+        unsigned int rsvd[RA_RSVD_NUM_4];
+    } txData;
+
+    struct {
+        char context[JETTY_CONTEXT_MAX_LEN];
+        unsigned int len;
+        unsigned int rsvd[RA_RSVD_NUM_4];
+    } rxData;
+};
+
 int RaHdcGetDevEidInfoNum(struct RaInfo info, unsigned int *num);
 int RaHdcGetDevEidInfoList(unsigned int phyId, struct HccpDevEidInfo infoList[], unsigned int *num);
 int RaHdcCtxInit(struct RaCtxHandle *ctxHandle, struct CtxInitAttr *attr, unsigned int *devIndex,
@@ -447,4 +462,5 @@ int RaHdcCtxUpdateCi(struct RaCtxQpHandle *qpHandle, uint16_t ci);
 int RaHdcCustomChannel(unsigned int phyId, struct CustomChanInfoIn *in, struct CustomChanInfoOut *out);
 int RaHdcCtxGetAuxInfo(struct RaCtxHandle *ctxHandle, struct HccpAuxInfoIn *in, struct HccpAuxInfoOut *out);
 int RaHdcCtxGetCrErrInfoList(struct RaCtxHandle *ctxHandle, struct CrErrInfo *infoList, unsigned int *num);
+int RaHdcCtxGetJettyContext(struct RaCtxQpHandle *qpHandle, char context[], unsigned int *len);
 #endif // RA_HDC_CTX_H
