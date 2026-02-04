@@ -297,8 +297,8 @@ std::string PhyTopo::Link::Describe() const
         protocolStr += it->Describe();
     }
 
-    return StringFormat("PhyTopo::Link[type=%s, protocol=%s, source=%s, target=%s%s]", linkType.Describe().c_str(),
+    return StringFormat("PhyTopo::Link[type=%s, protocol=%s, source=%s, target=%s%s, topoInstId=%u, topoType=%d]", linkType.Describe().c_str(),
                         protocolStr.c_str(), source->Describe().c_str(), target->Describe().c_str(),
-                        iFace.str().c_str());
+                        iFace.str().c_str(), topoInstId, topoType);
 }
 }  // namespace Hccl

@@ -366,6 +366,14 @@ HcclResult GetCommAddr(CommAddr &commAddr, const IpAddress &ipAddr)
     return HCCL_SUCCESS;
 }
 
+static EndpointLocType AddrPositionToEndpointLoc(AddrPosition pos) {
+    switch (pos) {
+        case AddrPosition::HOST:    return ENDPOINT_LOC_TYPE_HOST;
+        case AddrPosition::DEVICE:  return ENDPOINT_LOC_TYPE_DEVICE;
+        default: return ENDPOINT_LOC_TYPE_RESERVED;
+    }
+}
+
 HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t* descNum,
                                       EndpointDesc* endpointDesc)
 {
@@ -392,7 +400,8 @@ HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint3
                 auto it = protocolMap.find(protocol);
                 CommProtocol commProtocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
                 endpointDesc[count].protocol = commProtocol;
-                endpointDesc[count].loc.locType = static_cast<EndpointLocType>(static_cast<int>(iface->GetPos()));
+                endpointDesc[count].loc.locType = AddrPositionToEndpointLoc(iface->GetPos());
+                HCCL_INFO("[RankGraph::GetEndpointDesc] local type is %d", endpointDesc[count].loc.locType);
                 peer->SetEndpointToIface(endpointDesc[count].commAddr, endpointDesc[count].protocol, iface);
                 count++;
             }
