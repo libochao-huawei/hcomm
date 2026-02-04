@@ -169,11 +169,6 @@ public:
     u32 QuerySqHead();
     u32 QuerySqTail();
 
-    std::queue<std::pair<u32, u32>> getPiQueue()
-    {
-        return piQueue;
-    }
-
     virtual bool IsRtsqQueueSpaceSufficient()
     {
         return true;
@@ -214,7 +209,6 @@ protected:
     u32 QuerySqDepth();
 
     std::string GetHwSqDescribe();
-    std::queue<std::pair<u32, u32>> piQueue;
 
     void ConfigSqTail(u32 value);
     void ConfigDisableToEnable(u32 value);

@@ -312,14 +312,11 @@ TEST_F(AicpuUbConnLiteTest, test_UBConnLite_WriteReduceWithNotify)
     rmt.GetTokenValue();
     std::vector<char> uniqueId{};
     StreamLite stream(uniqueId);
-    std::queue<std::pair<u32, u32>> piQueue;
-    piQueue.push(std::make_pair(1, 1));
 
     MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
     MOCKER(memcpy_s).stubs().with(any()).will(returnValue(0));
     MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(any()).will(returnValue(0));
     MOCKER_CPP(&RtsqBase::QuerySqTail).stubs().with(any()).will(returnValue(1));
-    MOCKER_CPP(&RtsqBase::getPiQueue).stubs().with(any()).will(returnValue(piQueue));
 
     EXPECT_NO_THROW(
         ubConn.WriteReduceWithNotify(DataType::INT8, ReduceOp::SUM, loc, rmt, cfg, stream, out, notify, notifyData));
@@ -369,9 +366,6 @@ TEST_F(AicpuUbConnLiteTest, test_UBConnLite_WriteReduceWithNotify_Slice)
     std::vector<char> uniqueId{};
     StreamLite stream(uniqueId);
 
-    std::queue<std::pair<u32, u32>> piQueue;
-    piQueue.push(std::make_pair(1, 1));
-    MOCKER_CPP(&RtsqBase::getPiQueue).stubs().with(any()).will(returnValue(piQueue));
     MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
     MOCKER(memcpy_s).stubs().with(any()).will(returnValue(0));
     MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(any()).will(returnValue(0));
@@ -417,11 +411,9 @@ TEST_F(AicpuUbConnLiteTest, test_UBConnLite_WriteWithNotify)
     rmt.GetTokenValue();
     std::vector<char> uniqueId{};
     StreamLite stream(uniqueId);
-    std::queue<std::pair<u32, u32>> piQueue;
-    piQueue.push(std::make_pair(3, 3));
+
     MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
     MOCKER(memcpy_s).stubs().with(any()).will(returnValue(0));
-    MOCKER_CPP(&RtsqBase::getPiQueue).stubs().with(any()).will(returnValue(piQueue));
     MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(any()).will(returnValue(1));
     MOCKER_CPP(&RtsqBase::QuerySqTail).stubs().with(any()).will(returnValue(1));
     EXPECT_NO_THROW(ubConn.WriteWithNotify(loc, rmt, cfg, out, notify, stream, notifyData));
@@ -543,11 +535,8 @@ TEST_F(AicpuUbConnLiteTest, test_UBConnLite_WriteWithNotify_Slice)
     rmt.GetTokenValue();
     std::vector<char> uniqueId{};
     StreamLite stream(uniqueId);
-    std::queue<std::pair<u32, u32>> piQueue;
-    piQueue.push(std::make_pair(1, 1));
     MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
     MOCKER(memcpy_s).stubs().with(any()).will(returnValue(0));
-    MOCKER_CPP(&RtsqBase::getPiQueue).stubs().with(any()).will(returnValue(piQueue));
     MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(any()).will(returnValue(1));
     MOCKER_CPP(&RtsqBase::QuerySqTail).stubs().with(any()).will(returnValue(1));
     EXPECT_NO_THROW(ubConn.WriteWithNotify(loc, rmt, cfg, out, notify, stream, notifyData));

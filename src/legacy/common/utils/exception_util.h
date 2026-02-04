@@ -84,7 +84,7 @@
 #define CHK_RET_THROW(EXCEPTION, MSG, expr)                                                                            \
     do {                                                                                                               \
         auto ret = (expr);                                                                                             \
-        if (ret != HcclResult::HCCL_SUCCESS) {                                                                         \
+        if (UNLIKELY(ret != HcclResult::HCCL_SUCCESS)) {                                                                         \
             THROW<EXCEPTION>(MSG);                                                                                     \
         }                                                                                                              \
     } while (0)
@@ -114,7 +114,7 @@ template <typename EXCEPTION, typename... Args> inline void THROW(const char *fo
 
 template <typename POINTER> inline void CHECK_NULLPTR(const POINTER &p, const std::string &msg)
 {
-    if (p == nullptr) {
+    if (UNLIKELY(p == nullptr)) {
         THROW<NullPtrException>(msg);
     }
 }

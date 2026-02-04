@@ -292,16 +292,7 @@ TEST_F(LiteResTest, test_UBConnLite_WriteReduceWithNotify)
     EXPECT_EQ(1, ubConn.GetUbJettyLiteId().GetDieId());
     EXPECT_EQ(1, ubConn.GetUbJettyLiteAttr().dbAddr_);
     EXPECT_EQ(1, ubConn.GetRmtEid().raw[0]);
-    std::queue<std::pair<u32, u32>> piQueue;
-    piQueue.push(std::make_pair(3, 3));
-    piQueue.push(std::make_pair(6, 6));
-    piQueue.push(std::make_pair(9, 9));
-    piQueue.push(std::make_pair(12, 12));
-    piQueue.push(std::make_pair(15, 15));
-    piQueue.push(std::make_pair(18, 18));
-    piQueue.push(std::make_pair(21, 21));
 
-    MOCKER_CPP(&RtsqBase::getPiQueue).stubs().with(any()).will(returnValue(piQueue));
     MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(any()).will(returnValue(1));
     MOCKER_CPP(&RtsqBase::QuerySqTail).stubs().with(any()).will(returnValue(1));
 
@@ -342,10 +333,7 @@ TEST_F(LiteResTest, test_UBConnLite_WriteWithNotify)
     EXPECT_EQ(1, ubConn.GetUbJettyLiteId().GetDieId());
     EXPECT_EQ(1, ubConn.GetUbJettyLiteAttr().dbAddr_);
     EXPECT_EQ(1, ubConn.GetRmtEid().raw[0]);
-    std::queue<std::pair<u32, u32>> piQueue;
-    piQueue.push(std::make_pair(3, 3));
 
-    MOCKER_CPP(&RtsqBase::getPiQueue).stubs().with(any()).will(returnValue(piQueue));
     MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(any()).will(returnValue(1));
     MOCKER_CPP(&RtsqBase::QuerySqTail).stubs().with(any()).will(returnValue(1));
 

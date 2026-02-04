@@ -406,15 +406,6 @@ extern HcclResult HcclRankGraphGetLevels(HcclRankGraph graph, uint32_t *levels);
 extern HcclResult HcclRankGraphGetRankSize(HcclRankGraph graph, uint32_t level, uint32_t *rankSize);
 
 /**
- * @brief 给定level，返回topo类型
- * @param[in] graph rank图句柄
- * @param[in] level 通信层次
- * @param[out] topoType topo类型
- * @return HcclResult 执行结果状态码
- */
-extern HcclResult HcclRankGraphGetTopoType(HcclRankGraph graph, uint32_t level, uint32_t *topoType);
-
-/**
  * @brief 给定level，返回该通信层次包含的rank列表
  * @param[in] graph rank图句柄
  * @param[in] level 通信层次
