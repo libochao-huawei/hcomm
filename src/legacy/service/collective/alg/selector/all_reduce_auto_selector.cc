@@ -95,40 +95,6 @@ SelectorStatus AllReduceAutoSelector::SelectMeshAlgo(const TopoInfo &topoInfo,
     return SelectorStatus::MATCH;
 }
 
-SelectorStatus AllReduceAutoSelector::SelectMeshAlgo(const TopoInfo &topoInfo,
-                                                    const CollAlgOperator &op,
-                                                    std::string &primQueueGenName) const
-{
-    (void)op;
-    if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-        if (IsInputOutputOverlap(op.inputMem, op.outputMem) != true) {
-            HcclDetourType detourType = EnvConfig::GetInstance().GetDetourConfig().GetDetourType();
-            if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == 2)||
-                (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == 4)) {
-                primQueueGenName = "CcuAllReduceMeshDetour1D";
-            } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ != 2)||
-                (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ != 4)) {
-                HCCL_WARNING("[Algo][AllReduceAutoSelector] detourType not match for rankSize.");
-                return SelectorStatus::NOT_MATCH;
-            } else if (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P_AND_4P) {
-                HCCL_WARNING("[Algo][AllReduceAutoSelector] HCCL_DETOUR_ENABLE_2P_AND_4P is not supported yet.");
-                return SelectorStatus::NOT_MATCH;
-            } else {
-                primQueueGenName = "CcuAllReduceMesh1DOneShot";
-            }
-        } else {
-            return SelectorStatus::NOT_MATCH;
-        }
-    } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
-        if (IsSmallData(dataSize_) && IsInputOutputOverlap(op.inputMem, op.outputMem) != true) {
-            primQueueGenName = "CcuAllReduceMesh2DOneShot";
-        } else {
-            primQueueGenName = "CcuAllReduceMesh2DTwoShot";
-        }
-    }
-    return SelectorStatus::MATCH;
-}
-
 SelectorStatus AllReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
