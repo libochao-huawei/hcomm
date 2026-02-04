@@ -14,7 +14,9 @@
 #include "ip_address.h"
 #include "ccu_dev_mgr.h"
 #include "orion_adapter_hccp.h"
+#include "hccp_ctx.h"
 #include "rdma_handle_manager.h"
+#include "local_ub_rma_buffer.h"
 
 namespace Hccl {
 
@@ -67,9 +69,16 @@ private:
         const auto tokenIdHandle = tokenInfo.first;
         const auto tokenValue = GetUbToken();
         const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
-        inParam_ = HrtRaUbCreateJettyParam{jfcHandle, jfcHandle, tokenValue,
-        tokenIdHandle, jettyMode, jettyInfo_.taJettyId, jettyInfo_.sqBufVa,
-        jettyInfo_.sqBufSize, jettyInfo_.wqeBBStartId, jettyInfo_.sqDepth};
+        inParam_.sjfcHandle = jfcHandle;
+        inParam_.rjfcHandle = jfcHandle;
+        inParam_.tokenValue = tokenValue;
+        inParam_.tokenIdHandle = tokenIdHandle;
+        inParam_.jettyMode = jettyMode;
+        inParam_.JettyId = jettyInfo_.taJettyId;
+        inParam_.sqBufVa = jettyInfo_.sqBufVa;
+        inParam_.sqBufSize = jettyInfo_.sqBufSize;
+        inParam_.sqeBufIndex = jettyInfo_.wqeBBStartId;
+        inParam_.sqDepth = jettyInfo_.sqDepth;
     }
     
     int32_t devLogicId_{0};
