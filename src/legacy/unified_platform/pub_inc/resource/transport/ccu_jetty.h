@@ -69,6 +69,7 @@ private:
         const auto tokenIdHandle = tokenInfo.first;
         const auto tokenValue = GetUbToken();
         const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
+        
         inParam_.sjfcHandle = jfcHandle;
         inParam_.rjfcHandle = jfcHandle;
         inParam_.tokenValue = tokenValue;
