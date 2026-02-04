@@ -2529,6 +2529,7 @@ void CommunicatorImpl::CollAlgComponentInit()
 
 HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable)
 {
+    hcclAccelerator = HcclAccelerator::AICPU_TS;
     if (isLoadOp) {
         // 已下发过算子，不允许再设置accelerator
         HCCL_ERROR("[CommunicatorImpl]SetAccelerator is not allowed after load op.");
