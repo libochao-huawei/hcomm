@@ -22,7 +22,8 @@ namespace Hccl {
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph *rankGraph = static_cast<RankGraph *>(rankGraphPtr_);
         *rank                = rankGraph->GetMyRank();
-        return HCCL_SUCCESS;
+
+	return HCCL_SUCCESS;
     }
 
     HcclResult IRankGraph::GetRankSize(uint32_t *rankSize)
