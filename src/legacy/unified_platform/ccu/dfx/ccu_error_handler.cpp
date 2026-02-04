@@ -80,14 +80,15 @@ void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, c
                                ccuTaskParam.executeId);
     }
 
-    // 分类处理Rep, 返回异常信息
-    ErrorInfoBase baseInfo{deviceId, ccuTaskParam.dieId, ccuTaskParam.missionId, currIns, missionStatus};
-    GenStatusInfo(baseInfo, errorInfo);
     const uint16_t endIns = missionContext.GetEndIns();
     const uint16_t startIns = missionContext.GetStartIns();
     const uint16_t currIns = missionContext.GetCurrentIns();
+
+    // 分类处理Rep, 返回异常信息
+    ErrorInfoBase baseInfo{deviceId, ccuTaskParam.dieId, ccuTaskParam.missionId, currIns, missionStatus};
+    GenStatusInfo(baseInfo, errorInfo);
+
     // 获取异常指令对应的Rep
-    
     HCCL_ERROR("[CcuErrorHandler]device %u, execMissionId[%u], startIns[%u], endIns[%u], currIns[%u]", 
         deviceId, static_cast<u32>(ccuTaskParam.execMissionId), static_cast<u32>(startIns), static_cast<u32>(endIns), static_cast<u32>(currIns));
     if (endIns == currIns) {

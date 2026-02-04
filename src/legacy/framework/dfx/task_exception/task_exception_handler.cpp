@@ -515,7 +515,7 @@ vector<CcuTaskParam> TaskExceptionHandler::GetMC2AlgTaskParam(const TaskInfo& ta
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1
         const auto& missionInfo = ccuExDetailInfo.missionInfo[i]; // 异常mission
         uint16_t status = static_cast<uint16_t>(missionInfo.status) << BYTE | missionInfo.subStatus;
-        PrintCcuErrorInfo(deviceId, status, missionInfo.instrId, taskInfo);
+        PrintCcuErrorInfo(deviceId, status, taskInfo);
         // 打印寄存器信息
         PrintPanicLogInfo(missionInfo.panicLog);
     }
