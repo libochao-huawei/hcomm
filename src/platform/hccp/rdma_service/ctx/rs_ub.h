@@ -85,4 +85,9 @@ int RsUbCtxBatchSendWr(struct rs_cb *rsCb, struct WrlistBaseInfo *baseInfo,
 int RsUbCtxJettyUpdateCi(struct RsUbDevCb *devCb, unsigned int jettyId, uint16_t ci);
 int RsUbGetJettyCb(struct RsUbDevCb *devCb, unsigned int jettyId, struct RsCtxJettyCb **jettyCb);
 void RsUbFreeAsyncEventCb(struct RsUbDevCb *devCb, struct RsCtxAsyncEventCb *asyncEventCb);
+int RsUbCtxGetAuxInfo(struct RsUbDevCb *devCb, struct HccpAuxInfoIn *infoIn, struct HccpAuxInfoOut *infoOut);
+int RsEpollEventJfcInHandle(struct rs_cb *rsCb, int fd);
+int RsEpollEventUrmaAsyncEventInHandle(struct rs_cb *rsCb, int fd);
+void RsUbCtxGetAsyncEvents(struct RsUbDevCb *devCb, struct AsyncEvent asyncEvents[], unsigned int *num);
+int RsUbGetJettyContext(struct RsUbDevCb *devCb, unsigned int id, char context[], unsigned int *len);
 #endif // RS_UB_H
