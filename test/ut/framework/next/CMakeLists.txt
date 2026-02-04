@@ -15,6 +15,9 @@ set(src_to_test_list
     test_cpu_ts_thread.cc
     test_collcomm.cc
     test_hcclbuffer_api.cc
+    host/ut_cpu_roce_endpoint.cc
+    host/ut_host_cpu_roce_channel.cc
+    host/ut_host_rdma_connection.cc
 )
 
 add_executable(hccl_utest_test_resource ${src_to_test_list})
