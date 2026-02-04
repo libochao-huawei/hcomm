@@ -1570,14 +1570,6 @@ HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootIn
     CHK_SMART_PTR_NULL(comm);
     CHK_SMART_PTR_NULL(rootInfo);
 
-    HcclResult ret = InitExternalInput();
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] init "\
-        "external input error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
-    ret = InitEnvConfig();
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] init environment config error.",
-        HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
-
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
@@ -1594,6 +1586,14 @@ HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootIn
             return HCCL_SUCCESS;
         }());
 #endif
+
+    HcclResult ret = InitExternalInput();
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] init "\
+        "external input error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
+    ret = InitEnvConfig();
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] init environment config error.",
+        HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
 
     HcclRootHandle rootHandle;
     s32 sRet = memcpy_s(&rootHandle, sizeof(HcclRootHandle), rootInfo->internal, sizeof(HcclRootHandle));
@@ -1693,13 +1693,6 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
     CHK_PTR_NULL(comm);
     CHK_SMART_PTR_NULL(rootInfo);
 
-    HcclResult ret = InitExternalInput();
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoConfigInner]errNo[0x%016llx] init "\
-        "external input error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
-    ret = InitEnvConfig();
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoConfigInner]errNo[0x%016llx] init "\
-        "environment config error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
-
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
@@ -1715,6 +1708,13 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
             return HCCL_SUCCESS;
         }());
 #endif
+
+    HcclResult ret = InitExternalInput();
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoConfigInner]errNo[0x%016llx] init "\
+        "external input error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
+    ret = InitEnvConfig();
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoConfigInner]errNo[0x%016llx] init "\
+        "environment config error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
 
     HcclRootHandle rootHandle;
     s32 sRet = memcpy_s(&rootHandle, sizeof(HcclRootHandle), rootInfo->internal, sizeof(HcclRootHandle));
