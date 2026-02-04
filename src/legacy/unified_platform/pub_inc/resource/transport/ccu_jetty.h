@@ -50,7 +50,7 @@ public:
     {
         return jettyInfo_.taJettyId;
     }
-    void Clean();
+    HcclResult Clean();
 
     static HcclResult Create(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
                             std::unique_ptr<CcuJetty> &ccuJetty){

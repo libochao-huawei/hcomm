@@ -19,8 +19,12 @@ namespace Hccl {
 HcclResult CcuCreateJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
     std::unique_ptr<CcuJetty> &ccuJetty)
 {
-    HCCL_INFO("[CcuCreateJetty] ipaddr[%d], jettyInfo[%d], ccuJetty[%d].", ipAddr, jettyInfo, ccuJetty);
+    HCCL_INFO("[CcuCreateJetty] ipaddr[%d], jettyInfo[%d], ccuJetty[%d].", ipAddr, jettyInfo, ccuJetty.get());
     return CcuJetty::Create(ipAddr, jettyInfo, ccuJetty);
+}
+
+CcuJetty::CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo)
+        : ipAddr_(ipAddr), jettyInfo_(jettyInfo){
 }
 
 CcuJetty::~CcuJetty()
@@ -125,7 +129,7 @@ HrtRaUbJettyCreatedOutParam CcuJetty::GetJettyedOutParam() const
     return outParam_;
 }
 
-void CcuJetty::Clean()
+HcclResult CcuJetty::Clean()
 {
     TRY_CATCH_RETURN(
         if (isCreated_ && outParam_.handle != 0) {

@@ -15,10 +15,10 @@ using namespace std;
 
 HcclResult HcclNetDevOpen(const HcclNetDevInfos *info, HcclNetDev *netDev)
 {
-    CHECK_NULLPTR(netDev, "[HcclNetDevOpen] netDev is nullptr!");
+    Hccl::CHECK_NULLPTR(netDev, "[HcclNetDevOpen] netDev is nullptr!");
     HcclResult ret = HcclNetDevOpenV2(info, netDev);
     if(ret == HCCL_SUCCESS){
-        CHECK_NULLPTR(*netDev, "[HcclNetDevOpen] *netDev is nullptr!");
+        Hccl::CHECK_NULLPTR(*netDev, "[HcclNetDevOpen] *netDev is nullptr!");
         HCCL_DEBUG("HcclNetDevOpen: successfully opened netDev [%p]!", *netDev);
     }
     return ret;
@@ -34,7 +34,7 @@ HcclResult HcclNetDevGetAddr(HcclNetDev netDev, HcclAddress *addr)
 {
     HcclResult ret = HcclNetDevOpenV2(netDev, addr);
     if(ret == HCCL_SUCCESS){
-        CHECK_NULLPTR(addr, "[HcclNetDevGetAddr] addr is nullptr!");
+        Hccl::CHECK_NULLPTR(addr, "[HcclNetDevGetAddr] addr is nullptr!");
         HCCL_DEBUG("HcclNetDevGetAddr: successfully got addr [%p]!", addr);
     }
     return ret;
