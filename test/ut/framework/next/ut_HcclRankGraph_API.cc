@@ -28,12 +28,12 @@ class HcclRankGraphTest: public BaseInit {
         cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
         cclBuffer.addr = (void*)0x1000;
         char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-        hcclCommPtr = std::make_shared < hccl::hcclComm > (1, 1, commName);
+        hcclCommPtr = std::make_shared<hccl::hcclComm>(1, 1, commName);
         HcclCommConfig config;
         config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
-        ret = hcclCommPtr -> InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
-        CollComm* collComm = hcclCommPtr -> GetCollComm();
-        comm = static_cast < HcclComm > (hcclCommPtr.get());
+        ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+        CollComm* collComm = hcclCommPtr->GetCollComm();
+        comm = static_cast<HcclComm>(hcclCommPtr.get());
     }
 };
 
