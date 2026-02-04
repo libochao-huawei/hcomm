@@ -364,7 +364,7 @@ void HcclOneSidedService::SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &pa
     HCCL_INFO("[HcclOneSidedService][SetOneSidedKernelLaunchParam] op.opType[%s]", op.opType.Describe().c_str());
     param.kernel.comm.idIndex       = comm_->GetIdIndex();
     param.kernel.comm.myRank        = comm_->GetMyRank();
-    param.kernel.comm.rankSie       = comm_->GetRankSize();
+    param.kernel.comm.rankSize       = comm_->GetRankSize();
     param.kernel.comm.devType       = comm_->GetDevType();
     param.kernel.comm.devPhyId      = comm_->GetDevicePhyId();
     param.kernel.comm.opCounterAddr = static_cast<u64>(counterBuf->GetAddr());
