@@ -95,6 +95,7 @@ int llt_main(int argc, char *argv[])
 #endif
 {
     struct HccpInitParam param = {0};
+    enum ProductType productType;
     struct timeval start, end;
     float timeCost = 0.0;
     int ret;
@@ -102,10 +103,14 @@ int llt_main(int argc, char *argv[])
     hccp_run_info("hccp init start!");
     ret = HccpChangeNumOfFile();
     CHK_PRT_RETURN(ret, hccp_err("hccp change limit of nofile failed, ret = %d", ret), ret);
-
+    // Cache result after first query, skip exception checking for subsequent queries
+    productType = RsGetProductType(param.logicId);
+    CHK_PRT_RETURN(productType == PRODUCT_TYPE_INVALID, hccp_err("rs get product type failed", ret), -EINVAL);
 #ifdef CONFIG_CGROUP
-    ret = HccpAddToCgroup();
-    CHK_PRT_RETURN(ret, hccp_err("hccp_add_to_cgroup error[%d]", ret), ret);
+    if (productType == PRODUCT_TYPE_910 || productType == PRODUCT_TYPE_310p){
+        ret = HccpAddToCgroup();
+        CHK_PRT_RETURN(ret, hccp_err("HccpAddToCgroup error[%d] productType:[%d]", ret, productType), ret);
+    }
 #endif
 
     ret = DlHalInit();
@@ -124,13 +129,6 @@ int llt_main(int argc, char *argv[])
     }
 
     RsGetCurTime(&start);
-    if(RsGetIsRdmaSupported(param.logicId)) {
-        ret = RsApiInit();
-        if (ret != 0) {
-            hccp_err("RsApiInit error[%d]", ret);
-            goto out;
-        }
-    }
 
     ret = HccpInit(param.chipId, param.pid, param.hdcType, param.whiteListStatus);
     if (ret) {
@@ -157,9 +155,6 @@ int llt_main(int argc, char *argv[])
     hccp_run_info("hccp deinit ok! logic_id=%d", param.logicId);
 
 hccp_init_fail:
-    if(RsGetIsRdmaSupported(param.logicId)) {
-        RsApiDeinit();
-    }
 out:
     DlHalDeinit();
     return ret;
