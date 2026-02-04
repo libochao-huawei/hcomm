@@ -278,7 +278,7 @@ hccl::HcclCommAicpu *AicpuHcclProcess::AicpuGetCommbyGroup(const std::string &gr
 {
     auto startTime = std::chrono::steady_clock::now();
     constexpr u32 pollIntervalUs = 10; // 轮询间隔10us
-    constexpr u32 pollTimeoutMs = 10; // 轮询超时时间10ms
+    constexpr u32 pollTimeoutMs = 1000; // 轮询超时时间10ms
     auto waitPollTimeOutMs = std::chrono::milliseconds(pollTimeoutMs);
     ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMapMutex);
 
