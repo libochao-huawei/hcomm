@@ -476,3 +476,8 @@ int ra_peer_ctx_qp_unbind(struct ra_ctx_qp_handle *qp_handle)
 
     return ret;
 }
+
+int ra_peer_ctx_get_jetty_context(struct ra_ctx_qp_handle *qp_handle, char context[], unsigned int *len)
+{
+
+}

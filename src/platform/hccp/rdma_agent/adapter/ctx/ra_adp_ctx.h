@@ -61,6 +61,7 @@ struct rs_ctx_ops {
     int (*ctx_get_aux_info)(struct RaRsDevInfo *dev_info, struct aux_info_in *info_in,
         struct aux_info_out *info_out);
     int (*ctx_get_cr_err_info_list)(struct RaRsDevInfo *dev_info, struct CrErrInfo info_list[], unsigned int *num);
+    int (*ctx_get_jetty_context)(struct RaRsDevInfo *dev_info, unsigned int id, char context[], unsigned int *len);
 };
 
 int ra_rs_get_dev_eid_info_num(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
@@ -95,4 +96,5 @@ int ra_rs_ctx_batch_send_wr(char *in_buf, char *out_buf, int *out_len, int *op_r
 int ra_rs_custom_channel(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
 int ra_rs_ctx_get_aux_info(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
 int ra_rs_ctx_get_cr_err_info_list(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
+int ra_rs_ctx_get_jetty_context(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
 #endif // RA_ADP_CTX_H
