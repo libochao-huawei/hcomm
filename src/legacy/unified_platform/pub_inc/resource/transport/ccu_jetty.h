@@ -19,7 +19,11 @@ namespace Hccl {
 
 class CcuJetty final {
 public:
-    CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo);
+    CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo)
+        : ipAddr_(ipAddr), jettyInfo_(jettyInfo){
+        HCCL_DEBUG("CcuJetty: constructed with ipAdde [%s] and jettyInfo [%s]",
+                ipAddr_.ToString().c_str(), jettyInfo_.ToString().c_str());
+    }
     ~CcuJetty();
     CcuJetty(const CcuJetty &that) = delete;
     CcuJetty &operator=(const CcuJetty &that) = delete;
@@ -45,7 +49,28 @@ public:
     }
     void Clean();
 
+    static HcclResult Create(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
+                            std::unique_pte<CcuJetty> &ccuJetty){
+                                ccuJetty = std::make_unique<CcuJetty> (ipAddr, jettyInfo);
+                                TRY_CATCH_RETURN(ccuJetty->Initialize);
+                                return HcclResult::HCCL_SUCCESS;
+                            }
 private:
+    void Initialize(){
+        devLogicId_ = HrtGetDevice();
+        uint32_t devPhyId = HrtGetDevicePhyIdByIndex(devLogicId_);
+        auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
+        rdmaHandle_ = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
+        const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle_, HrtUbJfcMode::CCU_POLL);
+        const auto &tokenInfo = rdmaHandleMgr.GetTokenIdInfo(rdmaHandle_);
+        const auto tokenIdHandle = tokenInfo.first;
+        const auto tokenValue = GetUbToken();
+        const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
+        inParam_ = HrtRaUbCreateJettyParam{jfcHandle, jfcHandle, tokenValue,
+        tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
+        jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
+    }
+    
     int32_t devLogicId_{0};
     IpAddress ipAddr_{};
     CcuJettyInfo jettyInfo_{};
