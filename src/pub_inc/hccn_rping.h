@@ -72,7 +72,10 @@ typedef struct HccnRpingInitAttrDef {
  
 typedef struct HccnRpingTargetInfoDef {
     uint32_t srcPort;              /* udp src port, hash lag needed */
-    uint32_t addrType;             /* address type, HCCN_RPING_ADDR_TYPE_IP: ip, HCCN_RPING_ADDR_TYPE_EID: eid */
+    union {
+      uint32_t reserved;             
+      uint32_t addrType;             /* address type, HCCN_RPING_ADDR_TYPE_IP: ip, HCCN_RPING_ADDR_TYPE_EID: eid */
+    };
     uint32_t sl;                   /* service level, range: 0~7, need set as 4 when no use */
     uint32_t tc;                   /* traffic class, range: 0~255, need set as 132 when no use */
     uint32_t port;                 /* port to connect target */

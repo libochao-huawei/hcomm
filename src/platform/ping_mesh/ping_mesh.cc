@@ -378,12 +378,17 @@ inline HcclResult RpingTargetAttrInitWithUb(PingTargetInfo &ubtarget, RpingInput
 {
     ubtarget.remoteInfo.qpInfo.version = ubinfo->version;
     ubtarget.remoteInfo.qpInfo.ub.size = ubinfo->ub.size;
-    for(u32 i = 0; i< QPINFO_UB_KEY_LEN; i++) {
-        ubtarget.remoteInfo.qpInfo.ub.key[i] = ubinfo->ub.key[i];
+    u32 ret = 0;
+    ret = memcpy_s(ubtarget.remoteInfo.qpInfo.ub.key, sizeof(ubtarget.remoteInfo.qpInfo.ub.key), 
+            ubinfo->ub.key, QPINFO_UB_KEY_LEN);
+    if (ret != 0) {
+        return HCCL_E_INTERNAL;
     }
     ubtarget.remoteInfo.qpInfo.ub.token_value = ubinfo->ub.token_value;
-    for(uint32_t i = 0; i< URMA_EID_LEN; i++) {
-        ubtarget.remoteInfo.eid.raw[i] = ubinput.dip.GetEid().raw[i];
+    ret = memcpy_s(ubtarget.remoteInfo.eid.raw, sizeof(ubtarget.remoteInfo.eid.raw), 
+            ubinput.dip.GetEid().raw, URMA_EID_LEN);
+    if (ret != 0) {
+        return HCCL_E_INTERNAL;
     }
     ubtarget.localInfo.ub.qos_attr.tc = ubinput.tc;
     ubtarget.localInfo.ub.qos_attr.sl = ubinput.sl;
@@ -441,7 +446,7 @@ inline HcclResult RpingTargetAttrInit(PingTargetInfo &target, RpingInput input, 
     return HCCL_SUCCESS;
 }
 
-inline void RpingResultInfoInit(PingTargetResult *resultInfo, std::map<std::string, PingQpInfo> rdmaInfoMaps,
+HcclResult PingMesh::RpingResultInfoInit(PingTargetResult *resultInfo, std::map<std::string, PingQpInfo> rdmaInfoMaps,
     RpingInput *input, u32 targetNum)
 {
     for (u32 i = 0; i < targetNum; i++) {
@@ -461,20 +466,27 @@ inline void RpingResultInfoInit(PingTargetResult *resultInfo, std::map<std::stri
         }
         #ifdef CONFIG_CONTEXT
         if (input[i].addrType == HCCN_RPING_ADDR_TYPE_EID) {
-            for(uint32_t j = 0; j < URMA_EID_LEN; j++) {
-                resultInfo[i].remoteInfo.eid.raw[j] = input[i].dip.GetEid().raw[j];
+            u32 ret = 0;
+            ret = memcpy_s(resultInfo[i].remoteInfo.eid.raw, sizeof(resultInfo[i].remoteInfo.eid.raw), 
+                    input[i].dip.GetEid().raw, URMA_EID_LEN);
+            if (ret != 0) {
+                return HCCL_E_INTERNAL;
             }
             resultInfo[i].remoteInfo.qpInfo.version = 0;
             resultInfo[i].remoteInfo.qpInfo.ub.size = rdmainfo->ub.size;
-            for(uint32_t k = 0; k < QPINFO_UB_KEY_LEN; k++) {
-                resultInfo[i].remoteInfo.qpInfo.ub.key[k] = rdmainfo->ub.key[k];
+            ret = memcpy_s(resultInfo[i].remoteInfo.qpInfo.ub.key, sizeof(resultInfo[i].remoteInfo.qpInfo.ub.key), 
+                    rdmainfo->ub.key, QPINFO_UB_KEY_LEN);
+            if (ret != 0) {
+                return HCCL_E_INTERNAL;
             }
             resultInfo[i].remoteInfo.qpInfo.ub.token_value = rdmainfo->ub.token_value;
         }
         #endif
 
         HCCL_INFO("[HCCN][RpingResultInfoInit]Target[%s] info init success.", input[i].dip.GetReadableIP());
+        
     }
+    return HCCL_SUCCESS;
 }
 
 inline void GetResultFromReturnValue(PingTargetResult *resultInfo, RpingOutput *output, u32 targetNum)
@@ -1085,11 +1097,15 @@ HcclResult PingMesh::HccnRpingGetResult(u32 deviceId, u32 targetNum, RpingInput 
     CHK_PRT_RET(resultInfo == nullptr, HCCL_ERROR("[HCCN][HccnRpingGetResult]Alloc result memory failed."),
         HCCL_E_MEMORY);
     HCCL_INFO("[HCCN][HccnRpingGetResult]deviceId %u targetNum %u", deviceId, targetNum);
-    RpingResultInfoInit(resultInfo, rdmaInfoMaps_, input, targetNum);
-
+    HcclResult ret = RpingResultInfoInit(resultInfo, rdmaInfoMaps_, input, targetNum);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[HCCN][HccnRpingGetResult]RpingResultInfoInit failed, ret[%d] num[%u].", deviceId, ret, targetNum);
+        delete[] resultInfo;
+        return ret;
+    }
     // 调用hccp接口获取探测结果
     u32 num = targetNum; // resultinfo是一个带有返回值信息的数组, 对应的数组大小也需要返回，因此这里数组大小也传递指针
-    HcclResult ret = hrtRaPingGetResults(pingHandle_, resultInfo, &num);
+    ret = hrtRaPingGetResults(pingHandle_, resultInfo, &num);
     if (ret == HCCL_E_AGAIN) {
         HCCL_WARNING("[HCCN][HccnRpingGetResult]Try again.");
         delete[] resultInfo;

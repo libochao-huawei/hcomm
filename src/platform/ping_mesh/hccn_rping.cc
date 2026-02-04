@@ -82,7 +82,7 @@ inline HccnResult HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAtt
         ipAddrDesInter = ipAddr.Describe();
     }
     #endif
-    HCCL_RUN_INFO("[HccnRpingInitInter]bufferSize ,  bufferSize:%u", bufferSizeInter);
+    HCCL_INFO("[HccnRpingInitInter]bufferSize:%u", bufferSizeInter);
     return HCCN_SUCCESS;
 }
 
@@ -99,11 +99,11 @@ HccnResult HccnRpingInit(uint32_t devLogicId, HccnRpingInitAttr *initAttr, HccnR
         HCCL_ERROR("[HccnRpingInit]dlrafunction failed."), HCCN_E_FAIL);
     std::string initAttrDes;
     if (initAttr->mode == HCCN_RPING_MODE_ROCE) {
-        initAttrDes = std::string(initAttr->ipAddr).c_str(); 
+        initAttrDes = std::string(initAttr->ipAddr).c_str();
     }
     #ifdef CONFIG_CONTEXT
     if (initAttr->mode == HCCN_RPING_MODE_UB) {
-        initAttrDes = std::string(initAttr->eid).c_str(); 
+        initAttrDes = std::string(initAttr->eid).c_str();
     }
     #endif
     HCCL_DEBUG("[HccnRpingInit]devLogicId:%u, mode:%d port:%u npuNum:%u bufferSize:%u sl:%u tc:%u ip:%s", devLogicId,
@@ -181,9 +181,10 @@ HccnResult HccnRpingAddTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
 }
 
 inline HccnResult HccnRpingInitInputTargetAttr(HccnRpingTargetInfo *targetInter, RpingInput *inputInter, uint32_t &n) {
-    if (targetInter[n].addrType == HCCN_RPING_ADDR_TYPE_IP) { 
+    if (targetInter[n].addrType == HCCN_RPING_ADDR_TYPE_IP) {
+        //todo: 添加IP校验
         inputInter[n].sip = HcclIpAddress(std::string(targetInter[n].srcIp));
-        inputInter[n].dip = HcclIpAddress(std::string(targetInter[n].dstIp)); 
+        inputInter[n].dip = HcclIpAddress(std::string(targetInter[n].dstIp));
     }
     #ifdef CONFIG_CONTEXT
     if (targetInter[n].addrType == HCCN_RPING_ADDR_TYPE_EID) {
