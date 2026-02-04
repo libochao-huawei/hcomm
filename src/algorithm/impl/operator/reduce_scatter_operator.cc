@@ -259,7 +259,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
         u32 contextNum = CalcContextNumForPipeline(HcclCMDType::HCCL_CMD_REDUCE_SCATTER);
         if (contextNum > HCCL_FFTS_CAPACITY) {
             algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;
-            HCCL_WARNING("[ReduceScatterOperator][SelectAlgfor910B] context num[%u] is out of capacity of FFTS+"
+            HCCL_WARNING("[ReduceScatterOperator][SelectAlgfor910B] context num[%u] is out of capacity of FFTS+ "\
                 "graph[%u], reset algorithm to HD.", contextNum, HCCL_FFTS_CAPACITY);
         }
     }
@@ -327,16 +327,16 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
     // 如果配置了aiv only,但是实际没有选择aiv算法,需要通过DFX打印出具体原因
     if (isOnlyAiv && !isAivMode) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");
-        CHK_PRT_RET(!IsSupportAIVReduce(param.DataDes.dataType, param.reduceType), HCCL_ERROR("current data type[%s] or reduceType[%s] not supported,"
+        CHK_PRT_RET(!IsSupportAIVReduce(param.DataDes.dataType, param.reduceType), HCCL_ERROR("current data type[%s] or reduceType[%s] not supported, "\
             "data type support range:[int8, int16, int32, uint8, uint16, uint32, float16, float32, bfloat16] reduce type support range:[sum, max, min]",
             GetDataTypeEnumStr(param.DataDes.dataType).c_str(), GetReduceOpEnumStr(param.reduceType).c_str()), HCCL_E_NOT_SUPPORT);
 
-        CHK_PRT_RET(!isSupportAivDeter, HCCL_ERROR("is not support aiv deter.isSingleMeshAggregation_[%d] isOpbase[%d]"
+        CHK_PRT_RET(!isSupportAivDeter, HCCL_ERROR("is not support aiv deter.isSingleMeshAggregation_[%d] isOpbase[%d] "\
             "deterministic config[%u] dataSize[%llu], serverNum_[%u]",
             isSingleMeshAggregation_, isOpbase, topoMatcher_->GetDeterministicConfig(), dataSize, serverNum_), HCCL_E_NOT_SUPPORT);
 
         CHK_PRT_RET(!isSingleMeshAggregation_ && multiModuleDiffDeviceNumMode_,
-            HCCL_ERROR("The number of cards between servers in a multi-server setup must be consistent."
+            HCCL_ERROR("The number of cards between servers in a multi-server setup must be consistent. "\
             "isSingleMeshAggregation_[%d] multiModuleDiffDeviceNumMode_[%d]",
             isSingleMeshAggregation_, multiModuleDiffDeviceNumMode_), HCCL_E_NOT_SUPPORT);
 
@@ -347,7 +347,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
         CHK_PRT_RET(!isCCLBufferGE16M, HCCL_ERROR("current isOpbase[%d] or commInputSize[%llu] or commOutputSize[%llu] not supported",
             isOpbase, commInputSize, commOutputSize), HCCL_E_NOT_SUPPORT);
         HCCL_ERROR("isSingleMeshAggregation_[%d] multiModuleDiffDeviceNumMode_[%d] dataSize[%llu]",
-            isSingleMeshAggregation_, multiModuleDiffDeviceNumMode_, multiModuleDiffDeviceNumMode_);
+            isSingleMeshAggregation_, multiModuleDiffDeviceNumMode_, dataSize);
         return HCCL_E_NOT_SUPPORT;
     }
     HCCL_INFO("[SelectAlgfor910B] ReduceScatter SelectAlgfor910B is algName [%s], current mode is [%u].", algName.c_str(), workflowMode_);
@@ -522,7 +522,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
      // 如果配置了aiv only,但是实际没有选择aiv算法,需要通过DFX打印出具体原因
     if (isOnlyAiv && !isAivMode && !isSupportAivDeter) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");
-        CHK_PRT_RET(!IsSupportAIVReduce(param.DataDes.dataType, param.reduceType), HCCL_ERROR("current data type[%s] or reduceType[%s] not supported,"
+        CHK_PRT_RET(!IsSupportAIVReduce(param.DataDes.dataType, param.reduceType), HCCL_ERROR("current data type[%s] or reduceType[%s] not supported, "\
             "data type support range:[int8, int16, int32, uint8, uint16, uint32, float16, float32, bfloat16] reduce type support range:[sum, max, min]",
             GetDataTypeEnumStr(param.DataDes.dataType).c_str(), GetReduceOpEnumStr(param.reduceType).c_str()), HCCL_E_NOT_SUPPORT);
 

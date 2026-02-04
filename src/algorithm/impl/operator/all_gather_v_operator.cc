@@ -131,7 +131,7 @@ HcclResult AllGatherVOperator::SelectAlgfor910B(const OpParam& param, std::strin
         u32 contextNum = CalcContextNumForPipeline(HcclCMDType::HCCL_CMD_ALLGATHER_V);
         if (contextNum > HCCL_FFTS_CAPACITY) {
             algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
-            HCCL_WARNING("[AllGatherVOperator][SelectAlgfor910B] context num[%u] is out of capacityof FFTS+ graph[%u],"
+            HCCL_WARNING("[AllGatherVOperator][SelectAlgfor910B] context num[%u] is out of capacity of FFTS+ graph[%u], "
                 "reset algorithm to NHR.", contextNum, HCCL_FFTS_CAPACITY);
         }
     }
@@ -160,7 +160,7 @@ HcclResult AllGatherVOperator::SelectAlgfor910B(const OpParam& param, std::strin
             algName = "AllGatherVMeshExecutor"; 
         } 
     }
-    HCCL_INFO("[SelectAlgforA2] AllGatherV SelectAlgforA2 is algName [%s]", algName.c_str());
+    HCCL_INFO("[SelectAlgfor910B] AllGatherV SelectAlgfor910B is algName [%s]", algName.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -168,7 +168,7 @@ HcclResult AllGatherVOperator::SelectAlgfor310P3(const OpParam& param, std::stri
 {
     (void) param;
     CHK_PRT_RET(userRankSize_ > MAX_310P_RANK_SIZE,
-        HCCL_ERROR("[AllGatherVOperator][SelectAlgfor310P3]rankSize[%u] is not supported.AllGatherV does not support the"
+        HCCL_ERROR("[AllGatherVOperator][SelectAlgfor310P3]rankSize[%u] is not supported.AllGatherV does not support the "\
         "scenario where the rankSize is greater than 4.", userRankSize_), HCCL_E_NOT_SUPPORT);
     algName = "AllGatherVFor310PExecutor";
     HCCL_INFO("[SelectAlgfor310P3] AllGatherV SelectAlgfor310P3 is algName [%s]", algName.c_str());
