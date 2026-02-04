@@ -248,6 +248,8 @@ TEST_M(RdmaAgent, TcRaHdcCtxGetAuxInfo);
 TEST_M(RdmaAgent, TcRaRsCtxGetAuxInfo);
 TEST_M(RdmaAgent, TcRaHdcCtxGetCrErrInfoList);
 TEST_M(RdmaAgent, TcRaRsCtxGetCrErrInfoList);
+TEST_M(RdmaAgent, TcRaHdcCtxGetJettyContext);
+TEST_M(RdmaAgent, TcRaPeerCtxGetJettyContext);
 
 /* pingMesh ut cases */
 TEST_M(RdmaAgent, TcRaPingInitGetHandleAbnormal);
@@ -279,6 +281,7 @@ TEST_M(RdmaAgent, TcRaCtxUpdateCi);
 TEST_M(RdmaAgent, TcRaCustomChannel);
 TEST_M(RdmaAgent, TcRaGetEidByIp);
 TEST_M(RdmaAgent, TcRaCtxGetCrErrInfoList);
+TEST_M(RdmaAgent, TcRaCtxGetJettyContext);
 
 TEST_M(RdmaAgent, TcRaRsAsyncHdcSessionConnect);
 TEST_M(RdmaAgent, TcRaHdcAsyncSendPkt);
