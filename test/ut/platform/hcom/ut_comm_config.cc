@@ -285,23 +285,6 @@ TEST_F(CommConfigTest, utCommConfig_deterministic_strcit)
     GlobalMockObject::verify();
 }
 
-TEST_F(CommConfigTest, Ut_SetConfigOpExpansionMode_When_Aicpu_A3_ReturnIsHCCL_SUCCESS)
-{
-    DevType deviceType = DevType::DEV_TYPE_910_93;
-    MOCKER(hrtGetDeviceType)
-    .stubs()
-    .with(outBound(deviceType))
-    .will(returnValue(HCCL_SUCCESS));
-
-    CommConfig commConfig("comm_ID");
-    CommConfigInfo configInfo = { sizeof(CommConfigHandle), COMM_CONFIG_MAGIC_WORD, 4, { 0 } };
-    CommConfigHandle configHandle = { configInfo, 300, 1, "comm_ID", "Unspecified", 3, 132, 4};
-    configHandle.opExpansionMode = 2;
-    HcclResult ret = commConfig.SetConfigOpExpansionMode(configHandle);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify();
-}
-
 TEST_F(CommConfigTest, Ut_GetAicpuUnfoldConfig_When_SetConfigOpExpansionMode_Aicpu_A3_ReturnIsHCCL_SUCCESS)
 {
     DevType deviceType = DevType::DEV_TYPE_910_93;
