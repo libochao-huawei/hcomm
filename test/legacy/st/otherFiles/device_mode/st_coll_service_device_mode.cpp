@@ -811,6 +811,7 @@ TEST_F(CollServiceDeviceModeTest, St_AllocCommResource_When_versionIs100_Expect_
     commConfigPtr->srcDataType = HcclDataType::HCCL_DATA_TYPE_FP32;
     commConfigPtr->dstDataType = HcclDataType::HCCL_DATA_TYPE_FP32;
     commConfigPtr->communicationEngine = 3;  // aiv
+    commConfigPtr->protocol = 0; // aiv ubmemory
 
     void *commContext = nullptr;
 
