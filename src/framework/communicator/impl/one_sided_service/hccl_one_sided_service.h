@@ -22,6 +22,7 @@
 #include "hccl_mem.h"
 #include "global_mem_record.h"
 #include "aicpu_operator_pub.h"
+#include "comm_config_pub.h"
 
 using HcclBatchData = struct HcclBatchDataDef {
     HcclComm comm;
