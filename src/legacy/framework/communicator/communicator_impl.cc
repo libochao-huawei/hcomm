@@ -526,6 +526,8 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
         for (std::size_t i = 0, len = streamNum - 1; i < len; ++i) {
             u32  bitValue = BASE_BIT << i;
             auto slave    = opbaseStream->GetSlave(slaveIndex++);
+            auto master   = opbaseStream->GetMaster();
+            GetStreamManager().CaptureSlaveStream(master, slave);
             cntNotify1ToN->WaitBits(bitValue, timeout, *slave);
             if (taskExceptionEnv || enableProfilingEnv) {
                 params.taskParams[i + 1].beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
