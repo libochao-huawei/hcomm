@@ -15,8 +15,8 @@
 namespace Hccl {
 using HcclUs = std::chrono::steady_clock::time_point;
 static std::mutex vecMutex;
-
-int32_t ProcessTaskAbortHandleCallback(uint32_t deviceLogicId, rtDeviceTaskAbortStage stage, uint32_t timeout, void *args)
+int32_t ProcessTaskAbortHandleCallback(int32_t deviceLogicId, aclrtDeviceTaskAbortStage stage, uint32_t timeout,
+                                       void* args)
 {
     HcclUs startut = std::chrono::steady_clock::now();
     CHK_PTR_NULL(args);
@@ -27,7 +27,7 @@ int32_t ProcessTaskAbortHandleCallback(uint32_t deviceLogicId, rtDeviceTaskAbort
     const std::chrono::seconds localtimeout = std::chrono::seconds(timeout);
     HcclResult                 ret          = HCCL_SUCCESS;
     if (localtimeout != std::chrono::seconds(0)) {
-        if (stage == RT_DEVICE_TASK_ABORT_PRE) {
+        if (stage == aclrtDeviceTaskAbortStage::ACL_RT_DEVICE_TASK_ABORT_PRE) {
             for (size_t i = 0; i < commVector.size(); i++) {
                 std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
                 ret                                             = commVector[i]->Suspend();
@@ -41,7 +41,7 @@ int32_t ProcessTaskAbortHandleCallback(uint32_t deviceLogicId, rtDeviceTaskAbort
                 CHK_PRT_RET(elapsed > localtimeout, HCCL_ERROR("[NsRecovery][Callback] NsRecovery suspend timeout"),
                             static_cast<int>(TaskAbortResult::TASK_ABORT_TIMEOUT));
             }
-        } else if (stage == RT_DEVICE_TASK_ABORT_POST) {
+        } else if (stage == aclrtDeviceTaskAbortStage::ACL_RT_DEVICE_TASK_ABORT_POST) {
             CHK_RET(HcclCcuTaskKillPreProcess(deviceLogicId));
             for (size_t i = 0; i < commVector.size(); i++) {
                 std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
@@ -59,7 +59,7 @@ int32_t ProcessTaskAbortHandleCallback(uint32_t deviceLogicId, rtDeviceTaskAbort
             CHK_RET(HcclCcuTaskKillPostProcess(deviceLogicId));
         }
     } else {
-        if (stage == RT_DEVICE_TASK_ABORT_PRE) {
+        if (stage == aclrtDeviceTaskAbortStage::ACL_RT_DEVICE_TASK_ABORT_PRE) {
             for (size_t i = 0; i < commVector.size(); i++) {
                 ret = commVector[i]->Suspend();
                 if (ret != HCCL_SUCCESS && ret != HCCL_E_SUSPENDING) {
@@ -68,7 +68,7 @@ int32_t ProcessTaskAbortHandleCallback(uint32_t deviceLogicId, rtDeviceTaskAbort
                 }
                 HCCL_INFO("[NsRecovery][Callback] finish suspend success");
             }
-        } else if (stage == RT_DEVICE_TASK_ABORT_POST) {
+        } else if (stage == aclrtDeviceTaskAbortStage::ACL_RT_DEVICE_TASK_ABORT_POST) {
             CHK_RET(HcclCcuTaskKillPreProcess(deviceLogicId));
             for (size_t i = 0; i < commVector.size(); i++) {
                 ret = commVector[i]->Clean();
