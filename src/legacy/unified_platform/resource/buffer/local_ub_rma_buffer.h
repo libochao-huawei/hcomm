@@ -45,6 +45,8 @@ public:
     TokenIdHandle GetTokenIdHandle() const;
     std::pair<uintptr_t, u64> GetBufferInfo() {return make_pair(buf->GetAddr(), buf->GetSize());}
 
+    std::vector<char> Desc;
+
 private:
     RdmaHandle           rdmaHandle{nullptr};
     HcclNetDevice        *netDev{nullptr};

@@ -20,6 +20,7 @@
 #include "network/hccp_common.h"
 #include "network/hccp_ping.h"
 #include "hccn_rping.h"
+#include "orion_adapter_hccp.h"
  
 namespace hccl
 {
@@ -41,9 +42,20 @@ struct RpingInput {
     int tc;        // 主要是修改DSCP
     int port;      // 监听端口
     u32 len;
+    u32 addrType;     /* address type, 0: ip, 1: eid */ //todo: 是否要添加需要确定
     char payload[RPING_PAYLOAD_LEN_MAX];
 };
- 
+
+MAKE_ENUM(HrtNetworkMode, PEER, HDC)
+struct HRaInfo {
+    HrtNetworkMode mode;
+    uint32_t       phyId;
+    HRaInfo(HrtNetworkMode mode, uint32_t phyId) : mode(mode), phyId(phyId)
+    {
+    }
+};
+
+
 struct RpingOutput {
     u32 txPkt;     // rping发包总数
     u32 rxPkt;     // rping收包总数
@@ -56,13 +68,20 @@ struct RpingOutput {
 
 // 需要重填的payload头只有前136字节，后面是固定的
 struct RpingPayloadHead {
-    char srcIp[64];
-    char dstIp[64];
+    union {
+        char srcIp[64];   /* local(client) ip */
+        char srcEid[16];  /* local(client) eid */
+    };
+    union {
+        char dstIp[64];   /* remote(target) ip  */
+        char dstEid[16];  /* remote(target) eid */
+    };
     u32 payloadLen;
     u32 resvd[3];
     u64 timestamp[8];
     u32 rpingBatchId;
-    u8 reserved[44];
+    u32 addrType;     /* address type, 0: ip, 1: eid */
+    u8 reserved[40];
 };
 
 union RpingIpHead {
@@ -86,6 +105,34 @@ union RpingIpHead {
         u32 dstIp;
     } ipv4;
 };
+
+#ifdef CONFIG_CONTEXT
+struct RpingEidHead {
+       u32	version;            // 32bit version
+       u32	type;               // 32bit type
+       u32	ser_version;        // 32bit serversion
+       u32	padding1;         // 32bitpadding
+       u8   info_size1;          // 8bit的info_size 
+       u8 	srcEid[16];         // sip的Eid，128bit
+       u32  uasid1;              // 32bit的uasid
+       u32  jetty_id1;              // 32bit的jetty_id值
+       u32  padding2;              // 32bit的padding
+       u8   resvd[7];              // 56bit的reserved
+       u32  s_token_value;         // 32bit的s_token_value
+       u32  dst_version;              // 32bit的dst_version
+       u32  padding3;              // 32bit的padding
+       u8	info_size2;           // 4bit的info_size
+       u8 	dstEid[16];         // dip的Eid，128bit  
+       u32  uasid2;//4字节
+       u32  jetty_id2;//4字节，32bit
+       u8   reserv[7];
+       u32  client_jetty_token_value; //4字节
+       u64  times[8];
+       u32  taskId;
+       u8 reserved[44];
+       // todo : 测试整体打印出来
+};
+#endif
  
 enum class RpingState {
     UNINIT,
@@ -119,7 +166,7 @@ private:
     RpingState rpingState_ = RpingState::UNINIT;   // 记录client状态
     int rpingTargetNum_ = 0;                       // 记录client目标数量
     std::map<std::string, std::shared_ptr<HcclSocket>> socketMaps_;  // 记录client端的socket信息
-    std::map<std::string, PingQpInfo> rdmaInfoMaps_;    // 记录target的rdma信息
+    std::map<std::string, PingQpInfo> rdmaInfoMaps_;    // 记录target的rdma或者ub信息
     std::unique_ptr<std::thread> connThread_;      // server端等待socket建链的背景线程
     HcclNetDevCtx netCtx_ = nullptr;               // 记录网络上下文信息
     std::shared_ptr<HDCommunicate> hdcD2H_ = nullptr; // 从device侧获取数据的接口
@@ -130,6 +177,7 @@ private:
     std::atomic<bool> connThreadStop_{false};      // 侦听的子线程的结束条件
     bool isUsePayload_ = false;
     std::map<std::string, u32> payloadLenMap_;     // 记录自定义payload的长度
+    HccnRpingMode mode = HCCN_RPING_MODE_ROCE;     //ROCEorUB,
  
     HcclResult RpingSendInitInfo(u32 deviceId, u32 port, HcclIpAddress ipAddr, PingInitInfo initInfo,
         std::shared_ptr<HcclSocket> socket);
@@ -137,6 +185,8 @@ private:
     HcclResult StartSocketThread(u32 deviceId, HcclIpAddress ipAddr, u32 port);
     HcclResult HccnCloseSubProc(u32 deviceId);
     HcclResult HccnRaInit(u32 deviceId);
+    HcclResult HccnTargetAttrInter(u32 targetNumInter, RpingInput *inputInter, HccnRpingAddTargetConfig *configInter, PingTargetInfo *targetInter);
+    HcclResult HccnTarRemoveAttrInter(u32 targetNumInter, RpingInput *inputInter, PingTargetCommInfo *targetInter, std::shared_ptr<HcclSocket> &socketInter);
 public:
     PingMesh();
     ~PingMesh();
@@ -150,11 +200,18 @@ public:
     HcclResult HccnRpingBatchPingStop(u32 deviceId);
     HcclResult HccnRpingGetResult(u32 deviceId, u32 targetNum, RpingInput *input, RpingOutput *output);
     HcclResult HccnRpingRefillPayloadHead(u8 *originalHead, u32 payloadNum);
-    HcclResult HccnRpingGetPayload(u32 deviceId, void **payload, u32 *payloadLen);
+    HcclResult HccnRpingRefillUbPayloadHead(u8 *originalHead, u32 payloadNum);
+    HcclResult HccnRpingGetPayload(u32 deviceId, void **payload, u32 *payloadLen, HccnRpingMode mode);
 
     inline s32 GetDeviceLogicId() {
         return deviceLogicId_;
     }
+    inline HccnRpingMode GetMode() {
+        return mode;
+    }
+    inline void init(HccnRpingInitAttr* attr) {
+    this->mode = attr->mode;  
+}
 };
  
 }

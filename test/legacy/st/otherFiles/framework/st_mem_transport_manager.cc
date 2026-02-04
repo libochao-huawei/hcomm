@@ -168,7 +168,7 @@ TEST(MemTransportManagerTest, MemTransportManager_batch_recover_transports)
 
     // 打桩 SocketManager::GetConnectedSocket
     IpAddress          ipAddress("1.0.0.0");
-    unique_ptr<Socket> fakeSocket = make_unique<Socket>(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+    shared_ptr<Socket> fakeSocket = make_shared<Socket>(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
     SocketConfig       socketConfig(linkData.GetRemoteRankId(), linkData, comm.GetEstablishLinkSocketTag());
     comm.GetSocketManager().connectedSocketMap[socketConfig] = std::move(fakeSocket);
 

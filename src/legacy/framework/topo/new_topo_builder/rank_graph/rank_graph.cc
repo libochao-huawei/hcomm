@@ -1,7 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
- * Description: Implementation of RankGraph
- * Create: 2024-12-18
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "virtual_topo.h"
@@ -362,6 +366,14 @@ HcclResult GetCommAddr(CommAddr &commAddr, const IpAddress &ipAddr)
     return HCCL_SUCCESS;
 }
 
+static EndpointLocType AddrPositionToEndpointLoc(AddrPosition pos) {
+    switch (pos) {
+        case AddrPosition::HOST:    return ENDPOINT_LOC_TYPE_HOST;
+        case AddrPosition::DEVICE:  return ENDPOINT_LOC_TYPE_DEVICE;
+        default: return ENDPOINT_LOC_TYPE_RESERVED;
+    }
+}
+
 HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t* descNum,
                                       EndpointDesc* endpointDesc)
 {
@@ -388,7 +400,8 @@ HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint3
                 auto it = protocolMap.find(protocol);
                 CommProtocol commProtocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
                 endpointDesc[count].protocol = commProtocol;
-                endpointDesc[count].loc.locType = static_cast<EndpointLocType>(static_cast<int>(iface->GetPos()));
+                endpointDesc[count].loc.locType = AddrPositionToEndpointLoc(iface->GetPos());
+                HCCL_INFO("[RankGraph::GetEndpointDesc] local type is %d", endpointDesc[count].loc.locType);
                 peer->SetEndpointToIface(endpointDesc[count].commAddr, endpointDesc[count].protocol, iface);
                 count++;
             }

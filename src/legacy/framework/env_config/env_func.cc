@@ -208,7 +208,7 @@ void PrintSocketPortRange(const std::string &envName, const std::vector<SocketPo
     HCCL_INFO("%s is set to%s.", envName.c_str(), portRangeOss.str().c_str());
 }
 
-std::vector<SocketPortRange> CastSocketPortRange(const std::string &s)
+std::vector<SocketPortRange> CastSocketPortRange(const std::string &s, const std::string &envName)
 {
     std::vector<SocketPortRange> hcclSocketPortRange;
     // the environment variable is not set
@@ -237,7 +237,6 @@ std::vector<SocketPortRange> CastSocketPortRange(const std::string &s)
     }
 
     // load ranges from string
-    std::string envName = "HCCL_HOST_SOCKET_PORT_RANGE";
     SplitHcclSocketPortRange(envName, socketPortRange, hcclSocketPortRange);
     CHK_PRT_THROW(hcclSocketPortRange.size() == 0, 
         HCCL_ERROR("Load empty port range from HCCL_HOST_SOCKET_PORT_RANGE, please check."),

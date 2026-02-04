@@ -70,7 +70,6 @@ void CcuComponent::Init()
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
         CleanDieCkes(dieId);
     }
-    ChooseLoopEids();
     CreateCcuRmaBuffer();
     CreateResourceManagers();
     CreateLoopChannels();
@@ -117,11 +116,13 @@ void CcuComponent::CheckDiesEnable()
     HCCL_INFO("[CcuComponent][%s] ccu version[%s], devLogicId[%d].",
         __func__, ccuVersion.Describe().c_str(), devLogicId);
 
+    std::array<bool, MAX_CCU_IODIE_NUM> dieDrvEnableFlags{false, false};
     bool allDieDisable = true;
     const auto &ccuResSpecs = CcuResSpecifications::GetInstance(devLogicId);
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
         dieEnableFlags[dieId] = false;
-        (void)ccuResSpecs.GetDieEnableFlag(dieId, dieEnableFlags[dieId]);
+        (void)ccuResSpecs.GetDieEnableFlag(dieId, dieDrvEnableFlags[dieId]);
+        ChooseLoopEid(dieDrvEnableFlags[dieId], dieId);
         allDieDisable = allDieDisable && !dieEnableFlags[dieId];
         if (!dieEnableFlags[dieId]) { // 调用接口失败时不会改变dieEnableFlags[i]
             HCCL_WARNING("[CcuComponent][%s] devLogicId[%d], dieId[%u] is not usable.",
@@ -177,23 +178,23 @@ static HcclResult FindOneUsableEid(const uint32_t devLogicId, const uint8_t dieI
     return HcclResult::HCCL_SUCCESS;
 }
 
-void CcuComponent::ChooseLoopEids()
+void CcuComponent::ChooseLoopEid(bool &dieDrvEnableFlag, uint8_t dieId)
 {
-    for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
-        if (!dieEnableFlags[dieId]) {
-            continue;
-        }
-
-        uint32_t feId = 0;
-        IpAddress ipAddr = IpAddress();
-        if (FindOneUsableEid(devLogicId, dieId, feId, ipAddr) != HcclResult::HCCL_SUCCESS) {
-            HCCL_WARNING("[CcuComponent][%s] failed to find feId eid, but passed, "
-                "devLogicId[%d], dieId[%u].", __func__, devLogicId, dieId);
-            continue;
-        }
-
-        loopFeIpAddrMap[dieId] = {feId, ipAddr};
+    if (!dieDrvEnableFlag) {
+        return;
     }
+
+    uint32_t feId = 0;
+    IpAddress ipAddr = IpAddress();
+    if (FindOneUsableEid(devLogicId, dieId, feId, ipAddr) != HcclResult::HCCL_SUCCESS) {
+        HCCL_WARNING("[CcuComponent][%s] failed to find feId eid, but passed, "
+            "devLogicId[%d], dieId[%u].", __func__, devLogicId, dieId);
+        return;
+    }
+
+    loopFeIpAddrMap[dieId] = {feId, ipAddr};
+    dieEnableFlags[dieId] = dieDrvEnableFlag;
+    HCCL_INFO("[CcuComponent][%s] die[%u] is enable", __func__, dieId);
 }
 
 HcclResult CcuComponent::GetLoopFeIpByDieId(const uint8_t dieId, uint32_t &feId, IpAddress &ipAddr)
@@ -448,7 +449,13 @@ uint32_t CcuComponent::GetPsn(const IpAddress &ipAddr)
 HcclResult CcuComponent::ConfigLoopChannel(const uint8_t dieId, const IpAddress &ipAddr,
     const ChannelInfo &channelInfo)
 {
-    const auto &rmaBufferIter = ccuRmaBufferMap.find(dieId);
+    HCCL_INFO("[CcuComponent][%s] Create loop channel with another die's address, my dieId[%u]", __func__, dieId);
+    auto rmaBufferIter = ccuRmaBufferMap.find(1 - dieId); // 需要配置另一die的rma buffer
+    if (rmaBufferIter == ccuRmaBufferMap.end()) {
+        HCCL_WARNING("[CcuComponent][%s] Another die is not enable, create loop channel with my die[%u]",
+                    __func__, dieId);
+        rmaBufferIter = ccuRmaBufferMap.find(dieId);
+    }
     CHK_PRT_RET(rmaBufferIter == ccuRmaBufferMap.end(),
         HCCL_WARNING("[CcuComponent][%s] failed, ccu rma buffer of die[%u] is not existed, "
             "devLogicId[%d].", __func__, dieId, devLogicId),
@@ -749,7 +756,7 @@ HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
         return HcclResult::HCCL_SUCCESS;
     }
     
-    HRaInfo               info(HrtNetworkMode::HDC, devLogicId);
+    HRaInfo               info(HrtNetworkMode::HDC, devPhyId);
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
 

@@ -43,6 +43,25 @@ typedef uint64_t ThreadHandle;
 #endif
 
 /**
+ * @enum CommMemType
+ * @brief 内存类型枚举定义
+ */
+typedef enum {
+    COMM_MEM_TYPE_INVALID = -1, ///< 无效的内存类别
+    COMM_MEM_TYPE_DEVICE = 0, ///< 设备侧内存（如NPU等）
+    COMM_MEM_TYPE_HOST,   ///< 主机侧内存
+} CommMemType;
+
+/**
+ * @brief 内存段元数据描述结构体
+ */
+typedef struct {
+    CommMemType type; ///< 内存物理位置类型，参见CommMemType
+    void *addr;       ///< 内存地址
+    uint64_t size;    ///< 内存区域字节数
+} CommMem;
+ 
+/**
  * @brief 通信引擎类型枚举
  */
 typedef enum {
@@ -414,6 +433,33 @@ extern HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t 
  */
 extern HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads);
 
+/**
+ * @brief 获取channel中全部交换获得的远端内存信息
+ * 
+ * @param[in] comm 通信域句柄
+ * @param[in] channel 通道句柄
+ * @param[out] remoteMem 远端内存列表
+ * @param[out] memTag 远端内存字符串标识列表
+ * @param[in,out] memNum 内存数量
+ * @return HcclResult 
+ * @warning
+ */
+extern HcclResult HcclChannelGetRemoteMem(HcclComm comm, ChannelHandle channel, CommMem **remoteMem,
+    char **memTag, uint32_t *memNum);
+
+/**
+ * @brief 向通信域注册内存
+ * @param[in] comm 通信域句柄
+ * @param[in] memTag 内存字符串标识，以"\0"结尾，最大字符长度为HCCL_RES_TAG_MAX_LEN
+ * @param[in] mem 内存信息
+ * @param[in] regAttr 内存注册属性
+ * @param[out] memHandle 注册内存句柄
+ * @return HcclResult 执行结果状态码
+ * @note 通信域内以memTag作为key存储该内存，并注册内存。 \n该接口既支持算子内，也支持算子外注册内存。
+ * @warning
+ */
+extern HcclResult HcclCommMemReg(HcclComm comm, const char *memTag, const CommMem *mem, void **memHandle);
+ 
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

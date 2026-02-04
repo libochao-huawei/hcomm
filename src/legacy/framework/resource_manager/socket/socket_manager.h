@@ -20,18 +20,22 @@
 #include "socket.h"
 #include "virtual_topo.h"
 #include "socket_config.h"
+#include "env_func.h"
 
 namespace Hccl {
 
 class CommunicatorImpl;
 class SocketManager {
 public:
-    SocketManager(const CommunicatorImpl &communicator, u32 localRank, u32 devicePhyId, u32 serverListenPort,
-                  std::function<unique_ptr<Socket>(IpAddress &localIpAddress, IpAddress &remoteIpAddress,
+    SocketManager(const CommunicatorImpl &communicator, u32 localRank, u32 devicePhyId, u32 deviceLogicId,
+                  std::function<shared_ptr<Socket>(IpAddress &localIpAddress, IpAddress &remoteIpAddress,
                                                    u32 listenPort, SocketHandle socketHandle, const std::string &tag,
                                                    SocketRole socketRole, NicType nicType)>
                       socketProducer
                   = nullptr);
+    void SetDeviceServerListenPortMap(const std::unordered_map<u32, u32> &rankListenPortMap);
+
+    std::unordered_map<u32, u32> GetDeviceServerListenPortMap() const;
 
     void BatchCreateSockets(const vector<LinkData> &links);
 
@@ -62,26 +66,28 @@ private:
     void BatchAddWhiteList(const vector<LinkData> &links);
     void BatchCreateConnectedSockets(const vector<LinkData> &links);
     const CommunicatorImpl *comm;
-    static std::unordered_map<PortData, unique_ptr<Socket>>& GetServerSocketMap();
+    static std::unordered_map<PortData, shared_ptr<Socket>>& GetServerSocketMap();
     u32               localRank;
     u32               devicePhyId;
-    u32               serverListenPort;
-    std::function<unique_ptr<Socket>(IpAddress &localIpAddress, IpAddress &remoteIpAddress, u32 listenPort,
+    u32               deviceLogicId_;
+    vector<SocketPortRange> listenPortRanges_{};
+    std::unordered_map<u32, u32> rankListenPortMap_{};
+    std::function<shared_ptr<Socket>(IpAddress &localIpAddress, IpAddress &remoteIpAddress, u32 listenPort,
                                      SocketHandle socketHandle, const std::string &tag, SocketRole socketRole,
                                      NicType nicType)>
         socketProducer
         = [](IpAddress &localIpAddress, IpAddress &remoteIpAddress, u32 listenPort, SocketHandle socketHandle,
-             const std::string &tag, SocketRole socketRole, NicType nicType) -> unique_ptr<Socket> {
-        auto tmpSocket = std::make_unique<Socket>(socketHandle, localIpAddress, listenPort, remoteIpAddress, tag,
+             const std::string &tag, SocketRole socketRole, NicType nicType) -> shared_ptr<Socket> {
+        auto tmpSocket = std::make_shared<Socket>(socketHandle, localIpAddress, listenPort, remoteIpAddress, tag,
                                                   socketRole, nicType);
         HCCL_INFO("create socket with role %u", static_cast<u32>(socketRole));
         return tmpSocket;
     };
 
-    std::unordered_map<SocketConfig, unique_ptr<Socket>> connectedSocketMap;
+    std::unordered_map<SocketConfig, shared_ptr<Socket>> connectedSocketMap;
     std::unordered_map<PortData, vector<RaSocketWhitelist>> socketWlistMap{};
 
-    Socket *GetServerListenSocket(PortData &localPort) const;
+    Socket *GetServerListenSocket(const PortData &localPort) const;
     std::set<LinkData>      availableLinks;
 };
 

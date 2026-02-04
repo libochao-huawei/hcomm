@@ -21,6 +21,7 @@ HcclResult ThreadMgr::CommEngineToNotifyLoadType(CommEngine engine, NotifyLoadTy
     switch (engine) {
         case COMM_ENGINE_CPU:
         case COMM_ENGINE_CPU_TS:
+        case COMM_ENGINE_CCU:
             type =  NotifyLoadType::HOST_NOTIFY;
             break;
         case COMM_ENGINE_AICPU:
@@ -39,15 +40,15 @@ HcclResult ThreadMgr::CommEngineToStreamType(CommEngine engine, StreamType &type
     switch (engine) {
         case COMM_ENGINE_CPU:
         case COMM_ENGINE_CPU_TS:
+        case COMM_ENGINE_CCU:
             type = StreamType::STREAM_TYPE_ONLINE; // 单算子使用online，图模式使用offine
             break;
         case COMM_ENGINE_AICPU:
         case COMM_ENGINE_AICPU_TS:
             type = StreamType::STREAM_TYPE_DEVICE;
             break;
-        // 暂不支持AIV、CCU
+        // 暂不支持AIV
         case COMM_ENGINE_AIV:
-        case COMM_ENGINE_CCU:
         default:
             HCCL_ERROR("[ThreadMgr] Unknown comm engine type: %d", engine);
             return HCCL_E_PARA;
@@ -292,6 +293,7 @@ HcclResult ThreadMgr::HcclThreadExportToCommEngine(uint32_t threadNum, const Thr
     switch (dstCommEngine) {
     case COMM_ENGINE_CPU_TS:
     case COMM_ENGINE_CPU:
+    case COMM_ENGINE_CCU:
         CHK_RET(ThreadExportToCommEngineCpu(threadNum, threads, exportedThreads));
         break;
     case COMM_ENGINE_AICPU:
@@ -299,7 +301,6 @@ HcclResult ThreadMgr::HcclThreadExportToCommEngine(uint32_t threadNum, const Thr
         CHK_RET(ThreadExportToCommEngineAicpu(threadNum, threads, dstCommEngine, exportedThreads));
         break;
     case COMM_ENGINE_AIV:
-    case COMM_ENGINE_CCU:
     default:
         HCCL_ERROR("[ThreadMgr] Unknown comm engine type: %d", dstCommEngine);
         return HCCL_E_PARA;

@@ -1,8 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
- * Description: 算法模板AivTempAlltoAllMesh1D类实现
- * Author: wuhongge
- * Create: 2025-09-19
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "hccl_aiv_utils.h"
@@ -30,25 +33,25 @@ u32 AivTempAlltoAllMesh1D::CalcScratchMultiple(BufferType inBuffType, BufferType
     return 1;
 }
 
-HcclResult AivTempAlltoAllMesh1D::CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit)
+HcclResult AivTempAlltoAllMesh1D::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {
     (void) dataSize;
-    HCCL_INFO("[AivTempAlltoAllMesh1D] Limit core num[%u]", blockDimLimit);
+    HCCL_INFO("[AivTempAlltoAllMesh1D] Limit core num[%u]", numBlocksLimit);
 
     // 小于1的场景
-    if (blockDimLimit < 1) {
-        blockDim = blockDimLimit;
+    if (numBlocksLimit < 1) {
+        numBlocks = numBlocksLimit;
         return HcclResult::HCCL_SUCCESS;
     }
 
-    if (blockDimLimit >= tempRankSize_) {
-        blockDim = blockDimLimit / tempRankSize_ * tempRankSize_;
+    if (numBlocksLimit >= tempRankSize_) {
+        numBlocks = numBlocksLimit / tempRankSize_ * tempRankSize_;
     } else {
-        u32 rankPerCore = (tempRankSize_ + blockDimLimit - 1) / blockDimLimit;  // 向上取整
-        blockDim = (tempRankSize_ + rankPerCore - 1) / rankPerCore;  // 向上取整
+        u32 rankPerCore = (tempRankSize_ + numBlocksLimit - 1) / numBlocksLimit;  // 向上取整
+        numBlocks = (tempRankSize_ + rankPerCore - 1) / rankPerCore;  // 向上取整
     }
 
-    HCCL_INFO("[AivTempAlltoAllMesh1D] Actually use core num[%u]", blockDim);
+    HCCL_INFO("[AivTempAlltoAllMesh1D] Actually use core num[%u]", numBlocks);
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -89,7 +92,7 @@ HcclResult AivTempAlltoAllMesh1D::GenExtIns(const TempFuncs &tempFuncs, const Te
     aivAlltoAllArgs.yRankSize = 0;
     aivAlltoAllArgs.zRankSize = 0;
     u64 dataSize = op_.dataCount * DataTypeSizeGet(dataType_);
-    CHK_RET(CalBlockDim(aivAlltoAllArgs.blockDim, dataSize, op_.blockDimLimit));
+    CHK_RET(CalNumBlocks(aivAlltoAllArgs.numBlocks, dataSize, op_.numBlocksLimit));
     for (u32 i = 0; i < tempVTopo_[0].size(); i ++){
         aivAlltoAllArgs.topo_[i] = tempVTopo_[0][i];
     }

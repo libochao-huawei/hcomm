@@ -384,10 +384,10 @@ HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, void* args, u32 arg
     constexpr u32 AIV_ATTRNUM_THREE = 3;
     HCCL_INFO("[AIV][ExecuteKernelLaunch] sendbuff [%llu] recvbuff [%llu] rank [%u] rankSize [%u] count [%llu] "
         "dataType [%d] reduceOp [%d] root [%u] tag [%u] isOpBase [%d] "
-        "extraArgsPtr [%p] argsSize [%u] blockDim [%u]", opArgs.input,
+        "extraArgsPtr [%p] argsSize [%u] numBlocks [%u]", opArgs.input,
         opArgs.output, opArgs.rank, opArgs.rankSize, opArgs.count,
         opArgs.dataType, opArgs.op, opArgs.root,
-        opArgs.aivTag, opArgs.isOpBase, args, argsSize, opArgs.blockDim);
+        opArgs.aivTag, opArgs.isOpBase, args, argsSize, opArgs.numBlocks);
  
     aclrtLaunchKernelCfg cfg;
     aclrtLaunchKernelAttr attr[AIV_ATTRNUM_THREE];
@@ -413,7 +413,7 @@ HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, void* args, u32 arg
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[ExecuteKernelLaunchInner] errNo[0x%016llx] GetKernelFunc failed, "
         "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
 
-    aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, opArgs.blockDim, opArgs.stream,
+    aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, opArgs.numBlocks, opArgs.stream,
         &cfg, args, argsSize, nullptr, 0);
     CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[ExecuteKernelLaunchInner]errNo[0x%016llx] aclrtLaunchKernelWithHostArgs error[%d].",
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);

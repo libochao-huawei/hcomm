@@ -116,6 +116,7 @@ void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
     profilingReporterLite->UpdateProfStat();
     UpdateCommParam(kernelParam);
     UpdateLocBuffer(kernelParam);
+    UpdateUserStreamId(kernelParam);
     if (kernelParam->op.algOperator.opMode == OpMode::OPBASE) {
         UpdateOpRes(kernelParam);
     } else  {
@@ -480,6 +481,22 @@ std::shared_ptr<InsQueue> CommunicatorImplLite::GetOneSidedInsQueue(HcclKernelPa
         THROW<InternalException>(StringFormat("CommunicatorImplLite::GetOneSidedInsQueue ret[HCCL_E_PARA]"));
     }
     return queue;
+}
+
+HcclResult CommunicatorImplLite::SendErrorMessageReportToHost(ErrorMessageReport & errMsgInfo)
+{
+    if (kfcStatusTransferD2H == nullptr) {
+        return HCCL_E_PTR;
+    }
+    CHK_RET(kfcStatusTransferD2H->Put(sizeof(KfcStatus) + sizeof(KfcErrType), sizeof(errMsgInfo),
+        reinterpret_cast<uint8_t *>(&errMsgInfo)));
+
+    return HCCL_SUCCESS;
+}
+
+void CommunicatorImplLite::UpdateUserStreamId(HcclKernelParamLite *kernelParam)
+{
+    userStreamId_ = kernelParam->op.userStreamId;
 }
 
 } // namespace Hccl
