@@ -182,7 +182,7 @@ HcclResult HcclRankGraphGetRankSizeByLayer(HcclComm comm, uint32_t netLayer, uin
         HCCL_ERROR("[%s] Failed, ret[%d]", __func__, ret);
         return ret;
     }
-    HCCL_RUN_INFO("[%s] success, group[%s], rankNum[%u]", __func__, *rankNum);
+    HCCL_RUN_INFO("[%s] success, group[%s], rankNum[%u]", __func__, hcclComm->GetIdentifier().c_str(), *rankNum);
     return HCCL_SUCCESS;
 }
 
@@ -211,7 +211,7 @@ HcclResult HcclRankGraphGetRanksByLayer(HcclComm comm, uint32_t netLayer, uint32
         HCCL_ERROR("[%s] Failed, ret[%d]", __func__, ret);
         return ret;
     }
-    HCCL_RUN_INFO("[%s] success, group[%s], rankNum[%u]", __func__, *rankNum);
+    HCCL_RUN_INFO("[%s] success, group[%s], rankNum[%u]", __func__, hcclComm->GetIdentifier().c_str(), *rankNum);
     return HCCL_SUCCESS;
 }
 
@@ -240,7 +240,7 @@ HcclResult HcclRankGraphGetInstSizeListByLayer(HcclComm comm, uint32_t netLayer,
         HCCL_ERROR("[%s] Failed, ret[%d]", __func__, ret);
         return ret;
     }
-    HCCL_RUN_INFO("[%s] success, group[%s], listSize[%u]", __func__, *listSize);
+    HCCL_RUN_INFO("[%s] success, group[%s], listSize[%u]", __func__, hcclComm->GetIdentifier().c_str(), *listSize);
     return HCCL_SUCCESS;
 }
 
