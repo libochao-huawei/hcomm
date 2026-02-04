@@ -180,7 +180,6 @@ private:
     DeviceMem commResParaDevice_;
     DeviceMem execStreamContext_;
     aclrtBinHandle binHandle_ = nullptr;
-
     CommConfig commConfig_;
 };
 }
