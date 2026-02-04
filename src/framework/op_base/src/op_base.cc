@@ -353,7 +353,7 @@ HcclResult CheckOpBasedHcom(HcclOpInfoCtx &opBaseHcom, const uint32_t rank, cons
 HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclCommConfig *config, HcclComm *comm)
 {
     CHK_PTR_NULL(*commV2);
-    HCCL_INFO("HcclCommInitCollComm start.");
+    HCCL_INFO("[HcclCommInitCollComm] HcclCommInitCollComm init start.");
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HcclUs startut = TIME_NOW();
 
@@ -371,8 +371,9 @@ HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclCommConfig *co
     HcclMem cclBuffer;
     cclBuffer.size = static_cast<uint64_t>(cclBufferSize);
     cclBuffer.type = cclBufferMemType;
-    cclBuffer.addr = reinterpret_cast<void*>(cclBufferAddr);;
-    HcclCommPtr hcclCommPtr = make_shared<hccl::hcclComm>(cclBufferSize, cclBufferSize, commName);
+    cclBuffer.addr = reinterpret_cast<void*>(cclBufferAddr);
+    HcclCommPtr hcclCommPtr = nullptr;
+    EXECEPTION_CATCH(hcclCommPtr = make_shared<hccl::hcclComm>(cclBufferSize, cclBufferSize, commName), return HCCL_E_PTR);
     CommConfig commConfig(commName);
     HcclOpInfoCtx &opBaseHcom = GetHcclOpInfoCtx();
     CHK_RET(CheckOpBasedHcom(opBaseHcom, rank, commConfig));
@@ -382,7 +383,6 @@ HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclCommConfig *co
 
     //Collcomm初始化
     CHK_RET(hcclCommPtr->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName, config));
-    // hcclComm中的IndependentOp，channelManager,ContextManager初始化
     *comm = static_cast<HcclComm>(hcclCommPtr.get());
 
     std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
@@ -618,7 +618,13 @@ HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclC
                 return HCCL_SUCCESS;
             }
             constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, config, comm));
+            HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
+                CHK_RET(HcclCommDestroyV2(commV2));
+                commV2 = nullptr;
+                return ret;
+            }
             return HCCL_SUCCESS;
         }());
 #endif
@@ -845,7 +851,13 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
                 *comm = commV2;
                 return HCCL_SUCCESS;
             }
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, config, comm));
+            HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
+                CHK_RET(HcclCommDestroyV2(commV2));
+                commV2 = nullptr;
+                return ret;    
+            }
             return HCCL_SUCCESS;
         }());
 #endif
@@ -1577,14 +1589,6 @@ HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootIn
     CHK_SMART_PTR_NULL(comm);
     CHK_SMART_PTR_NULL(rootInfo);
 
-    HcclResult ret = InitExternalInput();
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] init "\
-        "external input error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
-    ret = InitEnvConfig();
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] init environment config error.",
-        HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
-
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
@@ -1597,10 +1601,24 @@ HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootIn
                 return HCCL_SUCCESS;
             }
             constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, config, comm));
+            HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
+                CHK_RET(HcclCommDestroyV2(commV2));
+                commV2 = nullptr;
+                return ret; 
+            }
             return HCCL_SUCCESS;
         }());
 #endif
+
+    HcclResult ret = InitExternalInput();
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] init "\
+        "external input error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
+    ret = InitEnvConfig();
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] init environment config error.",
+        HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
 
     HcclRootHandle rootHandle;
     s32 sRet = memcpy_s(&rootHandle, sizeof(HcclRootHandle), rootInfo->internal, sizeof(HcclRootHandle));
@@ -1700,13 +1718,6 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
     CHK_PTR_NULL(comm);
     CHK_SMART_PTR_NULL(rootInfo);
 
-    HcclResult ret = InitExternalInput();
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoConfigInner]errNo[0x%016llx] init "\
-        "external input error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
-    ret = InitEnvConfig();
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoConfigInner]errNo[0x%016llx] init "\
-        "environment config error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
-
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
@@ -1718,10 +1729,23 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
                 *comm = commV2;
                 return HCCL_SUCCESS;
             }
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, const_cast<HcclCommConfig *>(config), comm));
+            HcclResult ret = HcclCommInitCollComm(rank, &commV2, const_cast<HcclCommConfig *>(config), comm);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
+                CHK_RET(HcclCommDestroyV2(commV2));
+                commV2 = nullptr;
+                return ret; 
+            }
             return HCCL_SUCCESS;
         }());
 #endif
+
+    HcclResult ret = InitExternalInput();
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoConfigInner]errNo[0x%016llx] init "\
+        "external input error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
+    ret = InitEnvConfig();
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoConfigInner]errNo[0x%016llx] init "\
+        "environment config error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
 
     HcclRootHandle rootHandle;
     s32 sRet = memcpy_s(&rootHandle, sizeof(HcclRootHandle), rootInfo->internal, sizeof(HcclRootHandle));
