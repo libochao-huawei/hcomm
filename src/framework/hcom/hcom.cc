@@ -266,7 +266,7 @@ HcclResult HcomGenerteRanktable(std::string &rankTableM, std::string &rankId)
     u32 rankIdNum = 0;
     CHK_PRT_RET(topoDetectAgent->GetRankId(rankIdNum) != HCCL_SUCCESS,
         HCCL_ERROR("[Init][CommMasterInfo]topoDetectAgent error"), HCCL_E_INTERNAL);
-    
+        
     CHK_RET(topoDetectAgent->TransformRankTableStr(rankTable, rankTableM));
     rankId = to_string(rankIdNum);
     CHK_PRT_RET(topoDetectAgent->WaitComplete(rootHandle) != HCCL_SUCCESS,
