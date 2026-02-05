@@ -5852,6 +5852,7 @@ namespace hccl
         opResPara_.tinyMem = reinterpret_cast<u64>(tinySendRecvMem.ptr());
         opResPara_.tinyMemSize = reinterpret_cast<u64>(tinySendRecvMem.size());
         opResPara_.opEntry = GetExternalInputHcclEnableEntryLog();
+        opResPara_.hcclSdmaQos = GetHcclQos();
 
         CHK_RET(BuildOpLocalResParam(algResource, newTag));
         CHK_RET(BuildOpRemoteResParam(algResource, newTag, opType));
@@ -8842,4 +8843,16 @@ namespace hccl
     {
         return cclBufferManager_;
     }
+
+    void HcclCommunicator::SetHcclQos(u32 hcclQos)
+ 	{
+        HCCL_INFO("[HcclCommunicator][host][SetHcclQos] hcclQos[%u]", hcclQos);
+ 	    hcclQos_ = hcclQos;
+ 	}
+
+    u32 HcclCommunicator::GetHcclQos()
+ 	{
+        HCCL_INFO("[HcclCommunicator][host][GetHcclQos] hcclQos[%u]", hcclQos_);
+ 	    return hcclQos_;
+ 	}
 }

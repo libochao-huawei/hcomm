@@ -1500,4 +1500,27 @@ bool hcclComm::IsCommunicatorV2()
     }
     return false;
 }
+
+HcclResult hcclComm::SetHcclQos(u32 hcclQos)
+{
+    // 校验config中QoS的合法性
+    if (hcclQos == HCCL_COMM_QOS_CONFIG_NOT_SET) {
+        HCCL_INFO("[SetHcclQos]The QoS do not use the config configuration. "
+                  "It will use environment variables to configure. QoS[%u]", EnvConfig::HCCL_QOS_DEFAULT);
+        communicator_->SetHcclQos(EnvConfig::HCCL_QOS_DEFAULT);
+        return HCCL_SUCCESS;
+    }
+
+    // 若设置的hcclQos不在有效范围内，则报错
+    if (hcclQos < EnvConfig::HCCL_QOS_MIN || hcclQos > EnvConfig::HCCL_QOS_MAX) {
+        HCCL_ERROR("[SetHcclQos]hcclQos is invalid. except[%u, %u], actual[%u]",
+                   EnvConfig::HCCL_QOS_MIN, EnvConfig::HCCL_QOS_MAX, hcclQos);
+        return HCCL_E_PARA;
+    }
+
+    HCCL_INFO("[SetHcclQos] hcclQos[%u]", hcclQos);
+    communicator_->SetHcclQos(hcclQos);
+
+    return HCCL_SUCCESS;
+}
 }  // namespace hccl

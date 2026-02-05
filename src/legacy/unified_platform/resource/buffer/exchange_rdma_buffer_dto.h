@@ -38,7 +38,7 @@ public:
 
     std::string Describe() const override
     {
-        return StringFormat("ExchangeRdmaBufferDto[addr=0x%llx, size=0x%llx, rkey=%lu, memTag=%s]", addr, size, rkey,
+        return StringFormat("ExchangeRdmaBufferDto[addr=0x%llx, size=0x%llx, memTag=%s]", addr, size,
                             memTag.c_str());
     }
 

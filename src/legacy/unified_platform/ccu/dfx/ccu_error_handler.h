@@ -94,6 +94,16 @@ struct CcuMissionContext {
     {
         return (part5.currentIns << 11) | (part4.currentIns);   // part5.currentIns为[15:11]位
     }
+
+    uint16_t GetStartIns() const
+    {
+        return (part7.startIns << 11) | (part6.startIns);    // part7.startIns[15:11]位
+    }
+
+    uint16_t GetEndIns() const
+    {
+        return (part6.endIns << 11) | (part5.endIns);     // part6.endIns[15:11]位
+    }
 };
 
 struct CcuLoopContext {
@@ -292,8 +302,10 @@ public:
     CcuErrorHandler(const CcuErrorHandler&) = delete;
     void operator=(const CcuErrorHandler&) = delete;
 
-    static void GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, uint16_t currIns, const ParaCcu &ccuTaskParam, std::vector<CcuErrorInfo> &errorInfo);
+
+     static void GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const ParaCcu &ccuTaskParam, std::vector<CcuErrorInfo> &errorInfo);
     static void GetCcuJettys(int32_t deviceId, const ParaCcu &ccuTaskParam, std::vector<CcuJetty *> ccuJettys);
+
 
 private:
     static void GenStatusInfo(const ErrorInfoBase &baseInfo, std::vector<CcuErrorInfo> &errorInfo);

@@ -550,7 +550,7 @@ STATIC void rs_ub_ctx_free_jetty_cb(struct rs_ctx_jetty_cb *jetty_cb)
     struct rs_ctx_jetty_cb *tmp_jetty_cb = jetty_cb;
 
 #ifdef CUSTOM_INTERFACE
-    (void)DlHalBuffFree((void *)(uintptr_t)jetty_cb->ci_addr);
+    (void)DlHalBuffFree((void *)(uintptr_t)jetty_cb->qp_share_info_addr);
 #endif
 
     pthread_mutex_destroy(&tmp_jetty_cb->cr_err_info.mutex);
@@ -1541,11 +1541,11 @@ STATIC int rs_ub_jetty_cb_buff_alloc(struct rs_ub_dev_cb *dev_cb, struct rs_ctx_
     }
 
     flag = ((unsigned long)logic_devid << BUFF_FLAGS_DEVID_OFFSET) | BUFF_SP_SVM;
-    ret = DlHalBuffAllocAlignEx(CI_ADDR_TWO_BYTES, CI_ADDR_BUFFER_ALIGN_4K_PAGE_SIZE, flag, (int)dev_cb->rscb->grpId,
-        (void **)&jetty_cb->ci_addr);
+    ret = DlHalBuffAllocAlignEx(sizeof(struct ctx_qp_share_info), CI_ADDR_BUFFER_ALIGN_4K_PAGE_SIZE, flag,
+        (int)dev_cb->rscb->grpId, (void **)&jetty_cb->qp_share_info_addr);
     if (ret != 0) {
         hccp_err("dl_hal_buff_alloc_align_ex failed, length:0x%llx, dev_id:0x%x, flag:0x%lx, grp_id:%u, ret:%d",
-            CI_ADDR_TWO_BYTES, logic_devid, flag, dev_cb->rscb->grpId, ret);
+            sizeof(struct ctx_qp_share_info), logic_devid, flag, dev_cb->rscb->grpId, ret);
     }
 
     return ret;
@@ -1763,7 +1763,8 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
     jetty_info->ub.wqebb_size = WQE_BB_SIZE;
     jetty_info->ub.db_token_id = jetty_cb->db_token_id;
     jetty_info->va = (uint64_t)(uintptr_t)jetty_cb->jetty;
-    jetty_info->ub.ci_addr = jetty_cb->ci_addr;
+    jetty_info->ub.share_info_addr = (uint64_t)(uintptr_t)jetty_cb->qp_share_info_addr;
+    jetty_info->ub.share_info_len = sizeof(struct ctx_qp_share_info);
 
     return 0;
 }
@@ -2633,7 +2634,7 @@ STATIC int rs_handle_epoll_poll_jfc(struct rs_ub_dev_cb *dev_cb, urma_jfce_t *jf
             RS_PTHREAD_MUTEX_ULOCK(&dev_cb->mutex);
             break;
         }
-        (*(uint16_t *)(uintptr_t)jetty_cb->ci_addr)++;
+        jetty_cb->qp_share_info_addr->ci_val += 1;
         rs_jfc_callback_process(jetty_cb, &(g_cr_buf[i]), ev_jfc);
         RS_PTHREAD_MUTEX_ULOCK(&dev_cb->mutex);
     }
