@@ -1818,6 +1818,8 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
         jetty_cb->jetty->jetty_cfg.shared.jfr->handle);
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfr->async_events_acked: %ld",
         jetty_cb->jetty->jetty_cfg.shared.jfr->async_events_acked);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfr->jfr_cfg.depth: %ld",
+        jetty_cb->jetty->jetty_cfg.shared.jfr->jfr_cfg.depth);
 
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfc->jfc_id.eid: %ld",
         jetty_cb->jetty->jetty_cfg.shared.jfc->jfc_id.eid);
@@ -1917,6 +1919,10 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
         udma_jetty->base.jetty_cfg.shared.jfc->jfc_id.uasid);
     hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.shared.jfc->jfc_id.id: %ld",
         udma_jetty->base.jetty_cfg.shared.jfc->jfc_id.id);
+
+    hccp_warn("@@@@@@ udma_jetty->jetty_type: %ld", udma_jetty->jetty_type);
+    hccp_warn("@@@@@@ udma_jetty->pi_type: %ld", udma_jetty->pi_type);
+    hccp_warn("@@@@@@ udma_jetty->sq.max_sge_num: %ld", udma_jetty->sq.max_sge_num);
 
     jetty_info->udma_jetty_sq.qbuf = udma_jetty->sq.qbuf;
     jetty_info->udma_jetty_sq.qbuf_end = udma_jetty->sq.qbuf_end;

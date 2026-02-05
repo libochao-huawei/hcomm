@@ -1504,7 +1504,7 @@ struct udma_u_jetty_queue {
 	struct udma_u_target_jetty *tjetty;
 	urma_transport_mode_t trans_mode;
 	uint32_t sqe_bb_cnt;
-	uint32_t max_sge_num;
+	uint32_t max_sge_num; // 
 	bool flush_flag;
 	uint32_t old_entry_idx;
 	bool lock_free;
@@ -1546,8 +1546,8 @@ struct udma_u_jetty {
 	struct udma_u_jetty_queue sq;
 	struct udma_u_jfr *jfr;
 	struct udma_u_jetty_grp *jetty_grp;
-	uint32_t jetty_type;
-	bool pi_type;
+	uint32_t jetty_type; // 
+	bool pi_type; // 
 };
 
 #ifdef __cplusplus
