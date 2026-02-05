@@ -10,6 +10,7 @@
 
 #ifndef HCCL_CCU_MICROCODE_H
 #define HCCL_CCU_MICROCODE_H
+#include <cstdint>
 
 namespace Hccl {
 namespace CcuRep {
