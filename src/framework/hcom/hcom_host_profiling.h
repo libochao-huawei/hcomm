@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCOMM_HOST_PROFILING_H
-#define HCOMM_HOST_PROFILING_H
+#ifndef HCOM_HOST_PROFILING_H
+#define HCOM_HOST_PROFILING_H
 
 #include <stdint.h>
 #include <securec.h>
@@ -27,10 +27,12 @@ typedef struct HcomProInfo {
     uint64_t dataCount;
     uint32_t rankSize;
     uint32_t userRank;
-    uint32_t blockDim;
+    uint32_t blockDim = 0;
     uint64_t beginTime;
     uint32_t root;
     uint32_t slaveThreadNum;
+    uint64_t commNameLen;
+    uint64_t algTypeLen;
     char tag[MAX_LENGTH];
     char commName[MAX_LENGTH];
     char algType[MAX_LENGTH];
