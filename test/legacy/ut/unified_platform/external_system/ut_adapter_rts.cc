@@ -420,7 +420,7 @@ TEST_F(AdapterRtsTest, HrtIpcSetMemoryName_return_nok)
 TEST_F(AdapterRtsTest, HrtIpcDestroyMemoryName_return_nok)
 {
     // Given
-    MOCKER(rtIpcDestroyMemoryName).stubs().will(returnValue(1));
+    MOCKER(aclrtIpcMemClose).stubs().will(returnValue(1));
 
     // then
     EXPECT_THROW(HrtIpcDestroyMemoryName(nullptr), RuntimeApiException);
@@ -450,7 +450,7 @@ TEST_F(AdapterRtsTest, HrtIpcOpenMemory_return_nok)
 TEST_F(AdapterRtsTest, HrtIpcCloseMemory_return_nok)
 {
     // Given
-    MOCKER(rtIpcCloseMemory).stubs().will(returnValue(1));
+    MOCKER(aclrtIpcMemClose).stubs().will(returnValue(1));
 
     // then
     EXPECT_THROW(HrtIpcCloseMemory(nullptr), RuntimeApiException);
