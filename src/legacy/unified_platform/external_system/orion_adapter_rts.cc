@@ -1029,7 +1029,7 @@ const std::map<HrtCntNotifyWaitMode, rtCntNotifyWaitMode> HRT_CNT_NOTIFY_WAIT_MO
 void HrtCntNotifyWaitWithTimeOut(const rtCntNotify_t inCntNotify, const aclrtStream streamPtr, 
                                 HrtCntNotifyWaitMode mode, u32 value, u32 timeout, bool isClear)
 {
-    HCCL_INFO("[HrtCntNotifyRecord] inCntNotify[%p], streamPtr[%p], mode[%d], value[%u], timeout[%u], isClear[%s].", 
+    HCCL_INFO("[HrtCntNotifyRecord] inCntNotify[%p], streamPtr[%p], mode[%d], value[%u], timeout[%u], isClear[%d].", 
                 inCntNotify, streamPtr, mode, value, timeout, isClear);
     CHECK_NULLPTR(inCntNotify, "[HrtCntNotifyRecord] inCntNotify is nullptr!");
     CHECK_NULLPTR(streamPtr, "[HrtCntNotifyRecord] streamPtr is nullptr!");
