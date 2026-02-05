@@ -12,6 +12,7 @@
 #include "ins_coll_alg_registry.h"
 #include "topo_match_concurr_mesh.h"
 #include "ins_temp_reduce_mesh_1D.h"
+#include "ins_temp_reduce_mesh_1D_two_shot.h"
 #include "ins_temp_reduce_mesh_2D.h"
 #include "ins_temp_reduce_aicpu_reduce.h"
 #include "ins_temp_reduce_aicpu_reduce_mesh_2D.h"
@@ -252,6 +253,8 @@ HcclResult InsV2ReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcResOffload
 
 INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCE, InsReduceMesh1D, InsV2ReduceSoleExecutor,
     TopoMatchMesh, InsTempReduceMesh1D);
+INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCE, InsReduceMesh1DTwoShot, InsV2ReduceSoleExecutor,
+    TopoMatchMesh, InsTempReduceMesh1DTwoShot);
 INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCE, InsReduceMesh2D, InsV2ReduceSoleExecutor,
     TopoMatchConcurrMesh, InsTempReduceMesh2D);
 INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCE, InsReduceAicpuReduce, InsV2ReduceSoleExecutor,
