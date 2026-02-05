@@ -189,7 +189,7 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
     if (!aicpuComm->IsErrorReported()) {
         // 1) errorMessage上报
         ErrorMessageReport errMsgInfo{};
-        auto ret = GenerateErrorMessageReport(aicpuComm, curTask, errMsgInfo);
+        HcclResult ret = GenerateErrorMessageReport(aicpuComm, curTask, errMsgInfo);
         if (ret != HCCL_SUCCESS) {
             THROW<InvalidParamsException>("GenerateErrorMessageReport failed.");
         }
