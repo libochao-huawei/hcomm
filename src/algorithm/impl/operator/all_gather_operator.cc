@@ -66,7 +66,7 @@ HcclResult AllGatherOperator::SelectAlg(const std::string& tag, const OpParam& p
         AlgTypeLevel1 algType1 = algType_.algoLevel1;
         auto level1Iter = HCCL_ALGO_LEVEL1_NAME_MAP.find(algType1);
         CHK_PRT_RET(level1Iter == HCCL_ALGO_LEVEL1_NAME_MAP.end(), 
-                    HCCL_ERROR("[[AllGatherSelector]level1: algType1[%u] is invalid.", algType1), HCCL_E_INTERNAL);
+                    HCCL_ERROR("[AllGatherSelector]level1: algType1[%u] is invalid.", algType1), HCCL_E_INTERNAL);
         newTag = tag + level1Iter->second + algName;
     }
     if (algName == "AllGatherARSFor91093Executor") {
@@ -167,8 +167,8 @@ HcclResult AllGatherOperator::SelectAlgfor910B(const OpParam& param, std::string
     if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) {
         u32 contextNum = CalcContextNumForPipeline(HcclCMDType::HCCL_CMD_ALLGATHER);
         if (contextNum > HCCL_FFTS_CAPACITY) {
-            algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;;
-            HCCL_WARNING("[AllGatherOperator][SelectAlgfor910B] context num[%u] is out of capacityof FFTS+ graph[%u],"
+            algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;
+            HCCL_WARNING("[AllGatherOperator][SelectAlgfor910B] context num[%u] is out of capacity of FFTS+ graph[%u], "
                 "reset algorithm to HD.", contextNum, HCCL_FFTS_CAPACITY);
         }
     }
@@ -228,14 +228,14 @@ HcclResult AllGatherOperator::SelectAlgfor910B(const OpParam& param, std::string
     // 如果配置了aiv only,但是实际没有选择aiv算法,需要通过DFX打印出具体原因
     if (isOnlyAiv && !isAivRdmaMode) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");
-        CHK_PRT_RET(!IsSupportAIVCopy(param.DataDes.dataType), HCCL_ERROR("current data type[%s] not supported, support range:"
+        CHK_PRT_RET(!IsSupportAIVCopy(param.DataDes.dataType), HCCL_ERROR("current data type[%s] not supported, support range: "\
             "[int8, int16, int32, uint8, uint16, uint32, float16, float32, bfloat16]",
             GetDataTypeEnumStr(param.DataDes.dataType).c_str()), HCCL_E_NOT_SUPPORT);
         CHK_PRT_RET(!isMeshTopo, HCCL_ERROR("current topo type[%d] not supported", topoType_), HCCL_E_NOT_SUPPORT);
         CHK_PRT_RET(!isCCLBufferGE16M, HCCL_ERROR("current isOpbase[%d] or commInputSize[%llu] or commOutputSize[%llu] not supported",
             isOpbase, commInputSize, commOutputSize), HCCL_E_NOT_SUPPORT);
         CHK_PRT_RET(!isSingleMeshAggregation_ && multiModuleDiffDeviceNumMode_,
-            HCCL_ERROR("The number of cards between servers in a multi-server setup must be consistent."
+            HCCL_ERROR("The number of cards between servers in a multi-server setup must be consistent. "\
             "isSingleMeshAggregation_[%d] multiModuleDiffDeviceNumMode_[%d]",
             isSingleMeshAggregation_, multiModuleDiffDeviceNumMode_), HCCL_E_NOT_SUPPORT);
         return HCCL_E_NOT_SUPPORT;
@@ -388,7 +388,7 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
     // 如果配置了aiv only,但是实际没有选择aiv算法,需要通过DFX打印出具体原因
     if (isOnlyAiv && !isAivMode) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");
-        CHK_PRT_RET(!IsSupportAIVCopy(param.DataDes.dataType), HCCL_ERROR("current data type[%s] not supported, support range:"
+        CHK_PRT_RET(!IsSupportAIVCopy(param.DataDes.dataType), HCCL_ERROR("current data type[%s] not supported, support range: "\
             "[int8, int16, int32, uint8, uint16, uint32, float16, float32, bfloat16]",
             GetDataTypeEnumStr(param.DataDes.dataType).c_str()), HCCL_E_NOT_SUPPORT);
         CHK_PRT_RET(!isAivSingleNode && !isAivCrossNode,
