@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCOMM_CCU_REPRESENTATION_POSTSHAREDVAR_H
-#define HCOMM_CCU_REPRESENTATION_POSTSHAREDVAR_H
+#ifndef HCOMM_CCU_REPRESENTATION_LOC_WAIT_NOTIFY_H
+#define HCOMM_CCU_REPRESENTATION_LOC_WAIT_NOTIFY_H
 
 #include "ccu_datatype_v1.h"
 #include "ccu_rep_base_v1.h"
@@ -17,19 +17,18 @@
 namespace hcomm {
 namespace CcuRep {
 
-class CcuRepPostSharedVar : public CcuRepBase {
+class CcuRepLocWaitNotify : public CcuRepBase {
 public:
-    CcuRepPostSharedVar(const Variable &srcVar, const Variable &dstVar, const LocalNotify &notify, uint16_t mask);
+    CcuRepLocWaitNotify(const LocalNotify &notify, const uint32_t mask, bool isProfiling=true);
     bool Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
 
 private:
-    Variable   srcVar;
-    Variable   dstVar;
     LocalNotify notify_{};
-    uint16_t   mask;
+    uint32_t mask{0};
+    bool isProfiling{true};
 };
 
-};     // namespace CcuRep
-};     // namespace hcomm
-#endif // HCOMM_CCU_REPRESENTATION_POSTSHAREDVAR_H
+}; // namespace CcuRep
+}; // namespace hcomm
+#endif // HCOMM_CCU_REPRESENTATION_LOC_WAIT_NOTIFY_H

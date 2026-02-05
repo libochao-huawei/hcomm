@@ -226,7 +226,7 @@ HcclResult HcclCcuKernelRegister(HcclComm comm,
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
     CcuKernelHandle newHandle{0};
-    // 当前翻译内部流程可能抛异常
+    // 当前注册内部流程可能抛异常
     EXCEPTION_HANDLE_BEGIN
     CHK_RET(kernelMgr.Register(std::move(kernel), *resPack, newHandle));
     EXCEPTION_HANDLE_END
@@ -250,6 +250,16 @@ HcclResult HcclCcuKernelRegisterFinish(HcclComm comm)
 
     auto *ccuContainer = myRank->GetCcuResContainer();
     CHK_PTR_NULL(ccuContainer);
+
+    const auto &newKernels = ccuContainer->GetUntranslatedKernels();
+
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
+    // 当前翻译内部流程可能抛异常
+    EXCEPTION_HANDLE_BEGIN
+    CHK_RET(kernelMgr.Translate(newKernels));
+    EXCEPTION_HANDLE_END
+
     CHK_RET(ccuContainer->ResetResPack());
     return HcclResult::HCCL_SUCCESS;
 }

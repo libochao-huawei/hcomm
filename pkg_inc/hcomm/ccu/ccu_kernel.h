@@ -13,7 +13,7 @@
 #include "ccu_task_arg_v1.h"
 #include "ccu_task_param_v1.h"
 
-#include "ccu_context_resource_v1.h"
+#include "ccu_kernel_resource.h"
 #include "ccu_instr_info_v1.h"
 #include "ccu_rep_context_v1.h"
 
@@ -43,12 +43,14 @@ class CcuKernel : public CcuRep::CcuRepContext {
 public:
     explicit CcuKernel(const CcuKernelArg &arg);
     CcuKernel() = default;
-    ~CcuKernel() override;
+    ~CcuKernel() override = default;
     HcclResult Init();
 
     CcuResReq          GetResourceRequest();
     CcuResRepository  &GetResRepository();
     CcuRepResource    &GetResource();
+    CcuSharedResource &GetExportedRes();
+    CcuSharedResource &GetImportedRes();
 
     void        SetResRepository(const CcuResRepository &resRepo);
     void        SetInstrId(uint32_t instrId);
@@ -82,10 +84,16 @@ protected:
     HcclResult CreateBlockExecutor(const uint32_t count, CcuRep::Executor *ccuExes);
     HcclResult CreateBlockCompletedEvent(const uint32_t count, CcuRep::CompletedEvent *ccuEvents);
 
+    HcclResult CreateSharedVariable(const uint32_t coreId, const uint32_t varId, )
+
     HcclResult RecordEvent(CcuRep::CompletedEvent event);
     HcclResult WaitEvent(CcuRep::CompletedEvent event);
 
-    HcclResult LocalNotifyRecord(uint32_t coreId, uint32_t dstNotifyIdx, uint32_t mask);
+    HcclResult LocalNotifyRecord(const uint32_t coreId, const uint32_t dstNotifyIdx, const uint32_t mask);
+    HcclResult LocalNotifyRecord(const uint32_t coreId, const uint32_t dstNotifyIdx, const uint32_t mask,
+        const uint32_t dstVarIdx,, const CcuResp::Variable *srcVar);
+    
+    HcclResult LocalNotifyWait(const uint32_t coreId, const uint32_t notifyIdx, const uint32_t mask);
 
     HcclResult NotifyRecord(const ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask=1);
 
@@ -156,6 +164,9 @@ private:
     CcuRep::CcuInstrInfo instrInfo_{};
 
     uint32_t loadArgIndex_{0};
+
+    CcuSharedResource exportedRes_{};
+    CcuSharedResource importedRes_{};
 };
 
 // kernel构造函数的lambda函数

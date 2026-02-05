@@ -7,7 +7,7 @@
 
 #include "ccu_kernel.h"
 #include "ccu_rep_v1.h"
-#include "ccu_context_resource_v1.h"
+#include "ccu_kernel_resource.h"
 #include "ccu_assist_v1.h"
 #include "ccu_microcode_v1.h"
 
@@ -55,10 +55,6 @@ CcuKernel::CcuKernel(const CcuKernelArg &arg)
 {
     HCCL_INFO("Construct CcuKernel: %s", arg.GetKernelSignature().GetData().c_str());
     channels_ = arg.channels;
-}
-
-CcuKernel::~CcuKernel()
-{
 }
 
 static HcclResult GetDieIdByChannel(const ChannelHandle channel, uint32_t &dieId)
@@ -231,30 +227,94 @@ void CcuKernel::LoadVariable(const CcuRep::Variable &src, const CcuRep::Variable
     Append(std::make_shared<CcuRep::CcuRepLoadVar>(src, var));
 }
 
-HcclResult CcuKernel::LocalNotifyRecord(uint32_t coreId, uint32_t dstNotifyIdx, uint32_t mask)
+HcclResult CcuKernel::CreateSharedVariable(const uint32 coreId,
+    const uint32_t varId, CcuRep::Variable *var)
 {
-    HCCL_ERROR("[%s] not support.", __func__);
+    const std::string varTag = "Variable_" + std::to_string(coreId) + "_"
+        + std::to_string(varId);
+    if (exportedRes_.sharedVars.find(varTag) != exportedRes_.sharedVars.end()) {
+        HCCL_ERROR("[CcuKernel][%s] failed, var is already existed, "
+            "coreId[%u] varId[%u]", __func__, coreId, varId);
+        return HcclResult::HCCL_E_PARA;
+    }
+
+    CcuRep::Variable variable;
+    exportedRes_.sharedVars.insert({varTag, variable});
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuKernel::LocalNotifyRecord(const uint32_t coreId,
+    const uint32_t dstNotifyIdx, const uint32_t mask)
+{
+    if (CurrentBlock()->Type() == CcuRep::CcuRepType::LOOP_BLOCK) {
+        HCCL_ERROR("[CcuKernel][%s] is not supported in loop block, please check.", __func__);
+        return HcclResult::HCCL_E_NOT_SUPPORT;
+    }
+
+    const std::string notifyTag = "Notify_" + std::string(coreId) + "_" +
+        std::to_string(dstNotifyIdx);
+
+    auto &sharedNotifies = importedRes_.sharedNotifies;
+    if (sharedNotifies.find(notifyTag) == sharedNotifies.end()) {
+        CcuRep::LocalNotify localNotify;
+        sharedNotifies.insert({notifyTag, localNotify});
+    }
+
+    Append(std::make_shared<CcuRep::CcuRepRecordSharedNotify>(sharedNotifies.at(notifyTag), mask));
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuKernel::LocalNotifyRecord(const uint32_t coreId,
+    const uint32_t dstNotifyIdx, const uint32_t mask,
+    const uint32_t dstVarIdx, const CcuRep::Variable *srcVar)
+{
+    // todo:
+
     return HcclResult::HCCL_E_NOT_SUPPORT;
 }
-//新增
+
+HcclResult CcuKernel::LocalNotifyWait(const uint32_t coreId,
+    const uint32_t notifyIdx, const uint32_t mask)
+{
+    const std::string notifyTag = "Notify_" + std::to_string(coreId) + "_"
+        + std::to_string(notifyIdx);
+
+    auto &sharedNotifies = exportedRes_.sharedNotifies;
+    if (sharedNotifies.find(notifyTag) == sharedNotifies.end()) {
+        CcuRep::LocalNotify notify;
+        exportedRes_.sharedNotifies.insert({notifyTag, notify});
+    }
+
+    bool isProfiling = false;
+    if (CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK) {
+        isProfiling = true;
+    }
+
+    Append(std::make_shared<CcuRep::CcuRepLocWaitNotify)(
+        exportedRes_.sharedNotifyies.at(notifyTag), mask, isProfiling);
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult CcuKernel::RecordEvent(CcuRep::CompletedEvent event)
 {
     if (CurrentBlock()->Type() == CcuRep::CcuRepType::LOOP_BLOCK) {
-        return HCCL_E_NOT_SUPPORT; 
+        HCCL_ERROR("[CcuKernel][%s] is not supported in loop block, please check.", __func__);
+        return HcclResult::HCCL_E_NOT_SUPPORT;
     }
-    Append(std::make_shared<CcuRep::CcuRepLocPostSem>(event, event.mask));
+
+    Append(std::make_shared<CcuRep::CcuRepLocRecordEvent>(event));
     return HCCL_SUCCESS;
 }
 
 HcclResult CcuKernel::WaitEvent(CcuRep::CompletedEvent event)
 {
+    bool isProfiling = false;
     if (CurrentBlock()->Type() == CcuRep::CcuRepType::LOOP_BLOCK) {
-        Append(std::make_shared<CcuRep::CcuRepLocWaitSem>(event, event.mask, false));
-    } else {
-        auto rep = std::make_shared<CcuRep::CcuRepLocWaitSem>(event, event.mask, true);
-        Append(rep);
+        isProfiling = true;
     }
 
+    Append(std::make_shared<CcuRep::CcuRepLocWaitSem>(event, isProfiling));
     return HCCL_SUCCESS;
 }
 
@@ -610,4 +670,15 @@ CcuResRepository  &CcuKernel::GetResRepository()
 {
     return resRepo_;
 }
+
+CcuSharedResource &CcuKernel::GetExporetedRes()
+{
+    return exportedRes_;
+}
+
+CcuSharedResource &CcuKernel::GetImportedRes()
+{
+    return importedRes_;
+}
+
 }; // namespace hcomm

@@ -144,8 +144,11 @@ HcclResult CcuAllocChannels(const int32_t deviceLogicId, const CcuChannelPara &c
         ipAddr.Describe().c_str(), ccuChannelPara.channelNum,
         ccuChannelPara.jettyNum, ccuChannelPara.sqSize);
 
+    uint32_t devPhyId{0};
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId));
+
     DevEidInfo eidInfo{};
-    CHK_RET(EidInfoMgr::GetInstance(deviceLogicId).GetEidInfoByAddr(ccuChannelPara.commAddr, eidInfo));
+    CHK_RET(EidInfoMgr::GetInstance(devPhyId).GetEidInfoByAddr(ccuChannelPara.commAddr, eidInfo));
     const uint8_t dieId = static_cast<uint8_t>(eidInfo.dieId);
     const uint32_t feId = eidInfo.funcId;
     ChannelPara para{};

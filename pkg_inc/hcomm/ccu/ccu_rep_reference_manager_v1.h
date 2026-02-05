@@ -13,7 +13,7 @@
 
 #include "ccu_res_repo.h"
 #include "ccu_rep_block_v1.h"
-#include "ccu_context_resource_v1.h"
+#include "ccu_kernel_resource.h"
 
 namespace hcomm {
 namespace CcuRep {

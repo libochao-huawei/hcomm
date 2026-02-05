@@ -16,8 +16,9 @@
 #include "ccu_rep_loop_v1.h"
 #include "ccu_rep_loopgroup_v1.h"
 
-#include "ccu_rep_locpostsem_v1.h"
-#include "ccu_rep_locwaitsem_v1.h"
+#include "ccu_rep_loc_record_event.h"
+#include "ccu_rep_loc_wait_event.h"
+#include "ccu_rep_loc_wait_notify.h"
 
 #include "ccu_rep_read_v1.h"
 #include "ccu_rep_write_v1.h"
@@ -27,7 +28,7 @@
 #include "ccu_rep_rempostvar_v1.h"
 #include "ccu_rep_remwaitsem_v1.h"
 
-#include "ccu_rep_postsharedsem_v1.h"
+#include "ccu_rep_record_shared_notify.h"
 #include "ccu_rep_postsharedvar_v1.h"
 
 #include "ccu_rep_buflocread_v1.h"
