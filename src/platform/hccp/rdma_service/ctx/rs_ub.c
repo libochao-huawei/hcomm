@@ -1690,6 +1690,7 @@ STATIC void rs_ub_ctx_ext_jetty_create_ta_cache(struct rs_ctx_jetty_cb *jetty_cb
 
     jetty_cb->jetty = jetty_info.jetty;
     jetty_cb->db_addr = (uint64_t)(uintptr_t)jetty_info.db_addr;
+    hccp_warn("@@@ rs_ub_ctx_ext_jetty_create_ta_cache jetty_cb->db_addr: %d", jetty_cb->db_addr);
 
     // ccu jetty reg db addr
     ret = rs_ub_ctx_reg_jetty_db(jetty_cb, &jetty_info);
@@ -1721,13 +1722,16 @@ STATIC int rs_ub_ctx_drv_jetty_create(struct rs_ctx_jetty_cb *jetty_cb, struct r
     jetty_init_cfg.shared.jfc = (urma_jfc_t *)(uintptr_t)recv_jfc_cb->jfc_addr;
 
     if (jetty_cb->jetty_mode == JETTY_MODE_URMA_NORMAL) {
+        hccp_warn("@@@ rs_ub_ctx_drv_jetty_create JETTY_MODE_URMA_NORMAL");
         jetty_cb->jetty = rs_urma_create_jetty(jetty_cb->dev_cb->urma_ctx, &jetty_init_cfg);
         if (jetty_cb->jetty == NULL) {
             hccp_err("rs_urma_create_jetty failed, errno=%d", errno);
         }
     } else if (jetty_cb->jetty_mode == JETTY_MODE_CCU_TA_CACHE) {
+        hccp_warn("@@@ rs_ub_ctx_drv_jetty_create JETTY_MODE_CCU_TA_CACHE");
         rs_ub_ctx_ext_jetty_create_ta_cache(jetty_cb, &jetty_init_cfg);
     } else {
+        hccp_warn("@@@ rs_ub_ctx_drv_jetty_create else");
         rs_ub_ctx_ext_jetty_create(jetty_cb, &jetty_init_cfg);
     }
 
