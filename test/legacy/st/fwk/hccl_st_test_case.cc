@@ -83,8 +83,8 @@ void HcclStTestCase::InternalProcess(ThreadContext *ctx)
 
         // 3. 准备集合通信用到的入参
         Hccl::CollOpParams collOpParams = CreateCollOpParams(ctx);
-        rtStream_t         stream       = nullptr;
-        rtStreamCreateWithFlags(&stream, 0, 0);
+        aclrtStream         stream       = nullptr;
+        aclrtCreateStreamWithConfig(&stream, 0U, 0U);
 
         // 4. 执行集合通信
         auto res = communicator->LoadOpbasedCollOp(collOpParams, stream);
