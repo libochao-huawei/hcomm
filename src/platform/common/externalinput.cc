@@ -1535,6 +1535,7 @@ HcclResult ParseOpExpansion()
         } else {
             g_externalInput.aicpuUnfold = true;
             g_externalInput.aicpuCacheEnable = 1; // aicpu cache默认使能
+            g_externalInput.enableFfts = false; // aicpu cache默认使能
         }
     } else if (opExpansionModeEnv == "AICPU_CacheDisable") {
         if (deviceType == DevType::DEV_TYPE_910) {
