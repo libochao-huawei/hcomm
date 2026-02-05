@@ -436,6 +436,7 @@ struct qp_create_info {
         void *qbuf_end;
         uint32_t qbuf_size;
         void *qbuf_curr;
+        void volatile *db_addr;
     } udma_jetty_sq;
     uint32_t resv[15U];
 };
