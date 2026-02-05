@@ -124,7 +124,7 @@ HcclResult FlushManager::FlushParamPrepare(std::shared_ptr<FlushHandle> flushHan
     return HCCL_SUCCESS;
 }
 
-HcclResult FlushManager::ExecuteRdmaRead(ibv_qp *loopbackqp0, ibv_cq *cq, ibv_send_wr swr, int max_timeout_ms)
+HcclResult FlushManager::ExecuteRdmaRead(ibv_qp *loopbackqp0, ibv_cq *cq, const ibv_send_wr &swr, int max_timeout_ms)
 {
     ibv_send_wr *send_wr = nullptr;
     int ret = FlushPostSend(loopbackqp0, &swr, &send_wr);
