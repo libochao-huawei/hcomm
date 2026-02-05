@@ -110,6 +110,41 @@ struct SubCommLinkPara {
         }
     }
 };
+
+struct LinkPoolPara {
+    struct SingleSubCommTransport &singleSubCommTransport;
+    std::string poolName;
+    std::vector<std::pair<u32, u32>> taskList;
+
+    std::mutex mtx;
+    u32 nextIdx;
+    std::atomic<bool> abortFlag;
+
+    std::vector<std::unique_ptr<std::thread>> linkThreads;
+    std::vector<HcclResult> linkResults;
+
+    LinkPoolPara(struct SingleSubCommTransport &transport, 
+        const std::string &name, std::vector<std::pair<u32, u32>> &tasks)
+        : singleSubCommTransport(transport), 
+        poolName(name), 
+        taskList(tasks),
+        nextIdx(0), 
+        abortFlag(false)
+    {
+        u32 threadNum = std::min((u32)8, (u32)taskList.size());
+        linkThreads.resize(threadNum);
+        linkResults.resize(taskList.size(), HCCL_SUCCESS);
+    }
+
+    ~LinkPoolPara()
+    {
+        for (auto &linkThread : linkThreads) {
+            if (linkThread != nullptr && linkThread->joinable()) {
+                linkThread->join();
+            }
+        }
+    }
+};
 }
 
 namespace std {
@@ -188,7 +223,7 @@ public:
     HcclResult CreateVirturalTransport(SingleSubCommTransport& singleSubCommTransport);
     HcclResult Alloc(const std::string &tag, const TransportIOMem &transMem, OpCommTransport &opTransportResponse,
         bool isAicpuModeEn, bool isBackup = false, bool isZeroCopy = false, const HcclCMDType &opType=HcclCMDType::HCCL_CMD_INVALID,
-        bool isCapture = false, bool isIndOp = false, bool isNpuDirectRoce = false);
+        bool isCapture = false, bool isIndOp = false, bool isNpuDirectRoce = false, const OpParam *opParam = nullptr);
     HcclResult IncreAlloc(const std::string &tag, const TransportIOMem &transMem, OpCommTransport &opTransportReq,
         OpCommTransport &opTransportResponse, bool isAicpuModeEn, bool isBackup = false, bool isCapture = false,
         const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID);
@@ -259,6 +294,16 @@ private:
         struct SingleSubCommTransport &singleSubCommTransport, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
         bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
     HcclResult IsInterServer(const u32 dstRank, bool& isInterServer);
+
+    HcclResult CreateBatchSendRecvLinks(const std::string &tag, const TransportIOMem &transMem,
+        struct LinkPoolPara &linkPoolPara, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
+        bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
+    HcclResult WaitBatchSendRecvThreadsComplete(struct LinkPoolPara &linkPoolPara);
+    HcclResult CheckBatchSendRecvLinkStatus(const std::string &tag, struct SingleSubCommTransport &singleSubCommTransport, bool isBackup);
+    HcclResult AllocBatchSendRecvLinks(HcclSendRecvItem *sendRecvItemsPtr, u32 itemNum,
+        const std::string &tag, const TransportIOMem &transMem,
+        struct SingleSubCommTransport &singleSubCommTransport, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
+        bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
 
     std::mutex mutex_;	// 用于控制互斥资源的访问
     CCLBufferManager &cclBufferManager_;
