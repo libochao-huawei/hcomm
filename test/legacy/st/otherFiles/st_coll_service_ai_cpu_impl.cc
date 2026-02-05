@@ -511,7 +511,7 @@ TEST_F(CollServiceAiCpuImplTest, test_RecoverTransport)
         .will(returnValue(rmaBuffer));
 
     void *addr = reinterpret_cast<void *>(0x12345678);
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(addr));
+    MOCKER(HrtMalloc).stubs().with(any()).will(returnValue(addr));
     MOCKER(HrtFree).stubs();
 
     CommunicatorImpl comm;
@@ -612,7 +612,7 @@ TEST_F(CollServiceAiCpuImplTest, test_register_ccl_buffer)
         .will(returnValue(rmaBuffer));
 
     void *addr = reinterpret_cast<void *>(0x12345678);
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(addr));
+    MOCKER(HrtMalloc).stubs().with(any()).will(returnValue(addr));
     MOCKER(HrtFree).stubs();
 
     CommunicatorImpl comm;

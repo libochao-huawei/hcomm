@@ -404,7 +404,7 @@ TEST_F(CollServiceDefaultImplTest, test_base_register_offload_buf)
     MOCKER(HrtDevMemAlignWithPage).stubs();
     MOCKER(HrtIpcDestroyMemoryName).stubs();
     void *devPtr = nullptr;
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
+    MOCKER(HrtMalloc).stubs().with(any()).will(returnValue(devPtr));
 
     GenRankTableFile4p();
     GenTopoFile();
@@ -796,7 +796,7 @@ TEST_F(CollServiceDefaultImplTest, AddCountTask)
     MOCKER(HrtReduceAsync).stubs().with(any());
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
     void *devPtr = nullptr;
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
+    MOCKER(HrtMalloc).stubs().with(any()).will(returnValue(devPtr));
 
     CommunicatorImpl comm;
     comm.streamManager = make_unique<StreamManager>(&comm);
