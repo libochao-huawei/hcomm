@@ -195,11 +195,10 @@ aclError aclrtIpcMemSetImportPid(const char *key, int32_t *pid, size_t num)
     return 0;
 }
 
-rtError_t rtIpcDestroyMemoryName(const char_t *name)
+aclError aclrtIpcMemClose(const char_t *name)
 {
     return RT_ERROR_NONE;
 }
-
 
 aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType, aclrtStreamAttrValue *value)
 {
@@ -476,12 +475,7 @@ rtError_t rtGetDeviceSatMode(rtFloatOverflowMode_t *floatOverflowMode)
 
 aclError aclrtPointerGetAttributes(aclrtPtrAttributes  *attributes, const void *ptr)
 {
-    return 0;
-}
-
-rtError_t rtIpcCloseMemory(const void *ptr)
-{
-    return 0;
+    return ACL_SUCCESS;
 }
 
 rtError_t rtRDMADBSend(uint32_t dbIndex, uint64_t dbInfo, rtStream_t stm)
@@ -493,7 +487,7 @@ rtError_t rtCntNotifyCreate(const int32_t deviceId, aclrtCntNotify * const cntNo
 {
     return RT_ERROR_NONE;
 }
- 
+
 rtError_t rtGetCntNotifyId(aclrtCntNotify inCntNotify, uint32_t * const notifyId)
 {
     return RT_ERROR_NONE;
@@ -501,7 +495,7 @@ rtError_t rtGetCntNotifyId(aclrtCntNotify inCntNotify, uint32_t * const notifyId
 
 aclError aclrtCntNotifyDestroy(aclrtCntNotify cntNotify)
 {
-    return RT_ERROR_NONE;
+    return ACL_SUCCESS;
 }
 
 // rtError_t rtCntNotifyRecord(rtCntNotify_t const inCntNotify, rtStream_t const stm,
@@ -606,7 +600,7 @@ rtError_t rtModelGetId(rtModel_t mdl, uint32_t *modelId)
 aclError aclrtLaunchKernelWithHostArgs(const void *stubFunc, uint32_t numBlocks, rtArgsEx_t *argsInfo, rtSmDesc_t
 	*smDesc,rtStream_t stream, uint32_t flags, const rtTaskCfgInfo_t *cfgInfo)
 {
-    return RT_ERROR_NONE;
+    return ACL_SUCCESS;
 }
 
 aclError aclrtGetResInCurrentThread(aclrtDevResLimitType type, uint32_t *value)
@@ -615,9 +609,9 @@ aclError aclrtGetResInCurrentThread(aclrtDevResLimitType type, uint32_t *value)
     return ACL_SUCCESS;
 }
 
-rtError_t rtMemPrefetchToDevice(void *devPtr, uint64_t len, int32_t devId)
+aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t flags)
 {
-    return RT_ERROR_NONE;
+	return ACL_SUCCESS;
 }
  
 #endif
