@@ -88,6 +88,11 @@ inline Hccl::CollOpParams GetHcclOpParams(void *inputPtr, void *outputPtr, u64 c
     return opParams;
 }
 
+static void PrintOpTagAndComm(std::string tag, u32 opIndex)
+{
+    HCCL_RUN_INFO("Entry-[%s] V950 OpIndex[%u]", tag.c_str(), opIndex);
+}
+
 HcclResult HcomAllGatherV2(const char *tag, void *inputPtr, void *outputPtr, u64 inputCount, HcclDataType dataType,
     const char *group, rtStream_t stream)
 {
@@ -96,13 +101,14 @@ HcclResult HcomAllGatherV2(const char *tag, void *inputPtr, void *outputPtr, u64
     HcclUs startut = TIME_NOW();
     
     /* 通信域 */
+    std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_RET(GetHcclCommV2(group, hcclComm));
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
     CHK_RET(HcomCheckOpParamV2(tag, inputCount, dataType, group, stream));
 
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, inputCount, dataType, Hccl::OpType::ALLGATHER);
-    std::string opTag = tag;
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
 
     /* 关键状态记录 */
@@ -122,6 +128,7 @@ HcclResult HcomAllGatherVV2(const char *tag, void *sendBuf, u64 sendCount, void 
     std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_RET(GetHcclCommV2(group, hcclComm));
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
     /* 获取rank信息 */ 
     uint32_t rankId;
     CHK_RET(hcclComm->GetRankId(rankId));
@@ -175,12 +182,13 @@ HcclResult HcomAllReduceV2(const char *tag, void *inputPtr, void *outputPtr, u64
     CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
     /* 通信域 */
+    std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_RET(GetHcclCommV2(group, hcclComm));
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
 
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, count, dataType, Hccl::OpType::ALLREDUCE, op);
-    std::string opTag = tag;
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
 
     /* 关键状态记录 */
@@ -203,12 +211,13 @@ HcclResult HcomReduceScatterV2(const char *tag, void *inputPtr, void *outputPtr,
     CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
     /* 通信域 */
+    std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_RET(GetHcclCommV2(group, hcclComm));
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
 
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, count, dataType, Hccl::OpType::REDUCESCATTER, op);
-    std::string opTag = tag;
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
     /* 关键状态记录 */
     HCCL_RUN_INFO("hcom reducescatter success,take time [%lld]us, tag[%s], input_ptr[%p], output_ptr[%p], "\
@@ -227,6 +236,7 @@ HcclResult HcomReduceScatterVV2(const char *tag, void *sendBuf, void *sendCounts
     std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_RET(GetHcclCommV2(group, hcclComm));
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
     /* 获取rank信息 */
     uint32_t rankId;
     CHK_RET(hcclComm->GetRankId(rankId));
@@ -279,14 +289,15 @@ HcclResult HcomSendV2(const char *tag, void *inputPtr, u64 count, HcclDataType d
     HcclUs startut = TIME_NOW();
     
     /* 通信域 */
+    std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_RET(GetHcclCommV2(group, hcclComm));
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
  
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, nullptr, count, dataType, Hccl::OpType::SEND);
     opParams.dstRank = destRank;
-    std::string opTag = tag;
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
     /* 关键状态记录 */
     HCCL_RUN_INFO("hcom send success,time[%lld]us,tag[%s],inputPtr[%p],count[%llu],dataType[%s],destRank[%u],"
@@ -304,14 +315,15 @@ HcclResult HcomReceiveV2(const char *tag, void *outputPtr, u64 count, HcclDataTy
     HcclUs startut = TIME_NOW();
 
     /* 通信域 */
+    std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_RET(GetHcclCommV2(group, hcclComm));
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
 
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(nullptr, outputPtr, count, dataType, Hccl::OpType::RECV);
     opParams.dstRank = srcRank;
-    std::string opTag = tag;
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
     /* 关键状态记录 */
     HCCL_RUN_INFO("hcom receive success,time[%lld]us,tag[%s],outputPtr[%p],count[%llu],dataType[%s],srcRank[%u],"
@@ -421,8 +433,10 @@ HcclResult HcomAlltoAllVV2(const void *sendBuf, const void *sendCounts, const vo
     HcclUs startut = TIME_NOW();
 
     /* 通信域 */
+    std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_RET(GetHcclCommV2(group, hcclComm));
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
     CHK_RET(HcomCheckOpParamV2(tag, 0, sendType, group, stream));
     CHK_RET(HcomCheckDataTypeV2(recvType));
  
@@ -441,7 +455,6 @@ HcclResult HcomAlltoAllVV2(const void *sendBuf, const void *sendCounts, const vo
     opParams.all2AllVDataDes.sdispls = const_cast<void*>(sdispls);
     opParams.all2AllVDataDes.rdispls = const_cast<void*>(rdispls);
     opParams.dataType = HcclDataTypeToDataType(sendType);
-    std::string opTag = tag;
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
     
     /* 关键状态记录 */
@@ -460,8 +473,10 @@ HcclResult HcomAlltoAllVCV2(const void *sendBuf, const void *sendCountMatrix, Hc
     HcclUs startut = TIME_NOW();
 
     /* 获取通信域句柄并入参校验 */
+    std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_RET(GetHcclCommV2(group, hcclComm));
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
     CHK_RET(HcomCheckOpParamV2(tag, 0, sendType, group, stream));
     CHK_RET(HcomCheckDataTypeV2(recvType));
 
@@ -490,7 +505,6 @@ HcclResult HcomAlltoAllVCV2(const void *sendBuf, const void *sendCountMatrix, Hc
     opParams.all2AllVCDataDes.recvType = HcclDataTypeToDataType(recvType);
     opParams.all2AllVCDataDes.sendCountMatrix = const_cast<void*>(sendCountMatrix);
     opParams.dataType = HcclDataTypeToDataType(sendType);
-    std::string opTag = tag;
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
 
     /* 关键状态记录 */
@@ -510,8 +524,10 @@ HcclResult HcomAlltoAllV2(const void *sendBuf, u64 sendCount, HcclDataType sendT
     HcclUs startut = TIME_NOW();
 
     /* 通信域 */
+    std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_RET(GetHcclCommV2(group, hcclComm));
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
     CHK_RET(HcomCheckOpParamV2(tag, sendCount, sendType, stream));
     CHK_RET(HcomCheckOpParamV2(tag, recvCount, recvType, stream));
     
@@ -523,7 +539,6 @@ HcclResult HcomAlltoAllV2(const void *sendBuf, u64 sendCount, HcclDataType sendT
     opParams.all2AllDataDes.sendType = HcclDataTypeToDataType(sendType);
     opParams.all2AllDataDes.recvType = HcclDataTypeToDataType(recvType);
     opParams.dataType = HcclDataTypeToDataType(sendType);
-    std::string opTag = tag;
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
 
     HCCL_RUN_INFO("HcomAlltoAll success,take time [%lld]us, tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], "\
@@ -583,8 +598,10 @@ HcclResult HcomBroadcastV2(const char *tag, void *ptr, u64 count, HcclDataType d
     HcclUs startut = TIME_NOW();
 
     /* 通信域 */
+    std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_RET(GetHcclCommV2(group, hcclComm));
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
 
     /* 入参的正确性由HCCL确保 */
@@ -593,7 +610,6 @@ HcclResult HcomBroadcastV2(const char *tag, void *ptr, u64 count, HcclDataType d
     CHK_RET(HcomCheckUserRankV2(rankSize, root));
     Hccl::CollOpParams opParams = GetHcclOpParams(ptr, ptr, count, dataType, Hccl::OpType::BROADCAST);
     opParams.root = root;
-    std::string opTag = tag;
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
 
     /* 关键状态记录 */
@@ -614,8 +630,10 @@ HcclResult HcomReduceV2(const char *tag, void *inputPtr, void *outputPtr, u64 co
     CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
     /* 通信域 */
+    std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_RET(GetHcclCommV2(group, hcclComm));
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
 
     /* 入参的正确性由HCCL确保 */
     u32 rankSize = INVALID_VALUE_RANKSIZE;
@@ -623,7 +641,6 @@ HcclResult HcomReduceV2(const char *tag, void *inputPtr, void *outputPtr, u64 co
     CHK_RET(HcomCheckUserRankV2(rankSize, root));
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, count, dataType, Hccl::OpType::REDUCE, op);
     opParams.root = root;
-    std::string opTag = tag;
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
 
     /* 关键状态记录 */
@@ -827,6 +844,7 @@ HcclResult HcclCommGraphAllGatherV2(const char *tag, void *inputPtr, void *outpu
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, inputCount, dataType, Hccl::OpType::ALLGATHER);
     std::string opTag = tag;
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
  
     /* 关键状态记录 */
@@ -851,6 +869,7 @@ HcclResult HcomGraphAllReduceV2(const char *tag, void *inputPtr, void *outputPtr
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, count, dataType, Hccl::OpType::ALLREDUCE, op);
     std::string opTag = tag;
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
  
     /* 关键状态记录 */
@@ -878,6 +897,7 @@ HcclResult HcomGraphReduceScatterV2(const char *tag, void *inputPtr, void *outpu
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, count, dataType, Hccl::OpType::REDUCESCATTER, op);
     std::string opTag = tag;
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
     /* 关键状态记录 */
     HCCL_RUN_INFO("hcom reducescatter success,take time [%lld]us, tag[%s], input_ptr[%p], output_ptr[%p], "\
@@ -909,6 +929,7 @@ HcclResult HcomGraphReduceV2(const char *tag, void *inputPtr, void *outputPtr, u
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, count, dataType, Hccl::OpType::REDUCE, op);
     opParams.root = root;
     std::string opTag = tag;
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
  
     /* 关键状态记录 */
@@ -934,6 +955,7 @@ HcclResult HcomGraphSendV2(const char *tag, void *inputPtr, u64 count, HcclDataT
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, nullptr, count, dataType, Hccl::OpType::SEND);
     opParams.dstRank = destRank;
     std::string opTag = tag;
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
     /* 关键状态记录 */
     HCCL_RUN_INFO("hcom send success,time[%lld]us,tag[%s],inputPtr[%p],count[%llu],dataType[%s],destRank[%u],"
@@ -958,6 +980,7 @@ HcclResult HcomGraphReceiveV2(const char *tag, void *outputPtr, u64 count, HcclD
     Hccl::CollOpParams opParams = GetHcclOpParams(nullptr, outputPtr, count, dataType, Hccl::OpType::RECV);
     opParams.dstRank = srcRank;
     std::string opTag = tag;
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
     /* 关键状态记录 */
     HCCL_RUN_INFO("hcom receive success,time[%lld]us,tag[%s],outputPtr[%p],count[%llu],dataType[%s],srcRank[%u],"
@@ -984,6 +1007,7 @@ HcclResult HcomGraphBroadcastV2(const char *tag, void *ptr, u64 count, HcclDataT
     Hccl::CollOpParams opParams = GetHcclOpParams(ptr, ptr, count, dataType, Hccl::OpType::BROADCAST);
     opParams.root = root;
     std::string opTag = tag;
+    PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
  
     /* 关键状态记录 */

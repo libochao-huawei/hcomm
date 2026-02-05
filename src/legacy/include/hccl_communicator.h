@@ -132,6 +132,7 @@ public:
     Trace& GetTrace() const;
 
     u32 GetDeviceLogicId() const;
+    u32 GetOpIndex() const;
  
 private:
     CommParams                        commParams;
