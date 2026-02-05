@@ -30,8 +30,8 @@ struct CcuRepResource {
 
 // Context共享资源
 struct CcuSharedResource {
-    std::unordered_map<std::string, CcuRep::Variable>   sharedVar;
-    std::unordered_map<std::string, CcuRep::LocalNotify> sharedNotify;
+    std::unordered_map<std::string, CcuRep::Variable>   sharedVars;
+    std::unordered_map<std::string, CcuRep::LocalNotify> sharedNotifies;
 };
 
 }; // namespace hcomm

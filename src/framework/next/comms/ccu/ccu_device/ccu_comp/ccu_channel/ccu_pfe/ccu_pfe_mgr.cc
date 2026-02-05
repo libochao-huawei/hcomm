@@ -13,16 +13,16 @@
 
 namespace hcomm {
 
-inline PfeCtx BuildPfeCtx(const PfeJettyCtxCfg &cfg)
+inline PfeCtx BuildPfeCtx(const uint8_t dieId, const PfeJettyCtxCfg &cfg)
 {
     struct PfeCtx ctx = {0};
     ctx.startJettyId = cfg.startTaJettyId;
     ctx.jettyNum = cfg.size - 1; // PFE给CCU分配的Jetty个数，配置硬件时需减1
     ctx.startLocalJettyCtxId = cfg.startJettyCtxId;
 
-    HCCL_RUN_INFO("CcuPfeManager[%s]: feId[%u], startJettyId[%u], jettyNum(-1)[%u], "
-        "startLocalJettyCtxId[%u], pfe ctx size[%u]", __func__, cfg.feId, ctx.startJettyId,
-        ctx.jettyNum, ctx.startLocalJettyCtxId, sizeof(PfeCtx));
+    HCCL_RUN_INFO("[CcuPfeMgr][%s]: dieId[%u] feId[%u], startJettyId[%u], jettyNum(-1)[%u], "
+        "startLocalJettyCtxId[%u], pfe ctx size[%u]", __func__, dieId, cfg.feId,
+        ctx.startJettyId, ctx.jettyNum, ctx.startLocalJettyCtxId, sizeof(PfeCtx));
     return ctx;
 }
 
@@ -65,7 +65,8 @@ static HcclResult ConfigPfeTable(const uint32_t devPhyId, const uint8_t dieId, c
         reinterpret_cast<custom_chan_info_in *>(&inBuff),
         reinterpret_cast<custom_chan_info_out *>(&outBuff));
     if (ret != 0) {
-        HCCL_WARNING("");
+        HCCL_ERROR("[CcuPfeMgr][%s] failed to config pfe table of ccu device, "
+            "devLogicId[%d] dieId[%u].", __func__, devLogicId_, dieId);
         return HcclResult::HCCL_E_NETWORK;
     }
     
@@ -99,7 +100,7 @@ HcclResult CcuPfeMgr::Init()
         }
         pfeJettyMap_[feId] = BuildStrategy(cfg);
 
-        const auto &pfeCtx = BuildPfeCtx(cfg);
+        const auto &pfeCtx = BuildPfeCtx(dieId_, cfg);
         CHK_RET(ConfigPfeTable(devPhyId_, dieId_, feId, pfeReservedNum, pfeCtx));
     }
 
@@ -114,6 +115,11 @@ HcclResult CcuPfeMgr::GetPfeStrategy(uint32_t feId, PfeJettyStrategy &pfeJettySt
             "devLogicId[%d], dieId[%u].", __func__, feId, devLogicId_, dieId_);
         return HCCL_E_NOT_FOUND;
     }
+
+    HCCL_INFO("[CcuPfeMgr][%s] dieId[%u] feId[%u] pfeId[%u] size[%u] "
+ 	    "startTaJettyId[%u] startLocalJettyCtxId[%u]", __func__, dieId_,
+ 	    pfeJettyStrategy.feId, pfeJettyStrategy.pfeId, pfeJettyStrategy.size,
+ 	    pfeJettyStrategy.startTaJettyId, pfeJettyStrategy.startLocalJettyCtxId);    
 
     pfeJettyStrategy = iter->second;
     return HCCL_SUCCESS;

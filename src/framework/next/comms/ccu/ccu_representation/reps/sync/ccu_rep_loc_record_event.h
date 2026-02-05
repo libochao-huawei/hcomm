@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCOMM_CCU_REPRESENTATION_POSTSHAREDVAR_H
-#define HCOMM_CCU_REPRESENTATION_POSTSHAREDVAR_H
+#ifndef HCOMM_CCU_REPRESENTATION_LOC_RECORD_EVENT_H
+#define HCOMM_CCU_REPRESENTATION_LOC_RECORD_EVENT_H
 
 #include "ccu_datatype_v1.h"
 #include "ccu_rep_base_v1.h"
@@ -17,19 +17,16 @@
 namespace hcomm {
 namespace CcuRep {
 
-class CcuRepPostSharedVar : public CcuRepBase {
+class CcuRepLocRecordEvent : public CcuRepBase {
 public:
-    CcuRepPostSharedVar(const Variable &srcVar, const Variable &dstVar, const LocalNotify &notify, uint16_t mask);
-    bool Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
+    CcuRepLocRecordEvent(const CompletedEvent &event);
+    bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
 
 private:
-    Variable   srcVar;
-    Variable   dstVar;
-    LocalNotify notify_{};
-    uint16_t   mask;
+    CompletedEvent event_{};
 };
 
-};     // namespace CcuRep
-};     // namespace hcomm
-#endif // HCOMM_CCU_REPRESENTATION_POSTSHAREDVAR_H
+}; // namespace CcuRep
+}; // namespace hcomm
+#endif // HCOMM_CCU_REPRESENTATION_LOC_RECORD_EVENTH

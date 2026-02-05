@@ -38,8 +38,9 @@ enum class CcuRepType {
     LOOP_BLOCK,
     LOOPGROUP_BLOCK,
 
-    LOC_POST_SEM,
-    LOC_WAIT_SEM,
+    LOC_RECORD_EVENT,
+    LOC_WAIT_EVENT,
+    LOC_WAIT_NOTIFY,
     REM_POST_SEM,
     REM_WAIT_SEM,
     REM_POST_VAR,
@@ -58,7 +59,7 @@ enum class CcuRepType {
     BUF_REDUCE,
 
     POST_SHARED_VAR,
-    POST_SHARED_SEM,
+    RECORD_SHARED_NOTIFY,
 };
 
 enum class AssignSubType { INVALID, IMD_TO_VARIABLE, IMD_TO_ADDR, VAR_TO_ADDR, ADDR_TO_ADDR, VAR_TO_VAR };
