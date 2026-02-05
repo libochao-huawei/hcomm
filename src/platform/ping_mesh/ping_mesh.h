@@ -46,7 +46,10 @@ struct RpingInput {
     char payload[RPING_PAYLOAD_LEN_MAX];
 };
 
+bool IsSupportHCCLV2(const char *socNamePtr);
+
 MAKE_ENUM(HrtNetworkMode, PEER, HDC)
+
 struct HRaInfo {
     HrtNetworkMode mode;
     uint32_t       phyId;

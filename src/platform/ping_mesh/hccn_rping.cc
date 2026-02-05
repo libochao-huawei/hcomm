@@ -17,7 +17,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplusF
+#endif // __cplusplus
 
 #define HCCN_RPING_MIN_TIMEOUT 1
 #define HCCN_RPING_MAX_TIMEOUT 3600000
@@ -34,7 +34,6 @@ constexpr u32 LINK_TYPE_MODE_UB = 7;
 #endif
 constexpr u32 RPING_RESULT_STATE_VALID = 2;
 constexpr u32 TARGET_NUM_MAX = 16;
-
 
 inline HccnResult HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAttr *initAttrInter,
         PingMesh *rpingInter, u32 &npuNumInter,std::string &ipAddrDesInter)
@@ -66,7 +65,9 @@ inline HccnResult HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAtt
         ipAddrDesInter = ipAddr.GetReadableIP();
     }
     #ifdef CONFIG_CONTEXT
-    if (initAttrInter->mode == HCCN_RPING_MODE_UB) {
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PRT_RET(socNamePtr == nullptr, HCCL_ERROR("[HccnRpingInitInter]socNamePtr is null."), HCCN_E_PARA);;
+    if (initAttrInter->mode == HCCN_RPING_MODE_UB && IsSupportHCCLV2(socNamePtr)) {
         if (!HcclIpAddress::IsEID(std::string(initAttrInter->eid))) {
             HCCL_ERROR("[HccnRpingInitInter] invalid eid, bufferSize:%u", bufferSizeInter);
             return HCCN_E_PARA;
@@ -102,7 +103,9 @@ HccnResult HccnRpingInit(uint32_t devLogicId, HccnRpingInitAttr *initAttr, HccnR
         initAttrDes = std::string(initAttr->ipAddr).c_str();
     }
     #ifdef CONFIG_CONTEXT
-    if (initAttr->mode == HCCN_RPING_MODE_UB) {
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PRT_RET(socNamePtr == nullptr, HCCL_ERROR("[HccnRpingInitInter]socNamePtr is null."), HCCN_E_PARA);
+    if (initAttr->mode == HCCN_RPING_MODE_UB && IsSupportHCCLV2(socNamePtr)) {
         initAttrDes = std::string(initAttr->eid).c_str();
     }
     #endif
@@ -187,7 +190,9 @@ inline HccnResult HccnRpingInitInputTargetAttr(HccnRpingTargetInfo *targetInter,
         inputInter[n].dip = HcclIpAddress(std::string(targetInter[n].dstIp));
     }
     #ifdef CONFIG_CONTEXT
-    if (targetInter[n].addrType == HCCN_RPING_ADDR_TYPE_EID) {
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PRT_RET(socNamePtr == nullptr, HCCL_ERROR("[HccnRpingInitInputTargetAttr]socNamePtr is null."), HCCN_E_PARA);
+    if (targetInter[n].addrType == HCCN_RPING_ADDR_TYPE_EID && IsSupportHCCLV2(socNamePtr)) {
         if (!HcclIpAddress::IsEID(std::string(targetInter[n].srcEid)) && !HcclIpAddress::IsEID(std::string(targetInter[n].dstEid))) {
             HCCL_ERROR("[HccnRpingInitInputTargetAttr] invalid eid");
             return HCCN_E_PARA;

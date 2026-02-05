@@ -73,7 +73,8 @@ inline void hrtRaGetSecRandom(u32 *value, u32 &devPhyId)
     raInfo.phyId = devPhyId;
     ra_get_sec_random(&raInfo, value);
 }
-u32 GetUbToken(u32 devicePhyId)
+
+inline u32 GetUbToken(u32 devicePhyId)
 {
     std::lock_guard<std::mutex> lock(ubTokenMutex);
     if (!isInitialized) {
@@ -82,6 +83,16 @@ u32 GetUbToken(u32 devicePhyId)
         isInitialized = true;
     }
     return token;
+}
+
+inline bool IsSupportHCCLV2(const char *socNamePtr)
+{
+    std::string targetChipVerStr = socNamePtr;
+    HCCL_DEBUG("[%s]SocVersion = %s.", __func__, targetChipVerStr.c_str());
+    if (targetChipVerStr.find("Ascend950") != std::string::npos) {
+        return true;
+    }
+    return false;
 }
 
 inline HcclResult UninitStateCheck(RpingState nextState)
@@ -486,7 +497,9 @@ HcclResult PingMesh::RpingResultInfoInit(PingTargetResult *resultInfo, std::map<
 
         }
         #ifdef CONFIG_CONTEXT
-        if (input[i].addrType == HCCN_RPING_ADDR_TYPE_EID) {
+        const char *socNamePtr = aclrtGetSocName();
+        CHK_PTR_NULL(socNamePtr);
+        if (input[i].addrType == HCCN_RPING_ADDR_TYPE_EID && IsSupportHCCLV2(socNamePtr)) {
             u32 ret = 0;
             ret = memcpy_s(resultInfo[i].remoteInfo.eid.raw, sizeof(resultInfo[i].remoteInfo.eid.raw), 
                     input[i].dip.GetEid().raw, URMA_EID_LEN);
@@ -765,7 +778,9 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
             RpingRoceAttrInit(devicePhyId_, ipAddr, port, nodeNum, bufferSize, sl, tc, initAttr);
         }
         #ifdef CONFIG_CONTEXT
-        if (netMode == LinkType::LINK_UB) {
+        const char *socNamePtr = aclrtGetSocName();
+        CHK_PTR_NULL(socNamePtr);
+        if (netMode == LinkType::LINK_UB && IsSupportHCCLV2(socNamePtr)) {
             HRaInfo info(HrtNetworkMode::HDC, devicePhyId_);
             std::map<Eid, uint32_t> eidmap;
             ret = RaGetEidMap(eidmap, info);
@@ -916,7 +931,9 @@ HcclResult PingMesh::HccnTargetAttrInter(u32 targetNumInter, RpingInput *inputIn
             ret = RpingTargetAttrInit(targetInter[0], inputInter[i], rdmaInfo, true);
         }
         #ifdef CONFIG_CONTEXT
-        if (inputInter[i].addrType == HCCN_RPING_ADDR_TYPE_EID) {
+        const char *socNamePtr = aclrtGetSocName();
+        CHK_PTR_NULL(socNamePtr);
+        if (inputInter[i].addrType == HCCN_RPING_ADDR_TYPE_EID && IsSupportHCCLV2(socNamePtr)) {
             ret = RpingTargetAttrInitWithUb(targetInter[0], inputInter[i], rdmaInfo, true);
         }
         #endif
@@ -990,7 +1007,9 @@ HcclResult PingMesh::HccnTarRemoveAttrInter(u32 targetNumInter, RpingInput *inpu
             retInter = RpingTargetAttrInit(targetInfo, inputInter[i], rdmainfo, false);
         }
         #ifdef CONFIG_CONTEXT
-        if (inputInter[i].addrType == HCCN_RPING_ADDR_TYPE_EID) {
+        const char *socNamePtr = aclrtGetSocName();
+        CHK_PTR_NULL(socNamePtr);
+        if (inputInter[i].addrType == HCCN_RPING_ADDR_TYPE_EID && IsSupportHCCLV2(socNamePtr)) {
             retInter = RpingTargetAttrInitWithUb(targetInfo, inputInter[i], rdmainfo, false);
         }
         #endif
@@ -1302,7 +1321,9 @@ HcclResult PingMesh::HccnRpingGetPayload(u32 deviceId, void **payload, u32 *payl
         CHK_RET(HccnRpingRefillPayloadHead(payloadTmp, payloadNum));
     }
     #ifdef CONFIG_CONTEXT
-    if (mode == HCCN_RPING_MODE_UB) {
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    if (mode == HCCN_RPING_MODE_UB && IsSupportHCCLV2(socNamePtr)) {
         CHK_RET(HccnRpingRefillUbPayloadHead(payloadTmp, payloadNum));
     }
     #endif
