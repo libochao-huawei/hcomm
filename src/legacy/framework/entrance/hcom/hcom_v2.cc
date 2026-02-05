@@ -174,9 +174,7 @@ HcclResult HcomAllReduceV2(const char *tag, void *inputPtr, void *outputPtr, u64
     HcclReduceOp op, const char *group, rtStream_t stream)
 {
     HCCL_INFO("[%s] start.", __func__);
-
     HcclUs startut = TIME_NOW();
-    
     /* 入参校验 */
     CHK_RET(HcomCheckReductionOpV2(op));
     CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
@@ -203,15 +201,14 @@ HcclResult HcomReduceScatterV2(const char *tag, void *inputPtr, void *outputPtr,
     HcclDataType dataType, HcclReduceOp op, const char *group, rtStream_t &stream)
 {
     HCCL_INFO("[%s] start.", __func__);
-
     HcclUs startut = TIME_NOW();
-
     /* 入参校验 */
     CHK_RET(HcomCheckReductionOpV2(op));
     CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
     /* 通信域 */
     std::string opTag = tag;
+    
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_RET(GetHcclCommV2(group, hcclComm));
     PrintOpTagAndComm(opTag, hcclComm->GetOpIndex());
@@ -429,9 +426,7 @@ HcclResult HcomAlltoAllVV2(const void *sendBuf, const void *sendCounts, const vo
                          const char *group, rtStream_t stream, const char *tag)
 {
     HCCL_INFO("[%s] start.", __func__);
-
     HcclUs startut = TIME_NOW();
-
     /* 通信域 */
     std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
@@ -469,9 +464,7 @@ HcclResult HcomAlltoAllVCV2(const void *sendBuf, const void *sendCountMatrix, Hc
     const void *recvBuf, HcclDataType recvType, const char *group, rtStream_t stream, const char *tag)
 {
     HCCL_INFO("[%s] start.", __func__);
-
     HcclUs startut = TIME_NOW();
-
     /* 获取通信域句柄并入参校验 */
     std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
