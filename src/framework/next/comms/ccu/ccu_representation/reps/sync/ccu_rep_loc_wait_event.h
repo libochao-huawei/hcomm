@@ -25,7 +25,7 @@ public:
 
 private:
     CompletedEvent event_{};
-    bool       isProfiling{true};
+    bool       isProfiling_{true};
 };
 
 }; // namespace CcuRep

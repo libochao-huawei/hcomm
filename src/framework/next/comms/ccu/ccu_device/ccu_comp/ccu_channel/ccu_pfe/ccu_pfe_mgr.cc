@@ -66,7 +66,7 @@ static HcclResult ConfigPfeTable(const uint32_t devPhyId, const uint8_t dieId, c
         reinterpret_cast<custom_chan_info_out *>(&outBuff));
     if (ret != 0) {
         HCCL_ERROR("[CcuPfeMgr][%s] failed to config pfe table of ccu device, "
-            "devLogicId[%d] dieId[%u].", __func__, devLogicId_, dieId);
+            "devPhyId[%u] dieId[%u].", __func__, devPhyId, dieId);
         return HcclResult::HCCL_E_NETWORK;
     }
     

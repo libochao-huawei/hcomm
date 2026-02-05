@@ -8,6 +8,7 @@
 #define HCOMM_CCU_KERNEL_H
 
 #include <functional>
+
 #include "ccu_kernel_signature.h"
 #include "ccu_kernel_arg.h"
 #include "ccu_task_arg_v1.h"
@@ -84,14 +85,14 @@ protected:
     HcclResult CreateBlockExecutor(const uint32_t count, CcuRep::Executor *ccuExes);
     HcclResult CreateBlockCompletedEvent(const uint32_t count, CcuRep::CompletedEvent *ccuEvents);
 
-    HcclResult CreateSharedVariable(const uint32_t coreId, const uint32_t varId, )
+    HcclResult CreateSharedVariable(const uint32_t coreId, const uint32_t varId, CcuRep::Variable *var);
 
     HcclResult RecordEvent(CcuRep::CompletedEvent event);
     HcclResult WaitEvent(CcuRep::CompletedEvent event);
 
     HcclResult LocalNotifyRecord(const uint32_t coreId, const uint32_t dstNotifyIdx, const uint32_t mask);
     HcclResult LocalNotifyRecord(const uint32_t coreId, const uint32_t dstNotifyIdx, const uint32_t mask,
-        const uint32_t dstVarIdx,, const CcuResp::Variable *srcVar);
+        const uint32_t dstVarIdx, const CcuRep::Variable *srcVar);
     
     HcclResult LocalNotifyWait(const uint32_t coreId, const uint32_t notifyIdx, const uint32_t mask);
 

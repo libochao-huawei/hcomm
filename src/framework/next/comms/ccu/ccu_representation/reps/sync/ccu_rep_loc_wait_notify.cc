@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "ccu_rep_loc_wait_event.h"
+#include "ccu_rep_loc_wait_notify.h"
 
 #include <climits>
 
@@ -20,7 +20,7 @@ namespace hcomm {
 namespace CcuRep {
 
 CcuRepLocWaitNotify::CcuRepLocWaitNotify(const LocalNotify &notify, const uint32_t mask, bool isProfiling)
-    : notify_(notify), mask_(mask), isProfiling(isProfiling)
+    : notify_(notify), mask_(mask), isProfiling_(isProfiling)
 {
     type       = CcuRepType::LOC_WAIT_EVENT;
     instrCount = 1;
@@ -32,7 +32,7 @@ bool CcuRepLocWaitNotify::Translate(CcuInstr *&instr, uint16_t &instrId, const T
     translated    = true;
 
     // SetCKEInstr支持硬件profiling功能
-    if (isProfiling) {
+    if (isProfiling_) {
         SetCKEInstr(instr++, 0, 0, notify_.Id(), mask_, 1);
     } else {
         ClearCKEInstr(instr++, 0, 0, notify_.Id(), mask_, 1);
