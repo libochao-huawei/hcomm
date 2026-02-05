@@ -255,7 +255,7 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
         // 用户配置打平 alltoall
 
     CHK_PRT_RET(deviceType_ == DevType::DEV_TYPE_310P3 && userRankSize_ > MAX_310P_RANK_SIZE,
-        HCCL_ERROR("[AlltoAllOperator][SelectAlgforAlltoAll]rankSize[%u] is not supported.AlltoAll/AlltoAllV does not"
+        HCCL_ERROR("[AlltoAllOperator][SelectAlgforAlltoAll]rankSize[%u] is not supported. AlltoAll/AlltoAllV does not "\
         "support the scenario where the rankSize is greater than 4.", userRankSize_), HCCL_E_NOT_SUPPORT);
 
     // NA+pairwise算法不支持A+X跨mesh两卡
@@ -543,7 +543,7 @@ bool AlltoAllOperator::IsSatisfyAlltoAllAivCondition(const OpParam& param)
     // 如果配置了aiv only,但是实际没有选择aiv算法,需要通过DFX打印出具体原因
     if (isOnlyAiv && !isSupportAiv) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");
-        CHK_PRT_RET(!IsSupportAIVCopy(param.All2AllDataDes.sendType), HCCL_ERROR("current data type[%s] not supported, support range:"
+        CHK_PRT_RET(!IsSupportAIVCopy(param.All2AllDataDes.sendType), HCCL_ERROR("current data type[%s] not supported, support range: "\
             "[int8, int16, int32, uint8, uint16, uint32, float16, float32, bfloat16]",
             GetDataTypeEnumStr(param.All2AllDataDes.sendType).c_str()), false);
         CHK_PRT_RET(userRankSize_ > 1, HCCL_ERROR("current userRankSize_[%u] greater than 1", userRankSize_), false);
@@ -572,7 +572,7 @@ bool AlltoAllOperator::IsSatisfyAlltoAllAivCondition(const OpParam& param)
             }
         }
         if (isOnlyAiv && (!isModuleSatisfy || !isMeshTopo)) {
-            HCCL_ERROR("opType[%d] topoType_[%d] isSingleMeshAggregation_[%d] isOpbase[%d] multiModuleDiffDeviceNumMode_[%d]",
+            HCCL_ERROR("opType[%d] topoType_[%d] isSingleMeshAggregation_[%d] isOpbase[%d] multiModuleDiffDeviceNumMode_[%d] "\
                 "moduleNum_[%u] IsBufferSatisfyAlltoAllAivCondition[%u]", param.opType, topoType_, isSingleMeshAggregation_,
                 isOpbase, multiModuleDiffDeviceNumMode_, moduleNum_, IsBufferSatisfyAlltoAllAivCondition(param));
             return false;
@@ -618,7 +618,7 @@ bool AlltoAllOperator::IsBufferSatisfyAlltoAllAivCondition(const OpParam& param)
     if (param.supportRoceDirect) {
         // 使用roce直驱时，total数据量应小于8M
         if(!(scratchMemSize <= static_cast<u64>(dataSizeLimit))) {
-            HCCL_WARNING("[AlltoAllOperator]total dataSize[%u] > [%u], doesn't meet the aiv condition, select default algorithm",
+            HCCL_WARNING("[AlltoAllOperator]total dataSize[%llu] > [%lld], doesn't meet the aiv condition, select default algorithm",
                 scratchMemSize, dataSizeLimit);
             return false;
         }
@@ -627,7 +627,7 @@ bool AlltoAllOperator::IsBufferSatisfyAlltoAllAivCondition(const OpParam& param)
     } else {
         // 每个rank的数据需要满足小于190K
         if (!(sendCount * dataSize <= static_cast<u64>(dataSizeLimit))) {
-            HCCL_WARNING("[AlltoAllOperator]dataSize[%u] > [%u], doesn't meet the aiv condition, select default algorithm",
+            HCCL_WARNING("[AlltoAllOperator]dataSize[%llu] > [%lld], doesn't meet the aiv condition, select default algorithm",
                 sendCount * dataSize, dataSizeLimit);
             return false;
         }
@@ -635,7 +635,7 @@ bool AlltoAllOperator::IsBufferSatisfyAlltoAllAivCondition(const OpParam& param)
 
     // cclbuffer是否足够存储每个rank的中转数据
     if (!(scratchMemSize <= cclBufferManager_.GetInCCLbufferSize())) {
-        HCCL_WARNING("[AlltoAllOperator]cclbuffer[%u] < scratchMemSize[%u]+32K, don't meet the aiv condition, "
+        HCCL_WARNING("[AlltoAllOperator]cclbuffer[%llu] < scratchMemSize[%llu]+32K, don't meet the aiv condition, "
             "please set HCCL_BUFFSIZE to increase cclbuffer", cclBufferManager_.GetInCCLbufferSize(), scratchMemSize);
         return false;
     }
