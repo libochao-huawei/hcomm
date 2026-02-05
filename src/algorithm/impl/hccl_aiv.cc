@@ -469,6 +469,10 @@ HcclResult GetKernelFunc(aclrtFuncHandle& funcHandle, s8* stubFunc)
 // Kernel注册入口，全局只需要初始化一次
 HcclResult RegisterKernel(DevType deviceType)
 {
+    lock_guard<mutex> guard(g_mut);
+    if (g_init) {
+        return HCCL_SUCCESS;
+    }
     HcclResult ret;
     string binFilePath;
     ret = GetAivOpBinaryPath(deviceType, binFilePath);
@@ -485,6 +489,7 @@ HcclResult RegisterKernel(DevType deviceType)
             "cmdType[%d] dataType[%s] argsType[%d] failed", aivKernelInfo.kernelName, aivKernelInfo.cmdType,
             GetDataTypeEnumStr(aivKernelInfo.dataType).c_str(), aivKernelInfo.argsType), HCCL_E_RUNTIME);
     }
+    g_init = false;
 
     return HCCL_SUCCESS;
 }
