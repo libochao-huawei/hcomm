@@ -9,7 +9,6 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_to_test_list
     main.cc
-    ../../../hccl_api_base_test.cc
     ut_aicpu_ts_HcommLocalCopyOnThread.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
 )
