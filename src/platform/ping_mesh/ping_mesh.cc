@@ -63,6 +63,27 @@ PingMesh::~PingMesh()
     }
 }
 
+static bool isInitialized = false;  // 标记是否已经初始化
+static u32 token = 0;  // 存储生成的随机数
+static std::mutex ubTokenMutex;
+inline void hrtRaGetSecRandom(u32 *value, u32 &devPhyId)
+{
+    struct RaInfo raInfo;
+    raInfo.mode = HrtNetworkMode::HDC;
+    raInfo.phyId = devPhyId;
+    ra_get_sec_random(&raInfo, value);
+}
+u32 GetUbToken(u32 devicePhyId)
+{
+    std::lock_guard<std::mutex> lock(ubTokenMutex);
+    if (!isInitialized) {
+        u32 devPhyId = devicePhyId;
+        hrtRaGetSecRandom(&token, devPhyId);
+        isInitialized = true;
+    }
+    return token;
+}
+
 inline HcclResult UninitStateCheck(RpingState nextState)
 {
     HcclResult ret = HCCL_SUCCESS;
@@ -313,8 +334,8 @@ inline void RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, u32 no
     initAttr.client.ub.qp_attr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
     initAttr.client.ub.qp_attr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
     initAttr.client.ub.qp_attr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
-    initAttr.client.ub.qp_attr.token_value = Hccl::GetUbToken();
-    initAttr.client.ub.seg_attr.token_value = Hccl::GetUbToken();
+    initAttr.client.ub.qp_attr.token_value = GetUbToken(deviceId);
+    initAttr.client.ub.seg_attr.token_value = GetUbToken(deviceId);
 
     // server的初始化信息
     initAttr.server.ub.cq_attr.sendCqDepth = maxWrDepth;
@@ -326,8 +347,8 @@ inline void RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, u32 no
     initAttr.server.ub.qp_attr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
     initAttr.server.ub.qp_attr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
     initAttr.server.ub.qp_attr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
-    initAttr.server.ub.qp_attr.token_value = Hccl::GetUbToken();
-    initAttr.server.ub.seg_attr.token_value = Hccl::GetUbToken();
+    initAttr.server.ub.qp_attr.token_value = GetUbToken(deviceId);
+    initAttr.server.ub.seg_attr.token_value = GetUbToken(deviceId);
 
     // ip协议信息
     initAttr.commInfo.version = 0;
