@@ -68,8 +68,8 @@ CachedCCUParams::CachedCCUParams(std::vector<std::vector<Hccl::CcuTaskParam>> &&
         ccuTaskInstruction.push_back(ccuTaskVec);
     }
     constexpr std::size_t alignment = alignof(std::max_align_t);
-    ccuParams =
-        alloc_and_memcpy_aligned(std::forward<std::vector<std::vector<rtCcuTaskInfo_t>>>(ccuTaskInstruction), alignment);
+    ccuParams = alloc_and_memcpy_aligned(
+        std::forward<std::vector<std::vector<rtCcuTaskInfo_t>>>(ccuTaskInstruction), alignment);
     taskParams.reserve(ccuInstruction.size());
     for (std::size_t i = 0; i < ccuInstruction.size(); i++) {
         TaskParam taskParam = {
@@ -78,7 +78,8 @@ CachedCCUParams::CachedCCUParams(std::vector<std::vector<Hccl::CcuTaskParam>> &&
             .endTime = 0,
             .taskPara =
             {.Ccu = {.dieId = 0, .missionId = 0, .execMissionId = 0, .instrId = 0, .costumArgs = {0}, .executeId = 0}},
-            .ccuDetailInfo = nullptr};
+            .ccuDetailInfo = nullptr
+        };
         SFLReportCcuProfilingInfoInitPart(execId, std::forward<std::vector<CcuProfilingInfo>>(profilingInfo[i]),
                                           commImpl, taskParam);
         taskParams.emplace_back(std::move(taskParam));
