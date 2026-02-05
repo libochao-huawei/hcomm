@@ -279,11 +279,10 @@ TEST_F(HcclRankGraphTest, Ut_HcclRankGraphGetTopoType_When_ValidParam_Expect_Ret
 
     uint32_t netLayer = 0;
     uint32_t topoInstId = 0;
-    uint32_t topoInstNum;
     CommTopo topoType;
     ret = HcclRankGraphGetTopoType(comm, netLayer, topoInstId, &topoType);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(topoType, CommTopo::COMM_TOPO_CUSTOM);
+    EXPECT_EQ(topoType, CommTopo::COMM_TOPO_1DMESH);
 }
 
 TEST_F(HcclRankGraphTest, Ut_HcclRankGraphGetRanksByTopoInst_When_ValidParam_Expect_Return_HCCL_SUCCESS) {
@@ -297,7 +296,7 @@ TEST_F(HcclRankGraphTest, Ut_HcclRankGraphGetRanksByTopoInst_When_ValidParam_Exp
     uint32_t topoInstId = 0;
     uint32_t rankNum;
     uint32_t* ranks;
-    ret = HcclRankGraphGetTopoType(comm, netLayer, topoInstId, &ranks, &rankNum);
+    ret = HcclRankGraphGetRanksByTopoInst(comm, netLayer, topoInstId, &ranks, &rankNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankNum, 2);
 }
