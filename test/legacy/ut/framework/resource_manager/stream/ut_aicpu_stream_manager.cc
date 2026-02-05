@@ -93,7 +93,6 @@ TEST_F(AicpuStreamManagerTest, Ut_AclGraphCaptureFreeStream_When_GetStreamCaptur
 {
     // 前置条件
     MOCKER(&GetStreamCaptureInfo).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
 
     auto stream = std::make_unique<Stream>(nullptr);
     // 执行测试步骤
