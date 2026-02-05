@@ -57,7 +57,7 @@ HcclResult FlushHandle::Destroy()
     return finalResult;
 }
 
-HcclResult FlushHandle::GetRdmaHandle(IpAddress ip, const u32 devPhyId, void **rdmaHandle)
+HcclResult FlushHandle::GetRdmaHandle(IpAddress ip, u32 devPhyId, void **rdmaHandle)
 {
     *rdmaHandle =
         RdmaHandleManager::GetInstance().GetByAddr(devPhyId, LinkProtoType::RDMA, ip, PortDeploymentType::HOST_NET);
