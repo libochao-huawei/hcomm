@@ -105,3 +105,8 @@ int ra_get_dev_eid_info_list(struct RaInfo info, struct dev_eid_info info_list[]
  
     return 0;
 }
+
+int ra_get_sec_random(struct RaInfo *info, uint32_t *value)
+{
+    return 0;
+}
