@@ -397,18 +397,18 @@ static HcclResult MergeExportedResources(
 template <typename T>
 static HcclResult ResetImportedResources(
     std::unordered_map<std::string, T> &importedRes,
-    const std::unordered_map<std::string, T> &exporetedRes)
+    const std::unordered_map<std::string, T> &exportedRes)
 {
     for (auto &item : importedRes) {
         const auto &resTag = item.first;
-        const auto &exportedRes = exportedRes.find(resTag);
-        if (exporetedRes == exporetedRes.end()) {
+        const auto &iter = exportedRes.find(resTag);
+        if (iter == exportedRes.end()) {
             HCCL_ERROR("[CcuKernelMgr][%s] failed to find exported resources by tag[%s].",
                 __func__, resTag.c_str());
             return HcclResult::HCCL_E_NOT_FOUND;
         }
 
-        item.second.Reset(exportedRes->second.Id(), exportedRes->second.DieId());
+        item.second.Reset(iter->second.Id(), iter->second.DieId());
     }
 
     return HcclResult::HCCL_SUCCESS;
@@ -420,7 +420,7 @@ static HcclResult ProcessInterCtxRes(const std::vector<CcuKernel *> &kernels)
     std::unordered_map<std::string, CcuRep::LocalNotify> totalExportedNotifies;
 
     for (const auto kernel : kernels) {
-        const auto &exportedRes = kernel->GetExporetedRes();
+        const auto &exportedRes = kernel->GetExportedRes();
         CHK_RET(MergeExportedResources(exportedRes.sharedVars, totalExportedVars));
         CHK_RET(MergeExportedResources(exportedRes.sharedNotifies, totalExportedNotifies));
     }
@@ -661,7 +661,7 @@ HcclResult CcuKernelMgr::LoadInstruction(const CcuRep::CcuInstrInfo &instrInfo, 
 }
 
 HcclResult CcuKernelMgr::TransRepSequenceToMicrocode(
-    std::vector<CcuKernel *> &kernels, bool isFuncBlock)
+    const std::vector<CcuKernel *> &kernels, bool isFuncBlock)
 {
     for (auto kernel : kernels) {
         const uint32_t dieId = kernel->GetDieId();

@@ -30,7 +30,7 @@ CcuUrmaChannel::CcuUrmaChannel(const EndpointHandle locEndpointHandle,
 {
 }
 
-HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
+static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
     const Hccl::LinkData &linkData, Hccl::Socket *socket, void *memHandle,
     std::unique_ptr<CcuTransport> &impl)
 {
@@ -95,6 +95,24 @@ HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
     return HCCL_SUCCESS;
 }
 
+static HcclResult CheckEndpointDesc(const EndpointDesc &locDesc, const EndpointDesc &rmtDesc)
+{
+    if (locDesc.protocol != rmtDesc.protocol) {
+        HCCL_ERROR("[CcuUrmaChannel][%s] failed, endpoints protocols are not same, "
+            "loc[%d] rmt[%d].", __func__, locDesc.protocol, rmtDesc.protocol);
+        return HcclResult::HCCL_E_PARA;
+    }
+
+    if (locDesc.protocol != COMM_PROTOCOL_UBC_CTP &&
+        locDesc.protocol != COMM_PROTOCOL_UBC_TP) {
+        HCCL_ERROR("[CcuUrmaChannel][%s] failed, protocol[%d] are not supported in ccu.",
+            __func__, locDesc.protocol);
+        return HcclResult::HCCL_E_PARA;
+    }
+    
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult CcuUrmaChannel::Init()
 {
     EXCEPTION_HANDLE_BEGIN
@@ -105,8 +123,12 @@ HcclResult CcuUrmaChannel::Init()
     CHK_PTR_NULL(locEndpointHandle_);
     void *endpoint{nullptr};
     CHK_RET(HcommEndpointGet_(locEndpointHandle_, &endpoint));
-    UrmaEndpoint *ccuEndpoint = reinterpret_cast<UrmaEndpoint *>(endpoint);
+    UrmaEndpoint *ccuEndpoint = dynamic_cast<UrmaEndpoint *>(static_cast<Endpoint *>(endpoint));
+    CHK_PTR_NULL(ccuEndpoint);
     const auto &locEndpointDesc = ccuEndpoint->GetEndpointDesc();
+
+    CHK_RET(CheckEndpointDesc(locEndpointDesc, channelDesc_.remoteEndpoint));
+
     auto linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(locEndpointDesc, channelDesc_.remoteEndpoint, linkData));
 

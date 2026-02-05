@@ -33,7 +33,7 @@ bool CcuRepLocRecordEvent::Translate(CcuInstr *&instr, uint16_t &instrId, const 
 
     SetCKEInstr(instr++, event_.Id(), event_.mask, 0, 0, 1);
 
-    CHK_PTR_THROW(instrId > USHRT_MAX - instrCount,
+    CHK_PRT_THROW(instrId > USHRT_MAX - instrCount,
         HCCL_ERROR("[CcuRepLocRecordEvent][Translate] instrId[%u] + instrCount[%u] "
             "exceeds the maximum value of unsigned short int.", instrId, instrCount),
         Hccl::CcuApiException, "integer overflow");

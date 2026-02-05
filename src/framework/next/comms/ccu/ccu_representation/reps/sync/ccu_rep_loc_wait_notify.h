@@ -25,8 +25,8 @@ public:
 
 private:
     LocalNotify notify_{};
-    uint32_t mask{0};
-    bool isProfiling{true};
+    uint32_t mask_{0};
+    bool isProfiling_{true};
 };
 
 }; // namespace CcuRep

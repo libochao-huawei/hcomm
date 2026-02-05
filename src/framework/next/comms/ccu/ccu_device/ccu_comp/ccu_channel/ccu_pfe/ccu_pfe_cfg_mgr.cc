@@ -77,7 +77,6 @@ HcclResult CcuPfeCfgMgr::Init()
         PfeJettyCtxCfg cfg{feId, startJettyCtxId, startTaJettyId, pfeJettyNum};
         pfeJettyCtxCfgs_[dieId].emplace_back(std::move(cfg));
         dieFuncIdSet[dieId].insert(feId);
-        pfeCnts[dieId] += 1;
 
         HCCL_RUN_INFO("[CcuPfeCfgMgr] new pfe cfg set: dieId[%u] feId[%u] startJettyCtxId[%u] "
             "startTaJettyId[%u] pfeJettyNum[%u].", dieId, feId, startJettyCtxId, startTaJettyId,

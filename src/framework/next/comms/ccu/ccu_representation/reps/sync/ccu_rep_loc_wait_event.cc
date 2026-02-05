@@ -20,7 +20,7 @@ namespace hcomm {
 namespace CcuRep {
 
 CcuRepLocWaitEvent::CcuRepLocWaitEvent(const CompletedEvent &event, bool isProfiling)
-    : event_(event), isProfiling(isProfiling)
+    : event_(event), isProfiling_(isProfiling)
 {
     type       = CcuRepType::LOC_WAIT_EVENT;
     instrCount = 1;
@@ -32,10 +32,10 @@ bool CcuRepLocWaitEvent::Translate(CcuInstr *&instr, uint16_t &instrId, const Tr
     translated    = true;
 
     // SetCKEInstr支持硬件profiling功能
-    if (isProfiling) {
-        SetCKEInstr(instr++, 0, 0, event_.Id(), mask, 1);
+    if (isProfiling_) {
+        SetCKEInstr(instr++, 0, 0, event_.Id(), event_.mask, 1);
     } else {
-        ClearCKEInstr(instr++, 0, 0, event_.Id(), mask, 1);
+        ClearCKEInstr(instr++, 0, 0, event_.Id(), event_.mask, 1);
     }
 
     CHK_PRT_THROW((instrId > UINT16_MAX - instrCount),

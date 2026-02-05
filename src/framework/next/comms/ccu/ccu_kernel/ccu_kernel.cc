@@ -227,7 +227,7 @@ void CcuKernel::LoadVariable(const CcuRep::Variable &src, const CcuRep::Variable
     Append(std::make_shared<CcuRep::CcuRepLoadVar>(src, var));
 }
 
-HcclResult CcuKernel::CreateSharedVariable(const uint32 coreId,
+HcclResult CcuKernel::CreateSharedVariable(const uint32_t coreId,
     const uint32_t varId, CcuRep::Variable *var)
 {
     const std::string varTag = "Variable_" + std::to_string(coreId) + "_"
@@ -251,7 +251,7 @@ HcclResult CcuKernel::LocalNotifyRecord(const uint32_t coreId,
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 
-    const std::string notifyTag = "Notify_" + std::string(coreId) + "_" +
+    const std::string notifyTag = "Notify_" + std::to_string(coreId) + "_" +
         std::to_string(dstNotifyIdx);
 
     auto &sharedNotifies = importedRes_.sharedNotifies;
@@ -291,8 +291,8 @@ HcclResult CcuKernel::LocalNotifyWait(const uint32_t coreId,
         isProfiling = true;
     }
 
-    Append(std::make_shared<CcuRep::CcuRepLocWaitNotify)(
-        exportedRes_.sharedNotifyies.at(notifyTag), mask, isProfiling);
+    Append(std::make_shared<CcuRep::CcuRepLocWaitNotify>(
+        exportedRes_.sharedNotifies.at(notifyTag), mask, isProfiling));
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -314,7 +314,7 @@ HcclResult CcuKernel::WaitEvent(CcuRep::CompletedEvent event)
         isProfiling = true;
     }
 
-    Append(std::make_shared<CcuRep::CcuRepLocWaitSem>(event, isProfiling));
+    Append(std::make_shared<CcuRep::CcuRepLocWaitEvent>(event, isProfiling));
     return HCCL_SUCCESS;
 }
 
@@ -671,7 +671,7 @@ CcuResRepository  &CcuKernel::GetResRepository()
     return resRepo_;
 }
 
-CcuSharedResource &CcuKernel::GetExporetedRes()
+CcuSharedResource &CcuKernel::GetExportedRes()
 {
     return exportedRes_;
 }
