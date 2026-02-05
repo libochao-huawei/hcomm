@@ -190,6 +190,7 @@ STATIC int rs_get_jetty_opt(struct rs_ctx_jetty_cb *jettyCb)
 
     jettyCb->sq_buff_va = sqBuffVa;
     jettyCb->db_addr = dbVa;
+    hccp_warn("@@@ rs_get_jetty_opt jettyCb->db_addr: %ld", jettyCb->db_addr);
     if ((jettyCb->jetty_mode == JETTY_MODE_CACHE_LOCK_DWQE) || (jettyCb->jetty_mode == JETTY_MODE_USER_CTL_NORMAL)) {
         ret = rs_mmap_jetty_va(jettyCb);
         CHK_PRT_RETURN(ret != 0, hccp_err("rs_mmap_jetty_va failed, ret:%d", ret), ret);
