@@ -12,6 +12,7 @@
 #include "log.h"
 
 using namespace std;
+using namespace Hccl;
 
 HcclResult HcclNetDevOpen(const HcclNetDevInfos *info, HcclNetDev *netDev)
 {
