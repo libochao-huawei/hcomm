@@ -134,7 +134,7 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
     event.subevent_id = 0U;
     event.msg_len = static_cast<uint32_t>(sizeof(ts_aicpu_msg_info_t));
     event.msg = reinterpret_cast<char_t *>(&aicpuSqe);
-    auto ret = halEschedSubmitEvent(localDeviceId, &event);
+    auto ret = DlHalFunctionV2::GetInstance().dlHalEschedSubmitEvent(localDeviceId, &event);
     if (ret != static_cast<int32_t>(DRV_ERROR_NONE)) {
         HCCL_ERROR("[SendTaskExceptionByMBox]Send msg async to ts failed. ret=%d, streamId=%d, "
                 "notifyId=%u.", ret, userStreamId, notifyId);
