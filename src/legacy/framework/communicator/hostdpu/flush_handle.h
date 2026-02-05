@@ -24,7 +24,7 @@ public:
     ~FlushHandle();
 
     // 初始化 handle
-    HcclResult Init(IpAddress ip, u32 devPhyId);
+    HcclResult Init(const IpAddress &ip, const u32 &devPhyId);
 
     // 销毁 handle
     HcclResult Destroy();
@@ -44,7 +44,7 @@ private:
     RdmaHandle     rdmaHandle{nullptr};
 
     // 初始化方法
-    HcclResult GetRdmaHandle(IpAddress ip, u32 devPhyId, void **rdmaHandle);
+    HcclResult GetRdmaHandle(const IpAddress &ip, const u32 &devPhyId, void **rdmaHandle);
     HcclResult AllocateDeviceMemory();
     HcclResult AllocateHostMemory();
     HcclResult CreateLoopbackQp();
