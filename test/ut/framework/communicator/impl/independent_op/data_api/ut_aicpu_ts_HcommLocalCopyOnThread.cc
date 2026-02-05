@@ -22,16 +22,9 @@ using namespace hccl;
 class UtAicpuTsHcommLocalCopyOnThread : public testing::Test
 {
 protected:
-    static void SetUpTestCase()
-    {
-    }
-
-    static void TearDownTestCase()
-    {
-    }
-
     virtual void SetUp() override
     {
+        MOCKER_CPP(&Hccl::IAicpuTsThread::SdmaCopy).stubs().with(any(), any(), any()).will(returnValue(HCCL_SUCCESS));
     }
 
     virtual void TearDown() override
@@ -52,11 +45,7 @@ TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_Normal_Ex
     void *src = reinterpret_cast<void *>(&tempSrc);
     uint64_t len = sizeof(tempDst);
 
-    int32_t res = HCCL_E_RESERVED;
-
-    MOCKER_CPP(&Hccl::IAicpuTsThread::SdmaCopy).stubs().with(any(), any(), any()).will(returnValue(HCCL_SUCCESS));
-
-    res = HcommLocalCopyOnThread(thread, dst, src, len);
+    int32_t res = HcommLocalCopyOnThread(thread, dst, src, len);
 
     EXPECT_EQ(res, HCCL_SUCCESS);
 }
@@ -69,11 +58,7 @@ TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_Thread_Is
     void *src = reinterpret_cast<void *>(&tempSrc);
     uint64_t len = sizeof(tempDst);
 
-    int32_t res = HCCL_E_RESERVED;
-
-    MOCKER_CPP(&Hccl::IAicpuTsThread::SdmaCopy).stubs().with(any(), any(), any()).will(returnValue(HCCL_SUCCESS));
-
-    res = HcommLocalCopyOnThread(nullptr, dst, src, len);
+    int32_t res = HcommLocalCopyOnThread(0, dst, src, len);
 
     EXPECT_EQ(res, HCCL_E_PTR);
 }
@@ -86,18 +71,14 @@ TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_Dst_IsNul
     ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
     uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
     void *src = reinterpret_cast<void *>(&tempSrc);
-    uint64_t len = sizeof(tempDst);
+    uint64_t len = sizeof(tempSrc);
 
-    int32_t res = HCCL_E_RESERVED;
-
-    MOCKER_CPP(&Hccl::IAicpuTsThread::SdmaCopy).stubs().with(any(), any(), any()).will(returnValue(HCCL_SUCCESS));
-
-    res = HcommLocalCopyOnThread(thread, nullptr, src, len);
+    int32_t res = HcommLocalCopyOnThread(thread, nullptr, src, len);
 
     EXPECT_EQ(res, HCCL_E_PTR);
 }
 
-TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_Dst_IsNull_Expect_ReturnIsHCCL_E_PTR)
+TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_Src_IsNull_Expect_ReturnIsHCCL_E_PTR)
 {
     AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
     threadOnDevice.devType_ = DevType::DEV_TYPE_910_95;
@@ -107,11 +88,7 @@ TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_Dst_IsNul
     void *dst = reinterpret_cast<void *>(&tempDst);
     uint64_t len = sizeof(tempDst);
 
-    int32_t res = HCCL_E_RESERVED;
-
-    MOCKER_CPP(&Hccl::IAicpuTsThread::SdmaCopy).stubs().with(any(), any(), any()).will(returnValue(HCCL_SUCCESS));
-
-    res = HcommLocalCopyOnThread(thread, dst, nullptr, len);
+    int32_t res = HcommLocalCopyOnThread(thread, dst, nullptr, len);
 
     EXPECT_EQ(res, HCCL_E_PTR);
 }
