@@ -20,6 +20,7 @@
 #include "hccl_rank_graph.h"
 #include "hccl_mem_defs.h"
 #include "trace.h"
+#include "perf_timer.h"
  
 namespace Hccl {
 class CommunicatorImpl;
@@ -38,8 +39,8 @@ public:
     HcclResult CreateSubComm(const CommParams &subCommParams, const std::vector<u32> &rankIds,
         std::shared_ptr<HcclCommunicator> &subHcclComm, HcclCommConfig &subConfig);
     void DeInit() const;
- 
-    HcclResult LoadOpbasedCollOp(const CollOpParams &opParams, void *stream);
+
+    HcclResult LoadOpbasedCollOp(const CollOpParams &opParams, void *stream, SingleOperatorHostTimer *timer = nullptr);
     HcclResult AllocCollOpResource(const CollOpParams &opParams, void **addr);
  
     const std::string &GetId() const;

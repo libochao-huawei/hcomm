@@ -76,6 +76,7 @@ set(platform_include_list
     ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/framework/topo
     ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/framework/topo/new_topo_builder/common
     ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/framework/topo/new_topo_builder/rank_graph
+    ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/framework/communicator
 )
 
 if(BUILD_OPEN_PROJECT)
