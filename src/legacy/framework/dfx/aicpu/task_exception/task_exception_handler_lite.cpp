@@ -55,7 +55,7 @@ HcclResult GenerateErrorMessageReport(CommunicatorImplLite *aicpuComm, std::shar
     errMsgInfo.rankId = aicpuComm->GetMyRank();
     errMsgInfo.rankSize = aicpuComm->GetRankSize();
     errMsgInfo.algType = taskInfo->dfxOpInfo_ == nullptr ? static_cast<Hccl::AlgType>(AlgType::MESH) : taskInfo->dfxOpInfo_->algType_;
-    errMsgInfo.opIndex = taskInfo->dfxOpInfo_ == nullptr ? 0 : taskInfo->dfxOpInfo_->index_;
+    errMsgInfo.opIndex = taskInfo->dfxOpInfo_ == nullptr ? 0 : taskInfo->dfxOpInfo_->commIndex_;
     errMsgInfo.count = taskInfo->taskParam_.taskPara.DMA.size;
     errMsgInfo.dataType = taskInfo->taskParam_.taskPara.Reduce.dataType;
     errMsgInfo.dstAddr = reinterpret_cast<u64>(taskInfo->taskParam_.taskPara.DMA.dst);
