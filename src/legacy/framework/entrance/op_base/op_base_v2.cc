@@ -681,9 +681,9 @@ HcclResult HcclAlltoAllVV2(const void *sendBuf, const void *sendCounts, const vo
     rtModel_t rtModel = nullptr;
     u32 modelId = 0;
     CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
-    PrintOpTagAndComm(tag, communicator->GetOpIndex());
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "HCCL_ALLTOALLV_" + communicator->GetId();
+    PrintOpTagAndComm(tag, communicator->GetOpIndex());
 
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), 0, sendType, stream), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckDataTypeV2(recvType), tag.c_str());
