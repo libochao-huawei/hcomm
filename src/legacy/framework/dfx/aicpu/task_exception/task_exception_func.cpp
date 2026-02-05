@@ -9,7 +9,8 @@
  */
 
 #include "task_exception_func.h"
- #include "communicator_impl_lite_manager.h"
+#include "communicator_impl_lite_manager.h"
+#include "exception_util.h"
 
 namespace Hccl {
 TaskExceptionFunc &TaskExceptionFunc::GetInstance()
@@ -172,39 +173,41 @@ uint32_t TaskExceptionFunc::GetReporterInfo(const StreamLite *curStream, std::sh
 }
 
 void TaskExceptionFunc::Call()
-{
-    if (!isEnable_) {
-        return;
-    }
-    auto recvInfo = std::make_shared<halReportRecvInfo>();
-    constexpr uint32_t cqeSize = MAX_REPORT_CNT * sizeof(rtLogicCqReport_t);
-    uint8_t tmpAddr[cqeSize] = {};     // cqe byte size
-    recvInfo->cqe_addr = tmpAddr;  // 外部保证是有效的地址
-    
-    std::vector<CommunicatorImplLite *> aicpuComms = CommunicatorImplLiteMgr::GetInstance().GetAll();
-    for (auto aicpuComm : aicpuComms) {
-        std::vector<StreamLite *> aicpuStreams = aicpuComm-> GetStreamLiteMgr()->GetAllStreams();
-        for (auto &aicpuStream : aicpuStreams) {
-            if (aicpuStream == nullptr) {
-                HCCL_ERROR("[TaskExceptionFunc]stream of in aicpuComm[%s] is nullptr", aicpuComm->GetId().c_str());
-                continue;
-            }
-            if (GetReporterInfo(aicpuStream, recvInfo)) {
-                continue;
-            }
-            uint32_t reportNum = recvInfo->report_cqe_num;
-            if (reportNum > MAX_REPORT_CNT) {
-                HCCL_ERROR("[TaskExceptionFunc]report cqe num %u should not big than %u", reportNum, MAX_REPORT_CNT);
-                continue;
-            }
-            for (uint32_t idx = 0U; idx < reportNum; ++idx) {
-                auto &reportOfOne
-                    = *((reinterpret_cast<rtLogicCqReport_t *>(recvInfo->cqe_addr)) + idx); // 外部保证是有效的地址
-                if (IsExceptionCqe(reportOfOne)) {
-                    callback_(aicpuComm, &reportOfOne);
+{   
+    TRY_CATCH_PRINT_ERROR(
+        if (!isEnable_) {
+            return;
+        }
+        auto recvInfo = std::make_shared<halReportRecvInfo>();
+        constexpr uint32_t cqeSize = MAX_REPORT_CNT * sizeof(rtLogicCqReport_t);
+        uint8_t tmpAddr[cqeSize] = {};     // cqe byte size
+        recvInfo->cqe_addr = tmpAddr;  // 外部保证是有效的地址
+
+        std::vector<CommunicatorImplLite *> aicpuComms = CommunicatorImplLiteMgr::GetInstance().GetAll();
+        for (auto aicpuComm : aicpuComms) {
+            std::vector<StreamLite *> aicpuStreams = aicpuComm-> GetStreamLiteMgr()->GetAllStreams();
+            for (auto &aicpuStream : aicpuStreams) {
+                if (aicpuStream == nullptr) {
+                    HCCL_ERROR("[TaskExceptionFunc]stream of in aicpuComm[%s] is nullptr", aicpuComm->GetId().c_str());
+                    continue;
+                }
+                if (GetReporterInfo(aicpuStream, recvInfo)) {
+                    continue;
+                }
+                uint32_t reportNum = recvInfo->report_cqe_num;
+                if (reportNum > MAX_REPORT_CNT) {
+                    HCCL_ERROR("[TaskExceptionFunc]report cqe num %u should not big than %u", reportNum, MAX_REPORT_CNT);
+                    continue;
+                }
+                for (uint32_t idx = 0U; idx < reportNum; ++idx) {
+                    auto &reportOfOne
+                        = *((reinterpret_cast<rtLogicCqReport_t *>(recvInfo->cqe_addr)) + idx); // 外部保证是有效的地址
+                    if (IsExceptionCqe(reportOfOne)) {
+                        callback_(aicpuComm, &reportOfOne);
+                    }
                 }
             }
         }
-    }
+    );
 }
 } // namespace Hccl
