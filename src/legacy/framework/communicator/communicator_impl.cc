@@ -2718,7 +2718,7 @@ HcclResult CommunicatorImpl::HcomSelectAlg(const CollOpParams& opParams, int32_t
     ExecAlgSelect(opParams, OpMode::OFFLOAD);
     ifAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
     HcclResult dataTypeChkRes = OpParamsChecker::CheckOpDataTypeOffload(opParams, GetOpCcuFeatureFlag(),
-                                                                        GetOpAiCpuTSFeatureFlag(), ifAiv, true);
+                                                                        GetOpAiCpuTSFeatureFlag(), ifAiv);
     if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::HcomSelectAlg] DataType check fail.");
         status = CommStatus::COMM_READY;
