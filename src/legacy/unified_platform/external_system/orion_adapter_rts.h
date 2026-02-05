@@ -19,6 +19,7 @@
 #include "dev_type.h"
 #include "rt_external.h"
 #include "rt_external_kernel.h"
+#include "../../framework/communicator/perf_timer.h"
 
 namespace Hccl {
 #ifdef CCL_FWK_LLT
@@ -263,7 +264,7 @@ void       HrtStreamDestroy(aclrtStream ptr);
 void       HrtStreamSetMode(HcclRtStream streamPtr, const uint64_t stmMode);
 u64        HrtStreamGetMode(HcclRtStream const ptr);
 void       HcclStreamSynchronize(HcclRtStream ptr);
-s32        HrtGetStreamId(aclrtStream ptr);
+s32 HrtGetStreamId(aclrtStream ptr, SingleOperatorHostTimer *timer = nullptr);
 void       HrtStreamActive(aclrtStream activeStream, aclrtStream stream);
 
 void                 *HrtMalloc(u64 size, rtMemType_t memType);
@@ -369,12 +370,13 @@ u32 HrtGetCntNotifyId(const aclrtCntNotify inCntNotify);
 void HrtCntNotifyDestroy(const aclrtCntNotify inCntNotify);
 
 MAKE_ENUM(HrtCntNotifyRecordMode, WRITE_BIT, STORE)
-void HrtCntNotifyRecord(const aclrtCntNotify inCntNotify, const aclrtStream streamPtr, HrtCntNotifyRecordMode mode, u32 value);
+void HrtCntNotifyRecord(const aclrtCntNotify inCntNotify, const aclrtStream streamPtr, HrtCntNotifyRecordMode mode,
+                        u32 value, SingleOperatorHostTimer *timer = nullptr);
 MAKE_ENUM(HrtCntNotifyWaitMode, EQUAL, BITMAP)
-void HrtCntNotifyWaitWithTimeOut(const aclrtCntNotify inCntNotify, const aclrtStream streamPtr, HrtCntNotifyWaitMode mode, u32 value,
-                                 u32 timeout, bool isClear = true);
-
-void HrtCcuLaunch(rtCcuTaskInfo_t &taskInfo, aclrtStream const streamPtr);
+void HrtCntNotifyWaitWithTimeOut(const aclrtCntNotify inCntNotify, const aclrtStream streamPtr,
+                                 HrtCntNotifyWaitMode mode, u32 value, u32 timeout, bool isClear = true,
+                                 SingleOperatorHostTimer *timer = nullptr);
+void HrtCcuLaunch(rtCcuTaskInfo_t &taskInfo, aclrtStream const streamPtr, SingleOperatorHostTimer *timer = nullptr);
 void HrtUbDevQueryInfo(rtUbDevQueryCmd cmd, void *devInfo);
 // pair<tokendId, tokenValue>
 std::pair<u32, u32> HrtUbDevQueryToken(u64 addr, u64 size);
