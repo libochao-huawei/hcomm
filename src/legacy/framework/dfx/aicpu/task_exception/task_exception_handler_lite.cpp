@@ -189,7 +189,7 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
     if (!aicpuComm->IsErrorReported()) {
         // 1) errorMessage上报
         ErrorMessageReport errMsgInfo{};
-        HcclResult ret = GenerateErrorMessageReport(aicpuComm, curTask, errMsgInfo);
+        auto ret = GenerateErrorMessageReport(aicpuComm, curTask, errMsgInfo);
         if (ret != HCCL_SUCCESS) {
             THROW<InvalidParamsException>("GenerateErrorMessageReport failed.");
         }
@@ -199,15 +199,10 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
         }
 
         // 2) send mbox to tsfw
-        ret = SendTaskExceptionByMBox(aicpuComm, exceptionInfo);
-        HCCL_RUN_INFO("[TaskExceptionHandlerLite][SendTaskExceptionByMBox]group[%s]:"
-            "Try to send task exception by mailbox, errType[%u], errCode[%u], streamId[%d]",
-            aicpuComm->GetId().c_str(), exceptionInfo->sqeType, exceptionInfo->errorCode,
-            exceptionInfo->streamId);
         CHK_RET_THROW(InternalException,
             StringFormat("[TaskExceptionHandlerLite][SendTaskExceptionByMBox]group[%s]:"
             "Send task exception by mailBox failed, streamId[%d]",
-            aicpuComm->GetId().c_str(), exceptionInfo->streamId), ret);
+            aicpuComm->GetId().c_str(), exceptionInfo->streamId), SendTaskExceptionByMBox(aicpuComm, exceptionInfo));
 
         aicpuComm->SetErrorReported();
     }
