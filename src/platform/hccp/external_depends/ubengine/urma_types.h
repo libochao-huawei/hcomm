@@ -478,7 +478,7 @@ typedef struct urma_jfc {
     pthread_cond_t event_cond;
     uint32_t comp_events_acked;
     uint32_t async_events_acked;
-    urma_jfc_opt_t urma_jfc_opt;
+    // urma_jfc_opt_t urma_jfc_opt;
 } urma_jfc_t;
 
 #define URMA_SUB_TRANS_MODE_TA_DST_ORDERING_ENABLE (0x1)
@@ -565,7 +565,7 @@ typedef struct urma_jfs {
     pthread_mutex_t event_mutex;
     pthread_cond_t event_cond;
     uint32_t async_events_acked;
-    urma_jfs_opt_t urma_jfs_opt;
+    // urma_jfs_opt_t urma_jfs_opt;
 } urma_jfs_t;
 
 typedef enum urma_jfs_attr_mask {
@@ -660,7 +660,7 @@ typedef struct urma_jfr {
     pthread_mutex_t event_mutex;
     pthread_cond_t event_cond;
     uint32_t async_events_acked;
-    urma_jfr_opt_t urma_jfr_opt;
+    // urma_jfr_opt_t urma_jfr_opt;
 } urma_jfr_t;
 
 typedef union urma_import_jetty_flag {
