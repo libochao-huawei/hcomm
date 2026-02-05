@@ -1590,4 +1590,9 @@ namespace hccl
     {
         return cclBufferManager_;
     }
+
+    bool HcclCommunicator::EnableAicpuUnfold()
+    {
+        return false;
+    }
 }
