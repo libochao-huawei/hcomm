@@ -1782,7 +1782,52 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
     jetty_info->ub.share_info_addr = (uint64_t)(uintptr_t)jetty_cb->qp_share_info_addr;
     jetty_info->ub.share_info_len = sizeof(struct ctx_qp_share_info);
 
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_id.eid: %ld", jetty_cb->jetty->jetty_id.eid);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_id.uasid: %ld", jetty_cb->jetty->jetty_id.uasid);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_id.id: %ld", jetty_cb->jetty->jetty_id.id);
+
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.id: %ld", jetty_cb->jetty->jetty_cfg.id);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.jfs_cfg.depth: %ld", jetty_cb->jetty->jetty_cfg.jfs_cfg.depth);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.jfs_cfg.jfc->: %ld", jetty_cb->jetty->jetty_cfg.jfs_cfg.jfc);
+
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfr->jfr_id.eid: %ld",
+        jetty_cb->jetty->jetty_cfg.shared.jfr->jfr_id.eid);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfr->jfr_id.uasid: %ld",
+        jetty_cb->jetty->jetty_cfg.shared.jfr->jfr_id.uasid);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfr->jfr_id.id: %ld",
+        jetty_cb->jetty->jetty_cfg.shared.jfr->jfr_id.id);
+
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfc->jfc_id.eid: %ld",
+        jetty_cb->jetty->jetty_cfg.shared.jfc->jfc_id.eid);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfc->jfc_id.uasid: %ld",
+        jetty_cb->jetty->jetty_cfg.shared.jfc->jfc_id.uasid);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfc->jfc_id.id: %ld",
+        jetty_cb->jetty->jetty_cfg.shared.jfc->jfc_id.id);
+
     struct udma_u_jetty *udma_jetty = CONTAINER_OF(jetty_cb->jetty, struct udma_u_jetty, base);
+
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_id.eid: %ld", udma_jetty->base.jetty_id.eid);
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_id.uasid: %ld", udma_jetty->base.jetty_id.uasid);
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_id.id: %ld", udma_jetty->base.jetty_id.id);
+
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.id: %ld", udma_jetty->base.jetty_cfg.id);
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.jfs_cfg.depth: %ld", udma_jetty->base.jetty_cfg.jfs_cfg.depth);
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.jfs_cfg.jfc->: %ld", udma_jetty->base.jetty_cfg.jfs_cfg.jfc);
+
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.shared.jfr->jfr_id.eid: %ld",
+        udma_jetty->base.jetty_cfg.shared.jfr->jfr_id.eid);
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.shared.jfr->jfr_id.uasid: %ld",
+        udma_jetty->base.jetty_cfg.shared.jfr->jfr_id.uasid);
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.shared.jfr->jfr_id.id: %ld",
+        udma_jetty->base.jetty_cfg.shared.jfr->jfr_id.id);
+
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.shared.jfc->jfc_id.eid: %ld",
+        udma_jetty->base.jetty_cfg.shared.jfc->jfc_id.eid);
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.shared.jfc->jfc_id.uasid: %ld",
+        udma_jetty->base.jetty_cfg.shared.jfc->jfc_id.uasid);
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.shared.jfc->jfc_id.id: %ld",
+        udma_jetty->base.jetty_cfg.shared.jfc->jfc_id.id);
+
     jetty_info->udma_jetty_sq.qbuf = udma_jetty->sq.qbuf;
     jetty_info->udma_jetty_sq.qbuf_end = udma_jetty->sq.qbuf_end;
     jetty_info->udma_jetty_sq.qbuf_size = udma_jetty->sq.qbuf_size;
