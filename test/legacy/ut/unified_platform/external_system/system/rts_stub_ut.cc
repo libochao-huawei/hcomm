@@ -37,12 +37,6 @@ aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType
     return ACL_SUCCESS;
 }
 
-rtError_t rtStreamCreateWithFlags(rtStream_t *stream, int32_t priority, uint32_t flag)
-{
-    return RT_ERROR_NONE;
-}
-
-
 int rtModelFake = 0;
 aclError aclmdlRICaptureGetInfo(aclrtStream stream, aclmdlRICaptureStatus *status, aclmdlRI *modelRI)
 {   
@@ -60,8 +54,7 @@ aclError aclrtGetDeviceInfo(uint32_t deviceId, aclrtDevAttr attr, int64_t *value
     return ACL_SUCCESS;
 }
 
-typedef int32_t (*rtsDeviceTaskAbortCallback)(uint32_t devId, rtDeviceTaskAbortStage stage, uint32_t timeout, void *args);
-rtError_t rtsSetDeviceTaskAbortCallback(const char_t *regName, rtsDeviceTaskAbortCallback callback, void *args)
+aclError aclrtSetDeviceTaskAbortCallback(const char *regName, aclrtDeviceTaskAbortCallback callback, void *args)
 {
     return ACL_SUCCESS;
 }
@@ -86,11 +79,11 @@ aclError aclrtMemcpy(void *dst, size_t destMax, const void *src, size_t count, a
     return ACL_SUCCESS;
 }
 
-aclError rtPointerGetAttributes(const void *ptr, aclrtPtrAttributes *attributes)
+aclError aclrtPointerGetAttributes(const void *ptr, aclrtPtrAttributes *attributes)
 {
     //桩函数固定反回2M的页表大小
     attributes->pageSize = 1;
-
+    attributes->location.type = aclrtMemLocationType::ACL_MEM_LOCATION_TYPE_HOST;
     return ACL_SUCCESS;
 }
 
@@ -116,24 +109,23 @@ aclError aclrtReduceAsync(void *dst, const void *src, uint64_t count, aclrtReduc
     return ACL_SUCCESS;
 }
 
-rtError_t rtCntNotifyCreateServer(rtCntNotify_t * const cntNotify, uint64_t flags)
+aclError aclrtCntNotifyCreate(aclrtCntNotify * const cntNotify, uint64_t flags)
 {
     return ACL_SUCCESS;
 }
 
-rtError_t rtsCntNotifyGetId(rtCntNotify_t cntNotify, uint32_t *notifyId)
+aclError aclrtCntNotifyGetId(aclrtCntNotify cntNotify, uint32_t *notifyId)
 {
     return ACL_SUCCESS;
 }
 
-rtError_t rtsCntNotifyRecord(rtCntNotify_t cntNotify, rtStream_t stm,
-                                     rtCntNotifyRecordInfo_t *info)
+aclError aclrtCntNotifyRecord(aclrtCntNotify cntNotify, aclrtStream stream,
+                              aclrtCntNotifyRecordInfo *info)
 {
     return ACL_SUCCESS;
 }
 
-rtError_t rtsCntNotifyWaitWithTimeout(rtCntNotify_t cntNotify, rtStream_t stm,
-                                              rtCntNotifyWaitInfo_t *info)
+aclError aclrtCntNotifyWaitWithTimeout(aclrtCntNotify cntNotify, aclrtStream stream,aclrtCntNotifyWaitInfo *info)
 {
     return ACL_SUCCESS;
 }
@@ -179,7 +171,7 @@ rtError_t rtGetDeviceIndexByPhyId(uint32_t phyId, uint32_t *devIndex)
     return RT_ERROR_NONE;
 }
 
-rtError_t rtsGetPhyDevIdByLogicDevId(int32_t logicDevId, int32_t * const phyDevId)
+aclError aclrtGetPhyDevIdByLogicDevId(const int32_t logicDevId, int32_t *const phyDevId)
 {
     return RT_ERROR_NONE;
 }
@@ -219,11 +211,6 @@ rtError_t rtGetP2PStatus(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t *status)
     return RT_ERROR_NONE;
 }
 
-rtError_t rtMalloc(void **devPtr, uint64_t size, rtMemType_t type, const uint16_t moduleId)
-{
-    return RT_ERROR_NONE;
-}
-
 rtError_t aclrtFree(void *devPtr)
 {
     return RT_ERROR_NONE;
@@ -234,10 +221,9 @@ rtError_t aclrtMallocHost(void **hostPtr, size_t size)
     return RT_ERROR_NONE;
 }
 
-rtError_t rtPointerGetAttributes(rtPointerAttributes_t *attributes, const void *ptr)
+aclError aclrtMallocWithCfg(void **devPtr, size_t size, aclrtMemMallocPolicy policy, aclrtMallocConfig *cfg)
 {
-    attributes->memoryType = rtMemoryType_t::RT_MEMORY_TYPE_HOST;
-    return RT_ERROR_NONE;
+    return ACL_SUCCESS;
 }
 
 rtError_t rtIpcDestroyMemoryName(const char_t *name)
@@ -434,34 +420,18 @@ rtError_t rtGetDeviceSatMode(rtFloatOverflowMode_t *floatOverflowMode)
     return RT_ERROR_NONE;
 }
 
-rtError_t rtFunctionRegister(void *binHandle, const void *stubFunc, const char *stubName, const void *devFunc,
-                                uint32_t funcMode)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t numBlocks, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
+aclError aclrtLaunchKernelWithHostArgs(const void *stubFunc, uint32_t numBlocks, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
     rtStream_t stream, uint32_t flags, const rtTaskCfgInfo_t *cfgInfo)
 {
     return RT_ERROR_NONE;
 }
 
-rtError_t rtGetDeviceInfo(uint32_t deviceId, int32_t moduleType, int32_t infoType, int64_t *val)
+aclError aclrtBinaryGetFunctionByEntry(aclrtBinHandle binHandle, uint64_t funcEntry, aclrtFuncHandle *funcHandle)
 {
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtDevBinaryRegister(const rtDevBinary_t *bin, void **hdl)
-{
-    return RT_ERROR_NONE;
+	return ACL_SUCCESS;
 }
 
 rtError_t rtGetNotifyAddress(rtNotify_t notify, uint64_t *const notifyAddres)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtDevBinaryUnRegister(void *hdl)
 {
     return RT_ERROR_NONE;
 }
@@ -494,24 +464,19 @@ aclError aclrtDestroyStreamForce(aclrtStream stream)
     return ACL_SUCCESS;
 }
 
-rtError_t rtUbDbSend(rtUbDbInfo_t *dbInfo, rtStream_t stm)
+rtError_t rtCntNotifyCreate(const int32_t deviceId, aclrtCntNotify *const cntNotify)
 {
     return RT_ERROR_NONE;
 }
 
-rtError_t rtCntNotifyCreate(const int32_t deviceId, rtCntNotify_t *const cntNotify)
+rtError_t rtGetCntNotifyId(aclrtCntNotify inCntNotify, uint32_t *const notifyId)
 {
     return RT_ERROR_NONE;
 }
 
-rtError_t rtGetCntNotifyId(rtCntNotify_t inCntNotify, uint32_t *const notifyId)
+aclError aclrtCntNotifyDestroy(aclrtCntNotify cntNotify)
 {
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtCntNotifyDestroy(rtCntNotify_t const inCntNotify)
-{
-    return RT_ERROR_NONE;
+	return RT_ERROR_NONE;
 }
 
 // rtError_t rtCntNotifyRecord(
@@ -531,25 +496,7 @@ rtError_t rtCCULaunch(rtCcuTaskInfo_t *taskInfo, rtStream_t const stm)
     return RT_ERROR_NONE;
 }
 
-rtError_t rtUbDirectSend(rtUbWqeInfo_t *wqeInfo, rtStream_t stm)
-{
-    return RT_ERROR_NONE;
-}
-
 rtError_t rtUbDevQueryInfo(rtUbDevQueryCmd cmd, void *devInfo)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtGetDevResAddress(rtDevResInfo *const resInfo, uint64_t *const resAddress)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtAicpuKernelLaunchExWithArgs(const uint32_t kernelType, const char_t *const opName, const uint32_t numBlocks,
-                                        const rtAicpuArgsEx_t *argsInfo, rtSmDesc_t *const smDesc, const rtStream_t stm,
-                                        const uint32_t flags)
-
 {
     return RT_ERROR_NONE;
 }
@@ -607,11 +554,6 @@ aclError aclrtRecordEvent(aclrtEvent event, aclrtStream stream)
 aclError aclrtQueryEventWaitStatus(aclrtEvent event, aclrtEventWaitStatus *status)
 {
     return ACL_SUCCESS;
-}
-
-rtError_t rtWriteValue(rtWriteValueInfo_t * const info, rtStream_t const stm)
-{
-    return RT_ERROR_NONE;
 }
 
 rtError_t rtSetTaskAbortCallBack(const char *moduleName, rtTaskAbortCallBack callback, void *args)
@@ -685,12 +627,6 @@ aclError aclrtBinaryUnLoad(aclrtBinHandle binHandle)
     return ACL_SUCCESS;
 }
 
-aclError aclrtBinaryGetFunctionByEntry(aclrtBinHandle binHandle, uint64_t funcEntry,
-    aclrtFuncHandle *funcHandle)
-{
-    return ACL_SUCCESS;
-}
- 
 rtError_t rtResetXpuDevice(rtXpuDevType devType, const uint32_t devId)
 {
     return RT_ERROR_NONE;

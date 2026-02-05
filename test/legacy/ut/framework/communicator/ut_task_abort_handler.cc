@@ -47,7 +47,7 @@ TEST_F(TaskAbortHandlerTest, test_task_abort_handle_call_back_stage_pre_success)
 {
     // 构造入参
     uint32_t deviceLogicId = 0;
-    rtDeviceTaskAbortStage stage = RT_DEVICE_TASK_ABORT_PRE;
+    aclrtDeviceTaskAbortStage stage = aclrtDeviceTaskAbortStage::ACL_RT_DEVICE_TASK_ABORT_PRE;
     uint32_t time = 30U;
 
     CommParams commParams;
@@ -73,7 +73,7 @@ TEST_F(TaskAbortHandlerTest, test_task_abort_handle_call_back_stage_pre_fail)
 {
     // 构造入参
     uint32_t deviceLogicId = 0;
-    rtDeviceTaskAbortStage stage = RT_DEVICE_TASK_ABORT_PRE;
+    aclrtDeviceTaskAbortStage stage = aclrtDeviceTaskAbortStage::ACL_RT_DEVICE_TASK_ABORT_PRE;
     uint32_t time = 30U;
 
     CommParams commParams;
@@ -99,7 +99,7 @@ TEST_F(TaskAbortHandlerTest, test_task_abort_handle_call_back_stage_post_success
 {
     // 构造入参
     uint32_t deviceLogicId = 0;
-    rtDeviceTaskAbortStage stage = RT_DEVICE_TASK_ABORT_POST;
+    aclrtDeviceTaskAbortStage stage = aclrtDeviceTaskAbortStage::ACL_RT_DEVICE_TASK_ABORT_POST;
     uint32_t time = 30U;
 
     CommParams commParams;
@@ -127,7 +127,7 @@ TEST_F(TaskAbortHandlerTest, test_task_abort_handle_call_back_stage_post_fail)
 {
     // 构造入参
     uint32_t deviceLogicId = 0;
-    rtDeviceTaskAbortStage stage = RT_DEVICE_TASK_ABORT_POST;
+    aclrtDeviceTaskAbortStage stage = aclrtDeviceTaskAbortStage::ACL_RT_DEVICE_TASK_ABORT_POST;
     uint32_t time = 30U;
 
     CommParams commParams;
