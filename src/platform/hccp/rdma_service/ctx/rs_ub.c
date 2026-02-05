@@ -1785,8 +1785,8 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_id.eid: %ld", jetty_cb->jetty->jetty_id.eid);
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_id.uasid: %ld", jetty_cb->jetty->jetty_id.uasid);
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_id.id: %ld", jetty_cb->jetty->jetty_id.id);
-    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_id.handle: %ld", jetty_cb->jetty->jetty_id.handle);
-    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_id.async_events_acked: %ld", jetty_cb->jetty->jetty_id.async_events_acked);
+    hccp_warn("@@@@@@ jetty_cb->jetty->handle: %ld", jetty_cb->jetty->handle);
+    hccp_warn("@@@@@@ jetty_cb->jetty->async_events_acked: %ld", jetty_cb->jetty->async_events_acked);
 
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.id: %ld", jetty_cb->jetty->jetty_cfg.id);
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.flag.bs.share_jfr: %ld", jetty_cb->jetty->jetty_cfg.flag.bs.share_jfr);
