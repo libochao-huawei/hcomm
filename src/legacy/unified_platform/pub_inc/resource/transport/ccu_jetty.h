@@ -22,11 +22,8 @@ namespace Hccl {
 
 class CcuJetty final {
 public:
-    CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo)
-        : ipAddr_(ipAddr), jettyInfo_(jettyInfo){
-        HCCL_DEBUG("CcuJetty: constructed with ipAdde [%s] and jettyInfo [%s]",
-                ipAddr_.GetIpStr().c_str(), jettyInfo_.ToString().c_str());
-    }
+    explicit CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo)
+
     ~CcuJetty();
     CcuJetty(const CcuJetty &that) = delete;
     CcuJetty &operator=(const CcuJetty &that) = delete;

@@ -13,6 +13,7 @@
 #include "log.h"
 
 using namespace std;
+using namespace Hccl;
 
 HcclResult HcclNetDevOpen(const HcclNetDevInfos *info, HcclNetDev *netDev)
 {
@@ -33,7 +34,8 @@ HcclResult HcclNetDevClose(HcclNetDev netDev)
 
 HcclResult HcclNetDevGetAddr(HcclNetDev netDev, HcclAddress *addr)
 {
-    HcclResult ret = HcclNetDevOpenV2(netDev, addr);
+    HcclResult ret = HcclNetDevOpenV2(reinterpret_cast<const HcclNetDevInfosz*>(netDev), 
+                                    reinterpret_cast<const HcclNetDevInfosz**>(addr));
     if(ret == HCCL_SUCCESS){
         Hccl::CHECK_NULLPTR(addr, "[HcclNetDevGetAddr] addr is nullptr!");
         Hccl::HCCL_INFO("HcclNetDevGetAddr: successfully got addr [%p]!", addr);
