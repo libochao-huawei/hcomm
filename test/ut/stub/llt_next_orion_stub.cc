@@ -299,9 +299,9 @@ s32 HrtGetDevice()
 {
     return 1;
 }
-s32 HrtGetDevicePhyIdByIndex(s32 deviceLogicId)
+u32 HrtGetDevicePhyIdByIndex(s32 deviceLogicId)
 {
-    return 1;
+    return 1U;
 }
 
 
