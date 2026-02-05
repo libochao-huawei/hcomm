@@ -702,14 +702,14 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::UpdateZeroCopy(const OpParam &opParam, const AlgResourceResponse &resp)
+    HcclResult HcclCommunicator::UpdateZeroCopy(const OpParam &opParam, const AlgResourceResponse &algResource)
     {
         if (!opParam.isZeroCopy) {
             return HCCL_SUCCESS;
         }
 
         // 遍历所有transport，找出里面的p2p链路对应的对端地址
-        for (auto &singleSubCommTransport : resp.opTransportResponse[COMM_LEVEL0]) {
+        for (auto &singleSubCommTransport : algResource.opTransportResponse[COMM_LEVEL0]) {
             for (u64 i = 0; i < singleSubCommTransport.links.size(); ++i) {
                 LINK link = singleSubCommTransport.links[i];
                 if (link == nullptr || !singleSubCommTransport.transportRequests[i].isValid) {
@@ -2085,8 +2085,8 @@ namespace hccl
         return cclBufferManager_.InitCCLbuffer(inCCLbufferSize, outCCLbufferSize);
     }
 
-    HcclResult HcclCommunicator::SetGroupMainStream(HcclRtStream sendRecvMainStream_){
-        Stream streamObj(sendRecvMainStream_);
+    HcclResult HcclCommunicator::SetGroupMainStream(HcclRtStream sendRecvMainStream){
+        Stream streamObj(sendRecvMainStream);
         groupSendRecvMainStream = streamObj;
         HCCL_INFO("groupSendRecvMainStream[%p], id[%d]", groupSendRecvMainStream, groupSendRecvMainStream.id());
         return HCCL_SUCCESS;
