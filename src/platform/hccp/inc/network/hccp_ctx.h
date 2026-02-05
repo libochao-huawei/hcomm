@@ -413,6 +413,12 @@ struct qp_key {
     uint8_t size;
 };
 
+struct ctx_qp_share_info {
+    uint16_t ci_val;
+    uint16_t resv;
+    uint8_t raw_cqe[64U];
+};
+
 struct qp_create_info {
     struct qp_key key; /**< for modify qp or import & bind jetty*/
     union {
@@ -427,7 +433,8 @@ struct qp_create_info {
             uint64_t wqebb_size; /**< valid in jetty mode: JETTY_MODE_CACHE_LOCK_DWQE and JETTY_MODE_USER_CTL_NORMAL */
             uint64_t db_addr;
             uint32_t db_token_id;
-            uint64_t ci_addr;
+            uint32_t share_info_len; /**< refer to struct ctx_qp_share_info */
+            uint64_t share_info_addr; /**< refer to struct ctx_qp_share_info */
         } ub;
     };
     uint64_t va; /**< refer to struct urma_jetty*, struct ibv_qp* */
