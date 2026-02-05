@@ -257,8 +257,7 @@ HcclResult HcomGenerteRanktable(std::string &rankTableM, std::string &rankId)
             LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), __func__,
             localHostIp.GetReadableAddress(), GetExternalInputMasterInfo().port, ret), ret);
     }
-    CommConfig commConfig;
-    CHK_PRT_RET(topoDetectAgent->SetupAgentByMasterInfo(localHostIp, rootHandle, commConfig) != HCCL_SUCCESS,
+    CHK_PRT_RET(topoDetectAgent->SetupAgentByMasterInfo(localHostIp, rootHandle) != HCCL_SUCCESS,
         HCCL_ERROR("[Init][CommMasterInfo]setup topo detect error"), HCCL_E_INTERNAL);
     RankTable_t rankTable;
     CHK_PRT_RET(topoDetectAgent->GetCluterInfo(rankTable) != HCCL_SUCCESS,

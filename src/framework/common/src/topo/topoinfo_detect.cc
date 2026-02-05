@@ -559,9 +559,8 @@ HcclResult TopoInfoDetect::TeardownAgent()
     return HCCL_SUCCESS;
 }
 
-HcclResult TopoInfoDetect::SetupAgentByMasterInfo(HcclIpAddress &localHostIp, const HcclRootHandle &rootInfo, const CommConfig &commConfig)
+HcclResult TopoInfoDetect::SetupAgentByMasterInfo(HcclIpAddress &localHostIp, const HcclRootHandle &rootInfo)
 {
-    commConfig_ = commConfig;
     CHK_RET(hrtGetDevice(&deviceLogicID_));
     SetBootstrapHostIP(localHostIp);
     CHK_RET(hrtGetDevicePhyIdByIndex(deviceLogicID_, devicePhysicID_));

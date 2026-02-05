@@ -129,7 +129,7 @@ HcclResult TopoInfoDetect::TeardownAgent()
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult TopoInfoDetect::SetupAgentByMasterInfo(HcclIpAddress &localHostIp, const HcclRootHandle &rootInfo, const CommConfig &commConfig)
+HcclResult TopoInfoDetect::SetupAgentByMasterInfo(HcclIpAddress &localHostIp, const HcclRootHandle &rootInfo)
 {
     return HCCL_E_NOT_SUPPORT;
 }
