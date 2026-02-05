@@ -267,7 +267,8 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
     if (isMeshTopo) {
         if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_ENABLE
             && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE
-            && algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) {
+            && algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE
+            && deviceNumPerAggregation_ > DEVICE_TWO) {
             algName = "ReduceScatterDeterPipelineExecutor";
         } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             bool enableSmallCountDeterministicAlgo = !isSingleMeshAggregation_ &&
