@@ -595,6 +595,26 @@ HCCP_ATTRI_VISI_DEF int ra_ctx_qp_create(void *ctx_handle, struct qp_create_attr
         hccp_err("[init][ra_qp]calloc qp_handle_tmp failed, errno(%d) phy_id(%u) dev_index(%u)",
         errno, ctx_handle_tmp->attr.phy_id, ctx_handle_tmp->dev_index), ConverReturnCode(RDMA_OP, -ENOMEM));
 
+
+    hccp_warn("@@@ attr->sq_depth: %ld", attr->sq_depth);
+    hccp_warn("@@@ attr->rq_depth: %ld", attr->rq_depth);
+    hccp_warn("@@@ attr->transport_mode: %ld", attr->transport_mode);
+
+    hccp_warn("@@@ attr->ub.mode: %ld", attr->ub.mode);
+    hccp_warn("@@@ attr->ub.jetty_id: %ld", attr->ub.jetty_id);
+    hccp_warn("@@@ attr->ub.flag.value: %ld", attr->ub.flag.value);
+    hccp_warn("@@@ attr->ub.jfs_flag.value: %ld", attr->ub.jfs_flag.value);
+    hccp_warn("@@@ attr->ub.token_value: %ld", attr->ub.token_value);
+    hccp_warn("@@@ attr->ub.priority: %ld", attr->ub.priority);
+    hccp_warn("@@@ attr->ub.rnr_retry: %ld", attr->ub.rnr_retry);
+    hccp_warn("@@@ attr->ub.err_timeout: %ld", attr->ub.err_timeout);
+
+    hccp_warn("@@@ attr->ub.ext_mode.sq.buff_size: %ld", attr->ub.ext_mode.sq.buff_size);
+    hccp_warn("@@@ attr->ub.ext_mode.sq.buff_va: %ld", attr->ub.ext_mode.sq.buff_va);
+    hccp_warn("@@@ attr->ub.ext_mode.pi_type: %ld", attr->ub.ext_mode.pi_type);
+    hccp_warn("@@@ attr->ub.ext_mode.cstm_flag.bs.sq_cstm: %ld", attr->ub.ext_mode.cstm_flag.bs.sq_cstm);
+    hccp_warn("@@@ attr->ub.ext_mode.sqebb_num: %ld", attr->ub.ext_mode.sqebb_num);
+
     ret = ctx_handle_tmp->ctx_ops->ra_ctx_qp_create(ctx_handle_tmp, attr, info, qp_handle_tmp);
     if (ret != 0) {
         hccp_err("[init][ra_qp]create failed, ret(%d) phy_id(%u) dev_index(%u)",
@@ -602,6 +622,20 @@ HCCP_ATTRI_VISI_DEF int ra_ctx_qp_create(void *ctx_handle, struct qp_create_attr
         goto err;
     }
 
+    hccp_warn("@@@ info->va: %ld", info->va);
+    hccp_warn("@@@ info->udma_jetty_sq.qbuf: %ld", info->udma_jetty_sq.qbuf);
+    hccp_warn("@@@ info->udma_jetty_sq.qbuf_end: %ld", info->udma_jetty_sq.qbuf_end);
+    hccp_warn("@@@ info->udma_jetty_sq.qbuf_size: %ld", info->udma_jetty_sq.qbuf_size);
+    hccp_warn("@@@ info->udma_jetty_sq.qbuf_curr: %ld", info->udma_jetty_sq.qbuf_curr);
+    hccp_warn("@@@ info->udma_jetty_sq.db_addr: %ld", info->udma_jetty_sq.db_addr);
+
+    hccp_warn("@@@ info->ub.uasid: %ld", info->ub.uasid);
+    hccp_warn("@@@ info->ub.id: %ld", info->ub.id);
+    hccp_warn("@@@ info->ub.sq_buff_va: %ld", info->ub.sq_buff_va);
+    hccp_warn("@@@ info->ub.wqebb_size: %ld", info->ub.wqebb_size);
+    hccp_warn("@@@ info->ub.db_addr: %ld", info->ub.db_addr);
+    hccp_warn("@@@ info->ub.db_token_id: %ld", info->ub.db_token_id);
+    hccp_warn("@@@ info->ub.ci_addr: %ld", info->ub.ci_addr);
     *qp_handle = (void *)qp_handle_tmp;
     return 0;
 

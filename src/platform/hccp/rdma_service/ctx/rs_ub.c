@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <dlfcn.h>
+#include <urma_types.h>
 #include <urma_opcode.h>
 #include <udma_u_ctl.h>
 #include "securec.h"
@@ -1689,6 +1690,7 @@ STATIC void rs_ub_ctx_ext_jetty_create_ta_cache(struct rs_ctx_jetty_cb *jetty_cb
 
     jetty_cb->jetty = jetty_info.jetty;
     jetty_cb->db_addr = (uint64_t)(uintptr_t)jetty_info.db_addr;
+    hccp_warn("@@@ rs_ub_ctx_ext_jetty_create_ta_cache jetty_cb->db_addr: %d", jetty_cb->db_addr);
 
     // ccu jetty reg db addr
     ret = rs_ub_ctx_reg_jetty_db(jetty_cb, &jetty_info);
@@ -1720,13 +1722,16 @@ STATIC int rs_ub_ctx_drv_jetty_create(struct rs_ctx_jetty_cb *jetty_cb, struct r
     jetty_init_cfg.shared.jfc = (urma_jfc_t *)(uintptr_t)recv_jfc_cb->jfc_addr;
 
     if (jetty_cb->jetty_mode == JETTY_MODE_URMA_NORMAL) {
+        hccp_warn("@@@ rs_ub_ctx_drv_jetty_create JETTY_MODE_URMA_NORMAL");
         jetty_cb->jetty = rs_urma_create_jetty(jetty_cb->dev_cb->urma_ctx, &jetty_init_cfg);
         if (jetty_cb->jetty == NULL) {
             hccp_err("rs_urma_create_jetty failed, errno=%d", errno);
         }
     } else if (jetty_cb->jetty_mode == JETTY_MODE_CCU_TA_CACHE) {
+        hccp_warn("@@@ rs_ub_ctx_drv_jetty_create JETTY_MODE_CCU_TA_CACHE");
         rs_ub_ctx_ext_jetty_create_ta_cache(jetty_cb, &jetty_init_cfg);
     } else {
+        hccp_warn("@@@ rs_ub_ctx_drv_jetty_create else");
         rs_ub_ctx_ext_jetty_create(jetty_cb, &jetty_init_cfg);
     }
 
@@ -1744,6 +1749,17 @@ STATIC int rs_ub_ctx_drv_jetty_create(struct rs_ctx_jetty_cb *jetty_cb, struct r
 
     return 0;
 }
+
+#define CHECK_TYPES_MATCH(expr1, expr2)		\
+	((typeof(expr1) *)0 != (typeof(expr2) *)0)
+
+#define CONTAINER_OFF(containing_type, member)                                 \
+	offsetof(containing_type, member)
+#define CONTAINER_OF(member_ptr, containing_type, member)                      \
+	 ((containing_type *)                                                  \
+	  ((void *)(member_ptr)                                                \
+	   - CONTAINER_OFF(containing_type, member))                           \
+	  + (uint8_t)CHECK_TYPES_MATCH(*(member_ptr), ((containing_type *)0)->member))
 
 STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_create_info *jetty_info)
 {
@@ -1766,6 +1782,18 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
     jetty_info->ub.share_info_addr = (uint64_t)(uintptr_t)jetty_cb->qp_share_info_addr;
     jetty_info->ub.share_info_len = sizeof(struct ctx_qp_share_info);
 
+    struct udma_u_jetty *udma_jetty = CONTAINER_OF(jetty_cb->jetty, struct udma_u_jetty, base);
+    jetty_info->udma_jetty_sq.qbuf = udma_jetty->sq.qbuf;
+    jetty_info->udma_jetty_sq.qbuf_end = udma_jetty->sq.qbuf_end;
+    jetty_info->udma_jetty_sq.qbuf_size = udma_jetty->sq.qbuf_size;
+    jetty_info->udma_jetty_sq.qbuf_curr = udma_jetty->sq.qbuf_curr;
+    jetty_info->udma_jetty_sq.db_addr = udma_jetty->sq.db.addr;
+    hccp_warn("@@@ jetty_info->va: %ld", jetty_info->va);
+    hccp_warn("@@@ jetty_info->udma_jetty_sq.qbuf: %ld", jetty_info->udma_jetty_sq.qbuf);
+    hccp_warn("@@@ jetty_info->udma_jetty_sq.qbuf_end: %ld", jetty_info->udma_jetty_sq.qbuf_end);
+    hccp_warn("@@@ jetty_info->udma_jetty_sq.qbuf_size: %ld", jetty_info->udma_jetty_sq.qbuf_size);
+    hccp_warn("@@@ jetty_info->udma_jetty_sq.qbuf_curr: %ld", jetty_info->udma_jetty_sq.qbuf_curr);
+    hccp_warn("@@@ jetty_info->udma_jetty_sq.db_addr: %ld", jetty_info->udma_jetty_sq.db_addr);
     return 0;
 }
 
