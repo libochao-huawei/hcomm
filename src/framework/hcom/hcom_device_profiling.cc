@@ -117,7 +117,7 @@ extern HcclResult HcommProfilingEnd(ThreadHandle *threads, u32 threadNum)
     for (u32 i = 0; i < threadNum, i++) {
         HCCL_DEBUG("[%s] thread id = [%u]",__func__, GetStream(threads[i])->id());
         CHK_RET(GetStream(threads[i])->ClearLocalBuff());
-        CHK_RET(dfx::ProfilingManager::UpdateStartReportSqeIdx(GetStream(threads[i])->id(), 0));
+        CHK_RET(dfx::ProfilingManager::UpdateStartReportSqeIdx(GetStream(threads[i])->id()), 0));
     }
 #else
         HCCL_INFO("[%s] not support, do nothing", __func__);
