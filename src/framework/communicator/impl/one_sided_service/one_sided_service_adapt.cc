@@ -580,7 +580,7 @@ HcclResult HcclCommUnbindMem(HcclComm comm, void* memHandle)
 }
 
 // 使用固定的连接方式为通信域预先分配需要协商的资源，阻塞接口
-HcclResult HcclCommPrepare(HcclComm comm, const HcclPrepareConfig* prepareConfig, int timeout)
+HcclResult HcclCommPrepare(HcclComm comm, const HcclPrepareConfig* prepareConfig, const int timeout)
 {
     EXCEPTION_HANDLE_BEGIN
     HcclUs startut = TIME_NOW();
