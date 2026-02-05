@@ -6536,7 +6536,7 @@ namespace hccl
             StateGuard<HcclCommunicator, HcclCommState> guard(this, HcclCommState::BUILDING);
             ret = transportManager_->Alloc(opParam.tag, transMem, algResResponse.opTransportResponse,
                                            opParam.aicpuUnfoldMode, false, opParam.isZeroCopy, opParam.opType,
-                                           opParam.isCapture, false, opParam.isNpuDirectRoce);
+                                           opParam.isCapture, false, opParam.isNpuDirectRoce, &opParam);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[%s]Alloc transports failed, tag[%s]", __func__, newTag.c_str()), ret);
         }
@@ -6560,7 +6560,7 @@ namespace hccl
             // 超节点 && level2支持重执行 && Aicpu：创建备用Transport资源
             StateGuard<HcclCommunicator, HcclCommState> guard(this, HcclCommState::BUILDING);
             ret = transportManager_->Alloc(opParam.tag, transMem, algResResponse.opTransportResponseBackUp,
-                                           opParam.aicpuUnfoldMode, true, opParam.isCapture);
+                                           opParam.aicpuUnfoldMode, true, opParam.isCapture, &opParam);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                         HCCL_ERROR("[%s]Alloc backup transports failed, tag[%s]", __func__, newTag.c_str()), ret);
         }
