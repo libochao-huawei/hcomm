@@ -108,7 +108,6 @@ TEST_F(AicpuStreamManagerTest, Ut_AclGraphCaptureFreeStream_When_GetModelId_ERRO
         .with(any(), any(), outBound(isCapture))
         .will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(&GetModelId).stubs().will(returnValue(HCCL_E_RUNTIME));
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
 
     auto stream = std::make_unique<Stream>();
     // 执行测试步骤
@@ -126,7 +125,6 @@ TEST_F(AicpuStreamManagerTest, Ut_AclGraphCaptureFreeStream_When_AddStreamToMode
         .will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(&GetModelId).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(&AddStreamToModel).stubs().will(returnValue(HCCL_E_RUNTIME));
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
 
     auto stream = std::make_unique<Stream>();
     // 执行测试步骤
@@ -144,7 +142,6 @@ TEST_F(AicpuStreamManagerTest, Ut_AclGraphCaptureFreeStream_When_AddStreamToMode
         .will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(&GetModelId).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(&AddStreamToModel).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     auto stream = std::make_unique<Stream>();
 
     // 执行测试步骤
@@ -158,7 +155,6 @@ TEST_F(AicpuStreamManagerTest, Ut_CaptureFreeStream_When_isCapture_true_Expect_S
     MOCKER(&GetStreamCaptureInfo).stubs().will(invoke(GetStreamCaptureInfoStub));
     MOCKER(&GetModelId).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(&AddStreamToModel).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     auto mainStream = std::make_unique<Stream>();
     auto freeStream = std::make_unique<Stream>();
 
