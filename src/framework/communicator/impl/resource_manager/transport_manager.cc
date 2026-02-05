@@ -899,7 +899,7 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
     const DeviceMem inputMem, const DeviceMem outputMem, bool isUsedRdma,
     std::shared_ptr<Transport> &link, bool isAicpuModeEn, HcclResult &retOut, const HcclNetDevCtx &netDevCtx,
     u32 notifyNum, bool isBackup, bool isCapture, const DeviceMem expMem, TransportLinkType linkType,
-    bool isIndOp, const IndOpMem indOpMemd, const HcclCMDType &opType, bool isNpuDirectRoce)
+    bool isIndOp, const IndOpMem indOpMem, const HcclCMDType &opType, bool isNpuDirectRoce)
 {
     hrtErrMSetErrorContextPub(error_context);
     // 给当前线程添加名字
@@ -917,7 +917,7 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
     do {
         ret = SetMachinePara(tag, machineType, serverId, remoteRank, supportDataReceivedAck, linkMode, sockets,
             inputMem, outputMem, expMem, isAicpuModeEn, isBackup, isCapture, notifyNum, trafficClass_, serviceLevel_, machinePara,
-            loaclRankInfo, remoteRankInfo, netDevCtx, linkType, indOpMemd, isIndOp, opType, isNpuDirectRoce);
+            loaclRankInfo, remoteRankInfo, netDevCtx, linkType, indOpMem, isIndOp, opType, isNpuDirectRoce);
         retOut = ret;
         std::string tmpErrInfo = ret == HCCL_E_TIMEOUT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
         CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s][%s]SetMachinePara error.", __func__, LOG_KEYWORDS_INIT_CHANNEL.c_str(), tmpErrInfo.c_str()),);
@@ -925,8 +925,8 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
         HCCL_DEBUG("inputMem[%p],outputMem[%p], inputMem size[%llu], outputMem size[%llu]", inputMem.ptr(), outputMem.ptr(),
             inputMem.size(), outputMem.size());
         if (isIndOp) {
-            HCCL_DEBUG("userHostMem num[%llu], userDeviceMem num[%llu]", indOpMemd.userHostMem.size(), 
-                indOpMemd.userDeviceMem.size());
+            HCCL_DEBUG("userHostMem num[%llu], userDeviceMem num[%llu]", indOpMem.userHostMem.size(), 
+                indOpMem.userDeviceMem.size());
         }
         HCCL_INFO("[createLink para]tag[%s], rank[%u]-localUserrank[%u]-localIpAddr[%s], linkMode[%d] "
                 "dst_rank[%u]-remoteUserrank[%u]-remote_ip_addr[%s], machineType[%d], serverId[%s], "
