@@ -159,7 +159,7 @@ HcclResult ReduceScatterVOperator::SelectAlgfor910B(const OpParam& param, std::s
         u32 contextNum = CalcContextNumForPipeline(HcclCMDType::HCCL_CMD_REDUCE_SCATTER);
         if (contextNum > HCCL_FFTS_CAPACITY) {
             algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
-            HCCL_WARNING("[ReduceScatterVOperator][SelectAlgfor910B] context num[%u] is out of capacity of FFTS+"
+            HCCL_WARNING("[ReduceScatterVOperator][SelectAlgfor910B] context num[%u] is out of capacity of FFTS+ "\
                 "graph[%u], reset algorithm to NHR.", contextNum, HCCL_FFTS_CAPACITY);
         }
     }
@@ -217,7 +217,7 @@ HcclResult ReduceScatterVOperator::SelectAlgfor910B(const OpParam& param, std::s
         return HCCL_E_NOT_SUPPORT;
     }
 
-    HCCL_INFO("[SelectAlgforA2] ReduceScatterV SelectAlgfor910B is algName [%s]", algName.c_str());
+    HCCL_INFO("[SelectAlgfor910B] ReduceScatterV SelectAlgfor910B is algName [%s]", algName.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -225,7 +225,7 @@ HcclResult ReduceScatterVOperator::SelectAlgfor310P3(const OpParam& param, std::
 {
     (void) param;
     CHK_PRT_RET(userRankSize_ > MAX_310P_RANK_SIZE,
-        HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor310P3]rankSize[%u] is not supported.ReduceScatterV does not"
+        HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor310P3]rankSize[%u] is not supported.ReduceScatterV does not "\
         "support the scenario where the rankSize is greater than 4.", userRankSize_), HCCL_E_NOT_SUPPORT);
     algName = "ReduceScatterVFor310PRing";
     HCCL_INFO("[SelectAlgfor310P3] ReduceScatterV SelectAlgfor310P3 is algName [%s]", algName.c_str());
