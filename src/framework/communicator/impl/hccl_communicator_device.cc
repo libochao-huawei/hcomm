@@ -1602,4 +1602,9 @@ namespace hccl
         HCCL_INFO("[HcclCommunicator][device][GetHcclQos] hcclQos[%u]", hcclQos_);
  	    return hcclQos_;
  	}
+    
+    bool HcclCommunicator::EnableAicpuUnfold()
+    {
+        return false;
+    }
 }
