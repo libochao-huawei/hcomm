@@ -374,6 +374,12 @@ typedef struct urma_device {
     struct urma_sysfs_dev *sysfs_dev; /* [Private] internal device corresponding to the urma device */
 } urma_device_t;
 
+typedef enum urma_context_aggr_mode {
+    URMA_AGGR_MODE_STANDALONE,
+    URMA_AGGR_MODE_ACTIVE_BACKUP,
+    URMA_AGGR_MODE_BALANCE,
+} urma_context_aggr_mode_t;
+
 typedef struct urma_context {
     struct urma_device *dev;  /* [Private] point to the corresponding urma device. */
     struct urma_ops *ops;     /* [Private] operation of urma device. */
@@ -384,6 +390,7 @@ typedef struct urma_context {
     uint32_t eid_index;
     uint32_t uasid;           /* [Public] uasid of current process. */
     struct urma_ref ref;      /* [Private] reference count of urma context. */
+    urma_context_aggr_mode_t aggr_mode; /* [Public] aggregated mode of urma context. */
 } urma_context_t;
 
 typedef struct urma_eid_info {
