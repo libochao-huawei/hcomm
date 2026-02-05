@@ -37,6 +37,7 @@
 #include "op_base.h"
 #include "hccl_group.h"
 #include "op_base_v2.h"
+#include "perf_timer.h"
 
 using namespace std;
 using namespace hccl;
@@ -72,6 +73,8 @@ HcclResult GetCaptureInfo(aclrtStream stream, aclmdlRICaptureStatus &captureStat
 HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType,
                          HcclReduceOp op, HcclComm comm, aclrtStream stream)
 {
+    Hccl::SingleOperatorHostTimer timer("HcclAllReduce");
+    timer.start();
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_ALLREDUCE;
@@ -111,7 +114,7 @@ HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, Hccl
                   std::vector<std::string>({"HcclAllReduceInner", "recvBuf", "nullptr", "please check recvBuf"}));
     CHK_PTR_NULL(recvBuf);
 
-    HCCLV2_FUNC_RUN(HcclAllReduceV2(sendBuf, recvBuf, count, dataType, op, comm, stream));
+    HCCLV2_FUNC_RUN(HcclAllReduceV2(sendBuf, recvBuf, count, dataType, op, comm, stream, static_cast<void*>(&timer)));
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);
     StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);

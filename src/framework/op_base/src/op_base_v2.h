@@ -56,7 +56,7 @@ HcclResult __attribute__((weak)) HcclReduceV2(void *sendBuf, void *recvBuf, uint
     uint32_t root, HcclComm comm, aclrtStream stream);
 
 HcclResult __attribute__((weak)) HcclAllReduceV2(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType, HcclReduceOp op,
-    HcclComm comm, aclrtStream stream);
+    HcclComm comm, aclrtStream stream, void* timer);
 
 HcclResult __attribute__((weak)) HcclBroadcastV2(void *buf, uint64_t count, HcclDataType dataType, uint32_t root, HcclComm comm,
     aclrtStream stream);
@@ -69,13 +69,13 @@ HcclResult __attribute__((weak)) HcclScatterV2(void *sendBuf, void *recvBuf, uin
 HcclResult __attribute__((weak)) HcclCommSuspend(HcclComm comm);
 
 HcclResult __attribute__((weak)) HcclReduceScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType, HcclReduceOp op,
-    HcclComm comm, aclrtStream stream);
+    HcclComm comm, aclrtStream stream, void* timer);
 
 HcclResult __attribute__((weak)) HcclReduceScatterVV2(void *sendBuf, void *sendCounts, void *sendDispls, void *recvBuf,
     uint64_t recvCount, HcclDataType dataType, HcclReduceOp op, HcclComm comm, aclrtStream stream);
 
 HcclResult __attribute__((weak)) HcclAllGatherV2(
-    void *sendBuf, void *recvBuf, uint64_t sendCount, HcclDataType dataType, HcclComm comm, aclrtStream stream);
+    void *sendBuf, void *recvBuf, uint64_t sendCount, HcclDataType dataType, HcclComm comm, aclrtStream stream, void* timer);
 
 HcclResult __attribute__((weak)) HcclAllGatherVV2(void *sendBuf, uint64_t sendCount, void *recvBuf, void *recvCounts,
     void *recvDispls, HcclDataType dataType, HcclComm comm, aclrtStream stream);

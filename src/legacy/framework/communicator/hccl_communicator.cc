@@ -82,9 +82,10 @@ void HcclCommunicator::DeInit() const
 {
 }
 
-HcclResult HcclCommunicator::LoadOpbasedCollOp(const CollOpParams &opParams, void *stream)
+HcclResult HcclCommunicator::LoadOpbasedCollOp(const CollOpParams &opParams, void *stream,
+                                               SingleOperatorHostTimer *timer)
 {
-    return pimpl->LoadOpbasedCollOp(opParams, stream);
+    return pimpl->LoadOpbasedCollOp(opParams, stream, timer);
 }
 
 HcclResult HcclCommunicator::AllocCollOpResource(const CollOpParams &opParams, void **addr)

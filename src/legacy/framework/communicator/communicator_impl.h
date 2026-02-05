@@ -48,6 +48,7 @@
 #include "hccl_common_v2.h"
 #include "hccl_rank_graph.h"
 #include "error_message_v2.h"
+#include "perf_timer.h"
 
 namespace Hccl {
 
@@ -63,8 +64,7 @@ public:
     HcclResult CreateSubComm(const CommParams &subCommParams, const std::vector<u32> &rankIds,
                              CommunicatorImpl *subCommImpl, HcclCommConfig &subConfig);
 
-    HcclResult LoadOpbasedCollOp(const CollOpParams &opParams, void *stream);
-
+    HcclResult LoadOpbasedCollOp(const CollOpParams &opParams, void *stream, SingleOperatorHostTimer *timer = nullptr);
     HcclResult AllocCollOpResource(const CollOpParams &opParams, void **addr);
 
     HcclResult AllocCommResource(void *mc2Tiling, void **commContext);
@@ -546,8 +546,9 @@ private:
     bool superFasterLoad{false};
     bool taskExceptionEnv{true}; // 默认HCCL_DFS_CONFIG="task_exception:on" 且默认on下不开启快速下发
     bool enableProfilingEnv{false};
-    bool TryFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream);
-    void ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream, CachedCCUParams &params);
+    bool TryFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream, SingleOperatorHostTimer *timer);
+    void ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream, CachedCCUParams &params,
+                              SingleOperatorHostTimer *timer);
 
     void OpAcceleratorStateFallback(); // 算子粒度加速模式状态回退
     HcclResult ReLoadOpbasedOp();
