@@ -397,7 +397,7 @@ HcclResult AlltoAllOperator::PrepareAlltoAllAddrInfo(const void *sendCounts, con
 }
 
 HcclResult AlltoAllOperator::PreparePreOpParam(OpParam& preProcessOpParam,
-    const std::unique_ptr<PreProcessMetaInfo> &preMetaInfo, Stream &preProcessStream, const bool &aicpuUnfoldMode)
+    const std::unique_ptr<PreProcessMetaInfo> &preMetaInfo, Stream &preProcessStream, bool aicpuUnfoldMode)
 {
     u64 stepSize = sizeof(u64) * userRankSize_;
     u32 perDataSize = SIZE_TABLE[HCCL_DATA_TYPE_UINT64];
