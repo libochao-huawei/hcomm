@@ -1804,6 +1804,28 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfc->jfc_id.id: %ld",
         jetty_cb->jetty->jetty_cfg.shared.jfc->jfc_id.id);
 
+    hccp_warn("@@@@@@@@@ jetty_cb->jetty->urma_jetty_opt.is_actived: %ld",
+        jetty_cb->jetty->urma_jetty_opt.is_actived);
+    hccp_warn("@@@@@@@@@ jetty_cb->jetty->urma_jetty_opt.jfs_opt.jfs_opt_mask.value: %ld",
+        jetty_cb->jetty->urma_jetty_opt.jfs_opt.jfs_opt_mask.value);
+    hccp_warn("@@@@@@@@@ jetty_cb->jetty->urma_jetty_opt.jfs_opt.is_actived: %ld",
+        jetty_cb->jetty->urma_jetty_opt.jfs_opt.is_actived);
+    hccp_warn("@@@@@@@@@ jetty_cb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_sqe_base_addr: %ld",
+        jetty_cb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_sqe_base_addr);
+    hccp_warn("@@@@@@@@@ jetty_cb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_db_addr: %ld",
+        jetty_cb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_db_addr);
+    hccp_warn("@@@@@@@@@ jetty_cb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_id: %ld",
+        jetty_cb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_id);
+    hccp_warn("@@@@@@@@@ jetty_cb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_pi: %ld",
+        jetty_cb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_pi);
+    hccp_warn("@@@@@@@@@ jetty_cb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_pi_type: %ld",
+        jetty_cb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_pi_type);
+    hccp_warn("@@@@@@@@@ jetty_cb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_ci: %ld",
+        jetty_cb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_ci);
+    hccp_warn("@@@@@@@@@ jetty_cb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_db_status: %ld",
+        jetty_cb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_db_status);
+    
+
     struct udma_u_jetty *udma_jetty = CONTAINER_OF(jetty_cb->jetty, struct udma_u_jetty, base);
 
     hccp_warn("@@@@@@ udma_jetty->base.jetty_id.eid: %ld", udma_jetty->base.jetty_id.eid);
