@@ -123,8 +123,8 @@ HcclResult FlushHandle::RegisterLocalMr()
                    eRet);
         return HCCL_E_MEMORY;
     }
-    HCCL_DEBUG("[RegisterLocalMr]Local MR registered successfully. MR Handle=0x%p, lkey=%u, rkey=%u",
-                localMrHandle, loopBackQpMrLocalInfo.lkey, loopBackQpMrLocalInfo.rkey);
+    HCCL_DEBUG("[RegisterLocalMr]Local MR registered successfully. MR Handle=0x%p",
+                localMrHandle);
     return HCCL_SUCCESS;
 }
 
@@ -144,8 +144,8 @@ HcclResult FlushHandle::RegisterRemoteMr()
                    eRet);
         return HCCL_E_MEMORY;
     }
-    HCCL_DEBUG("[RegisterRemoteMr]Remote MR registered successfully. MR Handle=0x%p, lkey=%u, rkey=%u",
-                remoteMrHandle, loopBackQpMrRemoteInfo.lkey, loopBackQpMrRemoteInfo.rkey);
+    HCCL_DEBUG("[RegisterRemoteMr]Remote MR registered successfully. MR Handle=0x%p",
+                remoteMrHandle);
     return HCCL_SUCCESS;
 }
 
