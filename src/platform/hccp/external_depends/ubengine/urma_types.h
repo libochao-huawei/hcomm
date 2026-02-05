@@ -786,7 +786,7 @@ typedef struct urma_jetty {
     pthread_mutex_t event_mutex;
     pthread_cond_t event_cond;
     uint32_t async_events_acked;
-    urma_jetty_opt_t urma_jetty_opt;
+    // urma_jetty_opt_t urma_jetty_opt;
 } urma_jetty_t;
 
 typedef struct urma_notifier {
