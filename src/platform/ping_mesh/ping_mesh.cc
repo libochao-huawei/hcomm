@@ -728,6 +728,16 @@ HcclResult PingMesh::StartSocketThread(u32 deviceId, HcclIpAddress ipAddr, u32 p
     return HCCL_SUCCESS;
 }
 
+bool IsModeSupported(LinkType netMode)
+{
+    if (netMode != LinkType::LINK_ROCE && netMode != LinkType::LINK_UB) {
+        HCCL_ERROR("[HCCN][HccnRpingInit]only support ROCE or UB mode.");
+        return false;
+    }
+    return true;
+
+}
+
 HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr, u32 port, u32 nodeNum, u32 bufferSize,
     u32 sl, u32 tc)
 {
@@ -737,11 +747,9 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
         port, nodeNum, bufferSize, sl, tc);
     // 当前只支持RoCE和UB
     LinkType netMode = static_cast<LinkType>(mode);
-    if (netMode != LinkType::LINK_ROCE && netMode != LinkType::LINK_UB) {
-        HCCL_ERROR("[HCCN][HccnRpingInit]only support ROCE or UB mode.");
+    if(!IsModeSupported(netMode)) {
         return HCCL_E_NOT_SUPPORT;
     }
-
     // 获取物理id
     deviceLogicId_ = deviceId;
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
@@ -764,6 +772,11 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
     RpingInitState status = RpingInitState::HCCL_INIT_SUCCESS;
     HcclResult ret = HCCL_SUCCESS;
     void *pingHandle = nullptr;
+    const char *socNamePtr = aclrtGetSocName();
+    if (socNamePtr == nullptr) {
+        HCCL_ERROR("[HCCN][HccnRpingInit]GetsocNamePtr fail.");
+        return HCCL_E_PTR;
+    }
     do {
         // hccp侧初始化ping mesh资源
         ret = HccnRaInit(deviceId);
@@ -777,9 +790,7 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
         if (netMode == LinkType::LINK_ROCE) {
             RpingRoceAttrInit(devicePhyId_, ipAddr, port, nodeNum, bufferSize, sl, tc, initAttr);
         }
-        #ifdef CONFIG_CONTEXT
-        const char *socNamePtr = aclrtGetSocName();
-        CHK_PTR_NULL(socNamePtr);
+
         if (netMode == LinkType::LINK_UB && IsSupportHCCLV2(socNamePtr)) {
             HRaInfo info(HrtNetworkMode::HDC, devicePhyId_);
             std::map<Eid, uint32_t> eidmap;
@@ -790,7 +801,6 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
             }
             RpingUbAttrInit(devicePhyId_, ipAddr, port, nodeNum, bufferSize, sl, tc, initAttr, eidmap);
         }
-        #endif
         
         ret = hrtRaPingInit(&initAttr, &initInfo_, &pingHandle);
         if (ret != HCCL_SUCCESS) {

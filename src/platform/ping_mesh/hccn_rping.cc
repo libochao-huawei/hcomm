@@ -131,7 +131,7 @@ HccnResult HccnRpingInit(uint32_t devLogicId, HccnRpingInitAttr *initAttr, HccnR
     std::string ipAddrDes;
 
     if (HccnRpingInitInter(devLogicId, initAttr, rping, npuNum, ipAddrDes) != 0) {
-        HCCL_ERROR("[HccnRpingInit]Pingmesh init failed, devLogicId:%u, port:%u, npuNum:%u,  sl:%u"
+        HCCL_ERROR("[HccnRpingInit]Pingmesh init failed, devLogicId:%u, port:%u, npuNum:%u, sl:%u"
         " tc:%u ip:%s", devLogicId, initAttr->port, npuNum, initAttr->sl, initAttr->tc,
         ipAddrDes);
         delete rping; // 初始化失败释放内存
@@ -185,7 +185,6 @@ HccnResult HccnRpingAddTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
 
 inline HccnResult HccnRpingInitInputTargetAttr(HccnRpingTargetInfo *targetInter, RpingInput *inputInter, uint32_t &n) {
     if (targetInter[n].addrType == HCCN_RPING_ADDR_TYPE_IP) {
-        //todo: 添加IP校验
         inputInter[n].sip = HcclIpAddress(std::string(targetInter[n].srcIp));
         inputInter[n].dip = HcclIpAddress(std::string(targetInter[n].dstIp));
     }
