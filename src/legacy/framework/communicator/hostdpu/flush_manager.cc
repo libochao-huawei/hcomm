@@ -116,7 +116,6 @@ HcclResult FlushManager::FlushParamPrepare(std::shared_ptr<FlushHandle> flushHan
     swr->send_flags = IBV_SEND_SIGNALED;
     swr->wr.rdma.remote_addr = reinterpret_cast<uint64_t>(flushHandlePtr->loopBackQpMrRemoteInfo.addr);
     swr->wr.rdma.rkey = flushHandlePtr->loopBackQpMrRemoteInfo.rkey;
-    HCCL_DEBUG("[FlushParamPrepare] completed, ibv_sge.size=%u", list.length);
     return HCCL_SUCCESS;
 }
 
