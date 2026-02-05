@@ -34,10 +34,10 @@ bool CcuTransportGroup::CheckTransports(const vector<CcuTransport*> &transports)
 
 bool CcuTransportGroup::CheckTransportCntCke()
 {
-    HcclResult allocResHandleReturnValue = HCCL_SUCCESS;
+    HcclResult allocResHandleReturnValue = CcuDeviceManager::AllocCke(HrtGetDevice(), 
+                    cntCkesGroupDieId, cntCkeNumTransportGroupUse, ckeInfoTransportGroupUse);
 
-    TRY_CATCH_RETURN(allocResHandleReturnValue = CcuDeviceManager::AllocCke(HrtGetDevice(), 
-                    cntCkesGroupDieId, cntCkeNumTransportGroupUse, ckeInfoTransportGroupUse));
+    TRY_CATCH_RETURN(allocResHandleReturnValue);
                     
     if (allocResHandleReturnValue != HCCL_SUCCESS) {
         HCCL_ERROR("[CcuTransportGroup::%s] Failed to allocate cntCke resource, please check.", __func__);

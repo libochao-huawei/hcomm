@@ -34,8 +34,8 @@ HcclResult HcclNetDevClose(HcclNetDev netDev)
 
 HcclResult HcclNetDevGetAddr(HcclNetDev netDev, HcclAddress *addr)
 {
-    HcclResult ret = HcclNetDevOpenV2(reinterpret_cast<const HcclNetDevInfosz*>(netDev), 
-                                    reinterpret_cast<const HcclNetDevInfosz**>(addr));
+    HcclResult ret = HcclNetDevOpenV2(reinterpret_cast<const HcclNetDevInfos*>(netDev), 
+                                    reinterpret_cast<const HcclNetDevInfos**>(addr));
     if(ret == HCCL_SUCCESS){
         Hccl::CHECK_NULLPTR(addr, "[HcclNetDevGetAddr] addr is nullptr!");
         Hccl::HCCL_INFO("HcclNetDevGetAddr: successfully got addr [%p]!", addr);
