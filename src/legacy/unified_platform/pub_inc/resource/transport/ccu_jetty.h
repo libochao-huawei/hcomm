@@ -22,7 +22,7 @@ namespace Hccl {
 
 class CcuJetty final {
 public:
-    explicit CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo)
+    explicit CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo);
 
     ~CcuJetty();
     CcuJetty(const CcuJetty &that) = delete;
