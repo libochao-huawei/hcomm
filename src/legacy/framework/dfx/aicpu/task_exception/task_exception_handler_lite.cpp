@@ -19,6 +19,7 @@
 #include "task_struct_v2.h"
 #include "task_scheduler_error.h"
 #include "orion_adapter_hal.h"
+#include "internal_exception.h"
 
 namespace Hccl {
 
@@ -203,11 +204,11 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
             "Try to send task exception by mailbox, errType[%u], errCode[%u], streamId[%d]",
             aicpuComm->GetId().c_str(), exceptionInfo->sqeType, exceptionInfo->errorCode,
             exceptionInfo->streamId);
-        CHK_PRT_CONT(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TaskExceptionHandlerLite][SendTaskExceptionByMBox]group[%s]:"
+        CHK_RET_THROW(InternalException,
+            StringFormat("[TaskExceptionHandlerLite][SendTaskExceptionByMBox]group[%s]:"
             "Send task exception by mailBox failed, streamId[%d]",
-            aicpuComm->GetId().c_str(), exceptionInfo->streamId));
-        
+            aicpuComm->GetId().c_str(), exceptionInfo->streamId), ret);
+
         aicpuComm->SetErrorReported();
     }
 
