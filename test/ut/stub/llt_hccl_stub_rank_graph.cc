@@ -41,13 +41,21 @@ std::shared_ptr<Hccl::NetInstance::ConnInterface> RankGraphStub::InitConnInterfa
     return iface;
 }
 
-
 std::shared_ptr<Hccl::RankGraph> RankGraphStub::Create2PGraph()
 {
     Hccl::RankGraph  rankGraph(0);
     std::shared_ptr<Hccl::NetInstance> netInstLayer0 = InitNetInstance(0, "layer0");
     std::shared_ptr<Hccl::NetInstance::Peer> peer0 = InitPeer(0, 0, 0);
     std::shared_ptr<Hccl::NetInstance::Peer> peer1 = InitPeer(1, 1, 1);
+
+    uint32_t topoInstId = 0;
+    auto topoInstance = std::make_shared<Hccl::NetInstance::TopoInstance>(topoInstId);
+    std::unordered_map<uint32_t, std::shared_ptr<Hccl::NetInstance::TopoInstance>> topoInsts_;
+    topoInstance->topoType = Hccl::TopoType::MESH_1D;
+    std::set<Hccl::RankId> rankSet = {0, 1};
+    topoInstance->ranks = std::move(rankSet);
+    topoInsts_[topoInstId] = topoInstance;
+    netInstLayer0->topoInsts_ = std::move(topoInsts_);
     
     peer0->AddNetInstance(netInstLayer0);
     peer1->AddNetInstance(netInstLayer0);
