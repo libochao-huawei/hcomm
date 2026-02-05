@@ -31,8 +31,10 @@ HcclResult HcclCommInitClusterInfoConfigV2(
 
 HcclResult HcclCommInitAllV2(uint32_t ndev, int32_t *devices, HcclComm *comms);
 
-HcclResult HcclAlltoAllV2(const void *sendBuf, uint64_t sendCount, HcclDataType sendType, const void *recvBuf,
-    uint64_t recvCount, HcclDataType recvType, HcclComm comm, aclrtStream stream);
+HcclResult HcclAlltoAllV2(const void *sendBuf, uint64_t sendCount,
+                          HcclDataType sendType, const void *recvBuf,
+                          uint64_t recvCount, HcclDataType recvType,
+                          HcclComm comm, aclrtStream stream, void *timer);
 HcclResult HcclAlltoAllVV2(const void *sendBuf, const void *sendCounts, const void *sdispls, HcclDataType sendType,
     const void *recvBuf, const void *recvCounts, const void *rdispls, HcclDataType recvType, HcclComm comm,
     aclrtStream stream);
@@ -63,11 +65,13 @@ HcclResult HcclAlltoAllVCV2(const void *sendBuf, const void *sendCountMatrix, Hc
 HcclResult HcclReduceV2(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType, HcclReduceOp op,
     uint32_t root, HcclComm comm, aclrtStream stream);
 
-HcclResult HcclAllReduceV2(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType, HcclReduceOp op,
-    HcclComm comm, aclrtStream stream);
+HcclResult HcclAllReduceV2(void *sendBuf, void *recvBuf, uint64_t count,
+                           HcclDataType dataType, HcclReduceOp op,
+                           HcclComm comm, aclrtStream stream, void *timer);
 
-HcclResult HcclBroadcastV2(void *buf, uint64_t count, HcclDataType dataType, uint32_t root, HcclComm comm,
-    aclrtStream stream);
+HcclResult HcclBroadcastV2(void *buf, uint64_t count, HcclDataType dataType,
+                           uint32_t root, HcclComm comm, aclrtStream stream,
+                           void *timer);
 
 HcclResult HcclGetTopoDescV2();
 
@@ -77,13 +81,13 @@ HcclResult HcclScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclD
 HcclResult HcclCommSuspend(HcclComm comm);
 
 HcclResult HcclReduceScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType, HcclReduceOp op,
-    HcclComm comm, aclrtStream stream);
+    HcclComm comm, aclrtStream stream, void *timer);
 
 HcclResult HcclReduceScatterVV2(void *sendBuf, void *sendCounts, void *sendDispls, void *recvBuf, uint64_t recvCount,
                                 HcclDataType dataType, HcclReduceOp op, HcclComm comm, aclrtStream stream);
 
-HcclResult HcclAllGatherV2(
-    void *sendBuf, void *recvBuf, uint64_t sendCount, HcclDataType dataType, HcclComm comm, aclrtStream stream);
+HcclResult HcclAllGatherV2(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclDataType dataType, HcclComm comm,
+                           aclrtStream stream, void *timer);
 
 HcclResult HcclAllGatherVV2(void *sendBuf, uint64_t sendCount, void *recvBuf, void *recvCounts, void *recvDispls,
                             HcclDataType dataType, HcclComm comm, aclrtStream stream);

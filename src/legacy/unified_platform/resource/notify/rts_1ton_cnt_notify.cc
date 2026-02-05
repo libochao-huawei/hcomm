@@ -35,19 +35,19 @@ std::unique_ptr<BaseTask> Rts1ToNCntNotify::PostValue(u32 value)
     return std::make_unique<TaskPostValue>(this, value);
 }
 
-void Rts1ToNCntNotify::WaitBits(u32 bitValue, u32 timeout, const Stream &stream) const
+void Rts1ToNCntNotify::WaitBits(u32 bitValue, u32 timeout, const Stream &stream, SingleOperatorHostTimer *timer) const
 {
-    HrtCntNotifyWaitWithTimeOut(handle, stream.GetPtr(), HrtCntNotifyWaitMode::BITMAP, bitValue, timeout);
+    HrtCntNotifyWaitWithTimeOut(handle, stream.GetPtr(), HrtCntNotifyWaitMode::BITMAP, bitValue, timeout, timer);
 }
 
-void Rts1ToNCntNotify::PostValue(u32 value, const aclrtStream &rtStream) const
+void Rts1ToNCntNotify::PostValue(u32 value, const aclrtStream &rtStream, SingleOperatorHostTimer *timer) const
 {
-    HrtCntNotifyRecord(handle, rtStream, HrtCntNotifyRecordMode::STORE, value);
+    HrtCntNotifyRecord(handle, rtStream, HrtCntNotifyRecordMode::STORE, value, timer);
 }
 
-void Rts1ToNCntNotify::PostValue(u32 value, const Stream &stream) const
+void Rts1ToNCntNotify::PostValue(u32 value, const Stream &stream, SingleOperatorHostTimer *timer) const
 {
-    PostValue(value, stream.GetPtr());
+    PostValue(value, stream.GetPtr(), timer);
 }
 
 std::string Rts1ToNCntNotify::Describe() const

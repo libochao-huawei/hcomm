@@ -547,7 +547,7 @@ void Interpret(const InsLocalReduce &insLocalReduce, CommunicatorImpl &comm, con
 }
 
 static void LaunchCcuTasks(vector<CcuTaskParam> params, const Stream *stream, TaskParam &taskParam,
-                           const OpTaskConfig &taskConfig)
+                           const OpTaskConfig &taskConfig, SingleOperatorHostTimer *timerPtr)
 {
     taskParam.beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
@@ -571,7 +571,7 @@ static void LaunchCcuTasks(vector<CcuTaskParam> params, const Stream *stream, Ta
             HCCL_INFO("arg[%lu] = %lu", i, taskInfo.args[i]);
             taskParam.taskPara.Ccu.costumArgs[i] = taskInfo.args[i];
         }
-        HrtCcuLaunch(taskInfo, stream->GetPtr());
+        HrtCcuLaunch(taskInfo, stream->GetPtr(), timerPtr);
     }
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 }
@@ -650,15 +650,15 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
 
     // launch LocalPostTo on stream
     Rts1ToNCntNotify *cntNotify1ToN = comm.GetCcuStreamSyncNotifyManager().GetRts1ToNCntNotify(stream.GetId());
-    cntNotify1ToN->PostValue(value, stream);
+    cntNotify1ToN->PostValue(value, stream, comm.timerPtr);
 
     // launch ccu task
-    LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig);
+    LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig, comm.timerPtr);
     ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam);
 
     // launch LocalWaitFrom on stream
     RtsCntNotify *cntNotifyNTo1 = comm.GetCcuStreamSyncNotifyManager().GetRtsNTo1CntNotify(stream.GetId());
-    cntNotifyNTo1->WaitValue(value, timeout, stream);
+    cntNotifyNTo1->WaitValue(value, timeout, stream, comm.timerPtr);
 
     auto& streamMgr = comm.GetStreamManager();
     // 查询当前从流持有的子从流
@@ -678,14 +678,14 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
         auto masterStream = comm.GetStreamManager().GetMaster();
         comm.GetStreamManager().CaptureSlaveStream(masterStream, slave); // 捕获slaveStream
         u32 bitValue = BASE_BIT << (ccuProfIdx - 1);
-        cntNotify1ToN->WaitBits(bitValue, timeout, *slave);
+        cntNotify1ToN->WaitBits(bitValue, timeout, *slave, comm.timerPtr);
 
         // launch ccu task
-        LaunchCcuTasks(ccuParams[ccuProfIdx], slave, taskParam, taskConfig);
+        LaunchCcuTasks(ccuParams[ccuProfIdx], slave, taskParam, taskConfig,comm.timerPtr);
         ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[ccuProfIdx], comm, taskParam);
 
         // launch localPostTo on extra streams
-        cntNotifyNTo1->PostBits(bitValue, *slave);
+        cntNotifyNTo1->PostBits(bitValue, *slave, comm.timerPtr);
     }    
 
     std::size_t totalSize = 0;
@@ -732,7 +732,7 @@ static void SubmitCcuTasks(const CcuInstruction &ccuInstruction, CommunicatorImp
     GetCcuProfilingInfo(ccuInstruction, ccuParams, ccuProfilingInfo);
     
     //esl 2die适配，先申请从流再启动task
-    LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig);
+    LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig, comm.timerPtr);
     ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam);
 
     std::size_t totalSize = 0;

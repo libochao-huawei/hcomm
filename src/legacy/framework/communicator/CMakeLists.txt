@@ -7,6 +7,8 @@ target_sources(hccl_v2 PRIVATE
     op_params_checker.cc
     diff_rank_updater.cc
     ccu_super_fast_load.cc
+    perf_timer.cpp
+    timers.cc
 )
 
 target_sources(hccl_v2 PRIVATE

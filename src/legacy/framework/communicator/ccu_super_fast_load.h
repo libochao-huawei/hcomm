@@ -25,6 +25,7 @@
 #include "ccu/ccu_task_param.h"
 #include "task_param.h"
 #include "env_config.h"
+#include "perf_timer.h"
 
 namespace Hccl {
 using CcuParamsMappingKeyType = std::uint32_t;
@@ -96,10 +97,10 @@ private:
                                               std::size_t alignment);
 };
 
-inline void SuperFastLoad(rtCcuTaskInfo_t *params, aclrtStream const streamPtr, int counts)
-{
+inline void SuperFastLoad(rtCcuTaskInfo_t *params, aclrtStream const streamPtr, int counts,
+                          SingleOperatorHostTimer *timer = nullptr) {
     for (int i = 0; i < counts; ++i) {
-        HrtCcuLaunch(params[i], streamPtr);
+        HrtCcuLaunch(params[i], streamPtr, timer);
     }
 }
 }  // namespace Hccl

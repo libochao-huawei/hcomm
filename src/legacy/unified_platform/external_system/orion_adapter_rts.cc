@@ -182,10 +182,17 @@ void HrtFunctionRegister(void *binHandle, const void *stubFunc, const char *stub
     }
 }
 
-s32 HrtGetStreamId(aclrtStream ptr)
+s32 HrtGetStreamId(aclrtStream ptr, SingleOperatorHostTimer *timer)
 {
     s32       streamId;
-    aclError ret = aclrtStreamGetId(ptr, &streamId);
+    auto ret = ACL_SUCCESS;
+    if (timer != nullptr) {
+        timer->runtimeTime_.StartTimer();
+        ret = aclrtStreamGetId(ptr, &streamId);
+        timer->runtimeTime_.StopTimer();
+    } else {
+        ret = aclrtStreamGetId(ptr, &streamId);
+    }
     HCCL_INFO("Call aclrtStreamGetId, return value[%d] streamId[%d].", ret, streamId);
     if (ret != ACL_SUCCESS) {
         HCCL_ERROR("[Get][StreamId]errNo[0x%016llx] "
@@ -906,12 +913,20 @@ void HrtCntNotifyDestroy(const rtCntNotify_t inCntNotify)
 const std::map<HrtCntNotifyRecordMode, rtCntNotifyRecordMode> HRT_CNT_NOTIFY_RECORD_MODE_MAP
     = {{HrtCntNotifyRecordMode::WRITE_BIT, rtCntNotifyRecordMode::RT_CNT_NOTIFY_RECORD_BIT_OR_MODE},
        {HrtCntNotifyRecordMode::STORE, rtCntNotifyRecordMode::RT_CNT_NOTIFY_RECORD_SET_VALUE_MODE}};
-void HrtCntNotifyRecord(const rtCntNotify_t inCntNotify, const aclrtStream streamPtr, HrtCntNotifyRecordMode mode, u32 value)
+void HrtCntNotifyRecord(const rtCntNotify_t inCntNotify, const aclrtStream streamPtr, HrtCntNotifyRecordMode mode,
+                        u32 value, SingleOperatorHostTimer *timer)
 {
     rtCntNotifyRecordInfo_t recordInfo{};
     recordInfo.mode  = HRT_CNT_NOTIFY_RECORD_MODE_MAP.at(mode);
     recordInfo.value = value;
-    aclError ret    = rtsCntNotifyRecord(inCntNotify, streamPtr, &recordInfo);
+    auto ret = RT_ERROR_NONE;
+    if (timer != nullptr) {
+        timer->runtimeTime_.StartTimer();
+        ret    = rtsCntNotifyRecord(inCntNotify, streamPtr, &recordInfo);
+        timer->runtimeTime_.StopTimer();
+    } else {
+        ret    = rtsCntNotifyRecord(inCntNotify, streamPtr, &recordInfo);
+    }
     HCCL_INFO("Call rtCntNotifyRecord, return value[%d], inCntNotify[%p]", ret, inCntNotify);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("Call rtCntNotifyRecord failed");
@@ -923,14 +938,21 @@ const std::map<HrtCntNotifyWaitMode, rtCntNotifyWaitMode> HRT_CNT_NOTIFY_WAIT_MO
     = {{HrtCntNotifyWaitMode::EQUAL, rtCntNotifyWaitMode::RT_CNT_NOTIFY_WAIT_EQUAL_MODE},
        {HrtCntNotifyWaitMode::BITMAP, rtCntNotifyWaitMode::RT_CNT_NOTIFY_WAIT_EQUAL_WITH_BITMASK_MODE}};
 void HrtCntNotifyWaitWithTimeOut(const rtCntNotify_t inCntNotify, const aclrtStream streamPtr, HrtCntNotifyWaitMode mode, u32 value,
-                                 u32 timeout, bool isClear)
+                                 u32 timeout, bool isClear, SingleOperatorHostTimer *timer)
 {
     rtCntNotifyWaitInfo_t waitInfo{};
     waitInfo.mode    = HRT_CNT_NOTIFY_WAIT_MODE_MAP.at(mode);
     waitInfo.value   = value;
     waitInfo.isClear = isClear;
     waitInfo.timeout = timeout;
-    aclError ret    = rtsCntNotifyWaitWithTimeout(inCntNotify, streamPtr, &waitInfo);
+    rtError_t ret = RT_ERROR_NONE;
+    if (timer != nullptr) {
+        timer->runtimeTime_.StartTimer();
+        ret    = rtsCntNotifyWaitWithTimeout(inCntNotify, streamPtr, &waitInfo);
+        timer->runtimeTime_.StopTimer();
+    } else {
+        ret    = rtsCntNotifyWaitWithTimeout(inCntNotify, streamPtr, &waitInfo);
+    }
     HCCL_INFO("Call rtCntNotifyWaitWithTimeout, return value[%d], inCntNotify[%p]", ret, inCntNotify);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("Call rtCntNotifyWaitWithTimeout failed");
@@ -1003,9 +1025,16 @@ u32 HrtStreamGetCqId(const aclrtStream ptr)
     return logicCqId;
 }
 
-void HrtCcuLaunch(rtCcuTaskInfo_t &taskInfo, aclrtStream const streamPtr)
+void HrtCcuLaunch(rtCcuTaskInfo_t& taskInfo, aclrtStream const streamPtr, SingleOperatorHostTimer* timer)
 {
-    auto ret = rtCCULaunch(&taskInfo, streamPtr);
+    auto ret = RT_ERROR_NONE;
+    if (timer != nullptr) {
+        timer->runtimeTime_.StartTimer();
+        ret = rtCCULaunch(&taskInfo, streamPtr);
+        timer->runtimeTime_.StopTimer();
+    } else {
+        ret = rtCCULaunch(&taskInfo, streamPtr);
+    }
     if (ret != RT_ERROR_NONE) {
         string msg = StringFormat("Call rtCCULaunch failed.");
         THROW<RuntimeApiException>(msg);

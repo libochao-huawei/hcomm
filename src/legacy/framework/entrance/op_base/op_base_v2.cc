@@ -604,7 +604,7 @@ HcclResult HcclCommDestroyV2(HcclComm comm)
 }
 
 HcclResult HcclAlltoAllV2(const void *sendBuf, uint64_t sendCount, HcclDataType sendType, const void *recvBuf,
-    uint64_t recvCount, HcclDataType recvType, HcclComm comm, aclrtStream stream)
+    uint64_t recvCount, HcclDataType recvType, HcclComm comm, aclrtStream stream, void *timer)
 {
     HcclUs startut = TIME_NOW();
     bool isCapture;
@@ -653,8 +653,9 @@ HcclResult HcclAlltoAllV2(const void *sendBuf, uint64_t sendCount, HcclDataType 
     opParams.all2AllDataDes.recvType = HcclDataTypeToDataType(recvType);
     opParams.dataType = HcclDataTypeToDataType(sendType);
     opParams.opTag   = tag;
-
-    CHK_RET_AND_PRINT_IDE(communicator->LoadOpbasedCollOp(opParams, static_cast<void*>(stream)), tag.c_str());
+    Hccl::SingleOperatorHostTimer *timers =
+        static_cast<Hccl::SingleOperatorHostTimer *>(timer);
+    CHK_RET_AND_PRINT_IDE(communicator->LoadOpbasedCollOp(opParams, static_cast<void*>(stream), timers), tag.c_str());
 
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
@@ -1051,7 +1052,7 @@ HcclResult HcclReduceV2(void *sendBuf, void *recvBuf, uint64_t count, HcclDataTy
 }
 
 HcclResult HcclAllReduceV2(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType, HcclReduceOp op,
-    HcclComm comm, aclrtStream stream)
+                           HcclComm comm, aclrtStream stream, void *timer)
 {
     HcclUs startut = TIME_NOW();
     bool isCapture;
@@ -1102,7 +1103,8 @@ HcclResult HcclAllReduceV2(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
     opParams.recvBuf = recvBuf;
     opParams.count   = count;
     opParams.opTag   = tag;
-    CHK_RET_AND_PRINT_IDE(communicator->LoadOpbasedCollOp(opParams, static_cast<void*>(stream)), tag.c_str());
+    Hccl::SingleOperatorHostTimer *timers = static_cast<Hccl::SingleOperatorHostTimer *>(timer);
+    CHK_RET_AND_PRINT_IDE(communicator->LoadOpbasedCollOp(opParams, static_cast<void*>(stream), timers), tag.c_str());
 
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
@@ -1116,7 +1118,7 @@ HcclResult HcclAllReduceV2(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
 }
 
 HcclResult HcclBroadcastV2(void *buf, uint64_t count, HcclDataType dataType, uint32_t root, HcclComm comm,
-    aclrtStream stream)
+    aclrtStream stream, void *timer)
 {
     HcclUs startut = TIME_NOW();
     bool isCapture;
@@ -1163,7 +1165,9 @@ HcclResult HcclBroadcastV2(void *buf, uint64_t count, HcclDataType dataType, uin
     opParams.count = count;
     opParams.root = root;
     opParams.opTag = tag;
-    CHK_RET_AND_PRINT_IDE(communicator->LoadOpbasedCollOp(opParams, static_cast<void*>(stream)), tag.c_str());
+    Hccl::SingleOperatorHostTimer *timers =
+        static_cast<Hccl::SingleOperatorHostTimer *>(timer);
+    CHK_RET_AND_PRINT_IDE(communicator->LoadOpbasedCollOp(opParams, static_cast<void*>(stream), timers), tag.c_str());
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
@@ -1709,7 +1713,7 @@ HcclResult HcclScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclD
 }
 
 HcclResult HcclAllGatherV2(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclDataType dataType,
-                           HcclComm comm, aclrtStream stream)
+                           HcclComm comm, aclrtStream stream, void *timer)
 {
     HcclUs startut = TIME_NOW();
     bool isCapture;
@@ -1753,8 +1757,8 @@ HcclResult HcclAllGatherV2(void *sendBuf, void *recvBuf, uint64_t sendCount, Hcc
     opParams.recvBuf = recvBuf;
     opParams.count = sendCount;
     opParams.opTag = tag;
-
-    CHK_RET_AND_PRINT_IDE(communicator->LoadOpbasedCollOp(opParams, static_cast<void*>(stream)), tag.c_str());
+    Hccl::SingleOperatorHostTimer *timers = static_cast<Hccl::SingleOperatorHostTimer *>(timer);
+    CHK_RET_AND_PRINT_IDE(communicator->LoadOpbasedCollOp(opParams, static_cast<void*>(stream), timers), tag.c_str());
 
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
@@ -1788,7 +1792,7 @@ HcclResult HcclAllGatherVV2(void *sendBuf, uint64_t sendCount, void *recvBuf, vo
     // 参数合法性校验
     if (rankSize == 1) {
         // rankSize为1时，退化为AllGather
-        return HcclAllGatherV2(sendBuf, recvBuf, sendCount, dataType, comm, stream);
+        return HcclAllGatherV2(sendBuf, recvBuf, sendCount, dataType, comm, stream, nullptr);
     }
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), sendCount, dataType, stream), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckVOpParamV2(rankId, rankSize, sendCount, recvCounts), tag.c_str());
@@ -1971,7 +1975,7 @@ HcclResult HcclRecvV2(
 }
 
 HcclResult HcclReduceScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType, HcclReduceOp op,
-    HcclComm comm, aclrtStream stream)
+    HcclComm comm, aclrtStream stream, void *timer)
 {
     HcclUs startut = TIME_NOW();
     bool isCapture;
@@ -2019,8 +2023,8 @@ HcclResult HcclReduceScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount,
     opParams.recvBuf = recvBuf;
     opParams.count = recvCount;
     opParams.opTag = tag;
-
-    CHK_RET_AND_PRINT_IDE(communicator->LoadOpbasedCollOp(opParams, static_cast<void*>(stream)), tag.c_str());
+    Hccl::SingleOperatorHostTimer *timers = static_cast<Hccl::SingleOperatorHostTimer *>(timer);
+    CHK_RET_AND_PRINT_IDE(communicator->LoadOpbasedCollOp(opParams, static_cast<void*>(stream), timers), tag.c_str());
 
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
@@ -2054,7 +2058,7 @@ HcclResult HcclReduceScatterVV2(void *sendBuf, void *sendCounts, void *sendDispl
     // 参数合法性校验
     if (rankSize == 1) {
         // rankSize为1时，退化为ReduceScatter
-        return HcclReduceScatterV2(sendBuf, recvBuf, recvCount, dataType, op, comm, stream);
+        return HcclReduceScatterV2(sendBuf, recvBuf, recvCount, dataType, op, comm, stream, nullptr);
     }
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), recvCount, dataType, stream), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckReductionOpV2(op), tag.c_str());

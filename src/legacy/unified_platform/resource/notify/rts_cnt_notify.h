@@ -28,10 +28,9 @@ public:
     ~RtsCntNotify();
     std::unique_ptr<BaseTask> PostBits(u32 bitValue);
     std::unique_ptr<BaseTask> WaitValue(u32 value);
-    void                      PostBits(u32 bitValue, const Stream &stream) const;
-    void                      WaitValue(u32 value, u32 timeout, const aclrtStream &rtStream) const;
-    void                      WaitValue(u32 value, u32 timeout, const Stream &stream) const;
-
+    void                      PostBits(u32 bitValue, const Stream &stream, SingleOperatorHostTimer *timer = nullptr) const;
+    void                      WaitValue(u32 value, u32 timeout, const aclrtStream &rtStream, SingleOperatorHostTimer *timer = nullptr) const;
+    void                      WaitValue(u32 value, u32 timeout, const Stream &stream, SingleOperatorHostTimer *timer = nullptr) const;
     std::string Describe() const;
 
     u32 GetId() const

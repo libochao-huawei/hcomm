@@ -57,6 +57,7 @@
 #include "hostdpu/flush_manager.h"
 #include "hostdpu/dpu_kernel_entrance.h"
 #include "json_parser.h"
+#include "perf_timer.h"
 
 namespace Hccl {
 constexpr u64 HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE = (1 * 1024 * 1024); // 指定bufferSize的单位为MB
@@ -415,8 +416,8 @@ void CommunicatorImpl::SingleRankProc(const CollOpParams &opParams, void *stream
     }
 }
 
-bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream)
-{
+bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream,
+                                        SingleOperatorHostTimer *timer) {
     InitCcuSuperFastLoad(); // 存在profiling开关在多次下发算子时动态变化的场景，每次下发流程中都需要更新开关
     superFasterLoad = (opParams.opType == OpType::ALLREDUCE || opParams.opType == OpType::ALLGATHER
                           || opParams.opType == OpType::REDUCESCATTER || opParams.opType == OpType::BROADCAST || 
@@ -453,13 +454,13 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
         dfxOpInfo->algType_      = AlgType::MESH;
         dfxOpInfo->index_        = GetIdIndex();
         dfxOpInfo->comm_         = this;
-        dfxOpInfo->mainStreamId_ = HrtGetStreamId(stream);
+        dfxOpInfo->mainStreamId_ = HrtGetStreamId(stream, timer);
         dfxOpInfo->beginTime_    = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
         GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);
-        ExecuteFastCcuLaunch(opParams, stream, params);
+        ExecuteFastCcuLaunch(opParams, stream, params, timer);
         ReportProfInfo(beginTime, opParams.staticShape, true);
     } else {
-        ExecuteFastCcuLaunch(opParams, stream, params);
+        ExecuteFastCcuLaunch(opParams, stream, params, timer);
     }
     return true;
 }
@@ -477,8 +478,8 @@ static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const Tas
     comm.GetMirrorTaskManager().AddTaskInfo(taskInfo);
 }
 
-void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream, CachedCCUParams &params)
-{
+void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream,
+                                            CachedCCUParams &params, SingleOperatorHostTimer *timer) {
     static thread_local int slaveIndex = 0;
     static thread_local u32 mStreamId = 0;
     static thread_local u32 value = 0;
@@ -497,47 +498,47 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
     u32   streamNum    = params.count.size();
     if (streamNum > 1) {
         timeout = notifyTimeoutCfg.GetNotifyTimeout();
-        mStreamId = params.isSlave ? opbaseStream->GetSlave(slaveIndex++)->GetId() : HrtGetStreamId(mStream);
+        mStreamId = params.isSlave ? opbaseStream->GetSlave(slaveIndex++)->GetId() : HrtGetStreamId(mStream, timer);
         cntNotify1ToN = GetCcuStreamSyncNotifyManager().GetRts1ToNCntNotify(mStreamId);
         // launch LocalPostTo on stream
         value = 0;
         for (u32 i = 0; i < streamNum - 1; ++i) {
             value |= BASE_BIT << i;
         }
-        cntNotify1ToN->PostValue(value, mStream);
+        cntNotify1ToN->PostValue(value, mStream, timer);
     }
     if (taskExceptionEnv || enableProfilingEnv) {
         params.taskParams[0].taskPara.Ccu.costumArgs[0] = ccuParams[0].args[0];
         params.taskParams[0].taskPara.Ccu.costumArgs[1] = ccuParams[0].args[1];
         params.taskParams[0].beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-        SuperFastLoad(ccuParams, mStream, vector_zero_count);
+        SuperFastLoad(ccuParams, mStream, vector_zero_count, timer);
         params.taskParams[0].endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
         FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[0]);
     }
     else
     {
-        SuperFastLoad(ccuParams, mStream, vector_zero_count);
+        SuperFastLoad(ccuParams, mStream, vector_zero_count, timer);
     }
     
     if (streamNum > 1) {
         RtsCntNotify *cntNotifyNTo1 = GetCcuStreamSyncNotifyManager().GetRtsNTo1CntNotify(mStreamId);
         //  launch LocalWaitFrom on stream
-        cntNotifyNTo1->WaitValue(value, timeout, mStream);
+        cntNotifyNTo1->WaitValue(value, timeout, mStream, timer);
         for (std::size_t i = 0, len = streamNum - 1; i < len; ++i) {
             u32  bitValue = BASE_BIT << i;
             auto slave    = opbaseStream->GetSlave(slaveIndex++);
             cntNotify1ToN->WaitBits(bitValue, timeout, *slave);
             if (taskExceptionEnv || enableProfilingEnv) {
                 params.taskParams[i + 1].beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-                SuperFastLoad(ccuParams + params.count[i], slave->GetPtr(), params.count[i + 1]);
+                SuperFastLoad(ccuParams + params.count[i], slave->GetPtr(), params.count[i + 1], timer);
                 params.taskParams[i + 1].endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
                 FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[i + 1]);
             }
             else{
-                SuperFastLoad(ccuParams + params.count[i], slave->GetPtr(), params.count[i + 1]);
+                SuperFastLoad(ccuParams + params.count[i], slave->GetPtr(), params.count[i + 1], timer);
             }
             // launch localPostTo on extra streams
-            cntNotifyNTo1->PostBits(bitValue, *slave);
+            cntNotifyNTo1->PostBits(bitValue, *slave, timer);
         }
     }
     slaveIndex = 0;
@@ -564,7 +565,8 @@ HcclResult CommunicatorImpl::SetAivControledCoreNum(bool isAiv)
     return HCCL_SUCCESS;
 }
 
-HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, void *stream)
+HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, void *stream,
+                                               SingleOperatorHostTimer *timer)
 {
     try {
         isLoadOp = true;
@@ -574,7 +576,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         SnapShotParser::GetInstance().SetIsNeedLoadOp(false);
         if (rankSize == 1) {
             HCCL_WARNING("[CommunicatorImpl][%s] ranksize == 1, enter SingleRankProc", __func__);
-            TraceStartInfo(HrtGetStreamId(stream), opParams, OpMode::OPBASE);
+            TraceStartInfo(HrtGetStreamId(stream, timer), opParams, OpMode::OPBASE);
             TraceOpInfo(opParams);
             HcclUs startut = std::chrono::steady_clock::now();
             SingleRankProc(opParams, stream);
@@ -582,9 +584,10 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
             TraceEndInfo(startut, endut, opParams);
             return HcclResult::HCCL_SUCCESS;
         }
-        if (TryFastCcuLaunch(opParams, stream)) {
+        if (TryFastCcuLaunch(opParams, stream, timer)) {
             return HcclResult::HCCL_SUCCESS;
         }
+        this->timerPtr = timer;
         curOpParams = opParams;
         CovertToCurrentCollOperator(id, opParams, OpMode::OPBASE);
         opExecuteConfig = commExecuteConfig;
@@ -623,6 +626,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         TraceEndInfo(startut, endut, opParams);
         RefreshSubmittedOpcnt();
         opBaseOpIndex++;
+        this->timerPtr = nullptr;
         status = CommStatus::COMM_READY;
     } catch (HcclException &e) {
         status = CommStatus::COMM_READY;
