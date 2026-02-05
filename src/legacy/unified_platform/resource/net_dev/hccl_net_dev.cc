@@ -12,22 +12,21 @@
 #include "log.h"
 
 using namespace std;
-using namespace Hccl;
 
 HcclResult HcclNetDevOpen(const HcclNetDevInfos *info, HcclNetDev *netDev)
 {
-    Hccl::CHECK_NULLPTR(netDev, "[HcclNetDevOpen] netDev is nullptr!");
+    CHK_PTR_NULL(netDev);
     HcclResult ret = HcclNetDevOpenV2(info, netDev);
     if(ret == HCCL_SUCCESS){
-        Hccl::CHECK_NULLPTR(*netDev, "[HcclNetDevOpen] *netDev is nullptr!");
-        Hccl::HCCL_INFO("HcclNetDevOpen: successfully opened netDev [%p]!", *netDev);
+        CHK_PTR_NULL(*netDev);
+        HCCL_INFO("HcclNetDevOpen: successfully opened netDev [%p]!", *netDev);
     }
     return ret;
 }
 
 HcclResult HcclNetDevClose(HcclNetDev netDev)
 {
-    Hccl::HCCL_INFO("[HcclNetDevClose] netDev[%d].", netDev);
+    HCCL_INFO("[HcclNetDevClose] netDev[%d].", netDev);
     return HcclNetDevCloseV2(netDev);
 }
 
@@ -36,8 +35,8 @@ HcclResult HcclNetDevGetAddr(HcclNetDev netDev, HcclAddress *addr)
     HcclResult ret = HcclNetDevOpenV2(reinterpret_cast<const HcclNetDevInfos*>(netDev), 
                                     reinterpret_cast<HcclNetDev*>(addr));
     if(ret == HCCL_SUCCESS){
-        Hccl::CHECK_NULLPTR(addr, "[HcclNetDevGetAddr] addr is nullptr!");
-        Hccl::HCCL_INFO("HcclNetDevGetAddr: successfully got addr [%p]!", addr);
+        CHK_PTR_NULL(addr);
+        HCCL_INFO("HcclNetDevGetAddr: successfully got addr [%p]!", addr);
     }
     return ret;
 }
@@ -46,7 +45,7 @@ HcclResult HcclNetDevGetBusAddr(HcclDeviceId dstDevId, HcclAddress *busAddr)
 {
     HcclResult ret = HcclNetDevGetBusAddrV2(dstDevId, busAddr);
     if(ret != HCCL_SUCCESS){
-        Hccl::HCCL_ERROR("HcclNetDevGetBusAddr: failed to get bus addres for device %d, error code: %d", dstDevId, ret);
+        HCCL_ERROR("HcclNetDevGetBusAddr: failed to get bus addres for device %d, error code: %d", dstDevId, ret);
     }
     return ret;
 }
@@ -55,7 +54,7 @@ HcclResult HcclNetDevGetNicAddr(int32_t devicePhyId, HcclAddress **addr, uint32_
 {
     HcclResult ret = HcclNetDevGetNicAddrV2(devicePhyId, addr, addrNum);
     if(ret != HCCL_SUCCESS){
-        Hccl::HCCL_ERROR("HcclNetDevGetBusAddr: failed to get NIC addres for device %d, error code: %d", devicePhyId, ret);
+        HCCL_ERROR("HcclNetDevGetBusAddr: failed to get NIC addres for device %d, error code: %d", devicePhyId, ret);
     }
     return ret;
 }
