@@ -8,6 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16.0)
+set(CMAKE_EXPORT_COMPILE_COMMANDS  ON)
 option(BUILD_OPEN_PROJECT "Build open hcomm project." ON)
 message(STATUS "DEVICE_MODE=${DEVICE_MODE}")
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
@@ -50,10 +51,10 @@ set(CMAKE_C_FLAGS_RELEASE "")
 set(CMAKE_CXX_FLAGS_RELEASE "")
 
 set(CMAKE_CXX_COMPILE_OBJECT
-    "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+    "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$$(notdir $$(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
 )
 set(CMAKE_C_COMPILE_OBJECT
-    "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+    "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$$(notdir $$(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
 )
 
 # 获取 CPU 核心数
@@ -62,7 +63,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
         COMMAND nproc
         OUTPUT_VARIABLE CPU_CORES
         OUTPUT_STRIP_TRAILING_WHITESPACE
-    ) 
+    )
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     execute_process(
         COMMAND wmic cpu get NumberOfCores /value
@@ -76,12 +77,13 @@ else()
     set(CPU_CORES 1)
 endif()
 
-math(EXPR JOBS "${CPU_CORES} * 2")
-message(STATUS "Detected JOBS: ${JOBS}")
-set(CMAKE_JOB_POOL_COMPILE "${JOBS}")
-set(CMAKE_JOB_POOL_LINK "${JOBS}")
+# math(EXPR JOBS "${CPU_CORES} * 2")
+# message(STATUS "Detected JOBS: ${JOBS}")
+# set(CMAKE_JOB_POOL_COMPILE "${JOBS}")
+# set(CMAKE_JOB_POOL_LINK "${JOBS}")
 
 if(ENABLE_TEST)
+    enable_testing()
     include(cmake/config.cmake)
     include(cmake/function.cmake)
     include(cmake/intf_pub_gccnative.cmake)

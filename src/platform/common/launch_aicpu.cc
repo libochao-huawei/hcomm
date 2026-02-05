@@ -15,7 +15,7 @@
 #include "log.h"
 #include "mmpa_api.h"
 #include "mem_host_pub.h"
-
+#include <cstdint>
 
 using namespace std;
 

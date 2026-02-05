@@ -1,0 +1,7 @@
+build/
+output/
+build_device/
+build_out/
+third_party/
+.vscode/
+.idea/
