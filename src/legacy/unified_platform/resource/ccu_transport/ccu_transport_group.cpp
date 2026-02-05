@@ -32,16 +32,16 @@ bool CcuTransportGroup::CheckTransports(const vector<CcuTransport*> &transports)
     return true;
 }
 
-bool CcuTransportGroup::CheckTransportCntCke()
+HcclResult CcuTransportGroup::CheckTransportCntCke()
 {
-    HcclResult allocResHandleReturnValue = CcuDeviceManager::AllocCke(HrtGetDevice(), 
-                    cntCkesGroupDieId, cntCkeNumTransportGroupUse, ckeInfoTransportGroupUse);
+    HcclResult allocResHandleReturnValue = HCCL_SUCCESS;
 
-    TRY_CATCH_RETURN(allocResHandleReturnValue);
+    TRY_CATCH_RETURN(allocResHandleReturnValue = CcuDeviceManager::AllocCke(HrtGetDevice(), 
+                    cntCkesGroupDieId, cntCkeNumTransportGroupUse, ckeInfoTransportGroupUse));
                     
     if (allocResHandleReturnValue != HCCL_SUCCESS) {
         HCCL_ERROR("[CcuTransportGroup::%s] Failed to allocate cntCke resource, please check.", __func__);
-        return false;
+        return HCCL_E_INTERNAL;
     }
 
     for (u32 i = 0; i < ckeInfoTransportGroupUse.size(); i++) {
@@ -55,7 +55,7 @@ bool CcuTransportGroup::CheckTransportCntCke()
     for (auto &transport : transportsGrp) {
         transport->SetCntCke(cntCkesGroup);
     }
-    return true;
+    return HCCL_SUCCESS;
 }
 
 CcuTransportGroup::CcuTransportGroup(const vector<CcuTransport*> &transports, u32 cntCkeNum):isDestroyed(false)

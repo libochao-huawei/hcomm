@@ -9,7 +9,6 @@
  */
 #include "hccl_net_dev_v2.h"
 #include "hccl_net_dev.h"
-#include "exception_util.h"
 #include "log.h"
 
 using namespace std;
@@ -35,7 +34,7 @@ HcclResult HcclNetDevClose(HcclNetDev netDev)
 HcclResult HcclNetDevGetAddr(HcclNetDev netDev, HcclAddress *addr)
 {
     HcclResult ret = HcclNetDevOpenV2(reinterpret_cast<const HcclNetDevInfos*>(netDev), 
-                                    reinterpret_cast<const HcclNetDevInfos**>(addr));
+                                    reinterpret_cast<HcclNetDev*>(addr));
     if(ret == HCCL_SUCCESS){
         Hccl::CHECK_NULLPTR(addr, "[HcclNetDevGetAddr] addr is nullptr!");
         Hccl::HCCL_INFO("HcclNetDevGetAddr: successfully got addr [%p]!", addr);

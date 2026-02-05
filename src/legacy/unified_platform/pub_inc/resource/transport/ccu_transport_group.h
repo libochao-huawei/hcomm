@@ -28,7 +28,7 @@ public:
     TransportGrpStatus      GetGrpStatus() const;
     u32                     GetCntCkeId(u32 index, u32 &cntCkeId) const;
     bool                    CheckTransports(const vector<CcuTransport*> &transports);
-    bool                    CheckTransportCntCke();
+    HcclResult              CheckTransportCntCke();
     const vector<CcuTransport*> &GetTransports() const;
 
 private:
