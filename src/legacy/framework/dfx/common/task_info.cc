@@ -123,7 +123,7 @@ string TaskInfo::GetOpInfo() const
             static_cast<u64>(opInfo->op_.outputMem->GetAddr()));
     }
     return StringFormat("commIndex[%u], count[%llu], reduceType[%s], %sdataType[%s], opIndex[%u], headOpCounter[%u], tailOpCounter[%u]",
-        opInfo->commIndex,
+        opInfo->commIndex_,
         opInfo->op_.dataCount,
         opInfo->op_.reduceOp.Describe().c_str(),
         addr.c_str(),
