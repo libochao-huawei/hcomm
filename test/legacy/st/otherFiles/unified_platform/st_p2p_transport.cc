@@ -123,7 +123,6 @@ static void Mock()
 {
     MOCKER(HrtMemAsyncCopy).stubs().with(any());
     MOCKER(HrtReduceAsync).stubs().with(any());
-    //MOCKER(rtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue((void *)100));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtStreamDestroy).stubs();
     MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910A2));
