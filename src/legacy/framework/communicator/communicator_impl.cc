@@ -2940,7 +2940,7 @@ HcclResult CommunicatorImpl::PrepareDpuKernelResource(aclrtFuncHandle &funcHandl
     jsonPath += "/opp/built-in/op_impl/dpu/";
     HCCL_DEBUG("[CommunicatorImpl::%s] kernel folder path[%s]", __func__, jsonPath.c_str());
 
-    jsonPath += "libccl_dpu.json";
+    jsonPath += "ccl_dpu.json";
     char realPath[PATH_MAX] = {0};
     CHK_PRT_RET(realpath(jsonPath.c_str(), realPath) == nullptr,
         HCCL_ERROR("[CommunicatorImpl::%s]: %s is not a valid real path, err[%d]", __func__, jsonPath.c_str(), errno),
