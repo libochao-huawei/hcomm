@@ -263,7 +263,7 @@ HcclResult AivUbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memT
             remoteUserMems_[i].type = hccl::ConvertHcclToCommMemType(rmtBuffer->GetMemType());
             remoteUserMems_[i].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
             remoteUserMems_[i].size = rmtBuffer->GetSize();
-            const char* src = remoteUserMemTag_[i].data();
+            const char* src = remoteUserMemTag_[i+cclbufferNum].data();
             std::string tagCopy(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
             tagCopies_.push_back(std::move(tagCopy));
             tagPointers_.push_back(const_cast<char*>(tagCopies_.back().c_str()));
