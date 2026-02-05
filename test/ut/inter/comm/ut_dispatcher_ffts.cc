@@ -17,8 +17,6 @@
 #include "op_json_info.h"
 #include "op_tiling.h"
 #include "vector_tiling.h"
-#include "tbe_vector_reduce.h"
-#include "tbe_crack_cleared.h"
 #include "auto_tiling_rt2.h"
 #include "vector_op_info.h"
 #include "auto_tiling_register.h"

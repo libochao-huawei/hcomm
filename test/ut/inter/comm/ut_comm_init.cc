@@ -55,7 +55,6 @@
 #include "comm_config_pub.h"
 #include "transport_manager.h"
 #include "dlra_function.h"
-#include "tbe_vector_reduce.h"
 #include "hccl_one_sided_service.h"
 #include "adapter_prof.h"
 

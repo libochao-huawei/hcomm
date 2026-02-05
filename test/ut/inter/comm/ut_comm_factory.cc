@@ -302,7 +302,7 @@ TEST_F(CommFactoryTest, ut_create_comm_ranksize_7)
     std::map<HcclCMDType, std::vector<HcclAlgoType>> algoConfig;
     
     for(u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
-        std::vector<HcclAlgoType>> defaultAlgoTypes;
+        std::vector<HcclAlgoType> defaultAlgoTypes;
         defaultAlgoTypes.push_back(HcclAlgoType::HCCL_ALGO_TYPE_NULL);
         defaultAlgoTypes.push_back(HcclAlgoType::HCCL_ALGO_TYPE_NULL);
         algoConfig[static_cast<HcclCMDType>(opType)] = defaultAlgoTypes;
