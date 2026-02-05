@@ -484,7 +484,6 @@ TEST_F(InsRulesTest, Interpret_local_wait_group)
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtCntNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
 
     RtsCntNotify *nullCntNotify = nullptr;
     RtsCntNotify  rtsCntNotify;
