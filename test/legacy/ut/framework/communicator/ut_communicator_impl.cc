@@ -391,7 +391,7 @@ public:
         memset_s(devBufD2h, sizeof(devBufD2h), 0, sizeof(devBufD2h));
         MOCKER(HrtMalloc)
             .stubs()
-            .with(any(), any())
+            .with(any())
             .will(returnValue(static_cast<void *>(devBufH2d)))
             .then(returnValue(static_cast<void *>(devCacheH2d)))
             .then(returnValue(static_cast<void *>(devBufD2h)));
@@ -1583,7 +1583,7 @@ TEST_F(CommunicatorImplTest, should_success_when_AllocCommResource_ccu)
     std::vector<Hccl::LinkData> linkVec;
     char *buf = new char[16 * 1024 * 1024];
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(buf)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x100000));
+    MOCKER(HrtMalloc).stubs().with(any()).will(returnValue((void *)0x100000));
 
 #define FUSION_SUB_TASK_MAX_CPU_NUM (1U)
 typedef struct rtHostInputInfo {
@@ -3205,7 +3205,7 @@ TEST_F(CommunicatorImplTest, ut_GetAlgExecParam_When_Normal_Expect_ReturnHCCL_SU
     int32_t aivCoreLimit = 2;
 
     void *addr = reinterpret_cast<void *>(0x12345678);
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(addr));
+    MOCKER(HrtMalloc).stubs().with(any()).will(returnValue(addr));
     MOCKER(HrtFree).stubs();
     MOCKER_CPP(&SocketManager::BatchCreateSockets).stubs().with(any()).will(ignoreReturnValue());
     MOCKER_CPP(&UbMemoryTransportMgr::BatchCreateTransport).stubs().with(any()).will(returnValue(HcclResult::HCCL_SUCCESS));
