@@ -226,7 +226,7 @@ HcclResult HcomReduceScatterV2(const char *tag, void *inputPtr, void *outputPtr,
 HcclResult HcomReduceScatterVV2(const char *tag, void *sendBuf, void *sendCounts, void *sdispls, void *recvBuf,
     u64 recvCount, HcclDataType dataType, HcclReduceOp op, const char *group, rtStream_t stream)
 {
-    HCCL_INFO("[%s] start.", __func__);
+    HCCL_INFO("[HcomReduceScatterVV2] start.");
     HcclUs startut = TIME_NOW();
     /* 获取通信域 */
     std::string opTag = tag;
