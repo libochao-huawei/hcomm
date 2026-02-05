@@ -635,7 +635,6 @@ HCCP_ATTRI_VISI_DEF int ra_ctx_qp_create(void *ctx_handle, struct qp_create_attr
     hccp_warn("@@@ info->ub.wqebb_size: %ld", info->ub.wqebb_size);
     hccp_warn("@@@ info->ub.db_addr: %ld", info->ub.db_addr);
     hccp_warn("@@@ info->ub.db_token_id: %ld", info->ub.db_token_id);
-    hccp_warn("@@@ info->ub.ci_addr: %ld", info->ub.ci_addr);
     *qp_handle = (void *)qp_handle_tmp;
     return 0;
 
