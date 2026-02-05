@@ -20,38 +20,35 @@
 #include "local_rdma_rma_buffer.h"
 
 namespace hcomm {
+
 RoceRegedMemMgr::RoceRegedMemMgr()
 {
     localRdmaRmaBufferMgr_ = std::make_unique<LocalRdmaRmaBufferMgr>();
 }
+
 HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(this->localRdmaRmaBufferMgr_);
     CHK_PTR_NULL(memHandle);
-    CHK_PTR_NULL(memTag);
 
-    // 构造LocalRdmaRmaBuffer
-    std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
-    EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, mem.type, memTag)),
-        return HCCL_E_PTR);
+    std::shared_ptr<Hccl::LocalRdmaRmaBuffer> localRdmaRmaBuffer = nullptr;
  
     // LocalRdmaRmaBuffer构造函数存在注册动作，在调用该构造函数前需检查是否注册过
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
     auto findPair = localRdmaRmaBufferMgr_->Find(tempKey);
     if(findPair.first) {
-        // 内存再次注册时
-        HCCL_INFO("[RdmaRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
-                "{%p, %llu}", mem.addr, mem.size);
-        std::shared_ptr<Hccl::LocalRdmaRmaBuffer> &localRegisteredBuffer = findPair.second;
-        CHK_SMART_PTR_NULL(localRegisteredBuffer);
-        *memHandle = static_cast<void *>(localRegisteredBuffer.get());
-        return HCCL_E_AGAIN;
+        localRdmaRmaBuffer = findPair.second;
     }
-    
-    std::shared_ptr<Hccl::LocalRdmaRmaBuffer> localRdmaRmaBuffer = nullptr;
-    EXECEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<Hccl::LocalRdmaRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
-        return HCCL_E_PTR);
+    else {
+        // 构造LocalRdmaRmaBuffer
+        std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
+        EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, mem.type, memTag)),
+            return HCCL_E_PTR);
+
+        EXECEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<Hccl::LocalRdmaRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
+            return HCCL_E_PTR);
+    }
     
     // 注册到LocalRdmaRmaBuffer计数器
     auto resultPair = localRdmaRmaBufferMgr_->Add(tempKey, localRdmaRmaBuffer);
@@ -61,20 +58,20 @@ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
         return HCCL_E_INTERNAL;
     }
 
-    // 已注册：输入key是表中某一最相近key的全集。 返回添加该key的迭代器，及false
-    // 未注册：输入key是表中某一最相近key的空集。 返回添加成功的迭代器，及true
     std::shared_ptr<Hccl::LocalRdmaRmaBuffer> &localBuffer = resultPair.first->second.buffer;
     CHK_SMART_PTR_NULL(localBuffer);
+    *memHandle = static_cast<void *>(localBuffer.get());
+
+    // 已注册：输入key是表中某一最相近key的全集。 返回添加该key的迭代器，及false
+    // 未注册：输入key是表中某一最相近key的空集。 返回添加成功的迭代器，及true
     if (resultPair.second) {
         HCCL_INFO("[RoceRegedMemMgr][RegisterMemory]Register memory success! Add key {%p, %llu}", mem.addr, mem.size);
     } else {  
-        // 内存再次注册时
         HCCL_INFO("[RoceRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
                 "{%p, %llu}", mem.addr, mem.size);;
         return HCCL_E_AGAIN;
     }
  
-    *memHandle = static_cast<void *>(localBuffer.get());
     return HCCL_SUCCESS;
 }
 
@@ -186,11 +183,12 @@ HcclResult RoceRegedMemMgr::MemoryImport(const void *memDesc, uint32_t descLen, 
             return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(remoteRdmaRmaBufferMgr);
         remoteRdmaRmaBufferMgrs_[endpointDesc] = std::move(remoteRdmaRmaBufferMgr);
+        HCCL_INFO("remoteRdmaRmaBufferMgrs_ add remoteRdmaRmaBufferMgr successfully!");
     }
     
     auto resultPair = remoteRdmaRmaBufferMgrs_[endpointDesc]->Add(tempKey, remoteRdmaRmaBuffer);
     if(!resultPair.second) {
-        HCCL_ERROR("[RoceRegedMemMgr][MemoryExport] This memDesc has already been imported!");
+        HCCL_ERROR("[RoceRegedMemMgr][MemoryImport] This memDesc has already been imported!");
         return HCCL_E_AGAIN;
     }
 
