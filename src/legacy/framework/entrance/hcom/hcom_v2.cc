@@ -173,7 +173,7 @@ HcclResult HcomAllGatherVV2(const char *tag, void *sendBuf, u64 sendCount, void 
 HcclResult HcomAllReduceV2(const char *tag, void *inputPtr, void *outputPtr, u64 count, HcclDataType dataType,
     HcclReduceOp op, const char *group, rtStream_t stream)
 {
-    HCCL_INFO("[HcomReduceScatterV2] start.");
+    HCCL_INFO("[HcomAllReduceV2] start.");
     HcclUs startut = TIME_NOW();
     /* 入参校验 */
     CHK_RET(HcomCheckReductionOpV2(op));
