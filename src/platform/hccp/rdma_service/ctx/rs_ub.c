@@ -1785,10 +1785,28 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_id.eid: %ld", jetty_cb->jetty->jetty_id.eid);
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_id.uasid: %ld", jetty_cb->jetty->jetty_id.uasid);
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_id.id: %ld", jetty_cb->jetty->jetty_id.id);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_id.handle: %ld", jetty_cb->jetty->jetty_id.handle);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_id.async_events_acked: %ld", jetty_cb->jetty->jetty_id.async_events_acked);
 
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.id: %ld", jetty_cb->jetty->jetty_cfg.id);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.flag.bs.share_jfr: %ld", jetty_cb->jetty->jetty_cfg.flag.bs.share_jfr);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.flag.value: %ld", jetty_cb->jetty->jetty_cfg.flag.value);
+
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.jfs_cfg.depth: %ld", jetty_cb->jetty->jetty_cfg.jfs_cfg.depth);
-    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.jfs_cfg.jfc->: %ld", jetty_cb->jetty->jetty_cfg.jfs_cfg.jfc);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.jfs_cfg.flag.bs.order_type: %ld",
+        jetty_cb->jetty->jetty_cfg.jfs_cfg.flag.bs.order_type);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.jfs_cfg.flag.bs.multi_path: %ld",
+        jetty_cb->jetty->jetty_cfg.jfs_cfg.flag.bs.multi_path);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.jfs_cfg.flag.value: %ld",
+        jetty_cb->jetty->jetty_cfg.jfs_cfg.flag.value);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.jfs_cfg.max_sge: %ld", jetty_cb->jetty->jetty_cfg.jfs_cfg.max_sge);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.jfs_cfg.max_rsge: %ld", jetty_cb->jetty->jetty_cfg.jfs_cfg.max_rsge);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.jfs_cfg.max_inline_data: %ld", jetty_cb->jetty->jetty_cfg.jfs_cfg.max_inline_data);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.jfs_cfg.rnr_retry: %ld", jetty_cb->jetty->jetty_cfg.jfs_cfg.rnr_retry);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.jfs_cfg.err_timeout: %ld", jetty_cb->jetty->jetty_cfg.jfs_cfg.err_timeout);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.jfs_cfg.jfc->handle: %ld", jetty_cb->jetty->jetty_cfg.jfs_cfg.jfc->handle);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.jfs_cfg.jfc->async_events_acked: %ld",
+        jetty_cb->jetty->jetty_cfg.jfs_cfg.jfc->async_events_acked);
 
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfr->jfr_id.eid: %ld",
         jetty_cb->jetty->jetty_cfg.shared.jfr->jfr_id.eid);
@@ -1796,6 +1814,10 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
         jetty_cb->jetty->jetty_cfg.shared.jfr->jfr_id.uasid);
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfr->jfr_id.id: %ld",
         jetty_cb->jetty->jetty_cfg.shared.jfr->jfr_id.id);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfr->handle: %ld",
+        jetty_cb->jetty->jetty_cfg.shared.jfr->handle);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfr->async_events_acked: %ld",
+        jetty_cb->jetty->jetty_cfg.shared.jfr->async_events_acked);
 
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfc->jfc_id.eid: %ld",
         jetty_cb->jetty->jetty_cfg.shared.jfc->jfc_id.eid);
@@ -1803,6 +1825,14 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
         jetty_cb->jetty->jetty_cfg.shared.jfc->jfc_id.uasid);
     hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfc->jfc_id.id: %ld",
         jetty_cb->jetty->jetty_cfg.shared.jfc->jfc_id.id);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfc->handle: %ld",
+        jetty_cb->jetty->jetty_cfg.shared.jfc->handle);
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.shared.jfc->async_events_acked: %ld",
+        jetty_cb->jetty->jetty_cfg.shared.jfc->async_events_acked);
+
+    hccp_warn("@@@@@@ jetty_cb->jetty->jetty_cfg.user_ctx: %ld",
+        jetty_cb->jetty->jetty_cfg.user_ctx);
+
 
     hccp_warn("@@@@@@@@@ jetty_cb->jetty->urma_jetty_opt.is_actived: %ld",
         jetty_cb->jetty->urma_jetty_opt.is_actived);
