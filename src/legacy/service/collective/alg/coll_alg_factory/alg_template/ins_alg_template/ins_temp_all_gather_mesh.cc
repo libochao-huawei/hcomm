@@ -64,10 +64,11 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
     tempLinks_ = tempLinks;
 
     majorQueNum_ = tempVTopo_[0].size() - 1;
-    CHK_PRT_RET((majorQueNum_ + 1) * queNumPerNeighbor_ != tempInsQues.size(),
+
+    CHK_PRT_RET((majorQueNum_ + 1) != tempInsQues.size(),
         HCCL_ERROR("[InsTempAllGatherMesh1D] RunAllGather Rank [%d], requiredQueNum [%u] not equals to "
                    "templateQueNum [%u].",
-                   myRank_, majorQueNum_ * queNumPerNeighbor_, tempInsQues.size()),
+                   myRank_, (majorQueNum_ + 1), tempInsQues.size()),
         HcclResult::HCCL_E_INTERNAL);
 
     // queue arrangement
