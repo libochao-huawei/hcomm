@@ -16,7 +16,7 @@
 namespace hccl {
 constexpr u32 HCCL_RANK_SIZE_EQ_ONE = 1;
 
-enum CommPlane {
+enum class CommPlane {
     COMM_LEVEL0 = 0,    // 一级通信域(server内)
     COMM_LEVEL0_ANYPATH_RDMA,  // anypath特性使用
     COMM_LEVEL1,        // 二级通信域(server间)
