@@ -20,7 +20,6 @@
 #define DEV_INDEX_DIEID_OFFSET 8U
 #define DEV_INDEX_CNT_OFFSET 16U
 #define DEV_INDEX_UE_INFO_MASK 0x0000FFFFUL
-#define CI_ADDR_TWO_BYTES 2
 #define CI_ADDR_BUFFER_ALIGN_4K_PAGE_SIZE 4096U
 #define WQE_BB_SIZE 64ULL
 
@@ -125,7 +124,7 @@ struct rs_ctx_jetty_cb {
     uint64_t db_seg_handle;
     pthread_mutex_t mutex;
     uint32_t last_pi;
-    uint64_t ci_addr;
+    struct ctx_qp_share_info *qp_share_info_addr;
     struct RsCrErrInfo cr_err_info;
     struct RsListHead list;
 };
