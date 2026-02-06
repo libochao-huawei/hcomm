@@ -46,7 +46,9 @@ private:
     void *dst = reinterpret_cast<void *>(tempDst);
     void *src = reinterpret_cast<void *>(tempSrc);
     uint64_t len = sizeof(tempDst);
-    ChannelHandle devHandle = 1;
+    std::vector<char> uniqueId;
+    Hccl::UbTransportLiteImpl transportDev{uniqueId};
+    ChannelHandle devHandle = reinterpret_cast<ChannelHandle>(&transportDev);
 };
 
 TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_buffer_not_find_Expect_HCCL_E_INTERNAL)

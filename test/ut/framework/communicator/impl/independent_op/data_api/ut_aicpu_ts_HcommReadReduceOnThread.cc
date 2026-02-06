@@ -46,7 +46,9 @@ private:
     uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
     void *dst = reinterpret_cast<void *>(tempDst);
     void *src = reinterpret_cast<void *>(tempSrc);
-    ChannelHandle devHandle = 1;
+    std::vector<char> uniqueId;
+    Hccl::UbTransportLiteImpl transportDev{uniqueId};
+    ChannelHandle devHandle = reinterpret_cast<ChannelHandle>(&transportDev);
     uint64_t count = 1;
 };
 
