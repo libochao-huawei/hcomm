@@ -48,6 +48,7 @@ public:
     HcclResult SetTopoInfoForMeshL0();
     HcclResult SetTopoInfoForMeshL1();
     HcclResult SetTopoInfoForARS();
+    HcclResult SetTopoInfoForCombineL1();
     HcclResult CheckPlaneInfo();
     HcclResult CheckSuperPodInfo();
     HcclResult CheckServerInfo();
