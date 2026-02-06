@@ -402,11 +402,11 @@ HcclResult CcuConnection::UpdateExchangeStatus()
 
     for (size_t i = 0; i < jettyNum_; i++) {
         auto &outParam = importJettyCtxs_[i].outParam;
-        struct qp_import_info_t *infoPtr =
-            reinterpret_cast<qp_import_info_t *>(reqDataBuffers_[i].data());
+        struct QpImportInfoT *infoPtr =
+            reinterpret_cast<QpImportInfoT *>(reqDataBuffers_[i].data());
         outParam.handle        =
             reinterpret_cast<TargetJettyHandle>(remoteJettyHandlePtrs_[i]);
-        outParam.targetJettyVa = infoPtr->out.ub.tjetty_handle; // 该信息当前未使用
+        outParam.targetJettyVa = infoPtr->out.ub.tjettyHandle; // 该信息当前未使用
         outParam.tpn           = infoPtr->out.ub.tpn;
     }
     isJettyImported_ = true;
@@ -460,7 +460,7 @@ HcclResult CcuConnection::ReleaseConnRes()
 {
     for (auto &item : importJettyCtxs_) {
         if (item.outParam.handle != 0) {
-            int32_t ret = ra_ctx_qp_unimport(ctxHandle_, item.outParam.handle);
+            int32_t ret = RaCtxQpUnimport(ctxHandle_, item.outParam.handle);
             if (ret != 0) {
                 HCCL_ERROR("[CcuComponent][%s] failed, ctxHandle[%p] "
                     "remoteJettyHandle[%p], devLogicId[%d].", __func__,
