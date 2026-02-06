@@ -87,6 +87,8 @@ HcclResult HcclCreateComResourceByComm(HcclComm comm, u32 streamMode, bool isOpb
 
 HcclResult HcclDeviceRefresh(s32 &deviceLogicId);
 
+HcclResult HcclBatchSendRecvGroup(HcclSendRecvItem* sendRecvInfo, uint32_t itemNum, HcclComm comm, aclrtStream stream);
+
 HcclResult HcclSetIfProfile(void);
 
 void HcclResetIfProfile(void);
