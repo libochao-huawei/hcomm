@@ -773,10 +773,6 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
     HcclResult ret = HCCL_SUCCESS;
     void *pingHandle = nullptr;
     const char *socNamePtr = aclrtGetSocName();
-    if (socNamePtr == nullptr) {
-        HCCL_ERROR("[HCCN][HccnRpingInit]GetsocNamePtr fail.");
-        return HCCL_E_PTR;
-    }
     do {
         // hccp侧初始化ping mesh资源
         ret = HccnRaInit(deviceId);
