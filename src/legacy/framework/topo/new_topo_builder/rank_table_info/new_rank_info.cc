@@ -22,20 +22,29 @@
 #include "exception_util.h"
 
 namespace Hccl {
-void  CheakDeviceIdAndDevicePort(u32 deviceId, u32& devicePort){
+void  CheakDeviceIdAndDevicePort(u32 deviceId, std::string &portStr, u32& devicePort)
+{
     if (deviceId > MAX_VALUE_DEVICEID) {
             THROW<InvalidParamsException>(StringFormat("device_id [%u] is out of range [%u] to [%u]", deviceId, MIN_VALUE_U32, MAX_VALUE_DEVICEID));
-        }
+    }
+
+    if (portStr.empty()) {
+        // 不填则不检查，赋予无效值: 有可能填的刚好是无效值。
+        return;
+    }
+
     if (devicePort > MAX_VALUE_DEVICEPORT || devicePort < MIN_VALUE_DEVICEPORT) {
         THROW<InvalidParamsException>(StringFormat("device_port [%u] is out of range [%u] to [%u]", devicePort, MIN_VALUE_DEVICEPORT, MAX_VALUE_DEVICEPORT));
     }
 }
 
-void CheakLevelJsonsSize(u64 levelJsonsSize){
-    if(levelJsonsSize > MAX_LEVEL_lIST) {
+void CheakLevelJsonsSize(u64 levelJsonsSize)
+{
+    if (levelJsonsSize > MAX_LEVEL_lIST) {
         THROW<InvalidParamsException>(StringFormat("level_list size [%u], exceeds the maximum limit [%u]", levelJsonsSize, MAX_LEVEL_lIST));
     }
 }
+
 void NewRankInfo::Deserialize(const nlohmann::json &newRankInfoJson)
 {
     std::string msgRankid  = "error occurs when parser object of propName \"rank_id\"";
@@ -57,8 +66,10 @@ void NewRankInfo::Deserialize(const nlohmann::json &newRankInfoJson)
     std::string msgDeviceid  = "error occurs when parser object of propName \"device_id\"";
     std::string msgdeviceport = "error occurs when parser object of propName \"device_port\"";
     TRY_CATCH_THROW(InvalidParamsException, msgDeviceid, deviceId = GetJsonPropertyUInt(newRankInfoJson, "device_id"););
-    TRY_CATCH_THROW(InvalidParamsException, msgdeviceport, devicePort = GetJsonPropertyUInt(newRankInfoJson, "device_port", false, MAX_VALUE_DEVICEPORT););
-    CheakDeviceIdAndDevicePort(deviceId, devicePort);
+    std::string portStr;
+    TRY_CATCH_THROW(InvalidParamsException, msgdeviceport, portStr = GetJsonProperty(newRankInfoJson, "device_port", false););  // 此时用字符串来检查范围
+    TRY_CATCH_THROW(InvalidParamsException, msgdeviceport, devicePort = GetJsonPropertyUInt(newRankInfoJson, "device_port", false, INVALID_VALUE_DEVICEPORT););  // 此时用u32来存储数据, 并趁机校验为u32类型
+    CheakDeviceIdAndDevicePort(deviceId, portStr, devicePort);
     nlohmann::json levelJsons;
     std::string msgLevellist = "error occurs when parser object of propName \"level_list\"";
     TRY_CATCH_THROW(InvalidParamsException, msgLevellist, GetJsonPropertyList(newRankInfoJson, "level_list", levelJsons););
