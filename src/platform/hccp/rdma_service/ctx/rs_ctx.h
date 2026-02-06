@@ -17,74 +17,74 @@
 #include "ra_rs_ctx.h"
 #include "rs.h"
 
-struct rs_ctx_qp_info {
+struct RsCtxQpInfo {
     uint32_t id; // qpn(rdma) or jetty_id(udma)
-    struct qp_key key;
+    struct QpKey key;
 };
 
-struct rs_jetty_import_attr {
-    struct qp_key key;
-    struct ra_rs_jetty_import_attr attr;
+struct RsJettyImportAttr {
+    struct QpKey key;
+    struct RaRsJettyImportAttr attr;
 };
 
-struct rs_jetty_import_info {
-    unsigned int rem_jetty_id;
-    struct ra_rs_jetty_import_info info;
+struct RsJettyImportInfo {
+    unsigned int remJettyId;
+    struct RaRsJettyImportInfo info;
 };
 
-int rs_get_chip_protocol(unsigned int chip_id, enum NetworkMode hccp_mode, enum ProtocolTypeT *protocol,
-    unsigned int logic_id);
-int rs_ctx_api_init(enum NetworkMode hccp_mode, enum ProtocolTypeT protocol);
-int rs_ctx_api_deinit(enum NetworkMode hccp_mode, enum ProtocolTypeT protocol);
+int RsGetChipProtocol(unsigned int chipId, enum NetworkMode hccpMode, enum ProtocolTypeT *protocol,
+    unsigned int logicId);
+int RsCtxApiInit(enum NetworkMode hccpMode, enum ProtocolTypeT protocol);
+int RsCtxApiDeinit(enum NetworkMode hccpMode, enum ProtocolTypeT protocol);
 
-RS_ATTRI_VISI_DEF int rs_get_dev_eid_info_num(unsigned int phyId, unsigned int *num);
-RS_ATTRI_VISI_DEF int rs_get_dev_eid_info_list(unsigned int phyId, struct dev_eid_info info_list[],
-    unsigned int start_index, unsigned int count);
-RS_ATTRI_VISI_DEF int rs_ctx_init(struct ctx_init_attr *attr, unsigned int *devIndex, struct dev_base_attr *dev_attr);
-RS_ATTRI_VISI_DEF int rs_ctx_get_async_events(struct RaRsDevInfo *dev_info, struct async_event async_events[],
+RS_ATTRI_VISI_DEF int RsGetDevEidInfoNum(unsigned int phyId, unsigned int *num);
+RS_ATTRI_VISI_DEF int RsGetDevEidInfoList(unsigned int phyId, struct HccpDevEidInfo infoList[],
+    unsigned int startIndex, unsigned int count);
+RS_ATTRI_VISI_DEF int RsCtxInit(struct CtxInitAttr *attr, unsigned int *devIndex, struct DevBaseAttr *devAttr);
+RS_ATTRI_VISI_DEF int RsCtxGetAsyncEvents(struct RaRsDevInfo *devInfo, struct AsyncEvent asyncEvents[],
     unsigned int *num);
-RS_ATTRI_VISI_DEF int rs_ctx_deinit(struct RaRsDevInfo *dev_info);
-RS_ATTRI_VISI_DEF int rs_get_eid_by_ip(struct RaRsDevInfo *dev_info, struct IpInfo ip[], union hccp_eid eid[],
+RS_ATTRI_VISI_DEF int RsCtxDeinit(struct RaRsDevInfo *devInfo);
+RS_ATTRI_VISI_DEF int RsGetEidByIp(struct RaRsDevInfo *devInfo, struct IpInfo ip[], union HccpEid eid[],
     unsigned int *num);
-RS_ATTRI_VISI_DEF int rs_get_tp_info_list(struct RaRsDevInfo *dev_info, struct get_tp_cfg *cfg,
-    struct tp_info info_list[], unsigned int *num);
-RS_ATTRI_VISI_DEF int rs_get_tp_attr(struct RaRsDevInfo *dev_info, unsigned int *attr_bitmap,
-    const uint64_t tp_handle, struct tp_attr *attr);
-RS_ATTRI_VISI_DEF int rs_set_tp_attr(struct RaRsDevInfo *dev_info, const unsigned int attr_bitmap,
-    const uint64_t tp_handle, struct tp_attr *attr);
-RS_ATTRI_VISI_DEF int rs_ctx_token_id_alloc(struct RaRsDevInfo *dev_info, unsigned long long *addr,
-    unsigned int *token_id);
-RS_ATTRI_VISI_DEF int rs_ctx_token_id_free(struct RaRsDevInfo *dev_info, unsigned long long addr);
-RS_ATTRI_VISI_DEF int rs_ctx_lmem_reg(struct RaRsDevInfo *dev_info, struct mem_reg_attr_t *mem_attr,
-    struct mem_reg_info_t *mem_info);
-RS_ATTRI_VISI_DEF int rs_ctx_lmem_unreg(struct RaRsDevInfo *dev_info, unsigned long long addr);
-RS_ATTRI_VISI_DEF int rs_ctx_rmem_import(struct RaRsDevInfo *dev_info, struct mem_import_attr_t *mem_attr,
-    struct mem_import_info_t *mem_info);
-RS_ATTRI_VISI_DEF int rs_ctx_rmem_unimport(struct RaRsDevInfo *dev_info, unsigned long long addr);
-RS_ATTRI_VISI_DEF int rs_ctx_chan_create(struct RaRsDevInfo *dev_info, union data_plane_cstm_flag data_plane_flag,
+RS_ATTRI_VISI_DEF int RsGetTpInfoList(struct RaRsDevInfo *devInfo, struct GetTpCfg *cfg,
+    struct HccpTpInfo infoList[], unsigned int *num);
+RS_ATTRI_VISI_DEF int RsGetTpAttr(struct RaRsDevInfo *devInfo, unsigned int *attrBitmap,
+    const uint64_t tpHandle, struct TpAttr *attr);
+RS_ATTRI_VISI_DEF int RsSetTpAttr(struct RaRsDevInfo *devInfo, const unsigned int attrBitmap,
+    const uint64_t tpHandle, struct TpAttr *attr);
+RS_ATTRI_VISI_DEF int RsCtxTokenIdAlloc(struct RaRsDevInfo *devInfo, unsigned long long *addr,
+    unsigned int *tokenId);
+RS_ATTRI_VISI_DEF int RsCtxTokenIdFree(struct RaRsDevInfo *devInfo, unsigned long long addr);
+RS_ATTRI_VISI_DEF int RsCtxLmemReg(struct RaRsDevInfo *devInfo, struct MemRegAttrT *memAttr,
+    struct MemRegInfoT *memInfo);
+RS_ATTRI_VISI_DEF int RsCtxLmemUnreg(struct RaRsDevInfo *devInfo, unsigned long long addr);
+RS_ATTRI_VISI_DEF int RsCtxRmemImport(struct RaRsDevInfo *devInfo, struct MemImportAttrT *memAttr,
+    struct MemImportInfoT *memInfo);
+RS_ATTRI_VISI_DEF int RsCtxRmemUnimport(struct RaRsDevInfo *devInfo, unsigned long long addr);
+RS_ATTRI_VISI_DEF int RsCtxChanCreate(struct RaRsDevInfo *devInfo, union DataPlaneCstmFlag dataPlaneFlag,
     unsigned long long *addr, int *fd);
-RS_ATTRI_VISI_DEF int rs_ctx_chan_destroy(struct RaRsDevInfo *dev_info, unsigned long long addr);
-RS_ATTRI_VISI_DEF int rs_ctx_cq_create(struct RaRsDevInfo *dev_info, struct ctx_cq_attr *attr,
-    struct ctx_cq_info *info);
-RS_ATTRI_VISI_DEF int rs_ctx_cq_destroy(struct RaRsDevInfo *dev_info, unsigned long long addr);
-RS_ATTRI_VISI_DEF int rs_ctx_qp_create(struct RaRsDevInfo *dev_info, struct ctx_qp_attr *qp_attr,
-    struct qp_create_info *qp_info);
-RS_ATTRI_VISI_DEF int rs_ctx_qp_destroy(struct RaRsDevInfo *dev_info, unsigned int id);
-RS_ATTRI_VISI_DEF int rs_ctx_qp_destroy_batch(struct RaRsDevInfo *dev_info, unsigned int ids[], unsigned int *num);
-RS_ATTRI_VISI_DEF int rs_ctx_qp_import(struct RaRsDevInfo *dev_info, struct rs_jetty_import_attr *import_attr,
-    struct rs_jetty_import_info *import_info);
-RS_ATTRI_VISI_DEF int rs_ctx_qp_unimport(struct RaRsDevInfo *dev_info, unsigned int rem_jetty_id);
-RS_ATTRI_VISI_DEF int rs_ctx_qp_bind(struct RaRsDevInfo *dev_info, struct rs_ctx_qp_info *local_qp_info,
-    struct rs_ctx_qp_info *remote_qp_info);
-RS_ATTRI_VISI_DEF int rs_ctx_qp_unbind(struct RaRsDevInfo *dev_info, unsigned int qp_id);
-RS_ATTRI_VISI_DEF int rs_ctx_batch_send_wr(struct wrlist_base_info *base_info, struct batch_send_wr_data *wr_data,
-    struct send_wr_resp *wr_resp, struct WrlistSendCompleteNum *wrlist_num);
-RS_ATTRI_VISI_DEF int rs_ctx_update_ci(struct RaRsDevInfo *dev_info, unsigned int qp_id, uint16_t ci);
-RS_ATTRI_VISI_DEF int rs_ctx_custom_channel(const struct custom_chan_info_in *in, struct custom_chan_info_out *out);
-RS_ATTRI_VISI_DEF int rs_ctx_qp_query_batch(struct RaRsDevInfo *dev_info, unsigned int ids[],
-    struct jetty_attr attr[], unsigned int *num);
-RS_ATTRI_VISI_DEF int rs_ctx_get_aux_info(struct RaRsDevInfo *dev_info, struct aux_info_in *info_in,
-    struct aux_info_out *info_out);
-RS_ATTRI_VISI_DEF int rs_ctx_get_cr_err_info_list(struct RaRsDevInfo *dev_info, struct CrErrInfo info_list[],
+RS_ATTRI_VISI_DEF int RsCtxChanDestroy(struct RaRsDevInfo *devInfo, unsigned long long addr);
+RS_ATTRI_VISI_DEF int RsCtxCqCreate(struct RaRsDevInfo *devInfo, struct CtxCqAttr *attr,
+    struct CtxCqInfo *info);
+RS_ATTRI_VISI_DEF int RsCtxCqDestroy(struct RaRsDevInfo *devInfo, unsigned long long addr);
+RS_ATTRI_VISI_DEF int RsCtxQpCreate(struct RaRsDevInfo *devInfo, struct CtxQpAttr *qpAttr,
+    struct QpCreateInfo *qpInfo);
+RS_ATTRI_VISI_DEF int RsCtxQpDestroy(struct RaRsDevInfo *devInfo, unsigned int id);
+RS_ATTRI_VISI_DEF int RsCtxQpDestroyBatch(struct RaRsDevInfo *devInfo, unsigned int ids[], unsigned int *num);
+RS_ATTRI_VISI_DEF int RsCtxQpImport(struct RaRsDevInfo *devInfo, struct RsJettyImportAttr *importAttr,
+    struct RsJettyImportInfo *importInfo);
+RS_ATTRI_VISI_DEF int RsCtxQpUnimport(struct RaRsDevInfo *devInfo, unsigned int remJettyId);
+RS_ATTRI_VISI_DEF int RsCtxQpBind(struct RaRsDevInfo *devInfo, struct RsCtxQpInfo *localQpInfo,
+    struct RsCtxQpInfo *remoteQpInfo);
+RS_ATTRI_VISI_DEF int RsCtxQpUnbind(struct RaRsDevInfo *devInfo, unsigned int qpId);
+RS_ATTRI_VISI_DEF int RsCtxBatchSendWr(struct WrlistBaseInfo *baseInfo, struct BatchSendWrData *wrData,
+    struct SendWrResp *wrResp, struct WrlistSendCompleteNum *wrlistNum);
+RS_ATTRI_VISI_DEF int RsCtxUpdateCi(struct RaRsDevInfo *devInfo, unsigned int qpId, uint16_t ci);
+RS_ATTRI_VISI_DEF int RsCtxCustomChannel(const struct CustomChanInfoIn *in, struct CustomChanInfoOut *out);
+RS_ATTRI_VISI_DEF int RsCtxQpQueryBatch(struct RaRsDevInfo *devInfo, unsigned int ids[],
+    struct JettyAttr attr[], unsigned int *num);
+RS_ATTRI_VISI_DEF int RsCtxGetAuxInfo(struct RaRsDevInfo *devInfo, struct HccpAuxInfoIn *infoIn,
+    struct HccpAuxInfoOut *infoOut);
+RS_ATTRI_VISI_DEF int RsCtxGetCrErrInfoList(struct RaRsDevInfo *devInfo, struct CrErrInfo infoList[],
     unsigned int *num);
 #endif // RS_CTX_H

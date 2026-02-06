@@ -16,83 +16,83 @@
 #include "ra_rs_ctx.h"
 #include "rs_ctx.h"
 
-struct rs_ctx_ops {
-    int (*get_dev_eid_info_num)(unsigned int phyId, unsigned int *num);
-    int (*get_dev_eid_info_list)(unsigned int phyId, struct dev_eid_info info_list[], unsigned int start_index,
+struct RsCtxOps {
+    int (*getDevEidInfoNum)(unsigned int phyId, unsigned int *num);
+    int (*getDevEidInfoList)(unsigned int phyId, struct HccpDevEidInfo infoList[], unsigned int startIndex,
         unsigned int count);
-    int (*ctx_init)(struct ctx_init_attr *attr, unsigned int *dev_index, struct dev_base_attr *dev_attr);
-    int (*ctx_get_async_events)(struct RaRsDevInfo *dev_info, struct async_event async_events[], unsigned int *num);
-    int (*ctx_deinit)(struct RaRsDevInfo *dev_info);
-    int (*get_eid_by_ip)(struct RaRsDevInfo *dev_info, struct IpInfo ip[], union hccp_eid eid[], unsigned int *num);
-    int (*get_tp_info_list)(struct RaRsDevInfo *dev_info, struct get_tp_cfg *cfg, struct tp_info info_list[],
+    int (*ctxInit)(struct CtxInitAttr *attr, unsigned int *devIndex, struct DevBaseAttr *devAttr);
+    int (*ctxGetAsyncEvents)(struct RaRsDevInfo *devInfo, struct AsyncEvent asyncEvents[], unsigned int *num);
+    int (*ctxDeinit)(struct RaRsDevInfo *devInfo);
+    int (*getEidByIp)(struct RaRsDevInfo *devInfo, struct IpInfo ip[], union HccpEid eid[], unsigned int *num);
+    int (*getTpInfoList)(struct RaRsDevInfo *devInfo, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
         unsigned int *num);
-    int (*get_tp_attr)(struct RaRsDevInfo *dev_info, unsigned int *attr_bitmap, const uint64_t tp_handle,
-        struct tp_attr *attr);
-    int (*set_tp_attr)(struct RaRsDevInfo *dev_info, const unsigned int attr_bitmap, const uint64_t tp_handle,
-        struct tp_attr *attr);
-    int (*ctx_token_id_alloc)(struct RaRsDevInfo *dev_info, unsigned long long *addr, unsigned int *token_id);
-    int (*ctx_token_id_free)(struct RaRsDevInfo *dev_info, unsigned long long addr);
-    int (*ctx_lmem_reg)(struct RaRsDevInfo *dev_info, struct mem_reg_attr_t *mem_attr,
-        struct mem_reg_info_t *mem_info);
-    int (*ctx_lmem_unreg)(struct RaRsDevInfo *dev_info, unsigned long long addr);
-    int (*ctx_rmem_import)(struct RaRsDevInfo *dev_info, struct mem_import_attr_t *mem_attr,
-        struct mem_import_info_t *mem_info);
-    int (*ctx_rmem_unimport)(struct RaRsDevInfo *dev_info, unsigned long long addr);
-    int (*ctx_chan_create)(struct RaRsDevInfo *dev_info, union data_plane_cstm_flag data_plane_flag,
+    int (*getTpAttr)(struct RaRsDevInfo *devInfo, unsigned int *attrBitmap, const uint64_t tpHandle,
+        struct TpAttr *attr);
+    int (*setTpAttr)(struct RaRsDevInfo *devInfo, const unsigned int attrBitmap, const uint64_t tpHandle,
+        struct TpAttr *attr);
+    int (*ctxTokenIdAlloc)(struct RaRsDevInfo *devInfo, unsigned long long *addr, unsigned int *tokenId);
+    int (*ctxTokenIdFree)(struct RaRsDevInfo *devInfo, unsigned long long addr);
+    int (*ctxLmemReg)(struct RaRsDevInfo *devInfo, struct MemRegAttrT *memAttr,
+        struct MemRegInfoT *memInfo);
+    int (*ctxLmemUnreg)(struct RaRsDevInfo *devInfo, unsigned long long addr);
+    int (*ctxRmemImport)(struct RaRsDevInfo *devInfo, struct MemImportAttrT *memAttr,
+        struct MemImportInfoT *memInfo);
+    int (*ctxRmemUnimport)(struct RaRsDevInfo *devInfo, unsigned long long addr);
+    int (*ctxChanCreate)(struct RaRsDevInfo *devInfo, union DataPlaneCstmFlag dataPlaneFlag,
         unsigned long long *addr, int *fd);
-    int (*ctx_chan_destroy)(struct RaRsDevInfo *dev_info, unsigned long long addr);
-    int (*ctx_cq_create)(struct RaRsDevInfo *dev_info, struct ctx_cq_attr *attr, struct ctx_cq_info *info);
-    int (*ctx_cq_destroy)(struct RaRsDevInfo *dev_info, unsigned long long addr);
-    int (*ctx_qp_create)(struct RaRsDevInfo *dev_info, struct ctx_qp_attr *qp_attr, struct qp_create_info *qp_info);
-    int (*ctx_qp_destroy)(struct RaRsDevInfo *dev_info, unsigned int id);
-    int (*ctx_qp_destroy_batch)(struct RaRsDevInfo *dev_info, unsigned int ids[], unsigned int *num);
-    int (*ctx_qp_import)(struct RaRsDevInfo *dev_info, struct rs_jetty_import_attr *import_attr,
-        struct rs_jetty_import_info *import_info);
-    int (*ctx_qp_unimport)(struct RaRsDevInfo *dev_info, unsigned int rem_jetty_id);
-    int (*ctx_qp_bind)(struct RaRsDevInfo *dev_info, struct rs_ctx_qp_info *local_qp_info,
-        struct rs_ctx_qp_info *remote_qp_info);
-    int (*ctx_qp_unbind)(struct RaRsDevInfo *dev_info, unsigned int qp_id);
-    int (*ctx_batch_send_wr)(struct wrlist_base_info *base_info, struct batch_send_wr_data *wr_data,
-        struct send_wr_resp *wr_resp, struct WrlistSendCompleteNum *wrlist_num);
-    int (*ctx_update_ci)(struct RaRsDevInfo *dev_info, unsigned int qp_id, uint16_t ci);
-    int (*ccu_custom_channel)(const struct custom_chan_info_in *in, struct custom_chan_info_out *out);
-    int (*ctx_qp_query_batch)(struct RaRsDevInfo *dev_info, unsigned int ids[], struct jetty_attr attr[],
+    int (*ctxChanDestroy)(struct RaRsDevInfo *devInfo, unsigned long long addr);
+    int (*ctxCqCreate)(struct RaRsDevInfo *devInfo, struct CtxCqAttr *attr, struct CtxCqInfo *info);
+    int (*ctxCqDestroy)(struct RaRsDevInfo *devInfo, unsigned long long addr);
+    int (*ctxQpCreate)(struct RaRsDevInfo *devInfo, struct CtxQpAttr *qpAttr, struct QpCreateInfo *qpInfo);
+    int (*ctxQpDestroy)(struct RaRsDevInfo *devInfo, unsigned int id);
+    int (*ctxQpDestroyBatch)(struct RaRsDevInfo *devInfo, unsigned int ids[], unsigned int *num);
+    int (*ctxQpImport)(struct RaRsDevInfo *devInfo, struct RsJettyImportAttr *importAttr,
+        struct RsJettyImportInfo *importInfo);
+    int (*ctxQpUnimport)(struct RaRsDevInfo *devInfo, unsigned int remJettyId);
+    int (*ctxQpBind)(struct RaRsDevInfo *devInfo, struct RsCtxQpInfo *localQpInfo,
+        struct RsCtxQpInfo *remoteQpInfo);
+    int (*ctxQpUnbind)(struct RaRsDevInfo *devInfo, unsigned int qpId);
+    int (*ctxBatchSendWr)(struct WrlistBaseInfo *baseInfo, struct BatchSendWrData *wrData,
+        struct SendWrResp *wrResp, struct WrlistSendCompleteNum *wrlistNum);
+    int (*ctxUpdateCi)(struct RaRsDevInfo *devInfo, unsigned int qpId, uint16_t ci);
+    int (*ccuCustomChannel)(const struct CustomChanInfoIn *in, struct CustomChanInfoOut *out);
+    int (*ctxQpQueryBatch)(struct RaRsDevInfo *devInfo, unsigned int ids[], struct JettyAttr attr[],
         unsigned int *num);
-    int (*ctx_get_aux_info)(struct RaRsDevInfo *dev_info, struct aux_info_in *info_in,
-        struct aux_info_out *info_out);
-    int (*ctx_get_cr_err_info_list)(struct RaRsDevInfo *dev_info, struct CrErrInfo info_list[], unsigned int *num);
+    int (*ctxGetAuxInfo)(struct RaRsDevInfo *devInfo, struct HccpAuxInfoIn *infoIn,
+        struct HccpAuxInfoOut *infoOut);
+    int (*ctxGetCrErrInfoList)(struct RaRsDevInfo *devInfo, struct CrErrInfo infoList[], unsigned int *num);
 };
 
-int ra_rs_get_dev_eid_info_num(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_get_dev_eid_info_list(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_init(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_get_async_events(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_deinit(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_get_eid_by_ip(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_get_tp_info_list(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_get_tp_attr(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_set_tp_attr(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_token_id_alloc(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_token_id_free(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_lmem_reg(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_lmem_unreg(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_rmem_import(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_rmem_unimport(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_chan_create(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_chan_destroy(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_cq_create(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_cq_destroy(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_qp_create(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_qp_query_batch(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_qp_destroy(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_qp_destroy_batch(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_qp_import(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_qp_unimport(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_qp_bind(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_qp_unbind(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_update_ci(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_batch_send_wr(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_custom_channel(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_get_aux_info(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_ctx_get_cr_err_info_list(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
+int RaRsGetDevEidInfoNum(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsGetDevEidInfoList(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxInit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxGetAsyncEvents(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxDeinit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsGetEidByIp(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsGetTpInfoList(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsGetTpAttr(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsSetTpAttr(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxTokenIdAlloc(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxTokenIdFree(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsLmemReg(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsLmemUnreg(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsRmemImport(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsRmemUnimport(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxChanCreate(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxChanDestroy(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxCqCreate(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxCqDestroy(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxQpCreate(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxQpQueryBatch(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxQpDestroy(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxQpDestroyBatch(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxQpImport(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxQpUnimport(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxQpBind(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxQpUnbind(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxUpdateCi(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxBatchSendWr(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCustomChannel(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxGetAuxInfo(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsCtxGetCrErrInfoList(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
 #endif // RA_ADP_CTX_H
