@@ -603,24 +603,24 @@ HCCP_ATTRI_VISI_DEF int ra_ctx_qp_create(void *ctx_handle, struct qp_create_attr
         errno, ctx_handle_tmp->attr.phy_id, ctx_handle_tmp->dev_index), ConverReturnCode(RDMA_OP, -ENOMEM));
 
 
-    hccp_warn("@@@ attr->sq_depth: %ld", attr->sq_depth);
-    hccp_warn("@@@ attr->rq_depth: %ld", attr->rq_depth);
-    hccp_warn("@@@ attr->transport_mode: %ld", attr->transport_mode);
+    // hccp_warn("@@@ attr->sq_depth: %ld", attr->sq_depth);
+    // hccp_warn("@@@ attr->rq_depth: %ld", attr->rq_depth);
+    // hccp_warn("@@@ attr->transport_mode: %ld", attr->transport_mode);
 
-    hccp_warn("@@@ attr->ub.mode: %ld", attr->ub.mode);
-    hccp_warn("@@@ attr->ub.jetty_id: %ld", attr->ub.jetty_id);
-    hccp_warn("@@@ attr->ub.flag.value: %ld", attr->ub.flag.value);
-    hccp_warn("@@@ attr->ub.jfs_flag.value: %ld", attr->ub.jfs_flag.value);
-    hccp_warn("@@@ attr->ub.token_value: %ld", attr->ub.token_value);
-    hccp_warn("@@@ attr->ub.priority: %ld", attr->ub.priority);
-    hccp_warn("@@@ attr->ub.rnr_retry: %ld", attr->ub.rnr_retry);
-    hccp_warn("@@@ attr->ub.err_timeout: %ld", attr->ub.err_timeout);
+    // hccp_warn("@@@ attr->ub.mode: %ld", attr->ub.mode);
+    // hccp_warn("@@@ attr->ub.jetty_id: %ld", attr->ub.jetty_id);
+    // hccp_warn("@@@ attr->ub.flag.value: %ld", attr->ub.flag.value);
+    // hccp_warn("@@@ attr->ub.jfs_flag.value: %ld", attr->ub.jfs_flag.value);
+    // hccp_warn("@@@ attr->ub.token_value: %ld", attr->ub.token_value);
+    // hccp_warn("@@@ attr->ub.priority: %ld", attr->ub.priority);
+    // hccp_warn("@@@ attr->ub.rnr_retry: %ld", attr->ub.rnr_retry);
+    // hccp_warn("@@@ attr->ub.err_timeout: %ld", attr->ub.err_timeout);
 
-    hccp_warn("@@@ attr->ub.ext_mode.sq.buff_size: %ld", attr->ub.ext_mode.sq.buff_size);
-    hccp_warn("@@@ attr->ub.ext_mode.sq.buff_va: %ld", attr->ub.ext_mode.sq.buff_va);
-    hccp_warn("@@@ attr->ub.ext_mode.pi_type: %ld", attr->ub.ext_mode.pi_type);
-    hccp_warn("@@@ attr->ub.ext_mode.cstm_flag.bs.sq_cstm: %ld", attr->ub.ext_mode.cstm_flag.bs.sq_cstm);
-    hccp_warn("@@@ attr->ub.ext_mode.sqebb_num: %ld", attr->ub.ext_mode.sqebb_num);
+    // hccp_warn("@@@ attr->ub.ext_mode.sq.buff_size: %ld", attr->ub.ext_mode.sq.buff_size);
+    // hccp_warn("@@@ attr->ub.ext_mode.sq.buff_va: %ld", attr->ub.ext_mode.sq.buff_va);
+    // hccp_warn("@@@ attr->ub.ext_mode.pi_type: %ld", attr->ub.ext_mode.pi_type);
+    // hccp_warn("@@@ attr->ub.ext_mode.cstm_flag.bs.sq_cstm: %ld", attr->ub.ext_mode.cstm_flag.bs.sq_cstm);
+    // hccp_warn("@@@ attr->ub.ext_mode.sqebb_num: %ld", attr->ub.ext_mode.sqebb_num);
 
     ret = ctx_handle_tmp->ctx_ops->ra_ctx_qp_create(ctx_handle_tmp, attr, info, qp_handle_tmp);
     if (ret != 0) {
