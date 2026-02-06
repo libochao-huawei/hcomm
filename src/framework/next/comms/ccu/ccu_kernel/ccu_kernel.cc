@@ -241,7 +241,7 @@ HcclResult CcuKernel::CreateSharedVariable(const uint32_t coreId,
         return HcclResult::HCCL_E_PARA;
     }
 
-    CcuRep::Variable variable;
+    CcuRep::Variable variable = CreateVariable();
     exportedRes_.sharedVars.insert({varTag, variable});
     return HcclResult::HCCL_SUCCESS;
 }
@@ -305,7 +305,7 @@ HcclResult CcuKernel::LocalNotifyWait(const uint32_t coreId,
 
     auto &sharedNotifies = exportedRes_.sharedNotifies;
     if (sharedNotifies.find(notifyTag) == sharedNotifies.end()) {
-        CcuRep::LocalNotify notify;
+        CcuRep::LocalNotify notify = CreateLocalNotify();
         exportedRes_.sharedNotifies.insert({notifyTag, notify});
     }
 
