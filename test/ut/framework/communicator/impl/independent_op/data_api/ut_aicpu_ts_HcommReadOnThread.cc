@@ -23,43 +23,42 @@ using namespace hccl;
 class UtAicpuTsHcommReadOnThreadTest : public testing::Test
 {
 protected:
-    static void SetUpTestCase()
-    {
-    }
-
-    static void TearDownTestCase()
-    {
-    }
-
     virtual void SetUp() override
     {
+        MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
+            .stubs()
+            .with(any(), any(), any())
+            .will(returnValue(HCCL_SUCCESS));
+        threadOnDevice.devType_ = DevType::DEV_TYPE_910_95;
+        threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
+        threadOnDevice.pImpl_->streamLiteVoidPtr_ = reinterpret_cast<void *>(0x123);
     }
 
     virtual void TearDown() override
     {
         GlobalMockObject::verify();
     }
+
+private:
+    private:
+    AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
+    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
+    uint64_t tempDst[6] = {0};
+    uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
+    void *dst = reinterpret_cast<void *>(tempDst);
+    void *src = reinterpret_cast<void *>(tempSrc);
+    uint64_t len = sizeof(tempDst);
+    ChannelHandle devHandle = 1;
 };
 
 TEST_F(UtAicpuTsHcommReadOnThreadTest, Ut_HcommReadOnThread_When_buffer_not_find_Expect_HCCL_E_INTERNAL)
 {
     // 前置条件
+    GlobalMockObject::verify();
     MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(HCCL_E_INTERNAL));
-    AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
-    threadOnDevice.devType_ = DevType::DEV_TYPE_910_95;
-    threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
-    threadOnDevice.pImpl_->streamLiteVoidPtr_ = reinterpret_cast<void *>(0x123);
-    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
-    ChannelHandle devHandle = 1;
-
-    uint64_t tempDst[6] = {0};
-    uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
-    void *dst = reinterpret_cast<void *>(&tempDst);
-    void *src = reinterpret_cast<void *>(&tempSrc);
-    uint64_t len = sizeof(tempDst);
 
     // 执行步骤
     auto res = HcommReadOnThread(thread, devHandle, dst, src, len);
@@ -68,61 +67,17 @@ TEST_F(UtAicpuTsHcommReadOnThreadTest, Ut_HcommReadOnThread_When_buffer_not_find
     EXPECT_EQ(res, HCCL_E_INTERNAL);
 }
 
-TEST_F(UtAicpuTsHcommReadOnThreadTest, Ut_HcommReadOnThread_When_Read_fail_Expect_HCCL_E_INTERNAL)
+TEST_F(UtAicpuTsHcommReadOnThreadTest, Ut_HcommReadOnThread_When_When_thread_nullptr_Expect_HCCL_E_PTR)
 {
-    // 前置条件
-    MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
-        .stubs()
-        .with(any(), any(), any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::UbTransportLiteImpl::Read)
-        .stubs()
-        .with(any(), any(), any())
-        .will(returnValue(HCCL_E_INTERNAL));
-    AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
-    threadOnDevice.devType_ = DevType::DEV_TYPE_910_95;
-    threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
-    threadOnDevice.pImpl_->streamLiteVoidPtr_ = reinterpret_cast<void *>(0x123);
-    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
-    ChannelHandle devHandle = 1;
-
-    uint64_t tempDst[6] = {0};
-    uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
-    void *dst = reinterpret_cast<void *>(&tempDst);
-    void *src = reinterpret_cast<void *>(&tempSrc);
-    uint64_t len = sizeof(tempDst);
-
     // 执行步骤
-    auto res = HcommReadOnThread(thread, devHandle, dst, src, len);
+    auto res = HcommReadOnThread(0, devHandle, dst, src, len);
 
     // 后置验证
-    EXPECT_EQ(res, HCCL_E_INTERNAL);
+    EXPECT_EQ(res, HCCL_E_PTR);
 }
 
 TEST_F(UtAicpuTsHcommReadOnThreadTest, Ut_HcommReadOnThread_When_normal_Expect_HCCL_SUCCESS)
 {
-    // 前置条件
-    MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
-        .stubs()
-        .with(any(), any(), any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::UbTransportLiteImpl::Read)
-        .stubs()
-        .with(any(), any(), any())
-        .will(returnValue(HCCL_SUCCESS));
-    AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
-    threadOnDevice.devType_ = DevType::DEV_TYPE_910_95;
-    threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
-    threadOnDevice.pImpl_->streamLiteVoidPtr_ = reinterpret_cast<void *>(0x123);
-    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
-    ChannelHandle devHandle = 1;
-
-    uint64_t tempDst[6] = {0};
-    uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
-    void *dst = reinterpret_cast<void *>(&tempDst);
-    void *src = reinterpret_cast<void *>(&tempSrc);
-    uint64_t len = sizeof(tempDst);
-
     // 执行步骤
     auto res = HcommReadOnThread(thread, devHandle, dst, src, len);
 
