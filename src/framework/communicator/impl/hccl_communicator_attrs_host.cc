@@ -59,6 +59,10 @@ namespace hccl
             HCCL_INFO("The current device just support this StandardCard case.");
             return true;
         }
+        if (deviceType_ == DevType::DEV_TYPE_910_93) {
+            HCCL_INFO("The current device does not have the StandardCard case.");
+            return false;
+        }
         return ((pairLinkInfo_[static_cast<u32>(LinkTypeInServer::HCCS_TYPE)].size() == 0) &&
                 (pairLinkInfo_[static_cast<u32>(LinkTypeInServer::HCCS_SW_TYPE)].size() == 0) &&
                 (pairLinkInfo_[static_cast<u32>(LinkTypeInServer::SIO_TYPE)].size() == 0));
