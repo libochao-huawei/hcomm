@@ -10,6 +10,7 @@
 set(src_to_test_list
     main.cc
     ut_aicpu_ts_HcommLocalCopyOnThread.cc
+    ut_aicpu_ts_HcommWriteOnThread.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
 )
 
