@@ -1032,6 +1032,7 @@ HcclResult AlltoAllVDirectFullMesh::RunSDMAFineGrained(u32 totalStep, HcclOpMeta
 
 HcclResult AlltoAllVDirectFullMesh::RunSDMA(HcclOpMetaInfoDef &opMeta)
 {
+    // HcclUs startut = TIME_NOW();
     u32 totalStep = CalcNumSubStep();
     lastStep_ = totalStep - 1;
     // 计算每个rank分组fullmesh后需要通信的轮次，向上取整
@@ -1066,6 +1067,7 @@ HcclResult AlltoAllVDirectFullMesh::RunSDMA(HcclOpMetaInfoDef &opMeta)
         }
     }
     
+    // HCCL_RUN_INFO("[RunSDMA] runsdma success, take time [%lld]us.", DURATION_US(TIME_NOW() - startut));
     HCCL_INFO("[AlltoAllVDirectFullMesh][RunSDMA] finished.");
     return HCCL_SUCCESS;
 }

@@ -32,6 +32,8 @@ void CollNativeExecutorBase::ParseParam(const OpParam& param)
 // ----------------------资源计算接口----------------------
 HcclResult CollNativeExecutorBase::CalcResRequest(const OpParam& param, AlgResourceRequest& resourceRequest)
 {
+
+    // HcclUs startut = TIME_NOW();
     (void)ParseParam(param);
 
     u64 scratchMemSize = 0U;
@@ -55,6 +57,7 @@ HcclResult CollNativeExecutorBase::CalcResRequest(const OpParam& param, AlgResou
         resourceRequest.aivBufferRequest);
     // 打印建链诉求
     PrintTransportRequest(resourceRequest);
+    // HCCL_RUN_INFO("CalcResRequest take time [%lld]us.", DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 

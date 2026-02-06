@@ -290,7 +290,7 @@ HcclResult CollRunAlltoAllDirectFullmesh::GetAlltoAllvTmpRankSendRecvInfo(const 
 HcclResult CollRunAlltoAllDirectFullmesh::KernelRun(const OpParam &param, ExecMem &execMem)
 {
     HCCL_CONFIG_INFO(HCCL_ALG, "[%s] AllToAll fullmesh start.", __func__);
-
+    // HcclUs startut = TIME_NOW();
     // 准备数据
     CHK_RET(ActiveSlaveStreams(param.stream));
     CHK_RET(GetAlltoAllvTmpRankSendRecvInfo(param));
@@ -343,6 +343,8 @@ HcclResult CollRunAlltoAllDirectFullmesh::KernelRun(const OpParam &param, ExecMe
     CHK_RET(tempAlg->Prepare(prepareData));
 
     CHK_RET(tempAlg->RunAsync());
+
+    // HCCL_RUN_INFO("[CollRunAlltoAllDirectFullmesh] orchestrate success, take time [%lld]us.", DURATION_US(TIME_NOW() - startut));
 
     HCCL_INFO("[CollRunAlltoAllDirectFullmesh] executor run success.");
     if (algOpContext_.opRetryHandler.isPostSync == true) {
