@@ -36,6 +36,7 @@
 #include "profiling_command_handle.h"
 #include "dispatcher_ctx.h"
 #include "aicpu_res_package_helper.h"
+#include "aicpu_symmetric_memory.h"
 
 namespace hccl {
 constexpr u32 IPC_SIGNAL_MODULUS = 2;
@@ -292,6 +293,56 @@ HcclResult HcclCommAicpu::GetOpUnfoldKey(const OpParam &param, OpUnfoldKey& key)
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommAicpu::PrepareSymmetricMemRanges(
+    const AlgResourceResponse &algResource,
+    uint64_t inputSize,
+    uint64_t outputSize,
+    std::vector<OpUnfoldMemRange>& userInputMemRanges,
+    std::vector<OpUnfoldMemRange>& userOutputMemRanges)
+{
+    const uint32_t rankSize = GetRankSize();
+    const std::unordered_set<LinkType> supportedLinkTypes = {LinkType::LINK_HCCS, LinkType::LINK_SIO, LinkType::LINK_HCCS_SW};
+
+    for (auto &singleSubCommTransport : algResource.opTransportResponse[COMM_LEVEL0]) {
+        for (u64 i = 0; i < singleSubCommTransport.links.size(); ++i) {
+            LINK link = singleSubCommTransport.links[i];
+            // 校验链路有效性及类型
+            if (link == nullptr || !singleSubCommTransport.transportRequests[i].isValid ||
+                supportedLinkTypes.count(link->GetLinkType()) == 0) {
+                continue;
+            }
+            // 获取并校验对端 Rank ID
+            const uint32_t remoteRank = link->GetRemoteRank();
+            CHK_PRT_RET(remoteRank >= rankSize, 
+                HCCL_ERROR("[HcclCommAicpu][PrepareSymmetricMemRanges] remoteRank %u >= rankSize %u", remoteRank, rankSize), 
+                HCCL_E_INTERNAL);
+
+            HCCL_INFO("[HcclCommAicpu][PrepareSymmetricMemRanges] prepare memory range of remote rank %u", remoteRank);
+
+            // 处理 Remote Input Memory
+            void *remoteUserInputBaseAddr = nullptr;
+            CHK_RET(link->GetRemoteMem(UserMemType::INPUT_MEM, &remoteUserInputBaseAddr));
+            CHK_PTR_NULL(remoteUserInputBaseAddr);
+
+            OpUnfoldMemRange& remoteInputMemRange = userInputMemRanges[remoteRank];
+            remoteInputMemRange.isValid = true;
+            remoteInputMemRange.baseAddr = reinterpret_cast<uint64_t>(remoteUserInputBaseAddr);
+            remoteInputMemRange.memSize = inputSize;
+
+            // 处理 Remote Output Memory
+            void *remoteUserOutputBaseAddr = nullptr;
+            CHK_RET(link->GetRemoteMem(UserMemType::OUTPUT_MEM, &remoteUserOutputBaseAddr));
+            CHK_PTR_NULL(remoteUserOutputBaseAddr);
+
+            OpUnfoldMemRange& remoteOutputMemRange = userOutputMemRanges[remoteRank];
+            remoteOutputMemRange.isValid = true;
+            remoteOutputMemRange.baseAddr = reinterpret_cast<uint64_t>(remoteUserOutputBaseAddr);
+            remoteOutputMemRange.memSize = outputSize;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, const AlgResourceResponse &algResource, std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges)
 {
     const uint32_t rankSize = GetRankSize();
@@ -321,9 +372,12 @@ HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, const AlgRe
     curUserOutputMemRange.baseAddr = reinterpret_cast<uint64_t>(param.outputPtr);
     curUserOutputMemRange.memSize = outputSize; // NOTE: 不应该使用param.outputSize (alltoall类始终为0)
 
-    // 针对zero copy, 设置remote rank的input/output usermem addr
+    //针对SymmetricMemory/zero copy, 设置remote rank的input/output usermem addr
     constexpr uint8_t FORCE_OP_BASE_DELTA = 10;
-    if (param.isZeroCopy) {
+    if (param.supportSymmetricMemory) {
+        HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] symmetric memory is enabled, prepare remote user memory ranges accordingly");
+        CHK_RET(PrepareSymmetricMemRanges(algResource, inputSize, outputSize, userInputMemRanges, userOutputMemRanges));
+    } else if (param.isZeroCopy) {
         // 注意: 只有非V类算子可能使用zero copy (因此假设remote ranks' input/output size与local rank相同)
         // 注意: 而V类算子一定是buffer copy (否则PrepareRemoteUserMemRanges需要额外的输入作为remote ranks' input/output size)
         const HcclCMDType opType = param.opType;
@@ -660,6 +714,12 @@ HcclResult HcclCommAicpu::InitOpCounter(const OpCounterInfo &opCounterInfo)
 void HcclCommAicpu::SetZeroCopyEnable(bool enable)
 {
     isZeroCopy_ = enable;
+}
+
+void HcclCommAicpu::SetSymmetricMemoryEnable(bool enable)
+{
+    HCCL_INFO("[HcclCommAicpu::SetSymmetricMemoryEnable] enable[%d]", enable);
+    isSymmetricMemory_ = enable;
 }
 
 HcclResult HcclCommAicpu::PrepareZeroCopyExchanger(const std::string &newTag, OpParam &opParam,
@@ -2222,18 +2282,50 @@ u32 HcclCommAicpu::CalculateOpExecIndex(const OpParam &opParam, u32 userRank)
     return opIndex;
 }
 
+HcclResult HcclCommAicpu::PrepareSymmetricMemory(const OpParam &param, OpCommTransport &opTransportResponse)
+{
+    CHK_PRT_RET(opTransportResponse.size() == 0,
+        HCCL_ERROR("[HcclCommAicpu][PrepareSymmetricMemory] opTransportResponse size is 0"),
+        HCCL_E_PARA);
+    
+    const std::unordered_set<LinkType> supportedLinkTypes = {LinkType::LINK_HCCS, LinkType::LINK_SIO, LinkType::LINK_HCCS_SW};
+
+    for (auto &singleSubCommTransport : opTransportResponse[COMM_LEVEL0]) {
+        for (u64 i = 0; i < singleSubCommTransport.links.size(); ++i) {
+            LINK &link = singleSubCommTransport.links[i];
+            if (link == nullptr || !singleSubCommTransport.transportRequests[i].isValid || supportedLinkTypes.count(link->GetLinkType()) == 0) {
+                continue;   // 无效或者不支持的链路
+            }
+            u32 peerRank = link->GetRemoteRank();
+            void *remoteIn = nullptr;
+            CHK_RET(HcommSymWinGetPeerPointer(param.inputSymWindow, param.inputOffset, peerRank, &remoteIn));
+            void *remoteOut = nullptr;
+            CHK_RET(HcommSymWinGetPeerPointer(param.outputSymWindow, param.outputOffset, peerRank, &remoteOut));
+
+            CHK_PRT_RET(remoteIn == nullptr || remoteOut == nullptr,
+                HCCL_ERROR("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p] is invalid", peerRank, remoteIn, remoteOut),
+                HCCL_E_INTERNAL);
+            HCCL_INFO("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p]", peerRank, remoteIn, remoteOut);
+            CHK_RET(link->UpdateRemoteAddr(remoteIn, remoteOut));
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclCommAicpu::ExecOp(const std::string &newTag, const std::string &algName,
                                             OpParam &opParam, const HcclOpResParam *commParam)
 {
     std::unique_ptr<CollExecutorBase> executor;
     hccl::AlgResourceResponse *algResResponse;
     CHK_RET(GetAlgResponseRes(newTag, algName, opParam, commParam, executor, algResResponse));
-    if (isZeroCopy_) {
-        HcclResult ret = PrepareZeroCopyExchanger(newTag, opParam, algResResponse);
-        if(ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[HcclCommAicpu][ExecOp] newTag[%s], localRankId[%u]",
-            newTag.c_str(), commParam->localUsrRankId);
-            return ret;
+
+    if (isZeroCopy_ || isSymmetricMemory_) {
+        if (isSymmetricMemory_) {
+            CHK_RET(PrepareSymmetricMemory(opParam, algResResponse->opTransportResponse));
+        } else {
+            HcclResult ret = PrepareZeroCopyExchanger(newTag, opParam, algResResponse);
+            CHK_PRT_RET(ret != HCCL_SUCCESS, 
+                HCCL_ERROR("[HcclCommAicpu][ExecOp] newTag[%s], localRankId[%u]", newTag.c_str(), commParam->localUsrRankId), ret);            
         }
 
         // 零拷贝场景scratchMem的大小会与用户的输入大小不同，会导致后续算法展开模块计算出错
