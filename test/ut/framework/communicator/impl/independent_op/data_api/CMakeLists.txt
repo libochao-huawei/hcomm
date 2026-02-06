@@ -9,11 +9,13 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_to_test_list
     main.cc
+    ${HCCL_LLT_ROOT}/ut/stub/legacy/ub_transport_lite_impl.cc
     ut_aicpu_ts_HcommLocalCopyOnThread.cc
-    ut_aicpu_ts_HcommWriteOnThread.cc
     ut_aicpu_ts_HcommLocalReduceOnThread.cc
     ut_aicpu_ts_HcommThreadNotifyRecordOnThread.cc
     ut_aicpu_ts_HcommThreadNotifyWaitOnThread.cc
+    ut_aicpu_ts_HcommChannelNotifyRecordOnThread.cc
+    ut_aicpu_ts_HcommWriteOnThread.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
 )
 
