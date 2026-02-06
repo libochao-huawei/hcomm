@@ -154,24 +154,40 @@ HcclResult CreateCommConfig(uint32_t rank, HcclCommConfig *config, HcclComm *com
 
     opbasedCommInfoV2.pComm.reset(new (std::nothrow) Hccl::HcclCommunicator(commParams, hcclConf.get()));
     CHK_SMART_PTR_NULL(opbasedCommInfoV2.pComm);
-    CHK_RET(opbasedCommInfoV2.pComm->Init(ranktableM));
-    opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
-    s32 logicDevId = HrtGetDevice();
- 	CHK_RET(CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(opbasedCommInfoV2.pComm.get(), config->hcclOpExpansionMode)); // 通信域创建，设置默认accelerator
+    /* --------------初始化------------------------- */
+    HcclResult ret = HCCL_SUCCESS;
+    bool errorFlag = false;
+    do {
+        ret = opbasedCommInfoV2.pComm->Init(ranktableM);
+        CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
+            HCCL_ERROR("[CreateCommConfig]opbasedCommInfoV2.pComm->Init failed, errNo[0x%016llx]", HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+        opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
+        s32 logicDevId = HrtGetDevice();
+        ret = CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(opbasedCommInfoV2.pComm.get(), config->hcclOpExpansionMode); // 通信域创建，设置默认accelerator
+        CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
+            HCCL_ERROR("[CreateCommConfig]SetCommAcceleratorV2 failed, errNo[0x%016llx]", HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+        *comm = static_cast<HcclComm>(opbasedCommInfoV2.pComm.get());
+        HcclGetRankSizeV2(*comm, &commParams.rankSize);
+        opbasedCommInfoV2.commParams = commParams;
 
-    *comm = static_cast<HcclComm>(opbasedCommInfoV2.pComm.get());
-    
-    HcclGetRankSizeV2(*comm, &commParams.rankSize);
-    opbasedCommInfoV2.commParams = commParams;
+        HcclGroupParamsV2 params;
+        params.pComm = opbasedCommInfoV2.pComm;
+        std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
+        opbasedCommInfoV2.hcclGroupMap[commId] = params;
 
-    HcclGroupParamsV2 params;
-    params.pComm = opbasedCommInfoV2.pComm;
-    std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
-    opbasedCommInfoV2.hcclGroupMap[commId] = params;
+        opbasedCommInfoV2.pComm->RegisterPrintChannelInfoCallback(
+            CommManager::GetInstance(logicDevId).GetPrintChannelInfoCallback());
+    } while (0);
 
-    opbasedCommInfoV2.pComm->RegisterPrintChannelInfoCallback(
-        CommManager::GetInstance(logicDevId).GetPrintChannelInfoCallback());
-    
+    if (errorFlag) {
+        HCCL_ERROR("[Init][CreateCommConfig]CreateCommConfig failed,  rank[%u],"\
+            "return[0x%016llx]", rank, HCCL_ERROR_CODE(ret));
+        (void)HcclCommDestroyV2(opbasedCommInfoV2.pComm.get());
+        *comm = nullptr;
+        return ret;
+    }
     return HCCL_SUCCESS;
 }
 
@@ -207,24 +223,40 @@ HcclResult CreateCommConfigRootInfo(uint32_t rank, const HcclCommConfig *config,
 
     opbasedCommInfoV2.pComm.reset(new (std::nothrow) Hccl::HcclCommunicator(commParams, hcclConf.get()));
     CHK_SMART_PTR_NULL(opbasedCommInfoV2.pComm);
-    CHK_RET(opbasedCommInfoV2.pComm->Init(ranktable));
-    opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
-    s32 logicDevId = HrtGetDevice();
-    CHK_RET(CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(opbasedCommInfoV2.pComm.get(), config->hcclOpExpansionMode)); // 通信域创建，设置默认accelerator
+    HcclResult ret = HCCL_SUCCESS;
+    bool errorFlag = false;
+    do {
+        ret = opbasedCommInfoV2.pComm->Init(ranktable);
+        CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
+            HCCL_ERROR("[%s]opbasedCommInfoV2.pComm->Init failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+        opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
+        s32 logicDevId = HrtGetDevice();
+        ret = CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(opbasedCommInfoV2.pComm.get(), config->hcclOpExpansionMode); // 通信域创建，设置默认accelerator
+        CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
+            HCCL_ERROR("[%s]SetCommAcceleratorV2 failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+        *comm = static_cast<HcclComm>(opbasedCommInfoV2.pComm.get());
+        
+        HcclGetRankSizeV2(*comm, &commParams.rankSize);
+        opbasedCommInfoV2.commParams = commParams;
 
-    *comm = static_cast<HcclComm>(opbasedCommInfoV2.pComm.get());
-    
-    HcclGetRankSizeV2(*comm, &commParams.rankSize);
-    opbasedCommInfoV2.commParams = commParams;
+        HcclGroupParamsV2 params;
+        params.pComm = opbasedCommInfoV2.pComm;
+        std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
+        opbasedCommInfoV2.hcclGroupMap[identifier] = params;
 
-    HcclGroupParamsV2 params;
-    params.pComm = opbasedCommInfoV2.pComm;
-    std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
-    opbasedCommInfoV2.hcclGroupMap[identifier] = params;
+        opbasedCommInfoV2.pComm->RegisterPrintChannelInfoCallback(
+            CommManager::GetInstance(logicDevId).GetPrintChannelInfoCallback());
+    } while (0);
 
-    opbasedCommInfoV2.pComm->RegisterPrintChannelInfoCallback(
-        CommManager::GetInstance(logicDevId).GetPrintChannelInfoCallback());
-    
+    if (errorFlag) {
+        HCCL_ERROR("[Init][%s]CreateCommConfigRootInfo failed return[0x%016llx]", __func__, 
+            HCCL_ERROR_CODE(ret));
+        (void)HcclCommDestroyV2(opbasedCommInfoV2.pComm.get());
+        *comm = nullptr;
+        return ret;
+    }
     return HCCL_SUCCESS;
 }
 
@@ -284,27 +316,43 @@ HcclResult HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, Hcc
         static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_910_95, devUsed, isWorldGroup};
     opbasedCommInfoV2.pComm.reset(new (std::nothrow) Hccl::HcclCommunicator(commParams));
     CHK_PTR_NULL(opbasedCommInfoV2.pComm);
-    auto res = opbasedCommInfoV2.pComm->Init(ranktableM);
-    if (res != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("opbasedCommInfoV2.pComm->Init failed !!! res %d", res);
-        return HCCL_E_INTERNAL;
+    /* --------------初始化------------------------- */
+    HcclResult ret = HCCL_SUCCESS;
+    bool errorFlag = false;
+    do {
+        ret = opbasedCommInfoV2.pComm->Init(ranktableM);
+        CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
+            HCCL_ERROR("[%s]opbasedCommInfoV2.pComm->Init failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+        opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
+        s32 logicDevId = HrtGetDevice();
+        // todo:CHK_RET直接改有没有问题
+        ret = CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(opbasedCommInfoV2.pComm.get(), 0) // 通信域创建，设置默认accelerator
+        CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
+            HCCL_ERROR("[%s]SetCommAcceleratorV2 failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+        *comm = static_cast<HcclComm>(opbasedCommInfoV2.pComm.get());
+    
+        HcclGetRankSizeV2(*comm, &commParams.rankSize);
+        opbasedCommInfoV2.commParams = commParams;
+
+        HcclGroupParamsV2 params;
+        params.pComm = opbasedCommInfoV2.pComm;
+        std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
+        opbasedCommInfoV2.hcclGroupMap[commId] = params;
+
+        opbasedCommInfoV2.pComm->RegisterPrintChannelInfoCallback(
+            CommManager::GetInstance(logicDevId).GetPrintChannelInfoCallback());
+    } while (0);
+
+    if (errorFlag) {
+        HCCL_ERROR("[Init][%s]HcclCommInitClusterInfoV2 failed, clusterInfo[%s], rank[%u], deviceLogicId[%d], devPhyId[%d],"\
+            "return[0x%016llx]", __func__, clusterInfo, rank,
+            deviceLogicId, devPhyId, HCCL_ERROR_CODE(ret));
+        (void)HcclCommDestroyV2(opbasedCommInfoV2.pComm.get());
+        *comm = nullptr;
+        return ret;
     }
-    opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
-    s32 logicDevId = HrtGetDevice();
- 	CHK_RET(CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(opbasedCommInfoV2.pComm.get(), 0)); // 通信域创建，设置默认accelerator
-
-    *comm = static_cast<HcclComm>(opbasedCommInfoV2.pComm.get());
- 
-    HcclGetRankSizeV2(*comm, &commParams.rankSize);
-    opbasedCommInfoV2.commParams = commParams;
-
-    HcclGroupParamsV2 params;
-    params.pComm = opbasedCommInfoV2.pComm;
-    std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
-    opbasedCommInfoV2.hcclGroupMap[commId] = params;
-
-    opbasedCommInfoV2.pComm->RegisterPrintChannelInfoCallback(
-        CommManager::GetInstance(logicDevId).GetPrintChannelInfoCallback());
     /* 关键状态记录 */
     HCCL_RUN_INFO("[HCCL_TRACE]%s success, take time [%lld]us, clusterInfo[%s], rank[%u], deviceLogicId[%d], devPhyId[%d].",
         __func__, DURATION_US(TIME_NOW() - startut), clusterInfo, rank, deviceLogicId, devPhyId);
@@ -1549,25 +1597,40 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
 
     // 通信域初始化
     CHK_PTR_NULL(opbasedCommInfoV2.pComm);
-    auto res = opbasedCommInfoV2.pComm->Init(rankTable);
-    CHK_PRT_RET(res != HcclResult::HCCL_SUCCESS,
-        HCCL_ERROR("[%s] comm Init failed !!! res %d", __func__, res), HCCL_E_INTERNAL);
+    /* --------------初始化------------------------- */
+    bool errorFlag = false;
+    do {
+        ret = opbasedCommInfoV2.pComm->Init(rankTable);
+        CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
+            HCCL_ERROR("[%s]opbasedCommInfoV2.pComm->Init failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+        // 配置默认加速模式
+        opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
+        s32 logicDevId = HrtGetDevice();
+        ret = CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(opbasedCommInfoV2.pComm.get(), 0); // 通信域创建，设置默认accelerator
+        CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
+            HCCL_ERROR("[%s]SetCommAcceleratorV2 failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+        // 保存通信域
+        HcclGroupParamsV2 params;
+        params.pComm = opbasedCommInfoV2.pComm;
+        std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
+        opbasedCommInfoV2.hcclGroupMap[identifier] = params;
 
-    // 配置默认加速模式
-    opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
-    s32 logicDevId = HrtGetDevice();
- 	CHK_RET(CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(opbasedCommInfoV2.pComm.get(), 0)); // 通信域创建，设置默认accelerator
+        opbasedCommInfoV2.pComm->RegisterPrintChannelInfoCallback(
+            CommManager::GetInstance(logicDevId).GetPrintChannelInfoCallback());
+        
+        *comm = static_cast<HcclComm>(opbasedCommInfoV2.pComm.get());
+    } while (0);
 
-    // 保存通信域
-    HcclGroupParamsV2 params;
-    params.pComm = opbasedCommInfoV2.pComm;
-    std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
-    opbasedCommInfoV2.hcclGroupMap[identifier] = params;
-
-    opbasedCommInfoV2.pComm->RegisterPrintChannelInfoCallback(
-        CommManager::GetInstance(logicDevId).GetPrintChannelInfoCallback());
-    
-    *comm = static_cast<HcclComm>(opbasedCommInfoV2.pComm.get());
+    if (errorFlag) {
+        HCCL_ERROR("[Init][%s]HcclCommInitClusterInfoV2 failed, rankNum[%s], rank[%u], logicDevId[%d], rootInfo identifier[%s],"\
+            "return[0x%016llx]", __func__, nRanks, rank,
+            logicDevId, identifier.c_str(), HCCL_ERROR_CODE(ret));
+        (void)HcclCommDestroyV2(opbasedCommInfoV2.pComm.get());
+        *comm = nullptr;
+        return ret;
+    }
     HCCL_INFO("[%s] Init success, rankNum[%u], rank[%u], rootInfo identifier[%s], logicDevId[%d]", __func__,
                 nRanks, rank, identifier.c_str(), logicDevId);
     
