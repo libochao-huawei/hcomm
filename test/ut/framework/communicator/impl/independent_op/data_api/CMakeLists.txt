@@ -9,7 +9,6 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_to_test_list
     main.cc
-    ${HCCL_LLT_ROOT}/ut/stub/legacy/ub_transport_lite_impl.cc
     ut_aicpu_ts_HcommLocalCopyOnThread.cc
     ut_aicpu_ts_HcommLocalReduceOnThread.cc
     ut_aicpu_ts_HcommThreadNotifyRecordOnThread.cc
@@ -23,6 +22,7 @@ set(src_to_test_list
     ut_aicpu_ts_HcommReadOnThread.cc
     ut_aicpu_ts_HcommReadReduceOnThread.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
+    ${HCCL_LLT_ROOT}/ut/stub/legacy/ub_transport_lite_impl.cc
 )
 
 add_executable(hcomm_utest_api_data_aicpu_ts ${src_to_test_list})
