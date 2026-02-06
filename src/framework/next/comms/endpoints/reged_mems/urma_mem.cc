@@ -39,8 +39,7 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
     auto findPair = localUbRmaBufferMgr_->Find(tempKey);
     if(findPair.first) {
         localUbRmaBuffer = findPair.second;
-    }
-    else {
+    } else {
         // 构造LocalUbRmaBuffer
         std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
         EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, mem.type, memTag)),
@@ -186,7 +185,7 @@ HcclResult UbRegedMemMgr::MemoryImport(const void *memDesc, uint32_t descLen, Hc
     CHK_SMART_PTR_NULL(remoteUbRmaBuffer);
 
     // 放到RemoteUbRmaBufferMgr_
-    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(remoteUbRmaBuffer->GetAddr()), remoteUbRmaBuffer->GetSize());
+    hccl::BufferKey<uintptr_t, u64> tempKey(static_cast<uintptr_t>(dto.addr), dto.size);
     if(remoteUbRmaBufferMgrs_.find(endpointDesc) == remoteUbRmaBufferMgrs_.end()) {
         std::unique_ptr<RemoteUbRmaBufferMgr> remoteUbRmaBufferMgr;
         EXECEPTION_CATCH((remoteUbRmaBufferMgr = std::make_unique<RemoteUbRmaBufferMgr>()),
