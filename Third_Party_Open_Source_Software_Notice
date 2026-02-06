@@ -430,6 +430,10 @@ Software: libboundscheck v1.1.11
 Official Repository: https://gitee.com/openeuler/libboundscheck
 Usage:
 test/ut/depends/include/securectype.h
+test/ut/platform/hccp/rdma_agent/stub/sec.c
+test/ut/platform/hccp/hccp_service/stub/mm.c
+test/ut/platform/hccp/rdma_service_normal/stub/mm.c
+test/ut/platform/hccp/rdma_service_abnormal/stub/mm.c
 
 Copyright notice(s):
 Copyright (c) Huawei Technologies Co., Ltd. 2014-2021. All rights reserved.
@@ -627,6 +631,12 @@ src/platform/hccp/external_depends/rdma-core/include/ccan/str.h
 src/platform/hccp/external_depends/rdma-core/include/ccan/check_type.h
 src/platform/hccp/external_depends/rdma-core/include/ccan/container_of.h
 src/platform/hccp/external_depends/rdma-core/include/rdma/rdma_user_ioctl_cmds.h
+test/ut/platform/hccp/rdma_service_abnormal/stub/cmd.c
+test/ut/platform/hccp/rdma_service_abnormal/stub/device.c
+test/ut/platform/hccp/rdma_service_abnormal/stub/init.c
+test/ut/platform/hccp/rdma_service_normal/stub/cmd.c
+test/ut/platform/hccp/rdma_service_normal/stub/device.c
+test/ut/platform/hccp/rdma_service_normal/stub/init.c
 
 Copyright notice(s):
 Copyright (c) 2016-2017 Hisilicon Limited.
@@ -772,3 +782,32 @@ Full Licence Text:
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
+
+Software: umdk
+Official Repository: https://gitcode.com/openeuler/umdk
+Usage:
+test/ut/platform/hccp/rdma_service_abnormal/stub/ub_api.c
+test/ut/platform/hccp/rdma_service_normal/stub/ub_api.c
+
+Copyright notice(s):
+Copyright (c) Huawei Technologies Co., Ltd. 2021-2025. All rights reserved.
+License: The MIT License (MIT)
+Full Licence Text:
+The MIT License
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
