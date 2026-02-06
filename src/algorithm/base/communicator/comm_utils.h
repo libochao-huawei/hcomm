@@ -60,7 +60,7 @@ enum class CommType {
 
 // 通信域建链信息
 struct CommParaInfo {
-    CommPlane commPlane = COMM_LEVEL_RESERVED;
+    CommPlane commPlane = CommPlane::COMM_LEVEL_RESERVED;
     CommType commType = CommType::COMM_TAG_MAX;
     u32 root = INVALID_VALUE_RANKID;
     u32 peerUserRank = INVALID_VALUE_RANKID;

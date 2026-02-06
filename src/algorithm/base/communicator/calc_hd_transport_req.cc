@@ -30,7 +30,7 @@ HcclResult CalcHDTransportReq::CalcTransportRequest(const std::string &tag, Tran
     commTransport.resize(ringSize);
 
     for (u32 ringIndex = 0; ringIndex < ringSize; ringIndex++) {
-        if (commParaInfo.commPlane == COMM_LEVEL1 && !isBridgeVector_[ringIndex]) {
+        if (commParaInfo.commPlane == CommPlane::COMM_LEVEL1 && !isBridgeVector_[ringIndex]) {
             continue; // 跳出本次循环
         }
 

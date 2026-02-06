@@ -42,7 +42,7 @@ HcclResult TopoMatcher::CalcCommPlaneInfo(const std::string &tag, const CommPara
 
     u32 subUserRankRoot = INVALID_VALUE_RANKID;
     if (commParaInfo.root != INVALID_VALUE_RANKID) {
-        if (commParaInfo.commPlane == COMM_LEVEL2) {
+        if (commParaInfo.commPlane == CommPlane::COMM_LEVEL2) {
             subUserRankRoot = GetSubRootUserRankWithSuperPod(userRank_, commParaInfo.root);
         } else {
             subUserRankRoot = GetSubRootUserRank(userRank_, commParaInfo.root);
