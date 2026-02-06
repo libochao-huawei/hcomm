@@ -1047,7 +1047,7 @@ HCCP_ATTRI_VISI_DEF int RaRestoreSnapshot(struct RaInfo *info);
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_get_sec_random(struct RaInfo *info, uint32_t *value);
+HCCP_ATTRI_VISI_DEF int RaGetSecRandom(struct RaInfo *info, uint32_t *value);
 
 #ifdef __cplusplus
 }
