@@ -658,6 +658,12 @@ HcclResult Transport::HcclBatchRead(const TransportDeviceNormalData &ibvData, st
 #endif
 }
 
+HcclResult SetDeviceUnavailable(u32 deviceId)
+{
+    CHK_PTR_NULL(pimpl_);
+    return pimpl_->SetDeviceUnavailable(deviceId);
+}
+
 HcclResult Transport::HcclBatchWrite(const TransportDeviceNormalData &ibvData,
     struct MemDetails *localMems, struct MemDetails *remoteMems, u32 memNum, u64 &dbInfo)
 {

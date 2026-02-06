@@ -99,6 +99,7 @@ public:
 
     HcclResult Post(u32 notifyIdx, Stream &stream) override;
     HcclResult Wait(u32 notifyIdx, Stream &stream, const u32 timeOut = NOTIFY_INVALID_WAIT_TIME) override;
+    HcclResult SetDeviceUnavailable(u32 deviceId);
 
 protected:
     HcclResult FillExchangeDataTotalSize() override;

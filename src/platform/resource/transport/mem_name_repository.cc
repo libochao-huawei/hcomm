@@ -41,6 +41,13 @@ MemNameRepository* MemNameRepository::GetInstance(s32 deviceLogicID)
     return &instances[deviceLogicID];
 }
 
+HcclResult MemNameRepository::SetDeviceUnavailable(bool unavailable)
+{
+    unavailable_ = unavailable;
+    HCCL_RUN_INFO("SetDeviceUnavailable unavailable_[%d]", unavailable_);
+    return HCCL_SUCCESS;
+}
+
 HcclResult MemNameRepository::SetIpcMem(void *ptr, u64 size, u8 *name, u32 nameLen, u64 &offset, bool isSioToHccs)
 {
     CHK_PTR_NULL(name);
@@ -216,6 +223,12 @@ void MemNameRepository::CloseIpcMem(const u8* name)
 
     if (name == nullptr) {
         HCCL_WARNING("In mem repository, destroy null ipc ptr");
+        return;
+    }
+
+    // NPU快照，如果是快照回复后，则不调用destroy memory name
+    if (unavailable_) {
+        openedNameMap_.clear();
         return;
     }
 
