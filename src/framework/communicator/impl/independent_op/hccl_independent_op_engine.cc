@@ -20,6 +20,7 @@
 #include "hccl_communicator.h"
 #include "hccl_comm_pub.h"
 #include "hccl_independent_common.h"
+#include "profiling/profiling.h"
 
 using namespace hccl;
 
@@ -69,18 +70,26 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
         __func__, commId.c_str(), engine, threadNum, notifyNumPerThread);
 
     HcclResult ret = HCCL_SUCCESS;
+    std::vector<uint32_t> threadId;
     if (hcclComm->IsCommunicatorV2()) {
         hccl::CollComm* collComm = hcclComm->GetCollComm();
         CHK_PTR_NULL(collComm);
         CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
         CHK_PTR_NULL(engineResMgr);
-        ret = engineResMgr->HcclThreadAcquire(engine, threadNum, notifyNumPerThread, threads);
+        ret = engineResMgr->HcclThreadAcquire(engine, threadNum, notifyNumPerThread, threads, threadId);
     }
     else {
         auto& engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
-        ret = engineResMgr.HcclThreadAcquire(engine, threadNum, notifyNumPerThread, threads);
+        ret = engineResMgr.HcclThreadAcquire(engine, threadNum, notifyNumPerThread, threads, threadId);
+        if (engine == CommEngine::COMM_ENGINE_AICPU_TS || engine == CommEngine::COMM_ENGINE_AICPU) {
+            // 上报流
+            if (threadNum != threadId.size()) {
+                HCCL_ERROR("[%s] threadNum [%u] != threadId.size[%u]", __func__, threadNum, threadId.size());
+                return HCCL_E_PARA;
+            }
+            CHK_RET(HcclStreamProfilingReport(comm, threadNum, threadId.data()));
+        }
     }
-
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to create threads for engine[%d], threadNum[%u], notifyNumPerThread[%u]",
             __func__, engine, threadNum, notifyNumPerThread);

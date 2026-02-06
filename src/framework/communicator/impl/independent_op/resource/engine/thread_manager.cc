@@ -61,7 +61,7 @@ ThreadMgr::ThreadMgr(uint32_t threadNum, uint32_t notifyNumPerThread, std::strin
     commId_(commId), binHandle_(binHandle), callbacks_(callbacks){}
 
 HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
-    uint32_t notifyNumPerThread, ThreadHandle *threads)
+    uint32_t notifyNumPerThread, ThreadHandle *threads, std::vector<uint32_t> &threadId)
 {
     CHK_PTR_NULL(threads);
     std::lock_guard<std::mutex> lock(threadMutex_);
@@ -155,6 +155,11 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
             threads[i] = reinterpret_cast<ThreadHandle>(newThreads[i].get());
             HCCL_INFO("[ThreadMgr][%s] host threadArray[%u] = [%lu]", __func__, i, threads[i]);
         }
+    }
+    for (size_t i = 0; i < newThreads.size(); ++i) {
+        uint32_t id = newThreads[i]->GetStream()->id();
+        HCCL_DEBUG("[%s] thread id = [%u]", __func__, id);
+        threadId.push_back(id);
     }
     threads_.reserve(threads_.size() + newThreads.size());
     auto threadsIt = threads_.end();

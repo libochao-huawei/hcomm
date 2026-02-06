@@ -15,6 +15,8 @@
 #include "launch_aicpu.h"
 #include <unordered_set>
 #include <string>
+#include "adapter_prof.h"
+#include "hcom_host_profiling.h"
 
 namespace hccl {
 
@@ -563,7 +565,7 @@ HcclResult ChannelManager::AicpuChannelInit(const std::string &commId, const std
 {
     HcclIndOpChannelRemoteResV3 channelParam{};
     CHK_SAFETY_FUNC_RET(memset_s(&channelParam, sizeof(channelParam), 0, sizeof(channelParam)));
-
+    uint64_t beginTime = hrtMsprofSysCycleTime();
     // channelParam资源参数填充
     strncpy_s(channelParam.hcomId, HCOMID_MAX_LENGTH, commId.c_str(), HCOMID_MAX_LENGTH - 1);
     strncpy_s(channelParam.channelTag, TAG_MAX_LENGTH, tag.c_str(), TAG_MAX_LENGTH - 1);
@@ -616,7 +618,10 @@ HcclResult ChannelManager::AicpuChannelInit(const std::string &commId, const std
 
     // 手动释放channelParam中申请的内存
     CHK_RET(ReleaseChannelParam(channelParam));
-
+    const std::string profName = "RunAicpuIndOpChannelInit";
+    HCCL_DEBUG("[%s] RunAicpuIndOpChannelInit",__func__);
+    // 上报初始化kernel的时间
+    HcommProfilingReportKernel(beginTime, profName.c_str());
     return HCCL_SUCCESS;
 }
 

@@ -141,6 +141,8 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
 
+        ${HCCL_BASE_DIR}/platform/inc/adapter
+        
         ${THIRD_PARTY_NLOHMANN_PATH}
 
         ${HCCL_BASE_DIR}/common/debug/profiling/inc

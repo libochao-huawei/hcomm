@@ -15,6 +15,8 @@
 #include "launch_aicpu.h"
 #include "comm_configer.h"
 #include <iomanip>
+#include "hcom_host_profiling.h"
+#include "adapter_prof.h"
 
 namespace hccl {
 template <typename OpParam, typename ApiParam>
@@ -71,7 +73,7 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunch(std::vector<std::shared_ptr<Thread
     CHK_PRT_RET(newThreads.size() > LOCAL_STREAM_MAX_NUM,
         HCCL_ERROR("[AicpuLaunchMgr][%s] streamNum[%zu] > LOCAL_STREAM_MAX_NUM[%u]", __func__,
         newThreads.size(), LOCAL_STREAM_MAX_NUM), HCCL_E_PARA);
-
+    uint64_t beginTime = hrtMsprofSysCycleTime();       
     // Step 1. 创建局部 stream
     HCCL_INFO("AicpuLaunchMgr::%s, step 1 create local stream", __func__);
     Stream localStream(StreamType::STREAM_TYPE_ONLINE);
@@ -126,7 +128,9 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunch(std::vector<std::shared_ptr<Thread
     HCCL_INFO("AicpuLaunchMgr::%s, step 5 return device ptr", __func__);
     CHK_RET(hrtMemSyncCopy(hostHandle.get(), handleLen, opParam.deviceHandle, handleLen,
         HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_HOST));
-
+    const std::string profName = "RunAicpuIndOpThreadInit";
+    // 上报初始化kernel的时间
+    HcommProfilingReportKernel(beginTime, profName.c_str());
     return HCCL_SUCCESS;
 }
 

@@ -26,7 +26,7 @@ HcclResult hrtMsprofRegisterCallback(uint32_t moduleId, ProfCommandHandle handle
 HcclResult hrtMsprofRegTypeInfo(uint16_t level, uint32_t typeId, const char *typeName)
 {
     s32 ret = DlProfFunction::GetInstance().dlMsprofRegTypeInfo(level, typeId, typeName);
-    HCCL_INFO("Call MsprofRegTypeInfo, return value[%d], Params: typeId[%u]", ret, typeId);
+    HCCL_INFO("Call MsprofRegTypeInfo, return value[%d], Params: typeId[%u] typeName = [%s]", ret, typeId, typeName);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("Call MsprofRegTypeInfo fail, return[%d]", ret), HCCL_E_PROFILING);
     return HCCL_SUCCESS;
 }
