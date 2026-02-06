@@ -2332,7 +2332,7 @@ TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_DecoulpledCtx)
     msg->hcclDataType = HCCL_DATA_TYPE_FP16;
     msg->dataCnt = 16;
     msg->valid = HCCL_MSG_VALID_MASK;
-    msg->repeatCnt = 2;
+    msg->repeatCnt = 255;
     msg->sendBuffer = 0x12345678;
     msg->recvBuffer = 0x12345678;
     msg->ccOpTilingData = 1;
