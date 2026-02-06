@@ -1294,6 +1294,9 @@ namespace hccl
                     iterServ->second[i].serverId.c_str(), iterServ->second[i].deviceInfo.devicePhyId);
             }
         }
+        for (u32 i = 0; i < enableP2PDevices_.size(); i++){
+            HCCL_INFO("TETS5 enableP2PDevices_[%u] = %u", i, enableP2PDevices_[i]);
+        }
         if (deviceType_ != DevType::DEV_TYPE_310P3 && !isStandardCard_) {
             HcclResult ret = P2PMgmtPub::EnableP2P(enableP2PDevices_);
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][PreResource]Enable P2P Failed, deviceLogicId[%d], ret[%u]", deviceLogicId_, ret), ret);
