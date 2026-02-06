@@ -1170,6 +1170,10 @@ namespace hccl
             HCCL_INFO("The current device just support this StandardCard case.");
             return true;
         }
+        // if (deviceType_ == DevType::DEV_TYPE_910_93) {
+        //     HCCL_INFO("The current device does not have the StandardCard case.");
+        //     return false;
+        // }
 
         return ((pairLinkInfo_[static_cast<u32>(LinkTypeInServer::HCCS_TYPE)].size() == 0) &&
                 (pairLinkInfo_[static_cast<u32>(LinkTypeInServer::HCCS_SW_TYPE)].size() == 0) &&
@@ -1294,7 +1298,13 @@ namespace hccl
                     iterServ->second[i].serverId.c_str(), iterServ->second[i].deviceInfo.devicePhyId);
             }
         }
+        for (u32 i = 0; i < enableP2PDevices_.size(); i++){
+            HCCL_INFO("TEST5 enableP2PDevices_[%u] = %u, enableP2PDevices_.size(%u)",
+                i, enableP2PDevices_[i], static_cast<u32>(enableP2PDevices_.size()));
+        }
+        HCCL_INFO("TEST10 isStandardCard_ %s", isStandardCard_ ? "true" : "false");
         if (deviceType_ != DevType::DEV_TYPE_310P3 && !isStandardCard_) {
+            HCCL_INFO("TEST9 isStandardCard_ %s", isStandardCard_ ? "true" : "false");
             HcclResult ret = P2PMgmtPub::EnableP2P(enableP2PDevices_);
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][PreResource]Enable P2P Failed, deviceLogicId[%d], ret[%u]", deviceLogicId_, ret), ret);
         }
@@ -6172,6 +6182,24 @@ namespace hccl
     HcclResult HcclCommunicator::AllocAlgResource(const std::string &newTag, HcclCMDType opType, const OpParam &opParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool selectAivAlg)
     {
+        // 打印建链诉求
+        for (u32 levelIdx = 0; levelIdx < resRequest.opTransport.size(); levelIdx++) {
+            LevelNSubCommTransport &levelTransport = resRequest.opTransport[levelIdx];
+            u32 ringSize = levelTransport.size();
+            for (u32 ringIndex = 0; ringIndex < ringSize; ringIndex++) {
+                SingleSubCommTransport &subCommTransport = levelTransport[ringIndex];
+                u32 rankSize = subCommTransport.transportRequests.size();
+                for (u32 rankIndex = 0; rankIndex < rankSize; rankIndex++) {
+                    if (subCommTransport.transportRequests[rankIndex].isValid == true) {
+                        HCCL_INFO("TEST19 " \
+                            "levelIdx[%u], ringIndex[%u], rankIndex[%u], userRank[%u], remoteRank[%u], isUsedRdma[%d]",
+                            levelIdx, ringIndex, rankIndex, subCommTransport.transportRequests[rankIndex].localUserRank,
+                            subCommTransport.transportRequests[rankIndex].remoteUserRank,
+                            subCommTransport.transportRequests[rankIndex].isUsedRdma);
+                    }
+                }
+            }
+        }
         HcclResult ret = HCCL_SUCCESS;
         bool isGraphZeroCopyAlgAlloc = false;
         // 只有aicpu模式下才需要申请从流和相关的notify资源，isNeedSlaveStream为true就代表算子下发是aicpu模式
@@ -6370,6 +6398,24 @@ namespace hccl
             CHK_RET(GetRemoteUserMemResource());
         } else {
             StateGuard<HcclCommunicator, HcclCommState> guard(this, HcclCommState::BUILDING);
+
+            for (u32 levelIdx = 0; levelIdx < algResResponse.opTransportResponse.size(); levelIdx++) {
+                LevelNSubCommTransport &levelTransport = algResResponse.opTransportResponse[levelIdx];
+                u32 ringSize = levelTransport.size();
+                for (u32 ringIndex = 0; ringIndex < ringSize; ringIndex++) {
+                    SingleSubCommTransport &subCommTransport = levelTransport[ringIndex];
+                    u32 rankSize = subCommTransport.transportRequests.size();
+                    for (u32 rankIndex = 0; rankIndex < rankSize; rankIndex++) {
+                        if (subCommTransport.transportRequests[rankIndex].isValid == true) {
+                            HCCL_INFO("TEST19 " \
+                                "levelIdx[%u], ringIndex[%u], rankIndex[%u], userRank[%u], remoteRank[%u], isUsedRdma[%d]",
+                                levelIdx, ringIndex, rankIndex, subCommTransport.transportRequests[rankIndex].localUserRank,
+                                subCommTransport.transportRequests[rankIndex].remoteUserRank,
+                                subCommTransport.transportRequests[rankIndex].isUsedRdma);
+                        }
+                    }
+                }
+            }
             ret = transportManager_->Alloc(opParam.tag, transMem, algResResponse.opTransportResponse,
                                            opParam.aicpuUnfoldMode, false, opParam.isZeroCopy, opParam.opType,
                                            opParam.isCapture, false, opParam.isNpuDirectRoce);
