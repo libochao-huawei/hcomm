@@ -14,9 +14,9 @@
 #include "coll_alg_params.h"
 
 namespace Hccl {
-constexpr u64 AR_M2M_1D_MAX_DATA_SIZE = 16 * 1024 * 1024;
+constexpr u64 AR_M2M_1D_MAX_DATA_SIZE = 8 * 1024 * 1024;
 constexpr u64 AR_AICPU_1D_SMALL_DATA_SIZE = 8 * 1024 * 1024;
-constexpr u64 AR_AICPU_1D_MAX_DATA_SIZE = 32 * 1024 * 1024;
+constexpr u64 AR_AICPU_1D_MAX_DATA_SIZE = 16 * 1024 * 1024;
 constexpr u64 AR_ONESHOT_1D_MAX_DATA_SIZE = 16 * 1024;
 
 SelectorStatus AllReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
@@ -145,7 +145,14 @@ SelectorStatus AllReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
                              "with ms reduce.",
                     op.dataType.Describe().c_str()),
                 SelectorStatus::NOT_MATCH);
-            if (dataSize_ > AR_M2M_1D_MAX_DATA_SIZE) {
+            double ratio;  // 以8卡为基线确定ratio，用来表示不同卡数对下发的影响系数
+            if (rankSize_ == 0) {
+                HCCL_WARNING("[AllReduceAutoSelector]the selector is not set RankSize_");
+                ratio = 1;
+            } else {
+                ratio = 8.0 / rankSize_ / rankSize_;
+            }
+            if (dataSize_ * ratio > AR_M2M_1D_MAX_DATA_SIZE) {
                 return SelectorStatus::NOT_MATCH;
             }
             primQueueGenName = "CcuAllReduceMeshMem2Mem1D";
@@ -204,12 +211,19 @@ SelectorStatus AllReduceAutoSelector::SelectMeshAlgoAicpu(const TopoInfo &topoIn
                                                           std::string &primQueueGenName) const
 {
     if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
+        double ratio;  // 以8卡为基线确定ratio，用来表示不同卡数对下发的影响系数
+        if (rankSize_ == 0) {
+            HCCL_WARNING("[AllReduceAutoSelector]the selector is not set RankSize_");
+            ratio = 1;
+        } else {
+            ratio = 8.0 / rankSize_ / rankSize_;
+        }
         if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 ||
             op.dataType == DataType::FP64) {
             primQueueGenName = "InsAllReduceAicpuReduce";
         } else if (dataSize_ <= AR_AICPU_1D_SMALL_DATA_SIZE) {
             primQueueGenName = "InsAllReduceMesh1DOneShot";
-        } else if (dataSize_ > AR_AICPU_1D_MAX_DATA_SIZE) {
+        } else if (dataSize_ * ratio > AR_AICPU_1D_MAX_DATA_SIZE) {
             primQueueGenName = "InsAllReduceMesh1DTwoShotMeshChunk";
         } else {
             primQueueGenName = "InsAllReduceMesh1DTwoShot";
