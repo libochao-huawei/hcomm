@@ -105,6 +105,14 @@ struct RaRdmaOps {
     int (*raDestroySrq)(struct RaRdmaHandle *handle, struct SrqAttr *attr);
 };
 
+enum ErrTypeDef {
+    TYPE_EXE_OK = 0,               // execute successful.
+    TYPE_CODE_OR_ENV_ERR = 1,      // code or env error, need to check param or interface call seq or check env, etc.
+    TYPE_CODE_MATCH_ENV_ERR = 2,   // code does not match env, need to check param or interface to match the env, etc.
+    TYPE_SERVICE_ERR = 3,          // service abnormal caused by full or empty queue, etc.
+    TYPE_INTERNAL_ERR = 5,         // need to solve the problem on our own
+};
+
 struct ErrcodeInfo {
     int origErrcode;
     int errType;

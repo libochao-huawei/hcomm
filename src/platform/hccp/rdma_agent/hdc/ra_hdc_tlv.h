@@ -58,6 +58,7 @@ union OpTlvRequestData {
     } txData;
 
     struct {
+        int errCode;
         unsigned int recvBytes;
         char recvData[MAX_TLV_MSG_DATA_LEN];
     } rxData;

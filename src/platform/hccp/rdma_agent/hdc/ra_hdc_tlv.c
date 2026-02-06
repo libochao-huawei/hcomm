@@ -81,6 +81,9 @@ STATIC int RaHdTlvRequestForSendNullMsg(unsigned int phyId, union OpTlvRequestDa
     CHK_PRT_RETURN(ret != 0, hccp_err("[request][ra_hdc_tlv]hdc message process failed ret(%d) phy_id(%u)",
         ret, phyId), ret);
 
+    CHK_PRT_RETURN(tlvData->rxData.errCode == -EUSERS, hccp_run_warn("[request][ra_hdc_tlv]hdc message process unsuccessful errCode(%d) phy_id(%u)",
+        tlvData->rxData.errCode, phyId), tlvData->rxData.errCode);
+
     recvMsg->length = tlvData->rxData.recvBytes;
     return ret;
 }
@@ -114,6 +117,9 @@ int RaHdcTlvRequest(struct RaTlvHandle *tlvHandle, unsigned int moduleType,
             ret, phyId), ret);
         head.offset += head.sendBytes;
     }
+
+    CHK_PRT_RETURN(tlvData.rxData.errCode == -EUSERS, hccp_run_warn("[request][ra_hdc_tlv]hdc message process unsuccessful errCode(%d) phy_id(%u)",
+        tlvData.rxData.errCode, phyId), tlvData.rxData.errCode);
 
     recvMsg->length = tlvData.rxData.recvBytes;
     return ret;
