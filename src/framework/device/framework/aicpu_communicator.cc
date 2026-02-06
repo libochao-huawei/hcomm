@@ -2034,6 +2034,7 @@ HcclResult HcclCommAicpu::AllocTransportResource(const std::string &newTag, cons
 HcclResult HcclCommAicpu::IncreAllocTransportResource(const std::string &newTag, const OpParam &opParam,
     const HcclOpResParam *commParam, AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse)
 {
+    // HcclUs startut = TIME_NOW();
     HCCL_INFO("[HcclCommAicpu][IncreAllocTransportResource] Entry alloc transport group[%s]", identifier_.c_str());
     std::set<u32> bsrTansportRank;
     for (u32 levelIndex = 0; levelIndex < resRequest.opTransport.size(); levelIndex++) {
@@ -2077,6 +2078,7 @@ HcclResult HcclCommAicpu::IncreAllocTransportResource(const std::string &newTag,
             }
         }
     }
+    // HCCL_RUN_INFO("IncreAllocTransportResource take time [%lld]us.", DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 
@@ -2231,6 +2233,8 @@ HcclResult HcclCommAicpu::AllocAlgResource(const std::string &newTag, const OpPa
 HcclResult HcclCommAicpu::CalcResRequest(const std::string &algName, const OpParam &param,
     std::unique_ptr<CollExecutorBase> &executor, AlgResourceRequest &resourceRequest)
 {
+    HcclUs startut = TIME_NOW();
+
     if (executor.get() == nullptr) {
         executor = CollAlgExecRegistry::Instance().GetAlgExec(algName, dispatcher_, topoMatcher_);
         CHK_PRT_RET(executor.get() == nullptr,
@@ -2252,6 +2256,7 @@ HcclResult HcclCommAicpu::CalcResRequest(const std::string &algName, const OpPar
         }
     }
     return executor->CalcResRequest(param, resourceRequest);
+    HCCL_RUN_INFO("[HcclCommAicpu] CalcResRequest take time [%lld]us.", DURATION_US(TIME_NOW() - startut));
 }
 
 u32 HcclCommAicpu::CalculateOpExecIndex(const OpParam &opParam, u32 userRank)
@@ -2419,11 +2424,13 @@ HcclResult HcclCommAicpu::GetAlgResponseRes(const std::string &newTag, const std
         } else {
             HCCL_INFO("[%s] Repeatedly inited for alg [%s] is not allowed.", __func__, algName.c_str());
         }
-    } else if (algName == "BatchSendRecv" || algName == "BatchSendRecvRetry") {
+    } else if (algName == "BatchSendRecv" || algName == "BatchSendRecvRetry" || (algName == "BatchSendRecvGroup" && opParam.needIncreLink)) {
+        // HcclUs startut = TIME_NOW();
         AlgResourceRequest resRequest;
         HCCL_INFO("[%s]IncreAlloc resource for alg[%s], tag[%s]", __func__, algName.c_str(), newTag.c_str());
         CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
         CHK_RET(IncreAllocTransportResource(newTag, opParam, commParam, resRequest, resMap_[newTag]));
+        // HCCL_RUN_INFO("Batchsendrecv IncreAlloc take time [%lld]us.", DURATION_US(TIME_NOW() - startut));
     }
     CHK_PRT_RET(iter == resMap_.end(),
         HCCL_ERROR("[%s]Fail to find algResResponse for tag[%s]", __func__, newTag.c_str()), HCCL_E_PARA);

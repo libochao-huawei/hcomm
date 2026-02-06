@@ -41,6 +41,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuKfcResInitV2(void *args)
 
 __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void *args)
 {
+    // HcclUs startut = TIME_NOW();
     if (args == nullptr) {
         HCCL_ERROR("RunAicpuRpcSrvLaunchV2 args is null.");
         return HCCL_E_PARA;
@@ -114,6 +115,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void *arg
             return AICPUSUSPENDING_ERROR;
         }
     }
+    // HCCL_RUN_INFO("[RunAicpuRpcSrvLaunchV2] success, take time [%lld]us.", DURATION_US(TIME_NOW() - startut));
     HCCL_INFO("end RunAicpuRpcSrvLaunchV2");
     return 0;
 }
