@@ -1857,6 +1857,7 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
     hccp_warn("@@@@@@@@@ jetty_cb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_db_status: %ld",
         jetty_cb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_db_status);
 
+/*
     hccp_warn("@@@@@@@@@ jetty_cb->jetty->urma_jetty_opt.jfr_opt.jfr_opt_mask.value: %ld",
         jetty_cb->jetty->urma_jetty_opt.jfr_opt.jfr_opt_mask.value);
     hccp_warn("@@@@@@@@@ jetty_cb->jetty->urma_jetty_opt.jfr_opt.is_actived: %ld",
@@ -1894,7 +1895,7 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
         jetty_cb->jetty->urma_jetty_opt.jfc_opt.urma_jfc_ci);
     hccp_warn("@@@@@@@@@ jetty_cb->jetty->urma_jetty_opt.jfc_opt.urma_jfc_db_status: %ld",
         jetty_cb->jetty->urma_jetty_opt.jfc_opt.urma_jfc_db_status);
-    
+*/    
 
     struct udma_u_jetty *udma_jetty = CONTAINER_OF(jetty_cb->jetty, struct udma_u_jetty, base);
 
