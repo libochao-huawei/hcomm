@@ -122,17 +122,121 @@ bool CheckCommEngine(const CommEngine engine, const uint32_t opExpansionMode)
     return true;
 }
 
+/**
+ * @brief 打印 HcclChannelDesc 详细信息（调测辅助函数）
+ * @param idx channel 索引
+ * @param channelDesc channel 描述符
+ */
+static void PrintChannelDescInfo(uint32_t idx, const HcclChannelDesc& channelDesc)
+{
+    const char* funcName = __func__;
+    // 基本字段
+    HCCL_INFO("[%s] channelDescs[%u]: remoteRank[%u], channelProtocol[%d], notifyNum[%u], memHandleNum[%u]",
+        funcName, idx,
+        channelDesc.remoteRank,
+        channelDesc.channelProtocol,
+        channelDesc.notifyNum,
+        channelDesc.memHandleNum);
+
+    // 本地端点 commAddr 详情
+    const auto& localAddr = channelDesc.localEndpoint.commAddr;
+    if (localAddr.type == COMM_ADDR_TYPE_IP_V4 || localAddr.type == COMM_ADDR_TYPE_ID) {
+        HCCL_INFO("[%s] channelDescs[%u] localEndpoint commAddr: type[%d], addr[0x%x]",
+            funcName, idx, localAddr.type, localAddr.id);
+    } else if (localAddr.type == COMM_ADDR_TYPE_EID) {
+        HCCL_INFO("[%s] channelDescs[%u] localEndpoint commAddr: type[%d], eid[0x%x:0x%x:0x%x:0x%x]",
+            funcName, idx, localAddr.type,
+            *(uint32_t*)&localAddr.eid[0],
+            *(uint32_t*)&localAddr.eid[4],
+            *(uint32_t*)&localAddr.eid[8],
+            *(uint32_t*)&localAddr.eid[12]);
+    } else {
+        HCCL_INFO("[%s] channelDescs[%u] localEndpoint commAddr: type[%d], raws[0x%x:0x%x:0x%x:0x%x]",
+            funcName, idx, localAddr.type,
+            *(uint32_t*)&localAddr.raws[0],
+            *(uint32_t*)&localAddr.raws[4],
+            *(uint32_t*)&localAddr.raws[8],
+            *(uint32_t*)&localAddr.raws[12]);
+    }
+
+    // 本地端点 loc 详情
+    const auto& localLoc = channelDesc.localEndpoint.loc;
+    if (localLoc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+        HCCL_INFO("[%s] channelDescs[%u] localEndpoint loc: locType[%d], devPhyId[%u], superDevId[%u], serverIdx[%u], superPodIdx[%u]",
+            funcName, idx, localLoc.locType,
+            localLoc.device.devPhyId,
+            localLoc.device.superDevId,
+            localLoc.device.serverIdx,
+            localLoc.device.superPodIdx);
+    } else if (localLoc.locType == ENDPOINT_LOC_TYPE_HOST) {
+        HCCL_INFO("[%s] channelDescs[%u] localEndpoint loc: locType[%d], host.id[%u]",
+            funcName, idx, localLoc.locType, localLoc.host.id);
+    } else {
+        HCCL_INFO("[%s] channelDescs[%u] localEndpoint loc: locType[%d]",
+            funcName, idx, localLoc.locType);
+    }
+
+    // 远端端点 commAddr 详情
+    const auto& remoteAddr = channelDesc.remoteEndpoint.commAddr;
+    if (remoteAddr.type == COMM_ADDR_TYPE_IP_V4 || remoteAddr.type == COMM_ADDR_TYPE_ID) {
+        HCCL_INFO("[%s] channelDescs[%u] remoteEndpoint commAddr: type[%d], addr[0x%x]",
+            funcName, idx, remoteAddr.type, remoteAddr.id);
+    } else if (remoteAddr.type == COMM_ADDR_TYPE_EID) {
+        HCCL_INFO("[%s] channelDescs[%u] remoteEndpoint commAddr: type[%d], eid[0x%x:0x%x:0x%x:0x%x]",
+            funcName, idx, remoteAddr.type,
+            *(uint32_t*)&remoteAddr.eid[0],
+            *(uint32_t*)&remoteAddr.eid[4],
+            *(uint32_t*)&remoteAddr.eid[8],
+            *(uint32_t*)&remoteAddr.eid[12]);
+    } else {
+        HCCL_INFO("[%s] channelDescs[%u] remoteEndpoint commAddr: type[%d], raws[0x%x:0x%x:0x%x:0x%x]",
+            funcName, idx, remoteAddr.type,
+            *(uint32_t*)&remoteAddr.raws[0],
+            *(uint32_t*)&remoteAddr.raws[4],
+            *(uint32_t*)&remoteAddr.raws[8],
+            *(uint32_t*)&remoteAddr.raws[12]);
+    }
+
+    // 远端端点 loc 详情
+    const auto& remoteLoc = channelDesc.remoteEndpoint.loc;
+    if (remoteLoc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+        HCCL_INFO("[%s] channelDescs[%u] remoteEndpoint loc: locType[%d], devPhyId[%u], superDevId[%u], serverIdx[%u], superPodIdx[%u]",
+            funcName, idx, remoteLoc.locType,
+            remoteLoc.device.devPhyId,
+            remoteLoc.device.superDevId,
+            remoteLoc.device.serverIdx,
+            remoteLoc.device.superPodIdx);
+    } else if (remoteLoc.locType == ENDPOINT_LOC_TYPE_HOST) {
+        HCCL_INFO("[%s] channelDescs[%u] remoteEndpoint loc: locType[%d], host.id[%u]",
+            funcName, idx, remoteLoc.locType, remoteLoc.host.id);
+    } else {
+        HCCL_INFO("[%s] channelDescs[%u] remoteEndpoint loc: locType[%d]",
+            funcName, idx, remoteLoc.locType);
+    }
+
+    // ROCE 协议特有属性
+    if (channelDesc.channelProtocol == COMM_PROTOCOL_ROCE) {
+        HCCL_INFO("[%s] channelDescs[%u] roceAttr: queueNum[%u], retryCnt[%u], retryInterval[%u], tc[%u], sl[%u]",
+            funcName, idx,
+            channelDesc.roceAttr.queueNum,
+            channelDesc.roceAttr.retryCnt,
+            channelDesc.roceAttr.retryInterval,
+            channelDesc.roceAttr.tc,
+            channelDesc.roceAttr.sl);
+    }
+}
+
 constexpr uint32_t CHANNEL_NUM_MAX = 1024 * 1024;  // channel的默认限制最大为1024 * 1024
- 
+
 HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, 
     const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle* channels)
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
     HcclUs startut = TIME_NOW();
     EXCEPTION_HANDLE_BEGIN
+    HCCL_INFO("[%s] ChannelAcquire begin, channelNum[%u], engine[%d]", __func__, channelNum, engine);
     for (uint32_t idx = 0; idx < channelNum; idx++) {
-        HCCL_INFO("HcclChannelAcquire idx[%u], local[%d], remote[%d]",
-            idx, channelDescs[idx].localEndpoint.loc.locType, channelDescs[idx].remoteEndpoint.loc.locType);
+        PrintChannelDescInfo(idx, channelDescs[idx]);
     }
 
     // 入参校验
