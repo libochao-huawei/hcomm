@@ -394,7 +394,7 @@ extern int32_t HcommSendRequest(MsgHandle handle, const char* msgTag, const void
 extern int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, uint32_t *msgId);
 
 /**
- * @brief DPU数据面flush接口，已架构师评审过
+ * @brief DPU数据面flush接口
  * @param[in] void
  * @return int32_t 执行结果状态码
  * 

@@ -62,16 +62,16 @@ const map<uint8_t, map<uint8_t, string>> MISSION_SUB_STATUS_MAP{
       {0x0c, "read local mem poison(0x0c)"}}},
 };
 
-void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, uint16_t currIns, const ParaCcu &ccuTaskParam,
+void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const ParaCcu &ccuTaskParam,
                                         std::vector<CcuErrorInfo> &errorInfo)
 {
+    const auto missionContext = GetCcuMissionContext(deviceId, ccuTaskParam.dieId, ccuTaskParam.execMissionId);
     if (missionStatus == 0) {
         HCCL_INFO("[CcuErrorHandler][%s] no err found, mission status is 0, deviceId[%d], dieId[%u], execMissionId[%u]",
             __func__, deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.execMissionId));
         return;
     }
 
-    // 获取异常指令对应的Rep
     CcuRepContext *ctx
         = CtxMgrImp::GetInstance(deviceId).GetCtx(ccuTaskParam.executeId, ccuTaskParam.dieId, ccuTaskParam.missionId);
     if (ctx == nullptr) {
@@ -79,31 +79,54 @@ void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, u
                                deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId),
                                ccuTaskParam.executeId);
     }
-    auto           rep     = ctx->GetRepByInstrId(currIns);
-    if (rep == nullptr) {
-        HCCL_WARNING("[CcuErrorHandler][%s] cannot find REP from current CcuContext, instrId[%u]", __func__, currIns);
-        return;
-    }
 
-    // 处理Rep为FUNC_BLOCK的场景
-    while (rep->Type() == CcuRepType::FUNC_BLOCK) {
-        auto blockRep = static_pointer_cast<CcuRepBlock>(rep);
-        rep           = blockRep->GetRepByInstrId(currIns);
-        if (rep == nullptr) {
-            THROW<CcuApiException>("Failed to find REP from FuncBlock, instrId[%u], FuncBlock[%s]", currIns,
-                                   blockRep->GetLabel().c_str());
-        }
-    }
+    const uint16_t endIns = missionContext.GetEndIns();
+    const uint16_t startIns = missionContext.GetStartIns();
+    const uint16_t currIns = missionContext.GetCurrentIns();
 
     // 分类处理Rep, 返回异常信息
     ErrorInfoBase baseInfo{deviceId, ccuTaskParam.dieId, ccuTaskParam.missionId, currIns, missionStatus};
     GenStatusInfo(baseInfo, errorInfo);
-    if (rep->Type() == CcuRepType::LOOPGROUP) {
-        // 处理LoopGroup
-        GenErrorInfoLoopGroup(baseInfo, rep, *ctx, errorInfo);
-    } else {
-        // 处理可直接解析的Rep
-        GenErrorInfoByRepType(baseInfo, rep, errorInfo);
+
+    // 获取异常指令对应的Rep
+    HCCL_ERROR("[CcuErrorHandler]device %u, execMissionId[%u], startIns[%u], endIns[%u], currIns[%u]", 
+        deviceId, static_cast<u32>(ccuTaskParam.execMissionId), static_cast<u32>(startIns), static_cast<u32>(endIns), static_cast<u32>(currIns));
+    if (endIns == currIns) {
+       HCCL_ERROR("[CcuErrorHandler]device %u SQE != CQE, endIns[%u], currIns[%u]", 
+        deviceId, static_cast<u32>(endIns), static_cast<u32>(currIns));
+    }
+    // 安全地获取currIns - 10的值
+    uint16_t beginIns = (currIns < 10) ? startIns : ((currIns - 10) > startIns ? (currIns - 10) : startIns); 
+    // 打印报错的前10条指令，并且从第一个非空rep开始
+    for (uint16_t insId = currIns - 1; insId >= beginIns; insId--) {
+        auto rep = ctx->GetRepByInstrId(insId);
+        if (rep == nullptr) {
+           beginIns = insId + 1;
+           break;
+        }
+    }
+    for (uint16_t insId = beginIns; insId <= currIns; insId++) {
+        auto           rep     = ctx->GetRepByInstrId(insId);
+        if (rep == nullptr) {
+            HCCL_ERROR("[CcuErrorHandler][%s] cannot find REP from current CcuContext, instrId[%u]", __func__, insId);
+            continue;
+        }
+        // 处理Rep为FUNC_BLOCK的场景
+        while (rep->Type() == CcuRepType::FUNC_BLOCK) {
+            auto blockRep = static_pointer_cast<CcuRepBlock>(rep);
+            rep           = blockRep->GetRepByInstrId(insId);
+            if (rep == nullptr) {
+                THROW<CcuApiException>("Failed to find REP from FuncBlock, instrId[%u], FuncBlock[%s]", insId,
+                                    blockRep->GetLabel().c_str());
+            }
+        }
+        if (rep->Type() == CcuRepType::LOOPGROUP) {
+            // 处理LoopGroup
+            GenErrorInfoLoopGroup(baseInfo, rep, *ctx, errorInfo);
+        } else {
+            // 处理可直接解析的Rep
+            GenErrorInfoByRepType(baseInfo, rep, errorInfo);
+        }
     }
 }
 
@@ -170,7 +193,7 @@ void CcuErrorHandler::GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, share
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::LOOP_GROUP;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto  rep              = static_pointer_cast<CcuRepLoopGroup>(repBase);
     const auto  startLoopInstrId = rep->GetStartLoopInstrId();
@@ -278,7 +301,7 @@ void CcuErrorHandler::GenErrorInfoDefault(const ErrorInfoBase &baseInfo, shared_
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::DEFAULT;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
     errorInfo.push_back(errorMsg);
 }
 
@@ -287,7 +310,7 @@ void CcuErrorHandler::GenErrorInfoLocPostSem(const ErrorInfoBase &baseInfo, shar
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::WAIT_SIGNAL;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRepLocPostSem>(repBase);
     errorMsg.msg.waitSignal.signalId    = rep->sem.Id();
@@ -302,7 +325,7 @@ void CcuErrorHandler::GenErrorInfoLocWaitSem(const ErrorInfoBase &baseInfo, shar
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::WAIT_SIGNAL;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRepLocWaitSem>(repBase);
     errorMsg.msg.waitSignal.signalId    = rep->sem.Id();
@@ -317,7 +340,7 @@ void CcuErrorHandler::GenErrorInfoRemPostSem(const ErrorInfoBase &baseInfo, shar
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::WAIT_SIGNAL;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                     = static_pointer_cast<CcuRepRemPostSem>(repBase);
     errorMsg.msg.waitSignal.signalId   = rep->transport.GetRmtCntCkeByIndex(rep->semIndex);
@@ -334,7 +357,7 @@ void CcuErrorHandler::GenErrorInfoRemWaitSem(const ErrorInfoBase &baseInfo, shar
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::WAIT_SIGNAL;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                     = static_pointer_cast<CcuRepRemWaitSem>(repBase);
     errorMsg.msg.waitSignal.signalId    = rep->transport.GetLocCntCkeByIndex(rep->semIndex);
@@ -352,7 +375,7 @@ void CcuErrorHandler::GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, shar
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::WAIT_SIGNAL;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                     = static_pointer_cast<CcuRepRemPostVar>(repBase);
     errorMsg.msg.waitSignal.signalId   = rep->transport.GetRmtCntCkeByIndex(rep->semIndex);
@@ -371,7 +394,7 @@ void CcuErrorHandler::GenErrorInfoRemWaitGroup(const ErrorInfoBase &baseInfo, sh
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::WAIT_SIGNAL;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                           = static_pointer_cast<CcuRepWaitGroup>(repBase);
     errorMsg.msg.waitSignal.signalId         = rep->transportGroup.GetCntCkeId(rep->semIndex);
@@ -392,7 +415,7 @@ void CcuErrorHandler::GenErrorInfoPostSharedVar(const ErrorInfoBase &baseInfo, s
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::WAIT_SIGNAL;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRepPostSharedVar>(repBase);
     errorMsg.msg.waitSignal.signalId    = rep->sem.Id();
@@ -408,7 +431,7 @@ void CcuErrorHandler::GenErrorInfoPostSharedSem(const ErrorInfoBase &baseInfo, s
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::WAIT_SIGNAL;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRepPostSharedSem>(repBase);
     errorMsg.msg.waitSignal.signalId    = rep->sem.Id();
@@ -422,7 +445,7 @@ void CcuErrorHandler::GenErrorInfoRead(const ErrorInfoBase &baseInfo, shared_ptr
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::TRANS_MEM;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                   = static_pointer_cast<CcuRepRead>(repBase);
     errorMsg.msg.transMem.locAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->loc.addr.Id());
@@ -441,7 +464,7 @@ void CcuErrorHandler::GenErrorInfoWrite(const ErrorInfoBase &baseInfo, shared_pt
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::TRANS_MEM;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                   = static_pointer_cast<CcuRepWrite>(repBase);
     errorMsg.msg.transMem.locAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->loc.addr.Id());
@@ -460,7 +483,7 @@ void CcuErrorHandler::GenErrorInfoLocalCpy(const ErrorInfoBase &baseInfo, shared
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::TRANS_MEM;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                   = static_pointer_cast<CcuRepLocCpy>(repBase);
     errorMsg.msg.transMem.locAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->src.addr.Id());
@@ -478,7 +501,7 @@ void CcuErrorHandler::GenErrorInfoLocalReduce(const ErrorInfoBase &baseInfo, sha
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::TRANS_MEM;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                   = static_pointer_cast<CcuRepLocCpy>(repBase);
     errorMsg.msg.transMem.locAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->src.addr.Id());
@@ -498,7 +521,7 @@ void CcuErrorHandler::GenErrorInfoBufRead(const ErrorInfoBase &baseInfo, shared_
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::BUF_TRANS_MEM;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                    = static_pointer_cast<CcuRepBufRead>(repBase);
     errorMsg.msg.bufTransMem.bufId    = rep->dst.Id();
@@ -516,7 +539,7 @@ void CcuErrorHandler::GenErrorInfoBufWrite(const ErrorInfoBase &baseInfo, shared
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::BUF_TRANS_MEM;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRepBufWrite>(repBase);
     errorMsg.msg.bufTransMem.bufId      = rep->src.Id();
@@ -534,7 +557,7 @@ void CcuErrorHandler::GenErrorInfoBufLocRead(const ErrorInfoBase &baseInfo, shar
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::BUF_TRANS_MEM;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRepBufLocRead>(repBase);
     errorMsg.msg.bufTransMem.bufId      = rep->dst.Id();
@@ -551,7 +574,7 @@ void CcuErrorHandler::GenErrorInfoBufLocWrite(const ErrorInfoBase &baseInfo, sha
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::BUF_TRANS_MEM;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRepBufLocWrite>(repBase);
     errorMsg.msg.bufTransMem.bufId      = rep->src.Id();
@@ -568,7 +591,7 @@ void CcuErrorHandler::GenErrorInfoBufReduce(const ErrorInfoBase &baseInfo, share
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::BUF_REDUCE;
-    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                        = static_pointer_cast<CcuRepBufReduce>(repBase);
     errorMsg.msg.bufReduce.count          = rep->count;

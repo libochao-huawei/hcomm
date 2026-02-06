@@ -21,10 +21,10 @@
 #include <hccl/hccl_types.h>
 
 namespace Hccl {
-class DlHalFunction {
+class DlHalFunctionV2 {
 public:
-    virtual ~DlHalFunction();
-    static DlHalFunction &GetInstance();
+    virtual ~DlHalFunctionV2();
+    static DlHalFunctionV2 &GetInstance();
     HcclResult DlHalFunctionInit();
     std::function<drvError_t(unsigned int, struct event_summary *)> dlHalEschedSubmitEvent;
     std::function<drvError_t(int, unsigned int *, unsigned int *,
@@ -34,9 +34,9 @@ protected:
 private:
     void *handle_;
     std::mutex handleMutex_;
-    DlHalFunction(const DlHalFunction&);
-    DlHalFunction &operator=(const DlHalFunction&);
-    DlHalFunction();
+    DlHalFunctionV2(const DlHalFunctionV2&);
+    DlHalFunctionV2 &operator=(const DlHalFunctionV2&);
+    DlHalFunctionV2();
     HcclResult DlHalFunctionEschedInit();
 };
 }  // namespace hccl

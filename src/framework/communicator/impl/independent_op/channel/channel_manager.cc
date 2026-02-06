@@ -19,6 +19,7 @@
 namespace hccl {
 
 constexpr u32 RDMA_NOTIFY_MIN_NUM = 3;
+constexpr u32 NOTIFY_NUM_MAX = 64; // HcclChannelDesc 中 notifynum 的默认限制最大为64
 
 HcclResult ChannelManager::Init(aclrtBinHandle binHandle, u32 userRank, const ManagerCallbacks& callbacks)
 {
@@ -41,6 +42,10 @@ HcclResult ChannelManager::CheckChannelParam(CommEngine engine,
     std::unordered_set<HcclChannelDesc, std::hash<HcclChannelDesc>, HcclChannelDescEqual> descSet;
 
     for (uint32_t descIdx = 0; descIdx < descNum; ++descIdx) {
+        // 检查notifyNum
+        CHK_PRT_RET(channelDesc[descIdx].notifyNum > NOTIFY_NUM_MAX, 
+            HCCL_ERROR("[%s]Channeldesc[%u] invalid notifyNum, notifyNum[%u], max notify num[%u]",
+            __func__, descIdx, channelDesc[descIdx].notifyNum, NOTIFY_NUM_MAX), HCCL_E_PARA);
         // 检查memHandleNum是否大于0
         if (channelDesc[descIdx].memHandleNum != 0) {
             HCCL_WARNING("[%s]Channeldesc[%u] memHandleNum[%u] is non-zero, memHandle exchange is not supported.", 

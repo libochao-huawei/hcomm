@@ -22,41 +22,48 @@ using namespace hccl;
 class UtAicpuTsHcommLocalCopyOnThread : public testing::Test
 {
 protected:
-    static void SetUpTestCase()
-    {
-    }
-
-    static void TearDownTestCase()
-    {
-    }
-
     virtual void SetUp() override
     {
+        MOCKER_CPP(&Hccl::IAicpuTsThread::SdmaCopy).stubs().will(returnValue(HCCL_SUCCESS));
+        threadOnDevice.devType_ = DevType::DEV_TYPE_910_95;
+        threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
     }
 
     virtual void TearDown() override
     {
         GlobalMockObject::verify();
     }
+
+    AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
+    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
+    uint64_t tempDst[6] = {0};
+    uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
+    void *dst = reinterpret_cast<void *>(tempDst);
+    void *src = reinterpret_cast<void *>(tempSrc);
+    uint64_t len = sizeof(tempDst);
+    int32_t res{HCCL_E_RESERVED};
 };
 
 TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
-    AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
-    threadOnDevice.devType_ = DevType::DEV_TYPE_910_95;
-    threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
-    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
-    uint64_t tempDst[6] = {0};
-    uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
-    void *dst = reinterpret_cast<void *>(&tempDst);
-    void *src = reinterpret_cast<void *>(&tempSrc);
-    uint64_t len = sizeof(tempDst);
-
-    int32_t res = HCCL_E_RESERVED;
-
-    MOCKER_CPP(&Hccl::IAicpuTsThread::SdmaCopy).stubs().with(any(), any(), any()).will(returnValue(HCCL_SUCCESS));
-
     res = HcommLocalCopyOnThread(thread, dst, src, len);
-
     EXPECT_EQ(res, HCCL_SUCCESS);
+}
+
+TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_Thread_IsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    res = HcommLocalCopyOnThread(0, dst, src, len);
+    EXPECT_EQ(res, HCCL_E_PTR);
+}
+
+TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_Dst_IsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    res = HcommLocalCopyOnThread(thread, nullptr, src, len);
+    EXPECT_EQ(res, HCCL_E_PTR);
+}
+
+TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_Src_IsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    res = HcommLocalCopyOnThread(thread, dst, nullptr, len);
+    EXPECT_EQ(res, HCCL_E_PTR);
 }

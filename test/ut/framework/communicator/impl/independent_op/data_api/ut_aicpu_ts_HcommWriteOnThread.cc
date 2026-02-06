@@ -64,6 +64,6 @@ TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_buffer_not_fi
     // 执行步骤
     auto res = HcommWriteOnThread(thread, devHandle, dst, src, len);
 
-    // 后置严重
+    // 后置验证
     EXPECT_EQ(res, HCCL_E_INTERNAL);
 }
