@@ -1649,9 +1649,4 @@ void TransportP2p::SetMemIncludeFlag()
     }
     return;
 }
-
-HcclResult TransportP2p::SetDeviceUnavailable(u32 deviceId)
-{
-    return MemNameRepository::GetInstance(deviceId)->SetDeviceUnavailable(true);
-}
 }  // namespace hccl

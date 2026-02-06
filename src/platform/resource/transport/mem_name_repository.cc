@@ -229,6 +229,9 @@ void MemNameRepository::CloseIpcMem(const u8* name)
     // NPU快照，如果是快照回复后，则不调用destroy memory name
     if (unavailable_) {
         openedNameMap_.clear();
+        openedNameMapRef_.clear();
+        unavailable_ = false;
+        HCCL_RUN_INFO("CloseIpcMem unavailable_[%d]", unavailable_);
         return;
     }
 
@@ -260,6 +263,14 @@ void MemNameRepository::DestroyIpcMem(void *ptr, u64 size, bool isSioToHccs)
 
     if (ptr == nullptr) {
         HCCL_WARNING("In mem repository, destroy null ipc ptr");
+        return;
+    }
+
+    if (unavailable_) {
+        setNameMap_.clear();
+        setNameMapRef_.clear();
+        unavailable_ = false;
+        HCCL_RUN_INFO("DestroyIpcMem unavailable_[%d]", unavailable_);
         return;
     }
 
