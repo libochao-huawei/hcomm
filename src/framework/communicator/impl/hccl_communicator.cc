@@ -543,13 +543,7 @@ namespace hccl
         }
         return HCCL_SUCCESS;
     }
-
-    HcclResult HcclCommunicator::SetClearAivSyncBuf(bool aivClearEnable)
-    {
-        aivClearEnable_ = aivClearEnable;
-        return HCCL_SUCCESS;
-    }
-
+    
     u32 HcclCommunicator::GetRankTableCrc()
     {
         return ranktableCrc_;
@@ -2402,10 +2396,6 @@ namespace hccl
 
             CHK_RET(cclBufferManager_.ClearCommAIVbuffer());
             HCCL_INFO("[AIV][AivResumeClearSyncBuf] clear aiv buffer done");
-
-            aivOpbaseTag_ = TAG_INIT_VALUE;
-            aivOffloadTag_ = TAG_INIT_VALUE;
-            HCCL_INFO("[AIV][AivResume] clear aiv tag done");
         }
         return HCCL_SUCCESS;
     }

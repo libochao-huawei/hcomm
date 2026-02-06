@@ -79,10 +79,6 @@ constexpr u32 ONE_FOURTH_MAX_NUM_BLOCKS = 12;
 constexpr u32 ONE_SIXTH_MAX_NUM_BLOCKS = 8;
 constexpr u32 ONE_EIGHTH_MAX_NUM_BLOCKS = 6;
 
-constexpr s32 TAG_INIT_VALUE = 1;
-constexpr s32 TAG_RESET_COUNT = 1000;
-constexpr s32 AIV_A2_ALL_REDUCE_RDMA_KERNEL_NUM = 2;
-
 constexpr u32 TIME_S_TO_US = 1000000;
 constexpr u32 AIV_TIMEOUT_DEFAULT = 1091;
 constexpr u32 AIV_TIMEOUT_DEFAULT_US = 1091 * TIME_S_TO_US;
@@ -225,7 +221,6 @@ struct AivResourceArgs {
     void** buffersOut; // 注册的CCLOUT地址，所有卡可访问
     u64 bufferSize;
     u32 numBlocks;
-    s32 aivTag;
 };
  
 // 表示AIV算法流程控制的参数
@@ -282,12 +277,11 @@ using AivSuperKernelArgs = struct AivSuperKernelArgsDef {
     u64 unitSize;
     u64 reduceOp;
     u64 numBlocks;
-    s32 tag; // 第几次调用，定时重置成1
     s64 clearEnable;
  
     AivSuperKernelArgsDef(void** buffIn, void** buffOut, u32 rank,
-        u32 rankSize, u64 len, u32 dataType, u32 unitSize, u32 reduceOp,u32 numBlocks = 0, s32 tag = 0, bool clearEnable = true)
-        : rank(rank), rankSize(rankSize), len(len), dataType(dataType), unitSize(unitSize), reduceOp(reduceOp), numBlocks(numBlocks),tag(tag), clearEnable(clearEnable)
+        u32 rankSize, u64 len, u32 dataType, u32 unitSize, u32 reduceOp,u32 numBlocks = 0, bool clearEnable = true)
+        : rank(rank), rankSize(rankSize), len(len), dataType(dataType), unitSize(unitSize), reduceOp(reduceOp), numBlocks(numBlocks), clearEnable(clearEnable)
     {
         for (u32 i = 0; i < MAX_RANK_SIZE; i++) {
             buffersIn[i] = (u8 *) buffIn[i];

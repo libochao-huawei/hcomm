@@ -2725,27 +2725,6 @@ bool HcomIsNormalComm(const char *group)
     return (hcomInfo.pComm != nullptr);
 }
 
-HcclResult HcomClearAivSyncBuf(const char *group, bool aivClearEnable)
-{
-    HCCLV2_FUNC_RUN(HcomSetAivClearEnableV2(group, aivClearEnable));
-    CHK_PTR_NULL(group);
-    std::shared_ptr<hcclComm> hcclComm;
-    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
-        CHK_RET(hcclComm->SetClearAivSyncBuf(aivClearEnable));
-    }
-
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcclCommGraphClearAivSyncBuf(s64 comm, bool aivClearEnable)
-{
-    hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(comm);
-    if (hcclComm != nullptr) {
-        CHK_RET(hcclComm->SetClearAivSyncBuf(aivClearEnable));
-    }
-    return HCCL_SUCCESS;
-}
-
 HcclResult HcomSetAivCoreLimit(const char *group, u32 aivCoreLimit)
 {
     CHK_PRT_RET(aivCoreLimit == 0,

@@ -245,7 +245,6 @@ HcclResult CollAlgOperator::Orchestrate(const std::string& algName, OpParam& par
             HCCL_E_PARA);
         CHK_RET(SetExecutorAttr(param));
     }
-    executor_->SetAivClearEnable(aivClearEnable_);
     executor_->SetAlgOpContext(algOpContext_);
     executor_->SetOpCounter(opCounter_);
     return executor_->Orchestrate(param, algResource);
@@ -809,12 +808,6 @@ void CollAlgOperator::SetLegacyHcclImpl(std::unique_ptr<hcclImpl> &impl)
 HcclResult CollAlgOperator::SetRetryEnable(bool retryEnable)
 {
     retryEnable_ = retryEnable;
-    return HCCL_SUCCESS;
-}
-
-HcclResult CollAlgOperator::SetAivClearEnable(bool aivClearEnable)
-{
-    aivClearEnable_ = aivClearEnable;
     return HCCL_SUCCESS;
 }
 

@@ -28,7 +28,6 @@ CollAllReduceSmallCountAivRdmaExecutor::CollAllReduceSmallCountAivRdmaExecutor(c
 {
     DMAReduceFlag_ = false;
     desc_.isAivMode = true;
-    desc_.aivTagNum = AIV_A2_ALL_REDUCE_RDMA_KERNEL_NUM;
 }
 
 HcclResult CollAllReduceSmallCountAivRdmaExecutor::CalcStreamNum(u32& streamNum)
@@ -251,9 +250,6 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::KernelRun(const OpParam &para
     algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
-    if (aivClearEnable_) {
-        ClearAivSyncBuf(flagBuffers, resourceArgs, topoArgs, algArgs);
-    }
  
     CHK_RET(ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo));
  

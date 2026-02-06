@@ -850,13 +850,6 @@ HcclResult hcclComm::ClearOpResource(const std::string &tag)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::SetClearAivSyncBuf(bool aivClearEnable)
-{
-    CHK_RET(communicator_->SetClearAivSyncBuf(aivClearEnable));
-
-    return HCCL_SUCCESS;
-}
-
 HcclResult hcclComm::GetUniqueId(HcclRootInfo *uniqueId)
 {
     CHK_PTR_NULL(uniqueId);

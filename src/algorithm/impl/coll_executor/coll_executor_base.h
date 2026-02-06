@@ -31,7 +31,6 @@ public:
     HcclResult SetCCLInBuffer(u64 cclbufferSize);
     HcclResult SetIsSupportSDMAReduce(bool isSupportSDMAReduce);
     HcclResult SetAlgOpContext(AlgOpContext algOpContext);
-    HcclResult SetAivClearEnable(bool aivClearEnable);
 
     virtual HcclResult CalcResRequest(const OpParam& param, AlgResourceRequest &resourceRequest) = 0;
     virtual HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) = 0;
@@ -65,7 +64,6 @@ protected:
     std::unique_ptr<TopoMatcher> &topoMatcher_;
     bool isSupportSDMAReduce_ = false;
     AlgOpContext algOpContext_;
-    bool aivClearEnable_ = false;
     u32 numBlocks_ = MAX_NUM_BLOCKS;
     OpCounterInfo opCounter_;
     AlgDesc desc_;

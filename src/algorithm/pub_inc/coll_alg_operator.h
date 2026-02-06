@@ -64,7 +64,6 @@ public:
     HcclResult GetAivExecParam(std::string& algName, const OpParam& param,
         AlgResourceResponse& algRes, AivSuperKernelArgs &args);
     HcclResult CalNumBlocks(std::string& algName, const OpParam& param, u32 &numBlocks, int32_t aivCoreLimit = 0);
-    HcclResult SetAivClearEnable(bool aivClearEnable);
     bool SupportRetryWithInplaceCheck(
         const HcclCMDType &opType, OpParam &param, std::string& algName, u8 &isInplaceStatus,
         InplaceSupportRetryStatus &inPlaceSupportRetryStatus);
@@ -140,7 +139,6 @@ protected:
     std::unique_ptr<TopoMatcher> &topoMatcher_;
     HcclWorkflowMode workflowMode_;
     bool retryEnable_ = false;
-    bool aivClearEnable_ = false;
     AlgOpContext algOpContext_;
     OpCounterInfo opCounter_;
 private:

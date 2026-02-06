@@ -200,7 +200,6 @@ struct OpParam {
     u8 aclGraphZeroCopyEnable = 0;  // 记录和传递外部配置参数aclGraphZeroCopyEnable
     bool supportRoceDirect = false;   // AIV场景支持Roce直驱
     bool isNpuDirectRoce = false;     // AIV场景使用Roce直驱标记位
-    s32 aivTag = 0; // AIV场景使用的软同步标记位
     u32 index = 0;
     bool isInplaceError = false;
     u32 rankSize = 0;
@@ -272,7 +271,6 @@ struct AlgDesc {
     bool isAivCrossNode = false;
     bool isLastSelect = false;
     s32 deterministic = -1;     // -1:invalid，0:disable，1:enable，2:strict
-    s32 aivTagNum = 1;
     AlgType algType;
     // executor所支持的各级算法，当vector为空时表示不校验，若外部传入的algType不支持，重定向为vector第一个元素
     // 由于默认算法要从列表里的第一个取，因此使用顺序确定的vector而非set

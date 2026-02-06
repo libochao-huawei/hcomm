@@ -113,12 +113,6 @@ HcclResult CollExecutorBase::SetAlgOpContext(AlgOpContext algOpContext)
     return HCCL_SUCCESS;
 }
 
-HcclResult CollExecutorBase::SetAivClearEnable(bool aivClearEnable)
-{
-    aivClearEnable_ = aivClearEnable;
-    return HCCL_SUCCESS;
-}
-
 HcclResult CollExecutorBase::CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
     numBlocks = rankSize;
