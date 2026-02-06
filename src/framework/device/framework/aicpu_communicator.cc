@@ -2009,7 +2009,7 @@ HcclResult HcclCommAicpu::GetAlgResponseRes(const std::string &newTag, const std
         } else {
             HCCL_INFO("[%s] Repeatedly inited for alg [%s] is not allowed.", __func__, algName.c_str());
         }
-    } else if (algName == "BatchSendRecv" || algName == "BatchSendRecvRetry") {
+    } else if ((algName == "BatchSendRecv" || algName == "BatchSendRecvRetry") || (algName == "BatchSendRecvGroup" && opParam.needIncreLink)) {
         AlgResourceRequest resRequest;
         HCCL_INFO("[%s]IncreAlloc resource for alg[%s], tag[%s]", __func__, algName.c_str(), newTag.c_str());
         CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
