@@ -49,6 +49,7 @@ private:
     static void PrintCcuErrorLog(const std::vector<CcuErrorInfo>& errorInfos, const TaskInfo& taskInfo);
     static void ProcessAivException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo);
     static void PrintAivPreviousTaskException(rtExceptionInfo_t* exceptionInfo);
+    static void DispalyRPCMsg(const TaskInfo& taskInfo) const;
 
     static std::string GetCcuErrorMsgByType(const CcuErrorInfo& ccuErrorInfo, const TaskInfo& taskInfo);
     static std::string GetCcuErrorMsgLoop(const CcuErrorInfo& ccuErrorInfo, const TaskInfo& taskInfo);

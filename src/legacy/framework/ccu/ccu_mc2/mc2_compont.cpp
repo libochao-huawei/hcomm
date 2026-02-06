@@ -226,6 +226,35 @@ void Mc2Compont::AllocV2(void **commContext)
                                         static_cast<uint64_t>(workspaceBuffer->GetSize()));
 }
 
+void Mc2Compont::DisplayRPCMsg() const
+{
+    uint64_t* xnBaseAddr = reinterpret_cast<uint64_t*>(comParamBuffer->GetAddr());
+    uint64_t* waitCkeBaskAddr = reinterpret_cast<uint64_t*>(comSyncBuffer->GetAddr());
+    uint64_t* setCkeBaskAddr = reinterpret_cast<uint64_t*>(comSyncBuffer->GetAddr()) + CCU_TASK_NUM_MAX;
+    uint32_t xnNumPerMsg = CCU_PARAM_NUM_MAX;
+    for (uint32_t msgId = 0; msgId < CCU_TASK_NUM_MAX; msgId++) {
+        uint64_t* xnMsg = xnBaseAddr + msgId * xnNumPerMsg;
+        uint64_t* waitCkeMsg = waitCkeBaskAddr + msgId;
+        uint64_t* setCkeMsg = setCkeBaskAddr + msgId;
+        if (xnMsg == nullptr || waitCkeMsg == nullptr || setCkeMsg == nullptr) {
+            THROW<Hccl::InternalException>(StringFormat("xnMsg or ckeMsg is nullptr, msgId[%u]", msgId));
+        }
+        // print cke value and xn value
+        HCCL_ERROR("[Mc2Compont:%s] RPC MsgId[%u], waitCkeAddr=[0x%llx], setCkeAddr=[0x%llx], xnAddr=[0x%llx],"
+                   "waitCke=[% llu], setCke=[% llu]",
+                   __func__, msgId, waitCkeMsg, setCkeMsg, xnMsg, *waitCkeMsg, *setCkeMsg);
+        std::string tmpXnInfo = "xnMsg=[";
+        for (uint32_t xnId = 0; xnId < xnNumPerMsg; xnId++) {
+            tmpXnInfo += StringFormat("%llx", *(xnMsg + xnId));
+            if (xnId != xnNumPerMsg - 1) {
+                tmpXnInfo += ", ";
+            }
+        }
+        tmpXnInfo += "]";
+        HCCL_ERROR("[Mc2Compont:%s] RPC MsgId[%u], %s", __func__, msgId, tmpXnInfo.c_str());
+    }
+}
+
 void Mc2Compont::MC2Orchestrate(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue)
 {
     auto op = comm->GetCurrentCollOperator();

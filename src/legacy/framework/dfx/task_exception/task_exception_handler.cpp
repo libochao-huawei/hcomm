@@ -429,6 +429,9 @@ void TaskExceptionHandler::ProcessCcuMC2Exception(rtExceptionInfo_t* exceptionIn
  	            static_cast<u32>(missionInfo.missionId), missionInfo.instrId);
             continue;
         }
+
+        DispalyRPCMsg(*serverTaskInfo);
+
         ParaCcu serverParam = serverTaskInfo->taskParam_.taskPara.Ccu;
         serverParam.execMissionId = missionInfo.missionId;
         vector<CcuErrorInfo> serverErrorInfos {};
@@ -501,6 +504,27 @@ vector<CcuTaskParam> TaskExceptionHandler::GetMC2AlgTaskParam(const TaskInfo& ta
     auto* collServiceCcu = static_cast<CollServiceDeviceMode*>(collServiceBase);
     return collServiceCcu->GetMc2Compont().GetAlgoCcuTaskInfo(taskInfo.taskParam_.taskPara.Ccu.executeId);
 }
+
+void TaskExceptionHandler::DispalyRPCMsg(const TaskInfo& taskInfo) const
+{
+    if (taskInfo.taskParam_.taskType != TaskParamType::TASK_CCU) {
+        HCCL_ERROR("[TaskInfo][%s]Get MC2 Alg TaskParam failed, task type error.", __func__);
+        return;
+    }
+    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
+        HCCL_ERROR("[TaskInfo][%s]Get MC2 Alg TaskParam failed, communicator is nullptr.", __func__);
+        return;
+    }
+    const CommunicatorImpl* communicator = (CommunicatorImpl*)taskInfo.dfxOpInfo_->comm_;
+    auto* collServiceBase = communicator->GetCcuCollService();
+    if (collServiceBase == nullptr) {
+        HCCL_ERROR("[TaskInfo][%s]Failed to get collService from communicator.", __func__);
+        return;
+    }
+    auto* collServiceCcu = static_cast<CollServiceDeviceMode*>(collServiceBase);
+    collServiceCcu->GetMc2Compont().DisplayRPCMsg();
+}
+
 
  void TaskExceptionHandler::ProcessCcuException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo)
 {
