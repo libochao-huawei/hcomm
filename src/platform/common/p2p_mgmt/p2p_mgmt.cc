@@ -291,10 +291,12 @@ HcclResult P2PMgmt::WaitP2PConnected(int32_t localDeviceLogicID, uint32_t remote
 
         bool enabled = false;
         CHK_RET(CheckP2P(remoteDevicePhysicID, enabled));
+        u32 localDevicePhysicID = 0;
+        CHK_RET(hrtGetDevicePhyIdByIndex(localDeviceLogicID, localDevicePhysicID));
 
         if (enabled) {
-            HCCL_INFO("connected p2p success, take time [%lld]us. device info: local logic id:%d, remote physic id:%u.",
-                DURATION_US(TIME_NOW() - start), localDeviceLogicID, remoteDevicePhysicID);
+            HCCL_INFO("connected p2p success, take time [%lld]us. device info: local logic id:%d, local physic id:%u, remote physic id:%u.",
+                DURATION_US(TIME_NOW() - start), localDeviceLogicID, localDevicePhysicID, remoteDevicePhysicID);
             return HCCL_SUCCESS;
         }
         std::this_thread::sleep_for(checkP2PTimeInterval);
@@ -310,8 +312,8 @@ HcclResult P2PMgmt::WaitP2PConnected(int32_t localDeviceLogicID, uint32_t remote
                 localDeviceLogicID, remoteDevicePhysicID);
 
             HCCL_ERROR("[Wait][P2PConnected]connected p2p timeout, timeout:%d s. local logicDevid:%d, "\
-                "remote physic id:%u.", GetExternalInputHcclLinkTimeOut(),
-                localDeviceLogicID, remoteDevicePhysicID);
+                "local physic id:%u, remote physic id:%u.", GetExternalInputHcclLinkTimeOut(),
+                localDeviceLogicID, localDevicePhysicID, remoteDevicePhysicID);
             return HCCL_E_DRV;
         }
     }
