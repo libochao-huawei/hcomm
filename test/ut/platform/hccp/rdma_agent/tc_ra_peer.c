@@ -15,83 +15,83 @@
 #include "ut_dispatch.h"
 #include "rs.h"
 extern int RaPeerSetConnParam(struct SocketInfoT conn[],
-    struct SocketFdData rs_conn[], unsigned int i, int buf_size);
+    struct SocketFdData rsConn[], unsigned int i, int bufSize);
 extern int RaRdevInitCheckIp(int mode, struct rdev rdevInfo, char localIp[]);
-extern int RaPeerLoopbackQpCreate(struct RaRdmaHandle *rdma_handle, struct LoopbackQpPair *qp_pair,
-    void **qp_handle);
-extern int RaPeerLoopbackSingleQpCreate(struct RaRdmaHandle *rdma_handle, struct RaQpHandle **qp_handle,
+extern int RaPeerLoopbackQpCreate(struct RaRdmaHandle *rdmaHandle, struct LoopbackQpPair *qpPair,
+    void **qpHandle);
+extern int RaPeerLoopbackSingleQpCreate(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle **qpHandle,
     struct ibv_qp **qp);
-extern int RaPeerLoopbackQpModify(struct RaQpHandle *qp_handle0, struct RaQpHandle *qp_handle1);
+extern int RaPeerLoopbackQpModify(struct RaQpHandle *qpHandle0, struct RaQpHandle *qpHandle1);
 
-int ra_peer_loopback_single_qp_create_stub(struct RaRdmaHandle *rdma_handle, struct RaQpHandle **qp_handle,
+int RaPeerLoopbackSingleQpCreateStub(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle **qpHandle,
     struct ibv_qp **qp)
 {
-    static int call_num = 0;
+    static int callNum = 0;
     int ret = 0;
-    call_num++;
+    callNum++;
 
-    if (call_num == 1) {
-        return RaPeerLoopbackSingleQpCreate(rdma_handle, qp_handle, qp);
+    if (callNum == 1) {
+        return RaPeerLoopbackSingleQpCreate(rdmaHandle, qpHandle, qp);
     } else {
         return -1;
     }
     return ret;
 }
 
-void tc_peer()
+void TcPeer()
 {
     int ret;
-    int dev_id = 0;
+    int devId = 0;
     int flag = 0;
     int port = 0;
     int timeout = 100;
     void *addr = NULL;
     void *data = NULL;
     int size = 0;
-    int max_size = 2050;
+    int maxSize = 2050;
     int access = 0;
     struct SendWr *wr = NULL;
-    int wqe_index = 0;
+    int wqeIndex = 0;
     int index = 0;
     unsigned long pa = 0;
     unsigned long va = 0;
-    struct qp_peer_info *qp_info = NULL;
+    struct QpPeerInfo *qpInfo = NULL;
     struct SocketConnectInfoT conn[1];
     struct SocketListenInfoT listen[1];
     struct SocketInfoT info[1];
     struct SocketCloseInfoT close[1] = {0};
-    int sock_fd = 1;
-    void *qp_handle;
-    void *qp_handle_with_attr;
+    int sockFd = 1;
+    void *qpHandle;
+    void *qpHandleWithAttr;
     int status = 0;
     struct RaInitConfig config = {
-        .phyId = dev_id,
+        .phyId = devId,
         .nicPosition = 1,
         .hdcType = 0,
     };
     config.phyId = 0;
-    int ip_addr;
-    unsigned int host_tgid = 0;
+    int ipAddr;
+    unsigned int hostTgid = 0;
     int qpMode = 0;
-    struct rdev rdev_info = {0};
-    rdev_info.phyId = 0;
-    rdev_info.family = AF_INET;
-    rdev_info.localIp.addr.s_addr = 0;
-    struct RaRdmaHandle rdma_handle_tmp = {
-        .rdevInfo = rdev_info,
+    struct rdev rdevInfo = {0};
+    rdevInfo.phyId = 0;
+    rdevInfo.family = AF_INET;
+    rdevInfo.localIp.addr.s_addr = 0;
+    struct RaRdmaHandle rdmaHandleTmp = {
+        .rdevInfo = rdevInfo,
         .rdevIndex = 0,
     };
-    struct RaSocketHandle socket_handle_tmp ={
-        .rdevInfo = rdev_info,
+    struct RaSocketHandle socketHandleTmp ={
+        .rdevInfo = rdevInfo,
     };
-    struct RaRdmaHandle *rdma_handle = &rdma_handle_tmp;
-    struct RaSocketHandle *socket_handle = &socket_handle_tmp;
-    struct SocketFdData rs_conn[] = {0};
+    struct RaRdmaHandle *rdmaHandle = &rdmaHandleTmp;
+    struct RaSocketHandle *socketHandle = &socketHandleTmp;
+    struct SocketFdData rsConn[] = {0};
 
-    listen[0].socketHandle = socket_handle;
-    conn[0].socketHandle = socket_handle;
-    close[0].socketHandle = socket_handle;
-    info[0].socketHandle = socket_handle;
+    listen[0].socketHandle = socketHandle;
+    conn[0].socketHandle = socketHandle;
+    close[0].socketHandle = socketHandle;
+    info[0].socketHandle = socketHandle;
     struct QpExtAttrs extAttrs;
     extAttrs.version = QP_CREATE_WITH_ATTR_VERSION;
     extAttrs.qpMode = RA_RS_NOR_QP_MODE;
@@ -112,7 +112,7 @@ void tc_peer()
     ret = RaPeerGetSockets(0, 0, info, 1);
     EXPECT_INT_EQ(1, ret);
 
-    info[0].socketHandle = socket_handle;
+    info[0].socketHandle = socketHandle;
     info[0].status = 1;
     mocker((stub_fn_t)calloc, 10, NULL);
     ret = RaPeerGetSockets(0, 0, info, 1);
@@ -124,47 +124,47 @@ void tc_peer()
     ret = RaPeerSocketSend(0, info[0].fdHandle, data, size);
     EXPECT_INT_EQ(0, size);
 
-    ret = RaPeerSocketSend(0, info[0].fdHandle, data, max_size);
-    EXPECT_INT_EQ(max_size, ret);
+    ret = RaPeerSocketSend(0, info[0].fdHandle, data, maxSize);
+    EXPECT_INT_EQ(maxSize, ret);
 
     ret = RaPeerSocketRecv(0, info[0].fdHandle, data, size);
     EXPECT_INT_EQ(0, size);
 
-    ret = RaPeerSocketRecv(0, info[0].fdHandle, data, max_size);
-    EXPECT_INT_EQ(max_size, ret);
+    ret = RaPeerSocketRecv(0, info[0].fdHandle, data, maxSize);
+    EXPECT_INT_EQ(maxSize, ret);
 
-    rs_conn[0].phyId = 0;
-    rs_conn[0].fd = 0;
-    ret = RaPeerSetConnParam(info, rs_conn, 0, 0);
-    EXPECT_INT_EQ(0, ret);
-
-    unsigned int temp_depth = 128;
-    unsigned int qp_num = 0;
-    ret = RaPeerSetTsqpDepth(rdma_handle, temp_depth, &qp_num);
+    rsConn[0].phyId = 0;
+    rsConn[0].fd = 0;
+    ret = RaPeerSetConnParam(info, rsConn, 0, 0);
     EXPECT_INT_EQ(0, ret);
 
-    ret = RaPeerGetTsqpDepth(rdma_handle, &temp_depth, &qp_num);
+    unsigned int tempDepth = 128;
+    unsigned int qpNum = 0;
+    ret = RaPeerSetTsqpDepth(rdmaHandle, tempDepth, &qpNum);
     EXPECT_INT_EQ(0, ret);
 
-    ret = RaPeerQpCreate(rdma_handle, flag, qpMode, &qp_handle);
+    ret = RaPeerGetTsqpDepth(rdmaHandle, &tempDepth, &qpNum);
     EXPECT_INT_EQ(0, ret);
-    EXPECT_ADDR_NE(NULL, qp_handle);
-    ret = RaPeerQpCreateWithAttrs(rdma_handle, &extAttrs, &qp_handle_with_attr);
+
+    ret = RaPeerQpCreate(rdmaHandle, flag, qpMode, &qpHandle);
     EXPECT_INT_EQ(0, ret);
-    EXPECT_ADDR_NE(NULL, qp_handle_with_attr);
+    EXPECT_ADDR_NE(NULL, qpHandle);
+    ret = RaPeerQpCreateWithAttrs(rdmaHandle, &extAttrs, &qpHandleWithAttr);
+    EXPECT_INT_EQ(0, ret);
+    EXPECT_ADDR_NE(NULL, qpHandleWithAttr);
 
     struct QosAttr QosAttr= {0};
     QosAttr.tc = 110;
     QosAttr.sl = 3;
-    ret = RaPeerSetQpAttrQos(qp_handle, &QosAttr);
+    ret = RaPeerSetQpAttrQos(qpHandle, &QosAttr);
     EXPECT_INT_EQ(0, ret);
 
-    unsigned int rdma_timeout = 6;
-    ret = RaPeerSetQpAttrTimeout(qp_handle, &rdma_timeout);
+    unsigned int rdmaTimeout = 6;
+    ret = RaPeerSetQpAttrTimeout(qpHandle, &rdmaTimeout);
     EXPECT_INT_EQ(0, ret);
 
-    unsigned int retry_cnt = 5;
-    ret = RaPeerSetQpAttrRetryCnt(qp_handle, &retry_cnt);
+    unsigned int retryCnt = 5;
+    ret = RaPeerSetQpAttrRetryCnt(qpHandle, &retryCnt);
     EXPECT_INT_EQ(0, ret);
 
     ret = RaPeerNotifyBaseAddrInit(EVENTID, 0);
@@ -179,7 +179,7 @@ void tc_peer()
     ret = NotifyBaseAddrUninit(NO_USE, 0);
     EXPECT_INT_EQ(0, ret);
 
-    ret = RaPeerQpConnectAsync(qp_handle, info[0].fdHandle);
+    ret = RaPeerQpConnectAsync(qpHandle, info[0].fdHandle);
     EXPECT_INT_EQ(0, size);
 
     close[0].fdHandle = info[0].fdHandle;
@@ -190,183 +190,183 @@ void tc_peer()
     RaPeerSocketBatchClose(0, close, 1);
     mocker_clean();
 
-    ret = RaPeerGetQpStatus(qp_handle, &status);
+    ret = RaPeerGetQpStatus(qpHandle, &status);
     EXPECT_INT_EQ(0, ret);
 
-    struct MrInfoT mr_info;
-    mr_info.addr = addr;
-    mr_info.size = size;
-    mr_info.access = access;
+    struct MrInfoT mrInfo;
+    mrInfo.addr = addr;
+    mrInfo.size = size;
+    mrInfo.access = access;
 
-    void *mr_handle = NULL;
+    void *mrHandle = NULL;
 
-    ret = RaPeerMrReg(qp_handle, &mr_info);
+    ret = RaPeerMrReg(qpHandle, &mrInfo);
     EXPECT_INT_EQ(0, ret);
 
-    ret = RaPeerMrDereg(qp_handle, &mr_info);
+    ret = RaPeerMrDereg(qpHandle, &mrInfo);
     EXPECT_INT_EQ(0, ret);
 
-    ret = RaPeerRegisterMr(rdma_handle, &mr_info, &mr_handle);
+    ret = RaPeerRegisterMr(rdmaHandle, &mrInfo, &mrHandle);
     EXPECT_INT_EQ(0, ret);
 
-    ret = RaPeerDeregisterMr(rdma_handle, mr_handle);
+    ret = RaPeerDeregisterMr(rdmaHandle, mrHandle);
     EXPECT_INT_EQ(0, ret);
 
-    void *comp_channel = NULL;
-    ret = RaPeerCreateCompChannel(rdma_handle, &comp_channel);
+    void *compChannel = NULL;
+    ret = RaPeerCreateCompChannel(rdmaHandle, &compChannel);
     EXPECT_INT_EQ(0, ret);
 
-    ret = RaPeerDestroyCompChannel(comp_channel);
+    ret = RaPeerDestroyCompChannel(compChannel);
     EXPECT_INT_EQ(0, ret);
 
-    ret = RaPeerSendWr(qp_handle, wr, &wqe_index);
+    ret = RaPeerSendWr(qpHandle, wr, &wqeIndex);
     EXPECT_INT_EQ(0, ret);
 
     struct SrqAttr attr = {0};
-    ret = RaPeerCreateSrq(rdma_handle, &attr);
+    ret = RaPeerCreateSrq(rdmaHandle, &attr);
     EXPECT_INT_EQ(0, ret);
 
-    ret = RaPeerDestroySrq(rdma_handle, &attr);
+    ret = RaPeerDestroySrq(rdmaHandle, &attr);
     EXPECT_INT_EQ(0, ret);
 
-    struct RecvWrlistData rev_wr = {0};
-    rev_wr.wrId = 100;
-    rev_wr.memList.lkey = 0xff;
-    rev_wr.memList.addr = addr;
-    rev_wr.memList.len = size;
-    unsigned int recv_num = 1;
-    unsigned int rev_complete_num = 0;
-    ret = RaPeerRecvWrlist(qp_handle, &rev_wr, recv_num, &rev_complete_num);
+    struct RecvWrlistData revWr = {0};
+    revWr.wrId = 100;
+    revWr.memList.lkey = 0xff;
+    revWr.memList.addr = addr;
+    revWr.memList.len = size;
+    unsigned int recvNum = 1;
+    unsigned int revCompleteNum = 0;
+    ret = RaPeerRecvWrlist(qpHandle, &revWr, recvNum, &revCompleteNum);
     EXPECT_INT_EQ(0, ret);
 
-    unsigned long long notify_size;
-    ret = RaPeerGetNotifyBaseAddr(qp_handle, &va, &notify_size);
+    unsigned long long notifySize;
+    ret = RaPeerGetNotifyBaseAddr(qpHandle, &va, &notifySize);
     EXPECT_INT_EQ(0, ret);
 
-    ret = RaPeerQpDestroy(qp_handle);
+    ret = RaPeerQpDestroy(qpHandle);
     EXPECT_INT_EQ(0, ret);
-    ret = RaPeerQpDestroy(qp_handle_with_attr);
-    EXPECT_INT_EQ(0, ret);
-
-    ret = RaPeerDeinit(&config);
+    ret = RaPeerQpDestroy(qpHandleWithAttr);
     EXPECT_INT_EQ(0, ret);
 
     ret = RaPeerDeinit(&config);
     EXPECT_INT_EQ(0, ret);
 
-    struct SocketConnectInfoT connect_err_rs[1] = { 0 };
-    connect_err_rs[0].socketHandle = socket_handle;
+    ret = RaPeerDeinit(&config);
+    EXPECT_INT_EQ(0, ret);
+
+    struct SocketConnectInfoT connectErrRs[1] = { 0 };
+    connectErrRs[0].socketHandle = socketHandle;
     mocker((stub_fn_t)RsSocketBatchConnect, 10, -1);
-    ret = RaPeerSocketBatchConnect(0, connect_err_rs, 1);
+    ret = RaPeerSocketBatchConnect(0, connectErrRs, 1);
     EXPECT_INT_EQ(-1, ret);
     mocker((stub_fn_t)RsSocketSetScopeId, 10, -2);
-    ret = RaPeerSocketBatchConnect(0, connect_err_rs, 1);
+    ret = RaPeerSocketBatchConnect(0, connectErrRs, 1);
     EXPECT_INT_EQ(-2, ret);
     mocker_clean();
 
-    struct SocketListenInfoT listen_err_rs[1] = {0};
-    listen_err_rs[0].socketHandle = socket_handle;
+    struct SocketListenInfoT listenErrRs[1] = {0};
+    listenErrRs[0].socketHandle = socketHandle;
     mocker((stub_fn_t)RsSocketListenStart, 10, -1);
-    ret = RaPeerSocketListenStart(0, listen_err_rs, 1);
+    ret = RaPeerSocketListenStart(0, listenErrRs, 1);
     EXPECT_INT_NE(0, ret);
     mocker((stub_fn_t)RsSocketSetScopeId, 10, -2);
-    ret = RaPeerSocketListenStart(0, listen_err_rs, 1);
+    ret = RaPeerSocketListenStart(0, listenErrRs, 1);
     EXPECT_INT_EQ(-2, ret);
     mocker_clean();
 
-    struct SocketListenInfoT listen_err_rs2[1];
-    listen_err_rs2[0].socketHandle = socket_handle;
-    listen_err_rs2[0].port = 0;
+    struct SocketListenInfoT listenErrRs2[1];
+    listenErrRs2[0].socketHandle = socketHandle;
+    listenErrRs2[0].port = 0;
     mocker((stub_fn_t)RsSocketListenStop, 10, -1);
-    ret = RaPeerSocketListenStop(0, listen_err_rs2, 1);
+    ret = RaPeerSocketListenStop(0, listenErrRs2, 1);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
-    struct SocketInfoT info_err_rs[1];
-    info_err_rs[0].socketHandle = socket_handle;
-    info_err_rs[0].fdHandle = NULL;
+    struct SocketInfoT infoErrRs[1];
+    infoErrRs[0].socketHandle = socketHandle;
+    infoErrRs[0].fdHandle = NULL;
     mocker((stub_fn_t)calloc, 10, NULL);
-    ret = RaPeerGetSockets(0, 0, info_err_rs, 1);
+    ret = RaPeerGetSockets(0, 0, infoErrRs, 1);
     EXPECT_INT_EQ(1, ret);
     mocker_clean();
 
     mocker(RaPeerSetConnParam, 1, 1);
-    ret = RaPeerGetSockets(0, 0, info_err_rs, 1);
+    ret = RaPeerGetSockets(0, 0, infoErrRs, 1);
     EXPECT_INT_EQ(1, ret);
     mocker_clean();
 
-    struct SocketInfoT info_err_rs2[1];
-    info_err_rs2[0].socketHandle = socket_handle;
-    info_err_rs2[0].fdHandle = NULL;
+    struct SocketInfoT infoErrRs2[1];
+    infoErrRs2[0].socketHandle = socketHandle;
+    infoErrRs2[0].fdHandle = NULL;
     mocker((stub_fn_t)memcpy_s, 10, -1);
-    ret = RaPeerGetSockets(0, 0, info_err_rs2, 1);
+    ret = RaPeerGetSockets(0, 0, infoErrRs2, 1);
     EXPECT_INT_EQ(-ESAFEFUNC, ret);
     mocker_clean();
 
-    struct SocketInfoT info_err_rs3[1];
-    info_err_rs3[0].socketHandle = socket_handle;
-    info_err_rs3[0].fdHandle = NULL;
+    struct SocketInfoT infoErrRs3[1];
+    infoErrRs3[0].socketHandle = socketHandle;
+    infoErrRs3[0].fdHandle = NULL;
     mocker_ret((stub_fn_t)memcpy_s, 0, 1, 1);
-    ret = RaPeerGetSockets(0, 0, info_err_rs3, 1);
+    ret = RaPeerGetSockets(0, 0, infoErrRs3, 1);
     EXPECT_INT_EQ(1, ret);
     mocker_clean();
 
-    struct SocketInfoT  info_err_rs4[1];
-    info_err_rs4[0].socketHandle = socket_handle;
-    info_err_rs4[0].fdHandle = NULL;
+    struct SocketInfoT  infoErrRs4[1];
+    infoErrRs4[0].socketHandle = socketHandle;
+    infoErrRs4[0].fdHandle = NULL;
     mocker((stub_fn_t)RsGetSockets, 10, 0);
     mocker((stub_fn_t)RsGetSslEnable, 10, -1);
-    ret = RaPeerGetSockets(0, 0, info_err_rs4, 1);
+    ret = RaPeerGetSockets(0, 0, infoErrRs4, 1);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
     mocker((stub_fn_t)RsSetTsqpDepth, 10, -1);
-    ret = RaPeerSetTsqpDepth(rdma_handle, temp_depth, &qp_num);
+    ret = RaPeerSetTsqpDepth(rdmaHandle, tempDepth, &qpNum);
     EXPECT_INT_EQ(-1, ret);
 
     mocker((stub_fn_t)RsGetTsqpDepth, 10, -1);
-    ret = RaPeerGetTsqpDepth(rdma_handle, &temp_depth, &qp_num);
+    ret = RaPeerGetTsqpDepth(rdmaHandle, &tempDepth, &qpNum);
     EXPECT_INT_EQ(-1, ret);
 
-	qp_handle = NULL;
-    qp_handle_with_attr = NULL;
+	qpHandle = NULL;
+    qpHandleWithAttr = NULL;
     mocker((stub_fn_t)calloc, 10, NULL);
-    ret  = RaPeerQpCreate(rdma_handle, flag, qpMode, &qp_handle);
+    ret  = RaPeerQpCreate(rdmaHandle, flag, qpMode, &qpHandle);
     EXPECT_INT_EQ(-ENOMEM, ret);
-    EXPECT_ADDR_EQ(NULL, qp_handle);
-    ret  = RaPeerQpCreateWithAttrs(rdma_handle, &extAttrs, &qp_handle_with_attr);
+    EXPECT_ADDR_EQ(NULL, qpHandle);
+    ret  = RaPeerQpCreateWithAttrs(rdmaHandle, &extAttrs, &qpHandleWithAttr);
     EXPECT_INT_EQ(-ENOMEM, ret);
-    EXPECT_ADDR_EQ(NULL, qp_handle_with_attr);
+    EXPECT_ADDR_EQ(NULL, qpHandleWithAttr);
     mocker_clean();
 
     mocker((stub_fn_t)RsQpCreate, 10, 1);
     mocker((stub_fn_t)RsQpCreateWithAttrs, 10, 1);
-    ret = RaPeerQpCreate(rdma_handle, flag, qpMode, &qp_handle);
+    ret = RaPeerQpCreate(rdmaHandle, flag, qpMode, &qpHandle);
     EXPECT_INT_EQ(1, ret);
-    EXPECT_ADDR_EQ(NULL, qp_handle);
-    ret  = RaPeerQpCreateWithAttrs(rdma_handle, &extAttrs, &qp_handle_with_attr);
+    EXPECT_ADDR_EQ(NULL, qpHandle);
+    ret  = RaPeerQpCreateWithAttrs(rdmaHandle, &extAttrs, &qpHandleWithAttr);
     EXPECT_INT_EQ(1, ret);
-    EXPECT_ADDR_EQ(NULL, qp_handle_with_attr);
+    EXPECT_ADDR_EQ(NULL, qpHandleWithAttr);
     mocker_clean();
 
-    ret = RaPeerQpCreate(rdma_handle, flag, qpMode, &qp_handle);
+    ret = RaPeerQpCreate(rdmaHandle, flag, qpMode, &qpHandle);
     EXPECT_INT_EQ(0, ret);
     mocker((stub_fn_t)RsQpDestroy, 10, -1);
-    ret = RaPeerQpDestroy(qp_handle);
+    ret = RaPeerQpDestroy(qpHandle);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
     qpMode = 2;
-    ret = RaPeerQpCreate(rdma_handle, flag, qpMode, &qp_handle);
+    ret = RaPeerQpCreate(rdmaHandle, flag, qpMode, &qpHandle);
     EXPECT_INT_EQ(0, ret);
 
-    ret = RaPeerSetQpAttrQos(qp_handle, &QosAttr);
+    ret = RaPeerSetQpAttrQos(qpHandle, &QosAttr);
     EXPECT_INT_EQ(0, ret);
 
-    ret = RaPeerSetQpAttrTimeout(qp_handle, &timeout);
+    ret = RaPeerSetQpAttrTimeout(qpHandle, &timeout);
     EXPECT_INT_EQ(0, ret);
 
-    ret = RaPeerSetQpAttrRetryCnt(qp_handle, &retry_cnt);
+    ret = RaPeerSetQpAttrRetryCnt(qpHandle, &retryCnt);
     EXPECT_INT_EQ(0, ret);
 
     ret = RaPeerNotifyBaseAddrInit(1000, 0);
@@ -376,75 +376,75 @@ void tc_peer()
     EXPECT_INT_EQ(-EINVAL, ret);
 
     mocker((stub_fn_t)RsGetQpStatus, 10, -1);
-    ret = RaPeerGetQpStatus(qp_handle, &status);
+    ret = RaPeerGetQpStatus(qpHandle, &status);
     EXPECT_INT_EQ(-1, ret);
 
     mocker((stub_fn_t)RsMrReg, 10, -1);
-    ret = RaPeerMrReg(qp_handle, &mr_info);
+    ret = RaPeerMrReg(qpHandle, &mrInfo);
     EXPECT_INT_EQ(-1, ret);
 
     mocker((stub_fn_t)RsMrDereg, 10, -1);
-    ret = RaPeerMrDereg(qp_handle, &mr_info);
+    ret = RaPeerMrDereg(qpHandle, &mrInfo);
     EXPECT_INT_EQ(-1, ret);
 
     mocker((stub_fn_t)RsRegisterMr, 10, -1);
-    ret = RaPeerRegisterMr(rdma_handle, &mr_info, &mr_handle);
+    ret = RaPeerRegisterMr(rdmaHandle, &mrInfo, &mrHandle);
     EXPECT_INT_EQ(-1, ret);
 
     mocker((stub_fn_t)RsDeregisterMr, 10, -1);
-    ret = RaPeerDeregisterMr(rdma_handle, mr_handle);
+    ret = RaPeerDeregisterMr(rdmaHandle, mrHandle);
     EXPECT_INT_EQ(-1, ret);
 
     mocker((stub_fn_t)RsCreateCompChannel, 10, -1);
-    ret = RaPeerCreateCompChannel(rdma_handle, &comp_channel);
+    ret = RaPeerCreateCompChannel(rdmaHandle, &compChannel);
     EXPECT_INT_EQ(-1, ret);
 
     mocker((stub_fn_t)RsDestroyCompChannel, 10, -1);
-    ret = RaPeerDestroyCompChannel(comp_channel);
+    ret = RaPeerDestroyCompChannel(compChannel);
     EXPECT_INT_EQ(-1, ret);
 
-    struct SrqAttr attr_srq = {0};
+    struct SrqAttr attrSrq = {0};
     mocker((stub_fn_t)RsCreateSrq, 10, -1);
-    ret = RaPeerCreateSrq(rdma_handle, &attr_srq);
+    ret = RaPeerCreateSrq(rdmaHandle, &attrSrq);
     EXPECT_INT_EQ(-1, ret);
 
     mocker((stub_fn_t)RsDestroySrq, 10, -1);
-    ret = RaPeerDestroySrq(rdma_handle, &attr_srq);
+    ret = RaPeerDestroySrq(rdmaHandle, &attrSrq);
     EXPECT_INT_EQ(-1, ret);
 
     mocker((stub_fn_t)RsRecvWrlist, 10, -1);
-    ret = RaPeerRecvWrlist(qp_handle, &rev_wr, recv_num, &rev_complete_num);
+    ret = RaPeerRecvWrlist(qpHandle, &revWr, recvNum, &revCompleteNum);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
-    struct SocketInfoT info_rs[1];
-    info_rs[0].socketHandle = socket_handle;
+    struct SocketInfoT infoRs[1];
+    infoRs[0].socketHandle = socketHandle;
 
-    ret = RaPeerGetSockets(0, 0, info_rs, 1);
+    ret = RaPeerGetSockets(0, 0, infoRs, 1);
     EXPECT_INT_EQ(1, ret);
 
-    info_rs[0].fdHandle = calloc(1, sizeof(struct SocketPeerInfo));
+    infoRs[0].fdHandle = calloc(1, sizeof(struct SocketPeerInfo));
 
     mocker((stub_fn_t)RsQpConnectAsync, 10, -1);
-    ret = RaPeerQpConnectAsync(qp_handle, info_rs[0].fdHandle);
+    ret = RaPeerQpConnectAsync(qpHandle, infoRs[0].fdHandle);
     EXPECT_INT_EQ(-1, ret);
 
     mocker((stub_fn_t)RsGetNotifyMrInfo, 10, -1);
-    ret = RaPeerGetNotifyBaseAddr(qp_handle, &va, &notify_size);
+    ret = RaPeerGetNotifyBaseAddr(qpHandle, &va, &notifySize);
     EXPECT_INT_EQ(-1, ret);
 
     mocker((stub_fn_t)RsPeerSocketSend, 10, -1);
-    ret = RaPeerSocketSend(dev_id, info_rs[0].fdHandle, data, size);
+    ret = RaPeerSocketSend(devId, infoRs[0].fdHandle, data, size);
     EXPECT_INT_EQ(-1, ret);
 
-    ret = RaPeerQpDestroy(qp_handle);
+    ret = RaPeerQpDestroy(qpHandle);
     EXPECT_INT_EQ(0, ret);
 
-    struct SocketCloseInfoT close_rs[1] = {0};
-    close_rs[0].fdHandle = info_rs[0].fdHandle;
-    close_rs[0].socketHandle = socket_handle;
+    struct SocketCloseInfoT closeRs[1] = {0};
+    closeRs[0].fdHandle = infoRs[0].fdHandle;
+    closeRs[0].socketHandle = socketHandle;
     mocker((stub_fn_t)RsSocketBatchClose, 10, -1);
-    ret = RaPeerSocketBatchClose(0, close_rs, 1);
+    ret = RaPeerSocketBatchClose(0, closeRs, 1);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
@@ -467,77 +467,77 @@ void tc_peer()
     return;
 }
 
-void tc_peer_fail()
+void TcPeerFail()
 {
-    struct RaSocketHandle socket_handle;
-    socket_handle.rdevInfo.phyId = 0;
-    socket_handle.rdevInfo.family = 0;
+    struct RaSocketHandle socketHandle;
+    socketHandle.rdevInfo.phyId = 0;
+    socketHandle.rdevInfo.family = 0;
     struct SocketConnectInfoT conn[1];
-    conn[0].socketHandle = &socket_handle;
+    conn[0].socketHandle = &socketHandle;
     conn[0].port = 0;
-    struct SocketConnectInfo rs_conn[1] = {0};
+    struct SocketConnectInfo rsConn[1] = {0};
     mocker((stub_fn_t)memcpy_s, 10, -1);
-    RaGetSocketConnectInfo(conn, 1, rs_conn, 2);
+    RaGetSocketConnectInfo(conn, 1, rsConn, 2);
     mocker_clean();
 
-    struct SocketListenInfoT conn_listen[1];
-    struct SocketListenInfo rs_conn_listen[1];
-    conn_listen[0].phase = 0;
-    conn_listen[0].err = 0;
-    conn_listen[0].socketHandle = &socket_handle;
-    conn_listen[0].port = 0;
+    struct SocketListenInfoT connListen[1];
+    struct SocketListenInfo rsConnListen[1];
+    connListen[0].phase = 0;
+    connListen[0].err = 0;
+    connListen[0].socketHandle = &socketHandle;
+    connListen[0].port = 0;
     mocker((stub_fn_t)memcpy_s, 10, -1);
-    RaGetSocketListenInfo(conn_listen, 1, rs_conn_listen, 2);
+    RaGetSocketListenInfo(connListen, 1, rsConnListen, 2);
     mocker_clean();
 
-    rs_conn_listen[0].phase = 0;
-    rs_conn_listen[0].err = 0;
-    rs_conn_listen[0].phyId = 0;
-    rs_conn_listen[0].family = 0;
-    conn_listen[0].socketHandle = &socket_handle;
-    rs_conn_listen[0].port = 0;
+    rsConnListen[0].phase = 0;
+    rsConnListen[0].err = 0;
+    rsConnListen[0].phyId = 0;
+    rsConnListen[0].family = 0;
+    connListen[0].socketHandle = &socketHandle;
+    rsConnListen[0].port = 0;
     mocker((stub_fn_t)memcpy_s, 10, -1);
-    RaGetSocketListenResult(rs_conn_listen, 1, conn_listen, 2);
+    RaGetSocketListenResult(rsConnListen, 1, connListen, 2);
     mocker_clean();
 
-    struct SocketListenInfoT conn_listen_info[1] = {0};
-    conn_listen_info[0].port  = 0;
-    conn_listen_info[0].socketHandle = &socket_handle;
+    struct SocketListenInfoT connListenInfo[1] = {0};
+    connListenInfo[0].port  = 0;
+    connListenInfo[0].socketHandle = &socketHandle;
     mocker((stub_fn_t)RaGetSocketListenInfo, 10, 0);
     mocker((stub_fn_t)RsSocketListenStart, 10, -1);
-    RaPeerSocketListenStart(0, conn_listen_info, 1);
+    RaPeerSocketListenStart(0, connListenInfo, 1);
     mocker((stub_fn_t)RsSocketListenStop, 10, -1);
-    RaPeerSocketListenStop(0, conn_listen_info, 1);
+    RaPeerSocketListenStop(0, connListenInfo, 1);
     mocker_clean();
 
-    struct SocketPeerInfo peer_socket_handle = {0};
+    struct SocketPeerInfo peerSocketHandle = {0};
     int ret;
 
-    ret = RaPeerSocketSend(0, &peer_socket_handle, NULL, 0);
+    ret = RaPeerSocketSend(0, &peerSocketHandle, NULL, 0);
     EXPECT_INT_EQ(0, ret);
 
-    peer_socket_handle.sslEnable = 1;
-    ret = RaPeerSocketSend(0, &peer_socket_handle, NULL, 0);
+    peerSocketHandle.sslEnable = 1;
+    ret = RaPeerSocketSend(0, &peerSocketHandle, NULL, 0);
     EXPECT_INT_EQ(0, ret);
 
-    peer_socket_handle.sslEnable = 0;
-    ret = RaPeerSocketRecv(0, &peer_socket_handle, NULL, 0);
+    peerSocketHandle.sslEnable = 0;
+    ret = RaPeerSocketRecv(0, &peerSocketHandle, NULL, 0);
     EXPECT_INT_EQ(0, ret);
 
-    peer_socket_handle.sslEnable = 1;
-    ret = RaPeerSocketRecv(0, &peer_socket_handle, NULL, 0);
+    peerSocketHandle.sslEnable = 1;
+    ret = RaPeerSocketRecv(0, &peerSocketHandle, NULL, 0);
     EXPECT_INT_EQ(0, ret);
 
-    struct rdev rdev_info;
-	rdev_info.phyId = 0;
-    struct SocketWlistInfoT white_list[1];
+    struct rdev rdevInfo;
+	rdevInfo.phyId = 0;
+    struct SocketWlistInfoT whiteList[1];
     mocker((stub_fn_t)inet_ntoa, 10, NULL);
-    RaPeerSocketWhiteListAdd(rdev_info, white_list, 1);
-    RaPeerSocketWhiteListDel(rdev_info, white_list, 1);
+    RaPeerSocketWhiteListAdd(rdevInfo, whiteList, 1);
+    RaPeerSocketWhiteListDel(rdevInfo, whiteList, 1);
     mocker_clean();
 
     mocker((stub_fn_t)RsSocketDeinit, 10, -1);
-    RaPeerSocketDeinit(rdev_info);
+    RaPeerSocketDeinit(rdevInfo);
     mocker_clean();
 
     mocker((stub_fn_t)RsPeerGetIfnum, 10, -1);
@@ -545,15 +545,15 @@ void tc_peer_fail()
     RaPeerGetIfnum(0, &num);
     mocker_clean();
 
-    struct InterfaceInfo interface_infos[1];
+    struct InterfaceInfo interfaceInfos[1];
     mocker((stub_fn_t)RsPeerGetIfaddrs, 10, -1);
-    RaPeerGetIfaddrs(0, interface_infos, &num);
+    RaPeerGetIfaddrs(0, interfaceInfos, &num);
     mocker_clean();
 
     return;
 }
 
-void tc_ra_peer_epoll_ctl_add()
+void TcRaPeerEpollCtlAdd()
 {
     int ret;
 
@@ -568,7 +568,7 @@ void tc_ra_peer_epoll_ctl_add()
     return;
 }
 
-void tc_ra_peer_set_tcp_recv_callback()
+void TcRaPeerSetTcpRecvCallback()
 {
     RaSetTcpRecvCallback(NULL, NULL);
     (void)RaPeerSetTcpRecvCallback(0, NULL);
@@ -582,7 +582,7 @@ void tc_ra_peer_set_tcp_recv_callback()
     return;
 }
 
-void tc_ra_peer_epoll_ctl_mod()
+void TcRaPeerEpollCtlMod()
 {
     int ret;
 
@@ -597,28 +597,28 @@ void tc_ra_peer_epoll_ctl_mod()
     return;
 }
 
-void tc_ra_peer_epoll_ctl_del()
+void TcRaPeerEpollCtlDel()
 {
     int ret;
-    struct SocketPeerInfo fd_handle = {0};
+    struct SocketPeerInfo fdHandle = {0};
 
-    ret = RaPeerEpollCtlDel((const void *)&fd_handle);
+    ret = RaPeerEpollCtlDel((const void *)&fdHandle);
     EXPECT_INT_EQ(0, ret);
 
     mocker((stub_fn_t)RsEpollCtlDel, 3, -1);
-    ret = RaPeerEpollCtlDel((const void *)&fd_handle);
+    ret = RaPeerEpollCtlDel((const void *)&fdHandle);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
     return;
 }
 
-void tc_ra_peer_cq_create()
+void TcRaPeerCqCreate()
 {
     int ret;
-    struct RaRdmaHandle rdma_handle;
-    rdma_handle.rdevInfo.phyId = 0;
-    rdma_handle.rdevIndex = 0;
+    struct RaRdmaHandle rdmaHandle;
+    rdmaHandle.rdevInfo.phyId = 0;
+    rdmaHandle.rdevIndex = 0;
 
     struct ibv_cq *ibSendCq;
     struct ibv_cq *ibRecvCq;
@@ -630,61 +630,61 @@ void tc_ra_peer_cq_create()
     attr.sendCqEventId = 1;
     attr.recvCqEventId = 2;
 
-    ret = RaPeerCqCreate(&rdma_handle, &attr);
+    ret = RaPeerCqCreate(&rdmaHandle, &attr);
     EXPECT_INT_EQ(0, ret);
 
-    ret = RaPeerCqDestroy(&rdma_handle, &attr);
+    ret = RaPeerCqDestroy(&rdmaHandle, &attr);
     EXPECT_INT_EQ(0, ret);
 
     mocker((stub_fn_t)RsCqCreate, 3, -1);
-    ret = RaPeerCqCreate(&rdma_handle, &attr);
+    ret = RaPeerCqCreate(&rdmaHandle, &attr);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
-    ret = RaPeerCqCreate(&rdma_handle, &attr);
+    ret = RaPeerCqCreate(&rdmaHandle, &attr);
     EXPECT_INT_EQ(0, ret);
     mocker((stub_fn_t)RsCqDestroy, 3, -1);
-    ret = RaPeerCqDestroy(&rdma_handle, &attr);
+    ret = RaPeerCqDestroy(&rdmaHandle, &attr);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
     return;
 }
 
-void tc_ra_peer_normal_qp_create()
+void TcRaPeerNormalQpCreate()
 {
     int ret;
-    struct RaQpHandle *qp_handle;
-    struct ibv_qp_init_attr qp_init_attr;
-    struct RaRdmaHandle rdma_handle;
-    rdma_handle.rdevInfo.phyId = 0;
-    rdma_handle.rdevIndex = 0;
+    struct RaQpHandle *qpHandle;
+    struct ibv_qp_init_attr qpInitAttr;
+    struct RaRdmaHandle rdmaHandle;
+    rdmaHandle.rdevInfo.phyId = 0;
+    rdmaHandle.rdevIndex = 0;
     void** qp = NULL;
-    ret = RaPeerNormalQpCreate(&rdma_handle, &qp_init_attr, &qp_handle, qp);
+    ret = RaPeerNormalQpCreate(&rdmaHandle, &qpInitAttr, &qpHandle, qp);
     EXPECT_INT_EQ(0, ret);
 
-    ret = RaPeerNormalQpDestroy(qp_handle);
+    ret = RaPeerNormalQpDestroy(qpHandle);
     EXPECT_INT_EQ(0, ret);
 
     mocker((stub_fn_t)calloc, 3, NULL);
-    ret = RaPeerNormalQpCreate(&rdma_handle, &qp_init_attr, &qp_handle, qp);
+    ret = RaPeerNormalQpCreate(&rdmaHandle, &qpInitAttr, &qpHandle, qp);
     EXPECT_INT_EQ(-ENOMEM, ret);
     mocker_clean();
 
     mocker((stub_fn_t)RsNormalQpCreate, 3, -1);
-    ret = RaPeerNormalQpCreate(&rdma_handle, &qp_init_attr, &qp_handle, qp);
+    ret = RaPeerNormalQpCreate(&rdmaHandle, &qpInitAttr, &qpHandle, qp);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
-    ret = RaPeerNormalQpCreate(&rdma_handle, &qp_init_attr, &qp_handle, qp);
+    ret = RaPeerNormalQpCreate(&rdmaHandle, &qpInitAttr, &qpHandle, qp);
     EXPECT_INT_EQ(0, ret);
     mocker((stub_fn_t)RsNormalQpDestroy, 3, -1);
-    ret = RaPeerNormalQpDestroy(qp_handle);
+    ret = RaPeerNormalQpDestroy(qpHandle);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
     return;
 }
 
-void tc_ra_peer_create_event_handle()
+void TcRaPeerCreateEventHandle()
 {
     int ret;
     int fd;
@@ -693,19 +693,19 @@ void tc_ra_peer_create_event_handle()
     EXPECT_INT_EQ(0, ret);
 }
 
-void tc_ra_peer_ctl_event_handle()
+void TcRaPeerCtlEventHandle()
 {
     int ret;
-    int fd_handle;
+    int fdHandle;
 
     ret = RaPeerCtlEventHandle(0, NULL, 0, RA_EPOLLONESHOT);
     EXPECT_INT_EQ(-EINVAL, ret);
 
-    ret = RaPeerCtlEventHandle(0, &fd_handle, 1, RA_EPOLLONESHOT);
+    ret = RaPeerCtlEventHandle(0, &fdHandle, 1, RA_EPOLLONESHOT);
     EXPECT_INT_EQ(0, ret);
 }
 
-void tc_ra_peer_wait_event_handle()
+void TcRaPeerWaitEventHandle()
 {
     int ret;
     int fd;
@@ -714,7 +714,7 @@ void tc_ra_peer_wait_event_handle()
     EXPECT_INT_EQ(0, ret);
 }
 
-void tc_ra_peer_destroy_event_handle()
+void TcRaPeerDestroyEventHandle()
 {
     int ret;
     int fd;
@@ -723,107 +723,107 @@ void tc_ra_peer_destroy_event_handle()
     EXPECT_INT_EQ(0, ret);
 }
 
-void tc_ra_loopback_qp_create()
+void TcRaLoopbackQpCreate()
 {
-    struct RaRdmaHandle *rdma_handle2;
-    struct RaRdmaHandle *rdma_handle;
-    struct rdev rdev_info = {0};
-    rdev_info.phyId = 0;
-    rdev_info.family = AF_INET;
-    rdev_info.localIp.addr.s_addr = 0;
+    struct RaRdmaHandle *rdmaHandle2;
+    struct RaRdmaHandle *rdmaHandle;
+    struct rdev rdevInfo = {0};
+    rdevInfo.phyId = 0;
+    rdevInfo.family = AF_INET;
+    rdevInfo.localIp.addr.s_addr = 0;
     int ret = 0;
 
     mocker(RaRdevInitCheckIp, 10, 0);
-    ret = RaRdevInit(NETWORK_PEER_ONLINE, NO_USE, rdev_info, &rdma_handle);
+    ret = RaRdevInit(NETWORK_PEER_ONLINE, NO_USE, rdevInfo, &rdmaHandle);
     EXPECT_INT_EQ(0, ret);
-    ret = RaRdevGetHandle(rdev_info.phyId, &rdma_handle2);
+    ret = RaRdevGetHandle(rdevInfo.phyId, &rdmaHandle2);
     EXPECT_INT_EQ(0, ret);
-    EXPECT_INT_EQ(rdma_handle, rdma_handle2);
+    EXPECT_INT_EQ(rdmaHandle, rdmaHandle2);
     mocker_clean();
 
-    struct LoopbackQpPair qp_pair;
-    void *qp_handle = NULL;
+    struct LoopbackQpPair qpPair;
+    void *qpHandle = NULL;
 
     ret = RaLoopbackQpCreate(NULL, NULL, NULL);
     EXPECT_INT_EQ(128103, ret);
 
-    ret = RaLoopbackQpCreate(rdma_handle, NULL, NULL);
+    ret = RaLoopbackQpCreate(rdmaHandle, NULL, NULL);
     EXPECT_INT_EQ(128103, ret);
 
-    ret = RaLoopbackQpCreate(rdma_handle, &qp_pair, NULL);
+    ret = RaLoopbackQpCreate(rdmaHandle, &qpPair, NULL);
     EXPECT_INT_EQ(128103, ret);
 
-    rdma_handle->rdevInfo.phyId = 128;
-    ret = RaLoopbackQpCreate(rdma_handle, &qp_pair, &qp_handle);
+    rdmaHandle->rdevInfo.phyId = 128;
+    ret = RaLoopbackQpCreate(rdmaHandle, &qpPair, &qpHandle);
     EXPECT_INT_EQ(128103, ret);
 
-    rdma_handle->rdevInfo.phyId = 0;
+    rdmaHandle->rdevInfo.phyId = 0;
     mocker(RaPeerLoopbackQpCreate, 10, -1);
-    ret = RaLoopbackQpCreate(rdma_handle, &qp_pair, &qp_handle);
+    ret = RaLoopbackQpCreate(rdmaHandle, &qpPair, &qpHandle);
     EXPECT_INT_EQ(128100, ret);
 
     mocker_clean();
-    ret = RaLoopbackQpCreate(rdma_handle, &qp_pair, &qp_handle);
+    ret = RaLoopbackQpCreate(rdmaHandle, &qpPair, &qpHandle);
     EXPECT_INT_EQ(0, ret);
-    ret = RaQpDestroy(qp_handle);
+    ret = RaQpDestroy(qpHandle);
     EXPECT_INT_EQ(0, ret);
 
-    ret = RaRdevDeinit(rdma_handle, NO_USE);
+    ret = RaRdevDeinit(rdmaHandle, NO_USE);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
 
-void tc_ra_peer_loopback_qp_create()
+void TcRaPeerLoopbackQpCreate()
 {
-    struct rdev rdev_info = {0};
-    rdev_info.phyId = 0;
-    rdev_info.family = AF_INET;
-    rdev_info.localIp.addr.s_addr = 0;
-    struct RaRdmaHandle rdma_handle_tmp = {
-        .rdevInfo = rdev_info,
+    struct rdev rdevInfo = {0};
+    rdevInfo.phyId = 0;
+    rdevInfo.family = AF_INET;
+    rdevInfo.localIp.addr.s_addr = 0;
+    struct RaRdmaHandle rdmaHandleTmp = {
+        .rdevInfo = rdevInfo,
         .rdevIndex = 0,
     };
-    struct LoopbackQpPair qp_pair;
-    void *qp_handle = NULL;
+    struct LoopbackQpPair qpPair;
+    void *qpHandle = NULL;
     int ret = 0;
 
     mocker(RaPeerLoopbackSingleQpCreate, 10, -1);
-    ret = RaPeerLoopbackQpCreate(&rdma_handle_tmp, &qp_pair, &qp_handle);
+    ret = RaPeerLoopbackQpCreate(&rdmaHandleTmp, &qpPair, &qpHandle);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
-    mocker_invoke(RaPeerLoopbackSingleQpCreate, ra_peer_loopback_single_qp_create_stub, 10);
-    ret = RaPeerLoopbackQpCreate(&rdma_handle_tmp, &qp_pair, &qp_handle);
+    mocker_invoke(RaPeerLoopbackSingleQpCreate, RaPeerLoopbackSingleQpCreateStub, 10);
+    ret = RaPeerLoopbackQpCreate(&rdmaHandleTmp, &qpPair, &qpHandle);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
     mocker(RaPeerLoopbackQpModify, 10, -1);
-    ret = RaPeerLoopbackQpCreate(&rdma_handle_tmp, &qp_pair, &qp_handle);
+    ret = RaPeerLoopbackQpCreate(&rdmaHandleTmp, &qpPair, &qpHandle);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 }
 
-void tc_ra_peer_loopback_single_qp_create()
+void TcRaPeerLoopbackSingleQpCreate()
 {
-    struct rdev rdev_info = {0};
-    rdev_info.phyId = 0;
-    rdev_info.family = AF_INET;
-    rdev_info.localIp.addr.s_addr = 0;
-    struct RaRdmaHandle rdma_handle_tmp = {
-        .rdevInfo = rdev_info,
+    struct rdev rdevInfo = {0};
+    rdevInfo.phyId = 0;
+    rdevInfo.family = AF_INET;
+    rdevInfo.localIp.addr.s_addr = 0;
+    struct RaRdmaHandle rdmaHandleTmp = {
+        .rdevInfo = rdevInfo,
         .rdevIndex = 0,
     };
-    struct RaQpHandle *qp_handle = NULL;
+    struct RaQpHandle *qpHandle = NULL;
     struct ibv_qp *qp = NULL;
     int ret = 0;
 
     mocker(RaPeerCqCreate, 10, -1);
-    ret = RaPeerLoopbackSingleQpCreate(&rdma_handle_tmp, &qp_handle, &qp);
+    ret = RaPeerLoopbackSingleQpCreate(&rdmaHandleTmp, &qpHandle, &qp);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
     mocker(RaPeerNormalQpCreate, 10, -1);
-    ret = RaPeerLoopbackSingleQpCreate(&rdma_handle_tmp, &qp_handle, &qp);
+    ret = RaPeerLoopbackSingleQpCreate(&rdmaHandleTmp, &qpHandle, &qp);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 }

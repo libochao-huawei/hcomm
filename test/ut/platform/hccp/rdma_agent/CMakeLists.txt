@@ -73,8 +73,9 @@ set_property(TARGET rdma_agent_utest PROPERTY C_STANDARD 11)
 target_include_directories(rdma_agent_utest PRIVATE
     ${SRC_DIR}/test/ut/platform/hccp/rdma_service_normal/include
     ${SRC_DIR}/test/ut/platform/hccp/rdma_agent/stub
-    ${SRC_DIR}/src/platform/hccp/external_depends/inc
-    ${SRC_DIR}/src/platform/hccp/external_depends/inc/driver
+    ${SRC_DIR}/test/ut/platform/hccp/ut_include
+    ${SRC_DIR}/test/ut/platform/hccp/stub/
+    ${SRC_DIR}/test/ut/depends/include
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client
     ${SRC_DIR}/src/platform/hccp/rdma_agent/adapter
     ${SRC_DIR}/src/platform/hccp/rdma_agent/adapter/tlv
@@ -84,36 +85,22 @@ target_include_directories(rdma_agent_utest PRIVATE
     ${SRC_DIR}/src/platform/hccp/rdma_agent/hdc/async
     ${SRC_DIR}/src/platform/hccp/rdma_agent/peer
     ${SRC_DIR}/src/platform/hccp/rdma_agent/inc
-    ${SRC_DIR}/test/ut/platform/hccp/stub/include
-    ${SRC_DIR}/test/ut/platform/hccp/ut_include
-    ${SRC_DIR}/test/ut/platform/hccp/stub/
-    ${SRC_DIR}/src/platform/hccp/rdma_agent/inc
-    ${SRC_DIR}/src/platform/hccp/rdma_service
-    ${SRC_DIR}/src/platform/hccp/rdma_service/tlv
     ${SRC_DIR}/src/platform/hccp/rdma_agent/comm
     ${SRC_DIR}/src/platform/hccp/rdma_agent/comm/ctx
-    ${SRC_DIR}/src/platform/hccp/inc/private/network
-    ${SRC_DIR}/src/platform/hccp/crypt/inc
+    ${SRC_DIR}/src/platform/hccp/rdma_service
+    ${SRC_DIR}/src/platform/hccp/rdma_service/tlv
+    ${SRC_DIR}/src/platform/hccp/rdma_service/ctx
     ${SRC_DIR}/src/platform/hccp/common
-    ${SRC_DIR}/src/platform/hccp/common
-    ${SRC_DIR}/src/platform/hccp/roce/host_lite
-    ${SRC_DIR}/src/platform/hccp/external_depends/host_lite
     ${SRC_DIR}/src/platform/hccp/inc/network
     ${SRC_DIR}/src/platform/hccp/inc/private/network
-    ${SRC_DIR}/src/platform/hccp/rdma_agent/hdc
-    ${SRC_DIR}/src/platform/hccp/rdma_agent/inc
-    ${SRC_DIR}/src/platform/hccp/rdma_agent/hdc/async
-    ${SRC_DIR}/src/platform/hccp/rdma_agent/adapter/ctx
-    ${SRC_DIR}/src/platform/hccp/rdma_agent/peer
-    ${SRC_DIR}/src/platform/hccp/rdma_service/ctx
-    ${SRC_DIR}/src/platform/hccp/rdma_agent/comm/ctx
-    ${UT_COMMON_INCLUDE_LIST}
-)
-
-add_definitions(-DCONFIG_CONTEXT)
-target_include_directories(rdma_agent_utest PRIVATE
-    ${SRC_DIR}/src/platform/hccp/rdma_agent/adapter/ctx
-    ${SRC_DIR}/src/platform/hccp/rdma_service/ctx
+    ${SRC_DIR}/src/platform/hccp/external_depends/inc
+    ${SRC_DIR}/src/platform/hccp/external_depends/inc/driver
+    ${SRC_DIR}/src/platform/hccp/external_depends/host_lite
+    ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include
+    ${ASCEND_3RD_LIB_PATH}/json/include/
+    ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
+    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/
+    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/3rdparty/
 )
 
 target_compile_options(rdma_agent_utest PRIVATE
