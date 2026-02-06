@@ -137,7 +137,7 @@ protected:
 
 TEST_F(OneSidedUtV2, ut_HcclRegisterMemV2_func)
 {
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
     u32 remoteRankId = 1;
     s32 count = 1024;
     s8* localbuf;
@@ -167,7 +167,7 @@ TEST_F(OneSidedUtV2, ut_HcclRegisterMemV2_func)
 
 TEST_F(OneSidedUtV2, ut_HcclExchangeMemDescV2_func)
 {
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
     HcclMemDesc localDesc, remoteDesc;
     char str[21] = "aaaabbbbccccddddeeee";
     memcpy_s(localDesc.desc, sizeof(localDesc.desc), str, sizeof(str));
@@ -196,7 +196,7 @@ TEST_F(OneSidedUtV2, ut_HcclExchangeMemDescV2_func)
 
 TEST_F(OneSidedUtV2, ut_HcclEnableMemAccessV2_func)
 {
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
     u32 remoteRankId = 1;
     HcclMemDesc remoteMemDesc;
     HcclMem remoteMem;
@@ -222,7 +222,7 @@ TEST_F(OneSidedUtV2, ut_HcclEnableMemAccessV2_func)
 
 TEST_F(OneSidedUtV2, ut_HcclBatchPutV2_func)
 {
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
     nlohmann::json rank_table = rank_table_910_1server_4rank;
 
     char file_name_t[] = "./ut_opbase_test.json";

@@ -486,6 +486,7 @@ TEST_F(InsRulesTest, Interpret_local_wait_group)
     MOCKER(HrtCntNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
     MOCKER(HrtCntNotifyWaitWithTimeOut).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
 
     RtsCntNotify *nullCntNotify = nullptr;
     RtsCntNotify  rtsCntNotify;
@@ -1569,6 +1570,9 @@ TEST_F(InsRulesTest, Interpret_read_dev_net_ub_slice_is_not_zero_one_task)
 
 TEST_F(InsRulesTest, Interpret_wait_group_fin)
 {
+    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs().will(returnValue(static_cast<void*>(0)));
+
     CommunicatorImpl comm;
     comm.devPhyId                   = 0;
     comm.rmaConnectionManager       = make_unique<RmaConnManager>(comm);
@@ -1594,7 +1598,6 @@ TEST_F(InsRulesTest, Interpret_wait_group_fin)
     comm.connLocalCntNotifyManager->ApplyFor(0, links);
 
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     Stream       stream;
     OpTaskConfig taskConfig{};
 
@@ -1655,6 +1658,7 @@ HcclResult GetProfilingInfoStub(
 TEST_F(InsRulesTest, Interpret_ccu_instruction)
 {
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     MOCKER_CPP(&CommunicatorImpl::ExecAlgSelect).stubs().will(ignoreReturnValue());
