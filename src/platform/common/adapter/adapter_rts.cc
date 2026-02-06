@@ -1551,8 +1551,11 @@ HcclResult hrtEnableP2P(u32 deviceLogicId, u32 devicePhyId)
 {
 #ifndef HCCD
     rtError_t ret = rtEnableP2P(deviceLogicId, devicePhyId, 0);
+    u32 localDevicePhysicID = 0;
+    CHK_RET(hrtGetDevicePhyIdByIndex(deviceLogicId, localDevicePhysicID));
 
-    HCCL_INFO("rt enableP2P deviceLogicId[%u] and devicePhyId[%u] fail[%d]", deviceLogicId, devicePhyId, ret);
+    HCCL_INFO("rt enableP2P localdeviceLogicId[%u] localdevicePhyId[%u]and remotedevicePhyId[%u] fail[%d]",
+        deviceLogicId, localDevicePhysicID, devicePhyId, ret);
 
     CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Enable][P2P]errNo[0x%016llx] rt enableP2P deviceLogicId[%u] and "\
         "devicePhyId[%u] fail[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), deviceLogicId, devicePhyId, ret), HCCL_E_RUNTIME);
