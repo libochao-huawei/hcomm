@@ -306,7 +306,7 @@ HcclResult CollRunAlltoAllDirectFullmesh::GetAlltoAllvTmpRankSendRecvInfo(const 
 HcclResult CollRunAlltoAllDirectFullmesh::KernelRun(const OpParam &param, ExecMem &execMem)
 {
     HCCL_CONFIG_INFO(HCCL_ALG, "[%s] AllToAll fullmesh start.", __func__);
-
+    
     // 准备数据
     CHK_RET(ActiveSlaveStreams(param.stream));
     CHK_RET(GetAlltoAllvTmpRankSendRecvInfo(param));
