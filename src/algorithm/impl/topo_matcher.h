@@ -22,7 +22,7 @@
 #include "alg_env_config.h"
 
 namespace hccl {
-constexpr u32 COMM_LEVEL1_INDEX = CommPlane::COMM_LEVEL1;
+constexpr CommPlane COMM_LEVEL1_INDEX = CommPlane::COMM_LEVEL1;
 using HcclAlgoInfo = struct HcclAlgoInfoDef {
     bool inlineReduceSwitchOn;       // 收到数量时同时完成Reduce计算
     std::string identifier;

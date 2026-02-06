@@ -32,7 +32,7 @@ HcclResult CalcPartialMeshTransportReq::CalcTransportRequest(const std::string &
     commTransport.resize(ringSize);
 
     for (u32 ringIndex = 0; ringIndex < ringSize; ringIndex++) {
-        if (commParaInfo.commPlane == COMM_LEVEL1 && !isBridgeVector_.empty() && !isBridgeVector_[0]) {
+        if (commParaInfo.commPlane == CommPlane::COMM_LEVEL1 && !isBridgeVector_.empty() && !isBridgeVector_[0]) {
             continue; // 跳出本次循环
         }
         CHK_PRT_RET(subCommPlaneVector_.empty(), HCCL_ERROR("[CalcPartialMeshTransportReq][CalcTransportRequest] "\
