@@ -68,6 +68,7 @@ typedef struct CommConfigHandleDef {
     char hcclRetryParams[COMM_RETRY_PARAMS_MAX_LENGTH]; // hccl_retry_params
     char bufferName[BUFFER_NAME_MAX_LENGTH];    // cclbuffer名称
     u32 hcclQos = HCCL_COMM_QOS_CONFIG_NOT_SET;
+    uint64_t symmetricMemoryStride; // 对称内存预留VA大小
 } CommConfigHandle;
 
 namespace hccl {
@@ -103,6 +104,7 @@ public:
     HcclResult SetConfigExecTimeOut(s32 execTimeOut);
     const std::string& GetConfigBufferName() const;
     u32 GetConfigHcclQos() const;
+    u64 GetConfigSymmetricMemoryStride() const;
 
 private:
     void InitAlgoConfig();
@@ -145,6 +147,7 @@ private:
     u32 retryIntervalTime_;    // 重执行间隔时间，配置范围[0,3600000]，默认值1000
     std::string bufferName_;    // CCL buffer名称
     u32 hcclQos_;
+    u64 symmetricMemoryStride_; // 对称内存预留VA大小，单位GB
 };
 }
 #endif /* HCCL_COMM_CONFIG_PUB_H */

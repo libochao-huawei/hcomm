@@ -70,7 +70,7 @@ bool ZeroCopyAclGraph::SetAclGraphZeroCopyMode(
             deviceType);
         return false;
     }
-    if (opParam.isZeroCopy || opParam.supportZeroCopy) {
+    if (opParam.isZeroCopy || opParam.supportZeroCopy || opParam.supportSymmetricMemory) {
         HCCL_INFO("[ZeroCopyAclGraph][SetAclGraphZeroCopyMode] Hccl can't support graph zero copy mode and operator "
                   "zero copy at the same time.");
         return false;
