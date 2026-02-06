@@ -1,9 +1,12 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
- * Description: ccu represnetation context implementation file
- * Author: sunzhepeng
- * Create: 2024-06-17
- */
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "ccu_kernel.h"
 #include "ccu_rep_v1.h"
@@ -269,9 +272,29 @@ HcclResult CcuKernel::LocalNotifyRecord(const uint32_t coreId,
     const uint32_t dstNotifyIdx, const uint32_t mask,
     const uint32_t dstVarIdx, const CcuRep::Variable *srcVar)
 {
-    // todo:
+    CHK_PTR_NULL(srcVar);
 
-    return HcclResult::HCCL_E_NOT_SUPPORT;
+    const std::string notifyTag = "Notify_" + std::to_string(coreId) + "_"
+        + std::to_string(dstNotifyIdx);
+    
+    auto &sharedNotifies = importedRes_.sharedNotifies;
+    if (sharedNotifies.find(notifyTag) == sharedNotifies.end()) {
+        CcuRep::LocalNotify notify{};
+        sharedNotifies.insert({notifyTag, notify});
+    }
+
+    const std::string varTag = "Variable_" + std::to_string(coreId) + "_"
+        + std::to_string(dstVarIdx);
+    auto &sharedVars = importedRes_.sharedVars;
+    if (sharedVars.find(varTag) == sharedVars.end()) {
+        CcuRep::Variable var{};
+        sharedVars.insert({varTag, var});
+    }
+
+    Append(std::make_shared<CcuRep::CcuRepPostSharedVar>(*srcVar,
+        sharedVars.at(varTag), sharedNotifies.at(notifyTag), mask));
+
+    return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult CcuKernel::LocalNotifyWait(const uint32_t coreId,
