@@ -1308,4 +1308,26 @@ HcclResult DispatcherPub::StreamSync(Stream &stream)
     HCCL_INFO("StreamSync is not supported");
     return HCCL_SUCCESS;
 }
+
+void DispatcherPub::SetHcclQos(u32 hcclQos)
+{
+    // 按区间映射HCCL QOS到SDMA QOS
+    if (hcclQos >= HCCL_QOS_MIN && hcclQos <= HCCL_QOS_LEVEL_1_LIMIT) {
+        hcclQos_ = SDMA_QOS_LOW;
+    } else if (hcclQos <= HCCL_QOS_LEVEL_2_LIMIT) {
+        hcclQos_ = SDMA_QOS_MIDDLE;
+    } else if (hcclQos <= HCCL_QOS_LEVEL_3_LIMIT) {
+        hcclQos_ = SDMA_QOS_HIGH;
+    } else {
+        // 超出有效范围，使用默认值（包括hcclQos < HCCL_QOS_MIN的异常情况）
+        hcclQos_ = SDMA_QOS_DEFAULT;
+    }
+}
+
+void DispatcherPub::SetMpamid(u32 mPamid)
+{
+    HCCL_INFO("[DispatcherPub] [SetMpamid] mPamid[%u]", mPamid);
+ 	mPamid_ = mPamid;
+ 	return;
+}
 #endif

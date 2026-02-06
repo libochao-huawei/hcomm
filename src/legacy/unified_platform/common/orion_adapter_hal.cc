@@ -21,7 +21,7 @@ HcclResult HrtHalDrvQueryProcessHostPid(int pid, unsigned int *chipId, unsigned 
 {
     CHK_PTR_NULL(hostPid);
     // 和底软确认，chipId、vfid、hostPid、cpType不需要校验空指针，如果传入空指针表示当前不获取该值
-    drvError_t ret = DlHalFunction::GetInstance().dlHalDrvQueryProcessHostPid(pid,
+    drvError_t ret = DlHalFunctionV2::GetInstance().dlHalDrvQueryProcessHostPid(pid,
         chipId, vfid, hostPid, cpType);
     CHK_PRT_RET(ret != DRV_ERROR_NONE, HCCL_ERROR("errNo[0x%016llx] HrtHalDrvQueryProcessHostPid fail,"
         "return[%d], para: pid[%d].", HCCL_ERROR_CODE(HCCL_E_DRV), ret, pid), HCCL_E_DRV);

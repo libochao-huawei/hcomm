@@ -208,6 +208,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/
 
     # tbe头文件
     ${HCCL_CODE_ROOT}/src/platform/legacy/hccl_tbe_task/
@@ -293,3 +294,4 @@ add_subdirectory(framework/communicator/impl/independent_op/data_api)
 # add_subdirectory(framework/dpu_npu_sync)
 # add_subdirectory(aicpu_kfc/aicpu)
 # add_subdirectory(aicpu_kfc/misc)
+# add_subdirectory(inter/comm)

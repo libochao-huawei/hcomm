@@ -220,6 +220,7 @@ inline void HcclCommConfigInit(HcclCommConfig *config)
     config->hcclRetryEnable[0] = '\0';
     config->hcclRetryParams[0] = '\0';
     config->hcclBufferName[0] = '\0';
+    config->hcclQos = HCCL_COMM_QOS_CONFIG_NOT_SET;
 }
 
 /**

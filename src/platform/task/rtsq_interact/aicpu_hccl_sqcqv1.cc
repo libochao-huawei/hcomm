@@ -8,6 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "aicpu/aicpu_hccl_sqcqv1.h"
+#include "hccl_common.h"
+#include "dispatcher_task_types.h"
 #include <unordered_map>
 
 namespace {
@@ -169,7 +171,7 @@ void AddOneWriteValueRecordSqeV1(uint16_t streamId, uint16_t taskId, u64 notifyW
 
 void AddOneMemcpySqeV1(uint16_t streamId, uint16_t taskId, const void *src, uint32_t length,
     const aclDataType runtimeDataType, aclrtReduceKind rtReduceOp, const void *dst, uint32_t partId, uint32_t ssid,
-    uint32_t devId, u64 overflowAddr, uint8_t linkType, const uint8_t *sqeIn, uint8_t *sqeType)
+    uint32_t devId, u64 overflowAddr, uint8_t linkType, const uint8_t *sqeIn, uint8_t *sqeType, uint32_t hcclQos)
 {
     (void)ssid;
     (void)devId;
@@ -202,8 +204,8 @@ void AddOneMemcpySqeV1(uint16_t streamId, uint16_t taskId, const void *src, uint
         (rtReduceOp == ACL_RT_MEMCPY_SDMA_AUTOMATIC_MIN) || (rtReduceOp == ACL_RT_MEMCPY_SDMA_AUTOMATIC_EQUAL));
 
     sqe->opcode = isReduce ? GetOpcodeForReduce(rtReduceOp, runtimeDataType) : 0U;
-    HCCL_INFO("[SQE]MemcpySqe copyKind=%u,Opcode=0x%x, streamId=%u, len=%u, src:%p, dst:%p",
-        static_cast<uint32_t>(rtReduceOp), static_cast<uint32_t>(sqe->opcode), streamId, length, src, dst);
+    HCCL_INFO("[SQE]MemcpySqe copyKind=%u,Opcode=0x%x, streamId=%u, len=%u, src:%p, dst:%p, hcclQos:%u",
+        static_cast<uint32_t>(rtReduceOp), static_cast<uint32_t>(sqe->opcode), streamId, length, src, dst, hcclQos);
 
     sqe->length = len;
     sqe->src_addr_low = srcAddrLow;
@@ -214,7 +216,11 @@ void AddOneMemcpySqeV1(uint16_t streamId, uint16_t taskId, const void *src, uint
     sqe->dssv = 1U;
     sqe->sns = 1U;
     sqe->dns = 1U;
-    sqe->qos = 6; // 6 is HCCL QoS
+    if (linkType == static_cast<uint8_t>(hccl::LinkType::LINK_SIO) || linkType == static_cast<uint8_t>(hccl::LinkType::LINK_ONCHIP)) {
+ 	    hcclQos = SDMA_QOS_DEFAULT;
+ 	}
+    HCCL_INFO("[AddOneMemcpySqeV1] sqe->linkType=%u hcclQos=%u", static_cast<unsigned int>(linkType), static_cast<unsigned int>(hcclQos));
+    sqe->qos = hcclQos;
     sqe->partid = partId;
     sqe->linkType = linkType;
 }

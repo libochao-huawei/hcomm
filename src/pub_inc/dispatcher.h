@@ -80,7 +80,7 @@ extern "C" {
     HcclResult RegisterLoadTaskCallBack(HcclDispatcher dispatcherPtr, void *userPtr,
         void (*p1)(void *userPtr, void *param, u32 length));
     HcclResult HcclDispatcherAicpuInit(
-        HcclDispatcher *dispatcher, const u32 devPhyId,
+        HcclDispatcher *dispatcher, const u32 devPhyId, uint32_t hcclQos,
         DispatcherType type = DispatcherType::DISPATCHER_AICPU);
     HcclResult AddRetryPreamble(HcclDispatcher dispatcherPtr, hccl::Stream &stream);
     HcclResult StreamSync(HcclDispatcher dispatcherPtr, hccl::Stream &stream);

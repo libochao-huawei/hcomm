@@ -27,7 +27,7 @@ using AddOneNotifyWaitSqe = void(*)(uint16_t, uint16_t, u64, const uint8_t *, ui
 using AddOneRecordSqe = void(*)(uint16_t, uint16_t, u64, const uint8_t *, uint8_t *);
 using AddOneWriteValueRecordSqe = void(*)(uint16_t, uint16_t, u64, const uint8_t *, uint8_t *);
 using AddOneMemcpySqe = void(*)(uint16_t, uint16_t, const void *, uint32_t, const aclDataType,
-    aclrtReduceKind, const void *, uint32_t, uint32_t, uint32_t, u64, uint8_t, const uint8_t *, uint8_t *);
+    aclrtReduceKind, const void *, uint32_t, uint32_t, uint32_t, u64, uint8_t, const uint8_t *, uint8_t *, uint32_t);
 using AddOneEventResetSqe = void(*)(uint16_t, int32_t, uint16_t, int64_t, int64_t,
     u64, const uint8_t *, uint8_t *);
 using AddOneEventRecordSqe = void(*)(uint16_t, int32_t, uint16_t, const uint8_t *, uint8_t *);

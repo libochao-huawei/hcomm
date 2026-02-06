@@ -184,49 +184,22 @@ using AivExtraKernelArgs = struct AivExtraKernelArgsDef {
  
 HcclResult GetAivOpBinaryPath(std::string &binaryPath)
 {
+    char *envValue = nullptr; 
+    MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, envValue);
+
     std::string libPath;
-    if (const auto* env = getenv("LD_LIBRARY_PATH")) {
-        libPath = env;
+    if (envValue != nullptr) {
+        libPath = envValue;
     } else {
-        HCCL_ERROR("[AIV][GetAivOpBinaryPath]ENV:LD_LIBRARY_PATH is not set");
-        return HCCL_E_PARA;
+        libPath = "/usr/local/Ascend/cann";
+        HCCL_WARNING("[AIV][GetAivOpBinaryPath]ENV:ASCEND_HOME_PATH is not set, use default path[%s]", 
+                     libPath.c_str());
     }
- 
-    size_t mid = libPath.find("fwkacllib/lib64");
-    if (mid == libPath.npos) {
-        HCCL_WARNING("[AIV][GetAivOpBinaryPath]ENV:LD_LIBRARY_PATH lack fwkacllib/lib64");
- 
-        mmDlInfo info;
-        mmDladdr(reinterpret_cast<void *>(RegisterKernel), &info);
- 
-        CHK_PRT_RET(info.dli_fname == nullptr, HCCL_ERROR("[AIV][GetAivOpBinaryPath]get path of libhccl_alg.so failed"),
-            HCCL_E_UNAVAIL);
- 
-        char resolvedPath[PATH_MAX];
-        if (realpath(info.dli_fname, resolvedPath) == nullptr) {
-            HCCL_ERROR("[AIV][GetAivOpBinaryPath]path %s is not a valid real path", info.dli_fname);
-            return HCCL_E_INTERNAL;
-        }
-        binaryPath = resolvedPath;
-        if (binaryPath.find("/libhccl_v2.so") != binaryPath.npos) {
-            binaryPath.erase(binaryPath.find("/libhccl_v2.so"));
-        } else {
-            HCCL_ERROR("[AIV][GetAivOpBinaryPath]get binary path failed");
-            return HCCL_E_PARA;
-        }
-        HCCL_DEBUG("[AIV][GetAivOpBinaryPath]op binary file path[%s]", binaryPath.c_str());
-    } else {
-        u32 diff;
-        if (libPath.find(":", mid) == libPath.npos) {
-            diff = libPath.length() - libPath.rfind(":", mid);
-        } else {
-            diff = libPath.find(":", mid) - libPath.rfind(":", mid);
-        }
-        binaryPath = libPath.substr(libPath.rfind(":", mid) + 1, diff - 1);
-    }
- 
-    // 判断应该加载的文件
-     binaryPath += "/hccl_aiv_op_910_95.o";
+
+    binaryPath = libPath + "/lib64/hccl_aiv_op_910_95.o";
+
+    HCCL_INFO("[AIV][GetAivOpBinaryPath]binaryPath: %s", binaryPath.c_str());
+
     return HCCL_SUCCESS;
 }
 

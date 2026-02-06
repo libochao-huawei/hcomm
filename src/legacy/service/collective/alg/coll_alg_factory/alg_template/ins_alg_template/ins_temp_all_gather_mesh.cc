@@ -28,7 +28,7 @@ InsTempAllGatherMesh1D::~InsTempAllGatherMesh1D()
 HcclResult InsTempAllGatherMesh1D::CalcRes(AlgTempResReq &tempResReq)
 {
     HCCL_DEBUG("[InsTempAllGatherMesh1D] Enter CalcRes");
-    tempResReq.queNum = tempVTopo_[0].size() - 1;
+    tempResReq.queNum = tempVTopo_[0].size();
     tempResReq.streamNum = tempResReq.queNum;
     tempResReq.queNotifys = CreateMasterSlaveQueNotifiesRequest(tempResReq.queNum);
     HCCL_DEBUG("[InsTempAllGatherMesh1D] CalcRes queNotifys size[%zu]", tempResReq.queNotifys.size());
@@ -64,15 +64,16 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
     tempLinks_ = tempLinks;
 
     majorQueNum_ = tempVTopo_[0].size() - 1;
-    CHK_PRT_RET(majorQueNum_ * queNumPerNeighbor_ != tempInsQues.size(),
+
+    CHK_PRT_RET((majorQueNum_ + 1) != tempInsQues.size(),
         HCCL_ERROR("[InsTempAllGatherMesh1D] RunAllGather Rank [%d], requiredQueNum [%u] not equals to "
                    "templateQueNum [%u].",
-                   myRank_, majorQueNum_ * queNumPerNeighbor_, tempInsQues.size()),
+                   myRank_, (majorQueNum_ + 1), tempInsQues.size()),
         HcclResult::HCCL_E_INTERNAL);
 
     // queue arrangement
     std::vector<InsQuePtr> mainInsQues;
-    for (u32 queIdx = 0; queIdx < majorQueNum_; queIdx++) {
+    for (u32 queIdx = 0; queIdx < majorQueNum_ + 1; queIdx++) {
         mainInsQues.push_back(tempInsQues[queIdx * queNumPerNeighbor_]);
     }
 
@@ -102,21 +103,35 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
         CHK_RET(PostSyncInterQueues(mainInsQues));
     }
 
-    // LocalCopy: from scratch to output for opbase
-    if ((opMode_ == OpMode::OPBASE) && tempFuncs.isBottom) {
-        CHK_RET(PostLocalCopy(mainInsQues));
-    }
-
     return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult InsTempAllGatherMesh1D::LocalDataCopy(std::vector<InsQuePtr> &tempInsQues)
 {
+    u32 myAlgRank;
+    CHK_RET(GetAlgRank(myRank_, tempVTopo_[0], myAlgRank));
+
+    if (opMode_ == OpMode::OPBASE) {
+        for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
+            const u64 scratchRepeatStride = tempAlgParams_.sliceSize * tempRankSize_;
+            const u64 inBaseOff  = tempAlgParams_.buffInfo.inBuffBaseOff + rpt * tempAlgParams_.inputRepeatStride;
+            const u64 outBaseOff = tempAlgParams_.buffInfo.scratchBuffBaseOff + rpt * scratchRepeatStride;
+            const u64 inOff = tempAlgParams_.inputSliceStride * myAlgRank + inBaseOff;
+            const u64 outOff = tempAlgParams_.sliceSize * myAlgRank + outBaseOff;
+
+            DataSlice src(tempAlgParams_.buffInfo.inBuffType, inOff, tempAlgParams_.sliceSize);
+            DataSlice dst(tempAlgParams_.buffInfo.scratBuffType, outOff, tempAlgParams_.sliceSize);
+            HCCL_INFO("[InsTempAllGatherMesh1D] in:%s -> scratch:%s", src.Describe().c_str(), dst.Describe().c_str());
+
+            auto ins = std::make_unique<InsLocalCopy>(src, dst);
+            tempInsQues[0]->Append(std::move(ins));
+        }
+    }
+
     if (tempAlgParams_.buffInfo.inBuffType == tempAlgParams_.buffInfo.outBuffType) {
         return HcclResult::HCCL_SUCCESS;
     }
-    u32 myAlgRank;
-    CHK_RET(GetAlgRank(myRank_, tempVTopo_[0], myAlgRank));
+
     for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
         const u64 inBaseOff  = tempAlgParams_.buffInfo.inBuffBaseOff  + rpt * tempAlgParams_.inputRepeatStride;
         const u64 outBaseOff = tempAlgParams_.buffInfo.outBuffBaseOff + rpt * tempAlgParams_.outputRepeatStride;
@@ -129,7 +144,7 @@ HcclResult InsTempAllGatherMesh1D::LocalDataCopy(std::vector<InsQuePtr> &tempIns
         HCCL_INFO("[InsTempAllGatherMesh1D] in:%s -> out:%s", src.Describe().c_str(), dst.Describe().c_str());
 
         auto ins = std::make_unique<InsLocalCopy>(src, dst);
-        tempInsQues[0]->Append(std::move(ins));
+        tempInsQues[tempInsQues.size() - 1]->Append(std::move(ins));
     }
     return HcclResult::HCCL_SUCCESS;
 }
@@ -207,7 +222,7 @@ HcclResult InsTempAllGatherMesh1D::RunMesh(const u32 myAlgRank, const std::vecto
             TxRxLinks sendRecvLinks(neighborLinkData, neighborLinkData);
             SendRecvInfo sendRecvInfo(sendRecvLinks, sendRecvSlicesList);
 
-            CHK_PRT_RET(SendRecv(sendRecvInfo, currQue, 0, true, DmaMode::PUT),
+            CHK_PRT_RET(SendRecv(sendRecvInfo, currQue, 0, true, DmaMode::GET),
                 HCCL_ERROR("[InsTempAllGatherMesh1D] sendrecv failed (nbr=%d, queIdx=%u, rpt=%u)", connectedRank,
                 queIdx, rpt), HcclResult::HCCL_E_INTERNAL);
         }
