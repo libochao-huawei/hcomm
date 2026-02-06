@@ -1057,8 +1057,6 @@ private:
     std::set<u32> ranksLinked_{};
 
     // AIV通信同步标识
-    s32 aivOpbaseTag_ = 1; // 动态图或者单算子非Capture模式的tag
-    s32 aivOffloadTag_ = 1; // 静态图或者Capture模式的tag
     std::vector<DeviceMem> aivOffloadCommInfoMem_; // 图模式每个算子单独一块内存维护通信域信息
 
     // Host侧收集的数据

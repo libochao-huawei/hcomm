@@ -2402,10 +2402,6 @@ namespace hccl
 
             CHK_RET(cclBufferManager_.ClearCommAIVbuffer());
             HCCL_INFO("[AIV][AivResumeClearSyncBuf] clear aiv buffer done");
-
-            aivOpbaseTag_ = TAG_INIT_VALUE;
-            aivOffloadTag_ = TAG_INIT_VALUE;
-            HCCL_INFO("[AIV][AivResume] clear aiv tag done");
         }
         return HCCL_SUCCESS;
     }

@@ -1854,11 +1854,9 @@ namespace hccl
         CHK_PRT_RET(algOperator->CalNumBlocks(algName, param, numBlocks, aivCoreLimit) != HCCL_SUCCESS,
             HCCL_ERROR("[%s] CalNumBlocks failed", __func__),
             HCCL_E_PARA);
-        GetAivTag(algDesc.aivTagNum, false, aivSuperKernelArgs.tag); // workflowmode为图模式
-        aivSuperKernelArgs.clearEnable = (clearEnable ? 1 : 0);
         aivSuperKernelArgs.numBlocks = numBlocks;
 
-        HCCL_INFO("SPK, Tag %llu clearEnable %llu, aivCoreLimit %u, numBlocks %llu.", aivSuperKernelArgs.tag,
+        HCCL_INFO("SPK, clearEnable %llu, aivCoreLimit %u, numBlocks %llu.", aivSuperKernelArgs.tag,
                   aivSuperKernelArgs.clearEnable, aivCoreLimit, aivSuperKernelArgs.numBlocks);
         // clearenable
         //  拷贝到Device
@@ -1869,19 +1867,6 @@ namespace hccl
             HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
         commContext = sendAlgParamMemPtr;
         len = sizeof(AivSuperKernelArgs);
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclCommunicator::GetAivTag(s32 tagNum, bool isCapture, s32 &aivTag)
-    {
-        bool useOpbaseFlag = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !isCapture);
-        if (useOpbaseFlag) {
-            aivTag = aivOpbaseTag_;
-            aivOpbaseTag_ = GetNextAivTag(aivOpbaseTag_, tagNum);
-        } else {
-            aivTag = aivOffloadTag_;
-            aivOffloadTag_ = GetNextAivTag(aivOffloadTag_, tagNum);
-        }
         return HCCL_SUCCESS;
     }
 
@@ -4272,20 +4257,15 @@ namespace hccl
         bool selectAivAlg = cacheInfo.selectAivAlg;
         std::string newTag = cacheInfo.newTag;
         HcclResult ret = HCCL_SUCCESS;
-        //更新aivtag
-        GetAivTag(1, opParam.isCapture, cacheInfo.resourceArgs.aivTag);
-        HCCL_INFO("[HcclCommunicator][ExecOpCache]buffersIn[%p] buffersOut[%p] tag[%s] opType[%d] "
+        HCCL_INFO("[HcclCommunicator][ExecOpCache]buffersIn[%p] buffersOut[%p] opType[%d] "
             "deterministic [%u] count[%llu] op[%d] userRank[%u] aiv tag [%d] stream [%d]",
             cacheInfo.buffersIn, cacheInfo.buffersOut, identifier_.c_str(), opType, opParam.deterministic,
-            cacheInfo.opArgs.count, cacheInfo.opArgs.op, userRank_, cacheInfo.resourceArgs.aivTag, opParam.stream.id());
+            cacheInfo.opArgs.count, cacheInfo.opArgs.op, userRank_, opParam.stream.id());
         CHK_RET(HandleAclGraphFirstOpAivBuff(opParam.stream.ptr()));
         //保留dfx
         CHK_RET(RegisterDfxInfo(opParam, algType, resMap_[newTag].slaveStreams, selectAivAlg));
         // 头计数
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, HEAD, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
-        if (aivClearEnable_) {
-            CHK_RET(ClearAivSyncBuf(cacheInfo.buffersOut, cacheInfo.resourceArgs, cacheInfo.topoArgs, cacheInfo.algArgs));
-        }
         u64 dataSize = (opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALL ?
             opParam.All2AllDataDes.sendCount * SIZE_TABLE[opParam.All2AllDataDes.sendType] : 0);
         if (opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V || opType == HcclCMDType::HCCL_CMD_ALLGATHER_V ||
@@ -4507,15 +4487,6 @@ namespace hccl
 
         // 算法执行
         if (selectAivAlg) {
-            CHK_RET(HandleAclGraphFirstOpAivBuff(opParam.stream.ptr()));
-            if (aivClearEnable_) {
-                // 用于判断图模式是否清零
-                CHK_RET(algOperator->SetAivClearEnable(aivClearEnable_));
-                aivOffloadTag_ = 1;
-            }
-            GetAivTag(algDesc.aivTagNum, opParam.isCapture, opParam.aivTag);
-            HCCL_INFO("[HcclCommunicator][ExecOp] tag[%s] userRank[%u] cur aiv tag [%d]",
-                identifier_.c_str(), userRank_, opParam.aivTag);
             opParam.aicpuUnfoldMode = false;
             opParam.aicpuCacheEnable = 0;
             CHK_RET(algOperator->SetNumBlocks(aivCoreLimit));
@@ -4816,15 +4787,6 @@ namespace hccl
             CHK_RET(algOperator->SetRmaInfo(combinOparaPtr->aiRMAInfo));
         }
         if (selectAivAlg) {
-            CHK_RET(HandleAclGraphFirstOpAivBuff(opParam.stream.ptr()));
-            if (aivClearEnable_) {
-                // 用于判断图模式是否清零
-                CHK_RET(algOperator->SetAivClearEnable(aivClearEnable_));
-                aivOffloadTag_ = 1;
-            }
-            GetAivTag(algDesc.aivTagNum, opParam.isCapture, opParam.aivTag);
-            HCCL_INFO("[HcclCommunicator][ExecOpAlltoAll] tag[%s] userRank[%u] cur aiv tag [%d]",
-                identifier_.c_str(), userRank_, opParam.aivTag);
             opParam.aicpuUnfoldMode = false;
             opParam.aicpuCacheEnable = 0;
             CHK_RET(algOperator->SetNumBlocks(aivCoreLimit));
