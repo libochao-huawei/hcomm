@@ -1551,8 +1551,11 @@ HcclResult hrtEnableP2P(u32 deviceLogicId, u32 devicePhyId)
 {
 #ifndef HCCD
     rtError_t ret = rtEnableP2P(deviceLogicId, devicePhyId, 0);
+    u32 localDevicePhysicID = 0;
+    CHK_RET(hrtGetDevicePhyIdByIndex(deviceLogicId, localDevicePhysicID));
 
-    HCCL_INFO("rt enableP2P deviceLogicId[%u] and devicePhyId[%u] fail[%d]", deviceLogicId, devicePhyId, ret);
+    HCCL_INFO("rt enableP2P localdeviceLogicId[%u] localdevicePhyId[%u]and remotedevicePhyId[%u] fail[%d]",
+        deviceLogicId, localDevicePhysicID, devicePhyId, ret);
 
     CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Enable][P2P]errNo[0x%016llx] rt enableP2P deviceLogicId[%u] and "\
         "devicePhyId[%u] fail[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), deviceLogicId, devicePhyId, ret), HCCL_E_RUNTIME);
@@ -1584,9 +1587,11 @@ HcclResult hrtGetP2PStatus(u32 deviceLogicId, u32 devicePhyId, uint32_t *status)
 {
 #ifndef HCCD
     rtError_t ret = rtGetP2PStatus(deviceLogicId, devicePhyId, status);
+    u32 localDevicePhysicID = 0;
+    __hrtGetDevicePhyIdByIndex(deviceLogicId, localDevicePhysicID, false);
 
-    HCCL_DEBUG("rt getp2pstatus deviceLogicId[%u] and devicePhyId[%u] fail[%d], status[%u]",
-        deviceLogicId, devicePhyId, ret, *status);
+    HCCL_DEBUG("rt getp2pstatus localdeviceLogicId[%u] locallocalDevicePhysicID[%u]and remotedevicePhyId[%u] fail[%d], status[%u]",
+        deviceLogicId, localDevicePhysicID, devicePhyId, ret, *status);
     CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Get][P2PStatus]errNo[0x%016llx]Call rtGetP2PStatus failed, "
             "ret[%d], deviceLogicId[%u], devicePhyId[%u]",
             HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, deviceLogicId, devicePhyId), HCCL_E_RUNTIME);
