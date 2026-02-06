@@ -1,0 +1,130 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include "gtest/gtest.h"
+#include <mockcpp/mockcpp.hpp>
+
+#ifndef private
+#define private public
+#define protected public
+#endif
+#include "aicpu_hccl_sqcq.h"
+#include "aicpu_communicator.h"
+#undef private
+#undef protected
+#include "llt_hccl_stub_pub.h"
+#include "aicpu_hccl_process.h"
+#include "symmetric_memory.h"
+
+using namespace std;
+using namespace hccl;
+
+
+class AicpuCommunicatorTest : public testing::Test {
+protected:
+    static void SetUpTestCase()
+    {
+        std::cout << "AicpuCommunicatorTest SetUP" << std::endl;
+    }
+    static void TearDownTestCase()
+    {
+        std::cout << "AicpuCommunicatorTest TearDown" << std::endl;
+    }
+    // Some expensive resource shared by all tests.
+    virtual void SetUp()
+    {
+        std::cout << "AicpuCommunicatorTest Test SetUP" << std::endl;
+    }
+    virtual void TearDown()
+    {
+        GlobalMockObject::verify();
+        std::cout << "AicpuCommunicatorTest Test TearDown" << std::endl;
+    }
+};
+
+TEST_F(AicpuCommunicatorTest, Ut_PrepareSymmetricMemory_When_OpTransportResponseIsEmpty_Expect_ReturnIsHCCL_E_PARA) {
+    HcclCommAicpu * hcclCommAicpu = new HcclCommAicpu;
+    OpParam opParam;
+    OpCommTransport opTransportResponse;
+    HcclResult ret = hcclCommAicpu->PrepareSymmetricMemory(opParam, opTransportResponse);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    delete hcclCommAicpu;
+}
+
+TEST_F(AicpuCommunicatorTest, Ut_PrepareSymmetricMemory_When_LinkIsNull_Expect_ReturnIsHCCL_SUCCESS) {
+    HcclCommAicpu * hcclCommAicpu = new HcclCommAicpu;
+    OpParam opParam;
+    OpCommTransport opTransportResponse;
+    // 构造一个 level0 单元（遵循代码中使用 COMM_LEVEL0 索引）
+    opTransportResponse.resize(COMM_LEVEL0 + 1);
+    SingleSubCommTransport single;
+    // push a nullptr link and corresponding transportRequest with isValid = true
+    single.links.push_back(nullptr);
+    TransportRequest req{};
+    req.isValid = true;
+    single.transportRequests.push_back(req);
+    opTransportResponse[COMM_LEVEL0].push_back(single);
+
+    HcclResult ret = hcclCommAicpu->PrepareSymmetricMemory(opParam, opTransportResponse);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    delete hcclCommAicpu;
+}
+
+TEST_F(AicpuCommunicatorTest, Ut_ExecOp_When_SymMemEnabled_Expect_ReturnIsHCCL_SUCCESS)
+{
+    hccl::HcclCommAicpu *hcclCommAicpu = new hccl::HcclCommAicpu;
+    uint32_t sqHead = 0;
+    uint32_t sqTail = 100;
+    HcclComStreamInfo streamInfo;
+    streamInfo.actualStreamId = 1;
+    streamInfo.sqId = 1;
+    streamInfo.sqDepth = 100;
+    streamInfo.sqBaseAddr = &streamInfo;
+    streamInfo.logicCqId = 1;
+    Stream stream(streamInfo, false);
+    SqCqeContext sqeCqeCtx;
+    sqeCqeCtx.sqContext.inited = false;
+    stream.InitSqAndCqeContext(sqHead, sqTail, &sqeCqeCtx);
+    hcclCommAicpu->mainStream_ = stream;
+    hcclCommAicpu->retryEnable_ = true;
+    hcclCommAicpu->printTaskExceptionForErr_ = true;
+    hcclCommAicpu->identifier_ = "1";
+    MOCKER(QuerySqStatusByType)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(&HcclCommAicpu::Orchestrate).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommAicpu::PrepareSymmetricMemory).stubs().with(any()).will(returnValue(HCCL_E_INTERNAL));
+    MOCKER_CPP(&DeviceMem::create).stubs().with(any()).will(returnValue(DeviceMem()));
+
+    std::string newTag = "tag_test_taskException";
+    std::string algName = "algName_test_taskException";
+    OpParam opParam;
+    opParam.inputPtr = reinterpret_cast<void*>(0x1000000);
+    SymmetricWindow win;
+    win.stride = 1024;
+    win.baseVa = reinterpret_cast<void*>(0x3000000);
+    win.rankSize = 2;
+    opParam.inputSymWindow = reinterpret_cast<void*>(&win);
+    opParam.outputPtr = reinterpret_cast<void*>(0x2000000);
+    opParam.outputSymWindow = reinterpret_cast<void*>(&win);
+    HcommSymWinGetPeerPointer(opParam.inputSymWindow, opParam.inputOffset, 0, &opParam.inputPtr);
+    HcommSymWinGetPeerPointer(opParam.outputSymWindow, opParam.outputOffset, 0, &opParam.outputPtr);
+    
+    hccl::AlgResourceResponse algResResponse;
+    MOCKER_CPP(&HcclCommAicpu::GetAlgResponseRes)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    HcclOpResParam commParam;
+    commParam.localUsrRankId = 0;
+
+    hcclCommAicpu->isSymmetricMemory_ = true;
+    hcclCommAicpu->ExecOp(newTag, algName, opParam, &commParam);
+}
