@@ -352,7 +352,7 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;
     } else if (smallCountOptimMultiServer || smallCountOptimSingleServer) {
         algName = "AllGatherSmallCount";
-    } else if (param.supportZeroCopy &&
+    } else if ((param.supportSymmetricMemory || param.supportZeroCopy) &&
         (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize * deviceNumPerAggregation_ > HCCL_MID_COUNT_16_MB)) {
         const u32 SEVER_NUM_FOUR = 4;
         constexpr u64 RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN = 2 * 1024 * 1024;

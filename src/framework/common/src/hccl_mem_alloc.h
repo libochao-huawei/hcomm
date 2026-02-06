@@ -7,19 +7,27 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef PROFFILING_COMMAND_HANDLE_LITE_H
-#define PROFFILING_COMMAND_HANDLE_LITE_H
-#include "hccl/hccl_types.h"
 
-namespace Hccl {
-#ifdef CCL_KERNEL_AICPU
-using Prof_Status = uint32_t;
-const Prof_Status PROF_SUCCESS = 0x0;
-const Prof_Status PROF_FAILED = 0xFFFFFFFF;
-#define ADPROF_TASK_TIME_L0 0x00000008ULL
-#define ADPROF_TASK_TIME_L1 0x00000010ULL
-#define ADPROF_TASK_TIME_L2 0x00000020ULL
-int32_t DeviceCommandHandle(uint32_t profType, void *data, uint32_t len);
-#endif
+#ifndef HCCL_MEM_ALLOC_H
+#define HCCL_MEM_ALLOC_H
+
+#include <hccl_comm.h>
+#include "hccl_comm_pub.h"
+#include "config.h"
+
+#define ALIGN_SIZE(size, align) \
+    ({ \
+        (size) = (((size) + (align) - 1) / (align)) * (align);\
+    })
+
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
+
+HcclResult HcclMemAlloc(void **ptr, size_t size);
+HcclResult HcclMemFree(void *ptr);
+
+#ifdef __cplusplus
 }
-#endif
+#endif  // __cplusplus
+#endif // HCCL_MEM_ALLOC_H

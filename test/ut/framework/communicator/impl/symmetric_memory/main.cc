@@ -7,19 +7,13 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef PROFFILING_COMMAND_HANDLE_LITE_H
-#define PROFFILING_COMMAND_HANDLE_LITE_H
-#include "hccl/hccl_types.h"
+#include "gtest/gtest.h"
+#include "llt_hccl_stub_pub.h"
 
-namespace Hccl {
-#ifdef CCL_KERNEL_AICPU
-using Prof_Status = uint32_t;
-const Prof_Status PROF_SUCCESS = 0x0;
-const Prof_Status PROF_FAILED = 0xFFFFFFFF;
-#define ADPROF_TASK_TIME_L0 0x00000008ULL
-#define ADPROF_TASK_TIME_L1 0x00000010ULL
-#define ADPROF_TASK_TIME_L2 0x00000020ULL
-int32_t DeviceCommandHandle(uint32_t profType, void *data, uint32_t len);
-#endif
+GTEST_API_ int main(int argc, char **argv) {
+    // testcase测试代码，只跑特定的用例 testing::GTEST_FLAG(filter) = "AllReduceTest.allreduce_cyw_test";
+    printf("Running symmetric memory\n");
+    // log_level_set_stub(1);
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
-#endif
