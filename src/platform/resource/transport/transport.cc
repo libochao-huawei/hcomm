@@ -658,7 +658,7 @@ HcclResult Transport::HcclBatchRead(const TransportDeviceNormalData &ibvData, st
 #endif
 }
 
-HcclResult SetDeviceUnavailable(u32 deviceId)
+HcclResult Transport::SetDeviceUnavailable(u32 deviceId)
 {
     CHK_PTR_NULL(pimpl_);
     return pimpl_->SetDeviceUnavailable(deviceId);
