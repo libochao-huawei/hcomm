@@ -42,10 +42,28 @@ P2PMgmt::~P2PMgmt()
 
 HcclResult P2PMgmt::EnableP2P(std::vector<uint32_t> remoteDevices)
 {
+    for (u32 i = 0; i < remoteDevices.size(); i++){
+        HCCL_INFO("TETS6 remoteDevices[%u] = %u, remoteDevices.size(%u)",
+            i, remoteDevices[i], static_cast<u32>(remoteDevices.size()));
+    }
+    int32_t localDeviceLogicID;
+    u32 localDevicePhysicID = 0;
+    CHK_RET(hrtGetDevice(&localDeviceLogicID));
+    CHK_RET(hrtGetDevicePhyIdByIndex(localDeviceLogicID, localDevicePhysicID));
     if (initFlag_) {
+        for (u32 i = 0; i < remoteDevices.size(); i++){
+            HCCL_INFO("TETS7 remoteDevices[%u] = %u, remoteDevices.size(%u)",
+                i, remoteDevices[i], static_cast<u32>(remoteDevices.size()));
+        }
         isStandardCardFor910B_ = IsStandardCardFor910B(remoteDevices);
+        for (u32 i = 0; i < remoteDevices.size(); i++){
+            HCCL_INFO("TETS8 remoteDevices[%u] = %u, remoteDevices.size(%u)",
+                i, remoteDevices[i], static_cast<u32>(remoteDevices.size()));
+        }
         for (auto &remoteDevicePhysicID : remoteDevices) {
+            HCCL_INFO("TEST1 localdevicePhysicID[%u], remoteDevicePhysicID[%u]", localDevicePhysicID, remoteDevicePhysicID);
             if (IsNeedEstablishP2Pconnection(remoteDevicePhysicID)) {
+                HCCL_INFO("TEST2 localdevicePhysicID[%u], remoteDevicePhysicID[%u]", localDevicePhysicID, remoteDevicePhysicID);
                 CHK_RET(EnableP2P(remoteDevicePhysicID));
             }
         }
@@ -65,14 +83,15 @@ HcclResult P2PMgmt::EnableP2P(uint32_t remoteDevicePhysicID)
     CHK_PRT_RET(static_cast<u32>(localDeviceLogicID) >= maxDeviceNum,
         HCCL_ERROR("[EnableP2P]localDeviceLogicID[%d] is bigger than maxDeviceNum[%u]",
         localDeviceLogicID, maxDeviceNum), HCCL_E_INTERNAL);
-
+    
+    u32 localDevicePhysicID = 0;
+    CHK_RET(hrtGetDevicePhyIdByIndex(localDeviceLogicID, localDevicePhysicID));
+    HCCL_INFO("TEST4 localdevicePhysicID[%u], remoteDevicePhysicID[%u]", localDevicePhysicID, remoteDevicePhysicID);
     std::unique_lock<std::mutex> lock(connectionsLock_[localDeviceLogicID]);
     auto &iterLocalDevice = connectionsInfo_[localDeviceLogicID];
     auto iterRemoteDevice = iterLocalDevice.find(remoteDevicePhysicID);
     if ((iterRemoteDevice == iterLocalDevice.end()) || (iterRemoteDevice->second.reference == 0)) {
         bool isMarsterIdDiff = false;
-        u32 localDevicePhysicID = 0;
-        CHK_RET(hrtGetDevicePhyIdByIndex(localDeviceLogicID, localDevicePhysicID));
         CHK_RET(CheckMarsterId(remoteDevicePhysicID, localDevicePhysicID, isMarsterIdDiff));
         HCCL_INFO("[EnableP2P][CheckMarsterId]localDevicePhysicID[%u], remoteDevicePhysicID[%u], isMarsterIdDiff[%s]",
             localDevicePhysicID, remoteDevicePhysicID, isMarsterIdDiff ? "true" : "false");
@@ -291,10 +310,12 @@ HcclResult P2PMgmt::WaitP2PConnected(int32_t localDeviceLogicID, uint32_t remote
 
         bool enabled = false;
         CHK_RET(CheckP2P(remoteDevicePhysicID, enabled));
+        u32 localDevicePhysicID = 0;
+        CHK_RET(hrtGetDevicePhyIdByIndex(localDeviceLogicID, localDevicePhysicID));
 
         if (enabled) {
-            HCCL_INFO("connected p2p success, take time [%lld]us. device info: local logic id:%d, remote physic id:%u.",
-                DURATION_US(TIME_NOW() - start), localDeviceLogicID, remoteDevicePhysicID);
+            HCCL_INFO("connected p2p success, take time [%lld]us. device info: local logic id:%d, local physic id:%u, remote physic id:%u.",
+                DURATION_US(TIME_NOW() - start), localDeviceLogicID, localDevicePhysicID, remoteDevicePhysicID);
             return HCCL_SUCCESS;
         }
         std::this_thread::sleep_for(checkP2PTimeInterval);
@@ -310,8 +331,8 @@ HcclResult P2PMgmt::WaitP2PConnected(int32_t localDeviceLogicID, uint32_t remote
                 localDeviceLogicID, remoteDevicePhysicID);
 
             HCCL_ERROR("[Wait][P2PConnected]connected p2p timeout, timeout:%d s. local logicDevid:%d, "\
-                "remote physic id:%u.", GetExternalInputHcclLinkTimeOut(),
-                localDeviceLogicID, remoteDevicePhysicID);
+                "local physic id:%u, remote physic id:%u.", GetExternalInputHcclLinkTimeOut(),
+                localDeviceLogicID, localDevicePhysicID, remoteDevicePhysicID);
             return HCCL_E_DRV;
         }
     }
@@ -348,6 +369,9 @@ bool P2PMgmt::IsNeedEstablishP2Pconnection(uint32_t remoteDevicePhysicID)
         return true;
     }
     u32 deviceNum = (deviceType_ == DevType::DEV_TYPE_910_93) ? DIE_PER_MODULE : DEVICE_PER_MODULE;
+    HCCL_INFO("TEST3 localdevicePhysicID[%u], remoteDevicePhysicID[%u], [%u]==[%u] [%u]==[%u]",
+        localDevicePhysicID, remoteDevicePhysicID, localDevicePhysicID % deviceNum, remoteDevicePhysicID % deviceNum,
+        localDevicePhysicID / deviceNum, remoteDevicePhysicID / deviceNum);
     return ((localDevicePhysicID % deviceNum == remoteDevicePhysicID % deviceNum) ||
             (localDevicePhysicID / deviceNum == remoteDevicePhysicID / deviceNum));
 }
