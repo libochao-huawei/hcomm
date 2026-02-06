@@ -570,6 +570,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         isLoadOp = true;
         CHK_RET(CheckCommStatus());
         // 等待通信域状态为Ready，执行算子下发
+        THROW<InternalException>("Wait COMM_READY timeout, commId[%s]", id.c_str());
         WaitReady();
         SnapShotParser::GetInstance().SetIsNeedLoadOp(false);
         if (rankSize == 1) {
