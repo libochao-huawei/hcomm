@@ -61,10 +61,6 @@ private :
     HcclResult CalcCommRankSetforOneLoop(u32 roundIdx, const u32 groupRankSize,
                                          std::vector<u32> &commRanks) const; // 计算当前循环的send/recv rank set
 
-    HcclResult CopySendDataToScratch(u32 step, const std::vector<u32> &commRanks,
-                                     std::unordered_map<u32, UsrData> &sendSliceInfo,
-                                     std::vector<InsQuePtr>                 &queues) const;
-
     HcclResult SendRecvData(u32 step, const std::vector<u32> &commRanks,
                             std::unordered_map<u32, UsrData> &sendSliceInfo, std::unordered_map<u32, UsrData> &readSliceInfo,
                             const ResLinks &tempLinks, std::vector<InsQuePtr> &queues) const;
