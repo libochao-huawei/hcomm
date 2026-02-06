@@ -35,6 +35,8 @@ constexpr u32 MC2_PLANE_MODE_HOST = 0;    // HOST调度RoCE模式
 constexpr u32 MC2_PLANE_MODE_COMBINE = 1;    // 非分层建链模式
 constexpr u32 MC2_PLANE_MODE_HIERARCHY = 2;    // 分层建链模式
 
+constexpr u32 GROUP_MAX_CONCURRENT = 16;
+
 class CommBase {
 public:
     explicit CommBase(const std::string &collectiveId,
