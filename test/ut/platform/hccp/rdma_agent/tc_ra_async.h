@@ -13,23 +13,23 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-void tc_ra_ctx_lmem_register_async();
-void tc_ra_ctx_lmem_unregister_async();
-void tc_ra_ctx_qp_create_async();
-void tc_ra_ctx_qp_destroy_async();
-void tc_ra_ctx_qp_import_async();
-void tc_ra_ctx_qp_unimport_async();
-void tc_ra_socket_send_async();
-void tc_ra_socket_recv_async();
-void tc_ra_get_async_req_result();
-void tc_ra_socket_batch_connect_async();
-void tc_ra_socket_listen_start_async();
-void tc_ra_socket_listen_stop_async();
-void tc_ra_socket_batch_close_async();
-void tc_ra_hdc_async_init_session();
-void tc_ra_get_eid_by_ip_async();
-void tc_ra_hdc_get_eid_by_ip_async();
-void tc_ra_hdc_async_session_close();
+void TcRaCtxLmemRegisterAsync();
+void TcRaCtxLmemUnregisterAsync();
+void TcRaCtxQpCreateAsync();
+void TcRaCtxQpDestroyAsync();
+void TcRaCtxQpImportAsync();
+void TcRaCtxQpUnimportAsync();
+void TcRaSocketSendAsync();
+void TcRaSocketRecvAsync();
+void TcRaGetAsyncReqResult();
+void TcRaSocketBatchConnectAsync();
+void TcRaSocketListenStartAsync();
+void TcRaSocketListenStopAsync();
+void TcRaSocketBatchCloseAsync();
+void TcRaHdcAsyncInitSession();
+void TcRaGetEidByIpAsync();
+void TcRaHdcGetEidByIpAsync();
+void TcRaHdcAsyncSessionClose();
 #ifdef __cplusplus
 }
 #endif
