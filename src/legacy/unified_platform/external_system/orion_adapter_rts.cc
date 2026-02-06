@@ -192,7 +192,7 @@ void HrtFunctionRegister(void *binHandle, const void *stubFunc, const char *stub
 
 s32 HrtGetStreamId(aclrtStream ptr)
 {
-    CHECK_NULLPTR(ptr, "[HrtStreamGetMode] ptr is nullptr!");
+    CHECK_NULLPTR(ptr, "[HrtGetStreamId] ptr is nullptr!");
     s32       streamId;
     aclError ret = aclrtStreamGetId(ptr, &streamId);
     HCCL_INFO("Call aclrtStreamGetId, ptr[%p] return value[%d] streamId[%d].", ptr, ret, streamId);
@@ -415,7 +415,7 @@ void *HrtMalloc(u64 size, rtMemType_t memType)
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, devPtr, size, memType);
         MACRO_THROW(RuntimeApiException, msg);
     }
-    CHECK_NULLPTR(devPtr, "[HrtStreamCreateWithFlags] ptr is nullptr!");
+    CHECK_NULLPTR(devPtr, "[HrtMalloc] ptr is nullptr!");
 
     return devPtr;
 }
@@ -1029,10 +1029,10 @@ const std::map<HrtCntNotifyWaitMode, rtCntNotifyWaitMode> HRT_CNT_NOTIFY_WAIT_MO
 void HrtCntNotifyWaitWithTimeOut(const rtCntNotify_t inCntNotify, const aclrtStream streamPtr, 
                                 HrtCntNotifyWaitMode mode, u32 value, u32 timeout, bool isClear)
 {
-    HCCL_INFO("[HrtCntNotifyRecord] inCntNotify[%p], streamPtr[%p], mode[%d], value[%u], timeout[%u], isClear[%d].", 
+    HCCL_INFO("[HrtCntNotifyWaitWithTimeOut] inCntNotify[%p], streamPtr[%p], mode[%d], value[%u], timeout[%u], isClear[%d].", 
                 inCntNotify, streamPtr, mode, value, timeout, isClear);
-    CHECK_NULLPTR(inCntNotify, "[HrtCntNotifyRecord] inCntNotify is nullptr!");
-    CHECK_NULLPTR(streamPtr, "[HrtCntNotifyRecord] streamPtr is nullptr!");
+    CHECK_NULLPTR(inCntNotify, "[HrtCntNotifyWaitWithTimeOut] inCntNotify is nullptr!");
+    CHECK_NULLPTR(streamPtr, "[HrtCntNotifyWaitWithTimeOut] streamPtr is nullptr!");
     rtCntNotifyWaitInfo_t waitInfo{};
     waitInfo.mode    = HRT_CNT_NOTIFY_WAIT_MODE_MAP.at(mode);
     waitInfo.value   = value;
