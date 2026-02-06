@@ -121,7 +121,7 @@ STATIC int RsCcuRequest(struct TlvRequestMsgHead *head, char *data)
     switch (head->type) {
         case MSG_TYPE_CCU_INIT:
             ret = RsCcuInit();
-            CHK_PRT_RETURN(ret != 0, hccp_err("rs_ccu_init failed, ret(%d) module_type(%u) msg_type(%u) phyId(%u)",
+            CHK_PRT_RETURN(ret != 0 && ret != -EUSERS , hccp_err("rs_ccu_init failed, ret(%d) module_type(%u) msg_type(%u) phy_id(%u)",
                 ret, head->moduleType, head->type, head->phyId), ret);
             break;
         case MSG_TYPE_CCU_UNINIT:

@@ -73,6 +73,8 @@ int RaRsTlvRequest(char *inBuf, char *outBuf, int *outLen, int *opResult, int rc
     HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpTlvRequestData), sizeof(struct MsgHead), rcvBufLen, opResult);
 
     *opResult = gRaRsTlvOps.tlvRequest(&dataIn->txData.head, dataIn->txData.data);
+
+    CHK_PRT_RETURN(*opResult == -EUSERS, hccp_warn("tlv request unsuccessful"), 0);
     if (*opResult != 0) {
         hccp_err("tlv_request failed ret[%d]", *opResult);
     }
