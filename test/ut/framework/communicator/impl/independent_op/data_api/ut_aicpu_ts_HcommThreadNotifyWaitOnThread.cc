@@ -19,12 +19,12 @@
 
 using namespace hccl;
 
-class UtAicpuTsHcommLocalCopyOnThread : public testing::Test
+class UtAicpuTsHcommThreadNotifyWaitOnThread : public testing::Test
 {
 protected:
     virtual void SetUp() override
     {
-        MOCKER_CPP(&Hccl::IAicpuTsThread::SdmaCopy).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&Hccl::IAicpuTsThread::NotifyWait).stubs().will(returnValue(HCCL_SUCCESS));
         threadOnDevice.devType_ = DevType::DEV_TYPE_910_95;
         threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
     }
@@ -34,36 +34,28 @@ protected:
         GlobalMockObject::verify();
     }
 
-    AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
+    AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 1, NotifyLoadType::DEVICE_NOTIFY};
     ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
-    uint64_t tempDst[6] = {0};
-    uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
-    void *dst = reinterpret_cast<void *>(tempDst);
-    void *src = reinterpret_cast<void *>(tempSrc);
-    uint64_t len = sizeof(tempDst);
+    uint32_t notifyIdx = 0;
+    uint32_t timeOut = 1800;
     int32_t res{HCCL_E_RESERVED};
 };
 
-TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+TEST_F(UtAicpuTsHcommThreadNotifyWaitOnThread, Ut_HcommThreadNotifyWaitOnThread_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
-    res = HcommLocalCopyOnThread(thread, dst, src, len);
+    res = HcommThreadNotifyWaitOnThread(thread, notifyIdx, timeOut);
     EXPECT_EQ(res, HCCL_SUCCESS);
 }
 
-TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_Thread_IsNull_Expect_ReturnIsHCCL_E_PTR)
+TEST_F(UtAicpuTsHcommThreadNotifyWaitOnThread, Ut_HcommThreadNotifyWaitOnThread_When_Thread_IsNull_Expect_ReturnIsHCCL_E_PTR)
 {
-    res = HcommLocalCopyOnThread(0, dst, src, len);
+    res = HcommThreadNotifyWaitOnThread(0, notifyIdx, timeOut);
     EXPECT_EQ(res, HCCL_E_PTR);
 }
 
-TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_Dst_IsNull_Expect_ReturnIsHCCL_E_PTR)
+TEST_F(UtAicpuTsHcommThreadNotifyWaitOnThread, Ut_HcommThreadNotifyWaitOnThread_When_Notify_NotFound_Expect_ReturnIsHCCL_E_PTR)
 {
-    res = HcommLocalCopyOnThread(thread, nullptr, src, len);
-    EXPECT_EQ(res, HCCL_E_PTR);
-}
-
-TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_Src_IsNull_Expect_ReturnIsHCCL_E_PTR)
-{
-    res = HcommLocalCopyOnThread(thread, dst, nullptr, len);
+    notifyIdx = 1;
+    res = HcommThreadNotifyWaitOnThread(thread, notifyIdx, timeOut);
     EXPECT_EQ(res, HCCL_E_PTR);
 }
