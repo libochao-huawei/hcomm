@@ -4138,7 +4138,7 @@ namespace hccl
         // h to d
         CHK_RET(SetInfoToDevice(opParam, preMetaInfo, mode, preProcessStream));
         // opParam准备
-        CHK_RET(alltoAllOperator->PreparePreOpParam(preProcessOpParam, preMetaInfo, preProcessStream, GetAicpuUnfoldConfig()));
+        CHK_RET(alltoAllOperator->PreparePreOpParam(preProcessOpParam, preMetaInfo, preProcessStream));
 
         // 回归调用其它算子
         HCCL_INFO("[HcclCommunicator][RegressCalPreOp] Regression calls other operators and opType[%u]",
