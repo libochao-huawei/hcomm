@@ -198,6 +198,7 @@ HcclResult TransportManager::createSubCommLinkThreads(const std::string &tag, co
         bool isInterRdma;
         bool chooseBackup = transportRequest.isUsedRdma ? isBackup : false;
         HcclNetDevCtx netDevCtx;
+        HCCL_INFO("TEST16 remoterank %u", transportRequest.remoteUserRank);
         HcclResult ret = CreateDestSockets(tag, transportRequest.remoteUserRank, singleSubCommTransport.taskNum,
             connectSockets, netDevCtx, isInterRdma, transportRequest.isUsedRdma, chooseBackup, subCommIndex,
             transportRequest.linkType);
@@ -425,6 +426,7 @@ HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem 
                         transportRequest.remoteUserRank, userRank_, transportRequest.isUsedRdma, tag.c_str());
                     bool chooseBackup = transportRequest.isUsedRdma ? isBackup : false;
                     HcclNetDevCtx netDevCtx;
+                    HCCL_INFO("TEST17 remoterank %u", transportRequest.remoteUserRank);
                     HcclResult ret = CreateDestSockets(tag, transportRequest.remoteUserRank, singleSubCommTransport.taskNum,
                         connectSockets, netDevCtx, isInterRdma, transportRequest.isUsedRdma, chooseBackup, subCommIndex,
                         transportRequest.linkType);
@@ -569,6 +571,7 @@ HcclResult TransportManager::IncreAlloc(const std::string &tag, const TransportI
                     bool isInterRdma;
                     bool chooseBackup = transportRequest.isUsedRdma ? isBackup : false;
                     HcclNetDevCtx netDevCtx;
+                    HCCL_INFO("TEST18 remoterank %u", transportRequest.remoteUserRank);
                     HcclResult ret = CreateDestSockets(tag, transportRequest.remoteUserRank, reqSingleSubComm.taskNum,
                         connectSockets, netDevCtx, isInterRdma, transportRequest.isUsedRdma, chooseBackup, subCommIndex,
                         transportRequest.linkType);
@@ -724,6 +727,8 @@ HcclResult TransportManager::CreateDestSockets(const std::string &tag, RankId re
     std::vector<std::shared_ptr<HcclSocket> > &connectSockets, HcclNetDevCtx &netDevCtx, bool &isInterRdma, bool forceRdma, bool isBackup,
     u32 subCommIndex, TransportLinkType linkType)
 {
+    HCCL_INFO("TEST11 localRank %u, localRankDevice %d, remoteRank %u remoteRankDevice %d", 
+        userRank_, rankInfoList_[userRank_].devicePhyId, remoteRank, rankInfoList_[remoteRank].devicePhyId);
     // 改对端的ip和port
     UpdateIsInterRdma(remoteRank, isInterRdma, forceRdma);
     HCCL_INFO("[Create][DestSockets]UpdateIsInterRdma finished. local rank[%u], remote rank[%u],"
@@ -775,8 +780,15 @@ HcclResult TransportManager::CreateDestSockets(const std::string &tag, RankId re
         }
     } else {
         if (rankInfoList_[userRank_].deviceType == DevType::DEV_TYPE_310P3 || isStandardCard_) {
+            HCCL_INFO("TEST12 isStandardCard_ %s, localRank %u, localRankDevice %d, remoteRank %u remoteRankDevice %d", 
+                isStandardCard_ ? "true" : "false", userRank_, rankInfoList_[userRank_].devicePhyId,
+                remoteRank, rankInfoList_[remoteRank].devicePhyId);
             std::vector<u32> enableP2PDevices;
             enableP2PDevices.push_back(rankInfoList_[remoteRank].devicePhyId);
+            for (u32 i = 0; i < enableP2PDevices.size(); i++){
+                HCCL_INFO("TEST13 enableP2PDevices[%u] = %u, enableP2PDevices.size(%u)",
+                    i, enableP2PDevices[i], static_cast<u32>(enableP2PDevices.size()));
+            }
             HcclResult ret = P2PMgmtPub::EnableP2P(enableP2PDevices);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[Create][DestSockets]Enable P2P Failed, src devicePhyId[%d], dst devicePhyId[%d], ret[%u]",
@@ -790,6 +802,12 @@ HcclResult TransportManager::CreateDestSockets(const std::string &tag, RankId re
         if (!isInterServer && !isHaveCpuRank_) {
             std::vector<u32> WaitP2PEnabledDevices;
             WaitP2PEnabledDevices.push_back(rankInfoList_[remoteRank].devicePhyId);
+            HCCL_INFO("TEST14 localRank %u, localRankDevice %d, remoteRank %u remoteRankDevice %d", 
+                userRank_, rankInfoList_[userRank_].devicePhyId, remoteRank, rankInfoList_[remoteRank].devicePhyId);
+            for (u32 i = 0; i < WaitP2PEnabledDevices.size(); i++){
+                HCCL_INFO("TEST15 WaitP2PEnabledDevices[%u] = %u, WaitP2PEnabledDevices.size(%u)",
+                    i, WaitP2PEnabledDevices[i], static_cast<u32>(WaitP2PEnabledDevices.size()));
+            }
             HcclResult ret = P2PMgmtPub::WaitP2PEnabled(WaitP2PEnabledDevices, [this]() -> bool { return this->GetStopFlag(); });
             if (ret != HCCL_SUCCESS) {
                 if (ret == HCCL_E_DRV) {
