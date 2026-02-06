@@ -20,7 +20,7 @@
 
 using namespace hccl;
 
-class UtAicpuTsHcommWriteOnThreadTest : public testing::Test
+class UtAicpuTsHcommReadOnThreadTest : public testing::Test
 {
 protected:
     static void SetUpTestCase()
@@ -41,7 +41,7 @@ protected:
     }
 };
 
-TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_buffer_not_find_Expect_HCCL_E_INTERNAL)
+TEST_F(UtAicpuTsHcommReadOnThreadTest, Ut_HcommReadOnThread_When_buffer_not_find_Expect_HCCL_E_INTERNAL)
 {
     // 前置条件
     MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
@@ -62,20 +62,20 @@ TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_buffer_not_fi
     uint64_t len = sizeof(tempDst);
 
     // 执行步骤
-    auto res = HcommWriteOnThread(thread, devHandle, dst, src, len);
+    auto res = HcommReadOnThread(thread, devHandle, dst, src, len);
 
     // 后置验证
     EXPECT_EQ(res, HCCL_E_INTERNAL);
 }
 
-TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_Write_fail_Expect_HCCL_E_INTERNAL)
+TEST_F(UtAicpuTsHcommReadOnThreadTest, Ut_HcommReadOnThread_When_Read_fail_Expect_HCCL_E_INTERNAL)
 {
     // 前置条件
     MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::UbTransportLiteImpl::Write)
+    MOCKER_CPP(&Hccl::UbTransportLiteImpl::Read)
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(HCCL_E_INTERNAL));
@@ -93,20 +93,20 @@ TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_Write_fail_Ex
     uint64_t len = sizeof(tempDst);
 
     // 执行步骤
-    auto res = HcommWriteOnThread(thread, devHandle, dst, src, len);
+    auto res = HcommReadOnThread(thread, devHandle, dst, src, len);
 
     // 后置验证
     EXPECT_EQ(res, HCCL_E_INTERNAL);
 }
 
-TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_normal_Expect_HCCL_SUCCESS)
+TEST_F(UtAicpuTsHcommReadOnThreadTest, Ut_HcommReadOnThread_When_normal_Expect_HCCL_SUCCESS)
 {
     // 前置条件
     MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::UbTransportLiteImpl::Write)
+    MOCKER_CPP(&Hccl::UbTransportLiteImpl::Read)
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(HCCL_SUCCESS));
@@ -124,7 +124,7 @@ TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_normal_Expect
     uint64_t len = sizeof(tempDst);
 
     // 执行步骤
-    auto res = HcommWriteOnThread(thread, devHandle, dst, src, len);
+    auto res = HcommReadOnThread(thread, devHandle, dst, src, len);
 
     // 后置验证
     EXPECT_EQ(res, HCCL_SUCCESS);

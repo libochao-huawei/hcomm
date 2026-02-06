@@ -20,7 +20,7 @@
 
 using namespace hccl;
 
-class UtAicpuTsHcommWriteOnThreadTest : public testing::Test
+class UtAicpuTsHcommWriteReduceOnThreadTest : public testing::Test
 {
 protected:
     static void SetUpTestCase()
@@ -41,7 +41,7 @@ protected:
     }
 };
 
-TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_buffer_not_find_Expect_HCCL_E_INTERNAL)
+TEST_F(UtAicpuTsHcommWriteReduceOnThreadTest, Ut_HcommWriteReduceOnThread_When_buffer_not_find_Expect_HCCL_E_INTERNAL)
 {
     // 前置条件
     MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
@@ -62,20 +62,55 @@ TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_buffer_not_fi
     uint64_t len = sizeof(tempDst);
 
     // 执行步骤
-    auto res = HcommWriteOnThread(thread, devHandle, dst, src, len);
+    auto res = HcommWriteReduceOnThread(thread, devHandle, dst, src, len);
 
     // 后置验证
     EXPECT_EQ(res, HCCL_E_INTERNAL);
 }
 
-TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_Write_fail_Expect_HCCL_E_INTERNAL)
+TEST_F(UtAicpuTsHcommWriteReduceOnThreadTest, Ut_HcommWriteReduceOnThread_When_check_fail_Expect_HCCL_E_PARA)
 {
     // 前置条件
     MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::UbTransportLiteImpl::Write)
+    MOCKER(CheckDataTypeAndReduceOp)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_E_PARA));
+    AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
+    threadOnDevice.devType_ = DevType::DEV_TYPE_910_95;
+    threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
+    threadOnDevice.pImpl_->streamLiteVoidPtr_ = reinterpret_cast<void *>(0x123);
+    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
+    ChannelHandle devHandle = 1;
+
+    uint64_t tempDst[6] = {0};
+    uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
+    void *dst = reinterpret_cast<void *>(&tempDst);
+    void *src = reinterpret_cast<void *>(&tempSrc);
+    uint64_t len = sizeof(tempDst);
+
+    // 执行步骤
+    auto res = HcommWriteReduceOnThread(thread, devHandle, dst, src, len);
+
+    // 后置验证
+    EXPECT_EQ(res, HCCL_E_PARA);
+}
+
+TEST_F(UtAicpuTsHcommWriteReduceOnThreadTest, Ut_HcommWriteReduceOnThread_When_WriteReduce_fail_Expect_HCCL_E_INTERNAL)
+{
+    // 前置条件
+    MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
+        .stubs()
+        .with(any(), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(CheckDataTypeAndReduceOp)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::UbTransportLiteImpl::WriteReduce)
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(HCCL_E_INTERNAL));
@@ -93,20 +128,20 @@ TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_Write_fail_Ex
     uint64_t len = sizeof(tempDst);
 
     // 执行步骤
-    auto res = HcommWriteOnThread(thread, devHandle, dst, src, len);
+    auto res = HcommWriteReduceOnThread(thread, devHandle, dst, src, len);
 
     // 后置验证
     EXPECT_EQ(res, HCCL_E_INTERNAL);
 }
 
-TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_normal_Expect_HCCL_SUCCESS)
+TEST_F(UtAicpuTsHcommWriteReduceOnThreadTest, Ut_HcommWriteReduceOnThread_When_normal_Expect_HCCL_SUCCESS)
 {
     // 前置条件
     MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::UbTransportLiteImpl::Write)
+    MOCKER_CPP(&Hccl::UbTransportLiteImpl::WriteReduce)
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(HCCL_SUCCESS));
@@ -124,7 +159,7 @@ TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_normal_Expect
     uint64_t len = sizeof(tempDst);
 
     // 执行步骤
-    auto res = HcommWriteOnThread(thread, devHandle, dst, src, len);
+    auto res = HcommWriteReduceOnThread(thread, devHandle, dst, src, len);
 
     // 后置验证
     EXPECT_EQ(res, HCCL_SUCCESS);

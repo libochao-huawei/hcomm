@@ -16,6 +16,9 @@ set(src_to_test_list
     ut_aicpu_ts_HcommThreadNotifyWaitOnThread.cc
     ut_aicpu_ts_HcommChannelNotifyRecordOnThread.cc
     ut_aicpu_ts_HcommWriteOnThread.cc
+    ut_aicpu_ts_HcommWriteReduceOnThread.cc
+    ut_aicpu_ts_HcommReadOnThread.cc
+    ut_aicpu_ts_HcommReadReduceOnThread.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
 )
 
