@@ -135,6 +135,12 @@ HcclResult UrmaEndpoint::MemoryUnimport(const void *memDesc, uint32_t descLen)
     return HCCL_SUCCESS;
 }
 
+HcclResult UrmaEndpoint::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
+{
+    CHK_RET(this->regedMemMgr_->GetAllMemHandles(memHandles, memHandleNum));
+    return HCCL_SUCCESS;
+}
+
 CcuChannelCtxPool *UrmaEndpoint::GetCcuChannelCtxPool()
 {
     return ccuChannelCtxPool_.get();
