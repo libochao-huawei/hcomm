@@ -103,8 +103,7 @@ uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode){
 HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, const u32 tsId,
     const s32 userStreamId, const rtLogicCqReport_t* exceptionInfo)
 {
-    CHK_PRT_RET((halEschedSubmitEvent == nullptr), HCCL_ERROR("halEschedSubmitEvent is nullptr, "
-        "Does not support this interface."), HCCL_E_DRV);
+    HCCL_INFO("[SendTaskExceptionByMBox] SendTaskExceptionByMBox start.");
     ts_aicpu_msg_info_t aicpuSqe = {};
     u32 hostpid = 0;
     u32 vf_id = 0;
@@ -122,7 +121,7 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
 
     aicpuSqe.ts_id = static_cast<uint8_t>(tsId);
 
-    aicpuSqe.u.aicpu_record.fault_task_id = ((uint32_t)(exceptionInfo->taskId) << 16) | (exceptionInfo->streamId);
+    aicpuSqe.u.aicpu_record.fault_task_id = 0xffffffff;
 
     aicpuSqe.u.aicpu_record.ret_code = SwitchSdmaCqeErrCodeToTsErrCode(exceptionInfo->errorCode);
 
@@ -170,20 +169,15 @@ HcclResult SendTaskExceptionByMBox(CommunicatorImplLite *aicpuComm, const rtLogi
 
 void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicCqReport_t* exceptionInfo)
 {
-    if (exceptionInfo == nullptr) {
-        HCCL_ERROR("Exception process failed, rtExceptionInfo is nullptr.");
-        return;
-    }
-    // exceptionInfo->taskId和exceptionInfo->streamId拼成sqeId
+    Hccl::CHECK_NULLPTR(exceptionInfo, "Exception process failed, rtExceptionInfo is nullptr.");
+
     const u32 sqeId = static_cast<uint32_t>(exceptionInfo->taskId << 16) | static_cast<uint32_t>(exceptionInfo->streamId);
     const auto curTask = GlobalMirrorTasks::Instance().GetTaskInfo(
             0, exceptionInfo->sqId, sqeId);
-    if (curTask == nullptr) {
-        // 未找到异常对应的TaskInfo
-        HCCL_ERROR("Exception task not found. deviceId[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
-                   0, exceptionInfo->sqId, sqeId);
-        return;
-    }
+
+    Hccl::CHECK_NULLPTR(curTask, 
+        Hccl::StringFormat("Exception task not found. deviceId[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
+                   0, exceptionInfo->sqId, sqeId));
 
     // 每个通信域仅首次上报（N秒快恢时重置）
     if (!aicpuComm->IsErrorReported()) {
@@ -200,7 +194,7 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
 
         // 2) send mbox to tsfw
         CHK_RET_THROW(InternalException,
-            StringFormat("[TaskExceptionHandlerLite][SendTaskExceptionByMBox]group[%s]:"
+            Hccl::StringFormat("[TaskExceptionHandlerLite][SendTaskExceptionByMBox]group[%s]:"
             "Send task exception by mailBox failed, streamId[%d]",
             aicpuComm->GetId().c_str(), exceptionInfo->streamId), SendTaskExceptionByMBox(aicpuComm, exceptionInfo));
 

@@ -187,18 +187,17 @@ void TaskExceptionFunc::Call()
         for (auto aicpuComm : aicpuComms) {
             std::vector<StreamLite *> aicpuStreams = aicpuComm-> GetStreamLiteMgr()->GetAllStreams();
             for (auto &aicpuStream : aicpuStreams) {
-                if (aicpuStream == nullptr) {
-                    HCCL_ERROR("[TaskExceptionFunc]stream of in aicpuComm[%s] is nullptr", aicpuComm->GetId().c_str());
-                    continue;
-                }
+                Hccl::CHECK_NULLPTR(aicpuStream,
+                    Hccl::StringFormat("[TaskExceptionFunc] stream of in aicpuComm[%s] is nullptr", aicpuComm->GetId().c_str()));
+                
                 if (GetReporterInfo(aicpuStream, recvInfo)) {
                     continue;
                 }
+
                 uint32_t reportNum = recvInfo->report_cqe_num;
-                if (reportNum > MAX_REPORT_CNT) {
-                    HCCL_ERROR("[TaskExceptionFunc]report cqe num %u should not big than %u", reportNum, MAX_REPORT_CNT);
-                    continue;
-                }
+                CHK_PRT_THROW(reportNum > MAX_REPORT_CNT, HCCL_ERROR("[TaskExceptionFunc]report cqe num %u should not big than %u", 
+                    reportNum, MAX_REPORT_CNT), InvalidParamsException, "[TaskExceptionFunc] The report cqe num is bigger than the max report cnt.");
+
                 for (uint32_t idx = 0U; idx < reportNum; ++idx) {
                     auto &reportOfOne
                         = *((reinterpret_cast<rtLogicCqReport_t *>(recvInfo->cqe_addr)) + idx); // 外部保证是有效的地址
