@@ -360,11 +360,11 @@ HCCP_ATTRI_VISI_DEF int ra_ctx_lmem_register(void *ctx_handle, struct mr_reg_inf
 
     *lmem_handle = (void *)lmem_handle_tmp;
 
-    hccp_warn("@@@ lmem_info->udma_segment.token_value: %ld", lmem_info->udma_segment.token_value);
-    hccp_warn("@@@ lmem_info->udma_segment.token_value_valid: %ld", lmem_info->udma_segment.token_value_valid);
-    hccp_warn("@@@ lmem_info->udma_segment.len: %ld", lmem_info->udma_segment.len);
-    hccp_warn("@@@ lmem_info->udma_segment.va: %ld", lmem_info->udma_segment.va);
-    hccp_warn("@@@ lmem_info->udma_segment.tid: %ld", lmem_info->udma_segment.tid);
+    hccp_warn("@@@ lmem_info->out.udma_segment.token_value: %ld", lmem_info->out.udma_segment.token_value);
+    hccp_warn("@@@ lmem_info->out.udma_segment.token_value_valid: %ld", lmem_info->out.udma_segment.token_value_valid);
+    hccp_warn("@@@ lmem_info->out.udma_segment.len: %ld", lmem_info->out.udma_segment.len);
+    hccp_warn("@@@ lmem_info->out.udma_segment.va: %ld", lmem_info->out.udma_segment.va);
+    hccp_warn("@@@ lmem_info->out.udma_segment.tid: %ld", lmem_info->out.udma_segment.tid);
 
     return 0;
 

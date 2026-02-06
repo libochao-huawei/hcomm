@@ -426,12 +426,6 @@ struct ctx_qp_share_info {
     uint8_t raw_cqe[64U];
 };
 
-enum db_mmap_type {
-	UDMA_MMAP_HUGEPAGE,
-	UDMA_MMAP_JFC_PAGE,
-	UDMA_MMAP_JETTY_DSQE,
-};
-
 struct qp_create_info {
     struct qp_key key; /**< for modify qp or import & bind jetty*/
     union {
@@ -459,7 +453,7 @@ struct qp_create_info {
         uint32_t baseblk_shift;
         uint32_t baseblk_cnt;
         uint32_t sqe_bb_cnt;
-        enum db_mmap_type db_type;
+        uint32_t db_type;
         void volatile *db_addr;
     } udma_jetty_sq;
     struct {
@@ -470,7 +464,7 @@ struct qp_create_info {
         uint32_t baseblk_shift;
         uint32_t baseblk_cnt;
         uint32_t sqe_bb_cnt;
-        enum db_mmap_type db_type;
+        uint32_t db_type;
         void volatile *db_addr;
     } udma_jetty_cq;
     uint32_t resv[15U];
