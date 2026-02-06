@@ -121,6 +121,7 @@ STATIC int rs_ccu_request(struct TlvRequestMsgHead *head, char *data)
     switch (head->type) {
         case MSG_TYPE_CCU_INIT:
             ret = rs_ccu_init();
+            CHK_PRT_RETURN(ret == -EUSERS, hccp_run_warn("multi-users is not supported for ccu, phy_id(%u)", head->phyId), ret);
             CHK_PRT_RETURN(ret != 0, hccp_err("rs_ccu_init failed, ret(%d) module_type(%u) msg_type(%u) phy_id(%u)",
                 ret, head->moduleType, head->type, head->phyId), ret);
             break;
