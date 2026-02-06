@@ -289,7 +289,7 @@ namespace hccl
         // 根据设备ID创建dispatcher
         if ((deviceType_ == DevType::DEV_TYPE_910B) && GetExternalInputHcclEnableFfts())
         {
-            CHK_PRT_CONT(GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !GetExternalInputHcclAicpuUnfold(),
+            CHK_PRT_CONT(GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !GetAicpuUnfoldConfig(),
                          HCCL_RUN_INFO("Will use ffts mode."));
         }
         else
@@ -578,8 +578,8 @@ namespace hccl
     bool HcclCommunicator::GetSupportHDCommunicate()
     {
         HCCL_INFO("%s aicpuUnfold[%d], deviceType_[%d], isHaveCpuRank_[%d]",
-            __func__, GetExternalInputHcclAicpuUnfold(), deviceType_, isHaveCpuRank_);
-        return (GetExternalInputHcclAicpuUnfold() == true) ||
+            __func__, GetAicpuUnfoldConfig(), deviceType_, isHaveCpuRank_);
+        return (GetAicpuUnfoldConfig() == true) ||
             ((deviceType_ == DevType::DEV_TYPE_910_93) || (deviceType_ == DevType::DEV_TYPE_910B) ||
             Is310P3Common(isHaveCpuRank_, deviceType_));
     }
