@@ -451,10 +451,12 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
         dfxOpInfo->op_           = *GetCurrentCollOperator();
         dfxOpInfo->tag_          = OpTypeToString(dfxOpInfo->op_.opType);
         dfxOpInfo->algType_      = AlgType::MESH;
-        dfxOpInfo->index_        = GetIdIndex();
+        dfxOpInfo->commIndex_        = GetIdIndex();
         dfxOpInfo->comm_         = this;
         dfxOpInfo->mainStreamId_ = HrtGetStreamId(stream);
         dfxOpInfo->beginTime_    = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+        dfxOpInfo->commId_       = id;
+        dfxOpInfo->opIndex_      = opIndex;
         GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);
         ExecuteFastCcuLaunch(opParams, stream, params);
         ReportProfInfo(beginTime, opParams.staticShape, true);
@@ -544,6 +546,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
     collOpIndex++;
     submittedOpCnt = collOpIndex;
     opBaseOpIndex++;
+    opIndex++;
     status = CommStatus::COMM_READY;
 }
 
@@ -623,6 +626,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         TraceEndInfo(startut, endut, opParams);
         RefreshSubmittedOpcnt();
         opBaseOpIndex++;
+        opIndex++;
         status = CommStatus::COMM_READY;
     } catch (HcclException &e) {
         status = CommStatus::COMM_READY;
@@ -880,6 +884,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         ReportProfInfo(beginTime, opParams.staticShape, false);
         HcclUs endut = std::chrono::steady_clock::now();
         TraceEndInfo(startut, endut, opParams);
+        opIndex++;
     } catch (HcclException &e) {
         status = CommStatus::COMM_READY;
         HCCL_ERROR(e.what());
@@ -1453,9 +1458,15 @@ u32 CommunicatorImpl::GetSubmittedOpCnt() const
 {
     return submittedOpCnt;
 }
+
 u32 CommunicatorImpl::GetOpBaseOpIndex() const
 {
     return opBaseOpIndex;
+}
+
+u32 CommunicatorImpl::GetOpIndex() const
+{
+    return opIndex;
 }
 
 bool CommunicatorImpl::GetOpAiCpuTSFeatureFlag() const

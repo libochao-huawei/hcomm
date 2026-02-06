@@ -31,6 +31,7 @@ int CommunicatorImplLite::LoadWithOpBasedMode(HcclKernelParamLite *kernelParam)
         // 设定devType，初始化能力，算法及其他模块通过Get获取能力
         DevCapability::GetInstance().Init(kernelParam->comm.devType);
         UnfoldOp(kernelParam);
+        opIndex++;//算子计数
     } catch (HcclException &e) {
         HCCL_ERROR("Hccl exception %s was caught.", e.what());
         return KERNEL_ERROR_CODE;
@@ -190,6 +191,7 @@ void CommunicatorImplLite::UpdateCommParam(HcclKernelParamLite *kernelParam)
     devPhyId      = kernelParam->comm.devPhyId;
     devType       = kernelParam->comm.devType;
     opCounterAddr = kernelParam->comm.opCounterAddr;
+    opIndex       = kernelParam->comm.opIndex;
     hcclExecTimeout = kernelParam->envConfig.hcclExecTimeout;
     if (rmtDataBufferMgr == nullptr) {
         collAlgInfo   = std::make_unique<CollAlgInfo>(kernelParam->op.algOperator.opMode, kernelParam->opTag);
@@ -451,12 +453,17 @@ void CommunicatorImplLite::InitCurrentOp(HcclKernelParamLite *kernelParam)
 
 void CommunicatorImplLite::SetDfxOpInfo(uint64_t beginTime)
 {
+    u64 size = 4;
     auto dfxopInfo           = std::make_shared<DfxOpInfo>();
     dfxopInfo->op_           = currentOp;
     dfxopInfo->algType_      = AlgType::MESH; // 暂时
-    dfxopInfo->index_        = idIndex_;
+    dfxopInfo->commIndex_        = idIndex_;
     dfxopInfo->beginTime_    = beginTime;
     dfxopInfo->comm_         = this;
+    dfxopInfo->commId_       = commId;
+ 	dfxopInfo->opIndex_      = opIndex;
+ 	dfxopInfo->headOpCounter_ = *(reinterpret_cast<u32 *>(opCounterAddr + size));
+ 	dfxopInfo->tailOpCounter_ = *(reinterpret_cast<u32 *>(opCounterAddr + size * 2));
     CHECK_NULLPTR(streamLiteMgr->GetMaster(), "[SetDfxOpInfo]master stream is nullptr!");
     dfxopInfo->mainStreamId_ = streamLiteMgr->GetMaster()->GetId();
     mirrorTaskMgr->SetCurrDfxOpInfo(dfxopInfo);
