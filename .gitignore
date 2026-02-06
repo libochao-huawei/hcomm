@@ -6,3 +6,4 @@ build_device/*
 build_hccd/*
 scripts/sign/*
 utils/
+scripts/package/*

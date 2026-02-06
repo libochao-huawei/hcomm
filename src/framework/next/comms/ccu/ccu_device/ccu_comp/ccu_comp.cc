@@ -555,7 +555,9 @@ HcclResult CcuComponent::ConfigMsIdToken()
             reinterpret_cast<custom_chan_info_in *>(&inBuff),
             reinterpret_cast<custom_chan_info_out *>(&outBuff));
         if (ret != 0) {
-            HCCL_ERROR("");
+            HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
+                "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId_, dieId,
+                "SET_MSID_TOKEN");
             return HcclResult::HCCL_E_NETWORK;
         }
 

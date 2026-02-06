@@ -85,11 +85,11 @@ protected:
     CcuRep::CcuBuf CreateCcuBuf();
     CcuRep::Executor CreateExecutor();
 
+    HcclResult CreateVariable(const uint32_t coreId, const uint32_t varIdx, CcuRep::Variable *var);
+
     HcclResult CreateBlockCcuBuf(const uint32_t count, CcuRep::CcuBuf *ccuBufs);
     HcclResult CreateBlockExecutor(const uint32_t count, CcuRep::Executor *ccuExes);
     HcclResult CreateBlockCompletedEvent(const uint32_t count, CcuRep::CompletedEvent *ccuEvents);
-
-    HcclResult CreateSharedVariable(const uint32_t coreId, const uint32_t varId, CcuRep::Variable *var);
 
     HcclResult RecordEvent(CcuRep::CompletedEvent event);
     HcclResult WaitEvent(CcuRep::CompletedEvent event);

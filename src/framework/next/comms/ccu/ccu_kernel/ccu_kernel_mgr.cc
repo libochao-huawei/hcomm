@@ -656,8 +656,9 @@ HcclResult CcuKernelMgr::LoadInstruction(const CcuRep::CcuInstrInfo &instrInfo, 
         reinterpret_cast<custom_chan_info_in *>(&inBuff),
         reinterpret_cast<custom_chan_info_out *>(&outBuff));
     if (ret != 0) {
-        HCCL_ERROR("[CcuKernelMgr][%s] failed to call ccu driver[%d], devLogicId[%d] dieId[%u]",
-            __func__, ret, devLogicId_, dieId);
+        HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
+            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,
+            "SET_INSTRUCTION");
         return HcclResult::HCCL_E_NETWORK;
     }
 
