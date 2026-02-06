@@ -2945,8 +2945,10 @@ HcclResult HcclCommAicpu::BSRStopedProcess(HcclOpExecFSM &fsmState, KfcError &er
 
     ret = ((bsrSendOpBeginSqePos_ == bsrSendSqHead) || (bsrRecvOpBeginSqePos_ == bsrRecvSqHead)) ? HCCL_E_OPRETRY_FAIL :
                                                                                                    HCCL_SUCCESS;
-    uint16_t rsErrorCode = TS_ERROR_RETRY_CONSTRAINT;
-    CHK_PRT(SendTaskExceptionByMBox(rsErrorCode));
+    if (ret != HCCL_SUCCESS) {
+        uint16_t rsErrorCode = TS_ERROR_RETRY_CONSTRAINT;
+        CHK_PRT(SendTaskExceptionByMBox(rsErrorCode));
+    }
     HCCL_RETRY_CHK_RET_AND_TRANS_FSM(ret,
         HCCL_ERROR("[OpRetry][AICPU]hccl aicpu wait start task is not complete, can not retry. params: send sq head "
         "%u, recv sq head %u, send sq begin %u, recv sq begin %u",
