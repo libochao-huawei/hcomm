@@ -164,24 +164,24 @@ static HcclResult GetTpInfoAsync(const CtxHandle ctxHandle, const GetTpInfoParam
     CHK_RET(CommAddrToIpAddress(param.rmtAddr, rmtAddr));
     const auto &tpProtocol = param.tpProtocol;
 
-    struct get_tp_cfg cfg{};
+    struct GetTpCfg cfg{};
     cfg.flag.bs.rtp = tpProtocol == TpProtocol::RTP ? 1 : 0;
     cfg.flag.bs.ctp = tpProtocol == TpProtocol::CTP ? 1 : 0;
-    cfg.trans_mode = transport_mode_t::CONN_RM; // 当前只使用RM Jetty
-    CHK_RET(IpAddressToHccpEid(locAddr, cfg.local_eid)); // 当前复用orion ip address
+    cfg.transMode = TransportModeT::CONN_RM; // 当前只使用RM Jetty
+    CHK_RET(IpAddressToHccpEid(locAddr, cfg.localEid)); // 当前复用orion ip address
     HCCL_INFO("RaUbGetTpInfoAsync cfg.local_eid[subnetPrefix[%016llx], interfaceId[%016llx]]",
-              cfg.local_eid.in6.subnet_prefix, cfg.local_eid.in6.interface_id);
-    CHK_RET(IpAddressToHccpEid(rmtAddr, cfg.peer_eid));
+              cfg.localEid.in6.subnetPrefix, cfg.localEid.in6.interfaceId);
+    CHK_RET(IpAddressToHccpEid(rmtAddr, cfg.peerEid));
     HCCL_INFO("RaUbGetTpInfoAsync cfg.peer_eid[subnetPrefix[%016llx], interfaceId[%016llx]]",
-              cfg.peer_eid.in6.subnet_prefix, cfg.peer_eid.in6.interface_id);
+              cfg.peerEid.in6.subnetPrefix, cfg.peerEid.in6.interfaceId);
 
-    out.resize(sizeof(tp_info));
-    struct tp_info *info = reinterpret_cast<struct tp_info *>(out.data());
+    out.resize(sizeof(HccpTpInfo));
+    struct HccpTpInfo *info = reinterpret_cast<struct HccpTpInfo *>(out.data());
 
     void *raReqHandle = nullptr;
     constexpr uint32_t TP_HANDLE_REQUEST_NUM = 1;
     num = TP_HANDLE_REQUEST_NUM; // 指定需要从管控面申请tp handle的数量, hccp 会返回实际个数
-    s32 ret = ra_get_tp_info_list_async(ctxHandle, &cfg, info, &num, &raReqHandle);
+    s32 ret = RaGetTpInfoListAsync(ctxHandle, &cfg, info, &num, &raReqHandle);
     if (ret != 0 || !raReqHandle) {
         HCCL_ERROR("[%s] failed, call interface error[%d] raReqHandle[%p], "
             "ctxHandle[%p] locAddr[%s] rmtAddr[%s].", __func__, ret, raReqHandle, ctxHandle,
@@ -210,10 +210,10 @@ HcclResult TpMgr::StartGetTpInfoListRequest(const GetTpInfoParam &param,
     return HcclResult::HCCL_SUCCESS;
 }
 
-inline TpInfo ParseTpInfo(const struct tp_info *infoPtr)
+inline TpInfo ParseTpInfo(const struct HccpTpInfo *infoPtr)
 {
     TpInfo tpInfo;
-    tpInfo.tpHandle = infoPtr->tp_handle;
+    tpInfo.tpHandle = infoPtr->tpHandle;
 
     return tpInfo;
 }
@@ -228,8 +228,8 @@ HcclResult TpMgr::HandleCompletedRequest(const TpMgr::RequestCtx reqCtx,
         return HcclResult::HCCL_E_NOT_FOUND;
     }
 
-    const struct tp_info *baseInfoPtr = // 类的私有变量vector指向的堆内存，不会为空
-        reinterpret_cast<const struct tp_info *>(reqCtx.dataBuffer.data());
+    const struct HccpTpInfo *baseInfoPtr = // 类的私有变量vector指向的堆内存，不会为空
+        reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
 
     TpInfo tmpTpInfo = ParseTpInfo(baseInfoPtr); // 封装接口只会申请1个tpHandle
 

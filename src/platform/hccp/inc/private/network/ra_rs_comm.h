@@ -361,10 +361,10 @@ struct TlvRequestMsgHead {
 
 int ConverReturnCode(enum ModuleType module, int erroCode);
 
-static inline void ra_rs_set_dev_info(struct RaRsDevInfo *dev_info, unsigned int phy_id, unsigned int dev_index)
+static inline void RaRsSetDevInfo(struct RaRsDevInfo *devInfo, unsigned int phyId, unsigned int devIndex)
 {
-    dev_info->phyId = phy_id;
-    dev_info->devIndex = dev_index;
+    devInfo->phyId = phyId;
+    devInfo->devIndex = devIndex;
 }
 
 #endif

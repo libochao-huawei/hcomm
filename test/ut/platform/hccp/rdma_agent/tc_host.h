@@ -10,24 +10,24 @@
 
 #ifndef TC_RA_HOST_H
 #define TC_RA_HOST_H
-extern "C" void tc_host();
-extern "C" void tc_ifaddr();
-extern "C" void tc_ra_recv_wrlist(void);
-extern "C" void tc_host_ra_send_wrlist_ext();
-extern "C" void tc_host_ra_send_normal_wrlist();
-extern "C" void tc_ra_set_qp_attr_qos(void);
-extern "C" void tc_ra_set_qp_attr_timeout(void);
-extern "C" void tc_ra_set_qp_attr_retry_cnt(void);
-extern "C" void tc_ra_create_event_handle(void);
-extern "C" void tc_ra_ctl_event_handle(void);
-extern "C" void tc_ra_wait_event_handle(void);
-extern "C" void tc_ra_destroy_event_handle(void);
-extern "C" void tc_ra_poll_cq(void);
-extern "C" void tc_get_vnic_ip_infos(void);
-extern "C" void tc_ra_socket_batch_abort(void);
-extern "C" void tc_ra_get_client_socket_err_info(void);
-extern "C" void tc_ra_get_server_socket_err_info(void);
-extern "C" void tc_ra_socket_accept_credit_add(void);
-extern "C" void tc_ra_remap_mr(void);
-extern "C" void tc_ra_register_mr(void);
+extern "C" void TcHost();
+extern "C" void TcIfaddr();
+extern "C" void TcRaRecvWrlist(void);
+extern "C" void TcHostRaSendWrlistExt();
+extern "C" void TcHostRaSendNormalWrlist();
+extern "C" void TcRaSetQpAttrQos(void);
+extern "C" void TcRaSetQpAttrTimeout(void);
+extern "C" void TcRaSetQpAttrRetryCnt(void);
+extern "C" void TcRaCreateEventHandle(void);
+extern "C" void TcRaCtlEventHandle(void);
+extern "C" void TcRaWaitEventHandle(void);
+extern "C" void TcRaDestroyEventHandle(void);
+extern "C" void TcRaPollCq(void);
+extern "C" void TcGetVnicIpInfos(void);
+extern "C" void TcRaSocketBatchAbort(void);
+extern "C" void TcRaGetClientSocketErrInfo(void);
+extern "C" void TcRaGetServerSocketErrInfo(void);
+extern "C" void TcRaSocketAcceptCreditAdd(void);
+extern "C" void TcRaRemapMr(void);
+extern "C" void TcRaRegisterMr(void);
 #endif
