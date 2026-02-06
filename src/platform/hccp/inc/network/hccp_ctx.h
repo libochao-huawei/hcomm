@@ -177,6 +177,13 @@ struct mem_reg_info {
             uint64_t target_seg_handle; /**< refer to urma_target_seg_t */
         } ub;
     };
+    struct{
+        uint32_t token_value;
+        bool token_value_valid;
+        uint64_t len;                 /* specify the length of the segment to be registered */
+        uint64_t va;                  /* specify the address of the segment to be registered */
+        uint32_t tid;
+    } udma_segment;
     uint32_t resv[8U];
 };
 
@@ -419,6 +426,12 @@ struct ctx_qp_share_info {
     uint8_t raw_cqe[64U];
 };
 
+enum db_mmap_type {
+	UDMA_MMAP_HUGEPAGE,
+	UDMA_MMAP_JFC_PAGE,
+	UDMA_MMAP_JETTY_DSQE,
+};
+
 struct qp_create_info {
     struct qp_key key; /**< for modify qp or import & bind jetty*/
     union {
@@ -440,11 +453,26 @@ struct qp_create_info {
     uint64_t va; /**< refer to struct urma_jetty*, struct ibv_qp* */
     struct {
         void *qbuf;
-        void *qbuf_end;
         uint32_t qbuf_size;
-        void *qbuf_curr;
+        uint32_t pi;
+        uint32_t ci;
+        uint32_t baseblk_shift;
+        uint32_t baseblk_cnt;
+        uint32_t sqe_bb_cnt;
+        enum db_mmap_type db_type;
         void volatile *db_addr;
     } udma_jetty_sq;
+    struct {
+        void *qbuf;
+        uint32_t qbuf_size;
+        uint32_t pi;
+        uint32_t ci;
+        uint32_t baseblk_shift;
+        uint32_t baseblk_cnt;
+        uint32_t sqe_bb_cnt;
+        enum db_mmap_type db_type;
+        void volatile *db_addr;
+    } udma_jetty_cq;
     uint32_t resv[15U];
 };
 
