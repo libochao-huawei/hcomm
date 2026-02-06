@@ -16,7 +16,7 @@
 #include "suspending_exception.h"
 #include "exception_util.h"
 #include "task_info.h"
-#ifdef CCL_KERNEL
+#ifdef CCL_KERNEL_AICPU
 #include "dlprof_function.h"
 #include "profiling_command_handle_lite.h"
 #endif
@@ -126,7 +126,7 @@ void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
 
     UpdateHDCommnicate(kernelParam);
     RegisterRtsqCallback();
-#ifdef CCL_KERNEL
+#ifdef CCL_KERNEL_AICPU
     RegisterProfCallBack();
 #endif
     isCommReady = true;
@@ -158,7 +158,7 @@ void CommunicatorImplLite::RegisterRtsqCallback()
         streamLiteMgr->GetSlave(i)->GetRtsq()->SetOpExecStatusCallback(checkOpExecStatusCallback);
     }
 }
-#ifdef CCL_KERNEL
+#ifdef CCL_KERNEL_AICPU
 void CommunicatorImplLite::RegisterProfCallBack()
 {
     if (MsprofRegisterCallback != nullptr) {
