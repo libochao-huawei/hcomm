@@ -316,6 +316,11 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
 
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB) && !retryEnable_; // 涉及ROCE平面
+    // 多超节点的中等数据量
+    bool midCountOptimMultiPod = (superPodNum_ > 1) &&
+        (param.DataDes.count * unitSize > HCCL_SMALL_COUNT_16_KB) &&
+        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_256_KB) && !retryEnable_; // 涉及ROCE平面
+
     // ARS 算法选择
     bool isARSAlgo = multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_;
     if (isARSAlgo) {
@@ -352,6 +357,8 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;
     } else if (smallCountOptimMultiServer || smallCountOptimSingleServer) {
         algName = "AllGatherSmallCount";
+    } else if (midCountOptimMultiPod) {
+        algName = "AllGatherMidCountFor91093Executor";
     } else if ((param.supportSymmetricMemory || param.supportZeroCopy) &&
         (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize * deviceNumPerAggregation_ > HCCL_MID_COUNT_16_MB)) {
         const u32 SEVER_NUM_FOUR = 4;
