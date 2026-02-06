@@ -1170,6 +1170,10 @@ namespace hccl
             HCCL_INFO("The current device just support this StandardCard case.");
             return true;
         }
+        if (deviceType_ == DevType::DEV_TYPE_910_93) {
+            HCCL_INFO("The current device does not have the StandardCard case.");
+            return false;
+        }
 
         return ((pairLinkInfo_[static_cast<u32>(LinkTypeInServer::HCCS_TYPE)].size() == 0) &&
                 (pairLinkInfo_[static_cast<u32>(LinkTypeInServer::HCCS_SW_TYPE)].size() == 0) &&
@@ -1294,7 +1298,13 @@ namespace hccl
                     iterServ->second[i].serverId.c_str(), iterServ->second[i].deviceInfo.devicePhyId);
             }
         }
+        for (u32 i = 0; i < enableP2PDevices_.size(); i++){
+            HCCL_INFO("TEST5 enableP2PDevices_[%u] = %u, enableP2PDevices_.size(%u)",
+                i, enableP2PDevices_[i], static_cast<u32>(enableP2PDevices_.size()));
+        }
+        HCCL_INFO("TEST10 isStandardCard_ %s", isStandardCard_ ? "true" : "false");
         if (deviceType_ != DevType::DEV_TYPE_310P3 && !isStandardCard_) {
+            HCCL_INFO("TEST9 isStandardCard_ %s", isStandardCard_ ? "true" : "false");
             HcclResult ret = P2PMgmtPub::EnableP2P(enableP2PDevices_);
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][PreResource]Enable P2P Failed, deviceLogicId[%d], ret[%u]", deviceLogicId_, ret), ret);
         }

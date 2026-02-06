@@ -107,6 +107,9 @@ HcclResult TopoInfoParse::GetServerInnerLinkInfo(std::unordered_map<u32, u32> &p
 {
     std::vector<RankInfo> serverInnerInfo;
     CHK_RET(TransformRankInfoByServerId(serverInnerInfo));
+    for (u32 i = 0; i < serverInnerInfo.size();i++) {
+        HCCL_INFO("TEST14 serverInnerInfo[%u] = %d", i, serverInnerInfo.devicePhyId);
+    }
 
     CHK_PRT_RET(serverInnerInfo.size() == 0,
         HCCL_ERROR("[Get][ServerInnerLinkInfo]server info input is empty, "
