@@ -2231,6 +2231,8 @@ HcclResult HcclCommAicpu::AllocAlgResource(const std::string &newTag, const OpPa
 HcclResult HcclCommAicpu::CalcResRequest(const std::string &algName, const OpParam &param,
     std::unique_ptr<CollExecutorBase> &executor, AlgResourceRequest &resourceRequest)
 {
+    HcclUs startut = TIME_NOW();
+
     if (executor.get() == nullptr) {
         executor = CollAlgExecRegistry::Instance().GetAlgExec(algName, dispatcher_, topoMatcher_);
         CHK_PRT_RET(executor.get() == nullptr,
@@ -2252,6 +2254,7 @@ HcclResult HcclCommAicpu::CalcResRequest(const std::string &algName, const OpPar
         }
     }
     return executor->CalcResRequest(param, resourceRequest);
+    HCCL_RUN_INFO("[HcclCommAicpu] CalcResRequest take time [%lld]us.", DURATION_US(TIME_NOW() - startut));
 }
 
 u32 HcclCommAicpu::CalculateOpExecIndex(const OpParam &opParam, u32 userRank)
@@ -2419,7 +2422,7 @@ HcclResult HcclCommAicpu::GetAlgResponseRes(const std::string &newTag, const std
         } else {
             HCCL_INFO("[%s] Repeatedly inited for alg [%s] is not allowed.", __func__, algName.c_str());
         }
-    } else if (algName == "BatchSendRecv" || algName == "BatchSendRecvRetry") {
+    } else if (algName == "BatchSendRecv" || algName == "BatchSendRecvRetry" || (algName == "BatchSendRecvGroup" && opParam.needIncreLink)) {
         AlgResourceRequest resRequest;
         HCCL_INFO("[%s]IncreAlloc resource for alg[%s], tag[%s]", __func__, algName.c_str(), newTag.c_str());
         CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
