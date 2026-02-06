@@ -4339,7 +4339,7 @@ namespace hccl
         AlgDesc algDesc;
         algDesc.isLastSelect = true;
         CHK_RET(algOperator->SelectAlg(opParam.tag, opParam, limit, algName, algDesc, newTag));
-        if (true) {
+        if (isOnlyAiv_ && !algDesc.isAivMode) {
             std::string opTypeName = GetCMDTypeEnumStr(opType);
             HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%s] currently do not select aiv mode, "
                 "aiv only not support, please ensure rankNum is greater than one",
