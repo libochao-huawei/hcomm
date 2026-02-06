@@ -24,7 +24,7 @@ public:
     HcclResult Init(uint32_t threadNum, uint32_t notifyNumPerThread, const std::string& commId,
         const aclrtBinHandle binHandle, const ManagerCallbacks& callbacks);
     HcclResult HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
-        uint32_t notifyNumPerThread, ThreadHandle *threads);
+        uint32_t notifyNumPerThread, ThreadHandle *threads, std::vector<uint32_t> &threadId);
     HcclResult HcclThreadAcquireWithStream(CommEngine engine,
         rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
     HcclResult HcclGetNotifyNumInThread(ThreadHandle thread, CommEngine engine, uint32_t *notifyNum);

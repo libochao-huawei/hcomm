@@ -5426,6 +5426,8 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     topoInfo_.devicePhyId = commAicpuParam->devicePhyId;
     topoInfo_.deviceType = static_cast<DevType>(commAicpuParam->deviceType);
     identifier_ = std::string(commAicpuParam->hcomId);
+    topoInfo_.userRankSize = commAicpuParam->userRankSize;
+    topoInfo_.userRank = commAicpuParam->userRank; 
     notifys_.reserve(LOCAL_NOTIFY_MAX_NUM);
     if (topoInfo_.deviceType == DevType::DEV_TYPE_910_93 || topoInfo_.deviceType == DevType::DEV_TYPE_910B) {
         notifySize_ = NOTIFY_SIZE_FOUR;
@@ -5438,6 +5440,7 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(hrtSetlocalDeviceType(topoInfo_.deviceType));
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(topoInfo_.devicePhyId, &devId_));
     CHK_RET(taskExecption_.Init(devId_, localUserRank_, identifier_));
+    CHK_RET(RegisterProfCallBack());
 
     if (topoInfo_.deviceType == DevType::DEV_TYPE_910_95) {
         HCCL_INFO("[HcclCommAicpu][InitAicpuIndOp] InitAicpuIndOpV2 start");
@@ -5450,7 +5453,9 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
         CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devId_, identifier_.c_str()));
     }
     CHK_PTR_NULL(dispatcherCtx_);
-
+    hccl::DispatcherCtx *Ctx_temp = static_cast<DispatcherCtx *>(dispatcherCtx_);
+    HCCL_INFO("[%s] Ctx_temp[%p]", __func__, (void*)Ctx_temp);
+    (void)RegisterLoadTaskCallBack(Ctx_temp->GetDispatcher(), nullptr, dfx::TaskProfilingCallBack); //注册dispatcher
     if (commAicpuParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
         EXECEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
@@ -5514,6 +5519,27 @@ HcclResult HcclCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
         std::make_move_iterator(outThreads.end()));
     HCCL_INFO("[HcclCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
         __func__, hcomId.c_str(), threadNum);
+    // 为上报翻转初始化资源
+    CHK_RET(InitProfthreadResource(threadNum));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::InitProfthreadResource(u32 threadNum) {
+    groupHashId_ = dfx::ProfilingManager::GetProfHashId(identifier_.c_str(), identifier_.length());
+    HCCL_INFO("[%s], group[%s], groupHash[%llu], threadNum[%u] ", __func__, identifier_.c_str(), groupHashId_, threadNum);
+    dfx::ProfCommInfo profInfo{ groupHashId_, topoInfo_.userRankSize, topoInfo_.userRank };
+    // 添加检查确保 threadNum 不超过线程总数
+    if (threadNum > threads_.size()) {
+        HCCL_ERROR("[%s] threadNum Err", __func__);
+        return HCCL_E_PARA;
+    }
+    // 从后往前迭代指定数量
+    auto begin = threads_.rbegin();
+    auto end = begin + threadNum;
+    for (auto it = begin; it != end; ++it) {
+        CHK_RET(dfx::ProfilingManager::AddProfInfoByStreamId((*it)->GetStream()->id(), identifier_, profInfo));
+    }
+    dfx::ProfilingExtendInfoHelper::InitProfItemId();
     return HCCL_SUCCESS;
 }
 

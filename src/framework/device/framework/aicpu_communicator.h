@@ -195,6 +195,7 @@ public:
 
     HcclResult RegisterOpInfo(void* opInfo, u32 size);
     HcclResult RegOpTaskException(HcommGetOpInfoCallback callback);
+    HcclResult InitProfthreadResource(u32 threadNum);
 
     HcclResult SetDispatcherCtxOnThread();
 private:
