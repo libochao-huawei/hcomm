@@ -17,12 +17,6 @@ set(ra_list
 
 add_library(ra  SHARED ${ra_list})
 
-target_compile_definitions(ra PRIVATE
-    OPEN_BUILD_PROJECT
-    LOG_CPP
-    CONFIG_CONTEXT
-)
-
 target_include_directories(ra PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../hdc
@@ -66,9 +60,6 @@ target_compile_options(ra PRIVATE
     $<$<CONFIG:Debug>:-g>
 )
 
-target_compile_definitions(ra PRIVATE
-)
-
 target_link_options(ra PRIVATE
     -Wl,-z,now
     $<$<CONFIG:Release>:-s>
@@ -86,6 +77,7 @@ target_link_libraries(ra PRIVATE
 
 target_compile_definitions(ra PRIVATE
     LOG_HOST
+    LOG_CPP
 )
 
 install(TARGETS  ra

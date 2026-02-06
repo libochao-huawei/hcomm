@@ -42,8 +42,8 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle r
     }
     lkey = mrInfo.lkey;
     rkey = mrInfo.rkey;
-    HCCL_INFO("LocalRdmaRmaBuffer[rdmaHandle=%p, mrHandle = %p, buf=%s, lkey=%u, rkey=%u]", 
-            rdmaHandle, mrHandle, buf->Describe().c_str(), lkey, rkey);
+    HCCL_INFO("LocalRdmaRmaBuffer[rdmaHandle=%p, mrHandle = %p, buf=%s]", 
+            rdmaHandle, mrHandle, buf->Describe().c_str());
 }
 
 LocalRdmaRmaBuffer::~LocalRdmaRmaBuffer()
@@ -68,7 +68,7 @@ string LocalRdmaRmaBuffer::Describe() const
 std::unique_ptr<Serializable> LocalRdmaRmaBuffer::GetExchangeDto()
 {
     std::unique_ptr<ExchangeRdmaBufferDto> dto
-        = make_unique<ExchangeRdmaBufferDto>(buf->GetAddr(), buf->GetSize(), this->rkey);
+        = make_unique<ExchangeRdmaBufferDto>(buf->GetAddr(), buf->GetSize(), this->rkey, buf->GetMemTag());
     return std::unique_ptr<Serializable>(dto.release());
 }
 

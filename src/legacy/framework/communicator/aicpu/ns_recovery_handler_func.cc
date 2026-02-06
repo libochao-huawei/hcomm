@@ -65,6 +65,7 @@ void NsRecoveryHandlerFunc::HandleClean(CommunicatorImplLite *comm)
     StreamClean(comm);
     comm->SetNeedClean(false);
     comm->BackGroundSetStatus(KfcStatus::CLEAN_DONE);
+    comm->ResetErrorReported();
     HCCL_INFO("[NsRecovery][BackGround] send KfcStatus[CLEAN_DONE]");
 }
 

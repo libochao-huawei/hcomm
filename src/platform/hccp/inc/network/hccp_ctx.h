@@ -1,9 +1,13 @@
 /**
- * @file hccp_ctx.h
- * @brief This module provides APIs dma operations for HCCL
- * @version Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
- * @date 2024-09-13
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
+
 #ifndef HCCP_CTX_H
 #define HCCP_CTX_H
 
@@ -409,6 +413,12 @@ struct qp_key {
     uint8_t size;
 };
 
+struct ctx_qp_share_info {
+    uint16_t ci_val;
+    uint16_t resv;
+    uint8_t raw_cqe[64U];
+};
+
 struct qp_create_info {
     struct qp_key key; /**< for modify qp or import & bind jetty*/
     union {
@@ -423,7 +433,8 @@ struct qp_create_info {
             uint64_t wqebb_size; /**< valid in jetty mode: JETTY_MODE_CACHE_LOCK_DWQE and JETTY_MODE_USER_CTL_NORMAL */
             uint64_t db_addr;
             uint32_t db_token_id;
-            uint64_t ci_addr;
+            uint32_t share_info_len; /**< refer to struct ctx_qp_share_info */
+            uint64_t share_info_addr; /**< refer to struct ctx_qp_share_info */
         } ub;
     };
     uint64_t va; /**< refer to struct urma_jetty*, struct ibv_qp* */

@@ -26,7 +26,7 @@ using DataTypeSupportMap = std::unordered_map<OpType, DataTypeBitmap, std::EnumC
 class OpParamsChecker {
 public:
     static HcclResult CheckOpDataTypeOpbase(const CollOpParams &opParams, bool ccuEnable, bool isDevUsed, bool isAiv);
-    static HcclResult CheckOpDataTypeOffload(const CollOpParams &opParams, bool ccuEnable, bool isDevUsed, bool isAiv = false, bool isSuperKernel = false);
+    static HcclResult CheckOpDataTypeOffload(const CollOpParams &opParams, bool ccuEnable, bool isDevUsed, bool isAiv = false);
     static HcclResult CheckOpDataTypeMC2(const Mc2CommConfig &config);
     static HcclResult CheckOpDataTypeMC2V2(const Mc2CcTilingInner &config);
 
@@ -48,7 +48,6 @@ private:
 
     static DataTypeSupportMap opDataTypeSupportMapAivOpbase;
     static DataTypeSupportMap opDataTypeSupportMapAivOffload;
-    static DataTypeSupportMap opDataTypeSupportMapAivOffloadSuperKernel;
     static DataTypeSupportMap opDataTypeSupportMapCcuOpbase;
     static DataTypeSupportMap opDataTypeSupportMapCcuOffload;
     static DataTypeSupportMap opDataTypeSupportMapAicpuOpbase;

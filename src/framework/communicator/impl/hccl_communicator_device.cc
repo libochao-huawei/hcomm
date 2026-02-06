@@ -142,6 +142,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    bool HcclCommunicator::IsSupportSymmetricMemory(HcclCMDType opType, OpParam &opParam)
+    {
+        return false;
+    }
+
     bool HcclCommunicator::IsSupportZeroCopy(const OpParam &opParam)
     {
         return false;
@@ -1589,5 +1594,37 @@ namespace hccl
     CCLBufferManager& HcclCommunicator::GetCCLbufferManager()
     {
         return cclBufferManager_;
+    }
+
+    void HcclCommunicator::SetHcclQos(u32 hcclQos)
+ 	{
+        HCCL_INFO("[HcclCommunicator][device][SetHcclQos] hcclQos[%u]", hcclQos);
+ 	    hcclQos_ = hcclQos;
+ 	}
+ 	 
+ 	u32 HcclCommunicator::GetHcclQos()
+ 	{
+        HCCL_INFO("[HcclCommunicator][device][GetHcclQos] hcclQos[%u]", hcclQos_);
+ 	    return hcclQos_;
+ 	}
+
+    HcclResult HcclCommunicator::InitSymmetricMemory()
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::DeregisterWindow(CommSymWindow winHandle)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
+    {
+        return HCCL_SUCCESS;
     }
 }

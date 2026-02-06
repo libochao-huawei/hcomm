@@ -60,9 +60,15 @@ namespace Hccl {
 
     HcclResult IRankGraph::GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo* topoType)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetInstTopoTypeByNetLayer");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetInstTopoTypeByNetLayer with netLayer[%u]", netLayer);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
+        u32 rankId = rankGraph->GetMyRank();
+        std::set<u32> levels = rankGraph->GetLevels(rankId);
+        if (levels.find(netLayer) == levels.end()) {
+            HCCL_ERROR("[IRankGraph::GetInstTopoTypeByNetLayer] netLayer[%u] is invalid", netLayer);
+            return HCCL_E_PARA;
+        }
         auto type = rankGraph->GetNetType(netLayer);
         static const std::unordered_map<NetType, CommTopo> netTypeMap = {
                 {NetType::CLOS, CommTopo::COMM_TOPO_CLOS},
@@ -82,9 +88,15 @@ namespace Hccl {
 
     HcclResult IRankGraph::GetInstSizeByNetLayer(uint32_t netLayer, uint32_t* rankNum)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetInstSizeByNetLayer");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetInstSizeByNetLayer with netLayer[%u]", netLayer);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
+        u32 rankId = rankGraph->GetMyRank();
+        std::set<u32> levels = rankGraph->GetLevels(rankId);
+        if (levels.find(netLayer) == levels.end()) {
+            HCCL_ERROR("[IRankGraph::GetInstSizeByNetLayer] netLayer[%u] is invalid", netLayer);
+            return HCCL_E_PARA;
+        }
         u32 num = rankGraph->GetLocalInstSize(netLayer);
         *rankNum = static_cast<uint32_t>(num);
         return HCCL_SUCCESS;
@@ -92,9 +104,15 @@ namespace Hccl {
 
     HcclResult IRankGraph::GetInstRanksByNetLayer(uint32_t netLayer, uint32_t** rankList, uint32_t* rankNum)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetInstRanksByNetLayer");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetInstRanksByNetLayer with netLayer[%u]", netLayer);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
+        u32 rankId = rankGraph->GetMyRank();
+        std::set<u32> levels = rankGraph->GetLevels(rankId);
+        if (levels.find(netLayer) == levels.end()) {
+            HCCL_ERROR("[IRankGraph::GetInstRanksByNetLayer] netLayer[%u] is invalid", netLayer);
+            return HCCL_E_PARA;
+        }
         u32 num = 0;
         rankListVec_.clear();
         rankGraph->GetLocalInstRanks(netLayer, rankListVec_, num);
@@ -105,9 +123,15 @@ namespace Hccl {
 
     HcclResult IRankGraph::GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t** instSizeList, uint32_t* listSize)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetInstSizeListByNetLayer");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetInstSizeListByNetLayer with netLayer[%u]", netLayer);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
+        u32 rankId = rankGraph->GetMyRank();
+        std::set<u32> levels = rankGraph->GetLevels(rankId);
+        if (levels.find(netLayer) == levels.end()) {
+            HCCL_ERROR("[IRankGraph::GetInstSizeListByNetLayer] netLayer[%u] is invalid", netLayer);
+            return HCCL_E_PARA;
+        }
         u32 size = 0;
         instSizeVec_.clear();
         auto ret = rankGraph->GetNetInstanceList(netLayer, instSizeVec_, size);
@@ -146,7 +170,7 @@ namespace Hccl {
         return HCCL_SUCCESS;
     }
 
-    static HcclResult SetEndpoinLoc(EndpointLocType &locType, const AddrPosition &position)
+    static HcclResult SetEndpointLoc(EndpointLocType &locType, const AddrPosition &position)
     {
         if (position == AddrPosition::DEVICE) {
             locType = ENDPOINT_LOC_TYPE_DEVICE;
@@ -180,7 +204,7 @@ namespace Hccl {
                     HCCL_ERROR("[IRankGraph::%s] SetCommAddress FAILED for srcConn: %s.", __func__, srcConnInterface->Describe().c_str());
                     return result;
                 }
-                CHK_RET(SetEndpoinLoc(commLink.srcEndpointDesc.loc.locType, srcConnInterface->GetPos()));
+                CHK_RET(SetEndpointLoc(commLink.srcEndpointDesc.loc.locType, srcConnInterface->GetPos()));
 
                 // 设置目标端点
                 std::shared_ptr<NetInstance::ConnInterface> dstConnInterface = link.GetTargetIface();
@@ -191,7 +215,7 @@ namespace Hccl {
                     return result;
                 }
 
-                CHK_RET(SetEndpoinLoc(commLink.dstEndpointDesc.loc.locType, dstConnInterface->GetPos()));
+                CHK_RET(SetEndpointLoc(commLink.dstEndpointDesc.loc.locType, dstConnInterface->GetPos()));
 
                 if (commLink.srcEndpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
                     std::shared_ptr<NetInstance::Node> srcNode = peer2peer->GetSourceNode();
@@ -234,17 +258,12 @@ namespace Hccl {
 
             commLink.linkAttr.linkProtocol = commProtocol;
             commLink.linkAttr.hop = peer2net->GetHop();
-
             commLink.srcEndpointDesc.protocol = commProtocol;
             commLink.dstEndpointDesc.protocol = commProtocol;
 
             // 设置源端点
-            HcclResult result = SetCommAddress(commLink.srcEndpointDesc.commAddr, srcInterface->GetAddr());
-            if (result != HCCL_SUCCESS) {
-                HCCL_ERROR("[IRankGraph::%s] SetCommAddress FAILED for srcConn: %s.", __func__, srcInterface->Describe().c_str());
-                return result;
-            }
-            CHK_RET(SetEndpoinLoc(commLink.srcEndpointDesc.loc.locType, srcInterface->GetPos()));
+            CHK_RET(SetCommAddress(commLink.srcEndpointDesc.commAddr, srcInterface->GetAddr()));
+            CHK_RET(SetEndpointLoc(commLink.srcEndpointDesc.loc.locType, srcInterface->GetPos()));
             if (commLink.srcEndpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
                 std::shared_ptr<NetInstance::Node> srcNode = peer2net->GetSourceNode();
                 std::shared_ptr<NetInstance::Peer> srcPeer = std::dynamic_pointer_cast<NetInstance::Peer>(srcNode);
@@ -252,12 +271,13 @@ namespace Hccl {
             }
 
             // 设置目标端点
-            result = SetCommAddress(commLink.dstEndpointDesc.commAddr, dstInterface->GetAddr());
-            if (result != HCCL_SUCCESS) {
-                HCCL_ERROR("[IRankGraph::%s] SetCommAddress FAILED for dstConn: %s.", __func__, dstInterface->Describe().c_str());
-                return result;
+            CHK_RET(SetCommAddress(commLink.dstEndpointDesc.commAddr, dstInterface->GetAddr()));
+            CHK_RET(SetEndpointLoc(commLink.dstEndpointDesc.loc.locType, dstInterface->GetPos()));
+            if (commLink.dstEndpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+                std::shared_ptr<NetInstance::Node> dstNode = peer2net->GetSourceNode();
+                std::shared_ptr<NetInstance::Peer> dstPeer = std::dynamic_pointer_cast<NetInstance::Peer>(dstNode);
+                commLink.dstEndpointDesc.loc.device.devPhyId = dstPeer->GetDeviceId();
             }
-            CHK_RET(SetEndpoinLoc(commLink.dstEndpointDesc.loc.locType, dstInterface->GetPos()));
 
             linkListVec.emplace_back(std::move(commLink));
         }
@@ -267,9 +287,15 @@ namespace Hccl {
     HcclResult IRankGraph::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink** linkList,
                                     uint32_t* listSize)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetLinks");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetLinks netLayr[%u], srcRank[%u], dstRank[%u]", netLayer, srcRank, dstRank);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
+        u32 rankId = rankGraph->GetMyRank();
+        std::set<u32> levels = rankGraph->GetLevels(rankId);
+        if (levels.find(netLayer) == levels.end()) {
+            HCCL_ERROR("[IRankGraph::GetLinks] netLayer[%u] is invalid", netLayer);
+            return HCCL_E_PARA;
+        }
         std::vector<NetInstance::Path> paths = rankGraph->GetPaths(netLayer, srcRank, dstRank);
         linkListVec_.clear();
         // 遍历每条path
@@ -306,13 +332,13 @@ namespace Hccl {
 
     HcclResult IRankGraph::GetTopoInstsByLayer(uint32_t netLayer, uint32_t** topoInsts, uint32_t* topoInstNum)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetTopoInstsByLayer");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetTopoInstsByLayer with netLayer[%u]", netLayer);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
-        auto currNetType = rankGraph->GetNetType(netLayer);
-        if (currNetType != NetType::TOPO_FILE_DESC) {
-            HCCL_ERROR("[IRankGraph::GetTopoInstsByLayer] Only support TOPO_FILE_DESC netType ,current netType is [%d]",
-                       currNetType);
+        u32 rankId = rankGraph->GetMyRank();
+        std::set<u32> levels = rankGraph->GetLevels(rankId);
+        if (levels.find(netLayer) == levels.end()) {
+            HCCL_ERROR("[IRankGraph::GetTopoInstsByLayer] netLayer[%u] is invalid", netLayer);
             return HCCL_E_PARA;
         }
         u32 num = 0;
@@ -325,13 +351,13 @@ namespace Hccl {
 
     HcclResult IRankGraph::GetTopoType(const uint32_t netLayer, const uint32_t topoInstId, CommTopo* topoType)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetTopoType");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetTopoType netLayer[%u], topoInstId[%u]", netLayer, topoInstId);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
-        auto currNetType = rankGraph->GetNetType(netLayer);
-        if (currNetType != NetType::TOPO_FILE_DESC) {
-            HCCL_ERROR("[IRankGraph::GetTopoInstsByLayer] Only support TOPO_FILE_DESC netType ,current netType is [%d]",
-                       currNetType);
+        u32 rankId = rankGraph->GetMyRank();
+        std::set<u32> levels = rankGraph->GetLevels(rankId);
+        if (levels.find(netLayer) == levels.end()) {
+            HCCL_ERROR("[IRankGraph::GetTopoType] netLayer[%u] is invalid", netLayer);
             return HCCL_E_PARA;
         }
         Hccl::TopoType type;
@@ -356,13 +382,13 @@ namespace Hccl {
     HcclResult IRankGraph::GetRanksByTopoInst(const uint32_t netLayer, const uint32_t topoInstId, uint32_t** ranks,
                                               uint32_t* rankNum)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetRanksByTopoInst");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetRanksByTopoInst netLayer[%u], topoInstId[%u]", netLayer, topoInstId);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
-        auto currNetType = rankGraph->GetNetType(netLayer);
-        if (currNetType != NetType::TOPO_FILE_DESC) {
-            HCCL_ERROR("[IRankGraph::GetTopoInstsByLayer] Only support TOPO_FILE_DESC netType ,current netType is [%d]",
-                       currNetType);
+        u32 rankId = rankGraph->GetMyRank();
+        std::set<u32> levels = rankGraph->GetLevels(rankId);
+        if (levels.find(netLayer) == levels.end()) {
+            HCCL_ERROR("[IRankGraph::GetRanksByTopoInst] netLayer[%u] is invalid", netLayer);
             return HCCL_E_PARA;
         }
         u32 num = 0;
@@ -375,4 +401,60 @@ namespace Hccl {
         *rankNum = ranksVec_.size();
         return HCCL_SUCCESS;
     }
+
+    HcclResult IRankGraph::GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num)
+    {
+        HCCL_RUN_INFO("Entry-IRankGraph::GetEndpointNum netLayer[%u], topoInstId[%u]", netLayer, topoInstId);
+        CHK_PTR_NULL(rankGraphPtr_);
+        RankGraph *rankGraph = static_cast<RankGraph *>(rankGraphPtr_);
+        u32 rankId = rankGraph->GetMyRank();
+        std::set<u32> levels = rankGraph->GetLevels(rankId);
+        if (levels.find(netLayer) == levels.end()) {
+            HCCL_ERROR("[IRankGraph::GetEndpointNum] netLayer[%u] is invalid", netLayer);
+            return HCCL_E_PARA;
+        }
+        auto ret = rankGraph->GetEndpointNum(netLayer, topoInstId, num);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[IRankGraph::GetEndpointNum] Faild to get endpoint num at netLayer [%u] with topoInstId",
+                       netLayer, topoInstId);
+            return ret;
+        }
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult IRankGraph::GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum,
+                                           EndpointDesc *endpointDesc)
+    {
+        HCCL_RUN_INFO("Entry-IRankGraph::GetEndpointDesc netLayer[%u], topoInstId[%u]", netLayer, topoInstId);
+        CHK_PTR_NULL(rankGraphPtr_);
+        RankGraph *rankGraph = static_cast<RankGraph *>(rankGraphPtr_);
+        u32 rankId = rankGraph->GetMyRank();
+        std::set<u32> levels = rankGraph->GetLevels(rankId);
+        if (levels.find(netLayer) == levels.end()) {
+            HCCL_ERROR("[IRankGraph::GetEndpointDesc] netLayer[%u] is invalid", netLayer);
+            return HCCL_E_PARA;
+        }
+        auto ret = rankGraph->GetEndpointDesc(netLayer, topoInstId, descNum, endpointDesc);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[IRankGraph::GetEndpointDesc] Failed to get endpoint desc at netLayer [%u] with descNum [%u]",
+                       netLayer, descNum);
+            return ret;
+        }
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult IRankGraph::GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr,
+                                           uint32_t infoLen, void *info)
+    {
+        HCCL_RUN_INFO("Entry-IRankGraph::GetEndpointInfo with rankId[%u]", rankId);
+        CHK_PTR_NULL(rankGraphPtr_);
+        RankGraph *rankGraph = static_cast<RankGraph *>(rankGraphPtr_);
+        HcclResult ret = rankGraph->GetEndpointInfo(rankId, endPointDesc, endpointAttr, infoLen, info);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[IRankGraph::GetEndpointInfo] Faild to get endpoint info with rank [%u]", rankId);
+            return ret;
+        }
+        return HCCL_SUCCESS;
+    }
+
 } // namespace Hccl

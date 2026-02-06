@@ -21,6 +21,7 @@ HcclResult ThreadMgr::CommEngineToNotifyLoadType(CommEngine engine, NotifyLoadTy
     switch (engine) {
         case COMM_ENGINE_CPU:
         case COMM_ENGINE_CPU_TS:
+        case COMM_ENGINE_CCU:
             type =  NotifyLoadType::HOST_NOTIFY;
             break;
         case COMM_ENGINE_AICPU:
@@ -39,15 +40,15 @@ HcclResult ThreadMgr::CommEngineToStreamType(CommEngine engine, StreamType &type
     switch (engine) {
         case COMM_ENGINE_CPU:
         case COMM_ENGINE_CPU_TS:
+        case COMM_ENGINE_CCU:
             type = StreamType::STREAM_TYPE_ONLINE; // 单算子使用online，图模式使用offine
             break;
         case COMM_ENGINE_AICPU:
         case COMM_ENGINE_AICPU_TS:
             type = StreamType::STREAM_TYPE_DEVICE;
             break;
-        // 暂不支持AIV、CCU
+        // 暂不支持AIV
         case COMM_ENGINE_AIV:
-        case COMM_ENGINE_CCU:
         default:
             HCCL_ERROR("[ThreadMgr] Unknown comm engine type: %d", engine);
             return HCCL_E_PARA;
@@ -60,7 +61,7 @@ ThreadMgr::ThreadMgr(uint32_t threadNum, uint32_t notifyNumPerThread, std::strin
     commId_(commId), binHandle_(binHandle), callbacks_(callbacks){}
 
 HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
-    uint32_t notifyNumPerThread, ThreadHandle *threads)
+    uint32_t notifyNumPerThread, ThreadHandle *threads, std::vector<uint32_t> &threadId)
 {
     CHK_PTR_NULL(threads);
     std::lock_guard<std::mutex> lock(threadMutex_);
@@ -154,6 +155,11 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
             threads[i] = reinterpret_cast<ThreadHandle>(newThreads[i].get());
             HCCL_INFO("[ThreadMgr][%s] host threadArray[%u] = [%lu]", __func__, i, threads[i]);
         }
+    }
+    for (size_t i = 0; i < newThreads.size(); ++i) {
+        uint32_t id = newThreads[i]->GetStream()->id();
+        HCCL_DEBUG("[%s] thread id = [%u]", __func__, id);
+        threadId.push_back(id);
     }
     threads_.reserve(threads_.size() + newThreads.size());
     auto threadsIt = threads_.end();
@@ -292,6 +298,7 @@ HcclResult ThreadMgr::HcclThreadExportToCommEngine(uint32_t threadNum, const Thr
     switch (dstCommEngine) {
     case COMM_ENGINE_CPU_TS:
     case COMM_ENGINE_CPU:
+    case COMM_ENGINE_CCU:
         CHK_RET(ThreadExportToCommEngineCpu(threadNum, threads, exportedThreads));
         break;
     case COMM_ENGINE_AICPU:
@@ -299,7 +306,6 @@ HcclResult ThreadMgr::HcclThreadExportToCommEngine(uint32_t threadNum, const Thr
         CHK_RET(ThreadExportToCommEngineAicpu(threadNum, threads, dstCommEngine, exportedThreads));
         break;
     case COMM_ENGINE_AIV:
-    case COMM_ENGINE_CCU:
     default:
         HCCL_ERROR("[ThreadMgr] Unknown comm engine type: %d", dstCommEngine);
         return HCCL_E_PARA;

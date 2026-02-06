@@ -1,15 +1,21 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
- * Description: reduce 自适应算法选择实现
- * Author: libiaozhi
- * Create: 2025-05-23
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
+
 #include "reduce_auto_selector.h"
 #include "selector_registry.h"
 #include "coll_operator.h"
 #include "coll_alg_params.h"
 
 namespace Hccl {
+
+constexpr u64 REDUCE_AICPU_1D_MAX_DATA_SIZE = 32 * 1024 * 1024;
 
 SelectorStatus ReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,
@@ -57,7 +63,11 @@ SelectorStatus ReduceAutoSelector::SelectMeshAlgoCcuMs(const TopoInfo &topoInfo,
 {
     (void)op;
     if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            primQueueGenName = "CcuReduceMesh1D";
+        if (dataSize_ >= REDUCE_AICPU_1D_MAX_DATA_SIZE) {
+            HCCL_INFO("[Algo][ReduceAutoSelector] Mesh1D dataSize[%llu] >= 32MB, fallback to aicpu.", dataSize_);
+            return SelectorStatus::NOT_MATCH;   
+        }
+        primQueueGenName = "CcuReduceMesh1D";
     } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
         primQueueGenName = "CcuReduceMesh2D";
     }
@@ -106,10 +116,14 @@ SelectorStatus ReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInf
     }
     if ((IsDefaultAlg(levle0Algo) || levle0Algo == HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH) &&
         (topoInfo.level0Shape == Level0Shape::MESH_1D)) {
+        if (dataSize_ >= REDUCE_AICPU_1D_MAX_DATA_SIZE) {
+            HCCL_INFO("[Algo][ReduceAutoSelector] Mesh1D dataSize[%llu] >= 32MB, fallback to aicpu.", dataSize_);
+            return SelectorStatus::NOT_MATCH;
+        }
         primQueueGenName = "CcuReduceMeshMem2Mem1D";
         return SelectorStatus::MATCH;
     } else if ((IsDefaultAlg(levle0Algo) || levle0Algo == HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH) &&
-               (topoInfo.level0Shape == Level0Shape::MESH_2D)) {
+                (topoInfo.level0Shape == Level0Shape::MESH_2D)) {
         primQueueGenName = "CcuReduceMeshMem2Mem2D";
         return SelectorStatus::MATCH;
     } else {
@@ -150,6 +164,9 @@ SelectorStatus ReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
             if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
                 primQueueGenName = "InsReduceAicpuReduce";
+            } 
+            else if (dataSize_ >= REDUCE_AICPU_1D_MAX_DATA_SIZE) {
+                primQueueGenName = "InsReduceMesh1DTwoShot";
             } else {
                 primQueueGenName = "InsReduceMesh1D";
             }

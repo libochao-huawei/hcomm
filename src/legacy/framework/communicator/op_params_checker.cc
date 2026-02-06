@@ -33,7 +33,7 @@ HcclResult OpParamsChecker::CheckOpDataTypeOpbase(const CollOpParams &opParams, 
     return ret;
 }
 
-HcclResult OpParamsChecker::CheckOpDataTypeOffload(const CollOpParams &opParams, bool ccuEnable, bool isDevUsed, bool isAiv, bool isSuperKernel)
+HcclResult OpParamsChecker::CheckOpDataTypeOffload(const CollOpParams &opParams, bool ccuEnable, bool isDevUsed, bool isAiv)
 {
     HcclResult ret = HcclResult::HCCL_E_PARA;
     if (ccuEnable){
@@ -41,11 +41,7 @@ HcclResult OpParamsChecker::CheckOpDataTypeOffload(const CollOpParams &opParams,
     } else if (isDevUsed) {
         ret = CheckOpDataTypeByMap(opParams, opDataTypeSupportMapAicpuOffload);
     } else if (isAiv) {
-        if (isSuperKernel) {
-            ret = CheckOpDataTypeByMap(opParams, opDataTypeSupportMapAivOffloadSuperKernel);
-        } else {
-            ret = CheckOpDataTypeByMap(opParams, opDataTypeSupportMapAivOffload);
-        } 
+        ret = CheckOpDataTypeByMap(opParams, opDataTypeSupportMapAivOffload);
     } else {
         ret = CheckOpDataTypeByMap(opParams, opDataTypeSupportMapHostOffload);
     }
@@ -309,13 +305,6 @@ DataTypeSupportMap OpParamsChecker::opDataTypeSupportMapAivOffload= {
     {OpType::ALLTOALLV, dataTypeWithoutReduceAiv},
     {OpType::REDUCE, dataTypeWithReduceAiv},
     {OpType::BROADCAST, dataTypeWithoutReduceAiv}
-};
-
-DataTypeSupportMap OpParamsChecker::opDataTypeSupportMapAivOffloadSuperKernel= {
-    {OpType::REDUCESCATTER, dataTypeWithReduceAiv},
-    {OpType::ALLREDUCE, dataTypeWithReduceAiv},
-    {OpType::ALLGATHER, dataTypeWithoutReduceAiv},
-    {OpType::ALLTOALL, dataTypeWithoutReduceAiv}
 };
 
 DataTypeSupportMap OpParamsChecker::opDataTypeSupportMapCcuOpbase = {

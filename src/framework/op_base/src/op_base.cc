@@ -72,6 +72,7 @@ HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType
         hcclComm->GetNumBlocks(numBlocks);
 
         uint64_t groupName = hrtMsprofGetHashId(hcclComm->GetIdentifier().c_str(), hcclComm->GetIdentifier().length());
+        HCCL_INFO("[%s] groupName[%llu], groupNameStr[%s]", __func__, groupName, hcclComm->GetIdentifier().c_str());
         CHK_RET_AND_PRINT_IDE(ProfilingManagerPub::CallMsprofReportHostApi(cmdType, beginTime, count, dataType, algType,
             groupName, numBlocks), tag.c_str());
     }
@@ -350,7 +351,7 @@ HcclResult CheckOpBasedHcom(HcclOpInfoCtx &opBaseHcom, const uint32_t rank, cons
 }
 
 
-HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclComm *comm)
+HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclCommConfig *config, HcclComm *comm)
 {
     CHK_PTR_NULL(*commV2);
     HCCL_INFO("HcclCommInitCollComm start.");
@@ -381,7 +382,7 @@ HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclComm *comm)
     CHK_RET(HcclGetRankGraphV2(commV2, &rankGraph));
 
     //Collcomm初始化
-    CHK_RET(hcclCommPtr->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName));
+    CHK_RET(hcclCommPtr->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName, config));
     // hcclComm中的IndependentOp，channelManager,ContextManager初始化
     *comm = static_cast<HcclComm>(hcclCommPtr.get());
 
@@ -617,7 +618,8 @@ HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclC
                 *comm = commV2;
                 return HCCL_SUCCESS;
             }
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, comm));
+            constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
+            CHK_PRT(HcclCommInitCollComm(rank, &commV2, config, comm));
             return HCCL_SUCCESS;
         }());
 #endif
@@ -844,7 +846,7 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
                 *comm = commV2;
                 return HCCL_SUCCESS;
             }
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, comm));
+            CHK_PRT(HcclCommInitCollComm(rank, &commV2, config, comm));
             return HCCL_SUCCESS;
         }());
 #endif
@@ -1454,6 +1456,13 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
             hcclNslbDp::GetInstance().SetGlobalCommTaskId(commConfig.GetConfigJobID());
             hcclNslbDp::GetInstance().SetGlobalCommNodeId(commConfig.GetConfigWorldRankID());
         }
+
+        // 设置HCCL QOS配置
+ 	    ret = pComm->SetHcclQos(commConfig.GetConfigHcclQos());
+ 	    CHK_PRT_BREAK(ret != HCCL_SUCCESS,
+ 	        HCCL_ERROR("[%s]errNo[0x%016llx] set hccl qos error.", __func__, HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+
         /* 设置AIV模式 */
         ret = pComm->SetAivModeConfig(commConfig.GetConfigAivMode());
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
@@ -1569,14 +1578,6 @@ HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootIn
     CHK_SMART_PTR_NULL(comm);
     CHK_SMART_PTR_NULL(rootInfo);
 
-    HcclResult ret = InitExternalInput();
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] init "\
-        "external input error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
-    ret = InitEnvConfig();
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] init environment config error.",
-        HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
-
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
@@ -1588,10 +1589,19 @@ HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootIn
                 *comm = commV2;
                 return HCCL_SUCCESS;
             }
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, comm));
+            constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
+            CHK_PRT(HcclCommInitCollComm(rank, &commV2, config, comm));
             return HCCL_SUCCESS;
         }());
 #endif
+
+    HcclResult ret = InitExternalInput();
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] init "\
+        "external input error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
+    ret = InitEnvConfig();
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] init environment config error.",
+        HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
 
     HcclRootHandle rootHandle;
     s32 sRet = memcpy_s(&rootHandle, sizeof(HcclRootHandle), rootInfo->internal, sizeof(HcclRootHandle));
@@ -1691,13 +1701,6 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
     CHK_PTR_NULL(comm);
     CHK_SMART_PTR_NULL(rootInfo);
 
-    HcclResult ret = InitExternalInput();
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoConfigInner]errNo[0x%016llx] init "\
-        "external input error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
-    ret = InitEnvConfig();
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoConfigInner]errNo[0x%016llx] init "\
-        "environment config error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
-
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
@@ -1709,10 +1712,17 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
                 *comm = commV2;
                 return HCCL_SUCCESS;
             }
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, comm));
+            CHK_PRT(HcclCommInitCollComm(rank, &commV2, const_cast<HcclCommConfig *>(config), comm));
             return HCCL_SUCCESS;
         }());
 #endif
+
+    HcclResult ret = InitExternalInput();
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoConfigInner]errNo[0x%016llx] init "\
+        "external input error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
+    ret = InitEnvConfig();
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoConfigInner]errNo[0x%016llx] init "\
+        "environment config error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
 
     HcclRootHandle rootHandle;
     s32 sRet = memcpy_s(&rootHandle, sizeof(HcclRootHandle), rootInfo->internal, sizeof(HcclRootHandle));
@@ -2979,7 +2989,8 @@ HcclResult HcclCommDestroy(HcclComm comm)
                 return HCCL_SUCCESS;
             }
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-            CHK_RET(HcclCommDestroyV2(hcclComm->GetCommunicatorV2()));
+            // 先拷贝orion通信域地址，避免coll comm销毁后无法获取
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
             string group;
             group = hcclComm->GetIdentifier();
             HcclOpInfoCtx& opBaseHcom = GetHcclOpInfoCtx();
@@ -2991,6 +3002,7 @@ HcclResult HcclCommDestroy(HcclComm comm)
                 HCCL_ERROR("[HcclCommDestroy] comm is not exist, comm=%p, group=%s, deviceLogicId=%d", comm, group.c_str(), deviceLogicId);
                 return HCCL_E_PARA;
             }
+            CHK_RET(HcclCommDestroyV2(commV2));
             return HCCL_SUCCESS;
         }());
 #endif
@@ -3476,12 +3488,12 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParam(tag.c_str(), 0, sendType, stream), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckDataType(recvType), tag.c_str());
 
-    u64 sendCountMatrixHash;
-    HcomGetHashFromSendCountMatrix(sendCountMatrixHash, sendCountMatrix, rankSize, tag);
-
     /* 接口交互信息日志 */
     char stackLogBuffer[LOG_TMPBUF_SIZE];
     if (GetExternalInputHcclEnableEntryLog()) {
+        u64 sendCountMatrixHash;
+        HcomGetHashFromSendCountMatrix(sendCountMatrixHash, sendCountMatrix, rankSize, tag);
+
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
@@ -4582,6 +4594,72 @@ HcclResult CommGetCCLBufSizeCfg(HcclComm comm, uint64_t *cclBufSize)
     HCCL_RUN_INFO("CommGetCCLBufSizeCfg success, comm[%s], size[%u]", hcclComm->GetIdentifier().c_str(), buffSize);
     return HCCL_SUCCESS;
 }
+
+std::unordered_map<CommSymWindow, HcclComm> winHandle2comm;
+std::mutex g_winHandleMtx; // 保护 winHandle2comm
+
+HcclResult HcclCommSymWinRegister(HcclComm comm, void* addr, uint64_t size, CommSymWindow *winHandle, uint32_t flag)
+{
+    // 入参校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(addr);
+    CHK_PTR_NULL(winHandle);
+    CHK_PRT_RET(size == 0, HCCL_ERROR("[%s] size is 0, please check size value", __func__), HCCL_E_PARA);
+    if (flag == HCCL_WIN_COLL_SYMMETRIC) {
+        hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+        CHK_RET(hcclComm->RegisterWindow(addr, size, winHandle));
+        HCCL_RUN_INFO("[%s]WindowRegister mem success, group[%s], handle ptr[%p], size[%llu]", __func__,
+            hcclComm->GetIdentifier().c_str(), *winHandle, size);
+        {
+            std::lock_guard<std::mutex> lock(g_winHandleMtx);
+            winHandle2comm[*winHandle] = comm;
+        }
+    } else if (flag == HCCL_WIN_DEFAULT) {
+        HCCL_ERROR("[HcclCommSymWinRegister]flag: 0 is not supported yet.");
+        return HCCL_E_PARA;
+    }else {
+        HCCL_ERROR("[HcclCommSymWinRegister]Invalid flag[%u], must be 0 or 1", flag);
+        return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle)
+{
+    // 入参校验
+    CHK_PTR_NULL(winHandle);
+    HcclComm comm = nullptr;
+    std::lock_guard<std::mutex> lock(g_winHandleMtx);
+    auto it = winHandle2comm.find(winHandle);
+    if (it == winHandle2comm.end()) {
+        HCCL_ERROR("[HcclCommSymWinDeregister]Window handle[%p] is not registered.", winHandle);
+        return HCCL_E_PARA;
+    }
+    comm = it->second;
+    CHK_PTR_NULL(comm);
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    CHK_RET(hcclComm->DeregisterWindow(winHandle));
+    winHandle2comm.erase(it);
+    HCCL_RUN_INFO("[%s]WindowDeregister mem success, group[%s]", __func__, hcclComm->GetIdentifier().c_str());
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
+{
+    // 入参校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(ptr);
+    CHK_PTR_NULL(winHandle);
+    CHK_PTR_NULL(offset);
+    CHK_PRT_RET(size == 0, HCCL_ERROR("[%s] size is 0, please check size value", __func__), HCCL_E_PARA);
+
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    CHK_RET(hcclComm->GetCommSymWin(ptr, size, winHandle, offset));
+    HCCL_RUN_INFO("[%s]GetCommSymWin success, group[%s], handle ptr[%p], offset[%llu], size[%llu]", __func__,
+        hcclComm->GetIdentifier().c_str(), *winHandle, *offset, size);
+    return HCCL_SUCCESS;
+}
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

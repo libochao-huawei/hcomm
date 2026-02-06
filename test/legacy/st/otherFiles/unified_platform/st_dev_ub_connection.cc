@@ -181,7 +181,7 @@ TEST(DevUbConnectionTest, rma_ub_connection_get_pi_ci_sqDepth_ok)
     // Then
     EXPECT_EQ(devUbConnection.GetPiVal(), 0);
     EXPECT_EQ(devUbConnection.GetCiVal(), 0);
-    EXPECT_EQ(devUbConnection.GetSqDepth(), 32768);
+    EXPECT_EQ(devUbConnection.GetSqDepth(), 8192);
 }
  
 TEST(DevUbConnectionTest, rma_ub_connection_get_jfcMode_and_jettyHandle_ok)

@@ -26,7 +26,7 @@ constexpr u32 RTSQ_A5_PART_ID   = 0;
 constexpr u32 PRINT_INTERVAL  = 30;
 RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId) : RtsqBase(devPhyId, streamId, sqId)
 {
-    if (SetTaskIdBySqeId() != HCCL_SUCCESS) {
+    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
         taskId_ = 0;
     }
 }
@@ -36,7 +36,7 @@ void RtsqA5::Reset()
     RtsqBase::Reset();
     pendingSqeCnt = 0;
     s32 sRet      = memset_s(locBuf, rtsqSqeSize * perLaunchSqeCnt, 0, rtsqSqeSize * perLaunchSqeCnt);
-    if (sRet != EOK) {
+    if (UNLIKELY(sRet != EOK)) {
         auto msg = StringFormat("[RtsqA5][Reset] locBuf memset fail. errorno[%d]", sRet);
         THROW<InternalException>(msg);
     }
@@ -66,12 +66,12 @@ void RtsqA5::MakeSureAvailableSpace()
 
     HCCL_INFO("RtsqA5::%s start", __func__);
     while (availableSpace <= pendingSqeCnt) {
-        if (std::chrono::steady_clock::now() - lastPrintTime >= printInterval) {
+        if (UNLIKELY(std::chrono::steady_clock::now() - lastPrintTime >= printInterval)) {
             HCCL_INFO("RtsqA5::%s while loop availableSpace %u <= pendingSqeCnt %u", __func__, availableSpace,
                       pendingSqeCnt);
             lastPrintTime = std::chrono::steady_clock::now();
         }
-        if ((std::chrono::steady_clock::now() - startTime) >= timeout) { // timeout内还是不能向RTSQ中写入值，报错
+        if (UNLIKELY((std::chrono::steady_clock::now() - startTime) >= timeout)) { // timeout内还是不能向RTSQ中写入值，报错
             auto msg = StringFormat("Rtsq full, timeout %u. cur head: %u, sqId: %u", timeoutValue, sqHead_, sqId_);
             HCCL_ERROR("%s", msg.c_str());
             THROW<InternalException>(msg);
@@ -92,14 +92,15 @@ void RtsqA5::CopyLocBufToSq()
     if (sqTail_ >= sqHead_) {
         u32 depthLeft = sqDepth_ - sqTail_;
         if (pendingSqeCnt <= depthLeft) { // 没有回绕
-            HCCL_INFO("RtsqA5::%s copy sqe from sqe buffer, cur tail: %u, size: %u", __func__, sqTail_, pendingSqeCnt);
+            HCCL_INFO("RtsqA5::%s copy sqe from sqe buffer, sqId_: %u, streamId_: %u, cur head: %u, cur tail: %u, size: %u, depth remain: %u", 
+                __func__, sqId_, streamId_, sqHead_, sqTail_, pendingSqeCnt, depthLeft);
             int ret = memcpy_s(sqCurrAddr, pendingSqeCnt * AC_SQE_SIZE, locBuf, pendingSqeCnt * rtsqSqeSize);
-            if (ret != 0) {
+            if (UNLIKELY(ret != 0)) {
                 THROW<InternalException>(StringFormat("RtsqA5::%s sqe memcpy_s failed, ret = %d", __func__, ret));
             }
         } else {
-            HCCL_INFO("RtsqA5::%s copy sqe twice, cnt: %u, tail: %u, depth remain: %u", __func__, pendingSqeCnt,
-                      sqTail_, depthLeft);
+            HCCL_INFO("RtsqA5::%s copy sqe twice, sqId_: %u, streamId_: %u, cur head: %u, cur tail: %u, cnt: %u, depth remain: %u", 
+                __func__, sqId_, streamId_, sqHead_, sqTail_, pendingSqeCnt, depthLeft);
             // 先拷贝rtsq里剩余空间大小
             int ret = memcpy_s(sqCurrAddr, depthLeft * AC_SQE_SIZE, locBuf, depthLeft * rtsqSqeSize);
             if (ret != 0) {
@@ -109,16 +110,16 @@ void RtsqA5::CopyLocBufToSq()
             // 拷贝剩余sqe
             ret = memcpy_s(reinterpret_cast<u8 *>(sqBaseAddr_), sqHead_ * rtsqSqeSize, locBuf + depthLeft * rtsqSqeSize,
                            (pendingSqeCnt - depthLeft) * AC_SQE_SIZE);
-            if (ret != 0) {
+            if (UNLIKELY(ret != 0)) {
                 THROW<InternalException>(
                     StringFormat("RtsqA5::%s remaining sqe memcpy_s failed, ret = %d", __func__, ret));
             }
         }
     } else {
-        HCCL_INFO("RtsqA5::%s copy sqe from sqe buffer, tail < head, cur tail: %u, size: %u", __func__, sqTail_,
-                  pendingSqeCnt);
+        HCCL_INFO("RtsqA5::%s copy sqe from sqe buffer, tail < head, sqId_: %u, streamId_: %u, cur head: %u, cur tail: %u, size: %u", 
+                __func__, sqId_, streamId_, sqHead_, sqTail_, pendingSqeCnt);
         int ret = memcpy_s(sqCurrAddr, pendingSqeCnt * AC_SQE_SIZE, locBuf, pendingSqeCnt * rtsqSqeSize);
-        if (ret != 0) {
+        if (UNLIKELY(ret != 0)) {
             THROW<InternalException>(StringFormat("RtsqA5::%s sqe memcpy_s failed, ret = %d", __func__, ret));
         }
     }
@@ -140,10 +141,10 @@ void RtsqA5::LaunchTask()
     CopyLocBufToSq();
 
     // 更新tail，触发芯片执行
-    if (sqDepth_ == 0) {
+    if (UNLIKELY(sqDepth_ == 0)) {
         THROW<InternalException>("sqDepth_ cannot be zero.");
     }
-    if (pendingSqeCnt > (UINT32_MAX - sqTail_)) {
+    if (UNLIKELY(pendingSqeCnt > (UINT32_MAX - sqTail_))) {
         THROW<InternalException>("integer overflow occurs");
     }
     u32 newTail = (sqTail_ + pendingSqeCnt) % sqDepth_;
@@ -164,15 +165,17 @@ u8 *RtsqA5::GetCurrSqeBuffer()
 
 void RtsqA5::RefreshInfo()
 {
-    if (SetTaskIdBySqeId() != HCCL_SUCCESS) {
+    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
         taskId_++;
     }
     pendingSqeCnt++;
     HCCL_INFO("RtsqA5::%s: Updated: taskId_[%u], pendingSqeCnt[%u]", __func__, taskId_, pendingSqeCnt);
 
-    if (pendingSqeCnt == perLaunchSqeCnt) { // 挂起的sqe数量为128个，则需要向芯片RTSQ中写入task
-        LaunchTask();
+    if (pendingSqeCnt != perLaunchSqeCnt) {
+        return;
     }
+    // 挂起的sqe数量为128个，则需要向芯片RTSQ中写入task
+    LaunchTask();
 }
 
 void RtsqA5::NotifyWait(u32 notifyId)
@@ -253,8 +256,8 @@ const std::unordered_map<DataType, RtStarsMemcpyAsyncDataType, EnumClassHash> Da
 void RtsqA5::SdmaReduce(u64 srcAddr, u64 dstAddr, u32 size, u32 partId, const ReduceIn &reduceIn)
 {
     (void)partId;
-    if (ReduceOpToStarsOpKindMap.find(reduceIn.reduceOp) == ReduceOpToStarsOpKindMap.end()
-        || DataTypeToStarsDataTypeMap.find(reduceIn.dataType) == DataTypeToStarsDataTypeMap.end()) {
+    if (UNLIKELY(ReduceOpToStarsOpKindMap.find(reduceIn.reduceOp) == ReduceOpToStarsOpKindMap.end()
+        || DataTypeToStarsDataTypeMap.find(reduceIn.dataType) == DataTypeToStarsDataTypeMap.end())) {
         THROW<InternalException>(StringFormat("Sdma does not support reduceOp %s dataType %s",
                                               reduceIn.reduceOp.Describe().c_str(),
                                               reduceIn.dataType.Describe().c_str()));
@@ -274,7 +277,21 @@ bool RtsqA5::IsRtsqQueueSpaceSufficient()
     u32  availableSpace = GetTailToHeadDist();
     // 判断逻辑与rtsq内部保持一致，rtsq剩余空间需要大于（rtsq挂起的任务数量+本次任务） 
     // isPreStreamSync用于判断是否有Int64类型reduce算子，是否需要等其他流任务下发完成
-    return ((availableSpace <= pendingSqeCnt + 1) || isPreStreamSync)  ? false : true; 
+    auto isInsufficient = ((availableSpace <= pendingSqeCnt + 1) || isPreStreamSync);
+
+    if (!isInsufficient) {
+        HCCL_INFO("[Rtsq][%s], rtsq sqId_[%u], streamId_[%u] is sufficient. sqHead_[%u], sqTail_[%u], sqDepth[%u], availableSpace[%u], pendingSqeCnt[%u]", 
+            __func__, sqId_, streamId_, sqHead_, sqTail_, sqDepth_, availableSpace, pendingSqeCnt);
+        return true;
+    }
+
+    sqHead_ = QuerySqHead();
+    availableSpace = GetTailToHeadDist();
+    isInsufficient = ((availableSpace <= pendingSqeCnt + 1) || isPreStreamSync);
+    HCCL_INFO("[Rtsq][%s], rtsq sqId_[%u], streamId_[%u], sqHead_[%u], sqTail_[%u], sqDepth[%u], availableSpace[%u], pendingSqeCnt[%u]", 
+            __func__, sqId_, streamId_, sqHead_, sqTail_, sqDepth_, availableSpace, pendingSqeCnt);
+
+    return !isInsufficient; 
 }
 
 HcclResult RtsqA5::SetPreStreamSyncReady() 
@@ -298,7 +315,6 @@ void RtsqA5::UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
 {
     // piValue需要使用u16数据类型，保证自然增长，用于判断是否翻转
     BuildA5SqeUbDbSend(streamId_, taskId_, jettyLiteId, piValue, GetCurrSqeBuffer());
-    piQueue.push(std::make_pair(piValue, sqTail_));
     HCCL_INFO("RtsqA5::UbDbSend: UbDbSend Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     HCCL_INFO("[RtsqA5][UbDbSend] piValue(UbPi):%u, SqTail(Rtsq Pi):%u", piValue, sqTail_);
     RefreshInfo();

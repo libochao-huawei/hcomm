@@ -1,9 +1,13 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
- * Description: allgather自适应算法选择实现
- * Author: libiaozhi
- * Create: 2025-03-22
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
+
 #include "all_gather_auto_selector.h"
 #include "selector_registry.h"
 #include "coll_operator.h"
@@ -45,7 +49,20 @@ SelectorStatus AllGatherAutoSelector::SelectMeshAlgo(
     (void)op;
     HCCL_DEBUG("[AllGatherAutoSelector][%s] start", __func__);
     if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-        primQueueGenName = "CcuAllGatherMesh1D";
+        HcclDetourType detourType = EnvConfig::GetInstance().GetDetourConfig().GetDetourType();
+        if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == 2)||
+            (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == 4)) {
+            primQueueGenName = "CcuAllGatherMeshDetour1D";
+        } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ != 2)||
+            (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ != 4)) {
+            HCCL_WARNING("[Algo][AllGatherAutoSelector] detourType not match for rankSize.");
+            return SelectorStatus::NOT_MATCH;
+        } else if (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P_AND_4P) {
+            HCCL_WARNING("[Algo][AllGatherAutoSelector] HCCL_DETOUR_ENABLE_2P_AND_4P is not supported yet.");
+            return SelectorStatus::NOT_MATCH;
+        } else {
+            primQueueGenName = "CcuAllGatherMesh1D";
+        }
     } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
         primQueueGenName = "CcuAllGatherMesh2D";
     }
