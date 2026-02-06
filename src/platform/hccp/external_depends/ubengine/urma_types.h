@@ -1019,7 +1019,8 @@ typedef union urma_jfs_wr_flag {
                                           1: Notify local process after the task is completed. */
         uint32_t inline_flag : 1;      /* 0: not inline.
                                           1: inline data. */
-        uint32_t reserved : 25;
+        uint32_t db_bypass : 1;
+        uint32_t reserved : 24;
     } bs;
     uint32_t value;
 } urma_jfs_wr_flag_t;
