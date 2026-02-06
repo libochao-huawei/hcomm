@@ -181,6 +181,7 @@ struct ErrcodeInfo gErrcodeInfoList[] = {
     {-EADDRINUSE, 1, 5},
     {-EADDRNOTAVAIL, 1, 6},
     {-ESOCKCLOSED, 1, 7},
+    {-EUSERS, TYPE_CODE_OR_ENV_ERR, 8},
     {-ENOENT, 2, 0},
     {-ESRCH, 2, 1},
     {-ENODEV, 2, 2},
