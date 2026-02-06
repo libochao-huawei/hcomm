@@ -54,7 +54,7 @@ enum class TransportStatus {
     STOP
 };
 
-enum TransportMemType {
+enum class TransportMemType {
     CCL_INPUT = 0,
     CCL_OUTPUT,
     SCRATCH,
