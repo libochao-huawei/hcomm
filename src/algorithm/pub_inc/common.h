@@ -300,6 +300,41 @@ inline std::string TransferAlgType(AlgType algType)
  
     return algTypeStr;
 }
+
+inline bool TransferStrToAlgType(const std::string& algTypeStr, AlgType& algType)
+{
+    // 分割字符串
+    std::vector<std::string> parts;
+    std::stringstream ss(algTypeStr);
+    std::string part;
+    
+    while (std::getline(ss, part, '-')) {
+        parts.push_back(part);
+    }
+    
+    // 检查格式
+    if (parts.size() != 3) {
+        HCCL_ERROR("Invalid algType string format: %s", algTypeStr.c_str());
+        return false;
+    }
+    int level0Val = std::stoi(parts[0]);
+    int level1Val = std::stoi(parts[1]);
+    int level2Val = std::stoi(parts[2]);
+    if (level0Val >= static_cast<int>(AlgTypeLevel0::ALG_LEVEL0_RESERVED) || level0Val < 0
+        || level1Val >= static_cast<int>(AlgTypeLevel1::ALG_LEVEL1_RESERVED) || level1Val < 0
+        || level2Val >= static_cast<int>(AlgTypeLevel2::ALG_LEVEL2_RESERVED) || level2Val < 0)
+        {
+            HCCL_ERROR("Invalid algType string format: %s", algTypeStr.c_str());
+            return false;
+        }
+    algType.algoLevel0 = static_cast<AlgTypeLevel0>(level0Val);
+    algType.algoLevel1 = static_cast<AlgTypeLevel1>(level1Val);
+    algType.algoLevel2 = static_cast<AlgTypeLevel2>(level2Val);
+
+    HCCL_INFO("Successfully parsed algType from string: %s", algTypeStr.c_str());
+    return true;
+}
+
 }  // namespace hccl
 
 enum class TopoType {
