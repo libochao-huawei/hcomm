@@ -42,7 +42,7 @@ HcclResult HcclLocalCopy(StreamHandle streamHandle, HcclBuf *dst, HcclBuf *src)
 
     hccl::DispatcherPub* dispatcherPtr = nullptr;
     CHK_RET(GetPubDispatcher(&dispatcherPtr));
-
+    HCCL_INFO("[%s] dispatcherPtr[%p]", __func__, (void*)dispatcherPtr);
     return dispatcherPtr->MemcpyAsync(dstDevMem, srcDevMem, *stream);
 }
 

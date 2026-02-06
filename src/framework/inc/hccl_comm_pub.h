@@ -331,6 +331,7 @@ public:
     u32 GetRankTableCrc();
     u32 GetServerNum();
     u32 GetModuleNum();
+    u32 GetRealUserRank() const;
     HcclResult GetCommParams(HcclCommParams &params);       // 逆向解析获取HcclCommParams参数
     HcclResult GetCommRankTable(RankTable_t &rankTable);    // 逆向解析获取RankTable_t参数
     HcclResult SetQpQosAttr(u32 trafficClass, u32 serviceLevel); // 设置TC/SL配置
@@ -356,7 +357,8 @@ public:
     HcclResult RegisterCommUserMem(void* addr, u64 size, void **handle);
     HcclResult DeregisterCommUserMem(void* handle);
     HcclResult ExchangeCommUserMem(void* handle, std::vector<u32>& peerRanks);
-
+    HcclResult SetCommDispatcherCtx();
+    HcclResult ReleaseCommDispatcherCtx();
     // 独立算子专用
     HcclResult SetIndependentOpConfig(const CommConfig &commConfig, const RankTable_t &rankTable);
     HcclResult InitIndependentOp();

@@ -72,6 +72,7 @@ HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType
         hcclComm->GetNumBlocks(numBlocks);
 
         uint64_t groupName = hrtMsprofGetHashId(hcclComm->GetIdentifier().c_str(), hcclComm->GetIdentifier().length());
+        HCCL_INFO("[%s] groupName[%llu], groupNameStr[%s]", __func__, groupName, hcclComm->GetIdentifier().c_str());
         CHK_RET_AND_PRINT_IDE(ProfilingManagerPub::CallMsprofReportHostApi(cmdType, beginTime, count, dataType, algType,
             groupName, numBlocks), tag.c_str());
     }
@@ -1261,7 +1262,8 @@ HcclResult SetupHierarchical(const u32 nRanks, const u32 rank, const HcclRootHan
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfo][SetupHierarchical]errNo[0x%016llx] " \
         "prepare rank handle error", HCCL_ERROR_CODE(ret)), ret);
 
-    ret = topoDetectAgent->SetupAgent(nRanks, rank, rootHandle, rankHandle); // member connect to root
+    CommConfig commConfig;
+    ret = topoDetectAgent->SetupAgent(nRanks, rank, rootHandle, rankHandle, commConfig); // member connect to root
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfo][SetupHierarchical]errNo[0x%016llx] " \
         "setup topo detect error", HCCL_ERROR_CODE(ret)), ret);
 
@@ -1397,7 +1399,7 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
         } else {
             HCCL_RUN_INFO("[Init][CommRootInfo][Flat]nRanks[%u] entry flat topo detect.", nRanks);
 
-            ret = topoDetectAgent->SetupAgent(nRanks, rank, rootHandle, rootHandle);
+            ret = topoDetectAgent->SetupAgent(nRanks, rank, rootHandle, rootHandle, commConfig);
             CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfo][Flat]errNo[0x%016llx] " \
                 "setup flat topo detect error", HCCL_ERROR_CODE(ret)), errorFlag = true);
             ret = GetTopoDetectInfo(params, rankTable, localRankInfo, rootHandle, topoDetectAgent, topoDetectAgent);
