@@ -409,6 +409,10 @@ public:
     HcclResult GroupPrepareStreamAndNotify(HcclRtStream sendRecvMainStream);
     HcclResult GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte);
     HcclResult GroupSubstreamsSync();
+    HcclResult RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle);
+    HcclResult DeregisterWindow(CommSymWindow winHandle);
+    HcclResult GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
+
 protected:
     /* * 禁止用户对API类的实体做拷贝构造或拷贝赋值的操作，内部有指针成员变量 */
     hcclComm(const hcclComm &) = delete;
