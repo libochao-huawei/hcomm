@@ -180,6 +180,8 @@ HcclResult HcommMemRemap(const EndpointHandle endpointHandle, const HcommMem *me
 
 HcclResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHandles, uint32_t *memHandleNum)
 {
+    auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    CHK_RET(endpoint->GetAllMemHandles(memHandles, memHandleNum));
     return HCCL_SUCCESS;
 }
 
