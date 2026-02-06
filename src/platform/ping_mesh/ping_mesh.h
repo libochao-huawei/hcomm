@@ -58,7 +58,6 @@ struct HRaInfo {
     }
 };
 
-
 struct RpingOutput {
     u32 txPkt;     // rping发包总数
     u32 rxPkt;     // rping收包总数
