@@ -45,7 +45,7 @@ public:
  
 private:
     std::unique_ptr<LocalUbRmaBufferMgr> localUbRmaBufferMgr_{};
-    std::vector<std::shared_ptr<Hccl::localUbRmaBuffer>> allRegisteredBuffers_;
+    std::vector<std::shared_ptr<Hccl::LocalUbRmaBuffer>> allRegisteredBuffers_;
     std::unordered_map<EndpointDesc, std::unique_ptr<RemoteUbRmaBufferMgr>> remoteUbRmaBufferMgrs_;
 };
 }

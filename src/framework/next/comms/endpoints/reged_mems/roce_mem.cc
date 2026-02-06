@@ -96,9 +96,9 @@ HcclResult RoceRegedMemMgr::UnregisterMemory(void* memHandle)
 
     // 删除vector中的LocalRdmaRmaBuffer
     auto it = std::find_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
-            [buffer](const std::shared_ptr<Hccl::localRdmaRmaBuffer>& ptr) {
+            [buffer](const std::shared_ptr<Hccl::LocalRdmaRmaBuffer>& ptr) {
                 return ptr.get() == buffer;
-            })
+            });
 
     if (it == allRegisteredBuffers_.end()) {
         HCCL_ERROR("[RoceRegedMemMgr][UnregisterMemory] Memory not found in vector!");

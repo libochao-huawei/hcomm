@@ -96,16 +96,16 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
     EXECEPTION_CATCH(resultPair = this->localUbRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
     // 计数器大于1时，返回false，说明框架层有其它设备在使用这段内存，返回HCCL_E_AGAIN
     if (!resultPair) {
-        HCCL_INFO("[UbRegedMemMgr][[DeregMem] Memory reference count is larger than 0"
+        HCCL_INFO("[UbRegedMemMgr][[UnregisterMemory] Memory reference count is larger than 0"
                   "(used by other RemoteRank), do not deregister memory.");
         return HCCL_E_AGAIN;
     }
     
     // 删除vector中的LocalUbRmaBuffer
     auto it = std::find_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
-            [buffer](const std::shared_ptr<Hccl::localUbRmaBuffer>& ptr) {
+            [buffer](const std::shared_ptr<Hccl::LocalUbRmaBuffer>& ptr) {
                 return ptr.get() == buffer;
-            })
+            });
 
     if (it == allRegisteredBuffers_.end()) {
         HCCL_ERROR("[UbRegedMemMgr][UnregisterMemory] Memory not found in vector!");
