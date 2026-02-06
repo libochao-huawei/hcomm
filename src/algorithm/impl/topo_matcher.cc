@@ -55,75 +55,74 @@ HcclResult TopoMatcher::CalcCommPlaneInfo(const std::string &tag, const CommPara
 
     std::unique_ptr<CalcTransportReqBase> calcTransportReq;
     bool isAHCType = false;
+    u32 planeLevel = static_cast<u32>(commParaInfo.commPlane);
     switch (commParaInfo.commType) {
         case CommType::COMM_TAG_RING_INNER:
         case CommType::COMM_TAG_RING_COMBINED: {
-            calcTransportReq.reset(new (std::nothrow) CalcRingTransportReq(CommPlaneVector_[commParaInfo.commPlane],
+            calcTransportReq.reset(new (std::nothrow) CalcRingTransportReq(CommPlaneVector_[planeLevel],
                 isBridgeVector_, userRank_));
             break;
         }
         case CommType::COMM_TAG_HALVING_DOUBLING: {
-            calcTransportReq.reset(new (std::nothrow) CalcHDTransportReq(CommPlaneVector_[commParaInfo.commPlane],
+            calcTransportReq.reset(new (std::nothrow) CalcHDTransportReq(CommPlaneVector_[planeLevel],
                 isBridgeVector_, userRank_));
             break;
         }
         case CommType::COMM_TAG_NONUNIFORM_HIERARCHICAL_RING:
         case CommType::COMM_TAG_WHOLE_NHR:{
-            calcTransportReq.reset(new (std::nothrow) CalcNHRTransportReq(CommPlaneVector_[commParaInfo.commPlane],
+            calcTransportReq.reset(new (std::nothrow) CalcNHRTransportReq(CommPlaneVector_[planeLevel],
                 isBridgeVector_, userRank_));
             break;
         }
         case CommType::COMM_TAG_NONUNIFORM_HIERARCHICAL_RING_V1:
         case CommType::COMM_TAG_WHOLE_NHR_V1: {
-            calcTransportReq.reset(new (std::nothrow) CalcNHRV1TransportReq(CommPlaneVector_[commParaInfo.commPlane],
+            calcTransportReq.reset(new (std::nothrow) CalcNHRV1TransportReq(CommPlaneVector_[planeLevel],
                 isBridgeVector_, userRank_));
             break;
         }
         case CommType::COMM_TAG_ASYMMETRIC_HIERARCHICAL_CONCATENATE:
         case CommType::COMM_TAG_WHOLE_AHC: {
             isAHCType = true;
-            CHK_PRT_RET(static_cast<u32>(topoInfo_.CommPlaneSubGroupVector.size()) <
-                (static_cast<u32>(commParaInfo.commPlane) + 1) ||
-                topoInfo_.CommPlaneSubGroupVector[commParaInfo.commPlane].size() == 0,
+            CHK_PRT_RET(static_cast<u32>(topoInfo_.CommPlaneSubGroupVector.size()) < (planeLevel + 1) ||
+                topoInfo_.CommPlaneSubGroupVector[planeLevel].size() == 0,
                 HCCL_ERROR("[TopoMatcher][CalcCommPlaneInfo] CommPlaneSubGroupVector para init error."), HCCL_E_PARA);
-            calcTransportReq.reset(new (std::nothrow) CalcAHCTransportReq(CommPlaneVector_[commParaInfo.commPlane],
-                isBridgeVector_, userRank_, topoInfo_.CommPlaneSubGroupVector[commParaInfo.commPlane], topoInfo_.ahcAlgOption, topoInfo_.isUsedRdmaMap));
+            calcTransportReq.reset(new (std::nothrow) CalcAHCTransportReq(CommPlaneVector_[planeLevel],
+                isBridgeVector_, userRank_, topoInfo_.CommPlaneSubGroupVector[planeLevel], topoInfo_.ahcAlgOption, topoInfo_.isUsedRdmaMap));
             break;
         }
         case CommType::COMM_TAG_ASYMMETRIC_HIERARCHICAL_CONCATENATE_BROKE:
         case CommType::COMM_TAG_WHOLE_AHC_BROKE: {
             isAHCType = true;
-            CHK_PRT_RET(static_cast<u32>(topoInfo_.CommPlaneSubGroupVector.size()) <
-                (static_cast<u32>(commParaInfo.commPlane) + 1) ||
-                topoInfo_.CommPlaneSubGroupVector[commParaInfo.commPlane].size() == 0,
+            CHK_PRT_RET(static_cast<u32>(topoInfo_.CommPlaneSubGroupVector.size()) < (planeLevel + 1) ||
+                topoInfo_.CommPlaneSubGroupVector[planeLevel].size() == 0,
                 HCCL_ERROR("[TopoMatcher][CalcCommPlaneInfo] CommPlaneSubGroupVector para init error."), HCCL_E_PARA);
-            calcTransportReq.reset(new (std::nothrow) CalcAHCBrokeTransportReq(CommPlaneVector_[commParaInfo.commPlane],
-                isBridgeVector_, userRank_, topoInfo_.CommPlaneSubGroupVector[commParaInfo.commPlane], topoInfo_.ahcAlgOption, topoInfo_.isUsedRdmaMap));
+            calcTransportReq.reset(new (std::nothrow) CalcAHCBrokeTransportReq(CommPlaneVector_[planeLevel],
+                isBridgeVector_, userRank_, topoInfo_.CommPlaneSubGroupVector[planeLevel], topoInfo_.ahcAlgOption, topoInfo_.isUsedRdmaMap));
             break;
         }
         case CommType::COMM_TAG_NONUNIFORM_BRUCK:
         case CommType::COMM_TAG_WHOLE_NB: {
-            calcTransportReq.reset(new (std::nothrow) CalcNBTransportReq(CommPlaneVector_[commParaInfo.commPlane],
+            calcTransportReq.reset(new (std::nothrow) CalcNBTransportReq(CommPlaneVector_[planeLevel],
                 isBridgeVector_, userRank_));
             break;
         }
         case CommType::COMM_TAG_MESH: {
-            calcTransportReq.reset(new (std::nothrow) CalcMeshTransportReq(CommPlaneVector_[commParaInfo.commPlane],
+            calcTransportReq.reset(new (std::nothrow) CalcMeshTransportReq(CommPlaneVector_[planeLevel],
                 isBridgeVector_, userRank_));
             break;
         }
         case CommType::COMM_TAG_PARTIAL_MESH_COMBINED: {
             calcTransportReq.reset(new (std::nothrow) CalcPartialMeshTransportReq
-                (CommPlaneVector_[commParaInfo.commPlane], isBridgeVector_, userRank_));
+                (CommPlaneVector_[planeLevel], isBridgeVector_, userRank_));
             break;
         }
         case CommType::COMM_TAG_P2P: {
-            calcTransportReq.reset(new (std::nothrow) CalcP2PTransportReq(CommPlaneVector_[commParaInfo.commPlane],
+            calcTransportReq.reset(new (std::nothrow) CalcP2PTransportReq(CommPlaneVector_[planeLevel],
                 isBridgeVector_, userRank_));
             break;
         }
         case CommType::COMM_TAG_HCCS_PLUS_SIO: {
-            calcTransportReq.reset(new (std::nothrow) CalcHccsPlusSioTransportReq(CommPlaneVector_[commParaInfo.commPlane],
+            calcTransportReq.reset(new (std::nothrow) CalcHccsPlusSioTransportReq(CommPlaneVector_[planeLevel],
                 isBridgeVector_, userRank_));
             break;
         }
@@ -144,10 +143,10 @@ HcclResult TopoMatcher::CalcCommPlaneInfo(const std::string &tag, const CommPara
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Calc][CommPlane]failed, tag[%s], commPlane[%d], commType[%d]",
-        tag.c_str(), commParaInfo.commPlane, commParaInfo.commType), ret);
+        tag.c_str(), planeLevel, commParaInfo.commType), ret);
 
     HCCL_INFO("complete commPlane[%d] commType[%d] Calculation, Time:%lld us",
-        commParaInfo.commPlane, commParaInfo.commType, DURATION_US(TIME_NOW() - startut));
+        planeLevel, commParaInfo.commType, DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 
@@ -175,8 +174,8 @@ HcclResult TopoMatcher::GetRankMap(const CommParaInfo &commParaInfo, std::vector
 HcclResult TopoMatcher::SetRankMap()
 {
     // 构建由UserRank到子通信域的映射
-    subCommRank2UserRank_.resize(static_cast<u32>(COMM_LEVEL_RESERVED));
-    userRank2subCommRank_.resize(static_cast<u32>(COMM_LEVEL_RESERVED));
+    subCommRank2UserRank_.resize(static_cast<u32>(CommPlane::COMM_LEVEL_RESERVED));
+    userRank2subCommRank_.resize(static_cast<u32>(CommPlane::COMM_LEVEL_RESERVED));
     for (u32 levelIndex = 0; levelIndex < CommPlaneVector_.size(); levelIndex++) {
         u32 ringSize = CommPlaneVector_[levelIndex].size();
         subCommRank2UserRank_[levelIndex].resize(ringSize);
@@ -211,7 +210,7 @@ HcclResult TopoMatcher::GetIsUsedRdma(const CommParaInfo &commParaInfo, bool &is
     }
 
     std::vector<std::vector<u32> > &commPlaneVec = (commParaInfo.commType == CommType::COMM_TAG_P2P) ?
-        commP2PPlaneVec : CommPlaneVector_[commParaInfo.commPlane];
+        commP2PPlaneVec : CommPlaneVector_[static_cast<u32>(commParaInfo.commPlane)];
 
     for (const std::vector<u32> &commPlane : commPlaneVec) {
         for (const u32 dstRank : commPlane) {
