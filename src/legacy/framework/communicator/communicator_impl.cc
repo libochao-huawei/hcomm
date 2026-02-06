@@ -674,6 +674,7 @@ HcclResult CommunicatorImpl::AllocCollOpResource(const CollOpParams &opParams, v
         curOpParams = opParams;
         CovertToCurrentCollOperator(id, opParams, OpMode::OPBASE, false);
         opExecuteConfig = commExecuteConfig;
+        opExecuteConfig.accState = AcceleratorState::AICPU_TS;  // 此接口为AICPU模式
         ExecAlgSelect(opParams, OpMode::OPBASE);
         CHK_PTR_NULL(collService);
         if (dynamic_cast<CollServiceDefaultImpl *>(collService) != nullptr) {
@@ -2454,11 +2455,6 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
     params.opMode                     = opMode;
     params.maxTmpMemSize              = GetBufferSize();
     params.isMc2                      = opParams.isMc2;
-    if (opParams.isMc2 && (opParams.commEngine == HcclAccelerator::AICPU || opParams.commEngine == HcclAccelerator::AICPU_TS)) {
-        opExecuteConfig.accState = AcceleratorState::AICPU_TS;
-    } else if (opParams.isMc2 && opParams.commEngine != HcclAccelerator::AICPU) {
-        opExecuteConfig.accState = AcceleratorState::CCU_MS;
-    }
     OpExecuteConfig inOpExecuteConfig = opExecuteConfig;
     params.opExecuteConfig            = inOpExecuteConfig;
     params.algConfig                  = opParams.algConfig;
