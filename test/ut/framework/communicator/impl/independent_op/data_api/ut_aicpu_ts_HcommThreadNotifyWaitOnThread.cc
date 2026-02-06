@@ -19,6 +19,17 @@
 
 using namespace hccl;
 
+namespace {
+    void InitNotifies(AicpuTsThread &thread)
+    {
+        thread.notifys_.reserve(thread.notifyNum_);
+        for (uint32_t idx = 0; idx < thread.notifyNum_; idx++) {
+            thread.notifys_.emplace_back(nullptr);
+            thread.notifys_[idx].reset(new (std::nothrow) LocalNotify());
+        }
+    }
+}
+
 class UtAicpuTsHcommThreadNotifyWaitOnThread : public testing::Test
 {
 protected:
@@ -27,6 +38,7 @@ protected:
         MOCKER_CPP(&Hccl::IAicpuTsThread::NotifyWait).stubs().will(returnValue(HCCL_SUCCESS));
         threadOnDevice.devType_ = DevType::DEV_TYPE_910_95;
         threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
+        InitNotifies(threadOnDevice);
     }
 
     virtual void TearDown() override
