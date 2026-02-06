@@ -71,7 +71,10 @@ inline void hrtRaGetSecRandom(u32 *value, u32 &devPhyId)
     struct RaInfo raInfo;
     raInfo.mode = HrtNetworkMode::HDC;
     raInfo.phyId = devPhyId;
-    ra_get_sec_random(&raInfo, value);
+    s32 ret = ra_get_sec_random(&raInfo, value);
+    if (ret != 0) {
+        HCCL_ERROR("[HrtRaGetSecRandom] ra_get_sec_random failed, call interface");
+    }
 }
 
 inline u32 GetUbToken(u32 devicePhyId)
@@ -82,6 +85,7 @@ inline u32 GetUbToken(u32 devicePhyId)
         hrtRaGetSecRandom(&token, devPhyId);
         isInitialized = true;
     }
+    
     return token;
 }
 
@@ -92,6 +96,7 @@ inline bool IsSupportHCCLV2(const char *socNamePtr)
     if (targetChipVerStr.find("Ascend950") != std::string::npos) {
         return true;
     }
+
     return false;
 }
 
