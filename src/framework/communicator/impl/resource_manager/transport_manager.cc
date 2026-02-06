@@ -775,8 +775,13 @@ HcclResult TransportManager::CreateDestSockets(const std::string &tag, RankId re
         }
     } else {
         if (rankInfoList_[userRank_].deviceType == DevType::DEV_TYPE_310P3 || isStandardCard_) {
+            HCCL_INFO("TEST11 isStandardCard_ %s", isStandardCard_ ? "true" : "false");
             std::vector<u32> enableP2PDevices;
             enableP2PDevices.push_back(rankInfoList_[remoteRank].devicePhyId);
+            for (u32 i = 0; i < enableP2PDevices.size(); i++){
+                HCCL_INFO("TEST12 enableP2PDevices[%u] = %u, enableP2PDevices.size(%u)",
+                    i, enableP2PDevices[i], static_cast<u32>(enableP2PDevices.size()));
+            }
             HcclResult ret = P2PMgmtPub::EnableP2P(enableP2PDevices);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[Create][DestSockets]Enable P2P Failed, src devicePhyId[%d], dst devicePhyId[%d], ret[%u]",
