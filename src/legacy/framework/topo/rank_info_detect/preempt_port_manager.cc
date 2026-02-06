@@ -118,9 +118,12 @@ void PreemptPortManager::PreemptPortInRange(const std::shared_ptr<Socket> &liste
     HCCL_ERROR("[PreemptPortManager::%s] Complete polling of socket port range:%s", __func__, portRangeStr.c_str());
     HCCL_ERROR("[PreemptPortManager::%s] All ports in socket port range are bound already. "
         "no available port to listen. Please check the ports status, or change the port range to listen on.", __func__);
-    HCCL_ERROR("NOTICE: Users need to make sure ports in HCCL_HOST_SOCKET_PORT_RANGE are available for HCCL."
+    NicType nicType = listenSocket->GetNicType();
+    std::string envName = nicType == NicType::HOST_NIC_TYPE ? 
+        "HCCL_HOST_SOCKET_PORT_RANGE" : "HCCL_NPU_SOCKET_PORT_RANGE";
+    HCCL_ERROR("NOTICE: Users need to make sure ports in %s are available for HCCL."
         "Please double check whether the port are used by others unexpected process. "
-        "The port ranges size should also be enough when running multi-process HCCL.");
+        "The port ranges size should also be enough when running multi-process HCCL.", envName.c_str());
     HCCL_ERROR("NOTICE: The host port range size is not suggested to be smaller than the process number"
         " on current rank.");
     THROW<InvalidParamsException>("No available port to listen");

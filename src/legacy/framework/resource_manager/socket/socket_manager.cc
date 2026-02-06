@@ -103,17 +103,22 @@ void SocketManager::ServerInit(PortData &localPort)
     IpAddress    ipAddress        = localPort.GetAddr();
     u32 serverListenPort          = DEFAULT_DEVICE_LISTEN_PORT;
     auto iter = rankListenPortMap_.find(devicePhyId);
-    if (iter != rankListenPortMap_.end() && iter->second != MAX_VALUE_DEVICEPORT) {
+    if (iter != rankListenPortMap_.end() && iter->second != INVALID_VALUE_DEVICEPORT) {
         serverListenPort = iter->second;
     }
     auto         serverSocket     = socketProducer(ipAddress, ipAddress, serverListenPort, hccpSocketHandle, "server",
                                                    SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
     if (!listenPortRanges_.empty()) {
         PreemptPortManager::GetInstance(deviceLogicId_).ListenPreempt(serverSocket, listenPortRanges_, serverListenPort);
-        HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the preempt port %u]", __func__, deviceLogicId_, serverListenPort);
+        HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the preempt port %u", __func__, deviceLogicId_, serverListenPort);
     } else {
-        serverSocket->Listen();
-        HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the port %u]", __func__, deviceLogicId_, serverListenPort);
+        bool success = serverSocket->Listen(serverListenPort);
+        if (success) {
+            HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the port %u success", __func__, deviceLogicId_, serverListenPort);
+        } else {
+            string msg = StringFormat("[SocketManager::%s] Device %u listen the port %u failed, maybe other process be listen it", __func__, deviceLogicId_, serverListenPort);
+            MACRO_THROW(InvalidParamsException, msg);
+        }
     }
 
     serverSocketMap[localPort] = std::move(serverSocket);
@@ -260,10 +265,11 @@ void SocketManager::SetDeviceServerListenPortMap(const std::unordered_map<u32, u
     }
 
     auto iter = rankListenPortMap_.find(devicePhyId);
-    if (iter != rankListenPortMap_.end()) {
+    if (iter != rankListenPortMap_.end() && iter->second != INVALID_VALUE_DEVICEPORT) {
         HCCL_RUN_INFO("[SocketManager::%s] Device %u serverListenPort is %u.", __func__, devicePhyId, iter->second);
         return;
     }
+    HCCL_RUN_INFO("[SocketManager::%s] Device %u serverListenPort use the default %u.", __func__, devicePhyId, DEFAULT_DEVICE_LISTEN_PORT);
     return;
 }
 
