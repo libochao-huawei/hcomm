@@ -24,11 +24,15 @@ public:
     bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
     uint16_t    GetSemId() const;
+    void SetDependencyInfo(const std::unordered_map<uint32_t, std::vector<std::shared_ptr<CcuRepBase>>>& depInfo);
+    std::vector<std::shared_ptr<CcuRepBase>> GetDependencyInfo(uint32_t bit);
 
 private:
     MaskSignal sem;
     uint16_t   mask{0};
     bool       isProfiling{true};
+
+    std::unordered_map<uint32_t, std::vector<std::shared_ptr<CcuRepBase>>> depInfo_;
 
     friend class Hccl::CcuErrorHandler;
 };
