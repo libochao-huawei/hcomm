@@ -31,17 +31,13 @@ target_compile_definitions(hccl_utest_platform_hcom PRIVATE
 
 target_compile_options(hccl_utest_platform_hcom PRIVATE
     -U_FORTIFY_SOURCE
-    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
-    $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
+    -fno-access-control
 )
 
 target_link_libraries(hccl_utest_platform_hcom PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
-    -lpthread
+    $<BUILD_INTERFACE:intf_llt_pub>
     hccl_llt
-    -Wl,--whole-archive
-    -Wl,--no-whole-archi
-    -lgcov
+    -lpthread
     -lrt
 )
 
