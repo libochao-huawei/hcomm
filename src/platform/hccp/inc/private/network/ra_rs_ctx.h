@@ -53,7 +53,7 @@ struct mem_reg_info_t {
         uint64_t va;                  /* specify the address of the segment to be registered */
         uint32_t tid;
     } udma_segment;
-    uint32_t resv[8U];
+    uint32_t resv[7U];
 };
 
 struct mem_import_attr_t {
