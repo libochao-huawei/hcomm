@@ -39,6 +39,8 @@ public:
  
     // 关闭内存
     virtual HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) = 0;
+
+    virtual HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) = 0;
  
     RdmaHandle rdmaHandle_{nullptr};
 };
