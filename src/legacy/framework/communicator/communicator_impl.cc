@@ -2480,8 +2480,7 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
         auto dataSize = opParams.count * DataTypeSizeGet(opParams.dataType);
         THROW<NotSupportException>(
             "[CommunicatorImpl][ExecAlgSelect] failed. Error code :%u, opType[%s], opMode[%s], accState[%s], "
-            "dataType[%s], reduceOp[%s]. Current algName[%s],"
-            "algos[0]:[%u],algos[1]:[%u],algos[2]:[%u],algos[3]:[%u], dataSize[%u Bytes] .",
+            "dataType[%s], reduceOp[%s]. Current algName[%s],algos[0]:[%u],algos[1]:[%u],algos[2]:[%u],algos[3]:[%u], dataSize[%u Bytes] .",
             ret, opParams.opType.Describe().c_str(), opMode.Describe().c_str(),
             opExecuteConfig.accState.Describe().c_str(), opParams.dataType.Describe().c_str(),
             opParams.reduceOp.Describe().c_str(), curAlgName.c_str(), algos[0], algos[1], algos[2], algos[3], dataSize);
@@ -2496,8 +2495,6 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
     SetOpExecuteConfig(inOpExecuteConfig); // 算子粒度 ok
     HCCL_INFO("[CommunicatorImpl][%s] current accelerator[%s], algName[%s], algorithmType[%u]", __func__,
               opExecuteConfig.accState.Describe().c_str(), curAlgName.c_str(), algorithmType_);
-    HCCL_INFO("[CommunicatorImpl][%s] current accelerator[%s], algName[%s]", __func__,
-              opExecuteConfig.accState.Describe().c_str(), curAlgName.c_str());
     SelectCollService();
 }
 
