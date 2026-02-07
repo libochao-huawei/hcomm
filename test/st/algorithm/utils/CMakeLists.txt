@@ -42,11 +42,10 @@ target_compile_options(hccl_alg_analyzer PRIVATE
 )
 
 target_link_libraries(hccl_alg_analyzer PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     hccl_alg_adaption
-    ${THIRD_PARTY_PATH}/gtest_shared/lib/libgtest.so
+    protobuf
     -lpthread
-    ${PROTO_SOURCE_DIR}/libprotobuf.so
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     -lrt
     -ldl
 )
