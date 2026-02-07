@@ -2929,6 +2929,7 @@ bool CommunicatorImpl::IsNeedDpu()
 
 void CommunicatorImpl::InitHccpPeer()
 {
+    RaSocketSetWhiteListStatus(1); // PEER模式需要手动开启白名单模式
     HccpPeerManager::GetInstance().Init(devLogicId);
 }
 
