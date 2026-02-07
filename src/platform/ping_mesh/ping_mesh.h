@@ -108,7 +108,6 @@ union RpingIpHead {
     } ipv4;
 };
 
-#ifdef CONFIG_CONTEXT
 struct RpingEidHead {
     u32  version;            // 32bit version
     u32  type;               // 32bit type
@@ -134,7 +133,6 @@ struct RpingEidHead {
     u8 reserved[44];
 
 };
-#endif
  
 enum class RpingState {
     UNINIT,
@@ -181,7 +179,6 @@ private:
     std::map<std::string, u32> payloadLenMap_;     // 记录自定义payload的长度
     HccnRpingMode mode = HCCN_RPING_MODE_ROCE;     //ROCEorUB,
  
-
     HcclResult RpingSendInitInfo(u32 deviceId, u32 port, HcclIpAddress ipAddr, PingInitInfo initInfo,
         std::shared_ptr<HcclSocket> socket);
     HcclResult RpingRecvTargetInfo(void *clientNetCtx, u32 port, HcclIpAddress ipAddr, PingInitInfo &recvInfo, u32 timeout);
@@ -217,6 +214,5 @@ public:
     this->mode = attr->mode;  
 }
 };
- 
 }
 #endif

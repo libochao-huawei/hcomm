@@ -64,7 +64,7 @@ typedef struct HccnRpingInitAttrDef {
     uint32_t bufferSize; /* Size of resource that device need to allocate when device being client */
     uint32_t sl;         /* service level, range: 0~7, need set as 4 when no use */
     uint32_t tc;         /* traffic class, range: 0~255, need set as 132 when no use */
-    union{
+    union {
         char *ipAddr;             /* IP address of device */
         char *eid;             /* Eid of device */
     };
