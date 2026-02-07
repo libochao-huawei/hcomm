@@ -22,21 +22,17 @@
 #include "exception_util.h"
 
 namespace Hccl {
-void  CheakDeviceIdAndDevicePort(u32 deviceId, u32& devicePort, u32& tmpDevicePort)
-{
+void  CheakDeviceIdAndDevicePort(u32 deviceId, u32& devicePort){
     if (deviceId > MAX_VALUE_DEVICEID) {
             THROW<InvalidParamsException>(StringFormat("device_id [%u] is out of range [%u] to [%u]", deviceId, MIN_VALUE_U32, MAX_VALUE_DEVICEID));
-    }
-
-    // 通过不同默认值获取的value如果一样，则证明填入值，需要校验
-    if (devicePort == tmpDevicePort && (devicePort > MAX_VALUE_DEVICEPORT || devicePort < MIN_VALUE_DEVICEPORT)) {
+        }
+    if (devicePort > MAX_VALUE_DEVICEPORT || devicePort < MIN_VALUE_DEVICEPORT) {
         THROW<InvalidParamsException>(StringFormat("device_port [%u] is out of range [%u] to [%u]", devicePort, MIN_VALUE_DEVICEPORT, MAX_VALUE_DEVICEPORT));
     }
 }
 
-void CheakLevelJsonsSize(u64 levelJsonsSize)
-{
-    if (levelJsonsSize > MAX_LEVEL_lIST) {
+void CheakLevelJsonsSize(u64 levelJsonsSize){
+    if(levelJsonsSize > MAX_LEVEL_lIST) {
         THROW<InvalidParamsException>(StringFormat("level_list size [%u], exceeds the maximum limit [%u]", levelJsonsSize, MAX_LEVEL_lIST));
     }
 }
@@ -62,10 +58,8 @@ void NewRankInfo::Deserialize(const nlohmann::json &newRankInfoJson)
     std::string msgDeviceid  = "error occurs when parser object of propName \"device_id\"";
     std::string msgdeviceport = "error occurs when parser object of propName \"device_port\"";
     TRY_CATCH_THROW(InvalidParamsException, msgDeviceid, deviceId = GetJsonPropertyUInt(newRankInfoJson, "device_id"););
-    u32 tmpDevicePort;
-    TRY_CATCH_THROW(InvalidParamsException, msgdeviceport, tmpDevicePort = GetJsonPropertyUInt(newRankInfoJson, "device_port", false););  // 默认值是0
-    TRY_CATCH_THROW(InvalidParamsException, msgdeviceport, devicePort = GetJsonPropertyUInt(newRankInfoJson, "device_port", false, INVALID_VALUE_DEVICEPORT););  // 二者值如果一样，则证明其填入值
-    CheakDeviceIdAndDevicePort(deviceId, tmpDevicePort, devicePort);
+    TRY_CATCH_THROW(InvalidParamsException, msgdeviceport, devicePort = GetJsonPropertyUInt(newRankInfoJson, "device_port", false, DEFAULT_VALUE_DEVICEPORT););
+    CheakDeviceIdAndDevicePort(deviceId, devicePort);
     nlohmann::json levelJsons;
     std::string msgLevellist = "error occurs when parser object of propName \"level_list\"";
     TRY_CATCH_THROW(InvalidParamsException, msgLevellist, GetJsonPropertyList(newRankInfoJson, "level_list", levelJsons););
@@ -80,6 +74,7 @@ void NewRankInfo::Deserialize(const nlohmann::json &newRankInfoJson)
     for (auto &levelInfos : rankLevelInfos) {
         levelSequence.emplace_back(levelInfos.netLayer);
     }
+
     for (u32 i = 1; i < levelSequence.size(); i++) {
         if (levelSequence[i] <= levelSequence[i - 1]) {
             THROW<InvalidParamsException>(StringFormat("[NewRankInfo::%s] failed with level is not increased "
@@ -87,6 +82,7 @@ void NewRankInfo::Deserialize(const nlohmann::json &newRankInfoJson)
                                                        __func__, rankId, localId, levelSequence.size()));
         }
     }
+
     if(newRankInfoJson.contains("control_plane")){
     nlohmann::json controlJsons;
     std::string msgControlPlane = "error occurs when parser object of propName \"control_plane\"";
