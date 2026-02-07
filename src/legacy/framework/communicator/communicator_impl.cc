@@ -2462,7 +2462,7 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
     params.opMode                     = opMode;
     params.maxTmpMemSize              = GetBufferSize();
     params.isMc2                      = opParams.isMc2;
-    if (opParams.isMc2 && (opParams.commEngine == HcclAccelerator::AICPU || opParams.commEngine == HcclAccelerator::AICPU_TS)) {
+    if (opParams.isMc2) {
         if(accStateMap.find(opParams.commEngine) == accStateMap.end()) {
             THROW<NotSupportException>("[CommunicatorImpl][ExecAlgSelect] not support commEngine type!");
         }
