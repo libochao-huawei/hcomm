@@ -62,6 +62,7 @@ HcclResult CcuJettyMgr::PrepareCreate(const std::vector<LinkData> &links)
         unconfirmedRecord_.allocations.emplace_back(Allocation{link, channelIdKey, batchPtr});
         allocatedChannelIdMap_[link] = channelIdKey;
         channelRemoteRankIdMap_[channelIdKey] = link.GetRemoteRankId();
+        channelIpAddressMap_[channelIdKey] = {link.GetLocalAddr(), link.GetRemoteAddr()};
 
         HCCL_INFO("[CcuJettyMgr][%s] allocated new channelId[%u] of die[%u] to link[%s], "
             "devLogicId[%d].", __func__, channelIdKey.second, channelIdKey.first,
@@ -237,6 +238,7 @@ void CcuJettyMgr::FallbackAllocatedChannelJettyInfo()
         allocatedChannelIdMap_.erase(allocation.link);
         channelJettyInfoMap_.erase(allocation.channelIdKey);
         channelRemoteRankIdMap_.erase(allocation.channelIdKey);
+        channelIpAddressMap_.erase(allocation.channelIdKey);
     }
 }
 
@@ -251,6 +253,7 @@ void CcuJettyMgr::Clean()
     batchMap_.clear();
     channelJettyInfoMap_.clear();
     channelRemoteRankIdMap_.clear();
+    channelIpAddressMap_.clear();
     usedChannelCntMap_.clear();
     Confirm();
 }
@@ -303,6 +306,18 @@ RankId CcuJettyMgr::GetRemoteRankIdByChannelId(const uint8_t dieId, const uint32
     const auto &iter = channelRemoteRankIdMap_.find({dieId, channelId});
     if (iter == channelRemoteRankIdMap_.end()) {
         THROW<InvalidParamsException>("[CcuJettyMgr][%s] failed to find remoteRankId by "
+            "dieId[%u] channelId[%u], devLogicId[%d].", __func__, dieId, channelId,
+            devLogicId_);
+    }
+
+    return iter->second;
+}
+
+std::pair<IpAddress, IpAddress> CcuJettyMgr::GetAddrPairByChannelId(const uint8_t dieId, const uint32_t channelId)
+{
+    const auto &iter = channelIpAddressMap_.find({dieId, channelId});
+    if (iter == channelIpAddressMap_.end()) {
+        THROW<InvalidParamsException>("[CcuJettyMgr][%s] failed to find addrPair by "
             "dieId[%u] channelId[%u], devLogicId[%d].", __func__, dieId, channelId,
             devLogicId_);
     }
