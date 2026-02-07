@@ -8,214 +8,237 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCL_IP_ADDRESS_H
-#define HCCL_IP_ADDRESS_H
+#ifndef HCCN_RPING_H_
+#define HCCN_RPING_H_
 
-#include <securec.h>
-#include <arpa/inet.h>
-#include <hccl/base.h>
-#include <string>
-#include <vector>
-
-namespace hccl {
-constexpr u32 IP_ADDRESS_BUFFER_LEN = 64;
-
-struct HcclSocketInfo {
-    void *socketHandle; /**< socket handle */
-    void *fdHandle; /**< fd handle */
-};
-
-constexpr uint32_t URMA_EID_LEN = 16;
-constexpr uint32_t URMA_EID_NUM_TWO = 2;
-constexpr uint32_t MAX_IPV4_LEN = 15;   // 最大IPv4地址长度
-constexpr uint32_t MIN_IPV4_LEN = 7;    // 最小IPv4地址长度
-constexpr uint32_t BASE = 10;           // 进制基数
-constexpr uint32_t MAX_DOT_COUNT = 3;   // IPv4地址.分割符的最大个数
-constexpr uint32_t MAX_IPV4_SEGMENT_VALUE = 255;     // 每个段的最大值
-constexpr uint32_t URMA_EID_IPV4_PREFIX = 0x0;
-
-union Eid {
-    uint8_t raw[URMA_EID_LEN]{0};
-    struct {
-        uint64_t reserved;
-        uint32_t prefix;
-        uint32_t addr;
-    } in4;
-    struct {
-        uint64_t subnetPrefix;
-        uint64_t interfaceId;
-    } in6;
-
-    std::string Describe() const;
-
-    bool operator==(const Eid& other) const {
-        return memcmp(raw, other.raw, URMA_EID_LEN) == 0;
-    }
-
-    bool operator<(const Eid& other) const {
-        return memcmp(raw, other.raw, URMA_EID_LEN) < 0;
-    }
-};
-
-union HcclInAddr {
-    struct in_addr addr;
-    struct in6_addr addr6;
-};
-
-class HcclIpAddress {
-public:
-    explicit HcclIpAddress()
-    {
-        scopeID = 0;
-        family = AF_INET;
-        binaryAddr.addr.s_addr = 0;
-        readableIP = "0.0.0.0";
-        readableAddr = readableIP;
-    }
-    explicit HcclIpAddress(const Eid &eidInput);
+#include <stdint.h>
  
-    static bool IsEID(const std::string& str);
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 
-    static Eid StrToEID(const std::string& str);
-    std::string GetIpStr() const;
-    Eid GetEid() const
-    {
-        return eid;
-    }
+typedef void* HccnRpingCtx;
+
+#define HCCN_RPING_PAYLOAD_LEN_MAX 1500
+
+typedef enum {
+    HCCN_SUCCESS = 0,    /* success */
+    HCCN_E_AGAIN,        /* try again */
+    HCCN_E_FAIL,         /* fail */
+    HCCN_E_PARA,         /* wrong parameter */
+    HCCN_E_MEM,          /* memory */
+    HCCN_E_RESERVED      /* reserved */
+} HccnResult;
+
+typedef enum {
+    HCCN_RPING_MODE_ROCE = 0,    /* RoCE */
+    HCCN_RPING_MODE_UB = 1,      /* UB */
+    PING_MODE_IPoUB = 2,      /* UBoE */
+    HCCN_RPING_MODE_RESERVED     /* reserved */
+} HccnRpingMode;
+
+#define HCCN_RPING_ADDR_TYPE uint32_t
+#define HCCN_RPING_ADDR_TYPE_IP ((HCCN_RPING_ADDR_TYPE)0)
+#define HCCN_RPING_ADDR_TYPE_EID ((HCCN_RPING_ADDR_TYPE)1)
+
+
+typedef enum {
+    HCCN_RPING_ADDTARGET_STATE_DONE = 0,        /* add success */
+    HCCN_RPING_ADDTARGET_STATE_DOING,           /* adding */
+    HCCN_RPING_ADDTARGET_STATE_FAIL,            /* add fail */
+    HCCN_RPING_ADDTARGET_STATE_TIMEOUT,         /* connect target timeout */
+    HCCN_RPING_ADDTARGET_STATE_RESERVED         /* reserved */
+} HccnRpingAddTargetState;
+
+typedef enum {
+    HCCN_RPING_RESULT_STATE_NOT_FOUND = 0,    /* not found */
+    HCCN_RPING_RESULT_STATE_INVALID,          /* invalid */
+    HCCN_RPING_RESULT_STATE_VALID,            /* valid */
+    HCCN_RPING_RESULT_STATE_RESERVED          /* reserved */
+} HccnRpingResultState;
+
+typedef struct HccnRpingInitAttrDef {
+    HccnRpingMode mode;  /* Link type: RoCE : HCCN_RPING_MODE_ROCE /UB/ others */
+    uint32_t port;       /* Port to listen when device being target */
+    uint32_t npuNum;     /* Numbers of all the devices in the net */
+    uint32_t bufferSize; /* Size of resource that device need to allocate when device being client */
+    uint32_t sl;         /* service level, range: 0~7, need set as 4 when no use */
+    uint32_t tc;         /* traffic class, range: 0~255, need set as 132 when no use */
+    union{
+        char *ipAddr;             /* IP address of device */
+        char *eid;             /* Eid of device */
+    };
+} HccnRpingInitAttr;
  
-    std::string Describe() const;
+typedef struct HccnRpingTargetInfoDef {
+    uint32_t srcPort;              /* udp src port, hash lag needed */
+    union {
+        uint32_t reserved;
+        uint32_t addrType;         /* address type, HCCN_RPING_ADDR_TYPE_IP: ip, HCCN_RPING_ADDR_TYPE_EID: eid */
+    };
+    uint32_t sl;                   /* service level, range: 0~7, need set as 4 when no use */
+    uint32_t tc;                   /* traffic class, range: 0~255, need set as 132 when no use */
+    uint32_t port;                 /* port to connect target */
+    uint32_t payloadLen;
+    char payload[HCCN_RPING_PAYLOAD_LEN_MAX]; /* user defined payload */
+    union {
+        char* srcIp;                 /* local(client) ip */
+        char* srcEid;                /* local(client) eid */
+    };
+    union {
+        char* dstIp;                 /* remote(target) ip */
+        char* dstEid;                /* remote(target) eid */
+    };
+} HccnRpingTargetInfo;
+ 
+typedef struct HccnRpingResultInfoDef {
+    uint32_t txPkt;       /* send pkt num */
+    uint32_t rxPkt;       /* receive pkt num */
+    uint32_t minRTT;      /* minimum round-trip time / usec */
+    uint32_t maxRTT;      /* maximum round-trip time / usec */
+    uint32_t avgRTT;      /* average round-trip time / usec */
+    HccnRpingResultState state; /* ping result state: valid | invalid */
+    uint32_t reserved[5U];
+} HccnRpingResultInfo;
 
+typedef struct HccnRpingTimestampDef {
+    uint64_t sec;  /* time sec */
+    uint64_t usec; /* time usec */
+} HccnRpingTimestamp;
 
-    explicit HcclIpAddress(u32 address)
-    {
-        union HcclInAddr ipAddr;
-        ipAddr.addr.s_addr = address;
-        (void)SetBianryAddress(AF_INET, ipAddr);
-    }
-    explicit HcclIpAddress(s32 family, const union HcclInAddr &address)
-    {
-        (void)SetBianryAddress(family, address);
-    }
-    explicit HcclIpAddress(const struct in_addr &address)
-    {
-        union HcclInAddr ipAddr;
-        ipAddr.addr = address;
-        (void)SetBianryAddress(AF_INET, ipAddr);
-    }
-    explicit HcclIpAddress(const struct in6_addr &address)
-    {
-        union HcclInAddr ipAddr;
-        ipAddr.addr6 = address;
-        (void)SetBianryAddress(AF_INET6, ipAddr);
-    }
-    explicit HcclIpAddress(const std::string &address)
-    {
-        (void)SetReadableAddress(address);
-    }
-    ~HcclIpAddress() {}
+typedef struct HccnRpingAddTargetConfigDef {
+    uint32_t connectTimeout; //1ms-3600000ms
+    uint8_t reserve[32];
+} HccnRpingAddTargetConfig;
 
-    std::string GetIfName() const
-    {
-        return ifname;
-    }
-    HcclResult SetScopeID(s32 scopeID)
-    {
-        this->scopeID = scopeID;
-        return HCCL_SUCCESS;
-    }
-    s32 GetScopeID() const
-    {
-        return scopeID;
-    }
-    s32 GetFamily() const
-    {
-        return family;
-    }
+/**
+ * @brief struct of every payload header
+ */
+typedef struct HccnRpingPayloadHeadDef {
+    union {
+        char srcIp[64];   /* local(client) ip */
+        char srcEid[16];  /* local(client) eid */
+    };
+    union {
+        char dstIp[64];   /* remote(target) ip  */
+        char dstEid[16];  /* remote(target) eid */
+    };
+    uint32_t payloadLen;   /* user defined payload length */
+    uint32_t resvd[3];
+    HccnRpingTimestamp t1; /* client send timestamp */
+    HccnRpingTimestamp t2; /* target recv timestamp */
+    HccnRpingTimestamp t3; /* target send timestamp */
+    HccnRpingTimestamp t4; /* client recv timestamp */
+    uint32_t rpingBatchId; /* batch ping task id */
+    uint32_t addr_type;     /* address type, 0: ip, 1: eid */
+    uint8_t reserved[40];  //PPT40
+} HccnRpingPayloadHead;
 
-    const char *GetReadableIP() const
-    {
-        // return "IP adddress (string)"
-        return readableIP.c_str();
-    }
-    const char *GetReadableAddress() const
-    {
-        // return "IP adddress (string) % ifname"
-        return readableAddr.c_str();
-    }
-    union HcclInAddr GetBinaryAddress() const
-    {
-        return binaryAddr;
-    }
-    bool IsIPv6() const
-    {
-        return (family == AF_INET6);
-    }
-    void clear()
-    {
-        family = AF_INET;
-        scopeID = 0;
-        binaryAddr.addr.s_addr = 0;
-        readableAddr.clear();
-        readableIP.clear();
-        ifname.clear();
-    }
-    bool IsInvalid() const
-    {
-        return ((family == AF_INET) && (binaryAddr.addr.s_addr == 0));
-    }
-    bool operator == (const HcclIpAddress &that) const
-    {
-        if (this->family != that.family) {
-            return false;
-        }
-        if (this->family == AF_INET) {
-            return (this->binaryAddr.addr.s_addr == that.binaryAddr.addr.s_addr);
-        } else {
-            if (memcmp(&this->binaryAddr.addr6, &that.binaryAddr.addr6, sizeof(this->binaryAddr.addr6)) != 0) {
-                return false;
-            } else {
-                if (this->ifname.empty() || that.ifname.empty()) {
-                    return true;
-                } else {
-                    return (this->ifname == that.ifname);
-                }
-            }
-        }
-    }
+/**
+ * @brief Init rping resource on a device.
+ * @param devLogicId : Device logic ID.
+ * @param initAttr: init attribute.
+ * @param rpingCtx: context of rping resource.
+ * @return HccnResult
+ */
+extern HccnResult HccnRpingInit(uint32_t devLogicId, HccnRpingInitAttr *initAttr, HccnRpingCtx *rpingCtx);
+ 
+/**
+ * @brief Release rping resource on a device.
+ * @param rpingCtx: context of rping resource.
+ * @return HccnResult
+ */
+extern HccnResult HccnRpingDeinit(HccnRpingCtx rpingCtx);
+ 
+/**
+ * @brief Add targets to client.
+ * @param rpingCtx: context of rping resource.
+ * @param targetNum: Number of NPUs need probe.
+ * @param target: Infoes of NPU need probe, this is an array.
+ * @return HccnResult
+ */
+extern HccnResult HccnRpingAddTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target);
 
+/**
+ * @brief Add targets to client.
+ * @param rpingCtx: context of rping resource.
+ * @param targetNum: Number of NPUs need probe.
+ * @param target: Infoes of NPU need probe, this is an array.
+ * @param config: HccnRpingAddTargetConfig.
+ * @return HccnResult
+ */
+extern HccnResult HccnRpingAddTargetV2(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target,
+    HccnRpingAddTargetConfig *config); // deprecated
 
-    bool operator != (const HcclIpAddress &that) const
-    {
-        return !(*this == that);
-    }
-    bool operator < (const HcclIpAddress &that) const
-    {
-        if (this->family < that.family) {
-            return true;
-        }
-        if (this->family > that.family) {
-            return false;
-        }
-        return (this->family == AF_INET) ? (this->binaryAddr.addr.s_addr < that.binaryAddr.addr.s_addr) :
-                                           (this->readableAddr < that.readableAddr);
-    }
+/**
+ * @brief Add targets to client.
+ * @param rpingCtx: context of rping resource.
+ * @param targetNum: Number of NPUs need probe.
+ * @param target: Infoes of NPU need probe, this is an array.
+ * @param config: HccnRpingAddTargetConfig.
+ * @return HccnResult
+ */
+extern HccnResult HccnRpingAddTargetWithCfg(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target,
+    HccnRpingAddTargetConfig *config);
+ 
+/**
+ * @brief Remove targets from targets.
+ * @param rpingCtx: context of rping resource.
+ * @param targetNum: Number of NPUs need probe.
+ * @param target: Infoes of NPU need probe, this is an array.
+ * @return HccnResult
+ */
+extern HccnResult HccnRpingRemoveTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target);
+ 
+/**
+ * @brief Get adding target's state.
+ * @param rpingCtx: context of rping resource.
+ * @param targetNum: Number of NPUs need probe.
+ * @param target: Infoes of NPU need probe, this is an array.
+ * @param targetState: target state, this is an array.
+ * @return HccnResult
+ */
+extern HccnResult HccnRpingGetTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target,
+                                     HccnRpingAddTargetState *targetState);
+ 
+/**
+ * @brief Start batch ping task.
+ * @param rpingCtx: context of rping resource.
+ * @param pktNum: Number of packet send to target.
+ * @param interval: Interval between two sends of ping packet.
+ * @param timeout: Time threshold between ping & pong packet.
+ * @return HccnResult
+ */
+extern HccnResult HccnRpingBatchPingStart(HccnRpingCtx rpingCtx, uint32_t pktNum, uint32_t interval, uint32_t timeout);
+ 
+/**
+ * @brief Stop batch ping task.
+ * @param rpingCtx: context of rping resource.
+ * @return HccnResult
+ */
+extern HccnResult HccnRpingBatchPingStop(HccnRpingCtx rpingCtx);
+ 
+/**
+ * @brief Get batch ping results.
+ * @param rpingCtx: context of rping resource.
+ * @param targetNum: Number of NPUs need probe.
+ * @param target: Infoes of NPU need probe, this is an array.
+ * @param result: probe result, this is an array.
+ * @return HccnResult
+ */
+extern HccnResult HccnRpingGetResult(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target,
+                                     HccnRpingResultInfo *result);
 
+/**
+ * @brief Get batch ping packet payload.
+ * @param rpingCtx: context of rping resource.
+ * @param payload: packet payload pointer, contain all payload, every payload head struct as HccnRpingPayloadHeader.
+ * @param payloadLen: length of all payload.
+ * @return HccnResult
+ */
+extern HccnResult HccnRpingGetPayload(HccnRpingCtx rpingCtx, void **payload, uint32_t *payloadLen);
 
-    HcclResult SetReadableAddress(const std::string &address);
-    HcclResult SetIfName(const std::string &name);
-
-private:
-    HcclResult SetBianryAddress(s32 family, const union HcclInAddr &address);
-
-    union HcclInAddr binaryAddr{};   // 二进制IP地址
-    std::string readableAddr{};      // 字符串IP地址 + % + 网卡名
-    std::string readableIP{};        // 字符串IP地址
-    std::string ifname{};            // 网卡名
-    s32 family{};
-    s32 scopeID{};
-    Eid eid{};
-    
-
-};
+#ifdef __cplusplus
 }
-#endif // HCCL_IP_ADDRESS_H
+#endif // __cplusplus
+#endif // HCCN_RPING_H_

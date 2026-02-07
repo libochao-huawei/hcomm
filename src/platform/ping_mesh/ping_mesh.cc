@@ -63,6 +63,43 @@ PingMesh::~PingMesh()
     }
 }
 
+static bool isInitialized = false;  // 标记是否已经初始化
+static u32 token = 0;  // 存储生成的随机数
+static std::mutex ubTokenMutex;
+inline void hrtRaGetSecRandom(u32 *value, u32 &devPhyId)
+{
+    struct RaInfo raInfo;
+    raInfo.mode = HrtNetworkMode::HDC;
+    raInfo.phyId = devPhyId;
+    s32 ret = ra_get_sec_random(&raInfo, value);
+    if (ret != 0) {
+        HCCL_ERROR("[HrtRaGetSecRandom] ra_get_sec_random failed, call interface");
+    }
+}
+
+inline u32 GetUbToken(u32 devicePhyId)
+{
+    std::lock_guard<std::mutex> lock(ubTokenMutex);
+    if (!isInitialized) {
+        u32 devPhyId = devicePhyId;
+        hrtRaGetSecRandom(&token, devPhyId);
+        isInitialized = true;
+    }
+    
+    return token;
+}
+
+inline bool IsSupportHCCLV2(const char *socNamePtr)
+{
+    std::string targetChipVerStr = socNamePtr;
+    HCCL_DEBUG("[%s]SocVersion = %s.", __func__, targetChipVerStr.c_str());
+    if (targetChipVerStr.find("Ascend950") != std::string::npos) {
+        return true;
+    }
+
+    return false;
+}
+
 inline HcclResult UninitStateCheck(RpingState nextState)
 {
     HcclResult ret = HCCL_SUCCESS;
@@ -297,7 +334,7 @@ inline void RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, u32 no
     initAttr.dev.ub.eid_index = eidmap.at(ipAddr.GetEid());//从eid_list获取eid_index
     u32 ret = memcpy_s(initAttr.dev.ub.eid.raw, sizeof(initAttr.dev.ub.eid.raw), 
             ipAddr.GetEid().raw, sizeof(ipAddr.GetEid().raw));
-    if(ret != 0) {
+    if (ret != 0) {
         HCCL_ERROR("memcpy_s Eid failed");
     }
     initAttr.bufferSize = bufferSize == 0 ? (maxWrDepth * BYTE_PER_TARGET_DEFAULT) : bufferSize; // 发送接收缓存区大小
@@ -313,8 +350,8 @@ inline void RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, u32 no
     initAttr.client.ub.qp_attr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
     initAttr.client.ub.qp_attr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
     initAttr.client.ub.qp_attr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
-    initAttr.client.ub.qp_attr.token_value = Hccl::GetUbToken();
-    initAttr.client.ub.seg_attr.token_value = Hccl::GetUbToken();
+    initAttr.client.ub.qp_attr.token_value = GetUbToken(deviceId);
+    initAttr.client.ub.seg_attr.token_value = GetUbToken(deviceId);
 
     // server的初始化信息
     initAttr.server.ub.cq_attr.sendCqDepth = maxWrDepth;
@@ -326,8 +363,8 @@ inline void RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, u32 no
     initAttr.server.ub.qp_attr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
     initAttr.server.ub.qp_attr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
     initAttr.server.ub.qp_attr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
-    initAttr.server.ub.qp_attr.token_value = Hccl::GetUbToken();
-    initAttr.server.ub.seg_attr.token_value = Hccl::GetUbToken();
+    initAttr.server.ub.qp_attr.token_value = GetUbToken(deviceId);
+    initAttr.server.ub.seg_attr.token_value = GetUbToken(deviceId);
 
     // ip协议信息
     initAttr.commInfo.version = 0;
@@ -365,7 +402,7 @@ inline HcclResult RaGetEidMap(std::map<Eid, uint32_t>& eidmap, const HRaInfo &ra
         Eid eid;
         ret = memcpy_s(eid.raw, sizeof(eid.raw), 
             infoList[i].eid.raw, sizeof(infoList[i].eid.raw));
-        if(ret != 0) {
+        if (ret != 0) {
             return HCCL_E_INTERNAL;
         }
         eidmap.insert(std::make_pair(eid, infoList[i].eid_index));
@@ -378,12 +415,17 @@ inline HcclResult RpingTargetAttrInitWithUb(PingTargetInfo &ubtarget, RpingInput
 {
     ubtarget.remoteInfo.qpInfo.version = ubinfo->version;
     ubtarget.remoteInfo.qpInfo.ub.size = ubinfo->ub.size;
-    for(u32 i = 0; i< QPINFO_UB_KEY_LEN; i++){
-        ubtarget.remoteInfo.qpInfo.ub.key[i] = ubinfo->ub.key[i];
+    u32 ret = 0;
+    ret = memcpy_s(ubtarget.remoteInfo.qpInfo.ub.key, sizeof(ubtarget.remoteInfo.qpInfo.ub.key), 
+            ubinfo->ub.key, QPINFO_UB_KEY_LEN);
+    if (ret != 0) {
+        return HCCL_E_INTERNAL;
     }
     ubtarget.remoteInfo.qpInfo.ub.token_value = ubinfo->ub.token_value;
-    for(uint32_t i = 0; i< URMA_EID_LEN; i++){
-        ubtarget.remoteInfo.eid.raw[i] = ubinput.dip.GetEid().raw[i];
+    ret = memcpy_s(ubtarget.remoteInfo.eid.raw, sizeof(ubtarget.remoteInfo.eid.raw), 
+            ubinput.dip.GetEid().raw, URMA_EID_LEN);
+    if (ret != 0) {
+        return HCCL_E_INTERNAL;
     }
     ubtarget.localInfo.ub.qos_attr.tc = ubinput.tc;
     ubtarget.localInfo.ub.qos_attr.sl = ubinput.sl;
@@ -441,7 +483,7 @@ inline HcclResult RpingTargetAttrInit(PingTargetInfo &target, RpingInput input, 
     return HCCL_SUCCESS;
 }
 
-inline void RpingResultInfoInit(PingTargetResult *resultInfo, std::map<std::string, PingQpInfo> rdmaInfoMaps,
+HcclResult PingMesh::RpingResultInfoInit(PingTargetResult *resultInfo, std::map<std::string, PingQpInfo> rdmaInfoMaps,
     RpingInput *input, u32 targetNum)
 {
     for (u32 i = 0; i < targetNum; i++) {
@@ -450,7 +492,7 @@ inline void RpingResultInfoInit(PingTargetResult *resultInfo, std::map<std::stri
             continue;
         }
         PingQpInfo *rdmainfo = &rdmaInfoMaps[std::string(input[i].dip.GetReadableIP())];
-        if(input[i].addrType == HCCN_RPING_ADDR_TYPE_IP) {
+        if (input[i].addrType == HCCN_RPING_ADDR_TYPE_IP) {
             resultInfo[i].remoteInfo.ip.addr = input[i].dip.GetBinaryAddress().addr;
             resultInfo[i].remoteInfo.ip.addr6 = input[i].dip.GetBinaryAddress().addr6;
             resultInfo[i].remoteInfo.qpInfo.version = 0;
@@ -460,21 +502,30 @@ inline void RpingResultInfoInit(PingTargetResult *resultInfo, std::map<std::stri
 
         }
         #ifdef CONFIG_CONTEXT
-        if(input[i].addrType == HCCN_RPING_ADDR_TYPE_EID) {
-            for(uint32_t j = 0; j < URMA_EID_LEN; j++){
-                resultInfo[i].remoteInfo.eid.raw[j] = input[i].dip.GetEid().raw[j];
+        const char *socNamePtr = aclrtGetSocName();
+        CHK_PTR_NULL(socNamePtr);
+        if (input[i].addrType == HCCN_RPING_ADDR_TYPE_EID && IsSupportHCCLV2(socNamePtr)) {
+            u32 ret = 0;
+            ret = memcpy_s(resultInfo[i].remoteInfo.eid.raw, sizeof(resultInfo[i].remoteInfo.eid.raw), 
+                    input[i].dip.GetEid().raw, URMA_EID_LEN);
+            if (ret != 0) {
+                return HCCL_E_INTERNAL;
             }
             resultInfo[i].remoteInfo.qpInfo.version = 0;
             resultInfo[i].remoteInfo.qpInfo.ub.size = rdmainfo->ub.size;
-            for(uint32_t k = 0; k < QPINFO_UB_KEY_LEN; k++){
-                resultInfo[i].remoteInfo.qpInfo.ub.key[k] = rdmainfo->ub.key[k];
+            ret = memcpy_s(resultInfo[i].remoteInfo.qpInfo.ub.key, sizeof(resultInfo[i].remoteInfo.qpInfo.ub.key), 
+                    rdmainfo->ub.key, QPINFO_UB_KEY_LEN);
+            if (ret != 0) {
+                return HCCL_E_INTERNAL;
             }
             resultInfo[i].remoteInfo.qpInfo.ub.token_value = rdmainfo->ub.token_value;
         }
         #endif
 
         HCCL_INFO("[HCCN][RpingResultInfoInit]Target[%s] info init success.", input[i].dip.GetReadableIP());
+        
     }
+    return HCCL_SUCCESS;
 }
 
 inline void GetResultFromReturnValue(PingTargetResult *resultInfo, RpingOutput *output, u32 targetNum)
@@ -682,6 +733,16 @@ HcclResult PingMesh::StartSocketThread(u32 deviceId, HcclIpAddress ipAddr, u32 p
     return HCCL_SUCCESS;
 }
 
+bool IsModeSupported(LinkType netMode)
+{
+    if (netMode != LinkType::LINK_ROCE && netMode != LinkType::LINK_UB) {
+        HCCL_ERROR("[HCCN][HccnRpingInit]only support ROCE or UB mode.");
+        return false;
+    }
+    return true;
+
+}
+
 HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr, u32 port, u32 nodeNum, u32 bufferSize,
     u32 sl, u32 tc)
 {
@@ -691,11 +752,9 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
         port, nodeNum, bufferSize, sl, tc);
     // 当前只支持RoCE和UB
     LinkType netMode = static_cast<LinkType>(mode);
-    if (netMode != LinkType::LINK_ROCE && netMode != LinkType::LINK_UB) {
-        HCCL_ERROR("[HCCN][HccnRpingInit]only support ROCE or UB mode.");
+    if(!IsModeSupported(netMode)) {
         return HCCL_E_NOT_SUPPORT;
     }
-
     // 获取物理id
     deviceLogicId_ = deviceId;
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
@@ -718,6 +777,7 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
     RpingInitState status = RpingInitState::HCCL_INIT_SUCCESS;
     HcclResult ret = HCCL_SUCCESS;
     void *pingHandle = nullptr;
+    const char *socNamePtr = aclrtGetSocName();
     do {
         // hccp侧初始化ping mesh资源
         ret = HccnRaInit(deviceId);
@@ -728,11 +788,11 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
         }
 
         PingInitAttr initAttr{};
-        if(netMode == LinkType::LINK_ROCE) {
+        if (netMode == LinkType::LINK_ROCE) {
             RpingRoceAttrInit(devicePhyId_, ipAddr, port, nodeNum, bufferSize, sl, tc, initAttr);
         }
         #ifdef CONFIG_CONTEXT
-        if(netMode == LinkType::LINK_UB) {
+        if (netMode == LinkType::LINK_UB && IsSupportHCCLV2(socNamePtr)) {
             HRaInfo info(HrtNetworkMode::HDC, devicePhyId_);
             std::map<Eid, uint32_t> eidmap;
             ret = RaGetEidMap(eidmap, info);
@@ -743,7 +803,6 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
             RpingUbAttrInit(devicePhyId_, ipAddr, port, nodeNum, bufferSize, sl, tc, initAttr, eidmap);
         }
         #endif
-        
         ret = hrtRaPingInit(&initAttr, &initInfo_, &pingHandle);
         if (ret != HCCL_SUCCESS) {
             status = RpingInitState::HCCL_RA_NEED_DEINIT;
@@ -879,11 +938,13 @@ HcclResult PingMesh::HccnTargetAttrInter(u32 targetNumInter, RpingInput *inputIn
             continue;
         }
         payloadLenMap_.insert(std::pair<std::string, u32>(std::string(inputInter[i].dip.GetReadableIP()), inputInter[i].len));
-        if(inputInter[i].addrType == HCCN_RPING_ADDR_TYPE_IP) {
+        if (inputInter[i].addrType == HCCN_RPING_ADDR_TYPE_IP) {
             ret = RpingTargetAttrInit(targetInter[0], inputInter[i], rdmaInfo, true);
         }
         #ifdef CONFIG_CONTEXT
-        if(inputInter[i].addrType == HCCN_RPING_ADDR_TYPE_EID) {
+        const char *socNamePtr = aclrtGetSocName();
+        CHK_PTR_NULL(socNamePtr);
+        if (inputInter[i].addrType == HCCN_RPING_ADDR_TYPE_EID && IsSupportHCCLV2(socNamePtr)) {
             ret = RpingTargetAttrInitWithUb(targetInter[0], inputInter[i], rdmaInfo, true);
         }
         #endif
@@ -953,11 +1014,13 @@ HcclResult PingMesh::HccnTarRemoveAttrInter(u32 targetNumInter, RpingInput *inpu
         }
         PingQpInfo *rdmainfo = &rdmaInfoMaps_[std::string(inputInter[i].dip.GetReadableIP())];
         PingTargetInfo targetInfo { 0 };
-        if(inputInter[i].addrType == HCCN_RPING_ADDR_TYPE_IP) {
+        if (inputInter[i].addrType == HCCN_RPING_ADDR_TYPE_IP) {
             retInter = RpingTargetAttrInit(targetInfo, inputInter[i], rdmainfo, false);
         }
         #ifdef CONFIG_CONTEXT
-        if(inputInter[i].addrType == HCCN_RPING_ADDR_TYPE_EID) {
+        const char *socNamePtr = aclrtGetSocName();
+        CHK_PTR_NULL(socNamePtr);
+        if (inputInter[i].addrType == HCCN_RPING_ADDR_TYPE_EID && IsSupportHCCLV2(socNamePtr)) {
             retInter = RpingTargetAttrInitWithUb(targetInfo, inputInter[i], rdmainfo, false);
         }
         #endif
@@ -1085,11 +1148,15 @@ HcclResult PingMesh::HccnRpingGetResult(u32 deviceId, u32 targetNum, RpingInput 
     CHK_PRT_RET(resultInfo == nullptr, HCCL_ERROR("[HCCN][HccnRpingGetResult]Alloc result memory failed."),
         HCCL_E_MEMORY);
     HCCL_INFO("[HCCN][HccnRpingGetResult]deviceId %u targetNum %u", deviceId, targetNum);
-    RpingResultInfoInit(resultInfo, rdmaInfoMaps_, input, targetNum);
-
+    HcclResult ret = RpingResultInfoInit(resultInfo, rdmaInfoMaps_, input, targetNum);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[HCCN][HccnRpingGetResult]RpingResultInfoInit failed, ret[%d] num[%u].", deviceId, ret, targetNum);
+        delete[] resultInfo;
+        return ret;
+    }
     // 调用hccp接口获取探测结果
     u32 num = targetNum; // resultinfo是一个带有返回值信息的数组, 对应的数组大小也需要返回，因此这里数组大小也传递指针
-    HcclResult ret = hrtRaPingGetResults(pingHandle_, resultInfo, &num);
+    ret = hrtRaPingGetResults(pingHandle_, resultInfo, &num);
     if (ret == HCCL_E_AGAIN) {
         HCCL_WARNING("[HCCN][HccnRpingGetResult]Try again.");
         delete[] resultInfo;
@@ -1261,11 +1328,13 @@ HcclResult PingMesh::HccnRpingGetPayload(u32 deviceId, void **payload, u32 *payl
     // 重填payload头
     u32 payloadNum = bufferInfo->bufferSize / BYTE_PER_TARGET_DEFAULT;
     u8 *payloadTmp = payload_;
-    if(mode == HCCN_RPING_MODE_ROCE) {
+    if (mode == HCCN_RPING_MODE_ROCE) {
         CHK_RET(HccnRpingRefillPayloadHead(payloadTmp, payloadNum));
     }
     #ifdef CONFIG_CONTEXT
-    if(mode == HCCN_RPING_MODE_UB) {
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    if (mode == HCCN_RPING_MODE_UB && IsSupportHCCLV2(socNamePtr)) {
         CHK_RET(HccnRpingRefillUbPayloadHead(payloadTmp, payloadNum));
     }
     #endif
