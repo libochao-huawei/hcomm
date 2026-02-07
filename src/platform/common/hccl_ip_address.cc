@@ -18,15 +18,15 @@ namespace hccl {
 template <typename... Args> inline std::string StringFormat(const char *format, Args... args)
 {
     using namespace std;
-    constexpr size_t bufSize = BUFSIZ;
-    char             buffer[bufSize];
-    int result = snprintf_s(&buffer[0], bufSize, bufSize, format, args...);
-     if (result < 0) {
+    constexpr size_t buffSize = BUFSIZ;
+    char             buffer[buffSize];
+    int result = snprintf_s(&buffer[0], buffSize, buffSize, format, args...);
+    if (result < 0) {
         HCCL_ERROR("[StringFormat] data snprintf_s failed.");
         return "";
     }
     size_t actualSize = static_cast<size_t>(result);
-    if (actualSize + 1 > bufSize) {
+    if (actualSize + 1 > buffSize) {
         actualSize++;
         std::vector<char> newbuffer(actualSize);
         auto ret = snprintf_s(newbuffer.data(), actualSize, actualSize, format, args...);
