@@ -33,6 +33,12 @@ void ra_ctx_get_lmem_info(struct mem_reg_info_t *mem_info, struct mr_reg_info_t 
     lmem_info->out.key = mem_info->key;
     lmem_info->out.ub.token_id = mem_info->ub.token_id;
     lmem_info->out.ub.target_seg_handle = mem_info->ub.target_seg_handle;
+    lmem_info->out.udma_segment.token_value = mem_info->udma_segment.token_value;
+    lmem_info->out.udma_segment.token_value_valid = mem_info->udma_segment.token_value_valid;
+    lmem_info->out.udma_segment.len = mem_info->udma_segment.len;
+    lmem_info->out.udma_segment.va = mem_info->udma_segment.va;
+    lmem_info->out.udma_segment.tid = mem_info->udma_segment.tid;
+
     lmem_handle->addr = lmem_info->out.ub.target_seg_handle;
 }
 
