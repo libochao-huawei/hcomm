@@ -10,6 +10,8 @@
 
 #ifndef H_COM_PRIVATE_V2_H
 #define H_COM_PRIVATE_V2_H
+
+constexpr u32 ESTIMATE_CCU_TASK_PER_STREAM = 20;
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
