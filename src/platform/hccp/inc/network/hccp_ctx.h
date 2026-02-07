@@ -184,7 +184,7 @@ struct mem_reg_info {
         uint64_t va;                  /* specify the address of the segment to be registered */
         uint32_t tid;
     } udma_segment;
-    uint32_t resv[8U];
+    uint32_t resv[7U];
 };
 
 struct mr_reg_info_t {
@@ -467,7 +467,7 @@ struct qp_create_info {
         uint32_t db_type;
         void volatile *db_addr;
     } udma_jetty_cq;
-    uint32_t resv[15U];
+    uint32_t resv[14U];
 };
 
 enum jetty_grp_policy {
