@@ -36,8 +36,6 @@ public:
     u32 GetNotifyNumPerThread() const { return notifyNumPerThread_; }
 
 private:
-    HcclResult CommEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type);
-    HcclResult CommEngineToStreamType(CommEngine engine, StreamType &type);
 
     HcclResult ThreadExportToCommEngineCpu(uint32_t threadNum, const ThreadHandle *threads, ThreadHandle *exportedThreads);
     HcclResult ThreadExportToCommEngineAicpu(uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads);

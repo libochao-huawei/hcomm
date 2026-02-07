@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
  
-#include "../communicator/hccl_api_base_test.h"
+#include "../../../hccl_api_base_test.h"
 #include "local_notify_impl.h"
 class TestAicpuTsThread : public BaseInit {
 public:

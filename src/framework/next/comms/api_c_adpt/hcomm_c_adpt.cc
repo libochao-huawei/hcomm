@@ -503,13 +503,17 @@ HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t noti
 {
     CHK_PTR_NULL(threads);
 
-    HCCL_INFO("[%s]HcclThreadAcquire begin. need threadNum[%u], notifyPerThread[%u]",
+    HCCL_INFO("[%s]ThreadAcquire begin. need threadNum[%u], notifyPerThread[%u]",
         __func__,
         threadNum,
         notifyNumPerThread);
+    if (threadNum <= 0 || threadNum > hccl::HCOMM_THREADNUM_MAX_NUM) {
+        HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.ThreadNum %u.threadNum range (0 , %u]", threadNum, hccl::HCOMM_THREADNUM_MAX_NUM);
+        return HCCL_E_PARA;
+    }
 
-    if (threadNum == 0) {
-        HCCL_ERROR("[HcommThreadAlloc]threadNum is 0");
+    if (notifyNumPerThread < 0 || notifyNumPerThread > hccl::HCOMM_NOTIFY_MAX_NUM) {
+        HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.notifyNumPerThread is %u,notifyNumPerThread range [0 , %u]", notifyNumPerThread, hccl::HCOMM_NOTIFY_MAX_NUM);
         return HCCL_E_PARA;
     }
 
@@ -518,32 +522,35 @@ HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t noti
     CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
     CHK_RET(CommEngineToStreamType(engine, streamType));
 
-    HcclResult ret = HCCL_E_INTERNAL;
-
+    HcclResult ret = HCCL_SUCCESS;
     for (uint32_t i = 0; i < threadNum; ++i) {
         std::shared_ptr<hccl::Thread> handle;
-        HCCL_INFO("[%s] AicpuTsThread notifyLoadType[%u], streamType[%u]",
+        HCCL_INFO("[%s] Thread notifyLoadType[%u], streamType[%u]",
             __func__,
             static_cast<int32_t>(notifyLoadType),
             static_cast<int32_t>(streamType));
-        CHK_RET(CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, handle));
-        ret = handle->Init();
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[HcommThreadAlloc] Failed to init thread index %u", i);
+        ret = CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, handle);
+        if (ret != HCCL_SUCCESS ) {
+            HCCL_ERROR("[HcommThreadAlloc] Failed to create thread index %u", i);
+            if (i != 0) {
+                CHK_RET(HcommThreadFree(threads, i));
+            }
             return ret;
         }
-        // newThreads.emplace_back(std::move(handle));
+        ret = handle->Init();
+        if (ret != HCCL_SUCCESS ) {
+            HCCL_ERROR("[HcommThreadAlloc] Failed to init thread index %u", i);
+            if (i != 0) {
+                CHK_RET(HcommThreadFree(threads, i));
+            }
+            return ret;
+        }
         threads[i] = reinterpret_cast<ThreadHandle>(handle.get());
         hcomm::g_ThreadMap.emplace(threads[i], handle);
-        HCCL_INFO("[%s] host threadArray[%u] = [%lu]",__func__, i, threads[i]);
     }
 
-    HCCL_INFO("[HcommThreadAlloc] HcclThreadAcquire done: engine[%d] threadNum[%u],"
-              "notifyPerThread[%u]%s",
-        engine,
-        threadNum,
-        notifyNumPerThread,
-        (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) ? " (AICPU token ready)" : "");
+    HCCL_INFO("[HcommThreadAlloc] ThreadAcquire done: engine[%d] threadNum[%u],"
+              "notifyPerThread[%u]", engine, threadNum, notifyNumPerThread);
     return HCCL_SUCCESS;
 }
 
@@ -554,6 +561,7 @@ HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum)
         return HCCL_E_PARA;
     }
 
+    // 不允许空释放
     if (threadNum == 0) {
         HCCL_ERROR("[HcommThreadfree] threadNum is 0, nothing to free.");
         return HCCL_E_PARA;
@@ -579,7 +587,7 @@ HcclResult HcommThreadAllocWithStream(CommEngine engine,
 {
     CHK_PTR_NULL(thread);
     hccl::NotifyLoadType notifyLoadType;
-    CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
+    CHK_RET(CommHostEngineToNotifyLoadType(engine, notifyLoadType));
     std::shared_ptr<hccl::Thread> handle;
     EXECEPTION_CATCH(handle = std::make_shared<hccl::CpuTsThread>(stream, notifyNum, notifyLoadType), return HCCL_E_PTR);
     CHK_RET(handle->Init());
@@ -588,7 +596,7 @@ HcclResult HcommThreadAllocWithStream(CommEngine engine,
     *thread = reinterpret_cast<ThreadHandle>(handle.get());
     hcomm::g_ThreadMap.emplace(*thread , handle);
  
-    HCCL_INFO("[ThreadMgr]  HcclThreadAcquireWithStream done: engine[%d] stream[%p],"
+    HCCL_INFO("[ThreadMgr]  ThreadAcquireWithStream done: engine[%d] stream[%p],"
         "notifyNum[%u]",  engine, stream, notifyNum);
     return HCCL_SUCCESS;
 }
