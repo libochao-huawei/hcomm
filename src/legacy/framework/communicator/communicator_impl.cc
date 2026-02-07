@@ -2444,7 +2444,7 @@ CommStatus CommunicatorImpl::GetCommStatus() const
     return status;
 }
 
-std::Map<HcclAccelerator, AcceleratorState> accStateMap = {
+std::map<HcclAccelerator, AcceleratorState> accStateMap = {
     {HcclAccelerator::AICPU, AcceleratorState::AICPU_TS},
     {HcclAccelerator::AICPU_TS, AcceleratorState::AICPU_TS},
     {HcclAccelerator::CCU_SCHED, AcceleratorState::CCU_SCHED},
