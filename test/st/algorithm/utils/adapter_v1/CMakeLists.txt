@@ -85,8 +85,6 @@ target_include_directories(hccl_alg_adaption PRIVATE
     ${HCOMM_FRAMEWORK_INCLUDE_LIST}
     ${HCOMM_LEGACY_INCLUDE_LIST}
 
-    ${THIRD_PARTY_PATH}/json/include
-
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
 
     ${HCOMM_CODE_PLATFORM}/hccp/external_depends/rdma-core/include
@@ -107,11 +105,9 @@ target_compile_options(hccl_alg_adaption PRIVATE
 )
 
 target_link_libraries(hccl_alg_adaption PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     hccl_alg_test
-    ${THIRD_PARTY_PATH}/gtest_shared/lib/libgtest.so
     -lpthread
-    ${PROTO_SOURCE_DIR}/libprotobuf.so
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     -lrt
     -ldl
 )
