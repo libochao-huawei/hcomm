@@ -379,23 +379,21 @@ target_include_directories(hccl_llt  PRIVATE
 FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_CODE_ROOT}/src/legacy)
 foreach (dir ${sources_list})
     IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/legacy") AND (NOT ${dir} MATCHES "src/legacy/mdpi"))
-        target_include_directories(hccl_llt  PRIVATE  ${dir})
+        target_include_directories(hccl_llt PRIVATE ${dir})
     endif()
 endforeach()
 
-target_compile_definitions(hccl_llt    PRIVATE
+target_compile_definitions(hccl_llt PRIVATE
     HALF_T=float
-    google=ascend_private
     CCL_KERNEL
-    -DCCL_LLT
+    CCL_LLT
 )
 
-target_compile_options(hccl_llt   PRIVATE
-    -O0 -U_FORTIFY_SOURCE -g
-)
-
-target_link_libraries(hccl_llt  PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
-    -lrt
-    -ldl
+target_link_libraries(hccl_llt PRIVATE
+    $<BUILD_INTERFACE:intf_pub_base>
+    -wl,--as-needed
+    pthread
+    rt
+    dl
+    -wl,--no-as-needed
 )

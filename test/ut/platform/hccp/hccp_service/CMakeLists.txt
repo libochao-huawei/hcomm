@@ -13,22 +13,21 @@ set(hccp_utest_list
     stub/tsd.c 
     stub/mm.c 
     stub/hccp_pub.c
+    st_test.cc 
+    tc_hccp.c
     ${SRC_DIR}/test/ut/platform/hccp/stub/ut_dispatch.cc
     ${SRC_DIR}/src/platform/hccp/hccp_service/param.c
     ${SRC_DIR}/src/platform/hccp/common/dl_hal_function.c
     ${SRC_DIR}/src/platform/hccp/common/ascend_hal_dl.c
     ${SRC_DIR}/src/platform/hccp/hccp_service/main.c
-    st_test.cc 
-    tc_hccp.c
-    )
+)
 
-message(STATUS "${SRC_DIR}/src/platform/common/ascend_hal_dl.c")
 add_executable(hccp_utest ${hccp_utest_list})
 
 set_property(TARGET hccp_utest PROPERTY C_STANDARD 11)
 target_include_directories(hccp_utest PRIVATE
     stub
-    
+
     ${SRC_DIR}/src/platform/hccp/external_depends/inc
     ${SRC_DIR}/src/platform/hccp/external_depends/inc/driver
     ${SRC_DIR}/test/ut/platform/hccp/stub/include
@@ -54,14 +53,11 @@ target_include_directories(hccp_utest PRIVATE
 )
 
 target_compile_options(hccp_utest PRIVATE
-        -U_FORTIFY_SOURCE
- 	     -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
- 	     $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
- 	     -Wall
- 	     -Wextra
- 	     -Werror
- 	     -pedantic
- 	     -Wshadow
+    -Wall
+    -Wextra
+    -Werror
+    -pedantic
+    -Wshadow
 )
 
 target_compile_definitions(hccp_utest PRIVATE
@@ -72,11 +68,7 @@ target_compile_definitions(hccp_utest PRIVATE
 )
 
 target_link_libraries(hccp_utest PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
-    -lrt
-    -lpthread
-    -lgcov
-    -ldl
+    $<BUILD_INTERFACE:intf_llt_pub>
 )
 
 run_llt_test(

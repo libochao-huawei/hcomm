@@ -24,28 +24,14 @@ target_include_directories(hccl_utest_platform_hcom PRIVATE
 
 target_compile_definitions(hccl_utest_platform_hcom PRIVATE
     HALF_T=float
-    google=ascend_private
     CCL_KERNEL
-    -DCCL_LLT
-)
-
-target_compile_options(hccl_utest_platform_hcom PRIVATE
-    -U_FORTIFY_SOURCE
-    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
-    $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
+    CCL_LLT
 )
 
 target_link_libraries(hccl_utest_platform_hcom PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
-    -lpthread
+    $<BUILD_INTERFACE:intf_llt_pub>
     hccl_llt
-    -Wl,--whole-archive
-    -Wl,--no-whole-archi
-    -lgcov
-    -lrt
 )
-
-add_dependencies(hccl_utest_platform_hcom hccl_llt)
 
 run_llt_test(
     TARGET hccl_utest_platform_hcom 

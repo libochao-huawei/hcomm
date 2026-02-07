@@ -100,20 +100,21 @@ target_include_directories(rs_ut_normal PRIVATE
     ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/3rdparty/
 )
 
-target_compile_options(rs_ut_normal PRIVATE
-    -U_FORTIFY_SOURCE -O0 -g
-)
-
 target_compile_definitions(rs_ut_normal PRIVATE
-    HNS_ROCE_LLT USE_DISPATCH_EXPECT CA_CONFIG_LLT DEVICE_TLS_CONFIG CONFIG_SSL CONFIG_RDMA RS_DEVICE_CONFIG CUSTOM_INTERFACE RDMA_LITE_STUB_TEST CCU_CONFIG_LLT
+    HNS_ROCE_LLT
+    USE_DISPATCH_EXPECT
+    CA_CONFIG_LLT
+    DEVICE_TLS_CONFIG
+    CONFIG_SSL
+    CONFIG_RDMA
+    RS_DEVICE_CONFIG
+    CUSTOM_INTERFACE
+    RDMA_LITE_STUB_TEST
+    CCU_CONFIG_LLT
 )
 
 target_link_libraries(rs_ut_normal PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
-    -lrt
-    -lpthread
-    -lgcov
-    -ldl
+    $<BUILD_INTERFACE:intf_llt_pub>
 )
 
 run_llt_test(

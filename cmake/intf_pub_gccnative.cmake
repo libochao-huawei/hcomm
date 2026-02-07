@@ -12,14 +12,15 @@ add_library(intf_pub_base INTERFACE)
 
 target_compile_definitions(intf_pub_base INTERFACE
 	CFG_BUILD_DEBUG
+    google=cann_hccl
 )
 
 target_compile_options(intf_pub_base INTERFACE
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
     -D_GLIBCXX_USE_CXX11_ABI=0
+    -w
     -Os
     -O0 -g
-    -w
-    $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
     -fPIC
     -pipe
 )
@@ -54,15 +55,29 @@ target_link_libraries(intf_pub_base INTERFACE
     $<$<BOOL:${ENABLE_GCOV}>:-lgcov>
 )
 
-add_library(intf_pub INTERFACE)
+add_library(intf_llt_pub INTERFACE)
 
-target_link_libraries(intf_pub INTERFACE
+target_compile_options(intf_llt_pub INTERFACE
+    -U_FORTIFY_SOURCE
+    -fno-access-control
+)
+
+target_link_libraries(intf_llt_pub INTERFACE
     $<BUILD_INTERFACE:intf_pub_base>
-    json
     $<$<BOOL:${ENABLE_ST}>:protobuf>
+    json
+
     -Wl,--whole-archive
-    $<$<BOOL:${ENABLE_TEST}>:gtest>
-    $<$<BOOL:${ENABLE_TEST}>:mockcpp>
+    gtest
+    gtest_main
+    mockcpp
     -Wl,--no-whole-archive
+
+    -wl,--as-needed
+    pthread
+    rt
+    dl
+    -wl,--no-as-needed
+
     -Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib
 )

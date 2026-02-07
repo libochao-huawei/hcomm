@@ -7,44 +7,29 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+
 set(hccl_utest_platform_dispatcher_list
     main.cc
     ut_aicpu_dispatcher_utest.cc
 )
-add_executable(hccl_utest_platform_dispatcher  ${hccl_utest_platform_dispatcher_list})
+add_executable(hccl_utest_platform_dispatcher ${hccl_utest_platform_dispatcher_list})
 
-target_include_directories(hccl_utest_platform_dispatcher  PRIVATE
+target_include_directories(hccl_utest_platform_dispatcher PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
 )
 
-target_compile_definitions(hccl_utest_platform_dispatcher    PRIVATE
+target_compile_definitions(hccl_utest_platform_dispatcher PRIVATE
     HALF_T=float
-    google=ascend_private
     CCL_KERNEL
-    -DCCL_LLT
+    CCL_LLT
 )
 
-target_compile_options(hccl_utest_platform_dispatcher   PRIVATE 
-    -U_FORTIFY_SOURCE
-    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
-    $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
-)
-
-
-target_link_libraries(hccl_utest_platform_dispatcher  PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
-    -lpthread
+target_link_libraries(hccl_utest_platform_dispatcher PRIVATE
+    $<BUILD_INTERFACE:intf_llt_pub>
     hccl_llt
-    -Wl,--whole-archive
-    -Wl,--no-whole-archi
-    -lgcov
-    -lrt
-    -lpthread
 )
-
-add_dependencies(hccl_utest_platform_dispatcher hccl_llt)
 
 run_llt_test(
-    TARGET  hccl_utest_platform_dispatcher
+    TARGET hccl_utest_platform_dispatcher
     TASK_NUM 1
 )
