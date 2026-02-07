@@ -51,7 +51,7 @@ private:
     bool     CompareMissionMap(const std::map<uint8_t, std::map<uint32_t, uint32_t>> &mapA,
                                const std::map<uint8_t, std::map<uint32_t, uint32_t>> &mapB) const;
     void     MC2Orchestrate(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue, uint8_t commEngine);
-    void     MC2AllocCommRes(const CollAlgParams &params, std::shared_ptr<InsQueue> &insQueue, uint8_t commEngine);
+    void     MC2AllocCommRes(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue, uint8_t commEngine);
 private:
     const uint32_t dataCount = 1024;
     CommunicatorImpl *comm;

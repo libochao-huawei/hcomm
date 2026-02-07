@@ -70,7 +70,6 @@ AlgorithmType ExecuteSelector::GetAlgorithmTypeForMC2(const std::string& name)
 
 HcclResult ExecuteSelector::Run(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName)
 {
-    HCCL_ERROR("[lyx][Algo][Selector] Run.");
     if (rankGraph_ == nullptr) {
         HCCL_ERROR("[Algo][ExecuteSelector] rankGraph_ is nullptr.");
         return HcclResult::HCCL_E_PTR;
@@ -91,7 +90,7 @@ HcclResult ExecuteSelector::Run(const CollAlgOperator &op, CollAlgParams &params
             .SetDeviceNumPerSever(deviceNumPerSever_)
             .SetServerNum(serverNum_);
         if(iter->second->Select(op, params, primQueueGenName) == SelectorStatus::MATCH) {
-            HCCL_ERROR("[Algo][Selector] The ccu selector[priority of %u] is matched, the selected algo type is %s",
+            HCCL_INFO("[Algo][Selector] The ccu selector[priority of %u] is matched, the selected algo type is %s",
                 iter->first, primQueueGenName.c_str());
             return HcclResult::HCCL_SUCCESS;
         }
@@ -100,7 +99,7 @@ HcclResult ExecuteSelector::Run(const CollAlgOperator &op, CollAlgParams &params
     }
 
     selectors = SelectorRegistry::Global()->GetSelectorsByOpType(op.opType);
-    HCCL_ERROR("[Algo][Selector] The selector nums of optype[%d] is [%zu].", op.opType, selectors.size());
+    HCCL_INFO("[Algo][Selector] The selector nums of optype[%d] is [%zu].", op.opType, selectors.size());
     for (auto iter : selectors) {
         HCCL_DEBUG("[Algo][Selector] The selector[priority of %llu] is running.", iter.first);
         iter.second->SetVirtualTopo(rankGraph_)

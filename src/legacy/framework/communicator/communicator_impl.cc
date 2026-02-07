@@ -143,7 +143,7 @@ void CommunicatorImpl::InitCommResource(const CommParams &commParams)
     status = CommStatus::COMM_READY;
     SnapShotParser::GetInstance().SerializeCommonInfo(commParams, config, std::move(ranktableInfo), topoInfo, staticBinaryInfo);
     InitOneSidedService();
-    //RegisterKernel();
+    RegisterKernel();
     InitDpuKernel();
 }
 
@@ -234,7 +234,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitMirrorTaskManager();
             InitProfilingReporter();
             InitTaskExceptionHandler();
-            //RegisterKernel();
+            RegisterKernel();
             status = CommStatus::COMM_READY;
         } catch (HcclException &e) {
             HCCL_ERROR(e.what());
@@ -283,7 +283,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitMirrorTaskManager();
             InitProfilingReporter();
             InitTaskExceptionHandler();
-            //RegisterKernel();
+            RegisterKernel();
             status = CommStatus::COMM_READY;
             SnapShotParser::GetInstance().SerializeSubCommInfo(commParams, subConfig, rankIdsVec, staticBinaryInfo);
         );
@@ -2454,7 +2454,6 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
     params.opMode                     = opMode;
     params.maxTmpMemSize              = GetBufferSize();
     params.isMc2                      = opParams.isMc2;
-    HCCL_ERROR("[lyx][MC2AllocCommRes] params.isMc2[%d] opParams.commEngine[%s]", params.isMc2, opParams.commEngine.Describe().c_str());
     if (opParams.isMc2 && (opParams.commEngine == HcclAccelerator::AICPU || opParams.commEngine == HcclAccelerator::AICPU_TS)) {
         opExecuteConfig.accState = AcceleratorState::AICPU_TS;
     } else if (opParams.isMc2 && (opParams.commEngine == HcclAccelerator::CCU_SCHED || opParams.commEngine == HcclAccelerator::DEFAULT)){
@@ -2462,8 +2461,7 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
     } else if (opParams.isMc2 && opParams.commEngine == HcclAccelerator::CCU_MS) {
         opExecuteConfig.accState = AcceleratorState::CCU_MS;
     } else {
-        opExecuteConfig.accState = AcceleratorState::CCU_SCHED;
-        // THROW<NotSupportException>("[CommunicatorImpl][ExecAlgSelect] not support commEngine type!");
+        THROW<NotSupportException>("[CommunicatorImpl][ExecAlgSelect] not support commEngine type!");
     }
     OpExecuteConfig inOpExecuteConfig = opExecuteConfig;
     params.opExecuteConfig            = inOpExecuteConfig;

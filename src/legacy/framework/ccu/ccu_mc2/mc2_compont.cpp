@@ -224,7 +224,6 @@ void Mc2Compont::MC2Orchestrate(const CollAlgParams& params, std::shared_ptr<Ins
     opParams.count = op->dataCount;
     opParams.reduceOp = op->reduceOp;
     opParams.isMc2 = params.isMc2;
-    HCCL_ERROR("[lyx] commEngine[%s] isMc2[%d]",opParams.commEngine.Describe().c_str(), opParams.isMc2);
     comm->ExecAlgSelect(opParams, op->opMode);
     if (!comm->GetOpCcuFeatureFlag()) { // 算子粒度
         auto msg = StringFormat("[Mc2Compont:%s]AlgSelect not ccu, accState[%s]", __func__, comm->GetOpExecuteConfig().accState.Describe().c_str());
@@ -242,7 +241,6 @@ void Mc2Compont::MC2Orchestrate(const CollAlgParams& params, std::shared_ptr<Ins
 
 void Mc2Compont::MC2AllocCommRes(const CollAlgParams &params, std::shared_ptr<InsQueue> &insQueue, uint8_t commEngine)
 {
-    HCCL_INFO("[lyx] commEngine[%d]",commEngine);
     MC2Orchestrate(params, insQueue, commEngine);
     // 获取LinkData
     auto collService = dynamic_cast<CollServiceDeviceMode *>(comm->GetCollService());
