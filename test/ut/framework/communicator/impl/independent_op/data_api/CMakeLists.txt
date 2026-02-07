@@ -42,9 +42,7 @@ target_compile_definitions(hcomm_utest_api_data_aicpu_ts PRIVATE
 target_compile_options(hcomm_utest_api_data_aicpu_ts PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
-    -Os
-    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
-    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
+    -fno-access-control
 )
 
 target_link_directories(hcomm_utest_api_data_aicpu_ts PRIVATE
@@ -52,12 +50,8 @@ target_link_directories(hcomm_utest_api_data_aicpu_ts PRIVATE
 )
 target_link_libraries(hcomm_utest_api_data_aicpu_ts PRIVATE
     $<BUILD_INTERFACE:intf_pub>
-    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
-    -lpthread
     hccl_llt
-    -Wl,--whole-archive
-    -Wl,--no-whole-archi
-    -lgcov
+    -pthread
     -lrt
     -ldl
 )

@@ -164,7 +164,6 @@ target_compile_options(hccl_alg_test PRIVATE
     -x c++
     -fstack-protector-all
     -Wno-attributes
-    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer -g>
 )
 
 target_compile_definitions(hccl_alg_test PRIVATE
@@ -173,11 +172,9 @@ target_compile_definitions(hccl_alg_test PRIVATE
 )
 
 target_link_libraries(hccl_alg_test PRIVATE
-    -Wl,--no-as-needed
-    -Wl,--no-as-needed
-    ${THIRD_PARTY_PATH}/gtest_shared/lib/libgtest.so
-    pthread
+    $<BUILD_INTERFACE:intf_pub>
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
+    -lpthread
 )
 
 add_subdirectory(testcase)

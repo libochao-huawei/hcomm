@@ -28,8 +28,8 @@ target_include_directories(open_hccl_test PRIVATE
     ${HCOMM_LEGACY_INCLUDE_LIST}
 
     ${THIRD_PARTY_PATH}/json/include
-    ${THIRD_PARTY_PATH}/gtest_shared/include
-    ${THIRD_PARTY_PATH}/mockcpp_shared/include
+    ${THIRD_PARTY_PATH}/gtest/include
+    ${THIRD_PARTY_PATH}/mockcpp/include
 
     ${ASCEND_CANN_INCLUDE_LIST}
 )
@@ -41,22 +41,17 @@ target_compile_definitions(open_hccl_test PRIVATE
 
 target_compile_options(open_hccl_test PRIVATE
     -U_FORTIFY_SOURCE
-    -Os
-    -O0 -g
-    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
 add_dependencies(open_hccl_test hccl_alg_analyzer hccl_alg_adaption hccl_alg_test)
 
 target_link_libraries(open_hccl_test PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     hccl_alg_analyzer
     hccl_alg_adaption
     hccl_alg_test
-    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
-    ${THIRD_PARTY_PATH}/mockcpp_shared/lib/libmockcpp.a
-    ${THIRD_PARTY_PATH}/gtest_shared/lib/libgtest.so
+    protobuf
     -lpthread
-    ${PROTO_SOURCE_DIR}/libprotobuf.so
     -lrt
     -ldl
 )

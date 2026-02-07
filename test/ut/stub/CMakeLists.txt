@@ -294,10 +294,6 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/test/ut/depends/include/ascendc/highlevel_api/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
 
-    ${THIRD_PARTY_NLOHMANN_PATH}
-    ${ASCEND_3RD_LIB_PATH}/json/include/
-    ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
-
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/aicpu
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
