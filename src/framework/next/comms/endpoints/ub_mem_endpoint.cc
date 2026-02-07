@@ -63,4 +63,10 @@ HcclResult UbMemEndpoint::MemoryUnimport(const void *memDesc, uint32_t descLen)
     HCCL_INFO("UbMemEndpoint MemoryUnimport is not supported");
     return HCCL_SUCCESS;
 }
+
+HcclResult UbMemEndpoint::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
+{
+    HCCL_INFO("UbMemEndpoint GetAllMemHandles is not supported");
+    return HCCL_SUCCESS;
+}
 }
