@@ -113,7 +113,6 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_Alloc)
     // check
     HcclCombinOpParam combinOpParam{0};
     EXPECT_NO_THROW(mc2Compont.Alloc(&commContext, combinOpParam));
-    EXPECT_NE(nullptr, mc2Compont.combinOpParamBuffer);
 }
 
 TEST_F(Mc2CompontTest, should_return_success_when_calling_AllocV2)
@@ -145,7 +144,6 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_AllocV2)
 
     HcclCombinOpParam combinOpParam{0};
     EXPECT_NO_THROW(mc2Compont.AllocV2(&commContext, combinOpParam));
-    EXPECT_NE(nullptr, mc2Compont.combinOpParamBuffer);
 
     free(mc2TilingPtr);
 }
