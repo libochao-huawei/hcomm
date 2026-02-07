@@ -107,11 +107,10 @@ target_compile_options(hccl_alg_adaption PRIVATE
 )
 
 target_link_libraries(hccl_alg_adaption PRIVATE
-    hccl_alg_test
-    ${THIRD_PARTY_PATH}/gtest_shared/lib/libgtest.so
-    -lpthread
-    ${PROTO_SOURCE_DIR}/libprotobuf.so
+    $<BUILD_INTERFACE:intf_llt_pub>
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
+    hccl_alg_test
+    -lpthread
     -lrt
     -ldl
 )

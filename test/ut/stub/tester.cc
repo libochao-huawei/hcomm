@@ -8,8 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-
-#include "gtest/gtest.h"
 #include <pthread.h>
 #include <hccl/base.h>
 #include <hccl/hccl_types.h>
