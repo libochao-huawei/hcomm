@@ -172,11 +172,10 @@ target_compile_definitions(hccl_alg_test PRIVATE
 )
 
 target_link_libraries(hccl_alg_test PRIVATE
-    -Wl,--no-as-needed
-    -Wl,--no-as-needed
-    ${THIRD_PARTY_PATH}/gtest_shared/lib/libgtest.so
-    pthread
+    $<BUILD_INTERFACE:intf_pub>
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
+    protobuf
+    -lpthread
 )
 
 add_subdirectory(testcase)
