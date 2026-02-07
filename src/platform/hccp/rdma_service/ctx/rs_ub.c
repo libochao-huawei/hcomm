@@ -1293,6 +1293,13 @@ int rs_ub_ctx_lmem_reg(struct rs_ub_dev_cb *dev_cb, struct mem_reg_attr_t *mem_a
     mem_info->ub.token_id = lseg_cb->segment->token_id->token_id;
     mem_info->ub.target_seg_handle = (uintptr_t)lseg_cb->segment;
 
+    hccp_warn("@@@ lseg_cb->segment->seg.len: %ld", lseg_cb->segment->seg.len);
+    hccp_warn("@@@ lseg_cb->segment->seg.token_id: %ld", lseg_cb->segment->seg.token_id);
+    hccp_warn("@@@ lseg_cb->segment->mva: %ld", lseg_cb->segment->mva);
+    hccp_warn("@@@ lseg_cb->segment->token_id->token_id: %ld", lseg_cb->segment->token_id->token_id);
+    
+    hccp_warn("@@@ lseg_cb->segment->handle: %ld", lseg_cb->segment->handle);
+
     struct udma_u_segment *udma_segment = CONTAINER_OF(lseg_cb->segment, struct udma_u_segment, urma_tseg);
     mem_info->udma_segment.token_value = udma_segment->token_value.token;
     mem_info->udma_segment.token_value_valid = udma_segment->token_value_valid;
