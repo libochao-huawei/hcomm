@@ -62,23 +62,19 @@ PingMesh::~PingMesh()
 static bool isInitialized = false;  // 标记是否已经初始化
 static u32 token = 0;  // 存储生成的随机数
 static std::mutex ubTokenMutex;
-inline void hrtRaGetSecRandom(u32 *value, u32 &devPhyId)
-{
-    struct RaInfo raInfo;
-    raInfo.mode = HrtNetworkMode::HDC;
-    raInfo.phyId = devPhyId;
-    s32 ret = ra_get_sec_random(&raInfo, value);
-    if (ret != 0) {
-        HCCL_ERROR("[HrtRaGetSecRandom] ra_get_sec_random failed, call interface");
-    }
-}
 
 inline u32 GetUbToken(u32 devicePhyId)
 {
     std::lock_guard<std::mutex> lock(ubTokenMutex);
     if (!isInitialized) {
         u32 devPhyId = devicePhyId;
-        hrtRaGetSecRandom(&token, devPhyId);
+        struct RaInfo raInfo;
+        raInfo.mode = HrtNetworkMode::HDC;
+        raInfo.phyId = devPhyId;
+        HcclResult ret = hrtRaGetSecRandom(&raInfo, &token);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("get hrtRaGetSecRandom failed");
+        }
         isInitialized = true;
     }
     
@@ -379,14 +375,14 @@ inline HcclResult RaGetEidMap(std::map<Eid, uint32_t>& eidmap, const HRaInfo &ra
     info.mode = HRT_NETWORK_MODE_MAP.at(raInfo.mode);
     info.phyId = raInfo.phyId;
 
-    ret = ra_get_dev_eid_info_num(info, &num);
+    ret = hrtRaGetDevEidInfoNum(&info, &num);
     if (ret != 0) {
         HCCL_ERROR("call ra_get_dev_eid_info_num failed, error code = %d.", ret);
         return HCCL_E_NETWORK; //ra接口是网络相关调用
     }
 
     struct dev_eid_info infoList[num] = {};
-    ret = ra_get_dev_eid_info_list(info, infoList, &num);
+    ret = hrtRaGetDevEidInfoList(&info, infoList, &num);
     if (ret != 0) {
         HCCL_ERROR("call ra_get_dev_eid_info_list failed, error code = %d.", ret);
         return HCCL_E_NETWORK;
