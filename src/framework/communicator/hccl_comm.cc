@@ -46,6 +46,7 @@ hcclComm::~hcclComm()
 {
     RealeaseBarrierMemory();
     (void)UnRegistTaskAbortHandler();
+    BinaryUnLoad();
     communicator_ = nullptr;
 }
 
