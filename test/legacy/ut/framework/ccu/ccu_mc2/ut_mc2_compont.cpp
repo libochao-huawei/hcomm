@@ -91,7 +91,8 @@ TEST_F(Mc2CompontTest, should_success_when_calling_AllocCommResource_V2)
     MOCKER_CPP(&Mc2Compont::AllocV2).stubs();
     MOCKER_CPP(&Mc2Compont::GenerateAlgoTemplatesV2).stubs();
     MOCKER_CPP(&Mc2Compont::GenerateCcuServer).stubs();
-    EXPECT_NO_THROW(mc2Compont.AllocCommResource((void *)&mc2Tiling, nullptr));
+    void * commContext;
+    EXPECT_NO_THROW(mc2Compont.AllocCommResource((void *)&mc2Tiling, &commContext));
 }
 
 TEST_F(Mc2CompontTest, should_return_success_when_calling_Alloc)
