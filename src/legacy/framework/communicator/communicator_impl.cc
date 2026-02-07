@@ -2450,7 +2450,7 @@ std::map<HcclAccelerator, AcceleratorState> accStateMap = {
     {HcclAccelerator::CCU_SCHED, AcceleratorState::CCU_SCHED},
     {HcclAccelerator::DEFAULT, AcceleratorState::CCU_SCHED},
     {HcclAccelerator::CCU_MS, AcceleratorState::CCU_MS}
-}
+};
 
 // 初始化 算子粒度 = 通信域粒度 选择用 算子粒度 ok
 void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode &opMode)
