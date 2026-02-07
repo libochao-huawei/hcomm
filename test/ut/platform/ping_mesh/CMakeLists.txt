@@ -30,9 +30,7 @@ target_compile_definitions(hccl_utest_pingmesh PRIVATE
 target_compile_options(hccl_utest_pingmesh PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
-    -Os
-    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
-    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
+    -fno-access-control
 )
 
 target_link_directories(hccl_utest_pingmesh PRIVATE
@@ -40,13 +38,9 @@ target_link_directories(hccl_utest_pingmesh PRIVATE
 )
 
 target_link_libraries(hccl_utest_pingmesh PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
-    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
-    -lpthread
+    $<BUILD_INTERFACE:intf_llt_pub>
     hccl_llt
-    -Wl,--whole-archive
-    -Wl,--no-whole-archi
-    -lgcov
+    -lpthread
     -lrt
     -ldl
 )

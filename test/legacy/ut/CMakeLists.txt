@@ -73,22 +73,13 @@ target_include_directories(hccl_v2_utest PRIVATE
         ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network/
         ${HCCL_CODE_ROOT}/src/platform/hccp/external_depends/rdma-core/include
 
-        ${ASCEND_3RD_LIB_PATH}/json/include/
-        ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
-        ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/
-        ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/3rdparty/
         ${HCCL_LLT_ROOT}/common/virtual_topo_stub/
         ${HCCL_LLT_ROOT}/ut/framework/topo/ranktable/
         ${HCCL_CODE_ROOT}/externel_depends/tsch
     )
 
 target_link_libraries(hccl_v2_utest PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
-    -lpthread
-    # hccl_llt
-    -Wl,--whole-archive
-    -Wl,--no-whole-archi
-    -lgcov
+    $<BUILD_INTERFACE:intf_llt_pub>
     -lrt
     -ldl
     -lpthread
@@ -97,26 +88,20 @@ target_link_libraries(hccl_v2_utest PRIVATE
 
 # 编译选项
 target_compile_options(hccl_v2_utest PRIVATE
-        -std=c++14
         -Werror
         -fno-common
         -fno-strict-aliasing
         -pipe
         -U_FORTIFY_SOURCE
         -fno-var-tracking-assignments
-        -Os
-        -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
-        $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
+        -fno-access-control
 )
 
-message(STATUS "ORION_MODE=${ORION_MODE}")
 target_compile_definitions(hccl_v2_utest PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
     # private=public
     # protected=public
     HCOMM_CODE_ROOT_DIR="${HCCL_CODE_ROOT}"
-    # $<$<STREQUAL:${ORION_MODE},true>:ORION_MODE>
-    # ORION_MODE
 
     ORION_AICPU_DEPLOY
     ORION_HOST_DEPLOY
