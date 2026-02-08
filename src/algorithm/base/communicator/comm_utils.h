@@ -32,6 +32,7 @@ enum CommPlane {
     COMM_LEVEL0_LOGICAL, //环内
     COMM_LEVEL1_LOGICAL, //环间
     COMM_ARS, //超节点内给ARS使用
+    COMM_COMBINE_L1,    //超节点打平通信域
     COMM_LEVEL_RESERVED,
 };
 

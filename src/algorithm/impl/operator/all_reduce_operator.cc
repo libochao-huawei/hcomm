@@ -668,11 +668,18 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
         && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_4_MB * deviceNumPerAggregation_));
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_) && !retryEnable_; // 涉及ROCE平面
+    // 多超节点 的中等数据量
+    bool midCountOptimMultiPod = (superPodNum_ > 1) &&
+        (param.DataDes.count * unitSize >= HCCL_SMALL_COUNT_GRAPH_64_KB) &&
+        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_256_KB) && !retryEnable_; // 涉及ROCE平面
+ 
 
     if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
         algName = "AllReduceComm";
     } else if (multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_) {
         algName = "AllReduceARSFor91093Executor";
+    } else if (midCountOptimMultiPod) {
+        algName = "AllReduceMidCountFor91093Executor";
     } else if (useHostComm || smallCountOptimMultiServer || smallCountOptimMultiPod) {
         algName = "AllReduceComm";
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
