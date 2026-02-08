@@ -105,7 +105,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_default)
     ccuErrorInfo.instrId = 0xffff;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Internal Error");
+    EXPECT_EQ(msg, "InstrId[65535]: Internal Error");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_mission)
@@ -121,7 +121,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_mission)
     strncpy_s(ccuErrorInfo.msg.mission.missionError, MISSION_STATUS_MSG_LEN, statusMsg.c_str(), statusMsg.length());
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[10]: dieId[0], missionId[1], missionError[Transaction ACK Timeout]");
+    EXPECT_EQ(msg, "InstrId[10]: dieId[0], missionId[1], missionError[Transaction ACK Timeout]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_loop)
@@ -139,7 +139,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_loop)
     ccuErrorInfo.msg.loop.addrStride = 0xaabbcc;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Loop startInstr[7], endInstrId[17], totalIteration[10], currentIteration[8], addrStride[0xaabbcc]");
+    EXPECT_EQ(msg, "InstrId[65535]: Loop startInstrId[7], endInstrId[17], executorId[0], totalIter[10], curIter[8], addressStride[0xaabbcc]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_loop_group)
@@ -156,7 +156,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_loop_group)
     ccuErrorInfo.msg.loopGroup.expandCnt = 2;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: LoopGroup startLoopInsId[17], loopInsCnt[5], expandOffset[3], expandCnt[2]");
+    EXPECT_EQ(msg, "InstrId[65535]: LoopGroup startLoopInsId[17], loopInsCnt[5], expandOffset[3], expandCnt[2]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_loc_post_sem)
@@ -171,7 +171,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_loc_post_sem)
     ccuErrorInfo.msg.waitSignal.signalMask = 0x0010;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Set sem[11], semValue[0x0abc], mask[0x0010]");
+    EXPECT_EQ(msg, "InstrId[65535]: Set sem[11], semValue[0x0abc], mask[0x0010]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_loc_wait_sem)
@@ -186,7 +186,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_loc_wait_sem)
     ccuErrorInfo.msg.waitSignal.signalMask = 0x0010;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Wait sem[11], semValue[0x0abc], mask[0x0010]");
+    EXPECT_EQ(msg, "InstrId[65535]: Wait sem[11], semValue[0x0abc], mask[0x0010]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_rem_post_sem)
@@ -203,7 +203,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_rem_post_sem)
     ccuErrorInfo.msg.waitSignal.channelId[0] = 1;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Post, Use sem[11], mask[0x0010], rankId[100]");
+    EXPECT_EQ(msg, "InstrId[65535]: Post, Use sem[11], mask[0x0010], rankId[100]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_rem_wait_sem)
@@ -221,7 +221,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_rem_wait_sem)
     ccuErrorInfo.msg.waitSignal.channelId[0] = 1;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Wait, Use sem[11], semValue[0x0abc], mask[0x0010], rankId[100]");
+    EXPECT_EQ(msg, "InstrId[65535]: Wait, Use sem[11], semValue[0x0abc], mask[0x0010], rankId[100]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_rem_post_var)
@@ -240,7 +240,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_rem_post_var)
     ccuErrorInfo.msg.waitSignal.channelId[0] = 1;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Post Variable[0x0000aaaabbbbcccc] To Param[10], Use sem[11], mask[0x0010], rankId[100]");
+    EXPECT_EQ(msg, "InstrId[65535]: Post Variable[0x0000aaaabbbbcccc] To Param[10], Use sem[11], mask[0x0010], rankId[100]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_rem_wait_group)
@@ -265,7 +265,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_rem_wait_group)
     }
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Wait Group, Use sem[11], semValue[0x0abc], mask[0x0010], rankIds[100, 200, 300, 400]");
+    EXPECT_EQ(msg, "InstrId[65535]: Wait Group, Use sem[11], semValue[0x0abc], mask[0x0010], rankIds[100, 200, 300, 400]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_post_shared_var)
@@ -282,7 +282,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_post_shared_var
     ccuErrorInfo.msg.waitSignal.signalMask = 0x0010;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Post Shared Variable[10] from Variable[0x0000aaaabbbbcccc], Use sem[11], mask[0x0010]");
+    EXPECT_EQ(msg, "InstrId[65535]: Post Shared Variable[10] from Variable[0x0000aaaabbbbcccc], Use sem[11], mask[0x0010]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_post_shared_sem)
@@ -297,7 +297,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_post_shared_sem
     ccuErrorInfo.msg.waitSignal.signalMask = 0x0010;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Post, Use sem[11], mask[0x0010]");
+    EXPECT_EQ(msg, "InstrId[65535]: Post, Use sem[11], mask[0x0010]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_read)
@@ -318,7 +318,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_read)
     ccuErrorInfo.msg.transMem.channelId = 1;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Read Memory[0x000000000000aaaa] To Memory[0x000000000000cccc], Set sem[11] with mask[0x0010], rankId[100]");
+    EXPECT_EQ(msg, "InstrId[65535]: Read Memory[0x000000000000aaaa] To Memory[0x000000000000cccc], Len[0], Set sem[11] with mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_write)
@@ -339,7 +339,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_write)
     ccuErrorInfo.msg.transMem.channelId = 1;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Write Memory[0x000000000000cccc] to Memory[0x000000000000aaaa], Set sem[11] with mask[0x0010], rankId[100]");
+    EXPECT_EQ(msg, "InstrId[65535]: Write Memory[0x000000000000cccc] to Memory[0x000000000000aaaa], Len[0], Set sem[11] with mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_local_cpy)
@@ -358,7 +358,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_local_cpy)
     ccuErrorInfo.msg.transMem.signalMask = 0x0010;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Read Memory[0x000000000000cccc] to Memory[0x000000000000aaaa], Set sem[11] with mask[0x0010]");
+    EXPECT_EQ(msg, "InstrId[65535]: Read Memory[0x000000000000cccc] to Memory[0x000000000000aaaa], Len[0], Set sem[11] with mask[0x0010]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_local_reduce)
@@ -379,7 +379,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_local_reduce)
     ccuErrorInfo.msg.transMem.opType = 2;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Read Memory[0x000000000000cccc] to Memory[0x000000000000aaaa], Set sem[11] with mask[0x0010], dataType[1], opType[2]");
+    EXPECT_EQ(msg, "InstrId[65535]: Read Memory[0x000000000000cccc] to Memory[0x000000000000aaaa], Len[0], Set sem[11] with mask[0x0010], dataType[1], opType[2]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_read)
@@ -399,7 +399,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_read)
     ccuErrorInfo.msg.bufTransMem.channelId = 1;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Read Rmt Mem[0x000000000000aaaa] To CcuBuffer[10], sem[11], mask[0x0010], rankId[100]");
+    EXPECT_EQ(msg, "InstrId[65535]: Read Rmt Mem[0x000000000000aaaa] To CcuBuffer[10], Len[0], sem[11], mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_write)
@@ -419,7 +419,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_write)
     ccuErrorInfo.msg.bufTransMem.channelId = 1;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Write CcuBuffer[10] To Rmt Mem[0x000000000000aaaa], sem[11], mask[0x0010], rankId[100]");
+    EXPECT_EQ(msg, "InstrId[65535]: Write CcuBuffer[10] To Rmt Mem[0x000000000000aaaa], Len[0], sem[11], mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_loc_read)
@@ -437,7 +437,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_loc_read)
     ccuErrorInfo.msg.bufTransMem.signalMask = 0x0010;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Read Loc Mem[0x000000000000aaaa] To CcuBuffer[10], sem[11], mask[0x0010]");
+    EXPECT_EQ(msg, "InstrId[65535]: Read Loc Mem[0x000000000000aaaa] To CcuBuffer[10], Len[0], sem[11], mask[0x0010]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_loc_write)
@@ -455,7 +455,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_loc_write)
     ccuErrorInfo.msg.bufTransMem.signalMask = 0x0010;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Write CcuBuffer[10] To Loc Mem[0x000000000000aaaa], sem[11], mask[0x0010]");
+    EXPECT_EQ(msg, "InstrId[65535]: Write CcuBuffer[10] To Loc Mem[0x000000000000aaaa], Len[0], sem[11], mask[0x0010]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_reduce)
@@ -481,7 +481,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_reduce)
     }
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "CurrentInstr[65535]: Buffer Reduce count[4], dataType[1], outputDataType[2], opType[3], sem[11], mask[0x0010], CcuBuffers[100, 200, 300, 400]");
+    EXPECT_EQ(msg, "InstrId[65535]: Buffer Reduce count[4], dataType[1], outputDataType[2], opType[3], sem[11], mask[0x0010], CcuBuffers[100, 200, 300, 400]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_get_rank_id_by_channel_id)

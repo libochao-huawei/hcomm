@@ -472,8 +472,9 @@ HcclResult TopoInfoDetect::PrepareHandle(HcclRankHandle &rankHandle, std::vector
 }
 
 HcclResult TopoInfoDetect::SetupAgent(u32 rankSize, u32 myrank, const HcclRootHandle &rootInfo,
-    const HcclRankHandle &rankHandle)
+    const HcclRankHandle &rankHandle, const CommConfig &commConfig)
 {
+    commConfig_ = commConfig;
     CHK_PRT_RET((rootInfo.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST),
         HCCL_ERROR("[Setup][Agent]hcclDeviceNicDisable is [%u] when nicDeploy form root is NIC_DEPLOYMENT_HOST",
         rootInfo.nicDeploy), HCCL_E_PARA);
@@ -1041,7 +1042,7 @@ HcclResult TopoInfoDetect::GenerateLocalRankInfo(u32 rankSize, u32 rankID, HcclB
         // 此处不知道拓扑形态，无法判断是否需要backupIp，只能从硬件类型和重执行开关判断一下
         bool useSuperPodMode = false;
         CHK_RET(IsSuperPodMode(useSuperPodMode));
-        if (useSuperPodMode && GetExternalInputHcclAicpuUnfold() && isInterSuperPodRetryEnable_) {
+        if (useSuperPodMode && commConfig_.GetConfigAicpuUnfold() && isInterSuperPodRetryEnable_) {
             CHK_RET(GetDeviceBackupNicInfo(localRankInfo));
         }
     }

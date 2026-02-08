@@ -15,6 +15,8 @@
 
 namespace Hccl {
 
+constexpr u64 REDUCE_AICPU_1D_MAX_DATA_SIZE = 32 * 1024 * 1024;
+
 SelectorStatus ReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
@@ -61,7 +63,11 @@ SelectorStatus ReduceAutoSelector::SelectMeshAlgoCcuMs(const TopoInfo &topoInfo,
 {
     (void)op;
     if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            primQueueGenName = "CcuReduceMesh1D";
+        if (dataSize_ >= REDUCE_AICPU_1D_MAX_DATA_SIZE) {
+            HCCL_INFO("[Algo][ReduceAutoSelector] Mesh1D dataSize[%llu] >= 32MB, fallback to aicpu.", dataSize_);
+            return SelectorStatus::NOT_MATCH;   
+        }
+        primQueueGenName = "CcuReduceMesh1D";
     } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
         primQueueGenName = "CcuReduceMesh2D";
     }
@@ -110,10 +116,14 @@ SelectorStatus ReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInf
     }
     if ((IsDefaultAlg(levle0Algo) || levle0Algo == HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH) &&
         (topoInfo.level0Shape == Level0Shape::MESH_1D)) {
+        if (dataSize_ >= REDUCE_AICPU_1D_MAX_DATA_SIZE) {
+            HCCL_INFO("[Algo][ReduceAutoSelector] Mesh1D dataSize[%llu] >= 32MB, fallback to aicpu.", dataSize_);
+            return SelectorStatus::NOT_MATCH;
+        }
         primQueueGenName = "CcuReduceMeshMem2Mem1D";
         return SelectorStatus::MATCH;
     } else if ((IsDefaultAlg(levle0Algo) || levle0Algo == HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH) &&
-               (topoInfo.level0Shape == Level0Shape::MESH_2D)) {
+                (topoInfo.level0Shape == Level0Shape::MESH_2D)) {
         primQueueGenName = "CcuReduceMeshMem2Mem2D";
         return SelectorStatus::MATCH;
     } else {
@@ -154,6 +164,9 @@ SelectorStatus ReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
             if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
                 primQueueGenName = "InsReduceAicpuReduce";
+            } 
+            else if (dataSize_ >= REDUCE_AICPU_1D_MAX_DATA_SIZE) {
+                primQueueGenName = "InsReduceMesh1DTwoShot";
             } else {
                 primQueueGenName = "InsReduceMesh1D";
             }

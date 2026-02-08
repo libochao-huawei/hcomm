@@ -12,6 +12,9 @@
 #include "launch_aicpu.h"
 #include "manager_common.h"
 #include "comm_configer.h"
+#include "adapter_prof.h"
+#include "hccl_api_data.h"
+#include "hcom_host_profiling.h"
 
 namespace hccl {
 
@@ -45,9 +48,12 @@ HcclResult IndependentOp::SetIndependentOpConfig(const CommConfig &commConfig, c
     commAicpuParam_.deviceType = static_cast<u32>(topoAttr.deviceType);
     commAicpuParam_.kfcControlTransferH2DParams = kfcControlTransferH2DParams;
     commAicpuParam_.kfcStatusTransferD2HParams = kfcStatusTransferD2HParams;
+    commAicpuParam_.userRank = topoAttr.userRank;
+    commAicpuParam_.userRankSize = topoAttr.userRankSize;
     HCCL_INFO("[IndependentOp][%s] Hcom[%s] threadNum[%u], notifyPerThread[%u], cclBufferSize[%llu], deviceLogicId[%u], "
-        "devicePhyId[%u], deviceType[%u]", __func__, commId_.c_str(), threadNum_, notifyNumPerThread_,
-        cclBufferSize_, commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId, commAicpuParam_.deviceType);
+        "devicePhyId[%u], deviceType[%u], userRank[%u], userRankSize[%u]", __func__, commId_.c_str(), threadNum_, notifyNumPerThread_,
+        cclBufferSize_, commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId,
+        commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize);
     return HCCL_SUCCESS;
 }
 
@@ -65,6 +71,7 @@ void IndependentOp::SetAicpuCommState(bool aicpuCommState)
 HcclResult IndependentOp::KernelLaunchAicpuCommInit()
 {
     // 创建局部流
+    uint64_t beginTime = hrtMsprofSysCycleTime();
     Stream localStream(StreamType::STREAM_TYPE_ONLINE);
     constexpr u32 aicpuStreamMode = 1;
     CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
@@ -78,6 +85,10 @@ HcclResult IndependentOp::KernelLaunchAicpuCommInit()
 
     // 打印增加初始化对应的参数
     HCCL_RUN_INFO("[%s] KernelLaunchAicpuCommInit Success", __func__);
+    const std::string profName = "RunAicpuIndOpCommInit";
+    HCCL_INFO("[%s] RunAicpuIndOpCommInit", __func__);
+    // 上报初始化kernel的时间
+    HcommProfilingReportKernel(beginTime, profName.c_str());
     return HCCL_SUCCESS;
 }
 

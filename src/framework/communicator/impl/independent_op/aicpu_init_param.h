@@ -21,6 +21,8 @@ struct CommAicpuParam {
     s32 deviceLogicId;
     u32 devicePhyId;
     u32 deviceType;
+    u32 userRankSize;
+    u32 userRank;
     hccl::HDCommunicateParams kfcControlTransferH2DParams;
     hccl::HDCommunicateParams kfcStatusTransferD2HParams;
 };

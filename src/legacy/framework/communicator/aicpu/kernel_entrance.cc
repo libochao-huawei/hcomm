@@ -31,7 +31,7 @@ uint32_t HcclKernelEntrance(void *args)
     auto *kernelParam = reinterpret_cast<HcclKernelParamLite *>(args);
     AicpuUtils::GetInstance().CreateSingleInstance(args);
     NsRecoveryHandlerFunc::GetInstance();
-    CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
+    CHK_RET(DlHalFunctionV2::GetInstance().DlHalFunctionInit());
 
     u32 commIdIndex = kernelParam->comm.idIndex;
     HCCL_RUN_INFO("HcclKernelEntrance begin, OpType[%s] algName[%s] commIdIndex[%u] commId[%s] opTag[%s], devPhyId[%u] myRank[%u] rankSize[%u] oneSidedComm[%d]",

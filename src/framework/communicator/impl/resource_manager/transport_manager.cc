@@ -855,6 +855,42 @@ HcclResult TransportManager::CheckLinkNumAndSwitchLinkType(TransportType& type, 
     return HCCL_SUCCESS;
 }
 
+HcclResult TransportManager::PrintErrorInfo(NicType nicType)
+{
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType != DevType::DEV_TYPE_910_93) {
+        return HCCL_SUCCESS;
+    }
+    std::string nicTypeStr;
+    switch (nicType) {
+        case NicType::VNIC_TYPE:
+            nicTypeStr = "VNIC_TYPE";
+            break;
+        case NicType::DEVICE_NIC_TYPE:
+            nicTypeStr = "DEVICE_NIC_TYPE";
+            break;
+        case NicType::HOST_NIC_TYPE:
+            nicTypeStr = "HOST_NIC_TYPE";
+            break;
+        default:
+            nicTypeStr = "unknown";
+    }
+    s64 phySuperPodId;
+    CHK_RET(hrtGetDeviceInfo(deviceLogicId_, HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM,
+                             HcclRtDeviceInfoType::HCCL_INFO_TYPE_SUPER_POD_ID, phySuperPodId));
+    std::string logicSuperPodId = GetExternalInputLogicSuperPodId();
+    if (logicSuperPodId.empty()) {
+        HCCL_ERROR("[TransportManager][%s]local rank information: nicType[%s], logicSuperPodId is not set, phySuperPodId[%lld].", 
+            __func__, nicTypeStr.c_str(), phySuperPodId);
+    } else {
+        HCCL_ERROR("[TransportManager][%s]local rank information: nicType[%s], logicSuperPodId[%s], phySuperPodId[%lld]. Note: Do not "
+            "configure ranks belonging to different physical superpod ID info a single logical superpod ID", 
+            __func__, nicTypeStr.c_str(), logicSuperPodId.c_str(), phySuperPodId);
+    }
+    return HCCL_SUCCESS;
+}
+    
 HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContextPub &error_context,
     const MachineType machineType, const std::string &serverId, const u32 remoteRank,
     const bool supportDataReceivedAck, const LinkMode linkMode,
@@ -958,7 +994,7 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
         CHK_PRT_CONT(stringRet == -1, HCCL_ERROR("[Create][DestLink]Transport init error! Failed to build log info"));
         std::string tmpErrInfo = ret == HCCL_E_TIMEOUT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
         HCCL_ERROR("[%s][%s]Transport init error! %s", LOG_KEYWORDS_INIT_CHANNEL.c_str(), tmpErrInfo.c_str(), errorLogBuffer);
-
+        CHK_PRT(PrintErrorInfo(nicType));
         return ret;
     }
     HCCL_INFO("[createLink success]:rank[%u]-localUserrank[%u]-localIpAddr[%s], "

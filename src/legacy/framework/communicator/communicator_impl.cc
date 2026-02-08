@@ -1236,9 +1236,16 @@ void CommunicatorImpl::InitDataBufferManager()
     } else {
         scratchBufSize = scratchBufSize * HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE;
     }
+    // 如果是自定义算子流程，cclBufferSize的大小为2倍
+    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+    if (indOp != nullptr && strcmp(indOp, "1") == 0) {
+        scratchBufSize = scratchBufSize * 2;
+    }
     cclBufferSize = scratchBufSize;
+
     // aiv mc2预埋1M，并不暴露在内部算子执行逻辑里
     scratchBufSize += HCCL_MC2_ON_AICPU_FIXED_CALC_BUFFER_SIZE;
+
     if (rankSize > 1) {
         aivOffloadTagBuffer = std::move(DevBuffer::CreateHugePageBuf(4 * 1024 * 1024));
         cclBuffer = std::move(DevBuffer::CreateHugePageBuf(scratchBufSize));
@@ -2718,7 +2725,7 @@ HcclResult CommunicatorImpl::HcomSelectAlg(const CollOpParams& opParams, int32_t
     ExecAlgSelect(opParams, OpMode::OFFLOAD);
     ifAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
     HcclResult dataTypeChkRes = OpParamsChecker::CheckOpDataTypeOffload(opParams, GetOpCcuFeatureFlag(),
-                                                                        GetOpAiCpuTSFeatureFlag(), ifAiv, true);
+                                                                        GetOpAiCpuTSFeatureFlag(), ifAiv);
     if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::HcomSelectAlg] DataType check fail.");
         status = CommStatus::COMM_READY;
@@ -2922,6 +2929,7 @@ bool CommunicatorImpl::IsNeedDpu()
 
 void CommunicatorImpl::InitHccpPeer()
 {
+    RaSocketSetWhiteListStatus(1); // PEER模式需要手动开启白名单模式
     HccpPeerManager::GetInstance().Init(devLogicId);
 }
 
@@ -2940,7 +2948,7 @@ HcclResult CommunicatorImpl::PrepareDpuKernelResource(aclrtFuncHandle &funcHandl
     jsonPath += "/opp/built-in/op_impl/dpu/";
     HCCL_DEBUG("[CommunicatorImpl::%s] kernel folder path[%s]", __func__, jsonPath.c_str());
 
-    jsonPath += "libccl_dpu.json";
+    jsonPath += "ccl_dpu.json";
     char realPath[PATH_MAX] = {0};
     CHK_PRT_RET(realpath(jsonPath.c_str(), realPath) == nullptr,
         HCCL_ERROR("[CommunicatorImpl::%s]: %s is not a valid real path, err[%d]", __func__, jsonPath.c_str(), errno),

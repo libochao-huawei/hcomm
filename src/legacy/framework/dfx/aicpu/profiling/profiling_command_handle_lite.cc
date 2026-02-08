@@ -13,7 +13,7 @@
 #include "profiling_command_handle_lite.h"
  
 namespace Hccl {
-#ifdef CCL_KERNEL
+#ifdef CCL_KERNEL_AICPU
 
 int32_t DeviceCommandHandle(uint32_t profType, void *data, uint32_t len) {
     HCCL_INFO("[%s] start", __func__);

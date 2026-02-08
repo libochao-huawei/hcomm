@@ -15,8 +15,8 @@
 
 namespace Hccl {
 constexpr u64 RS_2D_SMALL_DATA_SIZE = 1024 * 1024;
-constexpr u64 RS_M2M_1D_MAX_DATA_SIZE = 2 * 1024 * 1024;
-constexpr u64 RS_AICPU_1D_MAX_DATA_SIZE = 8 * 1024 * 1024;
+constexpr u64 RS_M2M_1D_MAX_DATA_SIZE = 8 * 1024 * 1024;
+constexpr u64 RS_AICPU_1D_MAX_DATA_SIZE = 16 * 1024 * 1024;
 
 SelectorStatus ReduceScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,
@@ -134,7 +134,15 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &
                              "ccu_schedule mode with ms reduce.",
                     op.dataType.Describe().c_str()),
                 SelectorStatus::NOT_MATCH);
-            if (dataSize_ > RS_M2M_1D_MAX_DATA_SIZE) {
+            
+            double ratio;   // 以8卡为基线确定ratio，用来表示不同卡数对下发的影响系数
+            if (rankSize_ == 0) {
+                HCCL_WARNING("[ReduceScatterAutoSelector]the selector is not set rankSize_");
+                ratio = 1;
+            } else {
+                ratio = 8.0 / rankSize_;
+            }
+            if (dataSize_ * ratio >= RS_M2M_1D_MAX_DATA_SIZE) {
                 return SelectorStatus::NOT_MATCH;
             }
             primQueueGenName = "CcuReduceScatterMeshMem2Mem1D";
@@ -199,7 +207,15 @@ SelectorStatus ReduceScatterAutoSelector::SelectMeshAlgoAicpu(const TopoInfo &to
             op.dataType == DataType::FP64) {
             primQueueGenName = "InsReduceScatterAicpuReduce";
         } else {
-            if (dataSize_ > RS_AICPU_1D_MAX_DATA_SIZE) {
+            double ratio;  // 以8卡为基线确定ratio，用来表示不同卡数对下发的影响系数
+            if (rankSize_ == 0) {
+                HCCL_WARNING("[ReduceScatterAutoSelector]the selector is not set rankSize_");
+                ratio = 1;
+            } else {
+                ratio = (8.0 / rankSize_) * (8.0 / rankSize_);
+            }
+
+            if (dataSize_ * ratio > RS_AICPU_1D_MAX_DATA_SIZE) {
                 primQueueGenName = "InsReduceScatterMesh1DMeshChunk";
             } else {
                 primQueueGenName = "InsReduceScatterMesh1D";

@@ -13,6 +13,7 @@
 
 #include <set>
 #include <string>
+#include <unordered_map>
 
 #include "ccu_transport_group.h"
 #include "ccu_rep_base.h"
@@ -65,6 +66,10 @@ public:
     void AddProfiling(const std::vector<CcuTransport *> &transports, DataType dataType, DataType outputDataType,
                       ReduceOp opType);
 
+    void SetDependencyInfo(uint32_t id, uint32_t mask, std::shared_ptr<CcuRepBase> rep);
+    std::unordered_map<uint32_t, std::vector<std::shared_ptr<CcuRepBase>>> GetDependencyInfo(uint32_t id);
+    void ClearDependencyInfo();
+
 protected:
     std::set<std::string> registeredLoop;
 
@@ -82,6 +87,8 @@ private:
     LoopGroupProfilingInfo lgProfilingInfo; // LoopGroup相关profiling缓存信息
     std::vector<std::shared_ptr<CcuRepBase>> waitCkeProfilingReps; // waitCKE相关REP缓存
     std::vector<CcuProfilingInfo> profilingInfo; // context全部profiling缓存信息
+
+    std::unordered_map<uint32_t, std::unordered_map<uint32_t, std::vector<std::shared_ptr<CcuRepBase>>>> depInfo;
 };
 
 }; // namespace CcuRep
