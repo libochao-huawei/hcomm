@@ -61,15 +61,6 @@
 using namespace std;
 using namespace hccl;
 
-HcclResult HcclBuildOneSidedService_new(std::unique_ptr<IHcclOneSidedService> &service,
-    std::unique_ptr<HcclSocketManager> &socketManager, std::unique_ptr<NotifyPool> &notifyPool)
-{
-    EXCEPTION_HANDLE_BEGIN
-    service = std::make_unique<HcclOneSidedService>(socketManager, notifyPool);
-    EXCEPTION_HANDLE_END
-    return HCCL_SUCCESS;
-}
-
 class CommInitTest : public testing::Test
 {
 protected:

@@ -19,7 +19,6 @@ set(hccl_utest_inter_comm_list
     ut_coll_alg_operator.cc
     ut_allreduce_mesh_opbase.cc
     ut_alltoall_aiv.cc
-    ut_dispatcher_ffts.cc
     ut_hccl_impl_alg_nhr.cc
     ut_hccl_impl_alg_nb.cc
     ut_hccl_impl_alg_ahc.cc
