@@ -142,8 +142,8 @@ void Mc2Compont::Alloc(void **commContext)
     // inputMem给算法编排使用，只需要申请一次，按照最大数据类型申请
     inputMem = std::make_shared<DevBuffer>(dataCount * DataTypeSizeGet(DataType::INT64) * comm->GetRankSize());
     HCCL_INFO("[Mc2Compont][Alloc]inputMem addr[%p] size = [%llu]", inputMem->GetAddr(), inputMem->GetSize());
-    if(combinOpParamBuffer != nullptr) {
-        *commContext = reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
+    if (combinOpParamBuffer != nullptr) {
+        *commContext =  reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
         return;
     }
 
@@ -186,6 +186,10 @@ void Mc2Compont::AllocV2(void **commContext)
 {
     inputMem = std::make_shared<DevBuffer>(dataCount * DataTypeSizeGet(DataType::INT64) * comm->GetRankSize());
     HCCL_INFO("[Mc2Compont][AllocV2]inputMem addr[%p] size = [%llu]", inputMem->GetAddr(), inputMem->GetSize());
+    if (combinOpParamBuffer != nullptr) {
+        *commContext =  reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
+        return;
+    }
 
     constexpr uint32_t comSyncNum      = 2; // 每轮同步使用2个同步信号
     uint32_t           comParamBufSize = CCU_TASK_NUM_MAX * CCU_PARAM_NUM_MAX * CCU_ONE_PARAM_SIZE ;

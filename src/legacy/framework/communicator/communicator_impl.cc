@@ -2464,7 +2464,7 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
     params.isMc2                      = opParams.isMc2;
     if (opParams.isMc2) {
         if(accStateMap.find(opParams.commEngine) == accStateMap.end()) {
-            THROW<NotSupportException>("[CommunicatorImpl][ExecAlgSelect] not support commEngine type!");
+            THROW<NotSupportException>("[CommunicatorImpl][ExecAlgSelect] not support commEngine type[%s]!", opParams.commEngine.Describe().c_str());
         }
         opExecuteConfig.accState = accStateMap.find(opParams.commEngine)->second;
     }
