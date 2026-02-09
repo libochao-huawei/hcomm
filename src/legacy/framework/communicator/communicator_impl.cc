@@ -521,11 +521,14 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
     
     if (streamNum > 1) {
         RtsCntNotify *cntNotifyNTo1 = GetCcuStreamSyncNotifyManager().GetRtsNTo1CntNotify(mStreamId);
+        opbaseStream->RegisterMaster(std::make_unique<Stream>(stream));
         //  launch LocalWaitFrom on stream
         cntNotifyNTo1->WaitValue(value, timeout, mStream);
         for (std::size_t i = 0, len = streamNum - 1; i < len; ++i) {
             u32  bitValue = BASE_BIT << i;
             auto slave    = opbaseStream->GetSlave(slaveIndex++);
+            auto master   = opbaseStream->GetMaster();
+            GetStreamManager().CaptureSlaveStream(master, slave);
             cntNotify1ToN->WaitBits(bitValue, timeout, *slave);
             if (taskExceptionEnv || enableProfilingEnv) {
                 params.taskParams[i + 1].beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
