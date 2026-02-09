@@ -365,7 +365,7 @@ void NetInstance::Node::SetEndpointToIface(const EndpointDesc endpointDesc, cons
     endpointToIfaceMap_[endpointDesc] = iface;
 }
 
-const std::unordered_map<cosnt EndpointDesc endpointDesc, std::shared_ptr<NetInstance::ConnInterface>>  NetInstance::Node::GetEndpointToIfaceMap() const
+const std::unordered_map<EndpointDesc, std::shared_ptr<NetInstance::ConnInterface>>  NetInstance::Node::GetEndpointToIfaceMap() const
 {
     return endpointToIfaceMap_;
 }

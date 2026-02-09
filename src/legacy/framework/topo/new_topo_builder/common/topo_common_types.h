@@ -11,6 +11,7 @@
 #ifndef TOPO_COMMON_TYPES_H
 #define TOPO_COMMON_TYPES_H
 
+#include <memory>
 #include "enum_factory.h"
 #include "hccl/base.h"
 #include "hccl_rank_graph.h"
@@ -33,6 +34,9 @@ MAKE_ENUM(TopoType, CLOS, MESH_1D, MESH_2D, A3_SERVER, A2_AX_SERVER)
 constexpr LocalId BACKUP_LOCAL_ID = 64;
 } // namespace Hccl
 
+inline bool operator==(const EndpointDesc& a, const EndpointDesc& b) noexcept {
+    return ::memcmp(&a, &b, sizeof(EndpointDesc)) == 0;
+}
 namespace std {
 template <>
 struct hash<Hccl::LinkProtocol> {

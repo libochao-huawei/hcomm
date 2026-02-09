@@ -132,20 +132,6 @@ static EndpointLocType AddrPositionToEndpointLoc(AddrPosition pos) {
     }
 }
 
-void SetEndpointDesc(std::set<LinkProtocol> protocols, std::shared_ptr<NetInstance::Peer> peer, std::shared_ptr<NetInstance::ConnInterface> iface)
-{
-    for (const auto& protocol : protocols) {
-        EndpointDesc desc{};
-        CHK_RET(GetCommAddr(desc.commAddr, iface->GetAddr()));
-        auto it = protocolMap.find(protocol);
-        desc.protocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
-        desc.loc.locType = AddrPositionToEndpointLoc(iface->GetPos());
-        HCCL_INFO("[RankGraphBuilder::SetEndpointDesc] local type[%d] protocol[%d]",
-                  desc.loc.locType, desc.protocol);
-        peer->SetEndpointToIface(desc, iface); 
-    }
-}
-
 void RankGraphBuilder::AddFabricInfo(u32 netLayer)
 {
     auto netInst = rankGraph_->GetNetInstanceByRankId(netLayer, myRank_);
@@ -430,9 +416,16 @@ void RankGraphBuilder::BuildPeer2PeerLinks()
                     continue;
                 }
                 srcPeer->AddConnInterfaces(0, sourceIfaces);
-                SetEndpointDesc(phyLink->GetLinkProtocols(), srcPeer, sourceIfaces);
+                for (const auto& iface : sourceIFace)
+                {
+                    SetEndpointDesc(phyLink->GetLinkProtocols(), srcPeer, iface);
+                }
                 dstPeer->AddConnInterfaces(0, targetIfaces);
                 SetEndpointDesc(phyLink->GetLinkProtocols(), dstPeer, targetIfaces);
+                for (const auto& iface : targetIfaces)
+                {
+                    SetEndpointDesc(phyLink->GetLinkProtocols(), dstPeer, iface);
+                }
                 std::vector<shared_ptr<NetInstance::Link>> links =
                     ConstructLinks(srcPeer, dstPeer, sourceIfaces, targetIfaces, phyLink);
                 for (auto link : links) {

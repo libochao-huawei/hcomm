@@ -366,6 +366,28 @@ HcclResult GetCommAddr(CommAddr &commAddr, const IpAddress &ipAddr)
     return HCCL_SUCCESS;
 }
 
+static EndpointLocType AddrPositionToEndpointLoc(AddrPosition pos) {
+    switch (pos) {
+        case AddrPosition::HOST:    return ENDPOINT_LOC_TYPE_HOST;
+        case AddrPosition::DEVICE:  return ENDPOINT_LOC_TYPE_DEVICE;
+        default: return ENDPOINT_LOC_TYPE_RESERVED;
+    }
+}
+
+HcclResult SetEndpointDesc(std::set<LinkProtocol> protocols, std::shared_ptr<NetInstance::Peer> peer, std::shared_ptr<NetInstance::ConnInterface> iface)
+{
+    for (const auto& protocol : protocols) {
+        EndpointDesc desc{};
+        CHK_RET(GetCommAddr(desc.commAddr, iface->GetAddr()));
+        auto it = protocolMap.find(protocol);
+        desc.protocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
+        desc.loc.locType = AddrPositionToEndpointLoc(iface->GetPos());
+        HCCL_INFO("[RankGraphBuilder::SetEndpointDesc] local type[%d] protocol[%d]",
+                  desc.loc.locType, desc.protocol);
+        peer->SetEndpointToIface(desc, iface); 
+    }
+}
+
 HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId,
                                       uint32_t* descNum, EndpointDesc* endpointDesc)
 {
@@ -387,6 +409,7 @@ HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId,
 
         for (const auto& entry : endpointMap) {
             // 确保这个 desc 确实属于当前 iface（防止误匹配）
+            const EndpointDesc& desc = entry.first;
             const std::shared_ptr<NetInstance::ConnInterface>& mappedIface = entry.second;
             if (mappedIface != iface) {
                 continue;
