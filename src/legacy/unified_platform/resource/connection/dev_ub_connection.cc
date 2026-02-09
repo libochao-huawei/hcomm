@@ -290,7 +290,7 @@ bool DevUbConnection::GetTpInfo()
             __func__, tpProtocol.Describe().c_str());
         ThrowAbnormalStatus(std::string(__func__));
     }
-    
+    TpManager::GetInstance(devLogicId).Init();
     auto ret = TpManager::GetInstance(devLogicId).GetTpInfo(
         {locAddr, rmtAddr, tpProtocol}, tpInfo);
 

@@ -27,4 +27,18 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2(void 
 
     return AicpuHcclProcess::AicpuIndOpChannelInitV2(commParam);
 }
+
+__attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2Inner(void *args)
+{
+    HCCL_RUN_INFO("RunAicpuIndOpChannelInitV2Inner start.");
+    CHK_PRT_RET(args == nullptr, HCCL_ERROR("[%s]args is null.", __func__), HCCL_E_PARA);
+    struct InitTask {
+        u64 context;
+        bool isCustom;
+    };
+    InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
+    HcclChannelUrmaRes *commParam = reinterpret_cast<HcclChannelUrmaRes *>(ctxArgs->context);
+
+    return AicpuHcclProcess::AicpuIndOpChannelInitV2Inner(commParam);
+}
 }

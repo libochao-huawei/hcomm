@@ -36,6 +36,7 @@
 #include "dtype_common.h"
 #include "aicpu_one_side_service.h"
 #include "coll_batch_write_executor.h"
+#include "aicpu_res_package_helper.h"
 
 using namespace hccl;
 using namespace HcclApi;
@@ -58,6 +59,12 @@ DevType AicpuHcclProcess::AicpuGetInnerDevType()
 static constexpr uint32_t ALLTOALLV_INFO_INDEX_2 = 2;
 static constexpr uint32_t ALLTOALLV_INFO_INDEX_3 = 3;
 static constexpr uint32_t ALLTOALLV_INFO_INDEX_4 = 4;
+
+// 单边通信
+std::mutex AicpuHcclProcess::memMutex_;
+std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>>
+    AicpuHcclProcess::ubTransportMap_;
+std::vector<std::shared_ptr<hccl::Thread>> AicpuHcclProcess::threads_;
 
 AicpuComContext *AicpuGetComContext()
 {
@@ -613,6 +620,62 @@ HcclResult AicpuHcclProcess::AicpuIndOpThreadInit(ThreadMgrAicpuParam *param)
     return HCCL_SUCCESS;
 }
 
+HcclResult AicpuHcclProcess::InitThreads(ThreadMgrAicpuParam *param)
+{
+    u32 threadNum = param->threadNum;
+    std::vector<std::shared_ptr<Thread>> outThreads;
+    outThreads.reserve(threadNum);
+    std::string hcomId(param->hcomId);
+    for (u32 i = 0; i < threadNum; ++i) {
+        std::string thdUniqueId(param->threadParam[i], THREAD_UNIQUE_ID_MAX_SIZE);
+        if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_INFO))) {
+            std::ostringstream oss;
+            oss << "threadParam[" << i << "] raw bytes: ";
+            for (u32 j = 0; j < THREAD_UNIQUE_ID_MAX_SIZE; ++j) {
+                oss << std::hex << std::setw(2) << std::setfill('0')
+                    << static_cast<unsigned int>(static_cast<unsigned char>(param->threadParam[i][j])) << " ";
+            }
+            HCCL_INFO("[HcclCommAicpu][%s] %s", __func__, oss.str().c_str());
+        }
+        std::shared_ptr<AicpuTsThread> thread;
+        EXECEPTION_CATCH((thread = std::make_shared<AicpuTsThread>(thdUniqueId)), return HCCL_E_PTR);
+        HcclResult ret = thread->Init();
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclCommAicpu][%s] comm identifier[%s], init threads num[%u] failed at index %u",
+                __func__, hcomId.c_str(), param->threadNum, i);
+            return ret;
+        }
+        outThreads.emplace_back(thread);
+    }
+
+    ThreadHandle *threadArray = static_cast<ThreadHandle*>(param->deviceHandle);
+    // 空指针校验
+    CHK_PTR_NULL(threadArray);
+    for (size_t i = 0; i < threadNum; ++i) {
+        threadArray[i] = reinterpret_cast<ThreadHandle>(outThreads[i].get());  // 拷贝裸指针
+        HCCL_INFO("[HcclCommAicpu][%s] threadArray[%u] = [%lu]", __func__, i, threadArray[i]);
+    }
+    threads_.insert(threads_.end(), std::make_move_iterator(outThreads.begin()),
+        std::make_move_iterator(outThreads.end()));
+    HCCL_INFO("[HcclCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
+        __func__, hcomId.c_str(), threadNum);
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuHcclProcess::AicpuIndOpThreadInitInner(ThreadMgrAicpuParam *param)
+{
+    CHK_RET(hrtSetWorkModeAicpu(true));
+    CHK_RET(hrtSetlocalDevice(param->deviceLogicId));
+    CHK_RET(hrtSetlocalDeviceType(static_cast<DevType>(param->deviceType)));
+    std::lock_guard<std::mutex> addLock(memMutex_);
+    HcclResult ret = InitThreads(param);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpThreadInit]errNo[0x%016llx] Failed to init threads",
+        HCCL_ERROR_CODE(ret)), ret);
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult AicpuHcclProcess::AicpuIndOpChannelInit(HcclIndOpChannelRemoteResV3 *commParam)
 {
     std::string group = commParam->hcomId;
@@ -643,6 +706,78 @@ HcclResult AicpuHcclProcess::AicpuIndOpChannelInitV2(HcclChannelUrmaRes *commPar
 
     AicpuReleaseCommbyGroup(group);
     HCCL_INFO("[AicpuHcclProcess][%s] aicpuTask End.", __func__);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuHcclProcess::AicpuIndOpChannelInitV2Inner(HcclChannelUrmaRes *commParam)
+{
+    HCCL_INFO("[AicpuHcclProcess][%s] commParam->channelList[%p], commParam->listNum[%u], commParam->uniqueIdAddr[%p], "
+        "commParam->uniqueIdSize[%u]", __func__, commParam->channelList, commParam->listNum, commParam->uniqueIdAddr,
+        commParam->uniqueIdSize);
+
+    CHK_RET(hrtSetWorkModeAicpu(true));
+    CHK_RET(hrtSetlocalDevice(commParam->deviceLogicId));
+    CHK_RET(hrtSetlocalDeviceType(static_cast<DevType>(commParam->deviceType)));
+    std::lock_guard<std::mutex> addLock(memMutex_);
+    HcclResult ret = InitUrmaChannel(commParam);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpChannelInit]errNo[0x%016llx] Failed to init channels group[%s]",
+        HCCL_ERROR_CODE(ret)), ret);
+
+    HCCL_INFO("[AicpuHcclProcess][%s] aicpuTask End.", __func__);
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuHcclProcess::InitUrmaChannel(HcclChannelUrmaRes *commParam)
+{
+    HCCL_INFO("[HcclCommAicpu][%s] commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
+        __func__, commParam->uniqueIdAddr, commParam->uniqueIdSize);
+
+    for (u32 index = 0; index < commParam->listNum; index++) {
+        std::vector<char> data(commParam->singleUniqueIdSize);
+
+        // 计算地址块的偏移
+        u8* currentSrcAddr = reinterpret_cast<u8*>(commParam->uniqueIdAddr) + index * commParam->singleUniqueIdSize;
+        CHK_SAFETY_FUNC_RET(memcpy_s(data.data(), data.size(), currentSrcAddr, commParam->singleUniqueIdSize));
+
+        // 反序列化得到device侧transport对象
+        Hccl::AicpuResPackageHelper helper;
+        auto dataVec = helper.ParsePackedData(data);
+
+        Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM; // todo 待修改
+        if (static_cast<u32>(resType) >= dataVec.size()) {
+            HCCL_ERROR("[HcclCommAicpu][%s] fail, resType[%d], dataVec size[%u]", __func__, resType, dataVec.size());
+            return HCCL_E_PARA;
+        }
+        ChannelHandle channelHandle;
+        CHK_RET(ParsePackData(dataVec[resType].data, channelHandle));
+
+        // 恢复出的channelHandle回填到commParam中
+        ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
+        channelList[index] = channelHandle;
+        HCCL_INFO("[HcclCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
+            __func__, index, currentSrcAddr, commParam->singleUniqueIdSize, channelHandle);
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuHcclProcess::ParsePackData(std::vector<char> &data, ChannelHandle &handle)
+{
+    HCCL_DEBUG("[HcclCommAicpu][%s] data: ptr[%p], size[%u]", __func__, data.data(), data.size());
+    Hccl::BinaryStream binaryStream(data);
+
+    std::vector<char> transpUniqueId;
+    binaryStream >> transpUniqueId;
+
+    std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
+    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
+        return HCCL_E_PTR);
+    CHK_SMART_PTR_NULL(ubTransportLiteImpl);
+
+    handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
+    ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
 
     return HCCL_SUCCESS;
 }

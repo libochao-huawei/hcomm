@@ -75,6 +75,8 @@ struct HcclChannelUrmaRes {
     void* uniqueIdAddr;              // 序列化后device侧地址
     u32   uniqueIdSize{0};           // 序列化后总地址长度
     u32   singleUniqueIdSize{0};     // 单个channel内序列化后地址长度
+    s32   deviceLogicId{0};          // 设备逻辑ID，单边通信使用
+    u32   deviceType{0};             // 设备类型，单边通信使用
 };
 
 #endif

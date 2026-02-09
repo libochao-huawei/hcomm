@@ -85,7 +85,7 @@ private:
 
     static constexpr u64 NORMAL_NOTIFY_VAL = 1;
 
-    MAKE_ENUM(UbStatus, INIT, SOCKET_OK, SEND_DATA, RECV_DATA, SEND_FIN, RECV_FIN, PROCESS_DATA, CONN_OK)
+    MAKE_ENUM(UbStatus, INIT, SOCKET_OK, SEND_SIZE, RECV_SIZE, SEND_DATA, RECV_DATA, SEND_FIN, RECV_FIN, PROCESS_DATA, CONN_OK)
     UbStatus ubStatus{UbStatus::INIT};
 
     u32          cntNotifyNum{0};
@@ -105,6 +105,8 @@ private:
     RemoteBufferVec rmtCntNotifyVec; // 远端 cnt Notify
     LocalBufferVec locBufferVec;    // 本端 buffer
 
+    void SendDataSize();
+    void RecvDataSize();
     void SendExchangeData();
     void RecvExchangeData();
 

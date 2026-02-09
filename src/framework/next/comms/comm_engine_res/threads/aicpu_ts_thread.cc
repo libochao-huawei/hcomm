@@ -282,6 +282,7 @@ HcclResult AicpuTsThread::HostInit()
         CHK_SMART_PTR_NULL(stream_);
         rtStream_ = stream_->ptr();
     }
+
     notifys_.reserve(notifyNum_);
     for (uint32_t idx = 0; idx < notifyNum_; idx++) {
         notifys_.emplace_back(nullptr);

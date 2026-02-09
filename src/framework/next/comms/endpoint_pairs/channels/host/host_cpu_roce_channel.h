@@ -19,7 +19,7 @@
 #include "../../../../../../legacy/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
 #include "remote_rma_buffer.h"
 #include "host_rdma_connection.h"
-// #include "base_mem_transport.h"
+#include "../../sockets/socket_mgr.h"
 
 namespace hcomm {
 
@@ -42,18 +42,18 @@ public:
     HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) const;
     HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout);
     HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx) const;
-    HcclResult Write(void *dst, const void *src, uint64_t len) const;
-    HcclResult Read(void *dst, const void *src, uint64_t len) const;
-    HcclResult ChannelFence() const;
+    HcclResult Write(void *dst, const void *src, uint64_t len);
+    HcclResult Read(void *dst, const void *src, uint64_t len);
+    HcclResult ChannelFence();
     HcclResult GetHcclBuffer(void*& addr, uint64_t& size);
 
 private:
     HcclResult ParseInputParam();
-    // HcclResult BuildAttr();
     HcclResult BuildConnection();
     HcclResult BuildNotify();
     HcclResult BuildBuffer();
-
+    HcclResult BuildSocket();
+    HcclResult StartSocketListen();
 
     HcclResult CheckSocketStatus();
     HcclResult CreateQp();
@@ -76,6 +76,8 @@ private:
     HcclResult PrepareNotifyWrResource(const uint64_t len, const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifyRecordWr) const;
     HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
                                       struct ibv_send_wr &writeWithNotifyWr) const;
+    HcclResult FindLocalBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
+    HcclResult FindRemoteBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
 
     // 入参
     EndpointHandle endpointHandle_;
@@ -91,6 +93,7 @@ private:
     std::vector<std::unique_ptr<HostRdmaConnection>> connections_{};
     std::vector<Hccl::LocalRdmaRmaBuffer *> localRmaBuffers_{};
     std::vector<uint32_t> localDpuNotifyIds_{};
+    std::unique_ptr<SocketMgr> socketMgr_{nullptr};
     uint32_t bufferNum_{0};
     uint32_t connNum_{0};
     // Hccl::BaseMemTransport::Attribution attr_;
@@ -100,6 +103,7 @@ private:
     std::vector<std::unique_ptr<Hccl::RemoteRdmaRmaBuffer>> rmtRmaBuffers_{};
     ExchangeRdmaConnDto rmtConnDto_;
     std::vector<std::unique_ptr<HcclMem>> remoteMems{};
+    bool fenceFlag_{false};
 
     std::mutex cq_mutex;
 };

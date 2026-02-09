@@ -37,35 +37,43 @@ HcclResult HostCpuRoceChannel::ParseInputParam()
 {
     // 1. 从 endpointHandle_，获得 localEp_ 和 rdmaHandle_
     CHK_PTR_NULL(endpointHandle_);
+    HCCL_INFO("[HostCpuRoceChannel::%s] START. endpointHandle[0x%llx]", __func__, endpointHandle_);
     Endpoint* localEpPtr = reinterpret_cast<Endpoint*>(endpointHandle_);
+
     localEp_ = localEpPtr->GetEndpointDesc();
     rdmaHandle_ = localEpPtr->GetRdmaHandle();
     CHK_PTR_NULL(rdmaHandle_);
-
     // 2. 从 channelDesc_，获得 remoteEp_, socket_ 和 notifyNum
     remoteEp_ = channelDesc_.remoteEndpoint;
     socket_ = reinterpret_cast<Hccl::Socket*>(channelDesc_.socket);
-    CHK_PTR_NULL(socket_);
+    // socket_ 可为空
     notifyNum_ = channelDesc_.notifyNum;
 
-    // 3. 从 channelDesc 的 memHandle，获得 bufs_
-    CHK_PTR_NULL(channelDesc_.memHandles);
-    for (uint32_t i = 0; i < channelDesc_.memHandleNum; ++i) {
-        CHK_PTR_NULL(channelDesc_.memHandles[i]);
-        Hccl::LocalRdmaRmaBuffer* localRdmaBuffer = static_cast<Hccl::LocalRdmaRmaBuffer *>(channelDesc_.memHandles[i]);
-        localRmaBuffers_.emplace_back(localRdmaBuffer);
+    if (channelDesc_.exchangeAllMems) {
+        // 3. Get memHandles from endpoint
+        HCCL_INFO("[HostCpuRoceChannel][%s] exchangeAllMems == True. Get memHandles from endpoint.", __func__);
+        std::shared_ptr<Hccl::LocalRdmaRmaBuffer> *memHandles = nullptr;
+        uint32_t memHandleNum = 0;
+        CHK_RET(HcommMemGetAllMemHandles(endpointHandle_, reinterpret_cast<void**>(&memHandles), &memHandleNum));
+        HCCL_INFO("[HostCpuRoceChannel][%s] Got memHandleNum[%u]", __func__, memHandleNum);
+        for (uint32_t i = 0; i < memHandleNum; ++i) {
+            std::shared_ptr<Hccl::LocalRdmaRmaBuffer> &localRdmaBuffer = memHandle[i];
+            HCCL_INFO("[HostCpuRoceChannel][%s] Got memHandle No.%u: addr[0x%llx], size[0x%llx], memTag[%s].",
+                __func__, i, localRdmaBuffer->GetAddr(), localRdmaBuffer->GetSize(), localRdmaBuffer->GetBuf()->GetMemTag());
+            localRmaBuffers_.emplace_back(localRdmaBuffer.get());
+        }
+    } else {
+        // 3. 从 channelDesc 的 memHandle，获得 bufs_
+        HCCL_INFO("[HostCpuRoceChannel][%s] exchangeAllMems == false. Get memHandles from channelDesc.", __func__);
+        for (uint32_t i = 0; i < channelDesc_.memHandleNum; ++i) {
+            auto *localRdmaBuffer = static_cast<Hccl::LocalRdmaRmaBuffer *>(channelDesc_.memHandles[i]);
+            localRmaBuffers_.emplace_back(localRdmaBuffer);
+        }
     }
 
+    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
     return HCCL_SUCCESS;
 }
-
-// HcclResult HostCpuRoceChannel::BuildAttr()
-// {
-//     attr_.devicePhyId = localEp_.loc.device.devPhyId;
-//     attr_.opMode      = Hccl::OpMode::OPBASE;
-//     attr_.handshakeMsg = {'d', 'p', 'u'}; // TODO: 握手消息定义，怎么组？包括 cann版本号，rankTable CRC等字段
-//     return HCCL_SUCCESS;
-// }
 
 HcclResult HostCpuRoceChannel::BuildConnection()
 {
@@ -94,10 +102,45 @@ HcclResult HostCpuRoceChannel::BuildBuffer()
     return HCCL_SUCCESS;
 }
 
+HcclResult HostCpuRoceChannel::BuildSocket()
+{
+    if (socket_ != nullptr) {
+        return HCCL_SUCCESS;
+    }
+    HCCL_INFO("[HostCpuRoceChannel][%s] socket ptr is NULL, rebuildSocket", __func__);
+    Hccl::LinkData linkData = BuildDefaultLinkData();
+    CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
+    HCCL_INFO("[HostCpuRoceChannel][%s] built linkData: %s", __func__, linkData.Describe().c_str());
+    uint16_t port = channelDesc_.port;
+    if (port == 0) {
+        port = DEFAULT_LISTENING_PORT;
+    }
+    HCCL_INFO("[HostCpuRoceChannel][%s] Port[%u] will be used to build socketConfig.", __func__, port);
+    std::string socketTag = "AUTOMATIC_SOCKET_TAG";
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, port, socketTag);
+    CHK_RET(socketMgr_->GetSocket(socketConfig, socket_));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::StartSocketListen()
+{
+    HCCL_INFO("[HostCpuRoceChannel][%s] START", __func__);
+    Endpoint* localEpPtr = reinterpret_cast<Endpoint*>(endpointHandle_);
+    uint16_t port = channelDesc_.port;
+    if (port == 0) {
+        port = DEFAULT_LISTENING_PORT;
+        HCCL_INFO("[HostCpuRoceChannel][%s] Port unset, default value[%u] is used.", __func__, port);
+    }
+    CHK_RET(localEpPtr->ServerSocketListen(port));
+    HCCL_INFO("[HostCpuRoceChannel][%s] SUCCESS", __func__);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HostCpuRoceChannel::Init()
 {
     CHK_RET(ParseInputParam());
-    // CHK_RET(BuildAttr());
+    CHK_RET(StartSocketListen());
+    CHK_RET(BuildSocket());
     CHK_RET(BuildConnection());
     CHK_RET(BuildNotify());
     CHK_RET(BuildBuffer());
@@ -196,20 +239,32 @@ HcclResult HostCpuRoceChannel::ExchangeData()
     CHK_RET(BufferVecPack(binaryStream));
     CHK_RET(ConnVecPack(binaryStream));
 
-    // 同步发送数据
     std::vector<char> sendData{};
     binaryStream.Dump(sendData);
-    u64 exchangeDataSize = sendData.size();
-    // 同步接口必然是true。不需要分两个状态
-    socket_->Send(reinterpret_cast<void *>(sendData.data()), exchangeDataSize);
-
-    // 同步接受数据数据
-    HCCL_INFO("[HostCpuRoceChannel::%s] Start to Receive Exchange Data", __func__);
+    size_t sendSize = sendData.size();
     std::vector<char> recvData{};
-    recvData.resize(exchangeDataSize);
-    socket_->Recv(reinterpret_cast<void *>(recvData.data()), exchangeDataSize);
-    HCCL_INFO("[HostCpuRoceChannel::%s] Receive Exchange Data success, size=%llu, exchangeDataSize=%u", __func__,
-              recvData.size(), exchangeDataSize);
+    size_t recvSize = 0;
+
+    // 同步发送数据包尺寸
+    socket_->Send(reinterpret_cast<void *>(&sendSize), sizeof(sendSize));
+    HCCL_INFO("[HostCpuRoceChannel::%s] Send size[%zu] of data success. [%llu] bytes sent.", 
+        __func__, sendSize, sizeof(sendSize));
+
+    // 同步接收数据包尺寸
+    socket_->Recv(reinterpret_cast<void *>(&recvSize), sizeof(recvSize));
+    HCCL_INFO("[HostCpuRoceChannel::%s] Receive size[%zu] of data success. [%llu] bytes received.", 
+        __func__, recvSize, sizeof(recvSize));
+
+    // 同步发送数据
+    socket_->Send(reinterpret_cast<void *>(sendData.data()), sendSize);
+    HCCL_INFO("[HostCpuRoceChannel::%s] Send Exchange Data success. [%llu] bytes sent.", 
+        __func__, sendSize);
+    
+    // 同步接收数据
+    recvData.resize(recvSize);
+    socket_->Recv(reinterpret_cast<void *>(recvData.data()), recvSize);
+    HCCL_INFO("[HostCpuRoceChannel::%s] Receive Exchange Data success. [%llu] bytes received.", 
+        __func__, recvSize);
 
     // 同步数据解包
     Hccl::BinaryStream recvBinStream(recvData);
@@ -282,31 +337,24 @@ HcclResult HostCpuRoceChannel::RmtBufferVecUnpackProc(Hccl::BinaryStream &binary
 {
     u32 rmtNum;
     binaryStream >> rmtNum;
- 
-    HCCL_INFO("unpack, bufferNum_=%u, rmtNum=%u", bufferNum_,
-        rmtNum);
-    if (rmtNum != bufferNum_) {
-        HCCL_ERROR("bufferNum_=%u is not equal to rmtNum=%u", bufferNum_, rmtNum);
-        return HCCL_E_ROCE_CONNECT;
-    }
- 
+    HCCL_INFO("[HostCpuRoceChannel::%s] bufferNum_=%u, rmtNum=%u", __func__, bufferNum_, rmtNum);
+
+    rmtRmaBuffers_.resize(rmtNum);
     for (u32 i = 0; i < rmtNum; i++) {
         u32 pos;
         binaryStream >> pos;
         Hccl::ExchangeRdmaBufferDto dto;
         dto.Deserialize(binaryStream);
-        if (rmtRmaBuffers_.size() > pos) {
-            // 对于之前已经加过的资源，无需追加
-            continue;
-        }
  
-        HCCL_INFO("unpack  pos=%u, dto %s", pos, dto.Describe().c_str());
+        HCCL_INFO("[HostCpuRoceChannel::%s] pos=%u, dto %s", __func__, pos, dto.Describe().c_str());
         if (dto.size == 0) { // size为0，则为 remote 空buffer
-            HCCL_INFO("unpack nullptr, pos=%u", pos);
-            rmtRmaBuffers_.push_back(nullptr);
+            HCCL_INFO("[HostCpuRoceChannel::%s] size is 0, pos=%u, skip.", __func__, pos);
         } else { // size非0，则构造一个remote buffer
+            EXECEPTION_CATCH(rmtRmaBuffers_[i] = std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle_, dto),
+                return HCCL_E_INTERNAL);
             rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle_, dto));
-            HCCL_WARNING("unpack buffer pos=%u, rmtRmaBuffer=%s", pos, rmtRmaBuffers_.back()->Describe().c_str());
+            HCCL_INFO("[HostCpuRoceChannel::%s] pos=%u, rmtRmaBuffer=%s", __func__, pos, 
+                rmtRmaBuffers_[i]->Describe().c_str());
         }
     }
  
@@ -677,44 +725,145 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::Write(void *dst, const void *src, const uint64_t len) const
+HcclResult HostCpuRoceChannel::Write(void *dst, const void *src, const uint64_t len)
 {
-    return HCCL_E_NOT_SUPPORT;
-}
-
-HcclResult HostCpuRoceChannel::Read(void *dst, const void *src, const uint64_t len) const 
-{
-    return HCCL_E_NOT_SUPPORT;
-}
-
-HcclResult HostCpuRoceChannel::ChannelFence() const
-{
-    struct ibv_wc wc{};
-    int wcNum = 2;
+    HCCL_INFO("[HostCpuRoceChannel::%s] START. dst[%p], src[%p], len[%llu].", __func__, dst, src, len);
     std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
-    if (qpInfo.empty()) {
-        HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__);
-        return HCCL_E_ROCE_CONNECT;
-    }
+    CHK_PRT_RET(qpInfo.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__), HCCL_E_ROCE_CONNECT);
+    CHK_PRT_RET(localRmaBuffers_.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] localRmaBuffer is Empty", __func__),
+                HCCL_E_ROCE_CONNECT);
+    CHK_PRT_RET(rmtRmaBuffers_.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] rmtRmaBuffers is Empty", __func__),
+                HCCL_E_ROCE_CONNECT);
+    CHK_RET(IbvPostRecv());
 
-    auto timeout = std::chrono::milliseconds(FENCE_TIMEOUT_MS);
-    auto startTime = std::chrono::steady_clock::now();
-    while (true) {
-        auto actualNum = ibv_poll_cq(qpInfo[0].recvCq, wcNum, &wc);
-        CHK_PRT_RET(wc.status != IBV_WC_SUCCESS,
-            HCCL_ERROR("[HostCpuRoceChannel][%s] ibv_poll_cq return wc.status is [%d].",
-            __func__, wc.status), HCCL_E_NETWORK);
+    // 1. 构造WR
+    size_t localIdx = 0;
+    CHK_RET(FindLocalBuffer(reinterpret_cast<uint64_t>(src), len, localIdx));
+    size_t rmtIdx = 0;
+    CHK_RET(FindRemoteBuffer(reinterpret_cast<uint64_t>(dst), len, rmtIdx));
+    struct ibv_send_wr writeWr{};
+    struct ibv_send_wr *badWr = nullptr;
+    struct ibv_sge sg;
+    writeWr.sg_list = &sg;
+    writeWr.sg_list->addr = reinterpret_cast<uint64_t>(src); // 源地址
+    writeWr.sg_list->length = len;
+    writeWr.sg_list->lkey = localRmaBuffers_[localIdx]->GetLkey(); // LKey
+    writeWr.opcode = IBV_WR_RDMA_WRITE;
+    writeWr.send_flags = (fenceFlag_ == true ? (IBV_SEND_SIGNALED | IBV_SEND_FENCE) : IBV_SEND_SIGNALED);
+    writeWr.next = nullptr;
+    writeWr.num_sge = 1;
+    writeWr.wr_id = 0;
+    writeWr.wr.rdma.rkey = rmtRmaBuffers_[rmtIdx]->GetRkey(); // 远端RKey
+    writeWr.wr.rdma.remote_addr = reinterpret_cast<uint64_t>(dst); // 远端地址
 
-        if (actualNum == wcNum) {
-            break;
+    // 2. 调用ibv_post_send
+    int32_t ret = ibv_post_send(qpInfo[0].qp, &writeWr, &badWr);
+    CHK_PRT_CONT(ret == ENOMEM,
+        HCCL_WARNING("[HostCpuRoceChannel][%s] post send wqe overflow. ret:%d, badWr->wr_id[%llu], "
+                     "badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
+            __func__, ret, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr, badWr->wr.ud.remote_qpn),
+        HCCL_E_AGAIN);
+
+    CHK_PRT_CONT(ret != 0,
+        HCCL_ERROR("[HostCpuRoceChannel][%s] ibv_post_send failed. ret:%d, badWr->wr_id[%llu], "
+                   "badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
+            __func__, ret, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr, badWr->wr.ud.remote_qpn),
+        HCCL_E_NETWORK);
+    HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS", __func__);
+    fenceFlag_ = false;
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::Read(void *dst, const void *src, const uint64_t len)
+{
+    HCCL_INFO("[HostCpuRoceChannel::%s] START. dst[%p], src[%p], len[%llu].", __func__, dst, src, len);
+    std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
+    CHK_PRT_RET(qpInfo.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__), HCCL_E_ROCE_CONNECT);
+    CHK_PRT_RET(localRmaBuffers_.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] localRmaBuffer is Empty", __func__),
+                HCCL_E_ROCE_CONNECT);
+    CHK_PRT_RET(rmtRmaBuffers_.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] rmtRmaBuffers is Empty", __func__),
+                HCCL_E_ROCE_CONNECT);
+    CHK_RET(IbvPostRecv());
+
+    // 1. 构造WR
+    size_t localIdx = 0;
+    CHK_RET(FindLocalBuffer(reinterpret_cast<uint64_t>(src), len, localIdx));
+    size_t rmtIdx = 0;
+    CHK_RET(FindRemoteBuffer(reinterpret_cast<uint64_t>(dst), len, rmtIdx));
+    struct ibv_send_wr readWr{};
+    struct ibv_send_wr *badWr = nullptr;
+    struct ibv_sge sg;
+    readWr.sg_list = &sg;
+    readWr.sg_list->addr = reinterpret_cast<uint64_t>(dst);
+    readWr.sg_list->length = len;
+    readWr.sg_list->lkey = localRmaBuffers_[localIdx]->GetLkey(); // LKey
+    readWr.opcode = IBV_WR_RDMA_READ;
+    readWr.send_flags = (fenceFlag_ == true ? (IBV_SEND_SIGNALED | IBV_SEND_FENCE) : IBV_SEND_SIGNALED);
+    readWr.next = nullptr;
+    readWr.num_sge = 1;
+    readWr.wr_id = 0;
+    readWr.wr.rdma.rkey = rmtRmaBuffers_[rmtIdx]->GetRkey(); // 远端RKey
+    readWr.wr.rdma.remote_addr = reinterpret_cast<uint64_t>(src); // 远端地址
+
+    // 2. 调用ibv_post_send
+    s32 ret = ibv_post_send(qpInfo[0].qp, &readWr, &badWr);
+    CHK_PRT_CONT(ret == ENOMEM,
+        HCCL_WARNING("[HostCpuRoceChannel][%s] post send wqe overflow. ret:%d, badWr->wr_id[%llu], "
+                     "badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
+            __func__, ret, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr, badWr->wr.ud.remote_qpn),
+        HCCL_E_AGAIN);
+
+    CHK_PRT_CONT(ret != 0,
+        HCCL_ERROR("[HostCpuRoceChannel][%s] ibv_post_send failed. ret:%d, badWr->wr_id[%llu], "
+                   "badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
+            __func__, ret, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr, badWr->wr.ud.remote_qpn),
+        HCCL_E_NETWORK);
+    HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS", __func__);
+    fenceFlag_ = false;
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::FindLocalBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const
+{
+    HCCL_INFO("[HostCpuRoceChannel::%s] START. Finding buffer addr[0x%llx], len[0x%llx].", __func__, addr, len);
+    for (size_t i = 0; i < localRmaBuffers_.size(); i++) {
+        uint64_t bufAddr = localRmaBuffers_[i]->GetBufferInfo().first;
+        uint32_t bufSize = localRmaBuffers_[i]->GetBufferInfo().second;
+        HCCL_INFO("[HostCpuRoceChannel::%s] Comparing with saved localRmaBuffers_[%zu] addr[0x%llx], len[0x%llx].", 
+            __func__, i, bufAddr, bufSize);
+        if (addr >= bufAddr && (addr + len) <= (bufAddr + bufSize)) {
+            targetIdx = i;
+            HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. targetIdx[%zu].", __func__, targetIdx);
+            return HCCL_SUCCESS;
         }
+    }
+    HCCL_ERROR("[HostCpuRoceChannel::%s] FAIL. Can not Find Target Buffer addr[0x%llx], len[0x%llx].", 
+        __func__, addr, len);
+    return HCCL_E_NOT_FOUND;
+}
 
-        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            HCCL_ERROR("[HostCpuRoceChannel][%s] call ibv_poll_cq timeout.", __func__);
-            return HCCL_E_TIMEOUT;
+HcclResult HostCpuRoceChannel::FindRemoteBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const
+{
+    HCCL_INFO("[HostCpuRoceChannel::%s] START. Finding buffer addr[0x%llx], len[0x%llx].", __func__, addr, len);
+    for (size_t i = 0; i < rmtRmaBuffers_.size(); i++) {
+        uint64_t bufAddr = static_cast<uint64_t>(rmtRmaBuffers_[i]->GetAddr());
+        uint32_t bufSize = rmtRmaBuffers_[i]->GetSize();
+        HCCL_INFO("[HostCpuRoceChannel::%s] Comparing with saved rmtRmaBuffers_[%zu] addr[0x%llx], len[0x%llx].", 
+            __func__, i, bufAddr, bufSize);
+        if (addr >= bufAddr && (addr + len) <= (bufAddr + bufSize)) {
+            targetIdx = i;
+            HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. targetIdx[%zu].", __func__, targetIdx);
+            return HCCL_SUCCESS;
         }
     }
+    HCCL_ERROR("[HostCpuRoceChannel::%s] FAIL. Can not Find Target Buffer addr[0x%llx], len[0x%llx].", 
+        __func__, addr, len);
+    return HCCL_E_NOT_FOUND;
+}
 
+HcclResult HostCpuRoceChannel::ChannelFence()
+{
+    fenceFlag_ = true;
     return HCCL_SUCCESS;
 }
 

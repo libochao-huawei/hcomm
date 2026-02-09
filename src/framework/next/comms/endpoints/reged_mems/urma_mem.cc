@@ -87,7 +87,7 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
     CHK_PTR_NULL(this->localUbRmaBufferMgr_);
 
     Hccl::LocalUbRmaBuffer* buffer = static_cast<Hccl::LocalUbRmaBuffer*>(memHandle);
-
+    CHK_RET_NULL(buffer);
     auto bufferInfo = buffer->GetBufferInfo();
 
     // 从LocalRamBuffer计数器删除

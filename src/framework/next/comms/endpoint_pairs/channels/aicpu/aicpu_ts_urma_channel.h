@@ -19,6 +19,7 @@
 #include "ub_mem_transport.h"
 #include "dev_ub_connection.h"
 #include "ub_local_notify.h"
+#include "../../sockets/socket_mgr.h"
 
 namespace hcomm {
 
@@ -40,6 +41,7 @@ private:
     HcclResult BuildNotify();
     HcclResult BuildBuffer();
     HcclResult BuildUbMemTransport();
+    HcclResult BuildSocket();
 
     HcclResult PackOpData(std::vector<char> &data);
 
@@ -64,6 +66,7 @@ private:
     std::vector<std::unique_ptr<Hccl::DevUbConnection>>         connections_{};
     std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
+    std::unique_ptr<SocketMgr>                                  socktetMgr_{nullptr};
 };
 
 } // namespace hcomm
