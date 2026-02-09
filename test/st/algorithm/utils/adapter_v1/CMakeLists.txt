@@ -106,10 +106,15 @@ target_compile_options(hccl_alg_adaption PRIVATE
     -pipe
 )
 
+target_link_directories(hccl_alg_adaption PRIVATE
+    ${ASCEND_CANN_PACKAGE_PATH}/lib64
+)
+
 target_link_libraries(hccl_alg_adaption PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     hccl_alg_test
     protobuf
+    c_sec
     -lpthread
     -lrt
     -ldl
