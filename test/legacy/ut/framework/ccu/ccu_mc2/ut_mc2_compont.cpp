@@ -111,8 +111,8 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_Alloc)
 
     void *commContext;
     // check
-    HcclCombinOpParam combinOpParam{0};
-    EXPECT_NO_THROW(mc2Compont.Alloc(&commContext, combinOpParam));
+    EXPECT_NO_THROW(mc2Compont.Alloc(&commContext));	 
+    EXPECT_NE(nullptr, mc2Compont.combinOpParamBuffer);
 }
 
 TEST_F(Mc2CompontTest, should_return_success_when_calling_AllocV2)
@@ -142,8 +142,8 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_AllocV2)
     commConfigPtr->srcDataType = HcclDataType::HCCL_DATA_TYPE_FP32;
     commConfigPtr->dstDataType = HcclDataType::HCCL_DATA_TYPE_FP32;
 
-    HcclCombinOpParam combinOpParam{0};
-    EXPECT_NO_THROW(mc2Compont.AllocV2(&commContext, combinOpParam));
+    EXPECT_NO_THROW(mc2Compont.AllocV2(&commContext));	 
+    EXPECT_NE(nullptr, mc2Compont.combinOpParamBuffer);
 
     free(mc2TilingPtr);
 }

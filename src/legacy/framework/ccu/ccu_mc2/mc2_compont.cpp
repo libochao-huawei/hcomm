@@ -46,30 +46,19 @@ void Mc2Compont::AllocCommResource(void *mc2Tiling, void **commContext)
         HCCL_WARNING("Comm[%s] rank size is 1, Mc2 not support", comm->GetId().c_str());
         return;
     }
+    HcclCombinOpParam combinOpParam{0};
     std::unordered_set<uint64_t> algoTemplateRequire;
     if (tilingVersion == UNKNOWN_TILING_V1) {
-        // 申请deviceMem、通信域信息获取、commContext赋值
-        Alloc();
         // 生成本次需要的算子模板
         GenerateAlgoTemplates(reinterpret_cast<Mc2Tiling *>(mc2Tiling), algoTemplateRequire);
-    } else {
         // 申请deviceMem、通信域信息获取、commContext赋值
-        AllocV2();
+        Alloc(commContext, combinOpParam);
+    } else {
         // 生成本次需要的算子模板
         GenerateAlgoTemplatesV2(reinterpret_cast<Mc2InitTilingInner *>(mc2Tiling), algoTemplateRequire);
+        // 申请deviceMem、通信域信息获取、commContext赋值
+        AllocV2(commContext, combinOpParam);
     }
-    combinOpParamPtr->algorithmType = comm->GetAlgorithmType();
-    HCCL_RUN_INFO("hcclCombinOpParam info: workSpace = [%llu], rankId = [%u], rankDim = [%u], xnAddr = [%llu],"
-              "ckeAddr = [%llu], winSize = [%llu], windowsOut[0] = [%llu], algorithmType = [%u]",
-              combinOpParamPtr->workSpace, combinOpParamPtr->rankId, combinOpParamPtr->rankDim, combinOpParamPtr->xnAddr,
-              combinOpParamPtr->ckeAddr, combinOpParamPtr->winSize, combinOpParamPtr->windowsOut[0], combinOpParamPtr->algorithmType);
-    auto paramSize = sizeof(HcclCombinOpParam);
-    if(combinOpParamBuffer == nullptr){
-        combinOpParamBuffer = std::make_shared<DevBuffer>(paramSize);
-    }
-    HrtMemcpy(reinterpret_cast<void *>(combinOpParamBuffer->GetAddr()), paramSize, combinOpParamPtr.get(),
-              paramSize, RT_MEMCPY_HOST_TO_DEVICE);
-    *commContext = reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
     // 生成ccuServer指令，将注册得到的execId保存在curExecId，GetCcuTaskInfo时通过curExecId获取TaskParam
     GenerateCcuServer(algoTemplateRequire);
 }
@@ -147,16 +136,12 @@ std::vector<CcuTaskParam> Mc2Compont::GetCcuTaskInfo(void *tilingData)
     return ccuTaskParam;
 }
 
-void Mc2Compont::Alloc()
+void Mc2Compont::Alloc(void **commContext)
 {
     // inputMem给算法编排使用，只需要申请一次，按照最大数据类型申请
     inputMem = std::make_shared<DevBuffer>(dataCount * DataTypeSizeGet(DataType::INT64) * comm->GetRankSize());
     HCCL_INFO("[Mc2Compont][Alloc]inputMem addr[%p] size = [%llu]", inputMem->GetAddr(), inputMem->GetSize());
-    if (combinOpParamPtr != nullptr) { 
-        return; 
-    }
 
-    combinOpParamPtr = make_shared<HcclCombinOpParam>();
     constexpr uint32_t comSyncNum      = 2; // 每轮同步使用2个同步信号
     uint32_t           comParamBufSize = CCU_TASK_NUM_MAX * CCU_PARAM_NUM_MAX * CCU_ONE_PARAM_SIZE ;
     uint32_t           comSyncBufSize  = CCU_TASK_NUM_MAX * comSyncNum * CCU_ONE_PARAM_SIZE ;
@@ -164,32 +149,39 @@ void Mc2Compont::Alloc()
     comParamBuffer                     = std::make_shared<DevBuffer>(comParamBufSize);
     comSyncBuffer                      = std::make_shared<DevBuffer>(comSyncBufSize);
 
-    combinOpParamPtr->workSpace     = static_cast<uint64_t>(workspaceBuffer->GetAddr());
-    combinOpParamPtr->workSpaceSize = MC2_WORKSPACE_SIZE;
-    combinOpParamPtr->rankId        = comm->GetMyRank();
-    combinOpParamPtr->rankDim       = comm->GetRankSize();
-    combinOpParamPtr->xnAddr        = static_cast<uint64_t>(comParamBuffer->GetAddr());
-    combinOpParamPtr->ckeAddr       = static_cast<uint64_t>(comSyncBuffer->GetAddr());
+    HcclCombinOpParam combinOpParam{0};
+    combinOpParam.algorithmType = comm->GetAlgorithmType();
+    combinOpParam.workSpace     = static_cast<uint64_t>(workspaceBuffer->GetAddr());	 
+    combinOpParam.workSpaceSize = MC2_WORKSPACE_SIZE;	 
+    combinOpParam.rankId        = comm->GetMyRank();	 
+    combinOpParam.rankDim       = comm->GetRankSize();	 
+    combinOpParam.xnAddr        = static_cast<uint64_t>(comParamBuffer->GetAddr());	 
+    combinOpParam.ckeAddr       = static_cast<uint64_t>(comSyncBuffer->GetAddr());
     // add cclbuffer info
     if (comm->GetCclBuffer() == nullptr) {
         THROW<Hccl::InternalException>(StringFormat("Cannot get CCL Buffer to fill window!"));
     }
-    combinOpParamPtr->winSize = static_cast<uint64_t>(comm->GetCclBuffer()->GetSize());
-    combinOpParamPtr->windowsOut[0] = static_cast<uint64_t>(comm->GetCclBuffer()->GetAddr());
+    combinOpParam.winSize = static_cast<uint64_t>(comm->GetCclBuffer()->GetSize());
+    combinOpParam.windowsOut[0] = static_cast<uint64_t>(comm->GetCclBuffer()->GetAddr());
 
+    HCCL_RUN_INFO("hcclCombinOpParam info: workSpace = [%llu], rankId = [%u], rankDim = [%u], xnAddr = [%llu],"
+              "ckeAddr = [%llu], winSize = [%llu], windowsOut[0] = [%llu], algorithmType = [%u]",
+              combinOpParam.workSpace, combinOpParam.rankId, combinOpParam.rankDim, combinOpParam.xnAddr,
+              combinOpParam.ckeAddr, combinOpParam.winSize, combinOpParam.windowsOut[0], combinOpParam.algorithmType);
+    auto paramSize = sizeof(HcclCombinOpParam);
+    combinOpParamBuffer = std::make_shared<DevBuffer>(paramSize);
+    HrtMemcpy(reinterpret_cast<void *>(combinOpParamBuffer->GetAddr()), paramSize, static_cast<void *>(&combinOpParam),
+              paramSize, RT_MEMCPY_HOST_TO_DEVICE);
+    *commContext = reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
     tokenInfo    = CcuRep::GetTokenInfo(static_cast<uint64_t>(workspaceBuffer->GetAddr()),
                                         static_cast<uint64_t>(workspaceBuffer->GetSize()));
 }
 
-void Mc2Compont::AllocV2()
+void Mc2Compont::AllocV2(void **commContext)
 {
     inputMem = std::make_shared<DevBuffer>(dataCount * DataTypeSizeGet(DataType::INT64) * comm->GetRankSize());
     HCCL_INFO("[Mc2Compont][AllocV2]inputMem addr[%p] size = [%llu]", inputMem->GetAddr(), inputMem->GetSize());
-    if (combinOpParamPtr != nullptr) { 
-        return; 
-    }
 
-    combinOpParamPtr = make_shared<HcclCombinOpParam>();
     constexpr uint32_t comSyncNum      = 2; // 每轮同步使用2个同步信号
     uint32_t           comParamBufSize = CCU_TASK_NUM_MAX * CCU_PARAM_NUM_MAX * CCU_ONE_PARAM_SIZE ;
     uint32_t           comSyncBufSize  = CCU_TASK_NUM_MAX * comSyncNum * CCU_ONE_PARAM_SIZE ;
@@ -197,19 +189,30 @@ void Mc2Compont::AllocV2()
     comParamBuffer                     = std::make_shared<DevBuffer>(comParamBufSize);
     comSyncBuffer                      = std::make_shared<DevBuffer>(comSyncBufSize);
 
-    combinOpParamPtr->workSpace     = static_cast<uint64_t>(workspaceBuffer->GetAddr());
-    combinOpParamPtr->workSpaceSize = MC2_WORKSPACE_SIZE;
-    combinOpParamPtr->rankId        = comm->GetMyRank();
-    combinOpParamPtr->rankDim       = comm->GetRankSize();
-    combinOpParamPtr->xnAddr        = static_cast<uint64_t>(comParamBuffer->GetAddr());
-    combinOpParamPtr->ckeAddr       = static_cast<uint64_t>(comSyncBuffer->GetAddr());
+    HcclCombinOpParam combinOpParam{0};
+    combinOpParam.algorithmType = comm->GetAlgorithmType();
+    combinOpParam.workSpace     = static_cast<uint64_t>(workspaceBuffer->GetAddr());	 
+    combinOpParam.workSpaceSize = MC2_WORKSPACE_SIZE;	 
+    combinOpParam.rankId        = comm->GetMyRank();	 
+    combinOpParam.rankDim       = comm->GetRankSize();	 
+    combinOpParam.xnAddr        = static_cast<uint64_t>(comParamBuffer->GetAddr());	 
+    combinOpParam.ckeAddr       = static_cast<uint64_t>(comSyncBuffer->GetAddr());
     // add cclbuffer info
     if (comm->GetCclBuffer() == nullptr) {
         THROW<Hccl::InternalException>(StringFormat("Cannot get CCL Buffer to fill window!"));
     }
-    combinOpParamPtr->winSize = static_cast<uint64_t>(comm->GetCclBuffer()->GetSize());
-    combinOpParamPtr->windowsOut[0] = static_cast<uint64_t>(comm->GetCclBuffer()->GetAddr());
+    combinOpParam.winSize = static_cast<uint64_t>(comm->GetCclBuffer()->GetSize());
+    combinOpParam.windowsOut[0] = static_cast<uint64_t>(comm->GetCclBuffer()->GetAddr());
 
+    HCCL_RUN_INFO("hcclCombinOpParam info: workSpace = [%llu], rankId = [%u], rankDim = [%u], xnAddr = [%llu],"
+              "ckeAddr = [%llu], winSize = [%llu], windowsOut[0] = [%llu], algorithmType = [%u]",
+              combinOpParam.workSpace, combinOpParam.rankId, combinOpParam.rankDim, combinOpParam.xnAddr,
+              combinOpParam.ckeAddr, combinOpParam.winSize, combinOpParam.windowsOut[0], combinOpParam.algorithmType);
+    auto paramSize = sizeof(HcclCombinOpParam);
+    combinOpParamBuffer = std::make_shared<DevBuffer>(paramSize);
+    HrtMemcpy(reinterpret_cast<void *>(combinOpParamBuffer->GetAddr()), paramSize, static_cast<void *>(&combinOpParam),
+              paramSize, RT_MEMCPY_HOST_TO_DEVICE);
+    *commContext = reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
     tokenInfo    = CcuRep::GetTokenInfo(static_cast<uint64_t>(workspaceBuffer->GetAddr()),
                                         static_cast<uint64_t>(workspaceBuffer->GetSize()));
 }
