@@ -12,6 +12,95 @@
 #include "hccl_comm_pub.h"
 #include "hcomm_res_defs.h"  // ChannelHandle
 #include "../endpoint_pairs/channels/channel.h"  // ChannelStatus 枚举定义
+#include <arpa/inet.h>  // inet_ntop
+#include <malloc.h>     // malloc, free
+
+/**
+ * @brief 将 CommAddr 转换为 IP 地址字符串
+ * @param commAddr 通信地址
+ * @return IP 地址字符串（需要调用者释放）
+ *
+ * @note 对于 IPv4 地址，返回点分十进制格式（如 "192.168.1.1"）
+ * @note 对于 IPv6 地址，返回冒号分隔格式（如 "fe80::204:61ff:fe9d:f156"）
+ * @note 对于非 IP 类型，返回十六进制字符串（如 "id:0x12345678"）
+ * @note 调用者需要使用 free() 释放返回的字符串
+ */
+char* CommAddrToString(const CommAddr& commAddr)
+{
+    const char* funcName = __func__;
+    char* buffer = nullptr;
+
+    switch (commAddr.type) {
+        case COMM_ADDR_TYPE_IP_V4: {
+            buffer = (char*)malloc(INET_ADDRSTRLEN);
+            if (buffer == nullptr) {
+                HCCL_ERROR("[%s] malloc failed for IPv4 address", funcName);
+                return nullptr;
+            }
+            const char* result = inet_ntop(AF_INET, &commAddr.addr, buffer, INET_ADDRSTRLEN);
+            if (result == nullptr) {
+                HCCL_ERROR("[%s] inet_ntop failed for IPv4 address", funcName);
+                free(buffer);
+                return nullptr;
+            }
+            break;
+        }
+        case COMM_ADDR_TYPE_IP_V6: {
+            buffer = (char*)malloc(INET6_ADDRSTRLEN);
+            if (buffer == nullptr) {
+                HCCL_ERROR("[%s] malloc failed for IPv6 address", funcName);
+                return nullptr;
+            }
+            const char* result = inet_ntop(AF_INET6, &commAddr.addr6, buffer, INET6_ADDRSTRLEN);
+            if (result == nullptr) {
+                HCCL_ERROR("[%s] inet_ntop failed for IPv6 address", funcName);
+                free(buffer);
+                return nullptr;
+            }
+            break;
+        }
+        case COMM_ADDR_TYPE_ID: {
+            // ID 类型：返回格式化字符串
+            const int idStrLen = 32;
+            buffer = (char*)malloc(idStrLen);
+            if (buffer == nullptr) {
+                HCCL_ERROR("[%s] malloc failed for ID address", funcName);
+                return nullptr;
+            }
+            (void)snprintf_s(buffer, idStrLen, idStrLen - 1, "id:0x%x", commAddr.id);
+            break;
+        }
+        case COMM_ADDR_TYPE_EID: {
+            // EID 类型：返回十六进制字符串
+            const int eidStrLen = 64;
+            buffer = (char*)malloc(eidStrLen);
+            if (buffer == nullptr) {
+                HCCL_ERROR("[%s] malloc failed for EID address", funcName);
+                return nullptr;
+            }
+            (void)snprintf_s(buffer, eidStrLen, eidStrLen - 1,
+                "eid:%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+                commAddr.eid[0], commAddr.eid[1], commAddr.eid[2], commAddr.eid[3],
+                commAddr.eid[4], commAddr.eid[5], commAddr.eid[6], commAddr.eid[7],
+                commAddr.eid[8], commAddr.eid[9], commAddr.eid[10], commAddr.eid[11],
+                commAddr.eid[12], commAddr.eid[13], commAddr.eid[14], commAddr.eid[15]);
+            break;
+        }
+        default: {
+            // 保留类型或其他：返回通用格式
+            const int rawStrLen = 128;
+            buffer = (char*)malloc(rawStrLen);
+            if (buffer == nullptr) {
+                HCCL_ERROR("[%s] malloc failed for unknown address type", funcName);
+                return nullptr;
+            }
+            (void)snprintf_s(buffer, rawStrLen, rawStrLen - 1, "unknown(type:%d)", commAddr.type);
+            break;
+        }
+    }
+
+    return buffer;
+}
 
 /**
  * @brief 打印 commAddr 详情（本地或远端端点的通信地址）
@@ -22,19 +111,14 @@
 void PrintCommAddr(uint32_t idx, const char* endpointName, const CommAddr& commAddr)
 {
     const char* funcName = __func__;
-    if (commAddr.type == COMM_ADDR_TYPE_IP_V4 || commAddr.type == COMM_ADDR_TYPE_ID) {
-        HCCL_INFO("[%s] channelDescs[%u] %s commAddr: type[%d], addr[0x%x]",
-            funcName, idx, endpointName, commAddr.type, commAddr.id);
-    } else if (commAddr.type == COMM_ADDR_TYPE_EID) {
-        HCCL_INFO("[%s] channelDescs[%u] %s commAddr: type[%d], eid[0x%x:0x%x:0x%x:0x%x]",
-            funcName, idx, endpointName, commAddr.type,
-            *(uint32_t*)&commAddr.eid[0], *(uint32_t*)&commAddr.eid[4],
-            *(uint32_t*)&commAddr.eid[8], *(uint32_t*)&commAddr.eid[12]);
+    char* addrStr = CommAddrToString(commAddr);
+    if (addrStr != nullptr) {
+        HCCL_INFO("[%s] channelDescs[%u] %s commAddr: type[%d], addr[%s]",
+            funcName, idx, endpointName, commAddr.type, addrStr);
+        free(addrStr);
     } else {
-        HCCL_INFO("[%s] channelDescs[%u] %s commAddr: type[%d], raws[0x%x:0x%x:0x%x:0x%x]",
-            funcName, idx, endpointName, commAddr.type,
-            *(uint32_t*)&commAddr.raws[0], *(uint32_t*)&commAddr.raws[4],
-            *(uint32_t*)&commAddr.raws[8], *(uint32_t*)&commAddr.raws[12]);
+        HCCL_ERROR("[%s] channelDescs[%u] %s commAddr: failed to convert to string",
+            funcName, idx, endpointName);
     }
 }
 

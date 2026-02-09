@@ -34,6 +34,18 @@ void PrintChannelDescInfo(uint32_t idx, const HcclChannelDesc& channelDesc);
 void PrintCommAddr(uint32_t idx, const char* endpointName, const CommAddr& commAddr);
 
 /**
+ * @brief 将 CommAddr 转换为 IP 地址字符串
+ * @param commAddr 通信地址
+ * @return IP 地址字符串（需要调用者释放）
+ *
+ * @note 对于 IPv4 地址，返回点分十进制格式（如 "192.168.1.1"）
+ * @note 对于 IPv6 地址，返回冒号分隔格式（如 "fe80::204:61ff:fe9d:f156"）
+ * @note 对于非 IP 类型，返回十六进制字符串（如 "id:0x12345678"）
+ * @note 调用者需要使用 free() 释放返回的字符串
+ */
+char* CommAddrToString(const CommAddr& commAddr);
+
+/**
  * @brief 打印端点位置信息（本地或远端端点的位置）
  * @param idx channel 索引
  * @param endpointName 端点名称（"localEndpoint" 或 "remoteEndpoint"）
