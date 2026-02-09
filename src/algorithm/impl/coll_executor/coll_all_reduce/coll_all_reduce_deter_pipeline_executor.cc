@@ -99,13 +99,15 @@ HcclResult CollAllReduceDeterPipelineExecutor::RunLoopInner(OpParam &param, cons
         execMem.inputPtr, execMem.outputPtr, execMem.count, curSize);
     CHK_PRT_RET((execMem.count == 0),
         HCCL_ERROR("[CollAllReduceDeterPipelineExecutor][RunLoop]In OP_BASE curCount is zero."), HCCL_E_PARA);
-
+    
+    // 数据分成ranksize份，每份的起始偏移和大小
+    CHK_RET(PrepareDataSlice(execMem, unitSize));
     /* 设置子图复用标志 */
     auto autoSelectedAlgTypeLevel1 = static_cast<u32>(algType_.algoLevel1);
     bool hugeData = IsHugeData(curSize);    // override
     bool smallData = IsSmallData(param.DataDes.count * unitSize, curSize);  // override
-    constexpr s64 HCCL_MEDIUM_COUNT_2_MB = 2 * 1024 * 1024;
-    u64 sliceNum = (curSize / topoAttr_.userRankSize) < HCCL_MEDIUM_COUNT_2_MB ? 1 : 0 ;
+    constexpr u64 HCCL_MEDIUM_COUNT_2_MB = 2 * 1024 * 1024;
+    u64 sliceNum = bufferSlices_[topoAttr_.userRank].size < HCCL_MEDIUM_COUNT_2_MB ? 1 : 0 ;
     bool dataSplit = false;
     u8 deterministic = topoMatcher_->GetExternalInputHcclDeterministic();
     auto opMeta = HcclOpMetaInfo::GetOneForAllReduce(autoSelectedAlgTypeLevel1,
@@ -129,19 +131,18 @@ HcclResult CollAllReduceDeterPipelineExecutor::RunLoopInner(OpParam &param, cons
     return ret;
 }
 
-HcclResult CollAllReduceDeterPipelineExecutor::PrepareDataSlice(const ExecMem &execMem, const u32 &unitSize,
-    std::vector<Slice> &bufferSlices)
+HcclResult CollAllReduceDeterPipelineExecutor::PrepareDataSlice(const ExecMem &execMem, const u32 &unitSize)
 {
-    bufferSlices.resize(topoAttr_.userRankSize);
+    bufferSlices_.resize(topoAttr_.userRankSize);
     u64 totalSize = execMem.count * unitSize;
     u64 sliceSize = CalcCountPerSlice(execMem.count, unitSize);
     for (u32 sliceIndex = 0; sliceIndex < topoAttr_.userRankSize; sliceIndex++) {
-        bufferSlices[sliceIndex].size = totalSize > sliceSize ? sliceSize : totalSize;
-        bufferSlices[sliceIndex].offset = sliceIndex * sliceSize;
-        totalSize -= bufferSlices[sliceIndex].size;
+        bufferSlices_[sliceIndex].size = totalSize > sliceSize ? sliceSize : totalSize;
+        bufferSlices_[sliceIndex].offset = sliceIndex * sliceSize;
+        totalSize -= bufferSlices_[sliceIndex].size;
         HCCL_DEBUG("[CollAllReduceDeterPipelineExecutor][PrepareDataSlice]tag[%s], buffer slice i[%u], "
             "size[%llu], offset[%llu], left size[%llu]",
-            tag_.c_str(), bufferSlices[sliceIndex].size, bufferSlices[sliceIndex].offset, totalSize);
+            tag_.c_str(), bufferSlices_[sliceIndex].size, bufferSlices_[sliceIndex].offset, totalSize);
     }
     return HCCL_SUCCESS;
 }
@@ -159,8 +160,6 @@ HcclResult CollAllReduceDeterPipelineExecutor::KernelRun(const OpParam &param, E
     SubCommInfo level1CommInfo = GetSubCommInfo(COMM_LEVEL1, commIndex);
 
     u32 unitSize = SIZE_TABLE[param.DataDes.dataType];
-    std::vector<Slice> bufferSlices; // 数据分成ranksize份，每份的起始偏移和大小
-    CHK_RET(PrepareDataSlice(execMem, unitSize, bufferSlices));
 
     CHK_RET(ActiveSlaveStreams(param.stream));
 
@@ -171,7 +170,7 @@ HcclResult CollAllReduceDeterPipelineExecutor::KernelRun(const OpParam &param, E
     HcomCollOpInfo opInfo = {"", execMem.inputPtr, execMem.outputPtr, param.DataDes.count, param.DataDes.dataType,
         param.root, param.reduceType};
 
-    CHK_RET(tempAlg->Prepare(&opInfo, execMem.inputMem, execMem.outputMem, execMem.count, bufferSlices, level0CommInfo,
+    CHK_RET(tempAlg->Prepare(&opInfo, execMem.inputMem, execMem.outputMem, execMem.count, bufferSlices_, level0CommInfo,
         level1CommInfo, const_cast<Stream&>(param.stream), algResResp_->slaveStreams, algResResp_->notifiesMain,
         algResResp_->notifiesAux));
     CHK_RET(tempAlg->RunAsync());
