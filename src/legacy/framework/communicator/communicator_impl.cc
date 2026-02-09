@@ -824,7 +824,12 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         SnapShotParser::GetInstance().SetIsNeedLoadOp(false);
         if (rankSize == 1) {
             HCCL_WARNING("[CommunicatorImpl][%s] ranksize == 1, enter SingleRankProc", __func__);
+            TraceStartInfo(HrtGetStreamId(stream), opParams, OpMode::OFFLOAD);
+            TraceOpInfo(opParams);
+            HcclUs startut = std::chrono::steady_clock::now();
             SingleRankProc(opParams, stream);
+            HcclUs endut = std::chrono::steady_clock::now();
+            TraceEndInfo(startut, endut, opParams);
             return HcclResult::HCCL_SUCCESS;
         }
         // 避免transport建链前，通讯域被摧毁
