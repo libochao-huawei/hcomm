@@ -339,13 +339,10 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
     CHK_PTR_NULL(buffer);
     CHK_PTR_NULL(size);
 
-    u32 memNum = 0;
-    // 先查询实际内存块数量
-    CHK_RET(HcommChannelGetRemoteMem(channel, nullptr, &memNum, nullptr));
-
-    // 根据实际数量分配 vector，避免缓冲区溢出
-    std::vector<HcommMem *> remoteMemList(memNum);
-    std::vector<char *> memTags(memNum);
+    u32 memNum = 0;  // 接收内存块数量
+    /* 实现获取buffer Num的接口，此处Size为10的vector暂存 */
+    std::vector<HcommMem *> remoteMemList(10);
+    std::vector<char *> memTags(10);
     CHK_RET(HcommChannelGetRemoteMem(channel, remoteMemList.data(), &memNum, memTags.data()));
 
     for (u32 i = 0; i < memNum; i++) {
