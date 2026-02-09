@@ -8,6 +8,22 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# -----------------------------------------------------------------------------------------------------------
+
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# -----------------------------------------------------------------------------------------------------------
+
 set(BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../comm)
 set(ra_peer_list
     ra_peer.c
@@ -45,6 +61,12 @@ target_include_directories(ra_peer PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../rdma_agent/comm/ctx
     ${CMAKE_CURRENT_SOURCE_DIR}/../../rdma_service/ctx
 )
+
+if(NOT BUILD_OPEN_PROJECT)
+    target_include_directories(ra_peer PRIVATE
+        ${TOP_DIR}/runtime/pkg_inc/base
+    )
+endif()
 
 target_link_directories(ra_peer PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64

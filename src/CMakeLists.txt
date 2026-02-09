@@ -217,8 +217,14 @@ else()
         ${TOP_DIR}/hcomm/
         ${TOP_DIR}/hcomm/include/hccl/                      # ${ASCEND_CANN_PACKAGE_PATH}/include
         ${TOP_DIR}/hcomm/pkg_inc
+        ${TOP_DIR}/hcomm/pkg_inc/hccl
         ${TOP_DIR}/hcomm/src/platform/hccp/inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
+        ${TOP_DIR}/hcomm-legacy/src/platform/legacy/inc
+        ${TOP_DIR}/runtime/include/external
+        ${TOP_DIR}/runtime/pkg_inc/aicpu_sched
+        ${TOP_DIR}/runtime/pkg_inc/profiling
+        ${TOP_DIR}/runtime/pkg_inc/runtime
     )
 endif()
 
