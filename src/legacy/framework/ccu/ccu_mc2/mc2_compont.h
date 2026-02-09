@@ -36,8 +36,8 @@ public:
     u32 GetCcuMc2ServerNum();
 
 private:
-    void     Alloc(void **commContext);
-    void     AllocV2(void **commContext);
+    void     Alloc(HcclCombinOpParam& combinOpParam);
+    void     AllocV2(HcclCombinOpParam& combinOpParam);
     void     GenerateCcuServer(const std::unordered_set<uint64_t> &algoTemplateRequire);
     bool     FindCcuServer(const std::unordered_set<uint64_t> &algoTemplateRequire,
                            InsExeQue::ExtInsExeEntityId       &execId) const;
@@ -71,6 +71,8 @@ private:
 
     std::vector<u64> dataCounts;
     std::vector<u64> displs;
+
+    HcclCombinOpParam* hcclCombinOpParamPtr;
 };
 } // namespace Hccl
 #endif // MC2_COMPONT_H
