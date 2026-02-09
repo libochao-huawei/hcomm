@@ -199,7 +199,6 @@ inline HccnResult HccnRpingInitTargetAttr(HccnRpingTargetInfo *targetInter, Rpin
     HccnResult ret = HccnRpingInitInputTargetAttr(targetInter, inputInter, n);
     if (ret != HCCN_SUCCESS) {
         HCCL_ERROR("[HccnRpingInitTargetAttr] invalid eid");
-        delete[] inputInter;
         return HCCN_E_PARA;
     }
     inputInter[n].srcPort = targetInter[n].srcPort;
@@ -253,8 +252,12 @@ HccnResult HccnRpingAddTargetWithCfg(HccnRpingCtx rpingCtx, uint32_t targetNum, 
     RpingInput *input = new (std::nothrow) RpingInput[targetNum];
     CHK_PRT_RET(input == nullptr, HCCL_ERROR("[HccnRpingAddTarget]memory alloc failed."), HCCN_E_MEM);
     for (uint32_t m = 0; m < targetNum; m++) {
-        CHK_PRT_RET(HccnRpingInitTargetAttr(target, input, m) != HCCN_SUCCESS,
-            HCCL_ERROR("[HccnRpingAddTarget]init target attr fail, ret[%d].", ret), HCCN_E_PARA);
+        HccnResult res = HccnRpingInitTargetAttr(target, input, m);
+        if (res != HCCN_SUCCESS) {
+            delete[] input;
+            HCCL_ERROR("[HccnRpingAddTarget]init target attr fail, ret[%d].", ret);
+            return HCCN_E_PARA;
+        }
         s32 sRet = memcpy_s(input[m].payload, input[m].len, target[m].payload, target[m].payloadLen);
         if (sRet != EOK) {
             HCCL_ERROR("[HccnRpingAddTarget]memcpy payload fail. errorno[%d] params:dstMaxSize[%u] srclen[%d]",
