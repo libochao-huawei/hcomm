@@ -213,6 +213,7 @@ void Mc2Compont::AllocV2(HcclCombinOpParam& combinOpParam)
     }
     combinOpParam.winSize = static_cast<uint64_t>(comm->GetCclBuffer()->GetSize());
     combinOpParam.windowsOut[0] = static_cast<uint64_t>(comm->GetCclBuffer()->GetAddr());
+    hcclCombinOpParamPtr = &(combinOpParam);
 
     tokenInfo    = CcuRep::GetTokenInfo(static_cast<uint64_t>(workspaceBuffer->GetAddr()),
                                         static_cast<uint64_t>(workspaceBuffer->GetSize()));
