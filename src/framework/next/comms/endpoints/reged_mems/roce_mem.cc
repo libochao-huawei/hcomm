@@ -39,8 +39,7 @@ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
     auto findPair = localRdmaRmaBufferMgr_->Find(tempKey);
     if(findPair.first) {
         localRdmaRmaBuffer = findPair.second;
-    }
-    else {
+    } else {
         // 构造LocalRdmaRmaBuffer
         std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
         EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, mem.type, memTag)),
@@ -71,7 +70,8 @@ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
                 "{%p, %llu}", mem.addr, mem.size);;
         return HCCL_E_AGAIN;
     }
- 
+
+    this->allRegisteredBuffers_.push_back(localBuffer);
     return HCCL_SUCCESS;
 }
 
@@ -89,10 +89,23 @@ HcclResult RoceRegedMemMgr::UnregisterMemory(void* memHandle)
     EXECEPTION_CATCH(resultPair = this->localRdmaRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
     // 计数器大于1时，返回false，说明框架层有其它设备在使用这段内存，返回HCCL_E_AGAIN
     if (!resultPair) {
-        HCCL_INFO("[RoceRegedMemMgr][[DeregMem] Memory reference count is larger than 0"
+        HCCL_INFO("[RoceRegedMemMgr][[UnregisterMemory] Memory reference count is larger than 0"
                   "(used by other RemoteRank), do not deregister memory.");
         return HCCL_E_AGAIN;
     }
+
+    // 删除vector中的LocalRdmaRmaBuffer
+    auto it = std::find_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
+            [buffer](const std::shared_ptr<Hccl::LocalRdmaRmaBuffer>& ptr) {
+                return ptr.get() == buffer;
+            });
+
+    if (it == allRegisteredBuffers_.end()) {
+        HCCL_ERROR("[RoceRegedMemMgr][UnregisterMemory] Memory not found in vector!");
+        return HCCL_E_NOT_FOUND;
+    }
+
+    allRegisteredBuffers_.erase(it);
     return HCCL_SUCCESS;
 }
 
@@ -103,17 +116,17 @@ HcclResult RoceRegedMemMgr::GetMemDesc(const EndpointDesc endpointDesc, Hccl::Lo
     dto->Serialize(localRdmaRmaBufferStream);
     std::vector<char> tempLocalMemDesc;
     localRdmaRmaBufferStream.Dump(tempLocalMemDesc);
-    HCCL_DEBUG("[RoceRegedMemMgr][MemoryExport] [%s] dump data size [%u]", __func__, tempLocalMemDesc.size());
+    HCCL_DEBUG("[RoceRegedMemMgr][GetMemDesc] [%s] dump data size [%u]", __func__, tempLocalMemDesc.size());
     // 判断内存描述符是否正确导出
     if (tempLocalMemDesc.empty()) {
-        HCCL_ERROR("[RoceRegedMemMgr][MemoryExport] [%s] tempLocalMemDesc export failed.", __func__);
+        HCCL_ERROR("[RoceRegedMemMgr][GetMemDesc] [%s] tempLocalMemDesc export failed.", __func__);
         return HCCL_E_INTERNAL;
     }
 
     std::vector<char> tempLocalEndpointDesc;
     tempLocalEndpointDesc.resize(sizeof(EndpointDesc));
     if(memcpy_s(tempLocalEndpointDesc.data(), sizeof(EndpointDesc), &endpointDesc, sizeof(EndpointDesc)) != EOK) {
-        HCCL_ERROR("[RoceRegedMemMgr][MemoryExport] [%s] endpointDesc memcpy_s failed.", __func__);
+        HCCL_ERROR("[RoceRegedMemMgr][GetMemDesc] [%s] endpointDesc memcpy_s failed.", __func__);
         return HCCL_E_INTERNAL;
     }
 
@@ -176,7 +189,7 @@ HcclResult RoceRegedMemMgr::MemoryImport(const void *memDesc, uint32_t descLen, 
     );
 
     // 放到RemoteRdmaRmaBufferMgr_
-    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(remoteRdmaRmaBuffer->GetAddr()), remoteRdmaRmaBuffer->GetSize());
+    hccl::BufferKey<uintptr_t, u64> tempKey(static_cast<uintptr_t>(dto.addr), dto.size);
     if(remoteRdmaRmaBufferMgrs_.find(endpointDesc) == remoteRdmaRmaBufferMgrs_.end()) {
         std::unique_ptr<RemoteRdmaRmaBufferMgr> remoteRdmaRmaBufferMgr;
         EXECEPTION_CATCH((remoteRdmaRmaBufferMgr = std::make_unique<RemoteRdmaRmaBufferMgr>()),
@@ -226,6 +239,21 @@ HcclResult RoceRegedMemMgr::MemoryUnimport(const void *memDesc, uint32_t descLen
     if (!remoteRdmaRmaBufferMgrs_[endpointDesc]->size()) {
         remoteRdmaRmaBufferMgrs_.erase(endpointDesc);
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult RoceRegedMemMgr::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
+{
+    HCCL_INFO("[%s] Begin", __FUNCTION__);
+    CHK_PTR_NULL(memHandleNum);
+
+    uint32_t bufferCount = static_cast<uint32_t>(allRegisteredBuffers_.size());
+    *memHandleNum = bufferCount;
+
+    HCCL_INFO("[RoceRegedMemMgr][[GetAllMemHandles] memHandleNum is [%d]", bufferCount);
+
+    *memHandles = (bufferCount == 0) ? nullptr : reinterpret_cast<void *>(allRegisteredBuffers_.data());
+
     return HCCL_SUCCESS;
 }
 

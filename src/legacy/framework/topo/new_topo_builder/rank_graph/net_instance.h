@@ -123,7 +123,7 @@ public:
         }
 
         explicit Fabric(FabricId fabricId)
-            : Node(NodeType::FABRIC), fabricId_(fabricId), planeId_("") 
+            : Node(NodeType::FABRIC), fabricId_(fabricId), planeId_("")
         {
             nodeId_ = GenerateNodeId(fabricId);
         }
@@ -183,7 +183,7 @@ public:
         TopoType topoType;
         std::set<RankId> ranks;
         TopoInstance() = default;
- 
+
         TopoInstance(u32 instId) : topoInstId(instId)
         {}
     };
@@ -252,5 +252,5 @@ public:
 };
 
 } // namespace Hccl
- 
+
 #endif // NET_INSTANCE_H

@@ -109,4 +109,10 @@ HcclResult UbMemRegedMemMgr::MemoryUnimport(const void *memDesc, uint32_t descLe
     HCCL_INFO("UbMemRegedMemMgr MemoryUnimport is not supported.");
     return HCCL_SUCCESS;
 }
+
+HcclResult UbMemRegedMemMgr::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
+{
+    HCCL_INFO("UbMemRegedMemMgr GetAllMemHandles is not supported.");
+    return HCCL_SUCCESS;
+}
 }

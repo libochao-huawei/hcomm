@@ -45,6 +45,12 @@ target_include_directories(ra PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/async
 )
 
+if(NOT BUILD_OPEN_PROJECT)
+    target_include_directories(ra PRIVATE
+        ${TOP_DIR}/runtime/pkg_inc/base
+    )
+endif()
+
 target_link_directories(ra PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )

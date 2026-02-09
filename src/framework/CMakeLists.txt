@@ -355,6 +355,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather/all_gather_ahc_broke.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather/all_gather_hd_stage.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather/all_gather_hccs_sio.cc
+        
 
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_reduce/all_reduce_recursive_hd.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_reduce/all_reduce_ring.cc
@@ -465,9 +466,11 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/coll_all_reduce_ring_zerocopy_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/coll_all_reduce_order_preserved_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/coll_all_reduce_ars_for_910_93_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/coll_all_reduce_mid_count_for_910_93_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/310P/coll_all_reduce_for_310p_ring_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/310P/coll_all_reduce_for_310p_doubling_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/310P/coll_all_reduce_for_310p_doubling_direct_executor.cc
+        
 
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/coll_all_gather_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/coll_all_gather_comm_executor.cc
@@ -486,6 +489,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/coll_all_gather_ring_zerocopy_exchange_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/coll_all_gather_ring_zerocopy_pipeline_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/coll_all_gather_ars_for_910_93_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/coll_all_gather_mid_count_for_910_93_executor.cc
 
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather_v/coll_all_gather_v_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather_v/coll_all_gather_v_ring_for_910_93_executor.cc

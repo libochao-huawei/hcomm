@@ -16,45 +16,6 @@
 
 namespace hccl {
 
-HcclResult ThreadMgr::CommEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type)
-{
-    switch (engine) {
-        case COMM_ENGINE_CPU:
-        case COMM_ENGINE_CPU_TS:
-        case COMM_ENGINE_CCU:
-            type =  NotifyLoadType::HOST_NOTIFY;
-            break;
-        case COMM_ENGINE_AICPU:
-        case COMM_ENGINE_AICPU_TS:
-            type =  NotifyLoadType::DEVICE_NOTIFY;
-            break;
-        default:
-            HCCL_ERROR("[ThreadMgr] Unknown comm engine type: %d", engine);
-            return HCCL_E_PARA;
-    }
-    return HCCL_SUCCESS;
-}
-
-HcclResult ThreadMgr::CommEngineToStreamType(CommEngine engine, StreamType &type)
-{
-    switch (engine) {
-        case COMM_ENGINE_CPU:
-        case COMM_ENGINE_CPU_TS:
-        case COMM_ENGINE_CCU:
-            type = StreamType::STREAM_TYPE_ONLINE; // 单算子使用online，图模式使用offine
-            break;
-        case COMM_ENGINE_AICPU:
-        case COMM_ENGINE_AICPU_TS:
-            type = StreamType::STREAM_TYPE_DEVICE;
-            break;
-        // 暂不支持AIV
-        case COMM_ENGINE_AIV:
-        default:
-            HCCL_ERROR("[ThreadMgr] Unknown comm engine type: %d", engine);
-            return HCCL_E_PARA;
-    }
-    return HCCL_SUCCESS;
-}
 
 ThreadMgr::ThreadMgr(uint32_t threadNum, uint32_t notifyNumPerThread, std::string commId, 
     aclrtBinHandle binHandle, const ManagerCallbacks& callbacks) : threadNum_(threadNum), notifyNumPerThread_(notifyNumPerThread), 
@@ -203,7 +164,7 @@ HcclResult ThreadMgr::HcclThreadAcquireWithStream(CommEngine engine,
     }
 
     NotifyLoadType notifyLoadType;
-    CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
+    CHK_RET(CommHostEngineToNotifyLoadType(engine, notifyLoadType));
     std::shared_ptr<CpuTsThread> handle;
     EXECEPTION_CATCH(handle = std::make_shared<CpuTsThread>(stream, notifyNum, notifyLoadType), return HCCL_E_PTR);
     CHK_RET(handle->Init());

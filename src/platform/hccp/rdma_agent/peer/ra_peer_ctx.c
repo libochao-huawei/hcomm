@@ -76,7 +76,8 @@ int ra_peer_ctx_get_async_events(struct ra_ctx_handle *ctx_handle, struct async_
     ret = rs_ctx_get_async_events(&dev_info, events, num);
     RaPeerMutexUnlock(phy_id);
     if (ret != 0) {
-        hccp_err("[init][ra_peer_ctx]ctx init failed[%d] phy_id[%u]", ret, phy_id);
+        hccp_err("[get][async_events]rs_ctx_get_async_events failed ret:%d phy_id:%u dev_index:0x%x", ret, phy_id,
+            ctx_handle->dev_index);
     }
 
     return ret;
