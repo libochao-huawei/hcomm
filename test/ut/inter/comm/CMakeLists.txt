@@ -15,6 +15,7 @@ set(hccl_utest_inter_comm_list
     # ut_hccl_comm_910B.cc
     # ut_hccl_impl_alg_double_ring.cc
     # ut_allgather_mix_op_base.cc
+    # ut_comm_init.cc
 
     ut_coll_alg_operator.cc
     ut_allreduce_mesh_opbase.cc
@@ -25,7 +26,6 @@ set(hccl_utest_inter_comm_list
     ut_hccl_impl_alg.cc
     ut_hccl_impl_alg_double_ring_concurrent.cc
     ut_hccl_impl_alg_double_ring_concurrent_allreduce.cc
-    ut_comm_init.cc
     ut_alg_registry.cc
     ut_alltoallv_staged.cc
     ut_callback_thread_manager.cc

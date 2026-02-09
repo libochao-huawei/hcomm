@@ -98,7 +98,6 @@ protected:
 HcclDispatcher CommInitTest::dispatcherPtr = nullptr;
 DispatcherPub *CommInitTest::dispatcher = nullptr;
 
-#if 0
 TEST_F(CommInitTest, ut_HcclCommInitRootInfoConfig_not_set_config_01)
 {
     setenv("HCCL_RDMA_TC", "120", 1);
@@ -134,7 +133,6 @@ TEST_F(CommInitTest, ut_HcclCommInitRootInfoConfig_not_set_config_01)
     unsetenv("HCCL_RDMA_SL");
     GlobalMockObject::verify();
 }
-#endif
 
 TEST_F(CommInitTest, ut_HcclCommInitRootInfoConfig_not_set_config_02)
 {
