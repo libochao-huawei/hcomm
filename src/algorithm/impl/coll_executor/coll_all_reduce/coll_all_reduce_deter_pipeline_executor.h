@@ -36,8 +36,9 @@ private:
 
     /* **************** 数据准备*************** */
     u64 CalcCountPerSlice(const u64 &totalCount, const u32 &unitSize);
-    HcclResult PrepareDataSlice(const ExecMem &execMem, const u32 &unitSize, std::vector<Slice> &bufferSlices);
+    HcclResult PrepareDataSlice(const ExecMem &execMem, const u32 &unitSize);
     u64 totalSize_{0U};
+    std::vector<Slice> bufferSlices_;
 };
 
 } // namespace hccl
