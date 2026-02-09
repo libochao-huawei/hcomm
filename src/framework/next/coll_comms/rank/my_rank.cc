@@ -13,6 +13,7 @@
 #include "channel.h"
 #include "endpoint_pair.h"
 #include "hccl_res.h"
+#include "../common/coll_comm_res_log.h"  // 日志打印函数
 
 using namespace hcomm;
 
@@ -225,7 +226,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
     return HCCL_SUCCESS;
 }
 
-HcclResult MyRank::BatchConnectChannels(ChannelHandle *channelHandles, uint32_t channelNum)
+HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, ChannelHandle *channelHandles, uint32_t channelNum)
 {
     // TODO: 从环境变量里面拿 timeoutSec
     constexpr uint32_t timeoutSec = 120;
@@ -250,6 +251,23 @@ HcclResult MyRank::BatchConnectChannels(ChannelHandle *channelHandles, uint32_t 
                 std::chrono::steady_clock::now() - startTime).count();
             HCCL_ERROR("[%s] channel connect timeout after %u sec, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
                 __func__, timeoutSec, channelNum, elapsed, retryCount);
+
+            // 打印错误详情表格（只打印异常状态的 Channel）
+            PrintChannelErrorTableHeader(rankId_);
+            for (uint32_t i = 0; i < channelNum; ++i) {
+                if (statusList[i] != hcomm::ChannelStatus::READY) {
+                    PrintChannelErrorInfo(i, rankId_, channelDescs[i], channelHandles[i], statusList[i], elapsed);
+                }
+            }
+
+            // 表格外单独打印详细信息（FAILED 或 TIMEOUT 状态）
+            for (uint32_t i = 0; i < channelNum; ++i) {
+                if (statusList[i] == hcomm::ChannelStatus::FAILED ||
+                    statusList[i] == hcomm::ChannelStatus::SOCKET_TIMEOUT) {
+                    PrintChannelDescInfo(i, channelDescs[i]);
+                }
+            }
+
             return HCCL_E_TIMEOUT;
         }
         if (ret == HCCL_E_AGAIN) {
@@ -269,10 +287,28 @@ HcclResult MyRank::BatchConnectChannels(ChannelHandle *channelHandles, uint32_t 
                 __func__, channelNum, elapsed, retryCount);
             break;
         } else {
+            // 失败分支：HCCL_E_NETWORK、HCCL_E_IN_STATUS 等
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime).count();
             HCCL_ERROR("[%s] channel connect failed, channelNum[%u], ret[%d], elapsed[%lld]ms, retryCount[%u]",
                 __func__, channelNum, ret, elapsed, retryCount);
+
+            // 打印错误详情表格（只打印异常状态的 Channel）
+            PrintChannelErrorTableHeader(rankId_);
+            for (uint32_t i = 0; i < channelNum; ++i) {
+                if (statusList[i] != hcomm::ChannelStatus::READY) {
+                    PrintChannelErrorInfo(i, rankId_, channelDescs[i], channelHandles[i], statusList[i], elapsed);
+                }
+            }
+
+            // 表格外单独打印详细信息（FAILED 或 TIMEOUT 状态）
+            for (uint32_t i = 0; i < channelNum; ++i) {
+                if (statusList[i] == hcomm::ChannelStatus::FAILED ||
+                    statusList[i] == hcomm::ChannelStatus::SOCKET_TIMEOUT) {
+                    PrintChannelDescInfo(i, channelDescs[i]);
+                }
+            }
+
             return ret;
         }
     }
@@ -307,7 +343,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
 
     // 3. 连接 Channel
     HCCL_INFO("[CreateChannels] Step 3/3: BatchConnectChannels start, channelNum[%u]", channelNum);
-    CHK_RET(BatchConnectChannels(hostChannelHandleList, channelNum));
+    CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
     HCCL_INFO("[CreateChannels] Step 3/3: BatchConnectChannels success");
 
     // 4. channel kernel launch

@@ -50,7 +50,7 @@ private:
         const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs);
     HcclResult BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles);
-    HcclResult BatchConnectChannels(ChannelHandle *channelHandles, uint32_t channelNum);
+    HcclResult BatchConnectChannels(const HcclChannelDesc* channelDescs, ChannelHandle *channelHandles, uint32_t channelNum);
     HcclResult CheckChannelParam(CommEngine engine, const HcclChannelDesc &channelDesc, uint32_t index);
 
     aclrtBinHandle binHandle_{nullptr};

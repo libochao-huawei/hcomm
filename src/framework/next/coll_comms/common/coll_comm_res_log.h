@@ -41,6 +41,36 @@ void PrintCommAddr(uint32_t idx, const char* endpointName, const CommAddr& commA
  */
 void PrintEndpointLoc(uint32_t idx, const char* endpointName, const EndpointLoc& loc);
 
+/**
+ * @brief 打印 Channel 连接错误信息表格头部
+ * @param localRank 本地 Rank ID
+ */
+void PrintChannelErrorTableHeader(uint32_t localRank);
+
+/**
+ * @brief 打印单个 Channel 的错误状态（表格行）
+ * @param idx Channel 索引
+ * @param localRank 本地 Rank ID
+ * @param channelDesc Channel 描述符
+ * @param channelHandle Channel 句柄
+ * @param status Channel 状态值（int32_t，对应 ChannelStatus 枚举）
+ * @param elapsedMs 已耗时（毫秒）
+ */
+void PrintChannelErrorInfo(
+    uint32_t idx,
+    uint32_t localRank,
+    const HcclChannelDesc& channelDesc,
+    ChannelHandle channelHandle,
+    int32_t status,
+    uint64_t elapsedMs);
+
+/**
+ * @brief 将 ChannelStatus 状态值转换为可读字符串（使用 Describe() 方法）
+ * @param status ChannelStatus 状态值
+ * @return 状态字符串（如 "ChannelStatus::SOCKET_TIMEOUT"）
+ */
+const char* ChannelStatusToString(int32_t status);
+
 #ifdef __cplusplus
 }
 #endif

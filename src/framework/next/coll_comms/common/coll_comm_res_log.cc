@@ -10,6 +10,8 @@
 
 #include "coll_comm_res_log.h"
 #include "hccl_comm_pub.h"
+#include "hcomm_res_defs.h"  // ChannelHandle
+#include "../endpoint_pairs/channels/channel.h"  // ChannelStatus 枚举定义
 
 /**
  * @brief 打印 commAddr 详情（本地或远端端点的通信地址）
@@ -86,4 +88,51 @@ void PrintChannelDescInfo(uint32_t idx, const HcclChannelDesc& channelDesc)
             funcName, idx, channelDesc.roceAttr.queueNum, channelDesc.roceAttr.retryCnt,
             channelDesc.roceAttr.retryInterval, channelDesc.roceAttr.tc, channelDesc.roceAttr.sl);
     }
+}
+
+/**
+ * @brief 打印 Channel 连接错误信息表格头部
+ */
+void PrintChannelErrorTableHeader(uint32_t localRank)
+{
+    HCCL_ERROR("   _________________________CHANNEL_CONNECT_ERROR_INFO___________________________");
+    HCCL_ERROR("   |  comm error, localRank[%u]", localRank);
+    HCCL_ERROR("   |  idx  | localRank | remoteRank | channelHandle |            Status            | Protocol |  elapsed  |");
+    HCCL_ERROR("   |-------|-----------|------------|---------------|----------------------------|----------|-----------|");
+}
+
+/**
+ * @brief 将 ChannelStatus 状态值转换为可读字符串
+ */
+const char* ChannelStatusToString(int32_t status)
+{
+    hcomm::ChannelStatus::Value statusValue = static_cast<hcomm::ChannelStatus::Value>(status);
+    hcomm::ChannelStatus statusEnum(statusValue);
+    // 返回静态字符串以避免生命周期问题
+    static thread_local std::string statusStr;
+    statusStr = statusEnum.Describe();  // 返回 "ChannelStatus::SOCKET_TIMEOUT" 等
+    return statusStr.c_str();
+}
+
+/**
+ * @brief 打印单个 Channel 的错误状态
+ */
+void PrintChannelErrorInfo(
+    uint32_t idx,
+    uint32_t localRank,
+    const HcclChannelDesc& channelDesc,
+    ChannelHandle channelHandle,
+    int32_t status,
+    uint64_t elapsedMs)
+{
+    const char* statusStr = ChannelStatusToString(status);
+
+    HCCL_ERROR("   | %5u | %9u | %10u | 0x%013llx | %26s | %8d | %9llu |",
+        idx,
+        localRank,
+        channelDesc.remoteRank,
+        static_cast<unsigned long long>(channelHandle),
+        statusStr,
+        channelDesc.channelProtocol,
+        static_cast<unsigned long long>(elapsedMs));
 }
