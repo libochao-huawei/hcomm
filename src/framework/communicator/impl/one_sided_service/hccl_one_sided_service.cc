@@ -34,9 +34,10 @@ std::unique_ptr<Stream> g_launchStream = nullptr;
 std::mutex g_launchMutex;
 
 HcclOneSidedService::HcclOneSidedService(unique_ptr<HcclSocketManager> &socketManager,
-    unique_ptr<NotifyPool> &notifyPool)
+    unique_ptr<NotifyPool> &notifyPool, const CommConfig &commConfig)
     : IHcclOneSidedService(socketManager, notifyPool)
 {
+    commConfig_ = commConfig;
 }
 
 HcclOneSidedService::~HcclOneSidedService()
@@ -332,7 +333,7 @@ HcclResult HcclOneSidedService::InitAicpuUnfoldMode()
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
     aicpuUnfoldMode_ = (deviceType == DevType::DEV_TYPE_910_93) &&
-        GetExternalInputHcclAicpuUnfold();  // keep env flag for perf test
+        commConfig_.GetConfigAicpuUnfold();  // keep env flag for perf test
     HCCL_INFO("[InitAicpuUnfoldMode] A3[%u] rdma[%u] aicpu[%u]", (deviceType == DevType::DEV_TYPE_910_93),
         (netDevRdmaCtx_ != nullptr), aicpuUnfoldMode_);
     if (aicpuUnfoldMode_) {

@@ -316,7 +316,9 @@ void CcuContext::LocalPost(const CcuRep::MaskSignal &sig, uint32_t mask)
     if (CurrentBlock()->Type() == CcuRep::CcuRepType::LOOP_BLOCK) {
         THROW<CcuApiException>("LocalPost is not allowed in LoopBlock");
     }
-    Append(std::make_shared<CcuRep::CcuRepLocPostSem>(sig, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepLocPostSem>(sig, mask);
+    Append(rep);
+    SetDependencyInfo(sig.Id(), mask, rep);
 }
 
 void CcuContext::LocalWait(const CcuRep::MaskSignal &sig, uint32_t mask)
@@ -326,6 +328,8 @@ void CcuContext::LocalWait(const CcuRep::MaskSignal &sig, uint32_t mask)
     } else {
         auto rep = std::make_shared<CcuRep::CcuRepLocWaitSem>(sig, mask, true);
         AddProfiling("LocalWait", mask);
+        rep->SetDependencyInfo(GetDependencyInfo(sig.Id()));
+        ClearDependencyInfo();
         Append(rep);
     }
 }
@@ -366,13 +370,17 @@ void CcuContext::GroupWait(const CcuTransportGroup &transportGroup, uint32_t sig
 void CcuContext::Read(const CcuTransport &transport, const CcuRep::CcuBuffer &loc, const CcuRep::Memory &rem,
                       const CcuRep::Variable &len, const CcuRep::MaskSignal &locSig, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepBufRead>(transport, rem, loc, len, locSig, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepBufRead>(transport, rem, loc, len, locSig, mask);
+    Append(rep);
+    SetDependencyInfo(locSig.Id(), mask, rep);
 }
 
 void CcuContext::Write(const CcuTransport &transport, const CcuRep::Memory &rem, const CcuRep::CcuBuffer &loc,
                        const CcuRep::Variable &len, const CcuRep::MaskSignal &locSig, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepBufWrite>(transport, loc, rem, len, locSig, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepBufWrite>(transport, loc, rem, len, locSig, mask);
+    Append(rep);
+    SetDependencyInfo(locSig.Id(), mask, rep);
 }
 
 static bool isLowPrecisionIn(DataType dataType)
@@ -398,62 +406,80 @@ void CcuContext::LocalReduce(const std::vector<CcuRep::CcuBuffer> &bufs, uint32_
                                opType.Describe().c_str());
     }
 
-    Append(std::make_shared<CcuRep::CcuRepBufReduce>(bufs, count, CcuRep::GetCcuDataType(dataType, opType),
+    auto rep = std::make_shared<CcuRep::CcuRepBufReduce>(bufs, count, CcuRep::GetCcuDataType(dataType, opType),
                                                      CcuRep::GetCcuDataType(outputDataType, opType),
-                                                     CcuRep::GetCcuReduceType(opType), locSig, len, mask));
+                                                     CcuRep::GetCcuReduceType(opType), locSig, len, mask);
+    Append(rep);
+    SetDependencyInfo(locSig.Id(), mask, rep);
 }
 
 void CcuContext::Read(const CcuTransport &transport, const CcuRep::Memory &loc, const CcuRep::Memory &rem,
                       const CcuRep::Variable &len, const CcuRep::MaskSignal &locSig, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepRead>(transport, loc, rem, len, locSig, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepRead>(transport, loc, rem, len, locSig, mask);
+    Append(rep);
+    SetDependencyInfo(locSig.Id(), mask, rep);
 }
 
 void CcuContext::ReadReduce(const CcuTransport &transport, const CcuRep::Memory &loc, const CcuRep::Memory &rem,
                             const CcuRep::Variable &len, DataType dataType, ReduceOp opType,
                             const CcuRep::MaskSignal &locSig, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepRead>(transport, loc, rem, len, CcuRep::GetUBDataType(dataType),
-                                                CcuRep::GetUBReduceType(opType), locSig, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepRead>(transport, loc, rem, len, CcuRep::GetUBDataType(dataType),
+                                                CcuRep::GetUBReduceType(opType), locSig, mask);
+    Append(rep);
+    SetDependencyInfo(locSig.Id(), mask, rep);
 }
 
 void CcuContext::Write(const CcuTransport &transport, const CcuRep::Memory &rem, const CcuRep::Memory &loc,
                        const CcuRep::Variable &len, const CcuRep::MaskSignal &locSig, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepWrite>(transport, rem, loc, len, locSig, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepWrite>(transport, rem, loc, len, locSig, mask);
+    Append(rep);
+    SetDependencyInfo(locSig.Id(), mask, rep);
 }
 
 void CcuContext::WriteReduce(const CcuTransport &transport, const CcuRep::Memory &rem, const CcuRep::Memory &loc,
                              const CcuRep::Variable &len, DataType dataType, ReduceOp opType,
                              const CcuRep::MaskSignal &locSig, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepWrite>(transport, rem, loc, len, CcuRep::GetUBDataType(dataType),
-                                                 CcuRep::GetUBReduceType(opType), locSig, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepWrite>(transport, rem, loc, len, CcuRep::GetUBDataType(dataType),
+                                                 CcuRep::GetUBReduceType(opType), locSig, mask);
+    Append(rep);
+    SetDependencyInfo(locSig.Id(), mask, rep);                                                 
 }
 
 void CcuContext::LocalCopy(const CcuRep::Memory &dst, const CcuRep::Memory &src, const CcuRep::Variable &len,
                            const CcuRep::MaskSignal &locSig, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepLocCpy>(dst, src, len, locSig, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepLocCpy>(dst, src, len, locSig, mask);
+    Append(rep);
+    SetDependencyInfo(locSig.Id(), mask, rep);
 }
 
 void CcuContext::LocalCopy(const CcuRep::CcuBuffer &dst, const CcuRep::Memory &src, const CcuRep::Variable &len,
                            const CcuRep::MaskSignal &locSig, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepBufLocRead>(src, dst, len, locSig, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepBufLocRead>(src, dst, len, locSig, mask);
+    Append(rep);
+    SetDependencyInfo(locSig.Id(), mask, rep);
 }
 
 void CcuContext::LocalCopy(const CcuRep::Memory &dst, const CcuRep::CcuBuffer &src, const CcuRep::Variable &len,
                            const CcuRep::MaskSignal &locSig, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepBufLocWrite>(src, dst, len, locSig, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepBufLocWrite>(src, dst, len, locSig, mask);
+    Append(rep);
+    SetDependencyInfo(locSig.Id(), mask, rep);
 }
 
 void CcuContext::LocalReduce(const CcuRep::Memory &dst, const CcuRep::Memory &src, const CcuRep::Variable &len,
                              DataType dataType, ReduceOp opType, const CcuRep::MaskSignal &locSig, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepLocCpy>(dst, src, len, CcuRep::GetUBDataType(dataType), CcuRep::GetUBReduceType(opType),
-                                                  locSig, mask));
+    auto rep = std::make_shared<CcuRep::CcuRepLocCpy>(dst, src, len, CcuRep::GetUBDataType(dataType), CcuRep::GetUBReduceType(opType),
+                                                  locSig, mask);
+    Append(rep);
+    SetDependencyInfo(locSig.Id(), mask, rep);                                                  
 }
 
 void CcuContext::CreateMultiOpCopy()
@@ -905,7 +931,7 @@ std::vector<T> CcuContext::CreateBlockResAssist(uint32_t                        
     block.reserve(count);
     for (size_t i = 0; i < count; i++) {
         block.emplace_back(this);
-        block.back().Reset(resRecord[dieId].size() + i, dieId);
+        block.back().Reset(0x1000 + resRecord[dieId].size() + i, dieId);  // 0x1000分割Block资源和离散资源
     }
     resRecord[dieId].insert(resRecord[dieId].end(), block.begin(), block.end());
     return block;

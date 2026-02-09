@@ -38,12 +38,14 @@ public:
     HcclResult MemoryExport(const EndpointDesc endpointDesc, void *memHandle, void **memDesc, uint32_t *memDescLen) override;
     HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;
     HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
+    HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
     HcclResult GetMemDesc(const EndpointDesc endpointDesc, Hccl::LocalRdmaRmaBuffer *localRdmaRmaBuffer);
     HcclResult GetParamsFromMemDesc(const void *memDesc, uint32_t descLen, 
                                         EndpointDesc &endpointDesc, Hccl::ExchangeRdmaBufferDto &dto);
  
 private:
     std::unique_ptr<LocalRdmaRmaBufferMgr> localRdmaRmaBufferMgr_{};
+    std::vector<std::shared_ptr<Hccl::LocalRdmaRmaBuffer>> allRegisteredBuffers_;
     std::unordered_map<EndpointDesc, std::unique_ptr<RemoteRdmaRmaBufferMgr>> remoteRdmaRmaBufferMgrs_;
 };
 }

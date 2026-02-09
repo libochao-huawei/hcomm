@@ -141,6 +141,8 @@ public:
 
     u32 GetModuleNum();
 
+    u32 GetRealUserRank();
+
     HcclResult GetCommParams(HcclCommParams &params); // 逆向解析获取HcclCommParams参数
 
     HcclResult GetCommRankTable(RankTable_t &rankTable); // 逆向解析获取RankTable_t参数

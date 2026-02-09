@@ -2040,6 +2040,7 @@ HcclResult CreateQp(RdmaHandle rdmaHandle, int& flag, s32& qpMode, QpInfo& qp, b
         CHK_RET(ConstructQpAttrs(qpMode, attrs, qpDepth));
         attrs.udpSport = 0x0;
         attrs.qpAttr.cap.max_send_wr = HETEROG_OFFLINE_EXT_MAX_SEND_WR;
+        attrs.cqAttr.sendCqDepth = DEFAULT_MAX_ONE_SIDED_SEND_CQ_DEPTH;
         CHK_RET(hrtRaQpCreateWithAttrs(rdmaHandle, &attrs, qp.qpHandle));
     } else {
         CHK_RET(HrtRaQpCreate(rdmaHandle, flag, qpMode, qp.qpHandle));
@@ -2235,6 +2236,7 @@ HcclResult CreateAiQp(RdmaHandle rdmaHandle, struct AiQpInfo &aiQpInfo, QpInfo &
     QueueDepthAttr qpDepth{};
     CHK_RET(ConstructQpAttrs(info.qpMode, attrs, qpDepth, false));
     attrs.qpAttr.cap.max_send_wr = DEFAULT_OFFLINE_MAX_SEND_WR;
+    attrs.cqAttr.sendCqDepth = DEFAULT_MAX_ONE_SIDED_SEND_CQ_DEPTH;
     attrs.udpSport = 0;
 
     CHK_RET(hrtRaAiQpCreate(devicePhyId, rdmaHandle, &attrs, &aiQpInfo, info.qpHandle));

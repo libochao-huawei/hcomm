@@ -36,7 +36,6 @@ void HccpPeerManager::Init(s32 deviceLogicId)
     cfg.phyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
     cfg.mode  = HrtNetworkMode::PEER;
     HrtRaInit(cfg);
-    RaSocketSetWhiteListStatus(1); // PEER模式需要手动开启白名单模式
 
     instances_[deviceLogicId].Ref();
     HCCL_INFO("[HccpPeerManager::%s] deviceLogicId[%d] ra init success.", __func__, deviceLogicId);

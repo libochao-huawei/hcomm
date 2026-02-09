@@ -425,8 +425,7 @@ HcclResult AllReduceOperator::SelectAlgfor910B(const OpParam& param, std::string
                 algName = "AllReduceRingExecutor";
             }
         // 多机单卡/两卡 pipeline需单独做判断(pipeline无确定性算法，并只支持单算子模式）
-        } else if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE &&
-            algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE &&
+        } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE &&
             IsMultiMeshInlineReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
                 if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
                     algName = "AllReduceMeshOpbasePipelineExecutor";
@@ -553,7 +552,7 @@ HcclResult AllReduceOperator::DeterministicSelector(const OpParam& param, std::s
     const bool isInlineReduce =
         IsSupportSDMAReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType);
 
-    if (isOpbase && algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) {
+    if (isOpbase && algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE && deviceNumPerAggregation_ > DEVICE_TWO) {
         algName = "AllReduceDeterPipelineExecutor";
     } else if (SingleMeshInlineReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
         if (countType == HcclDataCountType::HCCL_COUNT_SMALL) {
@@ -668,11 +667,18 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
         && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_4_MB * deviceNumPerAggregation_));
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_) && !retryEnable_; // 涉及ROCE平面
+    // 多超节点 的中等数据量
+    bool midCountOptimMultiPod = (superPodNum_ > 1) &&
+        (param.DataDes.count * unitSize >= HCCL_SMALL_COUNT_GRAPH_64_KB) &&
+        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_256_KB) && !retryEnable_; // 涉及ROCE平面
+ 
 
     if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
         algName = "AllReduceComm";
     } else if (multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_) {
         algName = "AllReduceARSFor91093Executor";
+    } else if (midCountOptimMultiPod) {
+        algName = "AllReduceMidCountFor91093Executor";
     } else if (useHostComm || smallCountOptimMultiServer || smallCountOptimMultiPod) {
         algName = "AllReduceComm";
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
