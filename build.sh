@@ -515,7 +515,7 @@ elif [ -d "${DEFAULT_INSTALL_DIR}" ];then
     ASCEND_CANN_PACKAGE_PATH=${DEFAULT_INSTALL_DIR}
 else
     log "Error: Please set the toolkit package installation directory through parameter -p|--package-path."
-    exit 1
+    # exit 1
 fi
 
 if [ -n "${third_party_nlohmann_path}" ];then
