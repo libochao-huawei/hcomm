@@ -592,6 +592,7 @@ namespace hccl
 
     bool HcclCommunicator::IsSupportSymmetricMemory(HcclCMDType opType, OpParam &opParam)
     {
+        CHK_PRT_RET(symmetricMemory_ == nullptr, HCCL_DEBUG("symmetricMemory_ is a nullptr"), false);
         HCCL_INFO("[%s] aicpuUnfold[%d], workflowMode[%d], deviceType[%d], "
             "deviceNumPerAggregation_[%d], multiModuleDiffDeviceNumMode_[%d], tag[%s].",
             __func__, opParam.aicpuUnfoldMode, GetWorkflowMode(), deviceType_,
