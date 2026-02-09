@@ -479,7 +479,7 @@ void *inter_reduce_scatter_task_undeter_opbase(void *parg)
     return nullptr;
 }
 
-void public_stubs(bool needStubOp)
+void reducescatter_public_stubs(bool needStubOp)
 {
     u32 interfaceVersion = 1;
     MOCKER(hrtRaGetInterfaceVersion)
@@ -517,7 +517,7 @@ void public_stubs(bool needStubOp)
 
 TEST_F(HcclCommTest910BReduceScatter, ut_reducescatter_8p_mesh_undeterministic_small_count_opbase)
 {
-    public_stubs(false);
+    reducescatter_public_stubs(false);
     ResetInitState();
     InitExternalInput();
 
@@ -666,7 +666,7 @@ TEST_F(HcclCommTest910BReduceScatter, ut_reducescatter_8p_mesh_undeterministic_s
 // 71 4p 确定性 小数据量
 TEST_F(HcclCommTest910BReduceScatter, ut_reducescatter_4p_mesh_deterministic_small_count_opbase)
 {
-    public_stubs(false);
+    reducescatter_public_stubs(false);
     setenv("HCCL_DETERMINISTIC", "true", 1);
     ResetInitState();
     InitExternalInput();
@@ -815,7 +815,7 @@ TEST_F(HcclCommTest910BReduceScatter, ut_reducescatter_4p_mesh_deterministic_sma
 
 TEST_F(HcclCommTest910BReduceScatter, ut_reducescatter_4p_mesh_deterministic_small_count_opbase_prod)
 {
-    public_stubs(false);
+    reducescatter_public_stubs(false);
     setenv("HCCL_DETERMINISTIC", "true", 1);
     ResetInitState();
     InitExternalInput();
@@ -964,7 +964,7 @@ TEST_F(HcclCommTest910BReduceScatter, ut_reducescatter_4p_mesh_deterministic_sma
 
 TEST_F(HcclCommTest910BReduceScatter, ut_reducescatter_4p_mesh_deterministic_small_count_graph)
 {
-    public_stubs(false);
+    reducescatter_public_stubs(false);
     setenv("HCCL_DETERMINISTIC", "true", 1);
     ResetInitState();
     InitExternalInput();

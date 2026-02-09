@@ -492,7 +492,7 @@ void* inter_reduce_scatter_task_nb(void* parg)
     return nullptr;
 }
 
-void public_stubs(bool needStubOp)
+void nb_public_stubs(bool needStubOp)
 {
     u32 interfaceVersion = 1;
     MOCKER(hrtRaGetInterfaceVersion)
@@ -531,7 +531,7 @@ void public_stubs(bool needStubOp)
 #if 1
 TEST_F(HcclCommTest910BNB, ut_allreduce_8p_mesh)
 {
-    public_stubs(true);
+    nb_public_stubs(true);
     EXPECT_EQ(SetHcclAlgoConfig("level0:null;level1:NB"), HCCL_SUCCESS);
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
     nlohmann::json rank_table = rank_table_1server_8rank;
@@ -684,7 +684,7 @@ TEST_F(HcclCommTest910BNB, ut_allreduce_8p_mesh)
 
 TEST_F(HcclCommTest910BNB, ut_scatter_8p_ring)
 {
-    public_stubs(true);
+    nb_public_stubs(true);
     EXPECT_EQ(SetHcclAlgoConfig("level0:NA;level1:NB"), HCCL_SUCCESS);
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
     nlohmann::json rank_table = rank_table_1server_8rank;
@@ -837,7 +837,7 @@ TEST_F(HcclCommTest910BNB, ut_scatter_8p_ring)
 
 TEST_F(HcclCommTest910BNB, ut_reducescatter_8p_mesh)
 {
-    public_stubs(true);
+    nb_public_stubs(true);
     MOCKER(RaSocketListenStart).stubs().will(returnValue(0));
     EXPECT_EQ(SetHcclAlgoConfig("level0:null;level1:NB"), HCCL_SUCCESS);
 
@@ -1134,7 +1134,7 @@ void* inter_all_gather_mesh_nb(void* parg)
 
 TEST_F(HcclCommTest910BNB, ut_allgather_8p_mesh)
 {
-    public_stubs(true);
+    nb_public_stubs(true);
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
     nlohmann::json rank_table = rank_table_1server_8rank;
     char file_name_t[] = "./ut_allgather_8p_mesh.json";
