@@ -2654,10 +2654,11 @@ TEST_F(OneSidedSt, regmem_without_deregmem)
     vNetDevCtx.nicType_ = NicType::VNIC_TYPE;
     vNetDevCtx.localIpcRmaBufferMgr_ = std::make_shared<LocalIpcRmaBufferMgr>();
     HcclNetDevCtx vDevCtx = &vNetDevCtx;
-
+    
     unique_ptr<HcclSocketManager> socketManager = std::make_unique<HcclSocketManager>(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, 0);
     unique_ptr<NotifyPool> notifyPool = std::make_unique<NotifyPool>();
-    unique_ptr<HcclOneSidedService> service = std::make_unique<HcclOneSidedService>(socketManager, notifyPool);
+    HcclCommConfig commConfig("hccl_world_group");
+    unique_ptr<HcclOneSidedService> service = std::make_unique<HcclOneSidedService>(socketManager, notifyPool, commConfig);
     service->SetNetDevCtx(devCtx, true);
     service->SetNetDevCtx(vDevCtx, false);
 
@@ -2734,7 +2735,8 @@ TEST_F(OneSidedSt, remap_ipc_mem)
 
     unique_ptr<HcclSocketManager> socketManager = std::make_unique<HcclSocketManager>(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, 0);
     unique_ptr<NotifyPool> notifyPool = std::make_unique<NotifyPool>();
-    unique_ptr<HcclOneSidedService> service = std::make_unique<HcclOneSidedService>(socketManager, notifyPool);
+    HcclCommConfig commConfig("hccl_world_group");
+    unique_ptr<HcclOneSidedService> service = std::make_unique<HcclOneSidedService>(socketManager, notifyPool, commConfig);
     service->SetNetDevCtx(vDevCtx, false);
 
     u64 count = 1024;
@@ -4005,7 +4007,8 @@ TEST_F(OneSidedSt, ut_hcclComm_InitNic_IsOneSidedBackupInit)
     hcclCommunicator.devBackupIpAddr_.clear();
     hcclCommunicator.devBackupIpAddr_.push_back(remoteIp2);
     hcclCommunicator.commPortConfig_.devNicListen = std::make_pair(listenSocket, ctx1);
-    hcclCommunicator.oneSideService_ = std::make_unique<HcclOneSidedService>(hcclCommunicator.socketManager_, hcclCommunicator.notifyPool_);
+    HcclCommConfig commConfig("hccl_world_group");
+    hcclCommunicator.oneSideService_ = std::make_unique<HcclOneSidedService>(hcclCommunicator.socketManager_, hcclCommunicator.notifyPool_, commConfig);
 
     ret = hcclCommunicator.InitNic();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -4041,7 +4044,8 @@ TEST_F(OneSidedSt, ut_one_sided_service_prepare_fail)
 
     unique_ptr<HcclSocketManager> socketManager = std::make_unique<HcclSocketManager>(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, 0);
     unique_ptr<NotifyPool> notifyPool = std::make_unique<NotifyPool>();
-    unique_ptr<HcclOneSidedService> service = std::make_unique<HcclOneSidedService>(socketManager, notifyPool);
+    HcclCommConfig commConfig("hccl_world_group");
+    unique_ptr<HcclOneSidedService> service = std::make_unique<HcclOneSidedService>(socketManager, notifyPool, commConfig);
 
     MOCKER_CPP(&HcclOneSidedService::PrepareFullMesh)
     .stubs()
