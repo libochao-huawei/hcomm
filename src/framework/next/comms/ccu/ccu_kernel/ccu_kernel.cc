@@ -230,7 +230,7 @@ void CcuKernel::LoadVariable(const CcuRep::Variable &src, const CcuRep::Variable
     Append(std::make_shared<CcuRep::CcuRepLoadVar>(src, var));
 }
 
-HcclResult CcuKernel::CreateVariable(const uint32_t coreId,
+HcclResult CcuKernel::CreateSharedVariable(const uint32_t coreId,
     const uint32_t varId, CcuRep::Variable *var)
 {
     const std::string varTag = "Variable_" + std::to_string(coreId) + "_"

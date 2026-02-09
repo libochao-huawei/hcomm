@@ -85,7 +85,7 @@ protected:
     CcuRep::CcuBuf CreateCcuBuf();
     CcuRep::Executor CreateExecutor();
 
-    HcclResult CreateVariable(const uint32_t coreId, const uint32_t varIdx, CcuRep::Variable *var);
+    HcclResult CreateSharedVariable(const uint32_t coreId, const uint32_t varIdx, CcuRep::Variable *var);
 
     HcclResult CreateBlockCcuBuf(const uint32_t count, CcuRep::CcuBuf *ccuBufs);
     HcclResult CreateBlockExecutor(const uint32_t count, CcuRep::Executor *ccuExes);
