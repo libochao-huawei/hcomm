@@ -13,93 +13,83 @@
 #include "hcomm_res_defs.h"  // ChannelHandle
 #include "../endpoint_pairs/channels/channel.h"  // ChannelStatus 枚举定义
 #include <arpa/inet.h>  // inet_ntop
-#include <malloc.h>     // malloc, free
+#include <string>
+#include <array>
 
 /**
- * @brief 将 CommAddr 转换为 IP 地址字符串
- * @param commAddr 通信地址
- * @return IP 地址字符串（需要调用者释放）
- *
- * @note 对于 IPv4 地址，返回点分十进制格式（如 "192.168.1.1"）
- * @note 对于 IPv6 地址，返回冒号分隔格式（如 "fe80::204:61ff:fe9d:f156"）
- * @note 对于非 IP 类型，返回十六进制字符串（如 "id:0x12345678"）
- * @note 调用者需要使用 free() 释放返回的字符串
+ * @brief 获取 CommAddr 类型的描述字符串
+ * @param type 地址类型
+ * @return 类型描述字符串（如 "IPv4", "IPv6", "ID", "EID"）
  */
-char* CommAddrToString(const CommAddr& commAddr)
+static std::string GetCommAddrTypeString(CommAddrType type)
+{
+    switch (type) {
+        case COMM_ADDR_TYPE_IP_V4:
+            return "IPv4";
+        case COMM_ADDR_TYPE_IP_V6:
+            return "IPv6";
+        case COMM_ADDR_TYPE_ID:
+            return "ID";
+        case COMM_ADDR_TYPE_EID:
+            return "EID";
+        default:
+            return "Unknown(" + std::to_string(type) + ")";
+    }
+}
+
+/**
+ * @brief 将 CommAddr 转换为带类型的 IP 地址字符串
+ * @param commAddr 通信地址
+ * @return 地址字符串，格式为 "[type] addr"
+ *
+ * @note 对于 IPv4 地址，返回 "[IPv4] 192.168.1.1"
+ * @note 对于 IPv6 地址，返回 "[IPv6] fe80::204:61ff:fe9d:f156"
+ * @note 对于 ID 类型，返回 "[ID] id:0x12345678"
+ */
+std::string CommAddrToString(const CommAddr& commAddr)
 {
     const char* funcName = __func__;
-    char* buffer = nullptr;
+    std::string typeStr = GetCommAddrTypeString(commAddr.type);
 
     switch (commAddr.type) {
         case COMM_ADDR_TYPE_IP_V4: {
-            buffer = (char*)malloc(INET_ADDRSTRLEN);
-            if (buffer == nullptr) {
-                HCCL_ERROR("[%s] malloc failed for IPv4 address", funcName);
-                return nullptr;
-            }
-            const char* result = inet_ntop(AF_INET, &commAddr.addr, buffer, INET_ADDRSTRLEN);
+            std::array<char, INET_ADDRSTRLEN> buffer;
+            const char* result = inet_ntop(AF_INET, &commAddr.addr, buffer.data(), buffer.size());
             if (result == nullptr) {
                 HCCL_ERROR("[%s] inet_ntop failed for IPv4 address", funcName);
-                free(buffer);
-                return nullptr;
+                return "[" + typeStr + "] conversion failed";
             }
-            break;
+            return "[" + typeStr + "] " + std::string(result);
         }
         case COMM_ADDR_TYPE_IP_V6: {
-            buffer = (char*)malloc(INET6_ADDRSTRLEN);
-            if (buffer == nullptr) {
-                HCCL_ERROR("[%s] malloc failed for IPv6 address", funcName);
-                return nullptr;
-            }
-            const char* result = inet_ntop(AF_INET6, &commAddr.addr6, buffer, INET6_ADDRSTRLEN);
+            std::array<char, INET6_ADDRSTRLEN> buffer;
+            const char* result = inet_ntop(AF_INET6, &commAddr.addr6, buffer.data(), buffer.size());
             if (result == nullptr) {
                 HCCL_ERROR("[%s] inet_ntop failed for IPv6 address", funcName);
-                free(buffer);
-                return nullptr;
+                return "[" + typeStr + "] conversion failed";
             }
-            break;
+            return "[" + typeStr + "] " + std::string(result);
         }
         case COMM_ADDR_TYPE_ID: {
             // ID 类型：返回格式化字符串
-            const int idStrLen = 32;
-            buffer = (char*)malloc(idStrLen);
-            if (buffer == nullptr) {
-                HCCL_ERROR("[%s] malloc failed for ID address", funcName);
-                return nullptr;
-            }
-            (void)snprintf_s(buffer, idStrLen, idStrLen - 1, "id:0x%x", commAddr.id);
-            break;
+            return "[" + typeStr + "] id:0x" + std::to_string(commAddr.id);
         }
         case COMM_ADDR_TYPE_EID: {
             // EID 类型：返回十六进制字符串
-            const int eidStrLen = 64;
-            buffer = (char*)malloc(eidStrLen);
-            if (buffer == nullptr) {
-                HCCL_ERROR("[%s] malloc failed for EID address", funcName);
-                return nullptr;
-            }
-            (void)snprintf_s(buffer, eidStrLen, eidStrLen - 1,
-                "eid:%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+            char buffer[64];
+            (void)snprintf_s(buffer, sizeof(buffer), sizeof(buffer) - 1,
+                "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
                 commAddr.eid[0], commAddr.eid[1], commAddr.eid[2], commAddr.eid[3],
                 commAddr.eid[4], commAddr.eid[5], commAddr.eid[6], commAddr.eid[7],
                 commAddr.eid[8], commAddr.eid[9], commAddr.eid[10], commAddr.eid[11],
                 commAddr.eid[12], commAddr.eid[13], commAddr.eid[14], commAddr.eid[15]);
-            break;
+            return "[" + typeStr + "] eid:" + std::string(buffer);
         }
         default: {
             // 保留类型或其他：返回通用格式
-            const int rawStrLen = 128;
-            buffer = (char*)malloc(rawStrLen);
-            if (buffer == nullptr) {
-                HCCL_ERROR("[%s] malloc failed for unknown address type", funcName);
-                return nullptr;
-            }
-            (void)snprintf_s(buffer, rawStrLen, rawStrLen - 1, "unknown(type:%d)", commAddr.type);
-            break;
+            return "[" + typeStr + "]";
         }
     }
-
-    return buffer;
 }
 
 /**
@@ -111,15 +101,9 @@ char* CommAddrToString(const CommAddr& commAddr)
 void PrintCommAddr(uint32_t idx, const char* endpointName, const CommAddr& commAddr)
 {
     const char* funcName = __func__;
-    char* addrStr = CommAddrToString(commAddr);
-    if (addrStr != nullptr) {
-        HCCL_INFO("[%s] channelDescs[%u] %s commAddr: type[%d], addr[%s]",
-            funcName, idx, endpointName, commAddr.type, addrStr);
-        free(addrStr);
-    } else {
-        HCCL_ERROR("[%s] channelDescs[%u] %s commAddr: failed to convert to string",
-            funcName, idx, endpointName);
-    }
+    std::string addrStr = CommAddrToString(commAddr);
+    HCCL_INFO("[%s] channelDescs[%u] %s commAddr: type[%d], addr[%s]",
+        funcName, idx, endpointName, commAddr.type, addrStr.c_str());
 }
 
 /**
@@ -176,30 +160,36 @@ void PrintChannelDescInfo(uint32_t idx, const HcclChannelDesc& channelDesc)
 
 /**
  * @brief 打印 Channel 连接错误信息表格头部
+ * @param localRank 本地 rank
  */
 void PrintChannelErrorTableHeader(uint32_t localRank)
 {
-    HCCL_ERROR("   _________________________CHANNEL_CONNECT_ERROR_INFO___________________________");
+    HCCL_ERROR("   ________________________________________________CHANNEL_CONNECT_ERROR_INFO________________________________________________");
     HCCL_ERROR("   |  comm error, localRank[%u]", localRank);
-    HCCL_ERROR("   |  idx  | localRank | remoteRank | channelHandle |            Status            | Protocol |  elapsed  |");
-    HCCL_ERROR("   |-------|-----------|------------|---------------|----------------------------|----------|-----------|");
+    HCCL_ERROR("   |  idx  | localRank |              localAddr               | remoteRank |             remoteAddr             | chHandle  |            Status            | Proto | elapsed |");
+    HCCL_ERROR("   |-------|-----------|-------------------------------------|------------|-------------------------------------|-----------|----------------------------|-------|---------|");
 }
 
 /**
  * @brief 将 ChannelStatus 状态值转换为可读字符串
+ * @param status 状态值
+ * @return 状态描述字符串（如 "ChannelStatus::SOCKET_TIMEOUT"）
  */
-const char* ChannelStatusToString(int32_t status)
+std::string ChannelStatusToString(int32_t status)
 {
     hcomm::ChannelStatus::Value statusValue = static_cast<hcomm::ChannelStatus::Value>(status);
     hcomm::ChannelStatus statusEnum(statusValue);
-    // 返回静态字符串以避免生命周期问题
-    static thread_local std::string statusStr;
-    statusStr = statusEnum.Describe();  // 返回 "ChannelStatus::SOCKET_TIMEOUT" 等
-    return statusStr.c_str();
+    return statusEnum.Describe();
 }
 
 /**
  * @brief 打印单个 Channel 的错误状态
+ * @param idx channel 索引
+ * @param localRank 本地 rank
+ * @param channelDesc channel 描述符
+ * @param channelHandle channel 句柄
+ * @param status 连接状态
+ * @param elapsedMs 经过的时间（毫秒）
  */
 void PrintChannelErrorInfo(
     uint32_t idx,
@@ -209,14 +199,18 @@ void PrintChannelErrorInfo(
     int32_t status,
     uint64_t elapsedMs)
 {
-    const char* statusStr = ChannelStatusToString(status);
+    std::string localAddr = CommAddrToString(channelDesc.localEndpoint.commAddr);
+    std::string remoteAddr = CommAddrToString(channelDesc.remoteEndpoint.commAddr);
+    std::string statusStr = ChannelStatusToString(status);
 
-    HCCL_ERROR("   | %5u | %9u | %10u | 0x%013llx | %26s | %8d | %9llu |",
+    HCCL_ERROR("   | %5u | %9u | %35s | %10u | %35s | 0x%08llx | %26s | %5d | %7llu |",
         idx,
         localRank,
+        localAddr.c_str(),
         channelDesc.remoteRank,
+        remoteAddr.c_str(),
         static_cast<unsigned long long>(channelHandle),
-        statusStr,
+        statusStr.c_str(),
         channelDesc.channelProtocol,
         static_cast<unsigned long long>(elapsedMs));
 }
