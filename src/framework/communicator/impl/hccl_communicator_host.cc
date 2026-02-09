@@ -2983,7 +2983,6 @@ namespace hccl
         Stream streamObj(stream);
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = count * perDataSize;
-        bool isCapture = StreamIsCapture(stream);
         OpParam opParam;
         opParam.tag = tag;
         opParam.inputPtr = inputPtr;
@@ -2994,32 +2993,29 @@ namespace hccl
         opParam.DataDes.dataType = dataType;
         opParam.reduceType = op;
         opParam.stream = streamObj;
-        opParam.isCapture = isCapture;
+        opParam.isCapture = StreamIsCapture(stream);
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         AlgType algType;
         algType.algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_NP_SINGLE_RING;
         algType.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_RING;
-
-        // 构造空vector用于入参，无实际意义
-        const std::vector<Stream> slaveStreams;
+        auto slaveStreams = opParam.isCapture ? std::vector<Stream>{opStream_} : std::vector<Stream>{};
+        CaptureSlaveStreams(streamObj.ptr(), slaveStreams);
         CHK_RET(RegisterDfxInfo(opParam, algType, slaveStreams));
         HcclResult ret;
         if (!IsExistCommRes(tag)) {
             uint64_t streamMode = 0;
             CHK_RET(hrtStreamGetMode(stream, &streamMode));
-
             rtStream_t aicpuStream;
             ret = Mc2AiCpuStreamAllocAndGet(streamMode, aicpuStream);
             void *commContext = nullptr;
-            ret = CreateCommResource(tag, stream, true, &commContext);
+            ret = CreateCommResource(tag, aicpuStream, true, &commContext);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[hcclImpl][CreateComm]create aicpu unfold comminfo by tag[%s] failed. return[%d]",
                            tag.c_str(), ret);
                 return ret;
             }
         }
-
         AicpuOpTiling opTilingInfo;
         std::string kernelName = "RunAicpuRpcSrvLaunch";
         ret = AicpuKfcTilingDataLaunch(opParam, HcclCMDType::HCCL_CMD_ALLREDUCE, commContext_, kernelName, opTilingInfo);
@@ -4979,8 +4975,8 @@ namespace hccl
 
     HcclResult HcclCommunicator::CaptureSlaveStreams(rtStream_t mainStream, vector<Stream> &slaveStreams)
     {
-        if (deviceType_ != DevType::DEV_TYPE_910_93) {
-            HCCL_INFO("[HcclCommunicator][%s]Only A3 device in host expand mode need to capture slave streams.", __func__);
+        if ((deviceType_ != DevType::DEV_TYPE_910_93) && (deviceType_ != DevType::DEV_TYPE_310P3)) {
+            HCCL_INFO("[HcclCommunicator][%s]Only 310P3 or A3 device in host expand mode need to capture slave streams.", __func__);
             return HCCL_SUCCESS;
         }
         aclmdlRI rtModel = nullptr;
