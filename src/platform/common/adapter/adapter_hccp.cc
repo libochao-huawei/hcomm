@@ -3057,6 +3057,7 @@ HcclResult hrtRaGetSecRandom(struct RaInfo *info, unsigned int* token)
     s32 ret = DlRaFunction::GetInstance().dlRaGetSecRandom(info, token);
     if (ret != 0) {
         HCCL_ERROR("[HrtRaGetSecRandom] ra_get_sec_random failed, call interface");
+        return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;
 }
@@ -3069,7 +3070,8 @@ HcclResult hrtRaGetDevEidInfoNum(struct RaInfo *info, unsigned int* num)
     }
     s32 ret = DlRaFunction::GetInstance().dlRaGetDevEidInfoNum(info, num);
     if (ret != 0) {
-        HCCL_ERROR("[HrtRaGetSecRandom] ra_get_dev_eid_info_list failed, call interface");
+        HCCL_ERROR("[HrtRaGetSecRandom] ra_get_dev_eid_info_num failed, call interface");
+        return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;
 }
@@ -3083,6 +3085,7 @@ HcclResult hrtRaGetDevEidInfoList(struct RaInfo *info, struct dev_eid_info *eid_
     s32 ret = DlRaFunction::GetInstance().dlRaGetDevEidInfoList(info, eid_info, num);
     if (ret != 0) {
         HCCL_ERROR("[HrtRaGetSecRandom] ra_get_dev_eid_info_list failed, call interface");
+        return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;
 }
