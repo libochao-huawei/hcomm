@@ -58,9 +58,11 @@ add_library(intf_pub INTERFACE)
 
 target_link_libraries(intf_pub INTERFACE
     $<BUILD_INTERFACE:intf_pub_base>
+    json
+    pthread
     -Wl,--whole-archive
-    $<$<BOOL:${ENABLE_TEST}>:gtest>
     $<$<BOOL:${ENABLE_TEST}>:mockcpp>
+    $<$<BOOL:${ENABLE_TEST}>:gtest>
     -Wl,--no-whole-archive
     -Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib
 )

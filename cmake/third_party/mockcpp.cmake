@@ -14,9 +14,6 @@ unset(mockcpp_FOUND CACHE)
 unset(MOCKCPP_INCLUDE CACHE)
 unset(MOCKCPP_STATIC_LIBRARY CACHE)
 
-# 编译 mockcpp 需要 boost 库
-include(${CMAKE_CURRENT_LIST_DIR}/boost.cmake)
-
 set(MOCKCPP_FILE "mockcpp-2.7.tar.gz")
 set(MOCKCPP_URL "https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h2/${MOCKCPP_FILE}")
 set(MOCKCPP_PKG_PATH ${CANN_3RD_LIB_PATH}/${MOCKCPP_FILE})
@@ -54,6 +51,29 @@ message(STATUS "[ThirdParty] Found MockCpp: ${mockcpp_FOUND}")
 if(mockcpp_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message(STATUS "[ThirdParty] MockCpp found in ${MOCKCPP_INSTALL_PATH}, and not force rebuild cann third_party")
 else()
+    # 编译 mockcpp 需要 boost 库
+    include(${CMAKE_CURRENT_LIST_DIR}/boost.cmake)
+
+    if(NOT EXISTS ${MOCKCPP_PATCH_PATH})
+        # 下载 patch 文件
+        message(STATUS "[ThirdParty] Downloading mockcpp patch from ${MOCKCPP_PATCH_URL}")
+        file(DOWNLOAD
+            ${MOCKCPP_PATCH_URL}
+            ${MOCKCPP_PATCH_PATH}
+            TLS_VERIFY OFF
+        )
+    endif()
+
+    if(EXISTS ${MOCKCPP_PKG_PATH})
+        # 离线编译场景，优先使用 pkg 目录下的包
+        message(STATUS "[ThirdParty] Found local mockcpp package: ${MOCKCPP_PKG_PATH}")
+        set(MOCKCPP_PROJECT_URL ${MOCKCPP_PKG_PATH})
+    else()
+        # 下载并编译安装
+        message(STATUS "[ThirdParty] Downloading MockCpp from ${MOCKCPP_URL}")
+        set(MOCKCPP_PROJECT_URL ${MOCKCPP_URL})
+    endif()
+
     # 编译选项设置
     if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
         set(MOCKCPP_CXXFLAGS "-fPIC -D_GLIBCXX_USE_CXX11_ABI=0")
@@ -77,26 +97,6 @@ else()
         -DBUILD_TESTING=OFF
     )
 
-    if(NOT EXISTS ${MOCKCPP_PATCH_PATH})
-        # 下载 patch 文件
-        message(STATUS "[ThirdParty] Downloading mockcpp patch from ${MOCKCPP_PATCH_URL}")
-        file(DOWNLOAD
-            ${MOCKCPP_PATCH_URL}
-            ${MOCKCPP_PATCH_PATH}
-            TLS_VERIFY OFF
-        )
-    endif()
-
-    if(EXISTS ${MOCKCPP_PKG_PATH})
-        # 离线编译场景，优先使用 pkg 目录下的包
-        message(STATUS "[ThirdParty] Found local mockcpp package: ${MOCKCPP_PKG_PATH}")
-        set(MOCKCPP_PROJECT_URL ${MOCKCPP_PKG_PATH})
-    else()
-        # 下载并编译安装
-        message(STATUS "[ThirdParty] Downloading MockCpp from ${MOCKCPP_URL}")
-        set(MOCKCPP_PROJECT_URL ${MOCKCPP_URL})
-    endif()
-
     include(ExternalProject)
     ExternalProject_Add(third_party_mockcpp
         URL ${MOCKCPP_PROJECT_URL}
@@ -114,6 +114,10 @@ endif()
 # 创建导入的目标
 add_library(mockcpp STATIC IMPORTED)
 add_dependencies(mockcpp third_party_mockcpp)
+
+if(NOT EXISTS ${MOCKCPP_INSTALL_PATH}/include)
+    file(MAKE_DIRECTORY "${MOCKCPP_INSTALL_PATH}/include")
+endif()
 
 set_target_properties(mockcpp PROPERTIES
     IMPORTED_LOCATION ${MOCKCPP_INSTALL_PATH}/lib/libmockcpp.a

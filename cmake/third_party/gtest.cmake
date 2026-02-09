@@ -91,7 +91,7 @@ else()
         -DCMAKE_CXX_FLAGS=${GTEST_CXXFLAGS}
         -DCMAKE_C_FLAGS=${GTEST_CFLAGS}
         -DCMAKE_INSTALL_PREFIX=${GTEST_INSTALL_PATH}
-        -DCMAKE_INSTALL_LIBDIR=lib
+        -DCMAKE_INSTALL_LIBDIR=lib64
         -DBUILD_TESTING=OFF
         -DBUILD_SHARED_LIBS=OFF
     )
@@ -112,6 +112,9 @@ endif()
 add_library(gtest STATIC IMPORTED)
 add_dependencies(gtest third_party_gtest)
 
+add_library(gmock STATIC IMPORTED)
+add_dependencies(gmock third_party_gtest)
+
 add_library(gtest_main STATIC IMPORTED)
 add_dependencies(gtest_main third_party_gtest)
 
@@ -120,11 +123,16 @@ if(NOT EXISTS ${GTEST_INSTALL_PATH}/include)
 endif()
 
 set_target_properties(gtest PROPERTIES
-    IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib/libgtest.a
+    IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgtest.a
+    INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include
+)
+
+set_target_properties(gmock PROPERTIES
+    IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgmock.a
     INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include
 )
 
 set_target_properties(gtest_main PROPERTIES
-    IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib/libgtest_main.a
+    IMPORTED_LOCATION ${GTEST_INSTALL_PATH}/lib64/libgtest_main.a
     INTERFACE_INCLUDE_DIRECTORIES ${GTEST_INSTALL_PATH}/include
 )
