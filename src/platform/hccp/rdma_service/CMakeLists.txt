@@ -66,6 +66,13 @@ target_include_directories(rs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ubengine
 )
 
+if(NOT BUILD_OPEN_PROJECT)
+    target_include_directories(rs PRIVATE
+        ${TOP_DIR}/drivers/network/tls_adp
+        ${TOP_DIR}/runtime/pkg_inc/base
+    )
+endif()
+
 # c_sec、mmpa、unified_dlog动态库搜索路径
 target_link_directories(rs PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
