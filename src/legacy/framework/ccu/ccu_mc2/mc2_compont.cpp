@@ -156,7 +156,7 @@ void Mc2Compont::Alloc()
         return; 
     }
 
-    combinOpParamPtr = make_shared<HcclCombinOpParam>(0);
+    combinOpParamPtr = make_shared<HcclCombinOpParam>();
     constexpr uint32_t comSyncNum      = 2; // 每轮同步使用2个同步信号
     uint32_t           comParamBufSize = CCU_TASK_NUM_MAX * CCU_PARAM_NUM_MAX * CCU_ONE_PARAM_SIZE ;
     uint32_t           comSyncBufSize  = CCU_TASK_NUM_MAX * comSyncNum * CCU_ONE_PARAM_SIZE ;
@@ -189,7 +189,7 @@ void Mc2Compont::AllocV2()
         return; 
     }
 
-    combinOpParamPtr = make_shared<HcclCombinOpParam>(0);
+    combinOpParamPtr = make_shared<HcclCombinOpParam>();
     constexpr uint32_t comSyncNum      = 2; // 每轮同步使用2个同步信号
     uint32_t           comParamBufSize = CCU_TASK_NUM_MAX * CCU_PARAM_NUM_MAX * CCU_ONE_PARAM_SIZE ;
     uint32_t           comSyncBufSize  = CCU_TASK_NUM_MAX * comSyncNum * CCU_ONE_PARAM_SIZE ;
