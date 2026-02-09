@@ -141,7 +141,7 @@ TEST_F(RmaConnManagerTest,
         = new Socket(hccpSocketHandle, GetAnIpAddress(), 0, GetAnIpAddress(), "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
     std::string  socketTag = impl.GetEstablishLinkSocketTag();
     SocketConfig socketConfig(remoteRank, *linkData, socketTag);
-    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_unique<Socket>(hccpSocketHandle, GetAnIpAddress(),
+    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_shared<Socket>(hccpSocketHandle, GetAnIpAddress(),
                                                                                         0, GetAnIpAddress(), "stub",
                                                                                         SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
 
@@ -303,7 +303,7 @@ TEST_F(RmaConnManagerTest, should_return_valid_ptr_when_calling_creatermadevnetc
         = new Socket(hccpSocketHandle, GetAnIpAddress(), 0, GetAnIpAddress(), "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
     std::string  socketTag = impl.GetEstablishLinkSocketTag();
     SocketConfig socketConfig(remoteRank, *linkData, socketTag);
-    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_unique<Socket>(hccpSocketHandle, GetAnIpAddress(),
+    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_shared<Socket>(hccpSocketHandle, GetAnIpAddress(),
                                                                                         0, GetAnIpAddress(), "stub",
                                                                                         SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
 
@@ -392,7 +392,7 @@ TEST_F(RmaConnManagerTest, should_return_valid_ptr_when_calling_createdevubconn_
     Socket *socket = new Socket(hccpSocketHandle, GetAnIpAddress(), 0, GetAnIpAddress(), "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
     std::string  socketTag = impl.GetEstablishLinkSocketTag();
     SocketConfig socketConfig(remoteRank, linkData, socketTag);
-    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_unique<Socket>(hccpSocketHandle, GetAnIpAddress(),
+    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_shared<Socket>(hccpSocketHandle, GetAnIpAddress(),
                                                                                         0, GetAnIpAddress(), "stub",
                                                                                         SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
 

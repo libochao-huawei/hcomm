@@ -35,7 +35,8 @@ public:
     const SocketIfName &GetSocketIfName() const;
     bool                GetWhitelistDisable() const;
     const std::string  &GetWhiteListFile() const;
-    const std::vector<SocketPortRange>  &GetSocketPortRange() const;
+    const std::vector<SocketPortRange>  &GetHostSocketPortRange() const;
+    const std::vector<SocketPortRange>  &GetDeviceSocketPortRange() const;
 
 private:
     static constexpr u32 HCCL_INVALIED_IF_BASE_PORT     = 65536; // HCCL默认无效端口号
@@ -48,7 +49,10 @@ private:
     CfgField<SocketIfName> hcclSocketIfName{"HCCL_SOCKET_IFNAME", SocketIfName({}, false, false), CastSocketIfName};
     CfgField<bool>         whitelistDisable{"HCCL_WHITELIST_DISABLE", true, CastBin2Bool};
     CfgField<std::string>  hcclWhiteListFile{"HCCL_WHITELIST_FILE", "", Str2T<std::string>, CheckFilePath, SetRealPath};
-    CfgField<std::vector<SocketPortRange>> hcclSocketPortRange{"HCCL_HOST_SOCKET_PORT_RANGE", {}, CastSocketPortRange};
+    CfgField<std::vector<SocketPortRange>> hcclHostSocketPortRange{"HCCL_HOST_SOCKET_PORT_RANGE", {}, 
+        [] (const std::string &s) -> std::vector<SocketPortRange> { return CastSocketPortRange(s, "HCCL_HOST_SOCKET_PORT_RANGE"); }};
+    CfgField<std::vector<SocketPortRange>> hcclDeviceSocketPortRange{"HCCL_NPU_SOCKET_PORT_RANGE", {}, 
+        [] (const std::string &s) -> std::vector<SocketPortRange> { return CastSocketPortRange(s, "HCCL_NPU_SOCKET_PORT_RANGE"); }};
 };
 
 // Socket公共配置
