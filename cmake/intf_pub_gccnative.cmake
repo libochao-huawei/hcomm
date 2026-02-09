@@ -58,6 +58,9 @@ add_library(intf_pub INTERFACE)
 
 target_link_libraries(intf_pub INTERFACE
     $<BUILD_INTERFACE:intf_pub_base>
+    pthread
+    json
+    $<$<BOOL:${ENABLE_ST}>:protobuf>
     -Wl,--whole-archive
     $<$<BOOL:${ENABLE_TEST}>:gtest>
     $<$<BOOL:${ENABLE_TEST}>:mockcpp>
