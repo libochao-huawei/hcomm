@@ -56,6 +56,22 @@ public:
     static void PrintDescInfo(uint32_t idx, const HcclChannelDesc& channelDesc);
 
     /**
+     * @brief 打印 Channel 描述信息表格头部
+     *
+     * 表格列：idx | remoteRank | Proto | notifyNum | memHandleNum | localAddr | remoteAddr | ROCE Attr
+     */
+    static void PrintDescTableHeader();
+
+    /**
+     * @brief 打印单个 Channel 的描述信息（表格行）
+     * @param idx Channel 索引
+     * @param channelDesc Channel 描述符
+     *
+     * 表格列：idx | remoteRank | Proto | notifyNum | memHandleNum | localAddr | remoteAddr | ROCE Attr
+     */
+    static void PrintDescInfoRow(uint32_t idx, const HcclChannelDesc& channelDesc);
+
+    /**
      * @brief 打印 Channel 连接错误信息表格头部
      * @param localRank 本地 Rank ID
      */

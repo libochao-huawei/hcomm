@@ -48,6 +48,43 @@ void ChannelLogger::PrintDescInfo(uint32_t idx, const HcclChannelDesc& channelDe
     PrintRoceAttributes(idx, channelDesc);
 }
 
+void ChannelLogger::PrintDescTableHeader()
+{
+    HCCL_INFO("   _________________________________________________CHANNEL_DESCRIPTOR_INFO_________________________________________________");
+    HCCL_INFO("   |  idx  | remoteRank | Proto |  notifyNum  | memHandleNum |              localAddr               |             remoteAddr             |           ROCE Attr            |");
+    HCCL_INFO("   |-------|------------|-------|-------------|--------------|-------------------------------------|-------------------------------------|--------------------------------|");
+}
+
+void ChannelLogger::PrintDescInfoRow(uint32_t idx, const HcclChannelDesc& channelDesc)
+{
+    // 转换地址为字符串
+    std::string localAddr = CommAddrLogger::ToString(channelDesc.localEndpoint.commAddr);
+    std::string remoteAddr = CommAddrLogger::ToString(channelDesc.remoteEndpoint.commAddr);
+
+    // 格式化 ROCE 属性
+    char roceAttrStr[128] = "-";
+    if (channelDesc.channelProtocol == COMM_PROTOCOL_ROCE) {
+        snprintf_s(roceAttrStr, sizeof(roceAttrStr), sizeof(roceAttrStr) - 1,
+            "q:%u r:%u ri:%u tc:%u sl:%u",
+            channelDesc.roceAttr.queueNum,
+            channelDesc.roceAttr.retryCnt,
+            channelDesc.roceAttr.retryInterval,
+            channelDesc.roceAttr.tc,
+            channelDesc.roceAttr.sl);
+    }
+
+    // 输出表格行
+    HCCL_INFO("   | %5u | %10u | %5d | %11u | %12u | %35s | %35s | %30s |",
+        idx,
+        channelDesc.remoteRank,
+        channelDesc.channelProtocol,
+        channelDesc.notifyNum,
+        channelDesc.memHandleNum,
+        localAddr.c_str(),
+        remoteAddr.c_str(),
+        roceAttrStr);
+}
+
 void ChannelLogger::PrintErrorTableHeader(uint32_t localRank)
 {
     HCCL_ERROR("   ________________________________________________CHANNEL_CONNECT_ERROR_INFO________________________________________________");
