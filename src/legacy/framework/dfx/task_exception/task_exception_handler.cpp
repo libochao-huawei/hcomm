@@ -670,7 +670,7 @@ void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankCo
         );
     } else if (exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY 
         || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
-        || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITETASK_UB_INLINE_WRITE
+        || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
         || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE) {
         HCCL_ERROR("[ReportErrorMsg] EI0018");
         RPT_INPUT_ERR(true,
