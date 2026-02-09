@@ -61,15 +61,6 @@
 using namespace std;
 using namespace hccl;
 
-HcclResult HcclBuildOneSidedService_new(std::unique_ptr<IHcclOneSidedService> &service,
-    std::unique_ptr<HcclSocketManager> &socketManager, std::unique_ptr<NotifyPool> &notifyPool)
-{
-    EXCEPTION_HANDLE_BEGIN
-    service = std::make_unique<HcclOneSidedService>(socketManager, notifyPool);
-    EXCEPTION_HANDLE_END
-    return HCCL_SUCCESS;
-}
-
 class CommInitTest : public testing::Test
 {
 protected:
@@ -118,9 +109,9 @@ TEST_F(CommInitTest, ut_HcclCommInitRootInfoConfig_not_set_config_01)
     .with(outBound(deviceType))
     .will(returnValue(HCCL_SUCCESS));
 
+
     HcclResult ret = HcclGetRootInfo(&id);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-
     HcclCommConfig config;
     HcclCommConfigInit(&config);
 
@@ -128,6 +119,9 @@ TEST_F(CommInitTest, ut_HcclCommInitRootInfoConfig_not_set_config_01)
     config.hcclRdmaServiceLevel = 0xffffffff;
     strcpy_s(config.hcclCommName, 128, HCCL_WORLD_GROUP);
 
+    MOCKER(hrtProfRegisterCtrlCallback)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
     HcclComm newcomm;
     ret = HcclCommInitRootInfoConfig(1, &id, 0, &config, &newcomm);
     EXPECT_EQ(ret, HCCL_SUCCESS);

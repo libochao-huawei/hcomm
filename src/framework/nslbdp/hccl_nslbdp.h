@@ -202,7 +202,7 @@ public:
     u32 ipToUint32(const std::string& ipAddress);
     HcclResult SendOpAndAdjTable();
     HcclResult SendRankTableOpAndAdj(NslbDpOperatorInfo &tab_f);
-    std::vector<uint8_t> serializeTLV_TableOpAndAdj(NslbDpOperatorInfo &cominfo);
+    std::vector<uint8_t> serializeTLV_TableOpAndAdj(NslbDpOperatorInfo &info);
     HcclResult SendAlgorithmInfoTable();
     HcclResult SendRankTableAlgorithmInfo(NslbDpAlgorithmTlv &tab_f);
     std::vector<uint8_t> serializeTLV_TableAlgorithmInfo(NslbDpAlgorithmTlv &info);

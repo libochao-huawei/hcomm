@@ -373,7 +373,8 @@ HcclResult CcuResourceMangerGetLoopChannelIdStub(const int32_t deviceLogicId, co
  
 TEST_F(CcuMesh2DTest, CCU_A2A_Mesh_sole_context)
 {
-    MOCKER(HrtGetDevice).defaults().will(returnValue(0));
+	MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+	MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(0)));
     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
     MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
@@ -382,7 +383,8 @@ TEST_F(CcuMesh2DTest, CCU_A2A_Mesh_sole_context)
     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
     MOCKER(CcuDeviceManager::AllocCke).stubs().will(invoke(CtxMgrAllocCkeStubAlg));
     MOCKER(CcuDeviceManager::AllocXn).stubs().will(invoke(CtxMgrAllocXnStubAlg));
-
+    MOCKER_CPP(&CcuDeviceManager::GetCcuResourceSpaceTokenInfoForLocal).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP(&CcuDeviceManager::GetCcuResourceSpaceTokenInfo).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
     MOCKER(CcuDeviceManager::AllocResHandle).stubs().will(invoke(CtxMgrAllocResHandleStubAlg));
     MOCKER(CcuDeviceManager::GetResource).stubs().will(invoke(CtxMgrGetResourceStubAlg));
     MOCKER(CcuDeviceManager::ReleaseResHandle).stubs().will(invoke(CtxMgrReleaseResHandleStubAlg));

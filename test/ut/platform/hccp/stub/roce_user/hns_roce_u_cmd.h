@@ -106,4 +106,8 @@ int roce_get_cq_data_plane_info(struct ibv_cq *cq, struct hns_roce_cq_data_plane
 int roce_get_qp_data_plane_info(struct ibv_qp *qp, struct hns_roce_qp_data_plane_info *info);
 int roce_remap_mr(struct ibv_mr *mr, struct hns_roce_mr_remap_info info[], unsigned int num);
 unsigned int roce_get_api_version(void);
+
+int roce_set_qp_lb_value(struct ibv_qp *qp, int lb_value);
+int roce_get_qp_lb_value(struct ibv_qp *qp, int *lb_value);
+int roce_get_qp_num(int *qp_num);
 #endif

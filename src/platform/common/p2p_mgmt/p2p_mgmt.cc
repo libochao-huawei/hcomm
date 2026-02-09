@@ -264,7 +264,7 @@ HcclResult P2PMgmt::WaitP2PEnabled(uint32_t remoteDevicePhysicID, std::function<
         u32 localDevicePhysicID = 0;
         CHK_RET(hrtGetDevicePhyIdByIndex(localDeviceLogicID, localDevicePhysicID));
         HcclResult ret = CheckMarsterId(remoteDevicePhysicID, localDevicePhysicID, isMarsterIdDiff);
-        HCCL_INFO("[WaitP2PEnabled][CheckMarsterId]localDevicePhysicID %u, remoteDevicePhysicID %u, isMarsterIdDiff %s",
+        HCCL_INFO("[WaitP2PEnabled][CheckMarsterId]localDevicePhysicID[%u], remoteDevicePhysicID[%u], isMarsterIdDiff[%s]",
             localDevicePhysicID, remoteDevicePhysicID, isMarsterIdDiff ? "true" : "false");
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Wait][P2PEnabled]check pcie connection failed. device info: local logic id:%d, "\

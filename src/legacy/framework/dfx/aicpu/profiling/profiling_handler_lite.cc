@@ -107,7 +107,9 @@ void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcc
     taskDetailsInfos.localRank = it.dfxOpInfo_->op_.myRank;
     taskDetailsInfos.stage        = 0;
     if (it.taskParam_.taskType == TaskParamType::TASK_SDMA || it.taskParam_.taskType == TaskParamType::TASK_RDMA
-        || it.taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY) {
+        || it.taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
+        || it.taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
+        || it.taskParam_.taskType == TaskParamType::TASK_UB) {
         taskDetailsInfos.srcAddr  = static_cast<u64>(reinterpret_cast<uintptr_t>(it.taskParam_.taskPara.DMA.src));
         taskDetailsInfos.dstAddr  = static_cast<u64>(reinterpret_cast<uintptr_t>(it.taskParam_.taskPara.DMA.dst));
         taskDetailsInfos.dataSize = static_cast<u32>(it.taskParam_.taskPara.DMA.size);
@@ -115,6 +117,7 @@ void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcc
         taskDetailsInfos.linkType = static_cast<uint16_t>(it.taskParam_.taskPara.DMA.linkType);
     } else if (it.taskParam_.taskType == TaskParamType::TASK_REDUCE_INLINE
                || it.taskParam_.taskType == TaskParamType::TASK_REDUCE_TBE
+               || it.taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
                || it.taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
         taskDetailsInfos.srcAddr  = static_cast<u64>(reinterpret_cast<uintptr_t>(it.taskParam_.taskPara.Reduce.src));
         taskDetailsInfos.dstAddr  = static_cast<u64>(reinterpret_cast<uintptr_t>(it.taskParam_.taskPara.Reduce.dst));

@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -796,6 +796,7 @@ STATIC void RaHdcLitePeriodPollCqe(struct RaRdmaHandle *rdmaHandle)
                 RaHdcLiteSaveCqeErrInfo(qpHdcTmp, liteWc[i].status);
                 RaHdcLiteSaveQpCqeErrInfo(qpHdcTmp, liteWc[i].status);
                 RaRetryTimeoutExceptionCheck(rdmaHandle, &liteWc[i]);
+                qpHdcTmp->liteQpState = LITE_QP_STATE_ERR;
             }
         }
 
@@ -996,6 +997,9 @@ int RaHdcLiteTypicalSendWr(struct RaQpHandle *qpHdc, struct LiteSendWr *wr, stru
     int ret;
     int i;
 
+    CHK_PRT_RETURN(qpHdc->liteQpState == LITE_QP_STATE_ERR, hccp_err("invalid liteQpState:%u qpn:%u phyId:%u",
+        qpHdc->liteQpState, qpHdc->qpn, qpHdc->phyId), -EINVAL);
+
     ret = RaHdcLiteHandleBp(qpHdc);
     if (ret != 0) {
         return ret;
@@ -1060,6 +1064,9 @@ int RaHdcLiteSendWr(struct RaQpHandle *qpHdc, struct LiteSendWr *wr, struct Send
         CHK_PRT_RETURN(ret, hccp_err("[send][ra_hdc_wr]ra hdc get rem_mr failed ret(%d) phyId(%u)",
             ret, qpHdc->phyId), ret);
     }
+
+    CHK_PRT_RETURN(qpHdc->liteQpState == LITE_QP_STATE_ERR, hccp_err("invalid liteQpState:%u qpn:%u phyId:%u",
+        qpHdc->liteQpState, qpHdc->qpn, qpHdc->phyId), -EINVAL);
 
     ret = RaHdcLiteHandleBp(qpHdc);
     if (ret != 0) {

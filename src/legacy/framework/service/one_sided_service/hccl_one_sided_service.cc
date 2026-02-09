@@ -16,6 +16,11 @@
 #include "alg_topo_package_helper.h"
 #include "aicpu_res_package_helper.h"
 #include "hccl_mem.h"
+#include "aicpu/launch_device.h"
+#include "exception_util.h"
+#include "invalid_params_exception.h"
+#include "runtime_api_exception.h"
+#include "env_config.h"
 
 namespace Hccl {
 using namespace std;
@@ -27,7 +32,7 @@ static void OneSidedSetModuleDataName(ModuleData &module, const std::string &nam
 {
     int ret = strcpy_s(module.name, sizeof(module.name), name.c_str());
     if (ret != 0) {
-        THROW<InternalException>(StringFormat("strcpy_s name %s failed", name.c_str()));
+        THROW<InternalException>(StringFormat("strcpy_s name %s failed. ret[%d]", name.c_str(), ret));
     }
 }
 
@@ -124,6 +129,7 @@ HcclResult HcclOneSidedService::RegMem(void *addr, u64 size, HcclMemType type, R
     ret                           = HcclMemExport(&buf, &desc, &descLen);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HcclOneSidedService][RegMem]HcclMemExport failed, ret[%d]", ret);
+        CHK_RET(HcclNetDevClose(netDev));
         return ret;
     }
     registeredMemCnt_++;
@@ -356,8 +362,7 @@ void HcclOneSidedService::AddWaitToUserStream(const Stream &stream) const
     waitNotify->Wait(stream, 1000); // host 和 device sync流程，等待1000ms
 }
 
-void HcclOneSidedService::SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &param, bool needUpdateRes,
-                                                       const DevBuffer *mem) const
+void HcclOneSidedService::SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &param, const DevBuffer *mem) const
 {
     CollOperator op = *comm_->GetCurrentCollOperator();
 
@@ -371,20 +376,16 @@ void HcclOneSidedService::SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &pa
     auto ret = strcpy_s(param.kernel.comm.commId, sizeof(param.kernel.comm.commId), comm_->GetId().data());
     if (ret != EOK) {
         THROW<InternalException>(
-            StringFormat("HcclOneSidedService::SetOneSidedKernelLaunchParam, strcpy_s commId failed!"));
+            StringFormat("HcclOneSidedService::SetOneSidedKernelLaunchParam, strcpy_s commId failed! ret[%d]", ret));
     }
 
-    param.kernel.needUpdateRes = false;
     param.kernel.oneSidedComm  = true;
 
     param.kernel.op.algOperator.opMode = op.opMode;
     param.kernel.op.algOperator.opType = op.opType;
 
-    if (needUpdateRes) {
-        param.kernel.needUpdateRes = true;
-        param.kernel.binaryResAddr = mem->GetAddr();
-        param.kernel.binaryResSize = mem->GetSize();
-    }
+    param.kernel.binaryResAddr = mem->GetAddr();
+    param.kernel.binaryResSize = mem->GetSize();
 
     param.kernel.op.sendRecvRemoteRank = op.sendRecvRemoteRank;
 
@@ -394,42 +395,48 @@ void HcclOneSidedService::SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &pa
 
 void HcclOneSidedService::OneSidedAicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream) const
 {
-    rtHostInputInfo hostInputInfo;
-    hostInputInfo.addrOffset = KERNEL_PARAM_ADDR_OFFSET;
-    hostInputInfo.dataOffset = KERNEL_PARAM_DATA_OFFSET;
+    std::string jsonPath;
+    GetKernelFilePath(jsonPath);
+	jsonPath += "ccl_kernel.json";
+	aclrtBinHandle binHandle;
+	LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0,
+		binHandle);
+	aclrtFuncHandle funcHandle;
+	aclError aclRet = aclrtBinaryGetFunction(binHandle, param.kernelName, &funcHandle);
+    if(aclRet != ACL_SUCCESS)
+    {
+        THROW<RuntimeApiException>(StringFormat("Call aclrtBinaryGetFunction failed, with ret[%d]", aclRet));
+    }
+	constexpr u32 numBlocks = 1;
 
-    rtAicpuArgsEx_t args;
-    args.args                 = static_cast<void *>(&param);
-    args.argsSize             = sizeof(HcclKernelLaunchParam);
-    args.hostInputInfoPtr     = &hostInputInfo;
-    args.hostInputInfoNum     = 0;
-    args.kernelOffsetInfoPtr  = nullptr;
-    args.kernelOffsetInfoNum  = 0;
-    args.kernelNameAddrOffset = CalcFieldOffset(param.kernelName, &param);
-    args.soNameAddrOffset     = CalcFieldOffset(param.soName, &param);
-    args.isNoNeedH2DCopy      = false;
+	aclrtLaunchKernelCfg cfg;
+	aclrtLaunchKernelAttr attr;
+    attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
+    auto timeoutCheck         = EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
+    // aicpu kernal超时时间: X+30s
+    attr.value.timeout = static_cast<u16>((timeoutCheck == 0) ? timeoutCheck : (timeoutCheck + 30));
+	cfg.numAttrs = 1;
+	cfg.attrs = &attr;
 
     AddPostToUserStream(stream);
 
     HCCL_INFO("[HcclOneSidedService::AicpuKernelLaunch] param.soName: %s, param.kernelName: %s", param.soName,
               param.kernelName);
 
-    HrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU, param.opName, 1, &args, nullptr,
-                                   comm_->GetAicpuStreamManager().GetFreeStream()->GetPtr(), 0);
-    HCCL_INFO("[HcclOneSidedService][AicpuKernelLaunch] param.kernel.algName: %s OPBASE mode "
-              "HrtAicpuKernelLaunchExWithArgs end!",
+	HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, comm_->GetAicpuStreamManager().GetFreeStream()->GetPtr(),
+		&cfg, &param.kernel, sizeof(HcclKernelParamLite));
+    HCCL_INFO("[HcclOneSidedService][AicpuKernelLaunch] param.kernel.algName: %s HrtAicpuLaunchKernelWithHostArgs end!",
               param.kernel.algName);
 
     AddWaitToUserStream(stream);
 }
 
-DevBuffer *HcclOneSidedService::PackResToKernelLanuch(CollAlgOpReq &opReq, bool &needUpdateRes)
+DevBuffer *HcclOneSidedService::PackResToKernelLanuch(CollAlgOpReq &opReq)
 {
     auto it = OneSidedLoadMap.find(opReq.algName);
     if (it != OneSidedLoadMap.end()) { // 已经向Device Mem写过资源
-        HCCL_INFO("HcclOneSidedService, OneSidedLoadMap.find(%s) != OneSidedLoadMap.end()", opReq.algName.c_str());
-        needUpdateRes = false;
-        return nullptr;
+        HCCL_INFO("[OpBasedCollProcess] tag[%s] devMem has been allocated, reuse it", opReq.algName.c_str());
+        return it->second.get();
     }
 
     HCCL_INFO("[HcclOneSidedService][PackResToKernelLanuch], PackOpData start");
@@ -444,7 +451,6 @@ DevBuffer *HcclOneSidedService::PackResToKernelLanuch(CollAlgOpReq &opReq, bool 
               Bytes2hex(buffer.data(), buffer.size()).c_str());
     OneSidedLoadMap.insert(make_pair(opReq.algName, devMem));
 
-    needUpdateRes = true; // 需要更新资源
     return devMem.get();
 }
 
@@ -469,14 +475,13 @@ HcclResult HcclOneSidedService::BatchOpKernelLaunch(OpType opType, RankId remote
     FillOneSidedOperator(opType, remoteRankId, desc);
     HCCL_INFO("[HcclOneSidedService][BatchOpKernelLaunch] PackResToKernelLanuch start");
     // 打包device展开资源信息
-    bool       needUpdateRes;
-    DevBuffer *devMem = PackResToKernelLanuch(opReq, needUpdateRes);
+    DevBuffer *devMem = PackResToKernelLanuch(opReq);
     // 组kernelLaunch参数
     HcclKernelLaunchParam param;
 
     HCCL_INFO("[HcclOneSidedService][BatchOpKernelLaunch] SetOneSidedKernelLaunchParam start");
     // 构造单边通信公共参数
-    SetOneSidedKernelLaunchParam(param, needUpdateRes, devMem);
+    SetOneSidedKernelLaunchParam(param, devMem);
     auto it = oneSidedConns_.find(remoteRankId);
     if (it == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclMemCommunication][BatchGet] Can't find oneSidedConn by remoteRank %u", remoteRankId);
@@ -487,6 +492,12 @@ HcclResult HcclOneSidedService::BatchOpKernelLaunch(OpType opType, RankId remote
     param.kernel.op.batchPutGetDescNum    = descNum;
     param.kernel.op.batchPutGetLocalAddr  = reinterpret_cast<void *>(devBatchPutGetLocalBufs.get()->GetAddr());
     param.kernel.op.batchPutGetRemoteAddr = reinterpret_cast<void *>(devBatchPutGetRemoteBufs.get()->GetAddr());
+    auto ret = strcpy_s(param.kernel.tagKey, sizeof(param.kernel.tagKey), opReq.algName.c_str());
+    if (ret != EOK) {
+        THROW<InternalException>(
+            StringFormat("[HcclOneSidedService][BatchOpKernelLaunch], strcpy_s opReq.algName failed! ret[%d]", ret));
+    }
+
     HCCL_INFO("[HcclOneSidedService][BatchOpKernelLaunch] OneSidedAicpuKernelLaunch start");
     // 启动kernel
     OneSidedAicpuKernelLaunch(param, *stream);

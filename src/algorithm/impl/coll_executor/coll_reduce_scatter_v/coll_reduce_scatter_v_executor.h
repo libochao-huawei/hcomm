@@ -18,7 +18,7 @@ class CollReduceScatterVExecutor : public CollCommExecutor {
 public:
     explicit CollReduceScatterVExecutor(const HcclDispatcher dispatcher,
     std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceScatterVExecutor() = default;
+    ~CollReduceScatterVExecutor() override = default;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
     HcclResult GetAdjInfo(AlgResourceResponse& algRes, AdjInfo& adjInfo) override;

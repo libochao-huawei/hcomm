@@ -16,7 +16,6 @@
 #include <sstream>
 #include <set>
 #include "exception_util.h"
-#include "invalid_params_exception.h"
 #include "dma_mode.h"
 #include "ip_address.h"
 #include "op_type.h"
@@ -85,7 +84,8 @@ using SocketPortRange = struct SocketPortRangeDef {
 MAKE_ENUM(HcclAlgoType,
           HCCL_ALGO_TYPE_DEFAULT, // 默认算法，配置为此时，使用HCCL内藏算法选择逻辑
           HCCL_ALGO_TYPE_RING, HCCL_ALGO_TYPE_PIPELINE, HCCL_ALGO_TYPE_FULLMESH, HCCL_ALGO_TYPE_HDR,
-          HCCL_ALGO_TYPE_PAIRWISE, HCCL_ALGO_TYPE_NHR, HCCL_ALGO_TYPE_NB, HCCL_ALGO_TYPE_NULL, HCCL_ALGO_TYPE_NA)
+          HCCL_ALGO_TYPE_PAIRWISE, HCCL_ALGO_TYPE_NHR, HCCL_ALGO_TYPE_NB, HCCL_ALGO_TYPE_NULL, HCCL_ALGO_TYPE_NA,
+          HCCL_ALGO_TYPE_NHR_V1, HCCL_ALGO_TYPE_AHC)
 
 const std::set<OpType> OP_TYPE_SET = {OpType::ALLREDUCE, OpType::BROADCAST, OpType::ALLGATHER, OpType::REDUCESCATTER, OpType::SEND,
                                OpType::RECV, OpType::BARRIER, OpType::ALLTOALL, OpType::REDUCE, OpType::GATHER, OpType::SCATTER,

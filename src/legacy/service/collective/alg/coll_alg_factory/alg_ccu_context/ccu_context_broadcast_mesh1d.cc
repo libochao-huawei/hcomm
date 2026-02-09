@@ -55,14 +55,14 @@ void CcuContextBroadcastMesh1D::CreateAllVariables()
         } else {
             HCCL_INFO("[CcuContextBroadcastMesh1D] MyRank[%u], PeerId[%llu], TransportId[%hu]",
                 rankId_, peerId, transportIdx);
-            CHK_PRT_RET(transports[transportIdx] == nullptr,
-                HCCL_ERROR("[CcuContextBroadcastMesh1D] Algorithm transport ptr is null"),);
+            CHK_PRT_RET(transports[transportIdx] == nullptr || transportIdx >= transports.size(),
+                    HCCL_ERROR("[CcuContextBroadcastMesh1D] Algorithm transport ptr is null or transportIdx is out of bounds"),);
             output_.push_back(CreateVariable((*transports[transportIdx]), CKE_IDX_1));  // 获取transport中id=2的Var来传递output
             token_.push_back(CreateVariable((*transports[transportIdx]), CKE_IDX_2));
             transportIdx++;
         }
     }
-    offSet_      = CreateVariable();
+    offset_      = CreateVariable();
     slicesize_   = CreateVariable();
     groupOpSize_ = CreateGroupOpSize();
     return;
@@ -76,7 +76,7 @@ void CcuContextBroadcastMesh1D::LoadAndExchangeData()
     Load(input_);
     Load(output_[rankId_]);
     Load(token_[rankId_]);
-    Load(offSet_);
+    Load(offset_);
     Load(slicesize_);
     Load(groupOpSize_);
     for (auto t : transports) {
@@ -144,7 +144,7 @@ std::vector<uint64_t> CcuContextBroadcastMesh1D::GeneArgs(const CcuTaskArg &arg)
     uint64_t inputAddr  = taskArg->inputAddr_;
     uint64_t outputAddr = taskArg->outputAddr_;
     uint64_t tokenInfo  = taskArg->token_;
-    uint64_t offset     = taskArg->offSet_;
+    uint64_t offset     = taskArg->offset_;
     uint64_t sliceSize  = taskArg->sliceSize_;
     auto     goSize     = CalGoSize(sliceSize);
 

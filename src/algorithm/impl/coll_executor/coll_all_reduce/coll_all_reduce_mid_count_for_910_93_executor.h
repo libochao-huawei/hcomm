@@ -15,7 +15,7 @@ namespace hccl {
 class CollAllReduceMidCountFor91093Executor : public CollAllReduceExecutor {
 public:
     explicit CollAllReduceMidCountFor91093Executor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllReduceMidCountFor91093Executor() = default;
+    ~CollAllReduceMidCountFor91093Executor() override = default;
 
 private:
     /* *************** 资源计算 *************** */
@@ -29,7 +29,6 @@ private:
     /* *************** 算法编排 *************** */
     u64 CalcLoopMaxCount(const u64 cclBuffSize, const u32 unitSize) override;
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
-    
 };
 
 } // namespace hccl

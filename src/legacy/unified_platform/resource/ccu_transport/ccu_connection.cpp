@@ -10,10 +10,8 @@
 
 #include "ccu_connection.h"
 
-#include <random>
-
+#include <cstdlib>
 #include "hccp_ctx.h"
-
 #include "buffer.h"
 #include "exception_util.h"
 #include "orion_adapter_rts.h"
@@ -23,7 +21,6 @@
 #include "local_ub_rma_buffer.h"
 
 namespace Hccl {
-
 CcuConnection::CcuConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
     const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
     : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys)
@@ -82,7 +79,7 @@ CcuConnStatus CcuConnection::GetStatus()
 
     return status;
 }
-
+// 获取本端内存，为部分远端不可写的tokenId
 HcclResult CcuConnection::GetLocalCcuRmaBufferInfo()
 {
     uint64_t ccuBufSize = 0; // 暂未使用
@@ -163,7 +160,6 @@ bool CcuConnection::CreateJetty()
         }
 
         if (ret != HcclResult::HCCL_SUCCESS) {
-            isJettyCreated = true;
             HCCL_ERROR("[CcuConnection][%s] failed, hccl result[%d]", __func__, ret);
             ThrowAbnormalStatus(std::string(__func__));
         }
@@ -379,9 +375,9 @@ void CcuConnection::UpdateExchangeStatus()
 
     for (size_t i = 0; i < jettyNum; i++) {
         auto &outParam = importJettyCtxs[i].outParam;
-        struct qp_import_info_t *infoPtr = reinterpret_cast<qp_import_info_t *>(reqDataBuffers[i].data());
+        struct QpImportInfoT *infoPtr = reinterpret_cast<QpImportInfoT *>(reqDataBuffers[i].data());
         outParam.handle        = reinterpret_cast<TargetJettyHandle>(remoteJettyHandlePtrs[i]);
-        outParam.targetJettyVa = infoPtr->out.ub.tjetty_handle; // 该信息当前未使用
+        outParam.targetJettyVa = infoPtr->out.ub.tjettyHandle; // 该信息当前未使用
         outParam.tpn           = infoPtr->out.ub.tpn;
     }
     isJettyImported = true;
@@ -483,6 +479,22 @@ uint32_t CcuConnection::GetChannelId() const
 int32_t CcuConnection::GetDevLogicId() const
 {
     return devLogicId;
+}
+
+std::vector<ConnJettyInfo> CcuConnection::GetJettyInfo()
+{
+    std::vector<ConnJettyInfo> connJettyInfos;
+    ConnJettyInfo jettyInfo;
+    for (size_t i = 0; i < jettyNum; i++) {
+        ccuJettys_[i]->GetJettyInfo(jettyInfo);
+        jettyInfo.rdmaHandle = rdmaHandle;
+        if (importJettyCtxs[i].outParam.handle != 0) {
+            jettyInfo.remoteJetty = importJettyCtxs[i].outParam.handle;
+            importJettyCtxs[i].outParam.handle = 0;
+        }
+        connJettyInfos.push_back(jettyInfo);
+    }
+    return connJettyInfos;
 }
 
 void CcuConnection::Clean()

@@ -74,18 +74,6 @@ public:
     }
     explicit HcclIpAddress(const Eid &eidInput);
  
-    static bool IsEID(const std::string& str);
-
-    static Eid StrToEID(const std::string& str);
-    std::string GetIpStr() const;
-    Eid GetEid() const
-    {
-        return eid;
-    }
- 
-    std::string Describe() const;
-
-
     explicit HcclIpAddress(u32 address)
     {
         union HcclInAddr ipAddr;
@@ -114,6 +102,17 @@ public:
     }
     ~HcclIpAddress() {}
 
+    static bool IsIPv6(const std::string& str);
+ 	static bool IsIPv4(const std::string& str);
+    static bool IsEID(const std::string& str);
+    static Eid StrToEID(const std::string& str);
+    std::string GetIpStr() const;
+    Eid GetEid() const
+    {
+        return eid;
+    }
+    std::string Describe() const;
+
     std::string GetIfName() const
     {
         return ifname;
@@ -134,12 +133,12 @@ public:
 
     const char *GetReadableIP() const
     {
-        // return "IP adddress (string)"
+        // return "IP address (string)"
         return readableIP.c_str();
     }
     const char *GetReadableAddress() const
     {
-        // return "IP adddress (string) % ifname"
+        // return "IP address (string) % ifname"
         return readableAddr.c_str();
     }
     union HcclInAddr GetBinaryAddress() const
@@ -183,7 +182,6 @@ public:
         }
     }
 
-
     bool operator != (const HcclIpAddress &that) const
     {
         return !(*this == that);
@@ -200,10 +198,8 @@ public:
                                            (this->readableAddr < that.readableAddr);
     }
 
-
     HcclResult SetReadableAddress(const std::string &address);
     HcclResult SetIfName(const std::string &name);
-
 private:
     HcclResult SetBianryAddress(s32 family, const union HcclInAddr &address);
 
@@ -214,8 +210,6 @@ private:
     s32 family{};
     s32 scopeID{};
     Eid eid{};
-    
-
 };
 }
 #endif // HCCL_IP_ADDRESS_H

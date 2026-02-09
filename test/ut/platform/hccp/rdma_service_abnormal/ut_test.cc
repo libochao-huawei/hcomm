@@ -69,48 +69,48 @@ protected:
     }
 };
 
-TEST_M(RS, tc_rs_init2);
-TEST_M(RS, tc_rs_deinit2);
+TEST_M(RS, TcRsInit2);
+TEST_M(RS, TcRsDeinit2);
 
-TEST_M(RS, tc_rs_socket_init);
-TEST_M(RS, tc_rs_socket_deinit);
+TEST_M(RS, TcRsSocketInit);
+TEST_M(RS, TcRsSocketDeinit);
 
-TEST_M(RS, tc_rs_rdev_init);
-TEST_M(RS, tc_rs_rdev_deinit);
+TEST_M(RS, TcRsRdevInit);
+TEST_M(RS, TcRsRdevDeinit);
 
-TEST_M(RS, tc_rs_get_tsqp_depth_abnormal);
-TEST_M(RS, tc_rs_set_tsqp_depth_abnormal);
+TEST_M(RS, TcRsGetTsqpDepthAbnormal);
+TEST_M(RS, TcRsSetTsqpDepthAbnormal);
 
-TEST_M(RS, tc_rs_socket_listen_start2);
-TEST_M(RS, tc_rs_qp_create2);
+TEST_M(RS, TcRsSocketListenStart2);
+TEST_M(RS, TcRsQpCreate2);
 
-TEST_M(RS, tc_rs_abnormal2);
+TEST_M(RS, TcRsAbnormal2);
 
-TEST_M(RS, tc_rs_mr_abnormal2);
-TEST_M(RS, tc_rs_get_gid_index2);
-TEST_M(RS, tc_rs_qp_connect_async2);
-TEST_M(RS, tc_rs_send_wr2);
+TEST_M(RS, TcRsMrAbnormal2);
+TEST_M(RS, TcRsGetGidIndex2);
+TEST_M(RS, TcRsQpConnectAsync2);
+TEST_M(RS, TcRsSendWr2);
 
-TEST_M(RS, tc_rs_socket_nodeid2vnic);
-TEST_M(RS, tc_rs_server_valid_async_init);
-TEST_M(RS, tc_rs_connect_handle);
-TEST_M(RS, tc_rs_get_qp_context);
-TEST_M(RS, tc_rs_socket_get_bind_by_chip);
-TEST_M(RS, tc_rs_socket_batch_abort);
-TEST_M(RS, tc_rs_tcp_recv_tag_in_handle);
-TEST_M(RS, tc_rs_server_valid_async_abnormal);
-TEST_M(RS, tc_rs_server_valid_async_abnormal_01);
-TEST_M(RS, tc_rs_net_api_init_fail);
+TEST_M(RS, TcRsSocketNodeid2vnic);
+TEST_M(RS, TcRsServerValidAsyncInit);
+TEST_M(RS, TcRsConnectHandle);
+TEST_M(RS, TcRsGetQpContext);
+TEST_M(RS, TcRsSocketGetBindByChip);
+TEST_M(RS, TcRsSocketBatchAbort);
+TEST_M(RS, TcRsTcpRecvTagInHandle);
+TEST_M(RS, TcRsServerValidAsyncAbnormal);
+TEST_M(RS, TcRsServerValidAsyncAbnormal01);
+TEST_M(RS, TcRsNetApiInitFail);
 
 /* pingMesh ut cases */
-TEST_M(RS, tc_rs_ping_handle_init);
-TEST_M(RS, tc_rs_ping_handle_deinit);
-TEST_M(RS, tc_rs_ping_init);
-TEST_M(RS, tc_rs_ping_target_add);
-TEST_M(RS, tc_rs_ping_task_start);
-TEST_M(RS, tc_rs_ping_get_results);
-TEST_M(RS, tc_rs_ping_task_stop);
-TEST_M(RS, tc_rs_ping_target_del);
-TEST_M(RS, tc_rs_ping_deinit);
-TEST_M(RS, tc_rs_ping_urma_check_fd);
-TEST_M(RS, tc_rs_ping_cb_get_ib_ctx_and_index);
+TEST_M(RS, TcRsPingHandleInit);
+TEST_M(RS, TcRsPingHandleDeinit);
+TEST_M(RS, TcRsPingInit);
+TEST_M(RS, TcRsPingTargetAdd);
+TEST_M(RS, TcRsPingTaskStart);
+TEST_M(RS, TcRsPingGetResults);
+TEST_M(RS, TcRsPingTaskStop);
+TEST_M(RS, TcRsPingTargetDel);
+TEST_M(RS, TcRsPingDeinit);
+TEST_M(RS, TcRsPingUrmaCheckFd);
+TEST_M(RS, TcRsPingCbGetIbCtxAndIndex);

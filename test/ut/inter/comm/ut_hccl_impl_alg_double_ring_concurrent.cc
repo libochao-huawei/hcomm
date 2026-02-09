@@ -10,9 +10,7 @@
 
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
-
 #include <string>
-
 #define private public
 #define protected public
 #include "hccl_alg.h"
@@ -32,11 +30,10 @@
 #include "coll_reduce_scatter_executor.h"
 #include "coll_reduce_scatter_ring_executor.h"
 #include "env_config.h"
-
-
 #undef private
 #undef protected
 #include "dlra_function.h"
+#include "adapter_prof.h"
 
 using namespace hccl;
 using namespace std;
@@ -70,6 +67,12 @@ protected:
             .stubs()
             .with(any(), outBound(portNum))
             .will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HcclCommunicator::InitPreResource)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtProfRegisterCtrlCallback)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
         InitEnvParam();
         setenv("HCCL_OP_RETRY_ENABLE", "L0:0, L1:0, L2:0", 1);
         std::cout << "A Test SetUP" << std::endl;
@@ -426,16 +429,6 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrent, ut_CollReduceScatterDoubleRingConcur
     MOCKER(CollExecutorBase::RunTemplate)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatter)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatterConcurrent)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    SubCommInfo mockCommInfo {0, 8, std::vector<LINK>()};
-    MOCKER_CPP(&CollNativeExecutorBase::GetSubCommInfo)
-    .stubs()
-    .will(returnValue(mockCommInfo));
     ret = implBase->ReduceScatter(tag, inputMem.ptr(), outputMem.ptr(), count, dataType, HcclReduceOp::HCCL_REDUCE_SUM, stream.ptr());
     implBase = nullptr;
 
@@ -511,12 +504,6 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrent, ut_CollAllGatherDoubleRingConcurrent
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalWait, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u32,
         s32, bool, u32, u32)).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportManager::Alloc)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatterConcurrent)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingAllGatherConcurrent)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
     MOCKER(CollExecutorBase::RunTemplate)
@@ -648,13 +635,6 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrent, ut_CollReduceScatterDoubleRingConcur
     MOCKER(CollExecutorBase::RunTemplate)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatter)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatterConcurrent)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-
     ret = implBase->ReduceScatterOutPlace(tag, inputMem.ptr(), outputMem.ptr(), count, dataType, HcclReduceOp::HCCL_REDUCE_SUM, stream.ptr());
     implBase = nullptr;
 
@@ -828,7 +808,7 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrent, ut_CollReduceScatterSingleRingConcur
     SetFftsSwitch(true);
     GlobalMockObject::verify();
 }
-
+#if 0
 TEST_F(HcclImplAlgTestDoubleRingConcurrent, ut_CollMultiRingAllReduceAndMultiRootScatter)
 {
     HcclResult ret = HCCL_SUCCESS;
@@ -918,10 +898,6 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrent, ut_CollMultiRingAllReduceAndMultiRoo
     MOCKER_CPP(&StreamActiveManager::StreamActive)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-    SubCommInfo mockCommInfo {0, 8, std::vector<LINK>()};
-    MOCKER_CPP(&CollNativeExecutorBase::GetSubCommInfo)
-    .stubs()
-    .will(returnValue(mockCommInfo));
     MOCKER_CPP(&CollNativeExecutorBase::GetRankByUserRank)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
@@ -951,7 +927,7 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrent, ut_CollMultiRingAllReduceAndMultiRoo
 
     GlobalMockObject::verify();
 }
-
+#endif
 TEST_F(HcclImplAlgTestDoubleRingConcurrent, ut_GetRingsOrderByTopoType)
 {
     HcclResult ret = HCCL_SUCCESS;

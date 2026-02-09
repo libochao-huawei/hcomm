@@ -24,7 +24,7 @@ __aicore__ inline void AivAllGatherBigGraph910B::Process(GM_ADDR input, GM_ADDR 
 {
     uint32_t avgLengthPerSlice = len;
     uint32_t avgSizePerSlice = avgLengthPerSlice * sizeof(T);
-    uint32_t targetRank = block_idx; 
+    uint32_t targetRank = GetBlockIdx(); 
 
     // 共用16个flag
     __gm__ T *inputGm = (__gm__ T *)input;
@@ -61,4 +61,30 @@ __aicore__ inline void aiv_all_gather_910b_bigdata_graph(KERNEL_ARGS_DEF)
     op.HeadCounter();
     op.Process<T>(input, output, len, tag);
     op.TailCounter();
+}
+
+__aicore__ inline void sk_all_gather_910b_bigdata(SUPERKERNEL_ARGS_DEF)
+{
+    AivAllGatherBigGraph910B op;
+    op.Init(SUPERKERNEL_CLASS_INIT, 0, true);
+    #ifdef HCCL_DTYPE_INT8
+        op.Process<int8_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_INT16
+        op.Process<int16_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_INT32
+        op.Process<int32_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_FP16
+        op.Process<half>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_FP32
+        op.Process<float>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_BFP16
+        op.Process<bfloat16_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_UINT8
+        op.Process<uint8_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_UINT16
+        op.Process<uint16_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_UINT32
+        op.Process<uint32_t>(input, output, op.len_, op.tag_);
+    #else
+    #endif
 }

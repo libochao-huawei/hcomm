@@ -57,7 +57,7 @@ HcclResult FlushHandle::Destroy()
     return finalResult;
 }
 
-HcclResult FlushHandle::GetRdmaHandle(IpAddress ip, u32 devPhyId, void **rdmaHandle)
+HcclResult FlushHandle::GetRdmaHandle(IpAddress ip, u32 devPhyId, void **rdmaHandle) const
 {
     *rdmaHandle =
         RdmaHandleManager::GetInstance().GetByAddr(devPhyId, LinkProtoType::RDMA, ip, PortDeploymentType::HOST_NET);
@@ -85,7 +85,7 @@ HcclResult FlushHandle::AllocateHostMemory()
 HcclResult FlushHandle::AllocateDeviceMemory()
 {
     u64 bufferSize = FLUSH_BUFFER_SIZE;
-    deviceMem = HrtMalloc(bufferSize, RT_MEMORY_HBM);
+	deviceMem = HrtMalloc(bufferSize, static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
     if (deviceMem == nullptr) {
         HcclResult eRet = Destroy();
         HCCL_ERROR("[AllocateDeviceMemory]Failed to Allocate Device Memory. Destroy Flush code=%d", eRet);
@@ -123,8 +123,7 @@ HcclResult FlushHandle::RegisterLocalMr()
                    eRet);
         return HCCL_E_MEMORY;
     }
-    HCCL_DEBUG("[RegisterLocalMr]Local MR registered successfully. MR Handle=0x%p, lkey=%u, rkey=%u",
-                localMrHandle, loopBackQpMrLocalInfo.lkey, loopBackQpMrLocalInfo.rkey);
+    HCCL_DEBUG("[RegisterLocalMr]Local MR registered successfully. MR Handle=0x%p", localMrHandle);
     return HCCL_SUCCESS;
 }
 
@@ -144,13 +143,12 @@ HcclResult FlushHandle::RegisterRemoteMr()
                    eRet);
         return HCCL_E_MEMORY;
     }
-    HCCL_DEBUG("[RegisterRemoteMr]Remote MR registered successfully. MR Handle=0x%p, lkey=%u, rkey=%u",
-                remoteMrHandle, loopBackQpMrRemoteInfo.lkey, loopBackQpMrRemoteInfo.rkey);
+    HCCL_DEBUG("[RegisterRemoteMr]Remote MR registered successfully. MR Handle=0x%p", remoteMrHandle);
     return HCCL_SUCCESS;
 }
 
 // 销毁 MR
-HcclResult FlushHandle::DeregisterMr(MrHandle &mrHandle, std::string logTag)
+HcclResult FlushHandle::DeregisterMr(MrHandle &mrHandle, std::string logTag) const
 {
     HCCL_DEBUG("[DeregisterMr] Starting to destroy %s MR...", logTag.c_str());
 
@@ -183,9 +181,7 @@ HcclResult FlushHandle::DestroyLoopbackQp()
 
     int ret = RaQpDestroy(qpHandle);
     if (ret != 0) {
-        HCCL_ERROR("[DestroyLoopbackQp] Failed to destroy QP. "
-                   "qpHandle=%p, error=%d",
-                   qpHandle, ret);
+        HCCL_ERROR("[DestroyLoopbackQp] Failed to destroy QP. qpHandle=%p, error=%d", qpHandle, ret);
         qpHandle = nullptr;
         return HCCL_E_INTERNAL;
     }
@@ -222,11 +218,16 @@ HcclResult FlushHandle::FreeDeviceMemory()
         return HCCL_SUCCESS;
     }
 
-    HrtFree(deviceMem);
-
-    deviceMem = nullptr;
-    HCCL_DEBUG("[FreeDeviceMemory] Device memory successfully freed.");
-    return HCCL_SUCCESS;
+    try {
+        HrtFree(deviceMem);
+        deviceMem = nullptr;
+        HCCL_DEBUG("[FreeDeviceMemory] Device memory successfully freed.");
+        return HCCL_SUCCESS;
+    } catch(...) {
+        HCCL_ERROR("[FreeDeviceMemory] Exception caught while freeing device memory.");
+        deviceMem = nullptr;
+        return HCCL_E_RUNTIME;
+    }
 }
 
 }  // namespace Hccl

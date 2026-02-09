@@ -19,6 +19,11 @@
 
 namespace Hccl {
 
+struct HcclAlgoInfo {
+    uint32_t opType;
+    uint8_t  algorithmType;
+};
+
 class Mc2Compont {
 public:
     explicit Mc2Compont(CommunicatorImpl *comm) : comm(comm)
@@ -36,8 +41,8 @@ public:
     u32 GetCcuMc2ServerNum();
 
 private:
-    void     Alloc(void **commContext);
-    void     AllocV2(void **commContext);
+    void     Alloc();
+    void     AllocV2();
     void     GenerateCcuServer(const std::unordered_set<uint64_t> &algoTemplateRequire);
     bool     FindCcuServer(const std::unordered_set<uint64_t> &algoTemplateRequire,
                            InsExeQue::ExtInsExeEntityId       &execId) const;
@@ -50,13 +55,15 @@ private:
     void     SaveMc2DfxTaskInfo(const CcuTaskParam& ccuTaskParam, uint64_t execId) const;
     bool     CompareMissionMap(const std::map<uint8_t, std::map<uint32_t, uint32_t>> &mapA,
                                const std::map<uint8_t, std::map<uint32_t, uint32_t>> &mapB) const;
-    void     MC2Orchestrate(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue);
-    void     MC2AllocCommRes(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue);
+    void     MC2Orchestrate(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue, uint8_t commEngine) const;
+    void     MC2AllocCommRes(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue, uint8_t commEngine) const;
+    void     SaveAlgoInfo(uint32_t index, uint64_t templateSign, uint32_t opType, uint8_t algorithmType);
 private:
     const uint32_t dataCount = 1024;
     CommunicatorImpl *comm;
     // algoTemplateMap已经生成的算子集合; key:签名, value: taskParam
     std::unordered_map<uint64_t, std::vector<std::vector<CcuTaskParam>>> algoTemplateMap;
+    std::unordered_map<uint64_t, HcclAlgoInfo> algoInfoMap_;
     // ccuServer已经生成的server集合; key:execId, value:该server支持的算子签名
     std::unordered_map<InsExeQue::ExtInsExeEntityId, std::unordered_set<uint64_t>> ccuServerMap;
 
@@ -71,6 +78,9 @@ private:
 
     std::vector<u64> dataCounts;
     std::vector<u64> displs;
+
+    HcclCombinOpParam combinOpParam{0};
+    bool              ccuResourceAlloced{false}; // 标记通信域粒度资源已经申请过了
 };
 } // namespace Hccl
 #endif // MC2_COMPONT_H

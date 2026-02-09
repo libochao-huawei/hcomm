@@ -659,8 +659,11 @@ public:
         struct MemDetails *localMems, struct MemDetails *remoteMems, u32 memNum, u64 &dbInfo);
     static HcclResult HcclBatchWrite(const TransportDeviceNormalData &ibvData,
         struct MemDetails *localMems, struct MemDetails *remoteMems, u32 memNum, u64 &dbInfo);
+    static HcclResult SetDeviceUnavailable(u32 deviceId);
     
     bool GetIsUseAtomicWrite();
+
+    HcclResult GetSpecificNotify(HcclSignalInfo& notifyInfo, bool& isValid, const std::string& notifyName);
 
 private:
     void CreateTransportRoce(TransportType type, TransportPara& para, const HcclDispatcher dispatcherPtr,

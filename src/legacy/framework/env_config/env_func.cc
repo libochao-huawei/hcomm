@@ -17,6 +17,7 @@
 #include <sstream>
 #include <set>
 #include <unordered_map>
+#include <array>
 
 #include "sal.h"
 #include "string_util.h"
@@ -284,6 +285,8 @@ static void ParseAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlgoTyp
         {"NHR", HcclAlgoType::HCCL_ALGO_TYPE_NHR},
         {"NB", HcclAlgoType::HCCL_ALGO_TYPE_NB},
         {"NA", HcclAlgoType::HCCL_ALGO_TYPE_NA},
+        {"NHR_V1", HcclAlgoType::HCCL_ALGO_TYPE_NHR_V1},
+        {"AHC", HcclAlgoType::HCCL_ALGO_TYPE_AHC},
     };
 
     auto iterAlgoLevel = hcclAlgoLevelMap.find(orginalLevel);
@@ -418,6 +421,8 @@ HcclResult ParserHcclAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlg
         {"NHR", HcclAlgoType::HCCL_ALGO_TYPE_NHR},
         {"NB", HcclAlgoType::HCCL_ALGO_TYPE_NB},
         {"NA", HcclAlgoType::HCCL_ALGO_TYPE_NA},
+        {"NHR_V1", HcclAlgoType::HCCL_ALGO_TYPE_NHR_V1},
+        {"AHC", HcclAlgoType::HCCL_ALGO_TYPE_AHC},
     };
 
     auto iterAlgoLevel = hcclAlgoLevelMap.find(orginalLevel);
@@ -449,6 +454,8 @@ const std::map<HcclAlgoType, std::string> HcclAlgoTypeMap = {
     {HcclAlgoType::HCCL_ALGO_TYPE_NB, "NB"},
     {HcclAlgoType::HCCL_ALGO_TYPE_NULL, "null"},
     {HcclAlgoType::HCCL_ALGO_TYPE_NA, "NA"},
+    {HcclAlgoType::HCCL_ALGO_TYPE_NHR_V1, "NHR_V1"},
+    {HcclAlgoType::HCCL_ALGO_TYPE_AHC, "AHC"},
 };
 
 HcclResult SplitHcclAlgoLevel(const std::string &algoConfig, std::vector<std::string> &algos)
@@ -792,7 +799,7 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
             }
         }
     }
-    DfsConfig config{.taskExceptionEnable = taskExceptionEnable};
+    DfsConfig config{taskExceptionEnable};
     HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG task_exception set by environment to [%d]", config.taskExceptionEnable);
     return config;
 }

@@ -13,6 +13,7 @@ set(hccl_utest_impl_list
     ut_hccl_impl_common_new.cc
     # ut_hccl_impl_common.cc
     # ut_hccl_impl.cc
+    ut_hccl_impl_new.cc
     # ut_zero_copy_memory_agent.cc
     ut_preempt_port_manager.cc
     ut_template_base.cc
@@ -50,7 +51,7 @@ target_link_directories(hccl_utest_impl PRIVATE
 target_link_libraries(hccl_utest_impl PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
-    -lpthread
+    -pthread
     hccl_llt
     -Wl,--whole-archive
     -Wl,--no-whole-archi

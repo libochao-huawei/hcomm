@@ -13,6 +13,7 @@
 #include "log.h"
 
 #include "hcom_common.h"
+#include "exception_handler.h"
 
 #include "ccu_dev_mgr.h"
 #include "ccu_res_pack.h"
@@ -84,6 +85,7 @@ HcclResult CcuResContainer::ResetResPack()
         return HcclResult::HCCL_SUCCESS;
     }
 
+    untranslatedKernelHandles_.clear();
     CHK_RET(resPack_->Reset());
     return HcclResult::HCCL_SUCCESS;
 }
@@ -95,10 +97,16 @@ CcuResPack *CcuResContainer::GetResPack()
 
 HcclResult CcuResContainer::SaveCcuKernel(const CcuKernelHandle kernelHandle)
 {
-    EXECEPTION_CATCH(kernelHandles_.push_back(kernelHandle),
-        return HcclResult::HCCL_E_INTERNAL);
-
+    EXCEPTION_HANDLE_BEGIN
+    kernelHandles_.push_back(kernelHandle);
+    untranslatedKernelHandles_.push_back(kernelHandle);
+    EXCEPTION_HANDLE_END
     return HcclResult::HCCL_SUCCESS;
+}
+
+const std::vector<CcuKernelHandle> &CcuResContainer::GetUntranslatedKernels()
+{
+    return untranslatedKernelHandles_;
 }
 
 }

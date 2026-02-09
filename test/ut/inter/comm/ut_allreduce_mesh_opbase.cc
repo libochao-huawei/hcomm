@@ -26,6 +26,7 @@
 #undef protected
 #include "profiler_manager.h"
 #include "dlra_function.h"
+#include "adapter_prof.h"
 
 using namespace std;
 using namespace hccl;
@@ -61,6 +62,9 @@ protected:
             .stubs()
             .with(any(), outBound(portNum))
             .will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtProfRegisterCtrlCallback)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
         std::cout << "A Test SetUP" << std::endl;
     }
     virtual void TearDown()

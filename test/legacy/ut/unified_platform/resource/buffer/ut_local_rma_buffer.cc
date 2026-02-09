@@ -11,7 +11,8 @@
 #include "gtest/gtest.h"
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
-
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 #include "local_ub_rma_buffer.h"
 #include "local_rdma_rma_buffer.h"
 #include "local_ipc_rma_buffer.h"
@@ -109,7 +110,7 @@ TEST_F(LocalRmaBufferTest, getExchangeDto_ipc_test)
 TEST_F(LocalRmaBufferTest, generate_safe_random_number)
 {
     MOCKER(HrtGetDevice).stubs().will(returnValue(1));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
     MOCKER(HrtRaGetSecRandom).stubs().with(any(), any());
     u32 token = GetUbToken();
 }

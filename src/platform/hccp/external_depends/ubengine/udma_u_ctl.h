@@ -201,6 +201,8 @@ struct udma_u_ue_info {
 struct udma_u_cqe_info_in {
 	enum urma_cr_status status;
 	uint8_t s_r;
+    uint16_t rsv_bitmap;
+    uint32_t rsvd[8];
 };
  
 enum udma_u_cqe_aux_info_type {
@@ -253,10 +255,14 @@ struct udma_u_cqe_aux_info_out {
 	enum udma_u_cqe_aux_info_type *aux_info_type;
 	uint32_t *aux_info_value;
 	uint32_t aux_info_num;
+    uint32_t rsv_bitmap;
+    uint32_t rsvd[8];
 };
  
 struct udma_u_ae_info_in {
 	uint32_t event_type;
+    uint32_t rsv_bitmap;
+    uint32_t rsvd[8];
 };
  
 enum udma_u_ae_aux_info_type {

@@ -54,7 +54,7 @@ TEST_F(HccpTlvHdcManagerTest, should_successfully_init_HccpTlvHdcManager) {
     MOCKER(HrtGetDevicePhyIdByIndex)
         .stubs()
         .with(any())
-        .will(returnValue(0));
+        .will(returnValue(static_cast<DevId>(0)));
     MOCKER(RaTlvInit).stubs().will(returnValue(0));
     HccpTlvHdcManager::GetInstance().Init(deviceLogicId);
 }

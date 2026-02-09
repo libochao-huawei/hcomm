@@ -73,10 +73,6 @@ HcclResult SqeMgr::Add(u32 sqId, HcclSqe *sqe)
     }
 
     void   *nextBufferAddr = static_cast<u8 *>(sqInfo->sqeBuffer) + sqInfo->sqeCnt * AC_SQE_SIZE;
-    if (sqInfo->sqeBuffer == nullptr) {
-        HCCL_ERROR("SqeMgr::Add sqInfo->sqeBuffer is nullptr");
-        return HcclResult::HCCL_E_PTR;
-    }
 
     HCCL_INFO("SqeMgr::%s sqe->GetSqe() %llu", __func__, sqe->GetSqe());
 

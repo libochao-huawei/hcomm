@@ -9,7 +9,7 @@
  */
 #include "dev_ub_connection.h"
 
-#include <random>
+#include <cstdlib>
 
 #include "hccp_ctx.h"
 #include "exception_util.h"
@@ -26,9 +26,9 @@ constexpr u32 WQE_NUM_PER_SQE         = 4; // URMA约束每个SQE包含4个WQEBB
 constexpr u32 UB_MAX_TRANS_SIZE       = 256 * 1024 * 1024; // UB单次最大传输量256*1024*1024 Byte
 
 DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                                 const OpMode opMode, const bool devUsed)
+                                 const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
     : RmaConnection(nullptr, RmaConnType::UB), rdmaHandle(rdmaHandle), locAddr(locAddr), rmtAddr(rmtAddr),
-      opMode(opMode), rmtEid(rmtAddr.GetReverseEid()), locEid(locAddr.GetReverseEid())
+      opMode(opMode), jfcMode(jfcMode), rmtEid(rmtAddr.GetReverseEid()), locEid(locAddr.GetReverseEid())
 {
     HCCL_INFO("[DevUbConnection::DevUbConnection] rmtEid=%s", rmtEid.Describe().c_str());
     devLogicId = HrtGetDevice();
@@ -37,7 +37,12 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
     dieId               = dieIdAndFuncId.first;
     funcId              = dieIdAndFuncId.second;
 
-    jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, jfcMode);
+    if (jfcMode == HrtUbJfcMode::USER_CTL) {
+        jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandleAndCqInfo(rdmaHandle, cqInfo_, jfcMode);
+    }
+    else {
+        jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, jfcMode);
+    }
 
     sqDepth = OPBASED_UB_SQ_DEPTH_MAX;
     if (opMode == OpMode::OFFLOAD && devUsed == false) {
@@ -53,15 +58,15 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
 }
 
 DevUbTpConnection::DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                                     const OpMode opMode, const bool devUsed)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed)
+                                     const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
 {
     tpProtocol = TpProtocol::TP;
 }
 
 DevUbCtpConnection::DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                                       const OpMode opMode, const bool devUsed)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed)
+                                       const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
 {
     tpProtocol = TpProtocol::CTP;
 }
@@ -92,6 +97,25 @@ std::vector<char> DevUbConnection::GetUniqueId() const
     HCCL_INFO("type=%s, jfcPollMode=%u, dwqeCacheLocked=%d, sqCiAddr=0x%llx", rmaConnType.Describe().c_str(),
                jfcPollMode, dwqeCacheLocked, sqCiAddr);
     return result;
+}
+
+void DevUbConnection::SetCqInfo(HcclAiRMACQ &cq)
+{
+    cq.jfcId = cqInfo_.id;
+    cq.cqVA = cqInfo_.va;
+    cq.cqeSize = cqInfo_.cqeSize;
+    cq.cqDepth = cqInfo_.cqDepth;
+    cq.dbAddr = cqInfo_.swdbAddr;
+}
+
+void DevUbConnection::SetWqInfo(HcclAiRMAWQ &wq)
+{
+    wq.jettyId = jettyId;
+    wq.dbAddr = dbAddr;
+    wq.sqVA = sqBuffVa;
+    wq.sqDepth = sqDepth * WQE_NUM_PER_SQE;
+    wq.tp_id = tpn;
+    memcpy_s(wq.rmtEid, sizeof(wq.rmtEid), rmtEid.raw, sizeof(wq.rmtEid));
 }
 
 void DevUbConnection::Connect()
@@ -268,11 +292,11 @@ void DevUbConnection::CreateJetty(const bool devUsed)
 
 void DevUbConnection::SetJettyInfo()
 {
-    struct qp_create_info *info = reinterpret_cast<qp_create_info *>(reqDataBuffer.data());
+    struct QpCreateInfo *info = reinterpret_cast<QpCreateInfo *>(reqDataBuffer.data());
     jettyId                     = info->ub.id;
     jettyHandle                 = reinterpret_cast<JettyHandle>(jettyHandlePtr);
     keySize                     = info->key.size;
-    sqBuffVa                    = info->ub.sq_buff_va; // hccp提供
+    sqBuffVa                    = info->ub.sqBuffVa; // hccp提供
     HCCL_INFO("[DevUbConnection][%s] Get sqBuffVa is %llx.", __func__, sqBuffVa);
 
     s32 ret = memcpy_s(localQpKey, HRT_UB_QP_KEY_MAX_LEN, info->key.value, info->key.size);
@@ -280,7 +304,7 @@ void DevUbConnection::SetJettyInfo()
         THROW<InternalException>(StringFormat("[DevUbConnection][%s] memcpy_s failed, ret=%d", __func__, ret));
     }
 
-    dbAddr = info->ub.db_addr;
+    dbAddr = info->ub.dbAddr;
 }
 
 bool DevUbConnection::GetTpInfo()
@@ -334,9 +358,18 @@ void DevUbConnection::ImportJetty()
 
 void DevUbConnection::SetImportInfo()
 {
-    struct qp_import_info_t *info = reinterpret_cast<qp_import_info_t *>(reqDataBuffer.data());
+    struct QpImportInfoT *info = reinterpret_cast<QpImportInfoT *>(reqDataBuffer.data());
     remoteJettyHandle             = reinterpret_cast<TargetJettyHandle>(remoteJettyHandlePtr);
     tpn                           = info->out.ub.tpn;
+}
+
+void DevUbConnection::ReleaseTp()
+{
+    if (tpInfo.tpHandle != 0) {
+        (void)TpManager::GetInstance(devLogicId)
+            .ReleaseTpInfo({locAddr, rmtAddr, tpProtocol}, tpInfo);
+        tpInfo.tpHandle = 0;
+    }
 }
 
 void DevUbConnection::ReleaseResource()
@@ -346,11 +379,7 @@ void DevUbConnection::ReleaseResource()
         remoteJettyHandle = 0;
     }
 
-    if (tpInfo.tpHandle != 0) {
-        (void)TpManager::GetInstance(devLogicId)
-            .ReleaseTpInfo({locAddr, rmtAddr, tpProtocol}, tpInfo);
-        tpInfo.tpHandle = 0;
-    }
+    ReleaseTp();
 
     if (jettyHandle != 0) {
         HrtRaUbDestroyJetty(jettyHandle);
@@ -371,7 +400,7 @@ bool DevUbConnection::Suspend()
         HCCL_INFO("[DevUbConnection][%s] RmaConnStatus is SUSPENDED, status[%s].", __func__, status.Describe().c_str());
         return true;
     }
-    
+
     if (status != RmaConnStatus::READY) {
         ThrowAbnormalStatus(std::string(__func__));
     }
@@ -788,9 +817,19 @@ HrtUbJfcMode DevUbConnection::GetUbJfcMode() const
     return jfcMode;
 }
 
-JettyHandle DevUbConnection::GetJettyHandle() const
+JettyHandle& DevUbConnection::GetJettyHandle()
 {
     return jettyHandle;
+}
+
+JettyHandle&  DevUbConnection::GetRemoteJettyHandle()
+{
+    return remoteJettyHandle;
+}
+
+RdmaHandle&  DevUbConnection::GetRdmaHandle()
+{
+    return rdmaHandle;
 }
 
 u32 DevUbConnection::GetPiVal() const

@@ -509,8 +509,8 @@ HcclResult FindLocalHostIP(std::vector<std::pair<std::string, hccl::HcclIpAddres
             LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_ENV_CONFIG.c_str(), errormessage.c_str());
         RPT_ENV_ERR(true,
             "EI0001",
-            std::vector<std::string>({"env", "tips"}),
-            std::vector<std::string>({"HCCL_SOCKET_IFNAME", errormessage}));
+            std::vector<std::string>({"value", "env", "expect"}),
+            std::vector<std::string>({tmpIp.GetReadableAddress(), "HCCL_SOCKET_IFNAME", "an ip address that exists in the local network interfaces list"}));
         return HCCL_E_NOT_FOUND;
     } else if (!GetExternalInputHcclSocketIfName().configIfNames.empty()) {
         // 使用Host网卡名和环境变量HCCL_SOCKET_IFNAME配置的网卡名进行比较
@@ -530,8 +530,9 @@ HcclResult FindLocalHostIP(std::vector<std::pair<std::string, hccl::HcclIpAddres
                 LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_ENV_CONFIG.c_str(), errormessage.c_str());
             RPT_ENV_ERR(true,
                 "EI0001",
-                std::vector<std::string>({"env", "tips"}),
-                std::vector<std::string>({"HCCL_SOCKET_IFNAME", errormessage}));
+                std::vector<std::string>({"value", "env", "expect"}),
+                std::vector<std::string>({hcclSocketIfnameStr, "HCCL_SOCKET_IFNAME",
+                "a valid network interface name (e.g., eth0, bound0) present on this host"}));
             for (auto &ifInfo : ifInfos) {
                 HCCL_ERROR("[%s][%s]get host ip fail by socket Ifname. name[%s] ip[%s]",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),

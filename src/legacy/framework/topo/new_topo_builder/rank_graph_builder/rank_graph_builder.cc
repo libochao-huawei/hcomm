@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <array>
 #include "rank_graph_builder.h"
 #include "detour_service.h"
 #include "env_func.h"
@@ -205,7 +206,7 @@ void RankGraphBuilder::AddTopoDescFabricInfo()
         auto peer2netEdges = phyTopoGraph->GetEdges(localId, PhyTopo::Fabric::GetId());
 
         HCCL_RUN_INFO(
-            "[RankGraphBuilder][AddTopoDescFabricInfo] Processing rank %u (localId: %u), found %zu peer2net edges",
+            "[RankGraphBuilder][AddTopoDescFabricInfo] Processing rank %d (localId: %u), found %zu peer2net edges",
             rankId, localId, peer2netEdges.size());
 
         for (const auto& link : peer2netEdges) {
@@ -332,9 +333,38 @@ void RankGraphBuilder::BuildFromRankTable()
     HCCL_DEBUG("[RankGraphBuilder][BuildFromRankTable] Build VirtualTopo from RankTable success!");
 }
 
+void RankGraphBuilder::SetEndpointDesc()
+{
+    std::shared_ptr<NetInstance::Peer> peer = peers_[myRank_];
+    CHK_PRT_THROW(peer == nullptr, HCCL_ERROR("[RankGraphBuilder::%s] fail", __func__), NullPtrException, "peer is null" );
+    // 获取 peer 的 Iface
+    std::set<u32> layers = peer->GetLevels();
+    for (const auto& layer : layers) {
+        auto ifacesVec = peer->GetIfacesByLayer(layer);
+        for (const auto& iface : ifacesVec) {
+            const auto& protocols = iface->GetLinkProtocols();
+            for (const auto& protocol : protocols) {
+                EndpointDesc desc{};
+
+                HcclResult ret = GetCommAddr(desc.commAddr, iface->GetAddr());
+                CHK_PRT_THROW(ret != HCCL_SUCCESS, HCCL_ERROR("[RankGraphBuilder::%s] fail", __func__), InternalException, "GetCommAddr fail" );
+
+                auto it = protocolMap.find(protocol);
+                desc.protocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
+                desc.loc.locType = AddrPositionToEndpointLoc(iface->GetPos());
+
+                HCCL_INFO("[RankGraphBuilder::SetEndpointDesc] local type[%d] protocol[%d]",
+                          desc.loc.locType, desc.protocol);
+
+                peer->SetEndpointToIface(desc.commAddr, desc.protocol, iface);
+            }
+        }
+    }
+}
+
 std::shared_ptr<NetInstance> RankGraphBuilder::GetNetInstance(const RankLevelInfo &levelInfo){
     auto it = tempNetInsts_[levelInfo.netLayer].find(levelInfo.netInstId);
-    if (it != tempNetInsts_[levelInfo.netLayer].end()) {
+    if (it == tempNetInsts_[levelInfo.netLayer].end()) {
         return nullptr;
     }
     // 若NetInstance存在, type不一致则报错
@@ -458,7 +488,6 @@ void RankGraphBuilder::UpdateTopoInstForMyRankOnly()
     }
 }
 
-
 std::vector<std::shared_ptr<NetInstance::ConnInterface>> ConstructConnIFromPhyTopoConnIAndPortMap(
         std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, std::unordered_map<std::string, IpAddress> portAddrMap, 
         const TopoType topoType, const u32 topoInstId) {
@@ -560,6 +589,9 @@ void RankGraphBuilder::BuildRankGraph()
 
     // 添加绕路 绕路获取
     DetourService::GetInstance().InsertDetourLinks(rankGraph_.get(), rankTable_.get());
+
+    // 设置endpoint
+    SetEndpointDesc();
 
     // 构造完成
     rankGraph_->InitFinish();

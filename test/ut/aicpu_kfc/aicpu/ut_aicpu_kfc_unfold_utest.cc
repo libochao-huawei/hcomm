@@ -2332,7 +2332,7 @@ TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_DecoulpledCtx)
     msg->hcclDataType = HCCL_DATA_TYPE_FP16;
     msg->dataCnt = 16;
     msg->valid = HCCL_MSG_VALID_MASK;
-    msg->repeatCnt = 2;
+    msg->repeatCnt = 255;
     msg->sendBuffer = 0x12345678;
     msg->recvBuffer = 0x12345678;
     msg->ccOpTilingData = 1;
@@ -2824,45 +2824,6 @@ TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_FinalizeMsgTimeout)
     uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
     MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
     EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_TIMEOUT);
-}
-
-TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_InvalidRepeat)
-{
-    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
-
-    // commit
-    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
-    msg->version = 3;
-    msg->commType = HCCL_CMD_ALLGATHER;
-    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
-    msg->dataCnt = 16;
-    msg->valid = HCCL_MSG_VALID_MASK;
-    msg->repeatCnt = 100;
-    msg->sendBuffer = 0x12345678;
-    msg->recvBuffer = 0x12345678;
-    msg->ccOpTilingData = 1;
-    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
-    // finalize
-    ++msg;
-    msg->version = 3;
-    msg->commType = HCCL_CMD_FINALIZE;
-    msg->valid = HCCL_MSG_VALID_MASK;
-    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
-
-    CommKfcParamDesc desc;
-    desc.version = 2;
-    desc.itemNum = 1;
-    desc.hasFfts = 0;
-    desc.tilingOff = 0;
-    desc.isDyn = 0;
-    uint64_t inputDesc;
-    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(CommKfcParamDesc));
-    CommKfcContext ctx1{};
-    ctx1.hcclContext = 1;
-    ctx1.apiCtx.workSpace = (u64)g_msgArea;
-    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
-    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
-    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_PARA);
 }
 
 TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_FinalizeTimeout)

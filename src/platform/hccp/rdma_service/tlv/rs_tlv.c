@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include <errno.h>
 #include "securec.h"
@@ -114,37 +114,44 @@ STATIC int RsTlvAssembleSendData(struct TlvBufInfo *bufInfo, struct TlvRequestMs
     return 0;
 }
 
-STATIC int rs_ccu_request(struct TlvRequestMsgHead *head, char *data)
+STATIC int RsCcuRequest(struct TlvRequestMsgHead *head, char *dataIn, char *dataOut, unsigned int *bufferSize)
 {
     int ret = 0;
 
     switch (head->type) {
         case MSG_TYPE_CCU_INIT:
-            ret = rs_ccu_init();
-            CHK_PRT_RETURN(ret != 0, hccp_err("rs_ccu_init failed, ret(%d) module_type(%u) msg_type(%u) phy_id(%u)",
+            ret = RsCcuInit();
+            CHK_PRT_RETURN(ret != 0 && ret != -EUSERS , hccp_err("rs_ccu_init failed, ret(%d) module_type(%u) msg_type(%u) phy_id(%u)",
                 ret, head->moduleType, head->type, head->phyId), ret);
             break;
         case MSG_TYPE_CCU_UNINIT:
-            ret = rs_ccu_uninit();
-            CHK_PRT_RETURN(ret != 0, hccp_err("rs_ccu_uninit failed, ret(%d) module_type(%u) msg_type(%u) phy_id(%u)",
+            ret = RsCcuUninit();
+            CHK_PRT_RETURN(ret != 0, hccp_err("rs_ccu_uninit failed, ret(%d) module_type(%u) msg_type(%u) phyId(%u)",
+                ret, head->moduleType, head->type, head->phyId), ret);
+            break;
+        case MSG_TYPE_CCU_GET_MEM_INFO:
+            ret = RsCcuGetMemInfo(dataIn, dataOut, bufferSize);
+            CHK_PRT_RETURN(ret != 0, hccp_err("RsCcuGetMemInfo failed, ret(%d) module_type(%u) msg_type(%u) phyId(%u)",
                 ret, head->moduleType, head->type, head->phyId), ret);
             break;
         default:
-            hccp_err("[request][rs_ccu]msg type error, module_type(%u) msg_type(%u) phy_id(%u)",
+            hccp_err("[request][rs_ccu]msg type error, module_type(%u) msg_type(%u) phyId(%u)",
                 head->moduleType, head->type, head->phyId);
             return -EINVAL;
     }
-            
+
     return ret;
 }
-        
-RS_ATTRI_VISI_DEF int RsTlvRequest(struct TlvRequestMsgHead *head, char *data)
+
+RS_ATTRI_VISI_DEF int RsTlvRequest(struct TlvRequestMsgHead *head, char *dataIn, char *dataOut,
+    unsigned int *bufferSize)
 {
     struct RsTlvCb *tlvCb = NULL;
     bool isSendFinish = false;
     int ret = 0;
 
-    CHK_PRT_RETURN(head == NULL || data == NULL, hccp_err("param error, head or data is NULL"), -EINVAL);
+    CHK_PRT_RETURN(head == NULL || dataIn == NULL || dataOut == NULL || bufferSize == NULL,
+        hccp_err("param error, head or dataIn or dataOut or bufferSize is NULL"), -EINVAL);
 
     ret = RsGetTlvCb(head->phyId, &tlvCb);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_tlv_cb failed, ret(%d) phyId(%u)", ret, head->phyId), ret);
@@ -152,7 +159,7 @@ RS_ATTRI_VISI_DEF int RsTlvRequest(struct TlvRequestMsgHead *head, char *data)
         hccp_err("rs_tlv buf not initialized, phyId(%u)", head->phyId), -EINVAL);
 
     RS_PTHREAD_MUTEX_LOCK(&tlvCb->mutex);
-    ret = RsTlvAssembleSendData(&tlvCb->bufInfo, head, data, &isSendFinish);
+    ret = RsTlvAssembleSendData(&tlvCb->bufInfo, head, dataIn, &isSendFinish);
     if (ret != 0) {
         hccp_err("rs_tlv_assemble_send_data failed, ret(%d) phyId(%u)", ret, tlvCb->phyId);
         goto tlv_request_release_lock;
@@ -168,7 +175,7 @@ RS_ATTRI_VISI_DEF int RsTlvRequest(struct TlvRequestMsgHead *head, char *data)
                     head->type, tlvCb->bufInfo.buf, head->totalBytes);
             break;
         case TLV_MODULE_TYPE_CCU:
-            ret = rs_ccu_request(head, data);
+            ret = RsCcuRequest(head, dataIn, dataOut, bufferSize);
             break;
         default:
             hccp_err("[request][rs_tlv]module type error, moduleType(%u) phyId(%u)", head->moduleType, head->phyId);

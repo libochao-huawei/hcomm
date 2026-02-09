@@ -13,13 +13,11 @@
 
 #include <cstdint>
 #include "ccu_rep_type.h"
-#include "enum_factory.h"
 namespace Hccl {
 
 constexpr uint32_t MISSION_STATUS_MSG_LEN = 64;
 constexpr uint32_t WAIT_SIGNAL_CHANNEL_SIZE = 16;
 constexpr uint32_t BUF_REDUCE_ID_SIZE = 8;
-
 
 MAKE_ENUM(CcuErrorType, DEFAULT, MISSION, WAIT_SIGNAL, TRANS_MEM, BUF_TRANS_MEM, BUF_REDUCE, LOOP, LOOP_GROUP)
 

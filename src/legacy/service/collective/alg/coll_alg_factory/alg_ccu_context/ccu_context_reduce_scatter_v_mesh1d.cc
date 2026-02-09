@@ -45,7 +45,7 @@ void CcuContextReduceScatterVMesh1D::LoadArgs()
     Load(input_[rankId_]);
     Load(output_);
     Load(token_[rankId_]);
-    Load(mySliceOffSet_);
+    Load(mySliceOffset_);
     Load(groupOpSize_);
     return;
 }
@@ -64,15 +64,15 @@ void CcuContextReduceScatterVMesh1D::InitResources()
         } else {
             HCCL_INFO("[CcuContextReduceScatterVMesh1D] MyRank[%u], PeerId[%llu], TransportId[%u]", rankId_, peerId,
                       transportIdx);
-            CHK_PRT_RET(transports[transportIdx] == nullptr,
-                        HCCL_ERROR("[CcuContextReduceScatterVMesh1D] Algorithm transport ptr is null"),);
+            CHK_PRT_RET(transports[transportIdx] == nullptr || transportIdx >= transports.size(),
+                HCCL_ERROR("[CcuContextReduceScatterVMesh1D] Algorithm transport ptr is null or transportIdx is out of bounds"),);
             input_.push_back(
                 CreateVariable((*transports[transportIdx]), INPUT_XN_ID)); // 获取transport中id=1的Var来传递output
             token_.push_back(CreateVariable((*transports[transportIdx]), TOKEN_XN_ID));
             transportIdx++;
         }
     }
-    mySliceOffSet_ = CreateVariable();
+    mySliceOffset_ = CreateVariable();
     groupOpSize_   = CreateGroupOpSize();
     output_        = CreateVariable();
 
@@ -123,7 +123,7 @@ void CcuContextReduceScatterVMesh1D::DoGroupReduce()
             curId = rankSize_ - 1;
         }
         src[curId].addr = input_[rankIdx];
-        src[curId].addr += mySliceOffSet_;
+        src[curId].addr += mySliceOffset_;
         src[curId].token = token_[rankIdx];
     }
 
@@ -151,7 +151,7 @@ std::vector<uint64_t> CcuContextReduceScatterVMesh1D::GeneArgs(const CcuTaskArg 
     uint64_t              inputAddr           = taskArg->inputAddr_;
     uint64_t              outputAddr          = taskArg->outputAddr_;
     uint64_t              tokenInfo           = taskArg->token_;
-    uint64_t              mySliceInputOffset  = taskArg->offSet_;
+    uint64_t              mySliceInputOffset  = taskArg->offset_;
     uint64_t              mySliceSize         = taskArg->sliceSize_;
     auto                  goSize              = CalGoSize(mySliceSize);
     std::vector<uint64_t> args = {inputAddr, outputAddr, tokenInfo, mySliceInputOffset};

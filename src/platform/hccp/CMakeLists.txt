@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
@@ -28,7 +28,7 @@ target_include_directories(hccp_service.bin PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/hccp_service
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/driver
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/log
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/rdma-core/providers/hns
     ${CMAKE_CURRENT_SOURCE_DIR}/inc/network
@@ -93,7 +93,7 @@ if(DEVICE_MODE)
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:rs> ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra_adp> ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hccp_service.bin> ${HCCP_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/lib/lib* ${HCCP_TAR_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/lib/lib* ${HCCP_TAR_DIR}
         COMMAND chmod 750 ${HCCP_TAR_DIR}/lib*
         COMMAND chmod 750 ${HCCP_TAR_DIR}/hccp_service.bin
         COMMENT "Copying rs ra_adp hccp_service.bin ascend_kms tls_adp to ${HCCP_TAR_DIR}"

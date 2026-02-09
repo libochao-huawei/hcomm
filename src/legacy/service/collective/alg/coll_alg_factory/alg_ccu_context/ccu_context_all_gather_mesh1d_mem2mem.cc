@@ -45,14 +45,14 @@ CcuContextAllGatherMeshMem2Mem1D::CcuContextAllGatherMeshMem2Mem1D(const CcuCtxA
         } else {
             HCCL_INFO("[CcuContextAllGatherMeshMem2Mem1D] MyRank[%u], PeerId[%llu], TransportId[%u]",
                 rankId_, peerId, transportIdx);
-            CHK_PRT_RET(transports[transportIdx] == nullptr,
-                HCCL_ERROR("[CcuContextAllGatherMeshMem2Mem1D] Algorithm transport ptr is null"),);
+            CHK_PRT_RET(transports[transportIdx] == nullptr || transportIdx >= transports.size(),
+                    HCCL_ERROR("[CcuContextAllGatherMeshMem2Mem1D] Algorithm transport ptr is null or transportIdx is out of bounds"),);
             output_.push_back(CreateVariable((*transports[transportIdx]), OUTPUT_XN_ID));  // 获取transport中id=1的Var来传递output
             token_.push_back(CreateVariable((*transports[transportIdx]), TOKEN_XN_ID));
             transportIdx++;
         }
     }
-    offSet_ = CreateVariable();
+    offset_ = CreateVariable();
     sliceSize_ = CreateVariable();
     localGoSize_ = CreateGroupOpSize();
 }
@@ -66,7 +66,7 @@ void CcuContextAllGatherMeshMem2Mem1D::Algorithm()
     Load(input_[0]);
     Load(output_[rankId_]);
     Load(token_[rankId_]);
-    Load(offSet_);
+    Load(offset_);
     Load(sliceSize_);
     Load(localGoSize_);
 
@@ -89,7 +89,7 @@ void CcuContextAllGatherMeshMem2Mem1D::Algorithm()
     src.token = token_[rankId_];
     for (uint64_t rankIdx = 0; rankIdx < rankSize_; rankIdx++) {
         dst[rankIdx].addr = output_[rankIdx];
-        dst[rankIdx].addr += offSet_;
+        dst[rankIdx].addr += offset_;
         dst[rankIdx].token = token_[rankIdx];
         if (rankIdx == rankId_) {
             LocalPost(locMask, 1 << rankIdx);
@@ -118,7 +118,7 @@ std::vector<uint64_t> CcuContextAllGatherMeshMem2Mem1D::GeneArgs(const CcuTaskAr
     uint64_t inputAddr  = taskArg->inputAddr_;
     uint64_t outputAddr = taskArg->outputAddr_;
     uint64_t tokenInfo  = taskArg->token_;
-    uint64_t offset     = taskArg->offSet_;
+    uint64_t offset     = taskArg->offset_;
     uint64_t sliceSize  = taskArg->sliceSize_;
     auto     localGoSize = CalGoSize(sliceSize);
 

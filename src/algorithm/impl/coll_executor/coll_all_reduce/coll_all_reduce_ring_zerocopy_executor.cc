@@ -77,6 +77,10 @@ HcclResult CollAllReduceRingZerocopyExecutor::CalcLevel0CommInfo(TransportMemTyp
 {
     CommParaInfo commParaLevel0(COMM_LEVEL0, CommType::COMM_TAG_RING_INNER);
     CHK_RET(CalcCommPlaneInfo(tag_, commParaLevel0, opTransport[COMM_LEVEL0], inputType, outputType));
+    LevelNSubCommTransport &commTransportLevel0 = opTransport[COMM_LEVEL0];
+    for (u32 subCommIndex = 0; subCommIndex < commTransportLevel0.size(); subCommIndex++) {
+        commTransportLevel0[subCommIndex].isZeroCopy = true;
+    }
     return HCCL_SUCCESS;
 }
 
@@ -87,7 +91,7 @@ HcclResult CollAllReduceRingZerocopyExecutor::DoubleRingReduceScatter(const std:
     const std::vector<std::vector<Slice>> multRingsUserMemSlice)
 {
     (void) tag;
-    HCCL_INFO("[CollAlignedAllReduceDoubleRingFor91093Executor][DoubleRingReduceScatter] DoubleRingReduceScatter starts");
+    HCCL_INFO("[CollAllReduceRingZerocopyExecutor][DoubleRingReduceScatter] DoubleRingReduceScatter starts");
 
     u64 reduceAttr = GetReduceAttr(inputMem, outputMem, dataType, reductionOp);
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));

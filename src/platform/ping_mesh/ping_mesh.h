@@ -21,6 +21,7 @@
 #include "network/hccp_ping.h"
 #include "hccn_rping.h"
 #include "orion_adapter_hccp.h"
+#include "dispatcher_task_types.h"
  
 namespace hccl
 {
@@ -32,6 +33,9 @@ constexpr u64 TSD_EXT_PARA_NUM = 2;
 constexpr u32 RPING_SERVICE_LEVEL_DEFAULT = 4;
 constexpr u32 RPING_TRAFFIC_CLASS_DEFAULT = 132;
 
+//判断类型相关函数
+bool IsSupportHCCLV2(const char *socNamePtr);
+HcclResult GetAddrType(u32 *addrtype);
 // HCCN接口需要的结构体
 struct RpingInput {
     HcclIpAddress sip;
@@ -47,6 +51,7 @@ struct RpingInput {
 };
 
 MAKE_ENUM(HrtNetworkMode, PEER, HDC)
+
 struct HRaInfo {
     HrtNetworkMode mode;
     uint32_t       phyId;
@@ -54,7 +59,6 @@ struct HRaInfo {
     {
     }
 };
-
 
 struct RpingOutput {
     u32 txPkt;     // rping发包总数
@@ -106,34 +110,32 @@ union RpingIpHead {
     } ipv4;
 };
 
-#ifdef CONFIG_CONTEXT
 struct RpingEidHead {
-       u32	version;            // 32bit version
-       u32	type;               // 32bit type
-       u32	ser_version;        // 32bit serversion
-       u32	padding1;         // 32bitpadding
-       u8   info_size1;          // 8bit的info_size 
-       u8 	srcEid[16];         // sip的Eid，128bit
-       u32  uasid1;              // 32bit的uasid
-       u32  jetty_id1;              // 32bit的jetty_id值
-       u32  padding2;              // 32bit的padding
-       u8   resvd[7];              // 56bit的reserved
-       u32  s_token_value;         // 32bit的s_token_value
-       u32  dst_version;              // 32bit的dst_version
-       u32  padding3;              // 32bit的padding
-       u8	info_size2;           // 4bit的info_size
-       u8 	dstEid[16];         // dip的Eid，128bit  
-       u32  uasid2;//4字节
-       u32  jetty_id2;//4字节，32bit
-       u8   reserv[7];
-       u32  client_jetty_token_value; //4字节
-       u64  times[8];
-       u32  taskId;
-       u8 reserved[44];
-       // todo : 测试整体打印出来
+    u32  version;            // 32bit version
+    u32  type;               // 32bit type
+    u32  ser_version;        // 32bit serversion
+    u32  padding1;           // 32bitpadding
+    u8   info_size1;         // 8bit的info_size 
+    u8   srcEid[16];         // sip的Eid，128bit
+    u32  uasid1;             // 32bit的uasid
+    u32  jetty_id1;          // 32bit的jetty_id值
+    u32  padding2;           // 32bit的padding
+    u8   resvd[7];           // 56bit的reserved
+    u32  s_token_value;      // 32bit的s_token_value
+    u32  dst_version;        // 32bit的dst_version
+    u32  padding3;           // 32bit的padding
+    u8   info_size2;         // 4bit的info_size
+    u8   dstEid[16];         // dip的Eid，128bit  
+    u32  uasid2;             // 32bit的uasid2
+    u32  jetty_id2;          // 32bit的jetty_id2
+    u8   reserv[7];
+    u32  client_jetty_token_value; //32bit的client_jetty_token_value
+    u64  times[8];
+    u32  taskId;
+    u8 reserved[44];
+
 };
-#endif
- 
+
 enum class RpingState {
     UNINIT,
     INITED,
@@ -142,7 +144,7 @@ enum class RpingState {
     STOP,
     RESERVED
 };
- 
+
 enum class RpingLinkState {
     CONNECTED,
     CONNECTING,
@@ -187,6 +189,8 @@ private:
     HcclResult HccnRaInit(u32 deviceId);
     HcclResult HccnTargetAttrInter(u32 targetNumInter, RpingInput *inputInter, HccnRpingAddTargetConfig *configInter, PingTargetInfo *targetInter);
     HcclResult HccnTarRemoveAttrInter(u32 targetNumInter, RpingInput *inputInter, PingTargetCommInfo *targetInter, std::shared_ptr<HcclSocket> &socketInter);
+    HcclResult RpingResultInfoInit(PingTargetResult *resultInfo, std::map<std::string, PingQpInfo> rdmaInfoMaps, RpingInput *input, u32 targetNum);
+    HcclResult HccnSupportedAndGetphyid(u32 deviceId, LinkType netMode);
 public:
     PingMesh();
     ~PingMesh();
@@ -213,6 +217,5 @@ public:
     this->mode = attr->mode;  
 }
 };
- 
 }
 #endif

@@ -65,7 +65,7 @@ TEST_F(SqeMgrTest, sqe_mgr_begin)
     // given
     MOCKER_CPP(&SqeMgr::QuerySqDepth).stubs().with(any()).will(returnValue(AC_SQE_MAX_CNT));
     MOCKER_CPP(&SqeMgr::QuerySqTail).stubs().with(any()).will(returnValue(0));
-    MOCKER_CPP(&SqeMgr::QuerySqHead).stubs().with(any()).will(returnValue(0));
+    MOCKER_CPP(&SqeMgr::QuerySqHead).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
     MOCKER_CPP(&SqeMgr::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
 
     // when

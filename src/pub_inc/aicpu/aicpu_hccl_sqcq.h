@@ -145,7 +145,11 @@ enum SqeType : uint8_t {
     MEMCPY_ASYNC_SQE_V2,
     RDMA_DB_SEND_SQE,
     FLIP_PLACEHOLDER_SQE,
-    MEMCPY_ASYNC_SQE_V3
+    MEMCPY_ASYNC_SQE_V3,
+    CACHE_MEMCPY_PLACEHOLDER_SQE,
+    CACHE_NOTIFY_PLACEHOLDER_SQE,
+    CACHE_WRITE_VALUE_PLACEHOLDER_SQE,
+    CACHE_MEMCPY_RECORD_PLACEHOLDER_SQE
 };
 
 constexpr aclDataType DT_MAP_TABLE[HCCL_DATA_TYPE_RESERVED + 1] = {
@@ -412,6 +416,68 @@ struct rtFlipTaskTag_t {
     uint8_t reserved[46];
 };
 
+// 用于alltoallv算子小数据量下展开时cache中的cache-memcpy placeholder (for zero-len memcpy SQE)
+struct rtCacheMemcpyTaskTag_t {
+    // 注意: 不需要维护length, 因为每次cache hit时, length会根据send/recv info动态计算得到
+
+    // 第一次展开时保留src/dst addr, cache miss后处理时, 用于UpdateRefreshAddrInfoForAlltoallv
+    // 后续cache hit时只需要保留hccl buffer内的src/dst addr
+    // 如果是user memory内的src/dst addr, 则根据send/recv info动态计算得到, 不需要在placeholder中维护
+    uint32_t src_addr_low;
+    uint32_t src_addr_high;
+    uint32_t dst_addr_low;
+    uint32_t dst_addr_high;
+
+    // 始终需要维护
+    // LocalCopy/PrepareIntraData: linkType使用默认参数LINK_ONCHIP
+    // RemoteCopy: linkType使用srcRank-localRank之间的LINK对应的linkType
+    uint8_t kernel_credit;
+    uint8_t linkType;
+    uint32_t qos;
+
+    uint8_t reserved[26];
+};
+
+struct rtCacheNotifyTaskTag_t {
+    uint8_t is_wait; // NotifyWait or NotifyRecord
+    // Only for NotifyWait
+    uint8_t kernel_credit;
+    uint32_t timeout;
+    // Shared by NotifyWait and NotifyRecord
+    uint32_t notify_id;
+    uint8_t reserved[38];
+};
+
+struct rtCacheWriteValueTaskTag_t {
+    // For WriteValueRecord
+    uint32_t write_addr_low;
+    uint32_t write_addr_high;
+    uint8_t reserved[40];
+};
+
+struct rtCacheMemcpyRecordTaskTag_t {
+    // 20 bytes
+    uint32_t length;
+    uint32_t src_addr_low;
+    uint32_t src_addr_high;
+    uint32_t dst_addr_low;
+    uint32_t dst_addr_high;
+
+    // 4 bytes
+    uint32_t opcode : 8;
+    uint32_t partid : 8;
+    uint32_t res : 16;
+
+    // 2 bytes
+    uint8_t kernel_credit;
+    uint8_t linkType;
+
+    // 4 bytes
+    uint32_t qos;
+
+    uint8_t reserved[18];
+};
+
 struct rtStarsPlaceHolderSqe_t {
     rtStarsSqeHeader_t header;
     
@@ -423,6 +489,10 @@ struct rtStarsPlaceHolderSqe_t {
     /* The struct in the union must be 48 bytes */
     union {
         rtFlipTaskTag_t flip_task_info;
+        rtCacheMemcpyTaskTag_t cache_memcpy_task_info;
+        rtCacheNotifyTaskTag_t cache_notify_task_info;
+        rtCacheWriteValueTaskTag_t cache_write_value_task_info;
+        rtCacheMemcpyRecordTaskTag_t cache_memcpy_record_task_info;
         uint32_t resv[12];
     } u;
 };

@@ -75,6 +75,7 @@ HcclResult CollReduceExecutor::Orchestrate(OpParam& param, AlgResourceResponse& 
             HCCL_ERROR_CODE(ret)), ret);
 
     // Enforce task launch at the end of Orchestrate
+    // 注意: 不要删除这里的强制launch, 否则会导致aicpu cache功能问题
     if (needLaunchAtTheEnd) {
         HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
         CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
@@ -154,7 +155,7 @@ HcclResult CollReduceExecutor::RunLoopInner(OpParam &param, const ReduceType &re
         execMem.inputMem.ptr(), execMem.inputMem.size(), execMem.outputMem.ptr(), execMem.outputMem.size(),
         execMem.inputPtr, execMem.outputPtr, execMem.count, curSize);
     CHK_PRT_RET((execMem.count == 0),
-        HCCL_ERROR("[CollAllReduceExecutor][RunLoop]In OP_BASE curCount is zero."), HCCL_E_PARA);
+        HCCL_ERROR("[CollReduceExecutor][RunLoopInner]In OP_BASE curCount is zero."), HCCL_E_PARA);
 
     /* 设置子图复用标志 */
     bool isRootRank = param.root == topoAttr_.realUserRank ? true : false;
@@ -178,11 +179,11 @@ HcclResult CollReduceExecutor::RunLoopInner(OpParam &param, const ReduceType &re
     DeviceMem inMem(execMem.inputPtr, curSize);
     DeviceMem inCommMem = execMem.inputMem.range(0, curSize);
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, inCommMem, inMem, param.stream));
-    HCCL_DEBUG("[CollReduceExecutor][RunLoop]copy from user in to ccl in.");
+    HCCL_DEBUG("[CollReduceExecutor][RunLoopInner]copy from user in to ccl in.");
 
     HcclResult ret = KernelRun(param, execMem);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllReduceExecutor][RunLoop]errNo[0x%016llx]kernel run error, tag[%s], " \
+        HCCL_ERROR("[CollReduceExecutor][RunLoopInner]errNo[0x%016llx]kernel run error, tag[%s], " \
         "inputMem ptr[%p], outputMem ptr[%p], count[%llu], dataType[%d], reduce op type[%d]",
         HCCL_ERROR_CODE(ret), tag_.c_str(), execMem.inputMem.ptr(), execMem.outputMem.ptr(),
         execMem.count, param.DataDes.dataType, param.reduceType),

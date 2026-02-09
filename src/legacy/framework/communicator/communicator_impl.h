@@ -94,6 +94,7 @@ public:
     HcclResult GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num);
     HcclResult GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
     HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
+    HcclResult InitDeviceListenPort(u32 &linstenPort) const;
 
     u32 GetCcuMc2ServerNum();
 
@@ -286,6 +287,8 @@ public:
         return collAlgComponent.get();
     }
 
+    std::map<AivOpCacheArgs, std::shared_ptr<InsQueue>> hcclCacheMap_; //存储aiv cache信息
+    HcclResult GetCacheMap(AivOpCacheArgs& opCacheParam , std::shared_ptr<InsQueue>& tempInsQue);
     HcclResult SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable);
     HcclResult GetAccelerator(int32_t* accelerator) const;
     void ExecAlgSelect(const CollOpParams &opParams, const OpMode &opMode);
@@ -306,6 +309,10 @@ public:
     u32 GetAivOffloadTag() const
     {
         return aivOffloadTag;
+    }
+    u8 GetAlgorithmType() const
+    {
+        return algorithmType_;
     }
 
     void SetAivTag(u32 tag)
@@ -333,7 +340,8 @@ public:
     virtual CcuStreamSyncNotifyManager &GetCcuStreamSyncNotifyManager() const;
 
     void saveCCUParams(std::vector<std::vector<CcuTaskParam>> &&ccuParams,
-        std::vector<std::vector<CcuProfilingInfo>>&&ccuProfilingInfo, u64 execId, bool isSlave = false)
+                       std::vector<std::vector<CcuProfilingInfo>>&&ccuProfilingInfo, u64 execId, CcuInstType insType, 
+                       bool isSlave = false)
     {
         auto &ccuParamsMapping = colCcuParamMapping[currentCollOperator->opType];
         auto &ccuParamsNotCacheKey = colParamsNotCacheKey[currentCollOperator->opType];
@@ -341,7 +349,7 @@ public:
             ccuParamsNotCacheKey.find(ccuParamsMappingKey) == ccuParamsNotCacheKey.end()) {
             ccuParamsMapping.emplace(std::piecewise_construct, std::forward_as_tuple(ccuParamsMappingKey),
                                      std::forward_as_tuple(std::move(ccuParams), std::move(ccuProfilingInfo), execId,
-                                                           isSlave, static_cast<void*>(this)));
+                                                           insType, isSlave, static_cast<void *>(this)));
         } else {
             ccuParamsMapping.erase(ccuParamsMappingKey);
             if (ccuParamsMapping.empty()) {
@@ -366,7 +374,7 @@ public:
     
     HcclResult ClearOpResource(const std::string &opTag);// 清空opTag所属资源
     HcclResult GetAicpuOpStreamNotify(rtStream_t *opStream, u8 aicpuNotifyNum, void** aicpuNotify) const;
-    std::string GetTopoFilePath();
+    std::string GetTopoFilePath() const;
     std::vector<LinkData> GetFullMeshLinks() const;
     ErrorMessageReport GetAicpuTaskException();
 private:
@@ -452,7 +460,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<DevBuffer>> tagWorkspaceMap_;
     bool isFirstBarrier = true;
     // Dpu Kernel Launch 申请的共享内存
-    void* hostShareBuf;
+    void* hostShareBuf{nullptr};
     aclrtStream dpuStream;
     aclrtContext dpuContext;
     aclrtContext npuContext;
@@ -473,10 +481,13 @@ private:
     bool                                       isLoadOp{false}; // 是否已加载过算子,只要算子下发过就不让改加速模式 loadop offload AllocCommResource
     u32                                        aivTag{1}; // aiv kernal内部用于标志位计数
     u32                                        aivOffloadTag{0};// aiv kernal内部用于标志位计数
+    u8                                         algorithmType_{0};
+    std::atomic<u32>                           tagResourceIndex_{0};
     
     std::function<HcclResult(const std::string &commId, bool isUsingCcuMs, bool isUsingCcuSched)> callback;
     CollOpParams                               curOpParams; // 当前算子参数
-    std::map<std::pair<OpType, string>, AcceleratorState> opAcceStateCache{}; // opType + algName --> acceleratorState
+    std::map<std::pair<OpType, string>, std::pair<AcceleratorState, string>> 
+        opAcceStateCache{}; // opType + algName --> acceleratorState + newAlgName
 
     void InitCommonData(const CommParams &commParams);
     void InitCommonDataNotInitDevType(const CommParams &commParams, const HcclCommConfig &commConfig);
@@ -514,7 +525,7 @@ private:
     void ConvertCollOperatorMemV(const CollOpParams &opParams);
 
     // dpu相关
-    void InitHccpPeer();           // 拉起peer模式HCCP进程
+    void InitHccpPeer() const;           // 拉起peer模式HCCP进程
     bool IsNeedDpu();             // 判断是否需要Host网卡参与集合通信
     void InitDpuKernel();
     std::unordered_set<IpAddress> GetHostIpFromRankGraph();
@@ -549,6 +560,7 @@ private:
     bool taskExceptionEnv{true}; // 默认HCCL_DFS_CONFIG="task_exception:on" 且默认on下不开启快速下发
     bool enableProfilingEnv{false};
     bool TryFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream);
+    void FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams);
     void ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream, CachedCCUParams &params);
 
     void OpAcceleratorStateFallback(); // 算子粒度加速模式状态回退
@@ -565,6 +577,10 @@ private:
 
     void CheckAcceleratorConsistency(AcceleratorState commAccelerator, AcceleratorState tilingAccelerator) const;
     HcclResult GetTilingAccelerator(void *mc2Tiling, AcceleratorState& acceleratorState) const;
+
+    // AICPU场景aclgraph专用
+    bool IsOpSupportZeroCopyAlg(const CollOpParams &opParams, const rtStream_t stream) const;
+    HcclResult OffloadResourcePre(std::string &opTag, const CollOpParams &opParams);
 };
 } // namespace Hccl
 

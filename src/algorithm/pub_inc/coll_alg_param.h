@@ -97,6 +97,7 @@ struct SingleSubCommTransport {
     bool enableUseOneDoorbell = false;
     bool needVirtualLink = false; // for alltoall 多线程性能提升使用
     std::vector<LINK> virtualLinks; // for alltoall 多线程性能提升使用
+    bool isZeroCopy = false;
 };
 using LevelNSubCommTransport = std::vector<SingleSubCommTransport>;
 using OpCommTransport = std::vector<LevelNSubCommTransport>;
@@ -209,15 +210,12 @@ struct OpParam {
     u32 srTag = 0;
     u32 localGroupRank = 0;
     bool isGroupMode = false;
-    u32 nSend = 0;
-    u32 nRecv = 0;
-    u32 iSend = 0; // index of send
-    u32 iRecv = 0; // index of recv
     bool supportSymmetricMemory = false;
     void* inputSymWindow = nullptr;
     u64 inputOffset = 0;
     void* outputSymWindow = nullptr;
     u64 outputOffset = 0;
+    bool needIncreLink = false;
 
     inline HcclDataType GetDataType() const
     {

@@ -472,9 +472,9 @@ TEST_F(SnapShotParserTest, DeserializeCcuStatusBufTest) {
     BinaryStream buf;
 
     // 写入useMsCommIds的大小和内容
-    size_t useMsCommIdsSize = 2;
+    size_t useMsCommIdsSize = 1;
     buf << useMsCommIdsSize;
-    std::vector<std::string> useMsCommIds = {"comm1", "comm2"};
+    std::vector<std::string> useMsCommIds = {"comm1"};
     for (const auto &id : useMsCommIds) {
         buf << id;
     }

@@ -347,8 +347,6 @@ HcclResult ReduceScatterMultiDeterPipeline::Prepare(HcomCollOpInfo *opInfo, Devi
     usrInMemPtr_ = opInfo_->inputAddr;
     usrOutMemPtr_ = opInfo_->outputAddr;
     reductionOp_ = opInfo_->reduceOp;
-    HCCL_INFO("[%s] opInfo: dataType[%u], unitSize[%u], memSliceSize[%u], usrInMem[%p], usrOutMem[%p], reductionOp[%u]",
-        __func__, dataType_, unitSize_, memSliceSize_, usrInMemPtr_, usrOutMemPtr_, reductionOp_);
 
     // stream
     mainStream_ = mainStream;
@@ -394,6 +392,11 @@ HcclResult ReduceScatterMultiDeterPipeline::Prepare(HcomCollOpInfo *opInfo, Devi
     HCCL_INFO("[%s] this time: bufferSize[%u], count[%u], curSize[%u], offset[%u], slicesNum[%u]", __func__,
         bufferSize_, count_, curSize_, offset_, slices_.size());
     return HCCL_SUCCESS;
+}
+
+u64 ReduceScatterMultiDeterPipeline::GetLocalReduceSerialThresh()
+{
+    return curSize_;
 }
 
 REGISTER_TEMPLATE(TemplateType::TEMPLATE_REDUCESCATTER_MULTI_DETERMINISTIC_PIPELINE, ReduceScatterMultiDeterPipeline);

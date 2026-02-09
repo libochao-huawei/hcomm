@@ -153,4 +153,17 @@ HcclResult CollExecutorBase::GetAdjInfo(AlgResourceResponse& algRes, AdjInfo& ad
     return HCCL_SUCCESS;
 }
 
+HcclResult CollExecutorBase::MarkNeedAlltoallvCache()
+{
+    HCCL_ERROR("[CollExecutorBase][MarkNeedAlltoallvCache] not supported for current executor!");
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult CollExecutorBase::GetHcclOffsetDstRanksMap(std::unordered_map<uint64_t, std::vector<uint32_t>>& hcclOffsetDstRanksMap) const
+{
+    UNUSED_PARAM(hcclOffsetDstRanksMap);
+    HCCL_ERROR("[CollExecutorBase][GetHcclOffsetDstRanksMap] not supported for current executor!");
+    return HCCL_E_NOT_SUPPORT;
+}
+
 }

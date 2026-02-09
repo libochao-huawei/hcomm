@@ -43,4 +43,4 @@ private:
 
 } // namespace Hccl
 
-#endif // !HCCLV2_INS_TEMP_BROADCAST_MESH
+#endif // !HCCLV2_INS_TEMP_ALL_REDUCE_AICPU_REDUCE

@@ -176,8 +176,7 @@ HcclResult HcclRankGraphGetRankSizeByLayer(HcclComm comm, uint32_t netLayer, uin
         return HCCL_SUCCESS;
     }());
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    ret = hcclComm->GetInstSizeByNetLayer(netLayer, rankNum);
-    
+    ret = hcclComm->GetInstSizeByNetLayer(netLayer, rankNum);    
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed, ret[%d]", __func__, ret);
         return ret;
@@ -426,7 +425,6 @@ HcclResult HcclGetRankSize(HcclComm comm, uint32_t *rankSize)
 HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank)
 {
     // 入参合法性校验
-    //TODO:
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rank);
     HCCLV2_FUNC_RUN(

@@ -15,7 +15,7 @@ namespace hccl {
 class CollAllGatherCommExecutor : public CollAllGatherExecutor {
 public:
     explicit CollAllGatherCommExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherCommExecutor() = default;
+    ~CollAllGatherCommExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

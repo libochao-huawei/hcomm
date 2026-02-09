@@ -63,15 +63,15 @@ using namespace hccl;
 class HcclCommTest910B : public testing::TestWithParam<bool>
 {
 protected:
-    // static void SetUpTestCase()
-    // {
-    //     std::cout << "\033[36m--HcclCommTest910B SetUP--\033[0m" << std::endl;
-    // }
-    // static void TearDownTestCase()
-    // {
-    //     std::cout << "\033[36m--HcclCommTest910B TearDown--\033[0m" << std::endl;
-    // }
-    // Some expensive resource shared by all tests.
+    static void SetUpTestCase()
+    {
+        std::cout << "\033[36m--HcclCommTest910B SetUP--\033[0m" << std::endl;
+    }
+    static void TearDownTestCase()
+    {
+        std::cout << "\033[36m--HcclCommTest910B TearDown--\033[0m" << std::endl;
+    }
+    Some expensive resource shared by all tests.
     virtual void SetUp()
     {
         GlobalMockObject::verify();

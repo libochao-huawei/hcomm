@@ -96,10 +96,10 @@ private:
     // 本地将info和flag写到buffer对应位置，同时做一次level1的同步
     HcclResult DoLocalWriteInfoAndFlagAndInterSync();
 
-    // 轮询等待某个rank的flag，阻塞函数!!
+    // 轮询等待某个rank的flag，阻塞函数
     HcclResult WaitFlagOfRank(const u32 rank);
 
-    // 等待counts信息并刷新recive info，阻塞函数!!
+    // 等待counts信息并刷新recive info，阻塞函数
     HcclResult WaitAndCalReceiveInfo();
 
     // 获取module内某个rank对应的Sdma从流idx
@@ -117,10 +117,6 @@ private:
 
     // 跨module通信，通过SDMA从link left读
     HcclResult InterSdmaRx(const LINK& linkLeft, const LINK& linkRight, const std::vector<RxMemoryInfo>& recvMems,
-        Stream& stream);
-
-    // 跨module通信，通过SDMA向link right写
-    HcclResult InterSdmaTx(const LINK& linkLeft, const LINK& linkRight, const std::vector<TxMemoryInfo>& sendMems,
         Stream& stream);
 
     // 跨module通信，通过RDMA从link left读或向link right写

@@ -36,7 +36,7 @@ struct SnapshotCallbacks {
 
 class SnapshotControl {
 public:
-    static SnapshotControl& GetInstance(s32 deviceLogicID);
+    static SnapshotControl& GetInstance(s32 deviceLogicId);
     SnapshotStatus GetStatus();
     HcclResult RegisterComm(std::string &identifier, SnapshotSetInvalidComm setInvalidCommCallback,
         SnapshotCheckPreProcess preProcessCallback, SnapshotCheckPostProcess postProcessCallback);

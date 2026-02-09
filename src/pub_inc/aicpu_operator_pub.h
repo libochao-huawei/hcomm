@@ -679,6 +679,8 @@ struct HcclOpResParam {
     // 读取HCCL_ENTRY_LOG_ENABLE环境变量，用于增加算子kernel展开信息
     bool opEntry{false};
     uint32_t hcclSdmaQos; //HCCL SDMA QOS TAG
+    u64 sizeOfAiRMAInfo = 0; // sizeof(HcclAiRMAInfo), 用于内存校验
+    u64 aiRMAInfo = 0; // HcclAiRMAInfo* 单个结构体指针
 };
 
 struct OpTilingData {
@@ -720,6 +722,7 @@ struct OpTilingData {
     u64 customDataLength;    // 用户自定义预留可变长度数据区长度，预期在aicpu侧做数据块校验
     u8 isCapture = 0; // 算子是否aclgraph模式
     u8 orderLaunchMode = 0; // 对应AicpuNotifyMode的枚举值
+    u8 needIncreLink = 0; // 是否需要增量建链
 
     /* 不同算子，长度不同，依据opType决定选择使用
     * (1)batchsendrcv

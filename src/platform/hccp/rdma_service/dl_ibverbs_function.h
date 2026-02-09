@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #ifndef DL_IBVERBS_FUNCTION_H
 #define DL_IBVERBS_FUNCTION_H
@@ -91,6 +91,12 @@ struct RsRoceUserOps {
     unsigned int (*rsRoceGetApiVersion)(void);
 };
 
+struct RsHrnOps {
+    int (*rsRoceSetQpLbValue)(struct ibv_qp *qp, int lbValue);
+    int (*rsRoceGetQpLbValue)(struct ibv_qp *qp, int *lbValue);
+    int (*rsRoceGetQpNum)(struct ibv_context *context, int *qpNum);
+};
+
 struct ibv_mr *RsIbvExpRegMr(struct ibv_pd *pd, void *addr, size_t length, int access,
     struct roce_process_sign roceSign);
 int RsIbvExpQueryNotify(struct ibv_context *context, unsigned long long *notifyVa, unsigned long long *size);
@@ -156,4 +162,7 @@ int RsRoceGetCqDataPlaneInfo(struct ibv_cq *cq, struct hns_roce_cq_data_plane_in
 int RsRoceGetQpDataPlaneInfo(struct ibv_qp *qp, struct hns_roce_qp_data_plane_info *info);
 int RsRoceRemapMr(struct ibv_mr *mr, struct hns_roce_mr_remap_info info[], unsigned int num);
 unsigned int RsRoceGetApiVersion(void);
+int RsRoceSetQpLbValue(struct ibv_qp *qp, int lbValue);
+int RsRoceGetQpLbValue(struct ibv_qp *qp, int *lbValue);
+int RsRoceGetQpNum(struct ibv_context *context, int *qpNum);
 #endif // DL_IBVERBS_FUNCTION_H

@@ -41,15 +41,19 @@ static HcclResult GetHcclGroupParams(const std::string &strGroup, HcclGroupParam
         hcclGroupParamsV2 = iter->second;
         return HCCL_SUCCESS;
     }
-    HCCL_ERROR("comm group not in hcclGroupMap, please check groupName[%s].", strGroup.c_str());
-    return HCCL_E_PARA;
+    HCCL_WARNING("comm group not in hcclGroupMap, please check groupName[%s].", strGroup.c_str());
+    return HCCL_E_NOT_FOUND;
 }
 
 static HcclResult GetHcclCommV2(const char *group, std::shared_ptr<Hccl::HcclCommunicator> &hcclComm)
 {
     std::string strGroup = (group == nullptr || strlen(group) == 0) ? HCCL_WORLD_GROUP : group;
     HcclGroupParamsV2 hcclGroupParamsV2;
-    CHK_RET(GetHcclGroupParams(strGroup, hcclGroupParamsV2));
+    HcclResult ret = GetHcclGroupParams(strGroup, hcclGroupParamsV2);
+    CHK_PRT_RET(ret == HCCL_E_NOT_FOUND,
+                HCCL_WARNING("[GetHcclCommV2]errNo[0x%016llx] group[%s] group is not exist",
+                    HCOM_ERROR_CODE(HCCL_E_NOT_FOUND), strGroup.c_str()),
+                HCCL_E_NOT_FOUND);
     hcclComm = hcclGroupParamsV2.pComm;
     CHK_PTR_NULL(hcclComm);
     HCCL_INFO("[%s] success.", __func__);
@@ -375,7 +379,7 @@ HcclResult HcomGetWorkspaceMemSizeV2(
     const std::string &opType, u64 count, HcclDataType dataType, const char *group, u64 &memSize)
 {
     HCCL_INFO("[%s] start.", __func__);
-    if ((dataType < HCCL_DATA_TYPE_INT8) || (dataType > HCCL_DATA_TYPE_FP8E8M0)) {
+    if ((dataType < HCCL_DATA_TYPE_INT8) || (dataType > HCCL_DATA_TYPE_MXFP8)) {
         HCCL_ERROR("[%s] not support data type[%s].", __func__, GetDataTypeEnumStrV2(dataType).c_str());
         return HCCL_E_PARA;
     }
@@ -470,6 +474,12 @@ HcclResult HcomAlltoAllVCV2(const void *sendBuf, const void *sendCountMatrix, Hc
     CHK_RET(hcclComm->GetRankSize(&rankSize));
     u32 myRank = INVALID_VALUE_RANKID;
     CHK_RET(hcclComm->GetRankId(myRank));
+    bool isEmpty = false;
+    CHK_RET(HcomCheckAlltoAllVCEmptyV2(sendBuf, sendCountMatrix, recvBuf, rankSize, isEmpty));
+    if(isEmpty) {
+        HCCL_INFO("[HcclAlltoAllVCV2] sendCountMatrix is Empty");
+        return HCCL_SUCCESS;
+    }
     CHK_RET(HcomCheckAlltoAllVCExternalMemV2(sendBuf, sendCountMatrix, recvBuf, rankSize, myRank));
 
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
@@ -650,7 +660,7 @@ HcclResult HcomGetLocalRankSizeV2(const char *group, u32 *localRankSize)
     }
     *localRankSize = rankSize / layer0NetInstanceNum;
     HCCL_INFO("[HcomGetLocalRankSizeV2] end, layer0NetInstanceNum[%u], localRankSize[%u], rankSize[%u], commId[%s]",
-        layer0NetInstanceNum, localRankSize, rankSize, hcclComm->GetId().c_str());
+        layer0NetInstanceNum, *localRankSize, rankSize, hcclComm->GetId().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -669,7 +679,7 @@ HcclResult HcomGetLocalRankIdV2(const char *group, u32 *localRankId)
     }
     *localRankId = rankId % localRankSize;
     HCCL_INFO("[HcomGetLocalRankIdV2] end, rankId[%u], localRankSize[%u], localRankId[%u], commId[%s]",
-        rankId, localRankSize, localRankId, hcclComm->GetId().c_str());
+        rankId, localRankSize, *localRankId, hcclComm->GetId().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -997,7 +1007,7 @@ HcclResult HcomGetDevTypeV2(Hccl::DevType &devType)
     HCCL_INFO("[%s] start.", __func__);
     HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
     devType = hcomCommInfoV2.commParams.devType;
-    HCCL_INFO("HcomGetDevTypeV2, devType[%d]", static_cast<int>(devType));
+    HCCL_INFO("HcomGetDevTypeV2, devType[%s]", devType.Describe().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -1121,7 +1131,11 @@ HcclResult HcomUnloadTaskV2(const std::string group, const char *tag)
     CHK_RET(HcomCheckGroupNameV2(group.c_str()));
     CHK_RET(HcomCheckTagV2(tag));
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group.c_str(), hcclComm));
+    HcclResult ret = GetHcclCommV2(group.c_str(), hcclComm);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_WARNING("[HcomUnloadTaskV2]errNo[0x%016llx] group[%s] group is not exist",
+                    HCOM_ERROR_CODE(HCCL_E_NOT_FOUND), group.c_str()),
+                HCCL_SUCCESS);
     std::string opTag = tag;
     CHK_RET(hcclComm->ClearOpResource(opTag));
     HCCL_RUN_INFO("hcom unload task success,take time [%lld]us,tag[%s]", DURATION_US(TIME_NOW() - startut), tag);
@@ -1175,7 +1189,7 @@ HcclResult HcomCalcNumBlocksV2(const char *group, HcclCMDType opType, u64 count,
 
     HcclOpType hcclOpType = static_cast<HcclOpType::Value>(opType);
     if (OP_TYPE_MAP.find(opType) == OP_TYPE_MAP.end()) {
-        HCCL_ERROR("[HcomGraphSelectAlgV2], not support opType[%u].", hcclOpType.Describe().c_str());
+        HCCL_ERROR("[HcomGraphSelectAlgV2], not support opType[%s].", hcclOpType.Describe().c_str());
         return HCCL_E_NOT_SUPPORT;
     }
     Hccl::OpType optype = OP_TYPE_MAP.at(opType);
@@ -1217,7 +1231,7 @@ HcclResult HcomGetL0TopoTypeExV2(const char *group, CommTopo *topoType, uint32_t
     CHK_PTR_NULL(topoType);
     CHK_PTR_NULL(group);
 
-    bool isSetDevice = (bool)(flag & (~(0xfffffffe)));
+    bool isSetDevice = static_cast<bool>(flag & (~(0xfffffffe)));
     if (isSetDevice) {
         HCCL_ERROR("current only support no setdevice, flag[%u]", flag);
         return HCCL_E_PARA;
@@ -1233,7 +1247,7 @@ HcclResult HcomGetRankSizeExV2(const char *group, uint32_t *rankSize, uint32_t f
     CHK_PTR_NULL(rankSize);
     CHK_PTR_NULL(group);
 
-    bool isSetDevice = (bool)(flag & (~(0xfffffffe)));
+    bool isSetDevice = static_cast<bool>(flag & (~(0xfffffffe)));
     if (isSetDevice) {
         HCCL_ERROR("current only support no setdevice, flag[%u]", flag);
         return HCCL_E_PARA;
@@ -1245,6 +1259,9 @@ HcclResult HcomGetRankSizeExV2(const char *group, uint32_t *rankSize, uint32_t f
 
 HcclResult HcomMc2AiCpuStreamAllocAndGetV2(const char *group, u32 streamMode, rtStream_t *aiCpuStream)
 {
+    (void)group;
+    (void)streamMode;
+    (void)aiCpuStream;
     HCCL_WARNING("[HcomMc2AiCpuStreamAllocAndGetV2] Not support");
     return HCCL_E_NOT_FOUND;
 }

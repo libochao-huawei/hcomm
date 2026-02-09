@@ -16,6 +16,7 @@ set(src_list
     aicpu_share_data_manager.cc
     aicpu_one_side_service.cc
     aicpu_symmetric_memory.cc
+    aicpu_cache_manager.cc
 )
 
 target_sources(ccl_kernel PRIVATE

@@ -35,7 +35,6 @@ const std::string INCONSISTENT_CHECK_CONFIG = "inconsistent_check:";
 const std::string CONNECTION_FAULT_DETECTION_TIME = "connection_fault_detection_time:";
 const std::string TASK_MONITOR_INTERVAL = "task_monitor_interval:";
 constexpr static const s32 HCCL_MAX_LINK_TIME_OUT_S  = (120 * 60); // HCCL 最大探测超时时间设置为120*60s
-constexpr static const s32 HCCL_MAX_TASK_MONITOR_INTERVAL = 2147483647; // HCCL 最大task监控时长，与notify最大值保持一致
 HcclResult InitEnvConfig()
 {
     std::lock_guard<std::mutex> lock(g_envConfigMutex);
@@ -113,10 +112,14 @@ HcclResult ResetEnvConfigInitState()
 HcclResult InitEnvParam()
 {
     HcclResult ret = ParseHostSocketPortRange();
+    char* mmSysGetHostEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_HOST_SOCKET_PORT_RANGE, mmSysGetHostEnvValue);
+    std::string hostSocketPortRangeEnv = (mmSysGetHostEnvValue != nullptr) ? mmSysGetHostEnvValue : "EmptyString";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_HOST_SOCKET_PORT_RANGE", "Please check whether the port range is valid."}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({hostSocketPortRangeEnv, "HCCL_HOST_SOCKET_PORT_RANGE",
+        "a valid port range in the format of port1-port2, where port1 and port2 are valid port numbers (0-65535)"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_HOST_SOCKET_PORT_RANGE failed. errorno[%d]",
@@ -127,10 +130,14 @@ HcclResult InitEnvParam()
         ret);
 
     ret = ParseNpuSocketPortRange();
+    char* mmSysGetNpuEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_NPU_SOCKET_PORT_RANGE, mmSysGetNpuEnvValue);
+    std::string npuSocketPortRangeEnv = (mmSysGetNpuEnvValue != nullptr) ? mmSysGetNpuEnvValue : "EmptyString";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_NPU_SOCKET_PORT_RANGE", "Please check whether the port range is valid."}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({npuSocketPortRangeEnv, "HCCL_NPU_SOCKET_PORT_RANGE",
+        "a valid port range in the format of port1-port2, where port1 and port2 are valid port numbers (0-65535)"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_NPU_SOCKET_PORT_RANGE failed. errorno[%d]",
@@ -141,10 +148,13 @@ HcclResult InitEnvParam()
         ret);
 
     ret = ParseDFSConfig();
+    char* dfsConfigValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_DFS_CONFIG, dfsConfigValue);
+    std::string dfsConfigEnv = (dfsConfigValue != nullptr) ? dfsConfigValue : "EmptyString";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_DFS_CONFIG", "Please check whether the DFS config is valid."}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({dfsConfigEnv, "HCCL_DFS_CONFIG", "comma-separated key-value pairs (e.g., cluter_heartbeat=on,stuck_detection=off)"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_DFS_CONFIG failed. errorno[%d]",
@@ -155,10 +165,13 @@ HcclResult InitEnvParam()
         ret);
 
     ret = g_envConfig.ParseRDMATrafficClass();
+    char* mmSysGetTrafficClassEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_RDMA_TC, mmSysGetTrafficClassEnvValue);
+    std::string mmSysGetTrafficClassEnv = (mmSysGetTrafficClassEnvValue != nullptr) ? mmSysGetTrafficClassEnvValue : "EmptyString";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_RDMA_TC", "Value range[0, 255], Must be a multiple of 4"}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({mmSysGetTrafficClassEnv, "HCCL_RDMA_TC", "range[0, 255], Must be a multiple of 4"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_RDMA_TC failed. errorno[%d]",
@@ -169,10 +182,13 @@ HcclResult InitEnvParam()
         ret);
 
     ret = g_envConfig.ParseRDMAServerLevel();
+    char* mmSysGetServerLevelEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_RDMA_SL, mmSysGetServerLevelEnvValue);
+    std::string mmSysGetServerLevel = (mmSysGetServerLevelEnvValue != nullptr) ? mmSysGetServerLevelEnvValue : "EmptyString";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_RDMA_SL", "Value range[0, 7]"}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({mmSysGetServerLevel, "HCCL_RDMA_SL", "Value range[0, 7]"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_RDMA_SL failed. errorno[%d]",
@@ -185,12 +201,15 @@ HcclResult InitEnvParam()
     // 解析RDMATimeOut
     std::pair<u32, u32> rdmaTimeOutRange;
     ret = g_envConfig.ParseRDMATimeOut(rdmaTimeOutRange);
+    char* mmSysGetTimeOutEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_RDMA_TIMEOUT, mmSysGetTimeOutEnvValue);
+    std::string timeOutEnv = (mmSysGetTimeOutEnvValue != nullptr) ? mmSysGetTimeOutEnvValue : "EmptyString";
     std::string vaildRange =
-        "Value range[" + std::to_string(rdmaTimeOutRange.first) + " ," + std::to_string(rdmaTimeOutRange.second) + "]";
+        "range[" + std::to_string(rdmaTimeOutRange.first) + " ," + std::to_string(rdmaTimeOutRange.second) + "]";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_RDMA_TIMEOUT", vaildRange}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({timeOutEnv, "HCCL_RDMA_TIMEOUT", vaildRange}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_RDMA_TIMEOUT failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -201,10 +220,13 @@ HcclResult InitEnvParam()
 
     // 解析RDMARetryCnt
     ret = g_envConfig.ParseRDMARetryCnt();
+    char* mmSysGetRetryCntEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_RDMA_RETRY_CNT, mmSysGetRetryCntEnvValue);
+    std::string retryCntEnv = (mmSysGetRetryCntEnvValue != nullptr) ? mmSysGetRetryCntEnvValue : "EmptyString";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_RDMA_RETRY_CNT", "Value range[1, 7]"}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({retryCntEnv, "HCCL_RDMA_RETRY_CNT", "range[1, 7]"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_RDMA_RETRY_CNT failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -214,10 +236,13 @@ HcclResult InitEnvParam()
         ret);
 
     ret = InitDebugConfigByEnv();
+    char* env = nullptr; // 环境变量值
+    MM_SYS_GET_ENV(MM_ENV_HCCL_DEBUG_CONFIG, env);
+    std::string envValue = env ? std::string(env) : "null";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_DEBUG_CONFIG", "Please check whether the env is valid"}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({envValue, "HCCL_DEBUG_CONFIG", "ALG,TASK,RESOURCE,AIV_OPS_EXC(optionally prefixed with'^'"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_DEBUG_CONFIG failed. errorno[%d]",
@@ -229,11 +254,14 @@ HcclResult InitEnvParam()
 
     // 解析算法配置
     ret = ParseHcclAlgo();
+    char* mmSysGetEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_ALGO, mmSysGetEnvValue);
+    std::string hcclAlgo = (mmSysGetEnvValue != nullptr) ? mmSysGetEnvValue : "EmptyString";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_ALGO",
-            "expect: level0:NA;level1:<algo> or <op0>=level0:NA;level1:<algo0>/<op1>=level0:NA;level1:<algo1>"}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({hcclAlgo, "HCCL_ALGO",
+            "level0:NA;level1:<algo> or <op0>=level0:NA;level1:<algo0>/<op1>=level0:NA;level1:<algo1>"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse "
                    "hccl algorithm config failed. errorno[%d]",
@@ -400,13 +428,13 @@ HcclResult SetSocketPortRange(const std::string &envName, const std::string &soc
     portRangeVec.clear();
 
     // the environment variable is not set
-    if (!socketPortRange.compare(ENV_EMPTY_STRING)) {
+    if (socketPortRange.compare(ENV_EMPTY_STRING) == 0) {
         CHK_RET(SetDefaultSocketPortRange(socketLoc, portRangeVec));
         return HCCL_SUCCESS;
     }
 
     // the socket port range is set to auto, then the os will listen on the ports dynamically and automatically.
-    if (!socketPortRange.compare(HCCL_AUTO_PORT_CONFIG)) {
+    if (socketPortRange.compare(HCCL_AUTO_PORT_CONFIG) == 0) {
         HcclSocketPortRange autoSocketPortRange = {
             HCCL_SOCKET_PORT_RANGE_AUTO,
             HCCL_SOCKET_PORT_RANGE_AUTO
@@ -480,7 +508,7 @@ HcclResult ParseNpuSocketPortRange()
 // 通用的环境变量解析函数
 HcclResult ParseEnvConfig(const EnvConfigParam& param, std::string& envValue, u32& resultValue)
 {
-    if (!envValue.compare(ENV_EMPTY_STRING)) {
+    if (envValue.compare(ENV_EMPTY_STRING) == 0) {
         HCCL_RUN_INFO("%s set by default to [%u]", param.envName.c_str(), param.defaultValue);
         resultValue = param.defaultValue;
         return HCCL_SUCCESS;
@@ -654,13 +682,14 @@ HcclResult ParseMonitor(std::string &taskMonitorInterval, s32 &monitorTime)
             "is invalid, errorno[%d]", taskMonitorInterval.c_str(), ret), ret);
     }
 
+    s32 maxTimeInMs = HCCL_MAX_LINK_TIME_OUT_S * 1000;
     if (monitorTime == 0) {
         g_envConfig.dfsTaskMonitorInterval = 0;
-    } else if (monitorTime >= 0 && monitorTime <= HCCL_MAX_TASK_MONITOR_INTERVAL) {
+    } else if (monitorTime >= 0 && monitorTime <= maxTimeInMs) {
         g_envConfig.dfsTaskMonitorInterval = monitorTime;
     } else { // 不在允许范围内报错
         HCCL_ERROR("[ParseDFSConfig] HCCL_DFS_CONFIG-task_monitor_interval[%d] is invalid, except: [0, %d]",
-            monitorTime, HCCL_MAX_TASK_MONITOR_INTERVAL);
+            monitorTime, maxTimeInMs);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -727,7 +756,7 @@ HcclResult ParseDFSConfig()
         g_envConfig.dfsConnectionFaultDetectionTime = HCCL_MIN_CONNECT_FAULT_DETECTION_TIME;
         HCCL_RUN_INFO("[HCCL_ENV][Parse] HCCL_DFS_CONFIG cluster_heartbeat set by environment to [%d], "
             "stuck_detection set by environment to [%d], connection_fault_detection_time[%d]s inconsistentCheckSwitch[%d],"
-            "task_monitor_interval[%u]s", g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable,
+            "task_monitor_interval[%u]ms", g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable,
             g_envConfig.dfsConnectionFaultDetectionTime, g_envConfig.inconsistentCheckSwitch, g_envConfig.dfsTaskMonitorInterval);
         return HCCL_SUCCESS;
     }
@@ -748,7 +777,7 @@ HcclResult ParseDFSConfig()
 
     HCCL_RUN_INFO("[HCCL_ENV][Parse] HCCL_DFS_CONFIG cluster_heartbeat set by environment to [%d], "
         "stuck_detection set by environment to [%d], connection_fault_detection_time[%d]s inconsistentCheckSwitch[%d],"
-        "task_monitor_interval[%u]s", g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable,
+        "task_monitor_interval[%u]ms", g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable,
         g_envConfig.dfsConnectionFaultDetectionTime, g_envConfig.inconsistentCheckSwitch, g_envConfig.dfsTaskMonitorInterval);
     return HCCL_SUCCESS;
 }
