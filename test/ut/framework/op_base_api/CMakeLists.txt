@@ -43,9 +43,7 @@ target_compile_definitions(hccl_utest_framework_op_base_api PRIVATE
 target_compile_options(hccl_utest_framework_op_base_api PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
-    -Os
-    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
-    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
+    -fno-access-control
 )
 
 target_link_directories(hccl_utest_framework_op_base_api PRIVATE
@@ -53,12 +51,8 @@ target_link_directories(hccl_utest_framework_op_base_api PRIVATE
 )
 target_link_libraries(hccl_utest_framework_op_base_api PRIVATE
     $<BUILD_INTERFACE:intf_pub>
-    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
-    -lpthread
     hccl_llt
-    -Wl,--whole-archive
-    -Wl,--no-whole-archi
-    -lgcov
+    -lpthread
     -lrt
     -ldl
 )
