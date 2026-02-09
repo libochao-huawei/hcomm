@@ -15,6 +15,7 @@
 
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2(void *args);
+__attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2Inner(void *args);
 }
 
 #endif // AICPU_TS_URMA_CAHNNEL_KERNEL_H

@@ -28,7 +28,7 @@ HcclResult UbMemEndpoint::Init()
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult UbMemEndpoint::ServerSocketListen()
+HcclResult UbMemEndpoint::ServerSocketListen(const uint16_t port)
 {
     HCCL_INFO("UbMemEndpoint ServerSocketListen is not supported");
     return HCCL_SUCCESS;

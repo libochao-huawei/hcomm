@@ -21,6 +21,7 @@ class SocketConfig {
 public:
     RankId            remoteRank;
     LinkData          link;
+    uint16_t          listeningPort;
     const std::string tag;
 
     SocketConfig(RankId remoteRank, const LinkData &link, const std::string &tag)
@@ -37,18 +38,17 @@ public:
         }
     }
 
-    SocketConfig(const LinkData &link, const std::string &tag)
-        : link(link), tag(tag)
+    SocketConfig(const LinkData &link, const uint16_t port, const std::string &tag)
+        : link(link), listeningPort(port), tag(tag)
     {
-        remoteRank = link.GetRemoteRankId();
         role = link.GetLocalAddr() < link.GetRemoteAddr() ? SocketRole::SERVER : SocketRole::CLIENT;
  
-        if (role == SocketRole::SERVER) { // server: tag_local_remote
-            hccpTag = tag + "_" + to_string(link.GetLocalRankId()) + "_" + to_string(link.GetRemoteRankId()) + "_" +
-                      link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr();
-        } else { // client: tag_remote_local
-            hccpTag = tag + "_" + to_string(link.GetRemoteRankId()) + "_" + to_string(link.GetLocalRankId()) + "_" +
-                      link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr();
+        if (role == SocketRole::SERVER) { // server: tag_local_remote_port
+            hccpTag = tag + "_" + link.GetLocalAddr().GetIpStr() + "_" + 
+                link.GetRemoteAddr().GetIpStr() + "_" + to_string(port);
+        } else { // client: tag_local_remote_port
+            hccpTag = tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + 
+                link.GetLocalAddr().GetIpStr() + "_" + to_string(port);
         }
     }
 

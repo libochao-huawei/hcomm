@@ -32,10 +32,10 @@ HcclResult UrmaEndpoint::Init()
     Hccl::IpAddress ipAddr{};
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
-    u32 devPhyId;
     s32 deviceLogicId;
     CHK_RET(hrtGetDevice(&deviceLogicId));
-    Hccl::HccpHdcManager::GetInstance().Init(deviceLogicId);
+    EXECEPTION_CATCH(Hccl::HccpHdcManager::GetInstance().Init(deviceLogicId), return HCCL_E_INTERNAL);
+    u32 devPhyId;
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId));
     if (endpointDesc_.loc.device.devPhyId != devPhyId){
         HCCL_WARNING("[UrmaEndpoint][%s] endpointDesc.loc.device.devPhyId[%u] incorrect", __func__, endpointDesc_.loc.device.devPhyId);
@@ -45,10 +45,10 @@ HcclResult UrmaEndpoint::Init()
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     EXECEPTION_CATCH(ctxHandle_ = static_cast<void *>(rdmaHandleMgr.GetByIp(endpointDesc_.loc.device.devPhyId, ipAddr)), return HCCL_E_PARA);
     CHK_PTR_NULL(ctxHandle_);
-    HCCL_INFO("%s success, devId[%u], ipAddr[%s], ctxHandle[%p]",
-        __func__, devPhyId, ipAddr.Describe().c_str(), ctxHandle_);
+    HCCL_INFO("[UrmaEndpoint][%s] success, endpointDesc_.loc.device.devPhyId[%u], ipAddr[%s], ctxHandle[%p]",
+        __func__, endpointDesc_.loc.device.devPhyId, ipAddr.Describe().c_str(), ctxHandle_);
 
-    CHK_RET(ServerSocketListen());
+    CHK_RET(ServerSocketListen(DEFAULT_LISTENING_PORT));
     EXECEPTION_CATCH(this->regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_INTERNAL);
     this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
 
@@ -59,7 +59,7 @@ HcclResult UrmaEndpoint::Init()
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult UrmaEndpoint::ServerSocketListen()
+HcclResult UrmaEndpoint::ServerSocketListen(const uint16_t port)
 {
     if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE){
         HCCL_INFO("[UrmaEndpoint][%s] endpointDesc.loc.locType[%d] skip create ServerSocket", __func__, endpointDesc_.loc.locType);
@@ -91,7 +91,7 @@ HcclResult UrmaEndpoint::ServerSocketListen()
     );
 
     std::unique_ptr<Hccl::Socket> serverSocket;
-    EXECEPTION_CATCH(serverSocket = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, 60001, ipaddr, "server", Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA); //端口号可能冲突，需要SE做决定
+    EXECEPTION_CATCH(serverSocket = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, port, ipaddr, "server", Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA); //端口号可能冲突，需要SE做决定
     HCCL_INFO("[UrmaEndpoint][%s] listen_socket_info[%s]", __func__, serverSocket->Describe().c_str());
     EXECEPTION_CATCH(serverSocket->Listen(), return HCCL_E_INTERNAL);
     serverSocketMap[localPort] = std::move(serverSocket);

@@ -24,6 +24,9 @@ namespace hcomm {
 /**
  * @note 职责：通信设备Endpoint的C++抽象接口类，管理通信设备上下文，以及设备上的注册内存。
  */
+
+constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
+
 class Endpoint {
 public:
     explicit Endpoint(const EndpointDesc &endpointDesc);
@@ -34,7 +37,7 @@ public:
 
     virtual HcclResult Init() = 0;
 
-    virtual HcclResult ServerSocketListen() = 0;
+    virtual HcclResult ServerSocketListen(const uint16_t port) = 0;
 
     virtual std::shared_ptr<RegedMemMgr> GetRegedMemMgr() 
     {

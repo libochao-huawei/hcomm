@@ -15,6 +15,7 @@
 
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *args);
+__attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInner(void *args);
 __attribute__((visibility("default"))) uint32_t RunAicpuIndOpNotify(void *args);
 }
 

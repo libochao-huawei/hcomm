@@ -37,7 +37,6 @@ private:
 private:
     bool isLoaded_{false};
     uint32_t devicePhyId_{};
-    uint32_t serverListenPort_{};
     std::unordered_map<Hccl::SocketConfig, std::unique_ptr<Hccl::Socket>> socketMap_{};
     std::mutex mutex_{};
 };

@@ -197,7 +197,7 @@ HcclResult MyRank::BatchConnectChannels(ChannelHandle *channelHandles, uint32_t 
         // 1. HCCL_SUCCESS: 退出循环
         // 2. HCCL_E_AGAIN: 继续在 while true 内重试
         // 3. Others: 错误状态
-        HcclResult ret = HcommChannelGetStatus(channelHandles, channelNum, statusList);
+        HcclResult ret = HcommChannelGetStatusInner(channelHandles, channelNum, statusList);
  
         if (ret == HCCL_E_AGAIN) {
             continue;

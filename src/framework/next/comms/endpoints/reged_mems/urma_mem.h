@@ -50,4 +50,4 @@ private:
 };
 }
  
-#endif //URMA_ENDPOINT_H
+#endif //URMA_MEMORY_H
