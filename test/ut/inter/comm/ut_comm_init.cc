@@ -117,6 +117,9 @@ TEST_F(CommInitTest, ut_HcclCommInitRootInfoConfig_not_set_config_01)
     .stubs()
     .with(outBound(deviceType))
     .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtProfRegisterCtrlCallback)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
 
     HcclResult ret = HcclGetRootInfo(&id);
     EXPECT_EQ(ret, HCCL_SUCCESS);
