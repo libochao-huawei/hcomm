@@ -21,6 +21,7 @@
 #include "rma_conn_exception.h"
 #include "rdma_handle_manager.h"
 #include "tp_manager.h"
+#include "hccp_async.h"
 #undef protected
 #undef private
 
@@ -729,7 +730,7 @@ TEST_F(DevUbConnectionTest, rma_ub_connection_get_pi_ci_sqDepth_ok)
     // Then
     EXPECT_EQ(devUbConnection.GetPiVal(), 0);
     EXPECT_EQ(devUbConnection.GetCiVal(), 0);
-    EXPECT_EQ(devUbConnection.GetSqDepth(), 32768);
+    EXPECT_EQ(devUbConnection.GetSqDepth(), 8192);
 }
 
 TEST_F(DevUbConnectionTest, rma_ub_connection_get_jfcMode_and_jettyHandle_ok)
@@ -904,4 +905,31 @@ TEST_F(DevUbConnectionTest, ctp_import_test)
 
     devUbConnection.tpInfo.tpHandle = 1; // 控制非0
     EXPECT_NO_THROW(devUbConnection.ReleaseResource()); // 释放tp报错但是不影响流程
+}
+
+constexpr uint64_t expectSqBuffVa = 10;
+int ra_ctx_qp_create_async_stub(void *ctx_handle, struct qp_create_attr *attr, struct qp_create_info *info,
+                                void **qp_handle, void **req_handle)
+{
+    *req_handle = reinterpret_cast<void *>(0x12345678);
+    info->ub.sq_buff_va = expectSqBuffVa;
+    return 0;
+}
+TEST_F(DevUbConnectionTest, Ut_CreateJetty_When_CorrectParams_ReturnIsOk)
+{
+    // construct DevUbConnection
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    LinkData     linkData(portType, 10, 11, 10, 11);
+    linkData.remoteAddr_ = IpAddress("11.0.0.2");
+    linkData.linkProtocol_ = LinkProtocol::UB_CTP;
+    std::string tag = "test";
+
+    // When
+    MOCKER(ra_ctx_qp_create_async).stubs().will(invoke(ra_ctx_qp_create_async_stub));
+    DevUbCtpConnection devUbCtpConn(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
+
+    // Then
+    devUbCtpConn.SetJettyInfo();
+    EXPECT_EQ(devUbCtpConn.sqBuffVa, expectSqBuffVa);
 }

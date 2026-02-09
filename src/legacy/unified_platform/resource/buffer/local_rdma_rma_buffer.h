@@ -34,6 +34,9 @@ public:
 
     u32 GetLkey() {return lkey;}
     std::pair<uintptr_t, u64> GetBufferInfo() {return make_pair(buf->GetAddr(), buf->GetSize());}
+
+    std::vector<char> Desc;
+    
 private:
     RdmaHandle rdmaHandle;
     u8         key[RDMA_MEM_KEY_MAX_LEN]{0};

@@ -20,10 +20,14 @@ target_sources(hccl_v2 PRIVATE
         inner_net_dev.cc
         net_device.cc
         tokenInfo_manager.cc
+        dlhal_function_v2.cc
+        orion_adapter_hal.cc
 )
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
 target_sources(ccl_kernel PRIVATE
         dev_capability.cc
+        dlhal_function_v2.cc
+        orion_adapter_hal.cc
 )
 endif()

@@ -32,13 +32,15 @@ public:
     virtual HcclResult UnregisterMemory(void* memHandle) = 0;
  
     // 导出指定内存描述，用于交换
-    virtual HcclResult MemoryExport(const EndpointDesc endpointDesc, const void *memHandle, void **memDesc, uint32_t *memDescLen) = 0;
+    virtual HcclResult MemoryExport(const EndpointDesc endpointDesc, void *memHandle, void **memDesc, uint32_t *memDescLen) = 0;
  
     // 基于内存描述，导入获得内存
     virtual HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) = 0;
  
     // 关闭内存
     virtual HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) = 0;
+
+    virtual HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) = 0;
  
     RdmaHandle rdmaHandle_{nullptr};
 };

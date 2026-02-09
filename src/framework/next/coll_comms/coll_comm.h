@@ -32,7 +32,7 @@ public:
     ~CollComm();
     
     // 初始化通信域
-    HcclResult Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer);
+    HcclResult Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config);
 
     inline RankGraph* GetRankGraph() {
         return rankgraph_ != nullptr ? rankgraph_.get() : nullptr;

@@ -1219,3 +1219,25 @@ TEST_F(AllGatherTest, allgather_aiv_a3_AllGatherMeshAivSmallCountExecutor)
     ret = checker.Check(checkerOpParam, topoMeta);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
+
+
+TEST_F(AllGatherTest, allgather_91093_AllGathermidcountExecutor)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 2, 2, 4);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER;
+    checkerOpParam.tag = "AllGather";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.DataDes.count = 1024 * 1024;  // 64K 
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.algName = "AllGatherMidCountFor91093Executor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}

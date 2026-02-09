@@ -115,7 +115,7 @@ HcclResult TopoInfoDetect::PrepareHandle(HcclRankHandle &rankHandle, std::vector
 }
 
 HcclResult TopoInfoDetect::SetupAgent(u32 rankSize, u32 myrank, const HcclRootHandle &rootInfo,
-    const HcclRankHandle &rankHandle)
+    const HcclRankHandle &rankHandle, const CommConfig &commConfig)
 {
     return HCCL_E_NOT_SUPPORT;
 }

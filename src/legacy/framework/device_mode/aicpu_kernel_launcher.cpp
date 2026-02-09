@@ -142,7 +142,7 @@ void AicpuKernelLauncher::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param)
 
     param.kernel.comm.idIndex       = comm->GetIdIndex();
     param.kernel.comm.myRank        = comm->GetMyRank();
-    param.kernel.comm.rankSie       = comm->GetRankSize();
+    param.kernel.comm.rankSize       = comm->GetRankSize();
     param.kernel.comm.devType       = comm->GetDevType();
     param.kernel.comm.devPhyId      = comm->GetDevicePhyId();
     auto collService                = comm->GetCollService();

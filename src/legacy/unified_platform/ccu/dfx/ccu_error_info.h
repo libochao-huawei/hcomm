@@ -13,23 +13,15 @@
 
 #include <cstdint>
 #include "ccu_rep_type.h"
-
+#include "enum_factory.h"
 namespace Hccl {
 
 constexpr uint32_t MISSION_STATUS_MSG_LEN = 64;
 constexpr uint32_t WAIT_SIGNAL_CHANNEL_SIZE = 16;
 constexpr uint32_t BUF_REDUCE_ID_SIZE = 8;
 
-enum class CcuErrorType {
-    DEFAULT = 0,
-    MISSION,
-    WAIT_SIGNAL,
-    TRANS_MEM,
-    BUF_TRANS_MEM,
-    BUF_REDUCE,
-    LOOP,
-    LOOP_GROUP
-};
+
+MAKE_ENUM(CcuErrorType, DEFAULT, MISSION, WAIT_SIGNAL, TRANS_MEM, BUF_TRANS_MEM, BUF_REDUCE, LOOP, LOOP_GROUP)
 
 struct CcuErrorInfo {
     // 根据不同的typeId解析不同的union类型
@@ -66,6 +58,7 @@ struct CcuErrorInfo {
             uint64_t locToken;
             uint64_t rmtAddr;
             uint64_t rmtToken;
+            uint64_t len;
             uint16_t signalId;
             uint16_t signalMask;
             uint16_t channelId;
@@ -77,6 +70,7 @@ struct CcuErrorInfo {
             uint16_t bufId;
             uint64_t addr;
             uint64_t token;
+            uint64_t len;
             uint16_t signalId;
             uint16_t signalMask;
             uint16_t channelId;
@@ -96,6 +90,7 @@ struct CcuErrorInfo {
         struct {
             uint16_t startInstrId;
             uint16_t endInstrId;
+            uint16_t loopEngineId;
             uint16_t loopCnt;           // 该Loop需要循环执行的次数
             uint16_t loopCurrentCnt;    // 该Loop已经循环次数
             uint32_t addrStride;

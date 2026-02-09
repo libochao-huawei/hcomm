@@ -121,7 +121,7 @@ struct RtStarsSqeHeader {
     uint8_t wrCqe : 1;
     uint8_t reserved : 1;
 
-    uint16_t blockDim; // blockDim or res
+    uint16_t numBlocks; // numBlocks or res
 
     uint16_t rtStreamId;
     uint16_t taskId;

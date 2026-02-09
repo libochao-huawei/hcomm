@@ -57,8 +57,8 @@ HcclResult CalcNHRTransportReq::CalcTransportRequest(const std::string &tag, Tra
             tmpTransport.remoteUserRank = subCommPlaneVector_[ringIndex][targetRankPos];
             tmpTransport.inputMemType = inputMemType;
             tmpTransport.outputMemType = outputMemType;
-            HCCL_INFO("[CommFactory][CalcNHRCommInfo] param_.tag[%s] ringIndex[%u], localRank[%u], \
-                remoteRank[%u], inputMemType[%d], outputMemType[%d]", tag.c_str(), ringIndex, userRank_,
+            HCCL_INFO("[CommFactory][CalcNHRCommInfo] param_.tag[%s] ringIndex[%u], localRank[%u], "\
+                "remoteRank[%u], inputMemType[%d], outputMemType[%d]", tag.c_str(), ringIndex, userRank_,
                 tmpTransport.remoteUserRank, inputMemType, outputMemType);
 
             const u32 targetRankNeg = static_cast<u32>(rank + rankSize - delta) % rankSize;
@@ -68,8 +68,8 @@ HcclResult CalcNHRTransportReq::CalcTransportRequest(const std::string &tag, Tra
             tmpTransportNeg.remoteUserRank = subCommPlaneVector_[ringIndex][targetRankNeg];
             tmpTransportNeg.inputMemType = inputMemType;
             tmpTransportNeg.outputMemType = outputMemType;
-            HCCL_INFO("[CommFactory][CalcNHRCommInfo] param_.tag[%s] ringIndex[%u], localRank[%u], \
-                remoteRank[%u], inputMemType[%d], outputMemType[%d]", tag.c_str(), ringIndex, userRank_,
+            HCCL_INFO("[CommFactory][CalcNHRCommInfo] param_.tag[%s] ringIndex[%u], localRank[%u], "\
+                "remoteRank[%u], inputMemType[%d], outputMemType[%d]", tag.c_str(), ringIndex, userRank_,
                 tmpTransportNeg.remoteUserRank, inputMemType, outputMemType);
         }
         subCommTransport.enableUseOneDoorbell = true;

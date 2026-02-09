@@ -1,7 +1,7 @@
-/*
- * Copyright (c) 2024 Huawei Technologies Co., Ltd.
- * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
@@ -118,9 +118,12 @@ void PreemptPortManager::PreemptPortInRange(const std::shared_ptr<Socket> &liste
     HCCL_ERROR("[PreemptPortManager::%s] Complete polling of socket port range:%s", __func__, portRangeStr.c_str());
     HCCL_ERROR("[PreemptPortManager::%s] All ports in socket port range are bound already. "
         "no available port to listen. Please check the ports status, or change the port range to listen on.", __func__);
-    HCCL_ERROR("NOTICE: Users need to make sure ports in HCCL_HOST_SOCKET_PORT_RANGE are available for HCCL."
+    NicType nicType = listenSocket->GetNicType();
+    std::string envName = nicType == NicType::HOST_NIC_TYPE ? 
+        "HCCL_HOST_SOCKET_PORT_RANGE" : "HCCL_NPU_SOCKET_PORT_RANGE";
+    HCCL_ERROR("NOTICE: Users need to make sure ports in %s are available for HCCL."
         "Please double check whether the port are used by others unexpected process. "
-        "The port ranges size should also be enough when running multi-process HCCL.");
+        "The port ranges size should also be enough when running multi-process HCCL.", envName.c_str());
     HCCL_ERROR("NOTICE: The host port range size is not suggested to be smaller than the process number"
         " on current rank.");
     THROW<InvalidParamsException>("No available port to listen");

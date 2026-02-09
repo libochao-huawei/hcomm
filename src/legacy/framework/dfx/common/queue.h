@@ -61,8 +61,8 @@ public:
 
         virtual Iterator operator++(int)
         {
-            Iterator &temp = *new Iterator(this->it_);
-            (this->it_)++;
+            Iterator temp(*this);
+            ++it_;
             check();
             return temp;
         }
@@ -76,8 +76,8 @@ public:
 
         virtual Iterator operator--(int)
         {
-            Iterator &temp = *new Iterator(this->it_);
-            (this->it_)--;
+            Iterator temp(*this);
+            --it_;
             check();
             return temp;
         }

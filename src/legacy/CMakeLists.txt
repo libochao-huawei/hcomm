@@ -72,6 +72,7 @@ target_include_directories(hccl_v2 PRIVATE
     ${HCCL_BASE_DIR}/src/platform/hccp/inc/network
     ${HCCL_BASE_DIR}/src/platform/hccp/external_depends/rdma-core/include
     ${HCCL_BASE_DIR}/src/platform/hccp/orion/hcomm_dev/inc/network
+    ${HCCL_BASE_DIR}/externel_depends/tsch
 )
 
 # 每个文件夹单独组织要参与编译的文件

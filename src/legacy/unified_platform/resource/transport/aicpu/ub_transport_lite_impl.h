@@ -37,6 +37,9 @@ public:
 
     Buffer GetRmtBuffer(u32 index) override;
 
+    Eid GetLocEid() const;
+    Eid GetRmtEid() const;
+
     void Post(u32 index, const StreamLite &stream) override;
 
     void Wait(u32 index, const StreamLite &stream) override;
@@ -91,7 +94,7 @@ private:
         u32         tokenValue;
         std::string Describe() const
         {
-            return StringFormat("LocUbBufLite[addr=0x%llx, size=0x%llx, tokenId=%u, tokenValue=%u]", addr, size, tokenId, tokenValue);
+            return StringFormat("LocUbBufLite[addr=0x%llx, size=0x%llx]", addr, size);
         }
     };
 

@@ -17,12 +17,6 @@ set(ra_list
 
 add_library(ra  SHARED ${ra_list})
 
-target_compile_definitions(ra PRIVATE
-    OPEN_BUILD_PROJECT
-    LOG_CPP
-    CONFIG_CONTEXT
-)
-
 target_include_directories(ra PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../hdc
@@ -51,6 +45,12 @@ target_include_directories(ra PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/async
 )
 
+if(NOT BUILD_OPEN_PROJECT)
+    target_include_directories(ra PRIVATE
+        ${TOP_DIR}/runtime/pkg_inc/base
+    )
+endif()
+
 target_link_directories(ra PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
@@ -64,9 +64,6 @@ target_compile_options(ra PRIVATE
     -Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -std=gnu11 -Wextra
     -fstack-protector-strong
     $<$<CONFIG:Debug>:-g>
-)
-
-target_compile_definitions(ra PRIVATE
 )
 
 target_link_options(ra PRIVATE
@@ -86,6 +83,7 @@ target_link_libraries(ra PRIVATE
 
 target_compile_definitions(ra PRIVATE
     LOG_HOST
+    LOG_CPP
 )
 
 install(TARGETS  ra

@@ -126,7 +126,7 @@ HcclResult HcclOneSideServiceAicpu::Init(const std::string &tag, const OpTilingD
     }
     logicDevId_ = hostDevId;
 
-    CHK_RET(HcclDispatcherAicpuInit(&dispatcher_, devId_, DispatcherType::DISPATCHER_AICPU));
+    CHK_RET(HcclDispatcherAicpuInit(&dispatcher_, devId_, SDMA_QOS_DEFAULT, DispatcherType::DISPATCHER_AICPU));
 
     CHK_RET(InitOpNotifyObj());
     CHK_RET(InitStream(execStream_, execComStreamInfo_, commResParaPtr_->execStreamParam, tag));

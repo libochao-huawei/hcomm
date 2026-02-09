@@ -101,7 +101,7 @@ ANONYMOUS_NAMESPACE_END
 HcclResult AicpuKfcRetryProcess::RetryProcess(HcclCommAicpu &comm, RestartParam &restartParam, uint32_t idx)
 {
     HcclResult ret = HCCL_SUCCESS;
-    auto waitStopExecCmdTimeoutMs = HcclCommAicpu::HcclGetWaitStopExecCmdTimeout();
+    auto waitStopExecCmdTimeoutMs = comm.HcclGetWaitStopExecCmdTimeout();
     auto waitStopExecCmdTimeout = std::chrono::milliseconds(waitStopExecCmdTimeoutMs);
     auto waitRetryCmdTimeoutMs = comm.HcclGetWaitRetryCmdTimeout(restartParam.restartCnt);
     auto waitRetryCmdTimeout = std::chrono::milliseconds(waitRetryCmdTimeoutMs);
@@ -120,7 +120,7 @@ HcclResult AicpuKfcRetryProcess::RetryProcess(HcclCommAicpu &comm, RestartParam 
         case HcclOpExecFSM::HCCL_OP_EXEC_FSM_STOPPING:
             if ((std::chrono::steady_clock::now() - restartParam.startTime[idx]) >= waitStopExecCmdTimeout) {
                 HCCL_ERROR("MC2 restart aicpu wait stop exec timeout[%u ms].",
-                           HcclCommAicpu::HcclGetWaitStopExecCmdTimeout());
+                           comm.HcclGetWaitStopExecCmdTimeout());
                 restartParam.errorCode[idx] = KfcError::kTimeout;
                 restartParam.fsmState[idx] = HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR;
             } else {

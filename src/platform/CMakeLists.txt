@@ -60,6 +60,22 @@ set(platform_include_list
     ${CMAKE_CURRENT_SOURCE_DIR}/task
     ${CMAKE_CURRENT_SOURCE_DIR}/tbe_vector_reduce
     ${CMAKE_CURRENT_SOURCE_DIR}/aiv_communication
+
+    #legacy
+    ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/unified_platform
+    ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/common/utils
+    ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/common/exception
+    ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/unified_platform/resource/buffer/aicpu
+    ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/unified_platform/external_system
+    ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/common/types
+    ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/unified_platform/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/unified_platform/resource/buffer
+    ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/unified_platform/pub_inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/unified_platform/resource
+    ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/framework/topo
+    ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/framework/topo/new_topo_builder/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/framework/topo/new_topo_builder/rank_graph
 )
 
 if(BUILD_OPEN_PROJECT)
@@ -135,6 +151,7 @@ endif()
 
 target_compile_definitions(hccl_plf  PRIVATE
     $<$<STREQUAL:${PRODUCT_SIDE},device>:ASCEND_310P_DEVICE>
+    CONFIG_CONTEXT
     USE_AICORE_REDUCESUM
     USE_AICORE_GATHERV2
     USE_AICORE_GATHERV2_INFER

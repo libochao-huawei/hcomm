@@ -53,6 +53,7 @@ public:
     UbJettyLiteAttr GetUbJettyLiteAttr() const;
 
     Eid GetRmtEid() const;
+    Eid GetLocEid() const;
 
     u32 GetQpVa() const;
 
@@ -141,6 +142,7 @@ protected:
     u32  tpn_{0};
 
     Eid rmtEid_;
+    Eid locEid_;
 };
 
 } // namespace Hccl

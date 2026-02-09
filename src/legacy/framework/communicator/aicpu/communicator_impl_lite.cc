@@ -16,7 +16,7 @@
 #include "suspending_exception.h"
 #include "exception_util.h"
 #include "task_info.h"
-#ifdef CCL_KERNEL
+#ifdef CCL_KERNEL_AICPU
 #include "dlprof_function.h"
 #include "profiling_command_handle_lite.h"
 #endif
@@ -116,6 +116,7 @@ void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
     profilingReporterLite->UpdateProfStat();
     UpdateCommParam(kernelParam);
     UpdateLocBuffer(kernelParam);
+    UpdateUserStreamId(kernelParam);
     if (kernelParam->op.algOperator.opMode == OpMode::OPBASE) {
         UpdateOpRes(kernelParam);
     } else  {
@@ -125,7 +126,7 @@ void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
 
     UpdateHDCommnicate(kernelParam);
     RegisterRtsqCallback();
-#ifdef CCL_KERNEL
+#ifdef CCL_KERNEL_AICPU
     RegisterProfCallBack();
 #endif
     isCommReady = true;
@@ -157,7 +158,7 @@ void CommunicatorImplLite::RegisterRtsqCallback()
         streamLiteMgr->GetSlave(i)->GetRtsq()->SetOpExecStatusCallback(checkOpExecStatusCallback);
     }
 }
-#ifdef CCL_KERNEL
+#ifdef CCL_KERNEL_AICPU
 void CommunicatorImplLite::RegisterProfCallBack()
 {
     if (MsprofRegisterCallback != nullptr) {
@@ -185,7 +186,7 @@ void CommunicatorImplLite::UpdateCommParam(HcclKernelParamLite *kernelParam)
         return;
     }
     myRank        = kernelParam->comm.myRank;
-    rankSize      = kernelParam->comm.rankSie;
+    rankSize      = kernelParam->comm.rankSize;
     devPhyId      = kernelParam->comm.devPhyId;
     devType       = kernelParam->comm.devType;
     opCounterAddr = kernelParam->comm.opCounterAddr;
@@ -277,8 +278,10 @@ void CommunicatorImplLite::UpdateOpRes(HcclKernelParamLite *kernelParam)
 
 void CommunicatorImplLite::UpdateHDCommnicate(HcclKernelParamLite *kernelParam)
 {
-    kfcControlTransferH2D->Init(kernelParam->kfcControlTransferH2DParams);
-    kfcStatusTransferD2H->Init(kernelParam->kfcControlTransferD2HParams);
+    CHK_RET_THROW(InternalException, StringFormat("[CommunicatorImplLite][%s] failed to init kfcControlTransferH2DParams", __func__), 
+            kfcControlTransferH2D->Init(kernelParam->kfcControlTransferH2DParams));
+    CHK_RET_THROW(InternalException, StringFormat("[CommunicatorImplLite][%s] failed to init kfcControlTransferD2HParams", __func__),
+            kfcStatusTransferD2H->Init(kernelParam->kfcControlTransferD2HParams));
     std::unique_lock<std::mutex> lock(hdcShmLock_);
     hdcHandler = make_unique<AicpuHdcHandler>(*kfcControlTransferH2D, *kfcStatusTransferD2H);
 }
@@ -450,6 +453,7 @@ void CommunicatorImplLite::SetDfxOpInfo(uint64_t beginTime)
 {
     auto dfxopInfo           = std::make_shared<DfxOpInfo>();
     dfxopInfo->op_           = currentOp;
+    dfxopInfo->tag_          = currentOp.opTag;
     dfxopInfo->algType_      = AlgType::MESH; // 暂时
     dfxopInfo->index_        = idIndex_;
     dfxopInfo->beginTime_    = beginTime;
@@ -480,6 +484,22 @@ std::shared_ptr<InsQueue> CommunicatorImplLite::GetOneSidedInsQueue(HcclKernelPa
         THROW<InternalException>(StringFormat("CommunicatorImplLite::GetOneSidedInsQueue ret[HCCL_E_PARA]"));
     }
     return queue;
+}
+
+HcclResult CommunicatorImplLite::SendErrorMessageReportToHost(ErrorMessageReport & errMsgInfo)
+{
+    if (kfcStatusTransferD2H == nullptr) {
+        return HCCL_E_PTR;
+    }
+    CHK_RET(kfcStatusTransferD2H->Put(sizeof(KfcStatus) + sizeof(KfcErrType), sizeof(errMsgInfo),
+        reinterpret_cast<uint8_t *>(&errMsgInfo)));
+
+    return HCCL_SUCCESS;
+}
+
+void CommunicatorImplLite::UpdateUserStreamId(HcclKernelParamLite *kernelParam)
+{
+    userStreamId_ = kernelParam->op.userStreamId;
 }
 
 } // namespace Hccl

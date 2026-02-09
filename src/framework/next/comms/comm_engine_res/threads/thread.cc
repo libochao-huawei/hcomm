@@ -18,7 +18,8 @@ HcclResult CreateThread(CommEngine engine, StreamType streamType,
 {
     out_thread = nullptr;  // 初始化出参
  
-    if (engine == COMM_ENGINE_CPU_TS || engine == COMM_ENGINE_CPU) {
+    if (engine == COMM_ENGINE_CPU_TS || engine == COMM_ENGINE_CPU
+        || engine == COMM_ENGINE_CCU) {
         EXECEPTION_CATCH(out_thread = std::make_shared<CpuTsThread>(streamType, notifyNum, loadType), return HCCL_E_PTR);
     } else if (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU) {
         EXECEPTION_CATCH(out_thread = std::make_shared<AicpuTsThread>(streamType, notifyNum, loadType), return HCCL_E_PTR);
@@ -29,11 +30,27 @@ HcclResult CreateThread(CommEngine engine, StreamType streamType,
     return HCCL_SUCCESS;
 }
 
+HcclResult CommHostEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type)
+{
+    switch (engine) {
+        case COMM_ENGINE_CPU:
+        case COMM_ENGINE_CPU_TS:
+        case COMM_ENGINE_CCU:
+            type =  NotifyLoadType::HOST_NOTIFY;
+            break;
+        default:
+            HCCL_ERROR("[ThreadMgr] Unsupported comm engine type: %d", engine);
+            return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult CommEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type)
 {
     switch (engine) {
         case COMM_ENGINE_CPU:
         case COMM_ENGINE_CPU_TS:
+        case COMM_ENGINE_CCU:
             type =  NotifyLoadType::HOST_NOTIFY;
             break;
         case COMM_ENGINE_AICPU:
@@ -52,15 +69,15 @@ HcclResult CommEngineToStreamType(CommEngine engine, StreamType &type)
     switch (engine) {
         case COMM_ENGINE_CPU:
         case COMM_ENGINE_CPU_TS:
+        case COMM_ENGINE_CCU:
             type = StreamType::STREAM_TYPE_ONLINE; // 单算子使用online，图模式使用offine
             break;
         case COMM_ENGINE_AICPU:
         case COMM_ENGINE_AICPU_TS:
             type = StreamType::STREAM_TYPE_DEVICE;
             break;
-        // 暂不支持AIV、CCU
+        // 暂不支持AIV
         case COMM_ENGINE_AIV:
-        case COMM_ENGINE_CCU:
         default:
             HCCL_ERROR("[ThreadMgr] Unknown comm engine type: %d", engine);
             return HCCL_E_PARA;

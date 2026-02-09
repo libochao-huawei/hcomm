@@ -259,7 +259,7 @@ private:
         struct SingleSubCommTransport &singleSubCommTransport, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
         bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
     HcclResult IsInterServer(const u32 dstRank, bool& isInterServer);
-
+    HcclResult PrintErrorInfo(NicType nicType);
     std::mutex mutex_;	// 用于控制互斥资源的访问
     CCLBufferManager &cclBufferManager_;
     const std::unique_ptr<HcclSocketManager> &socketManager_;

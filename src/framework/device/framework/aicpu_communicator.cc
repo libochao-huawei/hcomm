@@ -36,6 +36,7 @@
 #include "profiling_command_handle.h"
 #include "dispatcher_ctx.h"
 #include "aicpu_res_package_helper.h"
+#include "aicpu_symmetric_memory.h"
 
 namespace hccl {
 constexpr u32 IPC_SIGNAL_MODULUS = 2;
@@ -125,7 +126,7 @@ HcclResult HcclCommAicpu::Init(const HcclOpResParam *commParam, bool isCustom)
     CHK_RET(InitCclbuffer(commParam));
     CHK_RET(InitTopoInfo(commParam));
     CHK_RET(InitOpNotifyObj(commParam));
-    CHK_RET(HcclDispatcherAicpuInit(&dispatcher_,devId_, DispatcherType::DISPATCHER_AICPU));
+    CHK_RET(HcclDispatcherAicpuInit(&dispatcher_, devId_, commParam->hcclSdmaQos, DispatcherType::DISPATCHER_AICPU));
     CHK_RET(RegisterProfilingCallback());
     CHK_RET(InitLocalNotifyObj(commParam));
     CHK_RET(InitMainStreamObj(commParam));
@@ -292,6 +293,56 @@ HcclResult HcclCommAicpu::GetOpUnfoldKey(const OpParam &param, OpUnfoldKey& key)
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommAicpu::PrepareSymmetricMemRanges(
+    const AlgResourceResponse &algResource,
+    uint64_t inputSize,
+    uint64_t outputSize,
+    std::vector<OpUnfoldMemRange>& userInputMemRanges,
+    std::vector<OpUnfoldMemRange>& userOutputMemRanges)
+{
+    const uint32_t rankSize = GetRankSize();
+    const std::unordered_set<LinkType> supportedLinkTypes = {LinkType::LINK_HCCS, LinkType::LINK_SIO, LinkType::LINK_HCCS_SW};
+
+    for (auto &singleSubCommTransport : algResource.opTransportResponse[COMM_LEVEL0]) {
+        for (u64 i = 0; i < singleSubCommTransport.links.size(); ++i) {
+            LINK link = singleSubCommTransport.links[i];
+            // 校验链路有效性及类型
+            if (link == nullptr || !singleSubCommTransport.transportRequests[i].isValid ||
+                supportedLinkTypes.count(link->GetLinkType()) == 0) {
+                continue;
+            }
+            // 获取并校验对端 Rank ID
+            const uint32_t remoteRank = link->GetRemoteRank();
+            CHK_PRT_RET(remoteRank >= rankSize, 
+                HCCL_ERROR("[HcclCommAicpu][PrepareSymmetricMemRanges] remoteRank %u >= rankSize %u", remoteRank, rankSize), 
+                HCCL_E_INTERNAL);
+
+            HCCL_INFO("[HcclCommAicpu][PrepareSymmetricMemRanges] prepare memory range of remote rank %u", remoteRank);
+
+            // 处理 Remote Input Memory
+            void *remoteUserInputBaseAddr = nullptr;
+            CHK_RET(link->GetRemoteMem(UserMemType::INPUT_MEM, &remoteUserInputBaseAddr));
+            CHK_PTR_NULL(remoteUserInputBaseAddr);
+
+            OpUnfoldMemRange& remoteInputMemRange = userInputMemRanges[remoteRank];
+            remoteInputMemRange.isValid = true;
+            remoteInputMemRange.baseAddr = reinterpret_cast<uint64_t>(remoteUserInputBaseAddr);
+            remoteInputMemRange.memSize = inputSize;
+
+            // 处理 Remote Output Memory
+            void *remoteUserOutputBaseAddr = nullptr;
+            CHK_RET(link->GetRemoteMem(UserMemType::OUTPUT_MEM, &remoteUserOutputBaseAddr));
+            CHK_PTR_NULL(remoteUserOutputBaseAddr);
+
+            OpUnfoldMemRange& remoteOutputMemRange = userOutputMemRanges[remoteRank];
+            remoteOutputMemRange.isValid = true;
+            remoteOutputMemRange.baseAddr = reinterpret_cast<uint64_t>(remoteUserOutputBaseAddr);
+            remoteOutputMemRange.memSize = outputSize;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, const AlgResourceResponse &algResource, std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges)
 {
     const uint32_t rankSize = GetRankSize();
@@ -321,8 +372,12 @@ HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, const AlgRe
     curUserOutputMemRange.baseAddr = reinterpret_cast<uint64_t>(param.outputPtr);
     curUserOutputMemRange.memSize = outputSize; // NOTE: 不应该使用param.outputSize (alltoall类始终为0)
 
-    // 针对zero copy, 设置remote rank的input/output usermem addr
-    if (param.isZeroCopy) {
+    //针对SymmetricMemory/zero copy, 设置remote rank的input/output usermem addr
+    constexpr uint8_t FORCE_OP_BASE_DELTA = 10;
+    if (param.supportSymmetricMemory) {
+        HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] symmetric memory is enabled, prepare remote user memory ranges accordingly");
+        CHK_RET(PrepareSymmetricMemRanges(algResource, inputSize, outputSize, userInputMemRanges, userOutputMemRanges));
+    } else if (param.isZeroCopy) {
         // 注意: 只有非V类算子可能使用zero copy (因此假设remote ranks' input/output size与local rank相同)
         // 注意: 而V类算子一定是buffer copy (否则PrepareRemoteUserMemRanges需要额外的输入作为remote ranks' input/output size)
         const HcclCMDType opType = param.opType;
@@ -332,7 +387,8 @@ HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, const AlgRe
         // 直接传入local rank's input/output size用于remote ranks' memory ranges
         HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] prepare user memory ranges of other remote ranks");
         CHK_RET(ZeroCopyExchanger_->PrepareRemoteUserMemRanges(inputSize, outputSize, userInputMemRanges, userOutputMemRanges));
-    } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
+    } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB ||
+        param.aicpuCacheEnable > FORCE_OP_BASE_DELTA) { // 图模式 或者 存在强制单算子模式转换 (图模式建链 + 单算子模式展开)
         HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] check transport resource for potential user memory of remote ranks");
 
         // 遍历所有transport信息, 更新remote ranks' user input/output memory ranges
@@ -366,7 +422,8 @@ HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, const AlgRe
                         CHK_PTR_NULL(curLink);
 
                         // 获取user input memory range if any
-                        if (curReq.inputMemType == TransportMemType::PARAM_INPUT) {
+                        if (curReq.inputMemType == TransportMemType::PARAM_INPUT ||
+                            curReq.inputMemType == TransportMemType::CCL_INPUT) {
                             // 获取remoteRank的user input memory baseaddr
                             void *remoteUserInputBaseAddr = nullptr;
                             CHK_RET(curLink->GetRemoteMem(UserMemType::INPUT_MEM, &remoteUserInputBaseAddr));
@@ -378,11 +435,20 @@ HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, const AlgRe
                             OpUnfoldMemRange& remoteUserInputMemRange = userInputMemRanges[curReq.remoteUserRank];
                             remoteUserInputMemRange.isValid = true;
                             remoteUserInputMemRange.baseAddr = reinterpret_cast<uint64_t>(remoteUserInputBaseAddr);
-                            remoteUserInputMemRange.memSize = inputSize;
+                            if (curReq.inputMemType == TransportMemType::PARAM_INPUT) { // user input
+                                remoteUserInputMemRange.memSize = inputSize;
+                            } else if (curReq.inputMemType == TransportMemType::CCL_INPUT) { // hccl input
+                                remoteUserInputMemRange.memSize = algResource.cclInputMem.size();
+                            } else {
+                                HCCL_ERROR("[HcclCommAicpu][PrepareUserMemRanges] invalid curReq.inputMemType[%u]",
+                                    curReq.inputMemType);
+                                return HCCL_E_INTERNAL;
+                            }
                         }
 
                         // 获取user output memory range if any
-                        if (curReq.outputMemType == TransportMemType::PARAM_OUTPUT) {
+                        if (curReq.outputMemType == TransportMemType::PARAM_OUTPUT ||
+                            curReq.outputMemType == TransportMemType::CCL_OUTPUT) {
                             // 获取remoteRank的user output memory baseaddr
                             void *remoteUserOutputBaseAddr = nullptr;
                             CHK_RET(curLink->GetRemoteMem(UserMemType::OUTPUT_MEM, &remoteUserOutputBaseAddr));
@@ -394,7 +460,15 @@ HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, const AlgRe
                             OpUnfoldMemRange& remoteUserOutputMemRange = userOutputMemRanges[curReq.remoteUserRank];
                             remoteUserOutputMemRange.isValid = true;
                             remoteUserOutputMemRange.baseAddr = reinterpret_cast<uint64_t>(remoteUserOutputBaseAddr);
-                            remoteUserOutputMemRange.memSize = outputSize;
+                            if (curReq.outputMemType == TransportMemType::PARAM_OUTPUT) { // user output
+                                remoteUserOutputMemRange.memSize = outputSize;
+                            } else if (curReq.outputMemType == TransportMemType::CCL_OUTPUT) { // hccl output
+                                remoteUserOutputMemRange.memSize = algResource.cclOutputMem.size();
+                            } else {
+                                HCCL_ERROR("[HcclCommAicpu][PrepareUserMemRanges] invalid curReq.outputMemType[%u]",
+                                    curReq.outputMemType);
+                                return HCCL_E_INTERNAL;
+                            }
                         }
                     } // curReq.isValid
                 } // Each TransportRequest
@@ -640,6 +714,12 @@ HcclResult HcclCommAicpu::InitOpCounter(const OpCounterInfo &opCounterInfo)
 void HcclCommAicpu::SetZeroCopyEnable(bool enable)
 {
     isZeroCopy_ = enable;
+}
+
+void HcclCommAicpu::SetSymmetricMemoryEnable(bool enable)
+{
+    HCCL_INFO("[HcclCommAicpu::SetSymmetricMemoryEnable] enable[%d]", enable);
+    isSymmetricMemory_ = enable;
 }
 
 HcclResult HcclCommAicpu::PrepareZeroCopyExchanger(const std::string &newTag, OpParam &opParam,
@@ -2202,18 +2282,50 @@ u32 HcclCommAicpu::CalculateOpExecIndex(const OpParam &opParam, u32 userRank)
     return opIndex;
 }
 
+HcclResult HcclCommAicpu::PrepareSymmetricMemory(const OpParam &param, OpCommTransport &opTransportResponse)
+{
+    CHK_PRT_RET(opTransportResponse.size() == 0,
+        HCCL_ERROR("[HcclCommAicpu][PrepareSymmetricMemory] opTransportResponse size is 0"),
+        HCCL_E_PARA);
+    
+    const std::unordered_set<LinkType> supportedLinkTypes = {LinkType::LINK_HCCS, LinkType::LINK_SIO, LinkType::LINK_HCCS_SW};
+
+    for (auto &singleSubCommTransport : opTransportResponse[COMM_LEVEL0]) {
+        for (u64 i = 0; i < singleSubCommTransport.links.size(); ++i) {
+            LINK &link = singleSubCommTransport.links[i];
+            if (link == nullptr || !singleSubCommTransport.transportRequests[i].isValid || supportedLinkTypes.count(link->GetLinkType()) == 0) {
+                continue;   // 无效或者不支持的链路
+            }
+            u32 peerRank = link->GetRemoteRank();
+            void *remoteIn = nullptr;
+            CHK_RET(HcommSymWinGetPeerPointer(param.inputSymWindow, param.inputOffset, peerRank, &remoteIn));
+            void *remoteOut = nullptr;
+            CHK_RET(HcommSymWinGetPeerPointer(param.outputSymWindow, param.outputOffset, peerRank, &remoteOut));
+
+            CHK_PRT_RET(remoteIn == nullptr || remoteOut == nullptr,
+                HCCL_ERROR("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p] is invalid", peerRank, remoteIn, remoteOut),
+                HCCL_E_INTERNAL);
+            HCCL_INFO("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p]", peerRank, remoteIn, remoteOut);
+            CHK_RET(link->UpdateRemoteAddr(remoteIn, remoteOut));
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclCommAicpu::ExecOp(const std::string &newTag, const std::string &algName,
                                             OpParam &opParam, const HcclOpResParam *commParam)
 {
     std::unique_ptr<CollExecutorBase> executor;
     hccl::AlgResourceResponse *algResResponse;
     CHK_RET(GetAlgResponseRes(newTag, algName, opParam, commParam, executor, algResResponse));
-    if (isZeroCopy_) {
-        HcclResult ret = PrepareZeroCopyExchanger(newTag, opParam, algResResponse);
-        if(ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[HcclCommAicpu][ExecOp] newTag[%s], localRankId[%u]",
-            newTag.c_str(), commParam->localUsrRankId);
-            return ret;
+
+    if (isZeroCopy_ || isSymmetricMemory_) {
+        if (isSymmetricMemory_) {
+            CHK_RET(PrepareSymmetricMemory(opParam, algResResponse->opTransportResponse));
+        } else {
+            HcclResult ret = PrepareZeroCopyExchanger(newTag, opParam, algResResponse);
+            CHK_PRT_RET(ret != HCCL_SUCCESS, 
+                HCCL_ERROR("[HcclCommAicpu][ExecOp] newTag[%s], localRankId[%u]", newTag.c_str(), commParam->localUsrRankId), ret);            
         }
 
         // 零拷贝场景scratchMem的大小会与用户的输入大小不同，会导致后续算法展开模块计算出错
@@ -2831,29 +2943,33 @@ HcclResult HcclCommAicpu::BSRStopedProcess(HcclOpExecFSM &fsmState, KfcError &er
     HCCL_RETRY_CHK_RET_AND_TRANS_FSM(ret, HCCL_ERROR("[OpRetry][AICPU]quert recv stream sq head failed, ret:%u", ret),
         KfcError::kExec, HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
 
-    ret = ((bsrSendOpBeginSqePos_ == bsrSendSqHead) || (bsrRecvOpBeginSqePos_ == bsrRecvSqHead)) ? HCCL_E_INTERNAL :
+    ret = ((bsrSendOpBeginSqePos_ == bsrSendSqHead) || (bsrRecvOpBeginSqePos_ == bsrRecvSqHead)) ? HCCL_E_OPRETRY_FAIL :
                                                                                                    HCCL_SUCCESS;
+    if (ret != HCCL_SUCCESS) {
+        uint16_t rsErrorCode = TS_ERROR_RETRY_CONSTRAINT;
+        CHK_PRT(SendTaskExceptionByMBox(rsErrorCode));
+    }
     HCCL_RETRY_CHK_RET_AND_TRANS_FSM(ret,
         HCCL_ERROR("[OpRetry][AICPU]hccl aicpu wait start task is not complete, can not retry. params: send sq head "
         "%u, recv sq head %u, send sq begin %u, recv sq begin %u",
         bsrSendSqHead, bsrRecvSqHead, bsrSendOpBeginSqePos_, bsrRecvOpBeginSqePos_),
-        KfcError::kExec, HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
+        KfcError::kExecConstraint, HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
 
-    ret = ((bsrRetryOp_ == HCCL_SEND) && (bsrSendSqHead == bsrSendOpEndSqePos_)) ? HCCL_E_INTERNAL : HCCL_SUCCESS;
+    ret = ((bsrRetryOp_ == HCCL_SEND) && (bsrSendSqHead == bsrSendOpEndSqePos_)) ? HCCL_E_OPRETRY_FAIL : HCCL_SUCCESS;
     HCCL_RETRY_CHK_RET_AND_TRANS_FSM(ret,
         HCCL_ERROR("[OpRetry][AICPU]hccl aicpu send record complete task is complete, can not retry. params: send sq "
         "head %u, recv sq head %u, send sq begin %u, send sq end %u, recv sq begin %u, recv sq end %u",
         bsrSendSqHead, bsrRecvSqHead, bsrSendOpBeginSqePos_, bsrSendOpEndSqePos_, bsrRecvOpBeginSqePos_,
         bsrRecvOpEndSqePos_),
-        KfcError::kExec, HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
+        KfcError::kExecConstraint, HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
 
-    ret = ((bsrRetryOp_ == HCCL_RECV) && (bsrRecvSqHead == bsrRecvOpEndSqePos_)) ? HCCL_E_INTERNAL : HCCL_SUCCESS;
+    ret = ((bsrRetryOp_ == HCCL_RECV) && (bsrRecvSqHead == bsrRecvOpEndSqePos_)) ? HCCL_E_OPRETRY_FAIL : HCCL_SUCCESS;
     HCCL_RETRY_CHK_RET_AND_TRANS_FSM(ret,
         HCCL_ERROR("[OpRetry][AICPU]hccl aicpu recv record complete task is complete, can not retry. params: send sq "
         "head %u, recv sq head %u, send sq begin %u, send sq end %u, recv sq begin %u, recv sq end %u",
         bsrSendSqHead, bsrRecvSqHead, bsrSendOpBeginSqePos_, bsrSendOpEndSqePos_, bsrRecvOpBeginSqePos_,
         bsrRecvOpEndSqePos_),
-        KfcError::kExec, HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
+        KfcError::kExecConstraint, HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
 
     HCCL_RUN_INFO("[OpRetry][AICPU]hccl aicpu op is running, can retry. params: send sq head "
         "%u, recv sq head %u, send sq begin %u, send sq end %u, recv sq begin %u, recv sq end %u",
@@ -2928,13 +3044,17 @@ HcclResult HcclCommAicpu::HcclOpExecFsmStoppedProcess(HcclOpExecFSM &fsmState, K
     if (sqHead == endSqePos) {
         HCCL_ERROR("[OpRetry][AICPU]hccl aicpu record complete task is complete, can not retry. params: "
             "sqHead %u, beginSqePos %u endSqePos %u", sqHead, beginSqePos, endSqePos);
-        errorCode = KfcError::kExec;
+        errorCode = KfcError::kExecConstraint;
         fsmState = HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR;
+        return HCCL_E_OPRETRY_FAIL;
     } else if (sqHead == beginSqePos) {
+        rsErrorCode = TS_ERROR_RETRY_CONSTRAINT;
+        CHK_PRT(SendTaskExceptionByMBox(rsErrorCode));
         HCCL_ERROR("[OpRetry][AICPU]hccl aicpu wait start task is not complete, can not retry. "\
             "params: sqHead %u, beginSqePos %u endSqePos %u", sqHead, beginSqePos, endSqePos);
-        errorCode = KfcError::kExec;
+        errorCode = KfcError::kExecConstraint;
         fsmState = HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR;
+        return HCCL_E_OPRETRY_FAIL;
     } else if ((param.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) && retryEnable_) {
         CHK_RET(BSRStopedProcess(fsmState, errorCode));
     } else {
@@ -3292,15 +3412,15 @@ static constexpr u32 HCCL_AICPU_WAIT_HOST_BASE_TIME_MS = 200 * 1000;
 static constexpr u32 TIME_S_TO_MS = 1000;
 u32 HcclCommAicpu::HcclGetWaitStopExecCmdTimeout()
 {
-    return std::max(static_cast<u32>(GetExternalInputHcclLinkTimeOut()) * TIME_S_TO_MS, HCCL_AICPU_WAIT_HOST_BASE_TIME_MS);
+    return std::max(static_cast<u32>(linkTimeOut_.count()), HCCL_AICPU_WAIT_HOST_BASE_TIME_MS);
 }
 
 u32 HcclCommAicpu::HcclGetWaitRetryCmdTimeout(uint32_t retryCnt)
 {
     if (retryCnt == 0) {
-        return HCCL_AICPU_WAIT_HOST_BASE_TIME_MS + retryHoldTime_;
+        return HcclGetWaitStopExecCmdTimeout() + retryHoldTime_;
     } else {
-        return HCCL_AICPU_WAIT_HOST_BASE_TIME_MS + retryIntervalTime_;
+        return HcclGetWaitStopExecCmdTimeout() + retryIntervalTime_;
     }
 }
 
@@ -5018,7 +5138,9 @@ void HcclCommAicpu::HandleIndOpCqe()
         bool isCompDataErr = cqeException.errorCode == RT_SDMA_COMPDATAERR ||
                              cqeException.errorCode == RT_SDMA_COMPERR;
         bool isSdmaCompDataErr = isSdmaTypeErr && isCompDataErr;
-        if (isSdmaCompDataErr) {
+        if (retryEnable_ && isSdmaCompDataErr) {
+            uint16_t rsErrorCode = TS_ERROR_RETRY_CONSTRAINT;
+ 	        CHK_PRT(SendTaskExceptionByMBox(rsErrorCode));
             HCCL_RUN_INFO("[OpRetry][AICPU]group[%s] can not retry, IndOp does not support opRetry", identifier_.c_str());
         }
 
@@ -5304,6 +5426,8 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     topoInfo_.devicePhyId = commAicpuParam->devicePhyId;
     topoInfo_.deviceType = static_cast<DevType>(commAicpuParam->deviceType);
     identifier_ = std::string(commAicpuParam->hcomId);
+    topoInfo_.userRankSize = commAicpuParam->userRankSize;
+    topoInfo_.userRank = commAicpuParam->userRank; 
     notifys_.reserve(LOCAL_NOTIFY_MAX_NUM);
     if (topoInfo_.deviceType == DevType::DEV_TYPE_910_93 || topoInfo_.deviceType == DevType::DEV_TYPE_910B) {
         notifySize_ = NOTIFY_SIZE_FOUR;
@@ -5316,6 +5440,7 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(hrtSetlocalDeviceType(topoInfo_.deviceType));
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(topoInfo_.devicePhyId, &devId_));
     CHK_RET(taskExecption_.Init(devId_, localUserRank_, identifier_));
+    CHK_RET(RegisterProfCallBack());
 
     if (topoInfo_.deviceType == DevType::DEV_TYPE_910_95) {
         HCCL_INFO("[HcclCommAicpu][InitAicpuIndOp] InitAicpuIndOpV2 start");
@@ -5328,7 +5453,9 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
         CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devId_, identifier_.c_str()));
     }
     CHK_PTR_NULL(dispatcherCtx_);
-
+    hccl::DispatcherCtx *Ctx_temp = static_cast<DispatcherCtx *>(dispatcherCtx_);
+    HCCL_INFO("[%s] Ctx_temp[%p]", __func__, (void*)Ctx_temp);
+    (void)RegisterLoadTaskCallBack(Ctx_temp->GetDispatcher(), nullptr, dfx::TaskProfilingCallBack); //注册dispatcher
     if (commAicpuParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
         EXECEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
@@ -5392,6 +5519,27 @@ HcclResult HcclCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
         std::make_move_iterator(outThreads.end()));
     HCCL_INFO("[HcclCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
         __func__, hcomId.c_str(), threadNum);
+    // 为上报翻转初始化资源
+    CHK_RET(InitProfthreadResource(threadNum));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::InitProfthreadResource(u32 threadNum) {
+    groupHashId_ = dfx::ProfilingManager::GetProfHashId(identifier_.c_str(), identifier_.length());
+    HCCL_INFO("[%s], group[%s], groupHash[%llu], threadNum[%u] ", __func__, identifier_.c_str(), groupHashId_, threadNum);
+    dfx::ProfCommInfo profInfo{ groupHashId_, topoInfo_.userRankSize, topoInfo_.userRank };
+    // 添加检查确保 threadNum 不超过线程总数
+    if (threadNum > threads_.size()) {
+        HCCL_ERROR("[%s] threadNum Err", __func__);
+        return HCCL_E_PARA;
+    }
+    // 从后往前迭代指定数量
+    auto begin = threads_.rbegin();
+    auto end = begin + threadNum;
+    for (auto it = begin; it != end; ++it) {
+        CHK_RET(dfx::ProfilingManager::AddProfInfoByStreamId((*it)->GetStream()->id(), identifier_, profInfo));
+    }
+    dfx::ProfilingExtendInfoHelper::InitProfItemId();
     return HCCL_SUCCESS;
 }
 

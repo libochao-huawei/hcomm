@@ -1,5 +1,12 @@
-/* SPDX-License-Identifier: MulanPSL-2.0 */
-/* Copyright (c) 2025 HiSilicon Technologies Co., Ltd. All rights reserved. */
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #ifndef __UDMA_U_CTL_H__
 #define __UDMA_U_CTL_H__
@@ -46,12 +53,8 @@ union udma_jfs_flag {
 		uint32_t sq_cstm : 1;
 		uint32_t db_cstm : 1;
 		uint32_t db_ctl_cstm : 1;
-#ifdef TGID_VA
 		uint32_t tg_id : 1;
 		uint32_t reserved : 28;
-#else
-		uint32_t reserved : 29;
-#endif
 	} bs;
 	uint32_t value;
 };
@@ -90,10 +93,8 @@ enum udma_u_jfc_type {
 	UDMA_U_NORMAL_JFC_TYPE,
 	UDMA_U_STARS_JFC_TYPE,
 	UDMA_U_CCU_JFC_TYPE,
-#ifdef CONFIG_V121
 	UDMA_RVS_TYPE,
 	UDMA_U_LOCK_CCU_JFC_TYPE,
-#endif
 };
 
 struct udma_u_jfc_cfg_ex {
@@ -101,7 +102,6 @@ struct udma_u_jfc_cfg_ex {
 	enum udma_u_jfc_type jfc_mode;
 };
 
-#ifdef CONFIG_V121
 struct udma_u_lock_jetty_cfg {
 	urma_jetty_cfg_t base_cfg;
 	bool jetty_type; /* 1:wqe lock buffer jetty, 0:normal jetty, defualt: 1 */
@@ -116,7 +116,6 @@ struct udma_u_lock_jfc_cfg {
 	urma_jfc_cfg_t base_cfg;
 	struct udma_u_jfc_ccu_cfg ccu_cfg;
 };
-#endif
 
 struct udma_u_jfs_wr_ex {
 	urma_jfs_wr_t wr;
@@ -186,12 +185,10 @@ enum udma_u_user_ctl_opcode {
 	UDMA_U_USER_CTL_QUERY_TP_SPORT,
 	UDMA_U_USER_CTL_QUERY_CQE_AUX_INFO,
 	UDMA_U_USER_CTL_QUERY_AE_AUX_INFO,
-#ifdef CONFIG_V121
 	UDMA_U_USER_CTL_CREATE_LOCK_BUFFER_JETTY_EX,
 	UDMA_U_USER_CTL_DELETE_LOCK_BUFFER_JETTY_EX,
 	UDMA_U_USER_CTL_CREATE_CCU_JFC_EX,
 	UDMA_U_USER_CTL_DELETE_CCU_JFC_EX,
-#endif
 	UDMA_U_USER_CTL_MAX,
 };
 

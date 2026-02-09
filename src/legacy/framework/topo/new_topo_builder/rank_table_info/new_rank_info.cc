@@ -1,7 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
- * Description: RankInfo implement
- * Create: 2024-12-16
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "new_rank_info.h"
@@ -32,6 +36,7 @@ void CheakLevelJsonsSize(u64 levelJsonsSize){
         THROW<InvalidParamsException>(StringFormat("level_list size [%u], exceeds the maximum limit [%u]", levelJsonsSize, MAX_LEVEL_lIST));
     }
 }
+
 void NewRankInfo::Deserialize(const nlohmann::json &newRankInfoJson)
 {
     std::string msgRankid  = "error occurs when parser object of propName \"rank_id\"";
@@ -53,7 +58,7 @@ void NewRankInfo::Deserialize(const nlohmann::json &newRankInfoJson)
     std::string msgDeviceid  = "error occurs when parser object of propName \"device_id\"";
     std::string msgdeviceport = "error occurs when parser object of propName \"device_port\"";
     TRY_CATCH_THROW(InvalidParamsException, msgDeviceid, deviceId = GetJsonPropertyUInt(newRankInfoJson, "device_id"););
-    TRY_CATCH_THROW(InvalidParamsException, msgdeviceport, devicePort = GetJsonPropertyUInt(newRankInfoJson, "device_port", false, MAX_VALUE_DEVICEPORT););
+    TRY_CATCH_THROW(InvalidParamsException, msgdeviceport, devicePort = GetJsonPropertyUInt(newRankInfoJson, "device_port", false, DEFAULT_VALUE_DEVICEPORT););
     CheakDeviceIdAndDevicePort(deviceId, devicePort);
     nlohmann::json levelJsons;
     std::string msgLevellist = "error occurs when parser object of propName \"level_list\"";

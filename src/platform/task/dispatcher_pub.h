@@ -263,6 +263,14 @@ public:
         return HCCL_SUCCESS;
     }
 
+    void SetHcclQos(u32 hcclQos);
+ 	void SetMpamid(u32 mPamid);
+ 	 
+ 	uint32_t GetHcclQos()
+ 	{
+ 	    return hcclQos_;
+ 	}
+
 protected:
     HcclResult RdmaSend(u32 qpn, u32 wqeIndex, const struct SendWr &wr, HcclRtStream stream, hccl::RdmaType rdmaType,
         u64 notifyID = INVALID_U64, bool isMainStream = false);
@@ -301,6 +309,8 @@ protected:
     static bool isForce_; // 强制profiling上报或缓存
     s32 execTimeOut_;
     bool execTimeOutByConfig_;
+    uint32_t hcclQos_;
+ 	uint32_t mPamid_;
 
 private:
     void SetupTaskParaDma(hccl::TaskPara& taskPara, hccl::TaskParaDMA& para, TaskType taskType,
