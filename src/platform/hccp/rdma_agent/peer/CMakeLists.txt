@@ -36,6 +36,12 @@ target_include_directories(ra_peer PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../rdma_service/ctx
 )
 
+if(NOT BUILD_OPEN_PROJECT)
+    target_include_directories(ra_peer PRIVATE
+        ${TOP_DIR}/runtime/pkg_inc/base
+    )
+endif()
+
 target_link_directories(ra_peer PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
