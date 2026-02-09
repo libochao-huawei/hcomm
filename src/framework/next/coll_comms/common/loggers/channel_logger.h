@@ -130,6 +130,54 @@ private:
      * @brief 打印 ROCE 协议特有属性
      */
     static void PrintRoceAttributes(uint32_t idx, const HcclChannelDesc& channelDesc);
+
+    // ========== 新增：私有辅助函数（消除重复代码） ==========
+
+    /**
+     * @brief 判断是否为 ROCE 协议
+     * @param channelDesc Channel 描述符
+     * @return true 如果是 ROCE 协议，false 否则
+     */
+    static bool IsRoceProtocol(const HcclChannelDesc& channelDesc);
+
+    /**
+     * @brief 格式化 ROCE 属性为紧凑字符串（表格用）
+     * @param channelDesc Channel 描述符
+     * @return 紧凑格式字符串，如 "q:4 r:3 ri:20 tc:0 sl:0" 或 "-"
+     */
+    static std::string FormatRoceAttrCompact(const HcclChannelDesc& channelDesc);
+
+    /**
+     * @brief 格式化 ROCE 属性为详细字符串（日志用）
+     * @param channelDesc Channel 描述符
+     * @return 详细格式字符串，如 "queueNum[4], retryCnt[3], retryInterval[20], tc[0], sl[0]"
+     */
+    static std::string FormatRoceAttrDetail(const HcclChannelDesc& channelDesc);
+
+    /**
+     * @brief 判断状态是否异常（非 READY）
+     * @param status Channel 状态值
+     * @return true 如果状态异常，false 如果状态为 READY
+     */
+    static bool IsAbnormalStatus(int32_t status);
+
+    /**
+     * @brief 判断是否需要详细打印（FAILED 或 SOCKET_TIMEOUT）
+     * @param status Channel 状态值
+     * @return true 如果需要详细打印，false 否则
+     */
+    static bool NeedDetailPrint(int32_t status);
+
+    /**
+     * @brief 批量格式化端点地址（输出引用）
+     * @param channelDesc Channel 描述符
+     * @param outLocalAddr 输出本地地址字符串
+     * @param outRemoteAddr 输出远端地址字符串
+     */
+    static void FormatEndpointAddresses(
+        const HcclChannelDesc& channelDesc,
+        std::string& outLocalAddr,
+        std::string& outRemoteAddr);
 };
 
 /**

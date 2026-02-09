@@ -26,11 +26,11 @@ void ChannelLogger::PrintBasicFields(uint32_t idx, const HcclChannelDesc& channe
 
 void ChannelLogger::PrintRoceAttributes(uint32_t idx, const HcclChannelDesc& channelDesc)
 {
-    if (channelDesc.channelProtocol == COMM_PROTOCOL_ROCE) {
-        HCCL_INFO("[%s] channelDescs[%u] roceAttr: queueNum[%u], retryCnt[%u], retryInterval[%u], tc[%u], sl[%u]",
-            __func__, idx, channelDesc.roceAttr.queueNum, channelDesc.roceAttr.retryCnt,
-            channelDesc.roceAttr.retryInterval, channelDesc.roceAttr.tc, channelDesc.roceAttr.sl);
+    if (!IsRoceProtocol(channelDesc)) {
+        return;
     }
+    std::string roceAttrStr = FormatRoceAttrDetail(channelDesc);
+    HCCL_INFO("[%s] channelDescs[%u] roceAttr: %s", __func__, idx, roceAttrStr.c_str());
 }
 
 void ChannelLogger::PrintDescInfo(uint32_t idx, const HcclChannelDesc& channelDesc)
@@ -57,21 +57,10 @@ void ChannelLogger::PrintDescTableHeader()
 
 void ChannelLogger::PrintDescInfoRow(uint32_t idx, const HcclChannelDesc& channelDesc)
 {
-    // 转换地址为字符串
-    std::string localAddr = CommAddrLogger::ToString(channelDesc.localEndpoint.commAddr);
-    std::string remoteAddr = CommAddrLogger::ToString(channelDesc.remoteEndpoint.commAddr);
-
-    // 格式化 ROCE 属性
-    char roceAttrStr[128] = "-";
-    if (channelDesc.channelProtocol == COMM_PROTOCOL_ROCE) {
-        snprintf_s(roceAttrStr, sizeof(roceAttrStr), sizeof(roceAttrStr) - 1,
-            "q:%u r:%u ri:%u tc:%u sl:%u",
-            channelDesc.roceAttr.queueNum,
-            channelDesc.roceAttr.retryCnt,
-            channelDesc.roceAttr.retryInterval,
-            channelDesc.roceAttr.tc,
-            channelDesc.roceAttr.sl);
-    }
+    // 使用类内部辅助函数
+    std::string localAddr, remoteAddr;
+    FormatEndpointAddresses(channelDesc, localAddr, remoteAddr);
+    std::string roceAttrStr = FormatRoceAttrCompact(channelDesc);
 
     // 输出表格行
     HCCL_INFO("   | %5u | %10u | %5d | %11u | %12u | %35s | %35s | %30s |",
@@ -82,7 +71,7 @@ void ChannelLogger::PrintDescInfoRow(uint32_t idx, const HcclChannelDesc& channe
         channelDesc.memHandleNum,
         localAddr.c_str(),
         remoteAddr.c_str(),
-        roceAttrStr);
+        roceAttrStr.c_str());
 }
 
 void ChannelLogger::PrintErrorTableHeader(uint32_t localRank)
@@ -108,8 +97,9 @@ void ChannelLogger::PrintErrorInfo(
     int32_t status,
     uint64_t elapsedMs)
 {
-    std::string localAddr = CommAddrLogger::ToString(channelDesc.localEndpoint.commAddr);
-    std::string remoteAddr = CommAddrLogger::ToString(channelDesc.remoteEndpoint.commAddr);
+    // 复用 FormatEndpointAddresses()
+    std::string localAddr, remoteAddr;
+    FormatEndpointAddresses(channelDesc, localAddr, remoteAddr);
     std::string statusStr = ChannelStatusUtils::ToString(status);
 
     HCCL_ERROR("   | %5u | %9u | %35s | %10u | %35s | 0x%08llx | %26s | %5d | %7llu |",
@@ -136,18 +126,79 @@ void ChannelLogger::PrintChannelErrorDetails(
     PrintErrorTableHeader(localRank);
 
     for (uint32_t i = 0; i < channelNum; ++i) {
-        if (statusList[i] != ChannelStatus::READY) {
+        if (IsAbnormalStatus(statusList[i])) {
             PrintErrorInfo(i, localRank, channelDescs[i], channelHandles[i], statusList[i], elapsedMs);
         }
     }
 
     // 表格外单独打印详细信息（FAILED 或 TIMEOUT 状态）
     for (uint32_t i = 0; i < channelNum; ++i) {
-        if (statusList[i] == ChannelStatus::FAILED ||
-            statusList[i] == ChannelStatus::SOCKET_TIMEOUT) {
+        if (NeedDetailPrint(statusList[i])) {
             PrintDescInfo(i, channelDescs[i]);
         }
     }
+}
+
+// ========== 私有辅助函数实现 ==========
+
+bool ChannelLogger::IsRoceProtocol(const HcclChannelDesc& channelDesc)
+{
+    return channelDesc.channelProtocol == COMM_PROTOCOL_ROCE;
+}
+
+std::string ChannelLogger::FormatRoceAttrCompact(const HcclChannelDesc& channelDesc)
+{
+    if (!IsRoceProtocol(channelDesc)) {
+        return std::string("-");
+    }
+
+    char roceAttrStr[128] = {0};
+    snprintf_s(roceAttrStr, sizeof(roceAttrStr), sizeof(roceAttrStr) - 1,
+        "q:%u r:%u ri:%u tc:%u sl:%u",
+        channelDesc.roceAttr.queueNum,
+        channelDesc.roceAttr.retryCnt,
+        channelDesc.roceAttr.retryInterval,
+        channelDesc.roceAttr.tc,
+        channelDesc.roceAttr.sl);
+
+    return std::string(roceAttrStr);
+}
+
+std::string ChannelLogger::FormatRoceAttrDetail(const HcclChannelDesc& channelDesc)
+{
+    if (!IsRoceProtocol(channelDesc)) {
+        return std::string("");
+    }
+
+    char roceAttrStr[256] = {0};
+    snprintf_s(roceAttrStr, sizeof(roceAttrStr), sizeof(roceAttrStr) - 1,
+        "queueNum[%u], retryCnt[%u], retryInterval[%u], tc[%u], sl[%u]",
+        channelDesc.roceAttr.queueNum,
+        channelDesc.roceAttr.retryCnt,
+        channelDesc.roceAttr.retryInterval,
+        channelDesc.roceAttr.tc,
+        channelDesc.roceAttr.sl);
+
+    return std::string(roceAttrStr);
+}
+
+bool ChannelLogger::IsAbnormalStatus(int32_t status)
+{
+    return status != ChannelStatus::READY;
+}
+
+bool ChannelLogger::NeedDetailPrint(int32_t status)
+{
+    return status == ChannelStatus::FAILED || status == ChannelStatus::SOCKET_TIMEOUT;
+}
+
+void ChannelLogger::FormatEndpointAddresses(
+    const HcclChannelDesc& channelDesc,
+    std::string& outLocalAddr,
+    std::string& outRemoteAddr)
+{
+    outLocalAddr = CommAddrLogger::ToString(channelDesc.localEndpoint.commAddr);
+    outRemoteAddr = CommAddrLogger::ToString(channelDesc.remoteEndpoint.commAddr);
 }
 
 } // namespace logger
