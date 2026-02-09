@@ -46,19 +46,20 @@ void Mc2Compont::AllocCommResource(void *mc2Tiling, void **commContext)
         HCCL_WARNING("Comm[%s] rank size is 1, Mc2 not support", comm->GetId().c_str());
         return;
     }
-    HcclCombinOpParam combinOpParam{0};
+
     std::unordered_set<uint64_t> algoTemplateRequire;
     if (tilingVersion == UNKNOWN_TILING_V1) {
         // 生成本次需要的算子模板
         GenerateAlgoTemplates(reinterpret_cast<Mc2Tiling *>(mc2Tiling), algoTemplateRequire);
         // 申请deviceMem、通信域信息获取、commContext赋值
-        Alloc(commContext, combinOpParam);
+        Alloc(commContext);
     } else {
         // 生成本次需要的算子模板
         GenerateAlgoTemplatesV2(reinterpret_cast<Mc2InitTilingInner *>(mc2Tiling), algoTemplateRequire);
         // 申请deviceMem、通信域信息获取、commContext赋值
-        AllocV2(commContext, combinOpParam);
+        AllocV2(commContext);
     }
+
     // 生成ccuServer指令，将注册得到的execId保存在curExecId，GetCcuTaskInfo时通过curExecId获取TaskParam
     GenerateCcuServer(algoTemplateRequire);
 }
@@ -141,6 +142,10 @@ void Mc2Compont::Alloc(void **commContext)
     // inputMem给算法编排使用，只需要申请一次，按照最大数据类型申请
     inputMem = std::make_shared<DevBuffer>(dataCount * DataTypeSizeGet(DataType::INT64) * comm->GetRankSize());
     HCCL_INFO("[Mc2Compont][Alloc]inputMem addr[%p] size = [%llu]", inputMem->GetAddr(), inputMem->GetSize());
+    if(combinOpParamBuffer != nullptr) {
+        *commContext = reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
+        return;
+    }
 
     constexpr uint32_t comSyncNum      = 2; // 每轮同步使用2个同步信号
     uint32_t           comParamBufSize = CCU_TASK_NUM_MAX * CCU_PARAM_NUM_MAX * CCU_ONE_PARAM_SIZE ;
@@ -151,11 +156,11 @@ void Mc2Compont::Alloc(void **commContext)
 
     HcclCombinOpParam combinOpParam{0};
     combinOpParam.algorithmType = comm->GetAlgorithmType();
-    combinOpParam.workSpace     = static_cast<uint64_t>(workspaceBuffer->GetAddr());	 
-    combinOpParam.workSpaceSize = MC2_WORKSPACE_SIZE;	 
-    combinOpParam.rankId        = comm->GetMyRank();	 
-    combinOpParam.rankDim       = comm->GetRankSize();	 
-    combinOpParam.xnAddr        = static_cast<uint64_t>(comParamBuffer->GetAddr());	 
+    combinOpParam.workSpace     = static_cast<uint64_t>(workspaceBuffer->GetAddr());
+    combinOpParam.workSpaceSize = MC2_WORKSPACE_SIZE;
+    combinOpParam.rankId        = comm->GetMyRank();
+    combinOpParam.rankDim       = comm->GetRankSize();
+    combinOpParam.xnAddr        = static_cast<uint64_t>(comParamBuffer->GetAddr());
     combinOpParam.ckeAddr       = static_cast<uint64_t>(comSyncBuffer->GetAddr());
     // add cclbuffer info
     if (comm->GetCclBuffer() == nullptr) {
@@ -191,11 +196,11 @@ void Mc2Compont::AllocV2(void **commContext)
 
     HcclCombinOpParam combinOpParam{0};
     combinOpParam.algorithmType = comm->GetAlgorithmType();
-    combinOpParam.workSpace     = static_cast<uint64_t>(workspaceBuffer->GetAddr());	 
-    combinOpParam.workSpaceSize = MC2_WORKSPACE_SIZE;	 
-    combinOpParam.rankId        = comm->GetMyRank();	 
-    combinOpParam.rankDim       = comm->GetRankSize();	 
-    combinOpParam.xnAddr        = static_cast<uint64_t>(comParamBuffer->GetAddr());	 
+    combinOpParam.workSpace     = static_cast<uint64_t>(workspaceBuffer->GetAddr());
+    combinOpParam.workSpaceSize = MC2_WORKSPACE_SIZE;
+    combinOpParam.rankId        = comm->GetMyRank();
+    combinOpParam.rankDim       = comm->GetRankSize();
+    combinOpParam.xnAddr        = static_cast<uint64_t>(comParamBuffer->GetAddr());
     combinOpParam.ckeAddr       = static_cast<uint64_t>(comSyncBuffer->GetAddr());
     // add cclbuffer info
     if (comm->GetCclBuffer() == nullptr) {
