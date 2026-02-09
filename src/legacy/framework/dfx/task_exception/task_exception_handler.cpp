@@ -719,7 +719,7 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
             // 打印UB DFX寄存器信息
             if (errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY 
                 || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
-                || errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITETASK_UB_INLINE_WRITE
+                || errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE
                 || errorMessage.taskType == TaskParamType::TASK_UB_REDUCE_INLINE) {
                 auto addr = IpAddress(errorMessage.locEid);
                 u32 devPhyId = HrtGetDevicePhyIdByIndex(exceptionInfo->deviceid);
