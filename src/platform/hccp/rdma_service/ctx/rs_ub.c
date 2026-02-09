@@ -300,7 +300,7 @@ STATIC int rs_ub_dev_cb_init(struct ctx_init_attr *attr, struct rs_ub_dev_cb *de
 
     ret = RsEpollCtl(dev_cb->rscb->connCb.epollfd, EPOLL_CTL_ADD, dev_cb->urma_ctx->async_fd, EPOLLIN | EPOLLRDHUP);
     if (ret != 0) {
-        hccp_err("rs_epoll_ctl failed, ret:%d", ret);
+        hccp_err("rs_epoll_ctl failed, ret:%d fd:%d", ret, dev_cb->urma_ctx->async_fd);
         goto close_dev;
     }
 
@@ -1055,7 +1055,7 @@ STATIC void rs_ub_free_async_event_cb_list(struct rs_ub_dev_cb *dev_cb, struct R
     RS_PTHREAD_MUTEX_LOCK(&dev_cb->mutex);
     (void)RsEpollCtl(dev_cb->rscb->connCb.epollfd, EPOLL_CTL_DEL, dev_cb->urma_ctx->async_fd, EPOLLIN | EPOLLRDHUP);
     if (!RsListEmpty(async_event_list)) {
-        hccp_warn("async_event list do not empty!");
+        hccp_run_warn("async_event list do not empty!");
         RS_LIST_GET_HEAD_ENTRY(async_event_curr, async_event_next, async_event_list, list,
             struct rs_ctx_async_event_cb);
         for (; (&async_event_curr->list) != async_event_list; async_event_curr = async_event_next,
@@ -2685,6 +2685,7 @@ int rs_epoll_event_jfc_in_handle(struct rs_cb *rs_cb, int fd)
 
     return -ENODEV;
 }
+
 STATIC void rs_ub_get_async_event_res_id(urma_async_event_t *event, struct rs_ub_dev_cb *dev_cb,
     unsigned int *res_id)
 {
@@ -2719,7 +2720,7 @@ STATIC void rs_ub_get_async_event_res_id(urma_async_event_t *event, struct rs_ub
             *res_id = dev_cb->index;
             break;
         default:
-            hccp_err("no such event_type:%d dev_index:0x%x", event->event_type, dev_cb->index);
+            hccp_err("invalid event_type:%d dev_index:0x%x", event->event_type, dev_cb->index);
             break;
     }
 }
@@ -2728,7 +2729,6 @@ STATIC int rs_ub_get_save_async_event(struct rs_ub_dev_cb *dev_cb)
 {
     struct rs_ctx_async_event_cb *async_event_cb = NULL;
     urma_async_event_t *event = NULL;
-    unsigned int res_id = 0;
     int ret = 0;
 
     async_event_cb = calloc(1, sizeof(struct rs_ctx_async_event_cb));
@@ -2744,8 +2744,9 @@ STATIC int rs_ub_get_save_async_event(struct rs_ub_dev_cb *dev_cb)
     }
     rs_urma_ack_async_event(event);
 
-    rs_ub_get_async_event_res_id(event, dev_cb, &res_id);
-    hccp_run_info("get async_event_type:%d res_id:%u dev_index:0x%x", event->event_type, res_id, dev_cb->index);
+    rs_ub_get_async_event_res_id(event, dev_cb, &async_event_cb->res_id);
+    hccp_run_info("get async_event_type:%d res_id:%u dev_index:0x%x", event->event_type, async_event_cb->res_id,
+        dev_cb->index);
 
     RsListAddTail(&async_event_cb->list, &dev_cb->async_event_list);
     dev_cb->async_event_cnt++;
@@ -2786,13 +2787,6 @@ int RsEpollEventUrmaAsyncEventInHandle(struct rs_cb *rsCb, int fd)
     return -ENODEV;
 }
 
-STATIC void rs_ub_ctx_fill_async_events(struct rs_ctx_async_event_cb *event_cb, struct async_event async_events[],
-    unsigned int *num)
-{
-    rs_ub_get_async_event_res_id(&event_cb->async_event, event_cb->dev_cb, &async_events[*num].res_id);
-    async_events[*num].event_type = event_cb->async_event.event_type;
-}
-
 void rs_ub_ctx_get_async_events(struct rs_ub_dev_cb *dev_cb, struct async_event async_events[], unsigned int *num)
 {
     struct rs_ctx_async_event_cb *event_cb_curr = NULL;
@@ -2808,7 +2802,8 @@ void rs_ub_ctx_get_async_events(struct rs_ub_dev_cb *dev_cb, struct async_event 
     RS_LIST_GET_HEAD_ENTRY(event_cb_curr, event_cb_next, &dev_cb->async_event_list, list, struct rs_ctx_async_event_cb);
     for (; (&event_cb_curr->list) != &dev_cb->async_event_list; event_cb_curr = event_cb_next,
         event_cb_next = list_entry(event_cb_next->list.next, struct rs_ctx_async_event_cb, list)) {
-        rs_ub_ctx_fill_async_events(event_cb_curr, async_events, num);
+        async_events[*num].res_id = event_cb_curr->res_id;
+        async_events[*num].event_type = event_cb_curr->async_event.event_type;
         (*num)++;
         rs_ub_free_async_event_cb(dev_cb, event_cb_curr);
         if (*num == expected_num) {
