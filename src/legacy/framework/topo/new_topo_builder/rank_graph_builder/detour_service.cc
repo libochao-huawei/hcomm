@@ -123,10 +123,12 @@ void AddDetourLink(NetInstance *innerNetInst, const DetourData &data,
             innerNetInst->AddLink(recvEdge);
 
             data.srcNetInstPeer->AddConnInterface(0, sourceIface);
+            SetEndpointDesc(newLinkProtocols, data.srcNetInstPeer, sourceIface);
             if(data.dstNetInstPeer == nullptr) {
                 THROW<NullPtrException>(StringFormat("[DetourService][InsertDetourLinks][AddDetourLink] dstVirtPeer is nullptr"));
             }
             data.dstNetInstPeer->AddConnInterface(0, targetIface);
+            SetEndpointDesc(newLinkProtocols, data.dstNetInstPeer, targetIface);
 
             HCCL_DEBUG("[DetourService][AddDetourLink] add SEND_ONLY and RECV_ONLY two links: linkType[%s]"
                        " sourceIfaceAddress[%s] targetIfaceAddress[%s]",

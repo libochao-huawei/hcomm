@@ -99,6 +99,8 @@ void RankGraphBuilder::AddPeer2NetLink(const u32 netLayer,  const string &netIns
         // 获取 rankId 对应 PeerNode
         shared_ptr<NetInstance::Peer> peerNode = peers_.at(rankId);
         peerNode->AddConnInterface(netLayer, peerIface);
+        //添加Endpoint信息
+        SetEndpointDesc(link->GetLinkProtocols(), peerNode, peerIface);
 
         // 构造 peer2netLink 和 net2peerLink 两条link
         shared_ptr<NetInstance::Link> peer2netLink =
@@ -119,6 +121,28 @@ void RankGraphBuilder::AddPeer2NetLink(const u32 netLayer,  const string &netIns
                    "netInstId[%s] rankId[%u] planeId[%s] AddrStr[%s],topoInstId[%u],topoType[%u]",
             netLayer,  netInstId.c_str(), rankId, fabNode->GetPlaneId().c_str(), addrInfo.addr.Describe().c_str(),
             topoInstId, topoType);
+    }
+}
+
+static EndpointLocType AddrPositionToEndpointLoc(AddrPosition pos) {
+    switch (pos) {
+        case AddrPosition::HOST:    return ENDPOINT_LOC_TYPE_HOST;
+        case AddrPosition::DEVICE:  return ENDPOINT_LOC_TYPE_DEVICE;
+        default: return ENDPOINT_LOC_TYPE_RESERVED;
+    }
+}
+
+void SetEndpointDesc(std::set<LinkProtocol> protocols, std::shared_ptr<NetInstance::Peer> peer, std::shared_ptr<NetInstance::ConnInterface> iface)
+{
+    for (const auto& protocol : protocols) {
+        EndpointDesc desc{};
+        CHK_RET(GetCommAddr(desc.commAddr, iface->GetAddr()));
+        auto it = protocolMap.find(protocol);
+        desc.protocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
+        desc.loc.locType = AddrPositionToEndpointLoc(iface->GetPos());
+        HCCL_INFO("[RankGraphBuilder::SetEndpointDesc] local type[%d] protocol[%d]",
+                  desc.loc.locType, desc.protocol);
+        peer->SetEndpointToIface(desc, iface); 
     }
 }
 
@@ -230,6 +254,7 @@ void RankGraphBuilder::AddTopoDescFabricInfo()
 
             for (const auto& iface : peerIfaces) {
                 peerNode->AddConnInterface(0, iface);
+                SetEndpointDesc(link->GetLinkProtocols(), peerNode, iface);
             }
             auto fabNodePtr = fabNodes[topoInstId];
             // 构造 peer2netLink 和 net2peerLink（双向）
@@ -405,7 +430,9 @@ void RankGraphBuilder::BuildPeer2PeerLinks()
                     continue;
                 }
                 srcPeer->AddConnInterfaces(0, sourceIfaces);
+                SetEndpointDesc(phyLink->GetLinkProtocols(), srcPeer, sourceIfaces);
                 dstPeer->AddConnInterfaces(0, targetIfaces);
+                SetEndpointDesc(phyLink->GetLinkProtocols(), dstPeer, targetIfaces);
                 std::vector<shared_ptr<NetInstance::Link>> links =
                     ConstructLinks(srcPeer, dstPeer, sourceIfaces, targetIfaces, phyLink);
                 for (auto link : links) {

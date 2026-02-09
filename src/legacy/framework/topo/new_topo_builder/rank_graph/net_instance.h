@@ -69,8 +69,8 @@ public:
         NodeType            GetType() const;
         std::vector<std::shared_ptr<NetInstance::ConnInterface>> GetIfacesByLayer(u32 layer) const;
         std::vector<std::shared_ptr<NetInstance::ConnInterface>> GetIfaces() const;
-        void SetEndpointToIface(const CommAddr& commAddr, CommProtocol protocol, const std::shared_ptr<NetInstance::ConnInterface>& iface);
-        const std::unordered_map<std::pair<CommAddr, CommProtocol>, std::shared_ptr<NetInstance::ConnInterface>> GetEndpointToIfaceMap() const;
+        void SetEndpointToIface(const EndopointDesc endpointDesc, const std::shared_ptr<NetInstance::ConnInterface>& iface);
+        const std::unordered_map<const EndopointDesc endpointDesc, std::shared_ptr<NetInstance::ConnInterface>> GetEndpointToIfaceMap() const;
         NodeId              GetNodeId() const;
         string              GetNodeIdStr() const;
         const std::unordered_map<u32, std::vector<std::shared_ptr<NetInstance::ConnInterface>>> GetInterfacesMap() const;

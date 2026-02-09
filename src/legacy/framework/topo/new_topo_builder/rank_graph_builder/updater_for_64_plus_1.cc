@@ -163,7 +163,9 @@ void UpdaterFor64Plus1::AddPeer2BackupLinks(shared_ptr<NetInstance::Peer> peer,
         peer2PlaneEdges->GetLinkProtocols(), backD2PlaneEdges->GetTopoType(), backD2PlaneEdges->GetTopoInstId());
 
     backupPeer->AddConnInterface(0, backupIface);
+    SetEndpointDesc(backD2PlaneEdges->GetLinkProtocols(), backupPeer, backupIface);
     peer->AddConnInterface(0, peerIface);
+    SetEndpointDesc(peer2PlaneEdges->GetLinkProtocols(), peer, peerIface);
 
     shared_ptr<NetInstance::Link> peer2Backup = make_shared<NetInstance::Link>(
         peer, backupPeer, peerIface, backupIface, LinkType::PEER2PEER, backD2PlaneEdges->GetLinkProtocols());

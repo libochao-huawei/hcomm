@@ -360,13 +360,12 @@ std::vector<std::shared_ptr<NetInstance::ConnInterface>> NetInstance::Node::GetI
 }
 
 
-void NetInstance::Node::SetEndpointToIface(const CommAddr& commAddr, CommProtocol protocol,
-                                           const std::shared_ptr<NetInstance::ConnInterface>& iface)
+void NetInstance::Node::SetEndpointToIface(const EndpointDesc endpointDesc, const std::shared_ptr<NetInstance::ConnInterface>& iface)
 {
-    endpointToIfaceMap_[std::make_pair(commAddr, protocol)] = iface;
+    endpointToIfaceMap_[endpointDesc] = iface;
 }
 
-const std::unordered_map<std::pair<CommAddr, CommProtocol>, std::shared_ptr<NetInstance::ConnInterface>>  NetInstance::Node::GetEndpointToIfaceMap() const
+const std::unordered_map<cosnt EndpointDesc endpointDesc, std::shared_ptr<NetInstance::ConnInterface>>  NetInstance::Node::GetEndpointToIfaceMap() const
 {
     return endpointToIfaceMap_;
 }

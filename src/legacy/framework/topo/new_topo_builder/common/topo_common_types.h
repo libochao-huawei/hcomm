@@ -57,86 +57,23 @@ struct hash<Hccl::TopoType> {
 };
 
 template <>
-struct hash<CommProtocol> {
-    size_t operator()(const CommProtocol& protocol) const
-    {
-        return static_cast<size_t>(protocol);
-    }
-};
+struct hash<EndpointDesc> {
+    size_t operator()(const EndpointDesc& e) const noexcept {
+        // FNV-1a（64位）对字节序列做hash
+        const uint8_t* p = reinterpret_cast<const uint8_t*>(&e);
+        size_t h = sizeof(size_t) == 8
+            ? static_cast<size_t>(14695981039346656037ull)
+            : static_cast<size_t>(2166136261u);
 
-template <>
-struct hash<CommAddr> {
-    size_t operator()(const CommAddr& commAddr) const noexcept
-    {
-        size_t h = 0;
-        h = h ^ static_cast<size_t>(commAddr.type);
-        switch (commAddr.type) {
-            case COMM_ADDR_TYPE_EID: {
-                for (u32 i = 0; i < COMM_ADDR_EID_LEN && i < sizeof(commAddr.eid); ++i) {
-                    h = h ^ (static_cast<size_t>(commAddr.eid[i]) << ((i % sizeof(size_t)) * 8));
-                }
-                break;
-            }
-            case COMM_ADDR_TYPE_IP_V4: {
-                // IPv4地址哈希
-                h = h ^ static_cast<size_t>(commAddr.addr.s_addr);
-                break;
-            }
-             case COMM_ADDR_TYPE_IP_V6: {
-                for (u32 i = 0; i < sizeof(commAddr.addr6); ++i) {
-                    h = h ^ static_cast<size_t>(commAddr.addr6.s6_addr[i]) << (i % 8);
-                }
-                break;
-            }
-            case COMM_ADDR_TYPE_ID: {
-                // ID类型哈希
-                h = h ^ static_cast<size_t>(commAddr.id);
-                break;
-            }
-            default: {
-                break;
-            }
+        const size_t prime = sizeof(size_t) == 8
+            ? static_cast<size_t>(1099511628211ull)
+            : static_cast<size_t>(16777619u);
+
+        for (size_t i = 0; i < sizeof(EndpointDesc); ++i) {
+            h ^= static_cast<size_t>(p[i]);
+            h *= prime;
         }
         return h;
-    }
-};
-
-inline bool operator==(const CommAddr& lhs, const CommAddr& rhs) {
-    // 类型不同，直接不等
-    if (lhs.type != rhs.type) {
-        return false;
-    }
-
-    // 类型相同，根据类型比较具体数据
-    switch (lhs.type) {
-        case COMM_ADDR_TYPE_IP_V4:
-            return lhs.addr.s_addr == rhs.addr.s_addr;
-
-        case COMM_ADDR_TYPE_IP_V6:
-            // 比较 IPv6 地址的 16 字节
-            return memcmp(lhs.addr6.s6_addr, rhs.addr6.s6_addr, sizeof(lhs.addr6.s6_addr)) == 0;
-
-        case COMM_ADDR_TYPE_ID:
-            return lhs.id == rhs.id;
-
-        case COMM_ADDR_TYPE_EID:
-            // 假设 COMM_ADDR_EID_LEN 是一个常量，比如 16
-            return memcmp(lhs.eid, rhs.eid, COMM_ADDR_EID_LEN) == 0;
-
-        case COMM_ADDR_TYPE_RESERVED:
-        default:
-            return true; 
-    }
-}
-
-
-template <>
-struct hash<std::pair<CommAddr, CommProtocol>> {
-    size_t operator()(const std::pair<CommAddr, CommProtocol>& key) const
-    {
-        size_t h1 = std::hash<CommAddr>()(key.first);
-        size_t h2 = std::hash<CommProtocol>()(key.second);
-        return h1 ^ (h2 << 1);
     }
 };
 };  // namespace std
