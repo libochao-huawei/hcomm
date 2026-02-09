@@ -13,7 +13,7 @@
 #include "channel.h"
 #include "endpoint_pair.h"
 #include "hccl_res.h"
-#include "../common/coll_comm_res_log.h"  // 日志打印函数
+#include "../common/loggers/channel_logger.h"  // 日志记录器
 
 using namespace hcomm;
 
@@ -253,10 +253,10 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
                 __func__, timeoutSec, channelNum, elapsed, retryCount);
 
             // 打印错误详情表格（只打印异常状态的 Channel）
-            PrintChannelErrorTableHeader(rankId_);
+            logger::ChannelLogger::PrintErrorTableHeader(rankId_);
             for (uint32_t i = 0; i < channelNum; ++i) {
                 if (statusList[i] != hcomm::ChannelStatus::READY) {
-                    PrintChannelErrorInfo(i, rankId_, channelDescs[i], channelHandles[i], statusList[i], elapsed);
+                    logger::ChannelLogger::PrintErrorInfo(i, rankId_, channelDescs[i], channelHandles[i], statusList[i], elapsed);
                 }
             }
 
@@ -264,7 +264,7 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
             for (uint32_t i = 0; i < channelNum; ++i) {
                 if (statusList[i] == hcomm::ChannelStatus::FAILED ||
                     statusList[i] == hcomm::ChannelStatus::SOCKET_TIMEOUT) {
-                    PrintChannelDescInfo(i, channelDescs[i]);
+                    logger::ChannelLogger::PrintDescInfo(i, channelDescs[i]);
                 }
             }
 
@@ -294,10 +294,10 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
                 __func__, channelNum, ret, elapsed, retryCount);
 
             // 打印错误详情表格（只打印异常状态的 Channel）
-            PrintChannelErrorTableHeader(rankId_);
+            logger::ChannelLogger::PrintErrorTableHeader(rankId_);
             for (uint32_t i = 0; i < channelNum; ++i) {
                 if (statusList[i] != hcomm::ChannelStatus::READY) {
-                    PrintChannelErrorInfo(i, rankId_, channelDescs[i], channelHandles[i], statusList[i], elapsed);
+                    logger::ChannelLogger::PrintErrorInfo(i, rankId_, channelDescs[i], channelHandles[i], statusList[i], elapsed);
                 }
             }
 
@@ -305,7 +305,7 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
             for (uint32_t i = 0; i < channelNum; ++i) {
                 if (statusList[i] == hcomm::ChannelStatus::FAILED ||
                     statusList[i] == hcomm::ChannelStatus::SOCKET_TIMEOUT) {
-                    PrintChannelDescInfo(i, channelDescs[i]);
+                    logger::ChannelLogger::PrintDescInfo(i, channelDescs[i]);
                 }
             }
 

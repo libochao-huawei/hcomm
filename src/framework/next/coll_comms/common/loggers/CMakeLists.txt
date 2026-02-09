@@ -8,5 +8,12 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-# 添加 loggers 子目录
-add_subdirectory(loggers)
+set(src_list
+comm_addr_logger.cc
+endpoint_logger.cc
+channel_logger.cc
+)
+
+target_sources(hcomm PRIVATE
+    ${src_list}
+)

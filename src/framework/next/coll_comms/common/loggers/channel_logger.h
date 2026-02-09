@@ -1,0 +1,125 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#ifndef CHANNEL_LOGGER_H
+#define CHANNEL_LOGGER_H
+
+#include <stdint.h>
+#include <string>
+#include "hccl/hccl_res.h"
+#include "hcomm_res_defs.h"  // ChannelHandle
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+namespace hcomm {
+namespace logger {
+
+// 前向声明
+class CommAddrLogger;
+class EndpointLogger;
+
+/**
+ * @brief 通道日志记录器
+ *
+ * 职责：
+ * - 打印 Channel 描述符的完整信息
+ * - 打印 Channel 连接错误信息表格
+ * - 协调 CommAddrLogger 和 EndpointLogger 完成信息打印
+ *
+ * 设计原则：
+ * - 单一职责：专注于通道信息的日志记录
+ * - 组合复用：通过组合其他 Logger 实现代码复用
+ * - 无状态：所有方法都是静态方法
+ */
+class ChannelLogger {
+public:
+    /**
+     * @brief 打印 HcclChannelDesc 详细信息
+     * @param idx Channel 索引
+     * @param channelDesc Channel 描述符
+     *
+     * 打印内容：
+     * - 基本信息：remoteRank, channelProtocol, notifyNum, memHandleNum
+     * - 本地端点：commAddr + loc
+     * - 远端端点：commAddr + loc
+     * - ROCE 协议特有属性（如果适用）
+     */
+    static void PrintDescInfo(uint32_t idx, const HcclChannelDesc& channelDesc);
+
+    /**
+     * @brief 打印 Channel 连接错误信息表格头部
+     * @param localRank 本地 Rank ID
+     */
+    static void PrintErrorTableHeader(uint32_t localRank);
+
+    /**
+     * @brief 打印单个 Channel 的错误状态（表格行）
+     * @param idx Channel 索引
+     * @param localRank 本地 Rank ID
+     * @param channelDesc Channel 描述符
+     * @param channelHandle Channel 句柄
+     * @param status Channel 状态值
+     * @param elapsedMs 已耗时（毫秒）
+     */
+    static void PrintErrorInfo(
+        uint32_t idx,
+        uint32_t localRank,
+        const HcclChannelDesc& channelDesc,
+        ChannelHandle channelHandle,
+        int32_t status,
+        uint64_t elapsedMs);
+
+private:
+    // 私有构造函数（静态工具类）
+    ChannelLogger() = delete;
+    ChannelLogger(const ChannelLogger&) = delete;
+    ChannelLogger& operator=(const ChannelLogger&) = delete;
+
+    /**
+     * @brief 打印 Channel 的基本信息字段
+     */
+    static void PrintBasicFields(uint32_t idx, const HcclChannelDesc& channelDesc);
+
+    /**
+     * @brief 打印 ROCE 协议特有属性
+     */
+    static void PrintRoceAttributes(uint32_t idx, const HcclChannelDesc& channelDesc);
+};
+
+/**
+ * @brief Channel 状态工具类
+ *
+ * 职责：
+ * - 将 ChannelStatus 状态值转换为可读字符串
+ * - 提供状态枚举的字符串化能力
+ */
+class ChannelStatusUtils {
+public:
+    /**
+     * @brief 将 ChannelStatus 状态值转换为可读字符串
+     * @param status ChannelStatus 状态值
+     * @return 状态描述字符串（如 "ChannelStatus::SOCKET_TIMEOUT"）
+     */
+    static std::string ToString(int32_t status);
+
+private:
+    ChannelStatusUtils() = delete;
+};
+
+} // namespace logger
+} // namespace hcomm
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // CHANNEL_LOGGER_H

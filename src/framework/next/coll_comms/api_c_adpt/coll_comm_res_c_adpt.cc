@@ -12,7 +12,7 @@
 #include "hccl_comm_pub.h"
 #include "exception_handler.h"
 #include "env_config.h"
-#include "../common/coll_comm_res_log.h"
+#include "../common/loggers/channel_logger.h"  // 日志记录器
 
 #include "hcom_common.h"
 #include "ccu_kernel.h"
@@ -133,7 +133,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
     EXCEPTION_HANDLE_BEGIN
     HCCL_INFO("[%s] ChannelAcquire begin, channelNum[%u], engine[%d]", __func__, channelNum, engine);
     for (uint32_t idx = 0; idx < channelNum; idx++) {
-        PrintChannelDescInfo(idx, channelDescs[idx]);
+        hcomm::logger::ChannelLogger::PrintDescInfo(idx, channelDescs[idx]);
     }
 
     // 入参校验
