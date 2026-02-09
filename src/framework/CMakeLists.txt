@@ -938,7 +938,6 @@ if(NOT KERNEL_MODE)
 endif()
 
 if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
-<<<<<<< HEAD
     target_include_directories(ccl_kernel PRIVATE
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
         ${HCCL_BASE_DIR}/platform/
@@ -994,8 +993,6 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
         ${THIRD_PARTY_NLOHMANN_PATH}
         )
-=======
->>>>>>> 2d608c23e6f8efab1cd1231efd9372e03bfb3693
     if(BUILD_OPEN_PROJECT)
         set(CMAKE_CXX_FLAGS "")
         target_compile_definitions(ccl_kernel PRIVATE
