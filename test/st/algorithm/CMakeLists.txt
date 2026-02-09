@@ -37,7 +37,7 @@ set(ASCEND_CANN_INCLUDE_LIST
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling
     ${ASCEND_CANN_PACKAGE_PATH}/include
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
     ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain
     ${ASCEND_CANN_PACKAGE_PATH}/include/experiment/metadef
     ${ASCEND_CANN_PACKAGE_PATH}/asc/include
