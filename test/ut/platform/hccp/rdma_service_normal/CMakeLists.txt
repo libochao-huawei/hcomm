@@ -112,7 +112,6 @@ target_link_libraries(rs_ut_normal PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     -lrt
     -lpthread
-    -lgcov
     -ldl
 )
 
