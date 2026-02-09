@@ -94,6 +94,27 @@ public:
         int32_t status,
         uint64_t elapsedMs);
 
+    /**
+     * @brief 打印 Channel 错误详情（批量）
+     * @param localRank 本地 Rank ID
+     * @param channelNum Channel 数量
+     * @param channelDescs Channel 描述符数组
+     * @param channelHandles Channel 句柄数组
+     * @param statusList Channel 状态数组
+     * @param elapsedMs 已耗时（毫秒）
+     *
+     * 功能：
+     * - 打印错误详情表格（只打印异常状态的 Channel）
+     * - 表格外单独打印详细信息（FAILED 或 TIMEOUT 状态）
+     */
+    static void PrintChannelErrorDetails(
+        uint32_t localRank,
+        uint32_t channelNum,
+        const HcclChannelDesc* channelDescs,
+        ChannelHandle* channelHandles,
+        int32_t* statusList,
+        int64_t elapsedMs);
+
 private:
     // 私有构造函数（静态工具类）
     ChannelLogger() = delete;

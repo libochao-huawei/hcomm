@@ -109,9 +109,8 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
 
         hcommDescs[i]  = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
         hcommDescs[i].socket = reinterpret_cast<HcommSocket>(socket);
-        HCCL_INFO("[%s][%u/%u] socket created successfully, remoteRank[%u], socket[0x%llx]",
-            __func__, i + 1, channelNum, remoteRank,
-            reinterpret_cast<uint64_t>(socket));
+        HCCL_INFO("[%s][%u/%u] socket created successfully, remoteRank[%u], socket[%p]",
+            __func__, i + 1, channelNum, remoteRank, socket);
     }
     return HCCL_SUCCESS;
 }
@@ -175,11 +174,9 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
             ret);
         CHK_PTR_NULL(epHandle);
 
-        Endpoint* localEpPtr = reinterpret_cast<Endpoint*>(epHandle);
-        HCCL_INFO("[%s][%u/%u] remoteRank[%u] epHandle[0x%llx] protocol[%d]",
+        HCCL_INFO("[%s][%u/%u] remoteRank[%u] epHandle[%p] protocol[%d]",
             __func__, i + 1, channelNum, remoteRank,
-            reinterpret_cast<uint64_t>(epHandle), localEpPtr->GetEndpointDesc().protocol
-        );
+            epHandle, localEndpointDesc.protocol);
 
         // 注册内存
         std::vector<MemHandle> memHandleVec;
@@ -218,9 +215,8 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
                 __func__, i, remoteRank, engine),
             ret);
 
-        HCCL_INFO("[%s][%u/%u] channel created successfully, remoteRank[%u], channelHandle[0x%llx]",
-            __func__, i + 1, channelNum, remoteRank,
-            reinterpret_cast<uint64_t>(channelHandles[i]));
+        HCCL_INFO("[%s][%u/%u] channel created successfully, remoteRank[%u], channelHandle[%p]",
+            __func__, i + 1, channelNum, remoteRank, channelHandles[i]);
     }
 
     return HCCL_SUCCESS;
@@ -240,77 +236,42 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
     int32_t* statusList = statusVec.data();
     uint32_t retryCount = 0;
     while (true) {
-        // 1. HCCL_SUCCESS: 退出循环
-        // 2. HCCL_E_AGAIN: 继续在 while true 内重试
-        // 3. Others: 错误状态
         HcclResult ret = HcommChannelGetStatus(channelHandles, channelNum, statusList);
 
-        // 先检查超时，避免在 HCCL_E_AGAIN 时跳过超时检查
+        // 卫语句：先处理异常情况
+
+        // 1. 检查超时
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime).count();
             HCCL_ERROR("[%s] channel connect timeout after %u sec, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
                 __func__, timeoutSec, channelNum, elapsed, retryCount);
-
-            // 打印错误详情表格（只打印异常状态的 Channel）
-            logger::ChannelLogger::PrintErrorTableHeader(rankId_);
-            for (uint32_t i = 0; i < channelNum; ++i) {
-                if (statusList[i] != hcomm::ChannelStatus::READY) {
-                    logger::ChannelLogger::PrintErrorInfo(i, rankId_, channelDescs[i], channelHandles[i], statusList[i], elapsed);
-                }
-            }
-
-            // 表格外单独打印详细信息（FAILED 或 TIMEOUT 状态）
-            for (uint32_t i = 0; i < channelNum; ++i) {
-                if (statusList[i] == hcomm::ChannelStatus::FAILED ||
-                    statusList[i] == hcomm::ChannelStatus::SOCKET_TIMEOUT) {
-                    logger::ChannelLogger::PrintDescInfo(i, channelDescs[i]);
-                }
-            }
-
+            logger::ChannelLogger::PrintChannelErrorDetails(rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed);
             return HCCL_E_TIMEOUT;
         }
+
+        // 2. 处理重试（去除频繁的重试日志，一秒可能重试上千次）
         if (ret == HCCL_E_AGAIN) {
             retryCount++;
-            if (retryCount % 10 == 0) {  // 每10次重试输出一次进度日志
-                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::steady_clock::now() - startTime).count();
-                HCCL_INFO("[%s] still connecting, retryCount[%u], elapsed[%lld]ms",
-                    __func__, retryCount, elapsed);
-            }
             continue;
         }
-        if (ret == HCCL_SUCCESS) {
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - startTime).count();
-            HCCL_INFO("[%s] all channels connected successfully, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
-                __func__, channelNum, elapsed, retryCount);
-            break;
-        } else {
-            // 失败分支：HCCL_E_NETWORK、HCCL_E_IN_STATUS 等
+
+        // 3. 处理失败
+        if (ret != HCCL_SUCCESS) {
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime).count();
             HCCL_ERROR("[%s] channel connect failed, channelNum[%u], ret[%d], elapsed[%lld]ms, retryCount[%u]",
                 __func__, channelNum, ret, elapsed, retryCount);
-
-            // 打印错误详情表格（只打印异常状态的 Channel）
-            logger::ChannelLogger::PrintErrorTableHeader(rankId_);
-            for (uint32_t i = 0; i < channelNum; ++i) {
-                if (statusList[i] != hcomm::ChannelStatus::READY) {
-                    logger::ChannelLogger::PrintErrorInfo(i, rankId_, channelDescs[i], channelHandles[i], statusList[i], elapsed);
-                }
-            }
-
-            // 表格外单独打印详细信息（FAILED 或 TIMEOUT 状态）
-            for (uint32_t i = 0; i < channelNum; ++i) {
-                if (statusList[i] == hcomm::ChannelStatus::FAILED ||
-                    statusList[i] == hcomm::ChannelStatus::SOCKET_TIMEOUT) {
-                    logger::ChannelLogger::PrintDescInfo(i, channelDescs[i]);
-                }
-            }
-
+            logger::ChannelLogger::PrintChannelErrorDetails(rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed);
             return ret;
         }
+
+        // 4. 正常情况：所有通道连接成功
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - startTime).count();
+        HCCL_INFO("[%s] all channels connected successfully, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
+            __func__, channelNum, elapsed, retryCount);
+        break;
     }
     return HCCL_SUCCESS;
 }
@@ -331,38 +292,22 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
 
     std::vector<HcommChannelDesc> hcommDescs(channelNum);
 
-    // 1. 创建 Socket
-    HCCL_INFO("[CreateChannels] Step 1/3: BatchCreateSockets start, channelNum[%u]", channelNum);
     CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
-    HCCL_INFO("[CreateChannels] Step 1/3: BatchCreateSockets success");
-
-    // 2. 创建 Channel
-    HCCL_INFO("[CreateChannels] Step 2/3: BatchCreateChannels start, channelNum[%u]", channelNum);
     CHK_RET(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
-    HCCL_INFO("[CreateChannels] Step 2/3: BatchCreateChannels success");
-
-    // 3. 连接 Channel
-    HCCL_INFO("[CreateChannels] Step 3/3: BatchConnectChannels start, channelNum[%u]", channelNum);
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
-    HCCL_INFO("[CreateChannels] Step 3/3: BatchConnectChannels success");
 
-    // 4. channel kernel launch
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
-        HCCL_INFO("[CreateChannels] Step 4: HcommChannelKernelLaunch for AICPU engine");
         CHK_RET(HcommChannelKernelLaunch(channelHandles, hostChannelHandleList, channelNum, commTag, binHandle_));
-        HCCL_INFO("[CreateChannels] All steps completed successfully for AICPU engine");
         return HCCL_SUCCESS;
     }
 
     if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CCU
         || engine == COMM_ENGINE_AIV) {
-        HCCL_INFO("[CreateChannels] Step 4: Copy host channel handles for CPU/CCU/AIV engine");
         // TODO: Host侧 Channel 赋值到 channelHandles
         CHK_SAFETY_FUNC_RET(memcpy_s(channelHandles,
             channelNum * sizeof(ChannelHandle),
             hostChannelHandleList,
             channelNum * sizeof(ChannelHandle)));
-        HCCL_INFO("[CreateChannels] All steps completed successfully for CPU/CCU/AIV engine");
         return HCCL_SUCCESS;
     }
 
@@ -400,6 +345,10 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
 
 HcclResult MyRank::ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char ***memTag, uint32_t *memNum)
 {
+    CHK_PTR_NULL(remoteMem);
+    CHK_PTR_NULL(memTag);
+    CHK_PTR_NULL(memNum);
+
     CHK_RET(HcommChannelGetUserRemoteMem(channel, remoteMem, memTag, memNum));
     // 添加空指针检查，防止返回的指针为空
     if (*memNum > 0) {

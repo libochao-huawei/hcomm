@@ -132,8 +132,9 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
     HcclUs startut = TIME_NOW();
     EXCEPTION_HANDLE_BEGIN
     HCCL_INFO("[%s] ChannelAcquire begin, channelNum[%u], engine[%d]", __func__, channelNum, engine);
+    hcomm::logger::ChannelLogger::PrintDescTableHeader();
     for (uint32_t idx = 0; idx < channelNum; idx++) {
-        hcomm::logger::ChannelLogger::PrintDescInfo(idx, channelDescs[idx]);
+        hcomm::logger::ChannelLogger::PrintDescInfoRow(idx, channelDescs[idx]);
     }
 
     // 入参校验

@@ -124,5 +124,31 @@ void ChannelLogger::PrintErrorInfo(
         static_cast<unsigned long long>(elapsedMs));
 }
 
+void ChannelLogger::PrintChannelErrorDetails(
+    uint32_t localRank,
+    uint32_t channelNum,
+    const HcclChannelDesc* channelDescs,
+    ChannelHandle* channelHandles,
+    int32_t* statusList,
+    int64_t elapsedMs)
+{
+    // 打印错误详情表格（只打印异常状态的 Channel）
+    PrintErrorTableHeader(localRank);
+
+    for (uint32_t i = 0; i < channelNum; ++i) {
+        if (statusList[i] != ChannelStatus::READY) {
+            PrintErrorInfo(i, localRank, channelDescs[i], channelHandles[i], statusList[i], elapsedMs);
+        }
+    }
+
+    // 表格外单独打印详细信息（FAILED 或 TIMEOUT 状态）
+    for (uint32_t i = 0; i < channelNum; ++i) {
+        if (statusList[i] == ChannelStatus::FAILED ||
+            statusList[i] == ChannelStatus::SOCKET_TIMEOUT) {
+            PrintDescInfo(i, channelDescs[i]);
+        }
+    }
+}
+
 } // namespace logger
 } // namespace hcomm
