@@ -498,8 +498,6 @@ union get_tp_cfg_flag {
     uint32_t value;
 };
  
-
-
 struct tp_info {
     uint64_t tp_handle;
     uint32_t resv;
