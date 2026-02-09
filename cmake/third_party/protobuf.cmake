@@ -102,6 +102,10 @@ endif()
 add_library(protobuf SHARED IMPORTED)
 add_dependencies(protobuf third_party_protobuf)
 
+if(NOT EXISTS ${PROTOBUF_INSTALL_PATH}/include)
+    file(MAKE_DIRECTORY "${PROTOBUF_INSTALL_PATH}/include")
+endif()
+
 set_target_properties(protobuf PROPERTIES
     IMPORTED_LOCATION ${PROTOBUF_INSTALL_PATH}/lib64/libprotobuf.so
     INTERFACE_INCLUDE_DIRECTORIES ${PROTOBUF_INSTALL_PATH}/include

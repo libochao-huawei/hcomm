@@ -240,8 +240,6 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/test/ut/depends/include/ascendc/highlevel_api/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
 
-    ${CANN_3RD_LIB_PATH}/json/include/
-
     ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal
 
