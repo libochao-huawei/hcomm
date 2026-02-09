@@ -19,6 +19,7 @@ target_sources(hccl_v2_native_alg_repo PRIVATE
         ins_temp_reduce_scatter_mesh_1D_meshchunk.cc
         ins_temp_reduce_scatter_mesh_2D.cc
         ins_temp_reduce_mesh_1D.cc
+        ins_temp_reduce_mesh_1D_two_shot.cc
         ins_temp_reduce_mesh_2D.cc
         ins_temp_all_reduce_mesh_1D_one_shot.cc
         ins_temp_all_reduce_mesh_1D_two_shot.cc
@@ -55,6 +56,7 @@ target_sources(ccl_kernel PRIVATE
         ins_temp_reduce_scatter_mesh_1D_meshchunk.cc
         ins_temp_reduce_scatter_mesh_2D.cc
         ins_temp_reduce_mesh_1D.cc
+        ins_temp_reduce_mesh_1D_two_shot.cc
         ins_temp_reduce_mesh_2D.cc
         ins_temp_all_reduce_mesh_1D_one_shot.cc
         ins_temp_all_reduce_mesh_1D_two_shot.cc

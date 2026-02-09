@@ -331,6 +331,7 @@ public:
     u32 GetRankTableCrc();
     u32 GetServerNum();
     u32 GetModuleNum();
+    u32 GetRealUserRank() const;
     HcclResult GetCommParams(HcclCommParams &params);       // 逆向解析获取HcclCommParams参数
     HcclResult GetCommRankTable(RankTable_t &rankTable);    // 逆向解析获取RankTable_t参数
     HcclResult SetQpQosAttr(u32 trafficClass, u32 serviceLevel); // 设置TC/SL配置
@@ -356,7 +357,8 @@ public:
     HcclResult RegisterCommUserMem(void* addr, u64 size, void **handle);
     HcclResult DeregisterCommUserMem(void* handle);
     HcclResult ExchangeCommUserMem(void* handle, std::vector<u32>& peerRanks);
-
+    HcclResult SetCommDispatcherCtx();
+    HcclResult ReleaseCommDispatcherCtx();
     // 独立算子专用
     HcclResult SetIndependentOpConfig(const CommConfig &commConfig, const RankTable_t &rankTable);
     HcclResult InitIndependentOp();
@@ -409,6 +411,10 @@ public:
     HcclResult GroupPrepareStreamAndNotify(HcclRtStream sendRecvMainStream);
     HcclResult GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte);
     HcclResult GroupSubstreamsSync();
+    HcclResult RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle);
+    HcclResult DeregisterWindow(CommSymWindow winHandle);
+    HcclResult GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
+
 protected:
     /* * 禁止用户对API类的实体做拷贝构造或拷贝赋值的操作，内部有指针成员变量 */
     hcclComm(const hcclComm &) = delete;
@@ -419,6 +425,7 @@ private:
     void UpdateIsHaveCpuRank(const std::vector<RankInfo> &rankList);
     void PrintSubmittedOpCnt(const std::string &tag, HcclResult ret);
     HcclResult ReleaseChannel();
+    void BinaryUnLoad();
     DeviceMem indirectInCCLbuffer_; /* 保存inCCLbuffer指针的地址 */
     DeviceMem indirectOutCCLbuffer_; /* 保存outCCLbuffer_指针的地址 */
     u64 inCCLbufferSize_;

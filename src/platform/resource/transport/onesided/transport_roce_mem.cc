@@ -372,7 +372,7 @@ HcclResult TransportRoceMem::TransportRdmaWithType(
         wr[0].dstAddr = remoteStartAddr;
         wr[0].rkey = remoteRdmaRmaBuffer->GetKey();
         wr[0].op = static_cast<u32>(rdmaOp);
-        wr[0].sendFlags = RA_SEND_SIGNALED;
+        wr[0].sendFlags = remainingBytes > MAX_RDMA_WQE_SIZE ? 0 : RA_SEND_SIGNALED;
 
         struct SendWrRsp opRsp[WR_NUM];
 

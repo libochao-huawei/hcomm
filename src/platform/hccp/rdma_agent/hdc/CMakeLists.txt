@@ -55,6 +55,12 @@ target_include_directories(ra_hdc PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../hdc/async
 )
 
+if(NOT BUILD_OPEN_PROJECT)
+    target_include_directories(ra_hdc PRIVATE
+        ${TOP_DIR}/runtime/pkg_inc/base
+    )
+endif()
+
 target_link_directories(ra_hdc PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )

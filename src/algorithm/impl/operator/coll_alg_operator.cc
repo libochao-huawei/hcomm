@@ -162,10 +162,13 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
         bool isOpBase = GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
         HCCL_CONFIG_INFO(HCCL_ALG,
             "[%s] newTag[%s] algName[%s] userRank[%u] topoType[%d] algType[%s] "\
-            "userRankSize[%u] level0Size[%u] moduleNum_[%u] level2Size[%u] "\
-            "opExpansionMode[%s] isZeroCopy[%u] retryEnable[%u] isOpBase[%u] isCapture[%u] aivCoreLimit[%u] %s.",
+            "userRankSize[%u] level0Size[%u] moduleNum_[%u] level2Size[%u] ",
             __func__, newTag.c_str(), algName.c_str(), userRank_, topoType_, AlgTypeToStr(algDesc.algType).c_str(),
-            userRankSize_, deviceNumPerAggregation_, moduleNum_, superPodNum_,
+            userRankSize_, deviceNumPerAggregation_, moduleNum_, superPodNum_);
+        HCCL_CONFIG_INFO(HCCL_ALG,
+            "[%s] newTag[%s] "\
+            "opExpansionMode[%s] isZeroCopy[%u] retryEnable[%u] isOpBase[%u] isCapture[%u] aivCoreLimit[%u] %s.",
+            __func__, newTag.c_str(), 
             opExpansionStr.c_str(), algDesc.isZeroCopy, retryEnable_, isOpBase, param.isCapture, limit.aivCoreLimit, appendStr.c_str());
     }
     return HCCL_SUCCESS;
@@ -490,7 +493,8 @@ HcclResult CollAlgOperator::GetDefaultAlgoLevel1V2(HcclCMDType hcclCMDType, u64 
         return HCCL_SUCCESS;
     }
     if (hcclCMDType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER && deterniminsticWithInlineReduce &&
-        deviceNumPerAggregation_ > 1 && curSize >= pipelineMinSize && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
+        deviceNumPerAggregation_ > 1 &&
+        curSize >= pipelineMinSize && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
         CalcContextNumForPipeline(hcclCMDType) <= HCCL_FFTS_CAPACITY
         && moduleNum_ > 1 && curSize >= HCCL_SMALL_COUNT_256_KB) {
         algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
@@ -509,7 +513,8 @@ HcclResult CollAlgOperator::GetDefaultAlgoLevel1V2(HcclCMDType hcclCMDType, u64 
             algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
             return HCCL_SUCCESS;
         }
-        if (deterniminsticWithInlineReduce && deviceNumPerAggregation_ > 1 &&
+        if (deterniminsticWithInlineReduce &&
+            deviceNumPerAggregation_ > 1 &&
             allreduceCurSize >= HCCL_SMALL_COUNT_1_MB && !isAivMode && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
             CalcContextNumForPipeline(hcclCMDType) <= HCCL_FFTS_CAPACITY) {
             algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;

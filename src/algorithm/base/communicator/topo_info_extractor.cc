@@ -370,6 +370,7 @@ HcclResult TopoInfoExtractor::SetTopologyInfo()
     CHK_RET(SetTopoInfoForLevel1());
     CHK_RET(SetTopoInfoForLevel2());
     CHK_RET(SetTopoInfoForARS());
+    CHK_RET(SetTopoInfoForCombineL1());
 
     CHK_RET(SetAHCSubGroupsAndAlgOption());
 
@@ -1125,6 +1126,20 @@ HcclResult TopoInfoExtractor::GetRankVecInfo(std::vector<std::vector<std::vector
     }
     serverAndsuperPodToRank.push_back(serverToRank);
     serverAndsuperPodToRank.push_back(superPodToRank);
+    return HCCL_SUCCESS;
+}
+HcclResult TopoInfoExtractor::SetTopoInfoForCombineL1()
+{
+    if (deviceType_ == DevType::DEV_TYPE_910_93) {
+        // 按照superPodIdx 划分得所有rank信息
+        for (auto iter = superPodToRank_.begin(); iter != superPodToRank_.end(); iter++) {
+            if (iter->first != rankData_.superPodIdx) {
+                continue; // 只在自己所在的超节点创建
+            }
+            CommPlaneVector_[COMM_COMBINE_L1].push_back(iter->second);
+            HCCL_DEBUG("[SetTopoInfoForARS]Superpod rankdSize[%u].", CommPlaneVector_[COMM_COMBINE_L1][0].size());
+        }
+    }
     return HCCL_SUCCESS;
 }
 

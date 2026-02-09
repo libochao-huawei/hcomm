@@ -16,17 +16,17 @@
 #include <stdio.h>
 
 namespace Hccl {
-DlHalFunction &DlHalFunction::GetInstance()
+DlHalFunctionV2 &DlHalFunctionV2::GetInstance()
 {
-	static DlHalFunction hcclDlHalFunction;
+	static DlHalFunctionV2 hcclDlHalFunction;
 	return hcclDlHalFunction;
 }
 
-DlHalFunction::DlHalFunction() : handle_(nullptr)
+DlHalFunctionV2::DlHalFunctionV2() : handle_(nullptr)
 {
 }
 
-DlHalFunction::~DlHalFunction()
+DlHalFunctionV2::~DlHalFunctionV2()
 {
 	if (handle_ != nullptr) {
 		(void)dlclose(handle_);
@@ -34,7 +34,7 @@ DlHalFunction::~DlHalFunction()
 	}
 }
 
-HcclResult DlHalFunction::DlHalFunctionEschedInit()
+HcclResult DlHalFunctionV2::DlHalFunctionEschedInit()
 {
 	HCCL_INFO("DlHalFunctionEschedInit start");
 	dlHalEschedSubmitEvent = (drvError_t(*)(unsigned int, struct event_summary *))dlsym(handle_,
@@ -50,7 +50,7 @@ HcclResult DlHalFunction::DlHalFunctionEschedInit()
 	return HCCL_SUCCESS;
 }
 
-HcclResult DlHalFunction::DlHalFunctionInit()
+HcclResult DlHalFunctionV2::DlHalFunctionInit()
 {
 	HCCL_INFO("DlHalFunctionInit start");
 	std::lock_guard<std::mutex> lock(handleMutex_);

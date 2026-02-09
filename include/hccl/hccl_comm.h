@@ -221,6 +221,7 @@ inline void HcclCommConfigInit(HcclCommConfig *config)
     config->hcclRetryParams[0] = '\0';
     config->hcclBufferName[0] = '\0';
     config->hcclQos = HCCL_COMM_QOS_CONFIG_NOT_SET;
+    config->hcclSymWinMaxMemSizePerRank = HCCL_DEFAULT_SYMMETRIC_MEMORY_STRIDE;
 }
 
 /**
@@ -290,6 +291,38 @@ extern HcclResult HcclGroupStart();
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern HcclResult HcclGroupEnd();
+
+/**
+ * @brief Register a memory window for HCCL communication.
+ *
+ * @param comm A pointer identifying the communication resource based on.
+ * @param addr A pointer identifying the user memory address.
+ * @param size A size_t identifying the size of memory window.
+ * @param winHandle A pointer identifying the registered memory window handle.
+ * @param flag The flag of this memory window, now only support 0
+ * @return HcclResult
+ */
+extern HcclResult HcclCommSymWinRegister(HcclComm comm, void *addr, uint64_t size, CommSymWindow *winHandle, uint32_t flag);
+
+/**
+ * @brief Deregister a memory window for HCCL communication.
+ *
+ * @param winHandle A pointer identifying the registered memory window handle.
+ * @return HcclResult
+ */
+extern HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle);
+
+/**
+ * @brief Get symmetric memory offset and window for HCCL communication.
+ *
+ * @param comm A pointer identifying the communication resource based on.
+ * @param ptr A pointer identifying the user memory address.
+ * @param size A size_t identifying the size of memory window.
+ * @param winHandle A pointer identifying the registered memory window handle.
+ * @param offset A size_t identifying the offset of symmetric memory heap.
+ * @return HcclResult
+ */
+extern HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
 
 #ifdef __cplusplus
 }

@@ -779,7 +779,7 @@ HCCP_ATTRI_VISI_DEF int ra_get_dev_base_attr(void *ctx_handle, struct dev_base_a
  * @brief get async event
  * @param ctx_handle [IN] ctx handle
  * @param events [IN/OUT] see struct async_event
- * @param num [IN/OUT] num of events
+ * @param num [IN/OUT] num of events, max num is ASYNC_EVENT_MAX_NUM
  * @retval #zero Success
  * @retval #non-zero Failure
 */

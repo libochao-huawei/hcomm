@@ -223,8 +223,12 @@ HcclResult IsSuperPodMode(bool &useSuperPodMode)
         CHK_RET(hrtGetDeviceInfo(deviceLogicId, HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM,
             HcclRtDeviceInfoType::HCCL_INFO_TYPE_SERVER_ID, serverId));
         useSuperPodMode = (serverId != INVALID_SUPERPOD_SERVERID);
+        if (!useSuperPodMode) {
+            HCCL_WARNING("If server Id is not configured, the network port may need to be " \
+                "kept up to ensure normal service running, server id[%016llx]", serverId);
+        }
     }
-    HCCL_DEBUG("[IsSuperPodMode]ret[%d], devType[%d], serverId[%016llx]", useSuperPodMode, devType, serverId);
+    HCCL_INFO("[IsSuperPodMode]ret[%d], devType[%d], serverId[%016llx]", useSuperPodMode, devType, serverId);
     return HCCL_SUCCESS;
 }
 
