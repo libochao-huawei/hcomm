@@ -67,7 +67,7 @@ void Mc2Compont::AllocCommResource(void *mc2Tiling, void **commContext)
               combinOpParam.workSpace, combinOpParam.rankId, combinOpParam.rankDim, combinOpParam.xnAddr,
               combinOpParam.ckeAddr, combinOpParam.winSize, combinOpParam.windowsOut[0], combinOpParam.algorithmType);
     auto paramSize = sizeof(HcclCombinOpParam);
-    if(combinOpParamBuffer != nullptr) {
+    if(combinOpParamBuffer == nullptr) {
         combinOpParamBuffer = std::make_shared<DevBuffer>(paramSize);
     }
     HrtMemcpy(reinterpret_cast<void *>(combinOpParamBuffer->GetAddr()), paramSize, static_cast<void *>(&combinOpParam),
