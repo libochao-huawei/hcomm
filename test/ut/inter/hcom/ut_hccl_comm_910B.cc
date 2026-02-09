@@ -504,7 +504,7 @@ void* inter_reduce_scatter_task_1(void* parg)
     return (NULL);
 }
 
-void public_stubs(bool needStubOp)
+void all_public_stubs(bool needStubOp)
 {
     u32 interfaceVersion = 1;
     MOCKER(hrtRaGetInterfaceVersion)
@@ -542,7 +542,7 @@ void public_stubs(bool needStubOp)
 
 TEST_F(HcclCommTest910B, ut_allreduce_4p_mesh)
 {
-    public_stubs(false);
+    all_public_stubs(false);
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
     nlohmann::json rank_table = rank_table_910_1server_4rank;
     char file_name_t[] = "./ut_allreduce_4p_ring.json";
@@ -710,7 +710,7 @@ TEST_F(HcclCommTest910B, ut_allreduce_4p_mesh)
 
 TEST_F(HcclCommTest910B, ut_reducescatter_4p_mesh)
 {
-    public_stubs(false);
+    all_public_stubs(false);
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
     nlohmann::json rank_table = rank_table_910_1server_4rank;
     char file_name_t[] = "./ut_allreduce_4p_ring.json";
@@ -1015,7 +1015,7 @@ void* inter_all_gather_outplace_task_1(void* parg)
 
 TEST_F(HcclCommTest910B, ut_allgather_outplace_4p_mesh)
 {
-    public_stubs(false);
+    all_public_stubs(false);
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
     nlohmann::json rank_table = rank_table_910_1server_4rank;
     char file_name_t[] = "./ut_allgather_4p_mesh.json";
@@ -1420,7 +1420,7 @@ void* inter_scatter_mesh_atomic_opbase_task_1(void* parg)
 #if 1
 TEST_F(HcclCommTest910B, ut_reducescatter_4p_mesh_atomic_opbase)
 {
-    public_stubs(false);
+    all_public_stubs(false);
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
     nlohmann::json rank_table = rank_table_910_1server_4rank;
     char file_name_t[] = "./ut_allreduce_4p_ring.json";
@@ -1582,7 +1582,7 @@ TEST_F(HcclCommTest910B, ut_reducescatter_4p_mesh_atomic_opbase)
 #if 1
 TEST_F(HcclCommTest910B, ut_reducescatter_4p_mesh_atomic_opbase_prod)
 {
-    public_stubs(false);
+    all_public_stubs(false);
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
     nlohmann::json rank_table = rank_table_910_1server_4rank;
     char file_name_t[] = "./ut_allreduce_4p_ring.json";
@@ -1744,7 +1744,7 @@ TEST_F(HcclCommTest910B, ut_reducescatter_4p_mesh_atomic_opbase_prod)
 #if 1
 TEST_F(HcclCommTest910B, ut_scatter_4p_mesh_atomic_opbase)
 {
-    public_stubs(false);
+    all_public_stubs(false);
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
     nlohmann::json rank_table = rank_table_910_1server_4rank;
     char file_name_t[] = "./ut_allreduce_4p_ring.json";
@@ -2039,7 +2039,7 @@ void* inter_reduce_task_1(void* parg)
 
 TEST_F(HcclCommTest910B, ut_reduce_4p_mesh)
 {
-    public_stubs(false);
+    all_public_stubs(false);
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
     nlohmann::json rank_table = rank_table_910_1server_4rank;
     char file_name_t[] = "./ut_reduce_4p_reduce.json";
@@ -2318,7 +2318,7 @@ void* inter_reduce_scatter_mesh_atomic_single_operator_task(void* parg)
 #if 1
 TEST_F(HcclCommTest910B, ut_reducescatter_4p_mesh_atomic_single_operator)
 {
-    public_stubs(false);
+    all_public_stubs(false);
     setenv("HCCL_OP_EXPANSION_MODE", "AI_CPU", 1);
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
     nlohmann::json rank_table = rank_table_910_1server_4rank;
@@ -2613,7 +2613,7 @@ void* inter_all_gather_outplace_task_single_operator(void* parg)
 
 TEST_F(HcclCommTest910B, ut_allgather_outplace_4p_mesh_single_operator)
 {
-    public_stubs(false);
+    all_public_stubs(false);
     setenv("HCCL_OP_EXPANSION_MODE", "AI_CPU", 1);
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
     nlohmann::json rank_table = rank_table_910_1server_4rank;
@@ -2903,7 +2903,7 @@ void* inter_reduce_scatter_atomic_single_operator_task(void* parg)
 
 TEST_F(HcclCommTest910B, ut_reducescatter_4p_atomic_single_operator)
 {
-    public_stubs(false);
+    all_public_stubs(false);
     MOCKER(IsSuperPodMode).stubs().with(any()).will(returnValue(false));
     setenv("HCCL_OP_EXPANSION_MODE", "AI_CPU", 1);
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
@@ -3067,7 +3067,7 @@ TEST_F(HcclCommTest910B, ut_reducescatter_4p_atomic_single_operator)
 
 TEST_F(HcclCommTest910B, ut_reducescatter_4p_atomic_single_operator_prod)
 {
-    public_stubs(false);
+    all_public_stubs(false);
     MOCKER(IsSuperPodMode).stubs().with(any()).will(returnValue(false));
     setenv("HCCL_OP_EXPANSION_MODE", "AI_CPU", 1);
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
@@ -3233,7 +3233,7 @@ TEST_F(HcclCommTest910B, ut_reducescatter_4p_atomic_single_operator_prod)
 #if 1
 TEST_F(HcclCommTest910B, ut_reducescatter_4p_mesh_atomic_single_operator_GetExternalInputHcclHighPerfEnable)
 {
-    public_stubs(false);
+    all_public_stubs(false);
     setenv("HCCL_OP_EXPANSION_MODE", "AI_CPU", 1);
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
     nlohmann::json rank_table = rank_table_910_1server_4rank;

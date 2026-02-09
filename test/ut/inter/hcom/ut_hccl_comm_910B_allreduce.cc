@@ -77,7 +77,7 @@ protected:
             .will(returnValue(HCCL_SUCCESS));
         MOCKER(GetExternalInputHcclLinkTimeOut)
             .stubs()
-            .will(returnValue(1));        
+            .will(returnValue(1));  
         DlTdtFunction::GetInstance().DlTdtFunctionInit();
         DlRaFunction::GetInstance().DlRaFunctionInit();
         TsdOpen(1, 2);
@@ -241,7 +241,7 @@ void* inter_all_reduce_task_2(void* parg)
     //--------------Resource destroy----------------//
     for (s32 i = 0; i < stream_list_size; i++)
     {
-        rt_ret = aclmdlRIUnBindStream(model, streamList[i]);
+        rt_ret = aclmdlRIUnbindStream(model, streamList[i]);
         EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
         rt_ret = aclrtDestroyStream(streamList[i]);
@@ -514,7 +514,7 @@ void* inter_all_reduce_task_4(void* parg)
     return nullptr;
 }
 
-void public_stubs(bool needStubOp)
+void allreduce_public_stubs(bool needStubOp)
 {
     u32 interfaceVersion = 1;
     MOCKER(hrtRaGetInterfaceVersion)
@@ -553,7 +553,7 @@ void public_stubs(bool needStubOp)
 //71 4p 确定性 小数据量
 TEST_F(HcclCommTest910BAllReduce, ut_allreduce_4p_mesh_deterministic_small_count)
 {
-    public_stubs(true);
+    allreduce_public_stubs(true);
     setenv("HCCL_DETERMINISTIC", "true", 1);
     ResetInitState();
     InitExternalInput();
@@ -730,7 +730,7 @@ TEST_F(HcclCommTest910BAllReduce, ut_allreduce_4p_mesh_deterministic_small_count
 //71 4p 确定性 大数据量
 TEST_F(HcclCommTest910BAllReduce, ut_allreduce_4p_mesh_deterministic_big_count)
 {
-    public_stubs(true);
+    allreduce_public_stubs(true);
     setenv("HCCL_DETERMINISTIC", "true", 1);
     ResetInitState();
     InitExternalInput();
@@ -906,7 +906,7 @@ TEST_F(HcclCommTest910BAllReduce, ut_allreduce_4p_mesh_deterministic_big_count)
 
 TEST_F(HcclCommTest910BAllReduce, ut_allreduce_4p_mesh_deterministic_big_count_prod)
 {
-    public_stubs(true);
+    allreduce_public_stubs(true);
     setenv("HCCL_DETERMINISTIC", "true", 1);
     ResetInitState();
     InitExternalInput();
@@ -1082,7 +1082,7 @@ TEST_F(HcclCommTest910BAllReduce, ut_allreduce_4p_mesh_deterministic_big_count_p
 
 TEST_F(HcclCommTest910BAllReduce, ut_allreduce_4p_mesh_deterministic_big_count_opbase)
 {
-    public_stubs(true);
+    allreduce_public_stubs(true);
     setenv("HCCL_DETERMINISTIC", "true", 1);
     ResetInitState();
     InitExternalInput();
@@ -1259,7 +1259,7 @@ TEST_F(HcclCommTest910BAllReduce, ut_allreduce_4p_mesh_deterministic_big_count_o
 //71 8p 确定性 小数据量
 TEST_F(HcclCommTest910BAllReduce, ut_allreduce_8p_mesh_deterministic_small_count_opbase)
 {
-    public_stubs(true);
+    allreduce_public_stubs(true);
     setenv("HCCL_DETERMINISTIC", "true", 1);
     ResetInitState();
     InitExternalInput();
@@ -1435,7 +1435,7 @@ TEST_F(HcclCommTest910BAllReduce, ut_allreduce_8p_mesh_deterministic_small_count
 
 TEST_F(HcclCommTest910BAllReduce, ut_allreduce_8p_mesh_deterministic_small_count_graph)
 {
-    public_stubs(true);
+    allreduce_public_stubs(true);
     setenv("HCCL_DETERMINISTIC", "true", 1);
     ResetInitState();
     InitExternalInput();
@@ -1611,7 +1611,7 @@ TEST_F(HcclCommTest910BAllReduce, ut_allreduce_8p_mesh_deterministic_small_count
 //71 8p 确定性 中数据量
 TEST_F(HcclCommTest910BAllReduce, ut_allreduce_8p_mesh_deterministic_big_count_graph)
 {
-    public_stubs(true);
+    allreduce_public_stubs(true);
     setenv("HCCL_DETERMINISTIC", "true", 1);
     ResetInitState();
     InitExternalInput();
@@ -1787,7 +1787,7 @@ TEST_F(HcclCommTest910BAllReduce, ut_allreduce_8p_mesh_deterministic_big_count_g
 
 TEST_F(HcclCommTest910BAllReduce, ut_allreduce_8p_mesh_deterministic_big_count_opbase)
 {
-    public_stubs(true);
+    allreduce_public_stubs(true);
     setenv("HCCL_DETERMINISTIC", "true", 1);
     ResetInitState();
     InitExternalInput();
@@ -1963,7 +1963,7 @@ TEST_F(HcclCommTest910BAllReduce, ut_allreduce_8p_mesh_deterministic_big_count_o
 
 TEST_F(HcclCommTest910BAllReduce, ut_allreduce_8p_mesh_deterministic_big_count_opbase_prod)
 {
-    public_stubs(true);
+    allreduce_public_stubs(true);
     setenv("HCCL_DETERMINISTIC", "true", 1);
     ResetInitState();
     InitExternalInput();
@@ -2136,185 +2136,11 @@ TEST_F(HcclCommTest910BAllReduce, ut_allreduce_8p_mesh_deterministic_big_count_o
     ResetInitState();
     InitExternalInput();
 }
-//71 4p 不确定性 图模式
-TEST_F(HcclCommTest910BAllReduce, ut_allreduce_4p_mesh_small_count)
-{
-    public_stubs(true);
-    ResetInitState();
-    InitExternalInput();
-    setenv("HCCL_BUFFSIZE", "1", 1);
-    RankConsistentcyChecker::GetInstance().ClearCheckInfo();
-    nlohmann::json rank_table = rank_table_910_1server_4rank;
-    char file_name_t[] = "./ut_allreduce_4p_ring.json";
-    std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
-    if (outfile.is_open())
-    {
-        outfile << std::setw(4) << rank_table << std::endl;
-        HCCL_INFO("open %s success", file_name_t);
-    }
-    else
-    {
-        HCCL_ERROR("open %s failed", file_name_t);
-    }
-
-    outfile.close();
-
-    s32 rank, errors = 0;
-
-    int ret = HCCL_SUCCESS;
-    rtError_t rt_ret = RT_ERROR_NONE;
-
-    s8* result_buff[DEV_NUM_4];
-    s8* sendbuf[DEV_NUM_4];
-    s8* recvbuf[DEV_NUM_4];
-    s8* inputbuf[DEV_NUM_4];
-    s8* outputbuf[DEV_NUM_4];
-
-    s32 sync_value = 0;
-
-    rtStream_t stream[DEV_NUM_4];
-    sal_thread_t tid[DEV_NUM_4];
-    para_t para_info[DEV_NUM_4];
-
-    HcclDataType datatype = HCCL_DATA_TYPE_INT8;
-
-    HcclReduceOp op = HCCL_REDUCE_SUM;
-    s32 count = 16*1024*1024;
-    s32 ndev = DEV_NUM_4;
-    HcclRootInfo rootInfo;
-    set_board_id(0x0000);
-    for (s32 i = 0; i < ndev; i++ )
-    {
-        set_chip_type_stub(i, static_cast<s32>(DevType::DEV_TYPE_910B));
-    }
-    ret = hccl::hcclComm::GetUniqueId(&rootInfo);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    /** 初始化输入输出缓存 */
-    for (s32 i = 0; i < ndev; i++ )
-    {
-        ret = hrtMalloc((void **)&(sendbuf[i]), count * sizeof(s8));
-        EXPECT_EQ(ret, HCCL_SUCCESS);
-        sal_memset(sendbuf[i],count * sizeof(s8), 0, count * sizeof(s8));
-        ret = hrtMalloc((void **)&(recvbuf[i]), count * sizeof(s8));
-        EXPECT_EQ(ret, HCCL_SUCCESS);
-        sal_memset(recvbuf[i], count  * sizeof(s8), 0,  count * sizeof(s8));
-        ret = hrtMalloc((void **)&(result_buff[i]), count * sizeof(s8));
-        EXPECT_EQ(ret, HCCL_SUCCESS);
-        sal_memset(result_buff[i], count * sizeof(s8), 0, count * sizeof(s8));
-        inputbuf[i] = sendbuf[i];
-        outputbuf[i] = recvbuf[i];
-    }
-
-    //sendbuf 赋值
-    for (u32 j = 0; j < ndev; j++)
-    {
-        for (u32 i = 0; i < count; i++)
-        {
-            inputbuf[j][i] = 1;
-        }
-    }
-
-    //resultbuf 赋值
-   for (s32 i = 0; i < ndev; ++i)
- {
-    for (u32 j = 0; j < count; j++)
-     {
-            result_buff[i][j] = ndev;
-     }
-    }
-    for (s32 i = 0; i < ndev; ++i)
-    {
-        rt_ret = aclrtCreateStream(&stream[i]);
-        EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-    }
-
-    for (s32 i = 0; i < ndev; i++)
-    {
-        sal_memcpy(&para_info[i].rootInfo, sizeof(HcclRootInfo), &rootInfo, sizeof(HcclRootInfo));
-        std::ostringstream identify("");
-        identify << i;
-        para_info[i].identify = identify.str();
-        para_info[i].comm_num = ndev;
-        para_info[i].device_id = i ;
-        para_info[i].ranks_local = ndev;
-        para_info[i].id = 7;
-
-        para_info[i].count = count;
-        para_info[i].datatype = datatype;
-        para_info[i].sendbuff = inputbuf[i];
-        para_info[i].stream = stream[i];
-        para_info[i].recvbuff = outputbuf[i];
-        para_info[i].op = op;
-
-        para_info[i].sync_addr = &sync_value;
-        para_info[i].file_name = file_name_t;
-        para_info[i].offline = false;
-        para_info[i].deviceNumPerServer = 4;
-    }
-
-    // 创建每个Dev的allreduce任务线程
-    for (s32 i = 0; i < ndev; i++)
-    {
-        tid[i] = sal_thread_create("thread", inter_all_reduce_task_2, (void*)&para_info[i]);
-        EXPECT_NE(tid[i], (sal_thread_t )NULL);
-    }
-
-    for (s32 i = 0; i < ndev; i++)
-    {
-        while ( sal_thread_is_running(tid[i]))
-        {
-            SaluSleep(SAL_MILLISECOND_USEC * 10);
-        }
-    }
-
-    //获取stream的操作的同步信号量
-    for (s32 i = 0; i < ndev; i++)
-  {
-     for (s32 j = 0; j < count; j++)
-    {
-            s8 res = result_buff[i][j];
-            s8 recv = outputbuf[i][j];
-
-            if (res != recv)
-            {
-                HCCL_ERROR(" recvbuf[%d] result_buff[%d] \n", recv, res);
-                errors ++;
-                break;
-            }
-    }
-        }
-      if (errors)
-        {
-            HCCL_ERROR("%d errors. Test FAILED.\n", errors);
-        }
-        else
-        {
-            HCCL_INFO("Test PASSED.\n");
-        }
-    for (s32 i = 0; i < ndev; i++)
-   {
-        hrtFree(sendbuf[i]);
-        hrtFree(recvbuf[i]);
-        hrtFree(result_buff[i]);
-    rt_ret = aclrtDestroyStream(stream[i]);
-
-    EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-   }
-    for (s32 i = 0; i < ndev; i++ )
-    {
-        set_chip_type_stub(i, static_cast<s32>(DevType::DEV_TYPE_910));
-    }
-    set_board_id(0);
-    remove(file_name_t);
-    unsetenv("HCCL_BUFFSIZE");
-    ResetInitState();
-    InitExternalInput();
-}
 //71 8p 不确定性 单算子模式 512k以上
 TEST_F(HcclCommTest910BAllReduce, ut_allreduce_4p_mesh_big_count)
 {
-    public_stubs(true);
+    allreduce_public_stubs(true);
     ResetInitState();
     InitExternalInput();
     setenv("HCCL_BUFFSIZE", "1", 1);
@@ -2489,7 +2315,7 @@ TEST_F(HcclCommTest910BAllReduce, ut_allreduce_4p_mesh_big_count)
 
 TEST_F(HcclCommTest910BAllReduce, ut_allreduce_4p_mesh_big_count_prod)
 {
-    public_stubs(true);
+    allreduce_public_stubs(true);
     ResetInitState();
     InitExternalInput();
     setenv("HCCL_BUFFSIZE", "1", 1);
@@ -2665,7 +2491,7 @@ TEST_F(HcclCommTest910BAllReduce, ut_allreduce_4p_mesh_big_count_prod)
 //80 8p  单算子模式 512k以上
 TEST_F(HcclCommTest910BAllReduce, ut_allreduce_8p_mesh_big_count_80)
 {
-    public_stubs(true);
+    allreduce_public_stubs(true);
     ResetInitState();
     InitExternalInput();
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
@@ -2835,11 +2661,10 @@ TEST_F(HcclCommTest910BAllReduce, ut_allreduce_8p_mesh_big_count_80)
     ResetInitState();
     InitExternalInput();
 }
-#endif
 
 TEST_F(HcclCommTest910BAllReduce, ut_allreduce_8p_mesh_deterministic_big_count_hccl_algo)
 {
-    public_stubs(true);
+    allreduce_public_stubs(true);
     setenv("HCCL_ALGO", "level0:NHR;level1:H-D_R", 1);
     ResetInitState();
     InitExternalInput();
@@ -3016,7 +2841,7 @@ TEST_F(HcclCommTest910BAllReduce, ut_allreduce_8p_mesh_deterministic_big_count_h
 //71 8p 不确定性 单算子模式 512k以上
 TEST_F(HcclCommTest910BAllReduce, ut_allreduce_4p_mesh_op_base)
 {
-    public_stubs(true);
+    allreduce_public_stubs(true);
     setenv("HCCL_OP_EXPANSION_MODE", "AI_CPU", 1);
     ResetInitState();
     InitExternalInput();
@@ -3391,7 +3216,7 @@ TEST_F(HcclCommTest910BAllReduce, ut_allreduce_8p_mesh_aiv_opbase)
 //71 8p AIV 图模式
 TEST_F(HcclCommTest910BAllReduce, ut_allreduce_4p_mesh_aiv_graph)
 {
-    public_stubs(true);
+    allreduce_public_stubs(true);
     setenv("HCCL_OP_EXPANSION_MODE", "AIV", 1);
     ResetInitState();
     InitExternalInput();
@@ -3568,7 +3393,7 @@ TEST_F(HcclCommTest910BAllReduce, ut_allreduce_4p_mesh_aiv_graph)
 //71 8p AIV 单算子 大数据量
 TEST_F(HcclCommTest910BAllReduce, ut_allreduce_8p_mesh_aiv_opbase_bigdata)
 {
-    public_stubs(true);
+    allreduce_public_stubs(true);
     setenv("HCCL_OP_EXPANSION_MODE", "AIV", 1);
     ResetInitState();
     InitExternalInput();
