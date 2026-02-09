@@ -28,6 +28,15 @@ constexpr s32 RDMA_QP_NO_MEM = -12;
 constexpr u32 RDMA_WRITE_NOTIFY_OFFSET_MASK = 0xffffff;
 constexpr u32 RDMA_WRITE_NOTIFY_VALUE_RECORD = 0x1000000;
 
+// 内存屏障，确保wqe下到HBM里
+#if defined(__x86_64__)
+#define HCOMM_DSB() asm volatile("" ::: "memory")
+#elif defined(__aarch64__)
+#define HCOMM_DSB() asm volatile("dsb st" ::: "memory");
+#else
+#error No architecture specific memory barrier defines found!
+#endif
+
 namespace hccl {
 std::atomic<u64> TransportDeviceIbverbs::wrIdOffset_ = {0};
 
@@ -633,6 +642,7 @@ HcclResult TransportDeviceIbverbs::TxSendWrlistExt(WrInformation wrList[], u32 s
             ext_attr.reduce_op = wrList[i].wrData.aux.reduceType;
             ext_attr.reduce_type = wrList[i].wrData.aux.dataType;
             ret = DlHnsFunction::GetInstance().dlHnsIbvExtPostSend(qp, &ib_wr, &bad_wr, &ext_attr, &ext_rsp);
+            HCOMM_DSB();
             exp_rsp.wqe_index = ext_rsp.wqe_index;
             exp_rsp.db_info = ext_rsp.db_info;
             HCCL_DEBUG("ibv_ext_post_send, op = [0x%x], imm_data = [0x%lx], reduce_op = [%d], reduceType = [%d]",
@@ -645,12 +655,14 @@ HcclResult TransportDeviceIbverbs::TxSendWrlistExt(WrInformation wrList[], u32 s
             ext_attr.reduce_op = wrList[i].wrData.aux.reduceType;
             ext_attr.reduce_type = wrList[i].wrData.aux.dataType;
             ret = DlHnsFunction::GetInstance().dlHnsIbvExtPostSend(qp, &ib_wr, &bad_wr, &ext_attr, &ext_rsp);
+            HCOMM_DSB();
             exp_rsp.wqe_index = ext_rsp.wqe_index;
             exp_rsp.db_info = ext_rsp.db_info;
             HCCL_DEBUG("ibv_ext_post_send, op = [0x%x], imm_data = [0x%lx], reduce_op = [%d],reduceType = [%d]",
                        wrList[i].wrData.op, ib_wr.imm_data, ext_attr.reduce_op, ext_attr.reduce_type);
         } else {
             ret = DlHnsFunction::GetInstance().dlHnsIbvExpPostSend(qp, &ib_wr, &bad_wr, &exp_rsp);
+            HCOMM_DSB();
             HCCL_DEBUG("ibv_exp_post_send, op = [0x%x], remote_addr = [0x%llx], size = [%d]",
                        wrList[i].wrData.op, ib_wr.wr.rdma.remote_addr, ib_wr.sg_list->length);
         }
@@ -1340,6 +1352,7 @@ HcclResult TransportDeviceIbverbs::HnsPostSend(const TransportDeviceNormalData &
     HCCL_DEBUG("[TransportDeviceIbverbs][HnsPostSend] qp=%p, handle=%u, qp_num=%u, qp_type=%d, qp_stat=%d", qp,
         qp->handle, qp->qp_num, qp->qp_type, qp->state);
     HcclResult ret = HrtHnsIbvExpPostSend(qp, &sendWr[0], &badWr, &exp_rsp);
+    HCOMM_DSB();
     CHK_PRT_RET(ret != HCCL_SUCCESS && ret != HCCL_E_AGAIN,
         HCCL_ERROR("[TransportDeviceIbverbs][HnsPostSend] failed, qp=%p, handle=%u, qp_num=%u, qp_type=%d, qp_stat=%d",
             qp, qp->handle, qp->qp_num, qp->qp_type, qp->state),
