@@ -232,6 +232,9 @@ HcclResult DispatcherAiCpu::SignalWait(HcclRtNotify signal, Stream &stream, u32 
     dfxInfo->notifyId = notifyId;
 
     dfxTimeOutConfig_.sqeTimeOutTimeOut = timeOut < notifyMaxWaitTime_ ? timeOut : dfxTimeOutConfig_.sqeTimeOutTimeOut;
+    if(dfxTimeOutConfig_.sqeTimeOutTimeOut > notifyMaxWaitTime_){
+        dfxTimeOutConfig_.sqeTimeOutTimeOut = notifyMaxWaitTime_;
+    }
     if (inchip || (aicpuInfo_.devType != DevType::DEV_TYPE_310P1 && aicpuInfo_.devType != DevType::DEV_TYPE_310P3)) {
         addOneNotifyWaitSqe_(streamInfo.actualStreamId, taskId, notifyId, sqeBuffer, sqeTypeAddr, dfxTimeOutConfig_);
     } else {
