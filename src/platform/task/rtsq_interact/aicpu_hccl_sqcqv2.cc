@@ -9,7 +9,8 @@
  */
 
 #include "aicpu/aicpu_hccl_sqcqv2.h"
-
+#include "hccl_common.h"
+#include "dispatcher_task_types.h"
 namespace {
 enum class SdmaReduceOpcode {
     SDMA_OPCODE_NOT_ATOMIC = 0,
@@ -89,7 +90,7 @@ void AddOneWriteValueRecordSqeV2(uint16_t streamId, uint16_t taskId, u64 notifyW
 
 void AddOneMemcpySqeV2(uint16_t streamId, uint16_t taskId, const void *src, uint32_t length,
     const aclDataType runtimeDataType, aclrtReduceKind rtReduceOp, const void *dst, uint32_t partId, uint32_t ssid,
-    uint32_t devId, u64 overflowAddr, uint8_t linkType, const uint8_t *sqeIn, uint8_t *sqeType)
+    uint32_t devId, u64 overflowAddr, uint8_t linkType, const uint8_t *sqeIn, uint8_t *sqeType, uint32_t hcclQos)
 {
     (void)partId;
     (void)linkType;
@@ -132,14 +133,16 @@ void AddOneMemcpySqeV2(uint16_t streamId, uint16_t taskId, const void *src, uint
     sqe->overflow_addr_low = static_cast<uint32_t>(reinterpret_cast<u64>(overflowAddr) & 0x00000000ffffffffU);
     sqe->overflow_addr_high =
         static_cast<uint32_t>((reinterpret_cast<u64>(overflowAddr) & 0xffffffff00000000U) >> UINT32_BIT_NUM);
-
-    sqe->qos = 6; // 6 is HCCL QoS
+    if (linkType == static_cast<uint8_t>(hccl::LinkType::LINK_SIO) || linkType == static_cast<uint8_t>(hccl::LinkType::LINK_ONCHIP)) {
+ 	    hcclQos = SDMA_QOS_DEFAULT;
+ 	}
+    sqe->qos = hcclQos;
     const bool isReduce = (rtReduceOp == ACL_RT_MEMCPY_SDMA_AUTOMATIC_SUM);
     sqe->opcode = isReduce ? ReduceOpcode(runtimeDataType) : static_cast<uint8_t>(SdmaReduceOpcode::SDMA_OPCODE_NOT_ATOMIC);
     HCCL_INFO("[SQE]MemcpySqe copyKind=%u,Opcode=0x%x, streamId=%u, len=%u, src:%p, dst:%p src_substreamid:%u "
-        "dst_substreamid:%u src_streamid:%x dst_streamid:%x overflowAddr:%llx",
+        "dst_substreamid:%u src_streamid:%x dst_streamid:%x overflowAddr:%llx hcclQos[%u]",
         static_cast<uint32_t>(rtReduceOp),  static_cast<uint32_t>(sqe->opcode), streamId, length, src, dst,
-        sqe->src_substreamid, sqe->dst_substreamid, sqe->src_streamid, sqe->dst_streamid, overflowAddr);
+        sqe->src_substreamid, sqe->dst_substreamid, sqe->src_streamid, sqe->dst_streamid, overflowAddr, hcclQos);
 }
 
 void AddOneEventResetSqeV2(uint16_t streamId, int32_t eventId, uint16_t taskId, int64_t phyChipId, int64_t phyDieId,

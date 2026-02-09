@@ -45,7 +45,7 @@ private:
     static void ProcessCcuMC2Exception(rtExceptionInfo_t* exceptionInfo);
     static std::vector<CcuTaskParam> GetMC2AlgTaskParam(const TaskInfo& taskInfo);
     static void ProcessCcuException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo);
- 	static void PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, uint16_t instrId, const TaskInfo& taskInfo);
+ 	static void PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, const TaskInfo& taskInfo);
     static void PrintCcuErrorLog(const std::vector<CcuErrorInfo>& errorInfos, const TaskInfo& taskInfo);
     static void ProcessAivException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo);
     static void PrintAivPreviousTaskException(rtExceptionInfo_t* exceptionInfo);
@@ -75,6 +75,7 @@ private:
     static RankId GetRankIdByChannelId(uint16_t channelId, const TaskInfo& taskInfo);
     static void PrintGroupErrorMessage(ErrorMessageReport &errorMessage, TaskInfo &exceptionTaskInfo, string &groupRankContent, string &stageErrInfo);
     static void PrintOpDataErrorMessage(u32 deviceId, ErrorMessageReport &errorMessage, string &stageErrInfo);
+    static std::pair<IpAddress, IpAddress> GetAddrPairByChannelId(uint16_t channelId, const TaskInfo& taskInfo);
 
 private:
     uint32_t devId_; // 当前设备id

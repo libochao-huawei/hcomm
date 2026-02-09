@@ -47,7 +47,9 @@
 #include "ccu_driver_handle.h"
 #include "hccl_common_v2.h"
 #include "hccl_rank_graph.h"
+#include "hccl_aiv_utils.h"
 #include "error_message_v2.h"
+#include "hccp.h"
 
 namespace Hccl {
 
@@ -423,7 +425,7 @@ private:
     u32 collOpIndex    = 0; // 集合通信算子次数
     u32 sendRecvIndex  = 0; // send/recv 算子次数
     u32 submittedOpCnt = 0;
-    u32 aivCoreLimit = 0;
+    u32 aivCoreLimit   = MAX_NUM_BLOCKS;
 
     void RegisterOffloadSlaveStreams(const std::string &opTag, std::vector<void *> slaveStreams) const;
     void RegisterOffloadScratchBuffer(const std::string &opTag, void *scratchMemPtr, u64 requiredScratchMemSize);
@@ -505,6 +507,8 @@ private:
     void RefreshSubmittedOpcnt();
     void SingleRankProc(const CollOpParams &opParams, void *stream) const;
     void ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch = true);
+    void DefaultConvertCollOperatorA2A(const CollOpParams &opParams);
+    void LaunchConvertCollOperatorA2A(const CollOpParams &opParams);
     void ConvertCollOperatorMem(const CollOpParams &opParams, u64 size);
     void CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize) const;
     void ConvertCollOperatorMemV(const CollOpParams &opParams);

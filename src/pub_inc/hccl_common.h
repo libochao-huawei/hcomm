@@ -103,6 +103,18 @@ constexpr u32  MAX_FRAME_LEN = 2 * 1024; // 最大信息长度2*1024
 constexpr s32 NOTIFY_MAX_WAIT_TIME = 255 * 68;   // 非910B和910_93场景notify wait最大等待时长，由硬件决定
 constexpr s32 NOTIFY_MAX_WAIT_TIME_910_93 = 2147483647;   // 910B和910_93场景notify wait最大等待时长，由软件实现
 
+ // HCCL QOS 与 SDMA QOS 映射级别
+constexpr uint32_t SDMA_QOS_LOW = 2;
+constexpr uint32_t SDMA_QOS_MIDDLE = 4;
+constexpr uint32_t SDMA_QOS_HIGH = 6;
+ 	 
+constexpr uint32_t SDMA_QOS_DEFAULT = 6;
+ 	 
+constexpr uint32_t HCCL_QOS_MIN = 0;
+constexpr uint32_t HCCL_QOS_LEVEL_1_LIMIT = 2;
+constexpr uint32_t HCCL_QOS_LEVEL_2_LIMIT = 4;
+constexpr uint32_t HCCL_QOS_LEVEL_3_LIMIT = 7;
+
 /* error message相关 */
     const std::string GET_SOCKET_TIMEOUT_REASON_CLOSE_DETECT =
     " Connection fault detection has been disabled. "

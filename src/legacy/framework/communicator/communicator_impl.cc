@@ -936,40 +936,71 @@ void CommunicatorImpl::CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sen
 
 void CommunicatorImpl::ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch)
 {
-    if (currentCollOperator) {
-        HCCL_INFO("ConvertCollOperatorA2A START");
-        if (opParams.opType == OpType::ALLTOALL) {
-            currentCollOperator->all2AllDataDes.sendCount = opParams.all2AllDataDes.sendCount;
-            currentCollOperator->all2AllDataDes.recvCount = opParams.all2AllDataDes.recvCount;
-            currentCollOperator->all2AllDataDes.sendType = opParams.all2AllDataDes.sendType;
-            currentCollOperator->all2AllDataDes.recvType = opParams.all2AllDataDes.recvType;
-            currentCollOperator->dataType = opParams.all2AllDataDes.sendType;
-            HCCL_INFO("sendCount[%llu], recvCount[%llu]", opParams.all2AllDataDes.sendCount, opParams.all2AllDataDes.recvCount);
-        } else if (opParams.opType == OpType::ALLTOALLV) {
-            currentCollOperator->all2AllVDataDes.sendCounts = opParams.all2AllVDataDes.sendCounts;
-            currentCollOperator->all2AllVDataDes.recvCounts = opParams.all2AllVDataDes.recvCounts;
-            currentCollOperator->all2AllVDataDes.sdispls = opParams.all2AllVDataDes.sdispls;
-            currentCollOperator->all2AllVDataDes.rdispls = opParams.all2AllVDataDes.rdispls;
-            currentCollOperator->all2AllVDataDes.sendType = opParams.all2AllVDataDes.sendType;
-            currentCollOperator->all2AllVDataDes.recvType = opParams.all2AllVDataDes.recvType;
-            currentCollOperator->dataType = opParams.all2AllVDataDes.sendType;
-        } else if (opParams.opType == OpType::ALLTOALLVC) {
-            currentCollOperator->all2AllVCDataDes.sendType = opParams.all2AllVCDataDes.sendType;
-            currentCollOperator->all2AllVCDataDes.recvType = opParams.all2AllVCDataDes.recvType;
-            currentCollOperator->all2AllVCDataDes.sendCountMatrix = opParams.all2AllVCDataDes.sendCountMatrix;
-            currentCollOperator->dataType = opParams.all2AllVCDataDes.sendType;
-        }
-        if (isLaunch) {
-            u64 sendSize = 0;
-            u64 recvSize = 0;
-            CalcA2ASendRecvMem(opParams, sendSize, recvSize);
-            HCCL_INFO("sendSize[%llu], recvSize[%llu]", sendSize, recvSize);
-            currentCollOperator->inputMem  = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.sendBuf), sendSize);
-            currentCollOperator->outputMem = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.recvBuf), recvSize);
-        }
-    } else {
-        HCCL_ERROR("currentCollOperator is nullptr");
+    if (currentCollOperator == nullptr) {
+        std::string msg = StringFormat("currentCollOperator is nullptr");
+        THROW<NullPtrException>(msg);
     }
+
+    if (isLaunch) {
+        LaunchConvertCollOperatorA2A(opParams);
+    } else {
+        DefaultConvertCollOperatorA2A(opParams);
+    }
+}
+
+void CommunicatorImpl::DefaultConvertCollOperatorA2A(const CollOpParams &opParams)
+{
+    // MC2场景准备资源场景下只需默认值
+    HCCL_INFO("DefaultConvertCollOperatorA2A start.");
+    if (opParams.opType == OpType::ALLTOALL) {
+        currentCollOperator->all2AllDataDes.sendCount = 0;
+        currentCollOperator->all2AllDataDes.recvCount = 0;
+        currentCollOperator->all2AllDataDes.sendType = DataType::FP16;
+        currentCollOperator->all2AllDataDes.recvType = DataType::FP16;
+        currentCollOperator->dataType = DataType::FP16;
+    } else if (opParams.opType == OpType::ALLTOALLV) {
+        currentCollOperator->all2AllVDataDes.sendType = DataType::FP16;
+        currentCollOperator->all2AllVDataDes.recvType = DataType::FP16;
+        currentCollOperator->dataType = DataType::FP16;
+    } else if (opParams.opType == OpType::ALLTOALLVC) {
+        currentCollOperator->all2AllVCDataDes.sendType = DataType::FP16;
+        currentCollOperator->all2AllVCDataDes.recvType = DataType::FP16;
+        currentCollOperator->dataType = DataType::FP16;
+    }
+}
+
+void CommunicatorImpl::LaunchConvertCollOperatorA2A(const CollOpParams &opParams)
+{
+    // 下发算子场景下需要继承值并准备Mem
+    HCCL_INFO("LaunchConvertCollOperatorA2A start.");
+    if (opParams.opType == OpType::ALLTOALL) {
+        currentCollOperator->all2AllDataDes.sendCount = opParams.all2AllDataDes.sendCount;
+        currentCollOperator->all2AllDataDes.recvCount = opParams.all2AllDataDes.recvCount;
+        currentCollOperator->all2AllDataDes.sendType = opParams.all2AllDataDes.sendType;
+        currentCollOperator->all2AllDataDes.recvType = opParams.all2AllDataDes.recvType;
+        currentCollOperator->dataType = opParams.all2AllDataDes.sendType;
+        HCCL_INFO("sendCount[%llu], recvCount[%llu]", opParams.all2AllDataDes.sendCount, opParams.all2AllDataDes.recvCount);
+    } else if (opParams.opType == OpType::ALLTOALLV) {
+        currentCollOperator->all2AllVDataDes.sendCounts = opParams.all2AllVDataDes.sendCounts;
+        currentCollOperator->all2AllVDataDes.recvCounts = opParams.all2AllVDataDes.recvCounts;
+        currentCollOperator->all2AllVDataDes.sdispls = opParams.all2AllVDataDes.sdispls;
+        currentCollOperator->all2AllVDataDes.rdispls = opParams.all2AllVDataDes.rdispls;
+        currentCollOperator->all2AllVDataDes.sendType = opParams.all2AllVDataDes.sendType;
+        currentCollOperator->all2AllVDataDes.recvType = opParams.all2AllVDataDes.recvType;
+        currentCollOperator->dataType = opParams.all2AllVDataDes.sendType;
+    } else if (opParams.opType == OpType::ALLTOALLVC) {
+        currentCollOperator->all2AllVCDataDes.sendType = opParams.all2AllVCDataDes.sendType;
+        currentCollOperator->all2AllVCDataDes.recvType = opParams.all2AllVCDataDes.recvType;
+        currentCollOperator->all2AllVCDataDes.sendCountMatrix = opParams.all2AllVCDataDes.sendCountMatrix;
+        currentCollOperator->dataType = opParams.all2AllVCDataDes.sendType;
+    }
+
+    u64 sendSize = 0;
+    u64 recvSize = 0;
+    CalcA2ASendRecvMem(opParams, sendSize, recvSize);
+    HCCL_INFO("sendSize[%llu], recvSize[%llu]", sendSize, recvSize);
+    currentCollOperator->inputMem  = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.sendBuf), sendSize);
+    currentCollOperator->outputMem = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.recvBuf), recvSize);
 }
 
 void CommunicatorImpl::ConvertCollOperatorMem(const CollOpParams &opParams, u64 size)
@@ -1205,9 +1236,16 @@ void CommunicatorImpl::InitDataBufferManager()
     } else {
         scratchBufSize = scratchBufSize * HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE;
     }
+    // 如果是自定义算子流程，cclBufferSize的大小为2倍
+    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+    if (indOp != nullptr && strcmp(indOp, "1") == 0) {
+        scratchBufSize = scratchBufSize * 2;
+    }
     cclBufferSize = scratchBufSize;
+
     // aiv mc2预埋1M，并不暴露在内部算子执行逻辑里
     scratchBufSize += HCCL_MC2_ON_AICPU_FIXED_CALC_BUFFER_SIZE;
+
     if (rankSize > 1) {
         aivOffloadTagBuffer = std::move(DevBuffer::CreateHugePageBuf(4 * 1024 * 1024));
         cclBuffer = std::move(DevBuffer::CreateHugePageBuf(scratchBufSize));
@@ -1304,6 +1342,7 @@ void CommunicatorImpl::TryInitCcuFeature()
 {
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
     if (indOp != nullptr && strcmp(indOp, "") != 0) {
+        TpManager::GetInstance(devLogicId).Init();
         HCCL_RUN_INFO("[CommunicatorImpl][%s] passed, "
             "will use open source ccu feature.", __func__);
         return;
@@ -2686,7 +2725,7 @@ HcclResult CommunicatorImpl::HcomSelectAlg(const CollOpParams& opParams, int32_t
     ExecAlgSelect(opParams, OpMode::OFFLOAD);
     ifAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
     HcclResult dataTypeChkRes = OpParamsChecker::CheckOpDataTypeOffload(opParams, GetOpCcuFeatureFlag(),
-                                                                        GetOpAiCpuTSFeatureFlag(), ifAiv, true);
+                                                                        GetOpAiCpuTSFeatureFlag(), ifAiv);
     if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::HcomSelectAlg] DataType check fail.");
         status = CommStatus::COMM_READY;
@@ -2890,6 +2929,7 @@ bool CommunicatorImpl::IsNeedDpu()
 
 void CommunicatorImpl::InitHccpPeer()
 {
+    RaSocketSetWhiteListStatus(1); // PEER模式需要手动开启白名单模式
     HccpPeerManager::GetInstance().Init(devLogicId);
 }
 
@@ -2908,7 +2948,7 @@ HcclResult CommunicatorImpl::PrepareDpuKernelResource(aclrtFuncHandle &funcHandl
     jsonPath += "/opp/built-in/op_impl/dpu/";
     HCCL_DEBUG("[CommunicatorImpl::%s] kernel folder path[%s]", __func__, jsonPath.c_str());
 
-    jsonPath += "libccl_dpu.json";
+    jsonPath += "ccl_dpu.json";
     char realPath[PATH_MAX] = {0};
     CHK_PRT_RET(realpath(jsonPath.c_str(), realPath) == nullptr,
         HCCL_ERROR("[CommunicatorImpl::%s]: %s is not a valid real path, err[%d]", __func__, jsonPath.c_str(), errno),

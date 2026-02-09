@@ -79,7 +79,7 @@ HcclResult CollReduceScatterMeshAivExecutor::CalNumBlocks(u32& numBlocks, u32 ra
         HCCL_WARNING("[CollReduceScatterMeshAivExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
         numBlocks_, rankSize), HCCL_E_PARA);
     
-    CHK_PRT_RET(numBlocks_ < bestNumBlocks && topoAttr_.deviceType != DevType::DEV_TYPE_910_93,
+    CHK_PRT_RET(numBlocks_ < bestNumBlocks && (topoAttr_.deviceType != DevType::DEV_TYPE_910_93 || isOpBase),
         HCCL_WARNING("[CollReduceScatterMeshAivExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
         numBlocks_, bestNumBlocks), HCCL_E_PARA);
 

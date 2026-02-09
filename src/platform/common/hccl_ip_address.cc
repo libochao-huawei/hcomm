@@ -113,7 +113,7 @@ HcclIpAddress::HcclIpAddress(const Eid &eidInput)
 
     HCCL_INFO("[IpAddress] %s", eid.Describe().c_str());
     // IPoURMA适配后，使用EID初始化时转为ipv6建链
-    family = AF_INET6;
+    this->family = AF_INET6;
     (void)memcpy_s(binaryAddr.addr6.s6_addr, sizeof(eid.raw), eid.raw, sizeof(eid.raw));  
     (void)SetBianryAddress(family, binaryAddr);
 }
@@ -145,7 +145,7 @@ std::string HcclIpAddress::GetIpStr() const
     } else if (family == AF_INET6) {
         src = &binaryAddr.addr6;
     } 
-    char        dst[INET6_ADDRSTRLEN];
+    char dst[INET6_ADDRSTRLEN];
     const char *res = inet_ntop(family, src, dst, INET6_ADDRSTRLEN);
     if (res == nullptr) {
         // 转换失败处理：返回空字符串或抛异常

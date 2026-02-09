@@ -24,6 +24,7 @@
 #include "independent_op.h"
 #include "comm_configer.h"
 #include "hccl_group_utils.h"
+#include "hccl_dispatcher_ctx.h"
 
 namespace hccl {
 RankTable_t g_hcclDefaultRankTable;
@@ -45,6 +46,7 @@ hcclComm::~hcclComm()
 {
     RealeaseBarrierMemory();
     (void)UnRegistTaskAbortHandler();
+    BinaryUnLoad();
     communicator_ = nullptr;
 }
 
@@ -1105,6 +1107,21 @@ HcclResult hcclComm::GetandClearOverFlowTasks(std::vector<HcclDumpInfo> &hcclDum
     return HCCL_SUCCESS;
 }
 
+
+HcclResult hcclComm::SetCommDispatcherCtx()
+{
+    DispatcherCtxPtr dispatherCtx = GetDispatcherCtx(identifier_.c_str());
+    CHK_PTR_NULL(dispatherCtx);
+    HCCL_INFO("[%s] dispatherCtx = [%p]", __func__, dispatherCtx);
+    CHK_RET(SetDispatcherCtx(dispatherCtx));
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::ReleaseCommDispatcherCtx()
+{
+    return HCCL_SUCCESS;
+}
+
 HcclResult hcclComm::SupportDeterministicOptim(bool &isDeterministicOptim)
 {
     CHK_RET(communicator_->SupportDeterministicOptim(isDeterministicOptim));
@@ -1314,6 +1331,11 @@ u32 hcclComm::GetModuleNum()
     return communicator_->GetModuleNum();
 }
 
+u32 hcclComm::GetRealUserRank() const
+{
+    return communicator_->GetRealUserRank();
+}
+
 HcclResult hcclComm::GetCommParams(HcclCommParams &params)
 {
     CHK_RET(communicator_->GetCommParams(params));
@@ -1500,4 +1522,49 @@ bool hcclComm::IsCommunicatorV2()
     }
     return false;
 }
+
+HcclResult hcclComm::SetHcclQos(u32 hcclQos)
+{
+    // 校验config中QoS的合法性
+    if (hcclQos == HCCL_COMM_QOS_CONFIG_NOT_SET) {
+        HCCL_INFO("[SetHcclQos]The QoS do not use the config configuration. "
+                  "It will use environment variables to configure. QoS[%u]", EnvConfig::HCCL_QOS_DEFAULT);
+        communicator_->SetHcclQos(EnvConfig::HCCL_QOS_DEFAULT);
+        return HCCL_SUCCESS;
+    }
+
+    // 若设置的hcclQos不在有效范围内，则报错
+    if (hcclQos < EnvConfig::HCCL_QOS_MIN || hcclQos > EnvConfig::HCCL_QOS_MAX) {
+        HCCL_ERROR("[SetHcclQos]hcclQos is invalid. except[%u, %u], actual[%u]",
+                   EnvConfig::HCCL_QOS_MIN, EnvConfig::HCCL_QOS_MAX, hcclQos);
+        return HCCL_E_PARA;
+    }
+
+    HCCL_INFO("[SetHcclQos] hcclQos[%u]", hcclQos);
+    communicator_->SetHcclQos(hcclQos);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)
+{
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->RegisterWindow(ptr, size, winHandle));
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::DeregisterWindow(CommSymWindow winHandle)
+{
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->DeregisterWindow(winHandle));
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
+{
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->GetCommSymWin(ptr, size, winHandle, offset));
+    return HCCL_SUCCESS;
+}
+
 }  // namespace hccl

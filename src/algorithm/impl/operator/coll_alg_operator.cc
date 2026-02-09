@@ -162,10 +162,13 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
         bool isOpBase = GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
         HCCL_CONFIG_INFO(HCCL_ALG,
             "[%s] newTag[%s] algName[%s] userRank[%u] topoType[%d] algType[%s] "\
-            "userRankSize[%u] level0Size[%u] moduleNum_[%u] level2Size[%u] "\
-            "opExpansionMode[%s] isZeroCopy[%u] retryEnable[%u] isOpBase[%u] isCapture[%u] aivCoreLimit[%u] %s.",
+            "userRankSize[%u] level0Size[%u] moduleNum_[%u] level2Size[%u] ",
             __func__, newTag.c_str(), algName.c_str(), userRank_, topoType_, AlgTypeToStr(algDesc.algType).c_str(),
-            userRankSize_, deviceNumPerAggregation_, moduleNum_, superPodNum_,
+            userRankSize_, deviceNumPerAggregation_, moduleNum_, superPodNum_);
+        HCCL_CONFIG_INFO(HCCL_ALG,
+            "[%s] newTag[%s] "\
+            "opExpansionMode[%s] isZeroCopy[%u] retryEnable[%u] isOpBase[%u] isCapture[%u] aivCoreLimit[%u] %s.",
+            __func__, newTag.c_str(), 
             opExpansionStr.c_str(), algDesc.isZeroCopy, retryEnable_, isOpBase, param.isCapture, limit.aivCoreLimit, appendStr.c_str());
     }
     return HCCL_SUCCESS;

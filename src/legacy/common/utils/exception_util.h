@@ -64,6 +64,23 @@
         }                                                                                                              \
     } while (0)
 
+#define TRY_CATCH_PROCESS_THROW(EXCEPTION, EXPR, MSG, PROCESS)                                                         \
+   do {                                                                                                                \
+        try {                                                                                                          \
+            EXPR;                                                                                                      \
+        } catch (HcclException & e) {                                                                                  \
+            PROCESS;                                                                                                   \
+            HCCL_ERROR("%s due to %s", MSG, e.what());                                                                 \
+            throw e;                                                                                                   \
+        } catch (std::exception & e) {                                                                                 \
+            PROCESS;                                                                                                   \
+            MACRO_THROW(EXCEPTION, StringFormat("%s due to %s", MSG, e.what()));                                       \
+        } catch (...) {                                                                                                \
+            PROCESS;                                                                                                   \
+            MACRO_THROW(EXCEPTION, StringFormat("%s due to: Unknown error occurs!", MSG));                             \
+        }                                                                                                              \
+    } while (0)
+
 #define TRY_CATCH_PRINT_ERROR(expr)                                                                                    \
     do {                                                                                                               \
         try {                                                                                                          \
@@ -84,7 +101,7 @@
 #define CHK_RET_THROW(EXCEPTION, MSG, expr)                                                                            \
     do {                                                                                                               \
         auto ret = (expr);                                                                                             \
-        if (ret != HcclResult::HCCL_SUCCESS) {                                                                         \
+        if (UNLIKELY(ret != HcclResult::HCCL_SUCCESS)) {                                                                         \
             THROW<EXCEPTION>(MSG);                                                                                     \
         }                                                                                                              \
     } while (0)
@@ -114,7 +131,7 @@ template <typename EXCEPTION, typename... Args> inline void THROW(const char *fo
 
 template <typename POINTER> inline void CHECK_NULLPTR(const POINTER &p, const std::string &msg)
 {
-    if (p == nullptr) {
+    if (UNLIKELY(p == nullptr)) {
         THROW<NullPtrException>(msg);
     }
 }

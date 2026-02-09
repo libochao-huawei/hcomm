@@ -15,6 +15,7 @@
 #include <securec.h>
 #include <arpa/inet.h>
 #include "acl/acl_rt.h"
+#include <hccl_types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -354,6 +355,17 @@ extern int32_t HcommAcquireComm(const char* commId);
  */
 extern int32_t HcommReleaseComm(const char* commId);
 
+/**
+ * @brief Get symmetric memory pointer.
+ *
+ * @param winHandle A pointer identifying the registered memory window handle.
+ * @param offset A size_t identifying the offset of symmetric memory heap.
+ * @param peerRank A u_integer identifying the identify for the peer rank.
+ * @param ptr A pointer identifying the symmetric memory heap address.
+ * @return HcclResult
+ */
+extern HcclResult HcommSymWinGetPeerPointer(CommSymWindow winHandle, size_t offset, uint32_t peerRank, void** ptr);
+
 #define HCOMM_PRIMITIVES_H_MODIFIED
 
 
@@ -394,7 +406,7 @@ extern int32_t HcommSendRequest(MsgHandle handle, const char* msgTag, const void
 extern int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, uint32_t *msgId);
 
 /**
- * @brief DPU数据面flush接口，已架构师评审过
+ * @brief DPU数据面flush接口
  * @param[in] void
  * @return int32_t 执行结果状态码
  * 

@@ -12,6 +12,7 @@
 #include "hcomm_res.h"
 #include "channel.h"
 #include "endpoint_pair.h"
+#include "hccl_res.h"
 
 using namespace hcomm;
 
@@ -280,37 +281,9 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
     return HCCL_SUCCESS;
 }
 
-HcclResult MyRank::ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char **memTag, uint32_t *memNum)
+HcclResult MyRank::ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char ***memTag, uint32_t *memNum)
 {
-    CHK_PTR_NULL(remoteMem);
-    CHK_PTR_NULL(memTag);
-    CHK_PTR_NULL(memNum);
-    CHK_PRT_RET(
-        (*memNum == 0), HCCL_INFO("[%s] memNum is equal to 0, no need to get remoteMem",
-        __func__, *memNum), HCCL_SUCCESS);
-
-    uint32_t cclbufferNum = 1; // HcommChannelGetRemoteMem 会将cclbuffer也回传
-    uint32_t totalMem = *memNum + cclbufferNum;
-    std::vector<HcommMem *> remoteMemList(totalMem); 
-    std::vector<char *> tmpMemTags(totalMem);
-    CHK_RET(HcommChannelGetRemoteMem(channel, remoteMemList.data(), &totalMem, tmpMemTags.data()));
-    *memNum = totalMem - cclbufferNum;
-
-    uint32_t index = 0;
-    for (u32 i = 0; i < totalMem; i++) {
-        HCCL_INFO("%s memNum[%u] memTags[%s]", __func__, totalMem, tmpMemTags[i]);
-        if (strcmp(tmpMemTags[i], "HcclBuffer") != 0) {
-            (*remoteMem)[index].addr = remoteMemList[i]->addr;
-            (*remoteMem)[index].size = remoteMemList[i]->size;
-            (*remoteMem)[index].type = ConvertHcclToCommMemType(remoteMemList[i]->type);
-            HCCL_INFO("[%s] Found memNum at index %u: addr=%p, size=%llu",
-                __func__,
-                index,
-                remoteMemList[i]->addr,
-                remoteMemList[i]->size);
-            index++;
-        }
-    }
+    CHK_RET(HcommChannelGetUserRemoteMem(channel, remoteMem, memTag, memNum));
     return HCCL_SUCCESS;
 }
 } // namespace hccl

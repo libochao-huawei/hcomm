@@ -225,7 +225,7 @@ HcclResult OrchestrateSdmaSqe(const OpParam &param, hccl::HcclCommAicpu &comm)
     for (u32 i = 0U; i < sqeCnt; ++i) {
         const uint8_t *sqe = newSqAddr + i * AC_SQE_SIZE;
         AddOneMemcpySqeV1(streamInfo.id(), taskId++, nullptr, 0U, ACL_DT_UNDEFINED, ACL_RT_MEMCPY_SDMA_AUTOMATIC_SUM,
-                          nullptr, 0U, 0U, 0U, 0U, static_cast<uint8_t>(LinkType::LINK_RESERVED), sqe, &sqeType);
+                          nullptr, 0U, 0U, 0U, 0U, static_cast<uint8_t>(LinkType::LINK_RESERVED), sqe, &sqeType, SDMA_QOS_DEFAULT);
     }
 
     u32 &head = sqeBuffer.sqHead;

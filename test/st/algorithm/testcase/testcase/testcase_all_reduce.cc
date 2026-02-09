@@ -1933,3 +1933,24 @@ TEST_F(AllReduceTest, allreduce_A2_2Server8Rank_midcount_deterministic)
     HcclResult ret = checker.Check(checkerOpParam, topoMeta);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
+
+TEST_F(AllReduceTest, allreduce_A3_AllReducemidcountExecutor)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 2, 2, 3);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLREDUCE;
+    checkerOpParam.tag = "AllREDUCE";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.DataDes.count = 1024;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.algName = "AllReduceMidCountFor91093Executor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}

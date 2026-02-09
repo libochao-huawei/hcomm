@@ -29,6 +29,7 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/legacy/interface_channel.cc
     ${HCCL_LLT_ROOT}/stub/llt_next_orion_stub.cc
     ${HCCL_LLT_ROOT}/stub/llt_next_hccp_stub.cc
+    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_rank_graph.cc
 )
 
 file(GLOB_RECURSE ALGORITHM_SOURCES "${HCCL_CODE_ROOT}/src/algorithm/*.cc")
@@ -338,6 +339,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank/comm_mems/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
