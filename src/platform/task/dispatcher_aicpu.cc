@@ -111,6 +111,7 @@ HcclResult DispatcherAiCpu::Init()
     CHK_PTR_NULL(addOneEventResetSqe_);
     CHK_PTR_NULL(addOneEventRecordSqe_);
     CHK_PTR_NULL(addOneEventWaitSqe_);
+    // 可能是这里检查出错了
 
     CHK_RET(GetNotifyMaxWaitTime());
     notifySize_ = (aicpuInfo_.devType == DevType::DEV_TYPE_910B || aicpuInfo_.devType == DevType::DEV_TYPE_910_93) ?

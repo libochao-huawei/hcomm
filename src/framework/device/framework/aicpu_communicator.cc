@@ -5026,6 +5026,8 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
         notifySize_ = NOTIFY_SIZE_EIGHT;
     }
 
+    HCCL_INFO("[HcclCommAicpu][InitAicpuIndOp] hcclQos = %u", commAicpuParam->hcclQos);
+    CHK_RET(HcclDispatcherAicpuInit(&dispatcher_, devId_, commAicpuParam->hcclQos, DispatcherType::DISPATCHER_AICPU));
     CHK_RET(hrtSetWorkModeAicpu(true));
     CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
     CHK_RET(hrtSetlocalDeviceType(topoInfo_.deviceType));
