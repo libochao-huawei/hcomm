@@ -21,13 +21,15 @@ extern "C" {
 
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
 
+HcclResult HcommEndpointGet_(const EndpointHandle endpointHandle, void **endpoint);
+
 HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle);
 
 HcclResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, HcommMem mem, void **memHandle);
 
 HcclResult HcommMemUnreg(EndpointHandle endpointHandle, void *memHandle);
 
-HcclResult HcommMemExport(EndpointHandle endpointHandle, const void *memHandle, void **memDesc, uint32_t *memDescLen);
+HcclResult HcommMemExport(EndpointHandle endpointHandle, void *memHandle, void **memDesc, uint32_t *memDescLen);
 
 HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, HcommMem *outMem);
 
@@ -36,10 +38,14 @@ HcclResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, 
 HcclResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine, HcommChannelDesc *channelDescs,
     uint32_t channelNum, ChannelHandle *channels);
 
+HcclResult HcommChannelGet(const ChannelHandle channelHandle, void **channel);
+
 HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum,  int32_t* statusList);
 
 HcclResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
- 	 
+
+HcclResult HcommChannelGetUserRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
+
 HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
 
 HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, uint32_t listNum,

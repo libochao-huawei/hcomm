@@ -296,7 +296,7 @@ TEST_F(CommunicatorImplLiteTest, test_UpdateLocBuffer_ranksize1_batchsendrecv)
  
     HcclKernelParamLite kernelParam;
  
-    kernelParam.comm.rankSie = 4;
+    kernelParam.comm.rankSize = 4;
     kernelParam.needUpdateRes = true;
     strncpy(kernelParam.algName, "TestAlgorithm", MAX_NAME_LEN);
     strncpy(kernelParam.opTag, "TestTag", MAX_OP_TAG_LEN);
@@ -380,7 +380,7 @@ TEST_F(CommunicatorImplLiteTest, test_UnfoldOneSidedOp)
 {
     HcclKernelParamLite kernelParamLite;
     kernelParamLite.comm.myRank = 3;
-    kernelParamLite.comm.rankSie = 10;
+    kernelParamLite.comm.rankSize = 10;
     kernelParamLite.comm.devPhyId = 1;
     kernelParamLite.comm.opBaseScratch.size = 3;
     kernelParamLite.comm.opCounterAddr = 0;

@@ -46,7 +46,7 @@ ORION_ALG_FRAME="<file value=\"libhccl_v2_alg_frame.so\" file_type=\"shared\" re
 ORION_ALG_REPO="<file value=\"libhccl_v2_native_alg_repo.so\" file_type=\"shared\" release_type=\"debug\"/>"
 ORION_AIV_OP="<file value=\"hccl_aiv_op_910_95.o\"/>"
 DPU_INSTALL_PATH="opp/built-in/op_impl/dpu"
-DPU_JSON="<file value=\"libccl_dpu.json\"/>"
+DPU_JSON="<file value=\"ccl_dpu.json\"/>"
 DPU_LIB="<file value=\"libccl_dpu.so\" file_type=\"shared\" install_softlink=\"\$(TARGET_ENV)/lib64/libccl_dpu.so\"/>"
 
 if [ "${USER_ID}" != "0" ]; then

@@ -1,8 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
- * Description: CcuContextReduceScatterMeshDetour1D类实现
- * Author: wanghaixu
- * Create: 2025-04-20
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "ccu_context_reduce_scatter_mesh1d_detour.h"
@@ -153,8 +156,7 @@ void CcuContextReduceScatterMeshDetour1D::GroupReduceDetour(std::vector<CcuRep::
     std::vector<CcuRep::Memory> &dst, DataType &dataType, DataType &outputDataType, ReduceOp &opType)
 {
     CreateMultiOpReduceDetour(dataType, outputDataType, opType);
-    uint32_t rankSize = detourTransports_[0].size() + 1;
-    uint32_t interLeave = pathNumPerPeer_ * rankSize;
+    uint32_t interLeave = 8;
 
     CCU_IF(iterNum_ != 0) {
         CcuRep::Variable loopParam = CreateVariable();
@@ -164,7 +166,7 @@ void CcuContextReduceScatterMeshDetour1D::GroupReduceDetour(std::vector<CcuRep::
         loopParam = CcuRep::GetLoopParam(0, singleTransportSize_ * moConfig.loopCount, 0);  // 下次迭代的偏移是单次总搬运量*loopNum
         loopParam += iterNum_;  // 加上loop的迭代次数构成完整loop参数
         paraCfg = CcuRep::GetParallelParam(moConfig.loopCount - 1, 0, 1);  // loop固定展开到128个
-        offsetCfg = CcuRep::GetOffsetParam(singleTransportSize_, interLeave, 1);  // 下一个loop偏移量
+        offsetCfg = CcuRep::GetOffsetParam(singleTransportSize_, interLeave, pathNumPerPeer_);  // 下一个loop偏移量
         auto lc = Loop("reduceDetour_loop")(src, dst, lengths_);
         LoopGroup({lc}, {loopParam}, paraCfg, offsetCfg);
     }

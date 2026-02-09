@@ -107,7 +107,7 @@ HcclResult CpuRoceEndpoint::UnregisterMemory(void* memHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult CpuRoceEndpoint::MemoryExport(const void *memHandle, void **memDesc, uint32_t *memDescLen)
+HcclResult CpuRoceEndpoint::MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen)
 {
     CHK_RET(this->regedMemMgr_->MemoryExport(this->endpointDesc_, memHandle, memDesc, memDescLen));
     return HCCL_SUCCESS;
@@ -122,6 +122,12 @@ HcclResult CpuRoceEndpoint::MemoryImport(const void *memDesc, uint32_t descLen, 
 HcclResult CpuRoceEndpoint::MemoryUnimport(const void *memDesc, uint32_t descLen)
 {
     CHK_RET(this->regedMemMgr_->MemoryUnimport(memDesc, descLen));
+    return HCCL_SUCCESS;
+}
+
+HcclResult CpuRoceEndpoint::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
+{
+    CHK_RET(this->regedMemMgr_->GetAllMemHandles(memHandles, memHandleNum));
     return HCCL_SUCCESS;
 }
 }

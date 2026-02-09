@@ -18,6 +18,8 @@
 #include "adapter_hal_pub.h"
 #include "op_base_v2.h"
 #include "host/host_cpu_roce_channel.h"
+#include "hccl_comm_pub.h"
+#include "op_base.h"
 
 
 using namespace hccl;
@@ -549,7 +551,10 @@ int32_t HcommBatchModeEnd(const char *batchTag)
 int32_t HcommAcquireComm(const char* commId)
 {
     CHK_PTR_NULL(commId);
-    HCCL_INFO("%s not support, commId[%s], do nothing", __func__, commId);
+    std::shared_ptr<hccl::hcclComm> hcclComm;
+    HcclGetCommHandle(commId, hcclComm);
+    CHK_PRT_RET(hcclComm == nullptr, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
+    CHK_PRT(hcclComm->SetCommDispatcherCtx());// 待优化
     return HCCL_SUCCESS;
 }
 

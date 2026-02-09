@@ -300,7 +300,7 @@ STATIC int rs_ub_dev_cb_init(struct ctx_init_attr *attr, struct rs_ub_dev_cb *de
 
     ret = RsEpollCtl(dev_cb->rscb->connCb.epollfd, EPOLL_CTL_ADD, dev_cb->urma_ctx->async_fd, EPOLLIN | EPOLLRDHUP);
     if (ret != 0) {
-        hccp_err("rs_epoll_ctl failed, ret:%d", ret);
+        hccp_err("rs_epoll_ctl failed, ret:%d fd:%d", ret, dev_cb->urma_ctx->async_fd);
         goto close_dev;
     }
 
@@ -550,7 +550,7 @@ STATIC void rs_ub_ctx_free_jetty_cb(struct rs_ctx_jetty_cb *jetty_cb)
     struct rs_ctx_jetty_cb *tmp_jetty_cb = jetty_cb;
 
 #ifdef CUSTOM_INTERFACE
-    (void)DlHalBuffFree((void *)(uintptr_t)jetty_cb->ci_addr);
+    (void)DlHalBuffFree((void *)(uintptr_t)jetty_cb->qp_share_info_addr);
 #endif
 
     pthread_mutex_destroy(&tmp_jetty_cb->cr_err_info.mutex);
@@ -1055,7 +1055,7 @@ STATIC void rs_ub_free_async_event_cb_list(struct rs_ub_dev_cb *dev_cb, struct R
     RS_PTHREAD_MUTEX_LOCK(&dev_cb->mutex);
     (void)RsEpollCtl(dev_cb->rscb->connCb.epollfd, EPOLL_CTL_DEL, dev_cb->urma_ctx->async_fd, EPOLLIN | EPOLLRDHUP);
     if (!RsListEmpty(async_event_list)) {
-        hccp_warn("async_event list do not empty!");
+        hccp_run_warn("async_event list do not empty!");
         RS_LIST_GET_HEAD_ENTRY(async_event_curr, async_event_next, async_event_list, list,
             struct rs_ctx_async_event_cb);
         for (; (&async_event_curr->list) != async_event_list; async_event_curr = async_event_next,
@@ -1109,7 +1109,7 @@ int rs_ub_get_tp_info_list(struct rs_ub_dev_cb *dev_cb, struct get_tp_cfg *cfg, 
     int ret = 0;
 
     udma_cfg.flag.value = cfg->flag.value;
-    udma_cfg.trans_mode = cfg->trans_mode;
+    udma_cfg.trans_mode = (urma_transport_mode_t)cfg->trans_mode;
     (void)memcpy_s(udma_cfg.local_eid.raw, sizeof(udma_cfg.local_eid.raw),
         cfg->local_eid.raw, sizeof(cfg->local_eid.raw));
     (void)memcpy_s(udma_cfg.peer_eid.raw, sizeof(udma_cfg.peer_eid.raw), cfg->peer_eid.raw, sizeof(cfg->peer_eid.raw));
@@ -1541,11 +1541,11 @@ STATIC int rs_ub_jetty_cb_buff_alloc(struct rs_ub_dev_cb *dev_cb, struct rs_ctx_
     }
 
     flag = ((unsigned long)logic_devid << BUFF_FLAGS_DEVID_OFFSET) | BUFF_SP_SVM;
-    ret = DlHalBuffAllocAlignEx(CI_ADDR_TWO_BYTES, CI_ADDR_BUFFER_ALIGN_4K_PAGE_SIZE, flag, (int)dev_cb->rscb->grpId,
-        (void **)&jetty_cb->ci_addr);
+    ret = DlHalBuffAllocAlignEx(sizeof(struct ctx_qp_share_info), CI_ADDR_BUFFER_ALIGN_4K_PAGE_SIZE, flag,
+        (int)dev_cb->rscb->grpId, (void **)&jetty_cb->qp_share_info_addr);
     if (ret != 0) {
         hccp_err("dl_hal_buff_alloc_align_ex failed, length:0x%llx, dev_id:0x%x, flag:0x%lx, grp_id:%u, ret:%d",
-            CI_ADDR_TWO_BYTES, logic_devid, flag, dev_cb->rscb->grpId, ret);
+            sizeof(struct ctx_qp_share_info), logic_devid, flag, dev_cb->rscb->grpId, ret);
     }
 
     return ret;
@@ -1763,7 +1763,8 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
     jetty_info->ub.wqebb_size = WQE_BB_SIZE;
     jetty_info->ub.db_token_id = jetty_cb->db_token_id;
     jetty_info->va = (uint64_t)(uintptr_t)jetty_cb->jetty;
-    jetty_info->ub.ci_addr = jetty_cb->ci_addr;
+    jetty_info->ub.share_info_addr = (uint64_t)(uintptr_t)jetty_cb->qp_share_info_addr;
+    jetty_info->ub.share_info_len = sizeof(struct ctx_qp_share_info);
 
     return 0;
 }
@@ -1966,8 +1967,8 @@ STATIC int rs_ub_ctx_drv_jetty_import(struct rs_ctx_rem_jetty_cb *rjetty_cb)
     jetty_key_info = (struct rs_jetty_key_info *)rjetty_cb->jetty_key.value;
     rjetty.jetty_id = jetty_key_info->jetty_id;
     rjetty.trans_mode = jetty_key_info->trans_mode;
-    rjetty.policy = rjetty_cb->policy;
-    rjetty.type = rjetty_cb->type;
+    rjetty.policy = (urma_jetty_grp_policy_t)rjetty_cb->policy;
+    rjetty.type = (urma_target_type_t)rjetty_cb->type;
     rjetty.flag.value = rjetty_cb->flag.value;
     rjetty.tp_type = rjetty_cb->tp_type;
 
@@ -2633,7 +2634,7 @@ STATIC int rs_handle_epoll_poll_jfc(struct rs_ub_dev_cb *dev_cb, urma_jfce_t *jf
             RS_PTHREAD_MUTEX_ULOCK(&dev_cb->mutex);
             break;
         }
-        (*(uint16_t *)(uintptr_t)jetty_cb->ci_addr)++;
+        jetty_cb->qp_share_info_addr->ci_val += 1;
         rs_jfc_callback_process(jetty_cb, &(g_cr_buf[i]), ev_jfc);
         RS_PTHREAD_MUTEX_ULOCK(&dev_cb->mutex);
     }
@@ -2684,6 +2685,7 @@ int rs_epoll_event_jfc_in_handle(struct rs_cb *rs_cb, int fd)
 
     return -ENODEV;
 }
+
 STATIC void rs_ub_get_async_event_res_id(urma_async_event_t *event, struct rs_ub_dev_cb *dev_cb,
     unsigned int *res_id)
 {
@@ -2718,7 +2720,7 @@ STATIC void rs_ub_get_async_event_res_id(urma_async_event_t *event, struct rs_ub
             *res_id = dev_cb->index;
             break;
         default:
-            hccp_err("no such event_type:%d dev_index:0x%x", event->event_type, dev_cb->index);
+            hccp_err("invalid event_type:%d dev_index:0x%x", event->event_type, dev_cb->index);
             break;
     }
 }
@@ -2727,7 +2729,6 @@ STATIC int rs_ub_get_save_async_event(struct rs_ub_dev_cb *dev_cb)
 {
     struct rs_ctx_async_event_cb *async_event_cb = NULL;
     urma_async_event_t *event = NULL;
-    unsigned int res_id = 0;
     int ret = 0;
 
     async_event_cb = calloc(1, sizeof(struct rs_ctx_async_event_cb));
@@ -2743,8 +2744,9 @@ STATIC int rs_ub_get_save_async_event(struct rs_ub_dev_cb *dev_cb)
     }
     rs_urma_ack_async_event(event);
 
-    rs_ub_get_async_event_res_id(event, dev_cb, &res_id);
-    hccp_run_info("get async_event_type:%d res_id:%u dev_index:0x%x", event->event_type, res_id, dev_cb->index);
+    rs_ub_get_async_event_res_id(event, dev_cb, &async_event_cb->res_id);
+    hccp_run_info("get async_event_type:%d res_id:%u dev_index:0x%x", event->event_type, async_event_cb->res_id,
+        dev_cb->index);
 
     RsListAddTail(&async_event_cb->list, &dev_cb->async_event_list);
     dev_cb->async_event_cnt++;
@@ -2785,13 +2787,6 @@ int RsEpollEventUrmaAsyncEventInHandle(struct rs_cb *rsCb, int fd)
     return -ENODEV;
 }
 
-STATIC void rs_ub_ctx_fill_async_events(struct rs_ctx_async_event_cb *event_cb, struct async_event async_events[],
-    unsigned int *num)
-{
-    rs_ub_get_async_event_res_id(&event_cb->async_event, event_cb->dev_cb, &async_events[*num].res_id);
-    async_events[*num].event_type = event_cb->async_event.event_type;
-}
-
 void rs_ub_ctx_get_async_events(struct rs_ub_dev_cb *dev_cb, struct async_event async_events[], unsigned int *num)
 {
     struct rs_ctx_async_event_cb *event_cb_curr = NULL;
@@ -2807,7 +2802,8 @@ void rs_ub_ctx_get_async_events(struct rs_ub_dev_cb *dev_cb, struct async_event 
     RS_LIST_GET_HEAD_ENTRY(event_cb_curr, event_cb_next, &dev_cb->async_event_list, list, struct rs_ctx_async_event_cb);
     for (; (&event_cb_curr->list) != &dev_cb->async_event_list; event_cb_curr = event_cb_next,
         event_cb_next = list_entry(event_cb_next->list.next, struct rs_ctx_async_event_cb, list)) {
-        rs_ub_ctx_fill_async_events(event_cb_curr, async_events, num);
+        async_events[*num].res_id = event_cb_curr->res_id;
+        async_events[*num].event_type = event_cb_curr->async_event.event_type;
         (*num)++;
         rs_ub_free_async_event_cb(dev_cb, event_cb_curr);
         if (*num == expected_num) {

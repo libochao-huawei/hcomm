@@ -14,6 +14,8 @@
 #include "channel.h"
 #include "./aicpu/aicpu_ts_urma_channel.h"
 #include "./host/host_cpu_roce_channel.h"
+#include "./ccu/ccu_urma_channel.h"
+#include "./aiv/aiv_ub_mem_channel.h"
 
 namespace hcomm {
 std::unordered_map<ChannelHandle, ChannelHandle> channelD2HHandleMap_;
@@ -28,9 +30,8 @@ HcclResult Channel::CreateChannel(
         case COMM_ENGINE_CPU:
             // TODO: if 判断 EndpointDesc 里面的协议
             if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_ROCE) {
-                channelPtr.reset(new (std::nothrow) HostCpuRoceChannel(
-                    endpointHandle, channelDesc
-                ));
+                EXECEPTION_CATCH(channelPtr = std::make_unique<HostCpuRoceChannel>(endpointHandle, channelDesc),
+                    return HCCL_E_PARA);
                 break;
             }
             HCCL_ERROR("[Channel][%s] CommEngine[COMM_ENGINE_CPU] not support", __func__);
@@ -45,11 +46,13 @@ HcclResult Channel::CreateChannel(
             ));
             break; 
         case COMM_ENGINE_AIV:
-            HCCL_ERROR("[Channel][%s] CommEngine[COMM_ENGINE_AIV] not support", __func__);
-            return HCCL_E_NOT_SUPPORT;
+            channelPtr.reset(
+                new (std::nothrow) AivUbMemChannel(endpointHandle, channelDesc));
+            break; 
         case COMM_ENGINE_CCU:
-            HCCL_ERROR("[Channel][%s] CommEngine[COMM_ENGINE_CCU] not support", __func__);
-            return HCCL_E_NOT_SUPPORT;
+            channelPtr.reset(
+                new (std::nothrow) CcuUrmaChannel(endpointHandle, channelDesc));
+            break;
         default:
             HCCL_ERROR("[Channel][%s] invalid type of CommEngine", __func__);
             return HCCL_E_NOT_FOUND;
@@ -59,4 +62,8 @@ HcclResult Channel::CreateChannel(
     return HCCL_SUCCESS;
 }
 
+HcclResult Channel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+{
+    return HCCL_SUCCESS;
+}
 } // namespace hcomm

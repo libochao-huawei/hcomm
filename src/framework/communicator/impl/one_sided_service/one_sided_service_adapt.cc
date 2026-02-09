@@ -487,10 +487,10 @@ inline static HcclResult HcclMemHandleParamCheck(void *memHandle, const std::str
 
 // 通信域创建OneSidedService对象的回调函数
 HcclResult HcclBuildOneSidedService(std::unique_ptr<IHcclOneSidedService> &service, std::unique_ptr<hccl::HcclSocketManager> &socketManager,
-                                    std::unique_ptr<hccl::NotifyPool> &notifyPool)
+                                    std::unique_ptr<hccl::NotifyPool> &notifyPool, const CommConfig &commConfig)
 {
     EXCEPTION_HANDLE_BEGIN
-        service = std::make_unique<HcclOneSidedService>(socketManager, notifyPool);
+        service = std::make_unique<HcclOneSidedService>(socketManager, notifyPool, commConfig);
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }

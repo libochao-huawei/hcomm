@@ -137,5 +137,10 @@ HcclComm hcclComm::GetCommunicatorV2()
     return nullptr;
 }
 
+void hcclComm::BinaryUnLoad()
+{
+    binHandle_ = nullptr;
+}
+
 }  // namespace hccl
  

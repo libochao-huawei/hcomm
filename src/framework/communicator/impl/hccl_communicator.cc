@@ -293,7 +293,7 @@ namespace hccl
         // 根据设备ID创建dispatcher
         if ((deviceType_ == DevType::DEV_TYPE_910B) && GetExternalInputHcclEnableFfts())
         {
-            CHK_PRT_CONT(GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !GetExternalInputHcclAicpuUnfold(),
+            CHK_PRT_CONT(GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !GetAicpuUnfoldConfig(),
                          HCCL_RUN_INFO("Will use ffts mode."));
         }
         else
@@ -309,6 +309,11 @@ namespace hccl
             CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devicePhyId_, identifier_.c_str()));
         }
         CHK_PTR_NULL(dispatcherCtx_);
+
+        hccl::DispatcherCtx *Ctx_tmp = static_cast<DispatcherCtx *>(dispatcherCtx_);
+        HCCL_INFO("[%s] RegisterLoadTaskCallBack Dispatcher = [%p], Ctx_tmp = [%p]", 
+            __func__, Ctx_tmp->GetDispatcher(), (void*)Ctx_tmp);
+        (void)RegisterLoadTaskCallBack(Ctx_tmp->GetDispatcher(), static_cast<void *>(profilerManager_.get()), TaskProfilerCallBack);
 
         CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_VIRTURAL, devicePhyId_, &vDispatcher_));
         CHK_SMART_PTR_NULL(vDispatcher_);
@@ -564,6 +569,11 @@ namespace hccl
         return serverNum_;
     }
 
+    u32 HcclCommunicator::GetRealUserRank()
+    {
+        return realUserRank_;
+    }
+
     u32 HcclCommunicator::GetModuleNum()
     {
         return moduleNum_;
@@ -572,12 +582,12 @@ namespace hccl
     bool HcclCommunicator::GetSupportHDCommunicate()
     {
         HCCL_INFO("%s aicpuUnfold[%d], deviceType_[%d], isHaveCpuRank_[%d]",
-            __func__, GetExternalInputHcclAicpuUnfold(), deviceType_, isHaveCpuRank_);
+            __func__, GetAicpuUnfoldConfig(), deviceType_, isHaveCpuRank_);
         if (deviceType_ == DevType::DEV_TYPE_910B && GetExternalInputHcclAicpuUnfold() == false && IsOneSidedIdentifier(identifier_)) {
             // A2单边通信域在非aicpu展开场景下不初始化HDC资源
             return false;
         }
-        return (GetExternalInputHcclAicpuUnfold() == true) ||
+        return (GetAicpuUnfoldConfig() == true) ||
             ((deviceType_ == DevType::DEV_TYPE_910_93) || (deviceType_ == DevType::DEV_TYPE_910B) ||
             Is310P3Common(isHaveCpuRank_, deviceType_));
     }
@@ -1711,6 +1721,10 @@ namespace hccl
         opTilingData->isInplacePreSync = static_cast<u8>(isInplacePreSync_);
         opTilingData->isPostSync = static_cast<u8>(isPostSync_);
         opTilingData->userStreamId = opParam.stream.id();
+        opTilingData->inputSymWindow = reinterpret_cast<u64>(opParam.inputSymWindow);
+        opTilingData->inputOffset = opParam.inputOffset;
+        opTilingData->outputSymWindow = reinterpret_cast<u64>(opParam.outputSymWindow);
+        opTilingData->outputOffset = opParam.outputOffset;
         return HCCL_SUCCESS;
     }
 

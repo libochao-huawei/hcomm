@@ -78,7 +78,7 @@ typedef struct tagRtDevBinary {
 extern rtError_t rtFunctionRegister(void *binHandle, const void *stubFunc, const char_t *stubName, const void *kernelInfoExt,
                              uint32_t funcMode);
 extern rtError_t rtDevBinaryRegister(const rtDevBinary_t *bin, void **hdl);
-extern rtError_t rtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t blockDim, rtArgsEx_t *argsInfo,
+extern rtError_t rtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t numBlocks, rtArgsEx_t *argsInfo,
                                    rtSmDesc_t *smDesc, rtStream_t stm, uint32_t flags, const rtTaskCfgInfo_t *cfgInfo);
 extern rtError_t rtWriteValue(rtWriteValueInfo_t * const info, rtStream_t const stm);
 /* 3-8包不支持的接口 
@@ -313,11 +313,11 @@ void HrtRDMASend(u32 qpn, u32 wqeIndex, aclrtStream streamPtr); // 910A offload
 void HrtRDMADBSend(uint32_t dbindex, uint64_t dbinfo,
                    aclrtStream streamPtr); // 910A opbase and 910A2/910A3
 
-void HrtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t blockDim, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
+void HrtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t numBlocks, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
     rtStream_t stream, uint32_t flags, const rtTaskCfgInfo_t *cfgInfo);
 void HrtFunctionRegister(void *binHandle, const void *stubFunc, const char *stubName, const void *devFunc,
                                 uint32_t funcMode);
-void HrtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uint32_t blockDim,
+void HrtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uint32_t numBlocks,
                                     const rtAicpuArgsEx_t *argsInfo, rtSmDesc_t * const smDesc, const rtStream_t stream,
                                     uint32_t flags);
 

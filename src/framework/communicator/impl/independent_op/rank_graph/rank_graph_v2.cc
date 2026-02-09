@@ -83,4 +83,19 @@ HcclResult RankGraphV2::GetRanksByTopoInst(const uint32_t netLayer, const uint32
     return pImpl->GetRanksByTopoInst(netLayer, topoInstId, ranks, rankNum);
 }
 
+HcclResult RankGraphV2::GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num)
+{
+ 	return pImpl->GetEndpointNum(netLayer, topoInstId, num);
+}
+ 	 
+HcclResult RankGraphV2::GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc)
+{
+ 	return pImpl->GetEndpointDesc(netLayer, topoInstId, descNum, endpointDesc);
+}
+ 	 
+HcclResult RankGraphV2::GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info)
+{
+ 	return pImpl->GetEndpointInfo(rankId, endPointDesc, endpointAttr, infoLen, info);
+}
+
 };  // namespace hccl

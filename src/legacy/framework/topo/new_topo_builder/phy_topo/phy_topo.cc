@@ -1,7 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
- * Description: PhyTopo
- * Create: 2024-12-23
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "phy_topo.h"
@@ -293,8 +297,8 @@ std::string PhyTopo::Link::Describe() const
         protocolStr += it->Describe();
     }
 
-    return StringFormat("PhyTopo::Link[type=%s, protocol=%s, source=%s, target=%s%s]", linkType.Describe().c_str(),
+    return StringFormat("PhyTopo::Link[type=%s, protocol=%s, source=%s, target=%s%s, topoInstId=%u, topoType=%d]", linkType.Describe().c_str(),
                         protocolStr.c_str(), source->Describe().c_str(), target->Describe().c_str(),
-                        iFace.str().c_str());
+                        iFace.str().c_str(), topoInstId, topoType);
 }
 }  // namespace Hccl

@@ -32,9 +32,10 @@ public:
 
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
     HcclResult UnregisterMemory(void* memHandle) override;
-    HcclResult MemoryExport(const void *memHandle, void **memDesc, uint32_t *memDescLen) override;
+    HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) override;
     HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;
     HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
+    HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
 
 private:
     std::unordered_map<Hccl::IpAddress, std::shared_ptr<Hccl::Socket>> &GetServerSocketMap();

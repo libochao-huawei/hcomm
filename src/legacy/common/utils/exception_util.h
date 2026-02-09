@@ -1,7 +1,12 @@
-//
-// Created by w00422550 on 1/16/24.
-// Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-//
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #ifndef HCCLV2_EXCEPTION_UTIL_H
 #define HCCLV2_EXCEPTION_UTIL_H
@@ -59,6 +64,23 @@
         }                                                                                                              \
     } while (0)
 
+#define TRY_CATCH_PROCESS_THROW(EXCEPTION, EXPR, MSG, PROCESS)                                                         \
+   do {                                                                                                                \
+        try {                                                                                                          \
+            EXPR;                                                                                                      \
+        } catch (HcclException & e) {                                                                                  \
+            PROCESS;                                                                                                   \
+            HCCL_ERROR("%s due to %s", MSG, e.what());                                                                 \
+            throw e;                                                                                                   \
+        } catch (std::exception & e) {                                                                                 \
+            PROCESS;                                                                                                   \
+            MACRO_THROW(EXCEPTION, StringFormat("%s due to %s", MSG, e.what()));                                       \
+        } catch (...) {                                                                                                \
+            PROCESS;                                                                                                   \
+            MACRO_THROW(EXCEPTION, StringFormat("%s due to: Unknown error occurs!", MSG));                             \
+        }                                                                                                              \
+    } while (0)
+
 #define TRY_CATCH_PRINT_ERROR(expr)                                                                                    \
     do {                                                                                                               \
         try {                                                                                                          \
@@ -79,7 +101,7 @@
 #define CHK_RET_THROW(EXCEPTION, MSG, expr)                                                                            \
     do {                                                                                                               \
         auto ret = (expr);                                                                                             \
-        if (ret != HcclResult::HCCL_SUCCESS) {                                                                         \
+        if (UNLIKELY(ret != HcclResult::HCCL_SUCCESS)) {                                                                         \
             THROW<EXCEPTION>(MSG);                                                                                     \
         }                                                                                                              \
     } while (0)
@@ -109,7 +131,7 @@ template <typename EXCEPTION, typename... Args> inline void THROW(const char *fo
 
 template <typename POINTER> inline void CHECK_NULLPTR(const POINTER &p, const std::string &msg)
 {
-    if (p == nullptr) {
+    if (UNLIKELY(p == nullptr)) {
         THROW<NullPtrException>(msg);
     }
 }

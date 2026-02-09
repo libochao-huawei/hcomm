@@ -694,3 +694,11 @@ int ra_get_sec_random(struct RaInfo *info, uint32_t *value)
 {
     return 0;
 }
+
+int ra_ctx_get_aux_info(void *ctx_handle, struct aux_info_in *in, struct aux_info_out *out) {
+    return 0;
+}
+
+int ra_ctx_qp_query_batch(void *qp_handle[], struct jetty_attr attr[], unsigned int *num) {
+    return 0;
+}

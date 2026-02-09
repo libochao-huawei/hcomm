@@ -88,6 +88,7 @@ typedef struct {
     int32_t commEngine;             ///< 通信引擎（0: HOST CPU；1: HOST CPU TS；...)（参考CommEngine，从hcclOpExpansionMode变更）
     uint32_t threadNum;             ///< thread数量（新增）
     uint32_t notifyNumPerThread;    ///< 每个thread的notify数量（新增）
+    uint32_t hcclQos;
 } HcclCommConfigV2;
 
 /**
@@ -404,15 +405,6 @@ extern HcclResult HcclRankGraphGetLevels(HcclRankGraph graph, uint32_t *levels);
  * @return HcclResult 执行结果状态码
  */
 extern HcclResult HcclRankGraphGetRankSize(HcclRankGraph graph, uint32_t level, uint32_t *rankSize);
-
-/**
- * @brief 给定level，返回topo类型
- * @param[in] graph rank图句柄
- * @param[in] level 通信层次
- * @param[out] topoType topo类型
- * @return HcclResult 执行结果状态码
- */
-extern HcclResult HcclRankGraphGetTopoType(HcclRankGraph graph, uint32_t level, uint32_t *topoType);
 
 /**
  * @brief 给定level，返回该通信层次包含的rank列表
@@ -1948,8 +1940,7 @@ extern HcclResult HcommMemUnReg(EndPointHandle endPointHandle, void *memHandle);
 /**
  * @brief 导出指定内存描述，用于交换
  */
-extern HcclResult HcommMemExport(EndPointHandle endPointHandle, const void *memHandle, void **memDesc,
-    uint32_t *memDescLen);
+extern HcclResult HcommMemExport(EndPointHandle endPointHandle, void *memHandle, void **memDesc, uint32_t *memDescLen);
 
 /**
  * @brief 基于内存描述，导入获得内存

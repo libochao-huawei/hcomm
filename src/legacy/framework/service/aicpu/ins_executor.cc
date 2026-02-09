@@ -140,7 +140,9 @@ void InsExecutor::ExecuteAllQueues91095(const InsQueue &insQueue, StreamLiteMgr 
         // 遍历从流InsQueue，每一次下发一个Task
         ExecuteSlaveQueue91095(slaveQueueIters, streamLiteMgr, isLaunchTask, slaveStreamIndexSet);
         // 每一次循环，下发一次主流Task
-        ExecuteMasterQueue91095(masterQueueIter, masterStream, isMasterInsIterEnd, isLaunchTask);
+        if (!isMasterInsIterEnd) {
+            ExecuteMasterQueue91095(masterQueueIter, masterStream, isMasterInsIterEnd, isLaunchTask);
+        }
 
         CheckPreStreamSync(streamLiteMgr, maxSlaveQueuesSize);
         // 如果没有下发任务就开始记录超时时间
@@ -166,7 +168,7 @@ void InsExecutor::ExecuteSlaveQueue91095(list<InsQueue::Iterator> &slaveQueueIte
     isLaunchTask = false;
     for (auto slaveQueueIter = slaveQueueIters.begin(); slaveQueueIter != slaveQueueIters.end();) {
         StreamLite *slaveStream = streamLiteMgr->GetSlave(*slaveStreamIndexIter);
-        if (slaveStream == nullptr) {
+        if (UNLIKELY(slaveStream == nullptr)) {
             THROW<NullPtrException>(StringFormat("InsExecutor::%s slaveStream is null,", __func__));
         }
         // 判断rtsq队列中的空间是否充足

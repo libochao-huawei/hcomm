@@ -1,7 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
- * Description: rdma_server context external interface declaration
- * Create: 2025-04-15
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #ifndef RS_CTX_INNER_H
@@ -16,7 +20,6 @@
 #define DEV_INDEX_DIEID_OFFSET 8U
 #define DEV_INDEX_CNT_OFFSET 16U
 #define DEV_INDEX_UE_INFO_MASK 0x0000FFFFUL
-#define CI_ADDR_TWO_BYTES 2
 #define CI_ADDR_BUFFER_ALIGN_4K_PAGE_SIZE 4096U
 #define WQE_BB_SIZE 64ULL
 
@@ -56,6 +59,7 @@ struct rs_ub_dev_cb {
 struct rs_ctx_async_event_cb {
     struct rs_ub_dev_cb *dev_cb;
     urma_async_event_t async_event;
+    unsigned int res_id;
     struct RsListHead list;
 };
 
@@ -121,7 +125,7 @@ struct rs_ctx_jetty_cb {
     uint64_t db_seg_handle;
     pthread_mutex_t mutex;
     uint32_t last_pi;
-    uint64_t ci_addr;
+    struct ctx_qp_share_info *qp_share_info_addr;
     struct RsCrErrInfo cr_err_info;
     struct RsListHead list;
 };

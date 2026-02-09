@@ -1,7 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
- * Description: RankTableInfo implement
- * Create: 2024-12-16
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "rank_table_info.h"
@@ -234,6 +238,13 @@ vector<char> RankTableInfo::GetUniqueId(bool isContainLocId) const
 void RankTableInfo::UpdateRankTable(const RankTableInfo &localRankInfo)
 {
     // version
+    if (detour) {
+        CHK_PRT_THROW(localRankInfo.detour != true,
+            HCCL_ERROR("[%s] detour cfg is not same with other ranks.", __func__),
+            InvalidParamsException, 
+            "updateRankTableInfo error");
+    }
+    detour = localRankInfo.detour; 
     if (rankCount == 0) {
         version = localRankInfo.version;
     } else {
