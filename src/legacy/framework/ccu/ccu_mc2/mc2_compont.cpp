@@ -214,15 +214,6 @@ void Mc2Compont::AllocV2(HcclCombinOpParam& combinOpParam)
     combinOpParam.winSize = static_cast<uint64_t>(comm->GetCclBuffer()->GetSize());
     combinOpParam.windowsOut[0] = static_cast<uint64_t>(comm->GetCclBuffer()->GetAddr());
 
-    HCCL_RUN_INFO("hcclCombinOpParam info: workSpace = [%llu], rankId = [%u], rankDim = [%u], xnAddr = [%llu],"
-              "ckeAddr = [%llu], winSize = [%llu], windowsOut[0] = [%llu], algorithmType = [%u]",
-              combinOpParam.workSpace, combinOpParam.rankId, combinOpParam.rankDim, combinOpParam.xnAddr,
-              combinOpParam.ckeAddr, combinOpParam.winSize, combinOpParam.windowsOut[0], combinOpParam.algorithmType);
-    auto paramSize = sizeof(HcclCombinOpParam);
-    combinOpParamBuffer = std::make_shared<DevBuffer>(paramSize);
-    HrtMemcpy(reinterpret_cast<void *>(combinOpParamBuffer->GetAddr()), paramSize, static_cast<void *>(&combinOpParam),
-              paramSize, RT_MEMCPY_HOST_TO_DEVICE);
-    *commContext = reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
     tokenInfo    = CcuRep::GetTokenInfo(static_cast<uint64_t>(workspaceBuffer->GetAddr()),
                                         static_cast<uint64_t>(workspaceBuffer->GetSize()));
 }
