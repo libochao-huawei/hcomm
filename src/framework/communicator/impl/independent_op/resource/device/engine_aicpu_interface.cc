@@ -28,6 +28,22 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *ar
     return AicpuHcclProcess::AicpuIndOpThreadInit(param);
 }
 
+__attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInitInner(void *args)
+{
+    if (args == nullptr) {
+        HCCL_ERROR("args is null.");
+        return HCCL_E_PARA;
+    }
+ 
+    struct InitTask {
+        u64 context;
+        bool isCustom;
+    };
+    InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
+    ThreadMgrAicpuParam* param = reinterpret_cast<ThreadMgrAicpuParam*>(ctxArgs->context);
+    return AicpuHcclProcess::AicpuIndOpThreadInitInner(param);
+}
+
 __attribute__((visibility("default"))) uint32_t RunAicpuIndOpNotify(void *args)
 {
     if (args == nullptr) {

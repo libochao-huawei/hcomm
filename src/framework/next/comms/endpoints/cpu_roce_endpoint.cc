@@ -15,6 +15,7 @@
 #include "reged_mems/roce_mem.h"
 #include "host_socket_handle_manager.h"
 #include "adapter_rts_common.h"
+#include "hccp_peer_manager.h"
  
 namespace hcomm {
 CpuRoceEndpoint::CpuRoceEndpoint(const EndpointDesc &endpointDesc)
@@ -34,11 +35,13 @@ HcclResult CpuRoceEndpoint::Init()
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
     s32 devId = 0;
     CHK_RET(hrtGetDevice(&devId));
+    EXECEPTION_CATCH(Hccl::HccpPeerManager::GetInstance().Init(devId), return HCCL_E_INTERNAL);
     u32 devPhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
-    ctxHandle_ = static_cast<void *>(
-        rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::RDMA, ipAddr, Hccl::PortDeploymentType::HOST_NET));
+    EXECEPTION_CATCH(ctxHandle_ = static_cast<void *>(
+        rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::RDMA, ipAddr, Hccl::PortDeploymentType::HOST_NET)), 
+        return HCCL_E_INTERNAL);
     CHK_PTR_NULL(ctxHandle_);
     HCCL_INFO("CpuRoceEndpoint::%s success, devId[%u], ipAddr[%s], ctxHandle[%p]",
         __func__,
@@ -46,14 +49,14 @@ HcclResult CpuRoceEndpoint::Init()
         ipAddr.Describe().c_str(),
         ctxHandle_);
 
-    CHK_RET(ServerSocketListen());
     EXECEPTION_CATCH(regedMemMgr_ = std::make_unique<RoceRegedMemMgr>(), return HCCL_E_PARA);
     this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
     return HCCL_SUCCESS;
 }
 
-HcclResult CpuRoceEndpoint::ServerSocketListen()
+HcclResult CpuRoceEndpoint::ServerSocketListen(const uint16_t port)
 {
+    HCCL_INFO("[CpuRoceEndpoint::%s] START. port[%u]", __func__, port);
     Hccl::IpAddress ipAddr{};
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
@@ -63,7 +66,8 @@ HcclResult CpuRoceEndpoint::ServerSocketListen()
     u32 devPhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
 
-    if (serverSocketMap.find(ipAddr) != serverSocketMap.end()) {
+    if (serverSocketMap.find(ipAddr) != serverSocketMap.end() &&
+        serverSocketMap[ipAddr].find(port) != serverSocketMap[ipAddr].end()) {
         HCCL_INFO("[CpuRoceEndpoint::%s] reuse serverSocket", __func__);
         return HCCL_SUCCESS;
     }
@@ -77,20 +81,23 @@ HcclResult CpuRoceEndpoint::ServerSocketListen()
 
     std::shared_ptr<Hccl::Socket> serverSocket{};
     EXECEPTION_CATCH(
-        serverSocket = std::make_shared<Hccl::Socket>(socketHandle, ipAddr, 60001, ipAddr, "server",
+        serverSocket = std::make_shared<Hccl::Socket>(socketHandle, ipAddr, port, ipAddr, "server",
                          Hccl::SocketRole::SERVER, Hccl::NicType::HOST_NIC_TYPE),
         return HCCL_E_PARA);
 
     HCCL_INFO("[CpuRoceEndpoint::%s] listen_socket_info[%s]", __func__, serverSocket->Describe().c_str());
 
     EXECEPTION_CATCH(serverSocket->Listen(), return HCCL_E_NETWORK);
-    serverSocketMap[ipAddr] = serverSocket;
+    serverSocketMap[ipAddr][port] = serverSocket;
+    HCCL_INFO("[CpuRoceEndpoint::%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
 
-std::unordered_map<Hccl::IpAddress, std::shared_ptr<Hccl::Socket>> &CpuRoceEndpoint::GetServerSocketMap()
+std::unordered_map<Hccl::IpAddress, 
+    std::unordered_map<uint16_t, std::shared_ptr<Hccl::Socket>>> &CpuRoceEndpoint::GetServerSocketMap()
 {
-    static std::unordered_map<Hccl::IpAddress, std::shared_ptr<Hccl::Socket>, std::hash<Hccl::IpAddress>>
+    static std::unordered_map<Hccl::IpAddress, 
+        std::unordered_map<uint16_t, std::shared_ptr<Hccl::Socket>>, std::hash<Hccl::IpAddress>>
         serverSocketMap;
     return serverSocketMap;
 }

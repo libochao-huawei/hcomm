@@ -31,7 +31,8 @@ HcclResult EndpointPair::GetSocket(const std::string &socketTag, Hccl::Socket*& 
 {
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(localEndpointDesc_, remoteEndpointDesc_, linkData));
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag);
+    uint16_t port = DEFAULT_LISTENING_PORT;
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, port, socketTag);
     CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
     return HCCL_SUCCESS;
 }

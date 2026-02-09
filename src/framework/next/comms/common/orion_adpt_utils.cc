@@ -131,6 +131,8 @@ HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointD
     uint32_t locDevPhyId = locEp.loc.device.devPhyId;
     uint32_t rmtDevPhyId = rmtEp.loc.device.devPhyId;
 
+    HCCL_INFO("[%s] locDevPhyId[%u] rmtDevPhyId[%u]", __func__, locDevPhyId, rmtDevPhyId);
+
     linkData = Hccl::LinkData(
         portDeploymentType,
         linkProtocol, 
