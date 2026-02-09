@@ -58,6 +58,7 @@ namespace hccl {
     }
     HcclResult DispatcherCtx::Destroy()
     {
+        const std::lock_guard<std::mutex> lock(destroyMutex_);
         if (dispatcher_ != nullptr) {
             DispatcherPub* dispatcher = reinterpret_cast<DispatcherPub*>(dispatcher_);
             delete dispatcher;

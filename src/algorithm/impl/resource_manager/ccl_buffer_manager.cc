@@ -384,16 +384,13 @@ void CCLBufferManager::ReleaseAlltoAllvParaBuffer()
 
 HcclResult CCLBufferManager::GetIndependentOpCCLbuffer(void* &buffer, uint64_t &size)
 {
-    if (inCCLbufferSize_ == 0) {
-        HCCL_ERROR("[CCLBufferManager][GetIndependentOpCCLbuffer] inCCLbufferSize is 0");
-        return HCCL_E_INTERNAL;
+    buffer = GetCCLbufferAddr(cclBuffer_);
+    if (buffer == nullptr) {
+        CHK_RET(CreateCommCCLbuffer());
+        buffer = GetCCLbufferAddr(cclBuffer_);
     }
-    buffer = GetCCLbufferAddr(inCCLbuffer_);
-    if (inCCLbuffer_.ptr() == nullptr) {
-        CHK_RET(CreateCCLbuffer(inCCLbufferSize_, inCCLbuffer_));
-        buffer = GetCCLbufferAddr(inCCLbuffer_);
-    }
-    size = inCCLbufferSize_;
+    // 大小在通信域初始化时调取InitCCLbuffer设置，MC1MB内存不对外暴露
+    size = inCCLbufferSize_ + outCCLbufferSize_;
     return HCCL_SUCCESS;
 }
 } // namespace hccl

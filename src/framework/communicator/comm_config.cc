@@ -33,7 +33,9 @@ CommConfig::CommConfig(const std::string &commName)
       retryMaxCnt_(GetExternalInputRetryMaxCnt()),
       retryHoldTime_(GetExternalInputRetryHoldTime()),
       retryIntervalTime_(GetExternalInputRetryIntervalTime()),
-      bufferName_("")
+      bufferName_(""),
+      hcclQos_(HCCL_COMM_QOS_CONFIG_NOT_SET),
+      symmetricMemoryStride_(HCCL_DEFAULT_SYMMETRIC_MEMORY_STRIDE)
 {
     InitAlgoConfig();
     InitRetryEnable();
@@ -54,7 +56,10 @@ CommConfig::CommConfig()
       execTimeOutSetByConfig_(false),
       retryMaxCnt_(GetExternalInputRetryMaxCnt()),
       retryHoldTime_(GetExternalInputRetryHoldTime()),
-      retryIntervalTime_(GetExternalInputRetryIntervalTime())
+      retryIntervalTime_(GetExternalInputRetryIntervalTime()),
+      bufferName_(""),
+      hcclQos_(HCCL_COMM_QOS_CONFIG_NOT_SET),
+      symmetricMemoryStride_(HCCL_DEFAULT_SYMMETRIC_MEMORY_STRIDE)
 {
     InitAlgoConfig();
     InitRetryEnable();
@@ -113,8 +118,8 @@ HcclResult CommConfig::Load(const HcclCommConfig *userConfig)
     HCCL_RUN_INFO("[Load] comm config info of [%s]: configSize[%llu], version[%u], opExpansionMode[%u]", commName_.c_str(),
         configHandle.info.configSize, configHandle.info.version, configHandle.opExpansionMode);
     HCCL_RUN_INFO("[Load] comm config of [%s]: bufferSize[%llu], deterministic[%u], trafficClass[%u], serviceLevel[%u]"
-        ", execTimeOut[%u], bufferName[%s]",
-        commName_.c_str(), bufferSize_, deterministic_, trafficClass_, serviceLevel_, execTimeOut_, bufferName_.c_str());
+        ", execTimeOut[%u]s, bufferName[%s], hcclQos[%u], symmetricMemoryStride[%llu]",
+        commName_.c_str(), bufferSize_, deterministic_, trafficClass_, serviceLevel_, execTimeOut_, bufferName_.c_str(), hcclQos_, symmetricMemoryStride_);
     return HCCL_SUCCESS;
 }
 
@@ -139,18 +144,18 @@ HcclResult CommConfig::CheckMagicWord(const CommConfigHandle &config)
 
 HcclResult CommConfig::SetConfigByVersion(const CommConfigHandle &config)
 {
-    if (config.info.version > CommConfigVersion::COMM_CONFIG_VERSION_EIGHT) {
+    if (config.info.version > CommConfigVersion::COMM_CONFIG_VERSION_TEN) {
         // 传入的config的版本高于当前版本，警告不支持的配置项将被忽略
         HCCL_WARNING("[SetConfigByVersion] The version of provided config[%u] is higher than the current version[%u], "
             "unsupported configuration will be ignored.",
             config.info.version,
-            CommConfigVersion::COMM_CONFIG_VERSION_EIGHT);
-    } else if (config.info.version < CommConfigVersion::COMM_CONFIG_VERSION_EIGHT) {
+            CommConfigVersion::COMM_CONFIG_VERSION_TEN);
+    } else if (config.info.version < CommConfigVersion::COMM_CONFIG_VERSION_TEN) {
         // 传入的config的版本低于当前版本，警告高版本支持的配置项将被忽略
         HCCL_WARNING("[SetConfigByVersion] The version of provided config[%u] is lower than the current version[%u], "
             "configurations supported by later versions will be ignored.",
             config.info.version,
-            CommConfigVersion::COMM_CONFIG_VERSION_EIGHT);
+            CommConfigVersion::COMM_CONFIG_VERSION_TEN);
     }
 
     if (config.info.version >= CommConfigVersion::COMM_CONFIG_VERSION_ONE) {
@@ -214,6 +219,13 @@ HcclResult CommConfig::SetConfigByVersion(const CommConfigHandle &config)
     if (config.info.version >= CommConfigVersion::COMM_CONFIG_VERSION_NINE) {
         // 版本大于等于9
         CHK_RET(SetConfigBufferName(config));
+    }
+
+    if (config.info.version >= CommConfigVersion::COMM_CONFIG_VERSION_TEN) {
+ 	    // 版本大于等于10,支持配置通信域级别的AI CPU SDMA QOS
+ 	    hcclQos_ = config.hcclQos;
+        // 版本大于等于10，支持配置对称内存每个rank的预留VA大小
+        symmetricMemoryStride_ = config.symmetricMemoryStride;
     }
     HCCL_INFO("NSLBDP-VERSION config.info.version = [%u] .", config.info.version);
     return HCCL_SUCCESS;
@@ -370,7 +382,7 @@ HcclResult CommConfig::SetConfigExecTimeout(const CommConfigHandle &config)
         if (deviceType == DevType::DEV_TYPE_910_93 || deviceType == DevType::DEV_TYPE_910B) {
             // 910B和910_93算子超时时间范围0s-2147483647s,其中0代表永不超时
             if ((execTimeOut < 0) || (execTimeOut > HCCL_EXEC_TIME_OUT_S_910_93)) {
-                HCCL_WARNING("[SetConfigByVersion][SetConfigExecTimeout] The configuration of ComConfigHcclExecTimeOut[%d] is invalid, "\
+                HCCL_WARNING("[SetConfigByVersion][SetConfigExecTimeout] The configuration of ComConfigHcclExecTimeOut[%d]s is invalid, "\
                 "which should be a number greater than or equal to 0s and less "\
                 "than or equal to 2147483647s", execTimeOut);
                 return HCCL_SUCCESS;
@@ -378,7 +390,7 @@ HcclResult CommConfig::SetConfigExecTimeout(const CommConfigHandle &config)
         } else {
             // 非910B和910_93算子超时时间范围1s-17340s
             if ((execTimeOut <= 0) || (execTimeOut > HCCL_EXEC_TIME_OUT_S)) {
-                HCCL_WARNING("[SetConfigByVersion] The configuration of ComConfigHcclExecTimeOut[%d] is invalid, "\
+                HCCL_WARNING("[SetConfigByVersion] The configuration of ComConfigHcclExecTimeOut[%d]s is invalid, "\
                 "which should be a number greater than 0s and less "\
                 "than or equal to 17340s", execTimeOut);
                 return HCCL_SUCCESS;
@@ -445,7 +457,7 @@ HcclResult CommConfig::SetConfigHcclRetryEnable(const CommConfigHandle &config)
     retryConfig.erase(std::remove(retryConfig.begin(), retryConfig.end(), ' '), retryConfig.end());
     if (retryConfig.empty()) {
         HCCL_WARNING("[%s] Hccl retry config is empty. The retryEnable of all levels is" \
-            "set by environment viable.", __func__);
+            "set by environment variable.", __func__);
         return HCCL_SUCCESS;
     }
     std::vector<std::string> retryEnables;
@@ -623,7 +635,7 @@ HcclResult CommConfig::SetSpecificAlgTypeConfig(std::vector<std::string> &algos)
         algoConfig_[HcclCMDType::HCCL_CMD_ALLTOALL];
     return HCCL_SUCCESS;
 }
- 
+
 HcclResult CommConfig::SetConfigExecTimeOut(s32 execTimeOut)
 {
     execTimeOut_ = execTimeOut;
@@ -743,5 +755,16 @@ u32 CommConfig::GetConfigRetryIntervalTime() const
 const std::string& CommConfig::GetConfigBufferName() const
 {
     return bufferName_;
+}
+
+u32 CommConfig::GetConfigHcclQos() const
+{
+ 	HCCL_INFO("[GetConfigHcclQos] hcclQos = %u", hcclQos_);
+ 	return hcclQos_;
+}
+
+u64 CommConfig::GetConfigSymmetricMemoryStride() const
+{
+    return symmetricMemoryStride_;
 }
 }

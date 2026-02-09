@@ -61,7 +61,7 @@ HcclResult CollAllGatherExecutor::Orchestrate(OpParam& param, AlgResourceRespons
         if (topoAttr_.serverNum > 1) {
             ret = RunLoop(param, algRes);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[CollAllGatherExecutor][Orchestrate]errNo[0x%016llx]AllGather excutor run loop failed",
+                HCCL_ERROR("[CollAllGatherExecutor][Orchestrate]errNo[0x%016llx]AllGather executor run loop failed",
                     HCCL_ERROR_CODE(ret)), ret);
         } else {        // 单机场景，数据直接从UserInput搬到UserOutput
             DeviceMem dstMem = DeviceMem::create(static_cast<u8 *>(algRes.paramOutputMem.ptr()) + totalSize * topoAttr_.userRank, totalSize);
@@ -86,7 +86,7 @@ HcclResult CollAllGatherExecutor::Orchestrate(OpParam& param, AlgResourceRespons
         needLaunchAtTheEnd = false;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllGatherExecutor][Orchestrate]errNo[0x%016llx]AllGather excutor kernel run failed",
+        HCCL_ERROR("[CollAllGatherExecutor][Orchestrate]errNo[0x%016llx]AllGather executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     // Enforce task launch at the end of Orchestrate

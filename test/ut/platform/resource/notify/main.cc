@@ -20,7 +20,6 @@ GTEST_API_ int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     sleep(100);
     printf("Running main() from gtest_main.cc+++++++++++++++++++++++++++++++++++++++++++\n");
-	setenv("LD_LIBRARY_PATH", "./hcomm/test/llt/stub/workspace/fwkacllib/lib64", 1);
     setenv("HCCL_DFS_CONFIG", "connection_fault_detection_time:0", 1);
     // InitEnvParam();
     return RUN_ALL_TESTS();

@@ -286,7 +286,7 @@ char g_shm_name[64] = {0};
 void ra_set_shm_name(const char* name)
 {
     sal_strncpy(g_shm_name, 64 - 1, name, SalStrLen(name));
-    printf("ra_set_shm_name %s", name);
+    // printf("ra_set_shm_name %s\n", name);
     g_shm_name[63] = 0;
 }
 
@@ -759,6 +759,7 @@ int RaSocketSend(const void* handle, const void* data, u64 size, u64 *sentSize)/
 
 int RaTlvInit(struct TlvInitInfo *init_info, unsigned int *buffer_size, void **tlv_handle)
 {
+    *tlv_handle = (void*)0x12345678;
     return 0;
 }
  

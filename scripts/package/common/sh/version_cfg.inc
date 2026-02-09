@@ -306,7 +306,7 @@ set_running_package_version() {
     local version="$3"
     local version_dir="$4"
     local filepath filepath_new line cfg_items package_name attr_type running_version
-    local setted="false" cleanup="" ret mod
+    local isset="false" cleanup="" ret mod
 
     get_version_cfg_path "filepath" "${dirpath}"
     get_version_cfg_new_path "filepath_new" "${dirpath}"
@@ -344,23 +344,23 @@ set_running_package_version() {
 
         if [ "${attr_type}" = "running" ]; then
             if [ "${package_name}" = "${package}" ]; then
-                if [ "${setted}" = "false" ]; then
+                if [ "${isset}" = "false" ]; then
                     echo "${running_version}" >> "${filepath_new}"
-                    setted="true"
+                    isset="true"
                 fi
             else
                 echo "${line}" >> "${filepath_new}"
             fi
         elif [ "${attr_type}" = "upgrade" ]; then
-            if [ "${setted}" = "false" ]; then
+            if [ "${isset}" = "false" ]; then
                 echo "${running_version}" >> "${filepath_new}"
-                setted="true"
+                isset="true"
             fi
             echo "${line}" >> "${filepath_new}"
         elif [ "${attr_type}" = "installed" ]; then
-            if [ "${setted}" = "false" ]; then
+            if [ "${isset}" = "false" ]; then
                 echo "${running_version}" >> "${filepath_new}"
-                setted="true"
+                isset="true"
             fi
             echo "${line}" >> "${filepath_new}"
         else
@@ -368,9 +368,9 @@ set_running_package_version() {
         fi
     done < "${filepath}"
 
-    if [ "${setted}" = "false" ]; then
+    if [ "${isset}" = "false" ]; then
         echo "${running_version}" >> "${filepath_new}"
-        setted="true"
+        isset="true"
     fi
 
     add_cfg_version_comment "${filepath_new}"
@@ -411,7 +411,7 @@ set_upgrade_package_version() {
     local version="$3"
     local version_dir="$4"
     local filepath filepath_new line cfg_items package_name attr_type upgrade_version
-    local setted="false" cleanup="" ret mod
+    local isset="false" cleanup="" ret mod
 
     get_version_cfg_path "filepath" "${dirpath}"
     get_version_cfg_new_path "filepath_new" "${dirpath}"
@@ -449,17 +449,17 @@ set_upgrade_package_version() {
 
         if [ "${attr_type}" = "upgrade" ]; then
             if [ "${package_name}" = "${package}" ]; then
-                if [ "${setted}" = "false" ]; then
+                if [ "${isset}" = "false" ]; then
                     echo "${upgrade_version}" >> "${filepath_new}"
-                    setted="true"
+                    isset="true"
                 fi
             else
                 echo "${line}" >> "${filepath_new}"
             fi
         elif [ "${attr_type}" = "installed" ]; then
-            if [ "${setted}" = "false" ]; then
+            if [ "${isset}" = "false" ]; then
                 echo "${upgrade_version}" >> "${filepath_new}"
-                setted="true"
+                isset="true"
             fi
             echo "${line}" >> "${filepath_new}"
         else
@@ -467,9 +467,9 @@ set_upgrade_package_version() {
         fi
     done < "${filepath}"
 
-    if [ "${setted}" = "false" ]; then
+    if [ "${isset}" = "false" ]; then
         echo "${upgrade_version}" >> "${filepath_new}"
-        setted="true"
+        isset="true"
     fi
 
     add_cfg_version_comment "${filepath_new}"
@@ -556,7 +556,7 @@ add_installed_package_version() {
     local version="$3"
     local version_dir="$4"
     local filepath filepath_new line cfg_items package_name attr_type value versions matched version_str
-    local setted="false"
+    local isset="false"
 
     get_version_cfg_path "filepath" "${dirpath}"
     get_version_cfg_new_path "filepath_new" "${dirpath}"
@@ -589,15 +589,15 @@ add_installed_package_version() {
             else
                 echo "${line}${version_str}" >> "${filepath_new}"
             fi
-            setted="true"
+            isset="true"
         else
             echo "${line}" >> "${filepath_new}"
         fi
     done < "${filepath}"
 
-    if [ "${setted}" = "false" ]; then
+    if [ "${isset}" = "false" ]; then
         echo "${package}_installed_version=${version_str}" >> "${filepath_new}"
-        setted="true"
+        isset="true"
     fi
 
     add_cfg_version_comment "${filepath_new}"

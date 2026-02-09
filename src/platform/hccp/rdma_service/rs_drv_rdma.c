@@ -121,31 +121,18 @@ int RsDrvGetCqeErrInfo(struct CqeErrInfo *info)
     return 0;
 }
 
-STATIC void RsRetryTimeoutExceptionCheck(struct RsRdevCb *rdevCb, struct ibv_wc *wc)
+STATIC void RsRdmaRetryTimeoutExceptionCheck(struct SensorNode *sensorNode, struct ibv_wc *wc)
 {
     int ret = 0;
-
-    /* sensor may not support, handle is 0 */
-    if (rdevCb->sensorHandle == 0) {
-        return;
-    }
 
     if (wc->status != IBV_WC_RETRY_EXC_ERR) {
         return;
     }
 
-    /* The notification alarm framework does not filter alarms. In this example, only one notification
-        alarm is reported by a single process, which does not need to be accurate. Therefore, no lock is used. */
-    if (rdevCb->sensorUpdateCnt == 0) {
-        ret = DlHalSensorNodeUpdateState(rdevCb->logicDevid, rdevCb->sensorHandle,
-            RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_TYPE, GENERAL_EVENT_TYPE_ONE_TIME);
-        if (ret == 0) {
-            rdevCb->sensorUpdateCnt++;
-        }
-    }
+    ret = RsRetryTimeoutExceptionCheck(sensorNode);
 
-    hccp_warn("update sensor state logic_devid(%u), qpn(%u), sensorUpdateCnt(%d),ret(%d)\n",
-        rdevCb->logicDevid, wc->qp_num, rdevCb->sensorUpdateCnt, ret);
+    hccp_warn("update sensor state logic_devid(%u), qpn(%u), sensorUpdateCnt(%d), ret(%d)\n",
+        sensorNode->logicDevid, wc->qp_num, sensorNode->sensorUpdateCnt, ret);
 }
 
 STATIC void RsCqeCallbackProcess(struct RsQpCb *qpCb, struct ibv_wc *wc, struct ibv_cq *evCq)
@@ -155,7 +142,7 @@ STATIC void RsCqeCallbackProcess(struct RsQpCb *qpCb, struct ibv_wc *wc, struct 
             RsIbvWcStatusStr(wc->status), wc->status, wc->wr_id);
         RsDrvSaveCqeErrInfo(wc->status, qpCb);
         RsDrvSaveQpCqeErrInfo(wc->status, qpCb);
-        RsRetryTimeoutExceptionCheck(qpCb->rdevCb, wc);
+        RsRdmaRetryTimeoutExceptionCheck(&qpCb->rdevCb->rs_cb->sensorNode, wc);
     }
 
     return;
@@ -467,7 +454,7 @@ enum ibv_mtu RsDrvSetMtu(struct RsQpCb *qpCb)
 #ifndef CA_CONFIG_LLT
     currMtu = portAttr.active_mtu;
 #else
-    curr_mtu = IBV_MTU_1024;
+    currMtu = IBV_MTU_1024;
 #endif
 
     return currMtu;
@@ -587,7 +574,7 @@ STATIC int RsOpenBackupIbCtx(struct RsRdevCb *rdevCb)
         }
     }
 
-    CHK_PRT_RETURN(i == rdevCb->devNum, hccp_err("can not find ib_ctx for phy_id[%u] local_ip[0x%x] in dev_list!",
+    CHK_PRT_RETURN(i == rdevCb->devNum, hccp_err("can not find ib_ctx for phyId[%u] local_ip[0x%x] in dev_list!",
         rdevInfo.phyId, rdevInfo.localIp.addr.s_addr), -EEXIST);
     return 0;
 }
@@ -612,20 +599,22 @@ STATIC int RsDrvQueryNotify(struct RsRdevCb *rdevCb)
     }
 
 #ifdef CUSTOM_INTERFACE
-    if (rdevCb->backupInfo.backupFlag) {
-        // open backup device to get ib_ctx to get backup notify va and size
-        ret = RsOpenBackupIbCtx(rdevCb);
-        CHK_PRT_RETURN(ret, hccp_err("rs_open_backup_ib_ctx failed, ret:%d", ret), ret);
-
-        ret = RsIbvExpQueryNotify(rdevCb->backupInfo.ibCtx, &rdevCb->notifyVaBase, &rdevCb->notifySize);
-        if (ret != 0) {
-            RsCloseBackupIbCtx(rdevCb);
-            hccp_err("rs_ibv_exp_query_notify with backup ctx failed, ret:%d", ret);
-            return ret;
+    if (RsIsCustomInterfaceSupported()) {
+        if (rdevCb->backupInfo.backupFlag) {
+            // open backup device to get ib_ctx to get backup notify va and size
+            ret = RsOpenBackupIbCtx(rdevCb);
+            CHK_PRT_RETURN(ret, hccp_err("rs_open_backup_ib_ctx failed, ret:%d", ret), ret);
+    
+            ret = RsIbvExpQueryNotify(rdevCb->backupInfo.ibCtx, &rdevCb->notifyVaBase, &rdevCb->notifySize);
+            if (ret != 0) {
+                RsCloseBackupIbCtx(rdevCb);
+                hccp_err("rs_ibv_exp_query_notify with backup ctx failed, ret:%d", ret);
+                return ret;
+            }
+        } else {
+            ret = RsIbvExpQueryNotify(rdevCb->ibCtx, &rdevCb->notifyVaBase, &rdevCb->notifySize);
+            CHK_PRT_RETURN(ret, hccp_err("rs_ibv_exp_query_notify failed, ret:%d", ret), ret);
         }
-    } else {
-        ret = RsIbvExpQueryNotify(rdevCb->ibCtx, &rdevCb->notifyVaBase, &rdevCb->notifySize);
-        CHK_PRT_RETURN(ret, hccp_err("rs_ibv_exp_query_notify failed, ret:%d", ret), ret);
     }
 #endif
     hccp_info("chip_id:%u, RsDrvQueryNotify ok, notify va:0x%llx, size:%llu", rdevCb->rs_cb->chipId,
@@ -643,7 +632,9 @@ int RsDrvQueryNotifyAndAllocPd(struct RsRdevCb *rdevCb)
     rdevCb->ibPd = RsIbvAllocPd(rdevCb->ibCtx);
     if (rdevCb->ibPd == NULL) {
 #ifdef CUSTOM_INTERFACE
-        RsCloseBackupIbCtx(rdevCb);
+        if (RsIsCustomInterfaceSupported()) {
+            RsCloseBackupIbCtx(rdevCb);
+        }
 #endif
         hccp_err("rs_ibv_alloc_pd failed, errno:%d", errno);
         return -ENOMEM;
@@ -654,11 +645,8 @@ int RsDrvQueryNotifyAndAllocPd(struct RsRdevCb *rdevCb)
 
 int RsDrvRegNotifyMr(struct RsRdevCb *rdevCb)
 {
-#ifdef CUSTOM_INTERFACE
     struct roce_process_sign roceSign = {0};
-#endif
     int access = DEFAULT_ACCESS_FLAG;
-
     rdevCb->notifyAccess = access;
     switch (rdevCb->notifyType) {
         case NO_USE: return 0;
@@ -669,8 +657,12 @@ int RsDrvRegNotifyMr(struct RsRdevCb *rdevCb)
         }
         case EVENTID: {
 #ifdef CUSTOM_INTERFACE
-            rdevCb->notifyMr = RsIbvExpRegMr(rdevCb->ibPd, (void *)(uintptr_t)rdevCb->notifyVaBase,
-                rdevCb->notifySize, access, roceSign);
+            if (RsIsCustomInterfaceSupported()) {
+                rdevCb->notifyMr = RsIbvExpRegMr(rdevCb->ibPd, (void *)(uintptr_t)rdevCb->notifyVaBase,
+                    rdevCb->notifySize, access, roceSign);
+            } else {
+                return 0;
+            }
             break;
 #else
             return 0;

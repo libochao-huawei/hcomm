@@ -62,7 +62,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
         COMMAND nproc
         OUTPUT_VARIABLE CPU_CORES
         OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+    ) 
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     execute_process(
         COMMAND wmic cpu get NumberOfCores /value
@@ -85,7 +85,6 @@ if(ENABLE_TEST)
     include(cmake/config.cmake)
     include(cmake/function.cmake)
     include(cmake/intf_pub_gccnative.cmake)
-    include(cmake/utils.cmake)
     add_subdirectory(test)
     return()
 endif()
@@ -95,7 +94,6 @@ if(BUILD_OPEN_PROJECT)
     include(cmake/third_party/json.cmake)
     include(cmake/utils.cmake)
     include(cmake/config.cmake)
-    set(HCOMM_VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/version/version.info)
     include(cmake/package.cmake)
     pack_built_in()
     add_subdirectory(src)
@@ -108,6 +106,8 @@ if(BUILD_OPEN_PROJECT)
         include/hccl/hccl_rank_graph.h
         include/hccl/hccl_res.h
         include/hccl/hcomm_primitives.h
+        include/hcomm_res.h
+        include/hcomm_res_defs.h
     )
 
     set(HCCL_JSON
@@ -195,22 +195,6 @@ if(BUILD_OPEN_PROJECT)
             DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
         )
         add_dependencies(install_tar hcomm)
-
-        set(HCOMM_VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/version/version.info)
-        add_custom_command(
-            OUTPUT ${HCOMM_VERSION_FILE}
-            COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/update_version_info/update_version_info.sh
-                    ${CMAKE_CURRENT_SOURCE_DIR}/version.info
-                    ${HCOMM_VERSION_FILE}
-            DEPENDS 
-                ${CMAKE_CURRENT_SOURCE_DIR}/version.info
-            VERBATIM
-        )
-        
-        add_custom_target(generate_hcomm_version_file
-            DEPENDS ${HCOMM_VERSION_FILE}
-        )
-        add_dependencies(hcomm generate_hcomm_version_file)
     endif()
 
     install(FILES
@@ -233,5 +217,44 @@ if(BUILD_OPEN_PROJECT)
     install(FILES
         ${HCCL_PKG_HEAD}
         DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hccl/ OPTIONAL
+    )
+    set(HCCL_PKG_CCU_HEAD
+        pkg_inc/hcomm/ccu/ccu_assist_pub.h
+        pkg_inc/hcomm/ccu/ccu_common.h
+        pkg_inc/hcomm/ccu/ccu_condition_v1.h
+        pkg_inc/hcomm/ccu/ccu_context_resource_v1.h
+        pkg_inc/hcomm/ccu/ccu_datatype_v1.h
+        pkg_inc/hcomm/ccu/ccu_funccall_v1.h
+        pkg_inc/hcomm/ccu/ccu_instr_info_v1.h
+        pkg_inc/hcomm/ccu/ccu_interface_assist_v1.h
+        pkg_inc/hcomm/ccu/ccu_kernel_arg.h
+        pkg_inc/hcomm/ccu/ccu_kernel_signature.h
+        pkg_inc/hcomm/ccu/ccu_kernel.h
+        pkg_inc/hcomm/ccu/ccu_loopblock_v1.h
+        pkg_inc/hcomm/ccu/ccu_loopcall_v1.h
+        pkg_inc/hcomm/ccu/ccu_loopgroupcall_v1.h
+        pkg_inc/hcomm/ccu/ccu_microcode_v1.h
+        pkg_inc/hcomm/ccu/ccu_operator_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_arg_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_base_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_block_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_context_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_funcblock_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_funccall_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_jump_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_jumplabel_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_loopblock_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_loopcall_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_reference_manager_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_type_v1.h
+        pkg_inc/hcomm/ccu/ccu_repeat_v1.h
+        pkg_inc/hcomm/ccu/ccu_res_repo.h
+        pkg_inc/hcomm/ccu/ccu_task_arg_v1.h
+        pkg_inc/hcomm/ccu/ccu_task_param_v1.h
+        pkg_inc/hcomm/ccu/hccl_ccu_res.h
+    )
+    install(FILES
+        ${HCCL_PKG_CCU_HEAD}
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ OPTIONAL
     )
 endif()

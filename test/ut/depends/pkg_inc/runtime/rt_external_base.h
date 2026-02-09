@@ -113,7 +113,7 @@ typedef struct tagRtTaskCfgInfo {
     uint8_t partId;
     uint8_t schemMode; // rtschemModeType_t 0:normal;1:batch;2:sync
     bool d2dCrossFlag; // d2dCrossFlag true:D2D_CROSS false:D2D_INNER
-    uint32_t blockDimOffset;
+    uint32_t numBlocksOffset;
     uint8_t dumpflag; // dumpflag 0:fault 2:RT_KERNEL_DUMPFLAG 4:RT_FUSION_KERNEL_DUMPFLAG
     uint8_t neverTimeout; // 1: never timeout, 0: will timeout
     uint8_t rev[2];
@@ -121,17 +121,17 @@ typedef struct tagRtTaskCfgInfo {
 } rtTaskCfgInfo_t;
 
 typedef struct tagRtLaunchTaskCfgInfo {
-    uint32_t blockDim;
+    uint32_t numBlocks;
     uint32_t dynamicShareMemSize;
     struct {
         uint32_t groupDim;
-        uint32_t groupBlockDim;
+        uint32_t groupNumBlocks;
     } Group;
     uint8_t qos;
     uint8_t partId;
     uint8_t schemMode; // rtschemModeType_t 0:normal;1:batch;2:sync
     uint8_t dumpflag; // dumpflag 0:fault 2:RT_KERNEL_DUMPFLAG
-    uint32_t blockDimOffset;
+    uint32_t numBlocksOffset;
 } LaunchTaskCfgInfo_t;
 
 /**
@@ -251,18 +251,23 @@ typedef struct rtUbExDetailInfo {
     rtUbInfo_t info[UB_DB_SEND_MAX_NUM];
 } rtUbExDetailInfo_t;
 
+#define FUSION_SUB_TASK_MAX_CCU_NUM (8U)
+#define RT_CCU_SQE_ARGS_LEN     (13U)
+#define MAX_CCU_EXCEPTION_INFO_SIZE (128U)
+
 typedef struct rtCCUExDetailInfo {
 	uint8_t dieId;
     uint8_t missionId;
     uint16_t instrId;
     uint64_t args[RT_CCU_SQE_ARGS_LEN];
-} rtCcuSqeDetailInfo_t;
+    uint8_t status;
+ 	uint8_t subStatus;
+ 	uint8_t panicLog[MAX_CCU_EXCEPTION_INFO_SIZE];
+} rtCcuMissionDetailInfo_t;
 
 typedef struct rtMultiCCUExDetailInfo {
-    uint16_t ccuTaskNum;        /* used for sqeInfo */
-    uint16_t panicLogNum;       /* used for panicLog */
-    rtCcuSqeDetailInfo_t sqeInfo[FUSION_SUB_TASK_MAX_CCU_NUM];
-    uint8_t panicLog[FUSION_SUB_TASK_MAX_CCU_NUM][MAX_CCU_EXCEPTION_INFO_SIZE];
+    uint16_t ccuMissionNum;
+ 	rtCcuMissionDetailInfo_t missionInfo[FUSION_SUB_TASK_MAX_CCU_NUM];
 } rtMultiCCUExDetailInfo_t;
 
 typedef struct rtAicoreExDetailInfo {

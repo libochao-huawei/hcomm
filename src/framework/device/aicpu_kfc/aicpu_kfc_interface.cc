@@ -17,6 +17,7 @@
 #include "dfx/aicpu_profiling_manager.h"
 #include "framework/aicpu_hccl_process.h"
 #include "aicpu_kfc/framework/aicpu_kfc_process.h"
+#include "aicpu_kfc/decoupler/comm_kfc_dispatcher.h"
 #include "aicpu_kfc/framework/aicpu_kfc_deprecated_process.h"
 #include "aicpu_kfc/framework/aicpu_kfc_batchwrite_process.h"
 #include "utils/hccl_aicpu_utils.h"
@@ -25,6 +26,7 @@
 #include "aicpu_kfc/framework/aicpu_kfc_prof.h"
 #include "utils/aicpu_hdc_utils.h"
 
+using namespace HcclApi;
 namespace {
 u64 GetTensorAddr(uint16_t index, uint8_t *tensorPtr) {
     uint64_t* dataAddr = reinterpret_cast<uint64_t*>(tensorPtr);
@@ -36,12 +38,12 @@ u64 GetTensorAddr(uint16_t index, uint8_t *tensorPtr) {
 
 u64 GetUpdatedOpIdx()
 {
-    static uint64_t aicpuOpIdx[MAX_AICPU_BLOCK_DIM] = {0UL};
+    static uint64_t aicpuOpIdx[MAX_AICPU_NUM_BLOCKS] = {0UL};
     const u32 blockNum = HcclAicpuUtils::GetBlockNum();
     const u32 blockIdx = HcclAicpuUtils::GetBlockIdx();
     ++aicpuOpIdx[blockIdx];
     if (blockIdx == blockNum - 1U) {
-        for (u32 i = blockIdx + 1U; i < MAX_AICPU_BLOCK_DIM; ++i) {
+        for (u32 i = blockIdx + 1U; i < MAX_AICPU_NUM_BLOCKS; ++i) {
             ++aicpuOpIdx[i];
         }
     }
@@ -99,7 +101,7 @@ HcclResult AicpuRunRpcServer(AicpuComContext *ctx, KFCTask *taskInfo)
     return HCCL_SUCCESS;
 }
 
-u32 RunAicpuInnerRpcSrvGroupLaunch(void *args[], KFCGroupTilingDataAuto *tilingData, HcclCommParamDesc* desc)
+u32 RunAicpuInnerRpcSrvGroupLaunch(void *args[], KFCGroupTilingDataAuto *tilingData, CommKfcParamDesc* desc)
 {
     constexpr int DESC_POS = 0;
 
@@ -109,11 +111,11 @@ u32 RunAicpuInnerRpcSrvGroupLaunch(void *args[], KFCGroupTilingDataAuto *tilingD
     }
     for (uint32_t i = 0; i < tilingData->groupNum; ++i) {
         KFCTask singleTask;
-        singleTask.inputA = u64(args[tilingData->msg[i].sendArgIndex + desc->hasFfts + desc->groupNum + 1]);
+        singleTask.inputA = u64(args[tilingData->msg[i].sendArgIndex + desc->hasFfts + desc->itemNum + 1]);
         singleTask.outputC = GetTensorAddr(i,
-                                           reinterpret_cast<uint8_t*>(args[tilingData->msg[i].recvArgIndex + desc->hasFfts + desc->groupNum + 1]));
+                                           reinterpret_cast<uint8_t*>(args[tilingData->msg[i].recvArgIndex + desc->hasFfts + desc->itemNum + 1]));
         singleTask.commOut = 0;
-        singleTask.context = u64(args[DESC_POS + desc->hasFfts + desc->groupNum]);
+        singleTask.context = u64(args[DESC_POS + desc->hasFfts + desc->itemNum]);
         singleTask.workSpace = u64(args[desc->tilingOff - 1]);
         singleTask.tilingData = u64(&tilingData->msg[i]);
         uint32_t ret = RunAicpuRpcSrvLaunch(&singleTask);
@@ -125,7 +127,7 @@ u32 RunAicpuInnerRpcSrvGroupLaunch(void *args[], KFCGroupTilingDataAuto *tilingD
     return 0;
 }
 
-u32 RunKernelAicpuServerV1(void *args[], HcclCommParamDesc *desc)
+u32 RunKernelAicpuServerV1(void *args[], CommKfcParamDesc *desc)
 {
     HcclKFCTilingData *tilingData = static_cast<HcclKFCTilingData *>(args[desc->tilingOff]);
     HCCL_INFO("RunAicpuKfcSrvLaunch, tiling.sendArgIndex %lu", tilingData->sendArgIndex);
@@ -134,12 +136,12 @@ u32 RunKernelAicpuServerV1(void *args[], HcclCommParamDesc *desc)
     HCCL_INFO("RunAicpuKfcSrvLaunch, tiling.hasCommOut %lu", tilingData->hasCommOut);
     KFCTask task;
     task.tilingData = u64(tilingData);
-    task.inputA =  u64(args[tilingData->sendArgIndex + desc->hasFfts + desc->groupNum + 1]);
-    task.outputC = u64(args[tilingData->recvArgIndex + desc->hasFfts + desc->groupNum + 1]);
-    task.context = u64(args[desc->hasFfts + desc->groupNum]);
+    task.inputA =  u64(args[tilingData->sendArgIndex + desc->hasFfts + desc->itemNum + 1]);
+    task.outputC = u64(args[tilingData->recvArgIndex + desc->hasFfts + desc->itemNum + 1]);
+    task.context = u64(args[desc->hasFfts + desc->itemNum]);
     task.workSpace = u64(args[desc->tilingOff - 1]);
     if (tilingData->commOutArgIndex != u64(0xff)) {
-        task.commOut = u64(args[tilingData->commOutArgIndex + desc->hasFfts + desc->groupNum + 1]);
+        task.commOut = u64(args[tilingData->commOutArgIndex + desc->hasFfts + desc->itemNum + 1]);
     } else {
         task.commOut = 0;
     }
@@ -166,7 +168,7 @@ HcclResult KfcProf(u64 launchEntryTime, KFCTaskV2 &task, u32 turnOffset = 0U)
     return HCCL_SUCCESS;
 }
 
-u32 RunKernelAicpuServerV2(void *args[], HcclCommParamDesc *desc, void *tilingData)
+u32 RunKernelAicpuServerV2(void *args[], CommKfcParamDesc *desc, void *tilingData)
 {
     u64 launchEntryTime = GetCurCpuTimestamp(true);
     // MC2目前只支持OP_BASE
@@ -182,12 +184,12 @@ u32 RunKernelAicpuServerV2(void *args[], HcclCommParamDesc *desc, void *tilingDa
 
     KFCTaskV2 task;
     task.tilingData = reinterpret_cast<u64>(tilingData);
-    task.ctxNum = desc->groupNum;
+    task.ctxNum = desc->itemNum;
     if (task.ctxNum > MAX_COMM_CTX_NUM) {
         HCCL_ERROR("group num must be smaller than %u.", MAX_COMM_CTX_NUM);
         return HCCL_E_PARA;
     }
-    for (int i = 0; i < desc->groupNum; i++) {
+    for (int i = 0; i < desc->itemNum; i++) {
         task.context[i] = reinterpret_cast<u64>(args[desc->hasFfts + i + 1]);
         if (task.context[i] == 0) {
             HCCL_ERROR("idx %d ctx is null, please check the input ctx.", i);
@@ -212,13 +214,13 @@ u32 RunKernelAicpuServerV2(void *args[], HcclCommParamDesc *desc, void *tilingDa
     return 0;
 }
 
-u32 RunAicpuApiRpcSrvLaunchV1(void *args[], HcclCommParamDesc *desc)
+u32 RunAicpuApiRpcSrvLaunchV1(void *args[], CommKfcParamDesc *desc)
 {
     static u32 aicpuOpIdx = 0;
     u64 launchEntryTime = GetCurCpuTimestamp(true);
 
     HccCommResParamTask *contextParam = nullptr;
-    for (uint64_t i = 1; i <= desc->groupNum; ++i) {
+    for (uint64_t i = 1; i <= desc->itemNum; ++i) {
         contextParam = reinterpret_cast<HccCommResParamTask *>(args[desc->hasFfts + i]);
         if (contextParam != nullptr) {
             HCCL_INFO("Idx %llu ctx addr %p.", i, contextParam);
@@ -249,7 +251,7 @@ u32 RunAicpuApiRpcSrvLaunchV1(void *args[], HcclCommParamDesc *desc)
         return HCCL_E_INTERNAL;
     }
 
-    HcclApi::Mc2InitTilingInner *tilingData = reinterpret_cast<HcclApi::Mc2InitTilingInner *>(args[desc->tilingOff]);
+    Mc2InitTilingInner *tilingData = reinterpret_cast<Mc2InitTilingInner *>(args[desc->tilingOff]);
     ctx->debugMode = tilingData->debugMode;
     if (ctx->debugMode == MC2_DEBUG_ONLY_CUBE) {
         HCCL_INFO("[%s]DebugMode is set to be 1 (i.e. computation only).", __func__);
@@ -326,14 +328,13 @@ u32 RunAicpuApiRpcSrvLaunchV1(void *args[], HcclCommParamDesc *desc)
     return HCCL_SUCCESS;
 }
 
-u32 RunAicpuApiRpcSrvLaunchV2(void *args[], HcclCommParamDesc *desc)
+u32 RunAicpuApiRpcSrvLaunchV2(void *args[], CommKfcParamDesc *desc)
 {
     // MC2目前只支持OP_BASE
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
     u64 launchEntryTime = GetCurCpuTimestamp(true);
 
-    const HcclApi::Mc2InitTilingInner *tilingData =
-            static_cast<const HcclApi::Mc2InitTilingInner *>(args[desc->tilingOff]);
+    const Mc2InitTilingInner *tilingData = static_cast<const Mc2InitTilingInner *>(args[desc->tilingOff]);
     AicpuKfcProf::SetDebugMode(tilingData->debugMode);
     if (AicpuKfcProf::IsDebugModeEquals(MC2_DEBUG_ONLY_CUBE)) {
         HCCL_INFO("[%s]DebugMode is set to be 1 (i.e. computation only).", __func__);
@@ -341,7 +342,7 @@ u32 RunAicpuApiRpcSrvLaunchV2(void *args[], HcclCommParamDesc *desc)
     }
 
     KFCTaskV2 task{};
-    for (uint64_t i = 0; i < desc->groupNum; i++) {
+    for (uint64_t i = 0; i < desc->itemNum; i++) {
         u64 arg = reinterpret_cast<u64>(args[desc->hasFfts + i + 1]);
         if (arg != 0UL) {
             HCCL_INFO("Ctx idx %u, addr %#llx.", task.ctxNum, arg);
@@ -373,7 +374,7 @@ u32 RunAicpuApiRpcSrvLaunchV2(void *args[], HcclCommParamDesc *desc)
     return 0;
 }
 
-u32 RunKernelAicpuServerForTilingApi(void *args[], HcclCommParamDesc* desc)
+u32 RunKernelAicpuServerForTilingApi(void *args[], CommKfcParamDesc* desc)
 {
     if (AicpuHcclProcess::AicpuGetInnerDevType() == DevType::DEV_TYPE_910_93) {
         return RunAicpuApiRpcSrvLaunchV2(args, desc);
@@ -570,10 +571,6 @@ constexpr u32 GROUP_DYN_FLAG = 23U;
 constexpr u32 GROUP_TILING_MAGIC_NUM = 99U;
 __attribute__((visibility("default"))) uint32_t RunAicpuKfcSrvLaunch(void *args[])
 {
-    KfcState state;
-    bool profL1Open = dfx::ProfilingManager::IsProfL1On();
-    bool profL0Open = dfx::ProfilingManager::IsProfL0On();
-    HCCL_INFO("profL1Open:%d, profL0Open:%d", profL1Open, profL0Open);
     if (args == nullptr) {
         HCCL_ERROR("args is null.");
         return HCCL_E_PARA;
@@ -581,21 +578,27 @@ __attribute__((visibility("default"))) uint32_t RunAicpuKfcSrvLaunch(void *args[
     constexpr int DESC_POS = 0;
     uint64_t desc_value = u64(args[DESC_POS]);
     uint64_t *desc_addr = &desc_value;
-    HcclCommParamDesc *desc = reinterpret_cast<HcclCommParamDesc*>(desc_addr);
+    CommKfcParamDesc *desc = reinterpret_cast<CommKfcParamDesc*>(desc_addr);
     AicpuKfcUtils::PrintHcclCommParamDesc(*desc);
+    if (desc->version == DECOUPLED_CTX_VER) {
+        return CommKfcDispatcher::Run(&(args[1]), desc->itemNum);
+    }
     void *tiling = reinterpret_cast<void *>(args[desc->tilingOff]);
     if (tiling == nullptr) {
         HCCL_ERROR("tiling is null.");
         return HCCL_E_PARA;
     }
+    KfcState state;
+    bool profL1Open = dfx::ProfilingManager::IsProfL1On();
+    bool profL0Open = dfx::ProfilingManager::IsProfL0On();
+    HCCL_INFO("profL1Open:%d, profL0Open:%d", profL1Open, profL0Open);
     const uint32_t ver = MC2TilingGetVer(tiling);
     HCCL_INFO("Start RunAicpuKfcSrvLaunch with tiling version %u.", ver);
     uint32_t ret;
     switch (ver) {
         case TILING_DATA_VER_OLD_FOR_HOST: {
             KFCGroupTilingDataAuto *tilingData = static_cast<KFCGroupTilingDataAuto *>(tiling);
-            if (desc->isDyn == GROUP_DYN_FLAG &&
-                tilingData->groupTilingMagicNum == GROUP_TILING_MAGIC_NUM) {
+            if (desc->isDyn == GROUP_DYN_FLAG && tilingData->groupTilingMagicNum == GROUP_TILING_MAGIC_NUM) {
                 ret = RunAicpuInnerRpcSrvGroupLaunch(args, tilingData, desc);
             } else {
                 ret = RunKernelAicpuServerV1(args, desc);

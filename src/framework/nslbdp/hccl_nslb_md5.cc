@@ -119,6 +119,12 @@ void NSLBMD5::encode(unsigned char output[], const uint32_t input[], size_t len)
     }
 }
 
+/**
+ * 背景：标准的MD5算法，主要功能是64字节处理
+ * 参考文献：RFC 1321: The MD5 Message-Digest Algorithm
+ * 作者：Ron Rivest
+ * 发布日期：1992年4月
+ */
 void NSLBMD5::update(const unsigned char input[], size_t length) {
     // 计算还需要填充多少字节才能达到64字节的倍数
     unsigned int index = count[0] / NSLB_MD5ENCODE_COUNT % NSLB_MD5_TOTAL;
@@ -156,7 +162,12 @@ void NSLBMD5::update(const char input[], size_t length) {
     update(reinterpret_cast<const uint8_t*>(input), length);
 }
 
-// MD5算法的核心变换函数，处理一个64字节的块
+/**
+ * 背景：标准的MD5算法，主要功能是MD5算法的核心变换函数，处理一个64字节的块
+ * 参考文献：RFC 1321: The MD5 Message-Digest Algorithm
+ * 作者：Ron Rivest
+ * 发布日期：1992年4月
+*/
 void NSLBMD5::transform(const unsigned char block[64]) {
     uint32_t a = state[0], b = state[NSLB_MD5_STATE1], c = state[NSLB_MD5_STATE2], d = state[NSLB_MD5_STATE3], x[NSLB_MD5_16];
 

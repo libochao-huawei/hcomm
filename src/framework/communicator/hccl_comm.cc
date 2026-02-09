@@ -23,6 +23,7 @@
 #include "env_config.h"
 #include "independent_op.h"
 #include "comm_configer.h"
+#include "hccl_group_utils.h"
 
 namespace hccl {
 RankTable_t g_hcclDefaultRankTable;
@@ -37,6 +38,7 @@ hcclComm::hcclComm(u64 inCCLbufferSize, u64 outCCLbufferSize, std::string identi
     indirectOutCCLbuffer_ = DeviceMem();
     barrierInMemory_ = DeviceMem();
     barrierOutMemory_ = DeviceMem();
+    planner = std::make_shared<hcclKernelPlanner>();
 }
 
 hcclComm::~hcclComm()
@@ -1004,16 +1006,16 @@ HcclResult hcclComm::GetRankSize(u32 &rankSize)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::HcclSelectAlg(HcclCMDType opType, u64 count, HcclDataType dataType,
+HcclResult hcclComm::HcclSelectAlg(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
     HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName)
 {
-    return communicator_->HcclSelectAlg(opType, count, dataType, op, aivCoreLimit, ifAiv, algName);
+    return communicator_->HcclSelectAlg(opType, count, counts, dataType, op, aivCoreLimit, ifAiv, algName);
 }
 
-HcclResult hcclComm::HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
-        std::string &algName, u32 &blockDim)
+HcclResult hcclComm::HcclCalcNumBlocks(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
+        std::string &algName, u32 &numBlocks)
 {
-    return communicator_->HcclCalcBlockDim(opType, count, dataType, aivCoreLimit, algName, blockDim);
+    return communicator_->HcclCalcNumBlocks(opType, count, counts, dataType, aivCoreLimit, algName, numBlocks);
 }
 
 HcclResult hcclComm::HcclGetAlgExecParam(const std::string &tag, u64 count, void *inputPtr, void *outputPtr,
@@ -1381,9 +1383,9 @@ HcclResult hcclComm::DeactivateCommMemory(void *virPtr)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::GetBlockDim(u32& blockDim)
+HcclResult hcclComm::GetNumBlocks(u32& numBlocks)
 {
-    return communicator_->GetBlockDim(blockDim);
+    return communicator_->GetNumBlocks(numBlocks);
 }
 
 HcclResult hcclComm::SetAivCoreLimit(u32 aivCoreLimit)
@@ -1423,6 +1425,66 @@ HcclResult hcclComm::GetRemoteCCLBuf(uint32_t remoteRank, void **addr, uint64_t 
     CHK_RET(communicator_->GetRemoteCCLBuf(remoteRank, addr, size));
     return HCCL_SUCCESS;
 }
+ 
+HcclResult hcclComm::SetGroupMode(bool isGroup){
+    isGroupMode_ = isGroup;
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->SetGroupMode(isGroup));
+    return HCCL_SUCCESS;
+}
+ 
+bool hcclComm::GetGroupMode(){
+    return isGroupMode_;
+}
+ 
+HcclResult hcclComm::SetSendIndex(u32 index){
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->SetSendIndex(index));
+    return HCCL_SUCCESS;
+}
+ 
+HcclResult hcclComm::SetRecvIndex(u32 index){
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->SetRecvIndex(index));
+    return HCCL_SUCCESS;
+}
+ 
+HcclResult hcclComm::SetBufferSliceNum(u32 bufferSliceNum){
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->SetBufferSliceNum(bufferSliceNum));
+    return HCCL_SUCCESS;
+}
+ 
+HcclResult hcclComm::SetNSend(u32 nSend){
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->SetNSend(nSend));
+    return HCCL_SUCCESS;
+}
+ 
+HcclResult hcclComm::SetNRecv(u32 nRecv){
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->SetNRecv(nRecv));
+    return HCCL_SUCCESS;
+}
+ 
+HcclResult hcclComm::GroupPrepareStreamAndNotify(HcclRtStream sendRecvMainStream){
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->GroupPrepareStreamAndNotify(sendRecvMainStream));
+    return HCCL_SUCCESS;
+}
+ 
+HcclResult hcclComm::GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte){
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->GroupSyncMainstream(sendIdx2Byte, recvIdx2Byte));
+    return HCCL_SUCCESS;
+}
+ 
+HcclResult hcclComm::GroupSubstreamsSync(){
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->GroupSubstreamsSync());
+    return HCCL_SUCCESS;
+}
+ 
 
 HcclResult hcclComm::GetKFCWorkSpace(void **addr, uint64_t *size)
 {
@@ -1431,5 +1493,56 @@ HcclResult hcclComm::GetKFCWorkSpace(void **addr, uint64_t *size)
     return HCCL_SUCCESS;
 }
 
+bool hcclComm::IsCommunicatorV2()
+{
+    if (devType_ == DevType::DEV_TYPE_910_95) {
+        return true;
+    }
+    return false;
+}
+
+HcclResult hcclComm::SetHcclQos(u32 hcclQos)
+{
+    // 校验config中QoS的合法性
+    if (hcclQos == HCCL_COMM_QOS_CONFIG_NOT_SET) {
+        HCCL_INFO("[SetHcclQos]The QoS do not use the config configuration. "
+                  "It will use environment variables to configure. QoS[%u]", EnvConfig::HCCL_QOS_DEFAULT);
+        communicator_->SetHcclQos(EnvConfig::HCCL_QOS_DEFAULT);
+        return HCCL_SUCCESS;
+    }
+
+    // 若设置的hcclQos不在有效范围内，则报错
+    if (hcclQos < EnvConfig::HCCL_QOS_MIN || hcclQos > EnvConfig::HCCL_QOS_MAX) {
+        HCCL_ERROR("[SetHcclQos]hcclQos is invalid. except[%u, %u], actual[%u]",
+                   EnvConfig::HCCL_QOS_MIN, EnvConfig::HCCL_QOS_MAX, hcclQos);
+        return HCCL_E_PARA;
+    }
+
+    HCCL_INFO("[SetHcclQos] hcclQos[%u]", hcclQos);
+    communicator_->SetHcclQos(hcclQos);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)
+{
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->RegisterWindow(ptr, size, winHandle));
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::DeregisterWindow(CommSymWindow winHandle)
+{
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->DeregisterWindow(winHandle));
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
+{
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->GetCommSymWin(ptr, size, winHandle, offset));
+    return HCCL_SUCCESS;
+}
 
 }  // namespace hccl

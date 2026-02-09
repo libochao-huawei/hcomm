@@ -142,6 +142,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    bool HcclCommunicator::IsSupportSymmetricMemory(HcclCMDType opType, OpParam &opParam)
+    {
+        return false;
+    }
+
     bool HcclCommunicator::IsSupportZeroCopy(const OpParam &opParam)
     {
         return false;
@@ -384,14 +389,14 @@ namespace hccl
         2. 计算resource，存到request内
         3. 创建和分配资源
     */
-    HcclResult HcclCommunicator::HcclSelectAlg(HcclCMDType opType, u64 count, HcclDataType dataType,
+    HcclResult HcclCommunicator::HcclSelectAlg(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
                                                HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName)
     {
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
-                                                  std::string &algName, u32 &blockDim)
+    HcclResult HcclCommunicator::HcclCalcNumBlocks(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
+                                                  std::string &algName, u32 &numBlocks)
     {
         return HCCL_SUCCESS;
     }
@@ -504,6 +509,34 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitCCLbuffer(u64 inCCLbufferSize, u64 outCCLbufferSize)
     {
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    HcclResult HcclCommunicator::SetGroupMainStream(HcclRtStream sendRecvMainStream_){
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    HcclResult HcclCommunicator::CreateGroupSendNotifies(){
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    HcclResult HcclCommunicator::CreateGroupRecvNotifies(){
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    HcclResult HcclCommunicator::CreateGroupSendStreams(){
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    HcclResult HcclCommunicator::CreateGroupRecvStreams(){
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    HcclResult HcclCommunicator::GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte){
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    HcclResult HcclCommunicator::GroupSubstreamsSync(){
         return HCCL_E_NOT_SUPPORT;
     }
 
@@ -1225,7 +1258,7 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::SetAicpuNotifyInvaild()
+    HcclResult HcclCommunicator::SetAicpuNotifyInvalid()
     {
         return HCCL_SUCCESS;
     }
@@ -1543,8 +1576,55 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::SnapshotCheckPreProcess()
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::SnapshotCheckPostProcess()
+    {
+        return HCCL_SUCCESS;
+    }
+
     void HcclCommunicator::SetReleaseChannel(std::function<HcclResult()> releaseChannel)
     {
         return;
+    }
+
+    CCLBufferManager& HcclCommunicator::GetCCLbufferManager()
+    {
+        return cclBufferManager_;
+    }
+
+    void HcclCommunicator::SetHcclQos(u32 hcclQos)
+ 	{
+        HCCL_INFO("[HcclCommunicator][device][SetHcclQos] hcclQos[%u]", hcclQos);
+ 	    hcclQos_ = hcclQos;
+ 	}
+ 	 
+ 	u32 HcclCommunicator::GetHcclQos()
+ 	{
+        HCCL_INFO("[HcclCommunicator][device][GetHcclQos] hcclQos[%u]", hcclQos_);
+ 	    return hcclQos_;
+ 	}
+
+    HcclResult HcclCommunicator::InitSymmetricMemory()
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::DeregisterWindow(CommSymWindow winHandle)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
+    {
+        return HCCL_SUCCESS;
     }
 }

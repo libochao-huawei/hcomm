@@ -126,7 +126,7 @@ HcclResult TopoInfoExchangeDispather::PrepareResource(
         FdContext fdcontext;
         fdcontext.socket = it.second;
         if (topoInfoExchangeServer_->TopoInfoExchangeBase::isByMasterInfo_) {  // masterInfo场景下无法获取rankid
-            fdcontext.txState.indentify = socketIndex;
+            fdcontext.txState.identify = socketIndex;
         }
         fdcontext.txState.bodyLen = rankTableJson_.length();
         fdcontext.txState.data    = &rankTableJson_[0];
@@ -162,18 +162,18 @@ HcclResult TopoInfoExchangeDispather::PrepareLeaderResource(
  
     u32 socketIndex = 0;   // socket已经经过rankid（or serverip +deviceid排序）
     for (auto it : connectSockets) {
-        FdContext fdcontext;
-        fdcontext.socket = it.second;
+        FdContext fdContext;
+        fdContext.socket = it.second;
         if (topoInfoExchangeServer_->TopoInfoExchangeBase::isByMasterInfo_) {  // masterInfo场景下无法获取rankid
-            fdcontext.txState.indentify = socketIndex;
+            fdContext.txState.identify = socketIndex;
         }
-        fdcontext.txState.bodyLen = rankTableJson_.length();
-        fdcontext.txState.data    = &rankTableJson_[0];
-        fdcontext.txState.rankId  = socketIndex;
+        fdContext.txState.bodyLen = rankTableJson_.length();
+        fdContext.txState.data    = &rankTableJson_[0];
+        fdContext.txState.rankId  = socketIndex;
         socketIndex++;
         HCCL_DEBUG("[TopoInfoExchangeDispather][PrepareLeaderResource]socketIndex:%u, bodyLen:%u, data:%u", socketIndex,
-            fdcontext.txState.bodyLen, fdcontext.txState.data);
-        fdHandleToFdContextMap_.emplace(it.second->GetFdHandle(), fdcontext);
+            fdContext.txState.bodyLen, fdContext.txState.data);
+        fdHandleToFdContextMap_.emplace(it.second->GetFdHandle(), fdContext);
     }
 
     HCCL_DEBUG("[TopoInfoExchangeDispather][PrepareEpollResource]fdHandleToFdContextMap_ size[%d]",
@@ -334,8 +334,8 @@ HcclResult TopoInfoExchangeDispather::SendState::Send(std::shared_ptr<HcclSocket
     }
 
     if ((headerSended == headerLen) && (bodyLen == bodySended) &&
-        (indentify != UINT_MAX && indentifyLen != indentifySended)) {
-        CHK_RET(SendIndentify(socket));
+        (identify != UINT_MAX && identifyLen != identifySended)) {
+        CHK_RET(SendIdentify(socket));
     }
 
     return HCCL_SUCCESS;
@@ -351,9 +351,9 @@ HcclResult TopoInfoExchangeDispather::SendState::SendBody(std::shared_ptr<HcclSo
     return SendHelper(socket, reinterpret_cast<char *>(data), bodyLen, bodySended);
 }
 
-HcclResult TopoInfoExchangeDispather::SendState::SendIndentify(std::shared_ptr<HcclSocket> socket)
+HcclResult TopoInfoExchangeDispather::SendState::SendIdentify(std::shared_ptr<HcclSocket> socket)
 {
-    return SendHelper(socket, reinterpret_cast<char *>(&indentify), indentifyLen, indentifySended);
+    return SendHelper(socket, reinterpret_cast<char *>(&identify), identifyLen, identifySended);
 }
 
 HcclResult TopoInfoExchangeDispather::SendState::SendHelper(std::shared_ptr<HcclSocket> socket,

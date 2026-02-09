@@ -66,11 +66,15 @@ HcclResult AllGatherOperator::SelectAlg(const std::string& tag, const OpParam& p
         AlgTypeLevel1 algType1 = algType_.algoLevel1;
         auto level1Iter = HCCL_ALGO_LEVEL1_NAME_MAP.find(algType1);
         CHK_PRT_RET(level1Iter == HCCL_ALGO_LEVEL1_NAME_MAP.end(), 
-                    HCCL_ERROR("[[AllGatherSelector]level1: algType1[%u] is invalid.", algType1), HCCL_E_INTERNAL);
+                    HCCL_ERROR("[AllGatherSelector]level1: algType1[%u] is invalid.", algType1), HCCL_E_INTERNAL);
         newTag = tag + level1Iter->second + algName;
     }
+    if (algName == "AllGatherARSFor91093Executor") {
+        u32 ringSize = CalcOptimalIntraRingsize(param.DataDes.count, param.DataDes.dataType, HcclCMDType::HCCL_CMD_ALLGATHER);
+        newTag += std::to_string(ringSize);
+    }
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
-    HCCL_DEBUG("[AllGatherSelector][SelectAlg]newTag is [%s]", newTag);
+    HCCL_DEBUG("[AllGatherSelector][SelectAlg]newTag is [%s]", newTag.c_str());
     return ret;
 }
 
@@ -163,8 +167,8 @@ HcclResult AllGatherOperator::SelectAlgfor910B(const OpParam& param, std::string
     if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) {
         u32 contextNum = CalcContextNumForPipeline(HcclCMDType::HCCL_CMD_ALLGATHER);
         if (contextNum > HCCL_FFTS_CAPACITY) {
-            algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;;
-            HCCL_WARNING("[AllGatherOperator][SelectAlgfor910B] context num[%u] is out of capacityof FFTS+ graph[%u],"
+            algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;
+            HCCL_WARNING("[AllGatherOperator][SelectAlgfor910B] context num[%u] is out of capacity of FFTS+ graph[%u], "
                 "reset algorithm to HD.", contextNum, HCCL_FFTS_CAPACITY);
         }
     }
@@ -224,14 +228,14 @@ HcclResult AllGatherOperator::SelectAlgfor910B(const OpParam& param, std::string
     // 如果配置了aiv only,但是实际没有选择aiv算法,需要通过DFX打印出具体原因
     if (isOnlyAiv && !isAivRdmaMode) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");
-        CHK_PRT_RET(!IsSupportAIVCopy(param.DataDes.dataType), HCCL_ERROR("current data type[%s] not supported, support range:"
+        CHK_PRT_RET(!IsSupportAIVCopy(param.DataDes.dataType), HCCL_ERROR("current data type[%s] not supported, support range: "\
             "[int8, int16, int32, uint8, uint16, uint32, float16, float32, bfloat16]",
             GetDataTypeEnumStr(param.DataDes.dataType).c_str()), HCCL_E_NOT_SUPPORT);
         CHK_PRT_RET(!isMeshTopo, HCCL_ERROR("current topo type[%d] not supported", topoType_), HCCL_E_NOT_SUPPORT);
         CHK_PRT_RET(!isCCLBufferGE16M, HCCL_ERROR("current isOpbase[%d] or commInputSize[%llu] or commOutputSize[%llu] not supported",
             isOpbase, commInputSize, commOutputSize), HCCL_E_NOT_SUPPORT);
         CHK_PRT_RET(!isSingleMeshAggregation_ && multiModuleDiffDeviceNumMode_,
-            HCCL_ERROR("The number of cards between servers in a multi-server setup must be consistent."
+            HCCL_ERROR("The number of cards between servers in a multi-server setup must be consistent. "\
             "isSingleMeshAggregation_[%d] multiModuleDiffDeviceNumMode_[%d]",
             isSingleMeshAggregation_, multiModuleDiffDeviceNumMode_), HCCL_E_NOT_SUPPORT);
         return HCCL_E_NOT_SUPPORT;
@@ -275,8 +279,8 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
                         && serverNum_ > 1
                         && !GetExternalInputInterHccsDisable()
                         && ((
-                            (userRankSize_ <= ONE_EIGHTH_MAX_BLOCK_DIM && dataSize <= AIV_ALL_GATHER_A3_SMALL_RANKSIZE_ENTRY_SIZE) ||
-                            (userRankSize_ <= ONE_THIRD_MAX_BLOCK_DIM && dataSize <= AIV_ALL_GATHER_A3_MID_RANKSIZE_ENTRY_SIZE) ||
+                            (userRankSize_ <= ONE_EIGHTH_MAX_NUM_BLOCKS && dataSize <= AIV_ALL_GATHER_A3_SMALL_RANKSIZE_ENTRY_SIZE) ||
+                            (userRankSize_ <= ONE_THIRD_MAX_NUM_BLOCKS && dataSize <= AIV_ALL_GATHER_A3_MID_RANKSIZE_ENTRY_SIZE) ||
                             (dataSize <= AIV_ALL_GATHER_A3_LARGE_RANKSIZE_ENTRY_SIZE)
                         ) || isOnlyAiv);
 
@@ -309,9 +313,19 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_512_KB) &&
         (deviceNumPerAggregation_ > HCCL_DEVICE_NUM_TWO) && !GetExternalInputInterHccsDisable();
     bool smallCountOptimMultiServer = SmallCountOptimMultiServer(param);
+
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB) && !retryEnable_; // 涉及ROCE平面
-
+    // ARS 算法选择
+    bool isARSAlgo = multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_;
+    if (isARSAlgo) {
+        if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB || algType_.algoLevel1 ==
+            AlgTypeLevel1::ALG_LEVEL1_RING)) {
+            algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
+            HCCL_WARNING("[AllGatherOperator][SelectAlgfor91093] ARS only support NHR or RING in AlgoLevel1 "\
+                "yet, default is NHR.");
+        }
+    }
     // AHC 算法选择逻辑
     bool isAHCAlgo = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) || (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE);
     if (isAHCAlgo) {
@@ -323,14 +337,22 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
     isHccsPlusSio = false; //待适配
     if (isHccsPlusSio && isSupportHccsAndSio_) {
         algName = "AllGatherHccsSioExecutor";
-    } else if (multiModuleDiffDeviceNumMode_) {
-        algName = "AllGatherComm";
+    } else if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
+         algName = "AllGatherComm";
+    } else if (multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_) {
+        if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB || algType_.algoLevel1 ==
+            AlgTypeLevel1::ALG_LEVEL1_RING)) {
+            algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
+            HCCL_WARNING("[AllGatherOperator][SelectAlgfor91093] ARS only support NHR or RING in AlgoLevel1 "\
+                "yet, default is NHR.");
+        }
+        algName = "AllGatherARSFor91093Executor";
     } else if (smallCountOptimMultiPod) {
         algName = "AllGatherComm";
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;
     } else if (smallCountOptimMultiServer || smallCountOptimSingleServer) {
         algName = "AllGatherSmallCount";
-    } else if (param.supportZeroCopy &&
+    } else if ((param.supportSymmetricMemory || param.supportZeroCopy) &&
         (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize * deviceNumPerAggregation_ > HCCL_MID_COUNT_16_MB)) {
         const u32 SEVER_NUM_FOUR = 4;
         constexpr u64 RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN = 2 * 1024 * 1024;
@@ -366,13 +388,14 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
     // 如果配置了aiv only,但是实际没有选择aiv算法,需要通过DFX打印出具体原因
     if (isOnlyAiv && !isAivMode) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");
-        CHK_PRT_RET(!IsSupportAIVCopy(param.DataDes.dataType), HCCL_ERROR("current data type[%s] not supported, support range:"
+        CHK_PRT_RET(!IsSupportAIVCopy(param.DataDes.dataType), HCCL_ERROR("current data type[%s] not supported, support range: "\
             "[int8, int16, int32, uint8, uint16, uint32, float16, float32, bfloat16]",
             GetDataTypeEnumStr(param.DataDes.dataType).c_str()), HCCL_E_NOT_SUPPORT);
         CHK_PRT_RET(!isAivSingleNode && !isAivCrossNode,
             HCCL_ERROR("not is aiv single or cross node. serverNum_[%u] isOpbase[%d] superPodNum_[%u]",
             serverNum_, isOpbase, superPodNum_), HCCL_E_NOT_SUPPORT);
         CHK_PRT_RET(retryEnable_, HCCL_ERROR("retryEnable_[%d] is true.", retryEnable_), HCCL_E_NOT_SUPPORT);
+        CHK_PRT_RET(multiModuleDiffDeviceNumMode_, HCCL_ERROR("multiModuleDiffDeviceNumMode [%d] not supported", multiModuleDiffDeviceNumMode_), HCCL_E_NOT_SUPPORT);
         return HCCL_E_NOT_SUPPORT;
     }
     HCCL_INFO("[SelectAlgfor91093] AllGather SelectAlgfor91093 is algName [%s].", algName.c_str());

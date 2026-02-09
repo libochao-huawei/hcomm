@@ -63,6 +63,11 @@ typedef enum tagRtRunMode {
     RT_RUN_MODE_RESERVED
 } rtRunMode;
 
+typedef enum tagRtXpuDevType {
+    RT_DEV_TYPE_DPU = 0,
+    RT_DEV_TYPE_REV
+} rtXpuDevType;
+
 typedef enum tagRtAicpuDeployType {
     AICPU_DEPLOY_CROSS_OS = 0x0,
     AICPU_DEPLOY_CROSS_PROCESS,
@@ -702,16 +707,6 @@ RTS_API rtError_t rtGetVisibleDeviceIdByLogicDeviceId(const int32_t logicDeviceI
  * @return RT_ERROR_INVALID_VALUE for error input
  */
 RTS_API rtError_t rtGetAllUtilizations(const int32_t devId, const rtTypeUtil_t kind, uint8_t * const util);
-/**
- * @ingroup
- * @brief get serverid by sdid
- * @param [int] sdid   sdid
- * @param [out] *srvId serverid
- * @return RT_ERROR_NONE for ok
- * @return RT_ERROR_INVALID_VALUE for error input
- */
-RTS_API rtError_t rtGetServerIDBySDID(uint32_t sdid, uint32_t *srvId);
-
 /**
  * @ingroup dvrt_dev
  * @brief set default device id

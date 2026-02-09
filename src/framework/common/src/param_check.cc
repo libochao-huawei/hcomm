@@ -453,3 +453,13 @@ HcclResult HcclParseRanktable(const std::string &rankTableM, const std::string &
         HCCL_ERROR_CODE(ret)), HCCL_E_INTERNAL);
     return HCCL_SUCCESS;
 }
+
+bool IsSupportHCCLV2(const char *socNamePtr)
+{
+    std::string targetChipVerStr = socNamePtr;
+    HCCL_DEBUG("[%s]SocVersion = %s.", __func__, targetChipVerStr.c_str());
+    if (targetChipVerStr.find("Ascend950") != std::string::npos) {
+        return true;
+    }
+    return false;
+}

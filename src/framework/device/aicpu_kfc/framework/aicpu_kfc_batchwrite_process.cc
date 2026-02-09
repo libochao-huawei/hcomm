@@ -225,7 +225,7 @@ HcclResult OrchestrateSdmaSqe(const OpParam &param, hccl::HcclCommAicpu &comm)
     for (u32 i = 0U; i < sqeCnt; ++i) {
         const uint8_t *sqe = newSqAddr + i * AC_SQE_SIZE;
         AddOneMemcpySqeV1(streamInfo.id(), taskId++, nullptr, 0U, ACL_DT_UNDEFINED, ACL_RT_MEMCPY_SDMA_AUTOMATIC_SUM,
-                          nullptr, 0U, 0U, 0U, 0U, static_cast<uint8_t>(LinkType::LINK_RESERVED), sqe, &sqeType);
+                          nullptr, 0U, 0U, 0U, 0U, static_cast<uint8_t>(LinkType::LINK_RESERVED), sqe, &sqeType, SDMA_QOS_DEFAULT);
     }
 
     u32 &head = sqeBuffer.sqHead;
@@ -320,9 +320,9 @@ AicpuServerRole AicpuKfcBatchwriteProcess::GetVerifiedServerRole(const AicpuComC
         }
     }
     // 老驱动包无法获取GetBlockNum，使用默认值6
-    const u32 blockDim = HcclAicpuUtils::GetBlockNum(6U);
-    if (opThreadIdx.load(std::memory_order_acquire) == blockDim) {
-        HCCL_INFO("Clear thread index at last with block dim %u.", blockDim);
+    const u32 numBlocks = HcclAicpuUtils::GetBlockNum(6U);
+    if (opThreadIdx.load(std::memory_order_acquire) == numBlocks) {
+        HCCL_INFO("Clear thread index at last with block dim %u.", numBlocks);
         opThreadIdx.store(0U, std::memory_order_relaxed);
     }
     return role;

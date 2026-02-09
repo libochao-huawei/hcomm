@@ -21,7 +21,7 @@
 
 namespace hccl {
 
-struct HcclMemHandle {
+struct HcclMemoryHandle {
     void* addr {nullptr};
     uint64_t size {0};
     HcclMemType memType {HCCL_MEM_TYPE_DEVICE};
@@ -30,14 +30,14 @@ struct HcclMemHandle {
 
 class CommMemMgr {
 public:
-    using Handle = std::shared_ptr<HcclMemHandle>;
+    using Handle = std::shared_ptr<HcclMemoryHandle>;
     using MemKey = hccl::BufferKey<uintptr_t, uint64_t>;
     using Table  = hccl::RmaBufferMgr<MemKey, Handle>;
     CommMemMgr() = default;
     ~CommMemMgr() = default;
 
      // cclbuffer内存
-    void CommSetHcclBufferSize(uint64_t size);
+    void CommSetHcclBufferManager(CCLBufferManager &bufferManager);
     HcclResult GetHcclBuffer(CommBuffer *buffer);
     
     // 用户注册/反注册内存
@@ -54,15 +54,14 @@ private:
 
     // cclbuffer内存
     std::mutex bufferMutex_;
-    uint32_t bufferSize_;
     CCLBufferManager bufferManager_;
 
     // 用户绑定内存
     std::mutex memMutex_;
     // 每个 tag 一份 registry
     std::unordered_map<std::string, TagRegistry> tagRegs_;
-    // 每个tag n个 HcclMemHandle
-    std::unordered_map<std::string, std::vector<std::shared_ptr<HcclMemHandle>>> opBindings_;
+    // 每个tag n个 HcclMemoryHandle
+    std::unordered_map<std::string, std::vector<std::shared_ptr<HcclMemoryHandle>>> opBindings_;
 };
 }
 

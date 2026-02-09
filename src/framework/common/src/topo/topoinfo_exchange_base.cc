@@ -73,7 +73,7 @@ void TopoInfoExchangeBase::PrintRecvFailReasons(std::shared_ptr<HcclSocket> sock
         LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), ret);
     HCCL_ERROR("Current rank get socket with server[%s] success, but wait for recv rankTable from server failed, maybe due to following reasons:",
         socket->GetRemoteIp().GetReadableIP());
-    HCCL_ERROR("1. client wait for recv timeout, please check [ERROR] info in server[%s], wheather all ranks were executed to create the communication",
+    HCCL_ERROR("1. client wait for recv timeout, please check [ERROR] info in server[%s], whether all ranks were executed to create the communication",
         socket->GetRemoteIp().GetReadableIP());
     HCCL_ERROR("2. in large-scale cluster scenarios, occasional connection failures may occur due to the maximum connection limit in the system configuration. ");
     HCCL_ERROR("   these issues can be resolved by modifying the system configuration in all node: `sysctl -w net.core.somaxconn=65535` and `sysctl -w net.ipv4.tcp_max_syn_backlog=65535`");
@@ -81,7 +81,7 @@ void TopoInfoExchangeBase::PrintRecvFailReasons(std::shared_ptr<HcclSocket> sock
 
 HcclResult TopoInfoExchangeBase::RecvClusterInfoMsg(std::shared_ptr<HcclSocket> socket, RankTable_t &clusterInfo)
 {
-    const u32 recvBufferLimit = 10 * 1024 * 1024; // 10 * 1024 * 1024 = 10MB
+    const u32 recvBufferLimit = 100 * 1024 * 1024; // 100 * 1024 * 1024 = 100MB
     u32 msgLen = 0;
     HcclResult ret = socket->Recv(reinterpret_cast<char *>(&msgLen), sizeof(msgLen));
     if (ret == HCCL_E_TIMEOUT) {
@@ -155,8 +155,8 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfo(std::shared_ptr<HcclSocket> soc
 {
     CHK_RET(RecvClusterInfoMsg(socket, clusterInfo));
     if (isByMasterInfo_) {
-        u32 indentify = 0;
-        auto ret = socket->Recv(reinterpret_cast<char *>(&indentify), sizeof(indentify));
+        u32 identify = 0;
+        auto ret = socket->Recv(reinterpret_cast<char *>(&identify), sizeof(identify));
         if (ret == HCCL_E_TIMEOUT) {
             RPT_INPUT_ERR(true,
                 "EI0015",
@@ -164,10 +164,10 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfo(std::shared_ptr<HcclSocket> soc
                 std::vector<std::string>({BLOCK_RECV_TIMEOUT_REASON}));
         }
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s][%s] receive indentify from fdhandle failed", LOG_KEYWORDS_INIT_GROUP.c_str(),
+            HCCL_ERROR("[%s][%s] receive identify from fdhandle failed", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_DETECT.c_str()),
             HCCL_E_INTERNAL);
-        identifierNum_ = indentify;
+        identifierNum_ = identify;
     }
     currentStep_++;
     return HCCL_SUCCESS;

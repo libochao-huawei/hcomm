@@ -1,0 +1,22 @@
+target_sources(hccl_v2_alg_frame PRIVATE
+        execute_selector.cc
+        base_selector.cc
+        env_selector.cc
+        mc2_selector.cc
+        selector_registry.cc
+        auto_selector_base.cc
+        all_gather_auto_selector.cc
+        all_gather_v_auto_selector.cc
+        all_reduce_auto_selector.cc
+        reduce_scatter_auto_selector.cc
+        alltoall_auto_selector.cc
+        alltoallv_auto_selector.cc
+        alltoallvc_auto_selector.cc
+        batch_send_recv_auto_selector.cc
+        broadcast_auto_selector.cc
+        reduce_auto_selector.cc
+        scatter_auto_selector.cc
+        send_recv_auto_selector.cc
+        all_gather_v_auto_selector.cc
+        reduce_scatter_v_auto_selector.cc
+)

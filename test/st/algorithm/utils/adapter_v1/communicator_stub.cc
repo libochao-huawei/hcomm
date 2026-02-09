@@ -606,7 +606,7 @@ HcclResult HcclCommunicator::ExecOp(HcclCMDType opType, OpParam &opParam, bool i
             algOperator->PrepareCommInfoToDevice(algName, resMap_[newTag]);
         }
         if (aiCoreLimit > 0 && aiCoreLimit < 48) {
-            CHK_RET(algOperator->SetBlockDim(aiCoreLimit));
+            CHK_RET(algOperator->SetNumBlocks(aiCoreLimit));
         }
 
         GetAivTag(algName, opParam.isCapture, opParam.aivTag);

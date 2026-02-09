@@ -237,8 +237,6 @@ HcclResult ParseEntryLogEnable();
 
 HcclResult ParseOpExpansion();
 
-HcclResult ParseAicpuCacheEnable();
-
 HcclResult ResetInitState();
 
 HcclResult ParseInterLinkType();

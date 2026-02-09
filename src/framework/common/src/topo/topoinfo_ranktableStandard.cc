@@ -153,7 +153,7 @@ HcclResult TopoinfoRanktableStandard::GetHcomInfo(hccl::HcclCommParams &params, 
     HCCL_DEBUG("%s.json -> para_plane_location: %s", fileName_.c_str(), paraPlaneLocation.c_str());
 
     if (paraPlaneLocation == "host") { // 不支持host 网卡
-        HCCL_ERROR("[Get][HcomInfo]errNo[0x%016llx] host nic is unsupport", HCOM_ERROR_CODE(HCCL_E_PARA));
+        HCCL_ERROR("[Get][HcomInfo]errNo[0x%016llx] host nic is unsupported", HCOM_ERROR_CODE(HCCL_E_PARA));
         return HCCL_E_PARA;
     }
 

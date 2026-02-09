@@ -30,7 +30,6 @@ dataType, reduceOp, root, tag, isOpBase, \
 step, deterministic
 
 constexpr uint32_t SIZE_OF_INT32 = 4;
-constexpr uint32_t SYNCALL_BUFF_START = 2560 * 1024;
 
 class AivCrossNode91093Base {
 public:
@@ -92,9 +91,9 @@ public:
     __aicore__ inline void CpGM2GM(__gm__ T *outputGM, __gm__ T *inputGM, uint64_t count, bool atomic = false,
         uint32_t atomicOp = 0);
 
-    template<HardEvent event> 
+    template<HardEvent event>
     __aicore__ inline void SyncFunc();
-   
+
     __aicore__ inline void SingleRecordBatchWaitCoreLevel(int32_t curTag, bool isTheSingleCore,
         AivNotifyType notifyType = AivNotifyType::ACK);
 
@@ -120,7 +119,7 @@ public:
 
     __aicore__ inline void WaitNv1(uint32_t tag, GM_ADDR recordAddr, bool ifCoreLevel,
         AivNotifyType notifyType = AivNotifyType::ACK);
-    
+
     __aicore__ inline void Wait1vN(uint32_t tag, CommPattern pattern, bool ifClear = true,
         AivNotifyType notifyType = AivNotifyType::ACK);
 
@@ -178,7 +177,7 @@ public:
     uint32_t unitSize_;
  
     uint64_t len_;
-    int32_t blockdim_;
+    int32_t numBlocks_;
     
     TPipe pipe;
 
@@ -221,6 +220,7 @@ public:
     uint32_t multiOffset;
     uint32_t pingpongOffset;
     uint32_t countOffset;
+    uint32_t syncAllOffset;
 };
 
 __aicore__ inline uint64_t AivCrossNode91093Base::CeilDiv(uint64_t a, uint64_t b)
@@ -309,7 +309,7 @@ __aicore__ inline void AivCrossNode91093Base::CalcNumTargetsAndTargetRanksDeter(
 
 __aicore__ inline void AivCrossNode91093Base::CalcNumTargetsAndTargetRanksGroup() 
 {
-    blockNumPerGroup = blockdim_ / blockGroup_; // 多少个aiv服务同一个对端
+    blockNumPerGroup = numBlocks_ / blockGroup_; // 多少个aiv服务同一个对端
     blockIdxInGroup = (GetBlockIdx() /blockGroup_) % blockNumPerGroup;
     numTargets = (rankSize_) / blockGroup_;
     uint32_t tailRankSize = (rankSize_) % blockGroup_;
@@ -384,7 +384,7 @@ __aicore__ inline void AivCrossNode91093Base::Init(GM_ADDR buffOut0, uint32_t ra
     rankSize_ = rankSize;
     useDoubleBuffer_ = useDoubleBuffer;
     usedBlockNum_ = block_num;
-    blockdim_ = block_num;
+    numBlocks_ = block_num;
     
     InitSetCheckClearArgsTensor();
     pipe.InitBuffer(offsetArgsBuf, UB_FLAG_SIZE * MAX_TARGET_NUM);
@@ -397,11 +397,14 @@ __aicore__ inline void AivCrossNode91093Base::Init(GM_ADDR buffOut0, uint32_t ra
 __aicore__ inline void AivCrossNode91093Base::InitOffset()
 {
     int32_t notifyArea = MAX_RANK_SIZE_A3;
-    if (rankSize_ * BLOCK_DIM_FOUR_PER_RANK_A3 < MAX_RANK_SIZE_A3) {
-        notifyArea = rankSize_ * BLOCK_DIM_FOUR_PER_RANK_A3;
+    if (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 < MAX_RANK_SIZE_A3) {
+        notifyArea = rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3;
     }
-    localOffset = (notifyArea * FLAG_BUF_NUM) * FLAG_SIZE;
-    multiOffset = MAX_BLOCK_DIM * DOUBLE * FLAG_SIZE+ localOffset;
+    localOffset = (notifyArea  * FLAG_BUF_NUM) * FLAG_SIZE;
+    multiOffset = MAX_NUM_BLOCKS * DOUBLE * FLAG_SIZE+ localOffset;
+    pingpongOffset = multiOffset + DOUBLE * DOUBLE * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
+    countOffset = DOUBLE * pingpongOffset;
+    syncAllOffset = countOffset + notifyArea * FLAG_SIZE;
 }
 
 template<typename T>
@@ -415,7 +418,7 @@ __aicore__ inline void AivCrossNode91093Base::InitDeter(GM_ADDR buffOut0, uint32
     reduceOp_ = reduceOp;
     useDoubleBuffer_ = useDoubleBuffer;
     usedBlockNum_ = block_num;
-    blockdim_ = block_num;
+    numBlocks_ = block_num;
     pingpongOffset = 0;
 
     InitSetCheckClearArgsTensor();
@@ -438,9 +441,9 @@ __aicore__ inline void AivCrossNode91093Base::InitSuperKernel(GM_ADDR hiddenInpu
     tag_ = args->tag;
     dataType_ = args->dataType;
     unitSize_ = args->unitSize;
-    blockdim_ = args->blockdim;
+    numBlocks_ = args->numBlocks;
     useDoubleBuffer_ = useDoubleBuffer;
-    usedBlockNum_ = blockdim_;
+    usedBlockNum_ = numBlocks_;
     flagAddrSelf_ = args->buffersOut[0];
     dataAddrSelf_ = args->buffersIn[0];
     commAddr_ = args->buffersOut[1];
@@ -451,7 +454,7 @@ __aicore__ inline void AivCrossNode91093Base::InitSuperKernel(GM_ADDR hiddenInpu
         useDoubleBuffer_ = false;
     }
 
-    blockGroup_ = rankSize_ > blockdim_ ? blockdim_ : rankSize_;
+    blockGroup_ = rankSize_ > numBlocks_ ? numBlocks_ : rankSize_;
     
     InitSetCheckClearArgsTensor();
     pipe.InitBuffer(offsetArgsBuf, UB_FLAG_SIZE * MAX_TARGET_NUM);
@@ -524,7 +527,7 @@ __aicore__ inline void AivCrossNode91093Base::Init(GM_ADDR buffOut0, uint32_t ra
     reduceOp_ = reduceOp;
     useDoubleBuffer_ = useDoubleBuffer;
     usedBlockNum_ = block_num;
-    blockdim_ = block_num;
+    numBlocks_ = block_num;
 
     InitSetCheckClearArgsTensor();
     blockNumPerGroup = block_num / blockGroup_; // 多少个aiv服务同一个对端
@@ -725,7 +728,7 @@ __aicore__ inline void AivCrossNode91093Base::WaitNv1(uint32_t tag, GM_ADDR reco
     __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(recordAddr + waitOffset);
     WaitSignalValue(ctrlFlagGM, localCheckTensor, tag);
 }
-//是否直接清零
+
 __aicore__ inline void AivCrossNode91093Base::Wait1vN(uint32_t tag, CommPattern pattern, bool ifClear, AivNotifyType notifyType)
 {
     AIV_INFO("[Wait1vN]tag is [%u], pattern is [%d], ifClear is [%d], notifyType is [%d] \n",
@@ -773,7 +776,7 @@ __aicore__ inline void AivCrossNode91093Base::SetSyncRecord(int32_t value, GM_AD
         value, setAddr, highOrderOff, lowOrderOff, ifPingpong);
     int32_t ppOffset = ifPingpong ? pingpongOffset : 0;
 
-    int32_t recordOffset = (highOrderOff * MAX_BLOCK_DIM + lowOrderOff) * FLAG_SIZE;
+    int32_t recordOffset = (highOrderOff * MAX_NUM_BLOCKS + lowOrderOff) * FLAG_SIZE;
 
     __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(setAddr + localOffset + ppOffset + recordOffset);
     SetSignalValue(ctrlFlagGM, localSetTensor, value);
@@ -787,7 +790,7 @@ __aicore__ inline void AivCrossNode91093Base::WaitSyncFlag(int32_t value, GM_ADD
         value, waitAddr, highOrderOff, lowOrderOff, ifPingpong);
     int32_t ppOffset = ifPingpong ? pingpongOffset : 0;
 
-    int32_t waitOffset = (highOrderOff * MAX_BLOCK_DIM + lowOrderOff) * FLAG_SIZE;
+    int32_t waitOffset = (highOrderOff * MAX_NUM_BLOCKS + lowOrderOff) * FLAG_SIZE;
 
     __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(waitAddr + localOffset + ppOffset + waitOffset);
     WaitSignalValue(ctrlFlagGM, localCheckTensor, value);

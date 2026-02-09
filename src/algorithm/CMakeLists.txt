@@ -86,7 +86,6 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../pub_inc
         ${CMAKE_CURRENT_SOURCE_DIR}/../../include
         ${CMAKE_CURRENT_SOURCE_DIR}/../../include/hccl
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../pub_inc
         ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc
         ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/hccl
 

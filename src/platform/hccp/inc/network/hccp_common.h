@@ -1,12 +1,11 @@
 /**
- * @file hccp_common.h
- * @brief This module provides common structure about sockets and rdma for HCCL
- * @version Copyright (c) Huawei Technologies Co., Ltd. 2019-2025. All rights reserved.
- * @author
- * @date 2019-03-25
- * @defgroup libsocket socket interface
- * @defgroup librdma rdma interface
- * @defgroup libinit init interface
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #ifndef __HCCP_COMMON_H__
@@ -19,7 +18,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 #define HCCP_ATTRI_VISI_DEF __attribute__ ((visibility ("default")))
 
@@ -112,6 +110,7 @@ enum NetworkMode {
  */
 enum ProtocolTypeT {
     PROTOCOL_RDMA = 0,
+    PROTOCOL_UDMA,
     PROTOCOL_UNSUPPORT,
 };
 
@@ -145,7 +144,7 @@ enum HccnCfgKey {
 
 /**
  * @ingroup libinit
- * ip address.
+ * ip address
  */
 union HccpIpAddr {
     struct in_addr addr;
@@ -291,7 +290,7 @@ enum RaSendFlags {
     RA_SEND_FENCE = 1 << 0, /**< RDMA operation with fence */
     RA_SEND_SIGNALED = 1 << 1, /**< RDMA operation with signaled */
     RA_SEND_SOLICITED = 1 << 2, /**< RDMA operation with solicited */
-    RA_SEND_INLINE = 1 << 3, /**< RDMA operation with inline */
+    RA_SEND_INLINE = 1 << 3, /**< RDMA operation with*/
 };
 
 /**
@@ -425,7 +424,7 @@ enum RaAccessFlags {
  * @ingroup librdma
  * wqe template info
  */
-struct WqeInfo {
+struct WqeInfoT {
     unsigned int sqIndex; /**< index of sq */
     unsigned int wqeIndex; /**< index of wqe */
 };
@@ -445,7 +444,7 @@ struct DbInfo {
  */
 struct SendWrRsp {
     union {
-        struct WqeInfo wqeTmp; /**< wqe template info */
+        struct WqeInfoT wqeTmp; /**< wqe template info */
         struct DbInfo db; /**< doorbell info */
     };
 };
@@ -657,6 +656,7 @@ enum SaveSnapshotAction {
     SAVE_SNAPSHOT_ACTION_POST_PROCESSING = 1,
     SAVE_SNAPSHOT_ACTION_MAX,
 };
+
 #ifdef __cplusplus
 }
 #endif

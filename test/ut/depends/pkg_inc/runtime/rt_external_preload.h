@@ -1,8 +1,13 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
- * Description: param rt_preload_task.h
- * Create: 2023-06-02
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
+
 #ifndef CCE_RUNTIME_RT_EXTERNAL_PRELOAD_H
 #define CCE_RUNTIME_RT_EXTERNAL_PRELOAD_H
 
@@ -33,7 +38,7 @@ typedef struct {
     uint64_t kernelBinOffset;
     uint64_t argsOffset;                           // need add rtTaskInput_t.argOffset
     uint32_t literalBuffLen;
-    uint16_t blockDim;
+    uint16_t numBlocks;
     uint8_t kernelFlag;
 } rtAicoreTaskParam_t;
 
@@ -56,7 +61,7 @@ typedef struct {
     uint8_t vld;
     uint32_t codeSize;
     uint32_t dynTaskDescSize;
-    uint32_t blockDim;
+    uint32_t numBlocks;
     uint32_t taskPcOffset;
 } rtHwtsDynamicTaskDesc_t;
 

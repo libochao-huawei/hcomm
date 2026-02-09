@@ -1,4 +1,12 @@
-
+# -----------------------------------------------------------------------------------------------------------
+# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# -----------------------------------------------------------------------------------------------------------
 set(DEFAULT_BUILD_TYPE "Release")
 
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -75,6 +83,7 @@ set(HOST_STUBS
     unified_dlog
     mmpa
     ascendcl
+    tsdclient
 )
 endif()
 
@@ -159,6 +168,7 @@ set(INSTALL_LIBRARY_DIR hcomm/lib64)
 set(INSTALL_INCLUDE_DIR hcomm/include)
 set(INSTALL_PKG_INCLUDE_DIR hcomm/pkg_inc)
 set(INSTALL_CCL_KERNEL_JSON_DIR hcomm/built-in/data/op/aicpu)
+set(INSTALL_DPU_KERNEL_JSON_DIR hcomm/built-in/data/op/dpu)
 set(INSTALL_DEVICE_TAR_DIR hcomm/Ascend/aicpu)
 
 set(CMAKE_SKIP_RPATH TRUE)

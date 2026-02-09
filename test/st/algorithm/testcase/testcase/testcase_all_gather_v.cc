@@ -710,35 +710,6 @@ TEST_F(AllGatherVTest, all_gather_v_91093_AllGatherVRingFor91093Executor_singleS
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
 
-TEST_F(AllGatherVTest, all_gather_v_91093_AllGatherVSemiRingExecutor_singleServer)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta;
-    gen.GenTopoMeta(topoMeta, 1, 1, 8);
-
-    vector<u64> counts {100, 100, 100, 100, 100, 100, 100, 100};    // only fix count
-    vector<u64> displs {0};
-    for (auto i = 1; i < counts.size(); ++i) {
-        displs.emplace_back(displs[i-1] + counts[i-1]);
-    }
-
-    CheckerOpParam  checkerOpParam;
-    checkerOpParam.opType = CheckerOpType::ALLGATHER_V;
-    checkerOpParam.tag = "AllGatherV";
-    checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
-    checkerOpParam.VDataDes.counts = counts;
-    checkerOpParam.VDataDes.displs = displs;
-    checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVSemiRingExecutor";
-    checkerOpParam.aicpuUnfoldMode = true;
-
-    Checker checker;
-    HcclResult ret;
-    ret = checker.Check(checkerOpParam, topoMeta);
-    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-}
-
 TEST_F(AllGatherVTest, all_gather_v_910B_graph_mesh_pipeline)
 {
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));

@@ -100,7 +100,7 @@ extern HcclResult HcclCommInitRootInfoConfig(uint32_t nRanks, const HcclRootInfo
  * @brief Set deterministic calculate
  *
  * @param config A struct identifying the Config
- * @param configValue An interger identifying the identify for the config.
+ * @param configValue An integer identifying the identify for the config.
  */
 
 extern HcclResult HcclSetConfig(HcclConfig config, HcclConfigValue configValue) HCOMM_WEAK_SYMBOL;
@@ -146,7 +146,7 @@ extern HcclResult HcclBarrier(HcclComm comm, aclrtStream stream) HCOMM_WEAK_SYMB
 /**
  * @brief Destroy HCCL comm
  *
- * @param comm A pointer identifying the communication resource targetting
+ * @param comm A pointer identifying the communication resource targeting
  * @return HcclResult
  * @see HcclCommInitClusterInfo()
  */
@@ -219,6 +219,9 @@ inline void HcclCommConfigInit(HcclCommConfig *config)
     config->hcclAlgo[0] = '\0';
     config->hcclRetryEnable[0] = '\0';
     config->hcclRetryParams[0] = '\0';
+    config->hcclBufferName[0] = '\0';
+    config->hcclQos = HCCL_COMM_QOS_CONFIG_NOT_SET;
+    config->hcclSymWinMaxMemSizePerRank = HCCL_DEFAULT_SYMMETRIC_MEMORY_STRIDE;
 }
 
 /**
@@ -256,7 +259,7 @@ extern HcclResult HcclCommUnsetMemoryRange(HcclComm comm, void *baseVirPtr) HCOM
  * @param virPtr The virtual address memory range in @ref HcclCommSetMemoryRange()
  * @param size The length of activate memory
  * @param offset the offset of physical memory, now only support 0
- * @param handle the physical memory hande
+ * @param handle the physical memory handle
  * @param flags the flag of physical memory, now only support 0
  */
 extern HcclResult HcclCommActivateCommMemory(HcclComm comm, void *virPtr, size_t size, size_t offset, aclrtDrvMemHandle handle, uint64_t flags) HCOMM_WEAK_SYMBOL;
@@ -276,6 +279,50 @@ extern HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr) HCOM
  * @param nRanks A integer identifying the rank size of the ranks need switch.
  */
 extern HcclResult HcclCommWorkingDevNicSet(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks) HCOMM_WEAK_SYMBOL;
+
+/**
+ * @brief Group Start
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
+ */
+extern HcclResult HcclGroupStart();
+
+/**
+ * @brief Group End
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
+ */
+extern HcclResult HcclGroupEnd();
+
+/**
+ * @brief Register a memory window for HCCL communication.
+ *
+ * @param comm A pointer identifying the communication resource based on.
+ * @param addr A pointer identifying the user memory address.
+ * @param size A size_t identifying the size of memory window.
+ * @param winHandle A pointer identifying the registered memory window handle.
+ * @param flag The flag of this memory window, now only support 0
+ * @return HcclResult
+ */
+extern HcclResult HcclCommSymWinRegister(HcclComm comm, void *addr, uint64_t size, CommSymWindow *winHandle, uint32_t flag);
+
+/**
+ * @brief Deregister a memory window for HCCL communication.
+ *
+ * @param winHandle A pointer identifying the registered memory window handle.
+ * @return HcclResult
+ */
+extern HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle);
+
+/**
+ * @brief Get symmetric memory offset and window for HCCL communication.
+ *
+ * @param comm A pointer identifying the communication resource based on.
+ * @param ptr A pointer identifying the user memory address.
+ * @param size A size_t identifying the size of memory window.
+ * @param winHandle A pointer identifying the registered memory window handle.
+ * @param offset A size_t identifying the offset of symmetric memory heap.
+ * @return HcclResult
+ */
+extern HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
 
 #ifdef __cplusplus
 }

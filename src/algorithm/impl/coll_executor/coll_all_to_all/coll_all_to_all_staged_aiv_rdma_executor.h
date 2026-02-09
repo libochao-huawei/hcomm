@@ -38,7 +38,7 @@ private:
     void CalcInterMeshAggregationAlltoAllMemInfo(const OpParam &param, 
         std::map<u32, std::list<OneSendRecvAddrInfo>> &sendAddrInfosInter,
         std::map<u32, std::list<OneSendRecvAddrInfo>> &recvAddrInfosInter);
-    HcclResult CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize = 0, HcclCMDType cmdType = HcclCMDType::HCCL_CMD_INVALID) override;
+    HcclResult CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize = 0, HcclCMDType cmdType = HcclCMDType::HCCL_CMD_INVALID) override;
 
     /* *************** 算法参数 *************** */
     u32 sendDataSize_ = 0;
