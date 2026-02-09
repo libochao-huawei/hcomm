@@ -944,61 +944,6 @@ if(NOT KERNEL_MODE)
 endif()
 
 if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
-    target_include_directories(ccl_kernel PRIVATE
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
-        ${HCCL_BASE_DIR}/platform/
-        ${HCCL_BASE_DIR}/platform/inc/
-        ${HCCL_BASE_DIR}/platform/inc/adapter
-        ${HCCL_BASE_DIR}/platform/resource/transport/heterog/
-        ${HCCL_BASE_DIR}/platform/resource/transport/host/
-        ${HCCL_BASE_DIR}/platform/resource/transport/
-        ${HCCL_BASE_DIR}/platform/resource/notify/
-        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
-        ${HCCL_BASE_DIR}/platform/task
-        ${HCCL_BASE_DIR}/platform/common
-        ${HCCL_BASE_DIR}/platform/common/unique
-        ${hccl_include_list}
-        ${HCCL_BASE_DIR}/../include
-        ${HCCL_BASE_DIR}/../include/hccl
-        ${HCCL_BASE_DIR}/../pkg_inc/
-        ${HCCL_BASE_DIR}/../pkg_inc/hccl/
-        ${HCCL_BASE_DIR}/pub_inc
-        ${HCCL_BASE_DIR}/pub_inc/aicpu
-
-        ${HCCL_BASE_DIR}/framework/device/
-        ${HCCL_BASE_DIR}/framework/device/common
-        ${HCCL_BASE_DIR}/framework/device/inc
-        ${HCCL_BASE_DIR}/framework/device/framework
-
-        # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-
-        # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
-
-        # 包间接口
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
-
-        # driver头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver
-
-        # ascendc
-        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
-
-        ${HCCL_BASE_DIR}/../externel_depends/tsch/
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
-        ${THIRD_PARTY_NLOHMANN_PATH}
-        )
     if(BUILD_OPEN_PROJECT)
         set(CMAKE_CXX_FLAGS "")
         target_compile_definitions(ccl_kernel PRIVATE
