@@ -127,6 +127,10 @@ namespace hccl
         ListCommonInit(&opResDeviceParaPtr_->localRes.nextTagRes, &opResPara_.localRes.nextTagRes);
         opResPara_.remoteResNum = 0;
         CHK_RET(GetOpCountInfo(opResPara_.opCounterInfo));
+        if (deviceType_ == DevType::DEV_TYPE_910B && GetAicpuUnfoldConfig() == false && IsOneSidedIdentifier(identifier_)) {
+            // A2单边通信域在非aicpu展开场景下不初始化host与device侧的数据同步内存
+            return HCCL_SUCCESS;
+        }
         CHK_RET(CreateWorkSpace(sizeof(HcclOpResParam), opResDevicePara_));
 
         opResDeviceParaPtr_ = static_cast<HcclOpResParam *>(opResDevicePara_.ptr());
@@ -579,6 +583,10 @@ namespace hccl
     {
         HCCL_INFO("%s aicpuUnfold[%d], deviceType_[%d], isHaveCpuRank_[%d]",
             __func__, GetAicpuUnfoldConfig(), deviceType_, isHaveCpuRank_);
+        if (deviceType_ == DevType::DEV_TYPE_910B && GetAicpuUnfoldConfig() == false && IsOneSidedIdentifier(identifier_)) {
+            // A2单边通信域在非aicpu展开场景下不初始化HDC资源
+            return false;
+        }
         return (GetAicpuUnfoldConfig() == true) ||
             ((deviceType_ == DevType::DEV_TYPE_910_93) || (deviceType_ == DevType::DEV_TYPE_910B) ||
             Is310P3Common(isHaveCpuRank_, deviceType_));
