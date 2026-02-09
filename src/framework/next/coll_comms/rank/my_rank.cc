@@ -212,7 +212,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         ret = endpointPair->CreateChannel(epHandle, engine, &hcommDescs[i], channelHandles + i);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to create channel, channelIndex[%u], remoteRank[%u], engine[%d]",
-                __func__, i, remoteRank, engine),
+                __func__, i + 1, remoteRank, engine),
             ret);
 
         HCCL_INFO("[%s][%u/%u] channel created successfully, remoteRank[%u], channelHandle[%p]",
