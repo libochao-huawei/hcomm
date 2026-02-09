@@ -143,10 +143,10 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
 
     aicpuSqe.u.aicpu_record.fault_task_id = 0xffffffff;
 
-    if ((exceptionInfo->errorCode & 0xFF) == 0b1) {
-        aicpuSqe.u.aicpu_record.ret_code = SwitchUBCqeErrCodeToTsErrCode(exceptionInfo->errorCode);
+    if ((exceptionInfo->errorType & 0xFF) == 0b1) {
+        aicpuSqe.u.aicpu_record.ret_code = SwitchUBCqeErrCodeToTsErrCode(exceptionInfo->errorCode & 0xFF);
     } else {
-        aicpuSqe.u.aicpu_record.ret_code = SwitchSdmaCqeErrCodeToTsErrCode(exceptionInfo->errorCode & 0xFF);
+        aicpuSqe.u.aicpu_record.ret_code = SwitchSdmaCqeErrCodeToTsErrCode(exceptionInfo->errorCode);
     }
 
     struct event_summary event;

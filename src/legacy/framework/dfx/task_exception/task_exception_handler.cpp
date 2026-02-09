@@ -110,6 +110,8 @@ void PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
     HCCL_INFO("[PrintUbRegisters] start");
     AuxInfoIn in;
     in.cqe.status = 0xffffffff; // 0xffffffff代表查询所有寄存器
+    in.auxInfoInType = AuxInfoInType::AUX_INFO_IN_TYPE_CQE;
+    in.cqe.sR = 0;
     AuxInfoOut auxInfo;
     auto ret = RaGetAuxInfo(rdmaHandle, in, auxInfo);
     if (ret != HCCL_SUCCESS) {
