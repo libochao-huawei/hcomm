@@ -1631,6 +1631,13 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
         "netMode[%s] rootHandle.identifier[%s], identifier[%s]", nRanks, rank, rootHandle.ip, rootHandle.listenPort,
         rootHandle.netMode.Describe().c_str(), rootHandle.identifier, identifier.c_str());
 
+    // 临时规避，在初始化通信域前声明单例保证时序
+    CHK_RET(CallSingletons());
+    HcclCommInfoV2 &opbasedCommInfoV2 = GetCommInfoV2();
+    CHK_PRT_RET(opbasedCommInfoV2.hcclGroupMap.find(identifier) != opbasedCommInfoV2.hcclGroupMap.end(),
+        HCCL_ERROR("[HcclCommInitRootInfoConfigV2]errNo[0x%016llx] The comm name[%s] already exists in Group2Comm map.",
+                HCCL_ERROR_CODE(HCCL_E_PARA), identifier.c_str()), HCCL_E_PARA);
+
     RankTableInfo rankTable{};
     HcclResult ret = RootInfoDetect(nRanks, rank, rootHandle, rankTable);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -1638,9 +1645,6 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
     
     // 打印ranktable
     rankTable.Dump();
-
-    // 临时规避，在初始化通信域前声明单例保证时序
-    CHK_RET(CallSingletons());
 
     // 创建通信域
     ret = CreateCommConfigRootInfo(rank, config, identifier, rankTable, comm);
