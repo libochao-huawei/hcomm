@@ -32,9 +32,9 @@ constexpr u32 RDMA_WRITE_NOTIFY_VALUE_RECORD = 0x1000000;
 #if defined(__x86_64__)
 #define HCOMM_DSB() asm volatile("" ::: "memory")
 #elif defined(__aarch64__)
-#define HCOMM_DSB() asm volatile("dsb st" ::: "memory");
+#define HCOMM_DSB() asm volatile("dsb st" ::: "memory")
 #else
-#error No architecture specific memory barrier defines found!
+#define HCOMM_DSB()
 #endif
 
 namespace hccl {
