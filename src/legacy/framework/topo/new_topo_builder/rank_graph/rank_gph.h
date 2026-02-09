@@ -115,7 +115,7 @@ void AddGroupLinks(const vector<RankId> &rankIds, const NetInstance *oldNetInsta
 
 HcclResult GetCommAddr(CommAddr &commAddr, const IpAddress &ipAddr);
 
-HcclResult SetEndpointDesc(std::set<LinkProtocol> protocols, std::shared_ptr<NetInstance::Peer> peer, std::shared_ptr<NetInstance::ConnInterface> iface);
+void SetEndpointDesc(std::set<LinkProtocol> protocols, std::shared_ptr<NetInstance::Peer> peer, std::shared_ptr<NetInstance::ConnInterface> iface);
 
 } // namespace Hccl
 

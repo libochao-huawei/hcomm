@@ -374,11 +374,16 @@ static EndpointLocType AddrPositionToEndpointLoc(AddrPosition pos) {
     }
 }
 
-HcclResult SetEndpointDesc(std::set<LinkProtocol> protocols, std::shared_ptr<NetInstance::Peer> peer, std::shared_ptr<NetInstance::ConnInterface> iface)
+void SetEndpointDesc(std::set<LinkProtocol> protocols, std::shared_ptr<NetInstance::Peer> peer, std::shared_ptr<NetInstance::ConnInterface> iface)
 {
     for (const auto& protocol : protocols) {
         EndpointDesc desc{};
-        CHK_RET(GetCommAddr(desc.commAddr, iface->GetAddr()));
+        HcclResult ret = GetCommAddr(desc.commAddr, iface->GetAddr());
+        if (ret != HCCL_SUCCESS)
+        {
+            HCCL_ERROR("GetCommAddr failed");
+            return;
+        }
         auto it = protocolMap.find(protocol);
         desc.protocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
         desc.loc.locType = AddrPositionToEndpointLoc(iface->GetPos());

@@ -124,14 +124,6 @@ void RankGraphBuilder::AddPeer2NetLink(const u32 netLayer,  const string &netIns
     }
 }
 
-static EndpointLocType AddrPositionToEndpointLoc(AddrPosition pos) {
-    switch (pos) {
-        case AddrPosition::HOST:    return ENDPOINT_LOC_TYPE_HOST;
-        case AddrPosition::DEVICE:  return ENDPOINT_LOC_TYPE_DEVICE;
-        default: return ENDPOINT_LOC_TYPE_RESERVED;
-    }
-}
-
 void RankGraphBuilder::AddFabricInfo(u32 netLayer)
 {
     auto netInst = rankGraph_->GetNetInstanceByRankId(netLayer, myRank_);
@@ -416,7 +408,7 @@ void RankGraphBuilder::BuildPeer2PeerLinks()
                     continue;
                 }
                 srcPeer->AddConnInterfaces(0, sourceIfaces);
-                for (const auto& iface : sourceIFace)
+                for (const auto& iface : sourceIfaces)
                 {
                     SetEndpointDesc(phyLink->GetLinkProtocols(), srcPeer, iface);
                 }
