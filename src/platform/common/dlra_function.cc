@@ -363,6 +363,18 @@ HcclResult DlRaFunction::DlRaFunctionSocketInit()
     if (dlRaGetHccnCfg == nullptr) {
         HCCL_WARNING("dlRaGetHccnCfg is nullptr, can not use RaGetHccnCfg");
     }
+    dlRaGetSecRandom = (int (*)(struct RaInfo *info, unsigned int* ))HcclDlsym(handle_, "ra_get_sec_random");
+    if (dlRaGetSecRandom == nullptr) {
+        HCCL_WARNING("dlRaGetSecRandom is nullptr, can not use ra_get_sec_random");
+    }
+    dlRaGetDevEidInfoNum = (int (*)(struct RaInfo *info, unsigned int* ))HcclDlsym(handle_, "ra_get_dev_eid_info_num");
+    if (dlRaGetDevEidInfoNum == nullptr) {
+        HCCL_WARNING("dlRaGetDevEidInfoNum is nullptr, can not use ra_get_dev_eid_info_num");
+    }
+    dlRaGetDevEidInfoList = (int (*)(struct RaInfo *info, struct dev_eid_info *eid_info, unsigned int* ))HcclDlsym(handle_, "ra_get_dev_eid_info_list");
+    if (dlRaGetDevEidInfoList == nullptr) {
+        HCCL_WARNING("dlRaGetDevEidInfoList is nullptr, can not use ra_get_dev_eid_info_list");
+    }
     return HCCL_SUCCESS;
 }
 
