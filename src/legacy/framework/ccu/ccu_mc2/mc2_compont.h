@@ -36,8 +36,8 @@ public:
     u32 GetCcuMc2ServerNum();
 
 private:
-    void     Alloc(void **commContext, HcclCombinOpParam &combinOpParam);
-    void     AllocV2(void **commContext, HcclCombinOpParam &combinOpParam);
+    void     Alloc();
+    void     AllocV2();
     void     GenerateCcuServer(const std::unordered_set<uint64_t> &algoTemplateRequire);
     bool     FindCcuServer(const std::unordered_set<uint64_t> &algoTemplateRequire,
                            InsExeQue::ExtInsExeEntityId       &execId) const;
@@ -68,6 +68,8 @@ private:
     InsExeQue::ExtInsExeEntityId curExecId{0};
     uint64_t                     tokenInfo{0};
     std::shared_ptr<DevBuffer>   inputMem{nullptr};
+
+    std::shared_ptr<HcclCombinOpParam> combinOpParamPtr{nullptr};
 
     std::vector<u64> dataCounts;
     std::vector<u64> displs;
