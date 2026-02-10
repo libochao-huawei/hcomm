@@ -79,7 +79,6 @@ TEST_F(Rts1ToNCntNotifyTest, rts1toncntnotify_postbits_submit_test)
     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(0));
-    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs().will(returnValue(0));
 
     // When
     Rts1ToNCntNotify rts1ToNCntNotify;
@@ -98,7 +97,9 @@ TEST_F(Rts1ToNCntNotifyTest, rts1toncntnotify_waitvalue_submit_test)
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
     MOCKER(HrtCntNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
-
+    MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
+    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(0));
+    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs().will(returnValue(0));
     // When
     Rts1ToNCntNotify rts1ToNCntNotify;
 
