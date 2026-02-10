@@ -670,8 +670,7 @@ void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankCo
             "EI0018",
             std::vector<std::string>({"localServerId", "localDeviceId", "localDeviceIp", "remoteServerId", "remoteDeviceId", "remoteDeviceIp"}),
             std::vector<std::string>({
-                "", exceptionTaskInfo.GetBaseInfo().c_str(), errorMessage.locEid.c_str(),
-                "", "", exceptionInfo->deviceid.c_str()})
+                "", exceptionInfo->deviceid, errorMessage.locEid, "", "", errorMessage.rmtEid})
             );
     }
 }
