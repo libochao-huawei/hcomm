@@ -328,6 +328,7 @@ inline HcclResult RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, 
             ipAddr.GetEid().raw, sizeof(ipAddr.GetEid().raw));
     if (ret != 0) {
         HCCL_ERROR("memcpy_s Eid failed");
+        return HCCL_E_MEMORY;
     }
     initAttr.bufferSize = bufferSize == 0 ? (maxWrDepth * BYTE_PER_TARGET_DEFAULT) : bufferSize; // 发送接收缓存区大小
     initAttr.protocol = PROTOCOL_UDMA; // pingmesh支持兼容UB驱动，新增protocol字段
@@ -343,18 +344,18 @@ inline HcclResult RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, 
     initAttr.client.ub.qp_attr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
     initAttr.client.ub.qp_attr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
     initAttr.client.ub.qp_attr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
-    HcclResult ret = GetUbToken(deviceId, &UbToken);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, ret:%d", ret);
-        return ret;
+    HcclResult token_ret = GetUbToken(deviceId, &UbToken);
+    if (token_ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, token_ret:%d", token_ret);
+        return token_ret;
     }
-    initAttr.client.ub.qp_attr.token_value = GetUbToken(deviceId);
-    ret = GetUbToken(deviceId, &UbToken);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, ret:%d", ret);
-        return ret;
+    initAttr.client.ub.qp_attr.token_value = UbToken;
+    token_ret = GetUbToken(deviceId, &UbToken);
+    if (token_ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, token_ret:%d", token_ret);
+        return token_ret;
     }
-    initAttr.client.ub.seg_attr.token_value = GetUbToken(deviceId);
+    initAttr.client.ub.seg_attr.token_value = UbToken;
 
     // server的初始化信息
     initAttr.server.ub.cq_attr.sendCqDepth = maxWrDepth;
@@ -366,18 +367,18 @@ inline HcclResult RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, 
     initAttr.server.ub.qp_attr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
     initAttr.server.ub.qp_attr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
     initAttr.server.ub.qp_attr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
-    ret = GetUbToken(deviceId, &UbToken);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, ret:%d", ret);
-        return ret;
+    token_ret = GetUbToken(deviceId, &UbToken);
+    if (token_ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, token_ret:%d", token_ret);
+        return token_ret;
     }
-    initAttr.server.ub.qp_attr.token_value = GetUbToken(deviceId);
-    ret = GetUbToken(deviceId, &UbToken);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, ret:%d", ret);
-        return ret;
+    initAttr.server.ub.qp_attr.token_value = UbToken;
+    token_ret = GetUbToken(deviceId, &UbToken);
+    if (token_ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, token_ret:%d", token_ret);
+        return token_ret;
     }
-    initAttr.server.ub.seg_attr.token_value = GetUbToken(deviceId);
+    initAttr.server.ub.seg_attr.token_value = UbToken;
 
     // ip协议信息
     initAttr.commInfo.version = 0;
