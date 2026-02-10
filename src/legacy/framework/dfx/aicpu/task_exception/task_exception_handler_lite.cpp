@@ -69,9 +69,14 @@ HcclResult GenerateErrorMessageReport(CommunicatorImplLite *aicpuComm, std::shar
     memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag), aicpuComm->GetCurrentOp().opTag.c_str(),
         aicpuComm->GetCurrentOp().opTag.size());
     memcpy_s(errMsgInfo.group, sizeof(errMsgInfo.group), aicpuComm->GetId().c_str(), aicpuComm->GetId().size());
-    if (taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY) {
+    if (taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY 
+        || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
+        || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE) {
         errMsgInfo.locEid = taskInfo->taskParam_.taskPara.DMA.locEid;
         errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.DMA.rmtEid;
+    } else if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE) {
+        errMsgInfo.locEid = taskInfo->taskParam_.taskPara.Reduce.locEid;
+        errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.Reduce.rmtEid;
     }
     return HCCL_SUCCESS;
 }
@@ -85,6 +90,8 @@ HcclResult SendErrorMessageReportToHost(CommunicatorImplLite *aicpuComm, ErrorMe
 constexpr u32 RT_SDMA_COMPERR = 0x9; // A3 sdma error类型为0x9时，表示写拷贝发生超时代答，或者数据搬移时地址译码错误
 constexpr u32 RT_SDMA_COMPDATAERR = 0xa; // A3 sdma error类型为0xa时，表示读拷贝发生超时代答，或者读HBM返回ERROR
 constexpr u32 RT_SDMA_DATAERR = 0x8; // A3 sdma error类型为0x8时，表示读HBM返回ERROR
+constexpr u32 RT_UB_LOCAL_OPERATIOINERR = 0x2; // A5 ub error类型为0x2时，表示UB本端返回ERROR
+constexpr u32 RT_UB_REMOTE_OPERATIOINERR = 0x3; // A5 ub error类型为0x3时，表示UB远端返回ERROR
 
 // 把SDMA类错误码转换成Ts对应的错误码
 uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode){
@@ -95,6 +102,18 @@ uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode){
             return TS_ERROR_SDMA_POISON_ERROR;
         case RT_SDMA_DATAERR:
             return TS_ERROR_SDMA_DDRC_ERROR;
+        default:
+            return TS_ERROR_HCCL_OTHER_ERROR;
+    }
+}
+
+// 把UB类错误码转换成Ts对应的错误码
+uint16_t SwitchUBCqeErrCodeToTsErrCode(u32 cqeErrCode){
+    switch (cqeErrCode) {
+        case RT_UB_LOCAL_OPERATIOINERR:
+            return TS_ERROR_LOCAL_MEM_ERROR;
+        case RT_UB_REMOTE_OPERATIOINERR:
+            return TS_ERROR_REMOTE_MEM_ERROR;
         default:
             return TS_ERROR_HCCL_OTHER_ERROR;
     }
@@ -122,9 +141,13 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
 
     aicpuSqe.ts_id = static_cast<uint8_t>(tsId);
 
-    aicpuSqe.u.aicpu_record.fault_task_id = ((uint32_t)(exceptionInfo->taskId) << 16) | (exceptionInfo->streamId);
+    aicpuSqe.u.aicpu_record.fault_task_id = 0xffffffff;
 
-    aicpuSqe.u.aicpu_record.ret_code = SwitchSdmaCqeErrCodeToTsErrCode(exceptionInfo->errorCode);
+    if ((exceptionInfo->errorType & 0xFF) == 0b1) {
+        aicpuSqe.u.aicpu_record.ret_code = SwitchUBCqeErrCodeToTsErrCode(exceptionInfo->errorCode & 0xFF);
+    } else {
+        aicpuSqe.u.aicpu_record.ret_code = SwitchSdmaCqeErrCodeToTsErrCode(exceptionInfo->errorCode);
+    }
 
     struct event_summary event;
     event.dst_engine = TS_CPU;
