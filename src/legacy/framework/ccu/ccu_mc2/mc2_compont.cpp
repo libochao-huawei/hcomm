@@ -61,10 +61,12 @@ void Mc2Compont::AllocCommResource(void *mc2Tiling, void **commContext)
     }
 
     combinOpParam.algorithmType = comm->GetAlgorithmType();
-    HCCL_RUN_INFO("hcclCombinOpParam info: workSpace = [%llu], rankId = [%u], rankDim = [%u], xnAddr = [%llu],"
-              "ckeAddr = [%llu], winSize = [%llu], windowsOut[0] = [%llu], algorithmType = [%u]",
+    HCCL_RUN_INFO("hcclCombinOpParam info: workSpace = [%llu], rankId = [%u], rankDim = [%u], xnAddr = [%llu], "
+              "ckeAddr = [%llu], winSize = [%llu], windowsOut[0] = [%llu], opType[0] = [%u], opType[1] = [%u], "
+              "algorithmType[0] = [%u], algorithmType[1] = [%u]",
               combinOpParam.workSpace, combinOpParam.rankId, combinOpParam.rankDim, combinOpParam.xnAddr,
-              combinOpParam.ckeAddr, combinOpParam.winSize, combinOpParam.windowsOut[0], combinOpParam.algorithmType);
+              combinOpParam.ckeAddr, combinOpParam.winSize, combinOpParam.windowsOut[0], combinOpParam.opType[0],
+              combinOpParam.opType[1], combinOpParam.algorithmType[0], combinOpParam.algorithmType[1]);
     auto paramSize = sizeof(HcclCombinOpParam);
     if(combinOpParamBuffer == nullptr) {
         combinOpParamBuffer = std::make_shared<DevBuffer>(paramSize);
@@ -303,6 +305,8 @@ void Mc2Compont::GenerateAlgoTemplates(Mc2Tiling *mc2TilingPtr, std::unordered_s
                 StringFormat("CcuInstruction translate faild, index = [%u], algName = [%s]", index, algName.c_str()));
         }
         algoTemplateMap[templateSign] = taskParams;
+        combinOpParam.opType[index]   = mc2TilingPtr->opType;
+        combinOpParam.algorithmType[index]   = comm->GetAlgorithmType();
         for (const auto &task : taskParams) {
             HCCL_INFO("taskParam: dieId = [%u], instStartId = [%u]", task[0].dieId, task[0].instStartId);
             SaveMc2DfxTaskInfo(task[0], ccuInstruction.GetExecId());
@@ -356,6 +360,8 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
                 StringFormat("CcuInstruction translate faild, index = [%u], algName = [%s]", index, algName.c_str()));
         }
         algoTemplateMap[templateSign] = taskParams;
+        combinOpParam.opType[index]   = mc2TilingPtr->opType;
+        combinOpParam.algorithmType[index]   = comm->GetAlgorithmType();
         for (const auto &task : taskParams) {
             HCCL_INFO("taskParam: dieId = [%u], instStartId = [%u]", task[0].dieId, task[0].instStartId);
             SaveMc2DfxTaskInfo(task[0], ccuInstruction.GetExecId());
