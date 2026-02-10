@@ -85,7 +85,7 @@ UbTransportLiteImpl::UbTransportLiteImpl(std::vector<char> &uniqueId)
 UbTransportLiteImpl::~UbTransportLiteImpl()
 {
     for (auto &it : connUniqueIdVec) {
-        UbConnLiteMgr::GetInstance().Clear(it);
+       DECTOR_TRY_CATCH("UbTransportLiteImpl",  UbConnLiteMgr::GetInstance().Clear(it));
     }
 }
 

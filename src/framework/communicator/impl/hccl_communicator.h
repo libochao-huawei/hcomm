@@ -125,7 +125,7 @@ public:
     virtual HcclResult Clean();
     virtual HcclResult Init(HcclCommParams &params, const RankTable_t &rankTable);
     virtual HcclResult Init(HcclCommParams &params, const std::vector<RankInfo> &rankList,
-        WorldGroupInfo &globalData);
+        WorldGroupInfo &groupCommonData);
 
     virtual HcclResult GetAlgType(AlgType &algType, HcclCMDType opType);
     virtual HcclResult InitHccpChannel();
@@ -312,7 +312,7 @@ public:
     HcclResult GetWorkspaceSubStreamNum(u64 count, HcclDataType dataType, HcclReduceOp op,
         const std::string &algName, u64 &streamNum, u64 dataSize, bool ifAiv, HcclCMDType opType);
     HcclResult GetWorkspaceMemSize(const std::string &opType, u64 count, HcclDataType dataType,
-                                   u32 &rankSize, u64 &size, DevType &deviceType) const;
+                                   u32 &rankSize, u64 &memSize, DevType &deviceType) const;
     HcclResult SetWorkspaceResource(const std::string &tag, void *memPtr, u64 &maxSize,
         std::vector<rtStream_t> &stream);
     HcclResult CreateOpBasedResources(const HcclCMDType &opType, const std::string &tag,
@@ -346,12 +346,12 @@ public:
     std::vector<RankInfo> GetRanksList();
     HcclResult SetWorldGroupInfo(
         std::unordered_map<std::string, std::map<u32, HcclIpAddress>> phyIdNicInfoMap,
-        std::vector<RankInfo> worldRankInfoList, std::vector<u32> &ranksPort, std::vector<u32> &vnicRanksPort);
+        std::vector<RankInfo> worldRankInfoList, std::vector<u32> &nicRanksPort, std::vector<u32> &vnicRanksPort);
     virtual HcclResult SaveTraceInfo(std::string &logInfo);
     virtual bool GetCommResource(const std::string &tag, void **commContext);
     virtual bool GetCommResource(void *&commContext);
 
-    virtual HcclResult GetAicpuOpStreamNotify(HcclRtStream *opStream, u8 aicpuNotifyNUm, void** aicpuNotify);
+    virtual HcclResult GetAicpuOpStreamNotify(HcclRtStream *opStream, u8 aicpuNotifyNum, void** aicpuNotify);
 
     HcclResult GetAlgInfo(const std::string &algConfig, const std::string &tag, HcclCMDType commType,
         std::string &algName, std::string &newTag);
@@ -531,7 +531,7 @@ private:
     bool IsNeedNicInit();
     HcclResult InitNic(bool isMC2ReInit = false);
     HcclResult DeinitNic();
-    HcclResult AddOpInfoToHeartBeat(const OpInfoDesc &opInfo, const std::string &newTag);
+    HcclResult AddOpInfoToHeartBeat(const OpInfoDesc &opInfo, const std::string &tag);
     void DeleteOpInfoToHeartBeat();
     HcclResult RegisterToHeartBeat();
     HcclResult RegisterToHeartBeat(u32 peerRankId, std::string &tag);
@@ -756,7 +756,7 @@ private:
     bool IsForceAicpuOpBaseMode(const OpParam &opParam, const HcclCMDType &opType);
     HcclResult AllocOpBaseModeScratchMem(HcclCMDType opType, const OpParam &opParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
-    HcclResult AllocAlgResource(const std::string &tag, HcclCMDType opType, const OpParam &opParam,
+    HcclResult AllocAlgResource(const std::string &newTag, HcclCMDType opType, const OpParam &opParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool selectAivAlg = false);
     HcclResult IncreAllocLink(const std::string &newTag, const OpParam &opParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
@@ -791,7 +791,7 @@ private:
     HcclResult PrepareZeroCopy(const std::string &algName, const AlgDesc &algDesc, OpParam &opParam);
     HcclResult UpdateZeroCopy(const OpParam &opParam, const AlgResourceResponse &algResource);
     HcclResult BuildZeroCopyParam();
-    HcclResult AllocAndClearHostMem(u64 size, std::shared_ptr<HostMem> &buffer) const;
+    HcclResult AllocAndClearHostMem(u64 size, std::shared_ptr<HostMem> &bufferPtr) const;
     HcclResult AllocAndClearDeviceMem(u64 size, std::shared_ptr<DeviceMem> &bufferPtr) const;
     HcclResult updateList(u64 size, void *buffer) const;
     HcclResult BuildOpLocalResParam(const AlgResourceResponse &algResource, const std::string &newTag);
@@ -821,7 +821,7 @@ private:
         const std::string &newTag, const HcclCMDType opType);
     HcclResult BuildCustomOpResParam();
     HcclResult BuildOpRetryParam(const AlgResourceResponse &algResource, const std::string &newTag);
-    HcclResult CopyHostListResToDeviceParam(const std::string &newTag, const ListCommon *headList, const u64 size);
+    HcclResult CopyHostListResToDeviceParam(const std::string &newTag, const ListCommon *headHostList, const u64 size);
     HcclResult CopyHostOpRemoteResToDeviceParam(const std::string &newTag);
     HcclResult CopyHostOpResToDeviceParam(const std::string &newTag);
     HcclResult AicpuResourceInit(const std::string &algName,
@@ -831,13 +831,13 @@ private:
         const HcclCMDType opType);
     HcclResult OrchestrateAicpu(const HcclCMDType &opType, const std::string &algName, const OpParam &param,
         const AlgResourceResponse &algResource, const std::string &newTag, AlgType algType, bool isCustom = false,
-        bool needIncreAlloc = false);
+        bool needIncreLink = false);
     template <typename T>
     HcclResult CopyVectorToDeviceMem(const u64 len, DeviceMem &dstDeviceMem, const std::vector<T> &srcVec);
     template <typename T>
     HcclResult CreateListNode(T **resHostPtr, T **resDevicePtr);
     HcclResult ParseRemoteDataToMem(const OpCommTransport &opTransportResponse, const std::string &newTag,
-        const HcclCMDType opType, bool isBakup = false, bool isRetry = false);
+        const HcclCMDType opType, bool isBackup = false, bool isRetry = false);
     HcclResult BuildRelationResByRemoteRankId(const TransportRequest &transportRequest, const LINK &link,
         HcclRankRelationResV2 *&rankRelationResHostPtr, HcclRankRelationResV2 *&rankRelationResDevicePtr);
     HcclResult BuildRemoteResByTag(const std::string &newTag, const u32 &usrRankId,
@@ -845,7 +845,7 @@ private:
         bool isBackup, bool isRetry);
     HcclResult BuildOpRemoteLinkP2pResParam(const LINK &link, HccltagRemoteResV3 &tagRemoteRes,
         TransportLinkType linkType = TransportLinkType::RESERVED);
-    HcclResult BuildOpRemoteLinkRoceResParam(const LINK &link, HccltagRemoteResV3 &tagRemoteRes, bool isBakup,
+    HcclResult BuildOpRemoteLinkRoceResParam(const LINK &link, HccltagRemoteResV3 &tagRemoteRes, bool isBackup,
         bool isRetry, bool isSecondBuild);
     HcclResult CheckNotifyOrQPMaxNum(u64 &existNum, const u64 &MaxNum, const bool &isNotifyRes);
     HcclResult AllocAlgNotifys(const std::string &tag, const NotifyLoadType notifyLoadType, const u32 notifyNum,

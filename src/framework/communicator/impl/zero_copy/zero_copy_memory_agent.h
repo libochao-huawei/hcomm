@@ -130,7 +130,7 @@ public:
 
 private:
     // member functions
-    std::string GenerateSocketTag(u32 localDevPhyId, u32 remoteDevPhyId);
+    std::string GenerateSocketTag(u32 localRank, u32 remoteRank);
     HcclResult SendRequest(RequestType requestType, const std::vector<u8> &req, u32 remoteDevPhyId = INVALID_VALUE_RANKID);
     HcclResult SendRequestSync(RequestType requestType, const std::vector<u8>& req, u32 remoteDevPhyId);
 

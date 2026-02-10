@@ -104,7 +104,7 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
     CHK_PTR_NULL(notify);
 
     HcclResult ret = HcclLocalNotifyRecord(stream, notify);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. %s.", __func__, thread, dstThread, dstNotifyIdx), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dstThread[0x%llx], dstNotifyIdx[%u].", __func__, thread, dstThread, dstNotifyIdx), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
