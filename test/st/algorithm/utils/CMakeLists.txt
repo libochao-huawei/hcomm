@@ -45,7 +45,7 @@ target_link_libraries(hccl_alg_analyzer PRIVATE
     $<BUILD_INTERFACE:intf_llt_pub>
     hccl_alg_adaption
     protobuf
-    -lpthread
+    -pthread
     -lrt
     -ldl
 )

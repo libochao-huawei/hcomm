@@ -40,7 +40,7 @@ target_link_directories(hccl_utest_pingmesh PRIVATE
 target_link_libraries(hccl_utest_pingmesh PRIVATE
     $<BUILD_INTERFACE:intf_llt_pub>
     hccl_llt
-    -lpthread
+    -pthread
     -lrt
     -ldl
 )

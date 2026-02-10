@@ -22,13 +22,8 @@ target_compile_options(hccl_ut_prepare_env   PRIVATE
 )
 
 target_link_libraries(hccl_ut_prepare_env  PRIVATE
-<<<<<<< Updated upstream
-    $<BUILD_INTERFACE:intf_pub>
-    -lpthread
-=======
     $<BUILD_INTERFACE:intf_llt_pub>
     -pthread
->>>>>>> Stashed changes
     -lrt
 )
 
