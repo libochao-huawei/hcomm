@@ -58,7 +58,7 @@ HcclResult CcuConnection::Init()
     ctxHandle_ = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
 
     DevEidInfo eidInfo{};
-    CHK_RET(EidInfoMgr::GetInstance(devLogicId_).GetEidInfoByAddr(locAddr_, eidInfo));
+    CHK_RET(EidInfoMgr::GetInstance(devPhyId).GetEidInfoByAddr(locAddr_, eidInfo));
     dieId_ = static_cast<uint8_t>(eidInfo.dieId);
 
     EXCEPTION_HANDLE_END
