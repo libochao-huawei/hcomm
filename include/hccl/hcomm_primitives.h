@@ -210,7 +210,8 @@ extern int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle c
  * @param[in] reduceOp 归约操作类型
  * @param[in] remoteNotifyIdx 远端通知索引
  * @return int32_t 执行结果状态码
- * @note 当前在A5上主要支持
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
     const void *src, uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp, uint32_t remoteNotifyIdx);
