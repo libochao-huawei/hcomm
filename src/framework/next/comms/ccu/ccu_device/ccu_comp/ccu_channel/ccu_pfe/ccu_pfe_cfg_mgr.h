@@ -51,6 +51,7 @@ private:
 private:
     bool initFlag_{false};
     int32_t devLogicId_{0};
+    uint32_t devPhyId_{0};
     // 每个iodie上PfeJettyCtxCfg的映射关系
     std::array<std::vector<PfeJettyCtxCfg>, CCU_MAX_IODIE_NUM> pfeJettyCtxCfgs_{};
 
