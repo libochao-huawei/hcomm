@@ -281,11 +281,7 @@ HcclResult CcuKernel::LocalNotifyWait(const uint32_t coreId,
         exportedRes_.sharedNotifies.insert({notifyTag, notify});
     }
 
-    bool isProfiling = false;
-    if (CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK) {
-        isProfiling = true;
-    }
-
+    bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
     Append(std::make_shared<CcuRep::CcuRepLocWaitNotify>(
         exportedRes_.sharedNotifies.at(notifyTag), mask, isProfiling));
     return HcclResult::HCCL_SUCCESS;
@@ -304,11 +300,7 @@ HcclResult CcuKernel::RecordEvent(CcuRep::CompletedEvent event)
 
 HcclResult CcuKernel::WaitEvent(CcuRep::CompletedEvent event)
 {
-    bool isProfiling = false;
-    if (CurrentBlock()->Type() == CcuRep::CcuRepType::LOOP_BLOCK) {
-        isProfiling = true;
-    }
-
+    bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
     Append(std::make_shared<CcuRep::CcuRepLocWaitEvent>(event, isProfiling));
     return HCCL_SUCCESS;
 }
@@ -330,13 +322,8 @@ HcclResult CcuKernel::NotifyRecord(const ChannelHandle channel, uint32_t remoteN
 /*RemoteWait新接口*/
 HcclResult CcuKernel::NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask)
 {
-    if (CurrentBlock()->Type() == CcuRep::CcuRepType::LOOP_BLOCK) {
-        Append(std::make_shared<CcuRep::CcuRepRemWaitSem>(channel, localNotifyIdx, mask, false));
-    } else {
-        auto rep = std::make_shared<CcuRep::CcuRepRemWaitSem>(channel, localNotifyIdx, mask, true);
-        //AddProfiling(channel, "NotifyWait", localNotifyIdx, mask);
-        Append(rep);
-    }
+    bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
+    Append(std::make_shared<CcuRep::CcuRepRemWaitSem>(channel, localNotifyIdx, mask, isProfiling));
     return HCCL_SUCCESS;
 }
 
