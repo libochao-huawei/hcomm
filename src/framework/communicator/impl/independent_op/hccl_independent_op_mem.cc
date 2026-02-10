@@ -138,7 +138,6 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
     
     auto& commMemMgr = hcclComm->GetIndependentOp().GetCommMemMgr();
     ret = commMemMgr.GetHcclBuffer(&commBuffer);
-
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to get local cclBuffer ret[%d]", __func__, ret);
         return ret;
