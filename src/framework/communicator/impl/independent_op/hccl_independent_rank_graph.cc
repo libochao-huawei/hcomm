@@ -176,8 +176,7 @@ HcclResult HcclRankGraphGetRankSizeByLayer(HcclComm comm, uint32_t netLayer, uin
         return HCCL_SUCCESS;
     }());
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    ret = hcclComm->GetInstSizeByNetLayer(netLayer, rankNum);
-    
+    ret = hcclComm->GetInstSizeByNetLayer(netLayer, rankNum);    
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed, ret[%d]", __func__, ret);
         return ret;
