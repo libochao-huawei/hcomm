@@ -116,6 +116,8 @@ namespace hccl {
             {
                 #ifdef CCL_KERNEL
                 pDispatcher = new (std::nothrow) DispatcherAiCpu(devicePhyId);
+                pDispatcher->SetHcclQos(hcclQos_);
+                pDispatcher->SetMpamid(0);
                 #endif
                 break;
             }
@@ -135,5 +137,11 @@ namespace hccl {
         }
         *dispatcher = pDispatcher;
         return HCCL_SUCCESS;
+    }
+
+    void DispatcherCtx::SetHcclQos(u32 hcclQos)
+    {
+        HCCL_INFO("[DispatcherCtx] [SetHcclQos] hcclQos = %u", hcclQos);
+        hcclQos_ = hcclQos;
     }
 }

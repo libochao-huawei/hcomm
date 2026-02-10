@@ -5435,8 +5435,6 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
         notifySize_ = NOTIFY_SIZE_EIGHT;
     }
 
-    HCCL_INFO("[HcclCommAicpu][InitAicpuIndOp] hcclQos = %u", commAicpuParam->hcclQos);
-    CHK_RET(HcclDispatcherAicpuInit(&dispatcher_, devId_, commAicpuParam->hcclQos, DispatcherType::DISPATCHER_AICPU));
     CHK_RET(hrtSetWorkModeAicpu(true));
     CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
     CHK_RET(hrtSetlocalDeviceType(topoInfo_.deviceType));
@@ -5450,9 +5448,9 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
         return HCCL_SUCCESS;
     } 
 
-    HCCL_INFO("[HcclCommAicpu][InitAicpuIndOp] InitAicpuIndOp start");
+    HCCL_INFO("[HcclCommAicpu][InitAicpuIndOp] InitAicpuIndOp start and hcclQos = %u", commAicpuParam->hcclQos);
     if (!FindDispatcherByCommId(&dispatcherCtx_, identifier_.c_str())) {
-        CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devId_, identifier_.c_str()));
+        CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devId_, CommAicpuParam->hcclQos, identifier_.c_str()));
     }
     CHK_PTR_NULL(dispatcherCtx_);
     hccl::DispatcherCtx *Ctx_temp = static_cast<DispatcherCtx *>(dispatcherCtx_);

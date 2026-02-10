@@ -28,7 +28,7 @@ static const char* DEFAULT_DISPATCH_NAME = "";
  * @param[out] ctx 返回已绑定的ctx
  * @return 执行状态码 HcclResult
  */
-extern HcclResult CreateDispatcherCtx(DispatcherCtxPtr *ctx, u32 devPhyId, const char* commId = DEFAULT_DISPATCH_NAME);
+extern HcclResult CreateDispatcherCtx(DispatcherCtxPtr *ctx, u32 devPhyId, u32 hcclQos, const char* commId = DEFAULT_DISPATCH_NAME);
 
 /**
  * @brief 销毁dispaatcher ctx
