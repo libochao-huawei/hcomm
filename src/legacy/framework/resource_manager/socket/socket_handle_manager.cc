@@ -82,6 +82,13 @@ SocketHandle SocketHandleManager::Get(u32 devicePhyId, const PortData &localPort
     return hccpSocketHandleMap[devicePhyId][static_cast<u32>(localPort.GetProto())][localPort.GetAddr()];
 }
 
+void SocketHandleManager::Destroy(u32 devicePhyId, const PortData &localPort)
+{
+    SocketHandle scoketHandle = Get(u32 devicePhyId, const PortData &localPort);
+    DECTOR_TRY_CATCH("RaSocketDeinit", HrtRaSocketDeInit(scoketHandle));
+    hccpSocketHandleMap[devicePhyId][static_cast<u32>(localPort.GetProto())][localPort.GetAddr()] = nullptr;
+}
+
 void SocketHandleManager::DestroyAll()
 {
     std::lock_guard<std::mutex> lock(socketHandleLock);
