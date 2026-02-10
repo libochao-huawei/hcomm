@@ -436,7 +436,7 @@ HcclResult CcuConnection::ReleaseConnRes()
 {
     for (auto &item : importJettyCtxs) {
         if (item.outParam.handle != 0) {
-            HrtRaUbUnimportJetty(rdmaHandle, item.outParam.handle);
+            remoteDelJettyList.push_back(item.outParam.handle);
             item.outParam.handle = 0;
         }
     }
@@ -494,10 +494,25 @@ void CcuConnection::Clean()
     ReleaseConnRes();
     GenerateLocalPsn();
 
+    for(auto remoteJettyHandle : remoteDelJettyList) {
+        HrtRaUbUnimportJetty(rdmaHandle, remoteJettyHandle);
+    }
+    remoteDelJettyList.clear();
+
+    std::vector<JettyHandle> jettyHandleList;
     // 销毁jetty要在ReleaseConnRes之后
     for (auto &ccuJetty : ccuJettys_) {
-        ccuJetty->Clean();
+        ccuJetty->Clean(jettyHandleList);
     }
+    std::vector<JettyHandle> failJettyHandles;
+    ccuConnection->Clean(jettyHandleList);
+    RaCtxQpDestoryBatch(rdmaHandle, jettyHandleList, failJettyHandles);
+     HCCL_INFO("[%s]RaCtxQpDestoryBatch finish, local jetty nums[%u], delete fail jetty nums[%u]",
+        __func__, jettyHandleList.size(), failJettyHandles.size());
+    for (u64 failJetty : failJettyHandles) {
+        HCCL_INFO("[%s]delete jetty[%llu] fail", __func__, failJetty);
+    }
+    jettyHandleList.clear();
 }
 
 } // namespace Hccl

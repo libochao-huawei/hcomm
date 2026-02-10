@@ -67,6 +67,9 @@ public:
 
     HrtUbJfcMode GetUbJfcMode() const;
     JettyHandle  GetJettyHandle() const;
+    JettyHandle  GetRemoteJettyHandle() const;
+    TpInfo       GetUbTpInfo() const;
+    RdmaHandle   GetRdmaHandle() const
     u32          GetPiVal() const;
     u32          GetCiVal() const;
     u32          GetSqDepth() const;

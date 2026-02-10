@@ -339,28 +339,9 @@ void DevUbConnection::SetImportInfo()
     tpn                           = info->out.ub.tpn;
 }
 
-void DevUbConnection::ReleaseResource()
-{
-    if (rdmaHandle && remoteJettyHandle != 0) {
-        HrtRaUbUnimportJetty(rdmaHandle, remoteJettyHandle);
-        remoteJettyHandle = 0;
-    }
-
-    if (tpInfo.tpHandle != 0) {
-        (void)TpManager::GetInstance(devLogicId)
-            .ReleaseTpInfo({locAddr, rmtAddr, tpProtocol}, tpInfo);
-        tpInfo.tpHandle = 0;
-    }
-
-    if (jettyHandle != 0) {
-        HrtRaUbDestroyJetty(jettyHandle);
-        jettyHandle = 0;
-    }
-}
 
 DevUbConnection::~DevUbConnection()
 {
-    DECTOR_TRY_CATCH("DevUbConnection", ReleaseResource());
 }
 
 // Suspend接口当前已不使用，由框架调用触发析构流程
@@ -376,7 +357,6 @@ bool DevUbConnection::Suspend()
         ThrowAbnormalStatus(std::string(__func__));
     }
 
-    ReleaseResource();
     status = RmaConnStatus::SUSPENDED;
     return true;
 }
@@ -788,9 +768,24 @@ HrtUbJfcMode DevUbConnection::GetUbJfcMode() const
     return jfcMode;
 }
 
-JettyHandle DevUbConnection::GetJettyHandle() const
+JettyHandle& DevUbConnection::GetJettyHandle() const
 {
     return jettyHandle;
+}
+
+JettyHandle&  GetRemoteJettyHandle() const
+{
+    return remoteJettyHandle;
+}
+
+RdmaHandle&  GetRdmaHandle() const
+{
+    return rdmaHandle;
+}
+
+TpInfo GetUbTpInfo() const
+{
+    return tpInfo;
 }
 
 u32 DevUbConnection::GetPiVal() const
