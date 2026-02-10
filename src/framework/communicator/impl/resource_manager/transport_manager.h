@@ -162,7 +162,7 @@ struct TransportIOMem {
 class TransportManager {
 public:
     TransportManager(CCLBufferManager &cclBufferManager,
-        const std::unique_ptr<HcclSocketManager> &socketManager_,
+        const std::unique_ptr<HcclSocketManager> &socketManager,
         HcclDispatcher dispatcher,
         const std::unique_ptr<NotifyPool> &notifyPool,
         const std::vector<RankInfo> &rankInfoList,
@@ -222,7 +222,7 @@ private:
     void UpdateIsInterRdma(const u32 remoteRank, bool &isInterRdma, bool forceRdma);
     HcclResult MakeRemoteLinkInfo(const u32 remoteRank, bool isInterRdma,
         u32 socketsPerLink, HcclRankLinkInfo &remoteLinkInfo);
-    HcclResult CreateDestSockets(const std::string &newTag, RankId remoteRank, u64 taskNum,
+    HcclResult CreateDestSockets(const std::string &tag, RankId remoteRank, u64 taskNum,
         std::vector<std::shared_ptr<HcclSocket> > &connectSockets, HcclNetDevCtx &netDevCtx, bool &isInterRdma, bool forceRdma = false, bool isBackup = false,
         u32 subCommIndex = 0, TransportLinkType linkType = TransportLinkType::RESERVED);
     u32 GetSocketsPerLink(u64 taskNum, u32 remoteRankId = INVALID_VALUE_RANKID);
