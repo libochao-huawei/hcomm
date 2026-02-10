@@ -109,12 +109,14 @@ protected:
     // 主从流同步部分
     virtual HcclResult AlltoallSync(u32 step, bool isStartPhase);
     virtual HcclResult LocalReduceSync(u32 step, bool isStartPhase);
+
     HcclResult AlltoallLocalReduceSync(u32 step, bool isStartPhase);
     // local reduce串行算法
     HcclResult RunAsyncLocalReduceSerial();
     // 初始化部分
     void InitAlltoallRecvBlockIdxMap();
     HcclResult PrepareTopoInfo(const SubCommInfo &level0CommInfo, const SubCommInfo &level1CommInfo);
+    virtual u64 GetLocalReduceSerialThresh() = 0;
 
     HcomCollOpInfo *opInfo_{nullptr};
 
