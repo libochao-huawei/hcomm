@@ -60,7 +60,6 @@ void Mc2Compont::AllocCommResource(void *mc2Tiling, void **commContext)
         GenerateAlgoTemplatesV2(reinterpret_cast<Mc2InitTilingInner *>(mc2Tiling), algoTemplateRequire);
     }
 
-    combinOpParam.algorithmType = comm->GetAlgorithmType();
     HCCL_RUN_INFO("hcclCombinOpParam info: workSpace = [%llu], rankId = [%u], rankDim = [%u], xnAddr = [%llu], "
               "ckeAddr = [%llu], winSize = [%llu], windowsOut[0] = [%llu], opType[0] = [%u], opType[1] = [%u], "
               "algorithmType[0] = [%u], algorithmType[1] = [%u]",
