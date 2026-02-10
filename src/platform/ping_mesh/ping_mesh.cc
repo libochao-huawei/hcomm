@@ -351,7 +351,7 @@ inline HcclResult RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, 
  
     u32 client_qp_token, client_seg_token;
     u32 server_qp_token, server_seg_token;
-    HcclResult token_ret = GetUbToken(deviceId, client_qp_token, client_seg_token, server_qp_token, server_seg_token);
+    HcclResult token_ret = GetUbToken(deviceId, &client_qp_token, &client_seg_token, &server_qp_token, &server_seg_token);
     if (token_ret != HCCL_SUCCESS) {
         HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, token_ret:%d", token_ret);
         return token_ret;
