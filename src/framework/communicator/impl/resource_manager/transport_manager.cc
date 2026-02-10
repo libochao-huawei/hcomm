@@ -1146,9 +1146,6 @@ HcclResult TransportManager::GetTransportType(const u32 dstRank, bool isUsedRdma
             transportType = TransportType::TRANS_TYPE_P2P;
         } else if (GetExternalInputHcclIsTcpMode()) {
             transportType = TransportType::TRANS_TYPE_HOST_TCP;
-        } else if ((!isUsedRdma) && IsSupportInterHccs(dstRank)) {
-            // 超节点内节点间走HCCS通信
-            transportType = TransportType::TRANS_TYPE_P2P;
         } else {
             transportType = TransportType::TRANS_TYPE_IBV_EXP;
         }
