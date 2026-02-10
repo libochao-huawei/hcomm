@@ -63,7 +63,8 @@ static bool isInitialized = false;  // 标记是否已经初始化
 static u32 token = 0;  // 存储生成的随机数
 static std::mutex ubTokenMutex;
 
-inline HcclResult GetUbToken(u32 devicePhyId, u32* token)
+inline HcclResult GetUbToken(u32 devicePhyId, u32* client_qp_token, u32* client_seg_token,
+                                    u32* server_qp_token, u32* server_seg_token)
 {
     std::lock_guard<std::mutex> lock(ubTokenMutex);
     if (!isInitialized) {
@@ -71,9 +72,24 @@ inline HcclResult GetUbToken(u32 devicePhyId, u32* token)
         struct RaInfo raInfo;
         raInfo.mode = HrtNetworkMode::HDC;
         raInfo.phyId = devPhyId;
-        HcclResult ret = hrtRaGetSecRandom(&raInfo, token);
+        HcclResult ret = hrtRaGetSecRandom(&raInfo, client_qp_token);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("get hrtRaGetSecRandom failed, ret:%d", ret);
+            HCCL_ERROR("get hrtRaGetSecRandom client_qp_token failed, ret:%d", ret);
+            return ret;
+        }
+        ret = hrtRaGetSecRandom(&raInfo, client_seg_token);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("get hrtRaGetSecRandom client_seg_token failed, ret:%d", ret);
+            return ret;
+        }
+        ret = hrtRaGetSecRandom(&raInfo, server_qp_token);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("get hrtRaGetSecRandom server_qp_token failed, ret:%d", ret);
+            return ret;
+        }
+        ret = hrtRaGetSecRandom(&raInfo, server_seg_token);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("get hrtRaGetSecRandom server_seg_token failed, ret:%d", ret);
             return ret;
         }
         isInitialized = true;
@@ -333,7 +349,13 @@ inline HcclResult RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, 
     initAttr.bufferSize = bufferSize == 0 ? (maxWrDepth * BYTE_PER_TARGET_DEFAULT) : bufferSize; // 发送接收缓存区大小
     initAttr.protocol = PROTOCOL_UDMA; // pingmesh支持兼容UB驱动，新增protocol字段
  
-    u32 UbToken;
+    u32 client_qp_token, client_seg_token;
+    u32 server_qp_token, server_seg_token;
+    HcclResult token_ret = GetUbToken(deviceId, client_qp_token, client_seg_token, server_qp_token, server_seg_token);
+    if (token_ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, token_ret:%d", token_ret);
+        return token_ret;
+    }
     // client的初始化信息
     initAttr.client.ub.cq_attr.sendCqDepth = maxWrDepth;
     initAttr.client.ub.cq_attr.recvCqDepth = maxWrDepth;
@@ -344,18 +366,8 @@ inline HcclResult RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, 
     initAttr.client.ub.qp_attr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
     initAttr.client.ub.qp_attr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
     initAttr.client.ub.qp_attr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
-    HcclResult token_ret = GetUbToken(deviceId, &UbToken);
-    if (token_ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, token_ret:%d", token_ret);
-        return token_ret;
-    }
-    initAttr.client.ub.qp_attr.token_value = UbToken;
-    token_ret = GetUbToken(deviceId, &UbToken);
-    if (token_ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, token_ret:%d", token_ret);
-        return token_ret;
-    }
-    initAttr.client.ub.seg_attr.token_value = UbToken;
+    initAttr.client.ub.qp_attr.token_value = client_qp_token;
+    initAttr.client.ub.seg_attr.token_value = client_seg_token;
 
     // server的初始化信息
     initAttr.server.ub.cq_attr.sendCqDepth = maxWrDepth;
@@ -367,18 +379,8 @@ inline HcclResult RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, 
     initAttr.server.ub.qp_attr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
     initAttr.server.ub.qp_attr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
     initAttr.server.ub.qp_attr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
-    token_ret = GetUbToken(deviceId, &UbToken);
-    if (token_ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, token_ret:%d", token_ret);
-        return token_ret;
-    }
-    initAttr.server.ub.qp_attr.token_value = UbToken;
-    token_ret = GetUbToken(deviceId, &UbToken);
-    if (token_ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, token_ret:%d", token_ret);
-        return token_ret;
-    }
-    initAttr.server.ub.seg_attr.token_value = UbToken;
+    initAttr.server.ub.qp_attr.token_value = server_qp_token;
+    initAttr.server.ub.seg_attr.token_value = server_seg_token;
 
     // ip协议信息
     initAttr.commInfo.version = 0;
@@ -768,7 +770,7 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
         port, nodeNum, bufferSize, sl, tc);
     // 当前只支持RoCE和UB
     LinkType netMode = static_cast<LinkType>(mode);
-    if(!IsModeSupported(netMode)) {
+    if (!IsModeSupported(netMode)) {
         return HCCL_E_NOT_SUPPORT;
     }
     // 获取物理id
@@ -802,7 +804,6 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
             HCCL_ERROR("[HCCN][HccnRpingInit]HccnRaInit fail, deviceId[%u] ret[%d].", deviceId, ret);
             break;
         }
-
         PingInitAttr initAttr{};
         if (netMode == LinkType::LINK_ROCE) {
             RpingRoceAttrInit(devicePhyId_, ipAddr, port, nodeNum, bufferSize, sl, tc, initAttr);
