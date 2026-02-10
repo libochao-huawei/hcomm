@@ -62,10 +62,16 @@ void Mc2Compont::AllocCommResource(void *mc2Tiling, void **commContext)
 
     HCCL_RUN_INFO("hcclCombinOpParam info: workSpace = [%llu], rankId = [%u], rankDim = [%u], xnAddr = [%llu], "
               "ckeAddr = [%llu], winSize = [%llu], windowsOut[0] = [%llu], opType[0] = [%u], opType[1] = [%u], "
-              "algorithmType[0] = [%u], algorithmType[1] = [%u]",
+              ", opType[2] = [%u], opType[3] = [%u], opType[4] = [%u], opType[5] = [%u], opType[6] = [%u], opType[7] = [%u], "
+              "algorithmType[0] = [%u], algorithmType[1] = [%u], algorithmType[2] = [%u], algorithmType[3] = [%u], ",
+              "algorithmType[4] = [%u], algorithmType[5] = [%u], algorithmType[6] = [%u], algorithmType[7] = [%u]",
               combinOpParam.workSpace, combinOpParam.rankId, combinOpParam.rankDim, combinOpParam.xnAddr,
               combinOpParam.ckeAddr, combinOpParam.winSize, combinOpParam.windowsOut[0], combinOpParam.opType[0],
-              combinOpParam.opType[1], combinOpParam.algorithmType[0], combinOpParam.algorithmType[1]);
+              combinOpParam.opType[1], combinOpParam.opType[2], combinOpParam.opType[3], combinOpParam.opType[4], 
+              combinOpParam.opType[5], combinOpParam.opType[6], combinOpParam.opType[7], combinOpParam.algorithmType[0], 
+              combinOpParam.algorithmType[1], combinOpParam.algorithmType[2], combinOpParam.algorithmType[3], 
+              combinOpParam.algorithmType[4], combinOpParam.algorithmType[5], combinOpParam.algorithmType[6], 
+              combinOpParam.algorithmType[7]);
     auto paramSize = sizeof(HcclCombinOpParam);
     if(combinOpParamBuffer == nullptr) {
         combinOpParamBuffer = std::make_shared<DevBuffer>(paramSize);
@@ -323,6 +329,10 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
     params.opMode        = OpMode::OPBASE;
     params.maxTmpMemSize = tmpMemSize;
     params.isMc2         = true;
+    if(mc2TilingPtr->mc2HcommCnt > MAX_OP_NUM) {
+        THROW<Hccl::InternalException>(
+                StringFormat("mc2HcommCnt is lager than MAX_OP_NUM, mc2HcommCnt = [%u]", mc2TilingPtr->mc2HcommCnt));
+    }
 
     for (uint32_t index = 0; index < mc2TilingPtr->mc2HcommCnt; index++) {
         const auto offset = mc2TilingPtr->offset[index];
