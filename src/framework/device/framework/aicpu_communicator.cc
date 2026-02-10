@@ -5450,7 +5450,7 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 
     HCCL_INFO("[HcclCommAicpu][InitAicpuIndOp] InitAicpuIndOp start and hcclQos = %u", commAicpuParam->hcclQos);
     if (!FindDispatcherByCommId(&dispatcherCtx_, identifier_.c_str())) {
-        CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devId_, CommAicpuParam->hcclQos, identifier_.c_str()));
+        CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devId_, commAicpuParam->hcclQos, identifier_.c_str()));
     }
     CHK_PTR_NULL(dispatcherCtx_);
     hccl::DispatcherCtx *Ctx_temp = static_cast<DispatcherCtx *>(dispatcherCtx_);
