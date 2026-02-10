@@ -40,6 +40,7 @@ class DispatcherCtx {
         HcclResult SetWaitTimeOut(u32 waitTimeOut);
         FftsCounterCallBack GetInitTaskCallback() const;
         FftsCounterCallBack GetLaunchTaskCallback() const;
+        void SetHcclQos(u32 hcclQos);
 
     private:
         CtxDispatcherType dispatcherType_;
@@ -55,6 +56,7 @@ class DispatcherCtx {
         FftsCounterCallBack g_LaunchTaskCallback = nullptr;
 
         std::mutex destroyMutex_;
+        u32 hcclQos_;
     };
 }
 
