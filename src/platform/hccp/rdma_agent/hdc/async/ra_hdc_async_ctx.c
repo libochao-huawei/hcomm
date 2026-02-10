@@ -18,577 +18,577 @@
 #include "ra_hdc_async.h"
 #include "ra_hdc_async_ctx.h"
 
-int ra_hdc_get_eid_by_ip_async(struct ra_ctx_handle *ctx_handle, struct IpInfo ip[], union hccp_eid eid[],
-    unsigned int *num, void **req_handle)
+int RaHdcGetEidByIpAsync(struct RaCtxHandle *ctxHandle, struct IpInfo ip[], union HccpEid eid[],
+    unsigned int *num, void **reqHandle)
 {
-    struct RaRequestHandle *req_handle_tmp = NULL;
-    struct ra_response_eid_list *async_rsp = NULL;
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    union op_get_eid_by_ip_data async_data = {0};
+    struct RaRequestHandle *reqHandleTmp = NULL;
+    struct RaResponseEidList *asyncRsp = NULL;
+    unsigned int phyId = ctxHandle->attr.phyId;
+    union OpGetEidByIpData asyncData = {0};
     int ret = 0;
 
-    async_rsp = (struct ra_response_eid_list *)calloc(1, sizeof(struct ra_response_eid_list));
-    CHK_PRT_RETURN(async_rsp == NULL,
-        hccp_err("[get][eid_by_ip]calloc async_rsp failed, phy_id[%u] dev_index[0x%x]",
-        phy_id, ctx_handle->dev_index), -ENOMEM);
-    async_rsp->eid_list = eid;
-    async_rsp->num = num;
+    asyncRsp = (struct RaResponseEidList *)calloc(1, sizeof(struct RaResponseEidList));
+    CHK_PRT_RETURN(asyncRsp == NULL,
+        hccp_err("[get][eid_by_ip]calloc async_rsp failed, phyId[%u] devIndex[0x%x]",
+        phyId, ctxHandle->devIndex), -ENOMEM);
+    asyncRsp->eidList = eid;
+    asyncRsp->num = num;
 
-    req_handle_tmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
-    if (req_handle_tmp == NULL) {
-        hccp_err("[get][eid_by_ip]calloc req_handle_tmp failed, phy_id[%u], dev_index[0x%x]",
-            phy_id, ctx_handle->dev_index);
+    reqHandleTmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
+    if (reqHandleTmp == NULL) {
+        hccp_err("[get][eid_by_ip]calloc req_handle_tmp failed, phyId[%u], devIndex[0x%x]",
+            phyId, ctxHandle->devIndex);
         ret = -ENOMEM;
         goto out;
     }
 
-    ra_hdc_prepare_get_eid_by_ip(ctx_handle, ip, *num, &async_data);
-    req_handle_tmp->devIndex = ctx_handle->dev_index;
-    req_handle_tmp->privData = (void *)async_rsp;
-    ret = RaHdcSendMsgAsync(RA_RS_GET_EID_BY_IP, phy_id, (char *)&async_data, sizeof(union op_get_eid_by_ip_data),
-        req_handle_tmp);
+    RaHdcPrepareGetEidByIp(ctxHandle, ip, *num, &asyncData);
+    reqHandleTmp->devIndex = ctxHandle->devIndex;
+    reqHandleTmp->privData = (void *)asyncRsp;
+    ret = RaHdcSendMsgAsync(RA_RS_GET_EID_BY_IP, phyId, (char *)&asyncData, sizeof(union OpGetEidByIpData),
+        reqHandleTmp);
     if (ret != 0) {
-        hccp_err("[get][eid_by_ip]hdc async send message failed ret[%d], phy_id[%u], dev_index[0x%x]",
-            ret, phy_id, ctx_handle->dev_index);
-        free(req_handle_tmp);
-        req_handle_tmp = NULL;
+        hccp_err("[get][eid_by_ip]hdc async send message failed ret[%d], phyId[%u], devIndex[0x%x]",
+            ret, phyId, ctxHandle->devIndex);
+        free(reqHandleTmp);
+        reqHandleTmp = NULL;
         goto out;
     }
 
-    *req_handle = (void *)req_handle_tmp;
+    *reqHandle = (void *)reqHandleTmp;
     return ret;
 
 out:
-    free(async_rsp);
-    async_rsp = NULL;
+    free(asyncRsp);
+    asyncRsp = NULL;
     return ret;
 }
 
-void ra_hdc_async_handle_get_eid_by_ip(struct RaRequestHandle *req_handle)
+void RaHdcAsyncHandleGetEidByIp(struct RaRequestHandle *reqHandle)
 {
-    union op_get_eid_by_ip_data *async_data = NULL;
-    struct ra_response_eid_list *async_rsp = NULL;
-    unsigned int ip_num = 0;
+    union OpGetEidByIpData *asyncData = NULL;
+    struct RaResponseEidList *asyncRsp = NULL;
+    unsigned int ipNum = 0;
     int ret = 0;
 
-    async_data = (union op_get_eid_by_ip_data *)req_handle->recvBuf;
-    async_rsp = (struct ra_response_eid_list *)req_handle->privData;
-    ip_num = *async_rsp->num;
+    asyncData = (union OpGetEidByIpData *)reqHandle->recvBuf;
+    asyncRsp = (struct RaResponseEidList *)reqHandle->privData;
+    ipNum = *asyncRsp->num;
 
-    ret = ra_hdc_get_eid_results(async_data, ip_num, async_rsp->eid_list, async_rsp->num);
+    ret = RaHdcGetEidResults(asyncData, ipNum, asyncRsp->eidList, asyncRsp->num);
     if (ret != 0) {
-        hccp_err("[get][eid_by_ip]ra_hdc_get_eid_results failed ret[%d], phy_id[%u] dev_index[0x%x]", ret,
-            req_handle->phyId, req_handle->devIndex);
-        req_handle->opRet = ret;
+        hccp_err("[get][eid_by_ip]ra_hdc_get_eid_results failed ret[%d], phyId[%u] devIndex[0x%x]", ret,
+            reqHandle->phyId, reqHandle->devIndex);
+        reqHandle->opRet = ret;
     }
 
-    free(req_handle->privData);
-    req_handle->privData = NULL;
+    free(reqHandle->privData);
+    reqHandle->privData = NULL;
     return;
 }
 
-int ra_hdc_ctx_lmem_register_async(struct ra_ctx_handle *ctx_handle, struct mr_reg_info_t *lmem_info, 
-    struct ra_lmem_handle *lmem_handle, void **req_handle)
+int RaHdcCtxLmemRegisterAsync(struct RaCtxHandle *ctxHandle, struct MrRegInfoT *lmemInfo, 
+    struct RaLmemHandle *lmemHandle, void **reqHandle)
 {
-    struct RaRequestHandle *req_handle_tmp = NULL;
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    union op_lmem_reg_info_data async_data = {0};
+    struct RaRequestHandle *reqHandleTmp = NULL;
+    unsigned int phyId = ctxHandle->attr.phyId;
+    union OpLmemRegInfoData asyncData = {0};
     int ret;
 
-    ret = ra_hdc_ctx_prepare_lmem_register(ctx_handle, lmem_info, &async_data);
-    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_hdc_lmem]prepare register failed ret[%d], phy_id[%u] dev_index[%u]",
-        ret, phy_id, ctx_handle->dev_index), ret);
+    ret = RaHdcCtxPrepareLmemRegister(ctxHandle, lmemInfo, &asyncData);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_hdc_lmem]prepare register failed ret[%d], phyId[%u] devIndex[%u]",
+        ret, phyId, ctxHandle->devIndex), ret);
 
-    req_handle_tmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
-    CHK_PRT_RETURN(req_handle_tmp == NULL,
-        hccp_err("[init][ra_hdc_lmem]calloc req_handle_tmp failed, phy_id[%u], dev_index[0x%x]",
-        phy_id, ctx_handle->dev_index), -ENOMEM);
+    reqHandleTmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
+    CHK_PRT_RETURN(reqHandleTmp == NULL,
+        hccp_err("[init][ra_hdc_lmem]calloc req_handle_tmp failed, phyId[%u], devIndex[0x%x]",
+        phyId, ctxHandle->devIndex), -ENOMEM);
 
-    req_handle_tmp->devIndex = ctx_handle->dev_index;
-    req_handle_tmp->privData = (void *)&lmem_info->out;
-    req_handle_tmp->privHandle = (void *)lmem_handle;
-    ret = RaHdcSendMsgAsync(RA_RS_LMEM_REG, phy_id, (char *)&async_data, sizeof(union op_lmem_reg_info_data),
-        req_handle_tmp);
+    reqHandleTmp->devIndex = ctxHandle->devIndex;
+    reqHandleTmp->privData = (void *)&lmemInfo->out;
+    reqHandleTmp->privHandle = (void *)lmemHandle;
+    ret = RaHdcSendMsgAsync(RA_RS_LMEM_REG, phyId, (char *)&asyncData, sizeof(union OpLmemRegInfoData),
+        reqHandleTmp);
     if (ret != 0) {
-        hccp_err("[init][ra_hdc_lmem]hdc async send message failed ret[%d], phy_id[%u], dev_index[0x%x]",
-            ret, phy_id, ctx_handle->dev_index);
-        free(req_handle_tmp);
-        req_handle_tmp = NULL;
+        hccp_err("[init][ra_hdc_lmem]hdc async send message failed ret[%d], phyId[%u], devIndex[0x%x]",
+            ret, phyId, ctxHandle->devIndex);
+        free(reqHandleTmp);
+        reqHandleTmp = NULL;
         return ret;
     }
 
-    *req_handle = (void *)req_handle_tmp;
+    *reqHandle = (void *)reqHandleTmp;
     return 0;
 }
 
-void ra_hdc_async_handle_lmem_register(struct RaRequestHandle *req_handle)
+void RaHdcAsyncHandleLmemRegister(struct RaRequestHandle *reqHandle)
 {
-    union op_lmem_reg_info_data *async_data = NULL;
-    struct ra_lmem_handle *lmem_handle = NULL;
-    struct mem_reg_info *info = NULL;
+    union OpLmemRegInfoData *asyncData = NULL;
+    struct RaLmemHandle *lmemHandle = NULL;
+    struct MemRegInfo *info = NULL;
     int ret;
 
-    async_data = (union op_lmem_reg_info_data *)req_handle->recvBuf;
-    lmem_handle = (struct ra_lmem_handle *)req_handle->privHandle;
-    info = (struct mem_reg_info *)req_handle->privData;
-    ret = memcpy_s(info, sizeof(struct mem_reg_info), &async_data->rx_data.mem_info, sizeof(struct mem_reg_info_t));
+    asyncData = (union OpLmemRegInfoData *)reqHandle->recvBuf;
+    lmemHandle = (struct RaLmemHandle *)reqHandle->privHandle;
+    info = (struct MemRegInfo *)reqHandle->privData;
+    ret = memcpy_s(info, sizeof(struct MemRegInfo), &asyncData->rxData.memInfo, sizeof(struct MemRegInfoT));
     if (ret != 0) {
-        hccp_err("[init][ra_hdc_lmem]memcpy_s mem_info failed ret[%d], phy_id[%u] dev_index[0x%x]",
-            ret, req_handle->phyId, req_handle->devIndex);
-        req_handle->opRet = -ESAFEFUNC;
+        hccp_err("[init][ra_hdc_lmem]memcpy_s mem_info failed ret[%d], phyId[%u] devIndex[0x%x]",
+            ret, reqHandle->phyId, reqHandle->devIndex);
+        reqHandle->opRet = -ESAFEFUNC;
         return;
     }
 
-    lmem_handle->addr = info->ub.target_seg_handle;
+    lmemHandle->addr = info->ub.targetSegHandle;
     return;
 }
 
-int ra_hdc_ctx_lmem_unregister_async(struct ra_ctx_handle *ctx_handle, struct ra_lmem_handle *lmem_handle,
-    void **req_handle)
+int RaHdcCtxLmemUnregisterAsync(struct RaCtxHandle *ctxHandle, struct RaLmemHandle *lmemHandle,
+    void **reqHandle)
 {
-    struct RaRequestHandle *req_handle_tmp = NULL;
-    union op_lmem_unreg_info_data async_data = {0};
-    unsigned int phy_id = ctx_handle->attr.phy_id;
+    struct RaRequestHandle *reqHandleTmp = NULL;
+    union OpLmemUnregInfoData asyncData = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
     int ret = 0;
 
-    async_data.tx_data.phy_id = phy_id;
-    async_data.tx_data.dev_index = ctx_handle->dev_index;
-    async_data.tx_data.addr = lmem_handle->addr;
-    req_handle_tmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
-    CHK_PRT_RETURN(req_handle_tmp == NULL,
-        hccp_err("[deinit][ra_hdc_lmem]calloc req_handle_tmp failed, phy_id[%u], dev_index[0x%x]",
-        phy_id, ctx_handle->dev_index), -ENOMEM);
+    asyncData.txData.phyId = phyId;
+    asyncData.txData.devIndex = ctxHandle->devIndex;
+    asyncData.txData.addr = lmemHandle->addr;
+    reqHandleTmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
+    CHK_PRT_RETURN(reqHandleTmp == NULL,
+        hccp_err("[deinit][ra_hdc_lmem]calloc req_handle_tmp failed, phyId[%u], devIndex[0x%x]",
+        phyId, ctxHandle->devIndex), -ENOMEM);
 
-    ret = RaHdcSendMsgAsync(RA_RS_LMEM_UNREG, phy_id, (char *)&async_data, sizeof(union op_lmem_unreg_info_data),
-        req_handle_tmp);
+    ret = RaHdcSendMsgAsync(RA_RS_LMEM_UNREG, phyId, (char *)&asyncData, sizeof(union OpLmemUnregInfoData),
+        reqHandleTmp);
     if (ret != 0) {
-        hccp_err("[deinit][ra_hdc_lmem]hdc async send message failed ret[%d], phy_id[%u] dev_index[0x%x]",
-            ret, phy_id, ctx_handle->dev_index);
-        free(req_handle_tmp);
-        req_handle_tmp = NULL;
+        hccp_err("[deinit][ra_hdc_lmem]hdc async send message failed ret[%d], phyId[%u] devIndex[0x%x]",
+            ret, phyId, ctxHandle->devIndex);
+        free(reqHandleTmp);
+        reqHandleTmp = NULL;
         return ret;
     }
 
-    *req_handle = (void *)req_handle_tmp;
+    *reqHandle = (void *)reqHandleTmp;
     return 0;
 }
 
-int ra_hdc_ctx_qp_create_async(struct ra_ctx_handle *ctx_handle, struct qp_create_attr *attr,
-	struct qp_create_info *info, struct ra_ctx_qp_handle *qp_handle, void **req_handle)
+int RaHdcCtxQpCreateAsync(struct RaCtxHandle *ctxHandle, struct QpCreateAttr *attr,
+	struct QpCreateInfo *info, struct RaCtxQpHandle *qpHandle, void **reqHandle)
 {
-    struct RaRequestHandle *req_handle_tmp = NULL;
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    union op_ctx_qp_create_data async_data = {0};
+    struct RaRequestHandle *reqHandleTmp = NULL;
+    unsigned int phyId = ctxHandle->attr.phyId;
+    union OpCtxQpCreateData asyncData = {0};
     int ret;
 
-    ret = ra_hdc_ctx_prepare_qp_create(ctx_handle, attr, &async_data);
-    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_hdc_qp]prepare qp_create failed ret[%d], phy_id[%u] dev_index[0x%x]",
-        ret, phy_id, ctx_handle->dev_index), ret);
+    ret = RaHdcCtxPrepareQpCreate(ctxHandle, attr, &asyncData);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_hdc_qp]prepare qp_create failed ret[%d], phyId[%u] devIndex[0x%x]",
+        ret, phyId, ctxHandle->devIndex), ret);
 
-    req_handle_tmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
-    CHK_PRT_RETURN(req_handle_tmp == NULL,
-        hccp_err("[init][ra_hdc_qp]calloc req_handle_tmp failed, phy_id[%u], dev_index[0x%x]",
-        phy_id, ctx_handle->dev_index), -ENOMEM);
-    req_handle_tmp->devIndex = ctx_handle->dev_index;
-    req_handle_tmp->privData = (void *)info;
-    qp_handle->ctx_handle = ctx_handle;
-    qp_handle->dev_index = ctx_handle->dev_index;
-    qp_handle->phy_id = ctx_handle->attr.phy_id;
-    qp_handle->protocol = ctx_handle->protocol;
-    (void)memcpy_s(&qp_handle->qp_attr, sizeof(struct qp_create_attr), attr, sizeof(struct qp_create_attr));
-    req_handle_tmp->privHandle = (void *)qp_handle;
+    reqHandleTmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
+    CHK_PRT_RETURN(reqHandleTmp == NULL,
+        hccp_err("[init][ra_hdc_qp]calloc req_handle_tmp failed, phyId[%u], devIndex[0x%x]",
+        phyId, ctxHandle->devIndex), -ENOMEM);
+    reqHandleTmp->devIndex = ctxHandle->devIndex;
+    reqHandleTmp->privData = (void *)info;
+    qpHandle->ctxHandle = ctxHandle;
+    qpHandle->devIndex = ctxHandle->devIndex;
+    qpHandle->phyId = ctxHandle->attr.phyId;
+    qpHandle->protocol = ctxHandle->protocol;
+    (void)memcpy_s(&qpHandle->qpAttr, sizeof(struct QpCreateAttr), attr, sizeof(struct QpCreateAttr));
+    reqHandleTmp->privHandle = (void *)qpHandle;
 
-    ret = RaHdcSendMsgAsync(RA_RS_CTX_QP_CREATE, phy_id, (char *)&async_data,
-        sizeof(union op_ctx_qp_create_data), req_handle_tmp);
+    ret = RaHdcSendMsgAsync(RA_RS_CTX_QP_CREATE, phyId, (char *)&asyncData,
+        sizeof(union OpCtxQpCreateData), reqHandleTmp);
     if (ret != 0) {
-        hccp_err("[init][ra_hdc_qp]hdc async send message failed ret[%d], phy_id[%u] dev_index[0x%x]",
-            ret, phy_id, ctx_handle->dev_index);
-        free(req_handle_tmp);
-        req_handle_tmp = NULL;
+        hccp_err("[init][ra_hdc_qp]hdc async send message failed ret[%d], phyId[%u] devIndex[0x%x]",
+            ret, phyId, ctxHandle->devIndex);
+        free(reqHandleTmp);
+        reqHandleTmp = NULL;
         return ret;
     }
 
-    *req_handle = (void *)req_handle_tmp;
+    *reqHandle = (void *)reqHandleTmp;
     return 0;
 }
 
-void ra_hdc_async_handle_qp_create(struct RaRequestHandle *req_handle)
+void RaHdcAsyncHandleQpCreate(struct RaRequestHandle *reqHandle)
 {
-    union op_ctx_qp_create_data *async_data = NULL;
-    struct ra_ctx_qp_handle *qp_handle = NULL;
-    struct qp_create_info *info = NULL;
+    union OpCtxQpCreateData *asyncData = NULL;
+    struct RaCtxQpHandle *qpHandle = NULL;
+    struct QpCreateInfo *info = NULL;
 
-    async_data = (union op_ctx_qp_create_data *)req_handle->recvBuf;
-    info = (struct qp_create_info *)req_handle->privData;
-    qp_handle = (struct ra_ctx_qp_handle *)req_handle->privHandle;
-    (void)memcpy_s(info, sizeof(struct qp_create_info), &async_data->rx_data.qp_info, sizeof(struct qp_create_info));
-    qp_handle->id = info->ub.id;
-    (void)memcpy_s(&qp_handle->qp_info, sizeof(struct qp_create_info), info, sizeof(struct qp_create_info));
-
-    return;
-}
-
-int ra_hdc_ctx_qp_destroy_async(struct ra_ctx_qp_handle *qp_handle, void **req_handle)
-{
-    struct RaRequestHandle *req_handle_tmp = NULL;
-    union op_ctx_qp_destroy_data async_data = {0};
-    unsigned int phy_id = qp_handle->phy_id;
-    int ret;
-
-    async_data.tx_data.phy_id = phy_id;
-    async_data.tx_data.dev_index = qp_handle->dev_index;
-    async_data.tx_data.id = qp_handle->id;
-
-    req_handle_tmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
-    CHK_PRT_RETURN(req_handle_tmp == NULL,
-        hccp_err("[deinit][ra_hdc_qp]calloc req_handle_tmp failed, phy_id[%u], dev_index[0x%x]",
-        phy_id, qp_handle->dev_index), -ENOMEM);
-
-    ret = RaHdcSendMsgAsync(RA_RS_CTX_QP_DESTROY, phy_id, (char *)&async_data,
-        sizeof(union op_ctx_qp_destroy_data), req_handle_tmp);
-    if (ret != 0) {
-        hccp_err("[deinit][ra_hdc_qp]hdc async send message failed ret[%d], phy_id[%u] dev_index[0x%x]",
-            ret, phy_id, qp_handle->dev_index);
-        free(req_handle_tmp);
-        req_handle_tmp = NULL;
-        return ret;
-    }
-
-    *req_handle = (void *)req_handle_tmp;
-    return 0;
-}
-
-int ra_hdc_ctx_qp_import_async(struct ra_ctx_handle *ctx_handle, struct qp_import_info_t *info,
-    struct ra_ctx_rem_qp_handle *rem_qp_handle, void **req_handle)
-{
-    struct RaRequestHandle *req_handle_tmp = NULL;
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    union op_ctx_qp_import_data async_data = {0};
-    int ret = 0;
-
-    ret = ra_hdc_ctx_prepare_qp_import(ctx_handle, info, &async_data);
-    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_hdc_qp]prepare qp_import failed ret[%d], phy_id[%u] dev_index[0x%x]",
-        ret, phy_id, ctx_handle->dev_index), ret);
-
-    req_handle_tmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
-    CHK_PRT_RETURN(req_handle_tmp == NULL,
-        hccp_err("[init][ra_hdc_qp]calloc req_handle_tmp failed, phy_id[%u], dev_index[0x%x]",
-        phy_id, ctx_handle->dev_index), -ENOMEM);
-
-    req_handle_tmp->devIndex = ctx_handle->dev_index;
-    req_handle_tmp->privData = (void *)&info->out;
-    rem_qp_handle->dev_index = ctx_handle->dev_index;
-    rem_qp_handle->phy_id = ctx_handle->attr.phy_id;
-    rem_qp_handle->protocol = ctx_handle->protocol;
-    req_handle_tmp->privHandle = (void *)rem_qp_handle;
-
-    ret = RaHdcSendMsgAsync(RA_RS_CTX_QP_IMPORT, phy_id, (char *)&async_data,
-        sizeof(union op_ctx_qp_import_data), req_handle_tmp);
-    if (ret != 0) {
-        hccp_err("[init][ra_hdc_qp]hdc async send message failed ret[%d], phy_id[%u] dev_index[0x%x]",
-            ret, phy_id, ctx_handle->dev_index);
-        free(req_handle_tmp);
-        req_handle_tmp = NULL;
-        return ret;
-    }
-
-    *req_handle = (void *)req_handle_tmp;
-    return 0;
-}
-
-void ra_hdc_async_handle_qp_import(struct RaRequestHandle *req_handle)
-{
-    struct ra_ctx_rem_qp_handle *rem_qp_handle = NULL;
-    union op_ctx_qp_import_data *async_data = NULL;
-    struct qp_import_info *info = NULL;
-
-    async_data = (union op_ctx_qp_import_data *)req_handle->recvBuf;
-    info = (struct qp_import_info *)req_handle->privData;
-    rem_qp_handle = (struct ra_ctx_rem_qp_handle *)req_handle->privHandle;
-
-    info->ub.tjetty_handle = async_data->rx_data.info.tjetty_handle;
-    info->ub.tpn = async_data->rx_data.info.tpn;
-    rem_qp_handle->id = async_data->rx_data.rem_jetty_id;
+    asyncData = (union OpCtxQpCreateData *)reqHandle->recvBuf;
+    info = (struct QpCreateInfo *)reqHandle->privData;
+    qpHandle = (struct RaCtxQpHandle *)reqHandle->privHandle;
+    (void)memcpy_s(info, sizeof(struct QpCreateInfo), &asyncData->rxData.qpInfo, sizeof(struct QpCreateInfo));
+    qpHandle->id = info->ub.id;
+    (void)memcpy_s(&qpHandle->qpInfo, sizeof(struct QpCreateInfo), info, sizeof(struct QpCreateInfo));
 
     return;
 }
 
-int ra_hdc_ctx_qp_unimport_async(struct ra_ctx_rem_qp_handle *rem_qp_handle, void **req_handle)
+int RaHdcCtxQpDestroyAsync(struct RaCtxQpHandle *qpHandle, void **reqHandle)
 {
-    struct RaRequestHandle *req_handle_tmp = NULL;
-    union op_ctx_qp_unimport_data async_data = {0};
-    unsigned int phy_id = rem_qp_handle->phy_id;
+    struct RaRequestHandle *reqHandleTmp = NULL;
+    union OpCtxQpDestroyData asyncData = {0};
+    unsigned int phyId = qpHandle->phyId;
     int ret;
 
-    async_data.tx_data.phy_id = phy_id;
-    async_data.tx_data.dev_index = rem_qp_handle->dev_index;
-    async_data.tx_data.rem_jetty_id = rem_qp_handle->id;
+    asyncData.txData.phyId = phyId;
+    asyncData.txData.devIndex = qpHandle->devIndex;
+    asyncData.txData.id = qpHandle->id;
 
-    req_handle_tmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
-    CHK_PRT_RETURN(req_handle_tmp == NULL,
-        hccp_err("[deinit][ra_hdc_qp]calloc req_handle_tmp failed, phy_id[%u], dev_index[0x%x]",
-        phy_id, rem_qp_handle->dev_index), -ENOMEM);
+    reqHandleTmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
+    CHK_PRT_RETURN(reqHandleTmp == NULL,
+        hccp_err("[deinit][ra_hdc_qp]calloc req_handle_tmp failed, phyId[%u], devIndex[0x%x]",
+        phyId, qpHandle->devIndex), -ENOMEM);
 
-    ret = RaHdcSendMsgAsync(RA_RS_CTX_QP_UNIMPORT, phy_id, (char *)&async_data,
-        sizeof(union op_ctx_qp_unimport_data), req_handle_tmp);
+    ret = RaHdcSendMsgAsync(RA_RS_CTX_QP_DESTROY, phyId, (char *)&asyncData,
+        sizeof(union OpCtxQpDestroyData), reqHandleTmp);
     if (ret != 0) {
-        hccp_err("[deinit][ra_hdc_qp]hdc async send message failed ret[%d], phy_id[%u] dev_index[0x%x]",
-            ret, phy_id, rem_qp_handle->dev_index);
-        free(req_handle_tmp);
-        req_handle_tmp = NULL;
+        hccp_err("[deinit][ra_hdc_qp]hdc async send message failed ret[%d], phyId[%u] devIndex[0x%x]",
+            ret, phyId, qpHandle->devIndex);
+        free(reqHandleTmp);
+        reqHandleTmp = NULL;
         return ret;
     }
 
-    *req_handle = (void *)req_handle_tmp;
+    *reqHandle = (void *)reqHandleTmp;
     return 0;
 }
 
-int ra_hdc_get_tp_info_list_async(struct ra_ctx_handle *ctx_handle, struct get_tp_cfg *cfg, struct tp_info info_list[],
-    unsigned int *num, void **req_handle)
+int RaHdcCtxQpImportAsync(struct RaCtxHandle *ctxHandle, struct QpImportInfoT *info,
+    struct RaCtxRemQpHandle *remQpHandle, void **reqHandle)
 {
-    struct ra_response_tp_info_list *async_rsp = NULL;
-    struct RaRequestHandle *req_handle_tmp = NULL;
-    union op_get_tp_info_list_data async_data = {0};
-    unsigned int phy_id = ctx_handle->attr.phy_id;
+    struct RaRequestHandle *reqHandleTmp = NULL;
+    unsigned int phyId = ctxHandle->attr.phyId;
+    union OpCtxQpImportData asyncData = {0};
     int ret = 0;
 
-    async_rsp = (struct ra_response_tp_info_list *)calloc(1, sizeof(struct ra_response_tp_info_list));
-    CHK_PRT_RETURN(async_rsp == NULL,
-        hccp_err("[get][ra_hdc_tp_info]calloc async_rsp failed, phy_id[%u] dev_index[0x%x]",
-        phy_id, ctx_handle->dev_index), -ENOMEM);
-    async_rsp->info_list = info_list;
-    async_rsp->num = num;
+    ret = RaHdcCtxPrepareQpImport(ctxHandle, info, &asyncData);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_hdc_qp]prepare qp_import failed ret[%d], phyId[%u] devIndex[0x%x]",
+        ret, phyId, ctxHandle->devIndex), ret);
 
-    async_data.tx_data.phy_id = phy_id;
-    async_data.tx_data.dev_index = ctx_handle->dev_index;
-    async_data.tx_data.num = *num;
-    (void)memcpy_s(&async_data.tx_data.cfg, sizeof(struct get_tp_cfg), cfg, sizeof(struct get_tp_cfg));
+    reqHandleTmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
+    CHK_PRT_RETURN(reqHandleTmp == NULL,
+        hccp_err("[init][ra_hdc_qp]calloc req_handle_tmp failed, phyId[%u], devIndex[0x%x]",
+        phyId, ctxHandle->devIndex), -ENOMEM);
 
-    req_handle_tmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
-    if (req_handle_tmp == NULL) {
-        hccp_err("[get][ra_hdc_tp_info]calloc RaRequestHandle failed, phy_id[%u], dev_index[0x%x]",
-            phy_id, ctx_handle->dev_index);
+    reqHandleTmp->devIndex = ctxHandle->devIndex;
+    reqHandleTmp->privData = (void *)&info->out;
+    remQpHandle->devIndex = ctxHandle->devIndex;
+    remQpHandle->phyId = ctxHandle->attr.phyId;
+    remQpHandle->protocol = ctxHandle->protocol;
+    reqHandleTmp->privHandle = (void *)remQpHandle;
+
+    ret = RaHdcSendMsgAsync(RA_RS_CTX_QP_IMPORT, phyId, (char *)&asyncData,
+        sizeof(union OpCtxQpImportData), reqHandleTmp);
+    if (ret != 0) {
+        hccp_err("[init][ra_hdc_qp]hdc async send message failed ret[%d], phyId[%u] devIndex[0x%x]",
+            ret, phyId, ctxHandle->devIndex);
+        free(reqHandleTmp);
+        reqHandleTmp = NULL;
+        return ret;
+    }
+
+    *reqHandle = (void *)reqHandleTmp;
+    return 0;
+}
+
+void RaHdcAsyncHandleQpImport(struct RaRequestHandle *reqHandle)
+{
+    struct RaCtxRemQpHandle *remQpHandle = NULL;
+    union OpCtxQpImportData *asyncData = NULL;
+    struct QpImportInfo *info = NULL;
+
+    asyncData = (union OpCtxQpImportData *)reqHandle->recvBuf;
+    info = (struct QpImportInfo *)reqHandle->privData;
+    remQpHandle = (struct RaCtxRemQpHandle *)reqHandle->privHandle;
+
+    info->ub.tjettyHandle = asyncData->rxData.info.tjettyHandle;
+    info->ub.tpn = asyncData->rxData.info.tpn;
+    remQpHandle->id = asyncData->rxData.remJettyId;
+
+    return;
+}
+
+int RaHdcCtxQpUnimportAsync(struct RaCtxRemQpHandle *remQpHandle, void **reqHandle)
+{
+    struct RaRequestHandle *reqHandleTmp = NULL;
+    union OpCtxQpUnimportData asyncData = {0};
+    unsigned int phyId = remQpHandle->phyId;
+    int ret;
+
+    asyncData.txData.phyId = phyId;
+    asyncData.txData.devIndex = remQpHandle->devIndex;
+    asyncData.txData.remJettyId = remQpHandle->id;
+
+    reqHandleTmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
+    CHK_PRT_RETURN(reqHandleTmp == NULL,
+        hccp_err("[deinit][ra_hdc_qp]calloc req_handle_tmp failed, phyId[%u], devIndex[0x%x]",
+        phyId, remQpHandle->devIndex), -ENOMEM);
+
+    ret = RaHdcSendMsgAsync(RA_RS_CTX_QP_UNIMPORT, phyId, (char *)&asyncData,
+        sizeof(union OpCtxQpUnimportData), reqHandleTmp);
+    if (ret != 0) {
+        hccp_err("[deinit][ra_hdc_qp]hdc async send message failed ret[%d], phyId[%u] devIndex[0x%x]",
+            ret, phyId, remQpHandle->devIndex);
+        free(reqHandleTmp);
+        reqHandleTmp = NULL;
+        return ret;
+    }
+
+    *reqHandle = (void *)reqHandleTmp;
+    return 0;
+}
+
+int RaHdcGetTpInfoListAsync(struct RaCtxHandle *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num, void **reqHandle)
+{
+    struct RaResponseTpInfoList *asyncRsp = NULL;
+    struct RaRequestHandle *reqHandleTmp = NULL;
+    union OpGetTpInfoListData asyncData = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    int ret = 0;
+
+    asyncRsp = (struct RaResponseTpInfoList *)calloc(1, sizeof(struct RaResponseTpInfoList));
+    CHK_PRT_RETURN(asyncRsp == NULL,
+        hccp_err("[get][ra_hdc_tp_info]calloc async_rsp failed, phyId[%u] devIndex[0x%x]",
+        phyId, ctxHandle->devIndex), -ENOMEM);
+    asyncRsp->infoList = infoList;
+    asyncRsp->num = num;
+
+    asyncData.txData.phyId = phyId;
+    asyncData.txData.devIndex = ctxHandle->devIndex;
+    asyncData.txData.num = *num;
+    (void)memcpy_s(&asyncData.txData.cfg, sizeof(struct GetTpCfg), cfg, sizeof(struct GetTpCfg));
+
+    reqHandleTmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
+    if (reqHandleTmp == NULL) {
+        hccp_err("[get][ra_hdc_tp_info]calloc RaRequestHandle failed, phyId[%u], devIndex[0x%x]",
+            phyId, ctxHandle->devIndex);
         ret = -ENOMEM;
         goto out;
     }
 
-    req_handle_tmp->devIndex = ctx_handle->dev_index;
-    req_handle_tmp->privData = (void *)async_rsp;
-    ret = RaHdcSendMsgAsync(RA_RS_GET_TP_INFO_LIST, phy_id, (char *)&async_data,
-        sizeof(union op_get_tp_info_list_data), req_handle_tmp);
+    reqHandleTmp->devIndex = ctxHandle->devIndex;
+    reqHandleTmp->privData = (void *)asyncRsp;
+    ret = RaHdcSendMsgAsync(RA_RS_GET_TP_INFO_LIST, phyId, (char *)&asyncData,
+        sizeof(union OpGetTpInfoListData), reqHandleTmp);
     if (ret != 0) {
-        hccp_err("[get][ra_hdc_tp_info]hdc async send message failed ret[%d], phy_id[%u] dev_index[0x%x]",
-            ret, phy_id, ctx_handle->dev_index);
-        free(req_handle_tmp);
-        req_handle_tmp = NULL;
+        hccp_err("[get][ra_hdc_tp_info]hdc async send message failed ret[%d], phyId[%u] devIndex[0x%x]",
+            ret, phyId, ctxHandle->devIndex);
+        free(reqHandleTmp);
+        reqHandleTmp = NULL;
         goto out;
     }
 
-    *req_handle = (void *)req_handle_tmp;
+    *reqHandle = (void *)reqHandleTmp;
     return 0;
 out:
-    free(async_rsp);
-    async_rsp = NULL;
+    free(asyncRsp);
+    asyncRsp = NULL;
     return ret;
 }
 
-void ra_hdc_async_handle_tp_info_list(struct RaRequestHandle *req_handle)
+void RaHdcAsyncHandleTpInfoList(struct RaRequestHandle *reqHandle)
 {
-    struct ra_response_tp_info_list *async_rsp = NULL;
-    union op_get_tp_info_list_data *async_data = NULL;
+    struct RaResponseTpInfoList *asyncRsp = NULL;
+    union OpGetTpInfoListData *asyncData = NULL;
     int ret;
 
-    if (req_handle->opRet != 0) {
+    if (reqHandle->opRet != 0) {
         goto out;
     }
-    async_data = (union op_get_tp_info_list_data *)req_handle->recvBuf;
-    async_rsp = (struct ra_response_tp_info_list *)req_handle->privData;
-    if (async_data->rx_data.num == 0) {
-        *async_rsp->num = async_data->rx_data.num;
+    asyncData = (union OpGetTpInfoListData *)reqHandle->recvBuf;
+    asyncRsp = (struct RaResponseTpInfoList *)reqHandle->privData;
+    if (asyncData->rxData.num == 0) {
+        *asyncRsp->num = asyncData->rxData.num;
         goto out;
     }
 
-    ret = memcpy_s(async_rsp->info_list, (*async_rsp->num) * sizeof(struct tp_info),
-        async_data->rx_data.info_list, async_data->rx_data.num * sizeof(struct tp_info));
+    ret = memcpy_s(asyncRsp->infoList, (*asyncRsp->num) * sizeof(struct HccpTpInfo),
+        asyncData->rxData.infoList, asyncData->rxData.num * sizeof(struct HccpTpInfo));
     if (ret != 0) {
         hccp_err("[get][ra_hdc_tp_info]memcpy_s tp_info failed ret[%d] *async_rsp->num[%u] rx_data.num[%u], "
-            "phy_id[%u] dev_index[0x%x]", ret, *async_rsp->num, async_data->rx_data.num,
-            req_handle->phyId, req_handle->devIndex);
-        req_handle->opRet = -ESAFEFUNC;
+            "phyId[%u] devIndex[0x%x]", ret, *asyncRsp->num, asyncData->rxData.num,
+            reqHandle->phyId, reqHandle->devIndex);
+        reqHandle->opRet = -ESAFEFUNC;
         goto out;
     }
-    *async_rsp->num = async_data->rx_data.num;
+    *asyncRsp->num = asyncData->rxData.num;
 out:
-    free(req_handle->privData);
-    req_handle->privData = NULL;
+    free(reqHandle->privData);
+    reqHandle->privData = NULL;
     return;
 }
 
-int ra_hdc_get_tp_attr_async(struct ra_ctx_handle *ctx_handle, uint64_t tp_handle, uint32_t *attr_bitmap,
-    struct tp_attr *attr, void **req_handle)
+int RaHdcGetTpAttrAsync(struct RaCtxHandle *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap,
+    struct TpAttr *attr, void **reqHandle)
 {
-    struct ra_response_get_tp_attr *async_rsp = NULL;
-    struct RaRequestHandle *req_handle_tmp = NULL;
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    union op_get_tp_attr_data async_data = {0};
+    struct RaResponseGetTpAttr *asyncRsp = NULL;
+    struct RaRequestHandle *reqHandleTmp = NULL;
+    unsigned int phyId = ctxHandle->attr.phyId;
+    union OpGetTpAttrData asyncData = {0};
     int ret = 0;
 
-    async_rsp = (struct ra_response_get_tp_attr *)calloc(1, sizeof(struct ra_response_get_tp_attr));
-    CHK_PRT_RETURN(async_rsp == NULL,
-        hccp_err("[get][ra_hdc_tp_attr]calloc ra_response_get_tp_attr failed, phy_id[%u] dev_index[0x%x]",
-        phy_id, ctx_handle->dev_index), -ENOMEM);
-    async_rsp->attr = attr;
-    async_rsp->attr_bitmap = attr_bitmap;
+    asyncRsp = (struct RaResponseGetTpAttr *)calloc(1, sizeof(struct RaResponseGetTpAttr));
+    CHK_PRT_RETURN(asyncRsp == NULL,
+        hccp_err("[get][ra_hdc_tp_attr]calloc ra_response_get_tp_attr failed, phyId[%u] devIndex[0x%x]",
+        phyId, ctxHandle->devIndex), -ENOMEM);
+    asyncRsp->attr = attr;
+    asyncRsp->attrBitmap = attrBitmap;
 
-    async_data.tx_data.dev_index = ctx_handle->dev_index;
-    async_data.tx_data.phy_id = phy_id;
-    async_data.tx_data.tp_handle = tp_handle;
-    async_data.tx_data.attr_bitmap = *attr_bitmap;
-    req_handle_tmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
-    if (req_handle_tmp == NULL) {
-        hccp_err("[get][ra_hdc_tp_attr]calloc RaRequestHandle failed, phy_id[%u] dev_index[0x%x]",
-            phy_id, ctx_handle->dev_index);
+    asyncData.txData.devIndex = ctxHandle->devIndex;
+    asyncData.txData.phyId = phyId;
+    asyncData.txData.tpHandle = tpHandle;
+    asyncData.txData.attrBitmap = *attrBitmap;
+    reqHandleTmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
+    if (reqHandleTmp == NULL) {
+        hccp_err("[get][ra_hdc_tp_attr]calloc RaRequestHandle failed, phyId[%u] devIndex[0x%x]",
+            phyId, ctxHandle->devIndex);
         ret = -ENOMEM;
         goto out;
     }
 
-    req_handle_tmp->devIndex = ctx_handle->dev_index;
-    req_handle_tmp->privData = (void *)async_rsp;
-    ret = RaHdcSendMsgAsync(RA_RS_GET_TP_ATTR, phy_id, (char *)&async_data,
-        sizeof(union op_get_tp_attr_data), req_handle_tmp);
+    reqHandleTmp->devIndex = ctxHandle->devIndex;
+    reqHandleTmp->privData = (void *)asyncRsp;
+    ret = RaHdcSendMsgAsync(RA_RS_GET_TP_ATTR, phyId, (char *)&asyncData,
+        sizeof(union OpGetTpAttrData), reqHandleTmp);
     if (ret != 0) {
-        hccp_err("[get][ra_hdc_tp_attr]hdc async send message failed ret[%d], phy_id[%u] dev_index[0x%x]",
-            ret, phy_id, ctx_handle->dev_index);
-        free(req_handle_tmp);
-        req_handle_tmp = NULL;
+        hccp_err("[get][ra_hdc_tp_attr]hdc async send message failed ret[%d], phyId[%u] devIndex[0x%x]",
+            ret, phyId, ctxHandle->devIndex);
+        free(reqHandleTmp);
+        reqHandleTmp = NULL;
         goto out;
     }
 
-    *req_handle = (void *)req_handle_tmp;
+    *reqHandle = (void *)reqHandleTmp;
     return 0;
 out:
-    free(async_rsp);
-    async_rsp = NULL;
+    free(asyncRsp);
+    asyncRsp = NULL;
     return ret;
 }
 
-void ra_hdc_async_handle_get_tp_attr(struct RaRequestHandle *req_handle)
+void RaHdcAsyncHandleGetTpAttr(struct RaRequestHandle *reqHandle)
 {
-    struct ra_response_get_tp_attr *async_rsp = NULL;
-    union op_get_tp_attr_data *async_data = NULL;
+    struct RaResponseGetTpAttr *asyncRsp = NULL;
+    union OpGetTpAttrData *asyncData = NULL;
 
-    if (req_handle->opRet != 0) {
+    if (reqHandle->opRet != 0) {
         goto out;
     }
-    async_data = (union op_get_tp_attr_data *)req_handle->recvBuf;
-    async_rsp = (struct ra_response_get_tp_attr *)req_handle->privData;
-    *async_rsp->attr_bitmap = async_data->rx_data.attr_bitmap;
-    (void)memcpy_s(async_rsp->attr, sizeof(struct tp_attr), &async_data->rx_data.attr, sizeof(struct tp_attr));
+    asyncData = (union OpGetTpAttrData *)reqHandle->recvBuf;
+    asyncRsp = (struct RaResponseGetTpAttr *)reqHandle->privData;
+    *asyncRsp->attrBitmap = asyncData->rxData.attrBitmap;
+    (void)memcpy_s(asyncRsp->attr, sizeof(struct TpAttr), &asyncData->rxData.attr, sizeof(struct TpAttr));
 
 out:
-    free(req_handle->privData);
-    req_handle->privData = NULL;
+    free(reqHandle->privData);
+    reqHandle->privData = NULL;
     return;
 }
 
-int ra_hdc_set_tp_attr_async(struct ra_ctx_handle *ctx_handle, uint64_t tp_handle, uint32_t attr_bitmap,
-    struct tp_attr *attr, void **req_handle)
+int RaHdcSetTpAttrAsync(struct RaCtxHandle *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap,
+    struct TpAttr *attr, void **reqHandle)
 {
-    struct RaRequestHandle *req_handle_tmp = NULL;
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    union op_set_tp_attr_data async_data = {0};
+    struct RaRequestHandle *reqHandleTmp = NULL;
+    unsigned int phyId = ctxHandle->attr.phyId;
+    union OpSetTpAttrData asyncData = {0};
     int ret = 0;
 
-    async_data.tx_data.dev_index = ctx_handle->dev_index;
-    async_data.tx_data.phy_id = phy_id;
-    async_data.tx_data.tp_handle = tp_handle;
-    async_data.tx_data.attr_bitmap = attr_bitmap;
-    (void)memcpy_s(&async_data.tx_data.attr, sizeof(struct tp_attr), attr, sizeof(struct tp_attr));
-    req_handle_tmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
-    CHK_PRT_RETURN(req_handle_tmp == NULL,
-        hccp_err("[set][ra_hdc_tp_attr]calloc RaRequestHandle failed, phy_id[%u] dev_index[0x%x]",
-        phy_id, ctx_handle->dev_index), -ENOMEM);
+    asyncData.txData.devIndex = ctxHandle->devIndex;
+    asyncData.txData.phyId = phyId;
+    asyncData.txData.tpHandle = tpHandle;
+    asyncData.txData.attrBitmap = attrBitmap;
+    (void)memcpy_s(&asyncData.txData.attr, sizeof(struct TpAttr), attr, sizeof(struct TpAttr));
+    reqHandleTmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
+    CHK_PRT_RETURN(reqHandleTmp == NULL,
+        hccp_err("[set][ra_hdc_tp_attr]calloc RaRequestHandle failed, phyId[%u] devIndex[0x%x]",
+        phyId, ctxHandle->devIndex), -ENOMEM);
 
-    req_handle_tmp->devIndex = ctx_handle->dev_index;
-    ret = RaHdcSendMsgAsync(RA_RS_SET_TP_ATTR, phy_id, (char *)&async_data,
-        sizeof(union op_set_tp_attr_data), req_handle_tmp);
+    reqHandleTmp->devIndex = ctxHandle->devIndex;
+    ret = RaHdcSendMsgAsync(RA_RS_SET_TP_ATTR, phyId, (char *)&asyncData,
+        sizeof(union OpSetTpAttrData), reqHandleTmp);
     if (ret != 0) {
-        hccp_err("[set][ra_hdc_tp_attr]hdc async send message failed ret[%d], phy_id[%u] dev_index[0x%x]",
-            ret, phy_id, ctx_handle->dev_index);
-        free(req_handle_tmp);
-        req_handle_tmp = NULL;
+        hccp_err("[set][ra_hdc_tp_attr]hdc async send message failed ret[%d], phyId[%u] devIndex[0x%x]",
+            ret, phyId, ctxHandle->devIndex);
+        free(reqHandleTmp);
+        reqHandleTmp = NULL;
         return ret;
     }
 
-    *req_handle = (void *)req_handle_tmp;
+    *reqHandle = (void *)reqHandleTmp;
     return 0;
 }
 
-STATIC int qp_destroy_batch_param_check(struct ra_ctx_handle *ctx_handle, void *qp_handle[],
+STATIC int QpDestroyBatchParamCheck(struct RaCtxHandle *ctxHandle, void *qpHandle[],
     unsigned int ids[], unsigned int *num)
 {
-    struct ra_ctx_qp_handle *qp_handle_tmp = NULL;
+    struct RaCtxQpHandle *qpHandleTmp = NULL;
     unsigned int i;
 
     for (i = 0; i < *num; ++i) {
-        qp_handle_tmp = (struct ra_ctx_qp_handle *)qp_handle[i];
-        CHK_PRT_RETURN(qp_handle_tmp == NULL,
+        qpHandleTmp = (struct RaCtxQpHandle *)qpHandle[i];
+        CHK_PRT_RETURN(qpHandleTmp == NULL,
             hccp_err("[destroy_batch][ra_hdc_ctx_qp]qp_handle[%u] is NULL", i), -EINVAL);
-        CHK_PRT_RETURN(qp_handle_tmp->ctx_handle == NULL,
+        CHK_PRT_RETURN(qpHandleTmp->ctxHandle == NULL,
             hccp_err("[destroy_batch][ra_hdc_ctx_qp]ctx_handle[%u] is NULL", i), -EINVAL);
-        CHK_PRT_RETURN(qp_handle_tmp->ctx_handle != ctx_handle,
+        CHK_PRT_RETURN(qpHandleTmp->ctxHandle != ctxHandle,
             hccp_err("[destroy_batch][ra_hdc_ctx_qp]qp_handle[%u]->ctx_handle is different from others", i), -EINVAL);
 
-        ids[i] = qp_handle_tmp->id;
+        ids[i] = qpHandleTmp->id;
     }
 
     return 0;
 }
 
-int ra_hdc_ctx_qp_destroy_batch_async(struct ra_ctx_handle *ctx_handle, void *qp_handle[],
-    unsigned int *num, void **req_handle)
+int RaHdcCtxQpDestroyBatchAsync(struct RaCtxHandle *ctxHandle, void *qpHandle[],
+    unsigned int *num, void **reqHandle)
 {
-    union op_ctx_qp_destroy_batch_data async_data = {0};
-    struct RaRequestHandle *req_handle_tmp = NULL;
-    unsigned int phy_id = ctx_handle->attr.phy_id;
+    union OpCtxQpDestroyBatchData asyncData = {0};
+    struct RaRequestHandle *reqHandleTmp = NULL;
+    unsigned int phyId = ctxHandle->attr.phyId;
     int ret;
 
-    ret = qp_destroy_batch_param_check(ctx_handle, qp_handle, async_data.tx_data.ids, num);
-    CHK_PRT_RETURN(ret != 0, hccp_err("[destroy_batch][ra_hdc_ctx_qp]param check failed, phy_id[%u] dev_index[0x%x]",
-        phy_id, ctx_handle->dev_index), ret);
+    ret = QpDestroyBatchParamCheck(ctxHandle, qpHandle, asyncData.txData.ids, num);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[destroy_batch][ra_hdc_ctx_qp]param check failed, phyId[%u] devIndex[0x%x]",
+        phyId, ctxHandle->devIndex), ret);
     
-    async_data.tx_data.phy_id = phy_id;
-    async_data.tx_data.dev_index = ctx_handle->dev_index;
-    async_data.tx_data.num = *num;
+    asyncData.txData.phyId = phyId;
+    asyncData.txData.devIndex = ctxHandle->devIndex;
+    asyncData.txData.num = *num;
 
-    req_handle_tmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
-    CHK_PRT_RETURN(req_handle_tmp == NULL, hccp_err("[destroy_batch][ra_hdc_ctx_qp]calloc RaRequestHandle failed, "
-        "phy_id[%u] dev_index[0x%x]", phy_id, ctx_handle->dev_index), -ENOMEM);
+    reqHandleTmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
+    CHK_PRT_RETURN(reqHandleTmp == NULL, hccp_err("[destroy_batch][ra_hdc_ctx_qp]calloc RaRequestHandle failed, "
+        "phyId[%u] devIndex[0x%x]", phyId, ctxHandle->devIndex), -ENOMEM);
 
-    req_handle_tmp->devIndex = ctx_handle->dev_index;
-    req_handle_tmp->privData = (void *)num;
-    ret = RaHdcSendMsgAsync(RA_RS_CTX_QP_DESTROY_BATCH, phy_id, (char *)&async_data,
-        sizeof(union op_ctx_qp_destroy_batch_data), req_handle_tmp);
+    reqHandleTmp->devIndex = ctxHandle->devIndex;
+    reqHandleTmp->privData = (void *)num;
+    ret = RaHdcSendMsgAsync(RA_RS_CTX_QP_DESTROY_BATCH, phyId, (char *)&asyncData,
+        sizeof(union OpCtxQpDestroyBatchData), reqHandleTmp);
     if (ret != 0) {
-        hccp_err("[destroy_batch][ra_hdc_ctx_qp]hdc async send message failed ret[%d], phy_id[%u] dev_index[0x%x]",
-            ret, phy_id, ctx_handle->dev_index);
-        free(req_handle_tmp);
-        req_handle_tmp = NULL;
+        hccp_err("[destroy_batch][ra_hdc_ctx_qp]hdc async send message failed ret[%d], phyId[%u] devIndex[0x%x]",
+            ret, phyId, ctxHandle->devIndex);
+        free(reqHandleTmp);
+        reqHandleTmp = NULL;
         return ret;
     }
 
-    *req_handle = (void *)req_handle_tmp;
+    *reqHandle = (void *)reqHandleTmp;
     return 0;
 }
 
-void ra_hdc_async_handle_qp_destroy_batch(struct RaRequestHandle *req_handle)
+void RaHdcAsyncHandleQpDestroyBatch(struct RaRequestHandle *reqHandle)
 {
-    union op_ctx_qp_destroy_batch_data *async_data = NULL;
+    union OpCtxQpDestroyBatchData *asyncData = NULL;
     unsigned int *num = NULL;
 
-    async_data = (union op_ctx_qp_destroy_batch_data *)req_handle->recvBuf;
-    num = (unsigned int *)req_handle->privData;
-    *num = async_data->rx_data.num;
+    asyncData = (union OpCtxQpDestroyBatchData *)reqHandle->recvBuf;
+    num = (unsigned int *)reqHandle->privData;
+    *num = asyncData->rxData.num;
 
     return;
 }

@@ -58,12 +58,12 @@ TEST_F(CcuPfeTest, GetDevEidInfoListPass)
 {
     u32 num = 2;
 
-    MOCKER(ra_get_dev_eid_info_num)
+    MOCKER(RaGetDevEidInfoNum)
         .stubs()
         .with(any(), outBoundP(&num, sizeof(num)))
         .will(returnValue(0));
 
-    MOCKER(ra_get_dev_eid_info_list)
+    MOCKER(RaGetDevEidInfoList)
         .stubs()
         .with(any(), any(), outBoundP(&num, sizeof(num)))
         .will(returnValue(0));
@@ -79,12 +79,12 @@ TEST_F(CcuPfeTest, GetDevEidInfoListFail)
 {
     u32 num = 2;
 
-    MOCKER(ra_get_dev_eid_info_num)
+    MOCKER(RaGetDevEidInfoNum)
         .stubs()
         .with(any(), outBoundP(&num, sizeof(num)))
         .will(returnValue(1));
 
-    MOCKER(ra_get_dev_eid_info_list)
+    MOCKER(RaGetDevEidInfoList)
         .stubs()
         .with(any(), any(), outBoundP(&num, sizeof(num)))
         .will(returnValue(0));
@@ -97,12 +97,12 @@ TEST_F(CcuPfeTest, GetDevEidInfoListFail1)
 {
     u32 num = 2;
 
-    MOCKER(ra_get_dev_eid_info_num)
+    MOCKER(RaGetDevEidInfoNum)
         .stubs()
         .with(any(), outBoundP(&num, sizeof(num)))
         .will(returnValue(0));
 
-    MOCKER(ra_get_dev_eid_info_list)
+    MOCKER(RaGetDevEidInfoList)
         .stubs()
         .with(any(), any(), outBoundP(&num, sizeof(num)))
         .will(returnValue(1));

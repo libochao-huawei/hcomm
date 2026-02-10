@@ -62,36 +62,28 @@ set_property(TARGET rs_ut_abnormal PROPERTY C_STANDARD 11)
 target_include_directories(rs_ut_abnormal PRIVATE
     ${SRC_DIR}/test/ut/platform/hccp/ut_include
     ${SRC_DIR}/test/ut/platform/hccp/rdma_service_normal/include
-    ${SRC_DIR}/src/platform/hccp/external_depends/inc
-    ${SRC_DIR}/src/platform/hccp/external_depends/inc/driver
-    ${SRC_DIR}/test/ut/platform/hccp/stub/include
-    ${SRC_DIR}/test/ut/platform/hccp/stub/
     ${SRC_DIR}/test/ut/platform/hccp/rdma_service_abnormal/stub
-    ${SRC_DIR}/src/platform/hccp/inc/network
-    ${SRC_DIR}/src/platform/hccp/inc/private/network
-    ${SRC_DIR}/src/platform/hccp/crypt/inc
+    ${SRC_DIR}/test/ut/platform/hccp/stub/
+    ${SRC_DIR}/test/ut/platform/hccp/stub/roce_user
+    ${SRC_DIR}/test/ut/depends/include
     ${SRC_DIR}/src/platform/hccp/rdma_service/
     ${SRC_DIR}/src/platform/hccp/rdma_service/tlv
-    ${SRC_DIR}/test/ut/platform/hccp/stub/roce_user
-    ${SRC_DIR}/src/platform/hccp/common
-    ${HCOMM_UTILS_PATH}/hcomm_utils/host/include/tls_adp
-    ${SRC_DIR}/src/platform/hccp/net_adapt/user/inc
     ${SRC_DIR}/src/platform/hccp/rdma_service/ctx/product
-    ${SRC_DIR}/src/platform/hccp/external_depends/net_adapt
-    ${SRC_DIR}/src/platform/hccp/external_depends/ubengine
-    ${SRC_DIR}/src/platform/hccp/external_depends/ccu
-    ${SRC_DIR}/src/platform/hccp/inc/network
     ${SRC_DIR}/src/platform/hccp/rdma_service/ctx
     ${SRC_DIR}/src/platform/hccp/inc/private/network
-    ${SRC_DIR}/src/platform/hccp/rdma_service/ctx/product
-    ${UT_COMMON_INCLUDE_LIST}
-)
-
-target_include_directories(rs_ut_abnormal PRIVATE
-    ${SRC_DIR}/src/platform/hccp/ccu/ccu_user
-    ${SRC_DIR}/src/platform/hccp/rdma_service/ctx
-    ${SRC_DIR}/src/platform/hccp/ccu/ccu_user/product
-    ${SRC_DIR}/src/platform/hccp/ccu/ccu_user/product/ascend910_95
+    ${SRC_DIR}/src/platform/hccp/inc/network
+    ${SRC_DIR}/src/platform/hccp/common
+    ${SRC_DIR}/src/platform/hccp/external_depends/net_adapt
+    ${SRC_DIR}/src/platform/hccp/external_depends/inc
+    ${SRC_DIR}/src/platform/hccp/external_depends/inc/driver
+    ${SRC_DIR}/src/platform/hccp/external_depends/ubengine
+    ${SRC_DIR}/src/platform/hccp/external_depends/ccu
+    ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include
+    ${HCOMM_UTILS_PATH}/hcomm_utils/host/include/tls_adp
+    ${ASCEND_3RD_LIB_PATH}/json/include/
+    ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
+    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/
+    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/3rdparty/
 )
 
 target_compile_options(rs_ut_abnormal PRIVATE

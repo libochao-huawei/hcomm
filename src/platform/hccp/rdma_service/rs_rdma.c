@@ -129,7 +129,7 @@ STATIC void *RsNotifyMrListAdd(struct RsQpCb *qpCb, const char *buf)
     }
 
     hccp_info("qpn is %d, rdevIndex:%u, chipId %u, recv notify va is 0x%llx, notify size is %llu",
-        qpCb->qpInfoLo.qpn, qpCb->rdevCb->rdevIndex, qpCb->rdevCb->rs_cb->chipId,
+        qpCb->qpInfoLo.qpn, qpCb->rdevCb->rdevIndex, qpCb->rdevCb->rsCb->chipId,
         notifyMrCb->mrInfo.addr, notifyMrCb->mrInfo.len);
 
     RsListAddTail(&notifyMrCb->list, &qpCb->remMrList);
@@ -490,7 +490,7 @@ STATIC int RsMrPreReg(unsigned int phyId, struct RsQpCb *qpCb, struct RsMrCb *mr
     unsigned long long len = mrRegInfo->len;
     int access = mrRegInfo->access;
 
-    if (qpCb->rdevCb->rs_cb->hccpMode == NETWORK_PEER_ONLINE || qpCb->rdevCb->rs_cb->hccpMode == NETWORK_ONLINE ||
+    if (qpCb->rdevCb->rsCb->hccpMode == NETWORK_PEER_ONLINE || qpCb->rdevCb->rsCb->hccpMode == NETWORK_ONLINE ||
         qpCb->isExp == RS_NOT_EXP) {
         mrCb->ibMr = RsDrvMrReg(qpCb->ibPd, addr, len, access);
         CHK_PRT_RETURN(mrCb->ibMr == NULL, hccp_err("rs_drv_mr_reg addr is NULL len[%lld] failed ",
@@ -502,10 +502,10 @@ STATIC int RsMrPreReg(unsigned int phyId, struct RsQpCb *qpCb, struct RsMrCb *mr
         }
         ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
         CHK_PRT_RETURN(ret, hccp_err("rsGetLocalDevIDByHostDevID failed, ret %d, phyid[%u]", ret, phyId), -EACCES);
-        roceSign.tgid = qpCb->rdevCb->rs_cb->pRsSign.tgid;
+        roceSign.tgid = qpCb->rdevCb->rsCb->pRsSign.tgid;
         roceSign.devid = chipId;
         roceSign.vfid = 0;
-        ret = strcpy_s(roceSign.sign, PROCESS_RS_SIGN_LENGTH, qpCb->rdevCb->rs_cb->pRsSign.sign);
+        ret = strcpy_s(roceSign.sign, PROCESS_RS_SIGN_LENGTH, qpCb->rdevCb->rsCb->pRsSign.sign);
         CHK_PRT_RETURN(ret, hccp_err("Invalid pid sign, ret(%d)", ret), -ESAFEFUNC);
         mrCb->ibMr = RsDrvExpMrReg(qpCb->ibPd, addr, len, access, roceSign);
         CHK_PRT_RETURN(mrCb->ibMr == NULL, hccp_err("rs_drv_exp_mr_reg addr is NULL len[%lld] failed ",
@@ -685,7 +685,7 @@ STATIC int RsInitTypicalMrCb(unsigned int phyId, struct RdmaMrRegInfo *mrRegInfo
     unsigned int chipId;
     int ret;
 
-    if (devCb->rs_cb->hccpMode == NETWORK_PEER_ONLINE || devCb->rs_cb->hccpMode == NETWORK_ONLINE) {
+    if (devCb->rsCb->hccpMode == NETWORK_PEER_ONLINE || devCb->rsCb->hccpMode == NETWORK_ONLINE) {
         mrCb->ibMr = RsDrvMrReg(devCb->ibPd, addr, len, access);
         CHK_PRT_RETURN(mrCb->ibMr == NULL, hccp_err("rs_drv_mr_reg addr is NULL len[%lld] failed", len), -EACCES);
     } else {
@@ -695,10 +695,10 @@ STATIC int RsInitTypicalMrCb(unsigned int phyId, struct RdmaMrRegInfo *mrRegInfo
         }
         ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
         CHK_PRT_RETURN(ret, hccp_err("rsGetLocalDevIDByHostDevID failed, ret %d, phyid[%u]", ret, phyId), -EACCES);
-        roceSign.tgid = devCb->rs_cb->pRsSign.tgid;
+        roceSign.tgid = devCb->rsCb->pRsSign.tgid;
         roceSign.devid = chipId;
         roceSign.vfid = 0;
-        ret = strcpy_s(roceSign.sign, PROCESS_RS_SIGN_LENGTH, devCb->rs_cb->pRsSign.sign);
+        ret = strcpy_s(roceSign.sign, PROCESS_RS_SIGN_LENGTH, devCb->rsCb->pRsSign.sign);
         CHK_PRT_RETURN(ret, hccp_err("Invalid pid sign, ret(%d)", ret), -ESAFEFUNC);
         mrCb->ibMr = RsDrvExpMrReg(devCb->ibPd, addr, len, access, roceSign);
         CHK_PRT_RETURN(mrCb->ibMr == NULL, hccp_err("rs_drv_exp_mr_reg addr is NULL len[%lld] failed", len), -EACCES);
@@ -1148,11 +1148,11 @@ STATIC int RsSendExpWrlist(struct RsQpCb *qpCb, struct WrInfo *wrList, unsigned 
             ret = RsIbvExtPostSend(qpCb->ibQp, &ibWr, &badWr, &extAttr, &extRsp);
             expRsp.wqe_index = extRsp.wqe_index;
             expRsp.db_info = extRsp.db_info;
-            hccp_dbg("rs_ibv_ext_post_send, op = [%x], imm_data = [0x%lx], reduce_op = [%d],reduceType = [%d]",
+            hccp_dbg("rs_ibv_ext_post_send, op = [%x], immData = [0x%lx], reduce_op = [%d],reduceType = [%d]",
                      ibWr.opcode, ibWr.imm_data, extAttr.reduce_op, extAttr.reduce_type);
         } else {
             ret = RsIbvExpPostSend(qpCb->ibQp, &ibWr, &badWr, &expRsp);
-            hccp_dbg("rs_ibv_exp_post_send, op = [%x], remote_addr = [0x%llx], size = [%d]",
+            hccp_dbg("rs_ibv_exp_post_send, op = [%x], remoteAddr = [0x%llx], size = [%d]",
                      ibWr.opcode, ibWr.wr.rdma.remote_addr, ibWr.sg_list->length);
         }
 
@@ -1429,7 +1429,7 @@ STATIC void RsSetQpDepthAttr(struct RsRdevCb *rdevCb, struct RsQpCb *qpCb, struc
         qpCb->txDepth = rdevCb->txDepth;
         qpCb->rxDepth = rdevCb->rxDepth;
     } else {
-        if (rdevCb->rs_cb->hccpMode == NETWORK_OFFLINE) {
+        if (rdevCb->rsCb->hccpMode == NETWORK_OFFLINE) {
             qpCb->txDepth = RS_QP_TX_DEPTH_OFFLINE;
             qpCb->rxDepth = RS_QP_RX_DEPTH_OFFLINE;
         } else {
@@ -1439,7 +1439,7 @@ STATIC void RsSetQpDepthAttr(struct RsRdevCb *rdevCb, struct RsQpCb *qpCb, struc
     }
 
     if (qpNorm->isExp != 0 && qpNorm->qpMode != RA_RS_NOR_QP_MODE) {
-        if (rdevCb->rs_cb->hccpMode == NETWORK_PEER_ONLINE) {
+        if (rdevCb->rsCb->hccpMode == NETWORK_PEER_ONLINE) {
             qpCb->txDepth = (qpCb->qpMode != RA_RS_GDR_TMPL_QP_MODE) ? RS_QP_TX_DEPTH_PEER_ONLINE : qpCb->txDepth;
             qpCb->rxDepth = (qpCb->qpMode != RA_RS_GDR_TMPL_QP_MODE) ? RS_QP_TX_DEPTH_PEER_ONLINE : qpCb->rxDepth;
         } else {
@@ -1450,7 +1450,7 @@ STATIC void RsSetQpDepthAttr(struct RsRdevCb *rdevCb, struct RsQpCb *qpCb, struc
         qpCb->sendSgeNum = 1;
         qpCb->recvSgeNum = 1;
     } else {
-        if (rdevCb->rs_cb->hccpMode == NETWORK_PEER_ONLINE) {
+        if (rdevCb->rsCb->hccpMode == NETWORK_PEER_ONLINE) {
             qpCb->txDepth = (qpCb->qpMode != RA_RS_GDR_TMPL_QP_MODE) ? RS_QP_TX_DEPTH_PEER_ONLINE : qpCb->txDepth;
             qpCb->rxDepth = (qpCb->qpMode != RA_RS_GDR_TMPL_QP_MODE) ? RS_QP_TX_DEPTH_PEER_ONLINE : qpCb->rxDepth;
         } else {
@@ -1505,7 +1505,7 @@ STATIC int RsQpcbInit(struct RsRdevCb *rdevCb, struct RsQpCb *qpCb, struct RsQpN
     qpCb->timeout = RS_QP_ATTR_TIMEOUT;
     qpCb->retryCnt = RS_QP_ATTR_RETRY_CNT;
 
-    ret = RsEpollCtl(rdevCb->rs_cb->connCb.epollfd, EPOLL_CTL_ADD, qpCb->channel->fd, EPOLLIN | EPOLLRDHUP);
+    ret = RsEpollCtl(rdevCb->rsCb->connCb.epollfd, EPOLL_CTL_ADD, qpCb->channel->fd, EPOLLIN | EPOLLRDHUP);
 #ifndef CA_CONFIG_LLT
     if (ret) {
         RsIbvDestroyCompChannel(qpCb->channel);
@@ -1525,7 +1525,7 @@ STATIC int RsQpcbDeinit(struct RsRdevCb *rdevCb, struct RsQpCb *qpCb)
         return -EINVAL;
     }
 
-    ret = RsEpollCtl(rdevCb->rs_cb->connCb.epollfd, EPOLL_CTL_DEL, qpCb->channel->fd, EPOLLIN | EPOLLRDHUP);
+    ret = RsEpollCtl(rdevCb->rsCb->connCb.epollfd, EPOLL_CTL_DEL, qpCb->channel->fd, EPOLLIN | EPOLLRDHUP);
 #ifndef CA_CONFIG_LLT
     if (ret) {
         hccp_err("del channel fd failed ret %d", ret);
@@ -1625,9 +1625,9 @@ STATIC int RsInitMemPool(struct RsQpCb *qpCb)
     memAttr.recv_cq_depth = (unsigned int)qpCb->recvCqDepth;
     memAttr.recv_sge_num = qpCb->recvSgeNum;
 
-    ret = RsRoceInitMemPool(&memAttr, &qpCb->memResp.memData, qpCb->rdevCb->rs_cb->chipId);
+    ret = RsRoceInitMemPool(&memAttr, &qpCb->memResp.memData, qpCb->rdevCb->rsCb->chipId);
     if (ret != 0) {
-        hccp_err("rs_roce_init_mem_pool failed, ret=%d, chipId=%u", ret, qpCb->rdevCb->rs_cb->chipId);
+        hccp_err("rs_roce_init_mem_pool failed, ret=%d, chipId=%u", ret, qpCb->rdevCb->rsCb->chipId);
     }
     return ret;
 }
@@ -1807,10 +1807,10 @@ STATIC int RsQpcbInitWithAttrs(struct RsRdevCb *rdevCb, struct RsQpCb *qpCb,
     qpCb->udpSport = qpNorm->extAttrs.udpSport;
 
     qpCb->aiOpSupport = qpNorm->aiOpSupport;
-    qpCb->grpId = rdevCb->rs_cb->grpId;
+    qpCb->grpId = rdevCb->rsCb->grpId;
     qpCb->cqCstmFlag = qpNorm->extAttrs.dataPlaneFlag.bs.cqCstm;
 
-    ret = RsEpollCtl(rdevCb->rs_cb->connCb.epollfd, EPOLL_CTL_ADD, qpCb->channel->fd, EPOLLIN | EPOLLRDHUP);
+    ret = RsEpollCtl(rdevCb->rsCb->connCb.epollfd, EPOLL_CTL_ADD, qpCb->channel->fd, EPOLLIN | EPOLLRDHUP);
 #ifndef CA_CONFIG_LLT
     if (ret) {
         RsIbvDestroyCompChannel(qpCb->channel);
@@ -2192,7 +2192,7 @@ STATIC int RsTypicalQpStateModifytoRtr(struct RsQpCb *qpCb, struct TypicalQp *lo
     attr.path_mtu = RsDrvSetMtu(qpCb);
     CHK_PRT_RETURN(attr.path_mtu < IBV_MTU_1024, hccp_err("qpn[%u] failed to set mtu, mtu[%d] < [%d]",
         localQpInfo->qpn, attr.path_mtu, IBV_MTU_1024), -EPERM);
-    if (qpCb->rdevCb->rs_cb->hccpMode == NETWORK_PEER_ONLINE) {
+    if (qpCb->rdevCb->rsCb->hccpMode == NETWORK_PEER_ONLINE) {
         attr.max_dest_rd_atomic = RS_MAX_RD_ATOMIC_NUM_PEER_ONLINE;
     } else {
         attr.max_dest_rd_atomic = RS_MAX_RD_ATOMIC_NUM;
@@ -2235,7 +2235,7 @@ STATIC int RsTypicalQpStateModifytoRts(struct RsQpCb *qpCb, struct TypicalQp *lo
     attr.retry_cnt     = (uint8_t)localQpInfo->retryCnt;
     attr.rnr_retry     = RS_QP_ATTR_RNR_RETRY;
     attr.sq_psn        = localQpInfo->psn;
-    if (qpCb->rdevCb->rs_cb->hccpMode == NETWORK_PEER_ONLINE) {
+    if (qpCb->rdevCb->rsCb->hccpMode == NETWORK_PEER_ONLINE) {
         attr.max_rd_atomic = RS_MAX_RD_ATOMIC_NUM_PEER_ONLINE;
     } else {
         attr.max_rd_atomic = RS_MAX_RD_ATOMIC_NUM;
@@ -2420,7 +2420,7 @@ RS_ATTRI_VISI_DEF int RsQpConnectAsync(unsigned int phyId, unsigned int rdevInde
     RsQpConnectAsyncQpcbSet(fd, qpCb);
 
     hccp_info("after socket fd %d send QP %u, chipId %u, state:%d!",
-        fd, qpn, qpCb->rdevCb->rs_cb->chipId, qpCb->state);
+        fd, qpn, qpCb->rdevCb->rsCb->chipId, qpCb->state);
 
     RS_PTHREAD_MUTEX_ULOCK(&qpCb->qpMutex);
 
@@ -2579,7 +2579,7 @@ RS_ATTRI_VISI_DEF int RsCreateCqEvent(struct RsCqContext *cqContext, struct CqAt
     }
 
     hccp_info("comp channel fd[%d].", cqContext->channel->fd);
-    ret = RsEpollCtl(cqContext->rdevCb->rs_cb->connCb.epollfd, EPOLL_CTL_ADD,
+    ret = RsEpollCtl(cqContext->rdevCb->rsCb->connCb.epollfd, EPOLL_CTL_ADD,
         cqContext->channel->fd, EPOLLIN | EPOLLRDHUP);
 #ifndef CA_CONFIG_LLT
     if (ret) {
@@ -2596,7 +2596,7 @@ RS_ATTRI_VISI_DEF int RsCreateCqEvent(struct RsCqContext *cqContext, struct CqAt
 
     return ret;
 rs_cq_create_err:
-    ret = RsEpollCtl(cqContext->rdevCb->rs_cb->connCb.epollfd, EPOLL_CTL_DEL, cqContext->channel->fd,
+    ret = RsEpollCtl(cqContext->rdevCb->rsCb->connCb.epollfd, EPOLL_CTL_DEL, cqContext->channel->fd,
         EPOLLIN | EPOLLRDHUP);
 #ifndef CA_CONFIG_LLT
     if (ret) {
@@ -2684,7 +2684,7 @@ RS_ATTRI_VISI_DEF int RsCqDestroy(unsigned int phyId, unsigned int rdevIndex, st
     }
 
     if (cqContext->channel != NULL) {
-        ret = RsEpollCtl(rdevCb->rs_cb->connCb.epollfd, EPOLL_CTL_DEL, cqContext->channel->fd,
+        ret = RsEpollCtl(rdevCb->rsCb->connCb.epollfd, EPOLL_CTL_DEL, cqContext->channel->fd,
             EPOLLIN | EPOLLRDHUP);
 #ifndef CA_CONFIG_LLT
             if (ret) {
