@@ -123,6 +123,31 @@ void SocketManager::ServerInit(PortData &localPort)
     serverSocketMap[localPort] = std::move(serverSocket);
 }
 
+static void SocketManager::ServerInitOne(RankTableInfo &localRankTable) {
+    vector<SocketPortRange> listenPortRanges = EnvConfig::GetInstance().GetHostNicConfig().GetDeviceSocketPortRange();
+    if (listenPortRanges.empty()) {
+        HCCL_RUN_INFO("[SocketManager::%s] socket port range not configured.", __func__);
+        return;
+    }
+
+    if (localRankTable.ranks.empty() 
+        && localRankTable.ranks[0].rankLevelInfos.empty() 
+        && localRankTable.ranks[0].rankLevelInfos[0].rankAddrs.empty()) {
+        HCCL_RUN_INFO("[SocketManager::%s] localRankTable not have ranks info.", __func__);
+        return;
+    }
+
+    u32 serverListenPort = DEFAULT_VALUE_DEVICEPORT;
+    AddressInfo addressInfo = localRankTable.ranks[0].rankLevelInfos[0].rankAddrs[0];
+    IpAddress ipAddress = addressInfo.addr;
+    PortData localPort{localRankTable.ranks[0].localId, PortDeploymentType::P2P, LinkProtoType::UB, 0, ipAddress};
+    SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(RankTableInfo.ranks[0].deviceId, localPort);
+    auto serverSocket = std::make_shared<Socket>(socketHandle, ipAddress, serverListenPort, ipAddress, "ListenPreempt", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+    PreemptPortManager::GetInstance(deviceLogicId_).ListenPreempt(serverSocket, listenPortRanges_, serverListenPort);
+    HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the preempt port %u", __func__, deviceLogicId_, serverListenPort);
+    localRankTable.ranks[0].devicePort = serverListenPort;
+}
+
 bool SocketManager::ServerDeInit(PortData &localPort) const
 {
     std::lock_guard<std::mutex> lock(socketLock);
