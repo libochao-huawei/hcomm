@@ -33,9 +33,9 @@ target_compile_options(hccl_utest_platform_dispatcher   PRIVATE
 target_link_libraries(hccl_utest_platform_dispatcher  PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     hccl_llt
-    -lpthread
+    -pthread
     -lrt
-    -lpthread
+    -pthread
 )
 
 add_dependencies(hccl_utest_platform_dispatcher hccl_llt)

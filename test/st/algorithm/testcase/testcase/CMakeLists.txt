@@ -51,7 +51,7 @@ target_link_libraries(open_hccl_test PRIVATE
     hccl_alg_adaption
     hccl_alg_test
     protobuf
-    -lpthread
+    -pthread
     -lrt
     -ldl
 )
