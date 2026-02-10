@@ -71,7 +71,7 @@ inline HcclResult GetUbToken(u32 devicePhyId, u32* token)
         struct RaInfo raInfo;
         raInfo.mode = HrtNetworkMode::HDC;
         raInfo.phyId = devPhyId;
-        HcclResult ret = hrtRaGetSecRandom(&raInfo, &token);
+        HcclResult ret = hrtRaGetSecRandom(&raInfo, token);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("get hrtRaGetSecRandom failed, ret:%d", ret);
             return ret;
