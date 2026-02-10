@@ -188,6 +188,7 @@ private:
     HcclResult HccnTargetAttrInter(u32 targetNumInter, RpingInput *inputInter, HccnRpingAddTargetConfig *configInter, PingTargetInfo *targetInter);
     HcclResult HccnTarRemoveAttrInter(u32 targetNumInter, RpingInput *inputInter, PingTargetCommInfo *targetInter, std::shared_ptr<HcclSocket> &socketInter);
     HcclResult RpingResultInfoInit(PingTargetResult *resultInfo, std::map<std::string, PingQpInfo> rdmaInfoMaps, RpingInput *input, u32 targetNum);
+    HcclResult GetDevicePhyId(u32 deviceId);
 public:
     PingMesh();
     ~PingMesh();
