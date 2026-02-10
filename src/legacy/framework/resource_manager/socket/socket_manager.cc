@@ -154,9 +154,9 @@ Socket *SocketManager::CreateConnectedSocket(SocketConfig &socketConfig)
     SocketRole socketRole      = socketConfig.GetRole();
     string     hccpSocketTag   = socketConfig.GetHccpTag();
     u32 serverListenPort = DEFAULT_VALUE_DEVICEPORT;
-    Socket *serverSocket = GetServerListenSocket(socketConfig.link.GetLocalPort());
-    if (serverSocket != nullptr) {
-        serverListenPort = serverSocket->GetListenPort();
+    auto iter = rankListenPortMap_.find(static_cast<u32>(socketConfig.remoteRank));
+    if (iter != rankListenPortMap_.end()) {
+        serverListenPort = iter->second;
     }
 
     auto tmpSocket = socketProducer(localIpAddress, remoteIpAddress, serverListenPort, socketHandle, hccpSocketTag,

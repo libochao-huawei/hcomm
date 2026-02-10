@@ -51,7 +51,7 @@ void RankTableInfo::Check()
 
     std::unordered_set<u32> rankIdSet;
     std::unordered_set<u32> localIdSet;
-    std::unordered_set<u32> devicePortSet;
+    // std::unordered_set<u32> devicePortSet;
     u32 recordedReplaceLocalId{UNDEFIEND_LOCAL_ID};
     for (auto &rank : ranks) {
         if (static_cast<u32>(rank.rankId) >= rankCount) {
@@ -65,7 +65,7 @@ void RankTableInfo::Check()
                                                        __func__, version.c_str(), rankCount, rank.rankId));
         }
         rankIdSet.insert(rank.rankId);
-        devicePortSet.insert(rank.devicePort);
+        // devicePortSet.insert(rank.devicePort);
 
         if (rank.localId != BACKUP_LOCAL_ID && rank.localId != rank.replacedLocalId) {
             THROW<InvalidParamsException>(StringFormat("[Parse][ClusterInfo][RankTableInfo::Check] "
@@ -103,11 +103,11 @@ void RankTableInfo::Check()
                                                     __func__, recordedReplaceLocalId));
     }
 
-    if(devicePortSet.size() != 1) {
-        THROW<InvalidParamsException>(StringFormat("[Parse][ClusterInfo][RankTableInfo::%s] failed with configuring "
-                                                   "the device port of rank info must be same",
-                                                    __func__));
-    }
+    // if(devicePortSet.size() != 1) {
+    //     THROW<InvalidParamsException>(StringFormat("[Parse][ClusterInfo][RankTableInfo::%s] failed with configuring "
+    //                                                "the device port of rank info must be same",
+    //                                                 __func__));
+    // }
 }
 
 constexpr int HCCL_DECIMAL = 10;
