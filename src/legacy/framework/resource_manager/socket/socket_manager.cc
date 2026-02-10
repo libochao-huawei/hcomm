@@ -107,20 +107,41 @@ void SocketManager::ServerInit(PortData &localPort)
     }
     auto         serverSocket     = socketProducer(ipAddress, ipAddress, serverListenPort, hccpSocketHandle, "server",
                                                    SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
-    if (!listenPortRanges_.empty()) {
-        PreemptPortManager::GetInstance(deviceLogicId_).ListenPreempt(serverSocket, listenPortRanges_, serverListenPort);
-        HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the preempt port %u", __func__, deviceLogicId_, serverListenPort);
+    bool success = serverSocket->Listen(serverListenPort);
+    if (success) {
+        HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the port %u success", __func__, deviceLogicId_, serverListenPort);
     } else {
-        bool success = serverSocket->Listen(serverListenPort);
-        if (success) {
-            HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the port %u success", __func__, deviceLogicId_, serverListenPort);
-        } else {
-            string msg = StringFormat("[SocketManager::%s] Device %u listen the port %u failed, maybe other process be listen it", __func__, deviceLogicId_, serverListenPort);
-            MACRO_THROW(InvalidParamsException, msg);
-        }
+        string msg = StringFormat("[SocketManager::%s] Device %u listen the port %u failed, maybe other process be listen it", __func__, deviceLogicId_, serverListenPort);
+        MACRO_THROW(InvalidParamsException, msg);
+    }
+    serverSocketMap[localPort] = std::move(serverSocket);
+}
+
+void SocketManager::ServerInitOne(RankTableInfo &localRankTable)
+{
+    vector<SocketPortRange> listenPortRanges = EnvConfig::GetInstance().GetHostNicConfig().GetDeviceSocketPortRange();
+    if (listenPortRanges.empty()) {
+        HCCL_RUN_INFO("[SocketManager::%s] socket port range not configured.", __func__);
+        return;
     }
 
-    serverSocketMap[localPort] = std::move(serverSocket);
+    if (localRankTable.ranks.empty() 
+        && localRankTable.ranks[0].rankLevelInfos.empty() 
+        && localRankTable.ranks[0].rankLevelInfos[0].rankAddrs.empty()) {
+        HCCL_RUN_INFO("[SocketManager::%s] localRankTable not have ranks info.", __func__);
+        return;
+    }
+
+    u32 serverListenPort = DEFAULT_VALUE_DEVICEPORT;
+    AddressInfo addressInfo = localRankTable.ranks[0].rankLevelInfos[0].rankAddrs[0];
+    IpAddress ipAddress = addressInfo.addr;
+    PortData localPort{static_cast<RankId>(localRankTable.ranks[0].localId), PortDeploymentType::P2P, LinkProtoType::UB, 0, ipAddress};
+    SocketHandle socketHandle = SocketHandleManager::GetInstance().Create(localRankTable.ranks[0].deviceId, localPort);
+    auto serverSocket = std::make_shared<Socket>(socketHandle, ipAddress, serverListenPort, ipAddress, "ListenPreempt", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+    PreemptPortManager::GetInstance(localRankTable.ranks[0].localId).ListenPreempt(serverSocket, listenPortRanges, serverListenPort);
+    HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the preempt port %u", __func__, localRankTable.ranks[0].localId, serverListenPort);
+    localRankTable.ranks[0].devicePort = serverListenPort;
+    serverSocket.Destroy();
 }
 
 bool SocketManager::ServerDeInit(PortData &localPort) const
