@@ -103,8 +103,18 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
     LocalNotify *notify = GetNotify(dstThread, dstNotifyIdx);
     CHK_PTR_NULL(notify);
 
+    if (threadPtr->IsDeviceA5())
+    {
+        HcclResult ret = notify->Post(*stream);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dstThread[0x%llx], notifyIdx[%u].",
+            __func__, thread, dstThread, dstNotifyIdx), ret);
+        HCCL_INFO("[%s] SUCCESS.", __func__);
+        return HCCL_SUCCESS;
+    }
+
     HcclResult ret = HcclLocalNotifyRecord(stream, notify);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dstThread[0x%llx], dstNotifyIdx[%u].", __func__, thread, dstThread, dstNotifyIdx), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dstThread[0x%llx], notifyIdx[%u].",
+        __func__, thread, dstThread, dstNotifyIdx), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -123,8 +133,17 @@ int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, u
     LocalNotify *notify = GetNotify(thread, notifyIdx);
     CHK_PTR_NULL(notify);
 
+    if (threadPtr->IsDeviceA5()) {
+        HcclResult ret = notify->Wait(*stream, timeOut);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeOut[%u].",
+            __func__, thread, notifyIdx, timeOut), ret);
+        HCCL_INFO("[%s] SUCCESS.", __func__);
+        return HCCL_SUCCESS;
+    }
+
     HcclResult ret = HcclLocalNotifyWait(stream, notify, timeOut);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeOut[%u].", __func__, thread, notifyIdx, timeOut), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeOut[%u].",
+        __func__, thread, notifyIdx, timeOut), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
