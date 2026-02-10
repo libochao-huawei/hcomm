@@ -396,5 +396,10 @@ HcclResult ReduceScatterMultiDeterPipeline::Prepare(HcomCollOpInfo *opInfo, Devi
     return HCCL_SUCCESS;
 }
 
+u32 GetLocalReduceSerialThresh()
+{
+    return curSize_;
+}
+
 REGISTER_TEMPLATE(TemplateType::TEMPLATE_REDUCESCATTER_MULTI_DETERMINISTIC_PIPELINE, ReduceScatterMultiDeterPipeline);
 } // namespace hccl
