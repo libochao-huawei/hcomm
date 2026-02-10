@@ -63,7 +63,7 @@ static bool isInitialized = false;  // 标记是否已经初始化
 static u32 token = 0;  // 存储生成的随机数
 static std::mutex ubTokenMutex;
 
-inline u32 GetUbToken(u32 devicePhyId)
+inline HcclResult GetUbToken(u32 devicePhyId, u32* token)
 {
     std::lock_guard<std::mutex> lock(ubTokenMutex);
     if (!isInitialized) {
@@ -73,12 +73,13 @@ inline u32 GetUbToken(u32 devicePhyId)
         raInfo.phyId = devPhyId;
         HcclResult ret = hrtRaGetSecRandom(&raInfo, &token);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("get hrtRaGetSecRandom failed");
+            HCCL_ERROR("get hrtRaGetSecRandom failed, ret:%d", ret);
+            return ret;
         }
         isInitialized = true;
     }
     
-    return token;
+    return HCCL_SUCCESS;
 }
 
 inline bool IsSupportHCCLV2(const char *socNamePtr)
@@ -312,7 +313,7 @@ inline void RpingRoceAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, u32 
     initAttr.commInfo.rdma.qosAttr.tc = tc;
 }
 
-inline void RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, u32 nodeNum, u32 bufferSize, u32 sl, u32 tc,
+inline HcclResult RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, u32 nodeNum, u32 bufferSize, u32 sl, u32 tc,
                               PingInitAttr &initAttr, std::map<Eid, uint32_t> eidmap)
 {
     u32 maxWrDepth = nodeNum * WR_DEPTH_MULTIPLE;
@@ -330,7 +331,8 @@ inline void RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, u32 no
     }
     initAttr.bufferSize = bufferSize == 0 ? (maxWrDepth * BYTE_PER_TARGET_DEFAULT) : bufferSize; // 发送接收缓存区大小
     initAttr.protocol = PROTOCOL_UDMA; // pingmesh支持兼容UB驱动，新增protocol字段
-
+ 
+    u32 UbToken;
     // client的初始化信息
     initAttr.client.ub.cq_attr.sendCqDepth = maxWrDepth;
     initAttr.client.ub.cq_attr.recvCqDepth = maxWrDepth;
@@ -341,7 +343,17 @@ inline void RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, u32 no
     initAttr.client.ub.qp_attr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
     initAttr.client.ub.qp_attr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
     initAttr.client.ub.qp_attr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
+    HcclResult ret = GetUbToken(deviceId, &UbToken);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, ret:%d", ret);
+        return ret;
+    }
     initAttr.client.ub.qp_attr.token_value = GetUbToken(deviceId);
+    ret = GetUbToken(deviceId, &UbToken);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, ret:%d", ret);
+        return ret;
+    }
     initAttr.client.ub.seg_attr.token_value = GetUbToken(deviceId);
 
     // server的初始化信息
@@ -354,13 +366,24 @@ inline void RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, u32 no
     initAttr.server.ub.qp_attr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
     initAttr.server.ub.qp_attr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
     initAttr.server.ub.qp_attr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
+    ret = GetUbToken(deviceId, &UbToken);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, ret:%d", ret);
+        return ret;
+    }
     initAttr.server.ub.qp_attr.token_value = GetUbToken(deviceId);
+    ret = GetUbToken(deviceId, &UbToken);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, ret:%d", ret);
+        return ret;
+    }
     initAttr.server.ub.seg_attr.token_value = GetUbToken(deviceId);
 
     // ip协议信息
     initAttr.commInfo.version = 0;
     initAttr.commInfo.ub.qos_attr.sl = sl;
     initAttr.commInfo.ub.qos_attr.tc = tc;
+    return HCCL_SUCCESS;
 }
 const std::unordered_map<HrtNetworkMode, NetworkMode, std::EnumClassHash> HRT_NETWORK_MODE_MAP
     = {{HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE}, {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
@@ -788,10 +811,14 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
             std::map<Eid, uint32_t> eidmap;
             ret = RaGetEidMap(eidmap, info);
             if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("call ra_get_dev_eid_map failed, devideId[%u], error code =%d.", deviceId, ret);
+                HCCL_ERROR("[HccnRpingInit]call ra_get_dev_eid_map failed, devideId[%u], error code =%d.", deviceId, ret);
                 break;
             }
-            RpingUbAttrInit(devicePhyId_, ipAddr, port, nodeNum, bufferSize, sl, tc, initAttr, eidmap);
+            ret = RpingUbAttrInit(devicePhyId_, ipAddr, port, nodeNum, bufferSize, sl, tc, initAttr, eidmap);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[HccnRpingInit]RpingUbAttrInit failed, devideId[%u], error code =%d.", deviceId, ret);
+                break;
+            }
         }
         ret = hrtRaPingInit(&initAttr, &initInfo_, &pingHandle);
         if (ret != HCCL_SUCCESS) {
