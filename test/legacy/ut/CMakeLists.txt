@@ -82,7 +82,7 @@ target_link_libraries(hccl_v2_utest PRIVATE
     $<BUILD_INTERFACE:intf_llt_pub>
     -lrt
     -ldl
-    -lpthread
+    -pthread
 )
 
 
