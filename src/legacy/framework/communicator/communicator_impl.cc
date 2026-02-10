@@ -3080,7 +3080,17 @@ void CommunicatorImpl::AppendLocalDieIdForLinks()
                     continue;
                 }
                 auto dieId = GetLocalDieId({myRank, *link->GetSourceIface()});
+                HCCL_INFO("[CommunicatorImpl][AppendLocalDieIdForLinks] get fabric link dieid[%u]", dieId);
                 link->GetSourceIface()->SetLocalDieId(dieId);
+            }
+            auto links2 = vGraph.GetEdges(dstRankNode, srcRankNode);
+            for (auto link : links2) {
+                if (link->GetTargetIFace()->GetPos() == AddrPosition::HOST) {
+                    continue;
+                }
+                auto dieId = GetLocalDieId({myRank, *link->GetTargetIFace()});
+                HCCL_INFO("[CommunicatorImpl][AppendLocalDieIdForLinks2] get fabric link dieid[%u]", dieId);
+                link->GetTargetIFace()->SetLocalDieId(dieId);
             }
         }
         // 直接连向对端rank的link
@@ -3092,10 +3102,22 @@ void CommunicatorImpl::AppendLocalDieIdForLinks()
                     continue;
                 }
                 auto dieId = GetLocalDieId({myRank, *link->GetSourceIface()});
+                HCCL_INFO("[CommunicatorImpl][AppendLocalDieIdForLinks] get peer link dieid[%u]", dieId);
                 link->GetSourceIface()->SetLocalDieId(dieId);
+            }
+            auto links2 = vGraph.GetEdges(dstRankNode, srcRankNode);
+            for (auto link : links2) {
+                if (link->GetTargetIFace()->GetPos() == AddrPosition::HOST) {
+                    continue;
+                }
+                auto dieId = GetLocalDieId({myRank, *link->GetTargetIFace()});
+                HCCL_INFO("[CommunicatorImpl][AppendLocalDieIdForLinks2] get peer link dieid[%u]", dieId);
+                link->GetTargetIFace()->SetLocalDieId(dieId);
             }
         }
     }
+    HCCL_INFO("[CommunicatorImpl][AppendLocalDieIdForLinks] set local dieid");
+    rankGraph->Dump();
 }
 
 HcclResult CommunicatorImpl::GetLocalCclBuffer(void **addr, uint64_t *size)
