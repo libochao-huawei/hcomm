@@ -79,7 +79,6 @@ protected:
 
 TEST_F(HcclOneSidedServiceTest, test_RegMemAndDeregMem)
 {
-    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
     LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
     StubCommunicatorImplTransMgr fakeComm;
     HcclOneSidedService oneSidedService(fakeComm);
@@ -96,7 +95,6 @@ TEST_F(HcclOneSidedServiceTest, test_RegMemAndDeregMem)
 
 TEST_F(HcclOneSidedServiceTest, test_RegMem_Fail_1)
 {
-    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
     StubCommunicatorImplTransMgr fakeComm;
     HcclOneSidedService oneSidedService(fakeComm);
     HcclMemDesc localMemDesc;
@@ -108,7 +106,6 @@ TEST_F(HcclOneSidedServiceTest, test_RegMem_Fail_1)
 
 TEST_F(HcclOneSidedServiceTest, test_DeregMem_Fail_1)
 {
-    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
     StubCommunicatorImplTransMgr fakeComm;
     HcclOneSidedService oneSidedService(fakeComm);
     HcclMemDesc localMemDesc;
@@ -117,7 +114,6 @@ TEST_F(HcclOneSidedServiceTest, test_DeregMem_Fail_1)
 
 TEST_F(HcclOneSidedServiceTest, test_ExchangeMemDesc)
 {
-    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
     RankId RankIdA = 0;
     RankId RankIdB = 1;
     LinkData linkData1(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), RankIdA, RankIdB, 0, 1);
@@ -172,7 +168,6 @@ TEST_F(HcclOneSidedServiceTest, test_ExchangeMemDesc)
 
 TEST_F(HcclOneSidedServiceTest, EnableMemAccess_ConnectionNotFound) 
 {
-    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
     CommunicatorImpl com;
     HcclOneSidedService service(com);
     // 创建一个HcclMemDesc对象，其中localRankId不存在于oneSidedConns_
@@ -188,7 +183,6 @@ TEST_F(HcclOneSidedServiceTest, EnableMemAccess_ConnectionNotFound)
 
 TEST_F(HcclOneSidedServiceTest, DisableMemAccess_ConnectionNotFound) 
 {
-    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
     CommunicatorImpl com;
     HcclOneSidedService service(com);
 
@@ -205,10 +199,7 @@ TEST_F(HcclOneSidedServiceTest, DisableMemAccess_ConnectionNotFound)
 
 TEST_F(HcclOneSidedServiceTest, test_BatchGet_BatchPut)
 {
-    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
-    MOCKER(HrtFree).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     RankId RankIdA = 0;
     RankId RankIdB = 1;
     LinkData linkData1(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), RankIdA, RankIdB, 0, 1);

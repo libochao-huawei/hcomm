@@ -39,6 +39,7 @@ aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType
 
 rtError_t rtStreamCreateWithFlags(rtStream_t *stream, int32_t priority, uint32_t flag)
 {
+    *stream = reinterpret_cast<rtStream_t>(0x123);
     return RT_ERROR_NONE;
 }
 
@@ -221,11 +222,13 @@ rtError_t rtGetP2PStatus(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t *status)
 
 rtError_t rtMalloc(void **devPtr, uint64_t size, rtMemType_t type, const uint16_t moduleId)
 {
+    *devPtr = reinterpret_cast<void*>(0x123);
     return RT_ERROR_NONE;
 }
 
 rtError_t aclrtFree(void *devPtr)
 {
+    devPtr = reinterpret_cast<void*>(0x123);
     return RT_ERROR_NONE;
 }
 
@@ -363,6 +366,7 @@ aclError aclrtNotifyGetExportKey(aclrtNotify notify, char *key, size_t len, uint
 
 aclError aclrtGetNotifyId(aclrtNotify notify, uint32_t *notifyId)
 {
+    notify = reinterpret_cast<aclrtNotify>(0x123);
     return ACL_SUCCESS;
 }
 

@@ -203,6 +203,7 @@ protected:
 
     virtual void SetUp()
     {
+        MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
         MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910A2));
         MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
         MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
@@ -277,8 +278,6 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_copy)
     RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::SdmaCopy).stubs().with(any(), any(), any(), any());
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-
     StubResMgrFetcher mockResMgrFetcher;
     
     Interpret(insLocalCopy, stream, &mockResMgrFetcher);
@@ -297,8 +296,6 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_copy_extend)
     RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::SdmaCopy).stubs().with(any(), any(), any(), any());
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-
     StubResMgrFetcher mockResMgrFetcher;
     
     Interpret(insLocalCopyExtend, stream, &mockResMgrFetcher);
@@ -316,8 +313,6 @@ TEST_F(InsToSqeRuleV82Test, Interpret_LocalReduce)
     RtsqA5     rtsq(0, 1, 2);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::SdmaCopy).stubs().with(any(), any(), any(), any());
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-
     StubResMgrFetcher mockResMgrFetcher;
     Interpret(insLocalReduce, stream, &mockResMgrFetcher);
 }
@@ -347,16 +342,13 @@ TEST_F(InsToSqeRuleV82Test, Interpret_AicpuReduce)
     RtsqA5     rtsq(0, 1, 2);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER(&InsAicpuReduce::RunAicpuReduce).stubs();
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
- 
     StubResMgrFetcher mockResMgrFetcher;
     Interpret(insAicpuReduce, stream, &mockResMgrFetcher);
 }
 
 TEST_F(InsToSqeRuleV82Test, Interpret_StreamSync)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    InsStreamSync insStreamSync;
+        InsStreamSync insStreamSync;
 
     std::vector<char> notifyLite1{1,2};
     StreamLite stream(notifyLite1);
@@ -369,8 +361,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_StreamSync)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_local_copy_extend_err)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    u64          size = 100;
+        u64          size = 100;
     DataBuffer    srcBuffer(0x1234560, size);
     DataBuffer    dstBuffer(0x1321000, size);
     InsLocalCopyExtend insLocalCopyExtend(srcBuffer, dstBuffer);
@@ -380,7 +371,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_copy_extend_err)
     RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::SdmaCopy).stubs().with(any(), any(), any(), any());
-
+    
     StubResMgrFetcher mockResMgrFetcher;
     insLocalCopyExtend.srcBuffer_.size = 0;
     Interpret(insLocalCopyExtend, stream, &mockResMgrFetcher);
@@ -388,8 +379,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_copy_extend_err)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_local_post_to)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    // normal notify
+        // normal notify
     NotifyLite *nullNotify = nullptr;
     std::vector<char> notifyLite1{fakeNotifyId,fakedevPhyId};
     NotifyLite  notify(notifyLite1);
@@ -436,8 +426,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_post_to)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_local_wait_from)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    // normal notify
+        // normal notify
     NotifyLite *nullNotify = nullptr;
     std::vector<char> notifyLite1{fakeNotifyId,fakedevPhyId};
     NotifyLite  notify(notifyLite1);
@@ -484,8 +473,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_wait_from)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_local_bcast_post)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    Cnt1tonNotifyLite *nullNotify = nullptr;
+        Cnt1tonNotifyLite *nullNotify = nullptr;
     std::vector<char> cntNto1NotifyLite1{fakeNotifyId, fakedevPhyId};
     Cnt1tonNotifyLite  notify(cntNto1NotifyLite1);
     Cnt1tonNotifyLite *validNotify = &notify;
@@ -513,8 +501,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_bcast_post)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_local_wait_group)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    CntNto1NotifyLite *nullNotify = nullptr;
+        CntNto1NotifyLite *nullNotify = nullptr;
     std::vector<char> cntNto1NotifyLite1{fakeNotifyId, fakedevPhyId};
     CntNto1NotifyLite  notify(cntNto1NotifyLite1);
     CntNto1NotifyLite *validNotify = &notify;
@@ -542,8 +529,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_wait_group)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_wait_ready)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr0 = nullptr;
@@ -576,8 +562,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_wait_ready)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_post_ready)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr0 = nullptr;
@@ -605,8 +590,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_post_ready)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_wait_fin)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr0 = nullptr;
@@ -634,8 +618,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_wait_fin)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_post_fin)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr0 = nullptr;
@@ -663,8 +646,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_post_fin)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_batch_write)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -686,8 +668,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_is_empty_err)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -707,8 +688,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_is_empty_err)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWrite_size_is_0)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -732,8 +712,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWrite_size_is_0)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWrite_size_isnot_0_err)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -756,8 +735,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWrite_size_isnot_0_err)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWriteReduce_size_is_0)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -781,8 +759,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWriteReduce_size_is_0)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWriteReduce_size_isnot_0_err)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -805,8 +782,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWriteReduce_size_isnot_0_er
 
 TEST_F(InsToSqeRuleV82Test, Interpret_batch_read)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -828,8 +804,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_is_empty_err)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -849,8 +824,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_is_empty_err)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insRead_size_is_0)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -874,8 +848,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insRead_size_is_0)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insRead_size_isnot_0_err)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -898,8 +871,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insRead_size_isnot_0_err)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insReadReduce_size_is_0)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -923,8 +895,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insReadReduce_size_is_0)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insReadReduce_size_isnot_0_err)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -947,8 +918,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insReadReduce_size_isnot_0_err)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_write)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -968,8 +938,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_write_err)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -989,8 +958,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_err)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_write_extend)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -1011,8 +979,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_extend)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_write_extend_err)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -1033,8 +1000,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_extend_err)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -1054,8 +1020,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce_err)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -1075,8 +1040,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce_err)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_read)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -1096,8 +1060,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_read)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_read_reduce)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -1117,8 +1080,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_read_reduce)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce_with_fin)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -1138,8 +1100,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce_with_fin)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce_with_fin_err)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -1159,8 +1120,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce_with_fin_err)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -1179,8 +1139,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin_err)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -1199,8 +1158,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin_err)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin_extend)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
@@ -1220,8 +1178,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin_extend)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin_extend_err)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    RankId remoteRank = 1;
+        RankId remoteRank = 1;
 
     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
     MemTransportLite *stubTransportPtr = transportLite.get();
