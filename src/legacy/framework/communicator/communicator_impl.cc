@@ -3080,6 +3080,7 @@ void CommunicatorImpl::AppendLocalDieIdForLinks()
                     continue;
                 }
                 auto dieId = GetLocalDieId({myRank, *link->GetSourceIface()});
+                HCCL_INFO("[CommunicatorImpl][AppendLocalDieIdForLinks] get fabric link dieid[%u]", dieId);
                 link->GetSourceIface()->SetLocalDieId(dieId);
             }
         }
@@ -3092,6 +3093,7 @@ void CommunicatorImpl::AppendLocalDieIdForLinks()
                     continue;
                 }
                 auto dieId = GetLocalDieId({myRank, *link->GetSourceIface()});
+                HCCL_INFO("[CommunicatorImpl][AppendLocalDieIdForLinks] get peer link dieid[%u]", dieId);
                 link->GetSourceIface()->SetLocalDieId(dieId);
             }
         }
