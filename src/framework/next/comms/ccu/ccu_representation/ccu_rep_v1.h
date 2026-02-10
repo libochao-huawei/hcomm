@@ -33,7 +33,6 @@
 #include "ccu_rep_remwaitsem_v1.h"
 
 #include "ccu_rep_record_shared_notify.h"
-#include "ccu_rep_postsharedvar_v1.h"
 
 #include "ccu_rep_buflocread_v1.h"
 #include "ccu_rep_buflocwrite_v1.h"

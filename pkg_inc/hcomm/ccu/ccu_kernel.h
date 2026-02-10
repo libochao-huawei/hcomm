@@ -85,8 +85,6 @@ protected:
     CcuRep::CcuBuf CreateCcuBuf();
     CcuRep::Executor CreateExecutor();
 
-    HcclResult CreateSharedVariable(const uint32_t coreId, const uint32_t varIdx, CcuRep::Variable *var);
-
     HcclResult CreateBlockCcuBuf(const uint32_t count, CcuRep::CcuBuf *ccuBufs);
     HcclResult CreateBlockExecutor(const uint32_t count, CcuRep::Executor *ccuExes);
     HcclResult CreateBlockCompletedEvent(const uint32_t count, CcuRep::CompletedEvent *ccuEvents);
@@ -95,9 +93,6 @@ protected:
     HcclResult WaitEvent(CcuRep::CompletedEvent event);
 
     HcclResult LocalNotifyRecord(const uint32_t coreId, const uint32_t dstNotifyIdx, const uint32_t mask);
-    HcclResult LocalNotifyRecord(const uint32_t coreId, const uint32_t dstNotifyIdx, const uint32_t mask,
-        const uint32_t dstVarIdx, const CcuRep::Variable *srcVar);
-    
     HcclResult LocalNotifyWait(const uint32_t coreId, const uint32_t notifyIdx, const uint32_t mask);
 
     HcclResult NotifyRecord(const ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask=1);

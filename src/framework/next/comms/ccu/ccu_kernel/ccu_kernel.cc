@@ -121,10 +121,25 @@ HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskPa
         return HcclResult::HCCL_E_INTERNAL;
     }
 
+    if (instrInfo_.missionInstrCount == 0 || instrInfo_.instrVec.empty()) {
+        HCCL_ERROR("[CcuKernel][%s] failed, mission instructions are empty, "
+            "the kernel is not been translated yet.", __func__);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
     // 如果agrs数量超过sqe arg的最大数量，则返回多个TaskParam，前面几个只从sqe中加载args;
     // args数量大于等于0、小于等于最大值时，返回1个TaskParam
-    uint32_t seqNum
+    const uint32_t seqNum
         = (agrsNum / CCU_SQE_ARGS_LEN) + ((agrsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (agrsNum == 0 ? 1 : 0);
+
+    const uint32_t preMissonSqeInsCnt = (seqNum - 1) * CCU_SQE_ARGS_LEN;
+    if (instrInfo_.missionInstrCount < preMissonSqeInsCnt) {
+        HCCL_ERROR("[CcuKernel][%s] failed, missionInstrCount[%u] should be greater "
+            "than preMissonSqeInsCnt[%u].", __func__, instrInfo_.missionInstrCount,
+            preMissonSqeInsCnt);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
     taskParams.resize(seqNum);
     for (uint32_t index = 0; index < seqNum; index++) {
         taskParams[index].dieId       = GetDieId();
@@ -133,8 +148,10 @@ HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskPa
         taskParams[index].key         = GetMissionKey();
         taskParams[index].argSize     = CCU_SQE_ARGS_LEN;
         if (index == seqNum - 1) {
-            taskParams[index].instCnt = instrInfo_.missionInstrCount - index * CCU_SQE_ARGS_LEN;
-            std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::end(args), std::begin(taskParams[index].args));
+            // index 由计算得出，相乘结果不会溢出
+            const uint32_t preMissionInsCnt = index * CCU_SQE_ARGS_LEN;
+            taskParams[index].instCnt = instrInfo_.missionInstrCount - preMissionInsCnt;
+            std::copy(std::begin(args) + preMissionInsCnt, std::end(args), std::begin(taskParams[index].args));
         } else {
             taskParams[index].instCnt = CCU_SQE_ARGS_LEN;
             std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::begin(args) + (index + 1) * CCU_SQE_ARGS_LEN,
@@ -230,22 +247,6 @@ void CcuKernel::LoadVariable(const CcuRep::Variable &src, const CcuRep::Variable
     Append(std::make_shared<CcuRep::CcuRepLoadVar>(src, var));
 }
 
-HcclResult CcuKernel::CreateSharedVariable(const uint32_t coreId,
-    const uint32_t varId, CcuRep::Variable *var)
-{
-    const std::string varTag = "Variable_" + std::to_string(coreId) + "_"
-        + std::to_string(varId);
-    if (exportedRes_.sharedVars.find(varTag) != exportedRes_.sharedVars.end()) {
-        HCCL_ERROR("[CcuKernel][%s] failed, var is already existed, "
-            "coreId[%u] varId[%u]", __func__, coreId, varId);
-        return HcclResult::HCCL_E_PARA;
-    }
-
-    CcuRep::Variable variable = CreateVariable();
-    exportedRes_.sharedVars.insert({varTag, variable});
-    return HcclResult::HCCL_SUCCESS;
-}
-
 HcclResult CcuKernel::LocalNotifyRecord(const uint32_t coreId,
     const uint32_t dstNotifyIdx, const uint32_t mask)
 {
@@ -264,35 +265,6 @@ HcclResult CcuKernel::LocalNotifyRecord(const uint32_t coreId,
     }
 
     Append(std::make_shared<CcuRep::CcuRepRecordSharedNotify>(sharedNotifies.at(notifyTag), mask));
-
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuKernel::LocalNotifyRecord(const uint32_t coreId,
-    const uint32_t dstNotifyIdx, const uint32_t mask,
-    const uint32_t dstVarIdx, const CcuRep::Variable *srcVar)
-{
-    CHK_PTR_NULL(srcVar);
-
-    const std::string notifyTag = "Notify_" + std::to_string(coreId) + "_"
-        + std::to_string(dstNotifyIdx);
-    
-    auto &sharedNotifies = importedRes_.sharedNotifies;
-    if (sharedNotifies.find(notifyTag) == sharedNotifies.end()) {
-        CcuRep::LocalNotify notify{};
-        sharedNotifies.insert({notifyTag, notify});
-    }
-
-    const std::string varTag = "Variable_" + std::to_string(coreId) + "_"
-        + std::to_string(dstVarIdx);
-    auto &sharedVars = importedRes_.sharedVars;
-    if (sharedVars.find(varTag) == sharedVars.end()) {
-        CcuRep::Variable var{};
-        sharedVars.insert({varTag, var});
-    }
-
-    Append(std::make_shared<CcuRep::CcuRepPostSharedVar>(*srcVar,
-        sharedVars.at(varTag), sharedNotifies.at(notifyTag), mask));
 
     return HcclResult::HCCL_SUCCESS;
 }

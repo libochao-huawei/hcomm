@@ -24,7 +24,7 @@ extern HcclResult HcclCcuKernelRegister(HcclComm comm,
 extern HcclResult HcclCcuKernelRegisterFinish(HcclComm comm);
 
 extern HcclResult HcclCcuKernelLaunch(HcclComm comm,
-    const ThreadHandle threadHandle, const CcuKernelHandle KernelHandle,
+    const ThreadHandle threadHandle, const CcuKernelHandle kernelHandle,
     void *taskArgs);
 
 #ifdef __cplusplus

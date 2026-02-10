@@ -425,13 +425,11 @@ static HcclResult ProcessInterCtxRes(const std::vector<CcuKernel *> &kernels)
 
     for (const auto kernel : kernels) {
         const auto &exportedRes = kernel->GetExportedRes();
-        CHK_RET(MergeExportedResources(exportedRes.sharedVars, totalExportedVars));
         CHK_RET(MergeExportedResources(exportedRes.sharedNotifies, totalExportedNotifies));
     }
 
     for (auto kernel : kernels) {
         auto &importedRes = kernel->GetImportedRes();
-        CHK_RET(ResetImportedResources(importedRes.sharedVars, totalExportedVars));
         CHK_RET(ResetImportedResources(importedRes.sharedNotifies, totalExportedNotifies));
     }
 
@@ -676,9 +674,9 @@ HcclResult CcuKernelMgr::TransRepSequenceToMicrocode(
         const auto &instrInfo = translators[dieId][missionId]->Translate(
             kernel->GetRepSequence(), kernel->GetInstrId(), isFuncBlock);
 
-        kernel->SetCcuInstrInfo(instrInfo);
-
         CHK_RET(LoadInstruction(instrInfo, dieId));
+
+        kernel->SetCcuInstrInfo(instrInfo); // 指令下发成功后可以对kernel进行launch
         EXCEPTION_HANDLE_END
     }
 

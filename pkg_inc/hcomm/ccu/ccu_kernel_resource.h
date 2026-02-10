@@ -34,7 +34,6 @@ struct CcuRepResource {
 
 // Context共享资源
 struct CcuSharedResource {
-    std::unordered_map<std::string, CcuRep::Variable>   sharedVars;
     std::unordered_map<std::string, CcuRep::LocalNotify> sharedNotifies;
 };
 
