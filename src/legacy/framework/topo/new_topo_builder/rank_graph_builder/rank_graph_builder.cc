@@ -363,6 +363,34 @@ std::shared_ptr<NetInstance> RankGraphBuilder::CreateNetInstance(const RankLevel
     return netInst;
 }
 
+void ProcessPhyLink( const shared_ptr<NetInstance::Peer>& srcPeer, const shared_ptr<NetInstance::Peer>& dstPeer,
+    const shared_ptr<PhyTopo::Link>& phyLink, NetInstance* innerNetInstance)
+{
+    auto sourceIfaces = ConstructConnIFromPhyTopoConnIAndPortMap(
+                    phyLink->GetSourceIFace(), srcPeer->GetPortAddrMapLayer0(), phyLink->GetTopoType(), phyLink->GetTopoInstId());
+    auto targetIfaces = ConstructConnIFromPhyTopoConnIAndPortMap(
+                    phyLink->GetTargetIFace(), dstPeer->GetPortAddrMapLayer0(), phyLink->GetTopoType(), phyLink->GetTopoInstId());
+    if (sourceIfaces.empty() || targetIfaces.empty()) {
+        // 没有可用的接口。
+        HCCL_WARNING("[RankGraphBuilder][BuildFromPhytopo] srcRankId[%d] dstRankId[%d] edge not .", srcRankId, dstRankId);
+                    continue;
+    }
+     srcPeer->AddConnInterfaces(0, sourceIfaces);
+    for (const auto& iface : sourceIfaces)
+    {
+        SetEndpointDesc(phyLink->GetLinkProtocols(), srcPeer, iface);
+    }
+    dstPeer->AddConnInterfaces(0, targetIfaces);
+    for (const auto& iface : targetIfaces)
+    {
+        SetEndpointDesc(phyLink->GetLinkProtocols(), dstPeer, iface);
+    }
+    std::vector<shared_ptr<NetInstance::Link>> links = ConstructLinks(srcPeer, dstPeer, sourceIfaces, targetIfaces, phyLink);
+    for (auto link : links) {
+        innerNetInstance->AddLink(link);
+    }
+}
+
 // 从phytopo和ranktable中读取数据共同构建peer2peer的边。
 void RankGraphBuilder::BuildPeer2PeerLinks()
 {
@@ -396,32 +424,7 @@ void RankGraphBuilder::BuildPeer2PeerLinks()
            shared_ptr<NetInstance::Peer> dstPeer = peers_.at(dstRankId);
 
            for (shared_ptr<PhyTopo::Link> phyLink : phyLinks) {
-                auto sourceIfaces = ConstructConnIFromPhyTopoConnIAndPortMap(
-                    phyLink->GetSourceIFace(), srcPeer->GetPortAddrMapLayer0(), phyLink->GetTopoType(), phyLink->GetTopoInstId());
-                auto targetIfaces = ConstructConnIFromPhyTopoConnIAndPortMap(
-                    phyLink->GetTargetIFace(), dstPeer->GetPortAddrMapLayer0(), phyLink->GetTopoType(), phyLink->GetTopoInstId());
-                if (sourceIfaces.empty() || targetIfaces.empty()) {
-                    // 没有可用的接口。
-                    HCCL_WARNING("[RankGraphBuilder][BuildFromPhytopo] srcRankId[%d] dstRankId[%d] edge not .",
-                        srcRankId,
-                        dstRankId);
-                    continue;
-                }
-                srcPeer->AddConnInterfaces(0, sourceIfaces);
-                for (const auto& iface : sourceIfaces)
-                {
-                    SetEndpointDesc(phyLink->GetLinkProtocols(), srcPeer, iface);
-                }
-                dstPeer->AddConnInterfaces(0, targetIfaces);
-                for (const auto& iface : targetIfaces)
-                {
-                    SetEndpointDesc(phyLink->GetLinkProtocols(), dstPeer, iface);
-                }
-                std::vector<shared_ptr<NetInstance::Link>> links =
-                    ConstructLinks(srcPeer, dstPeer, sourceIfaces, targetIfaces, phyLink);
-                for (auto link : links) {
-                    innerNetInstance->AddLink(link);
-                }
+               ProcessPhyLink(srcPeer, dstPeer, phyLink, innerNetInstance);
            }
         }
     }

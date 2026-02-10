@@ -57,7 +57,6 @@ private:
     std::shared_ptr<NetInstance> CreateNetInstance(const RankLevelInfo &levelInfo);
 };
 
-void SetEndpointDesc(std::set<LinkProtocol> protocols, std::shared_ptr<NetInstance::Peer> peer, std::shared_ptr<NetInstance::ConnInterface> iface);
 std::unordered_map<PlaneId, FabricId> GetFabricsFromAddrInfo(std::vector<AddressInfo> rankAddrs);
 std::vector<shared_ptr<PhyTopo::Link>> GetPeer2NetPhyLinks(u32 netLayer, LocalId localId);
 std::vector<std::shared_ptr<NetInstance::ConnInterface>> ConstructConnIFromPhyTopoConnIAndPortMap(
@@ -67,6 +66,8 @@ std::vector<shared_ptr<NetInstance::Link>> ConstructLinks(shared_ptr<NetInstance
     std::vector<std::shared_ptr<NetInstance::ConnInterface>> targetIfaces, shared_ptr<PhyTopo::Link> phyLink);
 std::vector<std::shared_ptr<PhyTopo::Link>> GetPeer2PeerPhyLinks(std::shared_ptr<Graph<PhyTopo::Node, PhyTopo::Link>> phyTopoGraph, 
     LocalId srcLocalId, LocalId dstLocalId);
+void ProcessPhyLink( const shared_ptr<NetInstance::Peer>& srcPeer, const shared_ptr<NetInstance::Peer>& dstPeer,
+    const shared_ptr<PhyTopo::Link>& phyLink, NetInstance* innerNetInstance)
 } // namespace Hccl
 
 #endif // RANK_GRAPH_BUILDER_H
