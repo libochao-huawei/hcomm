@@ -777,7 +777,7 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
     // 当前只支持RoCE和UB
     LinkType netMode = static_cast<LinkType>(mode);
     HcclResult ret = HCCL_SUCCESS;
-    ret = HccnSupportedAndGetphyid(deviceId, mode);
+    ret = HccnSupportedAndGetphyid(deviceId, netMode);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HCCN][HccnRpingInit]HccnSupportedAndGetphyid Failed, ret[%d].", deviceId, ret);
         return HCCL_E_NOT_SUPPORT;
