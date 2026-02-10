@@ -32,8 +32,8 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
 
 namespace hccl {
 
-MyRank::MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config)
-    : binHandle_(binHandle), rankId_(rankId), config_(config)
+MyRank::MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks)
+    : binHandle_(binHandle), rankId_(rankId), config_(config), callbacks_(callbacks)
 {
 }
 
@@ -235,6 +235,14 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
  
     // 4. channel kernel launch
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
+        if (!callbacks_.getAicpuCommState()) {
+            HCCL_INFO("MyRank::%s kernelLaunchAicpuCommInit start.", __func__);
+            HcclResult ret = callbacks_.kernelLaunchAicpuCommInit();
+            CHK_PRT_RET(ret != HCCL_SUCCESS, 
+                HCCL_ERROR("[%s] kernelLaunchAicpuCommInit failed, return [%d].", __func__, ret), ret);
+            callbacks_.setAicpuCommState(true);
+        }
+
         CHK_RET(HcommChannelKernelLaunch(channelHandles, hostChannelHandleList, channelNum, commTag, binHandle_));
         return HCCL_SUCCESS;
     }

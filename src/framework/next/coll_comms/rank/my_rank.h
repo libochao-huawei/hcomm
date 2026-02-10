@@ -27,7 +27,7 @@ namespace hccl {
  */
 class MyRank {
 public:
-    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config);
+    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks);
     ~MyRank();
 
     HcclResult Init(HcclMem cclBuffer, const uint32_t opExpansionMode);
@@ -66,6 +66,8 @@ private:
 
     // 当前CommEngineResMgr复用a3代码，为不影响a3流程，先将ccu资源管理放在MyRank
     std::unique_ptr<hcomm::CcuResContainer> ccuResContainer_{nullptr};
+
+    ManagerCallbacks callbacks_;
 };
 
 } // namespace hccl
