@@ -420,7 +420,6 @@ static HcclResult ResetImportedResources(
 
 static HcclResult ProcessInterCtxRes(const std::vector<CcuKernel *> &kernels)
 {
-    std::unordered_map<std::string, CcuRep::Variable> totalExportedVars;
     std::unordered_map<std::string, CcuRep::LocalNotify> totalExportedNotifies;
 
     for (const auto kernel : kernels) {
