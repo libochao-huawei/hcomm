@@ -56,9 +56,19 @@ HcclResult EschedNotify::Wait(Stream& stream, HcclDispatcher dispatcher, s32 sta
     return Wait(stream, dispatcher, stage, timeOut);
 }
 
+HcclResult EschedNotify::Wait(Stream& stream, u32 timeOut)
+{
+    return HCCL_SUCCESS;
+}
+
 HcclResult EschedNotify::Post(Stream& stream, HcclDispatcher dispatcher, s32 stage, u32 remoteUserRank)
 {
     return Post(stream, dispatcher, stage);
+}
+
+HcclResult EschedNotify::Post(Stream& stream)
+{
+    return HCCL_SUCCESS;
 }
 
 HcclResult EschedNotify::SetIpc()

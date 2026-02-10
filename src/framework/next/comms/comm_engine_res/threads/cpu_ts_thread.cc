@@ -152,7 +152,7 @@ LocalNotify *CpuTsThread::GetNotify(uint32_t index) const
 
 bool CpuTsThread::IsDeviceA5() const
 {
-    return false;  // Not implemented
+    return devType_ == DevType::DEV_TYPE_910_95;
 }
 
 // A3 Stream

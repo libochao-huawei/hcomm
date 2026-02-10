@@ -123,9 +123,10 @@ public:
 
     virtual HcclResult Wait(Stream& stream, HcclDispatcher dispatcher, s32 stage, u32 timeOut,
         u32 userRank, u32 remoteUserRank) = 0;
+    virtual HcclResult Wait(Stream& stream, u32 timeOut) = 0;
     virtual HcclResult Post(Stream& stream, HcclDispatcher dispatcher, s32 stage,
         u32 remoteUserRank) = 0;
-
+    virtual HcclResult Post(Stream& stream) = 0;
     virtual HcclResult SetIpc() = 0;
     virtual HcclResult Grant(s64 recvId) = 0;
     virtual void Break()
