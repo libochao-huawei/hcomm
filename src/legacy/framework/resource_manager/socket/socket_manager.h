@@ -61,6 +61,8 @@ public:
 
     SocketManager &operator=(const SocketManager &socketManager) = delete;
 
+    static void ServerInitOne(RankTableInfo &localRankTable);
+
 private:
     void BatchServerInit(const vector<LinkData> &links);
     void BatchAddWhiteList(const vector<LinkData> &links);
