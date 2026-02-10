@@ -371,12 +371,12 @@ bool DevUbConnection::Suspend()
         HCCL_INFO("[DevUbConnection][%s] RmaConnStatus is SUSPENDED, status[%s].", __func__, status.Describe().c_str());
         return true;
     }
-    
+
+    ReleaseResource();
     if (status != RmaConnStatus::READY) {
         ThrowAbnormalStatus(std::string(__func__));
     }
 
-    ReleaseResource();
     status = RmaConnStatus::SUSPENDED;
     return true;
 }
@@ -788,9 +788,24 @@ HrtUbJfcMode DevUbConnection::GetUbJfcMode() const
     return jfcMode;
 }
 
-JettyHandle DevUbConnection::GetJettyHandle() const
+JettyHandle& DevUbConnection::GetJettyHandle() const
 {
     return jettyHandle;
+}
+
+JettyHandle&  GetRemoteJettyHandle() const
+{
+    return remoteJettyHandle;
+}
+
+RdmaHandle&  GetRdmaHandle() const
+{
+    return rdmaHandle;
+}
+
+TpInfo GetUbTpInfo() const
+{
+    return tpInfo;
 }
 
 u32 DevUbConnection::GetPiVal() const

@@ -586,11 +586,11 @@ std::string CcuTransport::Describe() const
     return description;
 }
 
-void CcuTransport::Clean()
+void CcuTransport::Clean(std::vector<JettyHandle>& jettyHandleList)
 {
     transStatus = TransStatus::INIT;
     sendData.clear();
-    ccuConnection->Clean();
+    ccuConnection->Clean(jettyHandleList);
 }
 
 } // namespace Hccl
