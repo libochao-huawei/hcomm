@@ -520,8 +520,6 @@ HcclResult AllReduceMultiDeterPipeline::Prepare(HcomCollOpInfo *opInfo, DeviceMe
     usrInMemPtr_ = opInfo_->inputAddr;
     usrOutMemPtr_ = opInfo_->outputAddr;
     reductionOp_ = opInfo_->reduceOp;
-    HCCL_INFO("[%s] opInfo: dataType[%u], unitSize[%u], memSliceSize[%u], usrInMem[%p], usrOutMem[%p], reductionOp[%u]",
-        __func__, dataType_, unitSize_, memSliceSize_, usrInMemPtr_, usrOutMemPtr_, reductionOp_);
 
     // stream
     mainStream_ = mainStream;

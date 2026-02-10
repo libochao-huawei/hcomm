@@ -546,7 +546,8 @@ HcclResult MultiDeterPipeline::PrepareTopoInfo(const SubCommInfo &level0CommInfo
 
     intraLinks_ = level0CommInfo.links; // 节点内
     serverLinks_ = level1CommInfo.links; // 节点间
-
+    HCCL_INFO("[%s] opInfo: dataType[%u], unitSize[%u], memSliceSize[%u], usrInMem[%p], usrOutMem[%p], reductionOp[%u]",
+        __func__, dataType_, unitSize_, memSliceSize_, usrInMemPtr_, usrOutMemPtr_, reductionOp_);
     HCCL_INFO("[%s] topoInfo: userRank[%u], intraRankId[%u], intraRankSize[%u], serverId[%u], interRankSize[%u]",
         __func__, userRank_, intraRankId_, intraRankSize_, serverId_, serverSize_);
     HCCL_INFO("[%s] topoInfo: severLinksNum[%zu], intraLinksNum[%zu]", __func__, serverLinks_.size(), intraLinks_.size());
