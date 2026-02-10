@@ -107,9 +107,11 @@ static bool IsMC2Exception(rtExceptionInfo_t* exceptionInfo)
 
 void PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
 {
-    // TODO：补充locAddr和rmtAddr入参，打印addr，明确出问题的jetty对应的locEid和rmtEid
+    HCCL_INFO("[PrintUbRegisters] start");
     AuxInfoIn in;
     in.cqe.status = 0xffffffff; // 0xffffffff代表查询所有寄存器
+    in.auxInfoInType = AuxInfoInType::AUX_INFO_IN_TYPE_CQE;
+    in.cqe.sR = 0;
     AuxInfoOut auxInfo;
     auto ret = RaGetAuxInfo(rdmaHandle, in, auxInfo);
     if (ret != HCCL_SUCCESS) {
@@ -655,7 +657,9 @@ void TaskExceptionHandler::PrintOpDataErrorMessage(u32 deviceId, ErrorMessageRep
 
 void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankContent)
 {
+    HCCL_INFO("[ReportErrorMsg] start");
     if (exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
+        HCCL_ERROR("[ReportErrorMsg] EI0002");
         RPT_INPUT_ERR(true,
             "EI0002",
             std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
@@ -665,7 +669,10 @@ void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankCo
                 ""})
         );
     } else if (exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY 
-        || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY) {
+        || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
+        || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
+        || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE) {
+        HCCL_ERROR("[ReportErrorMsg] EI0018");
         RPT_INPUT_ERR(true,
             "EI0018",
             std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
@@ -710,7 +717,10 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
             PrintOpDataErrorMessage(exceptionInfo->deviceid, errorMessage, stageErrInfo);
 
             // 打印UB DFX寄存器信息
-            if (errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
+            if (errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY 
+                || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
+                || errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE
+                || errorMessage.taskType == TaskParamType::TASK_UB_REDUCE_INLINE) {
                 auto addr = IpAddress(errorMessage.locEid);
                 u32 devPhyId = HrtGetDevicePhyIdByIndex(exceptionInfo->deviceid);
                 auto rdmaHandle = RdmaHandleManager::GetInstance().GetByIp(devPhyId, addr);
@@ -734,6 +744,7 @@ void TaskExceptionHandler::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status,
     const ParaCcu& ccuTaskParam = taskInfo.taskParam_.taskPara.Ccu;
     vector<CcuErrorInfo> errorInfos {};
     HcclResult ret = GetCcuErrorMsg(deviceId, status, ccuTaskParam, errorInfos);
+    const uint8_t missionStatus = (status >> 8) & 0xFF;
     if (ret != HcclResult::HCCL_SUCCESS || errorInfos.empty()) {
         HCCL_ERROR("Get CCU error info failed. deviceId[%u], dieId[%u], missionId[%u], executeId[%llu].",
             deviceId, ccuTaskParam.dieId, ccuTaskParam.missionId,
@@ -742,7 +753,7 @@ void TaskExceptionHandler::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status,
     }
     PrintCcuErrorLog(errorInfos, taskInfo);
 
-    if (status >= 0x01 && status <= 0x05) { // 如果是UB错误(missionStatus为[0x01, 0x05])，打印Ub Dfx寄存器信息
+    if (missionStatus >= 0x01 && missionStatus <= 0x05) { // 如果是UB错误(missionStatus为[0x01, 0x05])，打印Ub Dfx寄存器信息
         PrintCcuUbRegisters(static_cast<s32>(deviceId), taskInfo.taskParam_.taskPara.Ccu);
     }
 }
