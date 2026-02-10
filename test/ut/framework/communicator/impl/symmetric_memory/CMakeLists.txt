@@ -44,7 +44,7 @@ target_link_directories(hccl_utest_framework_symmetric_memory PRIVATE
 target_link_libraries(hccl_utest_framework_symmetric_memory PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     hccl_llt
-    -lpthread
+    -pthread
     -lrt
     -ldl
 )

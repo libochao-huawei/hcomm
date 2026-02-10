@@ -55,7 +55,7 @@ target_link_directories(hccl_utest_device PRIVATE
 target_link_libraries(hccl_utest_device PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     hccl_llt
-    -lpthread
+    -pthread
     -lrt
     -ldl
 )
