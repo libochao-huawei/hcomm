@@ -32,7 +32,7 @@ public:
     HcclResult Init(HcclCommParams &params, const RankTable_t &rankTable,
         const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoConfigMap);
     HcclResult Init(HcclCommParams &params, const std::vector<RankInfo> &rankList,
-        WorldGroupInfo &globalData);
+        WorldGroupInfo &groupCommonData);
     HcclResult Init(HcclCommParams &params, const std::vector<RankInfo> &rankList,
         WorldGroupInfo &groupCommonData,
         const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoConfigMap);
@@ -161,7 +161,7 @@ private:
     bool IsSupportEnableRoce();
     HcclResult SetWorldGroupInfo(
         std::unordered_map<std::string, std::map<u32, HcclIpAddress>> &phyIdNicInfoMap,
-        std::vector<RankInfo> &worldRankInfoList, std::vector<u32> &ranksPort, std::vector<u32> &vnicRanksPort);
+        std::vector<RankInfo> &worldRankInfoList, std::vector<u32> &nicRanksPort, std::vector<u32> &vnicRanksPort);
 
     u32 deviceNumPerServer_{0};
     u32 userRank_{INVALID_VALUE_RANKID};
