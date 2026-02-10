@@ -9,26 +9,37 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_to_test_list
     main.cc
-    ../communicator/hccl_api_base_test.cc
-    ut_sync_data_device_test.cc
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/sync_data_aicpu_ts.cc
+    ut_aicpu_ts_HcommLocalCopyOnThread.cc
+    ut_aicpu_ts_HcommLocalReduceOnThread.cc
+    ut_aicpu_ts_HcommThreadNotifyRecordOnThread.cc
+    ut_aicpu_ts_HcommThreadNotifyWaitOnThread.cc
+    ut_aicpu_ts_HcommChannelNotifyRecordOnThread.cc
+    ut_aicpu_ts_HcommChannelNotifyWaitOnThread.cc
+    ut_aicpu_ts_HcommWriteWithNotifyOnThread.cc
+    ut_aicpu_ts_HcommWriteReduceWithNotifyOnThread.cc
+    ut_aicpu_ts_HcommWriteOnThread.cc
+    ut_aicpu_ts_HcommWriteReduceOnThread.cc
+    ut_aicpu_ts_HcommReadOnThread.cc
+    ut_aicpu_ts_HcommReadReduceOnThread.cc
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
+    ${HCCL_LLT_ROOT}/ut/stub/legacy/llt_stub_ub_transport_lite_impl.cc
 )
 
-add_executable(hcomm_utest_sync_data_aicpu_ts ${src_to_test_list})
+add_executable(hcomm_utest_api_data_aicpu_ts ${src_to_test_list})
 
 #头文件搜索路径
-target_include_directories(hcomm_utest_sync_data_aicpu_ts PRIVATE
+target_include_directories(hcomm_utest_api_data_aicpu_ts PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
 )
 
-target_compile_definitions(hcomm_utest_sync_data_aicpu_ts PRIVATE
+target_compile_definitions(hcomm_utest_api_data_aicpu_ts PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
     google=ascend_private
     -DOPEN_HCCL_TEST
     OPEN_BUILD_PROJECT
 )
 
-target_compile_options(hcomm_utest_sync_data_aicpu_ts PRIVATE
+target_compile_options(hcomm_utest_api_data_aicpu_ts PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
     -Os
@@ -36,10 +47,10 @@ target_compile_options(hcomm_utest_sync_data_aicpu_ts PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hcomm_utest_sync_data_aicpu_ts PRIVATE
+target_link_directories(hcomm_utest_api_data_aicpu_ts PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
-target_link_libraries(hcomm_utest_sync_data_aicpu_ts PRIVATE
+target_link_libraries(hcomm_utest_api_data_aicpu_ts PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -lpthread
@@ -50,9 +61,9 @@ target_link_libraries(hcomm_utest_sync_data_aicpu_ts PRIVATE
     -lrt
     -ldl
 )
-add_dependencies(hcomm_utest_sync_data_aicpu_ts hccl_llt)
+add_dependencies(hcomm_utest_api_data_aicpu_ts hccl_llt)
 
 run_llt_test(
-   TARGET  hcomm_utest_sync_data_aicpu_ts
+   TARGET  hcomm_utest_api_data_aicpu_ts
    TASK_NUM 1
 )
