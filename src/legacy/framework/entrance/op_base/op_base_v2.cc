@@ -327,7 +327,7 @@ HcclResult HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, Hcc
         opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
         s32 logicDevId = HrtGetDevice();
         // todo:CHK_RET直接改有没有问题
-        ret = CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(opbasedCommInfoV2.pComm.get(), 0) // 通信域创建，设置默认accelerator
+        ret = CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(opbasedCommInfoV2.pComm.get(), 0); // 通信域创建，设置默认accelerator
         CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
             HCCL_ERROR("[%s]SetCommAcceleratorV2 failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
             errorFlag = true);
@@ -1599,6 +1599,7 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
     CHK_PTR_NULL(opbasedCommInfoV2.pComm);
     /* --------------初始化------------------------- */
     bool errorFlag = false;
+    s32 logicDevId = HrtGetDevice();
     do {
         ret = opbasedCommInfoV2.pComm->Init(rankTable);
         CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
@@ -1606,7 +1607,6 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
             errorFlag = true);
         // 配置默认加速模式
         opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
-        s32 logicDevId = HrtGetDevice();
         ret = CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(opbasedCommInfoV2.pComm.get(), 0); // 通信域创建，设置默认accelerator
         CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
             HCCL_ERROR("[%s]SetCommAcceleratorV2 failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
