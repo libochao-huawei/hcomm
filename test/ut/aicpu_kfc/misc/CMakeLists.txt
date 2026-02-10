@@ -31,7 +31,7 @@ target_compile_options(aicpu_kfc_utest_misc PRIVATE
 target_link_libraries(aicpu_kfc_utest_misc PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     hccl_llt
-    -lpthread
+    -pthread
     -lrt
     -ldl
 )
