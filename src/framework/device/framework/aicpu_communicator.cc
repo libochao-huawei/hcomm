@@ -3032,9 +3032,9 @@ HcclResult HcclCommAicpu::HcclOpExecFsmWaitRetryProcess(const OpParam &param, Hc
     }
     if (cmd == KfcCommand::kRetry) {
         HCCL_RUN_INFO("[OpRetry][AICPU]hccl aicpu recv retry cmd from host.");
-        ret = ResetOpRetryException(param.opType);
         dfxExtendInfo_.pollStatus = PollStatus::kDefault;
         dfxExtendInfo_.cqeStatus = dfx::CqeStatus::kDefault;
+        ret = ResetOpRetryException(param.opType);
         HCCL_RETRY_CHK_RET_AND_TRANS_FSM(ret, HCCL_ERROR("reset stream buff failed, ret:%u", ret), KfcError::kInner,
             HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
         fsmState = HcclOpExecFSM::HCCL_OP_EXEC_FSM_RETRY;
@@ -4130,9 +4130,9 @@ bool HcclCommAicpu::GetBSRRecvOpExecException()
 
 HcclResult HcclCommAicpu::CleanStream(Stream &stream)
 {
-    ResetStreamCqeExceptionStatus(stream);
     CHK_RET(stream.ClearLocalBuff());
     CHK_RET(UpdateSqStatus(stream));
+    ResetStreamCqeExceptionStatus(stream);
     HCCL_INFO("CleanStream %u success.", stream.sqId());
     return HCCL_SUCCESS;
 }
