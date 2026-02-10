@@ -60,7 +60,6 @@ PingMesh::~PingMesh()
 }
 
 static bool isInitialized = false;  // 标记是否已经初始化
-static u32 token = 0;  // 存储生成的随机数
 static std::mutex ubTokenMutex;
 
 inline HcclResult GetUbToken(u32 devicePhyId, u32* client_qp_token, u32* client_seg_token,
