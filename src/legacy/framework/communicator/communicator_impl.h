@@ -477,6 +477,7 @@ private:
     std::function<HcclResult(const std::string &commId, bool isUsingCcuMs, bool isUsingCcuSched)> callback;
     CollOpParams                               curOpParams; // 当前算子参数
     std::map<std::pair<OpType, string>, AcceleratorState> opAcceStateCache{}; // opType + algName --> acceleratorState
+    std::string                                needFallBackAlgName; // 资源不足需要回退的算法名称
 
     void InitCommonData(const CommParams &commParams);
     void InitCommonDataNotInitDevType(const CommParams &commParams, const HcclCommConfig &commConfig);
