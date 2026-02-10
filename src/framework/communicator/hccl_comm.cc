@@ -1020,6 +1020,12 @@ HcclResult hcclComm::HcclCalcNumBlocks(HcclCMDType opType, u64 count, void* coun
     return communicator_->HcclCalcNumBlocks(opType, count, counts, dataType, aivCoreLimit, algName, numBlocks);
 }
 
+bool hcclComm::HcclGetConfigIsOnlyAivMode()
+{
+    CHK_SMART_PTR_NULL(communicator_);
+    return communicator_->GetConfigIsOnlyAivMode();
+}
+
 HcclResult hcclComm::HcclGetAlgExecParam(const std::string &tag, u64 count, void *inputPtr, void *outputPtr,
     HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op,
     void *&commContext, u64 &len, u32 aivCoreLimit)
