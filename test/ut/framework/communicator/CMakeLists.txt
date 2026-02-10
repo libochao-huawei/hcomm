@@ -45,7 +45,7 @@ target_link_directories(hccl_utest_framework_communicator PRIVATE
 target_link_libraries(hccl_utest_framework_communicator PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     hccl_llt
-    -lpthread
+    -pthread
     -lrt
     -ldl
 )
