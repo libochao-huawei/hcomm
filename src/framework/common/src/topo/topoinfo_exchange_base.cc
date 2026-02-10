@@ -138,7 +138,7 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfoMsg(std::shared_ptr<HcclSocket> 
             "EI0015",
             std::vector<std::string>({"error_reason"}),
             std::vector<std::string>({RANKTABLE_DETECT_RECV_FAULT_REASON}));
-        HCCL_ERROR("[%s][%s] TopoDetect ERROR occur !!! fault_type[%s], fault_info[%s]",
+        HCCL_ERROR("[%s][%s] TopoDetect ERROR occur fault_type[%s], fault_info[%s]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_DETECT.c_str(),
             jClusterJson["fault_type"].dump().c_str(),

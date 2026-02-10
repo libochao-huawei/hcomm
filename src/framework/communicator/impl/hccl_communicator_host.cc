@@ -439,7 +439,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitOneSidedService(const RankTable_t &rankTable)
     {
-        EXECEPTION_CATCH((oneSideService_ = std::make_unique<HcclOneSidedService>(socketManager_, notifyPool_)),
+        EXECEPTION_CATCH((oneSideService_ = std::make_unique<HcclOneSidedService>(socketManager_, notifyPool_, commConfig_)),
                          return HCCL_E_INTERNAL);
         hcclRankLinkInfo_.userRank = userRank_;
         hcclRankLinkInfo_.devicePhyId = devicePhyId_;
@@ -592,6 +592,7 @@ namespace hccl
 
     bool HcclCommunicator::IsSupportSymmetricMemory(HcclCMDType opType, OpParam &opParam)
     {
+        CHK_PRT_RET(symmetricMemory_ == nullptr, HCCL_DEBUG("symmetricMemory_ is a nullptr"), false);
         HCCL_INFO("[%s] aicpuUnfold[%d], workflowMode[%d], deviceType[%d], "
             "deviceNumPerAggregation_[%d], multiModuleDiffDeviceNumMode_[%d], tag[%s].",
             __func__, opParam.aicpuUnfoldMode, GetWorkflowMode(), deviceType_,
@@ -701,14 +702,14 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::UpdateZeroCopy(const OpParam &opParam, const AlgResourceResponse &resp)
+    HcclResult HcclCommunicator::UpdateZeroCopy(const OpParam &opParam, const AlgResourceResponse &algResource)
     {
         if (!opParam.isZeroCopy) {
             return HCCL_SUCCESS;
         }
 
         // 遍历所有transport，找出里面的p2p链路对应的对端地址
-        for (auto &singleSubCommTransport : resp.opTransportResponse[COMM_LEVEL0]) {
+        for (auto &singleSubCommTransport : algResource.opTransportResponse[COMM_LEVEL0]) {
             for (u64 i = 0; i < singleSubCommTransport.links.size(); ++i) {
                 LINK link = singleSubCommTransport.links[i];
                 if (link == nullptr || !singleSubCommTransport.transportRequests[i].isValid) {
@@ -1325,7 +1326,7 @@ namespace hccl
 
     bool HcclCommunicator::IsEnableBackupLink()
     {
-        return deviceType_ == DevType::DEV_TYPE_910_93 && IsEnableRoce() && GetExternalInputHcclAicpuUnfold() && retryEnable_ &&
+        return deviceType_ == DevType::DEV_TYPE_910_93 && IsEnableRoce() && GetAicpuUnfoldConfig() && retryEnable_ &&
                commConfig_.GetConfigInterSuperPodRetryEnable() && !devBackupIpAddr_[0].IsInvalid() && rtsSupportChangeLink_ &&
                !isDiffDeviceType_;
     }
@@ -2084,8 +2085,8 @@ namespace hccl
         return cclBufferManager_.InitCCLbuffer(inCCLbufferSize, outCCLbufferSize);
     }
 
-    HcclResult HcclCommunicator::SetGroupMainStream(HcclRtStream sendRecvMainStream_){
-        Stream streamObj(sendRecvMainStream_);
+    HcclResult HcclCommunicator::SetGroupMainStream(HcclRtStream sendRecvMainStream){
+        Stream streamObj(sendRecvMainStream);
         groupSendRecvMainStream = streamObj;
         HCCL_INFO("groupSendRecvMainStream[%p], id[%d]", groupSendRecvMainStream, groupSendRecvMainStream.id());
         return HCCL_SUCCESS;
@@ -2618,7 +2619,7 @@ namespace hccl
                                            HcclDataType dataType, HcclRtStream stream, HcomCollOpInfo *opInfo)
     {
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true &&
+        if (GetAicpuUnfoldConfig() == true &&
             (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
@@ -2663,7 +2664,7 @@ namespace hccl
     {
         bool aicpuUnfoldMode = false;
 
-        if (GetExternalInputHcclAicpuUnfold() && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
+        if (GetAicpuUnfoldConfig() && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -2788,7 +2789,7 @@ namespace hccl
         }
 
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
+        if (GetAicpuUnfoldConfig() == true && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -2842,7 +2843,7 @@ namespace hccl
         }
 
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
+        if (GetAicpuUnfoldConfig() && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -2919,7 +2920,7 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true &&
+        if (GetAicpuUnfoldConfig() == true &&
             IsSupportSDMAReduce(inputPtr, outputPtr, dataType, op) &&
             deviceType_ == DevType::DEV_TYPE_910_93 && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
@@ -2983,7 +2984,6 @@ namespace hccl
         Stream streamObj(stream);
         u32 perDataSize = SIZE_TABLE[dataType];
         u64 totalSize = count * perDataSize;
-        bool isCapture = StreamIsCapture(stream);
         OpParam opParam;
         opParam.tag = tag;
         opParam.inputPtr = inputPtr;
@@ -2994,32 +2994,29 @@ namespace hccl
         opParam.DataDes.dataType = dataType;
         opParam.reduceType = op;
         opParam.stream = streamObj;
-        opParam.isCapture = isCapture;
+        opParam.isCapture = StreamIsCapture(stream);
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         AlgType algType;
         algType.algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_NP_SINGLE_RING;
         algType.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_RING;
-
-        // 构造空vector用于入参，无实际意义
-        const std::vector<Stream> slaveStreams;
+        auto slaveStreams = opParam.isCapture ? std::vector<Stream>{opStream_} : std::vector<Stream>{};
+        CaptureSlaveStreams(streamObj.ptr(), slaveStreams);
         CHK_RET(RegisterDfxInfo(opParam, algType, slaveStreams));
         HcclResult ret;
         if (!IsExistCommRes(tag)) {
             uint64_t streamMode = 0;
             CHK_RET(hrtStreamGetMode(stream, &streamMode));
-
             rtStream_t aicpuStream;
             ret = Mc2AiCpuStreamAllocAndGet(streamMode, aicpuStream);
             void *commContext = nullptr;
-            ret = CreateCommResource(tag, stream, true, &commContext);
+            ret = CreateCommResource(tag, aicpuStream, true, &commContext);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[hcclImpl][CreateComm]create aicpu unfold comminfo by tag[%s] failed. return[%d]",
                            tag.c_str(), ret);
                 return ret;
             }
         }
-
         AicpuOpTiling opTilingInfo;
         std::string kernelName = "RunAicpuRpcSrvLaunch";
         ret = AicpuKfcTilingDataLaunch(opParam, HcclCMDType::HCCL_CMD_ALLREDUCE, commContext_, kernelName, opTilingInfo);
@@ -3041,7 +3038,7 @@ namespace hccl
         CHK_RET(CheckSuspendingStatus());
         const u32 RANK_SIZE_TWO = 2;
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true &&
+        if (GetAicpuUnfoldConfig() == true &&
             IsSupportSDMAReduce(inputPtr, outputPtr, dataType, op)) {
             if (userRankSize_ >= RANK_SIZE_TWO && Is310P3Common(isHaveCpuRank_, deviceType_)) {
                 HcclResult ret = AllReduceAicpuUnfold(tag, inputPtr, outputPtr, count, dataType, op, stream);
@@ -3139,7 +3136,7 @@ namespace hccl
         opParam.All2AllDataDes.rdispls = const_cast<void *>(rdispls);
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLV;
-        opParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetExternalInputHcclAicpuUnfold();
+        opParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetAicpuUnfoldConfig();
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
 
@@ -3198,7 +3195,7 @@ namespace hccl
         opParam.All2AllDataDes.rdispls = const_cast<void *>(rdispls);
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLV;
-        opParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetExternalInputHcclAicpuUnfold();
+        opParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetAicpuUnfoldConfig();
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
 
@@ -3257,7 +3254,7 @@ namespace hccl
         opParam.All2AllDataDes.sendCountMatrix = const_cast<void *>(sendCountMatrix);
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLVC;
-        opParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetExternalInputHcclAicpuUnfold();
+        opParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetAicpuUnfoldConfig();
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
 
@@ -3312,7 +3309,7 @@ namespace hccl
         opParam.All2AllDataDes.sendCountMatrix = const_cast<void *>(sendCountMatrix);
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLVC;
-        opParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetExternalInputHcclAicpuUnfold();
+        opParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetAicpuUnfoldConfig();
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
 
@@ -3368,7 +3365,7 @@ namespace hccl
         opParam.aicpuCacheEnable = 0;
         opParam.isCapture = isCapture;
         if (deviceType_ == DevType::DEV_TYPE_910_93) {
-            opParam.aicpuUnfoldMode = GetExternalInputHcclAicpuUnfold();
+            opParam.aicpuUnfoldMode = GetAicpuUnfoldConfig();
             opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         }
 
@@ -3383,7 +3380,7 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true && deviceType_ == DevType::DEV_TYPE_910_93 && (userRankSize_ != 1)) {
+        if (GetAicpuUnfoldConfig() == true && deviceType_ == DevType::DEV_TYPE_910_93 && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -3426,7 +3423,7 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true && deviceType_ == DevType::DEV_TYPE_910_93 && (userRankSize_ != 1)) {
+        if (GetAicpuUnfoldConfig() == true && deviceType_ == DevType::DEV_TYPE_910_93 && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -3483,7 +3480,7 @@ namespace hccl
             return HCCL_E_NOT_SUPPORT;
         }
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true && deviceType_ == DevType::DEV_TYPE_910_93 && (userRankSize_ != 1)) {
+        if (GetAicpuUnfoldConfig() == true && deviceType_ == DevType::DEV_TYPE_910_93 && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -3533,7 +3530,7 @@ namespace hccl
         }
 
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
+        if (GetAicpuUnfoldConfig() == true && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -3589,7 +3586,7 @@ namespace hccl
             return HCCL_E_NOT_SUPPORT;
         }
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true &&
+        if (GetAicpuUnfoldConfig() == true &&
             IsSupportSDMAReduce(inputPtr, outputPtr, dataType, op) && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
@@ -3633,7 +3630,7 @@ namespace hccl
                     HCCL_RUN_INFO("[ReduceOutPlace]This method cannot be invoked in the current scenario."), HCCL_SUCCESS);
 
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true &&
+        if (GetAicpuUnfoldConfig() == true &&
             IsSupportSDMAReduce(inputPtr, outputPtr, dataType, op) && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
@@ -3682,7 +3679,7 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true &&
+        if (GetAicpuUnfoldConfig() == true &&
             IsSupportSDMAReduce(inputPtr, outputPtr, dataType, op) && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
@@ -3742,7 +3739,7 @@ namespace hccl
         }
 
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true &&
+        if (GetAicpuUnfoldConfig() == true &&
             IsSupportSDMAReduce(cclBufferManager_.GetInCCLbuffer().ptr(), cclBufferManager_.GetOutCCLbuffer().ptr(),
                                 dataType, op) &&
             (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
@@ -3810,7 +3807,7 @@ namespace hccl
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
         implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
-        const bool aicpuUnfoldMode = GetExternalInputHcclAicpuUnfold() &&
+        const bool aicpuUnfoldMode = GetAicpuUnfoldConfig() &&
                                      IsSupportSDMAReduce(inputPtr, outputPtr, dataType, op) && (deviceType_ == DevType::DEV_TYPE_910_93);
 
         u32 perDataSize = SIZE_TABLE[dataType];
@@ -3875,7 +3872,7 @@ namespace hccl
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
         implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
-        const bool aicpuUnfoldMode = GetExternalInputHcclAicpuUnfold() &&
+        const bool aicpuUnfoldMode = GetAicpuUnfoldConfig() &&
                                      IsSupportSDMAReduce(inputPtr, outputPtr, dataType, op) && (deviceType_ == DevType::DEV_TYPE_910_93);
 
         u32 perDataSize = SIZE_TABLE[dataType];
@@ -3929,7 +3926,7 @@ namespace hccl
         }
 
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
+        if (GetAicpuUnfoldConfig() == true && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -3966,7 +3963,7 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
+        if (GetAicpuUnfoldConfig() == true && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -4008,7 +4005,7 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
+        if (GetAicpuUnfoldConfig() == true && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -4074,7 +4071,7 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
+        if (GetAicpuUnfoldConfig() == true && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -4116,7 +4113,7 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         bool aicpuUnfoldMode = false;
-        if (GetExternalInputHcclAicpuUnfold() == true && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
+        if (GetAicpuUnfoldConfig() == true && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -4422,8 +4419,10 @@ namespace hccl
         algDesc.isLastSelect = true;
         CHK_RET(algOperator->SelectAlg(opParam.tag, opParam, limit, algName, algDesc, newTag));
         if (isOnlyAiv_ && !algDesc.isAivMode) {
-            HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%u] not support aiv only, support range:"
-                "[allreduce, reducescatter, allgather, alltoall, alltoallv, alltoallvc]", opParam.opType);
+            std::string opTypeName = GetCMDTypeEnumStr(opType);
+            HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%s] currently do not select aiv mode, "
+                "aiv only not support, please ensure rankNum is greater than one",
+                opTypeName.c_str());
             return HCCL_E_NOT_SUPPORT;
         }
         CHK_RET(PrepareZeroCopy(algName, algDesc, opParam));
@@ -4977,8 +4976,8 @@ namespace hccl
 
     HcclResult HcclCommunicator::CaptureSlaveStreams(rtStream_t mainStream, vector<Stream> &slaveStreams)
     {
-        if (deviceType_ != DevType::DEV_TYPE_910_93) {
-            HCCL_INFO("[HcclCommunicator][%s]Only A3 device in host expand mode need to capture slave streams.", __func__);
+        if ((deviceType_ != DevType::DEV_TYPE_910_93) && (deviceType_ != DevType::DEV_TYPE_310P3)) {
+            HCCL_INFO("[HcclCommunicator][%s]Only 310P3 or A3 device in host expand mode need to capture slave streams.", __func__);
             return HCCL_SUCCESS;
         }
         aclmdlRI rtModel = nullptr;
@@ -8514,7 +8513,7 @@ namespace hccl
         CHK_PRT_RET(!IsEnableBackupLink(), HCCL_RUN_WARNING("[HcclCommunicator][%s]Backup link is not enabled, "
             "switch nic will not be prorocessed, comm identifier[%s], rank[%u], devType[%u], opretry enable[%u], "
             "backup ip valid[%u], roce enable[%u].", __func__, identifier_.c_str(), userRank_, deviceType_,
-            GetExternalInputHcclAicpuUnfold() && commConfig_.GetConfigInterSuperPodRetryEnable(),
+            GetAicpuUnfoldConfig() && commConfig_.GetConfigInterSuperPodRetryEnable(),
             !devBackupIpAddr_[0].IsInvalid(), IsEnableRoce()), HCCL_SUCCESS);
         CHK_PRT_RET(resMap_.empty(), HCCL_ERROR("[HcclCommunicator][%s] "
             "no collective operation has been executed in this communication[%s] on rank[%u], "

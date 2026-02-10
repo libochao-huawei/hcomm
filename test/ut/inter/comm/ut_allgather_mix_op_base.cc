@@ -10,7 +10,6 @@
 
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -23,15 +22,12 @@
 #include <unistd.h>
 #include <errno.h>
 #include <securec.h>
-
 #include <sys/types.h>
 #include <stddef.h>
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <driver/ascend_hal.h>
-
 #include "externalinput.h"
-
 #include "hccl/base.h"
 #include <hccl/hccl_types.h>
 #include "hcom_pub.h"
@@ -40,7 +36,6 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include "hccl_comm_pub.h"
-
 #include "sal.h"
 #include "dlra_function.h"
 #include "hccl_comm_pub.h"
@@ -54,7 +49,7 @@
 #include "opexecounter_pub.h"
 #include "hccl_communicator.h"
 #include "op_base.h"
-
+#include "adapter_prof.h"
 #include "param_check_pub.h"
 
 using namespace std;
@@ -105,6 +100,12 @@ TEST_F(AllGatherMix_Opbase_Test, ut_HcclAllGatherOutPlace_mix_ranksize_1)
     MOCKER(hrtGetHccsPortNum)
     .stubs()
     .with(any(), outBound(portNum))
+    .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::InitPreResource)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtProfRegisterCtrlCallback)
+    .stubs()
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HcclCommunicator::RegisterToHeartBeat, HcclResult(HcclCommunicator::*)())
     .stubs()

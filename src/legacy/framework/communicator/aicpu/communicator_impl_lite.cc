@@ -136,7 +136,7 @@ void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
         THROW<NullPtrException>(StringFormat("CommunicatorImplLite::UnfoldOpBase insQueue is nullptr."));
     }
     if (devType == DevType::DEV_TYPE_910_95) {
-        HCCL_INFO("CommunicatorImplLite::UnfoldOpBase DevType is DEV_TYPE_910_95.");
+        HCCL_INFO("CommunicatorImplLite::UnfoldOpBase DevType is DEV_TYPE_950.");
         insExecutor->ExecuteV82(*insQueue);
         profilingReporterLite->ReportAllTasks();
         ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgr->GetCurrDfxOpInfo());
@@ -453,6 +453,7 @@ void CommunicatorImplLite::SetDfxOpInfo(uint64_t beginTime)
 {
     auto dfxopInfo           = std::make_shared<DfxOpInfo>();
     dfxopInfo->op_           = currentOp;
+    dfxopInfo->tag_          = currentOp.opTag;
     dfxopInfo->algType_      = AlgType::MESH; // 暂时
     dfxopInfo->index_        = idIndex_;
     dfxopInfo->beginTime_    = beginTime;

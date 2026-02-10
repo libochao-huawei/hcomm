@@ -30,9 +30,6 @@ private:
     SelectorStatus SelectAicpuAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
                                    const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                    std::string                                 &primQueueGenName) const override;
-    SelectorStatus SelectMeshAlgo(const TopoInfo &topoInfo,
-                                  const CollAlgOperator &op,
-                                  std::string &primQueueGenName) const;
     SelectorStatus SelectAivAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op, const std::map<OpType, 
                                  std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const override;
     SelectorStatus SelectMeshAlgoAicpu(const TopoInfo &topoInfo,

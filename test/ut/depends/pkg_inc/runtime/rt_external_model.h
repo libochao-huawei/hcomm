@@ -196,6 +196,22 @@ RTS_API rtError_t rtDebugUnRegisterForStream(rtStream_t stm);
  */
 RTS_API rtError_t rtModelGetId(rtModel_t mdl, uint32_t *modelId);
 
+typedef enum tagModelStreamType {
+    RT_MODEL_HEAD_STREAM = 0,
+    RT_MODEL_WAIT_ACTIVE_STREAM = 1
+} rtModelStreamType_t;
+
+/**
+ * @ingroup rt_model
+ * @brief bind model and stream instance
+ * @param [in] mdl  binded model
+ * @param [in] stm   binded stream
+ * @param [in] flag  reserved 
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_VALUE for error input
+ */
+RTS_API rtError_t rtModelBindStream(rtModel_t mdl, rtStream_t stm, uint32_t flag);
+
 #if defined(__cplusplus)
 }
 #endif

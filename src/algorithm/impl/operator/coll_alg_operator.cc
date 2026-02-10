@@ -493,7 +493,8 @@ HcclResult CollAlgOperator::GetDefaultAlgoLevel1V2(HcclCMDType hcclCMDType, u64 
         return HCCL_SUCCESS;
     }
     if (hcclCMDType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER && deterniminsticWithInlineReduce &&
-        deviceNumPerAggregation_ > 1 && curSize >= pipelineMinSize && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
+        deviceNumPerAggregation_ > 1 &&
+        curSize >= pipelineMinSize && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
         CalcContextNumForPipeline(hcclCMDType) <= HCCL_FFTS_CAPACITY
         && moduleNum_ > 1 && curSize >= HCCL_SMALL_COUNT_256_KB) {
         algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
@@ -512,7 +513,8 @@ HcclResult CollAlgOperator::GetDefaultAlgoLevel1V2(HcclCMDType hcclCMDType, u64 
             algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
             return HCCL_SUCCESS;
         }
-        if (deterniminsticWithInlineReduce && deviceNumPerAggregation_ > 1 &&
+        if (deterniminsticWithInlineReduce &&
+            deviceNumPerAggregation_ > 1 &&
             allreduceCurSize >= HCCL_SMALL_COUNT_1_MB && !isAivMode && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
             CalcContextNumForPipeline(hcclCMDType) <= HCCL_FFTS_CAPACITY) {
             algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;

@@ -52,7 +52,7 @@ private:
     std::set<GlobalMemRecord> memRecordSet_{}; // 内存记录，按照type>addr>size排序
     std::unordered_set<void*> validHandlePtrSet{}; // 记录handle地址，用于校验用户传入的是否是handle的地址
     std::mutex lock_;   // 锁保证多线程访问安全
-    std::map<HcclIpAddress, std::pair<NicType, HcclNetDevCtx>> netDevCtxMap_{};
+    std::map<PortInfo, std::pair<NicType, HcclNetDevCtx>> netDevCtxMap_{};
     u32 devicePhyId_{INVALID_UINT};
     s32 deviceLogicId_{INVALID_INT};
     bool nicInited_{false};

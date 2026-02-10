@@ -17,7 +17,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+#include "hccp.h"
 #include "hccp_ctx.h"
 #include "hccp_async.h"
 #include "hccp_async_ctx.h"
@@ -103,5 +103,10 @@ int ra_get_dev_eid_info_list(struct RaInfo info, struct dev_eid_info info_list[]
     info_list[1].chip_id = 0;
     info_list[1].func_id = 3;
  
+    return 0;
+}
+
+int ra_get_sec_random(struct RaInfo *info, uint32_t *value)
+{
     return 0;
 }

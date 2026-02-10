@@ -1,7 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
- * Description: ra peer ctx
- * Create: 2025-11-03
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "securec.h"
@@ -76,7 +80,8 @@ int ra_peer_ctx_get_async_events(struct ra_ctx_handle *ctx_handle, struct async_
     ret = rs_ctx_get_async_events(&dev_info, events, num);
     RaPeerMutexUnlock(phy_id);
     if (ret != 0) {
-        hccp_err("[init][ra_peer_ctx]ctx init failed[%d] phy_id[%u]", ret, phy_id);
+        hccp_err("[get][async_events]rs_ctx_get_async_events failed ret:%d phy_id:%u dev_index:0x%x", ret, phy_id,
+            ctx_handle->dev_index);
     }
 
     return ret;

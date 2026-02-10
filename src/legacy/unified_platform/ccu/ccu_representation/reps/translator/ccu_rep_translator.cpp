@@ -24,7 +24,7 @@ namespace CcuRep {
 
 template <typename T> bool CheckType(const std::shared_ptr<CcuRepBlock> &refer)
 {
-    HCCL_INFO("[ChechType] refer->Type() = %d", refer->Type());
+    HCCL_INFO("[CheckType] refer->Type() = %d", refer->Type());
     return false;
 }
 

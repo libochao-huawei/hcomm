@@ -410,7 +410,7 @@ HcclResult AlltoAllOperator::PreparePreOpParam(OpParam& preProcessOpParam,
     preProcessOpParam.DataDes.count = (preMetaInfo->outputSize / stepSize);
     preProcessOpParam.DataDes.dataType = HCCL_DATA_TYPE_UINT64;
     preProcessOpParam.stream = preProcessStream;
-    preProcessOpParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetExternalInputHcclAicpuUnfold();
+    preProcessOpParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && topoMatcher_->GetAicpuUnfoldConfig();
     return HCCL_SUCCESS;
 }
 

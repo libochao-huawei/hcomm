@@ -2040,6 +2040,7 @@ HcclResult CreateQp(RdmaHandle rdmaHandle, int& flag, s32& qpMode, QpInfo& qp, b
         CHK_RET(ConstructQpAttrs(qpMode, attrs, qpDepth));
         attrs.udpSport = 0x0;
         attrs.qpAttr.cap.max_send_wr = HETEROG_OFFLINE_EXT_MAX_SEND_WR;
+        attrs.cqAttr.sendCqDepth = DEFAULT_MAX_ONE_SIDED_SEND_CQ_DEPTH;
         CHK_RET(hrtRaQpCreateWithAttrs(rdmaHandle, &attrs, qp.qpHandle));
     } else {
         CHK_RET(HrtRaQpCreate(rdmaHandle, flag, qpMode, qp.qpHandle));
@@ -2235,6 +2236,7 @@ HcclResult CreateAiQp(RdmaHandle rdmaHandle, struct AiQpInfo &aiQpInfo, QpInfo &
     QueueDepthAttr qpDepth{};
     CHK_RET(ConstructQpAttrs(info.qpMode, attrs, qpDepth, false));
     attrs.qpAttr.cap.max_send_wr = DEFAULT_OFFLINE_MAX_SEND_WR;
+    attrs.cqAttr.sendCqDepth = DEFAULT_MAX_ONE_SIDED_SEND_CQ_DEPTH;
     attrs.udpSport = 0;
 
     CHK_RET(hrtRaAiQpCreate(devicePhyId, rdmaHandle, &attrs, &aiQpInfo, info.qpHandle));
@@ -3043,5 +3045,47 @@ HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT ke
     value.assign(buffer.data(), actualLen != 0 && buffer[actualLen - 1] == '\0' ? actualLen - 1 : actualLen);
     HCCL_DEBUG("[HrtRaGetHccnCfg]devicePhyId[%u] key[%d], value[%s], value len[%d]",devicePhyId, key, value.c_str(),
                 actualLen);
+    return HCCL_SUCCESS;
+}
+
+HcclResult hrtRaGetSecRandom(struct RaInfo *info, unsigned int* token)
+{
+    if(DlRaFunction::GetInstance().dlRaGetSecRandom == nullptr) {
+        HCCL_ERROR("driver package does not support dlRaGetSecRandom, please change new package");
+        return HCCL_E_NOT_SUPPORT;
+    }
+    s32 ret = DlRaFunction::GetInstance().dlRaGetSecRandom(info, token);
+    if (ret != 0) {
+        HCCL_ERROR("[HrtRaGetSecRandom] ra_get_sec_random failed, call interface");
+        return HCCL_E_INTERNAL;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult hrtRaGetDevEidInfoNum(struct RaInfo *info, unsigned int* num)
+{
+    if(DlRaFunction::GetInstance().dlRaGetDevEidInfoNum == nullptr) {
+        HCCL_ERROR("driver package does not support dlRaGetDevEidInfoNum, please change new package");
+        return HCCL_E_NOT_SUPPORT;
+    }
+    s32 ret = DlRaFunction::GetInstance().dlRaGetDevEidInfoNum(info, num);
+    if (ret != 0) {
+        HCCL_ERROR("[HrtRaGetSecRandom] ra_get_dev_eid_info_num failed, call interface");
+        return HCCL_E_INTERNAL;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult hrtRaGetDevEidInfoList(struct RaInfo *info, struct dev_eid_info *eid_info, unsigned int* num)
+{
+    if(DlRaFunction::GetInstance().dlRaGetDevEidInfoList == nullptr) {
+        HCCL_ERROR("driver package does not support dlRaGetDevEidInfoNum, please change new package");
+        return HCCL_E_NOT_SUPPORT;
+    }
+    s32 ret = DlRaFunction::GetInstance().dlRaGetDevEidInfoList(info, eid_info, num);
+    if (ret != 0) {
+        HCCL_ERROR("[HrtRaGetSecRandom] ra_get_dev_eid_info_list failed, call interface");
+        return HCCL_E_INTERNAL;
+    }
     return HCCL_SUCCESS;
 }

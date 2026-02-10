@@ -24,6 +24,7 @@
 #include "independent_op.h"
 #include "comm_configer.h"
 #include "hccl_group_utils.h"
+#include "hccl_dispatcher_ctx.h"
 
 namespace hccl {
 RankTable_t g_hcclDefaultRankTable;
@@ -45,6 +46,7 @@ hcclComm::~hcclComm()
 {
     RealeaseBarrierMemory();
     (void)UnRegistTaskAbortHandler();
+    BinaryUnLoad();
     communicator_ = nullptr;
 }
 
@@ -1105,6 +1107,21 @@ HcclResult hcclComm::GetandClearOverFlowTasks(std::vector<HcclDumpInfo> &hcclDum
     return HCCL_SUCCESS;
 }
 
+
+HcclResult hcclComm::SetCommDispatcherCtx()
+{
+    DispatcherCtxPtr dispatherCtx = GetDispatcherCtx(identifier_.c_str());
+    CHK_PTR_NULL(dispatherCtx);
+    HCCL_INFO("[%s] dispatherCtx = [%p]", __func__, dispatherCtx);
+    CHK_RET(SetDispatcherCtx(dispatherCtx));
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::ReleaseCommDispatcherCtx()
+{
+    return HCCL_SUCCESS;
+}
+
 HcclResult hcclComm::SupportDeterministicOptim(bool &isDeterministicOptim)
 {
     CHK_RET(communicator_->SupportDeterministicOptim(isDeterministicOptim));
@@ -1312,6 +1329,11 @@ u32 hcclComm::GetServerNum()
 u32 hcclComm::GetModuleNum()
 {
     return communicator_->GetModuleNum();
+}
+
+u32 hcclComm::GetRealUserRank() const
+{
+    return communicator_->GetRealUserRank();
 }
 
 HcclResult hcclComm::GetCommParams(HcclCommParams &params)

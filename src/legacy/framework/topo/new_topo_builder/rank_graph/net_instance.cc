@@ -172,7 +172,7 @@ void NetInstance::GetTopoInstsByLayer(std::vector<u32> &topoInsts, u32 &topoInst
     for (const auto &entry : topoInsts_) {
         topoInsts.push_back(entry.first);
     }
- 
+
     topoInstNum = static_cast<u32>(topoInsts.size());
 }
 
@@ -231,7 +231,7 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
     // 2. 通过 fabric 的路径
     for (auto& fabric : fabrics) {
         NodeId fabricId = fabric->GetNodeId();
- 
+
         // 所有 src -> fabric 的链路
         vector<NetInstance::Link> srcToFabricLinks;
         vGraph.TraverseEdge(srcPeerId, fabricId, [&](shared_ptr<NetInstance::Link> edge) {
@@ -245,7 +245,7 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
             fabricToDstLinks.push_back(*edge);
             return;
         });
- 
+
         if (!srcToFabricLinks.empty() && !fabricToDstLinks.empty()) {
             for (auto& srcLink : srcToFabricLinks) {
                 for (auto& dstLink : fabricToDstLinks) {
@@ -564,7 +564,7 @@ std::set<LinkProtocol> NetInstance::ConnInterface::GetLinkProtocols() const
     return linkProtocols;
 }
 
-void NetInstance::ConnInterface::SetLocalDieId(u32 dieId) 
+void NetInstance::ConnInterface::SetLocalDieId(u32 dieId)
 {
     localDieId_ = dieId;
 }
@@ -591,7 +591,7 @@ std::string NetInstance::ConnInterface::Describe() const
 
 bool NetInstance::ConnInterface::operator==(const NetInstance::ConnInterface &rhs) const
 {
-    return addr == rhs.addr && pos == rhs.pos && linkType == rhs.linkType && 
+    return addr == rhs.addr && pos == rhs.pos && linkType == rhs.linkType &&
         linkProtocols == rhs.linkProtocols && ports == rhs.ports && topoInstId == rhs.topoInstId && topoType == rhs.topoType;
 }
 

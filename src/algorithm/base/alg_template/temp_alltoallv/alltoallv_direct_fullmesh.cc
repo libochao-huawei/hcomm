@@ -9,6 +9,7 @@
  */
 
 #include "alltoallv_direct_fullmesh.h"
+#include "dispatcher_pub.h"
 
 namespace hccl {
 AlltoAllVDirectFullMesh::AlltoAllVDirectFullMesh(const HcclDispatcher dispatcher)
@@ -66,6 +67,9 @@ HcclResult AlltoAllVDirectFullMesh::GenerateSubStreamInfo(const std::vector<Stre
 
 HcclResult AlltoAllVDirectFullMesh::Prepare(PrepareData &param)
 {
+    needAlltoallvCache_ = param.needAlltoallvCache;
+    HCCL_INFO("[AlltoAllVDirectFullMesh][Prepare] set needAlltoallvCache_[%u] for alltoallv aicpu cache", needAlltoallvCache_);
+
     mainStream_ = param.stream;
     userRank_ = param.userRank;
     userRankSize_ = param.userRankSize;
@@ -111,6 +115,7 @@ HcclResult AlltoAllVDirectFullMesh::Prepare(PrepareData &param)
 
     /* 考虑当group0 的rank 跟 group 1的所有rank通信时，每次都要收发，所以取sdmaConcurrentNum_块；
     跟group 0内的rank通信有一块儿浪费 */
+    // 注意: 如果sdmaDataBlockSize_的计算逻辑发生变化, 需要同步修改framework下CalcMetadataForFirstAlltoallv()函数中的part 1
     u32 blockGroup = (isBigCount_ || opType_ == HcclCMDType::HCCL_CMD_ALLTOALLV || opType_ == HcclCMDType::HCCL_CMD_ALLTOALLVC) ? 2 : 1;
     sdmaDataBlockSize_= (cclInMem_.size() / std::max(1u, sdmaConcurrentNum_ * blockGroup));
     // 向下对齐到16k Byte
@@ -153,8 +158,8 @@ u64 AlltoAllVDirectFullMesh::CalcMaxSendLen()
     return maxSendLen;
 }
 
-void AlltoAllVDirectFullMesh::UpdateCurrRankRecvInfo(u32 roundIdx, u32 side, u32 destRank,
-    std::vector<ReadDataBlock>& readInfo, u32 maxRecvStep)
+HcclResult AlltoAllVDirectFullMesh::UpdateCurrRankRecvInfo(u32 step, u32 roundIdx, u32 side, u32 destRank,
+    std::vector<ReadDataBlock>& readInfo, std::unordered_map<u32, ReadDataBlock>& subStreamZcopyReadInfo, u32 maxRecvStep)
 {
     const SendRecvInfo& localSendRecvInfo = *localSendRecvInfoPtr_;
     u64 remainRecvLen = localSendRecvInfo.recvLength[destRank];
@@ -182,25 +187,45 @@ void AlltoAllVDirectFullMesh::UpdateCurrRankRecvInfo(u32 roundIdx, u32 side, u32
 
     u32 recvStepIdx = 0;
     u64 dataOffset = 0;
-    HCCL_DEBUG("usrRank[%u] total recv localSendRecvInfo.recvLength[%llu] from dstRank[%u] bufferIdx[%u]",
-        userRank_, remainRecvLen, destRank, bufferIdx);
+    HCCL_DEBUG("step[%u] round[%u] usrRank[%u] total recv localSendRecvInfo.recvLength[%llu] from dstRank[%u] bufferIdx[%u]",
+        step, roundIdx, userRank_, remainRecvLen, destRank, bufferIdx);
 
-    while(recvStepIdx < maxRecvStep && remainRecvLen > 0) {
-        u64 currDataRemainLen = localSendRecvInfo.recvLength[destRank] - dataOffset;
-        u64 recvLen = std::min(sdmaDataBlockSize_, currDataRemainLen);
-        u64 userOutOffset = localSendRecvInfo.recvOffset[destRank] + dataOffset;
+    // alltoallv类算子的零长拷贝, 需要调用MemcpyAsync保证aicpu cache使能时placeholder正确下发 (cache不使能时为空函数调用)
+    if (needAlltoallvCache_ && remainRecvLen == 0) {
+        // 获取local user output offset
+        const u64 recvLen = 0;
+        u64 userOutOffset = localSendRecvInfo.recvOffset[destRank];
         HCCL_DEBUG("[AlltoAllVDirectFullMesh][UpdateCurrRankRecvInfo] usrRank[%u] recv from destRank [%u]"
-            "sendStepIdx[%u] recvLen[%lu] userOutOffset[%llu] scratchOffset[%llu]",
-            userRank_, destRank, recvStepIdx, recvLen, userOutOffset, scratchOffset);
-        readInfo.push_back({recvLen, scratchOffset, userOutOffset});
-        dataOffset += recvLen;
-        recvStepIdx++;
-        remainRecvLen -= recvLen;
+                "recvStepIdx[%u] recvLen[%lu] userOutOffset[%llu] scratchOffset[%llu]",
+                userRank_, destRank, recvStepIdx, recvLen, userOutOffset, scratchOffset);
+        
+        // 更新零长拷贝的read info
+        ReadDataBlock readBlock = {recvLen, scratchOffset, userOutOffset};
+        subStreamZcopyReadInfo[destRank] = readBlock;
+
+        // sendCount为0, step和readInfo.size一定为0
+        CHK_PRT_RET(maxRecvStep > 0, HCCL_ERROR("[AlltoAllVDirectFullMesh][UpdateCurrRankRecvInfo] maxRecvStep[%u] != 0 for remainRecvLen[%llu]", maxRecvStep, remainRecvLen), HCCL_E_INTERNAL);
+        CHK_PRT_RET(readInfo.size() != 0, HCCL_ERROR("[AlltoAllVDirectFullMesh][UpdateCurrRankRecvInfo] invalid readInfo.size[%u]", readInfo.size()), HCCL_E_INTERNAL);
+    } else {
+        while(recvStepIdx < maxRecvStep && remainRecvLen > 0) {
+            u64 currDataRemainLen = localSendRecvInfo.recvLength[destRank] - dataOffset;
+            u64 recvLen = std::min(sdmaDataBlockSize_, currDataRemainLen);
+            u64 userOutOffset = localSendRecvInfo.recvOffset[destRank] + dataOffset;
+            HCCL_DEBUG("[AlltoAllVDirectFullMesh][UpdateCurrRankRecvInfo] usrRank[%u] recv from destRank [%u]"
+                "recvStepIdx[%u] recvLen[%lu] userOutOffset[%llu] scratchOffset[%llu]",
+                userRank_, destRank, recvStepIdx, recvLen, userOutOffset, scratchOffset);
+            readInfo.push_back({recvLen, scratchOffset, userOutOffset});
+            dataOffset += recvLen;
+            recvStepIdx++;
+            remainRecvLen -= recvLen;
+        }
     }
+
+    return HCCL_SUCCESS;
 }
 
-void AlltoAllVDirectFullMesh::UpdateCurrRankSendInfo(u32 roundIdx, u32 side, u32 destRank,
-    std::vector<SendDataBlock>& sendInfo, u32 maxSendStep)
+HcclResult AlltoAllVDirectFullMesh::UpdateCurrRankSendInfo(u32 step, u32 roundIdx, u32 side, u32 destRank,
+    std::vector<SendDataBlock>& sendInfo, std::unordered_map<u32, SendDataBlock>& subStreamZcopySendInfo, u32 maxSendStep)
 {
     const SendRecvInfo& localSendRecvInfo = *localSendRecvInfoPtr_;
     u64 remainSendLen = localSendRecvInfo.sendLength[destRank];
@@ -226,28 +251,71 @@ void AlltoAllVDirectFullMesh::UpdateCurrRankSendInfo(u32 roundIdx, u32 side, u32
     }
     scratchOffset = bufferIdx * sdmaDataBlockSize_;
 
+    // 更新hcclOffset到dstRank的映射, 用于alltoallv算子aicpu展开的SQE缓存
+    if (needAlltoallvCache_) {
+        // alltoallv cache只针对小数据量, 至多只有1个step
+        CHK_PRT_RET(step != 0,
+            HCCL_ERROR("[AlltoAllVDirectFullMesh][UpdateCurrRankRecvInfo] needAlltoallvCache_[%u] step[%u]",
+                needAlltoallvCache_, step),
+            HCCL_E_INTERNAL);
+
+        std::unordered_map<uint64_t, std::vector<uint32_t>>::iterator mapIter = hcclOffsetDstRanksMap_.find(scratchOffset);
+        if (mapIter == hcclOffsetDstRanksMap_.end()) {
+            constexpr uint32_t singleRankVecSize = 1;
+            std::pair<std::unordered_map<uint64_t, std::vector<uint32_t>>::iterator, bool> emplaceResult = hcclOffsetDstRanksMap_.emplace(scratchOffset, std::vector<uint32_t>(singleRankVecSize, destRank));
+            CHK_PRT_RET(!emplaceResult.second, HCCL_ERROR("[AlltoAllVDirectFullMesh][UpdateCurrRankSendInfo] fail to insert hcclOffset[%llu]-dstRank[%u] pair", scratchOffset, destRank), HCCL_E_INTERNAL);
+            mapIter = emplaceResult.first;
+        } else {
+            // 虽然同一个dstRank不需要重复计算sendInfo, 但不同dstRanks在multi-round case下可能对应相同的hcclOffset
+            CHK_PRT_RET(mapIter->second.size() == 0, HCCL_ERROR("[AlltoAllVDirectFullMesh][UpdateCurrRankSendInfo] empty dstRanks for hcclOffset[%llu] before add destRank[%u]", mapIter->second, destRank, scratchOffset), HCCL_E_INTERNAL);
+            mapIter->second.push_back(destRank);
+        }
+        HCCL_DEBUG("[AlltoAllVDirectFullMesh][UpdateCurrRankSendInfo] mapIter->first[%llu] mapIter->second.size[%u] destRank[%u]", mapIter->first, mapIter->second.size(), destRank);
+    }
+
     u32 sendStepIdx = 0;
     u64 dataOffset = 0;
-    HCCL_DEBUG("usrRank[%u] total send localSendRecvInfo.sendLength[%llu] to dstRank[%u] bufferIdx[%u]",
-        userRank_, remainSendLen, destRank, bufferIdx);
+    HCCL_DEBUG("step[%u] round[%u] usrRank[%u] total send localSendRecvInfo.sendLength[%llu] to dstRank[%u] bufferIdx[%u]",
+        step, roundIdx, userRank_, remainSendLen, destRank, bufferIdx);
 
-    while (sendStepIdx < maxSendStep && remainSendLen > 0) {
-        u64 currDataRemainLen = localSendRecvInfo.sendLength[destRank] - dataOffset;
-        u64 sendLen = std::min(sdmaDataBlockSize_, currDataRemainLen);
-        u64 userInOffset = localSendRecvInfo.sendOffset[destRank] + dataOffset;
+    if (needAlltoallvCache_ && remainSendLen == 0) { // alltoallv类算子的零长拷贝, 需要调用MemcpyAsync保证aicpu cache使能时placeholder正确下发 (cache不使能时为空函数调用)
+        // 获取local user input offset
+        const u64 sendLen = 0;
+        u64 userInOffset = localSendRecvInfo.sendOffset[destRank];
         HCCL_DEBUG("[AlltoAllVDirectFullMesh][UpdateCurrRankSendInfo] usrRank[%u] send to destRank [%u]"
             " sendStepIdx[%u] sendLen[%lu] userInOffset[%llu] scratchOffset[%llu]",
             userRank_, destRank, sendStepIdx, sendLen, userInOffset, scratchOffset);
-        sendInfo.push_back({sendLen, userInOffset, scratchOffset});
-        dataOffset += sendLen;
-        sendStepIdx++;
-        remainSendLen -= sendLen;
+        
+        // 更新零长拷贝的send info
+        SendDataBlock sendBlock = {sendLen, userInOffset, scratchOffset};
+        subStreamZcopySendInfo[destRank] = sendBlock;
+
+        // sendCount为0, step和sendInfo.size一定为0
+        CHK_PRT_RET(maxSendStep > 0, HCCL_ERROR("[AlltoAllVDirectFullMesh][UpdateCurrRankSendInfo] maxSendStep[%u] != 0 for remainSendLen[%llu]", maxSendStep, remainSendLen), HCCL_E_INTERNAL);
+        CHK_PRT_RET(sendInfo.size() != 0, HCCL_ERROR("[AlltoAllVDirectFullMesh][UpdateCurrRankSendInfo] invalid sendInfo.size[%u]", sendInfo.size()), HCCL_E_INTERNAL);
+    } else {
+        while (sendStepIdx < maxSendStep && remainSendLen > 0) {
+            u64 currDataRemainLen = localSendRecvInfo.sendLength[destRank] - dataOffset;
+            u64 sendLen = std::min(sdmaDataBlockSize_, currDataRemainLen);
+            u64 userInOffset = localSendRecvInfo.sendOffset[destRank] + dataOffset;
+            HCCL_DEBUG("[AlltoAllVDirectFullMesh][UpdateCurrRankSendInfo] usrRank[%u] send to destRank [%u]"
+                " sendStepIdx[%u] sendLen[%lu] userInOffset[%llu] scratchOffset[%llu]",
+                userRank_, destRank, sendStepIdx, sendLen, userInOffset, scratchOffset);
+            sendInfo.push_back({sendLen, userInOffset, scratchOffset});
+            dataOffset += sendLen;
+            sendStepIdx++;
+            remainSendLen -= sendLen;
+        }
     }
+
+    return HCCL_SUCCESS;
 }
 
-void AlltoAllVDirectFullMesh::UpdateSendRecvInfo(u32 roundIdx,
+void AlltoAllVDirectFullMesh::UpdateSendRecvInfo(u32 step, u32 roundIdx,
     std::unordered_map<u32, std::vector<ReadDataBlock>> &subStreamReadInfo,
     std::unordered_map<u32, std::vector<SendDataBlock>> &subStreamSendInfo,
+    std::unordered_map<u32, ReadDataBlock>& subStreamZcopyReadInfo,
+    std::unordered_map<u32, SendDataBlock>& subStreamZcopySendInfo,
     const std::vector<std::vector<std::pair<u32,u32>>> &partialCommRankSet)
 {
     for (u32 side = 0; side < partialCommRankSet.size(); side++) {
@@ -258,7 +326,7 @@ void AlltoAllVDirectFullMesh::UpdateSendRecvInfo(u32 roundIdx,
             }
             u32 currDestRecvStep = recvNumSubStep_[readRemoteRank];
             std::vector<ReadDataBlock> readInfo;
-            UpdateCurrRankRecvInfo(roundIdx, side, readRemoteRank, readInfo, currDestRecvStep);
+            UpdateCurrRankRecvInfo(step, roundIdx, side, readRemoteRank, readInfo, subStreamZcopyReadInfo, currDestRecvStep);
 
             subStreamReadInfo[readRemoteRank] = readInfo;
         }
@@ -272,33 +340,80 @@ void AlltoAllVDirectFullMesh::UpdateSendRecvInfo(u32 roundIdx,
             }
             u32 currDestSendStep = sendNumSubStep_[sendRemoteRank];
             std::vector<SendDataBlock> sendInfo;
-            UpdateCurrRankSendInfo(roundIdx, side, sendRemoteRank, sendInfo, currDestSendStep);
+            UpdateCurrRankSendInfo(step, roundIdx, side, sendRemoteRank, sendInfo, subStreamZcopySendInfo, currDestSendStep);
 
             subStreamSendInfo[sendRemoteRank] = sendInfo;
         }
     }
 }
 
-void AlltoAllVDirectFullMesh::UpdateOpBaseSubStreamInfo(u32 roundIdx)
+void AlltoAllVDirectFullMesh::UpdateOpBaseSubStreamInfo(u32 step, u32 roundIdx)
 {
     if (roundIdx == 0 || !isBigCount_) {
         subStreamReadInfo_.clear();
         subStreamSendInfo_.clear();
-        UpdateSendRecvInfo(roundIdx, subStreamReadInfo_, subStreamSendInfo_, partialCommRankSet_);
+        if (needAlltoallvCache_) {
+            subStreamZcopyReadInfo_.clear();
+            subStreamZcopySendInfo_.clear();
+        }
+        UpdateSendRecvInfo(step, roundIdx, subStreamReadInfo_, subStreamSendInfo_, subStreamZcopyReadInfo_, subStreamZcopySendInfo_, partialCommRankSet_);
     }
     if (isBigCount_ && (roundIdx < commRounds_ - 1)) {
         nextSubStreamReadInfo_.clear();
         nextSubStreamSendInfo_.clear();
-        UpdateSendRecvInfo(roundIdx + 1, nextSubStreamReadInfo_, nextSubStreamSendInfo_, nextPartialCommRankSet_);
+        if (needAlltoallvCache_) {
+            nextSubStreamZcopyReadInfo_.clear();
+            nextSubStreamZcopySendInfo_.clear();
+        }
+        UpdateSendRecvInfo(step, roundIdx + 1, nextSubStreamReadInfo_, nextSubStreamSendInfo_, nextSubStreamZcopyReadInfo_, nextSubStreamZcopySendInfo_, nextPartialCommRankSet_);
     }
 }
 
 HcclResult AlltoAllVDirectFullMesh::PrepareIntraData(u32 step,
-    std::unordered_map<u32,std::vector<SendDataBlock>> &subStreamSendInfo)
+    std::unordered_map<u32,std::vector<SendDataBlock>> &subStreamSendInfo,
+    std::unordered_map<u32, SendDataBlock>& subStreamZcopySendInfo)
 {
     u32 sendDataIndex = 0;
     for (auto& sdmaInfo : subStreamSendInfo) {
         const std::vector<SendDataBlock>& sendInfo = sdmaInfo.second;
+
+        // 对于alltoallv类算子, 零长拷贝需要调用MemcpyAsync保证aicpu cache使能时placeholder正确下发
+        // 注意: alltoallv aicpu cache只考虑小数据量 (即max step为1), 所以只需要在step 0时下发一个placeholder SQE即可
+        if (needAlltoallvCache_) {
+            // alltoallv cache只针对小数据量, 至多只有1个step
+            CHK_PRT_RET(step != 0,
+                HCCL_ERROR("[AlltoAllVDirectFullMesh][UpdateCurrRankRecvInfo] needAlltoallvCache_[%u] step[%u]",
+                    needAlltoallvCache_, step),
+                HCCL_E_INTERNAL);
+
+            const u32 sendRank = sdmaInfo.first;
+            std::unordered_map<u32, SendDataBlock>::const_iterator mapIter = subStreamZcopySendInfo.find(sendRank);
+            if (mapIter != subStreamZcopySendInfo.end()) { // sendRank的sendCount为0
+                // 零长拷贝下, sendRank对应的step和sendInfo.size一定为0
+                CHK_PRT_RET(sendNumSubStep_[sdmaInfo.first] > 0, HCCL_ERROR("invalid sendNumSubStep_[%u][%u] != 0", sdmaInfo.first, sendNumSubStep_[sdmaInfo.first]), HCCL_E_INTERNAL);
+                CHK_PRT_RET(sendInfo.size() > 0, HCCL_ERROR("[AlltoAllVDirectFullMesh][PrepareIntraData] invalid sendInfo.size[%u] != 0", sendInfo.size()), HCCL_E_INTERNAL);
+
+                // 获取零长拷贝的发送偏移
+                const SendDataBlock& sendBlock = mapIter->second;
+                CHK_PRT_RET(sendBlock.sendLen != 0, HCCL_ERROR("[AlltoAllVDirectFullMesh][PrepareIntraData] invalid sendBlock.sendLen[%llu] != 0", sendBlock.sendLen), HCCL_E_INTERNAL);
+
+                // 强制调用HcclD2DMemcpyAsync下发cache-memcpy placeholder (aicpu cache使能时才会生效, 未使能时会直接返回)
+                DeviceMem src = userInput_.range(sendBlock.userInOffset, sendBlock.sendLen);
+                DeviceMem dst = cclInMem_.range(sendBlock.scratchOffset, sendBlock.sendLen);
+                HCCL_DEBUG("[AlltoAllVDirectFullMesh][PrepareIntraData]userRank [%u] copy from userInOffset[%llu]"
+                    "len[%u] to scratchOffset [%llu]", userRank_, sendBlock.userInOffset, sendBlock.sendLen,
+                    sendBlock.scratchOffset);
+                reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(true);
+                HCCL_INFO("[AlltoAllVDirectFullMesh][PrepareIntraData] generate cache-memcpy placeholder for sendRank[%u]", sendRank);
+                if (isBigCount_) {
+                    CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dst, src, localSubStream_[sendDataIndex]));
+                } else {
+                    CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dst, src, mainStream_));
+                }
+                reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(false);
+            }
+        }
+        
         if (step < sendNumSubStep_[sdmaInfo.first]) {
             DeviceMem src = userInput_.range(sendInfo[step].userInOffset, sendInfo[step].sendLen);
             DeviceMem dst = cclInMem_.range(sendInfo[step].scratchOffset, sendInfo[step].sendLen);
@@ -457,10 +572,49 @@ HcclResult AlltoAllVDirectFullMesh::NotifyRemoteRankStart(u32 step)
             Stream& currStream = sdmaSubStream_[streamIndex];
             const LINK& readTransport = links_[recvRank];
             const LINK& sendTransport = links_[sendRank];
+            
+            if (needAlltoallvCache_) {
+                // alltoallv cache只针对小数据量, 至多只有1个step
+                CHK_PRT_RET(step != 0,
+                    HCCL_ERROR("[AlltoAllVDirectFullMesh][NotifyRemoteRankStart] needAlltoallvCache_[%u] step[%u]",
+                        needAlltoallvCache_, step),
+                    HCCL_E_INTERNAL);
+
+                std::unordered_map<u32, SendDataBlock>::const_iterator mapIter = subStreamZcopySendInfo_.find(sendRank);
+                if (mapIter != subStreamZcopySendInfo_.end()) { // sendRank的sendCount为0
+                    // 零长拷贝下, sendRank对应的sendInfo.size一定为0
+                    CHK_PRT_RET(sendInfo.size() > 0,
+                        HCCL_ERROR("[AlltoAllVDirectFullMesh][NotifyRemoteRankStart] invalid sendInfo.size[%u] != 0",
+                            sendInfo.size()),
+                        HCCL_E_INTERNAL);
+
+                    // 生成cache-write placeholder
+                    reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(true);
+                    HCCL_INFO("[AlltoAllVDirectFullMesh][NotifyRemoteRankStart] generate cache-write placeholder for sendRank[%u]", sendRank);
+                    CHK_RET(sendTransport->TxAck(currStream));
+                    reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(false);
+                }
+            }
             if (step < sendInfo.size()) {
                 CHK_RET(sendTransport->TxAck(currStream));
             }
 
+            if (needAlltoallvCache_) {
+                std::unordered_map<u32, ReadDataBlock>::const_iterator mapIter = subStreamZcopyReadInfo_.find(recvRank);
+                if (mapIter != subStreamZcopyReadInfo_.end()) { // recvRank的recvCount为0
+                    // 零长拷贝下, recvRank对应的readInfo.size一定为0
+                    CHK_PRT_RET(readInfo.size() > 0,
+                        HCCL_ERROR("[AlltoAllVDirectFullMesh][NotifyRemoteRankStart] invalid readInfo.size[%u] != 0",
+                            readInfo.size()),
+                        HCCL_E_INTERNAL);
+
+                    // 生成cache-write placeholder
+                    reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(true);
+                    HCCL_INFO("[AlltoAllVDirectFullMesh][NotifyRemoteRankStart] generate cache-notify placeholder for recvRank[%u]", recvRank);
+                    CHK_RET(readTransport->RxAck(currStream));
+                    reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(false);
+                }
+            }
             if (step < readInfo.size()) {
                 CHK_RET(readTransport->RxAck(currStream));
             }
@@ -491,6 +645,32 @@ HcclResult AlltoAllVDirectFullMesh::SdmaMainStreamWait(u32 step, u32 roundIdx)
                 continue;
             }
             const std::vector<ReadDataBlock>& readInfo = subStreamReadInfo_[recvRank];
+
+            if (needAlltoallvCache_) {
+                // alltoallv cache只针对小数据量, 至多只有1个step
+                CHK_PRT_RET(step != 0,
+                    HCCL_ERROR("[AlltoAllVDirectFullMesh][SdmaMainStreamWait] needAlltoallvCache_[%u] step[%u]",
+                        needAlltoallvCache_, step),
+                    HCCL_E_INTERNAL);
+
+                std::unordered_map<u32, ReadDataBlock>::const_iterator mapIter = subStreamZcopyReadInfo_.find(recvRank);
+                if (mapIter != subStreamZcopyReadInfo_.end()) { // recvRank的recvCount为0
+                    // 零长拷贝下, recvRank对应的readInfo.size一定为0
+                    CHK_PRT_RET(readInfo.size() > 0,
+                        HCCL_ERROR("[AlltoAllVDirectFullMesh][SdmaMainStreamWait] invalid readInfo.size[%u] != 0",
+                            readInfo.size()),
+                        HCCL_E_INTERNAL);
+                    
+                    // 正常下NotifyWait SQE (本地主从流同步, 由于从流不存在跨卡数据搬运, 主流wait后会立刻wake up)
+                    HCCL_DEBUG("[AlltoAllVDirectFullMesh][SdmaMainStreamWait] userRank [%u], recvRank[%u], "
+                        "sendRank[%u], sdma stream [%u], "
+                        "post sync info: step[%u], roundIdx[%u], lastStep_[%u], lastRoundIdx_[%u] main stream wait",
+                        userRank_,  recvRank, sendRank, streamIndex, step, roundIdx, lastStep_, lastRoundIdx_);
+                    CHK_RET(LocalNotify::Wait(mainStream_, dispatcher_, sdmaMeshSignalMainToSub_[streamIndex],
+                        INVALID_VALUE_STAGE));
+                }
+            }
+
             if (step < readInfo.size()) {
                 HCCL_DEBUG("[AlltoAllVDirectFullMesh][SdmaMainStreamWait] userRank [%u], recvRank[%u], "
                     "sendRank[%u], sdma stream [%u], "
@@ -518,6 +698,32 @@ HcclResult AlltoAllVDirectFullMesh::SdmaMainStreamPost(u32 step, u32 roundIdx)
                 continue;
             }
             const std::vector<ReadDataBlock>& readInfo = subStreamReadInfo_[recvRank];
+
+            if (needAlltoallvCache_) {
+                // alltoallv cache只针对小数据量, 至多只有1个step
+                CHK_PRT_RET(step != 0,
+                    HCCL_ERROR("[AlltoAllVDirectFullMesh][SdmaMainStreamWait] needAlltoallvCache_[%u] step[%u]",
+                        needAlltoallvCache_, step),
+                    HCCL_E_INTERNAL);
+
+                std::unordered_map<u32, ReadDataBlock>::const_iterator mapIter = subStreamZcopyReadInfo_.find(recvRank);
+                if (mapIter != subStreamZcopyReadInfo_.end()) { // recvRank的recvCount为0
+                    // 零长拷贝下, recvRank对应的readInfo.size一定为0
+                    CHK_PRT_RET(readInfo.size() > 0,
+                        HCCL_ERROR("[AlltoAllVDirectFullMesh][SdmaMainStreamWait] invalid readInfo.size[%u] != 0",
+                            readInfo.size()),
+                        HCCL_E_INTERNAL);
+                    
+                    // 正常下NotifyRecord SQE
+                    HCCL_DEBUG("[AlltoAllVDirectFullMesh][SdmaMainStreamPost] userRank [%u], recvRank[%u], "
+                        "sendRank[%u], sdma stream [%u], "
+                        "post sync info: step[%u], roundIdx[%u], lastStep_[%u], lastRoundIdx_[%u] main stream post",
+                        userRank_,  recvRank, sendRank, streamIndex, step, roundIdx, lastStep_, lastRoundIdx_);
+                    CHK_RET(LocalNotify::Post(mainStream_, dispatcher_, sdmaMeshSignalSubToMain_[streamIndex],
+                        INVALID_VALUE_STAGE));
+                }
+            }
+
             if (step < readInfo.size()) {
                 HCCL_DEBUG("[AlltoAllVDirectFullMesh][SdmaMainStreamPost] userRank [%u], recvRank[%u], "
                     "sendRank[%u], sdma stream [%u], "
@@ -573,6 +779,57 @@ HcclResult AlltoAllVDirectFullMesh::SDMAwithRemoteRankAndNotifyEnd(u32 step, u32
             Stream& currStream = sdmaSubStream_[streamIndex];
             const LINK& readTransport = links_[recvRank];
             const LINK& sendTransport = links_[sendRank];
+
+            // 对于alltoallv类算子, 零长拷贝需要调用MemcpyAsync保证aicpu cache使能时placeholder正确下发
+            // 注意: alltoallv aicpu cache只考虑小数据量 (即max step为1), 所以只需要在step 0时下发一个placeholder SQE即可
+            if (needAlltoallvCache_) {
+                // alltoallv cache只针对小数据量, 至多只有1个step
+                CHK_PRT_RET(step != 0,
+                    HCCL_ERROR("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd] needAlltoallvCache_[%u] step[%u]",
+                        needAlltoallvCache_, step),
+                    HCCL_E_INTERNAL);
+
+                std::unordered_map<u32, ReadDataBlock>::const_iterator mapIter = subStreamZcopyReadInfo_.find(recvRank);
+                if (mapIter != subStreamZcopyReadInfo_.end()) { // recvRank的recvCount为0
+                    // 零长拷贝下, recvRank对应的readInfo.size一定为0
+                    CHK_PRT_RET(readInfo.size() > 0, HCCL_ERROR("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd] invalid readInfo.size[%u] != 0", readInfo.size()), HCCL_E_INTERNAL);
+
+                    // 获取零长拷贝的接收偏移
+                    const ReadDataBlock& readBlock = mapIter->second;
+                    CHK_PRT_RET(readBlock.recvLen != 0, HCCL_ERROR("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd] invalid readBlock.recvLen[%llu] != 0", readBlock.recvLen), HCCL_E_INTERNAL);
+
+                    // 强制调用HcclD2DMemcpyAsync下发cache-memcpy/write placeholder (aicpu cache使能时才会下发, 未使能时会直接返回)
+                    const LINK& intraNeighboorTransport = links_[recvRank];
+                    CHK_PTR_NULL(intraNeighboorTransport);
+                    void* remDMAMemPtr = nullptr;
+                    CHK_RET(intraNeighboorTransport->GetRemoteMem(UserMemType::INPUT_MEM, &remDMAMemPtr));
+                    DeviceMem remoteCCLInMem = DeviceMem::create(static_cast<u8 *>(remDMAMemPtr), cclInMem_.size());
+                    DeviceMem srcMem = remoteCCLInMem.range(readBlock.remoteOffset, readBlock.recvLen);
+                    DeviceMem dstMem = userOutput_.range(readBlock.recvOffset, readBlock.recvLen);
+                    reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(true);
+                    HCCL_INFO("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd] generate cache-memcpy placeholder for recvRank[%u]", recvRank);
+                    CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, currStream,
+                        readTransport->GetRemoteRank(), readTransport->GetLinkType()));
+                    HCCL_INFO("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd] generate cache-write placeholder for recvRank[%u]", recvRank);
+                    CHK_RET(readTransport->TxDataSignal(currStream));
+                    reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(false);
+
+                    // 正常下NotifyRecord/Wait SQE (本地主从流同步, 从流不存在跨卡数据拷贝, 下发placeholder后会立刻post主流并进入wait)
+                    HCCL_DEBUG("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd] userRank [%u], recvRank[%u], sendRank[%u]," \
+                        "sdma stream [%u] read data from remote offset [%llu] len [%llu] to local [%llu], "
+                        "post sync info: step[%u], roundIdx[%u], lastStep_[%u], lastRoundIdx_[%u]",
+                        userRank_,  recvRank, sendRank, streamIndex, readBlock.remoteOffset,
+                        readBlock.recvLen, readBlock.recvOffset, step, roundIdx, lastStep_, lastRoundIdx_);
+                    if (isPostSyncEnable) {
+                        HCCL_DEBUG("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd] post sync begins");
+                        CHK_RET(LocalNotify::Post(currStream, dispatcher_, sdmaMeshSignalMainToSub_[streamIndex],
+                            INVALID_VALUE_STAGE));
+                        CHK_RET(LocalNotify::Wait(currStream, dispatcher_, sdmaMeshSignalSubToMain_[streamIndex],
+                            INVALID_VALUE_STAGE));
+                    }
+                }
+            }
+            
             if (step < readInfo.size()) {
                 const LINK& intraNeighboorTransport = links_[recvRank];
                 CHK_PTR_NULL(intraNeighboorTransport);
@@ -583,13 +840,13 @@ HcclResult AlltoAllVDirectFullMesh::SDMAwithRemoteRankAndNotifyEnd(u32 step, u32
                 DeviceMem dstMem = userOutput_.range(readInfo[step].recvOffset, readInfo[step].recvLen);
                 CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, currStream,
                     readTransport->GetRemoteRank(), readTransport->GetLinkType()));
-                HCCL_DEBUG("[AlltoAllVDirectFullMesh][SendRecvData] userRank [%u], recvRank[%u], sendRank[%u]," \
+                HCCL_DEBUG("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd] userRank [%u], recvRank[%u], sendRank[%u]," \
                     "sdma stream [%u] read data from remote offset [%llu] len [%llu] to local [%llu], "
                     "post sync info: step[%u], roundIdx[%u], lastStep_[%u], lastRoundIdx_[%u]",
                     userRank_,  recvRank, sendRank, streamIndex, readInfo[step].remoteOffset,
                     readInfo[step].recvLen, readInfo[step].recvOffset, step, roundIdx, lastStep_, lastRoundIdx_);
                 if (isPostSyncEnable) {
-                    HCCL_DEBUG("[AlltoAllVDirectFullMesh][SendRecvData] post sync begins");
+                    HCCL_DEBUG("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd] post sync begins");
                     CHK_RET(LocalNotify::Post(currStream, dispatcher_, sdmaMeshSignalMainToSub_[streamIndex],
                         INVALID_VALUE_STAGE));
                     CHK_RET(LocalNotify::Wait(currStream, dispatcher_, sdmaMeshSignalSubToMain_[streamIndex],
@@ -597,6 +854,24 @@ HcclResult AlltoAllVDirectFullMesh::SDMAwithRemoteRankAndNotifyEnd(u32 step, u32
                 }
                 CHK_RET(readTransport->TxDataSignal(currStream));
             }
+
+            if (needAlltoallvCache_) {
+                std::unordered_map<u32, SendDataBlock>::const_iterator mapIter = subStreamZcopySendInfo_.find(sendRank);
+                if (mapIter != subStreamZcopySendInfo_.end()) { // sendRank的sendCount为0
+                    // 零长拷贝下, sendRank对应的sendInfo.size一定为0
+                    CHK_PRT_RET(sendInfo.size() > 0,
+                        HCCL_ERROR("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd] invalid sendInfo.size[%u] != 0",
+                            sendInfo.size()),
+                        HCCL_E_INTERNAL);
+
+                    // 生成cache-notify placeholder
+                    reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(true);
+                    HCCL_INFO("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd] generate cache-notify placeholder for sendRank[%u]", sendRank);
+                    CHK_RET(sendTransport->RxDataSignal(currStream));
+                    reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(false);
+                }
+            }
+
             if (step < sendInfo.size()) {
                 CHK_RET(sendTransport->RxDataSignal(currStream));
             }
@@ -617,7 +892,7 @@ HcclResult AlltoAllVDirectFullMesh::SendRecvData(u32 step, u32 roundIdx)
     CHK_RET(NotifySubStreamStart());
     if (isBigCount_ && (roundIdx < commRounds_ - 1)) {
         CHK_RET(NotifyLocalSubStreamStart());
-        CHK_RET(PrepareIntraData(step, nextSubStreamSendInfo_));
+        CHK_RET(PrepareIntraData(step, nextSubStreamSendInfo_, nextSubStreamZcopySendInfo_));
     }
     CHK_RET(SDMAwithRemoteRankAndNotifyEnd(step, roundIdx));
 
@@ -636,22 +911,28 @@ HcclResult AlltoAllVDirectFullMesh::LocalCopy()
         localSendRecvInfo.sendLength[userRank_],
         localSendRecvInfo.recvOffset[userRank_],
         localSendRecvInfo.recvLength[userRank_]);
+    if (needAlltoallvCache_ && localSendRecvInfo.sendLength[userRank_] == 0) {
+        reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(true);
+    }
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dst, src, mainStream_));
+    if (needAlltoallvCache_ && localSendRecvInfo.sendLength[userRank_] == 0) {
+        reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(false);
+    }
 
     return HCCL_SUCCESS;
 }
 
 HcclResult AlltoAllVDirectFullMesh::RunGroupFullMeshAlltoall(u32 roundIdx, u32 step)
 {
-    UpdateOpBaseSubStreamInfo(roundIdx);
+    UpdateOpBaseSubStreamInfo(step, roundIdx);
     CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
     if (isBigCount_ && (roundIdx == 0) ) {
         CHK_RET(NotifyLocalSubStreamStart());
-        CHK_RET(PrepareIntraData(step, subStreamSendInfo_));
+        CHK_RET(PrepareIntraData(step, subStreamSendInfo_, subStreamZcopySendInfo_));
         CHK_RET(WaitLocalSubStreamFinish());
         CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
     } else if (!isBigCount_) {
-        CHK_RET(PrepareIntraData(step, subStreamSendInfo_));
+        CHK_RET(PrepareIntraData(step, subStreamSendInfo_, subStreamZcopySendInfo_));
     }
     CHK_RET(NotifySubStreamStart());
     CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
@@ -979,6 +1260,10 @@ HcclResult AlltoAllVDirectFullMesh::RunSDMATasks(u32 roundIdx, u32 step, u32 gro
             partialCommRankSet_ = nextPartialCommRankSet_;
             subStreamSendInfo_ = nextSubStreamSendInfo_;
             subStreamReadInfo_ = nextSubStreamReadInfo_;
+            if (needAlltoallvCache_) {
+                subStreamZcopySendInfo_ = nextSubStreamZcopySendInfo_;
+                subStreamZcopyReadInfo_ = nextSubStreamZcopyReadInfo_;
+            }
         }
         CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, localSubStream_));
     } else {
@@ -1156,6 +1441,13 @@ HcclResult AlltoAllVDirectFullMesh::GetNslbAdjInfo(const u32 rank, const u32 ran
         nslbAdjInfo.nsAdjInfo.push_back(adjInfoStep);
     }
     nslbAdjInfo.dstRankNum = nslbAdjInfo.nsAdjInfo.size();
+    return HCCL_SUCCESS;
+}
+
+HcclResult AlltoAllVDirectFullMesh::GetHcclOffsetDstRanksMap(std::unordered_map<uint64_t, std::vector<uint32_t>>& hcclOffsetDstRanksMap) const {
+    hcclOffsetDstRanksMap.clear();
+    hcclOffsetDstRanksMap = hcclOffsetDstRanksMap_; // Deep copy
+
     return HCCL_SUCCESS;
 }
 

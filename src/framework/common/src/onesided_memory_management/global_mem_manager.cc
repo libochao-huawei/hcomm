@@ -30,10 +30,10 @@ HcclResult GlobalMemRegMgr::Destroy()
     HCCL_INFO("[GlobalMemRegMgr][%s] start.", __func__);
     std::unique_lock<std::mutex> lock(netDevCtxMtx_);
     for (auto& pair : netDevCtxMap_) {
-        HcclNetCloseDev(pair.second.second);
         if (pair.second.first == NicType::DEVICE_NIC_TYPE) {
-            socketManager_->ServerDeInit(pair.first, HETEROG_CCL_PORT);
+            socketManager_->ServerDeInit(pair.first.ip, pair.first.listenPort);
         }
+        HcclNetCloseDev(pair.second.second);
         HCCL_INFO("[GlobalMemRegMgr][%s] Close netdev[%p].", __func__, pair.second.second);
     }
     netDevCtxMap_.clear();
@@ -265,8 +265,9 @@ HcclResult GlobalMemRegMgr::GetNetDevCtx(NicType nicType, const HcclIpAddress &i
 
     std::lock_guard<std::mutex> lock(netDevCtxMtx_);
     // 进程粒度open dev，如果已open，直接复用
-    if (netDevCtxMap_.find(ipAddr) != netDevCtxMap_.end()) {
-        netDevCtx = netDevCtxMap_[ipAddr].second;
+    PortInfo portInfo(ipAddr, port);
+    if (netDevCtxMap_.find(portInfo) != netDevCtxMap_.end()) {
+        netDevCtx = netDevCtxMap_[portInfo].second;
         CHK_PTR_NULL(netDevCtx);
         return HCCL_SUCCESS;
     }
@@ -281,7 +282,7 @@ HcclResult GlobalMemRegMgr::GetNetDevCtx(NicType nicType, const HcclIpAddress &i
         CHK_RET(HcclNetOpenDev(&tempNetDevCtx, nicType, devicePhyId_, deviceLogicId_, ipAddr));
     }
     CHK_PTR_NULL(tempNetDevCtx);
-    netDevCtxMap_.insert(std::make_pair(ipAddr, std::make_pair(nicType, tempNetDevCtx)));
+    netDevCtxMap_.insert(std::make_pair(portInfo, std::make_pair(nicType, tempNetDevCtx)));
     netDevCtx = tempNetDevCtx;
     if (nicType == NicType::DEVICE_NIC_TYPE) {
         CHK_RET(socketManager_->ServerInit(netDevCtx, port));

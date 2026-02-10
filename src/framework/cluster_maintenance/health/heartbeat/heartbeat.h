@@ -264,7 +264,7 @@ public:
     void UnRegisterToHeartBeat(DevType devType, const std::string &commIdentifier, const std::string &tag);
     HcclResult CheckErrorCqe(const std::string &identifier, HcclResult &result);
     HcclResult  CheckOpInconsistentError(const std::string &identifier, HcclResult &result);
-    HcclResult SetRankPortInfo(bool isUseRankPort, std::vector<u32> &ranksPort, std::vector<u32> &vnicRanksPorts,
+    HcclResult SetRankPortInfo(bool isUseRankPort, std::vector<u32> &nicRanksPorts, std::vector<u32> &vnicRanksPorts,
         bool devPortSwitchOn);
     std::vector<std::string> GetErrStatusVec(const std::string& group = HCCL_WORLD_GROUP);
     HcclResult GetQpnErr(const std::string &identifier, std::set<std::tuple<u32, u32, u32>> &qpErrSet);
@@ -283,16 +283,16 @@ private:
         const std::string& group = HCCL_WORLD_GROUP);
     HcclResult DeInit();
     HcclResult RegisterRanks(DevType devType, const RankInfo& locRank, std::vector<RankInfo>& rankInfos, const u32 port,
-        const bool isNeedNic, const std::string& group = HCCL_WORLD_GROUP, bool isUsedRdmaLevel0 = false,
+        const bool isNeedNic, const std::string& group = HCCL_WORLD_GROUP, bool useSuperPodMode = false,
         bool isUsedRdma = false);
     std::string GetConnTag(HcclSocketRole role, UIDType &rem);
-    HcclResult GetConnInfo(RankInfo& remRank, bool isUsedRdmaLevel0, HcclSocketRole role, HcclSocketType type,
+    HcclResult GetConnInfo(RankInfo& remRank, bool useSuperPodMode, HcclSocketRole role, HcclSocketType type,
         std::map<UIDType, ConnInfo>& needConnectRank);
     template <typename T> HcclResult GetSamePlaneConnInfo(HcclSocketType type, std::vector<std::pair<T, u32>>& connVec,
         T& locId, std::vector<RankInfo>& rankInfos, std::map<UIDType, ConnInfo>& needConnectRank,
-        bool isUsedRdmaLevel0, u32 worldRank);
+        bool useSuperPodMode, u32 worldRank);
     HcclResult GetConnectRank(const RankInfo& locRank, std::vector<RankInfo>& rankInfos, std::map<UIDType,
-        ConnInfo>& needConnectRank, bool isUsedRdmaLevel0, bool isUsedRdma = false);
+        ConnInfo>& needConnectRank, bool useSuperPodMode, bool isUsedRdma = false);
     UIDType GetUId(const RankInfo& rankInfo) const;
     std::string FormatUId(const UIDType& uid) const;
     HcclResult SendFrame(UIDType &dst, UIDType &crimer, UIDType &informer, HeartBeatStatus status);
@@ -327,13 +327,13 @@ private:
     HcclResult PrepareConnect(ConnInfo &info);
     void CreateLinkWithRemote(std::string group, UIDType rem, ConnInfo needConnectRank);
     void CreateHBLinksAsync();
-    void AddOpInfo(const std::string &identifier, const OpInfoDesc &opInfo, const std::string &newTag);
+    void AddOpInfo(const std::string &identifier, const OpInfoDesc &opInfo, const std::string &paramTag);
     void GetOneOpInfo(std::string &tag, OpInfoDesc &opInfo);
     void GetSendOpInfoList(OpInfoTagQueueFrame &opInfoTagQueueFrame);
     void SaveOpInfo(const OpInfoTagQueueFrame &opInfoTagQueueFrame, UIDType &src);
     HcclResult CheckIsSameOp(const OpInfoDesc &localOpInfo, const OpInfoDesc &remoteOpInfo, InconsistentType &status);
     void CheckRecvOpInfoList();
-    void RegisterSROpIdentifier(const std::string &identifier, const std::string &newTag);
+    void RegisterSROpIdentifier(const std::string &identifier, const std::string &paramTag);
     void AddInconsistentOpRecord(const std::string &identifier, const OpInfoDesc &localOpInfo, InconsistentType status,
         const std::string &localInfo, const std::string &remoteInfo);
     void CheckSnapshotStatus();
