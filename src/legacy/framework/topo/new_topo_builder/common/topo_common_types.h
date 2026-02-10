@@ -11,7 +11,6 @@
 #ifndef TOPO_COMMON_TYPES_H
 #define TOPO_COMMON_TYPES_H
 
-#include <memory>
 #include "enum_factory.h"
 #include "hccl/base.h"
 #include "hccl_rank_graph.h"

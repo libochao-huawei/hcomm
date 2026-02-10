@@ -413,7 +413,6 @@ void RankGraphBuilder::BuildPeer2PeerLinks()
                     SetEndpointDesc(phyLink->GetLinkProtocols(), srcPeer, iface);
                 }
                 dstPeer->AddConnInterfaces(0, targetIfaces);
-                SetEndpointDesc(phyLink->GetLinkProtocols(), dstPeer, targetIfaces);
                 for (const auto& iface : targetIfaces)
                 {
                     SetEndpointDesc(phyLink->GetLinkProtocols(), dstPeer, iface);

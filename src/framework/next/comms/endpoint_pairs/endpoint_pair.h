@@ -18,37 +18,11 @@
 #include "socket_mgr.h"
 #include "socket.h"
 #include "../../../../legacy/unified_platform/resource/socket/socket.h"
+#include "topo_common_types.h"
 
 using EndpointDescPair = std::pair<EndpointDesc, EndpointDesc>;
 
-// 重载 == 操作符，用于 EndpointDesc 在 std::unordered_map 比较
-inline bool operator==(const EndpointDesc& a, const EndpointDesc& b) noexcept {
-    return std::memcmp(&a, &b, sizeof(EndpointDesc)) == 0;
-}
-
 namespace std {
-
-template <>
-struct hash<EndpointDesc> {
-    size_t operator()(const EndpointDesc& e) const noexcept {
-        // FNV-1a（64位）对字节序列做hash
-        const uint8_t* p = reinterpret_cast<const uint8_t*>(&e);
-        size_t h = sizeof(size_t) == 8
-            ? static_cast<size_t>(14695981039346656037ull)
-            : static_cast<size_t>(2166136261u);
-
-        const size_t prime = sizeof(size_t) == 8
-            ? static_cast<size_t>(1099511628211ull)
-            : static_cast<size_t>(16777619u);
-
-        for (size_t i = 0; i < sizeof(EndpointDesc); ++i) {
-            h ^= static_cast<size_t>(p[i]);
-            h *= prime;
-        }
-        return h;
-    }
-};
-
 template <>
 struct hash<EndpointDescPair> {
     size_t operator()(const EndpointDescPair& p) const noexcept {
