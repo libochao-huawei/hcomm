@@ -29,8 +29,11 @@ public:
 
     HcclResult Wait(Stream& stream, HcclDispatcher dispatcher, s32 stage, u32 timeOut,
         u32 userRank, u32 remoteUserRank);
+    HcclResult Wait(Stream& stream, u32 timeOut);
     HcclResult Post(Stream& stream, HcclDispatcher dispatcher, s32 stage,
         u32 remoteUserRank);
+
+    HcclResult Post(Stream& stream);
 
     HcclResult SetIpc();
     HcclResult Grant(s64 recvId);
