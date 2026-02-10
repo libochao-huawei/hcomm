@@ -32,6 +32,7 @@ public:
     std::unique_ptr<RankTableInfo> GetRankTableInfo();
     std::shared_ptr<TopoInfo>      GetTopoInfo();
     unique_ptr<RankGraph> RecoverBuild(const RankTableInfo &rankTableInfo,const TopoInfo &topoInfo, RankId myRank);
+    void SetEndpointDesc();
 
 private:
     std::unique_ptr<RankTableInfo>  rankTable_;
