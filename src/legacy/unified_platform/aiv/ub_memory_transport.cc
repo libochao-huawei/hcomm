@@ -85,7 +85,6 @@ UbMemoryTransport::UBTransportStatus UbMemoryTransport::StateMachine()
     } else if (socketStatus != SocketStatus::OK) {
         return ubStatus;
     }
-    HCCL_INFO("[%s] start, status[%s]", __func__, ubStatus.Describe().c_str());
     switch (ubStatus) {
         case UBTransportStatus::INIT:
             ubStatus = UBTransportStatus::SOCKET_OK;

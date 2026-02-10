@@ -248,7 +248,9 @@ vector<std::pair<CcuTransport *, LinkData>> CcuTransportMgr::GetUnConfirmedTrans
 void CcuTransportMgr::Clean()
 {
     for (auto &linkTransPair : ccuLink2TransportMap) {
-        linkTransPair.second->Clean();
+        if (linkTransPair.second->Clean() !=HCCL_SUCCESS) {
+            THROW<CcuApiException>("[CcuTransportMgr::%s]CcuTransport clean failed.", __func__);
+        }
     }
 }
 
