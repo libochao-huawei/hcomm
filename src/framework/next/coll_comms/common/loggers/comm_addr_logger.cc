@@ -62,13 +62,27 @@ std::string CommAddrLogger::ConvertID(uint32_t id)
 
 std::string CommAddrLogger::ConvertEID(const uint8_t eid[16])
 {
+    // 模仿 Eid::Describe 的格式
+    // 输出：eid[xxxxxxxxxxxxxxxx:xxxxxxxxxxxxxxxx]
+    // 其中前 8 字节是 subnetPrefix，后 8 字节是 interfaceId（网络字节序）
+
+    // 从字节数组中提取两个 64 位整数（网络字节序）
+    uint64_t subnetPrefix = 0;
+    uint64_t interfaceId = 0;
+
+    // 使用 memcpy 避免对齐问题
+    (void)memcpy_s(&subnetPrefix, sizeof(subnetPrefix), eid, sizeof(subnetPrefix));
+    (void)memcpy_s(&interfaceId, sizeof(interfaceId), eid + 8, sizeof(interfaceId));
+
+    // 转换字节序（网络字节序 -> 主机字节序）
+    subnetPrefix = be64toh(subnetPrefix);
+    interfaceId = be64toh(interfaceId);
+
     char buffer[64];
     int32_t ret = snprintf_s(buffer, sizeof(buffer), sizeof(buffer) - 1,
-        "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-        eid[0], eid[1], eid[2], eid[3],
-        eid[4], eid[5], eid[6], eid[7],
-        eid[8], eid[9], eid[10], eid[11],
-        eid[12], eid[13], eid[14], eid[15]);
+        "eid[%016llx:%016llx]",
+        static_cast<unsigned long long>(subnetPrefix),
+        static_cast<unsigned long long>(interfaceId));
     if (ret < 0) {
         HCCL_ERROR("[%s] snprintf_s failed for EID", __func__);
         return "conversion failed";
@@ -78,20 +92,29 @@ std::string CommAddrLogger::ConvertEID(const uint8_t eid[16])
 
 std::string CommAddrLogger::ToString(const CommAddr& commAddr)
 {
-    std::string typeStr = GetTypeString(commAddr.type);
+    // 模仿 IpAddress::Describe 的格式
+    // 输出：IpAddress[eid[xxxxxxxxxxxxxxxx:xxxxxxxxxxxxxxxx], AF=v4/v6, addr=xxx.xxx.xxx.xxx, scopeId=0x0]
+    std::string desc = "IpAddress[";
 
     switch (commAddr.type) {
         case COMM_ADDR_TYPE_IP_V4:
-            return "[" + typeStr + "] " + ConvertIPv4(commAddr.addr);
+            desc += ConvertEID(commAddr.eid) + ", AF=v4, addr=" + ConvertIPv4(commAddr.addr) + "]";
+            break;
         case COMM_ADDR_TYPE_IP_V6:
-            return "[" + typeStr + "] " + ConvertIPv6(commAddr.addr6);
+            desc += ConvertEID(commAddr.eid) + ", AF=v6, addr=" + ConvertIPv6(commAddr.addr6) + ", scopeId=0x0]";
+            break;
         case COMM_ADDR_TYPE_ID:
-            return "[" + typeStr + "] " + ConvertID(commAddr.id);
+            desc += "id:" + ConvertID(commAddr.id) + "]";
+            break;
         case COMM_ADDR_TYPE_EID:
-            return "[" + typeStr + "] eid:" + ConvertEID(commAddr.eid);
+            desc += ConvertEID(commAddr.eid) + "]";
+            break;
         default:
-            return "[" + typeStr + "]";
+            desc += "Unknown]";
+            break;
     }
+
+    return desc;
 }
 
 void CommAddrLogger::Print(uint32_t idx, const char* endpointName, const CommAddr& commAddr)

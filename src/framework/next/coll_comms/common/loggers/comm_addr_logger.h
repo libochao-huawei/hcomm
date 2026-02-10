@@ -42,11 +42,11 @@ public:
      * @param commAddr 通信地址
      * @return 格式化的地址字符串
      *
-     * 格式示例：
-     * - IPv4: "[IPv4] 192.168.1.1"
-     * - IPv6: "[IPv6] fe80::204:61ff:fe9d:f156"
-     * - ID:   "[ID] id:0x12345678"
-     * - EID:  "[EID] eid:1234567890abcdef..."
+     * 格式示例（完全模仿 IpAddress::Describe）：
+     * - IPv4: "IpAddress[eid[0000000000000000:12345678], AF=v4, addr=192.168.1.1]"
+     * - IPv6: "IpAddress[eid[1234567890abcdef:1234567890abcdef], AF=v6, addr=fe80::204:61ff:fe9d:f156, scopeId=0x0]"
+     * - ID:   "IpAddress[id:0x12345678]"
+     * - EID:  "IpAddress[eid[1234567890abcdef:1234567890abcdef]]"
      */
     static std::string ToString(const CommAddr& commAddr);
 
