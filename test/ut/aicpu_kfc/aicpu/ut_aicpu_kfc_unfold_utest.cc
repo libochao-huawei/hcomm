@@ -2442,7 +2442,10 @@ TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_DecoulpledCtx)
     uint64_t args[6] = {inputDesc, (uint64_t)&ctx1, (uint64_t)&ctx2, (uint64_t)&ctx3, (uint64_t)&ctx4, (uint64_t)&ctx5};
     MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
     MOCKER(HcclGetTaskStatus).stubs().with(any()).will(invoke(HcclGetTaskStatusStub));
+extern void log_level_set_stub(s32 log_level);
+log_level_set_stub(0);
     EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), 0);
+log_level_set_stub(3);
 }
 
 TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_SeqTest)
