@@ -332,6 +332,45 @@ void RankGraphBuilder::BuildFromRankTable()
     HCCL_DEBUG("[RankGraphBuilder][BuildFromRankTable] Build VirtualTopo from RankTable success!");
 }
 
+void RankGraphBuilder::SetEndpointDesc()
+{
+    auto peer = GetPeer(myRank_);
+    if (peer == nullptr) {
+        HCCL_ERROR("[RankGraph::GetEndpointDesc] Peer is nullptr at netLayer [%u]", layer);
+        return HCCL_E_PTR;
+    }
+
+    // 获取 peer 的 Iface
+    std::set<u32> layers = peer->GetLevels();
+    for (const auto& layer : layers) {
+        auto ifacesVec = peer->GetIfacesByLayer(layer);
+        uint32_t count = 0;
+
+        for (const auto& iface : ifacesVec) {
+            const auto& protocols = iface->GetLinkProtocols();
+            for (const auto& protocol : protocols) {
+                EndpointDesc desc{};
+
+                HcclResult ret = GetCommAddr(desc.commAddr, iface->GetAddr());
+                if (ret != HCCL_SUCCESS) {
+                    HCCL_ERROR("GetCommAddr failed");
+                    return;
+                }
+
+                auto it = protocolMap.find(protocol);
+                desc.protocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
+                desc.loc.locType = AddrPositionToEndpointLoc(iface->GetPos());
+
+                HCCL_INFO("[RankGraphBuilder::SetEndpointDesc] local type[%d] protocol[%d]",
+                          desc.loc.locType, desc.protocol);
+
+                peer->SetEndpointToIface(endpointDesc[count].commAddr, endpointDesc[count].protocol, iface);
+                ++count;  
+            }
+        }
+    }
+}
+
 std::shared_ptr<NetInstance> RankGraphBuilder::GetNetInstance(const RankLevelInfo &levelInfo){
     auto it = tempNetInsts_[levelInfo.netLayer].find(levelInfo.netInstId);
     if (it != tempNetInsts_[levelInfo.netLayer].end()) {
@@ -458,7 +497,6 @@ void RankGraphBuilder::UpdateTopoInstForMyRankOnly()
     }
 }
 
-
 std::vector<std::shared_ptr<NetInstance::ConnInterface>> ConstructConnIFromPhyTopoConnIAndPortMap(
         std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, std::unordered_map<std::string, IpAddress> portAddrMap, 
         const TopoType topoType, const u32 topoInstId) {
@@ -560,6 +598,9 @@ void RankGraphBuilder::BuildRankGraph()
 
     // 添加绕路 绕路获取
     DetourService::GetInstance().InsertDetourLinks(rankGraph_.get(), rankTable_.get());
+
+    // 设置endpoint
+    SetEndpointDesc();
 
     // 构造完成
     rankGraph_->InitFinish();
