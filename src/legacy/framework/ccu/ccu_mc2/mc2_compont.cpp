@@ -304,7 +304,7 @@ void Mc2Compont::GenerateAlgoTemplates(Mc2Tiling *mc2TilingPtr, std::unordered_s
                 StringFormat("CcuInstruction translate faild, index = [%u], algName = [%s]", index, algName.c_str()));
         }
         algoTemplateMap[templateSign] = taskParams;
-        combinOpParam.opType[index]   = mc2TilingPtr->opType;
+        combinOpParam.opType[index]   = commConfig.opType;
         combinOpParam.algorithmType[index]   = comm->GetAlgorithmType();
         for (const auto &task : taskParams) {
             HCCL_INFO("taskParam: dieId = [%u], instStartId = [%u]", task[0].dieId, task[0].instStartId);
@@ -359,7 +359,7 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
                 StringFormat("CcuInstruction translate faild, index = [%u], algName = [%s]", index, algName.c_str()));
         }
         algoTemplateMap[templateSign] = taskParams;
-        combinOpParam.opType[index]   = mc2TilingPtr->opType;
+        combinOpParam.opType[index]   = commConfig.opType;
         combinOpParam.algorithmType[index]   = comm->GetAlgorithmType();
         for (const auto &task : taskParams) {
             HCCL_INFO("taskParam: dieId = [%u], instStartId = [%u]", task[0].dieId, task[0].instStartId);
