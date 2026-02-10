@@ -32,7 +32,7 @@ private:
     hccl::RankTable_t &globalRankTable_;
 
     HcclResult TransformRankInfo(const RankTable_t &clusterInfo, nlohmann::json &perRankJson, u32 rankIndex);
-    HcclResult TransformServerList(const RankTable_t &clusterInfo, nlohmann::json &serverListJson);
+    HcclResult TransformServerList(const RankTable_t &clusterInfo, nlohmann::json &rankListJson);
     HcclResult Struct2JsonRankTable(const RankTable_t &clusterInfo, const DevType deviceType,
         nlohmann::json& ClusterJson);
     HcclResult GenerateSubSuperPodId(hccl::RankTable_t &subRankTable);

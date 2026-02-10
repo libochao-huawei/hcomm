@@ -1,7 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
- * Description: ra hdc ctx
- * Create: 2024-09-13
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include <stdlib.h>
@@ -123,22 +127,18 @@ int ra_hdc_ctx_get_async_events(struct ra_ctx_handle *ctx_handle, struct async_e
     op_data.tx_data.num = *num;
     ret = RaHdcProcessMsg(RA_RS_CTX_GET_ASYNC_EVENTS, phy_id, (char *)&op_data,
         sizeof(union op_ctx_get_async_events_data));
-    CHK_PRT_RETURN(ret, hccp_err("[get][async_events]hdc message process failed ret[%d], phy_id[%u] dev_index[0x%x]",
-        ret, phy_id, ctx_handle->dev_index), ret);
 
-    if (op_data.rx_data.num > expected_num) {
-        hccp_err("[get][async_events]rx_data.num(%u) > expected_num(%u), phy_id(%u) dev_index(0x%x)",
-            op_data.rx_data.num, expected_num, phy_id, ctx_handle->dev_index);
-        return -EINVAL;
-    }
-
-    CHK_PRT_RETURN(ret != 0, hccp_err("[get][async_events]hdc message process failed ret[%d], phy_id[%u]"
-        " dev_index[0x%x]", ret, phy_id, ctx_handle->dev_index), ret);
+    CHK_PRT_RETURN(op_data.rx_data.num > expected_num, hccp_err("[get][async_events]rx_data.num:%u > expected_num:%u,"
+        " phy_id:%u dev_index:0x%x", op_data.rx_data.num, expected_num, phy_id, ctx_handle->dev_index), -EINVAL);
 
     for (i = 0; i < op_data.rx_data.num; i++) {
         (void)memcpy_s(&events[i], sizeof(struct async_event), &op_data.rx_data.events[i], sizeof(struct async_event));
     }
     *num = op_data.rx_data.num;
+
+    CHK_PRT_RETURN(ret != 0, hccp_err("[get][async_events]hdc message process failed ret:%d, phy_id:%u"
+        " dev_index:0x%x", ret, phy_id, ctx_handle->dev_index), ret);
+
     return ret;
 }
 

@@ -152,7 +152,7 @@ constexpr OpType MC2_OP_TYPE[]
        OpType::RECV,     OpType::ALLGATHER, OpType::REDUCESCATTER, OpType::ALLTOALLV, OpType::ALLTOALLVC,
        OpType::ALLTOALL, OpType::GATHER,    OpType::INVALID,       OpType::INVALID,   OpType::INVALID,
        OpType::INVALID,  OpType::INVALID,   OpType::INVALID,       OpType::INVALID,   OpType::INVALID,
-       OpType::HALFALLTOALLV};
+       OpType::HALFALLTOALLV, OpType::INVALID};
 
 inline OpType MC2OpType(AicpuComType comType)
 {
@@ -166,7 +166,7 @@ constexpr ReduceOp MC2_REDUCE_TYPE[] = {ReduceOp::SUM, ReduceOp::PROD, ReduceOp:
 
 inline ReduceOp MC2ReduceType(HcclReduceOp reduceOp)
 {
-    if (reduceOp >= HCCL_REDUCE_RESERVED || reduceOp < HCCL_REDUCE_SUM) {
+    if (reduceOp >= (sizeof(MC2_REDUCE_TYPE) / sizeof(MC2_REDUCE_TYPE[0])) || reduceOp < HCCL_REDUCE_SUM) {
         THROW<Hccl::CcuApiException>(StringFormat("Invalid ReduceOp [%u].", reduceOp));
     }
     return MC2_REDUCE_TYPE[reduceOp];
@@ -180,7 +180,7 @@ constexpr DataType MC2_DATA_TYPE[]
 
 inline DataType MC2DataType(HcclDataType dataType)
 {
-    if (dataType >= HCCL_DATA_TYPE_RESERVED || dataType < HCCL_DATA_TYPE_INT8) {
+    if (dataType >= (sizeof(MC2_DATA_TYPE) / sizeof(MC2_DATA_TYPE[0])) || dataType < HCCL_DATA_TYPE_INT8) {
         THROW<Hccl::CcuApiException>(StringFormat("Invalid DataType [%u].", dataType));
     }
     return MC2_DATA_TYPE[dataType];

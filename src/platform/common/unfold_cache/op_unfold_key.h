@@ -30,7 +30,7 @@ struct OpUnfoldKey{
     HcclResult Init(const HcclCMDType curOpType, const HcclDataType curDataType, const HcclReduceOp curReduceType, const bool curIsZeroCopy, const uint64_t curInputSize, const bool curIsInplacePreSync, const HcclWorkflowMode curWorkflowMode);
 
     // 用于debug
-    std::string getKeyString() const;
+    std::string GetKeyString() const;
 
     bool operator==(const OpUnfoldKey& other) const; // 重载operator==用于std::unordered_map中相等比较
     const OpUnfoldKey& operator=(const OpUnfoldKey& other); // 拷贝赋值操作符
@@ -44,7 +44,7 @@ struct OpUnfoldKey{
     // 因为已经维护dataType, 所以inputSize/outputSize/totalCount中只需要维护任意一个即可
     uint64_t inputSize;
 
-    // ReduceScatter和AllReduce在开启重执行、in-place update、userMem < HcclBuffSize的时候，会触发前同步 (与正常算子展开逻辑不同)
+    // ReduceScatter和AllReduce在开启重执行、in-place update、UserInMem > HcclBuffSize的时候，会触发前同步 (与正常算子展开逻辑不同)
     bool isInplacePreSync;
 
     // 是否为图模式 (可能存在同一个通信域下的同一个算子, 既执行图模式又执行单算子模式下的算法)

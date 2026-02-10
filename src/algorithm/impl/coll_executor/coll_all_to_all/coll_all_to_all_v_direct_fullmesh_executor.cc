@@ -87,6 +87,21 @@ HcclResult CollRunAlltoAllDirectFullmesh::GetAdjInfo(AlgResourceResponse& algRes
     return HCCL_SUCCESS;
 }
 
+HcclResult CollRunAlltoAllDirectFullmesh::MarkNeedAlltoallvCache() {
+    needAlltoallvCache_ = true;
+    HCCL_INFO("[CollRunAlltoAllDirectFullmesh][MarkNeedAlltoallvCache] set needAlltoallvCache_[%u]"\
+        "for alltoallv aicpu cache", needAlltoallvCache_);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollRunAlltoAllDirectFullmesh::GetHcclOffsetDstRanksMap(std::unordered_map<uint64_t,
+    std::vector<uint32_t>>& hcclOffsetDstRanksMap) const {
+    hcclOffsetDstRanksMap.clear();
+    hcclOffsetDstRanksMap = hcclOffsetDstRanksMap_; // Deep copy
+
+    return HCCL_SUCCESS;
+}
+
 HcclOpMetaInfo CollRunAlltoAllDirectFullmesh::GetOpMeta(HcclCMDType opType, const u64 size)
 {
     (void)opType;
@@ -175,6 +190,7 @@ HcclResult CollRunAlltoAllDirectFullmesh::CalcCommInfo(std::vector<LevelNSubComm
 
 HcclResult CollRunAlltoAllDirectFullmesh::GetLocalSendRecvInfoforAlltoallV(const OpParam &param)
 {
+    // 注意: 如果send/recv info的计算逻辑发生变化, 需要同步修改framework下的IsSmallDataAlltoallv()函数
     for (u32 j = 0; j < topoAttr_.userRankSize; j++) {
         u64 curSendCounts = *(static_cast<const u64 *>(param.All2AllDataDes.sendCounts) + j);
         u64 curSendDispls = *(static_cast<const u64 *>(param.All2AllDataDes.sdispls) + j);
@@ -314,6 +330,7 @@ HcclResult CollRunAlltoAllDirectFullmesh::KernelRun(const OpParam &param, ExecMe
     }
 
     // 执行
+    // 注意: 如果使用了非AlltoAllVDirectFullMesh的算法模板, 需要同步修改framework中的NeedOpUnfoldCache()函数
     std::unique_ptr<AlgTemplateBase> tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_ALL_2_ALL_V_DIRECT_FULL_MESH, dispatcher_);
     HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_2_ALL_V_DIRECT_FULL_MESH in COMM_COMBINE_ORDER", __func__);
@@ -340,9 +357,31 @@ HcclResult CollRunAlltoAllDirectFullmesh::KernelRun(const OpParam &param, ExecMe
     prepareData.opType = param.opType;
     prepareData.algOpContext = algOpContext_;
 
+    // 如果使能alltoallv aicpu cache
+    if (needAlltoallvCache_) {
+        // 注意: 一定是alltoallv类算子才有可能设置needAlltoallvCache_, 让alltoallv temp alg感知cache并保存算法中间结果
+        CHK_PRT_RET(!(param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV || param.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC),
+            HCCL_ERROR("[CollRunAlltoAllDirectFullmesh][KernelRun] needAlltoallvCache_[%u] opType[%u]",
+                needAlltoallvCache_, param.opType),
+            HCCL_E_INTERNAL);
+
+        // 使能alltoallv temp alg感知alltoallv aicpu cache
+        prepareData.needAlltoallvCache = true;
+    } else {
+        prepareData.needAlltoallvCache = false;
+    }
+
     CHK_RET(tempAlg->Prepare(prepareData));
 
     CHK_RET(tempAlg->RunAsync());
+
+    if (needAlltoallvCache_) {
+        // 在tempAlg被销毁前保存hcclOffset-dstRank之间的mapping信息
+        // 注意: CollRunAlltoAllDirectFullmesh executor使用的一定是AlltoAllVDirectFullMesh template
+        hcclOffsetDstRanksMap_.clear();
+        HCCL_INFO("[CollRunAlltoAllDirectFullmesh][KernelRun] get hcclOffset-dstRanks mapping for AlltoAllVDirectFullMesh");
+        CHK_RET(tempAlg->GetHcclOffsetDstRanksMap(hcclOffsetDstRanksMap_));
+    }
 
     HCCL_INFO("[CollRunAlltoAllDirectFullmesh] executor run success.");
     if (algOpContext_.opRetryHandler.isPostSync == true) {

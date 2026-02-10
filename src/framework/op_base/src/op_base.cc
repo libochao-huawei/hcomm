@@ -72,6 +72,7 @@ HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType
         hcclComm->GetNumBlocks(numBlocks);
 
         uint64_t groupName = hrtMsprofGetHashId(hcclComm->GetIdentifier().c_str(), hcclComm->GetIdentifier().length());
+        HCCL_INFO("[%s] groupName[%llu], groupNameStr[%s]", __func__, groupName, hcclComm->GetIdentifier().c_str());
         CHK_RET_AND_PRINT_IDE(ProfilingManagerPub::CallMsprofReportHostApi(cmdType, beginTime, count, dataType, algType,
             groupName, numBlocks), tag.c_str());
     }
@@ -353,7 +354,7 @@ HcclResult CheckOpBasedHcom(HcclOpInfoCtx &opBaseHcom, const uint32_t rank, cons
 HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclCommConfig *config, HcclComm *comm)
 {
     CHK_PTR_NULL(*commV2);
-    HCCL_INFO("HcclCommInitCollComm start.");
+    HCCL_INFO("[HcclCommInitCollComm] CollComm init start.");
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HcclUs startut = TIME_NOW();
 
@@ -371,8 +372,9 @@ HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclCommConfig *co
     HcclMem cclBuffer;
     cclBuffer.size = static_cast<uint64_t>(cclBufferSize);
     cclBuffer.type = cclBufferMemType;
-    cclBuffer.addr = reinterpret_cast<void*>(cclBufferAddr);;
-    HcclCommPtr hcclCommPtr = make_shared<hccl::hcclComm>(cclBufferSize, cclBufferSize, commName);
+    cclBuffer.addr = reinterpret_cast<void*>(cclBufferAddr);
+    HcclCommPtr hcclCommPtr = nullptr;
+    EXECEPTION_CATCH(hcclCommPtr = make_shared<hccl::hcclComm>(cclBufferSize, cclBufferSize, commName), return HCCL_E_PTR);
     CommConfig commConfig(commName);
     HcclOpInfoCtx &opBaseHcom = GetHcclOpInfoCtx();
     CHK_RET(CheckOpBasedHcom(opBaseHcom, rank, commConfig));
@@ -382,7 +384,6 @@ HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclCommConfig *co
 
     //Collcomm初始化
     CHK_RET(hcclCommPtr->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName, config));
-    // hcclComm中的IndependentOp，channelManager,ContextManager初始化
     *comm = static_cast<HcclComm>(hcclCommPtr.get());
 
     std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
@@ -579,9 +580,7 @@ HcclResult HcclCommInitClusterInfoWrapper(struct hcclAsyncJob* job_){
     /* 关键状态记录 */
     HCCL_RUN_INFO("[HCCL_TRACE]%s success, take time [%lld]us, clusterInfo[%s], rank[%u], deviceLogicId[%d].",
         __func__, DURATION_US(TIME_NOW() - startut), clusterInfo, rank, deviceLogicId);
-    return HCCL_SUCCESS;      
- 
-    return ret;
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclComm *comm)
@@ -618,7 +617,14 @@ HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclC
                 return HCCL_SUCCESS;
             }
             constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, config, comm));
+            HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
+                CHK_RET(HcclCommDestroyV2(commV2));
+                commV2 = nullptr;
+                *comm = nullptr;
+                return ret;
+            }
             return HCCL_SUCCESS;
         }());
 #endif
@@ -845,7 +851,14 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
                 *comm = commV2;
                 return HCCL_SUCCESS;
             }
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, config, comm));
+            HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
+                CHK_RET(HcclCommDestroyV2(commV2));
+                commV2 = nullptr;
+                *comm = nullptr;
+                return ret;    
+            }
             return HCCL_SUCCESS;
         }());
 #endif
@@ -1261,7 +1274,8 @@ HcclResult SetupHierarchical(const u32 nRanks, const u32 rank, const HcclRootHan
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfo][SetupHierarchical]errNo[0x%016llx] " \
         "prepare rank handle error", HCCL_ERROR_CODE(ret)), ret);
 
-    ret = topoDetectAgent->SetupAgent(nRanks, rank, rootHandle, rankHandle); // member connect to root
+    CommConfig commConfig;
+    ret = topoDetectAgent->SetupAgent(nRanks, rank, rootHandle, rankHandle, commConfig); // member connect to root
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfo][SetupHierarchical]errNo[0x%016llx] " \
         "setup topo detect error", HCCL_ERROR_CODE(ret)), ret);
 
@@ -1397,7 +1411,7 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
         } else {
             HCCL_RUN_INFO("[Init][CommRootInfo][Flat]nRanks[%u] entry flat topo detect.", nRanks);
 
-            ret = topoDetectAgent->SetupAgent(nRanks, rank, rootHandle, rootHandle);
+            ret = topoDetectAgent->SetupAgent(nRanks, rank, rootHandle, rootHandle, commConfig);
             CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfo][Flat]errNo[0x%016llx] " \
                 "setup flat topo detect error", HCCL_ERROR_CODE(ret)), errorFlag = true);
             ret = GetTopoDetectInfo(params, rankTable, localRankInfo, rootHandle, topoDetectAgent, topoDetectAgent);
@@ -1589,7 +1603,14 @@ HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootIn
                 return HCCL_SUCCESS;
             }
             constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, config, comm));
+            HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
+                CHK_RET(HcclCommDestroyV2(commV2));
+                commV2 = nullptr;
+                *comm = nullptr;
+                return ret; 
+            }
             return HCCL_SUCCESS;
         }());
 #endif
@@ -1711,7 +1732,14 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
                 *comm = commV2;
                 return HCCL_SUCCESS;
             }
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, const_cast<HcclCommConfig *>(config), comm));
+            HcclResult ret = HcclCommInitCollComm(rank, &commV2, const_cast<HcclCommConfig *>(config), comm);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
+                CHK_RET(HcclCommDestroyV2(commV2));
+                commV2 = nullptr;
+                *comm = nullptr;
+                return ret; 
+            }
             return HCCL_SUCCESS;
         }());
 #endif
@@ -4593,6 +4621,72 @@ HcclResult CommGetCCLBufSizeCfg(HcclComm comm, uint64_t *cclBufSize)
     HCCL_RUN_INFO("CommGetCCLBufSizeCfg success, comm[%s], size[%u]", hcclComm->GetIdentifier().c_str(), buffSize);
     return HCCL_SUCCESS;
 }
+
+std::unordered_map<CommSymWindow, HcclComm> winHandle2comm;
+std::mutex g_winHandleMtx; // 保护 winHandle2comm
+
+HcclResult HcclCommSymWinRegister(HcclComm comm, void* addr, uint64_t size, CommSymWindow *winHandle, uint32_t flag)
+{
+    // 入参校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(addr);
+    CHK_PTR_NULL(winHandle);
+    CHK_PRT_RET(size == 0, HCCL_ERROR("[%s] size is 0, please check size value", __func__), HCCL_E_PARA);
+    if (flag == HCCL_WIN_COLL_SYMMETRIC) {
+        hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+        CHK_RET(hcclComm->RegisterWindow(addr, size, winHandle));
+        HCCL_RUN_INFO("[%s]WindowRegister mem success, group[%s], handle ptr[%p], size[%llu]", __func__,
+            hcclComm->GetIdentifier().c_str(), *winHandle, size);
+        {
+            std::lock_guard<std::mutex> lock(g_winHandleMtx);
+            winHandle2comm[*winHandle] = comm;
+        }
+    } else if (flag == HCCL_WIN_DEFAULT) {
+        HCCL_ERROR("[HcclCommSymWinRegister]flag: 0 is not supported yet.");
+        return HCCL_E_PARA;
+    }else {
+        HCCL_ERROR("[HcclCommSymWinRegister]Invalid flag[%u], must be 0 or 1", flag);
+        return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle)
+{
+    // 入参校验
+    CHK_PTR_NULL(winHandle);
+    HcclComm comm = nullptr;
+    std::lock_guard<std::mutex> lock(g_winHandleMtx);
+    auto it = winHandle2comm.find(winHandle);
+    if (it == winHandle2comm.end()) {
+        HCCL_ERROR("[HcclCommSymWinDeregister]Window handle[%p] is not registered.", winHandle);
+        return HCCL_E_PARA;
+    }
+    comm = it->second;
+    CHK_PTR_NULL(comm);
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    CHK_RET(hcclComm->DeregisterWindow(winHandle));
+    winHandle2comm.erase(it);
+    HCCL_RUN_INFO("[%s]WindowDeregister mem success, group[%s]", __func__, hcclComm->GetIdentifier().c_str());
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
+{
+    // 入参校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(ptr);
+    CHK_PTR_NULL(winHandle);
+    CHK_PTR_NULL(offset);
+    CHK_PRT_RET(size == 0, HCCL_ERROR("[%s] size is 0, please check size value", __func__), HCCL_E_PARA);
+
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    CHK_RET(hcclComm->GetCommSymWin(ptr, size, winHandle, offset));
+    HCCL_RUN_INFO("[%s]GetCommSymWin success, group[%s], handle ptr[%p], offset[%llu], size[%llu]", __func__,
+        hcclComm->GetIdentifier().c_str(), *winHandle, *offset, size);
+    return HCCL_SUCCESS;
+}
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

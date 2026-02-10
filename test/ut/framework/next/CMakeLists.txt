@@ -10,25 +10,24 @@
 set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
-    test_thread_api.cc
-    test_aicpu_ts_thread.cc
-    test_cpu_ts_thread.cc
-    test_collcomm.cc
-    test_hcclbuffer_api.cc
     host/ut_cpu_roce_endpoint.cc
     host/ut_host_cpu_roce_channel.cc
     host/ut_host_rdma_connection.cc
     ut_HcclRankGraph_API.cc
+    comms/comm_engine_res/threads/test_aicpu_ts_thread_class.cc
+    comms/comm_engine_res/threads/test_cpu_ts_thread_class.cc
+    comms/comm_engine_res/threads/test_thread_api.cc
+    coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
 )
 
-add_executable(hccl_utest_test_resource ${src_to_test_list})
+add_executable(hccl_utest_test_next_resource ${src_to_test_list})
 
 #头文件搜索路径
-target_include_directories(hccl_utest_test_resource PRIVATE
+target_include_directories(hccl_utest_test_next_resource PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
 )
  
-target_compile_definitions(hccl_utest_test_resource PRIVATE
+target_compile_definitions(hccl_utest_test_next_resource PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
     google=ascend_private
     -DOPEN_HCCL_TEST
@@ -36,7 +35,7 @@ target_compile_definitions(hccl_utest_test_resource PRIVATE
     OPEN_BUILD_PROJECT
 )
  
-target_compile_options(hccl_utest_test_resource PRIVATE
+target_compile_options(hccl_utest_test_next_resource PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
     -Os
@@ -44,10 +43,10 @@ target_compile_options(hccl_utest_test_resource PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
  
-target_link_directories(hccl_utest_test_resource PRIVATE
+target_link_directories(hccl_utest_test_next_resource PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
-target_link_libraries(hccl_utest_test_resource PRIVATE
+target_link_libraries(hccl_utest_test_next_resource PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -lpthread
@@ -58,9 +57,9 @@ target_link_libraries(hccl_utest_test_resource PRIVATE
     -lrt
     -ldl
 )
-add_dependencies(hccl_utest_test_resource hccl_llt)
+add_dependencies(hccl_utest_test_next_resource hccl_llt)
 
 run_llt_test(
-   TARGET  hccl_utest_test_resource
+   TARGET  hccl_utest_test_next_resource
    TASK_NUM 1
 )

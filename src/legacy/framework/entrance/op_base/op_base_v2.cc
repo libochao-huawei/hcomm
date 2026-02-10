@@ -1324,8 +1324,11 @@ HcclResult HcclSetOpSrcDataTypeV2(void *opArgs, uint8_t srcDataType)
         HCCL_RUN_INFO("Entry-HcclSetOpSrcDataType V910_95, opArgs[%p] set srcDataType[%u]", opArgs, srcDataType);
     }
     HcclOpArgs *opArgsPtr = static_cast<HcclOpArgs *>(opArgs);
-    DataType mc2DataType = MC2DataType(static_cast<HcclDataType>(srcDataType));
-    opArgsPtr->srcDataType = mc2DataType;
+    if (srcDataType >= (sizeof(MC2_DATA_TYPE) / sizeof(MC2_DATA_TYPE[0]))) {
+        HCCL_ERROR("HcclSetOpSrcDataType set srcDataType[%u] error, it's invalid.", srcDataType);
+        return HCCL_E_PARA;
+    }
+    opArgsPtr->srcDataType = MC2_DATA_TYPE[srcDataType];
     return HCCL_SUCCESS;
 }
  
@@ -1335,8 +1338,11 @@ HcclResult HcclSetOpDstDataTypeV2(void *opArgs, uint8_t dstDataType)
         HCCL_RUN_INFO("Entry-HcclSetOpDstDataType V910_95, opArgs[%p] set dstDataType[%u]", opArgs, dstDataType);
     }
     HcclOpArgs *opArgsPtr = static_cast<HcclOpArgs *>(opArgs);
-    DataType mc2DataType = MC2DataType(static_cast<HcclDataType>(dstDataType));
-    opArgsPtr->dstDataType = mc2DataType;
+    if (dstDataType >= (sizeof(MC2_DATA_TYPE) / sizeof(MC2_DATA_TYPE[0]))) {
+        HCCL_ERROR("HcclSetOpDstDataType set dstDataType[%u] error, it's invalid.", dstDataType);
+        return HCCL_E_PARA;
+    }
+    opArgsPtr->dstDataType = MC2_DATA_TYPE[dstDataType];
     return HCCL_SUCCESS;
 }
  
@@ -1346,8 +1352,11 @@ HcclResult HcclSetOpReduceTypeV2(void *opArgs, uint32_t reduceType)
         HCCL_RUN_INFO("Entry-HcclSetOpReduceType V910_95, opArgs[%p] set reduceType[%u]", opArgs, reduceType);
     }
     HcclOpArgs *opArgsPtr = static_cast<HcclOpArgs *>(opArgs);
-    ReduceOp reduceOp = MC2ReduceType(static_cast<HcclReduceOp>(reduceType));
-    opArgsPtr->reduceType = reduceOp;
+    if (reduceType >= (sizeof(MC2_REDUCE_TYPE) / sizeof(MC2_REDUCE_TYPE[0]))) {
+        HCCL_ERROR("HcclSetOpReduceType set reduceType[%u] error, it's invalid.", reduceType);
+        return HCCL_E_PARA;
+    }
+    opArgsPtr->reduceType = MC2_REDUCE_TYPE[reduceType];
     return HCCL_SUCCESS;
 }
  
@@ -1370,7 +1379,7 @@ HcclResult HcclSetOpAlgConfigV2(void *opArgs, char *algConfig)
     HcclOpArgs *opArgsPtr = static_cast<HcclOpArgs *>(opArgs);
     s32 ret = strcpy_s(opArgsPtr->algConfig, ALG_CONFIG_SIZE, algConfig);
     if (ret != EOK) {
-        HCCL_ERROR("[HcclSetOpAlgConfig]strcpy_s algConfig failed! result %u", ret);
+        HCCL_ERROR("[HcclSetOpAlgConfig]strcpy_s algConfig failed! result %u, the algConfig len must be less than %u", ret, ALG_CONFIG_SIZE);
         return HCCL_E_PARA;
     }
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
@@ -1426,8 +1435,13 @@ HcclResult HcclDevMemAcquireV2(HcclComm comm, const char *memTag, uint64_t *size
 {
     std::string memTagStr = "";
     if (memTag != nullptr) {
-        memTagStr = std::string(memTag);
-        memTagStr = memTagStr.substr(0, MAX_OP_NAME_SIZE);
+        char tmpMemTag[MAX_MEM_TAG_SIZE];
+        s32 ret = strcpy_s(tmpMemTag, MAX_MEM_TAG_SIZE, memTag);
+        if (ret != EOK) {
+            HCCL_ERROR("[HcclDevMemAcquire] strcpy_s memTag failed! result %u, the memTag len must be less than %u", ret, MAX_MEM_TAG_SIZE);
+            return HCCL_E_PARA;
+        }
+        memTagStr = std::string(tmpMemTag);
     }
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     CHK_RET(communicator->GetDevMemWorkSpace(memTagStr, size, addr, newCreated));
@@ -1631,6 +1645,13 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
         "netMode[%s] rootHandle.identifier[%s], identifier[%s]", nRanks, rank, rootHandle.ip, rootHandle.listenPort,
         rootHandle.netMode.Describe().c_str(), rootHandle.identifier, identifier.c_str());
 
+    // 临时规避，在初始化通信域前声明单例保证时序
+    CHK_RET(CallSingletons());
+    HcclCommInfoV2 &opbasedCommInfoV2 = GetCommInfoV2();
+    CHK_PRT_RET(opbasedCommInfoV2.hcclGroupMap.find(identifier) != opbasedCommInfoV2.hcclGroupMap.end(),
+        HCCL_ERROR("[HcclCommInitRootInfoConfigV2]errNo[0x%016llx] The comm name[%s] already exists in Group2Comm map.",
+                HCCL_ERROR_CODE(HCCL_E_PARA), identifier.c_str()), HCCL_E_PARA);
+
     RankTableInfo rankTable{};
     HcclResult ret = RootInfoDetect(nRanks, rank, rootHandle, rankTable);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -1638,9 +1659,6 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
     
     // 打印ranktable
     rankTable.Dump();
-
-    // 临时规避，在初始化通信域前声明单例保证时序
-    CHK_RET(CallSingletons());
 
     // 创建通信域
     ret = CreateCommConfigRootInfo(rank, config, identifier, rankTable, comm);
