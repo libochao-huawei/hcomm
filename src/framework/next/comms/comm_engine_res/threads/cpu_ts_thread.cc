@@ -29,7 +29,6 @@ HcclResult CpuTsThread::Init()
 {
     // Host 侧初始化
     CHK_RET(GetRunSideIsDevice(isDeviceSide_));
-    DevType devType_ = DevType::DEV_TYPE_COUNT;
     CHK_RET(hrtGetDeviceType(devType_));
     if (!isDeviceSide_) {
         s32 deviceLogicId;
