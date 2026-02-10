@@ -109,6 +109,8 @@ protected:
     // 主从流同步部分
     virtual HcclResult AlltoallSync(u32 step, bool isStartPhase);
     virtual HcclResult LocalReduceSync(u32 step, bool isStartPhase);
+
+    virtual u64 GetLocalReduceSerialThresh() = 0;
     HcclResult AlltoallLocalReduceSync(u32 step, bool isStartPhase);
     // local reduce串行算法
     HcclResult RunAsyncLocalReduceSerial();
