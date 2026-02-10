@@ -52,9 +52,7 @@ HcclResult CpuTsThread::Init()
             notifys_[idx].reset(new (std::nothrow) LocalNotify());
             CHK_SMART_PTR_NULL(notifys_[idx]);
             CHK_RET(notifys_[idx]->Init(notifyLoadType_));
-            if (devType != DevType::DEV_TYPE_910_95) {
-                CHK_RET(notifys_[idx]->SetIpc());
-            }
+            CHK_RET(notifys_[idx]->SetIpc());
         }
         return HCCL_SUCCESS;
     } else {
