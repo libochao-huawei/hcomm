@@ -760,18 +760,6 @@ bool IsModeSupported(LinkType netMode)
 
 }
 
-HcclResult PingMesh::GetDevicePhyId(u32 deviceId)
-{
-    deviceLogicId_ = deviceId;
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
-    if (deviceId != static_cast<u32>(deviceLogicId_)) {
-        HCCL_ERROR("[HCCN][HccnRpingInit]Input device logicId[%u] don't match real logicId[%s].", deviceId, deviceLogicId_);
-        return HCCL_E_PARA;
-    }
-    HCCL_INFO("[HCCN][HccnRpingInit]Device logic id is [%d], phy id is [%u].", deviceLogicId_, devicePhyId_);
-    return HCCL_SUCCESS;
-}
-
 HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr, u32 port, u32 nodeNum, u32 bufferSize,
     u32 sl, u32 tc)
 {
@@ -786,11 +774,14 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
         return HCCL_E_NOT_SUPPORT;
     }
     // 获取并验证设备物理id
-    ret = GetDevicePhyId(deviceId);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HCCN][HccnRpingInit]GetDevicePhyId fail, ret[%d].", ret);
+    deviceLogicId_ = deviceId;
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
+    if (deviceId != static_cast<u32>(deviceLogicId_)) {
+        HCCL_ERROR("[HCCN][HccnRpingInit]Input device logicId[%u] don't match real logicId[%s].", deviceId, deviceLogicId_);
         return HCCL_E_PARA;
     }
+    HCCL_INFO("[HCCN][HccnRpingInit]Device logic id is [%d], phy id is [%u].", deviceLogicId_, devicePhyId_);
+
     // 拉起hccp进程
     rtProcExtParam extParam[TSD_EXT_PARA_NUM] {};
     
