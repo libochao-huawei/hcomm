@@ -50,7 +50,7 @@ target_link_libraries(hccl_alg_analyzer_test PRIVATE
     $<BUILD_INTERFACE:intf_llt_pub>
     hccl_alg_adaption
     hccl_alg_analyzer
-    -lpthread
+    -pthread
     -lrt
     -ldl
 )
