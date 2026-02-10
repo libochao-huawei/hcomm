@@ -372,10 +372,10 @@ void ProcessPhyLink( const shared_ptr<NetInstance::Peer>& srcPeer, const shared_
                     phyLink->GetTargetIFace(), dstPeer->GetPortAddrMapLayer0(), phyLink->GetTopoType(), phyLink->GetTopoInstId());
     if (sourceIfaces.empty() || targetIfaces.empty()) {
         // 没有可用的接口。
-        HCCL_WARNING("[RankGraphBuilder][BuildFromPhytopo] srcRankId[%d] dstRankId[%d] edge not .", srcRankId, dstRankId);
-                    continue;
+        HCCL_WARNING("[RankGraphBuilder][BuildFromPhytopo] srcRankId[%d] dstRankId[%d] edge not .", srcPeer->GetRankId(), dstPeer->GetRankId());
+        return;
     }
-     srcPeer->AddConnInterfaces(0, sourceIfaces);
+    srcPeer->AddConnInterfaces(0, sourceIfaces);
     for (const auto& iface : sourceIfaces)
     {
         SetEndpointDesc(phyLink->GetLinkProtocols(), srcPeer, iface);

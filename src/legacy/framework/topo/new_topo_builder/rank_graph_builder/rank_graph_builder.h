@@ -67,7 +67,7 @@ std::vector<shared_ptr<NetInstance::Link>> ConstructLinks(shared_ptr<NetInstance
 std::vector<std::shared_ptr<PhyTopo::Link>> GetPeer2PeerPhyLinks(std::shared_ptr<Graph<PhyTopo::Node, PhyTopo::Link>> phyTopoGraph, 
     LocalId srcLocalId, LocalId dstLocalId);
 void ProcessPhyLink( const shared_ptr<NetInstance::Peer>& srcPeer, const shared_ptr<NetInstance::Peer>& dstPeer,
-    const shared_ptr<PhyTopo::Link>& phyLink, NetInstance* innerNetInstance)
+    const shared_ptr<PhyTopo::Link>& phyLink, NetInstance* innerNetInstance);
 } // namespace Hccl
 
 #endif // RANK_GRAPH_BUILDER_H
