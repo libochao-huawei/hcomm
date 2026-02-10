@@ -16,6 +16,7 @@
 #include "hccp_peer_manager.h"
 #include "orion_adapter_rts.h"
 #include "host_socket_handle_manager.h"
+#include "socket_manager.h"
 
 namespace Hccl {
 
@@ -179,6 +180,8 @@ void RankInfoDetectClient::ConstructRankTable(RankTableInfo &localRankTable)
     // 4. 反序列化获得RankTableInfo
     std::string msgDeserialize = "error occurs when localRankTable Deserialize";
     TRY_CATCH_THROW(InvalidParamsException, msgDeserialize, localRankTable.Deserialize(localRankTableJson, false););
+
+    SocketManager::ServerInitOne(localRankTable);
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
 }
