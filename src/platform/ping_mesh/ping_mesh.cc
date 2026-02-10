@@ -760,6 +760,18 @@ bool IsModeSupported(LinkType netMode)
 
 }
 
+HcclResult PingMesh::GetDevicePhyId(u32 deviceId)
+{
+    deviceLogicId_ = deviceId;
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
+    if (deviceId != static_cast<u32>(deviceLogicId_)) {
+        HCCL_ERROR("[HCCN][HccnRpingInit]Input device logicId[%u] don't match real logicId[%s].", deviceId, deviceLogicId_);
+        return HCCL_E_PARA;
+    }
+    HCCL_INFO("[HCCN][HccnRpingInit]Device logic id is [%d], phy id is [%u].", deviceLogicId_, devicePhyId_);
+    return HCCL_SUCCESS;
+}
+
 HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr, u32 port, u32 nodeNum, u32 bufferSize,
     u32 sl, u32 tc)
 {
@@ -769,18 +781,16 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
         port, nodeNum, bufferSize, sl, tc);
     // 当前只支持RoCE和UB
     LinkType netMode = static_cast<LinkType>(mode);
+    HcclResult ret = HCCL_SUCCESS;
     if (!IsModeSupported(netMode)) {
         return HCCL_E_NOT_SUPPORT;
     }
-    // 获取物理id
-    deviceLogicId_ = deviceId;
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
-    if (deviceId != static_cast<u32>(deviceLogicId_)) {
-        HCCL_ERROR("[HCCN][HccnRpingInit]Input device logicId[%u] don't match real logicId[%s].", deviceId, deviceLogicId_);
+    // 获取并验证设备物理id
+    ret = GetDevicePhyId(deviceId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HCCN][HccnRpingInit]GetDevicePhyId fail, ret[%d].", ret);
         return HCCL_E_PARA;
     }
-    HCCL_INFO("[HCCN][HccnRpingInit]Device logic id is [%d], phy id is [%u].", deviceLogicId_, devicePhyId_);
-
     // 拉起hccp进程
     rtProcExtParam extParam[TSD_EXT_PARA_NUM] {};
     
@@ -792,7 +802,6 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
     HCCL_INFO("[HCCN][HccnRpingInit]Device[%u] open process success", deviceId);
 
     RpingInitState status = RpingInitState::HCCL_INIT_SUCCESS;
-    HcclResult ret = HCCL_SUCCESS;
     void *pingHandle = nullptr;
     const char *socNamePtr = aclrtGetSocName();
     do {
@@ -804,21 +813,24 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
             break;
         }
         PingInitAttr initAttr{};
+        if (netMode == LinkType::LINK_ROCE) {
+            RpingRoceAttrInit(devicePhyId_, ipAddr, port, nodeNum, bufferSize, sl, tc, initAttr);
+        }
         if (netMode == LinkType::LINK_UB && IsSupportHCCLV2(socNamePtr)) {
             HRaInfo info(HrtNetworkMode::HDC, devicePhyId_);
             std::map<Eid, uint32_t> eidmap;
             ret = RaGetEidMap(eidmap, info);
             if (ret != HCCL_SUCCESS) {
+                status = RpingInitState::HCCL_TSD_NEED_CLOSE;
                 HCCL_ERROR("[HccnRpingInit]call ra_get_dev_eid_map failed, devideId[%u], error code =%d.", deviceId, ret);
                 break;
             }
             ret = RpingUbAttrInit(devicePhyId_, ipAddr, port, nodeNum, bufferSize, sl, tc, initAttr, eidmap);
             if (ret != HCCL_SUCCESS) {
+                status = RpingInitState::HCCL_TSD_NEED_CLOSE;
                 HCCL_ERROR("[HccnRpingInit]RpingUbAttrInit failed, devideId[%u], error code =%d.", deviceId, ret);
                 break;
             }
-        } else {
-            RpingRoceAttrInit(devicePhyId_, ipAddr, port, nodeNum, bufferSize, sl, tc, initAttr);
         }
         ret = hrtRaPingInit(&initAttr, &initInfo_, &pingHandle);
         if (ret != HCCL_SUCCESS) {
