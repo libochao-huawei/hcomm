@@ -564,7 +564,7 @@ HcclResult MrManager::ReleaseKey(void *addr, u64 size) // 释放临时MR
 
 HcclResult MrManager::GetMrInfo(MrInfo &mrInfo, bool &isInfoNotFound)
 {
-    CHK_PRT_RET(regedMrMap_.empty(), HCCL_ERROR("[MrManager][GetMrInfo]get mr info failed, mr map is empty!!!"),
+    CHK_PRT_RET(regedMrMap_.empty(), HCCL_ERROR("[MrManager][GetMrInfo]get mr info failed, mr map is empty"),
         HCCL_E_PARA);
 
     isInfoNotFound = false;

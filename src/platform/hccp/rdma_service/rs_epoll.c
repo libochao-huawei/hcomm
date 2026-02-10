@@ -551,7 +551,7 @@ STATIC void *RsEpollHandle(void *arg)
 
         /* eventfd is for wake up epoll wait, value is ignored */
         if (events[0].data.fd == connCb->eventfd) {
-            hccp_warn("<EPOLL> SHUT DOWN event!!! eventfd:%d", connCb->eventfd);
+            hccp_warn("<EPOLL> SHUT DOWN event eventfd:%d", connCb->eventfd);
             do {
                 num = read(connCb->eventfd, &val, sizeof(eventfd_t));
             } while ((num < 0) && (errno == EINTR));

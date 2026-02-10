@@ -457,7 +457,7 @@ STATIC int RsMrInfoSync(struct RsMrCb *mrCb)
 
     /*
      * no socket available for MR_INFO exchange if allowed
-     * need exchange when socket available!!!
+     * need exchange when socket available
      */
     CHK_PRT_RETURN(mrCb->qpCb->connInfo == NULL, hccp_warn("no conn available !"), 0);
 
