@@ -92,9 +92,9 @@ HcclResult CallSingletons()
         }
         
         // 不同通信域初始化方式时序不同，hdc manager 重复 init 内部会跳过
-        HccpHdcManager::GetInstance();
-        HccpPeerManager::GetInstance(); // host网卡需要拉起peer模式hccp
-        HccpTlvHdcManager::GetInstance();
+        HccpHdcManager::GetInstance().Init(deviceLogicId);
+        HccpPeerManager::GetInstance().Init(deviceLogicId); // host网卡需要拉起peer模式hccp
+        HccpTlvHdcManager::GetInstance().Init(deviceLogicId);
         RdmaHandleManager::GetInstance();
         InnerNetDevManager::GetInstance();
         SocketHandleManager::GetInstance();
