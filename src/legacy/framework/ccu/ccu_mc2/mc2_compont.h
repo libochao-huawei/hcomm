@@ -73,7 +73,7 @@ private:
     std::vector<u64> displs;
 
     HcclCombinOpParam combinOpParam{0};
-    bool              isCombinOpParamOk{false};
+    bool              ccuResourceAlloced{false}; // 标记通信域粒度资源已经申请过了
 };
 } // namespace Hccl
 #endif // MC2_COMPONT_H

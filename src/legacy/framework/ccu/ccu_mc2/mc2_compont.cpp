@@ -161,7 +161,7 @@ void Mc2Compont::Alloc()
     // inputMem给算法编排使用，只需要申请一次，按照最大数据类型申请
     inputMem = std::make_shared<DevBuffer>(dataCount * DataTypeSizeGet(DataType::INT64) * comm->GetRankSize());
     HCCL_INFO("[Mc2Compont][Alloc]inputMem addr[%p] size = [%llu]", inputMem->GetAddr(), inputMem->GetSize());
-    if (isCombinOpParamOk) {
+    if (ccuResourceAlloced) {
         return;
     }
 
@@ -184,7 +184,7 @@ void Mc2Compont::Alloc()
     }
     combinOpParam.winSize = static_cast<uint64_t>(comm->GetCclBuffer()->GetSize());
     combinOpParam.windowsOut[0] = static_cast<uint64_t>(comm->GetCclBuffer()->GetAddr());
-    isCombinOpParamOk = true;
+    ccuResourceAlloced = true;
     
     tokenInfo    = CcuRep::GetTokenInfo(static_cast<uint64_t>(workspaceBuffer->GetAddr()),
                                         static_cast<uint64_t>(workspaceBuffer->GetSize()));
@@ -194,7 +194,7 @@ void Mc2Compont::AllocV2()
 {
     inputMem = std::make_shared<DevBuffer>(dataCount * DataTypeSizeGet(DataType::INT64) * comm->GetRankSize());
     HCCL_INFO("[Mc2Compont][AllocV2]inputMem addr[%p] size = [%llu]", inputMem->GetAddr(), inputMem->GetSize());
-    if (isCombinOpParamOk) {
+    if (ccuResourceAlloced) {
         return;
     }
 
@@ -217,7 +217,7 @@ void Mc2Compont::AllocV2()
     }
     combinOpParam.winSize = static_cast<uint64_t>(comm->GetCclBuffer()->GetSize());
     combinOpParam.windowsOut[0] = static_cast<uint64_t>(comm->GetCclBuffer()->GetAddr());
-    isCombinOpParamOk = true;
+    ccuResourceAlloced = true;
 
     tokenInfo    = CcuRep::GetTokenInfo(static_cast<uint64_t>(workspaceBuffer->GetAddr()),
                                         static_cast<uint64_t>(workspaceBuffer->GetSize()));
