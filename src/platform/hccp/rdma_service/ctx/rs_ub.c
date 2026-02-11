@@ -1509,10 +1509,12 @@ int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct Ctx
 
         jfcCb->bufAddr = cqBuffVa;
         jfcCb->swdbAddr = dbVa;
-        hccp_warn("@@@RsUbCtxJfcCreate cqBuffVa: %ld, dbVa: %ld", cqBuffVa, dbVa);
+        hccp_warn("@@@RsUbCtxJfcCreate after RsUrmaGetJfcOpt cqBuffVa: %ld, dbVa: %ld", cqBuffVa, dbVa);
 
         ret = RsMmapJfcVa(jfcCb);
         CHK_PRT_RETURN(ret != 0, hccp_err("rs_mmap_jfc_va failed, ret:%d", ret), ret);
+        hccp_warn("@@@RsUbCtxJfcCreate after RsMmapJfcVa jfcCb->bufAddr: %ld, jfcCb->swdbAddr: %ld",
+            jfcCb->bufAddr, jfcCb->swdbAddr);
 
     } else {
         hccp_err("jfc_type %d is invalid, not support!", attr->ub.mode);
