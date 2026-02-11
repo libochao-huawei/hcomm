@@ -224,6 +224,7 @@ target_compile_options(hcomm PRIVATE
     -std=c++14
     -fstack-protector-all
     $<$<CONFIG:Debug>:-g>
+    -g
 )
 
 target_link_options(hcomm PRIVATE
@@ -607,6 +608,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         -pipe
         -O3
         -std=c++14
+        -g
     )
 
     target_link_options(ccl_kernel PRIVATE
