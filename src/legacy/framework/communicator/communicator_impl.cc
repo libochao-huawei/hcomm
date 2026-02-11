@@ -2454,6 +2454,14 @@ CommStatus CommunicatorImpl::GetCommStatus() const
     return status;
 }
 
+std::map<HcclAccelerator, AcceleratorState> accStateMap = {
+    {HcclAccelerator::AICPU, AcceleratorState::AICPU_TS},
+    {HcclAccelerator::AICPU_TS, AcceleratorState::AICPU_TS},
+    {HcclAccelerator::CCU_SCHED, AcceleratorState::CCU_SCHED},
+    {HcclAccelerator::DEFAULT, AcceleratorState::CCU_SCHED},
+    {HcclAccelerator::CCU_MS, AcceleratorState::CCU_MS}
+};
+
 // 初始化 算子粒度 = 通信域粒度 选择用 算子粒度 ok
 void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode &opMode)
 {
@@ -2464,10 +2472,11 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
     params.opMode                     = opMode;
     params.maxTmpMemSize              = GetBufferSize();
     params.isMc2                      = opParams.isMc2;
-    if (opParams.isMc2 && (opParams.commEngine == HcclAccelerator::AICPU || opParams.commEngine == HcclAccelerator::AICPU_TS)) {
-        opExecuteConfig.accState = AcceleratorState::AICPU_TS;
-    } else if (opParams.isMc2 && opParams.commEngine != HcclAccelerator::AICPU) {
-        opExecuteConfig.accState = AcceleratorState::CCU_MS;
+    if (opParams.isMc2) {
+        if(accStateMap.find(opParams.commEngine) == accStateMap.end()) {
+            THROW<NotSupportException>("[CommunicatorImpl][ExecAlgSelect] not support commEngine type[%s]!", opParams.commEngine.Describe().c_str());
+        }
+        opExecuteConfig.accState = accStateMap.find(opParams.commEngine)->second;
     }
     OpExecuteConfig inOpExecuteConfig = opExecuteConfig;
     params.opExecuteConfig            = inOpExecuteConfig;
@@ -2486,11 +2495,13 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
         auto dataSize = opParams.count * DataTypeSizeGet(opParams.dataType);
         THROW<NotSupportException>(
             "[CommunicatorImpl][ExecAlgSelect] failed. Error code :%u, opType[%s], opMode[%s], accState[%s], "
-            "dataType[%s], reduceOp[%s]. Current algName[%s],"
-            "algos[0]:[%u],algos[1]:[%u],algos[2]:[%u],algos[3]:[%u], dataSize[%u Bytes] .",
+            "dataType[%s], reduceOp[%s]. Current algName[%s],algos[0]:[%u],algos[1]:[%u],algos[2]:[%u],algos[3]:[%u], dataSize[%u Bytes] .",
             ret, opParams.opType.Describe().c_str(), opMode.Describe().c_str(),
             opExecuteConfig.accState.Describe().c_str(), opParams.dataType.Describe().c_str(),
             opParams.reduceOp.Describe().c_str(), curAlgName.c_str(), algos[0], algos[1], algos[2], algos[3], dataSize);
+    }
+    if(params.isMc2) {
+        algorithmType_ = collAlgComponent->GetAlgorithmTypeForMC2(curAlgName);
     }
     auto opAcceStateCacheIt = opAcceStateCache.find({opParams.opType, curAlgName});
     if (opAcceStateCacheIt != opAcceStateCache.end()) {
@@ -2499,8 +2510,8 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
         inOpExecuteConfig.accState = opAcceStateCacheIt->second;
     }
     SetOpExecuteConfig(inOpExecuteConfig); // 算子粒度 ok
-    HCCL_RUN_INFO("[CommunicatorImpl][%s] current accelerator[%s], algName[%s]", __func__,
-              opExecuteConfig.accState.Describe().c_str(), curAlgName.c_str());
+    HCCL_INFO("[CommunicatorImpl][%s] current accelerator[%s], algName[%s], algorithmType[%u]", __func__,
+              opExecuteConfig.accState.Describe().c_str(), curAlgName.c_str(), algorithmType_);
     SelectCollService();
 }
 

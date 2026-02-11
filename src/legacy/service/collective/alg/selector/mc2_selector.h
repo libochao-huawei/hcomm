@@ -17,19 +17,62 @@
 #include "virtual_topo.h"
 
 namespace Hccl {
+
+enum AlgorithmType {
+    CcuAllGatherMesh1D = 0,
+    CcuAllGatherMeshMem2Mem1D,
+    CcuAllGatherMesh2D,
+    CcuReduceScatterMesh1D,
+    CcuReduceScatterMeshMem2Mem1D,
+    CcuReduceScatterMesh2D,
+    CcuAllReduceMesh1D,
+    CcuAllReduceMeshMem2Mem1D,
+    CcuAllReduceMesh2DOneShot,
+    CcuReduceMesh1D,
+    CcuReduceMesh2D,
+    CcuAlltoAllMesh1D,
+    CcuAlltoAllVMesh1D,
+    CcuHalfAll2AllVMesh1D
+};
+
 class Mc2Selector : public BaseSelector {
 public:
     SelectorStatus SelectDefaultCcuMsAlgo(
         const CollAlgOperator &op,const CollAlgParams &params, std::string &primQueueGenName);
+
+    SelectorStatus SelectDefaultCcuSchedAlgo(
+        const CollAlgOperator &op, const CollAlgParams &params, std::string &primQueueGenName);
 
     SelectorStatus SelectDefaultAicpuAlgo(
         const CollAlgOperator &op,const CollAlgParams &params, std::string &primQueueGenName);
 
     SelectorStatus SelectCcuMsAlgo(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName);
 
+    SelectorStatus SelectCcuSchedAlgo(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName);
+
     SelectorStatus SelectAicpuAlgo(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName);
 
     SelectorStatus Select(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName) override;
+
+    AlgorithmType GetAlgorithmTypeForMC2(const std::string& name);
+
+private:
+    std::map<std::string, AlgorithmType> algorithmMap_ = {
+        {"CcuAllGatherMesh1D", CcuAllGatherMesh1D},
+        {"CcuAllGatherMeshMem2Mem1D", CcuAllGatherMeshMem2Mem1D},
+        {"CcuAllGatherMesh2D", CcuAllGatherMesh2D},
+        {"CcuReduceScatterMesh1D", CcuReduceScatterMesh1D},
+        {"CcuReduceScatterMeshMem2Mem1D", CcuReduceScatterMeshMem2Mem1D},
+        {"CcuReduceScatterMesh2D", CcuReduceScatterMesh2D},
+        {"CcuAllReduceMesh1D", CcuAllReduceMesh1D},
+        {"CcuAllReduceMeshMem2Mem1D", CcuAllReduceMeshMem2Mem1D},
+        {"CcuAllReduceMesh2DOneShot", CcuAllReduceMesh2DOneShot},
+        {"CcuReduceMesh1D", CcuReduceMesh1D},
+        {"CcuReduceMesh2D", CcuReduceMesh2D},
+        {"CcuAlltoAllMesh1D", CcuAlltoAllMesh1D},
+        {"CcuAlltoAllVMesh1D", CcuAlltoAllVMesh1D},
+        {"CcuHalfAll2AllVMesh1D", CcuAlltoAllVMesh1D}
+    };
 };
 }  // namespace Hccl
-#endif
+#endif

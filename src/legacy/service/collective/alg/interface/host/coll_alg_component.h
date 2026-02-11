@@ -17,6 +17,7 @@
 #include "ins_queue.h"
 #include "virtual_topo.h"
 #include "execute_selector.h"
+#include "mc2_selector.h"
 #include "coll_alg_registry.h"
 #include "ins_coll_alg_registry.h"
 #include "env_func.h"
@@ -42,7 +43,7 @@ public:
     void SetDmaMode(const DmaMode dmaMode);
     std::vector<char> GetPackedData() const;
     HcclResult ExecAlgSelect(const CollAlgOperator &op, const CollAlgParams &params, std::string &algName, OpExecuteConfig &opExecuteConfig);
-
+    AlgorithmType GetAlgorithmTypeForMC2(const std::string& name);
     // Host
     virtual HcclResult Orchestrate(const CollAlgOperator &op, const CollAlgParams &params,
                                    const string &algName, PrimQuePtr queue); // Primitive based
