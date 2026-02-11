@@ -502,6 +502,49 @@ HcclResult CommGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t 
     HCCL_RUN_INFO("[%s] success, group[%s], rankNum[%u]", __func__, hcclComm->GetIdentifier().c_str(), *rankNum);
     return HCCL_SUCCESS;
 }
+
+HcclResult HcclGetNetPlaneId(HcclComm comm, uint32_t *netPlaneId)
+{
+    // 步骤1：入参合法性校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(netPlaneId);
+
+    // 步骤2：类型转换
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
+
+    // 步骤3：获取并行平面信息
+    u32 tmpNetPlaneId = 0;
+    CHK_RET(hcclComm->GetNetPlaneId(tmpNetPlaneId));
+    *netPlaneId = tmpNetPlaneId;
+
+    // 步骤4：关键状态记录
+    HCCL_INFO("[%s] success, comm[%s], netPlaneId[%u]",
+              __func__, hcclComm->GetIdentifier().c_str(), *netPlaneId);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetNetPlaneNum(HcclComm comm, uint32_t *netPlaneNum)
+{
+    // 步骤1：入参合法性校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(netPlaneNum);
+
+    // 步骤2：类型转换
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
+
+    // 步骤3：获取并行平面信息
+    u32 tmpNetPlaneNum = 0;
+    CHK_RET(hcclComm->GetNetPlaneNum(tmpNetPlaneNum));
+    *netPlaneNum = tmpNetPlaneNum;
+
+    // 步骤4：关键状态记录
+    HCCL_INFO("[%s] success, comm[%s], netPlaneNum[%u]",
+              __func__, hcclComm->GetIdentifier().c_str(), *netPlaneNum);
+
+    return HCCL_SUCCESS;
+}
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

@@ -418,6 +418,10 @@ public:
         u8 *distRemoteRankNicStatus, u32 &distNicStatusNum, bool &needCheckDefaultNic, bool &needCheckBackupNic);
     HcclResult SetTransportStatus(const HcclOpIdentifier &opId, bool statusStop,
         const std::map<u32, bool> &remoteRankPortMap, const std::map<u32, bool> &isChangeLinkMap, bool isChangeLinkFlag);
+
+    // 获取并行平面信息
+    HcclResult GetNetPlaneId(u32 &netPlaneId) const;
+    HcclResult GetNetPlaneNum(u32 &netPlaneNum) const;
     static HcclResult GetTransportCqeErrors(const HcclNetDevCtx netDevCtx, std::vector<ErrCqeInfo> &infos, u32 &num);
     ErrorMessageReport GetAicpuTaskException();
 
@@ -707,6 +711,10 @@ private:
     bool isUsedInterHccsMode_ = false;
     bool isNeedInitNic_ = false;
     std::vector<RankInfo> worldRankInfoList_;
+    // 并行平面信息
+    u32 netPlaneId_{0};        // 当前 rank 所属的并行平面 ID
+    u32 netPlaneNum_{0};       // 总的并行平面数量
+    bool netPlaneInfoValid_{false};  // 并行平面信息是否有效
     std::unique_ptr<HcclTraceInfo> opBaseAtraceInfo_;
     bool aivClearEnable_ = false;
     u32 numBlocks_ = 0;

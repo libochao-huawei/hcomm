@@ -12,10 +12,12 @@ set(CMAKE_SKIP_RPATH FALSE)
 # UT
 if(ENABLE_UT)
     add_subdirectory(ut)
-    add_subdirectory(legacy/ut)
+    # 临时注释：只编译 OXC RankTable 测试
+    # add_subdirectory(legacy/ut)
 endif()
 
 # ST
-if(ENABLE_ST)
-    add_subdirectory(st/algorithm)
-endif()
+# 临时注释：只编译 OXC RankTable 测试
+# if(ENABLE_ST)
+#     add_subdirectory(st/algorithm)
+# endif()

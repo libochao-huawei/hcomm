@@ -414,6 +414,9 @@ public:
     HcclResult RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle);
     HcclResult DeregisterWindow(CommSymWindow winHandle);
     HcclResult GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
+    // 获取并行平面信息
+    HcclResult GetNetPlaneId(u32 &netPlaneId) const;
+    HcclResult GetNetPlaneNum(u32 &netPlaneNum) const;
 
 protected:
     /* * 禁止用户对API类的实体做拷贝构造或拷贝赋值的操作，内部有指针成员变量 */

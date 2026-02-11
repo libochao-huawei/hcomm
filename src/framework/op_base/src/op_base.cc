@@ -26,6 +26,7 @@
 #include "detect_connect_anomalies.h"
 #include "../common/src/topo/topoinfo_detect.h"
 #include "../common/src/topo/topoinfo_ranktable_partition.h"
+#include "../common/src/topo/topoinfo_netplane.h"
 #include "../common/src/state_guard.h"
 #include "../common/src/h2d_tlv/hccl_h2dtlv.h"
 #include "sal_pub.h"
@@ -933,6 +934,15 @@ HcclResult HcclCreateSubCommConfigInner(hccl::hcclComm *globalComm, uint32_t ran
         CHK_SMART_PTR_NULL(pTopoPartition);
         CHK_RET(pTopoPartition->GenerateSubRankTable(rankNum, rankIds, subRankTable));
         CHK_RET(pTopoPartition->GenerateSubParams(subRankTable, subCommRankId, subParams));
+
+        // 计算并行平面信息
+        u32 netPlaneId = 0;
+        u32 netPlaneNum = 0;
+        CHK_RET(TopoinfoNetplane::CalculateNetPlaneInfo(globalRankTable, subRankTable,
+                                                          netPlaneId, netPlaneNum));
+
+        // 将并行平面信息保存到 commConfig（通过配置传递）
+        commConfig.SetNetPlaneInfo(netPlaneId, netPlaneNum);
 
         std::string rankTableM = "";
         CHK_RET(pTopoPartition->GetRankTableStr(subRankTable, rankTableM));

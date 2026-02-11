@@ -20,6 +20,7 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/topoinfo_exchange_dispatcher.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/topoinfo_parse.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/topoinfo_ranktable_partition.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/topoinfo_netplane.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_whitelist.cc
 )
 

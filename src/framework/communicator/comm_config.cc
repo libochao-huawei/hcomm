@@ -775,4 +775,23 @@ u64 CommConfig::GetConfigSymmetricMemoryStride() const
 {
     return symmetricMemoryStride_;
 }
+
+// 并行平面信息相关方法
+void CommConfig::SetNetPlaneInfo(u32 netPlaneId, u32 netPlaneNum)
+{
+    netPlaneId_ = netPlaneId;
+    netPlaneNum_ = netPlaneNum;
+    HCCL_INFO("[%s] SetNetPlaneInfo: netPlaneId[%u], netPlaneNum[%u]",
+              __func__, netPlaneId_, netPlaneNum_);
+}
+
+u32 CommConfig::GetNetPlaneId() const
+{
+    return netPlaneId_;
+}
+
+u32 CommConfig::GetNetPlaneNum() const
+{
+    return netPlaneNum_;
+}
 }

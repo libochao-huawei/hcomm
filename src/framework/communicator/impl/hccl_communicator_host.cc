@@ -38,6 +38,7 @@
 #include "stream_utils.h"
 #include "config_log.h"
 #include "../nslbdp/hccl_nslbdp.h"
+#include "../common/src/topo/topoinfo_netplane.h"
 #include "../common/src/h2d_tlv/hccl_h2dtlv.h"
 #include "hccl_one_sided_service.h"
 #include "launch_device.h"
@@ -376,6 +377,29 @@ namespace hccl
             CHK_RET(RegisterToSnapshot());
         }
         CHK_RET(InitSymmetricMemory());
+
+        // 保存并行平面信息
+        // 子通信域：从 commConfig_ 获取已计算好的值
+        // 主通信域：现场计算
+        if (commConfig_.GetNetPlaneNum() > 0) {
+            // 子通信域：从 commConfig 获取
+            netPlaneId_ = commConfig_.GetNetPlaneId();
+            netPlaneNum_ = commConfig_.GetNetPlaneNum();
+            HCCL_INFO("[%s] NetPlane info from config: netPlaneId[%u], netPlaneNum[%u]",
+                      __func__, netPlaneId_, netPlaneNum_);
+        } else {
+            // 主通信域：使用 rankTable 自身作为 globalRankTable 和 subRankTable 进行计算
+            u32 netPlaneId = 0;
+            u32 netPlaneNum = 0;
+            CHK_RET(TopoinfoNetplane::CalculateNetPlaneInfo(rankTable, rankTable,
+                                                              netPlaneId, netPlaneNum));
+            netPlaneId_ = netPlaneId;
+            netPlaneNum_ = netPlaneNum;
+            HCCL_INFO("[%s] NetPlane info calculated: netPlaneId[%u], netPlaneNum[%u]",
+                      __func__, netPlaneId_, netPlaneNum_);
+        }
+        netPlaneInfoValid_ = true;
+
         return HCCL_SUCCESS;
     }
 
@@ -8976,5 +9000,25 @@ namespace hccl
     {
         CHK_SMART_PTR_NULL(symmetricMemory_);
         return symmetricMemory_->FindSymmetricWindow(ptr, size, winHandle, reinterpret_cast<u64*>(offset));
+    }
+
+    HcclResult HcclCommunicator::GetNetPlaneId(u32 &netPlaneId) const
+    {
+        if (!netPlaneInfoValid_) {
+            HCCL_ERROR("[%s] NetPlane info not initialized", __func__);
+            return HCCL_E_NOT_SUPPORT;
+        }
+        netPlaneId = netPlaneId_;
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetNetPlaneNum(u32 &netPlaneNum) const
+    {
+        if (!netPlaneInfoValid_) {
+            HCCL_ERROR("[%s] NetPlane info not initialized", __func__);
+            return HCCL_E_NOT_SUPPORT;
+        }
+        netPlaneNum = netPlaneNum_;
+        return HCCL_SUCCESS;
     }
 }

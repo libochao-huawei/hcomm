@@ -377,9 +377,21 @@ namespace hccl
         return collComm_->GetCommunicatorV2();
     }
 
-    CollComm* hcclComm::GetCollComm() 
+    CollComm* hcclComm::GetCollComm()
     {
         return collComm_!= nullptr ? collComm_.get() : nullptr;
+    }
+
+    HcclResult hcclComm::GetNetPlaneId(u32 &netPlaneId) const
+    {
+        CHK_PTR_NULL(communicator_);
+        return communicator_->GetNetPlaneId(netPlaneId);
+    }
+
+    HcclResult hcclComm::GetNetPlaneNum(u32 &netPlaneNum) const
+    {
+        CHK_PTR_NULL(communicator_);
+        return communicator_->GetNetPlaneNum(netPlaneNum);
     }
 
 } // namespace hccl
