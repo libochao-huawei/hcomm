@@ -48,6 +48,7 @@ protected:
 
 TEST_F(P2PConnectionTest, should_return_true_when_calling_rma_connection_bind_and_unbind_with_valid_params)
 {
+    MOCKER(HrtDevMemAlignWithPage).stubs().will(returnValue(static_cast<void*>(0)));
     u32          id = 0; // port
     BasePortType basePortType(PortDeploymentType::P2P);
     PortData     portData(0, basePortType, id, IpAddress());

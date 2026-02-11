@@ -38,8 +38,11 @@ protected:
     virtual void SetUp()
     {
         streamManager = new AicpuStreamManager();
-
-        MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeId));
+        
+        u32 pid = 0;
+        MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+        MOCKER(HrtStreamGetCqId).stubs().will(returnValue(pid));
+        MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeDevLogId));
         MOCKER(HrtStreamGetSqId).stubs().will(returnValue(fakeSqId));
         MOCKER(HrtStreamDestroy).stubs();
         MOCKER(HrtGetDevice).stubs().will(returnValue(fakeDevLogId));
