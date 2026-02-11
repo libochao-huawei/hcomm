@@ -2216,4 +2216,53 @@ HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles,
     }
     return HCCL_SUCCESS;
 }
+
+HcclResult RaCtxQpDestoryBatch(const RdmaHandle handle, const std::vector<JettyHandle> &jettyHandles, std::vector<JettyHandle> &failJettyHandles)
+{
+    const u32 DELETE_MAX_JETTY_NUMS = 768;
+    std::vector<void*> qp_handle;
+    failJettyHandles.clear();
+    for (auto jettyHandle : jettyHandles) {
+        qp_handle.push_back(reinterpret_cast<void*>(jettyHandle));
+    }
+    int curIdx = 0;
+    unsigned int qpNum = qp_handle.size();
+    unsigned int delNum = min(qpNum, DELETE_MAX_JETTY_NUMS);
+    std::vector<void*> del_qp_handle;
+    while (true) {
+        void *raReqHandle = nullptr;
+        delNum = min(qpNum, DELETE_MAX_JETTY_NUMS);
+        del_qp_handle.assign(qp_handle.begin(), qp_handle.begin() + delNum);
+        auto ret = ra_ctx_qp_destroy_batch_async(handle, del_qp_handle.data(), &delNum, &raReqHandle);
+        if (ret != 0) {
+            HCCL_ERROR("[%s] failed, ret is [%d].", __func__, ret);
+        }
+        RequestHandle reqHandle = reinterpret_cast<void*>(raReqHandle);
+        while (true) {
+            ReqHandleResult result = HrtRaGetAsyncReqResult(reqHandle);
+            if (result == ReqHandleResult::NOT_COMPLETED) {
+                continue;
+            } else if (result == ReqHandleResult::COMPLETED) {
+                break;
+            } else {
+                HCCL_ERROR("[%s] failed, result[%s] is unexpected.", __func__, result.Describe().c_str());
+                return HCCL_E_INTERNAL;
+            }
+        }
+        // 检查是否删除完成
+        if (delNum > del_qp_handle.size()) {
+            HCCL_ERROR("[%s] run ra_ctx_qp_destroy_batch_async error, del jetty num[%u] greater than all jetty num[%u].", __func__, delNum, del_qp_handle.size());
+            break;
+        } else {
+            failJettyHandles.push_back(reinterpret_cast<JettyHandle*>(del_qp_handle[delNum]));
+            qp_handle.erase(qp_handle.begin(), qp_handle.begin() + delNum + 1);
+            if (qp_handle.size() == 0) {
+                break;
+            }
+        }
+    }
+    HCCL_INFO("[%s] run success, del jetty num %u.", __func__, jettyHandles.size());
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl

@@ -702,3 +702,7 @@ int RaCtxGetAuxInfo(void *ctx_handle, struct HccpAuxInfoIn *in, struct HccpAuxIn
 int RaCtxQpQueryBatch(void *qp_handle[], struct JettyAttr attr[], unsigned int *num) {
     return 0;
 }
+
+int ra_ctx_qp_destroy_batch_async(void *ctx_handle, void*qp_handle[], unsigned int *num, void **req_handle) {
+    return 0;
+}

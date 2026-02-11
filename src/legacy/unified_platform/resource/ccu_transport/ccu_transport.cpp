@@ -591,12 +591,13 @@ std::string CcuTransport::Describe() const
     return description;
 }
 
-HcclResult CcuTransport::Clean()
+BatchDeleteJettyInfo CcuTransport::Clean()
 {
     transStatus = TransStatus::INIT;
     sendData.clear();
-    TRY_CATCH_RETURN(ccuConnection->Clean());
-    return HCCL_SUCCESS;
+    BatchDeleteJettyInfo batchDeleteJettyInfo;
+    TRY_CATCH_RETURN(batchDeleteJettyInfo = ccuConnection->Clean());
+    return batchDeleteJettyInfo;
 }
 
 } // namespace Hccl
