@@ -184,6 +184,9 @@ void CcuTransportMgr::WaitTransportsReady(vector<std::pair<CcuTransport*, LinkDa
             string timeoutMsg = StringFormat("WaitTransportReady timeout, commId[%s]", comm->GetId().c_str());
             HCCL_ERROR(timeoutMsg.c_str());
             DumpNotReadyTransports(transports);
+            // 上报EI0006
+            RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"commId", "tips"}),
+                            std::vector<std::string>({comm->GetId(), "wait transports ready timeout."}));
             THROW<InternalException>(timeoutMsg);
         }
     }

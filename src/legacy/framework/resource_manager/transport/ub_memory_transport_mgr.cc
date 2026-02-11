@@ -139,6 +139,9 @@ void UbMemoryTransportMgr::WaitTransportsReady(vector<std::pair<UbMemoryTranspor
         }
 
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            // 上报故障码EI0006
+            RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"commId", "tips"}),
+                            std::vector<std::string>({comm->GetId(), "wait transports ready timeout."}));
             THROW<InternalException>("WaitTransportReady timeout, commId[%s]", comm->GetId().c_str());
         }
     }

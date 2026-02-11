@@ -43,6 +43,9 @@ public:
             try {
                 value = cast(str);
             } catch (const InvalidParamsException &e) {
+                // 有异常上报故障码EI0001
+                RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"env", "tips"}),
+                            std::vector<std::string>({name, "Please check whether the value is valid."}));
                 THROW<InvalidParamsException>(StringFormat("[Init][EnvVarParam]Env config \"%s\" value is invalid.%s", name.c_str(), e.what()));
             } catch (const NotSupportException &e) { // 临时修改方案 HCCL_SOCKET_IFNAME等当前不支持配置 且需要报错
                 THROW<NotSupportException>(
@@ -57,6 +60,9 @@ public:
             try {
                 validate(value);
             } catch (const InvalidParamsException &e) {
+                // 有异常上报故障码EI0001
+                RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"env", "tips"}),
+                            std::vector<std::string>({name, "Please check whether the value is valid."}));
                 THROW<InvalidParamsException>(StringFormat("[Init][EnvVarParam]Env config \"%s\" value is invalid.%s", name.c_str(), e.what()));
             }
         }
