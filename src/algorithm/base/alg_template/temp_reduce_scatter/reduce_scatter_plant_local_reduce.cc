@@ -24,7 +24,7 @@ HcclResult ReduceScatterPlantLocalReduce::Prepare(void *inputMemPtr, DeviceMem &
     const Stream &stream, std::vector<Stream> &subStreams, std::vector<std::shared_ptr<LocalNotify>> &meshSignal,
     std::vector<std::shared_ptr<LocalNotify>> &meshSignalAux, GroupSlicesInfo &grouSlicesInfo,
     const HcclReduceOp reductionOp, u32 all2allOffset, const HcclDataType dataType, bool isNeedSpaceBorrow,
-    bool reverseMemUsage)
+    bool reverseMemUsage, bool isA3CrossNode)
 {
     inputMemPtr_ = inputMemPtr;       // UserInPtr，All2All使用
     inputMem_ = cclInMem;             // 空拷贝 & 存放最后一块数据（Allreduce非整除场景）
@@ -38,6 +38,7 @@ HcclResult ReduceScatterPlantLocalReduce::Prepare(void *inputMemPtr, DeviceMem &
     all2allOffset_ = all2allOffset;
     dataType_ = dataType;
     isNeedSpaceBorrow_ = isNeedSpaceBorrow;
+    isA3CrossNode_ = isA3CrossNode;
     if (reverseMemUsage) {
         // 交换两块buffer的用途，in buffer作为输出buffer
         HCCL_INFO("[%s] reverse memory usage.", __func__);
@@ -136,8 +137,12 @@ HcclResult ReduceScatterPlantLocalReduce::RunAsync(const u32 rank, const u32 ran
     HcclResult ret = HCCL_SUCCESS;
     for (u32 groupId = 0; groupId < groupSlicesInfo_.size(); groupId++) {
         const MemBlockInfo& memBlockInfo = groupSlicesInfo_[groupId];
-        ret = RunAlltoAll(links, groupId, memBlockInfo);
-        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]RunAlltoAll failed, localRank[%u], groupId[%u]",
+        if (isA3CrossNode_) {
+            ret = RunGroupAlltoAll(links, groupId, memBlockInfo);
+        } else {
+            ret = RunAlltoAll(links, groupId, memBlockInfo);
+        }
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]RunAlltoAll or RunGroupAlltoAll failed, localRank[%u], groupId[%u]",
             __func__, localRank_, groupId), ret);
         
         CHK_RET(LocalNotify::Wait(stream_, dispatcher_, (*meshSignalPtr_)[lRMainStreamId_], profilerInput_.stage));
@@ -246,6 +251,79 @@ HcclResult ReduceScatterPlantLocalReduce::RunAlltoAll(const std::vector<LINK> &l
     // 从流通知主流完成拷贝
     CHK_RET(SubRecordMain(all2allfirstSubStreamId, all2allSubStreamNum_));
     CHK_RET(MainWaitSub(stream_, all2allfirstSubStreamId, all2allSubStreamNum_));
+    return HCCL_SUCCESS;
+}
+
+HcclResult ReduceScatterPlantLocalReduce::RunGroupAlltoAll(const std::vector<LINK> &links, u32 groupId,
+    const MemBlockInfo& memBlockInfo)
+{
+    constexpr u32 numInGroup = DEVICE_EIGHT;
+    u32 numOfGroups = (rankSize_ + numInGroup - 1) / numInGroup;
+
+    // 本卡优先拷贝同号位数据
+    CHK_RET(LocalCopy(groupId, memBlockInfo));
+
+    for (u32 idGroup = 0; idGroup < numOfGroups; ++idGroup) {
+        // 主流通知从流可以开始接受数据
+        u32 all2allfirstSubStreamId = 0;
+        CHK_RET(MainRecordSub(stream_, all2allfirstSubStreamId, all2allSubStreamNum_));
+        CHK_RET(SubWaitMain(all2allfirstSubStreamId, all2allSubStreamNum_));
+
+        // 开始数据拷贝
+        u32 streamIndex = 0;
+        for (u32 cnt = 0, round = numOfGroups * numInGroup; round < rankSize_ && cnt < numInGroup; ++round, ++cnt) {
+            if (round == localRank_) {
+                continue;
+            }
+            Stream &subStream = (streamIndex == 0) ? stream_ : subStreams_[streamIndex - 1];
+            CHK_SMART_PTR_NULL(links[round]);
+            CHK_RET(links[round]->TxAck(subStream));
+            CHK_RET(links[round]->RxAck(subStream));
+            streamIndex++;
+        }
+
+        CHK_RET(SubRecordMain(all2allfirstSubStreamId, all2allSubStreamNum_));
+        CHK_RET(MainWaitSub(stream_, all2allfirstSubStreamId, all2allSubStreamNum_));
+        CHK_RET(AlgTemplateBase::ExecEmptyTask(inputMem_, outputMem_, subStreams_[lRMainStreamId_], dispatcher_));
+
+        CHK_RET(MainRecordSub(stream_, all2allfirstSubStreamId, all2allSubStreamNum_));
+        CHK_RET(SubWaitMain(all2allfirstSubStreamId, all2allSubStreamNum_));
+        streamIndex = 0;
+        for (u32 cnt = 0, round = numOfGroups * numInGroup; round < rankSize_ && cnt < numInGroup; ++round, ++cnt) {
+            if (round == localRank_) {
+                continue;
+            }
+            Stream &subStream = (streamIndex == 0) ? stream_ : subStreams_[streamIndex - 1];
+            CHK_SMART_PTR_NULL(links[round]);
+
+            u64 sliceSize = memBlockInfo.size[round];
+            if (sliceSize != 0) {
+                u64 userMemInOffset = memBlockInfo.userInputOffsets[round];
+                DeviceMem src = DeviceMem::create(static_cast<u8 *>(inputMemPtr_) + userMemInOffset, sliceSize);
+                u32 outputIndex = CalcOutputIndex(round);
+                u64 dstOffset = 0;
+                void *remMemPtr = nullptr;
+                if (isNeedSpaceBorrow_ && isLastBlockData(outputIndex) && !(isLastRank(round) && isLastGroup(groupId))) {
+                    CHK_RET(links[round]->GetRemoteMem(scratchMemType_, &remMemPtr));
+                    dstOffset = memBlockInfo.outputOffsets[round];
+                } else {
+                    CHK_RET(links[round]->GetRemoteMem(outputMemType_, &remMemPtr));
+                    dstOffset = memBlockInfo.outputOffsets[outputIndex];
+                }
+                DeviceMem dst = DeviceMem::create(static_cast<u8 *>(remMemPtr) + dstOffset, sliceSize);
+                CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dst, src, subStream, links[round]->GetRemoteRank(),
+                        links[round]->GetLinkType()));
+            }
+            CHK_RET(links[round]->TxDataSignal(subStream));
+            CHK_RET(links[round]->RxDataSignal(subStream));
+            streamIndex++;
+        }
+
+        // 从流通知主流完成拷贝
+        CHK_RET(SubRecordMain(all2allfirstSubStreamId, all2allSubStreamNum_));
+        CHK_RET(MainWaitSub(stream_, all2allfirstSubStreamId, all2allSubStreamNum_));
+    }
+
     return HCCL_SUCCESS;
 }
 
