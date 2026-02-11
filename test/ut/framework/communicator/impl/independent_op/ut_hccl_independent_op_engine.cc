@@ -96,7 +96,7 @@ void LocalCopyFfts(ThreadHandle thread) {
     .will(returnValue(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));
 
     DispatcherCtxPtr ctx;
-    HcclResult ret = CreateDispatcherCtx(&ctx, 0);
+    HcclResult ret = CreateDispatcherCtx(&ctx, 0, SDMA_QOS_DEFAULT);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     DispatcherCtx *ctxPtr = static_cast<DispatcherCtx *>(ctx);
