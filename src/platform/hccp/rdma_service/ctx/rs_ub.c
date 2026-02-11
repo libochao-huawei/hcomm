@@ -1591,9 +1591,11 @@ STATIC int RsUbJettyCbInit(struct RsUbDevCb *devCb, struct CtxQpAttr *jettyAttr,
     jettyCb->errTimeout = jettyAttr->ub.errTimeout;
 
     if (jettyCb->jettyMode == JETTY_MODE_CCU_TA_CACHE) {
+        hccp_warn("@@@ RsUbJettyCbInit JETTY_MODE_CCU_TA_CACHE");
         jettyCb->taCacheMode.lockFlag = jettyAttr->ub.taCacheMode.lockFlag;
         jettyCb->taCacheMode.sqeBufIdx = jettyAttr->ub.taCacheMode.sqeBufIdx;
     } else {
+        hccp_warn("@@@ RsUbJettyCbInit else");
         jettyCb->extMode.sq = jettyAttr->ub.extMode.sq;
         jettyCb->extMode.piType = jettyAttr->ub.extMode.piType;
         jettyCb->extMode.cstmFlag = jettyAttr->ub.extMode.cstmFlag;
@@ -1844,6 +1846,7 @@ STATIC int RsUbFillJettyInfo(struct RsCtxJettyCb *jettyCb, struct QpCreateInfo *
     jettyInfo->va = (uint64_t)(uintptr_t)jettyCb->jetty;
     jettyInfo->ub.shareInfoAddr = (uint64_t)(uintptr_t)jettyCb->qpShareInfoAddr;
     jettyInfo->ub.shareInfoLen = sizeof(struct CtxQpShareInfo);
+    hccp_warn("@@@ jettyCb->extMode.sqebbNum: %ld", jettyCb->jetty->jetty_id.sqebbNum);
 
     hccp_warn("@@@@@@ jettyCb->jetty->jetty_id.eid: %ld", jettyCb->jetty->jetty_id.eid);
     hccp_warn("@@@@@@ jettyCb->jetty->jetty_id.uasid: %ld", jettyCb->jetty->jetty_id.uasid);
