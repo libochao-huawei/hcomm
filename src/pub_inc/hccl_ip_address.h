@@ -101,7 +101,9 @@ public:
         (void)SetReadableAddress(address);
     }
     ~HcclIpAddress() {}
-
+    
+    static bool IsIPv6(const std::string& str);
+    static bool IsIPv4(const std::string& str);
     static bool IsEID(const std::string& str);
     static Eid StrToEID(const std::string& str);
     std::string GetIpStr() const;
