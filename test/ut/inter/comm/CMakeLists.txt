@@ -10,22 +10,22 @@
 set(hccl_utest_inter_comm_list
     main.cc
     # ut_adapter.cc
-    # ut_coll_alg_operator.cc
-    # ut_allreduce_mesh_opbase.cc
-    # ut_alltoall_aiv.cc
     # ut_comm_halving_doubling.cc
     # ut_comm_p2p.cc
-    # ut_dispatcher_ffts.cc
     # ut_hccl_comm_910B.cc
     # ut_hccl_impl_alg_double_ring.cc
-    # ut_hccl_impl_alg_nhr.cc
-    # ut_hccl_impl_alg_nb.cc
-    # ut_hccl_impl_alg_ahc.cc
-    # ut_hccl_impl_alg.cc
-    # ut_hccl_impl_alg_double_ring_concurrent.cc
-    # ut_hccl_impl_alg_double_ring_concurrent_allreduce.cc
     # ut_allgather_mix_op_base.cc
     # ut_comm_init.cc
+
+    ut_coll_alg_operator.cc
+    ut_allreduce_mesh_opbase.cc
+    ut_alltoall_aiv.cc
+    ut_hccl_impl_alg_nhr.cc
+    ut_hccl_impl_alg_nb.cc
+    ut_hccl_impl_alg_ahc.cc
+    ut_hccl_impl_alg.cc
+    ut_hccl_impl_alg_double_ring_concurrent.cc
+    ut_hccl_impl_alg_double_ring_concurrent_allreduce.cc
     ut_alg_registry.cc
     ut_alltoallv_staged.cc
     ut_callback_thread_manager.cc

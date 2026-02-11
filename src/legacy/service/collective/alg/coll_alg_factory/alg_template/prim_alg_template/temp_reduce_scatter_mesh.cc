@@ -49,7 +49,7 @@ HcclResult TempReduceScatterMesh::CalcResDetour(const bool forAllReduce, const R
     if (linkNumBtwPeers_ == 1) {
         HCCL_INFO(
             "[CollAlgFactory] [TempReduceScatterMesh] [WARNING] Rank [%d], linkNum between rank [%d] and rank [%d] "
-            "equals 1, not able to detour!!!",
+            "equals 1, not able to detour",
             myRank_, myRank_, tempVTopo_[0][(myAlgRank + 1) % tempRankSize_]);
         enableDetour_ = false;
     } else {

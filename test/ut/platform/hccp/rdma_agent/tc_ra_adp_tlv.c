@@ -16,101 +16,101 @@
 
 #define TC_TLV_HDC_MSG_SIZE    (32 * 1024)
 
-void tc_ra_rs_tlv_init()
+void TcRaRsTlvInit()
 {
-    union OpTlvInitData data_in;
-    union OpTlvInitData data_out;
-    int rcv_buf_len = 0;
-    int op_result;
-    int out_len;
+    union OpTlvInitData dataIn;
+    union OpTlvInitData dataOut;
+    int rcvBufLen = 0;
+    int opResult;
+    int outLen;
     int ret;
 
-    char* in_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvInitData));
-    char* out_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvInitData));
+    char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvInitData));
+    char* outBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvInitData));
 
-    data_in.txData.phyId = 0;
+    dataIn.txData.phyId = 0;
     mocker((stub_fn_t)RsTlvInit, 1, 0);
-    memcpy_s(in_buf + sizeof(struct MsgHead), sizeof(union OpTlvInitData),
-        &data_in, sizeof(union OpTlvInitData));
-    ret = RaRsTlvInit(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    memcpy_s(inBuf + sizeof(struct MsgHead), sizeof(union OpTlvInitData),
+        &dataIn, sizeof(union OpTlvInitData));
+    ret = RaRsTlvInit(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
     mocker((stub_fn_t)RsTlvInit, 1, -1);
-    ret = RaRsTlvInit(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    ret = RaRsTlvInit(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
     mocker((stub_fn_t)RsTlvInit, 1, -ENOTSUPP);
-    ret = RaRsTlvInit(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    ret = RaRsTlvInit(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    free(in_buf);
-    in_buf = NULL;
-    free(out_buf);
-    out_buf = NULL;
+    free(inBuf);
+    inBuf = NULL;
+    free(outBuf);
+    outBuf = NULL;
 }
 
-void tc_ra_rs_tlv_deinit()
+void TcRaRsTlvDeinit()
 {
-    union OpTlvDeinitData data_in;
-    union OpTlvDeinitData data_out;
-    int rcv_buf_len = 0;
-    int op_result;
-    int out_len;
+    union OpTlvDeinitData dataIn;
+    union OpTlvDeinitData dataOut;
+    int rcvBufLen = 0;
+    int opResult;
+    int outLen;
     int ret;
 
-    char* in_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvDeinitData));
-    char* out_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvDeinitData));
+    char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvDeinitData));
+    char* outBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvDeinitData));
 
-    data_in.txData.phyId = 0;
+    dataIn.txData.phyId = 0;
     mocker((stub_fn_t)RsTlvDeinit, 1, 0);
-    memcpy_s(in_buf + sizeof(struct MsgHead), sizeof(union OpTlvDeinitData),
-        &data_in, sizeof(union OpTlvDeinitData));
-    ret = RaRsTlvDeinit(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    memcpy_s(inBuf + sizeof(struct MsgHead), sizeof(union OpTlvDeinitData),
+        &dataIn, sizeof(union OpTlvDeinitData));
+    ret = RaRsTlvDeinit(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
     mocker((stub_fn_t)RsTlvDeinit, 1, -1);
-    ret = RaRsTlvDeinit(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    ret = RaRsTlvDeinit(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    free(in_buf);
-    in_buf = NULL;
-    free(out_buf);
-    out_buf = NULL;
+    free(inBuf);
+    inBuf = NULL;
+    free(outBuf);
+    outBuf = NULL;
 }
 
-void tc_ra_rs_tlv_request()
+void TcRaRsTlvRequest()
 {
-    union OpTlvRequestData data_in;
-    union OpTlvRequestData data_out;
-    int rcv_buf_len = 0;
-    int op_result;
-    int out_len;
+    union OpTlvRequestData dataIn;
+    union OpTlvRequestData dataOut;
+    int rcvBufLen = 0;
+    int opResult;
+    int outLen;
     int ret;
 
-    char* in_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvRequestData));
-    char* out_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvRequestData));
+    char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvRequestData));
+    char* outBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpTlvRequestData));
 
-    data_in.txData.head.moduleType = TLV_MODULE_TYPE_NSLB;
-    data_in.txData.head.phyId = 0;
+    dataIn.txData.head.moduleType = TLV_MODULE_TYPE_NSLB;
+    dataIn.txData.head.phyId = 0;
     mocker((stub_fn_t)RsTlvRequest, 1, 0);
-    memcpy_s(in_buf + sizeof(struct MsgHead), sizeof(union OpTlvRequestData),
-        &data_in, sizeof(union OpTlvRequestData));
-    ret = RaRsTlvRequest(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    memcpy_s(inBuf + sizeof(struct MsgHead), sizeof(union OpTlvRequestData),
+        &dataIn, sizeof(union OpTlvRequestData));
+    ret = RaRsTlvRequest(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
     mocker((stub_fn_t)RsTlvRequest, 1, -1);
-    ret = RaRsTlvRequest(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    ret = RaRsTlvRequest(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    free(in_buf);
-    in_buf = NULL;
-    free(out_buf);
-    out_buf = NULL;
+    free(inBuf);
+    inBuf = NULL;
+    free(outBuf);
+    outBuf = NULL;
 }

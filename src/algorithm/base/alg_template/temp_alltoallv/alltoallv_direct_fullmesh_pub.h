@@ -23,6 +23,14 @@ public:
     HcclResult Prepare(PrepareData &param) override;
     HcclResult GetNslbAdjInfo(const u32 rank, const u32 rankSize,
                               const std::vector<LINK> &links, AdjInfo& nslbAdjInfo) override;
+    
+    // 用于alltoallv类算子的aicpu cache
+    // 注意: 如果新增alltoallv的算法实现并且想使用aicpu cache, 需要在更新cache白名单前, 在算法实现中做以下适配:
+    // (i) Zero-length recv/send memcpy需要保证调用HcclD2DMemcpyAsync/TxAck/RxAck/TxDataSignal/RxDataSignal
+    // 从而dispatcher可以感知并下发对应placeholder
+    // (ii) 需要维护hccl offset <-> rank vector之间的mapping, 保证cache命中后的正确刷新
+    // 可以在alltoallv_direct_fullmesh.cc下搜索needAlltoallvCache_获得参考
+    HcclResult GetHcclOffsetDstRanksMap(std::unordered_map<uint64_t, std::vector<uint32_t>>& hcclOffsetDstRanksMap) const override;
 protected:
 private:
     HcclResult GenerateSubStreamInfo(const std::vector<Stream> &subStreams,
@@ -39,16 +47,18 @@ private:
     HcclResult SDMAwithRemoteRankAndNotifyEnd(u32 step, u32 roundIdx);
     HcclResult SendRecvData(u32 step, u32 roundIdx);
 
-    void UpdateCurrRankSendInfo(u32 roundIdx, u32 side, u32 destRank, std::vector<SendDataBlock>& sendInfo, u32 maxSendStep);
-    void UpdateCurrRankRecvInfo(u32 roundIdx, u32 side, u32 destRank, std::vector<ReadDataBlock>& readInfo, u32 maxRecvStep);
-    void UpdateOpBaseSubStreamInfo(u32 roundIdx);
+    HcclResult UpdateCurrRankSendInfo(u32 step, u32 roundIdx, u32 side, u32 destRank, std::vector<SendDataBlock>& sendInfo, std::unordered_map<u32, SendDataBlock>& subStreamZcopySendInfo, u32 maxSendStep);
+    HcclResult UpdateCurrRankRecvInfo(u32 step, u32 roundIdx, u32 side, u32 destRank, std::vector<ReadDataBlock>& readInfo, std::unordered_map<u32, ReadDataBlock>& subStreamZcopyReadInfo, u32 maxRecvStep);
+    void UpdateOpBaseSubStreamInfo(u32 step, u32 roundIdx);
     void UpdateRemoteRankSet(u32 roundIdx, u32 groupRankSize);
     void UpdatePartialCommunicationRankSetPairWise(u32 roundIdx, u32 groupRankSize);
     void UpdatePartialCommunicationRankSet(u32 roundIdx, u32 groupRankSize,
         std::vector<std::vector<std::pair<u32,u32>>> &partialCommRankSet);
-    HcclResult PrepareIntraData(u32 step, std::unordered_map<u32, std::vector<SendDataBlock>> &subStreamSendInfo);
-    void UpdateSendRecvInfo(u32 roundIdx,  std::unordered_map<u32, std::vector<ReadDataBlock>> &subStreamReadInfo,
+    HcclResult PrepareIntraData(u32 step, std::unordered_map<u32, std::vector<SendDataBlock>> &subStreamSendInfo, std::unordered_map<u32, SendDataBlock>& subStreamZcopySendInfo);
+    void UpdateSendRecvInfo(u32 step, u32 roundIdx,  std::unordered_map<u32, std::vector<ReadDataBlock>> &subStreamReadInfo,
         std::unordered_map<u32, std::vector<SendDataBlock>> &subStreamSendInfo,
+        std::unordered_map<u32, ReadDataBlock>& subStreamZcopyReadInfo,
+        std::unordered_map<u32, SendDataBlock>& subStreamZcopySendInfo,
         const std::vector<std::vector<std::pair<u32,u32>>> &partialCommRankSet);
     HcclResult LocalCopy();
     HcclResult RunGroupFullMeshAlltoall(u32 roundIdx, u32 step);
@@ -140,6 +150,18 @@ private:
     u32 lastRdmaRoundIdx_ = 0;
     u32 lastRdmaDstRanksIdx_ = 0;
     u32 lastRdmaStep_ = 0;
+
+    // 用于alltoallv类算子的aicpu cache
+    bool needAlltoallvCache_ = false; // 是否需要对当前alltoallv算子做aicpu cache
+    // 注意: 对零长拷贝保留send/read info, 是为了在使能alltoallv类算子aicpu cache时, 保证cache-memcpy placeholder SQE的正确下发
+    // 注意: 这里Zcopy指的是zero-length memory copy, 而不是zero copy
+    // 注意: 从流相关的偏移信息每个step每个round UpdateSendRecvInfo前都会clear, 所以可以重复设置
+    std::unordered_map<u32, SendDataBlock> subStreamZcopySendInfo_; // 从流当前零长拷贝的发送偏移
+    std::unordered_map<u32, ReadDataBlock> subStreamZcopyReadInfo_; // 从流当前零长拷贝的接收偏移
+    std::unordered_map<u32, SendDataBlock> nextSubStreamZcopySendInfo_; // 下一轮从流零长拷贝的发送偏移
+    std::unordered_map<u32, ReadDataBlock> nextSubStreamZcopyReadInfo_; // 下一轮从流零长拷贝的接收偏移
+    // 注意: hccl offset <-> remote rank之间的mapping不能每个step每个round清理, aicpu cache需要获得step 0所有rounds下的映射信息, 所以只有在step为0时才会更新 (其实hccl offsets在不同steps下不变, 变化的只有user input/output offsets)
+    std::unordered_map<uint64_t, std::vector<uint32_t>> hcclOffsetDstRanksMap_; // Local hccl input buffer中的local hccl offset到remote dst ranks的映射 (用于PrepareIntraData; 当rankSize较大触发multi-round场景时, 同一个hccl offset可能会对应多个dst ranks)
 };
 } // namespace hccl
 #endif /* ALLTOALL_V_MESH_READ_ONLY_PUB_H */
