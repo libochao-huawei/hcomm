@@ -36,6 +36,9 @@ target_include_directories(hccl_alg_analyzer_test PRIVATE
 
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
 
+    # protobuf源码
+    ${THIRD_PARTY_PATH}/protobuf/include
+
     ${ASCEND_CANN_INCLUDE_LIST}
 )
 
@@ -47,10 +50,12 @@ target_compile_options(hccl_alg_analyzer_test PRIVATE
 )
 
 target_link_libraries(hccl_alg_analyzer_test PRIVATE
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     hccl_alg_adaption
     hccl_alg_analyzer
-    -pthread
+    -lpthread
+    protobuf
+    ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     -lrt
     -ldl
 )

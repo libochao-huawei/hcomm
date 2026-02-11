@@ -35,14 +35,19 @@ target_compile_definitions(executor_pipeline_hccl_test PRIVATE
 
 target_compile_options(executor_pipeline_hccl_test PRIVATE
     -U_FORTIFY_SOURCE
+    -Os
+    -O0 -g
+    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
 target_link_libraries(executor_pipeline_hccl_test PRIVATE
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     hccl_alg_analyzer
     hccl_alg_adaption
     hccl_alg_test
-    -pthread
+    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
+    -lpthread
+    protobuf
     -lrt
     -ldl
 )
