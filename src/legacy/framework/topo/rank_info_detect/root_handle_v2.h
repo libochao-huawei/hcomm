@@ -26,6 +26,7 @@ using HcclRootHandleV2 = struct HcclRootHandleDefV2 {
     u32          listenPort{HCCL_INVALID_PORT};
     HrtNetworkMode netMode{HrtNetworkMode::HDC};
     char         identifier[ROOTINFO_INDENTIFIER_MAX_LENGTH];
+    u32          deviceistenPort{DEFAULT_VALUE_DEVICEPORT};
 };
 
 // buffer大小

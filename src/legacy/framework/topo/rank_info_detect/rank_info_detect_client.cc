@@ -181,7 +181,10 @@ void RankInfoDetectClient::ConstructRankTable(RankTableInfo &localRankTable)
     std::string msgDeserialize = "error occurs when localRankTable Deserialize";
     TRY_CATCH_THROW(InvalidParamsException, msgDeserialize, localRankTable.Deserialize(localRankTableJson, false););
 
-    SocketManager::ServerInitOne(localRankTable);
+    // SocketManager::ServerInitOne(localRankTable);
+    for(auto &rank : localRankTable.ranks) {
+        rank.devicePort = rootHandle_.deviceistenPort;
+    }
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
 }

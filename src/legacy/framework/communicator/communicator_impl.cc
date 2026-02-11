@@ -1218,6 +1218,12 @@ void CommunicatorImpl::InitRankGraph(const RankTableInfo &ranktable)
     }
 }
 
+HcclResult CommunicatorImpl::InitDeviceListenPort(u32 &linstenPort)
+{
+    std::vector<LinkData> fullLinks = GetFullMeshLinks();
+    GetSocketManager().ServerInitAll(fullLinks, linstenPort);
+}
+
 void CommunicatorImpl::InitRankGraph(std::unique_ptr<RankGraph> &inputRankGraph)
 {
     if (inputRankGraph != nullptr) {

@@ -41,6 +41,8 @@ public:
 
     void ServerInit(PortData &localPort);
 
+    void ServerInitAll(const vector<LinkData> &links, u32 &linstenPort);
+
     bool ServerDeInit(PortData &localPort) const;
 
     Socket *CreateConnectedSocket(SocketConfig &socketConfig);
@@ -72,7 +74,6 @@ private:
     u32               localRank;
     u32               devicePhyId;
     u32               deviceLogicId_;
-    vector<SocketPortRange> listenPortRanges_{};
     std::unordered_map<u32, u32> rankListenPortMap_{};
     std::function<shared_ptr<Socket>(IpAddress &localIpAddress, IpAddress &remoteIpAddress, u32 listenPort,
                                      SocketHandle socketHandle, const std::string &tag, SocketRole socketRole,
