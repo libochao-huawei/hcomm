@@ -339,6 +339,15 @@ void DevUbConnection::SetImportInfo()
     tpn                           = info->out.ub.tpn;
 }
 
+void DevUbConnection::ReleaseTp()
+{
+    if (tpInfo.tpHandle != 0) {
+        (void)TpManager::GetInstance(devLogicId)
+            .ReleaseTpInfo({locAddr, rmtAddr, tpProtocol}, tpInfo);
+        tpInfo.tpHandle = 0;
+    }
+}
+
 void DevUbConnection::ReleaseResource()
 {
     if (rdmaHandle && remoteJettyHandle != 0) {
@@ -346,11 +355,7 @@ void DevUbConnection::ReleaseResource()
         remoteJettyHandle = 0;
     }
 
-    if (tpInfo.tpHandle != 0) {
-        (void)TpManager::GetInstance(devLogicId)
-            .ReleaseTpInfo({locAddr, rmtAddr, tpProtocol}, tpInfo);
-        tpInfo.tpHandle = 0;
-    }
+    ReleaseTp();
 
     if (jettyHandle != 0) {
         HrtRaUbDestroyJetty(jettyHandle);
@@ -371,7 +376,7 @@ bool DevUbConnection::Suspend()
         HCCL_INFO("[DevUbConnection][%s] RmaConnStatus is SUSPENDED, status[%s].", __func__, status.Describe().c_str());
         return true;
     }
-    
+
     if (status != RmaConnStatus::READY) {
         ThrowAbnormalStatus(std::string(__func__));
     }
@@ -788,9 +793,24 @@ HrtUbJfcMode DevUbConnection::GetUbJfcMode() const
     return jfcMode;
 }
 
-JettyHandle DevUbConnection::GetJettyHandle() const
+JettyHandle& DevUbConnection::GetJettyHandle() const
 {
     return jettyHandle;
+}
+
+JettyHandle&  GetRemoteJettyHandle() const
+{
+    return remoteJettyHandle;
+}
+
+RdmaHandle&  GetRdmaHandle() const
+{
+    return rdmaHandle;
+}
+
+TpInfo GetUbTpInfo() const
+{
+    return tpInfo;
 }
 
 u32 DevUbConnection::GetPiVal() const

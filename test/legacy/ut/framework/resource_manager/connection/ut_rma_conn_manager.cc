@@ -511,3 +511,185 @@ TEST_F(RmaConnManagerTest, CovertToCurrentCollOperator)
     string tag = "optag";
     comm.CovertToCurrentCollOperator(tag, collOpParams, OpMode::OPBASE);
 }
+
+TEST_F(RmaConnManagerTest, should_delelte_all_when_calling_batchdeletejettys_with_valid_param)
+{
+    BasePortType     basePortType(PortDeploymentType::P2P, ConnectProtoType::UB);
+    LinkData *linkData = new LinkData(basePortType, 0, 1, 0, 1);
+
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+
+    u32 localRank  = 0;
+    u32 remoteRank = 1;
+
+    CommunicatorImpl impl;
+    CommParams commParams;
+    commParams.commId   = "commId";
+    commParams.myRank   = localRank;
+    commParams.rankSize = 8;
+    HcclCommConfig    config;
+    commParams.devType  = DevType::DEV_TYPE_910A;
+    GenRankTableFile1Ser8Dev();
+
+    CollOpParams collOpParams;
+    collOpParams.opType = OpType::SEND;
+    collOpParams.dataType = DataType::INT8;  // sizeof(int8) = 1
+    collOpParams.reduceOp = ReduceOp::SUM;
+    collOpParams.dstRank = remoteRank;
+    u32 buffer = 10;
+    collOpParams.sendBuf = static_cast<void *>(&buffer);
+    collOpParams.recvBuf = static_cast<void *>(&buffer);
+    collOpParams.count = 10;
+    collOpParams.root = 0;
+    collOpParams.staticAddr = true;
+    collOpParams.staticShape = true;
+
+    void *devPtr = nullptr;
+    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue(commParams.devType));
+    MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
+    MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
+    impl.rankGraph = make_unique<RankGraph>(0);
+    impl.rankGraph->peers_[0] = make_shared<NetInstance::Peer>(0, 0, 0, 0);
+    MOCKER_CPP(&CommunicatorImpl::InitCollService).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::InitRankGraph, void(CommunicatorImpl::*)(const std::string &))
+        .stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&CommunicatorImpl::InitRankGraph, void(CommunicatorImpl::*)(const string &rankTablePath)).
+        stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&CcuComponent::Init).stubs().will(ignoreReturnValue());
+    MOCKER_CPP(&CcuResBatchAllocator::Init).stubs().will(ignoreReturnValue());
+    MOCKER_CPP(&CtxMgrImp::Init).stubs().will(ignoreReturnValue());
+    impl.Init(commParams, "ranktable.json", config);
+
+    RmaConnManager rmaConnManager(impl);
+
+    Socket *socket
+        = new Socket(hccpSocketHandle, GetAnIpAddress(), 0, GetAnIpAddress(), "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
+    std::string  socketTag = impl.GetEstablishLinkSocketTag();
+    SocketConfig socketConfig(remoteRank, *linkData, socketTag);
+    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_shared<Socket>(hccpSocketHandle, GetAnIpAddress(),
+                                                                                        0, GetAnIpAddress(), "stub",
+                                                                                        SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
+
+    MOCKER_CPP(&Socket::GetStatus)
+        .stubs()
+        .will(returnValue((SocketStatus)SocketStatus::INIT))
+        .then(returnValue((SocketStatus)SocketStatus::CONNECTING))
+        .then(returnValue((SocketStatus)SocketStatus::OK))
+        .then(returnValue((SocketStatus)SocketStatus::TIMEOUT));
+
+    auto p2pConn1 = rmaConnManager.Create(commParams.commId, *linkData);
+    EXPECT_NE(nullptr, p2pConn1);
+    auto p2pConn2 = rmaConnManager.Create(commParams.commId, *linkData);
+    EXPECT_NE(nullptr, p2pConn2);
+    auto p2pConn3 = rmaConnManager.Create(commParams.commId, *linkData);
+    EXPECT_NE(nullptr, p2pConn3);
+
+    linkData->type = PortDeploymentType::DEV_NET;
+    linkData->linkProtocol_ = LinkProtocol::UB_CTP;
+    auto ubConn = rmaConnManager.Create(commParams.commId, *linkData);
+    EXPECT_NE(nullptr, ubConn);
+
+    ReqHandleResult result = ReqHandleResult::COMPLETED;
+    MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
+    BatchDeleteJettys();
+    DelRankTableFile();
+    delete linkData;
+    delete devPtr;
+    delete socket;
+}
+
+int ra_ctx_qp_destroy_batch_async_no_delete(void *ctx_handle, void*qp_handle[], unsigned int *num, void **req_handle) {
+    *num = 0;
+    return 0;
+}
+
+TEST_F(RmaConnManagerTest, should_delelte_part_when_calling_batchdeletejettys_with_valid_param)
+{
+    BasePortType     basePortType(PortDeploymentType::P2P, ConnectProtoType::UB);
+    LinkData *linkData = new LinkData(basePortType, 0, 1, 0, 1);
+
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+
+    u32 localRank  = 0;
+    u32 remoteRank = 1;
+
+    CommunicatorImpl impl;
+    CommParams commParams;
+    commParams.commId   = "commId";
+    commParams.myRank   = localRank;
+    commParams.rankSize = 8;
+    HcclCommConfig    config;
+    commParams.devType  = DevType::DEV_TYPE_910A;
+    GenRankTableFile1Ser8Dev();
+
+    CollOpParams collOpParams;
+    collOpParams.opType = OpType::SEND;
+    collOpParams.dataType = DataType::INT8;  // sizeof(int8) = 1
+    collOpParams.reduceOp = ReduceOp::SUM;
+    collOpParams.dstRank = remoteRank;
+    u32 buffer = 10;
+    collOpParams.sendBuf = static_cast<void *>(&buffer);
+    collOpParams.recvBuf = static_cast<void *>(&buffer);
+    collOpParams.count = 10;
+    collOpParams.root = 0;
+    collOpParams.staticAddr = true;
+    collOpParams.staticShape = true;
+
+    void *devPtr = nullptr;
+    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue(commParams.devType));
+    MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
+    MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
+    impl.rankGraph = make_unique<RankGraph>(0);
+    impl.rankGraph->peers_[0] = make_shared<NetInstance::Peer>(0, 0, 0, 0);
+    MOCKER_CPP(&CommunicatorImpl::InitCollService).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::InitRankGraph, void(CommunicatorImpl::*)(const std::string &))
+        .stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&CommunicatorImpl::InitRankGraph, void(CommunicatorImpl::*)(const string &rankTablePath)).
+        stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&CcuComponent::Init).stubs().will(ignoreReturnValue());
+    MOCKER_CPP(&CcuResBatchAllocator::Init).stubs().will(ignoreReturnValue());
+    MOCKER_CPP(&CtxMgrImp::Init).stubs().will(ignoreReturnValue());
+    impl.Init(commParams, "ranktable.json", config);
+
+    RmaConnManager rmaConnManager(impl);
+
+    Socket *socket
+        = new Socket(hccpSocketHandle, GetAnIpAddress(), 0, GetAnIpAddress(), "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
+    std::string  socketTag = impl.GetEstablishLinkSocketTag();
+    SocketConfig socketConfig(remoteRank, *linkData, socketTag);
+    impl.GetSocketManager().connectedSocketMap[socketConfig] = std::make_shared<Socket>(hccpSocketHandle, GetAnIpAddress(),
+                                                                                        0, GetAnIpAddress(), "stub",
+                                                                                        SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
+
+    MOCKER_CPP(&Socket::GetStatus)
+        .stubs()
+        .will(returnValue((SocketStatus)SocketStatus::INIT))
+        .then(returnValue((SocketStatus)SocketStatus::CONNECTING))
+        .then(returnValue((SocketStatus)SocketStatus::OK))
+        .then(returnValue((SocketStatus)SocketStatus::TIMEOUT));
+
+    auto p2pConn1 = rmaConnManager.Create(commParams.commId, *linkData);
+    EXPECT_NE(nullptr, p2pConn1);
+    auto p2pConn2 = rmaConnManager.Create(commParams.commId, *linkData);
+    EXPECT_NE(nullptr, p2pConn2);
+    auto p2pConn3 = rmaConnManager.Create(commParams.commId, *linkData);
+    EXPECT_NE(nullptr, p2pConn3);
+
+    linkData->type = PortDeploymentType::DEV_NET;
+    linkData->linkProtocol_ = LinkProtocol::UB_CTP;
+    auto ubConn = rmaConnManager.Create(commParams.commId, *linkData);
+    EXPECT_NE(nullptr, ubConn);
+
+    ReqHandleResult result = ReqHandleResult::COMPLETED;
+    MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
+    MOCKER(&ra_ctx_qp_destroy_batch_async).stubs().will(invoke(ra_ctx_qp_destroy_batch_async_no_delete));
+    BatchDeleteJettys();
+
+
+    DelRankTableFile();
+    delete linkData;
+    delete devPtr;
+    delete socket;
+}
