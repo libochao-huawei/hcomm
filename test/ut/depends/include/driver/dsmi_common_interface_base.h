@@ -84,7 +84,6 @@ struct dsmi_reboot_reason {
  * @param [in] gpio_num gpio_num
  * @param [out] status return the value of gpio value
  * @return  0 for success, others for fail
- * @note Support:Ascend610,bs9sx1a,as31xm1,Ascend610Lite
  */
 DLLEXPORT int dsmi_get_gpio_status(int device_id, unsigned int gpio_num, unsigned int *status);
 
@@ -94,7 +93,6 @@ DLLEXPORT int dsmi_get_gpio_status(int device_id, unsigned int gpio_num, unsigne
  * @param [in] device_id device id
  * @param [out] emu_subsys_state_data dsmi emu subsys status information.
  * @return  0 for success, others for fail
- * @note Support:Ascend610,bs9sx1a
  */
 DLLEXPORT int dsmi_get_sochwfault(int device_id, struct dsmi_emu_subsys_state_stru *emu_subsys_state_data);
 
@@ -104,7 +102,6 @@ DLLEXPORT int dsmi_get_sochwfault(int device_id, struct dsmi_emu_subsys_state_st
  * @param [in] device_id device id
  * @param [out] safetyisland_status_data dsmi safetyisland status information.
  * @return  0 for success, others for fail
- * @note Support:Ascend610,bs9sx1a,Ascend610Lite
  */
 DLLEXPORT int dsmi_get_safetyisland_status(int device_id,
     struct dsmi_safetyisland_status_stru *safetyisland_status_data);
@@ -119,7 +116,6 @@ DLLEXPORT int dsmi_get_safetyisland_status(int device_id,
  * @param [in] buf input buffer
  * @param [in] buf_size buffer size
  * @return  0 for success, others for fail
- * @note Support:Ascend610Lite
  */
 DLLEXPORT int dsmi_set_detect_info(unsigned int device_id, DSMI_DETECT_MAIN_CMD main_cmd,
     unsigned int sub_cmd, const void *buf, unsigned int buf_size);
@@ -134,7 +130,6 @@ DLLEXPORT int dsmi_set_detect_info(unsigned int device_id, DSMI_DETECT_MAIN_CMD 
  * @param [in out] buf input and output buffer
  * @param [in out] buf_size input buffer size and output data size
  * @return  0 for success, others for fail
- * @note Support:Ascend610Lite
  */
 DLLEXPORT int dsmi_get_detect_info(unsigned int device_id, DSMI_DETECT_MAIN_CMD main_cmd,
     unsigned int sub_cmd, void *buf, unsigned int *buf_size);
@@ -145,7 +140,6 @@ DLLEXPORT int dsmi_get_detect_info(unsigned int device_id, DSMI_DETECT_MAIN_CMD 
 * @attention call dsmi_get_fault_inject_info() to get fault inject info that supported by dsmi_fault_inject();
 * @param [in] fault_inject_info a fault that the customer want to inject;
 * @return 0 for success, others for fail
-* @note Support:as31xm1,BS9SX1A,Ascend610Lite
 */
 DLLEXPORT int dsmi_fault_inject(DSMI_FAULT_INJECT_INFO fault_inject_info);
 
@@ -158,7 +152,6 @@ DLLEXPORT int dsmi_fault_inject(DSMI_FAULT_INJECT_INFO fault_inject_info);
 * @param [out] info_buf  the memory malloced by users to store DSMI_FAULT_INJECT_INFO structs;
 * @param [out] real_info_cnt DSMI_FAULT_INJECT_INFO supported by device;
 * @return 0 for success, others for fail
-* @note Support:as31xm1, BS9SX1A, Ascend610,Ascend610Lite
 */
 DLLEXPORT int dsmi_get_fault_inject_info(unsigned int device_id, unsigned int max_info_cnt,
     DSMI_FAULT_INJECT_INFO *info_buf, unsigned int *real_info_cnt);
@@ -168,7 +161,6 @@ DLLEXPORT int dsmi_get_fault_inject_info(unsigned int device_id, unsigned int ma
  * @brief verify if current partitions is same as configuration file
  * @param [in] config_xml_path    full path of configuration file
  * @return  0 for success, others for fail
- * @note Support:Ascend610,as31xm1,bs9sx1a,Ascend610Lite
  */
 DLLEXPORT int dsmi_check_partitions(const char *config_xml_path);
 
@@ -179,7 +171,6 @@ DLLEXPORT int dsmi_check_partitions(const char *config_xml_path);
 * @param [in] device_id  The device id
 * @param [out] reboot_reason  Indicates the reset reason of the AI processor.
 * @return  0 for success, others for fail
-* @note Support:Ascend610,BS9SX1A,as31xm1,Ascend610Lite
 */
 DLLEXPORT int dsmi_get_reboot_reason(int device_id, struct dsmi_reboot_reason *reboot_reason);
 
@@ -191,7 +182,6 @@ DLLEXPORT int dsmi_get_reboot_reason(int device_id, struct dsmi_reboot_reason *r
 * @param [in] boot_type: the stage boot_type. 0 for Secure Boot, 1 for rootfs cms
 * @param [out] state: the boot state. 0 for normal, others for abnormal
 * @return  0 for success, others for fail
-* @note Support:Ascend610,BS9SX1A,Ascend610Lite
 */
 DLLEXPORT int dsmi_get_last_bootstate(int device_id, BOOT_TYPE boot_type, unsigned int *state);
 
@@ -203,7 +193,6 @@ DLLEXPORT int dsmi_get_last_bootstate(int device_id, BOOT_TYPE boot_type, unsign
 * @param [in] index: which index you want to get(0-1023)
 * @param [out] value: the valve you want to get
 * @return  0 for success, others for fail
-* @note Support:Ascend610,BS9SX1A,as31xm1,Ascend610Lite
 */
 DLLEXPORT int dsmi_get_centre_notify_info(int device_id, int index, int *value);
 
@@ -215,7 +204,6 @@ DLLEXPORT int dsmi_get_centre_notify_info(int device_id, int index, int *value);
 * @param [in] index: which index you want to set(0-1022)
 * @param [in] value: the valve you want to set
 * @return  0 for success, others for fail
-* @note Support:Ascend610,BS9SX1A,as31xm1,Ascend610Lite
 */
 DLLEXPORT int dsmi_set_centre_notify_info(int device_id, int index, int value);
 
