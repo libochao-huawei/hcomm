@@ -41,17 +41,21 @@ target_compile_definitions(open_hccl_test PRIVATE
 
 target_compile_options(open_hccl_test PRIVATE
     -U_FORTIFY_SOURCE
+    -Os
+    -O0 -g
+    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
 add_dependencies(open_hccl_test hccl_alg_analyzer hccl_alg_adaption hccl_alg_test)
 
 target_link_libraries(open_hccl_test PRIVATE
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     hccl_alg_analyzer
     hccl_alg_adaption
     hccl_alg_test
+    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
+    -lpthread
     protobuf
-    -pthread
     -lrt
     -ldl
 )
