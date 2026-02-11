@@ -58,6 +58,7 @@ DevType HrtGetDeviceType()
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), targetChipVerStr.c_str(), iter->second);
         MACRO_THROW(RuntimeApiException, msg);
     }
+    
     return iter->second;
 }
 
