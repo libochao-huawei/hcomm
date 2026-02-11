@@ -655,7 +655,7 @@ void TaskExceptionHandler::PrintOpDataErrorMessage(u32 deviceId, ErrorMessageRep
     return;
 }
 
-void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankContent)
+void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankContent, const ErrorMessageReport &errorMessage, const rtExceptionInfo_t *exceptionInfo)
 {
     HCCL_INFO("[ReportErrorMsg] start");
     if (exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
@@ -675,10 +675,9 @@ void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankCo
         HCCL_ERROR("[ReportErrorMsg] EI0018");
         RPT_INPUT_ERR(true,
             "EI0018",
-            std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
+            std::vector<std::string>({"localServerId", "localDeviceId", "localDeviceIp", "remoteServerId", "remoteDeviceId", "remoteDeviceIp"}),
             std::vector<std::string>({
-                std::to_string(exceptionTaskInfo.remoteRank_), exceptionTaskInfo.GetBaseInfo().c_str(),
-                (exceptionTaskInfo.GetParaInfo()).c_str(), groupRankContent.c_str()})
+                "", std::to_string(exceptionInfo->deviceid), errorMessage.locEid.Describe().c_str(), "", "", errorMessage.rmtEid.Describe().c_str()})
             );
     }
 }
@@ -727,7 +726,7 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
                 PrintUbRegisters(static_cast<s32>(exceptionInfo->deviceid), rdmaHandle);
             }
 
-            ReportErrorMsg(exceptionTaskInfo, groupRankContent);
+            ReportErrorMsg(exceptionTaskInfo, groupRankContent, errorMessage, exceptionInfo);
 
             lock.lock();
             Hccl::g_commHadCallbackArrayV2[exceptionInfo->deviceid] = true;

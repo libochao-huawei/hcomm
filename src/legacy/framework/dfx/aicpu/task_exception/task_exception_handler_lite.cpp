@@ -122,8 +122,7 @@ uint16_t SwitchUBCqeErrCodeToTsErrCode(u32 cqeErrCode){
 HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, const u32 tsId,
     const s32 userStreamId, const rtLogicCqReport_t* exceptionInfo)
 {
-    CHK_PRT_RET((halEschedSubmitEvent == nullptr), HCCL_ERROR("halEschedSubmitEvent is nullptr, "
-        "Does not support this interface."), HCCL_E_DRV);
+    HCCL_INFO("[SendTaskExceptionByMBox] SendTaskExceptionByMBox start.");
     ts_aicpu_msg_info_t aicpuSqe = {};
     u32 hostpid = 0;
     u32 vf_id = 0;
