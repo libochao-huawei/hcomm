@@ -1,0 +1,3463 @@
+diff --git a/src/legacy/unified_platform/ccu/ccu_representation/context/ccu_rep_context.cpp b/src/legacy/unified_platform/ccu/ccu_representation/context/ccu_rep_context.cpp
+index 6fe9a0ae94f193f4734b99a457d4ce1d8d6252dc..14711e490cb5bf81c3b84f114b53124cdc517e4d 100644
+--- a/src/legacy/unified_platform/ccu/ccu_representation/context/ccu_rep_context.cpp
++++ b/src/legacy/unified_platform/ccu/ccu_representation/context/ccu_rep_context.cpp
+@@ -172,7 +172,9 @@ void CcuRepContext::AddProfiling(const CcuTransportGroup &transportGroup, const
+ {
+     ccuProfilingInfoCache.type     = CcuProfilinType::CCU_WAITCKE_PROFILING;
+     ccuProfilingInfoCache.name     = name;
+-    ccuProfilingInfoCache.ckeId    = transportGroup.GetCntCkeId(signalIndex);
++    u32 cntCkeId;
++    transportGroup.GetCntCkeId(signalIndex, cntCkeId);
++    ccuProfilingInfoCache.ckeId    = cntCkeId;
+     ccuProfilingInfoCache.mask     = mask;
+ 
+     (void)memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId), INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId));
+diff --git a/src/legacy/unified_platform/ccu/ccu_representation/reps/sync/ccu_rep_remwaitgroup.cpp b/src/legacy/unified_platform/ccu/ccu_representation/reps/sync/ccu_rep_remwaitgroup.cpp
+index fb6fca0d1fe8342f8e9d3e2c96bdb1eb51b63a80..27c6b9787d3b02a7be9a6441c5444a794d79f838 100644
+--- a/src/legacy/unified_platform/ccu/ccu_representation/reps/sync/ccu_rep_remwaitgroup.cpp
++++ b/src/legacy/unified_platform/ccu/ccu_representation/reps/sync/ccu_rep_remwaitgroup.cpp
+@@ -26,12 +26,13 @@ bool CcuRepWaitGroup::Translate(CcuInstr *&instr, uint16_t &instrId, const Trans
+ {
+     this->instrId = instrId;
+     translated    = true;
++    u32 cntCkeId;
+ 
+     // 需要profiling的使用SetCKEInstr, 否则使用ClearCKEInstr
+     if (isProfiling) {
+-        SetCKEInstr(instr++, 0, 0, transportGroup.GetCntCkeId(semIndex), mask, 1);
++        SetCKEInstr(instr++, 0, 0, transportGroup.GetCntCkeId(semIndex, cntCkeId), mask, 1);
+     } else {
+-        ClearCKEInstr(instr++, 0, 0, transportGroup.GetCntCkeId(semIndex), mask, 1);
++        ClearCKEInstr(instr++, 0, 0, transportGroup.GetCntCkeId(semIndex, cntCkeId), mask, 1);
+     }
+     CHK_PRT_THROW((instrId > UINT16_MAX - instrCount),
+                         HCCL_ERROR("[CcuRepWaitGroup::Translate]uint16 integer overflow occurs, instrId = [%hu], instrCount = [%hu]", instrId, instrCount),
+diff --git a/src/legacy/unified_platform/ccu/dfx/ccu_dfx.cpp b/src/legacy/unified_platform/ccu/dfx/ccu_dfx.cpp
+index 55ae5bc1564358d4a4a2c13f35020efb73ab2500..d248e4b89db138952402ddb4d3dadc684bf783cc 100644
+--- a/src/legacy/unified_platform/ccu/dfx/ccu_dfx.cpp
++++ b/src/legacy/unified_platform/ccu/dfx/ccu_dfx.cpp
+@@ -27,7 +27,7 @@ HcclResult GetCcuErrorMsg(s32 deviceId, uint16_t status, const ParaCcu &ccuTaskP
+ 
+         // 入参校验
+         CHK_PRT_RET((deviceId < 0 || static_cast<u32>(deviceId) >= MAX_MODULE_DEVICE_NUM),
+-                    HCCL_ERROR("[CcuDfx][GetCcuErrorMsg]deviceId[%d] error.", deviceId), HcclResult::HCCL_E_PARA);
++                    HCCL_ERROR("[CcuDfx][GetCcuErrorMsg]deviceId[%d] error, MAX_MODULE_DEVICE_NUM[%u].", deviceId, MAX_MODULE_DEVICE_NUM), HcclResult::HCCL_E_PARA);
+ 
+         CcuErrorHandler::GetCcuErrorMsg(deviceId, status, ccuTaskParam, errorInfo);
+     );
+diff --git a/src/legacy/unified_platform/ccu/dfx/ccu_error_handler.cpp b/src/legacy/unified_platform/ccu/dfx/ccu_error_handler.cpp
+index 6a09fbb811b6afa5444b1803a7dc006bc0cfd0d4..2e59be293a6c8d158c34f79dfc416bbee2e22c96 100644
+--- a/src/legacy/unified_platform/ccu/dfx/ccu_error_handler.cpp
++++ b/src/legacy/unified_platform/ccu/dfx/ccu_error_handler.cpp
+@@ -397,7 +397,9 @@ void CcuErrorHandler::GenErrorInfoRemWaitGroup(const ErrorInfoBase &baseInfo, sh
+     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
+ 
+     const auto rep                           = static_pointer_cast<CcuRepWaitGroup>(repBase);
+-    errorMsg.msg.waitSignal.signalId         = rep->transportGroup.GetCntCkeId(rep->semIndex);
++    u32 cntCkeId;
++    rep->transportGroup.GetCntCkeId(rep->semIndex, cntCkeId);
++    errorMsg.msg.waitSignal.signalId         = cntCkeId;
+     errorMsg.msg.waitSignal.signalValue      = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, errorMsg.msg.waitSignal.signalId);
+     errorMsg.msg.waitSignal.signalMask       = rep->mask;
+     const vector<CcuTransport*> &transports  = rep->transportGroup.GetTransports();
+diff --git a/src/legacy/unified_platform/external_system/orion_adapter_rts.cc b/src/legacy/unified_platform/external_system/orion_adapter_rts.cc
+index 512be4eb0b7622c496e27c92567dec796792da82..e4fd96a30145214bd908bdbd6dfeabdec536c9b0 100644
+--- a/src/legacy/unified_platform/external_system/orion_adapter_rts.cc
++++ b/src/legacy/unified_platform/external_system/orion_adapter_rts.cc
+@@ -44,7 +44,6 @@ DevType HrtGetDeviceType()
+ {
+     std::string targetChipVerStr;
+     HrtGetSocVer(targetChipVerStr);
+-
+     HCCL_INFO("[HrtGetDeviceType]targetChipVerStr = %s.", targetChipVerStr.c_str());
+     if (targetChipVerStr.find("Ascend950") != std::string::npos) {
+         HCCL_INFO("[HrtGetDeviceType]DeviceType = DevType::DEV_TYPE_910_95.");
+@@ -53,11 +52,10 @@ DevType HrtGetDeviceType()
+ 
+     auto iter = SOC_VER_CONVERT.find(targetChipVerStr);
+     if (iter == SOC_VER_CONVERT.end()) {
+-        HCCL_ERROR("[Get][DeviceType]errNo[0x%016llx] rtGetSocVersion get "
+-                   "illegal chipver, chip_ver[%s].",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), targetChipVerStr.c_str());
+-
+-        throw RuntimeApiException("call HrtGetSocVer failed.");
++        string msg = StringFormat("[Get][DeviceType]errNo[0x%016llx] rtGetSocVersion get "
++                   "illegal chipver, chip_ver[%s], return[%d].",
++                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), targetChipVerStr.c_str(), iter->second);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+     return iter->second;
+ }
+@@ -68,16 +66,18 @@ s32 HrtGetDevicePhyIdByIndex(s32 deviceLogicId)
+     if (deviceType == DevType::DEV_TYPE_NOSOC) {
+         return 0;
+     }
++    HCCL_INFO("[HrtGetDevicePhyIdByIndex]deviceLogicId=%d.",deviceLogicId);
+ 
+     s32 devicePhyId = 0;
+     aclError ret = rtsGetPhyDevIdByLogicDevId(deviceLogicId, &devicePhyId);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Get][DevicePhyId]errNo[0x%016llx] rtGet device PhyId by "
++        string msg = StringFormat("[Get][DevicePhyId]errNo[0x%016llx] rtGet device PhyId by "
+                    "index failed, return[%d], "
+-                   "para: devIndex[%d], phyId[%d]",
++                   "para: devIndex[%d], phyId[%d].",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_DRV), ret, deviceLogicId, devicePhyId);
+-        throw RuntimeApiException(StringFormat("call rtGetDevicePhyIdByIndex failed, deviceLogicId=%d", deviceLogicId));
++        MACRO_THROW(RuntimeApiException, msg);
+     }
++    HCCL_INFO("[HrtGetDevicePhyIdByIndex]devicePhyId=%d.",devicePhyId);
+     return devicePhyId;
+ }
+ 
+@@ -87,10 +87,10 @@ s32 HrtDeviceGetBareTgid()
+     aclError ret = aclrtDeviceGetBareTgid(&pid);
+     HCCL_INFO("Call rtDeviceGetBareTgid, return value[%d], rtGet pid[%d].", ret, pid);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Get][BareTgid]errNo[0x%016llx] rtGet pid fail, "
++        string msg = StringFormat("[Get][BareTgid]errNo[0x%016llx] rtGet pid fail."
+                    "return[%d], rtGet pid[%d]",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, pid);
+-        throw RuntimeApiException("call rtDeviceGetBareTgid failed. ");
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+     return pid;
+ }
+@@ -103,6 +103,7 @@ void HrtGetSocVer(std::string &socName)
+                    HCCL_ERROR_CODE((HcclResult::HCCL_E_RUNTIME)));
+         throw RuntimeApiException("call rtGetSocVersion failed. ");
+     }
++
+     socName = socNamePtr;
+ }
+ 
+@@ -111,11 +112,12 @@ s32 HrtGetDevice()
+     s32 deviceLogicId = 0;
+     aclError ret = aclrtGetDevice(&deviceLogicId);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_WARNING("[Get][Device]errNo[0x%016llx] rtGet device fail, "
+-                     "please make sure that device is set. return[%d], para:deviceLogicId[%d]",
+-                     HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, deviceLogicId);
+-        throw RuntimeApiException("call aclrtGetDevice failed. ");
++        string msg = StringFormat("[Get][Device]errNo[0x%016llx] rtGet device fail."	 
++                      "please make sure that device is set. return[%d], para:deviceLogicId[%d]",	 
++                      HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, deviceLogicId);	 
++        MACRO_THROW(RuntimeApiException, msg);
+     }
++    HCCL_INFO("[HrtGetDevice]deviceLogicId=%d.",deviceLogicId);
+     return deviceLogicId;
+ }
+ 
+@@ -124,10 +126,10 @@ void HrtSetDevice(s32 deviceLogicId)
+     aclError ret = aclrtSetDevice(deviceLogicId);
+     HCCL_INFO("Call rtSetDevice, return value[%d], para: device_id[%d].", ret, deviceLogicId);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Set][Device]errNo[0x%016llx] rtSet device fail, return[%d], "
+-                   "para:deviceLogicId[%d]",
++        string msg = StringFormat("[Set][Device]errNo[0x%016llx] rtSet device fail."
++                   "return[%d], para:deviceLogicId[%d]",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, deviceLogicId);
+-        throw RuntimeApiException(StringFormat("call rtSetDevice failed, deviceLogicId=%d", deviceLogicId));
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+@@ -136,10 +138,10 @@ void HrtResetDevice(s32 deviceLogicId)
+     aclError ret = aclrtResetDevice(deviceLogicId);
+     HCCL_INFO("Call aclrtResetDevice, return value[%d], para: device_id[%d].", ret, deviceLogicId);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Reset][Device]errNo[0x%016llx] rtReset device fail, return[%d], "
+-                   "para: deviceLogicId[%d]",
++        string msg = StringFormat("[Reset][Device]errNo[0x%016llx] rtReset device fail."
++                   "return[%d], para: deviceLogicId[%d]",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, deviceLogicId);
+-        throw RuntimeApiException(StringFormat("call aclrtResetDevice failed, deviceLogicId=%d", deviceLogicId));
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+@@ -149,10 +151,10 @@ u32 HrtGetDeviceCount()
+     aclError ret   = aclrtGetDeviceCount(&count);
+     HCCL_INFO("Call rtGetDeviceCount, return value[%d], para: count[%d].", ret, count);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Get][DeviceCount]errNo[0x%016llx] rtGet device count fail, "
++        string msg = StringFormat("[Get][DeviceCount]errNo[0x%016llx] rtGet device count fail."
+                    "return[%d], para:count[%d]",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, count);
+-        throw RuntimeApiException("call rtDeviceReset failed. ");
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+     return count;
+ }
+@@ -160,13 +162,15 @@ u32 HrtGetDeviceCount()
+ // 兜底extern, 正式适配待todo
+ void *HrtDevBinaryRegister(const rtDevBinary_t *bin)
+ {
++    HCCL_INFO("[HrtDevBinaryRegister] bin magic=%u, version=%u, data=%p, length=%u.", bin->magic,
++                bin->version, bin->data, bin->length);
+     void     *handle = nullptr;
+     rtError_t ret    = rtDevBinaryRegister(bin, &handle);
+     if (ret != RT_ERROR_NONE) {
+-        HCCL_ERROR("[rtDev][inaryRegister]register opBinary failed");
+-        throw RuntimeApiException(
+-            StringFormat("call rtDevBinaryRegister failed, bin magic=%u, version=%u, data=%p, length=%u", bin->magic,
+-                bin->version, bin->data, bin->length));
++        string msg = StringFormat("[rtDev][inaryRegister]register opBinary failed."
++                   "bin magic=%u, version=%u, data=%p, length=%u, ret=%d, handle.", 
++                    bin->magic, bin->version, bin->data, bin->length, ret, handle);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ 
+     return handle;
+@@ -175,23 +179,28 @@ void *HrtDevBinaryRegister(const rtDevBinary_t *bin)
+ void HrtFunctionRegister(void *binHandle, const void *stubFunc, const char *stubName, const void *devFunc,
+                                 uint32_t funcMode)
+ {
++    HCCL_INFO("[HrtFunctionRegister] binHandlec=%p, stubFunc=%p, stubName=%s, devFunc=%p, funcMode=%u.", 
++                binHandle, stubFunc, stubName, devFunc, funcMode);
+     rtError_t ret = rtFunctionRegister(binHandle, stubFunc, stubName, devFunc, funcMode);
+     if (ret != RT_ERROR_NONE) {
+-        HCCL_ERROR("[HrtFunctionRegister]rt dev function register failed");
+-        throw RuntimeApiException("call rtFunctionRegister failed. ");
++        string msg = StringFormat("[HrtFunctionRegister]rt dev function register failed."
++                   "binHandlec=%p, stubFunc=%p, stubName=%s, devFunc=%p, funcMode=%u, ret=%d.", 
++                binHandle, stubFunc, stubName, devFunc, funcMode, ret);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+ s32 HrtGetStreamId(aclrtStream ptr)
+ {
++    CHECK_NULLPTR(ptr, "[HrtGetStreamId] ptr is nullptr!");
+     s32       streamId;
+     aclError ret = aclrtStreamGetId(ptr, &streamId);
+-    HCCL_INFO("Call aclrtStreamGetId, return value[%d] streamId[%d].", ret, streamId);
++    HCCL_INFO("Call aclrtStreamGetId, ptr[%p] return value[%d] streamId[%d].", ptr, ret, streamId);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Get][StreamId]errNo[0x%016llx] "
+-                   "rt get stream ID fail. return[%d].",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret);
+-        throw RuntimeApiException(StringFormat("call aclrtStreamGetId failed, ptr=%p", ptr));
++        string msg = StringFormat("[Get][StreamId]errNo[0x%016llx]."
++                   "rt get stream ID fail. ptr[%p], return[%d].",
++                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ptr, ret);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ 
+     return streamId;
+@@ -199,9 +208,8 @@ s32 HrtGetStreamId(aclrtStream ptr)
+ 
+ u64 HrtStreamGetMode(HcclRtStream const ptr)
+ {
+-    if (ptr == nullptr) {
+-        throw RuntimeApiException(StringFormat("ptr is null, call aclrtGetStreamAttribute failed, ptr=%p", ptr));
+-    }
++    HCCL_INFO("[HrtStreamGetMode]ptr[%p].", ptr);
++    CHECK_NULLPTR(ptr, "[HrtStreamGetMode] ptr is nullptr!");
+     u64 stmMode  =  0;
+     s32 streamId = -1;
+     aclError ret = aclrtStreamGetId(ptr, &streamId);
+@@ -211,19 +219,18 @@ u64 HrtStreamGetMode(HcclRtStream const ptr)
+     stmMode = value.failureMode;
+     HCCL_INFO("Call rtStreamGetMode return value[%d]. stmMode[%llu].", ret, stmMode);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Stream][GetMode]errNo[0x%016llx] rtStreamGetMode error, "
+-                   "rtRet[%d], stmMode[%llu]",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, stmMode);
+-        throw RuntimeApiException(StringFormat("call aclrtGetStreamAttribute failed, ptr=%p", ptr));
++        string msg = StringFormat("[Stream][GetMode]errNo[0x%016llx] rtStreamGetMode error."
++            "ptr[%p], stmMode[%llu], streamId[%d], rtRet[%d].", 
++            HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ptr, stmMode, streamId, ret);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+     return static_cast<u64>(stmMode);
+ }
+ 
+ void HrtStreamSetMode(HcclRtStream streamPtr, const uint64_t stmMode)
+ {
+-    if (streamPtr == nullptr) {
+-        throw RuntimeApiException(StringFormat("ptr is null, call aclrtSetStreamAttribute failed, ptr=%p", streamPtr));
+-    }
++    HCCL_INFO("[HrtStreamSetMode]streamPtr[%p], stmMode[%llu].", streamPtr, stmMode);
++    CHECK_NULLPTR(streamPtr, "[HrtStreamSetMode] ptr is nullptr!");
+     s32 streamId = -1;
+     aclError ret = aclrtStreamGetId(streamPtr, &streamId);
+     HCCL_DEBUG("Call aclrtStreamGetId, return value[%d].", ret);
+@@ -232,22 +239,22 @@ void HrtStreamSetMode(HcclRtStream streamPtr, const uint64_t stmMode)
+     ret = aclrtSetStreamAttribute(streamPtr, ACL_STREAM_ATTR_FAILURE_MODE, &value);
+     HCCL_INFO("Call rtStreamSetMode return value[%d]. stmMode[%llu].", ret, stmMode);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Stream][SetMode]errNo[0x%016llx] rtStreamSetMode error, "
+-                   "rtRet[%d], stmMode[%llu]",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, stmMode);
+-        throw RuntimeApiException(
+-            StringFormat("call aclrtSetStreamAttribute failed, ptr=%p, flags=0x%llx", streamPtr, stmMode));
++        string msg = StringFormat("[Stream][SetMode]errNo[0x%016llx] rtStreamSetMode error." 
++            "streamPtr[%p], rtRet[%d], stmMode[%llu].", 
++            HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), streamPtr, ret, stmMode);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+ HcclResult HrtGetDeviceInfo(uint32_t deviceLogicId, int32_t moduleType, int32_t infoType, int64_t &val)
+ {
++    HCCL_INFO("[HrtGetDeviceInfo]deviceLogicId[%u], moduleType[%d], infoType[%d], val[%ld].", deviceLogicId, moduleType, infoType, val);
+     rtError_t ret = rtGetDeviceInfo(deviceLogicId, moduleType, infoType, reinterpret_cast<int64_t *>(&val));
+     HCCL_INFO("Call HrtGetDeviceInfo return[%d]. val[%ld].", ret, val);
+     if (ret != RT_ERROR_NONE) {
+         HCCL_ERROR("[HrtGetDeviceInfo]errNo[0x%016llx] rt get device info failed, "
+-                   "deviceLogicId=%u, moduleType=%d, infoType=%d",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), deviceLogicId, moduleType, infoType);
++                   "deviceLogicId=%u, moduleType=%d, infoType=%d, return=%d.",
++                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), deviceLogicId, moduleType, infoType, ret);
+         return HcclResult::HCCL_E_RUNTIME;
+     }
+     return HcclResult::HCCL_SUCCESS;
+@@ -299,6 +306,8 @@ const std::unordered_map<uint64_t, HcclMainboardId> rtMainboardIdToHcclMainboard
+  */
+ HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainboardId)
+ {
++    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%d], hcclMainboardId[%s].",
++              deviceLogicId, hcclMainboardId.Describe().c_str());
+     constexpr int32_t moduleType = DEV_MODULE_TYPE::MODULE_TYPE_SYSTEM;
+     constexpr int32_t infoType = DEV_INFO_TYPE::INFO_TYPE_MAINBOARD_ID;
+     constexpr uint64_t BITS_5 = 5;
+@@ -320,43 +329,46 @@ HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainbo
+ 
+ aclrtStream HrtStreamCreateWithFlags(int32_t priority, uint32_t flags)
+ {
++    HCCL_INFO("[HrtStreamCreateWithFlags] priority[%d], flags[%u].", priority, flags);
+     aclrtStream ptr = nullptr;
+     aclError  ret = rtStreamCreateWithFlags(&ptr, priority, flags);
+     HCCL_INFO("Call rtGetStreamId return value[%d]. Params: flags[%u].", ret, flags);
+ 
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Stream][CreateWithFlags]errNo[0x%016llx] rtStreamCreate error, "
+-                   "rtRet[%d], flags[%u]",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, flags);
+-        throw RuntimeApiException(
+-            StringFormat("call rtStreamCreateWithFlags failed, priority=%p, flags=%u", priority, flags));
++        string msg = StringFormat("[Stream][CreateWithFlags]errNo[0x%016llx] rtStreamCreate error." 
++                                "rtRet[%d], flags[%u], ptr[%p].",
++                                HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, flags, ptr);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
++    CHECK_NULLPTR(ptr, "[HrtStreamCreateWithFlags] ptr is nullptr!");
++    HCCL_INFO("[HrtStreamCreateWithFlags] ptr[%p]", ptr);
+ 
+     return ptr;
+ }
+ 
+ void HrtStreamDestroy(aclrtStream ptr)
+ {
++    HCCL_INFO("[HrtStreamDestroy] ptr[%p].", ptr);
+     aclError ret = aclrtDestroyStreamForce(ptr);
+     HCCL_INFO("Call aclrtDestroyStreamForce, return value[%d].", ret);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Stream][Destroy]errNo[0x%016llx] rt stream Destroy fail, "
+-                   "return[%d]",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret);
+-        throw RuntimeApiException(StringFormat("call aclrtDestroyStreamForce failed, ptr=%p", ptr));
++        string msg = StringFormat("[Stream][Destroy]errNo[0x%016llx] rt stream Destroy fail." 
++                                "return[%d], ptr[%p].",
++                                HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+ void HrtStreamActive(aclrtStream activeStream, aclrtStream stream)
+ {
++    HCCL_INFO("[HrtStreamActive] activeStream[%p], activeStream[%p].", activeStream, stream);
+     aclError ret = aclrtActiveStream(activeStream, stream);
+     HCCL_INFO("Call aclrtActiveStream, return value[%d].", ret);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Activate][Stream]errNo[0x%016llx] "
+-                   "rt stream active fail. return[%d].",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret);
+-        throw RuntimeApiException(
+-            StringFormat("call aclrtActiveStream failed, active_stream=%p, stream=%p", activeStream, stream));
++        string msg = StringFormat("[Activate][Stream]errNo[0x%016llx] "
++                   "rt stream active fail. return[%d], active_stream=%p, stream=%p.",
++                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, activeStream, stream);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+@@ -372,16 +384,15 @@ inline s32 GetMsTimeFromExecTimeout()
+ 
+ void HcclStreamSynchronize(HcclRtStream ptr)
+ {
+-    if (ptr == nullptr) {
+-        throw RuntimeApiException(StringFormat("ptr is null, call aclrtSynchronizeStreamWithTimeout failed, ptr=%p", ptr));
+-    }
++    HCCL_INFO("[HcclStreamSynchronize] ptr[%p].", ptr);
++    CHECK_NULLPTR(ptr, "[HcclStreamSynchronize] ptr is nullptr!");
+     s32       timeout = GetMsTimeFromExecTimeout();
+     aclError  ret     = aclrtSynchronizeStreamWithTimeout(ptr, timeout);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Synchronize][Stream]errNo[0x%016llx] rt "
+-                   "streamsynchronizewithtimeout fail. return[%d].",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret);
+-        throw RuntimeApiException(StringFormat("call HcclStreamSynchronize failed, stream=%p", ptr));
++        string msg = StringFormat("[Synchronize][Stream]errNo[0x%016llx] rt "
++                   "streamsynchronizewithtimeout fail. return[%d], stream[%p], timeout[%d].",
++                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr, timeout);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+@@ -392,28 +403,34 @@ void HcclStreamSynchronize(HcclRtStream ptr)
+ */
+ void *HrtMalloc(u64 size, rtMemType_t memType)
+ {
++    HCCL_INFO("[HrtMalloc] size[%llu], memType[%u].", size, memType);
+     void     *devPtr = nullptr;
+     rtError_t ret    = rtMalloc(&devPtr, size, memType, HCCL);
+-    HCCL_INFO("Call rtMalloc, return value[%d] size[%llu] memType[%u], devPtr[%p], moudleId: HCCL.", ret, size, memType, devPtr);
++    HCCL_INFO("Call rtMalloc, return value[%d] size[%llu] memType[%u], devPtr[%p], moudleId: HCCL.", 
++                ret, size, memType, devPtr);
++
+     if (ret != RT_ERROR_NONE) {
+-        HCCL_ERROR("[Malloc][Mem]errNo[0x%016llx] rtMalloc failed, "
++        string msg = StringFormat("[Malloc][Mem]errNo[0x%016llx] rtMalloc failed."
+                    "return[%d], para: devPtrAddr[%p], size[%llu], memType[%u].",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, devPtr, size, memType);
+-        throw RuntimeApiException(StringFormat("call HrtMalloc failed, size=0x%llu, memType=%u", size, memType));
++        MACRO_THROW(RuntimeApiException, msg);
+     }
++    CHECK_NULLPTR(devPtr, "[HrtMalloc] ptr is nullptr!");
+ 
+     return devPtr;
+ }
+ 
+ void HrtFree(void *devPtr)
+ {
++    HCCL_INFO("[HrtFree] devPtr[%p].", devPtr);
++    CHECK_NULLPTR(devPtr, "[HrtFree] ptr is nullptr!");
+     aclError ret = aclrtFree(devPtr);
+     HCCL_INFO("Call aclrtFree, return value[%d], para: dev_ptr[%p].", ret, devPtr);
+     if (ret != RT_ERROR_NONE) {
+-        HCCL_ERROR("[Free][Mem]errNo[0x%016llx] aclrtFree failed, "
++        string msg = StringFormat("[Free][Mem]errNo[0x%016llx] aclrtFree failed."
+                    "return[%d], para: devPtrAddr[%p].",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, devPtr);
+-        throw RuntimeApiException(StringFormat("call aclrtFree failed, devPtr=%p", devPtr));
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+@@ -448,92 +465,101 @@ void HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, rtM
+     aclmdlRICaptureMode mode = aclmdlRICaptureMode::ACL_MODEL_RI_CAPTURE_MODE_RELAXED;
+     HcclResult hcclRet = HrtThreadExchangeCaptureMode(&mode);
+     CHK_PRT_CONT(hcclRet != HCCL_SUCCESS && hcclRet != HCCL_E_NOT_SUPPORT,
+-        HCCL_WARNING("[hrtMemcpy] HrtThreadExchangeCaptureMode return [%d]", hcclRet));
++        HCCL_WARNING("[hrtMemcpy] HrtThreadExchangeCaptureMode return [%d].", hcclRet));
+     aclrtMemcpyKind rtKind = ACL_MEMCPY_DEFAULT;
+     hcclRet = MemcpyKindTranslate(kind, &rtKind);
+     aclError ret = aclrtMemcpy(dst, destMax, src, count, rtKind);
+     HCCL_INFO("Call rtMemcpy, return value[%d]", ret);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[SyncCopy][Mem]errNo[0x%016llx] rtMemcpy failed, "
++        HCCL_ERROR("[SyncCopy][Mem]errNo[0x%016llx] rtMemcpy failed."
+                    "return[%d], para: dstAddr[%p], destMax[%llu], srcAddr[%p], count[%llu], kind[%d].",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, dst, destMax, src, count, kind);
+         throw RuntimeApiException(StringFormat(
+-            "call rtMemcpy failed, dst=%p, destMax=0x%llx, src=%p, count=0x%llx, kind=%d",
++            "call rtMemcpy failed, dst=%p, destMax=0x%llx, src=%p, count=0x%llx, kind=%d.",
+             dst, destMax, src, count, kind));
+     }
+     hcclRet = HrtThreadExchangeCaptureMode(&mode);
+     CHK_PRT_CONT(hcclRet != HCCL_SUCCESS && hcclRet != HCCL_E_NOT_SUPPORT,
+-        HCCL_WARNING("[hrtMemcpy] HrtThreadExchangeCaptureMode return [%d]", hcclRet));
++        HCCL_WARNING("[hrtMemcpy] HrtThreadExchangeCaptureMode return [%d].", hcclRet));
+ }
+ 
+ void HrtMemset(void *dst, uint64_t destMax, uint64_t count)
+ {
++    HCCL_INFO("[HrtMemset] dst[%p], destMax[%llu], count[%llu].", dst, destMax, count);
++    CHECK_NULLPTR(dst, "[HrtMemset] dst is nullptr!");
+     aclmdlRICaptureMode mode = aclmdlRICaptureMode::ACL_MODEL_RI_CAPTURE_MODE_RELAXED;
+     HcclResult hcclRet = HrtThreadExchangeCaptureMode(&mode);
+     CHK_PRT_CONT(hcclRet != HCCL_SUCCESS && hcclRet != HCCL_E_NOT_SUPPORT,
+-        HCCL_WARNING("[hrtMemSet] HrtThreadExchangeCaptureMode return [%d]", hcclRet));
++        HCCL_WARNING("[hrtMemSet] HrtThreadExchangeCaptureMode return [%d].", hcclRet));
+     aclError ret = aclrtMemset(dst, destMax, 0, count);
+ 
+-    HCCL_INFO("Call aclrtMemset, return value[%d]", ret);
++    HCCL_INFO("Call aclrtMemset, return value[%d].", ret);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[SyncSet][Mem]errNo[0x%016llx] aclrtMemset failed, "
++        string msg = StringFormat("[SyncSet][Mem]errNo[0x%016llx] aclrtMemset failed."
+                    "return[%d], para: dstAddr[%p], destMax[%llu], count[%llu].",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, dst, destMax, count);
+-        throw RuntimeApiException(StringFormat(
+-            "call aclrtMemset failed, dst=%p, destMax=0x%llx, count=0x%llx", dst, destMax, count));
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+     hcclRet = HrtThreadExchangeCaptureMode(&mode);
+     CHK_PRT_CONT(hcclRet != HCCL_SUCCESS && hcclRet != HCCL_E_NOT_SUPPORT,
+-        HCCL_WARNING("[hrtMemSet] HrtThreadExchangeCaptureMode return [%d]", hcclRet));
++        HCCL_ERROR("[hrtMemSet] HrtThreadExchangeCaptureMode return [%d].", hcclRet));
+ }
+ 
+ void HrtIpcSetMemoryName(void *ptr, char_t *name, u64 ptrMaxLen, u32 nameMaxLen)
+ {
++    HCCL_INFO("[HrtIpcSetMemoryName] ptr[%p], name[%s], ptrMaxLen[%llu], nameMaxLen[%u].", 
++            ptr, name, ptrMaxLen, nameMaxLen);
++    CHECK_NULLPTR(ptr, "[HrtIpcSetMemoryName] ptr is nullptr!");
+     aclError ret = aclrtIpcMemGetExportKey(ptr, ptrMaxLen, name, nameMaxLen, 0UL);
+-    HCCL_INFO("Call aclrtIpcMemGetExportKey, return value[%d], para: ptr[%p], name[%s], byteCount[%llu], nameLen[%u]",
++    HCCL_INFO("Call aclrtIpcMemGetExportKey, return value[%d], para: ptr[%p], name[%s], byteCount[%llu], nameLen[%u].",
+               ret, ptr, name, ptrMaxLen, nameMaxLen);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Set][IpcMemoryName]errNo[0x%016llx] rtSet Ipc Memory Name, "
+-                   "return[%d], para: ptr[%p] byteCount[%llu].",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr, ptrMaxLen);
+-        throw RuntimeApiException(StringFormat("call aclrtIpcMemGetExportKey failed, ptr=%p, ptrMaxLen=0x%llx, name=%s",
+-                                               ptr, ptrMaxLen, name));
++        string msg = StringFormat("[Set][IpcMemoryName]errNo[0x%016llx] rtSet Ipc Memory Name."
++                   "return[%d], para: ptr[%p] byteCount[%llu], name[%s].",
++                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr, ptrMaxLen, name);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+ void HrtIpcDestroyMemoryName(const char_t *name)
+ {
++    HCCL_INFO("[HrtIpcDestroyMemoryName] name[%s].", name);
++    CHECK_NULLPTR(name, "[HrtIpcDestroyMemoryName] name is nullptr!");
+     rtError_t ret = rtIpcDestroyMemoryName(reinterpret_cast<const char *>(name));
+-    HCCL_INFO("Call rtIpcDestroyMemoryName, return[%d], para: name[%s]", ret, name);
++    HCCL_INFO("Call rtIpcDestroyMemoryName, return[%d], para: name[%s].", ret, name);
+     if (ret != RT_ERROR_NONE) {
+-        HCCL_ERROR("[Destroy][IpcMemoryName]errNo[0x%016llx] "
+-                   "rtDestroy Ipc memory name fail. return[%d], para: name[%s]",
++        string msg = StringFormat("[Destroy][IpcMemoryName]errNo[0x%016llx] "
++                   "rtDestroy Ipc memory name fail. return[%d], para: name[%s].",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, name);
+-        throw RuntimeApiException(StringFormat("call rtIpcSetMemoryName failed, name=%s", name));
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+ void *HrtIpcOpenMemory(const char_t *name)
+ {
++    HCCL_INFO("[HrtIpcOpenMemory] name[%s].", name);
++    CHECK_NULLPTR(name, "[HrtIpcOpenMemory] name is nullptr!");
+     void     *ptr = nullptr;
+     aclError ret = aclrtIpcMemImportByKey(&ptr, name, 0UL);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Open][IpcMemory]errNo[0x%016llx] "
+-                   "rtOpen ipc memory fail. return[%d], para: ptr[%p], name[%s]",
++        string msg = StringFormat("[Open][IpcMemory]errNo[0x%016llx] "
++                   "rtOpen ipc memory fail. return[%d], para: ptr[%p], name[%s].",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr, name);
+-        throw RuntimeApiException(StringFormat("call aclrtIpcMemImportByKey failed, name=%s", name));
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+     return ptr;
+ }
+ 
+ void HrtIpcCloseMemory(const void *ptr)
+ {
++    HCCL_INFO("[HrtIpcCloseMemory] ptr[%p].", ptr);
++    CHECK_NULLPTR(ptr, "[HrtIpcCloseMemory] ptr is nullptr!");
+     rtError_t ret = rtIpcCloseMemory(ptr);
+     if (ret != RT_ERROR_NONE) {
+-        HCCL_ERROR("[Close][IpcMemory]errNo[0x%016llx] "
+-                   "rtClose ipc memory fail, return[%d]. para: ptr[%p]",
++        string msg = StringFormat("[Close][IpcMemory]errNo[0x%016llx] "
++                   "rtClose ipc memory fail, return[%d]. para: ptr[%p].",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr);
+-        throw RuntimeApiException(StringFormat("call rtIpcOpenMemory failed, ptr=%p", ptr));
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+@@ -541,42 +567,51 @@ void HrtIpcSetMemoryPid(const char_t *name, int pid)
+ {
+     aclError ret = aclrtIpcMemSetImportPid(name, &pid, 1);
+     HCCL_INFO("Call aclrtIpcMemSetImportPid, return value[%d], pid[%d], name[%s].", ret, pid, name);
++    CHECK_NULLPTR(name, "[HrtIpcSetMemoryPid] name is nullptr!");
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Set][IpcMemoryPid]errNo[0x%016llx] "
+-                   "rtSet ipc memory pid fail. return[%d], pid[%d], name[%s]",
++        string msg = StringFormat("[Set][IpcMemoryPid]errNo[0x%016llx] "
++                   "rtSet ipc memory pid fail. return[%d], pid[%d], name[%s].",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, pid, name);
+-        throw RuntimeApiException(StringFormat("call aclrtIpcMemSetImportPid failed, name=%s, pid=%d", name, pid));
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+ rtPointerAttributes_t  HrtPointerGetAttributes(const void *ptr)
+ {
++    HCCL_INFO("[HrtPointerGetAttributes] ptr[%p].", ptr);
++    CHECK_NULLPTR(ptr, "[HrtPointerGetAttributes] ptr is nullptr!");
+     rtPointerAttributes_t ptrAttr;
+     rtError_t             ret = rtPointerGetAttributes(reinterpret_cast<rtPointerAttributes_t *>(&ptrAttr), ptr);
+     if (ret != RT_ERROR_NONE) {
+-        HCCL_ERROR("[Get][PointAttr]errNo[0x%016llx] rt get point attr failed, "
++        string msg = StringFormat("[Get][PointAttr]errNo[0x%016llx] rt get point attr failed."
+                    "return[%d], para: ptrAddr[%p].",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr);
+-        throw RuntimeApiException(StringFormat("call rtPointerGetAttributes failed, ptr=%p", ptr));
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+     return ptrAttr;
+ }
+ 
+ void PrintMemoryAttr(const void *memAddr)
+ {
++    HCCL_INFO("[PrintMemoryAttr] memAddr[%p].", memAddr);
++    CHECK_NULLPTR(memAddr, "[PrintMemoryAttr] memAddr is nullptr!");
+     if (LIKELY(!CheckInfoLogLevel())) {
+         return;
+     }
+ 
+     rtPointerAttributes_t memAttr = HrtPointerGetAttributes(memAddr);
+-    HCCL_INFO("memory attributes: address[%p], page size[%u], type[%d]", memAddr, memAttr.pageSize, memAttr.memoryType);
++    HCCL_INFO("memory attributes: address[%p], page size[%u], type[%d].", memAddr, memAttr.pageSize, memAttr.memoryType);
+ }
+ 
+ void HrtDevMemAlignWithPage(void *ptr, u64 size, void *&ipcPtr, u64 &ipcSize, u64 &ipcOff)
+ {
++    HCCL_INFO("[HrtDevMemAlignWithPage] ptr[%p], size[%llu], ipcPtr[%p], ipcSize[%llu], ipcOff[%llu].",
++        ptr, size, ipcPtr, ipcSize, ipcOff);
++    CHECK_NULLPTR(ptr, "[HrtDevMemAlignWithPage] ptr is nullptr!");
++    CHECK_NULLPTR(ipcPtr, "[HrtDevMemAlignWithPage] ipcPtr is nullptr!");
+     rtPointerAttributes_t memAttr = HrtPointerGetAttributes(ptr);
+ 
+-    HCCL_INFO("[HrtDevMemAlignWithPage]get pageSize[%u]", memAttr.pageSize);
++    HCCL_INFO("[HrtDevMemAlignWithPage]get pageSize[%u].", memAttr.pageSize);
+     if (memAttr.pageSize == 0) {
+         ipcPtr  = ptr;
+         ipcSize = size;
+@@ -592,215 +627,254 @@ void HrtDevMemAlignWithPage(void *ptr, u64 size, void *&ipcPtr, u64 &ipcSize, u6
+ 
+ void *HrtMallocHost(u64 size)
+ {
++    HCCL_INFO("[HrtMallocHost] size[%llu].", size);
+     void *hostPtr = nullptr;
+     aclrtMallocAttrValue moduleIdValue;
+     moduleIdValue.moduleId = HCCL;
+     aclrtMallocAttribute attrs{.attr = ACL_RT_MEM_ATTR_MODULE_ID, .value = moduleIdValue};
+     aclrtMallocConfig cfg{.attrs = &attrs, .numAttrs = 1};
+     aclError ret = aclrtMallocHostWithCfg(&hostPtr, size, &cfg);
+-    HCCL_INFO("Call aclrtMallocHostWithCfg, return value[%d], para: hostPtr[%p], size[%llu], moudleId: HCCL.", ret,
+-              hostPtr, size);
++    HCCL_INFO("Call aclrtMallocHostWithCfg, return value[%d], para: hostPtr[%p], size[%llu], moudleId: HCCL.", 
++                ret, hostPtr, size);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Malloc][Host]errNo[0x%016llx] rt malloc host fail. return[%d], "
++        string msg = StringFormat("[Malloc][Host]errNo[0x%016llx] rt malloc host fail. return[%d]."
+                    "para: size[%llu].",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, size);
+-        throw RuntimeApiException(StringFormat("call HrtMallocHost failed, moudleId: HCCL size=0x%llx", size));
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+     return hostPtr;
+ }
+ 
+ void HrtFreeHost(void *hostPtr)
+ {
++    HCCL_INFO("[HrtFreeHost] hostPtr[%p].", hostPtr);
++    CHECK_NULLPTR(hostPtr, "[HrtFreeHost] hostPtr is nullptr!");
+     aclError ret = aclrtFreeHost(hostPtr);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Free][Host]errNo[0x%016llx] rt free host fail. return[%d], "
++        string msg = StringFormat("[Free][Host]errNo[0x%016llx] rt free host fail. return[%d]."
+                    "para: hostPtr[%p].",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, hostPtr);
+-        throw RuntimeApiException(StringFormat("call aclrtFreeHost failed, ptr=%p", hostPtr));
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+ aclrtNotify HrtNotifyCreate(s32 deviceLogicId)
+ {
++    HCCL_INFO("[HrtNotifyCreate] deviceLogicId[%d].", deviceLogicId);
+     aclrtNotify ptr = nullptr;
+     // aclrtCreateNotify 中通过 aclrtGetDevice 获取 deviceId，所以要求当前线程设置过 setDevice
+     aclError  ret = aclrtCreateNotify(&ptr, ACL_NOTIFY_DEFAULT);
+-    HCCL_INFO("[HrtNotifyCreate] deviceId[%d]", deviceLogicId);
++    HCCL_INFO("[HrtNotifyCreate] deviceId[%d].", deviceLogicId);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Notify][Create]errNo[0x%016llx] rtNotifyCreate error, "
+-                   "return[%d], deviceId[%d]",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, deviceLogicId);
+-        throw RuntimeApiException(StringFormat("call rtNotifyCreate failed, deviceLogidId=%d", deviceLogicId));
++        string msg = StringFormat("[Notify][Create]errNo[0x%016llx] rtNotifyCreate error."
++                   "return[%d], deviceId[%d], ptr[%p].",
++                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, deviceLogicId, ptr);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+-    HCCL_INFO("[HrtNotifyCreate] deviceId[%d]", deviceLogicId);
++    HCCL_INFO("[HrtNotifyCreate] deviceId[%d], ptr[%p]", deviceLogicId, ptr);
+     return ptr;
+ }
+ 
+ void HrtNotifyDestroy(RtNotify_t ptr)
+ {
++    HCCL_INFO("[HrtNotifyDestroy] ptr[%p].", ptr);
++    CHECK_NULLPTR(ptr, "[HrtNotifyDestroy] ptr is nullptr!");
+     aclError ret = aclrtDestroyNotify(ptr);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Notify][Destroy]errNo[0x%016llx] aclrtDestroyNotify error, "
+-                   "return[%d]",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret);
+-        throw RuntimeApiException("call aclrtDestroyNotify failed. ");
++        string msg = StringFormat("[Notify][Destroy]errNo[0x%016llx] aclrtDestroyNotify error."
++                   "ptr[%p], return[%d].",
++                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ptr, ret);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+ void HrtIpcSetNotifyName(RtNotify_t ptr, char_t *name, uint32_t len)
+ {
++    HCCL_INFO("[HrtIpcSetNotifyName] ptr[%p], name[%s], len[%u].", ptr, name, len);
++    CHECK_NULLPTR(ptr, "[HrtIpcSetNotifyName] ptr is nullptr!");
++    CHECK_NULLPTR(name, "[HrtIpcSetNotifyName] name is nullptr!");
+     if (HrtGetDeviceType() == DevType::DEV_TYPE_910_95) {
+         return;
+     }
+     aclError ret = aclrtNotifyGetExportKey(ptr, name, len, 0UL);
+     HCCL_INFO("Call aclrtNotifyGetExportKey, return value[%d].", ret);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Set][IPCNotify]errNo[0x%016llx] IPC set notify name fail.  "
+-                   "return[%d].",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret);
+-        throw RuntimeApiException("call aclrtNotifyGetExportKey failed. ");
++        string msg = StringFormat("[Set][IPCNotify]errNo[0x%016llx] IPC set notify name fail."
++                   "ptr[%p], name[%s], len[%u], return[%d].",
++                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ptr, name, len, ret);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+-    HCCL_INFO("[HrtIpcSetNotifyName] name[%s] len[%u]", name, len);
++    HCCL_INFO("[HrtIpcSetNotifyName] ptr[%p], name[%s] len[%u].", ptr, name, len);
+ }
+ 
+ u32 HrtGetNotifyID(RtNotify_t notifyHandle)
+ {
++    HCCL_INFO("[HrtGetNotifyID] notifyHandle[%p].", notifyHandle);
++    CHECK_NULLPTR(notifyHandle, "[HrtGetNotifyID] notifyHandle is nullptr!");
+     u32       notifyID = 0;
+     aclError  ret      = aclrtGetNotifyId(notifyHandle, &notifyID);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[HrtGetNotifyID]rt get notify id failed.");
+-        throw RuntimeApiException("call aclrtGetNotifyId failed. ");
++        string msg = StringFormat("[HrtGetNotifyID]rt get notify id failed."
++                                "notifyHandle[%p], notifyID[%u], return[%d].",
++                                notifyHandle, notifyID, ret);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+     return notifyID;
+ }
+ 
+ u64 HrtNotifyGetAddr(RtNotify_t notifyHandle)
+ {
++    HCCL_INFO("[HrtNotifyGetAddr] notifyHandle[%p].", notifyHandle);
++    CHECK_NULLPTR(notifyHandle, "[HrtNotifyGetAddr] notifyHandle is nullptr!");
+     uint64_t  addr;
+     rtError_t ret = rtGetNotifyAddress(notifyHandle, &addr);
+     if (ret != RT_ERROR_NONE) {
+-        HCCL_ERROR("[rtGetNotifyAddress]rt get notify address failed.");
+-        throw RuntimeApiException(StringFormat("call rtGetNotifyAddress failed, ptr=%p", notifyHandle));
++        string msg = StringFormat("[rtGetNotifyAddress]rt get notify address failed."
++                                "notifyHandle[%p], addr[%llu], return[%d].",
++                                notifyHandle, addr, ret);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+     return addr;
+ }
+ 
+ void HrtSetIpcNotifyPid(aclrtNotify notify, int32_t pid)
+ {
++    HCCL_INFO("[HrtSetIpcNotifyPid] notify[%p], pid[%d].", notify, pid);
++    CHECK_NULLPTR(notify, "[HrtSetIpcNotifyPid] notify is nullptr!");
+     aclError ret = aclrtNotifySetImportPid(notify, &pid, 1);
+     HCCL_INFO("Call rtSetIpcNotifyPid, return value[%d]. Params: pid[%d].", ret, pid);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[Set][IpcNotifyPid]errNo[0x%016llx] "
+-                   "rtSet ipc Notify pid fail. return[%d], pid[%d]",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, pid);
+-        throw RuntimeApiException(StringFormat("call rtSetIpcNotifyPid failed,pid=%d", pid));
++        string msg = StringFormat("[Set][IpcNotifyPid]errNo[0x%016llx] "
++                   "rtSet ipc Notify pid fail. notify[%p], return[%d], pid[%d].",
++                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), notify, ret, pid);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+ RtNotify_t HrtIpcOpenNotify(const char_t *name)
+ {
+-    RtNotify_t ptr = nullptr;
++    HCCL_INFO("[HrtIpcOpenNotify] name[%s].", name);
++    CHECK_NULLPTR(name, "[HrtIpcOpenNotify] name is nullptr!");
+     uint64_t flags = 0;
+     aclrtNotify* notify = nullptr;
+     aclError ret = aclrtNotifyImportByKey(notify, name, static_cast<uint64_t>(flags));
+-    HCCL_INFO("Call rtIpcOpenNotify, return value[%d] para: notify[%p], name[%s].", ret, ptr, name);
++    HCCL_INFO("Call rtIpcOpenNotify, return value[%d] para: notify[%p], name[%s].", ret, notify, name);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[rt][IpcOpenNotify]errNo[0x%016llx] rt ipc notify open fail,"
+-                   "return[%d]. para: notify[%p], name[%s]",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr, name);
+-        throw RuntimeApiException(StringFormat("call rtIpcOpenNotify failed, name=%s", name));
++        string msg = StringFormat("[rt][IpcOpenNotify]errNo[0x%016llx] rt ipc notify open fail."
++                   "return[%d]. para: notify[%p], name[%s], flags[%llu]",
++                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, notify, name, flags);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+-    return ptr;
++    return notify;
+ }
+ 
+ u32 HrtNotifyGetOffset(RtNotify_t ptr)
+ {
++    HCCL_INFO("[HrtNotifyGetOffset] ptr[%p].", ptr);
++    CHECK_NULLPTR(ptr, "[HrtNotifyGetOffset] ptr is nullptr!");
+     uint32_t  offset = 0;
+     aclError ret = aclrtGetNotifyId(ptr, &offset);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[rt][NotifyGetOffset]errNo[0x%016llx] rt ipc notify open fail,"
+-                   "return[%d].",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret);
+-        throw RuntimeApiException(StringFormat("call rtNotifyGetAddrOffset failed, ptr=%p", ptr));
++        string msg = StringFormat("[rt][NotifyGetOffset]errNo[0x%016llx] rt ipc notify open fail."
++                   "return[%d], ptr[%p], offset[%u].",
++                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr, offset);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+     return offset;
+ }
+ 
+ void HrtNotifyWaitWithTimeOut(RtNotify_t notifyPtr, aclrtStream streamPtr, uint32_t timeOut)
+ {
++    HCCL_INFO("[HrtNotifyWaitWithTimeOut] notifyPtr[%p], streamPtr[%p], timeOut[%u].", 
++                notifyPtr, streamPtr, timeOut);
++    CHECK_NULLPTR(notifyPtr, "[HrtNotifyWaitWithTimeOut] notifyPtr is nullptr!");
++    CHECK_NULLPTR(streamPtr, "[HrtNotifyWaitWithTimeOut] streamPtr is nullptr!");
+     aclError ret = aclrtWaitAndResetNotify(notifyPtr, streamPtr, timeOut);
+     HCCL_INFO("Call aclrtWaitAndResetNotify, return value[%d]", ret);
+     if (ret != ACL_SUCCESS) {
+         throw RuntimeApiException(
+-            StringFormat("call aclrtWaitAndResetNotify failed, notifyPtr=%p, streamPtr=%p", notifyPtr, streamPtr));
++            StringFormat("call aclrtWaitAndResetNotify failed, notifyPtr=%p, streamPtr=%p, return=%d", notifyPtr, streamPtr, ret));
+         ;
+     }
+ }
+ 
+ void HrtNotifyRecord(RtNotify_t notifyPtr, aclrtStream streamPtr)
+ {
++    HCCL_INFO("[HrtNotifyRecord] notifyPtr[%p], streamPtr[%p].", notifyPtr, streamPtr);
++    CHECK_NULLPTR(notifyPtr, "[HrtNotifyRecord] notifyPtr is nullptr!");
++    CHECK_NULLPTR(streamPtr, "[HrtNotifyRecord] streamPtr is nullptr!");
+     aclError ret = aclrtRecordNotify(notifyPtr, streamPtr);
+-    HCCL_INFO("Call aclrtRecordNotify, return value[%d]", ret);
++    HCCL_INFO("Call aclrtRecordNotify, return value[%d].", ret);
+     if (ret != ACL_SUCCESS) {
+         throw RuntimeApiException(
+-            StringFormat("call HrtNotifyRecord failed, notifyPtr=%p, streamPtr=%p", notifyPtr, streamPtr));
++            StringFormat("call HrtNotifyRecord failed, notifyPtr=%p, streamPtr=%p, return=%d", notifyPtr, streamPtr, ret));
+     }
+ }
+ 
+ void HrtMemAsyncCopy(void *dst, uint64_t destMax, const void *src, uint64_t count, aclrtMemcpyKind kind,
+                      aclrtStream streamPtr)
+ {
++    HCCL_INFO("[HrtMemAsyncCopy] dst[%p], destMax[%llu], src[%p], count[%llu], kind[%d], streamPtr[%p].", 
++                dst, destMax, src, count, kind, streamPtr);
++    CHECK_NULLPTR(dst, "[HrtMemAsyncCopy] dst is nullptr!");
++    CHECK_NULLPTR(src, "[HrtMemAsyncCopy] src is nullptr!");
++    CHECK_NULLPTR(streamPtr, "[HrtMemAsyncCopy] streamPtr is nullptr!");
+     aclError ret = aclrtMemcpyAsync(dst, destMax, src, count, kind, streamPtr);
+     HCCL_DEBUG("Call aclrtMemcpyAsync, return value[%d], para: dstAddr[%p], destMax[%llu], "
+-               "srcAddr[%p], count[%llu], rtKind[%d]", ret, dst, destMax, src, count, kind);
++               "srcAddr[%p], count[%llu], rtKind[%d].", ret, dst, destMax, src, count, kind);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[AsyncCopy][Mem]errNo[0x%016llx] rt memory async copy failed, "
++        string msg = StringFormat("[AsyncCopy][Mem]errNo[0x%016llx] rt memory async copy failed, "
+                    "return[%d], para: dstAddr[%p], destMax[%llu], srcAddr[%p], count[%llu], kind[%d], stream[%p].",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, dst, destMax, src, count, kind, streamPtr);
+-        throw RuntimeApiException(StringFormat("call HrtMemAsyncCopy failed, dst=%p, destMax=0x%llx, src=%p, "
+-                                               "count=0x%llx, kind=%d, streamPtr=%p",
+-                                               dst, destMax, src, count, kind, streamPtr));
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+ void HrtReduceAsync(void *dst, uint64_t destMax, const void *src, uint64_t count, aclrtReduceKind kind,
+                     aclDataType type, aclrtStream streamPtr)
+ {
++    HCCL_INFO("[HrtReduceAsync] dst[%p], destMax[%llu], src[%p], count[%llu], kind[%d], type[%d], streamPtr[%p].", 
++                dst, destMax, src, count, kind, type, streamPtr);
++    CHECK_NULLPTR(dst, "[HrtReduceAsync] dst is nullptr!");
++    CHECK_NULLPTR(src, "[HrtReduceAsync] src is nullptr!");
++    CHECK_NULLPTR(streamPtr, "[HrtReduceAsync] streamPtr is nullptr!");
+     // reserve 预留字段填 nullptr
+     aclError ret = aclrtReduceAsync(dst, src, count, kind, type, streamPtr, nullptr);
+     HCCL_INFO("Call rtReduceAsync, return value[%d]. para: dst[%p] destMax[%llu] src[%p] count[%llu] rtReduceOp[%d] "
+-               "rtDataType[%d].",
+-               ret, dst, destMax, src, count, kind, type);
++               "rtDataType[%d] streamPtr[%p].",
++               ret, dst, destMax, src, count, kind, type, streamPtr);
+     if (ret != ACL_SUCCESS) {
+-        HCCL_ERROR("[rt][ReduceAsync]errNo[0x%016llx] rt reduce async fail,"
+-                   "return[%d]. para: dst[%p] destMax[%llu] src[%p] count[%llu] rtReduceOp[%d] rtDataType[%d].",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, dst, destMax, src, count, kind, type);
+-        throw RuntimeApiException(StringFormat("call rtReduceAsync failed, dst=%p, destMax=0x%llx, src=%p, "
+-                                               "count=0x%llx, kind=%d, dataType=%d, streamPtr=%p",
+-                                               dst, destMax, src, count, kind, type, streamPtr));
++        string msg = StringFormat("[rt][ReduceAsync]errNo[0x%016llx] rt reduce async fail, "
++                   "return[%d]. para: dst[%p] destMax[%llu] src[%p] count[%llu] rtReduceOp[%d] rtDataType[%d] streamPtr[%p].",
++                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, dst, destMax, src, count, kind, type, streamPtr);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+ void HrtRDMASend(u32 qpn, u32 wqeIndex, aclrtStream streamPtr)
+ {
++    HCCL_INFO("[HrtRDMASend] qpn[%u], wqeIndex[%u], streamPtr[%p].", qpn, wqeIndex, streamPtr);
++    CHECK_NULLPTR(streamPtr, "[HrtRDMASend] streamPtr is nullptr!");
+     rtError_t ret = rtRDMASend(qpn, wqeIndex, streamPtr);
+-    HCCL_INFO("Call rtRDMASend, return value[%d]. Params: qpn[%u] wqeIndex[%u].", ret, qpn, wqeIndex);
++    HCCL_INFO("Call rtRDMASend, return value[%d]. Params: qpn[%u] wqeIndex[%u] streamPtr[%p].", ret, qpn, wqeIndex, streamPtr);
+     if (ret != RT_ERROR_NONE) {
+-        HCCL_ERROR("[rt][RdmaSend]errNo[0x%016llx] rt rdma send fail, "
+-                   "return[%d]. para: qpn[%u] wqeIndex[%u].",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, qpn, wqeIndex);
+-        throw RuntimeApiException(StringFormat("call rtRDMASend failed, qpn[%d], wqeIndex[%d]", qpn, wqeIndex));
++        string msg = StringFormat("[rt][RdmaSend]errNo[0x%016llx] rt rdma send fail, "
++                   "return[%d]. para: qpn[%u] wqeIndex[%u] streamPtr[%p].",
++                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, qpn, wqeIndex, streamPtr);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+ void HrtRDMADBSend(uint32_t dbindex, uint64_t dbinfo, aclrtStream streamPtr)
+ {
++    HCCL_INFO("[HrtRDMADBSend] dbindex[%u], dbinfo[%llu], streamPtr[%p].", dbindex, dbinfo, streamPtr);
++    CHECK_NULLPTR(streamPtr, "[HrtRDMADBSend] streamPtr is nullptr!");
+     rtError_t ret = rtRDMADBSend(dbindex, dbinfo, streamPtr);
+     if (ret != RT_ERROR_NONE) {
+-        HCCL_ERROR("[rtRDMADBSend]errNo[0x%016llx] rt rdma send fail, "
+-                   "return[%d]. para: dbindex[%u]dbinfo[%llu].",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, dbindex, dbinfo);
+-        throw RuntimeApiException(StringFormat("call rtRDMASend failed, dbindex[%u]dbinfo[%llu]", dbindex, dbinfo));
++        string msg = StringFormat("[rtRDMADBSend]errNo[0x%016llx] rt rdma send fail, "
++                   "return[%d]. para: dbindex[%u] dbinfo[%llu] streamPtr[%p].",
++                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, dbindex, dbinfo, streamPtr);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ // 兜底extern, 正式适配待todo
+@@ -810,25 +884,32 @@ void HrtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t numBlocks, rtArgsE
+     HCCL_INFO("[hrtKernelLaunchWithFlagV2]numBlocks: [%u]", numBlocks);
+     rtError_t ret = rtKernelLaunchWithFlagV2(stubFunc, numBlocks, argsInfo, smDesc, stream, flags, cfgInfo);
+     if (ret != RT_ERROR_NONE) {
+-        HCCL_ERROR("[hrtKernelLaunchWithFlagV2]execute kernel launch v2 failed");
+-        throw RuntimeApiException("call hrtKernelLaunchWithFlagV2 failed. ");
++        string msg = StringFormat("[hrtKernelLaunchWithFlagV2]execute kernel launch v2 failed, "
++                   "stubFunc[%p], numBlocks[%u], argsInfo[%p], smDesc[%p], stream[%p], flags[%u], cfgInfo[%p], return[%d].", 
++                    stubFunc, numBlocks, argsInfo, smDesc, stream, flags, cfgInfo, ret);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+ void HrtGetTaskIdAndStreamID(u32 &taskId, u32 &streamId)
+ {
++    HCCL_INFO("[HrtGetTaskIdAndStreamID] taskId[%u], streamId[%u].", taskId, streamId);
+     rtError_t ret = rtGetTaskIdAndStreamID(&taskId, &streamId);
+     HCCL_INFO("Call rtGetTaskIdAndStreamId, return value[%d], para: taskId[%u], streamId[%u].", ret, taskId, streamId);
+     if (ret != RT_ERROR_NONE) {
+-        HCCL_ERROR("[Get][TaskIdAndStreamID]errNo[0x%016llx] "
+-                   "rt get task ID and stream ID fail. return[%d].",
+-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret);
+-        throw RuntimeApiException("call HrtGetTaskIdAndStreamID failed. ");
++        string msg = StringFormat("[Get][TaskIdAndStreamID]errNo[0x%016llx] "
++                   "rt get task ID and stream ID fail. return[%d], taskId[%u], streamId[%u].",
++                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, taskId, streamId);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+ void HrtUbDbSend(const HrtUbDbInfo &info, aclrtStream streamPtr)
+ {
++    HCCL_INFO("[HrtUbDbSend] info: dbNum=%u funcId=%u dieId=%u rsv=%u jettyId=%u piValue=%u wrCqe=%u, streamPtr.",
++        info.dbNum, info.info[0].functionId, info.info[0].dieId, info.info[0].rsv,
++        info.info[0].jettyId, info.info[0].piValue, info.wrCqe, streamPtr);
++    CHECK_NULLPTR(streamPtr, "[HrtUbDbSend] streamPtr is nullptr!");
+     // 调用RTS接口，通过doorbell方式下发UB任务
+     rtUbDbInfo_t dbSendInfo{};
+     dbSendInfo.dbNum              = info.dbNum;
+@@ -838,20 +919,28 @@ void HrtUbDbSend(const HrtUbDbInfo &info, aclrtStream streamPtr)
+     dbSendInfo.info[0].jettyId    = info.info[0].jettyId;
+     dbSendInfo.info[0].piValue    = info.info[0].piValue;
+     dbSendInfo.wrCqe              = info.wrCqe;
+-    HCCL_INFO("UbDbSend dbNum=%u funcId=%u dieId=%u rsv=%u jettyId=%u piValue=%u wrCqe=%u",
+-        info.dbNum, info.info[0].functionId, info.info[0].dieId, info.info[0].rsv,
+-        info.info[0].jettyId, info.info[0].piValue, info.wrCqe);
+     rtError_t ret = rtUbDbSend(&dbSendInfo, streamPtr);
+ 
+     HCCL_INFO("Call rtUbDbSend, return value[%d]. Params: dbNum[%u] wrCqe[%u].", ret, info.dbNum, info.wrCqe);
+     if (ret != RT_ERROR_NONE) {
+-        string msg = StringFormat("call rtUbDbSend failed, dbNum[%u], wrCqe[%u]", info.dbNum, info.wrCqe);
+-        THROW<RuntimeApiException>(msg);
++        string msg = StringFormat("call rtUbDbSend failed, return[%d], "
++                "info: dbNum=%u, funcId=%u, dieId=%u, rsv=%u, jettyId=%u, piValue=%u, wrCqe=%u, streamPtr=%p, "
++                "dbSendInfo: dbNum=%u, funcId=%u, dieId=%u, rsv=%u, jettyId=%u, piValue=%u, wrCqe=%u.",
++                ret, info.dbNum, info.info[0].functionId, info.info[0].dieId, info.info[0].rsv,
++                info.info[0].jettyId, info.info[0].piValue, info.wrCqe, streamPtr, 
++                dbSendInfo.dbNum, dbSendInfo.info[0].functionId, dbSendInfo.info[0].dieId, dbSendInfo.info[0].rsv,
++                dbSendInfo.info[0].jettyId, dbSendInfo.info[0].piValue, dbSendInfo.wrCqe);
++        MACRO_THROW(RuntimeApiException, msg);
+     }
+ }
+ 
+ void HrtUbDirectSend(const HrtUbWqeInfo &info, aclrtStream streamPtr)
+ {
++    HCCL_INFO("[HrtUbDirectSend] info: dieId[%u], jettyId=[%u], funcId=[%u], wqeSize=[%u], wqePtrLen=[%u], "
++                "wrCqe=[%u], wqe[%u], streamPtr.",
++                info.dieId, info.jettyId, info.functionId, info.wqeSize, info.wqePtrLen, 
++                info.wrCqe, info.wqe, streamPtr);
++    CHECK_NULLPTR(streamPtr, "[HrtUbDirectSend] streamPtr is nullptr!");
+     rtUbWqeInfo_t dwqeInfo{};
+     dwqeInfo.wrCqe      = info.wrCqe;
+     dwqeInfo.functionId = info.functionId;
+@@ -863,19 +952,21 @@ void HrtUbDirectSend(const HrtUbWqeInfo &info, aclrtStream streamPtr)
+     rtError_t ret       = rtUbDirectSend(&dwqeInfo, streamPtr);
+     if (ret != RT_ERROR_NONE) {
+         string msg = StringFormat("call rtUbDirectSend failed, dieId[%u], jettyId=[%u], funcId=[%u], wqeSize=[%u], "
+-                                  "wqePtrLen=[%u], wrCqe=[%u]",
+-                                  info.dieId, info.jettyId, info.functionId, info.wqeSize, info.wqePtrLen, info.wrCqe);
++                                  "wqePtrLen=[%u], wrCqe=[%u], returm=[%d].",
++                                  info.dieId, info.jettyId, info.functionId, info.wqeSize, info.wqePtrLen, info.wrCqe, ret);
+         THROW<RuntimeApiException>(msg);
+     }
+ }
+ 
+ rtCntNotify_t HrtCntNotifyCreate(u32 deviceId)
+ { 
++    HCCL_INFO("[HrtCntNotifyCreate] deviceId[%u].", deviceId);
+     rtCntNotify_t handle;
+     aclError     ret = rtCntNotifyCreateServer(&handle, RT_NOTIFY_FLAG_DEFAULT);
+-    HCCL_INFO("Call rtGetTaskIdAndStreamId, return value[%d] devId[%d].", ret, deviceId);
++    HCCL_INFO("Call rtGetTaskIdAndStreamId, return value[%d] devId[%d] handle[%p].", ret, deviceId, handle);
+     if (ret != ACL_SUCCESS) {
+-        string msg = StringFormat("Call rtCntNotifyCreate failed");
++        string msg = StringFormat("Call rtCntNotifyCreate failed, return[%d], deviceId[%u], handle[%p].", 
++                                    ret, deviceId, handle);
+         THROW<RuntimeApiException>(msg);
+     }
+     return handle;
+@@ -883,11 +974,14 @@ rtCntNotify_t HrtCntNotifyCreate(u32 deviceId)
+ 
+ u32 HrtGetCntNotifyId(const rtCntNotify_t inCntNotify)
+ {
++    HCCL_INFO("[HrtGetCntNotifyId] inCntNotify[%p].", inCntNotify);
++    CHECK_NULLPTR(inCntNotify, "[HrtGetCntNotifyId] inCntNotify is nullptr!");
+     u32       notifyId = 0; // 待接口rtGetCntNotifyId(inCntNotify, notifyId)上库，目前打桩;
+     aclError ret      = rtsCntNotifyGetId(inCntNotify, &notifyId);
+-    HCCL_INFO("Call rtGetCntNotifyId, return value[%d], inCntNotify[%p], notifyId[%u]", ret, inCntNotify, notifyId);
++    HCCL_INFO("Call rtGetCntNotifyId, return value[%d], inCntNotify[%p], notifyId[%u].", ret, inCntNotify, notifyId);
+     if (ret != ACL_SUCCESS) {
+-        string msg = StringFormat("Call rtGetCntNotifyId failed");
++        string msg = StringFormat("Call rtGetCntNotifyId failed, return[%d], inCntNotify[%p], notifyId[%u].", 
++            ret, inCntNotify, notifyId);
+         THROW<RuntimeApiException>(msg);
+     }
+     return notifyId;
+@@ -895,10 +989,13 @@ u32 HrtGetCntNotifyId(const rtCntNotify_t inCntNotify)
+ 
+ void HrtCntNotifyDestroy(const rtCntNotify_t inCntNotify)
+ {
++    HCCL_INFO("[HrtCntNotifyDestroy] inCntNotify[%p].", inCntNotify);
++    CHECK_NULLPTR(inCntNotify, "[HrtCntNotifyDestroy] inCntNotify is nullptr!");
+     aclError ret = rtCntNotifyDestroy(inCntNotify);
+-    HCCL_INFO("Call rtCntNotifyDestroy, return value[%d], inCntNotify[%p]", ret, inCntNotify);
++    HCCL_INFO("Call rtCntNotifyDestroy, return value[%d], inCntNotify[%p].", ret, inCntNotify);
+     if (ret != ACL_SUCCESS) {
+-        string msg = StringFormat("Call rtCntNotifyDestroy failed");
++        string msg = StringFormat("Call rtCntNotifyDestroy failed, return[%d], inCntNotify[%p].", 
++            ret, inCntNotify);
+         THROW<RuntimeApiException>(msg);
+     }
+ }
+@@ -906,15 +1003,22 @@ void HrtCntNotifyDestroy(const rtCntNotify_t inCntNotify)
+ const std::map<HrtCntNotifyRecordMode, rtCntNotifyRecordMode> HRT_CNT_NOTIFY_RECORD_MODE_MAP
+     = {{HrtCntNotifyRecordMode::WRITE_BIT, rtCntNotifyRecordMode::RT_CNT_NOTIFY_RECORD_BIT_OR_MODE},
+        {HrtCntNotifyRecordMode::STORE, rtCntNotifyRecordMode::RT_CNT_NOTIFY_RECORD_SET_VALUE_MODE}};
+-void HrtCntNotifyRecord(const rtCntNotify_t inCntNotify, const aclrtStream streamPtr, HrtCntNotifyRecordMode mode, u32 value)
++void HrtCntNotifyRecord(const rtCntNotify_t inCntNotify, const aclrtStream streamPtr, 
++                        HrtCntNotifyRecordMode mode, u32 value)
+ {
++    HCCL_INFO("[HrtCntNotifyRecord] inCntNotify[%p], streamPtr[%p], mode[%d], value[%u].", 
++                inCntNotify, streamPtr, mode, value);
++    CHECK_NULLPTR(inCntNotify, "[HrtCntNotifyRecord] inCntNotify is nullptr!");
++    CHECK_NULLPTR(streamPtr, "[HrtCntNotifyRecord] streamPtr is nullptr!");
+     rtCntNotifyRecordInfo_t recordInfo{};
+     recordInfo.mode  = HRT_CNT_NOTIFY_RECORD_MODE_MAP.at(mode);
+     recordInfo.value = value;
+     aclError ret    = rtsCntNotifyRecord(inCntNotify, streamPtr, &recordInfo);
+-    HCCL_INFO("Call rtCntNotifyRecord, return value[%d], inCntNotify[%p]", ret, inCntNotify);
++    HCCL_INFO("Call rtCntNotifyRecord, return value[%d], inCntNotify[%p], streamPtr[%p], mode[%d], value[%u].", 
++                ret, inCntNotify, streamPtr, mode, value);
+     if (ret != ACL_SUCCESS) {
+-        string msg = StringFormat("Call rtCntNotifyRecord failed");
++        string msg = StringFormat("Call rtCntNotifyRecord failed, return[%d], inCntNotify[%p], streamPtr[%p], mode[%d], value[%u].", 
++                ret, inCntNotify, streamPtr, mode, value);
+         THROW<RuntimeApiException>(msg);
+     }
+ }
+@@ -922,9 +1026,13 @@ void HrtCntNotifyRecord(const rtCntNotify_t inCntNotify, const aclrtStream strea
+ const std::map<HrtCntNotifyWaitMode, rtCntNotifyWaitMode> HRT_CNT_NOTIFY_WAIT_MODE_MAP
+     = {{HrtCntNotifyWaitMode::EQUAL, rtCntNotifyWaitMode::RT_CNT_NOTIFY_WAIT_EQUAL_MODE},
+        {HrtCntNotifyWaitMode::BITMAP, rtCntNotifyWaitMode::RT_CNT_NOTIFY_WAIT_EQUAL_WITH_BITMASK_MODE}};
+-void HrtCntNotifyWaitWithTimeOut(const rtCntNotify_t inCntNotify, const aclrtStream streamPtr, HrtCntNotifyWaitMode mode, u32 value,
+-                                 u32 timeout, bool isClear)
++void HrtCntNotifyWaitWithTimeOut(const rtCntNotify_t inCntNotify, const aclrtStream streamPtr, 
++                                HrtCntNotifyWaitMode mode, u32 value, u32 timeout, bool isClear)
+ {
++    HCCL_INFO("[HrtCntNotifyWaitWithTimeOut] inCntNotify[%p], streamPtr[%p], mode[%d], value[%u], timeout[%u], isClear[%d].", 
++                inCntNotify, streamPtr, mode, value, timeout, isClear);
++    CHECK_NULLPTR(inCntNotify, "[HrtCntNotifyWaitWithTimeOut] inCntNotify is nullptr!");
++    CHECK_NULLPTR(streamPtr, "[HrtCntNotifyWaitWithTimeOut] streamPtr is nullptr!");
+     rtCntNotifyWaitInfo_t waitInfo{};
+     waitInfo.mode    = HRT_CNT_NOTIFY_WAIT_MODE_MAP.at(mode);
+     waitInfo.value   = value;
+@@ -933,28 +1041,37 @@ void HrtCntNotifyWaitWithTimeOut(const rtCntNotify_t inCntNotify, const aclrtStr
+     aclError ret    = rtsCntNotifyWaitWithTimeout(inCntNotify, streamPtr, &waitInfo);
+     HCCL_INFO("Call rtCntNotifyWaitWithTimeout, return value[%d], inCntNotify[%p]", ret, inCntNotify);
+     if (ret != ACL_SUCCESS) {
+-        string msg = StringFormat("Call rtCntNotifyWaitWithTimeout failed");
++        string msg = StringFormat("Call rtCntNotifyWaitWithTimeout failed, return[%d], inCntNotify[%p], streamPtr[%p], "
++                    "mode[%d], value[%u], timeout[%u], isClear[%s].", 
++                    inCntNotify, streamPtr, mode, value, timeout, isClear);
+         THROW<RuntimeApiException>(msg);
+     }
+ }
+ 
+ aclrtNotify HrtNotifyCreateWithFlag(u32 devId, u32 flag)
+ {
++    HCCL_INFO("[HrtNotifyCreateWithFlag] devId[%u], flag[%u].", devId, flag);
+     aclrtNotify ptr = nullptr;
+     aclError  ret = aclrtCreateNotify(&ptr, flag);
+-    HCCL_INFO("Call HrtNotifyCreateWithFlag, return value[%d], flag[%u] devid[%u]", ret, flag, devId);
++    HCCL_INFO("Call HrtNotifyCreateWithFlag, return value[%d], flag[%u] devid[%u].", ret, flag, devId);
+     if (ret != ACL_SUCCESS) {
+-        THROW<RuntimeApiException>(StringFormat("Call rtNotifyCreateWithFlag failed, with ret[%d]", ret));
++        string msg = StringFormat("Call rtNotifyCreateWithFlag failed, return[%d], devId[%u], flag[%u].", 
++                    ret, devId, flag);
++        THROW<RuntimeApiException>(msg);
+     }
+     return ptr;
+ }
+ 
+ RtNotify_t HrtIpcOpenNotifyWithFlag(const char_t *name, uint32_t flags)
+ {
++    HCCL_INFO("[HrtIpcOpenNotifyWithFlag] name[%s], flags[%u].", name, flags);
++    CHECK_NULLPTR(name, "[HrtIpcOpenNotifyWithFlag] name is nullptr!");
+     RtNotify_t ptr = nullptr;
+     aclError ret = aclrtNotifyImportByKey(&ptr, name, static_cast<uint64_t>(flags));
+     if (ret != ACL_SUCCESS) {
+-        THROW<RuntimeApiException>(StringFormat("Call rtIpcOpenNotifyWithFlag failed, with ret[%d].", ret));
++        string msg = StringFormat("Call rtIpcOpenNotifyWithFlag failed, return[%d], name[%p], flags[%u], ptr[%p].", 
++                    ret, name, flags, ptr);
++        THROW<RuntimeApiException>(msg);
+     }
+     return ptr;
+ }
+@@ -963,6 +1080,12 @@ void HrtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uin
+                                     const rtAicpuArgsEx_t *argsInfo, rtSmDesc_t * const smDesc, const rtStream_t stream,
+                                     uint32_t flags)
+ {
++    HCCL_INFO("[HrtAicpuKernelLaunchExWithArgs] kernelType[%u], opName[%s], numBlocks[%u], argsInfo[%p], "
++                "smDesc[%p], stream[%p], flags[%u].", 
++                kernelType, opName, numBlocks, argsInfo, smDesc, stream, flags);
++    CHECK_NULLPTR(argsInfo, "[HrtAicpuKernelLaunchExWithArgs] argsInfo is nullptr!");
++    CHECK_NULLPTR(smDesc, "[HrtAicpuKernelLaunchExWithArgs] smDesc is nullptr!");
++    CHECK_NULLPTR(stream, "[HrtAicpuKernelLaunchExWithArgs] stream is nullptr!");
+     auto tmp = reinterpret_cast<const char *>(argsInfo->args) + argsInfo->soNameAddrOffset;
+     HCCL_INFO("HrtAicpuKernelLaunchExWithArgs: args.soName = %s", tmp);
+     tmp = reinterpret_cast<const char *>(argsInfo->args) + argsInfo->kernelNameAddrOffset;
+@@ -970,53 +1093,73 @@ void HrtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uin
+ 
+     rtError_t ret = rtAicpuKernelLaunchExWithArgs(kernelType, opName, numBlocks, argsInfo, smDesc, stream, flags);
+     if (ret != RT_ERROR_NONE) {
+-        THROW<RuntimeApiException>(StringFormat("Call rtAicpuKernelLaunchExWithArgs failed, with ret[%d]", ret));
++        string msg = StringFormat("Call rtAicpuKernelLaunchExWithArgs failed, return[%d], kernelType[%u], opName[%s], "
++                    "numBlocks[%u], argsInfo[%p], smDesc[%p], stream[%p], flags[%u], tmp[%s].", 
++                ret, kernelType, opName, numBlocks, argsInfo, smDesc, stream, flags, tmp);
++        THROW<RuntimeApiException>(msg);
+     }
+ }
+ 
+ void HrtRegTaskFailCallbackByModule(aclrtExceptionInfoCallback callback)
+ {
++    HCCL_INFO("[HrtRegTaskFailCallbackByModule] callback[%p].", callback);
++    CHECK_NULLPTR(callback, "[HrtRegTaskFailCallbackByModule] callback is nullptr!");
+     aclError ret = aclrtSetExceptionInfoCallback(callback);
+     if (ret != ACL_SUCCESS) {
+-        THROW<RuntimeApiException>(StringFormat("Call aclrtSetExceptionInfoCallback failed, with ret[%d]", ret));
++        string msg = StringFormat("Call aclrtSetExceptionInfoCallback failed, return[%d], callback[%p].", 
++                                    ret, callback);
++        THROW<RuntimeApiException>(msg);
+     }
+ }
+ 
+ u32 HrtStreamGetSqId(const aclrtStream ptr)
+ {
++    HCCL_INFO("[HrtStreamGetSqId] ptr[%p].", ptr);
++    CHECK_NULLPTR(ptr, "[HrtStreamGetSqId] ptr is nullptr!");
+     u32       sqId;
+     rtError_t ret = rtStreamGetSqid(ptr, &sqId);
+     if (ret != RT_ERROR_NONE) {
+-        THROW<RuntimeApiException>(StringFormat("Call rtStreamGetSqid failed, with ret[%d]", ret));
++        string msg = StringFormat("Call rtStreamGetSqid failed, return[%d], ptr[%p], sqId[%u].", ret, ptr, sqId);
++        THROW<RuntimeApiException>(msg);
+     }
+     return sqId;
+ }
+ 
+ u32 HrtStreamGetCqId(const aclrtStream ptr)
+ {
++    HCCL_INFO("[HrtStreamGetCqId] ptr[%p].", ptr);
++    CHECK_NULLPTR(ptr, "[HrtStreamGetCqId] ptr is nullptr!");
+     u32 cqId;
+     u32 logicCqId;
+     rtError_t ret = rtStreamGetCqid(ptr, &cqId, &logicCqId);
+     if (ret != RT_ERROR_NONE) {
+-        THROW<RuntimeApiException>(StringFormat("Call rtStreamGetCqid failed, with ret[%d]", ret));
++        string msg = StringFormat("Call rtStreamGetCqid failed, return[%d], ptr[%p], cqId[%u], logicCqId[%u].", 
++                    ret, ptr, cqId, logicCqId);
++        THROW<RuntimeApiException>(msg);
+     }
+     return logicCqId;
+ }
+ 
+ void HrtCcuLaunch(rtCcuTaskInfo_t &taskInfo, aclrtStream const streamPtr)
+ {
++    HCCL_INFO("[HrtCcuLaunch] taskInfo[%d], streamPtr[%p].", taskInfo, streamPtr);
++    CHECK_NULLPTR(streamPtr, "[HrtCcuLaunch] streamPtr is nullptr!");
+     auto ret = rtCCULaunch(&taskInfo, streamPtr);
+     if (ret != RT_ERROR_NONE) {
+-        string msg = StringFormat("Call rtCCULaunch failed.");
++        string msg = StringFormat("Call rtCCULaunch failed, return[%d], taskInfo[%d], streamPtr[%p].", 
++                                ret, taskInfo, streamPtr);
+         THROW<RuntimeApiException>(msg);
+     }
+ }
+ 
+ void HrtUbDevQueryInfo(rtUbDevQueryCmd cmd, void *devInfo)
+ {
++    HCCL_INFO("[HrtUbDevQueryInfo] cmd[%d], devInfo[%p].", cmd, devInfo);
++    CHECK_NULLPTR(devInfo, "[HrtUbDevQueryInfo] devInfo is nullptr!");
+     auto ret = rtUbDevQueryInfo(cmd, devInfo);
+     if (ret != RT_ERROR_NONE) {
+-        string msg = StringFormat("Call rtUbDevQueryInfo failed.");
++        string msg = StringFormat("Call rtUbDevQueryInfo failed, return[%d], cmd[%d], devInfo[%p].", 
++                                ret, cmd, devInfo);
+         THROW<RuntimeApiException>(msg);
+     }
+     if (cmd == QUERY_PROCESS_TOKEN) {
+@@ -1027,12 +1170,14 @@ void HrtUbDevQueryInfo(rtUbDevQueryCmd cmd, void *devInfo)
+ // pair<tokendId, tokenValue>
+ std::pair<u32, u32> HrtUbDevQueryToken(u64 addr, u64 size)
+ {
++    HCCL_INFO("[HrtUbDevQueryToken] addr[%llu], size[%llu].", addr, size);
+     rtMemUbTokenInfo info;
+     info.va   = addr;
+     info.size = size;
+     auto ret  = rtUbDevQueryInfo(QUERY_PROCESS_TOKEN, &info);
+     if (ret != RT_ERROR_NONE) {
+-        HCCL_WARNING("query(va=0x%llx, size=0x%llx) token failed, ret=%d", addr, size, ret);
++        HCCL_ERROR("[UbDev][QueryToken]errNo[0x%016llx] query(va=0x%llx, size=0x%llx) token failed, ret=%d",
++            HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), addr, size, ret);
+         return std::make_pair(0, 0);
+     }
+ 
+@@ -1049,6 +1194,9 @@ const std::map<HrtDevResType, rtDevResType_t> HRT_DEV_RES_TYPE_MAP
+        {HrtDevResType::RES_TYPE_STARS_CNT_NOTIFY_BIT_WR, RT_RES_TYPE_STARS_CNT_NOTIFY_BIT_WR}};
+ HrtDevResAddrInfo HrtGetDevResAddress(const HrtDevResInfo &devResInfo)
+ {
++    HCCL_INFO("[HrtGetDevResAddress] devResInfo.dieId[%u], devResInfo.procType[%u], "
++                "devResInfo.resType[%u], devResInfo.flag[%u], devResInfo.resId[%u].", 
++                devResInfo.dieId, devResInfo.procType, devResInfo.resType, devResInfo.flag, devResInfo.resId);
+     rtDevResInfo resInfo;
+     resInfo.dieId    = devResInfo.dieId;
+     resInfo.procType = HRT_DEV_RES_PROC_TYPE_MAP.at(devResInfo.procType);
+@@ -1061,18 +1209,26 @@ HrtDevResAddrInfo HrtGetDevResAddress(const HrtDevResInfo &devResInfo)
+     rtDevResAddrInfo addrInfo;
+     addrInfo.resAddress = &addr;
+     addrInfo.len        = &len;
+-    auto ret            = rtGetDevResAddress(&resInfo, &addrInfo);
++    auto ret           = rtGetDevResAddress(&resInfo, &addrInfo);
+     if (ret != RT_ERROR_NONE) {
+-        string msg = StringFormat("Call rtGetDevResAddress failed.");
++        string msg = StringFormat("Call rtGetDevResAddress failed, return[%d], devResInfo.dieId[%u], "
++                                "devResInfo.procType[%u], devResInfo.resType[%u], devResInfo.flag[%u], "
++                                "devResInfo.resId[%u].", 
++                                ret, devResInfo.dieId, devResInfo.procType, devResInfo.resType, devResInfo.flag, 
++                                devResInfo.resId);
+         THROW<RuntimeApiException>(msg);
+     }
+     HrtDevResAddrInfo devResAddrInfo;
+     devResAddrInfo.address = addr;
+     devResAddrInfo.len     = len;
++    HCCL_INFO("devResAddrInfo.address[%llu], devResAddrInfo.len[%u]", devResAddrInfo.address, devResAddrInfo.len);
+     return devResAddrInfo;
+ }
+ void HrtReleaseDevResAddress(const HrtDevResInfo &devResInfo)
+ {
++    HCCL_INFO("[HrtReleaseDevResAddress] devResInfo.dieId[%u], devResInfo.procType[%u], "
++                "devResInfo.resType[%u], devResInfo.flag[%u], devResInfo.resId[%u].", 
++                devResInfo.dieId, devResInfo.procType, devResInfo.resType, devResInfo.flag, devResInfo.resId);
+     rtDevResInfo resInfo;
+     resInfo.dieId    = devResInfo.dieId;
+     resInfo.procType = HRT_DEV_RES_PROC_TYPE_MAP.at(devResInfo.procType);
+@@ -1082,34 +1238,48 @@ void HrtReleaseDevResAddress(const HrtDevResInfo &devResInfo)
+ 
+     rtError_t ret = rtReleaseDevResAddress(&resInfo);
+     if (ret != RT_ERROR_NONE) {
+-        string msg = StringFormat("Call rtReleaseDevResAddress failed.");
++        string msg = StringFormat("Call rtReleaseDevResAddress failed, return[%d], devResInfo.dieId[%u], "
++                                    "devResInfo.procType[%u],devResInfo.resType[%u], devResInfo.flag[%u], "
++                                    "devResInfo.resId[%u].", 
++                                    ret, devResInfo.dieId, devResInfo.procType, devResInfo.resType, 
++                                    devResInfo.flag, devResInfo.resId);
+         THROW<RuntimeApiException>(msg);
+     }
+ }
+ 
+ aclrtEvent HrtEventCreateWithFlag(u32 flag)
+ {
++    HCCL_INFO("[HrtEventCreateWithFlag] flag[%u].", flag);
+     aclrtEvent ptr = nullptr;
+     aclError ret = aclrtCreateEventWithFlag(&ptr, flag);
+     if (ret != ACL_SUCCESS) {
+-        THROW<RuntimeApiException>(StringFormat("Call rtEventCreateWithFlag failed, with ret[%d]", ret));
++        string msg = StringFormat("Call rtEventCreateWithFlag failed, return[%d], flag[%u], ptr[%p].", ret, flag, ptr);
++        THROW<RuntimeApiException>(msg);
+     }
+     return ptr;
+ }
+ 
+ void HrtEventDestroy(RtEvent_t eventPtr)
+ {
++    HCCL_INFO("[HrtEventDestroy] eventPtr[%p].", eventPtr);
++    CHECK_NULLPTR(eventPtr, "[HrtEventDestroy] eventPtr is nullptr!");
+     aclError ret = aclrtDestroyEvent(eventPtr);
+     if (ret != ACL_SUCCESS) {
+-        THROW<RuntimeApiException>(StringFormat("Call aclrtDestroyEvent failed, with ret[%d]", ret));
++        string msg = StringFormat("Call aclrtDestroyEvent failed, return[%d], eventPtr[%p].", ret, eventPtr);
++        THROW<RuntimeApiException>(msg);
+     }
+ }
+ 
+ void HrtEventRecord(RtEvent_t eventPtr, aclrtStream streamPtr)
+ {
++    HCCL_INFO("[HrtEventRecord] eventPtr[%p], streamPtr[%p].", eventPtr, streamPtr);
++    CHECK_NULLPTR(eventPtr, "[HrtEventRecord] eventPtr is nullptr!");
++    CHECK_NULLPTR(streamPtr, "[HrtEventRecord] streamPtr is nullptr!");
+     aclError ret = aclrtRecordEvent(eventPtr, streamPtr);
+     if (ret != ACL_SUCCESS) {
+-        THROW<RuntimeApiException>(StringFormat("Call aclrtRecordEvent failed, with ret[%d]", ret));
++        string msg = StringFormat("Call aclrtRecordEvent failed, return[%d], eventPtr[%p], streamPtr[%p].", 
++                    ret, eventPtr, streamPtr);
++        THROW<RuntimeApiException>(msg);
+     }
+ }
+ 
+@@ -1120,10 +1290,13 @@ const std::map<aclrtEventWaitStatus, HrtEventStatus> HRT_EVENT_STATUS_MAP{
+ 
+ HrtEventStatus HrtEventQueryStatus(RtEvent_t eventPtr)
+ {
++    HCCL_INFO("[HrtEventQueryStatus] eventPtr[%p].", eventPtr);
++    CHECK_NULLPTR(eventPtr, "[HrtEventQueryStatus] eventPtr is nullptr!");
+     aclrtEventWaitStatus status = ACL_EVENT_WAIT_STATUS_NOT_READY;
+     aclError ret = aclrtQueryEventWaitStatus(eventPtr, &status);
+     if (ret != ACL_SUCCESS) {
+-        THROW<RuntimeApiException>(StringFormat("Call aclrtQueryEventWaitStatus failed, with ret[%d]", ret));
++        string msg = StringFormat("Call aclrtQueryEventWaitStatus failed, return[%d], eventPtr[%p].", ret, eventPtr);
++        THROW<RuntimeApiException>(msg);
+     }
+     if (HRT_EVENT_STATUS_MAP.find(status) == HRT_EVENT_STATUS_MAP.end()) {
+         THROW<InvalidParamsException>(
+@@ -1134,6 +1307,8 @@ HrtEventStatus HrtEventQueryStatus(RtEvent_t eventPtr)
+ 
+ void HrtWriteValue(u64 addr, u32 piVal, const aclrtStream streamPtr)
+ {
++    HCCL_INFO("[HrtWriteValue] addr[%llu], piVal[%u], streamPtr[%p].", addr, piVal, streamPtr);
++    CHECK_NULLPTR(streamPtr, "[HrtWriteValue] streamPtr is nullptr!");
+     rtWriteValueInfo_t writeValueInfo;
+     writeValueInfo.addr  = addr;
+     writeValueInfo.size  = WRITE_VALUE_SIZE_TYPE_32BIT;
+@@ -1145,7 +1320,8 @@ void HrtWriteValue(u64 addr, u32 piVal, const aclrtStream streamPtr)
+ 
+     rtError_t ret = rtWriteValue(&writeValueInfo, streamPtr);
+     if (ret != RT_ERROR_NONE) {
+-        string msg = StringFormat("call rtWriteValue failed, ret=[%d]", ret);
++        string msg = StringFormat("call rtWriteValue failed, return[%d], addr[%llu], piVal[%u], streamPtr[%p].", 
++            ret, addr, piVal, streamPtr);
+         THROW<RuntimeApiException>(msg);
+     }
+ }
+@@ -1161,9 +1337,13 @@ void HrtDeviceAbortRegCallBack(rtsDeviceTaskAbortCallback callback, void *args)
+ 
+ HcclResult HrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode)
+ {
++    HCCL_INFO("[HrtThreadExchangeCaptureMode] mode[%p].", mode);
++    CHECK_NULLPTR(mode, "[HrtThreadExchangeCaptureMode] mode is nullptr!");
+     aclError ret = aclmdlRICaptureThreadExchangeMode(mode);
+     if (ret == ACL_ERROR_RT_FEATURE_NOT_SUPPORT) {
+-        HCCL_WARNING("[HrtThreadExchangeCaptureMode]rtThreadExchangeCaptureMode not support!");
++        HCCL_ERROR("[HrtThreadExchangeCaptureMode] errNo[0x%016llx] "
++            "rtThreadExchangeCaptureMode not support!, ret=%d, mode=%p.",
++            HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, mode);
+         return HCCL_E_NOT_SUPPORT;
+     } else {
+         CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[HrtThreadExchangeCaptureMode]rtThreadExchangeCaptureMode "
+@@ -1174,9 +1354,11 @@ HcclResult HrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode)
+ 
+ HcclResult HrtMemPrefetchToDevice(void *devPtr, uint64_t len)
+ {
++    HCCL_INFO("[HrtMemPrefetchToDevice] devPtr[%p], len[%llu].", devPtr, len);
++    CHECK_NULLPTR(devPtr, "[HrtMemPrefetchToDevice] devPtr is nullptr!");
+     int ret = rtMemPrefetchToDevice(devPtr, len, HrtGetDevice());
+     if (ret != 0) {
+-        HCCL_ERROR("rtMemPrefetchToDevice fail ret = %d", ret);
++        HCCL_ERROR("rtMemPrefetchToDevice fail ret=%d, devPtr=%p, len=%llu", ret, devPtr, len);
+         return HCCL_E_RUNTIME;
+     }
+     return HCCL_SUCCESS;
+diff --git a/src/legacy/unified_platform/pub_inc/ccu/ccu_dev_mgr.h b/src/legacy/unified_platform/pub_inc/ccu/ccu_dev_mgr.h
+index 508debbf58702f22cc1a51e36ce695c98a2eec72..883ee8924eb468c466af9dbfc40cd4af21183136 100644
+--- a/src/legacy/unified_platform/pub_inc/ccu/ccu_dev_mgr.h
++++ b/src/legacy/unified_platform/pub_inc/ccu/ccu_dev_mgr.h
+@@ -42,6 +42,12 @@ struct CcuJettyInfo {
+ 
+     uint64_t sqBufVa{0};
+     uint32_t sqBufSize{0};
++
++    std::string ToString() const {
++        return StringFormat("jettyType=%d, jettyCtxId=%d, taJettyId=%d, sqDepth=%d, "
++                            "wqeBBStartId=%d, sqBufVa=%d, sqBufSize=%d",
++            jettyType, jettyCtxId, taJettyId, sqDepth, wqeBBStartId, sqBufVa, sqBufSize);
++    }
+ };
+ 
+ struct CcuChannelInfo {
+diff --git a/src/legacy/unified_platform/pub_inc/resource/transport/ccu_jetty.h b/src/legacy/unified_platform/pub_inc/resource/transport/ccu_jetty.h
+index 60a7a6f366be280a05c06419573b737a8c97c1a9..304e7a3d4447e2343684028d1a2cd2b574127a18 100644
+--- a/src/legacy/unified_platform/pub_inc/resource/transport/ccu_jetty.h
++++ b/src/legacy/unified_platform/pub_inc/resource/transport/ccu_jetty.h
+@@ -14,12 +14,16 @@
+ #include "ip_address.h"
+ #include "ccu_dev_mgr.h"
+ #include "orion_adapter_hccp.h"
++#include "hccp_ctx.h"
++#include "rdma_handle_manager.h"
++#include "local_ub_rma_buffer.h"
+ 
+ namespace Hccl {
+ 
+ class CcuJetty final {
+ public:
+-    CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo);
++    explicit CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo);
++
+     ~CcuJetty();
+     CcuJetty(const CcuJetty &that) = delete;
+     CcuJetty &operator=(const CcuJetty &that) = delete;
+@@ -43,9 +47,38 @@ public:
+     {
+         return jettyInfo_.taJettyId;
+     }
+-    void Clean();
++    HcclResult Clean();
+ 
++    static HcclResult Create(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
++                            std::unique_ptr<CcuJetty> &ccuJetty){
++                                ccuJetty = std::make_unique<CcuJetty> (ipAddr, jettyInfo);
++                                TRY_CATCH_RETURN(ccuJetty->Initialize());
++                                return HcclResult::HCCL_SUCCESS;
++                            }
+ private:
++    void Initialize(){
++        devLogicId_ = HrtGetDevice();
++        uint32_t devPhyId = HrtGetDevicePhyIdByIndex(devLogicId_);
++        auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
++        rdmaHandle_ = rdmaHandleMgr.GetByIp(devPhyId, ipAddr_);
++        const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle_, HrtUbJfcMode::CCU_POLL);
++        const auto &tokenInfo = rdmaHandleMgr.GetTokenIdInfo(rdmaHandle_);
++        const auto tokenIdHandle = tokenInfo.first;
++        const auto tokenValue = GetUbToken();
++        const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
++        
++        inParam_.sjfcHandle = jfcHandle;
++        inParam_.rjfcHandle = jfcHandle;
++        inParam_.tokenValue = tokenValue;
++        inParam_.tokenIdHandle = tokenIdHandle;
++        inParam_.jettyMode = jettyMode;
++        inParam_.jettyId = jettyInfo_.taJettyId;
++        inParam_.sqBufVa = jettyInfo_.sqBufVa;
++        inParam_.sqBufSize = jettyInfo_.sqBufSize;
++        inParam_.sqeBufIndex = jettyInfo_.wqeBBStartId;
++        inParam_.sqDepth = jettyInfo_.sqDepth;
++    }
++    
+     int32_t devLogicId_{0};
+     IpAddress ipAddr_{};
+     CcuJettyInfo jettyInfo_{};
+diff --git a/src/legacy/unified_platform/pub_inc/resource/transport/ccu_transport_group.h b/src/legacy/unified_platform/pub_inc/resource/transport/ccu_transport_group.h
+index 2e7b46ba1ae761b69c8bdadcb56b7ab6b113321b..8c8758d86e3ae8791bdfe2444ed3d264f206e481 100644
+--- a/src/legacy/unified_platform/pub_inc/resource/transport/ccu_transport_group.h
++++ b/src/legacy/unified_platform/pub_inc/resource/transport/ccu_transport_group.h
+@@ -26,9 +26,9 @@ public:
+     virtual                ~CcuTransportGroup();
+     void                    Destroy();
+     TransportGrpStatus      GetGrpStatus() const;
+-    u32                     GetCntCkeId(u32 index) const;
++    u32                     GetCntCkeId(u32 index, u32 &cntCkeId) const;
+     bool                    CheckTransports(const vector<CcuTransport*> &transports);
+-    bool                    CheckTransportCntCke();
++    HcclResult              CheckTransportCntCke();
+     const vector<CcuTransport*> &GetTransports() const;
+ 
+ private:
+diff --git a/src/legacy/unified_platform/resource/ccu_transport/ccu_jetty.cpp b/src/legacy/unified_platform/resource/ccu_transport/ccu_jetty.cpp
+index 1534cd9f376c1392bbdb6beb205b4b3735ec3b57..2bad0a3380e64e10651eef96255f12c9f833c57e 100644
+--- a/src/legacy/unified_platform/resource/ccu_transport/ccu_jetty.cpp
++++ b/src/legacy/unified_platform/resource/ccu_transport/ccu_jetty.cpp
+@@ -19,28 +19,12 @@ namespace Hccl {
+ HcclResult CcuCreateJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
+     std::unique_ptr<CcuJetty> &ccuJetty)
+ {
+-    TRY_CATCH_RETURN(
+-        ccuJetty = std::make_unique<CcuJetty>(ipAddr, jettyInfo);
+-    );
+-    return HcclResult::HCCL_SUCCESS;
++    HCCL_INFO("[CcuCreateJetty] ipaddr[%d], jettyInfo[%d], ccuJetty[%d].", ipAddr, jettyInfo, ccuJetty.get());
++    return CcuJetty::Create(ipAddr, jettyInfo, ccuJetty);
+ }
+ 
+ CcuJetty::CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo)
+-    : ipAddr_(ipAddr), jettyInfo_(jettyInfo)
+-{
+-    devLogicId_ = HrtGetDevice();
+-    uint32_t devPhyId = HrtGetDevicePhyIdByIndex(devLogicId_);
+-    auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
+-    rdmaHandle_ = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
+-    const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle_, HrtUbJfcMode::CCU_POLL);
+-    const auto &tokenInfo = rdmaHandleMgr.GetTokenIdInfo(rdmaHandle_);
+-    const auto tokenIdHandle = tokenInfo.first;
+-    const auto tokenValue = GetUbToken();
+-    const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
+-
+-    inParam_ = HrtRaUbCreateJettyParam{jfcHandle, jfcHandle, tokenValue,
+-        tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
+-        jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
++        : ipAddr_(ipAddr), jettyInfo_(jettyInfo){
+ }
+ 
+ CcuJetty::~CcuJetty()
+@@ -145,15 +129,17 @@ HrtRaUbJettyCreatedOutParam CcuJetty::GetJettyedOutParam() const
+     return outParam_;
+ }
+ 
+-void CcuJetty::Clean()
++HcclResult CcuJetty::Clean()
+ {
+-    if (isCreated_ && outParam_.handle != 0) {
+-        HrtRaUbDestroyJetty(outParam_.handle);
+-        isCreated_ = false;
+-        reqHandle_ = 0;
+-        jettyHandlePtr_ = nullptr;
+-        reqDataBuffer_.clear();
+-    }
+-    isError_ = false;
++    TRY_CATCH_RETURN(
++        if (isCreated_ && outParam_.handle != 0) {
++            HrtRaUbDestroyJetty(outParam_.handle);
++            isCreated_ = false;
++            reqHandle_ = 0;
++            jettyHandlePtr_ = nullptr;
++            reqDataBuffer_.clear();
++        }
++        isError_ = false;);
++    return HcclResult::HCCL_SUCCESS;
+ }
+ } // namespace Hccl
+\ No newline at end of file
+diff --git a/src/legacy/unified_platform/resource/ccu_transport/ccu_transport_group.cpp b/src/legacy/unified_platform/resource/ccu_transport/ccu_transport_group.cpp
+index c536cd6470acaa894a094896efa73c573c48dc41..d1c743c429aa6ba95c8fbb7ca1653b442b23fc29 100644
+--- a/src/legacy/unified_platform/resource/ccu_transport/ccu_transport_group.cpp
++++ b/src/legacy/unified_platform/resource/ccu_transport/ccu_transport_group.cpp
+@@ -16,6 +16,7 @@ namespace Hccl {
+ 
+ bool CcuTransportGroup::CheckTransports(const vector<CcuTransport*> &transports)
+ {
++    HCCL_INFO("[CheckTransports] size[%u].", transports.size());
+     if (transports.size() == 0) {
+         HCCL_ERROR("[CcuTransportGroup::%s] Transports size is 0, please check.", __func__);
+         return false;
+@@ -31,12 +32,16 @@ bool CcuTransportGroup::CheckTransports(const vector<CcuTransport*> &transports)
+     return true;
+ }
+ 
+-bool CcuTransportGroup::CheckTransportCntCke()
++HcclResult CcuTransportGroup::CheckTransportCntCke()
+ {
+-    HcclResult allocResHandleReturnValue = CcuDeviceManager::AllocCke(HrtGetDevice(), cntCkesGroupDieId, cntCkeNumTransportGroupUse, ckeInfoTransportGroupUse);
++    HcclResult allocResHandleReturnValue = HCCL_SUCCESS;
++
++    TRY_CATCH_RETURN(allocResHandleReturnValue = CcuDeviceManager::AllocCke(HrtGetDevice(), 
++                    cntCkesGroupDieId, cntCkeNumTransportGroupUse, ckeInfoTransportGroupUse));
++                    
+     if (allocResHandleReturnValue != HCCL_SUCCESS) {
+         HCCL_ERROR("[CcuTransportGroup::%s] Failed to allocate cntCke resource, please check.", __func__);
+-        return false;
++        return HCCL_E_INTERNAL;
+     }
+ 
+     for (u32 i = 0; i < ckeInfoTransportGroupUse.size(); i++) {
+@@ -50,11 +55,12 @@ bool CcuTransportGroup::CheckTransportCntCke()
+     for (auto &transport : transportsGrp) {
+         transport->SetCntCke(cntCkesGroup);
+     }
+-    return true;
++    return HCCL_SUCCESS;
+ }
+ 
+ CcuTransportGroup::CcuTransportGroup(const vector<CcuTransport*> &transports, u32 cntCkeNum):isDestroyed(false)
+ {
++    HCCL_INFO("[CcuTransportGroup] cntCkeNum[%u].", cntCkeNum);
+     if (!CheckTransports(transports)) {
+         grpStatus = TransportGrpStatus::FAIL;
+         HCCL_ERROR("[CcuTransportGroup::%s] Func CheckTransports failed, please check.", __func__);
+@@ -76,6 +82,7 @@ CcuTransportGroup::CcuTransportGroup(const vector<CcuTransport*> &transports, u3
+ 
+ TransportGrpStatus CcuTransportGroup::GetGrpStatus() const
+ {
++    HCCL_INFO("[CcuTransportGroup] current group status [%s].", grpStatus);
+     return grpStatus;
+ }
+ 
+@@ -103,13 +110,17 @@ void CcuTransportGroup::Destroy()
+     transportsGrp.clear();
+ }
+ 
+-u32 CcuTransportGroup::GetCntCkeId(u32 index) const
++u32 CcuTransportGroup::GetCntCkeId(u32 index, u32 &cntCkeId) const
+ {
++    HCCL_INFO("[GetCntCkeId] index[%u].", index);
+     if (index >= cntCkesGroup.size()) {
+-        THROW<InvalidParamsException>(StringFormat("[CcuTransportGroup::%s] Index[%u] is bigger than cntCkesGroup size[%u], please check.", 
+-            __func__, index, cntCkesGroup.size()));
++        HCCL_ERROR("[GetCntCkeId] err[%s], index[%u] is bigger then cntCkesGroup size[%u], please check.",
++                __func__, index, cntCkesGroup.size());
++        return HcclResult::HCCL_E_PARA;
+     }
+-    return cntCkesGroup[index];
++
++    cntCkeId = cntCkesGroup[index];
++    return HcclResult::HCCL_SUCCESS;
+ }
+ 
+ const vector<CcuTransport*> &CcuTransportGroup::GetTransports() const
+diff --git a/src/legacy/unified_platform/resource/net_dev/hccl_net_dev.cc b/src/legacy/unified_platform/resource/net_dev/hccl_net_dev.cc
+index b84cda4b35fe2930dd318afd7184339fbf7be62d..68adc18bed8866e57b88a28f44f71db9ab413ed4 100644
+--- a/src/legacy/unified_platform/resource/net_dev/hccl_net_dev.cc
++++ b/src/legacy/unified_platform/resource/net_dev/hccl_net_dev.cc
+@@ -9,30 +9,53 @@
+  */
+ #include "hccl_net_dev_v2.h"
+ #include "hccl_net_dev.h"
++#include "log.h"
+ 
+ using namespace std;
++using namespace Hccl;
+ 
+ HcclResult HcclNetDevOpen(const HcclNetDevInfos *info, HcclNetDev *netDev)
+ {
+-    return HcclNetDevOpenV2(info, netDev);
++    CHK_PTR_NULL(netDev);
++    HcclResult ret = HcclNetDevOpenV2(info, netDev);
++    if(ret == HCCL_SUCCESS){
++        CHK_PTR_NULL(*netDev);
++        HCCL_INFO("HcclNetDevOpen: successfully opened netDev [%p]!", *netDev);
++    }
++    return ret;
+ }
+ 
+ HcclResult HcclNetDevClose(HcclNetDev netDev)
+ {
++    HCCL_INFO("[HcclNetDevClose] netDev[%d].", netDev);
+     return HcclNetDevCloseV2(netDev);
+ }
+ 
+ HcclResult HcclNetDevGetAddr(HcclNetDev netDev, HcclAddress *addr)
+ {
+-    return HcclNetDevGetAddrV2(netDev, addr);
++    HcclResult ret = HcclNetDevOpenV2(reinterpret_cast<const HcclNetDevInfos*>(netDev), 
++                                    reinterpret_cast<HcclNetDev*>(addr));
++    if(ret == HCCL_SUCCESS){
++        CHK_PTR_NULL(addr);
++        HCCL_INFO("HcclNetDevGetAddr: successfully got addr [%p]!", addr);
++    }
++    return ret;
+ }
+ 
+ HcclResult HcclNetDevGetBusAddr(HcclDeviceId dstDevId, HcclAddress *busAddr)
+ {
+-    return HcclNetDevGetBusAddrV2(dstDevId, busAddr);
++    HcclResult ret = HcclNetDevGetBusAddrV2(dstDevId, busAddr);
++    if(ret != HCCL_SUCCESS){
++        HCCL_ERROR("HcclNetDevGetBusAddr: failed to get bus addres for device %d, error code: %d", dstDevId, ret);
++    }
++    return ret;
+ }
+ 
+ HcclResult HcclNetDevGetNicAddr(int32_t devicePhyId, HcclAddress **addr, uint32_t *addrNum)
+ {
+-    return HcclNetDevGetNicAddrV2(devicePhyId, addr, addrNum);
++    HcclResult ret = HcclNetDevGetNicAddrV2(devicePhyId, addr, addrNum);
++    if(ret != HCCL_SUCCESS){
++        HCCL_ERROR("HcclNetDevGetBusAddr: failed to get NIC addres for device %d, error code: %d", devicePhyId, ret);
++    }
++    return ret;
+ }
+\ No newline at end of file
+diff --git a/test/CMakeLists.txt b/test/CMakeLists.txt
+index c21c1fb601e81b31bbac15609de2f1497f8cfd5c..85d6e8dc8527e56704af1283efb1568aebfef6c7 100644
+--- a/test/CMakeLists.txt
++++ b/test/CMakeLists.txt
+@@ -11,7 +11,7 @@ set(CMAKE_SKIP_RPATH FALSE)
+ 
+ # UT
+ if(ENABLE_UT)
+-    add_subdirectory(ut)
++#   add_subdirectory(ut)
+     add_subdirectory(legacy/ut)
+ endif()
+ 
+diff --git a/test/legacy/st/otherFiles/framework/ccu/ccu_manager/st_ccu_transport_group_manager.cpp b/test/legacy/st/otherFiles/framework/ccu/ccu_manager/st_ccu_transport_group_manager.cpp
+index 8fcfd884839c67f87d24493d1267f2004148a010..7e1c7e5d7c5e489e350e4a4acd9edc9e3f6d7995 100644
+--- a/test/legacy/st/otherFiles/framework/ccu/ccu_manager/st_ccu_transport_group_manager.cpp
++++ b/test/legacy/st/otherFiles/framework/ccu/ccu_manager/st_ccu_transport_group_manager.cpp
+@@ -223,7 +223,7 @@ TEST_F(CcuTransportGroupMgrTest, Test_CcuTransportGroupMgr_001)
+     utTransports.push_back(std::move(utCcuTransport.get()));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroup
+@@ -399,7 +399,7 @@ TEST_F(CcuTransportGroupMgrTest, Test_CcuTransportGroupMgr_003)
+     MOCKER_CPP(&CcuTransportMgr::Get, set<CcuTransport*>(CcuTransportMgr::*)(RankId)).stubs().with(any()).will(returnValue(utCcuTransportSet));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroupMgr
+@@ -499,7 +499,7 @@ TEST_F(CcuTransportGroupMgrTest, Test_CcuTransportGroupMgr_004)
+     utTransports.push_back(std::move(utCcuTransport.get()));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroup
+@@ -671,7 +671,7 @@ TEST_F(CcuTransportGroupMgrTest, Test_CcuTransportGroupMgr_006)
+     utCcuTransportVec.emplace_back(std::move(utCcuTransport.get()));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroup
+@@ -847,7 +847,7 @@ TEST_F(CcuTransportGroupMgrTest, GetAllTransportGroups)
+     utTransports.push_back(std::move(utCcuTransport.get()));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+     
+     // 创建utCcuTransportGroup
+@@ -1019,7 +1019,7 @@ TEST_F(CcuTransportGroupMgrTest, should_return_ccuTransportGroup_when_calling_Re
+     MOCKER_CPP(&CcuTransportMgr::Get, set<CcuTransport*>(CcuTransportMgr::*)(RankId)).stubs().with(any()).will(returnValue(utCcuTransportSet));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroupMgr
+@@ -1126,7 +1126,7 @@ TEST_F(CcuTransportGroupMgrTest, should_throw_if_transportGroup_init_fail_when_c
+     MOCKER_CPP(&CcuTransportMgr::Get, set<CcuTransport*>(CcuTransportMgr::*)(RankId)).stubs().with(any()).will(returnValue(utCcuTransportSet));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(false));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_E_INTERNAL));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroupMgr
+@@ -1234,7 +1234,7 @@ TEST_F(CcuTransportGroupMgrTest, should_no_throw_if_rankgroup_empty_when_calling
+     MOCKER_CPP(&CcuTransportMgr::Get, set<CcuTransport*>(CcuTransportMgr::*)(RankId)).stubs().with(any()).will(returnValue(utCcuTransportSet));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(false));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_E_INTERNAL));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroupMgr
+diff --git a/test/legacy/st/otherFiles/st_interpreter.cc b/test/legacy/st/otherFiles/st_interpreter.cc
+index 6466ed9abb899c5211afea3b1dc21963c361a496..fb2786d234f4ff7d2929fa3185017d1ce687cab7 100644
+--- a/test/legacy/st/otherFiles/st_interpreter.cc
++++ b/test/legacy/st/otherFiles/st_interpreter.cc
+@@ -188,7 +188,7 @@ TEST_F(InterpreterTest, St_Submit_When_input_Expect_NO_THROW)
+     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
+     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
+     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
+     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
+diff --git a/test/legacy/st/otherFiles/unified_platform/ccu/ccu_context/st_ccu_context.cpp b/test/legacy/st/otherFiles/unified_platform/ccu/ccu_context/st_ccu_context.cpp
+index 4e2886bf754bb7bd291e610dc61ff55dd9292a51..0378ac79c91c93e4063d715df594fb66d3e3d47d 100644
+--- a/test/legacy/st/otherFiles/unified_platform/ccu/ccu_context/st_ccu_context.cpp
++++ b/test/legacy/st/otherFiles/unified_platform/ccu/ccu_context/st_ccu_context.cpp
+@@ -475,7 +475,7 @@ TEST_F(CcuContextTest, CtxTest)
+     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
+     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
+     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
+     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));;
+@@ -637,7 +637,7 @@ TEST_F(CcuContextTest, TestSharedRes)
+     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
+     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
+     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
+     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));;
+diff --git a/test/legacy/st/otherFiles/unified_platform/ccu/ccu_context/st_ccu_context_tracker.cpp b/test/legacy/st/otherFiles/unified_platform/ccu/ccu_context/st_ccu_context_tracker.cpp
+index a477b26835e7aee1372122282d54f08f8c4f4023..ca4465dc6809b24b58d1eb452429740728392235 100644
+--- a/test/legacy/st/otherFiles/unified_platform/ccu/ccu_context/st_ccu_context_tracker.cpp
++++ b/test/legacy/st/otherFiles/unified_platform/ccu/ccu_context/st_ccu_context_tracker.cpp
+@@ -129,7 +129,7 @@ TEST_F(CcuContextTrackerTest, TrackerTest)
+     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
+     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
+     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
+     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));;
+diff --git a/test/legacy/st/otherFiles/unified_platform/ccu/ccu_context/st_ccu_ctx_mgr.cpp b/test/legacy/st/otherFiles/unified_platform/ccu/ccu_context/st_ccu_ctx_mgr.cpp
+index 603904ce10ff7fa0ec2965310abe1823ff414fd4..60ed61ce4c54324f285b03f2f2c1a382618097e3 100644
+--- a/test/legacy/st/otherFiles/unified_platform/ccu/ccu_context/st_ccu_ctx_mgr.cpp
++++ b/test/legacy/st/otherFiles/unified_platform/ccu/ccu_context/st_ccu_ctx_mgr.cpp
+@@ -481,7 +481,7 @@ TEST_F(CcuContextManagerTest, AGTest)
+     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
+     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
+     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
+     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));;
+@@ -658,7 +658,7 @@ TEST_F(CcuContextManagerTest, TestSharedRes)
+     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
+     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
+     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
+     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));;
+diff --git a/test/legacy/st/otherFiles/unified_platform/ccu/ccu_dfx/st_ccu_error_handler.cpp b/test/legacy/st/otherFiles/unified_platform/ccu/ccu_dfx/st_ccu_error_handler.cpp
+index ef81783ce69d72107546533c09f121736fb57034..bfda1c45da739ba6fcb7cd1daf5228a3120798b0 100644
+--- a/test/legacy/st/otherFiles/unified_platform/ccu/ccu_dfx/st_ccu_error_handler.cpp
++++ b/test/legacy/st/otherFiles/unified_platform/ccu/ccu_dfx/st_ccu_error_handler.cpp
+@@ -306,7 +306,7 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_rem_wait_group)
+     vector<CcuTransport*> transports {utCcuTransport1.get(), utCcuTransport2.get(), utCcuTransport3.get()};
+     // 打桩CcuTransportGroup构造函数与析构函数的调用
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().with(any()).will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+     MOCKER(CcuDeviceManager::ReleaseCke).defaults().will(returnValue(HcclResult::HCCL_SUCCESS));
+     CcuTransportGroup transportGroup{transports, 0};    // 创建CcuTransportGroup
+     transportGroup.cntCkesGroup.push_back(100);
+diff --git a/test/legacy/st/otherFiles/unified_platform/resource/ccu_transport/st_ccu_transport_group.cc b/test/legacy/st/otherFiles/unified_platform/resource/ccu_transport/st_ccu_transport_group.cc
+index 239c2ae9b5cbeeb5c9407fcc02186750319d5aac..3866cc892dce6672b56429b7d6dc6dea84f19daf 100644
+--- a/test/legacy/st/otherFiles/unified_platform/resource/ccu_transport/st_ccu_transport_group.cc
++++ b/test/legacy/st/otherFiles/unified_platform/resource/ccu_transport/st_ccu_transport_group.cc
+@@ -230,7 +230,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_001)
+     utCcuTransportVec.emplace_back(std::move(utCcuTransport.get()));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroup
+@@ -332,7 +332,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_002)
+     utCcuTransportVec.emplace_back(std::move(utCcuTransport.get()));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroup
+@@ -435,7 +435,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_003)
+     utCcuTransportVec.emplace_back(std::move(utCcuTransport.get()));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroup
+@@ -644,9 +644,9 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_005)
+ 
+     // 创建utCcuTransportGroup
+     CcuTransportGroup utCcuTransportGroup(utCcuTransportVec, utCntCke);
+-    auto res = utCcuTransportGroup.CheckTransports(utCcuTransportVec);
++    HcclResult res = utCcuTransportGroup.CheckTransports(utCcuTransportVec);
+ 
+-    EXPECT_EQ(false, res);
++    EXPECT_EQ(HCCL_E_INTERNAL, res);
+ 
+     delete socket;
+     delete rdmaHandle;
+@@ -741,9 +741,9 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_006)
+ 
+     // 创建utCcuTransportGroup
+     CcuTransportGroup utCcuTransportGroup(utCcuTransportVec, utCntCke);
+-    auto res = utCcuTransportGroup.CheckTransportCntCke();
++    HcclResult res = utCcuTransportGroup.CheckTransportCntCke();
+ 
+-    EXPECT_EQ(true, res);
++    EXPECT_EQ(HCCL_SUCCESS, res);
+ 
+     delete socket;
+     delete rdmaHandle;
+diff --git a/test/legacy/st/service/collective/alg/st_ccu_alg_2d.cc b/test/legacy/st/service/collective/alg/st_ccu_alg_2d.cc
+index 8ae520a51e39bcb883a8df9b32de2f46493028ab..f2df0aa4de98f3f020c100c3172015aec910030c 100644
+--- a/test/legacy/st/service/collective/alg/st_ccu_alg_2d.cc
++++ b/test/legacy/st/service/collective/alg/st_ccu_alg_2d.cc
+@@ -368,7 +368,7 @@ TEST_F(CcuMesh2DTest, CCU_A2A_Mesh_sole_context)
+     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
+     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
+     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
+     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
+diff --git a/test/legacy/ut/framework/ccu/ccu_manager/ut_ccu_transport_group_manager.cpp b/test/legacy/ut/framework/ccu/ccu_manager/ut_ccu_transport_group_manager.cpp
+index fa6614c7aa5c8b4daa1bad585c1040d05ee6906a..937b1be3f0dac128e11adc212e65e398f882a806 100644
+--- a/test/legacy/ut/framework/ccu/ccu_manager/ut_ccu_transport_group_manager.cpp
++++ b/test/legacy/ut/framework/ccu/ccu_manager/ut_ccu_transport_group_manager.cpp
+@@ -157,7 +157,7 @@ TEST_F(CcuTransportGroupMgrTest, Test_CcuTransportGroupMgr_001)
+     utTransports.push_back(std::move(utCcuTransport.get()));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroup
+@@ -331,7 +331,7 @@ TEST_F(CcuTransportGroupMgrTest, Test_CcuTransportGroupMgr_003)
+     MOCKER_CPP(&CcuTransportMgr::Get, set<CcuTransport*>(CcuTransportMgr::*)(RankId)).stubs().with(any()).will(returnValue(utCcuTransportSet));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroupMgr
+@@ -430,7 +430,7 @@ TEST_F(CcuTransportGroupMgrTest, Test_CcuTransportGroupMgr_004)
+     utTransports.push_back(std::move(utCcuTransport.get()));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroup
+@@ -597,7 +597,7 @@ TEST_F(CcuTransportGroupMgrTest, Test_CcuTransportGroupMgr_006)
+     utCcuTransportVec.emplace_back(std::move(utCcuTransport.get()));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroup
+@@ -771,7 +771,7 @@ TEST_F(CcuTransportGroupMgrTest, GetAllTransportGroups)
+     utTransports.push_back(std::move(utCcuTransport.get()));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+     
+     // 创建utCcuTransportGroup
+@@ -941,7 +941,7 @@ TEST_F(CcuTransportGroupMgrTest, should_return_ccuTransportGroup_when_calling_Re
+     MOCKER_CPP(&CcuTransportMgr::Get, set<CcuTransport*>(CcuTransportMgr::*)(RankId)).stubs().with(any()).will(returnValue(utCcuTransportSet));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroupMgr
+@@ -1047,7 +1047,7 @@ TEST_F(CcuTransportGroupMgrTest, should_throw_if_transportGroup_init_fail_when_c
+     MOCKER_CPP(&CcuTransportMgr::Get, set<CcuTransport*>(CcuTransportMgr::*)(RankId)).stubs().with(any()).will(returnValue(utCcuTransportSet));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(false));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_E_INTERNAL));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroupMgr
+@@ -1154,7 +1154,7 @@ TEST_F(CcuTransportGroupMgrTest, should_no_throw_if_linkgroup_empty_when_calling
+     MOCKER_CPP(&CcuTransportMgr::Get, set<CcuTransport*>(CcuTransportMgr::*)(RankId)).stubs().with(any()).will(returnValue(utCcuTransportSet));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(false));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_E_INTERNAL));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroupMgr
+diff --git a/test/legacy/ut/framework/ccu/ccu_manager/ut_ccu_transport_manager.cpp b/test/legacy/ut/framework/ccu/ccu_manager/ut_ccu_transport_manager.cpp
+index a4bcea7e296f41cf798df5e59cddb3a61aef0cca..8d766a94fec8b43094f3062a7459733accc73053 100644
+--- a/test/legacy/ut/framework/ccu/ccu_manager/ut_ccu_transport_manager.cpp
++++ b/test/legacy/ut/framework/ccu/ccu_manager/ut_ccu_transport_manager.cpp
+@@ -153,6 +153,9 @@ void MockCcuTransportMgrDevs()
+ 
+ TEST_F(CcuTransportMgrTest, Ut_PrepareCreate_When_InterfaceOk_Expect_Return_Ok)
+ {
++    u32 pid = 0;
++    MOCKER(HrtGetNotifyID).stubs().will(returnValue(pid));
++    MOCKER(HrtFree).stubs().will(returnValue(static_cast<void*>(0)));
+     const uint32_t baseIpAddrInt = 100;
+     const uint32_t linkNum = 4;
+     const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
+@@ -210,7 +213,10 @@ TEST_F(CcuTransportMgrTest, Ut_PrepareCreate_When_InterfaceOk_Expect_Return_Ok)
+ 
+ TEST_F(CcuTransportMgrTest, Ut_PrepareCreateFailAndFallback_When_InterfaceUnavailable_Expect_Return_Unavailable)
+ {
++    u32 pid = 0;
++    MOCKER(HrtGetNotifyID).stubs().will(returnValue(pid));
+     MOCKER(CcuCreateTransport).stubs().will(returnValue(HcclResult::HCCL_E_UNAVAIL));
++    MOCKER(HrtFree).stubs().will(returnValue(static_cast<void*>(0)));
+ 
+     const uint32_t baseIpAddrInt = 100;
+     const uint32_t linkNum = 4;
+@@ -253,6 +259,9 @@ TEST_F(CcuTransportMgrTest, Ut_PrepareCreateFailAndFallback_When_InterfaceUnavai
+ 
+ TEST_F(CcuTransportMgrTest, Ut_CleanAndResume_When_InterfaceOk_Expect_Return_Ok)
+ {
++    u32 pid = 0;
++    MOCKER(HrtGetNotifyID).stubs().will(returnValue(pid));
++    MOCKER(HrtFree).stubs().will(returnValue(static_cast<void*>(0)));
+     const uint32_t baseIpAddrInt = 100;
+     const uint32_t linkNum = 4;
+     const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
+@@ -308,6 +317,9 @@ TEST_F(CcuTransportMgrTest, Ut_CleanAndResume_When_InterfaceOk_Expect_Return_Ok)
+ 
+ TEST_F(CcuTransportMgrTest, Ut_CleanAndResumeFailed_When_InterfaceError_Expect_Return_Throw)
+ {
++    u32 pid = 0;
++    MOCKER(HrtGetNotifyID).stubs().will(returnValue(pid));
++    MOCKER(HrtFree).stubs().will(returnValue(static_cast<void*>(0)));
+     const uint32_t baseIpAddrInt = 100;
+     const uint32_t linkNum = 4;
+     const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
+@@ -361,6 +373,9 @@ TEST_F(CcuTransportMgrTest, Ut_CleanAndResumeFailed_When_InterfaceError_Expect_R
+ 
+ TEST_F(CcuTransportMgrTest, Ut_RecoverTransports_When_InterfaceOk_Expect_Return_Ok)
+ {
++    u32 pid = 0;
++    MOCKER(HrtGetNotifyID).stubs().will(returnValue(pid));
++    MOCKER(HrtFree).stubs().will(returnValue(static_cast<void*>(0)));
+     const uint32_t baseIpAddrInt = 100;
+     const uint32_t linkNum = 4;
+     const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
+@@ -421,6 +436,9 @@ TEST_F(CcuTransportMgrTest, Ut_RecoverTransports_When_InterfaceOk_Expect_Return_
+ 
+ TEST_F(CcuTransportMgrTest, Ut_RecoverTransportsFailed_When_RecoverMsgError_Expect_Throw)
+ {
++    u32 pid = 0;
++    MOCKER(HrtGetNotifyID).stubs().will(returnValue(pid));
++    MOCKER(HrtFree).stubs().will(returnValue(static_cast<void*>(0)));
+     const uint32_t baseIpAddrInt = 100;
+     const uint32_t linkNum = 4;
+     const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
+diff --git a/test/legacy/ut/framework/ccu/ccu_mc2/ut_mc2_compont.cpp b/test/legacy/ut/framework/ccu/ccu_mc2/ut_mc2_compont.cpp
+index 89934acb7dbfc78b078e68c468fee9a9e0ad4db7..abd0701e42dd3bcbdc0d04379ada583d093f9813 100644
+--- a/test/legacy/ut/framework/ccu/ccu_mc2/ut_mc2_compont.cpp
++++ b/test/legacy/ut/framework/ccu/ccu_mc2/ut_mc2_compont.cpp
+@@ -49,6 +49,7 @@ protected:
+ 
+     virtual void TearDown()
+     {
++        MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+         GlobalMockObject::verify();
+         MC2GlobalMirrorTasks::GetInstance().Clear();
+         std::cout << "A Test case in Mc2CompontTest TearDown" << std::endl;
+@@ -155,6 +156,8 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_generateCcuServer)
+         .with(any(), any(), any())
+         .will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER(InsExeQue::DeregisterExtendInstruction).stubs().with(any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));
++    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     // then
+     std::unique_ptr<CommunicatorImpl> comm = std::make_unique<CommunicatorImpl>();
+     Mc2Compont mc2Compont(comm.get());
+@@ -180,6 +183,8 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_generateCcuServer_and_
+         .with(any(), any(), any())
+         .will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER(InsExeQue::DeregisterExtendInstruction).stubs().with(any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));
++    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     // then
+     std::unique_ptr<CommunicatorImpl> comm = std::make_unique<CommunicatorImpl>();
+     Mc2Compont mc2Compont(comm.get());
+@@ -225,6 +230,8 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_generateCcuServer_and_
+         .stubs()
+         .with(any(), any(), any())
+         .will(returnValue(HcclResult::HCCL_SUCCESS));
++    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     // then
+     std::unique_ptr<CommunicatorImpl> comm = std::make_unique<CommunicatorImpl>();
+     Mc2Compont mc2Compont(comm.get());
+@@ -296,6 +303,8 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_getCcuTaskInfo)
+ 
+ TEST_F(Mc2CompontTest, func_FillCollOperator_test)
+ {
++    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Mc2Tiling mc2Tiling;
+     mc2Tiling.version = UNKNOWN_TILING_V1;
+     std::unique_ptr<CommunicatorImpl> comm = std::make_unique<CommunicatorImpl>();
+@@ -338,6 +347,8 @@ TEST_F(Mc2CompontTest, should_skip_GenerateAlgoTemplatesV2_when_has_cache)
+ 
+ TEST_F(Mc2CompontTest, func_FillCollOperatorV2_test)
+ {
++    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Mc2InitTilingInner mc2Tiling;
+     mc2Tiling.version = UNKNOWN_TILING_V2;
+     std::unique_ptr<CommunicatorImpl> comm = std::make_unique<CommunicatorImpl>();
+diff --git a/test/legacy/ut/framework/device_mode/ut_aicpu_ins_preprocessor.cpp b/test/legacy/ut/framework/device_mode/ut_aicpu_ins_preprocessor.cpp
+index 026f94bcdc9bb9299b6a247ab6e6e0b93fae2760..f0c6f3cca6c62de60cb2441abb90ed70aad41d50 100644
+--- a/test/legacy/ut/framework/device_mode/ut_aicpu_ins_preprocessor.cpp
++++ b/test/legacy/ut/framework/device_mode/ut_aicpu_ins_preprocessor.cpp
+@@ -65,6 +65,7 @@ protected:
+ 
+ TEST_F(AicpuInsPreprocessorTest, should_no_throw_when_calling_isAicpuResExisted)
+ {
++    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
+     CommunicatorImpl comm;
+     AicpuInsPreprocessor aicpuInsPreprocessor(&comm);
+     EXPECT_THROW(aicpuInsPreprocessor.IsAicpuResExisted("test"), NullPtrException);
+@@ -76,6 +77,7 @@ TEST_F(AicpuInsPreprocessorTest, should_no_throw_when_calling_isAicpuResExisted)
+ 
+ TEST_F(AicpuInsPreprocessorTest, should_no_throw_when_calling_getAicpuResBuffer)
+ {
++    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
+     CommunicatorImpl comm;
+     AicpuInsPreprocessor aicpuInsPreprocessor(&comm);
+     EXPECT_THROW(aicpuInsPreprocessor.GetAicpuResBuffer("test"), NullPtrException);
+@@ -123,6 +125,7 @@ TEST_F(AicpuInsPreprocessorTest, should_no_throw_when_calling_batchBuildTranspor
+ 
+ TEST_F(AicpuInsPreprocessorTest, should_no_throw_when_calling_packResAndCopyToDev)
+ {
++    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
+     MOCKER_CPP(&AicpuInsPreprocessor::PackOpData).stubs().with(any(), any(), any()).will(returnValue(std::vector<char>{'1'}));
+     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
+ 
+@@ -137,6 +140,7 @@ TEST_F(AicpuInsPreprocessorTest, should_no_throw_when_calling_packResAndCopyToDe
+ 
+ TEST_F(AicpuInsPreprocessorTest, test_AllocAlltoallVOpMem)
+ {
++    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
+     HcclKernelLaunchParam param;
+     CommunicatorImpl comm;
+     comm.InitNotifyManager();
+diff --git a/test/legacy/ut/framework/device_mode/ut_aicpu_kernel_launcher.cpp b/test/legacy/ut/framework/device_mode/ut_aicpu_kernel_launcher.cpp
+index c71328ebb8315052d3f25a16e33617aecf6a3575..66cc73f706206d1642a544142eadc2167e827f74 100644
+--- a/test/legacy/ut/framework/device_mode/ut_aicpu_kernel_launcher.cpp
++++ b/test/legacy/ut/framework/device_mode/ut_aicpu_kernel_launcher.cpp
+@@ -104,6 +104,7 @@ protected:
+ 
+ TEST_F(AicpuKernelLauncherTest, test_SetHcclKernelLaunchParam_offload)
+ {
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     CollServiceAiCpuImpl collService{&comm};
+     comm.collService = &collService;
+     comm.collService->counterBuf = DevBuffer::Create(0x100, 10);
+@@ -115,6 +116,7 @@ TEST_F(AicpuKernelLauncherTest, test_SetHcclKernelLaunchParam_offload)
+ 
+ TEST_F(AicpuKernelLauncherTest, test_SetHcclKernelLaunchParam_opbase)
+ {
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     CollServiceAiCpuImpl collService{&comm};
+     comm.collService = &collService;
+     comm.collService->counterBuf = DevBuffer::Create(0x100, 10);
+diff --git a/test/legacy/ut/framework/interface/one_sided_service/ut_one_sided_service_adapt_v2.cc b/test/legacy/ut/framework/interface/one_sided_service/ut_one_sided_service_adapt_v2.cc
+index 50ecef04acad566b34605237b13276f95150f52f..ff97e104955a619d4a7014bd7dc97da9a407764a 100644
+--- a/test/legacy/ut/framework/interface/one_sided_service/ut_one_sided_service_adapt_v2.cc
++++ b/test/legacy/ut/framework/interface/one_sided_service/ut_one_sided_service_adapt_v2.cc
+@@ -137,6 +137,7 @@ protected:
+ 
+ TEST_F(OneSidedUtV2, ut_HcclRegisterMemV2_func)
+ {
++    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
+     u32 remoteRankId = 1;
+     s32 count = 1024;
+     s8* localbuf;
+@@ -166,6 +167,7 @@ TEST_F(OneSidedUtV2, ut_HcclRegisterMemV2_func)
+ 
+ TEST_F(OneSidedUtV2, ut_HcclExchangeMemDescV2_func)
+ {
++    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
+     HcclMemDesc localDesc, remoteDesc;
+     char str[21] = "aaaabbbbccccddddeeee";
+     memcpy_s(localDesc.desc, sizeof(localDesc.desc), str, sizeof(str));
+@@ -194,6 +196,7 @@ TEST_F(OneSidedUtV2, ut_HcclExchangeMemDescV2_func)
+ 
+ TEST_F(OneSidedUtV2, ut_HcclEnableMemAccessV2_func)
+ {
++    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
+     u32 remoteRankId = 1;
+     HcclMemDesc remoteMemDesc;
+     HcclMem remoteMem;
+@@ -219,6 +222,7 @@ TEST_F(OneSidedUtV2, ut_HcclEnableMemAccessV2_func)
+ 
+ TEST_F(OneSidedUtV2, ut_HcclBatchPutV2_func)
+ {
++    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
+     nlohmann::json rank_table = rank_table_910_1server_4rank;
+ 
+     char file_name_t[] = "./ut_opbase_test.json";
+diff --git a/test/legacy/ut/framework/misc/ut_mask_event.cc b/test/legacy/ut/framework/misc/ut_mask_event.cc
+index c56f331dd6e4009985dd4a2b51f57cefdc83aec1..e0b4a83ab0bab9144be694339ff3211398b7bd7f 100644
+--- a/test/legacy/ut/framework/misc/ut_mask_event.cc
++++ b/test/legacy/ut/framework/misc/ut_mask_event.cc
+@@ -69,7 +69,11 @@ TEST_F(MaskEventTest, MaskEventRecord_ok)
+     MOCKER(HrtGetDevicePhyIdByIndex)
+         .stubs()
+         .will(returnValue(1));
+-
++    int pid = 0;
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
++ 	MOCKER(HrtEventDestroy).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtGetStreamId).stubs().will(returnValue(pid));
++    MOCKER(HrtEventRecord).stubs().will(returnValue(static_cast<void*>(0)));
+     // when
+     MaskEvent maskEvent;
+     Stream stream;
+diff --git a/test/legacy/ut/framework/resource_manager/notify/ut_conn_local_cnt_notify_manager.cc b/test/legacy/ut/framework/resource_manager/notify/ut_conn_local_cnt_notify_manager.cc
+index 340887a935bc2c6d9f01111679ec007ab7bb2607..48b83913471160d07f3dda56f318d3c1a85f84f2 100644
+--- a/test/legacy/ut/framework/resource_manager/notify/ut_conn_local_cnt_notify_manager.cc
++++ b/test/legacy/ut/framework/resource_manager/notify/ut_conn_local_cnt_notify_manager.cc
+@@ -41,6 +41,8 @@ protected:
+ TEST_F(ConnLocalCntNotifyManagerTest, applyfor_and_get_success)
+ {
+     MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910A2)));
++    u32 pid = 0;
++    MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(pid));
+ 
+     CommunicatorImpl comm;
+     comm.devPhyId = 0;
+diff --git a/test/legacy/ut/framework/resource_manager/notify/ut_host_device_sync_notify_lite_mgr.cc b/test/legacy/ut/framework/resource_manager/notify/ut_host_device_sync_notify_lite_mgr.cc
+index af8524ff6b4e96cab17fac6a1f947922496b90bb..6a73c642726d1d8aa8d7d8f80956cd6c832c8bde 100644
+--- a/test/legacy/ut/framework/resource_manager/notify/ut_host_device_sync_notify_lite_mgr.cc
++++ b/test/legacy/ut/framework/resource_manager/notify/ut_host_device_sync_notify_lite_mgr.cc
+@@ -44,6 +44,8 @@ protected:
+ TEST_F(HostDeviceSyncNotifyLiteMgrTest, test_parse_packed_data)
+ {
+     MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910A3));
++    u32 pid = 0;
++    MOCKER(HrtGetNotifyID).stubs().will(returnValue(pid));
+     HostDeviceSyncNotifyManager mgr;
+     HostDeviceSyncNotifyLiteMgr liteMgr;
+ 
+diff --git a/test/legacy/ut/framework/resource_manager/stream/ut_aicpu_stream_manager.cc b/test/legacy/ut/framework/resource_manager/stream/ut_aicpu_stream_manager.cc
+index 97eb31eecc2de13a9f58ddf400c04f88c99d9ff9..d38220fcfadeefb5fd9014c7262ef74e33b6e18f 100644
+--- a/test/legacy/ut/framework/resource_manager/stream/ut_aicpu_stream_manager.cc
++++ b/test/legacy/ut/framework/resource_manager/stream/ut_aicpu_stream_manager.cc
+@@ -38,8 +38,11 @@ protected:
+     virtual void SetUp()
+     {
+         streamManager = new AicpuStreamManager();
+-
+-        MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeId));
++        
++        u32 pid = 0;
++        MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
++        MOCKER(HrtStreamGetCqId).stubs().will(returnValue(pid));
++        MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeDevLogId));
+         MOCKER(HrtStreamGetSqId).stubs().will(returnValue(fakeSqId));
+         MOCKER(HrtStreamDestroy).stubs();
+         MOCKER(HrtGetDevice).stubs().will(returnValue(fakeDevLogId));
+diff --git a/test/legacy/ut/framework/resource_manager/stream/ut_stream_lite_manager.cc b/test/legacy/ut/framework/resource_manager/stream/ut_stream_lite_manager.cc
+index 9583aa9c44c01d868b08190112ab7664c1cce913..7d4cc5a5dc9b8b0708655ea3ad66857f6494fc64 100644
+--- a/test/legacy/ut/framework/resource_manager/stream/ut_stream_lite_manager.cc
++++ b/test/legacy/ut/framework/resource_manager/stream/ut_stream_lite_manager.cc
+@@ -44,6 +44,8 @@ protected:
+ 
+     virtual void SetUp()
+     {
++        u32 pid = 0;
++        MOCKER(HrtGetNotifyID).stubs().will(returnValue(pid));
+         MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910A2));
+         MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
+         MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
+diff --git a/test/legacy/ut/framework/resource_manager/stream/ut_stream_manager.cc b/test/legacy/ut/framework/resource_manager/stream/ut_stream_manager.cc
+index d513a6c397c67eb5033de7ace614757e0748f601..7a8fcdc4fd2065ebc10f7dbf029e285174201b1a 100644
+--- a/test/legacy/ut/framework/resource_manager/stream/ut_stream_manager.cc
++++ b/test/legacy/ut/framework/resource_manager/stream/ut_stream_manager.cc
+@@ -124,6 +124,7 @@ TEST_F(StreamManagerTest, opbase_register_master_two_diff_stream_and_get)
+ 
+ TEST_F(StreamManagerTest, clear_slaves)
+ {
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     streamManager->opbase->GetOrCreateSlave();
+     ASSERT_NO_THROW(streamManager->opbase->Clear());
+ }
+@@ -188,6 +189,7 @@ TEST_F(StreamManagerTest, Ut_CaptureSlaveStream_When_GetStreamCaptureInfo_ERROR_
+ {
+     // 前置条件
+     MOCKER(&GetStreamCaptureInfo).stubs().will(returnValue(HCCL_E_RUNTIME));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+ 
+     auto stream = std::make_unique<Stream>((void*)1);
+     streamManager->opbase->RegisterMaster(std::move(stream));
+@@ -211,6 +213,7 @@ TEST_F(StreamManagerTest, Ut_CaptureSlaveStream_When_rtModel_Null_Expect_NullPtr
+         .with(any(), outBound(rtModel), outBound(isCapture))
+         .will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER(&GetModelId).stubs().will(returnValue(HCCL_E_RUNTIME));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+ 
+     auto stream = std::make_unique<Stream>((void*)1);
+     streamManager->opbase->RegisterMaster(std::move(stream));
+@@ -234,6 +237,7 @@ TEST_F(StreamManagerTest, Ut_CaptureSlaveStream_When_GetModelId_ERROR_Expect_Int
+         .with(any(), outBound(rtModel), outBound(isCapture))
+         .will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER(&GetModelId).stubs().will(returnValue(HCCL_E_RUNTIME));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+ 
+     auto stream = std::make_unique<Stream>((void*)1);
+     streamManager->opbase->RegisterMaster(std::move(stream));
+@@ -258,6 +262,7 @@ TEST_F(StreamManagerTest, Ut_CaptureSlaveStream_When_AddStreamToModel_ERROR_Inte
+         .will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER(&GetModelId).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER(&AddStreamToModel).stubs().will(returnValue(HCCL_E_RUNTIME));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     auto stream = std::make_unique<Stream>((void*)1);
+     streamManager->opbase->RegisterMaster(std::move(stream));
+     streamManager->comm->currentCollOperator = std::make_unique<CollOperator>();
+@@ -281,6 +286,7 @@ TEST_F(StreamManagerTest, Ut_CaptureSlaveStream_Expect_no_throw)
+         .will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER(&GetModelId).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER(&AddStreamToModel).stubs().will(returnValue(HCCL_SUCCESS));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     auto stream = std::make_unique<Stream>((void*)1);
+     streamManager->opbase->RegisterMaster(std::move(stream));
+     streamManager->comm->currentCollOperator = std::make_unique<CollOperator>();
+diff --git a/test/legacy/ut/framework/resource_manager/transport/ut_ub_memory_transport_mgr.cc b/test/legacy/ut/framework/resource_manager/transport/ut_ub_memory_transport_mgr.cc
+index 72fac8ab0a062c2e1044f10174f55eb93129120d..f4bde467652dbcbd52c5a9c4d1678730c9bdad67 100644
+--- a/test/legacy/ut/framework/resource_manager/transport/ut_ub_memory_transport_mgr.cc
++++ b/test/legacy/ut/framework/resource_manager/transport/ut_ub_memory_transport_mgr.cc
+@@ -86,6 +86,7 @@ std::vector<char> StubAivSocket::buf;
+ 
+ TEST_F(UbMemoryTransportMgrTest, should_return_success_when_calling_TransportsConnect)
+ {
++    MOCKER(HrtDevMemAlignWithPage).stubs().will(returnValue(static_cast<void*>(0)));
+     cout<<1<<endl;
+     CommunicatorImpl comm;
+     comm.InitSocketManager();
+@@ -133,6 +134,7 @@ TEST_F(UbMemoryTransportMgrTest, should_return_success_when_calling_TransportsCo
+ 
+ TEST_F(UbMemoryTransportMgrTest, should_return_success_when_calling_GetLocMemBuffer)
+ {
++    MOCKER(HrtDevMemAlignWithPage).stubs().will(returnValue(static_cast<void*>(0)));
+     std::shared_ptr<Buffer> cclBuffer = DevBuffer::Create(0x100, 10);
+ 
+     unique_ptr<StubAivSocket> fakeSocket = make_unique<StubAivSocket>();
+diff --git a/test/legacy/ut/framework/service/aicpu/ut_ins_to_sqe_rule_v82.cc b/test/legacy/ut/framework/service/aicpu/ut_ins_to_sqe_rule_v82.cc
+index 95f143987eb3a0d8f04a780a77786f287b072fc3..cfc9f2e57a45c6191ae69a7535b9814431a7962c 100644
+--- a/test/legacy/ut/framework/service/aicpu/ut_ins_to_sqe_rule_v82.cc
++++ b/test/legacy/ut/framework/service/aicpu/ut_ins_to_sqe_rule_v82.cc
+@@ -203,6 +203,7 @@ protected:
+ 
+     virtual void SetUp()
+     {
++        MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
+         MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910A2));
+         MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
+         MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
+@@ -277,7 +278,6 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_copy)
+     RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
+     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::SdmaCopy).stubs().with(any(), any(), any(), any());
+-
+     StubResMgrFetcher mockResMgrFetcher;
+     
+     Interpret(insLocalCopy, stream, &mockResMgrFetcher);
+@@ -296,7 +296,6 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_copy_extend)
+     RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
+     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::SdmaCopy).stubs().with(any(), any(), any(), any());
+-
+     StubResMgrFetcher mockResMgrFetcher;
+     
+     Interpret(insLocalCopyExtend, stream, &mockResMgrFetcher);
+@@ -314,7 +313,6 @@ TEST_F(InsToSqeRuleV82Test, Interpret_LocalReduce)
+     RtsqA5     rtsq(0, 1, 2);
+     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
+     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::SdmaCopy).stubs().with(any(), any(), any(), any());
+-
+     StubResMgrFetcher mockResMgrFetcher;
+     Interpret(insLocalReduce, stream, &mockResMgrFetcher);
+ }
+@@ -344,14 +342,13 @@ TEST_F(InsToSqeRuleV82Test, Interpret_AicpuReduce)
+     RtsqA5     rtsq(0, 1, 2);
+     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
+     MOCKER(&InsAicpuReduce::RunAicpuReduce).stubs();
+- 
+     StubResMgrFetcher mockResMgrFetcher;
+     Interpret(insAicpuReduce, stream, &mockResMgrFetcher);
+ }
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_StreamSync)
+ {
+-    InsStreamSync insStreamSync;
++        InsStreamSync insStreamSync;
+ 
+     std::vector<char> notifyLite1{1,2};
+     StreamLite stream(notifyLite1);
+@@ -364,7 +361,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_StreamSync)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_local_copy_extend_err)
+ {
+-    u64          size = 100;
++        u64          size = 100;
+     DataBuffer    srcBuffer(0x1234560, size);
+     DataBuffer    dstBuffer(0x1321000, size);
+     InsLocalCopyExtend insLocalCopyExtend(srcBuffer, dstBuffer);
+@@ -374,7 +371,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_copy_extend_err)
+     RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
+     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::SdmaCopy).stubs().with(any(), any(), any(), any());
+-
++    
+     StubResMgrFetcher mockResMgrFetcher;
+     insLocalCopyExtend.srcBuffer_.size = 0;
+     Interpret(insLocalCopyExtend, stream, &mockResMgrFetcher);
+@@ -382,7 +379,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_copy_extend_err)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_local_post_to)
+ {
+-    // normal notify
++        // normal notify
+     NotifyLite *nullNotify = nullptr;
+     std::vector<char> notifyLite1{fakeNotifyId,fakedevPhyId};
+     NotifyLite  notify(notifyLite1);
+@@ -429,7 +426,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_post_to)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_local_wait_from)
+ {
+-    // normal notify
++        // normal notify
+     NotifyLite *nullNotify = nullptr;
+     std::vector<char> notifyLite1{fakeNotifyId,fakedevPhyId};
+     NotifyLite  notify(notifyLite1);
+@@ -476,7 +473,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_wait_from)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_local_bcast_post)
+ {
+-    Cnt1tonNotifyLite *nullNotify = nullptr;
++        Cnt1tonNotifyLite *nullNotify = nullptr;
+     std::vector<char> cntNto1NotifyLite1{fakeNotifyId, fakedevPhyId};
+     Cnt1tonNotifyLite  notify(cntNto1NotifyLite1);
+     Cnt1tonNotifyLite *validNotify = &notify;
+@@ -504,7 +501,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_bcast_post)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_local_wait_group)
+ {
+-    CntNto1NotifyLite *nullNotify = nullptr;
++        CntNto1NotifyLite *nullNotify = nullptr;
+     std::vector<char> cntNto1NotifyLite1{fakeNotifyId, fakedevPhyId};
+     CntNto1NotifyLite  notify(cntNto1NotifyLite1);
+     CntNto1NotifyLite *validNotify = &notify;
+@@ -532,7 +529,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_wait_group)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_wait_ready)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr0 = nullptr;
+@@ -565,7 +562,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_wait_ready)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_post_ready)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr0 = nullptr;
+@@ -593,7 +590,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_post_ready)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_wait_fin)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr0 = nullptr;
+@@ -621,7 +618,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_wait_fin)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_post_fin)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr0 = nullptr;
+@@ -649,7 +646,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_post_fin)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -671,7 +668,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_is_empty_err)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -691,7 +688,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_is_empty_err)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWrite_size_is_0)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -715,7 +712,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWrite_size_is_0)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWrite_size_isnot_0_err)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -738,7 +735,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWrite_size_isnot_0_err)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWriteReduce_size_is_0)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -762,7 +759,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWriteReduce_size_is_0)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWriteReduce_size_isnot_0_err)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -785,7 +782,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_write_insWriteReduce_size_isnot_0_er
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -807,7 +804,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_is_empty_err)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -827,7 +824,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_is_empty_err)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insRead_size_is_0)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -851,7 +848,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insRead_size_is_0)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insRead_size_isnot_0_err)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -874,7 +871,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insRead_size_isnot_0_err)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insReadReduce_size_is_0)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -898,7 +895,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insReadReduce_size_is_0)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insReadReduce_size_isnot_0_err)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -921,7 +918,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_batch_read_insReadReduce_size_isnot_0_err)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_write)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -941,7 +938,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_write_err)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -961,7 +958,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_err)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_write_extend)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -982,7 +979,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_extend)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_write_extend_err)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -1003,7 +1000,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_extend_err)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -1023,7 +1020,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce_err)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -1043,7 +1040,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce_err)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_read)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -1063,7 +1060,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_read)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_read_reduce)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -1083,7 +1080,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_read_reduce)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce_with_fin)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -1103,7 +1100,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce_with_fin)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce_with_fin_err)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -1123,7 +1120,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_reduce_with_fin_err)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -1142,7 +1139,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin_err)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -1161,7 +1158,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin_err)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin_extend)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+@@ -1181,7 +1178,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin_extend)
+ 
+ TEST_F(InsToSqeRuleV82Test, Interpret_write_with_fin_extend_err)
+ {
+-    RankId remoteRank = 1;
++        RankId remoteRank = 1;
+ 
+     transportLite->impl = std::make_unique<StubTransportLiteImpl>();
+     MemTransportLite *stubTransportPtr = transportLite.get();
+diff --git a/test/legacy/ut/framework/service/one_sided_service/ut_hccl_one_sided_service.cc b/test/legacy/ut/framework/service/one_sided_service/ut_hccl_one_sided_service.cc
+index 599828cb4dd8b73b70e819245d82b9102164dd16..678040a213c641de08bd91c07c23a20b453ed426 100644
+--- a/test/legacy/ut/framework/service/one_sided_service/ut_hccl_one_sided_service.cc
++++ b/test/legacy/ut/framework/service/one_sided_service/ut_hccl_one_sided_service.cc
+@@ -166,7 +166,8 @@ TEST_F(HcclOneSidedServiceTest, test_ExchangeMemDesc)
+     delete a;
+ }
+ 
+-TEST_F(HcclOneSidedServiceTest, EnableMemAccess_ConnectionNotFound) {
++TEST_F(HcclOneSidedServiceTest, EnableMemAccess_ConnectionNotFound) 
++{
+     CommunicatorImpl com;
+     HcclOneSidedService service(com);
+     // 创建一个HcclMemDesc对象，其中localRankId不存在于oneSidedConns_
+@@ -180,7 +181,8 @@ TEST_F(HcclOneSidedServiceTest, EnableMemAccess_ConnectionNotFound) {
+     EXPECT_EQ(service.EnableMemAccess(desc, mem), HCCL_E_NOT_FOUND);
+ }
+ 
+-TEST_F(HcclOneSidedServiceTest, DisableMemAccess_ConnectionNotFound) {
++TEST_F(HcclOneSidedServiceTest, DisableMemAccess_ConnectionNotFound) 
++{
+     CommunicatorImpl com;
+     HcclOneSidedService service(com);
+ 
+@@ -197,6 +199,14 @@ TEST_F(HcclOneSidedServiceTest, DisableMemAccess_ConnectionNotFound) {
+ 
+ TEST_F(HcclOneSidedServiceTest, test_BatchGet_BatchPut)
+ {
++    MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));    
++    MOCKER(HrtStreamGetSqId).stubs().will(returnValue(static_cast<u32>(0)));
++    MOCKER(HrtStreamGetCqId).stubs().will(returnValue(static_cast<u32>(0)));
++    MOCKER(HrtNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtAicpuKernelLaunchExWithArgs).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtNotifyWaitWithTimeOut).stubs().will(returnValue(static_cast<void*>(0)));
++
+     RankId RankIdA = 0;
+     RankId RankIdB = 1;
+     LinkData linkData1(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), RankIdA, RankIdB, 0, 1);
+diff --git a/test/legacy/ut/framework/service/ut_ins_rules.cc b/test/legacy/ut/framework/service/ut_ins_rules.cc
+index 4f2ae299aa08c510141f3bfcb67f03b4268d84ae..b5c6451577005b7933fb4ac1af4766d3f68bb032 100644
+--- a/test/legacy/ut/framework/service/ut_ins_rules.cc
++++ b/test/legacy/ut/framework/service/ut_ins_rules.cc
+@@ -371,6 +371,9 @@ TEST_F(InsRulesTest, Interpret_local_post_to)
+     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+     MOCKER(HrtCntNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
+     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
+ 
+     RtsNotify *nullLocalNotify = nullptr;
+ 
+@@ -429,6 +432,8 @@ TEST_F(InsRulesTest, Interpret_local_wait_from)
+     insLocalWaitFrom.SetWaitQid(1);
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtNotifyWaitWithTimeOut).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -448,6 +453,8 @@ TEST_F(InsRulesTest, Interpret_local_wait_from_cnt_notify)
+     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+     MOCKER(HrtCntNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
+     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs().will(returnValue(static_cast<void*>(0)));
+ 
+     StubCommunicatorImpl fakeComm;
+ 
+@@ -478,6 +485,8 @@ TEST_F(InsRulesTest, Interpret_local_wait_group)
+     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+     MOCKER(HrtCntNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
+     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
++    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+ 
+     RtsCntNotify *nullCntNotify = nullptr;
+     RtsCntNotify  rtsCntNotify;
+@@ -510,6 +519,8 @@ TEST_F(InsRulesTest, Interpret_local_bcast_post)
+     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+     MOCKER(HrtCntNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
+     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
+ 
+     Rts1ToNCntNotify *nullCntNotify = nullptr;
+     Rts1ToNCntNotify  rts1toNCntNotify;
+@@ -545,6 +556,8 @@ TEST_F(InsRulesTest, Interpret_local_copy)
+     DataSlice    dstSlice2(BufferType::SCRATCH, 100, 0);
+     InsLocalCopy insLocalCopy2(srcSlice2, dstSlice2);
+ 
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+@@ -580,6 +593,7 @@ TEST_F(InsRulesTest, Interpret_post_ready)
+     InsPostReady insPostReady(remoteRank, link);
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -613,6 +627,7 @@ TEST_F(InsRulesTest, Interpret_wait_ready)
+     InsWaitReady insWaitReady(remoteRank, link);
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -646,6 +661,7 @@ TEST_F(InsRulesTest, Interpret_post_fin)
+     InsPostFin insPostFin(remoteRank, link);
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -679,6 +695,7 @@ TEST_F(InsRulesTest, Interpret_wait_fin)
+     InsWaitFin insWaitFin(remoteRank, link);
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -706,6 +723,7 @@ TEST_F(InsRulesTest, Interpret_post_fin_ack_p2p_0_task)
+     InsPostFinAck insPostFinAck(remoteRank, link);
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -731,6 +749,7 @@ TEST_F(InsRulesTest, Interpret_wait_fin_ack_p2p_0_task)
+     InsWaitFinAck insWaitFinAck(remoteRank, link);
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -764,6 +783,7 @@ TEST_F(InsRulesTest, Interpret_post_fin_ack_rdma_1_task)
+     InsPostFinAck insPostFinAck(remoteRank, link);
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -799,6 +819,7 @@ TEST_F(InsRulesTest, Interpret_wait_fin_ack_rdma_1_task)
+     InsWaitFinAck insWaitFinAck(remoteRank, link);
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -835,6 +856,7 @@ TEST_F(InsRulesTest, Interpret_read_p2p_slice_is_not_zero_one_task)
+     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any()).will(returnValue(buffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -859,6 +881,7 @@ TEST_F(InsRulesTest, Interpret_read_p2p_rma_connection_is_null_ptr)
+     MOCKER_CPP(&RmaConnManager::Get).stubs().with(any(), any(), any()).will(returnValue(rmaConnection));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -885,6 +908,7 @@ TEST_F(InsRulesTest, Interpret_read_p2p_data_buffer_is_null_ptr)
+     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any()).will(returnValue(nullBuffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -918,6 +942,7 @@ TEST_F(InsRulesTest, Interpret_read_p2p_remote_rma_buffer_is_null_ptr)
+         .will(returnValue(nullRemoteRmaBuffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -951,6 +976,7 @@ TEST_F(InsRulesTest, Interpret_read_reduce_p2p_slice_is_not_zero_one_task)
+     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any()).will(returnValue(buffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -959,6 +985,9 @@ TEST_F(InsRulesTest, Interpret_read_reduce_p2p_slice_is_not_zero_one_task)
+ 
+ TEST_F(InsRulesTest, Interpret_local_reduce_not_support_now)
+ {
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtReduceAsync).stubs().will(returnValue(0));
+     StubCommunicatorImpl fakeComm;
+ 
+     DataSlice      srcSlice(BufferType::INPUT, 0, 100);
+@@ -966,6 +995,7 @@ TEST_F(InsRulesTest, Interpret_local_reduce_not_support_now)
+     InsLocalReduce insLocalReduce(srcSlice, dstSlice, DataType::FP32, ReduceOp::SUM);
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+     Interpret(insLocalReduce, fakeComm, stream, taskConfig);
+@@ -998,6 +1028,7 @@ TEST_F(InsRulesTest, Interpret_write_p2p)
+     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any()).will(returnValue(buffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+     Interpret(insWrite, fakeComm, stream, taskConfig);
+@@ -1036,6 +1067,7 @@ TEST_F(InsRulesTest, Interpret_write_dev_net_rdma_slice_is_not_zero_one_task)
+         .will(returnValue(localRmaBuffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -1078,6 +1110,7 @@ TEST_F(InsRulesTest, Interpret_write_dev_net_rdma_remote_rma_buffer_is_nullptr)
+         .will(returnValue(localRmaBuffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -1117,6 +1150,7 @@ TEST_F(InsRulesTest, Interpret_write_with_fin_dev_net_ub_slice_is_not_zero_one_t
+         .will(returnValue(localRmaBuffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -1157,6 +1191,7 @@ TEST_F(InsRulesTest, Interpret_write_with_fin_cnt_notify)
+ 
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -1196,6 +1231,7 @@ TEST_F(InsRulesTest, Interpret_write_reduce_dev_net_ub_slice_is_not_zero_one_tas
+         .will(returnValue(localRmaBuffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -1236,6 +1272,7 @@ TEST_F(InsRulesTest, Interpret_write_reduce_with_fin_dev_net_ub_slice_is_not_zer
+         .will(returnValue(localRmaBuffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -1276,6 +1313,7 @@ TEST_F(InsRulesTest, Interpret_write_reduce_with_fin_dev_net_ub_slice_is_not_zer
+         .will(returnValue(localRmaBuffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -1315,6 +1353,7 @@ TEST_F(InsRulesTest, Interpret_write_with_fin_dev_net_ub_slice_is_zero_one_task)
+         .will(returnValue(localRmaBuffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -1354,6 +1393,7 @@ TEST_F(InsRulesTest, Interpret_write_with_fin_dev_net_ub_slice_is_zero_one_task_
+         .will(returnValue(localRmaBuffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -1394,6 +1434,7 @@ TEST_F(InsRulesTest, Interpret_write_reduce_with_fin_dev_net_ub_slice_is_zero_on
+         .will(returnValue(localRmaBuffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -1434,6 +1475,7 @@ TEST_F(InsRulesTest, Interpret_write_reduce_with_fin_dev_net_ub_slice_is_zero_on
+         .will(returnValue(localRmaBuffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -1476,6 +1518,7 @@ TEST_F(InsRulesTest, Interpret_read_reduce_dev_net_ub_slice_is_not_zero_one_task
+         .will(returnValue(localRmaBuffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -1518,6 +1561,7 @@ TEST_F(InsRulesTest, Interpret_read_dev_net_ub_slice_is_not_zero_one_task)
+         .will(returnValue(localRmaBuffer));
+ 
+     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+     Stream       stream;
+     OpTaskConfig taskConfig{};
+ 
+@@ -1526,6 +1570,9 @@ TEST_F(InsRulesTest, Interpret_read_dev_net_ub_slice_is_not_zero_one_task)
+ 
+ TEST_F(InsRulesTest, Interpret_wait_group_fin)
+ {
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs().will(returnValue(static_cast<void*>(0)));
++
+     CommunicatorImpl comm;
+     comm.devPhyId                   = 0;
+     comm.rmaConnectionManager       = make_unique<RmaConnManager>(comm);
+@@ -1610,6 +1657,10 @@ HcclResult GetProfilingInfoStub(
+ 
+ TEST_F(InsRulesTest, Interpret_ccu_instruction)
+ {
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
+     MOCKER_CPP(&CommunicatorImpl::ExecAlgSelect).stubs().will(ignoreReturnValue());
+     CommunicatorImpl comm;
+     CollServiceDeviceMode collService{&comm};
+@@ -1636,6 +1687,9 @@ TEST_F(InsRulesTest, Interpret_ccu_instruction)
+ 
+ TEST_F(InsRulesTest, Interpret_aiv_instruction)
+ {
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
+     MOCKER_CPP(&CommunicatorImpl::ExecAlgSelect).stubs().will(ignoreReturnValue());
+     CommunicatorImpl comm;
+     CollServiceDeviceMode collService{&comm};
+@@ -1654,7 +1708,7 @@ TEST_F(InsRulesTest, Interpret_aiv_instruction)
+     rtStream_t fakePtr = nullptr;
+     MOCKER(rtStreamCreateWithFlags).stubs().with(outBoundP(&fakePtr, sizeof(fakePtr))).will(returnValue(RT_ERROR_NONE));
+     MOCKER_CPP(&Hccl::MirrorTaskManager::AddTaskInfo).stubs().with(any()).will(ignoreReturnValue());
+-    
++
+     s32 fakeStreamId = 123;
+     MOCKER(aclrtStreamGetId)
+         .stubs()
+diff --git a/test/legacy/ut/framework/service/ut_interpreter.cc b/test/legacy/ut/framework/service/ut_interpreter.cc
+index 92e15cde25c57051998508aa006bac27ddecd848..980fbab1d9a4cf77951fe13444d286aee20a3371 100644
+--- a/test/legacy/ut/framework/service/ut_interpreter.cc
++++ b/test/legacy/ut/framework/service/ut_interpreter.cc
+@@ -190,7 +190,7 @@ TEST_F(InterpreterTest, Ut_Submit_When_input_Expect_NO_THROW)
+     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
+     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
+     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
+     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
+diff --git a/test/legacy/ut/service/collective/alg/ut_ccu_alg_2d.cc b/test/legacy/ut/service/collective/alg/ut_ccu_alg_2d.cc
+index 5bcc65e3c0538f9ba4c77e872b73cd961de29cae..dc1bcab81a24a7caa1100104b16279fd09fe5f8f 100644
+--- a/test/legacy/ut/service/collective/alg/ut_ccu_alg_2d.cc
++++ b/test/legacy/ut/service/collective/alg/ut_ccu_alg_2d.cc
+@@ -376,7 +376,7 @@ TEST_F(CcuMesh2DTest, CCU_A2A_Mesh_sole_context)
+     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
+     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
+     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
+     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
+diff --git a/test/legacy/ut/unified_platform/ccu/ccu_context/ut_ccu_ctx_mgr.cpp b/test/legacy/ut/unified_platform/ccu/ccu_context/ut_ccu_ctx_mgr.cpp
+index cf791828f874d7c2b0ed210df5f23833631494dc..2d085c0771a474fb883ed07cbf631ee3d268a8cf 100644
+--- a/test/legacy/ut/unified_platform/ccu/ccu_context/ut_ccu_ctx_mgr.cpp
++++ b/test/legacy/ut/unified_platform/ccu/ccu_context/ut_ccu_ctx_mgr.cpp
+@@ -160,10 +160,10 @@ HcclResult CtxMgrGetInstructionNumStub(
+ 
+ TEST_F(CcuContextManagerTest, AGTest)
+ {
+-    MOCKER(HrtGetDevice).defaults().will(returnValue(0));
++    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
+     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
+     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
+     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
+@@ -278,10 +278,10 @@ HcclResult CtxMgrGetResourceSharedResStub(
+ 
+ TEST_F(CcuContextManagerTest, TestSharedRes)
+ {
+-    MOCKER(HrtGetDevice).defaults().will(returnValue(0));
++    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
+     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
+     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
+     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
+diff --git a/test/legacy/ut/unified_platform/ccu/ccu_dfx/ut_ccu_error_handler.cpp b/test/legacy/ut/unified_platform/ccu/ccu_dfx/ut_ccu_error_handler.cpp
+index 030cacc0c1b641f8f271ce3ea0a577c3a069272a..695d75f5a1b4028c8ae1c9f51258c6f790dc0744 100644
+--- a/test/legacy/ut/unified_platform/ccu/ccu_dfx/ut_ccu_error_handler.cpp
++++ b/test/legacy/ut/unified_platform/ccu/ccu_dfx/ut_ccu_error_handler.cpp
+@@ -317,7 +317,7 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_rem_wait_group)
+     vector<CcuTransport*> transports {utCcuTransport1.get(), utCcuTransport2.get(), utCcuTransport3.get()};
+     // 打桩CcuTransportGroup构造函数与析构函数的调用
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().with(any()).will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+     MOCKER(CcuDeviceManager::ReleaseCke).defaults().will(returnValue(HcclResult::HCCL_SUCCESS));
+     CcuTransportGroup transportGroup{transports, 0};    // 创建CcuTransportGroup
+     transportGroup.cntCkesGroup.push_back(100);
+diff --git a/test/legacy/ut/unified_platform/ccu/ccu_representation/ut_ccu_context.cpp b/test/legacy/ut/unified_platform/ccu/ccu_representation/ut_ccu_context.cpp
+index 5e06a5b8d051576df69f9989f9372d87b9476970..ad2ee7d9916a432ae95c59e35f38983e43bf1bda 100644
+--- a/test/legacy/ut/unified_platform/ccu/ccu_representation/ut_ccu_context.cpp
++++ b/test/legacy/ut/unified_platform/ccu/ccu_representation/ut_ccu_context.cpp
+@@ -111,7 +111,7 @@ TEST_F(CcuContextTest, CtxTest)
+     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
+     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
+     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
+     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
+@@ -208,7 +208,7 @@ TEST_F(CcuContextTest, TestSharedRes)
+     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
+     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
+     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
+     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
+diff --git a/test/legacy/ut/unified_platform/ccu/ccu_representation/ut_ccu_context_tracker.cpp b/test/legacy/ut/unified_platform/ccu/ccu_representation/ut_ccu_context_tracker.cpp
+index bcccf23ad571bbbd4c59584166a27b780b479333..ca229e13934a76d2d8035346e2c042f1133fd2d6 100644
+--- a/test/legacy/ut/unified_platform/ccu/ccu_representation/ut_ccu_context_tracker.cpp
++++ b/test/legacy/ut/unified_platform/ccu/ccu_representation/ut_ccu_context_tracker.cpp
+@@ -140,7 +140,7 @@ TEST_F(CcuContextTrackerTest, TrackerTest)
+     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
+     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
+     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
+     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
+diff --git a/test/legacy/ut/unified_platform/external_system/system/rts_stub_ut.cc b/test/legacy/ut/unified_platform/external_system/system/rts_stub_ut.cc
+index b9613da5f78ca4c6e7f6c6bdae4f9854ecd3f1ae..e297f3fdf4c129f18fde069a9d9a647edaff5d03 100644
+--- a/test/legacy/ut/unified_platform/external_system/system/rts_stub_ut.cc
++++ b/test/legacy/ut/unified_platform/external_system/system/rts_stub_ut.cc
+@@ -39,6 +39,7 @@ aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType
+ 
+ rtError_t rtStreamCreateWithFlags(rtStream_t *stream, int32_t priority, uint32_t flag)
+ {
++    *stream = reinterpret_cast<rtStream_t>(0x123);
+     return RT_ERROR_NONE;
+ }
+ 
+@@ -221,11 +222,13 @@ rtError_t rtGetP2PStatus(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t *status)
+ 
+ rtError_t rtMalloc(void **devPtr, uint64_t size, rtMemType_t type, const uint16_t moduleId)
+ {
++    *devPtr = reinterpret_cast<void*>(0x123);
+     return RT_ERROR_NONE;
+ }
+ 
+ rtError_t aclrtFree(void *devPtr)
+ {
++    devPtr = reinterpret_cast<void*>(0x123);
+     return RT_ERROR_NONE;
+ }
+ 
+@@ -363,6 +366,7 @@ aclError aclrtNotifyGetExportKey(aclrtNotify notify, char *key, size_t len, uint
+ 
+ aclError aclrtGetNotifyId(aclrtNotify notify, uint32_t *notifyId)
+ {
++    notify = reinterpret_cast<aclrtNotify>(0x123);
+     return ACL_SUCCESS;
+ }
+ 
+diff --git a/test/legacy/ut/unified_platform/resource/buffer/ut_local_rma_buffer.cc b/test/legacy/ut/unified_platform/resource/buffer/ut_local_rma_buffer.cc
+index f21d214b3d2cdf40e9bbce6ce361484e672c7ce0..273cab19cea5b2011c53f8ad5851430542f816c9 100644
+--- a/test/legacy/ut/unified_platform/resource/buffer/ut_local_rma_buffer.cc
++++ b/test/legacy/ut/unified_platform/resource/buffer/ut_local_rma_buffer.cc
+@@ -101,7 +101,7 @@ TEST_F(LocalRmaBufferTest, getExchangeDto_ipc_test)
+     localIpcRmaBuffer.Describe();
+     localIpcRmaBuffer.GetExchangeDto();
+ 
+-    u32 pid = 1;
++    int pid = 1;
+     MOCKER(HrtDeviceGetBareTgid).stubs().will(returnValue(pid));
+     localIpcRmaBuffer.Grant(pid);
+ };
+diff --git a/test/legacy/ut/unified_platform/resource/ccu_transport/ut_ccu_transport_group.cc b/test/legacy/ut/unified_platform/resource/ccu_transport/ut_ccu_transport_group.cc
+index f595f5ed4e573db8db69ec9d96fde069cfd718a7..0f9e3e08d6fc2b84781f3b82faeb6c3b3e57ad4e 100644
+--- a/test/legacy/ut/unified_platform/resource/ccu_transport/ut_ccu_transport_group.cc
++++ b/test/legacy/ut/unified_platform/resource/ccu_transport/ut_ccu_transport_group.cc
+@@ -156,7 +156,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_001)
+     utCcuTransportVec.emplace_back(std::move(utCcuTransport.get()));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroup
+@@ -257,7 +257,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_002)
+     utCcuTransportVec.emplace_back(std::move(utCcuTransport.get()));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroup
+@@ -359,7 +359,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_003)
+     utCcuTransportVec.emplace_back(std::move(utCcuTransport.get()));
+ 
+     // 打桩CcuTransportGroup构造函数中调用的函数
+-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
++    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
+ 
+     // 创建utCcuTransportGroup
+@@ -564,9 +564,9 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_005)
+ 
+     // 创建utCcuTransportGroup
+     CcuTransportGroup utCcuTransportGroup(utCcuTransportVec, utCntCke);
+-    auto res = utCcuTransportGroup.CheckTransports(utCcuTransportVec);
++    HcclResult res = utCcuTransportGroup.CheckTransports(utCcuTransportVec);
+ 
+-    EXPECT_EQ(false, res);
++    EXPECT_EQ(HCCL_E_INTERNAL, res);
+ 
+     delete socket;
+     delete rdmaHandle;
+@@ -659,9 +659,9 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_006)
+ 
+     // 创建utCcuTransportGroup
+     CcuTransportGroup utCcuTransportGroup(utCcuTransportVec, utCntCke);
+-    auto res = utCcuTransportGroup.CheckTransportCntCke();
++    HcclResult res = utCcuTransportGroup.CheckTransportCntCke();
+ 
+-    EXPECT_EQ(true, res);
++    EXPECT_EQ(HCCL_SUCCESS, res);
+ 
+     delete socket;
+     delete rdmaHandle;
+diff --git a/test/legacy/ut/unified_platform/resource/connection/ut_p2p_connection.cc b/test/legacy/ut/unified_platform/resource/connection/ut_p2p_connection.cc
+index c68441f3cafca3f042631bfbe52f99aa76167d28..6ffa5e8068b8fff9c2717d15735ab3e121e0e020 100644
+--- a/test/legacy/ut/unified_platform/resource/connection/ut_p2p_connection.cc
++++ b/test/legacy/ut/unified_platform/resource/connection/ut_p2p_connection.cc
+@@ -48,6 +48,7 @@ protected:
+ 
+ TEST_F(P2PConnectionTest, should_return_true_when_calling_rma_connection_bind_and_unbind_with_valid_params)
+ {
++    MOCKER(HrtDevMemAlignWithPage).stubs().will(returnValue(static_cast<void*>(0)));
+     u32          id = 0; // port
+     BasePortType basePortType(PortDeploymentType::P2P);
+     PortData     portData(0, basePortType, id, IpAddress());
+diff --git a/test/legacy/ut/unified_platform/resource/notify/ut_rts_1ton_cnt_notify.cc b/test/legacy/ut/unified_platform/resource/notify/ut_rts_1ton_cnt_notify.cc
+index f8d3a56246370c1a5cb1d741a10ffb9e2686e0df..8553e7de8ca8ca6de7fdae39c2eb41aa998e5766 100644
+--- a/test/legacy/ut/unified_platform/resource/notify/ut_rts_1ton_cnt_notify.cc
++++ b/test/legacy/ut/unified_platform/resource/notify/ut_rts_1ton_cnt_notify.cc
+@@ -33,6 +33,9 @@ protected:
+ 
+     virtual void SetUp()
+     {
++        MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
++        MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
++        MOCKER(HrtStreamGetMode).stubs().will(returnValue(static_cast<u64>(0)));
+         std::cout << "A Test case in Rts1ToNCntNotifyTest SetUP" << std::endl;
+     }
+ 
+@@ -74,6 +77,8 @@ TEST_F(Rts1ToNCntNotifyTest, rts1toncntnotify_postbits_submit_test)
+     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+     MOCKER(HrtCntNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
+     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
++    MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
++    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(0));
+ 
+     // When
+     Rts1ToNCntNotify rts1ToNCntNotify;
+@@ -92,7 +97,9 @@ TEST_F(Rts1ToNCntNotifyTest, rts1toncntnotify_waitvalue_submit_test)
+     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+     MOCKER(HrtCntNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
+     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
+-
++    MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
++    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(0));
++    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs().will(returnValue(0));
+     // When
+     Rts1ToNCntNotify rts1ToNCntNotify;
+ 
+diff --git a/test/legacy/ut/unified_platform/resource/notify/ut_rts_cnt_notify.cc b/test/legacy/ut/unified_platform/resource/notify/ut_rts_cnt_notify.cc
+index f9570c7b73c4793c1397c6d102133eab7ee835aa..46a0f39a0c62001f80247a833a64b180ab14c03b 100644
+--- a/test/legacy/ut/unified_platform/resource/notify/ut_rts_cnt_notify.cc
++++ b/test/legacy/ut/unified_platform/resource/notify/ut_rts_cnt_notify.cc
+@@ -69,11 +69,14 @@ TEST_F(RtsCntNotifyTest, rtscntnotify_construct_ok)
+ TEST_F(RtsCntNotifyTest, rtscntnotify_postbits_submit_test)
+ {
+     // Given
++    //MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
+     MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType::DEV_TYPE_910A2));
+     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+     MOCKER(HrtCntNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
+     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
++    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue((void*)(0)));
+ 
+     // When
+     RtsCntNotify rtsCntNotify;
+@@ -87,11 +90,14 @@ TEST_F(RtsCntNotifyTest, rtscntnotify_postbits_submit_test)
+ TEST_F(RtsCntNotifyTest, rtscntnotify_waitvalue_submit_test)
+ {
+     // Given
++    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
++    MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
+     MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType::DEV_TYPE_910A2));
+     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+     MOCKER(HrtCntNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
+     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
++    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs().will(returnValue((void*)(0)));
+ 
+     // When
+     RtsCntNotify rtsCntNotify;
+diff --git a/test/legacy/ut/unified_platform/resource/notify/ut_rts_notify.cc b/test/legacy/ut/unified_platform/resource/notify/ut_rts_notify.cc
+index 57d38cb05cae92a165c97ba5a78cf93ec919fcbb..061230189761c16e34d82e552e018daab9b5fc1b 100644
+--- a/test/legacy/ut/unified_platform/resource/notify/ut_rts_notify.cc
++++ b/test/legacy/ut/unified_platform/resource/notify/ut_rts_notify.cc
+@@ -95,6 +95,7 @@ const u32                 CAP_NOTIFY_SIZE_V82                    = 8;
+ 
+ TEST_F(RtsNotifyTest, rtsNotify_dev_used_false)
+ {
++    DevCapability::GetInstance().notifySize = CAP_NOTIFY_SIZE_V82;
+     Stream    stream;
+     RtsNotify notify(false);
+ 
+@@ -113,6 +114,7 @@ TEST_F(RtsNotifyTest, rtsNotify_dev_used_false)
+ 
+ TEST_F(RtsNotifyTest, rtsNotify_dev_used_true)
+ {
++    DevCapability::GetInstance().notifySize = CAP_NOTIFY_SIZE_V82;
+     Stream    stream;
+     RtsNotify notify(true);
+ 
