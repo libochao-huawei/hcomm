@@ -1846,7 +1846,7 @@ STATIC int RsUbFillJettyInfo(struct RsCtxJettyCb *jettyCb, struct QpCreateInfo *
     jettyInfo->va = (uint64_t)(uintptr_t)jettyCb->jetty;
     jettyInfo->ub.shareInfoAddr = (uint64_t)(uintptr_t)jettyCb->qpShareInfoAddr;
     jettyInfo->ub.shareInfoLen = sizeof(struct CtxQpShareInfo);
-    hccp_warn("@@@ jettyCb->extMode.sqebbNum: %ld", jettyCb->jetty->jetty_id.sqebbNum);
+    hccp_warn("@@@ jettyCb->extMode.sqebbNum: %ld", jettyCb->extMode.sqebbNum);
 
     hccp_warn("@@@@@@ jettyCb->jetty->jetty_id.eid: %ld", jettyCb->jetty->jetty_id.eid);
     hccp_warn("@@@@@@ jettyCb->jetty->jetty_id.uasid: %ld", jettyCb->jetty->jetty_id.uasid);
