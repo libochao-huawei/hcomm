@@ -35,10 +35,8 @@ target_compile_options(hccl_utest_platform_hcom PRIVATE
 )
 
 target_link_libraries(hccl_utest_platform_hcom PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     hccl_llt
-    gtest
-    mockcpp
     -pthread
     -lrt
 )

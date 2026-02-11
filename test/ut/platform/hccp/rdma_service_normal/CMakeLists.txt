@@ -97,11 +97,9 @@ target_compile_definitions(rs_ut_normal PRIVATE
 )
 
 target_link_libraries(rs_ut_normal PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
-    gtest
-    mockcpp
-    -pthread
+    $<BUILD_INTERFACE:intf_llt_pub>
     -lrt
+    -pthread
     -ldl
 )
 

@@ -46,10 +46,8 @@ target_link_directories(hccl_utest_impl PRIVATE
 )
 
 target_link_libraries(hccl_utest_impl PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     hccl_llt
-    gtest
-    mockcpp
     -pthread
     -lrt
     -ldl

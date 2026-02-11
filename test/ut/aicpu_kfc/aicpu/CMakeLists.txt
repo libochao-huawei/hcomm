@@ -26,10 +26,8 @@ target_compile_options(aicpu_kfc_utest_aicpu PRIVATE
 )
 
 target_link_libraries(aicpu_kfc_utest_aicpu  PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     hccl_llt
-    gtest
-    mockcpp
     -pthread
     -lrt
     -ldl

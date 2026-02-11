@@ -29,12 +29,10 @@ target_compile_options(executor_reduce_hccl_test PRIVATE
 )
 
 target_link_libraries(executor_reduce_hccl_test PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     hccl_alg_analyzer
     hccl_alg_adaption
     hccl_alg_test
-    gtest
-    mockcpp
     -pthread
     -lrt
     -ldl

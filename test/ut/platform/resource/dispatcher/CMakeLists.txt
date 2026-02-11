@@ -31,12 +31,11 @@ target_compile_options(hccl_utest_platform_dispatcher   PRIVATE
 
 
 target_link_libraries(hccl_utest_platform_dispatcher  PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
+    $<BUILD_INTERFACE:intf_llt_pub>
     hccl_llt
-    gtest
-    mockcpp
     -pthread
     -lrt
+    -pthread
 )
 
 add_dependencies(hccl_utest_platform_dispatcher hccl_llt)
