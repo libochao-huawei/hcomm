@@ -35,6 +35,8 @@ public:
 
     SocketHandle Get(u32 devicePhyId, const PortData &localPort);
 
+    void Destroy(u32 devicePhyId, const PortData &localPort);
+
     ~SocketHandleManager();
 
 private:

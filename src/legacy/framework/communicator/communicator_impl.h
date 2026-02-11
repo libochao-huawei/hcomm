@@ -94,6 +94,7 @@ public:
     HcclResult GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num);
     HcclResult GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
     HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
+    HcclResult InitDeviceListenPort(u32 &linstenPort);
 
     u32 GetCcuMc2ServerNum();
 

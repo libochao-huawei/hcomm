@@ -33,13 +33,15 @@ public:
                                                    SocketRole socketRole, NicType nicType)>
                       socketProducer
                   = nullptr);
-    void SetDeviceServerListenPortMap(const std::unordered_map<u32, u32> &rankListenPortMap);
+    static void SetDeviceServerListenPortMap(const std::unordered_map<u32, u32> &rankListenPortMap);
 
-    std::unordered_map<u32, u32> GetDeviceServerListenPortMap() const;
+    static std::unordered_map<u32, u32>& GetDeviceServerListenPortMap();
 
     void BatchCreateSockets(const vector<LinkData> &links);
 
     void ServerInit(PortData &localPort);
+
+    void ServerInitAll(const vector<LinkData> &links, u32 &linstenPort);
 
     bool ServerDeInit(PortData &localPort) const;
 
@@ -61,6 +63,8 @@ public:
 
     SocketManager &operator=(const SocketManager &socketManager) = delete;
 
+    static void ServerInitOne(RankTableInfo &localRankTable);
+
 private:
     void BatchServerInit(const vector<LinkData> &links);
     void BatchAddWhiteList(const vector<LinkData> &links);
@@ -70,8 +74,6 @@ private:
     u32               localRank;
     u32               devicePhyId;
     u32               deviceLogicId_;
-    vector<SocketPortRange> listenPortRanges_{};
-    std::unordered_map<u32, u32> rankListenPortMap_{};
     std::function<shared_ptr<Socket>(IpAddress &localIpAddress, IpAddress &remoteIpAddress, u32 listenPort,
                                      SocketHandle socketHandle, const std::string &tag, SocketRole socketRole,
                                      NicType nicType)>
