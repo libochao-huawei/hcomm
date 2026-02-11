@@ -178,7 +178,7 @@ HcclResult HcomCheckOpParamV2(const u64 count, const HcclDataType dataType, cons
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomCheckOpParamV2(const char *tag, const u64 count, const HcclDataType dataType, const void *stream)
+HcclResult HcomCheckOpParamV2(const char *tag, const u64 count, const HcclDataType dataType, const void *stream) // 校验opParam失败都上报EI0003
 {
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType));
 
