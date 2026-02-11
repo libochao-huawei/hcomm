@@ -641,10 +641,10 @@ HCCP_ATTRI_VISI_DEF int RaCtxQpCreate(void *ctxHandle, struct QpCreateAttr *attr
 
     hccp_warn("@@@ info->ub.uasid: %ld", info->ub.uasid);
     hccp_warn("@@@ info->ub.id: %ld", info->ub.id);
-    hccp_warn("@@@ info->ub.sq_buff_va: %ld", info->ub.sq_buff_va);
-    hccp_warn("@@@ info->ub.wqebb_size: %ld", info->ub.wqebb_size);
-    hccp_warn("@@@ info->ub.db_addr: %ld", info->ub.db_addr);
-    hccp_warn("@@@ info->ub.db_token_id: %ld", info->ub.db_token_id);
+    hccp_warn("@@@ info->ub.sqBuffVa: %ld", info->ub.sqBuffVa);
+    hccp_warn("@@@ info->ub.wqebbSize: %ld", info->ub.wqebbSize);
+    hccp_warn("@@@ info->ub.dbAddr: %ld", info->ub.dbAddr);
+    hccp_warn("@@@ info->ub.dbTokenId: %ld", info->ub.dbTokenId);
     return 0;
 
 err:
