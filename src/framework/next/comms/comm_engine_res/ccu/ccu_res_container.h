@@ -33,6 +33,7 @@ public:
     HcclResult ResetResPack();
     CcuResPack *GetResPack();
     HcclResult SaveCcuKernel(const CcuKernelHandle kernelHandle);
+    const std::vector<CcuKernelHandle> &GetUntranslatedKernels();
 
 private:
     uint32_t opExpansionMode_{0};
@@ -40,6 +41,7 @@ private:
     std::shared_ptr<hcomm::CcuDrvHandle> ccuDrvHandle_{};
     std::unique_ptr<CcuResPack> resPack_{};
     std::vector<CcuKernelHandle> kernelHandles_{};
+    std::vector<CcuKernelHandle> untranslatedKernelHandles_{};
 };
 
 } // namespace hcomm

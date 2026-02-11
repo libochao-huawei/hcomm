@@ -51,8 +51,9 @@ static bool CheckDieEnable(const uint32_t devPhyId, const uint8_t dieId)
         reinterpret_cast<CustomChanInfoIn *>(&inBuff),
         reinterpret_cast<CustomChanInfoOut *>(&outBuff));
     if (ret != 0) {
-        HCCL_WARNING("[%s] failed to get ccu die enable info, devPhyId[%u].",
-            __func__, devPhyId);
+        HCCL_WARNING("[CcuResSpecifications][%s] failed to call ccu driver, "
+            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,
+            "GET_DIE_WORKING");
         return false;
     }
 
@@ -118,7 +119,8 @@ static HcclResult CheckResSpecifications(const uint32_t devPhyId, const uint8_t 
         reinterpret_cast<CustomChanInfoOut *>(&outBuff));
     if (ret != 0) {
         HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
-            "devPhyId[%u] dieId[%d]", __func__, devPhyId, dieId);
+            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,
+            "GET_BASIC_INFO");
         return HcclResult::HCCL_E_NETWORK;
     }
 

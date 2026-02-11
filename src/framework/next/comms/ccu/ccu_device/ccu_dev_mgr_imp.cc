@@ -280,7 +280,7 @@ HcclResult CheckDieValid(const char *funcName, const int32_t devLogicId, const u
         HcclResult::HCCL_E_PARA);
 
     CHK_PRT_RET(!dieEnableFlags[dieId],
-        HCCL_WARNING("[%s] failed, dieId[%u] is disable, devLogicId[%d].",
+        HCCL_ERROR("[%s] failed, dieId[%u] is disable, devLogicId[%d].",
             funcName, dieId, devLogicId),
         HcclResult::HCCL_E_PARA);
 

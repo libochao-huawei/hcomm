@@ -63,15 +63,15 @@ HcclResult CcuJettyCtxMgrV1::Alloc(const uint32_t feId, const uint32_t jettyNum,
 
 HcclResult CcuJettyCtxMgrV1::GetJettyAllocator(uint32_t feId, JettyAllocator* &allocatorHandle)
 {
-    if (allocatorMap_.find(feId) == allocatorMap_.end()) {
+    if (!allocator_) {
         PfeJettyStrategy strategy = {};
         CHK_RET(pfeMgr_.GetPfeStrategy(feId, strategy)); // 如果strategy为0，后续按资源不足处理
-        allocatorMap_[feId].reset(new (std::nothrow) JettyAllocator(strategy));
-        CHK_PTR_NULL(allocatorMap_[feId]);
-        CHK_PTR_NULL(allocatorMap_[feId]->idAllocator);
+        allocator_.reset(new (std::nothrow) JettyAllocator(strategy));
+        CHK_PTR_NULL(allocator_);
+        CHK_PTR_NULL(allocator_->idAllocator);
     }
 
-    allocatorHandle = allocatorMap_[feId].get();
+    allocatorHandle = allocator_.get();
     return HcclResult::HCCL_SUCCESS;
 }
 

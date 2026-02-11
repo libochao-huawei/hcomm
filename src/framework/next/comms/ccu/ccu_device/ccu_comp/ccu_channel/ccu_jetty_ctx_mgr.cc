@@ -128,7 +128,9 @@ HcclResult ConfigJettyCtxData(const uint8_t dieId, const uint32_t devPhyId,
         reinterpret_cast<CustomChanInfoIn *>(&inBuff),
         reinterpret_cast<CustomChanInfoOut *>(&outBuff));
     if (ret != 0) {
-        HCCL_ERROR("");
+        HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
+            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,
+            "SET_JETTY_CTX");
         return HcclResult::HCCL_E_NETWORK;
     }
 

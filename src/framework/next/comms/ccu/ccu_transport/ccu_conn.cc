@@ -461,13 +461,14 @@ HcclResult CcuConnection::ReleaseConnRes()
     for (auto &item : importJettyCtxs_) {
         if (item.outParam.handle != 0) {
             int32_t ret = RaCtxQpUnimport(ctxHandle_, item.outParam.handle);
+            item.outParam.handle = 0;
             if (ret != 0) {
-                HCCL_ERROR("[CcuComponent][%s] failed, ctxHandle[%p] "
+                HCCL_ERROR("[CcuComponent][%s] failed but passed, ctxHandle[%p] "
                     "remoteJettyHandle[%p], devLogicId[%d].", __func__,
                     ctxHandle_, item.outParam.handle, devLogicId_);
-                return HcclResult::HCCL_E_NETWORK;
+                status_ = CcuConnStatus::CONN_INVALID;
+                innerStatus_ = InnerStatus::CONN_INVALID;
             }
-            item.outParam.handle = 0;
         }
     }
     importJettyCtxs_.clear();
