@@ -125,6 +125,7 @@ void RankInfoDetectService::GetRankTable()
     HCCL_INFO("[RankInfoDetectService::%s] start.", __func__);
 
     // 接收localRankTable并组全局RankTableInfo
+    rankTable_ = RankTableInfo{};
     for (auto &iter : connSockets_) {
         vector<char> rankInfoMsg{};
         SocketAgent socketAgent(iter.second.get());
