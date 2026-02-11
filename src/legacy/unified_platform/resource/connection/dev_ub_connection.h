@@ -61,12 +61,15 @@ public:
 
     void AddNop(const Stream &stream) override;
 
+    void         ReleaseTp();
     ~DevUbConnection() override;
 
     string Describe() const override;
 
     HrtUbJfcMode GetUbJfcMode() const;
-    JettyHandle  GetJettyHandle() const;
+    JettyHandle& GetJettyHandle() const;
+    JettyHandle& GetRemoteJettyHandle() const;
+    RdmaHandle&  GetRdmaHandle() const;
     u32          GetPiVal() const;
     u32          GetCiVal() const;
     u32          GetSqDepth() const;

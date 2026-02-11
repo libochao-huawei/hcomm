@@ -2216,4 +2216,45 @@ HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles,
     }
     return HCCL_SUCCESS;
 }
+
+HcclResult RaCtxQpDestoryBatch(const RdmaHandle handle, const std::vector<JettyHandle> &jettyHandles, std::vector<JettyHandle> &failJettyHandles)
+{
+    std::vector<void*> qp_handle;
+    failJettyHandles.clear();
+    for (auto jettyHandle : jettyHandles) {
+        qp_handle.push_back(reinterpret_cast<void*>(jettyHandle));
+    }
+    int curIdx = 0;
+    unsigned int qpNum = qp_handle.size();
+    while (true) {
+        void *raReqHandle = nullptr;
+        auto ret = ra_ctx_qp_destroy_batch_async(handle, qp_handle.data(), &qpNum, &raReqHandle);
+        if (ret != 0) {
+            HCCL_ERROR("[%s] failed, ret is [%d].", __func__, ret);
+        }
+        RequestHandle reqHandle = reinterpret_cast<void*>(raReqHandle);
+        while (true) {
+            ReqHandleResult result = HrtRaGetAsyncReqResult(reqHandle);
+            if (result == ReqHandleResult::NOT_COMPLETED) {
+                continue;
+            } else if (result == ReqHandleResult::COMPLETED) {
+                break;
+            } else {
+                HCCL_ERROR("[%s] failed, result[%s] is unexpected.", __func__, result.Describe().c_str());
+            }
+        }
+        // 检查是否删除完成
+        if (qpNum > qp_handle.size()) {
+            HCCL_ERROR("[%s] run ra_ctx_qp_destroy_batch_async error, del jetty num[%u] greater than all jetty num[%u].", __func__, qpNum, qp_handle.size());
+        } else if (qpNum == qp_handle.size()) {
+            break;
+        }
+        failJettyHandles.push_back(reinterpret_cast<JettyHandle*>(qp_handle[qpNum]));
+        qp_handle.erase(qp_handle.begin(), qp_handle.begin() + qpNum + 1);
+        qpNum = qp_handle.size();
+    }
+    HCCL_INFO("[%s] run success, del jetty num %u.", __func__, jettyHandles.size());
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl

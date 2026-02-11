@@ -46,7 +46,7 @@ public:
     {
         return ccuJettys_;
     }
-    void     Clean();
+    void     Clean(RdmaHandle& handle, std::vector<JettyHandle>& jettyHandleList);
 
 protected:
     TpProtocol tpProtocol{TpProtocol::INVALID};
@@ -101,6 +101,7 @@ private:
     vector<RequestHandle>  reqHandles;
     vector<vector<char_t>> reqDataBuffers;
     vector<void*>          remoteJettyHandlePtrs;
+    vector<TargetJettyHandle> remoteDelJettyList;
 
     HcclResult    StatusMachine();
     void          UpdateInitStatus();

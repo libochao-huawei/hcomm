@@ -436,7 +436,7 @@ HcclResult CcuConnection::ReleaseConnRes()
 {
     for (auto &item : importJettyCtxs) {
         if (item.outParam.handle != 0) {
-            HrtRaUbUnimportJetty(rdmaHandle, item.outParam.handle);
+            remoteDelJettyList.push_back(item.outParam.handle);
             item.outParam.handle = 0;
         }
     }
@@ -485,18 +485,28 @@ int32_t CcuConnection::GetDevLogicId() const
     return devLogicId;
 }
 
-void CcuConnection::Clean()
+void CcuConnection::Clean(RdmaHandle& handle, std::vector<JettyHandle>& jettyHandleList)
 {
     status = CcuConnStatus::INIT;
     innerStatus = InnerStatus::INIT;
     isJettyCreated = false;
     isJettyImported = false;
+    if (handle == nullptr) {
+        handle = rdmaHandle;
+    } else if(handle != rdmaHandle) {
+        HCCL_WARNING("[%s]rdmaHandle[%p] not equal to recordRdmaHandle[%p]", __func__, rdmaHandle, recordRdmaHandle);
+    }
     ReleaseConnRes();
     GenerateLocalPsn();
 
+    for(auto remoteJettyHandle : remoteDelJettyList) {
+        HrtRaUbUnimportJetty(rdmaHandle, remoteJettyHandle);
+    }
+    remoteDelJettyList.clear();
+
     // 销毁jetty要在ReleaseConnRes之后
     for (auto &ccuJetty : ccuJettys_) {
-        ccuJetty->Clean();
+        ccuJetty->Clean(jettyHandleList);
     }
 }
 

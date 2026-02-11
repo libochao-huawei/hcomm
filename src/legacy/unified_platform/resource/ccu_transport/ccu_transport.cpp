@@ -591,11 +591,11 @@ std::string CcuTransport::Describe() const
     return description;
 }
 
-HcclResult CcuTransport::Clean()
+HcclResult CcuTransport::Clean(RdmaHandle& handle, std::vector<JettyHandle>& jettyHandleList)
 {
     transStatus = TransStatus::INIT;
     sendData.clear();
-    TRY_CATCH_RETURN(ccuConnection->Clean());
+    TRY_CATCH_RETURN(ccuConnection->Clean(handle, jettyHandleList));
     return HCCL_SUCCESS;
 }
 
