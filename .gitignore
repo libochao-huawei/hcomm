@@ -1,9 +1,0 @@
-build
-build_out
-third_party
-output/*
-build_device/*
-build_hccd/*
-scripts/sign/*
-utils/
-scripts/package/*
