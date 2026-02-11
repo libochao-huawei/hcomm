@@ -19,7 +19,7 @@
 
 namespace Hccl {
 
-constexpr u32 OPBASED_UB_SQ_DEPTH_MAX = 8192;
+constexpr u32 OPBASED_UB_SQ_DEPTH_MAX = 1024;
 constexpr u32 UB_SQ_OFFLOAD_DEPTH     = 128;
 constexpr u32 UB_SQ_WQEBB_SIZE        = 64;
 constexpr u32 WQE_NUM_PER_SQE         = 4; // URMA约束每个SQE包含4个WQEBB

@@ -1222,18 +1222,18 @@ void HrtRaUbDestroyJfc(RdmaHandle handle, JfcHandle jfcHandle)
 
 JfcHandle HrtRaUbCreateJfcUserCtl(RdmaHandle handle, CqCreateInfo& cqInfo)
 {
-    struct cq_info_t info {};
+    struct CqInfoT info {};
 
-    info.in.chan_handle = nullptr;
+    info.in.chanhandle = nullptr;
     info.in.depth = CQ_DEPTH;
     info.in.ub.user_ctx   = 0;
-    info.in.ub.mode       = jfc_mode::JFC_MODE_USER_CTL_NORMAL;
+    info.in.ub.mode       = JfcMode::JFC_MODE_USER_CTL_NORMAL;
     info.in.ub.ceqn       = 0;
     info.in.ub.flag.value = 0;
 
     void *jfcHandle = nullptr;
 
-    s32 ret = ra_ctx_cq_create(handle, &info, &jfcHandle);
+    s32 ret = RaCtxCqCreate(handle, &info, &jfcHandle);
     if (ret != 0) {
         string msg = StringFormat("ubCreateCq failed, rdmaHandle=%p,", handle);
         THROW<NetworkApiException>(msg);
