@@ -15,6 +15,7 @@
 #include "hccl/base.h"
 #include "mem_device_pub.h"
 #include "mem_host_pub.h"
+#include "read_write_lock.h"
 
 #define HCCL_HDC_TYPE_D2H 0
 #define HCCL_HDC_TYPE_H2D 1
@@ -70,7 +71,7 @@ private:
     u32 *devTailCntAddr_{ nullptr };
     bool isHost_{ true };
     bool supportDevMemReg_{ true };
-    std::mutex lock_;
+    ReadWriteLockBase lock_;
 };
 }
 #endif // HCCL_HDC_PUB_H
