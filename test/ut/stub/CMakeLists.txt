@@ -389,7 +389,9 @@ target_compile_definitions(hccl_llt    PRIVATE
 )
 
 target_compile_options(hccl_llt   PRIVATE
-    -O0 -U_FORTIFY_SOURCE -g
+    -U_FORTIFY_SOURCE
+    -O0 -g
+    -w
 )
 
 target_link_libraries(hccl_llt  PRIVATE

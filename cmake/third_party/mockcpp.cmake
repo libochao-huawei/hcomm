@@ -77,13 +77,8 @@ else()
     endif()
 
     # 编译选项设置
-    if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
-        set(MOCKCPP_CXXFLAGS "-fPIC -D_GLIBCXX_USE_CXX11_ABI=0")
-        set(MOCKCPP_CFLAGS   "-fPIC -D_GLIBCXX_USE_CXX11_ABI=0")
-    else()
-        set(MOCKCPP_CXXFLAGS "-fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -std=c++11")
-        set(MOCKCPP_CFLAGS   "-fPIC -D_GLIBCXX_USE_CXX11_ABI=0")
-    endif()
+    set(MOCKCPP_CFLAGS   "-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
+    set(MOCKCPP_CXXFLAGS "-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack")
 
     set(MOCKCPP_OPTS
         -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
