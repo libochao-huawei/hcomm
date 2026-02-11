@@ -84,14 +84,14 @@ target_include_directories(hccl_v2_utest PRIVATE
 
 target_link_libraries(hccl_v2_utest PRIVATE
     $<BUILD_INTERFACE:intf_pub>
-    -lpthread
+    -pthread
     # hccl_llt
     -Wl,--whole-archive
     -Wl,--no-whole-archi
     -lgcov
     -lrt
     -ldl
-    -lpthread
+    -pthread
 )
 
 

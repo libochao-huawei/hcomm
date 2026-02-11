@@ -46,7 +46,7 @@ target_link_libraries(executor_hccl_test PRIVATE
     hccl_alg_adaption
     hccl_alg_test
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
-    -lpthread
+    -pthread
     protobuf
     -lrt
     -ldl

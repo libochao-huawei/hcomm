@@ -75,7 +75,7 @@ target_compile_definitions(hccp_utest PRIVATE
 target_link_libraries(hccp_utest PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     -lrt
-    -lpthread
+    -pthread
     -lgcov
     -ldl
 )

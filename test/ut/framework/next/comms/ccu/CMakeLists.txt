@@ -45,7 +45,7 @@ target_link_directories(hccl_utest_framework_ccu_dev_mgr_api PRIVATE
 target_link_libraries(hccl_utest_framework_ccu_dev_mgr_api PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
-    -lpthread
+    -pthread
     hccl_llt
     -Wl,--whole-archive
     -Wl,--no-whole-archi

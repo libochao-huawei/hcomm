@@ -44,7 +44,7 @@ target_compile_options(hccl_alg_analyzer PRIVATE
 target_link_libraries(hccl_alg_analyzer PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     hccl_alg_adaption
-    -lpthread
+    -pthread
     protobuf
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     -lrt

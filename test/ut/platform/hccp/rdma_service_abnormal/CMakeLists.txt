@@ -97,7 +97,7 @@ target_compile_definitions(rs_ut_abnormal PRIVATE
 target_link_libraries(rs_ut_abnormal PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     -lrt
-    -lpthread
+    -pthread
     -lgcov
     -ldl
 )
