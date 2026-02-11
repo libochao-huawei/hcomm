@@ -161,7 +161,7 @@ STATIC void RsMunmapJfcVa(struct RsCtxJfcCb *jfcCb)
     (void)RsJfcResAddrMunmap(jfcCb, &vaInfo);
 }
 
-STATIC int RsMmapJfcVa(struct RsCtxJfcCb *jfcCb)
+int RsMmapJfcVa(struct RsCtxJfcCb *jfcCb)
 {
     struct res_map_info_out resInfoOut = {0};
     struct UdmaVaInfo jfcVaInfo = {0};
