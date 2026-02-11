@@ -22,6 +22,7 @@ constexpr u32 MODULE_NUM_FOUR = 4;
 constexpr u32 HCCL_310P_DATA_SIZE_MID_COUNT = 320 * 1024;
 constexpr u32 HCCL_310P_DATA_SIZE_SMALL_COUNT = 1024;
 constexpr u32 HCCL_310P_SLIM_RING_MAX_SIZE = 8;
+constexpr u32 MIN_STRICT_RANK_NUM = 3;
 
 namespace hccl {
 ReduceScatterOperator::ReduceScatterOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
@@ -96,6 +97,18 @@ HcclResult ReduceScatterOperator::SelectAlg(const std::string& tag, const OpPara
 HcclResult ReduceScatterOperator::SelectAlgforMix(const OpParam& param, std::string& algName)
 {
     (void) param;
+
+    // 混合组网场景不支持规约保序
+    bool isStrictMode = (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_STRICT)
+                    && (param.DataDes.dataType == HCCL_DATA_TYPE_FP16 || param.DataDes.dataType == HCCL_DATA_TYPE_FP32 ||
+                        param.DataDes.dataType == HCCL_DATA_TYPE_BFP16 || param.DataDes.dataType == HCCL_DATA_TYPE_FP64)
+                    && (param.reduceType == HCCL_REDUCE_SUM || param.reduceType == HCCL_REDUCE_PROD)
+                    && userRankSize_ >= MIN_STRICT_RANK_NUM;
+    if (isStrictMode) {
+        HCCL_ERROR("[ReduceScatterOperator][SelectAlgforMix] not support DETERMINISTIC_STRICT mode.");
+        return HCCL_E_PARA;
+    }
+
     if (gcdDeviceNumPerAggregation_ > 1) {
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
         HCCL_WARNING("[ReduceScatterOperator][SelectAlgforMix] only support NHR in AlgoLevel1 yet, "\
@@ -399,6 +412,24 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
                 && (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE)
                 && (!retryEnable_)
                 && !multiModuleDiffDeviceNumMode_;
+
+    bool isStrictMode = (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_STRICT)
+                && (param.DataDes.dataType == HCCL_DATA_TYPE_FP16 || param.DataDes.dataType == HCCL_DATA_TYPE_FP32
+                    || param.DataDes.dataType == HCCL_DATA_TYPE_BFP16 || param.DataDes.dataType == HCCL_DATA_TYPE_FP64)
+                && (param.reduceType == HCCL_REDUCE_SUM || param.reduceType == HCCL_REDUCE_PROD)
+                && userRankSize_ >= MIN_STRICT_RANK_NUM;
+    if (isStrictMode) {
+        if (multiModuleDiffDeviceNumMode_ || multiSuperPodDiffDeviceNumMode_ || multiSuperPodDiffServerNumMode_ 
+            || param.reduceType == HCCL_REDUCE_PROD || param.DataDes.dataType == HCCL_DATA_TYPE_FP64) {
+            HCCL_ERROR("[ReduceScatterOperator][SelectAlgfor91093] not support DETERMINISTIC_STRICT mode.");
+            return HCCL_E_PARA;
+        }
+        else {
+            algName = "ReduceScatterOrderPreservedFor91093Executor";
+            HCCL_INFO("[SelectAlgfor91093] reduce_scatter SelectAlgfor91093 algName [%s].", algName.c_str());
+            return HCCL_SUCCESS;
+        }
+    }
 
     if (isSupportAivDeter){
         algName = "ReduceScatterMeshAivFor91093Executor";
