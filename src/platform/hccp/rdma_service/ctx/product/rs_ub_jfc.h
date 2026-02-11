@@ -22,5 +22,6 @@ union CreateJfcCfg {
 
 int RsUbDeleteJfcExt(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb);
 int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urma_jfc_t **jfc);
+int RsMmapJfcVa(struct RsCtxJfcCb *jfcCb)
 
 #endif // RS_UB_JFC_H

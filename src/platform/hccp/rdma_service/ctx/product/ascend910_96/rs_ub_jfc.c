@@ -82,3 +82,8 @@ int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urm
 
     return ret;
 }
+
+int RsMmapJfcVa(struct RsCtxJfcCb *jfcCb)
+{
+    return -EOPENSRC;
+}
