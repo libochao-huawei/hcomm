@@ -771,7 +771,7 @@ void TaskExceptionHandler::PrintCcuErrorLog(const std::vector<CcuErrorInfo>& err
 
 string TaskExceptionHandler::GetCcuLenErrorMsg(const uint64_t len)
 {
-    if ((0 < len) && (len < CCU_MSG_256MB_LEN)) {
+    if ((0 < len) && (len <= CCU_MSG_256MB_LEN)) {
         return "";
     }
     return StringFormat("ccu transMem Len[%llu]B > 256MB or is zero, not support!", len);
