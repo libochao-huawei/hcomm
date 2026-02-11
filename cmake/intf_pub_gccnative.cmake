@@ -15,10 +15,10 @@ target_compile_definitions(intf_pub_base INTERFACE
 )
 
 target_compile_options(intf_pub_base INTERFACE
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
     -D_GLIBCXX_USE_CXX11_ABI=0
     -O0 -g
     -w
-    $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
     -fPIC
     -pipe
 )
@@ -58,15 +58,13 @@ add_library(intf_pub INTERFACE)
 target_link_libraries(intf_pub INTERFACE
     $<BUILD_INTERFACE:intf_pub_base>
     json
-    -Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib
 )
 
 add_library(intf_llt_pub INTERFACE)
 
 target_link_libraries(intf_llt_pub INTERFACE
     $<BUILD_INTERFACE:intf_pub>
-    -Wl,--whole-archive
     $<$<BOOL:${ENABLE_TEST}>:mockcpp>
     $<$<BOOL:${ENABLE_TEST}>:gtest>
-    -Wl,--no-whole-archive
+    -Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib
 )
