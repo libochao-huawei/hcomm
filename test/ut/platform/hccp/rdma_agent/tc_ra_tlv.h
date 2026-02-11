@@ -11,8 +11,8 @@
 #ifndef TC_RA_TLV_H
 #define TC_RA_TLV_H
 
-void tc_ra_tlv_init();
-void tc_ra_tlv_deinit();
-void tc_ra_tlv_request();
+void TcRaTlvInit();
+void TcRaTlvDeinit();
+void TcRaTlvRequest();
 
 #endif

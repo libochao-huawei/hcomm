@@ -92,8 +92,8 @@ HcclResult CallSingletons()
         }
         
         // 不同通信域初始化方式时序不同，hdc manager 重复 init 内部会跳过
-        HccpHdcManager::GetInstance().Init(deviceLogicId);
-        HccpPeerManager::GetInstance().Init(deviceLogicId); // host网卡需要拉起peer模式hccp
+        HccpHdcManager::GetInstance();
+        HccpPeerManager::GetInstance(); // host网卡需要拉起peer模式hccp
         HccpTlvHdcManager::GetInstance();
         RdmaHandleManager::GetInstance();
         InnerNetDevManager::GetInstance();
@@ -698,7 +698,7 @@ HcclResult CommManager::SetCommAcceleratorV2(Hccl::HcclCommunicator *communicato
 {
     CHK_PTR_NULL(communicator);
     if (accelerator < static_cast<int32_t>(HcclAccelerator::DEFAULT) || accelerator > static_cast<int32_t>(HcclAccelerator::AICPU)) {
-        HCCL_ERROR("[SetCommAcceleratorV2] Invalid accelerator value [%d]", accelerator);
+        HCCL_ERROR("[SetCommAcceleratorV2] Invalid accelerator value [%d], valid range is [0,7]", accelerator);
         return HCCL_E_NOT_SUPPORT;
     }
     HcclAccelerator hcclAccelerator = static_cast<HcclAccelerator::Value>(accelerator);

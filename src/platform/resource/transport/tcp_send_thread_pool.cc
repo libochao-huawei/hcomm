@@ -210,7 +210,7 @@ HcclResult TcpSendThreadPool::AddSendTask(HcclRequestInfo *request)
 HcclResult TcpSendThreadPool::RunTask(u32 serialNum)
 {
     if (BindDataCpu(devId_) != HCCL_SUCCESS) {
-        HCCL_WARNING("send thread bind cpu failed!!!");
+        HCCL_WARNING("send thread bind cpu failed");
     }
 
     HCCL_DEBUG("threadSerial[%u]", serialNum);
