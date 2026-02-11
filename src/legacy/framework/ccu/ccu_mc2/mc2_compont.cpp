@@ -262,7 +262,7 @@ void Mc2Compont::MC2AllocCommRes(const CollAlgParams &params, std::shared_ptr<In
     // 对insQueue中ccuIns进行预处理(创建transport、ccuCtx、分配资源、注册等)
     collService->GetCcuInsPreprocessor()->Preprocess(insQueue, true);
     if (collService->GetCcuInsPreprocessor()->IsRollback()) { // mc2暂不能回退到aicpu
-        THROW<InternalException>("[Mc2Compont][%s]ResAlloc failed.", __func__);
+        THROW<InternalException>("[Mc2Compont][%s]ResAlloc unsuccessful.", __func__);
     }
 }
 

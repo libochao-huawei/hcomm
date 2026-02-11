@@ -5183,6 +5183,107 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::BuildAiRmaInfoParam(const std::string &newTag, const std::string &algName, const HcclCMDType opType)
+    {
+        HCCL_DEBUG("[HcclCommunicator][%s] Start prepare.", __func__);
+        CHK_PTR_NULL(aiRMAInfoMem_);
+        HcclAiRMAInfo *aiRMAInfoPtr = reinterpret_cast<HcclAiRMAInfo*>(aiRMAInfoMem_->ptr());
+        CHK_PTR_NULL(aiRMAInfoPtr);
+        aiRMAInfoPtr->curRankId = userRank_;
+        aiRMAInfoPtr->rankNum = userRankSize_;
+        u32 localRankSize = meshAggregationRankSize_;
+        LevelNSubCommTransport& commTransport = resMap_[newTag].opTransportResponse[COMM_LEVEL0];
+        CHK_PRT_RET(commTransport.size() <= 0, HCCL_ERROR("[%s] no LevelComm resource, please create comm first. "
+            "tag[%s], curRankId[%u] rankNum[%u]", __func__, newTag.c_str(), aiRMAInfoPtr->curRankId,
+            aiRMAInfoPtr->rankNum), HCCL_E_INTERNAL);
+        std::vector<LINK>& links = commTransport[0].links;
+        CHK_PRT_RET(links.size() <= 0, HCCL_ERROR("[%s] no transport resource, please create links first. "
+            "tag[%s], curRankId[%u] rankNum[%u]", __func__, newTag.c_str(), aiRMAInfoPtr->curRankId,
+            aiRMAInfoPtr->rankNum), HCCL_E_INTERNAL);
+        
+        LevelNSubCommTransport& tmpCommTransport = resMap_[newTag].opTransportResponse[COMM_MESH_L1];
+        CHK_PRT_RET(tmpCommTransport.size() <= 0, HCCL_ERROR("[%s] no LevelComm resource, please create comm first. "
+            "tag[%s], curRankId[%u] rankNum[%u]", __func__, newTag.c_str(), aiRMAInfoPtr->curRankId,
+            aiRMAInfoPtr->rankNum), HCCL_E_INTERNAL);
+        std::vector<LINK>& tmpLinks = tmpCommTransport[0].links;
+        CHK_PRT_RET(tmpLinks.size() <= 0, HCCL_ERROR("[%s] no transport resource, please create links first. "
+            "tag[%s], curRankId[%u] rankNum[%u]", __func__, newTag.c_str(), aiRMAInfoPtr->curRankId,
+            aiRMAInfoPtr->rankNum), HCCL_E_INTERNAL);
+        
+        CHK_RET(GetAivQPInfoV2(tmpLinks, newTag, meshAggregationRankSize_));
+        u32 tmpQueueSize = aiRMAInfoPtr->rankNum * aiRMAInfoPtr->qpNum;
+        u32 tmpMemSize = aiRMAInfoPtr->rankNum;
+        u32 tmpMemDetailSize = aiRMAInfoPtr->rankNum * AiMemMaxNum;
+        
+        CHK_RET(AllocAndClearHostMem(sizeof(HcclAiRMAWQ) * tmpQueueSize, aiSqMem_));
+        CHK_RET(AllocAndClearHostMem(sizeof(HcclAiRMACQ) * tmpQueueSize, aiScqMem_));
+        CHK_RET(AllocAndClearHostMem(sizeof(HcclAiRMAWQ) * tmpQueueSize, aiRqMem_));
+        CHK_RET(AllocAndClearHostMem(sizeof(HcclAiRMACQ) * tmpQueueSize, aiRcqMem_));
+        CHK_RET(AllocAndClearHostMem(sizeof(HcclAiRMAMemInfo) * tmpMemSize, aiMemMem_));
+        HcclAiRMAMemInfo *aiMemHost = reinterpret_cast<HcclAiRMAMemInfo*>(aiMemMem_->ptr());
+ 
+        CHK_RET(AllocAndClearHostMem(sizeof(MemDetails) * tmpMemDetailSize, aiMemDetailsMem_));
+        MemDetails *aiMemDetailsHost = reinterpret_cast<MemDetails*>(aiMemDetailsMem_->ptr());
+ 
+        CHK_RET(DeviceMem::alloc(aiMemDetailsDev_, aiMemDetailsMem_->size()));
+        u64 memBase = reinterpret_cast<uint64_t>(aiMemDetailsDev_.ptr());
+ 
+        for (u32 i = 0; i < aiRMAInfoPtr->rankNum; i++)
+        {
+            MemDetails &remoteIn = aiMemDetailsHost[i * AiMemMaxNum +
+                                                    GetAiMemTypeVal(HcclAiRMAMemType::REMOTE_INPUT)];
+            MemDetails &remoteOut = aiMemDetailsHost[i * AiMemMaxNum +
+                                                    GetAiMemTypeVal(HcclAiRMAMemType::REMOTE_OUTPUT)];
+            MemDetails &localIn = aiMemDetailsHost[i * AiMemMaxNum +
+                                                    GetAiMemTypeVal(HcclAiRMAMemType::LOCAL_INPUT)];
+            MemDetails &localOut = aiMemDetailsHost[i * AiMemMaxNum +
+                                                    GetAiMemTypeVal(HcclAiRMAMemType::LOCAL_OUTPUT)];
+            if (i != aiRMAInfoPtr->curRankId && ((i % localRankSize) == (aiRMAInfoPtr->curRankId % localRankSize)  
+                || (i / localRankSize) == (aiRMAInfoPtr->curRankId / localRankSize))) {
+                auto transport = links[i % localRankSize]; // localranksize个
+                if ((i % localRankSize) == (aiRMAInfoPtr->curRankId % localRankSize)){
+                    transport = tmpLinks[i / localRankSize];// servernum个
+                }
+                // link rank info
+                CHK_RET(GetTransportRemoteMem(transport, UserMemType::INPUT_MEM, remoteIn));
+                CHK_RET(GetTransportRemoteMem(transport, UserMemType::OUTPUT_MEM, remoteOut));
+                CHK_RET(GetTransportLocalMem(transport, UserMemType::INPUT_MEM, localIn));
+                CHK_RET(GetTransportLocalMem(transport, UserMemType::OUTPUT_MEM, localOut));
+ 
+                if (transport->GetTransportType() == TransportType::TRANS_TYPE_IBV_EXP) {
+                    CHK_RET(GenIbvAiRMAInfo(i, transport, newTag, aiRMAInfoPtr));
+                }
+            } 
+            else if (i == aiRMAInfoPtr->curRankId)
+            {
+                void *commInPtr = nullptr;
+                void *commOutPtr = nullptr;
+                u64 commInSize;
+                u64 commOutSize;
+                CHK_RET(cclBufferManager_.GetInCCLbuffer(commInPtr, commInSize));
+                CHK_RET(cclBufferManager_.GetOutCCLbuffer(commOutPtr, commOutSize));
+                localIn.addr = reinterpret_cast<uint64_t>(commInPtr);
+                localIn.size = commInSize;
+                localOut.addr = reinterpret_cast<uint64_t>(commOutPtr);
+                localOut.size = commOutSize;
+            }
+ 
+            aiMemHost[i].memMaxNum = AiMemMaxNum;
+            aiMemHost[i].sizeOfMemDetails = static_cast<u32>(sizeof(MemDetails));
+            aiMemHost[i].memDetailPtr = memBase + i * AiMemMaxNum * aiMemHost[i].sizeOfMemDetails;
+ 
+            HCCL_DEBUG("[%s] tag[%s] curRankId[%u] dstRankId[%u] rankNum[%u] qpNum[%u] memMaxNum[%u] sizeOfMemDetails[%u] "
+                       "memDetailPtr[%p] remoteInAddr[%p] remoteInSize[%llu] remoteOutAddr[%p] "
+                       "remoteOutSize[%llu] localInAddr[%p] localInSize[%llu] "
+                       "localOutAddr[%p] localOutSize[%llu] ",
+                       __func__, newTag.c_str(), aiRMAInfoPtr->curRankId, i, aiRMAInfoPtr->rankNum, aiRMAInfoPtr->qpNum,
+                       aiMemHost[i].memMaxNum, aiMemHost[i].sizeOfMemDetails, aiMemHost[i].memDetailPtr,
+                       remoteIn.addr, remoteIn.size, remoteOut.addr, remoteOut.size,
+                       localIn.addr, localIn.size, localOut.addr, localOut.size);
+            }
+        return HCCL_SUCCESS;
+    }
+
     template <typename T>
     HcclResult HcclCommunicator::CopyVectorToDeviceMem(const u64 len, DeviceMem &dstDeviceMem, const std::vector<T> &srcVec)
     {
@@ -5836,11 +5937,12 @@ namespace hccl
                                sizeof(HcclOpResParam), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
         HCCL_DEBUG("[HcclCommunicator][CopyHostOpResToDeviceParam] tag[%s] local rankId[%u] workspace[%p] "
                    "workspacesize[%lu] ranksize[%u], cclbuffersize[%lu], cclinbuffer[%p], ccloutbuffer[%p], "
-                   "remote winStart[%u], remote rWinOffset[%u], hostStateInfo[%p], aicpuStateInfo[%p], notifysize[%u]",
+                   "remote winStart[%u], remote rWinOffset[%u], hostStateInfo[%p], aicpuStateInfo[%p], notifysize[%u], "
+                   "sizeOfAiRMAInfo[%u],aiRMAInfo[%u]",
                    newTag.c_str(), userRank_, opResPara_.mc2WorkSpace.workSpace, opResPara_.mc2WorkSpace.workSpaceSize,
                    opResPara_.rankSize, opResPara_.winSize, opResPara_.localWindowsIn, opResPara_.localWindowsOut,
                    opResPara_.rWinStart, opResPara_.rWinOffset, opResPara_.hostStateInfo, opResPara_.aicpuStateInfo,
-                   opResPara_.notifysize);
+                   opResPara_.notifysize, opResPara_.sizeOfAiRMAInfo,opResPara_.aiRMAInfo);
         // 2、将opResPara_中localres的tagRes，H2D到device
         HCCL_DEBUG("[HcclCommunicator][CopyHostOpResToDeviceParam] local resource, tag[%s] streamNum[%u] signalNum[%u]",
                    newTag.c_str(), opResPara_.localRes.streamNum, opResPara_.localRes.signalNum);
@@ -5852,9 +5954,67 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::CopyHostAirmaInfoToDeviceParam(const std::string &newTag, const HcclCMDType opType, const rtStream_t aiCpuStream)
+    {
+        HCCL_INFO("[HcclCommunicator][%s] Start prepare.", __func__);
+        CHK_PTR_NULL(aiRMAInfoMem_);
+        HcclAiRMAInfo *aiRMAInfoPtr = reinterpret_cast<HcclAiRMAInfo*>(aiRMAInfoMem_->ptr());
+        CHK_PTR_NULL(aiRMAInfoPtr);
+ 
+        aiRMAInfoPtr->sizeOfAiRMAWQ = static_cast<u32>(sizeof(HcclAiRMAWQ));
+        aiRMAInfoPtr->sizeOfAiRMACQ = static_cast<u32>(sizeof(HcclAiRMACQ));
+        aiRMAInfoPtr->sizeOfAiRMAMem = static_cast<u32>(sizeof(HcclAiRMAMemInfo));
+ 
+        CHK_RET(DeviceMem::alloc(aiSqDev_, aiSqMem_->size()));
+        aiRMAInfoPtr->sqPtr = aiSqDev_.ptr();
+        CHK_RET(hrtMemAsyncCopy(aiSqDev_.ptr(), aiSqDev_.size(), aiSqMem_->ptr(), aiSqDev_.size(),
+                                     HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
+ 
+        CHK_RET(DeviceMem::alloc(aiScqDev_, aiScqMem_->size()));
+        aiRMAInfoPtr->scqPtr = aiScqDev_.ptr();
+        CHK_RET(hrtMemAsyncCopy(aiScqDev_.ptr(), aiScqDev_.size(), aiScqMem_->ptr(), aiScqDev_.size(),
+                                     HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
+ 
+        CHK_RET(DeviceMem::alloc(aiRqDev_, aiRqMem_->size()));
+        aiRMAInfoPtr->rqPtr = aiRqDev_.ptr();
+        CHK_RET(hrtMemAsyncCopy(aiRqDev_.ptr(), aiRqDev_.size(), aiRqMem_->ptr(), aiRqDev_.size(),
+                                     HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
+ 
+        CHK_RET(DeviceMem::alloc(aiRcqDev_, aiRcqMem_->size()));
+        aiRMAInfoPtr->rcqPtr = aiRcqDev_.ptr();
+        CHK_RET(hrtMemAsyncCopy(aiRcqDev_.ptr(), aiRcqDev_.size(), aiRcqMem_->ptr(), aiRcqDev_.size(),
+                                     HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
+ 
+        CHK_RET(hrtMemAsyncCopy(aiMemDetailsDev_.ptr(), aiMemDetailsDev_.size(), aiMemDetailsMem_->ptr(),
+                                     aiMemDetailsDev_.size(), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
+ 
+        CHK_RET(DeviceMem::alloc(aiMemDev_, aiMemMem_->size()));
+        aiRMAInfoPtr->memPtr = aiMemDev_.ptr();
+        CHK_RET(hrtMemAsyncCopy(aiMemDev_.ptr(), aiMemDev_.size(), aiMemMem_->ptr(), aiMemDev_.size(),
+                                     HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
+ 
+        opResPara_.sizeOfAiRMAInfo = static_cast<u64>(sizeof(HcclAiRMAInfo));
+        CHK_RET(DeviceMem::alloc(aiRMAInfoDev_, opResPara_.sizeOfAiRMAInfo));
+        opResPara_.aiRMAInfo = reinterpret_cast<u64>(aiRMAInfoDev_.ptr());
+ 
+        CHK_RET(hrtMemAsyncCopy(aiRMAInfoDev_.ptr(), aiRMAInfoDev_.size(), aiRMAInfoMem_->ptr(), aiRMAInfoDev_.size(),
+                                     HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
+        HCCL_INFO("[%s] tag[%s] curRankId[%u] rankNum[%u] qpNum[%u] aiRMAInfo[%p] sizeOfAiRMAInfo[%llu] "
+                  "sizeOfAiRMAWQ[%u] sizeOfAiRMACQ[%u] sizeOfAiRMAMem[%u] sqPtr[%p] sqSize[%llu] sqCount[%zu] "
+                  "scqPtr[%p] scqSize[%llu] scqCount[%zu] rqPtr[%p] rqSize[%llu] rqCount[%zu] rcqPtr[%p] "
+                  "rcqSize[%llu] rcqCount[%zu] memPtr[%p] memSize[%llu] memCount[%zu] memDetailCount[%zu],opResPara_.aiRMAInfo",
+                  __func__, newTag.c_str(), aiRMAInfoPtr->curRankId, aiRMAInfoPtr->rankNum, aiRMAInfoPtr->qpNum,
+                  opResPara_.aiRMAInfo, opResPara_.sizeOfAiRMAInfo, aiRMAInfoPtr->sizeOfAiRMAWQ,
+                  aiRMAInfoPtr->sizeOfAiRMACQ, aiRMAInfoPtr->sizeOfAiRMAMem, aiRMAInfoPtr->sqPtr,
+                  aiSqDev_.size(), aiSqMem_->size(), aiRMAInfoPtr->scqPtr, aiScqDev_.size(), aiScqMem_->size(),
+                  aiRMAInfoPtr->rqPtr, aiRqDev_.size(), aiRqMem_->size(), aiRMAInfoPtr->rcqPtr, aiRcqDev_.size(),
+                  aiRcqMem_->size(), aiRMAInfoPtr->memPtr, aiMemDev_.size(), aiMemMem_->size(), aiMemDetailsMem_->size());
+        return HCCL_SUCCESS;
+    }
+ 
     HcclResult HcclCommunicator::BuildOpResParam(
         const std::string &algName, const AlgResourceResponse &algResource, const std::string &newTag,
-        const HcclCMDType opType)
+        const HcclCMDType opType, const rtStream_t aicpuStream)
     {
         opResPara_.localUsrRankId = userRank_;
         opResPara_.rankSize = userRankSize_;
@@ -5918,6 +6078,11 @@ namespace hccl
         CHK_RET(BuildZeroCopyParam());
         CHK_RET(BuildAicpuCustomParam());
         CHK_RET(BuildAicpuOrderLaunchNotify()); // 先申请device侧的关于按序下发的Notify内存
+        if (algName == "RunAlltoAllAivDirect") {
+            // AIV直驱ROCE
+            CHK_RET(BuildAiRmaInfoParam(newTag, algName, opType));
+            CHK_RET(CopyHostAirmaInfoToDeviceParam(newTag, opType, aicpuStream));
+        }
         CHK_RET(CopyHostOpResToDeviceParam(newTag));
         HCCL_RUN_INFO("[%s]build aicpu unfold resource success, tag[%s] rWinStart[%u] rWinOffset[%u] opEntry[%d]",
                       __func__, newTag.c_str(), opResPara_.rWinStart, opResPara_.rWinOffset, opResPara_.opEntry);
@@ -6947,7 +7112,7 @@ namespace hccl
         HCCL_RUN_INFO("[%s] start to init group[%s] aicpu resources newTag[%s] local rankId[%u]",
                       __func__, identifier_.c_str(), newTag.c_str(), userRank_);
         isContextLaunched_ = true;
-        CHK_RET(BuildOpResParam(algName, algResource, newTag, opType)); // 构建context结构体
+        CHK_RET(BuildOpResParam(algName, algResource, newTag, opType, aicpuStream)); // 构建context结构体
         std::string kernelName = "RunAicpuKfcResInitV2";
         // 在这里构建suspending状态码的HDC通道初始化，并且在host侧进行init
         // （这个主要是针对hcomId；对算子通信域的复用；也就是多个算子复用（tag+Identifier）这个通信域的情况）
