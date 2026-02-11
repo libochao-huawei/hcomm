@@ -167,12 +167,12 @@ HcclResult ProfilingManager::ReportTaskInfo(s32 streamId, void* ctxPtr)
     u32 startSqeIdx = GetStartReportSqeIdx(streamId);
     HCCL_INFO("[ReportTaskInfo] Rank:%u, stream:%u, sqeNum:%u, startSqeIdx:%u, curSqeTailIdx: %u", profInfo.rankId, streamId,
         sqeContextBuffer->tailSqeIdx - startSqeIdx, startSqeIdx, sqeContextBuffer->tailSqeIdx);
-    MsprofAicpuHcclTaskInfo taskInfos[HCCLINFO_REPORT_BATCH_NUM] = {0};
+    MsprofAicpuHcclTaskInfo taskInfos[HCCLINFO_REPORT_BATCH_NUM] = {};
     auto endIdx = static_cast<uint32_t>(sqeContextBuffer->tailSqeIdx);
     bool isSupportBatchReport = (AdprofReportBatchAdditionalInfo != nullptr || MsprofReportBatchAdditionalInfo != nullptr);
     HCCL_INFO("AdprofReportBatchAdditionalInfo != nullptr || MsprofReportBatchAdditionalInfo != nullptr: %s", isSupportBatchReport ? "true" : "false");
     constexpr int32_t MAX_BATCH_REPORT_NUM = 512; // 最大支持批量上报的MsprofAdditionalInfo个数, 需要与接口实现侧保持一致
-    MsprofAdditionalInfo addInfoVec[MAX_BATCH_REPORT_NUM];
+    MsprofAdditionalInfo addInfoVec[MAX_BATCH_REPORT_NUM] = {};
     uint32_t addInfoIndx = 0;
     for (uint32_t idx = startSqeIdx, batchId = 0; idx < endIdx; ++idx) {
         // 获取SqeInfo
@@ -216,8 +216,8 @@ HcclResult ProfilingManager::ReportTaskInfo(s32 streamId, void* ctxPtr)
 
 void ProfilingManager::DumpHcclInfo(const MsprofAicpuHcclTaskInfo& taskInfo, u32 batchId, u32 idx)
 {
-    HCCL_DEBUG("[ReportTaskInfo] batchId:%u, idx:%u, itemId:%lld, groupName:%lld, localRank:%u, remoteRank:%u, " \
-            "rankSize:%u, timeStamp:%lld, srcAddr:%x, dstAddr:%x, dataSize:%lld, taskId:%u, streamId:%u, planeID:%u," \
+    HCCL_DEBUG("[ReportTaskInfo] batchId:%u, idx:%u, itemId:%llu, groupName:%llu, localRank:%u, remoteRank:%u, " \
+            "rankSize:%u, timeStamp:%llu, srcAddr:%x, dstAddr:%x, dataSize:%lld, taskId:%u, streamId:%u, planeID:%u," \
             "opType:%u, dataType:%u, linkType:%u, transportType:%u, rdmaType:%u, role:%u",
             batchId, idx, taskInfo.itemId, taskInfo.groupName, taskInfo.localRank, taskInfo.remoteRank,taskInfo.rankSize,
             taskInfo.timeStamp, taskInfo.srcAddr, taskInfo.dstAddr, taskInfo.dataSize,taskInfo.taskId, taskInfo.streamId,

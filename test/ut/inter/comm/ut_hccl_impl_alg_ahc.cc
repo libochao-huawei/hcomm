@@ -51,7 +51,7 @@
 #include "reduce_scatter_nb_pub.h"
 #include "all_gather_nb_pub.h"
 #include "all_reduce_nb_pub.h"
-
+#include "adapter_prof.h"
 
 using namespace hccl;
 using namespace std;
@@ -100,6 +100,12 @@ protected:
             .stubs()
             .with(any(), outBound(portNum))
             .will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HcclCommunicator::InitPreResource)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtProfRegisterCtrlCallback)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&Heartbeat::Init)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
@@ -729,12 +735,6 @@ static inline void ConstructCommTestCase91093(AHCEnvType ahcEnvType, AHCCommType
     MOCKER_CPP(&TransportManager::Alloc)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatter)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingAllGather)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
     MOCKER(CollExecutorBase::RunTemplate)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
@@ -1125,12 +1125,6 @@ TEST_F(HcclImplAlgTestAHCAllreduce, ut_AllReduceAHCExecute91093)
     MOCKER_CPP(&TransportManager::Alloc)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatter)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingAllGather)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
     MOCKER(CollExecutorBase::RunTemplate)
     .stubs()
     .will(invoke(FakeRunTemplateCoprimeCase));
@@ -1229,12 +1223,6 @@ TEST_F(HcclImplAlgTestAHCAllreduce, ut_AllReduceAHCBrokeExecute91093)
     MOCKER_CPP(&TransportManager::Alloc)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatter)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingAllGather)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
     MOCKER(CollExecutorBase::RunTemplate)
     .stubs()
     .will(invoke(FakeRunTemplateSpiltCase));
@@ -1324,12 +1312,6 @@ TEST_F(HcclImplAlgTestAHCAllreduce, ut_AllReduceNULLAHCExecute91093)
     MOCKER_CPP_VIRTUAL(*HcclImplAlgTestAHCAllreduce::dispatcher, &DispatcherPub::SignalWait, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u32,
         s32, bool, u32, u32)).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportManager::Alloc)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatter)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingAllGather)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
     MOCKER(CollExecutorBase::RunTemplate)
@@ -1482,12 +1464,6 @@ TEST_F(HcclImplAlgTestAHCAllreduce, ut_AHC_Mesh_910_93){
     MOCKER_CPP_VIRTUAL(*HcclImplAlgTestAHCAllreduce::dispatcher, &DispatcherPub::SignalWait, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u32,
         s32, bool, u32, u32)).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportManager::Alloc)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatter)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingAllGather)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
     MOCKER(CollExecutorBase::RunTemplate)
@@ -1989,9 +1965,6 @@ TEST_F(HcclImplAlgTestAHCAllreduce, ut_ReduceScatterAHCExecuteSingleBuffer910B)
     MOCKER(LaunchTask)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-    // MOCKER(InitTask)
-    // .stubs()
-    // .will(returnValue(HCCL_SUCCESS));
     MOCKER(CollExecutorBase::RunTemplate)
     .stubs()
     .will(invoke(FakeRunTemplateCoprimeCase));
@@ -2000,6 +1973,11 @@ TEST_F(HcclImplAlgTestAHCAllreduce, ut_ReduceScatterAHCExecuteSingleBuffer910B)
     .will(returnValue(HCCL_SUCCESS));
 
     HcclDispatcher dispatcher;
+    CollReduceScatterExecutor collReduceScatterExecutor(dispatcher, topoMatcher);
+    MOCKER_CPP_VIRTUAL(collReduceScatterExecutor, &CollReduceScatterExecutor::RunLoop)
+    .stubs()
+    .with(any(), any())
+    .will(returnValue(HCCL_SUCCESS));
     u64 reduceAttrBitMap;
     ReduceScatterRing reducescatterRing(dispatcher);
     MOCKER_CPP_VIRTUAL(reducescatterRing, &ReduceScatterRing::RunAsync).stubs().will(returnValue(HCCL_SUCCESS));
@@ -2096,17 +2074,18 @@ TEST_F(HcclImplAlgTestAHCAllreduce, ut_ReduceScatterAHCBrokeExecuteSingleBuffer9
     MOCKER(LaunchTask)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-    // MOCKER(InitTask)
-    // .stubs()
-    // .will(returnValue(HCCL_SUCCESS));
     MOCKER(CollExecutorBase::RunTemplate)
     .stubs()
     .will(invoke(FakeRunTemplateSpiltCase));
     MOCKER_CPP(&ExecutorBase::RegisterProfiler)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-
     HcclDispatcher dispatcher;
+    CollReduceScatterExecutor collReduceScatterExecutor(dispatcher, topoMatcher);
+    MOCKER_CPP_VIRTUAL(collReduceScatterExecutor, &CollReduceScatterExecutor::RunLoop)
+    .stubs()
+    .with(any(), any())
+    .will(returnValue(HCCL_SUCCESS));
     u64 reduceAttrBitMap;
     ReduceScatterRing reducescatterRing(dispatcher);
     MOCKER_CPP_VIRTUAL(reducescatterRing, &ReduceScatterRing::RunAsync).stubs().will(returnValue(HCCL_SUCCESS));
@@ -2199,9 +2178,6 @@ TEST_F(HcclImplAlgTestAHCAllreduce, ut_ReduceScatterAHCExecuteDoubleBuffer910B)
     MOCKER(LaunchTask)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-    // MOCKER(InitTask)
-    // .stubs()
-    // .will(returnValue(HCCL_SUCCESS));
     MOCKER(CollExecutorBase::RunTemplate)
     .stubs()
     .will(invoke(FakeRunTemplateCoprimeCase));
@@ -2210,6 +2186,12 @@ TEST_F(HcclImplAlgTestAHCAllreduce, ut_ReduceScatterAHCExecuteDoubleBuffer910B)
     .will(returnValue(HCCL_SUCCESS));
 
     HcclDispatcher dispatcher;
+    CollReduceScatterExecutor collReduceScatterExecutor(dispatcher, topoMatcher);
+    MOCKER_CPP_VIRTUAL(collReduceScatterExecutor, &CollReduceScatterExecutor::RunLoop)
+    .stubs()
+    .with(any(), any())
+    .will(returnValue(HCCL_SUCCESS));
+
     u64 reduceAttrBitMap;
     ReduceScatterRing reducescatterRing(dispatcher);
     MOCKER_CPP_VIRTUAL(reducescatterRing, &ReduceScatterRing::RunAsync).stubs().will(returnValue(HCCL_SUCCESS));
@@ -2306,9 +2288,6 @@ TEST_F(HcclImplAlgTestAHCAllreduce, ut_ReduceScatterAHCBrokeExecuteDoubleBuffer9
     MOCKER(LaunchTask)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-    // MOCKER(InitTask)
-    // .stubs()
-    // .will(returnValue(HCCL_SUCCESS));
     MOCKER(CollExecutorBase::RunTemplate)
     .stubs()
     .will(invoke(FakeRunTemplateSpiltCase));
@@ -2317,6 +2296,11 @@ TEST_F(HcclImplAlgTestAHCAllreduce, ut_ReduceScatterAHCBrokeExecuteDoubleBuffer9
     .will(returnValue(HCCL_SUCCESS));
 
     HcclDispatcher dispatcher;
+    CollReduceScatterExecutor collReduceScatterExecutor(dispatcher, topoMatcher);
+    MOCKER_CPP_VIRTUAL(collReduceScatterExecutor, &CollReduceScatterExecutor::RunLoop)
+    .stubs()
+    .with(any(), any())
+    .will(returnValue(HCCL_SUCCESS));
     u64 reduceAttrBitMap;
     ReduceScatterRing reducescatterRing(dispatcher);
     MOCKER_CPP_VIRTUAL(reducescatterRing, &ReduceScatterRing::RunAsync).stubs().will(returnValue(HCCL_SUCCESS));

@@ -22,6 +22,7 @@
 #include "hccl_mem.h"
 #include "global_mem_record.h"
 #include "aicpu_operator_pub.h"
+#include "comm_config_pub.h"
 
 using HcclBatchData = struct HcclBatchDataDef {
     HcclComm comm;
@@ -65,7 +66,7 @@ public:
     };
 
     HcclOneSidedService(std::unique_ptr<HcclSocketManager> &socketManager,
-        std::unique_ptr<NotifyPool> &notifyPool);
+        std::unique_ptr<NotifyPool> &notifyPool, const CommConfig &commConfig);
 
     // 父类Config()等已经完成必要参数的配置
     HcclOneSidedService() = default;
@@ -87,7 +88,7 @@ public:
     HcclResult GetIsUsedRdma(RankId remoteRankId, bool &useRdma);
 
     // 主要完成通信域粒度的数据面建链和已绑定MR的交换、使能
-    HcclResult Prepare(const std::string &commIdentifier, const HcclPrepareConfig* config, s32 timeoutSec);
+    HcclResult Prepare(const std::string &commIdentifier, const HcclPrepareConfig* prepareConfig, s32 timeoutSec);
     HcclResult InitIsUsedRdmaMap(bool& needInitNic, bool& needInitVnic);
     HcclResult DeInit() override;
 
@@ -179,6 +180,7 @@ private:
     DeviceMem commResParaDevice_;
     DeviceMem execStreamContext_;
     aclrtBinHandle binHandle_ = nullptr;
+    CommConfig commConfig_;
 };
 }
 

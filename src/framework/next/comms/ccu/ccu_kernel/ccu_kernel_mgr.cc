@@ -649,9 +649,9 @@ HcclResult CcuKernelMgr::LoadInstruction(const CcuRep::CcuInstrInfo &instrInfo, 
     tmp.insinfo.resourceAddr = reinterpret_cast<uint64_t>(instructionLoadDevMem_);
     (void)memcpy_s(inBuff.data.dataInfo.dataArray, sizeof(CcuDataTypeUnion), &tmp, sizeof(CcuDataTypeUnion));
 
-    auto ret = ra_custom_channel(info,
-        reinterpret_cast<custom_chan_info_in *>(&inBuff),
-        reinterpret_cast<custom_chan_info_out *>(&outBuff));
+    auto ret = RaCustomChannel(info,
+        reinterpret_cast<CustomChanInfoIn *>(&inBuff),
+        reinterpret_cast<CustomChanInfoOut *>(&outBuff));
     if (ret != 0) {
         HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
             "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,

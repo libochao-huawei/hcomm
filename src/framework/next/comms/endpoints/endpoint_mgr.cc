@@ -53,14 +53,14 @@ HcclResult EndpointMgr::RegisterMemory(EndpointHandle epHandle, const std::vecto
         MemHandle memHandle = nullptr;
         HcommMem hmem { mem.type, mem.addr, mem.size };
         HcclResult ret = HcommMemReg(epHandle, memTag[index].c_str(), hmem, &memHandle);
+        if(ret != HCCL_SUCCESS && ret != HCCL_E_AGAIN) {
+            HCCL_ERROR("[%s]call trace: hcclRet -> %d", __FUNCTION__, ret);
+            return ret;
+        }
         CHK_PTR_NULL(memHandle);
         memHandleVec.push_back(memHandle);
         index++;
-        if(ret != HCCL_SUCCESS) {
-            if(ret != HCCL_E_AGAIN) {
-                HCCL_ERROR("[%s]call trace: hcclRet -> %d", __FUNCTION__, ret);
-                return ret;
-            }
+        if(ret == HCCL_E_AGAIN) {
             HCCL_WARNING("This mem has already been registered, addr=%p, size=%llu", mem.addr, mem.size);   
         }
     }

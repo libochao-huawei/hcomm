@@ -123,7 +123,6 @@ TEST_F(CcuErrorHandlerTest, test_gen_status_info)
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::MISSION);
     EXPECT_EQ(errorInfo[0].dieId, 1);
     EXPECT_EQ(errorInfo[0].missionId, 2);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
 
     errorInfo.clear();
     baseInfo.status = 0x0400;
@@ -169,7 +168,6 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_loc_post_sem)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::LOC_POST_SEM);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalId, 1);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalValue, 0xabcd);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalMask, mask);
@@ -190,7 +188,6 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_loc_wait_sem)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::LOC_WAIT_SEM);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalId, 1);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalValue, 0xabcd);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalMask, mask);
@@ -215,7 +212,6 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_rem_post_sem)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::REM_POST_SEM);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalId, 101);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalMask, mask);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.channelId[0], 7);
@@ -245,7 +241,6 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_rem_wait_sem)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::REM_WAIT_SEM);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalId, 101);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalValue, 0xabcd);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalMask, mask);
@@ -279,7 +274,6 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_rem_post_var)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::REM_POST_VAR);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalId, 100);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalMask, mask);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.paramId, 101);
@@ -321,7 +315,6 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_rem_wait_group)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::REM_WAIT_GROUP);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalId, 100);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalValue, 0xabcd);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalMask, mask);
@@ -354,7 +347,6 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_post_shared_var)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::POST_SHARED_VAR);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalId, 1);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalMask, mask);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.paramId, 3);
@@ -375,7 +367,6 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_post_shared_sem)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::POST_SHARED_SEM);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalId, 1);
     EXPECT_EQ(errorInfo[0].msg.waitSignal.signalMask, mask);
 }
@@ -403,6 +394,8 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_read)
     MOCKER(CcuErrorHandler::GetCcuXnValue).stubs().with(any(), any(), eq(4)).will(returnValue(0xd));
 
     Variable len;
+    len.Reset(5);
+    MOCKER(CcuErrorHandler::GetCcuXnValue).stubs().with(any(), any(), eq(5)).will(returnValue(0xe));
 
     MaskSignal sem;
     sem.Reset(5);  // sem id
@@ -416,11 +409,11 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_read)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::TRANS_MEM);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::READ);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.transMem.locAddr, 0xa);
     EXPECT_EQ(errorInfo[0].msg.transMem.locToken, 0xb);
     EXPECT_EQ(errorInfo[0].msg.transMem.rmtAddr, 0xc);
     EXPECT_EQ(errorInfo[0].msg.transMem.rmtToken, 0xd);
+    EXPECT_EQ(errorInfo[0].msg.transMem.len, 0xe);
     EXPECT_EQ(errorInfo[0].msg.transMem.signalId, 5);
     EXPECT_EQ(errorInfo[0].msg.transMem.signalMask, mask);
     EXPECT_EQ(errorInfo[0].msg.transMem.channelId, 7);
@@ -449,6 +442,8 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_write)
     MOCKER(CcuErrorHandler::GetCcuXnValue).stubs().with(any(), any(), eq(4)).will(returnValue(0xd));
 
     Variable len;
+    len.Reset(5);
+    MOCKER(CcuErrorHandler::GetCcuXnValue).stubs().with(any(), any(), eq(5)).will(returnValue(0xe));
 
     MaskSignal sem;
     sem.Reset(5);  // sem id
@@ -462,11 +457,11 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_write)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::TRANS_MEM);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::WRITE);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.transMem.locAddr, 0xa);
     EXPECT_EQ(errorInfo[0].msg.transMem.locToken, 0xb);
     EXPECT_EQ(errorInfo[0].msg.transMem.rmtAddr, 0xc);
     EXPECT_EQ(errorInfo[0].msg.transMem.rmtToken, 0xd);
+    EXPECT_EQ(errorInfo[0].msg.transMem.len, 0xe);
     EXPECT_EQ(errorInfo[0].msg.transMem.signalId, 5);
     EXPECT_EQ(errorInfo[0].msg.transMem.signalMask, mask);
     EXPECT_EQ(errorInfo[0].msg.transMem.channelId, 7);
@@ -491,6 +486,8 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_local_cpy)
     MOCKER(CcuErrorHandler::GetCcuXnValue).stubs().with(any(), any(), eq(4)).will(returnValue(0xd));
 
     Variable len;
+    len.Reset(5);
+    MOCKER(CcuErrorHandler::GetCcuXnValue).stubs().with(any(), any(), eq(5)).will(returnValue(0xe));
 
     MaskSignal sem;
     sem.Reset(5);  // sem id
@@ -504,11 +501,11 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_local_cpy)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::TRANS_MEM);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::LOCAL_CPY);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.transMem.locAddr, 0xa);
     EXPECT_EQ(errorInfo[0].msg.transMem.locToken, 0xb);
     EXPECT_EQ(errorInfo[0].msg.transMem.rmtAddr, 0xc);
     EXPECT_EQ(errorInfo[0].msg.transMem.rmtToken, 0xd);
+    EXPECT_EQ(errorInfo[0].msg.transMem.len, 0xe);
     EXPECT_EQ(errorInfo[0].msg.transMem.signalId, 5);
     EXPECT_EQ(errorInfo[0].msg.transMem.signalMask, mask);
 }
@@ -532,6 +529,8 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_local_reduce)
     MOCKER(CcuErrorHandler::GetCcuXnValue).stubs().with(any(), any(), eq(4)).will(returnValue(0xd));
 
     Variable len;
+    len.Reset(5);
+    MOCKER(CcuErrorHandler::GetCcuXnValue).stubs().with(any(), any(), eq(5)).will(returnValue(0xe));
 
     MaskSignal sem;
     sem.Reset(5);  // sem id
@@ -545,11 +544,11 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_local_reduce)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::TRANS_MEM);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::LOCAL_REDUCE);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.transMem.locAddr, 0xa);
     EXPECT_EQ(errorInfo[0].msg.transMem.locToken, 0xb);
     EXPECT_EQ(errorInfo[0].msg.transMem.rmtAddr, 0xc);
     EXPECT_EQ(errorInfo[0].msg.transMem.rmtToken, 0xd);
+    EXPECT_EQ(errorInfo[0].msg.transMem.len, 0xe);
     EXPECT_EQ(errorInfo[0].msg.transMem.signalId, 5);
     EXPECT_EQ(errorInfo[0].msg.transMem.signalMask, mask);
     EXPECT_EQ(errorInfo[0].msg.transMem.opType, 7);
@@ -574,6 +573,8 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_buf_read)
     dst.Reset(3);  // dst id
 
     Variable len;
+    len.Reset(5);
+    MOCKER(CcuErrorHandler::GetCcuXnValue).stubs().with(any(), any(), eq(5)).will(returnValue(0xe));
 
     MaskSignal sem;
     sem.Reset(5);  // sem id
@@ -587,10 +588,10 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_buf_read)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::BUF_TRANS_MEM);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::BUF_READ);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.bufId, 3);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.addr, 0xa);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.token, 0xb);
+    EXPECT_EQ(errorInfo[0].msg.bufTransMem.len, 0xe);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.signalId, 5);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.signalMask, mask);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.channelId, 7);
@@ -614,6 +615,8 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_buf_write)
     src.Reset(3);  // src id
 
     Variable len;
+    len.Reset(5);
+    MOCKER(CcuErrorHandler::GetCcuXnValue).stubs().with(any(), any(), eq(5)).will(returnValue(0xe));
 
     MaskSignal sem;
     sem.Reset(5);  // sem id
@@ -627,10 +630,10 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_buf_write)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::BUF_TRANS_MEM);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::BUF_WRITE);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.bufId, 3);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.addr, 0xa);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.token, 0xb);
+    EXPECT_EQ(errorInfo[0].msg.bufTransMem.len, 0xe);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.signalId, 5);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.signalMask, mask);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.channelId, 7);
@@ -650,6 +653,8 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_buf_loc_read)
     dst.Reset(3);  // dst id
 
     Variable len;
+    len.Reset(5);
+    MOCKER(CcuErrorHandler::GetCcuXnValue).stubs().with(any(), any(), eq(5)).will(returnValue(0xe));
 
     MaskSignal sem;
     sem.Reset(5);  // sem id
@@ -663,10 +668,10 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_buf_loc_read)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::BUF_TRANS_MEM);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::BUF_LOC_READ);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.bufId, 3);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.addr, 0xa);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.token, 0xb);
+    EXPECT_EQ(errorInfo[0].msg.bufTransMem.len, 0xe);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.signalId, 5);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.signalMask, mask);
 }
@@ -685,6 +690,8 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_buf_loc_write)
     src.Reset(3);  // src id
 
     Variable len;
+    len.Reset(5);
+    MOCKER(CcuErrorHandler::GetCcuXnValue).stubs().with(any(), any(), eq(5)).will(returnValue(0xe));
 
     MaskSignal sem;
     sem.Reset(5);  // sem id
@@ -698,10 +705,10 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_buf_loc_write)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::BUF_TRANS_MEM);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::BUF_LOC_WRITE);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.bufId, 3);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.addr, 0xa);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.token, 0xb);
+    EXPECT_EQ(errorInfo[0].msg.bufTransMem.len, 0xe);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.signalId, 5);
     EXPECT_EQ(errorInfo[0].msg.bufTransMem.signalMask, mask);
 }
@@ -731,7 +738,6 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_buf_reduce)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::BUF_REDUCE);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::BUF_REDUCE);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.bufReduce.count, 4);
     EXPECT_EQ(errorInfo[0].msg.bufReduce.dataType, 6);
     EXPECT_EQ(errorInfo[0].msg.bufReduce.outputDataType, 7);
@@ -757,7 +763,6 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_default)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::DEFAULT);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::JUMP);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
 }
 
 TEST_F(CcuErrorHandlerTest, gen_error_info_by_rep_type_should_throw_exception)
@@ -800,7 +805,6 @@ TEST_F(CcuErrorHandlerTest, test_loop_group_error_info)
     EXPECT_EQ(errorInfo.size(), 1);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::LOOP_GROUP);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::LOOPGROUP);
-    EXPECT_EQ(errorInfo[0].instrId, 10);
     EXPECT_EQ(errorInfo[0].msg.loopGroup.startLoopInsId, 3);
     EXPECT_EQ(errorInfo[0].msg.loopGroup.loopInsCnt, 5);
     EXPECT_EQ(errorInfo[0].msg.loopGroup.expandOffset, 3);
@@ -842,25 +846,19 @@ TEST_F(CcuErrorHandlerTest, test_gen_error_info_loop)
     sem.Reset(0xa);          // sem id
     uint16_t mask = 0x0010;  // mask
     MOCKER(CcuErrorHandler::GetCcuCKEValue).stubs().with(any(), any(), eq(0xa)).will(returnValue(0xabcd));
-    shared_ptr<CcuRepLocPostSem> locPostSem = make_shared<CcuRepLocPostSem>(sem, mask);
 
     // Mock LoopBlock
     shared_ptr<CcuRepLoopBlock> loopBlock = make_shared<CcuRepLoopBlock>("loop_block_label");
+    shared_ptr<CcuRepLocPostSem> locPostSem = make_shared<CcuRepLocPostSem>(sem, mask);
     locPostSem->instrId = 0;
     locPostSem->instrCount = 1;
     loopBlock->Append(locPostSem);  // instr 0
-    locPostSem->instrId = 1;
-    locPostSem->instrCount = 1;
-    loopBlock->Append(locPostSem);  // instr 1
-    locPostSem->instrId = 2;
-    locPostSem->instrCount = 1;
-    loopBlock->Append(locPostSem);  // instr 2
 
     // Mock Loop
     Variable loopParam;
     shared_ptr<CcuRepLoop> loop = make_shared<CcuRepLoop>("loop_label", loopParam); // instr 3
     loop->Reference(loopBlock);
-    loop->instrId = 3;
+    loop->instrId = 1;
     loop->instrCount = 1;
 
     MockCcuContext mockCcuCtx{};
@@ -872,7 +870,7 @@ TEST_F(CcuErrorHandlerTest, test_gen_error_info_loop)
 
     CcuLoopContext loopCtx{};   // currentIns = 2, currentCnt = 3, addrStride = 0xaabbccdd
     loopCtx.part10.currentIns = 0;
-    loopCtx.part9.currentIns = 2;
+    loopCtx.part9.currentIns = 0;
     loopCtx.part14.currentCnt = 0;
     loopCtx.part13.currentCnt = 3;
     loopCtx.part10.addrStride = 0b011101;
@@ -880,7 +878,7 @@ TEST_F(CcuErrorHandlerTest, test_gen_error_info_loop)
     loopCtx.part12.addrStride = 0b1010101010;
     MOCKER(CcuErrorHandler::GetCcuLoopContext).stubs().with(any(), any(), any()).will(returnValue(loopCtx));
 
-    ErrorInfoBase baseInfo{0, 0, 0, 3, 0};  // currentInsId = 2
+    ErrorInfoBase baseInfo{0, 0, 0, 1, 0};  // currentInsId = 2
     vector<CcuErrorInfo> errorInfo{};
     CcuErrorHandler::GenErrorInfoLoop(baseInfo, mockCcuCtx, errorInfo);
 
@@ -888,16 +886,16 @@ TEST_F(CcuErrorHandlerTest, test_gen_error_info_loop)
     // check Loop
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::LOOP);
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::LOOP);
-    EXPECT_EQ(errorInfo[0].instrId, 3);
+    EXPECT_EQ(errorInfo[0].instrId, 1);
     EXPECT_EQ(errorInfo[0].msg.loop.startInstrId, 0);
-    EXPECT_EQ(errorInfo[0].msg.loop.endInstrId, 2);
+    EXPECT_EQ(errorInfo[0].msg.loop.endInstrId, 0);
     EXPECT_EQ(errorInfo[0].msg.loop.loopCnt, 5);
     EXPECT_EQ(errorInfo[0].msg.loop.loopCurrentCnt, 3);
     EXPECT_EQ(errorInfo[0].msg.loop.addrStride, 0xaabbccdd);
     // check Rep in loop
     EXPECT_EQ(errorInfo[1].type, CcuErrorType::WAIT_SIGNAL);
     EXPECT_EQ(errorInfo[1].repType, CcuRepType::LOC_POST_SEM);
-    EXPECT_EQ(errorInfo[1].instrId, 2);
+    EXPECT_EQ(errorInfo[1].instrId, 0);
     EXPECT_EQ(errorInfo[1].msg.waitSignal.signalId, 0xa);
     EXPECT_EQ(errorInfo[1].msg.waitSignal.signalValue, 0xabcd);
     EXPECT_EQ(errorInfo[1].msg.waitSignal.signalMask, mask);

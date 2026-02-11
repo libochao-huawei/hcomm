@@ -142,6 +142,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    bool HcclCommunicator::IsSupportSymmetricMemory(HcclCMDType opType, OpParam &opParam)
+    {
+        return false;
+    }
+
     bool HcclCommunicator::IsSupportZeroCopy(const OpParam &opParam)
     {
         return false;
@@ -889,6 +894,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::BuildAiRmaInfoParam(const std::string &newTag, const std::string &algName, const HcclCMDType opType)
+    {
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::BuildAicpuOrderLaunchNotify()
     {
         return HCCL_SUCCESS;
@@ -1010,6 +1020,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::CopyHostAirmaInfoToDeviceParam(const std::string &newTag, const HcclCMDType opType, const rtStream_t aiCpuStream)
+    {
+        return HCCL_SUCCESS;
+    }
+ 
     HcclResult HcclCommunicator::CopyHostOpResToDeviceParam(const std::string &newTag)
     {
         return HCCL_SUCCESS;
@@ -1017,7 +1032,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::BuildOpResParam(
         const std::string &algName, const AlgResourceResponse &algResource, const std::string &newTag,
-        const HcclCMDType opType)
+        const HcclCMDType opType, const rtStream_t aicpuStream)
     {
         return HCCL_SUCCESS;
     }
@@ -1602,4 +1617,24 @@ namespace hccl
         HCCL_INFO("[HcclCommunicator][device][GetHcclQos] hcclQos[%u]", hcclQos_);
  	    return hcclQos_;
  	}
+
+    HcclResult HcclCommunicator::InitSymmetricMemory()
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::DeregisterWindow(CommSymWindow winHandle)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
+    {
+        return HCCL_SUCCESS;
+    }
 }

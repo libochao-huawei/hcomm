@@ -78,6 +78,7 @@ HcclResult HcclSocketManager::ServerDeInit(const HcclIpAddress& localIp, u32 por
     std::unique_lock<std::mutex> lock(serverMapMutex_);
     auto res = serverSocketMap_.find(portInfo);
     if (res == serverSocketMap_.end()) {
+        HCCL_INFO("[DeInit][Server]ip[%s] port[%u] not found", localIp.GetReadableAddress(), port);
         return HCCL_SUCCESS;
     }
 

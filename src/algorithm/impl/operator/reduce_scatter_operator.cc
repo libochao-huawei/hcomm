@@ -267,7 +267,8 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
     if (isMeshTopo) {
         if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_ENABLE
             && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE
-            && algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) {
+            && algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE
+            && deviceNumPerAggregation_ > DEVICE_TWO) {
             algName = "ReduceScatterDeterPipelineExecutor";
         } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             bool enableSmallCountDeterministicAlgo = !isSingleMeshAggregation_ &&
@@ -280,7 +281,8 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
                 } else {
                     algName = "ReduceScatterMeshDmaEliminationExecutor";
                 }
-            } else if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE &&
+            } else if ((topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE ||
+                deviceNumPerAggregation_ == DEVICE_TWO) &&
                 algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE &&
                 IsMultiMeshInlineReduce(cclBufferManager_.GetInCCLbuffer().ptr(),
                 cclBufferManager_.GetOutCCLbuffer().ptr(), param.DataDes.dataType, param.reduceType)) {
@@ -480,7 +482,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         (smallCountOptimMultiServer && isPowOfTwo &&
         (param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] * serverNum_ <= smallCountMultiServerThreshold))) {
         algName = "ReduceScatterDeterExecutor";
-    } else if (param.supportZeroCopy && isSupportInlineReduce &&    // 不申请scratch ==> 不支持非InlineReduce
+    } else if (isSupportInlineReduce && (param.supportSymmetricMemory || param.supportZeroCopy) &&    // isSupportInlineReduce：不申请scratch ==> 不支持非InlineReduce
         (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize * deviceNumPerAggregation_ > HCCL_MID_COUNT_16_MB)) {
         const u32 SEVER_NUM_FOUR = 4;
         constexpr u64 RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN = 2 * 1024 * 1024;

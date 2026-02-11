@@ -679,6 +679,8 @@ struct HcclOpResParam {
     // 读取HCCL_ENTRY_LOG_ENABLE环境变量，用于增加算子kernel展开信息
     bool opEntry{false};
     uint32_t hcclSdmaQos; //HCCL SDMA QOS TAG
+    u64 sizeOfAiRMAInfo = 0; // sizeof(HcclAiRMAInfo), 用于内存校验
+    u64 aiRMAInfo = 0; // HcclAiRMAInfo* 单个结构体指针
 };
 
 struct OpTilingData {
@@ -709,6 +711,11 @@ struct OpTilingData {
     s32 userStreamId;
     u32 ahcConfInfo[TOP_HIERARCHICAL_CONF_SIZE] = {0};
     uint8_t aicpuCacheEnable = 0; // 是否开启aicpu cache
+    u8 isSymmetricMemory = 0;
+    u64 inputSymWindow;
+    u64 inputOffset = 0;
+    u64 outputSymWindow;
+    u64 outputOffset = 0;
 
     /******************可变长度数据区，如需新增字段请在这之前增加*******************/
     u64 length;   // 可变长度数据区长度

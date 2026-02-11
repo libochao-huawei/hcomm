@@ -301,6 +301,8 @@ int rdma_lite_set_qp_sl(struct rdma_lite_qp *lite_qp, int sl);
 
 int rdma_lite_clean_qp(struct rdma_lite_qp *lite_qp);
 
+int rdma_lite_restore_snapshot(struct rdma_lite_context *lite_ctx);
+
 unsigned int rdma_lite_get_api_version(void);
 
 struct rdma_lite_ops {

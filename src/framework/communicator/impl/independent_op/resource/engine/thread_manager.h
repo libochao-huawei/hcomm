@@ -27,7 +27,7 @@ public:
     ThreadMgr(uint32_t threadNum, uint32_t notifyNumPerThread, std::string commId, aclrtBinHandle binHandle, const ManagerCallbacks& callbacks);
     ~ThreadMgr() = default;
     HcclResult HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
-        uint32_t notifyNumPerThread, ThreadHandle *threads);
+        uint32_t notifyNumPerThread, ThreadHandle *threads, std::vector<uint32_t> &threadId);
     HcclResult HcclThreadAcquireWithStream(CommEngine engine,
         rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
     HcclResult HcclGetNotifyNumInThread(ThreadHandle thread, uint32_t *notifyNum);
@@ -36,12 +36,10 @@ public:
     u32 GetNotifyNumPerThread() const { return notifyNumPerThread_; }
 
 private:
-    HcclResult CommEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type);
-    HcclResult CommEngineToStreamType(CommEngine engine, StreamType &type);
 
     HcclResult ThreadExportToCommEngineCpu(uint32_t threadNum, const ThreadHandle *threads, ThreadHandle *exportedThreads);
     HcclResult ThreadExportToCommEngineAicpu(uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads);
-    HcclResult GetExportedThread(const ThreadHandle threadHandle, CommEngine dstCommEngine, Thread *&exportedThread, std::shared_ptr<Thread> &threadOut);
+    HcclResult GetExportedThread(const ThreadHandle threadHandle, CommEngine commEngine, Thread *&exportedThread, std::shared_ptr<Thread> &threadOut);
     u32 threadNum_ = 0;
     u32 notifyNumPerThread_ = 0;
     std::string commId_;

@@ -11,25 +11,25 @@
 #ifndef DL_NET_FUNCTION_H
 #define DL_NET_FUNCTION_H
 
-struct rs_net_ops {
-    int (*rs_net_adapt_init)(void);
-    void (*rs_net_adapt_uninit)(void);
-    int (*rs_net_alloc_jfc_id)(const char *udev_name, unsigned int jfc_mode, unsigned int *jfc_id);
-    int (*rs_net_free_jfc_id)(const char *udev_name, unsigned int jfc_mode, unsigned int jfc_id);
-    int (*rs_net_alloc_jetty_id)(const char *udev_name, unsigned int jetty_mode, unsigned int *jetty_id);
-    int (*rs_net_free_jetty_id)(const char *udev_name, unsigned int jetty_mode, unsigned int jetty_id);
-    unsigned long long (*rs_net_get_cqe_base_addr)(unsigned int die_id);
+struct RsNetOps {
+    int (*rsNetAdaptInit)(void);
+    void (*rsNetAdaptUninit)(void);
+    int (*rsNetAllocJfcId)(const char *udevName, unsigned int jfcMode, unsigned int *jfcId);
+    int (*rsNetFreeJfcId)(const char *udevName, unsigned int jfcMode, unsigned int jfcId);
+    int (*rsNetAllocJettyId)(const char *udevName, unsigned int jettyMode, unsigned int *jettyId);
+    int (*rsNetFreeJettyId)(const char *udevName, unsigned int jettyMode, unsigned int jettyId);
+    unsigned long long (*rsNetGetCqeBaseAddr)(unsigned int dieId);
 };
 
-int rs_net_api_init(void);
-void rs_net_api_deinit(void);
+int RsNetApiInit(void);
+void RsNetApiDeinit(void);
 
-int rs_net_adapt_init(void);
-void rs_net_adapt_uninit(void);
-int rs_net_alloc_jfc_id(const char *udev_name, unsigned int jfc_mode, unsigned int *jfc_id);
-int rs_net_free_jfc_id(const char *udev_name, unsigned int jfc_mode, unsigned int jfc_id);
-int rs_net_alloc_jetty_id(const char *udev_name, unsigned int jetty_mode, unsigned int *jetty_id);
-int rs_net_free_jetty_id(const char *udev_name, unsigned int jetty_mode, unsigned int jetty_id);
-int rs_net_get_cqe_base_addr(unsigned int die_id, unsigned long long *cqe_base_addr);
+int RsNetAdaptInit(void);
+void RsNetAdaptUninit(void);
+int RsNetAllocJfcId(const char *udevName, unsigned int jfcMode, unsigned int *jfcId);
+int RsNetFreeJfcId(const char *udevName, unsigned int jfcMode, unsigned int jfcId);
+int RsNetAllocJettyId(const char *udevName, unsigned int jettyMode, unsigned int *jettyId);
+int RsNetFreeJettyId(const char *udevName, unsigned int jettyMode, unsigned int jettyId);
+int RsNetGetCqeBaseAddr(unsigned int dieId, unsigned long long *cqeBaseAddr);
 
 #endif // DL_NET_FUNCTION_H

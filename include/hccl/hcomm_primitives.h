@@ -15,6 +15,7 @@
 #include <securec.h>
 #include <arpa/inet.h>
 #include "acl/acl_rt.h"
+#include <hccl_types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -199,6 +200,23 @@ extern int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle c
     uint64_t len, uint32_t remoteNotifyIdx);
 
 /**
+ * @brief 带通知的归约写操作
+ * @param[in] thread 线程句柄
+ * @param[in] channel 通道句柄
+ * @param[out] dst 目标内存地址
+ * @param[in] src 源内存地址
+ * @param[in] count 元素个数
+ * @param[in] dataType 数据类型
+ * @param[in] reduceOp 归约操作类型
+ * @param[in] remoteNotifyIdx 远端通知索引
+ * @return int32_t 执行结果状态码
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
+ */
+extern int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
+    const void *src, uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp, uint32_t remoteNotifyIdx);
+
+/**
  * @brief 单边读操作
  * @param[in] thread 线程句柄
  * @param[in] channel 通道句柄
@@ -353,6 +371,17 @@ extern int32_t HcommAcquireComm(const char* commId);
  * @note 当前仅支持AICPU模式
  */
 extern int32_t HcommReleaseComm(const char* commId);
+
+/**
+ * @brief Get symmetric memory pointer.
+ *
+ * @param winHandle A pointer identifying the registered memory window handle.
+ * @param offset A size_t identifying the offset of symmetric memory heap.
+ * @param peerRank A u_integer identifying the identify for the peer rank.
+ * @param ptr A pointer identifying the symmetric memory heap address.
+ * @return HcclResult
+ */
+extern HcclResult HcommSymWinGetPeerPointer(CommSymWindow winHandle, size_t offset, uint32_t peerRank, void** ptr);
 
 #define HCOMM_PRIMITIVES_H_MODIFIED
 
