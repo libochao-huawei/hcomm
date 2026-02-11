@@ -326,7 +326,6 @@ HcclResult HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, Hcc
             errorFlag = true);
         opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
         s32 logicDevId = HrtGetDevice();
-        // todo:CHK_RET直接改有没有问题
         ret = CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(opbasedCommInfoV2.pComm.get(), 0); // 通信域创建，设置默认accelerator
         CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
             HCCL_ERROR("[%s]SetCommAcceleratorV2 failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
