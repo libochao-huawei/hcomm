@@ -29,6 +29,7 @@ constexpr uint32_t AIV_FLAG_UB_ALIGN_SIZE=32; //aiv flag对齐规则
 constexpr uint32_t TASK_CONTEXT_SIZE = 50;
 constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失败时打印前序task信息的长度限制
 constexpr int BYTE = 8; // 一字节的位数
+constexpr int CCU_MEG_256MB_LEN = 268435456;
 
 std::array<TaskExceptionHandler *, MAX_MODULE_DEVICE_NUM> TaskExceptionHandlerManager::handlers_;
 
@@ -768,64 +769,81 @@ void TaskExceptionHandler::PrintCcuErrorLog(const std::vector<CcuErrorInfo>& err
     }
 }
 
+string TaskExceptionHandler::GetCcuLenErrorMsg(const CcuErrorInfo &ccuErrorInfo)
+{
+    string printMsg = StringFormat("ccu transMem length[0x%x]", ccuErrorInfo.msg.transMem.len);
+    if (ccuErrorInfo.msg.transMem.len > CCU_MEG_256MB_LEN) {
+        printMsg = StringFormat("ccu transMem length[0x%x] > 256MB, not support!",
+            ccuErrorInfo.msg.transMem.len);
+    }
+    return printMsg;
+}
+
 string TaskExceptionHandler::GetCcuErrorMsgLoop(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
     (void)taskInfo;
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
     return StringFormat("InstrId[%u]: Loop startInstrId[%u], endInstrId[%u], executorId[%u], "
-                        "totalIter[%u], curIter[%u], addressStride[0x%llx]",
+                        "totalIter[%u], curIter[%u], addressStride[0x%llx], %s",
                         ccuErrorInfo.instrId, ccuErrorInfo.msg.loop.startInstrId, ccuErrorInfo.msg.loop.endInstrId,
                         ccuErrorInfo.msg.loop.loopEngineId, ccuErrorInfo.msg.loop.loopCnt,
-                        ccuErrorInfo.msg.loop.loopCurrentCnt, ccuErrorInfo.msg.loop.addrStride);
+                        ccuErrorInfo.msg.loop.loopCurrentCnt, ccuErrorInfo.msg.loop.addrStride, printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgLoopGroup(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
     (void)taskInfo;
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
     return StringFormat("InstrId[%u]: LoopGroup startLoopInsId[%u], loopInsCnt[%u], "
-                        "expandOffset[%u], expandCnt[%u]",
+                        "expandOffset[%u], expandCnt[%u], %s",
                         ccuErrorInfo.instrId, ccuErrorInfo.msg.loopGroup.startLoopInsId,
                         ccuErrorInfo.msg.loopGroup.loopInsCnt, ccuErrorInfo.msg.loopGroup.expandOffset,
-                        ccuErrorInfo.msg.loopGroup.expandCnt);
+                        ccuErrorInfo.msg.loopGroup.expandCnt, printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgLocPostSem(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
     (void)taskInfo;
-    return StringFormat("InstrId[%u]: Set sem[%u], semValue[0x%04x], mask[0x%04x]", ccuErrorInfo.instrId,
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
+    return StringFormat("InstrId[%u]: Set sem[%u], semValue[0x%04x], mask[0x%04x], %s", ccuErrorInfo.instrId,
                         ccuErrorInfo.msg.waitSignal.signalId, ccuErrorInfo.msg.waitSignal.signalValue,
-                        ccuErrorInfo.msg.waitSignal.signalMask);
+                        ccuErrorInfo.msg.waitSignal.signalMask, printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgLocWaitSem(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
     (void)taskInfo;
-    return StringFormat("InstrId[%u]: Wait sem[%u], semValue[0x%04x], mask[0x%04x]", ccuErrorInfo.instrId,
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
+    return StringFormat("InstrId[%u]: Wait sem[%u], semValue[0x%04x], mask[0x%04x], %s", ccuErrorInfo.instrId,
                         ccuErrorInfo.msg.waitSignal.signalId, ccuErrorInfo.msg.waitSignal.signalValue,
-                        ccuErrorInfo.msg.waitSignal.signalMask);
+                        ccuErrorInfo.msg.waitSignal.signalMask, printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgRemPostSem(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
-    return StringFormat("InstrId[%u]: Post, Use sem[%u], mask[0x%04x], rankId[%d]", ccuErrorInfo.instrId,
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
+    return StringFormat("InstrId[%u]: Post, Use sem[%u], mask[0x%04x], rankId[%d], %s", ccuErrorInfo.instrId,
                         ccuErrorInfo.msg.waitSignal.signalId, ccuErrorInfo.msg.waitSignal.signalMask,
-                        GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo));
+                        GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo), printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgRemWaitSem(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
-    return StringFormat("InstrId[%u]: Wait, Use sem[%u], semValue[0x%04x], mask[0x%04x], rankId[%d]",
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
+    return StringFormat("InstrId[%u]: Wait, Use sem[%u], semValue[0x%04x], mask[0x%04x], rankId[%d], %s",
                         ccuErrorInfo.instrId, ccuErrorInfo.msg.waitSignal.signalId,
                         ccuErrorInfo.msg.waitSignal.signalValue, ccuErrorInfo.msg.waitSignal.signalMask,
-                        GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo));
+                        GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo), printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgRemPostVar(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
-    return StringFormat("InstrId[%u]: Post Variable[0x%016llx] To Param[%u], Use sem[%u], mask[0x%04x], rankId[%d]",
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
+    return StringFormat("InstrId[%u]: Post Variable[0x%016llx] To Param[%u], Use sem[%u], mask[0x%04x], rankId[%d], %s",
                         ccuErrorInfo.instrId, ccuErrorInfo.msg.waitSignal.paramValue,
                         ccuErrorInfo.msg.waitSignal.paramId, ccuErrorInfo.msg.waitSignal.signalId,
                         ccuErrorInfo.msg.waitSignal.signalMask,
-                        GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo));
+                        GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo), printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgRemWaitGroup(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
@@ -842,118 +860,129 @@ string TaskExceptionHandler::GetCcuErrorMsgRemWaitGroup(const CcuErrorInfo &ccuE
         }
         ranks << to_string(rankId);
     }
-    return StringFormat("InstrId[%u]: Wait Group, Use sem[%u], semValue[0x%04x], mask[0x%04x], rankIds[%s]",
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
+    return StringFormat("InstrId[%u]: Wait Group, Use sem[%u], semValue[0x%04x], mask[0x%04x], rankIds[%s], %s",
                         ccuErrorInfo.instrId, ccuErrorInfo.msg.waitSignal.signalId,
                         ccuErrorInfo.msg.waitSignal.signalValue, ccuErrorInfo.msg.waitSignal.signalMask,
-                        ranks.str().c_str());
+                        ranks.str().c_str(), printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgPostSharedVar(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
     (void)taskInfo;
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
     return StringFormat("InstrId[%u]: Post Shared Variable[%u] from Variable[0x%016llx], "
-                        "Use sem[%u], mask[0x%04x]",
+                        "Use sem[%u], mask[0x%04x], %s",
                         ccuErrorInfo.instrId, ccuErrorInfo.msg.waitSignal.paramId,
                         ccuErrorInfo.msg.waitSignal.paramValue, ccuErrorInfo.msg.waitSignal.signalId,
-                        ccuErrorInfo.msg.waitSignal.signalMask);
+                        ccuErrorInfo.msg.waitSignal.signalMask, printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgPostSharedSem(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
     (void)taskInfo;
-    return StringFormat("InstrId[%u]: Post, Use sem[%u], mask[0x%04x]", ccuErrorInfo.instrId,
-                        ccuErrorInfo.msg.waitSignal.signalId, ccuErrorInfo.msg.waitSignal.signalMask);
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
+    return StringFormat("InstrId[%u]: Post, Use sem[%u], mask[0x%04x], %s", ccuErrorInfo.instrId,
+                        ccuErrorInfo.msg.waitSignal.signalId, ccuErrorInfo.msg.waitSignal.signalMask, printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgRead(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
     auto pair = GetAddrPairByChannelId(ccuErrorInfo.msg.transMem.channelId, taskInfo);
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
     return StringFormat(
         "InstrId[%u]: Read Memory[0x%016llx] To Memory[0x%016llx], Len[%llu], "
-        "Set sem[%u] with mask[0x%04x], remoteRankId[%d], srcEID[%s], dstEID[%s]",
+        "Set sem[%u] with mask[0x%04x], remoteRankId[%d], srcEID[%s], dstEID[%s], %s",
         ccuErrorInfo.instrId, ccuErrorInfo.msg.transMem.rmtAddr, ccuErrorInfo.msg.transMem.locAddr,
         ccuErrorInfo.msg.transMem.len, ccuErrorInfo.msg.transMem.signalId, ccuErrorInfo.msg.transMem.signalMask,
         GetRankIdByChannelId(ccuErrorInfo.msg.transMem.channelId, taskInfo),
         pair.first.Describe().c_str(),
-        pair.second.Describe().c_str());
+        pair.second.Describe().c_str(), printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgWrite(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
     auto pair = GetAddrPairByChannelId(ccuErrorInfo.msg.transMem.channelId, taskInfo);
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
     return StringFormat(
         "InstrId[%u]: Write Memory[0x%016llx] to Memory[0x%016llx], Len[%llu], "
-        "Set sem[%u] with mask[0x%04x], remoteRankId[%d], srcEID[%s], dstEID[%s]",
+        "Set sem[%u] with mask[0x%04x], remoteRankId[%d], srcEID[%s], dstEID[%s], %s",
         ccuErrorInfo.instrId, ccuErrorInfo.msg.transMem.locAddr, ccuErrorInfo.msg.transMem.rmtAddr,
         ccuErrorInfo.msg.transMem.len, ccuErrorInfo.msg.transMem.signalId, ccuErrorInfo.msg.transMem.signalMask,
         GetRankIdByChannelId(ccuErrorInfo.msg.transMem.channelId, taskInfo),
         pair.first.Describe().c_str(),
-        pair.second.Describe().c_str());
+        pair.second.Describe().c_str(), printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgLocalCpy(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
     (void)taskInfo;
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
     return StringFormat("InstrId[%u]: Read Memory[0x%016llx] to Memory[0x%016llx], Len[%llu], "
-                        "Set sem[%u] with mask[0x%04x]",
+                        "Set sem[%u] with mask[0x%04x], %s",
                         ccuErrorInfo.instrId, ccuErrorInfo.msg.transMem.locAddr, ccuErrorInfo.msg.transMem.rmtAddr,
                         ccuErrorInfo.msg.transMem.len, ccuErrorInfo.msg.transMem.signalId,
-                        ccuErrorInfo.msg.transMem.signalMask);
+                        ccuErrorInfo.msg.transMem.signalMask, printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgLocalReduce(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
     (void)taskInfo;
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
     return StringFormat("InstrId[%u]: Read Memory[0x%016llx] to Memory[0x%016llx], Len[%llu], "
-                        "Set sem[%u] with mask[0x%04x], dataType[%u], opType[%u]",
+                        "Set sem[%u] with mask[0x%04x], dataType[%u], opType[%u], %s",
                         ccuErrorInfo.instrId, ccuErrorInfo.msg.transMem.locAddr, ccuErrorInfo.msg.transMem.rmtAddr,
                         ccuErrorInfo.msg.transMem.len, ccuErrorInfo.msg.transMem.signalId,
                         ccuErrorInfo.msg.transMem.signalMask, ccuErrorInfo.msg.transMem.dataType,
-                        ccuErrorInfo.msg.transMem.opType);
+                        ccuErrorInfo.msg.transMem.opType, printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgBufRead(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
     auto pair = GetAddrPairByChannelId(ccuErrorInfo.msg.bufTransMem.channelId, taskInfo);
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
     return StringFormat(
         "InstrId[%u]: Read Rmt Mem[0x%016llx] To CcuBuffer[%u], Len[%llu], "
-        "sem[%u], mask[0x%04x], remoteRankId[%d], srcEID[%s], dstEID[%s]",
+        "sem[%u], mask[0x%04x], remoteRankId[%d], srcEID[%s], dstEID[%s], %s",
         ccuErrorInfo.instrId, ccuErrorInfo.msg.bufTransMem.addr, ccuErrorInfo.msg.bufTransMem.bufId,
         ccuErrorInfo.msg.bufTransMem.len, ccuErrorInfo.msg.bufTransMem.signalId, ccuErrorInfo.msg.bufTransMem.signalMask,
         GetRankIdByChannelId(ccuErrorInfo.msg.bufTransMem.channelId, taskInfo),
         pair.first.Describe().c_str(),
-        pair.second.Describe().c_str());
+        pair.second.Describe().c_str(), printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgBufWrite(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
     auto pair = GetAddrPairByChannelId(ccuErrorInfo.msg.bufTransMem.channelId, taskInfo);
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
     return StringFormat(
         "InstrId[%u]: Write CcuBuffer[%u] To Rmt Mem[0x%016llx], Len[%llu], "
-        "sem[%u], mask[0x%04x], remoteRankId[%d], srcEID[%s], dstEID[%s]",
+        "sem[%u], mask[0x%04x], remoteRankId[%d], srcEID[%s], dstEID[%s], %s",
         ccuErrorInfo.instrId, ccuErrorInfo.msg.bufTransMem.bufId, ccuErrorInfo.msg.bufTransMem.addr,
         ccuErrorInfo.msg.bufTransMem.len, ccuErrorInfo.msg.bufTransMem.signalId, ccuErrorInfo.msg.bufTransMem.signalMask,
         GetRankIdByChannelId(ccuErrorInfo.msg.bufTransMem.channelId, taskInfo),
         pair.first.Describe().c_str(),
-        pair.second.Describe().c_str());
+        pair.second.Describe().c_str(), printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgBufLocRead(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
     (void)taskInfo;
-    return StringFormat("InstrId[%u]: Read Loc Mem[0x%016llx] To CcuBuffer[%u], Len[%llu], sem[%u], mask[0x%04x]",
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
+    return StringFormat("InstrId[%u]: Read Loc Mem[0x%016llx] To CcuBuffer[%u], Len[%llu], sem[%u], mask[0x%04x], %s",
                         ccuErrorInfo.instrId, ccuErrorInfo.msg.bufTransMem.addr, ccuErrorInfo.msg.bufTransMem.bufId,
                         ccuErrorInfo.msg.bufTransMem.len, ccuErrorInfo.msg.bufTransMem.signalId,
-                        ccuErrorInfo.msg.bufTransMem.signalMask);
+                        ccuErrorInfo.msg.bufTransMem.signalMask, printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgBufLocWrite(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
     (void)taskInfo;
-    return StringFormat("InstrId[%u]: Write CcuBuffer[%u] To Loc Mem[0x%016llx], Len[%llu], sem[%u], mask[0x%04x]",
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
+    return StringFormat("InstrId[%u]: Write CcuBuffer[%u] To Loc Mem[0x%016llx], Len[%llu], sem[%u], mask[0x%04x], %s",
                         ccuErrorInfo.instrId, ccuErrorInfo.msg.bufTransMem.bufId, ccuErrorInfo.msg.bufTransMem.addr,
                         ccuErrorInfo.msg.bufTransMem.len, ccuErrorInfo.msg.bufTransMem.signalId,
-                        ccuErrorInfo.msg.bufTransMem.signalMask);
+                        ccuErrorInfo.msg.bufTransMem.signalMask, printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgBufReduce(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
@@ -970,24 +999,29 @@ string TaskExceptionHandler::GetCcuErrorMsgBufReduce(const CcuErrorInfo &ccuErro
         }
         buffIds << to_string(buffId);
     }
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
 
     return StringFormat("InstrId[%u]: Buffer Reduce count[%u], dataType[%u], outputDataType[%u], opType[%u], "
-                        "sem[%u], mask[0x%04x], CcuBuffers[%s]",
+                        "sem[%u], mask[0x%04x], CcuBuffers[%s], %s",
                         ccuErrorInfo.instrId, ccuErrorInfo.msg.bufReduce.count, ccuErrorInfo.msg.bufReduce.dataType,
                         ccuErrorInfo.msg.bufReduce.outputDataType, ccuErrorInfo.msg.bufReduce.opType,
                         ccuErrorInfo.msg.bufReduce.signalId, ccuErrorInfo.msg.bufReduce.signalMask,
-                        buffIds.str().c_str());
+                        buffIds.str().c_str(), printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgDefault(const CcuErrorInfo &ccuErrorInfo)
 {
-    return StringFormat("InstrId[%u]: CcuErrorType[%s]", ccuErrorInfo.instrId, ccuErrorInfo.type.Describe().c_str());
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
+    return StringFormat("InstrId[%u]: CcuErrorType[%s], %s",
+        ccuErrorInfo.instrId, ccuErrorInfo.type.Describe().c_str(), printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgMission(const CcuErrorInfo &ccuErrorInfo)
 {
-    return StringFormat("InstrId[%u]: dieId[%u], missionId[%u], missionError[%s]", ccuErrorInfo.instrId,
-                        ccuErrorInfo.dieId, ccuErrorInfo.missionId, ccuErrorInfo.msg.mission.missionError);
+    string printMsg = GetCcuLenErrorMsg(ccuErrorInfo);
+    return StringFormat("InstrId[%u]: dieId[%u], missionId[%u], missionError[%s], %s",
+        ccuErrorInfo.instrId, ccuErrorInfo.dieId, ccuErrorInfo.missionId,
+        ccuErrorInfo.msg.mission.missionError, printMsg);
 }
 
 string TaskExceptionHandler::GetCcuErrorMsgByType(const CcuErrorInfo& ccuErrorInfo, const TaskInfo& taskInfo)
