@@ -1240,7 +1240,7 @@ STATIC int RsUbInitSegCb(struct MemRegAttrT *memAttr, struct RsUbDevCb *devCb, s
     }
 
     hccp_warn("@@@ RsUbInitSegCb segCfg.token_value: %ld", segCfg.token_value);
-    hccp_warn("@@@ RsUbInitSegCb segCfg.token_id: %ld", segCfg.token_id);
+    hccp_warn("@@@ RsUbInitSegCb segCfg.token_id.token_id: %ld", segCfg.token_id.token_id);
     segCb->segment = RsUrmaRegisterSeg(devCb->urmaCtx, &segCfg);
     if (segCb->segment == NULL) {
         hccp_err("[init][rs_ctx_lmem]rs_urma_register_seg len[0x%llx] failed, errno:%d", segCfg.len, errno);
