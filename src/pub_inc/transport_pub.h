@@ -662,6 +662,8 @@ public:
     
     bool GetIsUseAtomicWrite();
 
+    HcclResult GetSpecificNotify(HcclSignalInfo& notifyInfo, bool& isValid, const std::string& notifyName);
+
 private:
     void CreateTransportRoce(TransportType type, TransportPara& para, const HcclDispatcher dispatcherPtr,
         const std::unique_ptr<NotifyPool> &notifyPool, MachinePara &machinePara);

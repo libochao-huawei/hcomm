@@ -76,7 +76,7 @@ HcclResult CommKfcAicpuServer::AddOpContext(const CommKfcContext *ctx)
         turnNumsAddr_ = reinterpret_cast<u64>(msgArea_ + 1);
         rankNum_ = ctx->apiCtx.rankNum;
         std::iota(reinterpret_cast<u32 *>(turnNumsAddr_),
-                  reinterpret_cast<u32 *>(turnNumsAddr_) + TILING_TURN_MAX + 1U, 0U);
+                  reinterpret_cast<u32 *>(turnNumsAddr_) + UINT8_MAX + 1U, 0U);
         KeepAlive();
     }
     HCCL_INFO("Group %u: add op handle %#llx, HCCL context %#llx, message area address %#llx.",
@@ -101,8 +101,6 @@ HcclResult CommKfcAicpuServer::Orchestrate(const HcclMsg &msg, const HcclMsgExt 
     const HcclHandle handle = msg.addMsg.v1Msg.selfHandleID;
     CHK_PRT_RET(handle < 0, HCCL_ERROR("Group %u: invalid handle id %d.", groupIdx_, handle), HCCL_E_INTERNAL);
     const u32 repeatCnt = static_cast<u32>(msg.addMsg.v1Msg.repeatCnt);
-    CHK_PRT_RET(repeatCnt > TILING_TURN_MAX, HCCL_ERROR("Group %u: invalid repeat count %u.", groupIdx_, repeatCnt),
-                HCCL_E_PARA);
     const u64 waitAddr = reinterpret_cast<u64>(&(msgArea_->commMsg.singleMsg.commitTurnCnt[msgPos].cnt));
     const u64 recordAddr = reinterpret_cast<u64>(&(msgArea_->commMsg.singleMsg.finishedTurnCnt[msgPos].cnt));
 
@@ -123,10 +121,6 @@ HcclResult CommKfcAicpuServer::Orchestrate(const HcclMsg &msg, const HcclMsgExt 
 HcclResult CommKfcAicpuServer::Finalize(u32 msgPos)
 {
     KeepAlive();
-    for (auto it: ctxToOpHandle_) {
-        CHK_RET(HcclReleaseComm(it.second));
-        HCCL_INFO("Group %u: Op handle %#llx is released, HCCL context %#llxx.", groupIdx_, it.second, it.first);
-    }
     return HCCL_SUCCESS;
 }
 
@@ -153,6 +147,10 @@ HcclResult CommKfcAicpuServer::IsAllTaskFinished(u32 msgPos, bool &isFinish)
 #endif
     isFinish = true;
     HCCL_INFO("Group %u: all task is finished at message pos %u.", groupIdx_, msgPos);
+    for (auto it: ctxToOpHandle_) {
+        CHK_RET(HcclReleaseComm(it.second));
+        HCCL_INFO("Group %u: Op handle %#llx is released, HCCL context %#llxx.", groupIdx_, it.second, it.first);
+    }
     return HCCL_SUCCESS;
 }
 
@@ -165,8 +163,7 @@ HcclResult CommKfcAicpuServer::InterGroupSync(const CommKfcAicpuServer &otherSer
         HCCL_INFO("Group %u: group sync info is not obtained, return code %u.", groupIdx_, ret);
         return ret;
     }
-    CHK_PRT_RET(msgPos >= HCCL_MSG_CNT || repeat > TILING_TURN_MAX,
-                HCCL_ERROR("Group %u: invalid message index %u or repeat %u.", groupIdx_, msgPos, repeat),
+    CHK_PRT_RET(msgPos >= HCCL_MSG_CNT, HCCL_ERROR("Group %u: invalid message index %u.", groupIdx_, msgPos),
                 HCCL_E_PARA);
 
     HcclMsgArea *msgArea = otherServer.GetMsgAreaAddr();

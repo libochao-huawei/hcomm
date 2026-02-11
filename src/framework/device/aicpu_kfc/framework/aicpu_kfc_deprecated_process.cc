@@ -88,7 +88,11 @@ bool HcclOpSupportRetry(AicpuComContext *ctx, AivAicpuOpParam &opParams)
     return false;
 }
 
-static constexpr u32 HCCL_AICPU_WAIT_HOST_BASE_TIME_MS = 200 * 1000;
+#ifdef CCL_LLT
+static constexpr u32 HCCL_AICPU_WAIT_HOST_BASE_TIME_MS = 200U;
+#else
+static constexpr u32 HCCL_AICPU_WAIT_HOST_BASE_TIME_MS = 200000U;
+#endif
 u32 HcclGetWaitRetryCmdTimeout(AicpuComContext *ctx, uint32_t retryCnt)
 {
     if (retryCnt == 0) {

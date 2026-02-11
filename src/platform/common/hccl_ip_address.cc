@@ -13,8 +13,31 @@
 #include <regex>
 #include <log.h>
 #include "hccn_rping.h"
-#include "../../../legacy/common/utils/string_util.h"
 namespace hccl {
+
+template <typename... Args> inline std::string StringFormat(const char *format, Args... args)
+{
+    using namespace std;
+    constexpr size_t buffSize = BUFSIZ;
+    char             buffer[buffSize];
+    int result = snprintf_s(&buffer[0], buffSize, buffSize, format, args...);
+    if (result < 0) {
+        HCCL_ERROR("[StringFormat] data snprintf_s failed.");
+        return "";
+    }
+    size_t actualSize = static_cast<size_t>(result);
+    if (actualSize + 1 > buffSize) {
+        actualSize++;
+        std::vector<char> newbuffer(actualSize);
+        auto ret = snprintf_s(newbuffer.data(), actualSize, actualSize, format, args...);
+        if(ret != EOK){
+            HCCL_ERROR("[StringFormat] data snprintf_s failed.");
+            return "";
+        }
+        return newbuffer.data();
+    }
+    return buffer;
+}
 
 HcclResult HcclIpAddress::SetBianryAddress(s32 family, const union HcclInAddr &address)
 {
@@ -95,12 +118,12 @@ HcclResult HcclIpAddress::SetIfName(const std::string &name)
 
 std::string  HcclIpAddress::Describe() const
 {
-    std::string desc = Hccl::StringFormat("IpAddress[%s, ", eid.Describe().c_str());
+    std::string desc = StringFormat("IpAddress[%s, ", eid.Describe().c_str());
     
     if (family == AF_INET) {
-        desc += Hccl::StringFormat("AF=v4, addr=%s]", GetIpStr().c_str());
+        desc += StringFormat("AF=v4, addr=%s]", GetIpStr().c_str());
     } else {
-        desc += Hccl::StringFormat("AF=v6, addr=%s, scopeId=0x%x]", GetIpStr().c_str(), scopeID);
+        desc += StringFormat("AF=v6, addr=%s, scopeId=0x%x]", GetIpStr().c_str(), scopeID);
     }
     return desc;
 }
@@ -156,7 +179,7 @@ std::string HcclIpAddress::GetIpStr() const
 
 std::string Eid::Describe() const
 {
-    return Hccl::StringFormat("eid[%016llx:%016llx]",
+    return StringFormat("eid[%016llx:%016llx]",
                         static_cast<unsigned long long>(be64toh(in6.subnetPrefix)),
                         static_cast<unsigned long long>(be64toh(in6.interfaceId)));
     }
