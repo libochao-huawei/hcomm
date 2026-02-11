@@ -16,6 +16,8 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
+#include <utility>
+
 #include "graph.h"
 #include "ip_address.h"
 #include "iterator.h"
