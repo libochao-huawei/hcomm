@@ -861,6 +861,7 @@ QpHandle HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode)
 
     s32 ret = RaQpCreate(rdmaHandle, flag, qpMode, &connHandle);
     if (ret != 0 || connHandle == nullptr) {
+        // 上报EI0011
         HCCL_ERROR("[Create][RaQp]errNo[0x%016llx] ra qp create fail. "
                    "params: flag[%d], qpMode[%d]. return: ret[%d]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), flag, qpMode, ret);
