@@ -177,6 +177,65 @@ std::string HcclIpAddress::GetIpStr() const
     return dst;
 }
 
+static bool IsIPv6(const std::string& str)
+{
+    std::regex ipv6Pattern(R"(^([\da-fA-F]{1,4}:){6}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^::([\da-fA-F]{1,4}:){0,4}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:):([\da-fA-F]{1,4}:){0,3}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){2}:([\da-fA-F]{1,4}:){0,2}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){3}:([\da-fA-F]{1,4}:){0,1}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){4}:((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){7}[\da-fA-F]{1,4}$|^:((:[\da-fA-F]{1,4}){1,6}|:)$|^[\da-fA-F]{1,4}:((:[\da-fA-F]{1,4}){1,5}|:)$|^([\da-fA-F]{1,4}:){2}((:[\da-fA-F]{1,4}){1,4}|:)$|^([\da-fA-F]{1,4}:){3}((:[\da-fA-F]{1,4}){1,3}|:)$|^([\da-fA-F]{1,4}:){4}((:[\da-fA-F]{1,4}){1,2}|:)$|^([\da-fA-F]{1,4}:){5}:([\da-fA-F]{1,4})?$|^([\da-fA-F]{1,4}:){6}:$)");
+    return regex_match(str, ipv6Pattern);
+}
+
+/*All the five types of IPV4 addresses,ABCDE,can be identified.
+    A: 1.0.0.1 - 126.255.255.254
+    B: 128.0.0.1 - 191.255.255.254
+    C: 192.0.0.1 - 223.255.255.254
+    D: 224.0.0.1 - 239.255.255.254
+    E: 240.0.0.1 - 255.255.255.254
+    127.x.x.x is reserved address for loopback test.
+    0.0.0.0 can only be used as the source address.
+    255.255.255.255 is broadcast address.
+*/
+static bool IsIPv4(const std::string& str) {
+    // 快速长度检查
+    size_t len = str.length();
+    if (len < MIN_IPV4_LEN || len > MAX_IPV4_LEN) {
+        return false;
+    }
+    
+    uint32_t num = 0;
+    uint32_t dotCount = 0;
+    bool hasDigit = false;
+    
+    for (size_t i = 0; i < len; ++i) {
+        char c = str[i];
+        
+        if (c >= '0' && c <= '9') {
+            // 检查前导零
+            if (!hasDigit && c == '0' && i + 1 < len && str[i + 1] != '.') {
+                return false;
+            }
+            
+            num = num * BASE + (c - '0');
+            hasDigit = true;
+            
+            if (num > MAX_IPV4_SEGMENT_VALUE) {
+                return false;
+            }
+        } else if (c == '.') {
+            // 检查点号位置和数字有效性
+            if (!hasDigit || dotCount >= MAX_DOT_COUNT || i == 0 || i == len - 1) {
+                return false;
+            }
+            
+            dotCount++;
+            num = 0;
+            hasDigit = false;
+        } else {
+            return false;
+        }
+    }
+    
+    return dotCount == MAX_DOT_COUNT && hasDigit;
+}
+
 std::string Eid::Describe() const
 {
     return StringFormat("eid[%016llx:%016llx]",
