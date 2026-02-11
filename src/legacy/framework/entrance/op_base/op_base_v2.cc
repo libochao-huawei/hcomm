@@ -897,23 +897,41 @@ HcclResult HcclCreateSubCommConfigV2(const HcclComm *comm, uint32_t rankNum, uin
     for (uint32_t i = 0; i < rankNum; ++i) {
         rankIdsVec[i] = rankIds[i];
     }
-
-    HcclResult ret = communicator->CreateSubComm(commParams, rankIdsVec, subCommunicator, hcclConf);
-    CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS, HCCL_ERROR("[Create][Group]errNo[0x%016llx] create group failed.",
-        HCCL_ERROR_CODE(ret)), static_cast<HcclResult>(ret));
-    CHK_SMART_PTR_NULL(subCommunicator);
-
-    subCommunicator->RegisterAcceStateCallBack(CommunicatorCallback());
-
-    groupParamsV2Tem.pComm = subCommunicator;
-
-    opbasedCommInfoV2.hcclGroupMap.insert(std::make_pair(subCommIdStr, groupParamsV2Tem));
-    groupParaLock.unlock();
-
+    /* --------------初始化------------------------- */
+    HcclResult ret = HCCL_SUCCESS;
+    bool errorFlag = false;
     s32 logicDevId = HrtGetDevice();
- 	CHK_RET(CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(subCommunicator.get(), config->hcclOpExpansionMode)); // 通信域创建，设置默认accelerator
-    *subComm = subCommunicator.get();
     s32 devPhyId = HrtGetDevicePhyIdByIndex(logicDevId);
+    do {
+        ret = communicator->CreateSubComm(commParams, rankIdsVec, subCommunicator, hcclConf);
+        CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
+            HCCL_ERROR("[%s]communicator->CreateSubComm failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+        CHK_SMART_PTR_NULL(subCommunicator);
+
+        subCommunicator->RegisterAcceStateCallBack(CommunicatorCallback());
+
+        groupParamsV2Tem.pComm = subCommunicator;
+
+        opbasedCommInfoV2.hcclGroupMap.insert(std::make_pair(subCommIdStr, groupParamsV2Tem));
+        groupParaLock.unlock();
+
+        ret = CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(subCommunicator.get(), config->hcclOpExpansionMode); // 通信域创建，设置默认accelerator
+        CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
+            HCCL_ERROR("[%s]SetCommAcceleratorV2 failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+        *subComm = subCommunicator.get();
+    } while (0);
+
+    if (errorFlag) {
+        HCCL_ERROR("[Init][%s]HcclCreateSubCommConfigV2 failed, deviceLogicId[%d], devPhyId[%d],"\
+            "return[0x%016llx]", __func__,
+            logicDevId, devPhyId, HCCL_ERROR_CODE(ret));
+        (void)HcclCommDestroyV2(subCommunicator.get());
+        *subComm = nullptr;
+        return ret;
+    }
+    /* 关键状态记录 */
     HCCL_RUN_INFO("[Create][Group]create group[%s] success, deviceLogicId[%d], devPhyId[%d], take time [%lld]us",
         subCommIdStr.c_str(), logicDevId, devPhyId, DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
