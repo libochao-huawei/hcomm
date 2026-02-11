@@ -19,12 +19,17 @@ target_include_directories(hccl_ut_binary_package PRIVATE
 
 target_compile_options(hccl_ut_binary_package PRIVATE 
     -U_FORTIFY_SOURCE
-    -fno-access-control
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
+)
+
+target_compile_options(hccl_ut_binary_package PRIVATE 
+    -U_FORTIFY_SOURCE
+    -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
 )
 
 target_link_libraries(hccl_ut_binary_package PRIVATE
     $<BUILD_INTERFACE:intf_llt_pub>
-    -pthread
     -lrt
 )
 
