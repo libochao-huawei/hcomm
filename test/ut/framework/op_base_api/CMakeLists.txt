@@ -52,6 +52,8 @@ target_link_directories(hccl_utest_framework_op_base_api PRIVATE
 target_link_libraries(hccl_utest_framework_op_base_api PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     hccl_llt
+    gtest
+    mockcpp
     -pthread
     -lrt
     -ldl
