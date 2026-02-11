@@ -34,7 +34,7 @@ public:
     RankInfoDetect();
 
     void SetupServer(HcclRootHandleV2 &rootHandle);
-    void SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2 &rootHandle);
+    void SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2 &rootHandle, u32 &deviceListenPort);
     void GetRankTable(RankTableInfo &ranktable) const;
     void WaitComplete(u32 listenPort, u32 listenStatus);
 

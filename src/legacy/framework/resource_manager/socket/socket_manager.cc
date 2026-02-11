@@ -306,12 +306,6 @@ bool SocketManager::DelWhiteList(PortData &localPort, vector<RaSocketWhitelist> 
 void SocketManager::SetDeviceServerListenPortMap(const std::unordered_map<u32, u32> &rankListenPortMap)
 {
     rankListenPortMap_ = rankListenPortMap;
-    auto iter = rankListenPortMap_.find(devicePhyId);
-    if (iter != rankListenPortMap_.end()) {
-        HCCL_RUN_INFO("[SocketManager::%s] Device %u serverListenPort is %u.", __func__, devicePhyId, iter->second);
-        return;
-    }
-    HCCL_RUN_INFO("[SocketManager::%s] Device %u serverListenPort use the default %u.", __func__, devicePhyId, DEFAULT_VALUE_DEVICEPORT);
     return;
 }
 

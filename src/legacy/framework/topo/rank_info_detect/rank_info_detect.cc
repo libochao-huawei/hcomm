@@ -152,7 +152,7 @@ std::shared_ptr<Socket> RankInfoDetect::ClientInit(const HcclRootHandleV2 &rootH
     return clientSocket;
 }
 
-void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2 &rootHandle)
+void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2 &rootHandle, u32 &deviceListenPort)
 {
     HCCL_DEBUG("[RankInfoDetect::%s] setup agent start.", __func__);
 
@@ -169,7 +169,7 @@ void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2
 
     // 1. 创建RankInfoDetectClient对象
     std::unique_ptr<RankInfoDetectClient> rankInfoDetectClient =
-        std::make_unique<RankInfoDetectClient>(devPhyId_, rankSize, rankId, clientSocket, rootHandle);
+        std::make_unique<RankInfoDetectClient>(devPhyId_, rankSize, rankId, clientSocket, deviceListenPort);
 
     // 2. 调用RankInfoDetectClient.Setup, 获取rankTable
     rankInfoDetectClient->Setup(rankTable_);
