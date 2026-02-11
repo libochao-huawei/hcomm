@@ -120,6 +120,7 @@ void RankInfoDetectClient::SendLocalRankTable(const RankTableInfo &localRankTabl
     socketAgent_.SendMsg(sendMsg.data(), sendMsg.size());
 
     HCCL_INFO("[RankInfoDetectClient::%s] end, currentStep_[%u].", __func__, currentStep_);
+    currentStep_++;
 }
 
 void RankInfoDetectClient::ConstructSingleRank(RankTableInfo &localRankTable)
