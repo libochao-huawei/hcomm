@@ -86,6 +86,8 @@ HcclResult FlushManager::Flush()
 
         // 接口数据设置
         ibv_send_wr swr{};
+        ibv_sge sg_list{};
+        swr.sg_list = &sg_list;
         HcclResult paramsRet = FlushParamPrepare(flushHandlePtr, &swr);
         if (paramsRet != HCCL_SUCCESS) {
             HCCL_INFO("[Flush] Set work request failed.");
@@ -107,6 +109,7 @@ HcclResult FlushManager::FlushParamPrepare(std::shared_ptr<FlushHandle> flushHan
 {
     CHK_PTR_NULL(swr);
     swr->wr_id = 0;
+    CHK_PTR_NULL(swr->sg_list);
     swr->sg_list->addr = reinterpret_cast<uint64_t>(flushHandlePtr->loopBackQpMrLocalInfo.addr);
     swr->sg_list->length = flushHandlePtr->loopBackQpMrLocalInfo.size;
     swr->sg_list->lkey = flushHandlePtr->loopBackQpMrLocalInfo.lkey;
