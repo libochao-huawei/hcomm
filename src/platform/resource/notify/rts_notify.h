@@ -33,8 +33,10 @@ public:
 
     HcclResult Wait(Stream& stream, HcclDispatcher dispatcher, s32 stage, u32 timeOut,
         u32 userRank, u32 remoteUserRank) override;
+    HcclResult Wait(Stream& stream, u32 timeOut) override;
     HcclResult Post(Stream& stream, HcclDispatcher dispatcher, s32 stage,
         u32 remoteUserRank) override;
+    HcclResult Post(Stream& stream) override;
 
     HcclResult SetIpc() override;
     HcclResult Grant(s64 recvId) override;

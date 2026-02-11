@@ -10,7 +10,7 @@
 
 #include "hccl_communicator_attrs.h"
 #include "device_capacity.h"
-#include "config.h"
+#include "common/src/config.h"
 #include "externalinput_pub.h"
 #include "env_config.h"
 

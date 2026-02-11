@@ -3076,7 +3076,7 @@ HcclResult hrtRaGetDevEidInfoNum(struct RaInfo *info, unsigned int* num)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaGetDevEidInfoList(struct RaInfo *info, struct dev_eid_info *eid_info, unsigned int* num)
+HcclResult hrtRaGetDevEidInfoList(struct RaInfo *info, struct HccpDevEidInfo *eid_info, unsigned int* num)
 {
     if(DlRaFunction::GetInstance().dlRaGetDevEidInfoList == nullptr) {
         HCCL_ERROR("driver package does not support dlRaGetDevEidInfoNum, please change new package");

@@ -286,7 +286,7 @@ HcclResult HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, Hcc
     CHK_PTR_NULL(opbasedCommInfoV2.pComm);
     auto res = opbasedCommInfoV2.pComm->Init(ranktableM);
     if (res != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("opbasedCommInfoV2.pComm->Init failed !!! res %d", res);
+        HCCL_ERROR("opbasedCommInfoV2.pComm->Init failed res %d", res);
         return HCCL_E_INTERNAL;
     }
     opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
@@ -1311,7 +1311,7 @@ HcclResult HcclGetOpArgsV2(void **opArgs)
 HcclResult HcclFreeOpArgsV2(void *opArgs)
 {
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclFreeOpArgs V910_95, free opArgs[%p]!!!", opArgs);
+        HCCL_RUN_INFO("Entry-HcclFreeOpArgs V910_95, free opArgs[%p]", opArgs);
     }
     free(opArgs);
     opArgs = nullptr;
@@ -1565,7 +1565,7 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
     CHK_PTR_NULL(opbasedCommInfoV2.pComm);
     auto res = opbasedCommInfoV2.pComm->Init(rankTable);
     CHK_PRT_RET(res != HcclResult::HCCL_SUCCESS,
-        HCCL_ERROR("[%s] comm Init failed !!! res %d", __func__, res), HCCL_E_INTERNAL);
+        HCCL_ERROR("[%s] comm Init failed res %d", __func__, res), HCCL_E_INTERNAL);
 
     // 配置默认加速模式
     opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
@@ -2302,7 +2302,7 @@ HcclResult HcclGetCcuTaskInfo(HcclComm comm, void *tilingData, void *ccuTaskGrou
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclGetCcuTaskInfo V910_95, commId[%s], tilingData[%p], ccuTaskGroup[%p]!!!",
+        HCCL_RUN_INFO("Entry-HcclGetCcuTaskInfo V910_95, commId[%s], tilingData[%p], ccuTaskGroup[%p]",
              communicator->GetId(), tilingData, ccuTaskGroup);
     }
     auto ret = communicator->GetCcuTaskInfo(tilingData, ccuTaskGroup);

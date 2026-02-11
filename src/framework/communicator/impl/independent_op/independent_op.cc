@@ -21,7 +21,7 @@ namespace hccl {
 IndependentOp::IndependentOp(){};
 
 HcclResult IndependentOp::SetIndependentOpConfig(const CommConfig &commConfig, const RankTable_t &rankTable,
-    const HcclTopoAttr &topoAttr, aclrtBinHandle binHandle, HDCommunicateParams &kfcControlTransferH2DParams,
+    const HcclTopoAttr &topoAttr, const aclrtBinHandle binHandle, HDCommunicateParams &kfcControlTransferH2DParams,
     HDCommunicateParams &kfcStatusTransferD2HParams, CCLBufferManager &bufferManager)
 {
     commEngine_ = HCCL_COMM_ENGINE_CONFIG_NOT_SET;
