@@ -50,10 +50,11 @@ HcclResult IndependentOp::SetIndependentOpConfig(const CommConfig &commConfig, c
     commAicpuParam_.kfcStatusTransferD2HParams = kfcStatusTransferD2HParams;
     commAicpuParam_.userRank = topoAttr.userRank;
     commAicpuParam_.userRankSize = topoAttr.userRankSize;
+    commAicpuParam_.hcclQos = commConfig.GetConfigHcclQos();
     HCCL_INFO("[IndependentOp][%s] Hcom[%s] threadNum[%u], notifyPerThread[%u], cclBufferSize[%llu], deviceLogicId[%u], "
-        "devicePhyId[%u], deviceType[%u], userRank[%u], userRankSize[%u]", __func__, commId_.c_str(), threadNum_, notifyNumPerThread_,
+        "devicePhyId[%u], deviceType[%u], userRank[%u], userRankSize[%u], hcclQos[%u]", __func__, commId_.c_str(), threadNum_, notifyNumPerThread_,
         cclBufferSize_, commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId,
-        commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize);
+        commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize, commAicpuParam_.hcclQos);
     return HCCL_SUCCESS;
 }
 

@@ -312,7 +312,7 @@ namespace hccl
         CHK_RET(HcclSetExecTimeOut(dispatcher_, commConfig_.GetConfigExecTimeOut()));
 
         if (!FindDispatcherByCommId(&dispatcherCtx_, identifier_.c_str())) {
-            CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devicePhyId_, identifier_.c_str()));
+            CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devicePhyId_, hcclQos_, identifier_.c_str()));
         }
         CHK_PTR_NULL(dispatcherCtx_);
 

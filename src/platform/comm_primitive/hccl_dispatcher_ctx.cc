@@ -72,12 +72,13 @@ HcclResult BindDispatcherCtxWithComm(DispatcherCtxPtr ctx, const char* commId)
     return HCCL_SUCCESS;
 }
 
-HcclResult CreateDispatcherCtx(DispatcherCtxPtr *ctx, u32 devPhyId, const char* commId)
+HcclResult CreateDispatcherCtx(DispatcherCtxPtr *ctx, u32 devPhyId, u32 hcclQos, const char* commId)
 {
     CHK_PTR_NULL(commId);
     CHK_PRT_RET(devPhyId == INVALID_UINT, HCCL_ERROR("[CreateCtx] devPhyId invalid"), HCCL_E_PARA);
     CHK_PTR_NULL(ctx);
     hccl::DispatcherCtx *Ctx_tmp = new (std::nothrow) hccl::DispatcherCtx(devPhyId);
+    Ctx_tmp->SetHcclQos(hcclQos);
     CHK_PTR_NULL(Ctx_tmp);
     // 创建ctx，内部创建dispatcher和notify pool实例  目前没有pool
     HcclResult ret = Ctx_tmp->Init();

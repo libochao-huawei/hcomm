@@ -25,6 +25,7 @@ struct CommAicpuParam {
     u32 userRank;
     hccl::HDCommunicateParams kfcControlTransferH2DParams;
     hccl::HDCommunicateParams kfcStatusTransferD2HParams;
+    u32 hcclQos;
 };
 
 #endif
