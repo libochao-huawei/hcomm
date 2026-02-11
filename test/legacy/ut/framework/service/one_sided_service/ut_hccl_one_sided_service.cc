@@ -200,6 +200,13 @@ TEST_F(HcclOneSidedServiceTest, DisableMemAccess_ConnectionNotFound)
 TEST_F(HcclOneSidedServiceTest, test_BatchGet_BatchPut)
 {
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
+    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));    
+    MOCKER(HrtStreamGetSqId).stubs().will(returnValue(u32)(0));
+    MOCKER(HrtStreamGetCqId).stubs().will(returnValue(u32)(0));
+    MOCKER(HrtNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtAicpuKernelLaunchExWithArgs).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtNotifyWaitWithTimeOut).stubs().will(returnValue(static_cast<void*>(0)));
+
     RankId RankIdA = 0;
     RankId RankIdB = 1;
     LinkData linkData1(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), RankIdA, RankIdB, 0, 1);

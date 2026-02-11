@@ -91,6 +91,7 @@ TEST_F(RtsCntNotifyTest, rtscntnotify_waitvalue_submit_test)
 {
     // Given
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType::DEV_TYPE_910A2));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
