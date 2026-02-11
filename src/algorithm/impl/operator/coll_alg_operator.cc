@@ -35,6 +35,7 @@ constexpr u64 HCCL_FFTS_CAPACITY = 65535; // FFTS+子图最大容量
 constexpr u32 AHC_MIN_SUBGROUP_SPLIT_DIVISOR = 2;
 constexpr u32 AHC_LEVEL0_GROUP_SIZE_THRESHOLD = 3;
 constexpr u32 SERVER_COUNT_THRESHOLD_FOR_MULTI_DETER_PIPELINE = 2;
+constexpr u32 MIN_STRICT_RANK_NUM = 3;
 
 CollAlgOperator::CollAlgOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
                                  HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher,
@@ -1084,6 +1085,17 @@ u32 CollAlgOperator::CalcOptimalIntraRingsize(u64 count, HcclDataType dataType, 
     }
     HCCL_INFO("level0RingSize:[%u], totalSize:[%lf]GB, level0RankSize[%u].", level0RingSize, totalSize, level0RankSize);
     return level0RingSize;
+}
+
+bool CollAlgOperator::IsNeedStrictMode(const OpParam& param)
+{
+    bool isStrictMode = (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_STRICT)
+                        && (param.DataDes.dataType == HCCL_DATA_TYPE_FP16 || param.DataDes.dataType == HCCL_DATA_TYPE_FP32 ||
+                            param.DataDes.dataType == HCCL_DATA_TYPE_BFP16 || param.DataDes.dataType == HCCL_DATA_TYPE_FP64)
+                        && (param.reduceType == HCCL_REDUCE_SUM || param.reduceType == HCCL_REDUCE_PROD)
+                        && userRankSize_ >= MIN_STRICT_RANK_NUM;
+
+    return isStrictMode;
 }
 
 }   // namespace hccl
