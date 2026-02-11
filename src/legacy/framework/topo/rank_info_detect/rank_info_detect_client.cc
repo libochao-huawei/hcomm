@@ -183,7 +183,7 @@ void RankInfoDetectClient::ConstructRankTable(RankTableInfo &localRankTable)
 
     // SocketManager::ServerInitOne(localRankTable);
     for(auto &rank : localRankTable.ranks) {
-        rank.devicePort = rootHandle_.deviceistenPort;
+        rank.devicePort = rootHandle_.deviceListenPort;
     }
 
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);

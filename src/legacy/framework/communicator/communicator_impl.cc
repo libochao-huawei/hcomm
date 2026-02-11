@@ -1222,6 +1222,7 @@ HcclResult CommunicatorImpl::InitDeviceListenPort(u32 &linstenPort)
 {
     std::vector<LinkData> fullLinks = GetFullMeshLinks();
     GetSocketManager().ServerInitAll(fullLinks, linstenPort);
+    return HCCL_SUCCESS;
 }
 
 void CommunicatorImpl::InitRankGraph(std::unique_ptr<RankGraph> &inputRankGraph)

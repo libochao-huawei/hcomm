@@ -1661,7 +1661,7 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
                 HCCL_ERROR_CODE(HCCL_E_PARA), identifier.c_str()), HCCL_E_PARA);
 
     RankTableInfo rankTable{};
-    HcclResult ret = RootInfoDetect(nRanks, rank, rootHandle, rankTable);
+    HcclResult ret = RootInfoDetect(nRanks, rank, rootHandle, rankTable, false);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s] errNo[0x%016llx] RankInfoDetect failed.", __func__, HCCL_ERROR_CODE(ret));rankTable.Dump(), ret);
     

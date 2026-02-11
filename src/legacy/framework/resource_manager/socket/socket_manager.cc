@@ -136,7 +136,7 @@ void SocketManager::ServerInitAll(const vector<LinkData> &links, u32 &linstenPor
         auto serverSocket = std::make_shared<Socket>(hccpSocketHandle, ipAddress, linstenPort, ipAddress, "server", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
         if (i == 0) { // 首个链接抢占，其余继承
             PreemptPortManager::GetInstance(deviceLogicId_).ListenPreempt(serverSocket, listenPortRanges, linstenPort);
-            HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the preempt port %u", __func__, localRankTable.ranks[0].localId, linstenPort);
+            HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the preempt port %u", __func__, deviceLogicId_, linstenPort);
         } else {
             serverSocket->Listen();
         }
