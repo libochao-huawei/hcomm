@@ -107,10 +107,11 @@ target_compile_options(hccl_alg_adaption PRIVATE
 )
 
 target_link_libraries(hccl_alg_adaption PRIVATE
-    $<BUILD_INTERFACE:intf_llt_pub>
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
+    $<BUILD_INTERFACE:intf_pub>
     hccl_alg_test
-    -pthread
+    -lpthread
+    protobuf
+    ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     -lrt
     -ldl
 )
