@@ -153,6 +153,7 @@ target_compile_options(hccl_alg PRIVATE
     -std=c++14
     -fstack-protector-all
     $<$<CONFIG:Debug>:-g>
+    -g
 )
 
 target_link_options(hccl_alg PRIVATE
