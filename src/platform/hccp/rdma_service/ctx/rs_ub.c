@@ -1241,6 +1241,8 @@ STATIC int RsUbInitSegCb(struct MemRegAttrT *memAttr, struct RsUbDevCb *devCb, s
 
     hccp_warn("@@@ RsUbInitSegCb segCfg.token_value: %ld", segCfg.token_value);
     hccp_warn("@@@ RsUbInitSegCb segCfg.token_id->token_id: %ld", segCfg.token_id->token_id);
+    hccp_warn("@@@ RsUbInitSegCb segCfg.va: %ld", segCfg.va);
+    hccp_warn("@@@ RsUbInitSegCb segCfg.len: %ld", segCfg.len);
     segCb->segment = RsUrmaRegisterSeg(devCb->urmaCtx, &segCfg);
     if (segCb->segment == NULL) {
         hccp_err("[init][rs_ctx_lmem]rs_urma_register_seg len[0x%llx] failed, errno:%d", segCfg.len, errno);
@@ -1301,8 +1303,8 @@ int RsUbCtxLmemReg(struct RsUbDevCb *devCb, struct MemRegAttrT *memAttr, struct 
     memInfo->ub.tokenId = lsegCb->segment->token_id->token_id;
     memInfo->ub.targetSegHandle = (uintptr_t)lsegCb->segment;
 
-    hccp_warn("@@@ lsegCb->segInfo->seg.addr: %ld", lsegCb->segInfo->addr);
-    hccp_warn("@@@ lsegCb->segInfo->seg.len: %ld", lsegCb->segInfo->len);
+    hccp_warn("@@@ lsegCb->segInfo.addr: %ld", lsegCb->segInfo.addr);
+    hccp_warn("@@@ lsegCb->segInfo.len: %ld", lsegCb->segInfo.len);
     hccp_warn("@@@ lsegCb->segment->seg.len: %ld", lsegCb->segment->seg.len);
     hccp_warn("@@@ lsegCb->segment->seg.token_id: %ld", lsegCb->segment->seg.token_id);
     hccp_warn("@@@ lsegCb->segment->mva: %ld", lsegCb->segment->mva);
