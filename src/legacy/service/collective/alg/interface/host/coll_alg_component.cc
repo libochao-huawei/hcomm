@@ -75,6 +75,11 @@ void CollAlgComponent::SetDmaMode(const DmaMode dmaMode)
     return;
 }
 
+AlgorithmType CollAlgComponent::GetAlgorithmTypeForMC2(const std::string& name)
+{
+    return collAlgSelector_->GetAlgorithmTypeForMC2(name);
+}
+
 HcclResult CollAlgComponent::ExecAlgSelect(const CollAlgOperator &op, const CollAlgParams &params,std::string &algName, OpExecuteConfig &opExecuteConfig)
 {
     HCCL_INFO("CollAlgComponent::ExecAlgSelect currentCollOperator dataType[%s]", op.dataType.Describe().c_str());

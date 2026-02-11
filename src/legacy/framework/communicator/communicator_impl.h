@@ -307,6 +307,10 @@ public:
     {
         return aivOffloadTag;
     }
+    u8 GetAlgorithmType() const
+    {
+        return algorithmType_;
+    }
 
     void SetAivTag(u32 tag)
     {
@@ -473,6 +477,7 @@ private:
     bool                                       isLoadOp{false}; // 是否已加载过算子,只要算子下发过就不让改加速模式 loadop offload AllocCommResource
     u32                                        aivTag{1}; // aiv kernal内部用于标志位计数
     u32                                        aivOffloadTag{0};// aiv kernal内部用于标志位计数
+    u8                                         algorithmType_{0};
     
     std::function<HcclResult(const std::string &commId, bool isUsingCcuMs, bool isUsingCcuSched)> callback;
     CollOpParams                               curOpParams; // 当前算子参数
