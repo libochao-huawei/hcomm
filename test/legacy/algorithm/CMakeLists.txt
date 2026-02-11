@@ -181,6 +181,8 @@ target_link_libraries(hccl_orion_alg_test PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     ascend_protobuf
     c_sec_static
+    gtest
+    mockcpp
     -lrt
     -ldl
 )
@@ -218,12 +220,14 @@ target_compile_options(orion_alg_testcase PRIVATE
 )
 
 target_link_libraries(orion_alg_testcase PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     hccl_alg_analyzer
     hccl_orion_alg_test
     hccl_alg_adaption_v2
-    $<BUILD_INTERFACE:intf_pub>
     ascend_protobuf
     c_sec_static
+    gtest
+    mockcpp
     -lrt
     -ldl
 )
@@ -257,12 +261,14 @@ target_compile_options(orion_alg_aicpu_2d_testcase PRIVATE
 )
  
 target_link_libraries(orion_alg_aicpu_2d_testcase PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     hccl_alg_analyzer
     hccl_orion_alg_test
     hccl_alg_adaption_v2
-    $<BUILD_INTERFACE:intf_pub>
     ascend_protobuf
     c_sec_static
+    gtest
+    mockcpp
     -lrt
     -ldl
 )
@@ -296,12 +302,14 @@ target_compile_options(orion_alg_aiv_1d_testcase PRIVATE
 )
  
 target_link_libraries(orion_alg_aiv_1d_testcase PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     hccl_alg_analyzer
     hccl_orion_alg_test
     hccl_alg_adaption_v2
-    $<BUILD_INTERFACE:intf_pub>
     ascend_protobuf
     c_sec_static
+    gtest
+    mockcpp
     -lrt
     -ldl
 )
@@ -335,12 +343,14 @@ target_compile_options(orion_alg_ccu_1d_testcase PRIVATE
 )
 
 target_link_libraries(orion_alg_ccu_1d_testcase PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     hccl_alg_analyzer
     hccl_orion_alg_test
     hccl_alg_adaption_v2
-    $<BUILD_INTERFACE:intf_pub>
     ascend_protobuf
     c_sec_static
+    gtest
+    mockcpp
     -lrt
     -ldl
 )
@@ -369,12 +379,14 @@ target_compile_options(orion_alg_ccu_1d_hf16p_testcase PRIVATE
 )
 
 target_link_libraries(orion_alg_ccu_1d_hf16p_testcase PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     hccl_alg_analyzer
     hccl_orion_alg_test
     hccl_alg_adaption_v2
-    $<BUILD_INTERFACE:intf_pub>
     ascend_protobuf
     c_sec_static
+    gtest
+    mockcpp
     -lrt
     -ldl
 )
@@ -403,12 +415,14 @@ target_compile_options(orion_alg_ccu_2d_testcase PRIVATE
 )
 
 target_link_libraries(orion_alg_ccu_2d_testcase PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     hccl_alg_analyzer
     hccl_orion_alg_test
     hccl_alg_adaption_v2
-    $<BUILD_INTERFACE:intf_pub>
     ascend_protobuf
     c_sec_static
+    gtest
+    mockcpp
     -lrt
     -ldl
 )
@@ -436,12 +450,14 @@ target_compile_options(orion_alg_function_ut_testcase PRIVATE
 )
  
 target_link_libraries(orion_alg_function_ut_testcase PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     hccl_alg_analyzer
     hccl_orion_alg_test
     hccl_alg_adaption_v2
-    $<BUILD_INTERFACE:intf_pub>
     ascend_protobuf
     c_sec_static
+    gtest
+    mockcpp
     -lrt
     -ldl
 )

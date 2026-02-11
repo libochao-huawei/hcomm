@@ -174,6 +174,8 @@ target_compile_definitions(hccl_alg_test PRIVATE
 target_link_libraries(hccl_alg_test PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
+    gtest
+    mockcpp
     -pthread
 )
 

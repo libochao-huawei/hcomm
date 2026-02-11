@@ -51,6 +51,8 @@ target_link_directories(hcomm_utest_api_data_aicpu_ts PRIVATE
 target_link_libraries(hcomm_utest_api_data_aicpu_ts PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     hccl_llt
+    gtest
+    mockcpp
     -pthread
     -lrt
     -ldl
