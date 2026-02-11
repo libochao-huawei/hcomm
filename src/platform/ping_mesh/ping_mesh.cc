@@ -97,7 +97,7 @@ inline HcclResult GetUbToken(u32 devicePhyId, u32* client_qp_token, u32* client_
     return HCCL_SUCCESS;
 }
 
-inline bool IsSupportHCCLV2(const char *socNamePtr)
+bool IsSupportHCCLV2(const char *socNamePtr)
 {
     std::string targetChipVerStr = socNamePtr;
     HCCL_DEBUG("[%s]SocVersion = %s.", __func__, targetChipVerStr.c_str());
