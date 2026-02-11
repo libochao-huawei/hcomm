@@ -641,6 +641,11 @@ HCCP_ATTRI_VISI_DEF int ra_ctx_qp_create(void *ctx_handle, struct qp_create_attr
     hccp_warn("@@@ info->udma_jetty_sq.db_addr: %ld", info->udma_jetty_sq.db_addr);
     hccp_warn("@@@ info->udma_jetty_cq.qbuf: %ld", info->udma_jetty_cq.qbuf);
     hccp_warn("@@@ info->udma_jetty_cq.qbuf_size: %ld", info->udma_jetty_cq.qbuf_size);
+    hccp_warn("@@@ info->udma_jetty_sq.qbuf_end: %ld", info->udma_jetty_sq.qbuf_end);
+    hccp_warn("@@@ info->udma_jetty_sq.qbuf_curr: %ld", info->udma_jetty_sq.qbuf_curr);
+    hccp_warn("@@@ info->udma_jetty_sq.max_sge_num: %ld", info->udma_jetty_sq.max_sge_num);
+    hccp_warn("@@@ info->udma_jetty_sq.cstm: %ld", info->udma_jetty_sq.cstm);
+
     hccp_warn("@@@ info->udma_jetty_cq.pi: %ld", info->udma_jetty_cq.pi);
     hccp_warn("@@@ info->udma_jetty_cq.ci: %ld", info->udma_jetty_cq.ci);
     hccp_warn("@@@ info->udma_jetty_cq.baseblk_shift: %ld", info->udma_jetty_cq.baseblk_shift);
@@ -648,6 +653,10 @@ HCCP_ATTRI_VISI_DEF int ra_ctx_qp_create(void *ctx_handle, struct qp_create_attr
     hccp_warn("@@@ info->udma_jetty_cq.sqe_bb_cnt: %ld", info->udma_jetty_cq.sqe_bb_cnt);
     hccp_warn("@@@ info->udma_jetty_cq.db_type: %ld", info->udma_jetty_cq.db_type);
     hccp_warn("@@@ info->udma_jetty_cq.db_addr: %ld", info->udma_jetty_cq.db_addr);
+    hccp_warn("@@@ info->udma_jetty_cq.qbuf_end: %ld", info->udma_jetty_cq.qbuf_end);
+    hccp_warn("@@@ info->udma_jetty_cq.qbuf_curr: %ld", info->udma_jetty_cq.qbuf_curr);
+    hccp_warn("@@@ info->udma_jetty_cq.max_sge_num: %ld", info->udma_jetty_cq.max_sge_num);
+    hccp_warn("@@@ info->udma_jetty_cq.cstm: %ld", info->udma_jetty_cq.cstm);
 
     hccp_warn("@@@ info->ub.uasid: %ld", info->ub.uasid);
     hccp_warn("@@@ info->ub.id: %ld", info->ub.id);
