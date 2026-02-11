@@ -53,7 +53,7 @@ inline HccnResult HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAtt
     HcclIpAddress ipAddr;
     HcclResult ret = HCCL_SUCCESS;
     if (initAttrInter->mode == HCCN_RPING_MODE_ROCE) {
-        if (!HcclIpAddress::IsIPv4(std::string(initAttrInter->ipAddr) && !HcclIpAddress::IsIPv6(std::string(initAttrInter->ipAddr))) {
+        if (!HcclIpAddress::IsIPv4(std::string(initAttrInter->ipAddr)) && !HcclIpAddress::IsIPv6(std::string(initAttrInter->ipAddr))) {
             HCCL_ERROR("[HccnRpingInitInter] invalid ip: %s, bufferSize:%u", initAttrInter->ipAddr, bufferSizeInter);
             return HCCN_E_PARA;
         }
