@@ -113,7 +113,7 @@ TEST_F(LocalCtxUt, CreateCtxAiCpuMode) {
     .will(returnValue(HCCL_SUCCESS));
 
     DispatcherCtxPtr ctx;
-    HcclResult ret = CreateDispatcherCtx(&ctx, 0);
+    HcclResult ret = CreateDispatcherCtx(&ctx, 0, SDMA_QOS_DEFAULT);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     DispatcherCtx *ctxPtr = static_cast<DispatcherCtx *>(ctx);
@@ -150,7 +150,7 @@ TEST_F(LocalCtxUt, CreateCtxFFTSMode) {
     .will(returnValue(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));
 
     DispatcherCtxPtr ctx;
-    HcclResult ret = CreateDispatcherCtx(&ctx, 0);
+    HcclResult ret = CreateDispatcherCtx(&ctx, 0, SDMA_QOS_DEFAULT);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     DispatcherCtx *ctxPtr = static_cast<DispatcherCtx *>(ctx);
@@ -187,7 +187,7 @@ TEST_F(LocalCtxUt, CreateCtxNorMalMode) {
     .will(returnValue(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));
 
     DispatcherCtxPtr ctx;
-    HcclResult ret = CreateDispatcherCtx(&ctx, 0);
+    HcclResult ret = CreateDispatcherCtx(&ctx, 0, SDMA_QOS_DEFAULT);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     DispatcherCtx *ctxPtr = static_cast<DispatcherCtx *>(ctx);
@@ -204,7 +204,7 @@ TEST_F(LocalCtxUt, CreateCtxERRMode) {
     .with(any(), outBound(devicePhyId))
     .will(returnValue(HCCL_SUCCESS));
     DispatcherCtxPtr ctx;
-    HcclResult ret = CreateDispatcherCtx(&ctx, devicePhyId);
+    HcclResult ret = CreateDispatcherCtx(&ctx, devicePhyId, SDMA_QOS_DEFAULT);
     EXPECT_NE(ret, HCCL_SUCCESS);
 }
 
@@ -221,7 +221,7 @@ TEST_F(LocalCtxUt, LocalCopyAICpu) {
 
 
     DispatcherCtxPtr ctx;
-    HcclResult ret = CreateDispatcherCtx(&ctx, 0);
+    HcclResult ret = CreateDispatcherCtx(&ctx, 0, SDMA_QOS_DEFAULT);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     DispatcherCtx *ctxPtr = static_cast<DispatcherCtx *>(ctx);
@@ -261,7 +261,7 @@ TEST_F(LocalCtxUt, LocalCopyFfts) {
     .will(returnValue(HCCL_SUCCESS));
 
     DispatcherCtxPtr ctx;
-    HcclResult ret = CreateDispatcherCtx(&ctx, 0);
+    HcclResult ret = CreateDispatcherCtx(&ctx, 0, SDMA_QOS_DEFAULT);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     DispatcherCtx *ctxPtr = static_cast<DispatcherCtx *>(ctx);
@@ -301,7 +301,7 @@ TEST_F(LocalCtxUt, LocalCopyNormal) {
     .will(returnValue(HCCL_SUCCESS));
 
     DispatcherCtxPtr ctx;
-    HcclResult ret = CreateDispatcherCtx(&ctx, 0);
+    HcclResult ret = CreateDispatcherCtx(&ctx, 0, SDMA_QOS_DEFAULT);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     DispatcherCtx *ctxPtr = static_cast<DispatcherCtx *>(ctx);
@@ -340,7 +340,7 @@ TEST_F(LocalCtxUt, LocalCopyERR) {
     .will(returnValue(HCCL_SUCCESS));
 
     DispatcherCtxPtr ctx;
-    HcclResult ret = CreateDispatcherCtx(&ctx, 0);
+    HcclResult ret = CreateDispatcherCtx(&ctx, 0, SDMA_QOS_DEFAULT);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     DispatcherCtx *ctxPtr = static_cast<DispatcherCtx *>(ctx);
@@ -386,7 +386,7 @@ TEST_F(LocalCtxUt, LocalCopyWithReduceNormal) {
     .will(returnValue(HCCL_SUCCESS));
 
     DispatcherCtxPtr ctx;
-    HcclResult ret = CreateDispatcherCtx(&ctx, 0);
+    HcclResult ret = CreateDispatcherCtx(&ctx, 0, SDMA_QOS_DEFAULT);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     DispatcherCtx *ctxPtr = static_cast<DispatcherCtx *>(ctx);
@@ -437,7 +437,7 @@ TEST_F(LocalCtxUt, LocalLaunchTaskExtendNormal) {
     .will(returnValue(HCCL_SUCCESS));
 
     DispatcherCtxPtr ctx;
-    HcclResult ret = CreateDispatcherCtx(&ctx, 0);
+    HcclResult ret = CreateDispatcherCtx(&ctx, 0, SDMA_QOS_DEFAULT);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     DispatcherCtx *ctxPtr = static_cast<DispatcherCtx *>(ctx);
@@ -492,7 +492,7 @@ TEST_F(LocalCtxUt, LocalInitTaskNormal) {
     .will(returnValue(HCCL_SUCCESS));
 
     DispatcherCtxPtr ctx;
-    HcclResult ret = CreateDispatcherCtx(&ctx, 0);
+    HcclResult ret = CreateDispatcherCtx(&ctx, 0, SDMA_QOS_DEFAULT);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     DispatcherCtx *ctxPtr = static_cast<DispatcherCtx *>(ctx);
@@ -536,7 +536,7 @@ TEST_F(LocalCtxUt, HcclLocalNotifyRecordNormal) {
     .will(returnValue(HCCL_SUCCESS));
 
     DispatcherCtxPtr ctx;
-    HcclResult ret = CreateDispatcherCtx(&ctx, 0);
+    HcclResult ret = CreateDispatcherCtx(&ctx, 0, SDMA_QOS_DEFAULT);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     DispatcherCtx *ctxPtr = static_cast<DispatcherCtx *>(ctx);
     EXPECT_NE(ctxPtr->GetDispatcher(), nullptr);
