@@ -1507,7 +1507,7 @@ HcclResult HcclCommResumeImplV2(HcclComm comm)
 }
 
 HcclResult RootInfoDetect(const u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHandle,
-    RankTableInfo &rankTable)
+    RankTableInfo &rankTable, bool update)
 {
     s32 deviceLogicId = HcclGetThreadDeviceId();
     s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
@@ -1521,7 +1521,11 @@ HcclResult RootInfoDetect(const u32 nRanks, u32 rank, const HcclRootHandleV2 &ro
     EXECEPTION_CATCH(rankInfoDetectAgent->SetupAgent(nRanks, rank, rootHandle), hasException = true);
 
     // 等server端执行结束
-    EXECEPTION_CATCH(rankInfoDetectAgent->WaitComplete(rootHandle.listenPort), hasException = true);
+    if (update) {
+        EXECEPTION_CATCH(rankInfoDetectAgent->WaitComplete(rootHandle.listenPort, RANKINFO_DETECT_SERVER_STATUS_UPDATE), hasException = true);  // 初始化通信域用的
+    } else {
+        EXECEPTION_CATCH(rankInfoDetectAgent->WaitComplete(rootHandle.listenPort, RANKINFO_DETECT_SERVER_STATUS_IDLE), hasException = true);  // 刷新deviceport用的
+    }
 
     // 若探测流程异常返回错误信息
     CHK_PRT_RET(hasException, HCCL_ERROR("[%s] RankInfoDetect SetupAgent fail.", __func__), HCCL_E_INTERNAL);
@@ -1546,7 +1550,7 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
                 
     // rootInfo获取rankTable, 基于rankTable创建通信域
     RankTableInfo rankTable{};
-    HcclResult ret = RootInfoDetect(nRanks, rank, rootHandle, rankTable);
+    HcclResult ret = RootInfoDetect(nRanks, rank, rootHandle, rankTable, false);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", 
         __func__, HCCL_ERROR_CODE(ret));rankTable.Dump(), ret);
     
@@ -1566,7 +1570,11 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
     auto res = opbasedCommInfoV2.pComm->Init(rankTable);
     CHK_PRT_RET(res != HcclResult::HCCL_SUCCESS,
         HCCL_ERROR("[%s] comm Init failed !!! res %d", __func__, res), HCCL_E_INTERNAL);
-
+    
+    // 配置了抢占端口则提前建链并发生新的ranktable
+    CHK_RET(opbasedCommInfoV2.pComm->InitDeviceListenPort(rootHandle.deviceListenPort));
+    CHK_RET(RootInfoDetect(nRanks, rank, rootHandle, rankTable, true));
+    
     // 配置默认加速模式
     opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
     s32 logicDevId = HrtGetDevice();

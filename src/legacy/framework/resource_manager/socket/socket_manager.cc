@@ -117,6 +117,33 @@ void SocketManager::ServerInit(PortData &localPort)
     serverSocketMap[localPort] = std::move(serverSocket);
 }
 
+void SocketManager::ServerInitAll(const vector<LinkData> &links, u32 &linstenPort)
+{
+    std::lock_guard<std::mutex> lock(socketLock);
+    vector<SocketPortRange> listenPortRanges = EnvConfig::GetInstance().GetHostNicConfig().GetDeviceSocketPortRange();
+    if (listenPortRanges.empty()) {
+        HCCL_RUN_INFO("[SocketManager::%s] socket port range not configured.", __func__);
+        return;
+    }
+
+    auto &serverSocketMap = SocketManager::GetServerSocketMap();
+    for(uint32_t i = 0; i < links.size() ; i++)
+    {
+        LinkData link = links[i];
+        auto localPort = link.GetLocalPort();
+        SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
+        IpAddress ipAddress = localPort.GetAddr();
+        auto serverSocket = std::make_shared<Socket>(hccpSocketHandle, ipAddress, linstenPort, ipAddress, "server", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+        if (i == 0) { // 首个链接抢占，其余继承
+            PreemptPortManager::GetInstance(localRankTable.ranks[0].localId).ListenPreempt(serverSocket, listenPortRanges, linstenPort);
+            HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the preempt port %u", __func__, localRankTable.ranks[0].localId, linstenPort);
+        } else {
+            serverSocket->Listen();
+        }
+        serverSocketMap[localPort] = std::move(serverSocket);
+    }
+}
+
 void SocketManager::ServerInitOne(RankTableInfo &localRankTable)
 {
     vector<SocketPortRange> listenPortRanges = EnvConfig::GetInstance().GetHostNicConfig().GetDeviceSocketPortRange();
