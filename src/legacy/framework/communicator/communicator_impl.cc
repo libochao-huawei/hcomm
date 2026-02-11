@@ -353,7 +353,7 @@ void CommunicatorImpl::TraceOpInfo(const CollOpParams &opParams) const
         HcclSendRecvItem *sendRecvItems
             = static_cast<HcclSendRecvItem *>(opParams.batchSendRecvDataDes.sendRecvItemsPtr);
         for (u32 i = 0; i < itemNum; ++i) {
-            if ((sendRecvItems + i) == nullptr || (sendRecvItems + i)->buf == nullptr) {
+            if ((sendRecvItems + i)->buf == nullptr) {
                 continue;
             }
             auto info

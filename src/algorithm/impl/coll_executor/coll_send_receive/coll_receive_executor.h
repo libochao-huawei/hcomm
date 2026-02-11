@@ -24,6 +24,7 @@ public:
     HcclResult GetAdjInfo(AlgResourceResponse& algRes, AdjInfo& adjInfo) override;
 
 private:
+    using CollNativeExecutorBase::CalcCommInfo;
     /* *************** 资源计算 *************** */
     HcclResult CalcResRequest(const OpParam& param, AlgResourceRequest &resourceRequest) override;
     HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport, u32 srcRank);

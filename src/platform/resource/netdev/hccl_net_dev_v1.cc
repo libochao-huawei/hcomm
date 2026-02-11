@@ -111,8 +111,8 @@ HcclResult HcclNetDevCloseV1(HcclNetDev netDev)
             break;
         }
         default:
-            delete pNetDevCtx;
             HCCL_ERROR("[HcclNetDevClose]No Such HcclNetDevDeployment: %d", pNetDevCtx->GetNetDevDeployment());
+            delete pNetDevCtx;
             return HCCL_E_NOT_SUPPORT;
     }
 
