@@ -53,6 +53,10 @@ inline HccnResult HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAtt
     HcclIpAddress ipAddr;
     HcclResult ret = HCCL_SUCCESS;
     if (initAttrInter->mode == HCCN_RPING_MODE_ROCE) {
+        if (!HcclIpAddress::IsIPv4(std::string(initAttrInter->ipAddr) && !HcclIpAddress::IsIPv6(std::string(initAttrInter->ipAddr))) {
+            HCCL_ERROR("[HccnRpingInitInter] invalid ip: %s, bufferSize:%u", initAttrInter->ipAddr, bufferSizeInter);
+            return HCCN_E_PARA;
+        }
         ipAddr = HcclIpAddress(std::string(initAttrInter->ipAddr));
         ret = rpingInter->HccnRpingInit(devLogicIdInter, LINK_TYPE_MODE_ROCE, ipAddr, initAttrInter->port,
             npuNumInter, bufferSizeInter, initAttrInter->sl, initAttrInter->tc);
@@ -179,7 +183,15 @@ HccnResult HccnRpingAddTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
 
 inline HccnResult HccnRpingInitInputTargetAttr(HccnRpingTargetInfo *targetInter, RpingInput *inputInter, uint32_t &n) {
     if (targetInter[n].addrType == HCCN_RPING_ADDR_TYPE_IP) {
+        if (!HcclIpAddress::IsIPv4(std::string(targetInter[n].srcIp)) && !HcclIpAddress::IsIPv6(std::string(targetInter[n].srcIp))) {
+            HCCL_ERROR("[HccnRpingInitInter] invalid ip.");
+            return HCCN_E_PARA;
+        }
         inputInter[n].sip = HcclIpAddress(std::string(targetInter[n].srcIp));
+        if (!HcclIpAddress::IsIPv4(std::string(targetInter[n].dstIp)) && !HcclIpAddress::IsIPv6(std::string(targetInter[n].dstIp))) {
+            HCCL_ERROR("[HccnRpingInitInter] invalid ip.");
+            return HCCN_E_PARA;
+        }
         inputInter[n].dip = HcclIpAddress(std::string(targetInter[n].dstIp));
     }
     const char *socNamePtr = aclrtGetSocName();
