@@ -1529,7 +1529,6 @@ HcclResult RootInfoDetect(std::shared_ptr<RankInfoDetect> rankInfoDetectAgent, c
 
     // 获取ranktable
     rankInfoDetectAgent->GetRankTable(rankTable);
-    SocketManager::SetDeviceServerListenPortMap(rankTable.GetRankDeviceListenPortMap());
 
     HCCL_RUN_INFO("[%s] end.", __func__);
     return HCCL_SUCCESS;
@@ -1587,8 +1586,7 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
     // 通信域初始化
     CHK_PTR_NULL(opbasedCommInfoV2.pComm);
     auto res = opbasedCommInfoV2.pComm->Init(rankTable);
-    CHK_PRT_RET(res != HcclResult::HCCL_SUCCESS,
-        HCCL_ERROR("[%s] comm Init failed !!! res %d", __func__, res), HCCL_E_INTERNAL);
+    CHK_PRT_RET(res != HcclResult::HCCL_SUCCESS, HCCL_ERROR("[%s] comm Init failed res %d", __func__, res), HCCL_E_INTERNAL);
     
     // 配置默认加速模式
     opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
