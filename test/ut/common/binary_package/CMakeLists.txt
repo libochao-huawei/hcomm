@@ -29,7 +29,8 @@ target_compile_options(hccl_ut_binary_package PRIVATE
 )
 
 target_link_libraries(hccl_ut_binary_package PRIVATE
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
+    -lpthread
     -lrt
 )
 
