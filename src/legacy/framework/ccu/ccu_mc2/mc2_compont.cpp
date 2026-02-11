@@ -66,17 +66,18 @@ void Mc2Compont::AllocCommResource(void *mc2Tiling, void **commContext)
     }
 
     HCCL_RUN_INFO("hcclCombinOpParam info: workSpace = [%llu], rankId = [%u], rankDim = [%u], xnAddr = [%llu], "
-              "ckeAddr = [%llu], winSize = [%llu], windowsOut[0] = [%llu], opType[0] = [%u], opType[1] = [%u], "
-              ", opType[2] = [%u], opType[3] = [%u], opType[4] = [%u], opType[5] = [%u], opType[6] = [%u], opType[7] = [%u], "
-              "algorithmType[0] = [%u], algorithmType[1] = [%u], algorithmType[2] = [%u], algorithmType[3] = [%u], ",
-              "algorithmType[4] = [%u], algorithmType[5] = [%u], algorithmType[6] = [%u], algorithmType[7] = [%u]",
+              "ckeAddr = [%llu], winSize = [%llu], windowsOut[0] = [%llu]",
               combinOpParam.workSpace, combinOpParam.rankId, combinOpParam.rankDim, combinOpParam.xnAddr,
-              combinOpParam.ckeAddr, combinOpParam.winSize, combinOpParam.windowsOut[0], combinOpParam.opType[0],
+              combinOpParam.ckeAddr, combinOpParam.winSize, combinOpParam.windowsOut[0]);
+    HCCL_RUN_INFO("opType[0] = [%u], opType[1] = [%u], opType[2] = [%u], opType[3] = [%u], opType[4] = [%u], "
+              "opType[5] = [%u], opType[6] = [%u], opType[7] = [%u], ", combinOpParam.opType[0],
               combinOpParam.opType[1], combinOpParam.opType[2], combinOpParam.opType[3], combinOpParam.opType[4], 
-              combinOpParam.opType[5], combinOpParam.opType[6], combinOpParam.opType[7], combinOpParam.algorithmType[0], 
-              combinOpParam.algorithmType[1], combinOpParam.algorithmType[2], combinOpParam.algorithmType[3], 
-              combinOpParam.algorithmType[4], combinOpParam.algorithmType[5], combinOpParam.algorithmType[6], 
-              combinOpParam.algorithmType[7]);
+              combinOpParam.opType[5], combinOpParam.opType[6], combinOpParam.opType[7]);
+    HCCL_RUN_INFO("algorithmType[0] = [%u], algorithmType[1] = [%u], algorithmType[2] = [%u], algorithmType[3] = [%u], ",
+              "algorithmType[4] = [%u], algorithmType[5] = [%u], algorithmType[6] = [%u], algorithmType[7] = [%u]",
+              combinOpParam.algorithmType[0], combinOpParam.algorithmType[1], combinOpParam.algorithmType[2], 
+              combinOpParam.algorithmType[3], combinOpParam.algorithmType[4], combinOpParam.algorithmType[5],
+              combinOpParam.algorithmType[6], combinOpParam.algorithmType[7]);
     auto paramSize = sizeof(HcclCombinOpParam);
     if(combinOpParamBuffer == nullptr) {
         combinOpParamBuffer = std::make_shared<DevBuffer>(paramSize);
