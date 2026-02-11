@@ -8,36 +8,14 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <algorithm>
+#include <sstream>
+#include <iomanip>
 #include "log.h"
 #include "hccl_ip_address.h"
 #include <regex>
 #include <log.h>
 #include "hccn_rping.h"
 namespace hccl {
-
-template <typename... Args> inline std::string StringFormat(const char *format, Args... args)
-{
-    using namespace std;
-    constexpr size_t buffSize = BUFSIZ;
-    char             buffer[buffSize];
-    int result = snprintf_s(&buffer[0], buffSize, buffSize, format, args...);
-    if (result < 0) {
-        HCCL_ERROR("[StringFormat] data snprintf_s failed.");
-        return "";
-    }
-    size_t actualSize = static_cast<size_t>(result);
-    if (actualSize + 1 > buffSize) {
-        actualSize++;
-        std::vector<char> newbuffer(actualSize);
-        auto ret = snprintf_s(newbuffer.data(), actualSize, actualSize, format, args...);
-        if(ret != EOK){
-            HCCL_ERROR("[StringFormat] data snprintf_s failed.");
-            return "";
-        }
-        return newbuffer.data();
-    }
-    return buffer;
-}
 
 HcclResult HcclIpAddress::SetBianryAddress(s32 family, const union HcclInAddr &address)
 {
@@ -118,14 +96,15 @@ HcclResult HcclIpAddress::SetIfName(const std::string &name)
 
 std::string  HcclIpAddress::Describe() const
 {
-    std::string desc = StringFormat("IpAddress[%s, ", eid.Describe().c_str());
-    
+    std::ostringstream oss;
+    oss << "IpAddress[" << eid.Describe() << ",";
+
     if (family == AF_INET) {
-        desc += StringFormat("AF=v4, addr=%s]", GetIpStr().c_str());
+        oss << "AF=v4,addr=" << GetIpStr() << "]";
     } else {
-        desc += StringFormat("AF=v6, addr=%s, scopeId=0x%x]", GetIpStr().c_str(), scopeID);
+        oss << "AF=v6,addr=" << GetIpStr() << ", scopeId=0x" << std::hex <<scopeID << "]";
     }
-    return desc;
+    return oss.str();
 }
 
 HcclIpAddress::HcclIpAddress(const Eid &eidInput)
@@ -238,9 +217,10 @@ bool HcclIpAddress::IsIPv4(const std::string& str) {
 
 std::string Eid::Describe() const
 {
-    return StringFormat("eid[%016llx:%016llx]",
-                        static_cast<unsigned long long>(be64toh(in6.subnetPrefix)),
-                        static_cast<unsigned long long>(be64toh(in6.interfaceId)));
-    }
+    std::ostringstream oss;
+    oss << "eid[" << std::hex <<std::setw(16) << std::setfill('0') << be64toh(in6.subnetPrefix) << ":"
+    << std::hex <<std::setw(16) << std::setfill('0') << be64toh(in6.interfaceId) << "]";
+    return oss.str();
+}
 
 }
