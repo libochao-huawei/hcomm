@@ -1498,6 +1498,21 @@ int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct Ctx
     jfcCb->jfcAddr = (uint64_t)(uintptr_t)outJfc; // urma_jfc_t *
     RsUbFillJfcInfo(jfcCb, info);
 
+    struct udma_u_jfc *udma_jfc = CONTAINER_OF(outJfc, struct udma_u_jfc, base);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.qbuf", udma_jfc->cq.qbuf);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.qbuf_size", udma_jfc->cq.qbuf_size);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.pi", udma_jfc->cq.pi);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.ci", udma_jfc->cq.ci);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.baseblk_shift", udma_jfc->cq.baseblk_shift);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.baseblk_cnt", udma_jfc->cq.baseblk_cnt);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.sqe_bb_cnt", udma_jfc->cq.sqe_bb_cnt);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.db.type", udma_jfc->cq.db.type);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.db.addr", udma_jfc->cq.db.addr);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.qbuf_end", udma_jfc->cq.qbuf_end);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.qbuf_curr", udma_jfc->cq.qbuf_curr);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.max_sge_num", udma_jfc->cq.max_sge_num);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.cstm", udma_jfc->cq.cstm);
+
     hccp_info("jfc addr:0x%llx", jfcCb->jfcAddr);
 
     RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
