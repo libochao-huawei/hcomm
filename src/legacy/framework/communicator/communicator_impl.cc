@@ -2773,6 +2773,7 @@ void CommunicatorImpl::OpAcceleratorStateFallback()
 HcclResult CommunicatorImpl::AcceleratorFallback()
 {
     HCCL_RUN_INFO("[CommunicatorImpl][%s] opMode[%s]", __func__, currentCollOperator->opMode.Describe().c_str());
+    string needFallBackAlgName = curAlgName;
     OpAcceleratorStateFallback();
 
     HcclResult ret = HCCL_SUCCESS;
@@ -2793,9 +2794,9 @@ HcclResult CommunicatorImpl::AcceleratorFallback()
     // 下一个算子下发时，做完算法选择后，查找上述加速模式缓存，
     // 若能命中，按照上述已缓存的加速模式下发算子(大概率也是资源不足，走回退)；
     // 否则，按照算法选择的加速模式下发算子。
-    opAcceStateCache.insert({{curOpParams.opType, curAlgName}, opExecuteConfig.accState});
-    HCCL_INFO("[CommunicatorImpl][%s] opAcceStateCache opType[%s], curAlgName[%s], accelerator[%s]", __func__,
-              curOpParams.opType.Describe().c_str(), curAlgName.c_str(), opExecuteConfig.accState.Describe().c_str());
+    opAcceStateCache.insert({{curOpParams.opType, needFallBackAlgName}, opExecuteConfig.accState});
+    HCCL_INFO("[CommunicatorImpl][%s] opAcceStateCache opType[%s], needFallBackAlgName[%s], accelerator[%s]", __func__,
+              curOpParams.opType.Describe().c_str(), needFallBackAlgName.c_str(), opExecuteConfig.accState.Describe().c_str());
 
     HCCL_INFO("[CommunicatorImpl][%s] end", __func__);
     return ret;
@@ -2957,7 +2958,8 @@ HcclResult CommunicatorImpl::PrepareDpuKernelResource(aclrtFuncHandle &funcHandl
     jsonPath += "/opp/built-in/op_impl/dpu/";
     HCCL_DEBUG("[CommunicatorImpl::%s] kernel folder path[%s]", __func__, jsonPath.c_str());
 
-    jsonPath += "ccl_dpu.json";
+    // cpuKernelMode为1时，json命名需与so命名保持一致， 即libccl_dpu.json与libccl_dpu.so
+    jsonPath += "libccl_dpu.json";
     char realPath[PATH_MAX] = {0};
     CHK_PRT_RET(realpath(jsonPath.c_str(), realPath) == nullptr,
         HCCL_ERROR("[CommunicatorImpl::%s]: %s is not a valid real path, err[%d]", __func__, jsonPath.c_str(), errno),

@@ -42,21 +42,21 @@ extern hdcError_t DlDrvHdcFreeMsg(struct drvHdcMsg *msg);
 extern int RaHdcHandleSendPkt(unsigned int chipId, void *recvBuf, unsigned int recvLen);
 extern int DlDrvGetLocalDevIdByHostDevId(uint32_t phyId, uint32_t *devIndex);
 extern int DlHalGetChipInfo(unsigned int devId, halChipInfo *chipInfo);
-extern int ra_ctx_prepare_qp_create(struct qp_create_attr *qpAttr, struct ctx_qp_attr *ctx_qp_attr);
-extern int qp_query_batch_param_check(void *qp_handle[], unsigned int *num, unsigned int phyId, unsigned int ids[]);
-extern int qp_destroy_batch_param_check(struct ra_ctx_handle *ctx_handle, void *qp_handle[],
+extern int RaCtxPrepareQpCreate(struct QpCreateAttr *qpAttr, struct CtxQpAttr *ctxQpAttr);
+extern int QpQueryBatchParamCheck(void *qpHandle[], unsigned int *num, unsigned int phyId, unsigned int ids[]);
+extern int QpDestroyBatchParamCheck(struct RaCtxHandle *ctxHandle, void *qpHandle[],
     unsigned int ids[], unsigned int *num);
 
-extern struct ra_ctx_ops g_ra_hdc_ctx_ops;
+extern struct RaCtxOps gRaHdcCtxOps;
 
-int ra_hdc_process_msg_stub(unsigned int opcode, unsigned int phyId, char *data, unsigned int data_size)
+int RaHdcProcessMsgStub(unsigned int opcode, unsigned int phyId, char *data, unsigned int dataSize)
 {
-    union op_ctx_qp_query_batch_data *op_data = (union op_ctx_qp_query_batch_data *)data;
-    op_data->rx_data.num = 10;
+    union OpCtxQpQueryBatchData *opData = (union OpCtxQpQueryBatchData *)data;
+    opData->rxData.num = 10;
     return 0;
 }
 
-void tc_ra_get_dev_eid_info_num()
+void TcRaGetDevEidInfoNum()
 {
     struct RaInfo info = {0};
     unsigned int num = 0;
@@ -65,25 +65,25 @@ void tc_ra_get_dev_eid_info_num()
     mocker_clean();
     info.mode = NETWORK_OFFLINE;
     mocker(RaHdcProcessMsg, 1, 0);
-    ret = ra_get_dev_eid_info_num(info, &num);
+    ret = RaGetDevEidInfoNum(info, &num);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
     info.mode = NETWORK_PEER_ONLINE;
-    mocker(ra_peer_get_dev_eid_info_num, 1, 0);
-    ret = ra_get_dev_eid_info_num(info, &num);
+    mocker(RaPeerGetDevEidInfoNum, 1, 0);
+    ret = RaGetDevEidInfoNum(info, &num);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
-    mocker(ra_peer_get_dev_eid_info_num, 1, -1);
-    ret = ra_get_dev_eid_info_num(info, &num);
+    mocker(RaPeerGetDevEidInfoNum, 1, -1);
+    ret = RaGetDevEidInfoNum(info, &num);
     EXPECT_INT_EQ(128100, ret);
     mocker_clean();
 }
 
-void tc_ra_get_dev_eid_info_list()
+void TcRaGetDevEidInfoList()
 {
-    struct dev_eid_info info_list[35] = {0};
+    struct HccpDevEidInfo infoList[35] = {0};
     struct RaInfo info = {0};
     unsigned int num = 35;
     int ret = 0;
@@ -91,636 +91,636 @@ void tc_ra_get_dev_eid_info_list()
     mocker_clean();
     info.mode = NETWORK_OFFLINE;
     mocker(RaHdcProcessMsg, 2, 0);
-    ret = ra_get_dev_eid_info_list(info, info_list, &num);
+    ret = RaGetDevEidInfoList(info, infoList, &num);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
     info.mode = NETWORK_PEER_ONLINE;
-    mocker(ra_peer_get_dev_eid_info_list, 1, 0);
-    ret = ra_get_dev_eid_info_list(info, info_list, &num);
+    mocker(RaPeerGetDevEidInfoList, 1, 0);
+    ret = RaGetDevEidInfoList(info, infoList, &num);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
-    mocker(ra_peer_get_dev_eid_info_list, 1, -1);
-    ret = ra_get_dev_eid_info_list(info, info_list, &num);
+    mocker(RaPeerGetDevEidInfoList, 1, -1);
+    ret = RaGetDevEidInfoList(info, infoList, &num);
     EXPECT_INT_EQ(128100, ret);
     mocker_clean();
 }
 
-int stub_dl_hal_get_chip_info(unsigned int dev_id, halChipInfo *chip_info)
+int StubDlHalGetChipInfo(unsigned int devId, halChipInfo *chipInfo)
 {
-    strncpy_s(chip_info->name, 32,"910_96", 7);
+    strncpy_s(chipInfo->name, 32,"910_96", 7);
     return 0;
 }
 
-void tc_ra_ctx_init()
+void TcRaCtxInit()
 {
-    struct ctx_init_attr attr = {0};
-    struct ctx_init_cfg cfg = {0};
-    void *ctx_handle = NULL;
+    struct CtxInitAttr attr = {0};
+    struct CtxInitCfg cfg = {0};
+    void *ctxHandle = NULL;
     int ret = 0;
 
     mocker_clean();
     mocker(DlDrvGetLocalDevIdByHostDevId, 1, 0);
-    mocker_invoke(DlHalGetChipInfo, stub_dl_hal_get_chip_info, 1);
+    mocker_invoke(DlHalGetChipInfo, StubDlHalGetChipInfo, 1);
     mocker(RaHdcProcessMsg, 1, 0);
     cfg.mode = NETWORK_OFFLINE;
-    ret = ra_ctx_init(&cfg, &attr, &ctx_handle);
+    ret = RaCtxInit(&cfg, &attr, &ctxHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
-    free(ctx_handle);
+    free(ctxHandle);
 }
 
-void tc_ra_get_dev_base_attr()
+void TcRaGetDevBaseAttr()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    struct dev_base_attr attr = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct DevBaseAttr attr = {0};
     int ret = 0;
 
-    ret = ra_get_dev_base_attr(&ctx_handle, &attr);
+    ret = RaGetDevBaseAttr(&ctxHandle, &attr);
     EXPECT_INT_EQ(0, ret);
 }
 
-void tc_ra_ctx_deinit()
+void TcRaCtxDeinit()
 {
-    struct ra_ctx_handle *ctx_handle = malloc(sizeof(struct ra_ctx_handle));
+    struct RaCtxHandle *ctxHandle = malloc(sizeof(struct RaCtxHandle));
     int ret = 0;
 
     mocker_clean();
-    ctx_handle->ctx_ops = &g_ra_hdc_ctx_ops;
+    ctxHandle->ctxOps = &gRaHdcCtxOps;
     mocker(RaHdcProcessMsg, 1, 0);
-    ret = ra_ctx_deinit(ctx_handle);
+    ret = RaCtxDeinit(ctxHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
 
-void tc_ra_ctx_lmem_register()
+void TcRaCtxLmemRegister()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    struct mr_reg_info_t lmem_info = {0};
-    void *lmem_handle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    struct MrRegInfoT lmemInfo = {0};
+    void *lmemHandle = NULL;
     int ret = 0;
 
     mocker_clean();
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
     mocker(RaHdcProcessMsg, 3, 0);
-    ctx_handle.protocol = PROTOCOL_RDMA;
-    ret = ra_ctx_lmem_register(&ctx_handle, &lmem_info, &lmem_handle);
+    ctxHandle.protocol = PROTOCOL_RDMA;
+    ret = RaCtxLmemRegister(&ctxHandle, &lmemInfo, &lmemHandle);
     EXPECT_INT_EQ(0, ret);
-    free(lmem_handle);
-    ctx_handle.protocol = PROTOCOL_UDMA;
-    ret = ra_ctx_lmem_register(&ctx_handle, &lmem_info, &lmem_handle);
+    free(lmemHandle);
+    ctxHandle.protocol = PROTOCOL_UDMA;
+    ret = RaCtxLmemRegister(&ctxHandle, &lmemInfo, &lmemHandle);
     EXPECT_INT_EQ(0, ret);
-    ret = ra_ctx_lmem_unregister(&ctx_handle, lmem_handle);
+    ret = RaCtxLmemUnregister(&ctxHandle, lmemHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
 
-void tc_ra_ctx_rmem_import()
+void TcRaCtxRmemImport()
 {
-    struct mr_import_info_t rmem_info = {0};
-    struct ra_ctx_handle ctx_handle = {0};
-    void *rmem_handle = NULL;
+    struct MrImportInfoT rmemInfo = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    void *rmemHandle = NULL;
     int ret = 0;
 
     mocker_clean();
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
-    rmem_info.in.key.size = 4;
-    ctx_handle.protocol = PROTOCOL_UDMA;
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
+    rmemInfo.in.key.size = 4;
+    ctxHandle.protocol = PROTOCOL_UDMA;
     mocker(RaHdcProcessMsg, 2, 0);
-    ret = ra_ctx_rmem_import(&ctx_handle, &rmem_info, &rmem_handle);
+    ret = RaCtxRmemImport(&ctxHandle, &rmemInfo, &rmemHandle);
     EXPECT_INT_EQ(0, ret);
-    ret = ra_ctx_rmem_unimport(&ctx_handle, rmem_handle);
+    ret = RaCtxRmemUnimport(&ctxHandle, rmemHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
 
-void tc_ra_ctx_chan_create()
+void TcRaCtxChanCreate()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    struct chan_info_t chan_info = {0};
-    void *chan_handle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    struct ChanInfoT chanInfo = {0};
+    void *chanHandle = NULL;
     int ret = 0;
 
     mocker_clean();
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
     mocker(RaHdcProcessMsg, 2, 0);
-    ret = ra_ctx_chan_create(&ctx_handle, &chan_info, &chan_handle);
+    ret = RaCtxChanCreate(&ctxHandle, &chanInfo, &chanHandle);
     EXPECT_INT_EQ(0, ret);
-    ret = ra_ctx_chan_destroy(&ctx_handle, chan_handle);
+    ret = RaCtxChanDestroy(&ctxHandle, chanHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
 
-void tc_ra_ctx_cq_create()
+void TcRaCtxCqCreate()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    struct cq_info_t cq_info_t = {0};
-    void *cq_handle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    struct CqInfoT cqInfoT = {0};
+    void *cqHandle = NULL;
     int ret = 0;
 
     mocker_clean();
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
     mocker(RaHdcProcessMsg, 5, 0);
 
-    ctx_handle.protocol = PROTOCOL_UDMA;
-    ret = ra_ctx_cq_create(&ctx_handle, &cq_info_t, &cq_handle);
+    ctxHandle.protocol = PROTOCOL_UDMA;
+    ret = RaCtxCqCreate(&ctxHandle, &cqInfoT, &cqHandle);
     EXPECT_INT_EQ(0, ret);
-    ret = ra_ctx_cq_destroy(&ctx_handle, cq_handle);
-    EXPECT_INT_EQ(0, ret);
-
-    ctx_handle.protocol = PROTOCOL_UDMA;
-    cq_info_t.in.ub.ccu_ex_cfg.valid = 1;
-    cq_info_t.in.ub.mode = JFC_MODE_CCU_POLL;
-    ret = ra_ctx_cq_create(&ctx_handle, &cq_info_t, &cq_handle);
-    EXPECT_INT_EQ(0, ret);
-    ret = ra_ctx_cq_destroy(&ctx_handle, cq_handle);
+    ret = RaCtxCqDestroy(&ctxHandle, cqHandle);
     EXPECT_INT_EQ(0, ret);
 
-    ctx_handle.protocol = PROTOCOL_RDMA;
-    ret = ra_ctx_cq_create(&ctx_handle, &cq_info_t, &cq_handle);
+    ctxHandle.protocol = PROTOCOL_UDMA;
+    cqInfoT.in.ub.ccuExCfg.valid = 1;
+    cqInfoT.in.ub.mode = JFC_MODE_CCU_POLL;
+    ret = RaCtxCqCreate(&ctxHandle, &cqInfoT, &cqHandle);
+    EXPECT_INT_EQ(0, ret);
+    ret = RaCtxCqDestroy(&ctxHandle, cqHandle);
     EXPECT_INT_EQ(0, ret);
 
-    ret = ra_ctx_cq_create(&ctx_handle, &cq_info_t, NULL);
+    ctxHandle.protocol = PROTOCOL_RDMA;
+    ret = RaCtxCqCreate(&ctxHandle, &cqInfoT, &cqHandle);
+    EXPECT_INT_EQ(0, ret);
+
+    ret = RaCtxCqCreate(&ctxHandle, &cqInfoT, NULL);
     EXPECT_INT_EQ(ConverReturnCode(RDMA_OP, -EINVAL), ret);
 
-    free(cq_handle);
+    free(cqHandle);
     mocker_clean();
 }
 
-void tc_ra_ctx_token_id_alloc()
+void TcRaCtxTokenIdAlloc()
 {
-    tc_ra_ctx_token_id_alloc1();
-    tc_ra_ctx_token_id_alloc2();
-    tc_ra_ctx_token_id_alloc3();
+    TcRaCtxTokenIdAlloc1();
+    TcRaCtxTokenIdAlloc2();
+    TcRaCtxTokenIdAlloc3();
 }
 
-void tc_ra_ctx_token_id_alloc1()
+void TcRaCtxTokenIdAlloc1()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    struct hccp_token_id info = {0};
-    void *token_id_handle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    struct HccpTokenId info = {0};
+    void *tokenIdHandle = NULL;
     int ret;
 
     mocker_clean();
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
     mocker(RaHdcProcessMsg, 3, 0);
-    ctx_handle.protocol = PROTOCOL_UDMA;
-    ret = ra_ctx_token_id_alloc(&ctx_handle, &info, NULL);
+    ctxHandle.protocol = PROTOCOL_UDMA;
+    ret = RaCtxTokenIdAlloc(&ctxHandle, &info, NULL);
     EXPECT_INT_NE(0, ret);
-    ret = ra_ctx_token_id_free(NULL, NULL);
+    ret = RaCtxTokenIdFree(NULL, NULL);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_ctx_token_id_alloc(&ctx_handle, &info, &token_id_handle);
+    ret = RaCtxTokenIdAlloc(&ctxHandle, &info, &tokenIdHandle);
     EXPECT_INT_EQ(0, ret);
-    ret = ra_ctx_token_id_free(&ctx_handle, token_id_handle);
+    ret = RaCtxTokenIdFree(&ctxHandle, tokenIdHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
 
-void tc_ra_ctx_token_id_alloc2()
+void TcRaCtxTokenIdAlloc2()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    struct hccp_token_id info = {0};
-    void *token_id_handle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    struct HccpTokenId info = {0};
+    void *tokenIdHandle = NULL;
     int ret;
 
     mocker_clean();
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
     mocker(RaHdcProcessMsg, 3, 0);
-    ctx_handle.protocol = PROTOCOL_UDMA;
+    ctxHandle.protocol = PROTOCOL_UDMA;
 
-    mocker(ra_hdc_ctx_token_id_alloc, 10, -EPERM);
-    ret = ra_ctx_token_id_alloc(&ctx_handle, &info, &token_id_handle);
+    mocker(RaHdcCtxTokenIdAlloc, 10, -EPERM);
+    ret = RaCtxTokenIdAlloc(&ctxHandle, &info, &tokenIdHandle);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 }
 
-void tc_ra_ctx_token_id_alloc3()
+void TcRaCtxTokenIdAlloc3()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    struct hccp_token_id info = {0};
-    void *token_id_handle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    struct HccpTokenId info = {0};
+    void *tokenIdHandle = NULL;
     int ret;
 
     mocker_clean();
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
     mocker(RaHdcProcessMsg, 3, 0);
-    ctx_handle.protocol = PROTOCOL_UDMA;
+    ctxHandle.protocol = PROTOCOL_UDMA;
 
-    ret = ra_ctx_token_id_alloc(&ctx_handle, &info, &token_id_handle);
+    ret = RaCtxTokenIdAlloc(&ctxHandle, &info, &tokenIdHandle);
     EXPECT_INT_EQ(0, ret);
 
-    mocker(ra_hdc_ctx_token_id_free, 10, -EPERM);
-    ret = ra_ctx_token_id_free(&ctx_handle, token_id_handle);
+    mocker(RaHdcCtxTokenIdFree, 10, -EPERM);
+    ret = RaCtxTokenIdFree(&ctxHandle, tokenIdHandle);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 }
 
-void tc_ra_ctx_qp_create()
+void TcRaCtxQpCreate()
 {
-    struct ra_ctx_qp_handle *qp_handle = NULL;
-    struct ra_ctx_handle ctx_handle = {0};
-    struct ra_cq_handle scq_handle = {0};
-    struct ra_cq_handle rcq_handle = {0};
-    struct qp_create_attr attr = {0};
-    struct qp_create_info info = {0};
-    void *cq_handle = NULL;
+    struct RaCtxQpHandle *qpHandle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    struct RaCqHandle scqHandle = {0};
+    struct RaCqHandle rcqHandle = {0};
+    struct QpCreateAttr attr = {0};
+    struct QpCreateInfo info = {0};
+    void *cqHandle = NULL;
     int ret = 0;
 
     mocker_clean();
-    attr.scq_handle = &scq_handle;
-    attr.rcq_handle = &rcq_handle;
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
+    attr.scqHandle = &scqHandle;
+    attr.rcqHandle = &rcqHandle;
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
     mocker(RaHdcProcessMsg, 5, 0);
 
-    ctx_handle.protocol = PROTOCOL_UDMA;
-    ret = ra_ctx_qp_create(&ctx_handle, &attr, &info, &qp_handle);
+    ctxHandle.protocol = PROTOCOL_UDMA;
+    ret = RaCtxQpCreate(&ctxHandle, &attr, &info, &qpHandle);
     EXPECT_INT_EQ(0, ret);
-    ret = ra_ctx_qp_destroy(qp_handle);
+    ret = RaCtxQpDestroy(qpHandle);
     EXPECT_INT_EQ(0, ret);
 
     attr.ub.mode = JETTY_MODE_CCU_TA_CACHE;
-    attr.ub.ta_cache_mode.lock_flag = 1;
-    ret = ra_ctx_qp_create(&ctx_handle, &attr, &info, &qp_handle);
+    attr.ub.taCacheMode.lockFlag = 1;
+    ret = RaCtxQpCreate(&ctxHandle, &attr, &info, &qpHandle);
     EXPECT_INT_EQ(0, ret);
-    ret = ra_ctx_qp_destroy(qp_handle);
-    EXPECT_INT_EQ(0, ret);
-
-    ctx_handle.protocol = PROTOCOL_RDMA;
-    ret = ra_ctx_qp_create(&ctx_handle, &attr, &info, &qp_handle);
+    ret = RaCtxQpDestroy(qpHandle);
     EXPECT_INT_EQ(0, ret);
 
-    ret = ra_ctx_qp_create(&ctx_handle, &attr, &info, NULL);
+    ctxHandle.protocol = PROTOCOL_RDMA;
+    ret = RaCtxQpCreate(&ctxHandle, &attr, &info, &qpHandle);
+    EXPECT_INT_EQ(0, ret);
+
+    ret = RaCtxQpCreate(&ctxHandle, &attr, &info, NULL);
     EXPECT_INT_EQ(ConverReturnCode(RDMA_OP, -EINVAL), ret);
 
-    free(qp_handle);
+    free(qpHandle);
     mocker_clean();
 }
 
-void tc_ra_ctx_qp_import()
+void TcRaCtxQpImport()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    struct qp_import_info_t qp_info = {0};
-    struct ra_ctx_rem_qp_handle *rem_qp_handle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    struct QpImportInfoT qpInfo = {0};
+    struct RaCtxRemQpHandle *remQpHandle = NULL;
     int ret = 0;
 
     mocker_clean();
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
     mocker(RaHdcProcessMsg, 2, 0);
-    ctx_handle.protocol = PROTOCOL_UDMA;
-    ret = ra_ctx_qp_import(&ctx_handle, &qp_info, &rem_qp_handle);
+    ctxHandle.protocol = PROTOCOL_UDMA;
+    ret = RaCtxQpImport(&ctxHandle, &qpInfo, &remQpHandle);
     EXPECT_INT_EQ(0, ret);
-    ret = ra_ctx_qp_unimport(&ctx_handle, rem_qp_handle);
+    ret = RaCtxQpUnimport(&ctxHandle, remQpHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
 
-void tc_ra_ctx_qp_bind()
+void TcRaCtxQpBind()
 {
-    struct ra_ctx_rem_qp_handle rem_qp_handle = {0};
-    struct ra_ctx_qp_handle qp_handle = {0};
-    struct ra_ctx_handle ctx_handle = {0};
+    struct RaCtxRemQpHandle remQpHandle = {0};
+    struct RaCtxQpHandle qpHandle = {0};
+    struct RaCtxHandle ctxHandle = {0};
     int ret = 0;
 
     mocker_clean();
-    rem_qp_handle.protocol = PROTOCOL_UDMA;
-    qp_handle.ctx_handle = &ctx_handle;
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
+    remQpHandle.protocol = PROTOCOL_UDMA;
+    qpHandle.ctxHandle = &ctxHandle;
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
     mocker(RaHdcProcessMsg, 2, 0);
-    ret = ra_ctx_qp_bind(&qp_handle, &rem_qp_handle);
+    ret = RaCtxQpBind(&qpHandle, &remQpHandle);
     EXPECT_INT_EQ(0, ret);
-    ret = ra_ctx_qp_unbind(&qp_handle);
+    ret = RaCtxQpUnbind(&qpHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
     mocker(RaHdcProcessMsg, 2, -ENODEV);
-    ret = ra_ctx_qp_unbind(&qp_handle);
+    ret = RaCtxQpUnbind(&qpHandle);
     EXPECT_INT_EQ(ConverReturnCode(RDMA_OP, -ENODEV), ret);
     mocker_clean();
 }
 
-void tc_ra_batch_send_wr()
+void TcRaBatchSendWr()
 {
-    struct ra_ctx_rem_qp_handle rem_qp_handle = {0};
-    struct ra_lmem_handle rmem_handle = {0};
-    struct ra_ctx_qp_handle qp_handle = {0};
-    struct ra_ctx_handle ctx_handle = {0};
-    struct send_wr_data wr_list[1] = {0};
-    struct send_wr_resp op_resp[1] = {0};
+    struct RaCtxRemQpHandle remQpHandle = {0};
+    struct RaLmemHandle rmemHandle = {0};
+    struct RaCtxQpHandle qpHandle = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct SendWrData wrList[1] = {0};
+    struct SendWrResp opResp[1] = {0};
 
-    unsigned int complete_num = 0;
-    int inline_data = 0;
+    unsigned int completeNum = 0;
+    int inlineData = 0;
     int ret = 0;
 
     mocker_clean();
-    qp_handle.ctx_handle = &ctx_handle;
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
-    wr_list[0].rmem_handle = &rmem_handle;
-    qp_handle.protocol = PROTOCOL_RDMA;
-    wr_list[0].rdma.flags = RA_SEND_INLINE;
-    wr_list[0].inline_data = &inline_data;
+    qpHandle.ctxHandle = &ctxHandle;
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
+    wrList[0].rmemHandle = &rmemHandle;
+    qpHandle.protocol = PROTOCOL_RDMA;
+    wrList[0].rdma.flags = RA_SEND_INLINE;
+    wrList[0].inlineData = &inlineData;
     mocker(RaHdcProcessMsg, 2, 0);
-    ret = ra_batch_send_wr(&qp_handle, wr_list, op_resp, 1, &complete_num);
+    ret = RaBatchSendWr(&qpHandle, wrList, opResp, 1, &completeNum);
     EXPECT_INT_EQ(0, ret);
-    qp_handle.protocol = PROTOCOL_UDMA;
-    wr_list[0].ub.flags.bs.inline_flag = 1;
-    wr_list[0].ub.rem_qp_handle = &rem_qp_handle;
-    wr_list[0].ub.opcode = RA_UB_OPC_WRITE;
-    ret = ra_batch_send_wr(&qp_handle, wr_list, op_resp, 1, &complete_num);
+    qpHandle.protocol = PROTOCOL_UDMA;
+    wrList[0].ub.flags.bs.inlineFlag = 1;
+    wrList[0].ub.remQpHandle = &remQpHandle;
+    wrList[0].ub.opcode = RA_UB_OPC_WRITE;
+    ret = RaBatchSendWr(&qpHandle, wrList, opResp, 1, &completeNum);
     EXPECT_INT_EQ(0, ret);
 }
 
-void tc_ra_ctx_update_ci()
+void TcRaCtxUpdateCi()
 {
-    struct ra_ctx_qp_handle qp_handle = {0};
-    struct ra_ctx_handle ctx_handle = {0};
+    struct RaCtxQpHandle qpHandle = {0};
+    struct RaCtxHandle ctxHandle = {0};
     int ret = 0;
 
     mocker_clean();
     mocker(RaHdcProcessMsg, 1, 0);
-    qp_handle.ctx_handle = &ctx_handle;
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
-    ret = ra_ctx_update_ci(&qp_handle, 1);
+    qpHandle.ctxHandle = &ctxHandle;
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
+    ret = RaCtxUpdateCi(&qpHandle, 1);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
 
-void tc_ra_custom_channel()
+void TcRaCustomChannel()
 {
-    struct custom_chan_info_out out = {0};
-    struct custom_chan_info_in in = {0};
+    struct CustomChanInfoOut out = {0};
+    struct CustomChanInfoIn in = {0};
     struct RaInfo info = {0};
     int ret = 0;
 
     mocker_clean();
     mocker(RaHdcProcessMsg, 1, 0);
     info.mode = NETWORK_OFFLINE;
-    ret = ra_custom_channel(info, &in, &out);
+    ret = RaCustomChannel(info, &in, &out);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
 
-void tc_ra_get_tp_info_list_async()
+void TcRaGetTpInfoListAsync()
 {
-    struct tp_info info_list[HCCP_MAX_TPID_INFO_NUM] = {0};
-    struct RaRequestHandle *req_handle = NULL;
-    struct ra_ctx_handle ctx_handle = {0};
-    struct get_tp_cfg cfg = {0};
+    struct HccpTpInfo infoList[HCCP_MAX_TPID_INFO_NUM] = {0};
+    struct RaRequestHandle *reqHandle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    struct GetTpCfg cfg = {0};
     unsigned int num = 0;
     int ret = 0;
 
-    ret = ra_get_tp_info_list_async(NULL, &cfg, &info_list, &num, &req_handle);
+    ret = RaGetTpInfoListAsync(NULL, &cfg, &infoList, &num, &reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_get_tp_info_list_async(&ctx_handle, NULL, &info_list, &num, &req_handle);
+    ret = RaGetTpInfoListAsync(&ctxHandle, NULL, &infoList, &num, &reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_get_tp_info_list_async(&ctx_handle, &cfg, NULL, &num, &req_handle);
+    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, NULL, &num, &reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_get_tp_info_list_async(&ctx_handle, &cfg, &info_list, NULL, &req_handle);
+    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, &infoList, NULL, &reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_get_tp_info_list_async(&ctx_handle, &cfg, &info_list, &num, NULL);
+    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, &infoList, &num, NULL);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_get_tp_info_list_async(&ctx_handle, &cfg, &info_list, &num, &req_handle);
+    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, &infoList, &num, &reqHandle);
     EXPECT_INT_NE(0, ret);
 
     num = HCCP_MAX_TPID_INFO_NUM + 1;
-    ret = ra_get_tp_info_list_async(&ctx_handle, &cfg, &info_list, &num, &req_handle);
+    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, &infoList, &num, &reqHandle);
     EXPECT_INT_NE(0, ret);
 
     num = 1;
-    mocker(ra_hdc_get_tp_info_list_async, 1, 0);
-    ret = ra_get_tp_info_list_async(&ctx_handle, &cfg, &info_list, &num, &req_handle);
+    mocker(RaHdcGetTpInfoListAsync, 1, 0);
+    ret = RaGetTpInfoListAsync(&ctxHandle, &cfg, &infoList, &num, &reqHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
 
-void tc_ra_hdc_get_tp_info_list_async()
+void TcRaHdcGetTpInfoListAsync()
 {
-    struct tp_info info_list[HCCP_MAX_TPID_INFO_NUM] = {0};
-    struct ra_response_tp_info_list *async_rsp = NULL;
-    union op_get_tp_info_list_data recv_buf = {0};
-    struct RaRequestHandle *req_handle = NULL;
-    struct ra_ctx_handle ctx_handle = {0};
-    struct get_tp_cfg cfg = {0};
+    struct HccpTpInfo infoList[HCCP_MAX_TPID_INFO_NUM] = {0};
+    struct RaResponseTpInfoList *asyncRsp = NULL;
+    union OpGetTpInfoListData recvBuf = {0};
+    struct RaRequestHandle *reqHandle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    struct GetTpCfg cfg = {0};
     unsigned int num = 1;
     int ret = 0;
 
     mocker(RaHdcSendMsgAsync, 1, -1);
-    ret =  ra_hdc_get_tp_info_list_async(&ctx_handle, &cfg, &info_list, &num, &req_handle);
+    ret =  RaHdcGetTpInfoListAsync(&ctxHandle, &cfg, &infoList, &num, &reqHandle);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    ret =  ra_hdc_get_tp_info_list_async(&ctx_handle, &cfg, &info_list, &num, &req_handle);
+    ret =  RaHdcGetTpInfoListAsync(&ctxHandle, &cfg, &infoList, &num, &reqHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
-    req_handle->opRet = -1;
-    ra_hdc_async_handle_tp_info_list(req_handle);
+    reqHandle->opRet = -1;
+    RaHdcAsyncHandleTpInfoList(reqHandle);
 
-    req_handle->opRet = 0;
-    req_handle->recvBuf = &recv_buf;
-    async_rsp = (struct ra_response_tp_info_list *)calloc(1, sizeof(struct ra_response_tp_info_list));
-    async_rsp->num = &num;
-    async_rsp->info_list = info_list;
-    req_handle->privData = (void *)async_rsp;
-    ra_hdc_async_handle_tp_info_list(req_handle);
+    reqHandle->opRet = 0;
+    reqHandle->recvBuf = &recvBuf;
+    asyncRsp = (struct RaResponseTpInfoList *)calloc(1, sizeof(struct RaResponseTpInfoList));
+    asyncRsp->num = &num;
+    asyncRsp->infoList = infoList;
+    reqHandle->privData = (void *)asyncRsp;
+    RaHdcAsyncHandleTpInfoList(reqHandle);
 
-    req_handle->opRet = 0;
-    recv_buf.rx_data.num = 1;
-    req_handle->recvBuf = &recv_buf;
-    async_rsp = (struct ra_response_tp_info_list *)calloc(1, sizeof(struct ra_response_tp_info_list));
-    async_rsp->num = &num;
-    async_rsp->info_list = info_list;
-    req_handle->privData = (void *)async_rsp;
+    reqHandle->opRet = 0;
+    recvBuf.rxData.num = 1;
+    reqHandle->recvBuf = &recvBuf;
+    asyncRsp = (struct RaResponseTpInfoList *)calloc(1, sizeof(struct RaResponseTpInfoList));
+    asyncRsp->num = &num;
+    asyncRsp->infoList = infoList;
+    reqHandle->privData = (void *)asyncRsp;
     mocker(memcpy_s, 1, -1);
-    ra_hdc_async_handle_tp_info_list(req_handle);
+    RaHdcAsyncHandleTpInfoList(reqHandle);
     mocker_clean();
 
-    req_handle->opRet = 0;
-    recv_buf.rx_data.num = 1;
-    req_handle->recvBuf = &recv_buf;
-    async_rsp = (struct ra_response_tp_info_list *)calloc(1, sizeof(struct ra_response_tp_info_list));
-    async_rsp->num = &num;
-    async_rsp->info_list = info_list;
-    req_handle->privData = (void *)async_rsp;
+    reqHandle->opRet = 0;
+    recvBuf.rxData.num = 1;
+    reqHandle->recvBuf = &recvBuf;
+    asyncRsp = (struct RaResponseTpInfoList *)calloc(1, sizeof(struct RaResponseTpInfoList));
+    asyncRsp->num = &num;
+    asyncRsp->infoList = infoList;
+    reqHandle->privData = (void *)asyncRsp;
     mocker(memcpy_s, 1, 0);
-    ra_hdc_async_handle_tp_info_list(req_handle);
+    RaHdcAsyncHandleTpInfoList(reqHandle);
     mocker_clean();
 
-    free(req_handle);
-    req_handle = NULL;
+    free(reqHandle);
+    reqHandle = NULL;
 }
 
-void tc_ra_rs_get_tp_info_list()
+void TcRaRsGetTpInfoList()
 {
-    union op_get_tp_info_list_data data_in;
-    union op_get_tp_info_list_data data_out;
-    int rcv_buf_len = 0;
-    int op_result;
-    int out_len;
+    union OpGetTpInfoListData dataIn;
+    union OpGetTpInfoListData dataOut;
+    int rcvBufLen = 0;
+    int opResult;
+    int outLen;
     int ret;
 
-    char* in_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_get_tp_info_list_data));
-    char* out_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_get_tp_info_list_data));
+    char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpGetTpInfoListData));
+    char* outBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpGetTpInfoListData));
 
-    data_in.tx_data.phy_id = 0;
-    data_in.tx_data.dev_index = 0;
-    memcpy_s(in_buf + sizeof(struct MsgHead), sizeof(union op_get_tp_info_list_data),
-        &data_in, sizeof(union op_get_tp_info_list_data));
-    ret = ra_rs_get_tp_info_list(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    dataIn.txData.phyId = 0;
+    dataIn.txData.devIndex = 0;
+    memcpy_s(inBuf + sizeof(struct MsgHead), sizeof(union OpGetTpInfoListData),
+        &dataIn, sizeof(union OpGetTpInfoListData));
+    ret = RaRsGetTpInfoList(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    mocker(rs_get_tp_info_list, 1, -1);
-    ret = ra_rs_get_tp_info_list(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    mocker(RsGetTpInfoList, 1, -1);
+    ret = RaRsGetTpInfoList(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    free(in_buf);
-    in_buf = NULL;
-    free(out_buf);
-    out_buf = NULL;
+    free(inBuf);
+    inBuf = NULL;
+    free(outBuf);
+    outBuf = NULL;
 }
 
-void tc_ra_rs_async_hdc_session_connect()
+void TcRaRsAsyncHdcSessionConnect()
 {
     RaHwAsyncInit(0, 0);
-    union OpAsyncHdcConnectData connect_data = {0};
-    connect_data.txData.phyId = 0;
-    connect_data.txData.queueSize = MAX_POOL_QUEUE_SIZE;
-    connect_data.txData.threadNum = MAX_POOL_THREAD_NUM;
-    unsigned int connect_data_size = sizeof(union OpAsyncHdcConnectData);
+    union OpAsyncHdcConnectData connectData = {0};
+    connectData.txData.phyId = 0;
+    connectData.txData.queueSize = MAX_POOL_QUEUE_SIZE;
+    connectData.txData.threadNum = MAX_POOL_THREAD_NUM;
+    unsigned int connectDataSize = sizeof(union OpAsyncHdcConnectData);
 
-    void *send_rcv_buf = NULL;
-    unsigned int send_rcv_len;
+    void *sendRcvBuf = NULL;
+    unsigned int sendRcvLen;
     int ret;
-    pid_t host_tgid = 0;
+    pid_t hostTgid = 0;
     unsigned int opcode = RA_RS_ASYNC_HDC_SESSION_CONNECT;
-    send_rcv_len = sizeof(struct MsgHead) + connect_data_size;
-    send_rcv_buf = (void *)calloc(send_rcv_len, sizeof(char));
-    MsgHeadBuildUp(send_rcv_buf, opcode, 0, connect_data_size, host_tgid);
+    sendRcvLen = sizeof(struct MsgHead) + connectDataSize;
+    sendRcvBuf = (void *)calloc(sendRcvLen, sizeof(char));
+    MsgHeadBuildUp(sendRcvBuf, opcode, 0, connectDataSize, hostTgid);
 
-    ret = memcpy_s(send_rcv_buf + sizeof(struct MsgHead), send_rcv_len - sizeof(struct MsgHead), &connect_data, connect_data_size);
+    ret = memcpy_s(sendRcvBuf + sizeof(struct MsgHead), sendRcvLen - sizeof(struct MsgHead), &connectData, connectDataSize);
     if (ret) {
-        hccp_err("[process][ra_hdc_msg]memcpy_s failed, ret(%d) phyId(%u)", ret, connect_data.txData.phyId);
+        hccp_err("[process][ra_hdc_msg]memcpy_s failed, ret(%d) phyId(%u)", ret, connectData.txData.phyId);
         return;
     }
-    int op_ret = 0;
-    void *send_buf = NULL;
-    int snd_buf_len = 0;
+    int opRet = 0;
+    void *sendBuf = NULL;
+    int sndBufLen = 0;
 
-    struct MsgHead *recv_msg_head = (struct MsgHead *)send_rcv_buf;
-    send_buf = (char *)calloc(sizeof(char), recv_msg_head->msgDataLen + sizeof(struct MsgHead));
-    CHK_PRT_RETURN(send_buf == NULL, hccp_err("calloc fail."), -ENOMEM);
+    struct MsgHead *recvMsgHead = (struct MsgHead *)sendRcvBuf;
+    sendBuf = (char *)calloc(sizeof(char), recvMsgHead->msgDataLen + sizeof(struct MsgHead));
+    CHK_PRT_RETURN(sendBuf == NULL, hccp_err("calloc fail."), -ENOMEM);
 
     mocker(RaHdcAsyncRecvPkt, 1, -1);
-    RaRsAsyncHdcSessionConnect(send_rcv_buf, send_buf, snd_buf_len, &op_ret, send_rcv_len);
+    RaRsAsyncHdcSessionConnect(sendRcvBuf, sendBuf, sndBufLen, &opRet, sendRcvLen);
 
-    union OpAsyncHdcCloseData close_data = {0};
-    unsigned int close_data_size = sizeof(union OpAsyncHdcCloseData);
-    void *send_rcv_buf2 = NULL;
-    unsigned int send_rcv_len2;
+    union OpAsyncHdcCloseData closeData = {0};
+    unsigned int closeDataSize = sizeof(union OpAsyncHdcCloseData);
+    void *sendRcvBuf2 = NULL;
+    unsigned int sendRcvLen2;
     unsigned int opcode2 = RA_RS_ASYNC_HDC_SESSION_CLOSE;
-    send_rcv_len2 = sizeof(struct MsgHead) + close_data_size;
-    send_rcv_buf2 = (void *)calloc(send_rcv_len, sizeof(char));
-    MsgHeadBuildUp(send_rcv_buf2, opcode2, 0, close_data_size, host_tgid);
-    ret = memcpy_s(send_rcv_buf2 + sizeof(struct MsgHead), send_rcv_len2 - sizeof(struct MsgHead), &close_data, close_data_size);
+    sendRcvLen2 = sizeof(struct MsgHead) + closeDataSize;
+    sendRcvBuf2 = (void *)calloc(sendRcvLen, sizeof(char));
+    MsgHeadBuildUp(sendRcvBuf2, opcode2, 0, closeDataSize, hostTgid);
+    ret = memcpy_s(sendRcvBuf2 + sizeof(struct MsgHead), sendRcvLen2 - sizeof(struct MsgHead), &closeData, closeDataSize);
 
-    int op_ret2 = 0;
-    void *send_buf2 = NULL;
-    int snd_buf_len2 = 0;
+    int opRet2 = 0;
+    void *sendBuf2 = NULL;
+    int sndBufLen2 = 0;
 
-    RaRsAsyncHdcSessionClose(send_rcv_buf2, send_buf2, snd_buf_len2, &op_ret2, send_rcv_len2);
+    RaRsAsyncHdcSessionClose(sendRcvBuf2, sendBuf2, sndBufLen2, &opRet2, sendRcvLen2);
     RaHwAsyncDeinit();
 
-    free(send_rcv_buf);
-    free(send_buf);
-    free(send_rcv_buf2);
+    free(sendRcvBuf);
+    free(sendBuf);
+    free(sendRcvBuf2);
 
     mocker_clean();
 }
 
-void tc_ra_hdc_async_send_pkt()
+void TcRaHdcAsyncSendPkt()
 {
     char *data;
     data = (char *)calloc(100, sizeof(char));
     unsigned long long size = 100;
-    union OpSocketSendData *async_data = NULL;
-    async_data = (union OpSocketSendData *)calloc(sizeof(union OpSocketSendData), sizeof(char));
-    async_data->txData.fd = 0;
-    async_data->txData.sendSize = size;
-    memcpy_s(async_data->txData.dataSend, SOCKET_SEND_MAXLEN, data, size);
+    union OpSocketSendData *asyncData = NULL;
+    asyncData = (union OpSocketSendData *)calloc(sizeof(union OpSocketSendData), sizeof(char));
+    asyncData->txData.fd = 0;
+    asyncData->txData.sendSize = size;
+    memcpy_s(asyncData->txData.dataSend, SOCKET_SEND_MAXLEN, data, size);
 
-    void *send_buf = NULL;
-    unsigned int send_len;
+    void *sendBuf = NULL;
+    unsigned int sendLen;
     int ret;
-    pid_t host_tgid = 0;
+    pid_t hostTgid = 0;
     unsigned int opcode = RA_RS_SOCKET_SEND;
-    send_len = sizeof(struct MsgHead) + sizeof(union OpSocketSendData);
-    send_buf = (void *)calloc(send_len, sizeof(char));
-    MsgHeadBuildUp(send_buf, opcode, 0, sizeof(union OpSocketSendData), host_tgid);
+    sendLen = sizeof(struct MsgHead) + sizeof(union OpSocketSendData);
+    sendBuf = (void *)calloc(sendLen, sizeof(char));
+    MsgHeadBuildUp(sendBuf, opcode, 0, sizeof(union OpSocketSendData), hostTgid);
 
-    memcpy_s(send_buf + sizeof(struct MsgHead), send_len - sizeof(struct MsgHead), async_data, sizeof(union OpSocketSendData));
-    MsgHeadBuildUp(send_buf, opcode, 0, sizeof(union OpSocketSendData), host_tgid);
+    memcpy_s(sendBuf + sizeof(struct MsgHead), sendLen - sizeof(struct MsgHead), asyncData, sizeof(union OpSocketSendData));
+    MsgHeadBuildUp(sendBuf, opcode, 0, sizeof(union OpSocketSendData), hostTgid);
 
-    RaHdcHandleSendPkt(0, send_buf, send_len);
+    RaHdcHandleSendPkt(0, sendBuf, sendLen);
 
     free(data);
-    free(async_data);
-    free(send_buf);
+    free(asyncData);
+    free(sendBuf);
 }
 
-void tc_ra_hdc_async_recv_pkt()
+void TcRaHdcAsyncRecvPkt()
 {
-    struct RaHdcAsyncInfo async_info = {0};
-    void *recv_buf = NULL;
+    struct RaHdcAsyncInfo asyncInfo = {0};
+    void *recvBuf = NULL;
 
     mocker_clean();
     mocker(DlDrvHdcAllocMsg, 1, 0);
     mocker(DlHalHdcRecv, 1, -1);
     mocker(DlDrvHdcFreeMsg, 1, 0);
-    RaHdcAsyncRecvPkt(&async_info, 0, NULL, NULL);
+    RaHdcAsyncRecvPkt(&asyncInfo, 0, NULL, NULL);
     mocker_clean();
 
     mocker(DlDrvHdcAllocMsg, 1, 0);
     mocker(DlHalHdcRecv, 1, 0);
     mocker(DlDrvHdcGetMsgBuffer, 1, -1);
     mocker(DlDrvHdcFreeMsg, 1, 0);
-    RaHdcAsyncRecvPkt(&async_info, 0, NULL, NULL);
+    RaHdcAsyncRecvPkt(&asyncInfo, 0, NULL, NULL);
     mocker_clean();
 
     mocker(DlDrvHdcAllocMsg, 1, 0);
     mocker(DlHalHdcRecv, 1, 0);
     mocker(DlDrvHdcGetMsgBuffer, 1, 0);
     mocker(DlDrvHdcFreeMsg, 1, 0);
-    RaHdcAsyncRecvPkt(&async_info, 0, &recv_buf, NULL);
-    free(recv_buf);
+    RaHdcAsyncRecvPkt(&asyncInfo, 0, &recvBuf, NULL);
+    free(recvBuf);
     mocker_clean();
 }
 
-hdcError_t dl_drv_hdc_get_msg_buffer_stub(struct drvHdcMsg *msg, int index, char **pBuf, int *pLen)
+hdcError_t DlDrvHdcGetMsgBufferStub(struct drvHdcMsg *msg, int index, char **pBuf, int *pLen)
 {
     *pLen = 1;
     return 0;
 }
 
-void tc_hdc_async_recv_pkt()
+void TcHdcAsyncRecvPkt()
 {
-    struct RaRequestHandle stub_req_handle = { 0 };
-    struct HdcAsyncInfo async_info = {0};
-    HDC_SESSION stub_session = { 0 };
-    void *recv_buf = NULL;
-    unsigned int recv_len;
+    struct RaRequestHandle stubReqHandle = { 0 };
+    struct HdcAsyncInfo asyncInfo = {0};
+    HDC_SESSION stubSession = { 0 };
+    void *recvBuf = NULL;
+    unsigned int recvLen;
     int ret;
 
-    async_info.session = &stub_session;
-    RA_INIT_LIST_HEAD(&async_info.reqList);
-    RaListAddTail(&stub_req_handle.list, &async_info.reqList);
+    asyncInfo.session = &stubSession;
+    RA_INIT_LIST_HEAD(&asyncInfo.reqList);
+    RaListAddTail(&stubReqHandle.list, &asyncInfo.reqList);
 
     mocker_clean();
     mocker(pthread_mutex_lock, 10, 0);
@@ -731,36 +731,36 @@ void tc_hdc_async_recv_pkt()
     mocker(memcpy_s, 10, 0);
     mocker(DlDrvHdcFreeMsg, 10, 0);
     mocker(HdcAsyncSetReqDone, 10, (void*)0);
-    ret = HdcAsyncRecvPkt(&async_info, 0, recv_buf, &recv_len);
+    ret = HdcAsyncRecvPkt(&asyncInfo, 0, recvBuf, &recvLen);
     EXPECT_INT_EQ(ret, 25);
-    HdcAsyncHandleRecvBroken(&async_info);
+    HdcAsyncHandleRecvBroken(&asyncInfo);
 
     mocker_clean();
     mocker(pthread_mutex_lock, 10, 0);
     mocker(DlDrvHdcAllocMsg, 10, 0);
     mocker(DlHalHdcRecv, 10, 0);
-    mocker_invoke(DlDrvHdcGetMsgBuffer, dl_drv_hdc_get_msg_buffer_stub, 10);
+    mocker_invoke(DlDrvHdcGetMsgBuffer, DlDrvHdcGetMsgBufferStub, 10);
     mocker(pthread_mutex_unlock, 10, 0);
     mocker(memcpy_s, 10, 0);
     mocker(DlDrvHdcFreeMsg, 10, 0);
-    ret = HdcAsyncRecvPkt(&async_info, 0, recv_buf, &recv_len);
+    ret = HdcAsyncRecvPkt(&asyncInfo, 0, recvBuf, &recvLen);
     EXPECT_INT_EQ(ret, 25);
-    HdcAsyncHandleRecvBroken(&async_info);
+    HdcAsyncHandleRecvBroken(&asyncInfo);
 
-    EXPECT_INT_EQ(async_info.lastRecvStatus, 25);
+    EXPECT_INT_EQ(asyncInfo.lastRecvStatus, 25);
     ret = RaHdcSendMsgAsync(4, 0, NULL, 0, NULL);
     EXPECT_INT_EQ(ret, -EINVAL);
     mocker_clean();
 }
 
-void tc_ra_hdc_pool_add_task()
+void TcRaHdcPoolAddTask()
 {
     struct RaHdcThreadPool pool = {0};
-    struct RaHdcTask task_queue[5] = {0};
+    struct RaHdcTask taskQueue[5] = {0};
     int (*RaHdcHandleSendPkt)(unsigned int chipId, void *recvBuf, unsigned int recvLen);
 
     mocker_clean();
-    pool.taskQueue = &task_queue;
+    pool.taskQueue = &taskQueue;
     pool.queuePi = 0;
     pool.taskNum = 2;
     pool.queueSize = 5;
@@ -770,23 +770,23 @@ void tc_ra_hdc_pool_add_task()
     mocker_clean();
 }
 
-int stub_ra_hdc_pool_create_pthread_create(pthread_t *thread, const pthread_attr_t *attr,
-    void *(*start_routine) (void *), void *arg)
+int StubRaHdcPoolCreatePthreadCreate(pthread_t *thread, const pthread_attr_t *attr,
+    void *(*startRoutine) (void *), void *arg)
 {
     return -1;
 }
 
-void tc_ra_hdc_pool_create()
+void TcRaHdcPoolCreate()
 {
     mocker_clean();
-    mocker_invoke(pthread_create, stub_ra_hdc_pool_create_pthread_create, 1);
+    mocker_invoke(pthread_create, StubRaHdcPoolCreatePthreadCreate, 1);
     RaHdcPoolCreate(1, 1);
     mocker_clean();
 }
 
-void tc_ra_async_handle_pkt()
+void TcRaAsyncHandlePkt()
 {
-    struct MsgHead recv_buf = {0};
+    struct MsgHead recvBuf = {0};
 
     mocker_clean();
     mocker(RaHdcHandleSendPkt, 1, 0);
@@ -794,623 +794,623 @@ void tc_ra_async_handle_pkt()
     mocker(RaHdcPoolAddTask, 1, 0);
     mocker(pthread_mutex_lock, 10, 0);
     mocker(pthread_mutex_unlock, 10, 0);
-    RaAsyncHandlePkt(1, &recv_buf, 0);
+    RaAsyncHandlePkt(1, &recvBuf, 0);
     mocker_clean();
 }
 
-void tc_ra_hdc_async_handle_socket_listen_start()
+void TcRaHdcAsyncHandleSocketListenStart()
 {
-    struct RaRequestHandle req_handle = {0};
+    struct RaRequestHandle reqHandle = {0};
 
     mocker_clean();
-    req_handle.privData = malloc(sizeof(struct RaResponseSocketListen));
+    reqHandle.privData = malloc(sizeof(struct RaResponseSocketListen));
     mocker(RaGetSocketListenResult, 1, -1);
-    RaHdcAsyncHandleSocketListenStart(&req_handle);
+    RaHdcAsyncHandleSocketListenStart(&reqHandle);
     mocker_clean();
 }
 
-void tc_ra_hdc_async_handle_qp_import()
+void TcRaHdcAsyncHandleQpImport()
 {
-    struct RaRequestHandle req_handle = {0};
-    union op_ctx_qp_import_data recv_buf = {0};
-    struct qp_import_info priv_data = {0};
-    struct ra_ctx_rem_qp_handle privHandle = {0};
+    struct RaRequestHandle reqHandle = {0};
+    union OpCtxQpImportData recvBuf = {0};
+    struct QpImportInfo privData = {0};
+    struct RaCtxRemQpHandle privHandle = {0};
 
-    req_handle.recvBuf = &recv_buf;
-    req_handle.privData = &priv_data;
-    req_handle.privHandle = &privHandle;
+    reqHandle.recvBuf = &recvBuf;
+    reqHandle.privData = &privData;
+    reqHandle.privHandle = &privHandle;
     privHandle.protocol = PROTOCOL_UDMA;
-    ra_hdc_async_handle_qp_import(&req_handle);
+    RaHdcAsyncHandleQpImport(&reqHandle);
 }
 
-void tc_ra_peer_ctx_init()
+void TcRaPeerCtxInit()
 {
-    struct dev_base_attr dev_base_attr = {0};
-    struct ra_ctx_handle ctx_handle = {0};
-    struct ctx_init_attr info = {0};
-    unsigned int dev_index = 0;
+    struct DevBaseAttr devBaseAttr = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct CtxInitAttr info = {0};
+    unsigned int devIndex = 0;
     int ret = 0;
 
-    ret = ra_peer_ctx_init(&ctx_handle, &info, &dev_index, &dev_base_attr);
+    ret = RaPeerCtxInit(&ctxHandle, &info, &devIndex, &devBaseAttr);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_init, 1, -1);
-    ret = ra_peer_ctx_init(&ctx_handle, &info, &dev_index, &dev_base_attr);
+    mocker(RsCtxInit, 1, -1);
+    ret = RaPeerCtxInit(&ctxHandle, &info, &devIndex, &devBaseAttr);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_ctx_deinit()
+void TcRaPeerCtxDeinit()
 {
-    struct ra_ctx_handle ctx_handle = {0};
+    struct RaCtxHandle ctxHandle = {0};
     int ret = 0;
 
-    ret = ra_peer_ctx_deinit(&ctx_handle);
+    ret = RaPeerCtxDeinit(&ctxHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_deinit, 1, -1);
-    ret = ra_peer_ctx_deinit(&ctx_handle);
+    mocker(RsCtxDeinit, 1, -1);
+    ret = RaPeerCtxDeinit(&ctxHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_get_dev_eid_info_num()
+void TcRaPeerGetDevEidInfoNum()
 {
     struct RaInfo info = {0};
     unsigned int num = 0;
     int ret = 0;
 
-    ret = ra_peer_get_dev_eid_info_num(info, &num);
+    ret = RaPeerGetDevEidInfoNum(info, &num);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_get_dev_eid_info_num, 1, -1);
-    ret = ra_peer_get_dev_eid_info_num(info, &num);
+    mocker(RsGetDevEidInfoNum, 1, -1);
+    ret = RaPeerGetDevEidInfoNum(info, &num);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_get_dev_eid_info_list()
+void TcRaPeerGetDevEidInfoList()
 {
-    struct dev_eid_info info_list[35] = {0};
+    struct HccpDevEidInfo infoList[35] = {0};
     unsigned int phyId = 0;
     unsigned int num = 0;
     int ret = 0;
 
-    ret = ra_peer_get_dev_eid_info_list(phyId, info_list, &num);
+    ret = RaPeerGetDevEidInfoList(phyId, infoList, &num);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_get_dev_eid_info_list, 1, -1);
-    ret = ra_peer_get_dev_eid_info_list(phyId, info_list, &num);
+    mocker(RsGetDevEidInfoList, 1, -1);
+    ret = RaPeerGetDevEidInfoList(phyId, infoList, &num);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_ctx_token_id_alloc()
+void TcRaPeerCtxTokenIdAlloc()
 {
-    struct ra_token_id_handle token_id_handle = {0};
-    struct ra_ctx_handle ctx_handle = {0};
-    struct hccp_token_id info = {0};
+    struct RaTokenIdHandle tokenIdHandle = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct HccpTokenId info = {0};
     int ret = 0;
 
-    ret = ra_peer_ctx_token_id_alloc(&ctx_handle, &info, &token_id_handle);
+    ret = RaPeerCtxTokenIdAlloc(&ctxHandle, &info, &tokenIdHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_token_id_alloc, 1, -1);
-    ret = ra_peer_ctx_token_id_alloc(&ctx_handle, &info, &token_id_handle);
+    mocker(RsCtxTokenIdAlloc, 1, -1);
+    ret = RaPeerCtxTokenIdAlloc(&ctxHandle, &info, &tokenIdHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_ctx_token_id_free()
+void TcRaPeerCtxTokenIdFree()
 {
-    struct ra_token_id_handle token_id_handle = {0};
-    struct ra_ctx_handle ctx_handle = {0};
+    struct RaTokenIdHandle tokenIdHandle = {0};
+    struct RaCtxHandle ctxHandle = {0};
     int ret = 0;
 
-    ret = ra_peer_ctx_token_id_free(&ctx_handle, &token_id_handle);
+    ret = RaPeerCtxTokenIdFree(&ctxHandle, &tokenIdHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_token_id_free, 1, -1);
-    ret = ra_peer_ctx_token_id_free(&ctx_handle, &token_id_handle);
+    mocker(RsCtxTokenIdFree, 1, -1);
+    ret = RaPeerCtxTokenIdFree(&ctxHandle, &tokenIdHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_ctx_lmem_register()
+void TcRaPeerCtxLmemRegister()
 {
-    struct ra_lmem_handle lmem_handle = {0};
-    struct ra_ctx_handle ctx_handle = {0};
-    struct mr_reg_info_t lmem_info = {0};
+    struct RaLmemHandle lmemHandle = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct MrRegInfoT lmemInfo = {0};
     int ret = 0;
 
-    lmem_info.in.ub.flags.bs.token_id_valid = 1;
-    ret = ra_peer_ctx_lmem_register(&ctx_handle, &lmem_info, &lmem_handle);
+    lmemInfo.in.ub.flags.bs.tokenIdValid = 1;
+    ret = RaPeerCtxLmemRegister(&ctxHandle, &lmemInfo, &lmemHandle);
     EXPECT_INT_EQ(ret, -22);
 
-    lmem_info.in.ub.flags.bs.token_id_valid = 0;
-    ret = ra_peer_ctx_lmem_register(&ctx_handle, &lmem_info, &lmem_handle);
+    lmemInfo.in.ub.flags.bs.tokenIdValid = 0;
+    ret = RaPeerCtxLmemRegister(&ctxHandle, &lmemInfo, &lmemHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_lmem_reg, 1, -1);
-    ret = ra_peer_ctx_lmem_register(&ctx_handle, &lmem_info, &lmem_handle);
+    mocker(RsCtxLmemReg, 1, -1);
+    ret = RaPeerCtxLmemRegister(&ctxHandle, &lmemInfo, &lmemHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_ctx_lmem_unregister()
+void TcRaPeerCtxLmemUnregister()
 {
-    struct ra_lmem_handle lmem_handle = {0};
-    struct ra_ctx_handle ctx_handle = {0};
+    struct RaLmemHandle lmemHandle = {0};
+    struct RaCtxHandle ctxHandle = {0};
     int ret = 0;
 
-    ret = ra_peer_ctx_lmem_unregister(&ctx_handle, &lmem_handle);
+    ret = RaPeerCtxLmemUnregister(&ctxHandle, &lmemHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_lmem_unreg, 1, -1);
-    ret = ra_peer_ctx_lmem_unregister(&ctx_handle, &lmem_handle);
+    mocker(RsCtxLmemUnreg, 1, -1);
+    ret = RaPeerCtxLmemUnregister(&ctxHandle, &lmemHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_ctx_rmem_import()
+void TcRaPeerCtxRmemImport()
 {
-    struct mr_import_info_t rmem_info = {0};
-    struct ra_ctx_handle ctx_handle = {0};
+    struct MrImportInfoT rmemInfo = {0};
+    struct RaCtxHandle ctxHandle = {0};
     int ret = 0;
 
-    ret = ra_peer_ctx_rmem_import(&ctx_handle, &rmem_info);
+    ret = RaPeerCtxRmemImport(&ctxHandle, &rmemInfo);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_rmem_import, 1, -1);
-    ret = ra_peer_ctx_rmem_import(&ctx_handle, &rmem_info);
+    mocker(RsCtxRmemImport, 1, -1);
+    ret = RaPeerCtxRmemImport(&ctxHandle, &rmemInfo);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_ctx_rmem_unimport()
+void TcRaPeerCtxRmemUnimport()
 {
-    struct ra_rmem_handle rmem_handle = {0};
-    struct ra_ctx_handle ctx_handle = {0};
+    struct RaRmemHandle rmemHandle = {0};
+    struct RaCtxHandle ctxHandle = {0};
     int ret = 0;
 
-    ret = ra_peer_ctx_rmem_unimport(&ctx_handle, &rmem_handle);
+    ret = RaPeerCtxRmemUnimport(&ctxHandle, &rmemHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_rmem_unimport, 1, -1);
-    ret = ra_peer_ctx_rmem_unimport(&ctx_handle, &rmem_handle);
+    mocker(RsCtxRmemUnimport, 1, -1);
+    ret = RaPeerCtxRmemUnimport(&ctxHandle, &rmemHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_ctx_chan_create()
+void TcRaPeerCtxChanCreate()
 {
-    struct ra_chan_handle chan_handle = {0};
-    struct ra_ctx_handle ctx_handle = {0};
-    struct chan_info_t chan_info = {0};
+    struct RaChanHandle chanHandle = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct ChanInfoT chanInfo = {0};
     int ret = 0;
 
-    ret = ra_peer_ctx_chan_create(&ctx_handle, &chan_info, &chan_handle);
+    ret = RaPeerCtxChanCreate(&ctxHandle, &chanInfo, &chanHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_chan_create, 1, -1);
-    ret = ra_peer_ctx_chan_create(&ctx_handle, &chan_info, &chan_handle);
+    mocker(RsCtxChanCreate, 1, -1);
+    ret = RaPeerCtxChanCreate(&ctxHandle, &chanInfo, &chanHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_ctx_chan_destroy()
+void TcRaPeerCtxChanDestroy()
 {
-    struct ra_chan_handle chan_handle = {0};
-    struct ra_ctx_handle ctx_handle = {0};
+    struct RaChanHandle chanHandle = {0};
+    struct RaCtxHandle ctxHandle = {0};
     int ret = 0;
 
-    ret = ra_peer_ctx_chan_destroy(&ctx_handle, &chan_handle);
+    ret = RaPeerCtxChanDestroy(&ctxHandle, &chanHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_chan_destroy, 1, -1);
-    ret = ra_peer_ctx_chan_destroy(&ctx_handle, &chan_handle);
+    mocker(RsCtxChanDestroy, 1, -1);
+    ret = RaPeerCtxChanDestroy(&ctxHandle, &chanHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_ctx_cq_create()
+void TcRaPeerCtxCqCreate()
 {
-    struct ra_chan_handle chan_handle = {0};
-    struct ra_ctx_handle ctx_handle = {0};
-    struct ra_cq_handle cq_handle = {0};
-    struct cq_info_t info = {0};
+    struct RaChanHandle chanHandle = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct RaCqHandle cqHandle = {0};
+    struct CqInfoT info = {0};
     int ret = 0;
 
     info.in.ub.mode = JFC_MODE_CCU_POLL;
-    info.in.ub.ccu_ex_cfg.valid = true;
-    ret = ra_peer_ctx_cq_create(&ctx_handle, &info, &cq_handle);
+    info.in.ub.ccuExCfg.valid = true;
+    ret = RaPeerCtxCqCreate(&ctxHandle, &info, &cqHandle);
     EXPECT_INT_EQ(ret, -22);
 
-    mocker(rs_ctx_cq_create, 1, -1);
+    mocker(RsCtxCqCreate, 1, -1);
     info.in.ub.mode = JFC_MODE_NORMAL;
-    info.in.chan_handle = (void *)&chan_handle;
-    ret = ra_peer_ctx_cq_create(&ctx_handle, &info, &cq_handle);
+    info.in.chanHandle = (void *)&chanHandle;
+    ret = RaPeerCtxCqCreate(&ctxHandle, &info, &cqHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_ctx_cq_destroy()
+void TcRaPeerCtxCqDestroy()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    struct ra_cq_handle cq_handle = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct RaCqHandle cqHandle = {0};
     int ret = 0;
 
-    ret = ra_peer_ctx_cq_destroy(&ctx_handle, &cq_handle);
+    ret = RaPeerCtxCqDestroy(&ctxHandle, &cqHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_cq_destroy, 1, -1);
-    ret = ra_peer_ctx_cq_destroy(&ctx_handle, &cq_handle);
+    mocker(RsCtxCqDestroy, 1, -1);
+    ret = RaPeerCtxCqDestroy(&ctxHandle, &cqHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_ctx_qp_create()
+void TcRaPeerCtxQpCreate()
 {
-    struct ra_ctx_qp_handle qp_handle = {0};
-    struct ra_ctx_handle ctx_handle = {0};
-    struct qp_create_attr qpAttr = {0};
-    struct qp_create_info qp_info = {0};
+    struct RaCtxQpHandle qpHandle = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct QpCreateAttr qpAttr = {0};
+    struct QpCreateInfo qpInfo = {0};
     int ret = 0;
 
     qpAttr.ub.mode = JETTY_MODE_CCU;
-    ret = ra_peer_ctx_qp_create(&ctx_handle, &qpAttr, &qp_info, &qp_handle);
+    ret = RaPeerCtxQpCreate(&ctxHandle, &qpAttr, &qpInfo, &qpHandle);
     EXPECT_INT_EQ(ret, -22);
 
     qpAttr.ub.mode = JETTY_MODE_URMA_NORMAL;
-    mocker(ra_ctx_prepare_qp_create, 1, 0);
-    ret = ra_peer_ctx_qp_create(&ctx_handle, &qpAttr, &qp_info, &qp_handle);
+    mocker(RaCtxPrepareQpCreate, 1, 0);
+    ret = RaPeerCtxQpCreate(&ctxHandle, &qpAttr, &qpInfo, &qpHandle);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    mocker(ra_ctx_prepare_qp_create, 1, 0);
-    mocker(rs_ctx_qp_create, 1, -1);
-    ret = ra_peer_ctx_qp_create(&ctx_handle, &qpAttr, &qp_info, &qp_handle);
+    mocker(RaCtxPrepareQpCreate, 1, 0);
+    mocker(RsCtxQpCreate, 1, -1);
+    ret = RaPeerCtxQpCreate(&ctxHandle, &qpAttr, &qpInfo, &qpHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_ctx_prepare_qp_create()
+void TcRaCtxPrepareQpCreate()
 {
-    struct ra_token_id_handle token_id_handle = {0};
-    struct ctx_qp_attr ctx_qp_attr = {0};
-    struct qp_create_attr qpAttr = {0};
-    struct ra_cq_handle cq_handle = {0};
+    struct RaTokenIdHandle tokenIdHandle = {0};
+    struct CtxQpAttr ctxQpAttr = {0};
+    struct QpCreateAttr qpAttr = {0};
+    struct RaCqHandle cqHandle = {0};
     int ret = 0;
 
-    ret = ra_ctx_prepare_qp_create(&qpAttr, &ctx_qp_attr);
+    ret = RaCtxPrepareQpCreate(&qpAttr, &ctxQpAttr);
     EXPECT_INT_EQ(ret, -22);
 
-    qpAttr.scq_handle = (void *)&cq_handle;
-    ret = ra_ctx_prepare_qp_create(&qpAttr, &ctx_qp_attr);
+    qpAttr.scqHandle = (void *)&cqHandle;
+    ret = RaCtxPrepareQpCreate(&qpAttr, &ctxQpAttr);
     EXPECT_INT_EQ(ret, -22);
 
-    qpAttr.rcq_handle = (void *)&cq_handle;
+    qpAttr.rcqHandle = (void *)&cqHandle;
 
     qpAttr.ub.mode = JETTY_MODE_URMA_NORMAL;
-    qpAttr.ub.token_id_handle = (void *)&token_id_handle;
-    ret = ra_ctx_prepare_qp_create(&qpAttr, &ctx_qp_attr);
+    qpAttr.ub.tokenIdHandle = (void *)&tokenIdHandle;
+    ret = RaCtxPrepareQpCreate(&qpAttr, &ctxQpAttr);
     EXPECT_INT_EQ(ret, 0);
 }
 
-void tc_ra_peer_ctx_qp_destroy()
+void TcRaPeerCtxQpDestroy()
 {
-    struct ra_ctx_qp_handle qp_handle = {0};
+    struct RaCtxQpHandle qpHandle = {0};
     int ret = 0;
 
-    ret = ra_peer_ctx_qp_destroy(&qp_handle);
+    ret = RaPeerCtxQpDestroy(&qpHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_qp_destroy, 1, -1);
-    ret = ra_peer_ctx_qp_destroy(&qp_handle);
+    mocker(RsCtxQpDestroy, 1, -1);
+    ret = RaPeerCtxQpDestroy(&qpHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_ctx_qp_import()
+void TcRaPeerCtxQpImport()
 {
-    struct ra_ctx_rem_qp_handle rem_qp_handle = {0};
-    struct ra_ctx_handle ctx_handle = {0};
-    struct qp_import_info_t qp_info = {0};
+    struct RaCtxRemQpHandle remQpHandle = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct QpImportInfoT qpInfo = {0};
     int ret = 0;
 
-    ret = ra_peer_ctx_qp_import(&ctx_handle, &qp_info, &rem_qp_handle);
+    ret = RaPeerCtxQpImport(&ctxHandle, &qpInfo, &remQpHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_qp_import, 1, -1);
-    ret = ra_peer_ctx_qp_import(&ctx_handle, &qp_info, &rem_qp_handle);
+    mocker(RsCtxQpImport, 1, -1);
+    ret = RaPeerCtxQpImport(&ctxHandle, &qpInfo, &remQpHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_ctx_qp_unimport()
+void TcRaPeerCtxQpUnimport()
 {
-    struct ra_ctx_rem_qp_handle rem_qp_handle = {0};
+    struct RaCtxRemQpHandle remQpHandle = {0};
     int ret = 0;
 
-    ret = ra_peer_ctx_qp_unimport(&rem_qp_handle);
+    ret = RaPeerCtxQpUnimport(&remQpHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_qp_unimport, 1, -1);
-    ret = ra_peer_ctx_qp_unimport(&rem_qp_handle);
+    mocker(RsCtxQpUnimport, 1, -1);
+    ret = RaPeerCtxQpUnimport(&remQpHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_ctx_qp_bind()
+void TcRaPeerCtxQpBind()
 {
-    struct ra_ctx_rem_qp_handle rem_qp_handle = {0};
-    struct ra_ctx_qp_handle qp_handle = {0};
+    struct RaCtxRemQpHandle remQpHandle = {0};
+    struct RaCtxQpHandle qpHandle = {0};
     int ret = 0;
 
-    ret = ra_peer_ctx_qp_bind(&qp_handle, &rem_qp_handle);
+    ret = RaPeerCtxQpBind(&qpHandle, &remQpHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_qp_bind, 1, -1);
-    ret = ra_peer_ctx_qp_bind(&qp_handle, &rem_qp_handle);
+    mocker(RsCtxQpBind, 1, -1);
+    ret = RaPeerCtxQpBind(&qpHandle, &remQpHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_peer_ctx_qp_unbind()
+void TcRaPeerCtxQpUnbind()
 {
-    struct ra_ctx_qp_handle qp_handle = {0};
+    struct RaCtxQpHandle qpHandle = {0};
     int ret = 0;
 
-    ret = ra_peer_ctx_qp_unbind(&qp_handle);
+    ret = RaPeerCtxQpUnbind(&qpHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_qp_unbind, 1, -1);
-    ret = ra_peer_ctx_qp_unbind(&qp_handle);
+    mocker(RsCtxQpUnbind, 1, -1);
+    ret = RaPeerCtxQpUnbind(&qpHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_ctx_qp_destroy_batch_async()
+void TcRaCtxQpDestroyBatchAsync()
 {
-    struct ra_ctx_qp_handle *qp_handle[1] = {0};
-    struct RaRequestHandle *req_handle = NULL;
-    struct ra_ctx_handle ctx_handle = {0};
+    struct RaCtxQpHandle *qpHandle[1] = {0};
+    struct RaRequestHandle *reqHandle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
     unsigned int num = 0;
     int ret;
 
     mocker_clean();
-    ret = ra_ctx_qp_destroy_batch_async(NULL, qp_handle, &num, &req_handle);
+    ret = RaCtxQpDestroyBatchAsync(NULL, qpHandle, &num, &reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_ctx_qp_destroy_batch_async(&ctx_handle, NULL, &num, &req_handle);
+    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, NULL, &num, &reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_ctx_qp_destroy_batch_async(&ctx_handle, qp_handle, NULL, &req_handle);
+    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, NULL, &reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_ctx_qp_destroy_batch_async(&ctx_handle, qp_handle, &num, NULL);
+    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, NULL);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_ctx_qp_destroy_batch_async(&ctx_handle, qp_handle, &num, &req_handle);
+    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, &reqHandle);
     EXPECT_INT_NE(0, ret);
 
     num = HCCP_MAX_QP_DESTROY_BATCH_NUM + 1;
-    ret = ra_ctx_qp_destroy_batch_async(&ctx_handle, qp_handle, &num, &req_handle);
+    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, &reqHandle);
     EXPECT_INT_NE(0, ret);
 
     num = 1;
-    qp_handle[0] = (struct ra_ctx_qp_handle *)calloc(1, sizeof(struct ra_ctx_qp_handle));
-    mocker(ra_hdc_ctx_qp_destroy_batch_async, 1, -1);
-    ret = ra_ctx_qp_destroy_batch_async(&ctx_handle, qp_handle, &num, &req_handle);
+    qpHandle[0] = (struct RaCtxQpHandle *)calloc(1, sizeof(struct RaCtxQpHandle));
+    mocker(RaHdcCtxQpDestroyBatchAsync, 1, -1);
+    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, &reqHandle);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
-    qp_handle[0] = (struct ra_ctx_qp_handle *)calloc(1, sizeof(struct ra_ctx_qp_handle));
-    mocker(ra_hdc_ctx_qp_destroy_batch_async, 1, 0);
-    ret = ra_ctx_qp_destroy_batch_async(&ctx_handle, qp_handle, &num, &req_handle);
+    qpHandle[0] = (struct RaCtxQpHandle *)calloc(1, sizeof(struct RaCtxQpHandle));
+    mocker(RaHdcCtxQpDestroyBatchAsync, 1, 0);
+    ret = RaCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, &reqHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
 
-void tc_qp_destroy_batch_param_check()
+void TcQpDestroyBatchParamCheck()
 {
-    struct ra_ctx_qp_handle qp_handle_tmp;
-    struct ra_ctx_handle ctx_handle = {0};
+    struct RaCtxQpHandle qpHandleTmp;
+    struct RaCtxHandle ctxHandle = {0};
     unsigned int num = 1;
     unsigned int ids[1];
-    void *qp_handle[1];
+    void *qpHandle[1];
     int ret;
 
     mocker_clean();
-    qp_handle_tmp.ctx_handle = &ctx_handle;
-    qp_handle_tmp.id = 123;
-    qp_handle[0] = &qp_handle_tmp;
-    ret = qp_destroy_batch_param_check(&ctx_handle, qp_handle, ids, &num);
+    qpHandleTmp.ctxHandle = &ctxHandle;
+    qpHandleTmp.id = 123;
+    qpHandle[0] = &qpHandleTmp;
+    ret = QpDestroyBatchParamCheck(&ctxHandle, qpHandle, ids, &num);
     EXPECT_INT_EQ(0, ret);
 
-    qp_handle[0] = NULL;
-    ret = qp_destroy_batch_param_check(&ctx_handle, qp_handle, ids, &num);
+    qpHandle[0] = NULL;
+    ret = QpDestroyBatchParamCheck(&ctxHandle, qpHandle, ids, &num);
     EXPECT_INT_EQ(-EINVAL, ret);
 
-    qp_handle_tmp.ctx_handle = NULL;
-    qp_handle[0] = &qp_handle_tmp;
-    ret = qp_destroy_batch_param_check(&ctx_handle, qp_handle, ids, &num);
+    qpHandleTmp.ctxHandle = NULL;
+    qpHandle[0] = &qpHandleTmp;
+    ret = QpDestroyBatchParamCheck(&ctxHandle, qpHandle, ids, &num);
     EXPECT_INT_EQ(-EINVAL, ret);
 
-    qp_handle_tmp.ctx_handle = (struct ra_ctx_handle *)0x1234;
-    ret = qp_destroy_batch_param_check(&ctx_handle, qp_handle, ids, &num);
+    qpHandleTmp.ctxHandle = (struct RaCtxHandle *)0x1234;
+    ret = QpDestroyBatchParamCheck(&ctxHandle, qpHandle, ids, &num);
     EXPECT_INT_EQ(-EINVAL, ret);
 }
 
-void tc_ra_hdc_ctx_qp_destroy_batch_async()
+void TcRaHdcCtxQpDestroyBatchAsync()
 {
-    union op_ctx_qp_destroy_batch_data recv_buf = {0};
-    struct RaRequestHandle *req_handle = NULL;
-    struct ra_ctx_qp_handle qp_handle_tmp;
-    struct ra_ctx_handle ctx_handle = {0};
+    union OpCtxQpDestroyBatchData recvBuf = {0};
+    struct RaRequestHandle *reqHandle = NULL;
+    struct RaCtxQpHandle qpHandleTmp;
+    struct RaCtxHandle ctxHandle = {0};
     unsigned int num = 1;
-    void *qp_handle[1];
+    void *qpHandle[1];
     int ret;
 
     mocker_clean();
-    qp_handle_tmp.ctx_handle = &ctx_handle;
-    qp_handle[0] = &qp_handle_tmp;
+    qpHandleTmp.ctxHandle = &ctxHandle;
+    qpHandle[0] = &qpHandleTmp;
 
-    mocker(qp_destroy_batch_param_check, 1, -EINVAL);
-    ret = ra_hdc_ctx_qp_destroy_batch_async(&ctx_handle, qp_handle, &num, &req_handle);
+    mocker(QpDestroyBatchParamCheck, 1, -EINVAL);
+    ret = RaHdcCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, &reqHandle);
     EXPECT_INT_EQ(-EINVAL, ret);
     mocker_clean();
 
     mocker(calloc, 1, NULL);
-    ret = ra_hdc_ctx_qp_destroy_batch_async(&ctx_handle, qp_handle, &num, &req_handle);
+    ret = RaHdcCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, &reqHandle);
     EXPECT_INT_EQ(-ENOMEM, ret);
     mocker_clean();
 
-    mocker(qp_destroy_batch_param_check, 1, 0);
+    mocker(QpDestroyBatchParamCheck, 1, 0);
     mocker(RaHdcSendMsgAsync, 1, -EINVAL);
-    ret = ra_hdc_ctx_qp_destroy_batch_async(&ctx_handle, qp_handle, &num, &req_handle);
+    ret = RaHdcCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, &reqHandle);
     EXPECT_INT_EQ(-EINVAL, ret);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    ret = ra_hdc_ctx_qp_destroy_batch_async(&ctx_handle, qp_handle, &num, &req_handle);
+    ret = RaHdcCtxQpDestroyBatchAsync(&ctxHandle, qpHandle, &num, &reqHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
-    req_handle->recvBuf = &recv_buf;
-    ra_hdc_async_handle_qp_destroy_batch(req_handle);
-    free(req_handle);
-    req_handle = NULL;
+    reqHandle->recvBuf = &recvBuf;
+    RaHdcAsyncHandleQpDestroyBatch(reqHandle);
+    free(reqHandle);
+    reqHandle = NULL;
 }
 
-void tc_ra_rs_ctx_qp_destroy_batch()
+void TcRaRsCtxQpDestroyBatch()
 {
-    union op_ctx_qp_destroy_batch_data data_in;
-    union op_ctx_qp_destroy_batch_data data_out;
-    int rcv_buf_len = 0;
-    int op_result;
-    int out_len;
+    union OpCtxQpDestroyBatchData dataIn;
+    union OpCtxQpDestroyBatchData dataOut;
+    int rcvBufLen = 0;
+    int opResult;
+    int outLen;
     int ret;
 
-    char* in_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_ctx_qp_destroy_batch_data));
-    char* out_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_ctx_qp_destroy_batch_data));
+    char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpCtxQpDestroyBatchData));
+    char* outBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpCtxQpDestroyBatchData));
 
     mocker_clean();
-    data_in.tx_data.phy_id = 0;
-    data_in.tx_data.dev_index = 0;
-    memcpy_s(in_buf + sizeof(struct MsgHead), sizeof(union op_ctx_qp_destroy_batch_data),
-        &data_in, sizeof(union op_ctx_qp_destroy_batch_data));
-    ret = ra_rs_ctx_qp_destroy_batch(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    dataIn.txData.phyId = 0;
+    dataIn.txData.devIndex = 0;
+    memcpy_s(inBuf + sizeof(struct MsgHead), sizeof(union OpCtxQpDestroyBatchData),
+        &dataIn, sizeof(union OpCtxQpDestroyBatchData));
+    ret = RaRsCtxQpDestroyBatch(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    mocker(rs_ctx_qp_destroy_batch, 1, -1);
-    ret = ra_rs_ctx_qp_destroy_batch(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    mocker(RsCtxQpDestroyBatch, 1, -1);
+    ret = RaRsCtxQpDestroyBatch(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    free(in_buf);
-    in_buf = NULL;
-    free(out_buf);
-    out_buf = NULL;
+    free(inBuf);
+    inBuf = NULL;
+    free(outBuf);
+    outBuf = NULL;
 }
 
-void tc_ra_ctx_qp_query_batch()
+void TcRaCtxQpQueryBatch()
 {
-    struct ra_ctx_qp_handle qp_handle_tmp = {0};
-    struct ra_ctx_qp_handle *qp_handle[2];
-    struct ra_ctx_handle ctx_handle = {0};
-    struct jetty_attr attr[2];
+    struct RaCtxQpHandle qpHandleTmp = {0};
+    struct RaCtxQpHandle *qpHandle[2];
+    struct RaCtxHandle ctxHandle = {0};
+    struct JettyAttr attr[2];
     unsigned int num;
     int ret;
 
     mocker_clean();
-    ret = ra_ctx_qp_query_batch(NULL, attr, &num);
+    ret = RaCtxQpQueryBatch(NULL, attr, &num);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_ctx_qp_query_batch(qp_handle, NULL, &num);
+    ret = RaCtxQpQueryBatch(qpHandle, NULL, &num);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_ctx_qp_query_batch(qp_handle, attr, NULL);
+    ret = RaCtxQpQueryBatch(qpHandle, attr, NULL);
     EXPECT_INT_NE(0, ret);
 
-    mocker(qp_query_batch_param_check, 1, -1);
-    ret = ra_ctx_qp_query_batch(qp_handle, attr, &num);
+    mocker(QpQueryBatchParamCheck, 1, -1);
+    ret = RaCtxQpQueryBatch(qpHandle, attr, &num);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
-    qp_handle_tmp.ctx_handle = &ctx_handle;
-    qp_handle[0] = &qp_handle_tmp;
-    qp_handle[1] = &qp_handle_tmp;
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
+    qpHandleTmp.ctxHandle = &ctxHandle;
+    qpHandle[0] = &qpHandleTmp;
+    qpHandle[1] = &qpHandleTmp;
     num = 2;
-    mocker(qp_query_batch_param_check, 1, 0);
-    mocker(ra_hdc_ctx_qp_query_batch, 1, -1);
-    ret = ra_ctx_qp_query_batch(qp_handle, attr, &num);
+    mocker(QpQueryBatchParamCheck, 1, 0);
+    mocker(RaHdcCtxQpQueryBatch, 1, -1);
+    ret = RaCtxQpQueryBatch(qpHandle, attr, &num);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
-    mocker(qp_query_batch_param_check, 1, 0);
-    mocker(ra_hdc_ctx_qp_query_batch, 1, 0);
-    ret = ra_ctx_qp_query_batch(qp_handle, attr, &num);
+    mocker(QpQueryBatchParamCheck, 1, 0);
+    mocker(RaHdcCtxQpQueryBatch, 1, 0);
+    ret = RaCtxQpQueryBatch(qpHandle, attr, &num);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
 
-void tc_qp_query_batch_param_check()
+void TcQpQueryBatchParamCheck()
 {
-    struct ra_ctx_qp_handle qp_handle1 = {0};
-    struct ra_ctx_qp_handle qp_handle2 = {0};
-    struct ra_ctx_handle ctx_handle = {0};
-    struct ra_ctx_ops ctx_ops_tmp = {0};
+    struct RaCtxQpHandle qpHandle1 = {0};
+    struct RaCtxQpHandle qpHandle2 = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct RaCtxOps ctxOpsTmp = {0};
     unsigned int phyId = 1;
     unsigned int num = 2;
-    void *qp_handles[2];
+    void *qpHandles[2];
     unsigned int ids[2];
     int ret;
 
-    qp_handle1.id = 1;
-    qp_handle2.id = 2;
-    qp_handle1.phy_id = 1;
-    qp_handle2.phy_id = 1;
-    qp_handles[0] = &qp_handle1;
-    qp_handles[1] = &qp_handle2;
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
-    qp_handle1.ctx_handle = &ctx_handle;
-    qp_handle2.ctx_handle = &ctx_handle;
+    qpHandle1.id = 1;
+    qpHandle2.id = 2;
+    qpHandle1.phyId = 1;
+    qpHandle2.phyId = 1;
+    qpHandles[0] = &qpHandle1;
+    qpHandles[1] = &qpHandle2;
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
+    qpHandle1.ctxHandle = &ctxHandle;
+    qpHandle2.ctxHandle = &ctxHandle;
 
-    ret = qp_query_batch_param_check(qp_handles, &num, phyId, ids);
+    ret = QpQueryBatchParamCheck(qpHandles, &num, phyId, ids);
     EXPECT_INT_EQ(0, ret);
 
-    qp_handles[0] = NULL;
-    ret = qp_query_batch_param_check(qp_handles, &num, phyId, ids);
+    qpHandles[0] = NULL;
+    ret = QpQueryBatchParamCheck(qpHandles, &num, phyId, ids);
     EXPECT_INT_NE(0, ret);
 
-    qp_handles[0] = &qp_handle1;
-    qp_handle1.phy_id = 2;
-    ret = qp_query_batch_param_check(qp_handles, &num, phyId, ids);
+    qpHandles[0] = &qpHandle1;
+    qpHandle1.phyId = 2;
+    ret = QpQueryBatchParamCheck(qpHandles, &num, phyId, ids);
     EXPECT_INT_NE(0, ret);
 
-    qp_handle1.phy_id = 1;
-    qp_handle1.ctx_handle = NULL;
-    ret = qp_query_batch_param_check(qp_handles, &num, phyId, ids);
+    qpHandle1.phyId = 1;
+    qpHandle1.ctxHandle = NULL;
+    ret = QpQueryBatchParamCheck(qpHandles, &num, phyId, ids);
     EXPECT_INT_NE(0, ret);
 
-    ctx_handle.ctx_ops = NULL;
-    qp_handle1.ctx_handle = &ctx_handle;
-    ret = qp_query_batch_param_check(qp_handles, &num, phyId, ids);
+    ctxHandle.ctxOps = NULL;
+    qpHandle1.ctxHandle = &ctxHandle;
+    ret = QpQueryBatchParamCheck(qpHandles, &num, phyId, ids);
     EXPECT_INT_NE(0, ret);
 
-    ctx_handle.ctx_ops = &ctx_ops_tmp;
-    ret = qp_query_batch_param_check(qp_handles, &num, phyId, ids);
+    ctxHandle.ctxOps = &ctxOpsTmp;
+    ret = QpQueryBatchParamCheck(qpHandles, &num, phyId, ids);
     EXPECT_INT_NE(0, ret);
 }
 
-void tc_ra_hdc_ctx_qp_query_batch()
+void TcRaHdcCtxQpQueryBatch()
 {
     unsigned int ids[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    struct jetty_attr attr[10] = {0};
-    unsigned int dev_index = 2;
+    struct JettyAttr attr[10] = {0};
+    unsigned int devIndex = 2;
     unsigned int phyId = 1;
     unsigned int num = 10;
     int ret;
@@ -1418,522 +1418,522 @@ void tc_ra_hdc_ctx_qp_query_batch()
     mocker_clean();
     mocker(RaHdcProcessMsg, 1, 0);
     mocker(memcpy_s, 2, 0);
-    ret = ra_hdc_ctx_qp_query_batch(phyId, dev_index, ids, attr, &num);
+    ret = RaHdcCtxQpQueryBatch(phyId, devIndex, ids, attr, &num);
     EXPECT_INT_EQ(-EOPENSRC, ret);
     mocker_clean();
 
     mocker(RaHdcProcessMsg, 1, -1);
-    ret = ra_hdc_ctx_qp_query_batch(phyId, dev_index, ids, attr, &num);
+    ret = RaHdcCtxQpQueryBatch(phyId, devIndex, ids, attr, &num);
     EXPECT_INT_EQ(-EOPENSRC, ret);
     mocker_clean();
 
-    mocker_invoke(RaHdcProcessMsg, ra_hdc_process_msg_stub, 1);
-    ret = ra_hdc_ctx_qp_query_batch(phyId, dev_index, ids, attr, &num);
+    mocker_invoke(RaHdcProcessMsg, RaHdcProcessMsgStub, 1);
+    ret = RaHdcCtxQpQueryBatch(phyId, devIndex, ids, attr, &num);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
 
-void tc_ra_rs_ctx_qp_query_batch()
+void TcRaRsCtxQpQueryBatch()
 {
-    union op_ctx_qp_query_batch_data data_in;
-    union op_ctx_qp_query_batch_data data_out;
-    int rcv_buf_len = 0;
-    int op_result;
-    int out_len;
+    union OpCtxQpQueryBatchData dataIn;
+    union OpCtxQpQueryBatchData dataOut;
+    int rcvBufLen = 0;
+    int opResult;
+    int outLen;
     int ret;
 
-    char* in_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_ctx_qp_query_batch_data));
-    char* out_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_ctx_qp_query_batch_data));
+    char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpCtxQpQueryBatchData));
+    char* outBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpCtxQpQueryBatchData));
 
     mocker_clean();
-    data_in.tx_data.phy_id = 0;
-    data_in.tx_data.dev_index = 0;
-    memcpy_s(in_buf + sizeof(struct MsgHead), sizeof(union op_ctx_qp_query_batch_data),
-        &data_in, sizeof(union op_ctx_qp_query_batch_data));
-    ret = ra_rs_ctx_qp_query_batch(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    dataIn.txData.phyId = 0;
+    dataIn.txData.devIndex = 0;
+    memcpy_s(inBuf + sizeof(struct MsgHead), sizeof(union OpCtxQpQueryBatchData),
+        &dataIn, sizeof(union OpCtxQpQueryBatchData));
+    ret = RaRsCtxQpQueryBatch(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_ctx_qp_query_batch, 1, -1);
-    ret = ra_rs_ctx_qp_query_batch(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    mocker(RsCtxQpQueryBatch, 1, -1);
+    ret = RaRsCtxQpQueryBatch(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    free(in_buf);
-    in_buf = NULL;
-    free(out_buf);
-    out_buf = NULL;
+    free(inBuf);
+    inBuf = NULL;
+    free(outBuf);
+    outBuf = NULL;
 }
 
-void tc_ra_get_eid_by_ip()
+void TcRaGetEidByIp()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    union hccp_eid eid[32] = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    union HccpEid eid[32] = {0};
     struct IpInfo ip[32] = {0};
     unsigned int num = 32;
     int ret = 0;
 
-    ret = ra_get_eid_by_ip(NULL, eid, ip, &num);
+    ret = RaGetEidByIp(NULL, eid, ip, &num);
     EXPECT_INT_EQ(ret, 128103);
 
     num = 33;
-    ret = ra_get_eid_by_ip(&ctx_handle, eid, ip, &num);
+    ret = RaGetEidByIp(&ctxHandle, eid, ip, &num);
     EXPECT_INT_EQ(ret, 128103);
 
     num = 32;
-    ret = ra_get_eid_by_ip(&ctx_handle, eid, ip, &num);
+    ret = RaGetEidByIp(&ctxHandle, eid, ip, &num);
     EXPECT_INT_EQ(ret, 128103);
 
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
-    mocker(ra_hdc_get_eid_by_ip, 1, 0);
-    ret = ra_get_eid_by_ip(&ctx_handle, eid, ip, &num);
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
+    mocker(RaHdcGetEidByIp, 1, 0);
+    ret = RaGetEidByIp(&ctxHandle, eid, ip, &num);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    mocker(ra_hdc_get_eid_by_ip, 1, -1);
-    ret = ra_get_eid_by_ip(&ctx_handle, eid, ip, &num);
+    mocker(RaHdcGetEidByIp, 1, -1);
+    ret = RaGetEidByIp(&ctxHandle, eid, ip, &num);
     EXPECT_INT_EQ(ret, 128100);
     mocker_clean();
 }
 
-void tc_ra_hdc_get_eid_by_ip()
+void TcRaHdcGetEidByIp()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    union hccp_eid eid[32] = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    union HccpEid eid[32] = {0};
     struct IpInfo ip[32] = {0};
     unsigned int num = 32;
     int ret = 0;
 
     mocker(RaHdcProcessMsg, 1, -1);
-    mocker(ra_hdc_get_eid_results, 1, 0);
-    ret = ra_hdc_get_eid_by_ip(&ctx_handle, ip, eid, &num);
+    mocker(RaHdcGetEidResults, 1, 0);
+    ret = RaHdcGetEidByIp(&ctxHandle, ip, eid, &num);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 
     mocker(RaHdcProcessMsg, 1, 0);
-    mocker(ra_hdc_get_eid_results, 1, 0);
-    ret = ra_hdc_get_eid_by_ip(&ctx_handle, ip, eid, &num);
+    mocker(RaHdcGetEidResults, 1, 0);
+    ret = RaHdcGetEidByIp(&ctxHandle, ip, eid, &num);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 }
 
-void tc_ra_rs_get_eid_by_ip()
+void TcRaRsGetEidByIp()
 {
-    union op_get_eid_by_ip_data data_out = {0};
-    union op_get_eid_by_ip_data data_in = {0};
+    union OpGetEidByIpData dataOut = {0};
+    union OpGetEidByIpData dataIn = {0};
 
-    int rcv_buf_len = 0;
-    int op_result;
-    int out_len;
+    int rcvBufLen = 0;
+    int opResult;
+    int outLen;
     int ret;
 
-    char* in_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_get_eid_by_ip_data));
-    char* out_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_get_eid_by_ip_data));
+    char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpGetEidByIpData));
+    char* outBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpGetEidByIpData));
 
-    data_in.tx_data.phy_id = 0;
-    data_in.tx_data.dev_index = 0;
-    memcpy_s(in_buf + sizeof(struct MsgHead), sizeof(union op_get_eid_by_ip_data),
-        &data_in, sizeof(union op_get_eid_by_ip_data));
-    data_in.tx_data.num = 32;
-    mocker(rs_get_eid_by_ip, 1, 0);
-    ret = ra_rs_get_eid_by_ip(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
-    EXPECT_INT_EQ(op_result, 0);
+    dataIn.txData.phyId = 0;
+    dataIn.txData.devIndex = 0;
+    memcpy_s(inBuf + sizeof(struct MsgHead), sizeof(union OpGetEidByIpData),
+        &dataIn, sizeof(union OpGetEidByIpData));
+    dataIn.txData.num = 32;
+    mocker(RsGetEidByIp, 1, 0);
+    ret = RaRsGetEidByIp(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
+    EXPECT_INT_EQ(opResult, 0);
     mocker_clean();
 
-    mocker(rs_get_eid_by_ip, 1, -1);
-    ret = ra_rs_get_eid_by_ip(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
-    EXPECT_INT_EQ(op_result, -1);
+    mocker(RsGetEidByIp, 1, -1);
+    ret = RaRsGetEidByIp(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
+    EXPECT_INT_EQ(opResult, -1);
     mocker_clean();
 
-    free(in_buf);
-    in_buf = NULL;
-    free(out_buf);
-    out_buf = NULL;
+    free(inBuf);
+    inBuf = NULL;
+    free(outBuf);
+    outBuf = NULL;
 }
 
-void tc_ra_peer_get_eid_by_ip()
+void TcRaPeerGetEidByIp()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    union hccp_eid eid[32] = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    union HccpEid eid[32] = {0};
     struct IpInfo ip[32] = {0};
     unsigned int num = 32;
     int ret = 0;
 
-    ret = ra_peer_get_eid_by_ip(&ctx_handle, ip, eid, &num);
+    ret = RaPeerGetEidByIp(&ctxHandle, ip, eid, &num);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_get_eid_by_ip, 1, -1);
-    ret = ra_peer_get_eid_by_ip(&ctx_handle, ip, eid, &num);
+    mocker(RsGetEidByIp, 1, -1);
+    ret = RaPeerGetEidByIp(&ctxHandle, ip, eid, &num);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_ctx_get_aux_info()
+void TcRaCtxGetAuxInfo()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    struct aux_info_out out;
-    struct aux_info_in in;
+    struct RaCtxHandle ctxHandle = {0};
+    struct HccpAuxInfoOut out;
+    struct HccpAuxInfoIn in;
     int ret = 0;
 
-    ret = ra_ctx_get_aux_info(NULL, &in, &out);
+    ret = RaCtxGetAuxInfo(NULL, &in, &out);
     EXPECT_INT_EQ(ret, 128103);
 
     in.type = AUX_INFO_IN_TYPE_MAX;
-    ret = ra_ctx_get_aux_info(&ctx_handle, &in, &out);
+    ret = RaCtxGetAuxInfo(&ctxHandle, &in, &out);
     EXPECT_INT_EQ(ret, 128103);
 
     in.type = AUX_INFO_IN_TYPE_MAX - 1;
-    ret = ra_ctx_get_aux_info(&ctx_handle, &in, &out);
+    ret = RaCtxGetAuxInfo(&ctxHandle, &in, &out);
     EXPECT_INT_EQ(ret, 128103);
 
     mocker_clean();
-    mocker(ra_hdc_ctx_get_aux_info, 1, -1);
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
-    ret = ra_ctx_get_aux_info(&ctx_handle, &in, &out);
+    mocker(RaHdcCtxGetAuxInfo, 1, -1);
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
+    ret = RaCtxGetAuxInfo(&ctxHandle, &in, &out);
     EXPECT_INT_EQ(ret, 128100);
     mocker_clean();
 
-    mocker(ra_hdc_ctx_get_aux_info, 1, 0);
-    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
-    ret = ra_ctx_get_aux_info(&ctx_handle, &in, &out);
+    mocker(RaHdcCtxGetAuxInfo, 1, 0);
+    ctxHandle.ctxOps = &gRaHdcCtxOps;
+    ret = RaCtxGetAuxInfo(&ctxHandle, &in, &out);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 }
 
-void tc_ra_hdc_ctx_get_aux_info()
+void TcRaHdcCtxGetAuxInfo()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    struct aux_info_out out;
-    struct aux_info_in in;
+    struct RaCtxHandle ctxHandle = {0};
+    struct HccpAuxInfoOut out;
+    struct HccpAuxInfoIn in;
     int ret = 0;
 
     mocker_clean();
     mocker(RaHdcProcessMsg, 1, -1);
-    ret = ra_hdc_ctx_get_aux_info(&ctx_handle, &in, &out);
+    ret = RaHdcCtxGetAuxInfo(&ctxHandle, &in, &out);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 
     mocker(RaHdcProcessMsg, 1, 0);
-    ret = ra_hdc_ctx_get_aux_info(&ctx_handle, &in, &out);
+    ret = RaHdcCtxGetAuxInfo(&ctxHandle, &in, &out);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 }
 
-void tc_ra_rs_ctx_get_aux_info()
+void TcRaRsCtxGetAuxInfo()
 {
-    union op_ctx_get_aux_info_data data_out = {0};
-    union op_ctx_get_aux_info_data data_in = {0};
+    union OpCtxGetAuxInfoData dataOut = {0};
+    union OpCtxGetAuxInfoData dataIn = {0};
 
-    int rcv_buf_len = 0;
-    int op_result;
-    int out_len;
+    int rcvBufLen = 0;
+    int opResult;
+    int outLen;
     int ret;
 
-    char* in_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_ctx_get_aux_info_data));
-    char* out_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_ctx_get_aux_info_data));
+    char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpCtxGetAuxInfoData));
+    char* outBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpCtxGetAuxInfoData));
 
-    data_in.tx_data.phy_id = 0;
-    data_in.tx_data.dev_index = 0;
-    memcpy_s(in_buf + sizeof(struct MsgHead), sizeof(union op_ctx_get_aux_info_data),
-        &data_in, sizeof(union op_ctx_get_aux_info_data));
-    mocker(rs_ctx_get_aux_info, 1, 0);
-    ret = ra_rs_ctx_get_aux_info(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
-    EXPECT_INT_EQ(op_result, 0);
+    dataIn.txData.phyId = 0;
+    dataIn.txData.devIndex = 0;
+    memcpy_s(inBuf + sizeof(struct MsgHead), sizeof(union OpCtxGetAuxInfoData),
+        &dataIn, sizeof(union OpCtxGetAuxInfoData));
+    mocker(RsCtxGetAuxInfo, 1, 0);
+    ret = RaRsCtxGetAuxInfo(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
+    EXPECT_INT_EQ(opResult, 0);
     mocker_clean();
 
-    mocker(rs_ctx_get_aux_info, 1, -1);
-    ret = ra_rs_ctx_get_aux_info(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
-    EXPECT_INT_EQ(op_result, -1);
+    mocker(RsCtxGetAuxInfo, 1, -1);
+    ret = RaRsCtxGetAuxInfo(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
+    EXPECT_INT_EQ(opResult, -1);
     mocker_clean();
 
-    free(in_buf);
-    in_buf = NULL;
-    free(out_buf);
-    out_buf = NULL;
+    free(inBuf);
+    inBuf = NULL;
+    free(outBuf);
+    outBuf = NULL;
 }
 
-void tc_ra_get_tp_attr_async()
+void TcRaGetTpAttrAsync()
 {
-    struct RaRequestHandle *req_handle = NULL;
-    struct ra_ctx_handle ctx_handle = {0};
-    struct tp_attr attr = {0};
-    uint32_t attr_bitmap = 1;
-    uint64_t tp_handle = 0;
+    struct RaRequestHandle *reqHandle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    struct TpAttr attr = {0};
+    uint32_t attrBitmap = 1;
+    uint64_t tpHandle = 0;
     int ret;
 
     mocker_clean();
-    ret = ra_get_tp_attr_async(NULL, tp_handle, &attr_bitmap, &attr, &req_handle);
+    ret = RaGetTpAttrAsync(NULL, tpHandle, &attrBitmap, &attr, &reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_get_tp_attr_async(&ctx_handle, tp_handle, NULL, &attr, &req_handle);
+    ret = RaGetTpAttrAsync(&ctxHandle, tpHandle, NULL, &attr, &reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_get_tp_attr_async(&ctx_handle, tp_handle, &attr_bitmap, NULL, &req_handle);
+    ret = RaGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, NULL, &reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_get_tp_attr_async(&ctx_handle, tp_handle, &attr_bitmap, &attr, NULL);
+    ret = RaGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, NULL);
     EXPECT_INT_NE(0, ret);
 
-    mocker(ra_hdc_get_tp_attr_async, 1, -1);
-    ret = ra_get_tp_attr_async(&ctx_handle, tp_handle, &attr_bitmap, &attr, &req_handle);
+    mocker(RaHdcGetTpAttrAsync, 1, -1);
+    ret = RaGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, &reqHandle);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
-    mocker(ra_hdc_get_tp_attr_async, 1, 0);
-    ret = ra_get_tp_attr_async(&ctx_handle, tp_handle, &attr_bitmap, &attr, &req_handle);
+    mocker(RaHdcGetTpAttrAsync, 1, 0);
+    ret = RaGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, &reqHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
 
-void tc_ra_hdc_get_tp_attr_async()
+void TcRaHdcGetTpAttrAsync()
 {
-    struct ra_response_get_tp_attr *async_rsp = NULL;
-    union op_get_tp_attr_data *async_data = NULL;
-    struct RaRequestHandle  *req_handle = NULL;
-    union op_get_tp_attr_data recv_buf = {0};
-    struct ra_ctx_handle ctx_handle = {0};
-    uint64_t tp_handle = 1234;
-    uint32_t attr_bitmap = 0;
-    struct tp_attr attr = {0};
+    struct RaResponseGetTpAttr *asyncRsp = NULL;
+    union OpGetTpAttrData *asyncData = NULL;
+    struct RaRequestHandle  *reqHandle = NULL;
+    union OpGetTpAttrData recvBuf = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    uint64_t tpHandle = 1234;
+    uint32_t attrBitmap = 0;
+    struct TpAttr attr = {0};
     int ret;
 
     mocker_clean();
     mocker(calloc, 2, NULL);
-    ret = ra_hdc_get_tp_attr_async(&ctx_handle, tp_handle, &attr_bitmap, &attr, &req_handle);
+    ret = RaHdcGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, &reqHandle);
     EXPECT_INT_EQ(-ENOMEM, ret);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, -1);
-    ret = ra_hdc_get_tp_attr_async(&ctx_handle, tp_handle, &attr_bitmap, &attr, &req_handle);
+    ret = RaHdcGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, &reqHandle);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    ret = ra_hdc_get_tp_attr_async(&ctx_handle, tp_handle, &attr_bitmap, &attr, &req_handle);
+    ret = RaHdcGetTpAttrAsync(&ctxHandle, tpHandle, &attrBitmap, &attr, &reqHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
-    req_handle->opRet = 0;
-    req_handle->recvBuf = &recv_buf;
+    reqHandle->opRet = 0;
+    reqHandle->recvBuf = &recvBuf;
     mocker(memcpy_s, 1, 0);
-    ra_hdc_async_handle_get_tp_attr(req_handle);
+    RaHdcAsyncHandleGetTpAttr(reqHandle);
     mocker_clean();
 
-    req_handle->opRet = -1;
-    async_rsp = (struct ra_response_get_tp_attr *)calloc(1, sizeof(struct ra_response_get_tp_attr));
-    async_rsp->attr = &attr;
-    async_rsp->attr_bitmap = &attr_bitmap;
-    req_handle->privData = (void *)async_rsp;
-    ra_hdc_async_handle_get_tp_attr((struct RaRequestHandle  *)req_handle);
-    free(req_handle);
-    req_handle = NULL;
+    reqHandle->opRet = -1;
+    asyncRsp = (struct RaResponseGetTpAttr *)calloc(1, sizeof(struct RaResponseGetTpAttr));
+    asyncRsp->attr = &attr;
+    asyncRsp->attrBitmap = &attrBitmap;
+    reqHandle->privData = (void *)asyncRsp;
+    RaHdcAsyncHandleGetTpAttr((struct RaRequestHandle  *)reqHandle);
+    free(reqHandle);
+    reqHandle = NULL;
 }
 
-void tc_ra_rs_get_tp_attr()
+void TcRaRsGetTpAttr()
 {
-    union op_get_tp_attr_data data_in;
-    union op_get_tp_attr_data data_out;
-    int rcv_buf_len = 0;
-    int op_result;
-    int out_len;
+    union OpGetTpAttrData dataIn;
+    union OpGetTpAttrData dataOut;
+    int rcvBufLen = 0;
+    int opResult;
+    int outLen;
     int ret;
 
-    char* in_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_get_tp_attr_data));
-    char* out_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_get_tp_attr_data));
+    char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpGetTpAttrData));
+    char* outBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpGetTpAttrData));
 
     mocker_clean();
-    data_in.tx_data.phy_id = 0;
-    data_in.tx_data.dev_index = 0;
-    memcpy_s(in_buf + sizeof(struct MsgHead), sizeof(union op_get_tp_attr_data),
-        &data_in, sizeof(union op_get_tp_attr_data));
-    ret = ra_rs_get_tp_attr(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    dataIn.txData.phyId = 0;
+    dataIn.txData.devIndex = 0;
+    memcpy_s(inBuf + sizeof(struct MsgHead), sizeof(union OpGetTpAttrData),
+        &dataIn, sizeof(union OpGetTpAttrData));
+    ret = RaRsGetTpAttr(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
 
-    mocker(rs_get_tp_attr, 1, -1);
-    ret = ra_rs_get_tp_attr(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    mocker(RsGetTpAttr, 1, -1);
+    ret = RaRsGetTpAttr(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    free(in_buf);
-    in_buf = NULL;
-    free(out_buf);
-    out_buf = NULL;
+    free(inBuf);
+    inBuf = NULL;
+    free(outBuf);
+    outBuf = NULL;
 }
 
-void tc_ra_set_tp_attr_async()
+void TcRaSetTpAttrAsync()
 {
-    struct RaRequestHandle  *req_handle = NULL;
-    struct ra_ctx_handle ctx_handle = {0};
-    struct tp_attr attr = {0};
-    uint32_t attr_bitmap = 1;
-    uint64_t tp_handle = 0;
+    struct RaRequestHandle  *reqHandle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    struct TpAttr attr = {0};
+    uint32_t attrBitmap = 1;
+    uint64_t tpHandle = 0;
     int ret;
 
     mocker_clean();
-    ret = ra_set_tp_attr_async(NULL, tp_handle, attr_bitmap, &attr, &req_handle);
+    ret = RaSetTpAttrAsync(NULL, tpHandle, attrBitmap, &attr, &reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_set_tp_attr_async(&ctx_handle, tp_handle, attr_bitmap, NULL, &req_handle);
+    ret = RaSetTpAttrAsync(&ctxHandle, tpHandle, attrBitmap, NULL, &reqHandle);
     EXPECT_INT_NE(0, ret);
 
-    ret = ra_set_tp_attr_async(&ctx_handle, tp_handle, attr_bitmap, &attr, NULL);
+    ret = RaSetTpAttrAsync(&ctxHandle, tpHandle, attrBitmap, &attr, NULL);
     EXPECT_INT_NE(0, ret);
 
-    mocker(ra_hdc_set_tp_attr_async, 1, -1);
-    ret = ra_set_tp_attr_async(&ctx_handle, tp_handle, attr_bitmap, &attr, &req_handle);
+    mocker(RaHdcSetTpAttrAsync, 1, -1);
+    ret = RaSetTpAttrAsync(&ctxHandle, tpHandle, attrBitmap, &attr, &reqHandle);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
-    mocker(ra_hdc_set_tp_attr_async, 1, 0);
-    ret = ra_set_tp_attr_async(&ctx_handle, tp_handle, attr_bitmap, &attr, &req_handle);
+    mocker(RaHdcSetTpAttrAsync, 1, 0);
+    ret = RaSetTpAttrAsync(&ctxHandle, tpHandle, attrBitmap, &attr, &reqHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
 
-void tc_ra_hdc_set_tp_attr_async()
+void TcRaHdcSetTpAttrAsync()
 {
-    struct RaRequestHandle  *req_handle = NULL;
-    struct ra_ctx_handle ctx = {0};
-    uint64_t tp_handle = 1234;
-    uint32_t attr_bitmap = 0;
-    struct tp_attr attr = {0};
+    struct RaRequestHandle  *reqHandle = NULL;
+    struct RaCtxHandle ctx = {0};
+    uint64_t tpHandle = 1234;
+    uint32_t attrBitmap = 0;
+    struct TpAttr attr = {0};
 
     mocker_clean();
     mocker(calloc, 2, NULL);
-    int ret = ra_hdc_set_tp_attr_async(&ctx, tp_handle, attr_bitmap, &attr, &req_handle);
+    int ret = RaHdcSetTpAttrAsync(&ctx, tpHandle, attrBitmap, &attr, &reqHandle);
     EXPECT_INT_EQ(-ENOMEM, ret);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, -1);
-    ret = ra_hdc_set_tp_attr_async(&ctx, tp_handle, attr_bitmap, &attr, &req_handle);
+    ret = RaHdcSetTpAttrAsync(&ctx, tpHandle, attrBitmap, &attr, &reqHandle);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    ret = ra_hdc_set_tp_attr_async(&ctx, tp_handle, attr_bitmap, &attr, &req_handle);
+    ret = RaHdcSetTpAttrAsync(&ctx, tpHandle, attrBitmap, &attr, &reqHandle);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
-    free(req_handle);
-    req_handle = NULL;
+    free(reqHandle);
+    reqHandle = NULL;
 }
 
-void tc_ra_rs_set_tp_attr()
+void TcRaRsSetTpAttr()
 {
-    union op_set_tp_attr_data data_in;
-    union op_set_tp_attr_data data_out;
-    int rcv_buf_len = 0;
-    int op_result;
-    int out_len;
+    union OpSetTpAttrData dataIn;
+    union OpSetTpAttrData dataOut;
+    int rcvBufLen = 0;
+    int opResult;
+    int outLen;
     int ret;
 
-    char* in_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_set_tp_attr_data));
-    char* out_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_set_tp_attr_data));
+    char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpSetTpAttrData));
+    char* outBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpSetTpAttrData));
 
     mocker_clean();
-    data_in.tx_data.phy_id = 0;
-    data_in.tx_data.dev_index = 0;
-    memcpy_s(in_buf + sizeof(struct MsgHead), sizeof(union op_set_tp_attr_data),
-        &data_in, sizeof(union op_set_tp_attr_data));
-    ret = ra_rs_set_tp_attr(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    dataIn.txData.phyId = 0;
+    dataIn.txData.devIndex = 0;
+    memcpy_s(inBuf + sizeof(struct MsgHead), sizeof(union OpSetTpAttrData),
+        &dataIn, sizeof(union OpSetTpAttrData));
+    ret = RaRsSetTpAttr(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    mocker(rs_set_tp_attr, 1, -1);
-    ret = ra_rs_set_tp_attr(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    mocker(RsSetTpAttr, 1, -1);
+    ret = RaRsSetTpAttr(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    free(in_buf);
-    in_buf = NULL;
-    free(out_buf);
-    out_buf = NULL;
+    free(inBuf);
+    inBuf = NULL;
+    free(outBuf);
+    outBuf = NULL;
 }
 
-void tc_ra_ctx_get_cr_err_info_list()
+void TcRaCtxGetCrErrInfoList()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    struct CrErrInfo info_list[1] = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct CrErrInfo infoList[1] = {0};
     unsigned int num = 0;
     int ret = 0;
 
     mocker_clean();
-    ret = ra_ctx_get_cr_err_info_list(NULL, NULL, NULL);
+    ret = RaCtxGetCrErrInfoList(NULL, NULL, NULL);
     EXPECT_INT_EQ(ret, 128103);
 
-    ret = ra_ctx_get_cr_err_info_list(&ctx_handle, NULL, NULL);
+    ret = RaCtxGetCrErrInfoList(&ctxHandle, NULL, NULL);
     EXPECT_INT_EQ(ret, 128103);
 
-    ret = ra_ctx_get_cr_err_info_list(&ctx_handle, info_list, NULL);
+    ret = RaCtxGetCrErrInfoList(&ctxHandle, infoList, NULL);
     EXPECT_INT_EQ(ret, 128103);
 
-    ret = ra_ctx_get_cr_err_info_list(&ctx_handle, info_list, &num);
+    ret = RaCtxGetCrErrInfoList(&ctxHandle, infoList, &num);
     EXPECT_INT_EQ(ret, 128103);
 
     num = CR_ERR_INFO_MAX_NUM + 1;
-    ret = ra_ctx_get_cr_err_info_list(&ctx_handle, info_list, &num);
+    ret = RaCtxGetCrErrInfoList(&ctxHandle, infoList, &num);
     EXPECT_INT_EQ(ret, 128103);
 
     num = 1;
-    mocker(ra_hdc_ctx_get_cr_err_info_list, 1, -1);
-    ret = ra_ctx_get_cr_err_info_list(&ctx_handle, info_list, &num);
+    mocker(RaHdcCtxGetCrErrInfoList, 1, -1);
+    ret = RaCtxGetCrErrInfoList(&ctxHandle, infoList, &num);
     EXPECT_INT_EQ(ret, 128100);
     mocker_clean();
 
-    mocker(ra_hdc_ctx_get_cr_err_info_list, 1, 0);
-    ret = ra_ctx_get_cr_err_info_list(&ctx_handle, info_list, &num);
+    mocker(RaHdcCtxGetCrErrInfoList, 1, 0);
+    ret = RaCtxGetCrErrInfoList(&ctxHandle, infoList, &num);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 }
 
-void tc_ra_hdc_ctx_get_cr_err_info_list()
+void TcRaHdcCtxGetCrErrInfoList()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    struct CrErrInfo info_list[1] = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct CrErrInfo infoList[1] = {0};
     unsigned int num = 1;
     int ret = 0;
 
     mocker_clean();
     mocker(RaHdcProcessMsg, 1, -1);
-    ret = ra_hdc_ctx_get_cr_err_info_list(&ctx_handle, info_list, &num);
+    ret = RaHdcCtxGetCrErrInfoList(&ctxHandle, infoList, &num);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 
     mocker(RaHdcProcessMsg, 1, 0);
-    ret = ra_hdc_ctx_get_cr_err_info_list(&ctx_handle, info_list, &num);
+    ret = RaHdcCtxGetCrErrInfoList(&ctxHandle, infoList, &num);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 }
 
-void tc_ra_rs_ctx_get_cr_err_info_list()
+void TcRaRsCtxGetCrErrInfoList()
 {
-    union op_ctx_get_cr_err_info_list_data data_out = {0};
-    union op_ctx_get_cr_err_info_list_data data_in = {0};
+    union OpCtxGetCrErrInfoListData dataOut = {0};
+    union OpCtxGetCrErrInfoListData dataIn = {0};
 
-    int rcv_buf_len = 0;
-    int op_result;
-    int out_len;
+    int rcvBufLen = 0;
+    int opResult;
+    int outLen;
     int ret;
 
-    char* in_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_ctx_get_cr_err_info_list_data));
-    char* out_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_ctx_get_cr_err_info_list_data));
+    char* inBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpCtxGetCrErrInfoListData));
+    char* outBuf = calloc(1, sizeof(struct MsgHead) + sizeof(union OpCtxGetCrErrInfoListData));
 
-    data_in.tx_data.phy_id = 0;
-    data_in.tx_data.dev_index = 0;
-    memcpy_s(in_buf + sizeof(struct MsgHead), sizeof(union op_ctx_get_cr_err_info_list_data),
-        &data_in, sizeof(union op_ctx_get_cr_err_info_list_data));
-    data_in.tx_data.num = CQE_ERR_INFO_MAX_NUM;
-    mocker(rs_ctx_get_cr_err_info_list, 1, 0);
-    ret = ra_rs_ctx_get_cr_err_info_list(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
-    EXPECT_INT_EQ(op_result, 0);
+    dataIn.txData.phyId = 0;
+    dataIn.txData.devIndex = 0;
+    memcpy_s(inBuf + sizeof(struct MsgHead), sizeof(union OpCtxGetCrErrInfoListData),
+        &dataIn, sizeof(union OpCtxGetCrErrInfoListData));
+    dataIn.txData.num = CQE_ERR_INFO_MAX_NUM;
+    mocker(RsCtxGetCrErrInfoList, 1, 0);
+    ret = RaRsCtxGetCrErrInfoList(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
+    EXPECT_INT_EQ(opResult, 0);
     mocker_clean();
 
-    mocker(rs_ctx_get_cr_err_info_list, 1, -1);
-    ret = ra_rs_ctx_get_cr_err_info_list(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
-    EXPECT_INT_EQ(op_result, -1);
+    mocker(RsCtxGetCrErrInfoList, 1, -1);
+    ret = RaRsCtxGetCrErrInfoList(inBuf, outBuf, &outLen, &opResult, rcvBufLen);
+    EXPECT_INT_EQ(opResult, -1);
     mocker_clean();
 
-    free(in_buf);
-    in_buf = NULL;
-    free(out_buf);
-    out_buf = NULL;
+    free(inBuf);
+    inBuf = NULL;
+    free(outBuf);
+    outBuf = NULL;
 }

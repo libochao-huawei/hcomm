@@ -28,8 +28,10 @@ public:
 
     HcclResult Wait(Stream& stream, HcclDispatcher dispatcher,
         s32 stage = INVALID_VALUE_STAGE, u32 timeOut = NOTIFY_INVALID_WAIT_TIME);
+    HcclResult Wait(Stream& stream, u32 timeOut);
     HcclResult Post(Stream& stream, HcclDispatcher dispatcher,
         s32 stage = INVALID_VALUE_STAGE);
+    HcclResult Post(Stream& stream);
     virtual HcclResult Destroy();
     virtual HcclResult SetIpc();
 
