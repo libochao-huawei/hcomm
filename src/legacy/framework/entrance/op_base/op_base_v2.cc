@@ -1507,8 +1507,8 @@ HcclResult HcclCommResumeImplV2(HcclComm comm)
     });
 }
 
-HcclResult RootInfoDetect(const u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHandle, u32 &deviceListenPort,
-    RankTableInfo &rankTable, bool update)
+HcclResult RootInfoDetect(std::shared_ptr<RankInfoDetect> rankInfoDetectAgent, const u32 nRanks, u32 rank, 
+    const HcclRootHandleV2 &rootHandle, RankTableInfo &rankTable)
 {
     s32 deviceLogicId = HcclGetThreadDeviceId();
     s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
@@ -1517,16 +1517,32 @@ HcclResult RootInfoDetect(const u32 nRanks, u32 rank, const HcclRootHandleV2 &ro
                   __func__, nRanks, rank, rootHandle.ip, rootHandle.listenPort,
                   rootHandle.netMode.Describe().c_str(), rootHandle.identifier, deviceLogicId, devPhyId);
     // client端拓扑探测
-    std::shared_ptr<RankInfoDetect> rankInfoDetectAgent = std::make_shared<RankInfoDetect>();
+    
     bool hasException = false;
-    EXECEPTION_CATCH(rankInfoDetectAgent->SetupAgent(nRanks, rank, rootHandle, deviceListenPort), hasException = true);
+    EXECEPTION_CATCH(rankInfoDetectAgent->SetupAgent(nRanks, rank, rootHandle), hasException = true);
 
     // 等server端执行结束
-    if (update) {
-        EXECEPTION_CATCH(rankInfoDetectAgent->WaitComplete(rootHandle.listenPort, RANKINFO_DETECT_SERVER_STATUS_UPDATE), hasException = true);  // 刷新deviceport用的
-    } else {
-        EXECEPTION_CATCH(rankInfoDetectAgent->WaitComplete(rootHandle.listenPort, RANKINFO_DETECT_SERVER_STATUS_IDLE), hasException = true);   // 初始化通信域用的
-    }
+    EXECEPTION_CATCH(rankInfoDetectAgent->WaitComplete(rootHandle.listenPort, RANKINFO_DETECT_SERVER_STATUS_IDLE), hasException = true);
+
+    // 若探测流程异常返回错误信息
+    CHK_PRT_RET(hasException, HCCL_ERROR("[%s] RankInfoDetect SetupAgent fail.", __func__), HCCL_E_INTERNAL);
+
+    // 获取ranktable
+    rankInfoDetectAgent->GetRankTable(rankTable);
+    SocketManager::SetDeviceServerListenPortMap(rankTable.GetRankDeviceListenPortMap());
+
+    HCCL_RUN_INFO("[%s] end.", __func__);
+    return HCCL_SUCCESS;
+}
+
+HcclResult RootInfoUpdate(std::shared_ptr<RankInfoDetect> rankInfoDetectAgent, const u32 devicePort, 
+    const HcclRootHandleV2 &rootHandle, RankTableInfo &rankTable)
+{
+    bool hasException = false;
+    EXECEPTION_CATCH(rankInfoDetectAgent->UpdateAgent(devicePort), hasException = true);
+
+    // 等server端执行结束
+    EXECEPTION_CATCH(rankInfoDetectAgent->WaitComplete(rootHandle.listenPort, RANKINFO_DETECT_SERVER_STATUS_UPDATE), hasException = true);
 
     // 若探测流程异常返回错误信息
     CHK_PRT_RET(hasException, HCCL_ERROR("[%s] RankInfoDetect SetupAgent fail.", __func__), HCCL_E_INTERNAL);
@@ -1551,9 +1567,9 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
                 HCCL_ERROR_CODE(HCCL_E_PARA), identifier.c_str()), HCCL_E_PARA);
                 
     // rootInfo获取rankTable, 基于rankTable创建通信域
-    u32 deviceListenPort = DEFAULT_VALUE_DEVICEPORT;
+    std::shared_ptr<RankInfoDetect> rankInfoDetectAgent = std::make_shared<RankInfoDetect>();
     RankTableInfo rankTable{};
-    HcclResult ret = RootInfoDetect(nRanks, rank, rootHandle, rankTable, deviceListenPort, false);
+    HcclResult ret = RootInfoDetect(rankInfoDetectAgent, nRanks, rank, rootHandle, rankTable);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", 
         __func__, HCCL_ERROR_CODE(ret));rankTable.Dump(), ret);
     
@@ -1576,7 +1592,7 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
     
     // 配置了抢占端口则提前建链并发生新的ranktable
     CHK_RET(opbasedCommInfoV2.pComm->InitDeviceListenPort(deviceListenPort));
-    CHK_RET(RootInfoDetect(nRanks, rank, rootHandle, rankTable, deviceListenPort, true));
+    CHK_RET(RootInfoDetect(nRanks, rank, rootHandle, rankTable));
     
     // 配置默认加速模式
     opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
@@ -1663,9 +1679,9 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
         HCCL_ERROR("[HcclCommInitRootInfoConfigV2]errNo[0x%016llx] The comm name[%s] already exists in Group2Comm map.",
                 HCCL_ERROR_CODE(HCCL_E_PARA), identifier.c_str()), HCCL_E_PARA);
 
-    u32 deviceListenPort = DEFAULT_VALUE_DEVICEPORT;
     RankTableInfo rankTable{};
-    HcclResult ret = RootInfoDetect(nRanks, rank, rootHandle, rankTable, deviceListenPort, false);
+    std::shared_ptr<RankInfoDetect> rankInfoDetectAgent = std::make_shared<RankInfoDetect>();
+    HcclResult ret = RootInfoDetect(rankInfoDetectAgent, nRanks, rank, rootHandle, rankTable);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s] errNo[0x%016llx] RankInfoDetect failed.", __func__, HCCL_ERROR_CODE(ret));rankTable.Dump(), ret);
     

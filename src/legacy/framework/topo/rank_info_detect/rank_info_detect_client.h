@@ -25,13 +25,14 @@ namespace Hccl {
 
 class RankInfoDetectClient {
 public:
-    RankInfoDetectClient(u32 devPhyId, u32 rankSize, u32 rankId, const std::shared_ptr<Socket> &clientSocket, u32 &deviceListenPort)
-        : devPhyId_(devPhyId), rankSize_(rankSize), rankId_(rankId), clientSocket_(clientSocket), socketAgent_(clientSocket.get()), deviceListenPort_(deviceListenPort)
+    RankInfoDetectClient(u32 devPhyId, u32 rankSize, u32 rankId, const std::shared_ptr<Socket> &clientSocket)
+        : devPhyId_(devPhyId), rankSize_(rankSize), rankId_(rankId), clientSocket_(clientSocket), socketAgent_(clientSocket.get())
     {
     }
     ~RankInfoDetectClient();
 
     void Setup(RankTableInfo &rankTable);
+    void Setup(u32 devicePort, RankTableInfo &rankTable);
 
 private:
     u32                             devPhyId_{0};
@@ -41,7 +42,6 @@ private:
     u32                             currentStep_{0};
     RankTableInfo                   rankTable_{};
     SocketAgent                     socketAgent_;
-    u32                             deviceListenPort_;
     
     void Connect();
     void CheckStatus();

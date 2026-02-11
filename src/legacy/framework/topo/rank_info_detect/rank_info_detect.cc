@@ -152,7 +152,7 @@ std::shared_ptr<Socket> RankInfoDetect::ClientInit(const HcclRootHandleV2 &rootH
     return clientSocket;
 }
 
-void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2 &rootHandle, u32 &deviceListenPort)
+void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2 &rootHandle)
 {
     HCCL_DEBUG("[RankInfoDetect::%s] setup agent start.", __func__);
 
@@ -168,13 +168,21 @@ void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2
     std::shared_ptr<Socket> clientSocket = ClientInit(rootHandle);
 
     // 1. 创建RankInfoDetectClient对象
-    std::unique_ptr<RankInfoDetectClient> rankInfoDetectClient =
-        std::make_unique<RankInfoDetectClient>(devPhyId_, rankSize, rankId, clientSocket, deviceListenPort);
+    rankInfoDetectClient = std::make_shared<RankInfoDetectClient>(devPhyId_, rankSize, rankId, clientSocket);
 
     // 2. 调用RankInfoDetectClient.Setup, 获取rankTable
     rankInfoDetectClient->Setup(rankTable_);
 
     HCCL_INFO("[RankInfoDetect::%s] setup agent end.", __func__);
+}
+
+void RankInfoDetect::UpdateAgent(u32 devicePort)
+{
+    CHK_PTR_NULL(rankInfoDetectClient);
+
+    // 1. 创建RankInfoDetectClient对象
+    rankInfoDetectClient->Update(devicePort, rankTable_);
+    HCCL_INFO("[RankInfoDetect::%s] update agent end.", __func__);
 }
 
 void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket, s32 devLogicId, u32 devPhyId,
@@ -210,8 +218,8 @@ void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket,
 
     HCCL_INFO("[RankInfoDetect::%s] end, status idle.", __func__);
 
-    // 第二次发生的ranktable带有端口信息
-    EXECEPTION_CATCH(rankInfoDetectService->Setup(), hasException = true);
+    // 第二次发送的ranktable带有端口信息
+    EXECEPTION_CATCH(rankInfoDetectService->Update(), hasException = true);
     HrtResetDevice(devLogicId);
 
     // 若有异常则设置error状态退出

@@ -40,6 +40,26 @@ void RankInfoDetectClient::Setup(RankTableInfo &rankTable)
     rankTable = rankTable_;
 }
 
+void RankInfoDetectClient::Update(u32 devicePort, RankTableInfo &rankTable)
+{
+    // 1. 构造localRankTable
+    RankTableInfo localRankTable{};
+    ConstructRankTable(localRankTable);
+    for(auto &rank : localRankTable.ranks) {
+        rank.devicePort = devicePort;
+    }
+
+    // 2. 连接root节点
+    Connect();
+
+    // 3. 发送给root节点
+    SendLocalRankTable(localRankTable);
+    
+    // 4. 接收完整rankTable
+    RecvRankTable();
+    rankTable = rankTable_;
+}
+
 void RankInfoDetectClient::Connect()
 {
     clientSocket_->Connect(); 
@@ -180,12 +200,6 @@ void RankInfoDetectClient::ConstructRankTable(RankTableInfo &localRankTable)
     // 4. 反序列化获得RankTableInfo
     std::string msgDeserialize = "error occurs when localRankTable Deserialize";
     TRY_CATCH_THROW(InvalidParamsException, msgDeserialize, localRankTable.Deserialize(localRankTableJson, false););
-
-    // SocketManager::ServerInitOne(localRankTable);
-    for(auto &rank : localRankTable.ranks) {
-        rank.devicePort = deviceListenPort_;
-    }
-
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
 }
 
