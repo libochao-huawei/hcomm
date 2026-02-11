@@ -801,7 +801,7 @@ string TaskExceptionHandler::GetCcuErrorMsgLoopGroup(const CcuErrorInfo &ccuErro
 string TaskExceptionHandler::GetCcuErrorMsgLocPostSem(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
     (void)taskInfo;
-    return StringFormat("InstrId[%u]: Set sem[%u], semValue[0x%04x], mask[0x%04x], %s", ccuErrorInfo.instrId,
+    return StringFormat("InstrId[%u]: Set sem[%u], semValue[0x%04x], mask[0x%04x]", ccuErrorInfo.instrId,
                         ccuErrorInfo.msg.waitSignal.signalId, ccuErrorInfo.msg.waitSignal.signalValue,
                         ccuErrorInfo.msg.waitSignal.signalMask);
 }
@@ -871,7 +871,7 @@ string TaskExceptionHandler::GetCcuErrorMsgPostSharedVar(const CcuErrorInfo &ccu
 string TaskExceptionHandler::GetCcuErrorMsgPostSharedSem(const CcuErrorInfo &ccuErrorInfo, const TaskInfo &taskInfo)
 {
     (void)taskInfo;
-    return StringFormat("InstrId[%u]: Post, Use sem[%u], mask[0x%04x], %s", ccuErrorInfo.instrId,
+    return StringFormat("InstrId[%u]: Post, Use sem[%u], mask[0x%04x]", ccuErrorInfo.instrId,
                         ccuErrorInfo.msg.waitSignal.signalId, ccuErrorInfo.msg.waitSignal.signalMask);
 }
 
