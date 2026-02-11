@@ -104,7 +104,7 @@ if(BUILD_OPEN_PROJECT) # 蓝区构建
     add_dependencies(hccl_utest_inter_misc hccl hccl_alg hccl_plf framework_stub)
 else() 
     target_link_libraries(hccl_utest_inter_misc  PRIVATE
-        $<BUILD_INTERFACE:intf_llt_pub>
+        $<BUILD_INTERFACE:intf_pub>
         $<BUILD_INTERFACE:hccl_headers>
         $<BUILD_INTERFACE:mmpa_headers>
         $<BUILD_INTERFACE:msprof_headers>

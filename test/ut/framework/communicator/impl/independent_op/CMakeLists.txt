@@ -41,8 +41,10 @@ target_link_directories(hccl_utest_framework_independent_op PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
 target_link_libraries(hccl_utest_framework_independent_op PRIVATE
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     hccl_llt
+    gtest
+    mockcpp
     -pthread
     -lrt
     -ldl
