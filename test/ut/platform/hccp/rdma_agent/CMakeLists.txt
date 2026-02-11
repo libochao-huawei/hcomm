@@ -114,7 +114,7 @@ target_compile_definitions(rdma_agent_utest PRIVATE
 )
 
 target_link_libraries(rdma_agent_utest PRIVATE
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     -lrt
     -lpthread
     -lgcov
