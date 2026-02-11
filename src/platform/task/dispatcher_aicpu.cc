@@ -745,6 +745,8 @@ HcclResult DispatcherAiCpu::LaunchTask(Stream &stream, bool isBlockLaunch)
                 PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchTask] %uth dispatched SQE", sqeIdx);
             }
             
+            HCCL_DEBUG("[DispatcherAicpu][LaunchTask] sqeContextBuffer->localBuff[0x%160llx] sqePtr[0x%160llx]",
+                sqeContextBuffer->localBuff, sqePtr);
             CHK_RET(OpUnfoldCache::DumpSqeContent(sqePtr, sqeType));
 
             const AicpuDfxInfo& dfxinfo = sqeDfxInfoArray[sqeIdx];

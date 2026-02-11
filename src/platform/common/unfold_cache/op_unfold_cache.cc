@@ -135,7 +135,13 @@ namespace hccl {
                 case SqeType::NOTIFY_SQE: {
                     const rtStarsNotifySqeV1_t *notifySqePtr = reinterpret_cast<const rtStarsNotifySqeV1_t *>(sqePtr);
                     PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] rtStarsNotifySqeV1_t sqeType[%u]", sqeType);
+                    HCCL_DEBUG("[OpUnfoldCache][DumpSqeContent] sqePtr[0x%160llx]", sqePtr);
+                    HCCL_DEBUG("[OpUnfoldCache][DumpSqeContent] notifySqePtr[0x%160llx]", notifySqePtr);
+                    HCCL_DEBUG("[OpUnfoldCache][DumpSqeContent] header[0x%160llx]", notifySqePtr->header);
                     CHK_RET(DumpSqeHeader(notifySqePtr->header));
+                    HCCL_DEBUG("[OpUnfoldCache][DumpSqeContent] after sqePtr[0x%160llx]", sqePtr);
+                    HCCL_DEBUG("[OpUnfoldCache][DumpSqeContent] after notifySqePtr[0x%160llx]", notifySqePtr);
+                    HCCL_DEBUG("[OpUnfoldCache][DumpSqeContent] after header[0x%160llx]", notifySqePtr->header);
                     PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] notify_id[%u] res2[%u] res3[%u] kernel_credit[%u] res4[%u] timeout[%u]",
                         notifySqePtr->notify_id, notifySqePtr->res2, notifySqePtr->res3, notifySqePtr->kernel_credit, notifySqePtr->res4, notifySqePtr->timeout);
                     PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] res5[0][%u] res5[1][%u] res5[2][%u] res5[3][%u] res5[4][%u] res5[5][%u]",
@@ -392,6 +398,7 @@ namespace hccl {
     }
 
     HcclResult OpUnfoldCache::DumpSqeHeader(const rtStarsSqeHeader_t& sqeHeader) {
+        HCCL_DEBUG("[OpUnfoldCache][DumpSqeHeader] type[%u]", sqeHeader.type);
         PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeHeader] SQE header: type[%u] l1Lock[%u] l1Unlock[%u] ie[%u] preP[%u] postP[%u] wrCqe[%u]",
             sqeHeader.type, sqeHeader.l1Lock, sqeHeader.l1Unlock, sqeHeader.ie, sqeHeader.preP, sqeHeader.postP, sqeHeader.wrCqe);
         PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeHeader] SQE header: reserved[%u] numBlocks[%u] rtStreamId[%u] taskId[%u]",
