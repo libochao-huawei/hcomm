@@ -194,6 +194,7 @@ SymmetricMemory::~SymmetricMemory()
     }
     windowMap_.clear();
     sortedWindows_.clear();
+    importAddrs_.clear();
 
     if (heapBase_) {
         if (aclrtReleaseMemAddress(heapBase_) != ACL_SUCCESS) {
@@ -455,6 +456,13 @@ HcclResult SymmetricMemory::RegisterSymmetricMem(void* ptr, size_t size, void** 
     }
 
     *devWin = pWin->devWin;
+    //  使用aclrtMemRetainAllocationHandle之后，必须释放handle
+    if (paMapInfo->refCount > 1) {
+        if (aclrtFreePhysical(paHandle) != ACL_SUCCESS) {
+            HCCL_ERROR("[SymmetricMemory][RegisterSymmetricMem] Free Physical handle[%p] failed.", paHandle);
+            return HCCL_E_DRV;
+        }
+    }
     return HCCL_SUCCESS;
 
 INTERNAL_ERROR:
@@ -486,24 +494,26 @@ HcclResult SymmetricMemory::DeregisterSymmetricMem(void* devWin)
         if (paMapInfo->refCount == 1) {
             for (u32 i = 0; i < rankSize_; i++) {
                 void* virPtr = static_cast<uint8_t*>(heapBase_) + (stride_ * i) + (*it)->alignedHeapOffset;
-                aclrtDrvMemHandle handle;
-                aclError aclRet = aclrtMemRetainAllocationHandle(virPtr, &handle);
-                if (aclRet != ACL_SUCCESS) {
-                    HCCL_ERROR("[SymmetricMemory][DeregisterSymmetricMem] MemRetainAllocationHandle failed for ptr[%p], rank[%u], ret[%d].", virPtr, i, aclRet);
-                    ret = HCCL_E_DRV;
+                if (importAddrs_.count(virPtr) == 0) {
+                    HCCL_ERROR("[SymmetricMemory][DeregisterSymmetricMem] Get paHandle failed for ptr[%p], rank[%u].", virPtr, i);
+                    ret = HCCL_E_INTERNAL;
                     continue;
                 }
+                aclrtDrvMemHandle handle = importAddrs_[virPtr];
                 HCCL_INFO("[SymmetricMemory][DeregisterSymmetricMem] Start to UnmapMem virPtr[%p], handle[%p], rank[%u].", virPtr, handle, i);
-                aclRet = aclrtUnmapMem(virPtr);
+                aclError aclRet = aclrtUnmapMem(virPtr);
                 if (aclRet != ACL_SUCCESS) {
                     HCCL_ERROR("[SymmetricMemory][DeregisterSymmetricMem] Failed to unmap mem for rank %u at va %p, ret[%d].", i, virPtr, aclRet);
                     ret = HCCL_E_DRV;
                 }
+                HCCL_INFO("[SymmetricMemory][DeregisterSymmetricMem] aclrtFreePhysical Start");
                 aclRet = aclrtFreePhysical(handle);
                 if (aclRet != ACL_SUCCESS) {
-                    HCCL_ERROR("[SymmetricMemory][DeregisterSymmetricMem] FreePhysical handle[%p] failed, ret[%d], rank[%u].", handle, aclRet, i);
+                    HCCL_ERROR("[SymmetricMemory][DeregisterSymmetricMem] Free Physical handle[%p] failed, ret[%d], rank[%u].", handle, aclRet, i);
                     ret = HCCL_E_DRV;
                 }
+                HCCL_INFO("[SymmetricMemory][DeregisterSymmetricMem] aclrtFreePhysical end");
+                importAddrs_.erase(virPtr);
             }
             vaAllocator_->Release((*it)->alignedHeapOffset, (*it)->alignedSize);
             paMappingMap_.erase((*it)->paHandle);
@@ -597,6 +607,7 @@ HcclResult SymmetricMemory::RegisterInternal(aclrtDrvMemHandle &paHandle, size_t
                 HCCL_ERROR("[SymmetricMemory][RegisterInternal] Failed to map mem for rank %u at va %p.", i, targetVa);
                 goto MAP_ERROR;
             }
+            importAddrs_.insert({targetVa, importedHandle});
             HCCL_INFO("[SymmetricMemory][RegisterInternal] success to Mapmem for rank %u at va %p to handle[%p].", i, targetVa, importedHandle);
         }
     }
