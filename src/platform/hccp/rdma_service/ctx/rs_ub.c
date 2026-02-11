@@ -1229,6 +1229,7 @@ STATIC int RsUbInitSegCb(struct MemRegAttrT *memAttr, struct RsUbDevCb *devCb, s
 
     // token id in cfg is valid, get token id by mem_attr->ub.token_id_addr
     if (segCfg.flag.bs.token_id_valid == URMA_TOKEN_ID_VALID) {
+        hccp_warn("@@@ RsUbInitSegCb URMA_TOKEN_ID_VALID");
         ret = RsUbGetTokenIdCb(devCb, memAttr->ub.tokenIdAddr, &tokenIdCb);
         if (ret != 0) {
             hccp_err("get token_id_cb failed! ret %d, devIndex:0x%x, tokenId addr:0x%llx", ret, devCb->index,
@@ -1238,6 +1239,8 @@ STATIC int RsUbInitSegCb(struct MemRegAttrT *memAttr, struct RsUbDevCb *devCb, s
         segCfg.token_id = tokenIdCb->tokenId;
     }
 
+    hccp_warn("@@@ RsUbInitSegCb segCfg.token_value: %ld", segCfg.token_value);
+    hccp_warn("@@@ RsUbInitSegCb segCfg.token_id: %ld", segCfg.token_id);
     segCb->segment = RsUrmaRegisterSeg(devCb->urmaCtx, &segCfg);
     if (segCb->segment == NULL) {
         hccp_err("[init][rs_ctx_lmem]rs_urma_register_seg len[0x%llx] failed, errno:%d", segCfg.len, errno);
@@ -1280,6 +1283,7 @@ int RsUbCtxLmemReg(struct RsUbDevCb *devCb, struct MemRegAttrT *memAttr, struct 
     CHK_PRT_RETURN(lsegCb == NULL, hccp_err("[init][rs_ctx_lmem]calloc lseg_cb failed"), -ENOMEM);
     lsegCb->devCb = devCb;
     lsegCb->tokenValue.token = memAttr->ub.tokenValue;
+    hccp_warn("@@@ RsUbCtxLmemReg lsegCb->tokenValue.token: %ld", lsegCb->tokenValue.token);
 
     ret = RsUbInitSegCb(memAttr, devCb, lsegCb);
     if (ret != 0) {
