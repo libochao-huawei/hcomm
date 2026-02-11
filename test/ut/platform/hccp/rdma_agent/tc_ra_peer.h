@@ -26,4 +26,7 @@ void TcRaPeerSocketBatchAbort();
 void TcRaLoopbackQpCreate();
 void TcRaPeerLoopbackQpCreate();
 void TcRaPeerLoopbackSingleQpCreate();
+void TcRaPeerSetQpLbValue();
+void TcRaPeerGetQpLbValue();
+void TcRaPeerGetLbMax();
 #endif

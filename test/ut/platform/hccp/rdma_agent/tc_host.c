@@ -1406,3 +1406,75 @@ void TcRaRegisterMr(void)
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
+
+void TcRaGetLbMax(void)
+{
+    struct RaRdmaHandle rdmaHandle = {0};
+    struct RaRdmaOps rdmaOps = {0};
+    int lbMax = 0;
+    int ret = 0;
+
+    ret = RaGetLbMax(NULL, &lbMax);
+    EXPECT_INT_EQ(128103, ret);
+
+    ret = RaGetLbMax(&rdmaHandle, NULL);
+    EXPECT_INT_EQ(128103, ret);
+
+    ret = RaGetLbMax(&rdmaHandle, &lbMax);
+    EXPECT_INT_EQ(128103, ret);
+
+    rdmaHandle.rdmaOps = &rdmaOps;
+    ret = RaGetLbMax(&rdmaHandle, &lbMax);
+    EXPECT_INT_EQ(128103, ret);
+
+    rdmaHandle.rdmaOps->raGetLbMax = RaPeerGetLbMax;
+    ret = RaGetLbMax(&rdmaHandle, &lbMax);
+    EXPECT_INT_EQ(0, ret);
+}
+
+void TcRaSetQpLbValue(void)
+{
+    struct RaQpHandle qpHandle = {0};
+    struct RaRdmaOps rdmaOps = {0};
+    int lbvalue = 0;
+    int ret = 0;
+
+    ret = RaSetQpLbValue(NULL, lbvalue);
+    EXPECT_INT_EQ(128103, ret);
+
+    ret = RaSetQpLbValue(&qpHandle, lbvalue);
+    EXPECT_INT_EQ(128103, ret);
+
+    qpHandle.rdmaOps = &rdmaOps;
+    ret = RaSetQpLbValue(&qpHandle, lbvalue);
+    EXPECT_INT_EQ(128103, ret);
+
+    qpHandle.rdmaOps->raSetQpLbValue = RaPeerSetQpLbValue;
+    ret = RaSetQpLbValue(&qpHandle, lbvalue);
+    EXPECT_INT_EQ(0, ret);
+}
+
+void TcRaGetQpLbValue(void)
+{
+    struct RaQpHandle qpHandle = {0};
+    struct RaRdmaOps rdmaOps = {0};
+    int lbvalue = 0;
+    int ret = 0;
+
+    ret = RaGetQpLbValue(NULL, &lbvalue);
+    EXPECT_INT_EQ(128103, ret);
+
+    ret = RaGetQpLbValue(&qpHandle, NULL);
+    EXPECT_INT_EQ(128103, ret);
+
+    ret = RaGetQpLbValue(&qpHandle, &lbvalue);
+    EXPECT_INT_EQ(128103, ret);
+
+    qpHandle.rdmaOps = &rdmaOps;
+    ret = RaGetQpLbValue(&qpHandle, &lbvalue);
+    EXPECT_INT_EQ(128103, ret);
+
+    qpHandle.rdmaOps->raGetQpLbValue = RaPeerGetQpLbValue;
+    ret = RaGetQpLbValue(&qpHandle, &lbvalue);
+    EXPECT_INT_EQ(0, ret);
+}
