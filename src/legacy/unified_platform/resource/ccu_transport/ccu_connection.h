@@ -101,6 +101,7 @@ private:
     vector<RequestHandle>  reqHandles;
     vector<vector<char_t>> reqDataBuffers;
     vector<void*>          remoteJettyHandlePtrs;
+    vector<TargetJettyHandle> remoteDelJettyList;
 
     HcclResult    StatusMachine();
     void          UpdateInitStatus();

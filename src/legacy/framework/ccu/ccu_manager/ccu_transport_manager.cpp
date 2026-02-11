@@ -247,11 +247,20 @@ vector<std::pair<CcuTransport *, LinkData>> CcuTransportMgr::GetUnConfirmedTrans
 
 void CcuTransportMgr::Clean()
 {
+    std::vector<JettyHandle> jettyHandleList;
     for (auto &linkTransPair : ccuLink2TransportMap) {
-        if (linkTransPair.second->Clean() !=HCCL_SUCCESS) {
+        if (linkTransPair.second->Clean(jettyHandleList) !=HCCL_SUCCESS) {
             THROW<CcuApiException>("[CcuTransportMgr::%s]CcuTransport clean failed.", __func__);
         }
     }
+    std::vector<JettyHandle> failJettyHandles;
+    RaCtxQpDestoryBatch(rdmaHandle, jettyHandleList, failJettyHandles);
+    HCCL_INFO("[%s]RaCtxQpDestoryBatch finish, local jetty nums[%u], delete fail jetty nums[%u]",
+        __func__, jettyHandleList.size(), failJettyHandles.size());
+    for (u64 failJetty : failJettyHandles) {
+        HCCL_INFO("[%s]delete jetty[%llu] fail", __func__, failJetty);
+    }
+    jettyHandleList.clear();
 }
 
 void CcuTransportMgr::Resume()
@@ -286,6 +295,7 @@ void CcuTransportMgr::Fallback()
 void CcuTransportMgr::Destroy()
 {
     isDestroyed = true;
+    Clean();
     ccuLink2TransportMap.clear();
     ccuRank2TransportsMap.clear();
 }

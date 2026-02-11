@@ -35,6 +35,10 @@ public:
     RmaConnection               *Get(const std::string &tag, const LinkData &linkData);
 
     std::vector<RmaConnection *> GetOpTagConns(const std::string &tag) const;
+    
+    void GetDeleteJettys(std::vector<JettyHandle> &remoteJettyList, std::vector<JettyHandle> &jettyList);
+
+    void BatchDeleteJettys();
 
     void Release(const std::string &tag, const LinkData &linkData);
 
