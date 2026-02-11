@@ -1440,7 +1440,7 @@ struct udma_u_hugepage {
     void *va_start;
     uint32_t va_len;
     struct udma_u_hugepage_priv *priv;
-}
+};
 
 /* 32 */
 #define UDMA_JETTY_TABLE_NUM 1 << 5
