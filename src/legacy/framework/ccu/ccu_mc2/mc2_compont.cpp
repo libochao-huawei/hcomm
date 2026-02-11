@@ -73,7 +73,7 @@ void Mc2Compont::AllocCommResource(void *mc2Tiling, void **commContext)
               "opType[5] = [%u], opType[6] = [%u], opType[7] = [%u], ", combinOpParam.opType[0],
               combinOpParam.opType[1], combinOpParam.opType[2], combinOpParam.opType[3], combinOpParam.opType[4], 
               combinOpParam.opType[5], combinOpParam.opType[6], combinOpParam.opType[7]);
-    HCCL_RUN_INFO("algorithmType[0] = [%u], algorithmType[1] = [%u], algorithmType[2] = [%u], algorithmType[3] = [%u], ",
+    HCCL_RUN_INFO("algorithmType[0] = [%u], algorithmType[1] = [%u], algorithmType[2] = [%u], algorithmType[3] = [%u], "
               "algorithmType[4] = [%u], algorithmType[5] = [%u], algorithmType[6] = [%u], algorithmType[7] = [%u]",
               combinOpParam.algorithmType[0], combinOpParam.algorithmType[1], combinOpParam.algorithmType[2], 
               combinOpParam.algorithmType[3], combinOpParam.algorithmType[4], combinOpParam.algorithmType[5],
