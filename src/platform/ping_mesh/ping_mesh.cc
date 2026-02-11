@@ -320,9 +320,9 @@ inline void RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, u32 no
 
     initAttr.version = 0; // 暂时无用，默认给0
     initAttr.mode = NETWORK_OFFLINE; // net work mode 枚举值
-    initAttr.ub.phy_id = deviceId;
+    initAttr.ub.phyId = deviceId;
     HCCL_INFO("Input Eid %s", ipAddr.GetEid().Describe().c_str());
-    initAttr.dev.ub.eid_index = eidmap.at(ipAddr.GetEid());//从eid_list获取eid_index
+    initAttr.dev.ub.eidIndex = eidmap.at(ipAddr.GetEid());//从eid_list获取eidIndex
     u32 ret = memcpy_s(initAttr.dev.ub.eid.raw, sizeof(initAttr.dev.ub.eid.raw), 
             ipAddr.GetEid().raw, sizeof(ipAddr.GetEid().raw));
     if (ret != 0) {
@@ -332,40 +332,40 @@ inline void RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, u32 no
     initAttr.protocol = PROTOCOL_UDMA; // pingmesh支持兼容UB驱动，新增protocol字段
 
     // client的初始化信息
-    initAttr.client.ub.cq_attr.sendCqDepth = maxWrDepth;
-    initAttr.client.ub.cq_attr.recvCqDepth = maxWrDepth;
-    initAttr.client.ub.cq_attr.sendCqCompVector = 0; // 一组cqe组成的集合，这里给0
-    initAttr.client.ub.cq_attr.recvCqCompVector = 1; // 一组cqe组成的集合，这里给1
-    initAttr.client.ub.qp_attr.cap.maxSendWr = maxWrDepth;
-    initAttr.client.ub.qp_attr.cap.maxRecvWr = maxWrDepth;
-    initAttr.client.ub.qp_attr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
-    initAttr.client.ub.qp_attr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
-    initAttr.client.ub.qp_attr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
-    initAttr.client.ub.qp_attr.token_value = GetUbToken(deviceId);
-    initAttr.client.ub.seg_attr.token_value = GetUbToken(deviceId);
+    initAttr.client.ub.cqAttr.sendCqDepth = maxWrDepth;
+    initAttr.client.ub.cqAttr.recvCqDepth = maxWrDepth;
+    initAttr.client.ub.cqAttr.sendCqCompVector = 0; // 一组cqe组成的集合，这里给0
+    initAttr.client.ub.cqAttr.recvCqCompVector = 1; // 一组cqe组成的集合，这里给1
+    initAttr.client.ub.qpAttr.cap.maxSendWr = maxWrDepth;
+    initAttr.client.ub.qpAttr.cap.maxRecvWr = maxWrDepth;
+    initAttr.client.ub.qpAttr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
+    initAttr.client.ub.qpAttr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
+    initAttr.client.ub.qpAttr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
+    initAttr.client.ub.qpAttr.tokenValue = GetUbToken(deviceId);
+    initAttr.client.ub.segAttr.tokenValue = GetUbToken(deviceId);
 
     // server的初始化信息
-    initAttr.server.ub.cq_attr.sendCqDepth = maxWrDepth;
-    initAttr.server.ub.cq_attr.recvCqDepth = maxWrDepth;
-    initAttr.server.ub.cq_attr.sendCqCompVector = 0; // 一组cqe组成的集合，这里给0
-    initAttr.server.ub.cq_attr.recvCqCompVector = 1; // 一组cqe组成的集合，这里给1
-    initAttr.server.ub.qp_attr.cap.maxSendWr = maxWrDepth;
-    initAttr.server.ub.qp_attr.cap.maxRecvWr = maxWrDepth;
-    initAttr.server.ub.qp_attr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
-    initAttr.server.ub.qp_attr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
-    initAttr.server.ub.qp_attr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
-    initAttr.server.ub.qp_attr.token_value = GetUbToken(deviceId);
-    initAttr.server.ub.seg_attr.token_value = GetUbToken(deviceId);
+    initAttr.server.ub.cqAttr.sendCqDepth = maxWrDepth;
+    initAttr.server.ub.cqAttr.recvCqDepth = maxWrDepth;
+    initAttr.server.ub.cqAttr.sendCqCompVector = 0; // 一组cqe组成的集合，这里给0
+    initAttr.server.ub.cqAttr.recvCqCompVector = 1; // 一组cqe组成的集合，这里给1
+    initAttr.server.ub.qpAttr.cap.maxSendWr = maxWrDepth;
+    initAttr.server.ub.qpAttr.cap.maxRecvWr = maxWrDepth;
+    initAttr.server.ub.qpAttr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
+    initAttr.server.ub.qpAttr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
+    initAttr.server.ub.qpAttr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
+    initAttr.server.ub.qpAttr.tokenValue = GetUbToken(deviceId);
+    initAttr.server.ub.segAttr.tokenValue = GetUbToken(deviceId);
 
     // ip协议信息
     initAttr.commInfo.version = 0;
-    initAttr.commInfo.ub.qos_attr.sl = sl;
-    initAttr.commInfo.ub.qos_attr.tc = tc;
+    initAttr.commInfo.ub.qosAttr.sl = sl;
+    initAttr.commInfo.ub.qosAttr.tc = tc;
 }
 const std::unordered_map<HrtNetworkMode, NetworkMode, std::EnumClassHash> HRT_NETWORK_MODE_MAP
     = {{HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE}, {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
 
-//add查询eid_index
+//add查询eidIndex
 inline HcclResult RaGetEidMap(std::map<Eid, uint32_t>& eidmap, const HRaInfo &raInfo)
 {
     struct RaInfo info {};
@@ -377,14 +377,14 @@ inline HcclResult RaGetEidMap(std::map<Eid, uint32_t>& eidmap, const HRaInfo &ra
 
     ret = hrtRaGetDevEidInfoNum(&info, &num);
     if (ret != 0) {
-        HCCL_ERROR("call ra_get_dev_eid_info_num failed, error code = %d.", ret);
+        HCCL_ERROR("call RaGetDevEidInfoNum failed, error code = %d.", ret);
         return HCCL_E_NETWORK; //ra接口是网络相关调用
     }
 
-    struct dev_eid_info infoList[num] = {};
+    struct HccpDevEidInfo infoList[num] = {};
     ret = hrtRaGetDevEidInfoList(&info, infoList, &num);
     if (ret != 0) {
-        HCCL_ERROR("call ra_get_dev_eid_info_list failed, error code = %d.", ret);
+        HCCL_ERROR("call RaGetDevEidInfoList failed, error code = %d.", ret);
         return HCCL_E_NETWORK;
     }
 
@@ -397,7 +397,7 @@ inline HcclResult RaGetEidMap(std::map<Eid, uint32_t>& eidmap, const HRaInfo &ra
             HCCL_ERROR("[RaGetEidMap]memcpy_s failed, error code = %d.", ret);
             return HCCL_E_INTERNAL;
         }
-        eidmap.insert(std::make_pair(eid, infoList[i].eid_index));
+        eidmap.insert(std::make_pair(eid, infoList[i].eidIndex));
     }
 
     return HCCL_SUCCESS;
@@ -414,15 +414,15 @@ inline HcclResult RpingTargetAttrInitWithUb(PingTargetInfo &ubtarget, RpingInput
         HCCL_ERROR("[RpingTargetAttrInitWithUb]memcpy_s key failed, error code = %d.", ret);
         return HCCL_E_INTERNAL;
     }
-    ubtarget.remoteInfo.qpInfo.ub.token_value = ubinfo->ub.token_value;
+    ubtarget.remoteInfo.qpInfo.ub.tokenValue = ubinfo->ub.tokenValue;
     ret = memcpy_s(ubtarget.remoteInfo.eid.raw, sizeof(ubtarget.remoteInfo.eid.raw), 
             ubinput.dip.GetEid().raw, URMA_EID_LEN);
     if (ret != 0) {
         HCCL_ERROR("[RpingTargetAttrInitWithUb]memcpy_s eid failed, error code = %d.", ret);
         return HCCL_E_INTERNAL;
     }
-    ubtarget.localInfo.ub.qos_attr.tc = ubinput.tc;
-    ubtarget.localInfo.ub.qos_attr.sl = ubinput.sl;
+    ubtarget.localInfo.ub.qosAttr.tc = ubinput.tc;
+    ubtarget.localInfo.ub.qosAttr.sl = ubinput.sl;
     if (!isAddTargetUb) { // 并非添加target的时候调用，不需要拷贝payload信息
         return HCCL_SUCCESS;
     }
@@ -512,7 +512,7 @@ HcclResult PingMesh::RpingResultInfoInit(PingTargetResult *resultInfo, std::map<
                 HCCL_ERROR("[RpingResultInfoInit]memcpy_s key failed, error code = %d.", ret);
                 return HCCL_E_INTERNAL;
             }
-            resultInfo[i].remoteInfo.qpInfo.ub.token_value = rdmainfo->ub.token_value;
+            resultInfo[i].remoteInfo.qpInfo.ub.tokenValue = rdmainfo->ub.tokenValue;
         }
         HCCL_INFO("[HCCN][RpingResultInfoInit]Target[%s] info init success.", input[i].dip.GetReadableIP());
         
