@@ -356,35 +356,35 @@ inline HcclResult RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, 
         return token_ret;
     }
     // client的初始化信息
-    initAttr.client.ub.cq_attr.sendCqDepth = maxWrDepth;
-    initAttr.client.ub.cq_attr.recvCqDepth = maxWrDepth;
-    initAttr.client.ub.cq_attr.sendCqCompVector = 0; // 一组cqe组成的集合，这里给0
-    initAttr.client.ub.cq_attr.recvCqCompVector = 1; // 一组cqe组成的集合，这里给1
-    initAttr.client.ub.qp_attr.cap.maxSendWr = maxWrDepth;
-    initAttr.client.ub.qp_attr.cap.maxRecvWr = maxWrDepth;
-    initAttr.client.ub.qp_attr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
-    initAttr.client.ub.qp_attr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
-    initAttr.client.ub.qp_attr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
-    initAttr.client.ub.qp_attr.token_value = client_qp_token;
-    initAttr.client.ub.seg_attr.token_value = client_seg_token;
+    initAttr.client.ub.cqAttr.sendCqDepth = maxWrDepth;
+    initAttr.client.ub.cqAttr.recvCqDepth = maxWrDepth;
+    initAttr.client.ub.cqAttr.sendCqCompVector = 0; // 一组cqe组成的集合，这里给0
+    initAttr.client.ub.cqAttr.recvCqCompVector = 1; // 一组cqe组成的集合，这里给1
+    initAttr.client.ub.qpAttr.cap.maxSendWr = maxWrDepth;
+    initAttr.client.ub.qpAttr.cap.maxRecvWr = maxWrDepth;
+    initAttr.client.ub.qpAttr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
+    initAttr.client.ub.qpAttr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
+    initAttr.client.ub.qpAttr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
+    initAttr.client.ub.qpAttr.token_value = client_qp_token;
+    initAttr.client.ub.segAttr.token_value = client_seg_token;
 
     // server的初始化信息
-    initAttr.server.ub.cq_attr.sendCqDepth = maxWrDepth;
-    initAttr.server.ub.cq_attr.recvCqDepth = maxWrDepth;
-    initAttr.server.ub.cq_attr.sendCqCompVector = 0; // 一组cqe组成的集合，这里给0
-    initAttr.server.ub.cq_attr.recvCqCompVector = 1; // 一组cqe组成的集合，这里给1
-    initAttr.server.ub.qp_attr.cap.maxSendWr = maxWrDepth;
-    initAttr.server.ub.qp_attr.cap.maxRecvWr = maxWrDepth;
-    initAttr.server.ub.qp_attr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
-    initAttr.server.ub.qp_attr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
-    initAttr.server.ub.qp_attr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
-    initAttr.server.ub.qp_attr.token_value = server_qp_token;
-    initAttr.server.ub.seg_attr.token_value = server_seg_token;
+    initAttr.server.ub.cqAttr.sendCqDepth = maxWrDepth;
+    initAttr.server.ub.cqAttr.recvCqDepth = maxWrDepth;
+    initAttr.server.ub.cqAttr.sendCqCompVector = 0; // 一组cqe组成的集合，这里给0
+    initAttr.server.ub.cqAttr.recvCqCompVector = 1; // 一组cqe组成的集合，这里给1
+    initAttr.server.ub.qpAttr.cap.maxSendWr = maxWrDepth;
+    initAttr.server.ub.qpAttr.cap.maxRecvWr = maxWrDepth;
+    initAttr.server.ub.qpAttr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
+    initAttr.server.ub.qpAttr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
+    initAttr.server.ub.qpAttr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
+    initAttr.server.ub.qpAttr.token_value = server_qp_token;
+    initAttr.server.ub.segAttr.token_value = server_seg_token;
 
     // ip协议信息
     initAttr.commInfo.version = 0;
-    initAttr.commInfo.ub.qos_attr.sl = sl;
-    initAttr.commInfo.ub.qos_attr.tc = tc;
+    initAttr.commInfo.ub.qosAttr.sl = sl;
+    initAttr.commInfo.ub.qosAttr.tc = tc;
     return HCCL_SUCCESS;
 }
 const std::unordered_map<HrtNetworkMode, NetworkMode, std::EnumClassHash> HRT_NETWORK_MODE_MAP
