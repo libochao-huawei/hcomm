@@ -72,9 +72,11 @@ target_compile_definitions(hccp_utest PRIVATE
 )
 
 target_link_libraries(hccp_utest PRIVATE
-    $<BUILD_INTERFACE:intf_llt_pub>
-    -lrt
+    $<BUILD_INTERFACE:intf_pub>
+    gtest
+    mockcpp
     -pthread
+    -lrt
     -ldl
 )
 
