@@ -11,6 +11,8 @@
 #ifndef LLT_HCCL_STUB_MC2_H
 #define LLT_HCCL_STUB_MC2_H
 
+#include "gtest/gtest.h"
+
 #ifndef private
 #define private public
 #define protected public

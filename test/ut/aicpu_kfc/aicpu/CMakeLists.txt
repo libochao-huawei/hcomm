@@ -27,8 +27,12 @@ target_compile_options(aicpu_kfc_utest_aicpu PRIVATE
 
 target_link_libraries(aicpu_kfc_utest_aicpu  PRIVATE
     $<BUILD_INTERFACE:intf_llt_pub>
+    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
+    -lpthread
     hccl_llt
-    -pthread
+    -Wl,--whole-archive
+    -Wl,--no-whole-archi
+    -lgcov
     -lrt
     -ldl
 )
