@@ -178,7 +178,7 @@ target_compile_options(hccl_orion_alg_test PRIVATE
 )
 
 target_link_libraries(hccl_orion_alg_test PRIVATE
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     ascend_protobuf
     c_sec_static
     -lrt
@@ -221,7 +221,7 @@ target_link_libraries(orion_alg_testcase PRIVATE
     hccl_alg_analyzer
     hccl_orion_alg_test
     hccl_alg_adaption_v2
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     ascend_protobuf
     c_sec_static
     -lrt
@@ -260,7 +260,7 @@ target_link_libraries(orion_alg_aicpu_2d_testcase PRIVATE
     hccl_alg_analyzer
     hccl_orion_alg_test
     hccl_alg_adaption_v2
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     ascend_protobuf
     c_sec_static
     -lrt
@@ -299,7 +299,7 @@ target_link_libraries(orion_alg_aiv_1d_testcase PRIVATE
     hccl_alg_analyzer
     hccl_orion_alg_test
     hccl_alg_adaption_v2
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     ascend_protobuf
     c_sec_static
     -lrt
@@ -338,7 +338,7 @@ target_link_libraries(orion_alg_ccu_1d_testcase PRIVATE
     hccl_alg_analyzer
     hccl_orion_alg_test
     hccl_alg_adaption_v2
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     ascend_protobuf
     c_sec_static
     -lrt
@@ -372,7 +372,7 @@ target_link_libraries(orion_alg_ccu_1d_hf16p_testcase PRIVATE
     hccl_alg_analyzer
     hccl_orion_alg_test
     hccl_alg_adaption_v2
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     ascend_protobuf
     c_sec_static
     -lrt
@@ -406,7 +406,7 @@ target_link_libraries(orion_alg_ccu_2d_testcase PRIVATE
     hccl_alg_analyzer
     hccl_orion_alg_test
     hccl_alg_adaption_v2
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     ascend_protobuf
     c_sec_static
     -lrt
@@ -439,7 +439,7 @@ target_link_libraries(orion_alg_function_ut_testcase PRIVATE
     hccl_alg_analyzer
     hccl_orion_alg_test
     hccl_alg_adaption_v2
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     ascend_protobuf
     c_sec_static
     -lrt

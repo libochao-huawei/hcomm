@@ -49,7 +49,7 @@ target_link_directories(hcomm_utest_api_data_aicpu_ts PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
 target_link_libraries(hcomm_utest_api_data_aicpu_ts PRIVATE
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     hccl_llt
     -pthread
     -lrt
