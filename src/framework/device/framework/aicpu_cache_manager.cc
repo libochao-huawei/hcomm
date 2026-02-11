@@ -186,7 +186,7 @@ namespace hccl {
             // 注意: 只有当alltoallv的algName为"RunAlltoAllDirectFullmesh"时, 才会进入cache, 所以使用的一定是CollRunAlltoAllDirectFullmesh executor
             CHK_PTR_NULL(executor.get());
             HCCL_INFO("[AicpuCacheManager][PostProcessForCacheMiss] get hcclOffset-dstRank mapping of key[%s] for CollRunAlltoAllDirectFullmesh",
-                opUnfoldKey.GetKeyString());
+                opUnfoldKey.GetKeyString().c_str());
             std::unordered_map<uint64_t, std::vector<uint32_t>> hcclOffsetDstRanksMap;
             CHK_RET(executor->GetHcclOffsetDstRanksMap(hcclOffsetDstRanksMap));
             for (std::unordered_map<uint64_t, std::vector<uint32_t>>::const_iterator mapIter = hcclOffsetDstRanksMap.cbegin();
