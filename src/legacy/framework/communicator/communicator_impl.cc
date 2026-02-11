@@ -57,6 +57,7 @@
 #include "hostdpu/flush_manager.h"
 #include "hostdpu/dpu_kernel_entrance.h"
 #include "json_parser.h"
+#include "adapter_error_manager_pub.h"
 
 namespace Hccl {
 constexpr u64 HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE = (1 * 1024 * 1024); // 指定bufferSize的单位为MB
@@ -598,7 +599,16 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         }
         bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
         status = CommStatus::COMM_READY;
-        CHK_RET(OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv));
+        auto dataTypeChkRes = OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv);
+        // 上报入参校验失败？EI0003
+        if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
+            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
+                std::vector<std::string>({"CommunicatorImpl::LoadOpbasedCollOp", "dataTypeChkRes",
+                "no success", "please check DataType that check fail"}));
+            HCCL_ERROR("[CommunicatorImpl][%s] DataType check fail.", __func__);
+            status = CommStatus::COMM_READY;
+            return dataTypeChkRes;
+        }
         CHK_RET(SetAivControledCoreNum(isAiv));
 
         // 避免transport建链前，通讯域被摧毁
@@ -668,7 +678,7 @@ HcclResult CommunicatorImpl::AllocCollOpResource(const CollOpParams &opParams, v
 {
     try {
         if (opParams.commEngine != HcclAccelerator::AICPU && opParams.commEngine != HcclAccelerator::AICPU_TS) {
-            HCCL_ERROR("[AllocCollOpResource::%s]It's support aicpu unfold on mc2. input is %s", __func__, opParams.commEngine.Describe().c_str());
+            HCCL_ERROR("[CommunicatorImpl][%s]It's support aicpu unfold on mc2. input is %s", __func__, opParams.commEngine.Describe().c_str());
  	        return HCCL_E_NOT_SUPPORT;
  	    }
         CHK_RET(CheckCommStatus());
@@ -685,7 +695,17 @@ HcclResult CommunicatorImpl::AllocCollOpResource(const CollOpParams &opParams, v
         }
  
         status = CommStatus::COMM_READY;
-        CHK_RET(OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), false));
+        auto dataTypeChkRes = OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), false);
+        // 上报入参校验失败？EI0003
+        if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
+            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
+                std::vector<std::string>({"CommunicatorImpl::AllocCollOpResource", "dataTypeChkRes",
+                "no success", "please check DataType that check fail"}));
+            HCCL_ERROR("[CommunicatorImpl][%s] DataType check fail.", __func__);
+            status = CommStatus::COMM_READY;
+            return dataTypeChkRes;
+        }
+        
         status = CommStatus::COMM_INUSE;
         TraceOpInfo(opParams);
         HcclUs startut = std::chrono::steady_clock::now();
@@ -854,7 +874,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
             RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
                 std::vector<std::string>({"CommunicatorImpl::LoadOffloadCollOp", "dataTypeChkRes",
                 "no success", "please check DataType that check fail"}));
-            HCCL_ERROR("[CommunicatorImpl::LoadOffloadCollOp] DataType check fail.");
+            HCCL_ERROR("[CommunicatorImpl][%s] DataType check fail.", __func__);
             status = CommStatus::COMM_READY;
             return dataTypeChkRes;
         }
@@ -2730,7 +2750,11 @@ HcclResult CommunicatorImpl::HcomSelectAlg(const CollOpParams& opParams, int32_t
     HcclResult dataTypeChkRes = OpParamsChecker::CheckOpDataTypeOffload(opParams, GetOpCcuFeatureFlag(),
                                                                         GetOpAiCpuTSFeatureFlag(), ifAiv);
     if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::HcomSelectAlg] DataType check fail.");
+        // 上报入参校验失败？EI0003
+        RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
+                std::vector<std::string>({"CommunicatorImpl::HcomSelectAlg", "dataTypeChkRes",
+                "no success", "please check DataType that check fail"}));
+        HCCL_ERROR("[CommunicatorImpl][%s] DataType check fail.", __func__);
         status = CommStatus::COMM_READY;
         return dataTypeChkRes;
     }
@@ -2836,7 +2860,11 @@ HcclResult CommunicatorImpl::ReLoadOffloadOp()
     HcclResult dataTypeChkRes = OpParamsChecker::CheckOpDataTypeOffload(curOpParams, GetOpCcuFeatureFlag(),
                                                                         GetOpAiCpuTSFeatureFlag(), isAiv); // 算子粒度
     if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::ReLoadOffloadCollOp] DataType check fail.");
+        // 上报入参校验失败？EI0003
+        RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
+                std::vector<std::string>({"CommunicatorImpl::ReLoadOffloadCollOp", "dataTypeChkRes",
+                "no success", "please check DataType that check fail"}));
+        HCCL_ERROR("[CommunicatorImpl][%s] DataType check fail.", __func__);
         status = CommStatus::COMM_READY;
         return dataTypeChkRes;
     }

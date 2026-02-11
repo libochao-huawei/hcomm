@@ -1547,8 +1547,15 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
     // rootInfo获取rankTable, 基于rankTable创建通信域
     RankTableInfo rankTable{};
     HcclResult ret = RootInfoDetect(nRanks, rank, rootHandle, rankTable);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", 
-        __func__, HCCL_ERROR_CODE(ret));rankTable.Dump(), ret);
+    if (ret != HCCL_SUCCESS) {
+        RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
+                            std::vector<std::string>({"RootInfoDetect failed."}));
+        HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", __func__, HCCL_ERROR_CODE(ret));
+        rankTable.Dump();
+        return ret;
+    }
+  //  CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", 
+  //      __func__, HCCL_ERROR_CODE(ret));rankTable.Dump(), ret);
     
     // 打印ranktable
     rankTable.Dump();

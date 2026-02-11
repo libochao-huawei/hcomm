@@ -396,6 +396,8 @@ void *HrtMalloc(u64 size, rtMemType_t memType)
     rtError_t ret    = rtMalloc(&devPtr, size, memType, HCCL);
     HCCL_INFO("Call rtMalloc, return value[%d] size[%llu] memType[%u], devPtr[%p], moudleId: HCCL.", ret, size, memType, devPtr);
     if (ret != RT_ERROR_NONE) {
+        RPT_INPUT_ERR(true, "EI0007", std::vector<std::string>({"resource_type", "resource_info"}),
+                            std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size)}));
         HCCL_ERROR("[Malloc][Mem]errNo[0x%016llx] rtMalloc failed, "
                    "return[%d], para: devPtrAddr[%p], size[%llu], memType[%u].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, devPtr, size, memType);
@@ -601,6 +603,8 @@ void *HrtMallocHost(u64 size)
     HCCL_INFO("Call aclrtMallocHostWithCfg, return value[%d], para: hostPtr[%p], size[%llu], moudleId: HCCL.", ret,
               hostPtr, size);
     if (ret != ACL_SUCCESS) {
+        RPT_INPUT_ERR(true, "EI0007", std::vector<std::string>({"resource_type", "resource_info"}),
+                            std::vector<std::string>({"HostMemory", std::string("size:") + std::to_string(size)}));
         HCCL_ERROR("[Malloc][Host]errNo[0x%016llx] rt malloc host fail. return[%d], "
                    "para: size[%llu].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, size);

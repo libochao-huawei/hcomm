@@ -41,6 +41,7 @@ constexpr u32 MAX_RECV_SGE_NUM = 1;
 constexpr u32 MAX_CQ_DEPTH = 65535;
 constexpr u32 MAX_INLINE_DATA = 128;
 constexpr u32 RA_TLV_REQUEST_UNAVAIL = 328307;
+constexpr u32 ROCE_ENOMEM_RET = 328100;
 
 const std::unordered_map<HrtNetworkMode, NetworkMode, EnumClassHash> HRT_NETWORK_MODE_MAP
     = {{HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE}, {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
@@ -861,6 +862,8 @@ QpHandle HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode)
 
     s32 ret = RaQpCreate(rdmaHandle, flag, qpMode, &connHandle);
     if (ret != 0 || connHandle == nullptr) {
+        RPT_INPUT_ERR(ret == ROCE_ENOMEM_RET, "EI0011", std::vector<std::string>({"memory_size"}), // A3是当ROCE_ENOMEM_RET才上报EI0011
+                            std::vector<std::string>({"size: [0.25MB, 3MB], Affected by QP depth configuration"}));
         HCCL_ERROR("[Create][RaQp]errNo[0x%016llx] ra qp create fail. "
                    "params: flag[%d], qpMode[%d]. return: ret[%d]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), flag, qpMode, ret);
@@ -2149,6 +2152,8 @@ HcclResult HrtRaNormalQpCreate(RdmaHandle rdmaHandle, QpInfo& qp)
     ibQpAttr.cap.max_recv_wr = (qp.srq == nullptr ? qp.attr.maxWr : 0);
     ibQpAttr.cap.max_recv_sge = (qp.srq == nullptr ? qp.attr.maxRecvSge : 0);
     s32 ret = RaNormalQpCreate(rdmaHandle, &ibQpAttr, &(qp.qpHandle), reinterpret_cast<void **>(&(qp.qp)));
+    RPT_INPUT_ERR(ret == ROCE_ENOMEM_RET, "EI0011", std::vector<std::string>({"memory_size"}), // A3是当ROCE_ENOMEM_RET才上报EI0011
+                            std::vector<std::string>({"size: [0.25MB, 3MB], Affected by QP depth configuration"}));
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[Create][NormalQp]errNo[0x%016llx] RaNormalQpCreate fail. return[%d]",\
         HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
     return HCCL_SUCCESS;
