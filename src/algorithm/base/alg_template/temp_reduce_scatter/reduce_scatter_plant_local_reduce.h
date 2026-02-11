@@ -23,7 +23,7 @@ public:
         const Stream &stream, std::vector<Stream> &subStreams,
         std::vector<std::shared_ptr<LocalNotify>> &meshSignal, std::vector<std::shared_ptr<LocalNotify>> &meshSignalAux,
         GroupSlicesInfo &grouSlicesInfo, const HcclReduceOp reductionOp, u32 all2allOffset, 
-        const HcclDataType dataType, bool isNeedSpaceBorrow, bool reverseMemUsage = false) override;
+        const HcclDataType dataType, bool isNeedSpaceBorrow, bool reverseMemUsage = false, bool isA3CrossNode = false) override;
     HcclResult RunAsync(const u32 rank, const u32 rankSize, const std::vector<LINK> &links) override;
 
 protected:
@@ -39,6 +39,7 @@ private:
     bool isLastBlockData(const u32 outputIndex);
     HcclResult LocalCopy(u32 groupId, const MemBlockInfo& memBlockInfo);
     HcclResult RunAlltoAll(const std::vector<LINK> &links, u32 groupId, const MemBlockInfo& memBlockInfo);
+    HcclResult RunGroupAlltoAll(const std::vector<LINK> &links, u32 groupId, const MemBlockInfo& memBlockInfo);
     HcclResult RunLocalReduce(u32 groupId, const MemBlockInfo& memBlockInfo);
     u32 rankSize_{0};
     u32 localRank_{0};       // Level0当前rank对应的localRAnk
@@ -51,6 +52,7 @@ private:
     GroupSlicesInfo groupSlicesInfo_;
     void *inputMemPtr_{nullptr};
     bool isNeedSpaceBorrow_{false}; //是否需要借用CCLIN空间完成通信(算子维度)
+    bool isA3CrossNode_{false};
     UserMemType scratchMemType_{UserMemType::INPUT_MEM};
     UserMemType outputMemType_{UserMemType::OUTPUT_MEM};
 };
