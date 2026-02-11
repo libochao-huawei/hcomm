@@ -80,6 +80,7 @@ namespace hccl
         {"AllReduce=level0:fullmesh", "AllReduceMeshOpbaseLoopExecutor"},
         {"AllReduce=level0:doublering", "AlignedAllReduceDoubleRingFor91093Executor"},
         {"AlltoAll=level0:fullmesh;level1:pairwise", "RunAlltoAllDirectFullmesh"},
+        {"AlltoAll=level1:hierarchy", "RunAlltoAllAivDirect"},
         {"BatchWrite=level0:fullmesh", "BatchWriteBySdma"},
         {"BatchWrite=level1:fullmesh", "DispatchCombineFullmesh"},
         {"BatchWrite=level1:hierarchy", "DispatchCombineHierarchy"}};
@@ -127,6 +128,10 @@ namespace hccl
         ListCommonInit(&opResDeviceParaPtr_->localRes.nextTagRes, &opResPara_.localRes.nextTagRes);
         opResPara_.remoteResNum = 0;
         CHK_RET(GetOpCountInfo(opResPara_.opCounterInfo));
+        if (deviceType_ == DevType::DEV_TYPE_910B && GetAicpuUnfoldConfig() == false && IsOneSidedIdentifier(identifier_)) {
+            // A2单边通信域在非aicpu展开场景下不初始化host与device侧的数据同步内存
+            return HCCL_SUCCESS;
+        }
         CHK_RET(CreateWorkSpace(sizeof(HcclOpResParam), opResDevicePara_));
 
         opResDeviceParaPtr_ = static_cast<HcclOpResParam *>(opResDevicePara_.ptr());
@@ -134,6 +139,11 @@ namespace hccl
         hostDeviceLock_.reset(new (std::nothrow) PetersonLock(PetersonLock::DEFAULT_LOCK_TIMEOUT_SEC));
         CHK_SMART_PTR_NULL(hostDeviceLock_);
         CHK_RET(hostDeviceLock_->Init());
+        if (aiRMAInfoMem_ == nullptr) {
+            CHK_RET(AllocAndClearHostMem(sizeof(HcclAiRMAInfo), aiRMAInfoMem_));
+        }
+        CHK_PTR_NULL(aiRMAInfoMem_);
+        CHK_PTR_NULL(aiRMAInfoMem_->ptr());
 
         return HCCL_SUCCESS;
     }
@@ -289,7 +299,7 @@ namespace hccl
         // 根据设备ID创建dispatcher
         if ((deviceType_ == DevType::DEV_TYPE_910B) && GetExternalInputHcclEnableFfts())
         {
-            CHK_PRT_CONT(GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !GetExternalInputHcclAicpuUnfold(),
+            CHK_PRT_CONT(GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !GetAicpuUnfoldConfig(),
                          HCCL_RUN_INFO("Will use ffts mode."));
         }
         else
@@ -305,6 +315,11 @@ namespace hccl
             CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devicePhyId_, identifier_.c_str()));
         }
         CHK_PTR_NULL(dispatcherCtx_);
+
+        hccl::DispatcherCtx *Ctx_tmp = static_cast<DispatcherCtx *>(dispatcherCtx_);
+        HCCL_INFO("[%s] RegisterLoadTaskCallBack Dispatcher = [%p], Ctx_tmp = [%p]", 
+            __func__, Ctx_tmp->GetDispatcher(), (void*)Ctx_tmp);
+        (void)RegisterLoadTaskCallBack(Ctx_tmp->GetDispatcher(), static_cast<void *>(profilerManager_.get()), TaskProfilerCallBack);
 
         CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_VIRTURAL, devicePhyId_, &vDispatcher_));
         CHK_SMART_PTR_NULL(vDispatcher_);
@@ -560,6 +575,11 @@ namespace hccl
         return serverNum_;
     }
 
+    u32 HcclCommunicator::GetRealUserRank()
+    {
+        return realUserRank_;
+    }
+
     u32 HcclCommunicator::GetModuleNum()
     {
         return moduleNum_;
@@ -568,8 +588,12 @@ namespace hccl
     bool HcclCommunicator::GetSupportHDCommunicate()
     {
         HCCL_INFO("%s aicpuUnfold[%d], deviceType_[%d], isHaveCpuRank_[%d]",
-            __func__, GetExternalInputHcclAicpuUnfold(), deviceType_, isHaveCpuRank_);
-        return (GetExternalInputHcclAicpuUnfold() == true) ||
+            __func__, GetAicpuUnfoldConfig(), deviceType_, isHaveCpuRank_);
+        if (deviceType_ == DevType::DEV_TYPE_910B && GetAicpuUnfoldConfig() == false && IsOneSidedIdentifier(identifier_)) {
+            // A2单边通信域在非aicpu展开场景下不初始化HDC资源
+            return false;
+        }
+        return (GetAicpuUnfoldConfig() == true) ||
             ((deviceType_ == DevType::DEV_TYPE_910_93) || (deviceType_ == DevType::DEV_TYPE_910B) ||
             Is310P3Common(isHaveCpuRank_, deviceType_));
     }
@@ -2985,6 +3009,7 @@ namespace hccl
     HcclResult HcclCommunicator::GenIbvAiRMAInfo(u32 rankid, const std::shared_ptr<Transport> &transport,
         const std::string &tag, T* aiRMAInfoPtr)
     {
+        HCCL_INFO("[HcclCommunicator][%s] Start prepare.", __func__);
         std::vector<HcclAiRMAQueueInfo> aiQpVec;
         CHK_RET(transport->GetAiRMAQueueInfo(aiQpVec));
 
@@ -3111,6 +3136,33 @@ namespace hccl
             return HCCL_E_NOT_FOUND;
         }
         size = userMemMap_.begin()->second->size();
+        return HCCL_SUCCESS;
+    }
+    
+    HcclResult HcclCommunicator::GetAivQPInfoV2(std::vector<LINK>& links, const std::string &tag, u32 localRankSize)
+    {
+        HCCL_DEBUG("[HcclCommunicator][%s] Start prepare.", __func__);
+        // 获取 Transport QP 数量
+        CHK_PTR_NULL(aiRMAInfoMem_);
+        HcclAiRMAInfo *aiRMAInfoPtr = reinterpret_cast<HcclAiRMAInfo*>(aiRMAInfoMem_->ptr());
+        CHK_PTR_NULL(aiRMAInfoPtr);
+        // 获取 Transport QP 数量（暂时只支持单QP）
+        aiRMAInfoPtr->qpNum = HCCL_QPS_PER_CONNECTION_DEFAULT;
+        for (u32 i = 0; i < links.size(); i++) { //server num
+            if (i != (aiRMAInfoPtr->curRankId / meshAggregationRankSize_)) { //判断server
+                if (links[i]->GetTransportType() == TransportType::TRANS_TYPE_IBV_EXP) {
+                    std::vector<HcclAiRMAQueueInfo> aiQpVec;
+                    CHK_RET(links[i]->GetAiRMAQueueInfo(aiQpVec));
+                    aiRMAInfoPtr->qpNum = static_cast<u32>(aiQpVec.size());
+                    break;
+                }
+            }
+        }
+        CHK_PRT_RET(aiRMAInfoPtr->qpNum <= 0,
+                    HCCL_ERROR("[%s] invalid qpNum. tag[%s] curRankId[%u] rankNum[%u] qpNum[%u]", __func__,
+                    tag.c_str(), aiRMAInfoPtr->curRankId, aiRMAInfoPtr->rankNum, aiRMAInfoPtr->qpNum),
+                    HCCL_E_INTERNAL);
+ 
         return HCCL_SUCCESS;
     }
 }

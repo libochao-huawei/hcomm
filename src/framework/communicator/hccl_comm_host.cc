@@ -316,7 +316,6 @@ namespace hccl
                 ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE,
                 0),
             retCode);
-        // EXECEPTION_CATCH(rankgraph_ = std::make_unique<RankGraphV2>(rankGraph), return HCCL_E_PTR);
         CHK_PTR_NULL(commV2);
 
         EXECEPTION_CATCH(collComm_ = std::make_unique<CollComm>(commV2, userRank, commName, callbacks),
@@ -324,6 +323,18 @@ namespace hccl
 
         CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
         return HCCL_SUCCESS;
+    }
+
+    void hcclComm::BinaryUnLoad()
+    {
+        if (binHandle_ != nullptr){
+            HCCL_INFO("[BinaryUnLoad]aclrtBinaryUnLoad binHandle");
+            aclError ret = aclrtBinaryUnLoad(binHandle_);
+            if (ret != 0) {
+                HCCL_RUN_WARNING("[BinaryUnLoad]aclrtBinaryUnLoad binHandle faild");
+            }
+            binHandle_ = nullptr;
+        }
     }
 
     bool hcclComm::GetAicpuCommState()

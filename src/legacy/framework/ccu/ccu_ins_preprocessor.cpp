@@ -331,7 +331,7 @@ void CcuInsPreprocessor::Preprocess(std::shared_ptr<InsQueue> &insQueue, bool is
 
     HCCL_INFO("[CcuInsPreprocessor::%s] resAllocSuccess is[%d]", __func__, resAllocSuccess);
     if (!resAllocSuccess) {
-        HCCL_INFO("[CcuInsPreprocessor::%s] ResAlloc failed, accelerator fall back.", __func__);
+        HCCL_INFO("[CcuInsPreprocessor::%s] ResAlloc unsuccessful, accelerator fall back.", __func__);
         if (isMc2) {
             // mc2场景，CCU资源不足时不支持回退
             THROW<InternalException>(StringFormat("[CcuInsPreprocessor::%s] Alloc local resource failed", __func__));

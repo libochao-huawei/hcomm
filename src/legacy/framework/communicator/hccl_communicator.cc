@@ -142,8 +142,8 @@ HcclResult HcclCommunicator::HcclGetCclBuffer(uintptr_t &cclBufferAddr, size_t &
     }
     shared_ptr<DevBuffer> hcclBuffer = commImpl->GetCclBuffer();
     CHK_PTR_NULL(hcclBuffer);
+    cclBufferSize = commImpl->GetBufferSize();
     cclBufferAddr = hcclBuffer->GetAddr();
-    cclBufferSize = hcclBuffer->GetSize();
     cclBufferMemType = hcclBuffer->GetMemType();
     return HCCL_SUCCESS;
 }

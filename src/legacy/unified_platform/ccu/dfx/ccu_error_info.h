@@ -58,6 +58,7 @@ struct CcuErrorInfo {
             uint64_t locToken;
             uint64_t rmtAddr;
             uint64_t rmtToken;
+            uint64_t len;
             uint16_t signalId;
             uint16_t signalMask;
             uint16_t channelId;
@@ -69,6 +70,7 @@ struct CcuErrorInfo {
             uint16_t bufId;
             uint64_t addr;
             uint64_t token;
+            uint64_t len;
             uint16_t signalId;
             uint16_t signalMask;
             uint16_t channelId;
@@ -88,6 +90,7 @@ struct CcuErrorInfo {
         struct {
             uint16_t startInstrId;
             uint16_t endInstrId;
+            uint16_t loopEngineId;
             uint16_t loopCnt;           // 该Loop需要循环执行的次数
             uint16_t loopCurrentCnt;    // 该Loop已经循环次数
             uint32_t addrStride;

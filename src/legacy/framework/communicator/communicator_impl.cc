@@ -521,11 +521,14 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
     
     if (streamNum > 1) {
         RtsCntNotify *cntNotifyNTo1 = GetCcuStreamSyncNotifyManager().GetRtsNTo1CntNotify(mStreamId);
+        opbaseStream->RegisterMaster(std::make_unique<Stream>(stream));
         //  launch LocalWaitFrom on stream
         cntNotifyNTo1->WaitValue(value, timeout, mStream);
         for (std::size_t i = 0, len = streamNum - 1; i < len; ++i) {
             u32  bitValue = BASE_BIT << i;
             auto slave    = opbaseStream->GetSlave(slaveIndex++);
+            auto master   = opbaseStream->GetMaster();
+            GetStreamManager().CaptureSlaveStream(master, slave);
             cntNotify1ToN->WaitBits(bitValue, timeout, *slave);
             if (taskExceptionEnv || enableProfilingEnv) {
                 params.taskParams[i + 1].beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
@@ -1236,9 +1239,16 @@ void CommunicatorImpl::InitDataBufferManager()
     } else {
         scratchBufSize = scratchBufSize * HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE;
     }
+    // 如果是自定义算子流程，cclBufferSize的大小为2倍
+    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+    if (indOp != nullptr && strcmp(indOp, "1") == 0) {
+        scratchBufSize = scratchBufSize * 2;
+    }
     cclBufferSize = scratchBufSize;
+
     // aiv mc2预埋1M，并不暴露在内部算子执行逻辑里
     scratchBufSize += HCCL_MC2_ON_AICPU_FIXED_CALC_BUFFER_SIZE;
+
     if (rankSize > 1) {
         aivOffloadTagBuffer = std::move(DevBuffer::CreateHugePageBuf(4 * 1024 * 1024));
         cclBuffer = std::move(DevBuffer::CreateHugePageBuf(scratchBufSize));
@@ -2757,6 +2767,7 @@ void CommunicatorImpl::OpAcceleratorStateFallback()
 HcclResult CommunicatorImpl::AcceleratorFallback()
 {
     HCCL_RUN_INFO("[CommunicatorImpl][%s] opMode[%s]", __func__, currentCollOperator->opMode.Describe().c_str());
+    string needFallBackAlgName = curAlgName;
     OpAcceleratorStateFallback();
 
     HcclResult ret = HCCL_SUCCESS;
@@ -2777,9 +2788,9 @@ HcclResult CommunicatorImpl::AcceleratorFallback()
     // 下一个算子下发时，做完算法选择后，查找上述加速模式缓存，
     // 若能命中，按照上述已缓存的加速模式下发算子(大概率也是资源不足，走回退)；
     // 否则，按照算法选择的加速模式下发算子。
-    opAcceStateCache.insert({{curOpParams.opType, curAlgName}, opExecuteConfig.accState});
-    HCCL_INFO("[CommunicatorImpl][%s] opAcceStateCache opType[%s], curAlgName[%s], accelerator[%s]", __func__,
-              curOpParams.opType.Describe().c_str(), curAlgName.c_str(), opExecuteConfig.accState.Describe().c_str());
+    opAcceStateCache.insert({{curOpParams.opType, needFallBackAlgName}, opExecuteConfig.accState});
+    HCCL_INFO("[CommunicatorImpl][%s] opAcceStateCache opType[%s], needFallBackAlgName[%s], accelerator[%s]", __func__,
+              curOpParams.opType.Describe().c_str(), needFallBackAlgName.c_str(), opExecuteConfig.accState.Describe().c_str());
 
     HCCL_INFO("[CommunicatorImpl][%s] end", __func__);
     return ret;
@@ -2922,6 +2933,7 @@ bool CommunicatorImpl::IsNeedDpu()
 
 void CommunicatorImpl::InitHccpPeer()
 {
+    RaSocketSetWhiteListStatus(1); // PEER模式需要手动开启白名单模式
     HccpPeerManager::GetInstance().Init(devLogicId);
 }
 
@@ -2940,7 +2952,8 @@ HcclResult CommunicatorImpl::PrepareDpuKernelResource(aclrtFuncHandle &funcHandl
     jsonPath += "/opp/built-in/op_impl/dpu/";
     HCCL_DEBUG("[CommunicatorImpl::%s] kernel folder path[%s]", __func__, jsonPath.c_str());
 
-    jsonPath += "ccl_dpu.json";
+    // cpuKernelMode为1时，json命名需与so命名保持一致， 即libccl_dpu.json与libccl_dpu.so
+    jsonPath += "libccl_dpu.json";
     char realPath[PATH_MAX] = {0};
     CHK_PRT_RET(realpath(jsonPath.c_str(), realPath) == nullptr,
         HCCL_ERROR("[CommunicatorImpl::%s]: %s is not a valid real path, err[%d]", __func__, jsonPath.c_str(), errno),

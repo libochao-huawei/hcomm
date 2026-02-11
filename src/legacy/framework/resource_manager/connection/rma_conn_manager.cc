@@ -92,7 +92,7 @@ RmaConnection *RmaConnManager::Create(const std::string &tag, const LinkData &li
                linkData.Describe().c_str());
     RmaConnection *rmaConnPtr = Get(tag, linkData);
     if (rmaConnPtr != nullptr) {
-        HCCL_INFO("has inited!!");
+        HCCL_INFO("has inited");
         return rmaConnPtr;
     }
 

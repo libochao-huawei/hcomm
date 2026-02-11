@@ -49,6 +49,7 @@
 #include "hccl_rank_graph.h"
 #include "hccl_aiv_utils.h"
 #include "error_message_v2.h"
+#include "hccp.h"
 
 namespace Hccl {
 

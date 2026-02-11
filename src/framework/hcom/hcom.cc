@@ -2974,8 +2974,8 @@ HcclResult HcomCalcOpResOffline(HcomOpParam *hcomOpParam, HcomResResponse *hcomR
     CHK_RET(GetOpWorkspaceMemSize(true, hcclOpType, hcomOpParam, serverNum, opMemSize));
 
     if (devType == DevType::DEV_TYPE_910_95) {
-        HCCL_INFO("A5 offline calculation task num is not supported.");
-        CHK_RET(CalcTaskNum(hcomOpParam, streamNum, deviceNumPerServer, serverNum, multiModuleDiffDeviceNumMode, taskNum, devType));
+        // host展开已日落， Task任务数按照当前需求最多的CCU加速模式[AIV, AICPU使用较少]预估
+        taskNum = ESTIMATE_CCU_TASK_PER_STREAM; 
     }
 
     hcomResResponse->streamNum = streamNum;

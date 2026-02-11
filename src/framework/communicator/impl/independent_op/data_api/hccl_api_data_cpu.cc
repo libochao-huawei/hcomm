@@ -18,6 +18,8 @@
 #include "adapter_hal_pub.h"
 #include "op_base_v2.h"
 #include "host/host_cpu_roce_channel.h"
+#include "hccl_comm_pub.h"
+#include "op_base.h"
 
 
 using namespace hccl;
@@ -101,8 +103,18 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
     LocalNotify *notify = GetNotify(dstThread, dstNotifyIdx);
     CHK_PTR_NULL(notify);
 
+    if (threadPtr->IsDeviceA5())
+    {
+        HcclResult ret = notify->Post(*stream);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dstThread[0x%llx], notifyIdx[%u].",
+            __func__, thread, dstThread, dstNotifyIdx), ret);
+        HCCL_INFO("[%s] SUCCESS.", __func__);
+        return HCCL_SUCCESS;
+    }
+
     HcclResult ret = HcclLocalNotifyRecord(stream, notify);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. %s.", __func__, thread, dstThread, dstNotifyIdx), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dstThread[0x%llx], notifyIdx[%u].",
+        __func__, thread, dstThread, dstNotifyIdx), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -121,8 +133,17 @@ int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, u
     LocalNotify *notify = GetNotify(thread, notifyIdx);
     CHK_PTR_NULL(notify);
 
+    if (threadPtr->IsDeviceA5()) {
+        HcclResult ret = notify->Wait(*stream, timeOut);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeOut[%u].",
+            __func__, thread, notifyIdx, timeOut), ret);
+        HCCL_INFO("[%s] SUCCESS.", __func__);
+        return HCCL_SUCCESS;
+    }
+
     HcclResult ret = HcclLocalNotifyWait(stream, notify, timeOut);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeOut[%u].", __func__, thread, notifyIdx, timeOut), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeOut[%u].",
+        __func__, thread, notifyIdx, timeOut), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -549,7 +570,10 @@ int32_t HcommBatchModeEnd(const char *batchTag)
 int32_t HcommAcquireComm(const char* commId)
 {
     CHK_PTR_NULL(commId);
-    HCCL_INFO("%s not support, commId[%s], do nothing", __func__, commId);
+    std::shared_ptr<hccl::hcclComm> hcclComm;
+    HcclGetCommHandle(commId, hcclComm);
+    CHK_PRT_RET(hcclComm == nullptr, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
+    CHK_PRT(hcclComm->SetCommDispatcherCtx());// 待优化
     return HCCL_SUCCESS;
 }
 
