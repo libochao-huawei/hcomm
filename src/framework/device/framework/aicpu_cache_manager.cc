@@ -170,15 +170,16 @@ namespace hccl {
         OpUnfoldKey opUnfoldKey;
         CHK_RET(GetOpUnfoldKey(param, opUnfoldKey, topoinfo, algContext, workflowMode));
 
-        // 根据cache中的streamid计算是主流还是第几个从流
+        // 校验cache entry (post cache miss前的orchestrate一定会add new cache entry)
         OpUnfoldCacheEntry *entryPtr = nullptr;
         CHK_PTR_NULL(opUnfoldCachePtr_);
         CHK_RET(opUnfoldCachePtr_->FindEntry(opUnfoldKey, &entryPtr));
-        if (entryPtr != nullptr) { // Cache miss后刚刚admit的cache entry
-            HCCL_INFO("[AicpuCacheManager][PostProcessForCacheMiss] calculate stream seq idxes for a newly-admitted entry of key %s",
-                opUnfoldKey.GetKeyString().c_str());
-            CHK_RET(entryPtr->CalcStreamSeqIdxes(mainStream, slaveStreams));
-        }
+        CHK_PTR_NULL(entryPtr); // Cache miss后刚刚admit的cache entry
+
+        // 根据cache中的streamid计算是主流还是第几个从流
+        HCCL_INFO("[AicpuCacheManager][PostProcessForCacheMiss] calculate stream seq idxes for a newly-admitted entry of key %s",
+            opUnfoldKey.GetKeyString().c_str());
+        CHK_RET(entryPtr->CalcStreamSeqIdxes(mainStream, slaveStreams));
 
         // 第一个需要cache的alltoallv类算子
         if (IsAlltoallvType(param.opType)) {
@@ -186,7 +187,7 @@ namespace hccl {
             // 注意: 只有当alltoallv的algName为"RunAlltoAllDirectFullmesh"时, 才会进入cache, 所以使用的一定是CollRunAlltoAllDirectFullmesh executor
             CHK_PTR_NULL(executor.get());
             HCCL_INFO("[AicpuCacheManager][PostProcessForCacheMiss] get hcclOffset-dstRank mapping of key[%s] for CollRunAlltoAllDirectFullmesh",
-                opUnfoldKey.GetKeyString());
+                opUnfoldKey.GetKeyString().c_str());
             std::unordered_map<uint64_t, std::vector<uint32_t>> hcclOffsetDstRanksMap;
             CHK_RET(executor->GetHcclOffsetDstRanksMap(hcclOffsetDstRanksMap));
             for (std::unordered_map<uint64_t, std::vector<uint32_t>>::const_iterator mapIter = hcclOffsetDstRanksMap.cbegin();
