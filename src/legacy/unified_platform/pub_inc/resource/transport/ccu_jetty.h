@@ -43,7 +43,7 @@ public:
     {
         return jettyInfo_.taJettyId;
     }
-    void Clean();
+    void Clean(std::vector<JettyHandle> &jettyHandleList);
 
 private:
     int32_t devLogicId_{0};

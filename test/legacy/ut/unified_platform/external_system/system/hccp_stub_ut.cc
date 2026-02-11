@@ -702,3 +702,7 @@ int ra_ctx_get_aux_info(void *ctx_handle, struct aux_info_in *in, struct aux_inf
 int ra_ctx_qp_query_batch(void *qp_handle[], struct jetty_attr attr[], unsigned int *num) {
     return 0;
 }
+
+int ra_ctx_qp_destroy_batch_async(void *ctx_handle, void*qp_handle[], unsigned int *num, void **req_handle) {
+    return 0;
+}

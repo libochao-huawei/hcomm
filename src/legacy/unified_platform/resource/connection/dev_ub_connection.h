@@ -66,7 +66,10 @@ public:
     string Describe() const override;
 
     HrtUbJfcMode GetUbJfcMode() const;
-    JettyHandle  GetJettyHandle() const;
+    JettyHandle& GetJettyHandle() const;
+    JettyHandle& GetRemoteJettyHandle() const;
+    RdmaHandle&  GetRdmaHandle() const;
+    TpInfo       GetUbTpInfo() const;
     u32          GetPiVal() const;
     u32          GetCiVal() const;
     u32          GetSqDepth() const;
