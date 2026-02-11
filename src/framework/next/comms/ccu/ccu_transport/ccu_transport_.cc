@@ -414,8 +414,7 @@ HcclResult CcuTransport::ReleaseTransRes()
         auto ret = CcuDevMgrImp::ReleaseCke(devLogicId_, dieId_, ckesRes_[i]);
         if (ret != HcclResult::HCCL_SUCCESS) {
             HCCL_ERROR("[CcuTransport][%s] release ckes failed but passed, "
-                "devLogicId[%d] dieId[%u] ckeRes_[%u].", __func__, devLogicId_,
-                dieId_, ckesRes_[i]);
+                "devLogicId[%d] dieId[%u].", __func__, devLogicId_, dieId_);
         }
     }
     ckesRes_.clear();
@@ -427,8 +426,7 @@ HcclResult CcuTransport::ReleaseTransRes()
         auto ret = CcuDevMgrImp::ReleaseXn(devLogicId_, dieId_, xnsRes_[i]);
         if (ret != HcclResult::HCCL_SUCCESS) {
             HCCL_ERROR("[CcuTransport][%s] release xns failed but passed, "
-                "devLogicId[%d] dieId[%u] xnRes_[%u].", __func__, devLogicId_,
-                dieId_, xnsRes_[i]);
+                "devLogicId[%d] dieId[%u].", __func__, devLogicId_, dieId_);
         }
     }
     xnsRes_.clear();

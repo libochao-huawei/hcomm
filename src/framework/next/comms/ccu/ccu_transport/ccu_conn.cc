@@ -460,7 +460,7 @@ HcclResult CcuConnection::ReleaseConnRes()
 {
     for (auto &item : importJettyCtxs_) {
         if (item.outParam.handle != 0) {
-            int32_t ret = ra_ctx_qp_unimport(ctxHandle_, item.outParam.handle);
+            int32_t ret = RaCtxQpUnimport(ctxHandle_, item.outParam.handle);
             item.outParam.handle = 0;
             if (ret != 0) {
                 HCCL_ERROR("[CcuComponent][%s] failed but passed, ctxHandle[%p] "

@@ -62,7 +62,6 @@ enum class CcuRepType {
     BUF_LOC_WRITE,
     BUF_REDUCE,
 
-    POST_SHARED_VAR,
     RECORD_SHARED_NOTIFY,
 };
 

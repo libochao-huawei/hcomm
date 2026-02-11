@@ -327,8 +327,6 @@ static HcclResult SaveKernelMissionInfo(CcuKernel *kernel,
     }
 
     kernel->SetMissionId(missionId[dieId].back().startId);
-    // missionId[dieId].pop_back();
-
     return HcclResult::HCCL_SUCCESS;
 }
 

@@ -18,8 +18,6 @@
 #include "ccu_res_specs.h"
 #include "adapter_rts.h"
 
-#include "adapter_rts.h"
-
 namespace hcomm {
 
 CcuPfeCfgMgr &CcuPfeCfgMgr::GetInstance(const int32_t deviceLogicId)
