@@ -29,7 +29,7 @@ constexpr uint32_t AIV_FLAG_UB_ALIGN_SIZE=32; //aiv flag对齐规则
 constexpr uint32_t TASK_CONTEXT_SIZE = 50;
 constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失败时打印前序task信息的长度限制
 constexpr int BYTE = 8; // 一字节的位数
-constexpr int CCU_MEG_256MB_LEN = 268435456;
+constexpr uint64_t CCU_MEG_256MB_LEN = 268435456;
 
 std::array<TaskExceptionHandler *, MAX_MODULE_DEVICE_NUM> TaskExceptionHandlerManager::handlers_;
 
