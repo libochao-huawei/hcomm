@@ -176,13 +176,14 @@ void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2
     HCCL_INFO("[RankInfoDetect::%s] setup agent end.", __func__);
 }
 
-void RankInfoDetect::UpdateAgent(u32 devicePort)
+HcclResult RankInfoDetect::UpdateAgent(u32 devicePort)
 {
     CHK_PTR_NULL(rankInfoDetectClient);
 
     // 1. 创建RankInfoDetectClient对象
     rankInfoDetectClient->Update(devicePort, rankTable_);
     HCCL_INFO("[RankInfoDetect::%s] update agent end.", __func__);
+    return HCCL_SUCCESS;
 }
 
 void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket, s32 devLogicId, u32 devPhyId,

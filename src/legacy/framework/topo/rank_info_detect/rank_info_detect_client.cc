@@ -49,8 +49,8 @@ void RankInfoDetectClient::Update(u32 devicePort, RankTableInfo &rankTable)
         rank.devicePort = devicePort;
     }
 
-    // 2. 连接root节点
-    Connect();
+    // // 2. 连接root节点
+    // Connect();
 
     // 3. 发送给root节点
     SendLocalRankTable(localRankTable);

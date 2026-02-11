@@ -35,7 +35,7 @@ public:
 
     void SetupServer(HcclRootHandleV2 &rootHandle);
     void SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2 &rootHandle);
-    void UpdateAgent(u32 devicePort);
+    HcclResult UpdateAgent(u32 devicePort);
     void GetRankTable(RankTableInfo &ranktable) const;
     void WaitComplete(u32 listenPort, u32 listenStatus);
 

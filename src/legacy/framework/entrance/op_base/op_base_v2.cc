@@ -1590,10 +1590,6 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
     CHK_PRT_RET(res != HcclResult::HCCL_SUCCESS,
         HCCL_ERROR("[%s] comm Init failed !!! res %d", __func__, res), HCCL_E_INTERNAL);
     
-    // 配置了抢占端口则提前建链并发生新的ranktable
-    CHK_RET(opbasedCommInfoV2.pComm->InitDeviceListenPort(deviceListenPort));
-    CHK_RET(RootInfoDetect(nRanks, rank, rootHandle, rankTable));
-    
     // 配置默认加速模式
     opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
     s32 logicDevId = HrtGetDevice();
@@ -1607,6 +1603,11 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
 
     opbasedCommInfoV2.pComm->RegisterPrintChannelInfoCallback(
         CommManager::GetInstance(logicDevId).GetPrintChannelInfoCallback());
+    
+    // 配置了抢占端口则提前建链并发送新的ranktable
+    u32 deviceListenPort = DEFAULT_VALUE_DEVICEPORT;
+    CHK_RET(opbasedCommInfoV2.pComm->InitDeviceListenPort(deviceListenPort));
+    CHK_RET(RootInfoUpdate(rankInfoDetectAgent, deviceListenPort, rootHandle, rankTable));
     
     *comm = static_cast<HcclComm>(opbasedCommInfoV2.pComm.get());
     HCCL_INFO("[%s] Init success, rankNum[%u], rank[%u], rootInfo identifier[%s], logicDevId[%d]", __func__,
@@ -1692,6 +1693,11 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
     ret = CreateCommConfigRootInfo(rank, config, identifier, rankTable, comm);
     CHK_PRT_RET(ret, HCCL_ERROR("[%s]errNo[0x%016llx] and create comm failed.", __func__,
         HCCL_ERROR_CODE(ret)), static_cast<HcclResult>(ret));
+    
+    // 配置了抢占端口则提前建链并发生新的ranktable
+    u32 deviceListenPort = DEFAULT_VALUE_DEVICEPORT;
+    CHK_RET(opbasedCommInfoV2.pComm->InitDeviceListenPort(deviceListenPort));
+    CHK_RET(RootInfoUpdate(rankInfoDetectAgent, deviceListenPort, rootHandle, rankTable));
     
     /* 关键状态记录 */
     HCCL_RUN_INFO("HcclCommInitRootInfoConfigV2 success, take time [%lld]us, rankNum[%u], rank[%u]",
