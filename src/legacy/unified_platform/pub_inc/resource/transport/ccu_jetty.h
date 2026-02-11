@@ -11,11 +11,30 @@
 #ifndef HCCL_CCU_JETTY_H
 #define HCCL_CCU_JETTY_H
 
+#include <unordered_map>
+#include <vector>
 #include "ip_address.h"
 #include "ccu_dev_mgr.h"
 #include "orion_adapter_hccp.h"
 
 namespace Hccl {
+struct RdmaHandleHash() {
+    std::size_t operator()(const RdmaHandle handle) {
+        return std::hash<std::uintptr_t>{}()(reinterpret_cast<std::uintptr_t>(handle));
+    }
+};
+
+struct SingleDeleteJettyInfo {
+    RdmaHandle rdmaHandle{nullptr};
+    JettyHandle unimportJetty{0};
+    JettyHandle deleteJetty{0};
+    bool isValid{false};
+};
+
+struct BatchDeleteJettyInfo {
+    std::unordered_map<RdmaHandle, std::vector<JettyHandle>, RdmaHandleHash> unimportJettyList;
+    std::unordered_map<RdmaHandle, std::vector<JettyHandle>, RdmaHandleHash> deleteJettyList;
+};
 
 class CcuJetty final {
 public:
@@ -43,7 +62,7 @@ public:
     {
         return jettyInfo_.taJettyId;
     }
-    void Clean();
+    SingleDeleteJettyInfo Clean();
 
 private:
     int32_t devLogicId_{0};
