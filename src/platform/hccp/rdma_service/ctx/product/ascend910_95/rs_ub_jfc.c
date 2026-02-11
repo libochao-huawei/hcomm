@@ -163,6 +163,7 @@ STATIC void RsMunmapJfcVa(struct RsCtxJfcCb *jfcCb)
 
 int RsMmapJfcVa(struct RsCtxJfcCb *jfcCb)
 {
+    hccp_warn("@@@RsMmapJfcVa enter");
     struct res_map_info_out resInfoOut = {0};
     struct UdmaVaInfo jfcVaInfo = {0};
     struct UdmaVaInfo dbVaInfo = {0};
@@ -173,6 +174,7 @@ int RsMmapJfcVa(struct RsCtxJfcCb *jfcCb)
     jfcVaInfo.va = jfcCb->bufAddr;
     jfcVaInfo.len = WQE_BB_SIZE * jfcCb->depth;
     jfcVaInfo.pid = getpid();
+    hccp_warn("@@@RsMmapJfcVa before RsJfcResAddrMmap jfcVaInfo");
     ret = RsJfcResAddrMmap(jfcCb, &jfcVaInfo, &resInfoOut);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_jfc_res_addr_mmap failed, res_type:%u ret:%d", jfcVaInfo.resType, ret),
         ret);
@@ -182,6 +184,7 @@ int RsMmapJfcVa(struct RsCtxJfcCb *jfcCb)
     dbVaInfo.va = jfcCb->swdbAddr;
     dbVaInfo.len = sizeof(uint64_t);
     dbVaInfo.pid = getpid();
+    hccp_warn("@@@RsMmapJfcVa before RsJfcResAddrMmap dbVaInfo");
     ret = RsJfcResAddrMmap(jfcCb, &dbVaInfo, &resInfoOut);
     if (ret != 0) {
         hccp_err("rs_jfc_res_addr_mmap failed, res_type:%u ret:%d", dbVaInfo.resType, ret);
@@ -189,6 +192,7 @@ int RsMmapJfcVa(struct RsCtxJfcCb *jfcCb)
     }
 
     jfcCb->swdbAddr = resInfoOut.va;
+    hccp_warn("@@@RsMmapJfcVa end");
     return ret;
 
 munmap_jfc_buff_va:

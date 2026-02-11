@@ -85,5 +85,6 @@ int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urm
 
 int RsMmapJfcVa(struct RsCtxJfcCb *jfcCb)
 {
+    hccp_err("@@@RsMmapJfcVa enter src/platform/hccp/rdma_service/ctx/product/ascend910_96/rs_ub_jfc.c");
     return -EOPENSRC;
 }
