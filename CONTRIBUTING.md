@@ -20,3 +20,4 @@
 ## 编码规范
 
 若您需要贡献代码，请遵从[CANN 社区编码规范](https://gitcode.com/cann/community/tree/master/contributor/coding-standards)。
+

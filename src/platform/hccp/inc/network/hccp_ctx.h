@@ -177,7 +177,14 @@ struct MemRegInfo {
             uint64_t targetSegHandle; /**< refer to urma_target_seg_t */
         } ub;
     };
-    uint32_t resv[8U];
+    struct{
+        uint32_t token_value;
+        bool token_value_valid;
+        uint64_t len;                 /* specify the length of the segment to be registered */
+        uint64_t va;                  /* specify the address of the segment to be registered */
+        uint32_t tid;
+    } udma_segment;
+    uint32_t resv[7U];
 };
 
 struct MrRegInfoT {
@@ -438,7 +445,37 @@ struct QpCreateInfo {
         } ub;
     };
     uint64_t va; /**< refer to struct urma_jetty*, struct ibv_qp* */
-    uint32_t resv[16U];
+    struct {
+        void *qbuf;
+        uint32_t qbuf_size;
+        uint32_t pi;
+        uint32_t ci;
+        uint32_t baseblk_shift;
+        uint32_t baseblk_cnt;
+        uint32_t sqe_bb_cnt;
+        uint32_t db_type;
+        void volatile *db_addr;
+        void *qbuf_end;
+        void *qbuf_curr;
+        uint32_t max_sge_num;
+        bool cstm;
+    } udma_jetty_sq;
+    struct {
+        void *qbuf;
+        uint32_t qbuf_size;
+        uint32_t pi;
+        uint32_t ci;
+        uint32_t baseblk_shift;
+        uint32_t baseblk_cnt;
+        uint32_t sqe_bb_cnt;
+        uint32_t db_type;
+        void volatile *db_addr;
+        void *qbuf_end;
+        void *qbuf_curr;
+        uint32_t max_sge_num;
+        bool cstm;
+    } udma_jetty_cq;
+    uint32_t resv[14U];
 };
 
 enum JettyGrpPolicy {
