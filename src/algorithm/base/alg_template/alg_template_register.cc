@@ -37,6 +37,7 @@ HcclResult AlgTemplateRegistry::Register(const TemplateType type, const AlgTempl
         return HcclResult::HCCL_E_INTERNAL;
     }
     tempCreators_[type] = algTemplateCreator;
+    HCCL_DEBUG("[AlgTemplateRegistry][Register]Register template by type[%d]", type);
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -50,7 +51,7 @@ std::unique_ptr<AlgTemplateBase> AlgTemplateRegistry::GetAlgTemplate(const Templ
     }
 
     if (tempCreators_[type] == nullptr) {
-        HCCL_DEBUG("[AlgTemplateRegistry]Creator for template type[%d] has not registered.", type);
+        HCCL_ERROR("[AlgTemplateRegistry]Creator for template type[%d] has not registered.", type);
         return nullptr;
     }
     HCCL_DEBUG("[AlgTemplateRegistry][GetAlgTemplate]get template by type[%d]", type);
