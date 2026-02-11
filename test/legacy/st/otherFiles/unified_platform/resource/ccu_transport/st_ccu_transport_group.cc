@@ -230,7 +230,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_001)
     utCcuTransportVec.emplace_back(std::move(utCcuTransport.get()));
 
     // 打桩CcuTransportGroup构造函数中调用的函数
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
 
     // 创建utCcuTransportGroup
@@ -332,7 +332,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_002)
     utCcuTransportVec.emplace_back(std::move(utCcuTransport.get()));
 
     // 打桩CcuTransportGroup构造函数中调用的函数
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
 
     // 创建utCcuTransportGroup
@@ -435,7 +435,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_003)
     utCcuTransportVec.emplace_back(std::move(utCcuTransport.get()));
 
     // 打桩CcuTransportGroup构造函数中调用的函数
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
 
     // 创建utCcuTransportGroup
@@ -644,9 +644,9 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_005)
 
     // 创建utCcuTransportGroup
     CcuTransportGroup utCcuTransportGroup(utCcuTransportVec, utCntCke);
-    auto res = utCcuTransportGroup.CheckTransports(utCcuTransportVec);
+    HcclResult res = utCcuTransportGroup.CheckTransports(utCcuTransportVec);
 
-    EXPECT_EQ(false, res);
+    EXPECT_EQ(HCCL_E_INTERNAL, res);
 
     delete socket;
     delete rdmaHandle;
@@ -741,9 +741,9 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_006)
 
     // 创建utCcuTransportGroup
     CcuTransportGroup utCcuTransportGroup(utCcuTransportVec, utCntCke);
-    auto res = utCcuTransportGroup.CheckTransportCntCke();
+    HcclResult res = utCcuTransportGroup.CheckTransportCntCke();
 
-    EXPECT_EQ(true, res);
+    EXPECT_EQ(HCCL_SUCCESS, res);
 
     delete socket;
     delete rdmaHandle;

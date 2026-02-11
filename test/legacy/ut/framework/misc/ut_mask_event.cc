@@ -69,7 +69,11 @@ TEST_F(MaskEventTest, MaskEventRecord_ok)
     MOCKER(HrtGetDevicePhyIdByIndex)
         .stubs()
         .will(returnValue(1));
-
+    int pid = 0;
+    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+ 	MOCKER(HrtEventDestroy).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtGetStreamId).stubs().will(returnValue(pid));
+    MOCKER(HrtEventRecord).stubs().will(returnValue(static_cast<void*>(0)));
     // when
     MaskEvent maskEvent;
     Stream stream;
