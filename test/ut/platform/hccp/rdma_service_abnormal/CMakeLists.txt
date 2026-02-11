@@ -95,9 +95,11 @@ target_compile_definitions(rs_ut_abnormal PRIVATE
 )
 
 target_link_libraries(rs_ut_abnormal PRIVATE
-    $<BUILD_INTERFACE:intf_llt_pub>
-    -lrt
+    $<BUILD_INTERFACE:intf_pub>
+    gtest
+    mockcpp
     -pthread
+    -lrt
     -ldl
 )
 
