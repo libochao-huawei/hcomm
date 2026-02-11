@@ -360,6 +360,11 @@ HCCP_ATTRI_VISI_DEF int RaCtxLmemRegister(void *ctxHandle, struct MrRegInfoT *lm
     }
 
     *lmemHandle = (void *)lmemHandleTmp;
+    hccp_warn("@@@ lmemInfo->out.udma_segment.token_value: %ld", lmemInfo->out.udma_segment.token_value);
+    hccp_warn("@@@ lmemInfo->out.udma_segment.token_value_valid: %ld", lmemInfo->out.udma_segment.token_value_valid);
+    hccp_warn("@@@ lmemInfo->out.udma_segment.len: %ld", lmemInfo->out.udma_segment.len);
+    hccp_warn("@@@ lmemInfo->out.udma_segment.va: %ld", lmemInfo->out.udma_segment.va);
+    hccp_warn("@@@ lmemInfo->out.udma_segment.tid: %ld", lmemInfo->out.udma_segment.tid);
     return 0;
 
 err:
@@ -604,6 +609,42 @@ HCCP_ATTRI_VISI_DEF int RaCtxQpCreate(void *ctxHandle, struct QpCreateAttr *attr
     }
 
     *qpHandle = (void *)qpHandleTmp;
+
+    hccp_warn("@@@ info->va: %ld", info->va);
+    hccp_warn("@@@ info->udma_jetty_sq.qbuf: %ld", info->udma_jetty_sq.qbuf);
+    hccp_warn("@@@ info->udma_jetty_sq.qbuf_size: %ld", info->udma_jetty_sq.qbuf_size);
+    hccp_warn("@@@ info->udma_jetty_sq.pi: %ld", info->udma_jetty_sq.pi);
+    hccp_warn("@@@ info->udma_jetty_sq.ci: %ld", info->udma_jetty_sq.ci);
+    hccp_warn("@@@ info->udma_jetty_sq.baseblk_shift: %ld", info->udma_jetty_sq.baseblk_shift);
+    hccp_warn("@@@ info->udma_jetty_sq.baseblk_cnt: %ld", info->udma_jetty_sq.baseblk_cnt);
+    hccp_warn("@@@ info->udma_jetty_sq.sqe_bb_cnt: %ld", info->udma_jetty_sq.sqe_bb_cnt);
+    hccp_warn("@@@ info->udma_jetty_sq.db_type: %ld", info->udma_jetty_sq.db_type);
+    hccp_warn("@@@ info->udma_jetty_sq.db_addr: %ld", info->udma_jetty_sq.db_addr);
+    hccp_warn("@@@ info->udma_jetty_cq.qbuf: %ld", info->udma_jetty_cq.qbuf);
+    hccp_warn("@@@ info->udma_jetty_cq.qbuf_size: %ld", info->udma_jetty_cq.qbuf_size);
+    hccp_warn("@@@ info->udma_jetty_sq.qbuf_end: %ld", info->udma_jetty_sq.qbuf_end);
+    hccp_warn("@@@ info->udma_jetty_sq.qbuf_curr: %ld", info->udma_jetty_sq.qbuf_curr);
+    hccp_warn("@@@ info->udma_jetty_sq.max_sge_num: %ld", info->udma_jetty_sq.max_sge_num);
+    hccp_warn("@@@ info->udma_jetty_sq.cstm: %ld", info->udma_jetty_sq.cstm);
+
+    hccp_warn("@@@ info->udma_jetty_cq.pi: %ld", info->udma_jetty_cq.pi);
+    hccp_warn("@@@ info->udma_jetty_cq.ci: %ld", info->udma_jetty_cq.ci);
+    hccp_warn("@@@ info->udma_jetty_cq.baseblk_shift: %ld", info->udma_jetty_cq.baseblk_shift);
+    hccp_warn("@@@ info->udma_jetty_cq.baseblk_cnt: %ld", info->udma_jetty_cq.baseblk_cnt);
+    hccp_warn("@@@ info->udma_jetty_cq.sqe_bb_cnt: %ld", info->udma_jetty_cq.sqe_bb_cnt);
+    hccp_warn("@@@ info->udma_jetty_cq.db_type: %ld", info->udma_jetty_cq.db_type);
+    hccp_warn("@@@ info->udma_jetty_cq.db_addr: %ld", info->udma_jetty_cq.db_addr);
+    hccp_warn("@@@ info->udma_jetty_cq.qbuf_end: %ld", info->udma_jetty_cq.qbuf_end);
+    hccp_warn("@@@ info->udma_jetty_cq.qbuf_curr: %ld", info->udma_jetty_cq.qbuf_curr);
+    hccp_warn("@@@ info->udma_jetty_cq.max_sge_num: %ld", info->udma_jetty_cq.max_sge_num);
+    hccp_warn("@@@ info->udma_jetty_cq.cstm: %ld", info->udma_jetty_cq.cstm);
+
+    hccp_warn("@@@ info->ub.uasid: %ld", info->ub.uasid);
+    hccp_warn("@@@ info->ub.id: %ld", info->ub.id);
+    hccp_warn("@@@ info->ub.sq_buff_va: %ld", info->ub.sq_buff_va);
+    hccp_warn("@@@ info->ub.wqebb_size: %ld", info->ub.wqebb_size);
+    hccp_warn("@@@ info->ub.db_addr: %ld", info->ub.db_addr);
+    hccp_warn("@@@ info->ub.db_token_id: %ld", info->ub.db_token_id);
     return 0;
 
 err:

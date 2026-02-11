@@ -46,7 +46,14 @@ struct MemRegInfoT {
             uint64_t targetSegHandle; /**< refer to urma_target_seg_t */
         } ub;
     };
-    uint32_t resv[8U];
+    struct{
+        uint32_t token_value;
+        bool token_value_valid;
+        uint64_t len;                 /* specify the length of the segment to be registered */
+        uint64_t va;                  /* specify the address of the segment to be registered */
+        uint32_t tid;
+    } udma_segment;
+    uint32_t resv[7U];
 };
 
 struct MemImportAttrT {
