@@ -1496,6 +1496,24 @@ int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct Ctx
             hccp_err("rs_ub_ctx_jfc_create_normal failed, jfcMode:%d ret:%d", attr->ub.mode, ret);
             goto jfc_cb_init_err;
         }
+
+        uint64_t cqBuffVa = 0, dbVa = 0;
+
+        ret = RsUrmaGetJfcOpt(outJfc, URMA_JFC_CQE_BASE_ADDR, &cqBuffVa, sizeof(uint64_t));
+        CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_get_jfc_opt URMA_JFC_CQE_BASE_ADDR failed, ret:%d, errno:%d", ret, errno),
+            -EOPENSRC);
+
+        ret = RsUrmaGetJfcOpt(outJfc, URMA_JFC_DB_ADDR, &dbVa, sizeof(uint64_t));
+        CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_get_jfc_opt URMA_JFC_DB_ADDR failed, ret:%d, errno:%d",
+            ret, errno), -EOPENSRC);
+
+        jfcCb->bufAddr = cqBuffVa;
+        jfcCb->swdbAddr = dbVa;
+        hccp_warn("@@@RsUbCtxJfcCreate cqBuffVa: %ld, dbVa: %ld", cqBuffVa, dbVa);
+
+        ret = RsMmapJfcVa(jfcCb);
+        CHK_PRT_RETURN(ret != 0, hccp_err("rs_mmap_jfc_va failed, ret:%d", ret), ret);
+
     } else {
         hccp_err("jfc_type %d is invalid, not support!", attr->ub.mode);
         ret = -EINVAL;
