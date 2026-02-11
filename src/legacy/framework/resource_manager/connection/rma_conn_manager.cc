@@ -180,14 +180,81 @@ void RmaConnManager::Release(const std::string &tag, const LinkData &linkData)
     }
 }
 
+void RmaConnManager::GetDeleteJettys(std::vector<RmaConnection *> rmaDelConnList, RdmaHandle &recordRdmaHandle, std::vector<JettyHandle> &remoteJettyList, std::vector<JettyHandle> &jettyList)
+{
+    for (auto *conn : rmaDelConnList) {
+        DevUbConnection* ubConn = dynamic_cast<DevUbConnection*>(conn);
+        if (ubConn == nullptr) {
+            continue;
+        }
+
+        auto& rdmaHandle = ubConn->GetRdmaHandle();
+        if (recordRdmaHandle == nullptr) {
+            recordRdmaHandle = rdmaHandle;
+        } else if(rdmaHandle != recordRdmaHandle){
+            HCCL_WARNING("[%s]rdmaHandle[%p] not equal to recordRdmaHandle[%p]", __func__, rdmaHandle, recordRdmaHandle);
+        }
+
+        auto& remoteJettyHandle = ubConn->GetRemoteJettyHandle();
+        if (rdmaHandle && remoteJettyHandle != 0) {
+            remoteJettyList.push_back(remoteJettyHandle);
+            remoteJettyHandle = 0;
+        }
+
+        ubConn->ReleaseTp();
+
+        auto& jettyHandle = ubConn->GetJettyHandle();
+        if (jettyHandle != 0) {
+            jettyList.push_back(jettyHandle);
+            jettyHandle = 0;
+        }  
+    }
+}
+
+void RmaConnManager::BatchDeleteJettys()
+{
+    // 获取要删除的连接
+    std::vector<DevUbConnection *> rmaDelConnList;
+    DevUbConnection* ubConn = nullptr;
+    for (auto &connPair : rmaConnectionMap) {
+        for (auto &linkDataConnPair : connPair.second) {
+            if (linkDataConnPair.second != nullptr) {
+                ubConn = dynamic_cast<DevUbConnection*>(linkDataConnPair.second.get());
+                if (ubConn) {
+                    rmaDelConnList.push_back(ubConn);
+                    linkDataConnPair.second = nullptr;
+                }
+            }
+        }
+    }
+    RdmaHandle recordRdmaHandle = nullptr;
+    std::vector<JettyHandle> remoteJettyList;
+    std::vector<JettyHandle> jettyList;
+    GetDeleteJettys(rmaDelConnList, recordRdmaHandle, remoteJettyList, jettyList);
+    for(auto remoteJettyHandle : remoteJettyList) {
+        HrtRaUbUnimportJetty(recordRdmaHandle, remoteJettyHandle);
+    }
+    
+    std::vector<JettyHandle> failJettyHandles;
+    RaCtxQpDestoryBatch(recordRdmaHandle, jettyList, failJettyHandles);
+    HCCL_INFO("[%s]RaCtxQpDestoryBatch finish, local jetty nums[%u], delete fail jetty nums[%u]",
+        __func__, jettyList.size(), failJettyHandles.size());
+    for (u64 failJetty : failJettyHandles) {
+        HCCL_INFO("[%s]delete jetty[%llu] fail", __func__, failJetty);
+    }
+    jettyList.clear();
+}
+
 void RmaConnManager::Destroy()
 {
     isDestroyed = true;
+    BatchDeleteJettys();
     rmaConnectionMap.clear();
 }
 
 void RmaConnManager::Clear()
 {
+    BatchDeleteJettys();
     rmaConnectionMap.clear();
 }
 
