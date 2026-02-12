@@ -159,7 +159,7 @@ private:
 };
 
 // kernel构造函数的lambda函数
-using KernelCreator = std::function<std::unique_ptr<hcomm::CcuKernel>(const CcuKernelArg&)>;
+using CcuKernelFunc = std::function<std::unique_ptr<hcomm::CcuKernel>(const CcuKernelArg&)>;
 
 } // namespace hcomm
 

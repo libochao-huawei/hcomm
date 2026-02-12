@@ -209,8 +209,8 @@ HcclResult HcclCcuKernelRegister(HcclComm comm, CcuInsHandle ccuInsHandle,
 
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(kernelHandle);
-    CHK_PTR_NULL(kernelCreator);
-    CHK_PTR_NULL(kernelArg);
+    CHK_PTR_NULL(ccuKernelFunc);
+    CHK_PTR_NULL(kernelArgs);
 
     (void)ccuInsHandle; // 当前预埋不使用
 
@@ -226,9 +226,9 @@ HcclResult HcclCcuKernelRegister(HcclComm comm, CcuInsHandle ccuInsHandle,
     auto *resPack = ccuContainer->GetResPack();
     CHK_PTR_NULL(resPack);
 
-    hcomm::KernelCreator creator = *static_cast<hcomm::KernelCreator*>(kernelCreator);
-    const auto& arg = *static_cast<const hcomm::CcuKernelArg*>(kernelArg);
-    std::unique_ptr<hcomm::CcuKernel> kernel = creator(arg);
+    hcomm::CcuKernelFunc kernelFunc = *static_cast<hcomm::CcuKernelFunc*>(ccuKernelFunc);
+    const auto& args = *static_cast<const hcomm::CcuKernelArg*>(kernelArgs);
+    std::unique_ptr<hcomm::CcuKernel> kernel = kernelFunc(args);
 
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
