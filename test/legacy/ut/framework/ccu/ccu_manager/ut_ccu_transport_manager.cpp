@@ -458,3 +458,155 @@ TEST_F(CcuTransportMgrTest, Ut_RecoverTransportsFailed_When_RecoverMsgError_Expe
 
     EXPECT_THROW(transportMgr.RecoverConfirm(), InternalException);
 }
+
+TEST_F(CcuTransportMgrTest, Ut_Clean_And_Destory_Success_When_InterfaceOk_Expect_Return_Ok)
+{
+    const uint32_t baseIpAddrInt = 100;
+    const uint32_t linkNum = 4;
+    const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
+    const auto &link = links[0];
+    auto commImpl = MockCommImpl();
+    MockCcuTransportMgrDevs();
+
+    std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
+    SocketConfig socketConfig(1, link, socketTag);
+    commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
+        std::make_shared<Socket>(nullptr, IpAddress(), 0, IpAddress(),
+            "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
+
+    unique_ptr<LocalRmaBuffer> fakeBuffer = make_unique<LocalUbRmaBuffer>(commImpl->cclBuffer);
+    MOCKER_CPP(&LocalRmaBufManager::Get,
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &opTag, const PortData &portData, BufferType bufferType))
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(fakeBuffer.get()));
+
+    CcuJettyMgr *ccuJettyMgr = dynamic_cast<CollServiceDeviceMode *>(commImpl->GetCollService())
+        ->GetCcuInsPreprocessor()->GetCcuComm()->GetCcuJettyMgr();
+    (void)ccuJettyMgr->PrepareCreate(links); // GetChannelJettys是const不能打桩
+
+    int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    CcuTransportMgr transportMgr(*commImpl, devLogicId);
+
+    CcuTransport *transport;
+    EXPECT_EQ(transportMgr.PrepareCreate(link, transport), HcclResult::HCCL_SUCCESS);
+    EXPECT_NE(transport, nullptr);
+    EXPECT_EQ(transportMgr.tempTransport.empty(), false);
+    EXPECT_EQ(transportMgr.ccuLink2TransportMap.empty(), false);
+    std::cout<<"ccuLink2TransportMap size:"<<transportMgr.ccuLink2TransportMap.size()<<std::endl;
+    std::cout<<"ccuLink2TransportMap clean show:"<<std::endl;
+
+    constexpr uint32_t CCU_JETTY_GOURP_SIZE = 2; // 真实环境，ccu v1 默认为 1，可变，ccu v2 根据配比关系确定
+    static uint32_t channelCnt = 0;
+    static uint32_t jettyCnt = 0;
+    constexpr uint64_t fakeMemAddr = 0x12345678;
+
+    const uint32_t startTaJettyId = 1024;
+    const uint64_t fakeSqBufVa = fakeMemAddr;
+    const uint32_t fakeSqBufSize = 1024;
+    const uint32_t fakeSqDepth = 4;
+    const IpAddress locAddr{"1.1.1.1"};
+    const IpAddress rmtAddr{"2.2.2.2"};
+    
+    vector<unique_ptr<CcuJetty>> ccuJettys;
+    vector<CcuJetty *> ccuJettyPtrs;
+    for (uint32_t i = 0; i < CCU_JETTY_GOURP_SIZE; i++) {
+        CcuJettyInfo jettyInfo;
+        jettyInfo.jettyCtxId = 0 + jettyCnt + i; // 保证同一组channel jetty编号一致
+        jettyInfo.taJettyId = 0 + jettyCnt + startTaJettyId + i;
+        jettyInfo.sqDepth = fakeSqDepth;
+        jettyInfo.wqeBBStartId = 16;
+        jettyInfo.sqBufVa = fakeSqBufVa + i;
+        jettyInfo.sqBufSize = fakeSqBufSize + i;
+        unique_ptr<CcuJetty> ccuJetty = nullptr;
+        CcuCreateJetty(locAddr, jettyInfo, ccuJetty);
+        ccuJettyPtrs.emplace_back(ccuJetty.get());
+        ccuJettys.emplace_back(std::move(ccuJetty));
+    }
+
+    for (auto &linkTransPair : transportMgr.ccuLink2TransportMap) {
+        std::cout<<"ccuLink2TransportMap LinkData:"<<linkTransPair.first.Describe()<<std::endl;
+        std::cout<<"ccuLink2TransportMap rdmaHandle:"<<linkTransPair.second->ccuConnection->rdmaHandle<<std::endl;
+        linkTransPair.second->ccuConnection->importJettyCtxs.resize(2);
+        linkTransPair.second->ccuConnection->ccuJettys_ = ccuJettyPtrs;
+        int handleId = 0;
+        for (auto &item : linkTransPair.second->ccuConnection->importJettyCtxs) {
+            item.outParam.handle = ++handleId;
+            std::cout<<"ccuLink2TransportMap unimport jetty:"<<item.outParam.handle<<std::endl;
+        }
+        handleId = 0;
+        for (auto &item : linkTransPair.second->ccuConnection->ccuJettys_) {
+            item->isCreated_ = true;
+            item->outParam_.handle = ++handleId;
+            std::cout<<"ccuLink2TransportMap del jetty:"<<item->outParam_.handle<<std::endl;
+        }
+        BatchDeleteJettyInfo partInfo;
+        linkTransPair.second->Clean(partInfo); 
+        for(auto it:partInfo.deleteJettyList){
+            for(auto it2:it.second){
+                std::cout<<"handle:"<<it.first<<", delete jetty:"<<it2<<std::endl;
+            }
+        }
+        for(auto it:partInfo.unimportJettyList){
+            for(auto it2:it.second){
+                std::cout<<"handle:"<<it.first<<", unimportJetty jetty:"<<it2<<std::endl;
+            }
+        }
+    }
+    transportMgr.Clean();
+
+    CcuTransport *transport2;
+    EXPECT_EQ(transportMgr.PrepareCreate(link, transport2), HcclResult::HCCL_SUCCESS);
+    EXPECT_NE(transport2, nullptr);
+    EXPECT_EQ(transportMgr.tempTransport.empty(), false);
+    EXPECT_EQ(transportMgr.ccuLink2TransportMap.empty(), false);
+
+    ccuJettys.clear();
+    ccuJettyPtrs.clear();
+    for (uint32_t i = 0; i < CCU_JETTY_GOURP_SIZE; i++) {
+        CcuJettyInfo jettyInfo;
+        jettyInfo.jettyCtxId = 0 + jettyCnt + i; // 保证同一组channel jetty编号一致
+        jettyInfo.taJettyId = 0 + jettyCnt + startTaJettyId + i;
+        jettyInfo.sqDepth = fakeSqDepth;
+        jettyInfo.wqeBBStartId = 16;
+        jettyInfo.sqBufVa = fakeSqBufVa + i;
+        jettyInfo.sqBufSize = fakeSqBufSize + i;
+        unique_ptr<CcuJetty> ccuJetty = nullptr;
+        CcuCreateJetty(locAddr, jettyInfo, ccuJetty);
+        ccuJettyPtrs.emplace_back(ccuJetty.get());
+        ccuJettys.emplace_back(std::move(ccuJetty));
+    }
+
+    std::cout<<"ccuLink2TransportMap size:"<<transportMgr.ccuLink2TransportMap.size()<<std::endl;
+    std::cout<<"ccuLink2TransportMap destory show:"<<std::endl;
+    for (auto &linkTransPair : transportMgr.ccuLink2TransportMap) {
+        std::cout<<"ccuLink2TransportMap LinkData:"<<linkTransPair.first.Describe()<<std::endl;
+        std::cout<<"ccuLink2TransportMap rdmaHandle:"<<linkTransPair.second->ccuConnection->rdmaHandle<<std::endl;
+        linkTransPair.second->ccuConnection->importJettyCtxs.resize(2);
+        linkTransPair.second->ccuConnection->ccuJettys_.resize(2);
+        int handleId = 0;
+        for (auto &item : linkTransPair.second->ccuConnection->importJettyCtxs) {
+            item.outParam.handle = ++handleId;
+            std::cout<<"ccuLink2TransportMap unimport jetty:"<<item.outParam.handle<<std::endl;
+        }
+        handleId = 0;
+        for (auto &item : linkTransPair.second->ccuConnection->ccuJettys_) {
+            item->isCreated_ = true;
+            item->outParam_.handle = ++handleId;
+            std::cout<<"ccuLink2TransportMap del jetty:"<<item->outParam_.handle<<std::endl;
+        }
+        BatchDeleteJettyInfo partInfo;
+        linkTransPair.second->Clean(partInfo); 
+        for(auto it:partInfo.deleteJettyList){
+            for(auto it2:it.second){
+                std::cout<<"handle:"<<it.first<<", delete jetty:"<<it2<<std::endl;
+            }
+        }
+        for(auto it:partInfo.unimportJettyList){
+            for(auto it2:it.second){
+                std::cout<<"handle:"<<it.first<<", unimportJetty jetty:"<<it2<<std::endl;
+            }
+        }
+    }
+    transportMgr.Destroy();
+}
