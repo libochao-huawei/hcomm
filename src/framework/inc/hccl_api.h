@@ -144,7 +144,6 @@ extern HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine,
  * @note 1.基于thread获取notify数量\n 2.后续数据面用notify idx操作
  */
 extern HcclResult HcclGetNotifyNumInThread(HcclComm comm, ThreadHandle thread, CommEngine engine, uint32_t *notifyNum);
-// extern HcclResult HcclThreadGetNotifyNum(HcclComm comm, CommEngine engine, ThreadHandle thread, uint32_t *notifyNum);
 
 /** @} */  // 运行时接口-类型定义
 /**
