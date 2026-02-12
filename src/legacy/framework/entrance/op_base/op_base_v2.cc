@@ -123,7 +123,7 @@ static void CheckHcclDeterministic(uint32_t hcclDeterministic)
 
 template<typename InitParamType>
 HcclResult InitHcclCommunicator(HcclCommInfoV2 &opbasedCommInfoV2, const std::string &identifier, Hccl::CommParams &commParams,
-                                const InitParamType &&initParam, int32_t expansionMode, HcclComm *comm)
+                                const InitParamType &initParam, int32_t expansionMode, HcclComm *comm)
 {
     HcclResult ret = HCCL_SUCCESS;
     bool errorFlag = false;
