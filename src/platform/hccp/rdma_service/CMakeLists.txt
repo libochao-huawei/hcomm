@@ -63,7 +63,7 @@ target_include_directories(rs PRIVATE
     ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/kms
 
     # rdma头文件
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/inc/driver
@@ -127,3 +127,6 @@ install(TARGETS  rs
 )
 
 add_dependencies(rs crypto_static)
+if(BUILD_OPEN_PROJECT)
+add_dependencies(rs kern-abi)
+endif()
