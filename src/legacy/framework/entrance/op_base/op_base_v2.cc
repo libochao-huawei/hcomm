@@ -620,6 +620,7 @@ HcclResult HcclAlltoAllV2(const void *sendBuf, uint64_t sendCount, HcclDataType 
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "ALLTOALL_" + communicator->GetId();
+
     CHK_RET(HcomCheckOpParamV2(tag.c_str(), 0, sendType, stream));
     CHK_RET(HcomCheckDataTypeV2(recvType));
 
@@ -681,6 +682,7 @@ HcclResult HcclAlltoAllVV2(const void *sendBuf, const void *sendCounts, const vo
     rtModel_t rtModel = nullptr;
     u32 modelId = 0;
     CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
+
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "HCCL_ALLTOALLV_" + communicator->GetId();
 
@@ -932,6 +934,7 @@ HcclResult HcclAlltoAllVCV2(const void *sendBuf, const void *sendCountMatrix, Hc
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "HCCL_ALLTOALLVC_" + communicator->GetId();
+
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), 0, sendType, stream), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckDataTypeV2(recvType), tag.c_str());
     u32 rankSize = 0;
@@ -999,6 +1002,7 @@ HcclResult HcclReduceV2(void *sendBuf, void *recvBuf, uint64_t count, HcclDataTy
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "Reduce_" + communicator->GetId();
+
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckReductionOpV2(op), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckReduceDataTypeV2(dataType, op), tag.c_str());
@@ -1064,6 +1068,7 @@ HcclResult HcclAllReduceV2(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "AllReduce_" + communicator->GetId();
+
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
 
     CHK_RET_AND_PRINT_IDE(HcomCheckReductionOpV2(op), tag.c_str());
@@ -1128,6 +1133,7 @@ HcclResult HcclBroadcastV2(void *buf, uint64_t count, HcclDataType dataType, uin
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "Broadcast_" + communicator->GetId();
+
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
     u32 rankSize = INVALID_VALUE_RANKSIZE;
     CHK_RET_AND_PRINT_IDE(communicator->GetRankSize(&rankSize), tag.c_str());
@@ -1198,6 +1204,7 @@ HcclResult HcclBarrierV2(HcclComm comm, aclrtStream stream)
     }
     // 同通信域同算子复用tag
     const string tag = "AllReduce_" + communicator->GetId();
+
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
  
     CHK_RET_AND_PRINT_IDE(HcomCheckReductionOpV2(op), tag.c_str());
@@ -1657,6 +1664,7 @@ HcclResult HcclScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclD
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "Scatter_" + communicator->GetId();
+
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), recvCount, dataType, stream), tag.c_str());
     u32 rankSize = INVALID_VALUE_RANKSIZE;
     CHK_RET_AND_PRINT_IDE(communicator->GetRankSize(&rankSize), tag.c_str());
@@ -1723,6 +1731,7 @@ HcclResult HcclAllGatherV2(void *sendBuf, void *recvBuf, uint64_t sendCount, Hcc
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "AllGather_" + communicator->GetId();
+
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), sendCount, dataType, stream), tag.c_str());
     
     /* 接口交互信息日志 */
@@ -1782,6 +1791,7 @@ HcclResult HcclAllGatherVV2(void *sendBuf, uint64_t sendCount, void *recvBuf, vo
     // 获取通信域
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "AllGatherV_" + communicator->GetId();
+
     // 获取rank信息
     uint32_t rankId;
     CHK_RET(communicator->GetRankId(rankId));
@@ -1865,6 +1875,7 @@ HcclResult HcclSendV2(
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "Send_" + communicator->GetId();
+
     CHK_RET(HcomCheckDataTypeV2(dataType));
 
     /* 接口交互信息日志 */
@@ -1923,6 +1934,7 @@ HcclResult HcclRecvV2(
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "Recv_" + communicator->GetId();
+
     CHK_RET(HcomCheckDataTypeV2(dataType));
 
     /* 接口交互信息日志 */
@@ -1981,6 +1993,7 @@ HcclResult HcclReduceScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount,
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "ReduceScatter_" + communicator->GetId();
+
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), recvCount, dataType, stream), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckReductionOpV2(op), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckReduceDataTypeV2(dataType, op), tag.c_str());
@@ -2044,6 +2057,7 @@ HcclResult HcclReduceScatterVV2(void *sendBuf, void *sendCounts, void *sendDispl
     // 获取通信域
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "ReduceScatterV_" + communicator->GetId();
+
     // 获取rank信息
     uint32_t rankId;
     CHK_RET(communicator->GetRankId(rankId));
@@ -2134,6 +2148,7 @@ HcclResult HcclBatchSendRecvV2(HcclSendRecvItem *sendRecvInfo, uint32_t itemNum,
     CHK_PTR_NULL(comm);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "HcclBatchSendRecvV2_" + communicator->GetId();
+
     CHK_PTR_NULL(stream);
     CHK_PTR_NULL(sendRecvInfo);
     CHK_PRT_RET(itemNum == 0, HCCL_WARNING("[BatchSendRecv] taskList itemNum is zero."), HCCL_SUCCESS);

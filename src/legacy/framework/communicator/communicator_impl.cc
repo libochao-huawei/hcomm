@@ -1466,11 +1466,6 @@ u32 CommunicatorImpl::GetOpBaseOpIndex() const
     return opBaseOpIndex;
 }
 
-u32 CommunicatorImpl::GetOpIndex() const
-{
-    return opIndex;
-}
-
 bool CommunicatorImpl::GetOpAiCpuTSFeatureFlag() const
 {
     return opExecuteConfig.accState == AcceleratorState::AICPU_TS;
