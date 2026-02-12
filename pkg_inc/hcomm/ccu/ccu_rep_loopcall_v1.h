@@ -33,8 +33,6 @@ public:
     void SetInArg(const std::vector<LocalAddr> &addrList);
     void SetInArg(const std::vector<RemoteAddr> &addrList);
 
-
- 
 private:
     std::string                      label;
     std::shared_ptr<CcuRepLoopBlock> loopBlock{nullptr};
