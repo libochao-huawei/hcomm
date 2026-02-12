@@ -56,6 +56,7 @@ HcclResult P2PMgmt::EnableP2P(std::vector<uint32_t> remoteDevices)
 HcclResult P2PMgmt::EnableP2P(uint32_t remoteDevicePhysicID)
 {
     if (Is310PDevice()) {
+        HCCL_INFO("TEST2 Is310PDevice[%s]", Is310PDevice() ? "true" : "false");
         return HCCL_SUCCESS;
     }
     int32_t localDeviceLogicID;
@@ -238,6 +239,7 @@ HcclResult P2PMgmt::CheckMarsterId(
 HcclResult P2PMgmt::WaitP2PEnabled(uint32_t remoteDevicePhysicID, std::function<bool()> needStop)
 {
     if (Is310PDevice()) {
+        HCCL_INFO("TEST3 Is310PDevice[%s]", Is310PDevice() ? "true" : "false");
         return HCCL_SUCCESS;
     }
     int32_t localDeviceLogicID;
@@ -264,7 +266,7 @@ HcclResult P2PMgmt::WaitP2PEnabled(uint32_t remoteDevicePhysicID, std::function<
         u32 localDevicePhysicID = 0;
         CHK_RET(hrtGetDevicePhyIdByIndex(localDeviceLogicID, localDevicePhysicID));
         HcclResult ret = CheckMarsterId(remoteDevicePhysicID, localDevicePhysicID, isMarsterIdDiff);
-        HCCL_INFO("[WaitP2PEnabled][CheckMarsterId]localDevicePhysicID %u, remoteDevicePhysicID %u, isMarsterIdDiff %s",
+        HCCL_INFO("[WaitP2PEnabled][CheckMarsterId]localDevicePhysicID[%u], remoteDevicePhysicID[%u], isMarsterIdDiff[%s]",
             localDevicePhysicID, remoteDevicePhysicID, isMarsterIdDiff ? "true" : "false");
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Wait][P2PEnabled]check pcie connection failed. device info: local logic id:%d, "\
