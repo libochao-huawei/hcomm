@@ -14,6 +14,7 @@
 #include "hccl_api.h"
 #include "reged_mems/urma_mem.h"
 #include "adapter_rts_common.h"
+#include "ascend_hal.h"
  
 namespace hcomm {
 UrmaEndpoint::UrmaEndpoint(const EndpointDesc &endpointDesc)
@@ -25,10 +26,10 @@ HcclResult UrmaEndpoint::Init()
 {
     HCCL_INFO("[%s] localEndpoint protocol[%d]", __func__, endpointDesc_.protocol);
 
-    if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE){
-        HCCL_ERROR("[UrmaEndpoint][%s] endpointDesc.loc.locType[%d] only support ENDPOINT_LOC_TYPE_DEVICE", __func__, endpointDesc_.loc.locType);
-        return HCCL_E_PARA;
-    }
+    // if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE){
+    //     HCCL_ERROR("[UrmaEndpoint][%s] endpointDesc.loc.locType[%d] only support ENDPOINT_LOC_TYPE_DEVICE", __func__, endpointDesc_.loc.locType);
+    //     return HCCL_E_PARA;
+    // }
     Hccl::IpAddress ipAddr{};
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
@@ -61,10 +62,10 @@ HcclResult UrmaEndpoint::Init()
 
 HcclResult UrmaEndpoint::ServerSocketListen()
 {
-    if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE){
-        HCCL_INFO("[UrmaEndpoint][%s] endpointDesc.loc.locType[%d] skip create ServerSocket", __func__, endpointDesc_.loc.locType);
-        return HCCL_SUCCESS;
-    }
+    // if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE){
+    //     HCCL_INFO("[UrmaEndpoint][%s] endpointDesc.loc.locType[%d] skip create ServerSocket", __func__, endpointDesc_.loc.locType);
+    //     return HCCL_SUCCESS;
+    // }
 
     Hccl::IpAddress ipaddr{};
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipaddr));
@@ -107,6 +108,17 @@ std::unordered_map<Hccl::PortData, std::unique_ptr<Hccl::Socket>> &UrmaEndpoint:
 
 HcclResult UrmaEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
+    // rH2D场景先进行总线注册
+    if(this->endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
+        // 获取设备逻辑id
+        uint32_t devLogicId = HcclGetThreadDeviceId();
+        int ret = halSvmRegister(devLogicId, static_cast<uint64_t>(mem.addr), mem.size, 0, NULL);
+        if(ret) {
+            HCCL_ERROR("[UbRegedMemMgr][RegisterMemory] Rh2D bus registration failed!");
+            return HCCL_E_INTERNAL;
+        }
+    }
+
     CHK_RET(this->regedMemMgr_->RegisterMemory(mem, memTag, memHandle));
     return HCCL_SUCCESS;
 }
@@ -114,6 +126,18 @@ HcclResult UrmaEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void *
 HcclResult UrmaEndpoint::UnregisterMemory(void* memHandle)
 {
     CHK_RET(this->regedMemMgr_->UnregisterMemory(memHandle));
+    
+    // rH2D场景执行总线解注册
+    if(this->endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
+        // 获取设备逻辑id
+        uint32_t devLogicId = HcclGetThreadDeviceId();
+        int ret = halSvmUnRegister(devLogicId, static_cast<uint64_t>(mem.addr), mem.size, 0);
+        if(ret) {
+            HCCL_ERROR("[UbRegedMemMgr][UnregisterMemory] Rh2D bus unregistration failed!");
+            return HCCL_E_INTERNAL;
+        }
+    }
+
     return HCCL_SUCCESS;
 }
 
