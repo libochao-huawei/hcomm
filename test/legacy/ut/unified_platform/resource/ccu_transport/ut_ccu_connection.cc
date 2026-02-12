@@ -335,7 +335,7 @@ TEST_F(CcuConnectionTest, Ut_ReleaseConnRes_When_InterfaceOk_Expect_Return_Ok)
 
     connection->tpInfo.tpHandle = 1;
     MOCKER_CPP(&TpManager::ReleaseTpInfo).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
-    EXPECT_EQ(connection->ReleaseConnRes(), HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(connection->ReleaseConnRes(CONN_DESTORY), HcclResult::HCCL_SUCCESS);
 }
 
 TEST_F(CcuConnectionTest, Ut_Clean_When_InterfaceOk_Expect_Return_Ok)
@@ -371,5 +371,6 @@ TEST_F(CcuConnectionTest, Ut_Clean_When_InterfaceOk_Expect_Return_Ok)
     connection->ImportJetty();
     EXPECT_EQ(connection->GetStatus(), CcuConnStatus::CONNECTED);
 
-    EXPECT_NO_THROW(connection->Clean());
+    BatchDeleteJettyInfo info;
+    EXPECT_NO_THROW(connection->Clean(info));
 }
