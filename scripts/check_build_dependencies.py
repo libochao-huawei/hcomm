@@ -22,6 +22,7 @@ from typing import Iterator, List, NamedTuple, Optional
 
 class Receiver(NamedTuple):
     """消息接收器。"""
+    warn_msgs: List[str]
     err_msgs: List[str]
 
 
@@ -154,9 +155,9 @@ def check_build_deps(recv: Receiver, ascend_install_path: str, deps: list):
             continue
         try:
             if not check_build_dep(version, dep_info):
-                err_msg = 'Check build dependency failed! ' \
+                warn_msgs = 'Check build dependency failed! ' \
                         f'Required {dep_pkg} version is {dep_info}, but {dep_pkg} version is {version}.'
-                recv.err_msgs.append(err_msg)
+                recv.warn_msgs.append(warn_msgs)
         except ValueError:
             err_msg = f'Check build dependency error! version is {version}, dep_info is {dep_info}.'
             recv.err_msgs.append(err_msg)
@@ -174,8 +175,12 @@ def main():
         logging.error('The deps argument must contain an even number of elements!')
         return False
 
-    recv = Receiver([])
+    recv = Receiver([], [])
     check_build_deps(recv, args.ascend_install_path, args.deps)
+
+    if recv.warn_msgs:
+        for warn_msg in recv.warn_msgs:
+            logging.warning(err_msg)
 
     if recv.err_msgs:
         for err_msg in recv.err_msgs:
