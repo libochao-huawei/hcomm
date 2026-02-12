@@ -7,39 +7,35 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+
+include_guard(GLOBAL)
+
+set(HCOMM_UTILS_VERSION "8.5.0-beta.1")
+set(HCOMM_UTILS_ARCH ${CMAKE_HOST_SYSTEM_PROCESSOR})
+set(HCOMM_UTILS_FILE "cann-hcomm-utils_${HCOMM_UTILS_VERSION}_linux-${ARCH}.tar.gz")
+set(HCOMM_UTILS_URL "https://ascend.devcloud.huaweicloud.com/artifactory/cann-run/dependency/${HCOMM_UTILS_VERSION}/${HCOMM_UTILS_ARCH}/basic/${HCOMM_UTILS_FILE}")
+set(HCOMM_UTILS_PKG_PATH ${CANN_3RD_LIB_PATH}/${HCOMM_UTILS_FILE})
 set(HCOMM_UTILS_PATH ${CMAKE_CURRENT_BINARY_DIR})
 set(INSTALL_LIBRARY_DIR hcomm/lib64)
-set(CANN_UTILS_VERSION "8.5.0-beta.1")
 
 if(hcomm_utils_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
-    message(STATUS "hcomm_utils found in ${HCOMM_UTILS_PATH}")
+    message(STATUS "[ThirdParty] hcomm_utils found in ${HCOMM_UTILS_PATH}, and not force rebuild cann third_party")
 else()
-    message(STATUS "hcomm_utils INSTALL_LIBRARY_DIR ${INSTALL_LIBRARY_DIR} ${HCOMM_UTILS_PATH}")  
-    message(STATUS "hcomm_utils CANN_UTILS_LIB_PATH ${CANN_UTILS_LIB_PATH}   process ${CMAKE_HOST_SYSTEM_PROCESSOR}")
-    file(GLOB HCOMM_UTILS_PKG
-        LIST_DIRECTORIES True
-        ${CANN_UTILS_LIB_PATH}/cann-hcomm-utils_*_linux-${CMAKE_HOST_SYSTEM_PROCESSOR}.tar.gz
-    )
-
-    if(NOT EXISTS ${HCOMM_UTILS_PKG})
-        set(HCOMM_UTILS_FILE "cann-hcomm-utils_${CANN_UTILS_VERSION}_linux-${CMAKE_HOST_SYSTEM_PROCESSOR}.tar.gz")
-        set(SIMULATOR_DIR ${CMAKE_CURRENT_BINARY_DIR}/download/${HCOMM_UTILS_FILE})
-        execute_process(COMMAND rm -rf ${SIMULATOR_DIR})
-
-        set(HCOMM_UTILS_URL "https://ascend.devcloud.huaweicloud.com/artifactory/cann-run/dependency/${CANN_UTILS_VERSION}/${CMAKE_HOST_SYSTEM_PROCESSOR}/basic/${HCOMM_UTILS_FILE}")
-        message(STATUS "hcomm_utils pkg not found in ${HCOMM_UTILS_PKG}, downloading utils pkg from ${HCOMM_UTILS_URL}")
+    if(EXISTS ${HCOMM_UTILS_PKG_PATH})
+        # 离线编译场景，优先使用已下载的包
+        message(STATUS "[ThirdParty] Found local hcomm_utils package: ${HCOMM_UTILS_PKG_PATH}")
+    else()
+        message(STATUS "[ThirdParty] Downloading hcomm_utils from ${HCOMM_UTILS_URL}")
         file(DOWNLOAD
             ${HCOMM_UTILS_URL}
-            ${SIMULATOR_DIR}
-            SHOW_PROGRESS
+            ${HCOMM_UTILS_PKG_PATH}
         )
-        set(HCOMM_UTILS_PKG ${SIMULATOR_DIR})
     endif()
 
     execute_process(
         COMMAND mkdir -p ${HCOMM_UTILS_PATH}
         COMMAND chmod 755 -R ${HCOMM_UTILS_PATH}
-        COMMAND tar -xf ${HCOMM_UTILS_PKG} --overwrite --strip-components=1 -C ${HCOMM_UTILS_PATH}
+        COMMAND tar -xf ${HCOMM_UTILS_PKG_PATH} --overwrite --strip-components=1 -C ${HCOMM_UTILS_PATH}
     )
 
     add_library(ascend_kms SHARED IMPORTED)
@@ -69,10 +65,12 @@ else()
         INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_PATH}/hcomm_utils/${PRODUCT_SIDE}/include"
         IMPORTED_LOCATION "${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/libhccl_legacy.so"
     )
+
+    # 安装库文件到指定目录
     install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/libhccl_legacy.so
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
-    
+
     install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/MemSet_dynamic_AtomicAddrClean_1_ascend310p3.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
