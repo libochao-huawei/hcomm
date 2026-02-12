@@ -43,6 +43,7 @@ static HcclResult CheckRequestResult(RequestHandle &reqHandle)
 
     RequestResult result = HccpGetAsyncReqResult(reqHandle);
     if (result == RequestResult::NOT_COMPLETED) {
+        // 不提供日志避免刷屏
         return HcclResult::HCCL_E_AGAIN;
     }
 
@@ -57,7 +58,7 @@ static HcclResult CheckRequestResult(RequestHandle &reqHandle)
 
 HcclResult CheckTpProtocol(const TpProtocol tpProtocol) {
     if (tpProtocol != TpProtocol::CTP && tpProtocol != TpProtocol::RTP) {
-        HCCL_WARNING("[TpMgr][%s] failed, tpProtocol[%d] is not supported.",
+        HCCL_ERROR("[TpMgr][%s] failed, tpProtocol[%d] is not supported.",
             __func__, tpProtocol);
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
@@ -236,8 +237,6 @@ HcclResult TpMgr::HandleCompletedRequest(const TpMgr::RequestCtx reqCtx,
     Hccl::IpAddress locAddr{}, rmtAddr{};
     (void)CommAddrToIpAddress(param.locAddr, locAddr);
     (void)CommAddrToIpAddress(param.rmtAddr, rmtAddr);
-    // auto &locAddr = param.locAddr;
-    // auto &rmtAddr = param.rmtAddr;
 
     std::lock_guard<std::mutex> lock(GetInfoCtxMutex(param.tpProtocol));
     auto &infoMap = GetInfoCtxMap(param.tpProtocol);

@@ -1,13 +1,16 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
- * Description: ccu represnetation context implementation file
- * Author: sunzhepeng
- * Create: 2024-06-17
- */
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "ccu_kernel.h"
 #include "ccu_rep_v1.h"
-#include "ccu_context_resource_v1.h"
+#include "ccu_kernel_resource.h"
 #include "ccu_assist_v1.h"
 #include "ccu_microcode_v1.h"
 
@@ -55,10 +58,6 @@ CcuKernel::CcuKernel(const CcuKernelArg &arg)
 {
     HCCL_INFO("Construct CcuKernel: %s", arg.GetKernelSignature().GetData().c_str());
     channels_ = arg.channels;
-}
-
-CcuKernel::~CcuKernel()
-{
 }
 
 static HcclResult GetDieIdByChannel(const ChannelHandle channel, uint32_t &dieId)
@@ -122,10 +121,25 @@ HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskPa
         return HcclResult::HCCL_E_INTERNAL;
     }
 
+    if (instrInfo_.missionInstrCount == 0 || instrInfo_.instrVec.empty()) {
+        HCCL_ERROR("[CcuKernel][%s] failed, mission instructions are empty, "
+            "the kernel is not been translated yet.", __func__);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
     // 如果agrs数量超过sqe arg的最大数量，则返回多个TaskParam，前面几个只从sqe中加载args;
     // args数量大于等于0、小于等于最大值时，返回1个TaskParam
-    uint32_t seqNum
+    const uint32_t seqNum
         = (agrsNum / CCU_SQE_ARGS_LEN) + ((agrsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (agrsNum == 0 ? 1 : 0);
+
+    const uint32_t preMissonSqeInsCnt = (seqNum - 1) * CCU_SQE_ARGS_LEN;
+    if (instrInfo_.missionInstrCount < preMissonSqeInsCnt) {
+        HCCL_ERROR("[CcuKernel][%s] failed, missionInstrCount[%u] should be greater "
+            "than preMissonSqeInsCnt[%u].", __func__, instrInfo_.missionInstrCount,
+            preMissonSqeInsCnt);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
     taskParams.resize(seqNum);
     for (uint32_t index = 0; index < seqNum; index++) {
         taskParams[index].dieId       = GetDieId();
@@ -134,8 +148,10 @@ HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskPa
         taskParams[index].key         = GetMissionKey();
         taskParams[index].argSize     = CCU_SQE_ARGS_LEN;
         if (index == seqNum - 1) {
-            taskParams[index].instCnt = instrInfo_.missionInstrCount - index * CCU_SQE_ARGS_LEN;
-            std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::end(args), std::begin(taskParams[index].args));
+            // index 由计算得出，相乘结果不会溢出
+            const uint32_t preMissionInsCnt = index * CCU_SQE_ARGS_LEN;
+            taskParams[index].instCnt = instrInfo_.missionInstrCount - preMissionInsCnt;
+            std::copy(std::begin(args) + preMissionInsCnt, std::end(args), std::begin(taskParams[index].args));
         } else {
             taskParams[index].instCnt = CCU_SQE_ARGS_LEN;
             std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::begin(args) + (index + 1) * CCU_SQE_ARGS_LEN,
@@ -231,30 +247,61 @@ void CcuKernel::LoadVariable(const CcuRep::Variable &src, const CcuRep::Variable
     Append(std::make_shared<CcuRep::CcuRepLoadVar>(src, var));
 }
 
-HcclResult CcuKernel::LocalNotifyRecord(uint32_t coreId, uint32_t dstNotifyIdx, uint32_t mask)
+HcclResult CcuKernel::LocalNotifyRecord(const uint32_t coreId,
+    const uint32_t dstNotifyIdx, const uint32_t mask)
 {
-    HCCL_ERROR("[%s] not support.", __func__);
-    return HcclResult::HCCL_E_NOT_SUPPORT;
+    if (CurrentBlock()->Type() == CcuRep::CcuRepType::LOOP_BLOCK) {
+        HCCL_ERROR("[CcuKernel][%s] is not supported in loop block, please check.", __func__);
+        return HcclResult::HCCL_E_NOT_SUPPORT;
+    }
+
+    const std::string notifyTag = "Notify_" + std::to_string(coreId) + "_" +
+        std::to_string(dstNotifyIdx);
+
+    auto &sharedNotifies = importedRes_.sharedNotifies;
+    if (sharedNotifies.find(notifyTag) == sharedNotifies.end()) {
+        CcuRep::LocalNotify localNotify;
+        sharedNotifies.insert({notifyTag, localNotify});
+    }
+
+    Append(std::make_shared<CcuRep::CcuRepRecordSharedNotify>(sharedNotifies.at(notifyTag), mask));
+
+    return HcclResult::HCCL_SUCCESS;
 }
-//新增
+
+HcclResult CcuKernel::LocalNotifyWait(const uint32_t coreId,
+    const uint32_t notifyIdx, const uint32_t mask)
+{
+    const std::string notifyTag = "Notify_" + std::to_string(coreId) + "_"
+        + std::to_string(notifyIdx);
+
+    auto &sharedNotifies = exportedRes_.sharedNotifies;
+    if (sharedNotifies.find(notifyTag) == sharedNotifies.end()) {
+        CcuRep::LocalNotify notify = CreateLocalNotify();
+        exportedRes_.sharedNotifies.insert({notifyTag, notify});
+    }
+
+    bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
+    Append(std::make_shared<CcuRep::CcuRepLocWaitNotify>(
+        exportedRes_.sharedNotifies.at(notifyTag), mask, isProfiling));
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult CcuKernel::RecordEvent(CcuRep::CompletedEvent event)
 {
     if (CurrentBlock()->Type() == CcuRep::CcuRepType::LOOP_BLOCK) {
-        return HCCL_E_NOT_SUPPORT; 
+        HCCL_ERROR("[CcuKernel][%s] is not supported in loop block, please check.", __func__);
+        return HcclResult::HCCL_E_NOT_SUPPORT;
     }
-    Append(std::make_shared<CcuRep::CcuRepLocPostSem>(event, event.mask));
+
+    Append(std::make_shared<CcuRep::CcuRepLocRecordEvent>(event));
     return HCCL_SUCCESS;
 }
 
 HcclResult CcuKernel::WaitEvent(CcuRep::CompletedEvent event)
 {
-    if (CurrentBlock()->Type() == CcuRep::CcuRepType::LOOP_BLOCK) {
-        Append(std::make_shared<CcuRep::CcuRepLocWaitSem>(event, event.mask, false));
-    } else {
-        auto rep = std::make_shared<CcuRep::CcuRepLocWaitSem>(event, event.mask, true);
-        Append(rep);
-    }
-
+    bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
+    Append(std::make_shared<CcuRep::CcuRepLocWaitEvent>(event, isProfiling));
     return HCCL_SUCCESS;
 }
 
@@ -275,13 +322,8 @@ HcclResult CcuKernel::NotifyRecord(const ChannelHandle channel, uint32_t remoteN
 /*RemoteWait新接口*/
 HcclResult CcuKernel::NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask)
 {
-    if (CurrentBlock()->Type() == CcuRep::CcuRepType::LOOP_BLOCK) {
-        Append(std::make_shared<CcuRep::CcuRepRemWaitSem>(channel, localNotifyIdx, mask, false));
-    } else {
-        auto rep = std::make_shared<CcuRep::CcuRepRemWaitSem>(channel, localNotifyIdx, mask, true);
-        //AddProfiling(channel, "NotifyWait", localNotifyIdx, mask);
-        Append(rep);
-    }
+    bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
+    Append(std::make_shared<CcuRep::CcuRepRemWaitSem>(channel, localNotifyIdx, mask, isProfiling));
     return HCCL_SUCCESS;
 }
 
@@ -610,4 +652,15 @@ CcuResRepository  &CcuKernel::GetResRepository()
 {
     return resRepo_;
 }
+
+CcuSharedResource &CcuKernel::GetExportedRes()
+{
+    return exportedRes_;
+}
+
+CcuSharedResource &CcuKernel::GetImportedRes()
+{
+    return importedRes_;
+}
+
 }; // namespace hcomm
