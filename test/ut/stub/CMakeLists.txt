@@ -139,7 +139,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/pub_inc/new
     ${HCCL_CODE_ROOT}/src/platform/hccp/inc
     ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network
-    ${HCCL_CODE_ROOT}/src/platform/hccp/external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
     ${HCCL_CODE_ROOT}/src/pkg_inc
     ${HCCL_CODE_ROOT}/external_depends
 
@@ -391,6 +391,8 @@ target_compile_definitions(hccl_llt    PRIVATE
     CCL_KERNEL
     -DCCL_LLT
 )
+
+add_dependencies(hccl_llt ${RDMA_CORE_NAME})
 
 target_compile_options(hccl_llt   PRIVATE
     -O0 -U_FORTIFY_SOURCE -g
