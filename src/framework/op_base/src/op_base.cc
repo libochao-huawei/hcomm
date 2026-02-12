@@ -240,7 +240,10 @@ HcclResult HcclCommInitAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
         HCCL_E_PARA);
 
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcclCommInitAllV2(ndev, devices, comms));
+    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+    if (indOp == nullptr || strcmp(indOp, "") == 0) {
+        HCCLV2_FUNC_RUN(HcclCommInitAllV2(ndev, devices, comms));
+    }
 #endif
     std::future<HcclResult> threadResult;
     std::unique_ptr<std::thread> getCommThread;
@@ -1085,10 +1088,32 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
-            CHK_RET(HcclCreateSubCommConfigV2(comm, rankNum, rankIds, subCommId, subCommRankId, config, subComm));
+            void* subCommV2{nullptr};
+            void* commV2{nullptr};
+            commV2 = *comm;
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp != nullptr && strcmp(indOp, "1") == 0) {
+                hccl::hcclComm *gComm = static_cast<hccl::hcclComm*>(*comm);
+                CHK_PTR_NULL(gComm);
+                commV2 = gComm->GetCommunicatorV2();
+                CHK_PTR_NULL(commV2);
+            }
+            CHK_RET(HcclCreateSubCommConfigV2(&commV2, rankNum, rankIds, subCommId, subCommRankId, config, &subCommV2));
             char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-            CHK_RET(HcclGetCommNameV2(*subComm, commName));
+            CHK_RET(HcclGetCommNameV2(subCommV2, commName));
             CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                *subComm = subCommV2;
+                return HCCL_SUCCESS;
+            }
+            HcclResult ret = HcclCommInitCollComm(subCommRankId, &subCommV2, config, subComm);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy subcomv2");
+                CHK_RET(HcclCommDestroyV2(subCommV2));
+                subCommV2 = nullptr;
+                *subComm = nullptr;
+                return ret;    
+            }
             return HCCL_SUCCESS;
         }());
 #endif
