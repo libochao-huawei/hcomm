@@ -1204,7 +1204,7 @@ HcclResult HcclBarrierV2(HcclComm comm, aclrtStream stream)
     }
     // 同通信域同算子复用tag
     const string tag = "AllReduce_" + communicator->GetId();
-
+ 
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
  
     CHK_RET_AND_PRINT_IDE(HcomCheckReductionOpV2(op), tag.c_str());
@@ -1732,7 +1732,7 @@ HcclResult HcclAllGatherV2(void *sendBuf, void *recvBuf, uint64_t sendCount, Hcc
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "AllGather_" + communicator->GetId();
 
-    CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), sendCount, dataType, stream), tag.c_str());
+    CHK_RET_AND_PRINT_IDE(:HcomCheckOpParamV2(tag.c_str(), sendCount, dataType, stream), tag.c_str());
     
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
@@ -2148,7 +2148,7 @@ HcclResult HcclBatchSendRecvV2(HcclSendRecvItem *sendRecvInfo, uint32_t itemNum,
     CHK_PTR_NULL(comm);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "HcclBatchSendRecvV2_" + communicator->GetId();
-
+    
     CHK_PTR_NULL(stream);
     CHK_PTR_NULL(sendRecvInfo);
     CHK_PRT_RET(itemNum == 0, HCCL_WARNING("[BatchSendRecv] taskList itemNum is zero."), HCCL_SUCCESS);

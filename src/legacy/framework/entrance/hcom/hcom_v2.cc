@@ -175,12 +175,12 @@ HcclResult HcomAllReduceV2(const char *tag, void *inputPtr, void *outputPtr, u64
     CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
     /* 通信域 */
-    std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_RET(GetHcclCommV2(group, hcclComm));
 
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, count, dataType, Hccl::OpType::ALLREDUCE, op);
+    std::string opTag = tag;
     CHK_RET(hcclComm->LoadOffloadCollOp(opTag, opParams, stream));
 
     /* 关键状态记录 */
