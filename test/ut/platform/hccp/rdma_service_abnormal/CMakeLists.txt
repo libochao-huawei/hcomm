@@ -76,7 +76,7 @@ target_include_directories(rs_ut_abnormal PRIVATE
     ${SRC_DIR}/src/platform/hccp/external_depends/net_adapt
     ${SRC_DIR}/src/platform/hccp/external_depends/inc
     ${SRC_DIR}/src/platform/hccp/external_depends/inc/driver
-    ${SRC_DIR}/src/platform/hccp/external_depends/ubengine
+    ${URMA_INCLUDE_DIR}
     ${SRC_DIR}/src/platform/hccp/external_depends/ccu
     ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include
     ${HCOMM_UTILS_PATH}/hcomm_utils/host/include/tls_adp
