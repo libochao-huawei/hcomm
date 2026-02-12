@@ -214,8 +214,8 @@ TEST_F(TaskInfoTest, test_get_op_info)
 
     taskInfo.dfxOpInfo_->opIndex_ = 0;
     taskInfo.dfxOpInfo_->commIndex_ = 3;
-    taskInfo.dfxOpInfo_->headOpCounter_ = 0;
-    taskInfo.dfxOpInfo_->tailOpCounter_ = 0;
+    taskInfo.dfxOpInfo_->headOpCounterAddr_ = 0;
+    taskInfo.dfxOpInfo_->tailOpCounterAddr_ = 0;
     taskInfo.dfxOpInfo_->op_.dataCount = 0xaaaabbbbcccc;
     taskInfo.dfxOpInfo_->op_.reduceOp = ReduceOp::SUM;
     taskInfo.dfxOpInfo_->op_.dataType = DataType::UINT64;

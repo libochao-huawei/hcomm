@@ -237,6 +237,7 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, para information is %s.", curTask->GetParaInfo().c_str());
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(*curTask).c_str());
+    HCCL_ERROR("[[TaskExceptionHandler]Task run failed, headOpCounter[%u] tailOpCounter[%u]]", *(reinterpret_cast<u32 *>(curTask->dfxOpInfo_->headOpCounterAddr_)), *(reinterpret_cast<u32 *>(curTask->dfxOpInfo_->tailOpCounterAddr_)));
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, opData information is %s.", curTask->GetOpInfo().c_str());
 }
 

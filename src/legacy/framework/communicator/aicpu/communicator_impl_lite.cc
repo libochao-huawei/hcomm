@@ -462,8 +462,8 @@ void CommunicatorImplLite::SetDfxOpInfo(uint64_t beginTime)
     dfxopInfo->comm_         = this;
     dfxopInfo->commId_       = commId;
  	dfxopInfo->opIndex_      = opIndex;
- 	dfxopInfo->headOpCounter_ = *(reinterpret_cast<u32 *>(opCounterAddr + size));
- 	dfxopInfo->tailOpCounter_ = *(reinterpret_cast<u32 *>(opCounterAddr + size * 2));
+ 	dfxopInfo->headOpCounterAddr_ = opCounterAddr + size;
+ 	dfxopInfo->tailOpCounterAddr_ = opCounterAddr + size * 2;
     CHECK_NULLPTR(streamLiteMgr->GetMaster(), "[SetDfxOpInfo]master stream is nullptr!");
     dfxopInfo->mainStreamId_ = streamLiteMgr->GetMaster()->GetId();
     mirrorTaskMgr->SetCurrDfxOpInfo(dfxopInfo);

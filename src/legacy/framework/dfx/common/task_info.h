@@ -17,7 +17,6 @@
 namespace Hccl {
 
 constexpr u32 INVALID_VALUE_RANKID = 0xFFFFFFFF;    // rank id非法值
-constexpr u32 INVALID_VALUE_OPCOUNTER = 0xFFFFFFFF; // OpCounter非法值
 
 class DfxOpInfo {
 public:
@@ -30,16 +29,16 @@ public:
     void        *comm_;
     u32          mainStreamId_;
     std::string  commId_{};
-    u32          opIndex_{0};                               // 下发算子总计数(单算子/图模式/CCU快速下发)
-    u32          headOpCounter_{INVALID_VALUE_OPCOUNTER};   // 执行算子头计数器（执行前加一）
-    u32          tailOpCounter_{INVALID_VALUE_OPCOUNTER};   // 执行算子尾计数器（执行后加一）
+    u32          opIndex_{0};             // 下发算子总计数(单算子/图模式/CCU快速下发)
+    u64          headOpCounterAddr_{0};   // 执行算子头计数器地址（执行前加一）
+    u64          tailOpCounterAddr_{0};   // 执行算子尾计数器地址（执行后加一）
 
 public:
     std::string Describe() const
     {
         return StringFormat(
-            "DfxOpInfo: [collOperator:[%s], tag:[%s], algType:[%u], commIndex:[%u], commId[%s], beginTime:[%llu], endTime:[%llu], opIndex[%u], headOpCounter[%u], tailOpCounter[%u]",
-            CollOpToString(op_).c_str(), tag_.c_str(), algType_, commIndex_, commId_.c_str(), beginTime_, endTime_, opIndex_, headOpCounter_, tailOpCounter_);
+            "DfxOpInfo: [collOperator:[%s], tag:[%s], algType:[%u], commIndex:[%u], commId[%s], beginTime:[%llu], endTime:[%llu], opIndex[%u], headOpCounterAddr[0x%x], tailOpCounterAddr[0x%x]",
+            CollOpToString(op_).c_str(), tag_.c_str(), algType_, commIndex_, commId_.c_str(), beginTime_, endTime_, opIndex_, headOpCounterAddr_, tailOpCounterAddr_);
     }
 };
 
