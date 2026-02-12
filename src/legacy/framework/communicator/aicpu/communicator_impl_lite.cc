@@ -112,6 +112,7 @@ void CommunicatorImplLite::CreateCollAlgComponentLite()
 
 void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
 {
+    opIndex = kernelParam->comm.opIndex;
     uint64_t beginTime = ProfGetCurCpuTimestamp();
     profilingReporterLite->UpdateProfStat();
     UpdateCommParam(kernelParam);
@@ -451,12 +452,17 @@ void CommunicatorImplLite::InitCurrentOp(HcclKernelParamLite *kernelParam)
 
 void CommunicatorImplLite::SetDfxOpInfo(uint64_t beginTime)
 {
+    u64 size = 4;
     auto dfxopInfo           = std::make_shared<DfxOpInfo>();
     dfxopInfo->op_           = currentOp;
     dfxopInfo->algType_      = AlgType::MESH; // 暂时
-    dfxopInfo->index_        = idIndex_;
+    dfxopInfo->commIndex_    = idIndex_;
     dfxopInfo->beginTime_    = beginTime;
     dfxopInfo->comm_         = this;
+    dfxopInfo->commId_       = commId;
+ 	dfxopInfo->opIndex_      = opIndex;
+ 	dfxopInfo->headOpCounter_ = *(reinterpret_cast<u32 *>(opCounterAddr + size));
+ 	dfxopInfo->tailOpCounter_ = *(reinterpret_cast<u32 *>(opCounterAddr + size * 2));
     CHECK_NULLPTR(streamLiteMgr->GetMaster(), "[SetDfxOpInfo]master stream is nullptr!");
     dfxopInfo->mainStreamId_ = streamLiteMgr->GetMaster()->GetId();
     mirrorTaskMgr->SetCurrDfxOpInfo(dfxopInfo);

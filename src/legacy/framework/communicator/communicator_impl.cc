@@ -451,10 +451,12 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
         dfxOpInfo->op_           = *GetCurrentCollOperator();
         dfxOpInfo->tag_          = OpTypeToString(dfxOpInfo->op_.opType);
         dfxOpInfo->algType_      = AlgType::MESH;
-        dfxOpInfo->index_        = GetIdIndex();
+        dfxOpInfo->commIndex_        = GetIdIndex();
         dfxOpInfo->comm_         = this;
         dfxOpInfo->mainStreamId_ = HrtGetStreamId(stream);
         dfxOpInfo->beginTime_    = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+        dfxOpInfo->commId_       = id;
+        dfxOpInfo->opIndex_      = opIndex;
         GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);
         ExecuteFastCcuLaunch(opParams, stream, params);
         ReportProfInfo(beginTime, opParams.staticShape, true);
@@ -544,6 +546,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
     collOpIndex++;
     submittedOpCnt = collOpIndex;
     opBaseOpIndex++;
+    opIndex++;
     status = CommStatus::COMM_READY;
 }
 
@@ -567,6 +570,7 @@ HcclResult CommunicatorImpl::SetAivControledCoreNum(bool isAiv)
 HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, void *stream)
 {
     try {
+        HCCL_RUN_INFO("Entry-[%s] V950 OpIndex[%u]", opParams.opTag.c_str(), opIndex);
         isLoadOp = true;
         CHK_RET(CheckCommStatus());
         // 等待通信域状态为Ready，执行算子下发
@@ -623,6 +627,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         TraceEndInfo(startut, endut, opParams);
         RefreshSubmittedOpcnt();
         opBaseOpIndex++;
+        opIndex++;
         status = CommStatus::COMM_READY;
     } catch (HcclException &e) {
         status = CommStatus::COMM_READY;
@@ -806,6 +811,7 @@ void CommunicatorImpl::RegisterOffloadScratchBuffer(const std::string &opTag, vo
 HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpParams &opParams, void *stream)
 {
     try {
+        HCCL_RUN_INFO("Entry-[%s] V950 OpIndex[%u]", opTag.c_str(), opIndex);
         HCCL_INFO("CommunicatorImpl::LoadOffloadCollOp dataType[%s]", opParams.dataType.Describe().c_str());
         isLoadOp = true;
         curOpParams = opParams;
@@ -880,6 +886,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         ReportProfInfo(beginTime, opParams.staticShape, false);
         HcclUs endut = std::chrono::steady_clock::now();
         TraceEndInfo(startut, endut, opParams);
+        opIndex++;
     } catch (HcclException &e) {
         status = CommStatus::COMM_READY;
         HCCL_ERROR(e.what());
@@ -1453,6 +1460,7 @@ u32 CommunicatorImpl::GetSubmittedOpCnt() const
 {
     return submittedOpCnt;
 }
+
 u32 CommunicatorImpl::GetOpBaseOpIndex() const
 {
     return opBaseOpIndex;
