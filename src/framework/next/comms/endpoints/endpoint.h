@@ -19,6 +19,7 @@
 #include "rdma_handle_manager.h"
 #include "../common/orion_adpt_utils.h"
 #include "hccp_hdc_manager.h"
+#include "hccp_peer_manager"
 
 namespace hcomm {
 /**
