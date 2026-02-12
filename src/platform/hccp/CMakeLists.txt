@@ -23,12 +23,14 @@ add_executable(hccp_service.bin  hccp_service/main.c hccp_service/param.c
     ${CMAKE_CURRENT_SOURCE_DIR}/common/dl_hal_function.c
 )
 
+add_dependencies(hccp_service.bin ${RDMA_CORE_NAME})
+
 target_include_directories(hccp_service.bin PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/hccp_service
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/driver
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/log
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/rdma-core/providers/hns
     ${CMAKE_CURRENT_SOURCE_DIR}/inc/network
