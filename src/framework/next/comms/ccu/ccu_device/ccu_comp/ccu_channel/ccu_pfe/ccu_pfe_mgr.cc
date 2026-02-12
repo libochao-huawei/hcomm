@@ -121,12 +121,12 @@ HcclResult CcuPfeMgr::GetPfeStrategy(uint32_t feId, PfeJettyStrategy &pfeJettySt
         return HCCL_E_NOT_FOUND;
     }
 
-    HCCL_INFO("[CcuPfeMgr][%s] dieId[%u] feId[%u] pfeId[%u] size[%u] "
+    pfeJettyStrategy = iter->second;
+    HCCL_RUN_INFO("[CcuPfeMgr][%s] dieId[%u] feId[%u] pfeId[%u] size[%u] "
  	    "startTaJettyId[%u] startLocalJettyCtxId[%u]", __func__, dieId_,
  	    pfeJettyStrategy.feId, pfeJettyStrategy.pfeId, pfeJettyStrategy.size,
- 	    pfeJettyStrategy.startTaJettyId, pfeJettyStrategy.startLocalJettyCtxId);    
+ 	    pfeJettyStrategy.startTaJettyId, pfeJettyStrategy.startLocalJettyCtxId);  
 
-    pfeJettyStrategy = iter->second;
     return HCCL_SUCCESS;
 }
 
