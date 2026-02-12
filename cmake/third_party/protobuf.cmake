@@ -26,9 +26,10 @@ set(PROTOBUF_INSTALL_PATH ${CANN_3RD_LIB_PATH}/protobuf)
 message(STATUS "[ThirdParty] PROTOBUF_INSTALL_PATH=${PROTOBUF_INSTALL_PATH}")
 find_path(PROTOBUF_INCLUDE_DIR
     NAMES google/protobuf/message.h
+    PATH_SUFFIXES include
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH
-    PATHS ${PROTOBUF_INSTALL_PATH}/include
+    PATHS ${PROTOBUF_INSTALL_PATH}
 )
 find_library(PROTOBUF_LIBRARY
     NAMES protobuf libprotobuf
@@ -39,9 +40,10 @@ find_library(PROTOBUF_LIBRARY
 )
 find_program(PROTOBUF_PROTOC_EXECUTABLE
     NAMES protoc
+    PATH_SUFFIXES bin
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH
-    PATHS ${PROTOBUF_INSTALL_PATH}/bin
+    PATHS ${PROTOBUF_INSTALL_PATH}
 )
 
 # 是否全部找到 protobuf 的头文件、链接库
