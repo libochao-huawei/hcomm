@@ -2505,8 +2505,8 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
             opExecuteConfig.accState.Describe().c_str(), opParams.dataType.Describe().c_str(),
             opParams.reduceOp.Describe().c_str(), curAlgName.c_str(), algos[0], algos[1], algos[2], algos[3], dataSize);
     }
-    if(params.isMc2) {
-        algorithmType_ = collAlgComponent->GetAlgorithmTypeForMC2(curAlgName);
+    if(params.isMc2 && (opExecuteConfig.accState == AcceleratorState::CCU_SCHED || opExecuteConfig.accState == AcceleratorState::CCU_MS)) {
+        algorithmType_ = collAlgComponent->GetAlgorithmTypeForMC2CCU(curAlgName);
     }
     auto opAcceStateCacheIt = opAcceStateCache.find({opParams.opType, curAlgName});
     if (opAcceStateCacheIt != opAcceStateCache.end()) {
