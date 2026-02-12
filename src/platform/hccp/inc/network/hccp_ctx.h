@@ -455,10 +455,10 @@ struct QpCreateInfo {
         uint32_t sqe_bb_cnt;
         uint32_t db_type;
         void volatile *db_addr;
-        void *qbuf_end;
-        void *qbuf_curr;
-        uint32_t max_sge_num;
-        bool cstm;
+        // void *qbuf_end;
+        // void *qbuf_curr;
+        // uint32_t max_sge_num;
+        // bool cstm;
     } udma_jetty_sq;
     struct {
         void *qbuf;
@@ -470,10 +470,10 @@ struct QpCreateInfo {
         uint32_t sqe_bb_cnt;
         uint32_t db_type;
         void volatile *db_addr;
-        void *qbuf_end;
-        void *qbuf_curr;
-        uint32_t max_sge_num;
-        bool cstm;
+        // void *qbuf_end;
+        // void *qbuf_curr;
+        // uint32_t max_sge_num;
+        // bool cstm;
     } udma_jetty_cq;
     uint32_t resv[14U];
 };
