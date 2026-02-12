@@ -1731,7 +1731,7 @@ HcclResult HcclAllGatherV2(void *sendBuf, void *recvBuf, uint64_t sendCount, Hcc
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "AllGather_" + communicator->GetId();
-    
+
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), sendCount, dataType, stream), tag.c_str());
     
     /* 接口交互信息日志 */
@@ -1791,7 +1791,7 @@ HcclResult HcclAllGatherVV2(void *sendBuf, uint64_t sendCount, void *recvBuf, vo
     // 获取通信域
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "AllGatherV_" + communicator->GetId();
-
+    
     // 获取rank信息
     uint32_t rankId;
     CHK_RET(communicator->GetRankId(rankId));
