@@ -275,8 +275,7 @@ CcuTransport::TransStatus CcuTransport::GetStatus()
         InternalException,
         lockAndStatuMachine(),
         {
-            std::string errorMsg =
-                "CcuTransport GetStatus() Error when creating transport connection" + this->Describe().c_str();
+            "CcuTransport GetStatus() Error when creating transport connection" + this->Describe().c_str();
         },
         {
             transStatus = CcuTransport::TransStatus::CONNECT_FAILED;
