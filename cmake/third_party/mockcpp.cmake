@@ -27,9 +27,10 @@ set(MOCKCPP_PATCH_PATH ${CANN_3RD_LIB_PATH}/${MOCKCPP_PATCH_FILE})
 message(STATUS "[ThirdParty] MOCKCPP_INSTALL_PATH=${MOCKCPP_INSTALL_PATH}")
 find_path(MOCKCPP_INCLUDE
     NAMES mockcpp/mockcpp.hpp
+    PATH_SUFFIXES include
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH
-    PATHS ${MOCKCPP_INSTALL_PATH}/include
+    PATHS ${MOCKCPP_INSTALL_PATH}
 )
 find_library(MOCKCPP_STATIC_LIBRARY
     NAMES libmockcpp.a
@@ -97,6 +98,7 @@ else()
     include(ExternalProject)
     ExternalProject_Add(third_party_mockcpp
         URL ${MOCKCPP_PROJECT_URL}
+        URL_HASH SHA256=73ab0a8b6d1052361c2cebd85e022c0396f928d2e077bf132790ae3be766f603
         TLS_VERIFY OFF
         DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}
         DOWNLOAD_NO_PROGRESS TRUE
