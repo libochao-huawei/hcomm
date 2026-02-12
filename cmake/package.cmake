@@ -133,8 +133,10 @@ function(pack_built_in)
     DEPENDS ${HCOMM_VERSION_FILE}
   )
 
-  install(FILES ${HCOMM_VERSION_FILE}
+  install(FILES ${CMAKE_BINARY_DIR}/version.hcomm.info
       DESTINATION share/info/hcomm
+      RENAME version.info
+      OPTIONAL
   )
   install(FILES ${CONF_FILES}
       DESTINATION hcomm/conf

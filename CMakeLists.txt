@@ -81,6 +81,12 @@ message(STATUS "Detected JOBS: ${JOBS}")
 set(CMAKE_JOB_POOL_COMPILE "${JOBS}")
 set(CMAKE_JOB_POOL_LINK "${JOBS}")
 
+include(version.cmake)
+if(ENABLE_OPEN_SRC)
+    check_pkg_build_deps("hcomm")
+endif()
+add_version_info_targets()
+
 if(ENABLE_TEST)
     include(cmake/config.cmake)
     include(cmake/function.cmake)
