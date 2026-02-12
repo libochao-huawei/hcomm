@@ -681,3 +681,18 @@ int RsGetHccnCfg(unsigned int phyId, enum HccnCfgKey key, char *value, unsigned 
 {
 	return 0;
 }
+
+int RsSetQpLbValue(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, int lbValue)
+{
+	return 0;
+}
+
+int RsGetQpLbValue(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, int *lbValue)
+{
+	return 0;
+}
+
+int RsGetLbMax(unsigned int phyId, unsigned int rdevIndex, int *lbMax)
+{
+	return 0;
+}
