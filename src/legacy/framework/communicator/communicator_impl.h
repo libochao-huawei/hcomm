@@ -165,6 +165,8 @@ public:
 
     virtual u32 GetOpBaseOpIndex() const;
 
+    virtual u32 GetOpIndex() const;
+
     u32 GetSubmittedOpCnt() const;
 
     HDCommunicate &GetKfcControlTransferH2D() const;
