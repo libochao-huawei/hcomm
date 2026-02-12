@@ -47,11 +47,6 @@ void Mc2Compont::AllocCommResource(void *mc2Tiling, void **commContext)
         return;
     }
 
-    for(uint32_t i = 0; i < MAX_OP_NUM; i++) {
-        combinOpParam.opType[i] = 0xffffffff;
-        combinOpParam.algorithmType[i] = 0xff;
-    }
-
     std::unordered_set<uint64_t> algoTemplateRequire;
     if (tilingVersion == UNKNOWN_TILING_V1) {
         // 申请deviceMem、通信域信息获取、commContext赋值
