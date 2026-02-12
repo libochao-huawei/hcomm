@@ -10,297 +10,333 @@
 
 include_guard(GLOBAL)
 
+unset(hcomm_utils_FOUND CACHE)
+unset(HCCL_LEGACY_LIBRARY CACHE)
+
 set(HCOMM_UTILS_VERSION "8.5.0-beta.1")
-set(HCOMM_UTILS_ARCH ${CMAKE_HOST_SYSTEM_PROCESSOR})
-set(HCOMM_UTILS_FILE "cann-hcomm-utils_${HCOMM_UTILS_VERSION}_linux-${ARCH}.tar.gz")
+set(HCOMM_UTILS_ARCH "${CMAKE_HOST_SYSTEM_PROCESSOR}")
+set(HCOMM_UTILS_FILE "cann-hcomm-utils_${HCOMM_UTILS_VERSION}_linux-${HCOMM_UTILS_ARCH}.tar.gz")
 set(HCOMM_UTILS_URL "https://ascend.devcloud.huaweicloud.com/artifactory/cann-run/dependency/${HCOMM_UTILS_VERSION}/${HCOMM_UTILS_ARCH}/basic/${HCOMM_UTILS_FILE}")
 set(HCOMM_UTILS_PKG_PATH ${CANN_3RD_LIB_PATH}/${HCOMM_UTILS_FILE})
-set(HCOMM_UTILS_PATH ${CMAKE_CURRENT_BINARY_DIR})
+set(HCOMM_UTILS_SRC_PATH ${CMAKE_CURRENT_BINARY_DIR}/hcomm_utils)
 set(INSTALL_LIBRARY_DIR hcomm/lib64)
 
+# 查找目录下是否已经安装，避免重复编译安装
+message(STATUS "[ThirdParty] HCOMM_UTILS_SRC_PATH=${HCOMM_UTILS_SRC_PATH}")
+find_library(HCCL_LEGACY_LIBRARY
+    NAMES libhccl_legacy.so
+    PATH_SUFFIXES lib
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+    PATHS ${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}
+)
+
+# 是否找到 hcomm_legacy 的库文件
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(hcomm_utils
+    FOUND_VAR
+    hcomm_utils_FOUND 
+    REQUIRED_VARS
+    HCCL_LEGACY_LIBRARY
+)
+message(STATUS "[ThirdParty] Found hcomm_utils: ${hcomm_utils_FOUND}")
+
 if(hcomm_utils_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
-    message(STATUS "[ThirdParty] hcomm_utils found in ${HCOMM_UTILS_PATH}, and not force rebuild cann third_party")
+    message(STATUS "[ThirdParty] hcomm_utils found in ${HCOMM_UTILS_SRC_PATH}, and not force rebuild cann third_party")
 else()
     if(EXISTS ${HCOMM_UTILS_PKG_PATH})
         # 离线编译场景，优先使用已下载的包
         message(STATUS "[ThirdParty] Found local hcomm_utils package: ${HCOMM_UTILS_PKG_PATH}")
+        set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_PKG_PATH})
     else()
+        # 下载并解压
         message(STATUS "[ThirdParty] Downloading hcomm_utils from ${HCOMM_UTILS_URL}")
-        file(DOWNLOAD
-            ${HCOMM_UTILS_URL}
-            ${HCOMM_UTILS_PKG_PATH}
-        )
+        set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_URL})
     endif()
 
-    execute_process(
-        COMMAND mkdir -p ${HCOMM_UTILS_PATH}
-        COMMAND chmod 755 -R ${HCOMM_UTILS_PATH}
-        COMMAND tar -xf ${HCOMM_UTILS_PKG_PATH} --overwrite --strip-components=1 -C ${HCOMM_UTILS_PATH}
+    include(ExternalProject)
+    ExternalProject_Add(hcomm_utils_dl
+        URL ${HCOMM_UTILS_PROJECT_URL}
+        TLS_VERIFY OFF
+        DOWNLOAD_NO_EXTRACT FALSE
+        DOWNLOAD_NO_PROGRESS TRUE
+        DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}
+        SOURCE_DIR ${HCOMM_UTILS_SRC_PATH}
+        CONFIGURE_COMMAND ""    # 无需编译，只需解压
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
     )
 
+    if(NOT EXISTS ${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/include)
+        file(MAKE_DIRECTORY "${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/include")
+    endif()
+
+    # 创建导入的目标
     add_library(ascend_kms SHARED IMPORTED)
+    add_dependencies(ascend_kms hcomm_utils_dl)
 
     set_target_properties(ascend_kms PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_PATH}/hcomm_utils/${PRODUCT_SIDE}/include"
-        IMPORTED_LOCATION "${HCOMM_UTILS_PATH}/hcomm_utils/${PRODUCT_SIDE}/lib/libascend_kms.so"
+        INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/include"
+        IMPORTED_LOCATION "${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/lib/libascend_kms.so"
     )
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/${PRODUCT_SIDE}/lib/libascend_kms.so
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/lib/libascend_kms.so
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
     add_library(tls_adp SHARED IMPORTED)
+    add_dependencies(tls_adp hcomm_utils_dl)
 
     set_target_properties(tls_adp PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_PATH}/hcomm_utils/${PRODUCT_SIDE}/include"
-        IMPORTED_LOCATION "${HCOMM_UTILS_PATH}/hcomm_utils/${PRODUCT_SIDE}/lib/libtls_adp.so"
+        INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/include"
+        IMPORTED_LOCATION "${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/lib/libtls_adp.so"
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/${PRODUCT_SIDE}/lib/libtls_adp.so
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/lib/libtls_adp.so
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
     add_library(hccl_legacy SHARED IMPORTED)
+    add_dependencies(hccl_legacy hcomm_utils_dl)
 
     set_target_properties(hccl_legacy PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_PATH}/hcomm_utils/${PRODUCT_SIDE}/include"
-        IMPORTED_LOCATION "${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/libhccl_legacy.so"
+        INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/include"
+        IMPORTED_LOCATION "${HCOMM_UTILS_SRC_PATH}/host/lib/libhccl_legacy.so"
     )
 
     # 安装库文件到指定目录
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/libhccl_legacy.so
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/libhccl_legacy.so
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/MemSet_dynamic_AtomicAddrClean_1_ascend310p3.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/MemSet_dynamic_AtomicAddrClean_1_ascend310p3.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/MemSet_dynamic_AtomicAddrClean_1_ascend910.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/MemSet_dynamic_AtomicAddrClean_1_ascend910.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/MemSet_dynamic_AtomicAddrClean_1_ascend910b.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/MemSet_dynamic_AtomicAddrClean_1_ascend910b.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_add_float16_v51.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_add_float16_v51.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_add_float16_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_add_float16_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_add_float32_v51.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_add_float32_v51.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_add_int32_v51.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_add_int32_v51.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_add_int32_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_add_int32_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_add_int64_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_add_int64_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_add_int64_v81.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_add_int64_v81.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_add_int8_v51.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_add_int8_v51.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_add_int8_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_add_int8_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_maximum_float16_v51.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_maximum_float16_v51.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_maximum_float16_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_maximum_float16_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_maximum_float32_v51.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_maximum_float32_v51.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_maximum_float32_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_maximum_float32_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_maximum_int32_v51.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_maximum_int32_v51.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_maximum_int32_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_maximum_int32_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_maximum_int64_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_maximum_int64_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_maximum_int64_v81.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_maximum_int64_v81.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_maximum_int8_v51.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_maximum_int8_v51.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_maximum_int8_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_maximum_int8_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_minimum_float16_v51.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_minimum_float16_v51.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_minimum_float16_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_minimum_float16_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_minimum_float32_v51.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_minimum_float32_v51.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_minimum_float32_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_minimum_float32_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_minimum_int32_v51.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_minimum_int32_v51.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_minimum_int32_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_minimum_int32_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_minimum_int64_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_minimum_int64_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_minimum_int64_v81.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_minimum_int64_v81.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_minimum_int8_v51.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_minimum_int8_v51.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_minimum_int8_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_minimum_int8_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_float16_v51.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_float16_v51.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_float16_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_float16_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_float16_v81_910B1.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_float16_v81_910B1.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_float16_v81_910B2.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_float16_v81_910B2.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_float16_v81_910B3.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_float16_v81_910B3.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_float16_v81_910B4.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_float16_v81_910B4.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_float32_v51.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_float32_v51.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_float32_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_float32_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_float32_v81_910B1.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_float32_v81_910B1.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_float32_v81_910B2.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_float32_v81_910B2.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_float32_v81_910B3.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_float32_v81_910B3.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_float32_v81_910B4.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_float32_v81_910B4.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_int32_v51.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_int32_v51.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_int32_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_int32_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_int32_v81_910B1.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_int32_v81_910B1.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_int32_v81_910B2.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_int32_v81_910B2.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_int32_v81_910B3.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_int32_v81_910B3.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_int32_v81_910B4.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_int32_v81_910B4.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_int64_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_int64_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_int64_v81.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_int64_v81.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_int8_v51.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_int8_v51.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_int8_v80.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_int8_v80.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_int8_v81_910B1.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_int8_v81_910B1.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_int8_v81_910B2.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_int8_v81_910B2.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_int8_v81_910B3.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_int8_v81_910B3.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
-    install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/dynamic_mul_int8_v81_910B4.o
+    install(FILES  ${HCOMM_UTILS_SRC_PATH}/host/lib/dynamic_mul_int8_v81_910B4.o
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
-    set(hcomm_utils_FOUND ON)
 endif()
