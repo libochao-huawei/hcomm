@@ -1318,7 +1318,7 @@ int RsUbCtxLmemReg(struct RsUbDevCb *devCb, struct MemRegAttrT *memAttr, struct 
     memInfo->udma_segment.token_value_valid = udma_segment->token_value_valid;
     memInfo->udma_segment.len = udma_segment->len;
     memInfo->udma_segment.va = udma_segment->va;
-    memInfo->udma_segment.tid = udma_segment->tid;
+    memInfo->udma_segment.tid = lsegCb->segment->token_id->token_id;
     hccp_warn("@@@ memInfo->udma_segment.token_value: %ld", memInfo->udma_segment.token_value);
     hccp_warn("@@@ memInfo->udma_segment.token_value_valid: %ld", memInfo->udma_segment.token_value_valid);
     hccp_warn("@@@ memInfo->udma_segment.len: %ld", memInfo->udma_segment.len);
