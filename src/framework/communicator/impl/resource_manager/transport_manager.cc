@@ -292,8 +292,27 @@ HcclResult TransportManager::AllocSubCommLinks(const std::string &tag, const Tra
     std::vector<std::pair<u32, u32>> remoteRankMap;
 
     for (u32 i = 0; i< singleSubCommTransport.transportRequests.size(); i++) {
-        if (singleSubCommTransport.transportRequests[i].isValid) {
-            remoteRankMap.push_back(std::make_pair(singleSubCommTransport.transportRequests[i].remoteUserRank, i));
+        TransportRequest TemptransportRequest = singleSubCommTransport.transportRequests[i];
+        HCCL_INFO("TEST1 localrank %u, localPhyId %u, remoterank %u, remotePhyId %u",
+            TemptransportRequest.localUserRank, rankInfoList_[TemptransportRequest.localUserRank].devicePhyId,
+            TemptransportRequest.remoteUserRank, rankInfoList_[TemptransportRequest.remoteUserRank].devicePhyId);
+        if (TemptransportRequest.isValid) {
+            remoteRankMap.push_back(std::make_pair(TemptransportRequest.remoteUserRank, i));
+            HCCL_INFO("TEST2 insert remoteRankMap remoteUserRank %u, i %u, linkType %d",
+                TemptransportRequest.remoteUserRank, i, TemptransportRequest.linkType);
+            if (rankInfoList_[TemptransportRequest.localUserRank].deviceType == DevType::DEV_TYPE_310P3 || isStandardCard_) {
+                std::vector<u32> enableP2PDevices;
+                enableP2PDevices.push_back(rankInfoList_[TemptransportRequest.remoteUserRank].devicePhyId);
+                for (auto &enablep2p : enableP2PDevices) {
+                    HCCL_INFO("TEST3 enableP2PDevices has %u", enablep2p);
+                }
+                HcclResult ret = P2PMgmtPub::EnableP2P(enableP2PDevices);
+                CHK_PRT_RET(ret != HCCL_SUCCESS, 
+                    HCCL_ERROR("[Create][DestSockets]Enable P2P Failed, src devicePhyId[%d], dst devicePhyId[%d], ret[%u]",
+                    rankInfoList_[TemptransportRequest.localUserRank].devicePhyId,
+                    rankInfoList_[TemptransportRequest.remoteUserRank].devicePhyId, ret), ret);
+                enableP2PDevices_.push_back(rankInfoList_[TemptransportRequest.remoteUserRank].devicePhyId);
+            }
         }
     }
     if (remoteRankMap.empty()) {
@@ -809,15 +828,6 @@ HcclResult TransportManager::CreateDestSockets(const std::string &tag, RankId re
             }
         }
     } else {
-        if (rankInfoList_[userRank_].deviceType == DevType::DEV_TYPE_310P3 || isStandardCard_) {
-            std::vector<u32> enableP2PDevices;
-            enableP2PDevices.push_back(rankInfoList_[remoteRank].devicePhyId);
-            HcclResult ret = P2PMgmtPub::EnableP2P(enableP2PDevices);
-            CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[Create][DestSockets]Enable P2P Failed, src devicePhyId[%d], dst devicePhyId[%d], ret[%u]",
-                rankInfoList_[userRank_].devicePhyId, rankInfoList_[remoteRank].devicePhyId, ret), ret);
-            enableP2PDevices_.push_back(rankInfoList_[remoteRank].devicePhyId);
-        }
         // server内非异构场景，使能P2P
         bool isInterServer = false;
         CHK_PRT(IsInterServer(remoteRank, isInterServer));
@@ -825,6 +835,9 @@ HcclResult TransportManager::CreateDestSockets(const std::string &tag, RankId re
         if (!isInterServer && !isHaveCpuRank_) {
             std::vector<u32> WaitP2PEnabledDevices;
             WaitP2PEnabledDevices.push_back(rankInfoList_[remoteRank].devicePhyId);
+            for (auto &WaitP2P : WaitP2PEnabledDevices) {
+                HCCL_INFO("TEST4 WaitP2PEnabledDevices has %u", WaitP2P);
+            }
             HcclResult ret = P2PMgmtPub::WaitP2PEnabled(WaitP2PEnabledDevices, [this]() -> bool { return this->GetStopFlag(); });
             if (ret != HCCL_SUCCESS) {
                 if (ret == HCCL_E_DRV) {
