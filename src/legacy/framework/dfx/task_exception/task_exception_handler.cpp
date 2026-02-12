@@ -102,9 +102,9 @@ TaskExceptionHandlerManager::~TaskExceptionHandlerManager()
 
 static std::pair<u32, u32> GetOpCounter(const TaskInfo& taskInfo)
 {
-    if (taskInfo.headOpCounterAddr_ != 0 && taskInfo.tailOpCounterAddr_ != 0) {
+    std::pair<float, float> floatCounter;
+    if (taskInfo.dfxOpInfo_->headOpCounterAddr_ != 0 && taskInfo.dfxOpInfo_->tailOpCounterAddr_ != 0) {
         u64 size = 4;
-        std::pair<float, float> floatCounter;
         void *headAddr = reinterpret_cast<void *>(taskInfo.headOpCounterAddr_);
         void *tailAddr = reinterpret_cast<void *>(taskInfo.tailOpCounterAddr_);
         HrtMemcpy(&floatCounter.first, size, headAddr, size, RT_MEMCPY_DEVICE_TO_HOST);
