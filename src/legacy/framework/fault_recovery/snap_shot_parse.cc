@@ -13,6 +13,7 @@
 #include "ip_address.h"
 
 using namespace Hccl;
+constexpr u32 USE_MS_COMMIDS_SIZE = 1;
 
 SnapShotParser &SnapShotParser::GetInstance()
 {
@@ -164,6 +165,9 @@ void SnapShotParser::DeserializeCcuStatusBuf(BinaryStream &buf, SnapShotBuf &loc
 
     size_t useMsCommIdsSize{0};
     buf >> useMsCommIdsSize;
+    if (useMsCommIdsSize > USE_MS_COMMIDS_SIZE) {
+        THROW<InternalException>(StringFormat("[%s] useMsCommIdsSize[%zu] > USE_MS_COMMIDS_SIZE[%u]", __func__, useMsCommIdsSize, USE_MS_COMMIDS_SIZE));
+    }
     HCCL_INFO("[SnapShotParser][%s] useMsCommIdsSize = [%u]", __func__, useMsCommIdsSize);
     localBuff.ccuStatusSnapshot.useMsCommIds.resize(useMsCommIdsSize);
     for (auto &useMsCommIdCharArr : localBuff.ccuStatusSnapshot.useMsCommIds) {
