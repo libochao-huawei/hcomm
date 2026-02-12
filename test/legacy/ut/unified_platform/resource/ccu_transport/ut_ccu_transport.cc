@@ -221,10 +221,11 @@ TEST_F(CcuTransportTest, Ut_GetStatusFailed_When_ConnectionError_Expect_Return_E
     MOCKER_CPP(&CcuConnection::GetStatus).stubs().will(returnValue(fakeConnStatus));
     auto transportRes = MockMakeCcuTransport(true, true);
     auto transport = get<0>(transportRes).get();
+    CcuTransport::TransStatus status = CcuTransport::TransStatus::INIT;
     try {
         EXPECT_EQ(transport->Init(), HcclResult::HCCL_SUCCESS);
         EXPECT_EQ(transport->transStatus, CcuTransport::TransStatus::INIT);
-        auto status = transport->GetStatus();
+        status = transport->GetStatus();
     } catch (InternalException &e) {
         EXPECT_EQ(CcuTransport::TransStatus::CONNECT_FAILED, status);
     }
@@ -236,11 +237,11 @@ TEST_F(CcuTransportTest, Ut_GetStatusFailed_When_SocketError_Expect_Return_Error
     MOCKER_CPP(&Socket::GetAsyncStatus).stubs().will(returnValue(fakeSocketStatus));
     auto transportRes = MockMakeCcuTransport(true, true);
     auto transport = get<0>(transportRes).get();
-
+    CcuTransport::TransStatus status = CcuTransport::TransStatus::INIT;
     try {
         EXPECT_EQ(transport->Init(), HcclResult::HCCL_SUCCESS);
         EXPECT_EQ(transport->transStatus, CcuTransport::TransStatus::INIT);
-        auto status = transport->GetStatus();
+        status = transport->GetStatus();
     } catch (InternalException &e) {
         EXPECT_EQ(CcuTransport::TransStatus::CONNECT_FAILED, status);
     }
@@ -262,11 +263,12 @@ TEST_F(CcuTransportTest, Ut_GetStatusError_When_SocketSendError_Expect_Return_Er
     MOCKER_CPP(&Socket::SendAsync).stubs().will(throws(SocketException("")));
     auto transportRes = MockMakeCcuTransport(true, true);
     auto transport = get<0>(transportRes).get();
+    CcuTransport::TransStatus status = CcuTransport::TransStatus::INIT;
 
     try {
         EXPECT_EQ(transport->Init(), HcclResult::HCCL_SUCCESS);
         for (uint32_t i = 0; i < 2; i++) { // Connection切换2步
-            auto status = transport->GetStatus();
+            status = transport->GetStatus();
         }
     } catch (SocketException &e) {
         EXPECT_EQ(CcuTransport::TransStatus::CONNECT_FAILED, status);
@@ -277,6 +279,7 @@ TEST_F(CcuTransportTest, Ut_GetStatusError_When_HandshakeMsgInvalid_Expect_Retur
 {
     auto transportRes = MockMakeCcuTransport(true, true);
     auto transport = get<0>(transportRes).get();
+    CcuTransport::TransStatus status = CcuTransport::TransStatus::INIT;
     try {
         EXPECT_EQ(transport->Init(), HcclResult::HCCL_SUCCESS);
         EXPECT_EQ(transport->transStatus, CcuTransport::TransStatus::INIT);
@@ -285,21 +288,21 @@ TEST_F(CcuTransportTest, Ut_GetStatusError_When_HandshakeMsgInvalid_Expect_Retur
         
         const vector<uint32_t> cntCkes(DEFAULT_CCU_RESOURCE_NUM);
         transport->SetCntCke(cntCkes);
-        
+
         const vector<char> handshakeMsg(128);
         transport->SetHandshakeMsg(handshakeMsg);
-        
+
         EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::INIT);
         EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::INIT);
-        
+
         EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::SEND_ALL_INFO);
-        
+
         transport->recvData = transport->sendData;
-        
+
         EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::RECV_ALL_INFO);
-        
+
         transport->attr.handshakeMsg.push_back('a');
-        auto status = transport->GetStatus();
+        status = transport->GetStatus();
     } catch (InvalidParamsException &e) {
         EXPECT_EQ(CcuTransport::TransStatus::CONNECT_FAILED, status);
     }
