@@ -79,7 +79,7 @@ target_include_directories(hccl_alg PRIVATE
     ${HCCL_BASE_DIR}/platform/inc/adapter/
     ${HCCL_BASE_DIR}/platform/common/
     ${HCCL_BASE_DIR}/platform/hccp/inc/network/
-    ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include/
+    ${RDMA_CORE_INCLUDE_DIR}/
 
 )
 
