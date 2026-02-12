@@ -169,7 +169,7 @@ HcclResult HcomAllReduceV2(const char *tag, void *inputPtr, void *outputPtr, u64
     HCCL_INFO("[%s] start.", __func__);
 
     HcclUs startut = TIME_NOW();
-
+    
     /* 入参校验 */
     CHK_RET(HcomCheckReductionOpV2(op));
     CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
