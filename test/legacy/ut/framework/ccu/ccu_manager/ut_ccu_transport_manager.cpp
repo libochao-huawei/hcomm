@@ -458,3 +458,47 @@ TEST_F(CcuTransportMgrTest, Ut_RecoverTransportsFailed_When_RecoverMsgError_Expe
 
     EXPECT_THROW(transportMgr.RecoverConfirm(), InternalException);
 }
+
+TEST_F(CcuTransportMgrTest, Ut_Clean_And_Destory_Success_When_InterfaceOk_Expect_Return_Ok)
+{
+    const uint32_t baseIpAddrInt = 100;
+    const uint32_t linkNum = 4;
+    const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
+    const auto &link = links[0];
+    auto commImpl = MockCommImpl();
+    MockCcuTransportMgrDevs();
+
+    std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
+    SocketConfig socketConfig(1, link, socketTag);
+    commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
+        std::make_shared<Socket>(nullptr, IpAddress(), 0, IpAddress(),
+            "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
+
+    unique_ptr<LocalRmaBuffer> fakeBuffer = make_unique<LocalUbRmaBuffer>(commImpl->cclBuffer);
+    MOCKER_CPP(&LocalRmaBufManager::Get,
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &opTag, const PortData &portData, BufferType bufferType))
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(fakeBuffer.get()));
+
+    CcuJettyMgr *ccuJettyMgr = dynamic_cast<CollServiceDeviceMode *>(commImpl->GetCollService())
+        ->GetCcuInsPreprocessor()->GetCcuComm()->GetCcuJettyMgr();
+    (void)ccuJettyMgr->PrepareCreate(links); // GetChannelJettys是const不能打桩
+
+    int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    CcuTransportMgr transportMgr(*commImpl, devLogicId);
+
+    CcuTransport *transport;
+    EXPECT_EQ(transportMgr.PrepareCreate(link, transport), HcclResult::HCCL_SUCCESS);
+    EXPECT_NE(transport, nullptr);
+    EXPECT_EQ(transportMgr.tempTransport.empty(), false);
+    EXPECT_EQ(transportMgr.ccuLink2TransportMap.empty(), false);
+    transportMgr.Clean();
+
+    CcuTransport *transport2;
+    EXPECT_EQ(transportMgr.PrepareCreate(link, transport2), HcclResult::HCCL_SUCCESS);
+    EXPECT_NE(transport2, nullptr);
+    EXPECT_EQ(transportMgr.tempTransport.empty(), false);
+    EXPECT_EQ(transportMgr.ccuLink2TransportMap.empty(), false);
+    transportMgr.Destroy();
+}
