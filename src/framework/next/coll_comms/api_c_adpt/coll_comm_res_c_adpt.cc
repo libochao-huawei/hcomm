@@ -315,7 +315,7 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
 
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
-    auto *kernel = kernelMgr.GetKernel(KernelHandle);
+    auto *kernel = kernelMgr.GetKernel(kernelHandle);
     CHK_PTR_NULL(kernel);
 
     EXCEPTION_HANDLE_BEGIN
