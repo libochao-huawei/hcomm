@@ -14,6 +14,7 @@
 #include "hccl_api.h"
 #include "reged_mems/urma_mem.h"
 #include "adapter_rts_common.h"
+#include "ascend_hal.h"
  
 namespace hcomm {
 UrmaEndpoint::UrmaEndpoint(const EndpointDesc &endpointDesc)
@@ -25,10 +26,6 @@ HcclResult UrmaEndpoint::Init()
 {
     HCCL_INFO("[%s] localEndpoint protocol[%d]", __func__, endpointDesc_.protocol);
 
-    if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE){
-        HCCL_ERROR("[UrmaEndpoint][%s] endpointDesc.loc.locType[%d] only support ENDPOINT_LOC_TYPE_DEVICE", __func__, endpointDesc_.loc.locType);
-        return HCCL_E_PARA;
-    }
     Hccl::IpAddress ipAddr{};
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
@@ -36,6 +33,9 @@ HcclResult UrmaEndpoint::Init()
     s32 deviceLogicId;
     CHK_RET(hrtGetDevice(&deviceLogicId));
     Hccl::HccpHdcManager::GetInstance().Init(deviceLogicId);
+    if(endpointDesc_.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
+        Hccl::HccpPeerManager::GetInstance().Init(deviceLogicId);
+    }
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId));
     if (endpointDesc_.loc.device.devPhyId != devPhyId){
         HCCL_WARNING("[UrmaEndpoint][%s] endpointDesc.loc.device.devPhyId[%u] incorrect", __func__, endpointDesc_.loc.device.devPhyId);
@@ -43,7 +43,9 @@ HcclResult UrmaEndpoint::Init()
     }
 
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
-    EXECEPTION_CATCH(ctxHandle_ = static_cast<void *>(rdmaHandleMgr.GetByIp(endpointDesc_.loc.device.devPhyId, ipAddr)), return HCCL_E_PARA);
+    Hccl::PortDeploymentType NetType = (endpointDesc_.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) 
+    ? Hccl::PortDeploymentType::DEV_NET : Hccl::PortDeploymentType::HOST_NET;
+    EXECEPTION_CATCH(ctxHandle_ = static_cast<void *>(rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::UB, ipAddr, NetType));, return HCCL_E_PARA);
     CHK_PTR_NULL(ctxHandle_);
     HCCL_INFO("%s success, devId[%u], ipAddr[%s], ctxHandle[%p]",
         __func__, devPhyId, ipAddr.Describe().c_str(), ctxHandle_);
@@ -61,11 +63,6 @@ HcclResult UrmaEndpoint::Init()
 
 HcclResult UrmaEndpoint::ServerSocketListen()
 {
-    if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE){
-        HCCL_INFO("[UrmaEndpoint][%s] endpointDesc.loc.locType[%d] skip create ServerSocket", __func__, endpointDesc_.loc.locType);
-        return HCCL_SUCCESS;
-    }
-
     Hccl::IpAddress ipaddr{};
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipaddr));
 
@@ -107,13 +104,42 @@ std::unordered_map<Hccl::PortData, std::unique_ptr<Hccl::Socket>> &UrmaEndpoint:
 
 HcclResult UrmaEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
+    // rH2D场景先进行总线注册
+    if(this->endpointDesc_.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
+        // 获取设备逻辑id
+        s32 deviceLogicId;
+        CHK_RET(hrtGetDevice(&deviceLogicId));
+        uint64_t addr = reinterpret_cast<uintptr_t>(mem.addr);
+        int ret = halMemRegUbSegment(static_cast<uint32_t>(deviceLogicId), addr, mem.size);
+        if(ret) {
+            HCCL_ERROR("[UbRegedMemMgr][RegisterMemory] Rh2D bus registration failed!");
+            return HCCL_E_INTERNAL;
+        }
+    }
+
     CHK_RET(this->regedMemMgr_->RegisterMemory(mem, memTag, memHandle));
     return HCCL_SUCCESS;
 }
 
 HcclResult UrmaEndpoint::UnregisterMemory(void* memHandle)
 {
+    Hccl::LocalUbRmaBuffer* buffer = static_cast<Hccl::LocalUbRmaBuffer*>(memHandle);
+    auto bufferInfo = buffer->GetBufferInfo();
+
     CHK_RET(this->regedMemMgr_->UnregisterMemory(memHandle));
+    
+    // rH2D场景执行总线解注册
+    if(this->endpointDesc_.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
+        // 获取设备逻辑id
+        s32 deviceLogicId;
+        CHK_RET(hrtGetDevice(&deviceLogicId));
+        int ret = halMemUnRegUbSegment(static_cast<uint32_t>(deviceLogicId), reinterpret_cast<uintptr_t>(bufferInfo.first), bufferInfo.second);
+        if(ret) {
+            HCCL_ERROR("[UbRegedMemMgr][UnregisterMemory] Rh2D bus unregistration failed!");
+            return HCCL_E_INTERNAL;
+        }
+    }
+
     return HCCL_SUCCESS;
 }
 
