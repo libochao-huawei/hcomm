@@ -196,8 +196,13 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCcuKernelRegister(HcclComm comm,
-    CcuKernelHandle *kernelHandle, void *kernelCreator, void *kernelArg)
+HcclResult HcclCcuKernelRegisterStart(HcclComm comm)
+{
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult HcclCcuKernelRegister(HcclComm comm, CcuInsHandle ccuInsHandle,
+    CcuKernelHandle *kernelHandle, void *ccuKernelFunc, void *kernelArgs)
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
     HcclUs startut = TIME_NOW();
@@ -206,6 +211,8 @@ HcclResult HcclCcuKernelRegister(HcclComm comm,
     CHK_PTR_NULL(kernelHandle);
     CHK_PTR_NULL(kernelCreator);
     CHK_PTR_NULL(kernelArg);
+
+    (void)ccuInsHandle; // 当前预埋不使用
 
     auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto *collComm = hcclComm->GetCollComm();
@@ -237,7 +244,7 @@ HcclResult HcclCcuKernelRegister(HcclComm comm,
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult HcclCcuKernelRegisterFinish(HcclComm comm)
+HcclResult HcclCcuKernelRegisterEnd(HcclComm comm)
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
     CHK_PTR_NULL(comm);
