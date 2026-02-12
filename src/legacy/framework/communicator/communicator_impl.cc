@@ -570,6 +570,7 @@ HcclResult CommunicatorImpl::SetAivControledCoreNum(bool isAiv)
 HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, void *stream)
 {
     try {
+        HCCL_RUN_INFO("Entry-[%s] V950 OpIndex[%u]", opParams.opTag.c_str(), opIndex);
         isLoadOp = true;
         CHK_RET(CheckCommStatus());
         // 等待通信域状态为Ready，执行算子下发
@@ -810,6 +811,7 @@ void CommunicatorImpl::RegisterOffloadScratchBuffer(const std::string &opTag, vo
 HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpParams &opParams, void *stream)
 {
     try {
+        HCCL_RUN_INFO("Entry-[%s] V950 OpIndex[%u]", opTag.c_str(), opIndex);
         HCCL_INFO("CommunicatorImpl::LoadOffloadCollOp dataType[%s]", opParams.dataType.Describe().c_str());
         isLoadOp = true;
         curOpParams = opParams;

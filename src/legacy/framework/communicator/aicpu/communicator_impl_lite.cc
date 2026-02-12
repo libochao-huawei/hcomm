@@ -31,7 +31,6 @@ int CommunicatorImplLite::LoadWithOpBasedMode(HcclKernelParamLite *kernelParam)
         // 设定devType，初始化能力，算法及其他模块通过Get获取能力
         DevCapability::GetInstance().Init(kernelParam->comm.devType);
         UnfoldOp(kernelParam);
-        opIndex++;//算子计数
     } catch (HcclException &e) {
         HCCL_ERROR("Hccl exception %s was caught.", e.what());
         return KERNEL_ERROR_CODE;
@@ -113,6 +112,7 @@ void CommunicatorImplLite::CreateCollAlgComponentLite()
 
 void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
 {
+    opIndex = kernelParam->comm.opIndex;
     uint64_t beginTime = ProfGetCurCpuTimestamp();
     profilingReporterLite->UpdateProfStat();
     UpdateCommParam(kernelParam);
@@ -191,7 +191,6 @@ void CommunicatorImplLite::UpdateCommParam(HcclKernelParamLite *kernelParam)
     devPhyId      = kernelParam->comm.devPhyId;
     devType       = kernelParam->comm.devType;
     opCounterAddr = kernelParam->comm.opCounterAddr;
-    opIndex       = kernelParam->comm.opIndex;
     hcclExecTimeout = kernelParam->envConfig.hcclExecTimeout;
     if (rmtDataBufferMgr == nullptr) {
         collAlgInfo   = std::make_unique<CollAlgInfo>(kernelParam->op.algOperator.opMode, kernelParam->opTag);
@@ -457,7 +456,7 @@ void CommunicatorImplLite::SetDfxOpInfo(uint64_t beginTime)
     auto dfxopInfo           = std::make_shared<DfxOpInfo>();
     dfxopInfo->op_           = currentOp;
     dfxopInfo->algType_      = AlgType::MESH; // 暂时
-    dfxopInfo->commIndex_        = idIndex_;
+    dfxopInfo->commIndex_    = idIndex_;
     dfxopInfo->beginTime_    = beginTime;
     dfxopInfo->comm_         = this;
     dfxopInfo->commId_       = commId;

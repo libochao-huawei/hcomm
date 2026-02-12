@@ -16,7 +16,8 @@
 
 namespace Hccl {
 
-constexpr u32 INVALID_VALUE_RANKID = 0xFFFFFFFF; // rank id非法值
+constexpr u32 INVALID_VALUE_RANKID = 0xFFFFFFFF;    // rank id非法值
+constexpr u32 INVALID_VALUE_OPCOUNTER = 0xFFFFFFFF; // OpCounter非法值
 
 class DfxOpInfo {
 public:
@@ -29,9 +30,9 @@ public:
     void        *comm_;
     u32          mainStreamId_;
     std::string  commId_{};
-    u32          opIndex_{0};
-    u32          headOpCounter_{0x7fffffff};
-    u32          tailOpCounter_{0x7fffffff};
+    u32          opIndex_{0};                               // 下发算子总计数(单算子/图模式/CCU快速下发)
+    u32          headOpCounter_{INVALID_VALUE_OPCOUNTER};   // 执行算子头计数器（执行前加一）
+    u32          tailOpCounter_{INVALID_VALUE_OPCOUNTER};   // 执行算子尾计数器（执行后加一）
 
 public:
     std::string Describe() const
