@@ -78,7 +78,7 @@ target_include_directories(rs_ut_abnormal PRIVATE
     ${SRC_DIR}/src/platform/hccp/external_depends/inc/driver
     ${SRC_DIR}/src/platform/hccp/external_depends/ubengine
     ${SRC_DIR}/src/platform/hccp/external_depends/ccu
-    ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
     ${CANN_3RD_LIB_PATH}/hcomm_utils/host/include/tls_adp
     ${CANN_3RD_LIB_PATH}/json/include/
     ${CANN_3RD_LIB_PATH}/gtest/include/
