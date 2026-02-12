@@ -83,6 +83,7 @@ struct TransportRequest {
     bool isUsedRdma = false;
     u32 notifyNum = 0;
     TransportLinkType linkType = TransportLinkType::RESERVED;
+    u32 hcclQos;
 };
 
 struct SingleSubCommTransport {

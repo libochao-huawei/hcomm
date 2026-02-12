@@ -230,7 +230,7 @@ private:
         const bool supportDataReceivedAck, const LinkMode linkMode,
         const std::vector<std::shared_ptr<HcclSocket> > &socketList, const DeviceMem &inputMem,
         const DeviceMem &outputMem, const DeviceMem &expMem, bool isAicpuModeEn, bool isBackup, bool isCapture,
-        u32 notifyNum, u32 trafficClass, u32 serviceLevel, MachinePara &machinePara, RankInfo &loaclRank, RankInfo &remoteRank,
+        u32 notifyNum, u32 trafficClass, u32 serviceLevel, u32 hcclQos, MachinePara &machinePara, RankInfo &loaclRank, RankInfo &remoteRank,
         const HcclNetDevCtx &netDevCtx, TransportLinkType linkType = TransportLinkType::RESERVED, 
         const IndOpMem &indOpMem = IndOpMem(), bool isIndOp = false,
 		const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isNpuDirectRoce = false);
@@ -296,6 +296,7 @@ private:
     u64 rankConsistentDataLength_ = 0;
     u32 trafficClass_;
     u32 serviceLevel_;
+    u32 hcclQos_;
     u32 ibvCount_ = 0;
     std::mutex ibvCountMutex_;
     HcclCMDType opType_ = HcclCMDType::HCCL_CMD_INVALID;
