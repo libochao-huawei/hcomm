@@ -268,7 +268,7 @@ endfunction()
 # 检查构建依赖
 function(check_pkg_build_deps pkg_name)
     execute_process(
-        COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_build_dependencies.py "${ASCEND_INSTALL_PATH}" ${CANN_VERSION_${pkg_name}_BUILD_DEPS}
+        COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_build_dependencies.py "$ENV{ASCEND_HOME_PATH}" ${CANN_VERSION_${pkg_name}_BUILD_DEPS}
         RESULT_VARIABLE result
     )
     if(result)

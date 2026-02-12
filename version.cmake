@@ -16,6 +16,4 @@ set_build_dependencies(bisheng-compiler ">=8.5")
 set_build_dependencies(asc-devkit ">=8.5")
 
 set_run_dependencies(runtime "CUR_MAJOR_MINOR_VER")
-set_run_dependencies(hcomm "CUR_MAJOR_MINOR_VER")
-set_run_dependencies(asc-devkit "CUR_MAJOR_MINOR_VER")
-set_run_dependencies(bisheng-compiler "CUR_MAJOR_MINOR_VER")
+set_run_dependencies(metadef "CUR_MAJOR_MINOR_VER")
