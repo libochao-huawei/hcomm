@@ -645,7 +645,11 @@ int RaPeerSetQpLbValue(struct RaQpHandle *qpHandle, int lbValue)
     ret = RsSetQpLbValue(qpHandle->phyId, qpHandle->rdevIndex, qpHandle->qpn, lbValue);
     PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpHandle->phyId]);
     if (ret != 0) {
-        hccp_err("[set][lbValue]RsSetQpLbValue failed ret:%d", ret);
+        if (ret == -ENOTSUPP) {
+            hccp_run_warn("RsSetQpLbValue may not support, please check whether the libhrn3-rdmav34.so exists");
+        } else {
+            hccp_err("[set][lbValue]RsSetQpLbValue failed ret:%d", ret);
+        }
     }
     return ret;
 }
