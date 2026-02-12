@@ -35,7 +35,7 @@ target_compile_definitions(ra_adp PRIVATE
 target_include_directories(ra_adp PRIVATE
     ${BASIC_PATH}/external_depends/inc/driver
     ${BASIC_PATH}/external_depends/inc/log
-    ${BASIC_PATH}/external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
     ${BASIC_PATH}/inc/network
     ${BASIC_PATH}/inc/private/network
     ${BASIC_PATH}/rdma_agent/inc
