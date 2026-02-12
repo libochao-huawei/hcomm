@@ -21,6 +21,7 @@ set(ra_peer_list
 
 #编译目标
 add_library(ra_peer SHARED ${ra_peer_list})
+# add_dependencies(ra_peer ${RDMA_CORE_NAME})
 
 target_include_directories(ra_peer PRIVATE
     ${BASE_DIR}/
@@ -37,7 +38,7 @@ target_include_directories(ra_peer PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
 
     # rdma头文件
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/inc/driver
 
