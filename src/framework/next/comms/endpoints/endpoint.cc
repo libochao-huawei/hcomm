@@ -27,6 +27,10 @@ HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::uniqu
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UrmaEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_UBC_CTP && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UrmaEndpoint>(endpointDesc), return HCCL_E_PTR);
+    } else if (endpointDesc.protocol == COMM_PROTOCOL_UBC_TP && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
+        EXECEPTION_CATCH(endpointPtr = std::make_unique<UrmaEndpoint>(endpointDesc), return HCCL_E_PTR);
+    } else if (endpointDesc.protocol == COMM_PROTOCOL_UBC_CTP && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
+        EXECEPTION_CATCH(endpointPtr = std::make_unique<UrmaEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_UB_MEM && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UbMemEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else {
@@ -37,4 +41,4 @@ HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::uniqu
     return HCCL_SUCCESS;
 }
 
- }
+}
