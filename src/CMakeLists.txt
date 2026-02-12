@@ -172,7 +172,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../pkg_inc/hccl
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
+        ${RDMA_CORE_INCLUDE_DIR}
         ${HCCL_BASE_DIR}/legacy/interface
 
         # runtime头文件
@@ -194,9 +194,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
 
-        # 临时依赖，后续删除
         ${HCCL_BASE_DIR}/../externel_depends/tsch/
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
 
         ${THIRD_PARTY_NLOHMANN_PATH}
     )
@@ -318,7 +316,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
+        ${RDMA_CORE_INCLUDE_DIR}
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
@@ -341,7 +339,7 @@ if(BUILD_OPEN_PROJECT)
 
         # 临时依赖头文件，待删除
         ${HCCL_BASE_DIR}/../externel_depends/tsch/
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
+        ${RDMA_CORE_INCLUDE_DIR}
 
         ${THIRD_PARTY_NLOHMANN_PATH}
     )
@@ -354,7 +352,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
+        ${RDMA_CORE_INCLUDE_DIR}
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
@@ -377,7 +375,7 @@ if(BUILD_OPEN_PROJECT)
 
         # 临时依赖头文件，待删除
         ${HCCL_BASE_DIR}/../externel_depends/tsch/
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
+        ${RDMA_CORE_INCLUDE_DIR}
 
         ${THIRD_PARTY_NLOHMANN_PATH}
     )
