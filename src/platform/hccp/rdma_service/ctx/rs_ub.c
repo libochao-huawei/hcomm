@@ -1990,6 +1990,10 @@ STATIC int RsUbFillJettyInfo(struct RsCtxJettyCb *jettyCb, struct QpCreateInfo *
     // hccp_warn("@@@ jettyInfo->udma_jetty_sq.max_sge_num: %ld", jettyInfo->udma_jetty_sq.max_sge_num);
     // hccp_warn("@@@ jettyInfo->udma_jetty_sq.cstm: %ld", jettyInfo->udma_jetty_sq.cstm);
 
+    int value_wr = 123;
+    *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_sq.db_addr + 0x80) = value_wr;
+    int value_rd = *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_sq.db_addr + 0x80);
+    hccp_warn("123123123123123123 value_rd: %d", value_rd);
 
     struct udma_u_jfc *udma_jfc = CONTAINER_OF(jettyCb->jetty->jetty_cfg.shared.jfc, struct udma_u_jfc, base);
     jettyInfo->udma_jetty_cq.qbuf = udma_jfc->cq.qbuf;
