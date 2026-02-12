@@ -30,7 +30,7 @@ public:
 
     // 为了尽可能保障框架依赖兼容性，除了引用以外，参数不通过构造函数传递
     virtual HcclResult Config(const HcclDispatcher &dispatcher, const HcclRankLinkInfo &localRankInfo,
-        const RankTable_t *rankTable, std::string identifier = "");
+        const RankTable_t *rankTable, std::string identifier = "", bool isStandardCard = false);
     
     // 析构时要处理的逻辑
     virtual HcclResult DeInit();
@@ -52,6 +52,7 @@ protected:
     u32 serviceLevel_;
 
     std::string identifier_;
+    bool isStandardCard_{false};
 };
 }
 
