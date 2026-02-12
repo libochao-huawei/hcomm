@@ -271,12 +271,10 @@ CcuTransport::TransStatus CcuTransport::GetStatus()
         std::unique_lock<std::shared_timed_mutex> lock(transMutex);
         status = StateMachine();
     };
-    TRY_CATCH_PROCESS_THROW(
+    TRY_CATCH_PROCESS_THROW (
         InternalException,
         lockAndStatuMachine(),
-        {
-            "CcuTransport GetStatus() Error when creating transport connection" + this->Describe().c_str();
-        },
+        "CcuTransport GetStatus() Error when creating transport connection",
         {
             transStatus = CcuTransport::TransStatus::CONNECT_FAILED;
         });
