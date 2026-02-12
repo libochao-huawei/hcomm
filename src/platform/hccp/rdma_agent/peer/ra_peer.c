@@ -644,9 +644,7 @@ int RaPeerSetQpLbValue(struct RaQpHandle *qpHandle, int lbValue)
     RsSetCtx(qpHandle->phyId);
     ret = RsSetQpLbValue(qpHandle->phyId, qpHandle->rdevIndex, qpHandle->qpn, lbValue);
     PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpHandle->phyId]);
-    if (ret != 0) {
-        hccp_err("[set][lbValue]RsSetQpLbValue failed ret:%d", ret);
-    }
+
     return ret;
 }
 
