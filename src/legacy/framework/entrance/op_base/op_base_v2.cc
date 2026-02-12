@@ -1875,7 +1875,7 @@ HcclResult HcclSendV2(
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "Send_" + communicator->GetId();
-    
+
     CHK_RET(HcomCheckDataTypeV2(dataType));
 
     /* 接口交互信息日志 */
@@ -2057,7 +2057,7 @@ HcclResult HcclReduceScatterVV2(void *sendBuf, void *sendCounts, void *sendDispl
     // 获取通信域
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "ReduceScatterV_" + communicator->GetId();
-
+    
     // 获取rank信息
     uint32_t rankId;
     CHK_RET(communicator->GetRankId(rankId));
