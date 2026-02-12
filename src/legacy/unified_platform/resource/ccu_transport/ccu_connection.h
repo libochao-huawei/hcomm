@@ -46,7 +46,7 @@ public:
     {
         return ccuJettys_;
     }
-    void     Clean();
+    void Clean(BatchDeleteJettyInfo& batchDeleteJettyInfo);
 
 protected:
     TpProtocol tpProtocol{TpProtocol::INVALID};
@@ -101,6 +101,7 @@ private:
     vector<RequestHandle>  reqHandles;
     vector<vector<char_t>> reqDataBuffers;
     vector<void*>          remoteJettyHandlePtrs;
+    vector<TargetJettyHandle> remoteDelJettyList;
 
     HcclResult    StatusMachine();
     void          UpdateInitStatus();
@@ -114,7 +115,7 @@ private:
     HcclResult    StartImportJettyRequest(uint32_t jettyIndex, RequestHandle &reqHandle);
     bool          CheckRequestResults();
     void          ConfigChannel();
-    HcclResult    ReleaseConnRes();
+    HcclResult    ReleaseConnRes(const u32 clean_type);
     void          ThrowAbnormalStatus(const std::string &funcName);
     std::string   Describe();
 };

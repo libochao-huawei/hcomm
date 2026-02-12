@@ -23,7 +23,8 @@
 #include "local_ub_rma_buffer.h"
 
 namespace Hccl {
-
+constexpr u32 CONN_DESTORY = 0;
+constexpr u32 CONN_CLEAN = 1;
 CcuConnection::CcuConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
     const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
     : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys)
@@ -429,16 +430,23 @@ void CcuConnection::ConfigChannel()
 
 CcuConnection::~CcuConnection()
 {
-    DECTOR_TRY_CATCH("CcuConnection", ReleaseConnRes());
+    DECTOR_TRY_CATCH("CcuConnection", ReleaseConnRes(CONN_DESTORY));
 }
 
-HcclResult CcuConnection::ReleaseConnRes()
+HcclResult CcuConnection::ReleaseConnRes(const u32 release_type)
 {
     for (auto &item : importJettyCtxs) {
         if (item.outParam.handle != 0) {
-            HrtRaUbUnimportJetty(rdmaHandle, item.outParam.handle);
+            remoteDelJettyList.push_back(item.outParam.handle);
             item.outParam.handle = 0;
         }
+    }
+
+    if (release_type == CONN_DESTORY) {
+        for(auto remoteJettyHandle : remoteDelJettyList) {
+            HrtRaUbUnimportJetty(rdmaHandle, remoteJettyHandle);
+        }
+        remoteDelJettyList.clear();
     }
 
     if (tpInfo.tpHandle != 0) { // tp handle 复用，只释放一次
@@ -485,18 +493,27 @@ int32_t CcuConnection::GetDevLogicId() const
     return devLogicId;
 }
 
-void CcuConnection::Clean()
+void CcuConnection::Clean(BatchDeleteJettyInfo& batchDeleteJettyInfo)
 {
     status = CcuConnStatus::INIT;
     innerStatus = InnerStatus::INIT;
     isJettyCreated = false;
     isJettyImported = false;
-    ReleaseConnRes();
+    ReleaseConnRes(CONN_CLEAN);
     GenerateLocalPsn();
 
+    for(auto remoteJettyHandle : remoteDelJettyList) {
+        batchDeleteJettyInfo.unimportJettyList[rdmaHandle].push_back(remoteJettyHandle);
+    }
+    remoteDelJettyList.clear();
+
     // 销毁jetty要在ReleaseConnRes之后
+    SingleDeleteJettyInfo jettyInfo;
     for (auto &ccuJetty : ccuJettys_) {
-        ccuJetty->Clean();
+        jettyInfo = ccuJetty->Clean();
+        if (jettyInfo.isValid) {
+            batchDeleteJettyInfo.deleteJettyList[rdmaHandle].push_back(jettyInfo.deleteJetty);
+        }
     }
 }
 
