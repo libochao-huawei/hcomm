@@ -84,7 +84,7 @@ target_include_directories(rs_ut_normal PRIVATE
     ${SRC_DIR}/src/platform/hccp/external_depends/ubengine
     ${SRC_DIR}/src/platform/hccp/external_depends/net_adapt
     ${SRC_DIR}/src/platform/hccp/external_depends/ccu
-    ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
     ${HCOMM_UTILS_PATH}/hcomm_utils/host/include/tls_adp
     ${ASCEND_3RD_LIB_PATH}/json/include/
     ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/

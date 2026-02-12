@@ -96,7 +96,7 @@ target_include_directories(rdma_agent_utest PRIVATE
     ${SRC_DIR}/src/platform/hccp/external_depends/inc
     ${SRC_DIR}/src/platform/hccp/external_depends/inc/driver
     ${SRC_DIR}/src/platform/hccp/external_depends/host_lite
-    ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
     ${ASCEND_3RD_LIB_PATH}/json/include/
     ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
     ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/

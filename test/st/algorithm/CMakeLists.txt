@@ -76,7 +76,7 @@ set(HCOMM_PLATFORM_INCLUDE_LIST
     ${HCOMM_CODE_PLATFORM}/hccp/external_depends/inc/log
     ${HCOMM_CODE_PLATFORM}/task/
     ${HCOMM_CODE_PLATFORM}/hccp/inc/network/
-    ${HCOMM_CODE_PLATFORM}/hccp/external_depends/rdma-core/include/
+    ${RDMA_CORE_INCLUDE_DIR}
 )
 
 set(HCOMM_COMMON_INCLUDE_LIST
@@ -161,7 +161,7 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/../common/stream
     ${HCOMM_CODE_FRAMEWORK}/../platform/hccp/inc
     ${HCOMM_CODE_FRAMEWORK}/../platform/hccp/inc/network
-    ${HCOMM_CODE_FRAMEWORK}/../platform/hccp/external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
 
     # ccu 头文件
     ${HCOMM_CODE_FRAMEWORK}/../../pkg_inc/hcomm/ccu/

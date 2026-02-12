@@ -91,6 +91,7 @@ endif()
 
 if(BUILD_OPEN_PROJECT)
     include(cmake/third_party/openssl.cmake)
+    include(cmake/third_party/rdma-core.cmake)
     include(cmake/third_party/json.cmake)
     include(cmake/utils.cmake)
     include(cmake/config.cmake)

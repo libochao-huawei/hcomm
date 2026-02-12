@@ -104,7 +104,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/platform/typical
     ${HCCL_CODE_ROOT}/src/platform/hccp/inc
     ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network
-    ${HCCL_CODE_ROOT}/src/platform/hccp/external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
 
     # hccl/algorithm 目录下头文件
     ${HCCL_CODE_ROOT}/src/algorithm/pub_inc

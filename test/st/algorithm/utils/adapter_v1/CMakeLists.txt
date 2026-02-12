@@ -89,7 +89,7 @@ target_include_directories(hccl_alg_adaption PRIVATE
 
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
 
-    ${HCOMM_CODE_PLATFORM}/hccp/external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
 
     ${ASCEND_CANN_INCLUDE_LIST}
 )
