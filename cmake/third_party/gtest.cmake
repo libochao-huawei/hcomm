@@ -27,9 +27,10 @@ set(GTEST_INSTALL_PATH ${CANN_3RD_LIB_PATH}/gtest)
 message(STATUS "[ThirdParty] GTEST_INSTALL_PATH=${GTEST_INSTALL_PATH}")
 find_path(GTEST_INCLUDE
     NAMES gtest/gtest.h
+    PATH_SUFFIXES include
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH
-    PATHS ${GTEST_INSTALL_PATH}/include
+    PATHS ${GTEST_INSTALL_PATH}
 )
 find_library(GTEST_STATIC_LIBRARY
     NAMES libgtest.a
@@ -105,6 +106,7 @@ else()
     include(ExternalProject)
     ExternalProject_Add(third_party_gtest
         URL ${GTEST_PROJECT_URL}
+        URL_HASH SHA256=8ad598c73ad796e0d8280b082cebd82a630d73e73cd3c70057938a6501bba5d7
         TLS_VERIFY OFF
         DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}
         DOWNLOAD_NO_PROGRESS TRUE

@@ -472,6 +472,7 @@ else()
 endif()
 
 add_dependencies(ccl_kernel_plf json)
+add_dependencies(hccd json)
 
 target_compile_definitions(ccl_kernel_plf PRIVATE
     $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
