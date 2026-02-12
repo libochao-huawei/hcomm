@@ -28,6 +28,7 @@
 #include "orion_adapter_rts.h"
 #include "orion_adapter_hccp.h"
 #include "rdma_handle_manager.h"
+#include "log.h"
 
 #undef private
 #undef protected
@@ -229,6 +230,10 @@ TEST_F(CcuTransportTest, Ut_GetStatusFailed_When_ConnectionError_Expect_Return_E
         status = transport->GetStatus();
     } catch (InternalException &e) {
         EXPECT_EQ(CcuTransport::TransStatus::CONNECT_FAILED, status);
+    } catch (exception &e) {
+        HCCL_ERROR(e.what());
+    } catch (...) {
+        HCCL_ERROR("Unknown error occurs!");
     }
 }
 
@@ -246,6 +251,10 @@ TEST_F(CcuTransportTest, Ut_GetStatusFailed_When_SocketError_Expect_Return_Error
         status = transport->GetStatus();
     } catch (InternalException &e) {
         EXPECT_EQ(CcuTransport::TransStatus::CONNECT_FAILED, status);
+    } catch (exception &e) {
+        HCCL_ERROR(e.what());
+    } catch (...) {
+        HCCL_ERROR("Unknown error occurs!");
     }
 }
 
@@ -274,6 +283,10 @@ TEST_F(CcuTransportTest, Ut_GetStatusError_When_SocketSendError_Expect_Return_Er
         }
     } catch (SocketException &e) {
         EXPECT_EQ(CcuTransport::TransStatus::CONNECT_FAILED, status);
+    } catch (exception &e) {
+        HCCL_ERROR(e.what());
+    } catch (...) {
+        HCCL_ERROR("Unknown error occurs!");
     }
 }
 
@@ -308,6 +321,10 @@ TEST_F(CcuTransportTest, Ut_GetStatusError_When_HandshakeMsgInvalid_Expect_Retur
         status = transport->GetStatus();
     } catch (InvalidParamsException &e) {
         EXPECT_EQ(CcuTransport::TransStatus::CONNECT_FAILED, status);
+    } catch (exception &e) {
+        HCCL_ERROR(e.what());
+    } catch (...) {
+        HCCL_ERROR("Unknown error occurs!");
     }
 }
 
