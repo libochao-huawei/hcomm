@@ -3068,7 +3068,7 @@ HcclResult hrtRaGetDevEidInfoNum(struct RaInfo *info, unsigned int* num)
         HCCL_ERROR("driver package does not support dlRaGetDevEidInfoNum, please change new package");
         return HCCL_E_NOT_SUPPORT;
     }
-    s32 ret = DlRaFunction::GetInstance().dlRaGetDevEidInfoNum(info, num);
+    s32 ret = DlRaFunction::GetInstance().dlRaGetDevEidInfoNum(*info, num);
     if (ret != 0) {
         HCCL_ERROR("[HrtRaGetSecRandom] RaGetDevEidInfoNum failed, call interface, ret[%d]", ret);
         return HCCL_E_NETWORK;
@@ -3082,7 +3082,7 @@ HcclResult hrtRaGetDevEidInfoList(struct RaInfo *info, struct HccpDevEidInfo *ei
         HCCL_ERROR("driver package does not support dlRaGetDevEidInfoNum, please change new package");
         return HCCL_E_NOT_SUPPORT;
     }
-    s32 ret = DlRaFunction::GetInstance().dlRaGetDevEidInfoList(info, eid_info, num);
+    s32 ret = DlRaFunction::GetInstance().dlRaGetDevEidInfoList(*info, eid_info, num);
     if (ret != 0) {
         HCCL_ERROR("[HrtRaGetSecRandom] RaGetDevEidInfoList failed, call interface, ret[%d]", ret);
         return HCCL_E_NETWORK;
