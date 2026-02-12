@@ -1307,9 +1307,11 @@ int RsUbCtxLmemReg(struct RsUbDevCb *devCb, struct MemRegAttrT *memAttr, struct 
     hccp_warn("@@@ lsegCb->segInfo.len: %ld", lsegCb->segInfo.len);
     hccp_warn("@@@ lsegCb->segment->seg.len: %ld", lsegCb->segment->seg.len);
     hccp_warn("@@@ lsegCb->segment->seg.token_id: %ld", lsegCb->segment->seg.token_id);
+    hccp_warn("@@@ lsegCb->segment->seg.ubva.va: %ld", lsegCb->segment->seg.ubva.va);
     hccp_warn("@@@ lsegCb->segment->mva: %ld", lsegCb->segment->mva);
     hccp_warn("@@@ lsegCb->segment->token_id->token_id: %ld", lsegCb->segment->token_id->token_id);
     hccp_warn("@@@ lsegCb->segment->handle: %ld", lsegCb->segment->handle);
+
 
     struct udma_u_segment *udma_segment = CONTAINER_OF(lsegCb->segment, struct udma_u_segment, urma_tseg);
     memInfo->udma_segment.token_value = udma_segment->token_value.token;
