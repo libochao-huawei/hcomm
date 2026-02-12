@@ -54,7 +54,7 @@ public:
 
     SelectorStatus Select(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName) override;
 
-    AlgorithmType GetAlgorithmTypeForMC2(const std::string& name);
+    AlgorithmType GetAlgorithmTypeForMC2CCU(const std::string& name);
 
 private:
     std::map<std::string, AlgorithmType> algorithmMap_ = {
@@ -75,4 +75,4 @@ private:
     };
 };
 }  // namespace Hccl
-#endif
+#endif

@@ -62,10 +62,10 @@ ExecuteSelector &ExecuteSelector::SetOpConfig(OpExecuteConfig opConfig)
     return *this;
 }
 
-AlgorithmType ExecuteSelector::GetAlgorithmTypeForMC2(const std::string& name)
+AlgorithmType ExecuteSelector::GetAlgorithmTypeForMC2CCU(const std::string& name)
 {
     Mc2Selector mc2Selector;
-    return mc2Selector.GetAlgorithmTypeForMC2(name);
+    return mc2Selector.GetAlgorithmTypeForMC2CCU(name);
 }
 
 HcclResult ExecuteSelector::Run(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName)

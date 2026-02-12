@@ -56,7 +56,7 @@ const std::map<OpType, std::string> MC2_AICPU_1D_DEFAULT_ALG_MAP = {
     {OpType::RECV, "InsRecv"},
 };
 
-AlgorithmType Mc2Selector::GetAlgorithmTypeForMC2(const std::string& name) {
+AlgorithmType Mc2Selector::GetAlgorithmTypeForMC2CCU(const std::string& name) {
     auto it = algorithmMap_.find(name);
     if (it == algorithmMap_.end()) {
         THROW<InvalidParamsException>(StringFormat("Unknown algorithm name: [%s] ", name.c_str()));
