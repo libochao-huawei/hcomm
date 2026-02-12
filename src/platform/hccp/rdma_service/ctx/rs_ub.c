@@ -1544,10 +1544,10 @@ int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct Ctx
     hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.sqe_bb_cnt: %ld", udma_jfc->cq.sqe_bb_cnt);
     hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.db.type: %ld", udma_jfc->cq.db.type);
     hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.db.addr: %ld", udma_jfc->cq.db.addr);
-    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.qbuf_end: %ld", udma_jfc->cq.qbuf_end);
-    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.qbuf_curr: %ld", udma_jfc->cq.qbuf_curr);
-    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.max_sge_num: %ld", udma_jfc->cq.max_sge_num);
-    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.cstm: %ld", udma_jfc->cq.cstm);
+    // hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.qbuf_end: %ld", udma_jfc->cq.qbuf_end);
+    // hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.qbuf_curr: %ld", udma_jfc->cq.qbuf_curr);
+    // hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.max_sge_num: %ld", udma_jfc->cq.max_sge_num);
+    // hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.cstm: %ld", udma_jfc->cq.cstm);
 
     hccp_info("jfc addr:0x%llx", jfcCb->jfcAddr);
 
@@ -1970,10 +1970,10 @@ STATIC int RsUbFillJettyInfo(struct RsCtxJettyCb *jettyCb, struct QpCreateInfo *
     jettyInfo->udma_jetty_sq.sqe_bb_cnt = udma_jetty->sq.sqe_bb_cnt;
     jettyInfo->udma_jetty_sq.db_type = udma_jetty->sq.db.type;
     jettyInfo->udma_jetty_sq.db_addr = udma_jetty->sq.db.addr;
-    jettyInfo->udma_jetty_sq.qbuf_end = udma_jetty->sq.qbuf_end;
-    jettyInfo->udma_jetty_sq.qbuf_curr = udma_jetty->sq.qbuf_curr;
-    jettyInfo->udma_jetty_sq.max_sge_num = udma_jetty->sq.max_sge_num;
-    jettyInfo->udma_jetty_sq.cstm = udma_jetty->sq.cstm;
+    // jettyInfo->udma_jetty_sq.qbuf_end = udma_jetty->sq.qbuf_end;
+    // jettyInfo->udma_jetty_sq.qbuf_curr = udma_jetty->sq.qbuf_curr;
+    // jettyInfo->udma_jetty_sq.max_sge_num = udma_jetty->sq.max_sge_num;
+    // jettyInfo->udma_jetty_sq.cstm = udma_jetty->sq.cstm;
 
     hccp_warn("@@@ jettyInfo->va: %ld", jettyInfo->va);
     hccp_warn("@@@ jettyInfo->udma_jetty_sq.qbuf: %ld", jettyInfo->udma_jetty_sq.qbuf);
@@ -1985,10 +1985,10 @@ STATIC int RsUbFillJettyInfo(struct RsCtxJettyCb *jettyCb, struct QpCreateInfo *
     hccp_warn("@@@ jettyInfo->udma_jetty_sq.sqe_bb_cnt: %ld", jettyInfo->udma_jetty_sq.sqe_bb_cnt);
     hccp_warn("@@@ jettyInfo->udma_jetty_sq.db_type: %ld", jettyInfo->udma_jetty_sq.db_type);
     hccp_warn("@@@ jettyInfo->udma_jetty_sq.db_addr: %ld", jettyInfo->udma_jetty_sq.db_addr);
-    hccp_warn("@@@ jettyInfo->udma_jetty_sq.qbuf_end: %ld", jettyInfo->udma_jetty_sq.qbuf_end);
-    hccp_warn("@@@ jettyInfo->udma_jetty_sq.qbuf_curr: %ld", jettyInfo->udma_jetty_sq.qbuf_curr);
-    hccp_warn("@@@ jettyInfo->udma_jetty_sq.max_sge_num: %ld", jettyInfo->udma_jetty_sq.max_sge_num);
-    hccp_warn("@@@ jettyInfo->udma_jetty_sq.cstm: %ld", jettyInfo->udma_jetty_sq.cstm);
+    // hccp_warn("@@@ jettyInfo->udma_jetty_sq.qbuf_end: %ld", jettyInfo->udma_jetty_sq.qbuf_end);
+    // hccp_warn("@@@ jettyInfo->udma_jetty_sq.qbuf_curr: %ld", jettyInfo->udma_jetty_sq.qbuf_curr);
+    // hccp_warn("@@@ jettyInfo->udma_jetty_sq.max_sge_num: %ld", jettyInfo->udma_jetty_sq.max_sge_num);
+    // hccp_warn("@@@ jettyInfo->udma_jetty_sq.cstm: %ld", jettyInfo->udma_jetty_sq.cstm);
 
 
     struct udma_u_jfc *udma_jfc = CONTAINER_OF(jettyCb->jetty->jetty_cfg.shared.jfc, struct udma_u_jfc, base);
@@ -2001,10 +2001,10 @@ STATIC int RsUbFillJettyInfo(struct RsCtxJettyCb *jettyCb, struct QpCreateInfo *
     jettyInfo->udma_jetty_cq.sqe_bb_cnt = udma_jfc->cq.sqe_bb_cnt;
     jettyInfo->udma_jetty_cq.db_type = udma_jfc->cq.db.type;
     jettyInfo->udma_jetty_cq.db_addr = udma_jfc->cq.db.addr;
-    jettyInfo->udma_jetty_cq.qbuf_end = udma_jfc->cq.qbuf_end;
-    jettyInfo->udma_jetty_cq.qbuf_curr = udma_jfc->cq.qbuf_curr;
-    jettyInfo->udma_jetty_cq.max_sge_num = udma_jfc->cq.max_sge_num;
-    jettyInfo->udma_jetty_cq.cstm = udma_jfc->cq.cstm;
+    // jettyInfo->udma_jetty_cq.qbuf_end = udma_jfc->cq.qbuf_end;
+    // jettyInfo->udma_jetty_cq.qbuf_curr = udma_jfc->cq.qbuf_curr;
+    // jettyInfo->udma_jetty_cq.max_sge_num = udma_jfc->cq.max_sge_num;
+    // jettyInfo->udma_jetty_cq.cstm = udma_jfc->cq.cstm;
 
     hccp_warn("@@@ jettyInfo->udma_jetty_cq.qbuf: %ld", jettyInfo->udma_jetty_cq.qbuf);
     hccp_warn("@@@ jettyInfo->udma_jetty_cq.qbuf_size: %ld", jettyInfo->udma_jetty_cq.qbuf_size);
@@ -2015,10 +2015,10 @@ STATIC int RsUbFillJettyInfo(struct RsCtxJettyCb *jettyCb, struct QpCreateInfo *
     hccp_warn("@@@ jettyInfo->udma_jetty_cq.sqe_bb_cnt: %ld", jettyInfo->udma_jetty_cq.sqe_bb_cnt);
     hccp_warn("@@@ jettyInfo->udma_jetty_cq.db_type: %ld", jettyInfo->udma_jetty_cq.db_type);
     hccp_warn("@@@ jettyInfo->udma_jetty_cq.db_addr: %ld", jettyInfo->udma_jetty_cq.db_addr);
-    hccp_warn("@@@ jettyInfo->udma_jetty_cq.qbuf_end: %ld", jettyInfo->udma_jetty_cq.qbuf_end);
-    hccp_warn("@@@ jettyInfo->udma_jetty_cq.qbuf_curr: %ld", jettyInfo->udma_jetty_cq.qbuf_curr);
-    hccp_warn("@@@ jettyInfo->udma_jetty_cq.max_sge_num: %ld", jettyInfo->udma_jetty_cq.max_sge_num);
-    hccp_warn("@@@ jettyInfo->udma_jetty_cq.cstm: %ld", jettyInfo->udma_jetty_cq.cstm);
+    // hccp_warn("@@@ jettyInfo->udma_jetty_cq.qbuf_end: %ld", jettyInfo->udma_jetty_cq.qbuf_end);
+    // hccp_warn("@@@ jettyInfo->udma_jetty_cq.qbuf_curr: %ld", jettyInfo->udma_jetty_cq.qbuf_curr);
+    // hccp_warn("@@@ jettyInfo->udma_jetty_cq.max_sge_num: %ld", jettyInfo->udma_jetty_cq.max_sge_num);
+    // hccp_warn("@@@ jettyInfo->udma_jetty_cq.cstm: %ld", jettyInfo->udma_jetty_cq.cstm);
 
     return 0;
 }
