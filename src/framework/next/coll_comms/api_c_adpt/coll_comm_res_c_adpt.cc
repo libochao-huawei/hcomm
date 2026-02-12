@@ -196,16 +196,23 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCcuKernelRegister(HcclComm comm,
-    CcuKernelHandle *kernelHandle, void *kernelCreator, void *kernelArg)
+HcclResult HcclCcuKernelRegisterStart(HcclComm comm)
+{
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult HcclCcuKernelRegister(HcclComm comm, CcuInsHandle ccuInsHandle,
+    CcuKernelHandle *kernelHandle, void *ccuKernelFunc, void *kernelArgs)
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
     HcclUs startut = TIME_NOW();
 
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(kernelHandle);
-    CHK_PTR_NULL(kernelCreator);
-    CHK_PTR_NULL(kernelArg);
+    CHK_PTR_NULL(ccuKernelFunc);
+    CHK_PTR_NULL(kernelArgs);
+
+    (void)ccuInsHandle; // 当前预埋不使用
 
     auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto *collComm = hcclComm->GetCollComm();
@@ -219,9 +226,9 @@ HcclResult HcclCcuKernelRegister(HcclComm comm,
     auto *resPack = ccuContainer->GetResPack();
     CHK_PTR_NULL(resPack);
 
-    hcomm::KernelCreator creator = *static_cast<hcomm::KernelCreator*>(kernelCreator);
-    const auto& arg = *static_cast<const hcomm::CcuKernelArg*>(kernelArg);
-    std::unique_ptr<hcomm::CcuKernel> kernel = creator(arg);
+    hcomm::CcuKernelFunc kernelFunc = *static_cast<hcomm::CcuKernelFunc*>(ccuKernelFunc);
+    const auto& args = *static_cast<const hcomm::CcuKernelArg*>(kernelArgs);
+    std::unique_ptr<hcomm::CcuKernel> kernel = kernelFunc(args);
 
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
@@ -237,7 +244,7 @@ HcclResult HcclCcuKernelRegister(HcclComm comm,
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult HcclCcuKernelRegisterFinish(HcclComm comm)
+HcclResult HcclCcuKernelRegisterEnd(HcclComm comm)
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
     CHK_PTR_NULL(comm);
@@ -289,7 +296,7 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
 }
 
 HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
-    const CcuKernelHandle KernelHandle, void *taskArgs)
+    const CcuKernelHandle kernelHandle, void *taskArgs)
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
     HcclUs startut = TIME_NOW();
@@ -308,7 +315,7 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
 
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
-    auto *kernel = kernelMgr.GetKernel(KernelHandle);
+    auto *kernel = kernelMgr.GetKernel(kernelHandle);
     CHK_PTR_NULL(kernel);
 
     EXCEPTION_HANDLE_BEGIN
