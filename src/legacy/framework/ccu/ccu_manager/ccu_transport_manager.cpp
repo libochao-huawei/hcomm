@@ -247,10 +247,55 @@ vector<std::pair<CcuTransport *, LinkData>> CcuTransportMgr::GetUnConfirmedTrans
 
 void CcuTransportMgr::Clean()
 {
+    BatchDeleteJettyInfo batchDeleteJettyInfo;
+    // 获取所有transport的jetty
     for (auto &linkTransPair : ccuLink2TransportMap) {
-        if (linkTransPair.second->Clean() !=HCCL_SUCCESS) {
-            THROW<CcuApiException>("[CcuTransportMgr::%s]CcuTransport clean failed.", __func__);
+        BatchDeleteJettyInfo partInfo;
+        if (linkTransPair.second->Clean(partInfo) !=HCCL_SUCCESS) {	 
+            THROW<CcuApiException>("[CcuTransportMgr::%s]CcuTransport clean failed.", __func__);	 
         }
+        for (auto& tmp : partInfo.deleteJettyList) {
+            auto& delList = batchDeleteJettyInfo.deleteJettyList[tmp.first];
+            delList.insert(delList.end(), tmp.second.begin(), tmp.second.end());
+        }
+        for (auto& tmp : partInfo.unimportJettyList) {
+            auto& delList = batchDeleteJettyInfo.unimportJettyList[tmp.first];
+            delList.insert(delList.end(), tmp.second.begin(), tmp.second.end());
+        }
+    }
+
+    // 排序去重，循环unimport
+    for (auto& tmp : batchDeleteJettyInfo.unimportJettyList) {
+        auto& unimportJettys = tmp.second;
+        std::sort(unimportJettys.begin(), unimportJettys.end());
+        auto last = std::unique(unimportJettys.begin(), unimportJettys.end());
+        unimportJettys.erase(last, unimportJettys.end());
+        for (auto& unimportJetty : unimportJettys) {
+            HrtRaUbUnimportJetty(tmp.first, unimportJetty);
+        }
+    }
+
+    // 排序去重，批量销毁
+    std::vector<JettyHandle> failJettyHandles;
+    for (auto& tmp : batchDeleteJettyInfo.deleteJettyList) {
+        auto& rdmaHandle = tmp.first;
+        auto& delJettys = tmp.second;
+        std::sort(delJettys.begin(), delJettys.end());
+        auto last = std::unique(delJettys.begin(), delJettys.end());
+        delJettys.erase(last, delJettys.end());
+        auto ret = HrtRaCtxQpDestoryBatch(rdmaHandle, delJettys, failJettyHandles);
+        for (u64 failJetty : failJettyHandles) {
+            HCCL_ERROR("[%s]delete jetty[%llu] fail", __func__, failJetty);
+        }
+        if (ret == HCCL_E_INTERNAL) {
+            HCCL_ERROR("[%s]HrtRaCtxQpDestoryBatch finish, ret[%u], rdmaHandle[%p], originalJettyCount[%u], undeleteJettyCount[%u]",
+                __func__, ret, rdmaHandle, delJettys.size(), failJettyHandles.size());
+            break;
+        } else {
+            HCCL_INFO("[%s]HrtRaCtxQpDestoryBatch finish, ret[%u], rdmaHandle[%p], originalJettyCount[%u], undeleteJettyCount[%u]",
+                __func__, ret, rdmaHandle, delJettys.size(), failJettyHandles.size());
+        }
+        failJettyHandles.clear();
     }
 }
 
@@ -286,6 +331,7 @@ void CcuTransportMgr::Fallback()
 void CcuTransportMgr::Destroy()
 {
     isDestroyed = true;
+    Clean();
     ccuLink2TransportMap.clear();
     ccuRank2TransportsMap.clear();
 }
