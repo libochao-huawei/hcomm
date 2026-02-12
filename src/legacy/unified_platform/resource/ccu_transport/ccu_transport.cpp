@@ -266,19 +266,20 @@ CcuTransport::TransStatus CcuTransport::StateMachine()
 CcuTransport::TransStatus CcuTransport::GetStatus()
 {
     CcuTransport::TransStatus status = CcuTransport::TransStatus::CONNECT_FAILED;
-    try {
-        std::unique_lock<std::shared_timed_mutex> lock(transMutex);
-        status = StateMachine();
-    } catch (HcclException &e) {
-        HCCL_ERROR(e.what());
-        return CcuTransport::TransStatus::CONNECT_FAILED;
-    } catch (exception &e) {
-        HCCL_ERROR(e.what());
-        return CcuTransport::TransStatus::CONNECT_FAILED;
-    } catch (...) {
-        HCCL_ERROR("Unknown error occured during unimport jetty or destroy jetty!");
-        return CcuTransport::TransStatus::CONNECT_FAILED;
-    }
+    TRY_CATCH_PROCESS_THROW(
+        InternalException,
+        {
+            std::unique_lock<std::shared_timed_mutex> lock(transMutex);
+            status = StateMachine();
+        },
+        {
+            "CcuTransport GetStatus() Error when creating transport connection %s",
+                this->Describe().c_str();
+        },
+        {
+            transStatus = CcuTransport::TransStatus::CONNECT_FAILED;
+        }
+    );
     return status;
 }
 
