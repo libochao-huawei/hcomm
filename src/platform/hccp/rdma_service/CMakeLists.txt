@@ -127,3 +127,4 @@ install(TARGETS  rs
 )
 
 add_dependencies(rs crypto_static)
+add_dependencies(rs ${RDMA_CORE_NAME})
