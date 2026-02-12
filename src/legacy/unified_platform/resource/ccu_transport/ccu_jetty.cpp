@@ -145,15 +145,18 @@ HrtRaUbJettyCreatedOutParam CcuJetty::GetJettyedOutParam() const
     return outParam_;
 }
 
-void CcuJetty::Clean()
+SingleDeleteJettyInfo CcuJetty::Clean()
 {
+    SingleDeleteJettyInfo jettyInfo{};
     if (isCreated_ && outParam_.handle != 0) {
-        HrtRaUbDestroyJetty(outParam_.handle);
+        jettyInfo.isValid = true;
+        jettyInfo.deleteJetty = outParam_.handle;
         isCreated_ = false;
         reqHandle_ = 0;
         jettyHandlePtr_ = nullptr;
         reqDataBuffer_.clear();
     }
     isError_ = false;
+    return jettyInfo;
 }
 } // namespace Hccl
