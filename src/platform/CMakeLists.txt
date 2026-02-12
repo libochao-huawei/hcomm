@@ -121,7 +121,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
 
         ${THIRD_PARTY_NLOHMANN_PATH}
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
+        ${RDMA_CORE_INCLUDE_DIR}
     )
 
     target_link_directories(hccl_plf PRIVATE

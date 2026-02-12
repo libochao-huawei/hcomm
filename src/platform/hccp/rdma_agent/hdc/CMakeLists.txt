@@ -54,7 +54,7 @@ target_include_directories(ra_hdc PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/include/
 
     # rdma头文件
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/providers/hns
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/inc/driver
