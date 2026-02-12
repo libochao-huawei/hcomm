@@ -104,21 +104,6 @@ HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannel
     // 1) 在底层为新的结构体和版本（version为2）上，会正常执行下面的判断处理逻辑；
     // 2) 在底层为旧的结构体和版本（version为1）上，下面的逻辑没有，version的2 > 1的部分会被忽略掉；
     if (channelDesc.header.version >= 2) {
-        switch (channelDesc.channelProtocol) {
-            case COMM_PROTOCOL_HCCS:
-                channelDescFinal.hccsAttr.hcclQos = (channelDesc.hccsAttr.tc == 0xFF) ? SDMA_QOS_DEFAULT : channelDesc.hccsAttr.hcclQos;
-                HCCL_INFO("[ProcessHcclResPackReq] hcclQos = %u", channelDescFinal.hccsAttr.hcclQos);
-            case COMM_PROTOCOL_PCIE:
-            case COMM_PROTOCOL_SIO:
-            case COMM_PROTOCOL_UBC_CTP:
-            case COMM_PROTOCOL_UB_MEM:
-                break;
-            case COMM_PROTOCOL_ROCE:
-                break;
-            default:
-                HCCL_ERROR("[%s]Unsupported protocol[%d] found in HcclChannelDesc.", __func__, channelDesc.channelProtocol);
-                return HCCL_E_PARA;
-        }
     }
  
     return HCCL_SUCCESS;
@@ -163,7 +148,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
     std::vector<HcclChannelDesc> channelDescFinals;
     for (uint32_t idx = 0; idx < channelNum; idx++) {
         HcclChannelDesc channelDescFinal;
-        HcclChannelDescInit(&channelDescFinal, 1, hcclComm);
+        HcclChannelDescInit(&channelDescFinal, 1);
         ret = ProcessHcclResPackReq(channelDescs[idx], channelDescFinal);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[%s] Failed check channelDesc, channelDesc idx[%u], group[%s], engine[%d], "

@@ -1496,6 +1496,7 @@ HcclResult hcclComm::SetHcclQos(u32 hcclQos)
         HCCL_INFO("[SetHcclQos]hcclQos is invalid, expect[%u, %u], actual[%u]. "
                   "It will use the default value. QoS[%u]", EnvConfig::HCCL_QOS_MIN, EnvConfig::HCCL_QOS_MAX, hcclQos,
                    EnvConfig::HCCL_QOS_DEFAULT);
+        hcclQos_ = EnvConfig::HCCL_QOS_DEFAULT;
         communicator_->SetHcclQos(EnvConfig::HCCL_QOS_DEFAULT);
         return HCCL_SUCCESS;
     }

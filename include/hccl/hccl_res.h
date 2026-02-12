@@ -191,7 +191,7 @@ inline HcclResult EndpointDescInit(EndpointDesc *endpoint, uint32_t num)
 }
 
 const uint32_t HCCL_CHANNEL_MAGIC_WORD = 0x0f0f0f0f;
-const uint32_t HCCL_CHANNEL_VERSION = 2;    // HcclChannelDesc更新时，HCCL_CHANNEL_VERSION + 1
+const uint32_t HCCL_CHANNEL_VERSION = 1;    // HcclChannelDesc更新时，HCCL_CHANNEL_VERSION + 1
 
 /**
  * @brief 通道描述参数
@@ -218,13 +218,6 @@ typedef struct {
             uint8_t sl;               ///< 服务等级(QoS)
         } roceAttr;
     };
-
-    union {
-        uint8_t raws[128]; ///< 通用缓存
-        struct {
-            uint32_t hcclQos;
-        } hccsAttr;
-    };
 } HcclChannelDesc;
 
 #ifndef LIKELY
@@ -239,7 +232,7 @@ typedef struct {
  * @param[in] descNum 描述数量
  * @return HcclResult 执行结果状态码
  */
-inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum, hccl::hcclComm *hcclComm)
+inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum)
 {
     for (uint32_t idx = 0; idx < descNum; idx++) {
         if (channelDesc != nullptr) {
@@ -264,10 +257,6 @@ inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t des
                 UNLIKELY(EndpointDescInit(&channelDesc->remoteEndpoint, 1) != HCCL_SUCCESS)) {
                 return HCCL_E_INTERNAL;
             }
-
-            // 初始化hccsAttr中字段
-            channelDesc->hccsAttr.hcclQos = hcclComm->GetHcclQos();
-            HCCL_INFO("[HcclChannelDescInit] hccsAttr.hcclQos = %u", channelDesc->hccsAttr.hcclQos);
             channelDesc++;  // 移动到下一个描述符
         } else {
             return HCCL_E_PTR;
