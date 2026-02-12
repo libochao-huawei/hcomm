@@ -17,5 +17,6 @@ endif()
 
 # ST
 if(ENABLE_ST)
+    include(${PROJECT_SOURCE_DIR}/cmake/third_party/protobuf.cmake)
     add_subdirectory(st/algorithm)
 endif()

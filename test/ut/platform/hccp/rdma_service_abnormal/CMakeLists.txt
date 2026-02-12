@@ -80,10 +80,10 @@ target_include_directories(rs_ut_abnormal PRIVATE
     ${SRC_DIR}/src/platform/hccp/external_depends/ccu
     ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include
     ${HCOMM_UTILS_PATH}/hcomm_utils/host/include/tls_adp
-    ${ASCEND_3RD_LIB_PATH}/json/include/
-    ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
-    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/
-    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/3rdparty/
+    ${CANN_3RD_LIB_PATH}/json/include/
+    ${CANN_3RD_LIB_PATH}/gtest/include/
+    ${CANN_3RD_LIB_PATH}/mockcpp/include/
+    ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
 )
 
 target_compile_options(rs_ut_abnormal PRIVATE
@@ -97,7 +97,7 @@ target_compile_definitions(rs_ut_abnormal PRIVATE
 target_link_libraries(rs_ut_abnormal PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     -lrt
-    -lpthread
+    -pthread
     -lgcov
     -ldl
 )
