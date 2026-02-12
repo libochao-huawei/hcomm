@@ -184,7 +184,6 @@ HcclResult CreateCommConfig(uint32_t rank, HcclCommConfig *config, HcclComm *com
     if (errorFlag) {
         HCCL_ERROR("[Init][CreateCommConfig]CreateCommConfig failed,  rank[%u],"\
             "return[0x%016llx]", rank, HCCL_ERROR_CODE(ret));
-        (void)HcclCommDestroyV2(opbasedCommInfoV2.pComm.get());
         *comm = nullptr;
         return ret;
     }
@@ -253,7 +252,6 @@ HcclResult CreateCommConfigRootInfo(uint32_t rank, const HcclCommConfig *config,
     if (errorFlag) {
         HCCL_ERROR("[Init][%s]CreateCommConfigRootInfo failed return[0x%016llx]", __func__, 
             HCCL_ERROR_CODE(ret));
-        (void)HcclCommDestroyV2(opbasedCommInfoV2.pComm.get());
         *comm = nullptr;
         return ret;
     }
@@ -348,7 +346,6 @@ HcclResult HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, Hcc
         HCCL_ERROR("[Init][%s]HcclCommInitClusterInfoV2 failed, clusterInfo[%s], rank[%u], deviceLogicId[%d], devPhyId[%d],"\
             "return[0x%016llx]", __func__, clusterInfo, rank,
             deviceLogicId, devPhyId, HCCL_ERROR_CODE(ret));
-        (void)HcclCommDestroyV2(opbasedCommInfoV2.pComm.get());
         *comm = nullptr;
         return ret;
     }
@@ -926,7 +923,6 @@ HcclResult HcclCreateSubCommConfigV2(const HcclComm *comm, uint32_t rankNum, uin
         HCCL_ERROR("[Init][%s]HcclCreateSubCommConfigV2 failed, deviceLogicId[%d], devPhyId[%d],"\
             "return[0x%016llx]", __func__,
             logicDevId, devPhyId, HCCL_ERROR_CODE(ret));
-        (void)HcclCommDestroyV2(subCommunicator.get());
         *subComm = nullptr;
         return ret;
     }
@@ -1658,7 +1654,6 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
         HCCL_ERROR("[Init][%s]HcclCommInitClusterInfoV2 failed, rankNum[%s], rank[%u], logicDevId[%d], rootInfo identifier[%s],"\
             "return[0x%016llx]", __func__, nRanks, rank,
             logicDevId, identifier.c_str(), HCCL_ERROR_CODE(ret));
-        (void)HcclCommDestroyV2(opbasedCommInfoV2.pComm.get());
         *comm = nullptr;
         return ret;
     }
