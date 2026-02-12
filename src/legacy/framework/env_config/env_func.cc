@@ -277,6 +277,7 @@ static void ParseAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlgoTyp
     const std::map<std::string, HcclAlgoType> hcclAlgoTypeMap = {
         {"null", HcclAlgoType::HCCL_ALGO_TYPE_NULL},
         {"NHR", HcclAlgoType::HCCL_ALGO_TYPE_NHR},
+        {"NA", HcclAlgoType::HCCL_ALGO_TYPE_NA},
     };
 
     auto iterAlgoLevel = hcclAlgoLevelMap.find(orginalLevel);
@@ -404,6 +405,7 @@ HcclResult ParserHcclAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlg
     const std::map<std::string, HcclAlgoType> hcclAlgoTypeMap = {
         {"null", HcclAlgoType::HCCL_ALGO_TYPE_NULL},
         {"NHR", HcclAlgoType::HCCL_ALGO_TYPE_NHR},
+        {"NA", HcclAlgoType::HCCL_ALGO_TYPE_NA},
     };
 
     auto iterAlgoLevel = hcclAlgoLevelMap.find(orginalLevel);
@@ -428,6 +430,7 @@ const std::map<HcclAlgoType, std::string> HcclAlgoTypeMap = {
     {HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, "default"},
     {HcclAlgoType::HCCL_ALGO_TYPE_NHR, "NHR"},
     {HcclAlgoType::HCCL_ALGO_TYPE_NULL, "null"},
+    {HcclAlgoType::HCCL_ALGO_TYPE_NA, "NA"},
 };
 
 HcclResult SplitHcclAlgoLevel(const std::string &algoConfig, std::vector<std::string> &algos)
