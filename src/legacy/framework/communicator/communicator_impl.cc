@@ -3082,34 +3082,35 @@ void CommunicatorImpl::AppendLocalDieIdForLinks()
     }
 
     auto srcRankNode = rankGraph->GetPeer(myRank)->GetNodeId();
-    // 枚举level
+
+    auto processLinks = [&](const std::vector<std::shared_ptr<NetInstance::Link>>& links, bool isSource) {
+        for (auto link : links) {
+            auto iface = isSource ? link->GetSourceIface() : link->GetTargetIface();
+            if (iface->GetPos() == AddrPosition::HOST) {
+                continue;
+            }
+            u32 dieId = GetLocalDieId({myRank, *iface});
+            HCCL_INFO("[CommunicatorImpl][AppendLocalDieIdForLinks] get link dieid[%u]", dieId);
+            iface->SetLocalDieId(dieId); 
+        }
+    };
+
     for (auto level : rankGraph->GetLevels(myRank)) {
         auto netInstance = rankGraph->GetNetInstanceByRankId(level, myRank);
-        auto &vGraph = netInstance->GetGraph();
-        // 每个连向Fabric的link
-        auto fabrics = netInstance->GetFabrics();
-        for (auto fabric : fabrics) {
+        auto& vGraph = netInstance->GetGraph();
+
+        // Process fabric links
+        for (auto fabric : netInstance->GetFabrics()) {
             auto dstRankNode = fabric->GetNodeId();
-            auto links = vGraph.GetEdges(srcRankNode, dstRankNode);
-            for (auto link : links) {
-                if (link->GetSourceIface()->GetPos() == AddrPosition::HOST) {
-                    continue;
-                }
-                auto dieId = GetLocalDieId({myRank, *link->GetSourceIface()});
-                link->GetSourceIface()->SetLocalDieId(dieId);
-            }
+            processLinks(vGraph.GetEdges(srcRankNode, dstRankNode), true);
+            processLinks(vGraph.GetEdges(dstRankNode, srcRankNode), false);
         }
-        // 直接连向对端rank的link
-        for (u32 dstRank = 0; dstRank < rankSize; dstRank++) {
+
+        // Process direct peer links
+        for (u32 dstRank = 0; dstRank < rankSize; ++dstRank) {
             auto dstRankNode = rankGraph->GetPeer(dstRank)->GetNodeId();
-            auto links = vGraph.GetEdges(srcRankNode, dstRankNode);
-            for (auto link : links) {
-                if (link->GetSourceIface()->GetPos() == AddrPosition::HOST) {
-                    continue;
-                }
-                auto dieId = GetLocalDieId({myRank, *link->GetSourceIface()});
-                link->GetSourceIface()->SetLocalDieId(dieId);
-            }
+            processLinks(vGraph.GetEdges(srcRankNode, dstRankNode), true);
+            processLinks(vGraph.GetEdges(dstRankNode, srcRankNode), false);
         }
     }
 }
