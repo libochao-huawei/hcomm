@@ -220,7 +220,7 @@ typedef struct {
     };
 
     union {
-        uint8_t raws[128]; ///< 通用缓存
+        uint8_t hccsRaws[128]; ///< 通用缓存
         struct {
             uint32_t hcclQos;
         } hccsAttr;
@@ -239,7 +239,7 @@ typedef struct {
  * @param[in] descNum 描述数量
  * @return HcclResult 执行结果状态码
  */
-inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum, hccl::hcclComm *hcclComm)
+inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum, uint32_t hcclQos)
 {
     for (uint32_t idx = 0; idx < descNum; idx++) {
         if (channelDesc != nullptr) {
@@ -266,8 +266,7 @@ inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t des
             }
 
             // 初始化hccsAttr中字段
-            channelDesc->hccsAttr.hcclQos = hcclComm->GetHcclQos();
-            HCCL_INFO("[HcclChannelDescInit] hccsAttr.hcclQos = %u", channelDesc->hccsAttr.hcclQos);
+            channelDesc->hccsAttr.hcclQos = hcclQos;
             channelDesc++;  // 移动到下一个描述符
         } else {
             return HCCL_E_PTR;

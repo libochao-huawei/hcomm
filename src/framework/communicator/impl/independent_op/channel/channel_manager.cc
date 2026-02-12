@@ -271,6 +271,7 @@ OpCommTransport ChannelManager::BuildChannelRequests(const std::vector<HcclChann
         tmpTransport.inputMemType = TransportMemType::CCL_INPUT;
         tmpTransport.outputMemType = TransportMemType::CCL_OUTPUT;
         tmpTransport.isUsedRdma = (desc.channelProtocol == CommProtocol::COMM_PROTOCOL_ROCE);
+        tmpTransport.hcclQos = desc.hccsAttr.hcclQos;
         commTransport.transportRequests.push_back(tmpTransport);
     }
     
