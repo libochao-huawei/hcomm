@@ -124,7 +124,7 @@ string TaskInfo::GetOpInfo() const
     }
     return StringFormat("commIndex[%u], commId[%s], count[%llu], reduceType[%s], %sdataType[%s], opIndex[%u], headOpCounter[%u], tailOpCounter[%u]",
         opInfo->commIndex_,
-        opInfo->commId.c_str(),
+        opInfo->commId_.c_str(),
         opInfo->op_.dataCount,
         opInfo->op_.reduceOp.Describe().c_str(),
         addr.c_str(),
