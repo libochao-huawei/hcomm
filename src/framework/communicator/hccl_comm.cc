@@ -1486,6 +1486,7 @@ HcclResult hcclComm::SetHcclQos(u32 hcclQos)
     if (hcclQos == HCCL_COMM_QOS_CONFIG_NOT_SET) {
         HCCL_INFO("[SetHcclQos]The QoS do not use the config configuration. "
                   "It will use environment variables to configure. QoS[%u]", EnvConfig::HCCL_QOS_DEFAULT);
+        hcclQos_ = EnvConfig::HCCL_QOS_DEFAULT;
         communicator_->SetHcclQos(EnvConfig::HCCL_QOS_DEFAULT);
         return HCCL_SUCCESS;
     }
@@ -1500,9 +1501,15 @@ HcclResult hcclComm::SetHcclQos(u32 hcclQos)
     }
 
     HCCL_INFO("[SetHcclQos] hcclQos[%u]", hcclQos);
+    hcclQos_ = hcclQos;
     communicator_->SetHcclQos(hcclQos);
 
     return HCCL_SUCCESS;
+}
+
+u32 hcclComm::GetHcclQos()
+{
+    return hcclQos_;
 }
 
 HcclResult hcclComm::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)
