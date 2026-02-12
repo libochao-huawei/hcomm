@@ -186,7 +186,14 @@ HcclResult HcclCommUnsetMemoryRangeV2(HcclComm comm, void *baseVirPtr);
 HcclResult HcclCommActivateCommMemoryV2(HcclComm comm, void *virPtr, size_t size, size_t offset, void* handle, uint64_t flags);
 
 HcclResult HcclCommDeactivateCommMemoryV2(HcclComm comm, void *virPtr);
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
+
+#ifdef __cplusplus
+template<typename InitParamType>
+HcclResult InitHcclCommunicator(HcclCommInfoV2 &opbasedCommInfoV2, const std::string &identifier, Hccl::CommParams &commParams, const InitParamType &initParam, int32_t expansionMode, HcclComm *comm);
+#endif  // __cplusplus
+
 #endif  // OP_BASE_V2_H

@@ -32,7 +32,7 @@ RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto) : RemoteRmaBu
     if (myPid == remotePid) {
         HCCL_INFO("RemoteIpcRmaBuffer: myPid is equal to remotePid, do not need to open memory");
         HrtMemPrefetchToDevice(reinterpret_cast<void*>(ipcAddr + ipcOffset) , size);
-        addr = ipcAddr;
+        addr = ipcAddr + ipcOffset;
     } else {
         HCCL_INFO("RemoteIpcRmaBuffer: open memory.");
         ipcPtr   = HrtIpcOpenMemory(ipcName);
