@@ -182,5 +182,7 @@ void TcRsFreeDevList(void);
 void TcRsFreeRdevList(void);
 void TcRsFreeUdevList(void);
 void TcRsRetryTimeoutExceptionCheck();
-
+void TcRsSetQpLbValue();
+void TcRsGetQpLbValue();
+void TcRsGetLbMax();
 #endif

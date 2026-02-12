@@ -250,6 +250,28 @@ HCCP_ATTRI_VISI_DEF int RaQpDestroy(void *qpHandle);
 
 /**
  * @ingroup librdma
+ * @brief set qp load balance value
+ * @param qpHandle [IN] qp handle
+ * @param lbValue [IN] load balance value
+ * @see RaQpCreate
+ * @retval #zero Success
+ * @retval #non-zero Failure
+ */
+HCCP_ATTRI_VISI_DEF int RaSetQpLbValue(void *qpHandle, int lbValue);
+
+/**
+ * @ingroup librdma
+ * @brief get qp load balance value
+ * @param qpHandle [IN] qp handle
+ * @param lbValue [IN/OUT] load balance value
+ * @see RaSetQpLbValue
+ * @retval #zero Success
+ * @retval #non-zero Failure
+ */
+HCCP_ATTRI_VISI_DEF int RaGetQpLbValue(void *qpHandle, int *lbValue);
+
+/**
+ * @ingroup librdma
  * @brief Build QP chain by socket(exchange qp and mr info by socket)
  * revoke ra_get_qp_status to get qp async status
  * @param qp_handle [IN] QP handle
@@ -651,6 +673,17 @@ HCCP_ATTRI_VISI_DEF int RaRdevInitV2(struct RdevInitInfo initInfo, struct rdev r
 */
 HCCP_ATTRI_VISI_DEF int RaRdevInitWithBackup(struct RdevInitInfo *initInfo, struct rdev *rdevInfo,
     struct rdev *backupRdevInfo, void **rdmaHandle);
+
+/**
+ * @ingroup librdma
+ * @brief get max load balance value
+ * @param rdevHandle [IN] rdev handle
+ * @param lbMax [IN/OUT] load balance max value
+ * @see RaRdevInit
+ * @retval #zero Success
+ * @retval #non-zero Failure
+ */
+HCCP_ATTRI_VISI_DEF int RaGetLbMax(void *rdevHandle, int *lbMax);
 
 /**
  * @ingroup libinit

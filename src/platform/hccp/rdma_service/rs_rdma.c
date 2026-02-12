@@ -2389,6 +2389,28 @@ RS_ATTRI_VISI_DEF int RsQpBatchModify(unsigned int phyId, unsigned int rdevIndex
     return 0;
 }
 
+RS_ATTRI_VISI_DEF int RsSetQpLbValue(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, int lbValue)
+{
+    struct RsQpCb *qpCb = NULL;
+    int ret = 0;
+
+    ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsQpn2qpcb failed ret:%d", ret), ret);
+
+    return RsRoceSetQpLbValue(qpCb->ibQp, lbValue);
+}
+
+RS_ATTRI_VISI_DEF int RsGetQpLbValue(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, int *lbValue)
+{
+    struct RsQpCb *qpCb = NULL;
+    int ret = 0;
+
+    ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsQpn2qpcb failed ret:%d", ret), ret);
+
+    return RsRoceGetQpLbValue(qpCb->ibQp, lbValue);
+}
+
 RS_ATTRI_VISI_DEF int RsQpConnectAsync(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, int fd)
 {
     int ret;
@@ -2522,6 +2544,17 @@ STATIC int RsQueryRdevCb(unsigned int phyId, unsigned int rdevIndex, struct RsRd
     CHK_PRT_RETURN(ret, hccp_err("rs_get_rdev_cb failed! ret:%d, rdevIndex:%u", ret, rdevIndex), ret);
 
     return 0;
+}
+
+RS_ATTRI_VISI_DEF int RsGetLbMax(unsigned int phyId, unsigned int rdevIndex, int *lbMax)
+{
+    struct RsRdevCb *rdevCb = NULL;
+    int ret = 0;
+
+    ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsQueryRdevCb phyId:%u rdev_index:%u ret:%d", phyId, rdevIndex, ret), ret);
+
+    return RsRoceGetQpNum(rdevCb->ibCtx, lbMax);
 }
 
 STATIC int RsBuildUpQpcb(struct RsCqContext *cqContext, struct ibv_qp_init_attr *qpInitAttr,

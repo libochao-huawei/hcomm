@@ -636,6 +636,34 @@ int RaPeerTypicalQpModify(struct RaQpHandle *qpPeer, struct TypicalQp *localQpIn
     return ret;
 }
 
+int RaPeerSetQpLbValue(struct RaQpHandle *qpHandle, int lbValue)
+{
+    int ret = 0;
+
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpHandle->phyId]);
+    RsSetCtx(qpHandle->phyId);
+    ret = RsSetQpLbValue(qpHandle->phyId, qpHandle->rdevIndex, qpHandle->qpn, lbValue);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpHandle->phyId]);
+    if (ret != 0) {
+        hccp_err("[set][lbValue]RsSetQpLbValue failed ret:%d", ret);
+    }
+    return ret;
+}
+
+int RaPeerGetQpLbValue(struct RaQpHandle *qpHandle, int *lbValue)
+{
+    int ret = 0;
+
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpHandle->phyId]);
+    RsSetCtx(qpHandle->phyId);
+    ret = RsGetQpLbValue(qpHandle->phyId, qpHandle->rdevIndex, qpHandle->qpn, lbValue);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpHandle->phyId]);
+    if (ret != 0) {
+        hccp_err("[get][lbValue]RsGetQpLbValue failed ret:%d", ret);
+    }
+    return ret;
+}
+
 int RaPeerQpConnectAsync(struct RaQpHandle *qpPeer, const void *sockHandle)
 {
     int ret;
@@ -698,7 +726,7 @@ STATIC int RaPeerLoopbackQpModify(struct RaQpHandle *qpHandle0, struct RaQpHandl
     ret = RaPeerTypicalQpModify(qpHandle0, &qp0Info, &qp1Info);
     CHK_PRT_RETURN(ret, hccp_err("ra_peer_typical_qp_modify qp0 failed, ret:%d", ret), ret);
     ret = RaPeerTypicalQpModify(qpHandle1, &qp1Info, &qp0Info);
-    CHK_PRT_RETURN(ret, hccp_err("ra_peer_typical_qp_modify 1p1 failed, ret:%d", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("ra_peer_typical_qp_modify qp1 failed, ret:%d", ret), ret);
 
     return ret;
 }
@@ -1209,6 +1237,21 @@ notify_base_addr_uninit:
     retVal = NotifyBaseAddrUninit(notifyType, rdevInfo.phyId);
     CHK_PRT_RETURN(retVal, hccp_err("[init][ra_peer_rdev] notify_base_addr_uninit failed, ret(%d)",
         retVal), retVal);
+    return ret;
+}
+
+int RaPeerGetLbMax(struct RaRdmaHandle *rdmaHandle, int *lbMax)
+{
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    int ret = 0;
+
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[phyId]);
+    RsSetCtx(phyId);
+    ret = RsGetLbMax(phyId, rdmaHandle->rdevIndex, lbMax);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[phyId]);
+    if (ret != 0) {
+        hccp_err("[get][lbMax]RsGetLbMax failed ret:%d", ret);
+    }
     return ret;
 }
 
