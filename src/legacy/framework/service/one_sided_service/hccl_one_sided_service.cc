@@ -124,6 +124,7 @@ HcclResult HcclOneSidedService::RegMem(void *addr, u64 size, HcclMemType type, R
     ret                           = HcclMemExport(&buf, &desc, &descLen);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HcclOneSidedService][RegMem]HcclMemExport failed, ret[%d]", ret);
+        CHK_RET(HcclNetDevClose(netDev));
         return ret;
     }
     registeredMemCnt_++;
