@@ -436,7 +436,7 @@ HcclResult CcuConnection::ReleaseConnRes()
 {
     for (auto &item : importJettyCtxs) {
         if (item.outParam.handle != 0) {
-            HrtRaUbUnimportJetty(rdmaHandle, item.outParam.handle);
+            remoteDelJettyList.push_back(item.outParam.handle);
             item.outParam.handle = 0;
         }
     }
@@ -485,8 +485,9 @@ int32_t CcuConnection::GetDevLogicId() const
     return devLogicId;
 }
 
-void CcuConnection::Clean()
+void CcuConnection::Clean(BatchDeleteJettyInfo& batchDeleteJettyInfo)
 {
+    BatchDeleteJettyInfo batchDeleteJettyInfo;
     status = CcuConnStatus::INIT;
     innerStatus = InnerStatus::INIT;
     isJettyCreated = false;
@@ -494,9 +495,18 @@ void CcuConnection::Clean()
     ReleaseConnRes();
     GenerateLocalPsn();
 
+    for(auto remoteJettyHandle : remoteDelJettyList) {
+        batchDeleteJettyInfo.unimportJettyList[rdmaHandle].push_back(remoteJettyHandle);
+    }
+    remoteDelJettyList.clear();
+
     // 销毁jetty要在ReleaseConnRes之后
+    SingleDeleteJettyInfo jettyInfo;
     for (auto &ccuJetty : ccuJettys_) {
-        ccuJetty->Clean();
+        jettyInfo = ccuJetty->Clean();
+        if (jettyInfo.isValid) {
+            batchDeleteJettyInfo.deleteJettyList[rdmaHandle].push_back(jettyInfo.deleteJetty);
+        }
     }
 }
 
