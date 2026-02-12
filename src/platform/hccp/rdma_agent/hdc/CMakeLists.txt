@@ -31,6 +31,8 @@ set(ra_hdc_list
 
 add_library(ra_hdc SHARED ${ra_hdc_list})
 
+add_dependencies(ra_hdc ${RDMA_CORE_NAME})
+
 target_compile_definitions(ra_hdc PRIVATE
     LOG_CPP)
 

@@ -21,6 +21,7 @@ set(ra_peer_list
 
 #编译目标
 add_library(ra_peer SHARED ${ra_peer_list})
+add_dependencies(ra_peer ${RDMA_CORE_NAME})
 
 target_include_directories(ra_peer PRIVATE
     ${BASE_DIR}/

@@ -27,6 +27,8 @@ add_library(ra_adp SHARED
     ${ra_adp_list}
 )
 
+add_dependencies(ra_adp ${RDMA_CORE_NAME})
+
 target_compile_definitions(ra_adp PRIVATE
     LOG_CPP
     $<$<STREQUAL:${PRODUCT_SIDE},device>:CONFIG_TLV>

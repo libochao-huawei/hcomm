@@ -23,6 +23,8 @@ add_executable(hccp_service.bin  hccp_service/main.c hccp_service/param.c
     ${CMAKE_CURRENT_SOURCE_DIR}/common/dl_hal_function.c
 )
 
+add_dependencies(hccp_service.bin ${RDMA_CORE_NAME})
+
 target_include_directories(hccp_service.bin PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/hccp_service
