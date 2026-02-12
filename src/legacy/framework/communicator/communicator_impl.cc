@@ -2262,6 +2262,12 @@ CommunicatorImpl::~CommunicatorImpl()
 
 HcclResult CommunicatorImpl::DestroyDpuKernelResource()
 {
+    // 释放
+    if (hostShareBuf != nullptr) {
+        free(hostShareBuf);
+        hostShareBuf = nullptr;
+    }
+
     // 终止Dpu Kernel的TaskRun
     if (!isDpuKernelLaunched) {
         return HCCL_SUCCESS;
@@ -2290,11 +2296,6 @@ HcclResult CommunicatorImpl::DestroyDpuKernelResource()
     if (ACL_SUCCESS != aclrtSetCurrentContext(npuContext)) {
         HCCL_ERROR("set npu Ctx Failed");
         return HCCL_E_RUNTIME;
-    }
-
-    // 释放
-    if (hostShareBuf != nullptr) {
-        free(hostShareBuf);
     }
 
     return HCCL_SUCCESS;
@@ -3000,14 +3001,6 @@ HcclResult CommunicatorImpl::PrepareDpuKernelResource(aclrtFuncHandle &funcHandl
 
 HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
 {
-    // 申请共享内存
-    bool       newCreate = false;
-    uint64_t   memSize   = static_cast<uint64_t>(SHARE_HBM_MEMORY_SIZE);
-    HcclResult memRet    = CreateWorkspaceBuf(DPUTAG, &memSize, &newCreate);
-    if (memRet != HCCL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::InitCommResource] Alloc Share HBM Failed");
-    }
-    hostShareBuf = malloc(SHARE_HBM_MEMORY_SIZE);
     // 下发
     HCCL_INFO("[CommunicatorImpl::%s] Launch Dpu Kernel", __func__);
     aclrtLaunchKernelCfg  cfg;
@@ -3022,7 +3015,7 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     hostArgsTemp.hostMem    = hostShareBuf;
     auto shMem              = GetKFCWorkSpace(DPUTAG);
     hostArgsTemp.shareHBM = reinterpret_cast<void *>(shMem->GetAddr());
-    hostArgsTemp.deviceId = HrtGetDevice();
+    hostArgsTemp.deviceId = devLogicId;
     HCCL_INFO("[CommunicatorImpl::%s] DpuKernelLaunchParam{commId:%s; memorySize:%u; shareHBM:%p; hostMem:%p}",
               __func__, hostArgsTemp.commId.c_str(), hostArgsTemp.memorySize, hostArgsTemp.shareHBM,
               hostArgsTemp.hostMem);
@@ -3041,6 +3034,15 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
 HcclResult CommunicatorImpl::InitAndLaunchDpuKernel()
 {
     HCCL_INFO("[CommunicatorImpl::%s] Start to Launch Dpu Kernel", __func__);
+    // 申请共享内存(需要在npu ctx 下进行)
+    bool       newCreate = false;
+    uint64_t   memSize   = static_cast<uint64_t>(SHARE_HBM_MEMORY_SIZE);
+    HcclResult memRet    = CreateWorkspaceBuf(DPUTAG, &memSize, &newCreate);
+    if (memRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[CommunicatorImpl::InitCommResource] Alloc Share HBM Failed");
+        return HCCL_E_RUNTIME;
+    }
+    hostShareBuf = malloc(SHARE_HBM_MEMORY_SIZE);
     // 设置XPU
     HCCL_INFO("[CommunicatorImpl::%s] Switch to Dpu Ctx", __func__);
     if (aclrtGetCurrentContext(&npuContext) != ACL_SUCCESS) {
@@ -3082,34 +3084,35 @@ void CommunicatorImpl::AppendLocalDieIdForLinks()
     }
 
     auto srcRankNode = rankGraph->GetPeer(myRank)->GetNodeId();
-    // 枚举level
+
+    auto processLinks = [&](const std::vector<std::shared_ptr<NetInstance::Link>>& links, bool isSource) {
+        for (auto link : links) {
+            auto iface = isSource ? link->GetSourceIface() : link->GetTargetIface();
+            if (iface->GetPos() == AddrPosition::HOST) {
+                continue;
+            }
+            u32 dieId = GetLocalDieId({myRank, *iface});
+            HCCL_INFO("[CommunicatorImpl][AppendLocalDieIdForLinks] get link dieid[%u]", dieId);
+            iface->SetLocalDieId(dieId); 
+        }
+    };
+
     for (auto level : rankGraph->GetLevels(myRank)) {
         auto netInstance = rankGraph->GetNetInstanceByRankId(level, myRank);
-        auto &vGraph = netInstance->GetGraph();
-        // 每个连向Fabric的link
-        auto fabrics = netInstance->GetFabrics();
-        for (auto fabric : fabrics) {
+        auto& vGraph = netInstance->GetGraph();
+
+        // Process fabric links
+        for (auto fabric : netInstance->GetFabrics()) {
             auto dstRankNode = fabric->GetNodeId();
-            auto links = vGraph.GetEdges(srcRankNode, dstRankNode);
-            for (auto link : links) {
-                if (link->GetSourceIface()->GetPos() == AddrPosition::HOST) {
-                    continue;
-                }
-                auto dieId = GetLocalDieId({myRank, *link->GetSourceIface()});
-                link->GetSourceIface()->SetLocalDieId(dieId);
-            }
+            processLinks(vGraph.GetEdges(srcRankNode, dstRankNode), true);
+            processLinks(vGraph.GetEdges(dstRankNode, srcRankNode), false);
         }
-        // 直接连向对端rank的link
-        for (u32 dstRank = 0; dstRank < rankSize; dstRank++) {
+
+        // Process direct peer links
+        for (u32 dstRank = 0; dstRank < rankSize; ++dstRank) {
             auto dstRankNode = rankGraph->GetPeer(dstRank)->GetNodeId();
-            auto links = vGraph.GetEdges(srcRankNode, dstRankNode);
-            for (auto link : links) {
-                if (link->GetSourceIface()->GetPos() == AddrPosition::HOST) {
-                    continue;
-                }
-                auto dieId = GetLocalDieId({myRank, *link->GetSourceIface()});
-                link->GetSourceIface()->SetLocalDieId(dieId);
-            }
+            processLinks(vGraph.GetEdges(srcRankNode, dstRankNode), true);
+            processLinks(vGraph.GetEdges(dstRankNode, srcRankNode), false);
         }
     }
 }

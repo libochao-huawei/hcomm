@@ -115,6 +115,8 @@ void AddGroupLinks(const vector<RankId> &rankIds, const NetInstance *oldNetInsta
 
 HcclResult GetCommAddr(CommAddr &commAddr, const IpAddress &ipAddr);
 
+EndpointLocType AddrPositionToEndpointLoc(AddrPosition pos);
+
 } // namespace Hccl
 
 #endif // RANK_GRAPH_H
