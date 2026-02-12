@@ -296,7 +296,7 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
 }
 
 HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
-    const CcuKernelHandle KernelHandle, void *taskArgs)
+    const CcuKernelHandle kernelHandle, void *taskArgs)
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
     HcclUs startut = TIME_NOW();
