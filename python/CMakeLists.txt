@@ -12,7 +12,7 @@ add_custom_target(hccl-0.1.0-py3-none-any.whl ALL
 )
 
 # 读取sys_version.conf中版本号并打包到whl包中的hccl目录下
-file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/../version.cmake FILE_CONTENT)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../version.cmake FILE_CONTENT)
 
 string(REGEX MATCH "VERSION \"([^)]+)\"" MATCHED_VERSION "${FILE_CONTENT}")
 if (NOT MATCHED_VERSION)
