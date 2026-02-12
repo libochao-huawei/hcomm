@@ -242,7 +242,7 @@ SelectorStatus ReduceAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo,
                                                       const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                       std::string &primQueueGenName) const
 {
-    HCCL_DEBUG("[AllGatherAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
+    HCCL_DEBUG("[ReduceAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     //aiv 模式不支持 PROD
     CHK_PRT_RET(op.reduceOp == ReduceOp::PROD,
