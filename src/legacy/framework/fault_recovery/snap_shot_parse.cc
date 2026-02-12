@@ -11,6 +11,7 @@
 #include "snap_shot_parse.h"
 #include "checkcrc.h"
 #include "ip_address.h"
+#include "comm_manager.h"
 
 using namespace Hccl;
 
@@ -164,6 +165,9 @@ void SnapShotParser::DeserializeCcuStatusBuf(BinaryStream &buf, SnapShotBuf &loc
 
     size_t useMsCommIdsSize{0};
     buf >> useMsCommIdsSize;
+    if (useMsCommIdsSize > MAX_NUM_COMM_USING_MS) {
+        THROW<InternalException>(StringFormat("[%s] useMsCommIdsSize[%zu] > MAX_NUM_COMM_USING_MS[%u]", __func__, useMsCommIdsSize, MAX_NUM_COMM_USING_MS));
+    }
     HCCL_INFO("[SnapShotParser][%s] useMsCommIdsSize = [%u]", __func__, useMsCommIdsSize);
     localBuff.ccuStatusSnapshot.useMsCommIds.resize(useMsCommIdsSize);
     for (auto &useMsCommIdCharArr : localBuff.ccuStatusSnapshot.useMsCommIds) {
