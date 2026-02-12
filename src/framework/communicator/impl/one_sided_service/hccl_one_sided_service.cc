@@ -383,7 +383,7 @@ HcclResult HcclOneSidedService::CreateConnection(RankId remoteRankId, const Hccl
     u32 serverId = isUsedRdmaMap_.at(remoteRankId) ? 0 : rankTable_->rankList.at(localRankInfo_.userRank).serverIdx;
     EXECEPTION_CATCH(tempConn = std::make_shared<HcclOneSidedConn>(*ctx, *rankInfo, remoteRankInfo,
         socketManager_, notifyPool_, dispatcher_, isUsedRdmaMap_[remoteRankId], sdid, serverId, trafficClass_,
-        serviceLevel_, aicpuUnfoldMode_), return HCCL_E_PTR);
+        serviceLevel_, aicpuUnfoldMode_, isStandardCard_), return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(tempConn);
     return HCCL_SUCCESS;
 }
