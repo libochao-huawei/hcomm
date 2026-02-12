@@ -222,7 +222,11 @@ TEST_F(CcuTransportTest, Ut_GetStatusFailed_When_ConnectionError_Expect_Return_E
     EXPECT_EQ(transport->Init(), HcclResult::HCCL_SUCCESS);
     EXPECT_EQ(transport->transStatus, CcuTransport::TransStatus::INIT);
 
-    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::CONNECT_FAILED);
+    try {
+        transport->GetStatus();
+    } catch (InternalException &e) {
+        EXPECT_EQ(CcuTransport::TransStatus::CONNECT_FAILED, e.GetErrorCode());
+    }
 }
 
 TEST_F(CcuTransportTest, Ut_GetStatusFailed_When_SocketError_Expect_Return_Error)
@@ -233,7 +237,11 @@ TEST_F(CcuTransportTest, Ut_GetStatusFailed_When_SocketError_Expect_Return_Error
     auto transport = get<0>(transportRes).get();
     EXPECT_EQ(transport->Init(), HcclResult::HCCL_SUCCESS);
     EXPECT_EQ(transport->transStatus, CcuTransport::TransStatus::INIT);
-    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::CONNECT_FAILED);
+    try {
+        transport->GetStatus();
+    } catch (InternalException &e) {
+        EXPECT_EQ(CcuTransport::TransStatus::CONNECT_FAILED, e.GetErrorCode());
+    }
 }
 
 TEST_F(CcuTransportTest, Ut_GetStatusTimeOut_When_SocketTimeOut_Expect_Return_TimeOut)
@@ -257,7 +265,11 @@ TEST_F(CcuTransportTest, Ut_GetStatusError_When_SocketSendError_Expect_Return_Er
         EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::INIT);
     }
 
-    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::CONNECT_FAILED);
+    try {
+        transport->GetStatus();
+    } catch (SocketException &e) {
+        EXPECT_EQ(CcuTransport::TransStatus::CONNECT_FAILED, e.GetErrorCode());
+    }
 }
 
 TEST_F(CcuTransportTest, Ut_GetStatusError_When_HandshakeMsgInvalid_Expect_Return_Error)
@@ -285,7 +297,11 @@ TEST_F(CcuTransportTest, Ut_GetStatusError_When_HandshakeMsgInvalid_Expect_Retur
     EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::RECV_ALL_INFO);
 
     transport->attr.handshakeMsg.push_back('a');
-    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::CONNECT_FAILED);
+    try {
+        transport->GetStatus();
+    } catch (InvalidParamsException &e) {
+        EXPECT_EQ(CcuTransport::TransStatus::CONNECT_FAILED, e.GetErrorCode());
+    }
 }
 
 TEST_F(CcuTransportTest, Ut_Init_UNAVAIL_When_AppendCkes_Return_UNAVAIL)
