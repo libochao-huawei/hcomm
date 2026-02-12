@@ -139,7 +139,7 @@ public:
     HcclResult  GetRmtBuffer(CclBufferInfo &bufferInfo, const uint32_t &bufNum) const;
     TransStatus GetStatus();
     std::string Describe() const;
-    HcclResult  Clean();
+    BatchDeleteJettyInfo Clean();
 
 private:
     // 保存transport中需要使用的cke，xn等ccu资源
