@@ -24,6 +24,12 @@ extern HcclResult HcommEndpointCreate(const EndpointDesc *endPoint, EndpointHand
 extern HcclResult HcommEndpointDestroy(EndpointHandle endPointHandle);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
+extern HcclResult HcommEndpointStartListen(EndpointHandle endpointHandle, uint32_t port, uint32_t config);
+
+// WARNING: experimental API, No compatibility is currently guaranteed for this API
+extern HcclResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port);
+
+// WARNING: experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommMemReg(EndpointHandle endPointHandle, const char *memTag, HcommMem mem, void **memHandle);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API

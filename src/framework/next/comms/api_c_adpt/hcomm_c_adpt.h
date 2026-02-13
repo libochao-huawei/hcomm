@@ -25,6 +25,10 @@ HcclResult HcommEndpointGet_(const EndpointHandle endpointHandle, void **endpoin
 
 HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle);
 
+HcclResult HcommEndpointStartListen(EndpointHandle endpointHandle, uint32_t port, uint32_t config);
+
+HcclResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port);
+
 HcclResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, HcommMem mem, void **memHandle);
 
 HcclResult HcommMemUnreg(EndpointHandle endpointHandle, void *memHandle);
