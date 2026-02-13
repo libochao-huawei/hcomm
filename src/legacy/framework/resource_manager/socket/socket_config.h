@@ -17,10 +17,12 @@
 
 namespace Hccl {
 MAKE_ENUM(SocketRole, SERVER, CLIENT)
+constexpr uint32_t DEFAULT_SERVER_LISTEN_PORT = 60001;
 class SocketConfig {
 public:
     RankId            remoteRank;
     LinkData          link;
+    uint32_t          listeningPort{DEFAULT_SERVER_LISTEN_PORT};
     const std::string tag;
 
     SocketConfig(RankId remoteRank, const LinkData &link, const std::string &tag)
@@ -37,8 +39,8 @@ public:
         }
     }
 
-    SocketConfig(const LinkData &link, const std::string &tag)
-        : link(link), tag(tag)
+    SocketConfig(const LinkData &link, const uint32_t listenPort, const std::string &tag)
+        : link(link), listeningPort(listenPort), tag(tag)
     {
         remoteRank = link.GetRemoteRankId();
         role = link.GetLocalAddr() < link.GetRemoteAddr() ? SocketRole::SERVER : SocketRole::CLIENT;
