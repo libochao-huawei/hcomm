@@ -345,4 +345,14 @@ std::unordered_map<PortData, shared_ptr<Socket>> &SocketManager::GetServerSocket
     return serverSocketMap;
 }
 
+bool SocketManager::CheckServerPortListening(const PortData &portData) const
+{
+    auto &serverSocketMap = SocketManager::GetServerSocketMap();
+    auto iterSocket = serverSocketMap.find(portData);
+    if (iterSocket == serverSocketMap.end()) {
+        return false;
+    }
+    return true;
+}
+
 } // namespace Hccl
