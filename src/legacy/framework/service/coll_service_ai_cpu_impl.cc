@@ -34,6 +34,18 @@ void CollServiceAiCpuImpl::Init()
     AddOpCounterMems();
 }
 
+static std::string GetTagKey(CollOperator &op, std::string algName, u32 bsrRemoteRanksHashValue)
+{
+    std::string tmp{};
+    tmp = (op.opMode == OpMode::OPBASE) ? algName : op.opTag;
+    if (op.opType == OpType::BATCHSENDRECV) {
+        tmp = tmp + std::to_string(bsrRemoteRanksHashValue);
+    } else if (op.opType == OpType::SEND || op.opType == OpType::RECV) {
+        tmp = tmp + std::to_string(op.sendRecvRemoteRank);
+    }
+    return tmp;
+}
+
 DevBuffer *CollServiceAiCpuImpl::OpBasedCollProcess(CollOperator &op, bool &needUpdateRes, const std::string &algName)
 {
     auto req = comm->GetCollAlgComponent()->GetCollAlgOpReq(op, algName);
@@ -75,7 +87,13 @@ DevBuffer *CollServiceAiCpuImpl::OpBasedCollProcess(CollOperator &op, bool &need
         WaitOffloadTransportReady(op.opTag);
     }
 
-    std::string tagKey = (op.opMode == OpMode::OPBASE) ? req.algName : op.opTag;
+    u32 bsrRemoteRanksHashValue;
+    if (op.opType == OpType::BATCHSENDRECV) {
+        bsrRemoteRanksHashValue = GetRemoteRankIdsHashValue(op);
+    }
+ 
+    tagKey = GetTagKey(op, req.algName, bsrRemoteRanksHashValue);
+
     auto it = collOpLoadedMap.find(tagKey);
     if (it != collOpLoadedMap.end()) { // 已经向Device Mem写过资源
         HCCL_INFO("CollServiceAiCpuImpl, collOpLoadedMap.find(%s) != collOpLoadedMap.end()", tagKey.c_str());
@@ -87,8 +105,8 @@ DevBuffer *CollServiceAiCpuImpl::OpBasedCollProcess(CollOperator &op, bool &need
     shared_ptr<DevBuffer> devMem = make_shared<DevBuffer>(buffer.size()); // 申请device内存
     HrtMemcpy(reinterpret_cast<void *>(devMem->GetAddr()), devMem->GetSize(), buffer.data(), buffer.size(),
               RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将资源拷贝到device内存
-    collOpLoadedMap.insert(make_pair(tagKey, devMem));
 
+    collOpLoadedMap[tagKey] = devMem;
     needUpdateRes = true; // 需要更新资源
 
     return devMem.get();
@@ -376,6 +394,11 @@ void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollO
         THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch, strcpy_s opTag failed!"));
     }
 
+    ret = strcpy_s(param.kernel.tagKey, sizeof(param.kernel.tagKey), tagKey.data());
+    if (ret != EOK) {
+        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch, strcpy_s tagKey failed!"));
+    }
+
     HCCL_INFO("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch param.kernel.algName: %s, op.opTag %s", param.kernel.algName,
                op.opTag.c_str());
 
@@ -609,14 +632,22 @@ void CollServiceAiCpuImpl::AllocOpMemAlltoAllV(const CollOperator &op)
               RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将资源拷贝到RDISPLS内存
 }
 
+void CollServiceAiCpuImpl::AllocOpMemBatchSendRecv(const CollOperator &op)
+{
+    u32 itemNum = op.batchSendRecvDataDes.itemNum;
+    devBatchSendRecvItemBufs = make_shared<DevBuffer>(itemNum * sizeof(HcclSendRecvItem));
+    bsrItemsMem.push_back(devBatchSendRecvItemBufs);
+
+    HrtMemcpy(reinterpret_cast<void *>(devBatchSendRecvItemBufs.get()->GetAddr()), devBatchSendRecvItemBufs.get()->GetSize(),
+            op.batchSendRecvDataDes.sendRecvItemsPtr, itemNum * sizeof(HcclSendRecvItem),
+            RT_MEMCPY_HOST_TO_DEVICE);
+
+}
+
 void CollServiceAiCpuImpl::AllocOpMem(const CollOperator &op)
 {
     if (op.opType == OpType::BATCHSENDRECV) {
-        u32 itemNum = op.batchSendRecvDataDes.itemNum;
-        devBatchSendRecvItemBufs = make_shared<DevBuffer>(itemNum * sizeof(HcclSendRecvItem));
-        HrtMemcpy(reinterpret_cast<void *>(devBatchSendRecvItemBufs.get()->GetAddr()), devBatchSendRecvItemBufs.get()->GetSize(),
-              op.batchSendRecvDataDes.sendRecvItemsPtr, itemNum * sizeof(HcclSendRecvItem),
-              RT_MEMCPY_HOST_TO_DEVICE);
+        AllocOpMemBatchSendRecv(op);
         return;
     }
 
@@ -881,6 +912,27 @@ HcclResult CollServiceAiCpuImpl::ClearOpLoadedInfo(const std::string &opTag)
     }
     collOpLoadedMap.erase(opTag);
     return HCCL_SUCCESS;
+}
+
+u32 CollServiceAiCpuImpl::GetRemoteRankIdsHashValue(const CollOperator &op)
+{
+    vector<RankId> tempRankIds;
+    HcclSendRecvItem* itemPtr = reinterpret_cast<HcclSendRecvItem *>(op.batchSendRecvDataDes.sendRecvItemsPtr);
+    u32 itemNum = op.batchSendRecvDataDes.itemNum;
+    CHK_PTR_NULL(itemPtr);
+    for (u32 i = 0; i < itemNum; i++) {
+        u32 remoteRankIds = (itemPtr + i)->remoteRank;
+        tempRankIds.push_back(remoteRankIds);
+        HCCL_INFO("[CollServiceAiCpuImpl][GetRemoteRankIdsHashValue] insert remoteUserRank[%u] to vector", remoteRankIds);
+    }
+    std::sort(tempRankIds.begin(), tempRankIds.end());
+
+    u32 seed = tempRankIds.size();
+    const u32 goldRatio = 0x9e3779b9;
+    for (u32 rankId : tempRankIds) {
+        seed ^= std::hash<uint32_t>()(rankId) + goldRatio + (seed << 6) + (seed >>2);
+    }
+    return seed;
 }
 
 } // namespace Hccl
