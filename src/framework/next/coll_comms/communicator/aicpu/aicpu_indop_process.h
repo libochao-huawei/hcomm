@@ -8,19 +8,21 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "independent_op_aicpu_interface.h"
-#include "framework/aicpu_hccl_process.h"
-#include "aicpu_indop_process.h"
-extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpCommInit(void *args)
-{
-    CHK_PRT_RET(args == nullptr, HCCL_ERROR("[%s]args is null.", __func__), HCCL_E_PARA);
 
-    CommAicpuParam *commAicpuParam = reinterpret_cast<CommAicpuParam *>(args);
-    DevType devType = static_cast<DecType>(commAicpuParam->deviceType);
-    if (decltype == DevType::DEV_TYPE_910_95) {
-        return AicpuIndopProcess::AicpuIndOpCommInit(commAicpuParam);
-    }
-    return AicpuHcclProcess::AicpuIndOpCommInit(commAicpuParam);
+#ifndef __AICPU_INDOP_PROCESS_H__
+#define __AICPU_INDOP_PROCESS_H__
+
+#include "common.h"
+#include "channel_param.h"
+#include "aicpu_launch_manager"
+#include "aicpu_init_param"
+
+class AicpuIndopProcess {
+public:
+    ~AicpuIndopProcess() = default;
+    static HcclResult AicpuIndOpChannelInitV2(HcclChannelUrmaRes *commParam);
+    static HcclResult AicpuIndOpThreadInit(ThreadMgrAicpuParam *param);
+    static HcclResult AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param);
+    static HcclResult AicpuIndOpCommInit(CommAicpuParam *commAicpuParam);
 }
-}
+#endif // __AICPU_INDOP_PROCESS_H__
