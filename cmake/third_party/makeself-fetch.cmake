@@ -12,7 +12,7 @@ set(MAKESELF_NAME "makeself")
 set(MAKESELF_FILE "makeself-release-2.5.0-patch1.tar.gz")
 set(MAKESELF_URL "https://gitcode.com/cann-src-third-party/makeself/releases/download/release-2.5.0-patch1.0/${MAKESELF_FILE}")
 set(MAKESELF_PKG_PATH ${CANN_3RD_LIB_PATH}/${MAKESELF_FILE})
-set(MAKESELF_SRC_PATH ${CMAKE_BINARY_DIR}/makeself)
+set(MAKESELF_SRC_PATH ${CMAKE_BINARY_DIR}/third_party/makeself)
 
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
