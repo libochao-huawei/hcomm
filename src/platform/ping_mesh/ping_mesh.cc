@@ -401,14 +401,14 @@ inline HcclResult RaGetEidMap(std::map<Eid, uint32_t>& eidmap, const HRaInfo &ra
     info.mode = HRT_NETWORK_MODE_MAP.at(raInfo.mode);
     info.phyId = raInfo.phyId;
 
-    ret = hrtRaGetDevEidInfoNum(&info, &num);
+    ret = hrtRaGetDevEidInfoNum(info, &num);
     if (ret != 0) {
         HCCL_ERROR("call RaGetDevEidInfoNum failed, error code = %d.", ret);
         return HCCL_E_NETWORK; //ra接口是网络相关调用
     }
 
     struct HccpDevEidInfo infoList[num] = {};
-    ret = hrtRaGetDevEidInfoList(&info, infoList, &num);
+    ret = hrtRaGetDevEidInfoList(info, infoList, &num);
     if (ret != 0) {
         HCCL_ERROR("call RaGetDevEidInfoList failed, error code = %d.", ret);
         return HCCL_E_NETWORK;
