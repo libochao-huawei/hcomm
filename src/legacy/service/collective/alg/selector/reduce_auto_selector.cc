@@ -15,7 +15,7 @@
 
 namespace Hccl {
 
-constexpr u64 REDUCE_AICPU_1D_MAX_DATA_SIZE = 32 * 1024 * 1024;
+constexpr u64 REDUCE_AICPU_1D_MAX_DATA_SIZE = 8 * 1024 * 1024;
 
 SelectorStatus ReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,
@@ -48,7 +48,7 @@ SelectorStatus ReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                 HCCL_WARNING("[Algo][ReduceAutoSelector] 2DieFullMesh is not supported yet for ccu_ms mode.");
                 return SelectorStatus::NOT_MATCH;
             } else if(dataSize_ >= REDUCE_AICPU_1D_MAX_DATA_SIZE) {
-                HCCL_INFO("[Algo][ReduceAutoSelector] Mesh1D dataSize[%llu] >= 32MB, fallback to aicpu.", dataSize_);
+                HCCL_INFO("[Algo][ReduceAutoSelector] Mesh1D dataSize[%llu] >= 8MB, fallback to aicpu.", dataSize_);
                 return SelectorStatus::NOT_MATCH;
             } else {
                 primQueueGenName = "CcuReduceMesh1D";
@@ -59,7 +59,7 @@ SelectorStatus ReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
             if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
                 if(dataSize_ >= REDUCE_AICPU_1D_MAX_DATA_SIZE) {
-                    HCCL_INFO("[Algo][ReduceAutoSelector] Mesh1D dataSize[%llu] >= 32MB, fallback to aicpu.", dataSize_);
+                    HCCL_INFO("[Algo][ReduceAutoSelector] Mesh1D dataSize[%llu] >= 8MB, fallback to aicpu.", dataSize_);
                     return SelectorStatus::NOT_MATCH;
                 } else {
                     primQueueGenName = "CcuReduceMesh1D";
@@ -126,7 +126,7 @@ SelectorStatus ReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInf
                 HCCL_WARNING("[Algo][ReduceAutoSelector] 2DieFullMesh is not supported yet for ccu schedule mode.");
                 return SelectorStatus::NOT_MATCH;
             } else if (dataSize_ >= REDUCE_AICPU_1D_MAX_DATA_SIZE) {
-                HCCL_INFO("[Algo][ReduceAutoSelector] Mesh1D dataSize[%llu] >= 32MB, fallback to aicpu.", dataSize_);
+                HCCL_INFO("[Algo][ReduceAutoSelector] Mesh1D dataSize[%llu] >= 8MB, fallback to aicpu.", dataSize_);
                 return SelectorStatus::NOT_MATCH;
             } else {
                 primQueueGenName = "CcuReduceMeshMem2Mem1D";
@@ -137,7 +137,7 @@ SelectorStatus ReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInf
             if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
                 if (dataSize_ >= REDUCE_AICPU_1D_MAX_DATA_SIZE) {
-                    HCCL_INFO("[Algo][ReduceAutoSelector] Mesh1D dataSize[%llu] >= 32MB, fallback to aicpu.", dataSize_);
+                    HCCL_INFO("[Algo][ReduceAutoSelector] Mesh1D dataSize[%llu] >= 8MB, fallback to aicpu.", dataSize_);
                     return SelectorStatus::NOT_MATCH;
                 } else {
                     primQueueGenName = "CcuReduceMeshMem2Mem1D";
