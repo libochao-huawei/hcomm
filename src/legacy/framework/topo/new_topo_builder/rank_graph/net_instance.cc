@@ -391,6 +391,11 @@ DeviceId NetInstance::Peer::GetDeviceId() const
     return deviceId_;
 }
 
+u32 NetInstance::Peer::GetDevicePort() const
+{
+    return devicePort_;
+}
+
 RankId NetInstance::Peer::GetRankId() const
 {
     return rankId_;

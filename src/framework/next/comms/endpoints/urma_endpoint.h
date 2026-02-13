@@ -28,9 +28,10 @@ public:
 
     HcclResult Init() override;
 
-    HcclResult ServerSocketListen() override;
+    HcclResult ServerSocketListen(const uint32_t port) override;
+    HcclResult ServerSocketStopListen(const uint32_t port) override;
 
-    static std::unordered_map<Hccl::PortData, std::unique_ptr<Hccl::Socket>> &GetServerSocketMap();
+    static std::unordered_map<Hccl::PortData, std::unordered_map<uint32_t, std::unique_ptr<Hccl::Socket>>> &GetServerSocketMap();
 
     std::shared_ptr<RegedMemMgr> GetRegedMemMgr() override {
         return regedMemMgr_;
