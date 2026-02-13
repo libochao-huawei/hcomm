@@ -103,6 +103,15 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
         CHK_RET(PostSyncInterQueues(mainInsQues));
     }
 
+    // 同步第0条流和最后一条流 (LocalCopy所在的流)
+    // 确保 LocalDataCopy 完成后，整体任务才算结束
+    if (tempInsQues.size() > 1) {
+        std::vector<InsQuePtr> localCopySyncQues;
+        localCopySyncQues.push_back(tempInsQues[0]);
+        localCopySyncQues.push_back(tempInsQues[tempInsQues.size() - 1]);
+        CHK_RET(PostSyncInterQueues(localCopySyncQues));
+    }
+
     return HcclResult::HCCL_SUCCESS;
 }
 
