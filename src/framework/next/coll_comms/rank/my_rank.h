@@ -19,6 +19,7 @@
 #include "common.h"
 #include "comm_mems/comm_mems.h"
 #include "endpoint_mgr.h"
+#include "rank_graph.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
@@ -28,7 +29,7 @@ namespace hccl {
  */
 class MyRank {
 public:
-    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks);
+    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks, RankGraph* rankGraph);
     ~MyRank();
 
     HcclResult Init(HcclMem cclBuffer, const uint32_t opExpansionMode);
@@ -57,6 +58,9 @@ private:
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
     CommConfig config_{};
+
+    // RankGraph (临时放在myRank里面，后面会随着createchannel整体迁移到RankPairMgr上)
+    RankGraph* rankGraph_{nullptr};
 
     // 当前通信域初始化没有处理CommConfig，暂时只使用展开模式
     uint32_t opExpansionMode_{0};
