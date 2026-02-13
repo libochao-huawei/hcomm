@@ -56,6 +56,11 @@ public:
     bool Listen(u32 &port);
     bool ISend(void *data, u64 size, u64& compSize) const;
 
+    bool IsListen() const
+    {
+        return isListening;
+    }
+
     SocketStatus GetAsyncStatus();
 
     void ListenAsync();
