@@ -113,7 +113,7 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
         AllocQueueNotify(*insQueue);
         // 日志打印    
         if (comm->GetAivTag() == 1) {
-            std::vector<LinkData> uniqueLinks = GetFullMeshLinks();
+            std::vector<LinkData> uniqueLinks = comm->GetFullMeshLinks();
             comm->SetCommStatus(CommStatus::COMM_BUILDING);
             // Socket建链
             comm->GetSocketManager().BatchCreateSockets(uniqueLinks);
