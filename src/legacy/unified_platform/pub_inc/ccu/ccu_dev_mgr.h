@@ -44,8 +44,8 @@ struct CcuJettyInfo {
     uint32_t sqBufSize{0};
 
     std::string ToString() const {
-        return StringFormat("jettyType=%d, jettyCtxId=%d, taJettyId=%d, sqDepth=%d, "
-                            "wqeBBStartId=%d, sqBufVa=%d, sqBufSize=%d",
+        return StringFormat("jettyType=%d, jettyCtxId=%u, taJettyId=%u, sqDepth=%u, "
+                            "wqeBBStartId=%u, sqBufVa=%llu, sqBufSize=%u",
             jettyType, jettyCtxId, taJettyId, sqDepth, wqeBBStartId, sqBufVa, sqBufSize);
     }
 };

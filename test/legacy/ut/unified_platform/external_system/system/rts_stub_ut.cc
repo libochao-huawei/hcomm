@@ -228,7 +228,6 @@ rtError_t rtMalloc(void **devPtr, uint64_t size, rtMemType_t type, const uint16_
 
 rtError_t aclrtFree(void *devPtr)
 {
-    devPtr = reinterpret_cast<void*>(0x123);
     return RT_ERROR_NONE;
 }
 

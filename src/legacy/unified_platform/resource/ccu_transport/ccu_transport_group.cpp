@@ -16,7 +16,7 @@ namespace Hccl {
 
 bool CcuTransportGroup::CheckTransports(const vector<CcuTransport*> &transports)
 {
-    HCCL_INFO("[CheckTransports] size[%u].", transports.size());
+    HCCL_INFO("[CheckTransports] size[%llu].", transports.size());
     if (transports.size() == 0) {
         HCCL_ERROR("[CcuTransportGroup::%s] Transports size is 0, please check.", __func__);
         return false;
@@ -82,7 +82,7 @@ CcuTransportGroup::CcuTransportGroup(const vector<CcuTransport*> &transports, u3
 
 TransportGrpStatus CcuTransportGroup::GetGrpStatus() const
 {
-    HCCL_INFO("[CcuTransportGroup] current group status [%s].", grpStatus);
+    HCCL_INFO("[CcuTransportGroup] current group status [%s].", Describe.c_str());
     return grpStatus;
 }
 
@@ -110,11 +110,11 @@ void CcuTransportGroup::Destroy()
     transportsGrp.clear();
 }
 
-u32 CcuTransportGroup::GetCntCkeId(u32 index, u32 &cntCkeId) const
+HcclResult CcuTransportGroup::GetCntCkeId(u32 index, u32 &cntCkeId) const
 {
     HCCL_INFO("[GetCntCkeId] index[%u].", index);
     if (index >= cntCkesGroup.size()) {
-        HCCL_ERROR("[GetCntCkeId] err[%s], index[%u] is bigger then cntCkesGroup size[%u], please check.",
+        HCCL_ERROR("[GetCntCkeId] err[%s], index[%u] is bigger than cntCkesGroup size[%u], please check.",
                 __func__, index, cntCkesGroup.size());
         return HcclResult::HCCL_E_PARA;
     }

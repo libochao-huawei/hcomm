@@ -348,7 +348,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_AicpuReduce)
 
 TEST_F(InsToSqeRuleV82Test, Interpret_StreamSync)
 {
-        InsStreamSync insStreamSync;
+    InsStreamSync insStreamSync;
 
     std::vector<char> notifyLite1{1,2};
     StreamLite stream(notifyLite1);

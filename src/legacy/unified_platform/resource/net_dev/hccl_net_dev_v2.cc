@@ -93,6 +93,9 @@ static HcclResult ConvertToNetDevInfo(const HcclNetDevInfos &src, Hccl::NetDevIn
 HcclResult HcclNetDevOpenV2(const HcclNetDevInfos *info, HcclNetDev *netDev)
 {
     CHK_PTR_NULL(info);  
+    if(CHK_PTR_NULL(netDev)) {
+        HCCL_INFO("HcclNetDevOpen: successfully opened netDev [%p]!", *netDev);
+    }
 
     Hccl::NetDevInfo pltInfo;
     HcclResult ret = ConvertToNetDevInfo(*info, pltInfo);
@@ -119,6 +122,7 @@ HcclResult HcclNetDevOpenV2(const HcclNetDevInfos *info, HcclNetDev *netDev)
 
 HcclResult HcclNetDevCloseV2(HcclNetDev netDev)
 {
+    HCCL_INFO("[HcclNetDevCloseV2] netDev[%p].", netDev);
     CHK_PTR_NULL(netDev);
     Hccl::InnerNetDevManager *netDevMgr = &Hccl::InnerNetDevManager::GetInstance();
     CHK_PTR_NULL(netDevMgr);
@@ -143,6 +147,7 @@ HcclResult HcclNetDevGetAddrV2(const HcclNetDev netDev, HcclAddress *addr)
                            static_cast<HcclNetDevice *>(netDev)->GetNetDevInfo().devId);
         return HCCL_E_PARA;
     }
+    HCCL_INFO("HcclNetDevGetAddrV2: successfully got addr [%p]!", addr);
     return HCCL_SUCCESS;
 }
 
@@ -150,6 +155,7 @@ HcclResult HcclNetDevGetBusAddrV2(HcclDeviceId dstDevId, HcclAddress *busAddr)
 {
     (void)dstDevId;
     (void)busAddr;
+    HCCL_ERROR("HcclNetDevGetBusAddrV2: failed to get bus addres for device %d, error code: %d", dstDevId, ret);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -158,5 +164,6 @@ HcclResult HcclNetDevGetNicAddrV2(int32_t devicePhyId, HcclAddress **addr, uint3
     (void)devicePhyId;
     (void)addr;
     (void)addrNum;
+    HCCL_ERROR("HcclNetDevGetNicAddrV2: failed to get NIC addres for device %d, error code: %d", devicePhyId, ret);
     return HCCL_E_NOT_SUPPORT;
 }

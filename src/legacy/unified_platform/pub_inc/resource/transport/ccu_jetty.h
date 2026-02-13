@@ -22,7 +22,7 @@ namespace Hccl {
 
 class CcuJetty final {
 public:
-    explicit CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo);
+    CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo);
 
     ~CcuJetty();
     CcuJetty(const CcuJetty &that) = delete;
@@ -61,6 +61,7 @@ private:
         uint32_t devPhyId = HrtGetDevicePhyIdByIndex(devLogicId_);
         auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
         rdmaHandle_ = rdmaHandleMgr.GetByIp(devPhyId, ipAddr_);
+        CHECK_NULLPTR(rdmaHandle_, "[CcuJetty::Initialize] rdmaHandle_ is nullptr!");
         const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle_, HrtUbJfcMode::CCU_POLL);
         const auto &tokenInfo = rdmaHandleMgr.GetTokenIdInfo(rdmaHandle_);
         const auto tokenIdHandle = tokenInfo.first;

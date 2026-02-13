@@ -9,53 +9,30 @@
  */
 #include "hccl_net_dev_v2.h"
 #include "hccl_net_dev.h"
-#include "log.h"
 
 using namespace std;
-using namespace Hccl;
 
 HcclResult HcclNetDevOpen(const HcclNetDevInfos *info, HcclNetDev *netDev)
 {
-    CHK_PTR_NULL(netDev);
-    HcclResult ret = HcclNetDevOpenV2(info, netDev);
-    if(ret == HCCL_SUCCESS){
-        CHK_PTR_NULL(*netDev);
-        HCCL_INFO("HcclNetDevOpen: successfully opened netDev [%p]!", *netDev);
-    }
-    return ret;
+    return HcclNetDevOpenV2(info, netDev);
 }
 
 HcclResult HcclNetDevClose(HcclNetDev netDev)
 {
-    HCCL_INFO("[HcclNetDevClose] netDev[%d].", netDev);
     return HcclNetDevCloseV2(netDev);
 }
 
 HcclResult HcclNetDevGetAddr(HcclNetDev netDev, HcclAddress *addr)
 {
-    HcclResult ret = HcclNetDevOpenV2(reinterpret_cast<const HcclNetDevInfos*>(netDev), 
-                                    reinterpret_cast<HcclNetDev*>(addr));
-    if(ret == HCCL_SUCCESS){
-        CHK_PTR_NULL(addr);
-        HCCL_INFO("HcclNetDevGetAddr: successfully got addr [%p]!", addr);
-    }
-    return ret;
+    return HcclNetDevGetAddrV2(netDev, addr);
 }
 
 HcclResult HcclNetDevGetBusAddr(HcclDeviceId dstDevId, HcclAddress *busAddr)
 {
-    HcclResult ret = HcclNetDevGetBusAddrV2(dstDevId, busAddr);
-    if(ret != HCCL_SUCCESS){
-        HCCL_ERROR("HcclNetDevGetBusAddr: failed to get bus addres for device %d, error code: %d", dstDevId, ret);
-    }
-    return ret;
+    return HcclNetDevGetBusAddrV2(dstDevId, busAddr);
 }
 
 HcclResult HcclNetDevGetNicAddr(int32_t devicePhyId, HcclAddress **addr, uint32_t *addrNum)
 {
-    HcclResult ret = HcclNetDevGetNicAddrV2(devicePhyId, addr, addrNum);
-    if(ret != HCCL_SUCCESS){
-        HCCL_ERROR("HcclNetDevGetBusAddr: failed to get NIC addres for device %d, error code: %d", devicePhyId, ret);
-    }
-    return ret;
+    return HcclNetDevGetNicAddrV2(devicePhyId, addr, addrNum);
 }

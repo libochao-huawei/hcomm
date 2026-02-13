@@ -418,7 +418,13 @@ void CcuErrorHandler::GenErrorInfoRemWaitGroup(const ErrorInfoBase &baseInfo, sh
 
     const auto rep                           = static_pointer_cast<CcuRepWaitGroup>(repBase);
     u32 cntCkeId;
-    rep->transportGroup.GetCntCkeId(rep->semIndex, cntCkeId);
+    HcclResult ret;
+    ret = rep->transportGroup.GetCntCkeId(rep->semIndex, cntCkeId);
+    if (ret != ACL_SUCCESS) {
+        string msg = StringFormat("[GenErrorInfoRemWaitGroup]rt get CntCkeId failed. "
+                                "cntCkeId[%p] return[%d].", cntCkeId, ret);
+        MACRO_THROW(RuntimeApiException, msg);
+    }
     errorMsg.msg.waitSignal.signalId         = cntCkeId;
     errorMsg.msg.waitSignal.signalValue      = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, errorMsg.msg.waitSignal.signalId);
     errorMsg.msg.waitSignal.signalMask       = rep->mask;
