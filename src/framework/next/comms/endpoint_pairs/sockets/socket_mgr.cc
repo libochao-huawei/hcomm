@@ -94,12 +94,13 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
     Hccl::IpAddress  remoteIpAddress = socketConfig.link.GetRemoteAddr();
     Hccl::SocketRole socketRole      = socketConfig.GetRole();
     std::string     hccpSocketTag   = socketConfig.GetHccpTag();
+    serverListenPort_               = socketConfig.listeningPort; // serverListenPort_这个变量似乎没用
     
     std::unique_ptr<Hccl::Socket> tmpSocket = nullptr;
     if (socketConfig.link.GetType() == Hccl::PortDeploymentType::DEV_NET) {
         EXECEPTION_CATCH(
             tmpSocket = std::make_unique<Hccl::Socket>(
-                socketHandle, localIpAddress, serverListenPort_,
+                socketHandle, localIpAddress, socketConfig.listeningPort,
                 remoteIpAddress, hccpSocketTag,
                 socketRole, Hccl::NicType::DEVICE_NIC_TYPE
             ),
@@ -111,7 +112,7 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
         EXECEPTION_CATCH(
             tmpSocket = std::make_unique<Hccl::Socket>(socketHandle,
             localIpAddress,
-            serverListenPort_,
+            socketConfig.listeningPort,
             remoteIpAddress,
             hccpSocketTag,
             socketRole,
