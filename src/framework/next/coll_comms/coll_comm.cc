@@ -23,7 +23,7 @@ CollComm::~CollComm()
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
 }
 
-HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config)
+HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config, u32 rankNum)
 {
     EXCEPTION_HANDLE_BEGIN
 
@@ -41,12 +41,12 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
         EXECEPTION_CATCH(contextMgr_ = std::make_unique<ContextManager>(), return HCCL_E_PTR);
     }
 
-    EXECEPTION_CATCH(myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_), return HCCL_E_PTR);
+    EXECEPTION_CATCH(myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_), return HCCL_E_PTR);
     uint32_t opExpansionMode = 0;
     if (config) {
         opExpansionMode = config->hcclOpExpansionMode;
     }
-    CHK_RET(myRank_->Init(cclBuffer, opExpansionMode));
+    CHK_RET(myRank_->Init(cclBuffer, opExpansionMode, rankNum));
 
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;

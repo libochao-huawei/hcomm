@@ -271,8 +271,8 @@ namespace hccl
         return communicator_->GetHeterogMode(mode);
     }
 
-    HcclResult hcclComm::InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
-        HcclMem cclBuffer, const std::string &commName, HcclCommConfig *config) {
+     HcclResult hcclComm::InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
+        HcclMem cclBuffer, const std::string &commName, HcclCommConfig *config, u32 rankNum) {
         // 不校验config，为空时配置默认加速模式
 
         // aicpu侧初始化状态的回调函数
@@ -321,10 +321,10 @@ namespace hccl
         EXECEPTION_CATCH(collComm_ = std::make_unique<CollComm>(commV2, userRank, commName, callbacks),
         return HCCL_E_PTR);
 
-        CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
+        CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config, rankNum));
         return HCCL_SUCCESS;
     }
-
+    
     void hcclComm::BinaryUnLoad()
     {
         if (binHandle_ != nullptr){
