@@ -181,6 +181,9 @@ HcclResult TaskService::TaskRun()
     uint8_t *srcTaskTypePtr = srcFlagPtr + sizeof(flag);
     HCCL_INFO("[TaskService::TaskRun] TaskService{shareHBM:%p}", srcFlagPtr);
     std::string taskTypeStr;
+
+    CHK_RET(WriteFlag(srcFlagPtr, TASK_UNSET)); // 初始化重置flag 为 0
+
     while (true) {
         CHK_RET(ReadFlag(srcFlagPtr, flag));
         switch (flag) {
