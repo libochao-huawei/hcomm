@@ -304,4 +304,23 @@ std::unordered_map<PortData, shared_ptr<Socket>> &SocketManager::GetServerSocket
     return serverSocketMap;
 }
 
+bool SocketManager::CheckServerPortListening(PortData portData, uint32_t port)
+{
+    // auto &rankListenPortMap = SocketManager::GetDeviceServerListenPortMap();
+    // auto iter = rankListenPortMap.find(static_cast<u32>(socketConfig.remoteRank));
+    // if (iter == rankListenPortMap.end()) {
+    //     return false;
+    // }
+    // u32 listenPort = iter->second;
+    // if (listenPort != static_cast<u32>(port)) {
+    //     return false;
+    // }
+    auto &serverSocketMap = SocketManager::GetServerSocketMap();
+    auto iterSocket = serverSocketMap.find(portData);
+    if (iterSocket == serverSocketMap.end()) {
+        return false;
+    }
+    return true;
+}
+
 } // namespace Hccl
