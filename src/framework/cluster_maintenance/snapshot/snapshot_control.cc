@@ -12,7 +12,7 @@
 #include "adapter_rts_common.h"
 #include "adapter_hccp_common.h"
 #include "externalinput.h"
-#include "tranport_pub.h"
+#include "transport_pub.h"
 
 namespace hccl {
 
