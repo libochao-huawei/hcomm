@@ -12,9 +12,9 @@
 
 namespace hccl {
 
-std::shared_ptr<Hccl::NetInstance::Peer> RankGraphStub::InitPeer(Hccl::RankId rankId, Hccl::LocalId localId, Hccl::DeviceId deviceId)
+std::shared_ptr<Hccl::NetInstance::Peer> RankGraphStub::InitPeer(Hccl::RankId rankId, Hccl::LocalId localId, Hccl::DeviceId deviceId, uint32_t listenPort)
 {
-    std::shared_ptr<Hccl::NetInstance::Peer> peer = std::make_shared<Hccl::NetInstance::Peer>(rankId, localId, localId, deviceId);
+    std::shared_ptr<Hccl::NetInstance::Peer> peer = std::make_shared<Hccl::NetInstance::Peer>(rankId, localId, localId, deviceId, listenPort);
     return peer;
 }
 
@@ -45,8 +45,8 @@ std::shared_ptr<Hccl::RankGraph> RankGraphStub::Create2PGraph()
 {
     Hccl::RankGraph  rankGraph(0);
     std::shared_ptr<Hccl::NetInstance> netInstLayer0 = InitNetInstance(0, "layer0");
-    std::shared_ptr<Hccl::NetInstance::Peer> peer0 = InitPeer(0, 0, 0);
-    std::shared_ptr<Hccl::NetInstance::Peer> peer1 = InitPeer(1, 1, 1);
+    std::shared_ptr<Hccl::NetInstance::Peer> peer0 = InitPeer(0, 0, 0, 60001);
+    std::shared_ptr<Hccl::NetInstance::Peer> peer1 = InitPeer(1, 1, 1, 60002);
 
     uint32_t topoInstId = 0;
     auto topoInstance = std::make_shared<Hccl::NetInstance::TopoInstance>(topoInstId);
