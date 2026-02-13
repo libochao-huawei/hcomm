@@ -9,6 +9,8 @@
 # -----------------------------------------------------------------------------------------------------------
 
 unset(openssl_FOUND CACHE)
+unset(CRYPTO_INCLUDE CACHE)
+unset(SSL_INCLUDE CACHE)
 unset(CRYPTO_STATIC_LIBRARY CACHE)
 unset(SSL_STATIC_LIBRARY CACHE)
 
@@ -24,7 +26,7 @@ set(OPENSSL_FILE "openssl-openssl-3.0.9.tar.gz")
 set(OPENSSL_URL "https://gitcode.com/cann-src-third-party/openssl/releases/download/openssl-3.0.9/${OPENSSL_FILE}")
 set(OPENSSL_PKG_PATH ${CANN_3RD_LIB_PATH}/${OPENSSL_FILE})
 set(OPENSSL_INSTALL_PATH ${CANN_3RD_LIB_PATH}/openssl-${PRODUCT_SIDE})
-set(OPENSSL_SRC_PATH ${CMAKE_BINARY_DIR}/third_party/openssl-${PRODUCT_SIDE})
+set(OPENSSL_SRC_PATH ${PROJECT_SOURCE_DIR}/build/third_party/openssl-${PRODUCT_SIDE})
 set(OPENSSL_INCLUDE_DIR
     ${OPENSSL_INSTALL_PATH}/include
     ${OPENSSL_SRC_PATH}/include
@@ -32,6 +34,20 @@ set(OPENSSL_INCLUDE_DIR
 
 # 查找目录下是否已经安装，避免重复编译安装
 message(STATUS "[ThirdParty] OPENSSL_INSTALL_PATH=${OPENSSL_INSTALL_PATH}")
+find_library(CRYPTO_INCLUDE
+    NAMES crypto/x509.h
+    PATH_SUFFIXES include
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+    PATHS ${OPENSSL_INSTALL_PATH}
+)
+find_library(SSL_INCLUDE
+    NAMES openssl/ssl.h
+    PATH_SUFFIXES include
+    NO_CMAKE_SYSTEM_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+    PATHS ${OPENSSL_INSTALL_PATH}
+)
 find_library(CRYPTO_STATIC_LIBRARY
     NAMES libcrypto.a
     PATH_SUFFIXES lib lib64
@@ -53,6 +69,8 @@ find_package_handle_standard_args(openssl
     FOUND_VAR
     openssl_FOUND 
     REQUIRED_VARS
+    CRYPTO_INCLUDE
+    SSL_INCLUDE
     CRYPTO_STATIC_LIBRARY
     SSL_STATIC_LIBRARY
 )

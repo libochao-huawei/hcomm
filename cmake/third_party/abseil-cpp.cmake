@@ -15,7 +15,6 @@ set(ABSEIL_NAME "abseil-cpp")
 set(ABSEIL_FILE "abseil-cpp-20250127.0.tar.gz")
 set(ABSEIL_URL "https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20250127.0/${ABSEIL_FILE}")
 set(ABSEIL_PKG_PATH ${CANN_3RD_LIB_PATH}/${ABSEIL_FILE})
-set(ABSEIL_SRC_PATH ${CANN_3RD_LIB_PATH}/third_party/abseil-cpp)
 
 if(EXISTS ${ABSEIL_PKG_PATH})
     # 离线编译场景，优先使用已下载的包

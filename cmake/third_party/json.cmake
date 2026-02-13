@@ -16,7 +16,7 @@ unset(JSON_INCLUDE CACHE)
 set(JSON_FILE "include.zip")
 set(JSON_URL "https://gitcode.com/cann-src-third-party/json/releases/download/v3.11.3/${JSON_FILE}")
 set(JSON_PKG_PATH ${CANN_3RD_LIB_PATH}/${JSON_FILE})
-set(JSON_SRC_PATH ${CMAKE_BINARY_DIR}/third_party/json)
+set(JSON_SRC_PATH ${PROJECT_SOURCE_DIR}/build/third_party/json)
 
 find_path(JSON_INCLUDE
     NAMES nlohmann/json.hpp
