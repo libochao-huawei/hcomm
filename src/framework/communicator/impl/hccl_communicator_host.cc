@@ -9127,6 +9127,12 @@ namespace hccl
 
     HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)
     {
+        CHK_PRT_RET(superPodNum_ > 1, 
+            HCCL_ERROR("[RegisterWindow] Cross-SuperNode not support symmetric memory"), HCCL_E_NOT_SUPPORT);
+
+        CHK_PRT_RET(deviceType_ != DevType::DEV_TYPE_910_93, 
+            HCCL_ERROR("[%s] deviceType:%d not support symmetric memory", __func__, deviceType_), HCCL_E_NOT_SUPPORT);
+
         CHK_SMART_PTR_NULL(symmetricMemory_);
         return symmetricMemory_->RegisterSymmetricMem(ptr, size, winHandle);
     }
