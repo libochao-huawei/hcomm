@@ -32,8 +32,8 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
 
 namespace hccl {
 
-MyRank::MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config)
-    : binHandle_(binHandle), rankId_(rankId), config_(config)
+MyRank::MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, std::shared_ptr<RankGraph> rankGraph)
+    : binHandle_(binHandle), rankId_(rankId), config_(config), rankGraph_(rankGraph)
 {
 }
 
@@ -93,9 +93,23 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
         CHK_PTR_NULL(rankPair);
         CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));
 
+        // 查询该socket链接的server端监听的端口（监听方的选择策略需要跟SocketConfig中保持一致）
+        uint32_t listenPort = 0
+        if (localEndpointDesc.commAddr < remoteEndpointDesc.commAddr) {
+            // 查询localRankId对应的devPort
+            auto localPeer = rankGraph_->GetPeer(localRank);
+            CHK_PTR_NULL(localPeer);
+            listenPort = localPeer->GetDevicePort();
+        } else {
+            // 查询rmtRankId对应的devPort
+            auto remotePeer = rankGraph_->GetPeer(localRank);
+            CHK_PTR_NULL(remotePeer);
+            listenPort = remotePeer->GetDevicePort();
+        }
+
         Hccl::Socket* socket = nullptr;
         CHK_PTR_NULL(endpointPair);
-        CHK_RET(endpointPair->GetSocket(commTag, socket));
+        CHK_RET(endpointPair->GetSocket(commTag, socket, listenPort));
         CHK_PTR_NULL(socket);
         hcommDescs[i]  = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
         hcommDescs[i].socket = reinterpret_cast<HcommSocket>(socket);
@@ -156,6 +170,14 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         HCCL_INFO("[%s] remoteRank[%d] epHandle->GetEndpointDesc() protocol[%d]",
             __func__, remoteRank, localEpPtr->GetEndpointDesc().protocol
         );
+
+        // 启动监听，目前先修改Host网卡场景，其他场景待定
+        if (engine == COMM_ENGINE_CPU) {
+            auto localPeer = rankGraph_->GetPeer(localRank);
+            CHK_PTR_NULL(localPeer);
+            uint32_t listenPort = localPeer->GetDevicePort();
+            CHK_RET(HcommEndpointStartListen(epHandle, listenPort));
+        }
         
         // 注册内存
         std::vector<MemHandle> memHandleVec;
