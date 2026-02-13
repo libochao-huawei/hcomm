@@ -367,11 +367,11 @@ HcclResult DlRaFunction::DlRaFunctionSocketInit()
     if (dlRaGetSecRandom == nullptr) {
         HCCL_WARNING("dlRaGetSecRandom is nullptr, can not use RaGetSecRandom");
     }
-    dlRaGetDevEidInfoNum = (int (*)(struct RaInfo *info, unsigned int* ))HcclDlsym(handle_, "RaGetDevEidInfoNum");
+    dlRaGetDevEidInfoNum = (int (*)(RaInfo info, unsigned int* ))HcclDlsym(handle_, "RaGetDevEidInfoNum");
     if (dlRaGetDevEidInfoNum == nullptr) {
         HCCL_WARNING("dlRaGetDevEidInfoNum is nullptr, can not use RaGetDevEidInfoNum");
     }
-    dlRaGetDevEidInfoList = (int (*)(struct RaInfo *info, struct HccpDevEidInfo *eid_info, unsigned int* ))HcclDlsym(handle_, "RaGetDevEidInfoList");
+    dlRaGetDevEidInfoList = (int (*)(RaInfo info, struct HccpDevEidInfo *eid_info, unsigned int* ))HcclDlsym(handle_, "RaGetDevEidInfoList");
     if (dlRaGetDevEidInfoList == nullptr) {
         HCCL_WARNING("dlRaGetDevEidInfoList is nullptr, can not use RaGetDevEidInfoList");
     }

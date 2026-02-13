@@ -53,6 +53,10 @@ inline HccnResult HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAtt
     HcclIpAddress ipAddr;
     HcclResult ret = HCCL_SUCCESS;
     if (initAttrInter->mode == HCCN_RPING_MODE_ROCE) {
+         if (!HcclIpAddress::IsIPv4(std::string(initAttrInter->ipAddr)) && !HcclIpAddress::IsIPv6(std::string(initAttrInter->ipAddr))) {
+ 	        HCCL_ERROR("[HccnRpingInitInter] invalid ip: %s, bufferSize:%u", initAttrInter->ipAddr, bufferSizeInter);
+ 	        return HCCN_E_PARA;
+ 	    }
         ipAddr = HcclIpAddress(std::string(initAttrInter->ipAddr));
         ret = rpingInter->HccnRpingInit(devLogicIdInter, LINK_TYPE_MODE_ROCE, ipAddr, initAttrInter->port,
             npuNumInter, bufferSizeInter, initAttrInter->sl, initAttrInter->tc);
@@ -66,7 +70,7 @@ inline HccnResult HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAtt
     CHK_PRT_RET(socNamePtr == nullptr, HCCL_ERROR("[HccnRpingInitInter]socNamePtr is null."), HCCN_E_PARA);;
     if (initAttrInter->mode == HCCN_RPING_MODE_UB && IsSupportHCCLV2(socNamePtr)) {
         if (!HcclIpAddress::IsEID(std::string(initAttrInter->eid))) {
-            HCCL_ERROR("[HccnRpingInitInter] invalid eid, bufferSize:%u", bufferSizeInter);
+            HCCL_ERROR("[HccnRpingInitInter] invalid eid: %s, bufferSize:%u", initAttrInter->eid, bufferSizeInter);
             return HCCN_E_PARA;
         }
         Eid eid = HcclIpAddress::StrToEID(std::string(initAttrInter->eid));
@@ -74,12 +78,12 @@ inline HccnResult HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAtt
         ret = rpingInter->HccnRpingInit(devLogicIdInter, LINK_TYPE_MODE_UB, ipAddr, initAttrInter->port,
             npuNumInter, bufferSizeInter, initAttrInter->sl, initAttrInter->tc);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[HccnRpingInitInter] init fail, bufferSize:%u", bufferSizeInter);
+            HCCL_ERROR("[HccnRpingInitInter] init fail, bufferSize:%u, ret:%d", bufferSizeInter, ret);
             return HCCN_E_FAIL;
         }
         ipAddrDesInter = ipAddr.Describe();
     }
-    HCCL_INFO("[HccnRpingInitInter]bufferSize:%u", bufferSizeInter);
+    HCCL_RUN_INFO("[HccnRpingInitInter]bufferSize:%u, ret:%d", bufferSizeInter, ret);
     return HCCN_SUCCESS;
 }
 
@@ -103,7 +107,7 @@ HccnResult HccnRpingInit(uint32_t devLogicId, HccnRpingInitAttr *initAttr, HccnR
     if (initAttr->mode == HCCN_RPING_MODE_UB && IsSupportHCCLV2(socNamePtr)) {
         initAttrDes = std::string(initAttr->eid).c_str();
     }
-    HCCL_DEBUG("[HccnRpingInit]devLogicId:%u, mode:%d port:%u npuNum:%u bufferSize:%u sl:%u tc:%u ip:%s", devLogicId,
+    HCCL_RUN_INFO("[HccnRpingInit]devLogicId:%u, mode:%d port:%u npuNum:%u bufferSize:%u sl:%u tc:%u ip:%s", devLogicId,
     initAttr->mode, initAttr->port, initAttr->npuNum, initAttr->bufferSize, initAttr->sl, initAttr->tc, initAttrDes);
     // 获取device id
     s32 currDevLogicId = 0;
@@ -179,7 +183,15 @@ HccnResult HccnRpingAddTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
 
 inline HccnResult HccnRpingInitInputTargetAttr(HccnRpingTargetInfo *targetInter, RpingInput *inputInter, uint32_t &n) {
     if (targetInter[n].addrType == HCCN_RPING_ADDR_TYPE_IP) {
+        if (!HcclIpAddress::IsIPv4(std::string(targetInter[n].srcIp)) && !HcclIpAddress::IsIPv6(std::string(targetInter[n].srcIp))) {
+ 	        HCCL_ERROR("[HccnRpingInitInter] invalid ip.");
+ 	        return HCCN_E_PARA;
+ 	    }
         inputInter[n].sip = HcclIpAddress(std::string(targetInter[n].srcIp));
+        if (!HcclIpAddress::IsIPv4(std::string(targetInter[n].dstIp)) && !HcclIpAddress::IsIPv6(std::string(targetInter[n].dstIp))) {
+            HCCL_ERROR("[HccnRpingInitInter] invalid ip.");
+            return HCCN_E_PARA;
+ 	    }
         inputInter[n].dip = HcclIpAddress(std::string(targetInter[n].dstIp));
     }
     const char *socNamePtr = aclrtGetSocName();
@@ -209,12 +221,6 @@ inline HccnResult HccnRpingInitTargetAttr(HccnRpingTargetInfo *targetInter, Rpin
     inputInter[n].addrType = targetInter[n].addrType;
 
     return HCCN_SUCCESS;
-}
-
-HccnResult HccnRpingAddTargetV2(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target,
-    HccnRpingAddTargetConfig *config)
-{
-    return HccnRpingAddTargetWithCfg(rpingCtx, targetNum, target, config);
 }
 
 HccnResult HccnRpingAddTargetWithCfg(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target,

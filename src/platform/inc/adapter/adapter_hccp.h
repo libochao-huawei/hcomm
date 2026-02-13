@@ -332,6 +332,6 @@ HcclResult hrtRaSocketNonBlockBatchAbort(SocketConnectInfoT conn[], u32 num);
 HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigInfo& qpConfig, QpHandle &qpHandle, struct TypicalQp& qpInfo);
 HcclResult IsSupportRaSocketAbort(bool& isSupportRaSocketAbort);
 HcclResult hrtRaGetSecRandom(struct RaInfo *info, unsigned int* token);
-HcclResult hrtRaGetDevEidInfoNum(struct RaInfo *info, unsigned int* num);
-HcclResult hrtRaGetDevEidInfoList(struct RaInfo *info, struct HccpDevEidInfo *eid_info, unsigned int* num);
+HcclResult hrtRaGetDevEidInfoNum(RaInfo info, unsigned int* num);
+HcclResult hrtRaGetDevEidInfoList(RaInfo info, struct HccpDevEidInfo *eid_info, unsigned int* num);
 #endif
