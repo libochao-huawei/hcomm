@@ -49,12 +49,13 @@ TEST_F(NetInstanceTest, ut_NetInstance_Node_When_Normal_Expect_SUCCESS)
     s32 localId = 0;
     u32 groupLevel = 0;
     DeviceId deviceId = 0;
+    constexpr u32 devPort = 60001;
     string netInstId = "test";
     IpAddress inputAddr(0);
     std::set<std::string> ports = {"0/0"};
     std::set<LinkProtocol> protocals = {LinkProtocol::UB_CTP, LinkProtocol::UB_TP};
     shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocals);
-    std::shared_ptr<NetInstance::Node> node = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
+    std::shared_ptr<NetInstance::Node> node = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId, devPort);
     node->AddConnInterface(0, connInterface);
     node->AddConnInterface(0, connInterface);
 }
@@ -65,8 +66,9 @@ TEST_F(NetInstanceTest, FabGroup_Peer_test)
     s32 localId = 0;
     u32 groupLevel = 0;
     DeviceId deviceId = 0;
+    constexpr u32 devPort = 60001;
     string netInstId = "test";
-    std::shared_ptr<NetInstance::Peer> peer = std::make_shared<NetInstance::Peer>(rankId, localId, localId, localId);
+    std::shared_ptr<NetInstance::Peer> peer = std::make_shared<NetInstance::Peer>(rankId, localId, localId, localId, devPort);
     EXPECT_EQ(nullptr, peer->GetNetInstance(1));
     EXPECT_EQ(nullptr, peer->GetNetInstance(groupLevel));
     std::shared_ptr<NetInstance> fabGroup = std::make_shared<InnerNetInstance>(groupLevel, netInstId);
@@ -102,8 +104,10 @@ TEST_F(NetInstanceTest, FabGroup_Link_test)
     s32 localId1 = 1;
     u64 srcNodeId = 0;
     u64 dstNodeId = 1;
-    shared_ptr<NetInstance::Node> source = std::make_shared<NetInstance::Peer>(rankId, localId, localId, localId);
-    shared_ptr<NetInstance::Node> target = std::make_shared<NetInstance::Peer>(rankId1, localId1, localId1, localId1);
+    constexpr u32 devPort = 60001;
+    constexpr u32 devPort1 = 60002;
+    shared_ptr<NetInstance::Node> source = std::make_shared<NetInstance::Peer>(rankId, localId, localId, localId, devPort);
+    shared_ptr<NetInstance::Node> target = std::make_shared<NetInstance::Peer>(rankId1, localId1, localId1, localId1, devPort1);
     IpAddress inputAddr(0);
     std::set<LinkProtocol> protocals = {LinkProtocol::UB_CTP};
     std::set<std::string> ports = {"0/0"};
@@ -171,8 +175,9 @@ TEST_F(NetInstanceTest, fabGroup_add_peer_test)
     RankId rankId = 27;
     LocalId localId = 27;
     DeviceId deviceId = 27;
+    constexpr u32 devPort = 60001;
 
-    NetInstance::Peer peer = NetInstance::Peer(rankId, localId, localId, deviceId);
+    NetInstance::Peer peer = NetInstance::Peer(rankId, localId, localId, deviceId, devPort);
     std::shared_ptr<NetInstance::Peer> peerPtr =
         std::make_shared<NetInstance::Peer>(peer);
 
@@ -257,9 +262,10 @@ TEST_F(NetInstanceTest, fabGroup_add_link_test_v1)
     LocalId srcLocalId = 27;
     RankId dstRankId = 53;
     LocalId dstLocalId = 53;
+    constexpr u32 devPort = 60001;
 
-    NetInstance::Peer srcPeer = NetInstance::Peer(srcRankId, srcLocalId, srcLocalId, srcLocalId);
-    NetInstance::Peer dstPeer = NetInstance::Peer(dstRankId, dstLocalId, dstLocalId, srcLocalId);
+    NetInstance::Peer srcPeer = NetInstance::Peer(srcRankId, srcLocalId, srcLocalId, srcLocalId, devPort);
+    NetInstance::Peer dstPeer = NetInstance::Peer(dstRankId, dstLocalId, dstLocalId, srcLocalId, devPort);
 
     std::shared_ptr<NetInstance::Peer> srcPeerPtr = std::make_shared<NetInstance::Peer>(srcPeer);
     std::shared_ptr<NetInstance::Peer> dstPeerPtr = std::make_shared<NetInstance::Peer>(dstPeer);
@@ -294,9 +300,10 @@ TEST_F(NetInstanceTest, fabGroup_add_link_test_v2)
     LocalId srcLocalId = 27;
     RankId dstRankId = 53;
     LocalId dstLocalId = 53;
+    constexpr u32 devPort = 60001;
 
-    NetInstance::Peer srcPeer = NetInstance::Peer(srcRankId, srcLocalId, srcLocalId, srcLocalId);
-    NetInstance::Peer dstPeer = NetInstance::Peer(dstRankId, dstLocalId, dstLocalId, dstLocalId);
+    NetInstance::Peer srcPeer = NetInstance::Peer(srcRankId, srcLocalId, srcLocalId, srcLocalId, devPort);
+    NetInstance::Peer dstPeer = NetInstance::Peer(dstRankId, dstLocalId, dstLocalId, dstLocalId, devPort);
 
     std::shared_ptr<NetInstance::Peer> srcPeerPtr = std::make_shared<NetInstance::Peer>(srcPeer);
     std::shared_ptr<NetInstance::Peer> dstPeerPtr = std::make_shared<NetInstance::Peer>(dstPeer);
@@ -399,7 +406,7 @@ std::unique_ptr<NetInstance> InitFullFabGroup(
     std::vector<std::tuple<RankId, NodeId, NetInstance::Peer>> peers;
     for (auto& rankId : rankIds) {
         LocalId localId = static_cast<LocalId>(rankId);
-        NetInstance::Peer peer = NetInstance::Peer(rankId, localId, localId, localId);
+        NetInstance::Peer peer = NetInstance::Peer(rankId, localId, localId, localId, 60001);
         NodeId peerId = peer.GetNodeId();
 
         peers.push_back(std::make_tuple(rankId, peerId, peer));
@@ -549,6 +556,7 @@ TEST_F(NetInstanceTest, UT_GetIfacesByLayer_When_Valid_Return_HCCl_SUCCESS)
     s32 localId = 0;
     u32 groupLevel = 0;
     DeviceId deviceId = 0;
+    constexpr u32 devPort = 60001;
     string netInstId = "test";
     IpAddress inputAddr(0);
     std::set<std::string> ports = {"0/0"};
@@ -556,7 +564,7 @@ TEST_F(NetInstanceTest, UT_GetIfacesByLayer_When_Valid_Return_HCCl_SUCCESS)
     shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocals);
     EXPECT_EQ(connInterface->GetTopoType(), TopoType::CLOS);
     EXPECT_EQ(connInterface->GetTopoInstId(), 0);
-    std::shared_ptr<NetInstance::Node> node = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
+    std::shared_ptr<NetInstance::Node> node = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId, devPort);
     node->AddConnInterface(0, connInterface);
 
     auto ifaces = node->GetIfacesByLayer(0);

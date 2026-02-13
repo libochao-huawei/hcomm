@@ -373,7 +373,20 @@ HostSocketHandleManager::~HostSocketHandleManager()
 HostSocketHandleManager::HostSocketHandleManager()
 {}
 
+~SocketManager::SocketManager()
+{
 
+}
+
+bool SocketManager::CheckServerPortListening(const PortData &portData) const
+{
+    return true;
+}
+
+bool SocketManager::ServerDeInit(PortData &portData) const
+{
+    return true;
+}
 
 SocketStatus Socket::GetStatus()
 {
