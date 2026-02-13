@@ -103,7 +103,7 @@ struct AivOpCacheArgs {
     uint16_t opType = 0;
     ReduceOp reduceOp = ReduceOp::INVALID;
     u32 root = 0;
-    u32 blockDimLimit = 0;
+    u32 numBlocksLimit = 0;
     DataType outputDataType = DataType::INT32; 
     all2AllDataDes all2allDataDes{};
     all2AllVDataDes all2allVDataDes{};
@@ -115,7 +115,7 @@ struct AivOpCacheArgs {
         uint16_t opType_,
         ReduceOp reduceOp_,
         u32 root_,
-        u32 blockDimLimit_,
+        u32 numBlocksLimit_,
         DataType outputDataType_,
         const all2AllDataDes& all2allDataDes_ = {},
         const all2AllVDataDes& all2allVDataDes_ = {}
@@ -125,7 +125,7 @@ struct AivOpCacheArgs {
         opType(opType_),
         reduceOp(reduceOp_),
         root(root_),
-        blockDimLimit(blockDimLimit_),
+        numBlocksLimit(numBlocksLimit_),
         outputDataType(outputDataType_),
         all2allDataDes(all2allDataDes_),
         all2allVDataDes(all2allVDataDes_)
@@ -138,7 +138,7 @@ struct AivOpCacheArgs {
         if (opType != other.opType) return opType < other.opType;
         if (reduceOp != other.reduceOp) return reduceOp < other.reduceOp;
         if (root != other.root) return root < other.root;
-        if (blockDimLimit != other.blockDimLimit) return blockDimLimit < other.blockDimLimit;
+        if (numBlocksLimit != other.numBlocksLimit) return numBlocksLimit < other.numBlocksLimit;
         if (all2allDataDes != other.all2allDataDes) return all2allDataDes < other.all2allDataDes;
         if (all2allVDataDes != other.all2allVDataDes) return all2allVDataDes < other.all2allVDataDes;
         return outputDataType < other.outputDataType;
