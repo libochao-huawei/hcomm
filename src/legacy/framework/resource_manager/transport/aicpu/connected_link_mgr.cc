@@ -79,10 +79,7 @@ void ConnectedLinkMgr::ParsePackedData(std::vector<char> &data)
             linkVec.push_back(allLinkVec[linkIdx++]);
         }
 
-        if (levelRankPairLinkDataMap.find(level) == levelRankPairLinkDataMap.end() ||
-            levelRankPairLinkDataMap[level].find(dRank) == levelRankPairLinkDataMap[level].end()) {
-            levelRankPairLinkDataMap[level][dRank] = linkVec;
-        }
+        levelRankPairLinkDataMap[level][dRank] = linkVec;
     }
 }
 } // namespace Hccl

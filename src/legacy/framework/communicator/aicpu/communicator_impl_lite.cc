@@ -88,8 +88,8 @@ std::shared_ptr<InsQueue> CommunicatorImplLite::GetInsQueue(HcclKernelParamLite 
     CreateCollAlgComponentLite();
     HCCL_INFO("CommunicatorImplLite::GetInsQueue begin kernelParam->algName = %s", kernelParam->algName);
     std::shared_ptr<InsQueue> queue = std::make_shared<InsQueue>();
+    auto it  = algTopoInfoMap.find(kernelParam->tagKey);
 
-    auto it  = algTopoInfoMap.find(kernelParam->algName);
     auto ret = algComponentLite->Orchestrate(kernelParam->op.algOperator, kernelParam->algName, it->second, queue);
     if (ret == HCCL_E_PARA) {
         return nullptr;
@@ -273,7 +273,7 @@ void CommunicatorImplLite::UpdateOpRes(HcclKernelParamLite *kernelParam)
         return;
     }
 
-    RestoreOpRes(kernelParam->opTag, kernelParam->algName, kernelParam->binaryResAddr, kernelParam->binaryResSize);
+    RestoreOpRes(kernelParam->opTag, kernelParam->tagKey, kernelParam->binaryResAddr, kernelParam->binaryResSize);
 }
 
 void CommunicatorImplLite::UpdateHDCommnicate(HcclKernelParamLite *kernelParam)
@@ -299,7 +299,7 @@ void CommunicatorImplLite::UpdateOffloadRes(HcclKernelParamLite *kernelParam)
 
     offloadOpSet.insert(kernelParam->opTag);
 
-    RestoreOpRes(kernelParam->opTag, kernelParam->algName, kernelParam->binaryResAddr, kernelParam->binaryResSize);
+    RestoreOpRes(kernelParam->opTag, kernelParam->tagKey, kernelParam->binaryResAddr, kernelParam->binaryResSize);
 }
 
 HostDeviceSyncNotifyLiteMgr *CommunicatorImplLite::GetHostDeviceSyncNotifyLiteMgr()
@@ -355,7 +355,7 @@ void CommunicatorImplLite::BackGroundSetStatus(KfcStatus status, KfcErrType erro
 }
 
 // 从 buffer中解析出算子需要的信息 ，对应 Host侧的 PackOpData
-void CommunicatorImplLite::RestoreOpRes(const string &opTag, const string &algName, u64 addr, u64 bufSize)
+void CommunicatorImplLite::RestoreOpRes(const string &opTag, const string &tagKey, u64 addr, u64 bufSize)
 {
     std::vector<char> data;
     data.resize(bufSize);
@@ -402,9 +402,9 @@ void CommunicatorImplLite::RestoreOpRes(const string &opTag, const string &algNa
 
     resType = AicpuResMgrType::ALG_TOPO;
     AlgTopoPackageHelper algTopoHelper;
-    algTopoInfoMap[algName] = algTopoHelper.GetAlgTopoInfo(dataVec[resType].data);
-    HCCL_INFO("CommunicatorImplLite::RestoreOpRes: opTag %s GetResMgr %s Data, algName=%s", opTag.c_str(), resType.Describe().c_str(),
-               algName.c_str());
+    algTopoInfoMap[tagKey] = algTopoHelper.GetAlgTopoInfo(dataVec[resType].data);
+    HCCL_INFO("CommunicatorImplLite::RestoreOpRes: opTag %s GetResMgr %s Data, tagKey=%s", opTag.c_str(), resType.Describe().c_str(),
+               tagKey.c_str());
 
     resType = AicpuResMgrType::CONNECTD_MGR;
     GetConnectedLinkMgr()->ParsePackedData(dataVec[resType].data);
