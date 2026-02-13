@@ -204,8 +204,8 @@ void AddOneMemcpySqeV1(uint16_t streamId, uint16_t taskId, const void *src, uint
         (rtReduceOp == ACL_RT_MEMCPY_SDMA_AUTOMATIC_MIN) || (rtReduceOp == ACL_RT_MEMCPY_SDMA_AUTOMATIC_EQUAL));
 
     sqe->opcode = isReduce ? GetOpcodeForReduce(rtReduceOp, runtimeDataType) : 0U;
-    HCCL_INFO("[SQE]MemcpySqe copyKind=%u,Opcode=0x%x, streamId=%u, len=%u, src:%p, dst:%p, hcclQos:%u",
-        static_cast<uint32_t>(rtReduceOp), static_cast<uint32_t>(sqe->opcode), streamId, length, src, dst, hcclQos);
+    HCCL_INFO("[SQE]MemcpySqe copyKind=%u,Opcode=0x%x, streamId=%u, len=%u, src:%p, dst:%p",
+        static_cast<uint32_t>(rtReduceOp), static_cast<uint32_t>(sqe->opcode), streamId, length, src, dst);
 
     sqe->length = len;
     sqe->src_addr_low = srcAddrLow;
