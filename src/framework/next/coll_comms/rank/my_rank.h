@@ -31,7 +31,7 @@ public:
     MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks);
     ~MyRank();
 
-    HcclResult Init(HcclMem cclBuffer, const uint32_t opExpansionMode);
+    HcclResult Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum);
 
     CommMems* GetCommMems() const { return commMems_.get(); }
 
