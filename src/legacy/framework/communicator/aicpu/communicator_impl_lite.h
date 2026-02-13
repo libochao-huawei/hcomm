@@ -240,7 +240,7 @@ private:
 
     std::unique_ptr<CollAlgComponentLite>          algComponentLite{};
 
-    void RestoreOpRes(const string &opTag, const string &algName, u64 addr, u64 bufSize);
+    void RestoreOpRes(const string &opTag, const string &tagKey, u64 addr, u64 bufSize);
 
     void RestoreAllTransports(u64 addr, u64 bufSize);
     unique_ptr<HDCommunicateLite> kfcControlTransferH2D = std::make_unique<HDCommunicateLite>();
