@@ -53,6 +53,8 @@ public:
 
     Socket *GetConnectedSocket(SocketConfig &socketConfig) const;
 
+    bool CheckServerPortListening(PortData portData, uint32_t port);
+
     void DestroyAll();
 
     void AddWhiteList(PortData &localPort, vector<RaSocketWhitelist> &wlistInfoVec) const;
