@@ -3050,42 +3050,42 @@ HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT ke
 
 HcclResult hrtRaGetSecRandom(struct RaInfo *info, unsigned int* token)
 {
-    if(DlRaFunction::GetInstance().dlRaGetSecRandom == nullptr) {
+    if (DlRaFunction::GetInstance().dlRaGetSecRandom == nullptr) {
         HCCL_ERROR("driver package does not support dlRaGetSecRandom, please change new package");
         return HCCL_E_NOT_SUPPORT;
     }
     s32 ret = DlRaFunction::GetInstance().dlRaGetSecRandom(info, token);
     if (ret != 0) {
-        HCCL_ERROR("[HrtRaGetSecRandom] RaGetSecRandom failed, call interface");
-        return HCCL_E_INTERNAL;
+        HCCL_ERROR("[HrtRaGetSecRandom] RaGetSecRandom failed, call interface, ret[%d]", ret);
+        return HCCL_E_NETWORK;
     }
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaGetDevEidInfoNum(struct RaInfo *info, unsigned int* num)
+HcclResult hrtRaGetDevEidInfoNum(RaInfo info, unsigned int* num)
 {
-    if(DlRaFunction::GetInstance().dlRaGetDevEidInfoNum == nullptr) {
+    if (DlRaFunction::GetInstance().dlRaGetDevEidInfoNum == nullptr) {
         HCCL_ERROR("driver package does not support dlRaGetDevEidInfoNum, please change new package");
         return HCCL_E_NOT_SUPPORT;
     }
     s32 ret = DlRaFunction::GetInstance().dlRaGetDevEidInfoNum(info, num);
     if (ret != 0) {
-        HCCL_ERROR("[HrtRaGetSecRandom] RaGetDevEidInfoNum failed, call interface");
-        return HCCL_E_INTERNAL;
+        HCCL_ERROR("[HrtRaGetSecRandom] RaGetDevEidInfoNum failed, call interface, ret[%d]", ret);
+        return HCCL_E_NETWORK;
     }
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaGetDevEidInfoList(struct RaInfo *info, struct HccpDevEidInfo *eid_info, unsigned int* num)
+HcclResult hrtRaGetDevEidInfoList(RaInfo info, struct HccpDevEidInfo *eid_info, unsigned int* num)
 {
-    if(DlRaFunction::GetInstance().dlRaGetDevEidInfoList == nullptr) {
+    if (DlRaFunction::GetInstance().dlRaGetDevEidInfoList == nullptr) {
         HCCL_ERROR("driver package does not support dlRaGetDevEidInfoNum, please change new package");
         return HCCL_E_NOT_SUPPORT;
     }
     s32 ret = DlRaFunction::GetInstance().dlRaGetDevEidInfoList(info, eid_info, num);
     if (ret != 0) {
-        HCCL_ERROR("[HrtRaGetSecRandom] RaGetDevEidInfoList failed, call interface");
-        return HCCL_E_INTERNAL;
+        HCCL_ERROR("[HrtRaGetSecRandom] RaGetDevEidInfoList failed, call interface, ret[%d]", ret);
+        return HCCL_E_NETWORK;
     }
     return HCCL_SUCCESS;
 }

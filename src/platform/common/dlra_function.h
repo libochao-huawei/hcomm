@@ -159,8 +159,8 @@ public:
     std::function<int(struct RaInfo *info)> dlRaRestoreSnapShot;
     std::function<int(struct RaInfo *info, enum HccnCfgKey ext_attrs, char* value, int *value_len)> dlRaGetHccnCfg;
     std::function<int(struct RaInfo *info, unsigned int* )> dlRaGetSecRandom;
-    std::function<int(struct RaInfo *info, unsigned int* )> dlRaGetDevEidInfoNum;
-    std::function<int(struct RaInfo *info, struct HccpDevEidInfo *eid_info, unsigned int* )> dlRaGetDevEidInfoList;
+    std::function<int(RaInfo info, unsigned int* )> dlRaGetDevEidInfoNum;
+    std::function<int(RaInfo info, struct HccpDevEidInfo *eid_info, unsigned int* )> dlRaGetDevEidInfoList;
 protected:
 private:
     friend Init;
