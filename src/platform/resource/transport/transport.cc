@@ -664,6 +664,11 @@ HcclResult Transport::HcclBatchRead(const TransportDeviceNormalData &ibvData, st
 #endif
 }
 
+HcclResult Transport::SetDeviceUnavailable(u32 deviceId)
+{
+    return MemNameRepository::GetInstance(deviceId)->SetDeviceUnavailable(true);
+}
+
 HcclResult Transport::HcclBatchWrite(const TransportDeviceNormalData &ibvData,
     struct MemDetails *localMems, struct MemDetails *remoteMems, u32 memNum, u64 &dbInfo)
 {

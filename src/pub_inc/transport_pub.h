@@ -659,6 +659,7 @@ public:
         struct MemDetails *localMems, struct MemDetails *remoteMems, u32 memNum, u64 &dbInfo);
     static HcclResult HcclBatchWrite(const TransportDeviceNormalData &ibvData,
         struct MemDetails *localMems, struct MemDetails *remoteMems, u32 memNum, u64 &dbInfo);
+    static HcclResult SetDeviceUnavailable(u32 deviceId);
     
     bool GetIsUseAtomicWrite();
 
