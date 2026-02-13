@@ -67,7 +67,12 @@ typedef struct {
 typedef void* MemHandle;
 
 typedef void* HcommSocket;
- 
+
+typedef enum {
+    SOCKET_ROLE_SERVER, ///< 
+    SOCKET_ROLE_CLIENT  ///< 
+} HcommSocketRole;
+
 typedef struct {
     EndpointDesc remoteEndpoint;
     uint32_t notifyNum;
@@ -89,6 +94,7 @@ typedef struct {
     };
  
     HcommSocket socket;
+    HcommSocketRole role; // 本端角色
     // socket 监听指定端口号（源/目的端口号）
     uint16_t port;
 } HcommChannelDesc;
