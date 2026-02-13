@@ -396,5 +396,5 @@ TEST_F(CommunicatorImplLiteTest, test_UnfoldOneSidedOp)
     LinkData linkData{basePortType, 0, 1, 0, 1};
     communicatorImplLite.connectedLinkMgr->levelRankPairLinkDataMap[0][3] = {linkData};
     MOCKER_CPP(&CommunicatorImplLite::UpdateLocBuffer).stubs();
-    MOCKER_CPP(&CommunicatorImplLite::UpdateOpRes).stubs();
+    MOCKER_CPP(&CommunicatorImplLite::UpdateRes).stubs();
 }

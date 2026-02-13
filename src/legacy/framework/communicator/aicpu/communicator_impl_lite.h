@@ -208,14 +208,14 @@ public:
     void RegisterProfCallBack();
 #endif
     void CheckOpExecStatus() const;
+    bool CheckNeedUpdateRes(HcclKernelParamLite *kernelParam);
     void UpdateCommParam(HcclKernelParamLite *kernelParam);
     void UpdateLocBuffer(HcclKernelParamLite *kernelParam);
-    void UpdateOpRes(HcclKernelParamLite *kernelParam);
+    void UpdateRes(HcclKernelParamLite *kernelParam);
     void UpdateTransports(HcclKernelParamLite *kernelParam);
     void UpdateHDCommnicate(HcclKernelParamLite *kernelParam);
     void CreateCollAlgComponentLite();
     void InitCurrentOp(HcclKernelParamLite *kernelParam);
-    void UpdateOffloadRes(HcclKernelParamLite *kernelParam);
     void UpdateUserStreamId(HcclKernelParamLite *kernelParam);
     std::shared_ptr<InsQueue> GetInsQueue(HcclKernelParamLite *kernelParam);
     void                      SetDfxOpInfo(uint64_t beginTime);
@@ -285,6 +285,8 @@ private:
     std::mutex aicpuMc2Mutex;
     u32 userStreamId_{0};
     bool isErrorReported_{false};
+
+    std::unordered_set<std::string> loadedOpSet{};
 };
 
 } // namespace Hccl

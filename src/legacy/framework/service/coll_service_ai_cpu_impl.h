@@ -50,17 +50,17 @@ private:
     // 创建rmaConnections
     unordered_map<std::string, unique_ptr<ConnectionsBuilder>> connectionsBuilders;
 
-    DevBuffer *OpBasedCollProcess(CollOperator &op, bool &needUpdateRes, const std::string &algName);
+    DevBuffer *OpBasedCollProcess(CollOperator &op, const std::string &algName);
     void SetOpbaseBufferParam(HcclKernelLaunchParam &param, CommunicatorImpl *comm, CollOperator &op) const;
     void SetOffloadBufferParam(HcclKernelLaunchParam &param, CommunicatorImpl *comm, CollOperator &op) const;
     void SetHcclKernelLaunchParam(HcclKernelLaunchParam &param, CommunicatorImpl *comm, bool isLaunch = true);
     void SetDeviceEnvConfigParam(HcclKernelLaunchParam &param) const;
     void AicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream, OpMode opMode);
-    void AicpuKernelEntranceLaunch(Stream &stream, const CollOperator &op, const string &algName, bool needUpdateRes,
+    void AicpuKernelEntranceLaunch(Stream &stream, const CollOperator &op, const string &algName, 
                                    const DevBuffer *mem);
-    void AicpuUpdateCommLaunch(Stream &stream, bool needUpdateRes, const DevBuffer *mem);
-    HcclResult AicpuMc2CommResourcePrepare(const CollOperator &op, const string &algName, bool needUpdateRes,
-                            const DevBuffer *mem, const std::string &opAlgTag, void **addr);
+    void AicpuUpdateCommLaunch(Stream &stream, const DevBuffer *mem);
+    HcclResult AicpuMc2CommResourcePrepare(const CollOperator &op, const string &algName, const DevBuffer *mem, 
+                                   const std::string &opAlgTag, void **addr);
 
     void AllocQueueNotify(std::vector<std::tuple<QId, QId, u32>> &queueNotifyReq) const;
     void AllocBcastPostCntNotify(std::vector<std::pair<QId, u32>> &bcastPostCntNotifyReq) const;
