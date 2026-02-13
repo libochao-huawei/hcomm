@@ -14,6 +14,7 @@
 #include "endpoint_pair.h"
 #include "hccl_res.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器
+#include "server_socket_manager.h"
 
 using namespace hcomm;
 
@@ -33,9 +34,10 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
 
 namespace hccl {
 
-MyRank::MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks)
-    : binHandle_(binHandle), rankId_(rankId), config_(config), callbacks_(callbacks)
+MyRank::MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks, RankGraph* rankGraph)
+    : binHandle_(binHandle), rankId_(rankId), config_(config), callbacks_(callbacks), rankGraph_(rankGraph)
 {
+    (void)ServerSocketManager::GetInstance();
 }
 
 MyRank::~MyRank()
@@ -99,16 +101,47 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
         CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));
         CHK_PTR_NULL(endpointPair);
 
+        hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
+
+        // 查询rmtRankId对应的devPort
+        uint32_t rmtPort = 0;
+        CHK_PTR_NULL(rankGraph_);
+        CHK_RET(rankGraph_->GetDevicePort(remoteRank, &rmtPort));
+        if (rmtPort > Hccl::MAX_VALUE_DEVICEPORT) {
+            HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, rmtPort, remoteRank);
+            return HCCL_E_PARA;
+        }
+        // 查询该socket链接的server端监听的端口（监听方的选择策略需要跟SocketConfig中保持一致）
+        uint32_t listenPort = 0;
+        Hccl::IpAddress localIpAddr{};
+        Hccl::IpAddress remoteIpAddr{};
+        CHK_RET(CommAddrToIpAddress(localEndpointDesc.commAddr, localIpAddr));
+        CHK_RET(CommAddrToIpAddress(remoteEndpointDesc.commAddr, remoteIpAddr));
+        if (localIpAddr < remoteIpAddr) {
+            // 查询localRankId对应的devPort
+            CHK_RET(rankGraph_->GetDevicePort(localRank, &listenPort));
+            hcommDescs[i].role = HcommSocketRole::HCOMM_SOCKET_ROLE_SERVER;
+            if (listenPort > Hccl::MAX_VALUE_DEVICEPORT) {
+                HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, listenPort, localRank);
+                return HCCL_E_PARA;
+            }
+            hcommDescs[i].port = (uint16_t)listenPort; // HcommChannelDesc.port中填监听端口号
+        } else {
+            listenPort = rmtPort;
+            hcommDescs[i].role = HcommSocketRole::HCOMM_SOCKET_ROLE_CLIENT;
+            hcommDescs[i].port = (uint16_t)rmtPort; // HcommChannelDesc.port中填对端端口号(此场景下对端端口号也就是监听端口号)
+        }
+
         Hccl::Socket* socket = nullptr;
-        auto ret = endpointPair->GetSocket(commTag, socket);
+        auto ret = endpointPair->GetSocket(commTag, socket, listenPort);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d]",
                 __func__, i, remoteRank, localEndpointDesc.protocol),
             ret);
         CHK_PTR_NULL(socket);
 
-        hcommDescs[i]  = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
         hcommDescs[i].socket = reinterpret_cast<HcommSocket>(socket);
+
         HCCL_INFO("[%s][%u/%u] socket created successfully, remoteRank[%u], socket[%p]",
             __func__, i + 1, channelNum, remoteRank, socket);
     }
@@ -173,6 +206,11 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
                 __func__, i, remoteRank, localEndpointDesc.protocol),
             ret);
         CHK_PTR_NULL(epHandle);
+
+        // 启动监听
+        uint32_t listenPort = 0;
+        CHK_RET(rankGraph_->GetDevicePort(localRank, &listenPort));
+        CHK_RET(HcommEndpointStartListen(epHandle, listenPort, nullptr));
 
         HCCL_INFO("[%s][%u/%u] remoteRank[%u] epHandle[%p] protocol[%d]",
             __func__, i + 1, channelNum, remoteRank,

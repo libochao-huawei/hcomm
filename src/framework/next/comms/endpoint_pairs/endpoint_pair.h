@@ -74,7 +74,7 @@ public:
     ~EndpointPair();
 
     HcclResult Init();
-    HcclResult GetSocket(const std::string &socketTag, Hccl::Socket*& socket);
+    HcclResult GetSocket(const std::string &socketTag, Hccl::Socket*& socket, const uint32_t listenPort);
     HcclResult CreateChannel(EndpointHandle endpointHandle, CommEngine engine, 
         HcommChannelDesc *channelDescs, ChannelHandle *channels);
 
