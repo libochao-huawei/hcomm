@@ -28,7 +28,8 @@ public:
 
     HcclResult Init() override;
 
-    HcclResult ServerSocketListen() override;
+    HcclResult ServerSocketListen(const uint32_t port) override;
+    HcclResult ServerSocketStopListen(const uint32_t port) override;
 
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
     HcclResult UnregisterMemory(void* memHandle) override;
@@ -38,7 +39,7 @@ public:
     HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
 
 private:
-    std::unordered_map<Hccl::IpAddress, std::shared_ptr<Hccl::Socket>> &GetServerSocketMap();
+    std::unordered_map<Hccl::IpAddress, std::unordered_map<uint32_t, std::shared_ptr<Hccl::Socket>>> &GetServerSocketMap();
 };
 }
 #endif // ROCE_ENDPOINT_H
