@@ -33,7 +33,7 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
     if (pendingLinks.empty()) {
         return;
     }
-    
+
     BatchServerInit(pendingLinks);
     BatchAddWhiteList(pendingLinks);
     BatchCreateConnectedSockets(pendingLinks);
