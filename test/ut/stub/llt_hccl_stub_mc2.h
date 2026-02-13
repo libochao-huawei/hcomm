@@ -232,7 +232,7 @@ struct HcclMsgForTest {
     HcclHandle commDepGroupID;      // 本消息执行需要等待的通信域组id,默认是-1，表示不需要等待，用于设置notify监听的通信域组id
     HcclHandle commDepHandleID;     // 本消息执行需要等待的通信域组轮次,默认是-1，表示不需要等待，用于设置notify监听的地址
     HcclHandle selfHandleID;        // ͨ通信消息对应的handileId值
-    uint8_t seqNum;                 // 消息序号
+    uint8_t seqNum;                 // 消息序序号
     uint8_t version;                // 消息的版本信息，version=1使用hcclMsgV1
     uint32_t xorCheck;              // xor checksum
 };
