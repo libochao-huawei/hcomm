@@ -383,7 +383,7 @@ HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclCommConfig *co
     CHK_RET(HcclGetRankGraphV2(commV2, &rankGraph));
 
     //Collcomm初始化
-    CHK_RET(hcclCommPtr->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName, config));
+    CHK_RET(hcclCommPtr->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName, config, rankNum));
     *comm = static_cast<HcclComm>(hcclCommPtr.get());
 
     std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);

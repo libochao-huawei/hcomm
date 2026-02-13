@@ -368,7 +368,7 @@ public:
     bool IsCommunicatorV2();
 #ifndef HCCD
     HcclResult InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
-        HcclMem cclBuffer,const std::string &commName, HcclCommConfig *config);
+        HcclMem cclBuffer,const std::string &commName, HcclCommConfig *config, u32 rankNum);
 #endif
     void* GetCommunicatorV2();
 #ifndef CCL_KERNEL_AICPU
