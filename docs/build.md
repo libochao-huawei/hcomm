@@ -54,6 +54,7 @@ git clone https://gitcode.com/cann/hcomm.git
 | googletest  | 1.14.0                 | [googletest-1.14.0.tar.gz](https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz)                                                                          |
 | boost       | 1.87.0                 | [boost_1_87_0.tar.gz](https://gitcode.com/cann-src-third-party/boost/releases/download/v1.87.0/boost_1_87_0.tar.gz)                                                                                         |
 | mockcpp     | 2.7                    | [mockcpp-2.7.tar.gz](https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h2/mockcpp-2.7.tar.gz)                                                                                         |
+| mockcpp-patch     | 2.7              | [mockcpp-2.7_py3.patch](https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h2/${MOCKCPP_PATCH_FILE})                                                                                         |
 | abseil-cpp  | 20250127.0             | [abseil-cpp-20250127.0.tar.gz](https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20250127.0/abseil-cpp-20250127.0.tar.gz)                                                               |
 | protobuf    | 25.1                   | [protobuf-25.1.tar.gz](https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz)                                                                                      |
 
@@ -71,6 +72,7 @@ bash build.sh --pkg --full
 若您的编译环境无法访问网络，您需要在联网环境中下载上述开源软件压缩包，并手动上传至编译环境中，并通过 `--cann_3rd_lib_path` 参数指定软件包路径：
 
 ```shell
+# 指定软件包路径，默认为：./third_party
 bash build.sh --cann_3rd_lib_path={your_3rd_party_path}
 ```
 
