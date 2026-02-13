@@ -41,6 +41,14 @@ MemNameRepository* MemNameRepository::GetInstance(s32 deviceLogicID)
     return &instances[deviceLogicID];
 }
 
+HcclResult MemNameRepository::SetDeviceUnavailable(bool unavailable)
+{
+    closeCalled_ = unavailable;
+    destoryCalled_ = unavailable;
+    HCCL_RUN_INFO("SetDeviceUnavailable unavailable[%d]", unavailable);
+    return HCCL_SUCCESS;
+}
+
 HcclResult MemNameRepository::SetIpcMem(void *ptr, u64 size, u8 *name, u32 nameLen, u64 &offset, bool isSioToHccs)
 {
     CHK_PTR_NULL(name);
@@ -219,6 +227,17 @@ void MemNameRepository::CloseIpcMem(const u8* name)
         return;
     }
 
+    if(closeCalled_) {
+        openedNameMap_.clear();
+        openedNameMapRef_.clear();
+        setNameMap_.clear();
+        setNameMapRef_.clear();
+        alignPtrMap_.clear();
+        closeCalled_ = false;
+        HCCL_RUN_INFO("CloseIpMem closeCalled_[%d]", closeCalled_);
+        return;
+    }
+
     auto iter = openedNameMap_.begin();
     while (iter != openedNameMap_.end()) {
         SecIpcName_t memName = iter->second;
@@ -247,6 +266,17 @@ void MemNameRepository::DestroyIpcMem(void *ptr, u64 size, bool isSioToHccs)
 
     if (ptr == nullptr) {
         HCCL_WARNING("In mem repository, destroy null ipc ptr");
+        return;
+    }
+
+    if(destoryCalled_) {
+        openedNameMap_.clear();
+        openedNameMapRef_.clear();
+        setNameMap_.clear();
+        setNameMapRef_.clear();
+        alignPtrMap_.clear();
+        destoryCalled_ = false;
+        HCCL_RUN_INFO("DestoryIpcMem destoryCalled_[%d]", destoryCalled_);
         return;
     }
 
