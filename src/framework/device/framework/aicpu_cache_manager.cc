@@ -18,6 +18,7 @@
 #include "log.h"
 #include "task_logic_info_pub.h"
 #include "profiling_manager_device.h"
+#include "alltoall_utils_pub.h"
 
 namespace hccl {
     AicpuCacheManager::AicpuCacheManager() {
@@ -681,11 +682,59 @@ namespace hccl {
             CHK_RET(ParseOpParamForCache(param, sendType, recvType, inputSize, outputSize, topoinfo));
             UNUSED_PARAM(recvType);
             UNUSED_PARAM(outputSize);
+        } else { // alltoallv类算子, 需要根据isBigCount生成不同的key, 决定SQE编排是否需要并发
+            bool isBigCountForAlltoallv = false;
+            CHK_RET(IsBigCountForAlltoallv(param, topoinfo, isBigCountForAlltoallv));
+            if (isBigCountForAlltoallv) {
+                inputSize = 1;
+            } else {
+                inputSize = 0;
+            }
         }
 
         // 设置key for op-unfold cache
         CHK_RET(key.Init(param.opType, sendType, param.reduceType, param.isZeroCopy, inputSize,
             algContext.opRetryHandler.isInplacePreSync, workflowMode));
+
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult AicpuCacheManager::IsBigCountForAlltoallv(const OpParam &param, const HcclTopoInfo& topoinfo,
+        bool& isBigCount)
+    {
+        isBigCount = false;
+        if (IsAlltoallvType(param.opType)) { // alltoallv类算子
+            // 计算maxSendCount
+            // 参考coll_all_to_all_v_direct_fullmesh_executor.cc中的GetLocalSendRecvInfoforAlltoallV
+            const uint32_t curRank = topoinfo.userRank;
+            const uint32_t rankSize = topoinfo.userRankSize;
+            uint64_t maxSendCount = 0;
+            for (size_t dstRank = 0; dstRank < rankSize; ++dstRank) {
+                // 获得curRank -> dstRank的sendCount
+                uint64_t curSendCount = 0;
+                if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) { // alltoallv
+                    curSendCount = *(static_cast<const uint64_t *>(param.All2AllDataDes.sendCounts) + dstRank);
+                } else if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC) { // alltoallvc
+                    curSendCount = *(static_cast<const uint64_t *>(param.All2AllDataDes.sendCountMatrix)
+                        + curRank * rankSize + dstRank); // sendCountMatrix[curRank][dstRank]
+                } else {
+                    HCCL_ERROR("[AicpuCacheManager][IsBigCountForAlltoallv] invalid opType[%u] for alltoallv", param.opType);
+                    return HCCL_E_INTERNAL;
+                }
+
+                // 更新maxSendCount
+                if (curSendCount > maxSendCount) {
+                    maxSendCount = curSendCount;
+                }
+            }
+
+            // 参考alltoallv_direct_fullmesh.cc中的Prepare()
+            uint64_t maxSendLen = maxSendCount * SIZE_TABLE[param.All2AllDataDes.sendType];
+            isBigCount = (maxSendLen > ALLTOALLV_DIRECT_FULLMESH_BIG_SIZE) ? true : false;
+
+            HCCL_INFO("[AicpuCacheManager][IsBigCountForAlltoallv] maxSendCount[%llu] maxSendLen[%llu] isBigCount[%u]",
+                maxSendCount, maxSendLen, isBigCount);
+        }
 
         return HCCL_SUCCESS;
     }
