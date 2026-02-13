@@ -19,7 +19,7 @@ class AlltoAllVPairWise : public AlgTemplateBase{
 public:
     explicit AlltoAllVPairWise(const HcclDispatcher dispatcher);
 
-    virtual ~AlltoAllVPairWise();
+    virtual ~AlltoAllVPairWise() override;
 
     /* 图模式使用该prepare */
     HcclResult Prepare(AlltoAllVBufferInfo& sendBuffer, AlltoAllVBufferInfo& recvBuffer,
