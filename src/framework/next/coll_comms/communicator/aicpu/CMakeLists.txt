@@ -7,20 +7,15 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+
 set(src_list
-coll_comm.cc
+    aicpu_indop_process.cc
+    coll_comm_aicpu_mgr.cc
+    coll_comm_aicpu.cc
 )
 
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
-
-add_subdirectory(rank)
-add_subdirectory(rank_pairs)
-add_subdirectory(api_c_adpt)
-add_subdirectory(communicator)
-
-target_include_directories(hcomm PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/rank_pairs
-)
-
+if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+    target_sources(ccl_kernel PRIVATE
+        ${src_list}
+    )
+endif()
