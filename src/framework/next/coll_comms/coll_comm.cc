@@ -28,7 +28,8 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
     EXCEPTION_HANDLE_BEGIN
 
     EXECEPTION_CATCH(rankgraph_ = std::make_unique<RankGraphV2>(rankGraph), return HCCL_E_PTR);
-
+    uint32_t rankNum ;
+    CHK_RET(rankgraph_->GetRankSize(&rankNum));
     u32 threadNum = 0xffffffff;
     u32 notifyNumPerThread = 0xffffffff;
     if (!commEngineResMgr_) {
@@ -46,7 +47,7 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
     if (config) {
         opExpansionMode = config->hcclOpExpansionMode;
     }
-    CHK_RET(myRank_->Init(cclBuffer, opExpansionMode));
+    CHK_RET(myRank_->Init(cclBuffer, opExpansionMode, rankNum));
 
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
