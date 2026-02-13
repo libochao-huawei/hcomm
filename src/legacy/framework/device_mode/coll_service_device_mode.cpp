@@ -93,7 +93,7 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
     if(comm->GetOpExecuteConfig().accState == AcceleratorState::AIV){
         auto  insQueue = make_shared<InsQueue>();
  
-        AivOpCacheArgs opCacheParam{comm->GetCurAlgName(), op.dataCount, op.dataType, op.opType, op.reduceOp, op.root, op.blockDimLimit, op.outputDataType,{},{}};
+        AivOpCacheArgs opCacheParam{comm->GetCurAlgName(), op.dataCount, op.dataType, op.opType, op.reduceOp, op.root, op.numBlocksLimit, op.outputDataType,{},{}};
         if(op.opType == OpType::ALLTOALL){
             opCacheParam.all2allDataDes = {op.all2AllDataDes.sendType, op.all2AllDataDes.recvType, op.all2AllDataDes.sendCount, op.all2AllDataDes.recvCount};
         } 
