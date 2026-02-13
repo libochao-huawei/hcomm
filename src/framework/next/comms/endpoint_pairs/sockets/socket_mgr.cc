@@ -94,6 +94,7 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
     Hccl::IpAddress  remoteIpAddress = socketConfig.link.GetRemoteAddr();
     Hccl::SocketRole socketRole      = socketConfig.GetRole();
     std::string     hccpSocketTag   = socketConfig.GetHccpTag();
+    serverListenPort_               = socketConfig.listeningPort;
     
     std::unique_ptr<Hccl::Socket> tmpSocket = nullptr;
     if (socketConfig.link.GetType() == Hccl::PortDeploymentType::DEV_NET) {
