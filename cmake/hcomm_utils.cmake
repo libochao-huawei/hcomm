@@ -18,7 +18,7 @@ set(HCOMM_UTILS_ARCH "${CMAKE_HOST_SYSTEM_PROCESSOR}")
 set(HCOMM_UTILS_FILE "cann-hcomm-utils_${HCOMM_UTILS_VERSION}_linux-${HCOMM_UTILS_ARCH}.tar.gz")
 set(HCOMM_UTILS_URL "https://ascend.devcloud.huaweicloud.com/artifactory/cann-run/dependency/${HCOMM_UTILS_VERSION}/${HCOMM_UTILS_ARCH}/basic/${HCOMM_UTILS_FILE}")
 set(HCOMM_UTILS_PKG_PATH ${CANN_3RD_LIB_PATH}/${HCOMM_UTILS_FILE})
-set(HCOMM_UTILS_SRC_PATH ${CMAKE_CURRENT_BINARY_DIR}/hcomm_utils)
+set(HCOMM_UTILS_SRC_PATH ${CMAKE_BINARY_DIR}/hcomm_utils)
 set(INSTALL_LIBRARY_DIR hcomm/lib64)
 
 # 查找目录下是否已经安装，避免重复编译安装
