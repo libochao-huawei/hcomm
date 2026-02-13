@@ -163,7 +163,6 @@ HcclResult TaskService::SynchronizeControlInfo()
 
 HcclResult TaskService::TaskRun()
 {
-    // 检查shmem和hostMem是否非空
     CHK_PTR_NULL(hostMem_);
     CHK_PTR_NULL(npu2dpuMem_);
     CHK_PTR_NULL(dpu2npuMem_);
@@ -180,8 +179,10 @@ HcclResult TaskService::TaskRun()
     uint8_t flag{0};
     uint8_t *srcFlagPtr = static_cast<uint8_t *>(npu2dpuMem_);
     uint8_t *srcTaskTypePtr = srcFlagPtr + sizeof(flag);
-    HCCL_INFO("[TaskService::TaskRun] TaskService{shareHBM:%p}", srcFlagPtr);
     std::string taskTypeStr;
+
+    CHK_RET(WriteFlag(srcFlagPtr, TASK_UNSET)); // 初始化重置flag 为 0
+
     while (true) {
         CHK_RET(ReadFlag(srcFlagPtr, flag));
         switch (flag) {
