@@ -33,8 +33,8 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
 
 namespace hccl {
 
-MyRank::MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks)
-    : binHandle_(binHandle), rankId_(rankId), config_(config), callbacks_(callbacks)
+MyRank::MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks, RankGraph* rankGraph)
+    : binHandle_(binHandle), rankId_(rankId), config_(config), callbacks_(callbacks), rankGraph_(rankGraph)
 {
 }
 
@@ -99,16 +99,34 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
         CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));
         CHK_PTR_NULL(endpointPair);
 
+        // 查询rmtRankId对应的devPort
+        uint32_t rmtPort = 0;
+        CHK_RET(rankGraph_->GetDevicePort(remoteRank, &rmtPort));
+        // 查询该socket链接的server端监听的端口（监听方的选择策略需要跟SocketConfig中保持一致）
+        uint32_t listenPort = 0;
+        Hccl::IpAddress localIpAddr{};
+        Hccl::IpAddress remoteIpAddr{};
+        CHK_RET(CommAddrToIpAddress(localEndpointDesc.commAddr, localIpAddr));
+        CHK_RET(CommAddrToIpAddress(remoteEndpointDesc.commAddr, remoteIpAddr));
+        if (localIpAddr < remoteIpAddr) {
+            // 查询localRankId对应的devPort
+            CHK_RET(rankGraph_->GetDevicePort(localRank, &listenPort));
+        } else {
+            listenPort = rmtPort;
+        }
+
         Hccl::Socket* socket = nullptr;
-        auto ret = endpointPair->GetSocket(commTag, socket);
+        auto ret = endpointPair->GetSocket(commTag, socket, listenPort);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d]",
                 __func__, i, remoteRank, localEndpointDesc.protocol),
             ret);
         CHK_PTR_NULL(socket);
 
-        hcommDescs[i]  = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
+        hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
         hcommDescs[i].socket = reinterpret_cast<HcommSocket>(socket);
+        hcommDescs[i].port = rmtPort; // HcommChannelDesc中填对端端口号
+
         HCCL_INFO("[%s][%u/%u] socket created successfully, remoteRank[%u], socket[%p]",
             __func__, i + 1, channelNum, remoteRank, socket);
     }
@@ -173,6 +191,13 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
                 __func__, i, remoteRank, localEndpointDesc.protocol),
             ret);
         CHK_PTR_NULL(epHandle);
+
+        // 启动监听，目前先修改Host网卡场景，其他场景待定
+        if (engine == COMM_ENGINE_CPU) {
+            uint32_t listenPort = 0;
+            CHK_RET(rankGraph_->GetDevicePort(localRank, &listenPort));
+            CHK_RET(HcommEndpointStartListen(epHandle, listenPort));
+        }
 
         HCCL_INFO("[%s][%u/%u] remoteRank[%u] epHandle[%p] protocol[%d]",
             __func__, i + 1, channelNum, remoteRank,
