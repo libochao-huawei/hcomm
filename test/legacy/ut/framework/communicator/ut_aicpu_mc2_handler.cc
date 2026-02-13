@@ -47,7 +47,6 @@ protected:
         kernelParam->comm.idIndex = 0;
         kernelParam->comm.devType = DevType::DEV_TYPE_910_95;
         kernelParam->op.algOperator.opMode = OpMode::OPBASE;
-        kernelParam->needUpdateRes = false;
         std::cout << "A Test case in AicpuMc2HandlerTest SetUp" << std::endl;
     }
 
