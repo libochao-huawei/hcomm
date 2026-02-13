@@ -4686,8 +4686,9 @@ namespace hccl
         // 是否是AIV直驱Roce场景
         opParam.isNpuDirectRoce = algName == "AlltoAllDirectFullmeshAIVExecutor";
         if (isOnlyAiv_ && !algDesc.isAivMode) {
-            HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%u] not support aiv only, support range:"
-                "[allreduce, reducescatter, allgather, alltoall, alltoallv, alltoallvc]", opParam.opType);
+            std::string opTypeName = GetCMDTypeEnumStr(opType);
+            HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%s] currently do not select aiv mode, "
+                "aiv only not support, please ensure rankNum is greater than one", opTypeName.c_str());
             return HCCL_E_NOT_SUPPORT;
         }
 
