@@ -27,6 +27,12 @@ HcclResult RankGraphV2::GetRankSize(uint32_t *rankSize)
     return pImpl->GetRankSize(rankSize);
 }
 
+HcclResult GetDevicePort(const uint32_t rank, uint32_t *devPort) override
+{
+    *devPort = pImpl->GetDevicePort(rank);
+    return HCCL_SUCCESS;
+}
+
 HcclResult RankGraphV2::GetRankId(uint32_t *rank)
 {
     return pImpl->GetRankId(rank);
