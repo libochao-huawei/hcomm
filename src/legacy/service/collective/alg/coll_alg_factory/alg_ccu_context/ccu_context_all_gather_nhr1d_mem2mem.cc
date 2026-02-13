@@ -240,7 +240,6 @@ void CcuContextAllGatherNHR1D::DoRepeatAllGatherNHRSingleStep(const NHRStepInfo 
         dstMem_.addr += outputSliceOffset_[sendSliceIdx];
         DoRepeatSendRecvSlices(nhrStepInfo.toRank, srcMem_, dstMem_, i % BIT_NUM_PER_CKE);
     }
-    LocalWait(localSignal_, (1 << (sendSliceIdxList.size() % BIT_NUM_PER_CKE)) - 1);
 
 if (nhrStepInfo.step + 1 != stepInfoVector_.size()){
     uint16_t selfSignalId = rankId_ / BIT_NUM_PER_CKE;
@@ -275,6 +274,7 @@ void CcuContextAllGatherNHR1D::DoRepeatSendRecvSlices(const u32 &toRank, CcuRep:
             }
         }
         Write(*sendTransport, dst, src, sliceSize, localSignal_, 1 << signalIndex);
+        LocalWait(localSignal_, 1 << signalIndex);
         repeatTimeflag_ = 1;
     }
 }
