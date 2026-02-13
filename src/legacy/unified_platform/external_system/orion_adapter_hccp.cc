@@ -303,6 +303,11 @@ static void HRaSocketListenStart(struct SocketListenInfoT conn[], u32 num)
             }
 
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
+        } else if (ret == SOCK_EADDRINUSE) {
+            HCCL_ERROR("[%s]ra socket listen could not start, due to the port[%u] has already been bound. please try"
+                        " another port or check the port status", __func__, (num > 0 ? conn[0].port : HCCL_INVALID_PORT));
+            throw NetworkApiException(StringFormat("call RaSocketListenStart failed, the port[%u] has already been bound", 
+                                    (num > 0 ? conn[0].port : HCCL_INVALID_PORT)));
         } else {
             HCCL_ERROR("errNo[0x%016llx] ra socket listen start fail. return[%d]",
                        HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret);
@@ -321,7 +326,7 @@ static bool RaSocketTryListenStart(struct SocketListenInfoT conn[], u32 num)
         HCCL_INFO("[%s] listen eagain", __func__);
         return true;
     } else if (ret == SOCK_EADDRINUSE){
-        HCCL_INFO("[%s]ra socket listen could not start, due to the port[%u] has already been bound. please try"
+        HCCL_WARNING("[%s]ra socket listen could not start, due to the port[%u] has already been bound. please try"
                     " another port or check the port status", __func__, (num > 0 ? conn[0].port : HCCL_INVALID_PORT));
         return false;
     } else {
