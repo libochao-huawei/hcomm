@@ -19,7 +19,6 @@
 namespace Hccl {
 
 static std::mutex socketLock;
-const u32 DEFAULT_DEVICE_LISTEN_PORT = 60001;
 
 void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 {
@@ -93,6 +92,7 @@ void SocketManager::ServerInit(PortData &localPort)
 {
     std::lock_guard<std::mutex> lock(socketLock);
     auto &serverSocketMap = SocketManager::GetServerSocketMap();
+    auto &rankListenPortMap = SocketManager::GetDeviceServerListenPortMap();
     auto serverSocketInMap = serverSocketMap.find(localPort);
     if (serverSocketInMap != serverSocketMap.end()) {
         HCCL_INFO("[%s] find localPort in serverSocketMap, localPort [%s]", __func__, localPort.Describe().c_str());
@@ -101,22 +101,48 @@ void SocketManager::ServerInit(PortData &localPort)
 
     SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
     IpAddress    ipAddress        = localPort.GetAddr();
-    u32 serverListenPort          = DEFAULT_DEVICE_LISTEN_PORT;
-    auto iter = rankListenPortMap_.find(devicePhyId);
-    if (iter != rankListenPortMap_.end() && iter->second != MAX_VALUE_DEVICEPORT) {
+    u32 serverListenPort          = DEFAULT_VALUE_DEVICEPORT;
+    auto iter = rankListenPortMap.find(devicePhyId);
+    if (iter != rankListenPortMap.end()) {
         serverListenPort = iter->second;
     }
     auto         serverSocket     = socketProducer(ipAddress, ipAddress, serverListenPort, hccpSocketHandle, "server",
                                                    SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
-    if (!listenPortRanges_.empty()) {
-        PreemptPortManager::GetInstance(deviceLogicId_).ListenPreempt(serverSocket, listenPortRanges_, serverListenPort);
-        HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the preempt port %u]", __func__, deviceLogicId_, serverListenPort);
+    bool success = serverSocket->Listen(serverListenPort);
+    if (success) {
+        HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the port %u success", __func__, deviceLogicId_, serverListenPort);
     } else {
-        serverSocket->Listen();
-        HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the port %u]", __func__, deviceLogicId_, serverListenPort);
+        string msg = StringFormat("[SocketManager::%s] Device %u listen the port %u failed, maybe other process be listen it", __func__, deviceLogicId_, serverListenPort);
+        MACRO_THROW(InvalidParamsException, msg);
+    }
+    serverSocketMap[localPort] = std::move(serverSocket);
+}
+
+void SocketManager::ServerInitAll(const vector<LinkData> &links, u32 &linstenPort)
+{
+    std::lock_guard<std::mutex> lock(socketLock);
+    vector<SocketPortRange> listenPortRanges = EnvConfig::GetInstance().GetHostNicConfig().GetDeviceSocketPortRange();
+    if (listenPortRanges.empty()) {
+        HCCL_RUN_INFO("[SocketManager::%s] socket port range not configured.", __func__);
+        return;
     }
 
-    serverSocketMap[localPort] = std::move(serverSocket);
+    auto &serverSocketMap = SocketManager::GetServerSocketMap();
+    for(uint32_t i = 0; i < links.size() ; i++)
+    {
+        LinkData link = links[i];
+        auto localPort = link.GetLocalPort();
+        SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
+        IpAddress ipAddress = localPort.GetAddr();
+        auto serverSocket = std::make_shared<Socket>(hccpSocketHandle, ipAddress, linstenPort, ipAddress, "server", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+        if (i == 0) { // 首个链接抢占，其余继承
+            PreemptPortManager::GetInstance(deviceLogicId_).ListenPreempt(serverSocket, listenPortRanges, linstenPort);
+            HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the preempt port %u", __func__, deviceLogicId_, linstenPort);
+        } else {
+            serverSocket->Listen();
+        }
+        serverSocketMap[localPort] = std::move(serverSocket);
+    }
 }
 
 bool SocketManager::ServerDeInit(PortData &localPort) const
@@ -144,20 +170,20 @@ Socket *SocketManager::CreateConnectedSocket(SocketConfig &socketConfig)
         THROW<NullPtrException>(StringFormat("socketHandle of is nullptr, devicePhyId=%d, port=%s", devicePhyId,
                                              socketConfig.link.GetLocalPort().Describe().c_str()));
     }
-
+    auto &rankListenPortMap = SocketManager::GetDeviceServerListenPortMap();
     IpAddress  localIpAddress  = socketConfig.link.GetLocalAddr();
     IpAddress  remoteIpAddress = socketConfig.link.GetRemoteAddr();
     SocketRole socketRole      = socketConfig.GetRole();
     string     hccpSocketTag   = socketConfig.GetHccpTag();
-    u32 serverListenPort = DEFAULT_DEVICE_LISTEN_PORT;
-    Socket *serverSocket = GetServerListenSocket(socketConfig.link.GetLocalPort());
-    if (serverSocket != nullptr) {
-        serverListenPort = serverSocket->GetListenPort();
+    u32 serverListenPort = DEFAULT_VALUE_DEVICEPORT;
+    auto iter = rankListenPortMap.find(static_cast<u32>(socketConfig.remoteRank));
+    if (iter != rankListenPortMap.end()) {
+        serverListenPort = iter->second;
     }
 
     auto tmpSocket = socketProducer(localIpAddress, remoteIpAddress, serverListenPort, socketHandle, hccpSocketTag,
                                     socketRole, NicType::DEVICE_NIC_TYPE);
-    HCCL_INFO("[SocketManager::%s] Device %u ConnectAsync port %u.", __func__, deviceLogicId_, serverListenPort);
+    HCCL_INFO("[SocketManager::%s] Device %u connect async the remote rank %u port %u.", __func__, devicePhyId, socketConfig.remoteRank, serverListenPort);
     tmpSocket->ConnectAsync();
     connectedSocketMap[socketConfig] = std::move(tmpSocket);
     return connectedSocketMap[socketConfig].get();
@@ -252,24 +278,18 @@ bool SocketManager::DelWhiteList(PortData &localPort, vector<RaSocketWhitelist> 
 
 void SocketManager::SetDeviceServerListenPortMap(const std::unordered_map<u32, u32> &rankListenPortMap)
 {
-    rankListenPortMap_ = rankListenPortMap;
-    listenPortRanges_ = EnvConfig::GetInstance().GetHostNicConfig().GetDeviceSocketPortRange();
-    if (!listenPortRanges_.empty()) {
-        HCCL_RUN_INFO("[SocketManager::%s] Device %u socket port range configured.", __func__, devicePhyId);
-        return;
-    }
-
-    auto iter = rankListenPortMap_.find(devicePhyId);
-    if (iter != rankListenPortMap_.end()) {
-        HCCL_RUN_INFO("[SocketManager::%s] Device %u serverListenPort is %u.", __func__, devicePhyId, iter->second);
-        return;
+    std::unordered_map<u32, u32> &staticMap = SocketManager::GetDeviceServerListenPortMap();
+    staticMap.clear();
+    for (auto &pair : rankListenPortMap) {
+        staticMap[pair.first] = pair.second;
     }
     return;
 }
 
-std::unordered_map<u32, u32> SocketManager::GetDeviceServerListenPortMap() const
+std::unordered_map<u32, u32> &SocketManager::GetDeviceServerListenPortMap()
 {
-    return rankListenPortMap_;
+    static std::unordered_map<u32, u32> rankListenPortMap;
+    return rankListenPortMap;
 }
 
 

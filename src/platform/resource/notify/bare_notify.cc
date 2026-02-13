@@ -52,9 +52,19 @@ HcclResult BareNotify::Wait(Stream& stream, HcclDispatcher dispatcher, s32 stage
     return Wait(stream, dispatcher, stage, timeOut);
 }
 
+HcclResult BareNotify::Wait(Stream& stream, u32 timeOut)
+{
+    return HCCL_SUCCESS;
+}
+
 HcclResult BareNotify::Post(Stream& stream, HcclDispatcher dispatcher, s32 stage, u32 remoteUserRank)
 {
     return Post(stream, dispatcher, stage);
+}
+
+HcclResult BareNotify::Post(Stream& stream)
+{
+    return HCCL_SUCCESS;
 }
 
 HcclResult BareNotify::SetIpc()

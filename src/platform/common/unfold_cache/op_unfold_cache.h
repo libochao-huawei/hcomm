@@ -25,9 +25,6 @@ namespace hccl {
 // 注意: A3下scratch memory一定在HCCL buffer中, 所以目前不考虑scratch memory的更新
 class OpUnfoldCache {
 public:
-    // 根据算子类型判断是否需要cache
-    static bool NeedCache(const uint8_t aicpuCacheEnable, const HcclCMDType opType, const std::unordered_map<u32, bool>& isUsedRdmaMap, const bool isDeviceMode);
-
     explicit OpUnfoldCache();
     ~OpUnfoldCache();
 
@@ -47,7 +44,7 @@ private:
     static HcclResult DumpSqeHeader(const rtStarsSqeHeader_t& sqeHeader);
     static HcclResult DumpSqeHeader(const rtStarsSqeHeaderV2_t& sqeHeader);
 
-    CacheHashMap cacheHashMap_;
+    CacheHashMap cacheHashMap_; // key-entry mapping
 };
 
 } // namespace hccl

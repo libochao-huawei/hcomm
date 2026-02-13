@@ -23,6 +23,7 @@
 namespace hccl {
 constexpr u32 REMOTE_RDMA_SIGNAL_SIZE = 1;
 constexpr u64 MAX_RDMA_WQE_SIZE = 2ULL * 1024 * 1024 * 1024; // RDMA最大WQE限制, 2G限制是RDMA导致
+constexpr u64 NORMAL_PAGE_SIZE = 4 * 1024; // 普通内存大小，减少内存占用
 
 class TransportRoceMem : public TransportMem {
 public:
@@ -116,7 +117,7 @@ private:
     s32 index_{-1};
     static std::atomic<uint64_t> sendWrHandle;
     std::chrono::seconds maxTimeOut_{0};
-    const u64 notifyValueSize_{LARGE_PAGE_MEMORY_MIN_SIZE};
+    const u64 notifyValueSize_{NORMAL_PAGE_SIZE};
     DeviceMem notifyMem_{};
     SupportStatus isSupportRaSendNormalWrlist_ = SupportStatus::INIT;
     u32 trafficClass_;

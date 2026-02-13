@@ -1,12 +1,13 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -113,5 +114,53 @@ HCCP_ATTRI_VISI_DEF int RaDeregisterMr(const void *rdmaHandle, void *mrHandle)
         ConverReturnCode(RDMA_OP, -EINVAL));
 
     ret = rdmaHandleTmp->rdmaOps->raDeregisterMr(rdmaHandleTmp, mrHandle);
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
+HCCP_ATTRI_VISI_DEF int RaGetLbMax(void *rdevHandle, int *lbMax)
+{
+    struct RaRdmaHandle *rdevHandleTmp = (struct RaRdmaHandle *)rdevHandle;
+    int ret = 0;
+
+    CHK_PRT_RETURN(rdevHandle == NULL || lbMax == NULL,
+        hccp_err("[get][lbMax]rdevHandle or lbMax is NULL, invalid"), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(rdevHandleTmp->rdmaOps == NULL || rdevHandleTmp->rdmaOps->raGetLbMax == NULL,
+        hccp_err("[get][lbMax]rdmaOps is NULL or rdmaOps->raGetLbMax is NULL, invalid"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    ret = rdevHandleTmp->rdmaOps->raGetLbMax(rdevHandleTmp, lbMax);
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
+HCCP_ATTRI_VISI_DEF int RaSetQpLbValue(void *qpHandle, int lbValue)
+{
+    struct RaQpHandle *raQpHandle = (struct RaQpHandle *)qpHandle;
+    int ret = 0;
+
+    CHK_PRT_RETURN(qpHandle == NULL, hccp_err("[set][lbValue]qpHandle is NULL"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(raQpHandle->rdmaOps == NULL || raQpHandle->rdmaOps->raSetQpLbValue == NULL,
+        hccp_err("[set][lbValue]rdmaOps is NULL or rdmaOps->raSetQpLbValue is NULL"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    ret = raQpHandle->rdmaOps->raSetQpLbValue(raQpHandle, lbValue);
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
+HCCP_ATTRI_VISI_DEF int RaGetQpLbValue(void *qpHandle, int *lbValue)
+{
+    struct RaQpHandle *raQpHandle = (struct RaQpHandle *)qpHandle;
+    int ret = 0;
+
+    CHK_PRT_RETURN(qpHandle == NULL || lbValue == NULL,
+        hccp_err("[get][lbValue]qpHandle or lbValue is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(raQpHandle->rdmaOps == NULL || raQpHandle->rdmaOps->raGetQpLbValue == NULL,
+        hccp_err("[get][lbValue]rdmaOps is NULL or rdmaOps->raGetQpLbValue is NULL"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    ret = raQpHandle->rdmaOps->raGetQpLbValue(raQpHandle, lbValue);
     return ConverReturnCode(RDMA_OP, ret);
 }

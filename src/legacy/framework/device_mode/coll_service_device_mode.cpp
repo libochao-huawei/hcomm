@@ -82,6 +82,7 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
     HCCL_INFO("[CollServiceDeviceMode::%s] start.", __func__);
     // AIV aclgrah 流程
     if (comm->GetOpExecuteConfig().accState == AcceleratorState::AIV || comm->GetOpExecuteConfig().accState == AcceleratorState::AIV_ONLY) {
+        HCCL_INFO("[CollServiceDeviceMode][%s] enter AIV aclgraph, stream[%u]", __func__, stream->GetId());
         HandleAclGraphFirstOpAivBuff(stream->GetPtr());
     }
 

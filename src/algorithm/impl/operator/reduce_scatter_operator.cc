@@ -267,7 +267,8 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
     if (isMeshTopo) {
         if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_ENABLE
             && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE
-            && algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) {
+            && algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE
+            && deviceNumPerAggregation_ > DEVICE_TWO) {
             algName = "ReduceScatterDeterPipelineExecutor";
         } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             bool enableSmallCountDeterministicAlgo = !isSingleMeshAggregation_ &&
@@ -280,7 +281,8 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
                 } else {
                     algName = "ReduceScatterMeshDmaEliminationExecutor";
                 }
-            } else if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE &&
+            } else if ((topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE ||
+                deviceNumPerAggregation_ == DEVICE_TWO) &&
                 algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE &&
                 IsMultiMeshInlineReduce(cclBufferManager_.GetInCCLbuffer().ptr(),
                 cclBufferManager_.GetOutCCLbuffer().ptr(), param.DataDes.dataType, param.reduceType)) {
