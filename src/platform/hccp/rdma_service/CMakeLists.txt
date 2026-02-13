@@ -126,4 +126,4 @@ install(TARGETS  rs
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
 )
 
-add_dependencies(rs crypto_static)
+add_dependencies(rs third_party_openssl)
