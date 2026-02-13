@@ -92,7 +92,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/pub_inc
         ${CMAKE_CURRENT_SOURCE_DIR}/hccp/inc/
         ${CMAKE_CURRENT_SOURCE_DIR}/hccp/inc/network
-        ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy/
+        ${HCOMM_UTILS_PATH}/include/legacy/
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/

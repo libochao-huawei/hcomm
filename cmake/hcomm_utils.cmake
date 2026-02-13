@@ -19,6 +19,7 @@ set(HCOMM_UTILS_FILE "cann-hcomm-utils_${HCOMM_UTILS_VERSION}_linux-${HCOMM_UTIL
 set(HCOMM_UTILS_URL "https://ascend.devcloud.huaweicloud.com/artifactory/cann-run/dependency/${HCOMM_UTILS_VERSION}/${HCOMM_UTILS_ARCH}/basic/${HCOMM_UTILS_FILE}")
 set(HCOMM_UTILS_PKG_PATH ${CANN_3RD_LIB_PATH}/${HCOMM_UTILS_FILE})
 set(HCOMM_UTILS_SRC_PATH ${PROJECT_SOURCE_DIR}/build/hcomm_utils)
+set(HCOMM_UTILS_PATH ${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE})
 set(INSTALL_LIBRARY_DIR hcomm/lib64)
 
 # 查找目录下是否已经安装，避免重复编译安装
@@ -28,7 +29,7 @@ find_library(HCCL_LEGACY_LIBRARY
     PATH_SUFFIXES lib
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH
-    PATHS ${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}
+    PATHS ${HCOMM_UTILS_PATH}
 )
 
 # 是否找到 hcomm_legacy 的库文件
@@ -67,8 +68,8 @@ else()
         INSTALL_COMMAND ""
     )
 
-    if(NOT EXISTS ${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/include)
-        file(MAKE_DIRECTORY "${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/include")
+    if(NOT EXISTS ${HCOMM_UTILS_PATH}/include)
+        file(MAKE_DIRECTORY "${HCOMM_UTILS_PATH}/include")
     endif()
 
     # 创建导入的目标
@@ -76,10 +77,10 @@ else()
     add_dependencies(ascend_kms hcomm_utils_dl)
 
     set_target_properties(ascend_kms PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/include"
-        IMPORTED_LOCATION "${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/lib/libascend_kms.so"
+        INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_PATH}/include"
+        IMPORTED_LOCATION "${HCOMM_UTILS_PATH}/lib/libascend_kms.so"
     )
-    install(FILES  ${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/lib/libascend_kms.so
+    install(FILES  ${HCOMM_UTILS_PATH}/lib/libascend_kms.so
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
@@ -87,11 +88,11 @@ else()
     add_dependencies(tls_adp hcomm_utils_dl)
 
     set_target_properties(tls_adp PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/include"
-        IMPORTED_LOCATION "${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/lib/libtls_adp.so"
+        INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_PATH}/include"
+        IMPORTED_LOCATION "${HCOMM_UTILS_PATH}/lib/libtls_adp.so"
     )
 
-    install(FILES  ${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/lib/libtls_adp.so
+    install(FILES  ${HCOMM_UTILS_PATH}/lib/libtls_adp.so
         DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 
@@ -99,8 +100,8 @@ else()
     add_dependencies(hccl_legacy hcomm_utils_dl)
 
     set_target_properties(hccl_legacy PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/include"
-        IMPORTED_LOCATION "${HCOMM_UTILS_SRC_PATH}/host/lib/libhccl_legacy.so"
+        INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_PATH}/include"
+        IMPORTED_LOCATION "${HCOMM_UTILS_SRC_PATH}/host/lib/libhccl_legacy.so"  # 该动态库只有 host 有
     )
 
     # 安装库文件到指定目录
