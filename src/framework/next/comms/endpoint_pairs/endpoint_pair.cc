@@ -27,11 +27,11 @@ HcclResult EndpointPair::Init()
     return HCCL_SUCCESS;
 }
 
-HcclResult EndpointPair::GetSocket(const std::string &socketTag, Hccl::Socket*& socket)
+HcclResult EndpointPair::GetSocket(const std::string &socketTag, Hccl::Socket*& socket, const uint32_t listenPort)
 {
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(localEndpointDesc_, remoteEndpointDesc_, linkData));
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag);
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, listenPort, socketTag);
     CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
     return HCCL_SUCCESS;
 }
