@@ -18,13 +18,13 @@ set(HCOMM_UTILS_ARCH "${CMAKE_HOST_SYSTEM_PROCESSOR}")
 set(HCOMM_UTILS_FILE "cann-hcomm-utils_${HCOMM_UTILS_VERSION}_linux-${HCOMM_UTILS_ARCH}.tar.gz")
 set(HCOMM_UTILS_URL "https://ascend.devcloud.huaweicloud.com/artifactory/cann-run/dependency/${HCOMM_UTILS_VERSION}/${HCOMM_UTILS_ARCH}/basic/${HCOMM_UTILS_FILE}")
 set(HCOMM_UTILS_PKG_PATH ${CANN_3RD_LIB_PATH}/${HCOMM_UTILS_FILE})
-set(HCOMM_UTILS_SRC_PATH ${PROJECT_SOURCE_DIR}/build/hcomm_utils)
+set(HCOMM_UTILS_SRC_PATH ${CMAKE_BINARY_DIR}/hcomm_utils)
 set(INSTALL_LIBRARY_DIR hcomm/lib64)
 
 # 查找目录下是否已经安装，避免重复编译安装
 message(STATUS "[ThirdParty] HCOMM_UTILS_SRC_PATH=${HCOMM_UTILS_SRC_PATH}")
-find_library(HCCL_LEGACY_LIBRARY
-    NAMES libhccl_legacy.so
+find_library(TLS_ADP_LIBRARY
+    NAMES libtls_adp.so
     PATH_SUFFIXES lib
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH
@@ -100,7 +100,7 @@ else()
 
     set_target_properties(hccl_legacy PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_SRC_PATH}/${PRODUCT_SIDE}/include"
-        IMPORTED_LOCATION "${HCOMM_UTILS_SRC_PATH}/host/lib/libhccl_legacy.so"
+        IMPORTED_LOCATION "${HCOMM_UTILS_SRC_PATH}/host/lib/libhccl_legacy.so"  # 该动态库只有 host 有
     )
 
     # 安装库文件到指定目录
