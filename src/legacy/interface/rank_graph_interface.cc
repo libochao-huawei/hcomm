@@ -34,6 +34,18 @@ namespace Hccl {
         return HCCL_SUCCESS;
     }
 
+    HcclResult IRankGraph::GetDevicePort(const uint32_t rank, uint32_t *devPort)
+    {
+        HCCL_RUN_INFO("Entry-IRankGraph::GetDevicePort");
+        CHK_PTR_NULL(devPort);
+        CHK_PTR_NULL(rankGraphPtr_);
+        RankGraph *rankGraph = static_cast<RankGraph *>(rankGraphPtr_);
+        auto peer = rankGraph->GetPeer(rank);
+        CHK_PTR_NULL(peer);
+        *devPort = peer->GetDevicePort();
+        return HCCL_SUCCESS;
+    }
+
     HcclResult IRankGraph::GetRankGraphInfo(void **graph, uint32_t *len)
     {
         HCCL_RUN_INFO("Entry-IRankGraph::GetRankGraphInfo");
