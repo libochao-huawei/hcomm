@@ -457,7 +457,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<DevBuffer>> tagWorkspaceMap_;
     bool isFirstBarrier = true;
     // Dpu Kernel Launch 申请的共享内存
-    void* hostShareBuf;
+    void* hostShareBuf{nullptr};
     aclrtStream dpuStream;
     aclrtContext dpuContext;
     aclrtContext npuContext;
