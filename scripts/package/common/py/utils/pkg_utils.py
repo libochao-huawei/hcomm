@@ -95,10 +95,8 @@ class CompressError(PackageError):
 class InstallScriptNotInPackageInfo(PackageError):
     """package_info中没有配置install_script。"""
 
-
 class InstallScriptFormatError(PackageError):
     """install_script配置格式错误。"""
-
 
 class VersionInfoNotExist(PackageError):
     """version.info文件不存在。"""
@@ -106,7 +104,6 @@ class VersionInfoNotExist(PackageError):
 def flatten(list_of_lists):
     """Flatten one level of nesting"""
     return chain.from_iterable(list_of_lists)
-
 
 def merge_dict(base: Dict, *news: Dict):
     """合并两个字典。"""
