@@ -17,10 +17,12 @@
 
 namespace Hccl {
 MAKE_ENUM(SocketRole, SERVER, CLIENT)
+constexpr uint32_t DEFAULT_SERVER_LISTEN_PORT = 60001;
 class SocketConfig {
 public:
     RankId            remoteRank;
     LinkData          link;
+    uint32_t          listeningPort{DEFAULT_SERVER_LISTEN_PORT};
     const std::string tag;
 
     SocketConfig(RankId remoteRank, const LinkData &link, const std::string &tag)
@@ -37,8 +39,8 @@ public:
         }
     }
 
-    SocketConfig(const LinkData &link, const std::string &tag)
-        : link(link), tag(tag)
+    SocketConfig(const LinkData &link, const uint32_t listenPort, const std::string &tag)
+        : link(link), listeningPort(listenPort), tag(tag)
     {
         remoteRank = link.GetRemoteRankId();
         role = link.GetLocalAddr() < link.GetRemoteAddr() ? SocketRole::SERVER : SocketRole::CLIENT;
@@ -78,8 +80,9 @@ public:
         auto localPortHash  = hash<Hccl::PortData>{}(socketConfig.link.GetLocalPort());
         auto remotePortHash = hash<Hccl::PortData>{}(socketConfig.link.GetRemotePort());
         auto tagHash        = hash<string>{}(socketConfig.tag);
+        auto portHash       = hash<uint32_t>{}(socketConfig.listeningPort);
 
-        return Hccl::HashCombine({remoteRankHash, localPortHash, remotePortHash, tagHash});
+        return Hccl::HashCombine({remoteRankHash, localPortHash, remotePortHash, tagHash, portHash});
     }
 };
 
@@ -90,7 +93,7 @@ public:
         return config.remoteRank == otherConfig.remoteRank
                && config.link.GetLocalPort().GetAddr() == otherConfig.link.GetLocalPort().GetAddr()
                && config.link.GetRemotePort().GetAddr() == otherConfig.link.GetRemotePort().GetAddr()
-               && config.tag == config.tag;
+               && config.tag == otherConfig.tag && config.listeningPort == otherConfig.listeningPort;
     }
 };
 } // namespace std
