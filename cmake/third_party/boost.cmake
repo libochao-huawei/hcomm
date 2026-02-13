@@ -12,7 +12,7 @@ set(BOOST_NAME "boost")
 set(BOOST_FILE "boost_1_87_0.tar.gz")
 set(BOOST_URL "https://gitcode.com/cann-src-third-party/boost/releases/download/v1.87.0/${BOOST_FILE}")
 set(BOOST_PKG_PATH ${CANN_3RD_LIB_PATH}/${BOOST_FILE})
-set(BOOST_SRC_PATH ${CMAKE_BINARY_DIR}/boost-src)
+set(BOOST_SRC_PATH ${CMAKE_BINARY_DIR}/third_party/boost)
 
 if(NOT EXISTS ${BOOST_SRC_PATH}/boost/config.hpp)
     if(EXISTS ${BOOST_PKG_PATH})
