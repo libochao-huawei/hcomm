@@ -131,6 +131,24 @@ HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle)
     return HCCL_SUCCESS;
 }
 
+
+HcclResult HcommEndpointStartListen(EndpointHandle endpointHandle, uint32_t port)
+{
+    CHK_PTR_NULL(endpointHandle);
+    Endpoint* endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    CHK_PTR_NULL(endpoint);
+    CHK_RET(endpoint->ServerSocketListen(port));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port)
+{
+    CHK_PTR_NULL(endpointHandle);
+    Endpoint* endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    CHK_PTR_NULL(endpoint);
+    CHK_RET(endpoint->ServerSocketStopListen(port));
+}
+
 HcclResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, HcommMem mem, void **memHandle)
 {
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
