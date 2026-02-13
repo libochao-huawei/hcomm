@@ -199,7 +199,7 @@ extern __attribute__((default)) status_t GetTaskAndStreamId(uint64_t &taskId, ui
 }
 
 struct HcclMsgV1ForTest {
-    HcclCMDType commType;      // ͨ��ԭ�����ͣ�AllReduce/AllGather.../Finalize/InterHcclGroupSync
+    HcclCMDType commType;       // 通信原语类型
     HcclReduceOp opType;        // reduce�������ͣ�sum/prod/max/min
     uint64_t sendBuffer;        // Դ����buffer��ַ��
     uint64_t recvBuffer;        // Ŀ������buffer��ַ
