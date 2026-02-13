@@ -1223,30 +1223,30 @@ void HrtRaUbDestroyJfc(RdmaHandle handle, JfcHandle jfcHandle)
 
 JfcHandle HrtRaUbCreateJfcUserCtl(RdmaHandle handle, CqCreateInfo& cqInfo)
 {
-    struct cq_info_t info {};
+    struct CqInfoT info {};
 
-    info.in.chan_handle = nullptr;
+    info.in.chanHandle = nullptr;
     info.in.depth = CQ_DEPTH;
-    info.in.ub.user_ctx   = 0;
+    info.in.ub.userCtx   = 0;
     info.in.ub.mode       = JfcMode::JFC_MODE_USER_CTL_NORMAL;
     info.in.ub.ceqn       = 0;
     info.in.ub.flag.value = 0;
 
     void *jfcHandle = nullptr;
 
-    s32 ret = ra_ctx_cq_create(handle, &info, &jfcHandle);
+    s32 ret = RaCtxCqCreate(handle, &info, &jfcHandle);
     if (ret != 0) {
         string msg = StringFormat("ubCreateCq failed, rdmaHandle=%p,", handle);
         THROW<NetworkApiException>(msg);
     }
 
     HCCL_INFO("[HrtRaUbCreateJfcUserCtl] jfcId[%u], cqVA[%llx], cqeSize[%u], dbAddr[%llx]", 
-            info.out.id, info.out.buf_addr, info.out.cqe_size, info.out.swdb_addr);
+            info.out.id, info.out.bufAddr, info.out.cqeSize, info.out.swdbAddr);
 
-    cqInfo.va = info.out.buf_addr;
+    cqInfo.va = info.out.bufAddr;
     cqInfo.id = info.out.id;
-    cqInfo.cqe_size = info.out.cqe_size;
-    cqInfo.swdb_addr = info.out.swdb_addr;
+    cqInfo.cqe_size = info.out.cqeSize;
+    cqInfo.swdb_addr = info.out.swdbAddr;
 
     return reinterpret_cast<JfcHandle>(jfcHandle);
 }
