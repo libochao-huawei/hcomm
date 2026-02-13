@@ -66,6 +66,7 @@ struct HcclKernelParamLite {
     bool                      needUpdateRes{false};
     bool                      oneSidedComm{false};
     char                      opTag[MAX_OP_TAG_LEN]{0};
+    char                      tagKey[MAX_OP_TAG_LEN]{0};
     Hccl::HDCommunicateParams kfcControlTransferH2DParams;
     Hccl::HDCommunicateParams kfcControlTransferD2HParams;
     HcclDeviceEnvConfigLite   envConfig;
