@@ -32,23 +32,45 @@ SelectorStatus AlltoAllAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoI
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                     std::string &primQueueGenName) const
 {
-    if (topoInfo.levelNum > 1 || topoInfo.level0Shape != Level0Shape::MESH_1D) {
+    HCCL_DEBUG("[AlltoAllAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
+
+    if (topoInfo.levelNum > 1) {
         HCCL_WARNING("[Algo][AlltoAllAutoSelector] levelNum > 1 is not supported yet for ccu_schedule mode.");
         return SelectorStatus::NOT_MATCH;
-    }
-
-    HcclAlgoType levle0Algo = HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT; 
-    auto it = configAlgMap.find(op.opType);
-    if ((it != configAlgMap.end()) && (it->second.size() > 0)) {
-        levle0Algo = it->second[0];
-    }
-    if (IsDefaultAlg(levle0Algo) || levle0Algo ==  HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH) {
-        primQueueGenName = "CcuAlltoAllMesh1D";
-        return SelectorStatus::MATCH;
     } else {
-        HCCL_WARNING("[Algo][AlltoAllAutoSelector] algo[%u] is not supported yet for ccu_schedule mode, reset to default.", levle0Algo);
-        return SelectorStatus::NOT_MATCH;
+        if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
+            if (Is2DieFullMesh()) {
+                primQueueGenName = "CcuAllToAllMesh1D2Die";
+            } else {
+                primQueueGenName = "CcuAlltoAllMesh1D";
+            }
+        } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
+            primQueueGenName = "CcuAlltoAllMesh2D";
+        } else if (topoInfo.level0Shape == Level0Shape::MESH_1D_CLOS) {
+            if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
+                // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
+                if (Is2DieFullMesh()) {
+                    primQueueGenName = "CcuAllToAllMesh1D2Die";
+                } else {
+                    primQueueGenName = "CcuAlltoAllMesh1D";
+                }
+            } else {
+                HCCL_WARNING("[Algo][AlltoAllAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
+                    topoInfo.level0Shape);
+                return SelectorStatus::NOT_MATCH;
+            }
+        } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
+            HCCL_WARNING("[Algo][AlltoAllAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
+                topoInfo.level0Shape);
+            return SelectorStatus::NOT_MATCH;
+        } else {
+            HCCL_WARNING("[Algo][AlltoAllAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
+                topoInfo.level0Shape);
+            return SelectorStatus::NOT_MATCH;
+        }
     }
+    HCCL_INFO("[Algo][AlltoAllAutoSelector][%s] Algo match [%s]", __func__, primQueueGenName.c_str());
+    return SelectorStatus::MATCH;
 }
 
 SelectorStatus AlltoAllAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
@@ -56,24 +78,38 @@ SelectorStatus AlltoAllAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
                                                       const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                       std::string &primQueueGenName) const
 {
-    std::vector<HcclAlgoType> algos = std::vector<HcclAlgoType>(HCCL_ALGO_LEVEL_NUM, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT);
-    auto it = configAlgMap.find(op.opType);
-    if (it != configAlgMap.end()) {
-        algos = it->second;
-    }
+    HCCL_DEBUG("[AlltoAllAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
-    HCCL_INFO("hccl algo op config: config opType:%s, level0:%u, level1:%u, level2:%u, level3:%u",
-        op.opType.Describe().c_str(), algos[0], algos[1], algos[2], algos[3]);
-
-    if(topoInfo.levelNum > 1 || topoInfo.level0Shape == Level0Shape::MESH_1D) {
-        primQueueGenName = "InsAlltoAllMesh";
-    } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
-       primQueueGenName = "InsAlltoAllMesh2D";
+    if (topoInfo.levelNum > 1) {
+        if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
+            primQueueGenName = "InsAlltoAllMesh";
+        } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
+            primQueueGenName = "InsAlltoAllMesh";
+        } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
+            primQueueGenName = "InsAlltoAllMesh";
+        } else {
+            return SelectorStatus::NOT_MATCH;
+        }
     } else {
-	    HCCL_ERROR("hccl algo no match");
-        return SelectorStatus::NOT_MATCH;
+        if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
+            primQueueGenName = "InsAlltoAllMesh";
+        } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
+            primQueueGenName = "InsAlltoAllMesh2D";
+        } else if (topoInfo.level0Shape == Level0Shape::MESH_1D_CLOS) {
+            if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
+                // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
+                primQueueGenName = "InsAlltoAllMesh";
+            } else {
+                primQueueGenName = "InsAlltoAllMesh";
+            }
+        } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
+            primQueueGenName = "InsAlltoAllMesh";
+        } else {
+            HCCL_WARNING("[AlltoAllAutoSelector] topo not match");
+            return SelectorStatus::NOT_MATCH;
+        }
     }
-
+    HCCL_INFO("[Algo][AlltoAllAutoSelector][%s] Algo match [%s]", __func__, primQueueGenName.c_str());
     return SelectorStatus::MATCH;
 }
 
@@ -82,21 +118,12 @@ SelectorStatus AlltoAllAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo,
                                                    const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                    std::string &primQueueGenName) const
 {
-    std::vector<HcclAlgoType> algos = std::vector<HcclAlgoType>(HCCL_ALGO_LEVEL_NUM, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT);
-    auto it = configAlgMap.find(op.opType);
-    if (it != configAlgMap.end()) {
-        algos = it->second;
-    }
+    HCCL_DEBUG("[AlltoAllAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
-    HCCL_INFO("hccl algo op config: config opType:%s, level0:%u, level1:%u, level2:%u, level3:%u",
-        op.opType.Describe().c_str(), algos[0], algos[1], algos[2], algos[3]);
+    // aiv 直接走打平 mesh
+    primQueueGenName = "AivAlltoAllMesh1D";
 
-    if (topoInfo.level0Shape == Level0Shape::MESH_1D && topoInfo.levelNum <= 1) {
-        primQueueGenName = "AivAlltoAllMesh1D";
-    } else {
-        HCCL_WARNING("[AlltoAllAutoSelector] topo not match for aiv algo");
-        return  SelectorStatus::NOT_MATCH;
-    }
+    HCCL_INFO("[Algo][AlltoAllAutoSelector][%s] Algo match [%s]", __func__, primQueueGenName.c_str());
     return SelectorStatus::MATCH;
 }
 

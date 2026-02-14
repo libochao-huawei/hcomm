@@ -94,6 +94,7 @@ public:
     HcclResult GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num);
     HcclResult GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
     HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
+    HcclResult InitDeviceListenPort(u32 &linstenPort);
 
     u32 GetCcuMc2ServerNum();
 
@@ -307,6 +308,10 @@ public:
     {
         return aivOffloadTag;
     }
+    u8 GetAlgorithmType() const
+    {
+        return algorithmType_;
+    }
 
     void SetAivTag(u32 tag)
     {
@@ -452,7 +457,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<DevBuffer>> tagWorkspaceMap_;
     bool isFirstBarrier = true;
     // Dpu Kernel Launch 申请的共享内存
-    void* hostShareBuf;
+    void* hostShareBuf{nullptr};
     aclrtStream dpuStream;
     aclrtContext dpuContext;
     aclrtContext npuContext;
@@ -473,6 +478,8 @@ private:
     bool                                       isLoadOp{false}; // 是否已加载过算子,只要算子下发过就不让改加速模式 loadop offload AllocCommResource
     u32                                        aivTag{1}; // aiv kernal内部用于标志位计数
     u32                                        aivOffloadTag{0};// aiv kernal内部用于标志位计数
+    u8                                         algorithmType_{0};
+    std::atomic<u32>                           tagResourceIndex_{0};
     
     std::function<HcclResult(const std::string &commId, bool isUsingCcuMs, bool isUsingCcuSched)> callback;
     CollOpParams                               curOpParams; // 当前算子参数
@@ -565,6 +572,10 @@ private:
 
     void CheckAcceleratorConsistency(AcceleratorState commAccelerator, AcceleratorState tilingAccelerator) const;
     HcclResult GetTilingAccelerator(void *mc2Tiling, AcceleratorState& acceleratorState) const;
+
+    // AICPU场景aclgraph专用
+    bool IsOpSupportZeroCopyAlg(const CollOpParams &opParams, const rtStream_t stream) const;
+    HcclResult OffloadResourcePre(std::string &opTag, const CollOpParams &opParams);
 };
 } // namespace Hccl
 

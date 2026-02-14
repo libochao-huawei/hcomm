@@ -21,430 +21,430 @@
 
 #define MAX_DEV_INFO_TRANS_NUM 30
 
-union op_get_dev_eid_info_num_data {
+union OpGetDevEidInfoNumData {
     struct {
-        unsigned int phy_id;
+        unsigned int phyId;
         unsigned int rsvd;
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int num;
         unsigned int rsvd;
-    } rx_data;
+    } rxData;
 };
 
-union op_get_dev_eid_info_list_data {
+union OpGetDevEidInfoListData {
     struct {
-        unsigned int phy_id;
-        unsigned int start_index;
+        unsigned int phyId;
+        unsigned int startIndex;
         unsigned int count;
         unsigned int rsvd;
-    } tx_data;
+    } txData;
 
     struct {
-        struct dev_eid_info info_list[MAX_DEV_INFO_TRANS_NUM];
+        struct HccpDevEidInfo infoList[MAX_DEV_INFO_TRANS_NUM];
         unsigned int rsvd;
-    } rx_data;
+    } rxData;
 };
 
-union op_ctx_init_data {
+union OpCtxInitData {
     struct {
-        struct ctx_init_attr attr;
+        struct CtxInitAttr attr;
         unsigned int rsvd;
-    } tx_data;
+    } txData;
 
     struct {
-        struct dev_base_attr dev_attr;
-        unsigned int dev_index;
+        struct DevBaseAttr devAttr;
+        unsigned int devIndex;
         unsigned int rsvd;
-    } rx_data;
+    } rxData;
 };
 
-union op_ctx_get_async_events_data {
+union OpCtxGetAsyncEventsData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
+        unsigned int phyId;
+        unsigned int devIndex;
         unsigned int num;
         unsigned int rsvd;
-    } tx_data;
+    } txData;
 
     struct {
-        struct async_event events[ASYNC_EVENT_MAX_NUM];
+        struct AsyncEvent events[ASYNC_EVENT_MAX_NUM];
         unsigned int num;
         unsigned int rsvd;
-    } rx_data;
+    } rxData;
 };
 
-union op_ctx_deinit_data {
+union OpCtxDeinitData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
+        unsigned int phyId;
+        unsigned int devIndex;
         unsigned int rsvd;
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int rsvd;
-    } rx_data;
+    } rxData;
 };
 
-union op_get_eid_by_ip_data {
+union OpGetEidByIpData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
+        unsigned int phyId;
+        unsigned int devIndex;
         struct IpInfo ip[GET_EID_BY_IP_MAX_NUM];
         unsigned int num;
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
 
     struct {
-        union hccp_eid eid[GET_EID_BY_IP_MAX_NUM];
+        union HccpEid eid[GET_EID_BY_IP_MAX_NUM];
         unsigned int num;
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } rx_data;
+    } rxData;
 };
 
-union op_token_id_alloc_data {
+union OpTokenIdAllocData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
+        unsigned int phyId;
+        unsigned int devIndex;
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
     struct {
         unsigned long long addr;
-        unsigned int token_id;
+        unsigned int tokenId;
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } rx_data;
+    } rxData;
 };
 
-union op_token_id_free_data {
+union OpTokenIdFreeData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
+        unsigned int phyId;
+        unsigned int devIndex;
         unsigned long long addr;
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
     struct {
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } rx_data;
+    } rxData;
 };
 
-union op_lmem_reg_info_data {
+union OpLmemRegInfoData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
-        struct mem_reg_attr_t mem_attr;
+        unsigned int phyId;
+        unsigned int devIndex;
+        struct MemRegAttrT memAttr;
         unsigned int rsvd;
-    } tx_data;
+    } txData;
 
     struct {
-        struct mem_reg_info_t mem_info;
+        struct MemRegInfoT memInfo;
         unsigned int rsvd;
-    } rx_data;
+    } rxData;
 };
 
-union op_lmem_unreg_info_data {
+union OpLmemUnregInfoData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
+        unsigned int phyId;
+        unsigned int devIndex;
         unsigned long long addr;
         unsigned int rsvd;
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int rsvd;
-    } rx_data;
+    } rxData;
 };
 
-union op_rmem_import_info_data {
+union OpRmemImportInfoData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
-        struct mem_import_attr_t mem_attr;
+        unsigned int phyId;
+        unsigned int devIndex;
+        struct MemImportAttrT memAttr;
         unsigned int rsvd;
-    } tx_data;
+    } txData;
 
     struct {
-        struct mem_import_info_t mem_info;
+        struct MemImportInfoT memInfo;
         unsigned int rsvd;
-    } rx_data;
+    } rxData;
 };
 
-union op_rmem_unimport_info_data {
+union OpRmemUnimportInfoData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
+        unsigned int phyId;
+        unsigned int devIndex;
         unsigned long long addr;
         unsigned int rsvd;
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int rsvd;
-    } rx_data;
+    } rxData;
 };
 
-union op_ctx_chan_create_data {
+union OpCtxChanCreateData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
-        union data_plane_cstm_flag data_plane_flag;
+        unsigned int phyId;
+        unsigned int devIndex;
+        union DataPlaneCstmFlag dataPlaneFlag;
         uint32_t resv[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
     struct {
         unsigned long long addr; /**< refer to ibv_comp_channel*, urma_jfce_t* for chan_cb index */
         int fd;
         uint32_t resv[RA_RSVD_NUM_8];
-    } rx_data;
+    } rxData;
 };
 
-union op_ctx_chan_destroy_data {
+union OpCtxChanDestroyData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
+        unsigned int phyId;
+        unsigned int devIndex;
         unsigned long long addr; /**< refer to ibv_comp_channel*, urma_jfce_t* for chan_cb index */
         uint32_t resv[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
     struct {
         uint32_t resv[RA_RSVD_NUM_4];
-    } rx_data;
+    } rxData;
 };
 
-union op_ctx_cq_create_data {
+union OpCtxCqCreateData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
-        struct ctx_cq_attr attr;
+        unsigned int phyId;
+        unsigned int devIndex;
+        struct CtxCqAttr attr;
         uint32_t resv[4U];
-    } tx_data;
+    } txData;
 
     struct {
-        struct ctx_cq_info info;
+        struct CtxCqInfo info;
         uint32_t resv[4U];
-    } rx_data;
+    } rxData;
 };
 
-union op_ctx_cq_destroy_data {
+union OpCtxCqDestroyData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
+        unsigned int phyId;
+        unsigned int devIndex;
         uint64_t addr; /**< refer to ibv_cq*, urma_jfc_t* for cq_cb index */
         uint32_t resv[4U];
-    } tx_data;
+    } txData;
 
     struct {
         uint32_t resv[4U];
-    } rx_data;
+    } rxData;
 };
 
-union op_ctx_qp_create_data {
+union OpCtxQpCreateData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
-        struct ctx_qp_attr qp_attr;
+        unsigned int phyId;
+        unsigned int devIndex;
+        struct CtxQpAttr qpAttr;
         unsigned int rsvd[RA_RSVD_NUM_3];
-    } tx_data;
+    } txData;
 
     struct {
-        struct qp_create_info qp_info;
+        struct QpCreateInfo qpInfo;
         unsigned int rsvd[RA_RSVD_NUM_3];
-    } rx_data;
+    } rxData;
 };
 
-union op_ctx_qp_destroy_data {
+union OpCtxQpDestroyData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
+        unsigned int phyId;
+        unsigned int devIndex;
         unsigned int id; // qpn(rdma) or jetty_id(udma)
         unsigned int rsvd[RA_RSVD_NUM_3];
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int rsvd;
-    } rx_data;
+    } rxData;
 };
 
-union op_ctx_qp_import_data {
+union OpCtxQpImportData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
-        struct qp_key key;
-        struct ra_rs_jetty_import_attr attr;
+        unsigned int phyId;
+        unsigned int devIndex;
+        struct QpKey key;
+        struct RaRsJettyImportAttr attr;
         unsigned int rsvd[RA_RSVD_NUM_3];
-    } tx_data;
+    } txData;
 
     struct {
-        unsigned int rem_jetty_id; // only for ub
-        struct ra_rs_jetty_import_info info;
+        unsigned int remJettyId; // only for ub
+        struct RaRsJettyImportInfo info;
         unsigned int rsvd[RA_RSVD_NUM_3];
-    } rx_data;
+    } rxData;
 };
 
-union op_ctx_qp_unimport_data {
+union OpCtxQpUnimportData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
-        unsigned int rem_jetty_id;
+        unsigned int phyId;
+        unsigned int devIndex;
+        unsigned int remJettyId;
         unsigned int rsvd[RA_RSVD_NUM_6];
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int rsvd[RA_RSVD_NUM_6];
-    } rx_data;
+    } rxData;
 };
 
-union op_ctx_qp_bind_data {
+union OpCtxQpBindData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
+        unsigned int phyId;
+        unsigned int devIndex;
         unsigned int id; // local qpn(rdma) or local jetty_id(udma)
-        unsigned int rem_id; // only for UB, equivalent to rem_jetty_id
-        struct qp_key local_qp_key;
-        struct qp_key remote_qp_key;
+        unsigned int remId; // only for UB, equivalent to rem_jetty_id
+        struct QpKey localQpKey;
+        struct QpKey remoteQpKey;
         unsigned int rsvd[RA_RSVD_NUM_6];
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int rsvd[RA_RSVD_NUM_6];
-    } rx_data;
+    } rxData;
 };
 
-union op_ctx_qp_unbind_data {
+union OpCtxQpUnbindData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
+        unsigned int phyId;
+        unsigned int devIndex;
         unsigned int id; // local qpn(rdma) or local jetty_id(udma)
         unsigned int rsvd[RA_RSVD_NUM_3];
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int rsvd;
-    } rx_data;
+    } rxData;
 };
 
-union op_ctx_batch_send_wr_data {
+union OpCtxBatchSendWrData {
     struct {
-        struct wrlist_base_info base_info;
-        unsigned int send_num;
-        struct batch_send_wr_data wr_data[MAX_CTX_WR_NUM];
-    } tx_data;
+        struct WrlistBaseInfo baseInfo;
+        unsigned int sendNum;
+        struct BatchSendWrData wrData[MAX_CTX_WR_NUM];
+    } txData;
 
     struct {
-        unsigned int complete_num;
-        struct send_wr_resp wr_resp[MAX_CTX_WR_NUM];
-    } rx_data;
+        unsigned int completeNum;
+        struct SendWrResp wrResp[MAX_CTX_WR_NUM];
+    } rxData;
 };
 
-union op_ctx_update_ci_data {
+union OpCtxUpdateCiData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
-        unsigned int jetty_id;
+        unsigned int phyId;
+        unsigned int devIndex;
+        unsigned int jettyId;
         uint16_t ci;
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
     struct {
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } rx_data;
+    } rxData;
 };
 
-union op_custom_channel_data {
+union OpCustomChannelData {
     struct {
-        unsigned int phy_id;
-        struct custom_chan_info_in info;
+        unsigned int phyId;
+        struct CustomChanInfoIn info;
         unsigned int rsvd[64U];
-    } tx_data;
+    } txData;
 
     struct {
-        struct custom_chan_info_out info;
+        struct CustomChanInfoOut info;
         unsigned int rsvd[64U];
-    } rx_data;
+    } rxData;
 };
 
-union op_ctx_qp_query_batch_data {
+union OpCtxQpQueryBatchData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
+        unsigned int phyId;
+        unsigned int devIndex;
         unsigned int num;
         unsigned int ids[HCCP_MAX_QP_QUERY_NUM];
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int num;
-        struct jetty_attr attr[HCCP_MAX_QP_QUERY_NUM];
-    } rx_data;
+        struct JettyAttr attr[HCCP_MAX_QP_QUERY_NUM];
+    } rxData;
 };
 
-union op_ctx_get_aux_info_data {
+union OpCtxGetAuxInfoData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
-        struct aux_info_in info;
-    } tx_data;
+        unsigned int phyId;
+        unsigned int devIndex;
+        struct HccpAuxInfoIn info;
+    } txData;
 
     struct {
-        struct aux_info_out info;
-    } rx_data;
+        struct HccpAuxInfoOut info;
+    } rxData;
 };
 
-union op_ctx_get_cr_err_info_list_data {
+union OpCtxGetCrErrInfoListData {
     struct {
-        unsigned int phy_id;
-        unsigned int dev_index;
-        unsigned int num;
-        unsigned int rsvd[RA_RSVD_NUM_4];
-    } tx_data;
-
-    struct {
-        struct CrErrInfo info_list[CR_ERR_INFO_MAX_NUM];
+        unsigned int phyId;
+        unsigned int devIndex;
         unsigned int num;
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } rx_data;
+    } txData;
+
+    struct {
+        struct CrErrInfo infoList[CR_ERR_INFO_MAX_NUM];
+        unsigned int num;
+        unsigned int rsvd[RA_RSVD_NUM_4];
+    } rxData;
 };
 
-int ra_hdc_get_dev_eid_info_num(struct RaInfo info, unsigned int *num);
-int ra_hdc_get_dev_eid_info_list(unsigned int phy_id, struct dev_eid_info info_list[], unsigned int *num);
-int ra_hdc_ctx_init(struct ra_ctx_handle *ctx_handle, struct ctx_init_attr *attr, unsigned int *dev_index,
-    struct dev_base_attr *dev_attr);
-int ra_hdc_ctx_get_async_events(struct ra_ctx_handle *ctx_handle, struct async_event events[], unsigned int *num);
-int ra_hdc_ctx_deinit(struct ra_ctx_handle *ctx_handle);
-void ra_hdc_prepare_get_eid_by_ip(struct ra_ctx_handle *ctx_handle, struct IpInfo ip[], unsigned int ip_num,
-    union op_get_eid_by_ip_data *op_data);
-int ra_hdc_get_eid_results(union op_get_eid_by_ip_data *op_data, unsigned int ip_num, union hccp_eid eid[],
+int RaHdcGetDevEidInfoNum(struct RaInfo info, unsigned int *num);
+int RaHdcGetDevEidInfoList(unsigned int phyId, struct HccpDevEidInfo infoList[], unsigned int *num);
+int RaHdcCtxInit(struct RaCtxHandle *ctxHandle, struct CtxInitAttr *attr, unsigned int *devIndex,
+    struct DevBaseAttr *devAttr);
+int RaHdcCtxGetAsyncEvents(struct RaCtxHandle *ctxHandle, struct AsyncEvent events[], unsigned int *num);
+int RaHdcCtxDeinit(struct RaCtxHandle *ctxHandle);
+void RaHdcPrepareGetEidByIp(struct RaCtxHandle *ctxHandle, struct IpInfo ip[], unsigned int ipNum,
+    union OpGetEidByIpData *opData);
+int RaHdcGetEidResults(union OpGetEidByIpData *opData, unsigned int ipNum, union HccpEid eid[],
     unsigned int *num);
-int ra_hdc_get_eid_by_ip(struct ra_ctx_handle *ctx_handle, struct IpInfo ip[], union hccp_eid eid[],
+int RaHdcGetEidByIp(struct RaCtxHandle *ctxHandle, struct IpInfo ip[], union HccpEid eid[],
     unsigned int *num);
-int ra_hdc_ctx_token_id_alloc(struct ra_ctx_handle *ctx_handle, struct hccp_token_id *info,
-    struct ra_token_id_handle *token_id_handle);
-int ra_hdc_ctx_token_id_free(struct ra_ctx_handle *ctx_handle, struct ra_token_id_handle *token_id_handle);
-int ra_hdc_ctx_prepare_lmem_register(struct ra_ctx_handle *ctx_handle, struct mr_reg_info_t *lmem_info,
-    union op_lmem_reg_info_data *op_data);
-int ra_hdc_ctx_lmem_register(struct ra_ctx_handle *ctx_handle, struct mr_reg_info_t *lmem_info,
-    struct ra_lmem_handle *lmem_handle);
-int ra_hdc_ctx_lmem_unregister(struct ra_ctx_handle *ctx_handle, struct ra_lmem_handle *lmem_handle);
-int ra_hdc_ctx_rmem_import(struct ra_ctx_handle *ctx_handle, struct mr_import_info_t *rmem_info);
-int ra_hdc_ctx_rmem_unimport(struct ra_ctx_handle *ctx_handle, struct ra_rmem_handle *rmem_handle);
-int ra_hdc_ctx_chan_create(struct ra_ctx_handle *ctx_handle, struct chan_info_t *chan_info,
-    struct ra_chan_handle *chan_handle);
-int ra_hdc_ctx_chan_destroy(struct ra_ctx_handle *ctx_handle, struct ra_chan_handle *chan_handle);
-int ra_hdc_ctx_cq_create(struct ra_ctx_handle *ctx_handle, struct cq_info_t *info, struct ra_cq_handle *cq_handle);
-int ra_hdc_ctx_cq_destroy(struct ra_ctx_handle *ctx_handle, struct ra_cq_handle *cq_handle);
-int ra_hdc_ctx_prepare_qp_create(struct ra_ctx_handle *ctx_handle, struct qp_create_attr *qp_attr,
-    union op_ctx_qp_create_data *op_data);
-int ra_hdc_ctx_qp_create(struct ra_ctx_handle *ctx_handle, struct qp_create_attr *qp_attr,
-    struct qp_create_info *qp_info, struct ra_ctx_qp_handle *qp_handle);
-int ra_hdc_ctx_qp_query_batch(unsigned int phy_id, unsigned int dev_index, unsigned int ids[],
-    struct jetty_attr attr[], unsigned int *num);
-int ra_hdc_ctx_qp_destroy(struct ra_ctx_qp_handle *qp_handle);
-int ra_hdc_ctx_prepare_qp_import(struct ra_ctx_handle *ctx_handle, struct qp_import_info_t *qp_info,
-    union op_ctx_qp_import_data *op_data);
-int ra_hdc_ctx_qp_import(struct ra_ctx_handle *ctx_handle, struct qp_import_info_t *qp_info,
-    struct ra_ctx_rem_qp_handle *rem_qp_handle);
-int ra_hdc_ctx_qp_unimport(struct ra_ctx_rem_qp_handle *rem_qp_handle);
-int ra_hdc_ctx_qp_bind(struct ra_ctx_qp_handle *qp_handle, struct ra_ctx_rem_qp_handle *rem_qp_handle);
-int ra_hdc_ctx_qp_unbind(struct ra_ctx_qp_handle *qp_handle);
-int ra_hdc_ctx_batch_send_wr(struct ra_ctx_qp_handle *qp_handle, struct send_wr_data wr_list[],
-    struct send_wr_resp op_resp[], unsigned int send_num, unsigned int *complete_num);
-int ra_hdc_ctx_update_ci(struct ra_ctx_qp_handle *qp_handle, uint16_t ci);
-int ra_hdc_custom_channel(unsigned int phy_id, struct custom_chan_info_in *in, struct custom_chan_info_out *out);
-int ra_hdc_ctx_get_aux_info(struct ra_ctx_handle *ctx_handle, struct aux_info_in *in, struct aux_info_out *out);
-int ra_hdc_ctx_get_cr_err_info_list(struct ra_ctx_handle *ctx_handle, struct CrErrInfo *info_list, unsigned int *num);
+int RaHdcCtxTokenIdAlloc(struct RaCtxHandle *ctxHandle, struct HccpTokenId *info,
+    struct RaTokenIdHandle *tokenIdHandle);
+int RaHdcCtxTokenIdFree(struct RaCtxHandle *ctxHandle, struct RaTokenIdHandle *tokenIdHandle);
+int RaHdcCtxPrepareLmemRegister(struct RaCtxHandle *ctxHandle, struct MrRegInfoT *lmemInfo,
+    union OpLmemRegInfoData *opData);
+int RaHdcCtxLmemRegister(struct RaCtxHandle *ctxHandle, struct MrRegInfoT *lmemInfo,
+    struct RaLmemHandle *lmemHandle);
+int RaHdcCtxLmemUnregister(struct RaCtxHandle *ctxHandle, struct RaLmemHandle *lmemHandle);
+int RaHdcCtxRmemImport(struct RaCtxHandle *ctxHandle, struct MrImportInfoT *rmemInfo);
+int RaHdcCtxRmemUnimport(struct RaCtxHandle *ctxHandle, struct RaRmemHandle *rmemHandle);
+int RaHdcCtxChanCreate(struct RaCtxHandle *ctxHandle, struct ChanInfoT *chanInfo,
+    struct RaChanHandle *chanHandle);
+int RaHdcCtxChanDestroy(struct RaCtxHandle *ctxHandle, struct RaChanHandle *chanHandle);
+int RaHdcCtxCqCreate(struct RaCtxHandle *ctxHandle, struct CqInfoT *info, struct RaCqHandle *cqHandle);
+int RaHdcCtxCqDestroy(struct RaCtxHandle *ctxHandle, struct RaCqHandle *cqHandle);
+int RaHdcCtxPrepareQpCreate(struct RaCtxHandle *ctxHandle, struct QpCreateAttr *qpAttr,
+    union OpCtxQpCreateData *opData);
+int RaHdcCtxQpCreate(struct RaCtxHandle *ctxHandle, struct QpCreateAttr *qpAttr,
+    struct QpCreateInfo *qpInfo, struct RaCtxQpHandle *qpHandle);
+int RaHdcCtxQpQueryBatch(unsigned int phyId, unsigned int devIndex, unsigned int ids[],
+    struct JettyAttr attr[], unsigned int *num);
+int RaHdcCtxQpDestroy(struct RaCtxQpHandle *qpHandle);
+int RaHdcCtxPrepareQpImport(struct RaCtxHandle *ctxHandle, struct QpImportInfoT *qpInfo,
+    union OpCtxQpImportData *opData);
+int RaHdcCtxQpImport(struct RaCtxHandle *ctxHandle, struct QpImportInfoT *qpInfo,
+    struct RaCtxRemQpHandle *remQpHandle);
+int RaHdcCtxQpUnimport(struct RaCtxRemQpHandle *remQpHandle);
+int RaHdcCtxQpBind(struct RaCtxQpHandle *qpHandle, struct RaCtxRemQpHandle *remQpHandle);
+int RaHdcCtxQpUnbind(struct RaCtxQpHandle *qpHandle);
+int RaHdcCtxBatchSendWr(struct RaCtxQpHandle *qpHandle, struct SendWrData wrList[],
+    struct SendWrResp opResp[], unsigned int sendNum, unsigned int *completeNum);
+int RaHdcCtxUpdateCi(struct RaCtxQpHandle *qpHandle, uint16_t ci);
+int RaHdcCustomChannel(unsigned int phyId, struct CustomChanInfoIn *in, struct CustomChanInfoOut *out);
+int RaHdcCtxGetAuxInfo(struct RaCtxHandle *ctxHandle, struct HccpAuxInfoIn *in, struct HccpAuxInfoOut *out);
+int RaHdcCtxGetCrErrInfoList(struct RaCtxHandle *ctxHandle, struct CrErrInfo *infoList, unsigned int *num);
 #endif // RA_HDC_CTX_H

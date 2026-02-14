@@ -455,7 +455,6 @@ private:
         std::unique_ptr<CollComm> collComm_{nullptr};
     #endif
 #endif
-
 };
 }  // namespace hccl
 

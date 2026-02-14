@@ -25,6 +25,7 @@ public:
     SelectorStatus Select(const CollAlgOperator &op, CollAlgParams &params,
                           std::string &primQueueGenName) override;
     bool IsDefaultAlg(const HcclAlgoType algoType) const;
+    HcclAlgoType GetLevel0AlgoType(const CollAlgOperator &op, const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap) const;
     bool IsSmallData(const u64 dataSize) const;
     bool IsLargeData(const u64 dataSize) const;
     virtual SelectorStatus SelectCcuMsAlgo(const TopoInfo &topoInfo,

@@ -33,6 +33,7 @@
 #include "stream.h"
 #include "env_config.h"
 #include "stream_utils.h"
+#include "socket_manager.h"
 
 #include "hostdpu/dpu_kernel_entrance.h"
 #include "hostdpu/flush_manager.h"
@@ -286,7 +287,7 @@ HcclResult HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, Hcc
     CHK_PTR_NULL(opbasedCommInfoV2.pComm);
     auto res = opbasedCommInfoV2.pComm->Init(ranktableM);
     if (res != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("opbasedCommInfoV2.pComm->Init failed !!! res %d", res);
+        HCCL_ERROR("opbasedCommInfoV2.pComm->Init failed res %d", res);
         return HCCL_E_INTERNAL;
     }
     opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
@@ -1311,7 +1312,7 @@ HcclResult HcclGetOpArgsV2(void **opArgs)
 HcclResult HcclFreeOpArgsV2(void *opArgs)
 {
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclFreeOpArgs V910_95, free opArgs[%p]!!!", opArgs);
+        HCCL_RUN_INFO("Entry-HcclFreeOpArgs V910_95, free opArgs[%p]", opArgs);
     }
     free(opArgs);
     opArgs = nullptr;
@@ -1324,8 +1325,11 @@ HcclResult HcclSetOpSrcDataTypeV2(void *opArgs, uint8_t srcDataType)
         HCCL_RUN_INFO("Entry-HcclSetOpSrcDataType V910_95, opArgs[%p] set srcDataType[%u]", opArgs, srcDataType);
     }
     HcclOpArgs *opArgsPtr = static_cast<HcclOpArgs *>(opArgs);
-    DataType mc2DataType = MC2DataType(static_cast<HcclDataType>(srcDataType));
-    opArgsPtr->srcDataType = mc2DataType;
+    if (srcDataType >= (sizeof(MC2_DATA_TYPE) / sizeof(MC2_DATA_TYPE[0]))) {
+        HCCL_ERROR("HcclSetOpSrcDataType set srcDataType[%u] error, it's invalid.", srcDataType);
+        return HCCL_E_PARA;
+    }
+    opArgsPtr->srcDataType = MC2_DATA_TYPE[srcDataType];
     return HCCL_SUCCESS;
 }
  
@@ -1335,8 +1339,11 @@ HcclResult HcclSetOpDstDataTypeV2(void *opArgs, uint8_t dstDataType)
         HCCL_RUN_INFO("Entry-HcclSetOpDstDataType V910_95, opArgs[%p] set dstDataType[%u]", opArgs, dstDataType);
     }
     HcclOpArgs *opArgsPtr = static_cast<HcclOpArgs *>(opArgs);
-    DataType mc2DataType = MC2DataType(static_cast<HcclDataType>(dstDataType));
-    opArgsPtr->dstDataType = mc2DataType;
+    if (dstDataType >= (sizeof(MC2_DATA_TYPE) / sizeof(MC2_DATA_TYPE[0]))) {
+        HCCL_ERROR("HcclSetOpDstDataType set dstDataType[%u] error, it's invalid.", dstDataType);
+        return HCCL_E_PARA;
+    }
+    opArgsPtr->dstDataType = MC2_DATA_TYPE[dstDataType];
     return HCCL_SUCCESS;
 }
  
@@ -1346,8 +1353,11 @@ HcclResult HcclSetOpReduceTypeV2(void *opArgs, uint32_t reduceType)
         HCCL_RUN_INFO("Entry-HcclSetOpReduceType V910_95, opArgs[%p] set reduceType[%u]", opArgs, reduceType);
     }
     HcclOpArgs *opArgsPtr = static_cast<HcclOpArgs *>(opArgs);
-    ReduceOp reduceOp = MC2ReduceType(static_cast<HcclReduceOp>(reduceType));
-    opArgsPtr->reduceType = reduceOp;
+    if (reduceType >= (sizeof(MC2_REDUCE_TYPE) / sizeof(MC2_REDUCE_TYPE[0]))) {
+        HCCL_ERROR("HcclSetOpReduceType set reduceType[%u] error, it's invalid.", reduceType);
+        return HCCL_E_PARA;
+    }
+    opArgsPtr->reduceType = MC2_REDUCE_TYPE[reduceType];
     return HCCL_SUCCESS;
 }
  
@@ -1370,7 +1380,7 @@ HcclResult HcclSetOpAlgConfigV2(void *opArgs, char *algConfig)
     HcclOpArgs *opArgsPtr = static_cast<HcclOpArgs *>(opArgs);
     s32 ret = strcpy_s(opArgsPtr->algConfig, ALG_CONFIG_SIZE, algConfig);
     if (ret != EOK) {
-        HCCL_ERROR("[HcclSetOpAlgConfig]strcpy_s algConfig failed! result %u", ret);
+        HCCL_ERROR("[HcclSetOpAlgConfig]strcpy_s algConfig failed! result %u, the algConfig len must be less than %u", ret, ALG_CONFIG_SIZE);
         return HCCL_E_PARA;
     }
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
@@ -1426,8 +1436,13 @@ HcclResult HcclDevMemAcquireV2(HcclComm comm, const char *memTag, uint64_t *size
 {
     std::string memTagStr = "";
     if (memTag != nullptr) {
-        memTagStr = std::string(memTag);
-        memTagStr = memTagStr.substr(0, MAX_OP_NAME_SIZE);
+        char tmpMemTag[MAX_MEM_TAG_SIZE];
+        s32 ret = strcpy_s(tmpMemTag, MAX_MEM_TAG_SIZE, memTag);
+        if (ret != EOK) {
+            HCCL_ERROR("[HcclDevMemAcquire] strcpy_s memTag failed! result %u, the memTag len must be less than %u", ret, MAX_MEM_TAG_SIZE);
+            return HCCL_E_PARA;
+        }
+        memTagStr = std::string(tmpMemTag);
     }
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     CHK_RET(communicator->GetDevMemWorkSpace(memTagStr, size, addr, newCreated));
@@ -1492,8 +1507,8 @@ HcclResult HcclCommResumeImplV2(HcclComm comm)
     });
 }
 
-HcclResult RootInfoDetect(const u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHandle,
-    RankTableInfo &rankTable)
+HcclResult RootInfoDetect(std::shared_ptr<RankInfoDetect> rankInfoDetectAgent, const u32 nRanks, u32 rank, 
+    const HcclRootHandleV2 &rootHandle, RankTableInfo &rankTable)
 {
     s32 deviceLogicId = HcclGetThreadDeviceId();
     s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
@@ -1502,18 +1517,38 @@ HcclResult RootInfoDetect(const u32 nRanks, u32 rank, const HcclRootHandleV2 &ro
                   __func__, nRanks, rank, rootHandle.ip, rootHandle.listenPort,
                   rootHandle.netMode.Describe().c_str(), rootHandle.identifier, deviceLogicId, devPhyId);
     // client端拓扑探测
-    std::shared_ptr<RankInfoDetect> rankInfoDetectAgent = std::make_shared<RankInfoDetect>();
+    
     bool hasException = false;
     EXECEPTION_CATCH(rankInfoDetectAgent->SetupAgent(nRanks, rank, rootHandle), hasException = true);
 
     // 等server端执行结束
-    EXECEPTION_CATCH(rankInfoDetectAgent->WaitComplete(rootHandle.listenPort), hasException = true);
+    EXECEPTION_CATCH(rankInfoDetectAgent->WaitComplete(rootHandle.listenPort, RANKINFO_DETECT_SERVER_STATUS_IDLE), hasException = true);
 
     // 若探测流程异常返回错误信息
     CHK_PRT_RET(hasException, HCCL_ERROR("[%s] RankInfoDetect SetupAgent fail.", __func__), HCCL_E_INTERNAL);
 
     // 获取ranktable
     rankInfoDetectAgent->GetRankTable(rankTable);
+
+    HCCL_RUN_INFO("[%s] end.", __func__);
+    return HCCL_SUCCESS;
+}
+
+HcclResult RootInfoUpdate(std::shared_ptr<RankInfoDetect> rankInfoDetectAgent, const u32 devicePort, 
+    const HcclRootHandleV2 &rootHandle, RankTableInfo &rankTable)
+{
+    bool hasException = false;
+    EXECEPTION_CATCH(rankInfoDetectAgent->UpdateAgent(devicePort), hasException = true);
+
+    // 等server端执行结束
+    EXECEPTION_CATCH(rankInfoDetectAgent->WaitComplete(rootHandle.listenPort, RANKINFO_DETECT_SERVER_STATUS_UPDATE), hasException = true);
+
+    // 若探测流程异常返回错误信息
+    CHK_PRT_RET(hasException, HCCL_ERROR("[%s] RankInfoDetect SetupAgent fail.", __func__), HCCL_E_INTERNAL);
+
+    // 获取ranktable
+    rankInfoDetectAgent->GetRankTable(rankTable);
+    SocketManager::SetDeviceServerListenPortMap(rankTable.GetRankDeviceListenPortMap());
 
     HCCL_RUN_INFO("[%s] end.", __func__);
     return HCCL_SUCCESS;
@@ -1531,8 +1566,9 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
                 HCCL_ERROR_CODE(HCCL_E_PARA), identifier.c_str()), HCCL_E_PARA);
                 
     // rootInfo获取rankTable, 基于rankTable创建通信域
+    std::shared_ptr<RankInfoDetect> rankInfoDetectAgent = std::make_shared<RankInfoDetect>();
     RankTableInfo rankTable{};
-    HcclResult ret = RootInfoDetect(nRanks, rank, rootHandle, rankTable);
+    HcclResult ret = RootInfoDetect(rankInfoDetectAgent, nRanks, rank, rootHandle, rankTable);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", 
         __func__, HCCL_ERROR_CODE(ret));rankTable.Dump(), ret);
     
@@ -1551,7 +1587,7 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
     CHK_PTR_NULL(opbasedCommInfoV2.pComm);
     auto res = opbasedCommInfoV2.pComm->Init(rankTable);
     CHK_PRT_RET(res != HcclResult::HCCL_SUCCESS,
-        HCCL_ERROR("[%s] comm Init failed !!! res %d", __func__, res), HCCL_E_INTERNAL);
+        HCCL_ERROR("[%s] comm Init failed res %d", __func__, res), HCCL_E_INTERNAL);
 
     // 配置默认加速模式
     opbasedCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
@@ -1566,6 +1602,11 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
 
     opbasedCommInfoV2.pComm->RegisterPrintChannelInfoCallback(
         CommManager::GetInstance(logicDevId).GetPrintChannelInfoCallback());
+    
+    // 配置了抢占端口则提前建链并发送新的ranktable
+    u32 deviceListenPort = DEFAULT_VALUE_DEVICEPORT;
+    CHK_RET(opbasedCommInfoV2.pComm->InitDeviceListenPort(deviceListenPort));
+    CHK_RET(RootInfoUpdate(rankInfoDetectAgent, deviceListenPort, rootHandle, rankTable));
     
     *comm = static_cast<HcclComm>(opbasedCommInfoV2.pComm.get());
     HCCL_INFO("[%s] Init success, rankNum[%u], rank[%u], rootInfo identifier[%s], logicDevId[%d]", __func__,
@@ -1631,21 +1672,31 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
         "netMode[%s] rootHandle.identifier[%s], identifier[%s]", nRanks, rank, rootHandle.ip, rootHandle.listenPort,
         rootHandle.netMode.Describe().c_str(), rootHandle.identifier, identifier.c_str());
 
+    // 临时规避，在初始化通信域前声明单例保证时序
+    CHK_RET(CallSingletons());
+    HcclCommInfoV2 &opbasedCommInfoV2 = GetCommInfoV2();
+    CHK_PRT_RET(opbasedCommInfoV2.hcclGroupMap.find(identifier) != opbasedCommInfoV2.hcclGroupMap.end(),
+        HCCL_ERROR("[HcclCommInitRootInfoConfigV2]errNo[0x%016llx] The comm name[%s] already exists in Group2Comm map.",
+                HCCL_ERROR_CODE(HCCL_E_PARA), identifier.c_str()), HCCL_E_PARA);
+
     RankTableInfo rankTable{};
-    HcclResult ret = RootInfoDetect(nRanks, rank, rootHandle, rankTable);
+    std::shared_ptr<RankInfoDetect> rankInfoDetectAgent = std::make_shared<RankInfoDetect>();
+    HcclResult ret = RootInfoDetect(rankInfoDetectAgent, nRanks, rank, rootHandle, rankTable);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s] errNo[0x%016llx] RankInfoDetect failed.", __func__, HCCL_ERROR_CODE(ret));rankTable.Dump(), ret);
     
     // 打印ranktable
     rankTable.Dump();
 
-    // 临时规避，在初始化通信域前声明单例保证时序
-    CHK_RET(CallSingletons());
-
     // 创建通信域
     ret = CreateCommConfigRootInfo(rank, config, identifier, rankTable, comm);
     CHK_PRT_RET(ret, HCCL_ERROR("[%s]errNo[0x%016llx] and create comm failed.", __func__,
         HCCL_ERROR_CODE(ret)), static_cast<HcclResult>(ret));
+    
+    // 配置了抢占端口则提前建链并发生新的ranktable
+    u32 deviceListenPort = DEFAULT_VALUE_DEVICEPORT;
+    CHK_RET(opbasedCommInfoV2.pComm->InitDeviceListenPort(deviceListenPort));
+    CHK_RET(RootInfoUpdate(rankInfoDetectAgent, deviceListenPort, rootHandle, rankTable));
     
     /* 关键状态记录 */
     HCCL_RUN_INFO("HcclCommInitRootInfoConfigV2 success, take time [%lld]us, rankNum[%u], rank[%u]",
@@ -2284,7 +2335,7 @@ HcclResult HcclGetCcuTaskInfo(HcclComm comm, void *tilingData, void *ccuTaskGrou
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclGetCcuTaskInfo V910_95, commId[%s], tilingData[%p], ccuTaskGroup[%p]!!!",
+        HCCL_RUN_INFO("Entry-HcclGetCcuTaskInfo V910_95, commId[%s], tilingData[%p], ccuTaskGroup[%p]",
              communicator->GetId(), tilingData, ccuTaskGroup);
     }
     auto ret = communicator->GetCcuTaskInfo(tilingData, ccuTaskGroup);

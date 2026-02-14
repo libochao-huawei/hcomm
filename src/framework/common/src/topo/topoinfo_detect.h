@@ -61,7 +61,7 @@ private:
     HcclResult StopNetwork(HcclIpAddress &hostIP, bool bInitDevNic);
     HcclResult StartRootNetwork(const HcclIpAddress &hostIP, u32 &usePort, const std::vector<HcclSocketPortRange> &portRanges);
     HcclResult StartGroupLeaderNetwork(const std::vector<HcclIpAddress> &whitelist,
-        const HcclIpAddress &hostIP, u32 &listenSocket_);
+        const HcclIpAddress &hostIP, u32 &bindPort);
     HcclResult AddSocketWhiteList(u32 port,
         const std::vector<HcclIpAddress> &whitelist) const;
     HcclResult GenerateLocalRankInfo(u32 rankSize, u32 rankID, HcclBasicRankInfo &localRankInfo);

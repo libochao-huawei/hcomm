@@ -493,7 +493,8 @@ HcclResult CollAlgOperator::GetDefaultAlgoLevel1V2(HcclCMDType hcclCMDType, u64 
         return HCCL_SUCCESS;
     }
     if (hcclCMDType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER && deterniminsticWithInlineReduce &&
-        deviceNumPerAggregation_ > 1 && curSize >= pipelineMinSize && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
+        deviceNumPerAggregation_ > 1 &&
+        curSize >= pipelineMinSize && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
         CalcContextNumForPipeline(hcclCMDType) <= HCCL_FFTS_CAPACITY
         && moduleNum_ > 1 && curSize >= HCCL_SMALL_COUNT_256_KB) {
         algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
@@ -512,7 +513,8 @@ HcclResult CollAlgOperator::GetDefaultAlgoLevel1V2(HcclCMDType hcclCMDType, u64 
             algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
             return HCCL_SUCCESS;
         }
-        if (deterniminsticWithInlineReduce && deviceNumPerAggregation_ > 1 &&
+        if (deterniminsticWithInlineReduce &&
+            deviceNumPerAggregation_ > 1 &&
             allreduceCurSize >= HCCL_SMALL_COUNT_1_MB && !isAivMode && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
             CalcContextNumForPipeline(hcclCMDType) <= HCCL_FFTS_CAPACITY) {
             algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
@@ -1028,9 +1030,12 @@ u32 CollAlgOperator::CalcOptimalIntraRingsize(u64 count, HcclDataType dataType, 
     }
     // --- 1. 带宽 & 基本参数 ---
     float bwHCCS, bwHBM, bwSIO;
-    CHK_RET(GetBandWidthPerNPU(0, userRankSize_, deviceNumPerAggregation_, bwHCCS));
-    CHK_RET(GetBandWidthPerNPU(2, userRankSize_, deviceNumPerAggregation_, bwHBM));
-    CHK_RET(GetBandWidthPerNPU(3, userRankSize_, deviceNumPerAggregation_, bwSIO));
+    constexpr u32 level0 = 0;
+    constexpr u32 level2 = 2;
+    constexpr u32 level3 = 3;
+    CHK_RET(GetBandWidthPerNPU(level0, userRankSize_, deviceNumPerAggregation_, bwHCCS));
+    CHK_RET(GetBandWidthPerNPU(level2, userRankSize_, deviceNumPerAggregation_, bwHBM));
+    CHK_RET(GetBandWidthPerNPU(level3, userRankSize_, deviceNumPerAggregation_, bwSIO));
     float latency = BASE_COMM_LATENCY / MULTIPLIER_MS2US;   // ms
     // --- 2. 数据总量 (GB) ---
     float baseSizeGB = static_cast<double>(count) * perDataSize / GB2B;

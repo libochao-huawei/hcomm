@@ -22,8 +22,7 @@ set(HCOMM_CODE_ALGORITHM ${HCOMM_CODE_ROOT}/src/algorithm)
 set(HCOMM_CODE_FRAMEWORK ${HCOMM_CODE_ROOT}/src/framework)
 set(HCOMM_CODE_LEGACY    ${HCOMM_CODE_ROOT}/src/legacy)
 
-set(THIRD_PARTY_PATH   ${HCOMM_CODE_ROOT}/output/third_party)
-set(PROTO_SOURCE_DIR   ${THIRD_PARTY_PATH}/protobuf/lib64)
+set(THIRD_PARTY_PATH   ${CANN_3RD_LIB_PATH})
 set(PROTOC_PROGRAM     ${THIRD_PARTY_PATH}/protobuf/bin/protoc)
 
 # Include List
@@ -68,11 +67,15 @@ set(HCOMM_PUBLIC_INCLUDE_LIST
 )
 
 set(HCOMM_PLATFORM_INCLUDE_LIST
+    ${HCOMM_CODE_PLATFORM}
     ${HCOMM_CODE_PLATFORM}/inc
     ${HCOMM_CODE_PLATFORM}/inc/adapter
     ${HCOMM_CODE_PLATFORM}/inc/adapter/host
     ${HCOMM_CODE_PLATFORM}/common
     ${HCOMM_CODE_PLATFORM}/hccp/external_depends/inc/log
+    ${HCOMM_CODE_PLATFORM}/task/
+    ${HCOMM_CODE_PLATFORM}/hccp/inc/network/
+    ${HCOMM_CODE_PLATFORM}/hccp/external_depends/rdma-core/include/
 )
 
 set(HCOMM_COMMON_INCLUDE_LIST

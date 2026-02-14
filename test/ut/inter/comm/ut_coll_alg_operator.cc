@@ -11,12 +11,10 @@
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
 #include <stdio.h>
-
 #include "hccl/base.h"
 #include <hccl/hccl_types.h>
 #include "llt_hccl_stub_pub.h"
 #include "dlra_function.h"
-
 #define private public
 #define protected public
 #include "hccl_communicator.h"
@@ -25,8 +23,9 @@
 #include "coll_alg_operator.h"
 #undef private
 #undef protected
-
+#include "adapter_prof.h"
 #include "externalinput.h"
+
 using namespace std;
 using namespace hccl;
 
@@ -49,6 +48,9 @@ protected:
             .stubs()
             .with(any(), outBound(portNum))
             .will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtProfRegisterCtrlCallback)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
         std::cout << "A Test SetUP" << std::endl;
     }
     virtual void TearDown()
