@@ -107,6 +107,20 @@ const std::string hcomm_g_msg = R"(
     },
     {
       "errClass": "HCCL Errors",
+      "errTitle": "Communication_Error_Initialize_Transport",
+      "ErrCode": "EI0009",
+      "ErrMessage": "Device %d transport init error. Reason: %s.",
+      "Arglist": "device_id,reason",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution": "Use the following hccn_tool commands to check whether the port link is down. (The scope of i represents the number of NPUs of each node. 8 is used as an example.) "\
+                    "1. for i in {0..7}; do hccn_tool -i $i -optical -g; done | grep present: Check whether the optical module is in position. "\
+                    "2. for i in {0..7}; do hccn_tool -i $i -ip -g; done. Check whether the IP address is configured. "\
+                    "3. for i in {0..7}; do hccn_tool -i $i -lldp -g: Check whether the switch is connected."
+      }
+    },
+    {
+      "errClass": "HCCL Errors",
       "errTitle": "Communication_Error_P2P",
       "ErrCode": "EI0010",
       "ErrMessage": "P2P communication failed. Reason: %s",
@@ -194,17 +208,6 @@ const std::string hcomm_g_msg = R"(
       }
     },
     {
-      "errClass": "HCCP Errors",
-      "errTitle": "HCCP_Process_Initialization_Failure",
-      "ErrCode": "EJ0001",
-      "ErrMessage": "Failed to initialize the HCCP process. Reason: Maybe the last training process is running.",
-      "Arglist": "",
-      "suggestion": {
-        "Possible Cause": "N/A",
-        "Solution": "Wait for 10s after killing the last training process and try again."
-      }
-    },
-    {
       "errClass": "HCCL Errors",
       "errTitle": "Execution_Error_UB_CQE",
       "ErrCode": "EI0018",
@@ -216,36 +219,25 @@ const std::string hcomm_g_msg = R"(
       }
     },
     {
-      "errClass": "HCCP Errors",
-      "errTitle": "Environment_Error",
-      "ErrCode": "EJ0002",
-      "ErrMessage": "The network port is down.Suggest: %s",
-      "Arglist": "suggest",
-      "suggestion": {
-        "Possible Cause": "N/A",
-        "Solution": "N/A"
-      }
-    },
-    {
-      "errClass": "HCCP Errors",
+      "errClass": "HCCL Errors",
       "errTitle": "Communication_Error_Bind_IP_Port",
-      "ErrCode": "EJ0003",
-      "ErrMessage": "Failed to bind the IP port. Reason: %s",
+      "ErrCode": "EI0019",
+      "ErrMessage": "Failed to enable listebing for the host network adapter socket. Reason: %s",
       "Arglist": "reason",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "N/A"
+        "Solution": "1. Check whether this port has been occupied by another process. If yes, you can make adjustment using the environment variable HCCL_IF_BASE_PORT and use sysctl -w net.ipv4.ip_local_reserved_ports=****-**** to adjust the scope of reserved ports. 2. Check whether the service process is started multiple times on a device during this service."
       }
     },
     {
-      "errClass": "HCCP Errors",
-      "errTitle": "Invalid_Argument_IP_Address",
-      "ErrCode": "EJ0004",
-      "ErrMessage": "Check ip fail. Reason: %s",
+      "errClass": "HCCL Errors",
+      "errTitle": "Communication_Error_Bind_IP_Port",
+      "ErrCode": "EI0020",
+      "ErrMessage": "Failed to enable listebing for the host network adapter socket. Reason: %s",
       "Arglist": "reason",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "N/A"
+        "Solution": "Check whether the single-card multi-process scenario is used. If yes, configure the port number using the environment variable HCCL_NPU_SOCKET_PORT_RANGE."
       }
     }
   ]

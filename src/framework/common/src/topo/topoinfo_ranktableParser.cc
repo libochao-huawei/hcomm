@@ -324,10 +324,12 @@ HcclResult TopoInfoRanktableParser::GetJsonProperty(const nlohmann::json &obj, c
         if (optionalProp) {
             HCCL_WARNING("json object has no property called %s", propName);
         } else {
+            std::string errormessage = "Value " + std::string(propName)+ "for rankTable variable " + std::string()+
+                                       "is invalid, expected value " + std::string()+ ".";
             RPT_INPUT_ERR(true,
-                "EI0014",
+                "EI0017",
                 std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({ "json object has no property called "+std::string(propName)+"."}));
+                std::vector<std::string>({errormessage}));
             HCCL_ERROR("[%s][%s]json object has no property called %s", LOG_KEYWORDS_INIT_GROUP.c_str(),
                 LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), propName);
         }
@@ -338,11 +340,12 @@ HcclResult TopoInfoRanktableParser::GetJsonProperty(const nlohmann::json &obj, c
         propValue = obj[propName];
         return HCCL_SUCCESS;
     } else {
+        std::string errormessage = "Value " + std::string()+ "for rankTable variable " + std::string()+
+                                       "is invalid, expected value " + std::string()+ ".";
         RPT_INPUT_ERR(true,
-            "EI0014",
+            "EI0017",
             std::vector<std::string>({"error_reason"}),
-            std::vector<std::string>(
-                {"json object property value of Name[" + std::string(propName) + "] is not string."}));
+            std::vector<std::string>({errormessage}));
         HCCL_ERROR("[Get][JsonProperty]errNo[0x%016llx] json object property value of Name[%s] is not string!",
             HCOM_ERROR_CODE(HCCL_E_PARA), propName);
         return HCCL_E_PARA;
@@ -389,11 +392,12 @@ HcclResult TopoInfoRanktableParser::GetJsonArrayMemberProperty(const nlohmann::j
         propValue = subObj[propName];
         return HCCL_SUCCESS;
     } else {
+        std::string errormessage = "Value " + std::string(propName)+ "for rankTable variable " + std::string(propName)+
+                                   "is invalid, expected value " + std::string(propName)+ ".";
         RPT_INPUT_ERR(true,
-            "EI0014",
+            "EI0017",
             std::vector<std::string>({"error_reason"}),
-            std::vector<std::string>(
-                {"json object property value of Name[" + std::string(propName) + "] is not string."}));
+            std::vector<std::string>({errormessage}));
         HCCL_ERROR(
             "[%s][%s]errNo[0x%016llx] json object property value of Name[%s] is not string!",
             LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA),
