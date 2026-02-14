@@ -26,6 +26,7 @@ enum TlvModuleType {
 enum TlvCcuMsgType {
     MSG_TYPE_CCU_INIT = 0,
     MSG_TYPE_CCU_UNINIT,
+    MSG_TYPE_CCU_GET_MEM_INFO,
     MSG_TYPE_CCU_MAX,
 };
 
@@ -40,6 +41,12 @@ struct TlvMsg {
     unsigned int type;
     unsigned int length;
     char *data;
+};
+
+struct CcuMemReq {
+    unsigned int udieIdx;
+    unsigned int reserved;
+    unsigned long long memTypeBitmap;
 };
 
 /**
