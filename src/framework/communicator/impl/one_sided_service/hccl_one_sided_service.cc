@@ -1012,7 +1012,7 @@ HcclResult HcclOneSidedService::AicpuResourceInit()
 
     const u64 endTime = hrtMsprofSysCycleTime();
     HCCL_DEBUG("[AicpuResourceInit] done, time cost[%llu]", (endTime - beginTime));
-    
+
     return HCCL_SUCCESS;
 }
 
