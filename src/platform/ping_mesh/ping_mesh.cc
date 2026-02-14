@@ -113,7 +113,7 @@ HcclResult GetAddrType(u32 *addrType)
     CHK_PTR_NULL(addrType);
     const char *socNamePtr = aclrtGetSocName();
     CHK_PTR_NULL(socNamePtr);
-    if (IsSupportHCCLV2) {
+    if (IsSupportHCCLV2(socNamePtr)) {
         *addrType = 1;
     } else {
         *addrType = 0;
@@ -961,7 +961,7 @@ HcclResult PingMesh::HccnTargetAttrInter(u32 targetNumInter, RpingInput *inputIn
 {
     HcclResult ret = HCCL_SUCCESS;
     u32 addressType = 0;
-    HcclResult ret = GetAddrType(&addressType);
+    ret = GetAddrType(&addressType);
     if (ret != HCCL_SUCCESS) {
          HCCL_ERROR("RpingResultInfoInit]GetAddrType Fail ret %d", ret);
         return HCCL_E_PARA;
@@ -1035,7 +1035,7 @@ HcclResult PingMesh::HccnRpingAddTarget(u32 deviceId, u32 targetNum, RpingInput 
 HcclResult PingMesh::HccnTarRemoveAttrInter(u32 targetNumInter, RpingInput *inputInter, PingTargetCommInfo  *targetInter, std::shared_ptr<HcclSocket> &socketInter) {
     HcclResult retInter = HCCL_SUCCESS;
     u32 addressType = 0;
-    HcclResult retInter = GetAddrType(&addressType);
+    retInter = GetAddrType(&addressType);
     if (retInter != HCCL_SUCCESS) {
          HCCL_ERROR("RpingResultInfoInit]GetAddrType Fail retInter %d", retInter);
         return HCCL_E_PARA;
