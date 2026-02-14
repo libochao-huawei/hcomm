@@ -19,7 +19,6 @@
 #include "env_config.h"
 
 namespace Hccl {
-constexpr int RANK_SIZE_EIGHT = 8;
 constexpr u32 CCU_MS_MODE = 2;
 
 enum class SelectorStatus { MATCH, NOT_MATCH };

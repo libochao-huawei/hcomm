@@ -13,10 +13,10 @@
 # ut/unified_platform/external_system，内含hccp，rts等接口打桩
 target_sources(hccl_v2_utest 
     PUBLIC
-    # ut_ccu_res_specs.cpp
-    # ut_ccu_component.cpp
-    # ut_ccu_res_batch_allocator.cpp
-    # ut_ccu_pfe.cc
+    ut_ccu_res_specs.cpp
+    ut_ccu_component.cpp
+    ut_ccu_res_batch_allocator.cpp
+    ut_ccu_pfe.cc
 
     ${HCCL_V2_CODE_ROOT}/unified_platform/ccu/ccu_device/ccu_device_manager.cpp
     ${HCCL_V2_CODE_ROOT}/unified_platform/ccu/ccu_device/ccu_res_specs.cpp

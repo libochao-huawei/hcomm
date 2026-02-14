@@ -390,7 +390,7 @@ const std::string RankTable2p = R"(
       "device_id": 1,
       "local_id": 1,
       "replaced_local_id": 10,
-      "device_port": 2222,
+      "device_port": 6666,
       "level_list": [
         {
           "net_layer": 0,
@@ -488,6 +488,7 @@ const std::string RankTable_4p = R"(
       "rank_id": 1,
       "device_id": 1,
       "local_id": 1,
+      "device_port": 6666,
       "level_list": [
         {
           "net_layer": 0,
@@ -541,7 +542,7 @@ const std::string RankTable_4p = R"(
       "rank_id": 2,
       "device_id": 2,
       "local_id": 2,
-      "device_port": 3333,
+      "device_port": 6666,
       "level_list": [
         {
           "net_layer": 0,
@@ -695,7 +696,7 @@ const std::string RankTable2p_err = R"(
       "device_id": 1,
       "local_id": 1,
       "replaced_local_id": 10,
-      "device_port": 2222,
+      "device_port": 6666,
       "level_list": [
         {
           "net_layer": 0,
@@ -774,7 +775,7 @@ const std::string RankTable4p_2X2 = R"(
       "device_id": 1,
       "local_id": 1,
       "replaced_local_id": 10,
-      "device_port": 2222,
+      "device_port": 6666,
       "level_list": [
         {
           "net_layer": 0,
@@ -808,7 +809,7 @@ const std::string RankTable4p_2X2 = R"(
       "device_id": 1,
       "local_id": 8,
       "replaced_local_id": 10,
-      "device_port": 2222,
+      "device_port": 6666,
       "level_list": [
         {
           "net_layer": 0,
@@ -842,7 +843,7 @@ const std::string RankTable4p_2X2 = R"(
       "device_id": 1,
       "local_id": 9,
       "replaced_local_id": 10,
-      "device_port": 2222,
+      "device_port": 6666,
       "level_list": [
         {
           "net_layer": 0,
