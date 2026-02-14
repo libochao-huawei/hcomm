@@ -35,7 +35,7 @@ constexpr u32 RPING_TRAFFIC_CLASS_DEFAULT = 132;
 
 //判断类型相关函数
 bool IsSupportHCCLV2(const char *socNamePtr);
-HcclResult GetAddrType(u32 *addrtype)；
+HcclResult GetAddrType(u32 *addrtype);
 // HCCN接口需要的结构体
 struct RpingInput {
     HcclIpAddress sip;
