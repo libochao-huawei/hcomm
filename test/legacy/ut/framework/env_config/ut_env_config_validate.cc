@@ -339,40 +339,6 @@ TEST_F(EnvConfigValidateTest, test_parse_HCCL_RDMA_RETRY_CNT_should_success)
     EXPECT_EQ(rdmaCfg.rdmaRetryCnt.Get(), 5);
 }
 
-#if 0 // V2 LLT FAILED
-TEST_F(EnvConfigValidateTest, test_parse_HCCL_TOPO_FILE_PATH_should_default)
-{
-    EnvTopoFilePathConfig topoFilePathCfg{};
-    MOCKER(SalGetEnv).stubs().will(returnValue(string("")));
-    topoFilePathCfg.topoFilePath.Parse();
-    EXPECT_EQ(topoFilePathCfg.topoFilePath.Get(), "");
-}
-
-TEST_F(EnvConfigValidateTest, test_parse_HCCL_TOPO_FILE_PATH_should_fail_when_too_long)
-{
-    EnvTopoFilePathConfig topoFilePathCfg{};
-    MOCKER(SalGetEnv).stubs().will(returnValue(LONG_STRING));
-    EXPECT_THROW(topoFilePathCfg.topoFilePath.Parse(), InvalidParamsException);
-}
-
-TEST_F(EnvConfigValidateTest, test_parse_HCCL_TOPO_FILE_PATH_should_fail_when_file_not_exist)
-{
-    EnvTopoFilePathConfig topoFilePathCfg{};
-    MOCKER(SalGetEnv).stubs().will(returnValue(string(HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/env_config/not_exist_file")));
-    EXPECT_THROW(topoFilePathCfg.topoFilePath.Parse(), InvalidParamsException);
-}
-
-TEST_F(EnvConfigValidateTest, test_parse_HCCL_TOPO_FILE_PATH_should_success_when_file_exist)
-{
-    EnvTopoFilePathConfig topoFilePathCfg{};
-    string filePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/env_config/test_file.txt"};
-    MOCKER(SalGetEnv).stubs().will(returnValue(filePath));
-    topoFilePathCfg.topoFilePath.Parse();
-    string absPath = topoFilePathCfg.topoFilePath.Get();
-    EXPECT_TRUE(absPath.size() >= filePath.size());
-    EXPECT_EQ(absPath.compare(absPath.size() - filePath.size(), filePath.size(), filePath), 0);   // check endwith filePath
-}
-#endif
 TEST_F(EnvConfigValidateTest, test_parse_HCCL_IF_IP_should_success_when_input_default)
 {
     EnvHostNicConfig nicCfg{};

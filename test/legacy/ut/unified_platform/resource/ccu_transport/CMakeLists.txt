@@ -9,10 +9,10 @@
 # -----------------------------------------------------------------------------------------------------------
 target_sources(hccl_v2_utest
     PUBLIC
-    # ut_ccu_jetty.cc
-    # ut_ccu_connection.cc
+    ut_ccu_jetty.cc
+    ut_ccu_connection.cc
     ut_ccu_transport.cc
-    # ut_ccu_transport_group.cc
+    ut_ccu_transport_group.cc
 
     # ccu_device_manager_stub.cc // 独立编译时用于隔离平台层CCU接口，平时不需要开启
 

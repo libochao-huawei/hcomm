@@ -130,6 +130,7 @@ const std::string RankTable4p = R"(
       "rank_id": 1,
       "device_id": 1,
       "local_id": 1,
+      "device_port": 6666,
       "level_list": [
         {
           "net_layer": 0,
@@ -183,7 +184,7 @@ const std::string RankTable4p = R"(
       "rank_id": 2,
       "device_id": 2,
       "local_id": 2,
-      "device_port": 3333,
+      "device_port": 6666,
       "level_list": [
         {
           "net_layer": 0,
@@ -237,7 +238,7 @@ const std::string RankTable4p = R"(
       "rank_id": 3,
       "device_id": 3,
       "local_id": 3,
-      "device_port": 4222,
+      "device_port": 6666,
       "level_list": [
         {
           "net_layer": 0,

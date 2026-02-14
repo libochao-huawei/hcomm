@@ -27,7 +27,7 @@
 #include "orion_adapter_rts.h"
 #include "root_handle_v2.h"
 #include "rank_info_detect.h"
-#include "hccl.h"
+#include "hccl_comm.h"
 #define private public
 #include "hccl_communicator.h"
 #include "communicator_impl.h"
@@ -208,7 +208,7 @@ TEST_F(OpbaseTestV2, HcclBatchSendRecvV2_With_Log)
 {
     EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
     EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
-    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
 
     Hccl::CommParams commParams;
     std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
@@ -249,7 +249,7 @@ TEST_F(OpbaseTestV2, HcclAlltoAllV2_With_Log)
 {
     EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
     EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
-    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
 
     Hccl::CommParams commParams;
     std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
@@ -296,7 +296,7 @@ TEST_F(OpbaseTestV2, HcclAlltoAllVV2_With_Log)
 {
     EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
     EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
-    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
 
     Hccl::CommParams commParams;
     std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
@@ -504,7 +504,7 @@ TEST_F(OpbaseTestV2, HcclAlltoAllVCV2_With_Log)
 {
     EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
     EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
-    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
 
     // Prepare test data
     void* sendBuf = nullptr;
@@ -550,7 +550,7 @@ TEST_F(OpbaseTestV2, HcclReduceV2_Sum_ShouldPass_WhenValidParams_With_Log)
 {
     EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
     EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
-    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
 
     // Mock objects and parameters
     void *sendBuf = nullptr;
@@ -657,7 +657,7 @@ TEST_F(OpbaseTestV2, HcclAllReduceV2_Sum_ShouldPass_WhenValidParams_v2_With_Log)
 {
     EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
     EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
-    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
 
     // Mock objects and parameters
     void *sendBuf = nullptr;
@@ -751,7 +751,7 @@ TEST_F(OpbaseTestV2, HcclBroadcastV2_ShouldReturnSuccess_WhenAllParamsValid_With
 {
     EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
     EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
-    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
 
     void *buf = nullptr;
     uint64_t count = 10;
@@ -788,7 +788,7 @@ TEST_F(OpbaseTestV2, HcclAllocComResourceByTilingV2_With_Log)
 {
     EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
     EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
-    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
 
     Hccl::CommParams commParams;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
@@ -894,11 +894,11 @@ TEST_F(OpbaseTestV2, HcclScatterV2)
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
-TEST_F(OpbaseTestV2, HcclScatterV2)
+TEST_F(OpbaseTestV2, HcclScatterV2_1)
 {
     EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
     EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
-    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
 
     // Arrange
     void *sendBuf = (void *)0x1000000;
@@ -941,7 +941,7 @@ TEST_F(OpbaseTestV2, HcclAllGatherV2_With_Log)
 {
     EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
     EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
-    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
 
     // Arrange
     void *sendBuf = nullptr;
@@ -984,7 +984,7 @@ TEST_F(OpbaseTestV2, HcclSendV2_With_Log)
 {
     EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
     EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
-    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
 
     // Arrange
     void *sendBuf = nullptr;
@@ -1028,7 +1028,7 @@ TEST_F(OpbaseTestV2, HcclRecvV2_With_Log)
 {
     EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
     EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
-    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
 
     // Arrange
     void *sendBuf = nullptr;
@@ -1081,7 +1081,7 @@ TEST_F(OpbaseTestV2, HcclReduceScatterV2_With_Log)
 {
     EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
     EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
-    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
 
     void *sendBuf = nullptr;
     void *recvBuf = nullptr;
@@ -1760,7 +1760,7 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitClusterInfoConfigV2_When_InputValue_Expect_R
 TEST_F(OpbaseTestV2, Ut_HcclAllGatherVV2_When_Normal_Expect_Success)
 {
     constexpr u64 FAKE_RANK_SIZE = 2;
-    constexpr void *FAKE_PTR = (void *)0x1000000;
+    void *FAKE_PTR = (void *)0x1000000;
     constexpr HcclDataType FAKE_DATA_TYPE = HCCL_DATA_TYPE_INT32;
     Hccl::CommParams commParams;
     std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
@@ -1785,7 +1785,7 @@ TEST_F(OpbaseTestV2, Ut_HcclAllGatherVV2_When_Normal_Expect_Success)
 TEST_F(OpbaseTestV2, Ut_HcclAllGatherVV2_When_DipHas0_Expect_Success)
 {
     constexpr u64 FAKE_RANK_SIZE = 2;
-    constexpr void *FAKE_PTR = (void *)0x1000000;
+    void *FAKE_PTR = (void *)0x1000000;
     constexpr HcclDataType FAKE_DATA_TYPE = HCCL_DATA_TYPE_INT32;
     Hccl::CommParams commParams;
     std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
@@ -1810,7 +1810,7 @@ TEST_F(OpbaseTestV2, Ut_HcclAllGatherVV2_When_DipHas0_Expect_Success)
 TEST_F(OpbaseTestV2, Ut_HcclAllGatherVV2_When_OutputEq0_Expect_Success)
 {
     constexpr u64 FAKE_RANK_SIZE = 2;
-    constexpr void *FAKE_PTR = (void *)0x1000000;
+    void *FAKE_PTR = (void *)0x1000000;
     constexpr HcclDataType FAKE_DATA_TYPE = HCCL_DATA_TYPE_INT32;
     Hccl::CommParams commParams;
     std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
@@ -1835,7 +1835,7 @@ TEST_F(OpbaseTestV2, Ut_HcclAllGatherVV2_When_OutputEq0_Expect_Success)
 TEST_F(OpbaseTestV2, Ut_HcclAllGatherVV2_When_CountNotFixCounts_Expect_Error)
 {
     constexpr u64 FAKE_RANK_SIZE = 2;
-    constexpr void *FAKE_PTR = (void *)0x1000000;
+    void *FAKE_PTR = (void *)0x1000000;
     constexpr HcclDataType FAKE_DATA_TYPE = HCCL_DATA_TYPE_INT32;
     Hccl::CommParams commParams;
     std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
@@ -1860,7 +1860,7 @@ TEST_F(OpbaseTestV2, Ut_HcclAllGatherVV2_When_CountNotFixCounts_Expect_Error)
 TEST_F(OpbaseTestV2, Ut_HcclAllGatherVV2_When_CountTooLarge_Expect_Error)
 {
     constexpr u64 FAKE_RANK_SIZE = 2;
-    constexpr void *FAKE_PTR = (void *)0x1000000;
+    void *FAKE_PTR = (void *)0x1000000;
     constexpr HcclDataType FAKE_DATA_TYPE = HCCL_DATA_TYPE_INT32;
     Hccl::CommParams commParams;
     std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
@@ -1885,7 +1885,7 @@ TEST_F(OpbaseTestV2, Ut_HcclAllGatherVV2_When_CountTooLarge_Expect_Error)
 TEST_F(OpbaseTestV2, Ut_HcclAllGatherVV2_When_DatatypeNotSurport_Expect_Error)
 {
     constexpr u64 FAKE_RANK_SIZE = 2;
-    constexpr void *FAKE_PTR = (void *)0x1000000;
+    void *FAKE_PTR = (void *)0x1000000;
     constexpr HcclDataType FAKE_DATA_TYPE = HCCL_DATA_TYPE_RESERVED;
     Hccl::CommParams commParams;
     std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
@@ -1910,7 +1910,7 @@ TEST_F(OpbaseTestV2, Ut_HcclAllGatherVV2_When_DatatypeNotSurport_Expect_Error)
 TEST_F(OpbaseTestV2, Ut_HcclReduceScatterVV2_When_Normal_Expect_Success)
 {
     constexpr u64 FAKE_RANK_SIZE = 2;
-    constexpr void *FAKE_PTR = (void *)0x1000000;
+    void *FAKE_PTR = (void *)0x1000000;
     constexpr HcclDataType FAKE_DATA_TYPE = HCCL_DATA_TYPE_INT32;
     Hccl::CommParams commParams;
     std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
@@ -1936,7 +1936,7 @@ TEST_F(OpbaseTestV2, Ut_HcclReduceScatterVV2_When_Normal_Expect_Success)
 TEST_F(OpbaseTestV2, Ut_HcclReduceScatterVV2_When_DipHas0_Expect_Success)
 {
     constexpr u64 FAKE_RANK_SIZE = 2;
-    constexpr void *FAKE_PTR = (void *)0x1000000;
+    void *FAKE_PTR = (void *)0x1000000;
     constexpr HcclDataType FAKE_DATA_TYPE = HCCL_DATA_TYPE_INT32;
     Hccl::CommParams commParams;
     std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
@@ -1962,7 +1962,7 @@ TEST_F(OpbaseTestV2, Ut_HcclReduceScatterVV2_When_DipHas0_Expect_Success)
 TEST_F(OpbaseTestV2, Ut_HcclReduceScatterVV2_When_InuputCountEq0_Expect_Success)
 {
     constexpr u64 FAKE_RANK_SIZE = 2;
-    constexpr void *FAKE_PTR = (void *)0x1000000;
+    void *FAKE_PTR = (void *)0x1000000;
     constexpr HcclDataType FAKE_DATA_TYPE = HCCL_DATA_TYPE_INT32;
     Hccl::CommParams commParams;
     std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
@@ -1988,7 +1988,7 @@ TEST_F(OpbaseTestV2, Ut_HcclReduceScatterVV2_When_InuputCountEq0_Expect_Success)
 TEST_F(OpbaseTestV2, Ut_HcclReduceScatterVV2_When_CountNotFixCounts_Expect_Error)
 {
     constexpr u64 FAKE_RANK_SIZE = 2;
-    constexpr void *FAKE_PTR = (void *)0x1000000;
+    void *FAKE_PTR = (void *)0x1000000;
     constexpr HcclDataType FAKE_DATA_TYPE = HCCL_DATA_TYPE_INT32;
     Hccl::CommParams commParams;
     std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
@@ -2014,7 +2014,7 @@ TEST_F(OpbaseTestV2, Ut_HcclReduceScatterVV2_When_CountNotFixCounts_Expect_Error
 TEST_F(OpbaseTestV2, Ut_HcclReduceScatterVV2_When_CountTooLarge_Expect_Error)
 {
     constexpr u64 FAKE_RANK_SIZE = 2;
-    constexpr void *FAKE_PTR = (void *)0x1000000;
+    void *FAKE_PTR = (void *)0x1000000;
     constexpr HcclDataType FAKE_DATA_TYPE = HCCL_DATA_TYPE_INT32;
     Hccl::CommParams commParams;
     std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
@@ -2040,7 +2040,7 @@ TEST_F(OpbaseTestV2, Ut_HcclReduceScatterVV2_When_CountTooLarge_Expect_Error)
 TEST_F(OpbaseTestV2, Ut_HcclReduceScatterVV2_When_DatatypeNotSurport_Expect_Error)
 {
     constexpr u64 FAKE_RANK_SIZE = 2;
-    constexpr void *FAKE_PTR = (void *)0x1000000;
+    void *FAKE_PTR = (void *)0x1000000;
     constexpr HcclDataType FAKE_DATA_TYPE = HCCL_DATA_TYPE_RESERVED;
     Hccl::CommParams commParams;
     std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
@@ -2066,7 +2066,7 @@ TEST_F(OpbaseTestV2, Ut_HcclReduceScatterVV2_When_DatatypeNotSurport_Expect_Erro
 TEST_F(OpbaseTestV2, Ut_HcclReduceScatterVV2_When_ReduceOpNotSurport_Expect_Error)
 {
     constexpr u64 FAKE_RANK_SIZE = 2;
-    constexpr void *FAKE_PTR = (void *)0x1000000;
+    void *FAKE_PTR = (void *)0x1000000;
     constexpr HcclDataType FAKE_DATA_TYPE = HCCL_DATA_TYPE_INT32;
     Hccl::CommParams commParams;
     std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
@@ -2123,6 +2123,7 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitRootInfoV2_When_InputValue_Expect_Return_HCC
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_910_95));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::InitDeviceListenPort).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
  
     // then
@@ -2163,6 +2164,7 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitRootInfoConfigV2_When_InputValue_Expect_Retu
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_910_95));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::InitDeviceListenPort).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
  
     // then
@@ -2185,6 +2187,7 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitRootInfoConfigV2_When_NotSetBufSize_Expect_R
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_910_95));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::InitDeviceListenPort).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
     CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap.clear();
     CommManager::GetInstance(0).GetCommInfoV2().pComm = nullptr;
@@ -2234,6 +2237,7 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitAllV2_When_InputValue_Expect_Return_HCCL_SUC
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_910_95));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::InitDeviceListenPort).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
     CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap.clear();
     CommManager::GetInstance(0).GetCommInfoV2().pComm = nullptr;
