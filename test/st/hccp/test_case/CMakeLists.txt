@@ -7,17 +7,5 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-set(CMAKE_SKIP_RPATH FALSE)
-
-# UT
-if(ENABLE_UT)
-    add_subdirectory(ut)
-    add_subdirectory(legacy/ut)
-endif()
-
-# ST
-if(ENABLE_ST)
-    include(${PROJECT_SOURCE_DIR}/cmake/third_party/protobuf.cmake)
-    add_subdirectory(st/algorithm)
-    add_subdirectory(st/hccp)
-endif()
+add_subdirectory(rdma_agent)
+add_subdirectory(rdma_service)
