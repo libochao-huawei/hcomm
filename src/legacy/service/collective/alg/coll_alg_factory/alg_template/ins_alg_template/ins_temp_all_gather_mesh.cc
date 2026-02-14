@@ -85,7 +85,7 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
     }
 
     if (skipFix) {
-        HCCL_WARN("[TEST MODE] Skipping PreSync fix! Race condition expected if delay is present.");
+        HCCL_WARNING("[TEST MODE] Skipping PreSync fix! Race condition expected if delay is present.");
     } else {
     // 主流通知 copy流开始工作
     if (tempInsQues.size() > 1) {
@@ -124,7 +124,7 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
 
 
     if (skipFix) {
-        HCCL_WARN("[TEST MODE] Skipping PostSync fix! Race condition expected if delay is present.");
+        HCCL_WARNING("[TEST MODE] Skipping PostSync fix! Race condition expected if delay is present.");
     } else {
 
     // 同步第0条流和最后一条流 (LocalCopy所在的流)
@@ -173,7 +173,7 @@ HcclResult InsTempAllGatherMesh1D::LocalDataCopy(std::vector<InsQuePtr> &tempIns
     // =========================================================================
     const char* envDelay = std::getenv("HCCL_TEST_INJECT_DELAY");
     if (envDelay != nullptr && std::string(envDelay) == "1") {
-        HCCL_WARN("[TEST MODE] Injecting huge delay to Copy Stream (que 1) to reproduce race condition...");
+        HCCL_WARNING("[TEST MODE] Injecting huge delay to Copy Stream (que 1) to reproduce race condition...");
     
         auto& copyStream = tempInsQues[tempInsQues.size() - 1];
         // 循环 10000 次自拷贝，确保耗时远大于 Main Stream
