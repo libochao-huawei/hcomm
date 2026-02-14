@@ -103,8 +103,7 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
     LocalNotify *notify = GetNotify(dstThread, dstNotifyIdx);
     CHK_PTR_NULL(notify);
 
-    if (threadPtr->IsDeviceA5())
-    {
+    if (threadPtr->IsDeviceA5()) {
         HcclResult ret = notify->Post(*stream);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dstThread[0x%llx], notifyIdx[%u].",
             __func__, thread, dstThread, dstNotifyIdx), ret);
@@ -435,7 +434,7 @@ int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const void *sr
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
         CHK_PTR_NULL(hostCpuRoceChannelPtr);
         ret = hostCpuRoceChannelPtr->WriteWithNotify(dst, src, len, remoteNotifyIdx);
@@ -493,7 +492,7 @@ int32_t HcommChannelNotifyRecord(ChannelHandle channel, const uint32_t remoteNot
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
         CHK_PTR_NULL(hostCpuRoceChannelPtr);
         ret = hostCpuRoceChannelPtr->NotifyRecord(remoteNotifyIdx);
@@ -530,7 +529,7 @@ int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, u
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
         CHK_PTR_NULL(hostCpuRoceChannelPtr);
         ret = hostCpuRoceChannelPtr->NotifyWait(localNotifyIdx, timeout);

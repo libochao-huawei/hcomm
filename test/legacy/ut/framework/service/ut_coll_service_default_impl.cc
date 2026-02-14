@@ -75,7 +75,7 @@ protected:
 
 class FakeCollAlgComponent : public CollAlgComponent {
 public:
-    FakeCollAlgComponent() : CollAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1){};
+    FakeCollAlgComponent() : CollAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1){};
     HcclResult Orchestrate(const CollAlgOperator &op, const CollAlgParams &params, InsQuePtr queue, string &algName)
     {
         return HCCL_SUCCESS;
@@ -89,7 +89,7 @@ public:
 
 class FakeCollAlgComponentWithError : public CollAlgComponent {
 public:
-    FakeCollAlgComponentWithError() : CollAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1) {}
+    FakeCollAlgComponentWithError() : CollAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1) {}
     HcclResult Orchestrate(const CollAlgOperator &op, const CollAlgParams &params, InsQuePtr queue, string &algName)
     {
         return HCCL_E_INTERNAL;
@@ -395,7 +395,7 @@ TEST_F(CollServiceDefaultImplTest, test_base_register_offload_buf)
 
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER(HrtIpcSetMemoryName).stubs();
     MOCKER(HrtDevMemAlignWithPage).stubs();
@@ -423,7 +423,7 @@ TEST_F(CollServiceDefaultImplTest, test_base_register_offload_buf)
     commParams.commId = "commId";
     commParams.myRank = 1;
     commParams.rankSize = 4;
-    commParams.devType = DevType::DEV_TYPE_910_95;
+    commParams.devType = DevType::DEV_TYPE_950;
     comm.InitDataBufferManager();
     comm.Init(commParams, RankTable4p, config);
 
@@ -474,7 +474,7 @@ TEST_F(CollServiceDefaultImplTest, test_calc_coll_offload_op_res_with_hccl_succe
 
     CollAlgComponentBuilder collAlgComponentBuilder;
     std::shared_ptr<CollAlgComponent> collAlgComponent = collAlgComponentBuilder.SetRankGraph(&virtTopo)
-                                                             .SetDevType(DevType::DEV_TYPE_910_95)
+                                                             .SetDevType(DevType::DEV_TYPE_950)
                                                              .SetMyRank(myRank)
                                                              .SetRankSize(rankSize)
                                                              .Build();
@@ -496,7 +496,7 @@ TEST_F(CollServiceDefaultImplTest, test_init)
 
     MOCKER(HrtGetDevice).stubs().will(returnValue(1));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER(HrtIpcSetMemoryName).stubs();
     MOCKER(HrtDevMemAlignWithPage).stubs();
@@ -517,7 +517,7 @@ TEST_F(CollServiceDefaultImplTest, test_init)
     commParams.commId = "commId";
     commParams.myRank = 1;
     commParams.rankSize = 4;
-    commParams.devType = DevType::DEV_TYPE_910_95;
+    commParams.devType = DevType::DEV_TYPE_950;
     comm.Init(commParams, RankTable4p, config);
 
     DelRankTableFile4p();
@@ -531,7 +531,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_op_based_mode)
 {
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER(HrtIpcSetMemoryName).stubs();
     MOCKER(HrtDevMemAlignWithPage).stubs();
@@ -571,7 +571,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_op_based_mode)
     commParams.commId = "commId";
     commParams.myRank = 1;
     commParams.rankSize = 4;
-    commParams.devType = DevType::DEV_TYPE_910_95;
+    commParams.devType = DevType::DEV_TYPE_950;
     comm.devLogicId = 0;
     comm.Init(commParams, RankTable4p, config);
     u32 remoteRank = 1;
@@ -621,7 +621,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode)
 {
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER(HrtIpcSetMemoryName).stubs();
     MOCKER(HrtDevMemAlignWithPage).stubs();
@@ -664,7 +664,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode)
     commParams.commId = "commId";
     commParams.myRank = 1;
     commParams.rankSize = 4;
-    commParams.devType = DevType::DEV_TYPE_910_95;
+    commParams.devType = DevType::DEV_TYPE_950;
     comm.Init(commParams, RankTable4p, config);
     u32 remoteRank = 1;
     CollOpParams collOpParams;
@@ -809,7 +809,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode_with_task)
 {
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER(HrtIpcSetMemoryName).stubs();
     MOCKER(HrtDevMemAlignWithPage).stubs();
@@ -851,7 +851,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode_with_task)
     commParams.commId = "commId";
     commParams.myRank = 1;
     commParams.rankSize = 4;
-    commParams.devType = DevType::DEV_TYPE_910_95;
+    commParams.devType = DevType::DEV_TYPE_950;
     comm.Init(commParams, RankTable4p, config);
     u32 remoteRank = 1;
     CollOpParams collOpParams;
@@ -896,7 +896,7 @@ TEST_F(CollServiceDefaultImplTest, Test_RecoverTransport)
     CollServiceDefaultImpl collServiceDefaultImpl(comm.get());
 
     MOCKER_CPP(&RdmaHandleManager::GetDieAndFuncId).stubs().will(returnValue(make_pair<uint32_t,uint32_t>(0,0)));
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     
     vector<LinkData> links;

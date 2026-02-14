@@ -48,7 +48,7 @@ protected:
 
 TEST_F(HostRdmaConnectionTest, Ut_When_Normal_Call_Expect_Status_Consisitent)
 {
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(hrtGetDeviceType).stubs()
                             .with(outBound(devType))
                             .will(returnValue(HCCL_SUCCESS));
@@ -58,7 +58,7 @@ TEST_F(HostRdmaConnectionTest, Ut_When_Normal_Call_Expect_Status_Consisitent)
     std::cout << "start" << std::endl;
     // socket 打桩
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
-    char targetChipVer[Hccl::CHIP_VERSION_MAX_LEN] = "Ascend910_9591";
+    char targetChipVer[Hccl::CHIP_VERSION_MAX_LEN] = "Ascend95091";
     MOCKER(Hccl::HrtGetSocVer)
         .stubs()
         .with(outBoundP(&targetChipVer[0], sizeof(targetChipVer)), any())
@@ -140,14 +140,14 @@ TEST_F(HostRdmaConnectionTest, Ut_When_DevType_NotExpected_Expect_ERROR)
 // SOCKET_TIME_OUT
 TEST_F(HostRdmaConnectionTest, Ut_When_Socket_TIMEOUT_Expect_ERROR)
 {
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(hrtGetDeviceType).stubs()
                             .with(outBound(devType))
                             .will(returnValue(HCCL_SUCCESS));
     std::cout << "start" << std::endl;
     // socket 打桩
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::TIMEOUT));
-    char targetChipVer[Hccl::CHIP_VERSION_MAX_LEN] = "Ascend910_9591";
+    char targetChipVer[Hccl::CHIP_VERSION_MAX_LEN] = "Ascend95091";
     MOCKER(Hccl::HrtGetSocVer)
         .stubs()
         .with(outBoundP(&targetChipVer[0], sizeof(targetChipVer)), any())
@@ -178,14 +178,14 @@ TEST_F(HostRdmaConnectionTest, Ut_When_Socket_TIMEOUT_Expect_ERROR)
 // // Qp Create 失败
 TEST_F(HostRdmaConnectionTest, Ut_When_Call_GetStatus_Expect_Return_Ready)
 {
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(hrtGetDeviceType).stubs()
                             .with(outBound(devType))
                             .will(returnValue(HCCL_SUCCESS));
     std::cout << "start" << std::endl;
     // socket 打桩
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
-    char targetChipVer[Hccl::CHIP_VERSION_MAX_LEN] = "Ascend910_9591";
+    char targetChipVer[Hccl::CHIP_VERSION_MAX_LEN] = "Ascend95091";
     MOCKER(Hccl::HrtGetSocVer)
         .stubs()
         .with(outBoundP(&targetChipVer[0], sizeof(targetChipVer)), any())

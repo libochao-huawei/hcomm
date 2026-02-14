@@ -201,7 +201,7 @@ TEST_F(ConnLocalNotifyManagerTest, apply_for_ub_notify_ok) {
                 .stubs();
         MOCKER(HrtGetDeviceType)
                 .stubs()
-                .will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+                .will(returnValue((DevType)DevType::DEV_TYPE_950));
         
         pair<TokenIdHandle, uint32_t> fakeTokenInfo = make_pair(0x12345678, 1);
         MOCKER_CPP(&RdmaHandleManager::GetTokenIdInfo).stubs().will(returnValue(fakeTokenInfo));

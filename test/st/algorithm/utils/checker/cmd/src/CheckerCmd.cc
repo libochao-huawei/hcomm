@@ -439,7 +439,7 @@ int PrintHelp() {
     "[-p,--npus <npus used for superPodNum>] \n\t"
     "[-s,--npus <npus used for serverNum>] \n\t"
     "[-r,--npus <npus used for rankNum>] \n\t"
-    "[-d,--deviceType 1.0 : <310p1/310p3/910/910b/910_93> 2.0 : <910_95>] \n\t"
+    "[-d,--deviceType 1.0 : <310p1/310p3/910/910b/910_93> 2.0 : <950>] \n\t"
     "[-t,--opType <broadcast/allreduce/reduce/send/receive/allgather/reducescatter/alltoallv/alltoallvc/alltoall/"
     "scatter/batchsendrecv/reducescatterV/allGatherV>] \n\t"
     "[-m,--opMode <opbase/offload>] \n\t"

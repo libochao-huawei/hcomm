@@ -1921,7 +1921,7 @@ struct DVattribute {
  * 1. After applying for memory, you need to call the advise interface to allocate physical memory, and then
  * call this interface. That is, the user should ensure that the page table has been established in the space where
  * the virtual address is located to ensure that the corresponding physical address is correctly obtained
- * @attention: Ascend910_95 is not supported
+ * @attention: Ascend950 is not supported
  * @param [in] vptr:  unsigned 64-bit integer, the device memory address must be the shared memory requested
  * @param [out] pptr: unsigned 64-bit integer. The corresponding physical address is returned. The value is valid
  * when the return is successful
@@ -2007,7 +2007,7 @@ DLLEXPORT drvError_t halMemcpy(void *dst, size_t dst_size, void *src, size_t cou
  * 1. The destination buffer must have enough space to store the contents of the source buffer to be copied.
  * 2. (offline) (virtual machine logical grouping) not support
  * 3. The max num of async copy tasks being processed simultaneously is 65535.
- * @attention Ascend910_95 is not supported
+ * @attention Ascend950 is not supported
  * @param [in] dst:  unsigned 64-bit integer, memory address to be initialized
  * @param [in] dest_max:  the maximum number of valid initial memory values that can be set
  * @param [in] value:  16-bit unsigned, initial value set
@@ -2026,7 +2026,7 @@ DLLEXPORT DV_OFF_ONLINE DVresult halMemCpyAsync(
  * 1. The destination buffer must have enough space to store the contents of the source buffer to be copied.
  * 2. (offline) (virtual machine logical grouping) not support
  * 3. The copyFd will be free after wait finish, so the same copyFd can only be wait finish once.
- * @attention: Ascend910_95 is not supported
+ * @attention: Ascend950 is not supported
  * @param [in] copy_fd:  get from halMemCpyAsync, Asynchronously copy Fd
  * @return DRV_ERROR_NONE : success
  * @return DRV_ERROR_INVALID_HANDLE : Internal error, copy failed
@@ -2067,7 +2067,7 @@ DLLEXPORT DV_ONLINE DVresult halMemcpyBatch(uint64_t dst[], uint64_t src[], size
  * @attention This function is suitable for large size of memcpy. It fallback to normal
  * memcpy_s if the sdma version of memcpy failed. This copy interface can not be used
  * in p2p scenario.
- * @attention: Ascend910_95 is not supported
+ * @attention: Ascend950 is not supported
  * @param [in] dst: destination address
  * @param [in] dst_size: destination memory region size
  * @param [in] src: source address
@@ -2136,7 +2136,7 @@ DLLEXPORT DV_ONLINE DVresult halMemDestroyAddrBatch(struct DMA_ADDR *ptr[], uint
  * @ingroup driver
  * @brief Sumbit DMA the physical address information of the DMA copy
  * @attention Available online, not offline. This interface is used with drvMemConvertAddr.
- * @attention Ascend910_95 is not supported
+ * @attention Ascend950 is not supported
  * @param [in] dma_addr : information to be DMA copy
  * @param [in] flag: sumbit DMA copy use synchronize or asynchronous mode, use enum MEMCPY_SUMBIT_TYPE
  * @return DRV_ERROR_NONE : success
@@ -2148,7 +2148,7 @@ DLLEXPORT DV_ONLINE DVresult halMemcpySumbit(struct DMA_ADDR *dma_addr, int flag
  * @ingroup driver
  * @brief Wait the physical address information of the DMA copy asynchronously finish
  * @attention Available online, not offline. This interface is used with halMemcpySumbit.
- * @attention Ascend910_95 is not supported
+ * @attention Ascend950 is not supported
  * @param [in] dma_addr : information to be wait dma finish
  * @return DRV_ERROR_NONE : success
  * @return DV_ERROR_XXX : DMA copy fail
@@ -2182,7 +2182,7 @@ DLLEXPORT DV_ONLINE DVresult drvMemPrefetchToDevice(DVdeviceptr dev_ptr, size_t 
  * 1. Vptr must be device memory, and must be directly allocated for calling the memory management interface, without offset.
  * 2. The length of the name array and name_len must be greater than 64.
  * 3. Not support vmm va, use may result in unexpected behavior.
- * 4. For Ascend910_95, Ascend910_96, should config ubmem firstly.
+ * 4. For Ascend950, Ascend910_96, should config ubmem firstly.
  * @param [in] vptr: virtual memory to be shared
  * @param [in] byte_count: user-defined length to be shared
  * @param [in] name_len: the maximum length of the name array
@@ -2207,7 +2207,7 @@ DLLEXPORT DV_ONLINE DVresult halShmemDestroyHandle(const char *name);
  * @brief Configure the whitelist of nodes with ipc mem shared memory
  * @attention Available online, not offline. mutually exclusive with halShmemSetAttribute interface.
  * 1. The maximum number of PIDs that can be set for a shmem is:
- *     for Ascend910_95, Ascend910_55, Ascend910_96, is 65535;
+ *     for Ascend950, Ascend910_55, Ascend910_96, is 65535;
  *     for Ascend310B, Ascend910, Ascend310P, Ascend910B, Ascend910_93, is 32768.
  * @param [in] name: name used for sharing between processes
  * @param [in] pid: host pid whitelist array
@@ -4145,7 +4145,7 @@ typedef enum tagDrvResourceType {
     DRV_RESOURCE_CMO_ID,
     DRV_RESOURCE_SQ_ID,
     DRV_RESOURCE_CQ_ID,
-    DRV_RESOURCE_CNT_NOTIFY_ID,    /* add start ascend910_95 */
+    DRV_RESOURCE_CNT_NOTIFY_ID,    /* add start ascend950 */
     DRV_RESOURCE_INVALID_ID,
 } drvResourceType_t;
 

@@ -44,7 +44,7 @@ protected:
         communicatorImplLite = new CommunicatorImplLite(0);
         kernelParam->envConfig.taskExceptionEnable = true;
         kernelParam->comm.idIndex = 0;
-        kernelParam->comm.devType = DevType::DEV_TYPE_910_95;
+        kernelParam->comm.devType = DevType::DEV_TYPE_950;
         kernelParam->op.algOperator.opMode = OpMode::OPBASE;
         std::cout << "A Test case in HcclMc2ExTest SetUp" << std::endl;
     }

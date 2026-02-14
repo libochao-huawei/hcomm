@@ -31,7 +31,7 @@ extern "C" {
 typedef enum {
     RANK_GRAPH_RESERVED = -1,   ///< 保留的rank图类型
     RANK_GRAPH_910_93 = 0,      ///< 910_93 rank图类型
-    RANK_GRAPH_910_95 = 1,      ///< 910_95 rank图类型
+    RANK_GRAPH_950 = 1,      ///< 950 rank图类型
 } GraphType;
 
 /**

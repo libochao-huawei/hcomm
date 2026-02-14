@@ -169,7 +169,7 @@ typedef enum tagDrvIdType {
     DRV_MODEL_ID,
     DRV_NOTIFY_ID,
     DRV_CMO_ID,
-    DRV_CNT_NOTIFY_ID,    /* add start ascend910_95 */
+    DRV_CNT_NOTIFY_ID,    /* add start ascend950 */
     DRV_SQ_ID,
     DRV_CQ_ID,
     DRV_INVALID_ID,

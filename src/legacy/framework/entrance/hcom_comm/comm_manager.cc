@@ -302,7 +302,7 @@ HcclResult HcomCreateGroupImplV2(const std::string &group, u32 rankNum, const st
 
     /* 创建子通信域 */
     Hccl::CommParams subCommParams{group, static_cast<Hccl::RankId>(groupParamsV2Tem.groupRank),
-        rankNum, static_cast<Hccl::RankId>(groupParamsV2Tem.worldRank), Hccl::DevType::DEV_TYPE_910_95};
+        rankNum, static_cast<Hccl::RankId>(groupParamsV2Tem.worldRank), Hccl::DevType::DEV_TYPE_950};
     auto ret = hcomCommInfoV2.pComm->CreateSubComm(subCommParams, groupParamsV2Tem.groupRanks, groupParamsV2Tem.pComm);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Create][Group]errNo[0x%016llx] create group failed.", HCOM_ERROR_CODE(ret)), ret);
@@ -520,7 +520,7 @@ static HcclResult GetRankTableInfo(const char *rankTablePath, std::string &rankt
 HcclResult HcomInitByFileV2(const char *rankTablePath, const char *identify)
 {
     // 待解决：目前主要为了芯片验证，非最终版本
-    HCCL_RUN_INFO("Entry-HcomInitByFile V910_95, ranktable[%s], identify[%s]", rankTablePath, identify);
+    HCCL_RUN_INFO("Entry-HcomInitByFile V950, ranktable[%s], identify[%s]", rankTablePath, identify);
     
     // 解析myRank
     s32 myRank;
@@ -549,7 +549,7 @@ HcclResult HcomInitByFileV2(const char *rankTablePath, const char *identify)
     bool isWorldGroup = true;
     // 临时修改这个为4，后边要改掉这个，在初始流程中，解析完虚拟拓扑后，添加ranksize
     Hccl::CommParams commParams{commId, static_cast<Hccl::RankId>(myRank), 0, static_cast<Hccl::RankId>(myRank),
-        Hccl::DevType::DEV_TYPE_910_95, devUsed, isWorldGroup};
+        Hccl::DevType::DEV_TYPE_950, devUsed, isWorldGroup};
     hcomCommInfoV2.pComm.reset(new (std::nothrow) Hccl::HcclCommunicator(commParams));
     CHK_PTR_NULL(hcomCommInfoV2.pComm);
     auto res = hcomCommInfoV2.pComm->Init(ranktableInfo);
@@ -583,7 +583,7 @@ HcclResult HcomInitByFileV2(const char *rankTablePath, const char *identify)
 HcclResult HcomInitByStringV2(const char *rankTableM, const char *identify)
 {
     // 待解决：目前主要为了芯片验证，非最终版本
-    HCCL_RUN_INFO("Entry-HcomInitByString V910_95, rankTableM[%s], identify[%s]", rankTableM, identify);
+    HCCL_RUN_INFO("Entry-HcomInitByString V950, rankTableM[%s], identify[%s]", rankTableM, identify);
     
     // 解析myRank
     s32 myRank;
@@ -607,7 +607,7 @@ HcclResult HcomInitByStringV2(const char *rankTableM, const char *identify)
     bool isWorldGroup = true;
     // 临时修改这个为4，后边要改掉这个，在初始流程中，解析完虚拟拓扑后，添加ranksize
     Hccl::CommParams commParams{commId, static_cast<Hccl::RankId>(myRank), 0, static_cast<Hccl::RankId>(myRank),
-        Hccl::DevType::DEV_TYPE_910_95, devUsed, isWorldGroup};
+        Hccl::DevType::DEV_TYPE_950, devUsed, isWorldGroup};
     hcomCommInfoV2.pComm.reset(new (std::nothrow) Hccl::HcclCommunicator(commParams));
     CHK_PTR_NULL(hcomCommInfoV2.pComm);
     auto res = hcomCommInfoV2.pComm->Init(rankTableM);

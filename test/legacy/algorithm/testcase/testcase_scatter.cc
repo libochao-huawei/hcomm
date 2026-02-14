@@ -60,7 +60,7 @@ protected:
         checkerOpParam.opType = CheckerOpType::SCATTER;
         checkerOpParam.tag = "scatter";
         checkerOpParam.opMode = opMode;
-        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
         checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
         checkerOpParam.DataDes.count = dataCount;
         checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
