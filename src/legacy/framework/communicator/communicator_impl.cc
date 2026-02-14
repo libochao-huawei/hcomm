@@ -2638,7 +2638,7 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
             commAccelerator = AcceleratorState::AICPU_TS;
             break;
         case HcclAccelerator::HOSTCPU_TS: // 910_95不支持HOST展开，进行拦截
-            HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in 91095", hcclAccelerator.Describe().c_str());
+            HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in 950", hcclAccelerator.Describe().c_str());
             return HCCL_E_NOT_SUPPORT;
         case HcclAccelerator::AICPU:
             HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support", hcclAccelerator.Describe().c_str());

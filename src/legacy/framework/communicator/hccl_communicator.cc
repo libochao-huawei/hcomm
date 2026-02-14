@@ -367,7 +367,7 @@ HcclResult HcclCommunicator::GetTopoDesc(HcclTopoDescs *topoDescs, uint32_t topo
 HcclResult HcclCommunicator::GetDevType(DevType &devType)
 {
     devType = pimpl->GetDevType();
-    HCCL_INFO("HcclCommunicator::GetDevTyp, devtype is %d", static_cast<int>(devType));
+    HCCL_INFO("HcclCommunicator::GetDevTyp, devtype is %s", devType.Describe().c_str());
     return HcclResult::HCCL_SUCCESS;
 }
 

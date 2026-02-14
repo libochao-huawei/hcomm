@@ -997,7 +997,7 @@ HcclResult HcomGetDevTypeV2(Hccl::DevType &devType)
     HCCL_INFO("[%s] start.", __func__);
     HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
     devType = hcomCommInfoV2.commParams.devType;
-    HCCL_INFO("HcomGetDevTypeV2, devType[%d]", static_cast<int>(devType));
+    HCCL_INFO("HcomGetDevTypeV2, devType[%s]", devType.Describe().c_str());
     return HCCL_SUCCESS;
 }
 

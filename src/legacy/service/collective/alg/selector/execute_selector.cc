@@ -99,7 +99,7 @@ HcclResult ExecuteSelector::Run(const CollAlgOperator &op, CollAlgParams &params
     }
 
     selectors = SelectorRegistry::Global()->GetSelectorsByOpType(op.opType);
-    HCCL_INFO("[Algo][Selector] The selector nums of optype[%d] is [%zu].", op.opType, selectors.size());
+    HCCL_INFO("[Algo][Selector] The selector nums of optype[%s] is [%zu].", op.opType.Describe().c_str(), selectors.size());
     for (auto iter : selectors) {
         HCCL_DEBUG("[Algo][Selector] The selector[priority of %llu] is running.", iter.first);
         iter.second->SetVirtualTopo(rankGraph_)
