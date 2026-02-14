@@ -12,6 +12,7 @@
 #define CCU_U_COMM_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #define CCU_DATA_TYPE_UNION_ARRAY_SIZE 8
 #define CCU_RESOURCE_PATH_LEN_MAX 512
@@ -82,6 +83,15 @@ typedef enum ccu_u_opcode {
     CCU_U_OP_GET_LOOP_CTX                   = 209,  /* 获取Loop_ctx数据 */
     CCU_U_OP_GET_MEMORY_SLICE               = 210,  /* 获取memory slice数据 */
     CCU_U_OP_GET_LOOP_CKE_CTX               = 211,  /* 获取LOOP_CKE_CTX数据 */
+    CCU_U_OP_GET_MISSION_SQE                = 212,  /* 获取MISSION_SQE数据 */
+    CCU_U_OP_GET_CQE_BLOCK0                 = 213,  /* 获取CQE_BLOCK0数据 */
+    CCU_U_OP_GET_CQE_BLOCK1                 = 214,  /* 获取CQE_BLOCK1数据 */
+    CCU_U_OP_GET_CQE_BLOCK2                 = 215,  /* 获取CQE_BLOCK2数据 */
+    CCU_U_OP_GET_WQEBB                      = 216,  /* 获取WQEBB数据 */
+    CCU_U_OP_GET_MS_BLOCK0                  = 217,  /* 获取MS_BLOCK0数据 */
+    CCU_U_OP_GET_MS_BLOCK1                  = 218,  /* 获取MS_BLOCK1数据 */
+    CCU_U_OP_GET_MS_BLOCK2                  = 219,  /* 获取MS_BLOCK2数据 */
+    CCU_U_OP_GET_MS_BLOCK3                  = 220,  /* 获取MS_BLOCK3数据 */
 
     CCU_U_OP_SET_INSTRUCTION                = 251,  /* 设置INS指令 */
     CCU_U_OP_SET_GSA                        = 252,  /* 设置GSA数据 */
