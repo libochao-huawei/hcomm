@@ -6080,7 +6080,7 @@ namespace hccl
         CHK_RET(BuildAicpuOrderLaunchNotify()); // 先申请device侧的关于按序下发的Notify内存
         if (algName == "RunAlltoAllAivDirect") {
             // AIV直驱ROCE
-            CHK_RET(BuildAiRmaInfoParam(newTag, algName, opType));
+            CHK_RET(BuildAiRmaInfoParam(newTag, algName, opType)); // ???
             CHK_RET(CopyHostAirmaInfoToDeviceParam(newTag, opType, aicpuStream));
         }
         CHK_RET(CopyHostOpResToDeviceParam(newTag));
