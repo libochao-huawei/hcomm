@@ -81,7 +81,7 @@ constexpr u32 IDENTIFY_MAX_LEN = 127; // 最大的identify  长度
 constexpr s32 STRING_MAX_LENGTH = 40 * 1024 * 1024; // rankTable string length 40*1024*1024=40M.
 constexpr u64 DEVICE_MEMORY_MAX_ALLOC_SIZE = 16ULL * 1024 * 1024 * 1024; // device mmeory size 16GB
 constexpr int HCCL_BARRIER_DEFAULT_COUNT = 8;
-constexpr s32 NOTIFY_DEFAULT_WAIT_TIME = 27 * 68;   // notifywait默认1836等待时长
+constexpr u16 NOTIFY_DEFAULT_WAIT_TIME = 27 * 68;   // notifywait默认1836等待时长
 constexpr u32 NOTIFY_INVALID_WAIT_TIME = 0xFFFFFFFF;   // notifywait时长非法值
 constexpr u32 HCCL_FFTS_CAPACITY = 65535;           // FFTS+子图最大容量
 constexpr char HCCL_WORLD_GROUP[] = "hccl_world_group";
