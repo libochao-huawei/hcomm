@@ -141,10 +141,15 @@ HcclResult HcclCommunicator::HcclGetCclBuffer(uintptr_t &cclBufferAddr, size_t &
         return HCCL_E_PTR;
     }
     shared_ptr<DevBuffer> hcclBuffer = commImpl->GetCclBuffer();
-    CHK_PTR_NULL(hcclBuffer);
-    cclBufferSize = commImpl->GetBufferSize();
-    cclBufferAddr = hcclBuffer->GetAddr();
-    cclBufferMemType = hcclBuffer->GetMemType();
+     if (hcclBuffer == nullptr) {
+        cclBufferSize = 0;
+        cclBufferAddr = 0;
+        cclBufferMemType = HcclMemType::HCCL_MEM_TYPE_DEVICE;
+    } else {
+        cclBufferSize = commImpl->GetBufferSize();
+        cclBufferAddr = hcclBuffer->GetAddr();
+        cclBufferMemType = hcclBuffer->GetMemType();
+    }
     return HCCL_SUCCESS;
 }
 HcclResult HcclCommunicator::GetRankId(uint32_t &rankId)
