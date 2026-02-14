@@ -546,7 +546,7 @@ bool AlltoAllOperator::IsSatisfyAlltoAllAivCondition(const OpParam& param)
         CHK_PRT_RET(!IsSupportAIVCopy(param.All2AllDataDes.sendType), HCCL_ERROR("current data type[%s] not supported, support range: "\
             "[int8, int16, int32, uint8, uint16, uint32, float16, float32, bfloat16]",
             GetDataTypeEnumStr(param.All2AllDataDes.sendType).c_str()), false);
-        CHK_PRT_RET(userRankSize_ > 1, HCCL_ERROR("current userRankSize_[%u] greater than 1", userRankSize_), false);
+        CHK_PRT_RET(userRankSize_ == 1, HCCL_ERROR("current userRankSize[%u] equal to 1.", userRankSize_), false);
 
         CHK_PRT_RET(!isBufferEnough, HCCL_ERROR("current buffer size[%llu] is not enough. isOpbase[%d]",
             cclBufferManager_.GetInCCLbufferSize(), isOpbase), false);
