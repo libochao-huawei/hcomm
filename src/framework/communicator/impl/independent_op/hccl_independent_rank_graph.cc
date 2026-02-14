@@ -518,7 +518,7 @@ HcclResult HcclGetNetPlaneId(HcclComm comm, uint32_t *netPlaneId)
     *netPlaneId = tmpNetPlaneId;
 
     // 步骤4：关键状态记录
-    HCCL_INFO("[%s] success, comm[%s], netPlaneId[%u]",
+    HCCL_INFO("[OXC][%s] success, comm[%s], netPlaneId[%u]",
               __func__, hcclComm->GetIdentifier().c_str(), *netPlaneId);
 
     return HCCL_SUCCESS;
@@ -539,7 +539,7 @@ HcclResult HcclGetNetPlaneNum(HcclComm comm, uint32_t *netPlaneNum)
     *netPlaneNum = tmpNetPlaneNum;
 
     // 步骤4：关键状态记录
-    HCCL_INFO("[%s] success, comm[%s], netPlaneNum[%u]",
+    HCCL_INFO("[OXC][%s] success, comm[%s], netPlaneNum[%u]",
               __func__, hcclComm->GetIdentifier().c_str(), *netPlaneNum);
 
     return HCCL_SUCCESS;

@@ -781,7 +781,7 @@ void CommConfig::SetNetPlaneInfo(u32 netPlaneId, u32 netPlaneNum)
 {
     netPlaneId_ = netPlaneId;
     netPlaneNum_ = netPlaneNum;
-    HCCL_INFO("[%s] SetNetPlaneInfo: netPlaneId[%u], netPlaneNum[%u]",
+    HCCL_INFO("[OXC][%s] SetNetPlaneInfo: netPlaneId[%u], netPlaneNum[%u]",
               __func__, netPlaneId_, netPlaneNum_);
 }
 

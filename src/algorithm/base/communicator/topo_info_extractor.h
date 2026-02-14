@@ -24,6 +24,7 @@
 #include "comm_ahc_base_pub.h"
 #include "alg_template_base_pub.h"
 #include "env_config.h"
+#include "../../../framework/common/src/topo/topoinfo_plane_transformer.h"
 namespace hccl {
 
 class TopoInfoExtractor {
@@ -49,6 +50,11 @@ public:
     HcclResult SetTopoInfoForMeshL1();
     HcclResult SetTopoInfoForARS();
     HcclResult SetTopoInfoForCombineL1();
+
+    // ========== OXC 分层框架新增方法 ==========
+    HcclResult SetTopoInfoForLayeredLevel1();  // 构建组内平面
+    HcclResult SetTopoInfoForLayeredLevel2();  // 构建组间平面
+
     HcclResult CheckPlaneInfo();
     HcclResult CheckSuperPodInfo();
     HcclResult CheckServerInfo();
@@ -137,6 +143,10 @@ private:
 
     // 保存所有级别的通信rank关系, CommPlaneVector_[CommPlane][ringIndex]: 第CommPlane级 第ringIndex个环
     std::vector<std::vector<std::vector<RankInfo> > > CommPlaneVector_;
+
+    // ========== OXC 分层框架新增引用成员 ==========
+    HcclAlgoAttr &algoAttr_;    // 引用：存储组内/组间算法类型
+    HcclTopoAttr &topoAttr_;    // 引用：存储 groupSize/netPlaneId 等
 };
 
 bool Ascending(const RankInfo &first, const RankInfo &second);

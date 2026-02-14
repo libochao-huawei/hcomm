@@ -34,7 +34,10 @@ TopoInfoExtractor::TopoInfoExtractor(HcclAlgoAttr &algoAttr, HcclTopoAttr &topoA
       isDiffDeviceType_(topoAttr.isDiffDeviceType),
       gcdDeviceNumPerAggregation_(topoAttr.gcdDeviceNumPerAggregation),
       CommPlaneSubGroupVector_(COMM_LEVEL_RESERVED),
-      CommPlaneVector_(COMM_LEVEL_RESERVED)
+      CommPlaneVector_(COMM_LEVEL_RESERVED),
+      // ========== OXC 分层框架新增 ==========
+      algoAttr_(algoAttr),
+      topoAttr_(topoAttr)
 { };
 
 #ifdef CCL_LLT
@@ -373,6 +376,13 @@ HcclResult TopoInfoExtractor::SetTopologyInfo()
     CHK_RET(SetTopoInfoForCombineL1());
 
     CHK_RET(SetAHCSubGroupsAndAlgOption());
+
+    // ========== OXC 分层框架新增 ==========
+    // groupSize > 0 时启用分层算法
+    if (topoAttr_.groupSize > 0) {
+        CHK_RET(SetTopoInfoForLayeredLevel1());  // 构建组内平面
+        CHK_RET(SetTopoInfoForLayeredLevel2());  // 构建组间平面
+    }
 
     // 是否支持按mesh划分通信拓扑
     bool isSupportMeshTopo = meshAggregationRankSize_ > 0 &&
@@ -1355,6 +1365,171 @@ HcclResult TopoInfoExtractor::AHCSubGroupInit(CommPlane algLevel, std::vector<st
 
     CHK_RET(CommAHCBaseInfo::CheckGlobalGroups(globalSubGroups));
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult TopoInfoExtractor::SetTopoInfoForLayeredLevel1()
+{
+    HCCL_INFO("[OXC] SetTopoInfoForLayeredLevel1: start.");
+
+    // 1. 获取 Level1 环的大小
+    u32 ringSize = ranksOneNode_[static_cast<u32>(topoType_)];
+    CommPlane srcPlaneId = COMM_LEVEL1;         // 源：原 Level1 平面
+    CommPlane dstPlaneId = COMM_LAYERED_LEVEL1; // 目标：分层 Level1 平面
+
+    // 2. 获取分组信息
+    std::vector<std::vector<u32>> subGroups = CommPlaneSubGroupVector_[srcPlaneId][0];
+
+    // 3. 算法选择：根据分组选择组内/组间算法
+    TopoinfoPlaneTransformer::RegroupAndSelectAlgo(
+        topoAttr_.netPlaneNum, false, subGroups,
+        algoAttr_.intraAlgType, algoAttr_.interAlgType);
+
+    // 4. 查找当前 rank 在环中的位置
+    u32 rIdx = INVALID_UINT;  // 环索引
+    u32 xIdx = INVALID_UINT;  // 分组索引
+    for (u32 ringIndex = 0; ringIndex < ringSize; ringIndex++) {
+        for (u32 x = 0; x < subGroups.size(); x++) {
+            for (u32 y = 0; y < subGroups[x].size(); y++) {
+                u32 i = subGroups[x][y];
+                if (static_cast<u32>(ringIndex) < CommPlaneVector_[srcPlaneId].size() &&
+                    i < CommPlaneVector_[srcPlaneId][ringIndex].size()) {
+                    RankInfo& rankInfo = CommPlaneVector_[srcPlaneId][ringIndex][i];
+                    if (rankInfo.userRank == rankData_.userRank) {
+                        rIdx = ringIndex;
+                        xIdx = x;
+                        break;
+                    }
+                }
+            }
+            if (xIdx != INVALID_UINT) break;
+        }
+        if (xIdx != INVALID_UINT) break;
+    }
+
+    if (xIdx == INVALID_UINT || rIdx == INVALID_UINT) {
+        HCCL_WARNING("[OXC] SetTopoInfoForLayeredLevel1: failed to find current rank in subGroups.");
+        return HCCL_SUCCESS;
+    }
+
+    // 5. 构建分层 Level1 通信平面
+    CommPlaneVector_[dstPlaneId].resize(ringSize);
+    for (u32 ringIndex = 0; ringIndex < ringSize; ringIndex++) {
+        if (ringIndex != rIdx) continue;  // 只处理当前环
+
+        CommPlaneVector_[dstPlaneId][ringIndex].clear();
+        std::vector<u32> group = subGroups[xIdx];
+        for (u32 i : group) {
+            if (i < CommPlaneVector_[srcPlaneId][ringIndex].size()) {
+                RankInfo& rankInfo = CommPlaneVector_[srcPlaneId][ringIndex][i];
+                CommPlaneVector_[dstPlaneId][ringIndex].push_back(rankInfo);
+            }
+        }
+    }
+
+    HCCL_INFO("[OXC] SetTopoInfoForLayeredLevel1: done, plane size[%u]",
+        static_cast<u32>(CommPlaneVector_[dstPlaneId][rIdx].size()));
+    return HCCL_SUCCESS;
+}
+
+HcclResult TopoInfoExtractor::SetTopoInfoForLayeredLevel2()
+{
+    HCCL_INFO("[OXC] SetTopoInfoForLayeredLevel2: start.");
+
+    // 1. 获取分组信息
+    CommPlane srcPlaneId = COMM_LEVEL1;
+    CommPlane dstPlaneId = COMM_LAYERED_LEVEL2;
+
+    if (CommPlaneSubGroupVector_[srcPlaneId].empty() ||
+        CommPlaneSubGroupVector_[srcPlaneId][0].empty()) {
+        HCCL_WARNING("[OXC] SetTopoInfoForLayeredLevel2: no subGroups available.");
+        return HCCL_SUCCESS;
+    }
+
+    std::vector<std::vector<u32>> subGroups = CommPlaneSubGroupVector_[srcPlaneId][0];
+    u32 ringSize = ranksOneNode_[static_cast<u32>(topoType_)];
+
+    // 2. 算法选择
+    TopoinfoPlaneTransformer::RegroupAndSelectAlgo(
+        topoAttr_.netPlaneNum, false, subGroups,
+        algoAttr_.intraAlgType, algoAttr_.interAlgType);
+
+    // 3. 查找当前 rank 在分组中的位置
+    u32 rIdx = INVALID_UINT;      // 环索引
+    u32 yIdx = INVALID_UINT;      // 组内索引
+    u32 localRank = INVALID_UINT; // 本地 rank
+    for (u32 ringIndex = 0; ringIndex < ringSize; ringIndex++) {
+        for (u32 x = 0; x < subGroups.size(); x++) {
+            for (u32 y = 0; y < subGroups[x].size(); y++) {
+                u32 i = subGroups[x][y];
+                if (static_cast<u32>(ringIndex) < CommPlaneVector_[srcPlaneId].size() &&
+                    i < CommPlaneVector_[srcPlaneId][ringIndex].size()) {
+                    RankInfo& rankInfo = CommPlaneVector_[srcPlaneId][ringIndex][i];
+                    if (rankInfo.userRank == rankData_.userRank) {
+                        rIdx = ringIndex;
+                        yIdx = y;
+                        localRank = i;
+                        break;
+                    }
+                }
+            }
+            if (yIdx != INVALID_UINT) break;
+        }
+        if (yIdx != INVALID_UINT) break;
+    }
+
+    if (yIdx == INVALID_UINT || rIdx == INVALID_UINT || localRank == INVALID_UINT) {
+        HCCL_WARNING("[OXC] SetTopoInfoForLayeredLevel2: failed to find current rank.");
+        return HCCL_SUCCESS;
+    }
+
+    // 4. 平面重算：重新计算 netPlaneId 和 netPlaneNum
+    u32 layeredPlaneId = topoAttr_.netPlaneId;
+    u32 layeredPlaneNum = topoAttr_.netPlaneNum;
+    TopoinfoPlaneTransformer::ReparseGroupedPlane(
+        localRank, subGroups, layeredPlaneId, layeredPlaneNum);
+
+    // 更新 topoAttr_
+    topoAttr_.netPlaneId = layeredPlaneId;
+    topoAttr_.netPlaneNum = layeredPlaneNum;
+
+    // 5. 构建组间通信平面：从每个分组中取相同位置的 rank
+    std::vector<RankInfo> tmpRankVec;
+    for (u32 x = 0; x < subGroups.size(); x++) {
+        if (yIdx >= subGroups[x].size()) continue;
+        u32 i = subGroups[x][yIdx];
+        if (rIdx < CommPlaneVector_[srcPlaneId].size() &&
+            i < CommPlaneVector_[srcPlaneId][rIdx].size()) {
+            RankInfo& rankInfo = CommPlaneVector_[srcPlaneId][rIdx][i];
+            tmpRankVec.push_back(rankInfo);
+        }
+    }
+
+    // 6. 平面变换：根据算法类型重排平面
+    std::vector<u32> indexVector(tmpRankVec.size());
+    std::iota(indexVector.begin(), indexVector.end(), 0);
+    std::vector<std::vector<u32>> indexGroups(tmpRankVec.size());
+    for (u32 i = 0; i < tmpRankVec.size(); ++i) {
+        indexGroups[i] = std::vector<u32>(1, i);
+    }
+
+    TopoinfoPlaneTransformer::TransformPlaneByAlgo(
+        algoAttr_.interAlgType, topoAttr_.netPlaneId, 0, indexGroups, indexVector);
+
+    // 7. 应用平面变换
+    std::vector<RankInfo> newTmpRankVec(tmpRankVec.size());
+    for (u32 i = 0; i < tmpRankVec.size(); ++i) {
+        if (indexVector[i] < tmpRankVec.size()) {
+            newTmpRankVec[i] = tmpRankVec[indexVector[i]];
+        }
+    }
+    tmpRankVec = newTmpRankVec;
+
+    // 8. 存入通信平面向量
+    CommPlaneVector_[dstPlaneId].emplace_back(tmpRankVec);
+
+    HCCL_INFO("[OXC] SetTopoInfoForLayeredLevel2: done, plane size[%u], netPlaneId[%u], netPlaneNum[%u]",
+        static_cast<u32>(tmpRankVec.size()), topoAttr_.netPlaneId, topoAttr_.netPlaneNum);
     return HCCL_SUCCESS;
 }
 

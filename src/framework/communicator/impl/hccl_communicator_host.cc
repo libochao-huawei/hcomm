@@ -38,7 +38,7 @@
 #include "stream_utils.h"
 #include "config_log.h"
 #include "../nslbdp/hccl_nslbdp.h"
-#include "../common/src/topo/topoinfo_netplane.h"
+#include "../common/src/topo/topoinfo_plane_transformer.h"
 #include "../common/src/h2d_tlv/hccl_h2dtlv.h"
 #include "hccl_one_sided_service.h"
 #include "launch_device.h"
@@ -385,17 +385,23 @@ namespace hccl
             // 子通信域：从 commConfig 获取
             netPlaneId_ = commConfig_.GetNetPlaneId();
             netPlaneNum_ = commConfig_.GetNetPlaneNum();
-            HCCL_INFO("[%s] NetPlane info from config: netPlaneId[%u], netPlaneNum[%u]",
+            HCCL_INFO("[OXC][%s] NetPlane info from config: netPlaneId[%u], netPlaneNum[%u]",
                       __func__, netPlaneId_, netPlaneNum_);
         } else {
             // 主通信域：使用 rankTable 自身作为 globalRankTable 和 subRankTable 进行计算
-            u32 netPlaneId = 0;
-            u32 netPlaneNum = 0;
-            CHK_RET(TopoinfoNetplane::CalculateNetPlaneInfo(rankTable, rankTable,
-                                                              netPlaneId, netPlaneNum));
-            netPlaneId_ = netPlaneId;
+            std::vector<u32> rankIds(rankTable.rankNum);
+            for (u32 i = 0; i < rankTable.rankNum; ++i) {
+                rankIds[i] = i;
+            }
+            std::vector<RankInfo_t> subRankList = rankTable.rankList;
+            u32 netPlaneNum = 1;
+            CHK_RET(TopoinfoPlaneTransformer::ParsePlane(rankIds, rankTable.rankList,
+                subRankList, netPlaneNum));
+            // 使用当前 rank 的 userRank_ 获取对应的 netPlaneId
+            // 主通信域中 rankIds[i] = i，所以 subRankList[i] 对应全局 rank ID 为 i 的 rank
+            netPlaneId_ = (userRank_ < subRankList.size()) ? subRankList[userRank_].netPlaneId : 0;
             netPlaneNum_ = netPlaneNum;
-            HCCL_INFO("[%s] NetPlane info calculated: netPlaneId[%u], netPlaneNum[%u]",
+            HCCL_INFO("[OXC][%s] NetPlane info calculated: netPlaneId[%u], netPlaneNum[%u]",
                       __func__, netPlaneId_, netPlaneNum_);
         }
         netPlaneInfoValid_ = true;
@@ -9005,7 +9011,7 @@ namespace hccl
     HcclResult HcclCommunicator::GetNetPlaneId(u32 &netPlaneId) const
     {
         if (!netPlaneInfoValid_) {
-            HCCL_ERROR("[%s] NetPlane info not initialized", __func__);
+            HCCL_ERROR("[OXC][%s] NetPlane info not initialized", __func__);
             return HCCL_E_NOT_SUPPORT;
         }
         netPlaneId = netPlaneId_;
@@ -9015,7 +9021,7 @@ namespace hccl
     HcclResult HcclCommunicator::GetNetPlaneNum(u32 &netPlaneNum) const
     {
         if (!netPlaneInfoValid_) {
-            HCCL_ERROR("[%s] NetPlane info not initialized", __func__);
+            HCCL_ERROR("[OXC][%s] NetPlane info not initialized", __func__);
             return HCCL_E_NOT_SUPPORT;
         }
         netPlaneNum = netPlaneNum_;

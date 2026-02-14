@@ -26,7 +26,7 @@
 #include "detect_connect_anomalies.h"
 #include "../common/src/topo/topoinfo_detect.h"
 #include "../common/src/topo/topoinfo_ranktable_partition.h"
-#include "../common/src/topo/topoinfo_netplane.h"
+#include "../common/src/topo/topoinfo_plane_transformer.h"
 #include "../common/src/state_guard.h"
 #include "../common/src/h2d_tlv/hccl_h2dtlv.h"
 #include "sal_pub.h"
@@ -429,6 +429,17 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx]"\
                 "info error:rank[%u]", HCCL_ERROR_CODE(ret), rank), errorFlag = true);
+
+        // 解析并行平面信息
+        {
+            std::vector<u32> rankIds(opBaseHcom.rankTable.rankNum);
+            for (u32 i = 0; i < opBaseHcom.rankTable.rankNum; ++i) {
+                rankIds[i] = i;
+            }
+            u32 netPlaneNum = 1;
+            CHK_RET(TopoinfoPlaneTransformer::ParsePlane(rankIds, opBaseHcom.rankTable.rankList,
+                opBaseHcom.rankTable.rankList, netPlaneNum));
+        }
 
         ret = opBaseHcom.pComm->init(opBaseHcom.params, commConfig, opBaseHcom.rankTable);
         CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] hcclComm init error.",
@@ -936,10 +947,16 @@ HcclResult HcclCreateSubCommConfigInner(hccl::hcclComm *globalComm, uint32_t ran
         CHK_RET(pTopoPartition->GenerateSubParams(subRankTable, subCommRankId, subParams));
 
         // 计算并行平面信息
-        u32 netPlaneId = 0;
-        u32 netPlaneNum = 0;
-        CHK_RET(TopoinfoNetplane::CalculateNetPlaneInfo(globalRankTable, subRankTable,
-                                                          netPlaneId, netPlaneNum));
+        std::vector<u32> subRankIds(subRankTable.rankNum);
+        for (u32 i = 0; i < subRankTable.rankNum; ++i) {
+            subRankIds[i] = subRankTable.rankList[i].rankId;
+        }
+        std::vector<RankInfo_t> subRankList = subRankTable.rankList;
+        u32 netPlaneNum = 1;
+        CHK_RET(TopoinfoPlaneTransformer::ParsePlane(subRankIds, globalRankTable.rankList,
+            subRankList, netPlaneNum));
+        // 使用当前 rank 在子通信域中的索引获取对应的 netPlaneId
+        u32 netPlaneId = (subCommRankId < subRankList.size()) ? subRankList[subCommRankId].netPlaneId : 0;
 
         // 将并行平面信息保存到 commConfig（通过配置传递）
         commConfig.SetNetPlaneInfo(netPlaneId, netPlaneNum);
@@ -1427,6 +1444,17 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
             ret = GetTopoDetectInfo(params, rankTable, localRankInfo, rootHandle, topoDetectAgent, topoDetectAgent);
             CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfo][Flat]errNo[0x%016llx] setup " \
                 "GetTopoDetectInfo error", HCCL_ERROR_CODE(ret)), errorFlag = true);
+        }
+
+        // 解析并行平面信息
+        {
+            std::vector<u32> rankIds(rankTable.rankNum);
+            for (u32 i = 0; i < rankTable.rankNum; ++i) {
+                rankIds[i] = i;
+            }
+            u32 netPlaneNum = 1;
+            CHK_RET(TopoinfoPlaneTransformer::ParsePlane(rankIds, rankTable.rankList,
+                rankTable.rankList, netPlaneNum));
         }
 
         /* 初始化hccl comm */

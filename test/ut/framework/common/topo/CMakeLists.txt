@@ -11,6 +11,7 @@
 set(hccl_utest_topo_oxc_list
     main.cc
     ut_topoinfo_ranktableOxc.cc
+    ut_topoinfo_plane_transformer.cc
 )
 
 add_executable(hccl_utest_topo_oxc ${hccl_utest_topo_oxc_list})

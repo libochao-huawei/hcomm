@@ -29,7 +29,7 @@ HcclResult TopoinfoRanktableOxc::Init()
 
 HcclResult TopoinfoRanktableOxc::ParseOxcRankTable(RankTable_t &rankTable)
 {
-    const std::string funcName = "[TopoinfoRanktableOxc::ParseOxcRankTable]";
+    const std::string funcName = "[OXC][TopoinfoRanktableOxc::ParseOxcRankTable]";
 
     // 解析 task_id（OXC 特有字段）
     CHK_RET(ParseTaskId(fileContent_, taskId_));
@@ -42,7 +42,7 @@ HcclResult TopoinfoRanktableOxc::ParseOxcRankTable(RankTable_t &rankTable)
     nlohmann::json rankList;
     CHK_RET(GetJsonProperty(fileContent_, "rank_list", rankList));
 
-    HCCL_INFO("[%s.json] -> rank_list: size:[%zu]", fileName_.c_str(), rankList.size());
+    HCCL_INFO("[OXC][%s.json] -> rank_list: size:[%zu]", fileName_.c_str(), rankList.size());
 
     // 遍历 rank_list，填充 rankTable.rankList
     for (u32 index = 0; index < rankList.size(); index++) {
@@ -73,7 +73,7 @@ HcclResult TopoinfoRanktableOxc::ParseOxcRankTable(RankTable_t &rankTable)
         rankInfo.serverIdx = index;
 
         rankTable.rankList.push_back(rankInfo);
-        HCCL_DEBUG("[%s.json] -> rank_id[%u], local_id[%u], device_id[%d]",
+        HCCL_DEBUG("[OXC][%s.json] -> rank_id[%u], local_id[%u], device_id[%d]",
             fileName_.c_str(), rankInfo.rankId, rankInfo.localRank, rankInfo.deviceInfo.devicePhyId);
     }
 
@@ -90,7 +90,7 @@ HcclResult TopoinfoRanktableOxc::ParseOxcRankTable(RankTable_t &rankTable)
 
 HcclResult TopoinfoRanktableOxc::ParseTaskId(const nlohmann::json &obj, std::string &taskId)
 {
-    const std::string funcName = "[TopoinfoRanktableOxc::ParseTaskId]";
+    const std::string funcName = "[OXC][TopoinfoRanktableOxc::ParseTaskId]";
 
     // task_id 字段是 OXC 2.0 版本特有的
     if (obj.contains("task_id")) {
@@ -106,7 +106,7 @@ HcclResult TopoinfoRanktableOxc::ParseTaskId(const nlohmann::json &obj, std::str
 
 HcclResult TopoinfoRanktableOxc::GetClusterInfo(hccl::HcclCommParams &params, hccl::RankTable_t &rankTable)
 {
-    const std::string funcName = "[TopoinfoRanktableOxc::GetClusterInfo]";
+    const std::string funcName = "[OXC][TopoinfoRanktableOxc::GetClusterInfo]";
 
     // 直接返回已经解析好的 rankTable_
     rankTable.nicDeploy = rankTable_.nicDeploy;
