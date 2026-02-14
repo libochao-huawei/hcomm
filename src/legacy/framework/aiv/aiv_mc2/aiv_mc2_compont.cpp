@@ -140,24 +140,24 @@ void AivMc2Compont::GenerateAivUrmaCommContext(HcclCombinOpParam &combinOpParam)
     for (size_t i = 0; i < wqs.size(); i++) {
         combinOpParam.wq[links[i].GetRemoteRankId()] = wqs[i];
     }
-    HCCL_RUN_INFO("[AivMc2Compont][GenerateCommContext] wq info:");
+    HCCL_INFO("[AivMc2Compont][GenerateCommContext] wq info:");
     for (auto& wq : wqs) {
-        HCCL_RUN_INFO("[AivMc2Compont][GenerateCommContext]jettyId[%u], sqVA[%llx], wqeSize[%u], sqDepth[%u], "
+        HCCL_INFO("[AivMc2Compont][GenerateCommContext]jettyId[%u], sqVA[%llx], wqeSize[%u], sqDepth[%u], "
                       "headAddr[%llx], tailAddr[%llx], dbAddr[%llx], tp_id[%u]", wq.jettyId, wq.sqVA, wq.wqeSize, 
                       wq.sqDepth, wq.headAddr, wq.tailAddr, wq.dbAddr, wq.tp_id);
         for (size_t i = 0; i < 16; i++) {
-            HCCL_RUN_INFO("[AivMc2Compont][GenerateCommContext]rmtEid[%llu][%u]", i, wq.rmtEid[i]);
+            HCCL_INFO("[AivMc2Compont][GenerateCommContext]rmtEid[%llu][%u]", i, wq.rmtEid[i]);
         }
-        HCCL_RUN_INFO("[AivMc2Compont][GenerateCommContext]rmtObjId[%u]", wq.rmtObjId);
+        HCCL_INFO("[AivMc2Compont][GenerateCommContext]rmtObjId[%u]", wq.rmtObjId);
     }
 
     auto cqs = collService->GetAivInsPreprocessor()->GetCqs();
     for (size_t i = 0; i < cqs.size(); i++) {
         combinOpParam.cq[links[i].GetRemoteRankId()] = cqs[i];
     }
-    HCCL_RUN_INFO("[AivMc2Compont][GenerateCommContext] cq info:");
+    HCCL_INFO("[AivMc2Compont][GenerateCommContext] cq info:");
     for (auto& cq : cqs) {
-        HCCL_RUN_INFO("[AivMc2Compont][GenerateCommContext]jfcId[%u], cqVA[%llx], cqeSize[%u], cqDepth[%u], headAddr[%llx], "
+        HCCL_INFO("[AivMc2Compont][GenerateCommContext]jfcId[%u], cqVA[%llx], cqeSize[%u], cqDepth[%u], headAddr[%llx], "
                       "tailAddr[%llx], dbAddr[%llx]", cq.jfcId, cq.cqVA, cq.cqeSize, cq.cqDepth, cq.headAddr, 
                       cq.tailAddr, cq.dbAddr);
     }
@@ -214,7 +214,7 @@ void AivMc2Compont::AivMC2AllocCommResV2(Mc2InitTilingInner *mc2TilingPtr) const
                   commConfig.skipLocalRankCopy, commConfig.skipBufferWindowCopy, commConfig.stepSize, commConfig.version, 
                   commConfig.protocol, commConfig.communicationEngine, commConfig.srcDataType, commConfig.dstDataType,
                   commConfig.algConfig, commConfig.opType, commConfig.reduceType);
-    HCCL_RUN_INFO("groupName[%s]", commConfig.groupName);
+    HCCL_RUN_INFO("[AivMc2Compont][AivMC2AllocCommRes] groupName[%s]", commConfig.groupName);
     FillCollOperatorV2(commConfig);
 
     AivOpArgs aivArgs {};
