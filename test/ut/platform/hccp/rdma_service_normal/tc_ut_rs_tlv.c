@@ -145,16 +145,19 @@ void TcRsNslbDeinit()
 void TcRsNslbRequest()
 {
     struct TlvRequestMsgHead head = {0};
-    char *data;
+    unsigned int bufferSize = 0;
+    char *dataOut;
+    char *dataIn;
     int ret;
 
     head.phyId = 0;
     head.type = 0;
-    data = (char *)calloc(16, sizeof(char));
+    dataOut = (char *)calloc(16, sizeof(char));
+    dataIn = (char *)calloc(16, sizeof(char));
 
     mocker_invoke(RsGetTlvCb, StubRsGetNslbCb, 10);
     mocker(RsTlvAssembleSendData, 10, -EINVAL);
-    ret = RsTlvRequest(&head, data);
+    ret = RsTlvRequest(&head, dataIn, dataOut, &bufferSize);
     EXPECT_INT_EQ(-EINVAL, ret);
     mocker_clean();
     FreeRsCb();
@@ -162,19 +165,21 @@ void TcRsNslbRequest()
     head.offset = 0;
     mocker_invoke(RsGetTlvCb, StubRsGetNslbCb, 10);
     mocker_invoke(RsTlvAssembleSendData, StubRsTlvAssembleSendData, 10);
-    ret = RsTlvRequest(&head, data);
+    ret = RsTlvRequest(&head, dataIn, dataOut, &bufferSize);
     EXPECT_INT_EQ(0, ret);
     FreeRsCb();
 
     head.offset = 1U;
     head.totalBytes = 16U;
-    ret = RsTlvRequest(&head, data);
+    ret = RsTlvRequest(&head, dataIn, dataOut, &bufferSize);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
     FreeRsCb();
 
-    free(data);
-    data = NULL;
+    free(dataIn);
+    dataIn = NULL;
+    free(dataOut);
+    dataOut = NULL;
 }
 
 void TcRsTlvAssembleSendData()
@@ -303,6 +308,17 @@ void TcRsCcuRequest()
     mocker_clean();
 
     mocker(RsCcuUninit, 10, 0);
+    ret = RsCcuRequest(&head, data);
+    EXPECT_INT_EQ(0, ret);
+    mocker_clean();
+
+    head.type = MSG_TYPE_CCU_GET_MEM_INFO;
+    mocker(RsCcuGetMemInfo, 10, -1);
+    ret = RsCcuRequest(&head, data);
+    EXPECT_INT_EQ(-1, ret);
+    mocker_clean();
+
+    mocker(RsCcuGetMemInfo, 10, 0);
     ret = RsCcuRequest(&head, data);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
