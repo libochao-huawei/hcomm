@@ -71,6 +71,7 @@ STATIC int RaHdTlvRequestForSendNullMsg(unsigned int phyId, union OpTlvRequestDa
         ret, phyId), ret);
 
     recvMsg->length = tlvData->rxData.recvBytes;
+    recvMsg->data = tlvData->rxData.recvData;
     return ret;
 }
 
@@ -105,5 +106,6 @@ int RaHdcTlvRequest(struct RaTlvHandle *tlvHandle, unsigned int moduleType,
     }
 
     recvMsg->length = tlvData.rxData.recvBytes;
+    recvMsg->data = tlvData->rxData.recvData;
     return ret;
 }
