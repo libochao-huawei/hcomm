@@ -143,9 +143,9 @@ void AivMc2Compont::GenerateAivUrmaCommContext(HcclCombinOpParam &combinOpParam)
     HCCL_INFO("[AivMc2Compont][GenerateCommContext] wq info:");
     for (auto& wq : wqs) {
         HCCL_INFO("[AivMc2Compont][GenerateCommContext]jettyId[%u], sqVA[%llx], wqeSize[%u], sqDepth[%u], "
-                      "headAddr[%llx], tailAddr[%llx], dbAddr[%llx], tp_id[%u]", wq.jettyId, wq.sqVA, wq.wqeSize, 
-                      wq.sqDepth, wq.headAddr, wq.tailAddr, wq.dbAddr, wq.tp_id);
-        for (size_t i = 0; i < 16; i++) {
+                  "headAddr[%llx], tailAddr[%llx], dbAddr[%llx], tp_id[%u]", wq.jettyId, wq.sqVA, wq.wqeSize, 
+                  wq.sqDepth, wq.headAddr, wq.tailAddr, wq.dbAddr, wq.tp_id);
+        for (size_t i = 0; i < 16; i++) { // 遍历rmtEid
             HCCL_INFO("[AivMc2Compont][GenerateCommContext]rmtEid[%llu][%u]", i, wq.rmtEid[i]);
         }
         HCCL_INFO("[AivMc2Compont][GenerateCommContext]rmtObjId[%u]", wq.rmtObjId);
@@ -158,8 +158,8 @@ void AivMc2Compont::GenerateAivUrmaCommContext(HcclCombinOpParam &combinOpParam)
     HCCL_INFO("[AivMc2Compont][GenerateCommContext] cq info:");
     for (auto& cq : cqs) {
         HCCL_INFO("[AivMc2Compont][GenerateCommContext]jfcId[%u], cqVA[%llx], cqeSize[%u], cqDepth[%u], headAddr[%llx], "
-                      "tailAddr[%llx], dbAddr[%llx]", cq.jfcId, cq.cqVA, cq.cqeSize, cq.cqDepth, cq.headAddr, 
-                      cq.tailAddr, cq.dbAddr);
+                  "tailAddr[%llx], dbAddr[%llx]", cq.jfcId, cq.cqVA, cq.cqeSize, cq.cqDepth, cq.headAddr, 
+                  cq.tailAddr, cq.dbAddr);
     }
 }
 
