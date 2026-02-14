@@ -49,7 +49,6 @@
 #include "hccl_rank_graph.h"
 #include "hccl_aiv_utils.h"
 #include "error_message_v2.h"
-#include "mc2_type.h"
 #include "hccp.h"
 
 namespace Hccl {
@@ -217,9 +216,6 @@ public:
         auto it = tagWorkspaceMap_.find(tag);
         return it != tagWorkspaceMap_.end() ? it->second : nullptr;
     }
-
-    HcclAiRMAWQ* GetWq();
- 	HcclAiRMACQ* GetCq();
 
     HcclResult CreateCommCclBuf();
     HcclResult GetInCclBuf(void* &commInputPtr, u64 &commInputSize);
