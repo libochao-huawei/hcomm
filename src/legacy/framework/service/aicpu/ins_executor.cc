@@ -173,7 +173,9 @@ void InsExecutor::ExecuteSlaveQueue91095(list<InsQueue::Iterator> &slaveQueueIte
         }
         // 判断rtsq队列中的空间是否充足
         bool isRtsqQueueSpaceSufficient = slaveStream->GetRtsq()->IsRtsqQueueSpaceSufficient();
-        if (isRtsqQueueSpaceSufficient) {
+        // 判断当前从流是否有Int64类型reduce算子，是否需要等其他流任务下发完成
+        bool isPreStreamSync = slaveStream->GetRtsq()->GetPreStreamSyncStatus();
+        if (isRtsqQueueSpaceSufficient && !isPreStreamSync) {
             if (slaveQueueIter->HasNext()) {
                 HCCL_INFO("[ExecuteAllQueues91095]InsExecutor::%s slave stream InsQueue start %s SqId(%u) stream Id(%u)",
                     __func__, (*slaveQueueIter)->Describe().c_str(), slaveStream->GetSqId(), slaveStream->GetId());
@@ -208,7 +210,10 @@ void InsExecutor::ExecuteMasterQueue91095(InsQueue::Iterator &masterQueueIter, S
                                             bool &isMasterInsIterEnd, bool &isLaunchTask)
 {
     // 判断rtsq队列中的空间是否充足
-    if (masterStream->GetRtsq()->IsRtsqQueueSpaceSufficient()) {
+    bool isRtsqQueueSpaceSufficient = masterStream->GetRtsq()->IsRtsqQueueSpaceSufficient();
+    // 判断当前主流是否有Int64类型reduce算子，是否需要等其他流任务下发完成
+    bool isPreStreamSync = masterStream->GetRtsq()->GetPreStreamSyncStatus();
+    if (isRtsqQueueSpaceSufficient && !isPreStreamSync) {
         if (masterQueueIter.HasNext()) {
             HCCL_INFO("[ExecuteAllQueues91095]InsExecutor::%s master stream InsQueue start %s SqId(%u) stream Id(%u)",
                 __func__, masterQueueIter->Describe().c_str(), masterStream->GetSqId(), masterStream->GetId());

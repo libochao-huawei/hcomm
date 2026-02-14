@@ -273,25 +273,17 @@ void RtsqA5::SdmaReduce(u64 srcAddr, u64 dstAddr, u32 size, u32 partId, const Re
 
 bool RtsqA5::IsRtsqQueueSpaceSufficient()
 {
-    sqHead_         = QuerySqHead();
+    // 判断逻辑与rtsq内部保持一致，rtsq剩余空间需要大于（rtsq挂起的任务数量+本次任务）
     u32  availableSpace = GetTailToHeadDist();
-    // 判断逻辑与rtsq内部保持一致，rtsq剩余空间需要大于（rtsq挂起的任务数量+本次任务） 
-    // isPreStreamSync用于判断是否有Int64类型reduce算子，是否需要等其他流任务下发完成
-    auto isInsufficient = ((availableSpace <= pendingSqeCnt + 1) || isPreStreamSync);
-
-    if (!isInsufficient) {
-        HCCL_INFO("[Rtsq][%s], rtsq sqId_[%u], streamId_[%u] is sufficient. sqHead_[%u], sqTail_[%u], sqDepth[%u], availableSpace[%u], pendingSqeCnt[%u]", 
-            __func__, sqId_, streamId_, sqHead_, sqTail_, sqDepth_, availableSpace, pendingSqeCnt);
+    if (availableSpace > pendingSqeCnt + 1) {
         return true;
     }
 
-    sqHead_ = QuerySqHead();
+    // 否则的话，需要再次查询一次head，确认是否是因为head没有更新导致空间不足，如果查询后空间仍然不足，则返回false
+    sqHead_        = QuerySqHead();
     availableSpace = GetTailToHeadDist();
-    isInsufficient = ((availableSpace <= pendingSqeCnt + 1) || isPreStreamSync);
-    HCCL_INFO("[Rtsq][%s], rtsq sqId_[%u], streamId_[%u], sqHead_[%u], sqTail_[%u], sqDepth[%u], availableSpace[%u], pendingSqeCnt[%u]", 
-            __func__, sqId_, streamId_, sqHead_, sqTail_, sqDepth_, availableSpace, pendingSqeCnt);
 
-    return !isInsufficient; 
+    return (availableSpace > pendingSqeCnt + 1);
 }
 
 HcclResult RtsqA5::SetPreStreamSyncReady() 
