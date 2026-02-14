@@ -479,6 +479,7 @@ HcclResult HcclOneSidedService::BatchOpKernelLaunch(OpType opType, RankId remote
     param.kernel.op.batchPutGetDescNum    = descNum;
     param.kernel.op.batchPutGetLocalAddr  = reinterpret_cast<void *>(devBatchPutGetLocalBufs.get()->GetAddr());
     param.kernel.op.batchPutGetRemoteAddr = reinterpret_cast<void *>(devBatchPutGetRemoteBufs.get()->GetAddr());
+    param.kernel.tagKey = opReq.algName;
     HCCL_INFO("[HcclOneSidedService][BatchOpKernelLaunch] OneSidedAicpuKernelLaunch start");
     // 启动kernel
     OneSidedAicpuKernelLaunch(param, *stream);
