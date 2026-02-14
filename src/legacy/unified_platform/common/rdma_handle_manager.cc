@@ -168,9 +168,9 @@ JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jf
         THROW<InvalidParamsException>("[RdmaHandleManager][GetJfcHandle]rdmaHandle is nullptr, please check input.");
     }
 
-    if (jfcMode != HrtUbJfcMode::STARS_POLL && jfcMode != HrtUbJfcMode::CCU_POLL && jfcMode != HrtUbJfcMode::USER_CTL) {
-        THROW<InvalidParamsException>("[RdmaHandleManager][GetJfcHandle]jfcMode[%s] is not STARS_POLL, CCU_POLL "
-            "or USER_CTL, please check input.", jfcMode.Describe().c_str());
+    if (jfcMode != HrtUbJfcMode::STARS_POLL && jfcMode != HrtUbJfcMode::CCU_POLL) {
+        THROW<InvalidParamsException>("[RdmaHandleManager][GetJfcHandle]jfcMode[%s] is not STARS_POLL or CCU_POLL, "
+            "please check input.", jfcMode.Describe().c_str());
     }
 
     if (jfcHandleMap.find(rdmaHandle) != jfcHandleMap.end() && 
