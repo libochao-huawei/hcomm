@@ -103,8 +103,7 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
     LocalNotify *notify = GetNotify(dstThread, dstNotifyIdx);
     CHK_PTR_NULL(notify);
 
-    if (threadPtr->IsDeviceA5())
-    {
+    if (threadPtr->IsDeviceA5()) {
         HcclResult ret = notify->Post(*stream);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dstThread[0x%llx], notifyIdx[%u].",
             __func__, thread, dstThread, dstNotifyIdx), ret);
