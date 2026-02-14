@@ -48,7 +48,7 @@ MyRank::~MyRank()
     commMems_ = nullptr;
 }
 
-HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode)
+HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum)
 {
     // EXCEPTION_HANDLE_BEGIN
     // 创建通信内存管理器
@@ -58,7 +58,7 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode)
     CHK_RET(commMems_->Init(cclBuffer));
 
     opExpansionMode_ = opExpansionMode;
-    if (!ccuResContainer_) {
+    if (!ccuResContainer_ && rankNum != 1) {
         ccuResContainer_.reset(new (std::nothrow)CcuResContainer(opExpansionMode_));
         CHK_PTR_NULL(ccuResContainer_);
         CHK_RET(ccuResContainer_->Init());
