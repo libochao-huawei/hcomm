@@ -12,6 +12,7 @@
 #define CCU_U_COMM_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #define CCU_DATA_TYPE_UNION_ARRAY_SIZE 8
 #define CCU_RESOURCE_PATH_LEN_MAX 512
@@ -82,6 +83,15 @@ typedef enum ccu_u_opcode {
     CCU_U_OP_GET_LOOP_CTX                   = 209,  /* 获取Loop_ctx数据 */
     CCU_U_OP_GET_MEMORY_SLICE               = 210,  /* 获取memory slice数据 */
     CCU_U_OP_GET_LOOP_CKE_CTX               = 211,  /* 获取LOOP_CKE_CTX数据 */
+    CCU_U_OP_GET_MISSION_SQE                = 212,  /* 获取MISSION_SQE数据 */
+    CCU_U_OP_GET_CQE_BLOCK0                 = 213,  /* 获取CQE_BLOCK0数据 */
+    CCU_U_OP_GET_CQE_BLOCK1                 = 214,  /* 获取CQE_BLOCK1数据 */
+    CCU_U_OP_GET_CQE_BLOCK2                 = 215,  /* 获取CQE_BLOCK2数据 */
+    CCU_U_OP_GET_WQEBB                      = 216,  /* 获取WQEBB数据 */
+    CCU_U_OP_GET_MS_BLOCK0                  = 217,  /* 获取MS_BLOCK0数据 */
+    CCU_U_OP_GET_MS_BLOCK1                  = 218,  /* 获取MS_BLOCK1数据 */
+    CCU_U_OP_GET_MS_BLOCK2                  = 219,  /* 获取MS_BLOCK2数据 */
+    CCU_U_OP_GET_MS_BLOCK3                  = 220,  /* 获取MS_BLOCK3数据 */
 
     CCU_U_OP_SET_INSTRUCTION                = 251,  /* 设置INS指令 */
     CCU_U_OP_SET_GSA                        = 252,  /* 设置GSA数据 */
@@ -238,6 +248,41 @@ struct ccu_u_info {
     void *resourceAddr;         /* ccu resource addr va */
     struct ccu_data_caps caps;  /* ccu caps, get from ccu regs */
     struct ccu_version version;
+};
+
+#define MEM_BITMAP_NUM 64U
+
+#define CCU_MEMTYPE_INVALID         ((uint64_t)0ULL)
+#define CCU_MEMTYPE_INS             ((uint64_t)1ULL << 0)
+#define CCU_MEMTYPE_GSA             ((uint64_t)1ULL << 1)
+#define CCU_MEMTYPE_XN              ((uint64_t)1ULL << 2)
+#define CCU_MEMTYPE_CKE             ((uint64_t)1ULL << 3)
+#define CCU_MEMTYPE_LOOP_CKE        ((uint64_t)1ULL << 4)
+#define CCU_MEMTYPE_PFE             ((uint64_t)1ULL << 5)
+#define CCU_MEMTYPE_CHN             ((uint64_t)1ULL << 6)
+#define CCU_MEMTYPE_JETTY_CTX       ((uint64_t)1ULL << 7)
+#define CCU_MEMTYPE_MISSION_CTX     ((uint64_t)1ULL << 8)
+#define CCU_MEMTYPE_LOOP_CTX        ((uint64_t)1ULL << 9)
+#define CCU_MEMTYPE_MISSION_SQE     ((uint64_t)1ULL << 10)
+#define CCU_MEMTYPE_CQE_BLOCK0      ((uint64_t)1ULL << 11)
+#define CCU_MEMTYPE_CQE_BLOCK1      ((uint64_t)1ULL << 12)
+#define CCU_MEMTYPE_CQE_BLOCK2      ((uint64_t)1ULL << 13)
+#define CCU_MEMTYPE_WQEBB           ((uint64_t)1ULL << 14)
+
+#define CCU_MEMTYPE_MS_BLOCK0       ((uint64_t)1ULL << 32) // CCUA0
+#define CCU_MEMTYPE_MS_BLOCK1       ((uint64_t)1ULL << 33) // CCUA1
+#define CCU_MEMTYPE_MS_BLOCK2       ((uint64_t)1ULL << 34) // CCUA2
+#define CCU_MEMTYPE_MS_BLOCK3       ((uint64_t)1ULL << 35) // CCUA3
+
+struct ccu_memtype_map {
+    uint64_t memtype;
+    ccu_u_opcode_t ccu_u_op;
+};
+
+struct ccu_mem_info {
+    unsigned long long mem_va;
+    unsigned int mem_size;
+    unsigned int resv[1U];
 };
 
 bool is_ccu_attached(unsigned int die_id);

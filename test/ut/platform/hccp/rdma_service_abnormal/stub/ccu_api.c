@@ -34,3 +34,8 @@ unsigned long long ccu_get_cqe_base_addr(unsigned int die_id)
 {
     return 0;
 }
+
+int ccu_get_mem_info(unsigned int die_id, unsigned long long mem_type_bitmap, struct ccu_mem_rsp *rsp)
+{
+    return 0;
+}
