@@ -1,0 +1,54 @@
+diff --git a/src/framework/communicator/impl/one_sided_service/hccl_one_sided_service.cc b/src/framework/communicator/impl/one_sided_service/hccl_one_sided_service.cc
+index f162540de2c3648a0c24202f36d695cadadabe6f..d3e17ca1eeda16a684a71325e776bf2a127ba1e0 100644
+--- a/src/framework/communicator/impl/one_sided_service/hccl_one_sided_service.cc
++++ b/src/framework/communicator/impl/one_sided_service/hccl_one_sided_service.cc
+@@ -1012,7 +1012,7 @@ HcclResult HcclOneSidedService::AicpuResourceInit()
+ 
+     const u64 endTime = hrtMsprofSysCycleTime();
+     HCCL_DEBUG("[AicpuResourceInit] done, time cost[%llu]", (endTime - beginTime));
+-
++    
+     return HCCL_SUCCESS;
+ }
+ 
+@@ -1215,6 +1215,11 @@ HcclResult HcclOneSidedService::AicpuUnfoldKernelLaunchV2(const std::string &ker
+             }
+     }
+ 
++    if(tilingDataSize > std::numeric_limits<u32>::max()) {
++        HCCL_ERROR("[AicpuUnfoldKernelLaunchV2] tilingDataSize[%lu] exceeds the "
++                    "maximum allowed value for u32 [%u].", tilingDataSize, std::numeric_limits<u32>::max());
++        return HCCL_E_RUNTIME;
++    }
+     CHK_RET(AicpuAclKernelLaunchV2(stream, reinterpret_cast<void *>(&commContext),
+         sizeof(commContext), binHandle_, kernelName, false, timeOut, tilingDataPtr, tilingDataSize));
+     HCCL_DEBUG("[HcclOneSidedService][AicpuUnfoldKernelLaunchV2] exec succ.");
+diff --git a/src/platform/task/dispatcher_aicpu_pub.h b/src/platform/task/dispatcher_aicpu_pub.h
+index eb64143dd9d342007f891dca42b816f21b91f7ea..dec801b4ccd0369b5bdd69797dd45f39093521c0 100644
+--- a/src/platform/task/dispatcher_aicpu_pub.h
++++ b/src/platform/task/dispatcher_aicpu_pub.h
+@@ -92,6 +92,11 @@ public:
+     void SetSqeTimeOut(const u64 timeOut)
+     {
+         dfxTimeOutConfig_.sqeTimeOutTimeOut = timeOut;
++        if(dfxTimeOutConfig_.sqeTimeOutTimeOut > notifyMaxWaitTime_) {
++            dfxTimeOutConfig_.sqeTimeOutTimeOut = notifyMaxWaitTime_;
++            HCCL_WARNING("[SetSqeTimeOut] sqeTimeOutTimeOut[%lu] exceeds the maximum allowed value "
++                "for notifyMaxWaitTime[%u].", dfxTimeOutConfig_.sqeTimeOutTimeOut, notifyMaxWaitTime_);
++        }
+         HCCL_INFO("[DispatcherAiCpu][SetSqeTimeOut]DFX timeout config init successfully with details: [%s]",
+             dfxTimeOutConfig_.ToString().c_str());
+         return;
+diff --git a/src/pub_inc/hccl_common.h b/src/pub_inc/hccl_common.h
+index c5348aa00dd4e896587a151f44b90f5ae85bfc7e..ce13c9bfb35351162e439c7150c3f5c661e6666c 100644
+--- a/src/pub_inc/hccl_common.h
++++ b/src/pub_inc/hccl_common.h
+@@ -81,7 +81,7 @@ constexpr u32 IDENTIFY_MAX_LEN = 127; // 最大的identify  长度
+ constexpr s32 STRING_MAX_LENGTH = 40 * 1024 * 1024; // rankTable string length 40*1024*1024=40M.
+ constexpr u64 DEVICE_MEMORY_MAX_ALLOC_SIZE = 16ULL * 1024 * 1024 * 1024; // device mmeory size 16GB
+ constexpr int HCCL_BARRIER_DEFAULT_COUNT = 8;
+-constexpr s32 NOTIFY_DEFAULT_WAIT_TIME = 27 * 68;   // notifywait默认1836等待时长
++constexpr u16 NOTIFY_DEFAULT_WAIT_TIME = 27 * 68;   // notifywait默认1836等待时长
+ constexpr u32 NOTIFY_INVALID_WAIT_TIME = 0xFFFFFFFF;   // notifywait时长非法值
+ constexpr u32 HCCL_FFTS_CAPACITY = 65535;           // FFTS+子图最大容量
+ constexpr char HCCL_WORLD_GROUP[] = "hccl_world_group";

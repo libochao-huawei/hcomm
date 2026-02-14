@@ -1012,7 +1012,7 @@ HcclResult HcclOneSidedService::AicpuResourceInit()
 
     const u64 endTime = hrtMsprofSysCycleTime();
     HCCL_DEBUG("[AicpuResourceInit] done, time cost[%llu]", (endTime - beginTime));
-
+    
     return HCCL_SUCCESS;
 }
 
@@ -1215,6 +1215,11 @@ HcclResult HcclOneSidedService::AicpuUnfoldKernelLaunchV2(const std::string &ker
             }
     }
 
+    if(tilingDataSize > std::numeric_limits<u32>::max()) {
+        HCCL_ERROR("[AicpuUnfoldKernelLaunchV2] tilingDataSize[%lu] exceeds the "
+                    "maximum allowed value for u32 [%u].", tilingDataSize, std::numeric_limits<u32>::max());
+        return HCCL_E_RUNTIME;
+    }
     CHK_RET(AicpuAclKernelLaunchV2(stream, reinterpret_cast<void *>(&commContext),
         sizeof(commContext), binHandle_, kernelName, false, timeOut, tilingDataPtr, tilingDataSize));
     HCCL_DEBUG("[HcclOneSidedService][AicpuUnfoldKernelLaunchV2] exec succ.");
