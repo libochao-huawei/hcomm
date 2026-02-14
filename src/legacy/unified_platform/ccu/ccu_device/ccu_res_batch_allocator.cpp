@@ -474,7 +474,7 @@ static void ReleaseBlockRes(const uint32_t blockSize, std::vector<BlockInfo> &bl
     uint32_t startBlockId = (startId - blocks[0].startId) / blockSize;
     uint32_t blockNum     = num / blockSize;
 
-    for (uint32_t k = startBlockId; k < startBlockId + blockNum; k++) {
+    for (uint32_t k = startBlockId; (k < startBlockId + blockNum) && (k < blocks.size()); k++) {
         blocks[k].handle    = 0;
         blocks[k].allocated = false;
     }
@@ -485,7 +485,7 @@ HcclResult CcuResBatchAllocator::ReleaseResHandle(const CcuResHandle &handle)
 {
     std::unique_lock<std::mutex> lock(innerMutex);
 
-    uintptr_t handleKey = reinterpret_cast<uintptr_t>(handle);
+    uintptr_t handleKey = reinterpret_cast<uintptr_t>(handle);S
     if (handleMap.find(handleKey) == handleMap.end()) {
         HCCL_ERROR("[CcuResBatchAllocator][%s] failed, devLogicId[%d], "
             "failed to find resource repository, invalid resource handle(uintptr_t)[%llu]",
