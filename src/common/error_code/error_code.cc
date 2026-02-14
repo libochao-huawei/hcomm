@@ -167,8 +167,8 @@ const std::string hcomm_g_msg = R"(
       "errClass": "HCCL Errors",
       "errTitle": "Ranktable_Check_Failed",
       "ErrCode": "EI0014",
-      "ErrMessage": "The ranktable information check failed, Reason:[%s].",
-      "Arglist": "error_reason",
+      "ErrMessage": "Value %s for ranktable %s is invalid. Expected value: %s.",
+      "Arglist": "value,variable,expect",
       "suggestion": {
         "Possible Cause": "Failed to verify the content of the ranktable file, possibly due to inconsistency between the file content and the actual device information.",
         "Solution": "Try again with a valid cluster configuration in the ranktable file. Ensure that the configuration matches the operating environment."
