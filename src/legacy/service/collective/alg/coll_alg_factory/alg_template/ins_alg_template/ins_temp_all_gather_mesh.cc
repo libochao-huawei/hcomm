@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-
+#include <cstdlib>
 #include "log.h"
 
 #include "alg_data_trans_wrapper.h"
@@ -57,6 +57,13 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
                                            const ResLinks &tempLinks,
                                            std::vector<InsQuePtr> &tempInsQues)
 {
+    
+    // =========================================================================
+    // [修复代码] 同步第0条流和最后一条流
+    // 环境变量 HCCL_TEST_DISABLE_FIX=1 时跳过此逻辑 -> 预期出现 Bug
+    // =========================================================================
+    const char* envDisableFix = std::getenv("HCCL_TEST_DISABLE_FIX");
+    bool skipFix = (envDisableFix != nullptr && std::string(envDisableFix) == "1");
     HCCL_INFO("[InsTempAllGatherMesh1D] RunAllGather start");
 
     opMode_ = tempFuncs.opMode;
@@ -75,6 +82,18 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
     std::vector<InsQuePtr> mainInsQues;
     for (u32 queIdx = 0; queIdx < majorQueNum_ + 1; queIdx++) {
         mainInsQues.push_back(tempInsQues[queIdx * queNumPerNeighbor_]);
+    }
+
+    if (skipFix) {
+        HCCL_WARNING("[TEST MODE] Skipping PreSync fix! Race condition expected if delay is present.");
+    } else {
+    // 主流通知 copy流开始工作
+    if (tempInsQues.size() > 1) {
+        std::vector<InsQuePtr> preSyncQues; // 改名
+        preSyncQues.push_back(tempInsQues[0]);
+        preSyncQues.push_back(tempInsQues[tempInsQues.size() - 1]);
+        CHK_RET(PreSyncInterQueues(preSyncQues));
+    }
     }
 
     // Local Copy from Input to Output for OPBASE
@@ -101,6 +120,22 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
     // semaphore sync
     if (majorQueNum_ > 1) { // more than one rank
         CHK_RET(PostSyncInterQueues(mainInsQues));
+    }
+
+
+    if (skipFix) {
+        HCCL_WARNING("[TEST MODE] Skipping PostSync fix! Race condition expected if delay is present.");
+    } else {
+
+    // 同步第0条流和最后一条流 (LocalCopy所在的流)
+    // 确保 LocalDataCopy 完成后，整体任务才算结束
+    if (tempInsQues.size() > 1) {
+        std::vector<InsQuePtr> postSyncQues;
+        postSyncQues.push_back(tempInsQues[0]);
+        postSyncQues.push_back(tempInsQues[tempInsQues.size() - 1]);
+        CHK_RET(PostSyncInterQueues(postSyncQues));
+    }
+
     }
 
     return HcclResult::HCCL_SUCCESS;
@@ -132,6 +167,34 @@ HcclResult InsTempAllGatherMesh1D::LocalDataCopy(std::vector<InsQuePtr> &tempIns
         return HcclResult::HCCL_SUCCESS;
     }
 
+    // =========================================================================
+    // [测试专用] 注入延迟逻辑
+    // 环境变量 HCCL_TEST_INJECT_DELAY=1 时生效
+    // =========================================================================
+    const char* envDelay = std::getenv("HCCL_TEST_INJECT_DELAY");
+    if (envDelay != nullptr && std::string(envDelay) == "1") {
+        HCCL_WARNING("[TEST MODE] Injecting huge delay to Copy Stream (que 1) to reproduce race condition...");
+    
+        auto& copyStream = tempInsQues[tempInsQues.size() - 1];
+        // 循环 10000 次自拷贝，确保耗时远大于 Main Stream
+        for (int i = 0; i < 10000; ++i) {
+            DataSlice srcDelay(tempAlgParams_.buffInfo.inBuffType, 
+                               tempAlgParams_.buffInfo.inBuffBaseOff, 
+                               1024); // 小 slice 即可
+            DataSlice dstDelay(tempAlgParams_.buffInfo.inBuffType, 
+                               tempAlgParams_.buffInfo.inBuffBaseOff, 
+                               1024);
+            auto insDelay = std::make_unique<InsLocalCopy>(srcDelay, dstDelay);
+            copyStream->Append(std::move(insDelay));
+        }
+    }
+    
+    HCCL_INFO("[DEBUG] Injection Done. Stream will be busy.");
+    // =========================================================================
+    // [Hack] 注入延迟代码结束
+    // =========================================================================
+
+    // 下面是原本的正常的 Local Copy 逻辑
     for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
         const u64 inBaseOff  = tempAlgParams_.buffInfo.inBuffBaseOff  + rpt * tempAlgParams_.inputRepeatStride;
         const u64 outBaseOff = tempAlgParams_.buffInfo.outBuffBaseOff + rpt * tempAlgParams_.outputRepeatStride;
