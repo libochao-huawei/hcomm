@@ -96,7 +96,7 @@ DevBuffer *CollServiceAiCpuImpl::OpBasedCollProcess(CollOperator &op, const std:
 
     auto it = collOpLoadedMap.find(curTagKey);
     if (it != collOpLoadedMap.end()) { // 已经向Device Mem写过资源
-        HCCL_INFO("[OpBasedCollProcess] tag[%s] devMem has been allocated, reuse it", tagKey.c_str());
+        HCCL_INFO("[OpBasedCollProcess] tag[%s] devMem has been allocated, reuse it", curTagKey.c_str());
         return it->second.get();
     }
 
