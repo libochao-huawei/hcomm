@@ -30,7 +30,7 @@ protected:
 
     virtual void SetUp()
     {
-        MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(0));
+        MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<s32>(0)));
         std::cout << "A Test case in TpManagerTest SetUP" << std::endl;
     }
 

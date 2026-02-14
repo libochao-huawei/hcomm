@@ -52,7 +52,6 @@ protected:
     }
 };
 
-#if 0 // V2 LLT FAILED
 TEST_F(ConnectionsBuilderTest, CreateRmaConnections_test)
 {
     CommunicatorImpl comm;
@@ -67,4 +66,3 @@ TEST_F(ConnectionsBuilderTest, CreateRmaConnections_test)
     MOCKER_CPP(&RmaConnManager::Create).stubs().with(any(),any()).will(returnValue(rmaConnection));
     connBuilder.CreateRmaConnections(opTag, links);
 }
-#endif
