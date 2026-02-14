@@ -20,7 +20,7 @@
 struct RsTlvOps {
     int (*tlvInit)(unsigned int phyId, unsigned int *bufferSize);
     int (*tlvDeinit)(unsigned int phyId);
-    int (*tlvRequest)(struct TlvRequestMsgHead *head, char *data);
+    int (*tlvRequest)(struct TlvRequestMsgHead *head, char *dataIn, char *dataOut, unsigned int *bufferSize);
 };
 
 struct RsTlvOps gRaRsTlvOps = {
@@ -61,11 +61,13 @@ int RaRsTlvDeinit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcv
 
 int RaRsTlvRequest(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    union OpTlvRequestData *dataOut = (union OpTlvRequestData *)(outBuf + sizeof(struct MsgHead));
     union OpTlvRequestData *dataIn = (union OpTlvRequestData *)(inBuf + sizeof(struct MsgHead));
 
     HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpTlvRequestData), sizeof(struct MsgHead), rcvBufLen, opResult);
 
-    *opResult = gRaRsTlvOps.tlvRequest(&dataIn->txData.head, dataIn->txData.data);
+    *opResult = gRaRsTlvOps.tlvRequest(&dataIn->txData.head, dataIn->txData.data, dataOut->rxData.recvData,
+            &dataOut->rxData.recvBytes);
     if (*opResult != 0) {
         hccp_err("tlv_request failed ret[%d]", *opResult);
     }
