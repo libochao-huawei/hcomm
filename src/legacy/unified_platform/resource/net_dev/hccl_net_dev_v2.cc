@@ -93,9 +93,7 @@ static HcclResult ConvertToNetDevInfo(const HcclNetDevInfos &src, Hccl::NetDevIn
 HcclResult HcclNetDevOpenV2(const HcclNetDevInfos *info, HcclNetDev *netDev)
 {
     CHK_PTR_NULL(info);  
-    if(CHK_PTR_NULL(netDev)) {
-        HCCL_INFO("HcclNetDevOpen: successfully opened netDev [%p]!", *netDev);
-    }
+    CHK_PTR_NULL(netDev);
 
     Hccl::NetDevInfo pltInfo;
     HcclResult ret = ConvertToNetDevInfo(*info, pltInfo);
@@ -117,6 +115,8 @@ HcclResult HcclNetDevOpenV2(const HcclNetDevInfos *info, HcclNetDev *netDev)
         return ret;
     }
     *netDev = static_cast<HcclNetDev>(hcclNetDev);
+    CHK_PTR_NULL(*netDev);
+    HCCL_INFO("HcclNetDevOpenV2: successfully opened netDev[%p]!", *netDev);
     return HCCL_SUCCESS;
 }
 

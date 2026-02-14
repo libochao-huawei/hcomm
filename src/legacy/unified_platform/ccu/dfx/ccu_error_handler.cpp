@@ -423,7 +423,7 @@ void CcuErrorHandler::GenErrorInfoRemWaitGroup(const ErrorInfoBase &baseInfo, sh
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[GenErrorInfoRemWaitGroup]rt get CntCkeId failed. "
                                 "cntCkeId[%p] return[%d].", cntCkeId, ret);
-        MACRO_THROW(RuntimeApiException, msg);
+        MACRO_THROW(CcuApiException, msg);
     }
     errorMsg.msg.waitSignal.signalId         = cntCkeId;
     errorMsg.msg.waitSignal.signalValue      = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, errorMsg.msg.waitSignal.signalId);
