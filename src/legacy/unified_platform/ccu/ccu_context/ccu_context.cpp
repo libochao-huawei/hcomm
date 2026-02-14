@@ -1063,6 +1063,11 @@ std::vector<CcuProfilingInfo> CcuContext::GetCcuProfilingInfo(const CcuTaskArg &
     }
 
     HCCL_INFO("[GetCcuProfilingInfo] process loop group profiling start: lgsize(%lu), goSize(%lu)", lgProfInfo.lgProfilingReps.size(), groupOpSizeInfo.size());
+
+    if (lgProfInfo.lgProfilingReps.size() % 2 !=0) {
+                THROW<CcuApiException>("[GetCcuProfilingInfo] lgProfilingReps size is not even: %lu", lgProfInfo.lgProfilingReps.size());
+        }
+
     for (uint32_t i = 0; i < lgProfInfo.lgProfilingReps.size(); i += 2) { // 2: 一个goSize对应一个CcuProfilingInfo，对应1个loopGroup Rep
         if (taskArgs.empty() || varId2ArgIndexMap.empty()) {
             continue;
@@ -1080,6 +1085,11 @@ std::vector<CcuProfilingInfo> CcuContext::GetCcuProfilingInfo(const CcuTaskArg &
 
         if (parallelParam != 0) {
             HCCL_INFO("[GetCcuProfilingInfo] collect lg, residual start i=%lu", i);
+
+            if (i + 1 >= lgProfInfo.lgProfilingReps.size()) {
+                THROW<CcuApiException>("[GetCcuProfilingInfo] Index out of range: i=%lu, size=%lu", i + 1, lgProfInfo.lgProfilingReps.size());
+            }
+
             uint64_t residual = GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo[i].residual.Id());
             uint64_t repeatNum = CcuRep::ParseRepeatNumFromParallelParam(parallelParam);
             lgProfInfo.ccuProfilingInfos[i].dataSize = repeatNum * moConfig.memSlice + residual;

@@ -47,6 +47,10 @@ HcclResult InsV2AlltoAllVSoleExecutor<AlgTopoMatch, InsAlgTemplate>::InitParams(
         HCCL_ERROR("[InsV2AlltoAllVSoleExecutor][InitParams] sendCounts or sdispls is nullptr"),
         HCCL_E_PTR);
 
+    CHK_PRT_RET((myRank_ >= op.all2AllVDataDes.sendCounts),
+        HCCL_ERROR("[InsV2AlltoAllVSoleExecutor][InitParams] myRank_ is not of bounds"),
+        HcclResult::HCCL_E_PTR);
+
     dataType_ = op.all2AllVDataDes.sendType;
     dataCount_ = static_cast<u64 *>(op.all2AllVDataDes.sendCounts)[myRank_]; // send留给本卡的那一片数据
     outputDataType_ = op.all2AllVDataDes.recvType;

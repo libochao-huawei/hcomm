@@ -46,6 +46,10 @@ InnerNetDev::InnerNetDev(const NetDevInfo &info)
         isValid_ = true;
     } catch (const NetworkApiException &e) {
         HCCL_ERROR(e.what());
+        if (localProto_ == LinkProtoType::RDMA && rdmaHandle_ != nullptr) {
+            HrtRaRdmaFree(rdmaHandle_);
+            rdmaHandle_ = nullptr;
+        }
         isValid_ = false;
     }
 }
