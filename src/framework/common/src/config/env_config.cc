@@ -35,7 +35,6 @@ const std::string INCONSISTENT_CHECK_CONFIG = "inconsistent_check:";
 const std::string CONNECTION_FAULT_DETECTION_TIME = "connection_fault_detection_time:";
 const std::string TASK_MONITOR_INTERVAL = "task_monitor_interval:";
 constexpr static const s32 HCCL_MAX_LINK_TIME_OUT_S  = (120 * 60); // HCCL 最大探测超时时间设置为120*60s
-constexpr static const s32 HCCL_MAX_TASK_MONITOR_INTERVAL = 2147483647; // HCCL 最大task监控时长，与notify最大值保持一致
 HcclResult InitEnvConfig()
 {
     std::lock_guard<std::mutex> lock(g_envConfigMutex);
@@ -654,13 +653,14 @@ HcclResult ParseMonitor(std::string &taskMonitorInterval, s32 &monitorTime)
             "is invalid, errorno[%d]", taskMonitorInterval.c_str(), ret), ret);
     }
 
+    s32 maxTimeInMs = HCCL_MAX_LINK_TIME_OUT_S * 1000;
     if (monitorTime == 0) {
         g_envConfig.dfsTaskMonitorInterval = 0;
-    } else if (monitorTime >= 0 && monitorTime <= HCCL_MAX_TASK_MONITOR_INTERVAL) {
+    } else if (monitorTime >= 0 && monitorTime <= maxTimeInMs) {
         g_envConfig.dfsTaskMonitorInterval = monitorTime;
     } else { // 不在允许范围内报错
         HCCL_ERROR("[ParseDFSConfig] HCCL_DFS_CONFIG-task_monitor_interval[%d] is invalid, except: [0, %d]",
-            monitorTime, HCCL_MAX_TASK_MONITOR_INTERVAL);
+            monitorTime, maxTimeInMs);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -727,7 +727,7 @@ HcclResult ParseDFSConfig()
         g_envConfig.dfsConnectionFaultDetectionTime = HCCL_MIN_CONNECT_FAULT_DETECTION_TIME;
         HCCL_RUN_INFO("[HCCL_ENV][Parse] HCCL_DFS_CONFIG cluster_heartbeat set by environment to [%d], "
             "stuck_detection set by environment to [%d], connection_fault_detection_time[%d]s inconsistentCheckSwitch[%d],"
-            "task_monitor_interval[%u]s", g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable,
+            "task_monitor_interval[%u]ms", g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable,
             g_envConfig.dfsConnectionFaultDetectionTime, g_envConfig.inconsistentCheckSwitch, g_envConfig.dfsTaskMonitorInterval);
         return HCCL_SUCCESS;
     }
@@ -748,7 +748,7 @@ HcclResult ParseDFSConfig()
 
     HCCL_RUN_INFO("[HCCL_ENV][Parse] HCCL_DFS_CONFIG cluster_heartbeat set by environment to [%d], "
         "stuck_detection set by environment to [%d], connection_fault_detection_time[%d]s inconsistentCheckSwitch[%d],"
-        "task_monitor_interval[%u]s", g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable,
+        "task_monitor_interval[%u]ms", g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable,
         g_envConfig.dfsConnectionFaultDetectionTime, g_envConfig.inconsistentCheckSwitch, g_envConfig.dfsTaskMonitorInterval);
     return HCCL_SUCCESS;
 }
