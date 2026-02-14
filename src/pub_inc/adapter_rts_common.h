@@ -72,6 +72,20 @@ enum class HcclRtStreamClearStep {
     HCCL_STREAM_CLEAR,
 };
 
+const std::unordered_map<HcclDataType, aclDataType> hccl2rtDataTypeMap = {
+    {HCCL_DATA_TYPE_INT8, ACL_INT8},
+    {HCCL_DATA_TYPE_INT16, ACL_INT16},
+    {HCCL_DATA_TYPE_INT32, ACL_INT32},
+    {HCCL_DATA_TYPE_FP16, ACL_FLOAT16},
+    {HCCL_DATA_TYPE_FP32, ACL_FLOAT},
+    {HCCL_DATA_TYPE_BFP16, ACL_BF16},
+};
+const std::unordered_map<HcclReduceOp, aclrtReduceKind> hccl2rtReduceOpMap = {
+    {HCCL_REDUCE_SUM, ACL_RT_MEMCPY_SDMA_AUTOMATIC_SUM},
+    {HCCL_REDUCE_MAX, ACL_RT_MEMCPY_SDMA_AUTOMATIC_MAX},
+    {HCCL_REDUCE_MIN, ACL_RT_MEMCPY_SDMA_AUTOMATIC_MIN},
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
