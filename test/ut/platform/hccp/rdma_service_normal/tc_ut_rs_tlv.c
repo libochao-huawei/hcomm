@@ -33,7 +33,7 @@ extern int RsTlvAssembleSendData(struct TlvBufInfo *bufInfo, struct TlvRequestMs
 extern void RsEpollEventHandleOne(struct rs_cb *rsCb, struct epoll_event *events);
 extern int RsNslbRequest(struct TlvRequestMsgHead *head, char *data);
 extern int RsNetcoTblApiInit(void);
-extern int RsCcuRequest(struct TlvRequestMsgHead *head, char *data);
+extern int RsCcuRequest(struct TlvRequestMsgHead *head, char *dataIn, char *dataOut, unsigned int *bufferSize);
 extern int RsGetTlvCb(uint32_t phyId, struct RsTlvCb **tlvCb);
 extern int RsNetcoInitArg(unsigned int phyId, NetCoIpPortArg *netcoArg);
 
@@ -145,16 +145,19 @@ void TcRsNslbDeinit()
 void TcRsNslbRequest()
 {
     struct TlvRequestMsgHead head = {0};
-    char *data;
+    unsigned int bufferSize = 0;
+    char *dataOut;
+    char *dataIn;
     int ret;
 
     head.phyId = 0;
     head.type = 0;
-    data = (char *)calloc(16, sizeof(char));
+    dataOut = (char *)calloc(16, sizeof(char));
+    dataIn = (char *)calloc(16, sizeof(char));
 
     mocker_invoke(RsGetTlvCb, StubRsGetNslbCb, 10);
     mocker(RsTlvAssembleSendData, 10, -EINVAL);
-    ret = RsTlvRequest(&head, data);
+    ret = RsTlvRequest(&head, dataIn, dataOut, &bufferSize);
     EXPECT_INT_EQ(-EINVAL, ret);
     mocker_clean();
     FreeRsCb();
@@ -162,19 +165,21 @@ void TcRsNslbRequest()
     head.offset = 0;
     mocker_invoke(RsGetTlvCb, StubRsGetNslbCb, 10);
     mocker_invoke(RsTlvAssembleSendData, StubRsTlvAssembleSendData, 10);
-    ret = RsTlvRequest(&head, data);
+    ret = RsTlvRequest(&head, dataIn, dataOut, &bufferSize);
     EXPECT_INT_EQ(0, ret);
     FreeRsCb();
 
     head.offset = 1U;
     head.totalBytes = 16U;
-    ret = RsTlvRequest(&head, data);
+    ret = RsTlvRequest(&head, dataIn, dataOut, &bufferSize);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
     FreeRsCb();
 
-    free(data);
-    data = NULL;
+    free(dataIn);
+    dataIn = NULL;
+    free(dataOut);
+    dataOut = NULL;
 }
 
 void TcRsTlvAssembleSendData()
@@ -282,33 +287,45 @@ void TcRsNslbApiInit()
 void TcRsCcuRequest()
 {
     struct TlvRequestMsgHead head = {0};
-    char data[10];
+    char dataOut[MAX_TLV_MSG_DATA_LEN];
+    char dataIn[MAX_TLV_MSG_DATA_LEN];
+    unsigned int bufferSize = 0;
     int ret;
 
     head.type = MSG_TYPE_CCU_INIT;
     mocker(RsCcuInit, 10, -1);
-    ret = RsCcuRequest(&head, data);
+    ret = RsCcuRequest(&head, dataIn, dataOut, &bufferSize);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
     mocker(RsCcuInit, 10, 0);
-    ret = RsCcuRequest(&head, data);
+    ret = RsCcuRequest(&head, dataIn, dataOut, &bufferSize);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
     head.type = MSG_TYPE_CCU_UNINIT;
     mocker(RsCcuUninit, 10, -1);
-    ret = RsCcuRequest(&head, data);
+    ret = RsCcuRequest(&head, dataIn, dataOut, &bufferSize);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
 
     mocker(RsCcuUninit, 10, 0);
-    ret = RsCcuRequest(&head, data);
+    ret = RsCcuRequest(&head, dataIn, dataOut, &bufferSize);
+    EXPECT_INT_EQ(0, ret);
+    mocker_clean();
+
+    head.type = MSG_TYPE_CCU_GET_MEM_INFO;
+    mocker(RsCcuGetMemInfo, 10, -1);
+    ret = RsCcuRequest(&head, dataIn, dataOut, &bufferSize);
+    EXPECT_INT_EQ(-1, ret);
+    mocker_clean();
+
+    ret = RsCcuRequest(&head, dataIn, dataOut, &bufferSize);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
     head.type = MSG_TYPE_CCU_MAX;
-    ret = RsCcuRequest(&head, data);
+    ret = RsCcuRequest(&head, dataIn, dataOut, &bufferSize);
     EXPECT_INT_NE(0, ret);
 }
 

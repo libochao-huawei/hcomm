@@ -70,6 +70,7 @@ STATIC int RaHdTlvRequestForSendNullMsg(unsigned int phyId, union OpTlvRequestDa
     CHK_PRT_RETURN(ret != 0, hccp_err("[request][ra_hdc_tlv]hdc message process failed ret(%d) phy_id(%u)",
         ret, phyId), ret);
 
+    recvMsg->type = head->type;
     recvMsg->length = tlvData->rxData.recvBytes;
     return ret;
 }
@@ -79,6 +80,7 @@ int RaHdcTlvRequest(struct RaTlvHandle *tlvHandle, unsigned int moduleType,
 {
     unsigned int phyId = tlvHandle->initInfo.phyId;
     union OpTlvRequestData tlvData = { 0 };
+    unsigned int recvLen = recvMsg->length;
     struct TlvRequestMsgHead head = { 0 };
     int ret = 0;
 
@@ -104,6 +106,16 @@ int RaHdcTlvRequest(struct RaTlvHandle *tlvHandle, unsigned int moduleType,
         head.offset += head.sendBytes;
     }
 
+    if (head.type == MSG_TYPE_CCU_GET_MEM_INFO) {
+        CHK_PRT_RETURN(tlvData.rxData.recvBytes > recvLen,
+            hccp_err("[request][ra_hdc_tlv]rxData.recvBytes(%u) > recvLen(%u), phyId(%u)", tlvData.rxData.recvBytes,
+            recvLen, phyId), -EINVAL);
+
+        ret = memcpy_s(recvMsg->data, recvLen, tlvData.rxData.recvData, tlvData.rxData.recvBytes);
+        CHK_PRT_RETURN(ret != 0, hccp_err("[request][ra_hdc_tlv]memcpy_s recvData failed, ret(%d) rxData.recvBytes(%u)"
+            " recvLen(%u) phyId(%u)", ret, tlvData.rxData.recvBytes, recvLen, phyId), -ESAFEFUNC);
+    }
+    recvMsg->type = head.type;
     recvMsg->length = tlvData.rxData.recvBytes;
     return ret;
 }
