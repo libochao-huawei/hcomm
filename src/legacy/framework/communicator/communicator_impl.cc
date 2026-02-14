@@ -9,6 +9,7 @@
  */
 
 #include "communicator_impl.h"
+#include <op_type.h>
 #include <adapter_error_manager_pub.h>
 #include "orion_adapter_tsd.h"
 #include "orion_adapter_rts.h"
@@ -76,6 +77,16 @@ struct DpuKernelLaunchParam {
 };
 DpuKernelLaunchParam hostArgsTemp;
 
+// 支持零拷贝算子的白名单
+std::set<OpType> opWhiteSet = {
+    OpType::BROADCAST,
+    OpType::ALLTOALL,
+    OpType::ALLTOALLV,
+    OpType::SEND,
+    OpType::RECV,
+    OpType::ALLGATHER
+};
+
 static void PrintBackTrace(HcclException &e)
 {
     auto backTraces = e.GetBackTraceStrings();
@@ -123,7 +134,7 @@ void CommunicatorImpl::InitCommResource(const CommParams &commParams)
     InitStreamManager();
     InitSocketManager();
     if (ranktableInfo != nullptr) {
-        GetSocketManager().SetDeviceServerListenPortMap(ranktableInfo->GetRankDeviceListenPortMap());
+        SocketManager::SetDeviceServerListenPortMap(ranktableInfo->GetRankDeviceListenPortMap());
     }
     InitRmaConnManager();
     InitDataBufferManager();
@@ -303,7 +314,6 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
             std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(rankIds);
             // 初始化子通信域
             CHK_RET(subCommImpl->Init(subCommParams, subRankGraph, devLogicId));
-            subCommImpl->GetSocketManager().SetDeviceServerListenPortMap(GetSocketManager().GetDeviceServerListenPortMap());
             return HcclResult::HCCL_SUCCESS;
         } else {
             std::string msg = StringFormat("CreateSubComm fail, communicator has not been initialized, please check.");
@@ -325,7 +335,6 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
             HCCL_INFO("[%s]rankIds size[%u], rankIdsVec size[%u]", __func__, rankIds.size(), subCommImpl->rankIdsVec.size());
             // 初始化子通信域
             CHK_RET(subCommImpl->Init(subCommParams, subRankGraph, subConfig, devLogicId));
-            subCommImpl->GetSocketManager().SetDeviceServerListenPortMap(GetSocketManager().GetDeviceServerListenPortMap());
             return HcclResult::HCCL_SUCCESS;
         } else {
             std::string msg = StringFormat("CreateSubComm fail, communicator has not been initialized, please check.");
@@ -521,11 +530,14 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
     
     if (streamNum > 1) {
         RtsCntNotify *cntNotifyNTo1 = GetCcuStreamSyncNotifyManager().GetRtsNTo1CntNotify(mStreamId);
+        opbaseStream->RegisterMaster(std::make_unique<Stream>(stream));
         //  launch LocalWaitFrom on stream
         cntNotifyNTo1->WaitValue(value, timeout, mStream);
         for (std::size_t i = 0, len = streamNum - 1; i < len; ++i) {
             u32  bitValue = BASE_BIT << i;
             auto slave    = opbaseStream->GetSlave(slaveIndex++);
+            auto master   = opbaseStream->GetMaster();
+            GetStreamManager().CaptureSlaveStream(master, slave);
             cntNotify1ToN->WaitBits(bitValue, timeout, *slave);
             if (taskExceptionEnv || enableProfilingEnv) {
                 params.taskParams[i + 1].beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
@@ -564,6 +576,36 @@ HcclResult CommunicatorImpl::SetAivControledCoreNum(bool isAiv)
     return HCCL_SUCCESS;
 }
 
+bool CommunicatorImpl::IsOpSupportZeroCopyAlg(const CollOpParams &opParams, const rtStream_t stream) const
+{
+    bool isCapture = false;
+    rtModel_t rtModel = nullptr;
+    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
+    if (isCapture && opWhiteSet.find(opParams.opType) != opWhiteSet.end()) {
+        return true;
+    }
+    return false;
+}
+
+HcclResult CommunicatorImpl::OffloadResourcePre(std::string &opTag, const CollOpParams &opParams)
+{
+    CollOffloadOpResReq resReq;
+    auto dataSize = opParams.count * DataTypeSizeGet(opParams.dataType);
+    auto dataType = DataTypeToHcclDataType(opParams.dataType);
+    CHK_RET(CalcCollOffloadOpRes(opParams.opType, dataSize, dataType, resReq));
+
+    // 设定workspace内存资源
+    std::vector<rtStream_t> slaveStreams;
+    slaveStreams.resize(resReq.requiredSubQueNum);
+    for (u64 i = 0; i < resReq.requiredSubQueNum; ++i) {
+        slaveStreams[i] = static_cast<rtStream_t>(std::make_unique<Stream>(true).get());
+    }
+    CHK_RET(SetCollOffloadSlaveStreams(opTag, slaveStreams));
+    CHK_RET(SetCollOffloadScratchBuf(opTag, reinterpret_cast<void *>(GetCclBuffer()->GetAddr()),
+        GetCclBuffer()->GetSize()));
+    return HCCL_SUCCESS;
+}
+
 HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, void *stream)
 {
     try {
@@ -596,6 +638,14 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
         status = CommStatus::COMM_READY;
         CHK_RET(OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv));
+
+        // AICPU aclgraph场景传入的stream被capture且算子时支持零拷贝算法的，会切换到图模式
+        if (opExecuteConfig.accState == AcceleratorState::AICPU_TS && IsOpSupportZeroCopyAlg(opParams, stream)) {
+            std::string tag = opParams.opTag + "_" + std::to_string(tagResourceIndex_++);
+            OffloadResourcePre(tag, opParams);
+            HCCL_INFO("[CommunicatorImpl][%s]current op support zero copy in aicpu aclgraph, change to offload", __func__);
+            return LoadOffloadCollOp(tag, opParams, stream);
+        }
         CHK_RET(SetAivControledCoreNum(isAiv));
 
         // 避免transport建链前，通讯域被摧毁
@@ -1213,6 +1263,13 @@ void CommunicatorImpl::InitRankGraph(const RankTableInfo &ranktable)
     for (auto link : fullLinks) {
         HCCL_RUN_INFO("[CommunicatorImpl][InitRankGraph] link[%s]", link.Describe().c_str());
     }
+}
+
+HcclResult CommunicatorImpl::InitDeviceListenPort(u32 &linstenPort)
+{
+    std::vector<LinkData> fullLinks = GetFullMeshLinks();
+    GetSocketManager().ServerInitAll(fullLinks, linstenPort);
+    return HCCL_SUCCESS;
 }
 
 void CommunicatorImpl::InitRankGraph(std::unique_ptr<RankGraph> &inputRankGraph)
@@ -2259,6 +2316,12 @@ CommunicatorImpl::~CommunicatorImpl()
 
 HcclResult CommunicatorImpl::DestroyDpuKernelResource()
 {
+    // 释放
+    if (hostShareBuf != nullptr) {
+        free(hostShareBuf);
+        hostShareBuf = nullptr;
+    }
+
     // 终止Dpu Kernel的TaskRun
     if (!isDpuKernelLaunched) {
         return HCCL_SUCCESS;
@@ -2287,11 +2350,6 @@ HcclResult CommunicatorImpl::DestroyDpuKernelResource()
     if (ACL_SUCCESS != aclrtSetCurrentContext(npuContext)) {
         HCCL_ERROR("set npu Ctx Failed");
         return HCCL_E_RUNTIME;
-    }
-
-    // 释放
-    if (hostShareBuf != nullptr) {
-        free(hostShareBuf);
     }
 
     return HCCL_SUCCESS;
@@ -2451,6 +2509,14 @@ CommStatus CommunicatorImpl::GetCommStatus() const
     return status;
 }
 
+std::map<HcclAccelerator, AcceleratorState> accStateMap = {
+    {HcclAccelerator::AICPU, AcceleratorState::AICPU_TS},
+    {HcclAccelerator::AICPU_TS, AcceleratorState::AICPU_TS},
+    {HcclAccelerator::CCU_SCHED, AcceleratorState::CCU_SCHED},
+    {HcclAccelerator::DEFAULT, AcceleratorState::CCU_SCHED},
+    {HcclAccelerator::CCU_MS, AcceleratorState::CCU_MS}
+};
+
 // 初始化 算子粒度 = 通信域粒度 选择用 算子粒度 ok
 void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode &opMode)
 {
@@ -2461,10 +2527,11 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
     params.opMode                     = opMode;
     params.maxTmpMemSize              = GetBufferSize();
     params.isMc2                      = opParams.isMc2;
-    if (opParams.isMc2 && (opParams.commEngine == HcclAccelerator::AICPU || opParams.commEngine == HcclAccelerator::AICPU_TS)) {
-        opExecuteConfig.accState = AcceleratorState::AICPU_TS;
-    } else if (opParams.isMc2 && opParams.commEngine != HcclAccelerator::AICPU) {
-        opExecuteConfig.accState = AcceleratorState::CCU_MS;
+    if (opParams.isMc2) {
+        if(accStateMap.find(opParams.commEngine) == accStateMap.end()) {
+            THROW<NotSupportException>("[CommunicatorImpl][ExecAlgSelect] not support commEngine type[%s]!", opParams.commEngine.Describe().c_str());
+        }
+        opExecuteConfig.accState = accStateMap.find(opParams.commEngine)->second;
     }
     OpExecuteConfig inOpExecuteConfig = opExecuteConfig;
     params.opExecuteConfig            = inOpExecuteConfig;
@@ -2483,11 +2550,13 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
         auto dataSize = opParams.count * DataTypeSizeGet(opParams.dataType);
         THROW<NotSupportException>(
             "[CommunicatorImpl][ExecAlgSelect] failed. Error code :%u, opType[%s], opMode[%s], accState[%s], "
-            "dataType[%s], reduceOp[%s]. Current algName[%s],"
-            "algos[0]:[%u],algos[1]:[%u],algos[2]:[%u],algos[3]:[%u], dataSize[%u Bytes] .",
+            "dataType[%s], reduceOp[%s]. Current algName[%s],algos[0]:[%u],algos[1]:[%u],algos[2]:[%u],algos[3]:[%u], dataSize[%u Bytes] .",
             ret, opParams.opType.Describe().c_str(), opMode.Describe().c_str(),
             opExecuteConfig.accState.Describe().c_str(), opParams.dataType.Describe().c_str(),
             opParams.reduceOp.Describe().c_str(), curAlgName.c_str(), algos[0], algos[1], algos[2], algos[3], dataSize);
+    }
+    if(params.isMc2 && (opExecuteConfig.accState == AcceleratorState::CCU_SCHED || opExecuteConfig.accState == AcceleratorState::CCU_MS)) {
+        algorithmType_ = collAlgComponent->GetAlgorithmTypeForMC2CCU(curAlgName);
     }
     auto opAcceStateCacheIt = opAcceStateCache.find({opParams.opType, curAlgName});
     if (opAcceStateCacheIt != opAcceStateCache.end()) {
@@ -2496,8 +2565,8 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
         inOpExecuteConfig.accState = opAcceStateCacheIt->second;
     }
     SetOpExecuteConfig(inOpExecuteConfig); // 算子粒度 ok
-    HCCL_RUN_INFO("[CommunicatorImpl][%s] current accelerator[%s], algName[%s]", __func__,
-              opExecuteConfig.accState.Describe().c_str(), curAlgName.c_str());
+    HCCL_INFO("[CommunicatorImpl][%s] current accelerator[%s], algName[%s], algorithmType[%u]", __func__,
+              opExecuteConfig.accState.Describe().c_str(), curAlgName.c_str(), algorithmType_);
     SelectCollService();
 }
 
@@ -2569,7 +2638,7 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
             commAccelerator = AcceleratorState::AICPU_TS;
             break;
         case HcclAccelerator::HOSTCPU_TS: // 910_95不支持HOST展开，进行拦截
-            HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in 91095", hcclAccelerator.Describe().c_str());
+            HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in 950", hcclAccelerator.Describe().c_str());
             return HCCL_E_NOT_SUPPORT;
         case HcclAccelerator::AICPU:
             HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support", hcclAccelerator.Describe().c_str());
@@ -2764,6 +2833,7 @@ void CommunicatorImpl::OpAcceleratorStateFallback()
 HcclResult CommunicatorImpl::AcceleratorFallback()
 {
     HCCL_RUN_INFO("[CommunicatorImpl][%s] opMode[%s]", __func__, currentCollOperator->opMode.Describe().c_str());
+    string needFallBackAlgName = curAlgName;
     OpAcceleratorStateFallback();
 
     HcclResult ret = HCCL_SUCCESS;
@@ -2784,9 +2854,9 @@ HcclResult CommunicatorImpl::AcceleratorFallback()
     // 下一个算子下发时，做完算法选择后，查找上述加速模式缓存，
     // 若能命中，按照上述已缓存的加速模式下发算子(大概率也是资源不足，走回退)；
     // 否则，按照算法选择的加速模式下发算子。
-    opAcceStateCache.insert({{curOpParams.opType, curAlgName}, opExecuteConfig.accState});
-    HCCL_INFO("[CommunicatorImpl][%s] opAcceStateCache opType[%s], curAlgName[%s], accelerator[%s]", __func__,
-              curOpParams.opType.Describe().c_str(), curAlgName.c_str(), opExecuteConfig.accState.Describe().c_str());
+    opAcceStateCache.insert({{curOpParams.opType, needFallBackAlgName}, opExecuteConfig.accState});
+    HCCL_INFO("[CommunicatorImpl][%s] opAcceStateCache opType[%s], needFallBackAlgName[%s], accelerator[%s]", __func__,
+              curOpParams.opType.Describe().c_str(), needFallBackAlgName.c_str(), opExecuteConfig.accState.Describe().c_str());
 
     HCCL_INFO("[CommunicatorImpl][%s] end", __func__);
     return ret;
@@ -2948,7 +3018,8 @@ HcclResult CommunicatorImpl::PrepareDpuKernelResource(aclrtFuncHandle &funcHandl
     jsonPath += "/opp/built-in/op_impl/dpu/";
     HCCL_DEBUG("[CommunicatorImpl::%s] kernel folder path[%s]", __func__, jsonPath.c_str());
 
-    jsonPath += "ccl_dpu.json";
+    // cpuKernelMode为1时，json命名需与so命名保持一致， 即libccl_dpu.json与libccl_dpu.so
+    jsonPath += "libccl_dpu.json";
     char realPath[PATH_MAX] = {0};
     CHK_PRT_RET(realpath(jsonPath.c_str(), realPath) == nullptr,
         HCCL_ERROR("[CommunicatorImpl::%s]: %s is not a valid real path, err[%d]", __func__, jsonPath.c_str(), errno),
@@ -2984,14 +3055,6 @@ HcclResult CommunicatorImpl::PrepareDpuKernelResource(aclrtFuncHandle &funcHandl
 
 HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
 {
-    // 申请共享内存
-    bool       newCreate = false;
-    uint64_t   memSize   = static_cast<uint64_t>(SHARE_HBM_MEMORY_SIZE);
-    HcclResult memRet    = CreateWorkspaceBuf(DPUTAG, &memSize, &newCreate);
-    if (memRet != HCCL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::InitCommResource] Alloc Share HBM Failed");
-    }
-    hostShareBuf = malloc(SHARE_HBM_MEMORY_SIZE);
     // 下发
     HCCL_INFO("[CommunicatorImpl::%s] Launch Dpu Kernel", __func__);
     aclrtLaunchKernelCfg  cfg;
@@ -3006,7 +3069,7 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     hostArgsTemp.hostMem    = hostShareBuf;
     auto shMem              = GetKFCWorkSpace(DPUTAG);
     hostArgsTemp.shareHBM = reinterpret_cast<void *>(shMem->GetAddr());
-    hostArgsTemp.deviceId = HrtGetDevice();
+    hostArgsTemp.deviceId = devLogicId;
     HCCL_INFO("[CommunicatorImpl::%s] DpuKernelLaunchParam{commId:%s; memorySize:%u; shareHBM:%p; hostMem:%p}",
               __func__, hostArgsTemp.commId.c_str(), hostArgsTemp.memorySize, hostArgsTemp.shareHBM,
               hostArgsTemp.hostMem);
@@ -3025,6 +3088,15 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
 HcclResult CommunicatorImpl::InitAndLaunchDpuKernel()
 {
     HCCL_INFO("[CommunicatorImpl::%s] Start to Launch Dpu Kernel", __func__);
+    // 申请共享内存(需要在npu ctx 下进行)
+    bool       newCreate = false;
+    uint64_t   memSize   = static_cast<uint64_t>(SHARE_HBM_MEMORY_SIZE);
+    HcclResult memRet    = CreateWorkspaceBuf(DPUTAG, &memSize, &newCreate);
+    if (memRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[CommunicatorImpl::InitCommResource] Alloc Share HBM Failed");
+        return HCCL_E_RUNTIME;
+    }
+    hostShareBuf = malloc(SHARE_HBM_MEMORY_SIZE);
     // 设置XPU
     HCCL_INFO("[CommunicatorImpl::%s] Switch to Dpu Ctx", __func__);
     if (aclrtGetCurrentContext(&npuContext) != ACL_SUCCESS) {
@@ -3066,34 +3138,35 @@ void CommunicatorImpl::AppendLocalDieIdForLinks()
     }
 
     auto srcRankNode = rankGraph->GetPeer(myRank)->GetNodeId();
-    // 枚举level
+
+    auto processLinks = [&](const std::vector<std::shared_ptr<NetInstance::Link>>& links, bool isSource) {
+        for (auto link : links) {
+            auto iface = isSource ? link->GetSourceIface() : link->GetTargetIface();
+            if (iface->GetPos() == AddrPosition::HOST) {
+                continue;
+            }
+            u32 dieId = GetLocalDieId({myRank, *iface});
+            HCCL_INFO("[CommunicatorImpl][AppendLocalDieIdForLinks] get link dieid[%u]", dieId);
+            iface->SetLocalDieId(dieId); 
+        }
+    };
+
     for (auto level : rankGraph->GetLevels(myRank)) {
         auto netInstance = rankGraph->GetNetInstanceByRankId(level, myRank);
-        auto &vGraph = netInstance->GetGraph();
-        // 每个连向Fabric的link
-        auto fabrics = netInstance->GetFabrics();
-        for (auto fabric : fabrics) {
+        auto& vGraph = netInstance->GetGraph();
+
+        // Process fabric links
+        for (auto fabric : netInstance->GetFabrics()) {
             auto dstRankNode = fabric->GetNodeId();
-            auto links = vGraph.GetEdges(srcRankNode, dstRankNode);
-            for (auto link : links) {
-                if (link->GetSourceIface()->GetPos() == AddrPosition::HOST) {
-                    continue;
-                }
-                auto dieId = GetLocalDieId({myRank, *link->GetSourceIface()});
-                link->GetSourceIface()->SetLocalDieId(dieId);
-            }
+            processLinks(vGraph.GetEdges(srcRankNode, dstRankNode), true);
+            processLinks(vGraph.GetEdges(dstRankNode, srcRankNode), false);
         }
-        // 直接连向对端rank的link
-        for (u32 dstRank = 0; dstRank < rankSize; dstRank++) {
+
+        // Process direct peer links
+        for (u32 dstRank = 0; dstRank < rankSize; ++dstRank) {
             auto dstRankNode = rankGraph->GetPeer(dstRank)->GetNodeId();
-            auto links = vGraph.GetEdges(srcRankNode, dstRankNode);
-            for (auto link : links) {
-                if (link->GetSourceIface()->GetPos() == AddrPosition::HOST) {
-                    continue;
-                }
-                auto dieId = GetLocalDieId({myRank, *link->GetSourceIface()});
-                link->GetSourceIface()->SetLocalDieId(dieId);
-            }
+            processLinks(vGraph.GetEdges(srcRankNode, dstRankNode), true);
+            processLinks(vGraph.GetEdges(dstRankNode, srcRankNode), false);
         }
     }
 }

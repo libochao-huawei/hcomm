@@ -131,13 +131,13 @@ HcclResult CcuComponent::CheckDiesEnable()
     return HcclResult::HCCL_SUCCESS;
 }
 
-static HcclResult FindOneUsableEid(const uint32_t devLogicId, const uint8_t dieId,
+static HcclResult FindOneUsableEid(const int32_t devLogicId, const uint32_t devPhyId, const uint8_t dieId,
     uint32_t &feId, CommAddr &commAddr)
 {
     std::vector<DevEidInfo> eidInfos;
-    auto ret = EidInfoMgr::GetInstance(devLogicId).GetEidInfos(eidInfos);
+    auto ret = EidInfoMgr::GetInstance(devPhyId).GetEidInfos(eidInfos);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_WARNING("[CcuComponent][%s] failed, devLogicId[%u], dieId[%u].",
+        HCCL_WARNING("[CcuComponent][%s] failed, devLogicId[%d], dieId[%u].",
             __func__, devLogicId, dieId),
         ret);
 
@@ -159,14 +159,14 @@ static HcclResult FindOneUsableEid(const uint32_t devLogicId, const uint8_t dieI
 
     if (!findFlag) {
         HCCL_WARNING("[CcuComponent][%s] dieId[%u] doesn't have usable func ID, "
-            "devLogicId[%u].", __func__, dieId, devLogicId);
+            "devLogicId[%d].", __func__, dieId, devLogicId);
         return HcclResult::HCCL_E_INTERNAL;
     }
 
     Hccl::IpAddress ipAddr{};
     CHK_RET(CommAddrToIpAddress(commAddr, ipAddr));
     HCCL_INFO("[CcuComponent][%s] dieId[%u] choose: name[%s] feId[%u] ipAddr[%s], "
-        "devLogicId[%u].", __func__, dieId, name.c_str(), feId,
+        "devLogicId[%d].", __func__, dieId, name.c_str(), feId,
         ipAddr.Describe().c_str(), devLogicId);
 
     return HcclResult::HCCL_SUCCESS;
@@ -182,7 +182,7 @@ HcclResult CcuComponent::ChooseLoopEids(const std::array<bool, CCU_MAX_IODIE_NUM
 
         uint32_t feId = 0;
         CommAddr commAddr{};
-        if (FindOneUsableEid(devLogicId_, dieId, feId, commAddr) != HcclResult::HCCL_SUCCESS) {
+        if (FindOneUsableEid(devLogicId_, devPhyId_, dieId, feId, commAddr) != HcclResult::HCCL_SUCCESS) {
             dieEnableFlags_[dieId] = false;
             HCCL_WARNING("[CcuComponent][%s] failed to find feId eid, but passed, "
                 "devLogicId[%d], dieId[%u].", __func__, devLogicId_, dieId);
@@ -547,9 +547,9 @@ HcclResult CcuComponent::ConfigMsIdToken()
         inBuff.data.dataInfo.dataArray[0].baseinfo.tokenId    = tokenId;
         inBuff.data.dataInfo.dataArray[0].baseinfo.tokenValue = tokenValue;
 
-        auto ret = ra_custom_channel(info,
-            reinterpret_cast<custom_chan_info_in *>(&inBuff),
-            reinterpret_cast<custom_chan_info_out *>(&outBuff));
+        auto ret = RaCustomChannel(info,
+            reinterpret_cast<CustomChanInfoIn *>(&inBuff),
+            reinterpret_cast<CustomChanInfoOut *>(&outBuff));
         if (ret != 0) {
             HCCL_ERROR("");
             return HcclResult::HCCL_E_NETWORK;
@@ -817,7 +817,7 @@ HcclResult CcuComponent::UnimportAllJettys()
             if (!ctxHandle || !remoteJettyHandle) {
                 continue;
             }
-            int32_t ret = ra_ctx_qp_unimport(ctxHandle, remoteJettyHandle);
+            int32_t ret = RaCtxQpUnimport(ctxHandle, remoteJettyHandle);
             if (ret != 0) {
                 HCCL_ERROR("[CcuComponent][%s] failed, ctxHandle[%p] "
                     "remoteJettyHandle[%p], devLogicId[%d].", __func__,
@@ -863,7 +863,7 @@ HcclResult CcuComponent::DestroyAllJettys()
             if (!jettyHandle) {
                 continue;
             }
-            int32_t ret = ra_ctx_qp_destroy(jettyHandle);
+            int32_t ret = RaCtxQpDestroy(jettyHandle);
             if (ret != 0) {
                 HCCL_ERROR("[CcuComponent][%s] failed, jettyHandle[%p], "
                     "devLogicId[%d].", __func__, jettyHandle, devLogicId_);

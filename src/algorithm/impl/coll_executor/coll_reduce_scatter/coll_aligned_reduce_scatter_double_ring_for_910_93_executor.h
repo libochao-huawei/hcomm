@@ -17,7 +17,7 @@ class CollAlignedReduceScatterDoubleRingFor91093Executor : public CollReduceScat
 public:
     explicit CollAlignedReduceScatterDoubleRingFor91093Executor(
         const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAlignedReduceScatterDoubleRingFor91093Executor() = default;
+    ~CollAlignedReduceScatterDoubleRingFor91093Executor() override = default;
 
 private:
     /* *************** 算法编排 *************** */

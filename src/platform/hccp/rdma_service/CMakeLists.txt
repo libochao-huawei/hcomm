@@ -1,3 +1,13 @@
+# -----------------------------------------------------------------------------------------------------------
+# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# -----------------------------------------------------------------------------------------------------------
+
 set(TLV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tlv)
 
 set(rs_list
@@ -65,6 +75,13 @@ target_include_directories(rs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/net_adapt
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ubengine
 )
+
+if(NOT BUILD_OPEN_PROJECT)
+    target_include_directories(rs PRIVATE
+        ${TOP_DIR}/drivers/network/tls_adp
+        ${TOP_DIR}/runtime/pkg_inc/base
+    )
+endif()
 
 # c_sec、mmpa、unified_dlog动态库搜索路径
 target_link_directories(rs PRIVATE

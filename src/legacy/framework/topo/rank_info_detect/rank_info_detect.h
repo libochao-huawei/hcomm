@@ -24,14 +24,20 @@
 
 namespace Hccl {
 
+const u32 RANKINFO_DETECT_SERVER_STATUS_IDLE = 0;
+const u32 RANKINFO_DETECT_SERVER_STATUS_RUNING = 1;
+const u32 RANKINFO_DETECT_SERVER_STATUS_ERROR = 2;
+const u32 RANKINFO_DETECT_SERVER_STATUS_UPDATE = 3;
+
 class RankInfoDetect {
 public:
     RankInfoDetect();
 
     void SetupServer(HcclRootHandleV2 &rootHandle);
     void SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2 &rootHandle);
+    HcclResult UpdateAgent(u32 devicePort);
     void GetRankTable(RankTableInfo &ranktable) const;
-    void WaitComplete(u32 listenPort);
+    void WaitComplete(u32 listenPort, u32 listenStatus);
 
 private:
     s32                       devLogicId_{0};
@@ -41,6 +47,7 @@ private:
     u32                       hostPort_{HCCL_INVALID_PORT};
     vector<RaSocketWhitelist> wlistInfo_{};
     std::string               identifier_{};
+    std::shared_ptr<RankInfoDetectClient> rankInfoDetectClient;
 
     void                    SetupRankInfoDetectService(shared_ptr<Socket> serverSocket, s32 devLogicId, u32 devPhyId,
                                                        std::string identifier, vector<RaSocketWhitelist> wlistInfo);
