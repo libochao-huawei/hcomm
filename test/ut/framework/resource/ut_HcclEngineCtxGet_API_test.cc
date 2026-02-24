@@ -49,8 +49,7 @@ TEST_F(HcclEngineCtxGetTest, ut_HcclEngineCtxGet_When_Normal_Expect_ReturnIsHCCL
     result = HcclEngineCtxGet(comm, ctxTag, engine, &ctx, &size);
     EXPECT_EQ(result, HCCL_SUCCESS);
 
-    HcclMem engineCtx = {HcclMemType::HCCL_MEM_TYPE_HOST, ctx, size}; 
-    result = HcommEngineCtxDestroy(comm, &engineCtx);
+    result = HcclEngineCtxDestroy(comm, ctxTag, engine);
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
@@ -121,8 +120,7 @@ TEST_F(HcclEngineCtxGetTest, ut_HcclEngineCtxGet_When_NotExistCtxwithTag_Expect_
 
     result = HcclEngineCtxGet(comm, "2", engine, &ctx, &size);
     EXPECT_EQ(result, HCCL_E_PARA);
-    HcclMem engineCtx = {HcclMemType::HCCL_MEM_TYPE_HOST, ctx, size}; 
-    result = HcommEngineCtxDestroy(comm, &engineCtx);
+    result = HcclEngineCtxDestroy(comm, ctxTag, engine);
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
@@ -139,7 +137,6 @@ TEST_F(HcclEngineCtxGetTest, ut_HcclEngineCtxGet_When_NotExistCtxwithTagEngine_R
     result = HcclEngineCtxGet(comm, ctxTag, COMM_ENGINE_AICPU, &ctx, &size);
     EXPECT_EQ(result, HCCL_E_PARA);
 
-    HcclMem engineCtx = {HcclMemType::HCCL_MEM_TYPE_HOST, ctx, size}; 
-    result = HcommEngineCtxDestroy(comm, &engineCtx);
+    result = HcclEngineCtxDestroy(comm, ctxTag, engine);
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
