@@ -29,6 +29,13 @@ struct RsTlvOps gRaRsTlvOps = {
     .tlvRequest = RsTlvRequest,
 };
 
+int RaRsTlvInitV1(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
+{
+    hccp_warn("Tlv init is not support in this version.");
+
+    return 0;
+}
+
 int RaRsTlvInit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
     union OpTlvInitData *dataOut = (union OpTlvInitData *)(outBuf + sizeof(struct MsgHead));
