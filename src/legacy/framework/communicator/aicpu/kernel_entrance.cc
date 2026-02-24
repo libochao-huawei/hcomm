@@ -18,6 +18,8 @@
 #include "task_exception_handler_lite.h"
 #include "log.h"
 #include "inc/aicpu_utils.h"
+#include "aicpu_indop_process.h"
+
 extern "C" {
 using namespace Hccl;
 
@@ -42,6 +44,11 @@ uint32_t HcclKernelEntrance(void *args)
         HCCL_ERROR("HcclKernelEntrance communicatorImplLite is null.");
         return 1;
     }
+
+    std::string group = kernelParam->comm.commId;
+    CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
+    CHK_PRT_RET(!collCommAicpuMgr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), 1);
+    collCommAicpuMgr->SetOldA5Comm(communicatorImplLite);
 
     CHK_RET(AicpuUtils::GetInstance().WaitCommFree(communicatorImplLite, __func__));
     if (communicatorImplLite->LoadWithOpBasedMode(kernelParam) != 0) {
@@ -72,6 +79,12 @@ uint32_t HcclUpdateCommKernelEntrance(void *args)
         HCCL_ERROR("HcclUpdateCommKernelEntrance communicatorImplLite is null.");
         return 1;
     }
+
+    std::string group = kernelParam->comm.commId;
+    CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
+    CHK_PRT_RET(!collCommAicpuMgr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), 1);
+    collCommAicpuMgr->SetOldA5Comm(communicatorImplLite);
+
     CHK_RET(AicpuUtils::GetInstance().WaitCommFree(communicatorImplLite, __func__));
     communicatorImplLite->UpdateComm(kernelParam);
     unique_lock<std::mutex> aicpuLock(communicatorImplLite->GetAicpuMc2Mutex());
