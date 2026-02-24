@@ -142,6 +142,7 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_GET_VNIC_IP_INFOS_V1, 1},
     {RA_RS_GET_VNIC_IP_INFOS, 1},
 #ifdef CONFIG_TLV
+    {RA_RS_TLV_INIT_V1, 2},
     {RA_RS_TLV_INIT, 1},
     {RA_RS_TLV_DEINIT, 1},
     {RA_RS_TLV_REQUEST, 1},
