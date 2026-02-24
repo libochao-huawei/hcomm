@@ -47,8 +47,8 @@ void FormatOpData(const HcclMsg &msg, HcclMsgExt &extMsg, u32 rankNum, u32 repea
             extMsg.sendOffset[i] += extMsg.sendCounts[i];
             extMsg.recvOffset[i] += extMsg.recvCounts[i];
             HCCL_INFO("Formatted alltoallv info: repeat %u, rank id %u, send offset %llu, recv offset %llu.", repeat, i,
-                      static_cast<u64*>(data.all2AllVDataDes.sdispls)[i],
-                      static_cast<u64*>(data.all2AllVDataDes.rdispls)[i]);
+                      reinterpret_cast<u64*>(data.all2AllVDataDes.sdispls)[i],
+                      reinterpret_cast<u64*>(data.all2AllVDataDes.rdispls)[i]);
         }
     }
     const u64 offset = data.dataCount * DataUnitSize(data.dataType);
