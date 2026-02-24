@@ -44,6 +44,7 @@ protected:
         MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
         MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
         MOCKER_CPP(&RtsqBase::ConfigSqStatusByType).stubs();
+        MOCKER_CPP(&CommunicatorImplLite::CheckNeedUpdateRes).defaults().will(returnValue(false));
         std::cout << "A Test case in CommunicatorImplLiteTest SetUp" << std::endl;
     }
 
@@ -198,7 +199,6 @@ TEST_F(CommunicatorImplLiteTest, test_update_comm_with_hccl_exception)
     CommunicatorImplLite service(0);
     service.isSuspended = false;
     HcclKernelParamLite param;
-    param.needUpdateRes = true;
 
     MOCKER(memcpy_s).stubs().will(returnValue(-1));
     auto ret = service.UpdateComm(&param);
@@ -269,13 +269,12 @@ TEST_F(CommunicatorImplLiteTest, test_update_comm_success)
     // 不需要更新资源
     service.isSuspended = true;
     HcclKernelParamLite kernelParam;
-    kernelParam.needUpdateRes = false;
     auto ret = service.UpdateComm(&kernelParam);
     EXPECT_EQ(ret, 0);
 
     // 需要更新资源
     service.isSuspended = true;
-    kernelParam.needUpdateRes = true;
+    MOCKER_CPP(&CommunicatorImplLite::CheckNeedUpdateRes).stubs().will(returnValue(true));
 
     std::vector<ModuleData> dataVec;
     dataVec.resize(AicpuResMgrType::__COUNT__);
@@ -300,7 +299,7 @@ TEST_F(CommunicatorImplLiteTest, test_UpdateLocBuffer_ranksize1_batchsendrecv)
     HcclKernelParamLite kernelParam;
 
     kernelParam.comm.rankSize = 4;
-    kernelParam.needUpdateRes = true;
+    MOCKER_CPP(&CommunicatorImplLite::CheckNeedUpdateRes).stubs().will(returnValue(true));
     strncpy(kernelParam.algName, "TestAlgorithm", MAX_NAME_LEN);
     strncpy(kernelParam.opTag, "TestTag", MAX_OP_TAG_LEN);
     kernelParam.op.algOperator.opType == OpType::BATCHSENDRECV;
@@ -396,5 +395,5 @@ TEST_F(CommunicatorImplLiteTest, test_UnfoldOneSidedOp)
     LinkData linkData{basePortType, 0, 1, 0, 1};
     communicatorImplLite.connectedLinkMgr->levelRankPairLinkDataMap[0][3] = {linkData};
     MOCKER_CPP(&CommunicatorImplLite::UpdateLocBuffer).stubs();
-    MOCKER_CPP(&CommunicatorImplLite::UpdateOpRes).stubs();
+    MOCKER_CPP(&CommunicatorImplLite::UpdateRes).stubs();
 }

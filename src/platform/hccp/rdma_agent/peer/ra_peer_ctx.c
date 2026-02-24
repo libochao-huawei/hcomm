@@ -16,467 +16,467 @@
 #include "ra_ctx_comm.h"
 #include "ra_peer_ctx.h"
 
-int ra_peer_get_dev_eid_info_num(struct RaInfo info, unsigned int *num)
+int RaPeerGetDevEidInfoNum(struct RaInfo info, unsigned int *num)
 {
-    unsigned int phy_id = info.phyId;
+    unsigned int phyId = info.phyId;
     int ret = 0;
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_get_dev_eid_info_num(phy_id, num);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsGetDevEidInfoNum(phyId, num);
     if (ret != 0) {
-        hccp_err("[get][eid]rs_get_dev_eid_info_num failed ret[%d], phy_id[%u]", ret, phy_id);
+        hccp_err("[get][eid]rs_get_dev_eid_info_num failed ret[%d], phyId[%u]", ret, phyId);
     }
-    RaPeerMutexUnlock(phy_id);
+    RaPeerMutexUnlock(phyId);
     return ret;
 }
 
-int ra_peer_get_dev_eid_info_list(unsigned int phy_id, struct dev_eid_info info_list[], unsigned int *num)
+int RaPeerGetDevEidInfoList(unsigned int phyId, struct HccpDevEidInfo infoList[], unsigned int *num)
 {
-    unsigned int start_index = 0;
+    unsigned int startIndex = 0;
     unsigned int count = *num;
     int ret = 0;
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_get_dev_eid_info_list(phy_id, info_list, start_index, count);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsGetDevEidInfoList(phyId, infoList, startIndex, count);
     if (ret != 0) {
         *num = 0;
-        hccp_err("[get][eid]rs_get_dev_eid_info_list failed ret[%d], phy_id[%u]", ret, phy_id);
+        hccp_err("[get][eid]rs_get_dev_eid_info_list failed ret[%d], phyId[%u]", ret, phyId);
     } else {
         *num = count;
     }
-    RaPeerMutexUnlock(phy_id);
+    RaPeerMutexUnlock(phyId);
     return ret;
 }
 
-int ra_peer_ctx_init(struct ra_ctx_handle *ctx_handle, struct ctx_init_attr *attr, unsigned int *dev_index,
-    struct dev_base_attr *dev_base_attr)
+int RaPeerCtxInit(struct RaCtxHandle *ctxHandle, struct CtxInitAttr *attr, unsigned int *devIndex,
+    struct DevBaseAttr *devBaseAttr)
 {
-    unsigned int phy_id = ctx_handle->attr.phy_id;
+    unsigned int phyId = ctxHandle->attr.phyId;
     int ret = 0;
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_init(attr, dev_index, dev_base_attr);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxInit(attr, devIndex, devBaseAttr);
     if (ret != 0) {
-        hccp_err("[init][ra_peer_ctx]ctx init failed[%d] phy_id[%u]", ret, phy_id);
+        hccp_err("[init][ra_peer_ctx]ctx init failed[%d] phy_id[%u]", ret, phyId);
     }
 
-    RaPeerMutexUnlock(phy_id);
+    RaPeerMutexUnlock(phyId);
     return ret;
 }
 
-int ra_peer_ctx_get_async_events(struct ra_ctx_handle *ctx_handle, struct async_event events[], unsigned int *num)
+int RaPeerCtxGetAsyncEvents(struct RaCtxHandle *ctxHandle, struct AsyncEvent events[], unsigned int *num)
 {
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    struct RaRsDevInfo dev_info = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, ctx_handle->dev_index);
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_get_async_events(&dev_info, events, num);
-    RaPeerMutexUnlock(phy_id);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxGetAsyncEvents(&devInfo, events, num);
+    RaPeerMutexUnlock(phyId);
     if (ret != 0) {
-        hccp_err("[get][async_events]rs_ctx_get_async_events failed ret:%d phy_id:%u dev_index:0x%x", ret, phy_id,
-            ctx_handle->dev_index);
+        hccp_err("[get][async_events]RsCtxGetAsyncEvents failed ret:%d phyId:%u devIndex:0x%x", ret, phyId,
+            ctxHandle->devIndex);
     }
 
     return ret;
 }
 
-int ra_peer_ctx_deinit(struct ra_ctx_handle *ctx_handle)
+int RaPeerCtxDeinit(struct RaCtxHandle *ctxHandle)
 {
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    struct RaRsDevInfo dev_info = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, ctx_handle->dev_index);
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_deinit(&dev_info);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxDeinit(&devInfo);
     if (ret != 0) {
-        hccp_err("[deinit][ra_peer_ctx]ctx deinit failed[%d] phy_id[%u]", ret, phy_id);
+        hccp_err("[deinit][ra_peer_ctx]ctx deinit failed[%d] phy_id[%u]", ret, phyId);
     }
 
-    RaPeerMutexUnlock(phy_id);
+    RaPeerMutexUnlock(phyId);
     return ret;
 }
 
-int ra_peer_get_eid_by_ip(struct ra_ctx_handle *ctx_handle, struct IpInfo ip[], union hccp_eid eid[],
+int RaPeerGetEidByIp(struct RaCtxHandle *ctxHandle, struct IpInfo ip[], union HccpEid eid[],
     unsigned int *num)
 {
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    struct RaRsDevInfo dev_info = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, ctx_handle->dev_index);
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_get_eid_by_ip(&dev_info, ip, eid, num);
-    RaPeerMutexUnlock(phy_id);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsGetEidByIp(&devInfo, ip, eid, num);
+    RaPeerMutexUnlock(phyId);
     if (ret != 0) {
-        hccp_err("[get][eid_by_ip]rs_get_eid_by_ip failed ret[%d] phy_id[%u]", ret, phy_id);
+        hccp_err("[get][eid_by_ip]rs_get_eid_by_ip failed ret[%d] phy_id[%u]", ret, phyId);
     }
 
     return ret;
 }
 
-int ra_peer_ctx_token_id_alloc(struct ra_ctx_handle *ctx_handle, struct hccp_token_id *info,
-    struct ra_token_id_handle *token_id_handle)
+int RaPeerCtxTokenIdAlloc(struct RaCtxHandle *ctxHandle, struct HccpTokenId *info,
+    struct RaTokenIdHandle *tokenIdHandle)
 {
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    struct RaRsDevInfo dev_info = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, ctx_handle->dev_index);
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_token_id_alloc(&dev_info, &token_id_handle->addr, &info->token_id);
-    RaPeerMutexUnlock(phy_id);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxTokenIdAlloc(&devInfo, &tokenIdHandle->addr, &info->tokenId);
+    RaPeerMutexUnlock(phyId);
     if (ret != 0) {
-        hccp_err("[init][ra_token_id]rs_ctx_token_id_alloc failed, ret[%d] phy_id[%u]", ret, phy_id);
+        hccp_err("[init][ra_token_id]rs_ctx_token_id_alloc failed, ret[%d] phyId[%u]", ret, phyId);
     }
 
     return ret;
 }
 
-int ra_peer_ctx_token_id_free(struct ra_ctx_handle *ctx_handle, struct ra_token_id_handle *token_id_handle)
+int RaPeerCtxTokenIdFree(struct RaCtxHandle *ctxHandle, struct RaTokenIdHandle *tokenIdHandle)
 {
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    struct RaRsDevInfo dev_info = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, ctx_handle->dev_index);
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_token_id_free(&dev_info, token_id_handle->addr);
-    RaPeerMutexUnlock(phy_id);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxTokenIdFree(&devInfo, tokenIdHandle->addr);
+    RaPeerMutexUnlock(phyId);
     if (ret != 0) {
-        hccp_err("[deinit][ra_token_id]rs_ctx_token_id_free failed, ret[%d] phy_id[%u]", ret, phy_id);
+        hccp_err("[deinit][ra_token_id]rs_ctx_token_id_free failed, ret[%d] phyId[%u]", ret, phyId);
     }
 
     return ret;
 }
 
-int ra_peer_ctx_lmem_register(struct ra_ctx_handle *ctx_handle, struct mr_reg_info_t *lmem_info,
-    struct ra_lmem_handle *lmem_handle)
+int RaPeerCtxLmemRegister(struct RaCtxHandle *ctxHandle, struct MrRegInfoT *lmemInfo,
+    struct RaLmemHandle *lmemHandle)
 {
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    struct RaRsDevInfo dev_info = {0};
-    struct mem_reg_attr_t mem_attr = {0};
-    struct mem_reg_info_t mem_info = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
+    struct MemRegAttrT memAttr = {0};
+    struct MemRegInfoT memInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, ctx_handle->dev_index);
-    ret = ra_ctx_prepare_lmem_register(lmem_info, &mem_attr);
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
+    ret = RaCtxPrepareLmemRegister(lmemInfo, &memAttr);
     CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_peer_lmem]ra_ctx_prepare_lmem_register failed, ret[%d]",
         ret), ret);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_lmem_reg(&dev_info, &mem_attr, &mem_info);
-    RaPeerMutexUnlock(phy_id);
-    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_peer_lmem]rs_ctx_lmem_reg failed, ret[%d] phy_id[%u]", ret, phy_id),
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxLmemReg(&devInfo, &memAttr, &memInfo);
+    RaPeerMutexUnlock(phyId);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_peer_lmem]rs_ctx_lmem_reg failed, ret[%d] phyId[%u]", ret, phyId),
         ret);
 
-    ra_ctx_get_lmem_info(&mem_info, lmem_info, lmem_handle);
+    RaCtxGetLmemInfo(&memInfo, lmemInfo, lmemHandle);
 
     return ret;
 }
 
-int ra_peer_ctx_lmem_unregister(struct ra_ctx_handle *ctx_handle, struct ra_lmem_handle *lmem_handle)
+int RaPeerCtxLmemUnregister(struct RaCtxHandle *ctxHandle, struct RaLmemHandle *lmemHandle)
 {
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    struct RaRsDevInfo dev_info = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, ctx_handle->dev_index);
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_lmem_unreg(&dev_info, lmem_handle->addr);
-    RaPeerMutexUnlock(phy_id);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxLmemUnreg(&devInfo, lmemHandle->addr);
+    RaPeerMutexUnlock(phyId);
     if (ret != 0) {
-        hccp_err("[init][ra_peer_lmem]rs_ctx_lmem_unreg failed, ret[%d] phy_id[%u]", ret, phy_id);
+        hccp_err("[init][ra_peer_lmem]rs_ctx_lmem_unreg failed, ret[%d] phyId[%u]", ret, phyId);
     }
 
     return ret;
 }
 
-int ra_peer_ctx_rmem_import(struct ra_ctx_handle *ctx_handle, struct mr_import_info_t *rmem_info)
+int RaPeerCtxRmemImport(struct RaCtxHandle *ctxHandle, struct MrImportInfoT *rmemInfo)
 {
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    struct mem_import_attr_t mem_attr = {0};
-    struct mem_import_info_t mem_info = {0};
-    struct RaRsDevInfo dev_info = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct MemImportAttrT memAttr = {0};
+    struct MemImportInfoT memInfo = {0};
+    struct RaRsDevInfo devInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, ctx_handle->dev_index);
-    ra_ctx_prepare_rmem_import(rmem_info, &mem_attr);
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
+    RaCtxPrepareRmemImport(rmemInfo, &memAttr);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_rmem_import(&dev_info, &mem_attr, &mem_info);
-    RaPeerMutexUnlock(phy_id);
-    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_peer_rmem]rs_ctx_rmem_import failed, ret[%d] phy_id[%u]", ret, phy_id),
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxRmemImport(&devInfo, &memAttr, &memInfo);
+    RaPeerMutexUnlock(phyId);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_peer_rmem]rs_ctx_rmem_import failed, ret[%d] phyId[%u]", ret, phyId),
         ret);
 
-    rmem_info->out.ub.target_seg_handle = mem_info.ub.target_seg_handle;
+    rmemInfo->out.ub.targetSegHandle = memInfo.ub.targetSegHandle;
 
     return ret;
 }
 
-int ra_peer_ctx_rmem_unimport(struct ra_ctx_handle *ctx_handle, struct ra_rmem_handle *rmem_handle)
+int RaPeerCtxRmemUnimport(struct RaCtxHandle *ctxHandle, struct RaRmemHandle *rmemHandle)
 {
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    struct RaRsDevInfo dev_info = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, ctx_handle->dev_index);
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_rmem_unimport(&dev_info, rmem_handle->addr);
-    RaPeerMutexUnlock(phy_id);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxRmemUnimport(&devInfo, rmemHandle->addr);
+    RaPeerMutexUnlock(phyId);
     if (ret != 0) {
-        hccp_err("[deinit][ra_peer_rmem]rs_ctx_rmem_unimport failed, ret[%d] phy_id[%u]", ret, phy_id);
+        hccp_err("[deinit][ra_peer_rmem]rs_ctx_rmem_unimport failed, ret[%d] phyId[%u]", ret, phyId);
     }
 
     return ret;
 }
 
-int ra_peer_ctx_chan_create(struct ra_ctx_handle *ctx_handle, struct chan_info_t *chan_info,
-    struct ra_chan_handle *chan_handle)
+int RaPeerCtxChanCreate(struct RaCtxHandle *ctxHandle, struct ChanInfoT *chanInfo,
+    struct RaChanHandle *chanHandle)
 {
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    struct RaRsDevInfo dev_info = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, ctx_handle->dev_index);
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_chan_create(&dev_info, chan_info->in.data_plane_flag, &chan_handle->addr, &chan_info->out.fd);
-    RaPeerMutexUnlock(phy_id);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxChanCreate(&devInfo, chanInfo->in.dataPlaneFlag, &chanHandle->addr, &chanInfo->out.fd);
+    RaPeerMutexUnlock(phyId);
     if (ret != 0) {
-        hccp_err("[init][ctx_chan]rs_ctx_chan_create failed, ret[%d] phy_id[%u]", ret, phy_id);
+        hccp_err("[init][ctx_chan]rs_ctx_chan_create failed, ret[%d] phyId[%u]", ret, phyId);
     }
 
     return ret;
 }
 
-int ra_peer_ctx_chan_destroy(struct ra_ctx_handle *ctx_handle, struct ra_chan_handle *chan_handle)
+int RaPeerCtxChanDestroy(struct RaCtxHandle *ctxHandle, struct RaChanHandle *chanHandle)
 {
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    struct RaRsDevInfo dev_info = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, ctx_handle->dev_index);
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_chan_destroy(&dev_info, chan_handle->addr);
-    RaPeerMutexUnlock(phy_id);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxChanDestroy(&devInfo, chanHandle->addr);
+    RaPeerMutexUnlock(phyId);
     if (ret != 0) {
-        hccp_err("[deinit][ctx_chan]rs_ctx_chan_destroy failed, ret[%d] phy_id[%u]", ret, phy_id);
+        hccp_err("[deinit][ctx_chan]rs_ctx_chan_destroy failed, ret[%d] phyId[%u]", ret, phyId);
     }
 
     return ret;
 }
 
-int ra_peer_ctx_cq_create(struct ra_ctx_handle *ctx_handle, struct cq_info_t *info, struct ra_cq_handle *cq_handle)
+int RaPeerCtxCqCreate(struct RaCtxHandle *ctxHandle, struct CqInfoT *info, struct RaCqHandle *cqHandle)
 {
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    struct RaRsDevInfo dev_info = {0};
-    struct ctx_cq_attr cq_attr = {0};
-    struct ctx_cq_info cq_info = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
+    struct CtxCqAttr cqAttr = {0};
+    struct CtxCqInfo cqInfo = {0};
     int ret = 0;
 
-    CHK_PRT_RETURN(info->in.ub.mode != JFC_MODE_NORMAL, hccp_err("[init][ctx_cq]jfc_mode[%d] not support, phy_id[%u]",
-        info->in.ub.mode, phy_id), -EINVAL);
+    CHK_PRT_RETURN(info->in.ub.mode != JFC_MODE_NORMAL, hccp_err("[init][ctx_cq]jfc_mode[%d] not support, phyId[%u]",
+        info->in.ub.mode, phyId), -EINVAL);
 
-    ra_rs_set_dev_info(&dev_info, phy_id, ctx_handle->dev_index);
-    ra_ctx_prepare_cq_create(info, &cq_attr);
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
+    RaCtxPrepareCqCreate(info, &cqAttr);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_cq_create(&dev_info, &cq_attr, &cq_info);
-    RaPeerMutexUnlock(phy_id);
-    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ctx_cq]rs_ctx_cq_create failed, ret[%d] phy_id[%u]", ret, phy_id), ret);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxCqCreate(&devInfo, &cqAttr, &cqInfo);
+    RaPeerMutexUnlock(phyId);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ctx_cq]rs_ctx_cq_create failed, ret[%d] phyId[%u]", ret, phyId), ret);
 
-    cq_handle->addr = cq_info.addr;
-    ra_ctx_get_cq_create_info(&cq_info, info);
+    cqHandle->addr = cqInfo.addr;
+    RaCtxGetCqCreateInfo(&cqInfo, info);
     return ret;
 }
 
-int ra_peer_ctx_cq_destroy(struct ra_ctx_handle *ctx_handle, struct ra_cq_handle *cq_handle)
+int RaPeerCtxCqDestroy(struct RaCtxHandle *ctxHandle, struct RaCqHandle *cqHandle)
 {
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    struct RaRsDevInfo dev_info = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, ctx_handle->dev_index);
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_cq_destroy(&dev_info, cq_handle->addr);
-    RaPeerMutexUnlock(phy_id);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxCqDestroy(&devInfo, cqHandle->addr);
+    RaPeerMutexUnlock(phyId);
     if (ret != 0) {
-        hccp_err("[deinit][ctx_cq]rs_ctx_cq_destroy failed, ret[%d] phy_id[%u]", ret, phy_id);
+        hccp_err("[deinit][ctx_cq]rs_ctx_cq_destroy failed, ret[%d] phyId[%u]", ret, phyId);
     }
 
     return ret;
 }
 
-int ra_peer_ctx_qp_create(struct ra_ctx_handle *ctx_handle, struct qp_create_attr *qp_attr,
-    struct qp_create_info *qp_info, struct ra_ctx_qp_handle *qp_handle)
+int RaPeerCtxQpCreate(struct RaCtxHandle *ctxHandle, struct QpCreateAttr *qpAttr,
+    struct QpCreateInfo *qpInfo, struct RaCtxQpHandle *qpHandle)
 {
-    unsigned int dev_index = ctx_handle->dev_index;
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    struct RaRsDevInfo dev_info = {0};
-    struct ctx_qp_attr ctx_qp_attr = {0};
+    unsigned int devIndex = ctxHandle->devIndex;
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
+    struct CtxQpAttr ctxQpAttr = {0};
     int ret = 0;
 
-    CHK_PRT_RETURN(qp_attr->ub.mode != JETTY_MODE_URMA_NORMAL, hccp_err("[init][ctx_cq]jetty_mode[%d] not support,"
-        " phy_id[%u]", qp_attr->ub.mode, phy_id), -EINVAL);
+    CHK_PRT_RETURN(qpAttr->ub.mode != JETTY_MODE_URMA_NORMAL, hccp_err("[init][ctx_cq]jetty_mode[%d] not support,"
+        " phyId[%u]", qpAttr->ub.mode, phyId), -EINVAL);
 
-    ra_rs_set_dev_info(&dev_info, phy_id, ctx_handle->dev_index);
-    ret = ra_ctx_prepare_qp_create(qp_attr, &ctx_qp_attr);
-    CHK_PRT_RETURN(ret, hccp_err("[init][ra_peer_qp]ra_ctx_prepare_qp_create failed ret[%d], phy_id[%u] dev_index[%u]",
-        ret, phy_id, dev_index), ret);
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
+    ret = RaCtxPrepareQpCreate(qpAttr, &ctxQpAttr);
+    CHK_PRT_RETURN(ret, hccp_err("[init][ra_peer_qp]ra_ctx_prepare_qp_create failed ret[%d], phyId[%u] devIndex[%u]",
+        ret, phyId, devIndex), ret);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_qp_create(&dev_info, &ctx_qp_attr, qp_info);
-    RaPeerMutexUnlock(phy_id);
-    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_peer_qp]rs_ctx_qp_create failed, ret[%d] phy_id[%u]",
-        ret, phy_id), ret);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxQpCreate(&devInfo, &ctxQpAttr, qpInfo);
+    RaPeerMutexUnlock(phyId);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_peer_qp]rs_ctx_qp_create failed, ret[%d] phyId[%u]",
+        ret, phyId), ret);
 
-    ra_ctx_get_qp_create_info(ctx_handle, qp_attr, qp_info, qp_handle);
+    RaCtxGetQpCreateInfo(ctxHandle, qpAttr, qpInfo, qpHandle);
 
     return ret;
 }
 
-int ra_peer_ctx_qp_destroy(struct ra_ctx_qp_handle *qp_handle)
+int RaPeerCtxQpDestroy(struct RaCtxQpHandle *qpHandle)
 {
-    unsigned int phy_id = qp_handle->phy_id;
-    struct RaRsDevInfo dev_info = {0};
+    unsigned int phyId = qpHandle->phyId;
+    struct RaRsDevInfo devInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, qp_handle->dev_index);
+    RaRsSetDevInfo(&devInfo, phyId, qpHandle->devIndex);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_qp_destroy(&dev_info, qp_handle->id);
-    RaPeerMutexUnlock(phy_id);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxQpDestroy(&devInfo, qpHandle->id);
+    RaPeerMutexUnlock(phyId);
     if (ret != 0) {
-        hccp_err("[deinit][ra_peer_qp]rs_ctx_qp_destroy failed, ret[%d] phy_id[%u]", ret, phy_id);
+        hccp_err("[deinit][ra_peer_qp]rs_ctx_qp_destroy failed, ret[%d] phyId[%u]", ret, phyId);
     }
 
     return ret;
 }
 
-STATIC void ra_peer_prepare_qp_import(struct qp_import_info_t *qp_info, struct rs_jetty_import_attr *import_attr)
+STATIC void RaPeerPrepareQpImport(struct QpImportInfoT *qpInfo, struct RsJettyImportAttr *importAttr)
 {
-    struct ra_rs_jetty_import_attr *ra_rs_import_attr = NULL;
+    struct RaRsJettyImportAttr *raRsImportAttr = NULL;
 
-    ra_rs_import_attr = &(import_attr->attr);
-    import_attr->key = qp_info->in.key;
-    ra_ctx_prepare_qp_import(qp_info, ra_rs_import_attr);
+    raRsImportAttr = &(importAttr->attr);
+    importAttr->key = qpInfo->in.key;
+    RaCtxPrepareQpImport(qpInfo, raRsImportAttr);
 }
 
-STATIC void ra_peer_get_qp_import_info(struct ra_ctx_handle *ctx_handle, struct qp_import_info_t *qp_info,
-    struct rs_jetty_import_info *import_info, struct ra_ctx_rem_qp_handle *qp_handle)
+STATIC void RaPeerGetQpImportInfo(struct RaCtxHandle *ctxHandle, struct QpImportInfoT *qpInfo,
+    struct RsJettyImportInfo *importInfo, struct RaCtxRemQpHandle *qpHandle)
 {
-    struct ra_rs_jetty_import_info *ra_rs_import_info = NULL;
+    struct RaRsJettyImportInfo *raRsImportInfo = NULL;
 
-    ra_rs_import_info = &(import_info->info);
-    ra_ctx_get_qp_import_info(ctx_handle, qp_info, ra_rs_import_info, qp_handle);
-    qp_handle->id = import_info->rem_jetty_id;
+    raRsImportInfo = &(importInfo->info);
+    RaCtxGetQpImportInfo(ctxHandle, qpInfo, raRsImportInfo, qpHandle);
+    qpHandle->id = importInfo->remJettyId;
 }
 
-int ra_peer_ctx_qp_import(struct ra_ctx_handle *ctx_handle, struct qp_import_info_t *qp_info,
-    struct ra_ctx_rem_qp_handle *rem_qp_handle)
+int RaPeerCtxQpImport(struct RaCtxHandle *ctxHandle, struct QpImportInfoT *qpInfo,
+    struct RaCtxRemQpHandle *remQpHandle)
 {
-    unsigned int phy_id = ctx_handle->attr.phy_id;
-    struct rs_jetty_import_attr import_attr = {0};
-    struct rs_jetty_import_info import_info = {0};
-    struct RaRsDevInfo dev_info = {0};
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RsJettyImportAttr importAttr = {0};
+    struct RsJettyImportInfo importInfo = {0};
+    struct RaRsDevInfo devInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, ctx_handle->dev_index);
-    ra_peer_prepare_qp_import(qp_info, &import_attr);
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
+    RaPeerPrepareQpImport(qpInfo, &importAttr);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_qp_import(&dev_info, &import_attr, &import_info);
-    RaPeerMutexUnlock(phy_id);
-    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_peer_qp]rs_ctx_qp_import failed, ret[%d] phy_id[%u]", ret, phy_id),
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxQpImport(&devInfo, &importAttr, &importInfo);
+    RaPeerMutexUnlock(phyId);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_peer_qp]rs_ctx_qp_import failed, ret[%d] phyId[%u]", ret, phyId),
         ret);
 
-    ra_peer_get_qp_import_info(ctx_handle, qp_info, &import_info, rem_qp_handle);
+    RaPeerGetQpImportInfo(ctxHandle, qpInfo, &importInfo, remQpHandle);
     return ret;
 }
 
-int ra_peer_ctx_qp_unimport(struct ra_ctx_rem_qp_handle *rem_qp_handle)
+int RaPeerCtxQpUnimport(struct RaCtxRemQpHandle *remQpHandle)
 {
-    unsigned int phy_id = rem_qp_handle->phy_id;
-    struct RaRsDevInfo dev_info = {0};
+    unsigned int phyId = remQpHandle->phyId;
+    struct RaRsDevInfo devInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, rem_qp_handle->dev_index);
+    RaRsSetDevInfo(&devInfo, phyId, remQpHandle->devIndex);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_qp_unimport(&dev_info, rem_qp_handle->id);
-    RaPeerMutexUnlock(phy_id);
-    CHK_PRT_RETURN(ret != 0, hccp_err("[deinit][ra_peer_qp]rs_ctx_qp_unimport failed, ret[%d] phy_id[%u]", ret, phy_id),
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxQpUnimport(&devInfo, remQpHandle->id);
+    RaPeerMutexUnlock(phyId);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[deinit][ra_peer_qp]rs_ctx_qp_unimport failed, ret[%d] phyId[%u]", ret, phyId),
         ret);
 
     return ret;
 }
 
-int ra_peer_ctx_qp_bind(struct ra_ctx_qp_handle *qp_handle, struct ra_ctx_rem_qp_handle *rem_qp_handle)
+int RaPeerCtxQpBind(struct RaCtxQpHandle *qpHandle, struct RaCtxRemQpHandle *remQpHandle)
 {
-    struct rs_ctx_qp_info remote_qp_info = {0};
-    struct rs_ctx_qp_info local_qp_info = {0};
-    unsigned int phy_id = qp_handle->phy_id;
-    struct RaRsDevInfo dev_info = {0};
+    struct RsCtxQpInfo remoteQpInfo = {0};
+    struct RsCtxQpInfo localQpInfo = {0};
+    unsigned int phyId = qpHandle->phyId;
+    struct RaRsDevInfo devInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, rem_qp_handle->dev_index);
-    local_qp_info.id = qp_handle->id;
-    remote_qp_info.id = rem_qp_handle->id;
+    RaRsSetDevInfo(&devInfo, phyId, remQpHandle->devIndex);
+    localQpInfo.id = qpHandle->id;
+    remoteQpInfo.id = remQpHandle->id;
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_qp_bind(&dev_info, &local_qp_info, &remote_qp_info);
-    RaPeerMutexUnlock(phy_id);
-    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_peer_qp]rs_ctx_qp_bind failed, ret[%d] phy_id[%u]", ret, phy_id), ret);
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxQpBind(&devInfo, &localQpInfo, &remoteQpInfo);
+    RaPeerMutexUnlock(phyId);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_peer_qp]rs_ctx_qp_bind failed, ret[%d] phyId[%u]", ret, phyId), ret);
 
     return ret;
 }
 
-int ra_peer_ctx_qp_unbind(struct ra_ctx_qp_handle *qp_handle)
+int RaPeerCtxQpUnbind(struct RaCtxQpHandle *qpHandle)
 {
-    unsigned int phy_id = qp_handle->phy_id;
-    struct RaRsDevInfo dev_info = {0};
+    unsigned int phyId = qpHandle->phyId;
+    struct RaRsDevInfo devInfo = {0};
     int ret = 0;
 
-    ra_rs_set_dev_info(&dev_info, phy_id, qp_handle->dev_index);
+    RaRsSetDevInfo(&devInfo, phyId, qpHandle->devIndex);
 
-    RaPeerMutexLock(phy_id);
-    RsSetCtx(phy_id);
-    ret = rs_ctx_qp_unbind(&dev_info, qp_handle->id);
-    RaPeerMutexUnlock(phy_id);
-    CHK_PRT_RETURN(ret != 0, hccp_err("[deinit][ra_peer_qp]rs_ctx_qp_unbind failed, ret[%d] phy_id[%u]", ret, phy_id),
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsCtxQpUnbind(&devInfo, qpHandle->id);
+    RaPeerMutexUnlock(phyId);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[deinit][ra_peer_qp]rs_ctx_qp_unbind failed, ret[%d] phyId[%u]", ret, phyId),
         ret);
 
     return ret;

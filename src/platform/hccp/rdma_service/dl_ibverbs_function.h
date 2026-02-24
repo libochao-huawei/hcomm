@@ -91,6 +91,12 @@ struct RsRoceUserOps {
     unsigned int (*rsRoceGetApiVersion)(void);
 };
 
+struct RsHrnOps {
+    int (*rsRoceSetQpLbValue)(struct ibv_qp *qp, int lbValue);
+    int (*rsRoceGetQpLbValue)(struct ibv_qp *qp, int *lbValue);
+    int (*rsRoceGetQpNum)(struct ibv_context *context, int *qpNum);
+};
+
 struct ibv_mr *RsIbvExpRegMr(struct ibv_pd *pd, void *addr, size_t length, int access,
     struct roce_process_sign roceSign);
 int RsIbvExpQueryNotify(struct ibv_context *context, unsigned long long *notifyVa, unsigned long long *size);
@@ -156,4 +162,7 @@ int RsRoceGetCqDataPlaneInfo(struct ibv_cq *cq, struct hns_roce_cq_data_plane_in
 int RsRoceGetQpDataPlaneInfo(struct ibv_qp *qp, struct hns_roce_qp_data_plane_info *info);
 int RsRoceRemapMr(struct ibv_mr *mr, struct hns_roce_mr_remap_info info[], unsigned int num);
 unsigned int RsRoceGetApiVersion(void);
+int RsRoceSetQpLbValue(struct ibv_qp *qp, int lbValue);
+int RsRoceGetQpLbValue(struct ibv_qp *qp, int *lbValue);
+int RsRoceGetQpNum(struct ibv_context *context, int *qpNum);
 #endif // DL_IBVERBS_FUNCTION_H

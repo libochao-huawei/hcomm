@@ -8,9 +8,6 @@
 #ifndef CCU_OPERATOR
 #define CCU_OPERATOR
 
-// #include "exception_util.h"
-// #include "ccu_api_exception.h"
-
 namespace hcomm {
 namespace CcuRep {
 

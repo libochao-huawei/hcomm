@@ -13,10 +13,15 @@
  
 #include "aiv_communication_base.h"
 #include "aiv_all_to_all_91093_single.h"
- 
+#include "aiv_all_to_all_910B_single.h"
+
 extern "C" __aicore__ void sk_alltoall(SUPERKERNEL_LITE_ARGS_DEF) {
     SUPERKERNEL_LITE_ARGS_EXTRACT;
-    return sk_all_to_all_91093_single(SUPERKERNEL_ARGS_CALL);
+    if (devType == DEV_TYPE_910_93) {
+        return sk_all_to_all_91093_single(SUPERKERNEL_ARGS_CALL);
+    } else if (devType == DEV_TYPE_910B) {
+        return sk_all_to_all_910B_single(SUPERKERNEL_ARGS_CALL);
+    }
 }
  
  
