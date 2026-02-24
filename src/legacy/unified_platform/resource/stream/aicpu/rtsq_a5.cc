@@ -19,6 +19,9 @@
 #include "sqe_build_a5.h"
 #include "sqe.h"
 #include "communicator_impl_lite_manager.h"
+#ifdef CCL_KERNEL_AICPU
+#include "hccl_api_data_aicpu_ts.h"
+#endif
 
 namespace Hccl {
 using namespace std;
@@ -29,6 +32,14 @@ RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId) : RtsqBase(devPhyId, stream
     if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
         taskId_ = 0;
     }
+}
+
+RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId, bool launchFlag) : RtsqBase(devPhyId, streamId, sqId)
+{
+    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
+        taskId_ = 0;
+    }
+    launchFlag_ = launchFlag;
 }
 
 void RtsqA5::Reset()
@@ -170,6 +181,13 @@ void RtsqA5::RefreshInfo()
     }
     pendingSqeCnt++;
     HCCL_INFO("RtsqA5::%s: Updated: taskId_[%u], pendingSqeCnt[%u]", __func__, taskId_, pendingSqeCnt);
+    
+#ifdef CCL_KERNEL_AICPU
+    if (launchFlag_ && !IsBatchLaunchMode()) {
+        LaunchTask();
+        return;
+    }
+#endif
 
     if (pendingSqeCnt != perLaunchSqeCnt) {
         return;

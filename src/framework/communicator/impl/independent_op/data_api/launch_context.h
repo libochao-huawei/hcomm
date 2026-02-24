@@ -23,6 +23,7 @@ public:
 
     HcclResult SetLaunchMode(const char* launchTag, HcommLaunchMode mode);
     void AddThread(ThreadHandle thread);
+    bool IsBatchLaunchMode();
 
 private:
     HcclResult HandleBatchMode();
