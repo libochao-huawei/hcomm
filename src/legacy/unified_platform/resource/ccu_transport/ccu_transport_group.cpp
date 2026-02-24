@@ -82,7 +82,7 @@ CcuTransportGroup::CcuTransportGroup(const vector<CcuTransport*> &transports, u3
 
 TransportGrpStatus CcuTransportGroup::GetGrpStatus() const
 {
-    HCCL_INFO("[CcuTransportGroup] current group status [%s].", grpStatus);
+    HCCL_INFO("[CcuTransportGroup] current group status [%s].", grpStatus.c_str());
     return grpStatus;
 }
 
