@@ -12,6 +12,7 @@ set(src_to_test_list
     hccl_api_base_test.cc
     # ut_channel_API_test.cc
     # ut_DpuNotifyManager_test.cc
+    ut_HcclEngineCtxDestroy_API_test.cc
     ut_HcclEngineCtxGet_API_test.cc
     ut_HcclEngineCtxCreate_API_test.cc
 )
