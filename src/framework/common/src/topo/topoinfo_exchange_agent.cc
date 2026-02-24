@@ -810,11 +810,8 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterBackupDeviceIP(RankTable_t &clust
 
             LinkTypeInServer linkType = LinkTypeInServer::RESERVED_LINK_TYPE;
             CHK_RET(hrtGetPairDeviceLinkType(rankInfo.deviceInfo.devicePhyId, backupDevPhyId, linkType));
-            errormessage = "link between device phyId[" + std::to_string(rankInfo.deviceInfo.devicePhyId) +
-                           "] and backup device phyId[" + std::to_string(backupDevPhyId) +
-                           "] is not sio link, backup device ip[" + backupIpStr +
-                           "]. "
-                           "Please check backup ip validation and whether it is on a pair device!";
+            errormessage = "Value " + std::to_string(backupDevPhyId.GetReadableIP()) + " for rankTable variable \"backup_device_ip of "\
+                "rank " + std::to_string(rankInfo.rankId) + "\" is invalid, expected value \"is device_ip another Die under the same NPU\"."
             RPT_INPUT_ERR((backupDevPhyId == rankInfo.deviceInfo.devicePhyId),
                 "EI0014",
                 std::vector<std::string>({"error_reason"}),
@@ -920,9 +917,8 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterSuperPodInfo(const std::vector<Ra
     std::map<std::string, std::set<std::string>> superPodSrvIdMap; // super_pod_id -> serverId
     std::map<std::string, std::unordered_map<u32, u32>> superPodSdidMap; // super_pod_id -> superDeviceId
     for (u32 i = 0; i < rankInfo.size(); i++) {
-        std::string errormessage = "superDeviceId[" + std::to_string(rankInfo[i].superDeviceId) + "] or superPod[" +
-                                   rankInfo[i].superPodId + "] in rank[" + std::to_string(rankInfo[i].rankId) +
-                                   "] is invalid.";
+        std::string errormessage = "Value " + std::to_string(rankInfo[i].superDeviceId) + " for rankTable variable superDeviceId is invalid, "\
+                    "expected value is less than the communication size " + std::to_string(rankInfo.size()) + " and must be unique.";
         // 超节点模式下, 校验superPodId和sdid值有效
         RPT_INPUT_ERR((rankInfo[i].superPodId.empty() || rankInfo[i].superDeviceId == INVALID_UINT) &&
                           rankInfo[i].deviceInfo.deviceType == DevType::DEV_TYPE_910_93,
@@ -954,10 +950,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterSuperPodInfo(const std::vector<Ra
         } else if (it->second.find(rankInfo[i].superDeviceId) == it->second.end()) {
             it->second.insert({rankInfo[i].superDeviceId, rankInfo[i].rankId});
         } else {
-            errormessage = "devices have same superDeviceId[" + std::to_string(rankInfo[i].superDeviceId) +
-				"] in superPod[" + it->first + "]. Current device info: serverId[" + rankInfo[i].serverId +
-				"], rankId[" + std::to_string(rankInfo[i].rankId) + "], group[" + rankInfo[i].groupName +
-				"]. Another device info: rankId[" + std::to_string(it->second[rankInfo[i].superDeviceId]) + "].";
+            errormessage = "Value " + std::to_string(rankInfo[i].superDeviceId) + " for rankTable variable \"Device Id of server Id " + rankInfo[i].serverId + "\" is invalid, expected value is unique.";
             // 超节点内superDeviceId在超节点内唯一
             RPT_INPUT_ERR(it->second.find(rankInfo[i].superDeviceId) != it->second.end(),
                 "EI0014",

@@ -744,11 +744,10 @@ namespace hccl
         //                     n server: 1*n, 2*n, 4*n, 8*n
         if (!Check2N(devNum))
         {
-            const std::string devnumError("devNum must be divisible by 8, or equal to 1, 2 or 4, please check devNum");
             RPT_ENV_ERR(true,
                         "EI0014",
                         std::vector<std::string>({"error_reason"}),
-                        std::vector<std::string>({devnumError}));
+                        std::vector<std::string>({"Value [" + std::to_string(devNum) + "] for devNum is invalid, expected value to be  1, 2 or 4, or a multiple of 8."}));
 
             HCCL_ERROR("[%s][%s]errNo[0x%016llx] devNum[%u] devNum must be divisible by 8, or equal to 1, 2 or 4",
                     LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),

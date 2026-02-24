@@ -165,9 +165,9 @@ const std::string hcomm_g_msg = R"(
     },
     {
       "errClass": "HCCL Errors",
-      "errTitle": "Ranktable_Check_Failed",
+      "errTitle": "Config_Error_Ranktable",
       "ErrCode": "EI0014",
-      "ErrMessage": "Value %s for ranktable %s is invalid. Expected value: %s.",
+      "ErrMessage": "Value %s for ranktable variable %s is invalid. Expected value: %s.",
       "Arglist": "value,variable,expect",
       "suggestion": {
         "Possible Cause": "Failed to verify the content of the ranktable file, possibly due to inconsistency between the file content and the actual device information.",
@@ -176,7 +176,7 @@ const std::string hcomm_g_msg = R"(
     },
     {
       "errClass": "HCCL Errors",
-      "errTitle": "Ranktable_Detect_Failed",
+      "errTitle": "Communication_Error_Ranktable_Detect",
       "ErrCode": "EI0015",
       "ErrMessage": "Failed to collect cluster information of the communicator based on rootInfo detection. Reason: %s.",
       "Arglist": "error_reason",

@@ -117,7 +117,6 @@ protected:
         const JsonCheckOpType &opType);
     void GenerateServerIdx(const std::string &serverId, u32 &serverIdx);
     void GenerateSuperPodIdx(const std::string &superPodId, u32 &superPodIdx);
-    HcclResult CheckUniqueIntegerAndInsertPool(const std::string &serverId);
     HcclResult ConvertIpAddress(const std::string &ipStr, HcclIpAddress &ipAddr);
     // 所有集群信息
     hccl::HcclCommParams params_;

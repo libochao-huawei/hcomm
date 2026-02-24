@@ -475,7 +475,7 @@ HcclResult TopoInfoRanktableParser::CheckUniquePara(const JsonUniqueInfoType &ty
             HcclIpAddress ip(value);
             if (ip.IsInvalid()) {
                 RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
-                    std::vector<std::string>({ "The ip in ranktable is not a valid ip address" }));
+                    std::vector<std::string>({ "Value [" + value + "] for rankTable variable [deviceIp] is invalid, expected value a valid IP address." }));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] ip[%s] is not a valid ip address", LOG_KEYWORDS_INIT_GROUP.c_str(),
                     LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), value.c_str());
                 return HCCL_E_PARA;
@@ -520,7 +520,7 @@ HcclResult TopoInfoRanktableParser::CheckUniqueAndInsertPool(const JsonUniqueInf
         /* JsonCheckOpType::CHECK_OP_TYPE_INSERT操作插入保存到资源池中，若资源池中存在则报错 */
         if (srvIt != uniqueInfoCheckPool_[static_cast<u32>(type)].end()) {
             RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
-                std::vector<std::string>({ "The IP is used repeatedly." }));
+                std::vector<std::string>({ "Value [" + value + "] for rankTable variable [deviceIp] is repeate, please check the ranktable." }));
             HCCL_ERROR("[%s][%s]errNo[0x%016llx] [%s]:[%s] is already exist", LOG_KEYWORDS_INIT_GROUP.c_str(),
                 LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), strUniqueInfoType.c_str(),
                 value.c_str());
@@ -565,39 +565,11 @@ void TopoInfoRanktableParser::GenerateSuperPodIdx(const std::string &superPodId,
     HCCL_INFO("GenerateSuperPodIdx superPodId[%s], superPodIdx[%u]", superPodId.c_str(), superPodIdx);
 }
 
-HcclResult TopoInfoRanktableParser::CheckUniqueIntegerAndInsertPool(const std::string &serverId)
-{
-    u32 serverIdValue = 0;
-    if (SalStrToULong(serverId, HCCL_BASE_DECIMAL, serverIdValue) != HCCL_SUCCESS) {
-        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
-            std::vector<std::string>({ "The serverId in ranktable is invalid." }));
-        HCCL_ERROR("[%s][%s]errNo[0x%016llx] serverId[%s] is invalid.", LOG_KEYWORDS_INIT_GROUP.c_str(),
-            LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), serverId.c_str());
-        return HCCL_E_PARA;
-    }
-    if (serverIdValue < SERVERID_MIN || serverIdValue > SERVERID_MAX) {
-        HCCL_ERROR("[Check][UniqueIntegerAndInsertPool]errNo[0x%016llx] The value range of " \
-            "serverId:[%u] must be 0 to 4294967295.", HCOM_ERROR_CODE(HCCL_E_PARA), serverIdValue);
-        return HCCL_E_PARA;
-    }
-    auto srvIt = uniqueInfoCheckPool_[static_cast<u32>(JsonUniqueInfoType::UNIQUE_INFO_TYPE_SERVER_ID)].find(serverId);
-        /* JsonCheckOpType::CHECK_OP_TYPE_INSERT操作插入保存到资源池中，若资源池中存在则报错 */
-    if (srvIt != uniqueInfoCheckPool_[static_cast<u32>(JsonUniqueInfoType::UNIQUE_INFO_TYPE_SERVER_ID)].end()) {
-        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
-            std::vector<std::string>({ "The serverId is used repeatedly." }));
-        HCCL_ERROR("[%s][%s]errNo[0x%016llx] serverId:[%s] is already exist", LOG_KEYWORDS_INIT_GROUP.c_str(),
-            LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), serverId.c_str());
-        return HCCL_E_PARA;
-    }
-    uniqueInfoCheckPool_[static_cast<u32>(JsonUniqueInfoType::UNIQUE_INFO_TYPE_SERVER_ID)].insert(serverId);
-    return HCCL_SUCCESS;
-}
-
 HcclResult TopoInfoRanktableParser::ConvertIpAddress(const std::string &ipStr, HcclIpAddress &ipAddr)
 {
     HcclResult ret = ipAddr.SetReadableAddress(ipStr);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0014", std::vector<std::string>({ "error_reason" }),
-        std::vector<std::string>({ "The ips in ranktable is invalid" }));
+        std::vector<std::string>({ "Value [" + ipStr + "] for rankTable variable [deviceIp] is invalid, expected value a valid IP address." }));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]ipStr[%s] convert failed",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),ipStr.c_str()), ret);
     return ret;

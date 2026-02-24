@@ -150,8 +150,7 @@ HcclResult TopoinfoRanktableConcise::ParserClusterInfo(hccl::HcclCommParams &par
         RPT_ENV_ERR(true,
             "EI0014",
             std::vector<std::string>({"error_reason"}),
-            std::vector<std::string>({"Use a rankid[" + std::to_string(rankId) + "] that exceeds the rank size[" +
-                                      std::to_string(rankTable.rankList.size()) + "] in the ranktable."}));
+            std::vector<std::string>({"Value [" + std::to_string(rankId) + "] for rankTable variable [rankId] is invalid, expected value " + std::to_string(rankTable.rankList[rankId].rankId) + "."}));
         HCCL_ERROR("[%s][%s]rankId[%u] is invalid",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
@@ -161,7 +160,7 @@ HcclResult TopoinfoRanktableConcise::ParserClusterInfo(hccl::HcclCommParams &par
 
     RPT_ENV_ERR(rankId != rankTable.rankList[rankId].rankId, "EI0014",
         std::vector<std::string>({ "error_reason"}),
-        std::vector<std::string>({ "The 'rank_id' in the ranktable must start from 0 or it is used repeatedly"}));
+        std::vector<std::string>({ "Value [" + std::to_string(rankId) + "] for rankTable variable [rankId] is invalid, expected value " + std::to_string(rankTable.rankList[rankId].rankId) + "."}));
     CHK_PRT_RET(rankId != rankTable.rankList[rankId].rankId,
         HCCL_ERROR("[%s][%s]check rankList[%u] rankId[%u] failed", LOG_KEYWORDS_INIT_GROUP.c_str(),
         LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), rankId, rankTable.rankList[rankId].rankId), HCCL_E_UNAVAIL);
@@ -173,8 +172,7 @@ HcclResult TopoinfoRanktableConcise::ParserClusterInfo(hccl::HcclCommParams &par
     RPT_ENV_ERR(devicePhyId != static_cast<u32>(devId),
         "EI0014",
         std::vector<std::string>({"error_reason"}),
-        std::vector<std::string>({"The ranktable config devId[" + std::to_string(devId) +
-                                  "] is inconsistent with the local devId[" + std::to_string(devicePhyId) + "]."}));
+        std::vector<std::string>({"Value [" + std::to_string(devicePhyId) + "] for rankTable variable [devicePhyId] is invalid, expected value " + std::to_string(static_cast<u32>(devId)) + "."}));
     CHK_PRT_RET(devicePhyId != static_cast<u32>(devId),
         HCCL_ERROR("[%s][%s]ranktable config devId[%d],but local devId[%u]",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), devId, devicePhyId), HCCL_E_UNAVAIL);
@@ -228,7 +226,7 @@ HcclResult TopoinfoRanktableConcise::GetServerList(const nlohmann::json &obj, Ra
         // 校验serverCount
         if (serverList.size() != clusterInfo.serverNum) {
             RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason"}),
-                std::vector<std::string>({ "The 'server_count' in ranktable is invalid." }));
+                std::vector<std::string>({ "Value [" + serverCount + "] for rankTable variable [server_count] is invalid, expected value " + std::to_string(serverList.size()) + "." }));
 
             HCCL_ERROR("[%s][%s]errNo[0x%016llx] serverList size[%zu] neq server num[%u]",
                 LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA),
@@ -245,8 +243,7 @@ HcclResult TopoinfoRanktableConcise::GetServerList(const nlohmann::json &obj, Ra
     }
     if (clusterInfo.serverNum == 0) {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason"}),
-            std::vector<std::string>({ "the 'server_list' in the ranktable is empty, Please check the "
-            "'server_list' in ranktable" }));
+            std::vector<std::string>({ "Value [0] for rankTable variable [server_count] is invalid, expected value a positive integer." }));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] server num is zero", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA));
         return HCCL_E_PARA;
@@ -395,7 +392,7 @@ HcclResult TopoinfoRanktableConcise::GetSingleDevice(const nlohmann::json &devic
 
     if (SalStrToULong(rankId, HCCL_BASE_DECIMAL, rankinfo.rankId) != HCCL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason"}),
-            std::vector<std::string>({ "The rankid in ranktable is invalid. Please check ranktable" }));
+            std::vector<std::string>({ "Value [" + rankId + "] for rankTable variable [rankId] is invalid, expected value a non-negative integer." }));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] rankid[%s] is invalid", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankId.c_str());
         return HCCL_E_PARA;
@@ -451,7 +448,7 @@ HcclResult TopoinfoRanktableConcise::GetSingleDeviceIp(const nlohmann::json &dev
             isDeviceIpError = false;
         }
         RPT_INPUT_ERR(isDeviceIpError, "EI0014", std::vector<std::string>({ "error_reason" }),
-            std::vector<std::string>({ "The 'device_ip' in ranktable is not set or is not a valid ip address." }));
+            std::vector<std::string>({ "Value [" + deviceIp + "] for rankTable variable [deviceIp] is invalid, expected value a valid IP address." }));
         CHK_PRT_RET(isDeviceIpError,
             HCCL_ERROR("[%s][%s]'device_ip' is not set correctly, " \
                        "must be set when multi Server or HCCL_INTRA_ROCE_ENABLE enabled",
@@ -721,7 +718,7 @@ HcclResult TopoinfoRanktableConcise::GetSingleSuperDeviceId(const nlohmann::json
     ret = SalStrToULong(strSuperDeviceId, HCCL_BASE_DECIMAL, superDeviceId);
     if (ret != HCCL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
-            std::vector<std::string>({ "The 'super_device_id' must be an digit." }));
+            std::vector<std::string>({ "Value [" + strSuperDeviceId + "] for rankTable variable [super_device_id] is invalid, expected value a valid non-negative integer." }));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] super_device_id[%s] is invalid",
             LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA),
             strSuperDeviceId.c_str());
@@ -773,7 +770,7 @@ HcclResult TopoinfoRanktableConcise::GetSingleSuperPod(const nlohmann::json &sup
     ret = GetJsonArrayMemberProperty(superPodList, objIndex, "super_pod_id", superPodId, true);
     if (ret != HCCL_SUCCESS || superPodId.empty()) {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
-            std::vector<std::string>({ "the 'super_pod_id' in the ranktable is invalid or empty" }));
+            std::vector<std::string>({ "Value [" + superPodId + "] for rankTable variable [super_pod_id] is invalid, expected value a valid non-empty string." }));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] super_pod_id[%s] is invalid", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(ret), superPodId.c_str());
         return ret;
@@ -830,8 +827,7 @@ HcclResult TopoinfoRanktableConcise::GetSingleSuperPodSever(const nlohmann::json
     // server_id未找到, 或与server_list中的server_id不一致
     if (ret != HCCL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
-            std::vector<std::string>({ "the 'server_id' in the ranktable 'super_pod_list' is invalid "\
-            "or not found in server_list" }));
+            std::vector<std::string>({ "Value [" + superPodId + "] for rankTable variable [super_pod_id] is invalid, expected value a valid non-empty string." }));
         return ret;
     }
 
