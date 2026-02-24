@@ -28,7 +28,7 @@ namespace hcomm {
 // 暂时放在adapter
 constexpr uint32_t URMA_EID_LEN = 16;
 
-using Eid = hccp_eid; // 使用hccp定义的union表示eid
+using Eid = HccpEid; // 使用hccp定义的union表示eid
 
 // 当前支持编译定义，后续考虑直接使用hccp数据结构
 struct DevEidInfo {

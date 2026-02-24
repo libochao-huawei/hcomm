@@ -115,6 +115,7 @@ protected:
     // 初始化部分
     void InitAlltoallRecvBlockIdxMap();
     HcclResult PrepareTopoInfo(const SubCommInfo &level0CommInfo, const SubCommInfo &level1CommInfo);
+    virtual u64 GetLocalReduceSerialThresh() = 0;
 
     HcomCollOpInfo *opInfo_{nullptr};
 

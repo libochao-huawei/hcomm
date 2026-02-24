@@ -133,7 +133,7 @@ HCCP_ATTRI_VISI_DEF int RaGetHccnCfg(struct RaInfo *info, enum HccnCfgKey key, c
     return ConverReturnCode(OTHERS, ret);
 }
 
-HCCP_ATTRI_VISI_DEF int ra_get_sec_random(struct RaInfo *info, u32 *value)
+HCCP_ATTRI_VISI_DEF int RaGetSecRandom(struct RaInfo *info, u32 *value)
 {
     int ret;
 

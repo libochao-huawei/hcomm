@@ -406,7 +406,7 @@ TEST(ST_AdapterHccpTest, st_HrtRaUbPostNops_ok)
 
 TEST(ST_AdapterHccpTest, st_HrtRaUbPostNops_exception)
 {
-    MOCKER(ra_batch_send_wr).stubs().with(any()).will(returnValue(1));
+    MOCKER(RaBatchSendWr).stubs().with(any()).will(returnValue(1));
     EXPECT_THROW(HrtRaUbPostNops(0, 0, 1), NetworkApiException);
 }
 
@@ -419,7 +419,7 @@ TEST(AdapterHccpTest, RaUbUpdateCi_ok)
 TEST(AdapterHccpTest, RaUbUpdateCi_exception)
 {
     JettyHandle jettyHandle = 0;
-    MOCKER(ra_ctx_update_ci).stubs().will(returnValue(1));
+    MOCKER(RaCtxUpdateCi).stubs().will(returnValue(1));
     EXPECT_THROW(RaUbUpdateCi(jettyHandle, 100), NetworkApiException);
 }
 
@@ -565,12 +565,12 @@ TEST(LocalRmaBufferTest, localubrmabuffer_serialize)
     RequestHandle fakeReqHandle = 1;
 
     vector<char_t> out;
-    out.resize(sizeof(struct mr_reg_info_t));
-    struct mr_reg_info_t *info = reinterpret_cast<struct mr_reg_info_t *>(out.data());
+    out.resize(sizeof(struct MrRegInfoT));
+    struct MrRegInfoT *info = reinterpret_cast<struct MrRegInfoT *>(out.data());
     memcpy_s(info->out.key.value, HRT_UB_MEM_KEY_MAX_LEN, fakeKey, HRT_UB_MEM_KEY_MAX_LEN);
     info->out.key.size = 4;
-    info->out.ub.token_id = fakeTokenId;
-    info->out.ub.target_seg_handle = fakeSegVa;
+    info->out.ub.tokenId = fakeTokenId;
+    info->out.ub.targetSegHandle = fakeSegVa;
 
     MOCKER(RaUbLocalMemRegAsync)
         .stubs()
@@ -1465,7 +1465,7 @@ TEST(AdapterHccpTest, RaUbAllocTokenIdHanlde_ok)
 
 TEST(AdapterHccpTest, RaUbFreeTokenIdHandle_exception)
 {
-    MOCKER(ra_ctx_token_id_free).stubs().with(any()).will(returnValue(1));
+    MOCKER(RaCtxTokenIdFree).stubs().with(any()).will(returnValue(1));
     EXPECT_THROW(RaUbFreeTokenIdHandle(0, 0), NetworkApiException);
 }
 

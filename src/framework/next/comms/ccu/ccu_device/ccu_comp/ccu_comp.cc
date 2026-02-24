@@ -547,9 +547,9 @@ HcclResult CcuComponent::ConfigMsIdToken()
         inBuff.data.dataInfo.dataArray[0].baseinfo.tokenId    = tokenId;
         inBuff.data.dataInfo.dataArray[0].baseinfo.tokenValue = tokenValue;
 
-        auto ret = ra_custom_channel(info,
-            reinterpret_cast<custom_chan_info_in *>(&inBuff),
-            reinterpret_cast<custom_chan_info_out *>(&outBuff));
+        auto ret = RaCustomChannel(info,
+            reinterpret_cast<CustomChanInfoIn *>(&inBuff),
+            reinterpret_cast<CustomChanInfoOut *>(&outBuff));
         if (ret != 0) {
             HCCL_ERROR("");
             return HcclResult::HCCL_E_NETWORK;
@@ -817,7 +817,7 @@ HcclResult CcuComponent::UnimportAllJettys()
             if (!ctxHandle || !remoteJettyHandle) {
                 continue;
             }
-            int32_t ret = ra_ctx_qp_unimport(ctxHandle, remoteJettyHandle);
+            int32_t ret = RaCtxQpUnimport(ctxHandle, remoteJettyHandle);
             if (ret != 0) {
                 HCCL_ERROR("[CcuComponent][%s] failed, ctxHandle[%p] "
                     "remoteJettyHandle[%p], devLogicId[%d].", __func__,
@@ -863,7 +863,7 @@ HcclResult CcuComponent::DestroyAllJettys()
             if (!jettyHandle) {
                 continue;
             }
-            int32_t ret = ra_ctx_qp_destroy(jettyHandle);
+            int32_t ret = RaCtxQpDestroy(jettyHandle);
             if (ret != 0) {
                 HCCL_ERROR("[CcuComponent][%s] failed, jettyHandle[%p], "
                     "devLogicId[%d].", __func__, jettyHandle, devLogicId_);
