@@ -47,7 +47,7 @@ HcclResult InsV2AlltoAllVSoleExecutor<AlgTopoMatch, InsAlgTemplate>::InitParams(
         HCCL_ERROR("[InsV2AlltoAllVSoleExecutor][InitParams] sendCounts or sdispls is nullptr"),
         HCCL_E_PTR);
 
-    CHK_PRT_RET((myRank_ >= op.all2AllVDataDes.sendCounts),
+    CHK_PRT_RET((myRank_ >= *op.all2AllVDataDes.sendCounts),
         HCCL_ERROR("[InsV2AlltoAllVSoleExecutor][InitParams] myRank_ is not of bounds"),
         HcclResult::HCCL_E_PTR);
 
