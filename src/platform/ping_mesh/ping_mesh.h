@@ -33,6 +33,9 @@ constexpr u64 TSD_EXT_PARA_NUM = 2;
 constexpr u32 RPING_SERVICE_LEVEL_DEFAULT = 4;
 constexpr u32 RPING_TRAFFIC_CLASS_DEFAULT = 132;
 
+//判断类型相关函数
+bool IsSupportHCCLV2(const char *socNamePtr);
+HcclResult GetAddrType(u32 *addrtype);
 // HCCN接口需要的结构体
 struct RpingInput {
     HcclIpAddress sip;
@@ -46,8 +49,6 @@ struct RpingInput {
     u32 addrType;     /* address type, 0: ip, 1: eid */ //todo: 是否要添加需要确定
     char payload[RPING_PAYLOAD_LEN_MAX];
 };
-
-bool IsSupportHCCLV2(const char *socNamePtr);
 
 MAKE_ENUM(HrtNetworkMode, PEER, HDC)
 
