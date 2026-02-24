@@ -91,7 +91,8 @@ TEST_F(Mc2CompontTest, should_success_when_calling_AllocCommResource_V2)
     MOCKER_CPP(&Mc2Compont::AllocV2).stubs();
     MOCKER_CPP(&Mc2Compont::GenerateAlgoTemplatesV2).stubs();
     MOCKER_CPP(&Mc2Compont::GenerateCcuServer).stubs();
-    EXPECT_NO_THROW(mc2Compont.AllocCommResource((void *)&mc2Tiling, nullptr));
+    void * commContext;
+    EXPECT_NO_THROW(mc2Compont.AllocCommResource((void *)&mc2Tiling, &commContext));
 }
 
 TEST_F(Mc2CompontTest, should_return_success_when_calling_Alloc)
@@ -110,8 +111,7 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_Alloc)
 
     void *commContext;
     // check
-    EXPECT_NO_THROW(mc2Compont.Alloc(&commContext));
-    EXPECT_NE(nullptr, mc2Compont.combinOpParamBuffer);
+    EXPECT_NO_THROW(mc2Compont.Alloc());
 }
 
 TEST_F(Mc2CompontTest, should_return_success_when_calling_AllocV2)
@@ -141,8 +141,7 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_AllocV2)
     commConfigPtr->srcDataType = HcclDataType::HCCL_DATA_TYPE_FP32;
     commConfigPtr->dstDataType = HcclDataType::HCCL_DATA_TYPE_FP32;
 
-    EXPECT_NO_THROW(mc2Compont.AllocV2(&commContext));
-    EXPECT_NE(nullptr, mc2Compont.combinOpParamBuffer);
+    EXPECT_NO_THROW(mc2Compont.AllocV2());
 
     free(mc2TilingPtr);
 }
@@ -406,7 +405,7 @@ TEST_F(Mc2CompontTest, test_MC2Orchestrate)
 
     CollAlgParams collAlgParams;
     std::shared_ptr<InsQueue> insQueue = std::make_shared<InsQueue>();
-    EXPECT_THROW(mc2Compont.MC2Orchestrate(collAlgParams, insQueue), InternalException);
+    EXPECT_THROW(mc2Compont.MC2Orchestrate(collAlgParams, insQueue, 0), InternalException);
 }
 
 TEST_F(Mc2CompontTest, test_MC2AllocCommRes)
@@ -441,7 +440,7 @@ TEST_F(Mc2CompontTest, test_MC2AllocCommRes)
 
     CollAlgParams collAlgParams;
     std::shared_ptr<InsQueue> insQueue = std::make_shared<InsQueue>();
-    EXPECT_THROW(mc2Compont.MC2AllocCommRes(collAlgParams, insQueue), InternalException); // mc2回退抛异常
+    EXPECT_THROW(mc2Compont.MC2AllocCommRes(collAlgParams, insQueue, 0), InternalException); // mc2回退抛异常
 }
 
 TEST_F(Mc2CompontTest, Ut_GetCcuMc2ServerNum_Expect)

@@ -818,10 +818,11 @@ private:
     HcclResult BuildOpRemoteResParam(const AlgResourceResponse &algResource, const std::string &newTag,
         const HcclCMDType opType, bool isRetry = false);
     HcclResult BuildOpResParam(const std::string &algName, const AlgResourceResponse &algResource,
-        const std::string &newTag, const HcclCMDType opType);
+        const std::string &newTag, const HcclCMDType opType, const rtStream_t aicpuStream);
     HcclResult BuildCustomOpResParam();
     HcclResult BuildOpRetryParam(const AlgResourceResponse &algResource, const std::string &newTag);
     HcclResult CopyHostListResToDeviceParam(const std::string &newTag, const ListCommon *headHostList, const u64 size);
+    HcclResult CopyHostAirmaInfoToDeviceParam(const std::string &newTag, const HcclCMDType opType, const rtStream_t aiCpuStream);
     HcclResult CopyHostOpRemoteResToDeviceParam(const std::string &newTag);
     HcclResult CopyHostOpResToDeviceParam(const std::string &newTag);
     HcclResult AicpuResourceInit(const std::string &algName,
@@ -847,6 +848,7 @@ private:
         TransportLinkType linkType = TransportLinkType::RESERVED);
     HcclResult BuildOpRemoteLinkRoceResParam(const LINK &link, HccltagRemoteResV3 &tagRemoteRes, bool isBackup,
         bool isRetry, bool isSecondBuild);
+    HcclResult BuildAiRmaInfoParam(const std::string &newTag, const std::string &algName, const HcclCMDType opType);
     HcclResult CheckNotifyOrQPMaxNum(u64 &existNum, const u64 &MaxNum, const bool &isNotifyRes);
     HcclResult AllocAlgNotifys(const std::string &tag, const NotifyLoadType notifyLoadType, const u32 notifyNum,
       std::vector<std::shared_ptr<LocalNotify> > &notifiesMain, std::vector<std::shared_ptr<LocalNotify> > &notifiesAux);
@@ -872,7 +874,7 @@ private:
     HcclResult GetAIVNormalQPInfoV2(std::vector<LINK>& links, const std::string &tag);
     template<typename T>
     HcclResult GenIbvAiRMAInfo(u32 rankid, const std::shared_ptr<Transport>& transport, const std::string &tag, T* aiRMAInfoPtr);
-
+    HcclResult GetAivQPInfoV2(std::vector<LINK>& links, const std::string &tag, u32 localRankSize);
     HcclResult CaptureSlaveStreams(rtStream_t mainStream, std::vector<Stream> &slaveStreams);
     HcclResult HandleAclGraphFirstOpAivBuff(rtStream_t mainStream);
     bool StreamIsCapture(rtStream_t mainStream);

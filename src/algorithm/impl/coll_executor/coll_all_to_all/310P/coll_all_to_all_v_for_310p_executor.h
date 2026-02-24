@@ -15,7 +15,7 @@ namespace hccl {
 class CollRunAlltoAllVFor310PExecutor : public CollAlltoAllExecutor {
 public:
     CollRunAlltoAllVFor310PExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollRunAlltoAllVFor310PExecutor() = default;
+    ~CollRunAlltoAllVFor310PExecutor() override = default;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
 

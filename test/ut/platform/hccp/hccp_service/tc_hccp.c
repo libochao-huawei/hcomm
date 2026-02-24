@@ -22,7 +22,7 @@
 #include "param.h"
 #include "dl_hal_function.h"
 
-extern int llt_main(int argc, char* argv);
+extern int LltMain(int argc, char* argv);
 extern int HccpAddToCgroup();
 extern int HccpParamParse(int argc, char *argv[], struct HccpInitParam *param);
 extern int HccpSetLogInfo(struct HccpInitParam *param);
@@ -32,13 +32,13 @@ extern int HccpChangeNumOfFile();
 int dlDrvGetDevNum(unsigned int *numDev);
 int dlDrvDeviceGetPhyIdByIndex(unsigned int devIndex, unsigned int *phyId);
 
-void tc_normal()
+void TcNormal()
 {
 
 	return;
 }
 
-void tc_abnormal()
+void TcAbnormal()
 {
 
     return;
