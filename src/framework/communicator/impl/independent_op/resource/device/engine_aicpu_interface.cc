@@ -10,6 +10,8 @@
 
 #include "channel_aicpu_interface.h"
 #include "framework/aicpu_hccl_process.h"
+#include "adapter_rts.h"
+#include "aicpu_indop_process.h"
 
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *args)
@@ -25,6 +27,11 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *ar
     };
     InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
     ThreadMgrAicpuParam* param = reinterpret_cast<ThreadMgrAicpuParam*>(ctxArgs->context);
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType == DevType::DEV_TYPE_910_95) {
+        return AicpuIndopProcess::AicpuIndOpThreadInit(param);
+    }
     return AicpuHcclProcess::AicpuIndOpThreadInit(param);
 }
 
