@@ -103,7 +103,7 @@ HccnResult HccnRpingInit(uint32_t devLogicId, HccnRpingInitAttr *initAttr, HccnR
         initAttrDes = std::string(initAttr->ipAddr).c_str();
     }
     const char *socNamePtr = aclrtGetSocName();
-    CHK_PRT_RET(socNamePtr == nullptr, HCCL_ERROR("[HccnRpingInitInter]socNamePtr is null."), HCCN_E_PARA);
+    CHK_PRT_RET(socNamePtr == nullptr, HCCL_ERROR("[HccnRpingInit]socNamePtr is null."), HCCN_E_PARA);
     if (initAttr->mode == HCCN_RPING_MODE_UB && IsSupportHCCLV2(socNamePtr)) {
         initAttrDes = std::string(initAttr->eid).c_str();
     }
@@ -116,7 +116,7 @@ HccnResult HccnRpingInit(uint32_t devLogicId, HccnRpingInitAttr *initAttr, HccnR
 
     // 判断devLogicId与pingmesh所记录的是否一致
     if (devLogicId != static_cast<u32>(currDevLogicId)) {
-        HCCL_ERROR("[HccnRpingInit]Input device logicId[%d] don't match current logicId[%d].",
+        HCCL_ERROR("[HccnRpingInit]Input device logicId[%u] don't match current logicId[%d].",
             devLogicId, currDevLogicId);
         return HCCN_E_FAIL;
     }
@@ -182,21 +182,27 @@ HccnResult HccnRpingAddTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
 }
 
 inline HccnResult HccnRpingInitInputTargetAttr(HccnRpingTargetInfo *targetInter, RpingInput *inputInter, uint32_t &n) {
-    if (targetInter[n].addrType == HCCN_RPING_ADDR_TYPE_IP) {
+    u32 addressType = 0;
+    HcclResult addrTypeRet = GetAddrType(&addressType);
+    if (addrTypeRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[HccnRpingInitInputTargetAttr]GetAddrType Fail ret %d", addrTypeRet);
+        return HCCN_E_PARA;
+    }
+    if (addressType == HCCN_RPING_ADDR_TYPE_IP) {
         if (!HcclIpAddress::IsIPv4(std::string(targetInter[n].srcIp)) && !HcclIpAddress::IsIPv6(std::string(targetInter[n].srcIp))) {
- 	        HCCL_ERROR("[HccnRpingInitInter] invalid ip.");
+ 	        HCCL_ERROR("[HccnRpingInitInputTargetAttr] invalid source ip.");
  	        return HCCN_E_PARA;
  	    }
         inputInter[n].sip = HcclIpAddress(std::string(targetInter[n].srcIp));
         if (!HcclIpAddress::IsIPv4(std::string(targetInter[n].dstIp)) && !HcclIpAddress::IsIPv6(std::string(targetInter[n].dstIp))) {
-            HCCL_ERROR("[HccnRpingInitInter] invalid ip.");
+            HCCL_ERROR("[HccnRpingInitInputTargetAttr] invalid destination ip.");
             return HCCN_E_PARA;
  	    }
         inputInter[n].dip = HcclIpAddress(std::string(targetInter[n].dstIp));
     }
     const char *socNamePtr = aclrtGetSocName();
     CHK_PRT_RET(socNamePtr == nullptr, HCCL_ERROR("[HccnRpingInitInputTargetAttr]socNamePtr is null."), HCCN_E_PARA);
-    if (targetInter[n].addrType == HCCN_RPING_ADDR_TYPE_EID && IsSupportHCCLV2(socNamePtr)) {
+    if (addressType == HCCN_RPING_ADDR_TYPE_EID && IsSupportHCCLV2(socNamePtr)) {
         if (!HcclIpAddress::IsEID(std::string(targetInter[n].srcEid)) && !HcclIpAddress::IsEID(std::string(targetInter[n].dstEid))) {
             HCCL_ERROR("[HccnRpingInitInputTargetAttr] invalid eid");
             return HCCN_E_PARA;
@@ -227,46 +233,46 @@ HccnResult HccnRpingAddTargetWithCfg(HccnRpingCtx rpingCtx, uint32_t targetNum, 
     HccnRpingAddTargetConfig *config)
 {
     // 校验入参
-    CHK_PRT_RET(config == nullptr, HCCL_ERROR("[HccnRpingAddTargetV2]config is null."), HCCN_E_PARA);
+    CHK_PRT_RET(config == nullptr, HCCL_ERROR("[HccnRpingAddTargetWithCfg]config is null."), HCCN_E_PARA);
     //超时设置判断 小于1ms,大于1h
     if (config->connectTimeout < HCCN_RPING_MIN_TIMEOUT || config->connectTimeout > HCCN_RPING_MAX_TIMEOUT) {
-        HCCL_ERROR("[HCCN][HccnRpingAddTargetV2] timeout [%u ms], need to be in the range 1 to 3600000", config->connectTimeout);
+        HCCL_ERROR("[HCCN][HccnRpingAddTargetWithCfg] timeout [%u ms], need to be in the range 1 to 3600000", config->connectTimeout);
         return HCCN_E_PARA;
     }
     // 校验入参
-    CHK_PRT_RET(target == nullptr, HCCL_ERROR("[HccnRpingAddTarget]target is null."), HCCN_E_PARA);
+    CHK_PRT_RET(target == nullptr, HCCL_ERROR("[HccnRpingAddTargetWithCfg]target is null."), HCCN_E_PARA);
     CHK_PRT_RET(targetNum > TARGET_NUM_MAX,
-        HCCL_ERROR("[HccnRpingAddTarget]targetNum[%u] is more than %u!", targetNum, TARGET_NUM_MAX), HCCN_E_PARA);
+        HCCL_ERROR("[HccnRpingAddTargetWithCfg]targetNum[%u] is more than %u!", targetNum, TARGET_NUM_MAX), HCCN_E_PARA);
     // 校验指针，并将其转换为pingmesh指针
-    CHK_PRT_RET(rpingCtx == nullptr, HCCL_ERROR("[HccnRpingAddTarget]rpingCtx is null."), HCCN_E_PARA);
-    HCCL_DEBUG("[HccnRpingAddTarget]targetNum:%u connectTimeout:%u", targetNum, config->connectTimeout);
+    CHK_PRT_RET(rpingCtx == nullptr, HCCL_ERROR("[HccnRpingAddTargetWithCfg]rpingCtx is null."), HCCN_E_PARA);
+    HCCL_DEBUG("[HccnRpingAddTargetWithCfg]targetNum:%u connectTimeout:%u", targetNum, config->connectTimeout);
     PingMesh *rping = static_cast<PingMesh*>(rpingCtx);
     // 获取device id
     s32 devLogicId = 0;
     HcclResult ret = hrtGetDeviceRefresh(&devLogicId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingAddTarget]cannot get device logic id, ret[%d].", ret), HCCN_E_FAIL);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingAddTargetWithCfg]cannot get device logic id, ret[%d].", ret), HCCN_E_FAIL);
 
     // 判断devLogicId与pingmesh所记录的是否一致
     if (devLogicId != rping->GetDeviceLogicId()) {
-        HCCL_ERROR("[HccnRpingAddTarget]curr devId[%d] don't match record logicId[%d].",
+        HCCL_ERROR("[HccnRpingAddTargetWithCfg]curr devId[%d] don't match record logicId[%d].",
             devLogicId, rping->GetDeviceLogicId());
         return HCCN_E_PARA;
     }
-    HCCL_DEBUG("[HccnRpingAddTarget] device id is %d", devLogicId);
+    HCCL_DEBUG("[HccnRpingAddTargetWithCfg] device id is %d", devLogicId);
 
     // 将入参转换为内部接口可以使用的类型
     RpingInput *input = new (std::nothrow) RpingInput[targetNum];
-    CHK_PRT_RET(input == nullptr, HCCL_ERROR("[HccnRpingAddTarget]memory alloc failed."), HCCN_E_MEM);
+    CHK_PRT_RET(input == nullptr, HCCL_ERROR("[HccnRpingAddTargetWithCfg]memory alloc failed."), HCCN_E_MEM);
     for (uint32_t m = 0; m < targetNum; m++) {
         HccnResult res = HccnRpingInitTargetAttr(target, input, m);
         if (res != HCCN_SUCCESS) {
             delete[] input;
-            HCCL_ERROR("[HccnRpingAddTarget]init target attr fail, ret[%d].", ret);
+            HCCL_ERROR("[HccnRpingAddTargetWithCfg]init target attr fail, ret[%d].", ret);
             return HCCN_E_PARA;
         }
         s32 sRet = memcpy_s(input[m].payload, input[m].len, target[m].payload, target[m].payloadLen);
         if (sRet != EOK) {
-            HCCL_ERROR("[HccnRpingAddTarget]memcpy payload fail. errorno[%d] params:dstMaxSize[%u] srclen[%d]",
+            HCCL_ERROR("[HccnRpingAddTargetWithCfg]memcpy payload fail. errorno[%d] params:dstMaxSize[%u] srclen[%d]",
                 sRet, input[m].len, target[m].payloadLen);
             delete[] input;
             return HCCN_E_MEM;
@@ -280,7 +286,7 @@ HccnResult HccnRpingAddTargetWithCfg(HccnRpingCtx rpingCtx, uint32_t targetNum, 
     }
 
     delete[] input;
-    HCCL_RUN_INFO("[HccnRpingAddTarget]Device[%d] add targetNum %u success", devLogicId, targetNum);
+    HCCL_RUN_INFO("[HccnRpingAddTargetWithCfg]Device[%d] add targetNum %u success", devLogicId, targetNum);
     return HCCN_SUCCESS;
 }
  
