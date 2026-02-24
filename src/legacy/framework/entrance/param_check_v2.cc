@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include "param_check_v2.h"
 #include <linux/limits.h>
 #include <unordered_set>
 #include <map>
@@ -15,7 +16,6 @@
 #include <fstream>
 #include <linux/limits.h>
 #include <adapter_error_manager_pub.h>
-#include "param_check_v2.h"
 #include "log.h"
 #include "exception_util.h"
 
@@ -106,7 +106,7 @@ HcclResult HcomCheckTagV2(const char *tag)
 
     u32 tagLen = strnlen(tag, TAG_MAX_LEN + 1);
     if (tagLen == (TAG_MAX_LEN + 1) || tagLen == 0) {
-        HCCL_ERROR("[Check][Tag]errNo[0x%llx] tag is too long", HCCL_E_PARA);
+        HCCL_ERROR("[Check][Tag]errNo[0x%llx] tag is too long, range[1,%u]", HCCL_E_PARA, TAG_MAX_LEN);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;

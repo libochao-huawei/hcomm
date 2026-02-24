@@ -62,7 +62,7 @@ HCCP_ATTRI_VISI_DEF int RaTlvInit(struct TlvInitInfo *initInfo, unsigned int *bu
 
     ret = pthread_mutex_init(&tlvHandleTmp->mutex, NULL);
     if (ret != 0) {
-        hccp_err("[init][ra_tlv]init mutext failed, ret(%d), phy_id(%u)", ret, initInfo->phyId);
+        hccp_err("[init][ra_tlv]init mutext failed, ret(%d), phyId(%u)", ret, initInfo->phyId);
         goto ra_tlv_init_err;
     }
 

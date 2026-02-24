@@ -93,10 +93,10 @@ private:
     virtual HcclResult CalLevel2DataSegsSliceV(const OpParam &param, u32 level2RankSize, u32 perDataSize,
         std::vector<Slice> &level2DataSegsSlice);
 protected:
-    SubCommInfo logicalLevel0CommInfo_;
-    SubCommInfo logicalLevel1CommInfo_;
-    CommPlane logicalLevel0plane_;
-    CommPlane logicalLevel1plane_;
+    SubCommInfo logicalLevel0CommInfo_ = {0, 0, {}, {}};
+    SubCommInfo logicalLevel1CommInfo_ = {0, 0, {}, {}};
+    CommPlane logicalLevel0plane_ = COMM_LEVEL_RESERVED;
+    CommPlane logicalLevel1plane_ = COMM_LEVEL_RESERVED;
 };
 
 } // namespace hccl

@@ -45,6 +45,7 @@ protected:
     // 主从流同步部分
     HcclResult AlltoallSync(u32 step, bool isStartPhase) override;
     HcclResult LocalReduceSync(u32 step, bool isStartPhase) override;
+    u64 GetLocalReduceSerialThresh() override;
 
     DeviceMem cclBuffer_;
     u64 eachRankCclbufferSize_ = 0;

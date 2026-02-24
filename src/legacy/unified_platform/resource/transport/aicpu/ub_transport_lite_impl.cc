@@ -349,10 +349,16 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     }
 
     TaskParam taskParam{};
-    taskParam.taskType                 = TaskParamType::TASK_NOTIFY_RECORD;
+    taskParam.taskType                 = TaskParamType::TASK_UB_INLINE_WRITE;
     taskParam.beginTime                = ProfGetCurCpuTimestamp();
-    taskParam.taskPara.Notify.notifyID = GetRmtNotifySliceLite(index).GetAddr();
-    taskParam.taskPara.Notify.value    = 1;
+    taskParam.taskPara.DMA.dst         = reinterpret_cast<void*>(GetRmtNotifySliceLite(index).GetAddr());
+    taskParam.taskPara.DMA.size        = GetRmtNotifySliceLite(index).GetSize();
+    taskParam.taskPara.DMA.notifyID    = GetRmtNotifySliceLite(index).GetAddr();
+    taskParam.taskPara.DMA.linkType    = DfxLinkType::UB;
+    taskParam.taskPara.DMA.dmaOp       = DmaOp::HCCL_DMA_WRITE;
+    taskParam.taskPara.DMA.locEid      = GetLocEid();
+    taskParam.taskPara.DMA.rmtEid      = GetRmtEid();
+
     callback_(stream.GetSqId(), taskId, taskParam);
 }
 
@@ -459,7 +465,7 @@ void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufferLite &loc, const
     }
 
     TaskParam taskParam {};
-    taskParam.taskType = TaskParamType::TASK_REDUCE_INLINE;
+    taskParam.taskType = TaskParamType::TASK_UB_REDUCE_INLINE;
     taskParam.beginTime = ProfGetCurCpuTimestamp();
     taskParam.taskPara.Reduce.src = reinterpret_cast<void *>(GetRmaBufSlicelite(loc).GetAddr());
     taskParam.taskPara.Reduce.dst = reinterpret_cast<void *>(GetRmtRmaBufSliceLite(rmt).GetAddr());
@@ -468,6 +474,8 @@ void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufferLite &loc, const
     taskParam.taskPara.Reduce.linkType = DfxLinkType::UB;
     taskParam.taskPara.Reduce.reduceOp = ConvertReduceOpToHcclReduceOp(reduceIn.reduceOp);
     taskParam.taskPara.Reduce.dataType = DataTypeToHcclDataType(reduceIn.dataType);
+    taskParam.taskPara.Reduce.locEid   = GetLocEid();
+ 	taskParam.taskPara.Reduce.rmtEid   = GetRmtEid();
     callback_(stream.GetSqId(), taskId, taskParam);
 }
 

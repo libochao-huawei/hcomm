@@ -56,10 +56,10 @@ private:
                                                   const std::vector<std::vector<Slice>> &multRingsSliceZero,
                                                   const std::string &tag, const std::vector<u32>& nicList);
 protected:
-    SubCommInfo logicalLevel0CommInfo_;
-    SubCommInfo logicalLevel1CommInfo_;
-    CommPlane logicalLevel0plane_;
-    CommPlane logicalLevel1plane_;
+    SubCommInfo logicalLevel0CommInfo_ = {0, 0, {}, {}};
+    SubCommInfo logicalLevel1CommInfo_ = {0, 0, {}, {}};
+    CommPlane logicalLevel0plane_ = COMM_LEVEL_RESERVED;
+    CommPlane logicalLevel1plane_ = COMM_LEVEL_RESERVED;
 };
 
 } // namespace hccl

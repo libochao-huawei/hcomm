@@ -5111,7 +5111,9 @@ HcclResult HcclCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
     HCCL_INFO("[HcclCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
         __func__, hcomId.c_str(), threadNum);
     // 为上报翻转初始化资源
-    CHK_RET(InitProfthreadResource(threadNum));
+    if (topoInfo_.deviceType != DevType::DEV_TYPE_910_95) {
+        CHK_RET(InitProfthreadResource(threadNum));
+    }
     return HCCL_SUCCESS;
 }
 

@@ -75,6 +75,7 @@ HcclResult CollReduceExecutor::Orchestrate(OpParam& param, AlgResourceResponse& 
             HCCL_ERROR_CODE(ret)), ret);
 
     // Enforce task launch at the end of Orchestrate
+    // 注意: 不要删除这里的强制launch, 否则会导致aicpu cache功能问题
     if (needLaunchAtTheEnd) {
         HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
         CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));

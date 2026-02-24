@@ -35,8 +35,8 @@ __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_
     // 解析参数信息
     DpuKernelLaunchParam *params = reinterpret_cast<DpuKernelLaunchParam *>(args);
 
-    HCCL_RUN_INFO("[%s] DpuKernelLaunchParam{commId:%s; memorySize:%lu; deviceMem:%p; hostMem:%p}", __func__,
-                  params->commId.c_str(), params->memorySize, params->deviceMem, params->hostMem);
+    HCCL_RUN_INFO("[%s] DpuKernelLaunchParam{commId:%s; memorySize:%lu; deviceMem:%p; hostMem:%p; devId:%d}", __func__,
+                  params->commId.c_str(), params->memorySize, params->deviceMem, params->hostMem, params->deviceId);
 
     if (params->memorySize == 0) {
         HCCL_ERROR("[%s] memorySize is 0.", __func__);

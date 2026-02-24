@@ -71,7 +71,7 @@ bool CheckRequestResult(RequestHandle &reqHandle)
     return true;
 }
 
-static HcclResult ParseCreateInfo(const struct qp_create_info *infoPtr,
+static HcclResult ParseCreateInfo(const struct QpCreateInfo *infoPtr,
     const JettyHandle jettyHandle, HrtRaUbJettyCreatedOutParam &outParam)
 {
     outParam.handle = jettyHandle;
@@ -86,8 +86,8 @@ static HcclResult ParseCreateInfo(const struct qp_create_info *infoPtr,
     outParam.uasid           = infoPtr->ub.uasid;
     outParam.id              = infoPtr->ub.id;
     outParam.keySize         = infoPtr->key.size;
-    outParam.dbVa            = infoPtr->ub.db_addr;
-    outParam.dbTokenId       = infoPtr->ub.db_token_id >> URMA_TOKEN_ID_RIGHT_SHIFT;
+    outParam.dbVa            = infoPtr->ub.dbAddr;
+    outParam.dbTokenId       = infoPtr->ub.dbTokenId >> URMA_TOKEN_ID_RIGHT_SHIFT;
     // 不提供 tokenValue，不得打印token相关信息
     return HcclResult::HCCL_SUCCESS;
 }
@@ -105,8 +105,8 @@ HcclResult CcuJetty::HandleAsyncRequest()
         };
     );
 
-    const struct qp_create_info *info =
-        reinterpret_cast<const qp_create_info *>(reqDataBuffer_.data());
+    const struct QpCreateInfo *info =
+        reinterpret_cast<const QpCreateInfo *>(reqDataBuffer_.data());
     const JettyHandle jettyHandle = reinterpret_cast<JettyHandle>(jettyHandlePtr_);
     return ParseCreateInfo(info, jettyHandle, outParam_);
 }

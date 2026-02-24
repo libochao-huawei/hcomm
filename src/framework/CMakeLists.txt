@@ -932,12 +932,12 @@ if(NOT KERNEL_MODE)
         DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
     )
 
-    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ccl_dpu.json
-        COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/framework/communicator/hostdpu/ccl_dpu.ini ${CMAKE_CURRENT_BINARY_DIR}/ccl_dpu.json
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
+        COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/framework/communicator/hostdpu/ccl_dpu.ini ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
-    add_custom_target(dpu_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ccl_dpu.json)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_dpu.json
+    add_custom_target(dpu_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
         DESTINATION ${INSTALL_DPU_KERNEL_JSON_DIR} OPTIONAL
     )
     add_dependencies(hcomm ccl_kernel_json aicpu_custom_json dpu_kernel_json)

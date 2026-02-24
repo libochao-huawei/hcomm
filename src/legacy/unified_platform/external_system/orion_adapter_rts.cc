@@ -7,13 +7,15 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+
+#include "orion_adapter_rts.h"
 #include "runtime_api_exception.h"
 #include "exception_util.h"
-#include "orion_adapter_rts.h"
 #include "invalid_params_exception.h"
 #include "log.h"
 #include "acl/acl_rt.h"
 #include "driver/ascend_hal.h"
+#include "adapter_error_manager_pub.h"
 
 using namespace std;
 namespace Hccl {
