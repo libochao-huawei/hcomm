@@ -287,6 +287,8 @@ public:
         return collAlgComponent.get();
     }
 
+    std::map<AivOpCacheArgs, std::shared_ptr<InsQueue>> hcclCacheMap_; //存储aiv cache信息
+    HcclResult GetCacheMap(AivOpCacheArgs& opCacheParam , std::shared_ptr<InsQueue>& tempInsQue);
     HcclResult SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable);
     HcclResult GetAccelerator(int32_t* accelerator) const;
     void ExecAlgSelect(const CollOpParams &opParams, const OpMode &opMode);
