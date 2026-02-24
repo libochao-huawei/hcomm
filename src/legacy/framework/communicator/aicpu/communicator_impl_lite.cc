@@ -235,11 +235,9 @@ void CommunicatorImplLite::UpdateLocBuffer(HcclKernelParamLite *kernelParam)
 
 void CommunicatorImplLite::UpdateTransports(HcclKernelParamLite *kernelParam)
 {
-    if (CheckNeedUpdateRes(kernelParam)) {
-        HCCL_INFO("[NsRecovery] RestoreAllTransports start");
-        RestoreAllTransports(kernelParam->binaryResAddr, kernelParam->binaryResSize);
-        HCCL_INFO("[NsRecovery] RestoreAllTransports end");
-    }
+    HCCL_INFO("[NsRecovery] RestoreAllTransports start");
+    RestoreAllTransports(kernelParam->binaryResAddr, kernelParam->binaryResSize);
+    HCCL_INFO("[NsRecovery] RestoreAllTransports end");
 }
 
 void CommunicatorImplLite::RestoreAllTransports(u64 addr, u64 bufSize)
