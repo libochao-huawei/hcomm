@@ -340,7 +340,7 @@ union JfsFlag {
     } bs;
     uint32_t value;
 };
- 
+
 struct JettyQueCfgEx {
     uint32_t buffSize;
     uint64_t buffVa;
@@ -484,7 +484,7 @@ enum JettyImportMode {
 };
 
 #define HCCP_MAX_TPID_INFO_NUM 128
- 
+
 union GetTpCfgFlag {
     struct {
         uint32_t ctp : 1;
@@ -820,7 +820,7 @@ HCCP_ATTRI_VISI_DEF int RaCtxDeinit(void *ctxHandle);
  * @retval #non-zero Failure
 */
 HCCP_ATTRI_VISI_DEF int RaCtxTokenIdAlloc(void *ctxHandle, struct HccpTokenId *info, void **tokenIdHandle);
- 
+
 /**
  * @ingroup librdma
  * @ingroup libudma

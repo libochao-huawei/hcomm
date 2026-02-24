@@ -604,7 +604,7 @@ STATIC int RsDrvQueryNotify(struct RsRdevCb *rdevCb)
             // open backup device to get ib_ctx to get backup notify va and size
             ret = RsOpenBackupIbCtx(rdevCb);
             CHK_PRT_RETURN(ret, hccp_err("rs_open_backup_ib_ctx failed, ret:%d", ret), ret);
-    
+
             ret = RsIbvExpQueryNotify(rdevCb->backupInfo.ibCtx, &rdevCb->notifyVaBase, &rdevCb->notifySize);
             if (ret != 0) {
                 RsCloseBackupIbCtx(rdevCb);
