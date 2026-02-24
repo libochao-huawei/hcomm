@@ -57,6 +57,8 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     // 初始化通信内存
     CHK_RET(commMems_->Init(cclBuffer));
 
+    EXECEPTION_CATCH(engineCtxs_ = std::make_unique<EngineCtxs>(), return HCCL_E_PTR);
+
     opExpansionMode_ = opExpansionMode;
     if (!ccuResContainer_ && rankNum != 1) {
         ccuResContainer_.reset(new (std::nothrow)CcuResContainer(opExpansionMode_));

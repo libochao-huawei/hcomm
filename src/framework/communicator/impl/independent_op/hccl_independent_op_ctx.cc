@@ -14,6 +14,7 @@
 #include "hccl_comm_pub.h"
 #include "independent_op.h"
 #include <string>
+#include "param_check_pub.h"
 
 using namespace hccl;
 
@@ -118,31 +119,47 @@ HcclResult HcclEngineCtxCopy(HcclComm comm, CommEngine engine, const char *ctxTa
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommEngineCtxDestroy(HcclComm comm, const HcclMem *engineCtx)
+HcclResult HcclEngineCtxDestroy(HcclComm comm, const char *ctxTag, CommEngine engine)
 {
     CHK_PTR_NULL(comm);
-    CHK_PTR_NULL(engineCtx);
+    CHK_PTR_NULL(ctxTag);
+
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                HCCL_RUN_INFO("HcclEngineCtxDestroy is not supported");
+                return HCCL_SUCCESS;
+            }
+            auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+            std::string commId = hcclComm->GetIdentifier();
+            HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
+            hccl::CollComm* collComm = hcclComm->GetCollComm();
+            CHK_PTR_NULL(collComm);
+            auto myRank = collComm->GetMyRank();
+            CHK_PTR_NULL(myRank);
+            EngineCtxs* engineCtxs = myRank->GetEngineCtxs();
+            HcclResult ret = HCCL_SUCCESS;
+            ret = engineCtxs->DestroyEngineCtx(ctxTag, engine);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] Failed to destroy CommEngineCtx, ctxTag[%s], engine[%d], ret[%d]",
+                __func__, ctxTag, engine, ret), ret);
+            HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], group[%s]", 
+                __func__, ctxTag, engine, hcclComm->GetIdentifier().c_str());
+            return HCCL_SUCCESS;
+        }());
+#endif
+
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    HcclResult ret = HCCL_SUCCESS;
-    if (hcclComm->IsCommunicatorV2()) {
-        CollComm* collComm = hcclComm->GetCollComm();
-        CHK_PTR_NULL(collComm);
-        ContextManager* contextMgr = collComm->GetContextManager();
-        CHK_PTR_NULL(contextMgr);
-        ret = contextMgr->DestroyCommEngineCtx(engineCtx);
-    }
-    else {
-        auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
-        ret = contextMgr.DestroyCommEngineCtx(engineCtx);
-    }
-    
+    auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
+    HcclResult ret = contextMgr.DestroyCommEngineCtx(ctxTag, engine);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s] Failed to destroy CommEngineCtx, engineCtx[type:%d, addr:%p, size:%lu], ret[%d]",
-           __func__, engineCtx->type, engineCtx->addr, engineCtx->size, ret);
+        HCCL_ERROR("[%s] Failed to destroy CommEngineCtx, ctxTag[%s], engine[%d], ret[%d]",
+           __func__, ctxTag, engine, ret);
         return ret;
     }
-
-    HCCL_RUN_INFO("[%s] success, engineCtx[type:%d, addr:%p, size:%lu], group[%s]", 
-        __func__, engineCtx->type, engineCtx->addr, engineCtx->size, hcclComm->GetIdentifier().c_str());
+    HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], group[%s]", 
+        __func__, ctxTag, engine, hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
 }
