@@ -240,7 +240,7 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
     std::pair<float, float> floatCounter;
     floatCounter.first =  *(reinterpret_cast<float *>(curTask->dfxOpInfo_->headOpCounterAddr_));
     floatCounter.second = *(reinterpret_cast<float *>(curTask->dfxOpInfo_->tailOpCounterAddr_));
-    HCCL_ERROR("[[TaskExceptionHandler]Task run failed, headOpCounter[%u] tailOpCounter[%u]]", static_cast<u32>(floatCounter.first), static_cast<u32>(floatCounter.second));
+    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, headOpCounter[%u] tailOpCounter[%u].", static_cast<u32>(floatCounter.first), static_cast<u32>(floatCounter.second));
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, opData information is %s.", curTask->GetOpInfo().c_str());
 }
 
