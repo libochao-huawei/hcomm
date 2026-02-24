@@ -114,9 +114,9 @@ HcclResult GetAddrType(u32 *addrType)
     const char *socNamePtr = aclrtGetSocName();
     CHK_PTR_NULL(socNamePtr);
     if (IsSupportHCCLV2(socNamePtr)) {
-        *addrType = 1;
+        *addrType = HCCN_RPING_ADDR_TYPE_EID;
     } else {
-        *addrType = 0;
+        *addrType = HCCN_RPING_ADDR_TYPE_IP;
     }
     return HCCL_SUCCESS;
 }
