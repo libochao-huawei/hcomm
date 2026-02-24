@@ -184,9 +184,6 @@ public:
     HcclResult InitRoceChannel(HcclIndOpChannelRemoteResV3 *commParam, uint32_t channelIndex);
     HcclResult AllocChannelResource(HcclIndOpChannelRemoteResV3 *commParam);
 
-    HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
-    HcclResult AllocChannelResourceV2(HcclChannelUrmaRes *commParam);
-
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
     bool GetIsInitIndOp() { return indOpCommInitialized_; };
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
@@ -307,7 +304,6 @@ private:
     HcclResult GetAlltoAllTotalCount(OpParam &param, u64 &sendCount, u64 &recvCount);
     HcclResult GetAlltoAllVTotalCount(OpParam &param, u64 &sendCount, u64 &recvCount);
     HcclResult GetAlltoAllVCTotalCount(OpParam &param, u64 &sendCount, u64 &recvCount);
-    HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
 
     // taskException
     void PollCqeException(hccl::Stream &stream, bool isReadClear, rtLogicCqReport_t &cqeException, CqeStatus &cqeStatus);
