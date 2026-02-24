@@ -18,6 +18,9 @@
 #include "task_exception_handler_lite.h"
 #include "log.h"
 #include "inc/aicpu_utils.h"
+#ifdef CCL_KERNEL_AICPU
+#include "aicpu_indop_process.h"
+#endif
 extern "C" {
 using namespace Hccl;
 
@@ -43,6 +46,15 @@ uint32_t HcclKernelEntrance(void *args)
         return 1;
     }
 
+#ifdef CCL_KERNEL_AICPU
+    std::string group = kernelParam->comm.commId;
+    CollCommAicpuMgr *collCommAicpuMgr = nullptr;
+    CHK_RET(AicpuIndopProcess::AcquireAicpuCommMgr(group, &collCommAicpuMgr));
+    CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), 1);
+    collCommAicpuMgr->SetOldA5Comm(communicatorImplLite);
+    HCCL_RUN_INFO("Acquire AicpuCommMgr success");
+#endif
+
     CHK_RET(AicpuUtils::GetInstance().WaitCommFree(communicatorImplLite, __func__));
     if (communicatorImplLite->LoadWithOpBasedMode(kernelParam) != 0) {
         HCCL_ERROR("HcclKernelEntrance LoadWithOpBasedMode failed.");
@@ -62,7 +74,7 @@ uint32_t HcclUpdateCommKernelEntrance(void *args)
         HCCL_ERROR("[NsRecovery] HcclUpdateCommKernelEntrance Args is null.");
         return 1;
     }
- 
+
     auto *kernelParam = reinterpret_cast<HcclKernelParamLite *>(args);
     u32 commIdIndex = kernelParam->comm.idIndex;
     HCCL_INFO("[NsRecovery] HcclUpdateCommKernelEntrance begin, commIdIndex[%u]", commIdIndex);
@@ -72,6 +84,16 @@ uint32_t HcclUpdateCommKernelEntrance(void *args)
         HCCL_ERROR("HcclUpdateCommKernelEntrance communicatorImplLite is null.");
         return 1;
     }
+
+#ifdef CCL_KERNEL_AICPU
+    std::string group = kernelParam->comm.commId;
+    CollCommAicpuMgr *collCommAicpuMgr = nullptr;
+    CHK_RET(AicpuIndopProcess::AcquireAicpuCommMgr(group, &collCommAicpuMgr));
+    CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), 1);
+    collCommAicpuMgr->SetOldA5Comm(communicatorImplLite);
+    HCCL_RUN_INFO("Acquire AicpuCommMgr success");
+#endif
+
     CHK_RET(AicpuUtils::GetInstance().WaitCommFree(communicatorImplLite, __func__));
     communicatorImplLite->UpdateComm(kernelParam);
     unique_lock<std::mutex> aicpuLock(communicatorImplLite->GetAicpuMc2Mutex());
