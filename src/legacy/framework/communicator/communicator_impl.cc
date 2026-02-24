@@ -427,17 +427,17 @@ void CommunicatorImpl::SingleRankProc(const CollOpParams &opParams, void *stream
 bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream)
 {
     InitCcuSuperFastLoad(); // 存在profiling开关在多次下发算子时动态变化的场景，每次下发流程中都需要更新开关
-    superFasterLoad = (opParams.opType == OpType::ALLREDUCE || opParams.opType == OpType::ALLGATHER
-                          || opParams.opType == OpType::REDUCESCATTER || opParams.opType == OpType::BROADCAST || 
-                            opParams.opType == OpType::ALLTOALL
-                          );
+    superFasterLoad = (opParams.opType == OpType::ALLREDUCE || opParams.opType == OpType::ALLGATHER || 
+                            opParams.opType == OpType::REDUCESCATTER || opParams.opType == OpType::BROADCAST || 
+                            opParams.opType == OpType::ALLTOALL || opParams.opType == OpType::REDUCE ||
+                            opParams.opType == OpType::SCATTER);
     bool canUpdate = superFasterLoad &&
                      (commExecuteConfig.accState == AcceleratorState::CCU_MS
                          || commExecuteConfig.accState == AcceleratorState::CCU_SCHED);
     if (OpType::ALLTOALL == opParams.opType) {
         ccuParamsMappingKey = {static_cast<u32>(opParams.reduceOp), static_cast<u32>(opParams.all2AllDataDes.sendType),
                                static_cast<u32>(opParams.all2AllDataDes.sendCount)};
-    } else if (OpType::BROADCAST == opParams.opType) {
+    } else if (OpType::BROADCAST == opParams.opType || OpType::SCATTER == opParams.opType) {
         ccuParamsMappingKey = {static_cast<u32>(opParams.root), static_cast<u32>(opParams.dataType),
                                static_cast<u32>(opParams.count)};
     } else {
