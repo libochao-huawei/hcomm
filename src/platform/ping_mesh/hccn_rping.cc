@@ -185,7 +185,7 @@ inline HccnResult HccnRpingInitInputTargetAttr(HccnRpingTargetInfo *targetInter,
     u32 addressType = 0;
     HcclResult addrTypeRet = GetAddrType(&addressType);
     if (addrTypeRet != HCCL_SUCCESS) {
-         HCCL_ERROR("[HccnRpingInitInputTargetAttr]GetAddrType Fail ret %d", addrTypeRet);
+        HCCL_ERROR("[HccnRpingInitInputTargetAttr]GetAddrType Fail ret %d", addrTypeRet);
         return HCCN_E_PARA;
     }
     if (addressType == HCCN_RPING_ADDR_TYPE_IP) {
