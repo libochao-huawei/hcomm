@@ -1,0 +1,165 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include "aicpu_indop_process.h"
+#include "coll_comm_aicpu_mgr.h"
+
+using namespace hccl;
+
+namespace {
+struct CollCommAicpuInfo {
+    ReadWriteLockBase commAicpuMgrMapMutex;  // 读写锁单例，维护全局的读写信息
+    std::unordered_map<std::string, std::shared_ptr<CollCommAicpuMgr>> commMgrMap;
+};
+CollCommAicpuInfo g_commAicpuInfo;
+// DevType g_devType = DevType::DEV_TYPE_COUNT;
+thread_local CollCommAicpuMgr *g_hcclComm = nullptr; // 记录当前线程通信域; AicpuGetCommbyGroup赋值，AicpuReleaseCommbyGroup置空
+}
+
+
+HcclResult AicpuIndopProcess::AicpuIndOpCommInit(CommAicpuParam *commAicpuParam) {
+
+    CollCommAicpuMgr *commAicpuMgr = nullptr;
+    HcclResult ret = HCCL_SUCCESS;
+    std::string group = commAicpuParam->hcomId;
+    CHK_RET(AcquireAicpuCommMgr(group, &commAicpuMgr));
+    if (commAicpuMgr == nullptr) {
+        HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpCommInit]commAicpu is null group[%s]", group.c_str());
+        return HCCL_E_PTR;
+    }
+
+    ret = commAicpuMgr->InitAicpuIndOp(commAicpuParam);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[AicpuIndopProcess][%s]errNo[0x%016llx] Failed to init independent op comm group[%s]" , __func__,
+        HCCL_ERROR_CODE(ret), group.c_str()), ret);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuIndopProcess::AcquireAicpuCommMgr(const std::string &group, CollCommAicpuMgr **aicpuCommMgrPtr)
+{
+    ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMgrMapMutex);
+    rwlock.writeLock();
+    // 查找是否已存在该group的通信实例
+    auto iter = g_commAicpuInfo.commMgrMap.find(group);
+    if (iter != g_commAicpuInfo.commMgrMap.end()) {
+        *aicpuCommMgrPtr = iter->second.get();
+        HCCL_INFO("[%s]Reuse existing comm group [%s]", __func__, group.c_str());
+        rwlock.writeUnlock();
+        return HCCL_SUCCESS;
+    }
+    
+    // 未找到则创建新实例
+    std::shared_ptr<CollCommAicpuMgr> aicpuCommMgr;
+    try {
+        aicpuCommMgr = std::make_shared<CollCommAicpuMgr>();
+        aicpuCommMgr->AcquireCollCommAicpu();
+    } catch (std::exception& e) {
+        HCCL_ERROR("[%s]Failed, exception caught:%s", __func__, e.what());
+        rwlock.writeUnlock();
+        return HCCL_E_PTR;
+    }
+    
+    if (UNLIKELY(!aicpuCommMgr)) {
+        HCCL_ERROR("[%s]errNo[0x%016llx] aicpuComm is nullptr", __func__, HCCL_ERROR_CODE(HCCL_E_PTR));
+        rwlock.writeUnlock();
+        return HCCL_E_PTR;
+    }
+
+    // 将新实例加入映射表
+    g_commAicpuInfo.commMgrMap[group] = aicpuCommMgr;
+    *aicpuCommMgrPtr = aicpuCommMgr.get();
+    HCCL_INFO("[%s]Created new comm group [%s]", __func__, group.c_str());
+    rwlock.writeUnlock();
+    return HCCL_SUCCESS;
+}
+
+
+HcclResult AicpuIndopProcess::AicpuIndOpThreadInit(ThreadMgrAicpuParam *param)
+{
+    std::string group = param->hcomId;
+    CollCommAicpuMgr *hcclCommAicpu = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
+    CHK_PRT_RET(!hcclCommAicpu, HCCL_ERROR("%s hcclCommAicpu is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
+    HcclResult ret = hcclCommAicpu->InitThreads(param);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpThreadInit]errNo[0x%016llx] Failed to init threads group[%s]",
+        HCCL_ERROR_CODE(ret), group.c_str()), ret);
+    AicpuReleaseCommbyGroup(group);
+    return HCCL_SUCCESS;
+}
+
+CollCommAicpuMgr *AicpuHcclProcess::AicpuGetCommMgrbyGroup(const std::string &group)
+{
+    auto startTime = std::chrono::steady_clock::now();
+    constexpr u32 pollIntervalUs = 10; // 轮询间隔10us
+    constexpr u32 pollTimeoutMs = 10; // 轮询超时时间10ms
+    auto waitPollTimeOutMs = std::chrono::milliseconds(pollTimeoutMs);
+    ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMgrMapMutex);
+
+    while (true) {
+        rwlock.readLock();
+        auto iter = g_commAicpuInfo.commMgrMap.find(group);
+        if (iter == g_commAicpuInfo.commMgrMap.end()) {
+            HCCL_ERROR("[AicpuHcclProcess] exist group size is [%u]", g_commAicpuInfo.commMgrMap.size());
+            auto curIter = g_commAicpuInfo.commMgrMap.begin();
+            int i = 0;
+            while (curIter != g_commAicpuInfo.commMgrMap.end()) {
+                HCCL_ERROR("[AicpuHcclProcess] exist group idx is [%d] key[%s] value", i, curIter->first.c_str());
+                curIter++;
+            }
+            rwlock.readUnlock();
+            return nullptr;
+        }
+        if (iter->second->IsUsed()) {
+            if ((std::chrono::steady_clock::now() - startTime) >= waitPollTimeOutMs) {
+                HCCL_ERROR("[AicpuGetCommbyGroup]poll timeout, comm group [%s] has been used, last executed op: %s",
+                    group.c_str(), iter->second.first->GetExcuteOp().c_str());
+                rwlock.readUnlock();
+                return nullptr;
+            }
+
+            HCCL_WARNING("[AicpuGetCommbyGroup]comm group [%s] has been used, last executed op: %s",
+                group.c_str(), iter->second.first->GetExcuteOp().c_str());
+            rwlock.readUnlock();
+
+            usleep(pollIntervalUs);
+            continue;
+        }
+        g_hcclComm = iter->second.get();
+        iter->second->SetUsed(true);
+        rwlock.readUnlock();
+        return iter->second.get();
+    }
+    return nullptr;
+}
+
+void AicpuIndopProcess::AicpuReleaseCommbyGroup(const std::string &group)
+{
+    ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMgrMapMutex);
+    rwlock.readLock();
+    auto iter = g_commAicpuInfo.commMap.find(group);
+    if (iter == g_commAicpuInfo.commMap.end()) {
+        rwlock.readUnlock();
+        return;
+    }
+    g_hcclComm = iter->second.get();
+    iter->second->SetUsed(false);
+    rwlock.readUnlock();
+}
+
+HcclResult AicpuIndopProcess::AicpuIndOpChannelInitV2(HcclChannelUrmaRes *commParam)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuIndopProcess::AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param)
+{
+    return HCCL_SUCCESS;
+}
