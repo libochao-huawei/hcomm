@@ -86,8 +86,7 @@ private:
     std::map<IpcMemInfo, Referenced> openedNameMapRef_;  // 记录已打开的mem name 与ptr对应关系的引用计数
     std::map<IpcMemInfo, IpcMemInfo> alignPtrMap_; // 记录根据页表对齐前后的ipc mem对应关系
     std::mutex memMutex_;
-    bool closeCalled_{false};
-    bool destoryCalled_{false};
+    bool unavailable_{false};
 };
 }  // namespace hccl
 

@@ -20,11 +20,7 @@ namespace hccl {
 MemNameRepository::~MemNameRepository()
 {
     std::unique_lock<std::mutex> lock(memMutex_);
-    setNameMap_.clear();
-    openedNameMap_.clear();
-    setNameMapRef_.clear();
-    openedNameMapRef_.clear();
-    alignPtrMap_.clear();
+    ClearMemNameRepository();
 }
 
 MemNameRepository* MemNameRepository::GetInstance(s32 deviceLogicID)
@@ -43,8 +39,7 @@ MemNameRepository* MemNameRepository::GetInstance(s32 deviceLogicID)
 
 HcclResult MemNameRepository::SetDeviceUnavailable(bool unavailable)
 {
-    closeCalled_ = unavailable;
-    destoryCalled_ = unavailable;
+    unavailable_ = unavailable;
     HCCL_RUN_INFO("SetDeviceUnavailable unavailable[%d]", unavailable);
     return HCCL_SUCCESS;
 }
@@ -227,14 +222,10 @@ void MemNameRepository::CloseIpcMem(const u8* name)
         return;
     }
 
-    if(closeCalled_) {
-        openedNameMap_.clear();
-        openedNameMapRef_.clear();
-        setNameMap_.clear();
-        setNameMapRef_.clear();
-        alignPtrMap_.clear();
-        closeCalled_ = false;
-        HCCL_RUN_INFO("CloseIpMem closeCalled_[%d]", closeCalled_);
+    if(unavailable_) {
+        ClearMemNameRepository();
+        unavailable_ = false;
+        HCCL_RUN_INFO("CloseIpMem unavailable_[%d]", unavailable_);
         return;
     }
 
@@ -269,14 +260,10 @@ void MemNameRepository::DestroyIpcMem(void *ptr, u64 size, bool isSioToHccs)
         return;
     }
 
-    if(destoryCalled_) {
-        openedNameMap_.clear();
-        openedNameMapRef_.clear();
-        setNameMap_.clear();
-        setNameMapRef_.clear();
-        alignPtrMap_.clear();
-        destoryCalled_ = false;
-        HCCL_RUN_INFO("DestoryIpcMem destoryCalled_[%d]", destoryCalled_);
+    if(unavailable_) {
+        ClearMemNameRepository();
+        unavailable_ = false;
+        HCCL_RUN_INFO("DestoryIpcMem unavailable_[%d]", unavailable_);
         return;
     }
 
@@ -316,7 +303,6 @@ void MemNameRepository::DestroyIpcMem(void *ptr, u64 size, bool isSioToHccs)
 
 void MemNameRepository::ClearMemNameRepository()
 {
-    std::unique_lock<std::mutex> lock(memMutex_);
     setNameMap_.clear();
     openedNameMap_.clear();
     setNameMapRef_.clear();
