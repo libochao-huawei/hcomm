@@ -521,7 +521,7 @@ HcclResult PingMesh::RpingResultInfoInit(PingTargetResult *resultInfo, std::map<
     u32 addressType = 0;
     HcclResult addrTypeRet = GetAddrType(&addressType);
     if (addrTypeRet != HCCL_SUCCESS) {
-         HCCL_ERROR("RpingResultInfoInit]GetAddrType Fail ret %d", addrTypeRet);
+         HCCL_ERROR("[RpingResultInfoInit]GetAddrType Fail ret %d", addrTypeRet);
         return HCCL_E_PARA;
     }
     for (u32 i = 0; i < targetNum; i++) {
@@ -963,7 +963,7 @@ HcclResult PingMesh::HccnTargetAttrInter(u32 targetNumInter, RpingInput *inputIn
     u32 addressType = 0;
     ret = GetAddrType(&addressType);
     if (ret != HCCL_SUCCESS) {
-         HCCL_ERROR("RpingResultInfoInit]GetAddrType Fail ret %d", ret);
+         HCCL_ERROR("[HccnTargetAttrInter]GetAddrType Fail ret %d", ret);
         return HCCL_E_PARA;
     }
     for (u32 i = 0; i < targetNumInter; i++) {
@@ -1037,7 +1037,7 @@ HcclResult PingMesh::HccnTarRemoveAttrInter(u32 targetNumInter, RpingInput *inpu
     u32 addressType = 0;
     retInter = GetAddrType(&addressType);
     if (retInter != HCCL_SUCCESS) {
-         HCCL_ERROR("RpingResultInfoInit]GetAddrType Fail retInter %d", retInter);
+         HCCL_ERROR("[HccnTarRemoveAttrInter]GetAddrType Fail retInter %d", retInter);
         return HCCL_E_PARA;
     }
     for (u32 i = 0; i < targetNumInter; i++) {
