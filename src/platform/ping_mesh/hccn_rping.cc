@@ -116,7 +116,7 @@ HccnResult HccnRpingInit(uint32_t devLogicId, HccnRpingInitAttr *initAttr, HccnR
 
     // 判断devLogicId与pingmesh所记录的是否一致
     if (devLogicId != static_cast<u32>(currDevLogicId)) {
-        HCCL_ERROR("[HccnRpingInit]Input device logicId[%d] don't match current logicId[%d].",
+        HCCL_ERROR("[HccnRpingInit]Input device logicId[%u] don't match current logicId[%d].",
             devLogicId, currDevLogicId);
         return HCCN_E_FAIL;
     }
@@ -190,12 +190,12 @@ inline HccnResult HccnRpingInitInputTargetAttr(HccnRpingTargetInfo *targetInter,
     }
     if (addressType == HCCN_RPING_ADDR_TYPE_IP) {
         if (!HcclIpAddress::IsIPv4(std::string(targetInter[n].srcIp)) && !HcclIpAddress::IsIPv6(std::string(targetInter[n].srcIp))) {
- 	        HCCL_ERROR("[HccnRpingInitInputTargetAttr] invalid ip.");
+ 	        HCCL_ERROR("[HccnRpingInitInputTargetAttr] invalid source ip.");
  	        return HCCN_E_PARA;
  	    }
         inputInter[n].sip = HcclIpAddress(std::string(targetInter[n].srcIp));
         if (!HcclIpAddress::IsIPv4(std::string(targetInter[n].dstIp)) && !HcclIpAddress::IsIPv6(std::string(targetInter[n].dstIp))) {
-            HCCL_ERROR("[HccnRpingInitInputTargetAttr] invalid ip.");
+            HCCL_ERROR("[HccnRpingInitInputTargetAttr] invalid destination ip.");
             return HCCN_E_PARA;
  	    }
         inputInter[n].dip = HcclIpAddress(std::string(targetInter[n].dstIp));
