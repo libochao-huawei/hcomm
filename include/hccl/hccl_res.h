@@ -462,7 +462,16 @@ extern HcclResult HcclChannelGetRemoteMems(HcclComm comm, ChannelHandle channel,
  * @warning
  */
 extern HcclResult HcclCommMemReg(HcclComm comm, const char *memTag, const CommMem *mem, HcclMemHandle *memHandle);
- 
+
+/**
+ * @brief 销毁通信引擎资源上下文
+ * @param[in] comm 通信域句柄
+ * @param[in] ctxTag 引擎标签（最大字符长度为HCCL_RES_TAG_MAX_LEN）
+ * @param[in] engine 通信引擎类型
+ * @return HcclResult 执行结果状态码
+ */
+extern HcclResult HcclEngineCtxDestroy(HcclComm comm, const char *ctxTag, CommEngine engine);
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
