@@ -7,14 +7,13 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-
-add_subdirectory(common)
-add_subdirectory(rank)
-add_subdirectory(rank_pairs)
-add_subdirectory(api_c_adpt)
-add_subdirectory(communicator)
-
-target_include_directories(hcomm PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/rank_pairs
+set(src_list
+    coll_comm.cc
 )
+
+target_sources(hcomm PRIVATE
+    ${src_list}
+)
+
+add_subdirectory(aicpu)
 
