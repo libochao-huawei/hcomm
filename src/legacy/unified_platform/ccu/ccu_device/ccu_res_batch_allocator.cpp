@@ -482,7 +482,7 @@ HcclResult CcuResBatchAllocator::ReleaseResHandle(const CcuResHandle &handle)
 {
     std::unique_lock<std::mutex> lock(innerMutex);
 
-    uintptr_t handleKey = reinterpret_cast<uintptr_t>(handle);S
+    uintptr_t handleKey = reinterpret_cast<uintptr_t>(handle);
     if (handleMap.find(handleKey) == handleMap.end()) {
         HCCL_ERROR("[CcuResBatchAllocator][%s] failed, devLogicId[%d], "
             "failed to find resource repository, invalid resource handle(uintptr_t)[%llu]",
