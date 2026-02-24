@@ -89,6 +89,8 @@ constexpr u32 AIV_TIMEOUT_DEFAULT_US = 1091 * TIME_S_TO_US;
 constexpr u32 AIV_TIMEOUT_MAX = 1091;
 constexpr u32 AIV_TIMEOUT_MAX_US = 1091 * TIME_S_TO_US;
 
+constexpr u32 DEV_TYPE_910_93 = 4;
+
 constexpr u32 BUFFER_DIVIDE = 2;
 constexpr u32 MAX_TARGET_NUM = 20;
 
@@ -284,10 +286,11 @@ using AivSuperKernelArgs = struct AivSuperKernelArgsDef {
     u64 numBlocks;
     s32 tag; // 第几次调用，定时重置成1
     s64 clearEnable;
+    u32 devType;
  
     AivSuperKernelArgsDef(void** buffIn, void** buffOut, u32 rank,
-        u32 rankSize, u64 len, u32 dataType, u32 unitSize, u32 reduceOp,u32 numBlocks = 0, s32 tag = 0, bool clearEnable = true)
-        : rank(rank), rankSize(rankSize), len(len), dataType(dataType), unitSize(unitSize), reduceOp(reduceOp), numBlocks(numBlocks),tag(tag), clearEnable(clearEnable)
+        u32 rankSize, u64 len, u32 dataType, u32 unitSize, u32 reduceOp,u32 numBlocks = 0, s32 tag = 0, bool clearEnable = true, u32 devType = DEV_TYPE_910_93)
+        : rank(rank), rankSize(rankSize), len(len), dataType(dataType), unitSize(unitSize), reduceOp(reduceOp), numBlocks(numBlocks),tag(tag), clearEnable(clearEnable), devType(devType)
     {
         for (u32 i = 0; i < MAX_RANK_SIZE; i++) {
             buffersIn[i] = (u8 *) buffIn[i];

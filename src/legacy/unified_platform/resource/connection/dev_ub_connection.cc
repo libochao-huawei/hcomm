@@ -268,11 +268,11 @@ void DevUbConnection::CreateJetty(const bool devUsed)
 
 void DevUbConnection::SetJettyInfo()
 {
-    struct qp_create_info *info = reinterpret_cast<qp_create_info *>(reqDataBuffer.data());
+    struct QpCreateInfo *info = reinterpret_cast<QpCreateInfo *>(reqDataBuffer.data());
     jettyId                     = info->ub.id;
     jettyHandle                 = reinterpret_cast<JettyHandle>(jettyHandlePtr);
     keySize                     = info->key.size;
-    sqBuffVa                    = info->ub.sq_buff_va; // hccp提供
+    sqBuffVa                    = info->ub.sqBuffVa; // hccp提供
     HCCL_INFO("[DevUbConnection][%s] Get sqBuffVa is %llx.", __func__, sqBuffVa);
 
     s32 ret = memcpy_s(localQpKey, HRT_UB_QP_KEY_MAX_LEN, info->key.value, info->key.size);
@@ -280,7 +280,7 @@ void DevUbConnection::SetJettyInfo()
         THROW<InternalException>(StringFormat("[DevUbConnection][%s] memcpy_s failed, ret=%d", __func__, ret));
     }
 
-    dbAddr = info->ub.db_addr;
+    dbAddr = info->ub.dbAddr;
 }
 
 bool DevUbConnection::GetTpInfo()
@@ -334,7 +334,7 @@ void DevUbConnection::ImportJetty()
 
 void DevUbConnection::SetImportInfo()
 {
-    struct qp_import_info_t *info = reinterpret_cast<qp_import_info_t *>(reqDataBuffer.data());
+    struct QpImportInfoT *info = reinterpret_cast<QpImportInfoT *>(reqDataBuffer.data());
     remoteJettyHandle             = reinterpret_cast<TargetJettyHandle>(remoteJettyHandlePtr);
     tpn                           = info->out.ub.tpn;
 }

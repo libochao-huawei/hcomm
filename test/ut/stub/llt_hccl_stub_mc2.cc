@@ -152,12 +152,12 @@ typedef enum tagRtArchType {
     ARCH_C100 = 3, /* Ascend910 */
     ARCH_C220 = 4, /* Ascend910B & Ascend910_93 */
     ARCH_M100 = 5, /* Ascend310 */
-    ARCH_M200 = 6, /* Ascend310P & Ascend610 */
+    ARCH_M200 = 6, /* Ascend310P */
     ARCH_M201 = 7, /* BS9SX1A */
     ARCH_T300 = 8, /* Tiny */
     ARCH_N350 = 9, /* Nano */
-    ARCH_M300 = 10, /* Ascend310B & AS31XM1X */
-    ARCH_M310 = 11, /* Ascend610Lite */
+    ARCH_M300 = 10, /* Ascend310B */
+    ARCH_M310 = 11, /* */
     ARCH_S200 = 12, /* Hi3796CV300ES & TsnsE */
     ARCH_S202 = 13, /* Hi3796CV300CS & OPTG & SD3403 &TsnsC */
     ARCH_M510 = 14, /* MC62CM12A */
