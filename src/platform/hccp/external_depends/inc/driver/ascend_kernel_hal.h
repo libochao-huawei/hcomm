@@ -136,7 +136,6 @@ int devdrv_config_get_mac_info(unsigned int dev_id,
 * @param [in]  unsigned char *buf Buffer for storing information
 * @param [out] unsigned int *buf_size Obtain the information length
 * @return   0 for success, others for fail
-* @note Support:Ascend310,Ascend910,Ascend610,Ascend310P,Ascend910B,Ascend310B
 */
 
 int devdrv_get_user_config(unsigned int dev_id, const char *name, unsigned char *buf, unsigned int *buf_size);
@@ -156,7 +155,6 @@ int devdrv_get_user_config(unsigned int dev_id, const char *name, unsigned char 
 *              If the length is greater than the value of this parameter, a message is displayed,
 *              indicating that the setting fails.
 * @return   0 for success, others for fail
-* @note Support:Ascend310,Ascend910,Ascend610,Ascend310P,Ascend910B,Ascend310B
 */
 int devdrv_set_user_config(unsigned int dev_id, const char *name, unsigned char *buf, unsigned int buf_size);
 /**
@@ -168,7 +166,6 @@ int devdrv_set_user_config(unsigned int dev_id, const char *name, unsigned char 
 * @param [in]  const char *name: configuration item name
 * @param [in]  unsigned char *buf Buffer for storing information
 * @return   0 Success, others for fail
-* @note Support:Ascend310,Ascend910,Ascend610,Ascend310P,Ascend910B,Ascend310B
 */
 int devdrv_clear_user_config(unsigned int devid, const char *name);
 
@@ -182,7 +179,6 @@ int devdrv_clear_user_config(unsigned int devid, const char *name);
 * @param [out] unsigned int: data buffer out length
 * @return   0 Success, others for fail
 * @        -2 item not set
-* @note Support:Ascend910,Ascend610,Ascend310P,Ascend910B,Ascend310B
 */
 int hal_kernel_get_user_config(unsigned int dev_id, const char *name, unsigned char *data,
     unsigned int in_len, unsigned int *out_len);
@@ -196,7 +192,6 @@ int hal_kernel_get_user_config(unsigned int dev_id, const char *name, unsigned c
 * @param [in]  unsigned int: data buffer length
 * @return   0 Success, others for fail
 * @        -2 item not set
-* @note Support:Ascend910,Ascend610,Ascend310P,Ascend910B,Ascend310B
 */
 int hal_kernel_set_user_config(unsigned int dev_id, const char *name, u8 *data, u32 in_len);
 
@@ -870,7 +865,6 @@ unsigned long long hal_kernel_get_dev_phy_base_addr(unsigned int phy_id, unsigne
 typedef enum {
     SOC_TYPE_MINI = 0,          /* Ascend310 */
     SOC_TYPE_CLOUD,             /* Ascend910 */
-    SOC_TYPE_MDC,               /* Ascend610 */
     SOC_TYPE_LHISI,             /* Hi3796CV300ES & TsnsE, Hi3796CV300CS & OPTG & SD3403 &TsnsC */
     SOC_TYPE_DC,                /* Ascend310P */
     SOC_TYPE_CLOUD_V2,          /* Ascend910A2 & Ascend910A3 */
@@ -879,7 +873,7 @@ typedef enum {
     SOC_TYPE_TINY_V1,           /* Tiny */
     SOC_TYPE_NANO_V1,           /* Nano */
     SOC_TYPE_KUNPENG_V1,        /* KUNPENG */
-    SOC_TYPE_AS31XM1,           /* AS31XM1X */
+    SOC_TYPE_AS31XM1,           
     SOC_TYPE_610LITE,           /* 610lite */
     SOC_TYPE_CLOUD_V3,          /* Ascend910A3 */
     SOC_TYPE_BS9SX1A,           /* BS9SX1A */

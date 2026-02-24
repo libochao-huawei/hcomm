@@ -268,8 +268,8 @@ STATIC int RsPingInitProtocolOps(struct RsPingCtxCb *pingCb, enum ProtocolTypeT 
             pingCb->pingPongDfx = RsPingRoceGetDfx();
             break;
         case PROTOCOL_UDMA:
-            pingCb->pingPongOps = rs_ping_urma_get_ops();
-            pingCb->pingPongDfx = rs_ping_urma_get_dfx();
+            pingCb->pingPongOps = RsPingUrmaGetOps();
+            pingCb->pingPongDfx = RsPingUrmaGetDfx();
             break;
         default:
             hccp_err("unsupported protocol:%u", protocol);
@@ -293,7 +293,7 @@ RS_ATTRI_VISI_DEF int RsPingInit(struct PingInitAttr *attr, struct PingInitInfo 
     CHK_PRT_RETURN(attr == NULL || info == NULL || devIndex == NULL,
         hccp_err("param error, attr or info or devIndex is NULL"), -EINVAL);
 
-    phyId = (attr->protocol == PROTOCOL_RDMA) ? attr->dev.rdma.phyId : attr->ub.phy_id;
+    phyId = (attr->protocol == PROTOCOL_RDMA) ? attr->dev.rdma.phyId : attr->ub.phyId;
     ret = RsGetRsCb(phyId, &rscb);
     CHK_PRT_RETURN(ret != 0, hccp_err("RsGetRsCb failed, phyId[%u] invalid, ret %d", phyId, ret), ret);
 

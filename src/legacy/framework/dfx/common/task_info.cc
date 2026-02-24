@@ -57,8 +57,10 @@ string TaskInfo::GetParaInfo() const
         case TaskParamType::TASK_SDMA:
         case TaskParamType::TASK_RDMA:
         case TaskParamType::TASK_SEND_PAYLOAD:
+        case TaskParamType::TASK_UB_INLINE_WRITE:
             return GetParaDMA();
         case TaskParamType::TASK_REDUCE_INLINE:
+        case TaskParamType::TASK_UB_REDUCE_INLINE:
         case TaskParamType::TASK_REDUCE_TBE:
             return GetParaReduce();
         case TaskParamType::TASK_NOTIFY_RECORD:
@@ -143,11 +145,13 @@ string TaskInfo::GetTaskConciseName() const
             {TaskParamType::TASK_RDMA, "RS"},
             {TaskParamType::TASK_SEND_PAYLOAD, "SP"},
             {TaskParamType::TASK_REDUCE_INLINE, "IR"},
+            {TaskParamType::TASK_UB_REDUCE_INLINE, "IR"},
             {TaskParamType::TASK_REDUCE_TBE, "R"},
             {TaskParamType::TASK_NOTIFY_RECORD, "NR"},
             {TaskParamType::TASK_NOTIFY_WAIT, "NW"},
             {TaskParamType::TASK_SEND_NOTIFY, "SN"},
             {TaskParamType::TASK_WRITE_WITH_NOTIFY, "WN"},
+            {TaskParamType::TASK_UB_INLINE_WRITE, "IW"},
             {TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY, "WRN"},
             {TaskParamType::TASK_CCU, "CCU"},
             {TaskParamType::TASK_AICPU_KERNEL, "AIK"}};
@@ -166,6 +170,7 @@ string TaskInfo::GetNotifyInfo() const
     u64 notifyInfo = INVALID_U64;
     switch (this->taskParam_.taskType) {
         case TaskParamType::TASK_RDMA:
+        case TaskParamType::TASK_UB_INLINE_WRITE:
             notifyInfo = taskPara.DMA.notifyID;
             break;
         case TaskParamType::TASK_NOTIFY_RECORD:
@@ -196,7 +201,8 @@ string TaskInfo::GetConciseBaseInfo() const
     const auto taskType = this->taskParam_.taskType;
     if (taskType == TaskParamType::TASK_RDMA || taskType == TaskParamType::TASK_NOTIFY_RECORD ||
         taskType == TaskParamType::TASK_NOTIFY_WAIT || taskType == TaskParamType::TASK_SEND_NOTIFY ||
-        taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY || taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
+        taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY || taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY ||
+ 	    taskType == TaskParamType::TASK_UB_INLINE_WRITE) {
         taskConciseInfo << "," << this->GetNotifyInfo();
     }
     taskConciseInfo << ")";

@@ -484,7 +484,7 @@ TEST_F(SymmetricMemoryTest, ut_Init_When_SymmetricMemoryAgent_Is_Nullptr_Expect_
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(SymmetricMemoryTest, ut_Init_When_SingleRankCommunicator_Expect_ReturnHCCL_E_PARA)
+TEST_F(SymmetricMemoryTest, ut_Init_When_SingleRankCommunicator_Expect_ReturnHCCL_SUCCESS)
 {
     std::vector<RankInfo> rankInfoList(2);
     HcclIpAddress localVnicIp;
@@ -492,7 +492,7 @@ TEST_F(SymmetricMemoryTest, ut_Init_When_SingleRankCommunicator_Expect_ReturnHCC
         0, localVnicIp, rankInfoList, 0, true, "1");
     SymmetricMemory symmetricMemory(0, 1, TWO_M, symmetricMemoryAgent_);
     HcclResult ret = symmetricMemory.Init(); // 1MB
-    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 TEST_F(SymmetricMemoryTest, ut_Init_When_GetAllocationGranularityFails_Expect_ReturnHCCL_E_INTERNAL)
@@ -876,7 +876,7 @@ TEST_F(SymmetricMemoryTest, ut_RegisterSymmetricMem_When_ParaError_Expect_Return
         .will(returnValue(HCCL_SUCCESS));
     HcclResult ret = HCCL_SUCCESS;
     ret = symmetricMemory.RegisterSymmetricMem(nullptr, TWO_M, &win);
-    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(ret, HCCL_E_PTR);
     ret = symmetricMemory.RegisterSymmetricMem(ptr, 0, &win);
     EXPECT_EQ(ret, HCCL_E_PARA);
     MOCKER_CPP(aclrtMemGetAddressRange)

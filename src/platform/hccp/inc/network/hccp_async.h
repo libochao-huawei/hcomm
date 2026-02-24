@@ -121,7 +121,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketRecvAsync(const void *fdHandle, void *data, unsi
  * @brief get corresponding eid by ip async
  * @param ctx_handle [IN] ctx handle
  * @param ip [IN] ip array, see struct IpInfo
- * @param eid [IN/OUT] eid array, see union hccp_eid
+ * @param eid [IN/OUT] eid array, see union HccpEid
  * @param num [IN/OUT] num of ip and eid array, max num is GET_EID_BY_IP_MAX_NUM
  * @param req_handle [OUT] async request handle
  * @see ra_get_async_req_result
@@ -129,8 +129,8 @@ HCCP_ATTRI_VISI_DEF int RaSocketRecvAsync(const void *fdHandle, void *data, unsi
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_get_eid_by_ip_async(void *ctx_handle, struct IpInfo ip[], union hccp_eid eid[],
-    unsigned int *num, void **req_handle);
+HCCP_ATTRI_VISI_DEF int RaGetEidByIpAsync(void *ctxHandle, struct IpInfo ip[], union HccpEid eid[],
+    unsigned int *num, void **reqHandle);
 
 #ifdef __cplusplus
 }
