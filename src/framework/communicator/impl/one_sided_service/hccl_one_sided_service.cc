@@ -1215,8 +1215,8 @@ HcclResult HcclOneSidedService::AicpuUnfoldKernelLaunchV2(const std::string &ker
             }
     }
 
-    if(tilingDataSize > std::numeric_limits<u32>::max()) {
-        HCCL_ERROR("[AicpuUnfoldKernelLaunchV2] tilingDataSize[%lu] exceeds the "
+    if (tilingDataSize > std::numeric_limits<u32>::max()) {
+        HCCL_ERROR("[AicpuUnfoldKernelLaunchV2] tilingDataSize[%llu] exceeds the "
                     "maximum allowed value for u32 [%u].", tilingDataSize, std::numeric_limits<u32>::max());
         return HCCL_E_RUNTIME;
     }
