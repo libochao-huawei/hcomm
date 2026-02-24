@@ -144,9 +144,10 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/resource/engine
 
     ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads
-    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms
     ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads
     ${HCOMM_CODE_FRAMEWORK}/next/coll_comms
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/communicator
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/communicator/aicpu
     ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/rank
     ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/rank_pairs
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs

@@ -174,7 +174,9 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
 
     # framework/next
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/aicpu
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs/
     ${HCCL_CODE_ROOT}/src/framework/next/common/
@@ -251,6 +253,8 @@ set(UT_COMMON_INCLUDE_LIST
     #next
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/aicpu
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs
