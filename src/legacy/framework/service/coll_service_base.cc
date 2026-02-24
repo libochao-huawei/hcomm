@@ -284,13 +284,15 @@ void CollServiceBase::AddOpCounterMems()
     HrtMemcpy(srcAddr, srcSize, &srcValue, srcSize, RT_MEMCPY_HOST_TO_DEVICE); 
 
     // 初始化后面两个四字节置0
-    u64 countMemSize = srcSize * 2;
+    u64 countMemSize = srcSize;
     float startValue = 0; // value为0表示从0开始计数
-    void *countAddr = reinterpret_cast<void*>(counterBuf->GetAddr() + srcSize);
-    HrtMemcpy(countAddr, countMemSize, &startValue, countMemSize, RT_MEMCPY_HOST_TO_DEVICE); 
+    void *headCountAddr = reinterpret_cast<void*>(counterBuf->GetAddr() + srcSize);
+    void *tailCountAddr = reinterpret_cast<void*>(counterBuf->GetAddr() + srcSize * 2);
+    HrtMemcpy(headCountAddr, countMemSize, &startValue, countMemSize, RT_MEMCPY_HOST_TO_DEVICE);
+    HrtMemcpy(tailCountAddr, countMemSize, &startValue, countMemSize, RT_MEMCPY_HOST_TO_DEVICE);
 
-    HCCL_INFO("[CollServiceBase::%s] end, counterBuf[%llu] srcAddr[%p] countAddr[%p].", __func__,
-        counterBuf->GetAddr(), srcAddr, countAddr);
+    HCCL_INFO("[CollServiceBase::%s] end, counterBuf[%llu] srcAddr[%p] headCountAddr[%p] tailCountAddr[%p].", __func__,
+        counterBuf->GetAddr(), srcAddr, headCountAddr, tailCountAddr);
 }
 
 std::pair<u32, u32> CollServiceBase::GetOpCount()
