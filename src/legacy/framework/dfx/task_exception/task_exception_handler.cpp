@@ -115,7 +115,7 @@ static std::pair<u32, u32> GetOpCounter(const TaskInfo& taskInfo)
     counter.first = static_cast<u32>(floatCounter.first);
     counter.second = static_cast<u32>(floatCounter.second);
     
-    HCCL_INFO("[GetOpCounter] end, head:%u, tail:%u", __func__, counter.first, counter.second);
+    HCCL_INFO("[GetOpCounter] end, head:%u, tail:%u", counter.first, counter.second);
     return counter;
 }
 
