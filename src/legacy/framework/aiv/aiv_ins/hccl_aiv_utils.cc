@@ -17,6 +17,7 @@
 #include "acl/acl_rt.h"
 #include "env_config.h"
 #include "hccl_aiv_utils.h"
+#include "aicpu/launch_device.h"
  
 using namespace std;
  
@@ -203,33 +204,6 @@ HcclResult GetAivOpBinaryPath(std::string &binaryPath)
     return HCCL_SUCCESS;
 }
 
-HcclResult LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
-    aclrtBinHandle &binHandle)
-{
-    CHK_PRT_RET(binPath == nullptr,
-        HCCL_ERROR("[Load][Binary]binary path is nullptr"),
-        HCCL_E_PTR);
-
-    char realPath[PATH_MAX] = {0};
-    CHK_PRT_RET(realpath(binPath, realPath) == nullptr,
-        HCCL_ERROR("LoadBinaryFromFile: %s is not a valid real path, err[%d]", binPath, errno),
-        HCCL_E_INTERNAL);
-    HCCL_INFO("[LoadBinaryFromFile]realPath: %s", realPath);
-
-    aclrtBinaryLoadOptions loadOptions = {0};
-    aclrtBinaryLoadOption option;
-    loadOptions.numOpt = 1;
-    loadOptions.options = &option;
-    option.type = optionType;
-    option.value.cpuKernelMode = cpuKernelMode;
-    aclError aclRet = aclrtBinaryLoadFromFile(realPath, &loadOptions, &binHandle);
-    CHK_PRT_RET(aclRet != ACL_SUCCESS,
-        HCCL_ERROR("[LoadBinaryFromFile]errNo[0x%016llx] load binary from file error.", aclRet),
-        HCCL_E_OPEN_FILE_FAILURE);
-
-    return HCCL_SUCCESS;
-}
-
 s8* GetStubFunc(HcclCMDType cmdType, DataType dataType, KernelArgsType argsType = KernelArgsType::ARGS_TYPE_SERVER)
 {
     return reinterpret_cast<s8*>(
@@ -267,10 +241,7 @@ HcclResult RegisterKernel()
     HCCL_INFO("[RegisterKernel] binFilePath: %s", binFilePath.c_str());
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][RegisterKernel] get aiv op binary path failed"), HCCL_E_RUNTIME);
 
-    ret = LoadBinaryFromFile(binFilePath.c_str(), ACL_RT_BINARY_LOAD_OPT_LAZY_LOAD, 1, g_binHandle);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][RegisterKernel] read aiv kernel bin file failed"),
-        HCCL_E_RUNTIME);
- 
+    LoadBinaryFromFile(binFilePath.c_str(), ACL_RT_BINARY_LOAD_OPT_LAZY_LOAD, 1, g_binHandle);
     for (auto &aivKernelInfo: g_aivKernelInfoList) {
         ret = RegisterBinaryKernel(aivKernelInfo.kernelName, g_binHandle,
             GetStubFunc(aivKernelInfo.cmdType, aivKernelInfo.dataType, aivKernelInfo.argsType));
