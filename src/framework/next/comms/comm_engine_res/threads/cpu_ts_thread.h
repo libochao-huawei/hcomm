@@ -31,8 +31,8 @@ public:
     // A3 Stream & A5 Stream
     bool IsDeviceA5() const override;
     Stream *GetStream() const override;
-    void *GetStreamLitePtr() const override;
-    void LaunchTask() const override;
+    Hccl::StreamLite *GetStreamLitePtr() const override;
+    HcclResult LaunchTask() const override;
 
     // Local Data Plane Functions
     HcclResult LocalNotifyRecord(uint32_t notifyId) const override;
