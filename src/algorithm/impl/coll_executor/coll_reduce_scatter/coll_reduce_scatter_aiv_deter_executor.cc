@@ -134,7 +134,7 @@ HcclResult CollReduceScatterAivDeterExecutor::GetAivExecParam(const OpParam& par
     args.dataType = param.DataDes.dataType;
     args.unitSize = SIZE_TABLE[param.DataDes.dataType];
     args.reduceOp = param.reduceType;
- 
+    args.devType = static_cast<u32>(topoAttr_.deviceType);
     HCCL_INFO("SPK [CollReduceScatterAivDeterExecutor][GetAivExecParam], rank[%llu], rankSize[%llu], len[%llu],datatype[%llu], op[%llu]", args.rank, args.rankSize, args.len, args.dataType, args.reduceOp);
  
     HCCL_INFO("tag[%s], ReduceScatter executor getalgexecparam success, take time [%lld]us.",

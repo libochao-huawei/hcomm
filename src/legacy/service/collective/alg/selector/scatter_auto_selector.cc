@@ -28,7 +28,7 @@ SelectorStatus ScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, co
 SelectorStatus ScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
-    HCCL_DEBUG("[AllGatherAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
+    HCCL_DEBUG("[ScatterAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
@@ -36,13 +36,13 @@ SelectorStatus ScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoIn
                 // 每框出 1 卡
                 primQueueGenName = "CcuScatterNHRMem2Mem1D";
             } else if (Is2DieFullMesh()) {
-                HCCL_WARNING("[Algo][AllGatherAutoSelector] 2DieFullMesh is not supported yet for schedule mode.");
+                HCCL_WARNING("[Algo][ScatterAutoSelector] 2DieFullMesh is not supported yet for schedule mode.");
                 return SelectorStatus::NOT_MATCH;
             } else {
                 primQueueGenName = "CcuScatterParallelMesh1DNHR";
             }
         } else {
-            HCCL_WARNING("[Algo][AllGatherAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
+            HCCL_WARNING("[Algo][ScatterAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
                 topoInfo.level0Shape);
             return SelectorStatus::NOT_MATCH;
         }
@@ -80,7 +80,7 @@ SelectorStatus ScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoIn
 SelectorStatus ScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
-    HCCL_DEBUG("[AllGatherAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
+    HCCL_DEBUG("[ScatterAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
@@ -111,23 +111,23 @@ SelectorStatus ScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, co
         } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
             primQueueGenName = "InsScatterMesh1D";
         } else {
-            HCCL_WARNING("[AllGatherAutoSelector] topo not match");
+            HCCL_WARNING("[ScatterAutoSelector] topo not match");
             return SelectorStatus::NOT_MATCH;
         }
     }
-    HCCL_INFO("[Algo][AllGatherAutoSelector][%s] Algo match [%s]", __func__, primQueueGenName.c_str());
+    HCCL_INFO("[Algo][ScatterAutoSelector][%s] Algo match [%s]", __func__, primQueueGenName.c_str());
     return SelectorStatus::MATCH;
 }
 
 SelectorStatus ScatterAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
-    HCCL_DEBUG("[AllGatherAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
+    HCCL_DEBUG("[ScatterAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     // aiv 直接走打平 mesh
     primQueueGenName = "AivScatterMesh1D";
 
-    HCCL_INFO("[Algo][AllGatherAutoSelector][%s] Algo match [%s]", __func__, primQueueGenName.c_str());
+    HCCL_INFO("[Algo][ScatterAutoSelector][%s] Algo match [%s]", __func__, primQueueGenName.c_str());
     return SelectorStatus::MATCH;
 }
 

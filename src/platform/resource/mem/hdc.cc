@@ -138,7 +138,7 @@ HcclResult HDCommunicate::Put(u32 offset, u32 length, u8 *value)
     }
     CHK_PRT_RET((offset + length > buffLen_),
         HCCL_ERROR("[HDCommunicate][Put]Invalid length, offset=%u, length=%u", offset, length), HCCL_E_PARA);
-    std::unique_lock<std::mutex> lock(lock_);
+    ReadWriteLock lock(lock_);
     return Write(offset, length, value);
 }
 
@@ -151,7 +151,7 @@ HcclResult HDCommunicate::Get(u32 offset, u32 length, u8 *value)
     CHK_PRT_RET((offset + length > buffLen_),
         HCCL_ERROR("[HDCommunicate][Get]Invalid length, offset=%u, length=%u, befferLen=%u", offset, length, buffLen_),
         HCCL_E_PARA);
-    std::unique_lock<std::mutex> lock(lock_);
+    ReadWriteLock lock(lock_);
     return Read(offset, length, value);
 }
 
