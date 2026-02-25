@@ -82,6 +82,7 @@ private:
     // 获得op-unfold key for cache
     HcclResult GetOpUnfoldKey(const OpParam &param, OpUnfoldKey& key, const HcclTopoInfo& topoinfo,
         const AlgOpContext& algContext, const HcclWorkflowMode workflowMode);
+    HcclResult IsBigCountForAlltoallv(const OpParam &param, const HcclTopoInfo& topoinfo, bool& isBigCount);
     
     // 准备user input/output memory ranges
     HcclResult PrepareUserMemRanges(const OpParam &param, const AlgResourceResponse &algResource,

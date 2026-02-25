@@ -38,7 +38,6 @@ BUILD_CB_TEST="false"
 ENABLE_UT="off"
 ENABLE_ST="off"
 CMAKE_BUILD_TYPE="Debug"
-ASCEND_3RD_LIB_PATH="${CURRENT_DIR}/output/third_party"
 HCOMM_LIB_NAME="libhcomm.so"
 INSTALL_XML_FILE="${CURRENT_DIR}/scripts/package/module/ascend/CommLib.xml"
 ORION_HCCL_V2="<file value=\"libhccl_v2.so\" file_type=\"shared\" release_type=\"debug\"/>"
@@ -46,7 +45,7 @@ ORION_ALG_FRAME="<file value=\"libhccl_v2_alg_frame.so\" file_type=\"shared\" re
 ORION_ALG_REPO="<file value=\"libhccl_v2_native_alg_repo.so\" file_type=\"shared\" release_type=\"debug\"/>"
 ORION_AIV_OP="<file value=\"hccl_aiv_op_910_95.o\"/>"
 DPU_INSTALL_PATH="opp/built-in/op_impl/dpu"
-DPU_JSON="<file value=\"ccl_dpu.json\"/>"
+DPU_JSON="<file value=\"libccl_dpu.json\"/>"
 DPU_LIB="<file value=\"libccl_dpu.so\" file_type=\"shared\" install_softlink=\"\$(TARGET_ENV)/lib64/libccl_dpu.so\"/>"
 
 if [ "${USER_ID}" != "0" ]; then
@@ -209,7 +208,7 @@ function build_ut() {
               -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
               -DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR} \
               -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH} \
-              -DASCEND_3RD_LIB_PATH=${ASCEND_3RD_LIB_PATH} \
+              -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} \
               -DENABLE_COV=${ENABLE_COV} \
               -DENABLE_TEST=${ENABLE_TEST} \
               -DENABLE_UT=${ENABLE_UT} \
@@ -247,7 +246,7 @@ function make_ut_gov() {
     mkdir -p ${CURRENT_DIR}/cov
     lcov -c -d ${BUILD_DIR}/test/ut/ -o cov/tmp.info
     LCOV_COMMAND="lcov -r cov/tmp.info ${CURRENT_DIR}src/* -o cov/coverage.info" && ${LCOV_COMMAND}
-    # lcov -r cov/tmp.info "/usr/*" "${OUTPUT_PATH}/*" "${BASEPATH}/test/*" "${ASCEND_INSTALL_PATH}/*" "${ASCEND_3RD_LIB_PATH}/*" -o cov/coverage.info
+    # lcov -r cov/tmp.info "/usr/*" "${OUTPUT_PATH}/*" "${BASEPATH}/test/*" "${ASCEND_INSTALL_PATH}/*" "${CANN_3RD_LIB_PATH}/*" -o cov/coverage.info
 
     cd ${CURRENT_DIR}/cov
     genhtml coverage.info

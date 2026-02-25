@@ -169,10 +169,10 @@ void TpManager::StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param,
         reqCtx.tpInfoNum);
 }
 
-inline TpInfo ParseTpInfo(const struct tp_info *infoPtr)
+inline TpInfo ParseTpInfo(const struct HccpTpInfo *infoPtr)
 {
     TpInfo tpInfo;
-    tpInfo.tpHandle = infoPtr->tp_handle;
+    tpInfo.tpHandle = infoPtr->tpHandle;
 
     return tpInfo;
 }
@@ -187,8 +187,8 @@ HcclResult TpManager::HandleCompletedRequest(const TpManager::RequestCtx reqCtx,
         return HcclResult::HCCL_E_NOT_FOUND;
     }
 
-    const struct tp_info *baseInfoPtr = // 类的私有变量vector指向的堆内存，不会为空
-        reinterpret_cast<const struct tp_info *>(reqCtx.dataBuffer.data());
+    const struct HccpTpInfo *baseInfoPtr = // 类的私有变量vector指向的堆内存，不会为空
+        reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
 
     TpInfo tmpTpInfo = ParseTpInfo(baseInfoPtr); // 封装接口只会申请1个tpHandle
 

@@ -317,7 +317,7 @@ HcclResult TransportHeterogRoce::Imrecv(const TransData &recvData, HcclMessageIn
         dataReadWr_.next = nullptr;
 
         if (!(remoteIsHdc_ && (deviceLogicId_ == HOST_DEVICE_ID))) {
-            HCCL_INFO("general server not load ack !!!");
+            HCCL_INFO("general server not load ack ");
             dataReadWr_.next = &dataAckWr_;
             dataAckSge_.addr = reinterpret_cast<uint64_t>(&envelope.msn);
             dataAckSge_.length = sizeof(uint64_t);

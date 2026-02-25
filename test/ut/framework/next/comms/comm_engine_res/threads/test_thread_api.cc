@@ -12,6 +12,7 @@
 #include "hcomm_c_adpt.h"
 #include "local_notify_impl.h"
 #include "aicpu_launch_manager.h"
+#include "llt_hccl_stub_rank_graph.h"
 class TestHcclThread : public BaseInit {
 public:
     void SetUp() override {
@@ -405,7 +406,8 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_CpuTsThread_Return_HCCL
         .with(outBound(isDeviceSide))
         .will(returnValue(HCCL_SUCCESS));  
     void* commV2 = (void*)0x2000;
-    void* rankGraph = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
     u32 rank = 1;
     HcclMem cclBuffer;
     cclBuffer.size = 1;
@@ -415,7 +417,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_CpuTsThread_Return_HCCL
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
-    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraph, rank, cclBuffer, commName, &config);
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -442,7 +444,8 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_AicpuTsThread_Return_HC
         .will(returnValue(0));  
     
     void* commV2 = (void*)0x2000;
-    void* rankGraph = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
     u32 rank = 1;
     HcclMem cclBuffer;
     cclBuffer.size = 1;
@@ -452,7 +455,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_AicpuTsThread_Return_HC
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
-    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraph, rank, cclBuffer, commName, &config);
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -503,7 +506,8 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_ThreadNullptr_Return_HCCL_E_PTR
         .will(returnValue(0));  
     
     void* commV2 = (void*)0x2000;
-    void* rankGraph = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
     u32 rank = 1;
     HcclMem cclBuffer;
     cclBuffer.size = 1;
@@ -513,7 +517,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_ThreadNullptr_Return_HCCL_E_PTR
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
-    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraph, rank, cclBuffer, commName, &config);
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle *thread{nullptr};
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -573,7 +577,8 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_engineResMgrNullptr_Return_HCCL
         .will(returnValue(0));  
     
     void* commV2 = (void*)0x2000;
-    void* rankGraph = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
     u32 rank = 1;
     HcclMem cclBuffer;
     cclBuffer.size = 1;
@@ -583,7 +588,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_engineResMgrNullptr_Return_HCCL
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
-    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraph, rank, cclBuffer, commName, &config);
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -604,7 +609,8 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_Normal_Return_HCCL_Succe
         .will(returnValue(HCCL_SUCCESS));  
 
     void* commV2 = (void*)0x2000;
-    void* rankGraph = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
     u32 rank = 1;
     HcclMem cclBuffer;
     cclBuffer.size = 1;
@@ -614,7 +620,7 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_Normal_Return_HCCL_Succe
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
-    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraph, rank, cclBuffer, commName, &config);
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread[2];
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -645,7 +651,8 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_CommNullptr_Return_HCCL_
         .will(returnValue(HCCL_SUCCESS));  
 
     void* commV2 = (void*)0x2000;
-    void* rankGraph = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
     u32 rank = 1;
     HcclMem cclBuffer;
     cclBuffer.size = 1;
@@ -655,7 +662,7 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_CommNullptr_Return_HCCL_
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
-    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraph, rank, cclBuffer, commName, &config);
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread[2];
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -686,7 +693,8 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_notifyNumNullptr_Return_
         .will(returnValue(HCCL_SUCCESS));  
 
     void* commV2 = (void*)0x2000;
-    void* rankGraph = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
     u32 rank = 1;
     HcclMem cclBuffer;
     cclBuffer.size = 1;
@@ -696,7 +704,7 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_notifyNumNullptr_Return_
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
-    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraph, rank, cclBuffer, commName, &config);
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread[2];
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -750,7 +758,8 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_engineResMgrNullptr_Retu
     .stubs()
     .will(returnValue(0));  
     void* commV2 = (void*)0x2000;
-    void* rankGraph = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
     u32 rank = 1;
     HcclMem cclBuffer;
     cclBuffer.size = 1;
@@ -760,7 +769,7 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_engineResMgrNullptr_Retu
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
-    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraph, rank, cclBuffer, commName, &config);
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread[2];
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -788,7 +797,8 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquireWithStream_When_Acquire_CpuTsThread_R
     void* rtStream = stream->ptr();
 
     void* commV2 = (void*)0x2000;
-    void* rankGraph = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
     u32 rank = 1;
     HcclMem cclBuffer;
     cclBuffer.size = 1;
@@ -798,7 +808,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquireWithStream_When_Acquire_CpuTsThread_R
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
-    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraph, rank, cclBuffer, commName, &config);
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -883,7 +893,8 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquireWithStream_When_CollcommNullptr_Retur
     void* rtStream = stream->ptr();
 
     void* commV2 = (void*)0x2000;
-    void* rankGraph = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
     u32 rank = 1;
     HcclMem cclBuffer;
     cclBuffer.size = 1;
@@ -917,7 +928,8 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquireWithStream_When_engineResMgrNullptr_R
     void* rtStream = stream->ptr();
 
     void* commV2 = (void*)0x2000;
-    void* rankGraph = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
     u32 rank = 1;
     HcclMem cclBuffer;
     cclBuffer.size = 1;
@@ -927,7 +939,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquireWithStream_When_engineResMgrNullptr_R
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
-    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraph, rank, cclBuffer, commName, &config);
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -951,7 +963,8 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquireWithStream_When_A3_Acquire_CpuTsThrea
     void* rtStream = stream->ptr();
 
     void* commV2 = (void*)0x2000;
-    void* rankGraph = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
     u32 rank = 1;
     HcclMem cclBuffer;
     cclBuffer.size = 1;
@@ -984,7 +997,8 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_41_AicpuTsThread_Return
         .will(returnValue(0));  
     
     void* commV2 = (void*)0x2000;
-    void* rankGraph = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
     u32 rank = 1;
     HcclMem cclBuffer;
     cclBuffer.size = 1;
@@ -994,7 +1008,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_41_AicpuTsThread_Return
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
-    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraph, rank, cclBuffer, commName, &config);
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
@@ -1021,7 +1035,8 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_65Notify_AicpuTsThread_
         .will(returnValue(0));  
     
     void* commV2 = (void*)0x2000;
-    void* rankGraph = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
     u32 rank = 1;
     HcclMem cclBuffer;
     cclBuffer.size = 1;
@@ -1031,7 +1046,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_65Notify_AicpuTsThread_
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
-    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraph, rank, cclBuffer, commName, &config);
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());

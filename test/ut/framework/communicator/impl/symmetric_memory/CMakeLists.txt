@@ -46,7 +46,7 @@ target_link_directories(hccl_utest_framework_symmetric_memory PRIVATE
 target_link_libraries(hccl_utest_framework_symmetric_memory PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
-    -lpthread
+    -pthread
     hccl_llt
     -Wl,--whole-archive
     -Wl,--no-whole-archi

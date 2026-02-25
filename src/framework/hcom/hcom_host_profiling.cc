@@ -27,7 +27,6 @@ extern HcclResult HcommProfilingReportKernel(uint64_t beginTime, const char *pro
 // 上报acl host
 extern HcclResult HcommProfilingReportOp(HcomProInfo profInfo)
 {
-    HCCL_INFO("[%s] GetIfProfile() = [%u]", __func__, GetIfProfile());
     // 数据恢复
     HcclCMDType cmdTypeTemp = static_cast<HcclCMDType>(profInfo.cmdType);
     HcclDataType dataTypeTemp = static_cast<HcclDataType>(profInfo.dataType);
@@ -41,10 +40,8 @@ extern HcclResult HcommProfilingReportOp(HcomProInfo profInfo)
     HCCL_INFO("[%s] cmdType[%u], dataType[%u], groupName[%llu], groupNameStr[%s], algTypeStr[%s], blockDim[%u]",
                 __func__, cmdTypeTemp, dataTypeTemp, groupName, profInfo.commName, profInfo.algType, profInfo.blockDim);
 
-    if (GetIfProfile()) {
-        CHK_RET_AND_PRINT_IDE(ProfilingManagerPub::CallMsprofReportHostApi(cmdTypeTemp, profInfo.beginTime, profInfo.dataCount, dataTypeTemp, algType,
-                                                                           groupName, profInfo.blockDim), profInfo.commName);
-    }
+    CHK_RET_AND_PRINT_IDE(ProfilingManagerPub::CallMsprofReportHostApi(cmdTypeTemp, profInfo.beginTime, profInfo.dataCount, dataTypeTemp, algType,
+                                                                        groupName, profInfo.blockDim), profInfo.commName);
     return HCCL_SUCCESS;
 }
 

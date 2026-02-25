@@ -892,18 +892,18 @@ int ibv_req_notify_cq(struct ibv_cq *cq, int solicited_only)
 	return 0;
 }
 
-extern struct RsQpCb qp_cb_tmp2;
+extern struct RsQpCb qpCbTmp2;
 
 int ibv_get_cq_event_stub(struct ibv_comp_channel *channel, struct ibv_cq **cq, void **cq_context)
 {
-	*cq = qp_cb_tmp2.ibSendCq;
+	*cq = qpCbTmp2.ibSendCq;
 	return 0;
 }
 
-extern char *s_tmp;
+extern char *sTmp;
 const char *ibv_wc_status_str(enum ibv_wc_status status)
 {
-	return s_tmp;
+	return sTmp;
 }
 
 const char *ibv_get_device_name(struct ibv_device *device)
