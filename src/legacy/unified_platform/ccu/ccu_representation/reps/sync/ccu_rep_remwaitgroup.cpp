@@ -27,12 +27,18 @@ bool CcuRepWaitGroup::Translate(CcuInstr *&instr, uint16_t &instrId, const Trans
     this->instrId = instrId;
     translated    = true;
     u32 cntCkeId;
-
+    HcclResult ret = transportGroup.GetCntCkeId(semIndex, cntCkeId);
+    if (ret != HCCL_SUCCESS) {
+ 	    string msg = StringFormat("[Translate]rt get CntCkeId failed. "
+ 	                                "cntCkeId[%u] return[%d].", cntCkeId, ret);
+ 	    MACRO_THROW(CcuApiException, msg);
+ 	}
+    
     // 需要profiling的使用SetCKEInstr, 否则使用ClearCKEInstr
     if (isProfiling) {
-        SetCKEInstr(instr++, 0, 0, transportGroup.GetCntCkeId(semIndex, cntCkeId), mask, 1);
+        SetCKEInstr(instr++, 0, 0, cntCkeId, mask, 1);
     } else {
-        ClearCKEInstr(instr++, 0, 0, transportGroup.GetCntCkeId(semIndex, cntCkeId), mask, 1);
+        ClearCKEInstr(instr++, 0, 0, cntCkeId, mask, 1);
     }
     CHK_PRT_THROW((instrId > UINT16_MAX - instrCount),
                         HCCL_ERROR("[CcuRepWaitGroup::Translate]uint16 integer overflow occurs, instrId = [%hu], instrCount = [%hu]", instrId, instrCount),
