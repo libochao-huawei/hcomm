@@ -11,14 +11,14 @@
 #ifndef TC_UT_RS_TLV_H
 #define TC_UT_RS_TLV_H
 
-void tc_rs_nslb_init();
-void tc_rs_nslb_deinit();
-void tc_rs_nslb_request();
-void tc_rs_epoll_nslb_event_handle();
-void tc_rs_tlv_assemble_send_data();
-void tc_rs_get_tlv_cb();
-void tc_rs_nslb_api_init();
-void tc_rs_ccu_request();
+void TcRsNslbInit();
+void TcRsNslbDeinit();
+void TcRsNslbRequest();
+void TcRsEpollNslbEventHandle();
+void TcRsTlvAssembleSendData();
+void TcRsGetTlvCb();
+void TcRsNslbApiInit();
+void TcRsCcuRequest();
 void tc_RsNslbNetcoInitDeinit();
 
 #endif

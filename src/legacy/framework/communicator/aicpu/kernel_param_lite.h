@@ -63,7 +63,6 @@ struct HcclKernelParamLite {
     HcclAicpuCommunicatorLite comm;
     HcclAicpuOpLite           op;
     char                      algName[MAX_NAME_LEN]{0};
-    bool                      needUpdateRes{false};
     bool                      oneSidedComm{false};
     char                      opTag[MAX_OP_TAG_LEN]{0};
     Hccl::HDCommunicateParams kfcControlTransferH2DParams;

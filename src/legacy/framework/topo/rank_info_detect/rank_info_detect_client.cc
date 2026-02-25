@@ -16,6 +16,7 @@
 #include "hccp_peer_manager.h"
 #include "orion_adapter_rts.h"
 #include "host_socket_handle_manager.h"
+#include "socket_manager.h"
 
 namespace Hccl {
 
@@ -35,6 +36,23 @@ void RankInfoDetectClient::Setup(RankTableInfo &rankTable)
     SendLocalRankTable(localRankTable);
     
     // 5. 接收完整rankTable
+    RecvRankTable();
+    rankTable = rankTable_;
+}
+
+void RankInfoDetectClient::Update(u32 devicePort, RankTableInfo &rankTable)
+{
+    // 1. 构造localRankTable
+    RankTableInfo localRankTable{};
+    ConstructRankTable(localRankTable);
+    for(auto &rank : localRankTable.ranks) {
+        rank.devicePort = devicePort;
+    }
+
+    // 2. 发送给root节点
+    SendLocalRankTable(localRankTable);
+    
+    // 3. 接收完整rankTable
     RecvRankTable();
     rankTable = rankTable_;
 }
@@ -99,6 +117,7 @@ void RankInfoDetectClient::SendLocalRankTable(const RankTableInfo &localRankTabl
     socketAgent_.SendMsg(sendMsg.data(), sendMsg.size());
 
     HCCL_INFO("[RankInfoDetectClient::%s] end, currentStep_[%u].", __func__, currentStep_);
+    currentStep_++;
 }
 
 void RankInfoDetectClient::ConstructSingleRank(RankTableInfo &localRankTable)
@@ -179,7 +198,6 @@ void RankInfoDetectClient::ConstructRankTable(RankTableInfo &localRankTable)
     // 4. 反序列化获得RankTableInfo
     std::string msgDeserialize = "error occurs when localRankTable Deserialize";
     TRY_CATCH_THROW(InvalidParamsException, msgDeserialize, localRankTable.Deserialize(localRankTableJson, false););
-
     HCCL_INFO("[RankInfoDetectClient::%s] end.", __func__);
 }
 

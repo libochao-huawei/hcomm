@@ -47,9 +47,9 @@ static bool CheckDieEnable(const uint32_t devPhyId, const uint8_t dieId)
     inBuff.offsetStartIdx        = 0;
     inBuff.data.dataInfo.udieIdx = dieId;
 
-    auto ret = ra_custom_channel(info,
-        reinterpret_cast<custom_chan_info_in *>(&inBuff),
-        reinterpret_cast<custom_chan_info_out *>(&outBuff));
+    auto ret = RaCustomChannel(info,
+        reinterpret_cast<CustomChanInfoIn *>(&inBuff),
+        reinterpret_cast<CustomChanInfoOut *>(&outBuff));
     if (ret != 0) {
         HCCL_WARNING("[%s] failed to get ccu die enable info, devPhyId[%u].",
             __func__, devPhyId);
@@ -113,9 +113,9 @@ static HcclResult CheckResSpecifications(const uint32_t devPhyId, const uint8_t 
     inBuff.offsetStartIdx        = 0;
     inBuff.data.dataInfo.udieIdx = dieId;
 
-    auto ret = ra_custom_channel(info,
-        reinterpret_cast<custom_chan_info_in *>(&inBuff),
-        reinterpret_cast<custom_chan_info_out *>(&outBuff));
+    auto ret = RaCustomChannel(info,
+        reinterpret_cast<CustomChanInfoIn *>(&inBuff),
+        reinterpret_cast<CustomChanInfoOut *>(&outBuff));
     if (ret != 0) {
         HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
             "devPhyId[%u] dieId[%d]", __func__, devPhyId, dieId);

@@ -98,6 +98,10 @@ int RaPeerQpDestroy(struct RaQpHandle *qpPeer);
 int RaPeerTypicalQpModify(struct RaQpHandle *qpPeer, struct TypicalQp *localQpInfo,
     struct TypicalQp *remoteQpInfo);
 
+int RaPeerSetQpLbValue(struct RaQpHandle *qpHandle, int lbValue);
+
+int RaPeerGetQpLbValue(struct RaQpHandle *qpHandle, int *lbValue);
+
 int RaPeerQpConnectAsync(struct RaQpHandle *qpPeer, const void *sockHandle);
 
 int RaPeerGetQpStatus(struct RaQpHandle *qpPeer, int *status);
@@ -134,6 +138,8 @@ int RaPeerGetIfaddrs(unsigned int phyId, struct InterfaceInfo interfaceInfos[], 
 
 int RaPeerRdevInit(
     struct RaRdmaHandle *rdmaHandle, unsigned int notifyType, struct rdev rdevInfo, unsigned int *rdevIndex);
+
+int RaPeerGetLbMax(struct RaRdmaHandle *rdmaHandle, int *lbMax);
 
 int RaPeerRdevDeinit(struct RaRdmaHandle *rdmaHandle, unsigned int notifyType);
 

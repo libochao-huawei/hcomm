@@ -11,8 +11,6 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/config.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/param_check.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/json_utils.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/read_write_lock_base.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/read_write_lock.cc
 )
 
 target_sources(hcomm PRIVATE

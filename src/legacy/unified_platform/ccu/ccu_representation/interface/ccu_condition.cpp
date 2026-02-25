@@ -38,7 +38,7 @@ Condition::Condition(CcuRepContext *context, CcuRelationalOperator<Variable, uin
 
 Condition::~Condition()
 {
-    AppendToContext(context, endLabel);
+    DECTOR_TRY_CATCH("Condition", AppendToContext(context, endLabel));
 }
 
 bool Condition::Check() const

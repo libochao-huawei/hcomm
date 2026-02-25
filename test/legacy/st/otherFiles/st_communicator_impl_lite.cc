@@ -196,7 +196,6 @@ TEST_F(CommunicatorImplLiteTest, test_update_comm_with_hccl_exception)
     CommunicatorImplLite service(0);
     service.isSuspended = false;
     HcclKernelParamLite param;
-    param.needUpdateRes = true;
 
     MOCKER(memcpy_s).stubs().will(returnValue(-1));
     auto ret = service.UpdateComm(&param);
@@ -266,13 +265,11 @@ TEST_F(CommunicatorImplLiteTest, test_update_comm_success)
     // 不需要更新资源
     service.isSuspended = true;
     HcclKernelParamLite kernelParam;
-    kernelParam.needUpdateRes = false;
     auto ret = service.UpdateComm(&kernelParam);
     EXPECT_EQ(ret, 0);
 
     // 需要更新资源
     service.isSuspended = true;
-    kernelParam.needUpdateRes = true;
 
     std::vector<ModuleData> dataVec;
     dataVec.resize(AicpuResMgrType::__COUNT__);
@@ -297,7 +294,6 @@ TEST_F(CommunicatorImplLiteTest, test_UpdateLocBuffer_ranksize1_batchsendrecv)
     HcclKernelParamLite kernelParam;
  
     kernelParam.comm.rankSize = 4;
-    kernelParam.needUpdateRes = true;
     strncpy(kernelParam.algName, "TestAlgorithm", MAX_NAME_LEN);
     strncpy(kernelParam.opTag, "TestTag", MAX_OP_TAG_LEN);
     kernelParam.op.algOperator.opType == OpType::BATCHSENDRECV;

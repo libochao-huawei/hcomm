@@ -124,9 +124,9 @@ HcclResult ConfigJettyCtxData(const uint8_t dieId, const uint32_t devPhyId,
             &jettyCtxData[i], sizeof(struct LocalJettyCtxData));
     }
 
-    auto ret = ra_custom_channel(info,
-        reinterpret_cast<custom_chan_info_in *>(&inBuff),
-        reinterpret_cast<custom_chan_info_out *>(&outBuff));
+    auto ret = RaCustomChannel(info,
+        reinterpret_cast<CustomChanInfoIn *>(&inBuff),
+        reinterpret_cast<CustomChanInfoOut *>(&outBuff));
     if (ret != 0) {
         HCCL_ERROR("");
         return HcclResult::HCCL_E_NETWORK;
