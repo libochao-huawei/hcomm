@@ -2321,11 +2321,11 @@ HcclResult CollCommExecutor::CalExchangeRemoteRankForReduceScatter(u32 &remoteRa
     u32 userRankSize = topoAttr_.userRankSize;
     u32 l2Size = topoAttr_.superPodNum;
     CHK_PRT_RET(l2Size == 0,
-            HCCL_ERROR("[CollReduceScatterRingZerocopyExchangeExecutor][CalExchangeRemoteRank] invalid rank size, level2RankSize is 0"),
+            HCCL_ERROR("[CollCommExecutor][CalExchangeRemoteRank] invalid rank size, level2RankSize is 0"),
             HCCL_E_PARA);
     u32 l1Size = topoAttr_.serverNum / l2Size;
     CHK_PRT_RET(l1Size == 0,
-            HCCL_ERROR("[CollReduceScatterRingZerocopyExchangeExecutor][CalExchangeRemoteRank] invalid rank size, level1RankSize is 0"),
+            HCCL_ERROR("[CollCommExecutor][CalExchangeRemoteRank] invalid rank size, level1RankSize is 0"),
             HCCL_E_PARA);
     u32 l0Size = userRankSize / l1Size / l2Size;
     u32 l0Index = userRank % l0Size;
