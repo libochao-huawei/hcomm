@@ -328,6 +328,16 @@ extern int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle
  */
 extern int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout);
 
+/**
+ * @brief NPU上查询 rtsq任务执行完成的接口（阻塞）
+ * @param[in] thread NPU上执行的线程句柄
+ * @param[in] timeout 超时时间(毫秒)
+ * @return int32_t 执行结果状态码
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
+ */
+extern int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout);
+
 /** @} */  // 通知
 
 /**
