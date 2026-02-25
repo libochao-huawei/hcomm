@@ -2619,8 +2619,7 @@ namespace hccl
                                            HcclDataType dataType, HcclRtStream stream, HcomCollOpInfo *opInfo)
     {
         bool aicpuUnfoldMode = false;
-        if (GetAicpuUnfoldConfig() == true &&
-            (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
+        if (EnableAicpuUnfold() && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -2789,7 +2788,7 @@ namespace hccl
         }
 
         bool aicpuUnfoldMode = false;
-        if (GetAicpuUnfoldConfig() == true && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
+        if (EnableAicpuUnfold() && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -3364,8 +3363,8 @@ namespace hccl
         opParam.aicpuUnfoldMode = false;
         opParam.aicpuCacheEnable = 0;
         opParam.isCapture = isCapture;
-        if (deviceType_ == DevType::DEV_TYPE_910_93) {
-            opParam.aicpuUnfoldMode = GetAicpuUnfoldConfig();
+        if (EnableAicpuUnfold()) {
+            opParam.aicpuUnfoldMode = true;
             opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         }
 
@@ -4839,7 +4838,8 @@ namespace hccl
                 "RunAlltoAllVFullMesh",
                 "RunAlltoAllDirectFullmesh",
                 "RunAlltoAllVTwoLevelPipeline",
-                "RunAlltoAllVContinuousPipeline"
+                "RunAlltoAllVContinuousPipeline",
+                "RunAlltoAllVStaged"
             };
             return aicpuAlgs.count(algName) > 0;
         };
@@ -8976,5 +8976,14 @@ namespace hccl
     {
         CHK_SMART_PTR_NULL(symmetricMemory_);
         return symmetricMemory_->FindSymmetricWindow(ptr, size, winHandle, reinterpret_cast<u64*>(offset));
+    }
+
+    bool HcclCommunicator::EnableAicpuUnfold()
+    {
+        if (deviceType_ != DevType::DEV_TYPE_910_93 && deviceType_ != DevType::DEV_TYPE_910B) {
+            return false;
+        }
+
+        return GetAicpuUnfoldConfig();
     }
 }
