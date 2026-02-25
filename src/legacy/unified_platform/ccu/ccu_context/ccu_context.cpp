@@ -516,9 +516,9 @@ void CcuContext::CreateMultiOpCopy()
 
 void CcuContext::GroupCopy(CcuRep::Memory dst, CcuRep::Memory src, GroupOpSize goSize)
 {
-    Ccu::Memory tmpDst = CreateMemory();
+    CcuRep::Memory tmpDst = CreateMemory();
     tmpDst = dst;
-    Ccu::Memory tmpSrc = CreateMemory();
+    CcuRep::Memory tmpSrc = CreateMemory();
     tmpSrc = src;
 
     CreateMultiOpCopy();
