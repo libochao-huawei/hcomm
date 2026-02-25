@@ -34,6 +34,7 @@ __aicore__ inline void AivReduceScatterBigGraph910B::ReduceWithFlagWrap(__gm__ T
         if (processedBatchCount >= CeilDiv(avgSizePerSlice, UB_DB_DATA_BATCH_SIZE)) {
             break;
         }
+ 
 #ifndef OPEN_HCCL_TEST
         int32_t localFlag = CountWait(rank_, rank_);
 #else
@@ -43,22 +44,18 @@ __aicore__ inline void AivReduceScatterBigGraph910B::ReduceWithFlagWrap(__gm__ T
         flagInQue.FreeTensor(localFlagX);
 #endif 
         uint64_t localFlagValue;
-
         if (localFlag <= tag) {
             continue;
         } else {
            localFlagValue =  localFlag - tag;
         }
-
         if (localFlagValue == 0) {
             continue;
         }
-
         uint64_t preparedBatchCount = localFlagValue;
         if (processedBatchCount >= preparedBatchCount) {
             continue;
         }
-
         uint64_t curSize = (preparedBatchCount - processedBatchCount) * UB_DB_DATA_BATCH_SIZE;
         if (preparedBatchCount * UB_DB_DATA_BATCH_SIZE > avgSizePerSlice) {
             curSize = avgSizePerSlice - processedBatchCount * UB_DB_DATA_BATCH_SIZE;
@@ -66,10 +63,10 @@ __aicore__ inline void AivReduceScatterBigGraph910B::ReduceWithFlagWrap(__gm__ T
 
         set_flag(PIPE_S, PIPE_MTE2, EVENT_ID0);
         wait_flag(PIPE_S, PIPE_MTE2, EVENT_ID0);
-
+ 
         uint64_t curProcessedOffset = processedBatchCount * UB_DB_DATA_BATCH_SIZE / sizeof(T);
         CpGM2GM(cclGmSelf + curProcessedOffset, cclGmOther + curProcessedOffset, curSize / sizeof(T), true, reduceOp_);
-
+ 
         processedBatchCount = preparedBatchCount;
     }
 }
@@ -93,6 +90,7 @@ __aicore__ inline void AivReduceScatterBigGraph910B::Process(GM_ADDR input, GM_A
         // 拷贝相应的数据到output
         uint64_t freq = avgSizePerSlice >= 2 * 1024 * 1024 ? 4 : 16;
         CpGM2GMWithFlagWrap(outputGm, inputGm + inputOffset, avgLengthPerSlice, rank_, freq, tag);
+
         // 确认本端全部reduce完成
         Wait1vN((rankSize_ - 1) * tag, CommPattern::intraRank);
     } else if (targetRank != rank_) {
@@ -125,4 +123,3 @@ __aicore__ inline void aiv_reduce_scatter_910b_bigdata_graph(KERNEL_ARGS_DEF)
     op.Process<T>(input, output, len, tag);
     op.TailCounter();
 }
-

@@ -374,7 +374,7 @@ HcclResult TransportHeterogEventTcp::ReportSendComp(HcclRequestInfo *request)
 
     if (!needRepoEvent_) {
         gCompCounterEvent[devId_][HCCL_EVENT_SEND_COMPLETION_MSG].counter.fetch_add(1, std::memory_order_relaxed);
-        HCCL_INFO("TransportHeterogEventTcp Send Doesn't need SubmitEvent!!!");
+        HCCL_INFO("TransportHeterogEventTcp Send Doesn't need SubmitEvent");
         return HCCL_SUCCESS;
     }
 
@@ -399,7 +399,7 @@ HcclResult TransportHeterogEventTcp::ReportEnvelpComp(HcclEnvelopeSummary envelo
 
     if (!needRepoEvent_) {
         gCompCounterEvent[devId_][HCCL_EVENT_RECV_REQUEST_MSG].counter.fetch_add(1, std::memory_order_relaxed);
-        HCCL_INFO("TransportHeterogEventTcp Envelop Doesn't need SubmitEvent!!!");
+        HCCL_INFO("TransportHeterogEventTcp Envelop Doesn't need SubmitEvent");
         return HCCL_SUCCESS;
     }
 
@@ -423,7 +423,7 @@ HcclResult TransportHeterogEventTcp::ReportRecvComp(HcclRequestInfo *request)
 
     if (!needRepoEvent_) {
         gCompCounterEvent[devId_][HCCL_EVENT_RECV_COMPLETION_MSG].counter.fetch_add(1, std::memory_order_relaxed);
-        HCCL_INFO("TransportHeterogEventTcp Recv Doesn't need SubmitEvent!!!");
+        HCCL_INFO("TransportHeterogEventTcp Recv Doesn't need SubmitEvent");
         return HCCL_SUCCESS;
     }
 

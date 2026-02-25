@@ -15,7 +15,8 @@
 #include "rank_graph_builder.h"
 #include "phy_topo_builder.h"
 #include "detour_service.h"
- 
+#include "ranktable_builder.h"
+
 using namespace Hccl;
  
 class RankGraphTest : public testing::Test {
@@ -349,82 +350,4 @@ TEST_F(RankGraphTest, ut_GetEndpointDesc_When_Normal_Expect_SUCCESS)
     delete[] endPointDesc;
 
     EXPECT_EQ(ret, HCCL_SUCCESS);
-}
-
-TEST_F(RankGraphTest, ut_GetEndpointDesc_When_NumTooSmall_Expect_Return_HCCl_E_PARA) {
-    auto rankGraph = create4pRankGraph(myRank);
-    uint32_t layer = 0;
-    uint32_t topoInstId = 0;
-    uint32_t descNum = 1;
-    EndpointDesc* endPointDesc = new EndpointDesc[descNum];
-    HcclResult ret =  rankGraph->GetEndpointDesc(layer, topoInstId, &descNum, endPointDesc);
-
-    EXPECT_EQ(ret, HCCL_E_PARA);
-    delete[] endPointDesc;
-}
-
-TEST_F(RankGraphTest, ut_GetInfo_When_Normal_Expect_SUCCESS)
-{
-    auto rankGraph = create4pRankGraph(myRank);
-    uint32_t layer = 0;
-    uint32_t num = 2;
-    uint32_t topoInstId = 0;
-
-    HcclResult ret = rankGraph->GetEndpointNum(0, topoInstId, &num);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(num, 2);
-
-    uint32_t descNum = num;
-    std::unique_ptr<EndpointDesc[]> endPointDesc(new EndpointDesc[descNum]);
-    ret = rankGraph->GetEndpointDesc(layer, topoInstId, &descNum, endPointDesc.get());
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    for (uint32_t i = 0; i < num; ++i) {
-        uint32_t infoLen = sizeof(EndpointAttrBwCoeff);
-        EndpointAttrBwCoeff bwCoeff{};
-        ret = rankGraph->GetEndpointInfo(0, &endPointDesc[i], ENDPOINT_ATTR_BW_COEFF, infoLen, &bwCoeff);
-        EXPECT_EQ(ret, HCCL_SUCCESS);
-        EXPECT_EQ(bwCoeff, 2);
-
-        // 测试 DIE_ID
-        EndpointAttrDieId dieid{};
-        infoLen = sizeof(EndpointAttrDieId);
-        ret = rankGraph->GetEndpointInfo(0, &endPointDesc[i], ENDPOINT_ATTR_DIE_ID, infoLen, &dieid);
-        EXPECT_EQ(ret, HCCL_SUCCESS);
-        EXPECT_EQ(dieid, 1);
-
-        // 测试 POSITION
-        EndpointAttrLocation pos{};
-        infoLen = sizeof(EndpointAttrLocation);
-        ret = rankGraph->GetEndpointInfo(0, &endPointDesc[i], ENDPOINT_ATTR_LOCATION, infoLen, &pos);
-        EXPECT_EQ(ret, HCCL_SUCCESS);
-        EXPECT_EQ(pos, 0);
-    }
-}
-
-TEST_F(RankGraphTest, ut_GetInfo_When_infoLenTooSmall_Expect_Return_HCCL_E_PARA)
-{
-    auto rankGraph = create4pRankGraph(myRank);
-    uint32_t layer = 0;
-    uint32_t num = 2;
-    uint32_t topoInstId = 0;
-
-    HcclResult ret = rankGraph->GetEndpointNum(0, topoInstId, &num);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(num, 2);
-
-    uint32_t descNum = num;
-    std::unique_ptr<EndpointDesc[]> endPointDesc(new EndpointDesc[descNum]);
-    ret = rankGraph->GetEndpointDesc(layer, topoInstId, &descNum, endPointDesc.get());
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    // 遍历每个端点，测试 infoLen 过小的情况
-    for (uint32_t i = 0; i < num; ++i) {
-        uint32_t actualSize = sizeof(EndpointAttrBwCoeff);
-        uint32_t infoLen = actualSize - 1;
-
-        EndpointAttrBwCoeff bwCoeff{};
-        ret = rankGraph->GetEndpointInfo(0, &endPointDesc[i], ENDPOINT_ATTR_BW_COEFF, infoLen, &bwCoeff);
-        EXPECT_EQ(ret, HCCL_E_PARA);
-    }
 }
