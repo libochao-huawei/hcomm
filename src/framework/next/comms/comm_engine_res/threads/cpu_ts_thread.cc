@@ -172,6 +172,10 @@ HcclResult CpuTsThread::LaunchTask() const
 }
 
 // Local Data Plane Functions
+HcclResult CpuTsThread::ThreadNotifyRecordCrossType(const NotifyEntity notifyEntity) const
+{
+    return HCCL_E_NOT_SUPPORT;
+}
 HcclResult CpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
 {
     return HCCL_E_NOT_SUPPORT;
