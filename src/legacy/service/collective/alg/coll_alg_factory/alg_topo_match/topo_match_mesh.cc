@@ -61,8 +61,8 @@ HcclResult TopoMatchMesh::MatchTopo(std::vector<std::vector<RankId>> &vTopo, std
     } else if (levelSet.size() == COMM_LEVEL_SIZE_2) {
         CHK_RET(MeshTopoForAllLevel());
     } else {
-        HCCL_ERROR("[CollAlgFactory] [TopoMatchMesh] Rank [%d], deviceType [%s] not supported yet.",
-            myRank_, DevTypeToString(devType_).c_str());
+        HCCL_ERROR("[CollAlgFactory] [TopoMatchMesh] Rank [%d], levelSet size [%zu] not supported yet.",
+            myRank_, levelSet.size());
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
     virtRanks = rankIds_;

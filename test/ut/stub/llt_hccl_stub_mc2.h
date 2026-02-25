@@ -199,47 +199,47 @@ extern __attribute__((default)) status_t GetTaskAndStreamId(uint64_t &taskId, ui
 }
 
 struct HcclMsgV1ForTest {
-    HcclCMDType commType;      // ͨ��ԭ�����ͣ�AllReduce/AllGather.../Finalize/InterHcclGroupSync
-    HcclReduceOp opType;        // reduce�������ͣ�sum/prod/max/min
-    uint64_t sendBuffer;        // Դ����buffer��ַ��
-    uint64_t recvBuffer;        // Ŀ������buffer��ַ
-    uint64_t dataCnt;           // ������������ݸ���
-    uint64_t strideCount;       // ���������ݽ��һ���������ģ��зֶ��ֺ�ᵼ����Ҫ����stride������AllGather��stride��ÿ�����ϵ�����������
-    uint64_t ccOpTilingData;    // ��Ϣ��tiling��Ϣ
-    uint32_t valid;             // �����Ϣ��Ч��
-    HcclDataType hcclDataType;  // �����������������
-    uint8_t repeatCnt;          // ����Ϣ��Ҫ�ظ��Ĵ�����Ĭ����1
-    HcclHandle selfHandleID;    // ͨ����Ϣ��Ӧ��handleIdֵ
-    uint8_t seqNum;             // ��Ϣ���
-    uint8_t version;            // ��Ϣ�İ汾��Ϣ��version=1ʹ��hcclMsgV1
+    HcclCMDType commType;       // 通信原语类型,Allreduce/Allgather../Finalize/InterHcclGroupSync
+    HcclReduceOp opType;        // reduce操作类型，sum/prod/max/min
+    uint64_t sendBuffer;        // 源数据buffer地址
+    uint64_t recvBuffer;        // 目的数据buffer地址
+    uint64_t dataCnt;           // 参与操作的数据个数
+    uint64_t strideCount;       // 完整的数据结果一般是连续的，切分多轮后会导致需要加上stride，例如Allgather的stride是每个卡上的完整数据量
+    uint64_t ccOpTilingData;    // 消息的tiling信息
+    uint32_t valid;             // 检查消息有效性
+    HcclDataType hcclDataType;  // 参与操作的数据类型
+    uint8_t repeatCnt;          // 本消息需要重复的次数，默认是1
+    HcclHandle selfHandleID;    // ͨ通信消息对应的handileId值
+    uint8_t seqNum;             // 消息序号
+    uint8_t version;            // 消息的版本信息，version=1使用hcclMsgV1
     uint32_t xorCheck;          // xor checksum
 };
 
 struct HcclMsgForTest {
-    HcclCMDType commType;          // ͨ��ԭ�����ͣ�AllReduce/AllGather.../Finalize/InterHcclGroupSync
-    HcclReduceOp opType;            // reduce�������ͣ�sum/prod/max/min
-    uint64_t sendBuffer;            // Դ����buffer��ַ��
-    uint64_t recvBuffer;            // Ŀ������buffer��ַ
-    uint64_t dataCnt;               // ������������ݸ���
-    uint64_t strideCount;           // ���������ݽ��һ���������ģ��зֶ��ֺ�ᵼ����Ҫ����stride������AllGather��stride��ÿ�����ϵ�����������
-    HcclDataType hcclDataType;      // �����������������
-    uint32_t p2pSrcDestRankId;      // ��Ե�ͨ��send/recv�Զ˵�rankId��send�е�destRank, recv�е�srcRank
+    HcclCMDType commType;           // 通信原语类型,Allreduce/Allgather../Finalize/InterHcclGroupSync
+    HcclReduceOp opType;            // reduce操作类型，sum/prod/max/min
+    uint64_t sendBuffer;            // 源数据buffer地址
+    uint64_t recvBuffer;            // 目的数据buffer地址
+    uint64_t dataCnt;               // 参与操作的数据个数
+    uint64_t strideCount;           // 完整的数据结果一般是连续的，切分多轮后会导致需要加上stride，例如Allgather的stride是每个卡上的完整数据量
+    HcclDataType hcclDataType;      // 参与操作的数据类型
+    uint32_t p2pSrcDestRankId;      // 点对点通信send/recv对端的rankId,send中的destRank,recv中的srcRank
 
-    uint32_t valid;                 // �����Ϣ��Ч��
-    uint8_t repeatCnt;              // ����Ϣ��Ҫ�ظ��Ĵ�����Ĭ����1
-    uint8_t everyTurnRsp;           // ÿ�ֶ���Ҫ�ȴ�ִ�н���������Ӧ����ִ����һ��
-    uint8_t everyTurnWait;          // ÿ�ֶ���Ҫ�ȴ�work��Ϣ��ִ��
-    HcclHandle commDepGroupID;      // ����Ϣִ����Ҫ�ȴ���ͨ������id��Ĭ����-1����ʾ����Ҫ�ȴ�����������notify������ͨ������id
-    HcclHandle commDepHandleID;     // ����Ϣִ����Ҫ�ȴ���ͨ�����ִΣ�Ĭ����-1����ʾ����Ҫ�ȴ�����������notify�����ĵ�ַ
-    HcclHandle selfHandleID;        // ͨ����Ϣ��Ӧ��handleIdֵ
-    uint8_t seqNum;                 // ��Ϣ���
-    uint8_t version;                // ��Ϣ�İ汾��Ϣ��version=0ʹ��hcclMsg
+    uint32_t valid;                 // 检查消息有效性
+    uint8_t repeatCnt;              // 本消息需要重复的次数，默认是1
+    uint8_t everyTurnRsp;           // 每轮都需要等待执行结束发送响应，再执行下一轮
+    uint8_t everyTurnWait;          // 每轮都需要等待work消息再执行
+    HcclHandle commDepGroupID;      // 本消息执行需要等待的通信域组id,默认是-1，表示不需要等待，用于设置notify监听的通信域组id
+    HcclHandle commDepHandleID;     // 本消息执行需要等待的通信域组轮次,默认是-1，表示不需要等待，用于设置notify监听的地址
+    HcclHandle selfHandleID;        // ͨ通信消息对应的handileId值
+    uint8_t seqNum;                 // 消息序序号
+    uint8_t version;                // 消息的版本信息，version=1使用hcclMsgV1
     uint32_t xorCheck;              // xor checksum
 };
 
 struct HcclMsgAreaForTest {
-    HcclMsgForTest sendMsgList[HcclApi::HCCL_MSG_CNT];  // ������Ϣ����
-    HcclMsgForTest recvMsgList[HcclApi::HCCL_MSG_CNT];  // ������Ϣ���У�Ϊ�˱������˺Ϳͻ���ͬʱд
+    HcclMsgForTest sendMsgList[HcclApi::HCCL_MSG_CNT];  // 发送消息队列
+    HcclMsgForTest recvMsgList[HcclApi::HCCL_MSG_CNT];  // 接受消息队列，为了避免服务端和客户端同时写
     uint8_t reserved0[8 * HcclApi::BYTE_PER_KB];    // for abi compatibility
     HcclApi::TurnCnt commitTurnCnt[HcclApi::HCCL_MSG_CNT];
     HcclApi::TurnCnt finishedTurnCnt[HcclApi::HCCL_MSG_CNT];

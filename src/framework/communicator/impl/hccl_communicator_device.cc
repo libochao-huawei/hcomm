@@ -894,6 +894,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::BuildAiRmaInfoParam(const std::string &newTag, const std::string &algName, const HcclCMDType opType)
+    {
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::BuildAicpuOrderLaunchNotify()
     {
         return HCCL_SUCCESS;
@@ -1015,6 +1020,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::CopyHostAirmaInfoToDeviceParam(const std::string &newTag, const HcclCMDType opType, const rtStream_t aiCpuStream)
+    {
+        return HCCL_SUCCESS;
+    }
+ 
     HcclResult HcclCommunicator::CopyHostOpResToDeviceParam(const std::string &newTag)
     {
         return HCCL_SUCCESS;
@@ -1022,7 +1032,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::BuildOpResParam(
         const std::string &algName, const AlgResourceResponse &algResource, const std::string &newTag,
-        const HcclCMDType opType)
+        const HcclCMDType opType, const rtStream_t aicpuStream)
     {
         return HCCL_SUCCESS;
     }

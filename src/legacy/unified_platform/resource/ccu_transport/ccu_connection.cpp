@@ -379,9 +379,9 @@ void CcuConnection::UpdateExchangeStatus()
 
     for (size_t i = 0; i < jettyNum; i++) {
         auto &outParam = importJettyCtxs[i].outParam;
-        struct qp_import_info_t *infoPtr = reinterpret_cast<qp_import_info_t *>(reqDataBuffers[i].data());
+        struct QpImportInfoT *infoPtr = reinterpret_cast<QpImportInfoT *>(reqDataBuffers[i].data());
         outParam.handle        = reinterpret_cast<TargetJettyHandle>(remoteJettyHandlePtrs[i]);
-        outParam.targetJettyVa = infoPtr->out.ub.tjetty_handle; // 该信息当前未使用
+        outParam.targetJettyVa = infoPtr->out.ub.tjettyHandle; // 该信息当前未使用
         outParam.tpn           = infoPtr->out.ub.tpn;
     }
     isJettyImported = true;
