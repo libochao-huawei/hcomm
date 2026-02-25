@@ -125,6 +125,8 @@ HcclResult __attribute__((weak)) HcclCommActivateCommMemoryV2(HcclComm comm, voi
 HcclResult __attribute__((weak)) HcclCommDeactivateCommMemoryV2(HcclComm comm, void *virPtr);
 
 HcclResult __attribute__((weak)) HcommFlushV2();
+
+uint32_t __attribute__((weak)) HcclGetCommConfigCapabilityV2();
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
 HcclResult __attribute__((weak)) HcclGetNetLayersV2(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum);
 

@@ -520,8 +520,6 @@ HcclResult AllReduceMultiDeterPipeline::Prepare(HcomCollOpInfo *opInfo, DeviceMe
     usrInMemPtr_ = opInfo_->inputAddr;
     usrOutMemPtr_ = opInfo_->outputAddr;
     reductionOp_ = opInfo_->reduceOp;
-    HCCL_INFO("[%s] opInfo: dataType[%u], unitSize[%u], memSliceSize[%u], usrInMem[%p], usrOutMem[%p], reductionOp[%u]",
-        __func__, dataType_, unitSize_, memSliceSize_, usrInMemPtr_, usrOutMemPtr_, reductionOp_);
 
     // stream
     mainStream_ = mainStream;
@@ -562,6 +560,7 @@ HcclResult AllReduceMultiDeterPipeline::Prepare(HcomCollOpInfo *opInfo, DeviceMe
     isLastRank_ = (userRank_ == userRankSize_ - 1) ? true : false;
     // serverSize_是偶数，与正常allreduce pipeline中的allgather pipeline流程一样；若为奇数，则颠倒内存
     serverSizeParity_ = (serverSize_ % PARITY_BASE == 0) ? 1 : 0;
+    perRankAvgDataSize_ = count * unitSize_ / userRankSize_;
     if (slices_.size() != userRankSize_) {
         HCCL_ERROR("[%s] slices size[%llu] not match userRankSize[%u]", __func__, slices_.size(), userRankSize_);
         return HCCL_E_INTERNAL;
@@ -569,6 +568,11 @@ HcclResult AllReduceMultiDeterPipeline::Prepare(HcomCollOpInfo *opInfo, DeviceMe
     HCCL_INFO("[%s] this time: bufferSize[%u], count[%u], curSize[%u], lastSize[%u], slicesNum[%u] "
         "serverSizeParity[%u]", __func__, bufferSize_, count_, curSize_, lastSize_, slices_.size(), serverSizeParity_);
     return HCCL_SUCCESS;
+}
+
+u64 AllReduceMultiDeterPipeline::GetLocalReduceSerialThresh()
+{
+    return perRankAvgDataSize_;
 }
 
 REGISTER_TEMPLATE(TemplateType::TEMPLATE_ALL_REDUCE_MULTI_DETERMINISTIC_PIPELINE, AllReduceMultiDeterPipeline);
