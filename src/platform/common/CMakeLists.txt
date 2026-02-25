@@ -24,6 +24,8 @@ set(src_list
     dlprof_func.cc
     dltrace_function.cc
     dlhns_function.cc
+    read_write_lock_base.cc
+    read_write_lock.cc
 )
 
 target_sources(hccl_plf PRIVATE

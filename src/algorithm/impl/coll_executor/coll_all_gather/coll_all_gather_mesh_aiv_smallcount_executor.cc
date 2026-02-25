@@ -149,7 +149,7 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::GetAivExecParam(const OpParam
     args.dataType = param.DataDes.dataType;
     args.unitSize = SIZE_TABLE[param.DataDes.dataType];
     args.reduceOp = param.reduceType;
-
+    args.devType = static_cast<u32>(topoAttr_.deviceType);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollAllGatherMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);

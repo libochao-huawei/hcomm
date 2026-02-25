@@ -13,19 +13,19 @@
 
 #include "ccu_u_api.h"
 
-struct rs_ccu_ops {
-    int (*rs_ccu_init)(void);
-    int (*rs_ccu_uninit)(void);
-    int (*rs_ccu_custom_channel)(const struct channel_info_in *in, struct channel_info_out *out);
-    unsigned long long (*rs_ccu_get_cqe_base_addr)(unsigned int die_id);
+struct RsCcuOps {
+    int (*rsCcuInit)(void);
+    int (*rsCcuUninit)(void);
+    int (*rsCcuCustomChannel)(const struct channel_info_in *in, struct channel_info_out *out);
+    unsigned long long (*rsCcuGetCqeBaseAddr)(unsigned int dieId);
 };
 
-int rs_ccu_api_init(void);
-void rs_ccu_api_deinit(void);
+int RsCcuApiInit(void);
+void RsCcuApiDeinit(void);
 
-int rs_ccu_init(void);
-int rs_ccu_uninit(void);
-int rs_ccu_custom_channel(const struct channel_info_in *in, struct channel_info_out *out);
-int rs_ccu_get_cqe_base_addr(unsigned int die_id, unsigned long long *cqe_base_addr);
+int RsCcuInit(void);
+int RsCcuUninit(void);
+int RsCcuCustomChannel(const struct channel_info_in *in, struct channel_info_out *out);
+int RsCcuGetCqeBaseAddr(unsigned int dieId, unsigned long long *cqeBaseAddr);
 
 #endif // DL_CCU_FUNCTION_H

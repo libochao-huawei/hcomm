@@ -57,11 +57,11 @@ HcclResult AicpuZeroCopyExchanger::ExchangeAddress(const std::string &tag, void 
     CHK_RET(UpdateTransportAddress());
     HcclUs endut = TIME_NOW();
     auto timeVal = DURATION_US(endut - startut).count();
-    if (taskMonitorInterval_ != 0 && timeVal >= taskMonitorInterval_) {
+    if (taskMonitorInterval_ != 0 && timeVal >= taskMonitorInterval_ * 1000) {
         std::string endInfo;
         endInfo.reserve(100);
         endInfo = "task time: " + std::to_string(timeVal) + " us," +
-            "taskMonitor" + std::to_string(taskMonitorInterval_) + " us";
+            "taskMonitor" + std::to_string(taskMonitorInterval_ * 1000) + " us";
         HCCL_RUN_INFO("[ExchangeAddress] %s, %s", tag.c_str(), endInfo.c_str());
     }
     return HCCL_SUCCESS;

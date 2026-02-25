@@ -13,11 +13,16 @@
  
 #include "aiv_communication_base.h"
 #include "aiv_all_gather_91093_smalldata.h"
+#include "aiv_all_gather_910b_graph.h"
  
 extern "C" __aicore__ void sk_allgather(SUPERKERNEL_LITE_ARGS_DEF) {
     SUPERKERNEL_LITE_ARGS_EXTRACT;
-    return sk_all_gather_91093_smalldata(SUPERKERNEL_ARGS_CALL);
+    if (devType == DEV_TYPE_910_93) {
+        return sk_all_gather_91093_smalldata(SUPERKERNEL_ARGS_CALL);
+    } else if (devType == DEV_TYPE_910B) {
+        return sk_all_gather_910b_bigdata(SUPERKERNEL_ARGS_CALL);
+    }
+
 }
- 
- 
+
 #endif  /* AIV_AG_SUPERKERNEL_H */
