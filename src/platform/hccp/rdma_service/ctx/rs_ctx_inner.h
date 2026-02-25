@@ -23,66 +23,66 @@
 #define CI_ADDR_BUFFER_ALIGN_4K_PAGE_SIZE 4096U
 #define WQE_BB_SIZE 64ULL
 
-struct rs_ub_dev_cb {
+struct RsUbDevCb {
     struct rs_cb *rscb;
     unsigned int phyId;
-    unsigned int eid_index;
-    union hccp_eid eid;
-    urma_context_t *urma_ctx;
-    urma_device_t *urma_dev;
+    unsigned int eidIndex;
+    union HccpEid eid;
+    urma_context_t *urmaCtx;
+    urma_device_t *urmaDev;
     unsigned int index;
-    struct dev_base_attr dev_attr;
+    struct DevBaseAttr devAttr;
 
     unsigned int cqeErrCnt;
     pthread_mutex_t cqeErrCntMutex;
 
     pthread_mutex_t mutex;
-    unsigned int async_event_cnt;
-    unsigned int jfce_cnt;
-    unsigned int jfc_cnt;
-    unsigned int jetty_cnt;
-    unsigned int rjetty_cnt;
-    unsigned int token_id_cnt;
-    unsigned int lseg_cnt;
-    unsigned int rseg_cnt;
-    struct RsListHead async_event_list;
-    struct RsListHead jfce_list;
-    struct RsListHead jfc_list;
-    struct RsListHead jetty_list;
-    struct RsListHead rjetty_list;
-    struct RsListHead token_id_list;
-    struct RsListHead lseg_list;
-    struct RsListHead rseg_list;
+    unsigned int asyncEventCnt;
+    unsigned int jfceCnt;
+    unsigned int jfcCnt;
+    unsigned int jettyCnt;
+    unsigned int rjettyCnt;
+    unsigned int tokenIdCnt;
+    unsigned int lsegCnt;
+    unsigned int rsegCnt;
+    struct RsListHead asyncEventList;
+    struct RsListHead jfceList;
+    struct RsListHead jfcList;
+    struct RsListHead jettyList;
+    struct RsListHead rjettyList;
+    struct RsListHead tokenIdList;
+    struct RsListHead lsegList;
+    struct RsListHead rsegList;
     struct RsListHead list;
 };
 
-struct rs_ctx_async_event_cb {
-    struct rs_ub_dev_cb *dev_cb;
-    urma_async_event_t async_event;
-    unsigned int res_id;
+struct RsCtxAsyncEventCb {
+    struct RsUbDevCb *devCb;
+    urma_async_event_t asyncEvent;
+    unsigned int resId;
     struct RsListHead list;
 };
 
-struct rs_ctx_jfce_cb {
-    struct rs_ub_dev_cb *dev_cb;
-    uint64_t jfce_addr; // urma_jfce_t *
-    union data_plane_cstm_flag data_plane_flag;
+struct RsCtxJfceCb {
+    struct RsUbDevCb *devCb;
+    uint64_t jfceAddr; // urma_jfce_t *
+    union DataPlaneCstmFlag dataPlaneFlag;
     struct RsListHead list;
 };
 
-struct rs_ctx_jfc_cb {
-    struct rs_ub_dev_cb *dev_cb;
-    uint64_t jfc_addr;
-    enum jfc_mode jfc_type;
+struct RsCtxJfcCb {
+    struct RsUbDevCb *devCb;
+    uint64_t jfcAddr;
+    enum JfcMode jfcType;
     uint32_t depth;
-    uint32_t jfc_id;
-    uint64_t buf_addr;
-    uint64_t swdb_addr;
+    uint32_t jfcId;
+    uint64_t bufAddr;
+    uint64_t swdbAddr;
     struct RsListHead list;
     struct {
         bool valid;
-        uint32_t cqe_flag;
-    } ccu_ex_cfg;
+        uint32_t cqeFlag;
+    } ccuExCfg;
 };
 
 struct RsCrErrInfo {
@@ -90,100 +90,100 @@ struct RsCrErrInfo {
     struct CrErrInfo info;
 };
 
-struct rs_ctx_jetty_cb {
-    struct rs_ub_dev_cb *dev_cb;
+struct RsCtxJettyCb {
+    struct RsUbDevCb *devCb;
     urma_jetty_t *jetty;
     urma_jfr_t *jfr;
-    int jetty_mode;
-    uint32_t jetty_id;
-    int transport_mode;
+    int jettyMode;
+    uint32_t jettyId;
+    int transportMode;
     unsigned int state;
-    unsigned int tx_depth;
-    unsigned int rx_depth;
+    unsigned int txDepth;
+    unsigned int rxDepth;
     urma_jetty_flag_t flag;
-    urma_jfs_flag_t jfs_flag;
-    uint64_t token_id_addr; /**< NULL means unspecified */
-    unsigned int token_value;
+    urma_jfs_flag_t jfsFlag;
+    uint64_t tokenIdAddr; /**< NULL means unspecified */
+    unsigned int tokenValue;
     uint8_t priority;
-    uint8_t rnr_retry;
-    uint8_t err_timeout;
+    uint8_t rnrRetry;
+    uint8_t errTimeout;
     union {
         struct {
-            struct jetty_que_cfg_ex sq;
-            bool pi_type;
-            union cstm_jfs_flag cstm_flag;
-            uint32_t sqebb_num;
-        } ext_mode;
+            struct JettyQueCfgEx sq;
+            bool piType;
+            union CstmJfsFlag cstmFlag;
+            uint32_t sqebbNum;
+        } extMode;
         struct {
-            bool lock_flag;
-            uint32_t sqe_buf_idx;
-        } ta_cache_mode;
+            bool lockFlag;
+            uint32_t sqeBufIdx;
+        } taCacheMode;
     };
-    uint64_t sq_buff_va;
-    uint64_t db_addr;
-    uint32_t db_token_id;
-    uint64_t db_seg_handle;
+    uint64_t sqBuffVa;
+    uint64_t dbAddr;
+    uint32_t dbTokenId;
+    uint64_t dbSegHandle;
     pthread_mutex_t mutex;
-    uint32_t last_pi;
-    struct ctx_qp_share_info *qp_share_info_addr;
-    struct RsCrErrInfo cr_err_info;
+    uint32_t lastPi;
+    struct CtxQpShareInfo *qpShareInfoAddr;
+    struct RsCrErrInfo crErrInfo;
     struct RsListHead list;
 };
 
-struct rs_token_id_cb {
-    struct rs_ub_dev_cb *dev_cb;
-    urma_token_id_t *token_id;
+struct RsTokenIdCb {
+    struct RsUbDevCb *devCb;
+    urma_token_id_t *tokenId;
     struct RsListHead list;
 };
 
-struct rs_ctx_rem_jetty_cb {
-    struct rs_ub_dev_cb *dev_cb;
+struct RsCtxRemJettyCb {
+    struct RsUbDevCb *devCb;
     urma_target_jetty_t *tjetty;
-    struct qp_key jetty_key;
-    enum jetty_import_mode mode;
-    unsigned int token_value;
-    enum jetty_grp_policy policy;
-    enum target_type type;
-    union import_jetty_flag flag;
-    uint32_t tp_type;
-    struct jetty_import_exp_cfg exp_import_cfg;
+    struct QpKey jettyKey;
+    enum JettyImportMode mode;
+    unsigned int tokenValue;
+    enum JettyGrpPolicy policy;
+    enum TargetType type;
+    union ImportJettyFlag flag;
+    uint32_t tpType;
+    struct JettyImportExpCfg expImportCfg;
     unsigned int state;
     struct RsListHead list;
 };
 
-struct rs_seg_info {
+struct RsSegInfo {
     uint64_t addr;
     uint64_t len;
     urma_seg_t seg;
 };
 
-struct rs_seg_cb {
-    struct rs_ub_dev_cb *dev_cb;
+struct RsSegCb {
+    struct RsUbDevCb *devCb;
 
-    struct rs_seg_info seg_info;
+    struct RsSegInfo segInfo;
     uint32_t state;
 
-    urma_token_t token_value;
+    urma_token_t tokenValue;
     urma_target_seg_t *segment;
 
     struct RsListHead list;
 };
 
-struct udma_va_info {
+struct UdmaVaInfo {
     enum res_addr_type resType;
     int pid;
     uint64_t va;
     uint64_t len;
 };
 
-STATIC inline uint32_t rs_generate_ue_info(uint32_t die_id, uint32_t func_id)
+STATIC inline uint32_t RsGenerateUeInfo(uint32_t dieId, uint32_t funcId)
 {
-    return (die_id << DEV_INDEX_DIEID_OFFSET) | func_id;
+    return (dieId << DEV_INDEX_DIEID_OFFSET) | funcId;
 }
 
-STATIC inline uint32_t rs_generate_dev_index(uint32_t dev_cnt, uint32_t die_id, uint32_t func_id)
+STATIC inline uint32_t RsGenerateDevIndex(uint32_t devCnt, uint32_t dieId, uint32_t funcId)
 {
-    return (dev_cnt << DEV_INDEX_CNT_OFFSET) | rs_generate_ue_info(die_id, func_id);
+    return (devCnt << DEV_INDEX_CNT_OFFSET) | RsGenerateUeInfo(dieId, funcId);
 }
 
 #endif // RS_CTX_INNER_H
