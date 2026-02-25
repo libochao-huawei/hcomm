@@ -35,7 +35,7 @@ private:
 
     // flush实现
     HcclResult FlushParamPrepare(std::shared_ptr<FlushHandle> flushHandlePtr, ibv_send_wr *swr);
-    HcclResult ExecuteRdmaRead(ibv_qp *loopbackqp0, ibv_cq *cq, ibv_send_wr swr, int max_timeout_ms = MAX_TIME_VALUE);
+    HcclResult ExecuteRdmaRead(ibv_qp *loopbackqp0, ibv_cq *cq, ibv_send_wr &swr, int max_timeout_ms = MAX_TIME_VALUE);
 
     // flush销毁
     HcclResult DestroyAll();

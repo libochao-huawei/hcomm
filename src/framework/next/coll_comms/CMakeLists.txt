@@ -15,6 +15,7 @@ target_sources(hcomm PRIVATE
     ${src_list}
 )
 
+add_subdirectory(common)
 add_subdirectory(rank)
 add_subdirectory(rank_pairs)
 add_subdirectory(api_c_adpt)

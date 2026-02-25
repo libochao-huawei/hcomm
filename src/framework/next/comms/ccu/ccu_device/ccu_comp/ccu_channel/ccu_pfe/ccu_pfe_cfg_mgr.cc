@@ -17,6 +17,8 @@
 #include "eid_info_mgr.h"
 #include "ccu_res_specs.h"
 
+#include "adapter_rts.h"
+
 namespace hcomm {
 
 CcuPfeCfgMgr &CcuPfeCfgMgr::GetInstance(const int32_t deviceLogicId)
@@ -41,8 +43,10 @@ HcclResult CcuPfeCfgMgr::Init()
         return HcclResult::HCCL_SUCCESS;
     }
 
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId_), devPhyId_));
+
     std::vector<DevEidInfo> eidInfos;
-    CHK_RET(EidInfoMgr::GetInstance(devLogicId_).GetEidInfos(eidInfos));
+    CHK_RET(EidInfoMgr::GetInstance(devPhyId_).GetEidInfos(eidInfos));
 
     // 后续方案整改为根据虚拟拓扑获取ccu pfe jetty配置
     bool dieEnableFlags[MAX_MODULE_DEVICE_NUM] = {false, false};

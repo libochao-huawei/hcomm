@@ -648,9 +648,12 @@ u32 CollCommExecutor::CalcOptimalIntraRingsize(u64 count, HcclDataType dataType,
     }
     // --- 1. 带宽 & 基本参数 ---
     float bwHCCS, bwHBM, bwSIO;
-    CHK_RET(GetBandWidthPerNPU(0, topoAttr_.userRankSize, topoAttr_.deviceNumPerAggregation, bwHCCS));
-    CHK_RET(GetBandWidthPerNPU(2, topoAttr_.userRankSize, topoAttr_.deviceNumPerAggregation, bwHBM));
-    CHK_RET(GetBandWidthPerNPU(3, topoAttr_.userRankSize, topoAttr_.deviceNumPerAggregation, bwSIO));
+    constexpr u32 level0 = 0;
+    constexpr u32 level2 = 2;
+    constexpr u32 level3 = 3;
+    CHK_RET(GetBandWidthPerNPU(level0, topoAttr_.userRankSize, topoAttr_.deviceNumPerAggregation, bwHCCS));
+    CHK_RET(GetBandWidthPerNPU(level2, topoAttr_.userRankSize, topoAttr_.deviceNumPerAggregation, bwHBM));
+    CHK_RET(GetBandWidthPerNPU(level3, topoAttr_.userRankSize, topoAttr_.deviceNumPerAggregation, bwSIO));
     float latency = BASE_COMM_LATENCY / MULTIPLIER_MS2US;   // ms
     // --- 2. 数据总量 (GB) ---
     float baseSizeGB = static_cast<double>(count) * perDataSize / (1024 * 1024 * 1024);

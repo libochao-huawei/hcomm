@@ -25,100 +25,100 @@ extern int RaPingInitGetHandle(struct PingInitAttr *initAttr, struct PingInitInf
     struct RaPingHandle *pingHandle);
 extern int RaPingDeinitParaCheck(struct RaPingHandle *pingHandle);
 
-void tc_ra_ping_init_get_handle_abnormal()
+void TcRaPingInitGetHandleAbnormal()
 {
-    struct RaPingHandle ping_handle = { 0 };
-    struct PingInitAttr init_attr = { 0 };
-    struct PingInitInfo init_info = { 0 };
+    struct RaPingHandle pingHandle = { 0 };
+    struct PingInitAttr initAttr = { 0 };
+    struct PingInitInfo initInfo = { 0 };
     int ret;
 
-    ret = RaPingInitGetHandle(&init_attr, NULL, NULL);
+    ret = RaPingInitGetHandle(&initAttr, NULL, NULL);
     EXPECT_INT_EQ(ret, -EINVAL);
 
-    init_attr.bufferSize = 1;
-    ret = RaPingInitGetHandle(&init_attr, &init_info, NULL);
+    initAttr.bufferSize = 1;
+    ret = RaPingInitGetHandle(&initAttr, &initInfo, NULL);
     EXPECT_INT_EQ(ret, -EINVAL);
 
-    init_attr.bufferSize = 0;
-    init_attr.mode = NETWORK_PEER_ONLINE;
-    ret = RaPingInitGetHandle(&init_attr, &init_info, &ping_handle);
+    initAttr.bufferSize = 0;
+    initAttr.mode = NETWORK_PEER_ONLINE;
+    ret = RaPingInitGetHandle(&initAttr, &initInfo, &pingHandle);
     EXPECT_INT_EQ(ret, -EINVAL);
 
-    init_attr.mode = NETWORK_OFFLINE;
+    initAttr.mode = NETWORK_OFFLINE;
     mocker(RaRdevInitCheck, 1, -1);
-    ret = RaPingInitGetHandle(&init_attr, &init_info, &ping_handle);
+    ret = RaPingInitGetHandle(&initAttr, &initInfo, &pingHandle);
     EXPECT_INT_EQ(ret, -22);
     mocker_clean();
 
     mocker(RaRdevInitCheck, 1, 0);
     mocker((stub_fn_t)pthread_mutex_init, 1, -1);
-    ret = RaPingInitGetHandle(&init_attr, &init_info, &ping_handle);
+    ret = RaPingInitGetHandle(&initAttr, &initInfo, &pingHandle);
     EXPECT_INT_EQ(ret, -22);
     mocker_clean();
 
-    init_attr.bufferSize = RA_RS_PING_BUFFER_ALIGN_4K_PAGE_SIZE;
-    init_attr.commInfo.rdma.udpSport = 65536;
-    ret = RaPingInitGetHandle(&init_attr, &init_info, &ping_handle);
+    initAttr.bufferSize = RA_RS_PING_BUFFER_ALIGN_4K_PAGE_SIZE;
+    initAttr.commInfo.rdma.udpSport = 65536;
+    ret = RaPingInitGetHandle(&initAttr, &initInfo, &pingHandle);
     EXPECT_INT_EQ(ret, -22);
     mocker_clean();
 }
 
-void tc_ra_ping_init_abnormal()
+void TcRaPingInitAbnormal()
 {
-    void *ping_handle = NULL;
+    void *pingHandle = NULL;
     int ret;
 
     ret = RaPingInit(NULL, NULL, NULL);
     EXPECT_INT_EQ(ret, -EINVAL);
 
     mocker((stub_fn_t)calloc, 1, NULL);
-    ret = RaPingInit(NULL, NULL, &ping_handle);
+    ret = RaPingInit(NULL, NULL, &pingHandle);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 
     mocker(RaPingInitGetHandle, 1, -1);
-    ret = RaPingInit(NULL, NULL, &ping_handle);
+    ret = RaPingInit(NULL, NULL, &pingHandle);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 }
 
-void tc_ra_ping_target_add_abnormal()
+void TcRaPingTargetAddAbnormal()
 {
     struct PingTargetInfo  target[1] = { 0 };
-    struct RaPingHandle ping_handle = { 0 };
+    struct RaPingHandle pingHandle = { 0 };
     struct RaPingOps ops = { 0 };
     int num;
     int ret;
 
     num = 0;
-    ret = RaPingTargetAdd((void *)(&ping_handle), target, num);
+    ret = RaPingTargetAdd((void *)(&pingHandle), target, num);
     EXPECT_INT_NE(ret, 0);
 
     num = 1;
-    ping_handle.pingOps = &ops;
-    ret = RaPingTargetAdd((void *)(&ping_handle), target, num);
+    pingHandle.pingOps = &ops;
+    ret = RaPingTargetAdd((void *)(&pingHandle), target, num);
     EXPECT_INT_NE(ret, 0);
 
     ops.raPingTargetAdd = RaHdcPingTargetAdd;
-    ping_handle.phyId = RA_MAX_PHY_ID_NUM;
-    ret = RaPingTargetAdd((void *)(&ping_handle), target, num);
+    pingHandle.phyId = RA_MAX_PHY_ID_NUM;
+    ret = RaPingTargetAdd((void *)(&pingHandle), target, num);
     EXPECT_INT_NE(ret, 0);
 
-    ping_handle.phyId = 0;
-    ping_handle.taskCnt = 1;
-    ret = RaPingTargetAdd((void *)(&ping_handle), target, num);
+    pingHandle.phyId = 0;
+    pingHandle.taskCnt = 1;
+    ret = RaPingTargetAdd((void *)(&pingHandle), target, num);
     EXPECT_INT_NE(ret, 0);
 
-    ping_handle.taskCnt = 0;
+    pingHandle.taskCnt = 0;
     mocker(RaHdcPingTargetAdd, 1, -1);
-    ret = RaPingTargetAdd((void *)(&ping_handle), target, num);
+    ret = RaPingTargetAdd((void *)(&pingHandle), target, num);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 }
 
-void tc_ra_ping_task_start_abnormal()
+void TcRaPingTaskStartAbnormal()
 {
-    struct RaPingHandle ping_handle = { 0 };
+    struct RaPingHandle pingHandle = { 0 };
     struct PingTaskAttr attr = { 0 };
     struct RaPingOps ops = { 0 };
     int ret;
@@ -127,174 +127,174 @@ void tc_ra_ping_task_start_abnormal()
     attr.packetInterval = 1;
     attr.timeoutInterval = 1;
 
-    ret = RaPingTaskStart((void *)(&ping_handle), NULL);
+    ret = RaPingTaskStart((void *)(&pingHandle), NULL);
     EXPECT_INT_NE(ret, 0);
 
-    ping_handle.pingOps = &ops;
-    ret = RaPingTaskStart((void *)(&ping_handle), &attr);
+    pingHandle.pingOps = &ops;
+    ret = RaPingTaskStart((void *)(&pingHandle), &attr);
     EXPECT_INT_NE(ret, 0);
 
     ops.raPingTaskStart = RaHdcPingTaskStart;
-    ping_handle.phyId = RA_MAX_PHY_ID_NUM;
-    ret = RaPingTaskStart((void *)(&ping_handle), &attr);
+    pingHandle.phyId = RA_MAX_PHY_ID_NUM;
+    ret = RaPingTaskStart((void *)(&pingHandle), &attr);
     EXPECT_INT_NE(ret, 0);
 
-    ping_handle.phyId = 0;
-    ping_handle.taskCnt = 1;
-    ret = RaPingTaskStart((void *)(&ping_handle), &attr);
+    pingHandle.phyId = 0;
+    pingHandle.taskCnt = 1;
+    ret = RaPingTaskStart((void *)(&pingHandle), &attr);
     EXPECT_INT_NE(ret, 0);
 
-    ping_handle.taskCnt = 0;
-    ping_handle.targetCnt = 0;
-    ret = RaPingTaskStart((void *)(&ping_handle), &attr);
+    pingHandle.taskCnt = 0;
+    pingHandle.targetCnt = 0;
+    ret = RaPingTaskStart((void *)(&pingHandle), &attr);
     EXPECT_INT_NE(ret, 0);
 
-    ping_handle.targetCnt = 1;
-    ping_handle.bufferSize = 0;
-    ret = RaPingTaskStart((void *)(&ping_handle), &attr);
+    pingHandle.targetCnt = 1;
+    pingHandle.bufferSize = 0;
+    ret = RaPingTaskStart((void *)(&pingHandle), &attr);
     EXPECT_INT_NE(ret, 0);
 
-    ping_handle.bufferSize = ping_handle.targetCnt * attr.packetCnt * PING_TOTAL_PAYLOAD_MAX_SIZE;
+    pingHandle.bufferSize = pingHandle.targetCnt * attr.packetCnt * PING_TOTAL_PAYLOAD_MAX_SIZE;
     mocker(RaHdcPingTaskStart, 1, -1);
-    ret = RaPingTaskStart((void *)(&ping_handle), &attr);
+    ret = RaPingTaskStart((void *)(&pingHandle), &attr);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 }
 
-void tc_ra_ping_get_results_abnormal()
+void TcRaPingGetResultsAbnormal()
 {
     struct PingTargetResult target[1] = { 0 };
-    struct RaPingHandle ping_handle = { 0 };
+    struct RaPingHandle pingHandle = { 0 };
     struct RaPingOps ops = { 0 };
     int num = 0;
     int ret;
 
-    ret = RaPingGetResults((void *)(&ping_handle), target, NULL);
+    ret = RaPingGetResults((void *)(&pingHandle), target, NULL);
     EXPECT_INT_NE(ret, 0);
 
     num = 1;
-    ping_handle.pingOps = &ops;
-    ret = RaPingGetResults((void *)(&ping_handle), target, &num);
+    pingHandle.pingOps = &ops;
+    ret = RaPingGetResults((void *)(&pingHandle), target, &num);
     EXPECT_INT_NE(ret, 0);
 
     ops.raPingGetResults = RaHdcPingGetResults;
-    ping_handle.phyId = RA_MAX_PHY_ID_NUM;
-    ret = RaPingGetResults((void *)(&ping_handle), target, &num);
+    pingHandle.phyId = RA_MAX_PHY_ID_NUM;
+    ret = RaPingGetResults((void *)(&pingHandle), target, &num);
     EXPECT_INT_NE(ret, 0);
 
-    ping_handle.phyId = 0;
-    ping_handle.targetCnt = 0;
-    ret = RaPingGetResults((void *)(&ping_handle), target, &num);
+    pingHandle.phyId = 0;
+    pingHandle.targetCnt = 0;
+    ret = RaPingGetResults((void *)(&pingHandle), target, &num);
     EXPECT_INT_NE(ret, 0);
 
-    ping_handle.targetCnt = 1;
+    pingHandle.targetCnt = 1;
     mocker(RaHdcPingGetResults, 1, -1);
-    ret = RaPingGetResults((void *)(&ping_handle), target, &num);
+    ret = RaPingGetResults((void *)(&pingHandle), target, &num);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 }
 
-void tc_ra_ping_target_del_abnoraml()
+void TcRaPingTargetDelAbnoraml()
 {
     struct PingTargetResult target[1] = { 0 };
-    struct RaPingHandle ping_handle = { 0 };
+    struct RaPingHandle pingHandle = { 0 };
     struct RaPingOps ops = { 0 };
     int num = 0;
     int ret;
 
-    ret = RaPingTargetDel((void *)(&ping_handle), target, num);
+    ret = RaPingTargetDel((void *)(&pingHandle), target, num);
     EXPECT_INT_NE(ret, 0);
 
     num = 1;
-    ping_handle.pingOps = &ops;
-    ret = RaPingTargetDel((void *)(&ping_handle), target, num);
+    pingHandle.pingOps = &ops;
+    ret = RaPingTargetDel((void *)(&pingHandle), target, num);
     EXPECT_INT_NE(ret, 0);
 
     ops.raPingTargetDel = RaHdcPingTargetDel;
-    ping_handle.taskCnt = 1;
-    ret = RaPingTargetDel((void *)(&ping_handle), target, num);
+    pingHandle.taskCnt = 1;
+    ret = RaPingTargetDel((void *)(&pingHandle), target, num);
     EXPECT_INT_NE(ret, 0);
 
-    ping_handle.taskCnt = 0;
-    ping_handle.targetCnt = 0;
-    ret = RaPingTargetDel((void *)(&ping_handle), target, num);
+    pingHandle.taskCnt = 0;
+    pingHandle.targetCnt = 0;
+    ret = RaPingTargetDel((void *)(&pingHandle), target, num);
     EXPECT_INT_NE(ret, 0);
 
-    ping_handle.targetCnt = 1;
-    ping_handle.phyId = RA_MAX_PHY_ID_NUM;
-    ret = RaPingTargetDel((void *)(&ping_handle), target, num);
+    pingHandle.targetCnt = 1;
+    pingHandle.phyId = RA_MAX_PHY_ID_NUM;
+    ret = RaPingTargetDel((void *)(&pingHandle), target, num);
     EXPECT_INT_NE(ret, 0);
 
-    ping_handle.phyId = 0;
+    pingHandle.phyId = 0;
     mocker(RaHdcPingTargetDel, 1, -1);
-    ret = RaPingTargetDel((void *)(&ping_handle), target, num);
+    ret = RaPingTargetDel((void *)(&pingHandle), target, num);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 }
 
-void tc_ra_ping_task_stop_abnormal()
+void TcRaPingTaskStopAbnormal()
 {
-    struct RaPingHandle ping_handle = { 0 };
+    struct RaPingHandle pingHandle = { 0 };
     struct RaPingOps ops = { 0 };
     int ret;
 
     ret = RaPingTaskStop(NULL);
     EXPECT_INT_NE(ret, 0);
 
-    ping_handle.pingOps = &ops;
-    ret = RaPingTaskStop((void *)(&ping_handle));
+    pingHandle.pingOps = &ops;
+    ret = RaPingTaskStop((void *)(&pingHandle));
     EXPECT_INT_NE(ret, 0);
 
     ops.raPingTaskStop = RaHdcPingTaskStop;
-    ping_handle.phyId = RA_MAX_PHY_ID_NUM;
-    ret = RaPingTaskStop((void *)(&ping_handle));
+    pingHandle.phyId = RA_MAX_PHY_ID_NUM;
+    ret = RaPingTaskStop((void *)(&pingHandle));
     EXPECT_INT_NE(ret, 0);
 
-    ping_handle.phyId = 0;
-    ping_handle.taskCnt = 0;
-    ret = RaPingTaskStop((void *)(&ping_handle));
+    pingHandle.phyId = 0;
+    pingHandle.taskCnt = 0;
+    ret = RaPingTaskStop((void *)(&pingHandle));
     EXPECT_INT_NE(ret, 0);
 
-    ping_handle.taskCnt = 1;
+    pingHandle.taskCnt = 1;
     mocker(RaHdcPingTaskStop, 1, -1);
-    ret = RaPingTaskStop((void *)(&ping_handle));
+    ret = RaPingTaskStop((void *)(&pingHandle));
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 }
 
-int ra_hdc_ping_deinit_stub(struct RaPingHandle *ping_handle)
+int RaHdcPingDeinitStub(struct RaPingHandle *pingHandle)
 {
     return 0;
 }
 
-void tc_ra_ping_deinit_para_check_abnormal()
+void TcRaPingDeinitParaCheckAbnormal()
 {
-    struct RaPingHandle ping_handle = { 0 };
+    struct RaPingHandle pingHandle = { 0 };
     struct RaPingOps ops = { 0 };
     int ret;
 
-    ping_handle.phyId = RA_MAX_PHY_ID_NUM;
-    ret = RaPingDeinitParaCheck(&ping_handle);
+    pingHandle.phyId = RA_MAX_PHY_ID_NUM;
+    ret = RaPingDeinitParaCheck(&pingHandle);
     EXPECT_INT_EQ(ret, -EINVAL);
 
-    ping_handle.phyId = 0;
-    ping_handle.pingOps = &ops;
-    ping_handle.pingOps->raPingDeinit = ra_hdc_ping_deinit_stub;
+    pingHandle.phyId = 0;
+    pingHandle.pingOps = &ops;
+    pingHandle.pingOps->raPingDeinit = RaHdcPingDeinitStub;
     mocker(RaInetPton, 1, -1);
-    ret = RaPingDeinitParaCheck(&ping_handle);
+    ret = RaPingDeinitParaCheck(&pingHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 
     mocker(RaInetPton, 1, 0);
-    ping_handle.pingOps->raPingDeinit = NULL;
-    ret = RaPingDeinitParaCheck(&ping_handle);
+    pingHandle.pingOps->raPingDeinit = NULL;
+    ret = RaPingDeinitParaCheck(&pingHandle);
     EXPECT_INT_EQ(ret, -EINVAL);
     mocker_clean();
 }
 
-void tc_ra_ping_deinit_abnoaml()
+void TcRaPingDeinitAbnoaml()
 {
-    struct RaPingHandle *ping_handle = calloc(1, sizeof(struct RaPingHandle));
+    struct RaPingHandle *pingHandle = calloc(1, sizeof(struct RaPingHandle));
     struct RaPingOps ops = { 0 };
     int ret;
 
@@ -302,96 +302,96 @@ void tc_ra_ping_deinit_abnoaml()
     EXPECT_INT_NE(ret, 0);
 
     mocker(RaPingDeinitParaCheck, 1, -1);
-    ret = RaPingDeinit((void *)ping_handle);
+    ret = RaPingDeinit((void *)pingHandle);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 
     ops.raPingDeinit = RaHdcPingDeinit;
-    ping_handle->pingOps = &ops;
+    pingHandle->pingOps = &ops;
     mocker(RaPingDeinitParaCheck, 1, 0);
     mocker(RaHdcPingDeinit, 1, -1);
-    ret = RaPingDeinit((void *)ping_handle);
+    ret = RaPingDeinit((void *)pingHandle);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 }
 
-static void init_attr_fill(struct PingInitAttr *init_attr)
+static void InitAttrFill(struct PingInitAttr *initAttr)
 {
-    struct rdev rdev_info = { 0 };
-    rdev_info.phyId = 0;
-    rdev_info.family = AF_INET;
+    struct rdev rdevInfo = { 0 };
+    rdevInfo.phyId = 0;
+    rdevInfo.family = AF_INET;
 
-    init_attr->mode = NETWORK_OFFLINE;
-    init_attr->dev.rdma = rdev_info;
-    init_attr->client.rdma.cqAttr.sendCqDepth = 128;
-    init_attr->client.rdma.cqAttr.recvCqDepth = 128;
-    init_attr->client.rdma.qpAttr.cap.maxInlineData = 32;
-    init_attr->client.rdma.qpAttr.cap.maxSendSge = 1;
-    init_attr->client.rdma.qpAttr.cap.maxSendWr = 128;
-    init_attr->client.rdma.qpAttr.cap.maxRecvSge = 1;
-    init_attr->client.rdma.qpAttr.cap.maxRecvWr = 128;
+    initAttr->mode = NETWORK_OFFLINE;
+    initAttr->dev.rdma = rdevInfo;
+    initAttr->client.rdma.cqAttr.sendCqDepth = 128;
+    initAttr->client.rdma.cqAttr.recvCqDepth = 128;
+    initAttr->client.rdma.qpAttr.cap.maxInlineData = 32;
+    initAttr->client.rdma.qpAttr.cap.maxSendSge = 1;
+    initAttr->client.rdma.qpAttr.cap.maxSendWr = 128;
+    initAttr->client.rdma.qpAttr.cap.maxRecvSge = 1;
+    initAttr->client.rdma.qpAttr.cap.maxRecvWr = 128;
 
-    init_attr->server.rdma.cqAttr.sendCqDepth = 128;
-    init_attr->server.rdma.cqAttr.recvCqDepth = 128;
-    init_attr->server.rdma.qpAttr.cap.maxInlineData = 32;
-    init_attr->server.rdma.qpAttr.cap.maxSendSge = 1;
-    init_attr->server.rdma.qpAttr.cap.maxSendWr = 128;
-    init_attr->server.rdma.qpAttr.cap.maxRecvSge = 1;
-    init_attr->server.rdma.qpAttr.cap.maxRecvWr = 128;
-    init_attr->bufferSize = 8192;
+    initAttr->server.rdma.cqAttr.sendCqDepth = 128;
+    initAttr->server.rdma.cqAttr.recvCqDepth = 128;
+    initAttr->server.rdma.qpAttr.cap.maxInlineData = 32;
+    initAttr->server.rdma.qpAttr.cap.maxSendSge = 1;
+    initAttr->server.rdma.qpAttr.cap.maxSendWr = 128;
+    initAttr->server.rdma.qpAttr.cap.maxRecvSge = 1;
+    initAttr->server.rdma.qpAttr.cap.maxRecvWr = 128;
+    initAttr->bufferSize = 8192;
 }
 
-void tc_ra_ping()
+void TcRaPing()
 {
-    struct PingTargetCommInfo target_comm_client = {0};
-    struct PingTargetResult target_result_client = {0};
-    struct PingTargetInfo  target_info_client = {0};
-    char payload_client[20] = "hello, client";
-    struct PingInitInfo init_info = { 0 };
-    struct PingInitAttr init_attr = { 0 };
+    struct PingTargetCommInfo targetCommClient = {0};
+    struct PingTargetResult targetResultClient = {0};
+    struct PingTargetInfo  targetInfoClient = {0};
+    char payloadClient[20] = "hello, client";
+    struct PingInitInfo initInfo = { 0 };
+    struct PingInitAttr initAttr = { 0 };
     struct PingTaskAttr taskAttr = {0};
-    unsigned int target_result_num = 1;
+    unsigned int targetResultNum = 1;
     struct RaPingOps ops = { 0 };
-    void *ping_handle = NULL;
+    void *pingHandle = NULL;
     int ret;
 
-    init_attr_fill(&init_attr);
-    init_attr.bufferSize = 4;
-    ret = RaPingInit(&init_attr, &init_info, &ping_handle);
+    InitAttrFill(&initAttr);
+    initAttr.bufferSize = 4;
+    ret = RaPingInit(&initAttr, &initInfo, &pingHandle);
     EXPECT_INT_NE(ret, 0);
-    init_attr.bufferSize = 8192;
+    initAttr.bufferSize = 8192;
     mocker(RaRdevInitCheck, 20, 0);
     mocker((stub_fn_t)RaHdcProcessMsg, 20, 0);
-    ret = RaPingInit(&init_attr, &init_info, &ping_handle);
+    ret = RaPingInit(&initAttr, &initInfo, &pingHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    target_info_client.localInfo.rdma.hopLimit = 64;
-    target_info_client.localInfo.rdma.qosAttr.tc = (33 & 0x3f) << 2;
-    target_info_client.localInfo.rdma.qosAttr.sl = 4;
-    target_info_client.remoteInfo.qpInfo = init_info.client;
-    ret = RaPingTargetAdd(ping_handle, &target_info_client, 1);
+    targetInfoClient.localInfo.rdma.hopLimit = 64;
+    targetInfoClient.localInfo.rdma.qosAttr.tc = (33 & 0x3f) << 2;
+    targetInfoClient.localInfo.rdma.qosAttr.sl = 4;
+    targetInfoClient.remoteInfo.qpInfo = initInfo.client;
+    ret = RaPingTargetAdd(pingHandle, &targetInfoClient, 1);
     EXPECT_INT_EQ(ret, 0);
 
     taskAttr.packetCnt = 1;
     taskAttr.packetInterval = 10;
     taskAttr.timeoutInterval = 10;
-    ret = RaPingTaskStart(ping_handle, &taskAttr);
+    ret = RaPingTaskStart(pingHandle, &taskAttr);
     EXPECT_INT_EQ(ret, 0);
 
-    target_result_client.remoteInfo = target_info_client.remoteInfo;
+    targetResultClient.remoteInfo = targetInfoClient.remoteInfo;
     mocker(RaHdcPingGetResults, 20, 0);
-    ret = RaPingGetResults(ping_handle, &target_result_client, &target_result_num);
+    ret = RaPingGetResults(pingHandle, &targetResultClient, &targetResultNum);
     EXPECT_INT_EQ(ret, 0);
 
-    ret = RaPingTaskStop(ping_handle);
+    ret = RaPingTaskStop(pingHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    target_comm_client.ip = target_info_client.remoteInfo.ip;
-    target_comm_client.qpInfo = target_info_client.remoteInfo.qpInfo;
-    ret = RaPingTargetDel(ping_handle, &target_comm_client, 1);
+    targetCommClient.ip = targetInfoClient.remoteInfo.ip;
+    targetCommClient.qpInfo = targetInfoClient.remoteInfo.qpInfo;
+    ret = RaPingTargetDel(pingHandle, &targetCommClient, 1);
     EXPECT_INT_EQ(ret, 0);
 
-    ret = RaPingDeinit(ping_handle);
+    ret = RaPingDeinit(pingHandle);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 }

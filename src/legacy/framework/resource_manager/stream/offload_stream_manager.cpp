@@ -12,6 +12,7 @@
 #include "log.h"
 #include "exception_util.h"
 #include "invalid_params_exception.h"
+#include "stream_utils.h"
 
 namespace Hccl {
 
@@ -23,8 +24,17 @@ void OffloadStreamManager::RegisterMaster(const std::string &opTag, std::unique_
         std::string msg = StringFormat("master stream of op[%s] has been registered.", opTag.c_str());
         THROW<InvalidParamsException>(msg);
     }
-
-    ActivateSlaveStreams(opTag, stream.get());
+    // 判断是否为acl graph零拷贝切图模式，判断标志为主流是否被捕获
+    bool isCapture = false;
+    rtModel_t rtModel = nullptr;
+    auto ret = GetStreamCaptureInfo(stream->GetPtr(), rtModel, isCapture);
+    if (ret != HCCL_SUCCESS) {
+        THROW<InvalidParamsException>(StringFormat("[OffloadStreamManager::%s] GetStreamCaptureInfo failed.",
+                                                __func__));
+    }
+    if (!isCapture) {
+        ActivateSlaveStreams(opTag, stream.get()); // 不是acl graph则维持原流程
+    }
     masters[opTag] = std::move(stream);
 
     currOpTag = opTag;
@@ -123,7 +133,7 @@ Stream *OffloadStreamManager::GetSlave(const std::string &opTag, u32 index) cons
 {
     CheckOpTag(opTag);
     if (index >= slaves.at(opTag).size()) {
-        THROW<InvalidParamsException>(StringFormat("[OpbaseStreamManager::%s] index[%u] is invalid.", __func__, index));
+        THROW<InvalidParamsException>(StringFormat("[OffloadStreamManager::%s] index[%u] is invalid.", __func__, index));
     }
     return slaves.at(opTag)[index].get();
 }

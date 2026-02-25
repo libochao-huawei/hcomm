@@ -80,13 +80,14 @@ HcclResult FlushManager::Flush()
 
         ibv_qp *loopbackqp0 = static_cast<ibv_qp *>(flushHandlePtr->loopBackQpParam.ibvQp0);
         CHK_PTR_NULL(loopbackqp0);
-
         ibv_cq *cq = loopbackqp0->send_cq;
         CHK_PTR_NULL(cq);
         HCCL_DEBUG("[Flush] Successfully retrieved QP and CQ handles: qp=%p, cq=%p", loopbackqp0, cq);
 
         // 接口数据设置
         ibv_send_wr swr{};
+        ibv_sge sg_list{};
+        swr.sg_list = &sg_list;
         HcclResult paramsRet = FlushParamPrepare(flushHandlePtr, &swr);
         if (paramsRet != HCCL_SUCCESS) {
             HCCL_INFO("[Flush] Set work request failed.");
@@ -106,32 +107,24 @@ HcclResult FlushManager::Flush()
 
 HcclResult FlushManager::FlushParamPrepare(std::shared_ptr<FlushHandle> flushHandlePtr, ibv_send_wr *swr)
 {
-    ibv_sge list;
-    list.addr = reinterpret_cast<uint64_t>(flushHandlePtr->loopBackQpMrLocalInfo.addr);
-    list.length = flushHandlePtr->loopBackQpMrLocalInfo.size;
-    list.lkey = flushHandlePtr->loopBackQpMrLocalInfo.lkey;
-    HCCL_DEBUG("[FlushParamPrepare]list.lkey=%u, list.addr=%p", list.lkey, list.addr);
-
     CHK_PTR_NULL(swr);
     swr->wr_id = 0;
-    swr->sg_list = &list;
+    CHK_PTR_NULL(swr->sg_list);
+    swr->sg_list->addr = reinterpret_cast<uint64_t>(flushHandlePtr->loopBackQpMrLocalInfo.addr);
+    swr->sg_list->length = flushHandlePtr->loopBackQpMrLocalInfo.size;
+    swr->sg_list->lkey = flushHandlePtr->loopBackQpMrLocalInfo.lkey;
     swr->next = nullptr;
     swr->num_sge = 1;
     swr->opcode = IBV_WR_RDMA_READ;
     swr->send_flags = IBV_SEND_SIGNALED;
     swr->wr.rdma.remote_addr = reinterpret_cast<uint64_t>(flushHandlePtr->loopBackQpMrRemoteInfo.addr);
     swr->wr.rdma.rkey = flushHandlePtr->loopBackQpMrRemoteInfo.rkey;
-    HCCL_DEBUG("[FlushParamPrepare]swr.wr.rdma.rkey=%u, swr.wr.rdma.remote_addr=%p", swr->wr.rdma.rkey,
-               swr->wr.rdma.remote_addr);
-    HCCL_DEBUG("[FlushParamPrepare] completed, ibv_sge.size=%u", list.length);
     return HCCL_SUCCESS;
 }
 
-HcclResult FlushManager::ExecuteRdmaRead(ibv_qp *loopbackqp0, ibv_cq *cq, ibv_send_wr swr, int max_timeout_ms)
+HcclResult FlushManager::ExecuteRdmaRead(ibv_qp *loopbackqp0, ibv_cq *cq, ibv_send_wr &swr, int max_timeout_ms)
 {
     ibv_send_wr *send_wr = nullptr;
-    HCCL_INFO("swr id = %d, num_sge = %d, rkey = %u, remote_addr = %p", swr.wr_id, swr.num_sge, swr.wr.rdma.rkey,
-              swr.wr.rdma.remote_addr);
     int ret = FlushPostSend(loopbackqp0, &swr, &send_wr);
     if (ret != 0) {
         HCCL_ERROR("[ExecuteRdmaRead] ibv_post_send failed: %s", strerror(errno));

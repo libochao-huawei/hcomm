@@ -61,6 +61,7 @@ private:
     uint32_t devId_ = INVALID_UINT;
     NotifyLoadType notifyLoadType_ = NotifyLoadType::HOST_NOTIFY;
     std::unique_ptr<Stream> stream_;
+    DevType devType_ = DevType::DEV_TYPE_COUNT;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
 
     std::unique_ptr<Stream> streamDevice_; //在把用户的stream生成的thread导出到device时使用
