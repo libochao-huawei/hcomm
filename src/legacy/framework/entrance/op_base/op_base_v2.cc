@@ -2892,6 +2892,10 @@ HcclResult HcclCommDeactivateCommMemoryV2(HcclComm comm, void *virPtr)
     return HCCL_E_NOT_SUPPORT;
 }
 
+uint32_t HcclGetCommConfigCapabilityV2()
+{
+    return static_cast<uint32_t>(HCCL_COMM_CONFIG_RETRY);
+}
 
 #ifdef __cplusplus
 }
