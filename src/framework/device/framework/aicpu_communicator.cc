@@ -1880,7 +1880,7 @@ HcclResult HcclCommAicpu::PrepareSymmetricMemory(const OpParam &param, OpCommTra
     
     const std::unordered_set<LinkType> supportedLinkTypes = {LinkType::LINK_HCCS, LinkType::LINK_SIO, LinkType::LINK_HCCS_SW};
 
-    for (auto &singleSubCommTransport : opTransportResponse[COMM_LEVEL0]) {
+    for (auto &singleSubCommTransport : opTransportResponse[COMM_COMBINE_ORDER]) { // 这里暂时写死成了combine
         for (u64 i = 0; i < singleSubCommTransport.links.size(); ++i) {
             LINK &link = singleSubCommTransport.links[i];
             if (link == nullptr || !singleSubCommTransport.transportRequests[i].isValid || supportedLinkTypes.count(link->GetLinkType()) == 0) {
