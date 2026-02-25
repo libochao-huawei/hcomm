@@ -287,6 +287,6 @@ INS_REGISTER_IMPL_BY_TEMP(
 INS_REGISTER_IMPL_BY_TEMP(OpType::ALLGATHER, CcuAllGatherMeshMem2Mem2D, InsV2AllGatherSoleExecutor,
     TopoMatchConcurrMesh, CcuTempAllGatherMeshMem2Mem2D);
 INS_REGISTER_IMPL_BY_TEMP(OpType::ALLGATHER, CcuAllGatherMesh1D2Die, InsV2AllGatherSoleExecutor,
-    TopoMatchConcurrMesh, CcuTempAllGatherMesh1D2Die);
+    TopoMatchMesh, CcuTempAllGatherMesh1D2Die);
 #endif
 }  // namespace Hccl

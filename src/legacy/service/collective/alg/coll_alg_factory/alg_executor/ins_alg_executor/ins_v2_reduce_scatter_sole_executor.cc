@@ -285,7 +285,7 @@ INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCESCATTER, CcuReduceScatterMeshMem2Mem1D, 
                           CcuTempReduceScatterMeshMem2Mem1D);
 INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCESCATTER, CcuReduceScatterNHR1DMem2Mem, InsV2ReduceScatterSoleExecutor,
     TopoMatchMesh, CcuTempReduceScatterNHR1DMem2Mem);
-INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCESCATTER, CcuReduceScatter1D2Die, InsV2ReduceScatterSoleExecutor,
-    TopoMatchMesh, CcuTempReduceScatter1D2Die);
+INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCESCATTER, CcuReduceScatterMesh1D2Die, InsV2ReduceScatterSoleExecutor,
+    TopoMatchMesh, CcuTempReduceScatterMesh1D2Die);
 #endif
 } // namespace Hccl
