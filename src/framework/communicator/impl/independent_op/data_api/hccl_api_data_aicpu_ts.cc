@@ -19,6 +19,11 @@
 #include "ub_transport_lite_impl.h"
 #include "device/framework/aicpu_hccl_process.h"
 
+// specify namespaces for the macro TRY_CATCH_PRINT_ERROR
+using string = std::string;
+using exception = std::exception;
+using HcclException = Hccl::HcclException;
+
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
 
@@ -100,12 +105,12 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
     CHK_PTR_NULL(threadEntityPtr);
     ThreadEntity *const dstThreadEntityPtr = reinterpret_cast<ThreadEntity *>(dstThread);
     CHK_PTR_NULL(dstThreadEntityPtr);
-    const ThreadType srcType = threadEntityPtr->type;
-    const ThreadType dstType = dstThreadEntityPtr->type;
+    const hccl::ThreadType srcType = threadEntityPtr->type;
+    const hccl::ThreadType dstType = dstThreadEntityPtr->type;
 
     HCCL_INFO("[%s] START. thread[0x%llx] (type[%d]), dstThread[0x%llx] (type[%d]), dstNotifyIdx[%u].", __func__, thread, srcType, dstThread, dstType, dstNotifyIdx);
 
-    HcclResult ret = HCCL_SUCCESS;
+    int32_t ret = HCCL_SUCCESS;
     if (srcType == THREAD_TYPE_TS && dstType == THREAD_TYPE_CPU) { // TS notifies non-TS
         AddThread(threadEntityPtr->threadObj);
 
@@ -120,7 +125,7 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
             goto FINAL;
         }
 
-        if (dstNotifyEntityPtr->type != NotifyType::HOST_MEM) {
+        if (dstNotifyEntityPtr->type != NOTIFY_TYPE_HOST_MEM) {
             HCCL_ERROR("[%s] NotifyRecord from TS thread to non-HOST_MEM notify of non-TS thread is NOT supported.", __func__);
             ret = HCCL_E_NOT_SUPPORT;
             goto FINAL;
@@ -138,7 +143,7 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
             ret = HCCL_SUCCESS
         );
     } else if (srcType == THREAD_TYPE_CPU && dstType == THREAD_TYPE_TS) { // non-TS notifies TS
-        const RecordServiceArgs tempRecordArgs = {
+        RecordServiceArgs tempRecordArgs = {
             .threadHandle = thread,
             .dstThreadHandle = dstThread,
             .dstNotifyIdx = dstNotifyIdx,

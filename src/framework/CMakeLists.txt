@@ -91,6 +91,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/platform/inc
     ${HCCL_BASE_DIR}/platform/inc/adapter
 
+    ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res
     ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
     ${HCCL_BASE_DIR}/framework/next/coll_comms/
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank
