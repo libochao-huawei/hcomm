@@ -898,8 +898,14 @@ HcclResult TransportDirectNpu::TxData(UserMemType dstMemType, u64 dstOffset, con
         apiParam.timeout, apiParam.localFlagAddr, apiParam.remoteFlagAddr, apiParam.lfKey, apiParam.rfKey, apiParam.qpInfo.qpPtr);
 
 #ifndef CCL_KERNEL
+    u16 timeOut = 0;
+    if (NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16) {
+        timeOut = MAX_VALUE_U16;
+    } else {
+        timeOut = NOTIFY_DEFAULT_WAIT_TIME;
+    }
     CHK_PRT(AicpuAclKernelLaunch(stream.ptr(), reinterpret_cast<void *>(&apiParam), sizeof(apiParam),
-            binHandle_, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));
+            binHandle_, kernelName, true, timeOut));
 #else
     HCCL_ERROR("[AicpuAclKernelLaunch]Does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
@@ -967,8 +973,14 @@ HcclResult TransportDirectNpu::RxData(UserMemType srcMemType, u64 srcOffset, voi
         apiParam.timeout, apiParam.localFlagAddr, apiParam.remoteFlagAddr, apiParam.lfKey, apiParam.rfKey, apiParam.qpInfo.qpPtr);
 
 #ifndef CCL_KERNEL
+    u16 timeOut = 0;
+    if (NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16) {
+        timeOut = MAX_VALUE_U16;
+    } else {
+        timeOut = NOTIFY_DEFAULT_WAIT_TIME;
+    }
     CHK_PRT(AicpuAclKernelLaunch(stream.ptr(), reinterpret_cast<void *>(&apiParam), sizeof(apiParam),
-            binHandle_, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));
+            binHandle_, kernelName, true, timeOut));
 #else
     HCCL_ERROR("[AicpuAclKernelLaunch]Does not support this interface.");
     return HCCL_E_NOT_SUPPORT;

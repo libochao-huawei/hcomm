@@ -78,9 +78,14 @@ HcclResult IndependentOp::KernelLaunchAicpuCommInit()
 
     // 下kernel进行自定义算子aicpu侧通信域的公共初始化
     std::string kernelName = "RunAicpuIndOpCommInit";
-
+    u16 timeOut = 0;
+    if (NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16) {
+        timeOut = MAX_VALUE_U16;
+    } else {
+        timeOut = NOTIFY_DEFAULT_WAIT_TIME;
+    }
     CHK_RET(AicpuAclKernelLaunch(localStream.ptr(), reinterpret_cast<void *>(&commAicpuParam_),
-        sizeof(commAicpuParam_), binHandle_, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));
+        sizeof(commAicpuParam_), binHandle_, kernelName, true, timeOut));
     CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut("")));
 
     // 打印增加初始化对应的参数

@@ -338,14 +338,19 @@ HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle
     InitTask customInitTask = {0};
     customInitTask.context = reinterpret_cast<u64>(addr.ptr());
     customInitTask.isCustom = false;
-
+    u16 timeOut = 0;
+    if (NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16) {
+        timeOut = MAX_VALUE_U16;
+    } else {
+        timeOut = NOTIFY_DEFAULT_WAIT_TIME;
+    }
     CHK_RET(hccl::AicpuAclKernelLaunch(localStream.ptr(),
         reinterpret_cast<void *>(&customInitTask),
         sizeof(customInitTask),
         binHandle,
         kernelName,
         true,
-        NOTIFY_DEFAULT_WAIT_TIME));
+        timeOut));
 
     CHK_RET(
         hcclStreamSynchronize(localStream.ptr(), hccl::CommConfiger::GetInstance().GetCommConfigExecTimeOut(commTag)));
