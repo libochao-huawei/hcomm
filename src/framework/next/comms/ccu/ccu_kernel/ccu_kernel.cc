@@ -60,6 +60,10 @@ CcuKernel::CcuKernel(const CcuKernelArg &arg)
     channels_ = arg.channels;
 }
 
+CcuKernel::~CcuKernel()
+{
+}
+
 static HcclResult GetDieIdByChannel(const ChannelHandle channel, uint32_t &dieId)
 {
     void *channelPtr{nullptr};
