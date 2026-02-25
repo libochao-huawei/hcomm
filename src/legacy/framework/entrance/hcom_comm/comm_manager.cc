@@ -698,7 +698,7 @@ HcclResult CommManager::SetCommAcceleratorV2(Hccl::HcclCommunicator *communicato
 {
     CHK_PTR_NULL(communicator);
     if (accelerator < static_cast<int32_t>(HcclAccelerator::DEFAULT) || accelerator > static_cast<int32_t>(HcclAccelerator::AICPU)) {
-        HCCL_ERROR("[SetCommAcceleratorV2] Invalid accelerator value [%d]", accelerator);
+        HCCL_ERROR("[SetCommAcceleratorV2] Invalid accelerator value [%d], valid range is [0,7]", accelerator);
         return HCCL_E_NOT_SUPPORT;
     }
     HcclAccelerator hcclAccelerator = static_cast<HcclAccelerator::Value>(accelerator);

@@ -671,7 +671,6 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
     bool midCountOptimMultiPod = (superPodNum_ > 1) &&
         (param.DataDes.count * unitSize >= HCCL_SMALL_COUNT_GRAPH_64_KB) &&
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_256_KB) && !retryEnable_; // 涉及ROCE平面
- 
 
     if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
         algName = "AllReduceComm";

@@ -93,8 +93,8 @@ void NewRankInfo::Deserialize(const nlohmann::json &newRankInfoJson)
 
 std::string NewRankInfo::Describe() const
 {
-    return StringFormat("NewRankInfo[rankId=%d, localId=%d, replacedLocalId=%d, ranklevelInfos size=%d]",
-                        rankId, localId, replacedLocalId, rankLevelInfos.size());
+    return StringFormat("NewRankInfo[rankId=%d, localId=%d, replacedLocalId=%d, ranklevelInfos size=%d, device_port=%d]",
+                        rankId, localId, replacedLocalId, rankLevelInfos.size(), devicePort);
 }
 
 NewRankInfo::NewRankInfo(BinaryStream &binStream)

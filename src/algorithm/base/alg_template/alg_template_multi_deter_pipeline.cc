@@ -432,9 +432,9 @@ HcclResult MultiDeterPipeline::RunAsyncLocalReduceSerial()
 // 每个server内首先要进行alltoall full mesh收集数据，再进行机内local reduce，最后发送给指定server
 HcclResult MultiDeterPipeline::RunAsyncReduceScatterPipeline()
 {
-    constexpr s64 HCCL_MEDIUM_COUNT_2_MB = 2 * 1024 * 1024;
+    constexpr u64 HCCL_MEDIUM_COUNT_2_MB = 2 * 1024 * 1024;
     // 2机或者数据量小于2MB走localreduce串行算法
-    if (serverSize_ <= LOCAL_REDUCE_SERIIAL_ALG_SERVER_NUM || curSize_ < HCCL_MEDIUM_COUNT_2_MB) {
+    if (serverSize_ <= LOCAL_REDUCE_SERIIAL_ALG_SERVER_NUM || GetLocalReduceSerialThresh() < HCCL_MEDIUM_COUNT_2_MB) {
         CHK_RET(RunAsyncLocalReduceSerial());
         return HCCL_SUCCESS;
     }
@@ -546,7 +546,8 @@ HcclResult MultiDeterPipeline::PrepareTopoInfo(const SubCommInfo &level0CommInfo
 
     intraLinks_ = level0CommInfo.links; // 节点内
     serverLinks_ = level1CommInfo.links; // 节点间
-
+    HCCL_INFO("[%s] opInfo: dataType[%u], unitSize[%u], memSliceSize[%u], usrInMem[%p], usrOutMem[%p], reductionOp[%u]",
+        __func__, dataType_, unitSize_, memSliceSize_, usrInMemPtr_, usrOutMemPtr_, reductionOp_);
     HCCL_INFO("[%s] topoInfo: userRank[%u], intraRankId[%u], intraRankSize[%u], serverId[%u], interRankSize[%u]",
         __func__, userRank_, intraRankId_, intraRankSize_, serverId_, serverSize_);
     HCCL_INFO("[%s] topoInfo: severLinksNum[%zu], intraLinksNum[%zu]", __func__, serverLinks_.size(), intraLinks_.size());
