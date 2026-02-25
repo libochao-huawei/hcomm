@@ -62,6 +62,9 @@ extern HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, 
 
 extern HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemNum, HcclComm comm, aclrtStream stream);
 
+extern HcclResult HcclCreateOpResCtxInner(HcclComm comm, uint8_t opType, HcclDataType srcDataType, HcclDataType dstDataType,
+                                          HcclReduceOp reduceType, uint64_t count, char *algConfig, uint32_t commEngine, void **opResCtx);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
