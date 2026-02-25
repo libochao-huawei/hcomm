@@ -74,6 +74,9 @@ public:
     // 销毁ipc mem
     void DestroyIpcMem(void *ptr, u64 size, bool isSioToHccs = false);
 
+    // 清空map不加锁
+    void ClearMemNameRepositoryNoLock();
+
     // 清空map
     void ClearMemNameRepository();
 
