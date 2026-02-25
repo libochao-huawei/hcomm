@@ -44,7 +44,6 @@ namespace hcomm {
  * @tparam Func 形如：HcclResult func(Channel& ch)
  */
 template <typename Func>
-constexpr u16 MAX_VALUE_U16 = 0xFFFF;
 static inline HcclResult WithChannelByHandleLocked(ChannelHandle inHandle, Func &&func)
 {
     // 单锁：该锁同时保护 g_ChannelD2HMap 和 g_ChannelMap
@@ -273,6 +272,7 @@ static HcclResult FillChannelD2HMap(ChannelHandle *deviceChannelHandles,
 HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, uint32_t listNum,
     const std::string &commTag, aclrtBinHandle binHandle)
 {
+    constexpr u16 MAX_VALUE_U16 = 0xFFFF;
     HCCL_RUN_INFO("[%s] listNum[%u], commTag[%s]", __func__, listNum, commTag.c_str());
     std::vector<std::vector<char>> hostPackBuffers(listNum);
     HcclChannelUrmaRes channelParam{};
