@@ -121,9 +121,9 @@ void PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
 
     uint16_t isAuxInfoExisted{false};
     for (u32 i = 0; i < auxInfo.auxInfoNum; i++) {
-        if (auxInfo.auxInfoValues[i]) {
+        if (auxInfo.auxInfoValues[i]) { // 非零进行打印
             isAuxInfoExisted = true;
-            HCCL_ERROR("devLogicId[%d], aux_info_type[%u], aux_info_value[%u]",
+            HCCL_ERROR("devLogicId[%d], cqe_aux_info_type[%u], cqe_aux_info_value[%u]",
                 devLogicId, auxInfo.auxInfoTypes[i], auxInfo.auxInfoValues[i]);
         }
     }
