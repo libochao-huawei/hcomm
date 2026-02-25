@@ -331,7 +331,7 @@ void CcuInsPreprocessor::Preprocess(std::shared_ptr<InsQueue> &insQueue, bool is
 
     HCCL_INFO("[CcuInsPreprocessor::%s] resAllocSuccess is[%d]", __func__, resAllocSuccess);
     if (!resAllocSuccess) {
-        HCCL_INFO("[CcuInsPreprocessor::%s] ResAlloc failed, accelerator fall back.", __func__);
+        HCCL_INFO("[CcuInsPreprocessor::%s] ResAlloc unsuccessful, accelerator fall back.", __func__);
         if (isMc2) {
             // mc2场景，CCU资源不足时不支持回退
             THROW<InternalException>(StringFormat("[CcuInsPreprocessor::%s] Alloc local resource failed", __func__));
@@ -347,8 +347,8 @@ void CcuInsPreprocessor::Preprocess(std::shared_ptr<InsQueue> &insQueue, bool is
     }
     // 若本地资源申请成功, 则进行握手
     // 资源确认
-    TRY_CATCH_PROCESS_THROW(
-        InternalException,  
+    TRY_CATCH_PROCESS_THROW (
+        InternalException,
         Confirm(),
         "[CCU Confirm] Comfirm Resources Error",
         // 建链失败时，清除临时创建的资源

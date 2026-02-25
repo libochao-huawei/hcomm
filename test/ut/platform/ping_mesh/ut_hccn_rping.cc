@@ -331,7 +331,7 @@ TEST_F(HccnRping_UT, ut_HccnRping_RpingAddTargetV2)
     
     HccnRpingAddTargetConfig config;
     config.connectTimeout = 1000;
-    ret = HccnRpingAddTargetV2(pingmesh, targetNum, target, &config);
+    ret = HccnRpingAddTargetWithCfg(pingmesh, targetNum, target, &config);
     EXPECT_EQ(ret, HCCN_SUCCESS);
 
     // 删除节点
@@ -351,7 +351,7 @@ TEST_F(HccnRping_UT, ut_HccnRping_RpingAddTargetV2_err)
 {
     HccnRpingAddTargetConfig config;
     config.connectTimeout = 0;
-    auto ret = HccnRpingAddTargetV2(nullptr, 1, nullptr, &config);
+    auto ret = HccnRpingAddTargetWithCfg(nullptr, 1, nullptr, &config);
     EXPECT_EQ(ret, HCCN_E_PARA);
 }
 

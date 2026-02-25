@@ -1030,9 +1030,12 @@ u32 CollAlgOperator::CalcOptimalIntraRingsize(u64 count, HcclDataType dataType, 
     }
     // --- 1. 带宽 & 基本参数 ---
     float bwHCCS, bwHBM, bwSIO;
-    CHK_RET(GetBandWidthPerNPU(0, userRankSize_, deviceNumPerAggregation_, bwHCCS));
-    CHK_RET(GetBandWidthPerNPU(2, userRankSize_, deviceNumPerAggregation_, bwHBM));
-    CHK_RET(GetBandWidthPerNPU(3, userRankSize_, deviceNumPerAggregation_, bwSIO));
+    constexpr u32 level0 = 0;
+    constexpr u32 level2 = 2;
+    constexpr u32 level3 = 3;
+    CHK_RET(GetBandWidthPerNPU(level0, userRankSize_, deviceNumPerAggregation_, bwHCCS));
+    CHK_RET(GetBandWidthPerNPU(level2, userRankSize_, deviceNumPerAggregation_, bwHBM));
+    CHK_RET(GetBandWidthPerNPU(level3, userRankSize_, deviceNumPerAggregation_, bwSIO));
     float latency = BASE_COMM_LATENCY / MULTIPLIER_MS2US;   // ms
     // --- 2. 数据总量 (GB) ---
     float baseSizeGB = static_cast<double>(count) * perDataSize / GB2B;

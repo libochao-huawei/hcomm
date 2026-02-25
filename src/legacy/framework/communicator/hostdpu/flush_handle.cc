@@ -123,8 +123,7 @@ HcclResult FlushHandle::RegisterLocalMr()
                    eRet);
         return HCCL_E_MEMORY;
     }
-    HCCL_DEBUG("[RegisterLocalMr]Local MR registered successfully. MR Handle=0x%p, lkey=%u, rkey=%u",
-                localMrHandle, loopBackQpMrLocalInfo.lkey, loopBackQpMrLocalInfo.rkey);
+    HCCL_DEBUG("[RegisterLocalMr]Local MR registered successfully. MR Handle=0x%p", localMrHandle);
     return HCCL_SUCCESS;
 }
 
@@ -144,8 +143,7 @@ HcclResult FlushHandle::RegisterRemoteMr()
                    eRet);
         return HCCL_E_MEMORY;
     }
-    HCCL_DEBUG("[RegisterRemoteMr]Remote MR registered successfully. MR Handle=0x%p, lkey=%u, rkey=%u",
-                remoteMrHandle, loopBackQpMrRemoteInfo.lkey, loopBackQpMrRemoteInfo.rkey);
+    HCCL_DEBUG("[RegisterRemoteMr]Remote MR registered successfully. MR Handle=0x%p", remoteMrHandle);
     return HCCL_SUCCESS;
 }
 
@@ -183,9 +181,7 @@ HcclResult FlushHandle::DestroyLoopbackQp()
 
     int ret = RaQpDestroy(qpHandle);
     if (ret != 0) {
-        HCCL_ERROR("[DestroyLoopbackQp] Failed to destroy QP. "
-                   "qpHandle=%p, error=%d",
-                   qpHandle, ret);
+        HCCL_ERROR("[DestroyLoopbackQp] Failed to destroy QP. qpHandle=%p, error=%d", qpHandle, ret);
         qpHandle = nullptr;
         return HCCL_E_INTERNAL;
     }

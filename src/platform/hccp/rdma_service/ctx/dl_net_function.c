@@ -12,175 +12,175 @@
 #include "net_adapt_u_api.h"
 #include "dl_net_function.h"
 
-void *g_net_api_handle = NULL;
+void *gNetApiHandle = NULL;
 #ifndef CA_CONFIG_LLT
-struct rs_net_ops g_net_ops;
+struct RsNetOps gNetOps;
 #else
-struct rs_net_ops g_net_ops = {
-    .rs_net_adapt_init = net_adapt_init,
-    .rs_net_adapt_uninit = net_adapt_uninit,
-    .rs_net_alloc_jfc_id = net_alloc_jfc_id,
-    .rs_net_free_jfc_id = net_free_jfc_id,
-    .rs_net_alloc_jetty_id = net_alloc_jetty_id,
-    .rs_net_free_jetty_id = net_free_jetty_id,
-    .rs_net_get_cqe_base_addr = net_get_cqe_base_addr,
+struct RsNetOps gNetOps = {
+    .rsNetAdaptInit = net_adapt_init,
+    .rsNetAdaptUninit = net_adapt_uninit,
+    .rsNetAllocJfcId = net_alloc_jfc_id,
+    .rsNetFreeJfcId = net_free_jfc_id,
+    .rsNetAllocJettyId = net_alloc_jetty_id,
+    .rsNetFreeJettyId = net_free_jetty_id,
+    .rsNetGetCqeBaseAddr = net_get_cqe_base_addr,
 };
 #endif
 
-int rs_net_adapt_api_init(void)
+int RsNetAdaptApiInit(void)
 {
 #ifndef CA_CONFIG_LLT
-    g_net_ops.rs_net_adapt_init = (int (*)(void)) HccpDlsym(g_net_api_handle, "net_adapt_init");
-    DL_API_RET_IS_NULL_CHECK(g_net_ops.rs_net_adapt_init, "net_adapt_init");
+    gNetOps.rsNetAdaptInit = (int (*)(void)) HccpDlsym(gNetApiHandle, "net_adapt_init");
+    DL_API_RET_IS_NULL_CHECK(gNetOps.rsNetAdaptInit, "net_adapt_init");
 
-    g_net_ops.rs_net_adapt_uninit = (void (*)(void)) HccpDlsym(g_net_api_handle, "net_adapt_uninit");
-    DL_API_RET_IS_NULL_CHECK(g_net_ops.rs_net_adapt_uninit, "net_adapt_uninit");
+    gNetOps.rsNetAdaptUninit = (void (*)(void)) HccpDlsym(gNetApiHandle, "net_adapt_uninit");
+    DL_API_RET_IS_NULL_CHECK(gNetOps.rsNetAdaptUninit, "net_adapt_uninit");
 
-    g_net_ops.rs_net_alloc_jfc_id = (int (*)(const char *udev_name, unsigned int jfc_mode, unsigned int *jfc_id))
-        HccpDlsym(g_net_api_handle, "net_alloc_jfc_id");
-    DL_API_RET_IS_NULL_CHECK(g_net_ops.rs_net_alloc_jfc_id, "net_alloc_jfc_id");
+    gNetOps.rsNetAllocJfcId = (int (*)(const char *udevName, unsigned int jfcMode, unsigned int *jfcId))
+        HccpDlsym(gNetApiHandle, "net_alloc_jfc_id");
+    DL_API_RET_IS_NULL_CHECK(gNetOps.rsNetAllocJfcId, "net_alloc_jfc_id");
 
-    g_net_ops.rs_net_free_jfc_id = (int (*)(const char *udev_name, unsigned int jfc_mode, unsigned int jfc_id))
-        HccpDlsym(g_net_api_handle, "net_free_jfc_id");
-    DL_API_RET_IS_NULL_CHECK(g_net_ops.rs_net_free_jfc_id, "net_free_jfc_id");
+    gNetOps.rsNetFreeJfcId = (int (*)(const char *udevName, unsigned int jfcMode, unsigned int jfcId))
+        HccpDlsym(gNetApiHandle, "net_free_jfc_id");
+    DL_API_RET_IS_NULL_CHECK(gNetOps.rsNetFreeJfcId, "net_free_jfc_id");
 
-    g_net_ops.rs_net_alloc_jetty_id =
-        (int (*)(const char *udev_name, unsigned int jetty_mode, unsigned int *jetty_id))
-        HccpDlsym(g_net_api_handle, "net_alloc_jetty_id");
-    DL_API_RET_IS_NULL_CHECK(g_net_ops.rs_net_alloc_jetty_id, "net_alloc_jetty_id");
+    gNetOps.rsNetAllocJettyId =
+        (int (*)(const char *udevName, unsigned int jettyMode, unsigned int *jettyId))
+        HccpDlsym(gNetApiHandle, "net_alloc_jetty_id");
+    DL_API_RET_IS_NULL_CHECK(gNetOps.rsNetAllocJettyId, "net_alloc_jetty_id");
 
-    g_net_ops.rs_net_free_jetty_id = (int (*)(const char *udev_name, unsigned int jetty_mode, unsigned int jetty_id))
-        HccpDlsym(g_net_api_handle, "net_free_jetty_id");
-    DL_API_RET_IS_NULL_CHECK(g_net_ops.rs_net_free_jetty_id, "net_free_jetty_id");
+    gNetOps.rsNetFreeJettyId = (int (*)(const char *udevName, unsigned int jettyMode, unsigned int jettyId))
+        HccpDlsym(gNetApiHandle, "net_free_jetty_id");
+    DL_API_RET_IS_NULL_CHECK(gNetOps.rsNetFreeJettyId, "net_free_jetty_id");
 
-    g_net_ops.rs_net_get_cqe_base_addr = (unsigned long long (*)(unsigned int die_id))
-        HccpDlsym(g_net_api_handle, "net_get_cqe_base_addr");
-    DL_API_RET_IS_NULL_CHECK(g_net_ops.rs_net_get_cqe_base_addr, "net_get_cqe_base_addr");
+    gNetOps.rsNetGetCqeBaseAddr = (unsigned long long (*)(unsigned int dieId))
+        HccpDlsym(gNetApiHandle, "net_get_cqe_base_addr");
+    DL_API_RET_IS_NULL_CHECK(gNetOps.rsNetGetCqeBaseAddr, "net_get_cqe_base_addr");
 #endif
     return 0;
 }
 
-int rs_open_net_so(void)
+int RsOpenNetSo(void)
 {
 #ifndef CA_CONFIG_LLT
-    if (g_net_api_handle == NULL) {
-        g_net_api_handle = HccpDlopen("libnet_adapt.so", RTLD_NOW);
-        return ((g_net_api_handle != NULL) ? 0 : -EINVAL);
+    if (gNetApiHandle == NULL) {
+        gNetApiHandle = HccpDlopen("libnet_adapt.so", RTLD_NOW);
+        return ((gNetApiHandle != NULL) ? 0 : -EINVAL);
     }
     hccp_run_info("net_adapt_api HccpDlopen again!");
 #endif
     return 0;
 }
 
-void rs_close_net_so(void)
+void RsCloseNetSo(void)
 {
 #ifndef CA_CONFIG_LLT
-    if (g_net_api_handle != NULL) {
-        (void)HccpDlclose(g_net_api_handle);
-        g_net_api_handle = NULL;
+    if (gNetApiHandle != NULL) {
+        (void)HccpDlclose(gNetApiHandle);
+        gNetApiHandle = NULL;
     }
 #endif
     return;
 }
 
-int rs_net_api_init(void)
+int RsNetApiInit(void)
 {
     int ret;
 
-    ret = rs_open_net_so();
+    ret = RsOpenNetSo();
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_open_net_so[libnet_adapt.so] failed! ret=[%d],"
         "please check network adapter driver has been installed", ret), ret);
 
-    ret = rs_net_adapt_api_init();
+    ret = RsNetAdaptApiInit();
     if (ret != 0) {
         hccp_err("rs_net_adapt_api_init failed! ret=[%d]", ret);
-        rs_close_net_so();
+        RsCloseNetSo();
         return ret;
     }
     return 0;
 }
 
-void rs_net_api_deinit(void)
+void RsNetApiDeinit(void)
 {
-    rs_close_net_so();
+    RsCloseNetSo();
     return;
 }
 
-int rs_net_adapt_init(void)
+int RsNetAdaptInit(void)
 {
-    if (g_net_api_handle == NULL || g_net_ops.rs_net_adapt_init == NULL) {
+    if (gNetApiHandle == NULL || gNetOps.rsNetAdaptInit == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("g_net_api_handle is NULL or rs_net_adapt_init is NULL");
         return -EINVAL;
 #endif
     }
-    return g_net_ops.rs_net_adapt_init();
+    return gNetOps.rsNetAdaptInit();
 }
 
-void rs_net_adapt_uninit(void)
+void RsNetAdaptUninit(void)
 {
-    if (g_net_api_handle == NULL || g_net_ops.rs_net_adapt_uninit == NULL) {
+    if (gNetApiHandle == NULL || gNetOps.rsNetAdaptUninit == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("g_net_api_handle is NULL or rs_net_adapt_uninit is NULL");
         return;
 #endif
     }
-    g_net_ops.rs_net_adapt_uninit();
+    gNetOps.rsNetAdaptUninit();
 }
 
-int rs_net_alloc_jfc_id(const char *udev_name, unsigned int jfc_mode, unsigned int *jfc_id)
+int RsNetAllocJfcId(const char *udevName, unsigned int jfcMode, unsigned int *jfcId)
 {
-    if (g_net_api_handle == NULL || g_net_ops.rs_net_alloc_jfc_id == NULL) {
+    if (gNetApiHandle == NULL || gNetOps.rsNetAllocJfcId == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("g_net_api_handle is NULL or rs_net_alloc_jfc_id is NULL");
         return -EINVAL;
 #endif
     }
-    return g_net_ops.rs_net_alloc_jfc_id(udev_name, jfc_mode, jfc_id);
+    return gNetOps.rsNetAllocJfcId(udevName, jfcMode, jfcId);
 }
 
-int rs_net_free_jfc_id(const char *udev_name, unsigned int jfc_mode, unsigned int jfc_id)
+int RsNetFreeJfcId(const char *udevName, unsigned int jfcMode, unsigned int jfcId)
 {
-    if (g_net_api_handle == NULL || g_net_ops.rs_net_free_jfc_id == NULL) {
+    if (gNetApiHandle == NULL || gNetOps.rsNetFreeJfcId == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("g_net_api_handle is NULL or rs_net_free_jfc_id is NULL");
         return -EINVAL;
 #endif
     }
-    return g_net_ops.rs_net_free_jfc_id(udev_name, jfc_mode, jfc_id);
+    return gNetOps.rsNetFreeJfcId(udevName, jfcMode, jfcId);
 }
 
-int rs_net_alloc_jetty_id(const char *udev_name, unsigned int jetty_mode, unsigned int *jetty_id)
+int RsNetAllocJettyId(const char *udevName, unsigned int jettyMode, unsigned int *jettyId)
 {
-    if (g_net_api_handle == NULL || g_net_ops.rs_net_alloc_jetty_id == NULL) {
+    if (gNetApiHandle == NULL || gNetOps.rsNetAllocJettyId == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("g_net_api_handle is NULL or rs_net_alloc_jetty_id is NULL");
         return -EINVAL;
 #endif
     }
-    return g_net_ops.rs_net_alloc_jetty_id(udev_name, jetty_mode, jetty_id);
+    return gNetOps.rsNetAllocJettyId(udevName, jettyMode, jettyId);
 }
 
-int rs_net_free_jetty_id(const char *udev_name, unsigned int jetty_mode, unsigned int jetty_id)
+int RsNetFreeJettyId(const char *udevName, unsigned int jettyMode, unsigned int jettyId)
 {
-    if (g_net_api_handle == NULL || g_net_ops.rs_net_free_jetty_id == NULL) {
+    if (gNetApiHandle == NULL || gNetOps.rsNetFreeJettyId == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("g_net_api_handle is NULL or rs_net_free_jetty_id is NULL");
         return -EINVAL;
 #endif
     }
-    return g_net_ops.rs_net_free_jetty_id(udev_name, jetty_mode, jetty_id);
+    return gNetOps.rsNetFreeJettyId(udevName, jettyMode, jettyId);
 }
 
-int rs_net_get_cqe_base_addr(unsigned int die_id, unsigned long long *cqe_base_addr)
+int RsNetGetCqeBaseAddr(unsigned int dieId, unsigned long long *cqeBaseAddr)
 {
-    if (g_net_api_handle == NULL || g_net_ops.rs_net_get_cqe_base_addr == NULL) {
+    if (gNetApiHandle == NULL || gNetOps.rsNetGetCqeBaseAddr == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("g_net_api_handle is NULL or rs_net_get_cqe_base_addr is NULL");
         return -EINVAL;
 #endif
     }
-    CHK_PRT_RETURN(cqe_base_addr == NULL, hccp_err("cqe_base_addr is null, die_id:%u", die_id), -EINVAL);
-    *cqe_base_addr = g_net_ops.rs_net_get_cqe_base_addr(die_id);
+    CHK_PRT_RETURN(cqeBaseAddr == NULL, hccp_err("cqe_base_addr is null, dieId:%u", dieId), -EINVAL);
+    *cqeBaseAddr = gNetOps.rsNetGetCqeBaseAddr(dieId);
     return 0;
 }

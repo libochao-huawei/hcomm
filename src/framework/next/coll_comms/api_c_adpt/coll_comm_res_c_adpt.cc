@@ -12,6 +12,7 @@
 #include "hccl_comm_pub.h"
 #include "exception_handler.h"
 #include "env_config.h"
+#include "../common/loggers/channel_logger.h"  // 日志记录器
 
 #include "hcom_common.h"
 #include "ccu_kernel.h"
@@ -123,17 +124,14 @@ bool CheckCommEngine(const CommEngine engine, const uint32_t opExpansionMode)
 }
 
 constexpr uint32_t CHANNEL_NUM_MAX = 1024 * 1024;  // channel的默认限制最大为1024 * 1024
- 
+
 HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, 
     const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle* channels)
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
     HcclUs startut = TIME_NOW();
     EXCEPTION_HANDLE_BEGIN
-    for (uint32_t idx = 0; idx < channelNum; idx++) {
-        HCCL_INFO("HcclChannelAcquire idx[%u], local[%d], remote[%d]",
-            idx, channelDescs[idx].localEndpoint.loc.locType, channelDescs[idx].remoteEndpoint.loc.locType);
-    }
+    HCCL_INFO("[%s] ChannelAcquire begin, channelNum[%u], engine[%d]", __func__, channelNum, engine);
 
     // 入参校验
     CHK_PTR_NULL(comm);

@@ -37,5 +37,5 @@ protected:
     }
 };
 
-TEST_M(Hccp, tc_normal);
-TEST_M(Hccp, tc_abnormal);
+TEST_M(Hccp, TcNormal);
+TEST_M(Hccp, TcAbnormal);
