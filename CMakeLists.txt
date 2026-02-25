@@ -224,7 +224,7 @@ elseif(BUILD_OPEN_PROJECT)
         pkg_inc/hcomm/ccu/ccu_assist_pub.h
         pkg_inc/hcomm/ccu/ccu_common.h
         pkg_inc/hcomm/ccu/ccu_condition_v1.h
-        pkg_inc/hcomm/ccu/ccu_context_resource_v1.h
+        pkg_inc/hcomm/ccu/ccu_kernel_resource.h
         pkg_inc/hcomm/ccu/ccu_datatype_v1.h
         pkg_inc/hcomm/ccu/ccu_funccall_v1.h
         pkg_inc/hcomm/ccu/ccu_instr_info_v1.h

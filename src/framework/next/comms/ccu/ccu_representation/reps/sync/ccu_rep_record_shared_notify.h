@@ -8,27 +8,26 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCL_CCU_RES_H
-#define HCCL_CCU_RES_H
+#ifndef HCOMM_CCU_REPRESENTATION_RECORD_SHARED_NOTIFY_H
+#define HCOMM_CCU_REPRESENTATION_RECORD_SHARED_NOTIFY_H
 
-#include "hccl_types.h"
-#include "ccu_kernel.h"
+#include "ccu_datatype_v1.h"
+#include "ccu_rep_base_v1.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
+namespace hcomm {
+namespace CcuRep {
 
-extern HcclResult HcclCcuKernelRegister(HcclComm comm,
-    CcuKernelHandle *kernelHandle, void *kernelCreator, void *kernelArg);
+class CcuRepRecordSharedNotify : public CcuRepBase {
+public:
+    CcuRepRecordSharedNotify(const LocalNotify &notify, uint16_t mask);
+    bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
+    std::string Describe() override;
 
-extern HcclResult HcclCcuKernelRegisterFinish(HcclComm comm);
+private:
+    LocalNotify notify_{};
+    uint16_t   mask_{0};
+};
 
-extern HcclResult HcclCcuKernelLaunch(HcclComm comm,
-    const ThreadHandle threadHandle, const CcuKernelHandle kernelHandle,
-    void *taskArgs);
-
-#ifdef __cplusplus
-}
-#endif // __cplusplus
-
-#endif
+};     // namespace CcuRep
+};     // namespace hcomm
+#endif // HCOMM_CCU_REPRESENTATION_RECORD_SHARED_NOTIFY_H
