@@ -73,6 +73,7 @@ TEST_F(MaskEventTest, MaskEventRecord_ok)
  	MOCKER(HrtEventDestroy).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     MOCKER(HrtEventRecord).stubs().will(returnValue(static_cast<void*>(0)));
+
     // when
     MaskEvent maskEvent;
     Stream stream;

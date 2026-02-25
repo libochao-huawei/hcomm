@@ -24,7 +24,8 @@ HcclResult CcuCreateJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo
 }
 
 CcuJetty::CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo)
-        : ipAddr_(ipAddr), jettyInfo_(jettyInfo){
+    : ipAddr_(ipAddr), jettyInfo_(jettyInfo)
+{
 }
 
 CcuJetty::~CcuJetty()

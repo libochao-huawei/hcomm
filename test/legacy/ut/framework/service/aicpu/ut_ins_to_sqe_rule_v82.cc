@@ -339,7 +339,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_AicpuReduce)
     EXPECT_EQ(true, ui0 == 2);
     insAicpuReduce.RunAicpuReduce(&d0, 8, &d1, 8, DataType::FP64, ReduceOp::MIN);
     EXPECT_EQ(true, d0 == 1.0);
- 
+
     std::vector<char> notifyLite1{1,2};
     StreamLite stream(notifyLite1);
     RtsqA5     rtsq(0, 1, 2);
@@ -404,7 +404,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_post_to)
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::NotifyRecordLoc).stubs().with(any());
 
     StubResMgrFetcher mockResMgrFetcher;
-
+    
     EXPECT_THROW(Interpret(insLocalPostTo, stream, &mockResMgrFetcher), NullPtrException);
     Interpret(insLocalPostTo, stream, &mockResMgrFetcher);
 
