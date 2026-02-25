@@ -22,6 +22,7 @@
 #include "adapter_hal_pub.h"
 #include "device_capacity.h"
 #include "hccl_api.h"
+#include "resource_entities.h"
 #include "stream_lite.h"
 
 namespace hccl {
@@ -46,6 +47,7 @@ public:
     virtual HcclResult LaunchTask() const = 0;
 
     // Local Data Plane Functions
+    virtual HcclResult ThreadNotifyRecordCrossType(const NotifyEntity notifyEntity) const = 0;  // 跨通知类型的 Thread 间同步
     virtual HcclResult LocalNotifyRecord(uint32_t notifyId) const = 0;
     virtual HcclResult LocalNotifyWait(uint32_t notifyId) const = 0;
     virtual HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const = 0;

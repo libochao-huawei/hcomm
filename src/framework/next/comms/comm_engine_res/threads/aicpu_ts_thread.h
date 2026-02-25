@@ -33,7 +33,8 @@ public:
     Hccl::StreamLite *GetStreamLitePtr() const override;
     HcclResult LaunchTask() const override;
 
-    // Local Data Plane Functions
+    // Local Data Plane Functions    
+    HcclResult ThreadNotifyRecordCrossType(const NotifyEntity notifyEntity) const override;
     HcclResult LocalNotifyWait(uint32_t notifyId) const override;
     HcclResult LocalNotifyRecord(uint32_t notifyId) const override;
     HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const override;

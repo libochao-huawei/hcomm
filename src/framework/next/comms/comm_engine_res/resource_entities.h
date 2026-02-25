@@ -54,7 +54,7 @@ typedef struct {
             ThreadServiceHandle waitService;
             ThreadServiceHandle recordService;
         } cpuRes;
-        ThreadHandle threadObj;
+        ThreadHandle threadObjAddr;
         uint32_t raws[128];
     };
     uint32_t notifyNum;

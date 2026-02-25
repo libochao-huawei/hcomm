@@ -278,6 +278,21 @@ inline HcclResult CheckDataTypeAndReduceOp(HcommDataType dataType, HcommReduceOp
 } // namespace
 
 // Local Data Plane Functions
+HcclResult AicpuTsThread::ThreadNotifyRecordCrossType(const NotifyEntity notifyEntity) const
+{
+    if (notifyEntity.type != NOTIFY_TYPE_HOST_MEM) {
+        HCCL_ERROR("[AicpuTsThread::%s] non-HOST_MEM notify is NOT supported.", __func__);
+        return HCCL_E_PARA;
+    }
+    CHK_PTR_NULL(streamA5_);
+    Hccl::RtsqBase *const rtsqPtr = streamA5_->GetRtsq();
+    CHK_PTR_NULL(rtsqPtr);
+    
+    const uint64_t notifyDeviceVA = notifyEntity.u.deviceVA;
+    TRY_CATCH_RETURN(rtsqPtr->WriteValue(notifyDeviceVA, 1));
+    return HCCL_SUCCESS;
+}
+
 HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId) const
 {
     CHK_PTR_NULL(streamA5_);
