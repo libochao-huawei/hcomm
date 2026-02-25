@@ -18,25 +18,25 @@
 #include "ra_rs_comm.h"
 #include "ra_rs_ctx.h"
 
-int ra_ctx_prepare_lmem_register(struct mr_reg_info_t *lmem_info, struct mem_reg_attr_t *mem_attr);
+int RaCtxPrepareLmemRegister(struct MrRegInfoT *lmemInfo, struct MemRegAttrT *memAttr);
 
-void ra_ctx_get_lmem_info(struct mem_reg_info_t *mem_info, struct mr_reg_info_t *lmem_info,
-    struct ra_lmem_handle *lmem_handle);
+void RaCtxGetLmemInfo(struct MemRegInfoT *memInfo, struct MrRegInfoT *lmemInfo,
+    struct RaLmemHandle *lmemHandle);
 
-void ra_ctx_prepare_rmem_import(struct mr_import_info_t *rmem_info, struct mem_import_attr_t *mem_attr);
+void RaCtxPrepareRmemImport(struct MrImportInfoT *rmemInfo, struct MemImportAttrT *memAttr);
 
-void ra_ctx_prepare_cq_create(struct cq_info_t *info, struct ctx_cq_attr *cq_attr);
+void RaCtxPrepareCqCreate(struct CqInfoT *info, struct CtxCqAttr *cqAttr);
 
-void ra_ctx_get_cq_create_info(struct ctx_cq_info *cq_info, struct cq_info_t *info);
+void RaCtxGetCqCreateInfo(struct CtxCqInfo *cqInfo, struct CqInfoT *info);
 
-int ra_ctx_prepare_qp_create(struct qp_create_attr *qp_attr, struct ctx_qp_attr *ctx_qp_attr);
+int RaCtxPrepareQpCreate(struct QpCreateAttr *qpAttr, struct CtxQpAttr *ctxQpAttr);
 
-void ra_ctx_get_qp_create_info(struct ra_ctx_handle *ctx_handle, struct qp_create_attr *qp_attr,
-    struct qp_create_info *qp_info, struct ra_ctx_qp_handle *qp_handle);
+void RaCtxGetQpCreateInfo(struct RaCtxHandle *ctxHandle, struct QpCreateAttr *qpAttr,
+    struct QpCreateInfo *qpInfo, struct RaCtxQpHandle *qpHandle);
 
-void ra_ctx_prepare_qp_import(struct qp_import_info_t *qp_info, struct ra_rs_jetty_import_attr *import_attr);
+void RaCtxPrepareQpImport(struct QpImportInfoT *qpInfo, struct RaRsJettyImportAttr *importAttr);
 
-void ra_ctx_get_qp_import_info(struct ra_ctx_handle *ctx_handle, struct qp_import_info_t *qp_info,
-    struct ra_rs_jetty_import_info *import_info, struct ra_ctx_rem_qp_handle *qp_handle);
+void RaCtxGetQpImportInfo(struct RaCtxHandle *ctxHandle, struct QpImportInfoT *qpInfo,
+    struct RaRsJettyImportInfo *importInfo, struct RaCtxRemQpHandle *qpHandle);
 
 #endif // RA_CTX_COMM_H

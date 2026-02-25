@@ -112,7 +112,7 @@ struct RsPongTargetInfo {
     struct PingQpInfo qpInfo;
     union {
         struct ibv_ah *ah;
-        urma_target_jetty_t *import_tjetty;
+        urma_target_jetty_t *importTjetty;
     };
 
     enum RsPingPongTargetState state;
@@ -128,7 +128,7 @@ struct RsPingTargetInfo {
     struct PingQpInfo qpInfo;
     union {
         struct ibv_ah *ah;
-        urma_target_jetty_t *import_tjetty;
+        urma_target_jetty_t *importTjetty;
     };
 
     enum RsPingPongTargetState state;
@@ -153,44 +153,44 @@ struct RsPingRdevCb {
     struct ibv_pd *ibPd;
 };
 
-struct rs_ping_seg_cb {
-    uint32_t payload_offset;
+struct RsPingSegCb {
+    uint32_t payloadOffset;
     uint64_t len;
 
     pthread_mutex_t mutex;
     uint64_t addr;
 
-    urma_token_t token_value;
+    urma_token_t tokenValue;
     urma_target_seg_t *segment;
-    uint32_t sge_num;
-    urma_sge_t *sge_list;
-    uint32_t sge_idx;
+    uint32_t sgeNum;
+    urma_sge_t *sgeList;
+    uint32_t sgeIdx;
 };
 
-struct rs_ping_jfc_info {
+struct RsPingJfcInfo {
     int depth;
     urma_jfc_t *jfc;
-    uint32_t num_events;
-    int max_recv_wc_num;
+    uint32_t numEvents;
+    int maxRecvWcNum;
 };
 
-struct rs_ping_local_jetty_cb {
+struct RsPingLocalJettyCb {
     urma_jfce_t *jfce;
-    struct rs_ping_jfc_info send_jfc;
-    struct rs_ping_jfc_info recv_jfc;
+    struct RsPingJfcInfo sendJfc;
+    struct RsPingJfcInfo recvJfc;
 
-    uint32_t token_value;
+    uint32_t tokenValue;
     urma_jfr_t *jfr;
     urma_jetty_t *jetty;
 
-    struct rs_ping_seg_cb send_seg_cb;
-    struct rs_ping_seg_cb recv_seg_cb;
+    struct RsPingSegCb sendSegCb;
+    struct RsPingSegCb recvSegCb;
 };
 
-struct rs_ping_udev_cb {
-    struct dev_eid_info eid_info;
-    urma_device_t *urma_dev;
-    urma_context_t *urma_ctx;
+struct RsPingUdevCb {
+    struct HccpDevEidInfo eidInfo;
+    urma_device_t *urmaDev;
+    urma_context_t *urmaCtx;
 };
 
 struct RsPingCtxCb {
@@ -216,17 +216,17 @@ struct RsPingCtxCb {
     pthread_mutex_t devMutex;
     union {
         struct RsPingRdevCb rdevCb;
-        struct rs_ping_udev_cb udev_cb;
+        struct RsPingUdevCb udevCb;
     };
 
     union {
         struct RsPingLocalQpCb pingQp;
-        struct rs_ping_local_jetty_cb ping_jetty;
+        struct RsPingLocalJettyCb pingJetty;
     };
 
     union {
         struct RsPingLocalQpCb pongQp;
-        struct rs_ping_local_jetty_cb pong_jetty;
+        struct RsPingLocalJettyCb pongJetty;
     };
 
     int taskStatus;

@@ -16,41 +16,41 @@
 #define RS_TEST_MEM_SIZE  32
 #define RS_TEST_MEM_PAGE_SIZE  4096
 
-void tc_rs_init2();
-void tc_rs_deinit2();
+void TcRsInit2();
+void TcRsDeinit2();
 
-void tc_rs_socket_init();
-void tc_rs_socket_deinit();
+void TcRsSocketInit();
+void TcRsSocketDeinit();
 
-void tc_rs_rdev_init();
-void tc_rs_rdev_deinit();
+void TcRsRdevInit();
+void TcRsRdevDeinit();
 
-void tc_rs_get_tsqp_depth_abnormal();
-void tc_rs_set_tsqp_depth_abnormal();
+void TcRsGetTsqpDepthAbnormal();
+void TcRsSetTsqpDepthAbnormal();
 
-void tc_rs_socket_listen_start2();
-void tc_rs_socket_batch_connect2();
-void tc_rs_qp_create2();
-void tc_rs_mr_ops2();
+void TcRsSocketListenStart2();
+void TcRsSocketBatchConnect2();
+void TcRsQpCreate2();
+void TcRsMrOps2();
 
-void tc_rs_abnormal2();
-void tc_rs_epoll_ops2();
-void tc_rs_socket_ops2();
-void tc_rs_socket_close2();
-void tc_rs_mr_abnormal2();
-void tc_rs_get_gid_index2();
-void tc_rs_qp_connect_async2();
-void tc_rs_send_wr2();
-void tc_tls_abnormal1();
-void tc_rs_socket_nodeid2vnic();
-void tc_rs_server_valid_async_init();
-void tc_rs_connect_handle();
-void tc_rs_get_qp_context();
-void tc_rs_socket_get_bind_by_chip();
-void tc_rs_socket_batch_abort();
-void tc_rs_socket_send_and_recv_log_test();
-void tc_rs_tcp_recv_tag_in_handle();
-void tc_rs_server_valid_async_abnormal();
-void tc_rs_server_valid_async_abnormal_01();
-void tc_rs_net_api_init_fail();
+void TcRsAbnormal2();
+void TcRsEpollOps2();
+void TcRsSocketOps2();
+void TcRsSocketClose2();
+void TcRsMrAbnormal2();
+void TcRsGetGidIndex2();
+void TcRsQpConnectAsync2();
+void TcRsSendWr2();
+void TcTlsAbnormal1();
+void TcRsSocketNodeid2vnic();
+void TcRsServerValidAsyncInit();
+void TcRsConnectHandle();
+void TcRsGetQpContext();
+void TcRsSocketGetBindByChip();
+void TcRsSocketBatchAbort();
+void TcRsSocketSendAndRecvLogTest();
+void TcRsTcpRecvTagInHandle();
+void TcRsServerValidAsyncAbnormal();
+void TcRsServerValidAsyncAbnormal01();
+void TcRsNetApiInitFail();
 #endif

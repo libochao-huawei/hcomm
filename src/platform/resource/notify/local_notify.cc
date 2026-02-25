@@ -74,9 +74,19 @@ HcclResult LocalNotify::Wait(Stream& stream, HcclDispatcher dispatcher, s32 stag
     return pimpl_->Wait(stream, dispatcher, stage, timeOut);
 }
 
+HcclResult LocalNotify::Wait(Stream& stream, u32 timeOut)
+{
+    return pimpl_->Wait(stream, timeOut);
+}
+
 HcclResult LocalNotify::Post(Stream& stream, HcclDispatcher dispatcher, s32 stage)
 {
     return pimpl_->Post(stream, dispatcher, stage);
+}
+
+HcclResult LocalNotify::Post(Stream& stream)
+{
+    return pimpl_->Post(stream);
 }
 
 HcclResult LocalNotify::Wait(Stream& stream, HcclDispatcher dispatcherPtr, const std::shared_ptr<LocalNotify> &notify,
@@ -88,6 +98,7 @@ HcclResult LocalNotify::Wait(Stream& stream, HcclDispatcher dispatcherPtr, const
     return reinterpret_cast<DispatcherPub*>(dispatcherPtr)->SignalWait(
         notify->ptr(), stream, INVALID_VALUE_RANKID, INVALID_VALUE_RANKID, stage, true, notify->notifyId_, timeOut);
 }
+
 HcclResult LocalNotify::Post(Stream& stream, HcclDispatcher dispatcherPtr, const std::shared_ptr<LocalNotify> &notify,
     s32 stage)
 {

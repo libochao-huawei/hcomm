@@ -28,7 +28,6 @@ public:
     void DefineArg(const std::vector<LocalAddr> addrList);
     void DefineArg(const std::vector<RemoteAddr> addrList);
 
- 
     CcuRepArg &GetArg(uint16_t index);
  
 private:

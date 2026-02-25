@@ -13,126 +13,126 @@
 #include "ra_rs_err.h"
 #include "ra_ctx_comm.h"
 
-int ra_ctx_prepare_lmem_register(struct mr_reg_info_t *lmem_info, struct mem_reg_attr_t *mem_attr)
+int RaCtxPrepareLmemRegister(struct MrRegInfoT *lmemInfo, struct MemRegAttrT *memAttr)
 {
-    struct ra_token_id_handle *token_id_handle = NULL;
-    bool is_token_id_valid = false;
+    struct RaTokenIdHandle *tokenIdHandle = NULL;
+    bool isTokenIdValid = false;
 
-    mem_attr->mem = lmem_info->in.mem;
-    is_token_id_valid = lmem_info->in.ub.flags.bs.token_id_valid == 1;
-    CHK_PRT_RETURN(is_token_id_valid && lmem_info->in.ub.token_id_handle == NULL,
-        hccp_err("[init][ra_ctx_lmem]lmem_info specify token id, but token_id_handle is NULL"), -EINVAL);
-    mem_attr->ub.flags = lmem_info->in.ub.flags;
-    mem_attr->ub.token_value = lmem_info->in.ub.token_value;
-    token_id_handle = (struct ra_token_id_handle *)(lmem_info->in.ub.token_id_handle);
-    mem_attr->ub.token_id_addr = is_token_id_valid ? token_id_handle->addr : 0;
+    memAttr->mem = lmemInfo->in.mem;
+    isTokenIdValid = lmemInfo->in.ub.flags.bs.tokenIdValid == 1;
+    CHK_PRT_RETURN(isTokenIdValid && lmemInfo->in.ub.tokenIdHandle == NULL,
+        hccp_err("[init][ra_ctx_lmem]lmem_info specify token id, but tokenIdHandle is NULL"), -EINVAL);
+    memAttr->ub.flags = lmemInfo->in.ub.flags;
+    memAttr->ub.tokenValue = lmemInfo->in.ub.tokenValue;
+    tokenIdHandle = (struct RaTokenIdHandle *)(lmemInfo->in.ub.tokenIdHandle);
+    memAttr->ub.tokenIdAddr = isTokenIdValid ? tokenIdHandle->addr : 0;
 
     return 0;
 }
 
-void ra_ctx_get_lmem_info(struct mem_reg_info_t *mem_info, struct mr_reg_info_t *lmem_info,
-    struct ra_lmem_handle *lmem_handle)
+void RaCtxGetLmemInfo(struct MemRegInfoT *memInfo, struct MrRegInfoT *lmemInfo,
+    struct RaLmemHandle *lmemHandle)
 {
-    lmem_info->out.key = mem_info->key;
-    lmem_info->out.ub.token_id = mem_info->ub.token_id;
-    lmem_info->out.ub.target_seg_handle = mem_info->ub.target_seg_handle;
-    lmem_handle->addr = lmem_info->out.ub.target_seg_handle;
+    lmemInfo->out.key = memInfo->key;
+    lmemInfo->out.ub.tokenId = memInfo->ub.tokenId;
+    lmemInfo->out.ub.targetSegHandle = memInfo->ub.targetSegHandle;
+    lmemHandle->addr = lmemInfo->out.ub.targetSegHandle;
 }
 
-void ra_ctx_prepare_rmem_import(struct mr_import_info_t *rmem_info, struct mem_import_attr_t *mem_attr)
+void RaCtxPrepareRmemImport(struct MrImportInfoT *rmemInfo, struct MemImportAttrT *memAttr)
 {
-    mem_attr->key = rmem_info->in.key;
-    mem_attr->ub.flags = rmem_info->in.ub.flags;
-    mem_attr->ub.mapping_addr = rmem_info->in.ub.mapping_addr;
-    mem_attr->ub.token_value = rmem_info->in.ub.token_value;
+    memAttr->key = rmemInfo->in.key;
+    memAttr->ub.flags = rmemInfo->in.ub.flags;
+    memAttr->ub.mappingAddr = rmemInfo->in.ub.mappingAddr;
+    memAttr->ub.tokenValue = rmemInfo->in.ub.tokenValue;
 }
 
-void ra_ctx_prepare_cq_create(struct cq_info_t *info, struct ctx_cq_attr *cq_attr)
+void RaCtxPrepareCqCreate(struct CqInfoT *info, struct CtxCqAttr *cqAttr)
 {
-    struct ra_chan_handle *chan_handle = NULL;
+    struct RaChanHandle *chanHandle = NULL;
 
-    cq_attr->depth = info->in.depth;
-    cq_attr->ub.user_ctx = info->in.ub.user_ctx;
-    cq_attr->ub.mode = info->in.ub.mode;
-    cq_attr->ub.ceqn = info->in.ub.ceqn;
-    cq_attr->ub.flag = info->in.ub.flag;
-    if (info->in.chan_handle != NULL) {
-        chan_handle = (struct ra_chan_handle *)info->in.chan_handle;
-        cq_attr->chan_addr = chan_handle->addr;
+    cqAttr->depth = info->in.depth;
+    cqAttr->ub.userCtx = info->in.ub.userCtx;
+    cqAttr->ub.mode = info->in.ub.mode;
+    cqAttr->ub.ceqn = info->in.ub.ceqn;
+    cqAttr->ub.flag = info->in.ub.flag;
+    if (info->in.chanHandle != NULL) {
+        chanHandle = (struct RaChanHandle *)info->in.chanHandle;
+        cqAttr->chanAddr = chanHandle->addr;
     }
 }
 
-void ra_ctx_get_cq_create_info(struct ctx_cq_info *cq_info, struct cq_info_t *info)
+void RaCtxGetCqCreateInfo(struct CtxCqInfo *cqInfo, struct CqInfoT *info)
 {
-    info->out.va = cq_info->addr;
-    info->out.id = cq_info->ub.id;
-    info->out.cqe_size = cq_info->ub.cqe_size;
-    info->out.buf_addr = cq_info->ub.buf_addr;
-    info->out.swdb_addr = cq_info->ub.swdb_addr;
+    info->out.va = cqInfo->addr;
+    info->out.id = cqInfo->ub.id;
+    info->out.cqeSize = cqInfo->ub.cqeSize;
+    info->out.bufAddr = cqInfo->ub.bufAddr;
+    info->out.swdbAddr = cqInfo->ub.swdbAddr;
 }
 
-int ra_ctx_prepare_qp_create(struct qp_create_attr *qp_attr, struct ctx_qp_attr *ctx_qp_attr)
+int RaCtxPrepareQpCreate(struct QpCreateAttr *qpAttr, struct CtxQpAttr *ctxQpAttr)
 {
-    struct ra_token_id_handle *token_id_handle = NULL;
+    struct RaTokenIdHandle *tokenIdHandle = NULL;
 
-    CHK_PRT_RETURN(qp_attr->scq_handle == NULL, hccp_err("[init][ra_ctx_qp]scq_handle is NULL"), -EINVAL);
-    CHK_PRT_RETURN(qp_attr->rcq_handle == NULL, hccp_err("[init][ra_ctx_qp]rcq_handle is NULL"), -EINVAL);
+    CHK_PRT_RETURN(qpAttr->scqHandle == NULL, hccp_err("[init][ra_ctx_qp]scq_handle is NULL"), -EINVAL);
+    CHK_PRT_RETURN(qpAttr->rcqHandle == NULL, hccp_err("[init][ra_ctx_qp]rcq_handle is NULL"), -EINVAL);
 
-    ctx_qp_attr->scq_index = ((struct ra_cq_handle *)qp_attr->scq_handle)->addr;
-    ctx_qp_attr->rcq_index = ((struct ra_cq_handle *)qp_attr->rcq_handle)->addr;
-    ctx_qp_attr->srq_index = 0;
-    ctx_qp_attr->sq_depth = qp_attr->sq_depth;
-    ctx_qp_attr->rq_depth = qp_attr->rq_depth;
-    ctx_qp_attr->transport_mode = qp_attr->transport_mode;
+    ctxQpAttr->scqIndex = ((struct RaCqHandle *)qpAttr->scqHandle)->addr;
+    ctxQpAttr->rcqIndex = ((struct RaCqHandle *)qpAttr->rcqHandle)->addr;
+    ctxQpAttr->srqIndex = 0;
+    ctxQpAttr->sqDepth = qpAttr->sqDepth;
+    ctxQpAttr->rqDepth = qpAttr->rqDepth;
+    ctxQpAttr->transportMode = qpAttr->transportMode;
 
-    ctx_qp_attr->ub.mode = qp_attr->ub.mode;
-    ctx_qp_attr->ub.jetty_id = qp_attr->ub.jetty_id;
-    ctx_qp_attr->ub.flag = qp_attr->ub.flag;
-    ctx_qp_attr->ub.jfs_flag = qp_attr->ub.jfs_flag;
-    ctx_qp_attr->ub.token_value = qp_attr->ub.token_value;
-    ctx_qp_attr->ub.priority = qp_attr->ub.priority;
-    ctx_qp_attr->ub.rnr_retry = qp_attr->ub.rnr_retry;
-    ctx_qp_attr->ub.err_timeout = qp_attr->ub.err_timeout;
+    ctxQpAttr->ub.mode = qpAttr->ub.mode;
+    ctxQpAttr->ub.jettyId = qpAttr->ub.jettyId;
+    ctxQpAttr->ub.flag = qpAttr->ub.flag;
+    ctxQpAttr->ub.jfsFlag = qpAttr->ub.jfsFlag;
+    ctxQpAttr->ub.tokenValue = qpAttr->ub.tokenValue;
+    ctxQpAttr->ub.priority = qpAttr->ub.priority;
+    ctxQpAttr->ub.rnrRetry = qpAttr->ub.rnrRetry;
+    ctxQpAttr->ub.errTimeout = qpAttr->ub.errTimeout;
 
-    if (qp_attr->ub.token_id_handle != NULL) {
-        token_id_handle = (struct ra_token_id_handle *)(qp_attr->ub.token_id_handle);
-        ctx_qp_attr->ub.token_id_addr = token_id_handle->addr;
+    if (qpAttr->ub.tokenIdHandle != NULL) {
+        tokenIdHandle = (struct RaTokenIdHandle *)(qpAttr->ub.tokenIdHandle);
+        ctxQpAttr->ub.tokenIdAddr = tokenIdHandle->addr;
     }
 
     return 0;
 }
 
-void ra_ctx_get_qp_create_info(struct ra_ctx_handle *ctx_handle, struct qp_create_attr *qp_attr,
-    struct qp_create_info *qp_info, struct ra_ctx_qp_handle *qp_handle)
+void RaCtxGetQpCreateInfo(struct RaCtxHandle *ctxHandle, struct QpCreateAttr *qpAttr,
+    struct QpCreateInfo *qpInfo, struct RaCtxQpHandle *qpHandle)
 {
-    qp_handle->dev_index = ctx_handle->dev_index;
-    qp_handle->phy_id = ctx_handle->attr.phy_id;
-    qp_handle->ctx_handle = ctx_handle;
-    qp_handle->protocol = ctx_handle->protocol;
-    qp_handle->id = qp_info->ub.id;
-    (void)memcpy_s(&qp_handle->qp_attr, sizeof(struct qp_create_attr), qp_attr, sizeof(struct qp_create_attr));
-    (void)memcpy_s(&qp_handle->qp_info, sizeof(struct qp_create_info), qp_info,
-        sizeof(struct qp_create_info));
+    qpHandle->devIndex = ctxHandle->devIndex;
+    qpHandle->phyId = ctxHandle->attr.phyId;
+    qpHandle->ctxHandle = ctxHandle;
+    qpHandle->protocol = ctxHandle->protocol;
+    qpHandle->id = qpInfo->ub.id;
+    (void)memcpy_s(&qpHandle->qpAttr, sizeof(struct QpCreateAttr), qpAttr, sizeof(struct QpCreateAttr));
+    (void)memcpy_s(&qpHandle->qpInfo, sizeof(struct QpCreateInfo), qpInfo,
+        sizeof(struct QpCreateInfo));
 }
 
-void ra_ctx_prepare_qp_import(struct qp_import_info_t *qp_info, struct ra_rs_jetty_import_attr *import_attr)
+void RaCtxPrepareQpImport(struct QpImportInfoT *qpInfo, struct RaRsJettyImportAttr *importAttr)
 {
-    import_attr->mode = qp_info->in.ub.mode;
-    import_attr->token_value = qp_info->in.ub.token_value;
-    import_attr->policy = qp_info->in.ub.policy;
-    import_attr->type = qp_info->in.ub.type;
-    import_attr->flag = qp_info->in.ub.flag;
-    import_attr->exp_import_cfg = qp_info->in.ub.exp_import_cfg;
-    import_attr->tp_type = qp_info->in.ub.tp_type;
+    importAttr->mode = qpInfo->in.ub.mode;
+    importAttr->tokenValue = qpInfo->in.ub.tokenValue;
+    importAttr->policy = qpInfo->in.ub.policy;
+    importAttr->type = qpInfo->in.ub.type;
+    importAttr->flag = qpInfo->in.ub.flag;
+    importAttr->expImportCfg = qpInfo->in.ub.expImportCfg;
+    importAttr->tpType = qpInfo->in.ub.tpType;
 }
 
-void ra_ctx_get_qp_import_info(struct ra_ctx_handle *ctx_handle, struct qp_import_info_t *qp_info,
-    struct ra_rs_jetty_import_info *import_info, struct ra_ctx_rem_qp_handle *qp_handle)
+void RaCtxGetQpImportInfo(struct RaCtxHandle *ctxHandle, struct QpImportInfoT *qpInfo,
+    struct RaRsJettyImportInfo *importInfo, struct RaCtxRemQpHandle *qpHandle)
 {
-    qp_info->out.ub.tjetty_handle = import_info->tjetty_handle;
-    qp_info->out.ub.tpn = import_info->tpn;
-    qp_handle->dev_index = ctx_handle->dev_index;
-    qp_handle->phy_id = ctx_handle->attr.phy_id;
-    qp_handle->protocol = ctx_handle->protocol;
-    qp_handle->qp_key = qp_info->in.key;
+    qpInfo->out.ub.tjettyHandle = importInfo->tjettyHandle;
+    qpInfo->out.ub.tpn = importInfo->tpn;
+    qpHandle->devIndex = ctxHandle->devIndex;
+    qpHandle->phyId = ctxHandle->attr.phyId;
+    qpHandle->protocol = ctxHandle->protocol;
+    qpHandle->qpKey = qpInfo->in.key;
 }

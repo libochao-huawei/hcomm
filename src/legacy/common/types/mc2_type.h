@@ -25,6 +25,8 @@ constexpr uint32_t CCU_PARAM_NUM_MAX     = CCU_PARAM_NUM_PER_DIE * 2;
 constexpr uint32_t CCU_ONE_PARAM_SIZE    = 8;
 constexpr uint32_t CCU_TASK_NUM_MAX      = 64;
 constexpr uint32_t MAX_RANK_NUM          = 64; // 最大卡数
+constexpr uint32_t MAX_OP_NUM            = 8;  // MC2最大通信算子数
+
 
 constexpr uint32_t UNKNOWN_TILING_V1   = 3;     // 旧版本 MC2 Tiling version = 3
 constexpr uint32_t UNKNOWN_TILING_V2   = 100;   // 新版本 MC2 Tiling version = 100
@@ -234,6 +236,8 @@ struct HcclCombinOpParam {
     uint64_t ckeAddr; // CKE寄存器其实地址
     uint64_t msAddr; // MS地址，预留
     uint64_t msSize; // 可写的MS个数，预留
+    uint32_t opType[MAX_OP_NUM];
+    uint8_t  algorithmType[MAX_OP_NUM];
 };
 
 struct Mc2ServerCfg {
@@ -283,12 +287,12 @@ struct Mc2Tiling {
     }
 };
 
-struct Mc2InitTilingInner {   // 这个必须放到mc2tiling的最前面
-    uint32_t version;         // tiling结构体版本号,外部不可配置, 100开始
-    uint32_t mc2HcommCnt;     // 通信的次数
-    uint32_t offset[8];       // 每个通信的偏移
-    uint8_t  debugMode;       // 调测模式, 0表示关闭,1表示开启,外部可配置
-    uint8_t  preparePosition; // prepare消息发送的位置，0表示device，1表示host,外部可配置
+struct Mc2InitTilingInner {         // 这个必须放到mc2tiling的最前面
+    uint32_t version;               // tiling结构体版本号,外部不可配置, 100开始
+    uint32_t mc2HcommCnt;           // 通信的次数
+    uint32_t offset[MAX_OP_NUM];    // 每个通信的偏移
+    uint8_t  debugMode;             // 调测模式, 0表示关闭,1表示开启,外部可配置
+    uint8_t  preparePosition;       // prepare消息发送的位置，0表示device，1表示host,外部可配置
     char     reserved[22];
 };
 

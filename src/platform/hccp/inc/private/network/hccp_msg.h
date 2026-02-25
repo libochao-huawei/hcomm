@@ -17,56 +17,56 @@ extern "C" {
 
 #pragma pack(push)
 #pragma pack (1)
-typedef struct tag_ts_ccu_task_info {
-    uint8_t udie_id;
+typedef struct TagTsCcuTaskInfo {
+    uint8_t udieId;
     uint8_t rsv;
-    uint16_t mission_id;
-} ts_ccu_task_info_t;
+    uint16_t missionId;
+} TsCcuTaskInfoT;
 
-typedef struct tag_ts_ub_task_info {
-    uint8_t udie_id;
-    uint8_t function_id;
-    uint16_t jetty_id;
-} ts_ub_task_info_t;
+typedef struct TagTsUbTaskInfo {
+    uint8_t udieId;
+    uint8_t functionId;
+    uint16_t jettyId;
+} TsUbTaskInfoT;
 
-typedef struct tag_ts_ccu_task_report {
+typedef struct TagTsCcuTaskReport {
     uint8_t num;
     uint8_t rsv1[3];
-    ts_ccu_task_info_t array[8];
+    TsCcuTaskInfoT array[8];
     uint8_t rsv2[60]; // rsv 60B
-} ts_ccu_task_report_t;
+} TsCcuTaskReportT;
 
-typedef struct tag_ts_ub_task_report {
+typedef struct TagTsUbTaskReport {
     uint8_t num;
     uint8_t rsv1[3];
-    ts_ub_task_info_t array[4];
+    TsUbTaskInfoT array[4];
     uint8_t rsv2[76]; // rsv 76B
-} ts_ub_task_report_t;
+} TsUbTaskReportT;
 
-typedef struct tag_ts_hccp_msg {
+typedef struct TagTsHccpMsg {
     // head 32B
-    int32_t hccp_pid;  // apm_query_slave_tgid_by_master
-    uint32_t host_pid;
-    uint8_t cmd_type;   // 0:ub force kill; 1:ccu force kill
-    uint8_t vf_id;
-    uint16_t sq_id;
-    uint16_t is_app_exit;
-    uint16_t sqe_type;
-    uint8_t app_flag;
-    uint8_t intr_type;
-    uint16_t model_id;
+    int32_t hccpPid;  // apm_query_slave_tgid_by_master
+    uint32_t hostPid;
+    uint8_t cmdType;   // 0:ub force kill; 1:ccu force kill
+    uint8_t vfId;
+    uint16_t sqId;
+    uint16_t isAppExit;
+    uint16_t sqeType;
+    uint8_t appFlag;
+    uint8_t intrType;
+    uint16_t modelId;
     uint8_t res2[12];
     // info 96B
     union {
-        ts_ub_task_report_t ub_task_info;
-        ts_ccu_task_report_t ccu_task_info;
+        TsUbTaskReportT ubTaskInfo;
+        TsCcuTaskReportT ccuTaskInfo;
     } u;
-} ts_hccp_msg;
+} TsHccpMsg;
 
-typedef enum tag_ts_hccp_sub_event_id {
+typedef enum TagTsHccpSubEventId {
     TOPIC_SEND_KILL_MSG = 1U,
     TOPIC_KILL_DONE_MSG,
-} ts_hccp_sub_event_id;
+} TsHccpSubEventId;
 #pragma pack(pop)
 #ifdef __cplusplus
 }
