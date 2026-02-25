@@ -74,13 +74,12 @@ private:
     HcclResult GetNotifySize();
     HcclResult RecoverNotifyMsg(MemMsg *remoteRdmaSignal, u64 signalNum);
     HcclResult ConnectImpl(s32 timeoutSec);
-    HcclResult ConnectImplWithTimeout(s32 timeoutSec);
     HcclResult GetQpStatus();
-    HcclResult QpConnect();
+    HcclResult QpConnect(s32 timeoutSec);
     HcclResult CreateRdmaSignal(
         std::shared_ptr<LocalIpcNotify> &localNotify, MemMsg &rdmaSignalInfo, MemType notifyType);
     HcclResult GetRdmaHandle();
-    HcclResult ExchangeNotifyValueBuffer();
+    HcclResult ExchangeNotifyValueBuffer(s32 timeoutSec);
     HcclResult RdmaDbSend(u32 dbindex, u64 dbinfo, const struct SendWr &sendWr, rtStream_t stream);
     HcclResult CreateNotifyValueBuffer();
     HcclResult TransportRdmaWithType(const RmaBufferSlice &localRmaBufferSlice,

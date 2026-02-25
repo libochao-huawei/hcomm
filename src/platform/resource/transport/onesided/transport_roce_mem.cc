@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <future>
 #include "transport_roce_mem.h"
 #include "log.h"
 #include "adapter_hal.h"
@@ -321,47 +320,15 @@ HcclResult TransportRoceMem::CheckRdmaVal(void)
 
 HcclResult TransportRoceMem::ConnectImpl(s32 timeoutSec)
 {
-    if (deviceLogicId_ != HOST_DEVICE_ID) {
-        hrtSetDevice(deviceLogicId_);
-    }
+    // 增加1s的超时时间防止剩余超时时间不足
+ 	s32 redundantTimeout = timeoutSec + 1;
     CHK_RET(GetRdmaHandle());
     CHK_RET(CreateCqAndQp());
     CHK_RET(CreatSignalMesg());
     CHK_RET(CreateNotifyValueBuffer());
-    CHK_RET(ExchangeNotifyValueBuffer());
-    CHK_RET(QpConnect());
-    CHK_RET(WaitQPLinkComplete(timeoutSec));
-    CHK_RET(hrtResetDevice(deviceLogicId_));
-    return HCCL_SUCCESS;
-}
-
-HcclResult TransportRoceMem::ConnectImplWithTimeout(s32 timeoutSec)
-{
-    std::future<HcclResult> futureResult;
-    // 增加1s的超时时间防止剩余超时时间不足
-    s32 redundantTimeout = timeoutSec + 1;
-    futureResult = std::async(std::launch::async,
-        [this](s32 redundantTimeout) -> HcclResult {return this->ConnectImpl(redundantTimeout); }, redundantTimeout);
-
-    CHK_PRT_RET(!futureResult.valid(),
-        HCCL_ERROR("[%s]ConnectImpl futureResult is not assigned.", __func__),
-        HCCL_E_INTERNAL);
-
-    // 超时检查，若timeout设置为-1则不检查，上层已经保证timeout不会为0
-    if (timeoutSec != -1 && futureResult.wait_for(std::chrono::seconds(redundantTimeout)) == std::future_status::timeout) {
-        // 发生超时，设置stop flag让socket线程停止，避免进程长时间无法退出
-        CHK_RET(socket_->SetStopFlag(true));
-        HCCL_ERROR("[%s]ConnectImplWithTimeout timeout.timeout[%ds]", __func__, timeoutSec);
-        futureResult.wait();
-        CHK_RET(socket_->SetStopFlag(false));
-        return HCCL_E_TIMEOUT;
-    }
-
-    HcclResult ret = futureResult.get();
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]ConnectImplWithTimeout Prepare failed", __func__),
-        ret);
-    HCCL_INFO("[%s]connect success", __func__);
+    CHK_RET(ExchangeNotifyValueBuffer(redundantTimeout));
+    CHK_RET(QpConnect(redundantTimeout));
+    CHK_RET(WaitQPLinkComplete(redundantTimeout));
     return HCCL_SUCCESS;
 }
 
@@ -375,7 +342,7 @@ HcclResult TransportRoceMem::Connect(s32 timeoutSec)
     CHK_PTR_NULL(dispatcher_);
     CHK_SMART_PTR_NULL(notifyPool_);
     CHK_RET(notifyPool_->RegisterOp(socket_->GetTag()));
-    auto ret = ConnectImplWithTimeout(timeoutSec);
+    auto ret = ConnectImpl(timeoutSec);
     // 解注册之后再返回ret
     CHK_RET(notifyPool_->UnregisterOp(socket_->GetTag()));
     return ret;
@@ -658,9 +625,9 @@ HcclResult TransportRoceMem::CreateCqAndQp()
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportRoceMem::QpConnect()
+HcclResult TransportRoceMem::QpConnect(s32 timeoutSec)
 {
-    CHK_RET(HrtRaQpConnectAsync(dataQpInfo_.qpHandle, socket_->GetFdHandle(), [this]() -> bool {return this->socket_->GetStopFlag(); }));
+    CHK_RET(HrtRaQpConnectAsync(dataQpInfo_.qpHandle, socket_->GetFdHandle(), [this]() -> bool {return this->socket_->GetStopFlag(); }, timeoutSec));
 
     return HCCL_SUCCESS;
 }
@@ -712,7 +679,7 @@ HcclResult TransportRoceMem::GetNotifySize()
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportRoceMem::ExchangeNotifyValueBuffer()
+HcclResult TransportRoceMem::ExchangeNotifyValueBuffer(s32 timeoutSec)
 {
     CHK_RET(socket_->Send(
         &notifyMemMsg_[static_cast<u32>(MemType::NOTIFY_SRC_MEM)], sizeof(MemMsg) * REMOTE_RDMA_SIGNAL_SIZE));
@@ -723,7 +690,7 @@ HcclResult TransportRoceMem::ExchangeNotifyValueBuffer()
         notifyMemMsg_[static_cast<u32>(MemType::NOTIFY_SRC_MEM)].memType,
         notifyMemMsg_[static_cast<u32>(MemType::NOTIFY_SRC_MEM)].lkey);
     MemMsg remoteNotifyValue[REMOTE_RDMA_SIGNAL_SIZE];
-    CHK_RET(socket_->Recv(remoteNotifyValue, sizeof(MemMsg) * REMOTE_RDMA_SIGNAL_SIZE));
+    CHK_RET(socket_->Recv(remoteNotifyValue, sizeof(MemMsg) * REMOTE_RDMA_SIGNAL_SIZE, timeoutSec));
     CHK_RET(RecoverNotifyMsg(remoteNotifyValue, REMOTE_RDMA_SIGNAL_SIZE));
     return HCCL_SUCCESS;
 }

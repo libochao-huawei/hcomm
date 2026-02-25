@@ -433,11 +433,11 @@ HcclResult HcclSocket::Send(const void *data, u64 size)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclSocket::Recv(void *recvBuf, u32 recvBufLen)
+HcclResult HcclSocket::Recv(void *recvBuf, u32 recvBufLen, u32 timeout)
 {
     CHK_PTR_NULL(fdHandle_);
     CHK_PTR_NULL(recvBuf);
-    CHK_RET(hrtRaSocketBlockRecv(fdHandle_, recvBuf, recvBufLen, [this]() -> bool { return this->GetStopFlag(); }));
+    CHK_RET(hrtRaSocketBlockRecv(fdHandle_, recvBuf, recvBufLen, [this]() -> bool { return this->GetStopFlag(); }, timeout));
     return HCCL_SUCCESS;
 }
 

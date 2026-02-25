@@ -287,11 +287,12 @@ HcclResult HrtRaQpNonBlockConnectAsync(QpHandle handle, const SocketHandle sockH
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaQpConnectAsync(QpHandle handle, const SocketHandle sockHandle, std::function<bool()> needStop)
+HcclResult HrtRaQpConnectAsync(QpHandle handle, const SocketHandle sockHandle, std::function<bool()> needStop, u32 timeout)
 {
     s32 ret = 0;
     auto startTime = chrono::steady_clock::now();
-    auto timeout = chrono::seconds(GetExternalInputHcclLinkTimeOut());
+    const chrono::seconds timeoutSec = chrono::seconds(
+ 	    timeout > 0 ? timeout : GetExternalInputHcclLinkTimeOut());
     while (true) {
         CHK_PRT_RET(needStop(), HCCL_ERROR("Terminating operation due to external request"), HCCL_E_INTERNAL);
 
@@ -299,9 +300,9 @@ HcclResult HrtRaQpConnectAsync(QpHandle handle, const SocketHandle sockHandle, s
         if (!ret) {
             break;  // 成功跳出
         } else if (ret == SOCK_EAGAIN) {
-            bool bTimeout = ((chrono::steady_clock::now() - startTime) >= timeout);
+            bool bTimeout = ((chrono::steady_clock::now() - startTime) >= timeoutSec);
             CHK_PRT_RET(bTimeout, HCCL_ERROR("[ConnectAsync][RaQp]errNo[0x%016llx] ra qp connect async "\
-                "timeout[%lld s]. return[%d].", HCCL_ERROR_CODE(HCCL_E_NETWORK), timeout, ret), HCCL_E_NETWORK);
+                "timeout[%lld s]. return[%d].", HCCL_ERROR_CODE(HCCL_E_NETWORK), timeoutSec, ret), HCCL_E_NETWORK);
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
             HCCL_ERROR("[ConnectAsync][RaQp]errNo[0x%016llx] ra qp connect async fail. return[%d]",\
@@ -1462,25 +1463,25 @@ HcclResult hrtRaSocketNonBlockRecvHeart(const FdHandle fdHandle, void *data, u64
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u64 size, std::function<bool()> needStop)
+HcclResult hrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u64 size, std::function<bool()> needStop, u32 timeout)
 {
     auto startTime = chrono::steady_clock::now();
     void *recvData = const_cast<void *>(data);
     u64 recvSize = 0;
     s32 rtRet = 0;
     u64 getedLen = 0;
-    const chrono::seconds timeout = chrono::seconds(
-        GetExternalInputHcclLinkTimeOut());
+    const chrono::seconds timeoutSec = chrono::seconds(
+        timeout > 0 ? timeout : GetExternalInputHcclLinkTimeOut());
 
     HCCL_DEBUG("before ra socket recv, para: data[%p], size[%llu]", recvData, size);
     while (true) {
         CHK_PRT_RET(needStop(), HCCL_ERROR("Terminating operation due to external request"), HCCL_E_INTERNAL);
 
-        if ((chrono::steady_clock::now() - startTime) >= timeout) {
+        if ((chrono::steady_clock::now() - startTime) >= timeoutSec) {
             HCCL_ERROR("[Recv][RaSocket]errNo[0x%016llx] Wait timeout for sockets recv, data[%p], "\
                 "size[%llu Byte], recvSize[%llu Byte] timeout[%lld s]. Peerrank did not send the data in time. " \
                 "Check whether the peerrank is abnormal.", \
-                HCCL_ERROR_CODE(HCCL_E_NETWORK), data, size, recvSize, timeout);
+                HCCL_ERROR_CODE(HCCL_E_NETWORK), data, size, recvSize, timeoutSec);
             return HCCL_E_TIMEOUT;
         }
         rtRet = DlRaFunction::GetInstance().dlRaSocketRecv(fdHandle,
