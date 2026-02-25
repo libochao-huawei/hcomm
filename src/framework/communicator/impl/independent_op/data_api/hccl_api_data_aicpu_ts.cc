@@ -132,7 +132,7 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
         }
         const uint64_t notifyDeviceVA = dstNotifyEntityPtr->u.deviceVA;
 
-        Hccl::StreamLite *const streamLitePtr = reinterpret_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        Hccl::StreamLite *const streamLitePtr = threadPtr->GetStreamLitePtr();
         CHK_PTR_NULL(streamLitePtr);
         Hccl::RtsqBase *const rtsqPtr = streamLitePtr->GetRtsq();
         CHK_PTR_NULL(rtsqPtr);
@@ -282,7 +282,7 @@ HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum) // host fft
             Thread *threadPtrLoop = reinterpret_cast<Thread *>(threads[i]);
             CHK_PTR_NULL(threadPtrLoop);
             HCCL_INFO("[%s] Launching task in thread[0x%llx].", __func__, threads[i]);
-            EXECEPTION_CATCH(threadPtrLoop->LaunchTask(), return HCCL_E_INTERNAL);
+            CHK_RET(threadPtrLoop->LaunchTask());
         }
         return HCCL_SUCCESS;
     }
@@ -361,7 +361,7 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
     if (threadPtr->IsDeviceA5()) {
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
-        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        auto *const streamLitePtr = threadPtr->GetStreamLitePtr();
         CHK_PTR_NULL(streamLitePtr);
 
         Hccl::RmaBufferLite locRmaBuf;
@@ -407,7 +407,7 @@ int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, voi
     if (threadPtr->IsDeviceA5()) {
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
-        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        auto *const streamLitePtr = threadPtr->GetStreamLitePtr();
         CHK_PTR_NULL(streamLitePtr);
 
         Hccl::RmaBufferLite locRmaBuf;
@@ -480,7 +480,7 @@ int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel,
         HCCL_DEBUG("[%s] Running on A5.", __func__);
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
-        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        auto *const streamLitePtr = threadPtr->GetStreamLitePtr();
         CHK_PTR_NULL(streamLitePtr);
 
         Hccl::RmaBufferLite locRmaBuf;
@@ -529,7 +529,7 @@ int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHandle ch
         HCCL_DEBUG("[%s] Running on A5.", __func__);
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
-        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        auto *const streamLitePtr = threadPtr->GetStreamLitePtr();
         CHK_PTR_NULL(streamLitePtr);
 
         Hccl::RmaBufferLite locRmaBuf;
@@ -574,7 +574,7 @@ int32_t HcommReadOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
     if (threadPtr->IsDeviceA5()) {
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
-        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        auto *const streamLitePtr = threadPtr->GetStreamLitePtr();
         CHK_PTR_NULL(streamLitePtr);
 
         Hccl::RmaBufferLite locRmaBuf;
@@ -620,7 +620,7 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
     if (threadPtr->IsDeviceA5()) {
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
-        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        auto *const streamLitePtr = threadPtr->GetStreamLitePtr();
         CHK_PTR_NULL(streamLitePtr);
 
         Hccl::RmaBufferLite locRmaBuf;
@@ -696,7 +696,7 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
         HCCL_DEBUG("[%s] Running on A5.", __func__);
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
-        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        auto *const streamLitePtr = threadPtr->GetStreamLitePtr();
         CHK_PTR_NULL(streamLitePtr);
 
         EXECEPTION_CATCH(ubTransportLitePtr->Post(remoteNotifyIdx, *streamLitePtr), ret = HCCL_E_INTERNAL);
@@ -731,7 +731,7 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
         HCCL_DEBUG("[%s] Running on A5.", __func__);
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
-        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        auto *const streamLitePtr = threadPtr->GetStreamLitePtr();
         CHK_PTR_NULL(streamLitePtr);
 
         (void)timeout;
