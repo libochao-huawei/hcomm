@@ -52,6 +52,7 @@ public:
     
 private:
     HcclResult DevTypeToCommProtocol(DevType &type, CommProtocol &protocol);
+    HcclResult BuildRankGraphInfo(const RankInfo_t &rankItem, const CommProtocol &protocol, RankGraphInfo &outInfo);
     CommProtocol GetCommProtocolFromRankInfo(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo, uint32_t netLayer);
     HcclResult InitRankInfo();
     HcclResult InitServerRankInfo();
@@ -61,6 +62,8 @@ private:
     CommProtocol GetCommProtocolInSameServer(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo);
     CommProtocol GetCommProtocolBetweenServers(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo);
     bool NeedIgnoreEndPoints(CommProtocol srcProtocol, CommProtocol dstProtocol, CommProtocol linkProtocol);
+    void PrintLinksInfo(CommLink &link);
+ 	bool IsRoceInSameServer(uint32_t netLayer, const RankInfo_t &srcInfo, const RankInfo_t &dstInfo);
     HcclResult InitHeterogMode();
     RankTable_t rankTable_;
     // 根据 rankId 获取 RankInfo_t 与 EndPoint信息
