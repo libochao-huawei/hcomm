@@ -974,8 +974,8 @@ HcclResult TransportDirectNpu::RxData(UserMemType srcMemType, u64 srcOffset, voi
 
 #ifndef CCL_KERNEL
     u16 timeOut = 0;
-    if (NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16) {
-        timeOut = MAX_VALUE_U16;
+    if (NOTIFY_DEFAULT_WAIT_TIME > (std::numeric_limits<uint16_t>::max())) {
+        timeOut = (std::numeric_limits<uint16_t>::max());
     } else {
         timeOut = NOTIFY_DEFAULT_WAIT_TIME;
     }

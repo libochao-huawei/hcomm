@@ -108,7 +108,7 @@ public:
         if (dfxTimeOutConfig_.sqeTimeOutTimeOut > notifyMaxWaitTime_) {
             dfxTimeOutConfig_.sqeTimeOutTimeOut = notifyMaxWaitTime_;
             HCCL_WARNING("[SetSqeTimeOut] sqeTimeOutTimeOut[%llu] exceeds the maximum allowed value "
-                "for notifyMaxWaitTime[%u].", dfxTimeOutConfig_.sqeTimeOutTimeOut, notifyMaxWaitTime_);
+                "for notifyMaxWaitTime[%u].", timeOut, notifyMaxWaitTime_);
         }
         HCCL_INFO("[DispatcherAiCpu][SetSqeTimeOut]DFX timeout config init successfully with details: [%s]",
             dfxTimeOutConfig_.ToString().c_str());
