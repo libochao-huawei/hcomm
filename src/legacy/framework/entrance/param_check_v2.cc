@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include "param_check_v2.h"
 #include <linux/limits.h>
 #include <unordered_set>
 #include <map>
@@ -15,7 +16,6 @@
 #include <fstream>
 #include <linux/limits.h>
 #include <adapter_error_manager_pub.h>
-#include "param_check_v2.h"
 #include "log.h"
 #include "exception_util.h"
 
@@ -106,6 +106,9 @@ HcclResult HcomCheckTagV2(const char *tag)
 
     u32 tagLen = strnlen(tag, TAG_MAX_LEN + 1);
     if (tagLen == (TAG_MAX_LEN + 1) || tagLen == 0) {
+        string errReason = "please check tag that is too long, range[1," + std::to_string(TAG_MAX_LEN) + "]";
+        RPT_INPUT_ERR(true, "EI0003", vector<string>({"ccl_op", "value", "parameter", "reason"}),\
+            vector<string>({"HcomCheckTagV2", std::to_string(tagLen), "tag", errReason}));
         HCCL_ERROR("[Check][Tag]errNo[0x%llx] tag is too long, range[1,%u]", HCCL_E_PARA, TAG_MAX_LEN);
         return HCCL_E_PARA;
     }
@@ -117,6 +120,9 @@ HcclResult HcomCheckGroupNameV2(const char *group)
     if (group != nullptr) {
         u32 groupLen = strnlen(group, GROUP_NAME_MAX_LEN + 1);
         if (groupLen == (GROUP_NAME_MAX_LEN + 1) || groupLen == 0) {
+            RPT_INPUT_ERR(true, "EI0003", vector<string>({"ccl_op", "value", "parameter", "reason"}),\
+                vector<string>({"HcomCheckGroupNameV2", std::to_string(groupLen), "group name", 
+                "please check group name that group name[" + std::string(group) + "] length is invalid"}));
             HCCL_ERROR("[Check][GroupName]errNo[0x%llx] group name[%s] length[%lu] is invalid",
                 HCCL_E_PARA, group, groupLen);
             return HCCL_E_PARA;
@@ -128,6 +134,9 @@ HcclResult HcomCheckGroupNameV2(const char *group)
 HcclResult HcomCheckCountV2(const u64 count)
 {
     if (count > SYS_MAX_COUNT) {
+        string errReason =  "please check count that is bigger than MAX[" + std::to_string(SYS_MAX_COUNT) + "]";
+        RPT_INPUT_ERR(true, "EI0003", vector<string>({"ccl_op", "value", "parameter", "reason"}),\
+            vector<string>({"HcomCheckCountV2", std::to_string(count), "count", errReason}));
         HCCL_ERROR("[Check][Count]errNo[0x%llx] count[%llu] is invalid(bigger than MAX count[%llu])",
             HCCL_E_PARA, count, SYS_MAX_COUNT);
         return HCCL_E_PARA;
@@ -148,6 +157,9 @@ std::string GetReduceOpEnumStrV2(HcclReduceOp reduceOp)
 HcclResult HcomCheckDataTypeV2(const HcclDataType dataType)
 {
     if (HCCL_SUPPORT_DATA_TYPE_V2.find(dataType) == HCCL_SUPPORT_DATA_TYPE_V2.end()) {
+        RPT_INPUT_ERR(true, "EI0003", vector<string>({"ccl_op", "value", "parameter", "reason"}),\
+            vector<string>({"HcomCheckDataTypeV2", GetDataTypeEnumStrV2(dataType).c_str(), "dataType",
+            "please check dataType that is not supported"}));
         HCCL_ERROR("[Check][DataType]errNo[0x%llx] data type[%s] not supported",
             HCCL_E_NOT_SUPPORT, GetDataTypeEnumStrV2(dataType).c_str());
         return HCCL_E_NOT_SUPPORT;
@@ -178,11 +190,17 @@ HcclResult HcomCheckOpParamV2(const u64 count, const HcclDataType dataType, cons
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomCheckOpParamV2(const char *tag, const u64 count, const HcclDataType dataType, const void *stream)
+HcclResult HcomCheckOpParamV2(const char *tag, const u64 count, const HcclDataType dataType, const void *stream) // 校验opParam失败都上报EI0003
 {
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType));
 
-    CHK_PTR_NULL(stream);
+    if (stream == nullptr) {
+        HCCL_ERROR("[Check][Stream]errNo[0x%016llx] stream is NULL.", HCCL_E_PTR);
+        RPT_INPUT_ERR(true, "EI0003", vector<string>({"ccl_op", "value", "parameter", "reason"}),\
+            vector<string>({"HcomCheckOpParamV2", "NULL", "stream", 
+            "please check stream that is nullptr"}));
+        return HCCL_E_PTR; 
+    }
 
     return HCCL_SUCCESS;
 }
@@ -220,8 +238,8 @@ HcclResult HcomCheckOpParamV2(const u64 count, const HcclDataType dataType)
 HcclResult HcomCheckReductionOpV2(const HcclReduceOp op)
 {
     if (HCCL_SUPPORT_REDUCE_OP_V2.find(op) == HCCL_SUPPORT_REDUCE_OP_V2.end()) {
-        RPT_INPUT_ERR(true, "EI0003", vector<string>({"ccl_op", "parameter", "value", "tips"}),\
-            vector<string>({"HcomCheckReductionOpV2", "op", "not find", 
+        RPT_INPUT_ERR(true, "EI0003", vector<string>({"ccl_op", "value", "parameter", "reason"}),\
+            vector<string>({"HcomCheckReductionOpV2", GetReduceOpEnumStrV2(op).c_str(), "op", 
             "please check ReduceOp that is not supported"}));
         HCCL_ERROR("[Check][ReductionOp]errNo[0x%016llx] Op:[%s] not supported", HCCL_E_PARA,
             GetReduceOpEnumStrV2(op).c_str());
@@ -233,9 +251,9 @@ HcclResult HcomCheckReductionOpV2(const HcclReduceOp op)
 HcclResult HcomCheckProdDataTypeV2(const HcclDataType dataType)
 {
     if (HCCL_SUPPORT_PROD_DATA_TYPE_V2.find(dataType) == HCCL_SUPPORT_PROD_DATA_TYPE_V2.end()) {
-        RPT_INPUT_ERR(true, "EI0003", vector<string>({"ccl_op", "parameter", "value", "tips"}),\
-            vector<string>({"HcomCheckProdDataTypeV2", "dataType", "not supported for product", 
-            "please check DataType & ReduceOp that is not supported"}));
+        RPT_INPUT_ERR(true, "EI0003", vector<string>({"ccl_op", "value", "parameter", "reason"}),\
+            vector<string>({"HcomCheckProdDataTypeV2", GetDataTypeEnumStrV2(dataType).c_str(), "dataType",  
+            "please check DataType & ReduceOp that is not supported PROD"}));
         HCCL_ERROR("[Check][ProdDataType]errNo[0x%016llx] DataType:[%s] not supported PROD", HCCL_E_PARA,
             GetDataTypeEnumStrV2(dataType).c_str());
         return HCCL_E_NOT_SUPPORT;
