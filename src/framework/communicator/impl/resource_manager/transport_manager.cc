@@ -187,6 +187,12 @@ HcclResult TransportManager::createSubCommLinkThreads(const std::string &tag, co
             inputMem, outputMem, expMem);
         HCCL_DEBUG("transportRequest.inputMemType[%d] transportRequest.outputMemType[%d], isBackup[%d]",
             transportRequest.inputMemType, transportRequest.outputMemType, isBackup);
+                
+        if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV && isGroupMode_) { // Group 批量send/recv，切分cclbuffer
+            CHK_RET(AllocSliceMem(inputMem, outputMem, transportRequest.remoteUserRank));
+            HCCL_INFO("[AllocSliceMem] inputMem ptr[%p], size[%llu], outputMem ptr[%p], size[%llu], remote[%u]", 
+                inputMem.ptr(), inputMem.size(), outputMem.ptr(), outputMem.size(), transportRequest.remoteUserRank);
+        }
 
         IndOpMem indOpMem;
         if (isIndOp) {
@@ -351,6 +357,23 @@ HcclResult TransportManager::AllocSubCommLinks(const std::string &tag, const Tra
     return HCCL_SUCCESS;
 }
 
+HcclResult TransportManager::AllocSliceMem(DeviceMem &inputMem,  DeviceMem &outputMem, u32 remoteUserRank)
+{
+    u64 inputSize = inputMem.size();
+    u64 outputSize = outputMem.size();
+    u32 sliceNum = GROUP_MAX_CONCURRENT;
+    u32 alignSize = HCCL_MIN_SLICE_ALIGN_910B; // 对齐
+
+    u64 sliceSizeIn = inputSize / sliceNum / alignSize * alignSize;
+    u64 offsetIn = sliceSizeIn * (remoteUserRank % GROUP_MAX_CONCURRENT);
+    inputMem = inputMem.range(offsetIn, sliceSizeIn);
+
+    u64 sliceSizeOut = outputSize / sliceNum / alignSize * alignSize;
+    u64 offsetOut = sliceSizeOut * (remoteUserRank % GROUP_MAX_CONCURRENT);
+    outputMem = outputMem.range(offsetOut, sliceSizeOut);
+
+    return HCCL_SUCCESS;
+}
 HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem &transMem,
     OpCommTransport &opTransportResponse, bool isAicpuModeEn, bool isBackup, bool isZeroCopy, const HcclCMDType &opType,
         bool isCapture, bool isIndOp, bool isNpuDirectRoce)
@@ -412,6 +435,12 @@ HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem 
                         transportRequest.inputMemType, transportRequest.outputMemType, isBackup);
                     GetIOMem(transMem, transportRequest.inputMemType, transportRequest.outputMemType,
                         inputMem, outputMem, expMem);
+                    
+                    if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV && isGroupMode_) {// Group 批量send/recv，切分cclbuffer
+                        CHK_RET(AllocSliceMem(inputMem, outputMem, transportRequest.remoteUserRank));
+                        HCCL_INFO("[AllocSliceMem] inputMem ptr[%p], size[%llu], outputMem ptr[%p], size[%llu], remote[%u]", 
+                            inputMem.ptr(), inputMem.size(), outputMem.ptr(), outputMem.size(), transportRequest.remoteUserRank);
+                    }
 
                     IndOpMem indOpMem;
                     if (isIndOp) {
@@ -565,6 +594,12 @@ HcclResult TransportManager::IncreAlloc(const std::string &tag, const TransportI
                     GetIOMem(transMem, transportRequest.inputMemType, transportRequest.outputMemType,
                         inputMem, outputMem, expMem);
 
+                    if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV && isGroupMode_) {// Group 批量send/recv，切分cclbuffer
+                        CHK_RET(AllocSliceMem(inputMem, outputMem, transportRequest.remoteUserRank));
+                        HCCL_INFO("[AllocSliceMem] inputMem ptr[%p], size[%llu], outputMem ptr[%p], size[%llu], remote[%u]", 
+                            inputMem.ptr(), inputMem.size(), outputMem.ptr(), outputMem.size(), transportRequest.remoteUserRank);
+                    }
+                    
                     std::vector<std::shared_ptr<HcclSocket> > connectSockets;
                     bool isInterRdma;
                     bool chooseBackup = transportRequest.isUsedRdma ? isBackup : false;
@@ -1309,6 +1344,13 @@ void TransportManager::SetOpType(HcclCMDType opType)
 {
     opType_ = opType;
     return;
+}
+
+HcclResult TransportManager::SetGroupMode(bool groupMode)
+{
+    isGroupMode_ = groupMode;
+    HCCL_INFO("[SetGroupMode] isGroupMode_=[%d]", isGroupMode_);
+    return HCCL_SUCCESS;
 }
 
 std::map<u32, TransportType> TransportManager::GetRemoteTransportMap()

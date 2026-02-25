@@ -512,34 +512,6 @@ namespace hccl
         return HCCL_E_NOT_SUPPORT;
     }
 
-    HcclResult HcclCommunicator::SetGroupMainStream(HcclRtStream sendRecvMainStream_){
-        return HCCL_E_NOT_SUPPORT;
-    }
-
-    HcclResult HcclCommunicator::CreateGroupSendNotifies(){
-        return HCCL_E_NOT_SUPPORT;
-    }
-
-    HcclResult HcclCommunicator::CreateGroupRecvNotifies(){
-        return HCCL_E_NOT_SUPPORT;
-    }
-
-    HcclResult HcclCommunicator::CreateGroupSendStreams(){
-        return HCCL_E_NOT_SUPPORT;
-    }
-
-    HcclResult HcclCommunicator::CreateGroupRecvStreams(){
-        return HCCL_E_NOT_SUPPORT;
-    }
-
-    HcclResult HcclCommunicator::GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte){
-        return HCCL_E_NOT_SUPPORT;
-    }
-
-    HcclResult HcclCommunicator::GroupSubstreamsSync(){
-        return HCCL_E_NOT_SUPPORT;
-    }
-
     u32 HcclCommunicator::GetLocalNicPort(NicType nicType)
     {
         return 0;

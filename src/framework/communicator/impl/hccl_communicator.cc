@@ -3054,79 +3054,16 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::SetGroupMode(bool isGroup){
+    HcclResult HcclCommunicator::SetGroupMode(bool isGroup)
+    {
         isGroupMode_ = isGroup;
+        CHK_RET(transportManager_->SetGroupMode(isGroup));
         return HCCL_SUCCESS;
     }
  
-    bool HcclCommunicator::GetGroupMode(){
+    bool HcclCommunicator::GetGroupMode()
+    {
         return isGroupMode_;
-    }
- 
-    HcclResult HcclCommunicator::SetSendIndex(u32 index){
-        iSend = index;
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::SetRecvIndex(u32 index){
-        iRecv = index;
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::GetSendIndex(u32 &index){
-        index = iSend;
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::GetRecvIndex(u32 &index){
-        index = iRecv;
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::SetBufferSliceNum(u32 bufferSliceNum_){
-        bufferSliceNum = bufferSliceNum_; // std::min(rankSize - 1, MAX_CONCURRENT)
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::GetBufferSliceNum(u32 &bufferSliceNum_){
-        bufferSliceNum_ = bufferSliceNum;
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::SetNSend(u32 index){
-        nSend = index;
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::SetNRecv(u32 index){
-        nRecv = index;
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::GetNSend(u32 &index){
-        index = nSend; 
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::GetNRecv(u32 &index){
-        index = nRecv;
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::GetSliceSize(u64 &sliceSize){ // 默认CCLIN和CCLOUT的大小一样
-        u32 alignSize = HCCL_MIN_SLICE_ALIGN_910B; // 对齐
-        sliceSize = GetExternalInputCCLBuffSize() / alignSize / bufferSliceNum * alignSize; 
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::GroupPrepareStreamAndNotify(HcclRtStream sendRecvMainStream){
-        HCCL_INFO("[GroupPrepareStreamAndNotify] Start");
-        CHK_RET(SetGroupMainStream(sendRecvMainStream));
-        CHK_RET(CreateGroupSendNotifies());
-        CHK_RET(CreateGroupRecvNotifies());
-        CHK_RET(CreateGroupSendStreams());
-        CHK_RET(CreateGroupRecvStreams());
-        return HCCL_SUCCESS;
     }
 
     HcclResult HcclCommunicator::GetCommUserMemSize(uint64_t &size)

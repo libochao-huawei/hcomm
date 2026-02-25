@@ -25,7 +25,10 @@ HcclResult BatchSendRecvOperator::SelectAlg(const std::string& tag, const OpPara
 {
     if (retryEnable_ && param.aicpuUnfoldMode) {
         algName = "BatchSendRecvRetry";
-    } else {
+    } else if (param.isGroupMode) {
+        algName = "BatchSendRecvGroup";
+    }
+    else {
         algName = "BatchSendRecv";
     }
     newTag = tag;
