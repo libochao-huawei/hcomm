@@ -109,7 +109,7 @@ std::unique_ptr<CcuContext> CcuInsPreprocessor::CreateCcuCtx(const CcuInstructio
                __func__, transports.size(), createStatus, linkGroup.GetLinks().size(), cntCkeNum, createStatus,
                ccuInst.GetInstType().Describe().c_str());
 
-    std::unique_ptr<CcuCtxArg> ctxArg = std::move(ccuInst.GetCtxArg());
+    std::unique_ptr<CcuCtxArg> ctxArg = ccuInst.GetCtxArg();
     CHECK_NULLPTR(ctxArg, "[CcuInsPreprocessor::CreateCcuCtx] ctxArg is nullptr!");
     return CcuCtxCreatorRegistry::GetInstance().GetCreateFunc(ccuInst.GetInstType())(*ctxArg, transports,
                                                                                      *transportGrp);
