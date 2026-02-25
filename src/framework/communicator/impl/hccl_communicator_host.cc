@@ -601,6 +601,7 @@ namespace hccl
         // 目前只支持allgather, allreduce, reducescatter
         CHK_PRT_RET(opType != HcclCMDType::HCCL_CMD_ALLGATHER && 
                     opType != HcclCMDType::HCCL_CMD_ALLREDUCE &&
+                    opType != HcclCMDType::HCCL_CMD_ALLTOALL &&
                     opType != HcclCMDType::HCCL_CMD_REDUCE_SCATTER,
                     HCCL_INFO("[%s] opType[%d] not support symmetric memory", 
                             __func__, opType),
@@ -4635,6 +4636,7 @@ namespace hccl
         ForceProf(opParam.isCapture);
         bool isInGraphCaptureZeroCopy = false;
         zeroCopyAclGraph_->SetRetryEnable(retryEnable_);
+        opParam.supportSymmetricMemory = IsSupportSymmetricMemory(opType, opParam);
         opParam.aclGraphZeroCopyEnable = GetConfigAclGraphZeroCopyEnable();
         isInGraphCaptureZeroCopy = zeroCopyAclGraph_->SetAclGraphZeroCopyMode(
             deviceType_, opType, opParam, implAlg_.get(), cclBufferManager_.GetOutCCLbufferSize());
