@@ -22,6 +22,7 @@
 #include "adapter_hal_pub.h"
 #include "device_capacity.h"
 #include "hccl_api.h"
+#include "stream_lite.h"
 
 namespace hccl {
 constexpr u32 HCOMM_NOTIFY_MAX_NUM = 64;
@@ -41,8 +42,8 @@ public:
     // A3 Stream & A5 Stream
     virtual bool IsDeviceA5() const = 0;
     virtual Stream *GetStream() const = 0;
-    virtual void *GetStreamLitePtr() const = 0;
-    virtual void LaunchTask() const = 0;
+    virtual Hccl::StreamLite *GetStreamLitePtr() const = 0;
+    virtual HcclResult LaunchTask() const = 0;
 
     // Local Data Plane Functions
     virtual HcclResult LocalNotifyRecord(uint32_t notifyId) const = 0;
