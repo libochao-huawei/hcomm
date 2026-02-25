@@ -105,7 +105,7 @@ public:
             HCCL_ERROR("Init fail.");
             return nullptr;
         }
-        HCCL_DEBUG("LocklessRingMemoryAllocate::Alloc Start!!!");
+        HCCL_DEBUG("LocklessRingMemoryAllocate::Alloc Start");
         while (sem_trywait(&allocAvailable_) != 0) {
             HCCL_INFO("Alloc limited! head_[%u] tail_[%u]", head_ - 0, tail_ - 0);
             std::unique_lock<std::mutex> lock(expansionMutex_);

@@ -29,12 +29,12 @@ target_compile_options(hccl_ut_prepare_env   PRIVATE
 
 target_link_libraries(hccl_ut_prepare_env  PRIVATE
     $<BUILD_INTERFACE:intf_pub>
-    -lpthread
+    -pthread
     -Wl,--whole-archive
     -Wl,--no-whole-archive
     -lgcov
     -lrt
-    -lpthread
+    -pthread
 )
 
 run_llt_test(

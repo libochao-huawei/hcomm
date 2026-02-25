@@ -307,13 +307,14 @@ inline bool TransferStrToAlgType(const std::string& algTypeStr, AlgType& algType
     std::vector<std::string> parts;
     std::stringstream ss(algTypeStr);
     std::string part;
+    constexpr u32 algTypeLevelNum = 3;
     
     while (std::getline(ss, part, '-')) {
         parts.push_back(part);
     }
     
     // 检查格式
-    if (parts.size() != 3) {
+    if (parts.size() != algTypeLevelNum) {
         HCCL_ERROR("Invalid algType string format: %s", algTypeStr.c_str());
         return false;
     }

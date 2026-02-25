@@ -144,7 +144,6 @@ extern HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine,
  * @note 1.基于thread获取notify数量\n 2.后续数据面用notify idx操作
  */
 extern HcclResult HcclGetNotifyNumInThread(HcclComm comm, ThreadHandle thread, CommEngine engine, uint32_t *notifyNum);
-// extern HcclResult HcclThreadGetNotifyNum(HcclComm comm, CommEngine engine, ThreadHandle thread, uint32_t *notifyNum);
 
 /** @} */  // 运行时接口-类型定义
 /**
@@ -541,7 +540,6 @@ extern HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint
  */
 extern HcclResult HcclCommDestroy(HcclComm comm);
 
-
 /**
  * @brief 初始化通信域（含Thread/本地notify（通信域+thread粒度）/CCL buf等资源配置）
  * @param[in] nRanks 通信域中的rank总数
@@ -555,36 +553,6 @@ extern HcclResult HcclCommDestroy(HcclComm comm);
  */
 extern HcclResult HcclCommInitRootInfoConfig(
     uint32_t nRanks, const HcclRootInfo *rootInfo, uint32_t rank, const HcclCommConfig *config, HcclComm *comm);
-
-
-/** @} */  // 通信域管理（已对外开放）
-
-/**
- * @defgroup 集合通信算子（已对外开放）
- * @{
- */
-
-/** @} */  // 集合通信算子（已对外开放）
-
-
-
-/**
- * @defgroup 集合通信算子控制面编程
- * @{
- */
-
-/**
- * @defgroup 算子编程-类型定义
- * @{
- */
-
-// \cond
-/**
- * @brief 通信的rank图
- */
-// typedef struct {
-// } CommRankGraph;
-// \endcond
 
 /**
  * @brief 通信拓扑枚举
@@ -611,11 +579,6 @@ typedef enum {
     COMM_PROTOCOL_PCIE = 5,      ///< PCIE协议
     COMM_PROTOCOL_SIO = 6,        ///< SIO协议
 } CommProtocol;
-
-// CommProtocol protocol;  ///< 通信协议
-// CommAddr localCommAddr;   ///< 本端通信地址，从rank graph中查询
-// CommAddr remoteCommAddr;  ///< 远端通信地址，从rank graph中查询
-// char *bandWidth;          ///< 带宽
 
 /**
  * @brief EndPoint位置类型枚举
@@ -736,8 +699,6 @@ typedef enum {
  * @warning extern HcclResult HcclGetMyRank(HcclComm comm, uint32_t *rankId)
  */
 
-
-
 // \cond
 /**
  * @brief 给定通信域和level，返回该通信层次包含的rank列表
@@ -762,22 +723,6 @@ extern HcclResult HcclGetRankList(HcclComm comm, uint32_t level, uint32_t **rank
  * @warning  1、需要将topoType转换成枚举，字符串等？。 2、该接口非必须对外
  */
 extern HcclResult HcclGetTopoType(HcclComm comm, uint32_t level, uint32_t *topoType);
-// \endcond
-
-// \cond
-/**
- * @brief 给定通信域、level及算法类型，返回该通信层次包含的rank列表
- * @param[in] comm 通信域
- * @param[in] level 层级
- * @param[in] algType 算法类型
- * @param[out] rankList 通信域的rank列表
- * @param[out] rankSize 通信域的rank数量
- * @return HcclResult 执行结果状态码
- * @warning  1、需要将topoType转换成枚举。 2、该接口非必须对外
- * @warning  该接口可以先不提供
- */
-// extern HcclResult HcclGetRankListByAlg(HcclComm comm, uint32_t level, char *algType,
-//     uint32_t **rankList, uint32_t *rankSize);
 // \endcond
 
 // \cond
@@ -833,29 +778,6 @@ extern HcclResult HcclUnregMem(HcclComm comm, const char *memTag, const void* me
 /** @} */  // 通信内存获取
 
 /**
- * @name 通信内存交换
- * @{
- */
-// \cond
-/**
- * @brief 交换注册后的通信内存
- * @param[in] comm 通信域句柄
- * @param[in] channel 通信通道句柄
- * @param[in] memHandleList 已注册内存的句柄列表 
- * @param[in] listNum 列表数量 
- * @param[out] remoteMem 远端内存
- * @param[out] memTag 远端内存字符标识指针数组，每个成员以"\0"结尾（外部不能释放该内存）
- * @param[out] memNum 远端内存数量 
- * @param[in] timeout 超时时间（ms） 
- * @return HcclResult 执行结果状态码
- * @warning  1、是否要改为基于RankId的？          1、是不是就用channel最好？ 2、所有函数的const检查  4、参数超长\n
- * 5、需要针对运行时接口，增加基于RankId地址信息交换，以及获取对端内存信息的接口，如果需要交换的话！——2025年8月22日
- */
-// extern HcclResult HcclChannelExchangeMem(HcclComm comm, ChannelHandle channel, const void **memHandleList,
-//     uint32_t listNum, HcclMem **remoteMem, char **memTag, uint32_t *memNum, uint32_t timeout);
-// \endcond
-
-/**
  * @brief 交换注册内存
  * 
  * @param comm 
@@ -872,72 +794,7 @@ extern HcclResult HcclUnregMem(HcclComm comm, const char *memTag, const void* me
 extern HcclResult HcclExchangeMem(HcclComm comm, const EndPoint *srcEndPoint, const EndPoint *dstEndPoint,
     const void **memHandleList, uint32_t listNum, HcclMem **remoteMem, char **memTag, uint32_t *memNum, uint32_t timeout);
 
-// * @param[in] opTag 算子标签（建议包含算子名和标识，最大字符长度为COMM_TAG_LEN_MAX）
-// \cond
-/**
- * @brief 基于算子tag创建通信通道
- * @param[in] comm 通信域句柄
- * @param[in] channelTag 通信通道标签（最大字符长度为COMM_TAG_LEN_MAX）
- * @param[in] engine 通信引擎类型
- * @param[in] channelDescList 通道描述列表
- * @param[in] listNum 列表数量
- * @param[out] channelList 创建的通道句柄列表
- * @return HcclResult 执行结果状态码
- * @note 1.描述需建链的信息（如协议、远端EID等），支持批量完成与多个远端的建链\n
- * 2.CreateChannel时将交换内存信息（包含：已绑定到通信域的内存、已注册到算子TAG上的内存）\n
- * 3.注册后，通信域内以remoteRank+opName+customTag作为key存储该channel；如opName和customTag为空，则通信域内已remoteRank为key存储\n
- * 4.资源描述相同时，key相同情况下已有资源，则复用该资源返回，不重新创建；如需重复创建资源，可使用不同的tag\n
- * 5.注册后，通信域内以remoteRank+opName+customTag作为key存储该channel；如opName和customTag为空，则通信域内已remoteRank为key存储\n
- * 6.资源描述相同时，key相同情况下已有资源，则复用该资源返回，不重新创建（ps：host展开场景下 ，jetty不能复用）
- * @warning  note中的内容需要审核   1、参数精简；2、是否需要超时时间？另一个channel创建接口页数 3、增加内存等的参数描述 4、一个channelTag下是否可以多个channel？？？
- */
-// extern HcclResult HcclChannelCreateWithMemExch(HcclComm comm, const char *channelTag, CommEngine engine,
-//     const ChannelDesc *channelDescList, uint32_t listNum, const void **memHandleList, uint32_t memListNum,
-//     uint32_t timeout, ChannelHandle *channelList);
-// \endcond
-/** @} */  // 通信内存交换
-
 /** @} */  // 通信内存管理
-
-/**
- * @defgroup 通信引擎资源管理
- * @{
- */
-// -------------------------- ctx接口优化--------------
-// \cond
-/**
- * @brief 获取通信线程
- * @param[in] comm 通信域句柄
- * @param[in] engine 通信引擎类型
- * @param[in] reqThreadNum 请求的线程数量
- * @param[in] reqNotifyNumPerThread 每线程请求的通知数量
- * @param[out] thread 返回的线程句柄
- * @param[out] threadNum 实际分配的线程数
- * @param[out] notifyNumPerThread 每线程实际通知数
- * @return HcclResult 执行结果状态码
- * @note 1.创建通信域传入初始创建的thread数量\n 2、获取时按需获取，如资源不够则返回当前最大的thread数量
- * @warning  1、notifyNumPerThread没意义吧？满足不了notify数量诉求，返回仅有的。2、如果Thread数量不够，应该要添加申请Thread的接口？\n
- *  3、是不是约束不让申请线程和notify资源了？如果需要，初始化的时候给足
- */
-// extern HcclResult HcclGetThread(HcclComm comm, CommEngine engine, uint32_t reqThreadNum,
-//     uint32_t reqNotifyNumPerThread, ThreadHandle *thread, uint32_t *threadNum, uint32_t *notifyNumPerThread);
-// \endcond
-
-
-
-// \cond
-/**
- * @brief 基于已有流Stream申请指定notifyNum的通信线程资源
- * @param[in] comm 通信域句柄
- * @param[in] engine 通信引擎类型
- * @param[in] stream stream句柄
- * @param[in] notifyNumPerThread 通知数量
- * @param[out] thread 返回的线程句柄
- * @return HcclResult 执行结果状态码
- */
-// extern HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
-//     aclrtStream stream, uint32_t notifyNumPerThread, ThreadHandle *thread);
-// \endcond
 
 /**
  * @brief 基于通信域释放Notify
@@ -1027,23 +884,6 @@ extern HcclResult HcclChannelDestroy(HcclComm comm, const ChannelHandle *channel
 //  待确认是否一定需要
 typedef struct {
 } ServerConfig;
-
-// \cond
-/**
- * @brief 注册内存
- * 
- * @param hcommCSHandle 
- * @param memTag 
- * @param mem 
- * @param regAttr 
- * @param memHandle 
- * @return HcclResult 
- * @warning  集合通信的内存注册不用加regAttr了
- */
-// extern HcclResult HixlCSRegMem(const void *hcommCSHandle, const char *memTag, const HcclMem *mem,
-//     HcclRegMemAttr regAttr, void **memHandle);
-// \endcond
-
 
 // \cond
 /**
@@ -1168,7 +1008,6 @@ extern HcclResult HixlCSConnectToServer(void *clientHandle, EndPoint *dstCtlEndP
  * @{
  */
 
- 
 /**
  * @brief 批量放
  * 
@@ -1205,7 +1044,6 @@ extern HcclResult HixlCSClientQueryCompleteStatus(void *clientHandle, void *comp
 
 /** @} */  // 单边通信算子（待最终确定）
 
-
 // \cond
 /**
  * @defgroup 单边通信算子控制面编程
@@ -1213,39 +1051,15 @@ extern HcclResult HixlCSClientQueryCompleteStatus(void *clientHandle, void *comp
  */
 /** @} */  // 单边通信算子控制面编程
 
-
 /**
  * @defgroup Client-Server控制面
  * @{
  */
 
-
 /**
  * @defgroup Client-Server编程接口
  * @{
  */
-
-// \cond
-/**
- * @name Client侧——Link信息查询
- * @{
- */
-/**
- * @brief 获取Client侧的本地端点列表
- */
-// extern HcclResult HixlCSClientGetLocalEndPoints(void *clientHandle, EndPoint **localEndPointList,
-//     uint32_t *listSize);
-
-/**
- * @brief 获取Client侧的远端端点列表
- * 
- * @param clientHandle 
- * @param remoteEndPointList 
- * @param listSize 
- * @return HcclResult 
- */
-// extern HcclResult HixlCSClientGetRemoteEndPoints(void *clientHandle, EndPoint **remoteEndPointList,
-//     uint32_t *listSize);
 
 /**
  * @brief 获取Client侧的连接列表
@@ -1258,38 +1072,6 @@ extern HcclResult HixlCSClientQueryCompleteStatus(void *clientHandle, void *comp
 extern HcclResult HixlCSClientGetLinks(void *clientHandle, CommLink **linkList, uint32_t *listSize);
 /** @} */  // Client侧——Link信息查询
 // \endcond
-/**
- * @name Client侧——通信通道管理
- * @{
- */
-// \cond
-/**
- * @brief 基于Client创建通信通道
- * 
- * @param clientHandle 
- * @param channelTag
- * @param engine
- * @param channeDescList 
- * @param listNum
- * @param channelHandleList 
- * @return HcclResult 
- * @warning  考虑要加上tag  2、要求目标EndPoint必须要在Server中 3、不需要把内存交换过来吧？
- */
-// extern HcclResult HixlCSClientCreateChannel(void *clientHandle, const char *channelTag, CommEngine engine,
-//     const CSChannelDesc *channeDescList, uint32_t listNum, ChannelHandle **channelHandleList);
-
-/**
- * @brief 查询通信通道的状态
- * @param[in] comm 通信域句柄 
- * @param[in] channelList 通道句柄列表
- * @param[in] listNum 列表数量
- * @param[out] statusList 返回状态列表，0表示成功
- * @return HcclResult 执行结果状态码
- * @note 非阻塞接口
- * @warning  statusList是否改成枚举？
- */
-// extern HcclResult HixlCSClientChannelGetStatus(void *clientHandle, const ChannelHandle *channelList,
-//     uint32_t listNum, int32_t *statusList);
 
 /**
  * @brief 查询通信通道的状态
@@ -1304,74 +1086,10 @@ extern HcclResult HixlCSClientGetLinks(void *clientHandle, CommLink **linkList, 
 extern HcclResult HcclChannelGetStatus(HcclComm comm, const ChannelHandle *channelList, uint32_t listNum,
     int32_t *statusList);
 
-/**
- * @brief 获取channel中全部的交换获得的远端内存信息
- * 
- * @param comm
- * @param channel 
- * @param remoteMem 
- * @param memTag 
- * @param memNum 
- * @return HcclResult 
- * @warning  1、补充参数介绍 2、这个基于Channel的接口暂时不对外提供！！！
- */
-// extern HcclResult HixlCSClientChannelGetRemoteMem(void *clientHandle, ChannelHandle channel, HcclMem **remoteMem,
-//     char **memTag, uint32_t *memNum);
-
-/**
- * @brief 销毁通信通道
- * @param[in] clientHandle client句柄
- * @param[in] channelList 通道句柄数组
- * @param[in] listNum 列表数量
- * @return HcclResult 执行结果状态码
- */
-// extern HcclResult HixlCSClientChannelDestroy(void *clientHandle, const ChannelHandle *channelList,
-//     uint32_t listNum);
-// \endcond
-
-// \cond
-/**
- * @brief 从client句柄获取channel
- * 
- * @param clientHandle 
- * @return HcclResult 
- * @warning  考虑要加上tag？
- */
-// extern HcclResult HixlCSClientGetChannel(void *clientHandle, CommEngine engine,
-//     ChannelHandle *channelHandle);
-// \endcond
-/** @} */  // Client侧——通信通道管理
-// \cond
-/**
- * @name Client侧——通信引擎资源管理
- * @{
- */
-
-/**
- * @brief 获取通信线程资源
- * 
- * @param[in] clientHandle Client句柄
- * @param[in] engine 通信引擎类型
- * @param[in] threadNum 线程数量
- * @param[in] notifyNumPerThread 每线程的通知数量
- * @param[out] thread 返回的线程句柄
- * @return HcclResult 执行结果状态码
- * @warning  thread能否处理成通信域内的threadIdx？ 这样该接口改为获取thread数量。2、Notify是否需要？
- */
-// extern HcclResult HixlCSClientAllocThreadRes(void *clientHandle, CommEngine engine, uint32_t threadNum,
-//     uint32_t notifyNumPerThread, ThreadHandle *thread);
-
-/** @} */  // Client侧——通信引擎资源管理
-// \endcond
-
-/** @} */  // Client侧编程接口
 /** @} */  // Client-Server编程接口
-
-
 // \endcond
 
 /** @} */
-
 
 /**
  * @defgroup 通信数据面
@@ -1439,49 +1157,6 @@ extern HcclResult HcommInterOpValueWriteOnThread(ThreadHandle thread, uint32_t *
  */
 extern HcclResult HcommInterOpValueWaitOnThread(ThreadHandle thread, uint32_t *valuePtr, uint32_t expectValue);
 
-
-// \cond
-/**
- * @name 本地通知——掩码方式（AIV）
- * @{
- */
-
-/**
- * @brief 本地记录mask
- * 
- */
-// __aicore__ inline void HcommLocalNotifyRecordMask(NotifyHandle notifyHandle, uint32_t mask);
-
-/**
- * @brief 本地等待mask
- * 
- */
-// __aicore__ inline void HcommLocalNotifyWaitMask(NotifyHandle notifyHandle, uint32_t mask, uint32_t timeout);
-/** @} */  // 本地通知——掩码方式（AIV）
-
-/**
- * @name 本地通知——计数方式（AIV）
- * @{
- */
-/**
- * @brief 本地加法计数通知
- * 
- * @param[in] thread 线程句柄
- * @param[in] notifyType 通知类别
- * @param[in] notifyHandle 通知标识
- * @return HcclResult 执行结果状态码
- * @warning  怎么区分基于内存的、rtNotify、rtEvent的？需要分别对应新的接口？
- * 或者这个notifyId改为signalId，signalId增加标识区分类别。
- */
-// __aicore__ inline void HcommLocalNotifyAddCount(NotifyHandle notifyHandle, uint32_t increment);
-
-/**
- * @brief 本地等待通知数值
- * @return HcclResult 执行结果状态码
- */
-// __aicore__ inline void HcommLocalNotifyWaitCount(NotifyHandle notifyHandle, uint32_t expectedValue, uint32_t timeout);
-/** @} */  // 本地通知——计数方式（AIV）
-// \endcond
 /** @} */  // 算子间同步和值通知
 
 /**
@@ -1500,7 +1175,6 @@ extern HcclResult HcommInterOpValueWaitOnThread(ThreadHandle thread, uint32_t *v
  */
 extern HcclResult HcommFenceOnThread(ThreadHandle thread);
 
-
 /**
  * @brief 本地内存屏障
  * @return 无
@@ -1513,7 +1187,6 @@ __aicore__ inline void HcommFence();
  * @defgroup 通信通道上内存读写和规约
  * @{
  */
-
 
 /**
  * @brief 单边写操作
@@ -1692,7 +1365,6 @@ extern int32_t HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
  */
 __aicore__ inline void HcommNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx);
 
-
 /**
  * @brief 通信通道间等待通知
  * @param[in] thread 线程句柄
@@ -1711,29 +1383,6 @@ extern int32_t HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
  * @return 无
  */
 __aicore__ inline void HcommNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx);
-
-// \cond
-
-/**
- * @name 通道通知——计数方式（AIV）
- * @{
- */
-
-/**
- * @brief 通信通道间加法计数通知
- * @return HcclResult 执行结果状态码
- */
-// __aicore__ inline void HcommChannelNotifyAddCount(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t increment);
-
-/**
- * @brief 通信通道间等待通知数值
- * @return HcclResult 执行结果状态码
- */
-// __aicore__ inline void HcommNotifyWaitCount(ChannelHandle channel, uint32_t localNotifyIdx,
-//     uint32_t expectedValue, uint32_t timeout);
-
-/** @} */  // 通道通知——计数方式（AIV）
-// \endcond
 
 /** @} */  // 通信通道上同步通知
 
@@ -1755,7 +1404,6 @@ __aicore__ inline void HcommNotifyWait(ChannelHandle channel, uint32_t localNoti
  */
 extern HcclResult HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx);
-
 
 /**
  * @brief 带通知的单边写操作
@@ -1850,7 +1498,6 @@ extern HcclResult HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle c
 
 /** @} */  // 通信通道上内存屏障
 
-
 /**
  * @defgroup 批量下发设置接口
  * @{
@@ -1920,7 +1567,6 @@ extern HcclResult HcommEndPointCreate(const EndPoint *endPoint, EndPointHandle *
  */
 extern HcclResult HcommEndPointDestroy(EndPointHandle endPointHandle);
 /** @} */  // EndPoint管理
-
 
 /**
  * @name 内存注册与导入管理
@@ -2103,12 +1749,9 @@ extern HcclResult HcommSocketISend(HcommSocket socket, void *data, uint64_t len,
 extern HcclResult HcommSocketIRecv(HcommSocket socket, void *recvBuf, uint64_t len, uint64_t *recvLen);
 /** @} */  // 设备socket通信（暂不开放）
 
-
 /** @} */  // 通信控制面
 
 /** @} */  // Client-Server通信
-
-
 
 /** @} */  // 对用户开放API
 
@@ -2124,31 +1767,6 @@ extern HcclResult HcommSocketIRecv(HcommSocket socket, void *recvBuf, uint64_t l
  */
 
 // \cond
-/**
- * @brief 获取或生成一个通信域内指定算子标签的唯一标识
- * @param[in] comm 通信域句柄
- * @param[in] opName 算子名称
- * @param[in] opNameSize 算子名称长度
- * @param[in] customTag 自定义标签
- * @param[in] tagSize 标签长度
- * @param[out] opTagUId 算子标签唯一标识
- * @return HcclResult 执行结果状态码
- * @warning  考虑删除uniqueId的接口
- */
-// extern HcclResult HcommGetOpTagUniqueId(HcclComm comm, const char *opName, uint32_t opNameSize, const char *customTag,
-    // uint32_t tagSize, uint64_t *opTagUId);
-
-// \cond
-
-/**
- * @brief 通信引擎上下文
- */
-// typedef struct {
-//     void *ctx;        ///< 引擎上下文
-//     uint32_t ctxType; ///< thread数量
-//     uint32_t ctxSize; ///< 上下文大小（单位字节）
-// } CommEngineCtx;
-// \endcond
 
 //  * @param[in] opTag 算子标签（建议包含算子名和标识，最大字符长度为COMM_TAG_LEN_MAX）
 /**
@@ -2216,19 +1834,6 @@ extern HcclResult HcommEngineCtxAcquire(HcclComm comm, const char *engineTag, Co
 extern HcclResult HcommEngineCtxDestroy(HcclComm comm, const HcclMem *engineCtx);
 
 // \cond
-/**
- * @brief 创建命名的内存（取代ctx的申请释放接口）
- * 
- * @param[in] comm 通信域句柄
- * @param[in] memTag 内存标识
- * @param[in] memSize 内存大小
- * @param[in] memLocation 内存位置
- * @param[out] mem 内存句柄 
- * @return HcclResult 执行结果状态码
- */
-// HcclResult HcommCreateNamedMem(HcclComm comm, const char *memTag, uint32_t memSize,
-//     int32_t memLocation, void **mem);
-
 /**
  * @brief 释放命名的内存（取代ctx的申请释放接口）
  * 

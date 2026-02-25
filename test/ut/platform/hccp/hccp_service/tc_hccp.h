@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 
-void tc_normal();
-void tc_abnormal();
+void TcNormal();
+void TcAbnormal();
 
 #endif

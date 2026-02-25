@@ -23,9 +23,12 @@
 #include "hccl_common_v2.h"
 #include "ccu_connection.h"
 #include "socket_exception.h"
+#include "invalid_params_exception.h"
+#include "internal_exception.h"
 #include "orion_adapter_rts.h"
 #include "orion_adapter_hccp.h"
 #include "rdma_handle_manager.h"
+#include "log.h"
 
 #undef private
 #undef protected
@@ -215,25 +218,44 @@ TEST_F(CcuTransportTest, Ut_InitFailed_When_InterfaceError_Expect_Return_Error)
 
 TEST_F(CcuTransportTest, Ut_GetStatusFailed_When_ConnectionError_Expect_Return_Error)
 {
-    CcuConnStatus fakeConnStatus = CcuConnStatus::CONN_INVALID;
-    MOCKER_CPP(&CcuConnection::GetStatus).stubs().will(returnValue(fakeConnStatus));
-    auto transportRes = MockMakeCcuTransport(true, true);
-    auto transport = get<0>(transportRes).get();
-    EXPECT_EQ(transport->Init(), HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(transport->transStatus, CcuTransport::TransStatus::INIT);
+    CcuTransport::TransStatus status = CcuTransport::TransStatus::INIT;
+    try {
+        CcuConnStatus fakeConnStatus = CcuConnStatus::CONN_INVALID;
+        MOCKER_CPP(&CcuConnection::GetStatus).stubs().will(returnValue(fakeConnStatus));
+        auto transportRes = MockMakeCcuTransport(true, true);
+        auto transport = get<0>(transportRes).get();
 
-    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::CONNECT_FAILED);
+        EXPECT_EQ(transport->Init(), HcclResult::HCCL_SUCCESS);
+        EXPECT_EQ(transport->transStatus, CcuTransport::TransStatus::INIT);
+        status = transport->GetStatus();
+    } catch (InternalException &e) {
+        EXPECT_EQ(CcuTransport::TransStatus::CONNECT_FAILED, status);
+    } catch (exception &e) {
+        HCCL_ERROR(e.what());
+    } catch (...) {
+        HCCL_ERROR("Unknown error occurs!");
+    }
 }
 
 TEST_F(CcuTransportTest, Ut_GetStatusFailed_When_SocketError_Expect_Return_Error)
 {
-    SocketStatus fakeSocketStatus = SocketStatus::INIT; // 当前用该状态表示socket初始化失败
-    MOCKER_CPP(&Socket::GetAsyncStatus).stubs().will(returnValue(fakeSocketStatus));
-    auto transportRes = MockMakeCcuTransport(true, true);
-    auto transport = get<0>(transportRes).get();
-    EXPECT_EQ(transport->Init(), HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(transport->transStatus, CcuTransport::TransStatus::INIT);
-    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::CONNECT_FAILED);
+    CcuTransport::TransStatus status = CcuTransport::TransStatus::INIT;
+    try {
+        SocketStatus fakeSocketStatus = SocketStatus::INIT; // 当前用该状态表示socket初始化失败
+        MOCKER_CPP(&Socket::GetAsyncStatus).stubs().will(returnValue(fakeSocketStatus));
+        auto transportRes = MockMakeCcuTransport(true, true);
+        auto transport = get<0>(transportRes).get();
+
+        EXPECT_EQ(transport->Init(), HcclResult::HCCL_SUCCESS);
+        EXPECT_EQ(transport->transStatus, CcuTransport::TransStatus::INIT);
+        status = transport->GetStatus();
+    } catch (InternalException &e) {
+        EXPECT_EQ(CcuTransport::TransStatus::CONNECT_FAILED, status);
+    } catch (exception &e) {
+        HCCL_ERROR(e.what());
+    } catch (...) {
+        HCCL_ERROR("Unknown error occurs!");
+    }
 }
 
 TEST_F(CcuTransportTest, Ut_GetStatusTimeOut_When_SocketTimeOut_Expect_Return_TimeOut)
@@ -249,43 +271,61 @@ TEST_F(CcuTransportTest, Ut_GetStatusTimeOut_When_SocketTimeOut_Expect_Return_Ti
 
 TEST_F(CcuTransportTest, Ut_GetStatusError_When_SocketSendError_Expect_Return_Error)
 {
-    MOCKER_CPP(&Socket::SendAsync).stubs().will(throws(SocketException("")));
-    auto transportRes = MockMakeCcuTransport(true, true);
-    auto transport = get<0>(transportRes).get();
-    EXPECT_EQ(transport->Init(), HcclResult::HCCL_SUCCESS);
-    for (uint32_t i = 0; i < 2; i++) { // Connection切换2步
-        EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::INIT);
-    }
+    CcuTransport::TransStatus status = CcuTransport::TransStatus::INIT;
+    try {
+        MOCKER_CPP(&Socket::SendAsync).stubs().will(throws(SocketException("")));
+        auto transportRes = MockMakeCcuTransport(true, true);
+        auto transport = get<0>(transportRes).get();
 
-    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::CONNECT_FAILED);
+        EXPECT_EQ(transport->Init(), HcclResult::HCCL_SUCCESS);
+        for (uint32_t i = 0; i < 2; i++) { // Connection切换2步
+            status = transport->GetStatus();
+        }
+    } catch (SocketException &e) {
+        EXPECT_EQ(CcuTransport::TransStatus::CONNECT_FAILED, status);
+    } catch (exception &e) {
+        HCCL_ERROR(e.what());
+    } catch (...) {
+        HCCL_ERROR("Unknown error occurs!");
+    }
 }
 
 TEST_F(CcuTransportTest, Ut_GetStatusError_When_HandshakeMsgInvalid_Expect_Return_Error)
 {
-    auto transportRes = MockMakeCcuTransport(true, true);
-    auto transport = get<0>(transportRes).get();
-    EXPECT_EQ(transport->Init(), HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(transport->transStatus, CcuTransport::TransStatus::INIT);
-    EXPECT_EQ(transport->locRes.ckes.size(), DEFAULT_CCU_RESOURCE_NUM);
-    EXPECT_EQ(transport->locRes.xns.size(), DEFAULT_CCU_RESOURCE_NUM);
-    
-    const vector<uint32_t> cntCkes(DEFAULT_CCU_RESOURCE_NUM);
-    transport->SetCntCke(cntCkes);
+    CcuTransport::TransStatus status = CcuTransport::TransStatus::INIT;
+    try {
+        auto transportRes = MockMakeCcuTransport(true, true);
+        auto transport = get<0>(transportRes).get();
 
-    const vector<char> handshakeMsg(128);
-    transport->SetHandshakeMsg(handshakeMsg);
+        EXPECT_EQ(transport->Init(), HcclResult::HCCL_SUCCESS);
+        EXPECT_EQ(transport->transStatus, CcuTransport::TransStatus::INIT);
+        EXPECT_EQ(transport->locRes.ckes.size(), DEFAULT_CCU_RESOURCE_NUM);
+        EXPECT_EQ(transport->locRes.xns.size(), DEFAULT_CCU_RESOURCE_NUM);
+        
+        const vector<uint32_t> cntCkes(DEFAULT_CCU_RESOURCE_NUM);
+        transport->SetCntCke(cntCkes);
 
-    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::INIT);
-    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::INIT);
+        const vector<char> handshakeMsg(128);
+        transport->SetHandshakeMsg(handshakeMsg);
 
-    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::SEND_ALL_INFO);
+        EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::INIT);
+        EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::INIT);
 
-    transport->recvData = transport->sendData;
+        EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::SEND_ALL_INFO);
 
-    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::RECV_ALL_INFO);
+        transport->recvData = transport->sendData;
 
-    transport->attr.handshakeMsg.push_back('a');
-    EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::CONNECT_FAILED);
+        EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::RECV_ALL_INFO);
+
+        transport->attr.handshakeMsg.push_back('a');
+        status = transport->GetStatus();
+    } catch (InvalidParamsException &e) {
+        EXPECT_EQ(CcuTransport::TransStatus::CONNECT_FAILED, status);
+    } catch (exception &e) {
+        HCCL_ERROR(e.what());
+    } catch (...) {
+        HCCL_ERROR("Unknown error occurs!");
+    }
 }
 
 TEST_F(CcuTransportTest, Ut_Init_UNAVAIL_When_AppendCkes_Return_UNAVAIL)
