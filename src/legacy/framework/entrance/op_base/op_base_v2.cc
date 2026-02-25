@@ -56,7 +56,7 @@ static OpType GetOpTypeV2(std::string opTypeName) {
 
 static void LoadConfigCommName(string &commId, const HcclCommConfig &config)
 {
-    if (config.hcclCommName == nullptr || config.hcclCommName[0] == '\0') {
+    if (config.hcclCommName[0] == '\0') {
         HCCL_WARNING("[LoadConfigCommName] config.hcclCommName is empty, use default commId[%s]", commId.c_str());
         return;
     }

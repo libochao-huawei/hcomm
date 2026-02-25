@@ -113,6 +113,7 @@ public:
                         HcclRtContext rtCtx);
     ~TransportShmEvent() override;
 
+    using TransportHeterog::Init;
     HcclResult Init() override;
     HcclResult Init(TransportShmEventMember transport);
 
