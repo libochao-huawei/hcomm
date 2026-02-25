@@ -100,6 +100,7 @@ TEST_F(Rts1ToNCntNotifyTest, rts1toncntnotify_waitvalue_submit_test)
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(0));
     MOCKER(HrtCntNotifyWaitWithTimeOut).stubs().will(returnValue(0));
+
     // When
     Rts1ToNCntNotify rts1ToNCntNotify;
 
