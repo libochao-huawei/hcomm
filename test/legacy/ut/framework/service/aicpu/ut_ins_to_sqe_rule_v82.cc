@@ -404,7 +404,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_post_to)
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::NotifyRecordLoc).stubs().with(any());
 
     StubResMgrFetcher mockResMgrFetcher;
-
+    
     EXPECT_THROW(Interpret(insLocalPostTo, stream, &mockResMgrFetcher), NullPtrException);
     Interpret(insLocalPostTo, stream, &mockResMgrFetcher);
 
