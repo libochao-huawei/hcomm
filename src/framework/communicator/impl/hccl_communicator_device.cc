@@ -1627,4 +1627,9 @@ namespace hccl
     {
         return HCCL_SUCCESS;
     }
+
+    bool HcclCommunicator::EnableAicpuUnfold()
+    {
+        return false;
+    }
 }
