@@ -27,6 +27,7 @@
 #include "ccu_temp_all_gather_mesh_2D_mem2mem.h"
 #include "ccu_temp_all_gather_mesh_1D_mem2mem.h"
 #include "aiv_temp_all_gather_mesh_1D.h"
+#include "ccu_temp_all_gather_mesh_1D_2die.h"
 #endif
 
 namespace Hccl {
@@ -278,12 +279,14 @@ INS_REGISTER_IMPL_BY_TEMP(OpType::ALLGATHER, InsAllGatherNHR, InsV2AllGatherSole
                           InsTempAllGatherNHR);
 #ifndef CCL_KERNEL_AICPU
 INS_REGISTER_IMPL_BY_TEMP(OpType::ALLGATHER, AivAllGatherMesh1D, InsV2AllGatherSoleExecutor,
-    TopoMatchMesh, AivTempAllGatherMesh1D);
+    TopoMatchMesh, AivTempAllGatherMesh1D);P
 INS_REGISTER_IMPL_BY_TEMP(OpType::ALLGATHER, CcuAllGatherMesh1DMem2MemWithStride, InsV2AllGatherSoleExecutor,
     TopoMatchMesh, CcuTempAllGatherMesh1DMem2MemWithStride);
 INS_REGISTER_IMPL_BY_TEMP(
     OpType::ALLGATHER, CcuAllGatherNHR1D, InsV2AllGatherSoleExecutor, TopoMatchMesh, CcuTempAllGatherNHRMem2Mem1D);
 INS_REGISTER_IMPL_BY_TEMP(OpType::ALLGATHER, CcuAllGatherMeshMem2Mem2D, InsV2AllGatherSoleExecutor,
     TopoMatchConcurrMesh, CcuTempAllGatherMeshMem2Mem2D);
+INS_REGISTER_IMPL_BY_TEMP(OpType::ALLGATHER, CcuAllGatherMesh1D2Die, InsV2AllGatherSoleExecutor,
+    TopoMatchConcurrMesh, CcuTempAllGatherMesh1D2Die);
 #endif
 }  // namespace Hccl

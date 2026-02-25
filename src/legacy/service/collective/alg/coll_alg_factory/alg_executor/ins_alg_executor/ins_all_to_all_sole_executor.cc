@@ -17,6 +17,7 @@
 #include "ccu_temp_all_to_all_v_mesh_1D.h"
 #include "ccu_temp_all_to_all_mesh2d.h"
 #include "ccu_temp_all_to_all_v_mesh_2D.h"
+#include "ccu_temp_all_to_all_v_mesh_2Die.h"
 
 namespace Hccl {
 template <typename AlgTopoMatch, typename InsAlgTemplate>
@@ -247,16 +248,18 @@ INS_REGISTER_IMPL_BY_TEMP(OpType::ALLTOALLV, InsAlltoAllvMesh, InsAlltoAllSoleEx
 INS_REGISTER_IMPL_BY_TEMP(OpType::ALLTOALLVC, InsAlltoAllvcMesh, InsAlltoAllSoleExecutor, TopoMatchMesh,
                           InsTempAlltoAllMesh);
 #ifndef CCL_KERNEL_AICPU
-    INS_REGISTER_IMPL_BY_TEMP(OpType::ALLTOALL, CcuAlltoAllMesh1D, InsAlltoAllSoleExecutor, TopoMatchMesh,
-                          CcuTempAllToAllMesh1D);
-    INS_REGISTER_IMPL_BY_TEMP(OpType::ALLTOALLV, CcuAlltoAllVMesh1D, InsAlltoAllSoleExecutor, TopoMatchMesh,
-                          CcuTempAlltoAllVMesh1D);
-    INS_REGISTER_IMPL_BY_TEMP(OpType::ALLTOALL, CcuAlltoAllMesh2D, InsAlltoAllSoleExecutor, TopoMatchConcurrMesh,
-                          CcuTempAlltoAllMesh2D);
-    INS_REGISTER_IMPL_BY_TEMP(OpType::ALLTOALLV, CcuAlltoAllVMesh2D, InsAlltoAllSoleExecutor, TopoMatchConcurrMesh,
-                          CcuTempAlltoAllVMesh2D);
-    INS_REGISTER_IMPL_BY_TEMP(OpType::HALFALLTOALLV, CcuHalfAll2AllVMesh1D, InsAlltoAllSoleExecutor, TopoMatchMesh,
-                          CcuTempHalfAllToAllVMesh1D);
+INS_REGISTER_IMPL_BY_TEMP(OpType::ALLTOALL, CcuAlltoAllMesh1D, InsAlltoAllSoleExecutor, TopoMatchMesh,
+                        CcuTempAllToAllMesh1D);
+INS_REGISTER_IMPL_BY_TEMP(OpType::ALLTOALLV, CcuAlltoAllVMesh1D, InsAlltoAllSoleExecutor, TopoMatchMesh,
+                        CcuTempAlltoAllVMesh1D);
+INS_REGISTER_IMPL_BY_TEMP(OpType::ALLTOALL, CcuAlltoAllMesh2D, InsAlltoAllSoleExecutor, TopoMatchConcurrMesh,
+                        CcuTempAlltoAllMesh2D);
+INS_REGISTER_IMPL_BY_TEMP(OpType::ALLTOALLV, CcuAlltoAllVMesh2D, InsAlltoAllSoleExecutor, TopoMatchConcurrMesh,
+                        CcuTempAlltoAllVMesh2D);
+INS_REGISTER_IMPL_BY_TEMP(OpType::HALFALLTOALLV, CcuHalfAll2AllVMesh1D, InsAlltoAllSoleExecutor, TopoMatchMesh,
+                        CcuTempHalfAllToAllVMesh1D);
+INS_REGISTER_IMPL_BY_TEMP(OpType::ALLTOALLV, CcuAlltoAllVMesh2Die, InsAlltoAllSoleExecutor, TopoMatchMesh,
+                        CcuTempAlltoAllVMesh2Die);
 #endif
 
 } // namespace Hccl
