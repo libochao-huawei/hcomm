@@ -2464,7 +2464,7 @@ RS_ATTRI_VISI_DEF int RsGetQpStatus(unsigned int phyId, unsigned int rdevIndex, 
     struct hns_roce_qpc_attr_val qpAttrVal = { 0 };
     struct RsQpCb *qpCb = NULL;
     int ret;
-    
+
     CHK_PRT_RETURN(qpInfo == NULL, hccp_err("param error, qpInfo is NULL"), -EINVAL);
 
     CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("phyId:%u >= [%d], is invalid",
