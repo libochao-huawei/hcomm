@@ -65,8 +65,8 @@ HcclResult AicpuShareDataManager::RecordOpInfo(const std::string &newTag, OpPara
 
     aicpuOpInfo[opRingBufferIdx].opType = static_cast<uint8_t>(opParam.opType);
     aicpuOpInfo[opRingBufferIdx].rootId = opParam.root;
-    aicpuOpInfo[opRingBufferIdx].dstAddr = reinterpret_cast<uint64_t>(opParam.inputPtr);
-    aicpuOpInfo[opRingBufferIdx].srcAddr = reinterpret_cast<uint64_t>(opParam.outputPtr);
+    aicpuOpInfo[opRingBufferIdx].dstAddr = reinterpret_cast<uint64_t>(opParam.outputPtr);
+    aicpuOpInfo[opRingBufferIdx].srcAddr = reinterpret_cast<uint64_t>(opParam.inputPtr);
     aicpuOpInfo[opRingBufferIdx].reduceType = opParam.reduceType;
     aicpuOpInfo[opRingBufferIdx].isCustom = isCustom;
     opRingBufferIdx++; // +1后为下一个算子的index
