@@ -13,10 +13,21 @@
  
 #include "aiv_communication_base.h"
 #include "aiv_all_reduce_91093.h"
- 
+#include "aiv_all_reduce_910b_smalldata_graph.h"
+#include "aiv_all_reduce_910b_bigdata_graph.h"
+
 extern "C" __aicore__ void sk_allreduce(SUPERKERNEL_LITE_ARGS_DEF) {
     SUPERKERNEL_LITE_ARGS_EXTRACT;
-    return sk_all_reduce_91093(SUPERKERNEL_ARGS_CALL);
+    if (devType == DEV_TYPE_910_93) {
+        return sk_all_reduce_91093(SUPERKERNEL_ARGS_CALL);
+    } else if (devType == DEV_TYPE_910B) {
+        if (args->len * args->unitSize > UB_MAX_DATA_SIZE) {
+            return sk_all_reduce_910b_bigdata_graph(SUPERKERNEL_ARGS_CALL);
+        } else {
+            return sk_all_reduce_910b_smalldata_graph(SUPERKERNEL_ARGS_CALL);
+        }
+    }
+
 }
  
  

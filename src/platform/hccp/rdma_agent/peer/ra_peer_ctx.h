@@ -14,55 +14,55 @@
 #include "hccp_ctx.h"
 #include "ra_ctx.h"
 
-int ra_peer_get_dev_eid_info_num(struct RaInfo info, unsigned int *num);
+int RaPeerGetDevEidInfoNum(struct RaInfo info, unsigned int *num);
 
-int ra_peer_get_dev_eid_info_list(unsigned int phyId, struct dev_eid_info info_list[], unsigned int *num);
+int RaPeerGetDevEidInfoList(unsigned int phyId, struct HccpDevEidInfo infoList[], unsigned int *num);
 
-int ra_peer_ctx_init(struct ra_ctx_handle *ctx_handle, struct ctx_init_attr *attr, unsigned int *dev_index,
-    struct dev_base_attr *dev_base_attr);
+int RaPeerCtxInit(struct RaCtxHandle *ctxHandle, struct CtxInitAttr *attr, unsigned int *devIndex,
+    struct DevBaseAttr *devBaseAttr);
 
-int ra_peer_ctx_get_async_events(struct ra_ctx_handle *ctx_handle, struct async_event events[], unsigned int *num);
+int RaPeerCtxGetAsyncEvents(struct RaCtxHandle *ctxHandle, struct AsyncEvent events[], unsigned int *num);
 
-int ra_peer_ctx_deinit(struct ra_ctx_handle *ctx_handle);
+int RaPeerCtxDeinit(struct RaCtxHandle *ctxHandle);
 
-int ra_peer_get_eid_by_ip(struct ra_ctx_handle *ctx_handle, struct IpInfo ip[], union hccp_eid eid[],
+int RaPeerGetEidByIp(struct RaCtxHandle *ctxHandle, struct IpInfo ip[], union HccpEid eid[],
     unsigned int *num);
 
-int ra_peer_ctx_token_id_alloc(struct ra_ctx_handle *ctx_handle, struct hccp_token_id *info,
-    struct ra_token_id_handle *token_id_handle);
+int RaPeerCtxTokenIdAlloc(struct RaCtxHandle *ctxHandle, struct HccpTokenId *info,
+    struct RaTokenIdHandle *tokenIdHandle);
 
-int ra_peer_ctx_token_id_free(struct ra_ctx_handle *ctx_handle, struct ra_token_id_handle *token_id_handle);
+int RaPeerCtxTokenIdFree(struct RaCtxHandle *ctxHandle, struct RaTokenIdHandle *tokenIdHandle);
 
-int ra_peer_ctx_lmem_register(struct ra_ctx_handle *ctx_handle, struct mr_reg_info_t *lmem_info,
-    struct ra_lmem_handle *lmem_handle);
+int RaPeerCtxLmemRegister(struct RaCtxHandle *ctxHandle, struct MrRegInfoT *lmemInfo,
+    struct RaLmemHandle *lmemHandle);
 
-int ra_peer_ctx_lmem_unregister(struct ra_ctx_handle *ctx_handle, struct ra_lmem_handle *lmem_handle);
+int RaPeerCtxLmemUnregister(struct RaCtxHandle *ctxHandle, struct RaLmemHandle *lmemHandle);
 
-int ra_peer_ctx_rmem_import(struct ra_ctx_handle *ctx_handle, struct mr_import_info_t *rmem_info);
+int RaPeerCtxRmemImport(struct RaCtxHandle *ctxHandle, struct MrImportInfoT *rmemInfo);
 
-int ra_peer_ctx_rmem_unimport(struct ra_ctx_handle *ctx_handle, struct ra_rmem_handle *rmem_handle);
+int RaPeerCtxRmemUnimport(struct RaCtxHandle *ctxHandle, struct RaRmemHandle *rmemHandle);
 
-int ra_peer_ctx_chan_create(struct ra_ctx_handle *ctx_handle, struct chan_info_t *chan_info,
-    struct ra_chan_handle *chan_handle);
+int RaPeerCtxChanCreate(struct RaCtxHandle *ctxHandle, struct ChanInfoT *chanInfo,
+    struct RaChanHandle *chanHandle);
 
-int ra_peer_ctx_chan_destroy(struct ra_ctx_handle *ctx_handle, struct ra_chan_handle *chan_handle);
+int RaPeerCtxChanDestroy(struct RaCtxHandle *ctxHandle, struct RaChanHandle *chanHandle);
 
-int ra_peer_ctx_cq_create(struct ra_ctx_handle *ctx_handle, struct cq_info_t *info, struct ra_cq_handle *cq_handle);
+int RaPeerCtxCqCreate(struct RaCtxHandle *ctxHandle, struct CqInfoT *info, struct RaCqHandle *cqHandle);
 
-int ra_peer_ctx_cq_destroy(struct ra_ctx_handle *ctx_handle, struct ra_cq_handle *cq_handle);
+int RaPeerCtxCqDestroy(struct RaCtxHandle *ctxHandle, struct RaCqHandle *cqHandle);
 
-int ra_peer_ctx_qp_create(struct ra_ctx_handle *ctx_handle, struct qp_create_attr *qp_attr,
-    struct qp_create_info *qp_info, struct ra_ctx_qp_handle *qp_handle);
+int RaPeerCtxQpCreate(struct RaCtxHandle *ctxHandle, struct QpCreateAttr *qpAttr,
+    struct QpCreateInfo *qpInfo, struct RaCtxQpHandle *qpHandle);
 
-int ra_peer_ctx_qp_destroy(struct ra_ctx_qp_handle *qp_handle);
+int RaPeerCtxQpDestroy(struct RaCtxQpHandle *qpHandle);
 
-int ra_peer_ctx_qp_import(struct ra_ctx_handle *ctx_handle, struct qp_import_info_t *qp_info,
-    struct ra_ctx_rem_qp_handle *rem_qp_handle);
+int RaPeerCtxQpImport(struct RaCtxHandle *ctxHandle, struct QpImportInfoT *qpInfo,
+    struct RaCtxRemQpHandle *remQpHandle);
 
-int ra_peer_ctx_qp_unimport(struct ra_ctx_rem_qp_handle *rem_qp_handle);
+int RaPeerCtxQpUnimport(struct RaCtxRemQpHandle *remQpHandle);
 
-int ra_peer_ctx_qp_bind(struct ra_ctx_qp_handle *qp_handle, struct ra_ctx_rem_qp_handle *rem_qp_handle);
+int RaPeerCtxQpBind(struct RaCtxQpHandle *qpHandle, struct RaCtxRemQpHandle *remQpHandle);
 
-int ra_peer_ctx_qp_unbind(struct ra_ctx_qp_handle *qp_handle);
+int RaPeerCtxQpUnbind(struct RaCtxQpHandle *qpHandle);
 
 #endif  // RA_PEER_CTX_H
