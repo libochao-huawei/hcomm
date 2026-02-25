@@ -746,3 +746,51 @@ int32_t HcommChannelFence(ChannelHandle channel)
     HCCL_DEBUG("[%s] channel[0x%llx].", __func__, channel);
     return HCCL_E_NOT_SUPPORT;
 }
+
+int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
+{
+    hccl::Thread *threadPtr = reinterpret_cast<hccl::Thread *>(thread);
+    CHK_PTR_NULL(threadPtr);
+
+    HCCL_INFO("[%s] START. thread[0x%llx].", __func__, thread);
+
+    if (threadPtr->IsDeviceA5()) {
+        HCCL_INFO("[%s] Running on A5.", __func__);
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        CHK_PTR_NULL(streamLitePtr);
+        auto *const rtsqPtr = streamLitePtr->GetRtsq();
+        CHK_PTR_NULL(rtsqPtr);
+
+        uint32_t head = 0;
+        uint32_t tail = 0;
+        uint32_t sqId = streamLitePtr->GetSqId();
+        EXECEPTION_CATCH(tail = rtsqPtr->QuerySqTail(), return HCCL_E_INTERNAL);
+        HCCL_INFO("StreamSync aicpu stream sqid[%d] tail[%u]", sqId, tail);
+
+        u64 startUsec = GetCurAicpuTimestamp();
+        u64 lastUsec = startUsec;
+        constexpr uint64_t NANOSECOND_TO_SECOND = 1000000000U;
+        const uint64_t kPrintSqInterval = 30U;
+        do {
+            EXECEPTION_CATCH(head = rtsqPtr->QuerySqHead(), return HCCL_E_INTERNAL);
+            u64 curUsec = GetCurAicpuTimestamp();
+            if (curUsec - startUsec > NANOSECOND_TO_SECOND * timeout) {
+                HCCL_ERROR("stream sync timeout %lus. curhead:%u, curtall:%u, sqId:%d",
+                    timeout, head, tail, sqId);
+                return HCCL_E_TIMEOUT;
+            }
+
+            // 等待下发阶段，每隔30s打印一次状态
+            if (curUsec - lastUsec > NANOSECOND_TO_SECOND * kPrintSqInterval) {
+                lastUsec = curUsec;
+                HCCL_RUN_INFO("[StreamSync]Current state. sqid:%d, head:%u, tail:%u",
+                    sqId, head, tail);
+            }
+        } while (head != tail);
+        HCCL_INFO("[%s] SUCCESS. RTSQ's head == tail.", __func__);
+        return HCCL_SUCCESS;
+    }
+
+    HCCL_INFO("[%s] NOT Running on A5. No implementation, return SUCCESS.", __func__);
+    return HCCL_SUCCESS;
+}
