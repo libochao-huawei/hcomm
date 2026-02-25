@@ -11,6 +11,7 @@
 #define RESOURCE_ENTITIES_H
 
 #include "hccl_res.h"
+#include "hccl_api.h"
 
 namespace hccl {
 typedef enum {
@@ -19,15 +20,10 @@ typedef enum {
     THREAD_TYPE_TS = 1,
 } ThreadType;
 
-typedef enum {
-    NOTIFY_TYPE_INVALID = -1,
-    NOTIFY_TYPE_HOST_MEM = 0,
-} NotifyType;
-
 typedef struct {
     NotifyType type;
     union {
-        uint64_t deviceVA; // type == HOST_MEM 时，为映射到 Device 侧的 notify_dVA
+        uint64_t deviceVA;  // type == HOST_MEM 时，为映射到 Device 侧的 notify_dVA
         uint64_t notifyId;
     } u;
 } NotifyEntity;
