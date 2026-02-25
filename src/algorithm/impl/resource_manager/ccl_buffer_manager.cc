@@ -86,6 +86,7 @@ HcclResult CCLBufferManager::CreateCommCCLbuffer(const std::string &bufferName)
         winExpBuffer_ = DeviceMem::create(static_cast<u8 *>(cclBuffer_.ptr()) + inCCLbufferSize_ + outCCLbufferSize_, 
             winExpBufferSize_);
     }
+
     HCCL_INFO("[CreateCommCCLbuffer] create cclbuffer, inPtr[%p], outPtr[%p], winExpPtr[%p], isSharebuffer[%d]",
         inCCLbuffer_.ptr(), outCCLbuffer_.ptr(), winExpBuffer_.ptr(), isShareCCLbuffer_);
     return HCCL_SUCCESS;
@@ -286,7 +287,7 @@ HcclResult CCLBufferManager::InitCCLbuffer(u64 inCCLbufferSize, u64 outCCLbuffer
 
 void* CCLBufferManager::GetCCLbufferAddr(const DeviceMem &buffer)
 {
-    if (!buffer) {
+    if (buffer.ptr() == nullptr) {
         return nullptr;
     } else {
         return static_cast<void *>(reinterpret_cast<u8 *>(buffer.ptr()));
@@ -384,13 +385,16 @@ void CCLBufferManager::ReleaseAlltoAllvParaBuffer()
 
 HcclResult CCLBufferManager::GetIndependentOpCCLbuffer(void* &buffer, uint64_t &size)
 {
+    HCCL_INFO("[GetIndependentOpCCLbuffer] cclBuffer_[%p]", cclBuffer_.ptr());
     buffer = GetCCLbufferAddr(cclBuffer_);
     if (buffer == nullptr) {
+        HCCL_RUN_INFO("[GetIndependentOpCCLbuffer] buffer is empty");
         CHK_RET(CreateCommCCLbuffer());
         buffer = GetCCLbufferAddr(cclBuffer_);
     }
     // 大小在通信域初始化时调取InitCCLbuffer设置，MC1MB内存不对外暴露
     size = inCCLbufferSize_ + outCCLbufferSize_;
+    HCCL_RUN_INFO("[GetIndependentOpCCLbuffer] inCCLbufferSize_[%llu], outCCLbufferSize_[%llu]", inCCLbufferSize_, outCCLbufferSize_);
     return HCCL_SUCCESS;
 }
 } // namespace hccl
