@@ -175,7 +175,8 @@ HcclResult OpRetryServerRunning::ProcessEvent(RetryContext* retryCtx)
 
 HcclResult OpRetryServerHandleError::ProcessEvent(RetryContext* retryCtx)
 {
-    const std::chrono::seconds timeout = std::chrono::seconds(OP_RETRY_WAIT_CAN_RETRY_RANK);
+    const u32 timeoutValue = std::max(static_cast<u32>(GetExternalInputHcclLinkTimeOut()), OP_RETRY_SEND_RECV_TIMEOUT) + OP_RETRY_WAIT_AGENT_AICPU_TIMEOUT;
+    const std::chrono::seconds timeout = std::chrono::seconds(timeoutValue);
     std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
     u32 waitTime = CommConfiger::GetInstance().GetCommConfigRetryHoldTime(retryCtx->group_);
     while (true) {
@@ -400,7 +401,8 @@ HcclResult OpRetryServerIssueCmd::ProcessEvent(RetryContext* retryCtx)
 HcclResult OpRetryServerWaitResp::ProcessEvent(RetryContext* retryCtx)
 {
     std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
-    const std::chrono::seconds timeout = std::chrono::seconds(OP_RETRY_SEND_RECV_TIMEOUT);
+    const u32 timeoutValue = std::max(static_cast<u32>(GetExternalInputHcclLinkTimeOut()), OP_RETRY_SEND_RECV_TIMEOUT) + OP_RETRY_WAIT_AICPU_TIMEOUT;
+    const std::chrono::seconds timeout = std::chrono::seconds(timeoutValue);
     RetryState curState = retryCtx->GetRetryState();
 
     // 获取预期的下一个server状态
@@ -497,7 +499,8 @@ HcclResult OpRetryServerCheckOp::ProcessEvent(RetryContext* retryCtx)
 HcclResult OpRetryServerWaitLinkInfo::ProcessEvent(RetryContext* retryCtx)
 {
     std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
-    const std::chrono::seconds timeout = std::chrono::seconds(OP_RETRY_SEND_RECV_TIMEOUT);
+    const u32 timeoutValue = std::max(static_cast<u32>(GetExternalInputHcclLinkTimeOut()), OP_RETRY_SEND_RECV_TIMEOUT) + OP_RETRY_WAIT_AICPU_TIMEOUT;
+    const std::chrono::seconds timeout = std::chrono::seconds(timeoutValue);
     // 下一个server状态
     RetryState nextState = RETRY_STATE_CHECK_ALL_LINK;
 
@@ -918,7 +921,8 @@ HcclResult ResumeServerCheckAllLink::WaitAgentCheckLinkResult(RetryContext *retr
 {
     HCCL_RUN_INFO("[OpRetry][Server][Resume]WaitAgentCheckLinkResult begin");
     std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
-    const std::chrono::seconds timeout = std::chrono::seconds(OP_RETRY_SEND_RECV_TIMEOUT);
+    const u32 timeoutValue = std::max(static_cast<u32>(GetExternalInputHcclLinkTimeOut()), OP_RETRY_SEND_RECV_TIMEOUT) + OP_RETRY_WAIT_AICPU_TIMEOUT;
+    const std::chrono::seconds timeout = std::chrono::seconds(timeoutValue);
     std::set<u32> recvVaild;
     while (recvVaild.size() < retryCtx->serverSockets_.size()) {
         std::chrono::steady_clock::time_point curTime = std::chrono::steady_clock::now();
@@ -1020,7 +1024,8 @@ HcclResult ResumeServerChangeLink::WaitAllChangeLinkResult(RetryContext *retryCt
 {
     HCCL_RUN_INFO("[OpRetry][Server][Resume]WaitAllChangeLinkResult begin gorup[%s]", retryCtx->group_.c_str());
     std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
-    const std::chrono::seconds timeout = std::chrono::seconds(OP_RETRY_SEND_RECV_TIMEOUT);
+    const u32 timeoutValue = std::max(static_cast<u32>(GetExternalInputHcclLinkTimeOut()), OP_RETRY_SEND_RECV_TIMEOUT) + OP_RETRY_WAIT_AICPU_TIMEOUT;
+    const std::chrono::seconds timeout = std::chrono::seconds(timeoutValue);
     RetryState expectAgentState = RETRY_STATE_AGENT_RUNNING;
     std::set<u32> recvValid;
     while (recvValid.size() < retryCtx->serverSockets_.size()) {

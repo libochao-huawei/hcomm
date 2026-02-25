@@ -22,15 +22,15 @@
 namespace hccl {
 constexpr u32 OP_RETRY_MAX_CNT = 3;
 constexpr u32 OP_RETRY_WAIT_AICPU_TIMEOUT = 5; // 等待Aicpu的时长, 单位s
+constexpr u32 OP_RETRY_WAIT_AGENT_AICPU_TIMEOUT = 10; // 等待Agent+Aicpu的时长, 单位s
 constexpr u32 OP_RETRY_POLL_AICPU_ERROR_INTERVAL = 1; // 正常状态轮询Aicpu错误码的间隔, 单位s
 constexpr u32 OP_RETRY_POLL_RDMA_ERROR_INTERVAL = 1; // 正常状态轮询RDMA错误码的间隔, 单位s
 constexpr u32 OP_RETRY_POLL_AICPU_STATE_INTERVAL = 10000; // 重执行状态轮询Aicpu状态的间隔, 单位us
-constexpr u32 OP_RETRY_SEND_RECV_TIMEOUT = 205; // 发送和接收的超时时间, 单位s, 比aicpu状态机超时时间长5s
+constexpr u32 OP_RETRY_SEND_RECV_TIMEOUT = 200; // 发送和接收的超时时间, 单位s
 constexpr u32 OP_RETRY_SEND_RECV_INTERVAL = 10000; // 发送和接收的间隔时间, 单位us
 constexpr u32 OP_RETRY_KEEP_INTERVAL = 1; // 保活时间间隔, 单位s
 constexpr u32 OP_RETRY_RUNNING_POLL_INTERVAL = 100000; // 重执行状态轮询状态的间隔, 单位us
 constexpr u32 TIME_MS_TO_US = 1000;
-constexpr u32 OP_RETRY_WAIT_CAN_RETRY_RANK = 60;
 
 // 重执行初始化需要用到的参数
 struct OpRetryAgentParam {

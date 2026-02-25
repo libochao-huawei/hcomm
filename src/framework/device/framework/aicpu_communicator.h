@@ -153,7 +153,7 @@ public:
     bool GetOpRetryEnable();
     void SetZeroCopyEnable(bool enable);
     bool IsTaskExceptionForHccs();
-    static u32 HcclGetWaitStopExecCmdTimeout();
+    u32 HcclGetWaitStopExecCmdTimeout();
     u32 HcclGetWaitRetryCmdTimeout(uint32_t retryCnt);
     HcclResult UpdateOpExecStatus(HcclOpExecFSM &fsmState, KfcStatus state, KfcError &errorCode, uint32_t retryCnt);
     HcclResult ResetOpRetryException(HcclCMDType opType);
