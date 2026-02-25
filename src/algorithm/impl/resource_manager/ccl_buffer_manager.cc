@@ -286,9 +286,12 @@ HcclResult CCLBufferManager::InitCCLbuffer(u64 inCCLbufferSize, u64 outCCLbuffer
 
 void* CCLBufferManager::GetCCLbufferAddr(const DeviceMem &buffer)
 {
-    if (!buffer) {
+    HCCL_RUN_INFO("[GetCCLbufferAddr] buffer ptr[%p]", buffer.ptr());
+    if (buffer.ptr() == nullptr) {
+        HCCL_RUN_INFO("[GetCCLbufferAddr] buffer is empty");
         return nullptr;
     } else {
+        HCCL_RUN_INFO("[GetCCLbufferAddr] buffer ptr[%p]", static_cast<void *>(reinterpret_cast<u8 *>(buffer.ptr())));
         return static_cast<void *>(reinterpret_cast<u8 *>(buffer.ptr()));
     }
 }
@@ -384,10 +387,13 @@ void CCLBufferManager::ReleaseAlltoAllvParaBuffer()
 
 HcclResult CCLBufferManager::GetIndependentOpCCLbuffer(void* &buffer, uint64_t &size)
 {
-    buffer = GetCCLbufferAddr(cclBuffer_);
+    HCCL_RUN_INFO("[GetIndependentOpCCLbuffer] cclBuffer_[%p]", cclBuffer_.ptr());
+    HCCL_RUN_INFO("[GetIndependentOpCCLbuffer] inCCLbuffer_[%p]", inCCLbuffer_.ptr());
+    buffer = GetCCLbufferAddr(inCCLbuffer_);
     if (buffer == nullptr) {
+        HCCL_RUN_INFO("[GetIndependentOpCCLbuffer] buffer is empty");
         CHK_RET(CreateCommCCLbuffer());
-        buffer = GetCCLbufferAddr(cclBuffer_);
+        buffer = GetCCLbufferAddr(inCCLbuffer_);
     }
     // 大小在通信域初始化时调取InitCCLbuffer设置，MC1MB内存不对外暴露
     size = inCCLbufferSize_ + outCCLbufferSize_;
