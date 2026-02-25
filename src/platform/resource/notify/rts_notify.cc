@@ -97,6 +97,18 @@ HcclResult RtsNotify::Post(Stream& stream, HcclDispatcher dispatcher, s32 stage,
         notifyPtr, stream, remoteUserRank, notifyInfo_.ipcNotify.offset, stage, inchip, address);
 }
 
+HcclResult RtsNotify::Post(Stream& stream)
+{
+    CHK_RET(hrtNotifyRecord(notifyPtr, stream.ptr()));
+    return HCCL_SUCCESS;
+}
+
+HcclResult RtsNotify::Wait(Stream& stream, u32 timeOut)
+{
+    CHK_RET(hrtNotifyWaitWithTimeOut(notifyPtr, stream.ptr(), timeOut));
+    return HCCL_SUCCESS;
+}
+
 HcclResult RtsNotify::SetIpc()
 {
     SecIpcName_t ipcName;

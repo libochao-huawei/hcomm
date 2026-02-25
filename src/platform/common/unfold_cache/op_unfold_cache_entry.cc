@@ -132,8 +132,8 @@ namespace hccl {
         // 注意: 只有在第一次cache miss的executor->Orchestrate之后, 相关mapping才会被初始化
         if (afterFirstOrch) {
             CHK_PRT_RET(((rankSize > 1) && (hcclOffsetDstRanksIdxMap.size() == 0)),
-            HCCL_ERROR("[AlltoallvMetadata][Check] empty hcclOffsetDstRanksIdxMap for rankSize[%u]", rankSize),
-            HCCL_E_INTERNAL); // 注意: 只有当rankSize为1时, hcclOffsetDstRanksIdxMap的size才可以是0
+                HCCL_ERROR("[AlltoallvMetadata][Check] empty hcclOffsetDstRanksIdxMap for rankSize[%u]", rankSize),
+                HCCL_E_INTERNAL); // 注意: 只有当rankSize为1时, hcclOffsetDstRanksIdxMap的size才可以是0
         }
 
         return HCCL_SUCCESS;

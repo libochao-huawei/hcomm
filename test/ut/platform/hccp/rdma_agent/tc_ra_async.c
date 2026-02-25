@@ -33,237 +33,237 @@ extern void RaHwAsyncSetConnectStatus(unsigned int phyId, unsigned int connectSt
 extern int RaHdcAsyncSessionClose(unsigned int phyId);
 extern struct HdcAsyncInfo gRaHdcAsync[RA_MAX_PHY_ID_NUM];
 
-int ra_hdc_send_msg_async_stub(unsigned int opcode, unsigned int phyId, char *data, unsigned int dataSize,
+int RaHdcSendMsgAsyncStub(unsigned int opcode, unsigned int phyId, char *data, unsigned int dataSize,
     struct RaRequestHandle *reqHandle)
 {
     reqHandle->isDone = true;
     return 0;
 }
 
-void hdc_async_del_response_stub(struct RaRequestHandle *reqHandle)
+void HdcAsyncDelResponseStub(struct RaRequestHandle *reqHandle)
 {
     free(reqHandle);
     reqHandle = NULL;
     return;
 }
 
-void *calloc_first_stub(unsigned long num, unsigned long size)
+void *CallocFirstStub(unsigned long num, unsigned long size)
 {
-    static int calloc_first_stub_call_num1 = 0;
-    calloc_first_stub_call_num1++;
+    static int callocFirstStubCallNum1 = 0;
+    callocFirstStubCallNum1++;
 
-    if (calloc_first_stub_call_num1 == 1) {
+    if (callocFirstStubCallNum1 == 1) {
         return calloc(num, size);
     }
 
     return NULL;
 }
 
-void tc_ra_ctx_lmem_register_async()
+void TcRaCtxLmemRegisterAsync()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    struct mr_reg_info_t lmem_info = {0};
-    struct ra_lmem_handle *lmem_handle = NULL;
-    struct RaRequestHandle *req_handle = NULL;
-    union op_lmem_reg_info_data async_data = {0};
-    struct mem_reg_info info = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct MrRegInfoT lmemInfo = {0};
+    struct RaLmemHandle *lmemHandle = NULL;
+    struct RaRequestHandle *reqHandle = NULL;
+    union OpLmemRegInfoData asyncData = {0};
+    struct MemRegInfo info = {0};
     int ret;
 
     mocker_clean();
-    ctx_handle.protocol = 1;
+    ctxHandle.protocol = 1;
 
-    mocker(ra_hdc_ctx_lmem_register_async, 10, -1);
-    ret = ra_ctx_lmem_register_async(&ctx_handle, &lmem_info, &lmem_handle, &req_handle);
+    mocker(RaHdcCtxLmemRegisterAsync, 10, -1);
+    ret = RaCtxLmemRegisterAsync(&ctxHandle, &lmemInfo, &lmemHandle, &reqHandle);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 10, 0);
-    ret = ra_ctx_lmem_register_async(&ctx_handle, &lmem_info, &lmem_handle, &req_handle);
+    ret = RaCtxLmemRegisterAsync(&ctxHandle, &lmemInfo, &lmemHandle, &reqHandle);
     EXPECT_INT_EQ(ret, 0);
 
-    req_handle->recvBuf = &async_data;
-    req_handle->privData = &info;
+    reqHandle->recvBuf = &asyncData;
+    reqHandle->privData = &info;
     mocker(memcpy_s, 10, -1);
-    ra_hdc_async_handle_lmem_register(req_handle);
-    free(lmem_handle);
+    RaHdcAsyncHandleLmemRegister(reqHandle);
+    free(lmemHandle);
     mocker_clean();
-    free(req_handle);
+    free(reqHandle);
 }
 
-void tc_ra_ctx_lmem_unregister_async()
+void TcRaCtxLmemUnregisterAsync()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    struct ra_lmem_handle *lmem_handle = malloc(sizeof(struct ra_lmem_handle));
-    void *req_handle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    struct RaLmemHandle *lmemHandle = malloc(sizeof(struct RaLmemHandle));
+    void *reqHandle = NULL;
 
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    ra_ctx_lmem_unregister_async(&ctx_handle, lmem_handle, &req_handle);
+    RaCtxLmemUnregisterAsync(&ctxHandle, lmemHandle, &reqHandle);
     mocker_clean();
-    free(req_handle);
+    free(reqHandle);
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    lmem_handle = malloc(sizeof(struct ra_lmem_handle));
-    ra_ctx_lmem_unregister_async(&ctx_handle, lmem_handle, &req_handle);
+    lmemHandle = malloc(sizeof(struct RaLmemHandle));
+    RaCtxLmemUnregisterAsync(&ctxHandle, lmemHandle, &reqHandle);
     mocker_clean();
-    free(req_handle);
+    free(reqHandle);
 
-    mocker(ra_hdc_ctx_lmem_unregister_async, 1, -1);
-    lmem_handle = malloc(sizeof(struct ra_lmem_handle));
-    ra_ctx_lmem_unregister_async(&ctx_handle, lmem_handle, &req_handle);
-    mocker_clean();
-}
-
-void tc_ra_ctx_qp_create_async()
-{
-    struct ra_ctx_handle ctx_handle = {0};
-    struct qp_create_attr qpAttr = {0};
-    struct qp_info_t *qp_info = NULL;
-    struct ra_ctx_qp_handle *qp_handle = NULL;
-    struct RaRequestHandle *req_handle = NULL;
-    struct ra_cq_handle scq_handle = {0};
-    struct ra_cq_handle rcq_handle = {0};
-
-    qpAttr.scq_handle = (void*)&scq_handle;
-    qpAttr.rcq_handle = (void*)&rcq_handle;
-    ctx_handle.protocol = 1;
-    mocker_clean();
-
-    mocker(RaHdcSendMsgAsync, 1, 0);
-    ra_ctx_qp_create_async(&ctx_handle, &qpAttr, &qp_info, &qp_handle, &req_handle);
-    free(qp_handle);
-    free(req_handle);
-    mocker_clean();
-
-    mocker(RaHdcSendMsgAsync, 1, 0);
-    ra_ctx_qp_create_async(&ctx_handle, &qpAttr, &qp_info, &qp_handle, &req_handle);
-    mocker_clean();
-    free(qp_handle);
-    free(req_handle);
-
-    mocker(ra_hdc_ctx_qp_create_async, 1, -1);
-    ra_ctx_qp_create_async(&ctx_handle, &qpAttr, &qp_info, &qp_handle, &req_handle);
+    mocker(RaHdcCtxLmemUnregisterAsync, 1, -1);
+    lmemHandle = malloc(sizeof(struct RaLmemHandle));
+    RaCtxLmemUnregisterAsync(&ctxHandle, lmemHandle, &reqHandle);
     mocker_clean();
 }
 
-void tc_ra_ctx_qp_destroy_async()
+void TcRaCtxQpCreateAsync()
 {
-    struct ra_ctx_qp_handle *qp_handle = malloc(sizeof(struct ra_ctx_qp_handle));
-    void *req_handle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    struct QpCreateAttr qpAttr = {0};
+    struct QpInfoT *qpInfo = NULL;
+    struct RaCtxQpHandle *qpHandle = NULL;
+    struct RaRequestHandle *reqHandle = NULL;
+    struct RaCqHandle scqHandle = {0};
+    struct RaCqHandle rcqHandle = {0};
+
+    qpAttr.scqHandle = (void*)&scqHandle;
+    qpAttr.rcqHandle = (void*)&rcqHandle;
+    ctxHandle.protocol = 1;
+    mocker_clean();
+
+    mocker(RaHdcSendMsgAsync, 1, 0);
+    RaCtxQpCreateAsync(&ctxHandle, &qpAttr, &qpInfo, &qpHandle, &reqHandle);
+    free(qpHandle);
+    free(reqHandle);
+    mocker_clean();
+
+    mocker(RaHdcSendMsgAsync, 1, 0);
+    RaCtxQpCreateAsync(&ctxHandle, &qpAttr, &qpInfo, &qpHandle, &reqHandle);
+    mocker_clean();
+    free(qpHandle);
+    free(reqHandle);
+
+    mocker(RaHdcCtxQpCreateAsync, 1, -1);
+    RaCtxQpCreateAsync(&ctxHandle, &qpAttr, &qpInfo, &qpHandle, &reqHandle);
+    mocker_clean();
+}
+
+void TcRaCtxQpDestroyAsync()
+{
+    struct RaCtxQpHandle *qpHandle = malloc(sizeof(struct RaCtxQpHandle));
+    void *reqHandle = NULL;
 
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    ra_ctx_qp_destroy_async(qp_handle, &req_handle);
+    RaCtxQpDestroyAsync(qpHandle, &reqHandle);
     mocker_clean();
 
-    free(req_handle);
+    free(reqHandle);
 
-    qp_handle = malloc(sizeof(struct ra_ctx_qp_handle));
-    mocker(ra_hdc_ctx_qp_destroy_async, 1, -1);
-    ra_ctx_qp_destroy_async(qp_handle, &req_handle);
+    qpHandle = malloc(sizeof(struct RaCtxQpHandle));
+    mocker(RaHdcCtxQpDestroyAsync, 1, -1);
+    RaCtxQpDestroyAsync(qpHandle, &reqHandle);
     mocker_clean();
 }
 
-void tc_ra_ctx_qp_import_async()
+void TcRaCtxQpImportAsync()
 {
-    struct ra_ctx_handle ctx_handle = {0};
-    struct qp_import_info_t info = {0};
-    struct ra_ctx_rem_qp_handle *rem_qp_handle = NULL;
-    struct RaRequestHandle *req_handle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    struct QpImportInfoT info = {0};
+    struct RaCtxRemQpHandle *remQpHandle = NULL;
+    struct RaRequestHandle *reqHandle = NULL;
 
-    ctx_handle.protocol = 1;
+    ctxHandle.protocol = 1;
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    ra_ctx_qp_import_async(&ctx_handle, &info, &rem_qp_handle, &req_handle);
-    free(rem_qp_handle);
+    RaCtxQpImportAsync(&ctxHandle, &info, &remQpHandle, &reqHandle);
+    free(remQpHandle);
     mocker_clean();
 
-    mocker(ra_hdc_ctx_qp_import_async, 1, -1);
-    ra_ctx_qp_import_async(&ctx_handle, &info, &rem_qp_handle, &req_handle);
+    mocker(RaHdcCtxQpImportAsync, 1, -1);
+    RaCtxQpImportAsync(&ctxHandle, &info, &remQpHandle, &reqHandle);
     mocker_clean();
-    free(req_handle);
+    free(reqHandle);
 }
 
-void tc_ra_ctx_qp_unimport_async()
+void TcRaCtxQpUnimportAsync()
 {
-    struct ra_ctx_rem_qp_handle *rem_qp_handle = malloc(sizeof(struct ra_ctx_rem_qp_handle));
-    void *req_handle = NULL;
+    struct RaCtxRemQpHandle *remQpHandle = malloc(sizeof(struct RaCtxRemQpHandle));
+    void *reqHandle = NULL;
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    ra_ctx_qp_unimport_async(rem_qp_handle, &req_handle);
+    RaCtxQpUnimportAsync(remQpHandle, &reqHandle);
     mocker_clean();
 
-    free(req_handle);
+    free(reqHandle);
 
-    rem_qp_handle = malloc(sizeof(struct ra_ctx_rem_qp_handle));
-    mocker(ra_hdc_ctx_qp_unimport_async, 1, -1);
-    ra_ctx_qp_unimport_async(rem_qp_handle, &req_handle);
+    remQpHandle = malloc(sizeof(struct RaCtxRemQpHandle));
+    mocker(RaHdcCtxQpUnimportAsync, 1, -1);
+    RaCtxQpUnimportAsync(remQpHandle, &reqHandle);
     mocker_clean();
 }
 
-void tc_ra_socket_send_async()
+void TcRaSocketSendAsync()
 {
-    struct SocketHdcInfo fd_handle = {0};
-    struct RaRequestHandle *req_handle = NULL;
-    unsigned long long sent_size = 0;
+    struct SocketHdcInfo fdHandle = {0};
+    struct RaRequestHandle *reqHandle = NULL;
+    unsigned long long sentSize = 0;
 
     mocker_clean();
     mocker(RaHdcSendMsgAsync, 1, 0);
-    RaSocketSendAsync(&fd_handle,"a", 1, &sent_size, &req_handle);
+    RaSocketSendAsync(&fdHandle,"a", 1, &sentSize, &reqHandle);
     mocker_clean();
 
-    free(req_handle);
+    free(reqHandle);
 }
 
-void tc_ra_socket_recv_async()
+void TcRaSocketRecvAsync()
 {
-    struct SocketHdcInfo fd_handle = {0};
-    struct RaRequestHandle *req_handle = NULL;
-    unsigned long long received_size = 0;
+    struct SocketHdcInfo fdHandle = {0};
+    struct RaRequestHandle *reqHandle = NULL;
+    unsigned long long receivedSize = 0;
     char data = 0;
 
     mocker_clean();
     mocker(RaHdcSendMsgAsync, 1, 0);
-    RaSocketRecvAsync(&fd_handle, &data, 1, &received_size, &req_handle);
-    free(req_handle->privData);
+    RaSocketRecvAsync(&fdHandle, &data, 1, &receivedSize, &reqHandle);
+    free(reqHandle->privData);
     mocker_clean();
 
-    free(req_handle);
+    free(reqHandle);
 }
 
-void tc_ra_get_async_req_result()
+void TcRaGetAsyncReqResult()
 {
-    struct RaRequestHandle *req_handle = malloc(sizeof(struct RaRequestHandle));
-    struct RaAsyncOpHandle op_handle = {0};
-    int req_result = 0;
+    struct RaRequestHandle *reqHandle = malloc(sizeof(struct RaRequestHandle));
+    struct RaAsyncOpHandle opHandle = {0};
+    int reqResult = 0;
 
-    req_handle->isDone = 1;
-    req_handle->phyId = 0;
-    req_handle->recvLen = 1;
-    req_handle->opHandle = &op_handle;
-    RA_INIT_LIST_HEAD(&req_handle->list);
-    req_handle->recvBuf = malloc(1);
-    req_handle->privHandle = NULL;
+    reqHandle->isDone = 1;
+    reqHandle->phyId = 0;
+    reqHandle->recvLen = 1;
+    reqHandle->opHandle = &opHandle;
+    RA_INIT_LIST_HEAD(&reqHandle->list);
+    reqHandle->recvBuf = malloc(1);
+    reqHandle->privHandle = NULL;
     mocker_clean();
 
     mocker(pthread_mutex_lock, 1, 0);
     mocker(pthread_mutex_unlock, 1, 0);
-    RaGetAsyncReqResult(req_handle, &req_result);
+    RaGetAsyncReqResult(reqHandle, &reqResult);
     mocker_clean();
 }
 
-void tc_ra_socket_batch_connect_async_normal()
+void TcRaSocketBatchConnectAsyncNormal()
 {
-    struct RaRequestHandle *req_handle = NULL;
-    struct RaSocketHandle socket_handle = {0};
+    struct RaRequestHandle *reqHandle = NULL;
+    struct RaSocketHandle socketHandle = {0};
     struct SocketConnectInfoT conn[1] = {0};
     int ret = 0;
 
-    conn[0].socketHandle = (void *)&socket_handle;
+    conn[0].socketHandle = (void *)&socketHandle;
 
     mocker_clean();
     mocker(RaInetPton, 10, 0);
@@ -271,20 +271,20 @@ void tc_ra_socket_batch_connect_async_normal()
     mocker(RaHdcSendMsgAsync, 10, 0);
     mocker(RaGetSocketConnectInfo, 10, 0);
 
-    ret = RaSocketBatchConnectAsync(conn, 1, &req_handle);
-    free(req_handle);
+    ret = RaSocketBatchConnectAsync(conn, 1, &reqHandle);
+    free(reqHandle);
     mocker_clean();
     return;
 }
 
-void tc_ra_socket_batch_connect_async_fail()
+void TcRaSocketBatchConnectAsyncFail()
 {
-    struct RaRequestHandle *req_handle = NULL;
-    struct RaSocketHandle socket_handle = {0};
+    struct RaRequestHandle *reqHandle = NULL;
+    struct RaSocketHandle socketHandle = {0};
     struct SocketConnectInfoT conn[1] = {0};
     int ret = 0;
 
-    conn[0].socketHandle = (void *)&socket_handle;
+    conn[0].socketHandle = (void *)&socketHandle;
 
     mocker_clean();
     mocker(RaInetPton, 10, 0);
@@ -292,208 +292,208 @@ void tc_ra_socket_batch_connect_async_fail()
     mocker(RaHdcSendMsgAsync, 10, 0);
     mocker(RaGetSocketConnectInfo, 10, 0);
 
-    ret = RaSocketBatchConnectAsync(NULL, 1, &req_handle);
+    ret = RaSocketBatchConnectAsync(NULL, 1, &reqHandle);
     EXPECT_INT_NE(ret, 0);
 
-    ret = RaSocketBatchConnectAsync(conn, 0, &req_handle);
+    ret = RaSocketBatchConnectAsync(conn, 0, &reqHandle);
     EXPECT_INT_NE(ret, 0);
 
     ret = RaSocketBatchConnectAsync(conn, 1, NULL);
     EXPECT_INT_NE(ret, 0);
 
     conn[0].socketHandle = NULL;
-    ret = RaSocketBatchConnectAsync(conn, 1, &req_handle);
+    ret = RaSocketBatchConnectAsync(conn, 1, &reqHandle);
     EXPECT_INT_NE(ret, 0);
 
     mocker_clean();
     return;
 }
 
-void tc_ra_socket_batch_connect_async()
+void TcRaSocketBatchConnectAsync()
 {
-    tc_ra_socket_batch_connect_async_normal();
-    tc_ra_socket_batch_connect_async_fail();
+    TcRaSocketBatchConnectAsyncNormal();
+    TcRaSocketBatchConnectAsyncFail();
 }
 
-void tc_ra_socket_listen_start_async_normal()
+void TcRaSocketListenStartAsyncNormal()
 {
-    struct RaRequestHandle *req_handle = NULL;
-    struct RaSocketHandle socket_handle = {0};
+    struct RaRequestHandle *reqHandle = NULL;
+    struct RaSocketHandle socketHandle = {0};
     struct SocketListenInfoT conn[1] = {0};
     int ret = 0;
 
-    conn[0].socketHandle = (void *)&socket_handle;
+    conn[0].socketHandle = (void *)&socketHandle;
 
     mocker_clean();
     mocker(RaInetPton, 10, 0);
     mocker(RaHdcSendMsgAsync, 10, 0);
     mocker(RaGetSocketListenInfo, 10, 0);
 
-    ret = RaSocketListenStartAsync(conn, 1, &req_handle);
-    free(req_handle->privData);
-    free(req_handle);
+    ret = RaSocketListenStartAsync(conn, 1, &reqHandle);
+    free(reqHandle->privData);
+    free(reqHandle);
     mocker_clean();
     return;
 }
 
-void tc_ra_socket_listen_start_async_fail()
+void TcRaSocketListenStartAsyncFail()
 {
-    struct RaRequestHandle *req_handle = NULL;
-    struct RaSocketHandle socket_handle = {0};
+    struct RaRequestHandle *reqHandle = NULL;
+    struct RaSocketHandle socketHandle = {0};
     struct SocketListenInfoT conn[1] = {0};
     int ret = 0;
 
-    conn[0].socketHandle = (void *)&socket_handle;
+    conn[0].socketHandle = (void *)&socketHandle;
 
     mocker_clean();
     mocker(RaInetPton, 10, 0);
     mocker(RaHdcSendMsgAsync, 10, 0);
     mocker(RaGetSocketListenInfo, 10, 0);
 
-    ret = RaSocketListenStartAsync(NULL, 1, &req_handle);
+    ret = RaSocketListenStartAsync(NULL, 1, &reqHandle);
     EXPECT_INT_NE(ret, 0);
 
-    ret = RaSocketListenStartAsync(conn, 0, &req_handle);
+    ret = RaSocketListenStartAsync(conn, 0, &reqHandle);
     EXPECT_INT_NE(ret, 0);
 
     ret = RaSocketListenStartAsync(conn, 1, NULL);
     EXPECT_INT_NE(ret, 0);
 
     conn[0].socketHandle = NULL;
-    ret = RaSocketListenStartAsync(conn, 1, &req_handle);
+    ret = RaSocketListenStartAsync(conn, 1, &reqHandle);
     EXPECT_INT_NE(ret, 0);
 
     mocker_clean();
     return;
 }
 
-void tc_ra_socket_listen_start_async()
+void TcRaSocketListenStartAsync()
 {
-    tc_ra_socket_listen_start_async_normal();
-    tc_ra_socket_listen_start_async_fail();
+    TcRaSocketListenStartAsyncNormal();
+    TcRaSocketListenStartAsyncFail();
 }
 
-void tc_ra_socket_listen_stop_async_normal()
+void TcRaSocketListenStopAsyncNormal()
 {
-    struct RaRequestHandle *req_handle = NULL;
-    struct RaSocketHandle socket_handle = {0};
+    struct RaRequestHandle *reqHandle = NULL;
+    struct RaSocketHandle socketHandle = {0};
     struct SocketListenInfoT conn[1] = {0};
 
-    conn[0].socketHandle = (void *)&socket_handle;
+    conn[0].socketHandle = (void *)&socketHandle;
 
     mocker_clean();
     mocker(RaInetPton, 10, 0);
     mocker(RaHdcSendMsgAsync, 10, 0);
     mocker(RaGetSocketListenInfo, 10, 0);
 
-    (void)RaSocketListenStopAsync(conn, 1, &req_handle);
-    free(req_handle);
+    (void)RaSocketListenStopAsync(conn, 1, &reqHandle);
+    free(reqHandle);
     mocker_clean();
     return;
 }
 
-void tc_ra_socket_listen_stop_async_fail()
+void TcRaSocketListenStopAsyncFail()
 {
-    struct RaRequestHandle *req_handle = NULL;
-    struct RaSocketHandle socket_handle = {0};
+    struct RaRequestHandle *reqHandle = NULL;
+    struct RaSocketHandle socketHandle = {0};
     struct SocketListenInfoT conn[1] = {0};
     int ret = 0;
 
-    conn[0].socketHandle = (void *)&socket_handle;
+    conn[0].socketHandle = (void *)&socketHandle;
 
     mocker_clean();
     mocker(RaInetPton, 10, 0);
     mocker(RaHdcSendMsgAsync, 10, 0);
     mocker(RaGetSocketListenInfo, 10, 0);
 
-    ret = RaSocketListenStopAsync(NULL, 1, &req_handle);
+    ret = RaSocketListenStopAsync(NULL, 1, &reqHandle);
     EXPECT_INT_NE(ret, 0);
 
-    ret = RaSocketListenStopAsync(conn, 0, &req_handle);
+    ret = RaSocketListenStopAsync(conn, 0, &reqHandle);
     EXPECT_INT_NE(ret, 0);
 
     ret = RaSocketListenStopAsync(conn, 1, NULL);
     EXPECT_INT_NE(ret, 0);
 
     conn[0].socketHandle = NULL;
-    ret = RaSocketListenStopAsync(conn, 1, &req_handle);
+    ret = RaSocketListenStopAsync(conn, 1, &reqHandle);
     EXPECT_INT_NE(ret, 0);
 
     mocker_clean();
     return;
 }
 
-void tc_ra_socket_listen_stop_async()
+void TcRaSocketListenStopAsync()
 {
-    tc_ra_socket_listen_stop_async_normal();
-    tc_ra_socket_listen_stop_async_fail();
+    TcRaSocketListenStopAsyncNormal();
+    TcRaSocketListenStopAsyncFail();
 }
 
-void tc_ra_socket_batch_close_async_normal()
+void TcRaSocketBatchCloseAsyncNormal()
 {
-    struct RaRequestHandle *req_handle = NULL;
-    struct RaSocketHandle socket_handle = {0};
-    struct SocketHdcInfo fd_handle = {0};
+    struct RaRequestHandle *reqHandle = NULL;
+    struct RaSocketHandle socketHandle = {0};
+    struct SocketHdcInfo fdHandle = {0};
     struct SocketCloseInfoT conn[1] = {0};
     int ret = 0;
 
-    conn[0].socketHandle = (void *)&socket_handle;
-    conn[0].fdHandle = (void *)&fd_handle;
+    conn[0].socketHandle = (void *)&socketHandle;
+    conn[0].fdHandle = (void *)&fdHandle;
 
     mocker_clean();
     mocker(RaInetPton, 10, 0);
     mocker(RaHdcSendMsgAsync, 10, 0);
     mocker(RaGetSocketConnectInfo, 10, 0);
 
-    ret = RaSocketBatchCloseAsync(conn, 1, &req_handle);
-    free(req_handle->privData);
-    free(req_handle);
+    ret = RaSocketBatchCloseAsync(conn, 1, &reqHandle);
+    free(reqHandle->privData);
+    free(reqHandle);
     mocker_clean();
     return;
 }
 
-void tc_ra_socket_batch_close_async_fail()
+void TcRaSocketBatchCloseAsyncFail()
 {
-    struct RaRequestHandle *req_handle = NULL;
-    struct RaSocketHandle socket_handle = {0};
-    struct SocketHdcInfo fd_handle = {0};
+    struct RaRequestHandle *reqHandle = NULL;
+    struct RaSocketHandle socketHandle = {0};
+    struct SocketHdcInfo fdHandle = {0};
     struct SocketCloseInfoT conn[1] = {0};
     int ret = 0;
 
-    conn[0].socketHandle = (void *)&socket_handle;
-    conn[0].fdHandle = (void *)&fd_handle;
+    conn[0].socketHandle = (void *)&socketHandle;
+    conn[0].fdHandle = (void *)&fdHandle;
 
     mocker_clean();
     mocker(RaInetPton, 10, 0);
     mocker(RaHdcSendMsgAsync, 10, 0);
     mocker(RaGetSocketConnectInfo, 10, 0);
 
-    ret = RaSocketBatchCloseAsync(NULL, 1, &req_handle);
+    ret = RaSocketBatchCloseAsync(NULL, 1, &reqHandle);
     EXPECT_INT_NE(ret, 0);
 
-    ret = RaSocketBatchCloseAsync(conn, 0, &req_handle);
+    ret = RaSocketBatchCloseAsync(conn, 0, &reqHandle);
     EXPECT_INT_NE(ret, 0);
 
     ret = RaSocketBatchCloseAsync(conn, 1, NULL);
     EXPECT_INT_NE(ret, 0);
 
     conn[0].socketHandle = NULL;
-    ret = RaSocketBatchCloseAsync(conn, 1, &req_handle);
+    ret = RaSocketBatchCloseAsync(conn, 1, &reqHandle);
     EXPECT_INT_NE(ret, 0);
 
     mocker_clean();
     return;
 }
 
-void tc_ra_socket_batch_close_async()
+void TcRaSocketBatchCloseAsync()
 {
-    tc_ra_socket_batch_close_async_normal();
-    tc_ra_socket_batch_close_async_fail();
+    TcRaSocketBatchCloseAsyncNormal();
+    TcRaSocketBatchCloseAsyncFail();
 }
 
-void tc_ra_hdc_async_init_session()
+void TcRaHdcAsyncInitSession()
 {
-    unsigned int connect_status = HDC_CONNECTED;
+    unsigned int connectStatus = HDC_CONNECTED;
     struct RaInitConfig cfg = {0};
     unsigned int phyId = 0;
     int ret = 0;
@@ -501,99 +501,99 @@ void tc_ra_hdc_async_init_session()
     mocker(pthread_create, 2, 0);
     mocker(DlDrvDeviceGetBareTgid, 1, 0);
     mocker(RaHdcAsyncMutexInit, 1, -1);
-    RaHwAsyncSetConnectStatus(phyId, connect_status);
+    RaHwAsyncSetConnectStatus(phyId, connectStatus);
     ret = RaHdcAsyncInitSession(&cfg);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 }
 
-void tc_ra_get_eid_by_ip_async()
+void TcRaGetEidByIpAsync()
 {
-    struct RaRequestHandle *req_handle = NULL;
-    struct ra_ctx_handle ctx_handle = {0};
-    union hccp_eid eid[32] = {0};
+    struct RaRequestHandle *reqHandle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    union HccpEid eid[32] = {0};
     struct IpInfo ip[32] = {0};
     unsigned int num = 32;
     int ret = 0;
 
     mocker_clean();
-    ret = ra_get_eid_by_ip_async(NULL, ip, eid, &num, &req_handle);
+    ret = RaGetEidByIpAsync(NULL, ip, eid, &num, &reqHandle);
     EXPECT_INT_EQ(ret, 128103);
 
     num = 33;
-    ret = ra_get_eid_by_ip_async(&ctx_handle, ip, eid, &num, &req_handle);
+    ret = RaGetEidByIpAsync(&ctxHandle, ip, eid, &num, &reqHandle);
     EXPECT_INT_EQ(ret, 128103);
 
     num = 32;
-    mocker(ra_hdc_get_eid_by_ip_async, 10, -1);
-    ret = ra_get_eid_by_ip_async(&ctx_handle, ip, eid, &num, &req_handle);
+    mocker(RaHdcGetEidByIpAsync, 10, -1);
+    ret = RaGetEidByIpAsync(&ctxHandle, ip, eid, &num, &reqHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 
-    mocker(ra_hdc_get_eid_by_ip_async, 10, 0);
-    ret = ra_get_eid_by_ip_async(&ctx_handle, ip, eid, &num, &req_handle);
+    mocker(RaHdcGetEidByIpAsync, 10, 0);
+    ret = RaGetEidByIpAsync(&ctxHandle, ip, eid, &num, &reqHandle);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 }
 
-void tc_ra_hdc_get_eid_by_ip_async()
+void TcRaHdcGetEidByIpAsync()
 {
-    union op_get_eid_by_ip_data *async_data = NULL;
-    struct ra_response_eid_list *priv_data = NULL;
-    struct RaRequestHandle *req_handle = NULL;
-    struct ra_ctx_handle ctx_handle = {0};
-    unsigned int priv_data_num = 1;
-    union hccp_eid eid[32] = {0};
+    union OpGetEidByIpData *asyncData = NULL;
+    struct RaResponseEidList *privData = NULL;
+    struct RaRequestHandle *reqHandle = NULL;
+    struct RaCtxHandle ctxHandle = {0};
+    unsigned int privDataNum = 1;
+    union HccpEid eid[32] = {0};
     struct IpInfo ip[32] = {0};
     unsigned int num = 32;
     int ret = 0;
 
     mocker_clean();
     mocker(calloc, 1, NULL);
-    ret = ra_hdc_get_eid_by_ip_async(&ctx_handle, ip, eid, &num, &req_handle);
+    ret = RaHdcGetEidByIpAsync(&ctxHandle, ip, eid, &num, &reqHandle);
     EXPECT_INT_EQ(ret, -ENOMEM);
     mocker_clean();
 
-    mocker_invoke(calloc, calloc_first_stub, 2);
-    ret = ra_hdc_get_eid_by_ip_async(&ctx_handle, ip, eid, &num, &req_handle);
+    mocker_invoke(calloc, CallocFirstStub, 2);
+    ret = RaHdcGetEidByIpAsync(&ctxHandle, ip, eid, &num, &reqHandle);
     EXPECT_INT_EQ(ret, -ENOMEM);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, -1);
-    ret = ra_hdc_get_eid_by_ip_async(&ctx_handle, ip, eid, &num, &req_handle);
+    ret = RaHdcGetEidByIpAsync(&ctxHandle, ip, eid, &num, &reqHandle);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 
     mocker(RaHdcSendMsgAsync, 1, 0);
-    ret = ra_hdc_get_eid_by_ip_async(&ctx_handle, ip, eid, &num, &req_handle);
+    ret = RaHdcGetEidByIpAsync(&ctxHandle, ip, eid, &num, &reqHandle);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
     mocker(memcpy_s, 1, 0);
-    async_data = calloc(1, sizeof(union op_get_eid_by_ip_data));
-    req_handle->opRet = 0;
-    async_data->rx_data.num = 1;
-    priv_data = (struct ra_response_eid_list *)(req_handle->privData);
-    priv_data->num = &priv_data_num;
-    req_handle->recvBuf = (void *)async_data;
-    ra_hdc_async_handle_get_eid_by_ip(req_handle);
+    asyncData = calloc(1, sizeof(union OpGetEidByIpData));
+    reqHandle->opRet = 0;
+    asyncData->rxData.num = 1;
+    privData = (struct RaResponseEidList *)(reqHandle->privData);
+    privData->num = &privDataNum;
+    reqHandle->recvBuf = (void *)asyncData;
+    RaHdcAsyncHandleGetEidByIp(reqHandle);
     mocker_clean();
 
-    free(async_data);
-    async_data = NULL;
-    free(req_handle);
-    req_handle = NULL;
+    free(asyncData);
+    asyncData = NULL;
+    free(reqHandle);
+    reqHandle = NULL;
 }
 
-void tc_ra_hdc_async_session_close()
+void TcRaHdcAsyncSessionClose()
 {
     int ret = 0;
 
     mocker_clean();
     pthread_mutex_init(&gRaHdcAsync[0].reqMutex, NULL);
-    mocker_invoke(RaHdcSendMsgAsync, ra_hdc_send_msg_async_stub, 1);
+    mocker_invoke(RaHdcSendMsgAsync, RaHdcSendMsgAsyncStub, 1);
     mocker(RaHdcProcessMsg, 1, 0);
-    mocker_invoke(HdcAsyncDelResponse, hdc_async_del_response_stub, 1);
+    mocker_invoke(HdcAsyncDelResponse, HdcAsyncDelResponseStub, 1);
     ret = RaHdcAsyncSessionClose(0);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();

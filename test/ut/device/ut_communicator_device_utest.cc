@@ -326,7 +326,7 @@ TEST_F(Communicator_Device_UT, CommunicatorTest) {
     hcclCommunicator.CopyHostListResToDeviceParam(tag, headHostList, 0);
     hcclCommunicator.CopyHostOpResToDeviceParam(tag);
 
-    hcclCommunicator.BuildOpResParam(tag, algResource, tag, HcclCMDType::HCCL_CMD_ALL);
+    hcclCommunicator.BuildOpResParam(tag, algResource, tag, HcclCMDType::HCCL_CMD_ALL, stream_t);
     hcclCommunicator.BuildCustomOpResParam();
     hcclCommunicator.RegisterDfxInfo(opParam, algType, slaveStreams, true);
     hcclCommunicator.GetReportHcclMC2Info(stream, slaveStreams);

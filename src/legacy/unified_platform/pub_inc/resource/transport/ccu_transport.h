@@ -69,7 +69,6 @@ public:
             channelInfo(channelInfo), ccuJettys(ccuJettys) {}
     };
 
-    CcuTransport(Socket *socket, std::unique_ptr<CcuConnection> &&connection, const CclBufferInfo &locCclBufInfo);
     CcuTransport(const CcuTransport &that)             = delete;
     CcuTransport &operator=(const CcuTransport &other) = delete;
     ~CcuTransport();
@@ -126,6 +125,7 @@ public:
  	
 
     // 下面接口为平台层接口，不能在框架层使用
+    CcuTransport(Socket *socket, std::unique_ptr<CcuConnection> &&connection, const CclBufferInfo &locCclBufInfo);
     uint32_t    GetDieId() const;
     uint32_t    GetChannelId() const;
     void        SetCntCke(const std::vector<uint32_t> &cntCke);
@@ -139,7 +139,7 @@ public:
     HcclResult  GetRmtBuffer(CclBufferInfo &bufferInfo, const uint32_t &bufNum) const;
     TransStatus GetStatus();
     std::string Describe() const;
-    void        Clean();
+    HcclResult  Clean();
 
 private:
     // 保存transport中需要使用的cke，xn等ccu资源

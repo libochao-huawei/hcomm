@@ -10,15 +10,18 @@
 
 #include <pthread.h>
 #include "errno.h"
+#include "ra_rs_err.h"
 #include "dl_ibverbs_function.h"
 
 static pthread_mutex_t gRoceUserApiLock = PTHREAD_MUTEX_INITIALIZER;
 static int gRoceUserApiRefcnt = 0;
 void *gIbverbsApiHandle = NULL;
 void *gRoceUserApiHandle = NULL;
+void *gHrnApiHandle = NULL;
 #ifndef CA_CONFIG_LLT
 struct RsIbverbsOps gIbverbsOps;
 struct RsRoceUserOps gRoceUserOps;
+struct RsHrnOps gHrnOps;
 #else
 struct RsIbverbsOps gIbverbsOps = {
     .rsIbvFreeDeviceList = ibv_free_device_list,
@@ -71,6 +74,12 @@ struct RsRoceUserOps gRoceUserOps = {
     .rsRoceGetQpDataPlaneInfo = roce_get_qp_data_plane_info,
     .rsRoceRemapMr = roce_remap_mr,
     .rsRoceGetApiVersion = roce_get_api_version,
+};
+
+struct RsHrnOps gHrnOps = {
+    .rsRoceSetQpLbValue = roce_set_qp_lb_value,
+    .rsRoceGetQpLbValue = roce_get_qp_lb_value,
+    .rsRoceGetQpNum = roce_get_qp_num,
 };
 #endif
 
@@ -454,16 +463,87 @@ close_roce_user_so:
     return ret;
 }
 
+STATIC int RsHrnIbvApiInit(void)
+{
+#ifndef CA_CONFIG_LLT
+    gHrnOps.rsRoceSetQpLbValue = (int (*)(struct ibv_qp *qp, int lbValue))
+        HccpDlsym(gHrnApiHandle, "roce_set_qp_lb_value");
+    DL_API_RET_IS_NULL_CHECK(gHrnOps.rsRoceSetQpLbValue, "roce_set_qp_lb_value");
+    gHrnOps.rsRoceGetQpLbValue = (int (*)(struct ibv_qp *qp, int *lbValue))
+        HccpDlsym(gHrnApiHandle, "roce_get_qp_lb_value");
+    DL_API_RET_IS_NULL_CHECK(gHrnOps.rsRoceGetQpLbValue, "roce_get_qp_lb_value");
+    gHrnOps.rsRoceGetQpNum = (int (*)(struct ibv_context *context, int *qpNum))
+        HccpDlsym(gHrnApiHandle, "roce_get_qp_num");
+    DL_API_RET_IS_NULL_CHECK(gHrnOps.rsRoceGetQpNum, "roce_get_qp_num");
+#endif
+    return 0;
+}
+
+STATIC int RsOpenHrnSo(void)
+{
+#ifndef CA_CONFIG_LLT
+    if (gHrnApiHandle == NULL) {
+        gHrnApiHandle = HccpDlopen("libhrn3-rdmav34.so", RTLD_NOW);
+        if (gHrnApiHandle != NULL) {
+            return 0;
+        }
+        return -EINVAL;
+    } else {
+        hccp_run_info("HrnApi dlopen again!");
+    }
+#endif
+    return 0;
+}
+
+STATIC void RsCloseHrnSo(void)
+{
+#ifndef CA_CONFIG_LLT
+    if (gHrnApiHandle != NULL) {
+        (void)HccpDlclose(gHrnApiHandle);
+        gHrnApiHandle = NULL;
+    }
+#endif
+    return;
+}
+
+int RsHrnApiInit(void)
+{
+#ifndef CA_CONFIG_LLT
+    int ret = 0;
+
+    ret = RsOpenHrnSo();
+    if (ret != 0) {
+        hccp_warn("HccpDlopen[libhrn3-rdmav34.so] doesn't exist!");
+        return 0;
+    }
+
+    ret = RsHrnIbvApiInit();
+    if (ret != 0) {
+        hccp_err("RsHrnIbvApiInit failed! ret:%d", ret);
+        RsCloseHrnSo();
+        return ret;
+    }
+#endif
+    return 0;
+}
+
 DL_ATTRI_VISI_DEF int RsApiInit(void)
 {
 #ifndef CA_CONFIG_LLT
     int ret;
     ret = RsIbverbsApiInit();
     CHK_PRT_RETURN(ret, hccp_err("rs_ibverbs_api_init failed! ret=[%d]", ret), ret);
+    ret = RsHrnApiInit();
+    if (ret != 0) {
+        hccp_err("RsHrnApiInit failed! ret=[%d]", ret);
+        RsCloseIbverbsSo();
+        return ret;
+    }
 #ifdef CUSTOM_INTERFACE
     ret = RsRoceUserApiInit();
     if (ret != 0) {
         hccp_err("rs_roce_user_api_init failed! ret=[%d]", ret);
+        RsCloseHrnSo();
         RsCloseIbverbsSo();
         return ret;
     }
@@ -475,6 +555,7 @@ DL_ATTRI_VISI_DEF int RsApiInit(void)
 DL_ATTRI_VISI_DEF void RsApiDeinit(void)
 {
     RsCloseIbverbsSo();
+    RsCloseHrnSo();
     RsCloseRoceUserSo();
     return;
 }
@@ -1023,4 +1104,35 @@ unsigned int RsRoceGetApiVersion(void)
     }
 
     return 0;
+}
+
+int RsRoceSetQpLbValue(struct ibv_qp *qp, int lbValue)
+{
+    if (gHrnOps.rsRoceSetQpLbValue == NULL) {
+        hccp_run_warn("rsRoceSetQpLbValue is null");
+        return -ENOTSUPP;
+    }
+    return gHrnOps.rsRoceSetQpLbValue(qp, lbValue);
+}
+
+int RsRoceGetQpLbValue(struct ibv_qp *qp, int *lbValue)
+{
+    CHK_PRT_RETURN(lbValue == NULL, hccp_err("param error, lbValue is NULL"), -EINVAL);
+
+    if (gHrnOps.rsRoceGetQpLbValue == NULL) {
+        *lbValue = 0;
+        return 0;
+    }
+    return gHrnOps.rsRoceGetQpLbValue(qp, lbValue);
+}
+
+int RsRoceGetQpNum(struct ibv_context *context, int *qpNum)
+{
+    CHK_PRT_RETURN(qpNum == NULL, hccp_err("param error, qpNum is NULL"), -EINVAL);
+
+    if (gHrnOps.rsRoceGetQpNum == NULL) {
+        *qpNum = 0;
+        return 0;
+    }
+    return gHrnOps.rsRoceGetQpNum(context, qpNum);
 }
