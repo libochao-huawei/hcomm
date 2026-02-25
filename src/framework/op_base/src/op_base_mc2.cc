@@ -93,6 +93,99 @@ HcclResult HcclMc2ComResourceByTiling(HcclComm comm, void *mc2Tiling, rtStream_t
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclMc2ComOpResCtx(HcclComm comm, uint8_t opType, HcclDataType srcDataType, HcclDataType dstDataType,
+                              HcclReduceOp reduceType, uint64_t count, char *algConfig, uint32_t commEngine, rtStream_t &aicpuStream)
+{
+    HCCL_DEBUG("HcclMc2ComOpResCtx: srcDataType[%d], dstDataType[%d], count[%llu]", srcDataType, dstDataType, count);
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    string commIdentifier = hcclComm->GetIdentifier();
+
+    OpParam opParam;
+    opParam.tag = string(commIdentifier) + to_string(opType) + string("_mc2");
+    opParam.stream = Stream(aicpuStream);
+    opParam.reduceType = static_cast<HcclReduceOp>(reduceType);
+    opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
+    opParam.aicpuUnfoldMode = true;
+    opParam.opType = static_cast<HcclCMDType>(opType);
+    if (opParam.opType == HcclCMDType::HCCL_CMD_BATCH_WRITE) {
+        opParam.BatchWriteDataDes.queueNum = LOCAL_STREAM_MAX_NUM;
+        HCCL_INFO("Requiring %u queues for batch-write.", opParam.BatchWriteDataDes.queueNum);
+    }
+    HCCL_INFO("Comm resource will be created for group[%s] commEngine[%u]", commIdentifier.c_str(), commEngine);
+    CHK_RET(hcclComm->AllocComResourceByTiling(algConfig, reinterpret_cast<void *>(&opParam)));
+
+    if (commEngine == COMM_ENGINE_AICPU) {
+        CHK_RET(hcclComm->SetAicpuCommEngine(true));
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCreateOpResCtxInner(HcclComm comm, uint8_t opType, HcclDataType srcDataType, HcclDataType dstDataType,
+                                   HcclReduceOp reduceType, uint64_t count, char *algConfig, uint32_t commEngine, void **opResCtx)
+{
+    // 校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(algConfig);
+    CHK_PTR_NULL(opResCtx);
+
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType != DevType::DEV_TYPE_910_93) {
+        HCCL_ERROR("[HcclCreateOpResCtxInner] devType[%d] is not supported", devType);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    HcclUs startut = TIME_NOW();
+    uint64_t streamMode = 0; //streamMode未使用，固定传0
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    string commIdentifier = hcclComm->GetIdentifier();
+    HCCL_INFO("[%s]commIdentifier[%s], opType[%d]", __func__, commIdentifier.c_str(), opType);
+    string cclBufferName = hcclComm->GetCCLbufferName();
+    bool isShareComm = cclBufferName.empty() ? false : true;
+    if (isShareComm) {
+        HCCL_RUN_WARNING("MC2 using share CCLbuffer[%s], potential conflict with coll communicator", cclBufferName.c_str());
+    }
+
+    // 根据streamMode创建aicpuStream
+    rtStream_t aicpuStream{};
+    CHK_RET(hcclComm->Mc2AiCpuStreamAllocAndGet(streamMode, aicpuStream));
+
+    char stackLogBuffer[LOG_TMPBUF_SIZE];
+    u32 localRank = INVALID_VALUE_RANKID;
+    CHK_RET(hcclComm->GetUserRank(localRank));
+
+    /* 接口交互信息日志 */
+    if (GetExternalInputHcclEnableEntryLog()) {
+        s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U, "commIdentifier[%s]", commIdentifier.c_str());
+        CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, commIdentifier[%s].", commIdentifier.c_str()));
+
+        std::string logInfo = "MC2 create resource by tiling: localRank[" + std::to_string(localRank)
+                              + "]" + std::string(stackLogBuffer);
+        CHK_RET(hcclComm->SaveTraceInfo(logInfo));
+    }
+
+    CHK_RET(HcclMc2ComOpResCtx(comm, opType, srcDataType, dstDataType, reduceType, count, algConfig, commEngine, aicpuStream));
+
+    // 获取 commContext
+    hcclComm->GetCommResource(*opResCtx);
+    if (*opResCtx == nullptr) {
+        HCCL_ERROR("[%s] GetCommResource failed, opResCtx is nullptr, commIdentifier[%s]", __func__, commIdentifier.c_str());
+        return HCCL_E_INTERNAL;
+    }
+
+    if (GetExternalInputHcclEnableEntryLog()) {
+        HcclUs endut = TIME_NOW();
+        /* 关键状态记录 */
+        std::string endInfo = "MC2 create resource take time ["
+                              + std::to_string(DURATION_US(endut - startut).count()) + "]us, localRank["
+                              + std::to_string(localRank) + "] " + std::string(stackLogBuffer);
+        CHK_RET(hcclComm->SaveTraceInfo(endInfo));
+    }
+
+    return HCCL_SUCCESS;
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -150,6 +243,10 @@ HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Ti
 
     // 获取 commContext
     hcclComm->GetCommResource(*commContext);
+    if (*commContext == nullptr) {
+        HCCL_ERROR("[%s] GetCommResource failed, commContext is nullptr, commIdentifier[%s]", __func__, commIdentifier.c_str());
+        return HCCL_E_INTERNAL;
+    }
 
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
@@ -250,11 +347,22 @@ HcclResult HcclGetRemoteIpcHcclBuf(HcclComm comm, uint64_t remoteRank, void **ad
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(addr);
     CHK_PTR_NULL(size);
+
     HCCLV2_FUNC_RUN(HcclGetRemoteIpcHcclBuf(comm, remoteRank, addr, size));
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    void *opResCtx = nullptr;
+    hcclComm->GetCommResource(opResCtx);
+    if (opResCtx == nullptr) {
+        HCCL_ERROR("[%s]comm[%s] remoteRank[%llu] get resource fail", __func__, hcclComm->GetIdentifier().c_str(), remoteRank);
+        return HCCL_E_PARA;
+    }
+
+    CHK_RET(hcclComm->GetRemoteCCLBuf(remoteRank, addr, size));
+
     return HCCL_SUCCESS;
 }
 #endif
- 	 
+
 #ifdef __cplusplus
 }
 #endif

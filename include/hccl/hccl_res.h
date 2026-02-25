@@ -280,6 +280,17 @@ inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t des
 extern HcclResult HcclGetHcclBuffer(HcclComm comm, void **buffer, uint64_t *size);
 
 /**
+ * @brief 获取通信域中对端的Hccl缓存(HCCL Buffer)
+ * @param[in] comm 通信域句柄
+ * @param[in] remoteRank 远端rankId
+ * @param[out] addr Hccl缓存地址
+ * @param[out] size Hccl缓存大小
+ * @return HcclResult 执行结果状态码
+ * @warning 重要约束：返回的addr内存由库内管理，调用者严禁释放
+ */
+extern HcclResult HcclGetRemoteIpcHcclBuf(HcclComm comm, uint64_t remoteRank, void **addr, uint64_t *size);
+
+/**
  * @defgroup 通信引擎资源管理
  * @{
  */
