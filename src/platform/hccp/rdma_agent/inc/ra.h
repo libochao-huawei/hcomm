@@ -174,6 +174,7 @@ struct RaQpHandle {
     struct rdma_lite_cq *sendLiteCq;
     struct rdma_lite_cq *recvLiteCq;
     struct rdma_lite_qp *liteQp;
+    unsigned int liteQpState;
     struct LiteMrInfo localMr[RA_MR_MAX_NUM];
     struct LiteMrInfo remMr[RA_MR_MAX_NUM];
     pthread_mutex_t qpMutex;
