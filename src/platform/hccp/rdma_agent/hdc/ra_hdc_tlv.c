@@ -18,12 +18,23 @@
 int RaHdcTlvInit(struct RaTlvHandle *tlvHandle)
 {
     unsigned int phyId = tlvHandle->initInfo.phyId;
+    unsigned int opCode = RA_RS_TLV_INIT_V1;
     union OpTlvInitData tlvData = { 0 };
+    unsigned int interfaceVersion = 0;
     int ret = 0;
 
     tlvData.txData.phyId = phyId;
 
-    ret = RaHdcProcessMsg(RA_RS_TLV_INIT, phyId, (char *)&tlvData, sizeof(union OpTlvInitData));
+    ret = RaHdcGetInterfaceVersion(phyId, RA_RS_TLV_INIT, &interfaceVersion);
+    if (ret == 0 && interfaceVersion >= RA_RS_OPCODE_BASE_VERSION) {
+        opCode = RA_RS_TLV_INIT;
+    } else {
+        ret = -ENOTSUPP;
+        hccp_warn("[init][ra_hdc_tlv]ra tlv init version not support, phy_id(%u)", phyId);
+        return ret;
+    }
+
+    ret = RaHdcProcessMsg(opCode, phyId, (char *)&tlvData, sizeof(union OpTlvInitData));
     CHK_PRT_RETURN(ret == -ENOTSUPP, hccp_warn("[init][ra_hdc_tlv]ra hdc message process unsuccessful ret(%d) phy_id(%u)",
         ret, phyId), ret);
     CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_hdc_tlv]ra hdc message process failed ret(%d) phy_id(%u)",

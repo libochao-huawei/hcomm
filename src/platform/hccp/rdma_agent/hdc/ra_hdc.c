@@ -122,6 +122,7 @@ struct OpcodeInterfaceInfo gRaInterfaceInfoList[] = {
     {RA_RS_PING_DEINIT, 0},
     {RA_RS_GET_VNIC_IP_INFOS_V1, 0},
     {RA_RS_GET_VNIC_IP_INFOS, 0},
+    {RA_RS_TLV_INIT_V1, 0},
     {RA_RS_TLV_INIT, 0},
     {RA_RS_TLV_DEINIT, 0},
     {RA_RS_TLV_REQUEST, 0},

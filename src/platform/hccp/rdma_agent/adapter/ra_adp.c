@@ -1753,6 +1753,7 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_PING_DEL, RaRsPingTargetDel, sizeof(union OpPingDelData)},
     {RA_RS_PING_DEINIT, RaRsPingDeinit, sizeof(union OpPingDeinitData)},
 #ifdef CONFIG_TLV
+    {RA_RS_TLV_INIT_V1, RaRsTlvInitV1, sizeof(union OpTlvInitDataV1)},
     {RA_RS_TLV_INIT, RaRsTlvInit, sizeof(union OpTlvInitData)},
     {RA_RS_TLV_DEINIT, RaRsTlvDeinit, sizeof(union OpTlvDeinitData)},
     {RA_RS_TLV_REQUEST, RaRsTlvRequest, sizeof(union OpTlvRequestData)},
