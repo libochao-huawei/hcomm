@@ -77,9 +77,14 @@ HcclResult CollAllGatherMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rankSize
     CHK_PRT_RET(blockDim_ < rankSize,
         HCCL_WARNING("[CollAllGatherMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, rankSize), HCCL_E_PARA);
+    CHK_PRT_RET(isOpBase && blockDim_ < bestBlockDim,
+        HCCL_WARNING("[CollAllGatherMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+        blockDim_, bestBlockDim), HCCL_E_PARA);
+
     if (blockDim_ < blockDim) {
         blockDim = blockDim_ / rankSize * rankSize;
     }
+
     HCCL_INFO("[CollAllGatherMeshAivExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
         blockDim, blockDim_, bestBlockDim);
     return HCCL_SUCCESS;
