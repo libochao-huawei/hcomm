@@ -19,6 +19,7 @@
 #include "adapter_prof.h"
 
 namespace hccl {
+constexpr u16 MAX_VALUE_U16 = 0xFFFF;
 template <typename OpParam, typename ApiParam>
 HcclResult AicpuLaunchMgr::KernelLaunch(OpParam &opParam, ApiParam &apiParam, rtStream_t aicpuInitStream)
 {
@@ -45,12 +46,7 @@ HcclResult AicpuLaunchMgr::KernelLaunchAicpuCustom(OpParam &opParam, std::string
     customInitTask.isCustom = false;
 
     // Step 3. 启动 
-    u16 timeOut = 0;
-    if (NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16) {
-        timeOut = MAX_VALUE_U16;
-    } else {
-        timeOut = NOTIFY_DEFAULT_WAIT_TIME;
-    }
+    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16 ? MAX_VALUE_U16 : NOTIFY_DEFAULT_WAIT_TIME;
     CHK_RET(AicpuAclKernelLaunch(aicpuInitStream, reinterpret_cast<void *>(&customInitTask),
             sizeof(customInitTask), binCustomHandle, kernelName, true, timeOut));
     return HCCL_SUCCESS;

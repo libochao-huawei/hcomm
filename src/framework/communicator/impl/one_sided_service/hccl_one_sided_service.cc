@@ -1203,12 +1203,7 @@ HcclResult HcclOneSidedService::AicpuUnfoldKernelLaunchV2(const std::string &ker
     u64 tilingDataSize, const rtStream_t stream)
 {
     u64 commContext = 0ULL;
-    u16 timeOut = 0;
-    if (NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16) {
-        timeOut = MAX_VALUE_U16;
-    } else {
-        timeOut = NOTIFY_DEFAULT_WAIT_TIME;
-    }
+    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16 ? MAX_VALUE_U16 : NOTIFY_DEFAULT_WAIT_TIME;
     if (GetExternalInputHcclExecTimeoutSet() !=
         HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
         CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(identifier_)) {

@@ -44,6 +44,7 @@ namespace hcomm {
  * @tparam Func 形如：HcclResult func(Channel& ch)
  */
 template <typename Func>
+constexpr u16 MAX_VALUE_U16 = 0xFFFF;
 static inline HcclResult WithChannelByHandleLocked(ChannelHandle inHandle, Func &&func)
 {
     // 单锁：该锁同时保护 g_ChannelD2HMap 和 g_ChannelMap
@@ -338,12 +339,7 @@ HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle
     InitTask customInitTask = {0};
     customInitTask.context = reinterpret_cast<u64>(addr.ptr());
     customInitTask.isCustom = false;
-    u16 timeOut = 0;
-    if (NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16) {
-        timeOut = MAX_VALUE_U16;
-    } else {
-        timeOut = NOTIFY_DEFAULT_WAIT_TIME;
-    }
+    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16 ? MAX_VALUE_U16 : NOTIFY_DEFAULT_WAIT_TIME;
     CHK_RET(hccl::AicpuAclKernelLaunch(localStream.ptr(),
         reinterpret_cast<void *>(&customInitTask),
         sizeof(customInitTask),

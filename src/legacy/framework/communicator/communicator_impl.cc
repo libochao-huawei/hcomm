@@ -68,6 +68,7 @@ constexpr u32 HCCL_CCL_AIV_CLEAR_STEP_MAX = 1000; // aiv tag算子下发时++，
 constexpr u32      BASE_BIT             = 1; // 用于左移设置二进制数的特定位
 constexpr u64 SHARE_HBM_MEMORY_SIZE = (100 * 1024 * 1024);
 constexpr const char* DPUTAG = "DPUTAG";
+constexpr u16 MAX_VALUE_U16 = 0xFFFF;
 struct DpuKernelLaunchParam {
     u64         memorySize;
     void       *shareHBM;
@@ -3060,12 +3061,7 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     aclrtLaunchKernelCfg  cfg;
     aclrtLaunchKernelAttr kernelAttr;
     kernelAttr.id            = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
-    kernelAttr.value.timeout = 0;
-    if (NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16) {
-        kernelAttr.value.timeout = MAX_VALUE_U16;
-    } else {
-        kernelAttr.value.timeout = NOTIFY_DEFAULT_WAIT_TIME;
-    }
+    kernelAttr.value.timeout = NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16 ? MAX_VALUE_U16 : NOTIFY_DEFAULT_WAIT_TIME;
     cfg.numAttrs             = 1;
     cfg.attrs                = &kernelAttr;
     constexpr u32 numBlocks   = 1;

@@ -28,6 +28,7 @@
 
 namespace hccl
 {
+    constexpr u16 MAX_VALUE_U16 = 0xFFFF;
     HcclResult hcclComm::AllReduce(const std::string &tag, void *inputPtr, void *outputPtr, u64 count,
                                    HcclDataType dataType, HcclReduceOp op, HcclRtStream stream, SyncMode syncMode)
     {
