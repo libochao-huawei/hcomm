@@ -112,36 +112,22 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
 
     int32_t ret = HCCL_SUCCESS;
     if (srcType == THREAD_TYPE_TS && dstType == THREAD_TYPE_CPU) { // TS notifies non-TS
-        AddThread(threadEntityPtr->threadObj);
+        AddThread(threadEntityPtr->threadObjAddr);
 
-        Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObj);
+        Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(threadPtr);
-        NotifyEntity *const dstNotifyEntityPtr = &dstThreadEntityPtr->notifies[dstNotifyIdx];
-        CHK_PTR_NULL(dstNotifyEntityPtr);
-
         if (!threadPtr->IsDeviceA5()) {
             HCCL_ERROR("[%s] NotifyRecord from TS thread to non-TS thread is NOT supported on A3.", __func__);
             ret = HCCL_E_NOT_SUPPORT;
             goto FINAL;
         }
-
-        if (dstNotifyEntityPtr->type != NOTIFY_TYPE_HOST_MEM) {
-            HCCL_ERROR("[%s] NotifyRecord from TS thread to non-HOST_MEM notify of non-TS thread is NOT supported.", __func__);
-            ret = HCCL_E_NOT_SUPPORT;
+        if (dstNotifyIdx >= dstThreadEntityPtr->notifyNum) {
+            HCCL_ERROR("[%s] dstNotifyIdx[%u] is out of range.", __func__, dstNotifyIdx);
+            ret = HCCL_E_PARA;
             goto FINAL;
         }
-        const uint64_t notifyDeviceVA = dstNotifyEntityPtr->u.deviceVA;
-
-        Hccl::StreamLite *const streamLitePtr = threadPtr->GetStreamLitePtr();
-        CHK_PTR_NULL(streamLitePtr);
-        Hccl::RtsqBase *const rtsqPtr = streamLitePtr->GetRtsq();
-        CHK_PTR_NULL(rtsqPtr);
-        
-        TRY_CATCH_PRINT_ERROR(
-            ret = HCCL_E_INTERNAL;
-            rtsqPtr->WriteValue(notifyDeviceVA, 1);
-            ret = HCCL_SUCCESS
-        );
+        const NotifyEntity dstNotifyEntity = dstThreadEntityPtr->notifies[dstNotifyIdx];
+        ret = threadPtr->ThreadNotifyRecordCrossType(dstNotifyEntity);
     } else if (srcType == THREAD_TYPE_CPU && dstType == THREAD_TYPE_TS) { // non-TS notifies TS
         RecordServiceArgs tempRecordArgs = {
             .threadHandle = thread,
@@ -158,11 +144,11 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
         HCCL_ERROR("[%s] NotifyRecord from non-TS thread to non-TS thread is NOT supported.", __func__);
         ret = HCCL_E_NOT_SUPPORT;
     } else if (srcType == THREAD_TYPE_TS && dstType == THREAD_TYPE_TS) { // TS notifies TS
-        AddThread(threadEntityPtr->threadObj);
+        AddThread(threadEntityPtr->threadObjAddr);
 
-        Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObj);
+        Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(threadPtr);
-        Thread *const dstThreadPtr = reinterpret_cast<Thread *>(dstThreadEntityPtr->threadObj);
+        Thread *const dstThreadPtr = reinterpret_cast<Thread *>(dstThreadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(dstThreadPtr);
 
         if (threadPtr->IsDeviceA5()) {

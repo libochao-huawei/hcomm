@@ -117,6 +117,7 @@ set(include_list
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/resource/engine
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel/device
+    ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res
     ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank
     ${HCCL_BASE_DIR}/framework/next/coll_comms
