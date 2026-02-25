@@ -355,7 +355,7 @@ STATIC void RsEpollEventInHandle(struct rs_cb *rsCb, struct epoll_event *events)
     }
 
     if (RsIsUdmaSupported()) {
-        ret = rs_epoll_event_jfc_in_handle(rsCb, fd);
+        ret = RsEpollEventJfcInHandle(rsCb, fd);
         if (ret != -ENODEV) {
             hccp_info("the fd:%d is for poll jfc, no need to go on, ret:%d", fd, ret);
             return;
@@ -551,7 +551,7 @@ STATIC void *RsEpollHandle(void *arg)
 
         /* eventfd is for wake up epoll wait, value is ignored */
         if (events[0].data.fd == connCb->eventfd) {
-            hccp_warn("<EPOLL> SHUT DOWN event!!! eventfd:%d", connCb->eventfd);
+            hccp_warn("<EPOLL> SHUT DOWN event eventfd:%d", connCb->eventfd);
             do {
                 num = read(connCb->eventfd, &val, sizeof(eventfd_t));
             } while ((num < 0) && (errno == EINTR));

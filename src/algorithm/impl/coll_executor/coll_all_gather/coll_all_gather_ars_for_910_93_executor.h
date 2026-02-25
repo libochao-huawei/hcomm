@@ -22,7 +22,7 @@ public:
 
 private:
     /* *************** 资源计算 *************** */
-    u32 intraRingSize_;
+    u32 intraRingSize_ = 0;
     HcclResult CalcOptimalIntraRing(const OpParam& param) override;
     HcclResult CalcStreamNum(u32& streamNum) override;
     HcclResult CalcLevel0CommInfo(TransportMemType inputType,

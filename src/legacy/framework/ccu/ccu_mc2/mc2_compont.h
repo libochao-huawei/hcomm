@@ -36,8 +36,8 @@ public:
     u32 GetCcuMc2ServerNum();
 
 private:
-    void     Alloc(void **commContext);
-    void     AllocV2(void **commContext);
+    void     Alloc();
+    void     AllocV2();
     void     GenerateCcuServer(const std::unordered_set<uint64_t> &algoTemplateRequire);
     bool     FindCcuServer(const std::unordered_set<uint64_t> &algoTemplateRequire,
                            InsExeQue::ExtInsExeEntityId       &execId) const;
@@ -50,8 +50,8 @@ private:
     void     SaveMc2DfxTaskInfo(const CcuTaskParam& ccuTaskParam, uint64_t execId) const;
     bool     CompareMissionMap(const std::map<uint8_t, std::map<uint32_t, uint32_t>> &mapA,
                                const std::map<uint8_t, std::map<uint32_t, uint32_t>> &mapB) const;
-    void     MC2Orchestrate(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue);
-    void     MC2AllocCommRes(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue);
+    void     MC2Orchestrate(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue, uint8_t commEngine);
+    void     MC2AllocCommRes(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue, uint8_t commEngine);
 private:
     const uint32_t dataCount = 1024;
     CommunicatorImpl *comm;
@@ -71,6 +71,9 @@ private:
 
     std::vector<u64> dataCounts;
     std::vector<u64> displs;
+
+    HcclCombinOpParam combinOpParam{0};
+    bool              ccuResourceAlloced{false}; // 标记通信域粒度资源已经申请过了
 };
 } // namespace Hccl
 #endif // MC2_COMPONT_H

@@ -76,21 +76,20 @@ HcclResult AicpuUtils::GetCommHandle(CommunicatorImplLite *communicatorImplLite,
     // 启动计时，一直获取不到comm.isUsed会退出
     CHK_RET(WaitCommFree(communicatorImplLite, __func__));
 
-    // comm空闲，第一次创建或需要刷新，执行反序列化
-    if (communicatorImplLite->IsFirstUsed() || kernelParam_->needUpdateRes) {
-        auto reporter = communicatorImplLite->GetProfilingReporterLite();
-        CHK_PTR_NULL(reporter);
-        reporter->UpdateProfStat();
-        if (kernelParam_->op.algOperator.opMode == OpMode::OPBASE) {
-            communicatorImplLite->SetCurrentOpMode(kernelParam_->op.algOperator.opMode);
-            communicatorImplLite->UpdateCommParam(kernelParam_);
-            EXECEPTION_CATCH(communicatorImplLite->UpdateOpRes(kernelParam_), return HCCL_E_INTERNAL);
-        } else {
-            HCCL_ERROR("[%s]%s only support opbase, but get opMode %s.", __func__, __func__,
-                       kernelParam_->op.algOperator.opMode.Describe().c_str());
-            return HCCL_E_PARA;
-        }
+    // 默认执行反序列化
+    auto reporter = communicatorImplLite->GetProfilingReporterLite();
+    CHK_PTR_NULL(reporter);
+    reporter->UpdateProfStat();
+    if (kernelParam_->op.algOperator.opMode == OpMode::OPBASE) {
+        communicatorImplLite->SetCurrentOpMode(kernelParam_->op.algOperator.opMode);
+        communicatorImplLite->UpdateCommParam(kernelParam_);
+        EXECEPTION_CATCH(communicatorImplLite->UpdateRes(kernelParam_), return HCCL_E_INTERNAL);
+    } else {
+        HCCL_ERROR("[%s]%s only support opbase, but get opMode %s.", __func__, __func__,
+                    kernelParam_->op.algOperator.opMode.Describe().c_str());
+        return HCCL_E_PARA;
     }
+    
     *opHandle = reinterpret_cast<void *>(communicatorImplLite);
     return HCCL_SUCCESS;
 }

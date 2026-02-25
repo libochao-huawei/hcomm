@@ -73,10 +73,10 @@ target_include_directories(hccl_v2_utest PRIVATE
         ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network/
         ${HCCL_CODE_ROOT}/src/platform/hccp/external_depends/rdma-core/include
 
-        ${ASCEND_3RD_LIB_PATH}/json/include/
-        ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
-        ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/
-        ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/3rdparty/
+        ${CANN_3RD_LIB_PATH}/json/include/
+        ${CANN_3RD_LIB_PATH}/gtest/include/
+        ${CANN_3RD_LIB_PATH}/mockcpp/include/
+        ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
         ${HCCL_LLT_ROOT}/common/virtual_topo_stub/
         ${HCCL_LLT_ROOT}/ut/framework/topo/ranktable/
         ${HCCL_CODE_ROOT}/externel_depends/tsch
@@ -84,14 +84,14 @@ target_include_directories(hccl_v2_utest PRIVATE
 
 target_link_libraries(hccl_v2_utest PRIVATE
     $<BUILD_INTERFACE:intf_pub>
-    -lpthread
+    -pthread
     # hccl_llt
     -Wl,--whole-archive
     -Wl,--no-whole-archi
     -lgcov
     -lrt
     -ldl
-    -lpthread
+    -pthread
 )
 
 

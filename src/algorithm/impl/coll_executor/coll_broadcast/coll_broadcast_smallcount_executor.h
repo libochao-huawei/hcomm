@@ -16,7 +16,7 @@ class CollBroadcastSmallCountExecutor : public CollBroadcastExecutor {
 
 public:
     CollBroadcastSmallCountExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollBroadcastSmallCountExecutor() = default;
+    ~CollBroadcastSmallCountExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

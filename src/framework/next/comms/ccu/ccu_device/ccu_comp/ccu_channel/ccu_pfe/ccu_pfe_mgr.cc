@@ -61,9 +61,9 @@ static HcclResult ConfigPfeTable(const uint32_t devPhyId, const uint8_t dieId, c
     (void)memcpy_s(inBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen, &pfeCtx,
         inBuff.data.dataInfo.dataLen);
 
-    auto ret = ra_custom_channel(info,
-        reinterpret_cast<custom_chan_info_in *>(&inBuff),
-        reinterpret_cast<custom_chan_info_out *>(&outBuff));
+    auto ret = RaCustomChannel(info,
+        reinterpret_cast<CustomChanInfoIn *>(&inBuff),
+        reinterpret_cast<CustomChanInfoOut *>(&outBuff));
     if (ret != 0) {
         HCCL_WARNING("");
         return HcclResult::HCCL_E_NETWORK;

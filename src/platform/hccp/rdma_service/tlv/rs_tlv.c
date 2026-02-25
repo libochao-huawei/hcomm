@@ -114,23 +114,23 @@ STATIC int RsTlvAssembleSendData(struct TlvBufInfo *bufInfo, struct TlvRequestMs
     return 0;
 }
 
-STATIC int rs_ccu_request(struct TlvRequestMsgHead *head, char *data)
+STATIC int RsCcuRequest(struct TlvRequestMsgHead *head, char *data)
 {
     int ret = 0;
 
     switch (head->type) {
         case MSG_TYPE_CCU_INIT:
-            ret = rs_ccu_init();
-            CHK_PRT_RETURN(ret != 0, hccp_err("rs_ccu_init failed, ret(%d) module_type(%u) msg_type(%u) phy_id(%u)",
+            ret = RsCcuInit();
+            CHK_PRT_RETURN(ret != 0, hccp_err("rs_ccu_init failed, ret(%d) module_type(%u) msg_type(%u) phyId(%u)",
                 ret, head->moduleType, head->type, head->phyId), ret);
             break;
         case MSG_TYPE_CCU_UNINIT:
-            ret = rs_ccu_uninit();
-            CHK_PRT_RETURN(ret != 0, hccp_err("rs_ccu_uninit failed, ret(%d) module_type(%u) msg_type(%u) phy_id(%u)",
+            ret = RsCcuUninit();
+            CHK_PRT_RETURN(ret != 0, hccp_err("rs_ccu_uninit failed, ret(%d) module_type(%u) msg_type(%u) phyId(%u)",
                 ret, head->moduleType, head->type, head->phyId), ret);
             break;
         default:
-            hccp_err("[request][rs_ccu]msg type error, module_type(%u) msg_type(%u) phy_id(%u)",
+            hccp_err("[request][rs_ccu]msg type error, module_type(%u) msg_type(%u) phyId(%u)",
                 head->moduleType, head->type, head->phyId);
             return -EINVAL;
     }
@@ -168,7 +168,7 @@ RS_ATTRI_VISI_DEF int RsTlvRequest(struct TlvRequestMsgHead *head, char *data)
                     head->type, tlvCb->bufInfo.buf, head->totalBytes);
             break;
         case TLV_MODULE_TYPE_CCU:
-            ret = rs_ccu_request(head, data);
+            ret = RsCcuRequest(head, data);
             break;
         default:
             hccp_err("[request][rs_tlv]module type error, moduleType(%u) phyId(%u)", head->moduleType, head->phyId);
