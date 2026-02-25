@@ -48,25 +48,27 @@ HcclResult CcuResBatchAllocator::Init()
 
     dieEnableFlags_ = CcuComponent::GetInstance(devLogicId_).GetDieEnableFlags();
     if (!dieEnableFlags_[0] && !dieEnableFlags_[1]) {
-        HCCL_WARNING("[CcuResBatchAllocator][%s] failed, "
-            "CcuResBatchAllocator devLogicId[%d] no usable die.",
-            __func__, devLogicId_);
+        HCCL_WARNING("[CcuResBatchAllocator][%s] failed but passed, "
+            "devLogicId[%d] no usable die.", __func__, devLogicId_);
         return HcclResult::HCCL_E_UNAVAIL;
     }
 
     auto ret = PreAllocBlockRes();
     if (ret == HcclResult::HCCL_E_UNAVAIL) {
-        HCCL_WARNING("");
+        HCCL_WARNING("[CcuResBatchAllocator][%s] pre alloc block res failed but passed, "
+            "some sources are not enough, devLogicId[%d].", __func__, devLogicId_);
         return ret;
     }
     CHK_RET(ret);
 
     ret = missionMgr_.PreAlloc(devLogicId_, resStrategys_[0].missionNum, dieEnableFlags_);
     if (ret == HcclResult::HCCL_E_UNAVAIL) {
-        HCCL_WARNING("");
+        HCCL_WARNING("[CcuResBatchAllocator][%s] pre alloc mission res failed but passed, "
+            "some sources are not enough, devLogicId[%d].", __func__, devLogicId_);
         return ret;
     }
     CHK_RET(ret);
+    
     initFlag_ = true;
     return HcclResult::HCCL_SUCCESS;
 }
@@ -147,12 +149,13 @@ HcclResult CcuResBatchAllocator::PreAllocBlockRes()
 
             std::vector<ResInfo> tempResInfos;
             auto ret = ccuComponent.AllocRes(dieId, resType, reqNum, true, tempResInfos);
-            if (ret != HcclResult::HCCL_SUCCESS) {
+            if (ret == HcclResult::HCCL_E_UNAVAIL) {
                 HCCL_WARNING("[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
                     "failed to pre allocate block type resource, resType[%s], num[%u].",
                     __func__, devLogicId_, dieId, resType.Describe().c_str(), reqNum);
                 return ret;
             }
+            CHK_RET(ret);
 
             const bool avoidCcu0Flag = (armX86Flag && dieId == 0 && resType == ResType::MS);
 
@@ -383,12 +386,14 @@ HcclResult CcuResBatchAllocator::AllocConsecutiveRes(const CcuResReq &resReq,
             std::vector<ResInfo> resInfos;
             auto ret = ccuComponent.AllocRes(dieId, std::get<0>(req), std::get<1>(req),
                 true, resInfos);
-            if (ret != HcclResult::HCCL_SUCCESS) {
+            if (ret == HcclResult::HCCL_E_UNAVAIL) {
                 HCCL_WARNING("[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
                     "failed to allocate %s resource, num[%u].", __func__, devLogicId_, dieId,
                     std::get<0>(req).Describe().c_str(), std::get<1>(req));
                 return ret;
             }
+            CHK_RET(ret);
+
             std::get<2>(req) = resInfos;
         }
     }
@@ -426,12 +431,14 @@ HcclResult CcuResBatchAllocator::AllocDiscreteRes(const CcuResReq &resReq,
             std::vector<ResInfo> resInfos;
             auto ret = ccuComponent.AllocRes(dieId, std::get<0>(req), std::get<1>(req),
                 false, resInfos);
-            if (ret != HcclResult::HCCL_SUCCESS) {
+            if (ret == HcclResult::HCCL_E_UNAVAIL) {
                 HCCL_WARNING("[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
                     "failed to allocate %s resource, num[%u].", __func__, devLogicId_, dieId,
                     std::get<0>(req).Describe().c_str(), std::get<1>(req));
                 return ret;
             }
+            CHK_RET(ret);
+
             std::get<2>(req) = resInfos; // 2: resRepotPtr to resource
         }
     }
@@ -445,33 +452,37 @@ HcclResult CcuResBatchAllocator::TryAllocResHandle(const uintptr_t handleKey,
     std::unique_lock<std::mutex> lock(innerMutex_);
 
     HcclResult ret = AllocBlockRes(handleKey, resReq, resRepoPtr);
-    if (ret != HcclResult::HCCL_SUCCESS) {
+    if (ret == HcclResult::HCCL_E_UNAVAIL) {
         HCCL_WARNING("[CcuResBatchAllocator][%s] failed, devLogicId[%d], "
             "failed to allocate block type resource.", __func__, devLogicId_);
         return ret;
     }
+    CHK_RET(ret);
 
     ret = missionMgr_.Alloc(handleKey, resReq.missionReq, resRepoPtr->mission);
-    if (ret != HcclResult::HCCL_SUCCESS) {
+    if (ret == HcclResult::HCCL_E_UNAVAIL) {
         HCCL_WARNING("[CcuResBatchAllocator][%s] devLogicId[%d], failed to allocate "
             "mission resource, remaining block resources are not enough.",
             __func__, devLogicId_);
         return ret;
     }
+    CHK_RET(ret);
 
     ret = AllocConsecutiveRes(resReq, resRepoPtr);
-    if (ret != HcclResult::HCCL_SUCCESS) {
+    if (ret == HcclResult::HCCL_E_UNAVAIL) {
         HCCL_WARNING("[CcuResBatchAllocator][%s] devLogicId[%d], failed to allocate "
             "consecutive resource.", __func__, devLogicId_);
         return ret;
     }
+    CHK_RET(ret);
 
     ret = AllocDiscreteRes(resReq, resRepoPtr);
-    if (ret != HcclResult::HCCL_SUCCESS) {
+    if (ret == HcclResult::HCCL_E_UNAVAIL) {
         HCCL_WARNING("[CcuResBatchAllocator][%s] devLogicId[%d], failed to allocate "
             "discrete resource.", __func__, devLogicId_);
         return ret;
     }
+    CHK_RET(ret);
 
     return HcclResult::HCCL_SUCCESS;
 }
@@ -645,12 +656,14 @@ static HcclResult PreAllocMissionRes(int32_t devLogicId,
         std::vector<ResInfo> tempResInfos;
         auto ret = ccuComponent.AllocRes(i, ResType::MISSION, missionNums[i],
             true, tempResInfos);
-        if (ret != HcclResult::HCCL_SUCCESS) {
+        if (ret == HcclResult::HCCL_E_UNAVAIL) {
             HCCL_WARNING("[CcuMissionMgr][%s] devLogicId[%d] dieId[%u], failed[%u] "
                 "to pre allocate mission resource, num[%u]", __func__, devLogicId,
                 i, ret, missionNums[i]);
             return ret;
         }
+        CHK_RET(ret);
+
         missionStartIds[i] = tempResInfos[0].startId;
     }
 
@@ -750,13 +763,15 @@ HcclResult CcuResBatchAllocator::CcuMissionMgr::Alloc(const uintptr_t handleKey,
 
     std::vector<ResInfo> resInfos;
     auto ret = HandleBlockRes(handleKey, reqNum, stragtegy_, blocks_, resInfos);
-    if (ret != HcclResult::HCCL_SUCCESS) {
+    if (ret == HcclResult::HCCL_E_UNAVAIL) {
         HCCL_WARNING("[CcuMissionMgr][%s] failed, mission block resources are unavaiable, "
             "reqNum[%u], stragtegy[%u], reqType[%d].", __func__, reqNum, stragtegy_,
             reqType);
         DumpBlockResInfo(ResType::MISSION, blocks_);
         return ret;
     }
+    CHK_RET(ret);
+
     missionInfos.reqType = reqType;
 
     for (uint8_t i = 0; i < CCU_MAX_IODIE_NUM; i++) {

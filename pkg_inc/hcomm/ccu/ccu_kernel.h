@@ -1,19 +1,24 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
- * Description: ccu context header file
- * CreateC: 2025-02-18
- */
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #ifndef HCOMM_CCU_KERNEL_H
 #define HCOMM_CCU_KERNEL_H
 
 #include <functional>
+
 #include "ccu_kernel_signature.h"
 #include "ccu_kernel_arg.h"
 #include "ccu_task_arg_v1.h"
 #include "ccu_task_param_v1.h"
 
-#include "ccu_context_resource_v1.h"
+#include "ccu_kernel_resource.h"
 #include "ccu_instr_info_v1.h"
 #include "ccu_rep_context_v1.h"
 
@@ -43,12 +48,14 @@ class CcuKernel : public CcuRep::CcuRepContext {
 public:
     explicit CcuKernel(const CcuKernelArg &arg);
     CcuKernel() = default;
-    ~CcuKernel() override;
+    ~CcuKernel() override = default;
     HcclResult Init();
 
     CcuResReq          GetResourceRequest();
     CcuResRepository  &GetResRepository();
     CcuRepResource    &GetResource();
+    CcuSharedResource &GetExportedRes();
+    CcuSharedResource &GetImportedRes();
 
     void        SetResRepository(const CcuResRepository &resRepo);
     void        SetInstrId(uint32_t instrId);
@@ -85,7 +92,8 @@ protected:
     HcclResult RecordEvent(CcuRep::CompletedEvent event);
     HcclResult WaitEvent(CcuRep::CompletedEvent event);
 
-    HcclResult LocalNotifyRecord(uint32_t coreId, uint32_t dstNotifyIdx, uint32_t mask);
+    HcclResult LocalNotifyRecord(const uint32_t coreId, const uint32_t dstNotifyIdx, const uint32_t mask);
+    HcclResult LocalNotifyWait(const uint32_t coreId, const uint32_t notifyIdx, const uint32_t mask);
 
     HcclResult NotifyRecord(const ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask=1);
 
@@ -156,6 +164,9 @@ private:
     CcuRep::CcuInstrInfo instrInfo_{};
 
     uint32_t loadArgIndex_{0};
+
+    CcuSharedResource exportedRes_{};
+    CcuSharedResource importedRes_{};
 };
 
 // kernel构造函数的lambda函数

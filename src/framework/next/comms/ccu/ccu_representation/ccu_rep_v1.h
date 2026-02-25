@@ -1,8 +1,12 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
- * Description: ccu representation base header file
- * Create: 2025-02-18
- */
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #ifndef HCOMM_CCU_REPRESENTATION
 #define HCOMM_CCU_REPRESENTATION
@@ -16,8 +20,9 @@
 #include "ccu_rep_loop_v1.h"
 #include "ccu_rep_loopgroup_v1.h"
 
-#include "ccu_rep_locpostsem_v1.h"
-#include "ccu_rep_locwaitsem_v1.h"
+#include "ccu_rep_loc_record_event.h"
+#include "ccu_rep_loc_wait_event.h"
+#include "ccu_rep_loc_wait_notify.h"
 
 #include "ccu_rep_read_v1.h"
 #include "ccu_rep_write_v1.h"
@@ -27,8 +32,7 @@
 #include "ccu_rep_rempostvar_v1.h"
 #include "ccu_rep_remwaitsem_v1.h"
 
-#include "ccu_rep_postsharedsem_v1.h"
-#include "ccu_rep_postsharedvar_v1.h"
+#include "ccu_rep_record_shared_notify.h"
 
 #include "ccu_rep_buflocread_v1.h"
 #include "ccu_rep_buflocwrite_v1.h"
