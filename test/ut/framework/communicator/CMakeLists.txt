@@ -13,6 +13,7 @@ set(src_to_test_list
     # ut_HcclSetConfig_API_test.cc
     ut_HcclGetConfig_API_test.cc
     ut_HcclGetCommName_API_test.cc
+    ut_HcclCommGetHandleWithName_API_test.cc
     ut_HcclCommInitAll_API_test.cc
     ut_HcclGetErrorString_API_test.cc
     ut_HcclGetCommConfigCapability_API_test.cc

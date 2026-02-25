@@ -118,6 +118,16 @@ extern HcclResult HcclGetConfig(HcclConfig config, HcclConfigValue *configValue)
 extern HcclResult HcclGetCommName(HcclComm comm, char* commName) HCOMM_WEAK_SYMBOL;
 
 /**
+ * @brief get commHandle.
+ *
+ * @param commName The name of commhandle.
+ * @param commhandle A pointer identifying the initialized communication resource.
+ * @return HcclResult
+ */
+
+extern HcclResult HcclCommGetHandleWithName(const char* commName, HcclComm* comm) HCOMM_WEAK_SYMBOL;
+
+/**
  * @brief Get the rank size of this comm.
  *
  * @param comm A pointer identifying the communication resource based on.
