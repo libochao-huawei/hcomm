@@ -22,8 +22,7 @@ set(HCOMM_CODE_ALGORITHM ${HCOMM_CODE_ROOT}/src/algorithm)
 set(HCOMM_CODE_FRAMEWORK ${HCOMM_CODE_ROOT}/src/framework)
 set(HCOMM_CODE_LEGACY    ${HCOMM_CODE_ROOT}/src/legacy)
 
-set(THIRD_PARTY_PATH   ${HCOMM_CODE_ROOT}/output/third_party)
-set(PROTO_SOURCE_DIR   ${THIRD_PARTY_PATH}/protobuf/lib64)
+set(THIRD_PARTY_PATH   ${CANN_3RD_LIB_PATH})
 set(PROTOC_PROGRAM     ${THIRD_PARTY_PATH}/protobuf/bin/protoc)
 
 # Include List

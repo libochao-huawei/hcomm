@@ -15,94 +15,94 @@
 #include "hccp_ctx.h"
 #include "ra_rs_ctx.h"
 
-struct ra_ctx_handle {
+struct RaCtxHandle {
     enum ProtocolTypeT protocol;
-    struct ra_ctx_ops *ctx_ops;
-    struct ctx_init_attr attr;
-    unsigned int dev_index;
-    struct dev_base_attr dev_attr;
+    struct RaCtxOps *ctxOps;
+    struct CtxInitAttr attr;
+    unsigned int devIndex;
+    struct DevBaseAttr devAttr;
     union {
         struct {
-            pthread_mutex_t dev_mutex;
-            bool disabled_lite_thread;
+            pthread_mutex_t devMutex;
+            bool disabledLiteThread;
         } rdma;
     };
 };
 
-struct ra_token_id_handle {
+struct RaTokenIdHandle {
     unsigned long long addr;
 };
 
-struct ra_lmem_handle {
+struct RaLmemHandle {
     unsigned long long addr;
 };
 
-struct ra_rmem_handle {
-    struct mem_key key;
+struct RaRmemHandle {
+    struct MemKey key;
     unsigned long long addr;
 };
 
-struct ra_ctx_qp_handle {
+struct RaCtxQpHandle {
     unsigned int id; // qpn(rdma) or jetty_id(udma)
-    unsigned int phy_id;
-    unsigned int dev_index;
+    unsigned int phyId;
+    unsigned int devIndex;
     enum ProtocolTypeT protocol;
-    struct qp_create_attr qp_attr;
-    struct qp_create_info qp_info;
-    struct ra_ctx_handle *ctx_handle;
+    struct QpCreateAttr qpAttr;
+    struct QpCreateInfo qpInfo;
+    struct RaCtxHandle *ctxHandle;
 };
 
-struct ra_ctx_rem_qp_handle {
+struct RaCtxRemQpHandle {
     unsigned int id; // qpn(rdma) or jetty_id(udma)
-    unsigned int phy_id;
-    unsigned int dev_index;
+    unsigned int phyId;
+    unsigned int devIndex;
     enum ProtocolTypeT protocol;
-    struct qp_key qp_key; // only for rdma
+    struct QpKey qpKey; // only for rdma
 };
 
-struct ra_chan_handle {
+struct RaChanHandle {
     unsigned long long addr; /**< refer to ibv_comp_channel*, urma_jfce_t* for chan_cb index */
 };
 
-struct ra_cq_handle {
+struct RaCqHandle {
     unsigned long long addr; /**< refer to ibv_cq*, urma_jfc_t* for cq_cb index */
 };
 
-struct ra_ctx_ops {
-    int (*ra_ctx_init)(struct ra_ctx_handle *ctx_handle, struct ctx_init_attr *attr, unsigned int *devIndex,
-        struct dev_base_attr *dev_attr);
-    int (*ra_ctx_get_async_events)(struct ra_ctx_handle *ctx_handle, struct async_event events[], unsigned int *num);
-    int (*ra_ctx_deinit)(struct ra_ctx_handle *ctx_handle);
-    int (*ra_ctx_get_eid_by_ip)(struct ra_ctx_handle *ctx_handle, struct IpInfo ip[], union hccp_eid eid[],
+struct RaCtxOps {
+    int (*raCtxInit)(struct RaCtxHandle *ctxHandle, struct CtxInitAttr *attr, unsigned int *devIndex,
+        struct DevBaseAttr *devAttr);
+    int (*raCtxGetAsyncEvents)(struct RaCtxHandle *ctxHandle, struct AsyncEvent events[], unsigned int *num);
+    int (*raCtxDeinit)(struct RaCtxHandle *ctxHandle);
+    int (*raCtxGetEidByIp)(struct RaCtxHandle *ctxHandle, struct IpInfo ip[], union HccpEid eid[],
         unsigned int *num);
-    int (*ra_ctx_token_id_alloc)(struct ra_ctx_handle *ctx_handle, struct hccp_token_id *info,
-        struct ra_token_id_handle *token_id_handle);
-    int (*ra_ctx_token_id_free)(struct ra_ctx_handle *ctx_handle, struct ra_token_id_handle *token_id_handle);
-    int (*ra_ctx_lmem_register)(struct ra_ctx_handle *ctx_handle, struct mr_reg_info_t *lmem_info,
-        struct ra_lmem_handle *lmem_handle);
-    int (*ra_ctx_lmem_unregister)(struct ra_ctx_handle *ctx_handle, struct ra_lmem_handle *lmem_handle);
-    int (*ra_ctx_rmem_import)(struct ra_ctx_handle *ctx_handle, struct mr_import_info_t *rmem_info);
-    int (*ra_ctx_rmem_unimport)(struct ra_ctx_handle *ctx_handle, struct ra_rmem_handle *rmem_handle);
-    int (*ra_ctx_chan_create)(struct ra_ctx_handle *ctx_handle, struct chan_info_t *chan_info,
-        struct ra_chan_handle *chan_handle);
-    int (*ra_ctx_chan_destroy)(struct ra_ctx_handle *ctx_handle, struct ra_chan_handle *chan_handle);
-    int (*ra_ctx_cq_create)(struct ra_ctx_handle *ctx_handle, struct cq_info_t *info,
-        struct ra_cq_handle *cq_handle);
-    int (*ra_ctx_cq_destroy)(struct ra_ctx_handle *ctx_handle, struct ra_cq_handle *cq_handle);
-    int (*ra_ctx_qp_create)(struct ra_ctx_handle *ctx_handle, struct qp_create_attr *qp_attr, struct qp_create_info *qp_info,
-        struct ra_ctx_qp_handle *qp_handle);
-    int (*ra_ctx_query_qp_batch)(unsigned int phyId, unsigned int devIndex, unsigned int ids[],
-        struct jetty_attr attr[], unsigned int *num);
-    int (*ra_ctx_qp_destroy)(struct ra_ctx_qp_handle *qp_handle);
-    int (*ra_ctx_qp_import)(struct ra_ctx_handle *ctx_handle, struct qp_import_info_t *qp_import_info,
-        struct ra_ctx_rem_qp_handle *rem_qp_handle);
-    int (*ra_ctx_qp_unimport)(struct ra_ctx_rem_qp_handle *rem_qp_handle);
-    int (*ra_ctx_qp_bind)(struct ra_ctx_qp_handle *qp_handle, struct ra_ctx_rem_qp_handle *rem_qp_handle);
-    int (*ra_ctx_qp_unbind)(struct ra_ctx_qp_handle *qp_handle);
-    int (*ra_ctx_batch_send_wr)(struct ra_ctx_qp_handle *qp_handle, struct send_wr_data wr_list[],
-        struct send_wr_resp op_resp[], unsigned int send_num, unsigned int *complete_num);
-    int (*ra_ctx_update_ci)(struct ra_ctx_qp_handle *qp_handle, uint16_t ci);
-    int (*ra_ctx_get_aux_info)(struct ra_ctx_handle *ctx_handle, struct aux_info_in *in, struct aux_info_out *out);
+    int (*raCtxTokenIdAlloc)(struct RaCtxHandle *ctxHandle, struct HccpTokenId *info,
+        struct RaTokenIdHandle *tokenIdHandle);
+    int (*raCtxTokenIdFree)(struct RaCtxHandle *ctxHandle, struct RaTokenIdHandle *tokenIdHandle);
+    int (*raCtxLmemRegister)(struct RaCtxHandle *ctxHandle, struct MrRegInfoT *lmemInfo,
+        struct RaLmemHandle *lmemHandle);
+    int (*raCtxLmemUnregister)(struct RaCtxHandle *ctxHandle, struct RaLmemHandle *lmemHandle);
+    int (*raCtxRmemImport)(struct RaCtxHandle *ctxHandle, struct MrImportInfoT *rmemInfo);
+    int (*raCtxRmemUnimport)(struct RaCtxHandle *ctxHandle, struct RaRmemHandle *rmemHandle);
+    int (*raCtxChanCreate)(struct RaCtxHandle *ctxHandle, struct ChanInfoT *chanInfo,
+        struct RaChanHandle *chanHandle);
+    int (*raCtxChanDestroy)(struct RaCtxHandle *ctxHandle, struct RaChanHandle *chanHandle);
+    int (*raCtxCqCreate)(struct RaCtxHandle *ctxHandle, struct CqInfoT *info,
+        struct RaCqHandle *cqHandle);
+    int (*raCtxCqDestroy)(struct RaCtxHandle *ctxHandle, struct RaCqHandle *cqHandle);
+    int (*raCtxQpCreate)(struct RaCtxHandle *ctxHandle, struct QpCreateAttr *qpAttr, struct QpCreateInfo *qpInfo,
+        struct RaCtxQpHandle *qpHandle);
+    int (*raCtxQueryQpBatch)(unsigned int phyId, unsigned int devIndex, unsigned int ids[],
+        struct JettyAttr attr[], unsigned int *num);
+    int (*raCtxQpDestroy)(struct RaCtxQpHandle *qpHandle);
+    int (*raCtxQpImport)(struct RaCtxHandle *ctxHandle, struct QpImportInfoT *qpImportInfo,
+        struct RaCtxRemQpHandle *remQpHandle);
+    int (*raCtxQpUnimport)(struct RaCtxRemQpHandle *remQpHandle);
+    int (*raCtxQpBind)(struct RaCtxQpHandle *qpHandle, struct RaCtxRemQpHandle *remQpHandle);
+    int (*raCtxQpUnbind)(struct RaCtxQpHandle *qpHandle);
+    int (*raCtxBatchSendWr)(struct RaCtxQpHandle *qpHandle, struct SendWrData wrList[],
+        struct SendWrResp opResp[], unsigned int sendNum, unsigned int *completeNum);
+    int (*raCtxUpdateCi)(struct RaCtxQpHandle *qpHandle, uint16_t ci);
+    int (*raCtxGetAuxInfo)(struct RaCtxHandle *ctxHandle, struct HccpAuxInfoIn *in, struct HccpAuxInfoOut *out);
 };
 
 #endif // RA_CTX_H

@@ -1,7 +1,6 @@
 target_sources(hccl_v2_alg_frame PRIVATE
         execute_selector.cc
         base_selector.cc
-        env_selector.cc
         mc2_selector.cc
         selector_registry.cc
         auto_selector_base.cc

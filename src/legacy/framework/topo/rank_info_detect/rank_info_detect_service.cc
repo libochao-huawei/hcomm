@@ -39,6 +39,15 @@ void RankInfoDetectService::Setup()
     BroadcastRankTable();
 }
 
+void RankInfoDetectService::Update()
+{    
+    // 1. 接收所有rank发来的新localRankTable并整合为全局RankTable
+    GetRankTable();
+    
+    // 2. 将完整RankTable广播给所有rank
+    BroadcastRankTable();
+}
+
 void RankInfoDetectService::GetConnections()
 {
     HCCL_INFO("[RankInfoDetectService::%s] start.", __func__);
@@ -116,6 +125,7 @@ void RankInfoDetectService::GetRankTable()
     HCCL_INFO("[RankInfoDetectService::%s] start.", __func__);
 
     // 接收localRankTable并组全局RankTableInfo
+    rankTable_ = RankTableInfo{};
     for (auto &iter : connSockets_) {
         vector<char> rankInfoMsg{};
         SocketAgent socketAgent(iter.second.get());

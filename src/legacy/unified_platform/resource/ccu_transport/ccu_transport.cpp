@@ -10,6 +10,7 @@
 
 #include "ccu_transport.h"
 #include "coll_operator_check.h"
+#include "exception_util.h"
 
 namespace Hccl {
 
@@ -20,6 +21,10 @@ HcclResult CcuCreateTransport(Socket *socket, const CcuTransport::CcuConnectionI
     const CcuTransport::CclBufferInfo &cclBufferInfo, std::unique_ptr<CcuTransport> &ccuTransport)
 {
     CHK_PTR_NULL(socket);
+    HCCL_INFO("[%s]ccuConnectionInfo type[%d], locAddr[%s], rmtAddr[%s], channelInfo[channelId %u:dieId %u], "
+        "cclBufferInfo addr[%llu], size[%u]", __func__, ccuConnectionInfo.type, ccuConnectionInfo.locAddr.GetIpStr().c_str(),
+        ccuConnectionInfo.rmtAddr.GetIpStr().c_str(), ccuConnectionInfo.channelInfo.channelId, ccuConnectionInfo.channelInfo.dieId,
+        cclBufferInfo.addr, cclBufferInfo.size);
     TRY_CATCH_RETURN(
         std::unique_ptr<CcuConnection> ccuConnection;
         if (ccuConnectionInfo.type == CcuTransport::CcuConnectionType::UBC_CTP) {
@@ -172,6 +177,7 @@ HcclResult CcuTransport::AppendXns(uint32_t xnsNum)
 
 void CcuTransport::SetCntCke(const vector<uint32_t> &cntCke)
 {
+    HCCL_INFO("[%s]cntCke size[%llu]", __func__, cntCke.size());
     locRes.cntCkes = cntCke;
 }
 
@@ -261,19 +267,17 @@ CcuTransport::TransStatus CcuTransport::StateMachine()
 CcuTransport::TransStatus CcuTransport::GetStatus()
 {
     CcuTransport::TransStatus status = CcuTransport::TransStatus::CONNECT_FAILED;
-    try {
+    auto lockAndStatuMachine = [&]() {
         std::unique_lock<std::shared_timed_mutex> lock(transMutex);
         status = StateMachine();
-    } catch (HcclException &e) {
-        HCCL_ERROR(e.what());
-        return CcuTransport::TransStatus::CONNECT_FAILED;
-    } catch (exception &e) {
-        HCCL_ERROR(e.what());
-        return CcuTransport::TransStatus::CONNECT_FAILED;
-    } catch (...) {
-        HCCL_ERROR("Unknown error occured during unimport jetty or destroy jetty!");
-        return CcuTransport::TransStatus::CONNECT_FAILED;
-    }
+    };
+    TRY_CATCH_PROCESS_THROW (
+        InternalException,
+        lockAndStatuMachine(),
+        "CcuTransport GetStatus() Error when creating transport connection",
+        {
+            transStatus = CcuTransport::TransStatus::CONNECT_FAILED;
+        });
     return status;
 }
 
@@ -586,11 +590,12 @@ std::string CcuTransport::Describe() const
     return description;
 }
 
-void CcuTransport::Clean()
+HcclResult CcuTransport::Clean()
 {
     transStatus = TransStatus::INIT;
     sendData.clear();
-    ccuConnection->Clean();
+    TRY_CATCH_RETURN(ccuConnection->Clean());
+    return HCCL_SUCCESS;
 }
 
 } // namespace Hccl

@@ -29,8 +29,7 @@ HcclResult CpuTsThread::Init()
 {
     // Host 侧初始化
     CHK_RET(GetRunSideIsDevice(isDeviceSide_));
-    DevType devType = DevType::DEV_TYPE_COUNT;
-    CHK_RET(hrtGetDeviceType(devType));
+    CHK_RET(hrtGetDeviceType(devType_));
     if (!isDeviceSide_) {
         s32 deviceLogicId;
         CHK_RET(hrtGetDevice(&deviceLogicId));
@@ -52,7 +51,7 @@ HcclResult CpuTsThread::Init()
             notifys_[idx].reset(new (std::nothrow) LocalNotify());
             CHK_SMART_PTR_NULL(notifys_[idx]);
             CHK_RET(notifys_[idx]->Init(notifyLoadType_));
-            if (devType != DevType::DEV_TYPE_910_95) {
+            if (devType_ != DevType::DEV_TYPE_910_95) {
                 CHK_RET(notifys_[idx]->SetIpc());
             }
         }
@@ -152,7 +151,7 @@ LocalNotify *CpuTsThread::GetNotify(uint32_t index) const
 
 bool CpuTsThread::IsDeviceA5() const
 {
-    return false;  // Not implemented
+    return devType_ == DevType::DEV_TYPE_910_95;
 }
 
 // A3 Stream

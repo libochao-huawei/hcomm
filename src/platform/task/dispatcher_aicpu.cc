@@ -408,8 +408,8 @@ HcclResult DispatcherAiCpu::MemcpyAsync(hccl::DeviceMem &dst, const hccl::Device
             dstSplit, 0, aicpuInfo_.ssid, aicpuInfo_.devId, aicpuInfo_.overflowAddr, linkType, sqeBuffer, sqeTypeAddr, hcclQos_);
 
         PLF_CONFIG_INFO(PLF_TASK,
-            "%s para: linkType[%u] srcSplit[%p] dstSplit[%p] countSplit[%llu] taskId[%u] streamId[%u] remoteRank[%u] hcclQos[%u]",
-            __func__, linkType, srcSplit, dstSplit, countSplit , taskId, streamInfo.actualStreamId, remoteUserRank, hcclQos_);
+            "%s para: linkType[%u] srcSplit[%p] dstSplit[%p] countSplit[%llu] taskId[%u] streamId[%u] remoteRank[%u]",
+            __func__, linkType, srcSplit, dstSplit, countSplit , taskId, streamInfo.actualStreamId, remoteUserRank);
     }
     return HCCL_SUCCESS;
 }
@@ -921,8 +921,8 @@ HcclResult DispatcherAiCpu::InlineReduceAsync(const void *src, u64 dataCount, co
 
         PLF_CONFIG_INFO(PLF_TASK,
             "%s para: linkType[%u] srcSplit[%p] dstSplit[%p] countSplit[%llu] taskId[%u] streamId[%u] remoteRank[%u] "\
-            "rtDatatType[%d] rtReduceOp[%d] hcclQos[%u]", __func__, linkType, srcSplit, dstSplit, countSplit, taskId,
-            streamInfo.actualStreamId, remoteUserRank, runtimeDataType, rtReduceOp, hcclQos_);
+            "rtDatatType[%d] rtReduceOp[%d]", __func__, linkType, srcSplit, dstSplit, countSplit, taskId,
+            streamInfo.actualStreamId, remoteUserRank, runtimeDataType, rtReduceOp);
     }
 
     return HCCL_SUCCESS;

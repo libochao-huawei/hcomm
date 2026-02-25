@@ -34,8 +34,10 @@ FuncBlock::FuncBlock(CcuRepContext *context, std::string label, uint16_t callLay
 
 FuncBlock::~FuncBlock()
 {
-    repFuncBlock->SetCallLayer(callLayer);
-    SetCurrentBlock(context, curActiveBlock);
+    DECTOR_TRY_CATCH("FuncBlock",
+        repFuncBlock->SetCallLayer(callLayer);
+        SetCurrentBlock(context, curActiveBlock);
+    );
 }
 
 }; // namespace CcuRep
