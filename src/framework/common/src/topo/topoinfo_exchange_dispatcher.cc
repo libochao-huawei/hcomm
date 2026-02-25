@@ -116,7 +116,7 @@ HcclResult TopoInfoExchangeDispather::PrepareResource(
     CHK_RET(topoInfoExchangeServer_->TopoInfoExchangeBase::Struct2Json(clusterInfo, basicJson));
     basicJson[PROP_STEP] = topoInfoExchangeServer_->TopoInfoExchangeBase::currentStep_;
     if (!failedAgentIdList.empty()) {
-        basicJson["fault_info"] = "Failed to connect agent[" + failedAgentIdList + "]";
+        basicJson["fault_info"] = "[" + failedAgentIdList + "]";
         basicJson["fault_type"] = static_cast<int>(TopoDetectResult::TOPO_CONNECT_FAILED);
     }
     rankTableJson_ = basicJson.dump();

@@ -711,8 +711,8 @@ HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHan
 
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
-        vector<string>({"value,variable,expect"}),
-        vector<string>({"Value [%s] for rankTable variable [%s] is invalid. Expected value %s."})
+        vector<string>({ "value", "variable" ,"expect" }),
+        vector<string>({"Value [%s] for rankTable variable [IP] is invalid. Expected value %s."})
     );
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
@@ -744,8 +744,8 @@ HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rd
 
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
-        vector<string>({"value,variable,expect"}),
-        vector<string>({"Value [%s] for rankTable variable [%s] is invalid. Expected value %s."})
+        vector<string>({ "value", "variable" ,"expect" }),
+        vector<string>({"Value [%s] for rankTable variable [IP] is invalid. Expected value %s."})
     );
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
@@ -784,8 +784,8 @@ HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev
 
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
-        vector<string>({"value,variable,expect"}),
-        vector<string>({"Value [%s] for rankTable variable [%s] is invalid. Expected value %s."})
+        vector<string>({ "value", "variable" ,"expect" }),
+        vector<string>({"Value [%s] for rankTable variable [IP] is invalid. Expected value %s."})
     );
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",

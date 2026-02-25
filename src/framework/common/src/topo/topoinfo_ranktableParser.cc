@@ -324,12 +324,10 @@ HcclResult TopoInfoRanktableParser::GetJsonProperty(const nlohmann::json &obj, c
         if (optionalProp) {
             HCCL_WARNING("json object has no property called %s", propName);
         } else {
-            std::string errormessage = "Value " + std::string(propName)+ "for rankTable variable " + std::string()+
-                                       "is invalid, expected value " + std::string()+ ".";
             RPT_INPUT_ERR(true,
                 "EI0017",
-                std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({errormessage}));
+                std::vector<std::string>({"config"}),
+                std::vector<std::string>({std::string(propName)}));
             HCCL_ERROR("[%s][%s]json object has no property called %s", LOG_KEYWORDS_INIT_GROUP.c_str(),
                 LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), propName);
         }
@@ -340,12 +338,10 @@ HcclResult TopoInfoRanktableParser::GetJsonProperty(const nlohmann::json &obj, c
         propValue = obj[propName];
         return HCCL_SUCCESS;
     } else {
-        std::string errormessage = "Value " + std::string()+ "for rankTable variable " + std::string()+
-                                       "is invalid, expected value " + std::string()+ ".";
         RPT_INPUT_ERR(true,
             "EI0017",
-            std::vector<std::string>({"error_reason"}),
-            std::vector<std::string>({errormessage}));
+            std::vector<std::string>({"config"}),
+            std::vector<std::string>({std::string(propName)}));
         HCCL_ERROR("[Get][JsonProperty]errNo[0x%016llx] json object property value of Name[%s] is not string!",
             HCOM_ERROR_CODE(HCCL_E_PARA), propName);
         return HCCL_E_PARA;
@@ -392,12 +388,10 @@ HcclResult TopoInfoRanktableParser::GetJsonArrayMemberProperty(const nlohmann::j
         propValue = subObj[propName];
         return HCCL_SUCCESS;
     } else {
-        std::string errormessage = "Value " + std::string(propName)+ "for rankTable variable " + std::string(propName)+
-                                   "is invalid, expected value " + std::string(propName)+ ".";
         RPT_INPUT_ERR(true,
             "EI0017",
-            std::vector<std::string>({"error_reason"}),
-            std::vector<std::string>({errormessage}));
+            std::vector<std::string>({"config"}),
+            std::vector<std::string>({std::string(propName)}));
         HCCL_ERROR(
             "[%s][%s]errNo[0x%016llx] json object property value of Name[%s] is not string!",
             LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA),
@@ -474,8 +468,8 @@ HcclResult TopoInfoRanktableParser::CheckUniquePara(const JsonUniqueInfoType &ty
             /* 必须是一个有效的ip地址 */
             HcclIpAddress ip(value);
             if (ip.IsInvalid()) {
-                RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
-                    std::vector<std::string>({ "Value [" + value + "] for rankTable variable [deviceIp] is invalid, expected value a valid IP address." }));
+                RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
+                    std::vector<std::string>({ "[" + value + "]", "[IP]", "is a valid IP address" }));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] ip[%s] is not a valid ip address", LOG_KEYWORDS_INIT_GROUP.c_str(),
                     LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), value.c_str());
                 return HCCL_E_PARA;
@@ -519,8 +513,8 @@ HcclResult TopoInfoRanktableParser::CheckUniqueAndInsertPool(const JsonUniqueInf
     if (opType == JsonCheckOpType::CHECK_OP_TYPE_INSERT) {
         /* JsonCheckOpType::CHECK_OP_TYPE_INSERT操作插入保存到资源池中，若资源池中存在则报错 */
         if (srvIt != uniqueInfoCheckPool_[static_cast<u32>(type)].end()) {
-            RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
-                std::vector<std::string>({ "Value [" + value + "] for rankTable variable [deviceIp] is repeate, please check the ranktable." }));
+            RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
+                std::vector<std::string>({ "[" + value + "]", " \"[IP]\" is repeate", "please check the ranktable" }));
             HCCL_ERROR("[%s][%s]errNo[0x%016llx] [%s]:[%s] is already exist", LOG_KEYWORDS_INIT_GROUP.c_str(),
                 LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), strUniqueInfoType.c_str(),
                 value.c_str());
@@ -568,8 +562,8 @@ void TopoInfoRanktableParser::GenerateSuperPodIdx(const std::string &superPodId,
 HcclResult TopoInfoRanktableParser::ConvertIpAddress(const std::string &ipStr, HcclIpAddress &ipAddr)
 {
     HcclResult ret = ipAddr.SetReadableAddress(ipStr);
-    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0014", std::vector<std::string>({ "error_reason" }),
-        std::vector<std::string>({ "Value [" + ipStr + "] for rankTable variable [deviceIp] is invalid, expected value a valid IP address." }));
+    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
+        std::vector<std::string>({ "[" + ipStr + "]", "[IP]", "is a valid IP address" }));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]ipStr[%s] convert failed",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),ipStr.c_str()), ret);
     return ret;

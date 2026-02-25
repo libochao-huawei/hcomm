@@ -51,8 +51,8 @@ HcclResult CfgGetClusterInfo(const std::string &rankTableM, const std::string &i
     } else if (rankTable.version.compare("Standard") == 0) {
         pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableStandard(rankTableM, identify));
     } else {
-        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
-            std::vector<std::string>({ "Value " + rankTable.version + " for rankTable variable version is invalid, expected value %s" }));
+        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
+            std::vector<std::string>({rankTable.version, "version", "a valid version number." }));
         HCCL_ERROR("[%s][%s]version[%s] is not support",
             LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),rankTable.version.c_str());
         return HCCL_E_NOT_SUPPORT;
@@ -314,8 +314,9 @@ HcclResult CheckDeviceId(const std::vector<RankInfo_t> &rankList, u32 deviceNum,
         if (search != serverDeviceMapList.end()) {
             auto rs = serverDeviceMapList[tmpServerId].insert(it->deviceInfo.devicePhyId);
             if (!rs.second) {
-                RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
-                    std::vector<std::string>({ "Value " + std::to_string(it->deviceInfo.devicePhyId) + " for rankTable variable \"Device Id of server Id " + tmpServerId + " \" is invalid, expected value is unique." }));
+                RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
+                    std::vector<std::string>({ std::to_string(it->deviceInfo.devicePhyId),
+                    + " \"Device Id of server Id " + tmpServerId + " \" ", "is unique" }));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] check ranklist[%u], device id repeat for one server",
                         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
                         HCOM_ERROR_CODE(HCCL_E_PARA), it->rankId);
@@ -357,9 +358,9 @@ HcclResult CheckRankListInfo(const std::vector<RankInfo_t> &rankList)
     HCCL_INFO("START CheckRankListInfo");
     for (u32 index = 0; index < rankList.size(); index++) {
         if (rankList[index].rankId != index) {
-            RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
-                std::vector<std::string>({ "Value " + std::to_string(rankList[index].rankId) + " for rankTable variable RankID is invalid, "\
-                    "expected value is less than the communication size " + std::to_string(rankList.size()) + " and must be unique." }));
+            RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
+                std::vector<std::string>({ std::to_string(rankList[index].rankId), "rank_id",
+                "is less than the communication size " + std::to_string(rankList.size()) + " and must be unique." }));
             HCCL_ERROR("[%s][%s]errNo[0x%016llx] rankList[%u] rankId[%u] error",
                 LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA),
                 index, rankList[index].rankId);
@@ -375,16 +376,17 @@ HcclResult CheckRankIpFamily(const std::vector<RankInfo_t> &rankList)
     HCCL_INFO("START CheckRankIpFamily");
     s32 hostFamily = 0;
     s32 deviceFamily = 0;
-    std::string errormessage;
+    std::string errormessage = "";
     for (u32 index = 0; index < rankList.size(); index++) {
         if (!rankList[index].hostIp.IsInvalid()) {
-            errormessage =  "Value " + std::to_string(rankList[index].hostIp.GetFamily()) + " for rankTable variable \"Device Id of "\
-                "server Id " + std::to_string(rankList[index].serverId) + "\" is invalid, expected value is unique."
             RPT_INPUT_ERR(
                 ((rankList[index].hostIp.GetFamily() != AF_INET) && (rankList[index].hostIp.GetFamily() != AF_INET6)),
                 "EI0014",
-                std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({errormessage}));
+                std::vector<std::string>({ "value", "variable" ,"expect" }),
+                std::vector<std::string>({std::to_string(rankList[index].hostIp.GetFamily()),
+                " \"Device Id of server Id " + std::to_string(rankList[index].serverId) + "\" ", "is unique"}));
+            errormessage = "Value " + std::to_string(rankList[index].hostIp.GetFamily()) + " for rankTable variable \"Device Id of "\
+                "server Id " + std::to_string(rankList[index].serverId) + "\" is invalid, expected value is unique."
             CHK_PRT_RET(
                 ((rankList[index].hostIp.GetFamily() != AF_INET) && (rankList[index].hostIp.GetFamily() != AF_INET6)),
                 HCCL_ERROR("[%s][%s] %s",
@@ -395,8 +397,9 @@ HcclResult CheckRankIpFamily(const std::vector<RankInfo_t> &rankList)
 
             RPT_INPUT_ERR((hostFamily != 0 && hostFamily != rankList[index].hostIp.GetFamily()),
                 "EI0014",
-                std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({errormessage}));
+                std::vector<std::string>({ "value", "variable" ,"expect" }),
+                std::vector<std::string>({std::to_string(rankList[index].hostIp.GetFamily()),
+                " \"Device Id of server Id " + std::to_string(rankList[index].serverId) + "\" ", "is unique"}));
             CHK_PRT_RET((hostFamily != 0 && hostFamily != rankList[index].hostIp.GetFamily()),
                 HCCL_ERROR("[%s][%s]%s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -413,12 +416,14 @@ HcclResult CheckRankIpFamily(const std::vector<RankInfo_t> &rankList)
         }
 
         for (auto &iter : rankList[index].deviceInfo.deviceIp) {
-            errormessage =  "Value " + std::to_string(rankList[index].hostIp.GetFamily()) + " for rankTable variable \"Device Id of "\
-                "server Id " + std::to_string(rankList[index].serverId) + " \" is invalid, expected value is unique."
+
             RPT_INPUT_ERR(((iter.GetFamily() != AF_INET) && (iter.GetFamily() != AF_INET6)),
                 "EI0014",
-                std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({errormessage}));
+                std::vector<std::string>({ "value", "variable" ,"expect" }),
+                std::vector<std::string>({std::to_string(rankList[index].hostIp.GetFamily()), " \"Device Id of "\
+                "server Id " + std::to_string(rankList[index].serverId) + " \" ", "is unique"}));
+            errormessage =  "Value " + std::to_string(rankList[index].hostIp.GetFamily()) + " for rankTable variable \"Device Id of "\
+                "server Id " + std::to_string(rankList[index].serverId) + " \" is invalid, expected value is unique."
             CHK_PRT_RET(((iter.GetFamily() != AF_INET) && (iter.GetFamily() != AF_INET6)),
                 HCCL_ERROR("[%s][%s]%s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -497,10 +502,9 @@ HcclResult CheckDeviceNumValid(const std::vector<RankInfo_t> &rankList, u32 devi
     }
     for (auto it = serverDeviceNumMapList.begin(); it != serverDeviceNumMapList.end(); it++) {
         if (it->second !=  (deviceNum / serverNum)) {
-            std::string errormessage = "Value " + std::to_string(it->second) + " for rankTable variable \"DeviceNum of "\
-                "server Id " + it->first + "\" is invalid, expected value is that number of devices under each server node is the same."
             RPT_INPUT_ERR(true,
-                "EI0014", std::vector<std::string>({ "error_reason" }), std::vector<std::string>({ errormessage }));
+                "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }), std::vector<std::string>({ std::to_string(it->second), "\"DeviceNum of "\
+                "server Id " + it->first + "\" ", "is that number of devices under each server node is the same" }));
             HCCL_ERROR("[%s][%s]errNo[0x%016llx] devices num of each server error",
                 LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA));
             return HCCL_E_PARA;

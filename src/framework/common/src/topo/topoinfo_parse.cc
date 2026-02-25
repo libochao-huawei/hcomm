@@ -176,9 +176,7 @@ HcclResult TopoInfoParse::CheckInterServerDeviceId()
         HCCL_ERROR("[Check][DeviceId]errNo[0x%016llx] server num is zero", HCOM_ERROR_CODE(HCCL_E_PARA));
         return HCCL_E_PARA;
     }
-
     std::map<std::string, std::set<s32>> serverDeviceMapList;
-    std::string errormessage = "";
     for (auto it = rankList_.begin(); it != rankList_.end(); it++) {
         std::string tmpServerId = it->serverId;
         auto search = serverDeviceMapList.find(tmpServerId);
@@ -188,8 +186,9 @@ HcclResult TopoInfoParse::CheckInterServerDeviceId()
                 continue;
             }
             if (!rs.second) {
-                errormessage = "Value " + std::to_string(it->devicePhyId) + " for rankTable variable \"Device Id of server Id " + it->serverId + " \" is invalid, expected value is unique.";
-                RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason"}), std::vector<std::string>({ errormessage }));
+                RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
+                    std::vector<std::string>({ std::to_string(it->devicePhyId),
+                    " \"Device Id of server Id " + it->serverId + " \" ", "is unique" }));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] check ranklist[%u], device id repeat for one server",
                     LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), it->userRank);
                 return HCCL_E_PARA;
@@ -302,10 +301,11 @@ HcclResult TopoInfoParse::CheckServerInnerRankInfo()
             selectedDevice += " ";
         }
         if (HCCL_AISERVER_VAILD_4P_RANKS.find(serverInnerDeviceInfo) == HCCL_AISERVER_VAILD_4P_RANKS.end()) {
-            std::string errormessage = "Value " + selectedDevice + " for rankTable variable \"Device Id of server Id " + serverId_ + " \" is invalid, expected value is unique.";
+            std::string errormessage = "Value " + selectedDevice + " for rankTable "\
+                "variable \"Device Id of server Id " + serverId_ + " \" is invalid, expected value is unique.";
             errorManager += selectedDevice;
-            RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason"}),
-                std::vector<std::string>({ errorManager}));
+            RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
+                std::vector<std::string>({ selectedDevice, " \"Device Id of server Id " + serverId_ + " \" ", "is unique" }));
             HCCL_ERROR("[%s][%s] %s", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), errorManager.c_str());
             return HCCL_E_PARA;
         }

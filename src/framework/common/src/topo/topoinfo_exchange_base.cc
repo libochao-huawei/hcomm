@@ -83,10 +83,11 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfoMsg(std::shared_ptr<HcclSocket> 
 {
     const u32 recvBufferLimit = 100 * 1024 * 1024; // 100 * 1024 * 1024 = 100MB
     u32 msgLen = 0;
-    std::string errormessage = "Receiving message from the root node timed out. Check whether node[" + std::to_string(clusterInfo.rankList[i].rankId) +
-                               "] reports an error.";
+    std::string errormessage = "";
     HcclResult ret = socket->Recv(reinterpret_cast<char *>(&msgLen), sizeof(msgLen));
     if (ret == HCCL_E_TIMEOUT) {
+        errormessage = "Receiving message from the root node timed out. Check whether node " + std::string(socket->GetRemoteIp().GetReadableIP()) +
+                               " reports an error."
         RPT_INPUT_ERR(true,
             "EI0015",
             std::vector<std::string>({"error_reason"}),
@@ -134,8 +135,8 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfoMsg(std::shared_ptr<HcclSocket> 
 
     bool isRoot = (localHostIp == GetExternalInputMasterInfo().serverIp &&
         logicDevId == static_cast<s32>(GetExternalInputMasterInfo().serverDeviceId));
-    errormessage = "No rank in the communicator can connect to the root node within the timeout period. List of unconnected ranks: [" + 
-                   std::to_string(clusterInfo.rankList[i].rankId) + "].";
+    errormessage = "No rank in the communicator can connect to the root node within the timeout period. List of unconnected ranks: " + 
+                   std::string(jClusterJson["fault_info"].dump().c_str()) + ".";
     if (!isRoot && jClusterJson.find("fault_type") != jClusterJson.end() &&
         jClusterJson.find("fault_info") != jClusterJson.end()) {
         RPT_INPUT_ERR(true,
@@ -158,12 +159,13 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfoMsg(std::shared_ptr<HcclSocket> 
 HcclResult TopoInfoExchangeBase::RecvClusterInfo(std::shared_ptr<HcclSocket> socket, RankTable_t &clusterInfo)
 {
     CHK_RET(RecvClusterInfoMsg(socket, clusterInfo));
-    std::string errormessage = "Receiving message from the root node timed out. Check whether node[" + std::to_string(clusterInfo.rankList[i].rankId) +
-                            "] reports an error.";
+    std::string errormessage = "";
     if (isByMasterInfo_) {
         u32 identify = 0;
         auto ret = socket->Recv(reinterpret_cast<char *>(&identify), sizeof(identify));
         if (ret == HCCL_E_TIMEOUT) {
+            errormessage = "Receiving message from the root node timed out. Check whether node " + std::string(socket->GetRemoteIp().GetReadableIP()) +
+                            " reports an error."
             RPT_INPUT_ERR(true,
                 "EI0015",
                 std::vector<std::string>({"error_reason"}),
@@ -183,10 +185,11 @@ HcclResult TopoInfoExchangeBase::RecvClusterJson(std::shared_ptr<HcclSocket> soc
 {
     const u32 recvBufferLimit = 10 * 1024 * 1024; // 10 * 1024 * 1024 = 10MB
     u32 msgLen = 0;
-    std::string errormessage = "Receiving message from the root node timed out. Check whether node[" + std::to_string(clusterInfo.rankList[i].rankId) +
-                        "] reports an error.";
+    std::string errormessage = "";
     HcclResult ret = socket->Recv(reinterpret_cast<char *>(&msgLen), sizeof(msgLen));
     if (ret == HCCL_E_TIMEOUT) {
+        errormessage = "Receiving message from the root node timed out. Check whether node " + std::string(socket->GetRemoteIp().GetReadableIP()) +
+            " reports an error."
         RPT_INPUT_ERR(true,
             "EI0015",
             std::vector<std::string>({"error_reason"}),
@@ -210,6 +213,8 @@ HcclResult TopoInfoExchangeBase::RecvClusterJson(std::shared_ptr<HcclSocket> soc
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Recv][ClusterInfoMsg]sockBuff memset failed"), HCCL_E_MEMORY);
     ret = socket->Recv(recvMsgBuf, msgLen);
     if (ret == HCCL_E_TIMEOUT) {
+        errormessage = "Receiving message from the root node timed out. Check whether node " + std::string(socket->GetRemoteIp().GetReadableIP()) +
+            " reports an error."
         RPT_INPUT_ERR(true,
             "EI0015",
             std::vector<std::string>({"error_reason"}),
