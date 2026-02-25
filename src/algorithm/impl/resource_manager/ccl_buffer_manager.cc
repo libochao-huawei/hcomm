@@ -86,8 +86,10 @@ HcclResult CCLBufferManager::CreateCommCCLbuffer(const std::string &bufferName)
         winExpBuffer_ = DeviceMem::create(static_cast<u8 *>(cclBuffer_.ptr()) + inCCLbufferSize_ + outCCLbufferSize_, 
             winExpBufferSize_);
     }
-    HCCL_INFO("[CreateCommCCLbuffer] create cclbuffer, inPtr[%p], outPtr[%p], winExpPtr[%p], isSharebuffer[%d]",
-        inCCLbuffer_.ptr(), outCCLbuffer_.ptr(), winExpBuffer_.ptr(), isShareCCLbuffer_);
+
+    cclBufferAddr_ = reinterpret_cast<u64>(cclBuffer_.ptr());
+    HCCL_INFO("[CreateCommCCLbuffer] create cclbuffer, inPtr[%p], outPtr[%p], winExpPtr[%p], isSharebuffer[%d], cclBufferAddr_[%llx]",
+        inCCLbuffer_.ptr(), outCCLbuffer_.ptr(), winExpBuffer_.ptr(), isShareCCLbuffer_, cclBufferAddr_);
     return HCCL_SUCCESS;
 }
 
@@ -286,9 +288,12 @@ HcclResult CCLBufferManager::InitCCLbuffer(u64 inCCLbufferSize, u64 outCCLbuffer
 
 void* CCLBufferManager::GetCCLbufferAddr(const DeviceMem &buffer)
 {
-    if (!buffer) {
+    HCCL_RUN_INFO("[GetCCLbufferAddr] buffer ptr[%p]", buffer.ptr());
+    if (buffer.ptr() == nullptr) {
+        HCCL_RUN_INFO("[GetCCLbufferAddr] buffer is empty");
         return nullptr;
     } else {
+        HCCL_RUN_INFO("[GetCCLbufferAddr] buffer ptr[%p]", static_cast<void *>(reinterpret_cast<u8 *>(buffer.ptr())));
         return static_cast<void *>(reinterpret_cast<u8 *>(buffer.ptr()));
     }
 }
@@ -384,13 +389,19 @@ void CCLBufferManager::ReleaseAlltoAllvParaBuffer()
 
 HcclResult CCLBufferManager::GetIndependentOpCCLbuffer(void* &buffer, uint64_t &size)
 {
-    buffer = GetCCLbufferAddr(cclBuffer_);
-    if (buffer == nullptr) {
-        CHK_RET(CreateCommCCLbuffer());
-        buffer = GetCCLbufferAddr(cclBuffer_);
-    }
+    HCCL_RUN_INFO("[GetIndependentOpCCLbuffer] cclBuffer_[%p]", cclBuffer_.ptr());
+    HCCL_RUN_INFO("[GetIndependentOpCCLbuffer] inCCLbuffer_[%p]", inCCLbuffer_.ptr());
+    HCCL_RUN_INFO("[GetIndependentOpCCLbuffer] cclBufferAddr_[%llx]", cclBufferAddr_);
+    buffer = reinterpret_cast<void *>(cclBufferAddr_);
+    // buffer = GetCCLbufferAddr(inCCLbuffer_);
+    // if (buffer == nullptr) {
+    //     HCCL_RUN_INFO("[GetIndependentOpCCLbuffer] buffer is empty");
+    //     CHK_RET(CreateCommCCLbuffer());
+    //     buffer = GetCCLbufferAddr(inCCLbuffer_);
+    // }
     // 大小在通信域初始化时调取InitCCLbuffer设置，MC1MB内存不对外暴露
     size = inCCLbufferSize_ + outCCLbufferSize_;
+    HCCL_RUN_INFO("[GetIndependentOpCCLbuffer] inCCLbufferSize_[%llu], outCCLbufferSize_[%llu]", inCCLbufferSize_, outCCLbufferSize_);
     return HCCL_SUCCESS;
 }
 } // namespace hccl

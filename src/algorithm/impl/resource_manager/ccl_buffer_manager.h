@@ -70,6 +70,7 @@ private:
     u64 inCCLbufferSize_;
     u64 outCCLbufferSize_;
     u64 winExpBufferSize_;
+    u64 cclBufferAddr_;
     DeviceMem inAlltoAllvParaBuffer_;
     DeviceMem outAlltoAllvParaBuffer_;
     DeviceMem inAivOpbaseBuffer_ = DeviceMem();

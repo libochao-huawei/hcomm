@@ -22,8 +22,10 @@ DeviceMem::DeviceMem(const DeviceMem &that) : ptr_(that.ptr()), size_(that.size_
 
 DeviceMem::DeviceMem(DeviceMem &&that) noexcept : ptr_(that.ptr()), size_(that.size_), owner_(that.owner_)
 {
-    that.ptr_ = nullptr;
-    that.size_ = 0;
+    HCCL_RUN_INFO("[DeviceMem] move constructor, that.ptr[%p], that.size[%llu], that.owner[%d]",
+                  that.ptr_, that.size_, that.owner_);
+    // that.ptr_ = nullptr;
+    // that.size_ = 0;
     that.owner_ = false;
 }
 
@@ -107,8 +109,10 @@ DeviceMem DeviceMem::operator=(DeviceMem &&that)
         owner_ = that.owner_;
     }
 
-    that.ptr_ = nullptr;
-    that.size_ = 0;
+    HCCL_RUN_INFO("[DeviceMem::operator=] move assignment, that.ptr[%p], that.size[%llu], that.owner[%d]",
+                  that.ptr_, that.size_, that.owner_);
+    // that.ptr_ = nullptr;
+    // that.size_ = 0;
     that.owner_ = false;
 
     return *this;
