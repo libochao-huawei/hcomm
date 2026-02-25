@@ -25,12 +25,12 @@
 #include "rs_ctx_inner.h"
 #include "rs.h"
 
-struct rs_jetty_key_info {
-    urma_jetty_id_t jetty_id;
-    urma_transport_mode_t trans_mode;
+struct RsJettyKeyInfo {
+    urma_jetty_id_t jettyId;
+    urma_transport_mode_t transMode;
 };
 
-enum rs_jetty_state {
+enum RsJettyState {
     RS_JETTY_STATE_INIT = 0,
     RS_JETTY_STATE_CREATED = 1,
     RS_JETTY_STATE_IMPORTED = 2,
@@ -38,59 +38,59 @@ enum rs_jetty_state {
     RS_JETTY_STATE_MAX
 };
 
-struct jetty_destroy_batch_info {
-    struct rs_ctx_jetty_cb **jetty_cb_arr;
-    urma_jetty_t **jetty_arr;
-    urma_jfr_t **jfr_arr;
+struct JettyDestroyBatchInfo {
+    struct RsCtxJettyCb **jettyCbArr;
+    urma_jetty_t **jettyArr;
+    urma_jfr_t **jfrArr;
 };
 
-int rs_ub_get_dev_eid_info_num(unsigned int phyId, unsigned int *num);
-int rs_ub_get_ue_info(urma_context_t *urma_ctx, struct dev_base_attr *dev_attr);
-int rs_ub_get_dev_eid_info_list(unsigned int phyId, struct dev_eid_info info_list[], unsigned int start_index,
+int RsUbGetDevEidInfoNum(unsigned int phyId, unsigned int *num);
+int RsUbGetUeInfo(urma_context_t *urmaCtx, struct DevBaseAttr *devAttr);
+int RsUbGetDevEidInfoList(unsigned int phyId, struct HccpDevEidInfo infoList[], unsigned int startIndex,
     unsigned int count);
-int rs_ub_ctx_init(struct rs_cb *rs_cb, struct ctx_init_attr *attr, unsigned int *devIndex,
-    struct dev_base_attr *dev_attr);
-int rs_ub_get_dev_cb(struct rs_cb *rscb, unsigned int devIndex, struct rs_ub_dev_cb **dev_cb);
-int rs_ub_ctx_deinit(struct rs_ub_dev_cb *dev_cb);
-int rs_ub_get_eid_by_ip(struct rs_ub_dev_cb *dev_cb, struct IpInfo ip[], union hccp_eid eid[], unsigned int *num);
-int rs_ub_get_tp_info_list(struct rs_ub_dev_cb *dev_cb, struct get_tp_cfg *cfg, struct tp_info info_list[],
+int RsUbCtxInit(struct rs_cb *rsCb, struct CtxInitAttr *attr, unsigned int *devIndex,
+    struct DevBaseAttr *devAttr);
+int RsUbGetDevCb(struct rs_cb *rscb, unsigned int devIndex, struct RsUbDevCb **devCb);
+int RsUbCtxDeinit(struct RsUbDevCb *devCb);
+int RsUbGetEidByIp(struct RsUbDevCb *devCb, struct IpInfo ip[], union HccpEid eid[], unsigned int *num);
+int RsUbGetTpInfoList(struct RsUbDevCb *devCb, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
     unsigned int *num);
-int rs_ub_get_tp_attr(struct rs_ub_dev_cb *dev_cb, unsigned int *attr_bitmap, const uint64_t tp_handle,
-    struct tp_attr *attr);
-int rs_ub_set_tp_attr(struct rs_ub_dev_cb *dev_cb, const unsigned int attr_bitmap, const uint64_t tp_handle,
-    struct tp_attr *attr);
-int rs_ub_ctx_token_id_alloc(struct rs_ub_dev_cb *dev_cb, unsigned long long *addr, unsigned int *token_id);
-int rs_ub_ctx_token_id_free(struct rs_ub_dev_cb *dev_cb, unsigned long long addr);
-int rs_ub_ctx_lmem_reg(struct rs_ub_dev_cb *dev_cb, struct mem_reg_attr_t *mem_attr, struct mem_reg_info_t *mem_info);
-int rs_ub_ctx_lmem_unreg(struct rs_ub_dev_cb *dev_cb, unsigned long long addr);
-int rs_ub_ctx_rmem_import(struct rs_ub_dev_cb *dev_cb, struct mem_import_attr_t *mem_attr,
-    struct mem_import_info_t *mem_info);
-int rs_ub_ctx_rmem_unimport(struct rs_ub_dev_cb *dev_cb, unsigned long long addr);
-int rs_ub_ctx_chan_create(struct rs_ub_dev_cb *dev_cb, union data_plane_cstm_flag data_plane_flag,
+int RsUbGetTpAttr(struct RsUbDevCb *devCb, unsigned int *attrBitmap, const uint64_t tpHandle,
+    struct TpAttr *attr);
+int RsUbSetTpAttr(struct RsUbDevCb *devCb, const unsigned int attrBitmap, const uint64_t tpHandle,
+    struct TpAttr *attr);
+int RsUbCtxTokenIdAlloc(struct RsUbDevCb *devCb, unsigned long long *addr, unsigned int *tokenId);
+int RsUbCtxTokenIdFree(struct RsUbDevCb *devCb, unsigned long long addr);
+int RsUbCtxLmemReg(struct RsUbDevCb *devCb, struct MemRegAttrT *memAttr, struct MemRegInfoT *memInfo);
+int RsUbCtxLmemUnreg(struct RsUbDevCb *devCb, unsigned long long addr);
+int RsUbCtxRmemImport(struct RsUbDevCb *devCb, struct MemImportAttrT *memAttr,
+    struct MemImportInfoT *memInfo);
+int RsUbCtxRmemUnimport(struct RsUbDevCb *devCb, unsigned long long addr);
+int RsUbCtxChanCreate(struct RsUbDevCb *devCb, union DataPlaneCstmFlag dataPlaneFlag,
     unsigned long long *addr, int *fd);
-int rs_ub_ctx_chan_destroy(struct rs_ub_dev_cb *dev_cb, unsigned long long addr);
-int rs_ub_ctx_jfc_create(struct rs_ub_dev_cb *dev_cb, struct ctx_cq_attr *attr, struct ctx_cq_info *info);
-int rs_ub_ctx_jfc_destroy(struct rs_ub_dev_cb *dev_cb, unsigned long long addr);
-int rs_ub_ctx_jetty_create(struct rs_ub_dev_cb *dev_cb, struct ctx_qp_attr *attr, struct qp_create_info *info);
-int rs_ub_ctx_reg_jetty_db(struct rs_ctx_jetty_cb *jetty_cb, struct udma_u_jetty_info *jetty_info);
-int rs_ub_ctx_query_jetty_batch(struct rs_ub_dev_cb *dev_cb, unsigned int jetty_ids[], struct jetty_attr attr[],
+int RsUbCtxChanDestroy(struct RsUbDevCb *devCb, unsigned long long addr);
+int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct CtxCqInfo *info);
+int RsUbCtxJfcDestroy(struct RsUbDevCb *devCb, unsigned long long addr);
+int RsUbCtxJettyCreate(struct RsUbDevCb *devCb, struct CtxQpAttr *attr, struct QpCreateInfo *info);
+int RsUbCtxRegJettyDb(struct RsCtxJettyCb *jettyCb, struct udma_u_jetty_info *jettyInfo);
+int RsUbCtxQueryJettyBatch(struct RsUbDevCb *devCb, unsigned int jettyIds[], struct JettyAttr attr[],
     unsigned int *num);
-int rs_ub_ctx_jetty_destroy(struct rs_ub_dev_cb *dev_cb, unsigned int jetty_id);
-int rs_ub_ctx_jetty_destroy_batch(struct rs_ub_dev_cb *dev_cb, unsigned int jetty_ids[], unsigned int *num);
-int rs_ub_ctx_jetty_import(struct rs_ub_dev_cb *dev_cb, struct rs_jetty_import_attr *import_attr,
-    struct rs_jetty_import_info *import_info);
-int rs_ub_ctx_jetty_unimport(struct rs_ub_dev_cb *dev_cb, unsigned int rem_jetty_id);
-int rs_ub_ctx_jetty_bind(struct rs_ub_dev_cb *dev_cb, struct rs_ctx_qp_info *jetty_info,
-    struct rs_ctx_qp_info *rjetty_info);
-int rs_ub_ctx_jetty_unbind(struct rs_ub_dev_cb *dev_cb, unsigned int jetty_id);
-int rs_ub_ctx_jetty_free(struct rs_cb *rscb, unsigned int ue_info, unsigned int jetty_id);
-void rs_ub_free_jetty_cb_list(struct rs_ub_dev_cb *dev_cb, struct RsListHead *jetty_list,
-    struct RsListHead *rjetty_list);
-int rs_ub_ctx_batch_send_wr(struct rs_cb *rs_cb, struct wrlist_base_info *base_info,
-    struct batch_send_wr_data *wr_data, struct send_wr_resp *wr_resp, struct WrlistSendCompleteNum *wrlist_num);
-int rs_ub_ctx_jetty_update_ci(struct rs_ub_dev_cb *dev_cb, unsigned int jetty_id, uint16_t ci);
-int rs_ub_ctx_get_aux_info(struct rs_ub_dev_cb *dev_cb, struct aux_info_in *info_in, struct aux_info_out *info_out);
-int rs_epoll_event_jfc_in_handle(struct rs_cb *rs_cb, int fd);
+int RsUbCtxJettyDestroy(struct RsUbDevCb *devCb, unsigned int jettyId);
+int RsUbCtxJettyDestroyBatch(struct RsUbDevCb *devCb, unsigned int jettyIds[], unsigned int *num);
+int RsUbCtxJettyImport(struct RsUbDevCb *devCb, struct RsJettyImportAttr *importAttr,
+    struct RsJettyImportInfo *importInfo);
+int RsUbCtxJettyUnimport(struct RsUbDevCb *devCb, unsigned int remJettyId);
+int RsUbCtxJettyBind(struct RsUbDevCb *devCb, struct RsCtxQpInfo *jettyInfo,
+    struct RsCtxQpInfo *rjettyInfo);
+int RsUbCtxJettyUnbind(struct RsUbDevCb *devCb, unsigned int jettyId);
+int RsUbCtxJettyFree(struct rs_cb *rscb, unsigned int ueInfo, unsigned int jettyId);
+void RsUbFreeJettyCbList(struct RsUbDevCb *devCb, struct RsListHead *jettyList,
+    struct RsListHead *rjettyList);
+int RsUbCtxBatchSendWr(struct rs_cb *rsCb, struct WrlistBaseInfo *baseInfo,
+    struct BatchSendWrData *wrData, struct SendWrResp *wrResp, struct WrlistSendCompleteNum *wrlistNum);
+int RsUbCtxJettyUpdateCi(struct RsUbDevCb *devCb, unsigned int jettyId, uint16_t ci);
+int RsUbCtxGetAuxInfo(struct RsUbDevCb *devCb, struct HccpAuxInfoIn *infoIn, struct HccpAuxInfoOut *infoOut);
+int RsEpollEventJfcInHandle(struct rs_cb *rsCb, int fd);
 int RsEpollEventUrmaAsyncEventInHandle(struct rs_cb *rsCb, int fd);
-void rs_ub_ctx_get_async_events(struct rs_ub_dev_cb *dev_cb, struct async_event async_events[], unsigned int *num);
+void RsUbCtxGetAsyncEvents(struct RsUbDevCb *devCb, struct AsyncEvent asyncEvents[], unsigned int *num);
 #endif // RS_UB_H

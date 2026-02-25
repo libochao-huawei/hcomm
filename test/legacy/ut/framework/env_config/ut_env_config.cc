@@ -376,27 +376,6 @@ TEST_F(EnvConfigTest, parse_env_config_HCCL_WHITELIST_FILE_should_fail)
 }
 */
 
-TEST_F(EnvConfigTest, parse_env_config_hccl_algo)
-{
-    std::string hcclAlgo = "level0:NA;level1:ring";
-    std::map<OpType, std::vector<HcclAlgoType>> algoMap = SetHcclAlgoConfig(hcclAlgo);
-    for (auto iter = algoMap.begin(); iter != algoMap.end(); iter++) {
-        std::cout << iter->first << " : " << std::endl;
-        for (auto i = 0; i < iter->second.size(); i++) {
-            std::cout << "level : " << i << " : " << iter->second[i] << std::endl;
-        }
-    }
-
-    hcclAlgo = "allreduce=level0:fullmesh;level1:ring / alltoall=level0:fullmesh;level1:NA";
-    algoMap = SetHcclAlgoConfig(hcclAlgo);
-    for (auto iter = algoMap.begin(); iter != algoMap.end(); iter++) {
-        std::cout << iter->first << " : " << std::endl;
-        for (auto i = 0; i < iter->second.size(); i++) {
-            std::cout << "level : " << i << " : " << iter->second[i] << std::endl;
-        }
-    }
-}
-
 TEST_F(EnvConfigTest, parse_env_config_hccl_algo_invalid_test)
 {
     setenv("HCCL_ALGO", "level0:yyy;level1:xxxx", 1);

@@ -50,6 +50,7 @@ using AivSuperKernelArgs = struct AivSuperKernelArgsDef {
     int64_t numBlocks;
     int32_t tag; // 第几次调用，定时重置成1
     int64_t clearEnable;
+    uint32_t devType;
 };
 
 using AivRdmaArgs = struct AivRdmaArgsDef {
@@ -128,7 +129,9 @@ uint64_t args_offset
     GM_ADDR *param_base = (GM_ADDR *)get_para_base();\
     GM_ADDR hiddenInput = param_base[args_offset++];\
     GM_ADDR input = param_base[args_offset++];\
-    GM_ADDR output = param_base[args_offset++]
+    GM_ADDR output = param_base[args_offset++];\
+    __gm__ AivSuperKernelArgs* args = reinterpret_cast<__gm__ AivSuperKernelArgs*>(hiddenInput);\
+    uint32_t devType = args->devType
 
 #define SUPERKERNEL_ARGS_DEF \
 GM_ADDR hiddenInput, GM_ADDR input, GM_ADDR output
@@ -303,7 +306,7 @@ public:
         InitOpCounter(headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter);
     }
 
-    __aicore__ inline void Init(GM_ADDR hiddenInput, uint64_t threshold)
+    __aicore__ inline void Init(GM_ADDR hiddenInput, uint64_t threshold, bool useDoubleBuffer = false)
     {
         __gm__ AivSuperKernelArgs* args = reinterpret_cast<__gm__ AivSuperKernelArgs*>(hiddenInput);
         
@@ -332,14 +335,17 @@ public:
         countOffset = DOUBLE * pingpongOffset;
         seperateOffset = countOffset + NUM_BLOCKS_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
         
-        if (len_ * (unitSize_) > threshold) {
+        useDoubleBuffer_ = useDoubleBuffer;
+        if ((args->devType == DEV_TYPE_910_93) && (len_ * (unitSize_) > threshold)) {
             useDoubleBuffer_ = true;
-            pipe.InitBuffer(inOutQue, DOUBLE, UB_DB_DATA_BATCH_SIZE); // double buffer
+        }
+        if (useDoubleBuffer_)
+        {
+            pipe.InitBuffer(inOutQue, DOUBLE, UB_DB_DATA_BATCH_SIZE);
         } else {
-            useDoubleBuffer_ = false;
             pipe.InitBuffer(inOutQue, 1, UB_MAX_DATA_SIZE);
         }
- 
+
         if (args->clearEnable == 1) {
             ClearSyncBuf();
         }

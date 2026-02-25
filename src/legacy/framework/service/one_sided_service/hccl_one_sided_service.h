@@ -90,9 +90,9 @@ private:
 
     void FillOneSidedOperator(OpType type, RankId remoteRankId, const HcclOneSideOpDesc *desc) const;
 
-    DevBuffer *PackResToKernelLanuch(CollAlgOpReq &opReq, bool &needUpdateRes);
+    DevBuffer *PackResToKernelLanuch(CollAlgOpReq &opReq);
 
-    void SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &param, bool needUpdateRes, const DevBuffer *mem) const;
+    void SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &param, const DevBuffer *mem) const;
 
     void OneSidedAicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream)const ;
 

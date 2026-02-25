@@ -1020,11 +1020,6 @@ HcclResult hcclComm::HcclCalcNumBlocks(HcclCMDType opType, u64 count, void* coun
     return communicator_->HcclCalcNumBlocks(opType, count, counts, dataType, aivCoreLimit, algName, numBlocks);
 }
 
-bool hcclComm::HcclGetConfigIsOnlyAivMode()
-{
-    return communicator_->GetConfigIsOnlyAivMode();
-}
-
 HcclResult hcclComm::HcclGetAlgExecParam(const std::string &tag, u64 count, void *inputPtr, void *outputPtr,
     HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op,
     void *&commContext, u64 &len, u32 aivCoreLimit)
@@ -1290,6 +1285,12 @@ HcclResult hcclComm::SetAivModeConfig(const bool aivMode)
 HcclResult hcclComm::SetOnlyAivModeConfig(const bool isOnlyAiv)
 {
     CHK_RET(communicator_->SetOnlyAivModeConfig(isOnlyAiv));
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::GetOnlyAivModeConfig(bool &isOnlyAiv)
+{
+    isOnlyAiv = communicator_->GetConfigIsOnlyAivMode();
     return HCCL_SUCCESS;
 }
 
