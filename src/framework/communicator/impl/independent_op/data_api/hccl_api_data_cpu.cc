@@ -605,3 +605,11 @@ int32_t HcommChannelFence(ChannelHandle channel)
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
+
+int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
+{
+    (void)thread;
+    (void)timeout;
+    HCCL_WARNING("[%s] No implementation, return SUCCESS.", __func__);
+    return HCCL_SUCCESS;
+}
