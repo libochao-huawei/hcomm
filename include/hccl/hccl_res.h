@@ -42,6 +42,27 @@ typedef uint64_t ChannelHandle;
 typedef uint64_t ThreadHandle;
 #endif
 
+#ifndef THREAD_SERVICE_HANDLE_DEFINED
+#define THREAD_SERVICE_HANDLE_DEFINED
+/**
+ * @brief 线程服务句柄类型
+ */
+typedef uint64_t ThreadServiceHandle;
+#endif
+
+#ifndef THREAD_SERVICE_ARGS_DEFINED
+#define THREAD_SERVICE_ARGS_DEFINED
+/**
+ * @brief 线程服务参数结构体
+ */
+typedef struct {
+    void *args;
+    uint32_t argsSizeByte;
+    uint16_t timeOutSecond;
+    uint16_t reserved;
+} ThreadServiceArgs;
+#endif
+
 /**
  * @brief 内存句柄类型（不透明结构）
  */

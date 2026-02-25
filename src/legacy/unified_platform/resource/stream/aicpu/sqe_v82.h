@@ -487,5 +487,36 @@ struct Rt91095StarsMemcpySqe {
         RtMemcpyStride10 strideMode2;
     } u;
 };
+
+struct Rt91095StarsWriteValueSqe {
+    /* word0-1 */
+    Rt91095StarsSqeHeader header;
+
+    /* word2 */
+    uint32_t res0;
+
+    /* word3 */
+    uint16_t res1;
+    uint8_t  kernelCredit;
+    uint8_t  res2;
+
+    /* word4 */
+    uint32_t writeAddrLow;
+
+    /* word5 */
+    uint32_t writeAddrHigh : 17;
+    uint32_t res3 : 3;
+    uint32_t awsize : 3;
+    uint32_t snoop : 1;
+    uint32_t awcache : 4;
+    uint32_t awprot : 3;
+    uint32_t va : 1;
+
+    /* word6-7 */
+    uint32_t res4[2];
+
+    /* word8-15 */
+    uint32_t writeValuePart[8];
+};
 } // namespace Hccl
 #endif
