@@ -13,6 +13,7 @@
 #include <vector>
 #include "thread.h"
 #include "aicpu_ts_thread_interface.h"
+#include "resource_entities.h"
 
 namespace hccl {
 class AicpuTsThread : public Thread {
@@ -42,6 +43,7 @@ public:
         void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const override;
 
     // Non-override functions
+    HcclResult ThreadNotifyRecordCrossType(const NotifyEntity notifyEntity) const;  // 跨通知类型的 Thread 间同步
     HcclResult GetSqHeadAndTail(uint32_t& sqHead, uint32_t& sqTail);
 
 private:
