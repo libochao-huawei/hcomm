@@ -100,6 +100,7 @@ recreate_common_stub_softlink() {
 }
 
 whl_uninstall_package() {
+    set -x
     local _module="$1"
     local _module_apth="$2"
     if [ ! -d "${WHL_INSTALL_DIR_PATH}/${_module}" ]; then
@@ -127,6 +128,7 @@ whl_uninstall_package() {
             log "INFO" "${_module} uninstalled successfully!"
         fi
     fi
+    set +x
 }
 
 remove_rl_soft_link() {
