@@ -182,6 +182,23 @@ HcclResult IAicpuTsThread::SdmaReduce(uint64_t dstAddr, uint64_t srcAddr, uint64
     return HCCL_SUCCESS;
 }
 
+HcclResult IAicpuTsThread::WriteValue(uint64_t addr, uint16_t value) const
+{
+    RtsqBase *rtsqA5 = nullptr;
+    CHK_RET(GetRtsqWithNullCheck(streamLiteVoidPtr_, rtsqA5));
+
+    HCCL_INFO("[IAicpuTsThread::%s] @ Stream id [%u], addr [%llx], value [%u]",
+        __func__,
+        static_cast<StreamLite *>(streamLiteVoidPtr_)->GetId(),
+        addr,
+        value);
+
+    TRY_CATCH_RETURN(rtsqA5->WriteValue(addr, value));
+
+    return HCCL_SUCCESS;
+}
+
+
 HcclResult IAicpuTsThread::GetStreamLitePtr(void **streamLitePtrPtr) const
 {
     CHK_PTR_NULL(streamLiteVoidPtr_);
