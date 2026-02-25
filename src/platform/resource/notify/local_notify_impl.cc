@@ -101,11 +101,20 @@ HcclResult LocalNotifyImpl::Post(Stream& stream, HcclDispatcher dispatcher, s32 
     return notify_->Post(stream, dispatcher, stage);
 }
 
+HcclResult LocalNotifyImpl::Post(Stream& stream)
+{
+    return notify_->Post(stream);
+}
 
 HcclResult LocalNotifyImpl::Wait(Stream& stream, HcclDispatcher dispatcher, s32 stage, u32 timeOut,
     u32 userRank, u32 remoteUserRank)
 {
     return notify_->Wait(stream, dispatcher, stage, timeOut, userRank, remoteUserRank);
+}
+
+HcclResult LocalNotifyImpl::Wait(Stream& stream, u32 timeOut)
+{
+    return notify_->Wait(stream, timeOut);
 }
 
 HcclResult LocalNotifyImpl::Post(Stream& stream, HcclDispatcher dispatcher, s32 stage,

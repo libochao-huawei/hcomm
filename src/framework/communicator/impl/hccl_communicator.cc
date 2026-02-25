@@ -80,6 +80,7 @@ namespace hccl
         {"AllReduce=level0:fullmesh", "AllReduceMeshOpbaseLoopExecutor"},
         {"AllReduce=level0:doublering", "AlignedAllReduceDoubleRingFor91093Executor"},
         {"AlltoAll=level0:fullmesh;level1:pairwise", "RunAlltoAllDirectFullmesh"},
+        {"AlltoAll=level1:hierarchy", "RunAlltoAllAivDirect"},
         {"BatchWrite=level0:fullmesh", "BatchWriteBySdma"},
         {"BatchWrite=level1:fullmesh", "DispatchCombineFullmesh"},
         {"BatchWrite=level1:hierarchy", "DispatchCombineHierarchy"}};
@@ -138,6 +139,11 @@ namespace hccl
         hostDeviceLock_.reset(new (std::nothrow) PetersonLock(PetersonLock::DEFAULT_LOCK_TIMEOUT_SEC));
         CHK_SMART_PTR_NULL(hostDeviceLock_);
         CHK_RET(hostDeviceLock_->Init());
+        if (aiRMAInfoMem_ == nullptr) {
+            CHK_RET(AllocAndClearHostMem(sizeof(HcclAiRMAInfo), aiRMAInfoMem_));
+        }
+        CHK_PTR_NULL(aiRMAInfoMem_);
+        CHK_PTR_NULL(aiRMAInfoMem_->ptr());
 
         return HCCL_SUCCESS;
     }
@@ -3003,6 +3009,7 @@ namespace hccl
     HcclResult HcclCommunicator::GenIbvAiRMAInfo(u32 rankid, const std::shared_ptr<Transport> &transport,
         const std::string &tag, T* aiRMAInfoPtr)
     {
+        HCCL_INFO("[HcclCommunicator][%s] Start prepare.", __func__);
         std::vector<HcclAiRMAQueueInfo> aiQpVec;
         CHK_RET(transport->GetAiRMAQueueInfo(aiQpVec));
 
@@ -3129,6 +3136,33 @@ namespace hccl
             return HCCL_E_NOT_FOUND;
         }
         size = userMemMap_.begin()->second->size();
+        return HCCL_SUCCESS;
+    }
+    
+    HcclResult HcclCommunicator::GetAivQPInfoV2(std::vector<LINK>& links, const std::string &tag, u32 localRankSize)
+    {
+        HCCL_DEBUG("[HcclCommunicator][%s] Start prepare.", __func__);
+        // 获取 Transport QP 数量
+        CHK_PTR_NULL(aiRMAInfoMem_);
+        HcclAiRMAInfo *aiRMAInfoPtr = reinterpret_cast<HcclAiRMAInfo*>(aiRMAInfoMem_->ptr());
+        CHK_PTR_NULL(aiRMAInfoPtr);
+        // 获取 Transport QP 数量（暂时只支持单QP）
+        aiRMAInfoPtr->qpNum = HCCL_QPS_PER_CONNECTION_DEFAULT;
+        for (u32 i = 0; i < links.size(); i++) { //server num
+            if (i != (aiRMAInfoPtr->curRankId / meshAggregationRankSize_)) { //判断server
+                if (links[i]->GetTransportType() == TransportType::TRANS_TYPE_IBV_EXP) {
+                    std::vector<HcclAiRMAQueueInfo> aiQpVec;
+                    CHK_RET(links[i]->GetAiRMAQueueInfo(aiQpVec));
+                    aiRMAInfoPtr->qpNum = static_cast<u32>(aiQpVec.size());
+                    break;
+                }
+            }
+        }
+        CHK_PRT_RET(aiRMAInfoPtr->qpNum <= 0,
+                    HCCL_ERROR("[%s] invalid qpNum. tag[%s] curRankId[%u] rankNum[%u] qpNum[%u]", __func__,
+                    tag.c_str(), aiRMAInfoPtr->curRankId, aiRMAInfoPtr->rankNum, aiRMAInfoPtr->qpNum),
+                    HCCL_E_INTERNAL);
+ 
         return HCCL_SUCCESS;
     }
 }

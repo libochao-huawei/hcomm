@@ -13,1118 +13,1118 @@
 #include "hccp_dl.h"
 #include "dl_urma_function.h"
 
-static pthread_mutex_t g_urma_api_lock = PTHREAD_MUTEX_INITIALIZER;
-static int g_urma_api_refcnt = 0;
-void *g_urma_api_handle = NULL;
+static pthread_mutex_t gUrmaApiLock = PTHREAD_MUTEX_INITIALIZER;
+static int gUrmaApiRefcnt = 0;
+void *gUrmaApiHandle = NULL;
 #ifndef CA_CONFIG_LLT
-struct rs_urma_ops g_urma_ops;
+struct RsUrmaOps gUrmaOps;
 #else
-struct rs_urma_ops g_urma_ops = {
-    .rs_urma_init = urma_init,
-    .rs_urma_uninit = urma_uninit,
-    .rs_urma_get_device_list = urma_get_device_list,
-    .rs_urma_get_device_by_eid = urma_get_device_by_eid,
-    .rs_urma_free_device_list = urma_free_device_list,
-    .rs_urma_get_eid_list = urma_get_eid_list,
-    .rs_urma_free_eid_list = urma_free_eid_list,
-    .rs_urma_query_device = urma_query_device,
-    .rs_urma_get_eid_by_ip = urma_get_eid_by_ip,
-    .rs_urma_create_context = urma_create_context,
-    .rs_urma_delete_context = urma_delete_context,
-    .rs_urma_create_jfr = urma_create_jfr,
-    .rs_urma_delete_jfr = urma_delete_jfr,
-    .rs_urma_delete_jfr_batch = urma_delete_jfr_batch,
-    .rs_urma_create_jfc = urma_create_jfc,
-    .rs_urma_modify_jfc = urma_modify_jfc,
-    .rs_urma_delete_jfc = urma_delete_jfc,
-    .rs_urma_create_jetty = urma_create_jetty,
-    .rs_urma_modify_jetty = urma_modify_jetty,
-    .rs_urma_query_jetty = urma_query_jetty,
-    .rs_urma_delete_jetty = urma_delete_jetty,
-    .rs_urma_delete_jetty_batch = urma_delete_jetty_batch,
-    .rs_urma_import_jetty = urma_import_jetty,
-    .rs_urma_unimport_jetty = urma_unimport_jetty,
-    .rs_urma_bind_jetty = urma_bind_jetty,
-    .rs_urma_unbind_jetty = urma_unbind_jetty,
-    .rs_urma_flush_jetty = urma_flush_jetty,
-    .rs_urma_create_jfce = urma_create_jfce,
-    .rs_urma_delete_jfce = urma_delete_jfce,
-    .rs_urma_get_async_event = urma_get_async_event,
-    .rs_urma_ack_async_event = urma_ack_async_event,
-    .rs_urma_alloc_token_id = urma_alloc_token_id,
-    .rs_urma_free_token_id = urma_free_token_id,
-    .rs_urma_register_seg = urma_register_seg,
-    .rs_urma_unregister_seg = urma_unregister_seg,
-    .rs_urma_import_seg = urma_import_seg,
-    .rs_urma_unimport_seg = urma_unimport_seg,
-    .rs_urma_post_jetty_send_wr = urma_post_jetty_send_wr,
-    .rs_urma_post_jetty_recv_wr = urma_post_jetty_recv_wr,
-    .rs_urma_poll_jfc = urma_poll_jfc,
-    .rs_urma_rearm_jfc = urma_rearm_jfc,
-    .rs_urma_wait_jfc = urma_wait_jfc,
-    .rs_urma_ack_jfc = urma_ack_jfc,
-    .rs_urma_user_ctl = urma_user_ctl,
-    .rs_urma_get_tp_list = urma_get_tp_list,
-    .rs_urma_get_tp_attr = urma_get_tp_attr,
-    .rs_urma_set_tp_attr = urma_set_tp_attr,
-    .rs_urma_import_jetty_ex = urma_import_jetty_ex,
-    .rs_urma_alloc_jetty = urma_alloc_jetty,
-    .rs_urma_set_jetty_opt = urma_set_jetty_opt,
-    .rs_urma_active_jetty = urma_active_jetty,
-    .rs_urma_get_jetty_opt = urma_get_jetty_opt,
-    .rs_urma_deactive_jetty = urma_deactive_jetty,
-    .rs_urma_free_jetty = urma_free_jetty,
-    .rs_urma_alloc_jfc = urma_alloc_jfc,
-    .rs_urma_set_jfc_opt = urma_set_jfc_opt,
-    .rs_urma_active_jfc = urma_active_jfc,
-    .rs_urma_get_jfc_opt = urma_get_jfc_opt,
-    .rs_urma_deactive_jfc = urma_deactive_jfc,
-    .rs_urma_free_jfc = urma_free_jfc,
+struct RsUrmaOps gUrmaOps = {
+    .rsUrmaInit = urma_init,
+    .rsUrmaUninit = urma_uninit,
+    .rsUrmaGetDeviceList = urma_get_device_list,
+    .rsUrmaGetDeviceByEid = urma_get_device_by_eid,
+    .rsUrmaFreeDeviceList = urma_free_device_list,
+    .rsUrmaGetEidList = urma_get_eid_list,
+    .rsUrmaFreeEidList = urma_free_eid_list,
+    .rsUrmaQueryDevice = urma_query_device,
+    .rsUrmaGetEidByIp = urma_get_eid_by_ip,
+    .rsUrmaCreateContext = urma_create_context,
+    .rsUrmaDeleteContext = urma_delete_context,
+    .rsUrmaCreateJfr = urma_create_jfr,
+    .rsUrmaDeleteJfr = urma_delete_jfr,
+    .rsUrmaDeleteJfrBatch = urma_delete_jfr_batch,
+    .rsUrmaCreateJfc = urma_create_jfc,
+    .rsUrmaModifyJfc = urma_modify_jfc,
+    .rsUrmaDeleteJfc = urma_delete_jfc,
+    .rsUrmaCreateJetty = urma_create_jetty,
+    .rsUrmaModifyJetty = urma_modify_jetty,
+    .rsUrmaQueryJetty = urma_query_jetty,
+    .rsUrmaDeleteJetty = urma_delete_jetty,
+    .rsUrmaDeleteJettyBatch = urma_delete_jetty_batch,
+    .rsUrmaImportJetty = urma_import_jetty,
+    .rsUrmaUnimportJetty = urma_unimport_jetty,
+    .rsUrmaBindJetty = urma_bind_jetty,
+    .rsUrmaUnbindJetty = urma_unbind_jetty,
+    .rsUrmaFlushJetty = urma_flush_jetty,
+    .rsUrmaCreateJfce = urma_create_jfce,
+    .rsUrmaDeleteJfce = urma_delete_jfce,
+    .rsUrmaGetAsyncEvent = urma_get_async_event,
+    .rsUrmaAckAsyncEvent = urma_ack_async_event,
+    .rsUrmaAllocTokenId = urma_alloc_token_id,
+    .rsUrmaFreeTokenId = urma_free_token_id,
+    .rsUrmaRegisterSeg = urma_register_seg,
+    .rsUrmaUnregisterSeg = urma_unregister_seg,
+    .rsUrmaImportSeg = urma_import_seg,
+    .rsUrmaUnimportSeg = urma_unimport_seg,
+    .rsUrmaPostJettySendWr = urma_post_jetty_send_wr,
+    .rsUrmaPostJettyRecvWr = urma_post_jetty_recv_wr,
+    .rsUrmaPollJfc = urma_poll_jfc,
+    .rsUrmaRearmJfc = urma_rearm_jfc,
+    .rsUrmaWaitJfc = urma_wait_jfc,
+    .rsUrmaAckJfc = urma_ack_jfc,
+    .rsUrmaUserCtl = urma_user_ctl,
+    .rsUrmaGetTpList = urma_get_tp_list,
+    .rsUrmaGetTpAttr = urma_get_tp_attr,
+    .rsUrmaSetTpAttr = urma_set_tp_attr,
+    .rsUrmaImportJettyEx = urma_import_jetty_ex,
+    .rsUrmaAllocJetty = urma_alloc_jetty,
+    .rsUrmaSetJettyOpt = urma_set_jetty_opt,
+    .rsUrmaActiveJetty = urma_active_jetty,
+    .rsUrmaGetJettyOpt = urma_get_jetty_opt,
+    .rsUrmaDeactiveJetty = urma_deactive_jetty,
+    .rsUrmaFreeJetty = urma_free_jetty,
+    .rsUrmaAllocJfc = urma_alloc_jfc,
+    .rsUrmaSetJfcOpt = urma_set_jfc_opt,
+    .rsUrmaActiveJfc = urma_active_jfc,
+    .rsUrmaGetJfcOpt = urma_get_jfc_opt,
+    .rsUrmaDeactiveJfc = urma_deactive_jfc,
+    .rsUrmaFreeJfc = urma_free_jfc,
 };
 #endif
 
-void rs_ub_api_deinit(void)
+void RsUbApiDeinit(void)
 {
-    if (g_urma_api_handle != NULL) {
-        (void)HccpDlclose(g_urma_api_handle);
-        g_urma_api_handle = NULL;
+    if (gUrmaApiHandle != NULL) {
+        (void)HccpDlclose(gUrmaApiHandle);
+        gUrmaApiHandle = NULL;
     }
     return;
 }
 
-STATIC int rs_urma_device_api_init(void)
+STATIC int RsUrmaDeviceApiInit(void)
 {
 #ifndef CA_CONFIG_LLT
-    g_urma_ops.rs_urma_init = (urma_status_t (*)(urma_init_attr_t *)) HccpDlsym(g_urma_api_handle, "urma_init");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_init, "urma_init");
+    gUrmaOps.rsUrmaInit = (urma_status_t (*)(urma_init_attr_t *)) HccpDlsym(gUrmaApiHandle, "urma_init");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaInit, "urma_init");
 
-    g_urma_ops.rs_urma_uninit = (urma_status_t (*)(void)) HccpDlsym(g_urma_api_handle, "urma_uninit");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_uninit, "urma_uninit");
+    gUrmaOps.rsUrmaUninit = (urma_status_t (*)(void)) HccpDlsym(gUrmaApiHandle, "urma_uninit");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaUninit, "urma_uninit");
 
-    g_urma_ops.rs_urma_get_device_list = (urma_device_t **(*)(int *))
-        HccpDlsym(g_urma_api_handle, "urma_get_device_list");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_get_device_list, "urma_get_device_list");
+    gUrmaOps.rsUrmaGetDeviceList = (urma_device_t **(*)(int *))
+        HccpDlsym(gUrmaApiHandle, "urma_get_device_list");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaGetDeviceList, "urma_get_device_list");
 
-    g_urma_ops.rs_urma_get_device_by_eid = (urma_device_t *(*)(urma_eid_t, urma_transport_type_t))
-        HccpDlsym(g_urma_api_handle, "urma_get_device_by_eid");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_get_device_by_eid, "urma_get_device_by_eid");
+    gUrmaOps.rsUrmaGetDeviceByEid = (urma_device_t *(*)(urma_eid_t, urma_transport_type_t))
+        HccpDlsym(gUrmaApiHandle, "urma_get_device_by_eid");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaGetDeviceByEid, "urma_get_device_by_eid");
 
-    g_urma_ops.rs_urma_free_device_list = (void (*)(urma_device_t **))
-        HccpDlsym(g_urma_api_handle, "urma_free_device_list");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_free_device_list, "urma_free_device_list");
+    gUrmaOps.rsUrmaFreeDeviceList = (void (*)(urma_device_t **))
+        HccpDlsym(gUrmaApiHandle, "urma_free_device_list");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaFreeDeviceList, "urma_free_device_list");
 
-    g_urma_ops.rs_urma_get_eid_list = (urma_eid_info_t *(*)(urma_device_t *, uint32_t *))
-        HccpDlsym(g_urma_api_handle, "urma_get_eid_list");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_get_eid_list, "urma_get_eid_list");
+    gUrmaOps.rsUrmaGetEidList = (urma_eid_info_t *(*)(urma_device_t *, uint32_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_get_eid_list");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaGetEidList, "urma_get_eid_list");
 
-    g_urma_ops.rs_urma_free_eid_list = (void (*)(urma_eid_info_t *))
-        HccpDlsym(g_urma_api_handle, "urma_free_eid_list");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_free_eid_list, "urma_free_eid_list");
+    gUrmaOps.rsUrmaFreeEidList = (void (*)(urma_eid_info_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_free_eid_list");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaFreeEidList, "urma_free_eid_list");
 
-    g_urma_ops.rs_urma_query_device = (urma_status_t (*)(urma_device_t *, urma_device_attr_t *))
-        HccpDlsym(g_urma_api_handle, "urma_query_device");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_query_device, "urma_query_device");
+    gUrmaOps.rsUrmaQueryDevice = (urma_status_t (*)(urma_device_t *, urma_device_attr_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_query_device");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaQueryDevice, "urma_query_device");
 
-    g_urma_ops.rs_urma_get_eid_by_ip = (urma_status_t (*)(const urma_context_t *, const urma_net_addr_t *, urma_eid_t *))
-        HccpDlsym(g_urma_api_handle, "urma_get_eid_by_ip");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_get_eid_by_ip, "urma_get_eid_by_ip");
+    gUrmaOps.rsUrmaGetEidByIp = (urma_status_t (*)(const urma_context_t *, const urma_net_addr_t *, urma_eid_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_get_eid_by_ip");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaGetEidByIp, "urma_get_eid_by_ip");
 
-    g_urma_ops.rs_urma_create_context = (urma_context_t *(*)(urma_device_t *, uint32_t))
-        HccpDlsym(g_urma_api_handle, "urma_create_context");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_create_context, "urma_create_context");
+    gUrmaOps.rsUrmaCreateContext = (urma_context_t *(*)(urma_device_t *, uint32_t))
+        HccpDlsym(gUrmaApiHandle, "urma_create_context");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaCreateContext, "urma_create_context");
 
-    g_urma_ops.rs_urma_delete_context = (urma_status_t (*)(urma_context_t *))
-        HccpDlsym(g_urma_api_handle, "urma_delete_context");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_delete_context, "urma_delete_context");
+    gUrmaOps.rsUrmaDeleteContext = (urma_status_t (*)(urma_context_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_delete_context");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaDeleteContext, "urma_delete_context");
 #endif
     return 0;
 }
 
-STATIC int rs_urma_jetty_api_init(void)
+STATIC int RsUrmaJettyApiInit(void)
 {
 #ifndef CA_CONFIG_LLT
-    g_urma_ops.rs_urma_create_jfr = (urma_jfr_t *(*)(urma_context_t *, urma_jfr_cfg_t *))
-        HccpDlsym(g_urma_api_handle, "urma_create_jfr");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_create_jfr, "urma_create_jfr");
+    gUrmaOps.rsUrmaCreateJfr = (urma_jfr_t *(*)(urma_context_t *, urma_jfr_cfg_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_create_jfr");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaCreateJfr, "urma_create_jfr");
 
-    g_urma_ops.rs_urma_delete_jfr = (urma_status_t (*)(urma_jfr_t *))
-        HccpDlsym(g_urma_api_handle, "urma_delete_jfr");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_delete_jfr, "urma_delete_jfr");
+    gUrmaOps.rsUrmaDeleteJfr = (urma_status_t (*)(urma_jfr_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_delete_jfr");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaDeleteJfr, "urma_delete_jfr");
 
-    g_urma_ops.rs_urma_delete_jfr_batch = (urma_status_t (*)(urma_jfr_t **jfr_arr, int jfr_num, urma_jfr_t **bad_jfr))
-        HccpDlsym(g_urma_api_handle, "urma_delete_jfr_batch");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_delete_jfr_batch, "urma_delete_jfr_batch");
+    gUrmaOps.rsUrmaDeleteJfrBatch = (urma_status_t (*)(urma_jfr_t **jfrArr, int jfrNum, urma_jfr_t **badJfr))
+        HccpDlsym(gUrmaApiHandle, "urma_delete_jfr_batch");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaDeleteJfrBatch, "urma_delete_jfr_batch");
 
-    g_urma_ops.rs_urma_create_jetty = (urma_jetty_t *(*)(urma_context_t *, urma_jetty_cfg_t *))
-        HccpDlsym(g_urma_api_handle, "urma_create_jetty");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_create_jetty, "urma_create_jetty");
+    gUrmaOps.rsUrmaCreateJetty = (urma_jetty_t *(*)(urma_context_t *, urma_jetty_cfg_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_create_jetty");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaCreateJetty, "urma_create_jetty");
 
-    g_urma_ops.rs_urma_modify_jetty = (urma_status_t (*)(urma_jetty_t *, urma_jetty_attr_t *))
-        HccpDlsym(g_urma_api_handle, "urma_modify_jetty");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_modify_jetty, "urma_modify_jetty");
+    gUrmaOps.rsUrmaModifyJetty = (urma_status_t (*)(urma_jetty_t *, urma_jetty_attr_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_modify_jetty");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaModifyJetty, "urma_modify_jetty");
 
-    g_urma_ops.rs_urma_query_jetty = (urma_status_t (*)(urma_jetty_t *, urma_jetty_cfg_t *, urma_jetty_attr_t *))
-        HccpDlsym(g_urma_api_handle, "urma_query_jetty");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_query_jetty, "urma_query_jetty");
+    gUrmaOps.rsUrmaQueryJetty = (urma_status_t (*)(urma_jetty_t *, urma_jetty_cfg_t *, urma_jetty_attr_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_query_jetty");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaQueryJetty, "urma_query_jetty");
 
-    g_urma_ops.rs_urma_delete_jetty = (urma_status_t (*)(urma_jetty_t *))
-        HccpDlsym(g_urma_api_handle, "urma_delete_jetty");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_delete_jetty, "urma_delete_jetty");
+    gUrmaOps.rsUrmaDeleteJetty = (urma_status_t (*)(urma_jetty_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_delete_jetty");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaDeleteJetty, "urma_delete_jetty");
 
-    g_urma_ops.rs_urma_delete_jetty_batch = (urma_status_t (*)(urma_jetty_t **jetty_arr, int jetty_num,
-        urma_jetty_t **bad_jetty))HccpDlsym(g_urma_api_handle, "urma_delete_jetty_batch");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_delete_jetty_batch, "urma_delete_jetty_batch");
+    gUrmaOps.rsUrmaDeleteJettyBatch = (urma_status_t (*)(urma_jetty_t **jettyArr, int jettyNum,
+        urma_jetty_t **badJetty))HccpDlsym(gUrmaApiHandle, "urma_delete_jetty_batch");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaDeleteJettyBatch, "urma_delete_jetty_batch");
 
-    g_urma_ops.rs_urma_import_jetty = (urma_target_jetty_t *(*)(urma_context_t *, urma_rjetty_t *, urma_token_t *))
-        HccpDlsym(g_urma_api_handle, "urma_import_jetty");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_import_jetty, "urma_import_jetty");
+    gUrmaOps.rsUrmaImportJetty = (urma_target_jetty_t *(*)(urma_context_t *, urma_rjetty_t *, urma_token_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_import_jetty");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaImportJetty, "urma_import_jetty");
 
-    g_urma_ops.rs_urma_unimport_jetty = (urma_status_t (*)(urma_target_jetty_t *))
-        HccpDlsym(g_urma_api_handle, "urma_unimport_jetty");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_unimport_jetty, "urma_unimport_jetty");
+    gUrmaOps.rsUrmaUnimportJetty = (urma_status_t (*)(urma_target_jetty_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_unimport_jetty");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaUnimportJetty, "urma_unimport_jetty");
 
-    g_urma_ops.rs_urma_bind_jetty = (urma_status_t (*)(urma_jetty_t *, urma_target_jetty_t *))
-        HccpDlsym(g_urma_api_handle, "urma_bind_jetty");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_bind_jetty, "urma_bind_jetty");
+    gUrmaOps.rsUrmaBindJetty = (urma_status_t (*)(urma_jetty_t *, urma_target_jetty_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_bind_jetty");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaBindJetty, "urma_bind_jetty");
 
-    g_urma_ops.rs_urma_unbind_jetty = (urma_status_t (*)(urma_jetty_t *))
-        HccpDlsym(g_urma_api_handle, "urma_unbind_jetty");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_unbind_jetty, "urma_unbind_jetty");
+    gUrmaOps.rsUrmaUnbindJetty = (urma_status_t (*)(urma_jetty_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_unbind_jetty");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaUnbindJetty, "urma_unbind_jetty");
 
-    g_urma_ops.rs_urma_flush_jetty = (int (*)(urma_jetty_t *, int, urma_cr_t *))
-        HccpDlsym(g_urma_api_handle, "urma_flush_jetty");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_flush_jetty, "urma_flush_jetty");
+    gUrmaOps.rsUrmaFlushJetty = (int (*)(urma_jetty_t *, int, urma_cr_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_flush_jetty");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaFlushJetty, "urma_flush_jetty");
 
-    g_urma_ops.rs_urma_alloc_jetty = (urma_status_t (*)(urma_context_t *, urma_jetty_cfg_t *, urma_jetty_t **))
-        HccpDlsym(g_urma_api_handle, "urma_alloc_jetty");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_alloc_jetty, "urma_alloc_jetty");
+    gUrmaOps.rsUrmaAllocJetty = (urma_status_t (*)(urma_context_t *, urma_jetty_cfg_t *, urma_jetty_t **))
+        HccpDlsym(gUrmaApiHandle, "urma_alloc_jetty");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaAllocJetty, "urma_alloc_jetty");
 
-    g_urma_ops.rs_urma_set_jetty_opt = (urma_status_t (*)(urma_jetty_t *, uint64_t, void *, uint32_t))
-        HccpDlsym(g_urma_api_handle, "urma_set_jetty_opt");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_set_jetty_opt, "urma_set_jetty_opt");
+    gUrmaOps.rsUrmaSetJettyOpt = (urma_status_t (*)(urma_jetty_t *, uint64_t, void *, uint32_t))
+        HccpDlsym(gUrmaApiHandle, "urma_set_jetty_opt");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaSetJettyOpt, "urma_set_jetty_opt");
 
-    g_urma_ops.rs_urma_active_jetty = (urma_status_t (*)(urma_jetty_t *))
-        HccpDlsym(g_urma_api_handle, "urma_active_jetty");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_active_jetty, "urma_active_jetty");
+    gUrmaOps.rsUrmaActiveJetty = (urma_status_t (*)(urma_jetty_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_active_jetty");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaActiveJetty, "urma_active_jetty");
 
-    g_urma_ops.rs_urma_get_jetty_opt = (urma_status_t (*)(urma_jetty_t *, uint64_t, void *, uint32_t))
-        HccpDlsym(g_urma_api_handle, "urma_get_jetty_opt");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_get_jetty_opt, "urma_get_jetty_opt");
+    gUrmaOps.rsUrmaGetJettyOpt = (urma_status_t (*)(urma_jetty_t *, uint64_t, void *, uint32_t))
+        HccpDlsym(gUrmaApiHandle, "urma_get_jetty_opt");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaGetJettyOpt, "urma_get_jetty_opt");
 
-    g_urma_ops.rs_urma_deactive_jetty = (urma_status_t (*)(urma_jetty_t *))
-        HccpDlsym(g_urma_api_handle, "urma_deactive_jetty");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_deactive_jetty, "urma_deactive_jetty");
+    gUrmaOps.rsUrmaDeactiveJetty = (urma_status_t (*)(urma_jetty_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_deactive_jetty");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaDeactiveJetty, "urma_deactive_jetty");
 
-    g_urma_ops.rs_urma_free_jetty = (urma_status_t (*)(urma_jetty_t *))
-        HccpDlsym(g_urma_api_handle, "urma_free_jetty");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_free_jetty, "urma_free_jetty");
+    gUrmaOps.rsUrmaFreeJetty = (urma_status_t (*)(urma_jetty_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_free_jetty");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaFreeJetty, "urma_free_jetty");
 #endif
     return 0;
 }
 
-STATIC int rs_urma_jfc_api_init(void)
+STATIC int RsUrmaJfcApiInit(void)
 {
 #ifndef CA_CONFIG_LLT
-    g_urma_ops.rs_urma_create_jfc = (urma_jfc_t *(*)(urma_context_t *, urma_jfc_cfg_t *))
-        HccpDlsym(g_urma_api_handle, "urma_create_jfc");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_create_jfc, "urma_create_jfc");
+    gUrmaOps.rsUrmaCreateJfc = (urma_jfc_t *(*)(urma_context_t *, urma_jfc_cfg_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_create_jfc");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaCreateJfc, "urma_create_jfc");
 
-    g_urma_ops.rs_urma_modify_jfc = (urma_status_t (*)(urma_jfc_t *, urma_jfc_attr_t *))
-        HccpDlsym(g_urma_api_handle, "urma_modify_jfc");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_modify_jfc, "urma_modify_jfc");
+    gUrmaOps.rsUrmaModifyJfc = (urma_status_t (*)(urma_jfc_t *, urma_jfc_attr_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_modify_jfc");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaModifyJfc, "urma_modify_jfc");
 
-    g_urma_ops.rs_urma_delete_jfc = (urma_status_t (*)(urma_jfc_t *))
-        HccpDlsym(g_urma_api_handle, "urma_delete_jfc");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_delete_jfc, "urma_delete_jfc");
+    gUrmaOps.rsUrmaDeleteJfc = (urma_status_t (*)(urma_jfc_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_delete_jfc");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaDeleteJfc, "urma_delete_jfc");
 
-    g_urma_ops.rs_urma_create_jfce = (urma_jfce_t *(*)(urma_context_t *))
-        HccpDlsym(g_urma_api_handle, "urma_create_jfce");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_create_jfce, "urma_create_jfce");
+    gUrmaOps.rsUrmaCreateJfce = (urma_jfce_t *(*)(urma_context_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_create_jfce");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaCreateJfce, "urma_create_jfce");
 
-    g_urma_ops.rs_urma_delete_jfce = (urma_status_t (*)(urma_jfce_t *))
-        HccpDlsym(g_urma_api_handle, "urma_delete_jfce");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_delete_jfce, "urma_delete_jfce");
+    gUrmaOps.rsUrmaDeleteJfce = (urma_status_t (*)(urma_jfce_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_delete_jfce");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaDeleteJfce, "urma_delete_jfce");
 
-    g_urma_ops.rs_urma_get_async_event = (urma_status_t (*)(urma_context_t *, urma_async_event_t *))
-        HccpDlsym(g_urma_api_handle, "urma_get_async_event");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_get_async_event, "urma_get_async_event");
+    gUrmaOps.rsUrmaGetAsyncEvent = (urma_status_t (*)(urma_context_t *, urma_async_event_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_get_async_event");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaGetAsyncEvent, "urma_get_async_event");
 
-    g_urma_ops.rs_urma_ack_async_event = (void (*)(urma_async_event_t *))
-        HccpDlsym(g_urma_api_handle, "urma_ack_async_event");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_ack_async_event, "urma_ack_async_event");
+    gUrmaOps.rsUrmaAckAsyncEvent = (void (*)(urma_async_event_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_ack_async_event");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaAckAsyncEvent, "urma_ack_async_event");
 
-    g_urma_ops.rs_urma_alloc_jfc = (urma_status_t (*)(urma_context_t *, urma_jfc_cfg_t *, urma_jfc_t **))
-    HccpDlsym(g_urma_api_handle, "urma_alloc_jfc");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_alloc_jfc, "urma_alloc_jfc");
+    gUrmaOps.rsUrmaAllocJfc = (urma_status_t (*)(urma_context_t *, urma_jfc_cfg_t *, urma_jfc_t **))
+    HccpDlsym(gUrmaApiHandle, "urma_alloc_jfc");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaAllocJfc, "urma_alloc_jfc");
 
-    g_urma_ops.rs_urma_set_jfc_opt = (urma_status_t (*)(urma_jfc_t *, uint64_t , void *, uint32_t))
-        HccpDlsym(g_urma_api_handle, "urma_set_jfc_opt");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_set_jfc_opt, "urma_set_jfc_opt");
+    gUrmaOps.rsUrmaSetJfcOpt = (urma_status_t (*)(urma_jfc_t *, uint64_t , void *, uint32_t))
+        HccpDlsym(gUrmaApiHandle, "urma_set_jfc_opt");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaSetJfcOpt, "urma_set_jfc_opt");
 
-    g_urma_ops.rs_urma_active_jfc = (urma_status_t (*)(urma_jfc_t *))
-        HccpDlsym(g_urma_api_handle, "urma_active_jfc");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_active_jfc, "urma_active_jfc");
+    gUrmaOps.rsUrmaActiveJfc = (urma_status_t (*)(urma_jfc_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_active_jfc");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaActiveJfc, "urma_active_jfc");
 
-    g_urma_ops.rs_urma_get_jfc_opt = (urma_status_t (*)(urma_jfc_t *, uint64_t , void *, uint32_t))
-        HccpDlsym(g_urma_api_handle, "urma_get_jfc_opt");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_get_jfc_opt, "urma_get_jfc_opt");
+    gUrmaOps.rsUrmaGetJfcOpt = (urma_status_t (*)(urma_jfc_t *, uint64_t , void *, uint32_t))
+        HccpDlsym(gUrmaApiHandle, "urma_get_jfc_opt");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaGetJfcOpt, "urma_get_jfc_opt");
 
-    g_urma_ops.rs_urma_deactive_jfc = (urma_status_t (*)(urma_jfc_t *))
-        HccpDlsym(g_urma_api_handle, "urma_deactive_jfc");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_deactive_jfc, "urma_deactive_jfc");
+    gUrmaOps.rsUrmaDeactiveJfc = (urma_status_t (*)(urma_jfc_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_deactive_jfc");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaDeactiveJfc, "urma_deactive_jfc");
 
-    g_urma_ops.rs_urma_free_jfc = (urma_status_t (*)(urma_jfc_t *))
-        HccpDlsym(g_urma_api_handle, "urma_free_jfc");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_free_jfc, "urma_free_jfc");
+    gUrmaOps.rsUrmaFreeJfc = (urma_status_t (*)(urma_jfc_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_free_jfc");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaFreeJfc, "urma_free_jfc");
 #endif
     return 0;
 }
 
-STATIC int rs_urma_segment_api_init(void)
+STATIC int RsUrmaSegmentApiInit(void)
 {
 #ifndef CA_CONFIG_LLT
-    g_urma_ops.rs_urma_alloc_token_id = (urma_token_id_t *(*)(urma_context_t *))
-        HccpDlsym(g_urma_api_handle, "urma_alloc_token_id");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_alloc_token_id, "urma_alloc_token_id");
+    gUrmaOps.rsUrmaAllocTokenId = (urma_token_id_t *(*)(urma_context_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_alloc_token_id");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaAllocTokenId, "urma_alloc_token_id");
 
-    g_urma_ops.rs_urma_free_token_id = (urma_status_t (*)(urma_token_id_t *))
-        HccpDlsym(g_urma_api_handle, "urma_free_token_id");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_free_token_id, "urma_free_token_id");
+    gUrmaOps.rsUrmaFreeTokenId = (urma_status_t (*)(urma_token_id_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_free_token_id");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaFreeTokenId, "urma_free_token_id");
 
-    g_urma_ops.rs_urma_register_seg = (urma_target_seg_t *(*)(urma_context_t *, urma_seg_cfg_t *))
-        HccpDlsym(g_urma_api_handle, "urma_register_seg");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_register_seg, "urma_register_seg");
+    gUrmaOps.rsUrmaRegisterSeg = (urma_target_seg_t *(*)(urma_context_t *, urma_seg_cfg_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_register_seg");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaRegisterSeg, "urma_register_seg");
 
-    g_urma_ops.rs_urma_unregister_seg = (urma_status_t (*)(urma_target_seg_t *))
-        HccpDlsym(g_urma_api_handle, "urma_unregister_seg");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_unregister_seg, "urma_unregister_seg");
+    gUrmaOps.rsUrmaUnregisterSeg = (urma_status_t (*)(urma_target_seg_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_unregister_seg");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaUnregisterSeg, "urma_unregister_seg");
 
-    g_urma_ops.rs_urma_import_seg = (urma_target_seg_t *(*)(urma_context_t *, urma_seg_t *,
+    gUrmaOps.rsUrmaImportSeg = (urma_target_seg_t *(*)(urma_context_t *, urma_seg_t *,
         urma_token_t *, uint64_t, urma_import_seg_flag_t))
-        HccpDlsym(g_urma_api_handle, "urma_import_seg");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_import_seg, "urma_import_seg");
+        HccpDlsym(gUrmaApiHandle, "urma_import_seg");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaImportSeg, "urma_import_seg");
 
-    g_urma_ops.rs_urma_unimport_seg = (urma_status_t (*)(urma_target_seg_t *))
-        HccpDlsym(g_urma_api_handle, "urma_unimport_seg");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_unimport_seg, "urma_unimport_seg");
+    gUrmaOps.rsUrmaUnimportSeg = (urma_status_t (*)(urma_target_seg_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_unimport_seg");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaUnimportSeg, "urma_unimport_seg");
 #endif
     return 0;
 }
 
-STATIC int rs_urma_data_api_init(void)
+STATIC int RsUrmaDataApiInit(void)
 {
 #ifndef CA_CONFIG_LLT
-    g_urma_ops.rs_urma_post_jetty_send_wr = (urma_status_t (*)(urma_jetty_t *, urma_jfs_wr_t *, urma_jfs_wr_t **))
-        HccpDlsym(g_urma_api_handle, "urma_post_jetty_send_wr");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_post_jetty_send_wr, "urma_post_jetty_send_wr");
+    gUrmaOps.rsUrmaPostJettySendWr = (urma_status_t (*)(urma_jetty_t *, urma_jfs_wr_t *, urma_jfs_wr_t **))
+        HccpDlsym(gUrmaApiHandle, "urma_post_jetty_send_wr");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaPostJettySendWr, "urma_post_jetty_send_wr");
 
-    g_urma_ops.rs_urma_post_jetty_recv_wr = (urma_status_t (*)(urma_jetty_t *, urma_jfr_wr_t *, urma_jfr_wr_t **))
-        HccpDlsym(g_urma_api_handle, "urma_post_jetty_recv_wr");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_post_jetty_recv_wr, "urma_post_jetty_recv_wr");
+    gUrmaOps.rsUrmaPostJettyRecvWr = (urma_status_t (*)(urma_jetty_t *, urma_jfr_wr_t *, urma_jfr_wr_t **))
+        HccpDlsym(gUrmaApiHandle, "urma_post_jetty_recv_wr");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaPostJettyRecvWr, "urma_post_jetty_recv_wr");
 
-    g_urma_ops.rs_urma_poll_jfc = (int (*)(urma_jfc_t *, int, urma_cr_t *))
-        HccpDlsym(g_urma_api_handle, "urma_poll_jfc");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_poll_jfc, "urma_poll_jfc");
+    gUrmaOps.rsUrmaPollJfc = (int (*)(urma_jfc_t *, int, urma_cr_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_poll_jfc");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaPollJfc, "urma_poll_jfc");
 
-    g_urma_ops.rs_urma_rearm_jfc = (urma_status_t (*)(urma_jfc_t *, bool))
-        HccpDlsym(g_urma_api_handle, "urma_rearm_jfc");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_rearm_jfc, "urma_rearm_jfc");
+    gUrmaOps.rsUrmaRearmJfc = (urma_status_t (*)(urma_jfc_t *, bool))
+        HccpDlsym(gUrmaApiHandle, "urma_rearm_jfc");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaRearmJfc, "urma_rearm_jfc");
 
-    g_urma_ops.rs_urma_wait_jfc = (int (*)(urma_jfce_t *, uint32_t, int, urma_jfc_t *[]))
-        HccpDlsym(g_urma_api_handle, "urma_wait_jfc");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_wait_jfc, "urma_wait_jfc");
+    gUrmaOps.rsUrmaWaitJfc = (int (*)(urma_jfce_t *, uint32_t, int, urma_jfc_t *[]))
+        HccpDlsym(gUrmaApiHandle, "urma_wait_jfc");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaWaitJfc, "urma_wait_jfc");
 
-    g_urma_ops.rs_urma_ack_jfc = (void (*)(urma_jfc_t *[], uint32_t [], uint32_t))
-        HccpDlsym(g_urma_api_handle, "urma_ack_jfc");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_ack_jfc, "urma_ack_jfc");
+    gUrmaOps.rsUrmaAckJfc = (void (*)(urma_jfc_t *[], uint32_t [], uint32_t))
+        HccpDlsym(gUrmaApiHandle, "urma_ack_jfc");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaAckJfc, "urma_ack_jfc");
 
-    g_urma_ops.rs_urma_user_ctl = (urma_status_t (*)(urma_context_t *, urma_user_ctl_in_t *, urma_user_ctl_out_t *))
-        HccpDlsym(g_urma_api_handle, "urma_user_ctl");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_user_ctl, "urma_user_ctl");
+    gUrmaOps.rsUrmaUserCtl = (urma_status_t (*)(urma_context_t *, urma_user_ctl_in_t *, urma_user_ctl_out_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_user_ctl");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaUserCtl, "urma_user_ctl");
 
-    g_urma_ops.rs_urma_get_tp_list = (urma_status_t (*)(urma_context_t *, urma_get_tp_cfg_t *, uint32_t *,
-        urma_tp_info_t *))HccpDlsym(g_urma_api_handle, "urma_get_tp_list");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_get_tp_list, "urma_get_tp_list");
+    gUrmaOps.rsUrmaGetTpList = (urma_status_t (*)(urma_context_t *, urma_get_tp_cfg_t *, uint32_t *,
+        urma_tp_info_t *))HccpDlsym(gUrmaApiHandle, "urma_get_tp_list");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaGetTpList, "urma_get_tp_list");
 
-    g_urma_ops.rs_urma_get_tp_attr = (urma_status_t (*)(const urma_context_t *, const uint64_t, uint8_t *, uint32_t *,
-        urma_tp_attr_value_t *))HccpDlsym(g_urma_api_handle, "urma_get_tp_attr");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_get_tp_attr, "urma_get_tp_attr");
+    gUrmaOps.rsUrmaGetTpAttr = (urma_status_t (*)(const urma_context_t *, const uint64_t, uint8_t *, uint32_t *,
+        urma_tp_attr_value_t *))HccpDlsym(gUrmaApiHandle, "urma_get_tp_attr");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaGetTpAttr, "urma_get_tp_attr");
 
-    g_urma_ops.rs_urma_set_tp_attr = (urma_status_t (*)(const urma_context_t *, const uint64_t , const uint8_t,
-        const uint32_t, const urma_tp_attr_value_t *))HccpDlsym(g_urma_api_handle, "urma_set_tp_attr");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_set_tp_attr, "urma_set_tp_attr");
+    gUrmaOps.rsUrmaSetTpAttr = (urma_status_t (*)(const urma_context_t *, const uint64_t , const uint8_t,
+        const uint32_t, const urma_tp_attr_value_t *))HccpDlsym(gUrmaApiHandle, "urma_set_tp_attr");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaSetTpAttr, "urma_set_tp_attr");
 
-    g_urma_ops.rs_urma_import_jetty_ex = (urma_target_jetty_t *(*)(urma_context_t *, urma_rjetty_t *, urma_token_t *,
-        urma_import_jetty_ex_cfg_t *))HccpDlsym(g_urma_api_handle, "urma_import_jetty_ex");
-    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_import_jetty_ex, "urma_import_jetty_ex");
+    gUrmaOps.rsUrmaImportJettyEx = (urma_target_jetty_t *(*)(urma_context_t *, urma_rjetty_t *, urma_token_t *,
+        urma_import_jetty_ex_cfg_t *))HccpDlsym(gUrmaApiHandle, "urma_import_jetty_ex");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaImportJettyEx, "urma_import_jetty_ex");
 #endif
     return 0;
 }
 
-STATIC int rs_open_urma_so(void)
+STATIC int RsOpenUrmaSo(void)
 {
-    pthread_mutex_lock(&g_urma_api_lock);
+    pthread_mutex_lock(&gUrmaApiLock);
 #ifndef CA_CONFIG_LLT
-    if (g_urma_api_handle == NULL) {
-        g_urma_api_handle = HccpDlopen("liburma-udma.so", RTLD_NOW);
-        if (g_urma_api_handle != NULL) {
+    if (gUrmaApiHandle == NULL) {
+        gUrmaApiHandle = HccpDlopen("liburma-udma.so", RTLD_NOW);
+        if (gUrmaApiHandle != NULL) {
             goto out;
         }
 
-        g_urma_api_handle = HccpDlopen("/usr/lib64/urma/liburma-udma.so", RTLD_NOW);
-        if (g_urma_api_handle != NULL) {
+        gUrmaApiHandle = HccpDlopen("/usr/lib64/urma/liburma-udma.so", RTLD_NOW);
+        if (gUrmaApiHandle != NULL) {
             goto out;
         }
-        pthread_mutex_unlock(&g_urma_api_lock);
+        pthread_mutex_unlock(&gUrmaApiLock);
         return -EINVAL;
     } else {
-        hccp_run_info("urma_api dlopen again, g_urma_api_refcnt:%d", g_urma_api_refcnt + 1);
+        hccp_run_info("urma_api dlopen again, gUrmaApiRefcnt:%d", gUrmaApiRefcnt + 1);
     }
 out:
 #endif
-    g_urma_api_refcnt++;
-    pthread_mutex_unlock(&g_urma_api_lock);
+    gUrmaApiRefcnt++;
+    pthread_mutex_unlock(&gUrmaApiLock);
     return 0;
 }
 
-STATIC void rs_close_urma_so(void)
+STATIC void RsCloseUrmaSo(void)
 {
-    pthread_mutex_lock(&g_urma_api_lock);
+    pthread_mutex_lock(&gUrmaApiLock);
 #ifndef CA_CONFIG_LLT
-    if (g_urma_api_handle != NULL) {
-        g_urma_api_refcnt--;
-        if (g_urma_api_refcnt > 0) {
+    if (gUrmaApiHandle != NULL) {
+        gUrmaApiRefcnt--;
+        if (gUrmaApiRefcnt > 0) {
             goto out;
         }
 
-        hccp_run_info("dlclose urma_api, g_urma_api_refcnt:%d", g_urma_api_refcnt);
-        (void)HccpDlclose(g_urma_api_handle);
-        g_urma_api_handle = NULL;
-        g_urma_api_refcnt = 0;
+        hccp_run_info("dlclose urma_api, gUrmaApiRefcnt:%d", gUrmaApiRefcnt);
+        (void)HccpDlclose(gUrmaApiHandle);
+        gUrmaApiHandle = NULL;
+        gUrmaApiRefcnt = 0;
     }
 out:
 #endif
-    pthread_mutex_unlock(&g_urma_api_lock);
+    pthread_mutex_unlock(&gUrmaApiLock);
     return;
 }
 
-STATIC int rs_urma_api_init(void)
+STATIC int RsUrmaApiInit(void)
 {
     int ret;
 
-    ret = rs_open_urma_so();
+    ret = RsOpenUrmaSo();
     CHK_PRT_RETURN(ret, hccp_err("HccpDlopen[liburma-udma.so] failed! ret=[%d], "
     "Please check network adapter driver has been installed", ret), ret);
 
-    ret = rs_urma_device_api_init();
+    ret = RsUrmaDeviceApiInit();
     if (ret != 0) {
         hccp_err("[rs_urma_device_api_init]HccpDlopen failed! ret=[%d]", ret);
-        rs_close_urma_so();
+        RsCloseUrmaSo();
         return ret;
     }
 
-    ret = rs_urma_jetty_api_init();
+    ret = RsUrmaJettyApiInit();
     if (ret != 0) {
         hccp_err("[rs_urma_jetty_api_init]HccpDlopen failed! ret=[%d]", ret);
-        rs_close_urma_so();
+        RsCloseUrmaSo();
         return ret;
     }
 
-    ret = rs_urma_jfc_api_init();
+    ret = RsUrmaJfcApiInit();
     if (ret != 0) {
         hccp_err("[rs_urma_jfc_api_init]HccpDlopen failed! ret=[%d]", ret);
-        rs_close_urma_so();
+        RsCloseUrmaSo();
         return ret;
     }
 
-    ret = rs_urma_segment_api_init();
+    ret = RsUrmaSegmentApiInit();
     if (ret != 0) {
         hccp_err("[rs_urma_segment_api_init]HccpDlopen failed! ret=[%d]", ret);
-        rs_close_urma_so();
+        RsCloseUrmaSo();
         return ret;
     }
 
-    ret = rs_urma_data_api_init();
+    ret = RsUrmaDataApiInit();
     if (ret != 0) {
         hccp_err("[rs_urma_data_api_init]HccpDlopen failed! ret=[%d]", ret);
-        rs_close_urma_so();
+        RsCloseUrmaSo();
         return ret;
     }
 
     return 0;
 }
 
-int rs_ub_api_init(void)
+int RsUbApiInit(void)
 {
     int ret;
 
-    ret = rs_urma_api_init();
+    ret = RsUrmaApiInit();
     CHK_PRT_RETURN(ret, hccp_err("rs_urma_api_init failed! ret=[%d]", ret), ret);
 
     return 0;
 }
 
-int rs_urma_init(urma_init_attr_t *conf)
+int RsUrmaInit(urma_init_attr_t *conf)
 {
-    if (g_urma_ops.rs_urma_init == NULL) {
+    if (gUrmaOps.rsUrmaInit == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_init is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_init(conf);
+    return gUrmaOps.rsUrmaInit(conf);
 }
 
-int rs_urma_uninit(void)
+int RsUrmaUninit(void)
 {
-    if (g_urma_ops.rs_urma_uninit == NULL) {
+    if (gUrmaOps.rsUrmaUninit == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_uninit is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_uninit();
+    return gUrmaOps.rsUrmaUninit();
 }
 
-urma_device_t **rs_urma_get_device_list(int *num_devices)
+urma_device_t **RsUrmaGetDeviceList(int *numDevices)
 {
-    if (g_urma_ops.rs_urma_get_device_list == NULL) {
+    if (gUrmaOps.rsUrmaGetDeviceList == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_get_device_list is null");
         return NULL;
 #endif
     }
-    return g_urma_ops.rs_urma_get_device_list(num_devices);
+    return gUrmaOps.rsUrmaGetDeviceList(numDevices);
 }
 
-urma_device_t *rs_urma_get_device_by_eid(urma_eid_t eid, urma_transport_type_t type)
+urma_device_t *RsUrmaGetDeviceByEid(urma_eid_t eid, urma_transport_type_t type)
 {
-    if (g_urma_ops.rs_urma_get_device_by_eid == NULL) {
+    if (gUrmaOps.rsUrmaGetDeviceByEid == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_get_device_by_eid is null");
         return NULL;
 #endif
     }
-    return g_urma_ops.rs_urma_get_device_by_eid(eid, type);
+    return gUrmaOps.rsUrmaGetDeviceByEid(eid, type);
 }
 
-void rs_urma_free_device_list(urma_device_t **device_list)
+void RsUrmaFreeDeviceList(urma_device_t **deviceList)
 {
-    if (g_urma_ops.rs_urma_free_device_list == NULL) {
+    if (gUrmaOps.rsUrmaFreeDeviceList == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_free_device_list is null");
         return;
 #endif
     }
-    g_urma_ops.rs_urma_free_device_list(device_list);
+    gUrmaOps.rsUrmaFreeDeviceList(deviceList);
 }
 
-urma_eid_info_t *rs_urma_get_eid_list(urma_device_t *dev, uint32_t *cnt)
+urma_eid_info_t *RsUrmaGetEidList(urma_device_t *dev, uint32_t *cnt)
 {
-    if (g_urma_ops.rs_urma_get_eid_list == NULL) {
+    if (gUrmaOps.rsUrmaGetEidList == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_get_eid_list is null");
         return NULL;
 #endif
     }
-    return g_urma_ops.rs_urma_get_eid_list(dev, cnt);
+    return gUrmaOps.rsUrmaGetEidList(dev, cnt);
 }
 
-void rs_urma_free_eid_list(urma_eid_info_t *eid_list)
+void RsUrmaFreeEidList(urma_eid_info_t *eidList)
 {
-    if (g_urma_ops.rs_urma_free_eid_list == NULL) {
+    if (gUrmaOps.rsUrmaFreeEidList == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_free_eid_list is null");
         return;
 #endif
     }
-    g_urma_ops.rs_urma_free_eid_list(eid_list);
+    gUrmaOps.rsUrmaFreeEidList(eidList);
 }
 
-int rs_urma_query_device(urma_device_t *dev, urma_device_attr_t *dev_attr)
+int RsUrmaQueryDevice(urma_device_t *dev, urma_device_attr_t *devAttr)
 {
-    if (g_urma_ops.rs_urma_query_device == NULL) {
+    if (gUrmaOps.rsUrmaQueryDevice == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_query_device is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_query_device(dev, dev_attr);
+    return gUrmaOps.rsUrmaQueryDevice(dev, devAttr);
 }
 
-int rs_urma_get_eid_by_ip(const urma_context_t *ctx, const urma_net_addr_t *net_addr, urma_eid_t *eid)
+int RsUrmaGetEidByIp(const urma_context_t *ctx, const urma_net_addr_t *netAddr, urma_eid_t *eid)
 {
-    if (g_urma_ops.rs_urma_get_eid_by_ip == NULL) {
+    if (gUrmaOps.rsUrmaGetEidByIp == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_get_eid_by_ip is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_get_eid_by_ip(ctx, net_addr, eid);
+    return gUrmaOps.rsUrmaGetEidByIp(ctx, netAddr, eid);
 }
 
-urma_context_t *rs_urma_create_context(urma_device_t *dev, uint32_t eid_index)
+urma_context_t *RsUrmaCreateContext(urma_device_t *dev, uint32_t eidIndex)
 {
-    if (g_urma_ops.rs_urma_create_context == NULL) {
+    if (gUrmaOps.rsUrmaCreateContext == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_create_context is null");
         return NULL;
 #endif
     }
-    return g_urma_ops.rs_urma_create_context(dev, eid_index);
+    return gUrmaOps.rsUrmaCreateContext(dev, eidIndex);
 }
 
-int rs_urma_delete_context(urma_context_t *ctx)
+int RsUrmaDeleteContext(urma_context_t *ctx)
 {
-    if (g_urma_ops.rs_urma_delete_context == NULL) {
+    if (gUrmaOps.rsUrmaDeleteContext == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_delete_context is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_delete_context(ctx);
+    return gUrmaOps.rsUrmaDeleteContext(ctx);
 }
 
-urma_jfr_t *rs_urma_create_jfr(urma_context_t *ctx, urma_jfr_cfg_t *jfr_cfg)
+urma_jfr_t *RsUrmaCreateJfr(urma_context_t *ctx, urma_jfr_cfg_t *jfrCfg)
 {
-    if (g_urma_ops.rs_urma_create_jfr == NULL) {
+    if (gUrmaOps.rsUrmaCreateJfr == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_create_jfr is null");
         return NULL;
 #endif
     }
-    return g_urma_ops.rs_urma_create_jfr(ctx, jfr_cfg);
+    return gUrmaOps.rsUrmaCreateJfr(ctx, jfrCfg);
 }
 
-int rs_urma_delete_jfr(urma_jfr_t *jfr)
+int RsUrmaDeleteJfr(urma_jfr_t *jfr)
 {
-    if (g_urma_ops.rs_urma_delete_jfr == NULL) {
+    if (gUrmaOps.rsUrmaDeleteJfr == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_delete_jfr is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_delete_jfr(jfr);
+    return gUrmaOps.rsUrmaDeleteJfr(jfr);
 }
 
-urma_jfc_t *rs_urma_create_jfc(urma_context_t *ctx, urma_jfc_cfg_t *jfc_cfg)
+urma_jfc_t *RsUrmaCreateJfc(urma_context_t *ctx, urma_jfc_cfg_t *jfcCfg)
 {
-    if (g_urma_ops.rs_urma_create_jfc == NULL) {
+    if (gUrmaOps.rsUrmaCreateJfc == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_create_jfc is null");
         return NULL;
 #endif
     }
-    return g_urma_ops.rs_urma_create_jfc(ctx, jfc_cfg);
+    return gUrmaOps.rsUrmaCreateJfc(ctx, jfcCfg);
 }
 
-int rs_urma_modify_jfc(urma_jfc_t *jfc, urma_jfc_attr_t *attr)
+int RsUrmaModifyJfc(urma_jfc_t *jfc, urma_jfc_attr_t *attr)
 {
-    if (g_urma_ops.rs_urma_modify_jfc == NULL) {
+    if (gUrmaOps.rsUrmaModifyJfc == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_modify_jfc is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_modify_jfc(jfc, attr);
+    return gUrmaOps.rsUrmaModifyJfc(jfc, attr);
 }
 
-int rs_urma_delete_jfc(urma_jfc_t *jfc)
+int RsUrmaDeleteJfc(urma_jfc_t *jfc)
 {
-    if (g_urma_ops.rs_urma_delete_jfc == NULL) {
+    if (gUrmaOps.rsUrmaDeleteJfc == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_delete_jfc is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_delete_jfc(jfc);
+    return gUrmaOps.rsUrmaDeleteJfc(jfc);
 }
 
-urma_jetty_t *rs_urma_create_jetty(urma_context_t *ctx, urma_jetty_cfg_t *jetty_cfg)
+urma_jetty_t *RsUrmaCreateJetty(urma_context_t *ctx, urma_jetty_cfg_t *jettyCfg)
 {
-    if (g_urma_ops.rs_urma_create_jetty == NULL) {
+    if (gUrmaOps.rsUrmaCreateJetty == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_create_jetty is null");
         return NULL;
 #endif
     }
-    return g_urma_ops.rs_urma_create_jetty(ctx, jetty_cfg);
+    return gUrmaOps.rsUrmaCreateJetty(ctx, jettyCfg);
 }
 
-int rs_urma_modify_jetty(urma_jetty_t *jetty, urma_jetty_attr_t *attr)
+int RsUrmaModifyJetty(urma_jetty_t *jetty, urma_jetty_attr_t *attr)
 {
-    if (g_urma_ops.rs_urma_modify_jetty == NULL) {
+    if (gUrmaOps.rsUrmaModifyJetty == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_modify_jetty is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_modify_jetty(jetty, attr);
+    return gUrmaOps.rsUrmaModifyJetty(jetty, attr);
 }
 
-int rs_urma_query_jetty(urma_jetty_t *jetty, urma_jetty_cfg_t *cfg, urma_jetty_attr_t *attr)
+int RsUrmaQueryJetty(urma_jetty_t *jetty, urma_jetty_cfg_t *cfg, urma_jetty_attr_t *attr)
 {
-    if (g_urma_ops.rs_urma_query_jetty == NULL) {
+    if (gUrmaOps.rsUrmaQueryJetty == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_query_jetty is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_query_jetty(jetty, cfg, attr);
+    return gUrmaOps.rsUrmaQueryJetty(jetty, cfg, attr);
 }
 
-int rs_urma_delete_jetty(urma_jetty_t *jetty)
+int RsUrmaDeleteJetty(urma_jetty_t *jetty)
 {
-    if (g_urma_ops.rs_urma_delete_jetty == NULL) {
+    if (gUrmaOps.rsUrmaDeleteJetty == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_delete_jetty is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_delete_jetty(jetty);
+    return gUrmaOps.rsUrmaDeleteJetty(jetty);
 }
 
-urma_target_jetty_t *rs_urma_import_jetty(urma_context_t *ctx, urma_rjetty_t *rjetty,
-                                          urma_token_t *token_value)
+urma_target_jetty_t *RsUrmaImportJetty(urma_context_t *ctx, urma_rjetty_t *rjetty,
+                                          urma_token_t *tokenValue)
 {
-    if (g_urma_ops.rs_urma_import_jetty == NULL) {
+    if (gUrmaOps.rsUrmaImportJetty == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_import_jetty is null");
         return NULL;
 #endif
     }
-    return g_urma_ops.rs_urma_import_jetty(ctx, rjetty, token_value);
+    return gUrmaOps.rsUrmaImportJetty(ctx, rjetty, tokenValue);
 }
 
-int rs_urma_unimport_jetty(urma_target_jetty_t *tjetty)
+int RsUrmaUnimportJetty(urma_target_jetty_t *tjetty)
 {
-    if (g_urma_ops.rs_urma_unimport_jetty == NULL) {
+    if (gUrmaOps.rsUrmaUnimportJetty == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_unimport_jetty is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_unimport_jetty(tjetty);
+    return gUrmaOps.rsUrmaUnimportJetty(tjetty);
 }
 
-int rs_urma_bind_jetty(urma_jetty_t *jetty, urma_target_jetty_t *tjetty)
+int RsUrmaBindJetty(urma_jetty_t *jetty, urma_target_jetty_t *tjetty)
 {
-    if (g_urma_ops.rs_urma_bind_jetty == NULL) {
+    if (gUrmaOps.rsUrmaBindJetty == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_bind_jetty is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_bind_jetty(jetty, tjetty);
+    return gUrmaOps.rsUrmaBindJetty(jetty, tjetty);
 }
 
-int rs_urma_unbind_jetty(urma_jetty_t *jetty)
+int RsUrmaUnbindJetty(urma_jetty_t *jetty)
 {
-    if (g_urma_ops.rs_urma_unbind_jetty == NULL) {
+    if (gUrmaOps.rsUrmaUnbindJetty == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_unbind_jetty is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_unbind_jetty(jetty);
+    return gUrmaOps.rsUrmaUnbindJetty(jetty);
 }
 
-int rs_urma_flush_jetty(urma_jetty_t *jetty, int cr_cnt, urma_cr_t *cr)
+int RsUrmaFlushJetty(urma_jetty_t *jetty, int crCnt, urma_cr_t *cr)
 {
-    if (g_urma_ops.rs_urma_flush_jetty == NULL) {
+    if (gUrmaOps.rsUrmaFlushJetty == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_flush_jetty is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_flush_jetty(jetty, cr_cnt, cr);
+    return gUrmaOps.rsUrmaFlushJetty(jetty, crCnt, cr);
 }
 
-urma_jfce_t *rs_urma_create_jfce(urma_context_t *ctx)
+urma_jfce_t *RsUrmaCreateJfce(urma_context_t *ctx)
 {
-    if (g_urma_ops.rs_urma_create_jfce == NULL) {
+    if (gUrmaOps.rsUrmaCreateJfce == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_create_jfce is null");
         return NULL;
 #endif
     }
-    return g_urma_ops.rs_urma_create_jfce(ctx);
+    return gUrmaOps.rsUrmaCreateJfce(ctx);
 }
 
-int rs_urma_delete_jfce(urma_jfce_t *jfce)
+int RsUrmaDeleteJfce(urma_jfce_t *jfce)
 {
-    if (g_urma_ops.rs_urma_delete_jfce == NULL) {
+    if (gUrmaOps.rsUrmaDeleteJfce == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_delete_jfce is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_delete_jfce(jfce);
+    return gUrmaOps.rsUrmaDeleteJfce(jfce);
 }
 
-int rs_urma_get_async_event(urma_context_t *ctx, urma_async_event_t *event)
+int RsUrmaGetAsyncEvent(urma_context_t *ctx, urma_async_event_t *event)
 {
-    if (g_urma_ops.rs_urma_get_async_event == NULL) {
+    if (gUrmaOps.rsUrmaGetAsyncEvent == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_get_async_event is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_get_async_event(ctx, event);
+    return gUrmaOps.rsUrmaGetAsyncEvent(ctx, event);
 }
 
-void rs_urma_ack_async_event(urma_async_event_t *event)
+void RsUrmaAckAsyncEvent(urma_async_event_t *event)
 {
-    if (g_urma_ops.rs_urma_ack_async_event == NULL) {
+    if (gUrmaOps.rsUrmaAckAsyncEvent == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_ack_async_event is null");
         return;
 #endif
     }
-    g_urma_ops.rs_urma_ack_async_event(event);
+    gUrmaOps.rsUrmaAckAsyncEvent(event);
 }
 
-urma_token_id_t *rs_urma_alloc_token_id(urma_context_t *ctx)
+urma_token_id_t *RsUrmaAllocTokenId(urma_context_t *ctx)
 {
-    if (g_urma_ops.rs_urma_alloc_token_id == NULL) {
+    if (gUrmaOps.rsUrmaAllocTokenId == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_alloc_token_id is null");
         return NULL;
 #endif
     }
-    return g_urma_ops.rs_urma_alloc_token_id(ctx);
+    return gUrmaOps.rsUrmaAllocTokenId(ctx);
 }
 
-int rs_urma_free_token_id(urma_token_id_t *token_id)
+int RsUrmaFreeTokenId(urma_token_id_t *tokenId)
 {
-    if (g_urma_ops.rs_urma_free_token_id == NULL) {
+    if (gUrmaOps.rsUrmaFreeTokenId == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_free_token_id is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_free_token_id(token_id);
+    return gUrmaOps.rsUrmaFreeTokenId(tokenId);
 }
 
-urma_target_seg_t *rs_urma_register_seg(urma_context_t *ctx, urma_seg_cfg_t *seg_cfg)
+urma_target_seg_t *RsUrmaRegisterSeg(urma_context_t *ctx, urma_seg_cfg_t *segCfg)
 {
-    if (g_urma_ops.rs_urma_register_seg == NULL) {
+    if (gUrmaOps.rsUrmaRegisterSeg == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_register_seg is null");
         return NULL;
 #endif
     }
-    return g_urma_ops.rs_urma_register_seg(ctx, seg_cfg);
+    return gUrmaOps.rsUrmaRegisterSeg(ctx, segCfg);
 }
 
-int rs_urma_unregister_seg(urma_target_seg_t *target_seg)
+int RsUrmaUnregisterSeg(urma_target_seg_t *targetSeg)
 {
-    if (g_urma_ops.rs_urma_unregister_seg == NULL) {
+    if (gUrmaOps.rsUrmaUnregisterSeg == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_unregister_seg is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_unregister_seg(target_seg);
+    return gUrmaOps.rsUrmaUnregisterSeg(targetSeg);
 }
 
-urma_target_seg_t *rs_urma_import_seg(urma_context_t *ctx, urma_seg_t *seg, urma_token_t *token_value,
+urma_target_seg_t *RsUrmaImportSeg(urma_context_t *ctx, urma_seg_t *seg, urma_token_t *tokenValue,
                                       uint64_t addr, urma_import_seg_flag_t flag)
 {
-    if (g_urma_ops.rs_urma_import_seg == NULL) {
+    if (gUrmaOps.rsUrmaImportSeg == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_import_seg is null");
         return NULL;
 #endif
     }
-    return g_urma_ops.rs_urma_import_seg(ctx, seg, token_value, addr, flag);
+    return gUrmaOps.rsUrmaImportSeg(ctx, seg, tokenValue, addr, flag);
 }
 
-int rs_urma_unimport_seg(urma_target_seg_t *tseg)
+int RsUrmaUnimportSeg(urma_target_seg_t *tseg)
 {
-    if (g_urma_ops.rs_urma_unimport_seg == NULL) {
+    if (gUrmaOps.rsUrmaUnimportSeg == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_unimport_seg is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_unimport_seg(tseg);
+    return gUrmaOps.rsUrmaUnimportSeg(tseg);
 }
 
-int rs_urma_post_jetty_send_wr(urma_jetty_t *jetty, urma_jfs_wr_t *wr, urma_jfs_wr_t **bad_wr)
+int RsUrmaPostJettySendWr(urma_jetty_t *jetty, urma_jfs_wr_t *wr, urma_jfs_wr_t **badWr)
 {
-    if (g_urma_ops.rs_urma_post_jetty_send_wr == NULL) {
+    if (gUrmaOps.rsUrmaPostJettySendWr == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_post_jetty_send_wr is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_post_jetty_send_wr(jetty, wr, bad_wr);
+    return gUrmaOps.rsUrmaPostJettySendWr(jetty, wr, badWr);
 }
 
-int rs_urma_post_jetty_recv_wr(urma_jetty_t *jetty, urma_jfr_wr_t *wr, urma_jfr_wr_t **bad_wr)
+int RsUrmaPostJettyRecvWr(urma_jetty_t *jetty, urma_jfr_wr_t *wr, urma_jfr_wr_t **badWr)
 {
-    if (g_urma_ops.rs_urma_post_jetty_recv_wr == NULL) {
+    if (gUrmaOps.rsUrmaPostJettyRecvWr == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_post_jetty_recv_wr is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_post_jetty_recv_wr(jetty, wr, bad_wr);
+    return gUrmaOps.rsUrmaPostJettyRecvWr(jetty, wr, badWr);
 }
 
-int rs_urma_poll_jfc(urma_jfc_t *jfc, int cr_cnt, urma_cr_t *cr)
+int RsUrmaPollJfc(urma_jfc_t *jfc, int crCnt, urma_cr_t *cr)
 {
-    if (g_urma_ops.rs_urma_poll_jfc == NULL) {
+    if (gUrmaOps.rsUrmaPollJfc == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_poll_jfc is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_poll_jfc(jfc, cr_cnt, cr);
+    return gUrmaOps.rsUrmaPollJfc(jfc, crCnt, cr);
 }
 
-int rs_urma_rearm_jfc(urma_jfc_t *jfc, bool solicited_only)
+int RsUrmaRearmJfc(urma_jfc_t *jfc, bool solicitedOnly)
 {
-    if (g_urma_ops.rs_urma_rearm_jfc == NULL) {
+    if (gUrmaOps.rsUrmaRearmJfc == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_rearm_jfc is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_rearm_jfc(jfc, solicited_only);
+    return gUrmaOps.rsUrmaRearmJfc(jfc, solicitedOnly);
 }
 
-int rs_urma_wait_jfc(urma_jfce_t *jfce, uint32_t jfc_cnt, int time_out, urma_jfc_t *jfc[])
+int RsUrmaWaitJfc(urma_jfce_t *jfce, uint32_t jfcCnt, int timeOut, urma_jfc_t *jfc[])
 {
-    if (g_urma_ops.rs_urma_wait_jfc == NULL) {
+    if (gUrmaOps.rsUrmaWaitJfc == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_wait_jfc is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_wait_jfc(jfce, jfc_cnt, time_out, jfc);
+    return gUrmaOps.rsUrmaWaitJfc(jfce, jfcCnt, timeOut, jfc);
 }
 
-void rs_urma_ack_jfc(urma_jfc_t *jfc[], uint32_t nevents[], uint32_t jfc_cnt)
+void RsUrmaAckJfc(urma_jfc_t *jfc[], uint32_t nevents[], uint32_t jfcCnt)
 {
-    if (g_urma_ops.rs_urma_ack_jfc == NULL) {
+    if (gUrmaOps.rsUrmaAckJfc == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_ack_jfc is null");
         return;
 #endif
     }
-    g_urma_ops.rs_urma_ack_jfc(jfc, nevents, jfc_cnt);
+    gUrmaOps.rsUrmaAckJfc(jfc, nevents, jfcCnt);
 }
 
-int rs_urma_user_ctl(urma_context_t *ctx, urma_user_ctl_in_t *in, urma_user_ctl_out_t *out)
+int RsUrmaUserCtl(urma_context_t *ctx, urma_user_ctl_in_t *in, urma_user_ctl_out_t *out)
 {
-    if (g_urma_ops.rs_urma_user_ctl == NULL) {
+    if (gUrmaOps.rsUrmaUserCtl == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_user_ctl is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_user_ctl(ctx, in, out);
+    return gUrmaOps.rsUrmaUserCtl(ctx, in, out);
 }
 
-int rs_urma_get_tp_list(urma_context_t *ctx, urma_get_tp_cfg_t *cfg, uint32_t *tp_cnt, urma_tp_info_t *tp_list)
+int RsUrmaGetTpList(urma_context_t *ctx, urma_get_tp_cfg_t *cfg, uint32_t *tpCnt, urma_tp_info_t *tpList)
 {
-    if (g_urma_ops.rs_urma_get_tp_list == NULL) {
+    if (gUrmaOps.rsUrmaGetTpList == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_get_tp_list is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_get_tp_list(ctx, cfg, tp_cnt, tp_list);
+    return gUrmaOps.rsUrmaGetTpList(ctx, cfg, tpCnt, tpList);
 }
 
-int rs_urma_get_tp_attr(const urma_context_t *ctx, const uint64_t tp_handle, uint8_t *tp_attr_cnt,
-    uint32_t *tp_attr_bitmap, urma_tp_attr_value_t *tp_attr)
+int RsUrmaGetTpAttr(const urma_context_t *ctx, const uint64_t tpHandle, uint8_t *tpAttrCnt,
+    uint32_t *tpAttrBitmap, urma_tp_attr_value_t *tpAttr)
 {
-    if (g_urma_ops.rs_urma_get_tp_attr == NULL) {
+    if (gUrmaOps.rsUrmaGetTpAttr == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_get_tp_attr is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_get_tp_attr(ctx, tp_handle, tp_attr_cnt, tp_attr_bitmap, tp_attr);
+    return gUrmaOps.rsUrmaGetTpAttr(ctx, tpHandle, tpAttrCnt, tpAttrBitmap, tpAttr);
 }
 
-int rs_urma_set_tp_attr(const urma_context_t *ctx, const uint64_t tp_handle, const uint8_t tp_attr_cnt,
-    const uint32_t tp_attr_bitmap, const urma_tp_attr_value_t *tp_attr)
+int RsUrmaSetTpAttr(const urma_context_t *ctx, const uint64_t tpHandle, const uint8_t tpAttrCnt,
+    const uint32_t tpAttrBitmap, const urma_tp_attr_value_t *tpAttr)
 {
-    if (g_urma_ops.rs_urma_set_tp_attr == NULL) {
+    if (gUrmaOps.rsUrmaSetTpAttr == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_set_tp_attr is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_set_tp_attr(ctx, tp_handle, tp_attr_cnt, tp_attr_bitmap, tp_attr);
+    return gUrmaOps.rsUrmaSetTpAttr(ctx, tpHandle, tpAttrCnt, tpAttrBitmap, tpAttr);
 }
 
-urma_target_jetty_t *rs_urma_import_jetty_ex(urma_context_t *ctx, urma_rjetty_t *rjetty, urma_token_t *token_value,
+urma_target_jetty_t *RsUrmaImportJettyEx(urma_context_t *ctx, urma_rjetty_t *rjetty, urma_token_t *tokenValue,
     urma_import_jetty_ex_cfg_t *cfg)
 {
-    if (g_urma_ops.rs_urma_import_jetty_ex == NULL) {
+    if (gUrmaOps.rsUrmaImportJettyEx == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_import_jetty_ex is null");
         return NULL;
 #endif
     }
-    return g_urma_ops.rs_urma_import_jetty_ex(ctx, rjetty, token_value, cfg);
+    return gUrmaOps.rsUrmaImportJettyEx(ctx, rjetty, tokenValue, cfg);
 }
 
-int rs_urma_delete_jetty_batch(urma_jetty_t **jetty_arr, int jetty_num, urma_jetty_t **bad_jetty)
+int RsUrmaDeleteJettyBatch(urma_jetty_t **jettyArr, int jettyNum, urma_jetty_t **badJetty)
 {
-    if (g_urma_ops.rs_urma_delete_jetty_batch == NULL) {
+    if (gUrmaOps.rsUrmaDeleteJettyBatch == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_delete_jetty_batch is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_delete_jetty_batch(jetty_arr, jetty_num, bad_jetty);
+    return gUrmaOps.rsUrmaDeleteJettyBatch(jettyArr, jettyNum, badJetty);
 }
 
-int rs_urma_delete_jfr_batch(urma_jfr_t **jfr_arr, int jfr_num, urma_jfr_t **bad_jfr)
+int RsUrmaDeleteJfrBatch(urma_jfr_t **jfrArr, int jfrNum, urma_jfr_t **badJfr)
 {
-    if (g_urma_ops.rs_urma_delete_jfr_batch == NULL) {
+    if (gUrmaOps.rsUrmaDeleteJfrBatch == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_delete_jfr_batch is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_delete_jfr_batch(jfr_arr, jfr_num, bad_jfr);
+    return gUrmaOps.rsUrmaDeleteJfrBatch(jfrArr, jfrNum, badJfr);
 }
 
-int rs_urma_alloc_jetty(urma_context_t *urma_ctx, urma_jetty_cfg_t *cfg, urma_jetty_t **jetty)
+int RsUrmaAllocJetty(urma_context_t *urmaCtx, urma_jetty_cfg_t *cfg, urma_jetty_t **jetty)
 {
-    if (g_urma_ops.rs_urma_alloc_jetty == NULL) {
+    if (gUrmaOps.rsUrmaAllocJetty == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_alloc_jetty is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_alloc_jetty(urma_ctx, cfg, jetty);
+    return gUrmaOps.rsUrmaAllocJetty(urmaCtx, cfg, jetty);
 }
 
-int rs_urma_set_jetty_opt(urma_jetty_t *jetty, uint64_t opt, void *buf, uint32_t len)
+int RsUrmaSetJettyOpt(urma_jetty_t *jetty, uint64_t opt, void *buf, uint32_t len)
 {
-    if (g_urma_ops.rs_urma_set_jetty_opt == NULL) {
+    if (gUrmaOps.rsUrmaSetJettyOpt == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_set_jetty_opt is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_set_jetty_opt(jetty, opt, buf, len);
+    return gUrmaOps.rsUrmaSetJettyOpt(jetty, opt, buf, len);
 }
 
-int rs_urma_active_jetty(urma_jetty_t *jetty)
+int RsUrmaActiveJetty(urma_jetty_t *jetty)
 {
-    if (g_urma_ops.rs_urma_active_jetty == NULL) {
+    if (gUrmaOps.rsUrmaActiveJetty == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_active_jetty is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_active_jetty(jetty);
+    return gUrmaOps.rsUrmaActiveJetty(jetty);
 }
 
-int rs_urma_get_jetty_opt(urma_jetty_t *jetty, uint64_t opt, void *buf, uint32_t len)
+int RsUrmaGetJettyOpt(urma_jetty_t *jetty, uint64_t opt, void *buf, uint32_t len)
 {
-    if (g_urma_ops.rs_urma_get_jetty_opt == NULL) {
+    if (gUrmaOps.rsUrmaGetJettyOpt == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_get_jetty_opt is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_get_jetty_opt(jetty, opt, buf, len);
+    return gUrmaOps.rsUrmaGetJettyOpt(jetty, opt, buf, len);
 }
 
-int rs_urma_deactive_jetty(urma_jetty_t *jetty)
+int RsUrmaDeactiveJetty(urma_jetty_t *jetty)
 {
-    if (g_urma_ops.rs_urma_deactive_jetty == NULL) {
+    if (gUrmaOps.rsUrmaDeactiveJetty == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_deactive_jetty is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_deactive_jetty(jetty);
+    return gUrmaOps.rsUrmaDeactiveJetty(jetty);
 }
 
-int rs_urma_free_jetty(urma_jetty_t *jetty)
+int RsUrmaFreeJetty(urma_jetty_t *jetty)
 {
-    if (g_urma_ops.rs_urma_free_jetty == NULL) {
+    if (gUrmaOps.rsUrmaFreeJetty == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_free_jetty is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_free_jetty(jetty);
+    return gUrmaOps.rsUrmaFreeJetty(jetty);
 }
 
-int rs_urma_alloc_jfc(urma_context_t *urma_ctx, urma_jfc_cfg_t *cfg, urma_jfc_t **jfc)
+int RsUrmaAllocJfc(urma_context_t *urmaCtx, urma_jfc_cfg_t *cfg, urma_jfc_t **jfc)
 {
-    if (g_urma_ops.rs_urma_alloc_jfc == NULL) {
+    if (gUrmaOps.rsUrmaAllocJfc == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_alloc_jfc is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_alloc_jfc(urma_ctx, cfg, jfc);
+    return gUrmaOps.rsUrmaAllocJfc(urmaCtx, cfg, jfc);
 }
 
-int rs_urma_set_jfc_opt(urma_jfc_t *jfc, uint64_t opt, void *buf, uint32_t len)
+int RsUrmaSetJfcOpt(urma_jfc_t *jfc, uint64_t opt, void *buf, uint32_t len)
 {
-    if (g_urma_ops.rs_urma_set_jfc_opt == NULL) {
+    if (gUrmaOps.rsUrmaSetJfcOpt == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_set_jfc_opt is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_set_jfc_opt(jfc, opt, buf, len);
+    return gUrmaOps.rsUrmaSetJfcOpt(jfc, opt, buf, len);
 }
 
-int rs_urma_active_jfc(urma_jfc_t *jfc)
+int RsUrmaActiveJfc(urma_jfc_t *jfc)
 {
-    if (g_urma_ops.rs_urma_active_jfc == NULL) {
+    if (gUrmaOps.rsUrmaActiveJfc == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_active_jfc is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_active_jfc(jfc);
+    return gUrmaOps.rsUrmaActiveJfc(jfc);
 }
 
-int rs_urma_get_jfc_opt(urma_jfc_t *jfc, uint64_t opt, void *buf, uint32_t len)
+int RsUrmaGetJfcOpt(urma_jfc_t *jfc, uint64_t opt, void *buf, uint32_t len)
 {
-    if (g_urma_ops.rs_urma_get_jfc_opt == NULL) {
+    if (gUrmaOps.rsUrmaGetJfcOpt == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_get_jfc_opt is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_get_jfc_opt(jfc, opt, buf, len);
+    return gUrmaOps.rsUrmaGetJfcOpt(jfc, opt, buf, len);
 }
 
-int rs_urma_deactive_jfc(urma_jfc_t *jfc)
+int RsUrmaDeactiveJfc(urma_jfc_t *jfc)
 {
-    if (g_urma_ops.rs_urma_deactive_jfc == NULL) {
+    if (gUrmaOps.rsUrmaDeactiveJfc == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_deactive_jfc is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_deactive_jfc(jfc);
+    return gUrmaOps.rsUrmaDeactiveJfc(jfc);
 }
 
-int rs_urma_free_jfc(urma_jfc_t *jfc)
+int RsUrmaFreeJfc(urma_jfc_t *jfc)
 {
-    if (g_urma_ops.rs_urma_free_jfc == NULL) {
+    if (gUrmaOps.rsUrmaFreeJfc == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_urma_free_jfc is null");
         return -EINVAL;
 #endif
     }
-    return g_urma_ops.rs_urma_free_jfc(jfc);
+    return gUrmaOps.rsUrmaFreeJfc(jfc);
 }

@@ -76,7 +76,10 @@ HcclResult EidInfoMgr::GetEidInfoByAddr(const CommAddr &commAddr, DevEidInfo &ei
 
     Hccl::IpAddress ipAddr{}; // 暂时使用orion ipaddr 用作索引
     CHK_RET(CommAddrToIpAddress(commAddr, ipAddr));
-    const auto addrIter = eidInfoMap_.find(ipAddr);
+    // 兼容上层传递ipv4查询eid
+    const auto eidAddr = Hccl::IpAddress(ipAddr.GetEid());
+
+    const auto addrIter = eidInfoMap_.find(eidAddr);
     if (addrIter == eidInfoMap_.end()) {
         HCCL_ERROR("[EidInfoMgr][%s] failed to find eid info by ip addr[%s], "
             "devPhyId[%u].", __func__, ipAddr.Describe().c_str(), devPhyId_);
