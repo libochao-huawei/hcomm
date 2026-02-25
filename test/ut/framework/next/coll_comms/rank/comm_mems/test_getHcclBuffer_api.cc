@@ -220,6 +220,13 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBufferA3_When_Normal_Return_HCCL_Suc
     char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
 
+    HcclCommConfig config;
+    HcclCommConfigInit(&config);
+    CommConfig commConfig;
+    commConfig.Load(&config);
+    RankTable_t rankTable;
+    hcclCommPtr->SetIndependentOpConfig(commConfig, rankTable);
+
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
     void* buffer;
     uint64_t size;
