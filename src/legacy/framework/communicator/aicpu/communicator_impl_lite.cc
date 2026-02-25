@@ -260,7 +260,7 @@ void CommunicatorImplLite::RestoreAllTransports(u64 addr, u64 bufSize)
 
 bool CommunicatorImplLite::CheckNeedUpdateRes(HcclKernelParamLite *kernelParam)
 {
-    std::string tagKey = (kernelParam->op.algOperator.opMode == OpMode::OPBASE) ? kernelParam->algName : kernelParam->opTag;
+    std::string tagKey = kernelParam->tagKey;
     auto it = loadedOpSet.find(tagKey);
     if (it != loadedOpSet.end()) {
         HCCL_INFO("[CheckNeedUpdateRes] Corresponding resources of tag[%s] have been loaded", tagKey.c_str());
