@@ -57,6 +57,9 @@ HcclResult OpParamsChecker::CheckOpDataTypeMC2(const Mc2CommConfig &config)
     // 支持算子情况检验
     auto iter = opDataTypeSupportMapMC2.find(opType);
     if (iter == opDataTypeSupportMapMC2.end()) {
+        RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
+            std::vector<std::string>({"CheckOpDataTypeByMap", opType.Describe(), "opType",
+            "please check opType that is not supported"}));
         std::string msg = StringFormat("[OpParamsChecker::%s] unsupported opType [%s].",
                           __func__, opType.Describe().c_str());
         THROW<InvalidParamsException>(msg);
@@ -73,6 +76,9 @@ HcclResult OpParamsChecker::CheckOpDataTypeMC2(const Mc2CommConfig &config)
         if (inputDataType == outputDataType){
             checkResult = dataTypeMC2HighP.test(static_cast<int>(inputDataType));
             if (!checkResult){
+                RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
+                    std::vector<std::string>({"CheckOpDataTypeMC2", opType.Describe() + ":" + inputDataType.Describe(), "opType:dataType",
+                    "please check opType that is not supported"}));
                 std::string msg = StringFormat("[OpParamsChecker::%s] opType [%s] not support data type [%s].",
                                   __func__, opType.Describe().c_str(), inputDataType.Describe().c_str());
                 THROW<InvalidParamsException>(msg);
@@ -111,6 +117,9 @@ HcclResult OpParamsChecker::CheckOpDataTypeMC2V2(const Mc2CcTilingInner &config)
     // 支持算子情况检验
     auto iter = opDataTypeSupportMapMC2.find(opType);
     if (iter == opDataTypeSupportMapMC2.end()) {
+        RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
+            std::vector<std::string>({"CheckOpDataTypeMC2V2", opType.Describe(), "opType",
+            "please check opType that is not supported"}));
         std::string msg = StringFormat("[OpParamsChecker::%s] unsupported opType [%s].",
                           __func__, opType.Describe().c_str());
         THROW<InvalidParamsException>(msg);
@@ -127,6 +136,9 @@ HcclResult OpParamsChecker::CheckOpDataTypeMC2V2(const Mc2CcTilingInner &config)
         if (inputDataType == outputDataType){
             checkResult = dataTypeMC2HighP.test(static_cast<int>(inputDataType));
             if (!checkResult){
+                RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
+                    std::vector<std::string>({"CheckOpDataTypeMC2", opType.Describe() + ":" + inputDataType.Describe(), "opType:dataType",
+                    "please check dataType that is not supported"}));
                 std::string msg = StringFormat("[OpParamsChecker::%s] opType [%s] not support data type [%s].",
                                   __func__, opType.Describe().c_str(), inputDataType.Describe().c_str());
                 THROW<InvalidParamsException>(msg);
@@ -173,6 +185,9 @@ HcclResult OpParamsChecker::CheckOpDataTypeByMap(const CollOpParams &opParams, c
 {
     auto iter = opData2TypeMap.find(opParams.opType);
     if (iter == opData2TypeMap.end()) {
+        RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
+            std::vector<std::string>({"CheckOpDataTypeByMap", opParams.opType.Describe(), "opType",
+            "please check opType that is not found"}));
         HCCL_ERROR("[OpParamsChecker::%s] invalid opType [%s], please check input opParam.",
                     __func__, opParams.opType.Describe().c_str());
         return HcclResult::HCCL_E_PARA;
@@ -188,6 +203,9 @@ HcclResult OpParamsChecker::CheckOpDataTypeByMap(const CollOpParams &opParams, c
             dtype = HcclDataTypeToDataType((sendRecvItems + i)->dataType);
             checkResult = (iter->second).test(static_cast<int>(dtype));
             if (!checkResult){
+                RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
+                    std::vector<std::string>({"CheckOpDataTypeByMap", opParams.opType.Describe() + ":" + dtype.Describe(), "opType:dataType",
+                    "please check DataType that is not found"}));
                 HCCL_ERROR("[OpParamsChecker::%s] opType [%s] with not support data type [%s], please check input opParam.",
                             __func__, opParams.opType.Describe().c_str(), dtype.Describe().c_str());
                 return HcclResult::HCCL_E_PARA;
@@ -196,6 +214,9 @@ HcclResult OpParamsChecker::CheckOpDataTypeByMap(const CollOpParams &opParams, c
     } else {
         checkResult = (iter->second).test(static_cast<int>(dtype));
         if (!checkResult){
+            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
+                    std::vector<std::string>({"CheckOpDataTypeByMap", opParams.opType.Describe() + ":" + dtype.Describe(), "opType:dataType",
+                    "please check DataType that is not found"}));
             HCCL_ERROR("[OpParamsChecker::%s] opType [%s] with not support data type [%s], please check input opParam.",
                             __func__, opParams.opType.Describe().c_str(), dtype.Describe().c_str());
             return HcclResult::HCCL_E_PARA;
