@@ -45,17 +45,12 @@ void AicpuKernelLauncher::AicpuKernelLaunch(const Stream &stream, const string &
     HCCL_INFO("AicpuKernelLauncher::AicpuKernelLaunch param.kernel.algName: %s, opTag %s", param.kernel.algName,
                op->opTag.c_str());
 
-    param.kernel.needUpdateRes = false;
-
     auto aicpuInsPreprocessor
         = dynamic_cast<CollServiceDeviceMode *>(comm->GetCollService())->GetAicpuInsPreprocessor();
-    if (!aicpuInsPreprocessor->IsAicpuResExisted(algName)) {
-        param.kernel.needUpdateRes = true;
-        DevBuffer *mem             = aicpuInsPreprocessor->GetAicpuResBuffer(algName);
-        param.kernel.binaryResAddr = mem->GetAddr();
-        param.kernel.binaryResSize = mem->GetSize();
-        aicpuInsPreprocessor->SetAicpuResExisted(algName);
-    }
+    DevBuffer *mem             = aicpuInsPreprocessor->GetAicpuResBuffer(algName);
+    param.kernel.binaryResAddr = mem->GetAddr();
+    param.kernel.binaryResSize = mem->GetSize();
+    aicpuInsPreprocessor->SetAicpuResExisted(algName);
 
     SetHcclKernelLaunchParam(param);
 

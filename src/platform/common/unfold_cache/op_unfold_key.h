@@ -42,6 +42,7 @@ struct OpUnfoldKey{
 
     // inputSize和outputSize是由totalCount(由rankSize+count决定)+dataType决定的, 给定通信域rankSize是固定的
     // 因为已经维护dataType, 所以inputSize/outputSize/totalCount中只需要维护任意一个即可
+    // 注意: 对于alltoallv算子, cache查询不依赖具体数据量, inputSize用来区分isBigCount (0: false; 1: true)
     uint64_t inputSize;
 
     // ReduceScatter和AllReduce在开启重执行、in-place update、UserInMem > HcclBuffSize的时候，会触发前同步 (与正常算子展开逻辑不同)

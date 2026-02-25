@@ -21,7 +21,7 @@ static const std::vector<HcclCMDType> SUPPORT_OP_LIST {
     HCCL_CMD_ALLREDUCE, HCCL_CMD_ALLGATHER, HCCL_CMD_REDUCE_SCATTER, HCCL_CMD_ALLTOALLV, HCCL_CMD_ALLTOALL
 };
 
-void FormatOpData(const HcclMsg &msg, const HcclMsgExt &extMsg, u32 repeat, HcclOpData &data)
+void FormatOpData(const HcclMsg &msg, HcclMsgExt &extMsg, u32 rankNum, u32 repeat, HcclOpData &data)
 {
     if (repeat == 0U) {
         data.opType = static_cast<HcclCMDType>(msg.commType.prepareType);
@@ -41,6 +41,14 @@ void FormatOpData(const HcclMsg &msg, const HcclMsgExt &extMsg, u32 repeat, Hccl
             data.dataDes.dataType = data.dataType;
             data.dataDes.dataCount = data.dataCount;
             data.dataDes.strideCount = msg.strideCount;
+        }
+    } else if (data.opType == HCCL_CMD_ALLTOALLV) {
+        for (u32 i = 0U; i < rankNum; ++i) {
+            extMsg.sendOffset[i] += extMsg.sendCounts[i];
+            extMsg.recvOffset[i] += extMsg.recvCounts[i];
+            HCCL_INFO("Formatted alltoallv info: repeat %u, rank id %u, send offset %llu, recv offset %llu.", repeat, i,
+                      static_cast<u64 *>(data.all2AllVDataDes.sdispls)[i],
+                      static_cast<u64 *>(data.all2AllVDataDes.rdispls)[i]);
         }
     }
     const u64 offset = data.dataCount * DataUnitSize(data.dataType);
@@ -84,7 +92,7 @@ HcclResult CommKfcAicpuServer::AddOpContext(const CommKfcContext *ctx)
     return HCCL_SUCCESS;
 }
 
-HcclResult CommKfcAicpuServer::Orchestrate(const HcclMsg &msg, const HcclMsgExt &extMsg, u32 msgPos)
+HcclResult CommKfcAicpuServer::Orchestrate(const HcclMsg &msg, HcclMsgExt &extMsg, u32 msgPos)
 {
     KeepAlive();
     CHK_PTR_NULL(msgArea_);
@@ -107,7 +115,7 @@ HcclResult CommKfcAicpuServer::Orchestrate(const HcclMsg &msg, const HcclMsgExt 
     HcclOpData data{};
     void *opHandle = handleIter->second;
     for (u32 i = 0U; i < repeatCnt; ++i) {
-        FormatOpData(msg, extMsg, i, data);
+        FormatOpData(msg, extMsg, rankNum_, i, data);
         const u32 turnIdx = i + 1U;
         CHK_RET(HcclLaunchCcoreWait(opHandle, waitAddr, turnIdx, turnNumsAddr_, turnIdx == repeatCnt));
         CHK_RET(HcclLaunchOp(opHandle, &data));

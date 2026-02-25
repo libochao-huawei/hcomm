@@ -356,8 +356,7 @@ void HcclOneSidedService::AddWaitToUserStream(const Stream &stream) const
     waitNotify->Wait(stream, 1000); // host 和 device sync流程，等待1000ms
 }
 
-void HcclOneSidedService::SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &param, bool needUpdateRes,
-                                                       const DevBuffer *mem) const
+void HcclOneSidedService::SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &param, const DevBuffer *mem) const
 {
     CollOperator op = *comm_->GetCurrentCollOperator();
 
@@ -374,17 +373,13 @@ void HcclOneSidedService::SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &pa
             StringFormat("HcclOneSidedService::SetOneSidedKernelLaunchParam, strcpy_s commId failed!"));
     }
 
-    param.kernel.needUpdateRes = false;
     param.kernel.oneSidedComm  = true;
 
     param.kernel.op.algOperator.opMode = op.opMode;
     param.kernel.op.algOperator.opType = op.opType;
 
-    if (needUpdateRes) {
-        param.kernel.needUpdateRes = true;
-        param.kernel.binaryResAddr = mem->GetAddr();
-        param.kernel.binaryResSize = mem->GetSize();
-    }
+    param.kernel.binaryResAddr = mem->GetAddr();
+    param.kernel.binaryResSize = mem->GetSize();
 
     param.kernel.op.sendRecvRemoteRank = op.sendRecvRemoteRank;
 
@@ -423,13 +418,12 @@ void HcclOneSidedService::OneSidedAicpuKernelLaunch(HcclKernelLaunchParam &param
     AddWaitToUserStream(stream);
 }
 
-DevBuffer *HcclOneSidedService::PackResToKernelLanuch(CollAlgOpReq &opReq, bool &needUpdateRes)
+DevBuffer *HcclOneSidedService::PackResToKernelLanuch(CollAlgOpReq &opReq)
 {
     auto it = OneSidedLoadMap.find(opReq.algName);
     if (it != OneSidedLoadMap.end()) { // 已经向Device Mem写过资源
-        HCCL_INFO("HcclOneSidedService, OneSidedLoadMap.find(%s) != OneSidedLoadMap.end()", opReq.algName.c_str());
-        needUpdateRes = false;
-        return nullptr;
+        HCCL_INFO("[OpBasedCollProcess] tag[%s] devMem has been allocated, reuse it", opReq.algName.c_str());
+        return it->second.get();
     }
 
     HCCL_INFO("[HcclOneSidedService][PackResToKernelLanuch], PackOpData start");
@@ -444,7 +438,6 @@ DevBuffer *HcclOneSidedService::PackResToKernelLanuch(CollAlgOpReq &opReq, bool 
               Bytes2hex(buffer.data(), buffer.size()).c_str());
     OneSidedLoadMap.insert(make_pair(opReq.algName, devMem));
 
-    needUpdateRes = true; // 需要更新资源
     return devMem.get();
 }
 
@@ -469,14 +462,13 @@ HcclResult HcclOneSidedService::BatchOpKernelLaunch(OpType opType, RankId remote
     FillOneSidedOperator(opType, remoteRankId, desc);
     HCCL_INFO("[HcclOneSidedService][BatchOpKernelLaunch] PackResToKernelLanuch start");
     // 打包device展开资源信息
-    bool       needUpdateRes;
-    DevBuffer *devMem = PackResToKernelLanuch(opReq, needUpdateRes);
+    DevBuffer *devMem = PackResToKernelLanuch(opReq);
     // 组kernelLaunch参数
     HcclKernelLaunchParam param;
 
     HCCL_INFO("[HcclOneSidedService][BatchOpKernelLaunch] SetOneSidedKernelLaunchParam start");
     // 构造单边通信公共参数
-    SetOneSidedKernelLaunchParam(param, needUpdateRes, devMem);
+    SetOneSidedKernelLaunchParam(param, devMem);
     auto it = oneSidedConns_.find(remoteRankId);
     if (it == oneSidedConns_.end()) {
         HCCL_ERROR("[HcclMemCommunication][BatchGet] Can't find oneSidedConn by remoteRank %u", remoteRankId);

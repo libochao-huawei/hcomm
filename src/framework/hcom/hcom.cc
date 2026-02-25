@@ -3272,9 +3272,10 @@ HcclResult GetOpScratchMemSize(bool isOfflineCompilation, HcclCMDType hcclOpType
             CHK_RET(hrtResetDevice(deviceLogicId));
         }
     } else if (hcclOpType == HCCL_CMD_ALLREDUCE) {
-        // 2. 如何判断 aiv_only
+        // 判断 aiv_only
         bool isAivOnlyMode = false;
-        isAivOnlyMode = hcclComm->HcclGetConfigIsOnlyAivMode();
+        CHK_RET(hcclComm->GetOnlyAivModeConfig(isAivOnlyMode));
+
         u8 deterministic;
         std::string socVersionStr(hcomOpParam->socVersion);
         DevType devType = DevType::DEV_TYPE_COUNT;
@@ -3284,7 +3285,7 @@ HcclResult GetOpScratchMemSize(bool isOfflineCompilation, HcclCMDType hcclOpType
         if (deterministic != DETERMINISTIC_DISABLE) {
             CHK_RET(GetAllReduceScratchMemSize(isOfflineCompilation, hcomOpParam, serverNum, rankSize, opMemSize));
         } else {
-            if (count * dataTypeSize <= HCCL_MID_COUNT_16_MB || isAivOnlyMode) { // 3. aivOnly 也需要scratch mem
+            if (count * dataTypeSize <= HCCL_MID_COUNT_16_MB || isAivOnlyMode) { // aivOnly 也需要scratch mem
                 opMemSize += count * dataTypeSize * HCCL_MEMSIZE_HD_FACTOR;
             }
         }

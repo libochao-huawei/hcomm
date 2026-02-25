@@ -366,7 +366,7 @@ HcclResult GetCommAddr(CommAddr &commAddr, const IpAddress &ipAddr)
     return HCCL_SUCCESS;
 }
 
-static EndpointLocType AddrPositionToEndpointLoc(AddrPosition pos) {
+EndpointLocType AddrPositionToEndpointLoc(AddrPosition pos) {
     switch (pos) {
         case AddrPosition::HOST:    return ENDPOINT_LOC_TYPE_HOST;
         case AddrPosition::DEVICE:  return ENDPOINT_LOC_TYPE_DEVICE;
@@ -374,39 +374,48 @@ static EndpointLocType AddrPositionToEndpointLoc(AddrPosition pos) {
     }
 }
 
-HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t* descNum,
-                                      EndpointDesc* endpointDesc)
+HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t* descNum, EndpointDesc* endpointDesc)
 {
     auto peer = GetPeer(myRank_);
-    if (peer == nullptr) {
-        HCCL_ERROR("[RankGraph::GetEndpointDesc] Peer is nullptr at netLayer [%u]", layer);
-        return HCCL_E_PTR;
-    }
+    CHK_PTR_NULL(peer);
 
     auto ifacesVec = peer->GetIfacesByLayer(layer);
     uint32_t count = 0;
 
+    // 找到 topoInstId 匹配的 iface
     for (const auto& iface : ifacesVec) {
-        if (topoInstId == iface->GetTopoInstId()) {
-            const auto& protocols = iface->GetLinkProtocols();
-            for (const auto& protocol : protocols) {
-                if (count >= *descNum) {
-                    HCCL_ERROR("[RankGraph::GetEndpointDesc] endPointDesc array is too small: "
-                               "expected >= %u, but got %u",
-                               count + 1, *descNum);
-                    return HCCL_E_PARA;
-                }
-                CHK_RET(GetCommAddr(endpointDesc[count].commAddr, iface->GetAddr()));
-                auto it = protocolMap.find(protocol);
-                CommProtocol commProtocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
-                endpointDesc[count].protocol = commProtocol;
-                endpointDesc[count].loc.locType = AddrPositionToEndpointLoc(iface->GetPos());
-                HCCL_INFO("[RankGraph::GetEndpointDesc] local type is %d", endpointDesc[count].loc.locType);
-                peer->SetEndpointToIface(endpointDesc[count].commAddr, endpointDesc[count].protocol, iface);
-                count++;
+        if (iface->GetTopoInstId() != topoInstId) {
+            continue;
+        }
+
+        // 对该 iface，从 endpointToIfaceMap_ 中找出所有匹配的 EndpointDesc
+        // 一个 iface 可能对应多个 protocol（即多个 EndpointDesc）
+        const auto& endpointMap = peer->GetEndpointToIfaceMap();
+        for (const auto& entry : endpointMap) {
+            std::pair<CommAddr, CommProtocol> endpoint = entry.first;
+            const std::shared_ptr<NetInstance::ConnInterface>& mappedIface = entry.second;
+
+            if (mappedIface != iface) {
+                continue;
             }
+
+            // 检查输出缓冲区是否足够
+            if (count >= *descNum) {
+                HCCL_ERROR("[RankGraph::GetEndpointDesc] endpointDesc array too small: "
+                           "need %u, given %u", count + 1, *descNum);
+                return HCCL_E_PARA;
+            }
+
+            endpointDesc[count].commAddr = endpoint.first;
+            endpointDesc[count].protocol = endpoint.second;
+            endpointDesc[count].loc.locType = AddrPositionToEndpointLoc(iface->GetPos());
+
+            HCCL_INFO("[RankGraph::GetEndpointDesc] local type is %d, protocol %d", endpointDesc[count].loc.locType,
+                    endpointDesc[count].protocol);
+            count++;
         }
     }
+
     *descNum = count;
     return HCCL_SUCCESS;
 }
@@ -454,6 +463,7 @@ HcclResult RankGraph::GetEndpointInfo(uint32_t rankId,
                 return HCCL_E_PARA;
             }
             *(static_cast<EndpointAttrDieId*>(info)) = iface->GetLocalDieId();
+            HCCL_INFO("GetEndpointInfo rankId[%u] iface[%s]", rankId, iface->Describe().c_str());
             break;
         }
         case ENDPOINT_ATTR_LOCATION: {

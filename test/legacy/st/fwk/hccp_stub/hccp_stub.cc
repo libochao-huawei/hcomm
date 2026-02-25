@@ -209,113 +209,113 @@ int RaSendWr(void *qp_handle, struct SendWr *wr, struct SendWrRsp *op_rsp)
     return 0;
 }
 
-int ra_ctx_init(struct ctx_init_cfg *cfg, struct ctx_init_attr *info, void **ctx_handle)
+int RaCtxInit(struct CtxInitCfg *cfg, struct CtxInitAttr *info, void **ctx_handle)
 {
     return 0;
 }
  
-int ra_ctx_deinit(void *ctx_handle)
-{
-    return 0;
-}
-
-int ra_ctx_token_id_alloc(void *ctx_handle, struct hccp_token_id *info, void **token_id_handle)
+int RaCtxDeinit(void *ctx_handle)
 {
     return 0;
 }
 
-int ra_ctx_token_id_free(void *ctx_handle, void *token_id_handle)
+int RaCtxTokenIdAlloc(void *ctx_handle, struct HccpTokenId *info, void **token_id_handle)
 {
     return 0;
 }
 
-int ra_ctx_lmem_register(void *ctx_handle, struct mr_reg_info_t *lmem_info, void **lmem_handle)
+int RaCtxTokenIdFree(void *ctx_handle, void *token_id_handle)
+{
+    return 0;
+}
+
+int RaCtxLmemRegister(void *ctx_handle, struct MrRegInfoT *lmem_info, void **lmem_handle)
 {
     return 0;
 }
  
-int ra_ctx_lmem_unregister(void *ctx_handle, void *lmem_handle)
+int RaCtxLmemUnregister(void *ctx_handle, void *lmem_handle)
 {
     return 0; 
 }
  
-int ra_ctx_rmem_import(void *ctx_handle, struct mr_import_info_t *rmem_info, void **rmem_handle)
+int RaCtxRmemImport(void *ctx_handle, struct MrImportInfoT *rmem_info, void **rmem_handle)
 {
     return 0; 
 }
  
-int ra_ctx_rmem_unimport(void *ctx_handle, void *rmem_handle)
+int RaCtxRmemUnimport(void *ctx_handle, void *rmem_handle)
 {
     return 0; 
 }
  
-int ra_ctx_cq_create(void *ctx_handle, struct cq_info_t *info, void **cq_handle)
+int RaCtxCqCreate(void *ctx_handle, struct CqInfoT *info, void **cq_handle)
 {
     return 0; 
 }
  
-int ra_ctx_cq_destroy(void *ctx_handle, void *cq_handle)
+int RaCtxCqDestroy(void *ctx_handle, void *cq_handle)
 {
     return 0; 
 }
  
-int ra_ctx_qp_create(void *ctx_handle, struct qp_create_attr *attr, struct qp_create_info *info, void **qp_handle)
+int RaCtxQpCreate(void *ctx_handle, struct QpCreateAttr *attr, struct QpCreateInfo *info, void **qp_handle)
 {
     return 0; 
 }
  
-int ra_ctx_qp_destroy(void *qp_handle)
+int RaCtxQpDestroy(void *qp_handle)
 {
     return 0; 
 }
  
-int ra_ctx_qp_import(void *ctx_handle, struct qp_import_info_t *qp_info, void **rem_qp_handle)
+int RaCtxQpImport(void *ctx_handle, struct QpImportInfoT *qp_info, void **rem_qp_handle)
 {
     return 0; 
 }
  
-int ra_ctx_qp_unimport(void *ctx_handle, void *rem_qp_handle)
+int RaCtxQpUnimport(void *ctx_handle, void *rem_qp_handle)
 {
     return 0; 
 }
  
-int ra_ctx_qp_bind(void *qp_handle, void *rem_qp_handle)
+int RaCtxQpBind(void *qp_handle, void *rem_qp_handle)
 {
     return 0; 
 }
  
-int ra_ctx_qp_unbind(void *qp_handle)
+int RaCtxQpUnbind(void *qp_handle)
 {
     return 0; 
 }
  
-int ra_batch_send_wr(void *qp_handle, struct send_wr_data wr_list[], struct send_wr_resp op_resp[],
+int RaBatchSendWr(void *qp_handle, struct SendWrData wr_list[], struct SendWrResp op_resp[],
                      unsigned int num, unsigned int *complete_num)
 {
     return 0; 
 }
  
-int ra_get_dev_eid_info_num(struct RaInfo info, unsigned int *num)
+int RaGetDevEidInfoNum(struct RaInfo info, unsigned int *num)
 {
     return 0; 
 }
  
-int ra_get_dev_eid_info_list(struct RaInfo info, struct dev_eid_info info_list[], unsigned int *num)
+int RaGetDevEidInfoList(struct RaInfo info, struct HccpDevEidInfo info_list[], unsigned int *num)
 {
     return 0;
 }
 
-int ra_get_dev_base_attr(void *ctx_handle, struct dev_base_attr *attr)
+int RaGetDevBaseAttr(void *ctx_handle, struct DevBaseAttr *attr)
 {
     return 0;
 }
 
-int ra_custom_channel(struct RaInfo info, struct custom_chan_info_in *in, struct custom_chan_info_out *out)
+int RaCustomChannel(struct RaInfo info, struct CustomChanInfoIn *in, struct CustomChanInfoOut *out)
 {
     return 0;
 }
 
-int ra_ctx_update_ci(void *qp_handle, uint16_t ci)
+int RaCtxUpdateCi(void *qp_handle, uint16_t ci)
 {
     return 0;
 }
@@ -365,45 +365,45 @@ int RaSocketRecvAsync(const void *fd_handle, void *data, unsigned long long size
     return 0;
 }
 
-int ra_ctx_lmem_register_async(void *ctx_handle, struct mr_reg_info_t *lmem_info, void **lmem_handle,
+int RaCtxLmemRegisterAsync(void *ctx_handle, struct MrRegInfoT *lmem_info, void **lmem_handle,
     void **req_handle)
 {
     *req_handle = reinterpret_cast<void *>(0x12345678);
     return 0;
 }
 
-int ra_ctx_lmem_unregister_async(void *ctx_handle, void *lmem_handle, void **req_handle)
+int RaCtxLmemUnregisterAsync(void *ctx_handle, void *lmem_handle, void **req_handle)
 {
     *req_handle = reinterpret_cast<void *>(0x12345678);
     return 0;
 }
 
-int ra_ctx_qp_create_async(void *ctx_handle, struct qp_create_attr *attr, struct qp_create_info *info,
+int RaCtxQpCreateAsync(void *ctx_handle, struct QpCreateAttr *attr, struct QpCreateInfo *info,
     void **qp_handle, void **req_handle)
 {
     *req_handle = reinterpret_cast<void *>(0x12345678);
     return 0;
 }
 
-int ra_ctx_qp_destroy_async(void *qp_handle, void **req_handle)
+int RaCtxQpDestroyAsync(void *qp_handle, void **req_handle)
 {
     *req_handle = reinterpret_cast<void *>(0x12345678);
     return 0;
 }
 
-int ra_ctx_qp_import_async(void *ctx_handle, struct qp_import_info_t *info, void **rem_qp_handle, void **req_handle)
+int RaCtxQpImportAsync(void *ctx_handle, struct QpImportInfoT *info, void **rem_qp_handle, void **req_handle)
 {
     *req_handle = reinterpret_cast<void *>(0x12345678);
     return 0;
 }
 
-int ra_ctx_qp_unimport_async(void *rem_qp_handle, void **req_handle)
+int RaCtxQpUnimportAsync(void *rem_qp_handle, void **req_handle)
 {
     *req_handle = reinterpret_cast<void *>(0x12345678);
     return 0;
 }
 
-int ra_get_tp_info_list_async(void *ctx_handle, struct get_tp_cfg *cfg, struct tp_info info_list[],
+int RaGetTpInfoListAsync(void *ctx_handle, struct GetTpCfg *cfg, struct HccpTpInfo info_list[],
     unsigned int *num, void **req_handle)
 {
     *req_handle = reinterpret_cast<void *>(0x12345678);
@@ -447,7 +447,7 @@ int RaEpollCtlDel(const void *fd_handle)
     return 0;
 }
 
-int ra_get_sec_random(struct RaInfo *info, uint32_t *value)
+int RaGetSecRandom(struct RaInfo *info, uint32_t *value)
 {
     return 0;
 }
