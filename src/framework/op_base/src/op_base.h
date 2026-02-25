@@ -43,6 +43,23 @@ using HcclOpInfoCtx = struct HcclInfoTag {
     }
 };
 
+constexpr uint32_t ALG_CONFIG_SIZE = 128;
+struct HcclOpArgsV1 {
+    HcclDataType srcDataType;
+    HcclDataType dstDataType;
+    HcclReduceOp reduceType;
+    uint64_t count;
+    char algConfig[ALG_CONFIG_SIZE];
+    CommEngine commEngine;
+    uint64_t reverse;
+
+    void Init() {  // if not set value, give a default
+        srcDataType = HCCL_DATA_TYPE_FP16;
+        dstDataType = HCCL_DATA_TYPE_FP16;
+        reduceType = HCCL_REDUCE_SUM;
+    }
+};
+
 constexpr uint32_t MAX_HCOM_NUM = 3U;
 
 HcclOpInfoCtx &GetHcclExistDeviceOpInfoCtx(void);
@@ -98,6 +115,9 @@ void CheckCountsAndDispls(const u32 length, const void *counts, const void *disp
 HcclResult GetCaptureInfo(aclrtStream stream, aclmdlRICaptureStatus& captureStatus, uint64_t& modelId, bool& isCapture);
 
 HcclResult HcclGetInitTilingList(const void *mc2Tiling, const void *p[], uint32_t &cnt);
+
+HcclResult HcclMc2ComOpResCtx(HcclComm comm, uint8_t opType, HcclDataType srcDataType, HcclDataType dstDataType,
+                              HcclReduceOp reduceType, uint64_t count, char *algConfig, CommEngine commEngine, rtStream_t &aicpuStream);
 
 #ifdef __cplusplus
 extern "C" {

@@ -279,6 +279,8 @@ inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t des
  */
 extern HcclResult HcclGetHcclBuffer(HcclComm comm, void **buffer, uint64_t *size);
 
+extern HcclResult HcclGetRemoteIpcHcclBuf(HcclComm comm, uint64_t remoteRank, void **addr, uint64_t *size);
+
 /**
  * @defgroup 通信引擎资源管理
  * @{
