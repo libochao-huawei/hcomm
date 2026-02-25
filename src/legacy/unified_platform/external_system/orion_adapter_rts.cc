@@ -7,13 +7,15 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+
+#include "orion_adapter_rts.h"
 #include "runtime_api_exception.h"
 #include "exception_util.h"
-#include "orion_adapter_rts.h"
 #include "invalid_params_exception.h"
 #include "log.h"
 #include "acl/acl_rt.h"
 #include "driver/ascend_hal.h"
+#include "adapter_error_manager_pub.h"
 
 using namespace std;
 namespace Hccl {
@@ -396,6 +398,8 @@ void *HrtMalloc(u64 size, rtMemType_t memType)
     rtError_t ret    = rtMalloc(&devPtr, size, memType, HCCL);
     HCCL_INFO("Call rtMalloc, return value[%d] size[%llu] memType[%u], devPtr[%p], moudleId: HCCL.", ret, size, memType, devPtr);
     if (ret != RT_ERROR_NONE) {
+        RPT_INPUT_ERR(true, "EI0007", std::vector<std::string>({"resource_type", "resource_info"}),
+                            std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size)}));
         HCCL_ERROR("[Malloc][Mem]errNo[0x%016llx] rtMalloc failed, "
                    "return[%d], para: devPtrAddr[%p], size[%llu], memType[%u].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, devPtr, size, memType);
@@ -601,6 +605,8 @@ void *HrtMallocHost(u64 size)
     HCCL_INFO("Call aclrtMallocHostWithCfg, return value[%d], para: hostPtr[%p], size[%llu], moudleId: HCCL.", ret,
               hostPtr, size);
     if (ret != ACL_SUCCESS) {
+        RPT_INPUT_ERR(true, "EI0007", std::vector<std::string>({"resource_type", "resource_info"}),
+                            std::vector<std::string>({"HostMemory", std::string("size:") + std::to_string(size)}));
         HCCL_ERROR("[Malloc][Host]errNo[0x%016llx] rt malloc host fail. return[%d], "
                    "para: size[%llu].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, size);
