@@ -16,7 +16,7 @@ openssl:
   version: v3.0.9
   type: build
 mockcpp:
-  version: v2.7-h2
+  version: v2.7-h4
   type: test
 googletest:
   version: v1.14.0
