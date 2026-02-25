@@ -21,6 +21,7 @@
 #include "sal.h"
 #include "string_util.h"
 #include "orion_adapter_rts.h"
+#include "adapter_error_manager_pub.h"
 
 namespace Hccl {
 
@@ -250,6 +251,8 @@ constexpr u32 HCCL_RDMA_TC_BASE = 4;    // RDMATrafficClass需要是4的整数�
 void CheckRDMATrafficClass(const u32 &rdmaTrafficClass)
 {
     if (rdmaTrafficClass % HCCL_RDMA_TC_BASE != 0) {
+        RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"env", "tips"}),
+                            std::vector<std::string>({"HCCL_RDMA_TC", "Please check whether the value is multiple of four."}));
         HCCL_ERROR("rdmaTrafficClass[%u] is not a multiple of [%u]", rdmaTrafficClass, HCCL_RDMA_TC_BASE);
         THROW<InvalidParamsException>(
             StringFormat("rdmaTrafficClass[%u] is not a multiple of [%u]", rdmaTrafficClass, HCCL_RDMA_TC_BASE));
