@@ -79,7 +79,7 @@ public:
     HcclSocketStatus GetStatus();
     HcclResult Accept(const std::string &tag, std::shared_ptr<HcclSocket> &socket, u32 acceptTimeOut = 0);
     HcclResult Send(const void *data, u64 size);
-    HcclResult Recv(void *recvBuf, u32 recvBufLen);
+    HcclResult Recv(void *recvBuf, u32 recvBufLen, u32 timeout = 0);
     HcclResult Send(const std::string &sendMsg);
     HcclResult Recv(std::string &recvMsg);
     HcclResult ISend(void *data, u64 size, u64& compSize);

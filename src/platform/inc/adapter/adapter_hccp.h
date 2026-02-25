@@ -185,7 +185,7 @@ HcclResult HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode, QpHandle &
 HcclResult HrtRaQpDestroy(QpHandle handle);
 HcclResult HrtRaQpNonBlockConnectAsync(QpHandle handle, const SocketHandle sockHandle);
 HcclResult HrtRaQpConnectAsync(QpHandle handle, const SocketHandle sockHandle,
-    std::function<bool()> needStop = []() { return false; });
+    std::function<bool()> needStop = []() { return false; }, u32 timeout = 0);
 s32 hrtGetRaQpStatus(QpHandle handle, int *status);
 HcclResult HrtRaMrReg(QpHandle handle, struct MrInfoT *mrInfo);
 HcclResult HrtRaGetNotifyMrInfo(u32 phyId, RdmaHandle handle, struct MrInfoT *mrInfo);
@@ -240,7 +240,7 @@ HcclResult  hrtRaSocketNonBlockRecvHeterog(const FdHandle fdHandle, void *data, 
 s32 hrtRaSocketNonBlockRecv(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize);
 HcclResult hrtRaSocketNonBlockRecvHeart(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize);
 HcclResult hrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u64 size,
-    std::function<bool()> needStop = []() { return false; });
+    std::function<bool()> needStop = []() { return false; }, u32 timeout = 0);
 
 s32 hrtRaSocketRecv(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize);
 
