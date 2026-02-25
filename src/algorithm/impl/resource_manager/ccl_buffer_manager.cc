@@ -386,6 +386,7 @@ HcclResult CCLBufferManager::GetIndependentOpCCLbuffer(void* &buffer, uint64_t &
 {
     buffer = GetCCLbufferAddr(cclBuffer_);
     if (buffer == nullptr) {
+        HCCL_RUN_INFO("[GetIndependentOpCCLbuffer] buffer is empty");
         CHK_RET(CreateCommCCLbuffer());
         buffer = GetCCLbufferAddr(cclBuffer_);
     }
