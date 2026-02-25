@@ -279,7 +279,7 @@ INS_REGISTER_IMPL_BY_TEMP(OpType::ALLGATHER, InsAllGatherNHR, InsV2AllGatherSole
                           InsTempAllGatherNHR);
 #ifndef CCL_KERNEL_AICPU
 INS_REGISTER_IMPL_BY_TEMP(OpType::ALLGATHER, AivAllGatherMesh1D, InsV2AllGatherSoleExecutor,
-    TopoMatchMesh, AivTempAllGatherMesh1D);P
+    TopoMatchMesh, AivTempAllGatherMesh1D);
 INS_REGISTER_IMPL_BY_TEMP(OpType::ALLGATHER, CcuAllGatherMesh1DMem2MemWithStride, InsV2AllGatherSoleExecutor,
     TopoMatchMesh, CcuTempAllGatherMesh1DMem2MemWithStride);
 INS_REGISTER_IMPL_BY_TEMP(
