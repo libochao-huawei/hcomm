@@ -286,7 +286,7 @@ HcclResult CCLBufferManager::InitCCLbuffer(u64 inCCLbufferSize, u64 outCCLbuffer
 
 void* CCLBufferManager::GetCCLbufferAddr(const DeviceMem &buffer)
 {
-    if (!buffer) {
+    if (buffer.ptr() == nullptr) {
         return nullptr;
     } else {
         return static_cast<void *>(reinterpret_cast<u8 *>(buffer.ptr()));
@@ -386,6 +386,7 @@ HcclResult CCLBufferManager::GetIndependentOpCCLbuffer(void* &buffer, uint64_t &
 {
     buffer = GetCCLbufferAddr(cclBuffer_);
     if (buffer == nullptr) {
+        HCCL_RUN_INFO("[GetIndependentOpCCLbuffer] buffer is empty");
         CHK_RET(CreateCommCCLbuffer());
         buffer = GetCCLbufferAddr(cclBuffer_);
     }
