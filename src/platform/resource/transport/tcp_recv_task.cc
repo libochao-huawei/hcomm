@@ -31,7 +31,7 @@ void TcpRecvTask::RecvDataCb(const FdHandle fdHandle)
         return;
     }
     if (fdHandle == nullptr) {
-        HCCL_ERROR("[RecvTask][RecvDataCb]fdHandle is nullptr!!!!");
+        HCCL_ERROR("[RecvTask][RecvDataCb]fdHandle is nullptr");
     } else {
         GetRecvTaskInstance()->RecvData(fdHandle);
     }

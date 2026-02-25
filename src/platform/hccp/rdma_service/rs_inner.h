@@ -535,7 +535,7 @@ struct SensorNode {
 };
 
 struct RsRdevCb {
-    struct rs_cb *rs_cb;
+    struct rs_cb *rsCb;
     unsigned int rdevIndex;
     struct RsIpAddrInfo localIp;
     int devNum;

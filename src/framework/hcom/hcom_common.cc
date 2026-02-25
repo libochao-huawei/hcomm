@@ -1454,7 +1454,7 @@ DevType HcomGetDeviceType()
 	hrtGetDeviceType(devType);
     if(devType == DevType::DEV_TYPE_910_95 ){
         HcomGetDevTypeV2(devType);
-        HCCL_INFO("LaunchHcomKernel: devType is %d", MakeEnumToDevType(static_cast<int>(devType)));
+        HCCL_INFO("LaunchHcomKernel: devType is DEV_TYPE_910_95");
         return MakeEnumToDevType(static_cast<int>(devType));
     }
 

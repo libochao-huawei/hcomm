@@ -77,6 +77,14 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
         mainInsQues.push_back(tempInsQues[queIdx * queNumPerNeighbor_]);
     }
 
+    // 主流通知 copy流开始工作
+    if (tempInsQues.size() > 1) {
+        std::vector<InsQuePtr> preSyncQues; // 改名
+        preSyncQues.push_back(tempInsQues[0]);
+        preSyncQues.push_back(tempInsQues[tempInsQues.size() - 1]);
+        CHK_RET(PreSyncInterQueues(preSyncQues));
+    }
+
     // Local Copy from Input to Output for OPBASE
     CHK_RET(LocalDataCopy(mainInsQues));
     if (tempRankSize_ == 1) {
@@ -101,6 +109,15 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
     // semaphore sync
     if (majorQueNum_ > 1) { // more than one rank
         CHK_RET(PostSyncInterQueues(mainInsQues));
+    }
+
+    // 同步第0条流和最后一条流 (LocalCopy所在的流)
+    // 确保 LocalDataCopy 完成后，整体任务才算结束
+    if (tempInsQues.size() > 1) {
+        std::vector<InsQuePtr> postSyncQues;
+        postSyncQues.push_back(tempInsQues[0]);
+        postSyncQues.push_back(tempInsQues[tempInsQues.size() - 1]);
+        CHK_RET(PostSyncInterQueues(postSyncQues));
     }
 
     return HcclResult::HCCL_SUCCESS;

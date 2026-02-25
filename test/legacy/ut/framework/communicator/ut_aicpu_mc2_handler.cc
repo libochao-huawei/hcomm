@@ -47,7 +47,6 @@ protected:
         kernelParam->comm.idIndex = 0;
         kernelParam->comm.devType = DevType::DEV_TYPE_910_95;
         kernelParam->op.algOperator.opMode = OpMode::OPBASE;
-        kernelParam->needUpdateRes = false;
         std::cout << "A Test case in AicpuMc2HandlerTest SetUp" << std::endl;
     }
 
@@ -104,6 +103,7 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclGetCommHandleByCtx_When_CommIsUsed_Expect_Ret
 TEST_F(AicpuMc2HandlerTest, Ut_HcclGetCommHandleByCtx_When_CommIsFree_Expect_ReturnSuccess) {
     auto* ctx = reinterpret_cast<void*>(kernelParam);
     void* comm = reinterpret_cast<void*>(communicatorImplLite);
+    MOCKER_CPP(&CommunicatorImplLite::CheckNeedUpdateRes).stubs().will(returnValue(false));
     MOCKER_CPP(&CommunicatorImplLiteMgr::Get).stubs().with().will(returnValue(communicatorImplLite));
     MOCKER_CPP(&CommunicatorImplLite::SetDfxOpInfo).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&CommunicatorImplLite::UpdateHDCommnicate).stubs().will(ignoreReturnValue());

@@ -18,10 +18,10 @@
 #define ESCHED_THREAD_TRY_TIME 100
 #define ESCHED_THREAD_USLEEP_TIME 10000
 
-struct rs_esched_info {
-    unsigned int thread_status;
+struct RsEschedInfo {
+    unsigned int threadStatus;
 };
 
-int rs_esched_init(struct rs_cb *rscb);
-void rs_esched_deinit(enum ProtocolTypeT protocol);
+int RsEschedInit(struct rs_cb *rscb);
+void RsEschedDeinit(enum ProtocolTypeT protocol);
 #endif // RS_ESCHED_H
