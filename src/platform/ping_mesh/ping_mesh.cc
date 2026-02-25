@@ -108,6 +108,19 @@ bool IsSupportHCCLV2(const char *socNamePtr)
     return false;
 }
 
+HcclResult GetAddrType(u32 *addrType)
+{
+    CHK_PTR_NULL(addrType);
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    if (IsSupportHCCLV2(socNamePtr)) {
+        *addrType = HCCN_RPING_ADDR_TYPE_EID;
+    } else {
+        *addrType = HCCN_RPING_ADDR_TYPE_IP;
+    }
+    return HCCL_SUCCESS;
+}
+
 inline HcclResult UninitStateCheck(RpingState nextState)
 {
     HcclResult ret = HCCL_SUCCESS;
@@ -505,13 +518,19 @@ inline HcclResult RpingTargetAttrInit(PingTargetInfo &target, RpingInput input, 
 HcclResult PingMesh::RpingResultInfoInit(PingTargetResult *resultInfo, std::map<std::string, PingQpInfo> rdmaInfoMaps,
     RpingInput *input, u32 targetNum)
 {
+    u32 addressType = 0;
+    HcclResult addrTypeRet = GetAddrType(&addressType);
+    if (addrTypeRet != HCCL_SUCCESS) {
+         HCCL_ERROR("[RpingResultInfoInit]GetAddrType Fail ret %d", addrTypeRet);
+        return HCCL_E_PARA;
+    }
     for (u32 i = 0; i < targetNum; i++) {
         if (rdmaInfoMaps.find(std::string(input[i].dip.GetReadableIP())) == rdmaInfoMaps.end()) {
             HCCL_WARNING("[HCCN][RpingResultInfoInit]Target[%s] info doesn't exist.", input[i].dip.GetReadableIP());
             continue;
         }
         PingQpInfo *rdmainfo = &rdmaInfoMaps[std::string(input[i].dip.GetReadableIP())];
-        if (input[i].addrType == HCCN_RPING_ADDR_TYPE_IP) {
+        if (addressType == HCCN_RPING_ADDR_TYPE_IP) {
             resultInfo[i].remoteInfo.ip.addr = input[i].dip.GetBinaryAddress().addr;
             resultInfo[i].remoteInfo.ip.addr6 = input[i].dip.GetBinaryAddress().addr6;
             resultInfo[i].remoteInfo.qpInfo.version = 0;
@@ -522,7 +541,7 @@ HcclResult PingMesh::RpingResultInfoInit(PingTargetResult *resultInfo, std::map<
         }
         const char *socNamePtr = aclrtGetSocName();
         CHK_PTR_NULL(socNamePtr);
-        if (input[i].addrType == HCCN_RPING_ADDR_TYPE_EID && IsSupportHCCLV2(socNamePtr)) {
+        if (addressType == HCCN_RPING_ADDR_TYPE_EID && IsSupportHCCLV2(socNamePtr)) {
             u32 ret = 0;
             ret = memcpy_s(resultInfo[i].remoteInfo.eid.raw, sizeof(resultInfo[i].remoteInfo.eid.raw), 
                     input[i].dip.GetEid().raw, URMA_EID_LEN);
@@ -941,6 +960,12 @@ HcclResult PingMesh::HccnRpingDeinit(u32 deviceId)
 HcclResult PingMesh::HccnTargetAttrInter(u32 targetNumInter, RpingInput *inputInter, HccnRpingAddTargetConfig *configInter,PingTargetInfo *targetInter) 
 {
     HcclResult ret = HCCL_SUCCESS;
+    u32 addressType = 0;
+    ret = GetAddrType(&addressType);
+    if (ret != HCCL_SUCCESS) {
+         HCCL_ERROR("[HccnTargetAttrInter]GetAddrType Fail ret %d", ret);
+        return HCCL_E_PARA;
+    }
     for (u32 i = 0; i < targetNumInter; i++) {
         PingInitInfo recvInfo;
         ret = RpingRecvTargetInfo(netCtx_, inputInter[i].port, inputInter[i].dip, recvInfo, configInter->connectTimeout); 
@@ -960,12 +985,12 @@ HcclResult PingMesh::HccnTargetAttrInter(u32 targetNumInter, RpingInput *inputIn
             continue;
         }
         payloadLenMap_.insert(std::pair<std::string, u32>(std::string(inputInter[i].dip.GetReadableIP()), inputInter[i].len));
-        if (inputInter[i].addrType == HCCN_RPING_ADDR_TYPE_IP) {
+        if (addressType == HCCN_RPING_ADDR_TYPE_IP) {
             ret = RpingTargetAttrInit(targetInter[0], inputInter[i], rdmaInfo, true);
         }
         const char *socNamePtr = aclrtGetSocName();
         CHK_PTR_NULL(socNamePtr);
-        if (inputInter[i].addrType == HCCN_RPING_ADDR_TYPE_EID && IsSupportHCCLV2(socNamePtr)) {
+        if (addressType == HCCN_RPING_ADDR_TYPE_EID && IsSupportHCCLV2(socNamePtr)) {
             ret = RpingTargetAttrInitWithUb(targetInter[0], inputInter[i], rdmaInfo, true);
         }
         if (ret != HCCL_SUCCESS) {
@@ -1009,6 +1034,12 @@ HcclResult PingMesh::HccnRpingAddTarget(u32 deviceId, u32 targetNum, RpingInput 
 
 HcclResult PingMesh::HccnTarRemoveAttrInter(u32 targetNumInter, RpingInput *inputInter, PingTargetCommInfo  *targetInter, std::shared_ptr<HcclSocket> &socketInter) {
     HcclResult retInter = HCCL_SUCCESS;
+    u32 addressType = 0;
+    retInter = GetAddrType(&addressType);
+    if (retInter != HCCL_SUCCESS) {
+         HCCL_ERROR("[HccnTarRemoveAttrInter]GetAddrType Fail retInter %d", retInter);
+        return HCCL_E_PARA;
+    }
     for (u32 i = 0; i < targetNumInter; i++) {
         // 删除链路
         if (socketMaps_.find(std::string(inputInter[i].dip.GetReadableIP())) == socketMaps_.end()) {
@@ -1034,12 +1065,12 @@ HcclResult PingMesh::HccnTarRemoveAttrInter(u32 targetNumInter, RpingInput *inpu
         }
         PingQpInfo *rdmainfo = &rdmaInfoMaps_[std::string(inputInter[i].dip.GetReadableIP())];
         PingTargetInfo targetInfo { 0 };
-        if (inputInter[i].addrType == HCCN_RPING_ADDR_TYPE_IP) {
+        if (addressType == HCCN_RPING_ADDR_TYPE_IP) {
             retInter = RpingTargetAttrInit(targetInfo, inputInter[i], rdmainfo, false);
         }
         const char *socNamePtr = aclrtGetSocName();
         CHK_PTR_NULL(socNamePtr);
-        if (inputInter[i].addrType == HCCN_RPING_ADDR_TYPE_EID && IsSupportHCCLV2(socNamePtr)) {
+        if (addressType == HCCN_RPING_ADDR_TYPE_EID && IsSupportHCCLV2(socNamePtr)) {
             retInter = RpingTargetAttrInitWithUb(targetInfo, inputInter[i], rdmainfo, false);
         }
         

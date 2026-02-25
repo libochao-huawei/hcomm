@@ -1,8 +1,12 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
- * Description: ccu represnetation kernel manager implementation file
- * Create: 2025-02-13
- */
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "ccu_kernel_mgr.h"
 
@@ -75,12 +79,10 @@ HcclResult CcuKernelMgr::Register(std::unique_ptr<CcuKernel> kernel,
     std::unique_lock<std::mutex> lock(kernelMapMutex_);
     
     CHK_RET(AllocRes(kernel, resPack));
-    
-    constexpr bool isFuncBlock = false; // 当前不支持mc2
-    CHK_RET(Translate(kernel, isFuncBlock));
 
     kernelId_++;
     kernelMap_[kernelId_] = std::move(kernel);
+
     kernelHandle = kernelId_;
     return HcclResult::HCCL_SUCCESS;
 }
@@ -306,7 +308,7 @@ static HcclResult ResetRepResourceToResRepository(CcuRepResource &totalRepRes,
 }
 
 using DieResInfos = std::array<std::vector<ResInfo>, CCU_MAX_IODIE_NUM>;
-static HcclResult SaveKernelMissionInfo(std::unique_ptr<CcuKernel> &kernel,
+static HcclResult SaveKernelMissionInfo(CcuKernel *kernel,
     const DieResInfos &missionId, const int32_t devLogicId)
 {
     const uint32_t dieId = kernel->GetDieId();
@@ -325,8 +327,6 @@ static HcclResult SaveKernelMissionInfo(std::unique_ptr<CcuKernel> &kernel,
     }
 
     kernel->SetMissionId(missionId[dieId].back().startId);
-    // missionId[dieId].pop_back();
-
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -377,27 +377,107 @@ static HcclResult ExpandResRepo(CcuResRepository &totalRes, const CcuResReposito
     return HcclResult::HCCL_SUCCESS;
 }
 
-static HcclResult TransRepResToPhyRes(
-    std::unique_ptr<CcuKernel> &kernel, const int32_t devLogicId)
+template <typename T>
+static HcclResult MergeExportedResources(
+    const std::unordered_map<std::string, T> &inputRes,
+    std::unordered_map<std::string, T> &outputRes)
 {
-    const auto &totalResRepository = kernel->GetResRepository();
-    auto &totalRepRes = kernel->GetResource();
-    // 将ccu kernel持有的物理资源赋给资源对象
-    CcuResRepository expandedResRepo{};
-    ExpandResRepo(expandedResRepo, totalResRepository);
-    CHK_RET(ResetRepResourceToResRepository(totalRepRes, expandedResRepo));
-    CHK_RET(SaveKernelMissionInfo(kernel,
-        totalResRepository.mission.mission, devLogicId));
+    for (const auto &item : inputRes) {
+        const auto &resTag = item.first;
+        if (outputRes.find(resTag) != outputRes.end()) {
+            HCCL_ERROR("[CcuKernelMgr][%s] failed, exported resource tag[%s] is already existed, "
+                "please check.", __func__, resTag);
+            return HcclResult::HCCL_E_PARA;
+        }
+
+        outputRes.insert(item);
+    }
+
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuKernelMgr::Translate(std::unique_ptr<CcuKernel> &kernel, bool isFuncBlock)
+template <typename T>
+static HcclResult ResetImportedResources(
+    std::unordered_map<std::string, T> &importedRes,
+    const std::unordered_map<std::string, T> &exportedRes)
 {
-    // 将物理资源id通过shared_ptr添加到kernel中
-    CHK_RET(TransRepResToPhyRes(kernel, devLogicId_));
-    // 翻译为微码并下发指令空间
-    CHK_RET(TransRepSequenceToMicrocode(kernel, isFuncBlock));
-    // 清除referenceMgr中保存的引用关系
+    for (auto &item : importedRes) {
+        const auto &resTag = item.first;
+        const auto &iter = exportedRes.find(resTag);
+        if (iter == exportedRes.end()) {
+            HCCL_ERROR("[CcuKernelMgr][%s] failed to find exported resources by tag[%s].",
+                __func__, resTag.c_str());
+            return HcclResult::HCCL_E_NOT_FOUND;
+        }
+
+        item.second.Reset(iter->second.Id(), iter->second.DieId());
+    }
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+static HcclResult ProcessInterCtxRes(const std::vector<CcuKernel *> &kernels)
+{
+    std::unordered_map<std::string, CcuRep::LocalNotify> totalExportedNotifies;
+
+    for (const auto kernel : kernels) {
+        const auto &exportedRes = kernel->GetExportedRes();
+        CHK_RET(MergeExportedResources(exportedRes.sharedNotifies, totalExportedNotifies));
+    }
+
+    for (auto kernel : kernels) {
+        auto &importedRes = kernel->GetImportedRes();
+        CHK_RET(ResetImportedResources(importedRes.sharedNotifies, totalExportedNotifies));
+    }
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+static HcclResult TransRepResToPhyRes(
+    const std::vector<CcuKernel *> &kernels, const int32_t devLogicId)
+{
+    for (auto kernel : kernels) {
+        const auto &totalResRepository = kernel->GetResRepository();
+        auto &totalRepRes = kernel->GetResource();
+        
+        // 将ccu kernel持有的物理资源赋给资源对象
+        CcuResRepository expandedResRepo{};
+        ExpandResRepo(expandedResRepo, totalResRepository);
+        CHK_RET(ResetRepResourceToResRepository(totalRepRes, expandedResRepo));
+        
+        CHK_RET(SaveKernelMissionInfo(kernel,
+            totalResRepository.mission.mission, devLogicId));
+    }
+
+    CHK_RET(ProcessInterCtxRes(kernels));
+    
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuKernelMgr::Translate(const std::vector<CcuKernelHandle> &kernelHandles)
+{
+    if (kernelHandles.empty()) {
+        HCCL_INFO("[CcuKernelMgr][%s] passed, kernelHandles are empty.", __func__);
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    std::vector<CcuKernel *> kernels{};
+    for (const auto kernelHandle : kernelHandles) {
+        const auto &iter = kernelMap_.find(kernelHandle);
+        if (iter == kernelMap_.end()) {
+            HCCL_ERROR("[CcuKernelMgr][%s] failed to find kernel by ccu kernel handle[0x%llx].",
+                __func__, kernelHandle);
+            return HcclResult::HCCL_E_NOT_FOUND;
+        }
+
+        kernels.push_back(iter->second.get());
+    }
+
+    constexpr bool isFuncBlock = false; // 当前不支持MC2
+
+    CHK_RET(TransRepResToPhyRes(kernels, devLogicId_));
+    CHK_RET(TransRepSequenceToMicrocode(kernels, isFuncBlock));
+
     for (auto &referenceMgrMap : referenceMgrs) {
         for (auto &referenceMgr : referenceMgrMap.second) {
             referenceMgr.second->ClearRepReference();
@@ -406,7 +486,7 @@ HcclResult CcuKernelMgr::Translate(std::unique_ptr<CcuKernel> &kernel, bool isFu
     return HcclResult::HCCL_SUCCESS;
 }
 
-static HcclResult ReleaseInstrRes(std::unique_ptr<CcuKernel> &kernel, const int32_t devLogicId)
+static HcclResult ReleaseInstrRes(CcuKernel *kernel, const int32_t devLogicId)
 {
     const ResInfo insInfo{kernel->GetInstrId(),
         (kernel->GetInstrCount() + CcuRepTranslator::GetInstrNum())};
@@ -429,7 +509,7 @@ HcclResult CcuKernelMgr::UnRegister(const CcuKernelHandle kernelHandle)
             __func__, kernelHandle),
         HcclResult::HCCL_E_NOT_FOUND);
 
-    auto &kernel = it->second;
+    auto kernel = it->second.get();
     CHK_RET(ReleaseInstrRes(kernel, devLogicId_));
     kernelMap_.erase(kernelHandle);
     return HcclResult::HCCL_SUCCESS;
@@ -571,8 +651,9 @@ HcclResult CcuKernelMgr::LoadInstruction(const CcuRep::CcuInstrInfo &instrInfo, 
         reinterpret_cast<CustomChanInfoIn *>(&inBuff),
         reinterpret_cast<CustomChanInfoOut *>(&outBuff));
     if (ret != 0) {
-        HCCL_ERROR("[CcuKernelMgr][%s] failed to call ccu driver[%d], devLogicId[%d] dieId[%u]",
-            __func__, ret, devLogicId_, dieId);
+        HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
+            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,
+            "SET_INSTRUCTION");
         return HcclResult::HCCL_E_NETWORK;
     }
 
@@ -580,19 +661,22 @@ HcclResult CcuKernelMgr::LoadInstruction(const CcuRep::CcuInstrInfo &instrInfo, 
 }
 
 HcclResult CcuKernelMgr::TransRepSequenceToMicrocode(
-    std::unique_ptr<CcuKernel> &kernel, bool isFuncBlock)
+    const std::vector<CcuKernel *> &kernels, bool isFuncBlock)
 {
-    const uint32_t dieId = kernel->GetDieId();
-    const uint32_t missionId = kernel->GetMissionId();
-    
-    EXCEPTION_HANDLE_BEGIN
-    const auto &instrInfo = translators[dieId][missionId]->Translate(
-        kernel->GetRepSequence(), kernel->GetInstrId(), isFuncBlock);
+    for (auto kernel : kernels) {
+        const uint32_t dieId = kernel->GetDieId();
+        const uint32_t missionId = kernel->GetMissionId();
+        
+        EXCEPTION_HANDLE_BEGIN
+        const auto &instrInfo = translators[dieId][missionId]->Translate(
+            kernel->GetRepSequence(), kernel->GetInstrId(), isFuncBlock);
 
-    kernel->SetCcuInstrInfo(instrInfo);
+        CHK_RET(LoadInstruction(instrInfo, dieId));
 
-    CHK_RET(LoadInstruction(instrInfo, dieId));
-    EXCEPTION_HANDLE_END
+        kernel->SetCcuInstrInfo(instrInfo); // 指令下发成功后可以对kernel进行launch
+        EXCEPTION_HANDLE_END
+    }
+
     return HcclResult::HCCL_SUCCESS;
 }
 

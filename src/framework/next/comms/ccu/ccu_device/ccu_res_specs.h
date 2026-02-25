@@ -28,7 +28,7 @@ constexpr uint16_t CCU_START_TA_JETTY_ID = 1024; // IMP给系统预留给CCU的j
 constexpr uint32_t CCU_SQ_BUFFER_SIZE = 256 * 1024; // ccu 每个jetty sq buffer size 固定为256k
 constexpr uint32_t CCU_WQEBB_RESOURCE_NUM = 4096;
 constexpr uint32_t CCU_V1_PER_DIE_PFE_RESERVED_NUM = 16; // ccu 每个IO die预留16个PFE表
-constexpr uint32_t CCU_PER_DIE_JETTY_RESERVED_NUM = 128; // ccu 每个IO die默认jetty数量
+constexpr uint8_t  CCU_PER_DIE_JETTY_RESERVED_NUM = 128; // ccu 每个IO die默认jetty数量
 
 constexpr uint64_t CCU_RESOURCE_INS_RESERVE_SIZE = 0x100000;  // INS预留空间1M
 constexpr uint64_t CCU_V1_RESOURCE_GSA_RESERVE_SIZE = 0x8000; // v1 GSA预留空间32K

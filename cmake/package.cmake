@@ -114,27 +114,10 @@ function(pack_built_in)
       ${CMAKE_SOURCE_DIR}/scripts/package/common/cfg/path.cfg
   )
 
-  set(HCOMM_VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/version/version.info)
-  set(HOST_ONLY "false")
-  if (NOT FULL_MODE)
-    set(HOST_ONLY "true")
-  endif()
-  add_custom_command(
-    OUTPUT ${HCOMM_VERSION_FILE}
-    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/update_version_info/update_version_info.sh
-            ${CMAKE_CURRENT_SOURCE_DIR}/version.info
-            ${HCOMM_VERSION_FILE}
-    COMMAND ${CMAKE_COMMAND} -E echo "host_only=${HOST_ONLY}" >> ${HCOMM_VERSION_FILE}
-    DEPENDS 
-        ${CMAKE_CURRENT_SOURCE_DIR}/version.info
-    VERBATIM
-  )
-  add_custom_target(version_info ALL
-    DEPENDS ${HCOMM_VERSION_FILE}
-  )
-
-  install(FILES ${HCOMM_VERSION_FILE}
+  install(FILES ${CMAKE_BINARY_DIR}/version.hcomm.info
       DESTINATION share/info/hcomm
+      RENAME version.info
+      OPTIONAL
   )
   install(FILES ${CONF_FILES}
       DESTINATION hcomm/conf

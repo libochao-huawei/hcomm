@@ -56,7 +56,7 @@ static OpType GetOpTypeV2(std::string opTypeName) {
 
 static void LoadConfigCommName(string &commId, const HcclCommConfig &config)
 {
-    if (config.hcclCommName == nullptr || config.hcclCommName[0] == '\0') {
+    if (config.hcclCommName[0] == '\0') {
         HCCL_WARNING("[LoadConfigCommName] config.hcclCommName is empty, use default commId[%s]", commId.c_str());
         return;
     }
@@ -2892,6 +2892,10 @@ HcclResult HcclCommDeactivateCommMemoryV2(HcclComm comm, void *virPtr)
     return HCCL_E_NOT_SUPPORT;
 }
 
+uint32_t HcclGetCommConfigCapabilityV2()
+{
+    return static_cast<uint32_t>(HCCL_COMM_CONFIG_RETRY);
+}
 
 #ifdef __cplusplus
 }

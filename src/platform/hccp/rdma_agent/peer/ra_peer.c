@@ -232,7 +232,7 @@ STATIC int RaPeerSetConnParam(struct SocketInfoT conn[],
 {
     int ret;
     struct RaSocketHandle *socketHandle = NULL;
-    
+
     socketHandle = (struct RaSocketHandle *)conn[i].socketHandle;
     socketHandle->rdevInfo.phyId = rsConn[i].phyId;
 

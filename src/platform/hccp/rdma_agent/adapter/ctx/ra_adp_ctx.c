@@ -655,11 +655,11 @@ int RaRsCtxGetCrErrInfoList(char *inBuf, char *outBuf, int *outLen, int *opResul
     union OpCtxGetCrErrInfoListData *opData =
         (union OpCtxGetCrErrInfoListData *)(inBuf + sizeof(struct MsgHead));
     struct RaRsDevInfo devInfo = {0};
- 
+
     HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpCtxGetCrErrInfoListData), sizeof(struct MsgHead), rcvBufLen,
         opResult);
     HCCP_CHECK_PARAM_LEN_RET_HOST(opData->txData.num, 0, CR_ERR_INFO_MAX_NUM, opResult);
- 
+
     RaRsSetDevInfo(&devInfo, opData->txData.phyId, opData->txData.devIndex);
     opDataOut->rxData.num = opData->txData.num;
     *opResult = gRaRsCtxOps.ctxGetCrErrInfoList(&devInfo, opDataOut->rxData.infoList,
@@ -668,6 +668,6 @@ int RaRsCtxGetCrErrInfoList(char *inBuf, char *outBuf, int *outLen, int *opResul
         hccp_err("[get][cr_err]ctx_get_cr_err_info_list failed, ret[%d], phyId[%u]", *opResult,
             opData->txData.phyId);
     }
- 
+
     return 0;
 }

@@ -270,10 +270,10 @@ HCCP_ATTRI_VISI_DEF int RaGetEidByIp(void *ctxHandle, struct IpInfo ip[], union 
     CHK_PRT_RETURN(ret != 0, hccp_err("[get][eid_by_ip]ra_ctx_get_eid_by_ip failed, ret(%d) phyId(%u) devIndex(0x%x)",
         ret, ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex), ConverReturnCode(RDMA_OP, ret));
 
-    return ret;
+    return ConverReturnCode(RDMA_OP, ret);
 }
 
-int RaCtxTokenIdAlloc(void *ctxHandle, struct HccpTokenId *info, void **tokenIdHandle)
+HCCP_ATTRI_VISI_DEF int RaCtxTokenIdAlloc(void *ctxHandle, struct HccpTokenId *info, void **tokenIdHandle)
 {
     struct RaTokenIdHandle *tokenIdHandleTmp = NULL;
     struct RaCtxHandle *ctxHandleTmp = NULL;
@@ -308,7 +308,7 @@ err:
     return ConverReturnCode(RDMA_OP, ret);
 }
 
-int RaCtxTokenIdFree(void *ctxHandle, void *tokenIdHandle)
+HCCP_ATTRI_VISI_DEF int RaCtxTokenIdFree(void *ctxHandle, void *tokenIdHandle)
 {
     struct RaTokenIdHandle *tokenIdHandleTmp = NULL;
     struct RaCtxHandle *ctxHandleTmp = NULL;
@@ -626,7 +626,7 @@ STATIC int QpQueryBatchParamCheck(void *qpHandle[], unsigned int *num, unsigned 
         CHK_PRT_RETURN(qpHandleTmp->ctxHandle == NULL || qpHandleTmp->ctxHandle->ctxOps == NULL ||
             qpHandleTmp->ctxHandle->ctxOps->raCtxQueryQpBatch == NULL,
             hccp_err("[send][ra_qp]ctx_handle or ctx_ops or ra_ctx_query_qp_batch is NULL"), -EINVAL);
-        
+
         ids[i] = qpHandleTmp->id;
     }
 
@@ -932,7 +932,7 @@ HCCP_ATTRI_VISI_DEF int RaCtxGetAuxInfo(void *ctxHandle, struct HccpAuxInfoIn *i
     CHK_PRT_RETURN(ret != 0, hccp_err("[get][aux_info]ra_ctx_get_aux_info failed, ret(%d) phyId(%u) devIndex(0x%x)",
         ret, ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex), ConverReturnCode(RDMA_OP, ret));
 
-    return ret;
+    return ConverReturnCode(RDMA_OP, ret);
 }
 
 HCCP_ATTRI_VISI_DEF int RaCtxGetCrErrInfoList(void *ctxHandle, struct CrErrInfo *infoList,
@@ -940,22 +940,22 @@ HCCP_ATTRI_VISI_DEF int RaCtxGetCrErrInfoList(void *ctxHandle, struct CrErrInfo 
 {
     struct RaCtxHandle *ctxHandleTmp = NULL;
     int ret;
- 
+
     CHK_PRT_RETURN(ctxHandle == NULL || infoList == NULL || num == NULL,
         hccp_err("[get][cr_err_info_list]ctx_handle or info_list or num is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
- 
+
     CHK_PRT_RETURN(*num == 0 || *num > CR_ERR_INFO_MAX_NUM, hccp_err("[get][cr_err_info_list]num:%u must greater "
         "than 0 and less or equal to %d", *num, CR_ERR_INFO_MAX_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
- 
+
     ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
- 
+
     hccp_run_info("Input parameters: phy_id(%u), devIndex(0x%x) num(%u)",
         ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex, *num);
- 
+
     ret = RaHdcCtxGetCrErrInfoList(ctxHandleTmp, infoList, num);
     CHK_PRT_RETURN(ret != 0, hccp_err("[get][cr_err_info_list]ra_hdc_ctx_get_cr_err_info_list failed, ret:%d "
         "phyId:%u devIndex:0x%x", ret, ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex),
         ConverReturnCode(RDMA_OP, ret));
- 
+
     return ConverReturnCode(RDMA_OP, ret);
 }

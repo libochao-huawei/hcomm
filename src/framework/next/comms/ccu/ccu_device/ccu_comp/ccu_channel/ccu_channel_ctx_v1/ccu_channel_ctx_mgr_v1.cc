@@ -176,7 +176,9 @@ static HcclResult ConfigChannelCtxDataV1(const uint32_t devPhyId, const uint8_t 
         reinterpret_cast<CustomChanInfoIn *>(&inBuff),
         reinterpret_cast<CustomChanInfoOut *>(&outBuff));
     if (ret != 0) {
-        HCCL_ERROR("");
+        HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
+            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,
+            "SET_CHANNEL");
         return HcclResult::HCCL_E_NETWORK;
     }
 

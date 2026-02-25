@@ -12,21 +12,14 @@ add_custom_target(hccl-0.1.0-py3-none-any.whl ALL
 )
 
 # 读取sys_version.conf中版本号并打包到whl包中的hccl目录下
-file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/../version.info  SYS_VERSION)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/../version.cmake FILE_CONTENT)
 
-string(FIND "${SYS_VERSION}" "=" EQUALS_POS)
-math(EXPR VERSION_START "${EQUALS_POS} + 1")
-
-string(FIND "${SYS_VERSION}" ";" SEMICOLON_POS)
-if(${SEMICOLON_POS} EQUAL -1)
-    set(SEMICOLON_POS ${SYS_VERSION_LENGTH})
+string(REGEX MATCH "VERSION \"([^)]+)\"" MATCHED_VERSION "${FILE_CONTENT}")
+if (NOT MATCHED_VERSION)
+    message(FATAL_ERROR "can not find version num from version.cmake")
 endif()
 
-# 计算版本号的长度
-math(EXPR VERSION_LENGTH "${SEMICOLON_POS} - ${VERSION_START}")
-
-# 提取版本号
-string(SUBSTRING "${SYS_VERSION}" ${VERSION_START} ${VERSION_LENGTH} VERSION_NUMBER)
+set(VERSION_NUMBER ${CMAKE_MATCH_1})
 
 message(STATUS "Extracted version number: ${VERSION_NUMBER}")
 

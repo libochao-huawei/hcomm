@@ -224,7 +224,7 @@ HcclResult HcclCcuKernelRegister(HcclComm comm,
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
     CcuKernelHandle newHandle{0};
-    // 当前翻译内部流程可能抛异常
+    // 当前注册内部流程可能抛异常
     EXCEPTION_HANDLE_BEGIN
     CHK_RET(kernelMgr.Register(std::move(kernel), *resPack, newHandle));
     EXCEPTION_HANDLE_END
@@ -248,6 +248,16 @@ HcclResult HcclCcuKernelRegisterFinish(HcclComm comm)
 
     auto *ccuContainer = myRank->GetCcuResContainer();
     CHK_PTR_NULL(ccuContainer);
+
+    const auto &newKernels = ccuContainer->GetUntranslatedKernels();
+
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
+    // 当前翻译内部流程可能抛异常
+    EXCEPTION_HANDLE_BEGIN
+    CHK_RET(kernelMgr.Translate(newKernels));
+    EXCEPTION_HANDLE_END
+
     CHK_RET(ccuContainer->ResetResPack());
     return HcclResult::HCCL_SUCCESS;
 }
@@ -287,7 +297,7 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
 }
 
 HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
-    const CcuKernelHandle KernelHandle, void *taskArgs)
+    const CcuKernelHandle kernelHandle, void *taskArgs)
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
     HcclUs startut = TIME_NOW();
@@ -306,14 +316,18 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
 
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
-    auto *kernel = kernelMgr.GetKernel(KernelHandle);
+    auto *kernel = kernelMgr.GetKernel(kernelHandle);
     CHK_PTR_NULL(kernel);
 
     EXCEPTION_HANDLE_BEGIN
     const hcomm::CcuTaskArg *ccuTaskArgs =
         reinterpret_cast<hcomm::CcuTaskArg *>(taskArgs);
     std::vector<hcomm::CcuTaskParam> ccuParams{};
-    CHK_RET(kernel->GeneTaskParam(*ccuTaskArgs, ccuParams));
+    auto ret = kernel->GeneTaskParam(*ccuTaskArgs, ccuParams);
+    CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
+        HCCL_ERROR("[%s] failed, kernleHandle[0x%llx].", __func__, kernelHandle),
+        HcclResult::HCCL_SUCCESS);
+
     if (ccuParams.empty()) {
         HCCL_INFO("[%s] passed, ccu params are empty.", __func__);
         return HcclResult::HCCL_SUCCESS;
