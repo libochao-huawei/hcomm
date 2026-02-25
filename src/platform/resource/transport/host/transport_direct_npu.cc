@@ -899,8 +899,8 @@ HcclResult TransportDirectNpu::TxData(UserMemType dstMemType, u64 dstOffset, con
 
 #ifndef CCL_KERNEL
     u16 timeOut = 0;
-    if (NOTIFY_DEFAULT_WAIT_TIME > (std::numeric_limits<unit16_t>::max())) {
-        timeOut = (std::numeric_limits<unit16_t>::max());
+    if (NOTIFY_DEFAULT_WAIT_TIME > (std::numeric_limits<uint16_t>::max())) {
+        timeOut = (std::numeric_limits<uint16_t>::max());
     } else {
         timeOut = NOTIFY_DEFAULT_WAIT_TIME;
     }
