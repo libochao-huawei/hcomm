@@ -39,8 +39,7 @@ protected:
     {
         streamManager = new AicpuStreamManager();
 
-        u32 pid = 0;
-        MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
+        MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<u32>(0)));
         MOCKER(HrtStreamGetCqId).stubs().will(returnValue(pid));
         MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeDevLogId));
         MOCKER(HrtStreamGetSqId).stubs().will(returnValue(fakeSqId));

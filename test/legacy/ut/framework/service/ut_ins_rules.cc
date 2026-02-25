@@ -995,7 +995,6 @@ TEST_F(InsRulesTest, Interpret_local_reduce_not_support_now)
     InsLocalReduce insLocalReduce(srcSlice, dstSlice, DataType::FP32, ReduceOp::SUM);
 
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
-    
     Stream       stream;
     OpTaskConfig taskConfig{};
     Interpret(insLocalReduce, fakeComm, stream, taskConfig);
