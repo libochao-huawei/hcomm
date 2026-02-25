@@ -11,44 +11,44 @@
 #include "hccp_dl.h"
 #include "dl_ccu_function.h"
 
-void *g_ccu_api_handle = NULL;
+void *gCcuApiHandle = NULL;
 #ifndef CA_CONFIG_LLT
-struct rs_ccu_ops g_ccu_ops;
+struct RsCcuOps gCcuOps;
 #else
-struct rs_ccu_ops g_ccu_ops = {
-    .rs_ccu_init = ccu_init,
-    .rs_ccu_uninit = ccu_uninit,
-    .rs_ccu_custom_channel = ccu_custom_channel,
-    .rs_ccu_get_cqe_base_addr = ccu_get_cqe_base_addr,
+struct RsCcuOps gCcuOps = {
+    .rsCcuInit = ccu_init,
+    .rsCcuUninit = ccu_uninit,
+    .rsCcuCustomChannel = ccu_custom_channel,
+    .rsCcuGetCqeBaseAddr = ccu_get_cqe_base_addr,
 };
 #endif
 
-STATIC int rs_ccu_device_api_init(void)
+STATIC int RsCcuDeviceApiInit(void)
 {
 #ifndef CA_CONFIG_LLT
-    g_ccu_ops.rs_ccu_init = (int (*)(void)) HccpDlsym(g_ccu_api_handle, "ccu_init");
-    DL_API_RET_IS_NULL_CHECK(g_ccu_ops.rs_ccu_init, "ccu_init");
+    gCcuOps.rsCcuInit = (int (*)(void)) HccpDlsym(gCcuApiHandle, "ccu_init");
+    DL_API_RET_IS_NULL_CHECK(gCcuOps.rsCcuInit, "ccu_init");
 
-    g_ccu_ops.rs_ccu_uninit = (int (*)(void)) HccpDlsym(g_ccu_api_handle, "ccu_uninit");
-    DL_API_RET_IS_NULL_CHECK(g_ccu_ops.rs_ccu_uninit, "ccu_uninit");
+    gCcuOps.rsCcuUninit = (int (*)(void)) HccpDlsym(gCcuApiHandle, "ccu_uninit");
+    DL_API_RET_IS_NULL_CHECK(gCcuOps.rsCcuUninit, "ccu_uninit");
 
-    g_ccu_ops.rs_ccu_custom_channel = (int (*)(const struct channel_info_in *in, struct channel_info_out *out))
-        HccpDlsym(g_ccu_api_handle, "ccu_custom_channel");
-    DL_API_RET_IS_NULL_CHECK(g_ccu_ops.rs_ccu_custom_channel, "ccu_custom_channel");
+    gCcuOps.rsCcuCustomChannel = (int (*)(const struct channel_info_in *in, struct channel_info_out *out))
+        HccpDlsym(gCcuApiHandle, "ccu_custom_channel");
+    DL_API_RET_IS_NULL_CHECK(gCcuOps.rsCcuCustomChannel, "ccu_custom_channel");
 
-    g_ccu_ops.rs_ccu_get_cqe_base_addr = (unsigned long long (*)(unsigned int die_id))
-        HccpDlsym(g_ccu_api_handle, "ccu_get_cqe_base_addr");
-    DL_API_RET_IS_NULL_CHECK(g_ccu_ops.rs_ccu_get_cqe_base_addr, "ccu_get_cqe_base_addr");
+    gCcuOps.rsCcuGetCqeBaseAddr = (unsigned long long (*)(unsigned int dieId))
+        HccpDlsym(gCcuApiHandle, "ccu_get_cqe_base_addr");
+    DL_API_RET_IS_NULL_CHECK(gCcuOps.rsCcuGetCqeBaseAddr, "ccu_get_cqe_base_addr");
 #endif
     return 0;
 }
 
-STATIC int rs_open_ccu_so(void)
+STATIC int RsOpenCcuSo(void)
 {
 #ifndef CA_CONFIG_LLT
-    if (g_ccu_api_handle == NULL) {
-        g_ccu_api_handle = HccpDlopen("libccu-user-drv.so", RTLD_NOW);
-        if (g_ccu_api_handle != NULL) {
+    if (gCcuApiHandle == NULL) {
+        gCcuApiHandle = HccpDlopen("libccu-user-drv.so", RTLD_NOW);
+        if (gCcuApiHandle != NULL) {
             return 0;
         }
         return -EINVAL;
@@ -59,82 +59,82 @@ STATIC int rs_open_ccu_so(void)
     return 0;
 }
 
-STATIC void rs_close_ccu_so(void)
+STATIC void RsCloseCcuSo(void)
 {
 #ifndef CA_CONFIG_LLT
-    if (g_ccu_api_handle != NULL) {
-        (void)HccpDlclose(g_ccu_api_handle);
-        g_ccu_api_handle = NULL;
+    if (gCcuApiHandle != NULL) {
+        (void)HccpDlclose(gCcuApiHandle);
+        gCcuApiHandle = NULL;
     }
 #endif
     return;
 }
 
-int rs_ccu_api_init(void)
+int RsCcuApiInit(void)
 {
     int ret;
 
-    ret = rs_open_ccu_so();
+    ret = RsOpenCcuSo();
     CHK_PRT_RETURN(ret, hccp_err("HccpDlopen[libccu-user-drv.so] failed! ret=[%d],"\
     "Please check network adapter driver has been installed", ret), ret);
 
-    ret = rs_ccu_device_api_init();
+    ret = RsCcuDeviceApiInit();
     if (ret != 0) {
         hccp_err("[rs_ccu_device_api_init]HccpDlopen failed! ret=[%d]", ret);
-        rs_close_ccu_so();
+        RsCloseCcuSo();
         return ret;
     }
     return 0;
 }
 
-void rs_ccu_api_deinit(void)
+void RsCcuApiDeinit(void)
 {
-    rs_close_ccu_so();
+    RsCloseCcuSo();
     return;
 }
 
-int rs_ccu_init(void)
+int RsCcuInit(void)
 {
-    if (g_ccu_api_handle == NULL || g_ccu_ops.rs_ccu_init == NULL) {
+    if (gCcuApiHandle == NULL || gCcuOps.rsCcuInit == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("g_ccu_api_handle is NULL or rs_ccu_init is NULL");
         return -EINVAL;
 #endif
     }
-    return g_ccu_ops.rs_ccu_init();
+    return gCcuOps.rsCcuInit();
 }
 
-int rs_ccu_custom_channel(const struct channel_info_in *in, struct channel_info_out *out)
+int RsCcuCustomChannel(const struct channel_info_in *in, struct channel_info_out *out)
 {
-    if (g_ccu_api_handle == NULL || g_ccu_ops.rs_ccu_custom_channel == NULL) {
+    if (gCcuApiHandle == NULL || gCcuOps.rsCcuCustomChannel == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("g_ccu_api_handle is NULL or rs_ccu_custom_channel is NULL");
         return -EINVAL;
 #endif
     }
-    return g_ccu_ops.rs_ccu_custom_channel(in, out);
+    return gCcuOps.rsCcuCustomChannel(in, out);
 }
 
-int rs_ccu_get_cqe_base_addr(unsigned int die_id, unsigned long long *cqe_base_addr)
+int RsCcuGetCqeBaseAddr(unsigned int dieId, unsigned long long *cqeBaseAddr)
 {
-    if (g_ccu_api_handle == NULL || g_ccu_ops.rs_ccu_get_cqe_base_addr == NULL) {
+    if (gCcuApiHandle == NULL || gCcuOps.rsCcuGetCqeBaseAddr == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("g_ccu_api_handle is NULL or rs_ccu_get_cqe_base_addr is NULL");
         return -EINVAL;
 #endif
     }
-    CHK_PRT_RETURN(cqe_base_addr == NULL, hccp_err("cqe_base_addr is null, die_id:%u", die_id), -EINVAL);
-    *cqe_base_addr = g_ccu_ops.rs_ccu_get_cqe_base_addr(die_id);
+    CHK_PRT_RETURN(cqeBaseAddr == NULL, hccp_err("cqe_base_addr is null, dieId:%u", dieId), -EINVAL);
+    *cqeBaseAddr = gCcuOps.rsCcuGetCqeBaseAddr(dieId);
     return 0;
 }
 
-int rs_ccu_uninit(void)
+int RsCcuUninit(void)
 {
-    if (g_ccu_api_handle == NULL || g_ccu_ops.rs_ccu_uninit == NULL) {
+    if (gCcuApiHandle == NULL || gCcuOps.rsCcuUninit == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("g_ccu_api_handle is NULL or rs_ccu_uninit is NULL");
         return -EINVAL;
 #endif
     }
-    return g_ccu_ops.rs_ccu_uninit();
+    return gCcuOps.rsCcuUninit();
 }

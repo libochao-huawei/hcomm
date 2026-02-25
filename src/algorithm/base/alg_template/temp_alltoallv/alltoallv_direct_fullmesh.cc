@@ -103,6 +103,7 @@ HcclResult AlltoAllVDirectFullMesh::Prepare(PrepareData &param)
     workMode_ = param.workMode;
     isSuPodAsym_ = param.isSuPodAsym;
 
+    // 注意: 如果isBigCount的计算逻辑发生变化, 需要同步修改IsBigCountForAlltoallv()中的代码
     u64 maxSendLen = CalcMaxSendLen();
     isBigCount_ = (maxSendLen > ALLTOALLV_DIRECT_FULLMESH_BIG_SIZE) ? true : false;
     CHK_RET(GenerateSubStreamInfo(*param.subStreamsPtr, *param.signalPtr, *param.signalAuxPtr));
