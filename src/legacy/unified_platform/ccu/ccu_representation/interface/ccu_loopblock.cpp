@@ -32,7 +32,7 @@ LoopBlock::LoopBlock(CcuRepContext *context, std::string label) : context(contex
 
 LoopBlock::~LoopBlock()
 {
-    SetCurrentBlock(context, curActiveBlock);
+    DECTOR_TRY_CATCH("LoopBlock", SetCurrentBlock(context, curActiveBlock));
 }
 
 }; // namespace CcuRep

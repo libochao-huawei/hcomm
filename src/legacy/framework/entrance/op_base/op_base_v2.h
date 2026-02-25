@@ -186,6 +186,8 @@ HcclResult HcclCommUnsetMemoryRangeV2(HcclComm comm, void *baseVirPtr);
 HcclResult HcclCommActivateCommMemoryV2(HcclComm comm, void *virPtr, size_t size, size_t offset, void* handle, uint64_t flags);
 
 HcclResult HcclCommDeactivateCommMemoryV2(HcclComm comm, void *virPtr);
+
+uint32_t HcclGetCommConfigCapabilityV2();
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

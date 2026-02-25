@@ -87,13 +87,13 @@ STATIC int RsNslbNetcoInit(unsigned int phyId, struct RsNslbCb *nslbCb)
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_nslb_api_init[%d]", ret), ret);
 
     ret = RsGetRsCb(phyId, &rsCb);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_rs_cb failed, phy_id(%u) invalid, ret(%d)", phyId, ret), ret);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_rs_cb failed, phyId(%u) invalid, ret(%d)", phyId, ret), ret);
 
     netcoCb = RsNetcoInit(rsCb->connCb.epollfd, netcoArg);
     CHK_PRT_RETURN(netcoCb == NULL, hccp_err("netco init failed"), -EINVAL);
 
     ret = pthread_mutex_init(&nslbCb->mutex, NULL);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rs_nslb mutex_init failed, phy_id(%u), ret(%d)", phyId, ret), ret);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs_nslb mutex_init failed, phyId(%u), ret(%d)", phyId, ret), ret);
 
     nslbCb->netcoCb = netcoCb;
     nslbCb->initFlag = true;

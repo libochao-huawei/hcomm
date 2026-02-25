@@ -522,18 +522,16 @@ HcclResult EnvConfigPathCache::GetIpPairFromString(std::string &s, std::string &
     HcclIpAddress srcIpAddr{};
     // 解析源ip
     auto ret = srcIpAddr.SetReadableAddress(strIps[0]);
-    CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS || srcIpAddr.IsIPv6(),
-                HCCL_ERROR("[EnvConfigPathCache][GetIpPairFromString][line: %u]srcIp is either in an invalid format"
-                           " or is an IPv6 address.[%s]",
+    CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
+                HCCL_ERROR("[EnvConfigPathCache][GetIpPairFromString][line: %u]srcIp is an invalid format.[%s]",
                            lineCnt, lineAvator.c_str()),
                 HcclResult::HCCL_E_PARA);
 
     // 解析目的ip
     HcclIpAddress dstIpAddr{};
     ret = dstIpAddr.SetReadableAddress(strIps[1]);
-    CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS || dstIpAddr.IsIPv6(),
-                HCCL_ERROR("[EnvConfigPathCache][GetIpPairFromString][line: %u]dstIp is either in an invalid format"
-                           " or is an IPv6 address.[%s]",
+    CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
+                HCCL_ERROR("[EnvConfigPathCache][GetIpPairFromString][line: %u]dstIp is an invalid format.[%s]",
                            lineCnt, lineAvator.c_str()),
                 HcclResult::HCCL_E_PARA);
 
