@@ -117,6 +117,7 @@ typedef enum {
     NOTIFY_TYPE_RTS_NOTIFY = 0,
     NOTIFY_TYPE_RTS_EVENT = 1,
     NOTIFY_TYPE_DEVICE_MEM = 2,
+    NOTIFY_TYPE_HOST_MEM = 3,
 } NotifyType;
 
 typedef uint64_t NotifyHandle;
