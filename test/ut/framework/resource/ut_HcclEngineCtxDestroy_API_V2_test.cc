@@ -73,8 +73,8 @@ TEST_F(HcclEngineCtxDestroyV2Test, Ut_HcclEngineCtxDestroy_When_InputParamNull_E
     EXPECT_EQ(result, HCCL_E_PTR);
 }
 
-// 测试空ctxTag指针传入
-TEST_F(HcclEngineCtxDestroyV2Test, Ut_HcclEngineCtxDestroy_When_CtxTagNull_Expect_Return_ERROR)
+// 测试空ctxTag指针传入，tag替换为空字符串，预期不报错
+TEST_F(HcclEngineCtxDestroyV2Test, Ut_HcclEngineCtxDestroy_When_CtxTagNull_Expect_Return_Success)
 {
     std::shared_ptr<hccl::hcclComm>hcclCommPtr;
     std::shared_ptr<Hccl::RankGraph>rankGraphV2;
@@ -83,9 +83,15 @@ TEST_F(HcclEngineCtxDestroyV2Test, Ut_HcclEngineCtxDestroy_When_CtxTagNull_Expec
     SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     CommEngine engine = COMM_ENGINE_CPU;
+    void * ctx;
+    uint64_t size = 256;
+    
+    // 创建COMM_ENGINE_CPU类型的Context
+    HcclResult createResult = HcclEngineCtxCreate(comm, nullptr, engine, size, &ctx);
+    EXPECT_EQ(createResult, HCCL_SUCCESS);
     
     HcclResult result = HcclEngineCtxDestroy(comm, nullptr, engine);
-    EXPECT_EQ(result, HCCL_E_PTR);
+    EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
 // 测试销毁不存在的Context
