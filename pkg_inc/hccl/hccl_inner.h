@@ -12,6 +12,7 @@
 #define HCCL_INNER_H_
 
 #include <hccl/hccl_types.h>
+#include <hccl/hccl_res.h>
 #include <hccl/hccl_comm.h>
 #include <acl/acl.h>
 
@@ -61,6 +62,9 @@ extern HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, 
                              HcclReduceOp op, uint32_t root, HcclComm comm, aclrtStream stream);
 
 extern HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemNum, HcclComm comm, aclrtStream stream);
+
+extern HcclResult HcclCreateOpResCtxInner(HcclComm comm, uint8_t opType, HcclDataType srcDataType, HcclDataType dstDataType,
+                                          HcclReduceOp reduceType, uint64_t count, char *algConfig, CommEngine commEngine, void **opResCtx);
 
 #ifdef __cplusplus
 }
