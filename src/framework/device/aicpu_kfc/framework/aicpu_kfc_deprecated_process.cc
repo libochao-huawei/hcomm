@@ -88,12 +88,13 @@ bool HcclOpSupportRetry(AicpuComContext *ctx, AivAicpuOpParam &opParams)
     return false;
 }
 
+static constexpr u32 HCCL_AICPU_WAIT_HOST_BASE_TIME_MS = 200 * 1000;
 u32 HcclGetWaitRetryCmdTimeout(AicpuComContext *ctx, uint32_t retryCnt)
 {
     if (retryCnt == 0) {
-        return HcclCommAicpu::HcclGetWaitStopExecCmdTimeout() + ctx->retryHoldTime;
+        return HCCL_AICPU_WAIT_HOST_BASE_TIME_MS + ctx->retryHoldTime;
     } else {
-        return HcclCommAicpu::HcclGetWaitStopExecCmdTimeout() + ctx->retryIntervalTime;
+        return HCCL_AICPU_WAIT_HOST_BASE_TIME_MS + ctx->retryIntervalTime;
     }
 }
 
@@ -382,7 +383,7 @@ HcclResult AicpuKfcDeprecatedProcess::HcclOpExecFsmWaitRetryProcess(AicpuComCont
 HcclResult AicpuKfcDeprecatedProcess::AICPU_RpcServerUnfoldStageWait(AicpuComContext *ctx, AicpuKfcRpcServer &rpc)
 {
     AivAicpuOpParam opParams;
-    auto waitStopExecCmdTimeout = std::chrono::milliseconds(HcclCommAicpu::HcclGetWaitStopExecCmdTimeout());
+    auto waitStopExecCmdTimeout = std::chrono::milliseconds(HCCL_AICPU_WAIT_HOST_BASE_TIME_MS);
     auto startTime = std::chrono::steady_clock::now();
 
     KfcError errorCode = KfcError::kNone;
@@ -409,7 +410,7 @@ HcclResult AicpuKfcDeprecatedProcess::AICPU_RpcServerUnfoldStageWait(AicpuComCon
                 break;
             case HcclOpExecFSM::HCCL_OP_EXEC_FSM_STOPPING:
                 if ((std::chrono::steady_clock::now() - startTime) >= waitStopExecCmdTimeout) {
-                    HCCL_ERROR("hccl aicpu wait stop exec timeout[%u ms].", HcclCommAicpu::HcclGetWaitStopExecCmdTimeout());
+                    HCCL_ERROR("hccl aicpu wait stop exec timeout[%u ms].", HCCL_AICPU_WAIT_HOST_BASE_TIME_MS);
                     errorCode = KfcError::kTimeout;
                     state = HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR;
                 } else {

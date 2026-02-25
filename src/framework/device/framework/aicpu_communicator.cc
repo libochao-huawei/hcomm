@@ -2847,29 +2847,31 @@ HcclResult HcclCommAicpu::BSRStopedProcess(HcclOpExecFSM &fsmState, KfcError &er
     HCCL_RETRY_CHK_RET_AND_TRANS_FSM(ret, HCCL_ERROR("[OpRetry][AICPU]quert recv stream sq head failed, ret:%u", ret),
         KfcError::kExec, HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
 
-    ret = ((bsrSendOpBeginSqePos_ == bsrSendSqHead) || (bsrRecvOpBeginSqePos_ == bsrRecvSqHead)) ? HCCL_E_INTERNAL :
+    ret = ((bsrSendOpBeginSqePos_ == bsrSendSqHead) || (bsrRecvOpBeginSqePos_ == bsrRecvSqHead)) ? HCCL_E_OPRETRY_FAIL :
                                                                                                    HCCL_SUCCESS;
+    uint16_t rsErrorCode = TS_ERROR_RETRY_CONSTRAINT;
+    CHK_PRT(SendTaskExceptionByMBox(rsErrorCode));
     HCCL_RETRY_CHK_RET_AND_TRANS_FSM(ret,
         HCCL_ERROR("[OpRetry][AICPU]hccl aicpu wait start task is not complete, can not retry. params: send sq head "
         "%u, recv sq head %u, send sq begin %u, recv sq begin %u",
         bsrSendSqHead, bsrRecvSqHead, bsrSendOpBeginSqePos_, bsrRecvOpBeginSqePos_),
-        KfcError::kExec, HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
+        KfcError::kExecConstraint, HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
 
-    ret = ((bsrRetryOp_ == HCCL_SEND) && (bsrSendSqHead == bsrSendOpEndSqePos_)) ? HCCL_E_INTERNAL : HCCL_SUCCESS;
+    ret = ((bsrRetryOp_ == HCCL_SEND) && (bsrSendSqHead == bsrSendOpEndSqePos_)) ? HCCL_E_OPRETRY_FAIL : HCCL_SUCCESS;
     HCCL_RETRY_CHK_RET_AND_TRANS_FSM(ret,
         HCCL_ERROR("[OpRetry][AICPU]hccl aicpu send record complete task is complete, can not retry. params: send sq "
         "head %u, recv sq head %u, send sq begin %u, send sq end %u, recv sq begin %u, recv sq end %u",
         bsrSendSqHead, bsrRecvSqHead, bsrSendOpBeginSqePos_, bsrSendOpEndSqePos_, bsrRecvOpBeginSqePos_,
         bsrRecvOpEndSqePos_),
-        KfcError::kExec, HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
+        KfcError::kExecConstraint, HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
 
-    ret = ((bsrRetryOp_ == HCCL_RECV) && (bsrRecvSqHead == bsrRecvOpEndSqePos_)) ? HCCL_E_INTERNAL : HCCL_SUCCESS;
+    ret = ((bsrRetryOp_ == HCCL_RECV) && (bsrRecvSqHead == bsrRecvOpEndSqePos_)) ? HCCL_E_OPRETRY_FAIL : HCCL_SUCCESS;
     HCCL_RETRY_CHK_RET_AND_TRANS_FSM(ret,
         HCCL_ERROR("[OpRetry][AICPU]hccl aicpu recv record complete task is complete, can not retry. params: send sq "
         "head %u, recv sq head %u, send sq begin %u, send sq end %u, recv sq begin %u, recv sq end %u",
         bsrSendSqHead, bsrRecvSqHead, bsrSendOpBeginSqePos_, bsrSendOpEndSqePos_, bsrRecvOpBeginSqePos_,
         bsrRecvOpEndSqePos_),
-        KfcError::kExec, HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
+        KfcError::kExecConstraint, HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
 
     HCCL_RUN_INFO("[OpRetry][AICPU]hccl aicpu op is running, can retry. params: send sq head "
         "%u, recv sq head %u, send sq begin %u, send sq end %u, recv sq begin %u, recv sq end %u",
@@ -2944,13 +2946,17 @@ HcclResult HcclCommAicpu::HcclOpExecFsmStoppedProcess(HcclOpExecFSM &fsmState, K
     if (sqHead == endSqePos) {
         HCCL_ERROR("[OpRetry][AICPU]hccl aicpu record complete task is complete, can not retry. params: "
             "sqHead %u, beginSqePos %u endSqePos %u", sqHead, beginSqePos, endSqePos);
-        errorCode = KfcError::kExec;
+        errorCode = KfcError::kExecConstraint;
         fsmState = HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR;
+        return HCCL_E_OPRETRY_FAIL;
     } else if (sqHead == beginSqePos) {
+        rsErrorCode = TS_ERROR_RETRY_CONSTRAINT;
+        CHK_PRT(SendTaskExceptionByMBox(rsErrorCode));
         HCCL_ERROR("[OpRetry][AICPU]hccl aicpu wait start task is not complete, can not retry. "\
             "params: sqHead %u, beginSqePos %u endSqePos %u", sqHead, beginSqePos, endSqePos);
-        errorCode = KfcError::kExec;
+        errorCode = KfcError::kExecConstraint;
         fsmState = HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR;
+        return HCCL_E_OPRETRY_FAIL;
     } else if ((param.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) && retryEnable_) {
         CHK_RET(BSRStopedProcess(fsmState, errorCode));
     } else {
@@ -3212,15 +3218,15 @@ HcclResult HcclCommAicpu::UpdateOpExecStatus(HcclOpExecFSM &fsmState, KfcStatus 
 static constexpr u32 HCCL_AICPU_WAIT_HOST_BASE_TIME_MS = 200 * 1000;
 u32 HcclCommAicpu::HcclGetWaitStopExecCmdTimeout()
 {
-    return HCCL_AICPU_WAIT_HOST_BASE_TIME_MS;
+    return std::max(static_cast<u32>(linkTimeOut_.count()), HCCL_AICPU_WAIT_HOST_BASE_TIME_MS);
 }
 
 u32 HcclCommAicpu::HcclGetWaitRetryCmdTimeout(uint32_t retryCnt)
 {
     if (retryCnt == 0) {
-        return HCCL_AICPU_WAIT_HOST_BASE_TIME_MS + retryHoldTime_;
+        return HcclGetWaitStopExecCmdTimeout() + retryHoldTime_;
     } else {
-        return HCCL_AICPU_WAIT_HOST_BASE_TIME_MS + retryIntervalTime_;
+        return HcclGetWaitStopExecCmdTimeout() + retryIntervalTime_;
     }
 }
 
@@ -3238,9 +3244,9 @@ HcclResult HcclCommAicpu::HcclOpExecFsmWaitRetryProcess(const OpParam &param, Hc
     }
     if (cmd == KfcCommand::kRetry) {
         HCCL_RUN_INFO("[OpRetry][AICPU]hccl aicpu recv retry cmd from host.");
-        ret = ResetOpRetryException(param.opType);
         dfxExtendInfo_.pollStatus = PollStatus::kDefault;
         dfxExtendInfo_.cqeStatus = dfx::CqeStatus::kDefault;
+        ret = ResetOpRetryException(param.opType);
         HCCL_RETRY_CHK_RET_AND_TRANS_FSM(ret, HCCL_ERROR("reset stream buff failed, ret:%u", ret), KfcError::kInner,
             HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
         fsmState = HcclOpExecFSM::HCCL_OP_EXEC_FSM_RETRY;
@@ -4321,9 +4327,9 @@ bool HcclCommAicpu::GetBSRRecvOpExecException()
 
 HcclResult HcclCommAicpu::CleanStream(Stream &stream)
 {
-    ResetStreamCqeExceptionStatus(stream);
     CHK_RET(stream.ClearLocalBuff());
     CHK_RET(UpdateSqStatus(stream));
+    ResetStreamCqeExceptionStatus(stream);
     HCCL_INFO("CleanStream %u success.", stream.sqId());
     return HCCL_SUCCESS;
 }
@@ -4920,7 +4926,9 @@ void HcclCommAicpu::HandleIndOpCqe()
         bool isCompDataErr = cqeException.errorCode == RT_SDMA_COMPDATAERR ||
                              cqeException.errorCode == RT_SDMA_COMPERR;
         bool isSdmaCompDataErr = isSdmaTypeErr && isCompDataErr;
-        if (isSdmaCompDataErr) {
+        if (retryEnable_ && isSdmaCompDataErr) {
+            uint16_t rsErrorCode = TS_ERROR_RETRY_CONSTRAINT;
+ 	        CHK_PRT(SendTaskExceptionByMBox(rsErrorCode));
             HCCL_RUN_INFO("[OpRetry][AICPU]group[%s] can not retry, IndOp unsupport opRetry", identifier_.c_str());
         }
 
