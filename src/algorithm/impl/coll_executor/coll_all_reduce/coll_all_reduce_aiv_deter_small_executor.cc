@@ -23,7 +23,7 @@ CollAllReduceAivDeterSmallExecutor::CollAllReduceAivDeterSmallExecutor(const Hcc
 HcclResult CollAllReduceAivDeterSmallExecutor::CalcStreamNum(u32& streamNum)
 {
     streamNum = 0; // AIV通信不需要申请从流
-    HCCL_INFO("[CollAllReduceAivDeterSamllExecutor][CalcStreamNum] tag[%s] streamNum[%u].", tag_.c_str(), streamNum);
+    HCCL_INFO("[CollAllReduceAivDeterSmallExecutor][CalcStreamNum] tag[%s] streamNum[%u].", tag_.c_str(), streamNum);
     return HCCL_SUCCESS;
 }
 
@@ -94,7 +94,7 @@ HcclResult CollAllReduceAivDeterSmallExecutor::Orchestrate(OpParam& param, AlgRe
     ret = KernelRun(param, execMem);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllReduceAivSmallDeterExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel run failed",
+        HCCL_ERROR("[CollAllReduceAivDeterSmallExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel run failed",
             HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
 
     HCCL_INFO("tag[%s], AllReduce executor orchestrate success, take time [%lld]us",
@@ -109,7 +109,7 @@ HcclResult CollAllReduceAivDeterSmallExecutor::GetAivExecParam(const OpParam& pa
 
 HcclResult CollAllReduceAivDeterSmallExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_INFO("[CollAllReduceAivDeterExecutor][KernelRun]AllReduce aiv enter.");
+    HCCL_INFO("[CollAllReduceAivDeterSmallExecutor][KernelRun]AllReduce aiv enter.");
 
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);

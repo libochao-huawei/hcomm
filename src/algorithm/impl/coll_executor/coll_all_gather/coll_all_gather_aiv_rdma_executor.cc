@@ -130,7 +130,7 @@ HcclResult CollAllGatherAivRdmaExecutor::KernelRun(const OpParam &param, ExecMem
     DeviceMem srcMem = DeviceMem::create(static_cast<u8 *>(param.inputPtr), inputMemSize);
     HcclResult ret = HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, const_cast<Stream&>(param.stream));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllGatherMeshExecutor][KernelRun]AllGather 4PmeshHD memcpy Failed, Offset[%llu], Size[%llu].",
+        HCCL_ERROR("[CollAllGatherAivRdmaExecutor][KernelRun]AllGather 4PmeshHD memcpy Failed, Offset[%llu], Size[%llu].",
         baseOffset, inputMemSize), ret);
     //  STP2， AI server 间 recursive halving doubling AllGather
     u64 hdCount = inputMemSize / perDataSize;

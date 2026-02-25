@@ -174,7 +174,7 @@ HcclResult CollAllReduceMixExecutor::KernelRun(const OpParam &param, ExecMem &ex
     /* 三步算法step2: 内层 - 节点间 allreduce */
     u32 commIndex = level0CommInfo.localRank;
     CHK_PRT_RET(commIndex >= dataSegsSlice.size(),
-        HCCL_ERROR("[CollAllReduceMeshExecutor][Run]commIndex[%u] >= dataSegsSlice size[%zu]", commIndex,
+        HCCL_ERROR("[CollAllReduceMixExecutor][Run]commIndex[%u] >= dataSegsSlice size[%zu]", commIndex,
         dataSegsSlice.size()), HCCL_E_INTERNAL);
 
     DeviceMem allreduceInput = execMem.inputMem.range(dataSegsSlice[commIndex].offset, dataSegsSlice[commIndex].size);
