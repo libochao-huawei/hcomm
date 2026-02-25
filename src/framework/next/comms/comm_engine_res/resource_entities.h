@@ -12,6 +12,7 @@
 
 #include "hccl_res.h"
 
+namespace hccl {
 typedef enum {
     THREAD_TYPE_INVALID = -1,
     THREAD_TYPE_CPU = 0,
@@ -24,20 +25,20 @@ typedef enum {
 } NotifyType;
 
 typedef struct {
-    uint64_t addr;  // on HBM
-    uint64_t head;
-    uint64_t tail;
-    uint32_t msgSize;
-    uint32_t capacity;
-} QueueInfo;
-
-typedef struct {
     NotifyType type;
     union {
         uint64_t deviceVA; // type == HOST_MEM 时，为映射到 Device 侧的 notify_dVA
         uint64_t notifyId;
     } u;
 } NotifyEntity;
+
+typedef struct {
+    uint64_t addr;  // on HBM
+    uint64_t head;
+    uint64_t tail;
+    uint32_t msgSize;
+    uint32_t capacity;
+} QueueInfo;
 
 /**
  * @brief ThreadHandle 线程实体结构体（Device 侧）
@@ -70,5 +71,7 @@ typedef struct {
     ThreadHandle threadHandle;
     uint32_t notifyIdx;
 } WaitServiceArgs;
+
+} // namespace hccl
 
 #endif // RESOURCE_ENTITIES_H

@@ -188,7 +188,7 @@ void BuildA5SqeWriteValue(u32 streamId, u32 taskId, u64 addr, u16 value, uint8_t
     
     sqe->writeAddrLow  = static_cast<uint32_t>(addr & 0x00000000ffffffffU);
     sqe->writeAddrHigh = static_cast<uint32_t>((addr & 0x0001ffff00000000U) >> 32); // 高 32bit
-    sqe->awSize = 0; // 0: write data 位宽 = 1B
+    sqe->awsize = 0; // 0: write data 位宽 = 1B
     sqe->writeValuePart[0] = value;
     sqe->va = 1;
     HCCL_INFO("[SQE]WriteValueSqe streamId=%u, taskId(sqeId)=%u, writeAddr=0x%llx, value=%u.",
