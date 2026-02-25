@@ -222,7 +222,7 @@ void MemNameRepository::CloseIpcMem(const u8* name)
     }
 
     if(unavailable_) {
-        ClearMemNameRepositoryNoLock();
+        ClearMemNameRepositoryImpl();
         unavailable_ = false;
         HCCL_RUN_INFO("CloseIpMem unavailable_[%d]", unavailable_);
         return;
@@ -260,7 +260,7 @@ void MemNameRepository::DestroyIpcMem(void *ptr, u64 size, bool isSioToHccs)
     }
 
     if(unavailable_) {
-        ClearMemNameRepositoryNoLock();
+        ClearMemNameRepositoryImpl();
         unavailable_ = false;
         HCCL_RUN_INFO("DestoryIpcMem unavailable_[%d]", unavailable_);
         return;
@@ -300,7 +300,7 @@ void MemNameRepository::DestroyIpcMem(void *ptr, u64 size, bool isSioToHccs)
     }
 }
 
-void MemNameRepository::ClearMemNameRepositoryNoLock()
+void MemNameRepository::ClearMemNameRepositoryImpl()
 {
     setNameMap_.clear();
     openedNameMap_.clear();
@@ -312,10 +312,6 @@ void MemNameRepository::ClearMemNameRepositoryNoLock()
 void MemNameRepository::ClearMemNameRepository()
 {
     std::unique_lock<std::mutex> lock(memMutex_);
-    setNameMap_.clear();
-    openedNameMap_.clear();
-    setNameMapRef_.clear();
-    openedNameMapRef_.clear();
-    alignPtrMap_.clear();
+    ClearMemNameRepositoryImpl();
 }
 }  // namespace hccl
