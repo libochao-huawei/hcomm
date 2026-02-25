@@ -489,7 +489,7 @@ void HrtMemset(void *dst, uint64_t destMax, uint64_t count)
 
 void HrtIpcSetMemoryName(void *ptr, char_t *name, u64 ptrMaxLen, u32 nameMaxLen)
 {
-    aclError ret = aclrtIpcMemGetExportKey(ptr, ptrMaxLen, name, nameMaxLen, 0UL);
+    aclError ret = aclrtIpcMemGetExportKey(ptr, ptrMaxLen, name, nameMaxLen, 1UL);
     HCCL_INFO("Call aclrtIpcMemGetExportKey, return value[%d], para: ptr[%p], name[%s], byteCount[%llu], nameLen[%u]",
               ret, ptr, name, ptrMaxLen, nameMaxLen);
     if (ret != ACL_SUCCESS) {
