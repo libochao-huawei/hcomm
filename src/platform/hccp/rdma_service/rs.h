@@ -104,6 +104,8 @@ RS_ATTRI_VISI_DEF int RsTypicalQpModify(unsigned int phyId, unsigned int rdevInd
     struct TypicalQp localQpInfo, struct TypicalQp remoteQpInfo, unsigned int *udpSport);
 RS_ATTRI_VISI_DEF int RsQpBatchModify(unsigned int phyId, unsigned int rdevIndex,
     int status, int qpn[], int qpnNum);
+RS_ATTRI_VISI_DEF int RsSetQpLbValue(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, int lbValue);
+RS_ATTRI_VISI_DEF int RsGetQpLbValue(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, int *lbValue);
 RS_ATTRI_VISI_DEF int RsQpConnectAsync(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, int fd);
 
 enum RsQpStatus {
@@ -196,6 +198,7 @@ RS_ATTRI_VISI_DEF int RsRdevInit(struct rdev rdevInfo, unsigned int notifyType, 
 RS_ATTRI_VISI_DEF int RsRdevInitWithBackup(struct rdev rdevInfo, struct rdev backupRdevInfo,
     unsigned int notifyType, unsigned int *rdevIndex);
 RS_ATTRI_VISI_DEF int RsRdevGetPortStatus(unsigned int phyId, unsigned int rdevIndex, enum PortStatus *status);
+RS_ATTRI_VISI_DEF int RsGetLbMax(unsigned int phyId, unsigned int rdevIndex, int *lbMax);
 RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, unsigned int rdevIndex);
 
 /* ++++++++++++++++++++++++++++++Epoll API start++++++++++++++++++++++++++++++++++ */

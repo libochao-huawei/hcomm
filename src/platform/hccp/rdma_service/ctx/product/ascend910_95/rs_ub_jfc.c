@@ -28,40 +28,40 @@
 #include "rs_ctx.h"
 #include "rs_ub_jfc.h"
 
-struct ext_jfc_attr {
+struct ExtJfcAttr {
     urma_jfc_t *jfc;
-    unsigned int jfc_id;
-    unsigned long long cqe_base_addr_va;
+    unsigned int jfcId;
+    unsigned long long cqeBaseAddrVa;
 };
 
-STATIC int rs_init_jfc_attr(struct rs_ctx_jfc_cb *jfc_cb, urma_jfc_cfg_t *jfc_cfg, struct ext_jfc_attr *jfc_attr)
+STATIC int RsInitJfcAttr(struct RsCtxJfcCb *jfcCb, urma_jfc_cfg_t *jfcCfg, struct ExtJfcAttr *jfcAttr)
 {
     int ret = 0;
 
-    ret = rs_urma_alloc_jfc(jfc_cb->dev_cb->urma_ctx, jfc_cfg, &jfc_attr->jfc);
+    ret = RsUrmaAllocJfc(jfcCb->devCb->urmaCtx, jfcCfg, &jfcAttr->jfc);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_alloc_jfc failed, ret:%d errno:%d", ret, errno), -EOPENSRC);
 
-    if (jfc_cb->jfc_type == JFC_MODE_USER_CTL_NORMAL) {
+    if (jfcCb->jfcType == JFC_MODE_USER_CTL_NORMAL) {
         return 0;
     }
 
-    if (jfc_cb->jfc_type == JFC_MODE_CCU_POLL) {
-        ret = rs_ccu_get_cqe_base_addr(jfc_cb->dev_cb->dev_attr.ub.die_id, &jfc_attr->cqe_base_addr_va);
-        if (ret != 0 || jfc_attr->cqe_base_addr_va == 0) {
-            hccp_err("rs_ccu_get_cqe_base_addr failed, ret:%d, die_id:%u", ret, jfc_cb->dev_cb->dev_attr.ub.die_id);
+    if (jfcCb->jfcType == JFC_MODE_CCU_POLL) {
+        ret = RsCcuGetCqeBaseAddr(jfcCb->devCb->devAttr.ub.dieId, &jfcAttr->cqeBaseAddrVa);
+        if (ret != 0 || jfcAttr->cqeBaseAddrVa == 0) {
+            hccp_err("rs_ccu_get_cqe_base_addr failed, ret:%d, dieId:%u", ret, jfcCb->devCb->devAttr.ub.dieId);
             ret = -EOPENSRC;
             goto free_jfc;
         }
     } else {
-        ret = rs_net_get_cqe_base_addr(jfc_cb->dev_cb->dev_attr.ub.die_id, &jfc_attr->cqe_base_addr_va);
-        if (ret != 0 || jfc_attr->cqe_base_addr_va == 0) {
-            hccp_err("rs_net_get_cqe_base_addr failed, ret:%d, die_id:%u", ret, jfc_cb->dev_cb->dev_attr.ub.die_id);
+        ret = RsNetGetCqeBaseAddr(jfcCb->devCb->devAttr.ub.dieId, &jfcAttr->cqeBaseAddrVa);
+        if (ret != 0 || jfcAttr->cqeBaseAddrVa == 0) {
+            hccp_err("rs_net_get_cqe_base_addr failed, ret:%d, dieId:%u", ret, jfcCb->devCb->devAttr.ub.dieId);
             ret = -EOPENSRC;
             goto free_jfc;
         }
     }
 
-    ret = rs_net_alloc_jfc_id(jfc_cb->dev_cb->urma_dev->name, jfc_cb->jfc_type, &jfc_attr->jfc_id);
+    ret = RsNetAllocJfcId(jfcCb->devCb->urmaDev->name, jfcCb->jfcType, &jfcAttr->jfcId);
     if (ret != 0) {
         hccp_err("rs_net_alloc_jfc_id failed, ret:%d", ret);
         goto free_jfc;
@@ -70,50 +70,50 @@ STATIC int rs_init_jfc_attr(struct rs_ctx_jfc_cb *jfc_cb, urma_jfc_cfg_t *jfc_cf
     return 0;
 
 free_jfc:
-    (void)rs_urma_free_jfc(jfc_attr->jfc);
+    (void)RsUrmaFreeJfc(jfcAttr->jfc);
     return ret;
 }
 
-STATIC void rs_deinit_jfc_attr(struct rs_ctx_jfc_cb *jfc_cb, urma_jfc_cfg_t *jfc_cfg, struct ext_jfc_attr *jfc_attr)
+STATIC void RsDeinitJfcAttr(struct RsCtxJfcCb *jfcCb, urma_jfc_cfg_t *jfcCfg, struct ExtJfcAttr *jfcAttr)
 {
-    (void)rs_urma_free_jfc(jfc_attr->jfc);
-    if (jfc_cb->jfc_type == JFC_MODE_USER_CTL_NORMAL) {
+    (void)RsUrmaFreeJfc(jfcAttr->jfc);
+    if (jfcCb->jfcType == JFC_MODE_USER_CTL_NORMAL) {
         return;
     }
-    (void)rs_net_free_jfc_id(jfc_cb->dev_cb->urma_dev->name, jfc_cb->jfc_type, jfc_attr->jfc_id);
+    (void)RsNetFreeJfcId(jfcCb->devCb->urmaDev->name, jfcCb->jfcType, jfcAttr->jfcId);
 }
 
-STATIC int rs_set_jfc_opt(struct rs_ctx_jfc_cb *jfc_cb, struct ext_jfc_attr *jfc_attr)
+STATIC int RsSetJfcOpt(struct RsCtxJfcCb *jfcCb, struct ExtJfcAttr *jfcAttr)
 {
     int ret = 0;
 
-    if (jfc_cb->jfc_type == JFC_MODE_USER_CTL_NORMAL) {
+    if (jfcCb->jfcType == JFC_MODE_USER_CTL_NORMAL) {
         return ret;
     }
 
-    ret = rs_urma_set_jfc_opt(jfc_attr->jfc, URMA_JFC_ID, (void *)&jfc_attr->jfc_id, sizeof(uint32_t));
+    ret = RsUrmaSetJfcOpt(jfcAttr->jfc, URMA_JFC_ID, (void *)&jfcAttr->jfcId, sizeof(uint32_t));
     CHK_PRT_RETURN(ret != 0,
         hccp_err("rs_urma_set_jfc_opt URMA_JFC_ID failed, ret:%d, errno:%d", ret, errno), -EOPENSRC);
 
-    ret = rs_urma_set_jfc_opt(jfc_attr->jfc, URMA_JFC_CQE_BASE_ADDR,
-        (void *)&jfc_attr->cqe_base_addr_va, sizeof(uint64_t));
+    ret = RsUrmaSetJfcOpt(jfcAttr->jfc, URMA_JFC_CQE_BASE_ADDR,
+        (void *)&jfcAttr->cqeBaseAddrVa, sizeof(uint64_t));
     CHK_PRT_RETURN(ret != 0,
         hccp_err("rs_urma_set_jfc_opt URMA_JFC_CQE_BASE_ADDR failed, ret:%d, errno:%d", ret, errno), -EOPENSRC);
 
     return 0;
 }
 
-STATIC int rs_jfc_res_addr_munmap(struct rs_ctx_jfc_cb *jfc_cb, struct udma_va_info *vaInfo)
+STATIC int RsJfcResAddrMunmap(struct RsCtxJfcCb *jfcCb, struct UdmaVaInfo *vaInfo)
 {
     struct res_map_info_in resInfoIn = {0};
     int ret = 0;
 
-    resInfoIn.res_id = jfc_cb->jfc_id;
+    resInfoIn.res_id = jfcCb->jfcId;
     resInfoIn.target_proc_type = PROCESS_CP1;
     resInfoIn.res_type = (enum res_addr_type)vaInfo->resType;
-    resInfoIn.priv_len = sizeof(struct udma_va_info);
+    resInfoIn.priv_len = sizeof(struct UdmaVaInfo);
     resInfoIn.priv = (void *)vaInfo;
-    ret = DlHalResAddrUnmapV2(jfc_cb->dev_cb->rscb->logicId, &resInfoIn);
+    ret = DlHalResAddrUnmapV2(jfcCb->devCb->rscb->logicId, &resInfoIn);
     ret = ret > 0 ? -ret : ret;
     CHK_PRT_RETURN(ret != 0, hccp_err("DlHalResAddrUnmapV2 failed, res_type:%d ret:%d, errno:%d",
         resInfoIn.res_type, ret, errno), ret);
@@ -121,18 +121,18 @@ STATIC int rs_jfc_res_addr_munmap(struct rs_ctx_jfc_cb *jfc_cb, struct udma_va_i
     return ret;
 }
 
-STATIC int rs_jfc_res_addr_mmap(struct rs_ctx_jfc_cb *jfc_cb, struct udma_va_info *vaInfo,
+STATIC int RsJfcResAddrMmap(struct RsCtxJfcCb *jfcCb, struct UdmaVaInfo *vaInfo,
     struct res_map_info_out *resInfoOut)
 {
     struct res_map_info_in resInfoIn = {0};
     int ret = 0;
 
-    resInfoIn.res_id = jfc_cb->jfc_id;
+    resInfoIn.res_id = jfcCb->jfcId;
     resInfoIn.target_proc_type = PROCESS_CP1;
     resInfoIn.res_type = (enum res_addr_type)vaInfo->resType;
-    resInfoIn.priv_len = sizeof(struct udma_va_info);
+    resInfoIn.priv_len = sizeof(struct UdmaVaInfo);
     resInfoIn.priv = (void *)vaInfo;
-    ret = DlHalResAddrMapV2(jfc_cb->dev_cb->rscb->logicId, &resInfoIn, resInfoOut);
+    ret = DlHalResAddrMapV2(jfcCb->devCb->rscb->logicId, &resInfoIn, resInfoOut);
     ret = ret > 0 ? -ret : ret;
     CHK_PRT_RETURN(ret != 0, hccp_err("DlHalResAddrMapV2 failed, res_type:%d ret:%d, errno:%d",
         resInfoIn.res_type, ret, errno), ret);
@@ -140,154 +140,154 @@ STATIC int rs_jfc_res_addr_mmap(struct rs_ctx_jfc_cb *jfc_cb, struct udma_va_inf
     return ret;
 }
 
-STATIC void rs_munmap_jfc_va(struct rs_ctx_jfc_cb *jfc_cb)
+STATIC void RsMunmapJfcVa(struct RsCtxJfcCb *jfcCb)
 {
-    struct udma_va_info vaInfo = {0};
+    struct UdmaVaInfo vaInfo = {0};
 
-    if (jfc_cb->jfc_type != JFC_MODE_USER_CTL_NORMAL) {
+    if (jfcCb->jfcType != JFC_MODE_USER_CTL_NORMAL) {
         return;
     }
 
     vaInfo.resType = RES_ADDR_TYPE_HCCP_URMA_JFC;
-    vaInfo.va = jfc_cb->buf_addr;
-    vaInfo.len = WQE_BB_SIZE * jfc_cb->depth;
+    vaInfo.va = jfcCb->bufAddr;
+    vaInfo.len = WQE_BB_SIZE * jfcCb->depth;
     vaInfo.pid = getpid();
-    (void)rs_jfc_res_addr_munmap(jfc_cb, &vaInfo);
+    (void)RsJfcResAddrMunmap(jfcCb, &vaInfo);
 
     vaInfo.resType = RES_ADDR_TYPE_HCCP_URMA_DB;
-    vaInfo.va = jfc_cb->swdb_addr;
+    vaInfo.va = jfcCb->swdbAddr;
     vaInfo.len = sizeof(uint64_t);
     vaInfo.pid = getpid();
-    (void)rs_jfc_res_addr_munmap(jfc_cb, &vaInfo);
+    (void)RsJfcResAddrMunmap(jfcCb, &vaInfo);
 }
 
-STATIC int rs_mmap_jfc_va(struct rs_ctx_jfc_cb *jfc_cb)
+STATIC int RsMmapJfcVa(struct RsCtxJfcCb *jfcCb)
 {
     struct res_map_info_out resInfoOut = {0};
-    struct udma_va_info jfcVaInfo = {0};
-    struct udma_va_info dbVaInfo = {0};
-    int ret_tmp = 0;
+    struct UdmaVaInfo jfcVaInfo = {0};
+    struct UdmaVaInfo dbVaInfo = {0};
+    int retTmp = 0;
     int ret = 0;
 
     jfcVaInfo.resType = RES_ADDR_TYPE_HCCP_URMA_JFC;
-    jfcVaInfo.va = jfc_cb->buf_addr;
-    jfcVaInfo.len = WQE_BB_SIZE * jfc_cb->depth;
+    jfcVaInfo.va = jfcCb->bufAddr;
+    jfcVaInfo.len = WQE_BB_SIZE * jfcCb->depth;
     jfcVaInfo.pid = getpid();
-    ret = rs_jfc_res_addr_mmap(jfc_cb, &jfcVaInfo, &resInfoOut);
+    ret = RsJfcResAddrMmap(jfcCb, &jfcVaInfo, &resInfoOut);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_jfc_res_addr_mmap failed, res_type:%u ret:%d", jfcVaInfo.resType, ret),
         ret);
-    jfc_cb->buf_addr = resInfoOut.va;
+    jfcCb->bufAddr = resInfoOut.va;
 
     dbVaInfo.resType = RES_ADDR_TYPE_HCCP_URMA_DB;
-    dbVaInfo.va = jfc_cb->swdb_addr;
+    dbVaInfo.va = jfcCb->swdbAddr;
     dbVaInfo.len = sizeof(uint64_t);
     dbVaInfo.pid = getpid();
-    ret = rs_jfc_res_addr_mmap(jfc_cb, &dbVaInfo, &resInfoOut);
+    ret = RsJfcResAddrMmap(jfcCb, &dbVaInfo, &resInfoOut);
     if (ret != 0) {
         hccp_err("rs_jfc_res_addr_mmap failed, res_type:%u ret:%d", dbVaInfo.resType, ret);
         goto munmap_jfc_buff_va;
     }
 
-    jfc_cb->swdb_addr = resInfoOut.va;
+    jfcCb->swdbAddr = resInfoOut.va;
     return ret;
 
 munmap_jfc_buff_va:
-    jfcVaInfo.va = jfc_cb->buf_addr;
-    ret_tmp = rs_jfc_res_addr_munmap(jfc_cb, &jfcVaInfo);
-    CHK_PRT_RETURN(ret_tmp != 0, hccp_err("rs_jfc_res_addr_munmap failed, res_type:%u ret:%d",
-        jfcVaInfo.resType, ret_tmp), ret_tmp);
+    jfcVaInfo.va = jfcCb->bufAddr;
+    retTmp = RsJfcResAddrMunmap(jfcCb, &jfcVaInfo);
+    CHK_PRT_RETURN(retTmp != 0, hccp_err("rs_jfc_res_addr_munmap failed, res_type:%u ret:%d",
+        jfcVaInfo.resType, retTmp), retTmp);
     return ret;
 }
 
-STATIC int rs_get_jfc_opt(struct rs_ctx_jfc_cb *jfc_cb, urma_jfc_t *jfc)
+STATIC int RsGetJfcOpt(struct RsCtxJfcCb *jfcCb, urma_jfc_t *jfc)
 {
     uint64_t cqBuffVa = 0, dbVa = 0;
     int ret = 0;
 
-    if (jfc_cb->jfc_type != JFC_MODE_USER_CTL_NORMAL) {
+    if (jfcCb->jfcType != JFC_MODE_USER_CTL_NORMAL) {
         return ret;
     }
 
-    ret = rs_urma_get_jfc_opt(jfc, URMA_JFC_CQE_BASE_ADDR, &cqBuffVa, sizeof(uint64_t));
+    ret = RsUrmaGetJfcOpt(jfc, URMA_JFC_CQE_BASE_ADDR, &cqBuffVa, sizeof(uint64_t));
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_get_jfc_opt URMA_JFC_CQE_BASE_ADDR failed, ret:%d, errno:%d", ret, errno),
         -EOPENSRC);
 
-    ret = rs_urma_get_jfc_opt(jfc, URMA_JFC_DB_ADDR, &dbVa, sizeof(uint64_t));
+    ret = RsUrmaGetJfcOpt(jfc, URMA_JFC_DB_ADDR, &dbVa, sizeof(uint64_t));
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_get_jfc_opt URMA_JFC_DB_ADDR failed, ret:%d, errno:%d",
         ret, errno), -EOPENSRC);
 
-    jfc_cb->buf_addr = cqBuffVa;
-    jfc_cb->swdb_addr = dbVa;
+    jfcCb->bufAddr = cqBuffVa;
+    jfcCb->swdbAddr = dbVa;
 
-    ret = rs_mmap_jfc_va(jfc_cb);
+    ret = RsMmapJfcVa(jfcCb);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_mmap_jfc_va failed, ret:%d", ret), ret);
 
     return ret;
 }
 
-int rs_ub_ctx_jfc_create_ext(struct rs_ctx_jfc_cb *jfc_cb, urma_jfc_cfg_t *jfc_cfg, urma_jfc_t **jfc)
+int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *jfcCb, urma_jfc_cfg_t *jfcCfg, urma_jfc_t **jfc)
 {
-    struct ext_jfc_attr jfc_attr = {0};
+    struct ExtJfcAttr jfcAttr = {0};
     int ret = 0;
 
-    ret = rs_init_jfc_attr(jfc_cb, jfc_cfg, &jfc_attr);
+    ret = RsInitJfcAttr(jfcCb, jfcCfg, &jfcAttr);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_init_jfc_attr failed, ret:%d", ret), ret);
 
-    ret = rs_set_jfc_opt(jfc_cb, &jfc_attr);
+    ret = RsSetJfcOpt(jfcCb, &jfcAttr);
     if (ret != 0) {
         hccp_err("rs_set_jfc_attr failed, ret:%d", ret);
         goto deinit_attr;
     }
 
-    ret = rs_urma_active_jfc(jfc_attr.jfc);
+    ret = RsUrmaActiveJfc(jfcAttr.jfc);
     if (ret != 0) {
-        hccp_err("rs_urma_active_jfc failed, jfc_id:%u, ret:%d, errno:%d", jfc_attr.jfc->jfc_id.id, ret, errno);
+        hccp_err("rs_urma_active_jfc failed, jfcId:%u, ret:%d, errno:%d", jfcAttr.jfc->jfc_id.id, ret, errno);
         ret = -EOPENSRC;
         goto deinit_attr;
     }
-    jfc_cb->jfc_id = jfc_attr.jfc->jfc_id.id;
+    jfcCb->jfcId = jfcAttr.jfc->jfc_id.id;
 
-    ret = rs_get_jfc_opt(jfc_cb, jfc_attr.jfc);
+    ret = RsGetJfcOpt(jfcCb, jfcAttr.jfc);
     if (ret != 0) {
-        hccp_err("rs_get_jfc_opt failed, jfc_id:%u, ret:%d, errno:%d", jfc_attr.jfc->jfc_id.id, ret, errno);
+        hccp_err("rs_get_jfc_opt failed, jfcId:%u, ret:%d, errno:%d", jfcAttr.jfc->jfc_id.id, ret, errno);
         goto deactive_jfc;
     }
 
-    *jfc = jfc_attr.jfc;
+    *jfc = jfcAttr.jfc;
     return 0;
 
 deactive_jfc:
-    (void)rs_urma_deactive_jfc(jfc_attr.jfc);
+    (void)RsUrmaDeactiveJfc(jfcAttr.jfc);
 deinit_attr:
-    (void)rs_deinit_jfc_attr(jfc_cb, jfc_cfg, &jfc_attr);
+    (void)RsDeinitJfcAttr(jfcCb, jfcCfg, &jfcAttr);
     *jfc = NULL;
     return ret;
 }
 
-int rs_ub_delete_jfc_ext(struct rs_ub_dev_cb *dev_cb, struct rs_ctx_jfc_cb *jfc_cb)
+int RsUbDeleteJfcExt(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb)
 {
-    urma_jfc_t *jfc = (urma_jfc_t *)(uintptr_t)(jfc_cb->jfc_addr);
-    unsigned int jfc_id = jfc->jfc_id.id;
+    urma_jfc_t *jfc = (urma_jfc_t *)(uintptr_t)(jfcCb->jfcAddr);
+    unsigned int jfcId = jfc->jfc_id.id;
     int ret = 0;
 
-    rs_munmap_jfc_va(jfc_cb);
+    RsMunmapJfcVa(jfcCb);
 
-    ret = rs_urma_deactive_jfc(jfc);
+    ret = RsUrmaDeactiveJfc(jfc);
     if (ret != 0) {
-        hccp_err("rs_urma_deactive_jfc failed, jfc_id:%u, ret:%d, errno:%d", jfc_id, ret, errno);
+        hccp_err("rs_urma_deactive_jfc failed, jfcId:%u, ret:%d, errno:%d", jfcId, ret, errno);
         ret = -EOPENSRC;
     }
 
-    ret = rs_urma_free_jfc(jfc);
+    ret = RsUrmaFreeJfc(jfc);
     if (ret != 0) {
-        hccp_err("rs_urma_free_jfc failed, jfc_id:%u, ret:%d, errno:%d", jfc_id, ret, errno);
+        hccp_err("rs_urma_free_jfc failed, jfcId:%u, ret:%d, errno:%d", jfcId, ret, errno);
         ret = -EOPENSRC;
     }
 
-    if (jfc_cb->jfc_type != JFC_MODE_USER_CTL_NORMAL) {
-        ret = rs_net_free_jfc_id(dev_cb->urma_dev->name, jfc_cb->jfc_type, jfc_id);
+    if (jfcCb->jfcType != JFC_MODE_USER_CTL_NORMAL) {
+        ret = RsNetFreeJfcId(devCb->urmaDev->name, jfcCb->jfcType, jfcId);
         if (ret != 0) {
-            hccp_err("rs_net_free_jfc_id failed, jfc_id:%u, ret:%d", jfc_id, ret);
+            hccp_err("rs_net_free_jfc_id failed, jfcId:%u, ret:%d", jfcId, ret);
         }
     }
 

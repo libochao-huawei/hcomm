@@ -426,7 +426,7 @@ STATIC int RsInitNetAdapt(struct rs_cb *rscb) {
         return 0;
     }
 
-    ret = rs_net_adapt_init();
+    ret = RsNetAdaptInit();
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_net_adapt_init chipId[%u] logic_devid[%u] failed, ret=%d",
         rscb->chipId, rscb->logicId, ret), ret);
 
@@ -438,7 +438,7 @@ STATIC void RsDeInitNetAdapt(struct rs_cb *rscb) {
         return;
     }
 
-    rs_net_adapt_uninit();
+    RsNetAdaptUninit();
 }
 
 STATIC int RsInitRscbCfg(struct rs_cb *rscb)
@@ -455,11 +455,11 @@ STATIC int RsInitRscbCfg(struct rs_cb *rscb)
     CHK_PRT_RETURN(productType == PRODUCT_TYPE_INVALID, hccp_err("rs get product type failed", ret), -EINVAL);
 #ifdef CUSTOM_INTERFACE
     if (RsIsUdmaSupported()) {
-        ret = rs_get_chip_protocol(rscb->chipId, rscb->hccpMode, &rscb->protocol, rscb->logicId);
+        ret = RsGetChipProtocol(rscb->chipId, rscb->hccpMode, &rscb->protocol, rscb->logicId);
         CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_chip_protocol failed, ret[%d]", ret), ret);
-        ret = rs_ctx_api_init(rscb->hccpMode, rscb->protocol);
+        ret = RsCtxApiInit(rscb->hccpMode, rscb->protocol);
         CHK_PRT_RETURN(ret != 0, hccp_err("rs_ctx_api_init failed, ret[%d]", ret), ret);
-        ret = rs_esched_init(rscb);
+        ret = RsEschedInit(rscb);
         if (ret != 0) {
             hccp_err("rs_esched_init chipId[%u] logic_devid[%u] failed, ret=%d productType=%d",
                 rscb->chipId, rscb->logicId, ret, productType);
@@ -499,9 +499,9 @@ ssl_init_err:
     if (RsIsUdmaSupported()) {
         RsDeInitNetAdapt(rscb);
 net_adapt_init_err:
-        rs_esched_deinit(rscb->protocol);
+        RsEschedDeinit(rscb->protocol);
 esched_init_err:
-        (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
+        (void)RsCtxApiDeinit(rscb->hccpMode, rscb->protocol);
     }
 #endif
     return ret;
@@ -516,8 +516,8 @@ STATIC void RsDeinitRscbCfg(struct rs_cb *rscb)
 #ifdef CUSTOM_INTERFACE
     if (RsIsUdmaSupported()) {
         RsDeInitNetAdapt(rscb);
-        rs_esched_deinit(rscb->protocol);
-        (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
+        RsEschedDeinit(rscb->protocol);
+        (void)RsCtxApiDeinit(rscb->hccpMode, rscb->protocol);
     }
 #endif
     rs_ssl_deinit(rscb);
@@ -880,19 +880,19 @@ STATIC int RsGetDevRdevIndex(struct RsRdevCb *rdevCb, unsigned int *rdevIndex, i
     int retVal;
 
     if (RsIsCustomInterfaceSupported()) {
-        RS_PTHREAD_MUTEX_LOCK(&rdevCb->rs_cb->mutex);
+        RS_PTHREAD_MUTEX_LOCK(&rdevCb->rsCb->mutex);
         /*lint -e132*/
         rdevCb->devName = RsIbvGetDeviceName(rdevCb->devList[index]);  //lint !e101
         retVal = RsRoceGetRoceDevData(rdevCb->devName, &rdevData); //lint !e101
         /*lint +e132*/
         if (retVal) {
             hccp_err("rs_roce_get_roce_dev_data failed, retVal:%d, devName:%s", retVal, rdevCb->devName);
-            RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
+            RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rsCb->mutex);
             return retVal;
         }
         *rdevIndex = rdevData.rdev_index; // rdev_index is same to port_id
         rdevCb->rdevIndex = *rdevIndex;
-        RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
+        RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rsCb->mutex);
     }
 #endif
     return 0;
@@ -904,11 +904,11 @@ STATIC int RsGetHostRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb, uns
     struct RsRdevCb *rdevCbTmp = NULL;
     unsigned int tmpRdevIndex = 0;
 
-    RS_PTHREAD_MUTEX_LOCK(&rdevCb->rs_cb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&rdevCb->rsCb->mutex);
     rdevCb->devName = RsIbvGetDeviceName(rdevCb->devList[index]);
     if (rdevCb->devName == NULL) {
         hccp_err("rs_ibv_get_device_name failed, errno:%d", errno);
-        RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
+        RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rsCb->mutex);
         return -EINVAL;
     }
 
@@ -916,19 +916,19 @@ STATIC int RsGetHostRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb, uns
     int ret = RsConvertIpAddr(rdevInfo.family, &rdevInfo.localIp, &localIp);
     if (ret != 0) {
         hccp_err("convert(ntop) ip failed, ret:%d", ret);
-        RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
+        RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rsCb->mutex);
         return ret;
     }
 
-    RS_LIST_GET_HEAD_ENTRY(rdevCbTmp, rdevCbTmp2, &rdevCb->rs_cb->rdevList, list, struct RsRdevCb);
-    for (; (&rdevCbTmp->list) != &rdevCb->rs_cb->rdevList;
+    RS_LIST_GET_HEAD_ENTRY(rdevCbTmp, rdevCbTmp2, &rdevCb->rsCb->rdevList, list, struct RsRdevCb);
+    for (; (&rdevCbTmp->list) != &rdevCb->rsCb->rdevList;
         rdevCbTmp = rdevCbTmp2, rdevCbTmp2 = list_entry(rdevCbTmp2->list.next, struct RsRdevCb, list)) {
         tmpRdevIndex = rdevCbTmp->rdevIndex;
         if (!RsCompareIpAddr(&rdevCbTmp->localIp, &localIp)) {
             *rdevIndex = tmpRdevIndex;
             rdevCb->rdevIndex = *rdevIndex;
             rdevCb->localIp = localIp;
-            RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
+            RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rsCb->mutex);
             return 0;
         }
     }
@@ -936,7 +936,7 @@ STATIC int RsGetHostRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb, uns
     *rdevIndex = tmpRdevIndex + 1;
     rdevCb->rdevIndex = *rdevIndex;
     rdevCb->localIp = localIp;
-    RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rsCb->mutex);
     return 0;
 }
 
@@ -952,7 +952,7 @@ STATIC int RsGetIbCtxAndRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb,
         CHK_PRT_RETURN(ibCtxTmp == NULL, hccp_err("ibv_open_device failed !"), -ENODEV);
         ret = RsQueryGid(rdevInfo, ibCtxTmp, rdevCb->ibPort, &gidIndex);
         if (ret == 0) {
-            if (rdevCb->rs_cb->hccpMode == NETWORK_PEER_ONLINE) {
+            if (rdevCb->rsCb->hccpMode == NETWORK_PEER_ONLINE) {
                 ret = RsGetHostRdevIndex(rdevInfo, rdevCb, rdevIndex, i);
             } else {
                 ret = RsGetDevRdevIndex(rdevCb, rdevIndex, i);
@@ -1038,7 +1038,7 @@ STATIC int RsRdevCbInfoInit(struct rdev rdevInfo, struct rs_cb *rsCb, struct RsR
     int ret;
 
     rdevCb->ibPort = RS_PORT_DEF;
-    rdevCb->rs_cb = rsCb;
+    rdevCb->rsCb = rsCb;
     rdevCb->notifyVaBase = rsCb->notifyVaBase;
     rdevCb->notifySize = rsCb->notifySize;
 
@@ -1086,7 +1086,7 @@ STATIC int RsRdevCbInit(struct rdev rdevInfo, struct RsRdevCb *rdevCb, struct rs
 
 #ifdef CUSTOM_INTERFACE
     if (RsIsCustomInterfaceSupported()) {
-        ret = RsRoceMmapAiDbReg(rdevCb->ibCtx, (unsigned int)rdevCb->rs_cb->aicpuPid);
+        ret = RsRoceMmapAiDbReg(rdevCb->ibCtx, (unsigned int)rdevCb->rsCb->aicpuPid);
         if (ret) {
             hccp_err("rs_roce_mmap_ai_db_reg failed, ret[%d], rdevIndex[%u]", ret, *rdevIndex);
             goto close_dev;
@@ -1255,7 +1255,7 @@ STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct RsBackupInfo ba
 
     ret = RsRdevCbInit(rdevInfo, rdevCb, rsCb, rdevIndex);
     if (ret != 0) {
-        RsSensorNodeUnregister(rdevCb->rs_cb);
+        RsSensorNodeUnregister(rdevCb->rsCb);
         hccp_err("rs_rdev_cb_init failed ret %d!, normal ret 0", ret);
         goto free_dev_list;
     }
@@ -1393,7 +1393,7 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
     RS_PTHREAD_MUTEX_LOCK(&gRsCb->mutex);
     RsListDel(&rdevCb->list);
     RS_PTHREAD_MUTEX_ULOCK(&gRsCb->mutex);
-    RsSensorNodeUnregister(rdevCb->rs_cb);
+    RsSensorNodeUnregister(rdevCb->rsCb);
     RsApiDeinit();
     hccp_run_info("rdev deinit success, phyId:%u, rdevIndex:%u", phyId, rdevIndex);
     free(rdevCb);
@@ -1916,14 +1916,14 @@ STATIC void RsFreeRdevList(struct rs_cb *rsCb)
 
 STATIC void RsFreeUdevList(struct rs_cb *rsCb)
 {
-    struct rs_ub_dev_cb *udev_cb_curr = NULL;
-    struct rs_ub_dev_cb *udev_cb_next = NULL;
+    struct RsUbDevCb *udevCbCurr = NULL;
+    struct RsUbDevCb *udevCbNext = NULL;
     int ret;
 
-    RS_LIST_GET_HEAD_ENTRY(udev_cb_curr, udev_cb_next, &rsCb->rdevList, list, struct rs_ub_dev_cb);
-    for (; (&udev_cb_curr->list) != &rsCb->rdevList;
-        udev_cb_curr = udev_cb_next, udev_cb_next = list_entry(udev_cb_next->list.next, struct rs_ub_dev_cb, list)) {
-        ret = rs_ub_ctx_deinit(udev_cb_curr);
+    RS_LIST_GET_HEAD_ENTRY(udevCbCurr, udevCbNext, &rsCb->rdevList, list, struct RsUbDevCb);
+    for (; (&udevCbCurr->list) != &rsCb->rdevList;
+        udevCbCurr = udevCbNext, udevCbNext = list_entry(udevCbNext->list.next, struct RsUbDevCb, list)) {
+        ret = RsUbCtxDeinit(udevCbCurr);
         if (ret != 0) {
             hccp_err("rs_ub_ctx_deinit failed, ret:%d", ret);
         }
@@ -2035,8 +2035,8 @@ STATIC void RsDeinitFreeRscb(struct rs_cb *rscb)
 #ifdef CUSTOM_INTERFACE
     if (RsIsUdmaSupported()) {
         RsDeInitNetAdapt(rscb);
-        rs_esched_deinit(rscb->protocol);
-        (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
+        RsEschedDeinit(rscb->protocol);
+        (void)RsCtxApiDeinit(rscb->hccpMode, rscb->protocol);
     }
 #endif
 

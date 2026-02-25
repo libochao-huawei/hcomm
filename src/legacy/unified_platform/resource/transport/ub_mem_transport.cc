@@ -198,7 +198,7 @@ void UbMemTransport::ReadReduce(const RmaBufferSlice &locSlice, const RmtRmaBuff
                                                             reduceIn.dataType, reduceIn.reduceOp, config),
                  stream);
 
-    taskParam.taskType = TaskParamType::TASK_REDUCE_INLINE;
+    taskParam.taskType = TaskParamType::TASK_UB_REDUCE_INLINE;
     taskParam.endTime = DlProfFunc::GetInstance().dlMsprofSysCycleTime();
     taskParam.taskPara.DMA.src = reinterpret_cast<const void*>(locSlice.addr);
     taskParam.taskPara.DMA.dst = reinterpret_cast<const void*>(rmtSlice.addr);
@@ -243,7 +243,7 @@ void UbMemTransport::WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBuf
                                                              reduceIn.dataType, reduceIn.reduceOp, config),
                  stream);
 
-    taskParam.taskType = TaskParamType::TASK_REDUCE_INLINE;
+    taskParam.taskType = TaskParamType::TASK_UB_REDUCE_INLINE;
     taskParam.endTime = DlProfFunc::GetInstance().dlMsprofSysCycleTime();
     taskParam.taskPara.DMA.src = reinterpret_cast<const void*>(locSlice.addr);
     taskParam.taskPara.DMA.dst = reinterpret_cast<const void*>(rmtSlice.addr);
