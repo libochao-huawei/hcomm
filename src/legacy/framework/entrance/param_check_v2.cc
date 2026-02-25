@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include "param_check_v2.h"
 #include <linux/limits.h>
 #include <unordered_set>
 #include <map>
@@ -15,7 +16,6 @@
 #include <fstream>
 #include <linux/limits.h>
 #include <adapter_error_manager_pub.h>
-#include "param_check_v2.h"
 #include "log.h"
 #include "exception_util.h"
 
@@ -178,7 +178,7 @@ HcclResult HcomCheckOpParamV2(const u64 count, const HcclDataType dataType, cons
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomCheckOpParamV2(const char *tag, const u64 count, const HcclDataType dataType, const void *stream)
+HcclResult HcomCheckOpParamV2(const char *tag, const u64 count, const HcclDataType dataType, const void *stream) // 校验opParam失败都上报EI0003
 {
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType));
 
