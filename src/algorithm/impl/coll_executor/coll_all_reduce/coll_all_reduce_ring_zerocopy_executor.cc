@@ -87,7 +87,7 @@ HcclResult CollAllReduceRingZerocopyExecutor::DoubleRingReduceScatter(const std:
     const std::vector<std::vector<Slice>> multRingsUserMemSlice)
 {
     (void) tag;
-    HCCL_INFO("[CollAlignedAllReduceDoubleRingFor91093Executor][DoubleRingReduceScatter] DoubleRingReduceScatter starts");
+    HCCL_INFO("[CollAllReduceRingZerocopyExecutor][DoubleRingReduceScatter] DoubleRingReduceScatter starts");
 
     u64 reduceAttr = GetReduceAttr(inputMem, outputMem, dataType, reductionOp);
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));

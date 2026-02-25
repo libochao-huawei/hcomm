@@ -282,7 +282,7 @@ HcclResult CollAlgOperator::CalcIncreLinkRequest(const std::string& algName, con
     if (executor_.get() == nullptr) {
         executor_ = CollAlgExecRegistry::Instance().GetAlgExec(algName, dispatcher_, topoMatcher_);
         CHK_PRT_RET(executor_.get() == nullptr,
-            HCCL_ERROR("[BatchSendRecvOperator][CalcIncreLinkRequest]Fail to find executor for algName[%s]",
+            HCCL_ERROR("[CollAlgOperator][CalcIncreLinkRequest]Fail to find executor for algName[%s]",
             algName.c_str()), HCCL_E_PARA);
     }
     return executor_->CalcIncreLinkRequest(param, ranksHasLinked, resourceRequest, needIncreLink);
