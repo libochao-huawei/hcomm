@@ -30,11 +30,11 @@ constexpr u32 RDMA_WRITE_NOTIFY_VALUE_RECORD = 0x1000000;
 
 // 内存屏障，确保wqe下到HBM里
 #if defined(__x86_64__)
-#define HCOMM_DSB() asm volatile("" ::: "memory");
+#define HCOMM_DSB() asm volatile("" ::: "memory")
 #elif defined(__aarch64__)
-#define HCOMM_DSB() asm volatile("dsb st" ::: "memory");
+#define HCOMM_DSB() asm volatile("dsb st" ::: "memory")
 #else
-#define HCOMM_DSB();
+#define HCOMM_DSB()
 #endif
 
 namespace hccl {
