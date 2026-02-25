@@ -320,6 +320,14 @@ void RtsqA5::UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
     RefreshInfo();
 }
 
+void RtsqA5::WriteValue(u64 addr, u16 value)
+{
+    BuildA5SqeWriteValue(streamId_, taskId_, addr, value, GetCurrSqeBuffer());
+    HCCL_INFO("RtsqA5::WriteValue: WriteValue Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
+    HCCL_INFO("[RtsqA5][WriteValue] addr:0x%llx, value:%u, SqTail(Rtsq Pi):%u", addr, value, sqTail_);
+    RefreshInfo();
+}
+
 void RtsqA5::CCoreNotifyWait(u64 waitAddr, u64 curTurnCntAddr, bool last)
 {
     BuildA5SqeCCoreNotifyWait(streamId_, taskId_, waitAddr, curTurnCntAddr, last, GetCurrSqeBuffer());

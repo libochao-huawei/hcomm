@@ -177,6 +177,24 @@ void BuildA5SqeUbDbSend(u32 streamId, u32 taskId, const UbJettyLiteId &jettyLite
               jettyLiteId.GetDieId(), piValue);
 }
 
+void BuildA5SqeWriteValue(u32 streamId, u32 taskId, u64 addr, u16 value, uint8_t * const sqeIn)
+{
+    (void) streamId;
+    Rt91095StarsWriteValueSqe *sqe = (Rt91095StarsWriteValueSqe *)sqeIn;
+    sqe->header.type = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_WRITE_VALUE);
+    sqe->kernelCredit = RT_STARS_DEFAULT_KERNEL_CREDIT;
+    sqe->header.rtStreamId = static_cast<uint16_t>(taskId);  // TODO: streamId?
+    sqe->header.taskId = static_cast<uint16_t>(taskId >> 16);
+    
+    sqe->writeAddrLow  = static_cast<uint32_t>(addr & 0x00000000ffffffffU);
+    sqe->writeAddrHigh = static_cast<uint32_t>((addr & 0x0001ffff00000000U) >> 32); // 高 32bit
+    sqe->awSize = 0; // 0: write data 位宽 = 1B
+    sqe->writeValuePart[0] = value;
+    sqe->va = 1;
+    HCCL_INFO("[SQE]WriteValueSqe streamId=%u, taskId(sqeId)=%u, writeAddr=0x%llx, value=%u.",
+              streamId, taskId, addr, value);
+}
+
 namespace 
 {
 void ConstructLHWI(const Rt91095StarsCondIsaRegister_t dstReg, const u64 immd, Rt91095StarsCondOpLHWI_t &opLHWI)

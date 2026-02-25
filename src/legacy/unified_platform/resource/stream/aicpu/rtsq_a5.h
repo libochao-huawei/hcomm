@@ -36,6 +36,8 @@ public:
 
     void SdmaReduce(u64 srcAddr, u64 dstAddr, u32 size, u32 partId, const ReduceIn &reduceIn) override;
 
+    void WriteValue(u64 addr, u16 value) override;
+
     void UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue) override;
 
     void UbDirectSend(const UbJettyLiteId &jettyLiteId, u32 dwqeSize, const u8 *wqe) override

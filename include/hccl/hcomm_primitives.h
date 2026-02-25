@@ -37,6 +37,27 @@ typedef uint64_t ChannelHandle;
 typedef uint64_t ThreadHandle;
 #endif
 
+#ifndef THREAD_SERVICE_HANDLE_DEFINED
+#define THREAD_SERVICE_HANDLE_DEFINED
+/**
+ * @brief 线程服务句柄类型
+ */
+typedef uint64_t ThreadServiceHandle;
+#endif
+
+#ifndef THREAD_SERVICE_ARGS_DEFINED
+#define THREAD_SERVICE_ARGS_DEFINED
+/**
+ * @brief 线程服务参数结构体
+ */
+typedef struct {
+    void *args;
+    uint32_t argsSizeByte;
+    uint16_t timeOutSecond;
+    uint16_t reserved;
+} ThreadServiceArgs;
+#endif
+
 typedef enum {
     HCOMM_REDUCE_SUM = 0,    /**< sum */
     HCOMM_REDUCE_PROD = 1,   /**< prod */
@@ -439,6 +460,15 @@ extern int32_t HcommFlush();
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommChannelFence(ChannelHandle channel);
+
+/**
+ * @brief 在指定线程上发起一个服务执行请求（异步，调用成功仅表示请求已发送，不代表服务执行完成。需要和 HcommThreadNotifyWaitOnThread 配合使用）
+ * @param[in] threadHandle 线程句柄
+ * @param[in] serviceHandle 线程服务句柄
+ * @param[in] serviceArgs 线程服务参数指针
+ * @return int32_t 执行结果状态码
+ */
+extern int32_t HcommRequestServiceOnThread(ThreadHandle threadHandle, ThreadServiceHandle serviceHandle, const ThreadServiceArgs *serviceArgs);
 
 /** @} */  // 算子编程接口
 #ifdef __cplusplus

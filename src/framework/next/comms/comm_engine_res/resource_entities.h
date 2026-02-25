@@ -33,7 +33,10 @@ typedef struct {
 
 typedef struct {
     NotifyType type;
-    uint64_t notifyIdentifier;  // Host 侧为映射到 Device 侧的 notify_dVA
+    union {
+        uint64_t deviceVA; // type == HOST_MEM 时，为映射到 Device 侧的 notify_dVA
+        uint64_t notifyId;
+    } u;
 } NotifyEntity;
 
 /**
@@ -48,7 +51,7 @@ typedef struct {
             QueueInfo sendQueue;
             // QueueInfo completionQueue;  // TODO: for DFX, not planned for now.
             ThreadServiceHandle waitService;
-            ThreadServiceHandle notifyService;
+            ThreadServiceHandle recordService;
         } cpuRes;
         ThreadHandle threadObj;
         uint32_t raws[128];
@@ -56,5 +59,16 @@ typedef struct {
     uint32_t notifyNum;
     NotifyEntity notifies[0];  // 变长数据区
 } ThreadEntity;
+
+typedef struct {
+    ThreadHandle threadHandle;
+    ThreadHandle dstThreadHandle;
+    uint32_t dstNotifyIdx;
+} RecordServiceArgs;
+
+typedef struct {
+    ThreadHandle threadHandle;
+    uint32_t notifyIdx;
+} WaitServiceArgs;
 
 #endif // RESOURCE_ENTITIES_H
