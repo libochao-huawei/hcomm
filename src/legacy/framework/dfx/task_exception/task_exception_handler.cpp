@@ -121,10 +121,10 @@ void PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
 
     uint16_t isAuxInfoExisted{false};
     for (u32 i = 0; i < auxInfo.auxInfoNum; i++) {
-        if (auxInfo.auxInfoValues[i]) {
+        if (auxInfo.auxInfoValues[i]) { // 非零进行打印
             isAuxInfoExisted = true;
-            HCCL_ERROR("devLogicId[%d], aux_info_type[%u]=%u, aux_info_value[%u]=%u",
-                devLogicId, i, auxInfo.auxInfoTypes[i], i, auxInfo.auxInfoValues[i]);
+            HCCL_ERROR("devLogicId[%d], cqe_aux_info_type[%u], cqe_aux_info_value[%u]",
+                devLogicId, auxInfo.auxInfoTypes[i], auxInfo.auxInfoValues[i]);
         }
     }
     if (!isAuxInfoExisted) {
@@ -715,13 +715,15 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
             PrintParaErrorLog(stageErrInfo, exceptionTaskInfo.GetParaInfo(), tag);
             PrintGroupErrorMessage(errorMessage, exceptionTaskInfo, groupRankContent, stageErrInfo);
             PrintOpDataErrorMessage(exceptionInfo->deviceid, errorMessage, stageErrInfo);
+            HCCL_ERROR("errorMessage taskType is: %s", errorMessage.taskType.Describe().c_str());
 
             // 打印UB DFX寄存器信息
             if (errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY 
                 || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
                 || errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE
                 || errorMessage.taskType == TaskParamType::TASK_UB_REDUCE_INLINE) {
-                auto addr = IpAddress(errorMessage.locEid);
+                auto reverseAddr = IpAddress(errorMessage.locEid);
+                auto addr = IpAddress(reverseAddr.GetReverseEid());
                 u32 devPhyId = HrtGetDevicePhyIdByIndex(exceptionInfo->deviceid);
                 auto rdmaHandle = RdmaHandleManager::GetInstance().GetByIp(devPhyId, addr);
                 PrintUbRegisters(static_cast<s32>(exceptionInfo->deviceid), rdmaHandle);
