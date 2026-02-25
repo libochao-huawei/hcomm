@@ -14,6 +14,8 @@ set(src_to_test_list
     # ut_DpuNotifyManager_test.cc
     ut_HcclEngineCtxGet_API_test.cc
     ut_HcclEngineCtxCreate_API_test.cc
+    ut_HcclCreateOpResCtx_API_test.cc
+    # ut_HcclGetRemoteIpcHcclBuf_API_test.cc
 )
 
 add_executable(hccl_utest_framework_resource ${src_to_test_list})
