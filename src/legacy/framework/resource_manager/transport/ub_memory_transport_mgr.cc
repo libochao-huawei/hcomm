@@ -10,6 +10,7 @@
 #include "ub_memory_transport_mgr.h"
 #include "timeout_exception.h"
 #include "communicator_impl.h"
+#include "adapter_error_manager_pub.h"
 
 namespace Hccl {
 
@@ -139,7 +140,10 @@ void UbMemoryTransportMgr::WaitTransportsReady(vector<std::pair<UbMemoryTranspor
         }
 
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            THROW<InternalException>("WaitTransportReady timeout, commId[%s]", comm->GetId().c_str());
+            // 上报故障码EI0006
+            RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}),
+                            std::vector<std::string>({"UbMemoryTransportMgr wait transports ready timeout."}));
+            THROW<InternalException>("UbMemoryTransportMgr::WaitTransportReady timeout, commId[%s]", comm->GetId().c_str());
         }
     }
 }

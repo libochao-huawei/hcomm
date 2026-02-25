@@ -58,6 +58,7 @@
 #include "hostdpu/flush_manager.h"
 #include "hostdpu/dpu_kernel_entrance.h"
 #include "json_parser.h"
+#include "adapter_error_manager_pub.h"
 
 namespace Hccl {
 constexpr u64 HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE = (1 * 1024 * 1024); // 指定bufferSize的单位为MB
@@ -639,7 +640,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         status = CommStatus::COMM_READY;
         CHK_RET(OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv));
 
-        // AICPU aclgraph场景传入的stream被capture且算子时支持零拷贝算法的，会切换到图模式
+        // AICPU aclgraph场景传入的stream被capture且算子时支持零拷贝算法的,会切换到图模式
         if (opExecuteConfig.accState == AcceleratorState::AICPU_TS && IsOpSupportZeroCopyAlg(opParams, stream)) {
             std::string tag = opParams.opTag + "_" + std::to_string(tagResourceIndex_++);
             OffloadResourcePre(tag, opParams);
@@ -715,7 +716,7 @@ HcclResult CommunicatorImpl::AllocCollOpResource(const CollOpParams &opParams, v
 {
     try {
         if (opParams.commEngine != HcclAccelerator::AICPU && opParams.commEngine != HcclAccelerator::AICPU_TS) {
-            HCCL_ERROR("[AllocCollOpResource::%s]It's support aicpu unfold on mc2. input is %s", __func__, opParams.commEngine.Describe().c_str());
+            HCCL_ERROR("[CommunicatorImpl][%s]It's support aicpu unfold on mc2. input is %s", __func__, opParams.commEngine.Describe().c_str());
  	        return HCCL_E_NOT_SUPPORT;
  	    }
         CHK_RET(CheckCommStatus());
@@ -896,16 +897,9 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         }
 
         bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
-        HcclResult dataTypeChkRes = OpParamsChecker::CheckOpDataTypeOffload(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv); // 算子粒度
-        if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
-            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-                std::vector<std::string>({"CommunicatorImpl::LoadOffloadCollOp", "dataTypeChkRes",
-                "no success", "please check DataType that check fail"}));
-            HCCL_ERROR("[CommunicatorImpl::LoadOffloadCollOp] DataType check fail.");
-            status = CommStatus::COMM_READY;
-            return dataTypeChkRes;
-        }
-
+        status = CommStatus::COMM_READY;
+        CHK_RET(OpParamsChecker::CheckOpDataTypeOffload(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv)); // 算子粒度
+        status = CommStatus::COMM_INUSE;
         if (isAiv) {
             currentCollOperator->numBlocksLimit = aivCoreLimit;
             HCCL_INFO("[CommunicatorImpl::LoadOffloadCollOp] Aiv core limit is [%d].", aivCoreLimit);

@@ -279,7 +279,7 @@ void Mc2Compont::GenerateAlgoTemplates(Mc2Tiling *mc2TilingPtr, std::unordered_s
         reinterpret_cast<uint8_t *>(mc2TilingPtr) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(Mc2ServerCfg));
     for (uint32_t index = 0; index < mc2TilingPtr->commConfigNum; index++) {
         const auto &commConfig = *(commConfigPtr + index);
-        OpParamsChecker::CheckOpDataTypeMC2(commConfig);
+        CHK_RET(OpParamsChecker::CheckOpDataTypeMC2(commConfig));
         uint64_t templateSign = GetTemplateSignature(commConfig);
         algoTemplateRequire.insert(templateSign);
         // 已经生成过的算法模板不再生成
@@ -338,7 +338,7 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
     for (uint32_t index = 0; index < mc2TilingPtr->mc2HcommCnt; index++) {
         const auto offset = mc2TilingPtr->offset[index];
         const auto &commConfig = *(reinterpret_cast<const Mc2CcTilingInner *>(reinterpret_cast<const uint8_t *>(mc2TilingPtr) + offset));
-        OpParamsChecker::CheckOpDataTypeMC2V2(commConfig);
+        CHK_RET(OpParamsChecker::CheckOpDataTypeMC2V2(commConfig));
         uint64_t templateSign = GetTemplateSignatureV2(commConfig);
         algoTemplateRequire.insert(templateSign);
         // 已经生成过的算法模板不再生成
