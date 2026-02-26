@@ -33,9 +33,17 @@ public:
     MrInfoT        loopBackQpMrRemoteInfo;
     MrInfoT        loopBackQpMrLocalInfo;
     LoopbackQpPair loopBackQpParam;
-    bool flushOpcodeSupport{false};
+
+    bool GetFlushOpcodeSupport() {
+        return flushOpcodeSupport_;
+    }
+
+    void SetFlushOpcodeSupport() {
+        flushOpcodeSupport_ = true;
+    }
 
 private:
+    bool           flushOpcodeSupport_{false};
     bool           flushIsInitialied{false};
     void*          hostMem{nullptr};
     void*          deviceMem{nullptr};

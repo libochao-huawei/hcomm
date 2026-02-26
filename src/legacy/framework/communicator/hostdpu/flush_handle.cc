@@ -31,7 +31,9 @@ HcclResult FlushHandle::Init(IpAddress ip, u32 devPhyId)
     // 获取 LbMax
     CHK_RET(GetLbMax(&rdmaHandle, &lbMax));
 
-    flushOpcodeSupport = lbMax > 0;
+    if (lbMax > 0) {
+        SetFlushOpcodeSupport();
+    }
 
     // 分配 Host Memory
     CHK_RET(AllocateHostMemory());
@@ -56,8 +58,7 @@ HcclResult FlushHandle::GetLbMax(void *rdevHandle, int *lbMax)
 {
     int ret = RaGetLbMax(rdevHandle, lbMax);
     if (ret != 0) {
-        HcclResult eRet = Destroy();
-        HCCL_ERROR("[GetLbMax]Failed to get load balance max value. error_code=%d. Destroy Flush code=%d", ret, eRet);
+        HCCL_ERROR("[GetLbMax]Failed to get load balance max value. error_code=%d.", ret);
         return HCCL_E_ROCE_CONNECT;
     }
     HCCL_DEBUG("[GetLbMax]Get load balance max value successfully");
