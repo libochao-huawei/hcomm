@@ -145,7 +145,7 @@ public:
     HcclResult InitHybridModeResources();
     
     // 混合模式同步接口
-    HcclResult WriteWithNotifyHybrid(void *dst, const void *src, uint64_t len, uint32_t remoteNotifyIdx);
+    HcclResult WriteWithNotifyHybrid(void *dst, const void *src, uint64_t len, uint32_t remoteNotifyIdx) const;
     HcclResult NotifyWaitHybrid(uint32_t localNotifyIdx, uint32_t timeout);
 
 private:

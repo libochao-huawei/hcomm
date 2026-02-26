@@ -2843,9 +2843,9 @@ HcclResult TransportIbverbs::ExchangeDataHybrid()
     localData.bufSize = memMsg_[static_cast<u32>(MemType::USER_OUTPUT_MEM)].size;
     
     // Notify 信息
-    // 使用对端提供的 DPU Notify ID（HostCpuRoceChannel 作为立即数发送的目标）
-    // 在混合模式下，这个值会在接收对端数据后填充
-    localData.dpuNotifyId = remoteDpuNotifyId_;
+    // TransportIbverbs 不使用 DPU Notify ID 接收数据（使用 LocalIpcNotify 轮询）
+    // 发送 0 作为占位值，HostCpuRoceChannel 会忽略此字段
+    localData.dpuNotifyId = 0;
     
     // Notify 内存地址信息（供 HostCpuRoceChannel 写入）
     localData.hostNotifyAddr = localNotifyBaseAddr_;
