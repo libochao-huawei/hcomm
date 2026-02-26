@@ -58,9 +58,6 @@
 #include "aiv_reduce_scatter_v_910b_middata.h"
 #include "aiv_reduce_scatter_v_910b_bigdata.h"
 
-#include "aiv_sync_910b.h"
-#include "aiv_sync_910b_rdma.h"
-
 #include "aiv_all_gather_910B_rdma.h"
 #include "aiv_all_gather_910B_rdma_graph.h"
 #include "aiv_reduce_scatter_910b_rdma.h"
@@ -287,18 +284,6 @@ extern "C" __global__ __aicore__ void aiv_broadcast_##type(KERNEL_ARGS_DEF) \
     } \
 } \
 EXPORT_AIV_META_INFO(aiv_broadcast_##type)
-
-// aiv sync
-extern "C" __global__ __aicore__ void hccl_aiv_sync(KERNEL_ARGS_DEF) {
-    return aiv_sync_910b_inner(KERNEL_ARGS_CALL); 
-}
-EXPORT_AIV_META_INFO(hccl_aiv_sync);
-
-// aiv sync rdma
-extern "C" __global__ __aicore__ void hccl_aiv_sync_rdma(KERNEL_ARGS_DEF) {
-    return aiv_sync_910b_rdma(KERNEL_ARGS_CALL);
-}
-EXPORT_AIV_META_INFO(hccl_aiv_sync_rdma);
 
 // 910B支持的Atomic数据类型
 #define AIV_ATOMIC_DATA_TYPE_DEF(func) \
