@@ -1445,7 +1445,12 @@ HcclResult HcclDevMemAcquireV2(HcclComm comm, const char *memTag, uint64_t *size
         memTagStr = std::string(tmpMemTag);
     }
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
-    CHK_RET(communicator->GetDevMemWorkSpace(memTagStr, size, addr, newCreated));
+    try {
+        CHK_RET(communicator->GetDevMemWorkSpace(memTagStr, size, addr, newCreated));
+    } catch (const InternalException &e) {
+        HCCL_ERROR("[HcclDevMemAcquireV2] InternalException[%s].", e.what());
+        return HCCL_E_INTERNAL;
+    }
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HCCL_RUN_INFO("Entry-HcclDevMemAcquire V910_95, memTag[%s], addr[%p], size[%llu], commId[%s]", memTagStr.c_str(), *addr, *size, communicator->GetId().c_str());
     }

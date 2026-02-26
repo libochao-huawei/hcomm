@@ -30,10 +30,10 @@ void FormatOpData(const HcclMsg &msg, HcclMsgExt &extMsg, u32 rankNum, u32 repea
         data.dataCount = msg.dataCnt;
         if (data.opType == HCCL_CMD_ALLTOALLV) {
             data.all2AllVDataDes.sendType = data.all2AllVDataDes.recvType = data.dataType;
-            data.all2AllVDataDes.sendCounts = reinterpret_cast<uint64_t *>(reinterpret_cast<uintptr_t>(extMsg.sendCounts));
-            data.all2AllVDataDes.recvCounts = reinterpret_cast<uint64_t *>(reinterpret_cast<uintptr_t>(extMsg.recvCounts));
-            data.all2AllVDataDes.sdispls = reinterpret_cast<uint64_t *>(reinterpret_cast<uintptr_t>(extMsg.sendOffset));
-            data.all2AllVDataDes.rdispls = reinterpret_cast<uint64_t *>(reinterpret_cast<uintptr_t>(extMsg.recvOffset));
+            data.all2AllVDataDes.sendCounts = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(extMsg.sendCounts));
+            data.all2AllVDataDes.recvCounts = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(extMsg.recvCounts));
+            data.all2AllVDataDes.sdispls = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(extMsg.sendOffset));
+            data.all2AllVDataDes.rdispls = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(extMsg.recvOffset));
         } else if (data.opType == HCCL_CMD_ALLTOALL) {
             data.all2AllDataDes.sendType = data.all2AllDataDes.recvType = data.dataType;
             data.all2AllDataDes.sendCount = data.all2AllDataDes.recvCount = data.dataCount;
@@ -47,8 +47,8 @@ void FormatOpData(const HcclMsg &msg, HcclMsgExt &extMsg, u32 rankNum, u32 repea
             extMsg.sendOffset[i] += extMsg.sendCounts[i];
             extMsg.recvOffset[i] += extMsg.recvCounts[i];
             HCCL_INFO("Formatted alltoallv info: repeat %u, rank id %u, send offset %llu, recv offset %llu.", repeat, i,
-                      reinterpret_cast<u64*>(data.all2AllVDataDes.sdispls)[i],
-                      reinterpret_cast<u64*>(data.all2AllVDataDes.rdispls)[i]);
+                      static_cast<u64t *>(data.all2AllVDataDes.sdispls)[i],
+                      static_cast<u64t *>(data.all2AllVDataDes.rdispls)[i]);
         }
     }
     const u64 offset = data.dataCount * DataUnitSize(data.dataType);
