@@ -59,8 +59,8 @@ target_include_directories(rs PRIVATE
 
     # 第三方库依赖路径
     ${OPENSSL_INCLUDE_DIR}
-    ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/tls_adp
-    ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/kms
+    ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/tls_adp
+    ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/kms
 
     # rdma头文件
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/include
