@@ -274,10 +274,11 @@ void Mc2Compont::MC2AllocCommRes(const CollAlgParams &params, std::shared_ptr<In
 }
 
 static void Mc2Compont::saveAlgoInfo(uint32_t index, uint64_t templateSign) {
-        HcclAlgoInfo hcclAlgoInfo;
-        hcclAlgoInfo.opType = combinOpParam.opType[index];
-        hcclAlgoInfo.algorithmType = combinOpParam.algorithmType[index];
-        algoInfoMap_[templateSign] = hcclAlgoInfo;
+    HcclAlgoInfo hcclAlgoInfo;
+    hcclAlgoInfo.opType = combinOpParam.opType[index];
+    hcclAlgoInfo.algorithmType = combinOpParam.algorithmType[index];
+    algoInfoMap_[templateSign] = hcclAlgoInfo;
+    return;
 }
 
 void Mc2Compont::GenerateAlgoTemplates(Mc2Tiling *mc2TilingPtr, std::unordered_set<uint64_t> &algoTemplateRequire)
