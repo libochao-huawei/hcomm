@@ -48,11 +48,11 @@ void CallDlogNoSzFormat(int level, int errCode, std::string file, int line)
 {
     if (level == HCCL_LOG_RUN_INFO) {
         LOG_FUNC(static_cast<u32>(HCCL) | RUN_LOG_MASK, DLOG_INFO,
-                 "[%s:%d]errNo[0x%016llx] ptr of szFormat is null\n",
+                 "[%s:%d]errNo[%d] ptr of szFormat is null\n",
                  file.c_str(), line, errCode);
     } else {
         LOG_FUNC(HCCL, level,
-                 "[%s:%d]errNo[0x%016llx] ptr of szFormat is null\n",
+                 "[%s:%d]errNo[%d] ptr of szFormat is null\n",
                  file.c_str(), line, errCode);
     }
 }
