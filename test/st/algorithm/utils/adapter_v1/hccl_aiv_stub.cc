@@ -542,7 +542,7 @@ HcclResult ExecuteKernelLaunchImpl(const AivOpArgs &opArgs, const AivTopoArgs &t
     }
 
     s32 tag = resourceArgs.aivTag;
-    block_num = resourceArgs.numBlocks;
+    numBlocks_ = resourceArgs.numBlocks;
     block_idx = 0;
 
     checker::MemLayout::Global()->InitBlockMem(resourceArgs.numBlocks);

@@ -115,7 +115,7 @@ __aicore__ inline void AivAllReduceDeterSmall910B::Process(GM_ADDR input, GM_ADD
 {
     int64_t count = len;
     int64_t blockNumPerGroup = rankSize_;
-    int64_t x = block_idx % blockNumPerGroup;
+    int64_t x = GetBlockIdx() % blockNumPerGroup;
     int64_t flagOffsetBasic = seperateOffset + BASE_FLAG_OFFSET * AIV_ALL_REDUCE_DETER_910B_SMALLDATA;
 
     uint32_t flagOffsetBase = ((tag % 2 == 0) ? 0 : 6 * rankSize_ * FLAG_SIZE) + flagOffsetBasic;
@@ -133,7 +133,7 @@ __aicore__ inline void AivAllReduceDeterSmall910B::Process(GM_ADDR input, GM_ADD
     int64_t flagOffset2st = flagOffsetBase + (rankSize_ + x) * FLAG_SIZE;
  
     // 第一组 先从input拷贝到cclbuffer
-    if (block_idx < blockNumPerGroup) {
+    if (GetBlockIdx() < blockNumPerGroup) {
         int64_t dataNum = (x == rankSize_ - 1) ? lastDataNum : avgDataNum;
         CpGM2GM(cclGMSelf + x * avgDataNum, inputGM + x * avgDataNum, dataNum);
  
@@ -152,7 +152,7 @@ __aicore__ inline void AivAllReduceDeterSmall910B::Process(GM_ADDR input, GM_ADD
         GatherReduce(x, dataNum, tag, cclGMSelf + count, flagOffset2st);
     }
     
-    if (block_idx < blockNumPerGroup) {
+    if (GetBlockIdx() < blockNumPerGroup) {
         PipeBarrier<PIPE_ALL>();
         int64_t flagOffsetLast = flagOffsetBase + (rankSize_ + rankSize_ - 1) * FLAG_SIZE;
         if (rankSize_ >= DETERMINISTIC_RANKSIZE) {
@@ -173,7 +173,7 @@ __aicore__ inline void AivAllReduceDeterSmall910B::ProcessSingleRanksizeCore(GM_
 {
     int64_t count = len;
     int64_t blockNumPerGroup = rankSize_;
-    int64_t x = block_idx % blockNumPerGroup;
+    int64_t x = GetBlockIdx() % blockNumPerGroup;
     int64_t flagOffsetBasic = seperateOffset + BASE_FLAG_OFFSET * AIV_ALL_REDUCE_DETER_910B_SMALLDATA;
 
     uint32_t flagOffsetBase = ((tag % 2 == 0) ? 0 : 6 * rankSize_ * FLAG_SIZE) + flagOffsetBasic;

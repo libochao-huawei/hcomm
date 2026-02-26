@@ -27,28 +27,28 @@ public:
      */
     FORCE_INLINE_AICORE void Process(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag, uint64_t bufferSize, uint64_t serverNum)
     {
-        if (block_idx >= rankSize_) {
+        if (GetBlockIdx() >= rankSize_) {
             return;
         }
 
-        if (block_idx == 0) {
+        if (GetBlockIdx() == 0) {
             // 本卡该片数据已经可以被跨片读取
             SetSignalValue((__gm__ int32_t *)(GM_IN[rank_]), localSetTensor, tag); 
         }
-        WaitSignalValue((__gm__ int32_t *)(GM_IN[block_idx]), localCheckTensor, tag);
+        WaitSignalValue((__gm__ int32_t *)(GM_IN[GetBlockIdx()]), localCheckTensor, tag);
 
         for (int i = 0; i < serverNum; i++) {
-            if (block_idx == rank_) {
+            if (GetBlockIdx() == rank_) {
                 break;
             }
-            int64_t receiveSizeOffset = (i * rankSize_ + block_idx) * len * sizeof(T);
-            CpGM2GM<T>((__gm__ T*)((__gm__ char*)output + receiveSizeOffset), (__gm__ T*)((__gm__ char*)(GM_OUT[block_idx]) + receiveSizeOffset), len);
+            int64_t receiveSizeOffset = (i * rankSize_ + GetBlockIdx()) * len * sizeof(T);
+            CpGM2GM<T>((__gm__ T*)((__gm__ char*)output + receiveSizeOffset), (__gm__ T*)((__gm__ char*)(GM_OUT[GetBlockIdx()]) + receiveSizeOffset), len);
         }
 
-        if (block_idx == 0) {
+        if (GetBlockIdx() == 0) {
             SetSignalValue((__gm__ int32_t *)(GM_IN[rank_]) + 8, localSetTensor, tag); 
         }
-        WaitSignalValue((__gm__ int32_t *)(GM_IN[block_idx]) + 8, localCheckTensor, tag);
+        WaitSignalValue((__gm__ int32_t *)(GM_IN[GetBlockIdx()]) + 8, localCheckTensor, tag);
     }
 };
 
