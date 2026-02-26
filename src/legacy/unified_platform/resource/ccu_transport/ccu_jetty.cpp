@@ -145,10 +145,17 @@ HrtRaUbJettyCreatedOutParam CcuJetty::GetJettyedOutParam() const
     return outParam_;
 }
 
+void CcuJetty::GetDeleteJettyInfo(ConnJettyInfo& connJettyInfo)
+{
+    if (isCreated_ && outParam_.handle != 0) {
+        connJettyInfo.isValid = true;
+        connJettyInfo.deleteJetty = outParam_.handle;
+    }
+}
+
 void CcuJetty::Clean()
 {
     if (isCreated_ && outParam_.handle != 0) {
-        HrtRaUbDestroyJetty(outParam_.handle);
         isCreated_ = false;
         reqHandle_ = 0;
         jettyHandlePtr_ = nullptr;
