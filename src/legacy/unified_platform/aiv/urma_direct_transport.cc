@@ -92,7 +92,6 @@ HcclAiRMAWQ UrmaDirectTransport::GetAiRMAWQ()
             wq.rmtTokenValue = it->GetTokenValue();
         }
     }
-    qDepth_ = wq.sqDepth;
     
     return wq;
 }
