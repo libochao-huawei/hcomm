@@ -28,7 +28,7 @@ public:
     explicit RmaConnManager(const CommunicatorImpl &comm);
     virtual ~RmaConnManager();
 
-    RmaConnection *Create(const std::string &tag, const LinkData &linkData);
+    RmaConnection *Create(const std::string &tag, const LinkData &linkData, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL);
 
     void                         BatchCreate(vector<LinkData> &links);
 
@@ -44,7 +44,8 @@ public:
 
 private:
     unique_ptr<RmaConnection> CreateRdmaConn(Socket *socket, const std::string &tag, const LinkData &linkData) const;
-    unique_ptr<RmaConnection> CreateUbConn(Socket *socket, const std::string &tag, const LinkData &linkData) const;
+    unique_ptr<RmaConnection> CreateUbConn(Socket *socket, const std::string &tag, const LinkData &linkData, 
+                                           const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL) const;
     bool                      isDestroyed{false};
     // tag -> LinkData -> RmaConnection
     std::unordered_map<

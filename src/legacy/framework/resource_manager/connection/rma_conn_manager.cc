@@ -65,7 +65,7 @@ unique_ptr<RmaConnection> RmaConnManager::CreateRdmaConn(Socket *socket, const s
 }
 
 unique_ptr<RmaConnection> RmaConnManager::CreateUbConn(Socket *socket, const std::string &tag,
-                                                       const LinkData &linkData) const
+                                                       const LinkData &linkData, const HrtUbJfcMode jfcMode) const
 {
     RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
     OpMode opMode = comm->GetCurrentCollOperator()->opMode;
@@ -78,15 +78,15 @@ unique_ptr<RmaConnection> RmaConnManager::CreateUbConn(Socket *socket, const std
     IpAddress rmtAddr = linkData.GetRemoteAddr();
     bool devUsed = comm->GetOpAiCpuTSFeatureFlag();
     if (linkData.GetLinkProtocol() == LinkProtocol::UB_TP) {
-        ubConn = make_unique<DevUbTpConnection>(rdmaHandle, locAddr, rmtAddr, opMode, devUsed);
+        ubConn = make_unique<DevUbTpConnection>(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode);
         return std::unique_ptr<RmaConnection>(ubConn.release());
     }
 
-    ubConn = make_unique<DevUbCtpConnection>(rdmaHandle, locAddr, rmtAddr, opMode, devUsed);
+    ubConn = make_unique<DevUbCtpConnection>(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode);
     return std::unique_ptr<RmaConnection>(ubConn.release());
 }
 
-RmaConnection *RmaConnManager::Create(const std::string &tag, const LinkData &linkData)
+RmaConnection *RmaConnManager::Create(const std::string &tag, const LinkData &linkData, const HrtUbJfcMode jfcMode)
 {
     HCCL_INFO("Create tag = [%s], remoteRank[%d] LinkData[%s] ", tag.c_str(), linkData.GetRemoteRankId(),
                linkData.Describe().c_str());
@@ -108,7 +108,7 @@ RmaConnection *RmaConnManager::Create(const std::string &tag, const LinkData &li
         if (linkProtocol == LinkProtocol::ROCE) {
             rmaConn = CreateRdmaConn(socket, tag, linkData);
         } else if (linkProtocol == LinkProtocol::UB_TP || linkProtocol == LinkProtocol::UB_CTP) {
-            rmaConn = CreateUbConn(socket, tag, linkData);
+            rmaConn = CreateUbConn(socket, tag, linkData, jfcMode);
         }
     }
 
