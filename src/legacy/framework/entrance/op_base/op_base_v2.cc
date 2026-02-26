@@ -1938,19 +1938,19 @@ HcclResult HcclSendV2(
     CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     /* 接口交互信息日志 */
-    char stackLogBufferV2[LOG_TMPBUF_SIZE];
+    char hcclSendStackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         s32 streamId = HrtGetStreamId(stream);
         s32 deviceLogicId = HrtGetDevice();
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
-        s32 ret = snprintf_s(stackLogBufferV2, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
+        s32 ret = snprintf_s(hcclSendStackLogBufferV2, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], sendBuf[%p], count[%llu], dataType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, count, GetDataTypeEnumStrV2(dataType).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclSendV2:" + std::string(stackLogBufferV2);
+        std::string logInfo = "Entry-HcclSendV2:" + std::string(hcclSendStackLogBufferV2);
         if (isCapture) {
             CHK_PTR_NULL(rtModel);
             // 获取不到modelId会报错
@@ -1998,19 +1998,19 @@ HcclResult HcclRecvV2(
     CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     /* 接口交互信息日志 */
-    char stackLogBufferV2[LOG_TMPBUF_SIZE];
+    char hcclRecvStackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         s32 streamId = HrtGetStreamId(stream);
         s32 deviceLogicId = HrtGetDevice();
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
-        s32 ret = snprintf_s(stackLogBufferV2, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
+        s32 ret = snprintf_s(hcclRecvStackLogBufferV2, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], recvBuf[%p], count[%llu], dataType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), recvBuf, count, GetDataTypeEnumStrV2(dataType).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclRecvV2:" + std::string(stackLogBufferV2);
+        std::string logInfo = "Entry-HcclRecvV2:" + std::string(hcclRecvStackLogBufferV2);
         if (isCapture) {
             CHK_PTR_NULL(rtModel);
             // 获取不到modelId会报错
