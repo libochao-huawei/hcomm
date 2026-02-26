@@ -577,7 +577,7 @@ static HcclResult DoReleaseNonBlockTypeRes(int32_t devLogicId, uint8_t dieId,
         const ResType resType = std::get<0>(infos);
         std::vector<ResInfo> &resInfos= std::get<1>(infos);
         const uint32_t reqSize = resInfos.size();
-        for (uint32_t i = 0; i < reqSize; i++) {
+        for (uint32_t i = reqSize - 1; i >= 0; i--) {
             const uint32_t num = resInfos[i].num;
             if (num == 0) {
                 continue;
@@ -592,7 +592,7 @@ static HcclResult DoReleaseNonBlockTypeRes(int32_t devLogicId, uint8_t dieId,
                 return ret;
             }
 
-            resInfos.erase(resInfos.begin() + i);
+            resInfos.erase(resInfos.begin() + i); // 倒序删除，减少元素移动，避免越界
         }
     }
     return HcclResult::HCCL_SUCCESS;

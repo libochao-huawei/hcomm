@@ -31,10 +31,11 @@ HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::uniqu
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UbMemEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else {
         endpointPtr = nullptr;
-        HCCL_ERROR("[%s] failed, endpointDesc.protocol [%d] is not supported.", __func__, endpointDesc.protocol);
+        HCCL_ERROR("[%s] failed, endpointDesc.protocol[%d] with loc.locType[%d] is not supported.",
+            __func__, endpointDesc.protocol, endpointDesc.loc.locType);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
 }
 
- }
+}
