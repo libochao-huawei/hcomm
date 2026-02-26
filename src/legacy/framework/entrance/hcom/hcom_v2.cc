@@ -41,15 +41,19 @@ static HcclResult GetHcclGroupParams(const std::string &strGroup, HcclGroupParam
         hcclGroupParamsV2 = iter->second;
         return HCCL_SUCCESS;
     }
-    HCCL_ERROR("comm group not in hcclGroupMap, please check groupName[%s].", strGroup.c_str());
-    return HCCL_E_PARA;
+    HCCL_WARNING("comm group not in hcclGroupMap, please check groupName[%s].", strGroup.c_str());
+    return HCCL_E_NOT_FOUND;
 }
 
 static HcclResult GetHcclCommV2(const char *group, std::shared_ptr<Hccl::HcclCommunicator> &hcclComm)
 {
     std::string strGroup = (group == nullptr || strlen(group) == 0) ? HCCL_WORLD_GROUP : group;
     HcclGroupParamsV2 hcclGroupParamsV2;
-    CHK_RET(GetHcclGroupParams(strGroup, hcclGroupParamsV2));
+    HcclResult ret = GetHcclGroupParams(strGroup, hcclGroupParamsV2);
+    CHK_PRT_RET(ret == HCCL_E_NOT_FOUND,
+                HCCL_WARNING("[GetHcclCommV2]errNo[0x%016llx] group[%s] group is not exist",
+                    HCOM_ERROR_CODE(HCCL_E_NOT_FOUND), strGroup.c_str()),
+                HCCL_E_NOT_FOUND);
     hcclComm = hcclGroupParamsV2.pComm;
     CHK_PTR_NULL(hcclComm);
     HCCL_INFO("[%s] success.", __func__);
@@ -1121,7 +1125,11 @@ HcclResult HcomUnloadTaskV2(const std::string group, const char *tag)
     CHK_RET(HcomCheckGroupNameV2(group.c_str()));
     CHK_RET(HcomCheckTagV2(tag));
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group.c_str(), hcclComm));
+    HcclResult ret = GetHcclCommV2(group.c_str(), hcclComm);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_WARNING("[HcomUnloadTaskV2]errNo[0x%016llx] group[%s] group is not exist",
+                    HCOM_ERROR_CODE(HCCL_E_NOT_FOUND), group.c_str()),
+                HCCL_SUCCESS);
     std::string opTag = tag;
     CHK_RET(hcclComm->ClearOpResource(opTag));
     HCCL_RUN_INFO("hcom unload task success,take time [%lld]us,tag[%s]", DURATION_US(TIME_NOW() - startut), tag);
