@@ -23,6 +23,10 @@
 // Legacy
 #include "legacy/common/binary_stream.h"
 
+// Platform
+#include "platform/resource/notify/notify_pool_impl.h"
+#include "platform/hccp/inc/network/hccp_common.h"
+
 namespace hcomm {
 
 // ========== RoCECapability 序列化实现 ==========
@@ -105,11 +109,27 @@ HostCpuRoceChannel::HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChann
     : endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
 
 HostCpuRoceChannel::~HostCpuRoceChannel() {
+    if (resourcesCleaned_) {
+        return;
+    }
+    
     if (isHybridMode_) {
         // 混合模式：释放单 Notify ID
         if (localDpuNotifyId_ != INVALID_DPU_NOTIFY_ID) {
             DpuNotifyManager::GetInstance().FreeSingleNotifyId(localDpuNotifyId_);
             localDpuNotifyId_ = INVALID_DPU_NOTIFY_ID;
+        }
+        
+        // 释放 LocalIpcNotify
+        if (hybridNotify_) {
+            hybridNotify_->Destroy();
+            hybridNotify_.reset();
+        }
+        
+        // 释放 Notify Pool
+        if (notifyPool_) {
+            notifyPool_->DeInit();
+            notifyPool_.reset();
         }
     } else {
         // 原生模式：释放批量 Notify IDs
@@ -118,6 +138,8 @@ HostCpuRoceChannel::~HostCpuRoceChannel() {
             HCCL_ERROR("[HostCpuRoceChannel::~HostCpuRoceChannel] exception occurred, HcclResult=[%d]", ret);
         }
     }
+    
+    resourcesCleaned_ = true;
 }
 
 HcclResult HostCpuRoceChannel::ParseInputParam()
@@ -911,18 +933,45 @@ HcclResult HostCpuRoceChannel::NegotiateMode()
 
 HcclResult HostCpuRoceChannel::InitHybridModeResources()
 {
-    // 分配单个 DPU Notify ID（供对端 TransportIbverbs 作为立即数发送目标）
+    // 1. 分配单个 DPU Notify ID（供对端 TransportIbverbs 作为立即数发送目标）
     int allocatedId = DpuNotifyManager::GetInstance().AllocSingleNotifyId();
     CHK_PRT_RET(allocatedId < 0,
         HCCL_ERROR("[Hybrid] Failed to allocate DPU Notify ID"),
         HCCL_E_MEMORY);
     localDpuNotifyId_ = static_cast<uint32_t>(allocatedId);
     
-    // 设置本地 Notify 内存基地址（用于混合模式轮询）
-    // TODO: 从 LocalIpcNotify 获取实际地址
-    // localNotifyBaseAddr_ = ...
+    // 2. 创建 LocalIpcNotify 用于混合模式轮询
+    // 创建 notify pool（如果尚未创建）
+    if (notifyPool_ == nullptr) {
+        notifyPool_ = std::make_unique<NotifyPoolImpl>();
+        CHK_RET(notifyPool_->Init(localEp_.loc.device.devPhyId));
+    }
     
-    HCCL_INFO("[Hybrid] Allocated DPU Notify ID: %u", localDpuNotifyId_);
+    // 创建 LocalIpcNotify
+    hybridNotify_ = std::make_shared<hccl::LocalIpcNotify>();
+    CHK_RET(hybridNotify_->Init(localEp_.loc.device.devPhyId, remoteEp_.loc.device.devPhyId,
+        hccl::NotifyLoadType::HOST_NOTIFY));
+    
+    // 获取 notify 偏移量
+    CHK_RET(hybridNotify_->GetNotifyOffset(hybridNotifyOffset_));
+    
+    // 获取 notify 基地址
+    // 使用 HrtRaGetNotifyBaseAddr 获取基地址
+    uint64_t notifyBaseVa = 0;
+    uint64_t notifyTotalSize = 0;
+    CHK_RET(HrtRaGetNotifyBaseAddr(rdmaHandle_, &notifyBaseVa, &notifyTotalSize,
+        []() -> bool { return false; }));
+    
+    // 计算实际 notify 地址
+    localNotifyBaseAddr_ = notifyBaseVa + hybridNotifyOffset_;
+    
+    // 获取 notify 的 rkey（用于注册 MR）
+    struct MrInfoT mrInfo = {nullptr};
+    CHK_RET(HrtRaGetNotifyMrInfo(localEp_.loc.device.devPhyId, rdmaHandle_, &mrInfo));
+    localNotifyRkey_ = mrInfo.rkey;
+    
+    HCCL_INFO("[Hybrid] Allocated DPU Notify ID: %u, notify base=0x%llx, offset=0x%llx, va=0x%llx",
+        localDpuNotifyId_, notifyBaseVa, hybridNotifyOffset_, localNotifyBaseAddr_);
     return HCCL_SUCCESS;
 }
 
@@ -951,10 +1000,10 @@ HcclResult HostCpuRoceChannel::ExchangeDataHybrid()
     // 填充 Notify 信息（单 Notify ID，混合模式设计）
     localData.dpuNotifyId = localDpuNotifyId_;
     
-    // TODO: 填充 Host Notify 地址信息（供对端写入）
-    // localData.hostNotifyAddr = ...;
-    // localData.hostNotifyRkey = ...;
-    localData.hostNotifyOffset = 0;
+    // 填充 Host Notify 地址信息（供对端 TransportIbverbs 写入）
+    localData.hostNotifyAddr = localNotifyBaseAddr_;
+    localData.hostNotifyRkey = localNotifyRkey_;
+    localData.hostNotifyOffset = hybridNotifyOffset_;
     
     // 序列化并发送
     Hccl::BinaryStream stream;

@@ -2772,11 +2772,24 @@ HcclResult TransportIbverbs::InitHybridModeResources()
 {
     // 为 HostCpuRoceChannel 准备 Notify 内存地址
     // 在混合模式下，HostCpuRoceChannel 会轮询此内存地址
-    // TODO: 从 LocalIpcNotify 获取实际地址
-    // localNotifyBaseAddr_ = ...
-    // localNotifyRkey_ = ...
     
-    HCCL_INFO("[Hybrid][TransportIbverbs] Hybrid mode resources initialized");
+    // 使用已有的 dataNotify_ 作为混合模式的 notify
+    // dataNotify_ 在 ConstructExchangeForSend 中创建
+    if (dataNotify_ == nullptr) {
+        HCCL_ERROR("[Hybrid][TransportIbverbs] dataNotify_ is null, cannot initialize hybrid mode");
+        return HCCL_E_INTERNAL;
+    }
+    
+    // 获取 notify 信息
+    HcclSignalInfo notifyInfo;
+    CHK_RET(dataNotify_->GetNotifyData(notifyInfo));
+    
+    localNotifyBaseAddr_ = notifyInfo.addr;
+    // rkey 从 memMsg_ 获取
+    localNotifyRkey_ = memMsg_[static_cast<u32>(MemType::DATA_NOTIFY_MEM)].rkey;
+    
+    HCCL_INFO("[Hybrid][TransportIbverbs] Hybrid mode resources initialized, notify addr=0x%llx, rkey=%u",
+        localNotifyBaseAddr_, localNotifyRkey_);
     return HCCL_SUCCESS;
 }
 
@@ -2823,15 +2836,14 @@ HcclResult TransportIbverbs::ExchangeDataHybrid()
     localData.bufSize = memMsg_[static_cast<u32>(MemType::USER_OUTPUT_MEM)].size;
     
     // Notify 信息
-    // 生成一个 Notify ID（供 HostCpuRoceChannel 作为立即数发送目标）
-    // 注意：这里使用一个固定的值，实际应该分配唯一的 ID
-    remoteDpuNotifyId_ = 0;  // HostCpuRoceChannel 会使用这个 ID 作为立即数
+    // 使用对端提供的 DPU Notify ID（HostCpuRoceChannel 作为立即数发送的目标）
+    // 在混合模式下，这个值会在接收对端数据后填充
     localData.dpuNotifyId = remoteDpuNotifyId_;
     
     // Notify 内存地址信息（供 HostCpuRoceChannel 写入）
     localData.hostNotifyAddr = localNotifyBaseAddr_;
     localData.hostNotifyRkey = localNotifyRkey_;
-    localData.hostNotifyOffset = 0;
+    localData.hostNotifyOffset = memMsg_[static_cast<u32>(MemType::DATA_NOTIFY_MEM)].offset;
     
     // 发送本地数据
     CHK_RET(Send(&localData, sizeof(localData)));
@@ -2842,6 +2854,12 @@ HcclResult TransportIbverbs::ExchangeDataHybrid()
     
     // 保存对端 DPU Notify ID（HostCpuRoceChannel 提供，作为立即数发送目标）
     remoteDpuNotifyId_ = remoteData.dpuNotifyId;
+    
+    // 保存对端 Host Notify 地址信息（HostCpuRoceChannel 发送时写入的目标）
+    // 注意：TransportIbverbs 不使用这些信息，因为 HostCpuRoceChannel 使用 Write + Notify 方式
+    // 但保存下来用于调试和一致性检查
+    HCCL_INFO("[Hybrid][TransportIbverbs] Remote host notify addr=0x%llx, rkey=%u",
+        remoteData.hostNotifyAddr, remoteData.hostNotifyRkey);
     
     HCCL_INFO("[Hybrid][TransportIbverbs] Data exchange success, remote DPU Notify ID=%u", remoteDpuNotifyId_);
     return HCCL_SUCCESS;

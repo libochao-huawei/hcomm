@@ -21,6 +21,12 @@
 #include "host_rdma_connection.h"
 // #include "base_mem_transport.h"
 
+// For hybrid mode
+#include "../../../../../../platform/resource/notify/local_ipc_notify.h"
+
+// Forward declaration
+class NotifyPoolImpl;
+
 namespace hcomm {
 
 // ========== RoCE 混合模式（Cross-Mode）常量定义 ==========
@@ -217,6 +223,17 @@ private:
     
     // 5. 本地 Notify 内存基地址（用于混合模式轮询）
     uint64_t localNotifyBaseAddr_ = 0;
+    uint32_t localNotifyRkey_ = 0;
+    
+    // 6. 混合模式使用的 LocalIpcNotify
+    std::shared_ptr<hccl::LocalIpcNotify> hybridNotify_;
+    uint64_t hybridNotifyOffset_ = 0;
+    
+    // 7. Notify Pool（用于创建 LocalIpcNotify）
+    std::unique_ptr<NotifyPoolImpl> notifyPool_;
+    
+    // 8. 析构标志（用于避免重复释放资源）
+    bool resourcesCleaned_ = false;
 };
 
 } // namespace hcomm
