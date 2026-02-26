@@ -412,7 +412,7 @@ HcclResult TopoInfoExchangeAgent::GetConnection(HcclIpAddress &serverIp, u32 por
     while (true) {
         std::string errormessage = "1. The current node " + std::to_string(serverIp.GetReadableIP()) +
                                    " is disconnected from the host of the root node " + std::string(localRankHandle_.ip) + ". "\
-                                   "2. the timeout set by the HCCL_CONNECT_TIMEOUT environment variable is too short."
+                                   "2. the timeout set by the HCCL_CONNECT_TIMEOUT environment variable is too short.";
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}), \
                 std::vector<std::string>({errormessage}));
@@ -604,7 +604,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterInfo(RankTable_t &clusterInfo)
 
     errormessage = "The number of ranks[" + std::to_string(localRankInfo_.rankSize) +
                                "]passed by the communicator initialization interface does not match the number of ranks[" + std::to_string(clusterInfo.rankNum) +
-                               "] obtained during cluster information negotiction."
+                               "] obtained during cluster information negotiction.";
     CHK_PRT_RET((clusterInfo.rankNum != localRankInfo_.rankSize),
         HCCL_ERROR("[%s][%s]%s",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -816,7 +816,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterBackupDeviceIP(RankTable_t &clust
                 std::vector<std::string>({ std::to_string(backupDevPhyId.GetReadableIP()), " \"backup_device_ip of "\
                 "rank " + std::to_string(rankInfo.rankId) + "\" ", " \"is device_ip another Die under the same NPU\" " }));
             errormessage = "Value " + std::to_string(backupDevPhyId.GetReadableIP()) + " for rankTable variable \"backup_device_ip of "\
-                "rank " + std::to_string(rankInfo.rankId) + "\" is invalid, expected value \"is device_ip another Die under the same NPU\"."
+                "rank " + std::to_string(rankInfo.rankId) + "\" is invalid, expected value \"is device_ip another Die under the same NPU\".";
             CHK_PRT_RET(linkType != LinkTypeInServer::SIO_TYPE,
                 HCCL_ERROR(
                     "[%s][%s]errNo[0x%016llx], %s",

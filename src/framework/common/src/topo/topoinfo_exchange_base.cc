@@ -87,7 +87,7 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfoMsg(std::shared_ptr<HcclSocket> 
     HcclResult ret = socket->Recv(reinterpret_cast<char *>(&msgLen), sizeof(msgLen));
     if (ret == HCCL_E_TIMEOUT) {
         errormessage = "Receiving message from the root node timed out. Check whether node " + std::string(socket->GetRemoteIp().GetReadableIP()) +
-                               " reports an error."
+                               " reports an error.";
         RPT_INPUT_ERR(true,
             "EI0015",
             std::vector<std::string>({"error_reason"}),
@@ -165,7 +165,7 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfo(std::shared_ptr<HcclSocket> soc
         auto ret = socket->Recv(reinterpret_cast<char *>(&identify), sizeof(identify));
         if (ret == HCCL_E_TIMEOUT) {
             errormessage = "Receiving message from the root node timed out. Check whether node " + std::string(socket->GetRemoteIp().GetReadableIP()) +
-                            " reports an error."
+                            " reports an error.";
             RPT_INPUT_ERR(true,
                 "EI0015",
                 std::vector<std::string>({"error_reason"}),
@@ -189,7 +189,7 @@ HcclResult TopoInfoExchangeBase::RecvClusterJson(std::shared_ptr<HcclSocket> soc
     HcclResult ret = socket->Recv(reinterpret_cast<char *>(&msgLen), sizeof(msgLen));
     if (ret == HCCL_E_TIMEOUT) {
         errormessage = "Receiving message from the root node timed out. Check whether node " + std::string(socket->GetRemoteIp().GetReadableIP()) +
-            " reports an error."
+            " reports an error.";
         RPT_INPUT_ERR(true,
             "EI0015",
             std::vector<std::string>({"error_reason"}),
@@ -214,7 +214,7 @@ HcclResult TopoInfoExchangeBase::RecvClusterJson(std::shared_ptr<HcclSocket> soc
     ret = socket->Recv(recvMsgBuf, msgLen);
     if (ret == HCCL_E_TIMEOUT) {
         errormessage = "Receiving message from the root node timed out. Check whether node " + std::string(socket->GetRemoteIp().GetReadableIP()) +
-            " reports an error."
+            " reports an error.";
         RPT_INPUT_ERR(true,
             "EI0015",
             std::vector<std::string>({"error_reason"}),
