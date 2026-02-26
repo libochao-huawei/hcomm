@@ -552,7 +552,7 @@ static HcclResult DoReleaseNonBlockTypeRes(int32_t devLogicId, uint8_t dieId,
     for (auto& infos : infoParas) {
         const ResType resType = std::get<0>(infos);
         std::vector<ResInfo> &resInfos= std::get<1>(infos);
-        for (uint32_t i = 0; i < reqSize; ) {
+        for (uint32_t i = 0; i < resInfos.size(); ) {
             const uint32_t num = resInfos[i].num;
             if (num == 0) {
                 resInfos.erase(resInfos.begin() + i);
