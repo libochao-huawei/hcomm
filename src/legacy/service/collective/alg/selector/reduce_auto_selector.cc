@@ -146,7 +146,8 @@ SelectorStatus ReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInf
                 primQueueGenName = "CcuReduceNHR1D";
             }
         } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
-            HCCL_WARNING("[Algo][ReduceAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.");
+            HCCL_WARNING("[Algo][ReduceAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
+                topoInfo.level0Shape);
                 return SelectorStatus::NOT_MATCH;
         } else {
             HCCL_WARNING("[Algo][ReduceAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
@@ -164,8 +165,6 @@ SelectorStatus ReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
                                                       std::string &primQueueGenName) const
 {
     HCCL_DEBUG("[ReduceAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
-
-
 
     if (topoInfo.levelNum > 1) {
         CHK_PRT_RET(op.reduceOp == ReduceOp::PROD,

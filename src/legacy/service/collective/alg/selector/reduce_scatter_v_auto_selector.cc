@@ -31,7 +31,7 @@ SelectorStatus ReduceScatterVAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoI
     } else {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
             if (Is2DieFullMesh()) {
-                HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] 2DieFullMesh is not supported yet for ccu_ms mode.",
+                HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] 2DieFullMesh[%d] is not supported yet for ccu_ms mode.",
                     topoInfo.level0Shape);
                 return SelectorStatus::NOT_MATCH;
             } else {
