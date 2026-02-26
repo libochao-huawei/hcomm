@@ -154,7 +154,7 @@ HcclResult ZeroCopyAddressMgr::GetLocalIpc2RemoteAddr(u32 devicePhyId, void *rem
     void *remoteAddrBase = reinterpret_cast<void *>(rangeIt->start);
     auto mapIt = addrMapping.find(remoteAddrBase);
     CHK_PRT_RET(mapIt == addrMapping.end(),
-        HCCL_ERROR("[ZeroCopyAddressMgr][GetLocalIpc2RemoteAddr] dev[%u] addr %p not set", devicePhyId, remoteAddr), HCCL_E_PARA);
+        HCCL_ERROR("[ZeroCopyAddressMgr][GetLocalIpc2RemoteAddr] dev[%u] addr %p not mapped", devicePhyId, remoteAddrBase), HCCL_E_PARA);
 
     addr = mapIt->second;
 
