@@ -24,7 +24,7 @@ template<typename T>
 __aicore__ inline void AivAll2AllVCNoLoop910B::Process(GM_ADDR input, GM_ADDR output, int32_t tag,
     ExtraArgs &extraArgs)
 {
-    uint32_t targetRank = (block_idx >= rankSize_ ? block_idx - rankSize_ : block_idx); // 0-2*rankSize
+    uint32_t targetRank = (GetBlockIdx() >= rankSize_ ? GetBlockIdx() - rankSize_ : GetBlockIdx()); // 0-2*rankSize
 
     // 内存准备
     __gm__ T *inputGM = (__gm__ T *)input;
@@ -32,22 +32,22 @@ __aicore__ inline void AivAll2AllVCNoLoop910B::Process(GM_ADDR input, GM_ADDR ou
     __gm__ T *cclGMSelf = (__gm__ T *)(GM_IN[rank_]);
     __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[targetRank]);
     tag = tag << TAG_MOVE_LEFT_BITS;
-    if (block_idx < rankSize_) { // 前rankSize个aiv负责userin->cclin
+    if (GetBlockIdx() < rankSize_) { // 前rankSize个aiv负责userin->cclin
         uint64_t localSendOffset = 0;
-        for (uint32_t i = 0; i < block_idx; i++) {
+        for (uint32_t i = 0; i < GetBlockIdx(); i++) {
             localSendOffset += extraArgs.sendCountMatrix[rank_ * rankSize_ + i];
         }
-        uint64_t localSendCount = extraArgs.sendCountMatrix[rank_ * rankSize_ + block_idx];
+        uint64_t localSendCount = extraArgs.sendCountMatrix[rank_ * rankSize_ + GetBlockIdx()];
 
-        CpGM2GMWithFlagWrap(cclGMSelf + localSendOffset, inputGM + localSendOffset, localSendCount, block_idx, 16, tag);
+        CpGM2GMWithFlagWrap(cclGMSelf + localSendOffset, inputGM + localSendOffset, localSendCount, GetBlockIdx(), 16, tag);
     } else { // 后rankSize个aiv负责cclother->usrout
         // 读对端数据前确认对端已进入本算子
-        uint64_t remoteSendOffset = 0; // 远端ccl发送给本端output的数据偏移，远端卡号为block_idx，可能为本rank
+        uint64_t remoteSendOffset = 0; // 远端ccl发送给本端output的数据偏移，远端卡号为GetBlockIdx()，可能为本rank
         for (uint32_t i = 0; i < rank_; i++) {
             remoteSendOffset += extraArgs.sendCountMatrix[targetRank * rankSize_ + i];
         }
 
-        uint64_t localRecvOffset = 0; // 本端output接收远端ccl的数据偏移，目标远端卡号为block_idx，可能为本rank
+        uint64_t localRecvOffset = 0; // 本端output接收远端ccl的数据偏移，目标远端卡号为GetBlockIdx()，可能为本rank
         for (uint32_t i = 0; i < targetRank; i++) {
             localRecvOffset += extraArgs.sendCountMatrix[i * rankSize_ + rank_];
         }
