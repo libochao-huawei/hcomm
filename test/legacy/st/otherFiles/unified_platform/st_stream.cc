@@ -48,7 +48,7 @@ TEST_F(StreamTest, Stream_selfownded_false)
     void* fakePtr      = (void *)1;
     u32        fakeId       = 1;
     s32        fakeDevLogId = 1;
-    u32        fakeDevPhyId = 1;
+    s32        fakeDevPhyId = 1;
     u32        fakeSqId     = 2;
     u64        fakeStmMode  = 3;
     MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeId));
@@ -74,7 +74,7 @@ TEST_F(StreamTest, stream_dev_used_false)
     void* fakePtr      = (void *)1;
     u32        fakeId       = 1;
     s32        fakeDevLogId = 1;
-    u32        fakeDevPhyId = 1;
+    s32        fakeDevPhyId = 1;
     u32        fakeSqId     = 2;
     u64        fakeStmMode  = 3;
     MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeId));
@@ -100,7 +100,7 @@ TEST_F(StreamTest, stream_dev_used_true)
     void* fakePtr      = (void *)1;
     u32        fakeId       = 1;
     s32        fakeDevLogId = 1;
-    u32        fakeDevPhyId = 1;
+    s32        fakeDevPhyId = 1;
     u32        fakeSqId     = 2;
     u64        fakeStmMode  = 3;
     MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeId));
