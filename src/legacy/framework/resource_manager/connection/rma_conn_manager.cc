@@ -180,14 +180,74 @@ void RmaConnManager::Release(const std::string &tag, const LinkData &linkData)
     }
 }
 
+void RmaConnManager::GetDeleteJettys(BatchDeleteJettyInfo &batchDeleteJettyInfo)
+{
+    // 获取要删除的连接
+    DevUbConnection* ubConn = nullptr;
+    for (auto &connPair : rmaConnectionMap) {
+        for (auto &linkDataConnPair : connPair.second) {
+            if (linkDataConnPair.second != nullptr) {
+                ubConn = dynamic_cast<DevUbConnection*>(linkDataConnPair.second.get());
+                if (ubConn) {
+                    const auto& rdmaHandle = ubConn->GetRdmaHandle();
+                    auto& remoteJettyHandle = ubConn->GetRemoteJettyHandle();
+                    if (rdmaHandle && remoteJettyHandle != 0) {
+                        batchDeleteJettyInfo.unimportJettyList[rdmaHandle].insert(remoteJettyHandle);
+                        remoteJettyHandle = 0;
+                    }
+
+                    ubConn->ReleaseTp();
+
+                    auto& jettyHandle = ubConn->GetJettyHandle();
+                    if (jettyHandle != 0) {
+                        batchDeleteJettyInfo.deleteJettyList[rdmaHandle].insert(jettyHandle);
+                        jettyHandle = 0;
+                    }  
+                    linkDataConnPair.second = nullptr;
+                }
+            }
+        }
+    }
+}
+
+void RmaConnManager::BatchDeleteJettys()
+{
+    BatchDeleteJettyInfo batchDeleteJettyInfo;
+    GetDeleteJettys(batchDeleteJettyInfo);
+    for(auto& unimportJettys : batchDeleteJettyInfo.unimportJettyList) {
+        for(auto& unimportJetty : unimportJettys.second) {
+            HrtRaUbUnimportJetty(unimportJettys.first, unimportJetty);
+        }
+    }
+    
+    std::vector<JettyHandle> failJettyHandles;
+    for(const auto& deleteJettys : batchDeleteJettyInfo.deleteJettyList) {
+        auto ret = HrtRaCtxQpDestoryBatch(deleteJettys.first, deleteJettys.second, failJettyHandles);
+        for (u64 failJetty : failJettyHandles) {
+            HCCL_ERROR("[%s]delete jetty[%llu] fail", __func__, failJetty);
+        }
+        if (ret == HCCL_E_INTERNAL || ret == HCCL_E_TIMEOUT) {
+            HCCL_ERROR("[%s]HrtRaCtxQpDestoryBatch finish, ret[%u], rdmaHandle[%p], originalJettyCount[%u], undeleteJettyCount[%u]",
+                __func__, ret, deleteJettys.first, deleteJettys.second.size(), failJettyHandles.size());
+            continue;
+        } else {
+            HCCL_INFO("[%s]HrtRaCtxQpDestoryBatch finish, ret[%u], rdmaHandle[%p], originalJettyCount[%u], undeleteJettyCount[%u]",
+                __func__, ret, deleteJettys.first, deleteJettys.second.size(), failJettyHandles.size());
+        }
+        failJettyHandles.clear();
+    }
+}
+
 void RmaConnManager::Destroy()
 {
     isDestroyed = true;
+    BatchDeleteJettys();
     rmaConnectionMap.clear();
 }
 
 void RmaConnManager::Clear()
 {
+    BatchDeleteJettys();
     rmaConnectionMap.clear();
 }
 
