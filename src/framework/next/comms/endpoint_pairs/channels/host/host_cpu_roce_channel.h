@@ -66,6 +66,8 @@ struct RoCECapability {
     CommStackType commStack;     // 通信协议栈类型
     SyncMode syncMode;           // 支持的同步模式
     
+    uint8_t reserved[2];         // 预留字段，用于未来扩展
+    
     void Serialize(Hccl::BinaryStream &stream);
     void Deserialize(Hccl::BinaryStream &stream);
 };

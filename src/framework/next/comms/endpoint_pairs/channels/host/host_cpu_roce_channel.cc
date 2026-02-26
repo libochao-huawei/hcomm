@@ -39,6 +39,9 @@ void RoCECapability::Serialize(Hccl::BinaryStream &stream)
     stream << static_cast<uint8_t>(nicDeploy);
     stream << static_cast<uint8_t>(commStack);
     stream << static_cast<uint8_t>(syncMode);
+    for (int i = 0; i < 2; i++) {
+        stream << reserved[i];
+    }
 }
 
 void RoCECapability::Deserialize(Hccl::BinaryStream &stream)
@@ -54,6 +57,9 @@ void RoCECapability::Deserialize(Hccl::BinaryStream &stream)
     nicDeploy = static_cast<NicDeployType>(nicDeployVal);
     commStack = static_cast<CommStackType>(commStackVal);
     syncMode = static_cast<SyncMode>(syncModeVal);
+    for (int i = 0; i < 2; i++) {
+        stream >> reserved[i];
+    }
 }
 
 // ========== HybridExchangeData 序列化实现 ==========

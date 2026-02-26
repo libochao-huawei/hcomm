@@ -228,22 +228,25 @@
 // 版本定义
 constexpr uint32_t ROCE_CAPABILITY_VERSION = 1;         // 当前版本
 constexpr uint32_t ROCE_MIN_SUPPORTED_VERSION = 1;      // 最低支持版本
-constexpr uint32_t ROCE_HYBRID_MAGIC = 0x48434C32;      // "HCL2"
+constexpr uint32_t ROCE_HYBRID_MAGIC = 0x48434C52;      // "HCLR"
 constexpr uint32_t MAX_EXCHANGE_DATA_SIZE = 64 * 1024;  // 最大 64KB
 
 // 新增：通信能力协商结构
+// 注意：字段类型使用精确类型以节省空间和确保对齐
 struct RoCECapability {
-    uint32_t magic;           // 魔数：0x48434C32 ("HCL2")
-    uint32_t version;         // 版本：当前为 1
-    uint32_t nodeType;        // 节点类型：A2/A3/A5
-    uint32_t nicDeploy;       // 网卡部署：DEVICE(0) / HOST(1)
-    uint32_t commStack;       // 通信栈：TRANSPORT_IBVERBS(0) / HOST_CPU_ROCE(1)
-    uint32_t syncMode;        // 同步模式：WRITE_NOTIFY(0) / WRITE_IMM(1)
-    uint32_t totalLength;     // 总长度（用于校验）
-    uint32_t reserved[2];     // 预留字段，用于未来扩展
+    uint32_t magic;              // 魔数：0x48434C52 ("HCLR")
+    uint16_t version;            // 版本号：当前为 1
+    uint16_t totalLength;        // 总长度（包括头部和变长数据）
+    
+    uint8_t nodeType;            // 节点类型（参考 HcclDeviceType）
+    uint8_t nicDeploy;           // NIC 部署位置：HOST(0) / DPU(1)
+    uint8_t commStack;           // 通信协议栈：HOST_CPU_ROCE(0) / TRANSPORT_IBVERBS(1)
+    uint8_t syncMode;            // 同步模式：WRITE_IMM(0) / WRITE_NOTIFY(1)
+    
+    uint8_t reserved[2];         // 预留字段，用于未来扩展
     
     void Serialize(BinaryStream &stream);
-    void Deserialize(BinaryStream &stream);
+    void Deserialize(BinaryStream &BinaryStream);
 };
 
 // 版本兼容性策略：
@@ -257,15 +260,14 @@ struct RoCECapability {
 
 ```cpp
 // 混合模式下使用的统一交换数据结构（非对称兼容）
+// 注意：Capability 和 Data 是分开交换的（先 ExchangeCapability，后 ExchangeDataHybrid）
+// 因此 HybridExchangeData 不需要包含 RoCECapability 头部
 struct HybridExchangeData {
-    // --- 头部：能力协商 ---
-    RoCECapability capability;
-    
     // --- QP 信息（兼容双边）---
     uint32_t qpn;
     uint32_t psn;
-    uint32_t gidIdx;
     uint8_t gid[HCCP_GID_RAW_LEN];
+    uint8_t gidIdx;
     
     // --- Buffer 信息 ---
     uint64_t bufAddr;
