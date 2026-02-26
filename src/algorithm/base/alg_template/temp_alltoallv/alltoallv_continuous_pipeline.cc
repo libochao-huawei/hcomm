@@ -1019,7 +1019,7 @@ HcclResult AlltoallvContinuousPipeline::RunAsync()
         }
 
         if (interState.loopNum == 0 && needDoInterTasks) {
-            // 第一轮，在做intra分发前，等待、获取receive信息
+            // 第一轮，在做inter分发前，等待、获取receive信息
             if (needCollectInfo_) {
                 CHK_RET(WaitAndCalReceiveInfo()); // 阻塞函数
                 needCollectInfo_ = false;
