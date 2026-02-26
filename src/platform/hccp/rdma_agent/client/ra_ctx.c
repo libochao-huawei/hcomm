@@ -760,6 +760,8 @@ HCCP_ATTRI_VISI_DEF int RaCtxQpImport(void *ctxHandle, struct QpImportInfoT *qpI
     }
 
     *remQpHandle = (void *)remQpHandleTmp;
+
+    hccp_warn("@@@ RaCtxQpImport qpInfo->out.ub.tpn: %ld", qpInfo->out.ub.tpn);
     return 0;
 
 err:

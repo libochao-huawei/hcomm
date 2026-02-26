@@ -1990,12 +1990,12 @@ STATIC int RsUbFillJettyInfo(struct RsCtxJettyCb *jettyCb, struct QpCreateInfo *
     // hccp_warn("@@@ jettyInfo->udma_jetty_sq.max_sge_num: %ld", jettyInfo->udma_jetty_sq.max_sge_num);
     // hccp_warn("@@@ jettyInfo->udma_jetty_sq.cstm: %ld", jettyInfo->udma_jetty_sq.cstm);
 
-    hccp_warn("123123123123123123 jettyInfo->udma_jetty_sq.db_addr value_rd before : %d",
-        *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_sq.db_addr + 0x80));
-    int value_wr = 123;
-    *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_sq.db_addr + 0x80) = value_wr;
-    int value_rd = *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_sq.db_addr + 0x80);
-    hccp_warn("123123123123123123 jettyInfo->udma_jetty_sq.db_addr value_rd after: %d", value_rd);
+    // hccp_warn("123123123123123123 jettyInfo->udma_jetty_sq.db_addr value_rd before : %d",
+    //     *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_sq.db_addr + 0x80));
+    // int value_wr = 123;
+    // *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_sq.db_addr + 0x80) = value_wr;
+    // int value_rd = *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_sq.db_addr + 0x80);
+    // hccp_warn("123123123123123123 jettyInfo->udma_jetty_sq.db_addr value_rd after: %d", value_rd);
 
     struct udma_u_jfc *udma_jfc = CONTAINER_OF(jettyCb->jetty->jetty_cfg.shared.jfc, struct udma_u_jfc, base);
     jettyInfo->udma_jetty_cq.qbuf = udma_jfc->cq.qbuf;
@@ -2012,11 +2012,11 @@ STATIC int RsUbFillJettyInfo(struct RsCtxJettyCb *jettyCb, struct QpCreateInfo *
     // jettyInfo->udma_jetty_cq.max_sge_num = udma_jfc->cq.max_sge_num;
     // jettyInfo->udma_jetty_cq.cstm = udma_jfc->cq.cstm;
 
-    hccp_warn("123123123123123123 jettyInfo->udma_jetty_cq.db_addr value_rd before: %d",
-        *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_cq.db_addr + 0x80));
-    *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_cq.db_addr + 0x80) = value_wr;
-    value_rd = *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_cq.db_addr + 0x80);
-    hccp_warn("123123123123123123 jettyInfo->udma_jetty_cq.db_addr value_rd after: %d", value_rd);
+    // hccp_warn("123123123123123123 jettyInfo->udma_jetty_cq.db_addr value_rd before: %d",
+    //     *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_cq.db_addr + 0x80));
+    // *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_cq.db_addr + 0x80) = value_wr;
+    // value_rd = *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_cq.db_addr + 0x80);
+    // hccp_warn("123123123123123123 jettyInfo->udma_jetty_cq.db_addr value_rd after: %d", value_rd);
 
     hccp_warn("@@@ jettyInfo->udma_jetty_cq.qbuf: %ld", jettyInfo->udma_jetty_cq.qbuf);
     hccp_warn("@@@ jettyInfo->udma_jetty_cq.qbuf_size: %ld", jettyInfo->udma_jetty_cq.qbuf_size);
@@ -2239,8 +2239,10 @@ STATIC int RsUbCtxDrvJettyImport(struct RsCtxRemJettyCb *rjettyCb)
     rjetty.tp_type = rjettyCb->tpType;
 
     if (rjettyCb->mode == JETTY_IMPORT_MODE_NORMAL) {
+        hccp_warn("@@@ RsUbCtxDrvJettyImport JETTY_IMPORT_MODE_NORMAL");
         rjettyCb->tjetty = RsUrmaImportJetty(rjettyCb->devCb->urmaCtx, &rjetty, &tokenValue);
     }  else { // rjetty_cb->mode == JETTY_IMPORT_MODE_EXP
+        hccp_warn("@@@ RsUbCtxDrvJettyImport else");
         RsUbCtxExpJettyImport(rjettyCb, &rjetty, &tokenValue);
     }
     CHK_PRT_RETURN(rjettyCb->tjetty == NULL, hccp_err("import_jetty failed, mode:%d errno:%d", rjettyCb->mode, errno),
@@ -2266,6 +2268,8 @@ int RsUbCtxJettyImport(struct RsUbDevCb *devCb, struct RsJettyImportAttr *import
     importInfo->remJettyId = rjettyCb->tjetty->id.id;
     importInfo->info.tjettyHandle = (uint64_t)(uintptr_t)rjettyCb->tjetty;
     importInfo->info.tpn = rjettyCb->tjetty->tp.tpn;
+
+    hccp_warn("@@@ RsUbCtxJettyImport importInfo->info.tpn: %ld", importInfo->info.tpn);
 
     RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
     RsListAddTail(&rjettyCb->list, &devCb->rjettyList);
