@@ -712,10 +712,12 @@ HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHan
     CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
     CHK_PRT_RET(deviceIp.size() < 1,
         HCCL_ERROR("Get ip address failed, phyId[%u]", rdevInfo.phyId), HCCL_E_INTERNAL);
+
+
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
         vector<string>({ "value", "variable" ,"expect" }),
-        vector<string>({ rdevInfo.localIp.GetReadableIP(), "[IP]", deviceIp[0].GetReadableIP() })
+        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr)), "[IP]", string(deviceIp[0].GetReadableIP()) })
     );
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
@@ -752,7 +754,7 @@ HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rd
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
         vector<string>({ "value", "variable" ,"expect" }),
-        vector<string>({ rdevInfo.localIp.GetReadableIP(), "[IP]", deviceIp[0].GetReadableIP() })
+        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr)), "[IP]", string(deviceIp[0].GetReadableIP()) })
     );
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
@@ -796,7 +798,7 @@ HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
         vector<string>({ "value", "variable" ,"expect" }),
-        vector<string>({ rdevInfo.localIp.GetReadableIP(), "[IP]", deviceIp[0].GetReadableIP() })
+        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr)), "[IP]", string(deviceIp[0].GetReadableIP()) })
     );
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
