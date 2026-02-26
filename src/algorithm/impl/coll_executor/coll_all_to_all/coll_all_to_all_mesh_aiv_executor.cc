@@ -75,7 +75,7 @@ HcclResult CollAlltoAllMeshAivExecutor::CalNumBlocks(u32& numBlocks, u32 rankSiz
         if (topoAttr_.deviceType == DevType::DEV_TYPE_910_93 &&
             ((isOpBase && cmdType == HcclCMDType::HCCL_CMD_ALLTOALLV) ||
             (!isOpBase && cmdType == HcclCMDType::HCCL_CMD_ALLTOALLVC))) {
-            // A3单机单算子场景，block_num为3倍或者4倍的ranksize
+            // A3单机单算子场景，numBlocks_为3倍或者4倍的ranksize
             numBlocks = rankSize * NUM_BLOCKS_FOUR_PER_RANK_A3 > MAX_NUM_BLOCKS ?
                 rankSize * NUM_BLOCKS_THREE_PER_RANK_A3 : rankSize * NUM_BLOCKS_FOUR_PER_RANK_A3;
         } else if (isOpBase) {
@@ -242,9 +242,6 @@ HcclResult CollAlltoAllMeshAivExecutor::KernelRun(const OpParam &param, ExecMem 
             HCCL_E_PARA);
         numBlocks_ = numBlocks;
         resourceArgs.numBlocks = numBlocks_;
-        if (aivClearEnable_) {
-            ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
-        }
         ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);
     } else if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC || param.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
         for (u32 i = 0; i < localRankSize; i++) {
@@ -267,9 +264,6 @@ HcclResult CollAlltoAllMeshAivExecutor::KernelRun(const OpParam &param, ExecMem 
             HCCL_E_PARA);
         numBlocks_ = numBlocks;
         resourceArgs.numBlocks = numBlocks_;
-        if (aivClearEnable_) {
-            ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
-        }
         ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo);
     } else {
         for (u32 i = 0; i < localRankSize; i++) {
@@ -286,9 +280,6 @@ HcclResult CollAlltoAllMeshAivExecutor::KernelRun(const OpParam &param, ExecMem 
             HCCL_E_PARA);
         numBlocks_ = numBlocks;
         resourceArgs.numBlocks = numBlocks_;
-        if (aivClearEnable_) {
-            ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
-        }
         ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo);
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
