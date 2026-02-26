@@ -29,7 +29,7 @@ public:
         const std::string &identifier);
     explicit TopoInfoExchangeServer(HcclIpAddress &hostIP, u32 hostPort, const std::vector<HcclIpAddress> whitelist,
         HcclNetDevCtx netDevCtx, std::shared_ptr<HcclSocket> listenSocket,
-        std::shared_ptr<HcclSocket> connToRootSocket, const std::string &identifier);
+        std::shared_ptr<HcclSocket> grpLeaderToRoot, const std::string &identifier);
     ~TopoInfoExchangeServer() override;
     HcclResult Setup();
     HcclResult SetupGroupLeader();

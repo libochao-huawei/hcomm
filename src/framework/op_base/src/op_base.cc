@@ -580,9 +580,7 @@ HcclResult HcclCommInitClusterInfoWrapper(struct hcclAsyncJob* job_){
     /* 关键状态记录 */
     HCCL_RUN_INFO("[HCCL_TRACE]%s success, take time [%lld]us, clusterInfo[%s], rank[%u], deviceLogicId[%d].",
         __func__, DURATION_US(TIME_NOW() - startut), clusterInfo, rank, deviceLogicId);
-    return HCCL_SUCCESS;      
- 
-    return ret;
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclComm *comm)

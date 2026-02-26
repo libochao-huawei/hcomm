@@ -46,154 +46,154 @@
 extern void RsGetCurTime(struct timeval *time);
 extern int memset_s(void *dest, size_t destMax, int c, size_t count);
 extern int RsPthreadMutexInit(struct rs_cb *rscb, struct RsInitConfig *cfg);
-extern void RsSslRecvTagInHandle(struct RsAcceptInfo *accept_info, struct RsConnInfo *conn_tmp);
-extern void RsEpollEventSslRecvTagInHandle(struct rs_cb *rs_cb, struct RsAcceptInfo *accept_info);
+extern void RsSslRecvTagInHandle(struct RsAcceptInfo *acceptInfo, struct RsConnInfo *connTmp);
+extern void RsEpollEventSslRecvTagInHandle(struct rs_cb *rsCb, struct RsAcceptInfo *acceptInfo);
 extern int RsRdev2rdevCb(unsigned int chipId, unsigned int rdevIndex, struct RsRdevCb **rdevCb);
-extern int RsCompareIpGid(struct rdev rdev_info, union ibv_gid *gid);
-extern int RsGetIbCtxAndRdevIndex(struct rdev rdev_info, struct RsRdevCb *rdevCb, unsigned int *rdevIndex);
-extern int RsQueryGid(struct rdev rdev_info, struct ibv_context *ib_ctx_tmp, uint8_t ib_port, int *gid_idx);
-extern int RsRdevCbInit(struct rdev rdev_info, struct RsRdevCb *rdevCb, struct rs_cb *rs_cb, unsigned int *rdevIndex);
+extern int RsCompareIpGid(struct rdev rdevInfo, union ibv_gid *gid);
+extern int RsGetIbCtxAndRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb, unsigned int *rdevIndex);
+extern int RsQueryGid(struct rdev rdevInfo, struct ibv_context *ibCtxTmp, uint8_t ibPort, int *gidIdx);
+extern int RsRdevCbInit(struct rdev rdevInfo, struct RsRdevCb *rdevCb, struct rs_cb *rsCb, unsigned int *rdevIndex);
 extern int RsDrvQueryNotifyAndAllocPd(struct RsRdevCb *rdevCb);
 extern int RsDrvRegNotifyMr(struct RsRdevCb *rdevCb);
-extern int RsGetRsCb(unsigned int phyId, struct rs_cb **rs_cb);
+extern int RsGetRsCb(unsigned int phyId, struct rs_cb **rsCb);
 extern int RsDrvMrDereg(struct ibv_mr *ibMr);
 extern void RsSslFree(struct rs_cb *rscb);
-extern int RsDrvPostRecv(struct RsQpCb *qp_cb, struct RecvWrlistData *wr, unsigned int recv_num,
-    unsigned int *complete_num);
+extern int RsDrvPostRecv(struct RsQpCb *qpCb, struct RecvWrlistData *wr, unsigned int recvNum,
+    unsigned int *completeNum);
 extern int RsDrvSslBindFd(struct RsConnInfo *conn, int fd);
 extern void rs_ssl_err_string(int fd, int err);
 extern void rs_ssl_deinit(struct rs_cb *rscb);
 extern int rs_ssl_init(struct rs_cb *rscb);
-extern int rs_tls_inner_enable(struct rs_cb *rs_cb, unsigned int enable);
+extern int rs_tls_inner_enable(struct rs_cb *rsCb, unsigned int enable);
 extern int rs_ssl_inner_init(struct rs_cb *rscb);
-extern int rs_ssl_ca_ky_init(SSL_CTX *ssl_ctx, struct rs_cb *rscb);
-extern int rs_ssl_load_ca(SSL_CTX *ssl_ctx, struct rs_cb *rscb, struct tls_cert_mng_info* mng_info);
-extern int rs_ssl_crl_init(SSL_CTX *ssl_ctx, struct rs_cb *rscb, struct tls_cert_mng_info *mng_info);
-extern int rs_ssl_get_crl_data(struct rs_cb *rscb, FILE* fp, struct tls_cert_mng_info *mng_info, X509_CRL **crl);
-extern int rs_check_pridata(SSL_CTX *ssl_ctx, struct rs_cb *rscb, struct tls_cert_mng_info *mng_info);
-extern int rs_get_pk(struct rs_cb *rscb, struct tls_cert_mng_info *mng_info, EVP_PKEY **pky);
-extern int rs_ssl_get_ca_data(struct rs_cb *rscb, const char* end_file, const char* ca_file,
-    struct tls_cert_mng_info* mng_info);
-extern int rs_remove_certs(const char* end_file, const char* ca_file);
-extern int rs_ssl_put_certs(struct rs_cb *rscb, struct tls_cert_mng_info *mng_info, struct RsCerts *certs,
-    struct tls_ca_new_certs *new_certs, struct CertFile *file_name);
-extern int rs_ssl_skid_get_from_chain(struct rs_cb *rscb, struct tls_cert_mng_info *mng_info,
-    struct RsCerts *certs, struct tls_ca_new_certs *new_certs);
-extern int rs_socket_fill_wlist_by_phyID(unsigned int chipId, struct SocketWlistInfoT *white_list_node,
-    struct RsConnInfo *rs_conn);
-extern int rs_ssl_check_mng_and_cert_chain(struct rs_cb *rscb, struct tls_cert_mng_info *mng_info,
-    struct RsCerts *certs, struct tls_ca_new_certs *new_certs, struct CertFile *file_name);
-extern int rs_ssl_check_cert_chain(struct tls_cert_mng_info *mng_info, struct RsCerts *certs,
-    struct tls_ca_new_certs *new_certs);
+extern int rs_ssl_ca_ky_init(SSL_CTX *sslCtx, struct rs_cb *rscb);
+extern int rs_ssl_load_ca(SSL_CTX *sslCtx, struct rs_cb *rscb, struct tls_cert_mng_info* mngInfo);
+extern int rs_ssl_crl_init(SSL_CTX *sslCtx, struct rs_cb *rscb, struct tls_cert_mng_info *mngInfo);
+extern int rs_ssl_get_crl_data(struct rs_cb *rscb, FILE* fp, struct tls_cert_mng_info *mngInfo, X509_CRL **crl);
+extern int rs_check_pridata(SSL_CTX *sslCtx, struct rs_cb *rscb, struct tls_cert_mng_info *mngInfo);
+extern int rs_get_pk(struct rs_cb *rscb, struct tls_cert_mng_info *mngInfo, EVP_PKEY **pky);
+extern int rs_ssl_get_ca_data(struct rs_cb *rscb, const char* endFile, const char* caFile,
+    struct tls_cert_mng_info* mngInfo);
+extern int rs_remove_certs(const char* endFile, const char* caFile);
+extern int rs_ssl_put_certs(struct rs_cb *rscb, struct tls_cert_mng_info *mngInfo, struct RsCerts *certs,
+    struct tls_ca_new_certs *newCerts, struct CertFile *fileName);
+extern int rs_ssl_skid_get_from_chain(struct rs_cb *rscb, struct tls_cert_mng_info *mngInfo,
+    struct RsCerts *certs, struct tls_ca_new_certs *newCerts);
+extern int rs_socket_fill_wlist_by_phyID(unsigned int chipId, struct SocketWlistInfoT *whiteListNode,
+    struct RsConnInfo *rsConn);
+extern int rs_ssl_check_mng_and_cert_chain(struct rs_cb *rscb, struct tls_cert_mng_info *mngInfo,
+    struct RsCerts *certs, struct tls_ca_new_certs *newCerts, struct CertFile *fileName);
+extern int rs_ssl_check_cert_chain(struct tls_cert_mng_info *mngInfo, struct RsCerts *certs,
+    struct tls_ca_new_certs *newCerts);
 extern int rs_ssl_verify_cert(X509_STORE_CTX *ctx);
 extern int rs_ssl_verify_cert_chain(X509_STORE_CTX *ctx, X509_STORE *store,
-    struct RsCerts *certs, struct tls_cert_mng_info *mng_info, struct tls_ca_new_certs *new_certs);
-extern X509 *tls_load_cert(const uint8_t *inbuf, uint32_t buf_len, int type);
-extern int rs_ssl_get_leaf_cert(struct RsCerts *certs, X509 **leaf_cert);
-extern int tls_get_cert_chain(X509_STORE *store, struct RsCerts *certs, struct tls_cert_mng_info *mng_info);
+    struct RsCerts *certs, struct tls_cert_mng_info *mngInfo, struct tls_ca_new_certs *newCerts);
+extern X509 *tls_load_cert(const uint8_t *inbuf, uint32_t bufLen, int type);
+extern int rs_ssl_get_leaf_cert(struct RsCerts *certs, X509 **leafCert);
+extern int tls_get_cert_chain(X509_STORE *store, struct RsCerts *certs, struct tls_cert_mng_info *mngInfo);
 extern int rs_tls_peer_cert_verify(SSL *ssl, struct rs_cb *rscb);
-extern int RsEpollEventSslAcceptInHandle(struct rs_cb *rs_cb, int fd);
+extern int RsEpollEventSslAcceptInHandle(struct rs_cb *rsCb, int fd);
 extern int NetCommGetSelfHome(char *userNamePath, unsigned int pathLen);
-extern int get_tls_config_path(char *user_name_path, unsigned int path_len);
-extern int RsDrvQpNormal(struct RsQpCb *qp_cb, int qpMode);
-extern int RsDrvNormalQpCreateInit(struct ibv_qp_init_attr *qp_init_attr, struct RsQpCb *qp_cb, struct ibv_port_attr *attr);
-extern int RsSendExpWrlist(struct RsQpCb *qp_cb, struct WrInfo *wr_list, unsigned int send_num, struct SendWrRsp *wr_rsp, unsigned int *complete_num);
-extern int RsGetMrcb(struct RsQpCb *qp_cb, uint64_t addr, struct RsMrCb **mr_cb, struct RsListHead *mr_list);
-extern void RsWirteAndReadBuildUpWr(struct RsMrCb *mr_cb, struct RsMrCb *rem_mr_cb, struct WrInfo *wr, struct ibv_sge *list, struct ibv_send_wr *ib_wr);
+extern int GetTlsConfigPath(char *userNamePath, unsigned int pathLen);
+extern int RsDrvQpNormal(struct RsQpCb *qpCb, int qpMode);
+extern int RsDrvNormalQpCreateInit(struct ibv_qp_init_attr *qpInitAttr, struct RsQpCb *qpCb, struct ibv_port_attr *attr);
+extern int RsSendExpWrlist(struct RsQpCb *qpCb, struct WrInfo *wrList, unsigned int sendNum, struct SendWrRsp *wrRsp, unsigned int *completeNum);
+extern int RsGetMrcb(struct RsQpCb *qpCb, uint64_t addr, struct RsMrCb **mrCb, struct RsListHead *mrList);
+extern void RsWirteAndReadBuildUpWr(struct RsMrCb *mrCb, struct RsMrCb *remMrCb, struct WrInfo *wr, struct ibv_sge *list, struct ibv_send_wr *ibWr);
 extern struct ibv_mr* RsDrvMrReg(struct ibv_pd *pd, char *addr, size_t length, int access);
-extern int RsQueryEvent(int cq_event_id, struct event_summary **event);
-extern int tls_get_user_config(unsigned int save_mode, unsigned int chipId, const char *name,
-    unsigned char *buf, unsigned int *buf_size);
-extern void tls_get_enable_info(unsigned int save_mode, unsigned int chipId, unsigned char *buf,
-    unsigned int buf_size);
+extern int RsQueryEvent(int cqEventId, struct event_summary **event);
+extern int tls_get_user_config(unsigned int saveMode, unsigned int chipId, const char *name,
+    unsigned char *buf, unsigned int *bufSize);
+extern void TlsGetEnableInfo(unsigned int saveMode, unsigned int chipId, unsigned char *buf,
+    unsigned int bufSize);
 extern int RsGetIpv6ScopeId(struct in6_addr localIp);
-extern int verify_callback(int prev_ok, X509_STORE_CTX *ctx);
+extern int verify_callback(int prevOk, X509_STORE_CTX *ctx);
 extern int RsOpenBackupIbCtx(struct RsRdevCb *rdevCb);
 extern int RsGetSqDepthAndQpMaxNum(struct RsRdevCb *rdevCb, unsigned int rdevIndex);
 extern int RsSetupPdAndNotify(struct RsRdevCb *rdevCb);
-extern int RsSocketConnectCheckPara(struct SocketConnectInfo *conn_info);
-extern int RsSocketNodeid2vnic(uint32_t node_id, uint32_t *ip_addr);
+extern int RsSocketConnectCheckPara(struct SocketConnectInfo *connInfo);
+extern int RsSocketNodeid2vnic(uint32_t nodeId, uint32_t *ipAddr);
 extern int rsGetLocalDevIDByHostDevID(unsigned int phyId, unsigned int *chipId);
 extern int RsDev2conncb(uint32_t chipId, struct RsConnCb **connCb);
 extern int RsGetConnInfo(struct RsConnCb *connCb, struct SocketConnectInfo *conn,
     struct RsConnInfo **connInfo, unsigned int serverPort);
-extern int RsConvertIpAddr(int family, union HccpIpAddr *ip_addr, struct RsIpAddrInfo *ip);
-extern int RsFindListenNode(struct RsConnCb *connCb, struct RsIpAddrInfo *ip_addr, uint32_t server_port,
-    struct RsListenInfo **listen_info);
-extern int RsSocketListenAddToEpoll(struct RsConnCb *connCb, struct RsListenInfo *listen_info);
-extern bool RsSocketIsVnicIp(unsigned int chipId, unsigned int ip_addr);
-extern int kmc_dec_data(struct kmc_enc_info *enc_info, unsigned char *outbuf, unsigned int *size_out);
+extern int RsConvertIpAddr(int family, union HccpIpAddr *ipAddr, struct RsIpAddrInfo *ip);
+extern int RsFindListenNode(struct RsConnCb *connCb, struct RsIpAddrInfo *ipAddr, uint32_t serverPort,
+    struct RsListenInfo **listenInfo);
+extern int RsSocketListenAddToEpoll(struct RsConnCb *connCb, struct RsListenInfo *listenInfo);
+extern bool RsSocketIsVnicIp(unsigned int chipId, unsigned int ipAddr);
+extern int kmc_dec_data(struct KmcEncInfo *encInfo, unsigned char *outbuf, unsigned int *sizeOut);
 
 typedef uint32_t u32;
 typedef uint16_t u16;
 typedef unsigned long long u64;
 typedef signed int s32;
 
-const char *s_tmp = "suc";
-struct RsQpCb *qp_cb_ab2;
-struct RsRdevCb g_rdev_cb = {0};
-struct RsListenInfo g_listen_info = {0};
-struct RsListenInfo *g_plisten_info = &g_listen_info;
+const char *sTmp = "suc";
+struct RsQpCb *qpCbAb2;
+struct RsRdevCb gRdevCb = {0};
+struct RsListenInfo gListenInfo = {0};
+struct RsListenInfo *gPlistenInfo = &gListenInfo;
 
 #define SLEEP_TIME 50000
 
-int rs_conn_init(int index);
-void rs_conn_prepare(void *arg);
-int rs_conn_get_sockets(int index);
-int rs_conn_info_update(int index);
-int rs_conn_qp_info_update(int index, int i);
-int rs_conn_mr_info_update(int index, int i);
+int RsConnInit(int index);
+void RsConnPrepare(void *arg);
+int RsConnGetSockets(int index);
+int RsConnInfoUpdate(int index);
+int RsConnQpInfoUpdate(int index, int i);
+int RsConnMrInfoUpdate(int index, int i);
 uint64_t str2long(const char *str);
-int rs_conn_send_imm(uint32_t qpn, void *src_addr, int len, const char *dstAddr, int imm_data);
+int RsConnSendImm(uint32_t qpn, void *srcAddr, int len, const char *dstAddr, int immData);
 
-int rs_conn_close_check_timeout(int real_dev_id);
-int dev_read_flash(unsigned int chipId, const char* name, unsigned char* buf, unsigned int *buf_size);
+int RsConnCloseCheckTimeout(int realDevId);
+int dev_read_flash(unsigned int chipId, const char* name, unsigned char* buf, unsigned int *bufSize);
 
-int RsDev2rscb(uint32_t chipId, struct rs_cb **rs_cb, bool init_flag);
+int RsDev2rscb(uint32_t chipId, struct rs_cb **rsCb, bool initFlag);
 int memset_s(void * dest, size_t destMax, int c, size_t count);
 void RsFreeAcceptOneNode(struct rs_cb *rscb, struct RsAcceptInfo *accept);
-int RsEpollEventListenInHandle(struct rs_cb *rs_cb, int fd);
-int RsEpollEventQpMrInHandle(struct rs_cb *rs_cb, int fd);
-int RsEpollEventHeterogTcpRecvInHandle(struct rs_cb *rs_cb, int fd);
-void RsFreeHeterogTcpFdList(struct rs_cb *rs_cb);
+int RsEpollEventListenInHandle(struct rs_cb *rsCb, int fd);
+int RsEpollEventQpMrInHandle(struct rs_cb *rsCb, int fd);
+int RsEpollEventHeterogTcpRecvInHandle(struct rs_cb *rsCb, int fd);
+void RsFreeHeterogTcpFdList(struct rs_cb *rsCb);
 extern __thread struct rs_cb *gRsCb;
 extern struct RsCqeErrInfo gRsCqeErr;
-extern void RsDrvSaveCqeErrInfo(uint32_t status, struct RsQpCb *qp_cb);
-extern int RsDrvNormalQpCreate(struct RsQpCb *qp_cb, struct ibv_qp_init_attr *qp_init_attr);
+extern void RsDrvSaveCqeErrInfo(uint32_t status, struct RsQpCb *qpCb);
+extern int RsDrvNormalQpCreate(struct RsQpCb *qpCb, struct ibv_qp_init_attr *qpInitAttr);
 extern int DlHalGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value);
 
-extern int rs_ssl_get_cert(struct rs_cb *rscb, struct RsCerts *certs, struct tls_cert_mng_info* mng_info,
-    struct tls_ca_new_certs *new_certs);
+extern int rs_ssl_get_cert(struct rs_cb *rscb, struct RsCerts *certs, struct tls_cert_mng_info* mngInfo,
+    struct tls_ca_new_certs *newCerts);
 extern int rs_ssl_x509_store_init(X509_STORE *store, struct RsCerts *certs,
-    struct tls_cert_mng_info *mng_info, struct tls_ca_new_certs *new_certs);
-extern int rs_ssl_skids_subjects_get(struct rs_cb *rscb, struct tls_cert_mng_info *mng_info,
-    struct RsCerts *certs, struct tls_ca_new_certs *new_certs);
-extern int rs_ssl_put_cert_ca_pem(struct RsCerts *certs, struct tls_cert_mng_info* mng_info,
-    struct tls_ca_new_certs *new_certs, const char *ca_file);
-extern int rs_ssl_put_cert_end_pem(struct RsCerts *certs, struct tls_ca_new_certs *new_certs, const char *end_file);
-extern int rs_ssl_put_end_cert(struct RsCerts *certs, const char *end_file);
-extern int rs_ssl_X509_store_add_cert(char *cert_info, X509_STORE *store);
-extern int RsGetLinuxVersion(struct RsLinuxVersionInfo *ver_info);
+    struct tls_cert_mng_info *mngInfo, struct tls_ca_new_certs *newCerts);
+extern int rs_ssl_skids_subjects_get(struct rs_cb *rscb, struct tls_cert_mng_info *mngInfo,
+    struct RsCerts *certs, struct tls_ca_new_certs *newCerts);
+extern int rs_ssl_put_cert_ca_pem(struct RsCerts *certs, struct tls_cert_mng_info* mngInfo,
+    struct tls_ca_new_certs *newCerts, const char *caFile);
+extern int rs_ssl_put_cert_end_pem(struct RsCerts *certs, struct tls_ca_new_certs *newCerts, const char *endFile);
+extern int rs_ssl_put_end_cert(struct RsCerts *certs, const char *endFile);
+extern int rs_ssl_X509_store_add_cert(char *certInfo, X509_STORE *store);
+extern int RsGetLinuxVersion(struct RsLinuxVersionInfo *verInfo);
 extern void freeifaddrs(struct ifaddrs *ifa);
 extern int DlHalSensorNodeUpdateState(uint32_t devid, uint64_t handle, int val, halGeneralEventType_t assertion);
 
-void tc_rs_abnormal()
+void TcRsAbnormal()
 {
 	int ret;
-	struct rs_cb *rs_cb;
+	struct rs_cb *rsCb;
 	uint32_t qpn;
-	struct RsQpCb *qp_cb;
-	struct RsQpCb qp_cb_tmp;
+	struct RsQpCb *qpCb;
+	struct RsQpCb qpCbTmp;
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
 	rs_ut_msg("\n+++++++++ABNORMAL TC Start++++++++\n");
-	ret = RsDev2rscb(0, &rs_cb, false);
+	ret = RsDev2rscb(0, &rsCb, false);
 	EXPECT_INT_NE(ret, 0);
 
-	ret = RsDev2rscb(2, &rs_cb, false);
+	ret = RsDev2rscb(2, &rsCb, false);
 	EXPECT_INT_NE(ret, 0);
 
-	ret = RsQpn2qpcb(phyId, rdevIndex, 5, &qp_cb);
+	ret = RsQpn2qpcb(phyId, rdevIndex, 5, &qpCb);
 
 	rs_ut_msg("---------ABNORMAL TC End----------\n\n");
 
@@ -212,19 +212,19 @@ int dl_hal_get_device_info_910A(uint32_t devId, int32_t moduleType, int32_t info
 	return 0;
 }
 
-int dl_hal_get_device_info_sharemem(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value)
+int DlHalGetDeviceInfoSharemem(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value)
 {
 	*value = (5 << 8);
 	return 0;
 }
 
-int dl_hal_query_dev_pid_sharemem(struct halQueryDevpidInfo info, pid_t *dev_pid)
+int DlHalQueryDevPidSharemem(struct halQueryDevpidInfo info, pid_t *devPid)
 {
 	return 0;
 }
 
-extern int sprintf_s(char *strDest, size_t destMax, const char *format, ...);
-void tc_rs_init()
+extern int SprintfS(char *strDest, size_t destMax, const char *format, ...);
+void TcRsInit()
 {
 	int ret;
 	struct RsInitConfig cfg = {0};
@@ -256,12 +256,12 @@ void tc_rs_init()
 	return;
 }
 
-void tc_rs_deinit()
+void TcRsDeinit()
 {
 	int ret;
 	uint32_t chipId = 0;
-	struct rs_cb *rs_cb;
-	int eventfd_tmp;
+	struct rs_cb *rsCb;
+	int eventfdTmp;
 	struct RsInitConfig cfg = {0};
 
 	/* +++++Resource Prepare+++++ */
@@ -270,7 +270,7 @@ void tc_rs_deinit()
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
-	RsDev2rscb(chipId, &rs_cb, false);
+	RsDev2rscb(chipId, &rsCb, false);
 
 	rs_ut_msg("\n%s+++++++++ABNORMAL TC Start++++++++\n", __func__);
 	/* param error */
@@ -278,12 +278,12 @@ void tc_rs_deinit()
 	EXPECT_INT_NE(ret, 0);
 
 	/* env store */
-	eventfd_tmp = rs_cb->connCb.eventfd;
-	rs_cb->connCb.eventfd = -1;
+	eventfdTmp = rsCb->connCb.eventfd;
+	rsCb->connCb.eventfd = -1;
 	ret = RsDeinit(&cfg);
 	EXPECT_INT_NE(ret, 0);
 	/* env recovery */
-	rs_cb->connCb.eventfd = eventfd_tmp;
+	rsCb->connCb.eventfd = eventfdTmp;
 
 	rs_ut_msg("\n%s---------ABNORMAL TC End----------\n", __func__);
 
@@ -295,16 +295,16 @@ void tc_rs_deinit()
 }
 
 /* FREE server/client conn_info, listen_info AUTOMATICALLY */
-void tc_rs_deinit2()
+void TcRsDeinit2()
 {
 	int ret;
 	int i;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-    struct SocketWlistInfoT white_list;
-   	white_list.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-    white_list.connLimit = 1;
+    struct SocketWlistInfoT whiteList;
+   	whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+    whiteList.connLimit = 1;
 
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 0;
@@ -318,14 +318,14 @@ void tc_rs_deinit2()
 	listen[0].port = 16666;
 	ret = RsSocketListenStart(&listen[0], 1);
 
-    strcpy(white_list.tag, "1234");
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
-    RsSocketWhiteListAdd(rdev_info, &white_list, 1);
-    strcpy(white_list.tag, "5678");
-    RsSocketWhiteListAdd(rdev_info, &white_list, 1);
+    strcpy(whiteList.tag, "1234");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
+    RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);
+    strcpy(whiteList.tag, "5678");
+    RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);
 
 	conn[0].phyId = 0;
 	conn[0].family = AF_INET;
@@ -344,9 +344,9 @@ void tc_rs_deinit2()
 	usleep(SLEEP_TIME);
 
 	/* ------Resource CLEAN-------- */
-	struct rs_cb *rs_cb = NULL;
-	ret = RsGetRsCb(rdev_info.phyId, &rs_cb);
-	rs_cb->sslEnable = 1;
+	struct rs_cb *rsCb = NULL;
+	ret = RsGetRsCb(rdevInfo.phyId, &rsCb);
+	rsCb->sslEnable = 1;
 	ret = RsDeinit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
@@ -354,81 +354,81 @@ void tc_rs_deinit2()
 
 }
 
-void tc_rs_socket_init()
+void TcRsSocketInit()
 {
 	int ret;
 	int i;
-	unsigned int vnic_ip[8] = {0};
+	unsigned int vnicIp[8] = {0};
 
 	ret = RsSocketInit(NULL, 0);
 	EXPECT_INT_EQ(ret, -22);
 
-	ret = RsSocketInit(vnic_ip, 8);
+	ret = RsSocketInit(vnicIp, 8);
 	EXPECT_INT_EQ(ret, 0);
 
 	return;
 }
 
-void tc_rs_socket_deinit1()
+void TcRsSocketDeinit1()
 {
 	int ret;
 	int i;
 	struct RsInitConfig cfg = {0};
-	struct rs_cb *rs_cb = NULL;
-	struct rdev rdev_info = {0};
+	struct rs_cb *rsCb = NULL;
+	struct rdev rdevInfo = {0};
 	struct RsAcceptInfo *accept = calloc(1, sizeof(struct RsAcceptInfo));
 	struct RsListHead list = {0};
 
 	RS_INIT_LIST_HEAD(&list);
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
 	cfg.chipId = 0;
 	cfg.hccpMode = NETWORK_OFFLINE;
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsGetRsCb(rdev_info.phyId, &rs_cb);
-	rs_cb->sslEnable = 1;
+	ret = RsGetRsCb(rdevInfo.phyId, &rsCb);
+	rsCb->sslEnable = 1;
 
 	accept->list = list;
 	accept->ssl = NULL;
 
-	RsFreeAcceptOneNode(rs_cb, accept);
+	RsFreeAcceptOneNode(rsCb, accept);
 }
 
-void tc_rs_socket_deinit2()
+void TcRsSocketDeinit2()
 {
 	int ret;
 	int i;
 	struct RsInitConfig cfg = {0};
-	struct rs_cb *rs_cb = NULL;
-	struct rdev rdev_info = {0};
+	struct rs_cb *rsCb = NULL;
+	struct rdev rdevInfo = {0};
 	struct RsAcceptInfo *accept = calloc(1, sizeof(struct RsAcceptInfo));
 	struct RsListHead list = {0};
 
 	RS_INIT_LIST_HEAD(&list);
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
 	cfg.chipId = 0;
 	cfg.hccpMode = NETWORK_OFFLINE;
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsGetRsCb(rdev_info.phyId, &rs_cb);
-	rs_cb->sslEnable = 1;
+	ret = RsGetRsCb(rdevInfo.phyId, &rsCb);
+	rsCb->sslEnable = 1;
 	accept->ssl = malloc(sizeof(SSL_CTX));
 	accept->list = list;
 
-	RsFreeAcceptOneNode(rs_cb, accept);
+	RsFreeAcceptOneNode(rsCb, accept);
 	ret = RsDeinit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 }
 
-void tc_rs_socket_listen_ipv6()
+void TcRsSocketListenIpv6()
 {
 	int ret;
 	struct RsInitConfig cfg = {0};
@@ -459,7 +459,7 @@ void tc_rs_socket_listen_ipv6()
 	return;
 }
 
-void tc_rs_socket_listen()
+void TcRsSocketListen()
 {
 	int ret;
 	struct RsInitConfig cfg = {0};
@@ -502,19 +502,19 @@ void tc_rs_socket_listen()
 	return;
 }
 
-void tc_rs_socket_connect()
+void TcRsSocketConnect()
 {
 	int ret;
 	int i;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-	struct RsSocketCloseInfoT sock_close[2] = {0};
-	struct SocketFdData socket_info[3] = {0};
-    struct SocketWlistInfoT white_list;
-	white_list.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-    white_list.connLimit = 1;
-	int try_num = 10;
+	struct RsSocketCloseInfoT sockClose[2] = {0};
+	struct SocketFdData socketInfo[3] = {0};
+    struct SocketWlistInfoT whiteList;
+	whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+    whiteList.connLimit = 1;
+	int tryNum = 10;
 
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 0;
@@ -528,14 +528,14 @@ void tc_rs_socket_connect()
 	listen[0].port = 16666;
 	ret = RsSocketListenStart(&listen[0], 1);
 
-    strcpy(white_list.tag, "1234");
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
-    RsSocketWhiteListAdd(rdev_info, &white_list, 1);
-    strcpy(white_list.tag, "5678");
-    RsSocketWhiteListAdd(rdev_info, &white_list, 1);
+    strcpy(whiteList.tag, "1234");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
+    RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);
+    strcpy(whiteList.tag, "5678");
+    RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);
 
 	conn[0].phyId = 0;
 	conn[0].family = AF_INET;
@@ -551,8 +551,8 @@ void tc_rs_socket_connect()
 	conn[1].port = 16666;
 	ret = RsSocketBatchConnect(conn, 2);
 
-    strcpy(white_list.tag, "1234");
-    RsSocketWhiteListAdd(rdev_info, &white_list, 1);
+    strcpy(whiteList.tag, "1234");
+    RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);
 	/* >>>>>>> RsSocketBatchConnect test case begin <<<<<<<<<<< */
 	/* repeat connect */
 	conn[0].port = 16666;
@@ -574,56 +574,56 @@ void tc_rs_socket_connect()
 	usleep(SLEEP_TIME);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
-	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n", __func__, socket_info[i].fd, socket_info[i].status);
+	} while (ret != 1 && tryNum--);
+	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n", __func__, socketInfo[i].fd, socketInfo[i].status);
 
-	sock_close[i].fd = socket_info[i].fd;
-	ret = RsSocketBatchClose(0, &sock_close[i], 1);
+	sockClose[i].fd = socketInfo[i].fd;
+	ret = RsSocketBatchClose(0, &sockClose[i], 1);
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "5678");
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "5678");
 
-	try_num = 10;
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[1].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	sock_close[i].fd = socket_info[i].fd;
-	ret = RsSocketBatchClose(0, &sock_close[i], 1);
+	sockClose[i].fd = socketInfo[i].fd;
+	ret = RsSocketBatchClose(0, &sockClose[i], 1);
 
 	/* close a non-exist fd */
-	ret = RsSocketBatchClose(0, &sock_close[i], 1);
+	ret = RsSocketBatchClose(0, &sockClose[i], 1);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
 
-	try_num = 10;
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[0].fd:%d, client if:0x%x, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].remoteIp.addr.s_addr, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].remoteIp.addr.s_addr, socketInfo[i].status);
 
-	sock_close[i].fd = socket_info[i].fd;
-	ret = RsSocketBatchClose(0, &sock_close[i], 1);
+	sockClose[i].fd = socketInfo[i].fd;
+	ret = RsSocketBatchClose(0, &sockClose[i], 1);
 
 	/* ------Resource CLEAN-------- */
 	listen[0].port = 16666;
@@ -635,19 +635,19 @@ void tc_rs_socket_connect()
 	return;
 }
 
-void tc_rs_get_sockets()
+void TcRsGetSockets()
 {
 	int ret;
 	int i;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-	struct RsSocketCloseInfoT sock_close[2] = {0};
-	struct SocketFdData socket_info[3] = {0};
-    struct SocketWlistInfoT white_list;
-   	white_list.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-    white_list.connLimit = 1;
-	int try_num = 10;
+	struct RsSocketCloseInfoT sockClose[2] = {0};
+	struct SocketFdData socketInfo[3] = {0};
+    struct SocketWlistInfoT whiteList;
+   	whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+    whiteList.connLimit = 1;
+	int tryNum = 10;
 
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 0;
@@ -660,14 +660,14 @@ void tc_rs_get_sockets()
 	listen[0].localIp.addr.s_addr = inet_addr("127.0.0.1");
 	listen[0].port = 16666;
 	ret = RsSocketListenStart(&listen[0], 1);
-    strcpy(white_list.tag, "1234");
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
-    RsSocketWhiteListAdd(rdev_info, &white_list, 1);
-    strcpy(white_list.tag, "5678");
-    RsSocketWhiteListAdd(rdev_info, &white_list, 1);
+    strcpy(whiteList.tag, "1234");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
+    RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);
+    strcpy(whiteList.tag, "5678");
+    RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);
 
 	conn[0].phyId = 0;
 	conn[0].family = AF_INET;
@@ -686,76 +686,76 @@ void tc_rs_get_sockets()
 	usleep(SLEEP_TIME);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
 		usleep(30000);
 		rs_ut_msg(">>**RsGetSockets ret:%d\n", ret);
-	} while (ret != 1 && try_num--);
-	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n", __func__, socket_info[i].fd, socket_info[i].status);
+	} while (ret != 1 && tryNum--);
+	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n", __func__, socketInfo[i].fd, socketInfo[i].status);
 
-	sock_close[i].fd = socket_info[i].fd;
-	ret = RsSocketBatchClose(0, &sock_close[i], 1);
+	sockClose[i].fd = socketInfo[i].fd;
+	ret = RsSocketBatchClose(0, &sockClose[i], 1);
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "5678");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "5678");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[1].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
 	/* param error */
 	ret = RsGetSockets(RS_CONN_ROLE_CLIENT, NULL, 3);
 	EXPECT_INT_NE(ret, 0);
 
 	/* device id error */
-	socket_info[i].phyId = 55555;
-	ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+	socketInfo[i].phyId = 55555;
+	ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
 	EXPECT_INT_NE(ret, 0);
-	socket_info[i].phyId = 0;
+	socketInfo[i].phyId = 0;
 
 	/* repeat get */
-	ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+	ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
 	EXPECT_INT_EQ(ret, 0);
 
-	sock_close[i].fd = socket_info[i].fd;
-	ret = RsSocketBatchClose(0, &sock_close[i], 1);
+	sockClose[i].fd = socketInfo[i].fd;
+	ret = RsSocketBatchClose(0, &sockClose[i], 1);
 
 	/* close a non-exist fd */
-	ret = RsSocketBatchClose(0, &sock_close[i], 1);
+	ret = RsSocketBatchClose(0, &sockClose[i], 1);
 	EXPECT_INT_NE(ret, 0);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[0].fd:%d, client if:0x%x, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].remoteIp.addr.s_addr, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].remoteIp.addr.s_addr, socketInfo[i].status);
 
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].status = RS_SOCK_STATUS_OK;
-	struct RsConnInfo conn_tmp;
-	conn_tmp.state = RS_CONN_STATE_VALID_SYNC;
-	RsFindSockets(&conn_tmp, &socket_info[i], 1, RS_CONN_ROLE_CLIENT);
-	sock_close[i].fd = socket_info[i].fd;
-	ret = RsSocketBatchClose(0, &sock_close[i], 1);
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].status = RS_SOCK_STATUS_OK;
+	struct RsConnInfo connTmp;
+	connTmp.state = RS_CONN_STATE_VALID_SYNC;
+	RsFindSockets(&connTmp, &socketInfo[i], 1, RS_CONN_ROLE_CLIENT);
+	sockClose[i].fd = socketInfo[i].fd;
+	ret = RsSocketBatchClose(0, &sockClose[i], 1);
 
 	/* ------Resource CLEAN-------- */
 	listen[0].port = 16666;
@@ -767,17 +767,17 @@ void tc_rs_get_sockets()
 	return;
 }
 
-void tc_rs_set_tsqp_depth()
+void TcRsSetTsqpDepth()
 {
 	int ret;
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
-	unsigned int temp_depth = 8;
-	unsigned int qp_num;
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	unsigned int tempDepth = 8;
+	unsigned int qpNum;
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 	struct RsInitConfig cfg = {0};
 	cfg.chipId = 0;
 	cfg.hccpMode = NETWORK_OFFLINE;
@@ -785,10 +785,10 @@ void tc_rs_set_tsqp_depth()
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsSetTsqpDepth(phyId, rdevIndex, temp_depth, &qp_num);
+	ret = RsSetTsqpDepth(phyId, rdevIndex, tempDepth, &qpNum);
 	EXPECT_INT_EQ(ret, 0);
 
 	ret = RsRdevDeinit(phyId, NOTIFY, rdevIndex);
@@ -799,17 +799,17 @@ void tc_rs_set_tsqp_depth()
 	return;
 }
 
-void tc_rs_get_tsqp_depth()
+void TcRsGetTsqpDepth()
 {
 	int ret;
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
-	unsigned int temp_depth = 8;
-	unsigned int qp_num;
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	unsigned int tempDepth = 8;
+	unsigned int qpNum;
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 	struct RsInitConfig cfg = {0};
 	cfg.chipId = 0;
 	cfg.hccpMode = NETWORK_OFFLINE;
@@ -817,10 +817,10 @@ void tc_rs_get_tsqp_depth()
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsGetTsqpDepth(phyId, rdevIndex, &temp_depth, &qp_num);
+	ret = RsGetTsqpDepth(phyId, rdevIndex, &tempDepth, &qpNum);
 	EXPECT_INT_EQ(ret, 0);
 	ret = RsRdevDeinit(phyId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
@@ -830,16 +830,16 @@ void tc_rs_get_tsqp_depth()
 	return;
 }
 
-int stub_ibv_query_port(struct ibv_context *context, uint8_t port_num,
-		   struct ibv_port_attr *port_attr)
+int StubIbvQueryPort(struct ibv_context *context, uint8_t portNum,
+		   struct ibv_port_attr *portAttr)
 {
-	port_attr->gid_tbl_len = 2;
+	portAttr->gid_tbl_len = 2;
 	return 0;
 }
 
-extern int ibv_query_port(struct ibv_context *context, uint8_t port_num,
-		   struct ibv_port_attr *port_attr);
-void tc_rs_qp_create()
+extern int ibv_query_port(struct ibv_context *context, uint8_t portNum,
+		   struct ibv_port_attr *portAttr);
+void TcRsQpCreate()
 {
 	int ret;
 	uint32_t phyId = 0;
@@ -848,21 +848,21 @@ void tc_rs_qp_create()
 	struct RsQpResp resp = {0};
 	struct RsQpResp resp2 = {0};
 	int i;
-	int try_num = 10;
+	int tryNum = 10;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-	struct RsSocketCloseInfoT sock_close[2] = {0};
-	struct SocketFdData socket_info[3] = {0};
-    struct SocketWlistInfoT white_list;
- 	struct RsQpNorm qp_norm = {0};
+	struct RsSocketCloseInfoT sockClose[2] = {0};
+	struct SocketFdData socketInfo[3] = {0};
+    struct SocketWlistInfoT whiteList;
+ 	struct RsQpNorm qpNorm = {0};
 
-	qp_norm.flag = flag;
-	qp_norm.qpMode = 1;
-	qp_norm.isExp = 1;
+	qpNorm.flag = flag;
+	qpNorm.qpMode = 1;
+	qpNorm.isExp = 1;
 
-    white_list.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-    white_list.connLimit = 1;
+    whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+    whiteList.connLimit = 1;
 
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 1;
@@ -884,12 +884,12 @@ void tc_rs_qp_create()
 	listen[0].port = 16666;
 	ret = RsSocketListenStart(&listen[0], 1);
 
-    strcpy(white_list.tag, "1234");
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
-    RsSocketWhiteListAdd(rdev_info, &white_list, 1);
+    strcpy(whiteList.tag, "1234");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
+    RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);
 
 	conn[0].phyId = 0;
 	conn[0].family = AF_INET;
@@ -902,61 +902,61 @@ void tc_rs_qp_create()
 	usleep(SLEEP_TIME);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	mocker_invoke((stub_fn_t)ibv_query_port, stub_ibv_query_port, 10);
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	mocker_invoke((stub_fn_t)ibv_query_port, StubIbvQueryPort, 10);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, -ENOLINK);
     mocker_clean();
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
 	enum PortStatus status = PORT_STATUS_DOWN;
 	ret = RsRdevGetPortStatus(100000, rdevIndex, NULL);
 	EXPECT_INT_NE(ret, 0);
-	ret = RsRdevGetPortStatus(rdev_info.phyId, rdevIndex, NULL);
+	ret = RsRdevGetPortStatus(rdevInfo.phyId, rdevIndex, NULL);
 	EXPECT_INT_NE(ret, 0);
 	ret = RsRdevGetPortStatus(15, rdevIndex, &status);
 	EXPECT_INT_NE(ret, 0);
-	ret = RsRdevGetPortStatus(rdev_info.phyId, 100000, &status);
+	ret = RsRdevGetPortStatus(rdevInfo.phyId, 100000, &status);
 	EXPECT_INT_NE(ret, 0);
-	ret = RsRdevGetPortStatus(rdev_info.phyId, rdevIndex, &status);
+	ret = RsRdevGetPortStatus(rdevInfo.phyId, rdevIndex, &status);
 	EXPECT_INT_EQ(ret, 0);
 	mocker(ibv_query_port, 20, -1);
-	ret = RsRdevGetPortStatus(rdev_info.phyId, rdevIndex, &status);
+	ret = RsRdevGetPortStatus(rdevInfo.phyId, rdevIndex, &status);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
-	int support_lite = 0;
-	ret = RsGetLiteSupport(rdev_info.phyId, rdevIndex, &support_lite);
+	int supportLite = 0;
+	ret = RsGetLiteSupport(rdevInfo.phyId, rdevIndex, &supportLite);
 	EXPECT_INT_EQ(ret, 0);
-	EXPECT_INT_EQ(support_lite, 1);
+	EXPECT_INT_EQ(supportLite, 1);
 
-	struct LiteRdevCapResp rdev_resp;
-	ret = RsGetLiteRdevCap(rdev_info.phyId, rdevIndex, &rdev_resp);
+	struct LiteRdevCapResp rdevResp;
+	ret = RsGetLiteRdevCap(rdevInfo.phyId, rdevIndex, &rdevResp);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsQpCreate(phyId, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(phyId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RsQpCreate: qpn %d, ret:%d\n", resp.qpn, ret);
 
-	struct LiteQpCqAttrResp qp_resp;
-	ret = RsGetLiteQpCqAttr(phyId, rdevIndex, resp.qpn, &qp_resp);
+	struct LiteQpCqAttrResp qpResp;
+	ret = RsGetLiteQpCqAttr(phyId, rdevIndex, resp.qpn, &qpResp);
 	EXPECT_INT_EQ(ret, 0);
 
-	struct LiteMemAttrResp mem_resp;
-	ret = RsGetLiteMemAttr(rdev_info.phyId, rdevIndex, resp.qpn, &mem_resp);
+	struct LiteMemAttrResp memResp;
+	ret = RsGetLiteMemAttr(rdevInfo.phyId, rdevIndex, resp.qpn, &memResp);
 	EXPECT_INT_EQ(ret, 0);
 
 	struct QosAttr QosAttr = {0};
@@ -965,14 +965,14 @@ void tc_rs_qp_create()
 	ret = RsSetQpAttrQos(phyId, rdevIndex, resp.qpn, &QosAttr);
 
 	unsigned int timeout = 15;
-    unsigned int retry_cnt = 6;
+    unsigned int retryCnt = 6;
 	ret = RsSetQpAttrTimeout(phyId, rdevIndex, resp.qpn, &timeout);
 
-	ret = RsSetQpAttrRetryCnt(phyId, rdevIndex, resp.qpn, &retry_cnt);
+	ret = RsSetQpAttrRetryCnt(phyId, rdevIndex, resp.qpn, &retryCnt);
 
 	/* >>>>>>> RsQpConnectAsync test case begin <<<<<<<<<<< */
 	/* param error - qpn */
-	ret = RsQpConnectAsync(phyId, rdevIndex, 4444, socket_info[i].fd);
+	ret = RsQpConnectAsync(phyId, rdevIndex, 4444, socketInfo[i].fd);
 	EXPECT_INT_NE(ret, 0);
 
 	/* param error - fd */
@@ -980,61 +980,61 @@ void tc_rs_qp_create()
 	EXPECT_INT_NE(ret, 0);
 	/* >>>>>>> RsQpConnectAsync test case end <<<<<<<<<<< */
 
-	ret = RsQpConnectAsync(phyId, rdevIndex, resp.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(phyId, rdevIndex, resp.qpn, socketInfo[i].fd);
 	rs_ut_msg("***RsQpConnectAsync: %d****\n", ret);
 
-	struct RsQpCb *qp_cb;
-	ret = RsQpn2qpcb(phyId, rdevIndex, resp.qpn, &qp_cb);
+	struct RsQpCb *qpCb;
+	ret = RsQpn2qpcb(phyId, rdevIndex, resp.qpn, &qpCb);
 	EXPECT_INT_EQ(ret, 0);
-	struct LiteConnectedInfoResp connected_resp;
-	qp_cb->state = RS_QP_STATUS_CONNECTED;
-	ret = RsGetLiteConnectedInfo(phyId, rdevIndex, resp.qpn, &connected_resp);
+	struct LiteConnectedInfoResp connectedResp;
+	qpCb->state = RS_QP_STATUS_CONNECTED;
+	ret = RsGetLiteConnectedInfo(phyId, rdevIndex, resp.qpn, &connectedResp);
 	EXPECT_INT_EQ(ret, 0);
 
 	usleep(SLEEP_TIME);
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
 	/* >>>>>>> RsQpCreate test case begin <<<<<<<<<<< */
 	/* param error - device id */
-	ret = RsQpCreate(15, rdevIndex, qp_norm, &resp2);
+	ret = RsQpCreate(15, rdevIndex, qpNorm, &resp2);
 	EXPECT_INT_NE(ret, 0);
 
 	/* qp number out of boundry */
-	struct rs_cb *rs_cb;
+	struct rs_cb *rsCb;
 	struct RsRdevCb *rdevCb;
-	struct RsAcceptInfo accept_tmp = {0};
-	struct RsAcceptInfo *accept = &accept_tmp;
+	struct RsAcceptInfo acceptTmp = {0};
+	struct RsAcceptInfo *accept = &acceptTmp;
 	uint32_t chipId = 0;
-	ret = RsDev2rscb(chipId, &rs_cb, false);
+	ret = RsDev2rscb(chipId, &rsCb, false);
 	EXPECT_INT_EQ(ret, 0);
 
-    ret = RsGetRdevCb(rs_cb, rdevIndex, &rdevCb);
+    ret = RsGetRdevCb(rsCb, rdevIndex, &rdevCb);
 	EXPECT_INT_EQ(ret, 0);
 
-	int qp_cnt_tmp = rdevCb->qpCnt;
+	int qpCntTmp = rdevCb->qpCnt;
 	rdevCb->qpCnt = 44444;
-	ret = RsQpCreate(phyId, rdevIndex, qp_norm, &resp2);
+	ret = RsQpCreate(phyId, rdevIndex, qpNorm, &resp2);
 	EXPECT_INT_NE(ret, 0);
-	rdevCb->qpCnt = qp_cnt_tmp;
+	rdevCb->qpCnt = qpCntTmp;
 	/* >>>>>>> RsQpCreate test case end <<<<<<<<<<< */
 
-	ret = RsQpCreate(phyId, rdevIndex, qp_norm, &resp2);
+	ret = RsQpCreate(phyId, rdevIndex, qpNorm, &resp2);
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RsQpCreate: qpn2 %d, ret:%d\n", resp2.qpn, ret);
 
-	ret = RsQpConnectAsync(phyId, rdevIndex, resp2.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(phyId, rdevIndex, resp2.qpn, socketInfo[i].fd);
 	usleep(SLEEP_TIME);
 
 	ret = RsQpDestroy(phyId, rdevIndex, resp2.qpn);
@@ -1044,11 +1044,11 @@ void tc_rs_qp_create()
 	ret = RsQpDestroy(phyId, rdevIndex, resp.qpn);
 	EXPECT_INT_NE(ret, 0);
 
-	sock_close[0].fd = socket_info[0].fd;
-	ret = RsSocketBatchClose(0, &sock_close[0], 1);
+	sockClose[0].fd = socketInfo[0].fd;
+	ret = RsSocketBatchClose(0, &sockClose[0], 1);
 
-	sock_close[1].fd = socket_info[1].fd;
-	ret = RsSocketBatchClose(0, &sock_close[1], 1);
+	sockClose[1].fd = socketInfo[1].fd;
+	ret = RsSocketBatchClose(0, &sockClose[1], 1);
 
 	/* ------Resource CLEAN-------- */
 	listen[0].port = 16666;
@@ -1057,41 +1057,41 @@ void tc_rs_qp_create()
 	ret = RsRdevDeinit(phyId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsSocketDeinit(rdev_info);
+	ret = RsSocketDeinit(rdevInfo);
 	EXPECT_INT_EQ(ret, 0);
 	cfg.chipId = 0;
 	ret = RsDeinit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
         /* >>>>>>> 1910 create_qp test case begin <<<<<<<<<<< */
-        struct RsInitConfig cfg_1910 = {0};
-        cfg_1910.chipId = 0;
-        cfg_1910.hccpMode = NETWORK_ONLINE;
-        ret = RsInit(&cfg_1910);
+        struct RsInitConfig cfg1910 = {0};
+        cfg1910.chipId = 0;
+        cfg1910.hccpMode = NETWORK_ONLINE;
+        ret = RsInit(&cfg1910);
         EXPECT_INT_EQ(ret, 0);
 
-		rdev_info.phyId = cfg_1910.chipId;
-		rdev_info.family = AF_INET;
-		rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
-		ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+		rdevInfo.phyId = cfg1910.chipId;
+		rdevInfo.family = AF_INET;
+		rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
+		ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 		EXPECT_INT_EQ(ret, 0);
 		struct RsQpResp resp1910 = {0};
-		ret = RsQpCreate(phyId, rdevIndex, qp_norm, &resp1910);
+		ret = RsQpCreate(phyId, rdevIndex, qpNorm, &resp1910);
         EXPECT_INT_EQ(ret, 0);
 
 		ret = RsQpDestroy(phyId, rdevIndex, resp1910.qpn);
 
 		ret = RsRdevDeinit(phyId, NOTIFY, rdevIndex);
         EXPECT_INT_EQ(ret, 0);
-		ret = RsSocketDeinit(rdev_info);
+		ret = RsSocketDeinit(rdevInfo);
 		EXPECT_INT_EQ(ret, 0);
 
-	ret = RsRdevInitWithBackup(rdev_info, rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInitWithBackup(rdevInfo, rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 	ret = RsRdevDeinit(phyId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-        ret = RsDeinit(&cfg_1910);
+        ret = RsDeinit(&cfg1910);
 		EXPECT_INT_EQ(ret, 0);
         /* >>>>>>> 1910 create_qp test case end <<<<<<<<<<< */
 
@@ -1128,29 +1128,29 @@ void QpExtAttrs(int qpMode, struct QpExtAttrs *extAttrs)
     extAttrs->version = QP_CREATE_WITH_ATTR_VERSION;
 }
 
-void tc_rs_qp_create_with_attrs_v1()
+void TcRsQpCreateWithAttrsV1()
 {
 	int ret;
 	uint32_t phyId = 0;
 	unsigned int rdevIndex = 0;
 	uint32_t qpn, qpn1, qpn2;
 	int i;
-	int try_num = 10;
+	int tryNum = 10;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-	struct RsSocketCloseInfoT sock_close[2] = {0};
-	struct SocketFdData socket_info[3] = {0};
-    struct SocketWlistInfoT white_list;
- 	struct RsQpNormWithAttrs  qp_norm = {0};
-	struct RsQpRespWithAttrs qp_resp_create = {0};
+	struct RsSocketCloseInfoT sockClose[2] = {0};
+	struct SocketFdData socketInfo[3] = {0};
+    struct SocketWlistInfoT whiteList;
+ 	struct RsQpNormWithAttrs  qpNorm = {0};
+	struct RsQpRespWithAttrs qpRespCreate = {0};
 
-	qp_norm.isExp = 1;
-	qp_norm.isExt = 1;
-	QpExtAttrs(1, &qp_norm.extAttrs);
+	qpNorm.isExp = 1;
+	qpNorm.isExt = 1;
+	QpExtAttrs(1, &qpNorm.extAttrs);
 
-    white_list.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-    white_list.connLimit = 1;
+    whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+    whiteList.connLimit = 1;
 
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 1;
@@ -1172,12 +1172,12 @@ void tc_rs_qp_create_with_attrs_v1()
 	listen[0].port = 16666;
 	ret = RsSocketListenStart(&listen[0], 1);
 
-    strcpy(white_list.tag, "1234");
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
-    RsSocketWhiteListAdd(rdev_info, &white_list, 1);
+    strcpy(whiteList.tag, "1234");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
+    RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);
 
 	conn[0].phyId = 0;
 	conn[0].family = AF_INET;
@@ -1190,48 +1190,48 @@ void tc_rs_qp_create_with_attrs_v1()
 	usleep(SLEEP_TIME);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	mocker_invoke((stub_fn_t)ibv_query_port, stub_ibv_query_port, 10);
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	mocker_invoke((stub_fn_t)ibv_query_port, StubIbvQueryPort, 10);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, -ENOLINK);
     mocker_clean();
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	int support_lite = 0;
-	ret = RsGetLiteSupport(rdev_info.phyId, rdevIndex, &support_lite);
+	int supportLite = 0;
+	ret = RsGetLiteSupport(rdevInfo.phyId, rdevIndex, &supportLite);
 	EXPECT_INT_EQ(ret, 0);
-	EXPECT_INT_EQ(support_lite, 1);
+	EXPECT_INT_EQ(supportLite, 1);
 
-	struct LiteRdevCapResp rdev_resp;
-	ret = RsGetLiteRdevCap(rdev_info.phyId, rdevIndex, &rdev_resp);
+	struct LiteRdevCapResp rdevResp;
+	ret = RsGetLiteRdevCap(rdevInfo.phyId, rdevIndex, &rdevResp);
 	EXPECT_INT_EQ(ret, 0);
 
-    qp_norm.extAttrs.dataPlaneFlag.bs.cqCstm = 1;
-    qp_norm.aiOpSupport = 1;
-	ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qp_norm, &qp_resp_create);
-	qpn = qp_resp_create.qpn;
+    qpNorm.extAttrs.dataPlaneFlag.bs.cqCstm = 1;
+    qpNorm.aiOpSupport = 1;
+	ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qpNorm, &qpRespCreate);
+	qpn = qpRespCreate.qpn;
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RsQpCreateWithAttrs: qpn %d, ret:%d\n", qpn, ret);
 
-	struct LiteQpCqAttrResp qp_resp;
-	ret = RsGetLiteQpCqAttr(phyId, rdevIndex, qpn, &qp_resp);
+	struct LiteQpCqAttrResp qpResp;
+	ret = RsGetLiteQpCqAttr(phyId, rdevIndex, qpn, &qpResp);
 	EXPECT_INT_EQ(ret, 0);
 
-	struct LiteMemAttrResp mem_resp;
-	ret = RsGetLiteMemAttr(rdev_info.phyId, rdevIndex, qpn, &mem_resp);
+	struct LiteMemAttrResp memResp;
+	ret = RsGetLiteMemAttr(rdevInfo.phyId, rdevIndex, qpn, &memResp);
 	EXPECT_INT_EQ(ret, 0);
 
 	struct QosAttr QosAttr = {0};
@@ -1240,14 +1240,14 @@ void tc_rs_qp_create_with_attrs_v1()
 	ret = RsSetQpAttrQos(phyId, rdevIndex, qpn, &QosAttr);
 
 	unsigned int timeout = 15;
-    unsigned int retry_cnt = 6;
+    unsigned int retryCnt = 6;
 	ret = RsSetQpAttrTimeout(phyId, rdevIndex, qpn, &timeout);
 
-	ret = RsSetQpAttrRetryCnt(phyId, rdevIndex, qpn, &retry_cnt);
+	ret = RsSetQpAttrRetryCnt(phyId, rdevIndex, qpn, &retryCnt);
 
 	/* >>>>>>> RsQpConnectAsync test case begin <<<<<<<<<<< */
 	/* param error - qpn */
-	ret = RsQpConnectAsync(phyId, rdevIndex, 4444, socket_info[i].fd);
+	ret = RsQpConnectAsync(phyId, rdevIndex, 4444, socketInfo[i].fd);
 	EXPECT_INT_NE(ret, 0);
 
 	/* param error - fd */
@@ -1255,66 +1255,66 @@ void tc_rs_qp_create_with_attrs_v1()
 	EXPECT_INT_NE(ret, 0);
 	/* >>>>>>> RsQpConnectAsync test case end <<<<<<<<<<< */
 
-	ret = RsQpConnectAsync(phyId, rdevIndex, qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(phyId, rdevIndex, qpn, socketInfo[i].fd);
 	rs_ut_msg("***RsQpConnectAsync: %d****\n", ret);
 
-	struct RsQpCb *qp_cb;
-	ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qp_cb);
+	struct RsQpCb *qpCb;
+	ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
 	EXPECT_INT_EQ(ret, 0);
-	struct LiteConnectedInfoResp connected_resp;
-	qp_cb->state = RS_QP_STATUS_CONNECTED;
-	ret = RsGetLiteConnectedInfo(phyId, rdevIndex, qpn, &connected_resp);
+	struct LiteConnectedInfoResp connectedResp;
+	qpCb->state = RS_QP_STATUS_CONNECTED;
+	ret = RsGetLiteConnectedInfo(phyId, rdevIndex, qpn, &connectedResp);
 	EXPECT_INT_EQ(ret, 0);
 
 	usleep(SLEEP_TIME);
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
 	/* >>>>>>> RsQpCreate test case begin <<<<<<<<<<< */
 	/* param error - device id */
-	ret = RsQpCreateWithAttrs(15, rdevIndex, &qp_norm, &qp_resp_create);
-	qpn2 = qp_resp_create.qpn;
+	ret = RsQpCreateWithAttrs(15, rdevIndex, &qpNorm, &qpRespCreate);
+	qpn2 = qpRespCreate.qpn;
 	EXPECT_INT_NE(ret, 0);
 
 	/* qp number out of boundry */
-	struct rs_cb *rs_cb;
+	struct rs_cb *rsCb;
 	struct RsRdevCb *rdevCb;
-	struct RsAcceptInfo accept_tmp = {0};
-	struct RsAcceptInfo *accept = &accept_tmp;
+	struct RsAcceptInfo acceptTmp = {0};
+	struct RsAcceptInfo *accept = &acceptTmp;
 	uint32_t chipId = 0;
-	ret = RsDev2rscb(chipId, &rs_cb, false);
+	ret = RsDev2rscb(chipId, &rsCb, false);
 	EXPECT_INT_EQ(ret, 0);
 
-    ret = RsGetRdevCb(rs_cb, rdevIndex, &rdevCb);
+    ret = RsGetRdevCb(rsCb, rdevIndex, &rdevCb);
 	EXPECT_INT_EQ(ret, 0);
 
-	int qp_cnt_tmp = rdevCb->qpCnt;
+	int qpCntTmp = rdevCb->qpCnt;
 	rdevCb->qpCnt = 44444;
-	ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qp_norm, &qp_resp_create);
+	ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qpNorm, &qpRespCreate);
 	EXPECT_INT_NE(ret, 0);
-	rdevCb->qpCnt = qp_cnt_tmp;
+	rdevCb->qpCnt = qpCntTmp;
 	/* >>>>>>> RsQpCreateWithAttrs test case end <<<<<<<<<<< */
 
-	ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qp_norm, &qp_resp_create);
-	qpn2 = qp_resp_create.qpn;
+	ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qpNorm, &qpRespCreate);
+	qpn2 = qpRespCreate.qpn;
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RsQpCreateWithAttrs: qpn2 %d, ret:%d\n", qpn2, ret);
-	ret = RsQpConnectAsync(phyId, rdevIndex, qpn2, socket_info[i].fd);
+	ret = RsQpConnectAsync(phyId, rdevIndex, qpn2, socketInfo[i].fd);
 
-	qp_norm.extAttrs.qpMode = 0;
-	ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qp_norm, &qp_resp_create);
-	qpn1 = qp_resp_create.qpn;
+	qpNorm.extAttrs.qpMode = 0;
+	ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qpNorm, &qpRespCreate);
+	qpn1 = qpRespCreate.qpn;
 	rs_ut_msg("RsQpCreateWithAttrs: qpn1 %d, ret:%d\n", qpn1, ret);
 
 	usleep(SLEEP_TIME);
@@ -1327,11 +1327,11 @@ void tc_rs_qp_create_with_attrs_v1()
 	ret = RsQpDestroy(phyId, rdevIndex, qpn);
 	EXPECT_INT_NE(ret, 0);
 
-	sock_close[0].fd = socket_info[0].fd;
-	ret = RsSocketBatchClose(0, &sock_close[0], 1);
+	sockClose[0].fd = socketInfo[0].fd;
+	ret = RsSocketBatchClose(0, &sockClose[0], 1);
 
-	sock_close[1].fd = socket_info[1].fd;
-	ret = RsSocketBatchClose(0, &sock_close[1], 1);
+	sockClose[1].fd = socketInfo[1].fd;
+	ret = RsSocketBatchClose(0, &sockClose[1], 1);
 
 	/* ------Resource CLEAN-------- */
 	listen[0].port = 16666;
@@ -1340,43 +1340,43 @@ void tc_rs_qp_create_with_attrs_v1()
 	ret = RsRdevDeinit(phyId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsSocketDeinit(rdev_info);
+	ret = RsSocketDeinit(rdevInfo);
 	EXPECT_INT_EQ(ret, 0);
 	cfg.chipId = 0;
 	ret = RsDeinit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
         /* >>>>>>> 1910 create_qp test case begin <<<<<<<<<<< */
-        struct RsInitConfig cfg_1910 = {0};
-        cfg_1910.chipId = 0;
-        cfg_1910.hccpMode = NETWORK_ONLINE;
-        ret = RsInit(&cfg_1910);
+        struct RsInitConfig cfg1910 = {0};
+        cfg1910.chipId = 0;
+        cfg1910.hccpMode = NETWORK_ONLINE;
+        ret = RsInit(&cfg1910);
         EXPECT_INT_EQ(ret, 0);
 
-		rdev_info.phyId = cfg_1910.chipId;
-		rdev_info.family = AF_INET;
-		rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
-		ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+		rdevInfo.phyId = cfg1910.chipId;
+		rdevInfo.family = AF_INET;
+		rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
+		ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 		EXPECT_INT_EQ(ret, 0);
-        int qpn_1910;
-		ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qp_norm, &qp_resp_create);
-		qpn_1910 = qp_resp_create.qpn;
+        int qpn1910;
+		ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qpNorm, &qpRespCreate);
+		qpn1910 = qpRespCreate.qpn;
         EXPECT_INT_EQ(ret, 0);
 
-		ret = RsQpDestroy(phyId, rdevIndex, qpn_1910);
+		ret = RsQpDestroy(phyId, rdevIndex, qpn1910);
 
 		ret = RsRdevDeinit(phyId, NOTIFY, rdevIndex);
         EXPECT_INT_EQ(ret, 0);
-		ret = RsSocketDeinit(rdev_info);
+		ret = RsSocketDeinit(rdevInfo);
 		EXPECT_INT_EQ(ret, 0);
-        ret = RsDeinit(&cfg_1910);
+        ret = RsDeinit(&cfg1910);
 		EXPECT_INT_EQ(ret, 0);
         /* >>>>>>> 1910 create_qp test case end <<<<<<<<<<< */
 
 	return;
 }
 
-void tc_rs_mr_sync()
+void TcRsMrSync()
 {
 	int ret;
 	uint32_t phyId = 0;
@@ -1386,15 +1386,15 @@ void tc_rs_mr_sync()
 	struct RsQpResp resp = {0};
 	struct RsQpResp resp2 = {0};
 	int i;
-	int try_num = 10;
+	int tryNum = 10;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-	struct RsSocketCloseInfoT sock_close[2] = {0};
-	struct SocketFdData socket_info[3] = {0};
-    struct SocketWlistInfoT white_list;
-    white_list.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-    white_list.connLimit = 1;
+	struct RsSocketCloseInfoT sockClose[2] = {0};
+	struct SocketFdData socketInfo[3] = {0};
+    struct SocketWlistInfoT whiteList;
+    whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+    whiteList.connLimit = 1;
 
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 0;
@@ -1409,12 +1409,12 @@ void tc_rs_mr_sync()
 	ret = RsSocketListenStart(&listen[0], 1);
 
 	rs_ut_msg("___________________after listen:\n");
-    strcpy(white_list.tag, "1234");
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
-    RsSocketWhiteListAdd(rdev_info, &white_list, 1);
+    strcpy(whiteList.tag, "1234");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
+    RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);
 
 	conn[0].phyId = 0;
 	conn[0].family = AF_INET;
@@ -1429,44 +1429,44 @@ void tc_rs_mr_sync()
 	usleep(SLEEP_TIME);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	struct RsQpNorm qp_norm = {0};
-	qp_norm.flag = flag;
-	qp_norm.qpMode = qpMode;
-	qp_norm.isExp = 1;
-	ret = RsQpCreate(phyId, rdevIndex, qp_norm, &resp);
+	struct RsQpNorm qpNorm = {0};
+	qpNorm.flag = flag;
+	qpNorm.qpMode = qpMode;
+	qpNorm.isExp = 1;
+	ret = RsQpCreate(phyId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RsQpCreate: qpn %d, ret:%d\n", resp.qpn, ret);
 
 	rs_ut_msg("___________________after qp create:\n");
 
 	/* >>>>>>> RsQpConnectAsync test case begin <<<<<<<<<<< */
-	struct RdmaMrRegInfo mr_reg_info = {0};
-	mr_reg_info.addr = 0xabcdef;
-	mr_reg_info.len = RS_TEST_MEM_SIZE;
-	mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
-	ret = RsMrReg(phyId, rdevIndex, resp.qpn, &mr_reg_info);
+	struct RdmaMrRegInfo mrRegInfo = {0};
+	mrRegInfo.addr = 0xabcdef;
+	mrRegInfo.len = RS_TEST_MEM_SIZE;
+	mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
+	ret = RsMrReg(phyId, rdevIndex, resp.qpn, &mrRegInfo);
 	EXPECT_INT_EQ(ret, 0);
 	/* >>>>>>> RsQpConnectAsync test case end <<<<<<<<<<< */
 
 	rs_ut_msg("___________________after mr reg:\n");
 
-	ret = RsQpConnectAsync(phyId, rdevIndex, resp.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(phyId, rdevIndex, resp.qpn, socketInfo[i].fd);
 	rs_ut_msg("***RsQpConnectAsync: %d****\n", ret);
 
 	rs_ut_msg("___________________after qp connect async:\n");
@@ -1474,24 +1474,24 @@ void tc_rs_mr_sync()
 	rs_ut_msg("___________________after qp connect async & sleep:\n");
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	ret = RsQpCreate(phyId, rdevIndex, qp_norm, &resp2);
+	ret = RsQpCreate(phyId, rdevIndex, qpNorm, &resp2);
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RsQpCreate: qpn2 %d, ret:%d\n", resp2.qpn, ret);
 	rs_ut_msg("___________________after qp2 create:\n");
 
-	ret = RsQpConnectAsync(phyId, rdevIndex, resp2.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(phyId, rdevIndex, resp2.qpn, socketInfo[i].fd);
 
 	rs_ut_msg("___________________after qp2 connect async:\n");
 
@@ -1502,13 +1502,13 @@ void tc_rs_mr_sync()
 
 	rs_ut_msg("___________________after qp1&2 destroy:\n");
 
-	sock_close[0].fd = socket_info[0].fd;
-	ret = RsSocketBatchClose(0, &sock_close[0], 1);
+	sockClose[0].fd = socketInfo[0].fd;
+	ret = RsSocketBatchClose(0, &sockClose[0], 1);
 
 	rs_ut_msg("___________________after close socket 0:\n");
 
-	sock_close[1].fd = socket_info[1].fd;
-	ret = RsSocketBatchClose(0, &sock_close[1], 1);
+	sockClose[1].fd = socketInfo[1].fd;
+	ret = RsSocketBatchClose(0, &sockClose[1], 1);
 
 	rs_ut_msg("___________________after close socket 1:\n");
 
@@ -1521,7 +1521,7 @@ void tc_rs_mr_sync()
 	ret = RsRdevDeinit(phyId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsSocketDeinit(rdev_info);
+	ret = RsSocketDeinit(rdevInfo);
 	EXPECT_INT_EQ(ret, 0);
 
 	ret = RsDeinit(&cfg);
@@ -1533,11 +1533,11 @@ void tc_rs_mr_sync()
 }
 
 /* create 2 socket & 2 qp, and connect them */
-static int tc_rs_sock_qp_create_normal(int *fd, uint32_t *qpn, int *fd2, uint32_t *qpn2)
+static int TcRsSockQpCreateNormal(int *fd, uint32_t *qpn, int *fd2, uint32_t *qpn2)
 {
 	int ret;
 	int i;
-	int try_num = 10;
+	int tryNum = 10;
 	uint32_t phyId = 0;
 	uint32_t rdevIndex = 0;
 	int flag = 0; /* RC */
@@ -1545,17 +1545,17 @@ static int tc_rs_sock_qp_create_normal(int *fd, uint32_t *qpn, int *fd2, uint32_
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[1] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-	struct SocketFdData socket_info[3] = {0};
-    struct SocketWlistInfoT white_list;
+	struct SocketFdData socketInfo[3] = {0};
+    struct SocketWlistInfoT whiteList;
 	struct RsQpResp resp = {0};
 	struct RsQpResp resp2 = {0};
-    white_list.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-    white_list.connLimit = 1;
+    whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+    whiteList.connLimit = 1;
 
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
 	rs_ut_msg("resource prepare begin..................\n");
 
@@ -1566,7 +1566,7 @@ static int tc_rs_sock_qp_create_normal(int *fd, uint32_t *qpn, int *fd2, uint32_
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RS INIT, ret:%d !\n", ret);
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
 	listen[0].phyId = 0;
@@ -1576,8 +1576,8 @@ static int tc_rs_sock_qp_create_normal(int *fd, uint32_t *qpn, int *fd2, uint32_
 	ret = RsSocketListenStart(&listen[0], 1);
 	rs_ut_msg("RS LISTEN, ret:%d !\n", ret);
 
-    strcpy(white_list.tag, "1234");
-    RsSocketWhiteListAdd(rdev_info, &white_list, 1);;
+    strcpy(whiteList.tag, "1234");
+    RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);;
 
 	conn[0].phyId = 0;
 	conn[0].family = AF_INET;
@@ -1591,54 +1591,54 @@ static int tc_rs_sock_qp_create_normal(int *fd, uint32_t *qpn, int *fd2, uint32_
 	usleep(SLEEP_TIME);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
         usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	struct RsQpNorm qp_norm = {0};
-	qp_norm.flag = flag;
-	qp_norm.qpMode = qpMode;
-	qp_norm.isExp = 0;
+	struct RsQpNorm qpNorm = {0};
+	qpNorm.flag = flag;
+	qpNorm.qpMode = qpMode;
+	qpNorm.isExp = 0;
 
-	ret = RsQpCreate(phyId, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(phyId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_EQ(ret, 0);
 	*qpn = resp.qpn;
 	rs_ut_msg("RS CREATE QP: QPN:%d, ret:%d\n", *qpn, ret);
 
-	ret = RsQpConnectAsync(phyId, rdevIndex, *qpn, socket_info[i].fd);
-	*fd = socket_info[i].fd;
+	ret = RsQpConnectAsync(phyId, rdevIndex, *qpn, socketInfo[i].fd);
+	*fd = socketInfo[i].fd;
 	rs_ut_msg("RS QP CONNECT ASYNC: ret:%d\n", ret);
 
 	usleep(SLEEP_TIME);
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
         usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	ret = RsQpCreate(phyId, rdevIndex, qp_norm, &resp2);
+	ret = RsQpCreate(phyId, rdevIndex, qpNorm, &resp2);
 	EXPECT_INT_EQ(ret, 0);
 	*qpn2 = resp2.qpn;
 	rs_ut_msg("RS CREATE QP: QPN:%d, ret:%d\n", *qpn2, ret);
 
-	ret = RsQpConnectAsync(phyId, rdevIndex, *qpn2, socket_info[i].fd);
-	*fd2 = socket_info[i].fd;
+	ret = RsQpConnectAsync(phyId, rdevIndex, *qpn2, socketInfo[i].fd);
+	*fd2 = socketInfo[i].fd;
 
 	usleep(SLEEP_TIME);
 
@@ -1648,25 +1648,25 @@ static int tc_rs_sock_qp_create_normal(int *fd, uint32_t *qpn, int *fd2, uint32_
 }
 
 /* create 2 socket & 2 qp, and connect them */
-static int tc_rs_sock_qp_create(int *fd, uint32_t *qpn, int *fd2, uint32_t *qpn2)
+static int TcRsSockQpCreate(int *fd, uint32_t *qpn, int *fd2, uint32_t *qpn2)
 {
 	int ret;
 	int i;
-	int try_num = 10;
+	int tryNum = 10;
 	uint32_t phyId = 0;
 	int flag = 0; /* RC */
 	int qpMode = 1;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[1] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-	struct SocketFdData socket_info[3] = {0};
-    struct SocketWlistInfoT white_list;
+	struct SocketFdData socketInfo[3] = {0};
+    struct SocketWlistInfoT whiteList;
 	struct RsQpResp resp = {0};
 	struct RsQpResp resp2 = {0};
-    white_list.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-    white_list.connLimit = 1;
+    whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+    whiteList.connLimit = 1;
 	unsigned int rdevIndex = 0;
-	struct RsQpNorm qp_norm = {0};
+	struct RsQpNorm qpNorm = {0};
 
 	rs_ut_msg("resource prepare begin..................\n");
 
@@ -1683,13 +1683,13 @@ static int tc_rs_sock_qp_create(int *fd, uint32_t *qpn, int *fd2, uint32_t *qpn2
 	listen[0].port = 16666;
 	ret = RsSocketListenStart(&listen[0], 1);
 	rs_ut_msg("RS LISTEN, ret:%d !\n", ret);
-    strcpy(white_list.tag, "1234");
+    strcpy(whiteList.tag, "1234");
 
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
-    RsSocketWhiteListAdd(rdev_info, &white_list, 1);
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
+    RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);
 
 	conn[0].phyId = 0;
 	conn[0].family = AF_INET;
@@ -1703,56 +1703,56 @@ static int tc_rs_sock_qp_create(int *fd, uint32_t *qpn, int *fd2, uint32_t *qpn2
 	usleep(SLEEP_TIME);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	qp_norm.flag = flag;
-	qp_norm.qpMode = qpMode;
-	qp_norm.isExp = 1;
+	qpNorm.flag = flag;
+	qpNorm.qpMode = qpMode;
+	qpNorm.isExp = 1;
 
-	ret = RsQpCreate(phyId, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(phyId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_EQ(ret, 0);
 	*qpn = resp.qpn;
 	rs_ut_msg("RS CREATE QP: QPN:%d, ret:%d\n", *qpn, ret);
 
-	ret = RsQpConnectAsync(phyId, rdevIndex, *qpn, socket_info[i].fd);
-	*fd = socket_info[i].fd;
+	ret = RsQpConnectAsync(phyId, rdevIndex, *qpn, socketInfo[i].fd);
+	*fd = socketInfo[i].fd;
 	rs_ut_msg("RS QP CONNECT ASYNC: ret:%d\n", ret);
 
 	usleep(SLEEP_TIME);
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	ret = RsQpCreate(phyId, rdevIndex, qp_norm, &resp2);
+	ret = RsQpCreate(phyId, rdevIndex, qpNorm, &resp2);
 	EXPECT_INT_EQ(ret, 0);
 	*qpn2 = resp2.qpn;
 	rs_ut_msg("RS CREATE QP: QPN:%d, ret:%d\n", *qpn2, ret);
 
-	ret = RsQpConnectAsync(phyId, rdevIndex, *qpn2, socket_info[i].fd);
-	*fd2 = socket_info[i].fd;
+	ret = RsQpConnectAsync(phyId, rdevIndex, *qpn2, socketInfo[i].fd);
+	*fd2 = socketInfo[i].fd;
 
 	usleep(SLEEP_TIME * 10);
 
@@ -1761,18 +1761,18 @@ static int tc_rs_sock_qp_create(int *fd, uint32_t *qpn, int *fd2, uint32_t *qpn2
 	return ret;
 }
 
-static int tc_rs_sock_qp_destroy(int fd, uint32_t qpn, int fd2, uint32_t qpn2)
+static int TcRsSockQpDestroy(int fd, uint32_t qpn, int fd2, uint32_t qpn2)
 {
 	int ret;
 	uint32_t phyId = 0;
 	uint32_t rdevIndex = 0;
 	struct RsInitConfig cfg = {0};
-	struct RsSocketCloseInfoT sock_close[2] = {0};
+	struct RsSocketCloseInfoT sockClose[2] = {0};
 	struct SocketListenInfo listen[1] = {0};
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
 	rs_ut_msg("resource free begin..................\n");
 	usleep(SLEEP_TIME);
@@ -1783,12 +1783,12 @@ static int tc_rs_sock_qp_destroy(int fd, uint32_t qpn, int fd2, uint32_t qpn2)
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RS destroy QP: ret:%d\n", ret);
 
-	sock_close[0].fd = fd;
-	ret = RsSocketBatchClose(0, &sock_close[0], 1);
+	sockClose[0].fd = fd;
+	ret = RsSocketBatchClose(0, &sockClose[0], 1);
 	rs_ut_msg("RS socket close fd:%d, ret:%d\n", fd, ret);
 
-	sock_close[1].fd = fd2;
-	ret = RsSocketBatchClose(0, &sock_close[1], 1);
+	sockClose[1].fd = fd2;
+	ret = RsSocketBatchClose(0, &sockClose[1], 1);
 	rs_ut_msg("RS socket2 close fd:%d, ret:%d\n", fd2, ret);
 
 	/* ------resource CLEAN-------- */
@@ -1802,7 +1802,7 @@ static int tc_rs_sock_qp_destroy(int fd, uint32_t qpn, int fd2, uint32_t qpn2)
 	ret = RsRdevDeinit(phyId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsSocketDeinit(rdev_info);
+	ret = RsSocketDeinit(rdevInfo);
 	EXPECT_INT_EQ(ret, 0);
 
 	cfg.chipId = 0;
@@ -1814,7 +1814,7 @@ static int tc_rs_sock_qp_destroy(int fd, uint32_t qpn, int fd2, uint32_t qpn2)
 	return ret;
 }
 
-void tc_rs_mr_create()
+void TcRsMrCreate()
 {
 	int ret;
 	uint32_t phyId = 0;
@@ -1823,49 +1823,49 @@ void tc_rs_mr_create()
 	uint32_t qpn, qpn2;
 	int fd, fd2;
 	void *addr, *addr2;
-	int try_num = 0;
-	struct RdmaMrRegInfo mr_reg_info = {0};
+	int tryNum = 0;
+	struct RdmaMrRegInfo mrRegInfo = {0};
 
 	/* +++++Resource Prepare+++++ */
-	ret = tc_rs_sock_qp_create(&fd, &qpn, &fd2, &qpn2);
+	ret = TcRsSockQpCreate(&fd, &qpn, &fd2, &qpn2);
 
 	addr = malloc(RS_TEST_MEM_SIZE);
 	addr2 = malloc(8192);
 
-	try_num = 3;
+	tryNum = 3;
 	do {
-		mr_reg_info.addr = addr;
-		mr_reg_info.len = RS_TEST_MEM_SIZE;
-		mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
-		ret = RsMrReg(phyId, rdevIndex, qpn, &mr_reg_info);
+		mrRegInfo.addr = addr;
+		mrRegInfo.len = RS_TEST_MEM_SIZE;
+		mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
+		ret = RsMrReg(phyId, rdevIndex, qpn, &mrRegInfo);
 		EXPECT_INT_EQ(ret, 0);
 		if (0 == ret)
 			break;
 		rs_ut_msg("MR REG1: qpn %d, ret:%d\n", qpn, ret);
-		try_num--;
+		tryNum--;
 		sleep(1);
-	} while(try_num && (-EAGAIN == ret));
+	} while(tryNum && (-EAGAIN == ret));
 	EXPECT_INT_EQ(ret, 0);
 
 	/* repeat reg */
-	mr_reg_info.addr = addr;
-	mr_reg_info.len = RS_TEST_MEM_SIZE;
-	mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
-	ret = RsMrReg(phyId, rdevIndex, qpn, &mr_reg_info);
+	mrRegInfo.addr = addr;
+	mrRegInfo.len = RS_TEST_MEM_SIZE;
+	mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
+	ret = RsMrReg(phyId, rdevIndex, qpn, &mrRegInfo);
 	EXPECT_INT_EQ(ret, 0);
 
-	try_num = 3;
+	tryNum = 3;
 	do {
-		mr_reg_info.addr = addr2;
-		mr_reg_info.len = 8192;
-		mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
-		ret = RsMrReg(phyId, rdevIndex, qpn2, &mr_reg_info);
+		mrRegInfo.addr = addr2;
+		mrRegInfo.len = 8192;
+		mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
+		ret = RsMrReg(phyId, rdevIndex, qpn2, &mrRegInfo);
 		if (0 == ret)
 			break;
 		rs_ut_msg("MR REG2: qpn2 %d, ret:%d\n", qpn2, ret);
-		try_num--;
+		tryNum--;
 		sleep(1);
-	} while(try_num && (-EAGAIN == ret));
+	} while(tryNum && (-EAGAIN == ret));
 	EXPECT_INT_EQ(ret, 0);
 
 	usleep(SLEEP_TIME);
@@ -1881,21 +1881,21 @@ void tc_rs_mr_create()
 	free(addr2);
 
 	/* +++++Resource Free+++++ */
-	ret = tc_rs_sock_qp_destroy(fd, qpn, fd2, qpn2);
+	ret = TcRsSockQpDestroy(fd, qpn, fd2, qpn2);
 	EXPECT_INT_EQ(ret, 0);
 
 	return;
 }
-struct RsMrCb *g_mr_cb_a;
+struct RsMrCb *gMrCbA;
 
-int stub_rs_get_mrcb_a(struct RsQpCb *qp_cb, uint64_t addr, struct RsMrCb **mr_cb,
-    struct RsListHead *mr_list)
+int StubRsGetMrcbA(struct RsQpCb *qpCb, uint64_t addr, struct RsMrCb **mrCb,
+    struct RsListHead *mrList)
 {
-	*mr_cb = g_mr_cb_a;
+	*mrCb = gMrCbA;
 	return -1;
 }
 
-void tc_rs_mr_abnormal()
+void TcRsMrAbnormal()
 {
 	int ret;
 	uint32_t phyId = 0;
@@ -1904,24 +1904,24 @@ void tc_rs_mr_abnormal()
 	uint32_t qpn, qpn2;
 	int fd, fd2;
 	void *addr, *addr2;
-	struct RdmaMrRegInfo mr_reg_info = {0};
+	struct RdmaMrRegInfo mrRegInfo = {0};
 
 	/* +++++Resource Prepare+++++ */
-	ret = tc_rs_sock_qp_create(&fd, &qpn, &fd2, &qpn2);
+	ret = TcRsSockQpCreate(&fd, &qpn, &fd2, &qpn2);
 
 	addr = malloc(RS_TEST_MEM_SIZE);
 	addr2 = malloc(RS_TEST_MEM_SIZE);
 
-	mr_reg_info.addr = addr;
-	mr_reg_info.len = RS_TEST_MEM_SIZE;
-	mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
-	ret = RsMrReg(phyId, rdevIndex, 999999, &mr_reg_info);
+	mrRegInfo.addr = addr;
+	mrRegInfo.len = RS_TEST_MEM_SIZE;
+	mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
+	ret = RsMrReg(phyId, rdevIndex, 999999, &mrRegInfo);
 	EXPECT_INT_NE(ret, 0);
 
-	mr_reg_info.addr = 0;
-	mr_reg_info.len = RS_TEST_MEM_SIZE;
-	mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
-	ret = RsMrReg(phyId, rdevIndex, qpn, &mr_reg_info);
+	mrRegInfo.addr = 0;
+	mrRegInfo.len = RS_TEST_MEM_SIZE;
+	mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
+	ret = RsMrReg(phyId, rdevIndex, qpn, &mrRegInfo);
 	EXPECT_INT_NE(ret, 0);
 
 	ret = RsMrDereg(phyId, rdevIndex, 999999, addr);
@@ -1931,7 +1931,7 @@ void tc_rs_mr_abnormal()
 	EXPECT_INT_NE(ret, 0);
 
 	mocker(RsQpn2qpcb, 10, 0);
-	mocker_invoke((stub_fn_t)RsGetMrcb, stub_rs_get_mrcb_a, 1);
+	mocker_invoke((stub_fn_t)RsGetMrcb, StubRsGetMrcbA, 1);
 	ret = RsMrDereg(phyId, rdevIndex, 999999, addr2);
 	EXPECT_INT_EQ(ret, -EFAULT);
 	mocker_clean();
@@ -1940,119 +1940,119 @@ void tc_rs_mr_abnormal()
 	free(addr2);
 
 	/* +++++Resource Free+++++ */
-	ret = tc_rs_sock_qp_destroy(fd, qpn, fd2, qpn2);
+	ret = TcRsSockQpDestroy(fd, qpn, fd2, qpn2);
 	EXPECT_INT_EQ(ret, 0);
 
 	return;
 }
 
-void tc_rs_abnormal2()
+void TcRsAbnormal2()
 {
 		int ret;
 	int flag = 0; /* RC */
 	uint32_t qpn, qpn2;
 	int fd, fd2;
-	struct rs_cb *rs_cb, *rs_cb2;
+	struct rs_cb *rsCb, *rsCb2;
 	char cmd, cmd2;
 	struct epoll_event events;
 
 	/* +++++Resource Prepare+++++ */
-	ret = tc_rs_sock_qp_create(&fd, &qpn, &fd2, &qpn2);
+	ret = TcRsSockQpCreate(&fd, &qpn, &fd2, &qpn2);
 
 /* ABNORMAL TC Start */
 	rs_ut_msg("\n+++++++++ABNORMAL TC Start++++++++\n");
-	ret = RsDev2rscb(0, &rs_cb2, false);
+	ret = RsDev2rscb(0, &rsCb2, false);
 	EXPECT_INT_EQ(ret, 0);
 	usleep(1000);
 	events.data.fd = 200;
-	RsEpollEventInHandle(rs_cb2, &events);
+	RsEpollEventInHandle(rsCb2, &events);
 	events.data.fd = -1;
-	RsEpollEventInHandle(rs_cb2, &events);
+	RsEpollEventInHandle(rsCb2, &events);
 	events.data.fd = 0;
-	RsEpollEventInHandle(rs_cb2, &events);
+	RsEpollEventInHandle(rsCb2, &events);
 	rs_ut_msg("---------ABNORMAL TC End----------\n\n");
 /* ABNORMAL TC End */
 
 	/* +++++Resource Free+++++ */
-	ret = tc_rs_sock_qp_destroy(fd, qpn, fd2, qpn2);
+	ret = TcRsSockQpDestroy(fd, qpn, fd2, qpn2);
 	EXPECT_INT_EQ(ret, 0);
 
 	return;
 
 }
 
-struct RsQpCb *qp_cb2;
-void tc_rs_cq_handle()
+struct RsQpCb *qpCb2;
+void TcRsCqHandle()
 {
 	int ret;
 	uint32_t qpn, qpn2;
 	int fd, fd2;
-	struct RsQpCb qp_cb_4;
+	struct RsQpCb qpCb4;
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
 
 	/* +++++Resource Prepare+++++ */
-	ret = tc_rs_sock_qp_create(&fd, &qpn, &fd2, &qpn2);
+	ret = TcRsSockQpCreate(&fd, &qpn, &fd2, &qpn2);
 
-	qp_cb_4.channel = NULL;
-	RsDrvPollCqHandle(&qp_cb_4);
+	qpCb4.channel = NULL;
+	RsDrvPollCqHandle(&qpCb4);
 
-	ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qp_cb_ab2);
+	ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCbAb2);
 	EXPECT_INT_EQ(ret, 0);
-	RsDrvPollCqHandle(qp_cb_ab2);
+	RsDrvPollCqHandle(qpCbAb2);
 
-	struct RsQpCb qpcb_tmp = {0};
+	struct RsQpCb qpcbTmp = {0};
 	struct ibv_wc wc = {0};
-	struct ibv_cq ev_cq_sq = {0};
-	struct ibv_cq ev_cq_rq = {0};
+	struct ibv_cq evCqSq = {0};
+	struct ibv_cq evCqRq = {0};
 	struct RsRdevCb rdevCb = {0};
 
-	qpcb_tmp.ibSendCq = &ev_cq_sq;
-	qpcb_tmp.ibRecvCq = &ev_cq_rq;
-	qpcb_tmp.rdevCb = &rdevCb;
+	qpcbTmp.ibSendCq = &evCqSq;
+	qpcbTmp.ibRecvCq = &evCqRq;
+	qpcbTmp.rdevCb = &rdevCb;
 
-	RsCqeCallbackProcess(&qpcb_tmp, &wc, &ev_cq_sq);
-	RsCqeCallbackProcess(&qpcb_tmp, &wc, &ev_cq_sq);
+	RsCqeCallbackProcess(&qpcbTmp, &wc, &evCqSq);
+	RsCqeCallbackProcess(&qpcbTmp, &wc, &evCqSq);
 
-	RsCqeCallbackProcess(&qpcb_tmp, &wc, ev_cq_rq);
-
-	wc.status = IBV_WC_WR_FLUSH_ERR;
-	RsCqeCallbackProcess(&qpcb_tmp, &wc, ev_cq_rq);
+	RsCqeCallbackProcess(&qpcbTmp, &wc, evCqRq);
 
 	wc.status = IBV_WC_WR_FLUSH_ERR;
-	RsCqeCallbackProcess(&qpcb_tmp, &wc, ev_cq_rq);
+	RsCqeCallbackProcess(&qpcbTmp, &wc, evCqRq);
 
 	wc.status = IBV_WC_WR_FLUSH_ERR;
-	RsCqeCallbackProcess(&qpcb_tmp, &wc, ev_cq_rq);
+	RsCqeCallbackProcess(&qpcbTmp, &wc, evCqRq);
+
+	wc.status = IBV_WC_WR_FLUSH_ERR;
+	RsCqeCallbackProcess(&qpcbTmp, &wc, evCqRq);
 
 	wc.status = IBV_WC_SUCCESS;
-	RsCqeCallbackProcess(&qpcb_tmp, &wc, ev_cq_rq);
+	RsCqeCallbackProcess(&qpcbTmp, &wc, evCqRq);
 
 	wc.status = IBV_WC_MW_BIND_ERR;
-	RsCqeCallbackProcess(&qpcb_tmp, &wc, ev_cq_rq);
+	RsCqeCallbackProcess(&qpcbTmp, &wc, evCqRq);
 
 	/* +++++Resource Free+++++ */
-	ret = tc_rs_sock_qp_destroy(fd, qpn, fd2, qpn2);
+	ret = TcRsSockQpDestroy(fd, qpn, fd2, qpn2);
 	EXPECT_INT_EQ(ret, 0);
 
 	return;
 }
 
-void tc_rs_epoll_handle()
+void TcRsEpollHandle()
 {
 	int ret;
 	uint32_t qpn, qpn2;
 	int fd, fd2;
-	struct epoll_event events_3;
+	struct epoll_event events3;
 
 	/* +++++Resource Prepare+++++ */
-	ret = tc_rs_sock_qp_create(&fd, &qpn, &fd2, &qpn2);
+	ret = TcRsSockQpCreate(&fd, &qpn, &fd2, &qpn2);
 
-	events_3.events = 0;
-	RsEpollEventHandleOne(NULL, &events_3);
+	events3.events = 0;
+	RsEpollEventHandleOne(NULL, &events3);
 
 	/* +++++Resource Free+++++ */
-	ret = tc_rs_sock_qp_destroy(fd, qpn, fd2, qpn2);
+	ret = TcRsSockQpDestroy(fd, qpn, fd2, qpn2);
 	EXPECT_INT_EQ(ret, 0);
 
 	return;
@@ -2064,19 +2064,19 @@ int stub_halGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoType, 
 	return 0;
 }
 
-void tc_rs_socket_ops()
+void TcRsSocketOps()
 {
 	int ret;
 	int i;
-	int try_num = 10;
+	int tryNum = 10;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-	struct RsSocketCloseInfoT sock_close[2] = {0};
-	struct SocketFdData socket_info[3] = {0};
-	struct SocketWlistInfoT white_list;
-	white_list.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	white_list.connLimit = 1;
+	struct RsSocketCloseInfoT sockClose[2] = {0};
+	struct SocketFdData socketInfo[3] = {0};
+	struct SocketWlistInfoT whiteList;
+	whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	whiteList.connLimit = 1;
 
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 0;
@@ -2116,14 +2116,14 @@ void tc_rs_socket_ops()
 	ret = RsSocketListenStart(&listen[0], 1);
 	/* >>>>>>> RsSocketListenStart test case end <<<<<<<<<<< */
 
-	strcpy_s(white_list.tag, SOCK_CONN_TAG_SIZE, "1234");
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
-	RsSocketWhiteListAdd(rdev_info, &white_list, 1);
-	strcpy_s(white_list.tag, SOCK_CONN_TAG_SIZE, "5678");
-	RsSocketWhiteListAdd(rdev_info, &white_list, 1);
+	strcpy_s(whiteList.tag, SOCK_CONN_TAG_SIZE, "1234");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);
+	strcpy_s(whiteList.tag, SOCK_CONN_TAG_SIZE, "5678");
+	RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);
 
 	conn[0].phyId = 0;
 	conn[0].family = AF_INET;
@@ -2142,42 +2142,42 @@ void tc_rs_socket_ops()
 	usleep(SLEEP_TIME);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy_s(socket_info[i].tag, SOCK_CONN_TAG_SIZE, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy_s(socketInfo[i].tag, SOCK_CONN_TAG_SIZE, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
-	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n", __func__, socket_info[i].fd, socket_info[i].status);
+	} while (ret != 1 && tryNum--);
+	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n", __func__, socketInfo[i].fd, socketInfo[i].status);
 
-	sock_close[i].fd = socket_info[i].fd;
-	ret = RsSocketBatchClose(0, &sock_close[i], 1);
+	sockClose[i].fd = socketInfo[i].fd;
+	ret = RsSocketBatchClose(0, &sockClose[i], 1);
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy_s(socket_info[i].tag, SOCK_CONN_TAG_SIZE, "5678");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy_s(socketInfo[i].tag, SOCK_CONN_TAG_SIZE, "5678");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[1].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
 	/* >>>>>>> RsSocketSend test case begin <<<<<<<<<<< */
 	int data = 0;
 	int size = sizeof(data);
 	/* param error */
-	ret = RsSocketSend(socket_info[i].fd, NULL, 0);
+	ret = RsSocketSend(socketInfo[i].fd, NULL, 0);
 	EXPECT_INT_NE(ret, 0);
-	ret = RsPeerSocketSend(0, socket_info[i].fd, NULL, 0);
+	ret = RsPeerSocketSend(0, socketInfo[i].fd, NULL, 0);
 	EXPECT_INT_NE(ret, 0);
-	ret = RsPeerSocketSend(1, socket_info[i].fd, NULL, 0);
+	ret = RsPeerSocketSend(1, socketInfo[i].fd, NULL, 0);
 	EXPECT_INT_NE(ret, 0);
 
 	/* fd error */
@@ -2191,11 +2191,11 @@ void tc_rs_socket_ops()
 
 	/* >>>>>>> RsSocketRecv test case begin <<<<<<<<<<< */
 	/* param error */
-	ret = RsSocketRecv(socket_info[i].fd, NULL, 0);
+	ret = RsSocketRecv(socketInfo[i].fd, NULL, 0);
 	EXPECT_INT_NE(ret, 0);
-	ret = RsPeerSocketRecv(0, socket_info[i].fd, NULL, 0);
+	ret = RsPeerSocketRecv(0, socketInfo[i].fd, NULL, 0);
 	EXPECT_INT_NE(ret, 0);
-	ret = RsPeerSocketRecv(1, socket_info[i].fd, NULL, 0);
+	ret = RsPeerSocketRecv(1, socketInfo[i].fd, NULL, 0);
 	EXPECT_INT_NE(ret, 0);
 	ret = RsPeerSocketRecv(1, 1111, &data, size);
 	EXPECT_INT_NE(ret, 0);
@@ -2209,39 +2209,39 @@ void tc_rs_socket_ops()
 	EXPECT_INT_NE(ret, 0);
 
 	/* param error - num = 0 */
-	ret = RsSocketBatchClose(0, &sock_close[i], 0);
+	ret = RsSocketBatchClose(0, &sockClose[i], 0);
 	EXPECT_INT_NE(ret, 0);
 
 	/* param error - fd */
-	sock_close[i].fd = -1;
-	ret = RsSocketBatchClose(0, &sock_close[i], 1);
+	sockClose[i].fd = -1;
+	ret = RsSocketBatchClose(0, &sockClose[i], 1);
 	EXPECT_INT_NE(ret, 0);
 	/* >>>>>>> RsSocketBatchClose test case end <<<<<<<<<<< */
 
-	sock_close[i].fd = socket_info[i].fd;
-	ret = RsSocketBatchClose(0, &sock_close[i], 1);
+	sockClose[i].fd = socketInfo[i].fd;
+	ret = RsSocketBatchClose(0, &sockClose[i], 1);
 
 	/* close a non-exist fd */
-	ret = RsSocketBatchClose(0, &sock_close[i], 1);
+	ret = RsSocketBatchClose(0, &sockClose[i], 1);
 
 	usleep(1000);
 
  /* get Server Conn & Close it */
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy_s(socket_info[i].tag, SOCK_CONN_TAG_SIZE, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy_s(socketInfo[i].tag, SOCK_CONN_TAG_SIZE, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[0].fd:%d, client if:0x%x, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].remoteIp.addr.s_addr, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].remoteIp.addr.s_addr, socketInfo[i].status);
 
-	sock_close[i].fd = socket_info[i].fd;
-	ret = RsSocketBatchClose(0, &sock_close[i], 1);
+	sockClose[i].fd = socketInfo[i].fd;
+	ret = RsSocketBatchClose(0, &sockClose[i], 1);
 
 	/* >>>>>>> RsSocketListenStop test case begin <<<<<<<<<<< */
 	/* param error - close_info NULL */
@@ -2271,16 +2271,16 @@ void tc_rs_socket_ops()
 	return;
 }
 
-int replace_rs_qpn2qpcb(unsigned int phyId, unsigned int rdevIndex, uint32_t qpn, struct RsQpCb **qp_cb)
+int ReplaceRsQpn2qpcb(unsigned int phyId, unsigned int rdevIndex, uint32_t qpn, struct RsQpCb **qpCb)
 {
-    static struct RsQpCb a_qp_cb;
+    static struct RsQpCb aQpCb;
 
-    *qp_cb = &a_qp_cb;
-    a_qp_cb.state = 1;
+    *qpCb = &aQpCb;
+    aQpCb.state = 1;
     return 0;
 }
 
-void tc_rs_get_qp_status()
+void TcRsGetQpStatus()
 {
 	int ret;
 	unsigned int phyId = 0;
@@ -2289,35 +2289,35 @@ void tc_rs_get_qp_status()
 	int fd, fd2;
 	struct RsQpStatusInfo status;
 
-    struct RsQpCb qp_cb;
-    struct rs_cb rs_cb;
+    struct RsQpCb qpCb;
+    struct rs_cb rsCb;
 	struct RsRdevCb rdevCb;
-    qp_cb.rdevCb = &rdevCb;
+    qpCb.rdevCb = &rdevCb;
 
 	mocker((stub_fn_t)ibv_query_port, 1, 1);
-    ret = RsDrvSetMtu(&qp_cb);
+    ret = RsDrvSetMtu(&qpCb);
 	EXPECT_INT_EQ(ret, -EOPENSRC);
     mocker_clean();
 
 	/* +++++Resource Prepare+++++ */
 	mocker((stub_fn_t)RsDrvSetMtu, 10, 5);
-	ret = tc_rs_sock_qp_create(&fd, &qpn, &fd2, &qpn2);
+	ret = TcRsSockQpCreate(&fd, &qpn, &fd2, &qpn2);
     mocker_clean();
 
-    mocker_invoke(RsQpn2qpcb, replace_rs_qpn2qpcb, 1);
+    mocker_invoke(RsQpn2qpcb, ReplaceRsQpn2qpcb, 1);
     mocker(RsRoceQueryQpc, 10, 1);
     ret = RsGetQpStatus(phyId, rdevIndex, qpn, &status);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
 	/* +++++Resource Free+++++ */
-	ret = tc_rs_sock_qp_destroy(fd, qpn, fd2, qpn2);
+	ret = TcRsSockQpDestroy(fd, qpn, fd2, qpn2);
 	EXPECT_INT_EQ(ret, 0);
 
 	return;
 }
 
-void tc_rs_get_notify_ba()
+void TcRsGetNotifyBa()
 {
 	int ret;
 	uint32_t qpn, qpn2;
@@ -2327,7 +2327,7 @@ void tc_rs_get_notify_ba()
 	unsigned int rdevIndex = 0;
 
 	/* +++++Resource Prepare+++++ */
-	ret = tc_rs_sock_qp_create(&fd, &qpn, &fd2, &qpn2);
+	ret = TcRsSockQpCreate(&fd, &qpn, &fd2, &qpn2);
 
 	ret = RsGetNotifyMrInfo(phyId, rdevIndex, &info);
 	EXPECT_INT_EQ(ret, 0);
@@ -2339,16 +2339,16 @@ void tc_rs_get_notify_ba()
 	EXPECT_INT_NE(ret, 0);
 
 	/* +++++Resource Free+++++ */
-	ret = tc_rs_sock_qp_destroy(fd, qpn, fd2, qpn2);
+	ret = TcRsSockQpDestroy(fd, qpn, fd2, qpn2);
 	EXPECT_INT_EQ(ret, 0);
 
 	return;
 }
 
-void tc_rs_setup_sharemem()
+void TcRsSetupSharemem()
 {
 	struct RsRdevCb rdevCb = {0};
-	struct rs_cb rs_cb = {0};
+	struct rs_cb rsCb = {0};
 	int ret;
 
 	DlHalInit();
@@ -2356,31 +2356,31 @@ void tc_rs_setup_sharemem()
 	ret = RsBindHostpid(0, getpid());
 	EXPECT_INT_NE(ret, 0);
 
-	rs_cb.hccpMode = NETWORK_OFFLINE;
+	rsCb.hccpMode = NETWORK_OFFLINE;
 	mocker_invoke((stub_fn_t)DlHalGetDeviceInfo, dl_hal_get_device_info_910A, 20);
-	ret = RsSetupSharemem(&rs_cb, false, 0);
+	ret = RsSetupSharemem(&rsCb, false, 0);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
-	ret = RsSetupSharemem(&rs_cb, false, 0);
+	ret = RsSetupSharemem(&rsCb, false, 0);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
-	rs_cb.grpSetupFlag = false;
-	mocker_invoke((stub_fn_t)DlHalGetDeviceInfo, dl_hal_get_device_info_sharemem, 20);
-	ret = RsSetupSharemem(&rs_cb, false, 0);
+	rsCb.grpSetupFlag = false;
+	mocker_invoke((stub_fn_t)DlHalGetDeviceInfo, DlHalGetDeviceInfoSharemem, 20);
+	ret = RsSetupSharemem(&rsCb, false, 0);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
-	rs_cb.grpSetupFlag = false;
-	mocker_invoke((stub_fn_t)DlHalGetDeviceInfo, dl_hal_get_device_info_sharemem, 20);
-	mocker_invoke((stub_fn_t)DlHalQueryDevPid, dl_hal_query_dev_pid_sharemem, 20);
-	ret = RsSetupSharemem(&rs_cb, false, 0);
+	rsCb.grpSetupFlag = false;
+	mocker_invoke((stub_fn_t)DlHalGetDeviceInfo, DlHalGetDeviceInfoSharemem, 20);
+	mocker_invoke((stub_fn_t)DlHalQueryDevPid, DlHalQueryDevPidSharemem, 20);
+	ret = RsSetupSharemem(&rsCb, false, 0);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
-	rs_cb.grpSetupFlag = false;
-	mocker_invoke((stub_fn_t)DlHalGetDeviceInfo, dl_hal_get_device_info_sharemem, 20);
-	ret = RsSetupSharemem(&rs_cb, true, 0);
+	rsCb.grpSetupFlag = false;
+	mocker_invoke((stub_fn_t)DlHalGetDeviceInfo, DlHalGetDeviceInfoSharemem, 20);
+	ret = RsSetupSharemem(&rsCb, true, 0);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
@@ -2390,51 +2390,51 @@ void tc_rs_setup_sharemem()
 	DlHalDeinit();
 }
 
-void tc_rs_post_recv()
+void TcRsPostRecv()
 {
 	int ret;
 	uint32_t qpn, qpn2;
 	int fd, fd2;
 	uint32_t size;
-	int try_num;
+	int tryNum;
 	void *addr, *addr2;
-	struct RdmaMrRegInfo mr_reg_info = {0};
+	struct RdmaMrRegInfo mrRegInfo = {0};
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
 
 	/* +++++Resource Prepare+++++ */
-	ret = tc_rs_sock_qp_create(&fd, &qpn, &fd2, &qpn2);
+	ret = TcRsSockQpCreate(&fd, &qpn, &fd2, &qpn2);
 
 	addr = malloc(RS_TEST_MEM_SIZE);
 	addr2 = malloc(RS_TEST_MEM_SIZE);
 
-	try_num = 3;
+	tryNum = 3;
 	do {
-		mr_reg_info.addr = addr;
-		mr_reg_info.len = RS_TEST_MEM_SIZE;
-		mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
-		ret = RsMrReg(phyId, rdevIndex, qpn, &mr_reg_info);
+		mrRegInfo.addr = addr;
+		mrRegInfo.len = RS_TEST_MEM_SIZE;
+		mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
+		ret = RsMrReg(phyId, rdevIndex, qpn, &mrRegInfo);
 		EXPECT_INT_EQ(ret, 0);
 		if (0 == ret)
 			break;
 		rs_ut_msg("MR REG1: qpn %d, ret:%d\n", qpn, ret);
-		try_num--;
+		tryNum--;
 		sleep(1);
-	} while(try_num && (-EAGAIN == ret));
+	} while(tryNum && (-EAGAIN == ret));
 	EXPECT_INT_EQ(ret, 0);
 
-	try_num = 3;
+	tryNum = 3;
 	do {
-		mr_reg_info.addr = addr2;
-		mr_reg_info.len = RS_TEST_MEM_SIZE;
-		mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
-		ret = RsMrReg(phyId, rdevIndex, qpn2, &mr_reg_info);
+		mrRegInfo.addr = addr2;
+		mrRegInfo.len = RS_TEST_MEM_SIZE;
+		mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
+		ret = RsMrReg(phyId, rdevIndex, qpn2, &mrRegInfo);
 		if (0 == ret)
 			break;
 		rs_ut_msg("MR REG2: qpn2 %d, ret:%d\n", qpn2, ret);
-		try_num--;
+		tryNum--;
 		sleep(1);
-	} while(try_num && (-EAGAIN == ret));
+	} while(tryNum && (-EAGAIN == ret));
 	EXPECT_INT_EQ(ret, 0);
 
 	usleep(1000);
@@ -2450,14 +2450,14 @@ void tc_rs_post_recv()
 	free(addr2);
 
 	/* +++++Resource Free+++++ */
-	ret = tc_rs_sock_qp_destroy(fd, qpn, fd2, qpn2);
+	ret = TcRsSockQpDestroy(fd, qpn, fd2, qpn2);
 	EXPECT_INT_EQ(ret, 0);
 
 	return;
 
 }
 
-void tc_rs_send_wrlist_exp()
+void TcRsSendWrlistExp()
 {
 	int ret;
 	uint32_t qpn, qpn2;
@@ -2465,63 +2465,63 @@ void tc_rs_send_wrlist_exp()
 	uint32_t index;
 	struct SgList list;
 	struct WrInfo wrlist[1];
-	int try_num;
+	int tryNum;
 	void *addr, *addr2;
-	struct SendWrRsp rs_wr_info[1];
+	struct SendWrRsp rsWrInfo[1];
 	uint32_t phyId = 0;
 	uint32_t rdevIndex = 0;
-	struct RsWrlistBaseInfo base_info;
-	unsigned int send_num = 1;
-	unsigned int complete_num = 0;
+	struct RsWrlistBaseInfo baseInfo;
+	unsigned int sendNum = 1;
+	unsigned int completeNum = 0;
 	/* +++++Resource Prepare+++++ */
-	ret = tc_rs_sock_qp_create(&fd, &qpn, &fd2, &qpn2);
+	ret = TcRsSockQpCreate(&fd, &qpn, &fd2, &qpn2);
 
 	addr = malloc(RS_TEST_MEM_SIZE);
 	addr2 = malloc(RS_TEST_MEM_SIZE);
 
-	struct RdmaMrRegInfo mr_reg_info = {0};
-	mr_reg_info.addr = addr;
-	mr_reg_info.len = RS_TEST_MEM_SIZE;
-	mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
+	struct RdmaMrRegInfo mrRegInfo = {0};
+	mrRegInfo.addr = addr;
+	mrRegInfo.len = RS_TEST_MEM_SIZE;
+	mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
 
-	base_info.phyId = phyId;
-	base_info.rdevIndex = rdevIndex;
-	base_info.qpn = qpn;
-	base_info.keyFlag = 0;
-	try_num = 3;
+	baseInfo.phyId = phyId;
+	baseInfo.rdevIndex = rdevIndex;
+	baseInfo.qpn = qpn;
+	baseInfo.keyFlag = 0;
+	tryNum = 3;
 	do {
-		ret = RsMrReg(phyId, rdevIndex, qpn, &mr_reg_info);
+		ret = RsMrReg(phyId, rdevIndex, qpn, &mrRegInfo);
 		EXPECT_INT_EQ(ret, 0);
 		if (0 == ret)
 			break;
 		rs_ut_msg("MR REG1: qpn %d, ret:%d\n", qpn, ret);
-		try_num--;
+		tryNum--;
 		sleep(1);
-	} while(try_num && (-EAGAIN == ret));
+	} while(tryNum && (-EAGAIN == ret));
 	EXPECT_INT_EQ(ret, 0);
 
-	mr_reg_info.addr = addr2;
-	try_num = 3;
+	mrRegInfo.addr = addr2;
+	tryNum = 3;
 	do {
-		ret = RsMrReg(phyId, rdevIndex, qpn2, &mr_reg_info);
+		ret = RsMrReg(phyId, rdevIndex, qpn2, &mrRegInfo);
 		if (0 == ret)
 			break;
 		rs_ut_msg("MR REG2: qpn2 %d, ret:%d\n", qpn2, ret);
-		try_num--;
+		tryNum--;
 		sleep(1);
-	} while(try_num && (-EAGAIN == ret));
+	} while(tryNum && (-EAGAIN == ret));
 	EXPECT_INT_EQ(ret, 0);
 
-	struct RsMrCb *addr2_mr_cb;
-    addr2_mr_cb = calloc(1, sizeof(struct RsMrCb));
-	addr2_mr_cb->mrInfo.cmd = RS_CMD_MR_INFO;
-	addr2_mr_cb->mrInfo.addr = mr_reg_info.addr;
-	addr2_mr_cb->mrInfo.len = mr_reg_info.len;
-	addr2_mr_cb->mrInfo.rkey = mr_reg_info.lkey;
+	struct RsMrCb *addr2MrCb;
+    addr2MrCb = calloc(1, sizeof(struct RsMrCb));
+	addr2MrCb->mrInfo.cmd = RS_CMD_MR_INFO;
+	addr2MrCb->mrInfo.addr = mrRegInfo.addr;
+	addr2MrCb->mrInfo.len = mrRegInfo.len;
+	addr2MrCb->mrInfo.rkey = mrRegInfo.lkey;
 
-	struct RsQpCb *qp_cb = NULL;
-	RsQpn2qpcb(phyId, rdevIndex, qpn, &qp_cb);
-	RsListAddTail(&addr2_mr_cb->list, &qp_cb->remMrList);
+	struct RsQpCb *qpCb = NULL;
+	RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
+	RsListAddTail(&addr2MrCb->list, &qpCb->remMrList);
 
 	usleep(1000);
 
@@ -2532,46 +2532,46 @@ void tc_rs_send_wrlist_exp()
 	wrlist[0].op = 0;
 	wrlist[0].sendFlags = RS_SEND_FENCE;
 
-	try_num = 3;
+	tryNum = 3;
 	do {
-		ret =RsSendWrlist(base_info, wrlist, send_num, rs_wr_info, &complete_num);
+		ret =RsSendWrlist(baseInfo, wrlist, sendNum, rsWrInfo, &completeNum);
 		if (0 == ret)
 			break;
 		usleep(SLEEP_TIME);
-	} while(try_num-- && ret == -2);
+	} while(tryNum-- && ret == -2);
 	EXPECT_INT_EQ(ret, 0);
 
 	wrlist[0].dstAddr = NULL;
-	try_num = 3;
+	tryNum = 3;
 	do {
-		ret =RsSendWrlist(base_info, wrlist, send_num, rs_wr_info, &complete_num);
+		ret =RsSendWrlist(baseInfo, wrlist, sendNum, rsWrInfo, &completeNum);
 		if (0 == ret)
 			break;
 		usleep(SLEEP_TIME);
-	} while(try_num-- && ret == -2);
+	} while(tryNum-- && ret == -2);
 	EXPECT_INT_EQ(ret, -ENOENT);
 	wrlist[0].dstAddr = addr2;
 
 	wrlist[0].memList.addr = NULL;
-	try_num = 3;
+	tryNum = 3;
 	do {
-		ret =RsSendWrlist(base_info, wrlist, send_num, rs_wr_info, &complete_num);
+		ret =RsSendWrlist(baseInfo, wrlist, sendNum, rsWrInfo, &completeNum);
 		if (0 == ret)
 			break;
 		usleep(SLEEP_TIME);
-	} while(try_num-- && ret == -2);
+	} while(tryNum-- && ret == -2);
 	EXPECT_INT_EQ(ret, -EFAULT);
 	wrlist[0].memList.addr = addr;
 
 	list.len = 2147483649;
 	wrlist[0].memList = list;
-	try_num = 3;
+	tryNum = 3;
 	do {
-		ret =RsSendWrlist(base_info, wrlist, send_num, rs_wr_info, &complete_num);
+		ret =RsSendWrlist(baseInfo, wrlist, sendNum, rsWrInfo, &completeNum);
 		if (0 == ret)
 			break;
 		usleep(SLEEP_TIME);
-	} while(try_num-- && ret == -2);
+	} while(tryNum-- && ret == -2);
 	EXPECT_INT_EQ(ret, -EINVAL);
 	/* free resource */
 	rs_ut_msg("RS MR dereg begin...\n");
@@ -2584,13 +2584,13 @@ void tc_rs_send_wrlist_exp()
 	free(addr2);
 
 	/* +++++Resource Free+++++ */
-	ret = tc_rs_sock_qp_destroy(fd, qpn, fd2, qpn2);
+	ret = TcRsSockQpDestroy(fd, qpn, fd2, qpn2);
 	EXPECT_INT_EQ(ret, 0);
 
 	return;
 }
 
-void tc_rs_send_wrlist_normal()
+void TcRsSendWrlistNormal()
 {
 	int ret;
 	uint32_t qpn, qpn2;
@@ -2598,63 +2598,63 @@ void tc_rs_send_wrlist_normal()
 	uint32_t index;
 	struct SgList list;
 	struct WrInfo wrlist[1];
-	int try_num;
+	int tryNum;
 	void *addr, *addr2;
-	struct SendWrRsp rs_wr_info[1];
+	struct SendWrRsp rsWrInfo[1];
 	uint32_t phyId = 0;
 	uint32_t rdevIndex = 0;
-	struct RsWrlistBaseInfo base_info;
-	unsigned int send_num = 1;
-	unsigned int complete_num = 0;
+	struct RsWrlistBaseInfo baseInfo;
+	unsigned int sendNum = 1;
+	unsigned int completeNum = 0;
 	/* +++++Resource Prepare+++++ */
-	ret = tc_rs_sock_qp_create_normal(&fd, &qpn, &fd2, &qpn2);
+	ret = TcRsSockQpCreateNormal(&fd, &qpn, &fd2, &qpn2);
 
 	addr = malloc(RS_TEST_MEM_SIZE);
 	addr2 = malloc(RS_TEST_MEM_SIZE);
 
-	struct RdmaMrRegInfo mr_reg_info = {0};
-	mr_reg_info.addr = addr;
-	mr_reg_info.len = RS_TEST_MEM_SIZE;
-	mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
+	struct RdmaMrRegInfo mrRegInfo = {0};
+	mrRegInfo.addr = addr;
+	mrRegInfo.len = RS_TEST_MEM_SIZE;
+	mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
 
-	base_info.phyId = phyId;
-	base_info.rdevIndex = rdevIndex;
-	base_info.qpn = qpn;
-	base_info.keyFlag = 0;
-	try_num = 3;
+	baseInfo.phyId = phyId;
+	baseInfo.rdevIndex = rdevIndex;
+	baseInfo.qpn = qpn;
+	baseInfo.keyFlag = 0;
+	tryNum = 3;
 	do {
-		ret = RsMrReg(phyId, rdevIndex, qpn, &mr_reg_info);
+		ret = RsMrReg(phyId, rdevIndex, qpn, &mrRegInfo);
 		EXPECT_INT_EQ(ret, 0);
 		if (0 == ret)
 			break;
 		rs_ut_msg("MR REG1: qpn %d, ret:%d\n", qpn, ret);
-		try_num--;
+		tryNum--;
 		sleep(1);
-	} while(try_num && (-EAGAIN == ret));
+	} while(tryNum && (-EAGAIN == ret));
 	EXPECT_INT_EQ(ret, 0);
 
-	mr_reg_info.addr = addr2;
-	try_num = 3;
+	mrRegInfo.addr = addr2;
+	tryNum = 3;
 	do {
-		ret = RsMrReg(phyId, rdevIndex, qpn2, &mr_reg_info);
+		ret = RsMrReg(phyId, rdevIndex, qpn2, &mrRegInfo);
 		if (0 == ret)
 			break;
 		rs_ut_msg("MR REG2: qpn2 %d, ret:%d\n", qpn2, ret);
-		try_num--;
+		tryNum--;
 		sleep(1);
-	} while(try_num && (-EAGAIN == ret));
+	} while(tryNum && (-EAGAIN == ret));
 	EXPECT_INT_EQ(ret, 0);
 
-	struct RsMrCb *addr2_mr_cb;
-    addr2_mr_cb = calloc(1, sizeof(struct RsMrCb));
-	addr2_mr_cb->mrInfo.cmd = RS_CMD_MR_INFO;
-	addr2_mr_cb->mrInfo.addr = mr_reg_info.addr;
-	addr2_mr_cb->mrInfo.len = mr_reg_info.len;
-	addr2_mr_cb->mrInfo.rkey = mr_reg_info.lkey;
+	struct RsMrCb *addr2MrCb;
+    addr2MrCb = calloc(1, sizeof(struct RsMrCb));
+	addr2MrCb->mrInfo.cmd = RS_CMD_MR_INFO;
+	addr2MrCb->mrInfo.addr = mrRegInfo.addr;
+	addr2MrCb->mrInfo.len = mrRegInfo.len;
+	addr2MrCb->mrInfo.rkey = mrRegInfo.lkey;
 
-	struct RsQpCb *qp_cb = NULL;
-	RsQpn2qpcb(phyId, rdevIndex, qpn, &qp_cb);
-	RsListAddTail(&addr2_mr_cb->list, &qp_cb->remMrList);
+	struct RsQpCb *qpCb = NULL;
+	RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
+	RsListAddTail(&addr2MrCb->list, &qpCb->remMrList);
 
 	usleep(1000);
 
@@ -2668,48 +2668,48 @@ void tc_rs_send_wrlist_normal()
 	wrlist[0].sendFlags = RS_SEND_FENCE;
 
 	mocker(RsQpn2qpcb, 1, -1);
-	ret =RsSendWrlist(base_info, wrlist, send_num, rs_wr_info, &complete_num);
+	ret =RsSendWrlist(baseInfo, wrlist, sendNum, rsWrInfo, &completeNum);
 	EXPECT_INT_EQ(ret, -EACCES);
 	mocker_clean();
 
-	try_num = 3;
+	tryNum = 3;
 	do {
-		ret =RsSendWrlist(base_info, wrlist, send_num, rs_wr_info, &complete_num);
+		ret =RsSendWrlist(baseInfo, wrlist, sendNum, rsWrInfo, &completeNum);
 		if (0 == ret)
 			break;
 		usleep(SLEEP_TIME);
-	} while(try_num-- && ret == -2);
+	} while(tryNum-- && ret == -2);
 	EXPECT_INT_EQ(ret, 0);
 
 	wrlist[0].dstAddr = NULL;
-	try_num = 3;
+	tryNum = 3;
 	do {
-		ret =RsSendWrlist(base_info, wrlist, send_num, rs_wr_info, &complete_num);
+		ret =RsSendWrlist(baseInfo, wrlist, sendNum, rsWrInfo, &completeNum);
 		if (0 == ret)
 			break;
 		usleep(SLEEP_TIME);
-	} while(try_num-- && ret == -2);
+	} while(tryNum-- && ret == -2);
 	EXPECT_INT_EQ(ret, -ENOENT);
 
 	wrlist[0].dstAddr = addr2;
 	wrlist[0].memList.addr = NULL;
-	try_num = 3;
+	tryNum = 3;
 	do {
-		ret =RsSendWrlist(base_info, wrlist, send_num, rs_wr_info, &complete_num);
+		ret =RsSendWrlist(baseInfo, wrlist, sendNum, rsWrInfo, &completeNum);
 		if (0 == ret)
 			break;
 		usleep(SLEEP_TIME);
-	} while(try_num-- && ret == -2);
+	} while(tryNum-- && ret == -2);
 	EXPECT_INT_EQ(ret, -EFAULT);
 	wrlist[0].memList.addr = addr;
 
-	try_num = 3;
+	tryNum = 3;
 	do {
-		ret =RsSendWrlist(base_info, wrlist, 1028, rs_wr_info, &complete_num);
+		ret =RsSendWrlist(baseInfo, wrlist, 1028, rsWrInfo, &completeNum);
 		if (0 == ret)
 			break;
 		usleep(SLEEP_TIME);
-	} while(try_num-- && ret == -2);
+	} while(tryNum-- && ret == -2);
 	EXPECT_INT_EQ(ret, -EINVAL);
 
 	/* free resource */
@@ -2723,13 +2723,13 @@ void tc_rs_send_wrlist_normal()
 	free(addr2);
 
 	/* +++++Resource Free+++++ */
-	ret = tc_rs_sock_qp_destroy(fd, qpn, fd2, qpn2);
+	ret = TcRsSockQpDestroy(fd, qpn, fd2, qpn2);
 	EXPECT_INT_EQ(ret, 0);
 
 	return;
 }
 
-void tc_rs_send_wr()
+void TcRsSendWr()
 {
 	int ret;
 	uint32_t qpn, qpn2;
@@ -2737,56 +2737,56 @@ void tc_rs_send_wr()
 	uint32_t index;
 	struct SgList list[2];
 	struct SendWr wr;
-	int try_num;
+	int tryNum;
 	void *addr, *addr2;
-	struct wr_exp_rsp rs_wr_info;
+	struct wr_exp_rsp rsWrInfo;
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
-	struct RdmaMrRegInfo mr_reg_info = {0};
+	struct RdmaMrRegInfo mrRegInfo = {0};
 
 	/* +++++Resource Prepare+++++ */
-	ret = tc_rs_sock_qp_create(&fd, &qpn, &fd2, &qpn2);
+	ret = TcRsSockQpCreate(&fd, &qpn, &fd2, &qpn2);
 
 	addr = malloc(RS_TEST_MEM_SIZE);
 	addr2 = malloc(RS_TEST_MEM_SIZE);
 
-	try_num = 3;
+	tryNum = 3;
 	do {
-		mr_reg_info.addr = addr;
-		mr_reg_info.len = RS_TEST_MEM_SIZE;
-		mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
-		ret = RsMrReg(phyId, rdevIndex, qpn, &mr_reg_info);
+		mrRegInfo.addr = addr;
+		mrRegInfo.len = RS_TEST_MEM_SIZE;
+		mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
+		ret = RsMrReg(phyId, rdevIndex, qpn, &mrRegInfo);
 		if (0 == ret)
 			break;
 		rs_ut_msg("MR REG1: qpn %d, ret:%d\n", qpn, ret);
-		try_num--;
+		tryNum--;
 		sleep(1);
-	} while(try_num && (-EAGAIN == ret));
+	} while(tryNum && (-EAGAIN == ret));
 
-	try_num = 3;
+	tryNum = 3;
 	do {
-		mr_reg_info.addr = addr2;
-		mr_reg_info.len = RS_TEST_MEM_SIZE;
-		mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
-		ret = RsMrReg(phyId, rdevIndex, qpn2, &mr_reg_info);
+		mrRegInfo.addr = addr2;
+		mrRegInfo.len = RS_TEST_MEM_SIZE;
+		mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
+		ret = RsMrReg(phyId, rdevIndex, qpn2, &mrRegInfo);
 		if (0 == ret)
 			break;
 		rs_ut_msg("MR REG2: qpn2 %d, ret:%d\n", qpn2, ret);
-		try_num--;
+		tryNum--;
 		sleep(1);
-	} while(try_num && (-EAGAIN == ret));
+	} while(tryNum && (-EAGAIN == ret));
 	EXPECT_INT_EQ(ret, 0);
 
-	struct RsMrCb *addr2_mr_cb;
-    addr2_mr_cb = calloc(1, sizeof(struct RsMrCb));
-	addr2_mr_cb->mrInfo.cmd = RS_CMD_MR_INFO;
-	addr2_mr_cb->mrInfo.addr = mr_reg_info.addr;
-	addr2_mr_cb->mrInfo.len = mr_reg_info.len;
-	addr2_mr_cb->mrInfo.rkey = mr_reg_info.lkey;
+	struct RsMrCb *addr2MrCb;
+    addr2MrCb = calloc(1, sizeof(struct RsMrCb));
+	addr2MrCb->mrInfo.cmd = RS_CMD_MR_INFO;
+	addr2MrCb->mrInfo.addr = mrRegInfo.addr;
+	addr2MrCb->mrInfo.len = mrRegInfo.len;
+	addr2MrCb->mrInfo.rkey = mrRegInfo.lkey;
 
-	struct RsQpCb *qp_cb = NULL;
-	RsQpn2qpcb(phyId, rdevIndex, qpn, &qp_cb);
-	RsListAddTail(&addr2_mr_cb->list, &qp_cb->remMrList);
+	struct RsQpCb *qpCb = NULL;
+	RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
+	RsListAddTail(&addr2MrCb->list, &qpCb->remMrList);
 
 	usleep(1000);
 
@@ -2800,51 +2800,51 @@ void tc_rs_send_wr()
 	wr.op = 0;
 	wr.sendFlag = RS_SEND_FENCE;
 
-	try_num = 3;
+	tryNum = 3;
 	do {
-		ret = RsSendWr(phyId, rdevIndex, qpn, &wr, &rs_wr_info);
+		ret = RsSendWr(phyId, rdevIndex, qpn, &wr, &rsWrInfo);
 		if (0 == ret)
 			break;
 		usleep(SLEEP_TIME);
-	} while(try_num-- && ret == -2);
+	} while(tryNum-- && ret == -2);
 	EXPECT_INT_EQ(ret, 0);
 
 	/* RDMA Write with Notify Test */
-	try_num = 3;
+	tryNum = 3;
 	wr.op = 0x16;
 	do {
-		ret = RsSendWr(phyId, rdevIndex, qpn, &wr, &rs_wr_info);
+		ret = RsSendWr(phyId, rdevIndex, qpn, &wr, &rsWrInfo);
 		if (ret == 0)
 			break;
 		usleep(SLEEP_TIME);
-	} while(try_num-- && ret == -2);
+	} while(tryNum-- && ret == -2);
 	EXPECT_INT_EQ(ret, 0);
 
 	/* qpn error */
-	ret = RsSendWr(phyId, rdevIndex, 44444, &wr, &rs_wr_info);
+	ret = RsSendWr(phyId, rdevIndex, 44444, &wr, &rsWrInfo);
 	EXPECT_INT_NE(ret, 0);
 
 	wr.bufNum = MAX_SGE_NUM + 1;
-	ret = RsSendWr(phyId, rdevIndex, qpn, &wr, &rs_wr_info);
+	ret = RsSendWr(phyId, rdevIndex, qpn, &wr, &rsWrInfo);
 	EXPECT_INT_NE(ret, 0);
 	wr.bufNum =  2;
 
 	list[0].len = 2147483649;
     list[1].len = 2147483649;
-	ret = RsSendWr(phyId, rdevIndex, qpn, &wr, &rs_wr_info);
+	ret = RsSendWr(phyId, rdevIndex, qpn, &wr, &rsWrInfo);
 	EXPECT_INT_NE(ret, 0);
 
 	list[0].len = RS_TEST_MEM_SIZE;
 	list[1].len = RS_TEST_MEM_SIZE;
 	/* addr error, cannot find mrcb */
 	list[0].addr = 5555;
-	ret = RsSendWr(phyId, rdevIndex, qpn, &wr, &rs_wr_info);
+	ret = RsSendWr(phyId, rdevIndex, qpn, &wr, &rsWrInfo);
 	EXPECT_INT_NE(ret, 0);
 	list[0].addr = addr;
 
 	/* addr error, cannot find remote mrcb */
 	wr.dstAddr = 5555;
-	ret = RsSendWr(phyId, rdevIndex, qpn, &wr, &rs_wr_info);
+	ret = RsSendWr(phyId, rdevIndex, qpn, &wr, &rsWrInfo);
 	EXPECT_INT_NE(ret, 0);
 	wr.dstAddr = addr2;
 
@@ -2859,46 +2859,46 @@ void tc_rs_send_wr()
 	free(addr2);
 
 	/* +++++Resource Free+++++ */
-	ret = tc_rs_sock_qp_destroy(fd, qpn, fd2, qpn2);
+	ret = TcRsSockQpDestroy(fd, qpn, fd2, qpn2);
 	EXPECT_INT_EQ(ret, 0);
 
 	return;
 }
 
-void tc_rs_dfx()
+void TcRsDfx()
 {
 	int ret;
 	uint32_t qpn, qpn2;
 	int fd, fd2;
-	struct RsQpCb qp_cb_4;
+	struct RsQpCb qpCb4;
 
 	/* +++++Resource Prepare+++++ */
-	ret = tc_rs_sock_qp_create(&fd, &qpn, &fd2, &qpn2);
+	ret = TcRsSockQpCreate(&fd, &qpn, &fd2, &qpn2);
 
 	/* +++++Resource Free+++++ */
-	ret = tc_rs_sock_qp_destroy(fd, qpn, fd2, qpn2);
+	ret = TcRsSockQpDestroy(fd, qpn, fd2, qpn2);
 	EXPECT_INT_EQ(ret, 0);
 
 	return;
 }
 
-void tc_rs_white_list()
+void TcRsWhiteList()
 {
 	int ret;
-	int try_num = 10;
+	int tryNum = 10;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen;
 	struct SocketConnectInfo conn;
 	struct SocketConnectInfo conn1;
 
-	struct RsSocketCloseInfoT sock_close;
-	struct RsSocketCloseInfoT sock_close1;
+	struct RsSocketCloseInfoT sockClose;
+	struct RsSocketCloseInfoT sockClose1;
 
-	struct SocketFdData socket_info;
-	struct SocketFdData socket_info1;
-    struct SocketWlistInfoT white_list;
-    struct SocketWlistInfoT white_list1;
-    u32 server_ip = inet_addr("127.0.0.1");
+	struct SocketFdData socketInfo;
+	struct SocketFdData socketInfo1;
+    struct SocketWlistInfoT whiteList;
+    struct SocketWlistInfoT whiteList1;
+    u32 serverIp = inet_addr("127.0.0.1");
 
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 0;
@@ -2928,43 +2928,43 @@ void tc_rs_white_list()
 	strcpy(conn1.tag, "2345");
 	conn1.port = 18888;
     sleep(1);
-    white_list.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-    white_list.connLimit = 1;
-    strcpy(white_list.tag, "LinkCheck");
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = server_ip;
-    RsSocketWhiteListAdd(rdev_info, &white_list, 1);
+    whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+    whiteList.connLimit = 1;
+    strcpy(whiteList.tag, "LinkCheck");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = serverIp;
+    RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);
 
-    white_list1.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-    white_list1.connLimit = 1;
-    strcpy(white_list1.tag, "2345");
-    RsSocketWhiteListAdd(rdev_info, &white_list1, 1);
+    whiteList1.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+    whiteList1.connLimit = 1;
+    strcpy(whiteList1.tag, "2345");
+    RsSocketWhiteListAdd(rdevInfo, &whiteList1, 1);
 
-    socket_info.phyId = 0;
-	socket_info.family = AF_INET;
- 	socket_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info.tag, "LinkCheck");
-	try_num = 10;
+    socketInfo.phyId = 0;
+	socketInfo.family = AF_INET;
+ 	socketInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo.tag, "LinkCheck");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info, 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo, 1);
         usleep(30000);
-	} while (ret != 1 && try_num--);
-	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n", __func__, socket_info.fd, socket_info.status);
+	} while (ret != 1 && tryNum--);
+	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n", __func__, socketInfo.fd, socketInfo.status);
 
-    RsSocketWhiteListDel(rdev_info, &white_list, 1);
-    RsSocketWhiteListDel(rdev_info, &white_list1, 1);
-	sock_close.fd = socket_info.fd;
-	ret = RsSocketBatchClose(0, &sock_close, 1);
+    RsSocketWhiteListDel(rdevInfo, &whiteList, 1);
+    RsSocketWhiteListDel(rdevInfo, &whiteList1, 1);
+	sockClose.fd = socketInfo.fd;
+	ret = RsSocketBatchClose(0, &sockClose, 1);
 
-	sock_close1.fd = socket_info1.fd;
+	sockClose1.fd = socketInfo1.fd;
 
 	listen.port = 18888;
 	ret = RsSocketListenStop(&listen, 1);
 
-	ret = RsSocketDeinit(rdev_info);
+	ret = RsSocketDeinit(rdevInfo);
 	EXPECT_INT_EQ(ret, 0);
 
 	ret = RsDeinit(&cfg);
@@ -2973,22 +2973,22 @@ void tc_rs_white_list()
 	return;
 }
 
-void tc_rs_ssl_test1()
+void TcRsSslTest1()
 {
     int ret;
-	int try_num = 10;
-    uint32_t dev_id = 0;
+	int tryNum = 10;
+    uint32_t devId = 0;
     int flag = 0; /* RC */
     uint32_t qpn, qpn2;
     int i;
     struct RsInitConfig cfg = {0};
     struct SocketListenInfo listen[2] = {0};
     struct SocketConnectInfo conn[2] = {0};
-    struct RsSocketCloseInfoT sock_close[2] = {0};
-   struct SocketFdData socket_info[3] = {0};
-    struct SocketWlistInfoT white_list;
-    white_list.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-    white_list.connLimit = 1;
+    struct RsSocketCloseInfoT sockClose[2] = {0};
+   struct SocketFdData socketInfo[3] = {0};
+    struct SocketWlistInfoT whiteList;
+    whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+    whiteList.connLimit = 1;
 	uint32_t sslEnable = 1;
 
 	ret = RsGetSslEnable(NULL);
@@ -3008,56 +3008,56 @@ void tc_rs_ssl_test1()
 
     /* pridata tls */
     struct rs_cb rscb = {0};
-    struct RsSecPara rs_para = {0};
-    struct tls_cert_mng_info mng_info = {0};
+    struct RsSecPara rsPara = {0};
+    struct tls_cert_mng_info mngInfo = {0};
 
-    mng_info.work_key_len = 10;
-    mng_info.ky_len = 512;
-    mng_info.ky_enc_len = 1678;
-    mng_info.pwd_enc_len = 15;
-    mng_info.pwd_len = 16;
+    mngInfo.work_key_len = 10;
+    mngInfo.ky_len = 512;
+    mngInfo.ky_enc_len = 1678;
+    mngInfo.pwd_enc_len = 15;
+    mngInfo.pwd_len = 16;
 
-    ret = rs_get_pridata(&rscb, &rs_para, &mng_info);
+    ret = rs_get_pridata(&rscb, &rsPara, &mngInfo);
     EXPECT_INT_EQ(ret, 0);
 
     mocker(dev_read_flash, 10, -1);
-    ret = rs_get_pridata(&rscb, &rs_para, &mng_info);
+    ret = rs_get_pridata(&rscb, &rsPara, &mngInfo);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 
     mocker(kmc_dec_data, 10, -1);
-    ret = rs_get_pridata(&rscb, &rs_para, &mng_info);
+    ret = rs_get_pridata(&rscb, &rsPara, &mngInfo);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 
     mocker(crypto_decrypt_with_aes_gcm, 10, -1);
-    ret = rs_get_pridata(&rscb, &rs_para, &mng_info);
+    ret = rs_get_pridata(&rscb, &rsPara, &mngInfo);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 
     mocker(crypto_gen_key_with_pbkdf2, 10, -1);
-    ret = rs_get_pridata(&rscb, &rs_para, &mng_info);
+    ret = rs_get_pridata(&rscb, &rsPara, &mngInfo);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 
     mocker((stub_fn_t)memset_s, 10, 1);
-    ret = rs_get_pridata(&rscb, &rs_para, &mng_info);
+    ret = rs_get_pridata(&rscb, &rsPara, &mngInfo);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 
     mocker((stub_fn_t)memset_s, 10, -1);
-    ret = rs_get_pridata(&rscb, &rs_para, &mng_info);
+    ret = rs_get_pridata(&rscb, &rsPara, &mngInfo);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 
     /* tls pridata end */
 
-	struct rs_cb *tag_rs_cb = NULL;
-	ret = RsGetRsCb(cfg.chipId, &tag_rs_cb);
-	tag_rs_cb->sslEnable = 1;
-	struct RsConnInfo tag_conn = {0};
-	tag_conn.connfd = -1;
-	RsSocketTagSync(&tag_conn);
+	struct rs_cb *tagRsCb = NULL;
+	ret = RsGetRsCb(cfg.chipId, &tagRsCb);
+	tagRsCb->sslEnable = 1;
+	struct RsConnInfo tagConn = {0};
+	tagConn.connfd = -1;
+	RsSocketTagSync(&tagConn);
 
     listen[0].phyId = 0;
 	listen[0].family = AF_INET;
@@ -3065,12 +3065,12 @@ void tc_rs_ssl_test1()
 	listen[0].port = 26666;
     ret = RsSocketListenStart(&listen[0], 1);
 
-    strcpy(white_list.tag, "1234");
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
-    RsSocketWhiteListAdd(rdev_info, &white_list, 1);
+    strcpy(whiteList.tag, "1234");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
+    RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);
 
     conn[0].phyId = 0;
 	conn[0].family = AF_INET;
@@ -3082,38 +3082,38 @@ void tc_rs_ssl_test1()
 	usleep(SLEEP_TIME);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
         usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
 	usleep(SLEEP_TIME);
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
         usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
 	usleep(SLEEP_TIME);
 
 	rs_ut_msg("++++++++++++++ RS QP PREPARE DONE ++++++++++++++\n");
 
-	ret = RsSocketDeinit(rdev_info);
+	ret = RsSocketDeinit(rdevInfo);
 	EXPECT_INT_EQ(ret, 0);
 
     ret = RsDeinit(&cfg);
@@ -3122,14 +3122,14 @@ void tc_rs_ssl_test1()
     return;
 }
 
-extern int RsFillIfaddrInfos(struct IfaddrInfo ifaddr_infos[], unsigned int *num, unsigned int phyId);
-extern int RsFillIfaddrInfosV2(struct InterfaceInfo interface_infos[], unsigned int *num, unsigned int phyId);
+extern int RsFillIfaddrInfos(struct IfaddrInfo ifaddrInfos[], unsigned int *num, unsigned int phyId);
+extern int RsFillIfaddrInfosV2(struct InterfaceInfo interfaceInfos[], unsigned int *num, unsigned int phyId);
 extern enum RsHardwareType RsGetDeviceType(unsigned int phyId);
 extern int RsCheckDstInterface(unsigned int phyId, const char *ifaName, enum RsHardwareType type, bool isAll);
 extern int snprintf_s(char *strDest, size_t destMax, size_t count, const char *format, ...);
-extern int RsFillIfnum(unsigned int phyId, bool is_all, unsigned int *num, unsigned int is_peer);
+extern int RsFillIfnum(unsigned int phyId, bool isAll, unsigned int *num, unsigned int isPeer);
 
-void tc_rs_get_interface_version()
+void TcRsGetInterfaceVersion()
 {
 	int version;
 	int ret = RsGetInterfaceVersion(0, NULL);
@@ -3143,60 +3143,60 @@ void tc_rs_get_interface_version()
     EXPECT_INT_EQ(ret, 0);
 }
 
-int stub_dl_hal_get_device_info(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value)
+int StubDlHalGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value)
 {
 	*value = 0x10;
 	return 0;
 }
 
-int stub_dl_hal_get_device_info_pod(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value)
+int StubDlHalGetDeviceInfoPod(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value)
 {
 	*value = 0x30;
 	return 0;
 }
 
-int stub_dl_hal_get_device_info_pod_16p(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value)
+int StubDlHalGetDeviceInfoPod16p(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value)
 {
 	*value = 0x50;
 	return 0;
 }
 
-void tc_rs_get_ifaddrs()
+void TcRsGetIfaddrs()
 {
 	DlHalInit();
 	gRsCb = malloc(sizeof(struct rs_cb));
 	gRsCb->hccpMode = 1;
 	int ret;
 	int phyId = 0;
-	unsigned int ifaddr_num = 4;
-	struct IfaddrInfo ifaddr_infos[4] = {0};
-	bool is_all = false;
+	unsigned int ifaddrNum = 4;
+	struct IfaddrInfo ifaddrInfos[4] = {0};
+	bool isAll = false;
 
-	ret = RsGetIfaddrs(ifaddr_infos, &ifaddr_num, phyId);
+	ret = RsGetIfaddrs(ifaddrInfos, &ifaddrNum, phyId);
 	EXPECT_INT_EQ(ret, 0);
 
 	mocker((stub_fn_t)RsFillIfaddrInfos, 1, 1);
-	ret = RsGetIfaddrs(ifaddr_infos, &ifaddr_num, phyId);
+	ret = RsGetIfaddrs(ifaddrInfos, &ifaddrNum, phyId);
 	EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
 
-	ret = RsGetIfaddrs(NULL, &ifaddr_num, phyId);
+	ret = RsGetIfaddrs(NULL, &ifaddrNum, phyId);
 	EXPECT_INT_EQ(ret, -EINVAL);
 
-	ret = RsGetIfaddrs(ifaddr_infos, &ifaddr_num, 129);
+	ret = RsGetIfaddrs(ifaddrInfos, &ifaddrNum, 129);
 	EXPECT_INT_EQ(ret, -EINVAL);
 
 	mocker((stub_fn_t)RsGetDeviceType, 1, 2);
-	ret = RsFillIfaddrInfos(ifaddr_infos, &ifaddr_num, phyId);
+	ret = RsFillIfaddrInfos(ifaddrInfos, &ifaddrNum, phyId);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
-	mocker_invoke((stub_fn_t)DlHalGetDeviceInfo, stub_dl_hal_get_device_info_pod, 10);
+	mocker_invoke((stub_fn_t)DlHalGetDeviceInfo, StubDlHalGetDeviceInfoPod, 10);
 	ret = RsGetDeviceType(0);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
-	mocker_invoke((stub_fn_t)DlHalGetDeviceInfo, stub_dl_hal_get_device_info_pod_16p, 10);
+	mocker_invoke((stub_fn_t)DlHalGetDeviceInfo, StubDlHalGetDeviceInfoPod16p, 10);
 	ret = RsGetDeviceType(0);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
@@ -3206,7 +3206,7 @@ void tc_rs_get_ifaddrs()
 	EXPECT_INT_EQ(ret, 3);
 	mocker_clean();
 
-	mocker_invoke((stub_fn_t)DlHalGetDeviceInfo, stub_dl_hal_get_device_info, 10);
+	mocker_invoke((stub_fn_t)DlHalGetDeviceInfo, StubDlHalGetDeviceInfo, 10);
 	ret = RsGetDeviceType(0);
 	EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
@@ -3217,38 +3217,38 @@ void tc_rs_get_ifaddrs()
 	EXPECT_INT_EQ(ret, 1);
 
 	mocker((stub_fn_t)getifaddrs, 1, -1);
-	ret = RsFillIfaddrInfos(ifaddr_infos, &ifaddr_num, phyId);
+	ret = RsFillIfaddrInfos(ifaddrInfos, &ifaddrNum, phyId);
 	EXPECT_INT_EQ(ret, -ESYSFUNC);
 	mocker_clean();
 
 	mocker((stub_fn_t)RsCheckDstInterface, 1, -1);
-	ret = RsFillIfaddrInfos(ifaddr_infos, &ifaddr_num, phyId);
+	ret = RsFillIfaddrInfos(ifaddrInfos, &ifaddrNum, phyId);
 	EXPECT_INT_EQ(ret, -EAGAIN);
 	mocker_clean();
 
-	ifaddr_num = 0;
-	ret = RsFillIfaddrInfos(ifaddr_infos, &ifaddr_num, phyId);
+	ifaddrNum = 0;
+	ret = RsFillIfaddrInfos(ifaddrInfos, &ifaddrNum, phyId);
 
-	ret = RsCheckDstInterface(phyId, "eth0", 1, is_all);
+	ret = RsCheckDstInterface(phyId, "eth0", 1, isAll);
 	EXPECT_INT_EQ(ret, 1);
 
 	mocker((stub_fn_t)strncmp, 2, 2);
-	ret = RsCheckDstInterface(phyId, "eth0", 1, is_all);
+	ret = RsCheckDstInterface(phyId, "eth0", 1, isAll);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)snprintf_s, 2, -1);
-	ret = RsCheckDstInterface(phyId, "eth0", 0, is_all);
+	ret = RsCheckDstInterface(phyId, "eth0", 0, isAll);
 	EXPECT_INT_EQ(ret, -EAGAIN);
 	mocker_clean();
 
 	mocker((stub_fn_t)snprintf_s, 2, 2);
-	ret = RsCheckDstInterface(phyId, "bond0", 0, is_all);
+	ret = RsCheckDstInterface(phyId, "bond0", 0, isAll);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)snprintf_s, 2, -1);
-	ret = RsCheckDstInterface(phyId, "bond0", 0, is_all);
+	ret = RsCheckDstInterface(phyId, "bond0", 0, isAll);
 	EXPECT_INT_EQ(ret, -EAGAIN);
 	mocker_clean();
 
@@ -3263,32 +3263,32 @@ enum {
 	IFF_RUNNING = 1 << 6,
 };
 
-int stub_getifaddrs(struct ifaddrs **ifap)
+int StubGetifaddrs(struct ifaddrs **ifap)
 {
 	*ifap = malloc(sizeof(struct ifaddrs));
 	if (*ifap == NULL)
 		return -ENOMEM;
 	memset(*ifap, 0, sizeof(struct ifaddrs));
 
-	struct sockaddr_in *sa_addr = malloc(sizeof(struct sockaddr_in));
-	if (sa_addr == NULL)
+	struct sockaddr_in *saAddr = malloc(sizeof(struct sockaddr_in));
+	if (saAddr == NULL)
 		return -ENOMEM;
-	memset(sa_addr, 0, sizeof(struct sockaddr_in));
+	memset(saAddr, 0, sizeof(struct sockaddr_in));
 
-	struct sockaddr_in *sa_netmask = malloc(sizeof(struct sockaddr_in));
-	if (sa_netmask == NULL)
+	struct sockaddr_in *saNetmask = malloc(sizeof(struct sockaddr_in));
+	if (saNetmask == NULL)
 		return -ENOMEM;
-	memset(sa_netmask, 0, sizeof(struct sockaddr_in));
+	memset(saNetmask, 0, sizeof(struct sockaddr_in));
 
-	sa_addr->sin_family = AF_INET;
-	sa_addr->sin_port = 0;
-	inet_pton(AF_INET, "192.168.100.50", &(sa_addr->sin_addr));
+	saAddr->sin_family = AF_INET;
+	saAddr->sin_port = 0;
+	inet_pton(AF_INET, "192.168.100.50", &(saAddr->sin_addr));
 
-	sa_netmask->sin_family = AF_INET;
-	sa_netmask->sin_port = 0;
-	inet_pton(AF_INET, "255.255.255.0", &(sa_netmask->sin_addr));
-	(*ifap)->ifa_addr = (struct sockaddr *)sa_addr;
-	(*ifap)->ifa_netmask = (struct sockaddr *)sa_netmask;
+	saNetmask->sin_family = AF_INET;
+	saNetmask->sin_port = 0;
+	inet_pton(AF_INET, "255.255.255.0", &(saNetmask->sin_addr));
+	(*ifap)->ifa_addr = (struct sockaddr *)saAddr;
+	(*ifap)->ifa_netmask = (struct sockaddr *)saNetmask;
 
 	(*ifap)->ifa_next = NULL;
 	(*ifap)->ifa_name = "eth0";
@@ -3297,77 +3297,77 @@ int stub_getifaddrs(struct ifaddrs **ifap)
 	return 0;
 }
 
-void stub_freeifaddrs(struct ifaddrs *ifa)
+void StubFreeifaddrs(struct ifaddrs *ifa)
 {
 	if (!ifa) return;
-	if (ifa->ifa_next) stub_freeifaddrs(ifa->ifa_next);
+	if (ifa->ifa_next) StubFreeifaddrs(ifa->ifa_next);
 	if (ifa->ifa_addr) free(ifa->ifa_addr);
 	if (ifa->ifa_netmask) free(ifa->ifa_netmask);
 	if (ifa->ifa_ifu.ifu_broadaddr) free(ifa->ifa_ifu.ifu_broadaddr);
 	free(ifa);
 }
 
-void tc_rs_get_ifaddrs_v2()
+void TcRsGetIfaddrsV2()
 {
 	DlHalInit();
 	gRsCb = malloc(sizeof(struct rs_cb));
 	gRsCb->hccpMode = 1;
 	int ret;
 	int phyId = 0;
-	unsigned int ifaddr_num = 4;
-	struct InterfaceInfo interface_infos[4] = {0};
-	bool is_all = false;
+	unsigned int ifaddrNum = 4;
+	struct InterfaceInfo interfaceInfos[4] = {0};
+	bool isAll = false;
 
-	ret = RsGetIfaddrsV2(interface_infos, &ifaddr_num, phyId, is_all);
+	ret = RsGetIfaddrsV2(interfaceInfos, &ifaddrNum, phyId, isAll);
 	EXPECT_INT_EQ(ret, 0);
 
 	mocker((stub_fn_t)RsFillIfaddrInfosV2, 1, 1);
-	ret = RsGetIfaddrsV2(interface_infos, &ifaddr_num, phyId, is_all);
+	ret = RsGetIfaddrsV2(interfaceInfos, &ifaddrNum, phyId, isAll);
 	EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
 
-	ret = RsGetIfaddrsV2(NULL, &ifaddr_num, phyId, 0);
+	ret = RsGetIfaddrsV2(NULL, &ifaddrNum, phyId, 0);
 	EXPECT_INT_EQ(ret, -EINVAL);
 
-	ret = RsGetIfaddrsV2(interface_infos, &ifaddr_num, 129, is_all);
+	ret = RsGetIfaddrsV2(interfaceInfos, &ifaddrNum, 129, isAll);
 	EXPECT_INT_EQ(ret, -EINVAL);
 
-	ifaddr_num = 1;
+	ifaddrNum = 1;
 	mocker((stub_fn_t)RsGetDeviceType, 1, 2);
-	mocker_invoke(getifaddrs, stub_getifaddrs, 10);
-	mocker_invoke(freeifaddrs, stub_freeifaddrs, 10);
-	ret = RsFillIfaddrInfosV2(interface_infos, &ifaddr_num, phyId);
+	mocker_invoke(getifaddrs, StubGetifaddrs, 10);
+	mocker_invoke(freeifaddrs, StubFreeifaddrs, 10);
+	ret = RsFillIfaddrInfosV2(interfaceInfos, &ifaddrNum, phyId);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
-	mocker_invoke((stub_fn_t)DlHalGetDeviceInfo, stub_dl_hal_get_device_info_pod, 10);
+	mocker_invoke((stub_fn_t)DlHalGetDeviceInfo, StubDlHalGetDeviceInfoPod, 10);
 	ret = RsGetDeviceType(0);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)getifaddrs, 1, -1);
-	ret = RsFillIfaddrInfosV2(interface_infos, &ifaddr_num, phyId);
+	ret = RsFillIfaddrInfosV2(interfaceInfos, &ifaddrNum, phyId);
 	EXPECT_INT_EQ(ret, -ESYSFUNC);
 	mocker_clean();
 
 	mocker((stub_fn_t)RsCheckDstInterface, 1, -1);
-	ret = RsFillIfaddrInfosV2(interface_infos, &ifaddr_num, phyId);
+	ret = RsFillIfaddrInfosV2(interfaceInfos, &ifaddrNum, phyId);
 	EXPECT_INT_EQ(ret, -EAGAIN);
 	mocker_clean();
 
-	ifaddr_num = 0;
-	ret = RsFillIfaddrInfosV2(interface_infos, &ifaddr_num, phyId);
+	ifaddrNum = 0;
+	ret = RsFillIfaddrInfosV2(interfaceInfos, &ifaddrNum, phyId);
 
-	ret = RsCheckDstInterface(phyId, "eth0", 1, is_all);
+	ret = RsCheckDstInterface(phyId, "eth0", 1, isAll);
 	EXPECT_INT_EQ(ret, 1);
 
 	mocker((stub_fn_t)strncmp, 2, 2);
-	ret = RsCheckDstInterface(phyId, "eth0", 1, is_all);
+	ret = RsCheckDstInterface(phyId, "eth0", 1, isAll);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)snprintf_s, 2, -1);
-	ret = RsCheckDstInterface(phyId, "eth0", 0, is_all);
+	ret = RsCheckDstInterface(phyId, "eth0", 0, isAll);
 	EXPECT_INT_EQ(ret, -EAGAIN);
 	mocker_clean();
 	free(gRsCb);
@@ -3376,30 +3376,30 @@ void tc_rs_get_ifaddrs_v2()
 	return;
 }
 
-void tc_rs_peer_get_ifaddrs()
+void TcRsPeerGetIfaddrs()
 {
 	int ret;
 	int phyId = 0;
-	unsigned int ifaddr_num = 1000;
-	unsigned int if_num = 1000;
-	struct InterfaceInfo ifaddr_infos[1000] = {0};
+	unsigned int ifaddrNum = 1000;
+	unsigned int ifNum = 1000;
+	struct InterfaceInfo ifaddrInfos[1000] = {0};
 	struct RsInitConfig cfg = {0};
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RS INIT, ret:%d !\n", ret);
 
-	ret = RsPeerGetIfnum(phyId, &if_num);
+	ret = RsPeerGetIfnum(phyId, &ifNum);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsPeerGetIfaddrs(&ifaddr_infos, &ifaddr_num, phyId);
+	ret = RsPeerGetIfaddrs(&ifaddrInfos, &ifaddrNum, phyId);
 	EXPECT_INT_EQ(ret, 0);
-	EXPECT_INT_EQ(if_num, ifaddr_num);
+	EXPECT_INT_EQ(ifNum, ifaddrNum);
 
 	ret = RsDeinit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 }
 
-void tc_rs_get_ifnum()
+void TcRsGetIfnum()
 {
 	DlHalInit();
 	gRsCb = malloc(sizeof(struct rs_cb));
@@ -3407,26 +3407,26 @@ void tc_rs_get_ifnum()
 	int ret;
 	int phyId = 0;
 	unsigned int ifnum = 0;
-	bool is_all = false;
+	bool isAll = false;
 
-	ret = RsGetIfnum(phyId, is_all, &ifnum);
+	ret = RsGetIfnum(phyId, isAll, &ifnum);
 	EXPECT_INT_EQ(ret, 0);
 
 	mocker((stub_fn_t)RsFillIfnum, 1, 1);
-	ret = RsGetIfnum(phyId, is_all, &ifnum);
+	ret = RsGetIfnum(phyId, isAll, &ifnum);
 	EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
 
-	ret = RsGetIfnum(phyId, is_all, NULL);
+	ret = RsGetIfnum(phyId, isAll, NULL);
 	EXPECT_INT_EQ(ret, -EINVAL);
 
 	mocker((stub_fn_t)getifaddrs, 1, -1);
-	ret = RsFillIfnum(phyId, is_all, &ifnum, 1);
+	ret = RsFillIfnum(phyId, isAll, &ifnum, 1);
 	EXPECT_INT_EQ(ret, -ESYSFUNC);
 	mocker_clean();
 
 	mocker((stub_fn_t)RsCheckDstInterface, 1, -1);
-	ret = RsFillIfnum(phyId, is_all, &ifnum, 0);
+	ret = RsFillIfnum(phyId, isAll, &ifnum, 0);
 	EXPECT_INT_EQ(ret, -EAGAIN);
 	mocker_clean();
 
@@ -3436,7 +3436,7 @@ void tc_rs_get_ifnum()
 	return;
 }
 
-void tc_rs_get_cur_time()
+void TcRsGetCurTime()
 {
 	struct timeval time;
 	mocker(gettimeofday, 20, 1);
@@ -3456,110 +3456,110 @@ void tc_RsRdev2rdevCb()
 	return;
 }
 
-void tc_rs_compare_ip_gid()
+void TcRsCompareIpGid()
 {
-	struct rdev rdev_info;
+	struct rdev rdevInfo;
 	union ibv_gid gid;
-	rdev_info.family = 10;
-	int ret = RsCompareIpGid(rdev_info,  &gid);
+	rdevInfo.family = 10;
+	int ret = RsCompareIpGid(rdevInfo,  &gid);
 	EXPECT_INT_EQ(ret, -ENODEV);
 
     mocker(memcmp, 20, 0);
-	ret = RsCompareIpGid(rdev_info,  &gid);
+	ret = RsCompareIpGid(rdevInfo,  &gid);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 	return;
 }
 
-void tc_rs_query_gid()
+void TcRsQueryGid()
 {
-	struct ibv_context ib_ctx_tmp;
+	struct ibv_context ibCtxTmp;
 	struct RsRdevCb rdevCb;
-	struct rdev rdev_info;
-	uint8_t ib_port = 1;
-	int gid_idx;
+	struct rdev rdevInfo;
+	uint8_t ibPort = 1;
+	int gidIdx;
 	int ret;
 
 	mocker(ibv_query_port, 20, 1);
-	ret = RsQueryGid(rdev_info, &ib_ctx_tmp, ib_port, &gid_idx);
+	ret = RsQueryGid(rdevInfo, &ibCtxTmp, ibPort, &gidIdx);
 	EXPECT_INT_EQ(ret, -EOPENSRC);
 	mocker_clean();
 
 	mocker(ibv_query_gid_type, 20, 1);
-	ret = RsQueryGid(rdev_info, &ib_ctx_tmp, ib_port, &gid_idx);
+	ret = RsQueryGid(rdevInfo, &ibCtxTmp, ibPort, &gidIdx);
 	EXPECT_INT_EQ(ret, -EOPENSRC);
 	mocker_clean();
 
 	mocker(ibv_query_gid, 20, 1);
-	ret = RsQueryGid(rdev_info, &ib_ctx_tmp, ib_port, &gid_idx);
+	ret = RsQueryGid(rdevInfo, &ibCtxTmp, ibPort, &gidIdx);
 	EXPECT_INT_EQ(ret, -EOPENSRC);
 	mocker_clean();
 
 	mocker(RsCompareIpGid, 20, 1);
-	RsQueryGid(rdev_info, &ib_ctx_tmp, ib_port, &gid_idx);
+	RsQueryGid(rdevInfo, &ibCtxTmp, ibPort, &gidIdx);
 	mocker_clean();
 	return;
 }
 
-void tc_rs_get_host_rdev_index()
+void TcRsGetHostRdevIndex()
 {
 	struct RsRdevCb rdevCb = {0};
-	struct rdev rdev_info = {0};
-	struct rs_cb rs_cb = {0};
+	struct rdev rdevInfo = {0};
+	struct rs_cb rsCb = {0};
 	int rdevIndex = 0;
 	int ret;
 
 	rdevCb.devList = ibv_get_device_list(&(rdevCb.devName));
-	rdevCb.rs_cb = &rs_cb;
+	rdevCb.rsCb = &rsCb;
 	mocker((stub_fn_t)pthread_mutex_lock, 20, 0);
 	mocker((stub_fn_t)pthread_mutex_unlock, 20, 0);
 	mocker(RsIbvGetDeviceName, 20, "910B");
 	mocker(RsConvertIpAddr, 20, -EINVAL);
-	ret = RsGetHostRdevIndex(rdev_info, &rdevCb, &rdevIndex, 0);
+	ret = RsGetHostRdevIndex(rdevInfo, &rdevCb, &rdevIndex, 0);
 	EXPECT_INT_EQ(ret, -EINVAL);
 	mocker_clean();
 }
 
-void tc_rs_get_ib_ctx_and_rdev_index()
+void TcRsGetIbCtxAndRdevIndex()
 {
-	struct rdev rdev_info = {0};
+	struct rdev rdevInfo = {0};
 	int rdevIndex = 0;
 	struct RsRdevCb rdevCb = {0};
 	int ret;
 
 	rdevCb.devList = ibv_get_device_list(&(rdevCb.devName));
 	mocker(ibv_open_device, 20, NULL);
-	ret = RsGetIbCtxAndRdevIndex(rdev_info, &rdevCb, &rdevIndex);
+	ret = RsGetIbCtxAndRdevIndex(rdevInfo, &rdevCb, &rdevIndex);
     EXPECT_INT_EQ(ret, -ENODEV);
 	mocker_clean();
 
 	mocker(RsQueryGid, 20, -EEXIST);
-	ret = RsGetIbCtxAndRdevIndex(rdev_info, &rdevCb, &rdevIndex);
+	ret = RsGetIbCtxAndRdevIndex(rdevInfo, &rdevCb, &rdevIndex);
     EXPECT_INT_EQ(ret, -EEXIST);
 	mocker_clean();
 
 	mocker(RsQueryGid, 20, 1);
-	ret = RsGetIbCtxAndRdevIndex(rdev_info, &rdevCb, &rdevIndex);
+	ret = RsGetIbCtxAndRdevIndex(rdevInfo, &rdevCb, &rdevIndex);
     EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
 	return;
 }
 
-void tc_rs_rdev_cb_init()
+void TcRsRdevCbInit()
 {
-	struct rdev rdev_info = {0};
-	struct rs_cb rs_cb;
+	struct rdev rdevInfo = {0};
+	struct rs_cb rsCb;
 	struct RsRdevCb rdevCb = {0};
 	int rdevIndex;
 	mocker(RsInetNtop, 20, 0);
 	mocker(pthread_mutex_init, 20, 1);
-	int ret = RsRdevCbInit(rdev_info, &rdevCb, &rs_cb, &rdevIndex);
+	int ret = RsRdevCbInit(rdevInfo, &rdevCb, &rsCb, &rdevIndex);
 	EXPECT_INT_EQ(ret, -ESYSFUNC);
 	mocker_clean();
 
 	mocker(RsInetNtop, 20, 0);
 	mocker(RsGetIbCtxAndRdevIndex, 20, 1);
-	ret = RsRdevCbInit(rdev_info, &rdevCb, &rs_cb, &rdevIndex);
+	ret = RsRdevCbInit(rdevInfo, &rdevCb, &rsCb, &rdevIndex);
 	EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
 
@@ -3567,7 +3567,7 @@ void tc_rs_rdev_cb_init()
 	mocker(RsGetIbCtxAndRdevIndex, 20, 0);
 	mocker(RsGetSqDepthAndQpMaxNum, 20, 1);
 	mocker(RsRoceUnmmapAiDbReg, 20, 1);
-	ret = RsRdevCbInit(rdev_info, &rdevCb, &rs_cb, &rdevIndex);
+	ret = RsRdevCbInit(rdevInfo, &rdevCb, &rsCb, &rdevIndex);
 	EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
 
@@ -3576,7 +3576,7 @@ void tc_rs_rdev_cb_init()
 	mocker(RsGetSqDepthAndQpMaxNum, 20, 0);
 	mocker(RsRoceUnmmapAiDbReg, 20, 0);
     mocker(RsSetupPdAndNotify, 20, 1);
-	ret = RsRdevCbInit(rdev_info, &rdevCb, &rs_cb, &rdevIndex);
+	ret = RsRdevCbInit(rdevInfo, &rdevCb, &rsCb, &rdevIndex);
 	EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
 
@@ -3584,7 +3584,7 @@ void tc_rs_rdev_cb_init()
 	mocker(RsGetIbCtxAndRdevIndex, 20, 0);
 	mocker(RsDrvQueryNotifyAndAllocPd, 20, 1);
 	mocker(ibv_close_device, 20, 1);
-	ret = RsRdevCbInit(rdev_info, &rdevCb, &rs_cb, &rdevIndex);
+	ret = RsRdevCbInit(rdevInfo, &rdevCb, &rsCb, &rdevIndex);
 	EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
 
@@ -3594,15 +3594,15 @@ void tc_rs_rdev_cb_init()
 	mocker(RsDrvRegNotifyMr, 20, 1);
 	mocker(ibv_dealloc_pd, 20, 1);
 	mocker(ibv_close_device, 20, 1);
-	ret = RsRdevCbInit(rdev_info, &rdevCb, &rs_cb, &rdevIndex);
+	ret = RsRdevCbInit(rdevInfo, &rdevCb, &rsCb, &rdevIndex);
 	EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
 	return;
 }
 
-void tc_rs_rdev_init()
+void TcRsRdevInit()
 {
-	struct rdev rdev_info;
+	struct rdev rdevInfo;
 	int rdevIndex;
 	int ret;
 	mocker(RsGetRsCb, 20, 0);
@@ -3610,24 +3610,24 @@ void tc_rs_rdev_init()
 
 	mocker(RsGetRsCb, 20, 0);
 	mocker(calloc, 20, NULL);
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, -ENOMEM);
 	mocker_clean();
 
 	mocker(ibv_get_device_list, 20, NULL);
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, -EINVAL);
 	mocker_clean();
 
 	mocker(RsApiInit, 1, -EINVAL);
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, -EINVAL);
 	mocker_clean();
 
 	return;
 }
 
-void tc_rs_ssl_free()
+void TcRsSslFree()
 {
 	struct rs_cb rscb = {0};
 	struct RsCertSkidSubjectCb *skidSubjectCb = (struct RsCertSkidSubjectCb *)malloc(sizeof(struct RsCertSkidSubjectCb));
@@ -3643,7 +3643,7 @@ void tc_rs_ssl_free()
 	return;
 }
 
-void tc_rs_drv_connect()
+void TcRsDrvConnect()
 {
 	gRsCb = malloc(sizeof(struct rs_cb));
 	gRsCb->hccpMode = 1;
@@ -3655,7 +3655,7 @@ void tc_rs_drv_connect()
 	return;
 }
 
-void tc_rs_listen_invalid_port()
+void TcRsListenInvalidPort()
 {
 	int ret;
 	struct SocketListenInfo listen[2] = {0};
@@ -3672,14 +3672,14 @@ void tc_rs_listen_invalid_port()
 	return;
 }
 
-void tc_rs_qpn2qpcb()
+void TcRsQpn2qpcb()
 {
-	struct RsQpCb *qp_cb;
-	RsQpn2qpcb(1, 1, 1, &qp_cb);
+	struct RsQpCb *qpCb;
+	RsQpn2qpcb(1, 1, 1, &qpCb);
 	return;
 }
 
-void tc_rs_ssl_deinit()
+void TcRsSslDeinit()
 {
 	struct rs_cb rscb;
 	rscb.sslEnable = 1;
@@ -3690,7 +3690,7 @@ void tc_rs_ssl_deinit()
 	return;
 }
 
-void tc_rs_tls_inner_enable()
+void Tcrs_tls_inner_enable()
 {
 	struct rs_cb rscb;
 	rscb.sslEnable = 1;
@@ -3701,7 +3701,7 @@ void tc_rs_tls_inner_enable()
 	return;
 }
 
-void tc_rs_ssl_inner_init()
+void TcRsSslInnerInit()
 {
 	struct rs_cb rscb = {0};
 	mocker(SSL_CTX_new, 20, NULL);
@@ -3717,7 +3717,7 @@ void tc_rs_ssl_inner_init()
 	return;
 }
 
-void tc_rs_ssl_ca_ky_init()
+void TcRsSslCaKyInit()
 {
 	struct rs_cb rscb = {0};
 	rscb.serverSslCtx = SSL_CTX_new(TLS_server_method());
@@ -3781,306 +3781,306 @@ void tc_rs_ssl_ca_ky_init()
 	return;
 }
 
-void tc_rs_ssl_crl_init()
+void Tcrs_ssl_crl_init()
 {
-	SSL_CTX ssl_ctx;
+	SSL_CTX sslCtx;
 	struct rs_cb rscb;
-	struct tls_cert_mng_info mng_info;
+	struct tls_cert_mng_info mngInfo;
 	int ret;
 
 	mocker(rs_ssl_get_crl_data, 20, 0);
 	mocker(SSL_CTX_get_cert_store, 20, NULL);
-	ret = rs_ssl_crl_init(&ssl_ctx, &rscb, &mng_info);
+	ret = rs_ssl_crl_init(&sslCtx, &rscb, &mngInfo);
     EXPECT_INT_EQ(-EFAULT, ret);
 	mocker_clean();
 
 	mocker(rs_ssl_get_crl_data, 20, 0);
 	mocker(SSL_CTX_get_cert_store, 20, 1);
 	mocker(X509_STORE_set_flags, 20, 0);
-	ret = rs_ssl_crl_init(&ssl_ctx, &rscb, &mng_info);
+	ret = rs_ssl_crl_init(&sslCtx, &rscb, &mngInfo);
 	EXPECT_INT_EQ(-EFAULT, ret);
 	mocker_clean();
 
 	mocker(rs_ssl_get_crl_data, 20, 0);
 	mocker(SSL_CTX_get_cert_store, 20, 1);
 	mocker(X509_STORE_add_crl, 20, 0);
-	ret = rs_ssl_crl_init(&ssl_ctx, &rscb, &mng_info);
+	ret = rs_ssl_crl_init(&sslCtx, &rscb, &mngInfo);
 	EXPECT_INT_EQ(-EFAULT, ret);
 	mocker_clean();
 
 	mocker(rs_ssl_get_crl_data, 20, 2);
-	ret = rs_ssl_crl_init(&ssl_ctx, &rscb, &mng_info);
+	ret = rs_ssl_crl_init(&sslCtx, &rscb, &mngInfo);
 	EXPECT_INT_EQ(2, ret);
 	mocker_clean();
 	return;
 }
 
-void tc_rs_check_pridata()
+void Tcrs_check_pridata()
 {
-	SSL_CTX ssl_ctx;
+	SSL_CTX sslCtx;
 	struct rs_cb rscb;
-	struct tls_cert_mng_info mng_info;
+	struct tls_cert_mng_info mngInfo;
 	int ret;
 	mocker(rs_get_pk, 20, 0);
 	mocker(SSL_CTX_use_PrivateKey, 20, 0);
-	rs_check_pridata(&ssl_ctx, &rscb, &mng_info);
+	rs_check_pridata(&sslCtx, &rscb, &mngInfo);
 
 	mocker_clean();
 
 	mocker(rs_get_pk, 20, 0);
 	mocker(SSL_CTX_use_PrivateKey, 20, 1);
 	mocker(SSL_CTX_check_private_key, 20, 0);
-	ret = rs_check_pridata(&ssl_ctx, &rscb, &mng_info);
+	ret = rs_check_pridata(&sslCtx, &rscb, &mngInfo);
 	mocker_clean();
 
 	mocker(rs_get_pk, 20, 0);
 	mocker(SSL_CTX_use_PrivateKey, 20, 1);
 	mocker(SSL_CTX_check_private_key, 20, 1);
-	ret = rs_check_pridata(&ssl_ctx, &rscb, &mng_info);
+	ret = rs_check_pridata(&sslCtx, &rscb, &mngInfo);
 	return;
 }
 
-void tc_rs_ssl_load_ca()
+void Tcrs_ssl_load_ca()
 {
-	SSL_CTX ssl_ctx;
+	SSL_CTX sslCtx;
 	struct rs_cb rscb;
-	struct tls_cert_mng_info mng_info;
+	struct tls_cert_mng_info mngInfo;
 	int ret;
 
 	mocker(NetCommGetSelfHome, 20, 1);
-	ret = rs_ssl_load_ca(&ssl_ctx, &rscb, &mng_info);
+	ret = rs_ssl_load_ca(&sslCtx, &rscb, &mngInfo);
 	EXPECT_INT_EQ(1, ret);
 	mocker_clean();
 
 	mocker(rs_ssl_get_ca_data, 20, 1);
-	ret = rs_ssl_load_ca(&ssl_ctx, &rscb, &mng_info);
+	ret = rs_ssl_load_ca(&sslCtx, &rscb, &mngInfo);
     EXPECT_INT_EQ(1, ret);
 	mocker_clean();
 
 	mocker(rs_ssl_get_ca_data, 20, 0);
 	mocker(SSL_CTX_load_verify_locations, 20, 0);
-	ret = rs_ssl_load_ca(&ssl_ctx, &rscb, &mng_info);
+	ret = rs_ssl_load_ca(&sslCtx, &rscb, &mngInfo);
 	mocker_clean();
 
 	mocker(rs_ssl_get_ca_data, 20, 0);
 	mocker(SSL_CTX_load_verify_locations, 20, 1);
 	mocker(SSL_CTX_use_certificate_chain_file, 20, 0);
-	ret = rs_ssl_load_ca(&ssl_ctx, &rscb, &mng_info);
+	ret = rs_ssl_load_ca(&sslCtx, &rscb, &mngInfo);
 	mocker_clean();
 
 	mocker(rs_ssl_get_ca_data, 20, 0);
 	mocker(SSL_CTX_load_verify_locations, 20, 1);
 	mocker(SSL_CTX_use_certificate_chain_file, 20, 1);
 	mocker(rs_remove_certs, 20, 1);
-	ret = rs_ssl_load_ca(&ssl_ctx, &rscb, &mng_info);
+	ret = rs_ssl_load_ca(&sslCtx, &rscb, &mngInfo);
 	mocker_clean();
 
 	return;
 }
 
-void tc_rs_ssl_get_ca_data()
+void Tcrs_ssl_get_ca_data()
 {
 	int ret;
-	char end_file;
-	char ca_file;
+	char endFile;
+	char caFile;
 	struct rs_cb rscb = {0};
-	struct tls_cert_mng_info mng_info = {0};
+	struct tls_cert_mng_info mngInfo = {0};
 
 	mocker(calloc, 20, NULL);
-	ret = rs_ssl_get_ca_data(&rscb, &end_file, &ca_file, &mng_info);
+	ret = rs_ssl_get_ca_data(&rscb, &endFile, &caFile, &mngInfo);
 	EXPECT_INT_EQ(-ENOMEM, ret);
 	mocker_clean();
 
 	mocker(rs_ssl_get_cert, 10, -1);
-	ret = rs_ssl_get_ca_data(&rscb, &end_file, &ca_file, &mng_info);
+	ret = rs_ssl_get_ca_data(&rscb, &endFile, &caFile, &mngInfo);
 	EXPECT_INT_EQ(ret, -EACCES);
 	mocker_clean();
 
 	mocker(rs_ssl_get_cert, 10, 0);
 	mocker(rs_ssl_put_certs, 10, -1);
-	ret = rs_ssl_get_ca_data(&rscb, &end_file, &ca_file, &mng_info);
+	ret = rs_ssl_get_ca_data(&rscb, &endFile, &caFile, &mngInfo);
 	EXPECT_INT_EQ(ret, -EACCES);
 	mocker_clean();
 
 	mocker(rs_ssl_get_cert, 10, 0);
 	mocker(rs_ssl_put_certs, 10, 0);
 	mocker(memset_s, 10, 0);
-	ret = rs_ssl_get_ca_data(&rscb, &end_file, &ca_file, &mng_info);
+	ret = rs_ssl_get_ca_data(&rscb, &endFile, &caFile, &mngInfo);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
 	return;
 }
 
-void tc_rs_ssl_get_crl_data_1()
+void Tcrs_ssl_get_crl_data1()
 {
 	struct rs_cb rscb;
 	FILE *fp = NULL;
-	struct tls_cert_mng_info mng_info;
+	struct tls_cert_mng_info mngInfo;
 	X509_CRL *crl = NULL;
 	int ret;
 	mocker(tls_get_user_config, 20, -2);
-	ret = rs_ssl_get_crl_data(&rscb, fp, &mng_info, &crl);
+	ret = rs_ssl_get_crl_data(&rscb, fp, &mngInfo, &crl);
 	EXPECT_INT_EQ(-ENODEV, ret);
 	return;
 }
 
-void tc_rs_ssl_get_ca_data_1()
+void Tcrs_ssl_get_ca_data1()
 {
 	struct rs_cb rscb;
-	char end_file;
-	char ca_file;
-	struct tls_cert_mng_info mng_info;
+	char endFile;
+	char caFile;
+	struct tls_cert_mng_info mngInfo;
 	int ret;
 	mocker(tls_get_user_config, 20, -2);
-	ret = rs_ssl_get_ca_data(&rscb, &end_file, &ca_file, &mng_info);
+	ret = rs_ssl_get_ca_data(&rscb, &endFile, &caFile, &mngInfo);
 	EXPECT_INT_EQ(-EACCES, ret);
 	mocker_clean();
 	return;
 }
 
-void tc_rs_ssl_put_certs()
+void Tcrs_ssl_put_certs()
 {
 	int ret;
 	struct rs_cb rscb;
-	struct CertFile file_name;
-	struct tls_cert_mng_info mng_info;
+	struct CertFile fileName;
+	struct tls_cert_mng_info mngInfo;
 	struct RsCerts certs;
-	struct tls_ca_new_certs new_certs[RS_SSL_NEW_CERT_CB_NUM];
+	struct tls_ca_new_certs newCerts[RS_SSL_NEW_CERT_CB_NUM];
 
 	mocker(rs_ssl_check_mng_and_cert_chain, 20, -1);
-	ret = rs_ssl_put_certs(&rscb, &mng_info, &certs, &new_certs, &file_name);
+	ret = rs_ssl_put_certs(&rscb, &mngInfo, &certs, &newCerts, &fileName);
 	EXPECT_INT_EQ(-1, ret);
 	mocker_clean();
 
 	mocker(rs_ssl_check_mng_and_cert_chain, 20, 0);
 	mocker(rs_ssl_put_cert_end_pem, 20, -1);
-	ret = rs_ssl_put_certs(&rscb, &mng_info, &certs, &new_certs, &file_name);
+	ret = rs_ssl_put_certs(&rscb, &mngInfo, &certs, &newCerts, &fileName);
 	EXPECT_INT_EQ(-1, ret);
 	mocker_clean();
 
 	mocker(rs_ssl_check_mng_and_cert_chain, 20, 0);
 	mocker(rs_ssl_put_cert_end_pem, 20, 0);
 	mocker(rs_ssl_put_cert_ca_pem, 20, -1);
-	ret = rs_ssl_put_certs(&rscb, &mng_info, &certs, &new_certs, &file_name);
+	ret = rs_ssl_put_certs(&rscb, &mngInfo, &certs, &newCerts, &fileName);
 	EXPECT_INT_EQ(-1, ret);
 	mocker_clean();
 	return;
 }
 
-void tc_rs_ssl_check_cert_chain()
+void Tcrs_ssl_check_cert_chain()
 {
 	int ret;
-	struct tls_cert_mng_info mng_info = {0};
+	struct tls_cert_mng_info mngInfo = {0};
 	struct RsCerts certs = {0};
-	struct tls_ca_new_certs new_certs = {{0}};
+	struct tls_ca_new_certs newCerts = {{0}};
 
 	mocker(X509_STORE_new, 20, NULL);
-	ret = rs_ssl_check_cert_chain(&mng_info, &certs, &new_certs);
+	ret = rs_ssl_check_cert_chain(&mngInfo, &certs, &newCerts);
 	EXPECT_INT_EQ(ret, -ENOMEM);
 	mocker_clean();
 
 	mocker(X509_STORE_CTX_new, 20, NULL);
-	ret = rs_ssl_check_cert_chain(&mng_info, &certs, &new_certs);
+	ret = rs_ssl_check_cert_chain(&mngInfo, &certs, &newCerts);
 	EXPECT_INT_EQ(ret, -ENOMEM);
 	mocker_clean();
 
 	mocker(rs_ssl_verify_cert_chain, 20, -1);
-	ret = rs_ssl_check_cert_chain(&mng_info, &certs, &new_certs);
+	ret = rs_ssl_check_cert_chain(&mngInfo, &certs, &newCerts);
 	EXPECT_INT_EQ(ret, -1);
 	mocker_clean();
 
 	mocker(rs_ssl_verify_cert_chain, 20, 0);
-	ret = rs_ssl_check_cert_chain(&mng_info, &certs, &new_certs);
+	ret = rs_ssl_check_cert_chain(&mngInfo, &certs, &newCerts);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
 	return;
 }
 
-void tc_rs_ssl_skid_get_from_chain()
+void Tcrs_ssl_skid_get_from_chain()
 {
-	struct tls_cert_mng_info mng_info;
+	struct tls_cert_mng_info mngInfo;
 	struct RsCerts certs;
 	struct rs_cb rscb;
-	struct tls_ca_new_certs new_certs[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
+	struct tls_ca_new_certs newCerts[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
 	rscb.skidSubjectCb = NULL;
 
 	mocker(calloc, 20, NULL);
-	int ret = rs_ssl_skid_get_from_chain(&rscb, &mng_info, &certs, &new_certs);
+	int ret = rs_ssl_skid_get_from_chain(&rscb, &mngInfo, &certs, &newCerts);
 	EXPECT_INT_EQ(-ENOMEM, ret);
 	mocker_clean();
 
-	mng_info.cert_count = 2;
+	mngInfo.cert_count = 2;
 	mocker(tls_load_cert, 20, NULL);
-	ret = rs_ssl_skid_get_from_chain(&rscb, &mng_info, &certs, &new_certs);
+	ret = rs_ssl_skid_get_from_chain(&rscb, &mngInfo, &certs, &newCerts);
 	EXPECT_INT_EQ(-22, ret);
 	mocker_clean();
 
 	mocker(rs_ssl_skids_subjects_get, 20, -1);
     mocker(memset_s, 20, -1);
-	ret = rs_ssl_skid_get_from_chain(&rscb, &mng_info, &certs, &new_certs);
+	ret = rs_ssl_skid_get_from_chain(&rscb, &mngInfo, &certs, &newCerts);
 	EXPECT_INT_EQ(ret, -1);
 	mocker_clean();
 
 	return;
 }
 
-void tc_rs_ssl_verify_cert_chain()
+void Tcrs_ssl_verify_cert_chain()
 {
 	int ret;
 	X509_STORE_CTX ctx;
 	X509_STORE store;
 	struct RsCerts certs = {0};
-	struct tls_cert_mng_info mng_info = {0};
-	struct tls_ca_new_certs new_certs[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
+	struct tls_cert_mng_info mngInfo = {0};
+	struct tls_ca_new_certs newCerts[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
 
-	new_certs[0].ncert_count = 2;
+	newCerts[0].ncert_count = 2;
 	mocker(tls_load_cert, 20, NULL);
-	ret = rs_ssl_verify_cert_chain(&ctx, &store, &certs, &mng_info, &new_certs);
+	ret = rs_ssl_verify_cert_chain(&ctx, &store, &certs, &mngInfo, &newCerts);
 	EXPECT_INT_EQ(ret, -22);
 	mocker_clean();
 
-	new_certs[0].ncert_count = 0;
+	newCerts[0].ncert_count = 0;
 	mocker(tls_load_cert, 20, NULL);
-	ret = rs_ssl_verify_cert_chain(&ctx, &store, &certs, &mng_info, &new_certs);
+	ret = rs_ssl_verify_cert_chain(&ctx, &store, &certs, &mngInfo, &newCerts);
 	EXPECT_INT_EQ(ret, -22);
 	mocker_clean();
 
 	return;
 }
 
-void tc_tls_get_cert_chain()
+void Tctls_get_cert_chain()
 {
 	X509_STORE store;
 	struct RsCerts certs;
-	struct tls_cert_mng_info mng_info;
-	mng_info.cert_count = 2;
+	struct tls_cert_mng_info mngInfo;
+	mngInfo.cert_count = 2;
 	mocker(tls_load_cert, 20 ,NULL);
 
-	int ret = tls_get_cert_chain(&store, &certs, &mng_info);
+	int ret = tls_get_cert_chain(&store, &certs, &mngInfo);
 	EXPECT_INT_EQ(-EINVAL, ret);
 	mocker_clean();
 
 	mocker(X509_STORE_add_cert, 20 ,0);
-	ret = tls_get_cert_chain(&store, &certs, &mng_info);
+	ret = tls_get_cert_chain(&store, &certs, &mngInfo);
 	EXPECT_INT_EQ(-EINVAL, ret);
 	mocker_clean();
 	return;
 }
 
-void tc_rs_ssl_get_leaf_cert()
+void Tcrs_ssl_get_leaf_cert()
 {
 	struct RsCerts certs;
-	X509 *leaf_cert;
+	X509 *leafCert;
 	mocker(tls_load_cert, 20, NULL);
-	int ret = rs_ssl_get_leaf_cert(&certs, &leaf_cert);
+	int ret = rs_ssl_get_leaf_cert(&certs, &leafCert);
 	EXPECT_INT_EQ(-EINVAL, ret);
 	mocker_clean();
 	return;
 }
 
-void tc_tls_load_cert()
+void Tctls_load_cert()
 {
 	char inbuf;
 	mocker(BIO_new_mem_buf, 20, NULL);
@@ -4107,7 +4107,7 @@ struct SSL {
     int fd;
 };
 
-void tc_rs_tls_peer_cert_verify()
+void Tcrs_tls_peer_cert_verify()
 {
 	SSL ssl;
 	int ret = rs_tls_peer_cert_verify(&ssl, &gRsCb);
@@ -4125,13 +4125,13 @@ void tc_rs_tls_peer_cert_verify()
 	return;
 }
 
-void tc_rs_ssl_err_string()
+void Tcrs_ssl_err_string()
 {
 	rs_ssl_err_string(1, 1);
 	return;
 }
 
-void tc_rs_server_send_wlist_check_result()
+void TcRsServerSendWlistCheckResult()
 {
 	struct RsConnInfo conn = {0};
 	int ret;
@@ -4147,7 +4147,7 @@ void tc_rs_server_send_wlist_check_result()
 	gRsCb = NULL;
 }
 
-void tc_rs_drv_ssl_bind_fd()
+void TcRsDrvSslBindFd()
 {
 	struct RsConnInfo conn;
 	RsDrvSslBindFd(&conn, 1);
@@ -4156,41 +4156,41 @@ void tc_rs_drv_ssl_bind_fd()
 
 void tc_rs_socket_fill_wlist_by_phyID()
 {
-	struct SocketWlistInfoT white_list_node = {0};
-	struct RsConnInfo rs_conn = {0};
+	struct SocketWlistInfoT whiteListNode = {0};
+	struct RsConnInfo rsConn = {0};
 
 	mocker(RsSocketIsVnicIp, 1, 1);
-	rs_conn.clientIp.family = AF_INET;
-	rs_socket_fill_wlist_by_phyID(0, &white_list_node, &rs_conn);
+	rsConn.clientIp.family = AF_INET;
+	rs_socket_fill_wlist_by_phyID(0, &whiteListNode, &rsConn);
 	mocker_clean();
 	return;
 }
 
-void tc_rs_get_vnic_ip()
+void TcRsGetVnicIp()
 {
 	unsigned int phyId = 0;
-	unsigned int vnic_ip = 0;
+	unsigned int vnicIp = 0;
 	int ret;
 
-	ret = RsGetVnicIp(phyId, &vnic_ip);
+	ret = RsGetVnicIp(phyId, &vnicIp);
 	EXPECT_INT_EQ(0, ret);
 }
 
-int RsDev2rscb_stub(uint32_t dev_id, struct rs_cb **rs_cb, bool init_flag)
+int RsDev2rscb_stub(uint32_t devId, struct rs_cb **rsCb, bool initFlag)
 {
-	struct rs_cb rs_cb_tmp = {0};
-	*rs_cb = &rs_cb_tmp;
+	struct rs_cb rsCbTmp = {0};
+	*rsCb = &rsCbTmp;
 	return 0;
 }
-void tc_rs_notify_cfg_set()
+void TcRsNotifyCfgSet()
 {
-	unsigned int dev_id = 0;
+	unsigned int devId = 0;
 	unsigned long long va = 0x10000;
 	unsigned long long size = 8192;
 	int ret;
 	mocker(rsGetLocalDevIDByHostDevID, 1, 0);
 	mocker_invoke(RsDev2rscb, RsDev2rscb_stub, 1);
-	ret = RsNotifyCfgSet(dev_id, va, size);
+	ret = RsNotifyCfgSet(devId, va, size);
 	EXPECT_INT_EQ(0, ret);
 	mocker_clean();
 
@@ -4200,22 +4200,22 @@ void tc_rs_notify_cfg_set()
 	size = 8192;
 	va = 0x10000;
 	mocker(rsGetLocalDevIDByHostDevID, 1, -1);
-	ret = RsNotifyCfgSet(dev_id, va, size);
+	ret = RsNotifyCfgSet(devId, va, size);
 	EXPECT_INT_EQ(-1, ret);
 	mocker_clean();
 
-	ret = RsNotifyCfgSet(dev_id, va, size);
+	ret = RsNotifyCfgSet(devId, va, size);
 }
 
-void tc_rs_notify_cfg_get()
+void TcRsNotifyCfgGet()
 {
-	unsigned int dev_id = 0;
+	unsigned int devId = 0;
 	unsigned long long va = 0;
 	unsigned long long size = 0;
 	int ret;
 	mocker(rsGetLocalDevIDByHostDevID, 1, 0);
 	mocker_invoke(RsDev2rscb, RsDev2rscb_stub, 1);
-	ret = RsNotifyCfgGet(dev_id, &va, &size);
+	ret = RsNotifyCfgGet(devId, &va, &size);
 	EXPECT_INT_EQ(0, ret);
 	mocker_clean();
 
@@ -4223,44 +4223,44 @@ void tc_rs_notify_cfg_get()
 	EXPECT_INT_EQ(-EINVAL, ret);
 
 	mocker(rsGetLocalDevIDByHostDevID, 1, -1);
-	ret = RsNotifyCfgGet(dev_id, &va, &size);
+	ret = RsNotifyCfgGet(devId, &va, &size);
 	EXPECT_INT_EQ(-1, ret);
 	mocker_clean();
 
-	ret = RsNotifyCfgGet(dev_id, &va, &size);
+	ret = RsNotifyCfgGet(devId, &va, &size);
 
 }
 
-void tc_crypto_decrypt_with_aes_gcm()
+void TcCryptoDecryptWithAesGcm()
 {
 	return;
 }
 
-void tc_rs_drv_qp_normal_fail()
+void TcRsDrvQpNormalFail()
 {
-	struct RsQpCb qp_cb = {0};
+	struct RsQpCb qpCb = {0};
 	struct ibv_qp ibQp = {0};
 	int ret;
-	qp_cb.ibQp = &ibQp;
+	qpCb.ibQp = &ibQp;
 
 	mocker(memset_s, 1, -1);
-	ret = RsDrvQpNormal(&qp_cb, 0);
+	ret = RsDrvQpNormal(&qpCb, 0);
 	EXPECT_INT_EQ(-ESAFEFUNC, ret);
 	mocker_clean();
 
 	mocker_ret((stub_fn_t)memset_s , 0, 1, 1);
-	ret = RsDrvQpNormal(&qp_cb, 0);
+	ret = RsDrvQpNormal(&qpCb, 0);
 	EXPECT_INT_EQ(-ESAFEFUNC, ret);
 	mocker_clean();
 
 	mocker(RsDrvNormalQpCreateInit, 1, -3);
-	ret = RsDrvQpNormal(&qp_cb, 0);
+	ret = RsDrvQpNormal(&qpCb, 0);
 	EXPECT_INT_EQ(-3, ret);
 	mocker_clean();
 
 	mocker(RsDrvNormalQpCreateInit, 1, 0);
 	mocker(RsIbvCreateQp, 1, NULL);
-	ret = RsDrvQpNormal(&qp_cb, 0);
+	ret = RsDrvQpNormal(&qpCb, 0);
 	EXPECT_INT_EQ(-ENOMEM, ret);
 	mocker_clean();
 
@@ -4268,7 +4268,7 @@ void tc_rs_drv_qp_normal_fail()
 	mocker(RsIbvCreateQp, 1, 1);
 	mocker(RsIbvQueryQp, 1, -1);
 	mocker(RsIbvDestroyQp, 1, 0);
-	ret = RsDrvQpNormal(&qp_cb, 0);
+	ret = RsDrvQpNormal(&qpCb, 0);
 	EXPECT_INT_EQ(-EOPENSRC, ret);
 	mocker_clean();
 
@@ -4276,7 +4276,7 @@ void tc_rs_drv_qp_normal_fail()
 	mocker(RsIbvQueryQp, 1, 0);
 	mocker(RsDrvQpInfoRelated, 1, -1);
 	mocker(RsIbvDestroyQp, 1, 0);
-	ret = RsDrvQpNormal(&qp_cb, 0);
+	ret = RsDrvQpNormal(&qpCb, 0);
 	EXPECT_INT_EQ(-1, ret);
 	mocker_clean();
 
@@ -4291,69 +4291,69 @@ void tc_RsApiInit()
 	return;
 }
 
-void tc_rs_recv_wrlist()
+void TcRsRecvWrlist()
 {
 	int ret;
-	struct RsWrlistBaseInfo base_info = {0};
+	struct RsWrlistBaseInfo baseInfo = {0};
 	struct RecvWrlistData wr = {0};
-    unsigned int recv_num = 0;
-	unsigned int complete_num = 0;
-	ret = RsRecvWrlist(base_info, &wr, recv_num, &complete_num);
+    unsigned int recvNum = 0;
+	unsigned int completeNum = 0;
+	ret = RsRecvWrlist(baseInfo, &wr, recvNum, &completeNum);
 	EXPECT_INT_EQ(-EINVAL, ret);
 
-	recv_num = 1;
+	recvNum = 1;
 	mocker(RsQpn2qpcb, 1, -1);
-	ret = RsRecvWrlist(base_info, &wr, recv_num, &complete_num);
+	ret = RsRecvWrlist(baseInfo, &wr, recvNum, &completeNum);
 	EXPECT_INT_EQ(-EACCES, ret);
 	mocker_clean();
 
 	mocker(RsQpn2qpcb, 1, 0);
 	mocker(RsDrvPostRecv, 1, 0);
-	ret = RsRecvWrlist(base_info, &wr, recv_num, &complete_num);
+	ret = RsRecvWrlist(baseInfo, &wr, recvNum, &completeNum);
 	EXPECT_INT_EQ(0, ret);
 	mocker_clean();
 
 	return;
 }
 
-void tc_rs_drv_post_recv()
+void TcRsDrvPostRecv()
 {
 	int ret;
-	struct RsQpCb qp_cb = {0};
+	struct RsQpCb qpCb = {0};
 	struct ibv_qp ibQp = {0};
 	struct RecvWrlistData wr = {0};
-	unsigned int recv_num = 0;
-	unsigned int complete_num = 0;
+	unsigned int recvNum = 0;
+	unsigned int completeNum = 0;
 
-	qp_cb.ibQp = &ibQp;
+	qpCb.ibQp = &ibQp;
 
-	ret = RsDrvPostRecv(&qp_cb, &wr, recv_num, &complete_num);
+	ret = RsDrvPostRecv(&qpCb, &wr, recvNum, &completeNum);
 	EXPECT_INT_EQ(-EINVAL, ret);
 
-	recv_num = 1;
+	recvNum = 1;
 	mocker(RsIbvPostRecv, 1, 0);
-	ret = RsDrvPostRecv(&qp_cb, &wr, recv_num, &complete_num);
+	ret = RsDrvPostRecv(&qpCb, &wr, recvNum, &completeNum);
 	EXPECT_INT_EQ(0, ret);
 	mocker_clean();
 
 	mocker(RsIbvPostRecv, 1, -ENOMEM);
-	ret = RsDrvPostRecv(&qp_cb, &wr, recv_num, &complete_num);
+	ret = RsDrvPostRecv(&qpCb, &wr, recvNum, &completeNum);
 	EXPECT_INT_EQ(0, ret);
 	mocker_clean();
 
 	mocker(RsIbvPostRecv, 1, -1);
-	ret = RsDrvPostRecv(&qp_cb, &wr, recv_num, &complete_num);
+	ret = RsDrvPostRecv(&qpCb, &wr, recvNum, &completeNum);
 	EXPECT_INT_EQ(-1, ret);
 	mocker_clean();
 
 	mocker(calloc, 1, NULL);
-	ret = RsDrvPostRecv(&qp_cb, &wr, recv_num, &complete_num);
+	ret = RsDrvPostRecv(&qpCb, &wr, recvNum, &completeNum);
 	EXPECT_INT_EQ(-ENOSPC, ret);
 	mocker_clean();
 	return;
 }
 
-void tc_rs_drv_reg_notify_mr()
+void TcRsDrvRegNotifyMr()
 {
 	int ret;
 	struct RsRdevCb rdevCb = {0};
@@ -4374,7 +4374,7 @@ void tc_rs_drv_reg_notify_mr()
 	return;
 }
 
-void tc_rs_drv_query_notify_and_alloc_pd()
+void TcRsDrvQueryNotifyAndAllocPd()
 {
 	int ret;
 	struct RsRdevCb rdevCb = {0};
@@ -4389,73 +4389,73 @@ void tc_rs_drv_query_notify_and_alloc_pd()
 	return;
 }
 
-void tc_rs_send_normal_wrlist()
+void TcRsSendNormalWrlist()
 {
 	int ret;
-	struct RsQpCb qp_cb = {0};
-	struct WrInfo wr_list = {0};
-	unsigned int send_num = 1;
-	unsigned int complete_num = 0;
+	struct RsQpCb qpCb = {0};
+	struct WrInfo wrList = {0};
+	unsigned int sendNum = 1;
+	unsigned int completeNum = 0;
 	unsigned int keyFlag = 1;
 
 	mocker(RsIbvPostSend, 1, 0);
-	ret = RsSendNormalWrlist(&qp_cb, &wr_list, send_num, &complete_num, keyFlag);
+	ret = RsSendNormalWrlist(&qpCb, &wrList, sendNum, &completeNum, keyFlag);
 	EXPECT_INT_EQ(0, ret);
 	mocker_clean();
 
-	wr_list.memList.len = 0xffffffff;
-	ret = RsSendNormalWrlist(&qp_cb, &wr_list, send_num, &complete_num, keyFlag);
+	wrList.memList.len = 0xffffffff;
+	ret = RsSendNormalWrlist(&qpCb, &wrList, sendNum, &completeNum, keyFlag);
 	EXPECT_INT_EQ(-EINVAL, ret);
 	return;
 }
 
-void tc_rs_drv_send_exp()
+void TcRsDrvSendExp()
 {
-	struct RsQpCb qp_cb = {0};
-	struct RsMrCb mr_cb = {0};
-	struct RsMrCb rem_mr_cb = {0};
+	struct RsQpCb qpCb = {0};
+	struct RsMrCb mrCb = {0};
+	struct RsMrCb remMrCb = {0};
 	struct SendWr wr = {0};
-	struct SendWrRsp wr_rsp = {0};
+	struct SendWrRsp wrRsp = {0};
 	int ret = 0;
 
 	mocker(RsIbvExpPostSend, 1, 0);
-	qp_cb.qpMode = 2;
-	ret = RsDrvSendExp(&qp_cb, &mr_cb, &rem_mr_cb, &wr, &wr_rsp);
+	qpCb.qpMode = 2;
+	ret = RsDrvSendExp(&qpCb, &mrCb, &remMrCb, &wr, &wrRsp);
 	mocker_clean();
 
 	mocker(RsIbvExpPostSend, 1, 0);
-	qp_cb.qpMode = 1;
-	ret = RsDrvSendExp(&qp_cb, &mr_cb, &rem_mr_cb, &wr, &wr_rsp);
+	qpCb.qpMode = 1;
+	ret = RsDrvSendExp(&qpCb, &mrCb, &remMrCb, &wr, &wrRsp);
 	mocker_clean();
 	return;
 }
 
-void tc_rs_drv_normal_qp_create_init()
+void TcRsDrvNormalQpCreateInit()
 {
-	struct ibv_qp_init_attr qp_init_attr = {0};
-	struct RsQpCb qp_cb = {0};
+	struct ibv_qp_init_attr qpInitAttr = {0};
+	struct RsQpCb qpCb = {0};
 	struct ibv_port_attr attr = {0};
-	struct rs_cb rs_cb = {0};
+	struct rs_cb rsCb = {0};
 	struct RsRdevCb rdevCb = {0};
 	int ret;
-	qp_cb.rdevCb = &rdevCb;
-	qp_cb.rdevCb->rs_cb = &rs_cb;
-	qp_cb.rdevCb->rs_cb->hccpMode == NETWORK_PEER_ONLINE;
+	qpCb.rdevCb = &rdevCb;
+	qpCb.rdevCb->rsCb = &rsCb;
+	qpCb.rdevCb->rsCb->hccpMode == NETWORK_PEER_ONLINE;
 
-	qp_cb.txDepth = 10;
-	qp_cb.rxDepth = 10;
+	qpCb.txDepth = 10;
+	qpCb.rxDepth = 10;
 
 	mocker(memset_s, 10, 0);
-	qp_cb.qpMode = 2;
-	ret = RsDrvNormalQpCreateInit(&qp_init_attr, &qp_cb, &attr);
-	qp_cb.rdevCb->rs_cb->hccpMode == NETWORK_OFFLINE;
-	ret = RsDrvNormalQpCreateInit(&qp_init_attr, &qp_cb, &attr);
+	qpCb.qpMode = 2;
+	ret = RsDrvNormalQpCreateInit(&qpInitAttr, &qpCb, &attr);
+	qpCb.rdevCb->rsCb->hccpMode == NETWORK_OFFLINE;
+	ret = RsDrvNormalQpCreateInit(&qpInitAttr, &qpCb, &attr);
 	mocker_clean();
 
 	return;
 }
 
-void tc_rs_register_mr()
+void TcRsRegisterMr()
 {
 	int ret;
 	unsigned int phyId = 0;
@@ -4470,15 +4470,15 @@ void tc_rs_register_mr()
 	cfg.chipId = 0;
 	cfg.hccpMode = NETWORK_OFFLINE;
 
-	struct RdmaMrRegInfo mr_reg_info = {0};
-	mr_reg_info.addr = 0xabcdef;
-	mr_reg_info.len = RS_TEST_MEM_SIZE;
-	mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
+	struct RdmaMrRegInfo mrRegInfo = {0};
+	mrRegInfo.addr = 0xabcdef;
+	mrRegInfo.len = RS_TEST_MEM_SIZE;
+	mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
 
-	struct RdmaMrRegInfo mr_reg_info1 = {0};
-	mr_reg_info1.addr = 0xabcdef;
-	mr_reg_info1.len = RS_TEST_MEM_SIZE;
-	mr_reg_info1.access = RS_ACCESS_LOCAL_WRITE;
+	struct RdmaMrRegInfo mrRegInfo1 = {0};
+	mrRegInfo1.addr = 0xabcdef;
+	mrRegInfo1.len = RS_TEST_MEM_SIZE;
+	mrRegInfo1.access = RS_ACCESS_LOCAL_WRITE;
 
 	gRsCb = malloc(sizeof(struct rs_cb));
 	struct rs_cb *temPtr = gRsCb;
@@ -4487,28 +4487,28 @@ void tc_rs_register_mr()
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RS INIT, ret:%d !\n", ret);
 
-	struct rdev rdev_info = {0};
-	void *mr_handle = NULL;
-	void *mr_handle1 = NULL;
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	void *mrHandle = NULL;
+	void *mrHandle1 = NULL;
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret =  RsRegisterMr(phyId, rdevIndex, &mr_reg_info, &mr_handle);
+	ret =  RsRegisterMr(phyId, rdevIndex, &mrRegInfo, &mrHandle);
 	EXPECT_INT_EQ(0, ret);
 
-	ret =  RsRegisterMr(1, rdevIndex, &mr_reg_info, &mr_handle);
+	ret =  RsRegisterMr(1, rdevIndex, &mrRegInfo, &mrHandle);
 	EXPECT_INT_NE(0, ret);
 
 	mocker(RsDrvMrReg, 1, NULL);
-	ret =  RsRegisterMr(phyId, rdevIndex, &mr_reg_info1, &mr_handle1);
+	ret =  RsRegisterMr(phyId, rdevIndex, &mrRegInfo1, &mrHandle1);
 	EXPECT_INT_EQ(0, ret);
 	mocker_clean();
 
-	ret =  RsDeregisterMr(mr_handle);
+	ret =  RsDeregisterMr(mrHandle);
 	EXPECT_INT_EQ(0, ret);
 
 	ret =  RsDeregisterMr(NULL);
@@ -4524,31 +4524,31 @@ void tc_rs_register_mr()
 	return;
 }
 
-void tc_rs_epoll_ctl_add()
+void TcRsEpollCtlAdd()
 {
-    struct SocketPeerInfo fd_handle[1];
+    struct SocketPeerInfo fdHandle[1];
     struct RsConnCb connCb = {0};
     int ret;
     struct RsListHead list = {0};
 
-    fd_handle[0].phyId = 0;
-    fd_handle[0].fd = 0;
+    fdHandle[0].phyId = 0;
+    fdHandle[0].fd = 0;
 
     RS_INIT_LIST_HEAD(&list);
     gRsCb = malloc(sizeof(struct rs_cb));
-    gRsCb->fdMap = (const void **)&fd_handle;
+    gRsCb->fdMap = (const void **)&fdHandle;
     gRsCb->connCb = connCb;
     gRsCb->heterogTcpFdList = list;
 
     mocker((stub_fn_t)calloc, 5, NULL);
-    ret = RsEpollCtlAdd((const void *)fd_handle, RA_EPOLLONESHOT);
+    ret = RsEpollCtlAdd((const void *)fdHandle, RA_EPOLLONESHOT);
     EXPECT_INT_EQ(ret, -ENOMEM);
     mocker_clean();
 
-    ret = RsEpollCtlAdd((const void *)fd_handle, RA_EPOLLONESHOT);
+    ret = RsEpollCtlAdd((const void *)fdHandle, RA_EPOLLONESHOT);
     EXPECT_INT_EQ(ret, -1);
 
-    ret = RsEpollCtlAdd((const void *)fd_handle, RA_EPOLLERR);
+    ret = RsEpollCtlAdd((const void *)fdHandle, RA_EPOLLERR);
     EXPECT_INT_EQ(ret, -EINVAL);
 
     free(gRsCb);
@@ -4556,23 +4556,23 @@ void tc_rs_epoll_ctl_add()
     return;
 }
 
-void tc_rs_epoll_ctl_add_01()
+void TcRsEpollCtlAdd01()
 {
-    struct SocketPeerInfo fd_handle[1];
+    struct SocketPeerInfo fdHandle[1];
     struct RsConnCb connCb = {0};
     int ret;
     struct RsListHead list = {0};
 
-    fd_handle[0].phyId = 0;
-    fd_handle[0].fd = 0;
+    fdHandle[0].phyId = 0;
+    fdHandle[0].fd = 0;
 
     RS_INIT_LIST_HEAD(&list);
     gRsCb = malloc(sizeof(struct rs_cb));
-    gRsCb->fdMap = (const void **)&fd_handle;
+    gRsCb->fdMap = (const void **)&fdHandle;
     gRsCb->connCb = connCb;
     gRsCb->heterogTcpFdList = list;
 
-    ret = RsEpollCtlAdd((const void *)fd_handle, RA_EPOLLIN);
+    ret = RsEpollCtlAdd((const void *)fdHandle, RA_EPOLLIN);
     EXPECT_INT_EQ(ret, -1);
 
     free(gRsCb);
@@ -4580,26 +4580,26 @@ void tc_rs_epoll_ctl_add_01()
     return;
 }
 
-void tc_rs_epoll_ctl_add_02()
+void TcRsEpollCtlAdd02()
 {
-    struct SocketPeerInfo fd_handle[1];
+    struct SocketPeerInfo fdHandle[1];
     struct RsConnCb connCb = {0};
     int ret;
     struct RsListHead list = {0};
 
-    fd_handle[0].phyId = 0;
-    fd_handle[0].fd = 0;
+    fdHandle[0].phyId = 0;
+    fdHandle[0].fd = 0;
 
     RS_INIT_LIST_HEAD(&list);
     gRsCb = malloc(sizeof(struct rs_cb));
-    gRsCb->fdMap = (const void **)&fd_handle;
+    gRsCb->fdMap = (const void **)&fdHandle;
     gRsCb->connCb = connCb;
     gRsCb->heterogTcpFdList = list;
     gRsCb->heterogTcpFdList.next = &(gRsCb->heterogTcpFdList);
     gRsCb->heterogTcpFdList.prev = &(gRsCb->heterogTcpFdList);
 
     mocker((stub_fn_t)RsEpollCtl, 5, 0);
-    ret = RsEpollCtlAdd((const void *)fd_handle, RA_EPOLLIN);
+    ret = RsEpollCtlAdd((const void *)fdHandle, RA_EPOLLIN);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
     ret = RsEpollCtlDel(0);
@@ -4608,24 +4608,24 @@ void tc_rs_epoll_ctl_add_02()
     return;
 }
 
-void tc_rs_epoll_ctl_add_03()
+void TcRsEpollCtlAdd03()
 {
-    struct SocketPeerInfo fd_handle[1];
+    struct SocketPeerInfo fdHandle[1];
     struct RsConnCb connCb = {0};
     int ret;
 
-    fd_handle[0].phyId = 0;
-    fd_handle[0].fd = 0;
+    fdHandle[0].phyId = 0;
+    fdHandle[0].fd = 0;
 
     gRsCb = malloc(sizeof(struct rs_cb));
-    gRsCb->fdMap = (const void **)&fd_handle;
+    gRsCb->fdMap = (const void **)&fdHandle;
     gRsCb->connCb = connCb;
     RS_INIT_LIST_HEAD(&gRsCb->heterogTcpFdList);
     gRsCb->heterogTcpFdList.next = &(gRsCb->heterogTcpFdList);
     gRsCb->heterogTcpFdList.prev = &(gRsCb->heterogTcpFdList);
 
     mocker((stub_fn_t)RsEpollCtl, 5, -1);
-    ret = RsEpollCtlAdd((const void *)fd_handle, RA_EPOLLIN);
+    ret = RsEpollCtlAdd((const void *)fdHandle, RA_EPOLLIN);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
     free(gRsCb);
@@ -4633,26 +4633,26 @@ void tc_rs_epoll_ctl_add_03()
     return;
 }
 
-void tc_rs_epoll_ctl_mod()
+void TcRsEpollCtlMod()
 {
-    struct SocketPeerInfo fd_handle[1];
+    struct SocketPeerInfo fdHandle[1];
     struct RsConnCb connCb = {0};
     int ret;
     struct RsListHead list = {0};
 
-    fd_handle[0].phyId = 0;
-    fd_handle[0].fd = 0;
+    fdHandle[0].phyId = 0;
+    fdHandle[0].fd = 0;
 
     RS_INIT_LIST_HEAD(&list);
     gRsCb = malloc(sizeof(struct rs_cb));
-    gRsCb->fdMap = (const void **)&fd_handle;
+    gRsCb->fdMap = (const void **)&fdHandle;
     gRsCb->connCb = connCb;
     gRsCb->heterogTcpFdList = list;
 
-    ret = RsEpollCtlMod((const void *)fd_handle, RA_EPOLLONESHOT);
+    ret = RsEpollCtlMod((const void *)fdHandle, RA_EPOLLONESHOT);
     EXPECT_INT_EQ(ret, -1);
 
-    ret = RsEpollCtlMod((const void *)fd_handle, RA_EPOLLERR);
+    ret = RsEpollCtlMod((const void *)fdHandle, RA_EPOLLERR);
     EXPECT_INT_EQ(ret, -EINVAL);
 
     free(gRsCb);
@@ -4660,23 +4660,23 @@ void tc_rs_epoll_ctl_mod()
     return;
 }
 
-void tc_rs_epoll_ctl_mod_01()
+void TcRsEpollCtlMod01()
 {
-    struct SocketPeerInfo fd_handle[1];
+    struct SocketPeerInfo fdHandle[1];
     struct RsConnCb connCb = {0};
     int ret;
     struct RsListHead list = {0};
 
-    fd_handle[0].phyId = 0;
-    fd_handle[0].fd = 0;
+    fdHandle[0].phyId = 0;
+    fdHandle[0].fd = 0;
 
     RS_INIT_LIST_HEAD(&list);
     gRsCb = malloc(sizeof(struct rs_cb));
-    gRsCb->fdMap = (const void **)&fd_handle;
+    gRsCb->fdMap = (const void **)&fdHandle;
     gRsCb->connCb = connCb;
     gRsCb->heterogTcpFdList = list;
 
-    ret = RsEpollCtlMod((const void *)fd_handle, RA_EPOLLIN);
+    ret = RsEpollCtlMod((const void *)fdHandle, RA_EPOLLIN);
     EXPECT_INT_EQ(ret, -1);
 
     free(gRsCb);
@@ -4684,24 +4684,24 @@ void tc_rs_epoll_ctl_mod_01()
     return;
 }
 
-void tc_rs_epoll_ctl_mod_02()
+void TcRsEpollCtlMod02()
 {
-    struct SocketPeerInfo fd_handle[1];
+    struct SocketPeerInfo fdHandle[1];
     struct RsConnCb connCb = {0};
     int ret;
     struct RsListHead list = {0};
 
-    fd_handle[0].phyId = 0;
-    fd_handle[0].fd = 0;
+    fdHandle[0].phyId = 0;
+    fdHandle[0].fd = 0;
 
     RS_INIT_LIST_HEAD(&list);
     gRsCb = malloc(sizeof(struct rs_cb));
-    gRsCb->fdMap = (const void **)&fd_handle;
+    gRsCb->fdMap = (const void **)&fdHandle;
     gRsCb->connCb = connCb;
     gRsCb->heterogTcpFdList = list;
 
     mocker((stub_fn_t)RsEpollCtl, 5, 0);
-    ret = RsEpollCtlMod((const void *)fd_handle, RA_EPOLLIN);
+    ret = RsEpollCtlMod((const void *)fdHandle, RA_EPOLLIN);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
@@ -4710,23 +4710,23 @@ void tc_rs_epoll_ctl_mod_02()
     return;
 }
 
-void tc_rs_epoll_ctl_mod_03()
+void TcRsEpollCtlMod03()
 {
-    struct SocketPeerInfo fd_handle[1];
+    struct SocketPeerInfo fdHandle[1];
     int ret;
 
-    fd_handle[0].phyId = 0;
-    fd_handle[0].fd = 0;
+    fdHandle[0].phyId = 0;
+    fdHandle[0].fd = 0;
 
     gRsCb = NULL;
 
     mocker((stub_fn_t)RsEpollCtl, 5, 0);
-    ret = RsEpollCtlAdd((const void *)fd_handle, RA_EPOLLIN);
+    ret = RsEpollCtlAdd((const void *)fdHandle, RA_EPOLLIN);
     EXPECT_INT_EQ(ret, -22);
 
     gRsCb = NULL;
 
-    ret = RsEpollCtlMod((const void *)fd_handle, RA_EPOLLIN);
+    ret = RsEpollCtlMod((const void *)fdHandle, RA_EPOLLIN);
     EXPECT_INT_EQ(ret, -22);
 
     gRsCb = NULL;
@@ -4739,7 +4739,7 @@ void tc_rs_epoll_ctl_mod_03()
     return;
 }
 
-void tc_rs_epoll_ctl_del()
+void TcRsEpollCtlDel()
 {
     int ret;
     struct RsListHead list = {0};
@@ -4758,7 +4758,7 @@ void tc_rs_epoll_ctl_del()
     return;
 }
 
-void tc_rs_epoll_ctl_del_01()
+void TcRsEpollCtlDel01()
 {
     int ret;
     struct RsListHead list = {0};
@@ -4780,7 +4780,7 @@ void tc_rs_epoll_ctl_del_01()
     return;
 }
 
-void tc_rs_set_tcp_recv_callback()
+void TcRsSetTcpRecvCallback()
 {
 	(void)RsSetTcpRecvCallback(NULL);
 
@@ -4794,16 +4794,16 @@ void tc_rs_set_tcp_recv_callback()
     return;
 }
 
-void tc_rs_epoll_event_in_handle()
+void TcRsEpollEventInHandle()
 {
     int ret;
-    struct rs_cb rs_cb = {0};
+    struct rs_cb rsCb = {0};
     struct epoll_event events = {0};
-    rs_cb.sslEnable = 1;
+    rsCb.sslEnable = 1;
 
     mocker((stub_fn_t)RsEpollEventListenInHandle, 1, -ENODEV);
     mocker((stub_fn_t)RsEpollEventSslAcceptInHandle, 5, 0);
-    (void)RsEpollEventInHandle(&rs_cb, &events);
+    (void)RsEpollEventInHandle(&rsCb, &events);
     mocker_clean();
 
     return;
@@ -4811,48 +4811,48 @@ void tc_rs_epoll_event_in_handle()
 
 int *stub__errno_locations()
 {
-    static int err_no = 0;
+    static int errNo = 0;
 
-    err_no = EADDRINUSE;
-    return &err_no;
+    errNo = EADDRINUSE;
+    return &errNo;
 }
 
 int *stub__errno_location()
 {
-    static int err_no = 0;
+    static int errNo = 0;
 
-    err_no = EAGAIN;
-    return &err_no;
+    errNo = EAGAIN;
+    return &errNo;
 }
 
-void tc_rs_socket_listen_bind_listen()
+void TcRsSocketListenBindListen()
 {
     int ret;
     struct RsConnCb connCb;
     struct SocketListenInfo conn;
-    struct RsListenInfo listen_info;
+    struct RsListenInfo listenInfo;
     conn.localIp.addr.s_addr = 1;
 
-	ret = RsSocketListenBindListen(-1, &connCb, &conn, &listen_info, 0);
+	ret = RsSocketListenBindListen(-1, &connCb, &conn, &listenInfo, 0);
     EXPECT_INT_EQ(-ESYSFUNC, ret);
 
 	mocker(setsockopt, 20, 0);
 	mocker_invoke(__errno_location, stub__errno_location, 1);
-    ret = RsSocketListenBindListen(-1, &connCb, &conn, &listen_info, 0);
+    ret = RsSocketListenBindListen(-1, &connCb, &conn, &listenInfo, 0);
     EXPECT_INT_EQ(EAGAIN, ret);
     mocker_clean();
 
 	mocker(setsockopt, 20, 0);
     mocker(bind, 20, 0);
 	mocker_invoke(__errno_location, stub__errno_location, 1);
-    ret = RsSocketListenBindListen(-1, &connCb, &conn, &listen_info, 0);
+    ret = RsSocketListenBindListen(-1, &connCb, &conn, &listenInfo, 0);
     EXPECT_INT_EQ(EAGAIN, ret);
     mocker_clean();
 
     mocker(setsockopt, 20, 0);
     mocker(bind, 20, 1);
 	mocker_invoke(__errno_location, stub__errno_location, 1);
-    ret = RsSocketListenBindListen(-1, &connCb, &conn, &listen_info, 0);
+    ret = RsSocketListenBindListen(-1, &connCb, &conn, &listenInfo, 0);
     EXPECT_INT_EQ(EAGAIN, ret);
 	mocker_clean();
 
@@ -4860,7 +4860,7 @@ void tc_rs_socket_listen_bind_listen()
     mocker(bind, 20, 0);
     mocker(listen, 20, 1);
 	mocker_invoke(__errno_location, stub__errno_location, 1);
-    ret = RsSocketListenBindListen(-1, &connCb, &conn, &listen_info, 0);
+    ret = RsSocketListenBindListen(-1, &connCb, &conn, &listenInfo, 0);
     EXPECT_INT_EQ(EAGAIN, ret);
     mocker_clean();
 
@@ -4868,46 +4868,46 @@ void tc_rs_socket_listen_bind_listen()
     mocker(bind, 20, 0);
     mocker(listen, 20, 1);
 	mocker_invoke(__errno_location, stub__errno_locations, 1);
-    ret = RsSocketListenBindListen(-1, &connCb, &conn, &listen_info, 0);
+    ret = RsSocketListenBindListen(-1, &connCb, &conn, &listenInfo, 0);
     EXPECT_INT_EQ(EADDRINUSE, ret);
     mocker_clean();
 }
 
-void tc_rs_epoll_event_in_handle_01()
+void TcRsEpollEventInHandle01()
 {
     int ret;
-    struct rs_cb rs_cb = {0};
+    struct rs_cb rsCb = {0};
     struct epoll_event events = {0};
-    rs_cb.sslEnable = 0;
+    rsCb.sslEnable = 0;
 
     mocker((stub_fn_t)RsEpollEventListenInHandle, 1, -ENODEV);
     mocker((stub_fn_t)RsEpollEventQpMrInHandle, 1, -ENODEV);
     mocker((stub_fn_t)RsEpollEventHeterogTcpRecvInHandle, 5, 0);
-    (void)RsEpollEventInHandle(&rs_cb, &events);
+    (void)RsEpollEventInHandle(&rsCb, &events);
     mocker_clean();
 
     return;
 }
 
-void tc_rs_epoll_tcp_recv()
+void TcRsEpollTcpRecv()
 {
     int ret;
-    struct rs_cb rs_cb = {0};
-    struct SocketPeerInfo fd_handle[1];
+    struct rs_cb rsCb = {0};
+    struct SocketPeerInfo fdHandle[1];
     int callback = 0;
 
-    fd_handle[0].phyId = 0;
-    fd_handle[0].fd = 0;
+    fdHandle[0].phyId = 0;
+    fdHandle[0].fd = 0;
 
     gRsCb = malloc(sizeof(struct rs_cb));
-    rs_cb.fdMap = (const void **)&fd_handle;
+    rsCb.fdMap = (const void **)&fdHandle;
 
-    rs_cb.tcpRecvCallback = RsSetTcpRecvCallback;
-    ret =RsEpollTcpRecv(&rs_cb, 0);
+    rsCb.tcpRecvCallback = RsSetTcpRecvCallback;
+    ret =RsEpollTcpRecv(&rsCb, 0);
     EXPECT_INT_EQ(ret, 0);
 
-    rs_cb.tcpRecvCallback = NULL;
-    ret =RsEpollTcpRecv(&rs_cb, 0);
+    rsCb.tcpRecvCallback = NULL;
+    ret =RsEpollTcpRecv(&rsCb, 0);
     EXPECT_INT_EQ(ret, -EINVAL);
 
     free(gRsCb);
@@ -4915,104 +4915,104 @@ void tc_rs_epoll_tcp_recv()
     return;
 }
 
-void tc_rs_epoll_event_ssl_accept_in_handle()
+void TcRsEpollEventSslAcceptInHandle()
 {
     int ret;
     struct RsListHead list = {0};
-    struct rs_cb *rs_cb = NULL;
+    struct rs_cb *rsCb = NULL;
     struct RsConnCb connCb = {0};
 
     RS_INIT_LIST_HEAD(&list);
 
-    rs_cb = malloc(sizeof(struct rs_cb));
-    rs_cb->connCb = connCb;
-    rs_cb->connCb.serverAcceptList = list;
-    rs_cb->connCb.serverAcceptList.next = &(rs_cb->connCb.serverAcceptList);
-    rs_cb->connCb.serverAcceptList.prev = &(rs_cb->connCb.serverAcceptList);
-    ret = RsEpollEventSslAcceptInHandle(rs_cb, 0);
+    rsCb = malloc(sizeof(struct rs_cb));
+    rsCb->connCb = connCb;
+    rsCb->connCb.serverAcceptList = list;
+    rsCb->connCb.serverAcceptList.next = &(rsCb->connCb.serverAcceptList);
+    rsCb->connCb.serverAcceptList.prev = &(rsCb->connCb.serverAcceptList);
+    ret = RsEpollEventSslAcceptInHandle(rsCb, 0);
     EXPECT_INT_EQ(ret, -ENODEV);
 
-    free(rs_cb);
-    rs_cb = NULL;
+    free(rsCb);
+    rsCb = NULL;
     return;
 }
-struct RsMrCb *g_mr_cb;
-struct ibv_mr *g_ib_mr;
+struct RsMrCb *gMrCb;
+struct ibv_mr *gIbMr;
 
-struct RsMrCb *g_mr_cb;
-struct ibv_mr *g_ib_mr;
+struct RsMrCb *gMrCb;
+struct ibv_mr *gIbMr;
 
-int stub_rs_get_mrcb(struct RsQpCb *qp_cb, uint64_t addr, struct RsMrCb **mr_cb,
-    struct RsListHead *mr_list)
+int StubRsGetMrcb(struct RsQpCb *qpCb, uint64_t addr, struct RsMrCb **mrCb,
+    struct RsListHead *mrList)
 {
-	*mr_cb = g_mr_cb;
+	*mrCb = gMrCb;
 	return 0;
 }
 
-int stub_RsIbvExpPostSend(struct ibv_qp *qp, struct ibv_send_wr *wr, struct ibv_send_wr **bad_wr,
-    struct wr_exp_rsp *exp_rsp)
+int stub_RsIbvExpPostSend(struct ibv_qp *qp, struct ibv_send_wr *wr, struct ibv_send_wr **badWr,
+    struct wr_exp_rsp *expRsp)
 {
-	int wqe_index = 2;
-	exp_rsp->wqe_index = wqe_index;
-	exp_rsp->db_info = 1;
+	int wqeIndex = 2;
+	expRsp->wqe_index = wqeIndex;
+	expRsp->db_info = 1;
 	return 0;
 }
 
-void tc_rs_send_exp_wrlist()
+void TcRsSendExpWrlist()
 {
 	DlHalInit();
-	struct RsQpCb qp_cb = {0};
+	struct RsQpCb qpCb = {0};
 	struct WrInfo wrlist[1];
-	unsigned int send_num = 1;
-	struct SendWrRsp rs_wr_info[1];
-	unsigned int complete_num = 0;
+	unsigned int sendNum = 1;
+	struct SendWrRsp rsWrInfo[1];
+	unsigned int completeNum = 0;
 	struct DbInfo db = {0};
 	struct ibv_qp ibQp = {0};
 	struct WqeInfoT wqeTmp = {0};
-	struct SendWrRsp wr_rsp = {0};
-	struct wr_exp_rsp exp_rsp = {0};
+	struct SendWrRsp wrRsp = {0};
+	struct wr_exp_rsp expRsp = {0};
 
 	int ret;
 
-	g_mr_cb = malloc(sizeof(struct RsMrCb));
-	g_ib_mr = malloc(sizeof(struct ibv_mr));
-	g_mr_cb->ibMr = g_ib_mr;
+	gMrCb = malloc(sizeof(struct RsMrCb));
+	gIbMr = malloc(sizeof(struct ibv_mr));
+	gMrCb->ibMr = gIbMr;
 
 	wrlist[0].memList.len = RS_TEST_MEM_SIZE;
 	wrlist[0].memList.addr = 0x15;
 	wrlist[0].op = 1;
-	qp_cb.sendWrNum = 0;
+	qpCb.sendWrNum = 0;
 	ibQp.qp_num = 1;
-	qp_cb.ibQp= &ibQp;
-	qp_cb.sqIndex = 1;
-	mocker_invoke((stub_fn_t)RsGetMrcb, stub_rs_get_mrcb, 2);
+	qpCb.ibQp= &ibQp;
+	qpCb.sqIndex = 1;
+	mocker_invoke((stub_fn_t)RsGetMrcb, StubRsGetMrcb, 2);
 	mocker_invoke(RsIbvExpPostSend, stub_RsIbvExpPostSend, 1);
-	qp_cb.qpMode = 3;
-	rs_wr_info[0].db = db;
-	rs_wr_info[0].wqeTmp = wqeTmp;
-	ret = RsSendExpWrlist(&qp_cb, &wrlist, send_num, &rs_wr_info, &complete_num);
+	qpCb.qpMode = 3;
+	rsWrInfo[0].db = db;
+	rsWrInfo[0].wqeTmp = wqeTmp;
+	ret = RsSendExpWrlist(&qpCb, &wrlist, sendNum, &rsWrInfo, &completeNum);
 	mocker_clean();
 
-    mocker_invoke((stub_fn_t)RsGetMrcb, stub_rs_get_mrcb, 2);
+    mocker_invoke((stub_fn_t)RsGetMrcb, StubRsGetMrcb, 2);
     mocker(RsIbvExpPostSend, 1, -12);
-    ret = RsSendExpWrlist(&qp_cb, &wrlist, send_num, &rs_wr_info, &complete_num);
+    ret = RsSendExpWrlist(&qpCb, &wrlist, sendNum, &rsWrInfo, &completeNum);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    mocker_invoke((stub_fn_t)RsGetMrcb, stub_rs_get_mrcb, 2);
+    mocker_invoke((stub_fn_t)RsGetMrcb, StubRsGetMrcb, 2);
     mocker(RsIbvExpPostSend, 1, -1);
-    ret = RsSendExpWrlist(&qp_cb, &wrlist, send_num, &rs_wr_info, &complete_num);
+    ret = RsSendExpWrlist(&qpCb, &wrlist, sendNum, &rsWrInfo, &completeNum);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 
-	mocker_invoke((stub_fn_t)RsGetMrcb, stub_rs_get_mrcb, 2);
+	mocker_invoke((stub_fn_t)RsGetMrcb, StubRsGetMrcb, 2);
 	mocker_invoke(RsIbvExpPostSend, stub_RsIbvExpPostSend, 1);
 	wrlist[0].op = 0xf6;
-	ret = RsSendExpWrlist(&qp_cb, &wrlist, send_num, &rs_wr_info, &complete_num);
+	ret = RsSendExpWrlist(&qpCb, &wrlist, sendNum, &rsWrInfo, &completeNum);
 	mocker_clean();
 
-	free(g_ib_mr);
-	free(g_mr_cb);
+	free(gIbMr);
+	free(gMrCb);
 
 	EXPECT_INT_EQ(ret, 0);
 
@@ -5020,16 +5020,16 @@ void tc_rs_send_exp_wrlist()
     return;
 }
 
-int stub_ibv_get_cq_event(struct ibv_comp_channel *channel, struct ibv_cq **cq, void **cq_context)
+int StubIbvGetCqEvent(struct ibv_comp_channel *channel, struct ibv_cq **cq, void **cqContext)
 {
 	*cq = NULL;
 	return 0;
 }
 
-void tc_rs_drv_poll_cq_handle()
+void TcRsDrvPollCqHandle()
 {
 	int ret;
-	uint32_t dev_id = 0;
+	uint32_t devId = 0;
 	uint32_t qpMode = 1;
 	unsigned int rdevIndex = 0;
 	int flag = 0; /* RC */
@@ -5037,74 +5037,74 @@ void tc_rs_drv_poll_cq_handle()
 	struct RsQpResp resp2 = {0};
 	int i;
 	struct RsInitConfig cfg = {0};
-    struct RsQpCb *qp_cb = NULL;
-	struct ibv_cq *ib_send_cq_t, *ib_recv_cq_t;
+    struct RsQpCb *qpCb = NULL;
+	struct ibv_cq *ibSendCqT, *ibRecvCqT;
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 0;
 	cfg.hccpMode = NETWORK_OFFLINE;
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	struct RsQpNorm qp_norm = {0};
-	qp_norm.flag = flag;
-	qp_norm.qpMode = qpMode;
-	qp_norm.isExp = 1;
+	struct RsQpNorm qpNorm = {0};
+	qpNorm.flag = flag;
+	qpNorm.qpMode = qpMode;
+	qpNorm.isExp = 1;
 
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_EQ(ret, 0);
 
-    ret = RsQpn2qpcb(0, rdevIndex, resp.qpn, &qp_cb);
+    ret = RsQpn2qpcb(0, rdevIndex, resp.qpn, &qpCb);
 
-	mocker_invoke((stub_fn_t)ibv_get_cq_event, stub_ibv_get_cq_event, 10);
-	ib_send_cq_t = qp_cb->ibSendCq;
-	qp_cb->ibSendCq = NULL;
+	mocker_invoke((stub_fn_t)ibv_get_cq_event, StubIbvGetCqEvent, 10);
+	ibSendCqT = qpCb->ibSendCq;
+	qpCb->ibSendCq = NULL;
 
 	/* reach end ? */
 	mocker((stub_fn_t)ibv_req_notify_cq, 10, 0);
 	mocker((stub_fn_t)ibv_poll_cq, 10, 0);
-	RsDrvPollCqHandle(qp_cb);
+	RsDrvPollCqHandle(qpCb);
 	mocker_clean();
 
-	mocker_invoke((stub_fn_t)ibv_get_cq_event, stub_ibv_get_cq_event, 10);
+	mocker_invoke((stub_fn_t)ibv_get_cq_event, StubIbvGetCqEvent, 10);
 	mocker((stub_fn_t)ibv_req_notify_cq, 10, 1);
-	RsDrvPollCqHandle(qp_cb);
+	RsDrvPollCqHandle(qpCb);
 	mocker_clean();
 
-	mocker_invoke((stub_fn_t)ibv_get_cq_event, stub_ibv_get_cq_event, 10);
+	mocker_invoke((stub_fn_t)ibv_get_cq_event, StubIbvGetCqEvent, 10);
 	mocker((stub_fn_t)ibv_poll_cq, 10, -1);
-	RsDrvPollCqHandle(qp_cb);
+	RsDrvPollCqHandle(qpCb);
 	mocker_clean();
 
-	mocker_invoke((stub_fn_t)ibv_get_cq_event, stub_ibv_get_cq_event, 10);
+	mocker_invoke((stub_fn_t)ibv_get_cq_event, StubIbvGetCqEvent, 10);
 	mocker((stub_fn_t)ibv_poll_cq, 10, 0);
-	RsDrvPollCqHandle(qp_cb);
+	RsDrvPollCqHandle(qpCb);
 	mocker_clean();
 
-	mocker_invoke((stub_fn_t)ibv_get_cq_event, stub_ibv_get_cq_event, 10);
+	mocker_invoke((stub_fn_t)ibv_get_cq_event, StubIbvGetCqEvent, 10);
 	mocker((stub_fn_t)ibv_poll_cq, 10, -1);
-	RsDrvPollCqHandle(qp_cb);
+	RsDrvPollCqHandle(qpCb);
 	mocker_clean();
 
-	qp_cb->ibSendCq = ib_send_cq_t;
+	qpCb->ibSendCq = ibSendCqT;
 
-	qp_cb->rdevCb->rs_cb->hccpMode = NETWORK_PEER_ONLINE;
-	struct RsCqContext srq_context = {0};
-	qp_cb->srqContext = &srq_context;
+	qpCb->rdevCb->rsCb->hccpMode = NETWORK_PEER_ONLINE;
+	struct RsCqContext srqContext = {0};
+	qpCb->srqContext = &srqContext;
 	mocker((stub_fn_t)RsIbvGetCqEvent, 10, 0);
-	RsDrvPollSrqCqHandle(qp_cb);
+	RsDrvPollSrqCqHandle(qpCb);
 	mocker_clean();
 
-	ret = RsQpDestroy(dev_id, rdevIndex, resp.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, resp.qpn);
 
-	ret = RsRdevDeinit(dev_id, NOTIFY, rdevIndex);
+	ret = RsRdevDeinit(devId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
 	ret = RsDeinit(&cfg);
@@ -5113,40 +5113,40 @@ void tc_rs_drv_poll_cq_handle()
 	return;
 }
 
-void tc_rs_qp_create_with_attrs_v2()
+void TcRsQpCreateWithAttrsV2()
 {
 	int ret;
 	uint32_t phyId = 0;
 	unsigned int rdevIndex = 0;
-	struct RsQpNormWithAttrs  qp_norm = {0};
-	struct RsQpRespWithAttrs qp_resp = {0};
-	qp_norm.isExp = 1;
+	struct RsQpNormWithAttrs  qpNorm = {0};
+	struct RsQpRespWithAttrs qpResp = {0};
+	qpNorm.isExp = 1;
 
-	ret = RsQpCreateWithAttrs(15, rdevIndex, &qp_norm, &qp_resp);
+	ret = RsQpCreateWithAttrs(15, rdevIndex, &qpNorm, &qpResp);
 	EXPECT_INT_NE(ret, 0);
-	ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qp_norm, NULL);
+	ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qpNorm, NULL);
 	EXPECT_INT_NE(ret, 0);
-	ret = RsQpCreateWithAttrs(phyId, rdevIndex, NULL, &qp_resp);
+	ret = RsQpCreateWithAttrs(phyId, rdevIndex, NULL, &qpResp);
 	EXPECT_INT_NE(ret, 0);
-	qp_norm.extAttrs.version = -1;
-	ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qp_norm, &qp_resp);
+	qpNorm.extAttrs.version = -1;
+	ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qpNorm, &qpResp);
 	EXPECT_INT_NE(ret, 0);
-	qp_norm.extAttrs.version = QP_CREATE_WITH_ATTR_VERSION;
-	qp_norm.extAttrs.qpMode = -1;
-	ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qp_norm, &qp_resp);
+	qpNorm.extAttrs.version = QP_CREATE_WITH_ATTR_VERSION;
+	qpNorm.extAttrs.qpMode = -1;
+	ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qpNorm, &qpResp);
 	EXPECT_INT_NE(ret, 0);
-	qp_norm.extAttrs.qpMode = RA_RS_OP_QP_MODE_EXT;
-	ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qp_norm, &qp_resp);
+	qpNorm.extAttrs.qpMode = RA_RS_OP_QP_MODE_EXT;
+	ret = RsQpCreateWithAttrs(phyId, rdevIndex, &qpNorm, &qpResp);
 	EXPECT_INT_NE(ret, 0);
 }
 
-void tc_rs_qp_create_with_attrs()
+void TcRsQpCreateWithAttrs()
 {
-	tc_rs_qp_create_with_attrs_v1();
-	tc_rs_qp_create_with_attrs_v2();
+	TcRsQpCreateWithAttrsV1();
+	TcRsQpCreateWithAttrsV2();
 }
 
-void tc_rs_normal_qp_create()
+void TcRsNormalQpCreate()
 {
 	int ret;
 	uint32_t phyId = 0;
@@ -5155,15 +5155,15 @@ void tc_rs_normal_qp_create()
 	int qpMode = 1;
 	uint32_t qpn, qpn2, qpn3;
 	int i;
-	int try_num = 10;
+	int tryNum = 10;
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-	struct RsSocketCloseInfoT sock_close[2] = {0};
-	struct SocketFdData socket_info[3] = {0};
-    struct SocketWlistInfoT white_list;
-    white_list.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-    white_list.connLimit = 1;
+	struct RsSocketCloseInfoT sockClose[2] = {0};
+	struct SocketFdData socketInfo[3] = {0};
+    struct SocketWlistInfoT whiteList;
+    whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+    whiteList.connLimit = 1;
 
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 0;
@@ -5178,12 +5178,12 @@ void tc_rs_normal_qp_create()
 	ret = RsSocketListenStart(&listen[0], 1);
 
 	rs_ut_msg("___________________after listen:\n");
-    strcpy(white_list.tag, "1234");
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
-    RsSocketWhiteListAdd(rdev_info, &white_list, 1);
+    strcpy(whiteList.tag, "1234");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
+    RsSocketWhiteListAdd(rdevInfo, &whiteList, 1);
 
 	conn[0].phyId = 0;
 	conn[0].family = AF_INET;
@@ -5198,20 +5198,20 @@ void tc_rs_normal_qp_create()
 	usleep(SLEEP_TIME);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
     struct ibv_cq *ibSendCq;
@@ -5229,47 +5229,47 @@ void tc_rs_normal_qp_create()
 	attr.recvChannel = NULL;
     ret = RsCqCreate(phyId, rdevIndex, &attr);
     EXPECT_INT_EQ(ret, 0);
-	struct RsQpResp qp_resp = {0};
-	struct RsQpResp qp_resp2 = {0};
+	struct RsQpResp qpResp = {0};
+	struct RsQpResp qpResp2 = {0};
 
-    struct ibv_qp_init_attr qp_init_attr;
-    qp_init_attr.qp_context = context;
-    qp_init_attr.send_cq = ibSendCq;
-    qp_init_attr.recv_cq = ibRecvCq;
-    qp_init_attr.qp_type = 2;
-    qp_init_attr.cap.max_inline_data = 32;
-    qp_init_attr.cap.max_send_wr = 4096;
-    qp_init_attr.cap.max_send_sge = 4096;
-    qp_init_attr.cap.max_recv_wr = 4096;
-    qp_init_attr.cap.max_recv_sge = 1;
+    struct ibv_qp_init_attr qpInitAttr;
+    qpInitAttr.qp_context = context;
+    qpInitAttr.send_cq = ibSendCq;
+    qpInitAttr.recv_cq = ibRecvCq;
+    qpInitAttr.qp_type = 2;
+    qpInitAttr.cap.max_inline_data = 32;
+    qpInitAttr.cap.max_send_wr = 4096;
+    qpInitAttr.cap.max_send_sge = 4096;
+    qpInitAttr.cap.max_recv_wr = 4096;
+    qpInitAttr.cap.max_recv_sge = 1;
     struct ibv_qp* qp;
 
     mocker((stub_fn_t)RsDrvNormalQpCreate, 10, -ENOMEM);
-    ret = RsNormalQpCreate(phyId, rdevIndex, &qp_init_attr, &qp_resp, &qp);
+    ret = RsNormalQpCreate(phyId, rdevIndex, &qpInitAttr, &qpResp, &qp);
     EXPECT_INT_EQ(-ENOMEM, ret);
     mocker_clean();
 
-    ret = RsNormalQpCreate(phyId, rdevIndex, &qp_init_attr, &qp_resp, &qp);
+    ret = RsNormalQpCreate(phyId, rdevIndex, &qpInitAttr, &qpResp, &qp);
     EXPECT_INT_EQ(0, ret);
 
-    qp_init_attr.qp_context = NULL;
-    ret = RsNormalQpCreate(phyId, rdevIndex, &qp_init_attr, &qp_resp, &qp);
+    qpInitAttr.qp_context = NULL;
+    ret = RsNormalQpCreate(phyId, rdevIndex, &qpInitAttr, &qpResp, &qp);
     EXPECT_INT_EQ(-22, ret);
 
 	rs_ut_msg("___________________after qp create:\n");
 
 	/* >>>>>>> RsQpConnectAsync test case begin <<<<<<<<<<< */
-	struct RdmaMrRegInfo mr_reg_info = {0};
-	mr_reg_info.addr = 0xabcdef;
-	mr_reg_info.len = RS_TEST_MEM_SIZE;
-	mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
-	ret = RsMrReg(phyId, rdevIndex, qp_resp.qpn, &mr_reg_info);
+	struct RdmaMrRegInfo mrRegInfo = {0};
+	mrRegInfo.addr = 0xabcdef;
+	mrRegInfo.len = RS_TEST_MEM_SIZE;
+	mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
+	ret = RsMrReg(phyId, rdevIndex, qpResp.qpn, &mrRegInfo);
 	EXPECT_INT_EQ(ret, 0);
 	/* >>>>>>> RsQpConnectAsync test case end <<<<<<<<<<< */
 
 	rs_ut_msg("___________________after mr reg:\n");
 
-	ret = RsQpConnectAsync(phyId, rdevIndex, qp_resp.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(phyId, rdevIndex, qpResp.qpn, socketInfo[i].fd);
 	rs_ut_msg("***RsQpConnectAsync: %d****\n", ret);
 
 	rs_ut_msg("___________________after qp connect async:\n");
@@ -5277,25 +5277,25 @@ void tc_rs_normal_qp_create()
 	rs_ut_msg("___________________after qp connect async & sleep:\n");
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-	strcpy(socket_info[i].tag, "1234");
-	try_num = 10;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+	strcpy(socketInfo[i].tag, "1234");
+	tryNum = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
 		usleep(30000);
-	} while (ret != 1 && try_num--);
+	} while (ret != 1 && tryNum--);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-    struct ibv_cq *ib_send_cq2;
-    struct ibv_cq *ib_recv_cq2;
+    struct ibv_cq *ibSendCq2;
+    struct ibv_cq *ibRecvCq2;
     void* context2;
     struct CqAttr attr2;
     attr2.qpContext = &context2;
-    attr2.ibSendCq = &ib_send_cq2;
-    attr2.ibRecvCq = &ib_recv_cq2;
+    attr2.ibSendCq = &ibSendCq2;
+    attr2.ibRecvCq = &ibRecvCq2;
     attr2.sendCqDepth = 16384;
     attr2.recvCqDepth = 16384;
     attr2.sendCqEventId = -1;
@@ -5305,33 +5305,33 @@ void tc_rs_normal_qp_create()
     ret = RsCqCreate(phyId, rdevIndex, &attr2);
     EXPECT_INT_EQ(ret, 0);
 
-    struct ibv_qp_init_attr qp_init_attr2;
-    qp_init_attr2.qp_context = context2;
-    qp_init_attr2.send_cq = ib_send_cq2;
-    qp_init_attr2.recv_cq = ib_recv_cq2;
-    qp_init_attr2.qp_type = 2;
-    qp_init_attr2.cap.max_inline_data = 32;
-    qp_init_attr2.cap.max_send_wr = 4096;
-    qp_init_attr2.cap.max_send_sge = 4096;
-    qp_init_attr2.cap.max_recv_wr = 4096;
-    qp_init_attr2.cap.max_recv_sge = 1;
+    struct ibv_qp_init_attr qpInitAttr2;
+    qpInitAttr2.qp_context = context2;
+    qpInitAttr2.send_cq = ibSendCq2;
+    qpInitAttr2.recv_cq = ibRecvCq2;
+    qpInitAttr2.qp_type = 2;
+    qpInitAttr2.cap.max_inline_data = 32;
+    qpInitAttr2.cap.max_send_wr = 4096;
+    qpInitAttr2.cap.max_send_sge = 4096;
+    qpInitAttr2.cap.max_recv_wr = 4096;
+    qpInitAttr2.cap.max_recv_sge = 1;
 	struct ibv_qp* qp2;
-    ret = RsNormalQpCreate(phyId, rdevIndex, &qp_init_attr2, &qp_resp2, &qp2);
+    ret = RsNormalQpCreate(phyId, rdevIndex, &qpInitAttr2, &qpResp2, &qp2);
     EXPECT_INT_EQ(0, ret);
 
 	rs_ut_msg("___________________after qp2 create:\n");
 
-	ret = RsQpConnectAsync(phyId, rdevIndex, qp_resp2.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(phyId, rdevIndex, qpResp2.qpn, socketInfo[i].fd);
 
 	rs_ut_msg("___________________after qp2 connect async:\n");
 
-	struct ibv_cq *ib_send_cq3;
-    struct ibv_cq *ib_recv_cq3;
+	struct ibv_cq *ibSendCq3;
+    struct ibv_cq *ibRecvCq3;
     void* context3;
     struct CqAttr attr3;
     attr3.qpContext = &context3;
-    attr3.ibSendCq = &ib_send_cq3;
-    attr3.ibRecvCq = &ib_send_cq3;
+    attr3.ibSendCq = &ibSendCq3;
+    attr3.ibRecvCq = &ibSendCq3;
     attr3.sendCqDepth = 16384;
     attr3.recvCqDepth = 16384;
     attr3.sendCqEventId = 1;
@@ -5342,13 +5342,13 @@ void tc_rs_normal_qp_create()
     ret = RsCqCreate(phyId, rdevIndex, &attr3);
     EXPECT_INT_EQ(ret, 0);
 
-	struct ibv_cq *ib_send_cq4;
-    struct ibv_cq *ib_recv_cq4;
+	struct ibv_cq *ibSendCq4;
+    struct ibv_cq *ibRecvCq4;
     void* context4;
     struct CqAttr attr4;
     attr4.qpContext = &context4;
-    attr4.ibSendCq = &ib_send_cq4;
-    attr4.ibRecvCq = &ib_send_cq4;
+    attr4.ibSendCq = &ibSendCq4;
+    attr4.ibRecvCq = &ibSendCq4;
     attr4.sendCqDepth = 16384;
     attr4.recvCqDepth = 16384;
     attr4.sendCqEventId = 1;
@@ -5361,8 +5361,8 @@ void tc_rs_normal_qp_create()
 
 	usleep(SLEEP_TIME);
 
-	ret = RsNormalQpDestroy(phyId, rdevIndex, qp_resp2.qpn);
-	ret = RsNormalQpDestroy(phyId, rdevIndex, qp_resp.qpn);
+	ret = RsNormalQpDestroy(phyId, rdevIndex, qpResp2.qpn);
+	ret = RsNormalQpDestroy(phyId, rdevIndex, qpResp.qpn);
 
 	rs_ut_msg("___________________after qp1&2 destroy:\n");
 
@@ -5372,13 +5372,13 @@ void tc_rs_normal_qp_create()
 
 	rs_ut_msg("___________________after cq1&2 destroy:\n");
 
-	sock_close[0].fd = socket_info[0].fd;
-	ret = RsSocketBatchClose(0, &sock_close[0], 1);
+	sockClose[0].fd = socketInfo[0].fd;
+	ret = RsSocketBatchClose(0, &sockClose[0], 1);
 
 	rs_ut_msg("___________________after close socket 0:\n");
 
-	sock_close[1].fd = socket_info[1].fd;
-	ret = RsSocketBatchClose(0, &sock_close[1], 1);
+	sockClose[1].fd = socketInfo[1].fd;
+	ret = RsSocketBatchClose(0, &sockClose[1], 1);
 
 	rs_ut_msg("___________________after close socket 1:\n");
 
@@ -5391,7 +5391,7 @@ void tc_rs_normal_qp_create()
 	ret = RsRdevDeinit(phyId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsSocketDeinit(rdev_info);
+	ret = RsSocketDeinit(rdevInfo);
 	EXPECT_INT_EQ(ret, 0);
 
 	ret = RsDeinit(&cfg);
@@ -5402,67 +5402,67 @@ void tc_rs_normal_qp_create()
     return;
 }
 
-void tc_rs_query_event()
+void TcRsQueryEvent()
 {
 	int ret;
-	int event_id = 1;
+	int eventId = 1;
 	struct event_summary *sendEvent;
 
     mocker((stub_fn_t)calloc, 10, NULL);
-	ret = RsQueryEvent(event_id, &sendEvent);
+	ret = RsQueryEvent(eventId, &sendEvent);
     EXPECT_INT_EQ(-ENOMEM, ret);
     mocker_clean();
 }
 
-void tc_rs_create_cq()
+void TcRsCreateCq()
 {
 	int ret;
 
 	struct RsRdevCb rdevCb;
-	struct RsCqContext cq_context = {0};
+	struct RsCqContext cqContext = {0};
 	struct CqAttr attr = {0};
-	cq_context.rdevCb = &rdevCb;
-	cq_context.cqCreateMode = RS_NORMAL_CQ_CREATE;
+	cqContext.rdevCb = &rdevCb;
+	cqContext.cqCreateMode = RS_NORMAL_CQ_CREATE;
 
     mocker((stub_fn_t)RsQueryEvent, 10, -1);
-	ret = RsDrvCreateCqEvent(&cq_context, &attr);
+	ret = RsDrvCreateCqEvent(&cqContext, &attr);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
     mocker((stub_fn_t)RsIbvCreateCq, 10, NULL);
-	ret = RsDrvCreateCqEvent(&cq_context, &attr);
+	ret = RsDrvCreateCqEvent(&cqContext, &attr);
     EXPECT_INT_EQ(-EOPENSRC, ret);
     mocker_clean();
 
     mocker((stub_fn_t)ibv_req_notify_cq, 10, -1);
-	ret = RsDrvCreateCqEvent(&cq_context, &attr);
+	ret = RsDrvCreateCqEvent(&cqContext, &attr);
     EXPECT_INT_EQ(-EOPENSRC, ret);
     mocker_clean();
 
-	cq_context.recvEvent = NULL;
-	cq_context.sendEvent = NULL;
+	cqContext.recvEvent = NULL;
+	cqContext.sendEvent = NULL;
     mocker((stub_fn_t)RsIbvDestroyCq, 10, -1);
-	ret = RsDrvDestroyCqEvent(&cq_context);
+	ret = RsDrvDestroyCqEvent(&cqContext);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
 }
 
-void tc_rs_create_normal_qp()
+void TcRsCreateNormalQp()
 {
 	int ret;
-	struct RsQpCb qp_cb;
-	struct ibv_qp_init_attr qp_init_attr;
+	struct RsQpCb qpCb;
+	struct ibv_qp_init_attr qpInitAttr;
 
     mocker((stub_fn_t)RsIbvCreateQp, 10, NULL);
-	ret = RsDrvNormalQpCreate(&qp_cb, &qp_init_attr);
+	ret = RsDrvNormalQpCreate(&qpCb, &qpInitAttr);
     EXPECT_INT_EQ(-ENOMEM, ret);
     mocker_clean();
 
     mocker((stub_fn_t)RsIbvQueryQp, 10, -1);
 	mocker((stub_fn_t)RsIbvCreateQp, 10, 1);
 	mocker((stub_fn_t)RsIbvDestroyQp, 10, 0);
-	ret = RsDrvNormalQpCreate(&qp_cb, &qp_init_attr);
+	ret = RsDrvNormalQpCreate(&qpCb, &qpInitAttr);
     EXPECT_INT_EQ(-EOPENSRC, ret);
     mocker_clean();
 
@@ -5470,12 +5470,12 @@ void tc_rs_create_normal_qp()
 	mocker((stub_fn_t)RsIbvCreateQp, 10, 1);
 	mocker((stub_fn_t)RsIbvDestroyQp, 10, 0);
     mocker((stub_fn_t)RsDrvQpInfoRelated, 10, -1);
-	ret = RsDrvNormalQpCreate(&qp_cb, &qp_init_attr);
+	ret = RsDrvNormalQpCreate(&qpCb, &qpInitAttr);
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 }
 
-void tc_rs_create_comp_channel()
+void TcRsCreateCompChannel()
 {
 	int ret;
 	unsigned int phyId = 0;
@@ -5496,40 +5496,40 @@ void tc_rs_create_comp_channel()
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RS INIT, ret:%d !\n", ret);
 
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	void *comp_channel = NULL;
-	void *comp_channel1 = NULL;
-	ret =  RsCreateCompChannel(phyId, rdevIndex, &comp_channel);
+	void *compChannel = NULL;
+	void *compChannel1 = NULL;
+	ret =  RsCreateCompChannel(phyId, rdevIndex, &compChannel);
 	EXPECT_INT_EQ(0, ret);
 
 	mocker(rsGetLocalDevIDByHostDevID, 1, -19);
-	ret =  RsCreateCompChannel(phyId, rdevIndex, &comp_channel1);
+	ret =  RsCreateCompChannel(phyId, rdevIndex, &compChannel1);
 	EXPECT_INT_EQ(-19, ret);
 	mocker_clean();
 
 	mocker(RsRdev2rdevCb, 1, -19);
-	ret =  RsCreateCompChannel(phyId, rdevIndex, &comp_channel1);
+	ret =  RsCreateCompChannel(phyId, rdevIndex, &compChannel1);
 	EXPECT_INT_EQ(-19, ret);
 	mocker_clean();
 
 	mocker(RsIbvCreateCompChannel, 1, NULL);
-	ret =  RsCreateCompChannel(phyId, rdevIndex, &comp_channel1);
+	ret =  RsCreateCompChannel(phyId, rdevIndex, &compChannel1);
 	EXPECT_INT_EQ(-259, ret);
 	mocker_clean();
 
 	mocker(RsIbvDestroyCompChannel, 1, -1);
-	ret =  RsDestroyCompChannel(comp_channel1);
+	ret =  RsDestroyCompChannel(compChannel1);
 	EXPECT_INT_EQ(-1, ret);
 	mocker_clean();
 
-	ret =  RsDestroyCompChannel(comp_channel);
+	ret =  RsDestroyCompChannel(compChannel);
 	EXPECT_INT_EQ(0, ret);
 
 	ret = RsRdevDeinit(phyId, NOTIFY, rdevIndex);
@@ -5542,48 +5542,48 @@ void tc_rs_create_comp_channel()
 	return;
 }
 
-void tc_rs_get_cqe_err_info()
+void TcRsGetCqeErrInfo()
 {
 	int ret;
-    struct RsCqeErrInfo *err_info = &gRsCqeErr;
-    struct CqeErrInfo *temp_info = &err_info->info;
-    struct CqeErrInfo cqe_info;
+    struct RsCqeErrInfo *errInfo = &gRsCqeErr;
+    struct CqeErrInfo *tempInfo = &errInfo->info;
+    struct CqeErrInfo cqeInfo;
 
-	temp_info->status = 0;
+	tempInfo->status = 0;
     mocker((stub_fn_t)pthread_mutex_lock, 1, 0);
 	mocker((stub_fn_t)pthread_mutex_unlock, 1, 0);
-    ret = RsDrvGetCqeErrInfo(&cqe_info);
+    ret = RsDrvGetCqeErrInfo(&cqeInfo);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
-	temp_info->status = 1;
+	tempInfo->status = 1;
     mocker((stub_fn_t)memcpy_s, 1, 1);
-    ret = RsDrvGetCqeErrInfo(&cqe_info);
+    ret = RsDrvGetCqeErrInfo(&cqeInfo);
     EXPECT_INT_EQ(-ESAFEFUNC, ret);
     mocker_clean();
 
-	temp_info->status = 1;
+	tempInfo->status = 1;
     mocker((stub_fn_t)memset_s, 1, 1);
     mocker((stub_fn_t)pthread_mutex_lock, 1, 0);
     mocker((stub_fn_t)pthread_mutex_unlock, 1, 0);
-	ret = RsDrvGetCqeErrInfo(&cqe_info);
+	ret = RsDrvGetCqeErrInfo(&cqeInfo);
     EXPECT_INT_EQ(-ESAFEFUNC, ret);
     mocker_clean();
 
-	temp_info->status = 1;
+	tempInfo->status = 1;
     mocker((stub_fn_t)pthread_mutex_lock, 1, 0);
     mocker((stub_fn_t)pthread_mutex_unlock, 1, 0);
-	ret = RsDrvGetCqeErrInfo(&cqe_info);
+	ret = RsDrvGetCqeErrInfo(&cqeInfo);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
     mocker((stub_fn_t)RsDrvGetCqeErrInfo, 1, 0);
-    ret = RsGetCqeErrInfo(&cqe_info);
+    ret = RsGetCqeErrInfo(&cqeInfo);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
 
-void tc_rs_get_cqe_err_info_num()
+void TcRsGetCqeErrInfoNum()
 {
     unsigned int num = 0;
     unsigned int phyId;
@@ -5607,14 +5607,14 @@ void tc_rs_get_cqe_err_info_num()
 
 int stub_RsRdev2rdevCb(unsigned int chipId, unsigned int rdevIndex, struct RsRdevCb **rdevCb)
 {
-    *rdevCb = &g_rdev_cb;
+    *rdevCb = &gRdevCb;
     return 0;
 }
 
-void tc_rs_get_cqe_err_info_list()
+void TcRsGetCqeErrInfoList()
 {
     struct CqeErrInfo info = {0};
-    struct RsQpCb qp_cb = {0};
+    struct RsQpCb qpCb = {0};
     unsigned int num = 1;
     unsigned int phyId;
     int ret;
@@ -5629,14 +5629,14 @@ void tc_rs_get_cqe_err_info_list()
     mocker((stub_fn_t)rsGetLocalDevIDByHostDevID, 10, 0);
     mocker_invoke((stub_fn_t)RsRdev2rdevCb, stub_RsRdev2rdevCb, 10);
     phyId = 0;
-    RS_INIT_LIST_HEAD(&g_rdev_cb.qpList);
+    RS_INIT_LIST_HEAD(&gRdevCb.qpList);
     ret = RsGetCqeErrInfoList(phyId, 0, &info, &num);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 
-    RsListAddTail(&qp_cb.list, &g_rdev_cb.qpList);
-    qp_cb.rdevCb = &g_rdev_cb;
-    qp_cb.cqeErrInfo.info.status = 1;
+    RsListAddTail(&qpCb.list, &gRdevCb.qpList);
+    qpCb.rdevCb = &gRdevCb;
+    qpCb.cqeErrInfo.info.status = 1;
     mocker((stub_fn_t)rsGetLocalDevIDByHostDevID, 10, 0);
     mocker_invoke((stub_fn_t)RsRdev2rdevCb, stub_RsRdev2rdevCb, 10);
     ret = RsGetCqeErrInfoList(phyId, 0, &info, &num);
@@ -5646,41 +5646,41 @@ void tc_rs_get_cqe_err_info_list()
     return;
 }
 
-void tc_rs_save_cqe_err_info()
+void TcRsSaveCqeErrInfo()
 {
 	int ret;
-    struct RsCqeErrInfo *err_info = &gRsCqeErr;
-    struct CqeErrInfo *temp_info = &err_info->info;
-	struct RsQpCb qp_cb;
+    struct RsCqeErrInfo *errInfo = &gRsCqeErr;
+    struct CqeErrInfo *tempInfo = &errInfo->info;
+	struct RsQpCb qpCb;
 
-	temp_info->status = 0;
-    RsDrvSaveCqeErrInfo(0x15, &qp_cb);
+	tempInfo->status = 0;
+    RsDrvSaveCqeErrInfo(0x15, &qpCb);
     mocker_clean();
 
-	temp_info->status = 1;
-    RsDrvSaveCqeErrInfo(0x15, &qp_cb);
+	tempInfo->status = 1;
+    RsDrvSaveCqeErrInfo(0x15, &qpCb);
     mocker_clean();
 }
 
-void tc_rs_cqe_callback_process()
+void TcRsCqeCallbackProcess()
 {
-	struct RsQpCb qpcb_tmp = {0};
+	struct RsQpCb qpcbTmp = {0};
 	struct ibv_wc wc = {0};
-	struct ibv_cq ev_cq_sq = {0};
-	struct ibv_cq ev_cq_rq = {0};
+	struct ibv_cq evCqSq = {0};
+	struct ibv_cq evCqRq = {0};
 	struct RsRdevCb rdevCb = {0};
 
-	qpcb_tmp.ibSendCq = &ev_cq_sq;
-	qpcb_tmp.ibRecvCq = &ev_cq_rq;
-	qpcb_tmp.rdevCb = &rdevCb;
+	qpcbTmp.ibSendCq = &evCqSq;
+	qpcbTmp.ibRecvCq = &evCqRq;
+	qpcbTmp.rdevCb = &rdevCb;
 
 	wc.status = IBV_WC_MW_BIND_ERR;
     mocker((stub_fn_t)RsDrvSaveCqeErrInfo, 1, 0);
-	RsCqeCallbackProcess(&qpcb_tmp, &wc, ev_cq_rq);
+	RsCqeCallbackProcess(&qpcbTmp, &wc, evCqRq);
     mocker_clean();
 }
 
-void tc_rs_create_srq()
+void TcRsCreateSrq()
 {
 	int ret;
 	unsigned int phyId = 0;
@@ -5701,19 +5701,19 @@ void tc_rs_create_srq()
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RS INIT, ret:%d !\n", ret);
 
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
 	struct SrqAttr attr = {0};
- 	struct ibv_srq *ib_srq = NULL;
+ 	struct ibv_srq *ibSrq = NULL;
     struct ibv_cq *ibRecvCq = NULL;
 	void *context = NULL;
-    attr.ibSrq = &ib_srq;
+    attr.ibSrq = &ibSrq;
     attr.ibRecvCq = &ibRecvCq;
     attr.maxSge = 1;
     attr.context = &context;
@@ -5721,14 +5721,14 @@ void tc_rs_create_srq()
     attr.srqDepth = 63;
     attr.cqDepth = 64;
 	struct SrqAttr attr1 = {0};
-	struct ibv_srq *ib_srq1 = 0xab;
-    struct ibv_cq *ib_recv_cq1 = 0xab;
-	struct RsCqContext cq_context1 = {0};
-	cq_context1.ibSrqCq =  &ib_recv_cq1;
-    attr1.ibSrq = &ib_srq1;
-    attr1.ibRecvCq = &ib_recv_cq1;
+	struct ibv_srq *ibSrq1 = 0xab;
+    struct ibv_cq *ibRecvCq1 = 0xab;
+	struct RsCqContext cqContext1 = {0};
+	cqContext1.ibSrqCq =  &ibRecvCq1;
+    attr1.ibSrq = &ibSrq1;
+    attr1.ibRecvCq = &ibRecvCq1;
     attr1.maxSge = 1;
-	void *context1 = &cq_context1;
+	void *context1 = &cqContext1;
     attr1.context = &context1;
     attr1.srqEventId = 1;
     attr1.srqDepth = 63;
@@ -5758,7 +5758,7 @@ void tc_rs_create_srq()
 	EXPECT_INT_EQ(0, ret);
 
 	struct ibv_cq *ibSendCq;
-    struct ibv_cq *ib_recv_cq3;
+    struct ibv_cq *ibRecvCq3;
     void* context2;
     struct CqAttr attr2;
     attr2.qpContext = &context2;
@@ -5793,7 +5793,7 @@ void tc_rs_create_srq()
 	return;
 }
 
-void tc_rs_get_ipv6_scope_id()
+void TcRsGetIpv6ScopeId()
 {
 	int ret;
 	struct in6_addr localIp;
@@ -5806,7 +5806,7 @@ void tc_rs_get_ipv6_scope_id()
 	EXPECT_INT_EQ(-ESYSFUNC, ret);
 }
 
-void tc_rs_create_event_handle()
+void TcRsCreateEventHandle()
 {
 	int ret;
 	int fd;
@@ -5820,9 +5820,9 @@ void tc_rs_create_event_handle()
 	EXPECT_INT_EQ(0, ret);
 }
 
-void tc_rs_ctl_event_handle()
+void TcRsCtlEventHandle()
 {
-	struct SocketPeerInfo fd_handle[1];
+	struct SocketPeerInfo fdHandle[1];
 	int ret;
 	int fd;
 
@@ -5834,24 +5834,24 @@ void tc_rs_ctl_event_handle()
 	ret = RsCtlEventHandle(fd, NULL, 0, 100);
 	EXPECT_INT_EQ(-EINVAL, ret);
 
-	fd_handle[0].phyId = 0;
-	fd_handle[0].fd = 0;
-	ret = RsCtlEventHandle(fd, (const void *)fd_handle, 0, 100);
+	fdHandle[0].phyId = 0;
+	fdHandle[0].fd = 0;
+	ret = RsCtlEventHandle(fd, (const void *)fdHandle, 0, 100);
 	EXPECT_INT_EQ(-EINVAL, ret);
 
-	ret = RsCtlEventHandle(fd, (const void *)fd_handle, EPOLL_CTL_ADD, 100);
+	ret = RsCtlEventHandle(fd, (const void *)fdHandle, EPOLL_CTL_ADD, 100);
 	EXPECT_INT_EQ(-EINVAL, ret);
 
-	ret = RsCtlEventHandle(fd, (const void *)fd_handle, EPOLL_CTL_ADD, RA_EPOLLONESHOT);
+	ret = RsCtlEventHandle(fd, (const void *)fdHandle, EPOLL_CTL_ADD, RA_EPOLLONESHOT);
 
 	ret = RsDestroyEventHandle(&fd);
 	EXPECT_INT_EQ(0, ret);
 }
 
-void tc_rs_wait_event_handle()
+void TcRsWaitEventHandle()
 {
-	struct SocketEventInfoT event_info;
-	unsigned int events_num = 0;
+	struct SocketEventInfoT eventInfo;
+	unsigned int eventsNum = 0;
 	int ret;
 	int fd;
 
@@ -5863,17 +5863,17 @@ void tc_rs_wait_event_handle()
 	ret = RsWaitEventHandle(fd, NULL, -2, -1, NULL);
 	EXPECT_INT_EQ(-EINVAL, ret);
 
-	ret = RsWaitEventHandle(fd, &event_info, -2, -1, NULL);
+	ret = RsWaitEventHandle(fd, &eventInfo, -2, -1, NULL);
 	EXPECT_INT_EQ(-EINVAL, ret);
 
-	ret = RsWaitEventHandle(fd, &event_info, 0, 1, &events_num);
+	ret = RsWaitEventHandle(fd, &eventInfo, 0, 1, &eventsNum);
 	EXPECT_INT_EQ(0, ret);
 
 	ret = RsDestroyEventHandle(&fd);
 	EXPECT_INT_EQ(0, ret);
 }
 
-void tc_rs_destroy_event_handle()
+void TcRsDestroyEventHandle()
 {
 	int ret;
 
@@ -5881,7 +5881,7 @@ void tc_rs_destroy_event_handle()
 	EXPECT_INT_EQ(-EINVAL, ret);
 }
 
-void tc_rs_epoll_create_epollfd()
+void TcRsEpollCreateEpollfd()
 {
 	int ret;
 
@@ -5889,7 +5889,7 @@ void tc_rs_epoll_create_epollfd()
 	EXPECT_INT_EQ(-EINVAL, ret);
 }
 
-void tc_rs_epoll_destroy_fd()
+void TcRsEpollDestroyFd()
 {
 	int fd;
 	int ret;
@@ -5904,7 +5904,7 @@ void tc_rs_epoll_destroy_fd()
 	EXPECT_INT_EQ(0, ret);
 }
 
-void tc_rs_epoll_wait_handle()
+void TcRsEpollWaitHandle()
 {
 	int fd;
 	int ret;
@@ -5913,7 +5913,7 @@ void tc_rs_epoll_wait_handle()
 	EXPECT_INT_EQ(-EINVAL, ret);
 }
 
-void tc_ssl_verify_callback()
+void TcSslverify_callback()
 {
 	X509_STORE_CTX ctx;
 	int ret;
@@ -5924,7 +5924,7 @@ void tc_ssl_verify_callback()
 	mocker_clean();
 }
 
-void tc_rs_ssl_verify_cert()
+void Tcrs_ssl_verify_cert()
 {
 	X509_STORE_CTX ctx;
 	int ret;
@@ -5942,34 +5942,34 @@ void tc_rs_ssl_verify_cert()
 	mocker_clean();
 }
 
-void tc_rs_mem_pool()
+void TcRsMemPool()
 {
-    struct LiteMemAttrResp mem_resp = {0};
+    struct LiteMemAttrResp memResp = {0};
     struct RsRdevCb rdevCb = {0};
-    struct RsQpCb qp_cb = {0};
-    struct rs_cb rs_cb = {0};
+    struct RsQpCb qpCb = {0};
+    struct rs_cb rsCb = {0};
     int ret;
 
-    qp_cb.qpMode = RA_RS_OP_QP_MODE;
-    qp_cb.memAlign = LITE_ALIGN_4KB;
-    ret = RsInitMemPool(&qp_cb);
+    qpCb.qpMode = RA_RS_OP_QP_MODE;
+    qpCb.memAlign = LITE_ALIGN_4KB;
+    ret = RsInitMemPool(&qpCb);
     EXPECT_INT_EQ(ret, 0);
-    RsDeinitMemPool(&qp_cb);
+    RsDeinitMemPool(&qpCb);
 
-    qp_cb.memAlign = LITE_ALIGN_2MB;
-    qp_cb.memResp = mem_resp;
-    qp_cb.rdevCb = &rdevCb;
-    rdevCb.rs_cb = &rs_cb;
+    qpCb.memAlign = LITE_ALIGN_2MB;
+    qpCb.memResp = memResp;
+    qpCb.rdevCb = &rdevCb;
+    rdevCb.rsCb = &rsCb;
     mocker(RsRoceInitMemPool, 100, -EINVAL);
-    ret = RsInitMemPool(&qp_cb);
+    ret = RsInitMemPool(&qpCb);
     EXPECT_INT_EQ(ret, -EINVAL);
     mocker_clean();
     mocker(RsRoceDeinitMemPool, 100, -EINVAL);
-    RsDeinitMemPool(&qp_cb);
+    RsDeinitMemPool(&qpCb);
     mocker_clean();
 }
 
-void tc_rs_get_vnic_ip_info()
+void TcRsGetVnicIpInfo()
 {
 	int ret;
 	unsigned int ids[1] = {0};
@@ -5998,41 +5998,41 @@ void tc_rs_get_vnic_ip_info()
 	DlHalDeinit();
 }
 
-void tc_rs_typical_register_mr()
+void TcRsTypicalRegisterMr()
 {
 	int ret;
 	uint32_t phyId = 0;
 	uint32_t rdevIndex = 0;
 	void *addr;
-	struct RdmaMrRegInfo mr_reg_info = {0};
-	struct ibv_mr *ra_rs_mr_handle = NULL;
+	struct RdmaMrRegInfo mrRegInfo = {0};
+	struct ibv_mr *raRsMrHandle = NULL;
 	struct RsInitConfig cfg = {0};
 
 	addr = malloc(RS_TEST_MEM_SIZE);
-	mr_reg_info.addr = addr;
-	mr_reg_info.len = RS_TEST_MEM_SIZE;
-	mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
+	mrRegInfo.addr = addr;
+	mrRegInfo.len = RS_TEST_MEM_SIZE;
+	mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
 
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsTypicalRegisterMrV1(phyId, rdevIndex, &mr_reg_info, &ra_rs_mr_handle);
+	ret = RsTypicalRegisterMrV1(phyId, rdevIndex, &mrRegInfo, &raRsMrHandle);
 	EXPECT_INT_EQ(ret, 0);
 
 	ret = RsTypicalDeregisterMr(phyId, rdevIndex, (uint64_t)addr);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsTypicalRegisterMr(phyId, rdevIndex, &mr_reg_info, &ra_rs_mr_handle);
+	ret = RsTypicalRegisterMr(phyId, rdevIndex, &mrRegInfo, &raRsMrHandle);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsTypicalDeregisterMr(phyId, rdevIndex, (uint64_t)ra_rs_mr_handle);
+	ret = RsTypicalDeregisterMr(phyId, rdevIndex, (uint64_t)raRsMrHandle);
 	EXPECT_INT_EQ(ret, 0);
 
 	ret = RsRdevDeinit(phyId, NOTIFY, rdevIndex);
@@ -6045,7 +6045,7 @@ void tc_rs_typical_register_mr()
 	free(addr);
 }
 
-int stub_RsIbvQueryQp_init(struct ibv_qp *qp, struct ibv_qp_attr *attr, int attr_mask, struct ibv_qp_init_attr *init_attr)
+int stub_RsIbvQueryQp_init(struct ibv_qp *qp, struct ibv_qp_attr *attr, int attrMask, struct ibv_qp_init_attr *initAttr)
 {
 	if (attr == NULL) {
 		return -EINVAL;
@@ -6054,77 +6054,77 @@ int stub_RsIbvQueryQp_init(struct ibv_qp *qp, struct ibv_qp_attr *attr, int attr
 	return 0;
 }
 
-void tc_rs_typical_qp_modify()
+void TcRsTypicalQpModify()
 {
 	int ret;
 	uint32_t phyId = 0;
 	uint32_t rdevIndex = 0;
 	void *addr;
-	struct RdmaMrRegInfo mr_reg_info = {0};
-	struct ibv_mr *ra_rs_mr_handle = NULL;
+	struct RdmaMrRegInfo mrRegInfo = {0};
+	struct ibv_mr *raRsMrHandle = NULL;
 	struct RsInitConfig cfg = {0};
 
 	addr = malloc(RS_TEST_MEM_SIZE);
-	mr_reg_info.addr = addr;
-	mr_reg_info.len = RS_TEST_MEM_SIZE;
-	mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
+	mrRegInfo.addr = addr;
+	mrRegInfo.len = RS_TEST_MEM_SIZE;
+	mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
 
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	struct TypicalQp local_qp_info = {0};
-	struct TypicalQp remote_qp_info = {0};
-	unsigned int udp_sport;
+	struct TypicalQp localQpInfo = {0};
+	struct TypicalQp remoteQpInfo = {0};
+	unsigned int udpSport;
 
-	struct RsQpNorm qp_norm = {0};
+	struct RsQpNorm qpNorm = {0};
 	struct RsQpResp resp = {0};
 	struct RsQpResp resp2 = {0};
 	int flag = 0; /* RC */
 	int qpMode = 4;
-	qp_norm.flag = flag;
-	qp_norm.qpMode = qpMode;
-	qp_norm.isExp = 1;
-	qp_norm.isExt = 1;
-	int batch_modify_qpn[2];
+	qpNorm.flag = flag;
+	qpNorm.qpMode = qpMode;
+	qpNorm.isExp = 1;
+	qpNorm.isExt = 1;
+	int batchModifyQpn[2];
 
-	ret = RsQpCreate(phyId, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(phyId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_EQ(ret, 0);
-	ret = RsQpCreate(phyId, rdevIndex, qp_norm, &resp2);
+	ret = RsQpCreate(phyId, rdevIndex, qpNorm, &resp2);
 	EXPECT_INT_EQ(ret, 0);
 
-	local_qp_info.qpn = resp.qpn;
-	local_qp_info.psn = resp.psn;
-	local_qp_info.gidIdx = resp.gidIdx;
-	(void)memcpy_s(local_qp_info.gid, HCCP_GID_RAW_LEN, resp.gid.raw, HCCP_GID_RAW_LEN);
-	remote_qp_info.qpn = resp2.qpn;
-	remote_qp_info.psn = resp2.psn;
-	remote_qp_info.gidIdx = resp2.gidIdx;
-	(void)memcpy_s(remote_qp_info.gid, HCCP_GID_RAW_LEN, resp2.gid.raw, HCCP_GID_RAW_LEN);
+	localQpInfo.qpn = resp.qpn;
+	localQpInfo.psn = resp.psn;
+	localQpInfo.gidIdx = resp.gidIdx;
+	(void)memcpy_s(localQpInfo.gid, HCCP_GID_RAW_LEN, resp.gid.raw, HCCP_GID_RAW_LEN);
+	remoteQpInfo.qpn = resp2.qpn;
+	remoteQpInfo.psn = resp2.psn;
+	remoteQpInfo.gidIdx = resp2.gidIdx;
+	(void)memcpy_s(remoteQpInfo.gid, HCCP_GID_RAW_LEN, resp2.gid.raw, HCCP_GID_RAW_LEN);
 
 	mocker_invoke(RsIbvQueryQp, stub_RsIbvQueryQp_init, 10);
     mocker(RsRoceQueryQpc, 10, 1);
-	ret = RsTypicalQpModify(phyId, rdevIndex, local_qp_info, remote_qp_info, &udp_sport);
+	ret = RsTypicalQpModify(phyId, rdevIndex, localQpInfo, remoteQpInfo, &udpSport);
 	EXPECT_INT_EQ(ret, 0);
-	ret = RsTypicalQpModify(phyId, rdevIndex, remote_qp_info, local_qp_info, &udp_sport);
+	ret = RsTypicalQpModify(phyId, rdevIndex, remoteQpInfo, localQpInfo, &udpSport);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
-	batch_modify_qpn[0] = resp.qpn;
-	batch_modify_qpn[1] = resp2.qpn;
- 	ret = RsQpBatchModify(phyId, rdevIndex, 5, batch_modify_qpn, 2);
+	batchModifyQpn[0] = resp.qpn;
+	batchModifyQpn[1] = resp2.qpn;
+ 	ret = RsQpBatchModify(phyId, rdevIndex, 5, batchModifyQpn, 2);
 	EXPECT_INT_EQ(ret, 0);
 
- 	ret = RsQpBatchModify(phyId, rdevIndex, 1, batch_modify_qpn, 2);
+ 	ret = RsQpBatchModify(phyId, rdevIndex, 1, batchModifyQpn, 2);
 	EXPECT_INT_EQ(ret, 0);
 
- 	ret = RsQpBatchModify(phyId, rdevIndex, 1, batch_modify_qpn, 2);
+ 	ret = RsQpBatchModify(phyId, rdevIndex, 1, batchModifyQpn, 2);
 	EXPECT_INT_NE(ret, 0);
 
 	ret = RsQpDestroy(phyId, rdevIndex, resp.qpn);
@@ -6142,57 +6142,57 @@ void tc_rs_typical_qp_modify()
 	free(addr);
 }
 
-void tc_rs_ssl_get_cert() {
+void Tcrs_ssl_get_cert() {
 	int ret;
-	struct tls_cert_mng_info mng_info = {0};
+	struct tls_cert_mng_info mngInfo = {0};
 	struct rs_cb rscb = {0};
     struct RsCertSkidSubjectCb skidSubjectCb = {0};
 	struct RsCerts certs = {0};
-	struct tls_ca_new_certs new_certs[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
+	struct tls_ca_new_certs newCerts[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
 
 	mocker(tls_get_user_config, 10, -1);
-	ret = rs_ssl_get_cert(&rscb, &certs, &mng_info, &new_certs);
+	ret = rs_ssl_get_cert(&rscb, &certs, &mngInfo, &newCerts);
 	EXPECT_INT_EQ(ret, -1);
 	mocker_clean();
 
 	mocker(tls_get_user_config, 20, 0);
-	ret = rs_ssl_get_cert(&rscb, &certs, &mng_info, &new_certs);
+	ret = rs_ssl_get_cert(&rscb, &certs, &mngInfo, &newCerts);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
 	mocker_ret(tls_get_user_config, 0, 0, -1);
 	rscb.hccpMode = NETWORK_OFFLINE;
-	ret = rs_ssl_get_cert(&rscb, &certs, &mng_info, &new_certs);
+	ret = rs_ssl_get_cert(&rscb, &certs, &mngInfo, &newCerts);
 	EXPECT_INT_EQ(ret, -1);
 	mocker_clean();
 
 	mocker_ret(tls_get_user_config, 0, -2, -1);
 	rscb.hccpMode = NETWORK_OFFLINE;
-	ret = rs_ssl_get_cert(&rscb, &certs, &mng_info, &new_certs);
+	ret = rs_ssl_get_cert(&rscb, &certs, &mngInfo, &newCerts);
 	EXPECT_INT_EQ(ret, -1);
 	mocker_clean();
 
 	mocker_ret(tls_get_user_config, 0, -1, -1);
 	rscb.hccpMode = NETWORK_OFFLINE;
-	ret = rs_ssl_get_cert(&rscb, &certs, &mng_info, &new_certs);
+	ret = rs_ssl_get_cert(&rscb, &certs, &mngInfo, &newCerts);
 	EXPECT_INT_EQ(ret, -1);
 	mocker_clean();
 
 	mocker_ret_2(tls_get_user_config, 0, 0, 0, -1, 0);
 	rscb.hccpMode = NETWORK_OFFLINE;
-	ret = rs_ssl_get_cert(&rscb, &certs, &mng_info, &new_certs);
+	ret = rs_ssl_get_cert(&rscb, &certs, &mngInfo, &newCerts);
 	EXPECT_INT_EQ(ret, -1);
 	mocker_clean();
 
 	mocker_ret_2(tls_get_user_config, 0, 0, 0, -2, -1);
 	rscb.hccpMode = NETWORK_OFFLINE;
-	ret = rs_ssl_get_cert(&rscb, &certs, &mng_info, &new_certs);
+	ret = rs_ssl_get_cert(&rscb, &certs, &mngInfo, &newCerts);
 	EXPECT_INT_EQ(ret, -1);
 	mocker_clean();
 
 	mocker_ret_2(tls_get_user_config, 0, 0, 0, -2, -2);
 	rscb.hccpMode = NETWORK_OFFLINE;
-	ret = rs_ssl_get_cert(&rscb, &certs, &mng_info, &new_certs);
+	ret = rs_ssl_get_cert(&rscb, &certs, &mngInfo, &newCerts);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
@@ -6204,168 +6204,168 @@ void tc_rs_ssl_X509_store_init()
 	int ret;
 	X509_STORE_CTX ctx = {0};
 	X509_STORE store = {0};
-	struct tls_cert_mng_info mng_info = {0};
+	struct tls_cert_mng_info mngInfo = {0};
 	struct RsCerts certs = {0};
-	struct tls_ca_new_certs new_certs[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
+	struct tls_ca_new_certs newCerts[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
 
 	mocker(tls_get_cert_chain, 10, -1);
-	ret = rs_ssl_x509_store_init(&store, &certs, &mng_info, &new_certs);
+	ret = rs_ssl_x509_store_init(&store, &certs, &mngInfo, &newCerts);
 	EXPECT_INT_EQ(ret, -1);
 	mocker_clean();
 
 	mocker(tls_get_cert_chain, 10, 0);
-	ret = rs_ssl_x509_store_init(&store, &certs, &mng_info, &new_certs);
+	ret = rs_ssl_x509_store_init(&store, &certs, &mngInfo, &newCerts);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
-	new_certs[0].ncert_count = 1;
-	strcpy(new_certs[0].certs[0].ncert_info ,"pub cert");
-	ret = rs_ssl_x509_store_init(&store, &certs, &mng_info, &new_certs);
+	newCerts[0].ncert_count = 1;
+	strcpy(newCerts[0].certs[0].ncert_info ,"pub cert");
+	ret = rs_ssl_x509_store_init(&store, &certs, &mngInfo, &newCerts);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
-	new_certs[0].ncert_count = 2;
-	strcpy(new_certs[0].certs[1].ncert_info ,"root ca cert");
+	newCerts[0].ncert_count = 2;
+	strcpy(newCerts[0].certs[1].ncert_info ,"root ca cert");
 	mocker(tls_load_cert, 10, NULL);
-	ret = rs_ssl_x509_store_init(&store, &certs, &mng_info, &new_certs);
+	ret = rs_ssl_x509_store_init(&store, &certs, &mngInfo, &newCerts);
 	EXPECT_INT_EQ(ret, -22);
 	mocker_clean();
 
 	return;
 }
 
-void tc_rs_ssl_skids_subjects_get()
+void Tcrs_ssl_skids_subjects_get()
 {
 	int ret;
-	struct tls_cert_mng_info mng_info = {0};
+	struct tls_cert_mng_info mngInfo = {0};
 	struct RsCerts certs = {0};
-	struct tls_ca_new_certs new_certs[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
+	struct tls_ca_new_certs newCerts[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
 	struct rs_cb rscb = {0};
 
-	mng_info.cert_count = 2;
+	mngInfo.cert_count = 2;
 	mocker(tls_load_cert, 10, NULL);
-	ret = rs_ssl_skids_subjects_get(&rscb, &mng_info, &certs, &new_certs);
+	ret = rs_ssl_skids_subjects_get(&rscb, &mngInfo, &certs, &newCerts);
 	EXPECT_INT_EQ(ret, -22);
 	mocker_clean();
 
-	new_certs[0].ncert_count = 2;
-	strcpy(new_certs[0].certs[1].ncert_info, "root ca cert");
+	newCerts[0].ncert_count = 2;
+	strcpy(newCerts[0].certs[1].ncert_info, "root ca cert");
 	mocker(tls_load_cert, 10, NULL);
-	ret = rs_ssl_skids_subjects_get(&rscb, &mng_info, &certs, &new_certs);
+	ret = rs_ssl_skids_subjects_get(&rscb, &mngInfo, &certs, &newCerts);
 	EXPECT_INT_EQ(ret, -22);
 	mocker_clean();
 
 	return;
 }
 
-void tc_rs_ssl_put_cert_ca_pem()
+void Tcrs_ssl_put_cert_ca_pem()
 {
 	int ret;
-	char ca_file[20];
-	struct tls_cert_mng_info mng_info = {0};
+	char caFile[20];
+	struct tls_cert_mng_info mngInfo = {0};
 	struct RsCerts certs = {0};
-	struct tls_ca_new_certs new_certs[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
+	struct tls_ca_new_certs newCerts[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
 
-	strcpy(ca_file, "ca file name");
+	strcpy(caFile, "ca file name");
 	mocker(creat, 10, -1);
-	ret = rs_ssl_put_cert_ca_pem(&certs, &mng_info, &new_certs, &ca_file);
+	ret = rs_ssl_put_cert_ca_pem(&certs, &mngInfo, &newCerts, &caFile);
 	EXPECT_INT_EQ(ret, -EFILEOPER);
 	mocker_clean();
 
 	mocker(creat, 10, 0);
-	mng_info.cert_count = 2;
+	mngInfo.cert_count = 2;
 	mocker(write, 10, -1);
-	ret = rs_ssl_put_cert_ca_pem(&certs, &mng_info, &new_certs, &ca_file);
+	ret = rs_ssl_put_cert_ca_pem(&certs, &mngInfo, &newCerts, &caFile);
 	EXPECT_INT_EQ(ret, -22);
 	mocker_clean();
 
 	mocker(creat, 10, 0);
-	new_certs[0].ncert_count = 2;
-	strcpy(new_certs[0].certs[0].ncert_info, "pub cert");
-	strcpy(new_certs[0].certs[1].ncert_info, "root ca cert");
+	newCerts[0].ncert_count = 2;
+	strcpy(newCerts[0].certs[0].ncert_info, "pub cert");
+	strcpy(newCerts[0].certs[1].ncert_info, "root ca cert");
 	mocker(write, 10, 0);
-	ret = rs_ssl_put_cert_ca_pem(&certs, &mng_info, &new_certs, &ca_file);
+	ret = rs_ssl_put_cert_ca_pem(&certs, &mngInfo, &newCerts, &caFile);
 	EXPECT_INT_EQ(ret, -22);
 	mocker_clean();
 
 	return;
 }
 
-void tc_rs_ssl_put_cert_end_pem()
+void Tcrs_ssl_put_cert_end_pem()
 {
 	int ret;
-	char end_file[20];
+	char endFile[20];
 	struct RsCerts certs = {0};
-	struct tls_ca_new_certs new_certs[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
+	struct tls_ca_new_certs newCerts[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
 
-	strcpy(end_file, "end file name");
-	new_certs[0].ncert_count = 2;
+	strcpy(endFile, "end file name");
+	newCerts[0].ncert_count = 2;
 	mocker(creat, 10, 0);
 	mocker(write, 10, -1);
-	ret = rs_ssl_put_cert_end_pem(&certs, &new_certs, &end_file);
+	ret = rs_ssl_put_cert_end_pem(&certs, &newCerts, &endFile);
 	EXPECT_INT_EQ(ret, -EFILEOPER);
 	mocker_clean();
 
-	strcpy(new_certs[0].certs[0].ncert_info, "pub cert");
+	strcpy(newCerts[0].certs[0].ncert_info, "pub cert");
 	mocker(creat, 10, 0);
-	mocker(write, 10, strlen(new_certs[0].certs[0].ncert_info));
-	ret = rs_ssl_put_cert_end_pem(&certs, &new_certs, &end_file);
+	mocker(write, 10, strlen(newCerts[0].certs[0].ncert_info));
+	ret = rs_ssl_put_cert_end_pem(&certs, &newCerts, &endFile);
 	EXPECT_INT_EQ(ret, 0);
 	mocker_clean();
 
-	new_certs[0].ncert_count = 0;
+	newCerts[0].ncert_count = 0;
 	mocker(rs_ssl_put_end_cert, 10, -1);
-	ret = rs_ssl_put_cert_end_pem(&certs, &new_certs, &end_file);
+	ret = rs_ssl_put_cert_end_pem(&certs, &newCerts, &endFile);
 	EXPECT_INT_EQ(ret, -1);
 	mocker_clean();
 
 	return;
 }
 
-void tc_rs_ssl_check_mng_and_cert_chain()
+void Tcrs_ssl_check_mng_and_cert_chain()
 {
 	int ret;
 	struct rs_cb rscb = {0};
 	struct RsCerts certs = {0};
-	struct tls_cert_mng_info mng_info = {0};
-	struct CertFile file_name = {0};
-	struct tls_ca_new_certs new_certs[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
+	struct tls_cert_mng_info mngInfo = {0};
+	struct CertFile fileName = {0};
+	struct tls_ca_new_certs newCerts[RS_SSL_NEW_CERT_CB_NUM] = {{0}};
 
-	mng_info.cert_count = 1;
-	mng_info.total_cert_len = 0;
+	mngInfo.cert_count = 1;
+	mngInfo.total_cert_len = 0;
 	strcpy(certs.certs[0].certInfo, "pub cert");
-	ret = rs_ssl_check_mng_and_cert_chain(&rscb, &mng_info, &certs, &new_certs, &file_name);
+	ret = rs_ssl_check_mng_and_cert_chain(&rscb, &mngInfo, &certs, &newCerts, &fileName);
 	EXPECT_INT_EQ(ret, -22);
 
-	new_certs[0].ncert_count = 2;
+	newCerts[0].ncert_count = 2;
 	mocker(rs_remove_certs, 20, -1);
-	ret = rs_ssl_check_mng_and_cert_chain(&rscb, &mng_info, &certs, &new_certs, &file_name);
+	ret = rs_ssl_check_mng_and_cert_chain(&rscb, &mngInfo, &certs, &newCerts, &fileName);
 	EXPECT_INT_EQ(ret, -1);
 	mocker_clean();
 
 	mocker(rs_remove_certs, 20, 0);
 	mocker(rs_ssl_check_cert_chain, 20, -1);
-	ret = rs_ssl_check_mng_and_cert_chain(&rscb, &mng_info, &certs, &new_certs, &file_name);
+	ret = rs_ssl_check_mng_and_cert_chain(&rscb, &mngInfo, &certs, &newCerts, &fileName);
 	EXPECT_INT_EQ(ret, -1);
 	mocker_clean();
 
 	mocker(rs_remove_certs, 20, 0);
 	mocker(rs_ssl_check_cert_chain, 20, 0);
 	mocker(rs_ssl_skid_get_from_chain, 20, -1);
-	ret = rs_ssl_check_mng_and_cert_chain(&rscb, &mng_info, &certs, &new_certs, &file_name);
+	ret = rs_ssl_check_mng_and_cert_chain(&rscb, &mngInfo, &certs, &newCerts, &fileName);
 	EXPECT_INT_EQ(ret, -1);
 	mocker_clean();
 	return;
 }
 
-void tc_rs_remove_certs()
+void Tcrs_remove_certs()
 {
 	int ret;
-	char end_file[20];
-	char ca_file[20];
+	char endFile[20];
+	char caFile[20];
 
 	mocker(remove, 10, -1);
-	ret = rs_remove_certs(&end_file, &ca_file);
+	ret = rs_remove_certs(&endFile, &caFile);
 	EXPECT_INT_EQ(ret, -EFILEOPER);
 	mocker_clean();
 
@@ -6375,18 +6375,18 @@ void tc_rs_remove_certs()
 void tc_rs_ssl_X509_store_add_cert()
 {
 	int ret;
-	char cert_info[20];
+	char certInfo[20];
 	X509_STORE store;
 
 	mocker(tls_load_cert, 10, NULL);
-	ret = rs_ssl_X509_store_add_cert(&cert_info, &store);
+	ret = rs_ssl_X509_store_add_cert(&certInfo, &store);
 	EXPECT_INT_EQ(ret, -22);
 	mocker_clean();
 
 	return;
 }
 
-void tc_rs_peer_socket_recv()
+void TcRsPeerSocketRecv()
 {
     struct SocketConnectInfo conn[10] = {0};
     struct SocketErrInfo  err[10] = {0};
@@ -6418,7 +6418,7 @@ void tc_rs_peer_socket_recv()
     return;
 }
 
-void tc_rs_socket_get_server_socket_err_info()
+void TcRsSocketGetServerSocketErrInfo()
 {
     struct SocketListenInfo conn[10] = {0};
     struct ServerSocketErrInfo err[10] = {0};
@@ -6451,15 +6451,15 @@ void tc_rs_socket_get_server_socket_err_info()
     return;
 }
 
-int stub_rs_find_listen_node(struct RsConnCb *connCb, struct RsIpAddrInfo *ip_addr, uint32_t server_port,
-    struct RsListenInfo **listen_info)
+int StubRsFindListenNode(struct RsConnCb *connCb, struct RsIpAddrInfo *ipAddr, uint32_t serverPort,
+    struct RsListenInfo **listenInfo)
 {
-    *listen_info = g_plisten_info;
+    *listenInfo = gPlistenInfo;
 
     return 0;
 }
 
-void tc_rs_socket_accept_credit_add()
+void TcRsSocketAcceptCreditAdd()
 {
     struct SocketListenInfo conn[10] = {0};
     struct RsConnCb connCb = {0};
@@ -6478,7 +6478,7 @@ void tc_rs_socket_accept_credit_add()
     mocker(RsConvertIpAddr, 1, 0);
     mocker(pthread_mutex_lock, 3, 0);
     mocker(pthread_mutex_unlock, 3, 0);
-    mocker_invoke(RsFindListenNode, stub_rs_find_listen_node, 1);
+    mocker_invoke(RsFindListenNode, StubRsFindListenNode, 1);
     mocker(RsSocketListenAddToEpoll, 1, 0);
     ret = RsSocketAcceptCreditAdd(conn, 1, 1);
     EXPECT_INT_EQ(ret, 0);
@@ -6487,64 +6487,64 @@ void tc_rs_socket_accept_credit_add()
     mocker(RsEpollCtl, 1, 0);
     mocker(pthread_mutex_lock, 3, 0);
     mocker(pthread_mutex_unlock, 3, 0);
-    g_listen_info.fdState = LISTEN_FD_STATE_DELETED;
-    ret = RsSocketListenAddToEpoll(&connCb, g_plisten_info);
+    gListenInfo.fdState = LISTEN_FD_STATE_DELETED;
+    ret = RsSocketListenAddToEpoll(&connCb, gPlistenInfo);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
     mocker(pthread_mutex_lock, 3, 0);
     mocker(pthread_mutex_unlock, 3, 0);
-    g_listen_info.fdState = LISTEN_FD_STATE_DELETED;
-    ret = RsSocketListenDelFromEpoll(&connCb, g_plisten_info);
+    gListenInfo.fdState = LISTEN_FD_STATE_DELETED;
+    ret = RsSocketListenDelFromEpoll(&connCb, gPlistenInfo);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
     mocker(pthread_mutex_lock, 3, 0);
     mocker(pthread_mutex_unlock, 3, 0);
     mocker(RsEpollCtl, 1, -1);
-    g_listen_info.fdState = LISTEN_FD_STATE_ADDED;
-    ret = RsSocketListenDelFromEpoll(&connCb, g_plisten_info);
+    gListenInfo.fdState = LISTEN_FD_STATE_ADDED;
+    ret = RsSocketListenDelFromEpoll(&connCb, gPlistenInfo);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 
-    g_listen_info.acceptCreditFlag = 1;
-    g_listen_info.acceptCreditLimit = 1;
+    gListenInfo.acceptCreditFlag = 1;
+    gListenInfo.acceptCreditLimit = 1;
     mocker(pthread_mutex_lock, 3, 0);
     mocker(pthread_mutex_unlock, 3, 0);
     mocker(RsEpollCtl, 1, 0);
-    ret = RsSocketCheckCredit(&connCb, g_plisten_info);
+    ret = RsSocketCheckCredit(&connCb, gPlistenInfo);
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 }
 
-void tc_rs_epoll_event_ssl_recv_tag_in_handle()
+void TcRsEpollEventSslRecvTagInHandle()
 {
-    struct rs_cb rs_cb = {0};
-    struct RsAcceptInfo *accept_info = NULL;
+    struct rs_cb rsCb = {0};
+    struct RsAcceptInfo *acceptInfo = NULL;
     struct RsListHead list = {0};
 
     RS_INIT_LIST_HEAD(&list);
-    accept_info = malloc(sizeof(struct RsAcceptInfo));
-    accept_info->list = list;
+    acceptInfo = malloc(sizeof(struct RsAcceptInfo));
+    acceptInfo->list = list;
     mocker_clean();
     mocker(RsSslRecvTagInHandle, 1, 0);
     mocker(RsWlistCheckConnAdd, 1, -1);
     mocker(SSL_free, 1, 0);
     mocker(pthread_mutex_lock, 1, 0);
     mocker(pthread_mutex_unlock, 1, 0);
-    RsEpollEventSslRecvTagInHandle(&rs_cb, accept_info);
+    RsEpollEventSslRecvTagInHandle(&rsCb, acceptInfo);
     mocker_clean();
 }
 
-void tc_rs_remap_mr()
+void TcRsRemapMr()
 {
     struct MemRemapInfo memList[1] = {0};
-    struct RsMrCb mr_cb = {0};
+    struct RsMrCb mrCb = {0};
     struct ibv_mr ibMr = {0};
     int ret;
 
     mocker_clean();
-    RS_INIT_LIST_HEAD(&g_rdev_cb.typicalMrList);
+    RS_INIT_LIST_HEAD(&gRdevCb.typicalMrList);
     mocker(rsGetLocalDevIDByHostDevID, 1, 0);
     mocker_invoke((stub_fn_t)RsRdev2rdevCb, stub_RsRdev2rdevCb, 10);
     mocker(RsRoceRemapMr, 1, 0);
@@ -6554,10 +6554,10 @@ void tc_rs_remap_mr()
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 
-    RS_INIT_LIST_HEAD(&g_rdev_cb.typicalMrList);
+    RS_INIT_LIST_HEAD(&gRdevCb.typicalMrList);
     ibMr.length = 100;
-    mr_cb.ibMr = &ibMr;
-    RsListAddTail(&mr_cb.list, &g_rdev_cb.typicalMrList);
+    mrCb.ibMr = &ibMr;
+    RsListAddTail(&mrCb.list, &gRdevCb.typicalMrList);
     mocker(rsGetLocalDevIDByHostDevID, 1, 0);
     mocker_invoke((stub_fn_t)RsRdev2rdevCb, stub_RsRdev2rdevCb, 10);
     mocker(RsRoceRemapMr, 1, 0);
@@ -6567,11 +6567,11 @@ void tc_rs_remap_mr()
     EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 
-    RS_INIT_LIST_HEAD(&g_rdev_cb.typicalMrList);
+    RS_INIT_LIST_HEAD(&gRdevCb.typicalMrList);
     ibMr.length = 100;
-    mr_cb.ibMr = &ibMr;
+    mrCb.ibMr = &ibMr;
     memList[0].size = (unsigned long long)-1;
-    RsListAddTail(&mr_cb.list, &g_rdev_cb.typicalMrList);
+    RsListAddTail(&mrCb.list, &gRdevCb.typicalMrList);
     mocker(rsGetLocalDevIDByHostDevID, 1, 0);
     mocker_invoke((stub_fn_t)RsRdev2rdevCb, stub_RsRdev2rdevCb, 10);
     mocker(RsRoceRemapMr, 1, 0);
@@ -6581,11 +6581,11 @@ void tc_rs_remap_mr()
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
 
-    RS_INIT_LIST_HEAD(&g_rdev_cb.typicalMrList);
+    RS_INIT_LIST_HEAD(&gRdevCb.typicalMrList);
     ibMr.length = 100;
-    mr_cb.ibMr = &ibMr;
+    mrCb.ibMr = &ibMr;
 	memList[0].size = 100;
-    RsListAddTail(&mr_cb.list, &g_rdev_cb.typicalMrList);
+    RsListAddTail(&mrCb.list, &gRdevCb.typicalMrList);
     mocker(rsGetLocalDevIDByHostDevID, 1, 0);
     mocker_invoke((stub_fn_t)RsRdev2rdevCb, stub_RsRdev2rdevCb, 10);
     mocker(RsRoceRemapMr, 1, 0);
@@ -6598,20 +6598,20 @@ void tc_rs_remap_mr()
 
 void tc_RsRoceGetApiVersion()
 {
-    unsigned int api_version = 0;
+    unsigned int apiVersion = 0;
 
-    api_version = RsRoceGetApiVersion();
-    EXPECT_INT_EQ(api_version, 0);
+    apiVersion = RsRoceGetApiVersion();
+    EXPECT_INT_EQ(apiVersion, 0);
 }
 
-void tc_rs_get_tls_enable()
+void TcRsGetTlsEnable()
 {
     unsigned int phyId;
-    bool tls_enable;
+    bool tlsEnable;
     int ret;
 
     mocker(RsGetRsCb, 1, 1);
-    ret = RsGetTlsEnable(phyId, &tls_enable);
+    ret = RsGetTlsEnable(phyId, &tlsEnable);
     EXPECT_INT_EQ(ret, 1);
 
     ret = RsGetTlsEnable(phyId, NULL);
@@ -6619,15 +6619,15 @@ void tc_rs_get_tls_enable()
 	mocker_clean();
 }
 
-int rs_get_linux_version_stub(struct RsLinuxVersionInfo *ver_info)
+int RsGetLinuxVersionStub(struct RsLinuxVersionInfo *verInfo)
 {
-    ver_info->major = 5;
-    ver_info->minor = 19;
-    ver_info->patch = 0;
+    verInfo->major = 5;
+    verInfo->minor = 19;
+    verInfo->patch = 0;
     return 0;
 }
 
-void tc_rs_get_sec_random()
+void TcRsGetSecRandom()
 {
 	unsigned int value = 0;
     int ret;
@@ -6646,25 +6646,25 @@ void tc_rs_get_sec_random()
     ret = RsGetSecRandom(&value);
     EXPECT_INT_NE(0, ret);
 
-	mocker_invoke(RsGetLinuxVersion, rs_get_linux_version_stub, 10);
+	mocker_invoke(RsGetLinuxVersion, RsGetLinuxVersionStub, 10);
 
 	ret = RsGetSecRandom(&value);
     EXPECT_INT_NE(ret, 0);
 }
 
-void tc_rs_get_hccn_cfg()
+void TcRsGetHccnCfg()
 {
 	char *value[2048] = {0};
-	unsigned int value_len = 2048;
+	unsigned int valueLen = 2048;
 
     int ret;
 
-	ret = RsGetHccnCfg(0, HCCN_CFG_UDP_PORT_MODE, value, &value_len);
+	ret = RsGetHccnCfg(0, HCCN_CFG_UDP_PORT_MODE, value, &valueLen);
     EXPECT_INT_EQ(0, ret);
 	mocker_clean();
 }
 
-void tc_rs_free_dev_list(void)
+void TcRsFreeDevList(void)
 {
     struct rs_cb rscb = {0};
 
@@ -6675,7 +6675,7 @@ void tc_rs_free_dev_list(void)
     RsFreeDevList(&rscb);
 }
 
-void tc_rs_free_rdev_list(void)
+void TcRsFreeRdevList(void)
 {
     struct RsRdevCb rdevCb = {0};
     struct rs_cb rscb = {0};
@@ -6698,24 +6698,24 @@ void tc_rs_free_rdev_list(void)
     mocker_clean();
 }
 
-void tc_rs_free_udev_list(void)
+void TcRsFreeUdevList(void)
 {
-    struct rs_ub_dev_cb udev_cb = {0};
+    struct RsUbDevCb udevCb = {0};
     struct rs_cb rscb = {0};
 
 	RS_INIT_LIST_HEAD(&rscb.rdevList);
-    mocker(rs_ub_ctx_deinit, 1, -1);
-    RsListAddTail(&udev_cb.list, &rscb.rdevList);
+    mocker(RsUbCtxDeinit, 1, -1);
+    RsListAddTail(&udevCb.list, &rscb.rdevList);
     RsFreeUdevList(&rscb);
     mocker_clean();
 
     mocker_clean();
-    mocker(rs_ub_ctx_deinit, 1, 0);
+    mocker(RsUbCtxDeinit, 1, 0);
     RsFreeUdevList(&rscb);
     mocker_clean();
 }
 
-void tc_rs_retry_timeout_exception_check()
+void TcRsRetryTimeoutExceptionCheck()
 {
     struct SensorNode sensorNode = {0};
 	struct ibv_wc wc = {0};

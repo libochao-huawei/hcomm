@@ -53,15 +53,11 @@ extern HcclResult HcommProfilingRegThread(HcomProInfo profInfo, ThreadHandle *th
     std::string identifier(profInfo.commName);
     std::string tag(profInfo.tag);
     HCCL_PROFILER_ADD_GROUPRANK(identifier, profInfo.rankSize, profInfo.userRank);
-    if (profInfo.isAiv)
-    {
+    if (profInfo.isAiv) {
         HCCL_PROFILER_ADD_TAG_AIV(tag, identifier, GetWorkflowMode());
-    }
-    else
-    {
+    } else {
         HCCL_PROFILER_ADD_TAG(tag, identifier, GetWorkflowMode());
     }
-
 
     uint32_t mainStreamId = reinterpret_cast<Thread*>(threads[0])->GetStream()->id();
     HCCL_INFO("[%s] mainStreamId[%u], identifier[%s], tag[%s]", __func__, mainStreamId, profInfo.commName, profInfo.tag);
@@ -93,7 +89,6 @@ extern HcclResult HcommProfilingUnRegThread(HcomProInfo profInfo, ThreadHandle *
     CHK_PTR_NULL(threads);
     std::string tag(profInfo.tag);
     std::string identifier(profInfo.commName);
-    
 
     HCCL_PROFILER_DEL_TAG(tag);
     HCCL_PROFILER_DEL_GROUPRANK(identifier);
@@ -104,8 +99,7 @@ extern HcclResult HcommProfilingUnRegThread(HcomProInfo profInfo, ThreadHandle *
     if (((GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
             hccl::ProfilingManagerPub::GetAddtionInfoState() &&
             hccl::ProfilingManagerPub::GetTaskApiState()) &&
-            !profInfo.isCapture)
-    {
+            !profInfo.isCapture) {
         return HCCL_SUCCESS;
     }
 

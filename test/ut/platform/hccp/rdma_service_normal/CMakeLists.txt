@@ -67,33 +67,25 @@ add_executable(rs_ut_normal ${rs_ut_normal_list})
 set_property(TARGET rs_ut_normal PROPERTY C_STANDARD 11)
 target_include_directories(rs_ut_normal PRIVATE
     ${SRC_DIR}/test/ut/depends/include
-    ${SRC_DIR}/test/ut/platform/hccp/stub/include
-    ${SRC_DIR}/test/ut/platform/hccp/ut_include
-    ${SRC_DIR}/test/ut/platform/hccp/stub/
-    ${SRC_DIR}/test/ut/platform/hccp/rdma_service_normal/stub
     ${SRC_DIR}/test/ut/platform/hccp/stub/roce_user
-    ${HCOMM_UTILS_PATH}/hcomm_utils/host/include/tls_adp
+    ${SRC_DIR}/test/ut/platform/hccp/stub/
+    ${SRC_DIR}/test/ut/platform/hccp/ut_include
+    ${SRC_DIR}/test/ut/platform/hccp/rdma_service_normal/stub
     ${SRC_DIR}/test/ut/platform/hccp/rdma_service_normal/include
-    ${SRC_DIR}/src/platform/hccp/external_depends/inc
-    ${SRC_DIR}/src/platform/hccp/external_depends/inc/driver
-    ${SRC_DIR}/src/platform/hccp/inc/private/network
-    ${SRC_DIR}/src/platform/hccp/crypt/inc
+    ${SRC_DIR}/src/platform/hccp/common
     ${SRC_DIR}/src/platform/hccp/rdma_service/
     ${SRC_DIR}/src/platform/hccp/rdma_service/tlv
-    ${SRC_DIR}/src/platform/hccp/common
-    ${SRC_DIR}/src/platform/hccp/roce/roce_user
     ${SRC_DIR}/src/platform/hccp/rdma_service/ctx/product
-    ${SRC_DIR}/src/platform/hccp/inc/network
-    ${SRC_DIR}/src/platform/hccp/inc/network
     ${SRC_DIR}/src/platform/hccp/rdma_service/ctx
     ${SRC_DIR}/src/platform/hccp/inc/private/network
+    ${SRC_DIR}/src/platform/hccp/inc/network
+    ${SRC_DIR}/src/platform/hccp/external_depends/inc
+    ${SRC_DIR}/src/platform/hccp/external_depends/inc/driver
     ${SRC_DIR}/src/platform/hccp/external_depends/ubengine
     ${SRC_DIR}/src/platform/hccp/external_depends/net_adapt
     ${SRC_DIR}/src/platform/hccp/external_depends/ccu
-    ${SRC_DIR}/src/platform/hccp/rdma_service/ctx/product
-    ${HCCL_CODE_ROOT}/src/platform/hccp/inc
-    ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network
-    ${HCCL_CODE_ROOT}/src/platform/hccp/external_depends/rdma-core/include
+    ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include
+    ${HCOMM_UTILS_PATH}/hcomm_utils/host/include/tls_adp
     ${ASCEND_3RD_LIB_PATH}/json/include/
     ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
     ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/

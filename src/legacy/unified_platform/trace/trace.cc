@@ -29,6 +29,9 @@ bool Trace::isClosingChar(const char& c) const
 HcclResult Trace::Init(std::string &logInfo)
 {
     traceHandle = TraceCreate(logInfo.c_str());//Handle只申请不释放，由atrace组件释放
+    if (traceHandle == TRACE_INVALID_HANDLE) {
+        HCCL_RUN_INFO("Trace::Init traceHandle is TRACE_INVALID_HANDLE");
+    }
     return HcclResult::HCCL_SUCCESS;
 }
 

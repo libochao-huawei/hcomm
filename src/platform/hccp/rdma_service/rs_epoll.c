@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #define _GNU_SOURCE
 #include <unistd.h>
@@ -355,7 +355,7 @@ STATIC void RsEpollEventInHandle(struct rs_cb *rsCb, struct epoll_event *events)
     }
 
     if (RsIsUdmaSupported()) {
-        ret = rs_epoll_event_jfc_in_handle(rsCb, fd);
+        ret = RsEpollEventJfcInHandle(rsCb, fd);
         if (ret != -ENODEV) {
             hccp_info("the fd:%d is for poll jfc, no need to go on, ret:%d", fd, ret);
             return;
@@ -551,7 +551,7 @@ STATIC void *RsEpollHandle(void *arg)
 
         /* eventfd is for wake up epoll wait, value is ignored */
         if (events[0].data.fd == connCb->eventfd) {
-            hccp_warn("<EPOLL> SHUT DOWN event!!! eventfd:%d", connCb->eventfd);
+            hccp_warn("<EPOLL> SHUT DOWN event eventfd:%d", connCb->eventfd);
             do {
                 num = read(connCb->eventfd, &val, sizeof(eventfd_t));
             } while ((num < 0) && (errno == EINTR));

@@ -150,7 +150,7 @@ HcclResult GetCombineComTaskNum(const std::string &sCollectiveType, s32 serverNu
 HcclResult GetIntraComTaskNum(const std::string &sCollectiveType, s32 deviceNumPerServer,
     u64 streamNum, const AlgType &algType, u32 &taskNum, u64 totalSize);
 HcclResult GetBetweenServersStep(s32 serverNum, u32 &commStep);
-HcclResult GetClusterInfoAndDeviceNum(const std::string ranktableStr, hccl::RankTable_t &clusterInfo, s32 &deviceNum);
+HcclResult GetClusterInfoAndDeviceNum(const std::string ranktableString, hccl::RankTable_t &clusterInfo, s32 &deviceNum);
 HcclResult GetServerAndDevNumFromRanklist(const u32 *groupList, u32 groupListSize, const std::vector<hccl::RankInfo_t> &rankList,
     DevType devType, s32 &serverNum, s32 &deviceNum, bool &multiModuleDiffDeviceNumMode);
 HcclResult GetServerIdByRankId(const std::vector<hccl::RankInfo_t> &rankList, const u32 &rankId, u32 &serverId);

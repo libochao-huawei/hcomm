@@ -333,5 +333,5 @@ HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpCo
 HcclResult IsSupportRaSocketAbort(bool& isSupportRaSocketAbort);
 HcclResult hrtRaGetSecRandom(struct RaInfo *info, unsigned int* token);
 HcclResult hrtRaGetDevEidInfoNum(struct RaInfo *info, unsigned int* num);
-HcclResult hrtRaGetDevEidInfoList(struct RaInfo *info, struct dev_eid_info *eid_info, unsigned int* num);
+HcclResult hrtRaGetDevEidInfoList(struct RaInfo *info, struct HccpDevEidInfo *eid_info, unsigned int* num);
 #endif

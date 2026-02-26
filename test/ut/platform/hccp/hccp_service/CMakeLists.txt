@@ -22,35 +22,36 @@ set(hccp_utest_list
     tc_hccp.c
     )
 
-message(STATUS "${SRC_DIR}/src/platform/common/ascend_hal_dl.c")
 add_executable(hccp_utest ${hccp_utest_list})
 
 set_property(TARGET hccp_utest PROPERTY C_STANDARD 11)
 target_include_directories(hccp_utest PRIVATE
     stub
-    
-    ${SRC_DIR}/src/platform/hccp/external_depends/inc
-    ${SRC_DIR}/src/platform/hccp/external_depends/inc/driver
-    ${SRC_DIR}/test/ut/platform/hccp/stub/include
     ${SRC_DIR}/test/ut/platform/hccp/ut_include
     ${SRC_DIR}/test/ut/depends/include
     ${SRC_DIR}/test/ut/depends/pkg_inc/aicpu/tsd
     ${SRC_DIR}/test/ut/depends/pkg_inc/aicpu/
+    ${SRC_DIR}/test/ut/hccp/rdma_service_normal/rdma_service_normal/include
+    ${SRC_DIR}/test/ut/depends/include
     ${SRC_DIR}/src/platform/hccp/hccp_service
     ${SRC_DIR}/src/platform/hccp/rdma_agent/adapter
     ${SRC_DIR}/src/platform/hccp/rdma_agent/adapter/async
     ${SRC_DIR}/src/platform/hccp/rdma_agent/hdc
     ${SRC_DIR}/src/platform/hccp/rdma_agent/inc
     ${SRC_DIR}/src/platform/hccp/rdma_service
-    ${SRC_DIR}/src/platform/hccp/inc/private/network
-    ${SRC_DIR}/test/ut/hccp/rdma_service_normal/rdma_service_normal/include
-    ${SRC_DIR}/platform/roce/roce-core
     ${SRC_DIR}/src/platform/hccp/common
-    ${SRC_DIR}/src/platform/hccp/external_depends/host_lite
+    ${SRC_DIR}/src/platform/hccp/inc/private/network
     ${SRC_DIR}/src/platform/hccp/inc/network
+    ${SRC_DIR}/src/platform/hccp/external_depends/inc
+    ${SRC_DIR}/src/platform/hccp/external_depends/inc/driver
+    ${SRC_DIR}/src/platform/hccp/external_depends/host_lite
     ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include
     ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/providers/hns
-    ${UT_COMMON_INCLUDE_LIST}
+    ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include
+    ${ASCEND_3RD_LIB_PATH}/json/include/
+    ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
+    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/
+    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/3rdparty/
 )
 
 target_compile_options(hccp_utest PRIVATE

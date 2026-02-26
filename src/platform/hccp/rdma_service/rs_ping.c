@@ -1,12 +1,13 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
 #include <errno.h>
 #include <sys/prctl.h>
 #include "securec.h"
@@ -267,8 +268,8 @@ STATIC int RsPingInitProtocolOps(struct RsPingCtxCb *pingCb, enum ProtocolTypeT 
             pingCb->pingPongDfx = RsPingRoceGetDfx();
             break;
         case PROTOCOL_UDMA:
-            pingCb->pingPongOps = rs_ping_urma_get_ops();
-            pingCb->pingPongDfx = rs_ping_urma_get_dfx();
+            pingCb->pingPongOps = RsPingUrmaGetOps();
+            pingCb->pingPongDfx = RsPingUrmaGetDfx();
             break;
         default:
             hccp_err("unsupported protocol:%u", protocol);
@@ -292,7 +293,7 @@ RS_ATTRI_VISI_DEF int RsPingInit(struct PingInitAttr *attr, struct PingInitInfo 
     CHK_PRT_RETURN(attr == NULL || info == NULL || devIndex == NULL,
         hccp_err("param error, attr or info or devIndex is NULL"), -EINVAL);
 
-    phyId = (attr->protocol == PROTOCOL_RDMA) ? attr->dev.rdma.phyId : attr->ub.phy_id;
+    phyId = (attr->protocol == PROTOCOL_RDMA) ? attr->dev.rdma.phyId : attr->ub.phyId;
     ret = RsGetRsCb(phyId, &rscb);
     CHK_PRT_RETURN(ret != 0, hccp_err("RsGetRsCb failed, phyId[%u] invalid, ret %d", phyId, ret), ret);
 

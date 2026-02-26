@@ -23,20 +23,20 @@ typedef signed int s32;
 
 struct RsInitConfig {
     u32 port;
-    u32 device_id;
-    u32 rs_position;
+    u32 deviceId;
+    u32 rsPosition;
 };
 
-struct rs_socket_listen_info_t {
-    uint32_t device_id;
-    uint32_t ip_addr;
+struct RsSocketListenInfoT {
+    uint32_t deviceId;
+    uint32_t ipAddr;
     uint32_t phase;
     uint32_t err;
 };
 
-struct rs_socket_connect_info_t {
-    uint32_t device_id;
-    uint32_t ip_addr;
+struct RsSocketConnectInfoT {
+    uint32_t deviceId;
+    uint32_t ipAddr;
     char tag[128];
 };
 
@@ -44,11 +44,11 @@ struct RsSocketCloseInfoT {
     int fd;
 };
 
-struct rs_socket_info_t {
+struct RsSocketInfoT {
     int fd;
-    u32 device_id;
-    u32 server_ip_addr;
-    u32 client_ip_addr;
+    u32 deviceId;
+    u32 serverIpAddr;
+    u32 clientIpAddr;
     s32 status;
     char tag[128];
 };
@@ -58,11 +58,11 @@ struct RsQpNorm {
     int qpMode;
     int isExp;
     int isExt;
-    int mem_align;
+    int memAlign;
 };
 
 struct RsWrlistBaseInfo {
-    unsigned int dev_id;
+    unsigned int devId;
     unsigned int rdevIndex;
     unsigned int qpn;
     unsigned int keyFlag;
@@ -83,16 +83,16 @@ void RsGetCurTime(struct timeval *time)
     return;
 }
 
-void HccpTimeInterval(struct timeval *end_time, struct timeval *start_time, float *msec)
+void HccpTimeInterval(struct timeval *endTime, struct timeval *startTime, float *msec)
 {
     /* if low position is sufficient, then borrow one from the high position */
-    if (end_time->tv_usec < start_time->tv_usec) {
-        end_time->tv_sec -= 1;
-        end_time->tv_usec += MS_PER_SECOND_I * MS_PER_SECOND_I;
+    if (endTime->tv_usec < startTime->tv_usec) {
+        endTime->tv_sec -= 1;
+        endTime->tv_usec += MS_PER_SECOND_I * MS_PER_SECOND_I;
     }
 
-    *msec = (end_time->tv_sec - start_time->tv_sec) * MS_PER_SECOND_F +
-            (end_time->tv_usec - start_time->tv_usec) / MS_PER_SECOND_F;
+    *msec = (endTime->tv_sec - startTime->tv_sec) * MS_PER_SECOND_F +
+            (endTime->tv_usec - startTime->tv_usec) / MS_PER_SECOND_F;
 
     return;
 }
@@ -102,17 +102,17 @@ int RsSocketBatchConnect(struct SocketConnectInfo conn[], uint32_t num)
     return 0;
 }
 
-int RsSocketSetScopeId(unsigned int dev_id, int scope_id)
+int RsSocketSetScopeId(unsigned int devId, int scopeId)
 {
     return 0;
 }
 
-int RsSocketBatchClose(int disuse_linger, struct RsSocketCloseInfoT conn[], u32 num)
+int RsSocketBatchClose(int disuseLinger, struct RsSocketCloseInfoT conn[], u32 num)
 {
     return 0;
 }
 
-int RsSocketBatchAbort(int disuse_linger, struct RsSocketCloseInfoT conn[], u32 num)
+int RsSocketBatchAbort(int disuseLinger, struct RsSocketCloseInfoT conn[], u32 num)
 {
     return 0;
 }
@@ -128,13 +128,13 @@ int RsSocketListenStop(struct SocketListenInfo listen[], uint32_t num)
 }
 
 static int fd = 0;
-static int dev_id = 0;
+static int devId = 0;
 int RsGetSockets(uint32_t role, struct SocketFdData conn[], uint32_t num)
 {
     int i;
 
     for (i = 0; i < num; i++) {
-        conn[i].phyId = dev_id;
+        conn[i].phyId = devId;
         conn[i].fd = fd;
     }
     return num;
@@ -155,13 +155,13 @@ int RsPeerSocketRecv(uint32_t sslEnable, int fd, void *data, uint64_t size)
     return size;
 }
 
-int rs_get_socket_num(unsigned int role, struct rdev rdev_info, unsigned int *socket_num)
+int RsGetSocketNum(unsigned int role, struct rdev rdevInfo, unsigned int *socketNum)
 {
    return 0;
 }
 
-int rs_get_all_sockets(unsigned int phyId, uint32_t role, struct SocketFdData *conn,
-    uint32_t *socket_num)
+int RsGetAllSockets(unsigned int phyId, uint32_t role, struct SocketFdData *conn,
+    uint32_t *socketNum)
 {
 	conn->fd = 0;
 	conn->localIp.addr.s_addr = 0;
@@ -182,96 +182,96 @@ int RsSocketRecv(int fd, void *data, u64 size)
     return size;
 }
 
-int RsQpCreate(unsigned int phyId, unsigned int rdevIndex, struct RsQpNorm qp_norm,
-    struct RsQpResp *qp_resp)
+int RsQpCreate(unsigned int phyId, unsigned int rdevIndex, struct RsQpNorm qpNorm,
+    struct RsQpResp *qpResp)
 {
-	qp_resp->qpn = 0;
-	qp_resp->psn = 0;
-	qp_resp->gidIdx = 0;
-	qp_resp->gid.global.subnet_prefix = 0;
-	qp_resp->gid.global.interface_id = 0;
+	qpResp->qpn = 0;
+	qpResp->psn = 0;
+	qpResp->gidIdx = 0;
+	qpResp->gid.global.subnet_prefix = 0;
+	qpResp->gid.global.interface_id = 0;
 
 	return 0;
 }
 
 int RsQpCreateWithAttrs(unsigned int phyId, unsigned int rdevIndex,
-    struct RsQpNormWithAttrs  *qp_norm, struct RsQpRespWithAttrs *qp_resp)
+    struct RsQpNormWithAttrs  *qpNorm, struct RsQpRespWithAttrs *qpResp)
 {
-	qp_resp->qpn = 0;
-	qp_resp->aiQpAddr = 0;
+	qpResp->qpn = 0;
+	qpResp->aiQpAddr = 0;
 	return 0;
 }
 
-int RsQpDestroy(unsigned int dev_id, unsigned int rdevIndex, unsigned int qpn)
+int RsQpDestroy(unsigned int devId, unsigned int rdevIndex, unsigned int qpn)
 {
     return 0;
 }
 
 int RsTypicalQpModify(unsigned int phyId, unsigned int rdevIndex,
-    struct TypicalQp local_qp_info, struct TypicalQp remote_qp_info, unsigned int *udp_sport)
+    struct TypicalQp localQpInfo, struct TypicalQp remoteQpInfo, unsigned int *udpSport)
 {
 	return 0;
 }
 
-static struct ibv_mr stub_mr = {0};
+static struct ibv_mr stubMr = {0};
 
-int RsTypicalRegisterMrV1(unsigned int phyId, unsigned int rdevIndex, struct RdmaMrRegInfo *mr_reg_info,
-    void **mr_handle)
+int RsTypicalRegisterMrV1(unsigned int phyId, unsigned int rdevIndex, struct RdmaMrRegInfo *mrRegInfo,
+    void **mrHandle)
 {
-	*mr_handle = &stub_mr;
+	*mrHandle = &stubMr;
 	return 0;
 }
 
-int RsTypicalRegisterMr(unsigned int phyId, unsigned int rdevIndex, struct RdmaMrRegInfo *mr_reg_info,
-    void **mr_handle)
+int RsTypicalRegisterMr(unsigned int phyId, unsigned int rdevIndex, struct RdmaMrRegInfo *mrRegInfo,
+    void **mrHandle)
 {
-	*mr_handle = &stub_mr;
+	*mrHandle = &stubMr;
 	return 0;
 }
 
-int RsTypicalDeregisterMr(unsigned int phyId, unsigned int dev_index, unsigned long long addr)
+int RsTypicalDeregisterMr(unsigned int phyId, unsigned int devIndex, unsigned long long addr)
 {
 	return 0;
 }
 
-int RsQpConnectAsync(unsigned int dev_id, unsigned int rdevIndex, unsigned int qpn, int fd)
+int RsQpConnectAsync(unsigned int devId, unsigned int rdevIndex, unsigned int qpn, int fd)
 {
     return 0;
 }
 
-int RsGetQpStatus(unsigned int dev_id, unsigned int rdevIndex, unsigned int qpn, int *status)
+int RsGetQpStatus(unsigned int devId, unsigned int rdevIndex, unsigned int qpn, int *status)
 {
     return 0;
 }
 
-int RsMrReg(unsigned int dev_id, unsigned int rdevIndex, unsigned int qpn, struct RdmaMrRegInfo *mr_reg_info)
+int RsMrReg(unsigned int devId, unsigned int rdevIndex, unsigned int qpn, struct RdmaMrRegInfo *mrRegInfo)
 {
     return 0;
 }
 
-int RsMrDereg(unsigned int dev_id, unsigned int rdevIndex, unsigned int qpn, char *addr)
+int RsMrDereg(unsigned int devId, unsigned int rdevIndex, unsigned int qpn, char *addr)
 {
     return 0;
 }
 
-int RsRegisterMr(unsigned int dev_id, unsigned int rdevIndex, struct RdmaMrRegInfo *mr_reg_info)
+int RsRegisterMr(unsigned int devId, unsigned int rdevIndex, struct RdmaMrRegInfo *mrRegInfo)
 {
     return 0;
 }
 
-int RsDeregisterMr(unsigned int dev_id, unsigned int rdevIndex, char *addr)
+int RsDeregisterMr(unsigned int devId, unsigned int rdevIndex, char *addr)
 {
     return 0;
 }
 
-int RsSendWr(unsigned int dev_id, unsigned int rdevIndex, uint32_t qpn, struct SendWr *wr,
-    struct SendWrRsp *wr_rsp)
+int RsSendWr(unsigned int devId, unsigned int rdevIndex, uint32_t qpn, struct SendWr *wr,
+    struct SendWrRsp *wrRsp)
 {
     return 0;
 }
 
-int RsSendWrlist(struct RsWrlistBaseInfo base_info, struct WrInfo *wr,
-    unsigned int send_num, struct SendWrRsp *wr_rsp, unsigned int *complete_num)
+int RsSendWrlist(struct RsWrlistBaseInfo baseInfo, struct WrInfo *wr,
+    unsigned int sendNum, struct SendWrRsp *wrRsp, unsigned int *completeNum)
 {
 	return 0;
 }
@@ -281,7 +281,7 @@ int RsGetNotifyMrInfo(unsigned int phyId, unsigned int rdevIndex, struct mrInfo*
     return 0;
 }
 
-int RsSetHostPid(uint32_t dev_id, uint32_t host_pid)
+int RsSetHostPid(uint32_t devId, uint32_t hostPid)
 {
     return 0;
 }
@@ -306,62 +306,62 @@ int RsDeinit(struct RaInitConfig *cfg)
     return 0;
 }
 
-int RsSocketInit(const unsigned int *vnic_ip, unsigned int num)
+int RsSocketInit(const unsigned int *vnicIp, unsigned int num)
 {
     return 0;
 }
 
-int RsSocketDeinit(struct rdev rdev_info)
+int RsSocketDeinit(struct rdev rdevInfo)
 {
     return 0;
 }
 
-int RsRdevInit(struct rdev rdev_info, unsigned int notify_type,  unsigned int *rdevIndex)
+int RsRdevInit(struct rdev rdevInfo, unsigned int notifyType,  unsigned int *rdevIndex)
 {
     return 0;
 }
 
-int RsRdevInitWithBackup(struct rdev rdev_info, struct rdev backup_rdev_info,
-    unsigned int notify_type, unsigned int *rdevIndex)
+int RsRdevInitWithBackup(struct rdev rdevInfo, struct rdev backupRdevInfo,
+    unsigned int notifyType, unsigned int *rdevIndex)
 {
     return 0;
 }
 
-int RsRdevDeinit(unsigned int dev_id, unsigned int notify_type,  unsigned int rdevIndex)
+int RsRdevDeinit(unsigned int devId, unsigned int notifyType,  unsigned int rdevIndex)
 {
     return 0;
 }
 
-int RsSocketWhiteListAdd(struct rdev rdev_info, struct SocketWlistInfoT white_list[],
+int RsSocketWhiteListAdd(struct rdev rdevInfo, struct SocketWlistInfoT whiteList[],
                                         u32 num)
 {
     return 0;
 }
 
-int RsSocketWhiteListDel(struct rdev rdev_info, struct SocketWlistInfoT white_list[],
+int RsSocketWhiteListDel(struct rdev rdevInfo, struct SocketWlistInfoT whiteList[],
                                         u32 num)
 {
     return 0;
 }
 
-int RsPeerGetIfaddrs(struct InterfaceInfo interface_infos[], unsigned int *num,
+int RsPeerGetIfaddrs(struct InterfaceInfo interfaceInfos[], unsigned int *num,
     unsigned int phyId)
 {
     return 0;
 }
 
-int RsGetIfaddrs(struct IfaddrInfo ifaddr_infos[], unsigned int *num, unsigned int dev_id)
+int RsGetIfaddrs(struct IfaddrInfo ifaddrInfos[], unsigned int *num, unsigned int devId)
 {
 	return 0;
 }
 
-int RsGetIfaddrsV2(struct InterfaceInfo interface_infos[], unsigned int *num,
-    unsigned int phyId, bool is_all)
+int RsGetIfaddrsV2(struct InterfaceInfo interfaceInfos[], unsigned int *num,
+    unsigned int phyId, bool isAll)
 {
 	return 0;
 }
 
-int RsGetIfnum(unsigned int phyId, bool is_all, unsigned int *num)
+int RsGetIfnum(unsigned int phyId, bool isAll, unsigned int *num)
 {
     return 0;
 }
@@ -371,7 +371,7 @@ int RsPeerGetIfnum(unsigned int phyId, unsigned int *num)
     return 0;
 }
 
-int RsGetVnicIp(unsigned int phyId, unsigned int *vnic_ip)
+int RsGetVnicIp(unsigned int phyId, unsigned int *vnicIp)
 {
 	return 0;
 }
@@ -382,46 +382,46 @@ int RsGetInterfaceVersion(unsigned int opcode, unsigned int *version)
     return 0;
 }
 
-int RsNotifyCfgSet(unsigned int dev_id, unsigned long long va, unsigned long long size)
+int RsNotifyCfgSet(unsigned int devId, unsigned long long va, unsigned long long size)
 {
 	return 0;
 }
 
-int RsNotifyCfgGet(unsigned int dev_id, unsigned long long *va, unsigned long long *size)
+int RsNotifyCfgGet(unsigned int devId, unsigned long long *va, unsigned long long *size)
 {
 	return 0;
 }
 
-int RsSetTsqpDepth(unsigned int phyId, unsigned int rdevIndex, unsigned int temp_depth,
-    unsigned int *qp_num)
+int RsSetTsqpDepth(unsigned int phyId, unsigned int rdevIndex, unsigned int tempDepth,
+    unsigned int *qpNum)
 {
 	return 0;
 }
 
-int RsGetTsqpDepth(unsigned int phyId, unsigned int rdevIndex, unsigned int *temp_depth,
-    unsigned int *qp_num)
+int RsGetTsqpDepth(unsigned int phyId, unsigned int rdevIndex, unsigned int *tempDepth,
+    unsigned int *qpNum)
 {
 	return 0;
 }
 
-void RsHeartbeatAlivePrint(struct RaHdcAsyncInfo *pthread_info)
+void RsHeartbeatAlivePrint(struct RaHdcAsyncInfo *pthreadInfo)
 {
 	return;
 }
 
-int RsRecvWrlist(struct RsWrlistBaseInfo base_info, struct RecvWrlistData *wr,
-    unsigned int recv_num, unsigned int *complete_num)
+int RsRecvWrlist(struct RsWrlistBaseInfo baseInfo, struct RecvWrlistData *wr,
+    unsigned int recvNum, unsigned int *completeNum)
 {
-    *complete_num = recv_num;
+    *completeNum = recvNum;
 	return 0;
 }
 
-int RsEpollCtlAdd(const void *fd_handle, enum RaEpollEvent event)
+int RsEpollCtlAdd(const void *fdHandle, enum RaEpollEvent event)
 {
     return 0;
 }
 
-int RsEpollCtlMod(const void *fd_handle, enum RaEpollEvent event)
+int RsEpollCtlMod(const void *fdHandle, enum RaEpollEvent event)
 {
     return 0;
 }
@@ -437,7 +437,7 @@ void RsSetTcpRecvCallback(const void *callback)
 }
 
 int RsGetQpContext(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, void** qp,
-    void** send_cq, void** recv_cq)
+    void** sendCq, void** recvCq)
 {
     return 0;
 }
@@ -453,7 +453,7 @@ int RsCqDestroy(unsigned int phyId, unsigned int rdevIndex, struct CqAttr *attr)
 }
 
 int RsNormalQpCreate(unsigned int phyId, unsigned int rdevIndex,
-    struct ibv_qp_init_attr *qp_init_attr, struct RsQpResp *qp_resp, void** qp)
+    struct ibv_qp_init_attr *qpInitAttr, struct RsQpResp *qpResp, void** qp)
 {
     return 0;
 }
@@ -476,7 +476,7 @@ int RsSetQpAttrTimeout(unsigned int phyId, unsigned int rdevIndex, unsigned int 
 }
 
 int RsSetQpAttrRetryCnt(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn,
-    unsigned int *retry_cnt)
+    unsigned int *retryCnt)
 {
     return 0;
 }
@@ -486,52 +486,52 @@ int RsGetCqeErrInfo(struct CqeErrInfo *info)
 	return 0;
 }
 
-int RsGetCqeErrInfoNum(unsigned int phyId, unsigned int rdev_idx, unsigned int *num)
+int RsGetCqeErrInfoNum(unsigned int phyId, unsigned int rdevIdx, unsigned int *num)
 {
     return 0;
 }
 
-int RsGetCqeErrInfoList(unsigned int phyId, unsigned int rdev_idx, struct CqeErrInfo *info,
+int RsGetCqeErrInfoList(unsigned int phyId, unsigned int rdevIdx, struct CqeErrInfo *info,
     unsigned int *num)
 {
     return 0;
 }
 
-int tls_get_user_config(unsigned int save_mode, unsigned int chipId, const char *name,
-    unsigned char *buf, unsigned int *buf_size)
+int TlsGetUserConfig(unsigned int saveMode, unsigned int chipId, const char *name,
+    unsigned char *buf, unsigned int *bufSize)
 {
     return 0;
 }
 
-void tls_get_enable_info(unsigned int save_mode, unsigned int chipId, unsigned char *buf, unsigned int buf_size)
+void TlsGetEnableInfo(unsigned int saveMode, unsigned int chipId, unsigned char *buf, unsigned int bufSize)
 {
     return 0;
 }
 
-struct kmc_enc_info {
-    unsigned char *cipher_text;
-    unsigned int cipher_text_len;
-    unsigned char *work_key;
-    unsigned int work_key_len;
+struct KmcEncInfo {
+    unsigned char *cipherText;
+    unsigned int cipherTextLen;
+    unsigned char *workKey;
+    unsigned int workKeyLen;
 };
 
-int enc_with_sdp(unsigned int enc_alg, const unsigned char *inbuf,
-    unsigned int size_in, unsigned char *cpr, unsigned int *ret_len)
+int EncWithSdp(unsigned int encAlg, const unsigned char *inbuf,
+    unsigned int sizeIn, unsigned char *cpr, unsigned int *retLen)
 {
     return 0;
 }
 
-int dec_with_kmc(unsigned char *cpr, unsigned int cpr_len, unsigned char *outbuf, unsigned int *size_out)
+int DecWithKmc(unsigned char *cpr, unsigned int cprLen, unsigned char *outbuf, unsigned int *sizeOut)
 {
     return 0;
 }
 
-int RsCreateCompChannel(unsigned int phyId, unsigned int rdevIndex, void** comp_channel)
+int RsCreateCompChannel(unsigned int phyId, unsigned int rdevIndex, void** compChannel)
 {
 	return 0;
 }
 
-int RsDestroyCompChannel(void* comp_channel)
+int RsDestroyCompChannel(void* compChannel)
 {
 	return 0;
 }
@@ -546,12 +546,12 @@ int RsDestroySrq(unsigned int phyId, unsigned int rdevIndex, struct SrqAttr *att
 	return 0;
 }
 
-int RsGetLiteSupport(unsigned int phyId, unsigned int rdevIndex, int *support_lite)
+int RsGetLiteSupport(unsigned int phyId, unsigned int rdevIndex, int *supportLite)
 {
 	return 0;
 }
 
-int RsGetLiteRdevCap(unsigned int phyId, unsigned int rdev_index, struct LiteRdevCapResp *resp)
+int RsGetLiteRdevCap(unsigned int phyId, unsigned int rdevIndex, struct LiteRdevCapResp *resp)
 {
 	return 0;
 }
@@ -576,23 +576,23 @@ void RsSetCtx(unsigned int phyId)
     return;
 }
 
-int RsCreateEventHandle(int *event_handle)
+int RsCreateEventHandle(int *eventHandle)
 {
     return 0;
 }
 
-int RsCtlEventHandle(int event_handle, const void *fd_handle, int opcode,
+int RsCtlEventHandle(int eventHandle, const void *fdHandle, int opcode,
     enum RaEpollEvent event)
 {
     int ret;
     int fd = -1;
     int tmpEvent;
 
-    if (event_handle < 0) {
-        hccp_err("[RsCtlEventHandle]event_handle[%d] is invalid", event_handle);
+    if (eventHandle < 0) {
+        hccp_err("[RsCtlEventHandle]event_handle[%d] is invalid", eventHandle);
         return -EINVAL;
     }
-    if (fd_handle == NULL) {
+    if (fdHandle == NULL) {
         hccp_err("[RsCtlEventHandle]fd_handle is NULL");
         return -EINVAL;
     }
@@ -618,12 +618,12 @@ int RsCtlEventHandle(int event_handle, const void *fd_handle, int opcode,
     return 0;
 }
 
-int RsWaitEventHandle(int event_handle, struct SocketEventInfoT *event_info, int timeout)
+int RsWaitEventHandle(int eventHandle, struct SocketEventInfoT *eventInfo, int timeout)
 {
     return 0;
 }
 
-int RsDestroyEventHandle(int *event_handle)
+int RsDestroyEventHandle(int *eventHandle)
 {
     return 0;
 }
@@ -635,7 +635,7 @@ int RsGetVnicIpInfos(unsigned int phyId, enum IdType type, unsigned int ids[], u
 }
 
 int RsQpBatchModify(unsigned int phyId, unsigned int rdevIndex,
-    int status, int qpn[], int qpn_num)
+    int status, int qpn[], int qpnNum)
 {
     return 0;
 }
@@ -652,17 +652,17 @@ int RsSocketGetServerSocketErrInfo(struct SocketListenInfo conn[],
     return 0;
 }
 
-int RsSocketAcceptCreditAdd(struct SocketListenInfo conn[], uint32_t num, unsigned int credit_limit)
+int RsSocketAcceptCreditAdd(struct SocketListenInfo conn[], uint32_t num, unsigned int creditLimit)
 {
     return 0;
 }
 
-int RsRemapMr(unsigned int phyId, unsigned int rdevIndex, struct MemRemapInfo memList[], unsigned int mem_num)
+int RsRemapMr(unsigned int phyId, unsigned int rdevIndex, struct MemRemapInfo memList[], unsigned int memNum)
 {
     return 0;
 }
 
-int RsGetTlsEnable(unsigned int phyId, bool *tls_enable)
+int RsGetTlsEnable(unsigned int phyId, bool *tlsEnable)
 {
 	return 0;
 }
@@ -672,12 +672,12 @@ int RsGetSecRandom(unsigned int *value)
 	return 0;
 }
 
-int RsDrvGetRandomNum(int *rand_num)
+int RsDrvGetRandomNum(int *randNum)
 {
 	return 0;
 }
 
-int RsGetHccnCfg(unsigned int phyId, enum HccnCfgKey key, char *value, unsigned int *value_len)
+int RsGetHccnCfg(unsigned int phyId, enum HccnCfgKey key, char *value, unsigned int *valueLen)
 {
 	return 0;
 }

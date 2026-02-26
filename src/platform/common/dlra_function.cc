@@ -363,17 +363,17 @@ HcclResult DlRaFunction::DlRaFunctionSocketInit()
     if (dlRaGetHccnCfg == nullptr) {
         HCCL_WARNING("dlRaGetHccnCfg is nullptr, can not use RaGetHccnCfg");
     }
-    dlRaGetSecRandom = (int (*)(struct RaInfo *info, unsigned int* ))HcclDlsym(handle_, "ra_get_sec_random");
+    dlRaGetSecRandom = (int (*)(struct RaInfo *info, unsigned int* ))HcclDlsym(handle_, "RaGetSecRandom");
     if (dlRaGetSecRandom == nullptr) {
-        HCCL_WARNING("dlRaGetSecRandom is nullptr, can not use ra_get_sec_random");
+        HCCL_WARNING("dlRaGetSecRandom is nullptr, can not use RaGetSecRandom");
     }
-    dlRaGetDevEidInfoNum = (int (*)(struct RaInfo *info, unsigned int* ))HcclDlsym(handle_, "ra_get_dev_eid_info_num");
+    dlRaGetDevEidInfoNum = (int (*)(struct RaInfo *info, unsigned int* ))HcclDlsym(handle_, "RaGetDevEidInfoNum");
     if (dlRaGetDevEidInfoNum == nullptr) {
-        HCCL_WARNING("dlRaGetDevEidInfoNum is nullptr, can not use ra_get_dev_eid_info_num");
+        HCCL_WARNING("dlRaGetDevEidInfoNum is nullptr, can not use RaGetDevEidInfoNum");
     }
-    dlRaGetDevEidInfoList = (int (*)(struct RaInfo *info, struct dev_eid_info *eid_info, unsigned int* ))HcclDlsym(handle_, "ra_get_dev_eid_info_list");
+    dlRaGetDevEidInfoList = (int (*)(struct RaInfo *info, struct HccpDevEidInfo *eid_info, unsigned int* ))HcclDlsym(handle_, "RaGetDevEidInfoList");
     if (dlRaGetDevEidInfoList == nullptr) {
-        HCCL_WARNING("dlRaGetDevEidInfoList is nullptr, can not use ra_get_dev_eid_info_list");
+        HCCL_WARNING("dlRaGetDevEidInfoList is nullptr, can not use RaGetDevEidInfoList");
     }
     return HCCL_SUCCESS;
 }

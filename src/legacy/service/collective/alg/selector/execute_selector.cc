@@ -62,9 +62,14 @@ ExecuteSelector &ExecuteSelector::SetOpConfig(OpExecuteConfig opConfig)
     return *this;
 }
 
+AlgorithmType ExecuteSelector::GetAlgorithmTypeForMC2(const std::string& name)
+{
+    Mc2Selector mc2Selector;
+    return mc2Selector.GetAlgorithmTypeForMC2(name);
+}
+
 HcclResult ExecuteSelector::Run(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName)
 {
-    HCCL_DEBUG("[Algo][Selector] Run.");
     if (rankGraph_ == nullptr) {
         HCCL_ERROR("[Algo][ExecuteSelector] rankGraph_ is nullptr.");
         return HcclResult::HCCL_E_PTR;
