@@ -331,6 +331,67 @@ TEST_F(HccnRping_UT, ut_HccnRping_RpingAddTargetV2)
     
     HccnRpingAddTargetConfig config;
     config.connectTimeout = 1000;
+    ret = HccnRpingAddTargetV2(pingmesh, targetNum, target, &config);
+    EXPECT_EQ(ret, HCCN_SUCCESS);
+
+    // 删除节点
+    ret = HccnRpingRemoveTarget(pingmesh, targetNum, target);
+    EXPECT_EQ(ret, HCCN_SUCCESS);
+
+    // 反初始化
+    ret = HccnRpingDeinit(pingmesh);
+    EXPECT_EQ(ret, HCCN_SUCCESS);
+
+    delete[] target[0].srcIp;
+    delete[] target[0].dstIp;
+    delete[] target;
+}
+
+TEST_F(HccnRping_UT, ut_HccnRping_RpingAddTargetWithCfg)
+{
+    MOCKER_CPP(&PingMesh::GetDeviceLogicId)
+    .stubs()
+    .with(any())
+    .will(returnValue(1));
+
+    u32 devId = 1;
+    u32 devserverId = 2;
+    HccnRpingInitAttr *initAttr = new HccnRpingInitAttr();
+    initAttr->mode = HCCN_RPING_MODE_ROCE;
+    initAttr->port = 13886;
+    initAttr->npuNum = 128;
+    initAttr->bufferSize = 4096 * 10;
+    initAttr->sl = 0;
+    initAttr->tc = 0;
+    initAttr->ipAddr = new char[ipLen_];
+    strcpy(initAttr->ipAddr, deviceIp_[devId]);
+    void *pingmesh = nullptr;
+
+    // 初始化
+    auto ret = HccnRpingInit(devId, initAttr, &pingmesh);
+    EXPECT_EQ(ret, HCCN_SUCCESS);
+    EXPECT_TRUE(pingmesh != nullptr);
+    delete[] initAttr->ipAddr;
+    delete initAttr;
+
+    // 添加节点
+    int targetNum = 1;
+    HccnRpingTargetInfo *target = new HccnRpingTargetInfo[1];
+    target[0].srcPort = 0;
+    target[0].sl = 0;
+    target[0].tc = 0;
+    target[0].port = 13886;
+    target[0].payloadLen = 12;
+    target[0].addrType = 0;
+    target[0].srcIp = new char[ipLen_];
+    target[0].dstIp = new char[ipLen_];
+    char payload[12] = "hellotarget";
+    strcpy(target[0].payload, payload);
+    strcpy(target[0].srcIp, deviceIp_[devserverId]);
+    strcpy(target[0].dstIp, deviceIp_[devId]);
+    
+    HccnRpingAddTargetConfig config;
+    config.connectTimeout = 1000;
     ret = HccnRpingAddTargetWithCfg(pingmesh, targetNum, target, &config);
     EXPECT_EQ(ret, HCCN_SUCCESS);
 
