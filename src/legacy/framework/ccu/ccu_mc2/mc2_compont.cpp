@@ -307,7 +307,7 @@ void Mc2Compont::GenerateAlgoTemplates(Mc2Tiling *mc2TilingPtr, std::unordered_s
                 combinOpParam.opType[index]   = algoInfoMap_[templateSign].opType;
                 combinOpParam.algorithmType[index]   = algoInfoMap_[templateSign].algorithmType;
                 continue;
-            }else{
+            } else {
                 THROW<Hccl::InternalException>(StringFormat("algoInfoMap_ do not has templateSign = [%llu]", templateSign));
             }
         }
