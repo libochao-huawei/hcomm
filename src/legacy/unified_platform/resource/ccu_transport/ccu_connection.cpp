@@ -23,7 +23,6 @@
 #include "local_ub_rma_buffer.h"
 
 namespace Hccl {
-
 CcuConnection::CcuConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
     const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
     : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys)
@@ -436,7 +435,7 @@ HcclResult CcuConnection::ReleaseConnRes()
 {
     for (auto &item : importJettyCtxs) {
         if (item.outParam.handle != 0) {
-            HrtRaUbUnimportJetty(rdmaHandle, item.outParam.handle);
+            HrtRaUbUnimportJetty(rdmaHandle, remoteJettyHandle);
             item.outParam.handle = 0;
         }
     }
@@ -485,18 +484,35 @@ int32_t CcuConnection::GetDevLogicId() const
     return devLogicId;
 }
 
+void CcuConnection::GetDeleteJettyInfo(BatchDeleteJettyInfo& batchDeleteJettyInfo)
+{
+    ConnJettyInfo jettyInfo;
+    for (auto &ccuJetty : ccuJettys_) {
+        ccuJetty->GetDeleteJettyInfo(jettyInfo);
+        if (jettyInfo.isValid) {
+            batchDeleteJettyInfo.deleteJettyList[rdmaHandle].insert(jettyInfo.deleteJetty);
+        }
+    }
+
+    for (auto &item : importJettyCtxs) {
+        if (item.outParam.handle != 0) {
+            batchDeleteJettyInfo.unimportJettyList[rdmaHandle].insert(item.outParam.handle);
+        }
+    }
+}
+
 void CcuConnection::Clean()
 {
     status = CcuConnStatus::INIT;
     innerStatus = InnerStatus::INIT;
     isJettyCreated = false;
     isJettyImported = false;
-    ReleaseConnRes();
+    ReleaseConnRes(CONN_CLEAN);
     GenerateLocalPsn();
 
     // 销毁jetty要在ReleaseConnRes之后
     for (auto &ccuJetty : ccuJettys_) {
-        ccuJetty->Clean();
+        jettyInfo = ccuJetty->Clean();
     }
 }
 
