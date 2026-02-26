@@ -358,19 +358,19 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
         const auto offset = mc2TilingPtr->offset[index];
         const auto &commConfig = *(reinterpret_cast<const Mc2CcTilingInner *>(reinterpret_cast<const uint8_t *>(mc2TilingPtr) + offset));
         OpParamsChecker::CheckOpDataTypeMC2V2(commConfig);
-        uint64_t templateSign = GetTemplateSignatureV2(commConfig);
-        algoTemplateRequire.insert(templateSign);
+        uint64_t templateSignV2 = GetTemplateSignatureV2(commConfig);
+        algoTemplateRequire.insert(templateSignV2);
         // 已经生成过的算法模板不再生成
-        if (algoTemplateMap.find(templateSign) != algoTemplateMap.end()) {
-            HCCL_INFO("A algoTemplate that meets the requirement already exists, index = [%u], templateSign = [%llu]",
-                       index, templateSign);
-            if(algoInfoMap_.find(templateSign) != algoInfoMap_.end()) {
-                combinOpParam.opType[index]   = algoInfoMap_[templateSign].opType;
-                combinOpParam.algorithmType[index]   = algoInfoMap_[templateSign].algorithmType;
+        if (algoTemplateMap.find(templateSignV2) != algoTemplateMap.end()) {
+            HCCL_INFO("A algoTemplate that meets the requirement already exists, index = [%u], templateSignV2 = [%llu]",
+                       index, templateSignV2);
+            if(algoInfoMap_.find(templateSignV2) != algoInfoMap_.end()) {
+                combinOpParam.opType[index]   = algoInfoMap_[templateSignV2].opType;
+                combinOpParam.algorithmType[index]   = algoInfoMap_[templateSignV2].algorithmType;
                 continue;
             }else{
                 THROW<Hccl::InternalException>(
-                    StringFormat("algoInfoMap_ do not has templateSign = [%llu]", templateSign));
+                    StringFormat("algoInfoMap_ do not has templateSignV2 = [%llu]", templateSignV2));
             }
         }
 
@@ -380,8 +380,8 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
         MC2AllocCommRes(params, insQueue, commConfig.communicationEngine);
 
         std::string algName = comm->GetCurAlgName();
-        HCCL_INFO("Orchestrate: index = [%u], algName = [%s], templateSign = [%llu]", index, algName.c_str(),
-                templateSign);
+        HCCL_INFO("Orchestrate: index = [%u], algName = [%s], templateSignV2 = [%llu]", index, algName.c_str(),
+                templateSignV2);
         if (insQueue->Iter()->GetType() != InstructionType::CCU_INS) {
             THROW<Hccl::InternalException>(
                 StringFormat("InstructionType is not ccu ins, algName = [%s]", algName.c_str()));
@@ -395,13 +395,13 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
             THROW<Hccl::InternalException>(
                 StringFormat("CcuInstruction translate faild, index = [%u], algName = [%s]", index, algName.c_str()));
         }
-        algoTemplateMap[templateSign] = taskParams;
+        algoTemplateMap[templateSignV2] = taskParams;
         combinOpParam.opType[index]   = commConfig.opType;
         combinOpParam.algorithmType[index]   = comm->GetAlgorithmType();
         HcclAlgoInfo hcclAlgoInfo;
-        hcclAlgoInfo.opType = algoInfoMap_[templateSign];
+        hcclAlgoInfo.opType = algoInfoMap_[templateSignV2];
         hcclAlgoInfo.algorithmType = combinOpParam.algorithmType[index];
-        algoInfoMap_[templateSign] = hcclAlgoInfo;
+        algoInfoMap_[templateSignV2] = hcclAlgoInfo;
         for (const auto &task : taskParams) {
             HCCL_INFO("taskParam: dieId = [%u], instStartId = [%u]", task[0].dieId, task[0].instStartId);
             SaveMc2DfxTaskInfo(task[0], ccuInstruction.GetExecId());

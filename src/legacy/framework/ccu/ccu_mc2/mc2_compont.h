@@ -22,7 +22,7 @@ namespace Hccl {
 struct HcclAlgoInfo{
     uint32_t opType;
     uint8_t  algorithmType;
-}
+};
 
 class Mc2Compont {
 public:
