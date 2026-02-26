@@ -332,9 +332,9 @@ HcclResult HcclOneSidedService::InitAicpuUnfoldMode()
 
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
-    aicpuUnfoldMode_ = (deviceType == DevType::DEV_TYPE_910_93) &&
+    aicpuUnfoldMode_ = (deviceType == DevType::DEV_TYPE_910_93 || deviceType == DevType::DEV_TYPE_910B) &&
         commConfig_.GetConfigAicpuUnfold();  // keep env flag for perf test
-    HCCL_INFO("[InitAicpuUnfoldMode] A3[%u] rdma[%u] aicpu[%u]", (deviceType == DevType::DEV_TYPE_910_93),
+    HCCL_INFO("[InitAicpuUnfoldMode] deviceType[%u] rdma[%u] aicpu[%u]", deviceType,
         (netDevRdmaCtx_ != nullptr), aicpuUnfoldMode_);
     if (aicpuUnfoldMode_) {
         CHK_PRT(LoadAICPUKernel());
