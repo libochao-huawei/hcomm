@@ -97,18 +97,18 @@ __aicore__ inline void AivAllReduceBig910B::Process(GM_ADDR input, GM_ADDR outpu
     uint64_t count = 0;
 
     uint32_t blockNumPerGroup = rankSize_;
-    uint32_t targetRank = (block_idx >= rankSize_ ? block_idx - rankSize_ : block_idx); // 0-2*rankSize_
+    uint32_t targetRank = (GetBlockIdx() >= rankSize_ ? GetBlockIdx() - rankSize_ : GetBlockIdx()); // 0-2*rankSize_
 
     __gm__ T *inputGm = (__gm__ T *)input;
     __gm__ T *outputGm = (__gm__ T *)output;
     __gm__ T *cclGmSelf = (__gm__ T *)(GM_IN[rank_]);
     __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[targetRank]);
 
-    if (block_idx < blockNumPerGroup) {
+    if (GetBlockIdx() < blockNumPerGroup) {
         uint64_t gmOffset = targetRank * loopCount;
         count = CalActualCount(targetRank, sliceCount, avgLengthPerSlice, tailLength);
         // 做localcopy, 写偏移16 FLAG_SIZE
-        CpGM2GMWithFlagWrap(cclGmSelf + gmOffset, inputGm + targetRank * avgLengthPerSlice, count, block_idx, 8, tag);
+        CpGM2GMWithFlagWrap(cclGmSelf + gmOffset, inputGm + targetRank * avgLengthPerSlice, count, GetBlockIdx(), 8, tag);
     } else if (targetRank != rank_) {
         uint64_t gmOffset = rank_ * loopCount;
         count = CalActualCount(rank_, sliceCount, avgLengthPerSlice, tailLength);
@@ -119,7 +119,7 @@ __aicore__ inline void AivAllReduceBig910B::Process(GM_ADDR input, GM_ADDR outpu
 
     pipe_barrier(PIPE_ALL);
 
-    if (block_idx >= blockNumPerGroup) {
+    if (GetBlockIdx() >= blockNumPerGroup) {
         if (targetRank!=rank_){
             RecordNv1(tag, rank_);
         }
@@ -127,7 +127,7 @@ __aicore__ inline void AivAllReduceBig910B::Process(GM_ADDR input, GM_ADDR outpu
     }
     pipe_barrier(PIPE_ALL);
     
-    if (block_idx == rank_) {
+    if (GetBlockIdx() == rank_) {
         // check 本端aiv 所有reduce结果是否完成
         Wait1vN(tag * (rankSize_ - 1), CommPattern::intraRank);
 
@@ -147,10 +147,10 @@ __aicore__ inline void AivAllReduceBig910B::Process(GM_ADDR input, GM_ADDR outpu
     pipe_barrier(PIPE_ALL);
 
     // 3. 每个aiv再把rankSize张卡上其他位置的数据搬运到本卡的对应位置
-    uint64_t gmOffset = block_idx * avgLengthPerSlice;
-    count = CalActualCount(block_idx, sliceCount, avgLengthPerSlice, tailLength);
+    uint64_t gmOffset = GetBlockIdx() * avgLengthPerSlice;
+    count = CalActualCount(GetBlockIdx(), sliceCount, avgLengthPerSlice, tailLength);
 
-    CpGM2GM(outputGm + gmOffset, cclGmOther + block_idx * loopCount, count);
+    CpGM2GM(outputGm + gmOffset, cclGmOther + GetBlockIdx() * loopCount, count);
     pipe_barrier(PIPE_ALL);
 
     // 通知对端，自己已经把对端的那片数据拉回来了
@@ -162,7 +162,7 @@ __aicore__ inline void AivAllReduceBig910B::Process(GM_ADDR input, GM_ADDR outpu
     pipe_barrier(PIPE_ALL);
     
     RecordNv1(tag, rank_);
-    if (block_idx ==rank_) {
+    if (GetBlockIdx() ==rank_) {
         Wait1vN(tag * rankSize_, CommPattern::intraRank);
     }    
 
@@ -181,7 +181,7 @@ __aicore__ inline void AivAllReduceBig910B::ProcessSingleRanksizeCore(GM_ADDR in
     uint64_t tailLength = len - (sliceCount - 1) * avgLengthPerSlice;
 
     uint64_t count = 0;
-    uint32_t targetRank = block_idx;
+    uint32_t targetRank = GetBlockIdx();
 
     __gm__ T *inputGm = (__gm__ T *)input;
     __gm__ T *outputGm = (__gm__ T *)output;
@@ -189,7 +189,7 @@ __aicore__ inline void AivAllReduceBig910B::ProcessSingleRanksizeCore(GM_ADDR in
     __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[targetRank]);
 
     count = CalActualCount(targetRank, sliceCount, avgLengthPerSlice, tailLength);
-    CpGM2GMWithFlagWrap(cclGmSelf + targetRank * loopCount, inputGm + targetRank * avgLengthPerSlice, count, block_idx, 8, tag);
+    CpGM2GMWithFlagWrap(cclGmSelf + targetRank * loopCount, inputGm + targetRank * avgLengthPerSlice, count, GetBlockIdx(), 8, tag);
     pipe_barrier(PIPE_ALL);
 
     if (targetRank != rank_) {
@@ -219,8 +219,8 @@ __aicore__ inline void AivAllReduceBig910B::ProcessSingleRanksizeCore(GM_ADDR in
     pipe_barrier(PIPE_ALL);
 
     // 3. 每个aiv再把rankSize张卡上其他位置的数据搬运到本卡的对应位置
-    count = CalActualCount(block_idx, sliceCount, avgLengthPerSlice, tailLength);
-    CpGM2GM(outputGm + block_idx * avgLengthPerSlice, cclGmOther + block_idx * loopCount, count);
+    count = CalActualCount(GetBlockIdx(), sliceCount, avgLengthPerSlice, tailLength);
+    CpGM2GM(outputGm + GetBlockIdx() * avgLengthPerSlice, cclGmOther + GetBlockIdx() * loopCount, count);
     pipe_barrier(PIPE_ALL);
 
     // 通知对端，自己已经把对端的那片数据拉回来了
@@ -232,7 +232,7 @@ __aicore__ inline void AivAllReduceBig910B::ProcessSingleRanksizeCore(GM_ADDR in
     pipe_barrier(PIPE_ALL);
 
     RecordNv1(tag, rank_);
-    if (block_idx ==rank_) {
+    if (GetBlockIdx() ==rank_) {
         Wait1vN(tag * rankSize_, CommPattern::intraRank);
     }
 
