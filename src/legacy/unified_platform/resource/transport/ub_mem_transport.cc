@@ -301,6 +301,12 @@ void UbMemTransport::SubmitWriteEmptyWithNotify(const WithNotifyIn &withNotify, 
     u32 value = NORMAL_NOTIFY_VAL;
 
     if (withNotify.notifyType_ == TransportNotifyType::NORMAL) {
+        // 索引校验
+        if (withNotify.index_ >= rmtNotifyVec.size()) {
+            std::string msg = StringFormat("Notify index %u out of range, max size %zu", 
+                                        withNotify.index_, rmtNotifyVec.size());
+            THROW<InternalException>(msg);
+        }
         SubmitNotify(GetRmtNotifyMemBuffer(withNotify.index_), NORMAL_NOTIFY_VAL, stream);
     } else if (withNotify.notifyType_ == TransportNotifyType::COUNT) {
         SubmitNotify(GetRmtCntNotifyMemBuffer(withNotify), withNotify.userData_, stream);

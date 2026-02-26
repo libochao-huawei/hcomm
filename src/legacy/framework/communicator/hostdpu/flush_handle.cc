@@ -86,11 +86,7 @@ HcclResult FlushHandle::AllocateDeviceMemory()
 {
     u64 bufferSize = FLUSH_BUFFER_SIZE;
     deviceMem = HrtMalloc(bufferSize, RT_MEMORY_HBM);
-    if (deviceMem == nullptr) {
-        HcclResult eRet = Destroy();
-        HCCL_ERROR("[AllocateDeviceMemory]Failed to Allocate Device Memory. Destroy Flush code=%d", eRet);
-        return HCCL_E_MEMORY;
-    }
+    // 在HrtMalloc函数调用的rtMalloc接口中，加入成功返回，那么内存就不会为空
     HCCL_DEBUG("[AllocateDeviceMemory]Device memory allocated at %p, size=%u", deviceMem, bufferSize);
     return HCCL_SUCCESS;
 }
@@ -218,11 +214,20 @@ HcclResult FlushHandle::FreeDeviceMemory()
         return HCCL_SUCCESS;
     }
 
-    HrtFree(deviceMem);
-
-    deviceMem = nullptr;
-    HCCL_DEBUG("[FreeDeviceMemory] Device memory successfully freed.");
-    return HCCL_SUCCESS;
+    try {
+        HrtFree(deviceMem);
+        deviceMem = nullptr;
+        HCCL_DEBUG("[FreeDeviceMemory] Device memory successfully freed.");
+        return HCCL_SUCCESS;
+    } catch (const std::exception &e) {
+        HCCL_ERROR("[FreeDeviceMemory] Failed to free device memory, exception: %s.", e.what());
+        deviceMem = nullptr;
+        return HCCL_E_RUNTIME;
+    } catch (...) {
+        HCCL_ERROR("[FreeDeviceMemory] Failed to free device memory, unknown exception.");
+        deviceMem = nullptr;
+        return HCCL_E_RUNTIME;
+    }
 }
 
 }  // namespace Hccl

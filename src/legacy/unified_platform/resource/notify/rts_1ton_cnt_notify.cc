@@ -15,14 +15,25 @@
 
 namespace Hccl {
 
-Rts1ToNCntNotify::Rts1ToNCntNotify() : deviceId(HrtGetDevice()), devPhyId(HrtGetDevicePhyIdByIndex(HrtGetDevice())),
-                                        handle(HrtCntNotifyCreate(deviceId)), id(HrtGetCntNotifyId(handle))
+Rts1ToNCntNotify::Rts1ToNCntNotify()
 {
+    deviceId = HrtGetDevice();
+    devPhyId = HrtGetDevicePhyIdByIndex(HrtGetDevice());
+    handle = HrtCntNotifyCreate(deviceId);
+    try {
+        id = HrtGetCntNotifyId(handle);
+    } catch (...) {
+        HrtCntNotifyDestroy(handle);
+        handle = nullptr;
+        throw;
+    }
 }
 
 Rts1ToNCntNotify::~Rts1ToNCntNotify()
 {
-    DECTOR_TRY_CATCH("Rts1ToNCntNotify", HrtCntNotifyDestroy(handle));
+    if (handle != nullptr) {
+        DECTOR_TRY_CATCH("Rts1ToNCntNotify", HrtCntNotifyDestroy(handle));
+    }
 }
 
 std::unique_ptr<BaseTask> Rts1ToNCntNotify::WaitBits(u32 bitValue)
