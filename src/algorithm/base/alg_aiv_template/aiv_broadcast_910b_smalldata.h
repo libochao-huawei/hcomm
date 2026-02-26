@@ -28,7 +28,7 @@ __aicore__ inline void AivBroadcastSmall910B::Process(GM_ADDR input, GM_ADDR out
     __gm__ T *cclGMRoot = (__gm__ T *)(GM_IN[root]);   // root卡的cclbuffer
     __gm__ T *outputGM = (__gm__ T *)output;
  
-    if (block_idx > 0) {
+    if (GetBlockIdx() > 0) {
         return ;
     }
     if (rank_ == root) {

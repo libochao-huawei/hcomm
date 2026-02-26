@@ -74,7 +74,7 @@ __aicore__ inline void AivAllGatherVBig910B::Process(GM_ADDR input, GM_ADDR outp
                                                      ExtraArgs &extraArgs, int32_t tag)
 {
     uint32_t blockNumPerGroup = rankSize_;
-    uint32_t targetRank = block_idx >= rankSize_ ? block_idx - rankSize_ : block_idx;
+    uint32_t targetRank = GetBlockIdx() >= rankSize_ ? GetBlockIdx() - rankSize_ : GetBlockIdx();
 
 
     __gm__ T *inputGm = (__gm__ T *)input;
@@ -82,8 +82,8 @@ __aicore__ inline void AivAllGatherVBig910B::Process(GM_ADDR input, GM_ADDR outp
     __gm__ T *cclGmSelf = (__gm__ T *)(GM_IN[rank_]);
     __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[targetRank]);
 
-    if (block_idx < blockNumPerGroup) {
-        if (block_idx == rank_) {   //把数据从UserIn 搬运到 CCLIn，同时检测有多少个核在搬运这个数据
+    if (GetBlockIdx() < blockNumPerGroup) {
+        if (GetBlockIdx() == rank_) {   //把数据从UserIn 搬运到 CCLIn，同时检测有多少个核在搬运这个数据
             CpGM2GMWithFlagWrap(cclGmSelf, inputGm, curCount, rank_, 8, tag);
             // 所有对端都取走数据
             pipe_barrier(PIPE_ALL);
@@ -107,8 +107,8 @@ __aicore__ inline void aiv_all_gather_v_910b_bigdata(EXTERN_KERNEL_ARGS_DEF)
     op.HeadCounter();
     uint64_t maxCountPerLoop = bufferSize / UB_ALIGN_SIZE * UB_ALIGN_SIZE / sizeof(T);
     uint64_t countLeft;
-    if (block_idx < rankSize) {
-        countLeft = extraArgs.recvCounts[block_idx];
+    if (GetBlockIdx() < rankSize) {
+        countLeft = extraArgs.recvCounts[GetBlockIdx()];
     } else {
         countLeft = extraArgs.recvCounts[rank];
     }
