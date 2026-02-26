@@ -19,7 +19,7 @@ class CollAllReduceFastDoubleRingFor91093Executor : public CollAllReduceRingFor9
 public:
     CollAllReduceFastDoubleRingFor91093Executor(
         const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllReduceFastDoubleRingFor91093Executor() = default;
+    ~CollAllReduceFastDoubleRingFor91093Executor() override = default;
 
 private:
     /* *************** 算法编排 *************** */

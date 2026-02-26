@@ -16,7 +16,7 @@ class CollAllGatherSemiRingExecutor : public CollAllGatherRingFor91093Executor {
 
 public:
     explicit CollAllGatherSemiRingExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherSemiRingExecutor() = default;
+    ~CollAllGatherSemiRingExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */
