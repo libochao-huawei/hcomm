@@ -281,7 +281,7 @@ public:
         qpMode = that.qpMode;
         tc = that.tc;
         sl = that.sl;
-        hcclQos = thar.hcclQos;
+        hcclQos = that.hcclQos;
         specifyLink = that.specifyLink;
         enableAtomicWrite = that.enableAtomicWrite;
         queueDepthAttr = that.queueDepthAttr;
@@ -323,7 +323,7 @@ public:
             qpMode = that.qpMode;
             tc = that.tc;
             sl = that.sl;
-            hcclQos = thar.hcclQos;
+            hcclQos = that.hcclQos;
             specifyLink = that.specifyLink;
             enableAtomicWrite = that.enableAtomicWrite;
             queueDepthAttr = that.queueDepthAttr;
