@@ -46,9 +46,9 @@ public:
             // 写同步：将aivTag写入root上的数据同步标志位，表示数据搬运完成
             uint64_t flagOffset;
             if (rank_ < root_) {
-                flagOffset = rank_ * block_num + block_idx;
+                flagOffset = rank_ * numBlocks_ + block_idx;
             } else {
-                flagOffset = (rank_ - 1) * block_num + block_idx;
+                flagOffset = (rank_ - 1) * numBlocks_ + block_idx;
             }
             Record(root_, flagOffset, tag_);
         } else {
@@ -63,7 +63,7 @@ public:
                     continue;
                 }
                 // 读同步：阻塞读取本地数据同步标志位，当前aivTag等于读取值时，继续步骤
-                uint64_t flagOffset = sliceIdx * block_num + block_idx;
+                uint64_t flagOffset = sliceIdx * numBlocks_ + block_idx;
                 WaitFlag(rank_, flagOffset, tag_);
                 // 本地规约：将本地ScratchBuffer上的数据Reduce到本地OutputBuffer上
                 if (sliceLen_ > 0) {
@@ -78,8 +78,8 @@ public:
  
     __aicore__ inline void SplitData(uint64_t dataLen, uint64_t& sliceLen, uint64_t& offsetLen)
     {
-        uint64_t sliceLenMin = dataLen / block_num;
-        uint64_t remainLen = dataLen % block_num;
+        uint64_t sliceLenMin = dataLen / numBlocks_;
+        uint64_t remainLen = dataLen % numBlocks_;
         // remainLen必然小于dataLen，均分给前remainLen个aiv处理
         if (block_idx < remainLen) {
             sliceLen = sliceLenMin + 1;

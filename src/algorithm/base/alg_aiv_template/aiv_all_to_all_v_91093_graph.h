@@ -31,16 +31,11 @@ __aicore__ inline void AivAll2AllVGraph91093::Process(GM_ADDR buffOut0, GM_ADDR 
     __gm__ T *outputGM = (__gm__ T *)output;
 
     uint64_t argsCount = FLAG_SIZE * rankSize_ / sizeof(uint64_t);
-    GlobalTensor<uint64_t> bufferArgsGT;
-    __gm__ uint64_t *buffersGmAddr = (__gm__ uint64_t *)(commInfoAddr);
-    bufferArgsGT.SetGlobalBuffer(buffersGmAddr, argsCount);
     GlobalTensor<uint64_t> offsetArgsGT;
     __gm__ uint64_t *offsetsGmAddr = (__gm__ uint64_t *)(buffOut0 + AIV_FLAG_BUFFER_SIZE - GM_TMP_ARGS_OFFSET);
     offsetArgsGT.SetGlobalBuffer(offsetsGmAddr, argsCount);
 
     // 准备参数
-    GM_ADDR buffersIn[MAX_TARGET_NUM] = {};
-    GM_ADDR buffersOut[MAX_TARGET_NUM] = {};
     uint64_t recvCounts[MAX_TARGET_NUM] = {};
     uint64_t sendDispls[MAX_TARGET_NUM] = {};
     uint64_t recvDispls[MAX_TARGET_NUM] = {};
@@ -49,7 +44,6 @@ __aicore__ inline void AivAll2AllVGraph91093::Process(GM_ADDR buffOut0, GM_ADDR 
     // 把buffer地址搬到ub，把偏移参数搬到GM
     for (uint32_t i = 0; i < numTargets; i++) {
         uint32_t targetRank = targetRanks[i];
-        DataCopy(bufferArgsTensor[i * 4], bufferArgsGT[2 * targetRank], 4); // buffersIn buffersOut
         recvCounts[i] = extraArgs->recvCounts[targetRank];
         recvDispls[i] = extraArgs->recvDispls[targetRank];
 #ifndef OPEN_HCCL_TEST
@@ -59,19 +53,7 @@ __aicore__ inline void AivAll2AllVGraph91093::Process(GM_ADDR buffOut0, GM_ADDR 
     }
  
     PipeBarrier<PIPE_ALL>();
- 
-    for (uint32_t i = 0; i < numTargets; i++) {
-#ifndef OPEN_HCCL_TEST
-        DataCopy(offsetArgsGT[targetRanks[i] * 4], offsetArgsTensor[i * 4], 4);
-#endif
-        uint32_t curIdx = i * 4;
-        buffersIn[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx));
-        buffersOut[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx + 1));
-    }
- 
- 
-    PipeBarrier<PIPE_ALL>();
- 
+  
     // 偏移参数拷贝到自己GM后的同步
     BatchRecordWait(tag, buffersOut);
     PipeBarrier<PIPE_ALL>();
@@ -114,7 +96,7 @@ __aicore__ inline void AivAll2AllVGraph91093::Process(GM_ADDR buffOut0, GM_ADDR 
     BatchRecordWait(tag, buffersOut, AivNotifyType::DataSignal);
  
     // 最后一个核做localcopy
-    if (block_idx == block_num - 1) {
+    if (GetBlockIdx() == numBlocks_ - 1) {
         uint64_t sendOffset = extraArgs->sendDispls[rank_];
         uint64_t recvOffset = extraArgs->recvDispls[rank_];
         uint64_t sendCount = extraArgs->recvCounts[rank_];
@@ -126,7 +108,7 @@ template<typename T>
 __aicore__ inline void aiv_all_to_all_v_91093_graph(KERNEL_ARGS_DEF, ExtraArgsV2* extraArgs)
 {
     AivAll2AllVGraph91093 op;
-    op.Init(buffOut0, rank, rankSize, tag, true);
+    op.Init(buffOut0, buffOut1, rank, rankSize, tag, numBlocks, isOpBase, true);
     op.InitOpCounter(headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter);
     op.HeadCounter();
     op.Process<T>(buffOut0, buffOut1, input, output, tag, extraArgs);
