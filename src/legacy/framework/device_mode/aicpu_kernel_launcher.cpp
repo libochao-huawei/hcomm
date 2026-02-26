@@ -141,6 +141,10 @@ void AicpuKernelLauncher::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param)
     param.kernel.comm.devType       = comm->GetDevType();
     param.kernel.comm.devPhyId      = comm->GetDevicePhyId();
     auto collService                = comm->GetCollService();
+    if (collService == nullptr) {
+        HCCL_ERROR("[AicpuKernelLauncher::%s] Get CollService Failed", __func__);
+        return;
+    }
     param.kernel.comm.opCounterAddr = static_cast<u64>(collService->GetOpCounterBuf()->GetAddr());
 
     if (op.opMode == OpMode::OPBASE) {

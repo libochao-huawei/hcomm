@@ -97,6 +97,19 @@ HcclResult InsTempScatterMesh1D::RunMesh(TemplateDataParams &tempAlgParams,
 {
     u32 myAlgRank;
     GetAlgRank(myRank_, tempVTopo_[0], myAlgRank);
+    
+    // 检查tempInsQues size 避免数组越界
+    if (root_ == u32(myRank_)) {
+        u32 requiredSize = tempVTopo_[0].size() - 1;
+        CHK_PRT_RET(tempInsQues.size() < requiredSize,
+                    HCCL_ERROR("[InsTempScatterMesh1D] tempInsQues size is insufficient: %zu, required: %u", tempInsQues.size(), requiredSize),
+                    HcclResult::HCCL_E_INTERNAL);
+    } else {
+        CHK_PRT_RET(tempInsQues.empty(),
+                    HCCL_ERROR("[InsTempScatterMesh1D] tempInsQues is empty for non-root"),
+                    HcclResult::HCCL_E_INTERNAL);
+    }
+
     for (u32 r = 0; r < tempAlgParams.repeatNum; r++) {
         if (root_ == u32(myRank_)) {
             u32 count = 0;
