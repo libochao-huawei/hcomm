@@ -103,9 +103,9 @@ void DevUbConnection::SetCqInfo(HcclAiRMACQ &cq)
 {
     cq.jfcId = cqInfo_.id;
     cq.cqVA = cqInfo_.va;
-    cq.cqeSize = cqInfo_.cqe_size;
-    cq.cqDepth = sqDepth;
-    cq.dbAddr = cqInfo_.swdb_addr;
+    cq.cqeSize = cqInfo_.cqeSize;
+    cq.cqDepth = cqInfo_.cqDepth;
+    cq.dbAddr = cqInfo_.swdbAddr;
 }
 
 void DevUbConnection::SetWqInfo(HcclAiRMAWQ &wq)
@@ -113,7 +113,7 @@ void DevUbConnection::SetWqInfo(HcclAiRMAWQ &wq)
     wq.jettyId = jettyId;
     wq.dbAddr = dbAddr;
     wq.sqVA = sqBuffVa;
-    wq.sqDepth = sqDepth;
+    wq.sqDepth = sqDepth * WQE_NUM_PER_SQE;
     wq.tp_id = tpn;
     memcpy_s(wq.rmtEid, sizeof(wq.rmtEid), rmtEid.raw, sizeof(wq.rmtEid));
 }
