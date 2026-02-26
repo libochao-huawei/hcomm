@@ -256,6 +256,10 @@ HcclResult InsTempReduceMesh2D::GatherFromInput(const u32 slice, const u32 axis,
 {
     HCCL_DEBUG("[InsTempReduceMesh2D] Gather from input start");
 
+    CHK_PRT_RET(axisTempInsQues.empty(),
+            HCCL_ERROR("[InsTempReduceMesh2D] axisTempInsQues is empty"),
+            HcclResult::HCCL_E_INTERNAL);
+
     u64 sliceSize = sliceSize_[slice];
     u64 sliceScratchBaseOffset = sliceScratchBaseOffset_[slice];
 
