@@ -41,14 +41,14 @@ __aicore__ inline void AivAll2AllV91093Single::Process(GM_ADDR input, GM_ADDR ou
     ExtraArgs* extraArgs)
 {
     // 每张卡的CCLBuffer大小为bufferSize，平均分给ranksize块，每块的大小
-    uint64_t avgBufferCount = bufferSize / block_num / sizeof(T); // block_num需要能被rankSize_整除
+    uint64_t avgBufferCount = bufferSize / numBlocks_ / sizeof(T); // numBlocks_需要能被rankSize_整除
 
     __gm__ T *inputGM = (__gm__ T *)input;
     __gm__ T *outputGM = (__gm__ T *)output;
  
-    uint32_t blockNumPerGroup = block_num / rankSize_; 
-    uint32_t blockIdxInGroup = block_idx % blockNumPerGroup;
-    uint32_t dstRank = block_idx / blockNumPerGroup;
+    uint32_t blockNumPerGroup = numBlocks_ / rankSize_; 
+    uint32_t blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
+    uint32_t dstRank = GetBlockIdx() / blockNumPerGroup;
     uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
 
     __gm__ T *cclGMSelf = (__gm__ T *)(GM_IN[rank_]);

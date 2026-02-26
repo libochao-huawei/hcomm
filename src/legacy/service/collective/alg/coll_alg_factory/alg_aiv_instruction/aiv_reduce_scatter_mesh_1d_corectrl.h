@@ -23,7 +23,7 @@ class AivReduceScatterMesh1DCoreCtrl : public AivCommBase {
 public:
     __aicore__ inline AivReduceScatterMesh1DCoreCtrl() {}
 
-    // 0 < block_num < 2 * rankSize
+    // 0 < numBlocks_ < 2 * rankSize
     __aicore__ inline void InitCoreInfo(uint64_t len, uint64_t inputStride)
     {
         lenPerRank_ = len;

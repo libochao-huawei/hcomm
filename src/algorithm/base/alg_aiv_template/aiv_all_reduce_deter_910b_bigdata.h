@@ -49,11 +49,11 @@ public:
 
 __aicore__ inline void AivAllReduceDeterBig910B::EndSync(int32_t tag)
 {
-    uint32_t targetRank = block_idx % rankSize_;
+    uint32_t targetRank = GetBlockIdx() % rankSize_;
     int64_t flagOffsetBase = BASE_FLAG_OFFSET * AIV_ALL_REDUCE_DETER_910B_BIGDATA;
     uint32_t flagOffset = flagOffsetBase + (3 * rankSize_) * FLAG_SIZE;
 
-    if (block_idx < rankSize_) {
+    if (GetBlockIdx() < rankSize_) {
         if (targetRank != rank_) {
             PipeBarrier<PIPE_ALL>();
             SetSignalValue((__gm__ int32_t *)(GM_OUT[targetRank] + flagOffset + rank_ * FLAG_SIZE), localSetTensor, tag);
@@ -73,10 +73,10 @@ __aicore__ inline void AivAllReduceDeterBig910B::PreSync(int32_t tag)
     PipeBarrier<PIPE_ALL>();
 
     // 卡内同步
-    __gm__ int32_t *flagAddr = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetPostSync + block_idx * FLAG_SIZE);
+    __gm__ int32_t *flagAddr = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetPostSync + GetBlockIdx() * FLAG_SIZE);
     SetSignalValue(flagAddr, localSetTensor, tag);
-    for (int64_t i = 0; i < block_num; ++i) {
-        if (i == block_idx) {
+    for (int64_t i = 0; i < numBlocks_; ++i) {
+        if (i == GetBlockIdx()) {
             continue;
         }
         WaitSignalValue((__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetPostSync + i * FLAG_SIZE), localCheckTensor, tag);
@@ -85,13 +85,13 @@ __aicore__ inline void AivAllReduceDeterBig910B::PreSync(int32_t tag)
     PipeBarrier<PIPE_ALL>();
     // 卡间同步
     __gm__ int32_t *flagAddr2st =
-        (__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetPostSync + (block_num + block_idx) * FLAG_SIZE);
+        (__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetPostSync + (numBlocks_ + GetBlockIdx()) * FLAG_SIZE);
     SetSignalValue(flagAddr2st, localSetTensor, tag);
     for (int64_t target = 0; target < rankSize_; ++target) {
         if (target == rank_) {
             continue;
         }
-        WaitSignalGEValue((__gm__ int32_t *)(GM_OUT[target] + flagOffsetPostSync + (block_num + block_idx) * FLAG_SIZE), localCheckGETensor, tag);
+        WaitSignalGEValue((__gm__ int32_t *)(GM_OUT[target] + flagOffsetPostSync + (numBlocks_ + GetBlockIdx()) * FLAG_SIZE), localCheckGETensor, tag);
     }
 }
 
@@ -103,10 +103,10 @@ __aicore__ inline void AivAllReduceDeterBig910B::PostSync(int32_t tag)
     PipeBarrier<PIPE_ALL>();
 
     // 卡内同步
-    __gm__ int32_t *flagAddr = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetPostSync + block_idx * FLAG_SIZE);
+    __gm__ int32_t *flagAddr = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetPostSync + GetBlockIdx() * FLAG_SIZE);
     SetSignalValue(flagAddr, localSetTensor, tag);
-    for (int64_t i = 0; i < block_num; ++i) {
-        if (i == block_idx) {
+    for (int64_t i = 0; i < numBlocks_; ++i) {
+        if (i == GetBlockIdx()) {
             continue;
         }
         WaitSignalValue((__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetPostSync + i * FLAG_SIZE), localCheckTensor, tag);
@@ -115,13 +115,13 @@ __aicore__ inline void AivAllReduceDeterBig910B::PostSync(int32_t tag)
     PipeBarrier<PIPE_ALL>();
     // 卡间同步
     __gm__ int32_t *flagAddr2st =
-        (__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetPostSync + (block_num + block_idx) * FLAG_SIZE);
+        (__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetPostSync + (numBlocks_ + GetBlockIdx()) * FLAG_SIZE);
     SetSignalValue(flagAddr2st, localSetTensor, tag);
     for (int64_t target = 0; target < rankSize_; ++target) {
         if (target == rank_) {
             continue;
         }
-        WaitSignalGEValue((__gm__ int32_t *)(GM_OUT[target] + flagOffsetPostSync + (block_num + block_idx) * FLAG_SIZE), localCheckGETensor, tag);
+        WaitSignalGEValue((__gm__ int32_t *)(GM_OUT[target] + flagOffsetPostSync + (numBlocks_ + GetBlockIdx()) * FLAG_SIZE), localCheckGETensor, tag);
     }
 }
 
@@ -129,7 +129,7 @@ __aicore__ inline void AivAllReduceDeterBig910B::ClearFlag()
 {
     int64_t flagOffsetBase = 0;
 
-    if (block_idx < rankSize_ && block_idx == rank_) {
+    if (GetBlockIdx() < rankSize_ && GetBlockIdx() == rank_) {
         SetFlagBatchValue((__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetBase), flagBatchSetQue, 0, 3 * rankSize_);
     }
 }
@@ -324,7 +324,7 @@ __aicore__ inline void AivAllReduceDeterBig910B::Process(GM_ADDR input, GM_ADDR 
 {
     int64_t curCount = len;
     int64_t blockNumPerGroup = rankSize_;
-    int64_t x = block_idx % blockNumPerGroup;
+    int64_t x = GetBlockIdx() % blockNumPerGroup;
     int64_t avgDataNum = curCount / rankSize_;
     int64_t lastDataNum = curCount - (rankSize_ - 1) * avgDataNum;
 
@@ -339,13 +339,13 @@ __aicore__ inline void AivAllReduceDeterBig910B::Process(GM_ADDR input, GM_ADDR 
     int64_t flagOffset3stCount = flagOffsetBase + (DOUBLE * rankSize_ + x) * FLAG_SIZE;
 
     // 第一组 先从input拷贝到cclbuffer
-    if (block_idx < blockNumPerGroup) {
+    if (GetBlockIdx() < blockNumPerGroup) {
         int64_t dataCntSize = (x == rankSize_ - 1) ? lastDataNum : avgDataNum;
         CpGM2GMWithFlagWrap(cclGMSelf + x * avgDataNum, inputGM + x * avgDataNum, dataCntSize,
             (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset1stCount), 8, tag);
     }
     // 第二组 拷贝cclbuffer前半部分到cllbuffer后半部分
-    else if (blockNumPerGroup <= block_idx && block_idx < DOUBLE * blockNumPerGroup) {
+    else if (blockNumPerGroup <= GetBlockIdx() && GetBlockIdx() < DOUBLE * blockNumPerGroup) {
         __gm__ int32_t *flagCntDoneOtner = (__gm__ int32_t *)(GM_OUT[x] + flagOffsetBase + (rank_)*FLAG_SIZE);
         __gm__ int32_t *flagCntSelf = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset2stCount);
         if (x == 0) {
@@ -364,7 +364,7 @@ __aicore__ inline void AivAllReduceDeterBig910B::Process(GM_ADDR input, GM_ADDR 
     }
 
     // 第2组搬运cclbuffer到output
-    if (blockNumPerGroup <= block_idx && block_idx < DOUBLE * blockNumPerGroup) {
+    if (blockNumPerGroup <= GetBlockIdx() && GetBlockIdx() < DOUBLE * blockNumPerGroup) {
         int32_t lastOpCore = rankSize_ - 1;
         if (rankSize_ >= DETERMINISTIC_RANKSIZE) {
             lastOpCore = rankSize_ > DETERMINISTIC_RANKSIZE ? DETERMINISTIC_RANKSIZE : DOUBLE;
