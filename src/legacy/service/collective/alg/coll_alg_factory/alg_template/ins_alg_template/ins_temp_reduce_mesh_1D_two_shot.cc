@@ -217,8 +217,7 @@ HcclResult InsTempReduceMesh1DTwoShot::RunGatherToRoot(const RankSliceInfo &slic
         u64 curSize = sliceInfoVec[rankIdx][0].size;
         
         if (curSize != 0) {
-            u64 srcOffset = static_cast<u64>(rankIdx) * curSize + scOff;
-            DataSlice ssrc(tempAlgParams.buffInfo.scratBuffType, srcOffset, curSize);
+            DataSlice ssrc(tempAlgParams.buffInfo.scratBuffType, static_cast<u64>(rankIdx) * curSize + scOff, curSize);
             DataSlice sdest(tempAlgParams.buffInfo.outBuffType, sliceInfoVec[rankIdx][0].offset + outOff, curSize);
 
             if (tempLinks.find(root_) == tempLinks.end()) {
@@ -229,7 +228,13 @@ HcclResult InsTempReduceMesh1DTwoShot::RunGatherToRoot(const RankSliceInfo &slic
             const auto &link = tempLinks.at(root_)[0];
             SlicesList sliceList({ssrc}, {sdest});
 
-            CHK_RET(Send(DataInfo(link, sliceList), tempInsQues[0], 1, true, DmaMode::GET));
+            auto rootIt = tempVirtRankMap_.find(root_);
+            if (rootIt == tempVirtRankMap_.end()) {
+                HCCL_ERROR("[InsTempReduceMesh1DTwoShot] root_ [%d] not found in tempVirtRankMap.", root_);
+                return HcclResult::HCCL_E_INTERNAL;
+            }
+
+            CHK_RET(Send(DataInfo(link, sliceList), tempInsQues[rootIt->second], 1, true, DmaMode::GET));
         }
     }
 
