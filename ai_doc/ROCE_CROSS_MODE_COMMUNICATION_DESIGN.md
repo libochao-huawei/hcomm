@@ -388,6 +388,15 @@ HcclResult HostCpuRoceChannel::NegotiateMode()
     }
     return HCCL_SUCCESS;
 }
+
+HcclResult HostCpuRoceChannel::InitHybridModeResources()
+{
+    // 分配单个 DPU Notify ID（供对端 TransportIbverbs 作为立即数发送目标）
+    CHK_RET(DpuNotifyManager::GetInstance().AllocNotifyId(localDpuNotifyId_));
+    
+    HCCL_INFO("[Hybrid] Allocated DPU Notify ID: %u", localDpuNotifyId_);
+    return HCCL_SUCCESS;
+}
 ```
 
 #### 3.2.3 混合模式数据交换（扩展）
@@ -424,9 +433,8 @@ HcclResult HostCpuRoceChannel::ExchangeDataHybrid()
     localData.bufLkey = localRmaBuffers_[0]->GetLkey();
     localData.bufSize = localRmaBuffers_[0]->GetSize();
     
-    // 填充 Notify 信息
-    localData.notifyNum = notifyNum_;
-    localData.notifyIds = localDpuNotifyIds_;
+    // 填充 Notify 信息（单 Notify ID，混合模式设计）
+    localData.dpuNotifyId = localDpuNotifyId_;
     
     // 序列化
     BinaryStream stream;
@@ -459,9 +467,8 @@ HcclResult HostCpuRoceChannel::ExchangeDataHybrid()
     remoteData.Deserialize(recvStream);
     
     // 校验关键字段
-    CHK_PRT_RET(remoteData.notifyNum != notifyNum_,
-        HCCL_ERROR("[ExchangeDataHybrid] Notify number mismatch, local: %u, remote: %u",
-            notifyNum_, remoteData.notifyNum),
+    CHK_PRT_RET(remoteData.dpuNotifyId == INVALID_DPU_NOTIFY_ID,
+        HCCL_ERROR("[ExchangeDataHybrid] Remote DPU Notify ID is invalid"),
         HCCL_E_PARA);
     
     // 解析远端 QP 信息用于 ModifyQp
@@ -497,6 +504,9 @@ enum HybridModeErrorCode {
 #define HCCL_HYBRID_LOG(level, fmt, ...) \
     HCCL_##level("[Hybrid] " fmt " [func=%s, line=%d]", ##__VA_ARGS__, __func__, __LINE__)
 
+// 混合模式常量定义
+static constexpr uint32_t INVALID_DPU_NOTIFY_ID = 0xFFFFFFFF;  // 无效 Notify ID
+
 // 在 HostCpuRoceChannel 类中添加成员变量（解决生命周期问题）
 class HostCpuRoceChannel {
     // ... 现有成员 ...
@@ -516,7 +526,7 @@ private:
     uint32_t remoteHostNotifyRkey_ = 0;    // 该内存的 rkey
     
     // 4. 接收端使用：本地 DPU Notify ID（TransportIbverbs 作为立即数发送的目标）
-    uint32_t localDpuNotifyId_ = 0;        // 本地 Notify ID（供对端作为立即数）
+    uint32_t localDpuNotifyId_ = INVALID_DPU_NOTIFY_ID;  // 本地 Notify ID（供对端作为立即数）
     
     // 5. 配置项
     static constexpr bool USE_INLINE_NOTIFY = true;  // 使用 INLINE 发送
@@ -630,9 +640,8 @@ HcclResult HostCpuRoceChannel::NotifyWaitHybrid(uint32_t localNotifyIdx, uint32_
     // 混合模式：轮询本地 Notify 内存地址
     // 对端会写入该地址
     
-    CHK_PRT_RET(localNotifyIdx >= localDpuNotifyIds_.size(),
-        HCCL_ERROR("[NotifyWaitHybrid] Invalid notify index: %u, max: %u",
-            localNotifyIdx, localDpuNotifyIds_.size()),
+    CHK_PRT_RET(localNotifyIdx != 0,
+        HCCL_ERROR("[NotifyWaitHybrid] Hybrid mode only supports single notify, index: %u", localNotifyIdx),
         HCCL_E_PARA);
     
     // 使用 std::atomic 保证内存可见性
@@ -995,10 +1004,10 @@ HcclResult HostCpuRoceChannel::CleanupResources()
     }
     connections_.clear();
     
-    // 释放 Notify ID
-    if (!localDpuNotifyIds_.empty()) {
-        DpuNotifyManager::GetInstance().FreeNotifyIds(notifyNum_, localDpuNotifyIds_);
-        localDpuNotifyIds_.clear();
+    // 释放 Notify ID（混合模式使用单 Notify）
+    if (localDpuNotifyId_ != INVALID_DPU_NOTIFY_ID) {
+        DpuNotifyManager::GetInstance().FreeNotifyId(localDpuNotifyId_);
+        localDpuNotifyId_ = INVALID_DPU_NOTIFY_ID;
     }
     
     return HCCL_SUCCESS;
