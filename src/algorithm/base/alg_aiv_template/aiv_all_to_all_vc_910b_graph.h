@@ -24,7 +24,7 @@ template<typename T>
 __aicore__ inline void AivAll2AllVCGraph910B::Process(GM_ADDR input, GM_ADDR output, int32_t tag,
     ExtraArgs &extraArgs)
 {
-    uint32_t targetRank = block_idx; // 0-rankSize
+    uint32_t targetRank = GetBlockIdx(); // 0-rankSize
 
     // 内存准备
     __gm__ T *inputGM = (__gm__ T *)input;
@@ -39,12 +39,12 @@ __aicore__ inline void AivAll2AllVCGraph910B::Process(GM_ADDR input, GM_ADDR out
     Record(tag, targetRank, AivNotifyType::ACK);
     Wait(tag, targetRank, AivNotifyType::ACK);
     PipeBarrier<PIPE_ALL>();
-    uint64_t remoteSendOffset = 0; // 远端usrin发送给本端output的数据偏移，远端卡号为block_idx，可能为本rank
+    uint64_t remoteSendOffset = 0; // 远端usrin发送给本端output的数据偏移，远端卡号为GetBlockIdx()，可能为本rank
     for (uint32_t i = 0; i < rank_; i++) {
         remoteSendOffset += extraArgs.sendCountMatrix[targetRank * rankSize_ + i];
     }
 
-    uint64_t localRecvOffset = 0; // 本端output接收远端usrin的数据偏移，目标远端卡号为block_idx，可能为本rank
+    uint64_t localRecvOffset = 0; // 本端output接收远端usrin的数据偏移，目标远端卡号为GetBlockIdx()，可能为本rank
     for (uint32_t i = 0; i < targetRank; i++) {
         localRecvOffset += extraArgs.sendCountMatrix[i * rankSize_ + rank_];
     }
