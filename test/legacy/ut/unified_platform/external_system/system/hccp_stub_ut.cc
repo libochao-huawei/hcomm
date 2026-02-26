@@ -702,3 +702,8 @@ int RaCtxGetAuxInfo(void *ctx_handle, struct HccpAuxInfoIn *in, struct HccpAuxIn
 int RaCtxQpQueryBatch(void *qp_handle[], struct JettyAttr attr[], unsigned int *num) {
     return 0;
 }
+
+int RaGetLbMax(void *rdevHandle, int *lbMax)
+{
+    return 0;
+}
