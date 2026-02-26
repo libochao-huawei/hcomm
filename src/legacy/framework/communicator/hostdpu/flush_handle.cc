@@ -57,10 +57,10 @@ HcclResult FlushHandle::GetLbMax(void *rdevHandle, int *lbMax)
     int ret = RaGetLbMax(rdevHandle, lbMax);
     if (ret != 0) {
         HcclResult eRet = Destroy();
-        HCCL_ERROR("[GetLbMax]Failed to get lb max. error_code=%d. Destroy Flush code=%d", ret, eRet);
+        HCCL_ERROR("[GetLbMax]Failed to get load balance max value. error_code=%d. Destroy Flush code=%d", ret, eRet);
         return HCCL_E_ROCE_CONNECT;
     }
-    HCCL_DEBUG("[GetLbMax]Loopback QP created successfully. QP Handle=%p", qpHandle);
+    HCCL_DEBUG("[GetLbMax]Get load balance max value successfully");
     return HCCL_SUCCESS;
 }
 
