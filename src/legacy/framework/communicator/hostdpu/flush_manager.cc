@@ -105,7 +105,6 @@ HcclResult FlushManager::Flush()
     return HCCL_SUCCESS;
 }
 
-#define ROCE_WR_FLUSH ((ibv_wr_opcode)0x40)
 HcclResult FlushManager::FlushParamPrepare(std::shared_ptr<FlushHandle> flushHandlePtr, ibv_send_wr *swr)
 {
     CHK_PTR_NULL(swr);
