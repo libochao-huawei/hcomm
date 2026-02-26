@@ -130,7 +130,7 @@ void CcuContextAllToAllVMesh1D::LoadArgs()
     } else {
         Load(xnMaxTransportGoSize_);
     }
-    
+
     // 恢复当前卡对所有卡的收发信息
     sendRecvInfo_.resize(rankSize_);
     for (uint64_t rankIdx = 0; rankIdx < rankSize_; rankIdx++) {
@@ -333,5 +333,48 @@ void CcuContextAllToAllVMesh1D::LoadAll2allSendRecvInfo(A2AsingleSendRecvInfo &s
         Load(sendRecvInfo.recvOffset);
         Load(sendRecvInfo.tailGoSize);
     }
+}
+
+static void CcuContextAllToAllVMesh1D::RefreshArgs(CollOpParams opParams, u32 rankSize, std::vector<uint64_t> &args)
+{
+    uint64_t& inputAddr = args[0];
+    uint64_t& outputAddr = args[1];
+
+    (void)memcpy_s(&inputAddr, sizeof(inputAddr), &opParams.sendBuf, sizeof(inputAddr));
+    (void)memcpy_s(&outputAddr, sizeof(outputAddr), &opParams.recvBuf, sizeof(inputAddr));
+
+    uint64_t xnMaxTransportSize   = UB_MAX_TRANS_SIZE;
+
+    u32 argIdx = 9;
+    for (u32 i = 0; i < rankSize; i++) {
+        u64 curSendCounts = *(static_cast<const u64 *>(opParams.All2AllDataDes.sendCounts) + i);
+        u64 curSendDispls = *(static_cast<const u64 *>(opParams.All2AllDataDes.sdispls) + i);
+        u64 sendLength = curSendCounts * DataTypeSizeGet(opParams.All2AllDataDes.sendType);
+        u64 sendOffset = curSendDispls * DataTypeSizeGet(opParams.All2AllDataDes.sendType);
+
+        u64 curRecvDispls = *(static_cast<const u64 *>(opParams.All2AllDataDes.rdispls) + i);
+        u64 recvOffset = curRecvDispls * DataTypeSizeGet(opParams.All2AllDataDes.recvType);
+
+        uint64_t tailSize = sendLength % UB_MAX_TRANS_SIZE;
+        uint64_t loopNum = UINT64_MAX - 1 - (sendLength / UB_MAX_TRANS_SIZE);
+        auto tailGoSize = CalGoSize(tailSize);
+
+        args[argIdx] = tailSize;
+        argIdx++;
+        args[argIdx] = loopNum;
+        argIdx++;
+        args[argIdx] = sendOffset;
+        argIdx++;
+        args[argIdx] = recvOffset;
+        argIdx++;
+        for (auto val : tailGoSize) {
+            args[argIdx] = val;
+            argIdx++;
+        }
+    }
+    for (u32 i = 0; i < args.size(); i++) {
+        HCCL_INFO("[CcuContextAllToAllVMesh1D][RefreshArgs] SFL args[%u] is [%llu]", i, args[i]);
+    }
+    return;
 }
 }
