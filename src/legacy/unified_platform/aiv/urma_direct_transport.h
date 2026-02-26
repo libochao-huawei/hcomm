@@ -37,8 +37,6 @@ public:
 private:
     RdmaHandle rdmaHandle;
 
-    u32 qDepth_{0};
-
     MAKE_ENUM(UrmaStatus, INIT, SOCKET_OK, SEND_DATA, RECV_DATA, SEND_FIN, RECV_FIN, PROCESS_DATA, CONN_OK)
     UrmaStatus urmaStatus{UrmaStatus::INIT};
 
