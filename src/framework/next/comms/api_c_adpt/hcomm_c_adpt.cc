@@ -25,7 +25,10 @@
 #include "launch_aicpu.h"
 #include "comm_configer.h"
 #include "endpoint_map.h"
-#include "endpoint_map.h"
+
+#include "unified_mgr.h"
+
+#include "param_check_pub.h"
 
 namespace hcomm {
 static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
@@ -82,6 +85,20 @@ static inline HcclResult WithChannelByHandleLocked(ChannelHandle inHandle, Func 
 
 using namespace hcomm;
 static HcommEndpointMap g_EndpointMap;
+
+HcclResult HcommInitManager(const uint32_t devPhyId)
+{
+    // 临时方案：触发统一平台层单例触发静态对象声明
+    // 内部流程触发各种单例声明，保证时序
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            (void)UnifiedMgr::GetInstance(devPhyId);
+            return HcclResult::HCCL_SUCCESS;
+        }());
+#endif
+    return HcclResult::HCCL_SUCCESS;
+}
 
 HcclResult HcommEndpointGet_(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
 {
