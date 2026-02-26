@@ -50,8 +50,9 @@ public:
     std::function<drvError_t(uint32_t, struct halSensorNodeCfg *, uint64_t *)> dlHalSensorNodeRegister;
     std::function<drvError_t(uint32_t, uint64_t)> dlHalSensorNodeUnregister;
     std::function<drvError_t(uint32_t, uint64_t, int, halGeneralEventType_t)> dlHalSensorNodeUpdateState;
-    bool DlHalFunctionIsInit() const
+    bool DlHalFunctionIsInit()
     {
+        std::lock_guard<std::mutex> lock(handleMutex_);
         return (handle_ != nullptr);
     }
 
