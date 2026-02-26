@@ -65,6 +65,10 @@ void StreamLiteMgr::ParsePackedData(std::vector<char> &givenData)
     binaryStream >> num;
     binaryStream >> data;
     HCCL_INFO("StreamLiteMgr, num=%u, data=%s", num, Bytes2hex(data.data(), data.size()).c_str());
+    if (num == 0) {
+        HCCL_ERROR("StreamLiteMgr, num is 0");
+        return;
+    }
     u32 sizePerDto = data.size() / num;
     if (streams.size() >= num) { // 已经解析出stream，并且已有stream数量大于需要解包的数量，则直接返回
         return;
