@@ -48,10 +48,10 @@ target_include_directories(hccp_utest PRIVATE
     ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include
     ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/providers/hns
     ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include
-    ${ASCEND_3RD_LIB_PATH}/json/include/
-    ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
-    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/
-    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/3rdparty/
+    ${CANN_3RD_LIB_PATH}/json/include/
+    ${CANN_3RD_LIB_PATH}/gtest/include/
+    ${CANN_3RD_LIB_PATH}/mockcpp/include/
+    ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
 )
 
 target_compile_options(hccp_utest PRIVATE
@@ -75,7 +75,7 @@ target_compile_definitions(hccp_utest PRIVATE
 target_link_libraries(hccp_utest PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     -lrt
-    -lpthread
+    -pthread
     -lgcov
     -ldl
 )

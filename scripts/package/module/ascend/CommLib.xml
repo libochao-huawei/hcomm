@@ -48,7 +48,7 @@
         <file value="ccu_assist_pub.h"/>
         <file value="ccu_common.h"/>
         <file value="ccu_condition_v1.h"/>
-        <file value="ccu_context_resource_v1.h"/>
+        <file value="ccu_kernel_resource.h"/>
         <file value="ccu_datatype_v1.h"/>
         <file value="ccu_funccall_v1.h"/>
         <file value="ccu_instr_info_v1.h"/>

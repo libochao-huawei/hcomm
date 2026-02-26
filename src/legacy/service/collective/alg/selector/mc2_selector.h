@@ -38,13 +38,13 @@ enum AlgorithmType {
 class Mc2Selector : public BaseSelector {
 public:
     SelectorStatus SelectDefaultCcuMsAlgo(
-        const CollAlgOperator &op,const CollAlgParams &params, std::string &primQueueGenName) const;
+        const CollAlgOperator &op,const CollAlgParams &params, std::string &primQueueGenName);
 
     SelectorStatus SelectDefaultCcuSchedAlgo(
-        const CollAlgOperator &op, const CollAlgParams &params, std::string &primQueueGenName) const;
+        const CollAlgOperator &op, const CollAlgParams &params, std::string &primQueueGenName);
 
     SelectorStatus SelectDefaultAicpuAlgo(
-        const CollAlgOperator &op,const CollAlgParams &params, std::string &primQueueGenName) const;
+        const CollAlgOperator &op,const CollAlgParams &params, std::string &primQueueGenName);
 
     SelectorStatus SelectCcuMsAlgo(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName);
 

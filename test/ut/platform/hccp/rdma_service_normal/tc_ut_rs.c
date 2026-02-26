@@ -176,6 +176,15 @@ extern int rs_ssl_X509_store_add_cert(char *certInfo, X509_STORE *store);
 extern int RsGetLinuxVersion(struct RsLinuxVersionInfo *verInfo);
 extern void freeifaddrs(struct ifaddrs *ifa);
 extern int DlHalSensorNodeUpdateState(uint32_t devid, uint64_t handle, int val, halGeneralEventType_t assertion);
+extern int RsQueryRdevCb(unsigned int phyId, unsigned int rdevIndex, struct RsRdevCb **rdevCb);
+
+int RsQueryRdevCbStub(unsigned int phyId, unsigned int rdevIndex, struct RsRdevCb **rdevCb)
+{
+	static struct RsRdevCb stub_rdev_cb = {0};
+
+	*rdevCb = &stub_rdev_cb;
+	return 0;
+}
 
 void TcRsAbnormal()
 {
@@ -6740,5 +6749,70 @@ void TcRsRetryTimeoutExceptionCheck()
 	wc.status = IBV_WC_RETRY_EXC_ERR;
     mocker(RsRetryTimeoutExceptionCheck, 1, 0);
     RsRdmaRetryTimeoutExceptionCheck(&sensorNode, &wc);
+    mocker_clean();
+}
+
+void TcRsSetQpLbValue()
+{
+    unsigned int rdevIndex = 0;
+    unsigned int phyId = 0;
+    unsigned int qpn = 0;
+    int lbValue = 0;
+    int ret = 0;
+
+    ret = RsSetQpLbValue(RS_MAX_DEV_NUM, rdevIndex, qpn, lbValue);
+    EXPECT_INT_EQ(ret, -EINVAL);
+
+    mocker_clean();
+    mocker_invoke(RsQpn2qpcb, ReplaceRsQpn2qpcb, 1);
+    ret = RsSetQpLbValue(phyId, rdevIndex, qpn, lbValue);
+    EXPECT_INT_EQ(ret, 0);
+    mocker_clean();
+}
+
+void TcRsGetQpLbValue()
+{
+    unsigned int rdevIndex = 0;
+    unsigned int phyId = 0;
+    unsigned int qpn = 0;
+    int lbValue = 0;
+    int ret = 0;
+
+    ret = RsGetQpLbValue(RS_MAX_DEV_NUM, rdevIndex, qpn, &lbValue);
+    EXPECT_INT_EQ(ret, -EINVAL);
+
+    mocker_clean();
+    mocker_invoke(RsQpn2qpcb, ReplaceRsQpn2qpcb, 1);
+    ret = RsGetQpLbValue(phyId, rdevIndex, qpn, NULL);
+    EXPECT_INT_EQ(ret, -EINVAL);
+    mocker_clean();
+
+    mocker_clean();
+    mocker_invoke(RsQpn2qpcb, ReplaceRsQpn2qpcb, 1);
+    ret = RsGetQpLbValue(phyId, rdevIndex, qpn, &lbValue);
+    EXPECT_INT_EQ(ret, 0);
+    mocker_clean();
+}
+
+void TcRsGetLbMax()
+{
+    unsigned int rdevIndex = 0;
+    unsigned int phyId = 0;
+    int lbMax = 0;
+    int ret = 0;
+
+    ret = RsGetLbMax(RS_MAX_DEV_NUM, rdevIndex, &lbMax);
+    EXPECT_INT_EQ(ret, -EINVAL);
+
+    mocker_clean();
+    mocker_invoke(RsQueryRdevCb, RsQueryRdevCbStub, 1);
+    ret = RsGetLbMax(phyId, rdevIndex, NULL);
+    EXPECT_INT_EQ(ret, -EINVAL);
+    mocker_clean();
+
+    mocker_clean();
+    mocker_invoke(RsQueryRdevCb, RsQueryRdevCbStub, 1);
+    ret = RsGetLbMax(phyId, rdevIndex, &lbMax);
+    EXPECT_INT_EQ(ret, 0);
     mocker_clean();
 }

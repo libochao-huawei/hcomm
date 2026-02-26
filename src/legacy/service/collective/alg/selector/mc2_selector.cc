@@ -68,7 +68,7 @@ const std::map<OpType, std::string> MC2_AICPU_2D_DEFAULT_ALG_MAP = {
 };
 
 SelectorStatus Mc2Selector::SelectDefaultCcuMsAlgo(const CollAlgOperator &op,const CollAlgParams &params,
-                                   std::string &primQueueGenName) const
+                                   std::string &primQueueGenName)
 {
     (void) params;
     TopoInfo topoInfo;
@@ -94,7 +94,7 @@ SelectorStatus Mc2Selector::SelectDefaultCcuMsAlgo(const CollAlgOperator &op,con
 }
 
 SelectorStatus Mc2Selector::SelectDefaultCcuSchedAlgo(const CollAlgOperator &op, const CollAlgParams &params,
-                                   std::string &primQueueGenName) const
+                                   std::string &primQueueGenName)
 {
     (void) params;
     TopoInfo topoInfo;
@@ -118,7 +118,7 @@ SelectorStatus Mc2Selector::SelectDefaultCcuSchedAlgo(const CollAlgOperator &op,
 }
 
 SelectorStatus Mc2Selector::SelectDefaultAicpuAlgo(const CollAlgOperator &op,const CollAlgParams &params,
-                                   std::string &primQueueGenName) const
+                                   std::string &primQueueGenName)
 {
     (void) params;
     TopoInfo topoInfo;

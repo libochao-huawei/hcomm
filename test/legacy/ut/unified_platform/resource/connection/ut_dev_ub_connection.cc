@@ -24,6 +24,7 @@
 #include "hccp_async.h"
 #undef protected
 #undef private
+#include "hccp_async_ctx.h"
 
 using namespace Hccl;
 
@@ -203,7 +204,7 @@ TEST_F(DevUbConnectionTest, rma_ub_connection_suspend_change_status_suspend)
     //  When:
     MOCKER(HrtFree).stubs().with(any()).will(ignoreReturnValue());
     devUbConnection.jettyHandle = 1;
-    devUbConnection.sqPtr = (void *)0x1000000;
+    devUbConnection.sqBuffVa = 0x1000000;
     devUbConnection.status = RmaConnStatus::READY;
     devUbConnection.ubConnStatus = DevUbConnection::UbConnStatus::READY;
     
@@ -702,7 +703,7 @@ TEST_F(DevUbConnectionTest, rma_net_connection_prepare_write_task_in_offload_mod
     MOCKER(HrtRaUbPostNops).stubs().with(any(), any(), any());
     MOCKER(HrtUbDbSend).stubs().with(any(), any());
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream stream;
     devUbConnection.AddNop(stream);
 
@@ -853,7 +854,7 @@ TEST_F(DevUbConnectionTest, rma_ub_connection_ready_import_jetty)
 
 TEST_F(DevUbConnectionTest, tp_import_test)
 {
-    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<s32>(0)));
     // construct DevUbConnection
     RdmaHandle rdmaHandle = (void *)0x1000000;
 
@@ -908,11 +909,11 @@ TEST_F(DevUbConnectionTest, ctp_import_test)
 }
 
 constexpr uint64_t expectSqBuffVa = 10;
-int ra_ctx_qp_create_async_stub(void *ctx_handle, struct qp_create_attr *attr, struct qp_create_info *info,
-                                void **qp_handle, void **req_handle)
+int RaCtxQpCreateAsync_stub(void *ctxHandle, struct QpCreateAttr *attr,
+    struct QpCreateInfo *info, void **qpHandle, void **reqHandle)
 {
-    *req_handle = reinterpret_cast<void *>(0x12345678);
-    info->ub.sq_buff_va = expectSqBuffVa;
+    *reqHandle = reinterpret_cast<void *>(0x12345678);
+    info->ub.sqBuffVa = expectSqBuffVa;
     return 0;
 }
 TEST_F(DevUbConnectionTest, Ut_CreateJetty_When_CorrectParams_ReturnIsOk)
@@ -926,7 +927,7 @@ TEST_F(DevUbConnectionTest, Ut_CreateJetty_When_CorrectParams_ReturnIsOk)
     std::string tag = "test";
 
     // When
-    MOCKER(ra_ctx_qp_create_async).stubs().will(invoke(ra_ctx_qp_create_async_stub));
+    MOCKER(RaCtxQpCreateAsync).stubs().will(invoke(RaCtxQpCreateAsync_stub));
     DevUbCtpConnection devUbCtpConn(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
 
     // Then

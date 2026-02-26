@@ -240,10 +240,10 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/test/ut/depends/include/ascendc/highlevel_api/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
 
-    ${ASCEND_3RD_LIB_PATH}/json/include/
-    ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
-    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/
-    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/3rdparty/
+    ${CANN_3RD_LIB_PATH}/json/include/
+    ${CANN_3RD_LIB_PATH}/gtest/include/
+    ${CANN_3RD_LIB_PATH}/mockcpp/include/
+    ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
 
     ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal

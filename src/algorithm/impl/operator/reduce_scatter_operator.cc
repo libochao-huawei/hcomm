@@ -330,7 +330,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
     if (isOnlyAiv && !isAivMode) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");
         CHK_PRT_RET(!IsSupportAIVReduce(param.DataDes.dataType, param.reduceType), HCCL_ERROR("current data type[%s] or reduceType[%s] not supported, "\
-            "data type support range:[int8, int16, int32, uint8, uint16, uint32, float16, float32, bfloat16] reduce type support range:[sum, max, min]",
+            "data type support range:[int8, int16, int32, float16, float32, bfloat16] reduce type support range:[sum, max, min]",
             GetDataTypeEnumStr(param.DataDes.dataType).c_str(), GetReduceOpEnumStr(param.reduceType).c_str()), HCCL_E_NOT_SUPPORT);
 
         CHK_PRT_RET(!isSupportAivDeter, HCCL_ERROR("is not support aiv deter.isSingleMeshAggregation_[%d] isOpbase[%d] "\
@@ -525,7 +525,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
     if (isOnlyAiv && !isAivMode && !isSupportAivDeter) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");
         CHK_PRT_RET(!IsSupportAIVReduce(param.DataDes.dataType, param.reduceType), HCCL_ERROR("current data type[%s] or reduceType[%s] not supported, "\
-            "data type support range:[int8, int16, int32, uint8, uint16, uint32, float16, float32, bfloat16] reduce type support range:[sum, max, min]",
+            "data type support range:[int8, int16, int32, float16, float32, bfloat16] reduce type support range:[sum, max, min]",
             GetDataTypeEnumStr(param.DataDes.dataType).c_str(), GetReduceOpEnumStr(param.reduceType).c_str()), HCCL_E_NOT_SUPPORT);
 
         CHK_PRT_RET(retryEnable_, HCCL_ERROR("retryEnable [%d] not supported", retryEnable_), HCCL_E_NOT_SUPPORT);

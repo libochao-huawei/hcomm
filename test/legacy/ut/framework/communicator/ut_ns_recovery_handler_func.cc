@@ -22,6 +22,9 @@ using namespace Hccl;
 
 constexpr u32 h2dBufferSize = sizeof(KfcCommand);
 constexpr u32 d2hBufferSize = sizeof(KfcExecStatus);
+#define HCCL_HDC_TYPE_D2H 0
+#define HCCL_HDC_TYPE_H2D 1
+
 
 static HcclResult HrtDrvMemCpyStub(void *dst, uint64_t destMax, const void *src, uint64_t count)
 {

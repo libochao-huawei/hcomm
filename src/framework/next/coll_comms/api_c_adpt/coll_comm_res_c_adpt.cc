@@ -12,6 +12,7 @@
 #include "hccl_comm_pub.h"
 #include "exception_handler.h"
 #include "env_config.h"
+#include "../common/loggers/channel_logger.h"  // 日志记录器
 
 #include "hcom_common.h"
 #include "ccu_kernel.h"
@@ -123,17 +124,14 @@ bool CheckCommEngine(const CommEngine engine, const uint32_t opExpansionMode)
 }
 
 constexpr uint32_t CHANNEL_NUM_MAX = 1024 * 1024;  // channel的默认限制最大为1024 * 1024
- 
+
 HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, 
     const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle* channels)
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
     HcclUs startut = TIME_NOW();
     EXCEPTION_HANDLE_BEGIN
-    for (uint32_t idx = 0; idx < channelNum; idx++) {
-        HCCL_INFO("HcclChannelAcquire idx[%u], local[%d], remote[%d]",
-            idx, channelDescs[idx].localEndpoint.loc.locType, channelDescs[idx].remoteEndpoint.loc.locType);
-    }
+    HCCL_INFO("[%s] ChannelAcquire begin, channelNum[%u], engine[%d]", __func__, channelNum, engine);
 
     // 入参校验
     CHK_PTR_NULL(comm);
@@ -226,7 +224,7 @@ HcclResult HcclCcuKernelRegister(HcclComm comm,
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
     CcuKernelHandle newHandle{0};
-    // 当前翻译内部流程可能抛异常
+    // 当前注册内部流程可能抛异常
     EXCEPTION_HANDLE_BEGIN
     CHK_RET(kernelMgr.Register(std::move(kernel), *resPack, newHandle));
     EXCEPTION_HANDLE_END
@@ -250,6 +248,16 @@ HcclResult HcclCcuKernelRegisterFinish(HcclComm comm)
 
     auto *ccuContainer = myRank->GetCcuResContainer();
     CHK_PTR_NULL(ccuContainer);
+
+    const auto &newKernels = ccuContainer->GetUntranslatedKernels();
+
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
+    // 当前翻译内部流程可能抛异常
+    EXCEPTION_HANDLE_BEGIN
+    CHK_RET(kernelMgr.Translate(newKernels));
+    EXCEPTION_HANDLE_END
+
     CHK_RET(ccuContainer->ResetResPack());
     return HcclResult::HCCL_SUCCESS;
 }
@@ -289,7 +297,7 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
 }
 
 HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
-    const CcuKernelHandle KernelHandle, void *taskArgs)
+    const CcuKernelHandle kernelHandle, void *taskArgs)
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
     HcclUs startut = TIME_NOW();
@@ -308,14 +316,18 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
 
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
-    auto *kernel = kernelMgr.GetKernel(KernelHandle);
+    auto *kernel = kernelMgr.GetKernel(kernelHandle);
     CHK_PTR_NULL(kernel);
 
     EXCEPTION_HANDLE_BEGIN
     const hcomm::CcuTaskArg *ccuTaskArgs =
         reinterpret_cast<hcomm::CcuTaskArg *>(taskArgs);
     std::vector<hcomm::CcuTaskParam> ccuParams{};
-    CHK_RET(kernel->GeneTaskParam(*ccuTaskArgs, ccuParams));
+    auto ret = kernel->GeneTaskParam(*ccuTaskArgs, ccuParams);
+    CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
+        HCCL_ERROR("[%s] failed, kernleHandle[0x%llx].", __func__, kernelHandle),
+        HcclResult::HCCL_SUCCESS);
+
     if (ccuParams.empty()) {
         HCCL_INFO("[%s] passed, ccu params are empty.", __func__);
         return HcclResult::HCCL_SUCCESS;

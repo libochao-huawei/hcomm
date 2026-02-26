@@ -4686,8 +4686,9 @@ namespace hccl
         // 是否是AIV直驱Roce场景
         opParam.isNpuDirectRoce = algName == "AlltoAllDirectFullmeshAIVExecutor";
         if (isOnlyAiv_ && !algDesc.isAivMode) {
-            HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%u] not support aiv only, support range:"
-                "[allreduce, reducescatter, allgather, alltoall, alltoallv, alltoallvc]", opParam.opType);
+            std::string opTypeName = GetCMDTypeEnumStr(opType);
+            HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%s] currently do not select aiv mode, "
+                "aiv only not support, please ensure rankNum is greater than one", opTypeName.c_str());
             return HCCL_E_NOT_SUPPORT;
         }
 
@@ -9127,6 +9128,12 @@ namespace hccl
 
     HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)
     {
+        CHK_PRT_RET(superPodNum_ > 1, 
+            HCCL_ERROR("[RegisterWindow] Cross-SuperNode not support symmetric memory"), HCCL_E_NOT_SUPPORT);
+
+        CHK_PRT_RET(deviceType_ != DevType::DEV_TYPE_910_93, 
+            HCCL_ERROR("[%s] deviceType:%d not support symmetric memory", __func__, deviceType_), HCCL_E_NOT_SUPPORT);
+
         CHK_SMART_PTR_NULL(symmetricMemory_);
         return symmetricMemory_->RegisterSymmetricMem(ptr, size, winHandle);
     }

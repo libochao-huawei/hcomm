@@ -263,3 +263,6 @@ TEST_M(RS, TcRsUbGetTpAttr);
 TEST_M(RS, TcRsUbSetTpAttr);
 TEST_M(RS, TcRsCtxGetCrErrInfoList);
 TEST_M(RS, TcRsRetryTimeoutExceptionCheck);
+TEST_M(RS, TcRsSetQpLbValue);
+TEST_M(RS, TcRsGetQpLbValue);
+TEST_M(RS, TcRsGetLbMax);

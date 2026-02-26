@@ -126,7 +126,7 @@ void MockHrtRaCustomChannelXn(const HRaInfo &raInfo, void *customIn, void *custo
 
 TEST_F(CcuRaTest, test_get_ccu_xn_value)
 {
-    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtRaCustomChannel).stubs().with(any(), any(), any()).will(invoke(MockHrtRaCustomChannelXn));
 
     EXPECT_EQ(CcuErrorHandler::GetCcuXnValue(0, 0, 0), 0xaaaabbbbccccdddd);
@@ -141,7 +141,7 @@ void MockHrtRaCustomChannelGSA(const HRaInfo &raInfo, void *customIn, void *cust
 
 TEST_F(CcuRaTest, test_get_ccu_gsa_value)
 {
-    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtRaCustomChannel).stubs().with(any(), any(), any()).will(invoke(MockHrtRaCustomChannelGSA));
 
     EXPECT_EQ(CcuErrorHandler::GetCcuGSAValue(0, 0, 0), 0x1111222233334444);
@@ -156,7 +156,7 @@ void MockHrtRaCustomChannelCKE(const HRaInfo &raInfo, void *customIn, void *cust
 
 TEST_F(CcuRaTest, test_get_ccu_cke_value)
 {
-    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtRaCustomChannel).stubs().with(any(), any(), any()).will(invoke(MockHrtRaCustomChannelCKE));
 
     EXPECT_EQ(CcuErrorHandler::GetCcuCKEValue(0, 0, 0), 0xffff);
@@ -175,7 +175,7 @@ void MockHrtRaCustomChannelMissionContext(const HRaInfo &raInfo, void *customIn,
 
 TEST_F(CcuRaTest, test_get_ccu_mission_context)
 {
-    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtRaCustomChannel).stubs().with(any(), any(), any()).will(invoke(MockHrtRaCustomChannelMissionContext));
 
     auto missionCtx = CcuErrorHandler::GetCcuMissionContext(0, 0, 0);
@@ -198,7 +198,7 @@ void MockHrtRaCustomChannelLoopContext(const HRaInfo &raInfo, void *customIn, vo
 
 TEST_F(CcuRaTest, test_get_ccu_loop_context)
 {
-    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtRaCustomChannel).stubs().with(any(), any(), any()).will(invoke(MockHrtRaCustomChannelLoopContext));
 
     auto loopCtx = CcuErrorHandler::GetCcuLoopContext(0, 0, 0);

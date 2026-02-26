@@ -31,10 +31,6 @@ constexpr u32 HOST_CONTROL_BASE_PORT = 60000;  // 控制面起始port
 constexpr u32 HCCL_WHITELIST_ON = 1;
 constexpr u32 HOST_SOCKET_CONN_LIMIT = 8;  // HCCL_AISERVER_DEVICE_NUM (8)
 
-const u32 RANKINFO_DETECT_SERVER_STATUS_IDLE = 0;
-const u32 RANKINFO_DETECT_SERVER_STATUS_RUNING = 1;
-const u32 RANKINFO_DETECT_SERVER_STATUS_ERROR = 2;
-
 UniversalConcurrentMap<u32, volatile u32> RankInfoDetect::g_detectServerStatus_;
 
 RankInfoDetect::RankInfoDetect()
@@ -172,13 +168,22 @@ void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2
     std::shared_ptr<Socket> clientSocket = ClientInit(rootHandle);
 
     // 1. 创建RankInfoDetectClient对象
-    std::unique_ptr<RankInfoDetectClient> rankInfoDetectClient =
-        std::make_unique<RankInfoDetectClient>(devPhyId_, rankSize, rankId, clientSocket);
+    rankInfoDetectClient = std::make_shared<RankInfoDetectClient>(devPhyId_, rankSize, rankId, clientSocket);
 
     // 2. 调用RankInfoDetectClient.Setup, 获取rankTable
     rankInfoDetectClient->Setup(rankTable_);
 
     HCCL_INFO("[RankInfoDetect::%s] setup agent end.", __func__);
+}
+
+HcclResult RankInfoDetect::UpdateAgent(u32 devicePort)
+{
+    CHK_PTR_NULL(rankInfoDetectClient);
+
+    // 1. 创建RankInfoDetectClient对象
+    rankInfoDetectClient->Update(devicePort, rankTable_);
+    HCCL_INFO("[RankInfoDetect::%s] update agent end.", __func__);
+    return HCCL_SUCCESS;
 }
 
 void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket, s32 devLogicId, u32 devPhyId,
@@ -194,16 +199,11 @@ void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket,
     g_detectServerStatus_.EmplaceAndUpdate(
         hostPort, [](volatile u32 &status) { status = RANKINFO_DETECT_SERVER_STATUS_RUNING; });
 
+    HrtSetDevice(devLogicId);
+    std::shared_ptr<RankInfoDetectService> rankInfoDetectService = make_shared<RankInfoDetectService>(devPhyId, serverSocket, identifier, wlistInfo);
+
     bool hasException = false;
-    EXECEPTION_CATCH(
-        {
-            HrtSetDevice(devLogicId);
-            std::shared_ptr<RankInfoDetectService> rankInfoDetectService =
-                make_shared<RankInfoDetectService>(devPhyId, serverSocket, identifier, wlistInfo);
-            rankInfoDetectService->Setup();
-            HrtResetDevice(devLogicId);
-        }, 
-        hasException = true);
+    EXECEPTION_CATCH(rankInfoDetectService->Setup(), hasException = true);
 
     // 若有异常则设置error状态退出
     if(hasException == true) {
@@ -218,6 +218,23 @@ void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket,
         hostPort, [](volatile u32 &status) { status = RANKINFO_DETECT_SERVER_STATUS_IDLE; });
 
     HCCL_INFO("[RankInfoDetect::%s] end, status idle.", __func__);
+
+    // 第二次发送的ranktable带有端口信息
+    EXECEPTION_CATCH(rankInfoDetectService->Update(), hasException = true);
+    HrtResetDevice(devLogicId);
+
+    // 若有异常则设置error状态退出
+    if(hasException == true) {
+        g_detectServerStatus_.EmplaceAndUpdate(hostPort, 
+            [](volatile u32 &status) { status = RANKINFO_DETECT_SERVER_STATUS_ERROR; });
+        HCCL_ERROR("[RankInfoDetect::%s] end, status error.", __func__);
+        return;
+    }
+
+    g_detectServerStatus_.EmplaceAndUpdate(
+        hostPort, [](volatile u32 &status) { status = RANKINFO_DETECT_SERVER_STATUS_UPDATE; });
+    
+    HCCL_INFO("[RankInfoDetect::%s] end, status update.", __func__);  
 }
 
 u32 RankInfoDetect::GetHostListenPort()
@@ -280,7 +297,7 @@ void RankInfoDetect::GetRankTable(RankTableInfo &ranktable) const
     ranktable = rankTable_;
 }
 
-void RankInfoDetect::WaitComplete(u32 listenPort)
+void RankInfoDetect::WaitComplete(u32 listenPort, u32 listenStatus)
 {
     // 若server拓扑探测已正常结束则退出
     auto iter = g_detectServerStatus_.Find(listenPort);
@@ -300,7 +317,7 @@ void RankInfoDetect::WaitComplete(u32 listenPort)
         if (status == RANKINFO_DETECT_SERVER_STATUS_ERROR) {
             THROW<InternalException>( StringFormat("[RankInfoDetect::%s] topo detect failed, port[%u].",
                 __func__, listenPort));
-        } else if (status == RANKINFO_DETECT_SERVER_STATUS_IDLE) {
+        } else if (status == listenStatus) {
             HCCL_INFO("[RankInfoDetect::%s] topoExchangeServer port[%u] compeleted.", __func__, listenPort);
             return;
         } else {
