@@ -246,7 +246,7 @@ HcclResult TopoinfoRanktableConcise::GetServerList(const nlohmann::json &obj, Ra
     }
     if (clusterInfo.serverNum == 0) {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
-            std::vector<std::string>({ "[" + clusterInfo.serverNum + "]", "[server_count]",
+            std::vector<std::string>({ "[" + std::to_string(clusterInfo.serverNum) + "]", "[server_count]",
             "is a positive integer" }));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] server num is zero", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA));

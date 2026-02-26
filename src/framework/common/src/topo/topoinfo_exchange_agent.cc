@@ -914,18 +914,20 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterSuperPodInfo(const std::vector<Ra
     CHK_PRT_RET(useSuperPodMode == false,
         HCCL_DEBUG("[Verify][SuperPodInfo] does not need verify superPod info"), HCCL_SUCCESS);
 
+    std::string errormessage = "";
     // 获取每个超节点内的serverId
     std::map<std::string, std::set<std::string>> superPodSrvIdMap; // super_pod_id -> serverId
     std::map<std::string, std::unordered_map<u32, u32>> superPodSdidMap; // super_pod_id -> superDeviceId
     for (u32 i = 0; i < rankInfo.size(); i++) {
-        std::string errormessage = "Value " + std::to_string(rankInfo[i].superDeviceId) + " for rankTable variable superDeviceId is invalid, "\
-                    "expected value is less than the communication size " + std::to_string(rankInfo.size()) + " and must be unique.";
         // 超节点模式下, 校验superPodId和sdid值有效
         RPT_INPUT_ERR((rankInfo[i].superPodId.empty() || rankInfo[i].superDeviceId == INVALID_UINT) &&
                           rankInfo[i].deviceInfo.deviceType == DevType::DEV_TYPE_910_93,
             "EI0014",
             std::vector<std::string>({ "value", "variable" ,"expect" }),
-            std::vector<std::string>({errormessage}));
+            std::vector<std::string>({std::to_string(rankInfo[i].superDeviceId), "super_device_id",
+            "is less than the communication size " + std::to_string(rankInfo.size()) + " and must be unique"}));
+        errormessage = "Value " + std::to_string(rankInfo[i].superDeviceId) + " for rankTable variable superDeviceId is invalid, "\
+                    "expected value is less than the communication size " + std::to_string(rankInfo.size()) + " and must be unique.";
         CHK_PRT_RET((rankInfo[i].superPodId.empty() || rankInfo[i].superDeviceId == INVALID_UINT) &&
                         rankInfo[i].deviceInfo.deviceType == DevType::DEV_TYPE_910_93,
             HCCL_ERROR("[%s][%s]%s",
@@ -951,13 +953,13 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterSuperPodInfo(const std::vector<Ra
         } else if (it->second.find(rankInfo[i].superDeviceId) == it->second.end()) {
             it->second.insert({rankInfo[i].superDeviceId, rankInfo[i].rankId});
         } else {
-            errormessage = "Value " + std::to_string(rankInfo[i].superDeviceId) + " for rankTable "\
-                "variable \"Device Id of server Id " + rankInfo[i].serverId + "\" is invalid, expected value is unique.";
             // 超节点内superDeviceId在超节点内唯一
             RPT_INPUT_ERR(it->second.find(rankInfo[i].superDeviceId) != it->second.end(),
                 "EI0014",
                 std::vector<std::string>({ "value", "variable" ,"expect" }),
-                std::vector<std::string>({errormessage}));
+                std::vector<std::string>({std::to_string(rankInfo[i].superDeviceId), " \"Device Id of server Id " + rankInfo[i].serverId + "\" ", "is unique"}));
+            errormessage = "Value " + std::to_string(rankInfo[i].superDeviceId) + " for rankTable "\
+                "variable \"Device Id of server Id " + rankInfo[i].serverId + "\" is invalid, expected value is unique.";
             CHK_PRT_RET(it->second.find(rankInfo[i].superDeviceId) != it->second.end(),
                 HCCL_ERROR("[%s][%s]%s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
