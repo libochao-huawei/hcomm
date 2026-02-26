@@ -46,10 +46,6 @@ InnerNetDev::InnerNetDev(const NetDevInfo &info)
         isValid_ = true;
     } catch (const NetworkApiException &e) {
         HCCL_ERROR(e.what());
-        if (localProto_ == LinkProtoType::RDMA && rdmaHandle_ != nullptr) {
-            HrtRaRdmaFree(rdmaHandle_);
-            rdmaHandle_ = nullptr;
-        }
         isValid_ = false;
     }
 }
@@ -74,23 +70,27 @@ std::pair<TokenIdHandle, uint32_t> InnerNetDev::getTokenIdInfo(const BufferKey<u
 
 InnerNetDev::~InnerNetDev()
 {
-    if (ubJfcHandle_ != 0) {
-        HrtRaUbDestroyJfc(rdmaHandle_, ubJfcHandle_);
-    }
-    if (localProto_ == LinkProtoType::RDMA) {
-        if (tokenHandle_ != 0) {
-            RaUbFreeTokenIdHandle(rdmaHandle_, tokenId_);
+    try {
+        if (ubJfcHandle_ != 0) {
+            HrtRaUbDestroyJfc(rdmaHandle_, ubJfcHandle_);
         }
-        if (rdmaHandle_ != nullptr) {
-            HrtRaRdmaDeInit(rdmaHandle_, netMode_);
-        }
-    } else if (localProto_ == LinkProtoType::UB) {
-        if (tokenInfoManager_ != nullptr) {
+        if (localProto_ == LinkProtoType::RDMA) {
+            if (tokenHandle_ != 0) {
+                RaUbFreeTokenIdHandle(rdmaHandle_, tokenId_);
+            }
+            if (rdmaHandle_ != nullptr) {
+                HrtRaRdmaDeInit(rdmaHandle_, netMode_);
+            }
+        } else if (localProto_ == LinkProtoType::UB) {
+            if (tokenInfoManager_ != nullptr) {
             tokenInfoManager_->Destroy();
+            }
+            if (rdmaHandle_ != nullptr) {
+                HrtRaUbCtxDestroy(rdmaHandle_);
+            }
         }
-        if (rdmaHandle_ != nullptr) {
-            HrtRaUbCtxDestroy(rdmaHandle_);
-        }
+    } catch (const NetworkApiException &e) {
+        HCCL_ERROR(e.what());
     }
 }
 
