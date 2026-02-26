@@ -28,15 +28,15 @@ public:
 
     FORCE_INLINE_AICORE void Process(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag, uint64_t bufferSize, uint64_t serverNum) 
     {
-        if (block_idx >= rankSize_) {
+        if (GetBlockIdx() >= rankSize_) {
             return;
         }
 
-        if (block_idx == rank_) {
+        if (GetBlockIdx() == rank_) {
             // 本卡该片数据已经可以被跨片读取
             Record1vN(tag, CommPattern::interRank);
         } else {
-            WaitNv1(tag, block_idx);
+            WaitNv1(tag, GetBlockIdx());
 	    }
         pipe_barrier(PIPE_ALL);
 
@@ -44,15 +44,15 @@ public:
         for (int i = 0; i < serverNum; i++) {
             int64_t sendSize = len * sizeof(T);
             int64_t sendSizeOffset = i * len * sizeof(T);
-            int64_t receiveSizeOffset = (i * rankSize_ + block_idx) * len * sizeof(T);
-            CpGM2GM<T>((__gm__ T*)((__gm__ char*)output + receiveSizeOffset), (__gm__ T*)((__gm__ char*)(GM_IN[block_idx]) + sendSizeOffset), len);
+            int64_t receiveSizeOffset = (i * rankSize_ + GetBlockIdx()) * len * sizeof(T);
+            CpGM2GM<T>((__gm__ T*)((__gm__ char*)output + receiveSizeOffset), (__gm__ T*)((__gm__ char*)(GM_IN[GetBlockIdx()]) + sendSizeOffset), len);
         }
         pipe_barrier(PIPE_ALL);
         //尾同步，每个卡搬完完后要进行标记。要确保所有卡都搬完再退出。
-	    if (block_idx == rank_) {
+	    if (GetBlockIdx() == rank_) {
             Wait1vN(tag * (rankSize_ - 1), CommPattern::interRank);
         } else {
-	        RecordNv1(tag, block_idx);
+	        RecordNv1(tag, GetBlockIdx());
 	    }
     }
 };
