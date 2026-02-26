@@ -99,6 +99,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_001)
     impl.rankGraph->peers_[0] = make_shared<NetInstance::Peer>(0, 0, 0, 0);
     MOCKER_CPP(&CommunicatorImpl::InitRankGraph, void(CommunicatorImpl::*)(const std::string &))
         .stubs().with(any()).will(ignoreReturnValue());
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
  
     MockerCcuFeature();
 
@@ -136,7 +137,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_001)
     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
     MOCKER(HrtRaUbUnimportJetty).defaults().will(returnValue(0));
     MOCKER(HrtGetDeviceType).defaults().will(returnValue(DevType::DEV_TYPE_910_95));
-    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtRaUbCreateJetty).defaults().will(returnValue(HrtRaUbJettyCreatedOutParam()));
     MOCKER(HraGetDieAndFuncId).defaults().will(returnValue(std::pair<uint32_t, uint32_t>(0, 0)));
     MOCKER(HrtRaUbCreateJfc).defaults().will(returnValue(jfcHandle));
@@ -200,6 +201,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_002)
     impl.rankGraph->peers_[0] = make_shared<NetInstance::Peer>(0, 0, 0, 0);
     MOCKER_CPP(&CommunicatorImpl::InitRankGraph, void(CommunicatorImpl::*)(const std::string &))
         .stubs().with(any()).will(ignoreReturnValue());
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
  
     MockerCcuFeature();
 
@@ -237,7 +239,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_002)
     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
     MOCKER(HrtRaUbUnimportJetty).defaults().will(returnValue(0));
     MOCKER(HrtGetDeviceType).defaults().will(returnValue(DevType::DEV_TYPE_910_95));
-    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtRaUbCreateJetty).defaults().will(returnValue(HrtRaUbJettyCreatedOutParam()));
     MOCKER(HraGetDieAndFuncId).defaults().will(returnValue(std::pair<uint32_t, uint32_t>(0, 0)));
     MOCKER(HrtRaUbCreateJfc).defaults().will(returnValue(jfcHandle));
@@ -302,6 +304,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_003)
     impl.rankGraph->peers_[0] = make_shared<NetInstance::Peer>(0, 0, 0, 0);
     MOCKER_CPP(&CommunicatorImpl::InitRankGraph, void(CommunicatorImpl::*)(const std::string &))
         .stubs().with(any()).will(ignoreReturnValue());
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
  
     MockerCcuFeature();
 
@@ -339,7 +342,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_003)
     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
     MOCKER(HrtRaUbUnimportJetty).defaults().will(returnValue(0));
     MOCKER(HrtGetDeviceType).defaults().will(returnValue(DevType::DEV_TYPE_910_95));
-    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtRaUbCreateJetty).defaults().will(returnValue(HrtRaUbJettyCreatedOutParam()));
     MOCKER(HraGetDieAndFuncId).defaults().will(returnValue(std::pair<uint32_t, uint32_t>(0, 0)));
     MOCKER(HrtRaUbCreateJfc).defaults().will(returnValue(jfcHandle));
@@ -413,6 +416,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_004)
     impl.rankGraph->peers_[0] = make_shared<NetInstance::Peer>(0, 0, 0, 0);
     MOCKER_CPP(&CommunicatorImpl::InitRankGraph, void(CommunicatorImpl::*)(const std::string &))
         .stubs().with(any()).will(ignoreReturnValue());
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
  
     MockerCcuFeature();
 
@@ -450,7 +454,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_004)
     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
     MOCKER(HrtRaUbUnimportJetty).defaults().will(returnValue(0));
     MOCKER(HrtGetDeviceType).defaults().will(returnValue(DevType::DEV_TYPE_910_95));
-    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtRaUbCreateJetty).defaults().will(returnValue(HrtRaUbJettyCreatedOutParam()));
     MOCKER(HraGetDieAndFuncId).defaults().will(returnValue(std::pair<uint32_t, uint32_t>(0, 0)));
     MOCKER(HrtRaUbCreateJfc).defaults().will(returnValue(jfcHandle));
@@ -509,6 +513,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_005)
     impl.rankGraph->peers_[0] = make_shared<NetInstance::Peer>(0, 0, 0, 0);
     MOCKER_CPP(&CommunicatorImpl::InitRankGraph, void(CommunicatorImpl::*)(const std::string &))
         .stubs().with(any()).will(ignoreReturnValue());
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
  
     MockerCcuFeature();
 
@@ -546,7 +551,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_005)
     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
     MOCKER(HrtRaUbUnimportJetty).defaults().will(returnValue(0));
     MOCKER(HrtGetDeviceType).defaults().will(returnValue(DevType::DEV_TYPE_910_95));
-    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtRaUbCreateJetty).defaults().will(returnValue(HrtRaUbJettyCreatedOutParam()));
     MOCKER(HraGetDieAndFuncId).defaults().will(returnValue(std::pair<uint32_t, uint32_t>(0, 0)));
     MOCKER(HrtRaUbCreateJfc).defaults().will(returnValue(jfcHandle));
@@ -603,6 +608,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_006)
     impl.rankGraph->peers_[0] = make_shared<NetInstance::Peer>(0, 0, 0, 0);
     MOCKER_CPP(&CommunicatorImpl::InitRankGraph, void(CommunicatorImpl::*)(const std::string &))
         .stubs().with(any()).will(ignoreReturnValue());
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
  
     MockerCcuFeature();
 
@@ -640,7 +646,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_006)
     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
     MOCKER(HrtRaUbUnimportJetty).defaults().will(returnValue(0));
     MOCKER(HrtGetDeviceType).defaults().will(returnValue(DevType::DEV_TYPE_910_95));
-    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtRaUbCreateJetty).defaults().will(returnValue(HrtRaUbJettyCreatedOutParam()));
     MOCKER(HraGetDieAndFuncId).defaults().will(returnValue(std::pair<uint32_t, uint32_t>(0, 0)));
     MOCKER(HrtRaUbCreateJfc).defaults().will(returnValue(jfcHandle));
@@ -698,6 +704,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_007)
     impl.rankGraph->peers_[0] = make_shared<NetInstance::Peer>(0, 0, 0, 0);
     MOCKER_CPP(&CommunicatorImpl::InitRankGraph, void(CommunicatorImpl::*)(const std::string &))
         .stubs().with(any()).will(ignoreReturnValue());
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
  
     MockerCcuFeature();
 
@@ -735,7 +742,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_007)
     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
     MOCKER(HrtRaUbUnimportJetty).defaults().will(returnValue(0));
     MOCKER(HrtGetDeviceType).defaults().will(returnValue(DevType::DEV_TYPE_910_95));
-    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtRaUbCreateJetty).defaults().will(returnValue(HrtRaUbJettyCreatedOutParam()));
     MOCKER(HraGetDieAndFuncId).defaults().will(returnValue(std::pair<uint32_t, uint32_t>(0, 0)));
     MOCKER(HrtRaUbCreateJfc).defaults().will(returnValue(jfcHandle));

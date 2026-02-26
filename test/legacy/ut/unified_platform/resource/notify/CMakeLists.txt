@@ -9,7 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 target_sources(hccl_v2_utest
     PUBLIC
-        # ut_local_notify.cc
+        ut_local_notify.cc
         ut_remote_notify.cc
         ut_local_cnt_notify.cc
         ut_rts_notify.cc
