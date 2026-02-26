@@ -709,14 +709,15 @@ HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHan
         vector<string>({std::to_string(rdevInfo.phyId), "The network port is down."})
     );
     vector<HcclIpAddress> deviceIp;
+     
     CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
     CHK_PRT_RET(deviceIp.size() < 1,
         HCCL_ERROR("Get ip address failed, phyId[%u]", rdevInfo.phyId), HCCL_E_INTERNAL);
-    vector<string> actualValues = { string(HcclIpAddress(rdevInfo.localIp.addr.s_addr)), "[IP]", string(deviceIp[0].GetReadableIP()) };
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
         vector<string>({ "value", "variable" ,"expect" }),
-        actualValues
+        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()),
+        "[IP]", string(deviceIp[0].GetReadableIP()) })
     );
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
@@ -750,11 +751,10 @@ HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rd
     CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
     CHK_PRT_RET(deviceIp.size() < 1,
         HCCL_ERROR("Get ip address failed, phyId[%u]", rdevInfo.phyId), HCCL_E_INTERNAL);
-    vector<string> actualValues = { string(HcclIpAddress(rdevInfo.localIp.addr.s_addr)), "[IP]", string(deviceIp[0].GetReadableIP()) };
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
         vector<string>({ "value", "variable" ,"expect" }),
-        actualValues
+        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()), "[IP]", string(deviceIp[0].GetReadableIP()) })
     );
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
@@ -795,11 +795,10 @@ HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev
     CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
     CHK_PRT_RET(deviceIp.size() < 1,
         HCCL_ERROR("Get ip address failed, phyId[%u]", rdevInfo.phyId), HCCL_E_INTERNAL);
-    vector<string> actualValues = { string(HcclIpAddress(rdevInfo.localIp.addr.s_addr)), "[IP]", string(deviceIp[0].GetReadableIP()) };
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
         vector<string>({ "value", "variable" ,"expect" }),
-        actualValues
+        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()), "[IP]", string(deviceIp[0].GetReadableIP()) })
     );
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
