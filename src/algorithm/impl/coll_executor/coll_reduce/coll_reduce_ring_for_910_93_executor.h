@@ -17,7 +17,7 @@ class CollReduceRingFor91093Executor : public CollReduceExecutor {
 public:
     CollReduceRingFor91093Executor(const HcclDispatcher dispatcher,
     std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceRingFor91093Executor() = default;
+    ~CollReduceRingFor91093Executor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

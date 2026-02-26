@@ -18,7 +18,7 @@ class CollSendExecutor : public CollNativeExecutorBase {
 
 public:
     CollSendExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollSendExecutor() = default;
+    ~CollSendExecutor() override = default;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
     HcclResult GetAdjInfo(AlgResourceResponse& algRes, AdjInfo& adjInfo) override;

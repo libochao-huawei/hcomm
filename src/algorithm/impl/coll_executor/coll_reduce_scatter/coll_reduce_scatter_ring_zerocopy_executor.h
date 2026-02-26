@@ -17,7 +17,7 @@ class CollReduceScatterRingZerocopyExecutor : public CollReduceScatterExecutor {
 public:
     explicit CollReduceScatterRingZerocopyExecutor(const HcclDispatcher dispatcher,
     std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceScatterRingZerocopyExecutor() = default;
+    ~CollReduceScatterRingZerocopyExecutor() override = default;
 
 protected:
     HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport) override;
