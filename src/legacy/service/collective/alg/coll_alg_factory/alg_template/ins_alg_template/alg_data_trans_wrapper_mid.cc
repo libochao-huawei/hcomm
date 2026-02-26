@@ -402,6 +402,17 @@ HcclResult MultiRxReduceWithFinCounter(const std::vector<LinkData> &links, const
                                        const std::vector<ReduceSlicesList> &slices, u32 topicId, DmaMode dmaMode)
 {
     (void)slices;
+
+    CHK_PRT_RET(
+        queues.empty(),
+        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiRxReduceWithFinCounter: queues is empty"),
+        HcclResult::HCCL_E_INTERNAL);
+
+    CHK_PRT_RET(
+        queues[0] == nullptr,
+        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiRxReduceWithFinCounter: queues[0] is nullptr"),
+        HcclResult::HCCL_E_INTERNAL);
+
     CHK_PRT_RET(
         !DevCapability::GetInstance().IsSupportWriteWithNotify(),
         HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiRxReduceWithFinCounter: inter-rank counterNotify is "
@@ -847,6 +858,12 @@ HcclResult LocalCopySlices(InsQuePtr queue, const std::vector<DataSlice> &srcSli
 
 HcclResult StreamSync(std::vector<InsQuePtr> &queues)
 {   
+    CHK_PRT_RET(queues.empty(),
+            HCCL_ERROR("[StreamSync] queues is empty"),
+            HcclResult::HCCL_E_INTERNAL);
+    CHK_PRT_RET(queues[0] == nullptr,
+            HCCL_ERROR("[StreamSync] queues[0] is nullptr"),
+            HcclResult::HCCL_E_INTERNAL);
     for (auto &queue : queues) {
         std::unique_ptr<InsPreStreamSync> insPreStreamSync = std::make_unique<InsPreStreamSync>();
         queue->Append(std::move(insPreStreamSync));
