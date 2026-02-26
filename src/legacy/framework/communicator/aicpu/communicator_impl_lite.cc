@@ -88,10 +88,9 @@ std::shared_ptr<InsQueue> CommunicatorImplLite::GetInsQueue(HcclKernelParamLite 
     CreateCollAlgComponentLite();
     HCCL_INFO("CommunicatorImplLite::GetInsQueue begin kernelParam->algName = %s", kernelParam->algName);
     std::shared_ptr<InsQueue> queue = std::make_shared<InsQueue>();
-
-    auto it  = algTopoInfoMap.find(kernelParam->algName);
+    auto it  = algTopoInfoMap.find(kernelParam->tagKey);
     if (it == algTopoInfoMap.end()) {
-        HCCL_ERROR("CommunicatorImplLite::GetInsQueue algName %s not found in algTopoInfoMap", kernelParam->algName);
+        HCCL_ERROR("CommunicatorImplLite::GetInsQueue algName %s not found in algTopoInfoMap", kernelParam->tagKey);
         return nullptr;
     }
     auto ret = algComponentLite->Orchestrate(kernelParam->op.algOperator, kernelParam->algName, it->second, queue);
@@ -263,7 +262,7 @@ void CommunicatorImplLite::RestoreAllTransports(u64 addr, u64 bufSize)
 
 bool CommunicatorImplLite::CheckNeedUpdateRes(HcclKernelParamLite *kernelParam)
 {
-    std::string tagKey = (kernelParam->op.algOperator.opMode == OpMode::OPBASE) ? kernelParam->algName : kernelParam->opTag;
+    std::string tagKey = kernelParam->tagKey;
     auto it = loadedOpSet.find(tagKey);
     if (it != loadedOpSet.end()) {
         HCCL_INFO("[CheckNeedUpdateRes] Corresponding resources of tag[%s] have been loaded", tagKey.c_str());
@@ -277,7 +276,7 @@ void CommunicatorImplLite::UpdateRes(HcclKernelParamLite *kernelParam)
 {
     if (CheckNeedUpdateRes(kernelParam)) {   
         HCCL_INFO("[UpdateRes] start, opMode[%s]", kernelParam->op.algOperator.opMode.Describe().c_str());
-        RestoreOpRes(kernelParam->opTag, kernelParam->algName, kernelParam->binaryResAddr, kernelParam->binaryResSize);
+        RestoreOpRes(kernelParam->opTag, kernelParam->tagKey, kernelParam->binaryResAddr, kernelParam->binaryResSize);
         HCCL_INFO("[UpdateRes] end");
     }
 }
@@ -345,7 +344,7 @@ void CommunicatorImplLite::BackGroundSetStatus(KfcStatus status, KfcErrType erro
 }
 
 // 从 buffer中解析出算子需要的信息 ，对应 Host侧的 PackOpData
-void CommunicatorImplLite::RestoreOpRes(const string &opTag, const string &algName, u64 addr, u64 bufSize)
+void CommunicatorImplLite::RestoreOpRes(const string &opTag, const string &tagKey, u64 addr, u64 bufSize)
 {
     std::vector<char> data;
     data.resize(bufSize);
@@ -392,9 +391,9 @@ void CommunicatorImplLite::RestoreOpRes(const string &opTag, const string &algNa
 
     resType = AicpuResMgrType::ALG_TOPO;
     AlgTopoPackageHelper algTopoHelper;
-    algTopoInfoMap[algName] = algTopoHelper.GetAlgTopoInfo(dataVec[resType].data);
-    HCCL_INFO("CommunicatorImplLite::RestoreOpRes: opTag %s GetResMgr %s Data, algName=%s", opTag.c_str(), resType.Describe().c_str(),
-               algName.c_str());
+    algTopoInfoMap[tagKey] = algTopoHelper.GetAlgTopoInfo(dataVec[resType].data);
+    HCCL_INFO("CommunicatorImplLite::RestoreOpRes: opTag %s GetResMgr %s Data, tagKey=%s", opTag.c_str(), resType.Describe().c_str(),
+               tagKey.c_str());
 
     resType = AicpuResMgrType::CONNECTD_MGR;
     GetConnectedLinkMgr()->ParsePackedData(dataVec[resType].data);

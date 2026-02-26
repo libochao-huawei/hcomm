@@ -252,6 +252,7 @@ public:
         HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
     HcclResult HcclCalcNumBlocks(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
         std::string &algName, u32 &numBlocks);
+    
     HcclResult HcclGetAlgExecParam(const std::string &tag, u64 count, void *inputPtr, void *outputPtr,
         HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op, 
         void *&commContext, u64 &len, u32 aivCoreLimit);
@@ -323,6 +324,7 @@ public:
     HcclResult SetDeterministicConfig(const u8 deterministic);  // 设置确定性计算配置
     HcclResult SetAivModeConfig(const bool aivMode);  // 设置aiv模式配置
     HcclResult SetOnlyAivModeConfig(const bool isOnlyAiv);
+    HcclResult GetOnlyAivModeConfig(bool &isOnlyAiv);
     HcclResult SetAicpuUnfoldConfig(const bool aicpuUnfold);  // 设置aicpu配置
     HcclResult SetExecTimeOutConfig(const s32 execTimeOut);  // 设置HCCL执行超时时间
     HcclResult SetAlgoConfig(const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoMap);  //设置HCCL_ALGO
