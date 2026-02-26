@@ -607,8 +607,10 @@ HcclResult ChannelManager::AicpuChannelInit(const std::string &commId, const std
     customInitTask.context = reinterpret_cast<u64>(addr.ptr());
     customInitTask.isCustom = false;
 
+    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
+                    std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
     CHK_RET(AicpuAclKernelLaunch(localStream.ptr(), reinterpret_cast<void *>(&customInitTask),
-        sizeof(customInitTask), binHandle_, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));
+        sizeof(customInitTask), binHandle_, kernelName, true, timeOut));
     CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut(tag)));
 
     // 将device侧的channelList拷贝回host侧的channelList
