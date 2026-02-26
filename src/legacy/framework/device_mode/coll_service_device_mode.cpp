@@ -420,7 +420,6 @@ DevBuffer *CollServiceDeviceMode::GetAicpuResBuffer(std::string algName)
 }
 
 constexpr u32 TEMP_MAX_CNTCKE_NUM = 16; // 临时规避多轮不同算子导致CNTCKE资源不足，待后续正式方案修改
-
 void CollServiceDeviceMode::Resume()
 {
     CcuCommunicator *ccuComm = ccuInsPreprocessor.GetCcuComm();
@@ -433,6 +432,7 @@ void CollServiceDeviceMode::Resume()
     HCCL_INFO("[CollServiceDeviceMode][%s] resource confirm end.", __func__);
 
     int32_t devLogicId = HrtGetDevice();
+    std::cout<<"[myinfo]["<<__FILE__<<":"<<__LINE__<<"]:CollServiceDeviceMode::Resume HrtGetDevice success"<<std::endl;
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; ++dieId) {
         CHK_RET_THROW(InternalException,
             StringFormat("[CollServiceDeviceMode][%s]Error occurs when call CcuCleanDieCkes, "
