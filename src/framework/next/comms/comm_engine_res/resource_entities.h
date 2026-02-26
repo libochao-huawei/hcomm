@@ -13,6 +13,8 @@
 #include "hccl_res.h"
 #include "hccl_api.h"
 
+#include <string>
+
 namespace hccl {
 typedef enum {
     THREAD_TYPE_INVALID = -1,
@@ -55,6 +57,10 @@ typedef struct {
     };
     uint32_t notifyNum;
     NotifyEntity notifies[0];  // 变长数据区
+
+    std::string DescribeAttr() {
+        return "engine=" + std::to_string(engine) + ", type=" + std::to_string(type);
+    }
 } ThreadEntity;
 
 typedef struct {
