@@ -392,7 +392,11 @@ HcclResult HostCpuRoceChannel::NegotiateMode()
 HcclResult HostCpuRoceChannel::InitHybridModeResources()
 {
     // 分配单个 DPU Notify ID（供对端 TransportIbverbs 作为立即数发送目标）
-    CHK_RET(DpuNotifyManager::GetInstance().AllocNotifyId(localDpuNotifyId_));
+    int allocatedId = DpuNotifyManager::GetInstance().AllocSingleNotifyId();
+    CHK_PRT_RET(allocatedId < 0,
+        HCCL_ERROR("[InitHybridModeResources] Failed to allocate DPU Notify ID"),
+        HCCL_E_MEMORY);
+    localDpuNotifyId_ = static_cast<uint32_t>(allocatedId);
     
     HCCL_INFO("[Hybrid] Allocated DPU Notify ID: %u", localDpuNotifyId_);
     return HCCL_SUCCESS;
@@ -1006,7 +1010,7 @@ HcclResult HostCpuRoceChannel::CleanupResources()
     
     // 释放 Notify ID（混合模式使用单 Notify）
     if (localDpuNotifyId_ != INVALID_DPU_NOTIFY_ID) {
-        DpuNotifyManager::GetInstance().FreeNotifyId(localDpuNotifyId_);
+        DpuNotifyManager::GetInstance().FreeSingleNotifyId(localDpuNotifyId_);
         localDpuNotifyId_ = INVALID_DPU_NOTIFY_ID;
     }
     
