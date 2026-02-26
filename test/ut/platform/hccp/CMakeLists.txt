@@ -10,8 +10,10 @@
 
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../..)
 
-include(${HCCL_CODE_ROOT}/cmake/hcomm_utils.cmake)
-include(${HCCL_CODE_ROOT}/cmake/third_party/openssl.cmake)
+if(NOT EXISTS ${PROJECT_SOURCE_DIR}/third_party/openssl-${PRODUCT_SIDE})
+    include(${HCCL_CODE_ROOT}/cmake/third_party/openssl.cmake)
+endif()
+include(${HCCL_CODE_ROOT}/cmake/utils.cmake)
 
 add_subdirectory(hccp_service)
 add_subdirectory(rdma_agent)
