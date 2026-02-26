@@ -22,6 +22,8 @@ namespace CcuRep {
 // 辅助函数
 uint64_t GetMaxLoopIterNum();
 uint64_t GetLoopParam(uint64_t loopCtxId, uint64_t gsaOffset, uint64_t loopIterNum);
+uint64_t GetLoopIterNum(uint64_t iterNum);
+uint64_t GetLoopGsaOffset(uint64_t gsaOffset);
 uint64_t GetParallelParam(uint64_t repeatNum, uint64_t repeatLoopIndex, uint64_t totalLoopNum);
 uint16_t ParseRepeatNumFromParallelParam(uint64_t parallelParam);
 uint64_t GetOffsetParam(uint64_t gsaOffset, uint64_t msOffset, uint64_t ckeOffset);
@@ -36,7 +38,7 @@ uint32_t    GetReduceExpansionNum(ReduceOp reduceOp, DataType dataType, DataType
 std::string GetReduceTypeStr(DataType dataType, ReduceOp opType);
 
 uint64_t    GetTokenInfo(uint64_t va, uint64_t size);
-
+uint32_t    GetRelativeInstrId(uint32_t currentInstrId, uint32_t targetInstrId);
 }; // namespace CcuRep
 }; // namespace Hccl
 

@@ -38,27 +38,82 @@ uint64_t GetMaxLoopIterNum()
 
 uint64_t GetLoopParam(uint64_t loopCtxId, uint64_t gsaOffset, uint64_t loopIterNum)
 {
-    constexpr uint16_t ctxIdBitNum     = 8;
-    constexpr uint16_t ctxIdShiftBit   = 45;
-    constexpr uint16_t gsaBitNum       = 32;
-    constexpr uint16_t gsaShiftBit     = 13;
-    constexpr uint16_t loopNumBitNum   = 13;
-    constexpr uint16_t loopNumShiftBit = 0;
-    return ((loopCtxId & SetBits(ctxIdBitNum)) << ctxIdShiftBit) | ((gsaOffset & SetBits(gsaBitNum)) << gsaShiftBit)
-           | ((loopIterNum & SetBits(loopNumBitNum)) << loopNumShiftBit);
+    DevType type = HrtGetDeviceType();
+    if(type == DevType::DEV_TYPE_910_95) {
+        constexpr uint16_t ctxIdBitNum     = 8;
+        constexpr uint16_t ctxIdShiftBit   = 45;
+        constexpr uint16_t gsaBitNum       = 32;
+        constexpr uint16_t gsaShiftBit     = 13;
+        constexpr uint16_t loopNumBitNum   = 13;
+        constexpr uint16_t loopNumShiftBit = 0;
+        return ((loopCtxId & SetBits(ctxIdBitNum)) << ctxIdShiftBit) | ((gsaOffset & SetBits(gsaBitNum)) << gsaShiftBit)
+        | ((loopIterNum & SetBits(loopNumBitNum)) << loopNumShiftBit);
+    } else if(type == DevType::DEV_TYPE_910_96) {
+        return loopCtxId;
+    } else {
+        THROW<CcuApiException>("Unsupported Dev Type[%d]", type);
+    }
+}
+
+uint64_t GetLoopIterNum(uint64_t iterNum)
+{
+  DevType type = HrtGetDeviceType();
+  if(type == DevType::DEV_TYPE_910_95) {
+        THROW<NotSupportException>("DevType::DEV_TYPE_910_95 Not support GetLoopIterNum.");
+  }
+  constexpr uint16_t iterNumBitNum   = 13;
+  constexpr uint16_t iterNumShiftBit = 0;
+  return (iterNum & SetBits(iterNumBitNum)) << iterNumShiftBit;
+}
+
+uint64_t GetLoopGsaOffset(uint64_t gsaOffset)
+{
+    DevType type = HrtGetDeviceType();
+    if(type == DevType::DEV_TYPE_910_95) {
+      THROW<NotSupportException>("DevType::DEV_TYPE_910_95 Not support GetLoopGsaOffset.");
+    }
+    constexpr uint16_t gsaOffsetBitNum   = 32;
+    constexpr uint16_t gsaOffsetShiftBit = 0;
+    return (gsaOffset & SetBits(gsaOffsetBitNum)) << gsaOffsetShiftBit;
 }
 
 uint64_t GetParallelParam(uint64_t repeatNum, uint64_t repeatLoopIndex, uint64_t totalLoopNum)
 {
-    constexpr uint16_t repeatBitNum       = 7;
-    constexpr uint16_t repeatNumShiftBit  = 55;
-    constexpr uint16_t repeatLoopBitNum   = 7;
-    constexpr uint16_t repeatLoopShiftBit = 48;
-    constexpr uint16_t totalLoopBitNum    = 7;
-    constexpr uint16_t totalLoopShiftBit  = 41;
-    return ((repeatNum & SetBits(repeatBitNum)) << repeatNumShiftBit)
-           | ((repeatLoopIndex & SetBits(repeatLoopBitNum)) << repeatLoopShiftBit)
-           | ((totalLoopNum & SetBits(totalLoopBitNum)) << totalLoopShiftBit);
+    DevType type = HrtGetDeviceType();
+    if(type == DevType::DEV_TYPE_910_95) {
+      constexpr uint16_t repeatBitNum       = 7;
+      constexpr uint16_t repeatNumShiftBit  = 55;
+      constexpr uint16_t repeatLoopBitNum   = 7;
+      constexpr uint16_t repeatLoopShiftBit = 48;
+      constexpr uint16_t totalLoopBitNum    = 7;
+      constexpr uint16_t totalLoopShiftBit  = 41;
+      return ((repeatNum & SetBits(repeatBitNum)) << repeatNumShiftBit)
+        | ((repeatLoopIndex & SetBits(repeatLoopBitNum)) << repeatLoopShiftBit)
+        | ((totalLoopNum & SetBits(totalLoopBitNum)) << totalLoopShiftBit);
+    } else if (type == DevType::DEV_TYPE_910_96) {
+      // CCU V121 Loop规格变化适配
+      constexpr uint16_t repeatBitNum       = 9;
+      constexpr uint16_t repeatNumShiftBit  = 19;
+      constexpr uint16_t repeatLoopBitNum   = 9;
+      constexpr uint16_t repeatLoopShiftBit = 10;
+      constexpr uint16_t totalLoopBitNum    = 10;
+      constexpr uint16_t totalLoopShiftBit  = 0;
+      return ((repeatNum & SetBits(repeatBitNum)) << repeatNumShiftBit)
+        | ((repeatLoopIndex & SetBits(repeatLoopBitNum)) << repeatLoopShiftBit)
+        | ((totalLoopNum & SetBits(totalLoopBitNum)) << totalLoopShiftBit);
+    } else {
+        THROW<CcuApiException>("Unsupported Dev Type[%d]", type);
+    }
+}
+
+uint32_t GetRelativeInstrId(uint32_t currentInstrId, uint32_t targetInstrId)
+{
+    if (targetInstrId > currentInstrId) {
+      return targetInstrId - currentInstrId;
+    } else {
+      // CCU V121 确认Jmp反转条件
+      return 0x10000 - (currentInstrId - targetInstrId);
+    }
 }
 
 uint16_t ParseRepeatNumFromParallelParam(uint64_t parallelParam)
