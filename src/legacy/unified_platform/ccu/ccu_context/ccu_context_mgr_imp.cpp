@@ -664,7 +664,7 @@ void CtxMgrImp::LoadInstruction(CcuRep::CcuInstrInfo &instrInfo, uint32_t dieId)
         }
         HCCL_INFO("[CtxMgrImp]LoadInstruction: deviceLogicId[%d], instrNum[%u]", deviceLogicId_, instrNum);
         // rt接口申请device内存
-        instructionLoadDevMem_ = HrtMalloc(instrNum * sizeof(CcuInstr), RT_MEMORY_HBM);
+        instructionLoadDevMem_ = HrtMalloc(instrNum * sizeof(CcuInstr));
     }
 
     // rt接口memcpySync

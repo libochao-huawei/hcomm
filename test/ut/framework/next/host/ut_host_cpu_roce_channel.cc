@@ -37,7 +37,7 @@ protected:
         Hccl::DevType dev = Hccl::DevType::DEV_TYPE_910_95;
         MOCKER(Hccl::HrtGetDevice).stubs().will(returnValue(0));
         MOCKER(Hccl::HrtGetDeviceType).stubs().will(returnValue(dev));
-        MOCKER(Hccl::HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(0));
+        MOCKER(Hccl::HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<DevId>(0)));
         RdmaHandle rdmaHandle = (void *)0x1000000;
         MOCKER(Hccl::HrtRaRdmaInit).stubs().with(any(), any()).will(returnValue(rdmaHandle));
         EndpointDesc endpointDesc{};

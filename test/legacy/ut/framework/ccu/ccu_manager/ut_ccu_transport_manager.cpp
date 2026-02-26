@@ -81,7 +81,7 @@ std::unique_ptr<CommunicatorImpl> MockCommImpl()
     GenRankTableFile1Ser8Dev();
 
     void *devPtr = nullptr;
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
+    MOCKER(HrtMalloc).stubs().with(any()).will(returnValue(devPtr));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(commParams.devType));
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
     MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
@@ -123,7 +123,8 @@ HcclResult CcuJettyMgrPrepareCreateStub(CcuJettyMgr *self, const std::vector<Lin
 
 void MockCcuTransportMgrDevs()
 {
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(MAX_MODULE_DEVICE_NUM - 1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<DevId>(MAX_MODULE_DEVICE_NUM -
+	    1)));
     
     HcclResult OkResult = HcclResult::HCCL_SUCCESS;
     HcclResult AgainResult = HcclResult::HCCL_E_AGAIN;
