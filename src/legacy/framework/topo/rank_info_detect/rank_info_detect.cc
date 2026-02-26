@@ -263,6 +263,9 @@ u32 RankInfoDetect::GetHostListenPort()
 void RankInfoDetect::GetRootHandle(HcclRootHandleV2 &rootHandle)
 {
     u64 timestamp = SalGetCurrentTimestamp();
+    CHK_PRT_THROW(timestamp == INVALID_UINT,
+        HCCL_ERROR("[RankInfoDetect::%s] get timestamp failed.", __func__),
+        InternalException, "get timestamp failed");
     identifier_ = hostIp_.GetIpStr();
     identifier_.append("_");
     identifier_.append(to_string(hostPort_));
