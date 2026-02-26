@@ -134,16 +134,12 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
         ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
         ${HCCL_BASE_DIR}/platform/common
-        ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
         ${HCCL_BASE_DIR}/platform/legacy/inc
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
         ${HCCL_BASE_DIR}/platform/hccp/inc/
         ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
-
         ${HCCL_BASE_DIR}/platform/inc/adapter
-        
-        ${THIRD_PARTY_NLOHMANN_PATH}
 
         ${HCCL_BASE_DIR}/common/debug/profiling/inc
         ${HCCL_BASE_DIR}/common/debug/profiling/inc/host
@@ -176,9 +172,11 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
-        ${THIRD_PARTY_NLOHMANN_PATH}
-
         ${HCCL_BASE_DIR}/framework/op_base/src
+
+        # 第三方库依赖路径
+        ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
+        ${CANN_3RD_LIB_PATH}/json/include/
     )
 
     target_link_directories(hcomm PRIVATE

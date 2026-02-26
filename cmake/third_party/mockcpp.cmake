@@ -97,7 +97,7 @@ else()
     include(ExternalProject)
     ExternalProject_Add(third_party_mockcpp_patch
         URL ${MOCKCPP_PATCH_PROJECT_URL}
-        URL_HASH SHA256=386f592a49160a2f596b210468fbcaeb2061c8276fd6a38c86c7db29167d839e
+        URL_HASH SHA256=600c0a263182b1f988e77bb907666d24a72d6ea624a52212d61750384745327d
         TLS_VERIFY OFF
         DOWNLOAD_NO_EXTRACT TRUE
         DOWNLOAD_NO_PROGRESS TRUE
