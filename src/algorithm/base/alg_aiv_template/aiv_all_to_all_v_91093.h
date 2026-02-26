@@ -56,16 +56,10 @@ __aicore__ inline void AivAll2AllV91093::Process(GM_ADDR buffIn0, GM_ADDR buffOu
     __gm__ T *outputGM = (__gm__ T *)output;
     __gm__ T *cclGMSelf = (__gm__ T *)buffIn0;
 
-    GlobalTensor<uint64_t> bufferArgsGT;
-    __gm__ uint64_t *buffersGmAddr = (__gm__ uint64_t *)(commInfoAddr);
-    bufferArgsGT.SetGlobalBuffer(buffersGmAddr, FLAG_SIZE * rankSize_ / sizeof(uint64_t));
-
     uint32_t cclReadyFlagOffset = 0;
     uint32_t finalAckFlagOffset = rankSize_ * FLAG_SIZE;
 
     // 准备参数，buffer地址和最大收发count
-    GM_ADDR buffersIn[MAX_TARGET_NUM] = {};
-    GM_ADDR buffersOut[MAX_TARGET_NUM] = {};
     uint64_t sendCounts[MAX_TARGET_NUM] = {};
     uint64_t recvCounts[MAX_TARGET_NUM] = {};
     uint64_t sendDispls[MAX_TARGET_NUM] = {};
@@ -76,7 +70,6 @@ __aicore__ inline void AivAll2AllV91093::Process(GM_ADDR buffIn0, GM_ADDR buffOu
 
     for (uint32_t i = 0; i < numTargets; i++) {
         uint32_t targetRank = targetRanks[i];
-        DataCopy(bufferArgsTensor[i * 4], bufferArgsGT[2 * targetRank], 4); // buffersIn buffersOut
         sendCounts[i] = extraArgs->sendCounts[targetRank];
         recvCounts[i] = extraArgs->recvCounts[targetRank];
         sendDispls[i] = extraArgs->sendDispls[targetRank];
@@ -86,14 +79,6 @@ __aicore__ inline void AivAll2AllV91093::Process(GM_ADDR buffIn0, GM_ADDR buffOu
         maxCount = recvCounts[i] > maxCount ? recvCounts[i] : maxCount;
     }
     uint32_t bufferLoopNum = (maxCount + avgBufferCount - 1) / avgBufferCount;
-
-    SyncFunc<HardEvent::MTE2_S>();
-
-    for (uint32_t i = 0; i < numTargets; i++) {
-        uint32_t curIdx = i * 4;
-        buffersIn[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx));
-        buffersOut[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx + 1));
-    }
 
     int32_t curTag = (tag << TAG_MOVE_LEFT_BITS);
     for (uint32_t loop = 0; loop < bufferLoopNum; loop++) {
@@ -141,7 +126,7 @@ __aicore__ inline void AivAll2AllV91093::Process(GM_ADDR buffIn0, GM_ADDR buffOu
     }
 
     // 最后一个核做localcopy
-    if (block_idx == block_num - 1) {
+    if (GetBlockIdx() == numBlocks_ - 1) {
         uint64_t sendCount = extraArgs->sendCounts[rank_];
         uint64_t sendOffset = extraArgs->sendDispls[rank_];
         uint64_t recvOffset = extraArgs->recvDispls[rank_];
@@ -153,7 +138,7 @@ template<typename T>
 __aicore__ inline void aiv_all_to_all_v_91093(KERNEL_ARGS_DEF, ExtraArgsV2* extraArgs)
 {
     AivAll2AllV91093 op;
-    op.Init(buffOut0, rank, rankSize, tag, true);
+    op.Init(buffOut0, buffOut1, rank, rankSize, tag, numBlocks, isOpBase, true);
     op.InitOpCounter(headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter);
     op.HeadCounter();
     op.Process<T>(buffIn0, buffOut0, buffOut1, input, output, tag, bufferSize, extraArgs);
