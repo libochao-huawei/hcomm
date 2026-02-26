@@ -108,7 +108,7 @@ HcclResult ZeroCopyAddressMgr::DelLocalIpc2RemoteAddr(u32 devicePhyId, void *rem
     AddressRange range(remoteAddrBase, length);
     auto rangeIt = addrRange.find(range);
     CHK_PRT_RET(rangeIt == addrRange.end(),
-        HCCL_ERROR("[ZeroCopyAddressMgr][DelLocalIpc2RemoteAddr] dev[%u] addr %p not set", devicePhyId, remoteAddrBase), HCCL_E_PARA);
+        HCCL_ERROR("[ZeroCopyAddressMgr][DelLocalIpc2RemoteAddr] dev[%u] addr %p range not found", devicePhyId, remoteAddrBase), HCCL_E_PARA);
 
     // 检查是否仍存在Activate的内存
     AddressRange localRange(mappingIt->second.localIpcAddr, length);
@@ -123,7 +123,7 @@ HcclResult ZeroCopyAddressMgr::DelLocalIpc2RemoteAddr(u32 devicePhyId, void *rem
     addrMapping.erase(mappingIt);
     addrRange.erase(rangeIt);
     CHK_RET(PushOne(item));
-    HCCL_INFO("[ZeroCopyAddressMgr][DelLocalIpc2RemoteAddr] dev[%u] del set localIpc[0x%lx] remote[0x%lx] length[%lu]",
+    HCCL_INFO("[ZeroCopyAddressMgr][DelLocalIpc2RemoteAddr] dev[%u] del localIpc[0x%lx] remote[0x%lx] len[%lu]",
         devicePhyId, item.addr.localIpcAddr, item.addr.remoteAddr, length);
     return HCCL_SUCCESS;
 }
