@@ -26,10 +26,9 @@ set(PROTOBUF_INSTALL_PATH ${CANN_3RD_LIB_PATH}/protobuf)
 message(STATUS "[ThirdParty] PROTOBUF_INSTALL_PATH=${PROTOBUF_INSTALL_PATH}")
 find_path(PROTOBUF_INCLUDE_DIR
     NAMES google/protobuf/message.h
-    PATH_SUFFIXES include
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH
-    PATHS ${PROTOBUF_INSTALL_PATH}
+    PATHS ${PROTOBUF_INSTALL_PATH}/include
 )
 find_library(PROTOBUF_LIBRARY
     NAMES protobuf libprotobuf
@@ -40,10 +39,9 @@ find_library(PROTOBUF_LIBRARY
 )
 find_program(PROTOBUF_PROTOC_EXECUTABLE
     NAMES protoc
-    PATH_SUFFIXES bin
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH
-    PATHS ${PROTOBUF_INSTALL_PATH}
+    PATHS ${PROTOBUF_INSTALL_PATH}/bin
 )
 
 # 是否全部找到 protobuf 的头文件、链接库
@@ -66,7 +64,7 @@ else()
 
     # 2. 编译安装 protobuf
     if(EXISTS ${PROTOBUF_PKG_PATH})
-        # 离线编译场景，优先使用已下载的包
+        # 离线编译场景，优先使用 pkg 目录下的包
         message(STATUS "[ThirdParty] Found local protobuf package: ${PROTOBUF_PKG_PATH}")
         set(PROTOBUF_PROJECT_URL ${PROTOBUF_PKG_PATH})
     else()
@@ -88,7 +86,6 @@ else()
     include(ExternalProject)
     ExternalProject_Add(third_party_protobuf
         URL ${PROTOBUF_PROJECT_URL}
-        URL_HASH SHA256=9bd87b8280ef720d3240514f884e56a712f2218f0d693b48050c836028940a42
         DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}
         DOWNLOAD_NO_PROGRESS TRUE
         PATCH_COMMAND tar -zxf ${ABSEIL_PKG_PATH} --strip-components 1 -C <SOURCE_DIR>/third_party/abseil-cpp
