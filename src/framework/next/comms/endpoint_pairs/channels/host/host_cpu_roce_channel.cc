@@ -11,6 +11,7 @@
 #include "host_cpu_roce_channel.h"
 #include "../../../endpoints/endpoint.h"
 #include "dpu_notify/dpu_notify_manager.h"
+#include "hybrid_mode_config.h"
 
 // Orion
 #include "orion_adapter_hccp.h"
@@ -19,7 +20,84 @@
 #include "exchange_rdma_conn_dto.h"
 #include "sal.h"
 
+// Legacy
+#include "legacy/common/binary_stream.h"
+
 namespace hcomm {
+
+// ========== RoCECapability 序列化实现 ==========
+void RoCECapability::Serialize(Hccl::BinaryStream &stream)
+{
+    stream << magic;
+    stream << version;
+    stream << totalLength;
+    stream << nodeType;
+    stream << static_cast<uint8_t>(nicDeploy);
+    stream << static_cast<uint8_t>(commStack);
+    stream << static_cast<uint8_t>(syncMode);
+}
+
+void RoCECapability::Deserialize(Hccl::BinaryStream &stream)
+{
+    stream >> magic;
+    stream >> version;
+    stream >> totalLength;
+    stream >> nodeType;
+    uint8_t nicDeployVal, commStackVal, syncModeVal;
+    stream >> nicDeployVal;
+    stream >> commStackVal;
+    stream >> syncModeVal;
+    nicDeploy = static_cast<NicDeployType>(nicDeployVal);
+    commStack = static_cast<CommStackType>(commStackVal);
+    syncMode = static_cast<SyncMode>(syncModeVal);
+}
+
+// ========== HybridExchangeData 序列化实现 ==========
+void HybridExchangeData::Serialize(Hccl::BinaryStream &stream)
+{
+    // QP 信息
+    stream << qpn;
+    stream << psn;
+    for (int i = 0; i < HCCP_GID_RAW_LEN; i++) {
+        stream << gid[i];
+    }
+    stream << gidIdx;
+    
+    // Buffer 信息
+    stream << bufAddr;
+    stream << bufRkey;
+    stream << bufLkey;
+    stream << bufSize;
+    
+    // Notify 信息
+    stream << dpuNotifyId;
+    stream << hostNotifyAddr;
+    stream << hostNotifyRkey;
+    stream << hostNotifyOffset;
+}
+
+void HybridExchangeData::Deserialize(Hccl::BinaryStream &stream)
+{
+    // QP 信息
+    stream >> qpn;
+    stream >> psn;
+    for (int i = 0; i < HCCP_GID_RAW_LEN; i++) {
+        stream >> gid[i];
+    }
+    stream >> gidIdx;
+    
+    // Buffer 信息
+    stream >> bufAddr;
+    stream >> bufRkey;
+    stream >> bufLkey;
+    stream >> bufSize;
+    
+    // Notify 信息
+    stream >> dpuNotifyId;
+    stream >> hostNotifyAddr;
+    stream >> hostNotifyRkey;
+    stream >> hostNotifyOffset;
+}
 constexpr u32 FENCE_TIMEOUT_MS = 30 * 1000; // 定义最大等待30秒
 constexpr u32 MEM_BLOCK_SIZE = 128;
 
@@ -27,9 +105,18 @@ HostCpuRoceChannel::HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChann
     : endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
 
 HostCpuRoceChannel::~HostCpuRoceChannel() {
-    HcclResult ret = DpuNotifyManager::GetInstance().FreeNotifyIds(notifyNum_, localDpuNotifyIds_);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HostCpuRoceChannel::~HostCpuRoceChannel] exception occurred, HcclResult=[%d]", ret);
+    if (isHybridMode_) {
+        // 混合模式：释放单 Notify ID
+        if (localDpuNotifyId_ != INVALID_DPU_NOTIFY_ID) {
+            DpuNotifyManager::GetInstance().FreeSingleNotifyId(localDpuNotifyId_);
+            localDpuNotifyId_ = INVALID_DPU_NOTIFY_ID;
+        }
+    } else {
+        // 原生模式：释放批量 Notify IDs
+        HcclResult ret = DpuNotifyManager::GetInstance().FreeNotifyIds(notifyNum_, localDpuNotifyIds_);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HostCpuRoceChannel::~HostCpuRoceChannel] exception occurred, HcclResult=[%d]", ret);
+        }
     }
 }
 
@@ -123,18 +210,30 @@ HcclResult HostCpuRoceChannel::GetStatus(ChannelStatus &status) {
             CHK_RET(CheckSocketStatus());
             break;
         case RdmaStatus::SOCKET_OK:
+            // 进行能力协商（混合模式支持）
+            CHK_RET(ExchangeCapability());
+            rdmaStatus_ = RdmaStatus::CAP_EXCHANGED;
+            break;
+        case RdmaStatus::CAP_EXCHANGED:
+            // 协商通信模式
+            CHK_RET(NegotiateMode());
             // 准备资源
             CHK_RET(CreateQp());
             rdmaStatus_ = RdmaStatus::QP_CREATED;
             break;
         case RdmaStatus::QP_CREATED:
-            // 发送交换数据
-            CHK_RET(ExchangeData());
+            // 根据模式选择数据交换方式
+            if (isHybridMode_) {
+                CHK_RET(ExchangeDataHybrid());
+            } else {
+                CHK_RET(ExchangeData());
+            }
             rdmaStatus_ = RdmaStatus::DATA_EXCHANGE;
             break;
         case RdmaStatus::DATA_EXCHANGE:
             CHK_RET(ModifyQp());
             rdmaStatus_ = RdmaStatus::QP_MODIFIED;
+            break;
         case RdmaStatus::QP_MODIFIED:
             // TODO: Prepare Rqe
         default:
@@ -736,4 +835,289 @@ HcclResult HostCpuRoceChannel::GetHcclBuffer(void*& addr, uint64_t& size)
     size = static_cast<uint64_t>(rmtRmaBuffers_[0]->GetSize());
     return HCCL_SUCCESS;
 }
+
+// ========== 混合模式（RoCE Cross-Mode）方法实现 ==========
+
+HcclResult HostCpuRoceChannel::ExchangeCapability()
+{
+    HCCL_INFO("[Hybrid] Starting capability exchange");
+    
+    // 1. 构造本地能力信息
+    RoCECapability localCap;
+    localCap.magic = ROCE_HYBRID_MAGIC;
+    localCap.version = ROCE_CAPABILITY_VERSION;
+    localCap.nodeType = 0;  // TODO: 获取实际设备类型
+    localCap.nicDeploy = NicDeployType::NIC_DEPLOY_HOST;
+    localCap.commStack = CommStackType::COMM_STACK_HOST_CPU_ROCE;
+    localCap.syncMode = SyncMode::SYNC_MODE_WRITE_IMM;
+    localCap.totalLength = sizeof(RoCECapability);
+    
+    // 2. 发送本地能力
+    Hccl::BinaryStream sendStream;
+    localCap.Serialize(sendStream);
+    std::vector<char> sendData;
+    sendStream.Dump(sendData);
+    
+    uint32_t sendSize = sendData.size();
+    socket_->Send(&sendSize, sizeof(sendSize));
+    socket_->Send(sendData.data(), sendSize);
+    
+    // 3. 接收对端能力
+    uint32_t recvSize = 0;
+    socket_->Recv(&recvSize, sizeof(recvSize));
+    CHK_PRT_RET(recvSize > 1024 || recvSize == 0,
+        HCCL_ERROR("[Hybrid] Invalid capability size: %u", recvSize),
+        HCCL_E_PARA);
+    
+    std::vector<char> recvData(recvSize);
+    socket_->Recv(recvData.data(), recvSize);
+    
+    // 4. 解析对端能力
+    Hccl::BinaryStream recvStream(recvData);
+    remoteCap_.Deserialize(recvStream);
+    
+    // 5. 校验魔数和版本
+    CHK_PRT_RET(remoteCap_.magic != ROCE_HYBRID_MAGIC,
+        HCCL_ERROR("[Hybrid] Magic mismatch, expected 0x%x, got 0x%x", ROCE_HYBRID_MAGIC, remoteCap_.magic),
+        HCCL_E_VERSION);
+    
+    CHK_PRT_RET(remoteCap_.version < ROCE_MIN_SUPPORTED_VERSION,
+        HCCL_ERROR("[Hybrid] Version too old, expected >= %u, got %u", ROCE_MIN_SUPPORTED_VERSION, remoteCap_.version),
+        HCCL_E_VERSION);
+    
+    HCCL_INFO("[Hybrid] Capability exchange success, remote commStack=%u", static_cast<uint8_t>(remoteCap_.commStack));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::NegotiateMode()
+{
+    if (remoteCap_.commStack == CommStackType::COMM_STACK_TRANSPORT_IBVERBS) {
+        // 对端是 TransportIbverbs，切换到混合模式
+        isHybridMode_ = true;
+        // TransportIbverbs 不支持 Write With Immediate，切换到 Write + Notify
+        negotiatedSyncMode_ = SyncMode::SYNC_MODE_WRITE_NOTIFY;
+        
+        // 初始化兼容层资源
+        CHK_RET(InitHybridModeResources());
+        HCCL_INFO("[Hybrid] Negotiated to hybrid mode (Write + Notify)");
+    } else {
+        // 对端也是 HostCpuRoceChannel，使用原生模式
+        isHybridMode_ = false;
+        negotiatedSyncMode_ = SyncMode::SYNC_MODE_WRITE_IMM;
+        HCCL_INFO("[Hybrid] Using native mode (Write With Immediate)");
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::InitHybridModeResources()
+{
+    // 分配单个 DPU Notify ID（供对端 TransportIbverbs 作为立即数发送目标）
+    int allocatedId = DpuNotifyManager::GetInstance().AllocSingleNotifyId();
+    CHK_PRT_RET(allocatedId < 0,
+        HCCL_ERROR("[Hybrid] Failed to allocate DPU Notify ID"),
+        HCCL_E_MEMORY);
+    localDpuNotifyId_ = static_cast<uint32_t>(allocatedId);
+    
+    // 设置本地 Notify 内存基地址（用于混合模式轮询）
+    // TODO: 从 LocalIpcNotify 获取实际地址
+    // localNotifyBaseAddr_ = ...
+    
+    HCCL_INFO("[Hybrid] Allocated DPU Notify ID: %u", localDpuNotifyId_);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::ExchangeDataHybrid()
+{
+    HCCL_INFO("[Hybrid] Starting hybrid data exchange");
+    
+    // --- 1. 构造并发送本地数据 ---
+    HybridExchangeData localData;
+    
+    // 填充 QP 信息
+    auto qpInfo = connections_[0]->GetQpInfo();
+    struct QpAttr localQpAttr;
+    RaGetQpAttr(qpInfo.qpHandle, &localQpAttr);
+    localData.qpn = localQpAttr.qpn;
+    localData.psn = localQpAttr.psn;
+    localData.gidIdx = localQpAttr.gidIdx;
+    memcpy(localData.gid, localQpAttr.gid, HCCP_GID_RAW_LEN);
+    
+    // 填充 Buffer 信息
+    localData.bufAddr = localRmaBuffers_[0]->GetAddr();
+    localData.bufRkey = localRmaBuffers_[0]->GetRkey();
+    localData.bufLkey = localRmaBuffers_[0]->GetLkey();
+    localData.bufSize = localRmaBuffers_[0]->GetSize();
+    
+    // 填充 Notify 信息（单 Notify ID，混合模式设计）
+    localData.dpuNotifyId = localDpuNotifyId_;
+    
+    // TODO: 填充 Host Notify 地址信息（供对端写入）
+    // localData.hostNotifyAddr = ...;
+    // localData.hostNotifyRkey = ...;
+    localData.hostNotifyOffset = 0;
+    
+    // 序列化并发送
+    Hccl::BinaryStream stream;
+    localData.Serialize(stream);
+    std::vector<char> sendData;
+    stream.Dump(sendData);
+    
+    uint32_t sendSize = sendData.size();
+    socket_->Send(&sendSize, sizeof(sendSize));
+    socket_->Send(sendData.data(), sendSize);
+    
+    // --- 2. 接收对端数据 ---
+    uint32_t recvSize = 0;
+    socket_->Recv(&recvSize, sizeof(recvSize));
+    CHK_PRT_RET(recvSize > 4096 || recvSize == 0,
+        HCCL_ERROR("[Hybrid] Invalid receive size: %u", recvSize),
+        HCCL_E_PARA);
+    
+    std::vector<char> recvData(recvSize);
+    socket_->Recv(recvData.data(), recvSize);
+    
+    // --- 3. 解析对端数据 ---
+    Hccl::BinaryStream recvStream(recvData);
+    HybridExchangeData remoteData;
+    remoteData.Deserialize(recvStream);
+    
+    // 校验关键字段
+    CHK_PRT_RET(remoteData.dpuNotifyId == INVALID_DPU_NOTIFY_ID,
+        HCCL_ERROR("[Hybrid] Remote DPU Notify ID is invalid"),
+        HCCL_E_PARA);
+    
+    // 保存对端信息
+    rmtConnDto_.qpn_ = remoteData.qpn;
+    rmtConnDto_.psn_ = remoteData.psn;
+    rmtConnDto_.gid_idx_ = remoteData.gidIdx;
+    memcpy(rmtConnDto_.gid_, remoteData.gid, HCCP_GID_RAW_LEN);
+    
+    // 保存对端 Notify 地址信息（HostCpuRoceChannel 发送时使用）
+    remoteHostNotifyAddr_ = remoteData.hostNotifyAddr;
+    remoteHostNotifyRkey_ = remoteData.hostNotifyRkey;
+    
+    // 保存对端 DPU Notify ID（TransportIbverbs 发送时使用）
+    // 注意：TransportIbverbs 作为立即数发送此 ID
+    
+    HCCL_INFO("[Hybrid] Data exchange success, remote QPN=%u", remoteData.qpn);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::WriteWithNotifyHybrid(
+    void *dst, const void *src, uint64_t len, uint32_t remoteNotifyIdx)
+{
+    CHK_PTR_NULL(src);
+    CHK_PTR_NULL(dst);
+    HCCL_INFO("[Hybrid] WriteWithNotifyHybrid start, len=%lu", len);
+    
+    // 参数校验
+    CHK_PRT_RET(localRmaBuffers_.empty(),
+        HCCL_ERROR("[Hybrid] localRmaBuffer is Empty"),
+        HCCL_E_ROCE_CONNECT);
+    
+    std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
+    CHK_PRT_RET(qpInfo.empty(),
+        HCCL_ERROR("[Hybrid] qpInfos is Empty"),
+        HCCL_E_ROCE_CONNECT);
+    
+    // 获取本地 buffer 信息
+    uint64_t localAddr = localRmaBuffers_[0]->GetAddr();
+    uint32_t localLkey = localRmaBuffers_[0]->GetLkey();
+    uint64_t bufferSize = localRmaBuffers_[0]->GetSize();
+    
+    // 校验数据长度
+    CHK_PRT_RET(len > bufferSize,
+        HCCL_ERROR("[Hybrid] Data length %lu exceeds buffer size %lu", len, bufferSize),
+        HCCL_E_PARA);
+    
+    // 构造发送 WR 链：数据 WR + Notify WR
+    struct ibv_send_wr dataWr{};
+    struct ibv_send_wr notifyWr{};
+    struct ibv_send_wr *badWr = nullptr;
+    struct ibv_sge dataSge{};
+    struct ibv_sge notifySge{};
+    
+    // 1. 数据 WR（RDMA Write）
+    dataSge.addr = reinterpret_cast<uint64_t>(src);
+    dataSge.length = len;
+    dataSge.lkey = localLkey;
+    
+    dataWr.wr_id = 0;
+    dataWr.opcode = IBV_WR_RDMA_WRITE;
+    dataWr.send_flags = IBV_SEND_SIGNALED;  // 需要 CQE 确认完成
+    dataWr.sg_list = &dataSge;
+    dataWr.num_sge = 1;
+    dataWr.wr.rdma.remote_addr = reinterpret_cast<uint64_t>(dst);
+    dataWr.wr.rdma.rkey = rmtRmaBuffers_[0]->GetRkey();
+    
+    // 2. Notify WR（写入对端 TransportIbverbs 的 Notify 内存）
+    notifySge.addr = reinterpret_cast<uint64_t>(&notifySignalValue_);
+    notifySge.length = sizeof(uint64_t);
+    notifySge.lkey = localLkey;  // 使用本地 buffer 的 lkey
+    
+    notifyWr.wr_id = 1;
+    notifyWr.opcode = IBV_WR_RDMA_WRITE;
+    notifyWr.send_flags = IBV_SEND_SIGNALED;
+    notifyWr.sg_list = &notifySge;
+    notifyWr.num_sge = 1;
+    // Notify 写入对端 hostNotifyAddr 的偏移位置
+    notifyWr.wr.rdma.remote_addr = remoteHostNotifyAddr_ + remoteNotifyIdx * sizeof(uint64_t);
+    notifyWr.wr.rdma.rkey = remoteHostNotifyRkey_;
+    
+    // 链接 WR 链：dataWr -> notifyWr
+    dataWr.next = &notifyWr;
+    notifyWr.next = nullptr;
+    
+    // 3. 下发 WR 链
+    int32_t ret = ibv_post_send(qpInfo[0].qp, &dataWr, &badWr);
+    CHK_PRT_RET(ret != 0,
+        HCCL_ERROR("[Hybrid] ibv_post_send failed, ret=%d", ret),
+        HCCL_E_NETWORK);
+    
+    HCCL_INFO("[Hybrid] WriteWithNotifyHybrid success");
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::NotifyWaitHybrid(uint32_t localNotifyIdx, uint32_t timeout)
+{
+    HCCL_INFO("[Hybrid] NotifyWaitHybrid start, idx=%u", localNotifyIdx);
+    
+    // 参数校验：混合模式只支持单 Notify，索引必须为 0
+    CHK_PRT_RET(localNotifyIdx != 0,
+        HCCL_ERROR("[Hybrid] Hybrid mode only supports single notify, index: %u", localNotifyIdx),
+        HCCL_E_PARA);
+    
+    // 使用配置的超时时间和轮询间隔
+    uint32_t pollTimeout = (timeout == 0) ? 
+        HybridModeConfig::GetInstance().GetPollTimeoutMs() : timeout;
+    uint32_t pollInterval = HybridModeConfig::GetInstance().GetPollIntervalMs();
+    
+    // 使用原子操作读取 Notify 内存
+    std::atomic<uint64_t>* notifyAddr = reinterpret_cast<std::atomic<uint64_t>*>(
+        localNotifyBaseAddr_ + localNotifyIdx * sizeof(uint64_t));
+    const uint64_t expectedValue = 1;
+    
+    auto startTime = std::chrono::steady_clock::now();
+    auto waitTime = std::chrono::milliseconds(pollTimeout);
+    
+    while (true) {
+        // 使用原子操作读取，确保内存可见性
+        if (notifyAddr->load(std::memory_order_acquire) == expectedValue) {
+            // 读取成功后清零，为下一次通知做准备
+            notifyAddr->store(0, std::memory_order_release);
+            HCCL_INFO("[Hybrid] NotifyWaitHybrid success");
+            return HCCL_SUCCESS;
+        }
+        
+        // 检查超时
+        if ((std::chrono::steady_clock::now() - startTime) >= waitTime) {
+            HCCL_ERROR("[Hybrid] NotifyWaitHybrid timeout");
+            return HCCL_E_TIMEOUT;
+        }
+        
+        // 低频通信场景：简单睡眠即可
+        SaluSleep(pollInterval);
+    }
+}
+
 } // namespace hcomm

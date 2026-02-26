@@ -26,6 +26,10 @@ public:
     HcclResult AllocNotifyIds(uint32_t notifyNum, std::vector<uint32_t> &notifyIds);
     HcclResult FreeNotifyIds(uint32_t notifyNum, std::vector<uint32_t> &notifyIds);
 
+    // 混合模式（RoCE Cross-Mode）专用接口
+    int AllocSingleNotifyId();                   // 申请单个notify
+    void FreeSingleNotifyId(uint32_t notifyId);  // 回收单个notify
+
 private:
     DpuNotifyManager(int numEntries);
 
@@ -34,9 +38,6 @@ private:
     uint32_t byteSize;                          // 字节为单位，即8192的bit对应1024字节
 
     void UpdateFreeBit(uint32_t index);
-
-    int AllocSingleNotifyId();                   // 申请单个notify
-    void FreeSingleNotifyId(uint32_t notifyId);  // 回收单个notify
 
     std::mutex mtxAlloc_;
     std::mutex mtxFree_;

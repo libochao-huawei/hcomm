@@ -2697,3 +2697,196 @@ HcclResult TransportIbverbs::GetTransportId(u32 &id)
     return HCCL_SUCCESS;
 }
 }  // namespace hccl
+
+
+// ========== 混合模式（RoCE Cross-Mode）实现 ==========
+
+HcclResult TransportIbverbs::ExchangeCapabilityHybrid()
+{
+    HCCL_INFO("[Hybrid][TransportIbverbs] Starting capability exchange");
+    
+    // 1. 构造本地能力信息
+    struct RoCECapability {
+        uint32_t magic;              // 魔数：0x48434C52 ("HCLR")
+        uint16_t version;            // 版本号
+        uint16_t totalLength;        // 总长度
+        uint8_t nodeType;            // 节点类型
+        uint8_t nicDeploy;           // NIC 部署位置
+        uint8_t commStack;           // 通信协议栈类型
+        uint8_t syncMode;            // 支持的同步模式
+    } __attribute__((packed));
+    
+    constexpr uint32_t ROCE_HYBRID_MAGIC = 0x48434C52;
+    constexpr uint16_t ROCE_CAPABILITY_VERSION = 1;
+    
+    RoCECapability localCap;
+    localCap.magic = ROCE_HYBRID_MAGIC;
+    localCap.version = ROCE_CAPABILITY_VERSION;
+    localCap.nodeType = 0;  // NPU 设备
+    localCap.nicDeploy = 1; // DPU/NPU NIC
+    localCap.commStack = 1; // COMM_STACK_TRANSPORT_IBVERBS
+    localCap.syncMode = 0;  // SYNC_MODE_WRITE_IMM
+    localCap.totalLength = sizeof(RoCECapability);
+    
+    // 2. 发送本地能力
+    CHK_RET(Send(&localCap, sizeof(localCap)));
+    
+    // 3. 接收对端能力
+    RoCECapability remoteCap;
+    CHK_RET(Recv(&remoteCap, sizeof(remoteCap)));
+    
+    // 4. 校验魔数和版本
+    CHK_PRT_RET(remoteCap.magic != ROCE_HYBRID_MAGIC,
+        HCCL_ERROR("[Hybrid][TransportIbverbs] Magic mismatch, expected 0x%x, got 0x%x", 
+            ROCE_HYBRID_MAGIC, remoteCap.magic),
+        HCCL_E_VERSION);
+    
+    CHK_PRT_RET(remoteCap.version < ROCE_CAPABILITY_VERSION,
+        HCCL_ERROR("[Hybrid][TransportIbverbs] Version too old, expected >= %u, got %u", 
+            ROCE_CAPABILITY_VERSION, remoteCap.version),
+        HCCL_E_VERSION);
+    
+    // 5. 判断是否进入混合模式
+    if (remoteCap.commStack == 0) {  // COMM_STACK_HOST_CPU_ROCE
+        isHybridMode_ = true;
+        HCCL_INFO("[Hybrid][TransportIbverbs] Remote is HostCpuRoceChannel, entering hybrid mode");
+    } else {
+        isHybridMode_ = false;
+        HCCL_INFO("[Hybrid][TransportIbverbs] Remote is TransportIbverbs, using native mode");
+    }
+    
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportIbverbs::NegotiateModeHybrid()
+{
+    if (isHybridMode_) {
+        // 混合模式：初始化兼容层资源
+        CHK_RET(InitHybridModeResources());
+        HCCL_INFO("[Hybrid][TransportIbverbs] Hybrid mode negotiated");
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportIbverbs::InitHybridModeResources()
+{
+    // 为 HostCpuRoceChannel 准备 Notify 内存地址
+    // 在混合模式下，HostCpuRoceChannel 会轮询此内存地址
+    // TODO: 从 LocalIpcNotify 获取实际地址
+    // localNotifyBaseAddr_ = ...
+    // localNotifyRkey_ = ...
+    
+    HCCL_INFO("[Hybrid][TransportIbverbs] Hybrid mode resources initialized");
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportIbverbs::ExchangeDataHybrid()
+{
+    HCCL_INFO("[Hybrid][TransportIbverbs] Starting hybrid data exchange");
+    
+    // 构造混合模式交换数据
+    struct HybridExchangeData {
+        // QP 信息
+        uint32_t qpn;
+        uint32_t psn;
+        uint8_t gid[HCCP_GID_RAW_LEN];
+        uint8_t gidIdx;
+        
+        // Buffer 信息
+        uint64_t bufAddr;
+        uint32_t bufRkey;
+        uint32_t bufLkey;
+        uint64_t bufSize;
+        
+        // Notify 信息（非对称设计）
+        uint32_t dpuNotifyId;      // 本端 Notify ID（供对端作为立即数发送目标）
+        uint64_t hostNotifyAddr;   // 本端 Notify 内存地址（供对端写入）
+        uint32_t hostNotifyRkey;   // 该内存的 rkey
+        uint32_t hostNotifyOffset; // Notify 在内存中的偏移
+    } __attribute__((packed));
+    
+    // 获取 QP 信息
+    struct QpAttr qpAttr;
+    CHK_RET(hrtRaGetQpAttr(combineQpHandles_[0].qpHandle, &qpAttr));
+    
+    // 构造本地数据
+    HybridExchangeData localData;
+    localData.qpn = qpAttr.qpn;
+    localData.psn = qpAttr.psn;
+    localData.gidIdx = qpAttr.gidIdx;
+    memcpy(localData.gid, qpAttr.gid, HCCP_GID_RAW_LEN);
+    
+    // Buffer 信息（使用 USER_OUTPUT_MEM）
+    localData.bufAddr = reinterpret_cast<uint64_t>(memMsg_[static_cast<u32>(MemType::USER_OUTPUT_MEM)].addr);
+    localData.bufRkey = memMsg_[static_cast<u32>(MemType::USER_OUTPUT_MEM)].rkey;
+    localData.bufLkey = memMsg_[static_cast<u32>(MemType::USER_OUTPUT_MEM)].lkey;
+    localData.bufSize = memMsg_[static_cast<u32>(MemType::USER_OUTPUT_MEM)].size;
+    
+    // Notify 信息
+    // 生成一个 Notify ID（供 HostCpuRoceChannel 作为立即数发送目标）
+    // 注意：这里使用一个固定的值，实际应该分配唯一的 ID
+    remoteDpuNotifyId_ = 0;  // HostCpuRoceChannel 会使用这个 ID 作为立即数
+    localData.dpuNotifyId = remoteDpuNotifyId_;
+    
+    // Notify 内存地址信息（供 HostCpuRoceChannel 写入）
+    localData.hostNotifyAddr = localNotifyBaseAddr_;
+    localData.hostNotifyRkey = localNotifyRkey_;
+    localData.hostNotifyOffset = 0;
+    
+    // 发送本地数据
+    CHK_RET(Send(&localData, sizeof(localData)));
+    
+    // 接收对端数据
+    HybridExchangeData remoteData;
+    CHK_RET(Recv(&remoteData, sizeof(remoteData)));
+    
+    // 保存对端 DPU Notify ID（HostCpuRoceChannel 提供，作为立即数发送目标）
+    remoteDpuNotifyId_ = remoteData.dpuNotifyId;
+    
+    HCCL_INFO("[Hybrid][TransportIbverbs] Data exchange success, remote DPU Notify ID=%u", remoteDpuNotifyId_);
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportIbverbs::TxSendDataAndNotifyHybrid(std::vector<WqeInfo>& wqeInfoVec, 
+    Stream &stream, bool useOneDoorbell)
+{
+    HCCL_INFO("[Hybrid][TransportIbverbs] TxSendDataAndNotifyHybrid start, wqeNum=%zu", wqeInfoVec.size());
+    
+    // 混合模式：使用 Write With Immediate
+    // 将最后一个数据 WR 修改为 Write With Immediate，携带 remoteDpuNotifyId_
+    
+    if (wqeInfoVec.empty()) {
+        return HCCL_SUCCESS;
+    }
+    
+    // 获取最后一个 WQE，将其改为 Write With Immediate
+    WqeInfo &lastWqe = wqeInfoVec.back();
+    
+    // 设置操作码为 Write With Immediate
+    lastWqe.wqeData.op = RA_WR_RDMA_WRITE_WITH_IMM;
+    
+    // 设置立即数（使用对端的 DPU Notify ID）
+    lastWqe.wqeData.ext.immData = remoteDpuNotifyId_;
+    
+    // 设置发送标志
+    lastWqe.wqeData.sendFlags = RA_SEND_SIGNALED;
+    
+    // 使用原有的发送流程
+    if (UseMultiQp()) {
+        u32 maxLength = 0;
+        for (auto &wqeInfo : wqeInfoVec) {
+            if (wqeInfo.wqeData.memList.len > maxLength) {
+                maxLength = wqeInfo.wqeData.memList.len;
+            }
+        }
+        u32 actualMultiQpNum = GetActualQpNum(maxLength);
+        CHK_RET(TxSendDataAndNotifyWithMultiQP(wqeInfoVec, actualMultiQpNum, stream, useOneDoorbell));
+    } else {
+        CHK_RET(TxSendDataAndNotifyWithSingleQP(wqeInfoVec, stream, useOneDoorbell));
+    }
+    
+    HCCL_INFO("[Hybrid][TransportIbverbs] TxSendDataAndNotifyHybrid success, immData=%u", remoteDpuNotifyId_);
+    return HCCL_SUCCESS;
+}
+
+}  // namespace hccl

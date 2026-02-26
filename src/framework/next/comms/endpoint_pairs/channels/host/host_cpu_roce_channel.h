@@ -23,9 +23,91 @@
 
 namespace hcomm {
 
+// ========== RoCE 混合模式（Cross-Mode）常量定义 ==========
+constexpr uint32_t ROCE_HYBRID_MAGIC = 0x48434C52;  // "HCLR"
+constexpr uint16_t ROCE_CAPABILITY_VERSION = 1;
+constexpr uint16_t ROCE_MIN_SUPPORTED_VERSION = 1;
+
+// 通信协议栈类型
+enum class CommStackType : uint8_t {
+    COMM_STACK_HOST_CPU_ROCE = 0,    // Host CPU RoCE (ibverbs)
+    COMM_STACK_TRANSPORT_IBVERBS = 1, // NPU RoCE (HCCP)
+    COMM_STACK_UNKNOWN = 255
+};
+
+// 节点部署类型
+enum class NicDeployType : uint8_t {
+    NIC_DEPLOY_HOST = 0,   // HOST NIC
+    NIC_DEPLOY_DPU = 1,    // DPU/NPU NIC
+    NIC_DEPLOY_UNKNOWN = 255
+};
+
+// 同步模式
+enum class SyncMode : uint8_t {
+    SYNC_MODE_WRITE_IMM = 0,      // Write With Immediate (原生模式)
+    SYNC_MODE_WRITE_NOTIFY = 1,   // Write + Notify (混合模式)
+    SYNC_MODE_UNKNOWN = 255
+};
+
+// RoCE 能力协商结构
+struct RoCECapability {
+    uint32_t magic;              // 魔数：0x48434C52 ("HCLR")
+    uint16_t version;            // 版本号
+    uint16_t totalLength;        // 总长度（包括头部和变长数据）
+    
+    uint8_t nodeType;            // 节点类型（参考 HcclDeviceType）
+    NicDeployType nicDeploy;     // NIC 部署位置
+    CommStackType commStack;     // 通信协议栈类型
+    SyncMode syncMode;           // 支持的同步模式
+    
+    void Serialize(Hccl::BinaryStream &stream);
+    void Deserialize(Hccl::BinaryStream &stream);
+};
+
+// 混合模式交换数据结构（非对称设计）
+struct HybridExchangeData {
+    // --- QP 信息 ---
+    uint32_t qpn;
+    uint32_t psn;
+    uint8_t gid[HCCP_GID_RAW_LEN];
+    uint8_t gidIdx;
+    
+    // --- Buffer 信息 ---
+    uint64_t bufAddr;
+    uint32_t bufRkey;
+    uint32_t bufLkey;
+    uint64_t bufSize;
+    
+    // --- Notify 信息（非对称设计关键）---
+    // HostCpuRoceChannel 提供给 TransportIbverbs（作为立即数发送）
+    uint32_t dpuNotifyId;
+    
+    // TransportIbverbs 提供给 HostCpuRoceChannel（作为写入目标地址）
+    uint64_t hostNotifyAddr;
+    uint32_t hostNotifyRkey;
+    uint32_t hostNotifyOffset;
+    
+    void Serialize(Hccl::BinaryStream &stream);
+    void Deserialize(Hccl::BinaryStream &stream);
+};
+
+// 混合模式专用错误码
+enum class HybridModeErrorCode {
+    HYBRID_SUCCESS = 0,
+    HYBRID_E_INVALID_QP_STATE = 1,
+    HYBRID_E_MEMORY_NOT_REGISTERED = 2,
+    HYBRID_E_POST_SEND_FAILED = 3,
+    HYBRID_E_NOTIFY_TIMEOUT = 4,
+    HYBRID_E_VERSION_MISMATCH = 5,
+    HYBRID_E_EXCHANGE_DATA_INVALID = 6,
+};
+
+// 无效 Notify ID 常量
+static constexpr uint32_t INVALID_DPU_NOTIFY_ID = 0xFFFFFFFF;
+
 class HostCpuRoceChannel final : public Channel {
 public:
-    MAKE_ENUM(RdmaStatus, INIT, SOCKET_OK, QP_CREATED,  DATA_EXCHANGE, QP_MODIFIED, CONN_OK)
+    MAKE_ENUM(RdmaStatus, INIT, SOCKET_OK, CAP_EXCHANGED, QP_CREATED, DATA_EXCHANGE, QP_MODIFIED, CONN_OK)
 
     HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc);
     ~HostCpuRoceChannel();
@@ -46,6 +128,19 @@ public:
     HcclResult Read(void *dst, const void *src, uint64_t len) const;
     HcclResult ChannelFence() const;
     HcclResult GetHcclBuffer(void*& addr, uint64_t& size);
+
+    // ========== 混合模式（RoCE Cross-Mode）接口 ==========
+    // 能力协商
+    HcclResult ExchangeCapability();
+    HcclResult NegotiateMode();
+    
+    // 混合模式数据交换
+    HcclResult ExchangeDataHybrid();
+    HcclResult InitHybridModeResources();
+    
+    // 混合模式同步接口
+    HcclResult WriteWithNotifyHybrid(void *dst, const void *src, uint64_t len, uint32_t remoteNotifyIdx);
+    HcclResult NotifyWaitHybrid(uint32_t localNotifyIdx, uint32_t timeout);
 
 private:
     HcclResult ParseInputParam();
@@ -102,6 +197,26 @@ private:
     std::vector<std::unique_ptr<HcclMem>> remoteMems{};
 
     std::mutex cq_mutex;
+    
+    // ========== 混合模式（RoCE Cross-Mode）成员变量 ==========
+    // 1. 能力协商结果
+    RoCECapability remoteCap_;            // 对端能力
+    bool isHybridMode_ = false;           // 是否为混合模式
+    SyncMode negotiatedSyncMode_ = SyncMode::SYNC_MODE_WRITE_IMM;
+    
+    // 2. 发送端使用：预分配的 Notify 信号值缓冲区
+    uint64_t notifySignalValue_ = 1;
+    
+    // 3. 发送端使用：对端 TransportIbverbs 的 Notify 地址信息
+    // 非对称设计：HostCpuRoceChannel 发送时写入此地址
+    uint64_t remoteHostNotifyAddr_ = 0;   // TransportIbverbs 的 Notify 内存地址
+    uint32_t remoteHostNotifyRkey_ = 0;   // 该内存的 rkey
+    
+    // 4. 接收端使用：本地 DPU Notify ID（TransportIbverbs 作为立即数发送的目标）
+    uint32_t localDpuNotifyId_ = INVALID_DPU_NOTIFY_ID;  // 本地 Notify ID（供对端作为立即数）
+    
+    // 5. 本地 Notify 内存基地址（用于混合模式轮询）
+    uint64_t localNotifyBaseAddr_ = 0;
 };
 
 } // namespace hcomm
