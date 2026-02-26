@@ -9,16 +9,16 @@
 # -----------------------------------------------------------------------------------------------------------
 target_sources(hccl_v2_utest
         PUBLIC
-        # ut_communicator_impl.cc
-        # ut_hccl_communicator_pub.cc
+        ut_communicator_impl.cc
+        ut_hccl_communicator_pub.cc
         ut_kernel_entrance.cc
         ut_communicator_impl_lite.cc
         ut_aicpu_daemon_service.cpp
         ut_aicpu_res_package_helper.cc
         ut_task_abort_handler.cc
         ut_hdc.cc
-        ##ut_aicpu_comm_destroy_func.cc
-        # ut_ns_recovery_handler_func.cc
+        #ut_aicpu_comm_destroy_func.cc
+        ut_ns_recovery_handler_func.cc
         ut_one_sided_component_lite.cpp
         ut_op_params_checker.cc
         ut_ins_executor.cc

@@ -363,7 +363,7 @@ TEST(InsRulesTest, Interpret_local_post_to)
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream       stream;
     OpTaskConfig taskConfig{};
 
@@ -410,7 +410,7 @@ TEST(InsRulesTest, Interpret_local_wait_from)
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream       stream;
     OpTaskConfig taskConfig{};
 
@@ -476,7 +476,7 @@ TEST(InsRulesTest, Interpret_write_with_fin_dev_net_ub_slice_is_not_zero_one_tas
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream       stream;
     OpTaskConfig taskConfig{};
     Interpret(insWriteWithFin, fakeComm, stream, taskConfig);
@@ -524,7 +524,7 @@ TEST(InsRulesTest, Interpret_write_reduce_dev_net_ub_slice_is_not_zero_one_task)
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream       stream;
     OpTaskConfig taskConfig{};
     Interpret(insWriteReduce, fakeComm, stream, taskConfig);
@@ -588,7 +588,7 @@ TEST(InsRulesTest, Interpret_write_reduce_with_fin_dev_net_ub_slice_is_not_zero_
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream       stream;
     OpTaskConfig taskConfig{};
     Interpret(insWriteReduceWithFin, fakeComm, stream, taskConfig);
@@ -635,7 +635,7 @@ TEST(InsRulesTest, Interpret_write_with_fin_dev_net_ub_slice_is_zero_one_task)
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream       stream;
     OpTaskConfig taskConfig{};
     Interpret(insWriteWithFin, fakeComm, stream, taskConfig);
@@ -682,7 +682,7 @@ TEST(InsRulesTest, Interpret_read_reduce_dev_net_ub_slice_is_not_zero_one_task)
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream       stream;
     OpTaskConfig taskConfig{};
     Interpret(insReadReduce, fakeComm, stream, taskConfig);
@@ -729,7 +729,7 @@ TEST(InsRulesTest, Interpret_read_dev_net_ub_slice_is_not_zero_one_task)
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream       stream;
     OpTaskConfig taskConfig{};
     Interpret(insRead, fakeComm, stream, taskConfig);
@@ -768,7 +768,7 @@ TEST(InsRulesTest, Interpret_wait_group_fin)
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream       stream;
     OpTaskConfig taskConfig{};
 
@@ -816,7 +816,7 @@ TEST(InsRulesTest, Interpret_write_with_fin_dev_net_ub_slice_is_zero_one_task_cn
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream       stream;
     OpTaskConfig taskConfig{};
     Interpret(insWriteWithFin, fakeComm, stream, taskConfig);
@@ -864,7 +864,7 @@ TEST(InsRulesTest, Interpret_write_reduce_with_fin_dev_net_ub_slice_is_zero_one_
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream       stream;
     OpTaskConfig taskConfig{};
     Interpret(insWriteReduceWithFin, fakeComm, stream, taskConfig);
@@ -905,7 +905,7 @@ TEST(InsRulesTest, Interpret_write_p2p)
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream       stream;
     OpTaskConfig taskConfig{};
     Interpret(insWrite, fakeComm, stream, taskConfig);
@@ -939,7 +939,7 @@ TEST(InsRulesTest, Interpret_local_wait_group)
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream       stream;
     OpTaskConfig taskConfig{};
     EXPECT_THROW(Interpret(insLocalWaitGroup, fakeComm, stream, taskConfig), NullPtrException);
@@ -974,7 +974,7 @@ TEST(InsRulesTest, Interpret_local_wait_from_cnt_notify)
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream       stream;
     OpTaskConfig taskConfig{};
     EXPECT_THROW(Interpret(insLocalWaitFrom, fakeComm, stream, taskConfig), NullPtrException);
@@ -1010,7 +1010,7 @@ TEST(InsRulesTest, Interpret_local_bcast_post)
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream       stream;
     OpTaskConfig taskConfig{};
     EXPECT_THROW(Interpret(insLocalBcastPost, fakeComm, stream, taskConfig), NullPtrException);
@@ -1029,7 +1029,7 @@ TEST(InsRulesTest, Interpret_LocalReduce)
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream stream;
     OpTaskConfig taskConfig{};
     MOCKER(HrtMemAsyncCopy).stubs();
@@ -1055,7 +1055,7 @@ TEST(InsRulesTest, Interpret_local_copy)
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     Stream       stream;
     OpTaskConfig taskConfig{};
     MOCKER(HrtMemAsyncCopy).stubs();

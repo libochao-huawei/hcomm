@@ -53,7 +53,7 @@ TEST_F(StreamTest, Stream_selfownded_false)
     u64        fakeStmMode  = 3;
     MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeId));
     MOCKER(HrtGetDevice).stubs().will(returnValue(fakeDevLogId));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(fakeDevPhyId));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(fakePtr));
     MOCKER(HrtStreamGetSqId).stubs().will(returnValue(fakeSqId));
     MOCKER(HrtStreamDestroy).stubs();
@@ -79,7 +79,7 @@ TEST_F(StreamTest, stream_dev_used_false)
     u64        fakeStmMode  = 3;
     MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeId));
     MOCKER(HrtGetDevice).stubs().will(returnValue(fakeDevLogId));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(fakeDevPhyId));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(fakePtr));
     MOCKER(HrtStreamGetSqId).stubs().will(returnValue(fakeSqId));
     MOCKER(HrtStreamDestroy).stubs();
@@ -105,7 +105,7 @@ TEST_F(StreamTest, stream_dev_used_true)
     u64        fakeStmMode  = 3;
     MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeId));
     MOCKER(HrtGetDevice).stubs().will(returnValue(fakeDevLogId));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(fakeDevPhyId));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(fakePtr));
     MOCKER(HrtStreamGetSqId).stubs().will(returnValue(fakeSqId));
     MOCKER(HrtStreamDestroy).stubs();
