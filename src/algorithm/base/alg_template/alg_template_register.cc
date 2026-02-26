@@ -37,6 +37,7 @@ HcclResult AlgTemplateRegistry::Register(const TemplateType type, const AlgTempl
         return HcclResult::HCCL_E_INTERNAL;
     }
     tempCreators_[type] = algTemplateCreator;
+    HCCL_DEBUG("[AlgTemplateRegistry][Register]Register template by type[%d]", type);
     return HcclResult::HCCL_SUCCESS;
 }
 
