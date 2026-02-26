@@ -20,7 +20,6 @@
 #include <vector>
 #include "alltoall_utils_pub.h"
 #include "device_capacity.h"
-#include "ffts_common_pub.h"
 #include "hccl_socket.h"
 #include "local_notify.h"
 #include "stream_pub.h"
