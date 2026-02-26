@@ -2735,15 +2735,33 @@ HcclResult TransportIbverbs::ExchangeCapabilityHybrid()
     localCap.commStack = 1; // COMM_STACK_TRANSPORT_IBVERBS
     localCap.syncMode = 0;  // SYNC_MODE_WRITE_IMM
     localCap.totalLength = sizeof(RoCECapability);
+    memset(localCap.reserved, 0, sizeof(localCap.reserved));
     
-    // 2. 发送本地能力
-    CHK_RET(Send(&localCap, sizeof(localCap)));
+    // 2. 发送本地能力（与 HostCpuRoceChannel 协议一致：4字节大小前缀 + 数据）
+    uint32_t sendSize = sizeof(localCap);
+    CHK_RET(Send(&sendSize, sizeof(sendSize)));
+    CHK_RET(Send(&localCap, sendSize));
     
-    // 3. 接收对端能力
+    // 3. 接收对端能力（先读4字节大小，再读数据）
+    uint32_t recvSize = 0;
+    CHK_RET(Recv(&recvSize, sizeof(recvSize)));
+    CHK_PRT_RET(recvSize > 1024 || recvSize == 0,
+        HCCL_ERROR("[Hybrid][TransportIbverbs] Invalid capability size: %u", recvSize),
+        HCCL_E_PARA);
+    
+    std::vector<char> recvData(recvSize);
+    CHK_RET(Recv(recvData.data(), recvSize));
+    
+    // 4. 解析对端能力
+    CHK_PRT_RET(recvSize < sizeof(RoCECapability),
+        HCCL_ERROR("[Hybrid][TransportIbverbs] Received data too small: %u < %zu", 
+            recvSize, sizeof(RoCECapability)),
+        HCCL_E_PARA);
+    
     RoCECapability remoteCap;
-    CHK_RET(Recv(&remoteCap, sizeof(remoteCap)));
+    memcpy(&remoteCap, recvData.data(), sizeof(RoCECapability));
     
-    // 4. 校验魔数和版本
+    // 5. 校验魔数和版本
     CHK_PRT_RET(remoteCap.magic != ROCE_HYBRID_MAGIC,
         HCCL_ERROR("[Hybrid][TransportIbverbs] Magic mismatch, expected 0x%x, got 0x%x", 
             ROCE_HYBRID_MAGIC, remoteCap.magic),
@@ -2754,7 +2772,7 @@ HcclResult TransportIbverbs::ExchangeCapabilityHybrid()
             ROCE_CAPABILITY_VERSION, remoteCap.version),
         HCCL_E_VERSION);
     
-    // 5. 判断是否进入混合模式
+    // 6. 判断是否进入混合模式
     if (remoteCap.commStack == 0) {  // COMM_STACK_HOST_CPU_ROCE
         isHybridMode_ = true;
         HCCL_INFO("[Hybrid][TransportIbverbs] Remote is HostCpuRoceChannel, entering hybrid mode");

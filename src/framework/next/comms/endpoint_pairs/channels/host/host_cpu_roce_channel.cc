@@ -27,6 +27,9 @@
 #include "platform/resource/notify/notify_pool_impl.h"
 #include "platform/hccp/inc/network/hccp_common.h"
 
+// C++ standard
+#include <cstring>
+
 namespace hcomm {
 
 // ========== RoCECapability 序列化实现 ==========
@@ -891,18 +894,14 @@ HcclResult HostCpuRoceChannel::ExchangeCapability()
     localCap.commStack = CommStackType::COMM_STACK_HOST_CPU_ROCE;
     localCap.syncMode = SyncMode::SYNC_MODE_WRITE_IMM;
     localCap.totalLength = sizeof(RoCECapability);
+    memset(localCap.reserved, 0, sizeof(localCap.reserved));
     
-    // 2. 发送本地能力
-    Hccl::BinaryStream sendStream;
-    localCap.Serialize(sendStream);
-    std::vector<char> sendData;
-    sendStream.Dump(sendData);
-    
-    uint32_t sendSize = sendData.size();
+    // 2. 发送本地能力（与 TransportIbverbs 协议一致：4字节大小前缀 + 原始结构体数据）
+    uint32_t sendSize = sizeof(localCap);
     socket_->Send(&sendSize, sizeof(sendSize));
-    socket_->Send(sendData.data(), sendSize);
+    socket_->Send(&localCap, sendSize);
     
-    // 3. 接收对端能力
+    // 3. 接收对端能力（先读4字节大小，再读数据）
     uint32_t recvSize = 0;
     socket_->Recv(&recvSize, sizeof(recvSize));
     CHK_PRT_RET(recvSize > 1024 || recvSize == 0,
@@ -912,9 +911,12 @@ HcclResult HostCpuRoceChannel::ExchangeCapability()
     std::vector<char> recvData(recvSize);
     socket_->Recv(recvData.data(), recvSize);
     
-    // 4. 解析对端能力
-    Hccl::BinaryStream recvStream(recvData);
-    remoteCap_.Deserialize(recvStream);
+    // 4. 解析对端能力（直接内存拷贝，确保与 TransportIbverbs 兼容）
+    CHK_PRT_RET(recvSize < sizeof(RoCECapability),
+        HCCL_ERROR("[Hybrid] Received data too small: %u < %zu", recvSize, sizeof(RoCECapability)),
+        HCCL_E_PARA);
+    
+    memcpy(&remoteCap_, recvData.data(), sizeof(RoCECapability));
     
     // 5. 校验魔数和版本
     CHK_PRT_RET(remoteCap_.magic != ROCE_HYBRID_MAGIC,
