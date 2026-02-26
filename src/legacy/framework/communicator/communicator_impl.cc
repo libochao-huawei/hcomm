@@ -473,7 +473,8 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
     return true;
 }
 
-static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const TaskParam &taskParam)
+static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const TaskParam &taskParam, 
+    const RankId remoteRankId = INVALID_RANKID)
 {
     u32 taskId;
     u32 streamId;
@@ -497,8 +498,8 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
     rtCcuTaskInfo_t *&ccuParams = params.ccuParams;
     (void)memcpy_s(&ccuParams[0].args[0], sizeof(ccuParams[0].args[0]), &opParams.sendBuf,
                    sizeof(ccuParams[0].args[0]));
-    (void)memcpy_s(&ccuParams[0].args[1], sizeof(ccuParams[0].args[0]), &opParams.recvBuf,
-                   sizeof(ccuParams[0].args[0]));
+    (void)memcpy_s(&ccuParams[0].args[1], sizeof(ccuParams[0].args[1]), &opParams.recvBuf,
+                   sizeof(ccuParams[0].args[1]));
     auto vector_zero_count = params.count[0];
 
     auto &opbaseStream = GetStreamManager().opbase;
@@ -522,9 +523,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
         SuperFastLoad(ccuParams, mStream, vector_zero_count);
         params.taskParams[0].endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
         FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[0]);
-    }
-    else
-    {
+    } else {
         SuperFastLoad(ccuParams, mStream, vector_zero_count);
     }
     
@@ -552,6 +551,42 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
             cntNotifyNTo1->PostBits(bitValue, *slave);
         }
     }
+    if(params.insType == CcuInstType::CCU_REDUCE_SCATTER_MESH_1D_2DIE) {
+        //硬编码
+        if (taskExceptionEnv || enableProfilingEnv) {
+            TaskParam taskParam{};
+            taskParam.beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+            aclrtReduceKind rtReduceOp = static_cast<aclrtReduceKind>(static_cast<int>(RtReduceOpGet(opParams.reduceOp)));
+            aclDataType rtDataType = static_cast<aclDataType>(static_cast<int>(RtDataTypeGet(opParams.dataType)));
+            constexpr std::size_t myScratchPlace = 4;
+            const u32             scratchSize    = ccuParams[0].args[myScratchPlace];
+            auto                  src            = reinterpret_cast<void *>(ccuParams[0].args[3]);
+            auto                  dst            = reinterpret_cast<void *>(ccuParams[0].args[1]);
+            HrtReduceAsync(dst, scratchSize, src, scratchSize, rtReduceOp, rtDataType, stream);
+            taskParam.taskType                   = TaskParamType::TASK_REDUCE_INLINE;
+            taskParam.endTime                    = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+            taskParam.taskPara.Reduce.src        = src;
+            taskParam.taskPara.Reduce.dst        = dst;
+            taskParam.taskPara.Reduce.size       = scratchSize;
+            taskParam.taskPara.Reduce.notifyID   = INVALID_VALUE_NOTIFYID;
+            taskParam.taskPara.Reduce.linkType   = DfxLinkType::ONCHIP;
+            taskParam.taskPara.Reduce.dataType   = DataTypeToHcclDataType(opParams.dataType);
+            taskParam.taskPara.Reduce.linkType   = ReduceOpToHcclReduceOp(opParams.reduceOp);
+            FastCcuLaunchSaveDfxTaskInfo(*this, taskParam, GetMyRank());
+        } else {
+            aclrtReduceKind rtReduceOp = static_cast<aclrtReduceKind>(static_cast<int>(RtReduceOpGet(opParams.reduceOp)));
+            aclDataType rtDataType = static_cast<aclDataType>(static_cast<int>(RtDataTypeGet(opParams.dataType)));
+            constexpr std::size_t myScratchPlace = 4;
+            const u32             scratchSize    = ccuParams[0].args[myScratchPlace];
+            auto                  src            = reinterpret_cast<void *>(ccuParams[0].args[3]);
+            auto                  dst            = reinterpret_cast<void *>(ccuParams[0].args[1]);
+            HrtReduceAsync(dst, scratchSize, src, scratchSize, rtReduceOp, rtDataType, stream);
+        }       
+    }
+    if(params.insType == CcuInstType::CCU_ALLTOALLV_MESH_1D_DIRECT) {
+        CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, ccuParmas[0].args);
+    }
+
     slaveIndex = 0;
     collOpIndex++;
     submittedOpCnt = collOpIndex;
