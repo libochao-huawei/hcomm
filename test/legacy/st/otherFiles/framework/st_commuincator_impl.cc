@@ -3171,7 +3171,7 @@ TEST(CommunicatorImplTest, st_GetAlgExecParam_When_Normal_Expect_ReturnHCCL_SUCC
     MOCKER(HrtMemAsyncCopy).stubs();
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
     void *addr = reinterpret_cast<void *>(0x12345678);
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(addr));
+    MOCKER(HrtMalloc).stubs().with(any()).will(returnValue(addr));
     MOCKER(HrtFree).stubs();
 
     // 资源初始化
@@ -3268,7 +3268,7 @@ TEST(CommunicatorImplTest, st_GetAlgExecParam_When_Normal_Expect_ReturnHCCL_SUCC
     MOCKER_CPP(&CollServiceAiCpuImpl::AddPostToUserStream).stubs().with(any());
     MOCKER_CPP(&CollServiceAiCpuImpl::AddWaitToUserStream).stubs().with(any());
     MOCKER_CPP(&CollServiceAiCpuImpl::SetHcclKernelLaunchParam).stubs().with(any(), any());
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x100000));
+    MOCKER(HrtMalloc).stubs().with(any()).will(returnValue((void *)0x100000));
     std::cout << "A Test case in CommunicatorImplTest SetUP" << std::endl;
 
     std::shared_ptr<FakeAivCollAlgComponent> collAlgComponent = std::make_shared<FakeAivCollAlgComponent>();
