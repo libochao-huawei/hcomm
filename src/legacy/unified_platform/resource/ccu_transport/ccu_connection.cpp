@@ -23,7 +23,6 @@
 #include "local_ub_rma_buffer.h"
 
 namespace Hccl {
-
 CcuConnection::CcuConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
     const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
     : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys)
@@ -432,20 +431,26 @@ CcuConnection::~CcuConnection()
     DECTOR_TRY_CATCH("CcuConnection", ReleaseConnRes());
 }
 
-HcclResult CcuConnection::ReleaseConnRes()
-{
-    for (auto &item : importJettyCtxs) {
-        if (item.outParam.handle != 0) {
-            HrtRaUbUnimportJetty(rdmaHandle, item.outParam.handle);
-            item.outParam.handle = 0;
-        }
-    }
 
+void CcuConnection::ReleaseTp()
+{
     if (tpInfo.tpHandle != 0) { // tp handle 复用，只释放一次
         (void)TpManager::GetInstance(devLogicId)
             .ReleaseTpInfo({locAddr_, rmtAddr_, tpProtocol}, tpInfo);
         tpInfo.tpHandle = 0;
     }
+}
+
+HcclResult CcuConnection::ReleaseConnRes()
+{
+    for (auto &item : importJettyCtxs) {
+        if (item.outParam.handle != 0) {
+            HrtRaUbUnimportJetty(rdmaHandle, remoteJettyHandle);
+            item.outParam.handle = 0;
+        }
+    }
+
+    ReleaseTp();
 
     // CcuJetty 生命周期跟随通信域CcuJettyMgr
     // 不需要connection主动销毁
@@ -485,13 +490,31 @@ int32_t CcuConnection::GetDevLogicId() const
     return devLogicId;
 }
 
+void CcuConnection::GetDeleteJettyInfo(BatchDeleteJettyInfo& batchDeleteJettyInfo)
+{
+    ConnJettyInfo jettyInfo;
+    for (auto &ccuJetty : ccuJettys_) {
+        ccuJetty->GetDeleteJettyInfo(jettyInfo);
+        if (jettyInfo.isValid) {
+            batchDeleteJettyInfo.deleteJettyList[rdmaHandle].insert(jettyInfo.deleteJetty);
+        }
+    }
+
+    for (auto &item : importJettyCtxs) {
+        if (item.outParam.handle != 0) {
+            batchDeleteJettyInfo.unimportJettyList[rdmaHandle].insert(item.outParam.handle);
+            item.outParam.handle = 0;
+        }
+    }
+}
+
 void CcuConnection::Clean()
 {
     status = CcuConnStatus::INIT;
     innerStatus = InnerStatus::INIT;
     isJettyCreated = false;
     isJettyImported = false;
-    ReleaseConnRes();
+    ReleaseTp();
     GenerateLocalPsn();
 
     // 销毁jetty要在ReleaseConnRes之后

@@ -46,7 +46,9 @@ public:
     {
         return ccuJettys_;
     }
+    void     ReleaseTp();
     void     Clean();
+    void     GetDeleteJettyInfo(BatchDeleteJettyInfo& batchDeleteJettyInfo);
 
 protected:
     TpProtocol tpProtocol{TpProtocol::INVALID};
