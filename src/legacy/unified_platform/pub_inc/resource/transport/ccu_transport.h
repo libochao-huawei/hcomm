@@ -139,6 +139,7 @@ public:
     HcclResult  GetRmtBuffer(CclBufferInfo &bufferInfo, const uint32_t &bufNum) const;
     TransStatus GetStatus();
     std::string Describe() const;
+    void        GetDeleteJettyInfo(BatchDeleteJettyInfo& batchDeleteJettyInfo);
     HcclResult  Clean();
 
 private:
