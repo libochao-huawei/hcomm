@@ -891,8 +891,6 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         opExecuteConfig = commExecuteConfig;
         ExecAlgSelect(opParams, OpMode::OFFLOAD);
 
-        HCCL_INFO("AcceleratorState: %d", static_cast<int>(opExecuteConfig.accState));
-        HCCL_INFO("HOSTCPU_TS: %d", static_cast<int>(AcceleratorState::HOSTCPU_TS));
         if (opExecuteConfig.accState == AcceleratorState::HOSTCPU_TS) { // 910_95不支持HOST_TS模式
             HCCL_ERROR("[CommunicatorImpl::LoadOffloadCollOp] HOSTCPU_TS is not support.");
             return HcclResult::HCCL_E_NOT_SUPPORT;
