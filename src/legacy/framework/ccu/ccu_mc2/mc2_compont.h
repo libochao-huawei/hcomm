@@ -19,6 +19,11 @@
 
 namespace Hccl {
 
+struct HcclAlgoInfo{
+    uint32_t opType;
+    uint8_t  algorithmType;
+}
+
 class Mc2Compont {
 public:
     explicit Mc2Compont(CommunicatorImpl *comm) : comm(comm)
@@ -57,6 +62,7 @@ private:
     CommunicatorImpl *comm;
     // algoTemplateMap已经生成的算子集合; key:签名, value: taskParam
     std::unordered_map<uint64_t, std::vector<std::vector<CcuTaskParam>>> algoTemplateMap;
+    std::unordered_map<uint64_t, HcclAlgoInfo> algoInfoMap_;
     // ccuServer已经生成的server集合; key:execId, value:该server支持的算子签名
     std::unordered_map<InsExeQue::ExtInsExeEntityId, std::unordered_set<uint64_t>> ccuServerMap;
 

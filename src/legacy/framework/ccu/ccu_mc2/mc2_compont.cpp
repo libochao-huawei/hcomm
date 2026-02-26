@@ -162,6 +162,10 @@ void Mc2Compont::Alloc()
     // inputMem给算法编排使用，只需要申请一次，按照最大数据类型申请
     inputMem = std::make_shared<DevBuffer>(dataCount * DataTypeSizeGet(DataType::INT64) * comm->GetRankSize());
     HCCL_INFO("[Mc2Compont][Alloc]inputMem addr[%p] size = [%llu]", inputMem->GetAddr(), inputMem->GetSize());
+    for(int i = 0; i < MAX_OP_NUM; i++) {
+        combinOpParam.opType[i] = 0;
+        combinOpParam.algorithmType = 0;
+    }
     if (ccuResourceAlloced) {
         return;
     }
@@ -195,6 +199,10 @@ void Mc2Compont::AllocV2()
 {
     inputMem = std::make_shared<DevBuffer>(dataCount * DataTypeSizeGet(DataType::INT64) * comm->GetRankSize());
     HCCL_INFO("[Mc2Compont][AllocV2]inputMem addr[%p] size = [%llu]", inputMem->GetAddr(), inputMem->GetSize());
+    for(int i = 0; i < MAX_OP_NUM; i++) {
+        combinOpParam.opType[i] = 0;
+        combinOpParam.algorithmType = 0;
+    }
     if (ccuResourceAlloced) {
         return;
     }
@@ -286,7 +294,14 @@ void Mc2Compont::GenerateAlgoTemplates(Mc2Tiling *mc2TilingPtr, std::unordered_s
         if (algoTemplateMap.find(templateSign) != algoTemplateMap.end()) {
             HCCL_INFO("A algoTemplate that meets the requirement already exists, index = [%u], templateSign = [%llu]",
                        index, templateSign);
-            continue;
+            if(algoInfoMap_.find(templateSign) != algoInfoMap_.end()) {
+                combinOpParam.opType[index]   = algoInfoMap_[templateSign].opType;
+                combinOpParam.algorithmType[index]   = algoInfoMap_[templateSign].algorithmType;
+                continue;
+            }else{
+                THROW<Hccl::InternalException>(
+                    StringFormat("algoInfoMap_ do not has templateSign = [%llu]", templateSign));
+            }
         }
 
         FillCollOperator(commConfig);
@@ -313,6 +328,10 @@ void Mc2Compont::GenerateAlgoTemplates(Mc2Tiling *mc2TilingPtr, std::unordered_s
         algoTemplateMap[templateSign] = taskParams;
         combinOpParam.opType[index]   = commConfig.opType;
         combinOpParam.algorithmType[index]   = comm->GetAlgorithmType();
+        HcclAlgoInfo hcclAlgoInfo;
+        hcclAlgoInfo.opType = algoInfoMap_[templateSign];
+        hcclAlgoInfo.algorithmType = combinOpParam.algorithmType[index];
+        algoInfoMap_[templateSign] = hcclAlgoInfo;
         for (const auto &task : taskParams) {
             HCCL_INFO("taskParam: dieId = [%u], instStartId = [%u]", task[0].dieId, task[0].instStartId);
             SaveMc2DfxTaskInfo(task[0], ccuInstruction.GetExecId());
@@ -345,7 +364,14 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
         if (algoTemplateMap.find(templateSign) != algoTemplateMap.end()) {
             HCCL_INFO("A algoTemplate that meets the requirement already exists, index = [%u], templateSign = [%llu]",
                        index, templateSign);
-            continue;
+            if(algoInfoMap_.find(templateSign) != algoInfoMap_.end()) {
+                combinOpParam.opType[index]   = algoInfoMap_[templateSign].opType;
+                combinOpParam.algorithmType[index]   = algoInfoMap_[templateSign].algorithmType;
+                continue;
+            }else{
+                THROW<Hccl::InternalException>(
+                    StringFormat("algoInfoMap_ do not has templateSign = [%llu]", templateSign));
+            }
         }
 
         FillCollOperatorV2(commConfig);
@@ -372,6 +398,10 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
         algoTemplateMap[templateSign] = taskParams;
         combinOpParam.opType[index]   = commConfig.opType;
         combinOpParam.algorithmType[index]   = comm->GetAlgorithmType();
+        HcclAlgoInfo hcclAlgoInfo;
+        hcclAlgoInfo.opType = algoInfoMap_[templateSign];
+        hcclAlgoInfo.algorithmType = combinOpParam.algorithmType[index];
+        algoInfoMap_[templateSign] = hcclAlgoInfo;
         for (const auto &task : taskParams) {
             HCCL_INFO("taskParam: dieId = [%u], instStartId = [%u]", task[0].dieId, task[0].instStartId);
             SaveMc2DfxTaskInfo(task[0], ccuInstruction.GetExecId());
