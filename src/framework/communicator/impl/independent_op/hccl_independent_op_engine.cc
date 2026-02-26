@@ -244,7 +244,7 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
 
 uint32_t HcclGetHcclQos(HcclComm comm)
 {
-    auto hcclComm = static_casthcclhcclComm(comm);
+    auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     HCCL_INFO("HcclGetHcclQos hcclQos = %u", hcclComm->GetHcclQos());
-    return hcclComm-GetHcclQos();
+    return hcclComm->GetHcclQos();
 }
