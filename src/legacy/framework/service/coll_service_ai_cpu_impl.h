@@ -73,6 +73,9 @@ private:
     void AllocOpMem(const CollOperator &op);
     void AllocOpMemAlltoAllVC(const CollOperator &op);
     void AllocOpMemAlltoAllV(const CollOperator &op);
+    void AllocOpMemBatchSendRecv(const CollOperator &op);
+    u32 GetRemoteRankIdsHashValue(const CollOperator &op);
+
     std::set<LinkData> availableLinks;
     std::unordered_map<std::string, std::shared_ptr<DevBuffer>>
         collOpLoadedMap; // 集合通信算子资源加载到device侧的内存
@@ -83,10 +86,13 @@ private:
     std::vector<std::shared_ptr<DevBuffer>> sdisplsMem{};
     std::vector<std::shared_ptr<DevBuffer>> rdisplsMem{};
     std::vector<std::shared_ptr<DevBuffer>> sendCountMatrixMem{};
+    std::vector<std::shared_ptr<DevBuffer>> bsrItemsMem{};
+
     bool isCountMemInited{ false };
     bool isCountMemInitedAlltoAllVC{ false };
     u32 index{0};
     u32 indexAlltoAllVC{0};
+    std::string curTagKey{};
 
     std::vector<char> PackOpData(const std::string &opTag, const CollAlgOpReq &req) const;
     std::vector<char> PackAllTransportData() const;
