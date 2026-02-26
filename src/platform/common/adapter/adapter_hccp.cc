@@ -712,12 +712,11 @@ HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHan
     CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
     CHK_PRT_RET(deviceIp.size() < 1,
         HCCL_ERROR("Get ip address failed, phyId[%u]", rdevInfo.phyId), HCCL_E_INTERNAL);
-
-
+    vector<string> actualValues = { string(HcclIpAddress(rdevInfo.localIp.addr.s_addr)), "[IP]", string(deviceIp[0].GetReadableIP()) };
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
         vector<string>({ "value", "variable" ,"expect" }),
-        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr)), "[IP]", string(deviceIp[0].GetReadableIP()) })
+        actualValues
     );
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
@@ -726,7 +725,7 @@ HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHan
     CHK_PRT_RET(ret == HCCP_ELINKDOWN , HCCL_RUN_WARNING("ra rdma init need retry."), HCCL_E_AGAIN);
     CHK_PRT_RET(ret != 0 || (rdmaHandle == nullptr), HCCL_ERROR("[Init][RaRdma]errNo[0x%016llx] rdma init fail. "\
         "params: mode[%d]. notifyType[%u] phyId[%u] family[%d] s_addr[%u] ret[%d]", HCCL_ERROR_CODE(HCCL_E_INTERNAL),\
-        mode, notifyType, , rdevInfo.family, rdevInfo.localIp.addr.s_addr, ret), HCCL_E_INTERNAL);
+        mode, notifyType, rdevInfo.phyId, rdevInfo.family, rdevInfo.localIp.addr.s_addr, ret), HCCL_E_INTERNAL);
     return HCCL_SUCCESS;
 }
 
@@ -751,10 +750,11 @@ HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rd
     CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
     CHK_PRT_RET(deviceIp.size() < 1,
         HCCL_ERROR("Get ip address failed, phyId[%u]", rdevInfo.phyId), HCCL_E_INTERNAL);
+    vector<string> actualValues = { string(HcclIpAddress(rdevInfo.localIp.addr.s_addr)), "[IP]", string(deviceIp[0].GetReadableIP()) };
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
         vector<string>({ "value", "variable" ,"expect" }),
-        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr)), "[IP]", string(deviceIp[0].GetReadableIP()) })
+        actualValues
     );
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
@@ -795,10 +795,11 @@ HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev
     CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
     CHK_PRT_RET(deviceIp.size() < 1,
         HCCL_ERROR("Get ip address failed, phyId[%u]", rdevInfo.phyId), HCCL_E_INTERNAL);
+    vector<string> actualValues = { string(HcclIpAddress(rdevInfo.localIp.addr.s_addr)), "[IP]", string(deviceIp[0].GetReadableIP()) };
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
         vector<string>({ "value", "variable" ,"expect" }),
-        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr)), "[IP]", string(deviceIp[0].GetReadableIP()) })
+        actualValues
     );
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",

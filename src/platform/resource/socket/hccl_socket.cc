@@ -88,7 +88,7 @@ HcclResult HcclSocket::Listen()
     if (socketType_ == NicType::VNIC_TYPE) {
         ret = NetworkManager::GetInstance(localDeviceLogicId_).StartVnic(localIp_, localPort_);
         errormessage = "The IP address " + std::string(localIp_.GetReadableIP()) +
-                                " add port " + std::to_string(localPort_) + " have already been bound."
+                                " add port " + std::to_string(localPort_) + " have already been bound.";
         RPT_INPUT_ERR(true, "EI0019", std::vector<std::string>({"reason"}),
             std::vector<std::string>({errormessage}));
     } else if (socketType_ == NicType::DEVICE_NIC_TYPE) {
@@ -97,7 +97,7 @@ HcclResult HcclSocket::Listen()
             "socketType_[%d], backupIp_[%s]", __func__, localDeviceLogicId_, localIp_.GetReadableIP(),
             localPort_, rdmaFlag, socketType_, backupIp_.GetReadableIP());
         errormessage = "The IP address " + std::string(localIp_.GetReadableIP()) +
-                                " add port " + std::to_string(localPort_) + " have already been bound."
+                                " add port " + std::to_string(localPort_) + " have already been bound.";
         RPT_INPUT_ERR(true, "EI0020", std::vector<std::string>({"reason"}),
             std::vector<std::string>({errormessage}));
         // 如果是backup，传入额外的rdev信息
@@ -107,7 +107,7 @@ HcclResult HcclSocket::Listen()
         ret = NetworkManager::GetInstance(localDeviceLogicId_).StartHostNetAndListen(
             localIp_, hostSocketHandle, localPort_, false);
         errormessage = "The IP address " + std::string(localIp_.GetReadableIP()) +
-                                " add port " + std::to_string(localPort_) + " have already been bound."
+                                " add port " + std::to_string(localPort_) + " have already been bound.";
         RPT_INPUT_ERR(true, "EI0019", std::vector<std::string>({"reason"}),
             std::vector<std::string>({errormessage}));
     }
