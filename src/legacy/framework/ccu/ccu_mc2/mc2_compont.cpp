@@ -201,7 +201,7 @@ void Mc2Compont::AllocV2()
     HCCL_INFO("[Mc2Compont][AllocV2]inputMem addr[%p] size = [%llu]", inputMem->GetAddr(), inputMem->GetSize());
     for(uint32_t i = 0; i < MAX_OP_NUM; i++) {
         combinOpParam.opType[i] = 0;
-        combinOpParam.algorithmType = 0;
+        combinOpParam.algorithmType[i] = 0;
     }
     if (ccuResourceAlloced) {
         return;
