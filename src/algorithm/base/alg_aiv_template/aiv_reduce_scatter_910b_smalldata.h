@@ -29,23 +29,23 @@ __aicore__ inline void AivReduceScatterSmall910B::Process(GM_ADDR input, GM_ADDR
 
     __gm__ T *inputGM = (__gm__ T *)input;
     __gm__ T *cclGMSelf = (__gm__ T *)(GM_IN[rank_] + dataOffset);
-    __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[block_idx] + dataOffset);
+    __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[GetBlockIdx()] + dataOffset);
     __gm__ T *outputGM = (__gm__ T *)output;
 
     uint64_t count = len;
 
-    if (block_idx != rank_) {
+    if (GetBlockIdx() != rank_) {
 
         GlobalTensor<T> cclGTOther;
         cclGTOther.SetGlobalBuffer(cclGMOther, count);
         GlobalTensor<T> outputGT;
         outputGT.SetGlobalBuffer(outputGM, count);
-        CpGM2GM(cclGMSelf + count * block_idx, inputGM + count * block_idx, count);
+        CpGM2GM(cclGMSelf + count * GetBlockIdx(), inputGM + count * GetBlockIdx(), count);
         // 卡间同步
         pipe_barrier(PIPE_ALL);
-        Record(tag, block_idx, AivNotifyType::DataSignal, 0, ifPingpong);
+        Record(tag, GetBlockIdx(), AivNotifyType::DataSignal, 0, ifPingpong);
         // 对端到ub
-        Wait(tag, block_idx, AivNotifyType::DataSignal, 0, ifPingpong);
+        Wait(tag, GetBlockIdx(), AivNotifyType::DataSignal, 0, ifPingpong);
         pipe_barrier(PIPE_ALL);
         LocalTensor<T> localIn = inOutQue.AllocTensor<T>();
         DataCopyGM2UB(localIn, cclGTOther[count * rank_], count);
