@@ -2270,6 +2270,13 @@ int RsUbCtxJettyImport(struct RsUbDevCb *devCb, struct RsJettyImportAttr *import
     importInfo->info.tpn = rjettyCb->tjetty->tp.tpn;
 
     hccp_warn("@@@ RsUbCtxJettyImport importInfo->info.tpn: %ld", importInfo->info.tpn);
+    hccp_warn("@@@ RsUbCtxJettyImport rjettyCb->tjetty->id.uasid: %ld", rjettyCb->tjetty->id.uasid);
+    hccp_warn("@@@ RsUbCtxJettyImport rjettyCb->tjetty->id.id: %ld", rjettyCb->tjetty->id.id);
+    hccp_warn("@@@ RsUbCtxJettyImport rjettyCb->tjetty->trans_mode: %ld", rjettyCb->tjetty->trans_mode);
+    hccp_warn("@@@ RsUbCtxJettyImport rjettyCb->tjetty->type: %ld", rjettyCb->tjetty->type);
+    hccp_warn("@@@ RsUbCtxJettyImport rjettyCb->tjetty->flag.value: %ld", rjettyCb->tjetty->flag.value);
+    hccp_warn("@@@ RsUbCtxJettyImport rjettyCb->tjetty->policy: %ld", rjettyCb->tjetty->policy);
+    hccp_warn("@@@ RsUbCtxJettyImport rjettyCb->tjetty->tp_type: %ld", rjettyCb->tjetty->tp_type);
 
     RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
     RsListAddTail(&rjettyCb->list, &devCb->rjettyList);
