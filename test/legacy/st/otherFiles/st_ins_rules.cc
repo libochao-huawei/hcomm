@@ -1159,7 +1159,7 @@ TEST(InsRulesTest, Interpret_aiv_instruction)
     AivInstruction ins(links, aivOpArgs);
 
     rtStream_t fakePtr = nullptr;
-    MOCKER(rtStreamCreateWithFlags).stubs().with(outBoundP(&fakePtr, sizeof(fakePtr))).will(returnValue(RT_ERROR_NONE));
+    MOCKER(aclrtCreateStreamWithConfig).stubs().with(outBoundP(&fakePtr, sizeof(fakePtr))).will(returnValue(ACL_SUCCESS));
 
     s32 fakeStreamId = 123;
     MOCKER(aclrtStreamGetId)
