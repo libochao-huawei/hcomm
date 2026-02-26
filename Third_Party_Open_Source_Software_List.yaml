@@ -8,7 +8,7 @@
 
 json:
   version: v3.11.3
-  type: run
+  type: build
 makeself:
   version: release-2.5.0-patch1.0
   type: build
