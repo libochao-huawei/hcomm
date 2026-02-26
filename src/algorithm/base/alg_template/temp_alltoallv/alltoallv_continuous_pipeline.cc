@@ -1018,7 +1018,7 @@ HcclResult AlltoallvContinuousPipeline::RunAsync()
             }
         }
 
-        if (intraState.loopNum == 0 && needDoIntraTasks) {
+        if (interState.loopNum == 0 && needDoInterTasks) {
             // 第一轮，在做intra分发前，等待、获取receive信息
             if (needCollectInfo_) {
                 CHK_RET(WaitAndCalReceiveInfo()); // 阻塞函数
