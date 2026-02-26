@@ -105,7 +105,7 @@ HcclResult FlushManager::Flush()
     return HCCL_SUCCESS;
 }
 
-#define ROCE_WR_FLUSH 64
+#define ROCE_WR_FLUSH ((ibv_wr_opcode)0x40)
 HcclResult FlushManager::FlushParamPrepare(std::shared_ptr<FlushHandle> flushHandlePtr, ibv_send_wr *swr)
 {
     CHK_PTR_NULL(swr);
@@ -116,7 +116,7 @@ HcclResult FlushManager::FlushParamPrepare(std::shared_ptr<FlushHandle> flushHan
     swr->sg_list->lkey = flushHandlePtr->loopBackQpMrLocalInfo.lkey;
     swr->next = nullptr;
     swr->num_sge = 1;
-    swr->opcode = flushHandlePtr->flushOpcodeSupport == false ? IBV_WR_RDMA_READ : ROCE_WR_FLUSH;
+    swr->opcode = (flushHandlePtr->flushOpcodeSupport) ? ROCE_WR_FLUSH : IBV_WR_RDMA_READ;
     swr->send_flags = IBV_SEND_SIGNALED;
     swr->wr.rdma.remote_addr = reinterpret_cast<uint64_t>(flushHandlePtr->loopBackQpMrRemoteInfo.addr);
     swr->wr.rdma.rkey = flushHandlePtr->loopBackQpMrRemoteInfo.rkey;
