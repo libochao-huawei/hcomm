@@ -1240,13 +1240,14 @@ JfcHandle HrtRaUbCreateJfcUserCtl(RdmaHandle handle, CqCreateInfo& cqInfo)
         THROW<NetworkApiException>(msg);
     }
 
-    HCCL_INFO("[HrtRaUbCreateJfcUserCtl] jfcId[%u], cqVA[%llx], cqeSize[%u], dbAddr[%llx]", 
-            info.out.id, info.out.bufAddr, info.out.cqeSize, info.out.swdbAddr);
+    HCCL_INFO("[HrtRaUbCreateJfcUserCtl] jfcId[%u], cqVA[%llx], cqeSize[%u], cqDepth[%u], dbAddr[%llx]", 
+            info.out.id, info.out.bufAddr, info.out.cqeSize, CQ_DEPTH, info.out.swdbAddr);
 
     cqInfo.va = info.out.bufAddr;
     cqInfo.id = info.out.id;
-    cqInfo.cqe_size = info.out.cqeSize;
-    cqInfo.swdb_addr = info.out.swdbAddr;
+    cqInfo.cqeSize = info.out.cqeSize;
+    cqInfo.cqDepth = CQ_DEPTH;
+    cqInfo.swdbAddr = info.out.swdbAddr;
 
     return reinterpret_cast<JfcHandle>(jfcHandle);
 }
