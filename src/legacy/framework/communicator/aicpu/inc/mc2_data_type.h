@@ -53,10 +53,10 @@ struct HcclOpData {
         struct {
             HcclDataType sendType;
             HcclDataType recvType;
-            void* sendCounts;
-            void* recvCounts;
-            void* sdispls;
-            void* rdispls;
+            void *sendCounts;
+            void *recvCounts;
+            void *sdispls;
+            void *rdispls;
         } all2AllVDataDes;
         struct {
             HcclDataType sendType;
