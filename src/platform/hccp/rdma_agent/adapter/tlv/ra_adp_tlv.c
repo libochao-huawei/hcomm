@@ -32,7 +32,7 @@ struct RsTlvOps gRaRsTlvOps = {
 int RaRsTlvInitV1(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
     hccp_warn("Tlv init is not support in this version.");
-
+    *opResult = -ENOTSUPP;
     return 0;
 }
 
