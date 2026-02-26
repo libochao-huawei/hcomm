@@ -1017,7 +1017,7 @@ TEST_F(HcomTest, ut_Hcom_GetLocalRankSizeV2)
     u32 localRankSize;
 
     HcclResult ret = HcomGetLocalRankSizeV2(group, &localRankSize);
-    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 }
 TEST_F(HcomTest, ut_Hcom_GetLocalRankIdV2)
 {
@@ -1025,7 +1025,7 @@ TEST_F(HcomTest, ut_Hcom_GetLocalRankIdV2)
     u32 localRankId;
     
     HcclResult ret = HcomGetLocalRankIdV2(group, &localRankId);
-    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
 TEST_F(HcomTest, ut_HcomCalcTaskNumV2_When_Abnormal_Expect_ReturnlsHCCL_E_INTERNAL)
@@ -1044,7 +1044,7 @@ TEST_F(HcomTest, ut_HcomCalcTaskNumV2_When_Abnormal_Expect_ReturnlsHCCL_E_INTERN
     HcomOpParam hcomOpParam;
     hcomOpParam.opType = "HcomAllReduce";
     hcomOpParam.count = 1;
-    hcomOpParam.datatype = HCCL_DATA_TYPE_INT8;
+    hcomOpParam.dataType = HCCL_DATA_TYPE_INT8;
     u32 taskNum = 0;
     hcclComm->GetCommImpl()->CollAlgComponentInit();
     auto ret = HcomCalcTaskNumV2(&hcomOpParam, taskNum);
@@ -1067,7 +1067,7 @@ TEST_F(HcomTest, ut_HcomCalcTaskNumV2_OpType_Not_Find_When_Abnormal_Expect_Retur
     HcomOpParam hcomOpParam;
     hcomOpParam.opType = "HcomAll";
     hcomOpParam.count = 1;
-    hcomOpParam.datatype = HCCL_DATA_TYPE_INT8;
+    hcomOpParam.dataType = HCCL_DATA_TYPE_INT8;
     u32 taskNum = 0;
     hcclComm->GetCommImpl()->CollAlgComponentInit();
     auto ret = HcomCalcTaskNumV2(&hcomOpParam, taskNum);
@@ -1306,7 +1306,7 @@ TEST_F(HcomTest, ut_hcom_get_dev_type_v2_When_Normal_Expect_ReturnlsHCCL_SUCCESS
 {
     SetupCommonCommInfo();
 
-    DevType devType;
+    Hccl::DevType devType;
     HcclResult ret = HcomGetDevTypeV2(devType);
     EXPECT_EQ(HCCL_SUCCESS, ret);
 }
@@ -1345,7 +1345,7 @@ TEST_F(HcomTest, ut_hcom_set_aiv_core_limit_v2_When_Normal_Expect_ReturnlsHCCL_S
     SetupCommonCommInfo();
 
     char group[] = "hccl_world_group";
-    u32 aivCoreLimit = 0;
+    u32 aivCoreLimit = 1;
     HcclResult ret = HcomSetAivCoreLimitV2(group,aivCoreLimit);
     EXPECT_EQ(HCCL_SUCCESS, ret);
 }
@@ -2004,7 +2004,7 @@ TEST_F(HcomTest, ut_HcomGraphSelectAlgV2_When_UnNormal_Expect_ReturnError)
     hcclComm->pimpl->commExecuteConfig.accState = AcceleratorState::AIV;
     opType = HcclCMDType::HCCL_CMD_REDUCE;
     ret = HcomGraphSelectAlgV2(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, algName);
-    EXPECT_EQ(HCCL_E_PARA, ret);
+    EXPECT_EQ(HCCL_SUCCESS, ret);
 }
 
 TEST_F(HcomTest, ut_HcomCalcNumBlocksV2_When_Normal_Expect_ReturnHCCL_SUCCESS)

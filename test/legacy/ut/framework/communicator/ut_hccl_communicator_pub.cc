@@ -8,12 +8,12 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#define private public
-#define protected public
 
 #include "gtest/gtest.h"
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
+#define private public
+#define protected public
 #include "op_type.h"
 #include "hccl_communicator.h"
 #include "communicator_impl.h"
@@ -26,7 +26,7 @@
 #include "binary_stream.h"
 #include "mc2_type.h"
 #include <hccl/hccl_types.h>
-// #include "hccl.h"
+#include "hccl_comm.h"
 #undef private
 #undef protected
 
@@ -64,7 +64,7 @@ TEST_F(HcclCommunicatorTest, should_success_when_calling_init_with_valid_params)
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HrtGetDevice).stubs().with().will(returnValue(0));
     MOCKER(HrtGetDeviceCount).stubs().with().will(returnValue(8));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtSetDevice).stubs().with(any());
     MOCKER_CPP(&HccpHdcManager::Init).stubs().with(any());
     DevType devType = DevType::DEV_TYPE_910A;
@@ -86,7 +86,7 @@ TEST_F(HcclCommunicatorTest, should_failed_when_calling_init_with_invalid_params
         .will(returnValue(HCCL_E_PARA));
     MOCKER(HrtGetDevice).stubs().with().will(returnValue(0));
     MOCKER(HrtGetDeviceCount).stubs().with().will(returnValue(8));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtSetDevice).stubs().with(any());
     MOCKER_CPP(&HccpHdcManager::Init).stubs().with(any());
     DevType devType = DevType::DEV_TYPE_910A;
@@ -444,7 +444,7 @@ TEST_F(HcclCommunicatorTest, should_success_when_IsUsingCcu)
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HrtGetDevice).stubs().with().will(returnValue(0));
     MOCKER(HrtGetDeviceCount).stubs().with().will(returnValue(8));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtSetDevice).stubs().with(any());
     MOCKER_CPP(&HccpHdcManager::Init).stubs().with(any());
     DevType devType = DevType::DEV_TYPE_910A;

@@ -6,7 +6,7 @@
  */
 #include "ccu_datatype_v1.h"
 #include "ccu_rep_v1.h"
-#include "ccu_context_resource_v1.h"
+#include "ccu_kernel_resource.h"
 #include "ccu_interface_assist_v1.h"
 
 #include "exception_util.h"

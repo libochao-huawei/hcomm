@@ -68,7 +68,7 @@ TEST(StreamManagerTest, opbase_register_master_and_get)
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(temp));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     MOCKER(HrtStreamDestroy).stubs();
 
     auto stream = std::make_unique<Stream>(temp);
@@ -91,7 +91,7 @@ TEST(StreamManagerTest, opbase_register_master_two_same_stream_and_get)
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(temp));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     MOCKER(HrtStreamDestroy).stubs();
 
     auto stream  = std::make_unique<Stream>(temp);
@@ -117,7 +117,7 @@ TEST(StreamManagerTest, opbase_register_master_two_diff_stream_and_get)
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(temp));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     MOCKER(HrtStreamDestroy).stubs();
 
     auto stream  = std::make_unique<Stream>(temp);
@@ -140,7 +140,7 @@ TEST(StreamManagerTest, clear_slaves)
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(temp));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     MOCKER(HrtStreamDestroy).stubs();
 
     MOCKER(HrtStreamDestroy).stubs();
@@ -159,7 +159,7 @@ TEST(StreamManagerTest, offload_register_master_and_get)
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(temp));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     MOCKER(HrtStreamDestroy).stubs();
 
     auto stream = std::make_unique<Stream>(nullptr);
@@ -186,7 +186,7 @@ TEST(StreamManagerTest, offload_register_master_two_diff_stream_and_get)
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(temp));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     MOCKER(HrtStreamDestroy).stubs();
 
     auto stream = std::make_unique<Stream>(nullptr);
@@ -213,7 +213,7 @@ TEST(StreamManagerTest, offload_register_two_diff_slave_stream_and_get)
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(temp));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     MOCKER(HrtStreamDestroy).stubs();
 
     std::string opTag = "test";
@@ -244,7 +244,7 @@ TEST(StreamManagerTest, St_ClearOpStream_When_Normal_Expect_Success)
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(temp));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     MOCKER(HrtStreamDestroy).stubs();
     MOCKER(HrtStreamActive).stubs();
 

@@ -51,7 +51,7 @@ private:
     HcclResult GetJettyAllocator(uint32_t feId, JettyAllocator* &allocatorHandle);
 
 private:
-    std::unordered_map<uint32_t, std::unique_ptr<JettyAllocator>> allocatorMap_;
+    std::unique_ptr<JettyAllocator> allocator_; // 所有FE的Jetty统一打平分配
 };
 
 }; // namespace hcomm

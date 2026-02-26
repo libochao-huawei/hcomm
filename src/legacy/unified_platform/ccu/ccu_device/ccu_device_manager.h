@@ -11,6 +11,7 @@
 #ifndef CCU_DEVICE_MANAGER_H
 #define CCU_DEVICE_MANAGER_H
 
+#include <array>
 #include "hccl/hccl_types.h"
 
 #include "ip_address.h"

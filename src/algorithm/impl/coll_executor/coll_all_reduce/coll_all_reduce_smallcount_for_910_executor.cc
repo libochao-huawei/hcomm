@@ -64,7 +64,7 @@ HcclResult CollAllReduceSmallCountFor910Executor::Orchestrate(OpParam& param, Al
 {
     HcclUs startut = TIME_NOW();
     CHK_PRT_RET(workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE,
-        HCCL_ERROR("[CollAllReduceMeshSmallCountExecutor][Orchestrate] only support op base mode."),
+        HCCL_ERROR("[CollAllReduceSmallCountFor910Executor][Orchestrate] only support op base mode."),
         HCCL_E_NOT_SUPPORT);
     ParseParam(param);
     algResResp_ = &algRes;
@@ -85,7 +85,7 @@ HcclResult CollAllReduceSmallCountFor910Executor::Orchestrate(OpParam& param, Al
     HCCL_DEBUG("[CollAllReduceSmallCountFor910Executor][RunLoop]copy from user in to ccl out.");
     HcclResult ret = KernelRun(param, execMem);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllReduceMeshSmallCountExecutor][Orchestrate]errNo[0x%016llx]executor kernel run failed",
+        HCCL_ERROR("[CollAllReduceSmallCountFor910Executor][Orchestrate]errNo[0x%016llx]executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
     DeviceMem outMem(execMem.outputPtr, totalSize);
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, outMem, inCommMem, param.stream));

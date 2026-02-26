@@ -12,6 +12,7 @@
 
 #include <map>
 #include <memory>
+#include <array>
 #include "dfx_common.h"
 #include "queue.h"
 #include "task_info.h"

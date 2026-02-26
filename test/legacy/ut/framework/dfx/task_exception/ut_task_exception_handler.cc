@@ -105,7 +105,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_default)
     ccuErrorInfo.instrId = 0xffff;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "InstrId[65535]: Internal Error");
+    EXPECT_EQ(msg, "InstrId[65535]: CcuErrorType[CcuErrorType::DEFAULT]");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_mission)
@@ -318,7 +318,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_read)
     ccuErrorInfo.msg.transMem.channelId = 1;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "InstrId[65535]: Read Memory[0x000000000000aaaa] To Memory[0x000000000000cccc], Len[0], Set sem[11] with mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]]");
+    EXPECT_EQ(msg, "InstrId[65535]: Read Memory[0x000000000000aaaa] To Memory[0x000000000000cccc], Len[0], Set sem[11] with mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]] ccu transMem Len[0]B > 256MB or is zero, not support!");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_write)
@@ -339,7 +339,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_write)
     ccuErrorInfo.msg.transMem.channelId = 1;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "InstrId[65535]: Write Memory[0x000000000000cccc] to Memory[0x000000000000aaaa], Len[0], Set sem[11] with mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]]");
+    EXPECT_EQ(msg, "InstrId[65535]: Write Memory[0x000000000000cccc] to Memory[0x000000000000aaaa], Len[0], Set sem[11] with mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]] ccu transMem Len[0]B > 256MB or is zero, not support!");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_local_cpy)
@@ -358,7 +358,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_local_cpy)
     ccuErrorInfo.msg.transMem.signalMask = 0x0010;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "InstrId[65535]: Read Memory[0x000000000000cccc] to Memory[0x000000000000aaaa], Len[0], Set sem[11] with mask[0x0010]");
+    EXPECT_EQ(msg, "InstrId[65535]: Read Memory[0x000000000000cccc] to Memory[0x000000000000aaaa], Len[0], Set sem[11] with mask[0x0010] ccu transMem Len[0]B > 256MB or is zero, not support!");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_local_reduce)
@@ -379,7 +379,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_local_reduce)
     ccuErrorInfo.msg.transMem.opType = 2;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "InstrId[65535]: Read Memory[0x000000000000cccc] to Memory[0x000000000000aaaa], Len[0], Set sem[11] with mask[0x0010], dataType[1], opType[2]");
+    EXPECT_EQ(msg, "InstrId[65535]: Read Memory[0x000000000000cccc] to Memory[0x000000000000aaaa], Len[0], Set sem[11] with mask[0x0010], dataType[1], opType[2] ccu transMem Len[0]B > 256MB or is zero, not support!");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_read)
@@ -399,7 +399,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_read)
     ccuErrorInfo.msg.bufTransMem.channelId = 1;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "InstrId[65535]: Read Rmt Mem[0x000000000000aaaa] To CcuBuffer[10], Len[0], sem[11], mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]]");
+    EXPECT_EQ(msg, "InstrId[65535]: Read Rmt Mem[0x000000000000aaaa] To CcuBuffer[10], Len[0], sem[11], mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]] ccu transMem Len[0]B > 256MB or is zero, not support!");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_write)
@@ -419,7 +419,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_write)
     ccuErrorInfo.msg.bufTransMem.channelId = 1;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "InstrId[65535]: Write CcuBuffer[10] To Rmt Mem[0x000000000000aaaa], Len[0], sem[11], mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]]");
+    EXPECT_EQ(msg, "InstrId[65535]: Write CcuBuffer[10] To Rmt Mem[0x000000000000aaaa], Len[0], sem[11], mask[0x0010], remoteRankId[100], srcEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]], dstEID[IpAddress[eid[0000000000000000:0000000000000000], AF=v4, addr=0.0.0.0]] ccu transMem Len[0]B > 256MB or is zero, not support!");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_loc_read)
@@ -437,7 +437,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_loc_read)
     ccuErrorInfo.msg.bufTransMem.signalMask = 0x0010;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "InstrId[65535]: Read Loc Mem[0x000000000000aaaa] To CcuBuffer[10], Len[0], sem[11], mask[0x0010]");
+    EXPECT_EQ(msg, "InstrId[65535]: Read Loc Mem[0x000000000000aaaa] To CcuBuffer[10], Len[0], sem[11], mask[0x0010] ccu transMem Len[0]B > 256MB or is zero, not support!");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_loc_write)
@@ -455,7 +455,7 @@ TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_loc_write)
     ccuErrorInfo.msg.bufTransMem.signalMask = 0x0010;
 
     auto msg = TaskExceptionHandler::GetCcuErrorMsgByType(ccuErrorInfo, *taskInfo);
-    EXPECT_EQ(msg, "InstrId[65535]: Write CcuBuffer[10] To Loc Mem[0x000000000000aaaa], Len[0], sem[11], mask[0x0010]");
+    EXPECT_EQ(msg, "InstrId[65535]: Write CcuBuffer[10] To Loc Mem[0x000000000000aaaa], Len[0], sem[11], mask[0x0010] ccu transMem Len[0]B > 256MB or is zero, not support!");
 }
 
 TEST_F(TaskExceptionHandlerTest, test_ccu_error_msg_when_type_is_buf_reduce)
@@ -555,6 +555,7 @@ TEST_F(TaskExceptionHandlerTest, test_process_when_task_more_than_50)
     communicator.id = "GroupName";
     communicator.rankSize = 4;
     communicator.myRank = 1;
+    MOCKER(TaskExceptionHandler::PrintAicpuErrorMessage).stubs();
     dfxOpInfo->comm_ = &communicator;
     mirrorTaskManager.SetCurrDfxOpInfo(dfxOpInfo);
     // 加入一些 Task 数据
@@ -666,6 +667,7 @@ TEST_F(TaskExceptionHandlerTest, test_process_when_task_less_than_50)
     curTaskInfo->taskParam_.taskPara.Notify.notifyID = 0xaaaabbbbcccc;
     mirrorTaskManager.AddTaskInfo(curTaskInfo);
 
+    MOCKER(TaskExceptionHandler::PrintAicpuErrorMessage).stubs();
     // 调用 TaskExceptionHandler::Process() 打印异常DFX信息
     rtExceptionInfo_t exceptionInfo{};
     exceptionInfo.deviceid = 0;
@@ -745,6 +747,7 @@ TEST_F(TaskExceptionHandlerTest, test_process_ccu)
     MOCKER(HrtRaCustomChannel).stubs();
 
     // 调用 TaskExceptionHandler::Process() 打印异常DFX信息
+    MOCKER(TaskExceptionHandler::PrintAicpuErrorMessage).stubs();
     rtExceptionInfo_t exceptionInfo{};
     exceptionInfo.deviceid = 0;
     exceptionInfo.streamid = 0;

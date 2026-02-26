@@ -73,7 +73,7 @@ protected:
         MOCKER(HrtNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtGetNotifyID).stubs().will(returnValue(fakeNotifyId));
-        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(fakeDevPhyId));
+        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
         MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
         MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
         MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
@@ -472,7 +472,7 @@ TEST_F(CollServiceDeviceModeTest, test_coll_service_device_mode_resume)
     CollServiceDeviceMode service(&comm);
 
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     MOCKER_CPP(&RdmaHandleManager::GetDieAndFuncId).stubs().will(returnValue(make_pair<uint32_t,uint32_t>(0,0)));
     BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
     LinkData linkData{PortDeploymentType::P2P,LinkProtocol::UB_CTP, 0, 1, IpAddress{"10.0.0.1"}, IpAddress{"10.0.0.2"}};
