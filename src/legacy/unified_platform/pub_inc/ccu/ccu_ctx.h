@@ -27,6 +27,9 @@
 #include "ccu_rep_context.h"
 
 namespace Hccl {
+constexpr uint32_t LOCAL_COPY_MS_PER_LOOP = 8;
+constexpr uint32_t CCU_MS_DEFAULT_LOOP_COUNT = 8;
+
 class CcuContext : public CcuRep::CcuRepContext {
 public:
     explicit CcuContext(const CcuCtxArg &arg, const std::vector<CcuTransport*> &transports,
@@ -156,12 +159,15 @@ protected:
                                const CcuRep::Variable &paraCfg, const CcuRep::Variable &offsetCfg);
     // 高阶操作
     std::vector<uint64_t> CalGoSize(uint64_t size);
+    static std::vector<uint64_t> CalGoSizeStatic(uint64_t size, GroupOpConfig &moCfg);
 
     void AllocGoResource(uint32_t parallelDim = CcuRep::CCU_MS_DEFAULT_LOOP_COUNT, uint32_t msPerLoop = 1);
     void Load(GroupOpSize moSize);
     void GroupBroadcast(const std::vector<CcuTransport*> &transports, std::vector<CcuRep::Memory> dst,
                         CcuRep::Memory src, GroupOpSize goSize);
     void GroupReduce(const std::vector<CcuTransport*> &transports, CcuRep::Memory dst, std::vector<CcuRep::Memory> src,
+                     GroupOpSize goSize, DataType dataType, DataType outputDataType, ReduceOp opType);
+    void GroupReduceWithoutMyRank(const std::vector<CcuTransport*> &transports, CcuRep::Memory dst, std::vector<CcuRep::Memory> src,
                      GroupOpSize goSize, DataType dataType, DataType outputDataType, ReduceOp opType);
     void GroupCopy(CcuRep::Memory dst, CcuRep::Memory src, GroupOpSize goSize);
     // 子类实现
@@ -173,6 +179,9 @@ private:
     void CreateMultiOpBroadcast(const std::vector<CcuTransport*> &transports);
     void CreateMultiOpReduce(const std::vector<CcuTransport*> &transports, DataType dataType, DataType outputDataType,
                              ReduceOp opType);
+    void CreateMultiOpReduceWithoutMyRank(const std::vector<CcuTransport*> &transports, DataType dataType, 
+                                          DataType outputDataType, ReduceOp opType);
+    
     template <typename T> T CreateResAssist(std::array<std::vector<T>, MAX_CCU_IODIE_NUM> &resRecord);
     template <typename T>
     std::vector<T> CreateBlockResAssist(uint32_t                                                  count,
@@ -193,9 +202,6 @@ protected:
 
     GroupOpConfig       moConfig{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFFFFFFFFFF};
     GroupOpSizeResource moRes;
-
-    const uint32_t LOCAL_COPY_MS_PER_LOOP = 8;
-    const uint32_t CCU_MS_LOCAL_COPY_LOOP_COUNT = 8;
 
 private:
     CcuSharedResource exportRes;

@@ -340,7 +340,8 @@ public:
     virtual CcuStreamSyncNotifyManager &GetCcuStreamSyncNotifyManager() const;
 
     void saveCCUParams(std::vector<std::vector<CcuTaskParam>> &&ccuParams,
-        std::vector<std::vector<CcuProfilingInfo>>&&ccuProfilingInfo, u64 execId, bool isSlave = false)
+                       std::vector<std::vector<CcuProfilingInfo>>&&ccuProfilingInfo, u64 execId, CcuInstType insType, 
+                       bool isSlave = false)
     {
         auto &ccuParamsMapping = colCcuParamMapping[currentCollOperator->opType];
         auto &ccuParamsNotCacheKey = colParamsNotCacheKey[currentCollOperator->opType];
@@ -348,7 +349,7 @@ public:
             ccuParamsNotCacheKey.find(ccuParamsMappingKey) == ccuParamsNotCacheKey.end()) {
             ccuParamsMapping.emplace(std::piecewise_construct, std::forward_as_tuple(ccuParamsMappingKey),
                                      std::forward_as_tuple(std::move(ccuParams), std::move(ccuProfilingInfo), execId,
-                                                           isSlave, static_cast<void*>(this)));
+                                                           insType, isSlave, static_cast<void *>(this)));
         } else {
             ccuParamsMapping.erase(ccuParamsMappingKey);
             if (ccuParamsMapping.empty()) {
