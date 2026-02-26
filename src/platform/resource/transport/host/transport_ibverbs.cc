@@ -739,32 +739,49 @@ HcclResult TransportIbverbs::InitQpConnect()
     /* 创建QP操作句柄 */
     qpsPerConnection_ = GetQpsPerConnection();
 
+    // 1. 能力协商（混合模式支持）
+    // 注意：必须在 CreateQp 之前进行，因为混合模式需要不同的 QP 配置
+    CHK_RET(ExchangeCapabilityHybrid());
+    
     CHK_RET(CreateQp());
 
-    CHK_RET(FillExchangeDataTotalSize());
+    // 2. 根据模式选择数据交换方式
+    if (isHybridMode_) {
+        // 混合模式：使用简化版数据交换（HybridExchangeData）
+        CHK_RET(InitHybridModeResources());
+        CHK_RET(ExchangeDataHybrid());
+        
+        // 注册notify 内存信息
+        CHK_RET(CreateNotifyValueBuffer());
+        
+        HCCL_INFO("[Hybrid][TransportIbverbs] Hybrid mode resources initialized");
+    } else {
+        // 原生模式：使用原有复杂数据交换
+        CHK_RET(FillExchangeDataTotalSize());
 
-    CHK_RET(ConstructExchangeForSend());
+        CHK_RET(ConstructExchangeForSend());
 
-    // 注册notify 内存信息
-    CHK_RET(CreateNotifyValueBuffer());
+        // 注册notify 内存信息
+        CHK_RET(CreateNotifyValueBuffer());
 
-    HCCL_DEBUG("[TransportIbverbs] resource create done exchangeDataTotalSize_[%llu]", exchangeDataTotalSize_);
+        HCCL_DEBUG("[TransportIbverbs] resource create done exchangeDataTotalSize_[%llu]", exchangeDataTotalSize_);
 
-    HcclResult ret = defaultSocket_->Send(exchangeDataForSend_.data(), exchangeDataTotalSize_);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportIbverbs][InitQpConnect] failed to send exchangeData exchangeDataTotalSize[%llu], "
-            "custom exchange data size [%llu].", exchangeDataTotalSize_, machinePara_.exchangeInfo.size()), ret);
-    HCCL_DEBUG("[TransportIbverbs]Seocket Send finished, exchangeDataTotalSize[%llu]", exchangeDataTotalSize_);
+        HcclResult ret = defaultSocket_->Send(exchangeDataForSend_.data(), exchangeDataTotalSize_);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[TransportIbverbs][InitQpConnect] failed to send exchangeData exchangeDataTotalSize[%llu], "
+                "custom exchange data size [%llu].", exchangeDataTotalSize_, machinePara_.exchangeInfo.size()), ret);
+        HCCL_DEBUG("[TransportIbverbs]Seocket Send finished, exchangeDataTotalSize[%llu]", exchangeDataTotalSize_);
 
-    exchangeDataForRecv_.resize(exchangeDataTotalSize_);
-    ret = defaultSocket_->Recv(exchangeDataForRecv_.data(), exchangeDataTotalSize_);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportIbverbs][InitQpConnect] failed to recv exchangeData exchangeDataTotalSize[%llu], "
-            "custom exchange data size [%llu].", exchangeDataTotalSize_, machinePara_.exchangeInfo.size()), ret);
+        exchangeDataForRecv_.resize(exchangeDataTotalSize_);
+        ret = defaultSocket_->Recv(exchangeDataForRecv_.data(), exchangeDataTotalSize_);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[TransportIbverbs][InitQpConnect] failed to recv exchangeData exchangeDataTotalSize[%llu], "
+                "custom exchange data size [%llu].", exchangeDataTotalSize_, machinePara_.exchangeInfo.size()), ret);
 
-    HCCL_DEBUG("[TransportIbverbs][Init] Socket Data Recved");
+        HCCL_DEBUG("[TransportIbverbs][Init] Socket Data Recved");
 
-    CHK_RET(ParseReceivedExchangeData());
+        CHK_RET(ParseReceivedExchangeData());
+    }
 
     // 连接Qp
     CHK_RET(ConnectQp());
