@@ -1010,7 +1010,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterTlsConsistency(const RankTable_t 
         tlsInconsistentTlsType = (tlsEnableRank.size() >= tlsDisableRank.size()) ? "Disable" : "Enable";
         GenerateTlsStatusStr(tlsInconsistentStr, target);
     }
-    std::string errormessage;
+    std::string errormessage = "";
     // 将不支持查询的卡的信息汇总成一个string
     std::string tlsUnknownRankStr = "";
     if (!isSupportCheckTlsStatus) {
@@ -1021,14 +1021,17 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterTlsConsistency(const RankTable_t 
     // 1.通信域所有卡都支持查询TLS开关状态，并且TLS开关状态都是一致的。
         HCCL_INFO("[Verify][TlsConsistency] All ranks tlsStatus are consistent");
     } else if (!isTlsConsistent && isSupportCheckTlsStatus) {
-        errormessage = "Value " + tlsInconsistentTlsType + " for config \"tls\" is invalid. Expected: \"All ranks are consistent. Current status: "\
-        "rankList for enabled tls:[\" + tlsInconsistentStr + \"]; rankList for disabled tls:[\" + tlsInconsistentStr + \"] rankList for query failure tls:
-        [\" + tlsInconsistentStr + \"].\"";
         // 2.通信域所有卡都支持查询TLS开关状态，但是TLS开关状态存在不一致，报错。
         RPT_INPUT_ERR(true,
             "EI0016",
-            std::vector<std::string>({"error_reason"}),
-            std::vector<std::string>({errormessage}));
+            std::vector<std::string>({"value", "variable", "expect"}),
+            std::vector<std::string>({tlsInconsistentTlsType,
+                                      " \"tls\" ",
+                                      " \"All ranks are consistent. Current status: rankList for enabled tls:" + tlsInconsistentStr + "; "\
+                                      "rankList for disabled tls:" + tlsInconsistentStr + " rankList "\
+                                      "for query failure tls:" + tlsUnknownRankStr + ".\" "}));
+        errormessage = "Value " + tlsInconsistentTlsType + " for config \"tls\" is invalid. Expected: \"All ranks are consistent. Current status: "\
+            "rankList for enabled tls: " + tlsInconsistentStr + "; rankList for disabled tls:" + tlsInconsistentStr + " rankList for query failure tls:" + tlsUnknownRankStr + ".\"";
         HCCL_ERROR("[%s][%s] %s",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
@@ -1039,14 +1042,17 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterTlsConsistency(const RankTable_t 
         HCCL_RUN_WARNING("[Verify][TlsConsistency] Some ranks do not support to check tlsStatus, " \
             "not support serverId/rankId: %s", tlsUnknownRankStr.c_str());
     } else {
-        errormessage = "Value " + tlsInconsistentTlsType + " for config \"tls\" is invalid. Expected: \"All ranks are consistent. Current status: "\
-        "rankList for enabled tls:[\" + tlsInconsistentStr + \"]; rankList for disabled tls:[\" + tlsInconsistentStr + \"] rankList for query failure tls:
-        [\" + tlsInconsistentStr + \"].\"";
         // 4.通信域内的部分卡不支持查询TLS开关状态，但是目前能查询到的卡的TLS开关状态已经不一致，报错
         RPT_INPUT_ERR(true,
             "EI0016",
-            std::vector<std::string>({"error_reason"}),
-            std::vector<std::string>({errormessage}));
+            std::vector<std::string>({"value", "variable", "expect"}),
+            std::vector<std::string>({tlsInconsistentTlsType,
+                                      " \"tls\" ",
+                                      " \"All ranks are consistent. Current status: rankList for enabled tls:" + tlsInconsistentStr + "; "\
+                                      "rankList for disabled tls:" + tlsInconsistentStr + " rankList "\
+                                      "for query failure tls:" + tlsUnknownRankStr + ".\" "}));
+        errormessage = "Value " + tlsInconsistentTlsType + " for config \"tls\" is invalid. Expected: \"All ranks are consistent. Current status: "\
+            "rankList for enabled tls: " + tlsInconsistentStr + "; rankList for disabled tls:" + tlsInconsistentStr + " rankList for query failure tls:" + tlsUnknownRankStr + ".\"";
         HCCL_ERROR(
             "[%s][%s] %s",
             LOG_KEYWORDS_INIT_GROUP.c_str(),

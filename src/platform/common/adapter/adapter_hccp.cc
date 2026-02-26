@@ -705,14 +705,17 @@ HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHan
     s32 ret = DlRaFunction::GetInstance().dlRaRdmaInit(mode, notifyType, rdevInfo, &rdmaHandle);
     RPT_INPUT_ERR(ret == HCCP_ELINKDOWN,
         "EI0009",
-        vector<string>({"device_id,reason"}),
-        vector<string>({"The network port is down."})
+        vector<string>({"device_id", "reason"}),
+        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down."})
     );
-
+    vector<HcclIpAddress> deviceIp;
+    CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
+    CHK_PRT_RET(deviceIp.size() < 1,
+        HCCL_ERROR("Get ip address failed, phyId[%u]", rdevInfo.phyId), HCCL_E_INTERNAL);
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
         vector<string>({ "value", "variable" ,"expect" }),
-        vector<string>({"Value [%s] for rankTable variable [IP] is invalid. Expected value %s."})
+        vector<string>({ rdevInfo.localIp.GetReadableIP(), "[IP]", deviceIp[0].GetReadableIP() })
     );
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
@@ -721,7 +724,7 @@ HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHan
     CHK_PRT_RET(ret == HCCP_ELINKDOWN , HCCL_RUN_WARNING("ra rdma init need retry."), HCCL_E_AGAIN);
     CHK_PRT_RET(ret != 0 || (rdmaHandle == nullptr), HCCL_ERROR("[Init][RaRdma]errNo[0x%016llx] rdma init fail. "\
         "params: mode[%d]. notifyType[%u] phyId[%u] family[%d] s_addr[%u] ret[%d]", HCCL_ERROR_CODE(HCCL_E_INTERNAL),\
-        mode, notifyType, rdevInfo.phyId, rdevInfo.family, rdevInfo.localIp.addr.s_addr, ret), HCCL_E_INTERNAL);
+        mode, notifyType, , rdevInfo.family, rdevInfo.localIp.addr.s_addr, ret), HCCL_E_INTERNAL);
     return HCCL_SUCCESS;
 }
 
@@ -735,17 +738,21 @@ HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rd
 
     RPT_INPUT_ERR(ret == HCCP_ELINKDOWN,
         "EI0009",
-        vector<string>({"device_id,reason"}),
-        vector<string>({"The network port is down."})
+        vector<string>({"device_id", "reason"}),
+        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down."})
     );
     CHK_PRT_CONT(ret == HCCP_ELINKDOWN, 
         HCCL_ERROR("[%s][%s]rdma init failed because RoCE link status is down, please check the network adapter configuration.",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str()));
 
+    vector<HcclIpAddress> deviceIp;
+    CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
+    CHK_PRT_RET(deviceIp.size() < 1,
+        HCCL_ERROR("Get ip address failed, phyId[%u]", rdevInfo.phyId), HCCL_E_INTERNAL);
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
         vector<string>({ "value", "variable" ,"expect" }),
-        vector<string>({"Value [%s] for rankTable variable [IP] is invalid. Expected value %s."})
+        vector<string>({ rdevInfo.localIp.GetReadableIP(), "[IP]", deviceIp[0].GetReadableIP() })
     );
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
@@ -775,17 +782,21 @@ HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev
 
     RPT_INPUT_ERR(ret == HCCP_ELINKDOWN,
         "EI0009",
-        vector<string>({"device_id,reason"}),
-        vector<string>({"The network port is down."})
+        vector<string>({"device_id", "reason"}),
+        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down."})
     );
     CHK_PRT_CONT(ret == HCCP_ELINKDOWN, 
         HCCL_ERROR("[%s][%s]rdma init failed because RoCE link status is down, please check the network adapter configuration.",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str()));
 
+    vector<HcclIpAddress> deviceIp;
+    CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
+    CHK_PRT_RET(deviceIp.size() < 1,
+        HCCL_ERROR("Get ip address failed, phyId[%u]", rdevInfo.phyId), HCCL_E_INTERNAL);
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EI0014",
         vector<string>({ "value", "variable" ,"expect" }),
-        vector<string>({"Value [%s] for rankTable variable [IP] is invalid. Expected value %s."})
+        vector<string>({ rdevInfo.localIp.GetReadableIP(), "[IP]", deviceIp[0].GetReadableIP() })
     );
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
