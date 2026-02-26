@@ -164,7 +164,7 @@ void Mc2Compont::Alloc()
     HCCL_INFO("[Mc2Compont][Alloc]inputMem addr[%p] size = [%llu]", inputMem->GetAddr(), inputMem->GetSize());
     for(uint32_t i = 0; i < MAX_OP_NUM; i++) {
         combinOpParam.opType[i] = 0;
-        combinOpParam.algorithmType = 0;
+        combinOpParam.algorithmType[i] = 0;
     }
     if (ccuResourceAlloced) {
         return;
@@ -273,7 +273,7 @@ void Mc2Compont::MC2AllocCommRes(const CollAlgParams &params, std::shared_ptr<In
     }
 }
 
-static void Mc2Compont::saveAlgoInfo(uint32_t index, uint64_t templateSign, uint32_t opType, uint8_t algorithmType) {
+void Mc2Compont::saveAlgoInfo(uint32_t index, uint64_t templateSign, uint32_t opType, uint8_t algorithmType) {
     combinOpParam.opType[index]   = opType;
     combinOpParam.algorithmType[index]   = algorithmType;
     HcclAlgoInfo hcclAlgoInfo;
