@@ -23,7 +23,6 @@
 #include "local_ub_rma_buffer.h"
 
 namespace Hccl {
-
 CcuConnection::CcuConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
     const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
     : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys)
@@ -483,6 +482,24 @@ uint32_t CcuConnection::GetChannelId() const
 int32_t CcuConnection::GetDevLogicId() const
 {
     return devLogicId;
+}
+
+std::vector<ConnJettyInfo> CcuConnection::GetJettyInfo()
+{
+    std::vector<ConnJettyInfo> connJettyInfos;
+    ConnJettyInfo jettyInfo;
+    for (auto i = 0; i < jettyNum; i++) {
+        ccuJettys_[i]->GetJettyInfo(jettyInfo);
+        jettyInfo.rdmaHandle = rdmaHandle;
+        if (importJettyCtxs[i].outParam.handle != 0) {
+            jettyInfo.rdmaHandle = rdmaHandle;
+            jettyInfo.remoteJetty = importJettyCtxs[i].outParam.handle;
+            connJettyInfos.push_back(jettyInfo);
+            importJettyCtxs[i].outParam.handle = 0;
+        }
+        connJettyInfos.push_back(jettyInfo);
+    }
+    return connJettyInfos;
 }
 
 void CcuConnection::Clean()
