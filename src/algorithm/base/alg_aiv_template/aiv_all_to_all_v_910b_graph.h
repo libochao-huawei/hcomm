@@ -24,7 +24,7 @@ template<typename T>
 __aicore__ inline void AivAll2AllVGraph910B::Process(GM_ADDR input, GM_ADDR output, int32_t tag,
     ExtraArgs &extraArgs)
 {
-    uint32_t targetRank = block_idx; // 0-rankSize
+    uint32_t targetRank = GetBlockIdx(); // 0-rankSize
 
     // 内存准备
     __gm__ T *inputGM = (__gm__ T *)input;
@@ -57,7 +57,7 @@ __aicore__ inline void AivAll2AllVGraph910B::Process(GM_ADDR input, GM_ADDR outp
             Record(tag, i, AivNotifyType::ACK);
         }
     }    
-    uint64_t remoteSendOffset = 0; // 远端usrin发送给本端output的数据偏移，远端卡号为block_idx，可能为本rank
+    uint64_t remoteSendOffset = 0; // 远端usrin发送给本端output的数据偏移，远端卡号为GetBlockIdx()，可能为本rank
     uint64_t remoteSendCount = 0; // 远端ccl发送给本端output的数据量，远端可能为本rank
     if (targetRank != rank_) {
         // 确认对端targetRank号aiv已把sendcount数据搬运到GM
@@ -84,7 +84,7 @@ __aicore__ inline void AivAll2AllVGraph910B::Process(GM_ADDR input, GM_ADDR outp
 
     PipeBarrier<PIPE_ALL>();
 
-    // 本端output接收远端usrin的数据偏移，目标远端卡号为block_idx，可能为本rank
+    // 本端output接收远端usrin的数据偏移，目标远端卡号为GetBlockIdx()，可能为本rank
     uint64_t localRecvOffset = extraArgs.recvDispls[targetRank];
 
     CpGM2GM(outputGM + localRecvOffset, cclGMOther + remoteSendOffset, remoteSendCount);
