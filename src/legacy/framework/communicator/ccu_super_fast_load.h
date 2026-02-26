@@ -25,6 +25,8 @@
 #include "ccu/ccu_task_param.h"
 #include "task_param.h"
 #include "env_config.h"
+#include "ccu_ins.h"
+#include "acl/acl_rt.h"
 
 namespace Hccl {
 using CcuParamsMappingKeyType = std::uint32_t;
@@ -36,16 +38,17 @@ constexpr int kValidStates = AcceleratorState::CCU_MS | AcceleratorState::CCU_SC
 struct CachedCCUParams {
 public:
     rtCcuTaskInfo_t *ccuParams{nullptr};
-    u64 execId{0};
     std::vector<std::size_t> count;
-    std::size_t totalCounts{0};
-    bool isSlave{false};
     std::vector<TaskParam> taskParams;
+    u64 execId{0};
+    std::size_t totalCounts{0};
+    CcuInstType insType{};
+    bool isSlave{false};
 
     CachedCCUParams() = default;
     explicit CachedCCUParams(std::vector<std::vector<Hccl::CcuTaskParam>> &&ccuInstruction,
-                             std::vector<std::vector<CcuProfilingInfo>> &&profilingInfo, std::size_t execId, bool isSlave,
-                             void* comm);
+                             std::vector<std::vector<CcuProfilingInfo>> &&profilingInfo, std::size_t execId,
+                             CcuInstType insType, bool isSlave, void* comm);
 
     CachedCCUParams(const CachedCCUParams &) = delete;
     CachedCCUParams &operator=(const CachedCCUParams &) = delete;
