@@ -43,7 +43,7 @@ protected:
         MOCKER(HrtStreamGetSqId).stubs().will(returnValue(fakeSqId));
         MOCKER(HrtStreamDestroy).stubs();
         MOCKER(HrtGetDevice).stubs().will(returnValue(fakeDevLogId));
-        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
+        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
 
         streamManager->AllocStreams(1);
         streamManager->AllocFreeStream();
