@@ -229,7 +229,14 @@ HcclResult InsTempReduceMesh1DTwoShot::RunGatherToRoot(const RankSliceInfo &slic
             const auto &link = tempLinks.at(root_)[0];
             SlicesList sliceList({ssrc}, {sdest});
 
-            CHK_RET(Send(DataInfo(link, sliceList), tempInsQues[0], 1, true, DmaMode::GET));
+            auto it = tempVirtRankMap_.find(root_);
+            if (it == tempVirtRankMap_.end()) {
+                HCCL_ERROR("[InsTempReduceMesh1DTwoShot] root_ [%d] not found in tempVirtRankMap.", root_);
+                return HcclResult::HCCL_E_INTERNAL;
+            }
+            u32 rootIdx = it->second;
+
+            CHK_RET(Send(DataInfo(link, sliceList), tempInsQues[rootIdx], 1, true, DmaMode::GET));
         }
     }
 
