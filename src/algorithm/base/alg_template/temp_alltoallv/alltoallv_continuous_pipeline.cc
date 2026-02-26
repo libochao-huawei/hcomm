@@ -395,62 +395,9 @@ HcclResult AlltoallvContinuousPipeline::WaitRdmaSubStreamFinish()
     }
     return HCCL_SUCCESS;
 }
-
-HcclResult AlltoallvContinuousPipeline::InterSdmaRx(const LINK& linkLeft, const LINK& linkRight,
-    const std::vector<RxMemoryInfo>& recvMems, Stream& stream)
-{
-    // 前同步，通知right我已准备好，可以从我这里读；等待left通知它已准备好，可以从它那里读
-    CHK_RET(linkRight->TxAck(stream));
-    CHK_RET(linkLeft->RxAck(stream));
-
-    // 从left读
-    for (const auto& memInfo : recvMems) {
-        void *srcMemPtr = nullptr;
-        CHK_RET(linkLeft->GetRemoteMem(memInfo.srcMemType, &srcMemPtr));
-        DeviceMem dstMem = DeviceMem::create(memInfo.dst, memInfo.len);
-        DeviceMem srcMem(static_cast<s8 *>(srcMemPtr) + memInfo.srcOffset, memInfo.len);
-        CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, stream, linkLeft->GetRemoteRank(),
-            linkLeft->GetLinkType()));
-    }
-
-    // 尾同步，通知left我已读完，等待right通知它已读完
-    CHK_RET(linkLeft->TxDataSignal(stream));
-    CHK_RET(linkRight->RxDataSignal(stream));
-
-    HCCL_DEBUG("[AlltoallvContinuousPipeline][InterSdmaRx] Done. linkLeft.rank[%u], linkRight.rank[%u], "
-        "recvMems.size[%zu]", linkLeft->GetRemoteRank(), linkRight->GetRemoteRank(), recvMems.size());
-    return HCCL_SUCCESS;
-}
-
-// 跨module通信，通过SDMA向link right写
-HcclResult AlltoallvContinuousPipeline::InterSdmaTx(const LINK& linkLeft, const LINK& linkRight,
-    const std::vector<TxMemoryInfo>& sendMems, Stream& stream)
-{
-    // 前同步，通知left我已准备好，可以向我写；等待right通知它已准备好，可以向它写
-    CHK_RET(linkLeft->TxAck(stream));
-    CHK_RET(linkRight->RxAck(stream));
-
-    // 向right写
-    for (const auto& memInfo : sendMems) {
-        void *dstMemPtr = nullptr;
-        CHK_RET(linkRight->GetRemoteMem(memInfo.dstMemType, &dstMemPtr));
-        DeviceMem srcMem = DeviceMem::create(const_cast<void *>(memInfo.src), memInfo.len);
-        DeviceMem dstMem(static_cast<s8 *>(dstMemPtr) + memInfo.dstOffset, memInfo.len);
-        CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, stream, linkRight->GetRemoteRank(),
-                linkRight->GetLinkType()));
-    }
-
-    // 尾同步，通知right我已写完，等待left通知它已写完
-    CHK_RET(linkRight->TxDataSignal(stream));
-    CHK_RET(linkLeft->RxDataSignal(stream));
-
-    HCCL_DEBUG("[AlltoallvContinuousPipeline][InterSdmaTx] Done. linkLeft.rank[%u], linkRight.rank[%u], "
-        "sendMems.size[%zu]", linkLeft->GetRemoteRank(), linkRight->GetRemoteRank(), sendMems.size());
-    return HCCL_SUCCESS;
-}
     
 // 跨module通信，通过RDMA从link left读或向link right写
-HcclResult AlltoallvContinuousPipeline::InterRdmaTxRx(const LINK& linkLeft, const LINK& linkRight,
+HcclResult AlltoallvContinuousPipeline::InterTxRx(const LINK& linkLeft, const LINK& linkRight,
     std::vector<TxMemoryInfo>& sendMems, std::vector<RxMemoryInfo>& recvMems, Stream& stream)
 {
     CHK_RET(linkLeft->TxAck(stream));
@@ -467,7 +414,12 @@ HcclResult AlltoallvContinuousPipeline::InterRdmaTxRx(const LINK& linkLeft, cons
     CHK_RET(linkLeft->PostFinAck(stream));
     CHK_RET(linkRight->WaitFinAck(stream));
 
-    HCCL_DEBUG("[AlltoallvContinuousPipeline][InterRdmaTxRx] Done. linkLeft.rank[%u], linkRight.rank[%u], "
+    // 如果是SDMA链路，需要执行barrier
+    if (linkLeft->IsSpInlineReduce() || linkRight->IsSpInlineReduce()) {
+        CHK_RET(ExecuteBarrier(linkLeft, linkRight, stream));
+    }
+
+    HCCL_DEBUG("[AlltoallvContinuousPipeline][InterTxRx] Done. linkLeft.rank[%u], linkRight.rank[%u], "
         "sendMems.size[%zu], recvMems.size[%zu]", linkLeft->GetRemoteRank(), linkRight->GetRemoteRank(),
         sendMems.size(), recvMems.size());
     return HCCL_SUCCESS;
@@ -638,50 +590,34 @@ HcclResult AlltoallvContinuousPipeline::InterSendAndReceive(const u32 sendRank, 
     const bool isSDMALink = sendLink->IsSpInlineReduce() || recvLink->IsSpInlineReduce();
 
     for (u32 rankOffset = 0; rankOffset < intraRankSize_; ++rankOffset) {
-        if (!isSDMALink || needCollectInfo_) {
-            const u32 targetRank = sendModuleFirstRank + rankOffset;
-            const u64 sendSrcOffset = GetDataBlockOffset(targetRank, loopIdx);
-            const u64 sendDstOffset = GetDataBlockOffset(interRankId_ * intraRankSize_ + rankOffset, loopIdx);
-            const u64 sendSize = inBufferDataSize_[targetRank];
-            if (sendSize > 0) {
-                sendMems.emplace_back(TxMemoryInfo{UserMemType::OUTPUT_MEM, sendDstOffset,
-                    static_cast<s8*>(inBuffer_.ptr()) + sendSrcOffset, sendSize});
-            }
-            HCCL_DEBUG("[AlltoallvContinuousPipeline][InterSendAndReceive]inter send userRank[%u], sendRank[%u], "
-                "targetRank[%u], srcOffset[%llu], dstOffset[%llu], sendSize[%llu], loopIdx[%u]",
-                userRank_, sendRank, targetRank, sendSrcOffset, sendDstOffset, sendSize, loopIdx);
+        const u32 targetRank = sendModuleFirstRank + rankOffset;
+        const u64 sendSrcOffset = GetDataBlockOffset(targetRank, loopIdx);
+        const u64 sendDstOffset = GetDataBlockOffset(interRankId_ * intraRankSize_ + rankOffset, loopIdx);
+        const u64 sendSize = inBufferDataSize_[targetRank];
+        if (sendSize > 0) {
+            sendMems.emplace_back(TxMemoryInfo{UserMemType::OUTPUT_MEM, sendDstOffset,
+                static_cast<s8*>(inBuffer_.ptr()) + sendSrcOffset, sendSize});
         }
+        HCCL_DEBUG("[AlltoallvContinuousPipeline][InterSendAndReceive]inter send userRank[%u], sendRank[%u], "
+            "targetRank[%u], srcOffset[%llu], dstOffset[%llu], sendSize[%llu], loopIdx[%u]",
+            userRank_, sendRank, targetRank, sendSrcOffset, sendDstOffset, sendSize, loopIdx);
 
-        // 在获取到receive信息前，由于缺乏信息，不填写recvMems
-        if (!needCollectInfo_) {
-            const u32 sourceRank = recvModuleFirstRank + rankOffset;
-            const u32 actualTargetRank = interRankId_ * intraRankSize_ + rankOffset;
-            const u64 recvSrcOffset = GetDataBlockOffset(actualTargetRank, loopIdx);
-            const u64 recvDstOffset = GetDataBlockOffset(sourceRank, loopIdx);
-            const u64 recvCount = std::min(countsPerBlock_, intraRecvCounts_[rankOffset][sourceRank]);
-            const u64 recvSize = recvCount * unitSize_;
-            if (recvCount > 0) {
-                recvMems.emplace_back(RxMemoryInfo{UserMemType::INPUT_MEM, recvSrcOffset,
-                    static_cast<s8*>(outBuffer_.ptr()) + recvDstOffset, recvSize});
-                intraRecvCounts_[rankOffset][sourceRank] -= recvCount;
-            }
-            HCCL_DEBUG("[AlltoallvContinuousPipeline][InterSendAndReceive]inter recv userRank[%u], recvRank[%u], "
-                "sourceRank[%u], targetRank[%u], srcOffset[%llu], dstOffset[%llu], readSize[%llu], loopIdx[%u]",
-                userRank_, recvRank, sourceRank, actualTargetRank, recvSrcOffset, recvDstOffset, recvSize, loopIdx);
+        const u32 sourceRank = recvModuleFirstRank + rankOffset;
+        const u32 actualTargetRank = interRankId_ * intraRankSize_ + rankOffset;
+        const u64 recvSrcOffset = GetDataBlockOffset(actualTargetRank, loopIdx);
+        const u64 recvDstOffset = GetDataBlockOffset(sourceRank, loopIdx);
+        const u64 recvCount = std::min(countsPerBlock_, intraRecvCounts_[rankOffset][sourceRank]);
+        const u64 recvSize = recvCount * unitSize_;
+        if (recvCount > 0) {
+            recvMems.emplace_back(RxMemoryInfo{UserMemType::INPUT_MEM, recvSrcOffset,
+                static_cast<s8*>(outBuffer_.ptr()) + recvDstOffset, recvSize});
+            intraRecvCounts_[rankOffset][sourceRank] -= recvCount;
         }
+        HCCL_DEBUG("[AlltoallvContinuousPipeline][InterSendAndReceive]inter recv userRank[%u], recvRank[%u], "
+            "sourceRank[%u], targetRank[%u], srcOffset[%llu], dstOffset[%llu], readSize[%llu], loopIdx[%u]",
+            userRank_, recvRank, sourceRank, actualTargetRank, recvSrcOffset, recvDstOffset, recvSize, loopIdx);
     }
-    if (isSDMALink) {
-        if (needCollectInfo_) {
-            // 在获取到receive信息前，需要用SDMA写
-            CHK_RET(InterSdmaTx(recvLink, sendLink, sendMems, stream));
-        } else {
-            // SDMA读
-            CHK_RET(InterSdmaRx(recvLink, sendLink, recvMems, stream));
-        }
-    } else {
-        // RDMA
-        CHK_RET(InterRdmaTxRx(recvLink, sendLink, sendMems, recvMems, stream));
-    }
+    CHK_RET(InterTxRx(recvLink, sendLink, sendMems, recvMems, stream));
     
     return HCCL_SUCCESS;
 }
@@ -699,15 +635,13 @@ HcclResult AlltoallvContinuousPipeline::DoSdmaSync(const SdmaSyncType syncType)
             // 前同步
             CHK_RET(link->TxAck(subStream));
             CHK_RET(link->RxAck(subStream));
-            HCCL_DEBUG("[AlltoallvContinuousPipeline][DoSdmaSync] Pre-sync done");
         } else {
             // 尾同步
             CHK_RET(link->TxDataSignal(subStream));
             CHK_RET(link->RxDataSignal(subStream));
-            HCCL_DEBUG("[AlltoallvContinuousPipeline][DoSdmaSync] Post-sync done");
         }
     }
-
+    HCCL_DEBUG("[AlltoallvContinuousPipeline][DoSdmaSync] Sync done, syncType[%d].", syncType);
     return HCCL_SUCCESS;
 }
 
