@@ -19,7 +19,6 @@
 #include "aiv_reduce_scatter_91093_deter.h"
 #include "aiv_all_reduce_crossnode_91093.h"
 #include "aiv_all_reduce_91093_deter.h"
-#include "aiv_sync_91093.h"
 
 using namespace AscendC;
 
@@ -61,12 +60,6 @@ extern "C" __global__ __aicore__ void aiv_reduce_scatter_cn_##type(KERNEL_ARGS_D
     return aiv_reduce_scatter_crossnode_91093_graph<type>(KERNEL_ARGS_CALL_A3); \
 } \
 EXPORT_AIV_META_INFO(aiv_reduce_scatter_cn_##type)
-
-// aiv sync
-extern "C" __global__ __aicore__ void hccl_aiv_sync_cn(KERNEL_ARGS_DEF_A3) {
-    return aiv_sync_91093_inner(KERNEL_ARGS_CALL_A3);
-}
-EXPORT_AIV_META_INFO(hccl_aiv_sync_cn);
 
 // AIV支持的Atomic数据类型
 #define AIV_ATOMIC_DATA_TYPE_DEF_A3(func) \

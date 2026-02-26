@@ -39,7 +39,7 @@ template<typename T>
 __aicore__ inline void AivAll2AllV910B::ProcessAllToAllV910B(GM_ADDR input, GM_ADDR output, int32_t tag,
     uint64_t bufferSize, ExtraArgs &extraArgs, bool isAlltoAllVC)
 {
-    uint32_t targetRank = (block_idx >= rankSize_ ? block_idx - rankSize_ : block_idx); // 0-2*rankSize
+    uint32_t targetRank = (GetBlockIdx() >= rankSize_ ? GetBlockIdx() - rankSize_ : GetBlockIdx()); // 0-2*rankSize
 
     // 每张卡的CCLBuffer大小为bufferSize，平均分给ranksize块，每块的大小
     uint64_t avgBufferSize = bufferSize / rankSize_;
@@ -54,18 +54,18 @@ __aicore__ inline void AivAll2AllV910B::ProcessAllToAllV910B(GM_ADDR input, GM_A
     __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[targetRank]);
     tag = tag << TAG_MOVE_LEFT_BITS;
 
-    if (block_idx < rankSize_) { // 前rankSize个aiv负责userin->cclin
+    if (GetBlockIdx() < rankSize_) { // 前rankSize个aiv负责userin->cclin
         uint64_t localSendOffset = 0;
         if (isAlltoAllVC) {
-            for (uint32_t i = 0; i < block_idx; i++) {
+            for (uint32_t i = 0; i < GetBlockIdx(); i++) {
                 localSendOffset += extraArgs.sendCountMatrix[rank_ * rankSize_ + i];
             }
         } else {
             localSendOffset = extraArgs.sendDispls[targetRank];
         }
-        uint64_t localSendCount = isAlltoAllVC ? extraArgs.sendCountMatrix[rank_ * rankSize_ + block_idx]
+        uint64_t localSendCount = isAlltoAllVC ? extraArgs.sendCountMatrix[rank_ * rankSize_ + GetBlockIdx()]
                                 : extraArgs.sendCounts[targetRank];
-        uint64_t localRecvOffset = avgBufferCount * block_idx; // userin搬到ccl的偏移
+        uint64_t localRecvOffset = avgBufferCount * GetBlockIdx(); // userin搬到ccl的偏移
 
         GlobalTensor<T> inputGT;
         inputGT.SetGlobalBuffer(inputGM + localSendOffset, localSendCount);
@@ -106,7 +106,7 @@ __aicore__ inline void AivAll2AllV910B::ProcessAllToAllV910B(GM_ADDR input, GM_A
                 set_flag(PIPE_MTE3, PIPE_S, EVENT_ID0);
                 wait_flag(PIPE_MTE3, PIPE_S, EVENT_ID0);
 
-                CountRecord(tag, curBatchCount, block_idx);
+                CountRecord(tag, curBatchCount, GetBlockIdx());
             }
         }
         PipeBarrier<PIPE_ALL>();
@@ -118,8 +118,8 @@ __aicore__ inline void AivAll2AllV910B::ProcessAllToAllV910B(GM_ADDR input, GM_A
     } else { // 后rankSize个aiv负责cclother->usrout
         uint64_t remoteSendOffset = avgBufferCount * rank_; // ccl读到usrout的偏移
 
-        // 本端output接收远端ccl的数据偏移，远端卡号为block_idx，可能为本rank
-        uint64_t localRecvOffset = 0; // 本端output接收远端ccl的数据偏移，目标远端卡号为block_idx，可能为本rank
+        // 本端output接收远端ccl的数据偏移，远端卡号为GetBlockIdx()，可能为本rank
+        uint64_t localRecvOffset = 0; // 本端output接收远端ccl的数据偏移，目标远端卡号为GetBlockIdx()，可能为本rank
         if (isAlltoAllVC) {
             for (uint32_t i = 0; i < targetRank; i++) {
                 localRecvOffset += extraArgs.sendCountMatrix[i * rankSize_ + rank_];
