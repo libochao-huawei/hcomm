@@ -145,7 +145,7 @@ HcclResult HcclCommConn::Listen(int backLog)
     HCCL_RUN_INFO("HcclCommConn Listen localIpv4Addr[%s],  port[%u]",
         HcclIpAddress(localAddr_.info.tcp.ipv4Addr).GetReadableIP(), localAddr_.info.tcp.port);
     HcclResult ret = hrtRaSocketNonBlockListenStart(&serverInfo, 1);
-    std::string errormessage = "The IP address " + HcclIpAddress(localAddr_.info.tcp.ipv4Addr).GetReadableIP() +
+    std::string errormessage = "The IP address " + std::string(HcclIpAddress(localAddr_.info.tcp.ipv4Addr).GetReadableIP()) +
                               " add port " + std::to_string(localAddr_.info.tcp.port) + " have already been bound.";
     RPT_INPUT_ERR(true, "EI0019", std::vector<std::string>({"reason"}),
         std::vector<std::string>({errormessage}));
