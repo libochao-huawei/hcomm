@@ -30,8 +30,8 @@ using namespace Hccl;
  * 因单例不容易实现完全打桩，ccu_component用例运行后
  * 部分单例已在内存中，故以下用例调整需注意设备号
  */
-// extern void MockCcuResources(const int32_t devLogicId, const CcuVersion ccuVersion);
-// extern void MockCcuNetworkDevice(const int32_t devLogicId);
+extern void MockCcuResources(const int32_t devLogicId, const CcuVersion ccuVersion);
+extern void MockCcuNetworkDevice(const int32_t devLogicId);
 
 class CcuResBatchAllocatorTest: public testing::Test {
 protected:
@@ -146,8 +146,8 @@ void DumpBlockResInfo(ResType resType, const std::vector<BlockInfo> &blocks)
 
 void MockerCcuComponent(const int32_t devLogicId, const CcuVersion ccuVersion)
 {
-    // MockCcuResources(devLogicId, ccuVersion);
-    // MockCcuNetworkDevice(devLogicId);
+    MockCcuResources(devLogicId, ccuVersion);
+    MockCcuNetworkDevice(devLogicId);
     EXPECT_NO_THROW(CcuComponent::GetInstance(devLogicId).Init());
 }
 

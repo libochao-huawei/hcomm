@@ -84,6 +84,7 @@ TEST_F(RankGraphBuilderTest, Ut_BuildRankGraph_When_Normal_Expect_Success)
     MOCKER_CPP(&RankGraphBuilder::BuildPeer2PeerLinks).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&DetourService::InsertDetourLinks).stubs().with(any()).will(ignoreReturnValue());
     MOCKER_CPP(&RankGraphBuilder::UpdateTopoInstForMyRankOnly).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER_CPP(&RankGraphBuilder::SetEndpointDesc).stubs();
     // then
     RankGraphBuilder rankGraphBuilder;
     Hccl::RankTableInfo tmpRankTable;
