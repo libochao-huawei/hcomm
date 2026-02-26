@@ -106,8 +106,8 @@ HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannel
     if (channelDesc.header.version >= 2) {
         switch (channelDesc.channelProtocol) {
             case COMM_PROTOCOL_HCCS:
-                channelDescFinal.hccsAttr.hcclQos = (channelDesc.hccsAttr.hcclQos == 0xFF) ? SDMA_QOS_DEFAULT : channelDesc.hccsAttr.hcclQos;
-                HCCL_INFO("[ProcessHcclResPackReq] hcclQos = %u", channelDescFinal.hccsAttr.hcclQos);
+                channelDescFinal.hccsAttr.hcclQos = (channelDesc.hccsAttr.hcclQos == HCCL_COMM_QOS_CONFIG_NOT_SET) ? SDMA_QOS_DEFAULT : channelDesc.hccsAttr.hcclQos;
+                HCCL_INFO("[ProcessHcclResPackReq] hcclQos = %u version = %u", channelDescFinal.hccsAttr.hcclQos, channelDesc.header.version);
             case COMM_PROTOCOL_PCIE:
             case COMM_PROTOCOL_SIO:
             case COMM_PROTOCOL_UBC_CTP:
@@ -163,7 +163,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
     std::vector<HcclChannelDesc> channelDescFinals;
     for (uint32_t idx = 0; idx < channelNum; idx++) {
         HcclChannelDesc channelDescFinal;
-        HcclChannelDescInit(&channelDescFinal, 1, hcclComm->GetHcclQos());
+        HcclChannelDescInit(&channelDescFinal, 1);
         HCCL_INFO("[HcclChannelAcquire] hcclQos = %u", hcclComm->GetHcclQos());
         ret = ProcessHcclResPackReq(channelDescs[idx], channelDescFinal);
         if (ret != HCCL_SUCCESS) {

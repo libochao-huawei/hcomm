@@ -241,3 +241,10 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
     HCCL_INFO("[%s]:comm[%s] export success. ", __func__, commId.c_str());
     return HCCL_SUCCESS;
 }
+
+uint32_t HcclGetHcclQos(HcclComm comm)
+{
+    auto hcclComm = static_casthcclhcclComm(comm);
+    HCCL_INFO("HcclGetHcclQos hcclQos = %u", hcclComm->GetHcclQos());
+    return hcclComm-GetHcclQos();
+}
