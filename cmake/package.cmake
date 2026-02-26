@@ -163,7 +163,6 @@ function(pack_built_in)
   set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_SOURCE_DIR}/cmake/makeself_built_in.cmake")
   set(CPACK_EXTERNAL_ENABLE_STAGING true)
   set(CPACK_PACKAGE_DIRECTORY "${CMAKE_INSTALL_PREFIX}")
-  set(CPACK_3RD_LIB_PATH "${CANN_3RD_LIB_PATH}")
 
   message(STATUS "CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
   include(CPack)
