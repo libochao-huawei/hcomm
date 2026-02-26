@@ -273,7 +273,7 @@ void Mc2Compont::MC2AllocCommRes(const CollAlgParams &params, std::shared_ptr<In
     }
 }
 
-void Mc2Compont::saveAlgoInfo(uint32_t index, uint64_t templateSign, uint32_t opType, uint8_t algorithmType) {
+void Mc2Compont::SaveAlgoInfo(uint32_t index, uint64_t templateSign, uint32_t opType, uint8_t algorithmType) {
     combinOpParam.opType[index]   = opType;
     combinOpParam.algorithmType[index]   = algorithmType;
     HcclAlgoInfo hcclAlgoInfo;
@@ -331,7 +331,7 @@ void Mc2Compont::GenerateAlgoTemplates(Mc2Tiling *mc2TilingPtr, std::unordered_s
             THROW<Hccl::InternalException>(StringFormat("CcuInstruction translate faild, index = [%u], algName = [%s]", index, algName.c_str()));
         }
         algoTemplateMap[templateSign] = taskParams;
-        saveAlgoInfo(index, templateSign, commConfig.opType, comm->GetAlgorithmType());
+        SaveAlgoInfo(index, templateSign, commConfig.opType, comm->GetAlgorithmType());
         for (const auto &task : taskParams) {
             HCCL_INFO("taskParam: dieId = [%u], instStartId = [%u]", task[0].dieId, task[0].instStartId);
             SaveMc2DfxTaskInfo(task[0], ccuInstruction.GetExecId());
@@ -366,7 +366,7 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
                 combinOpParam.opType[index]   = algoInfoMap_[templateSign].opType;
                 combinOpParam.algorithmType[index]   = algoInfoMap_[templateSign].algorithmType;
                 continue;
-            }else{
+            } else {
                 THROW<Hccl::InternalException>(StringFormat("algoInfoMap_ do not has templateSign = [%llu]", templateSign));
             }
         }
@@ -390,7 +390,7 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
             THROW<Hccl::InternalException>(StringFormat("CcuInstruction translate faild, index = [%u], algName = [%s]", index, algName.c_str()));
         }
         algoTemplateMap[templateSign] = taskParams;
-        saveAlgoInfo(index, templateSign, commConfig.opType, comm->GetAlgorithmType());
+        SaveAlgoInfo(index, templateSign, commConfig.opType, comm->GetAlgorithmType());
         for (const auto &task : taskParams) {
             HCCL_INFO("taskParam: dieId = [%u], instStartId = [%u]", task[0].dieId, task[0].instStartId);
             SaveMc2DfxTaskInfo(task[0], ccuInstruction.GetExecId());
