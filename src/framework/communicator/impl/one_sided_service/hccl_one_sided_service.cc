@@ -89,7 +89,7 @@ HcclResult HcclOneSidedService::IsUsedRdma(RankId remoteRankId, bool &useRdma)
     RankInfo_t remoteRankInfo = (rankTable_->rankList).at(remoteRankId);
     if (deviceType == DevType::DEV_TYPE_910B) {
         // 外部使能RDMA，或者节点间通信
-        if (GetExternalInputIntraRoceSwitch() || localRankInfo.serverId != remoteRankInfo.serverId) {
+        if (GetExternalInputIntraRoceSwitch() != 0 || localRankInfo.serverId != remoteRankInfo.serverId) {
             useRdma = true;
             return HCCL_SUCCESS;
         }
@@ -109,7 +109,7 @@ HcclResult HcclOneSidedService::IsUsedRdma(RankId remoteRankId, bool &useRdma)
         useRdma = false;
         return HCCL_SUCCESS;
     } else if (deviceType == DevType::DEV_TYPE_910_93) {
-        if (GetExternalInputIntraRoceSwitch() || localRankInfo.superPodId != remoteRankInfo.superPodId) {
+        if (GetExternalInputIntraRoceSwitch() != 0 || localRankInfo.superPodId != remoteRankInfo.superPodId) {
             useRdma = true;
             return HCCL_SUCCESS;
         }

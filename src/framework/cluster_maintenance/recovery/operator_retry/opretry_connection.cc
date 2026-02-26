@@ -369,7 +369,7 @@ HcclResult OpRetryConnection::StartListen()
     CHK_PTR_NULL(serverNetCtx_);
 
     auto enableWhiteList_ = GetExternalInputHcclEnableWhitelist();
-    if (enableWhiteList_) {
+    if (enableWhiteList_ != 0) {
         CHK_RET(GetHostSocketWhiteList());
     }
 
@@ -378,7 +378,7 @@ HcclResult OpRetryConnection::StartListen()
     CHK_RET(listenSocket_->Init());
     CHK_RET(listenSocket_->Listen());
 
-    if (enableWhiteList_) {
+    if (enableWhiteList_ != 0) {
         CHK_RET(AddListenSocketWhiteList());
     }
 
