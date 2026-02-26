@@ -813,9 +813,9 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterBackupDeviceIP(RankTable_t &clust
             RPT_INPUT_ERR((backupDevPhyId == rankInfo.deviceInfo.devicePhyId),
                 "EI0014",
                 std::vector<std::string>({ "value", "variable" ,"expect" }),
-                std::vector<std::string>({ std::string(backupDevPhyId.GetReadableIP()), " \"backup_device_ip of "\
+                std::vector<std::string>({ std::to_string(backupDevPhyId), " \"backup_device_ip of "\
                 "rank " + std::to_string(rankInfo.rankId) + "\" ", " \"is device_ip another Die under the same NPU\" " }));
-            errormessage = "Value " + std::string(backupDevPhyId.GetReadableIP()) + " for rankTable variable \"backup_device_ip of "\
+            errormessage = "Value " + std::to_string(backupDevPhyId) + " for rankTable variable \"backup_device_ip of "\
                 "rank " + std::to_string(rankInfo.rankId) + "\" is invalid, expected value \"is device_ip another Die under the same NPU\".";
             CHK_PRT_RET(linkType != LinkTypeInServer::SIO_TYPE,
                 HCCL_ERROR(
