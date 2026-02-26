@@ -661,6 +661,12 @@ HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx) cons
 HcclResult HostCpuRoceChannel::NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout)
 {
     HCCL_INFO("[HostCpuRoceChannel::NotifyWait] NotifyWait start");
+    
+    // 混合模式：使用内存轮询方式
+    if (isHybridMode_) {
+        HCCL_INFO("[Hybrid][HostCpuRoceChannel] Using hybrid mode NotifyWaitHybrid");
+        return NotifyWaitHybrid(localNotifyIdx, timeout);
+    }
 
     if (localNotifyIdx >= localDpuNotifyIds_.size()) {
         HCCL_ERROR("[HostCpuRoceChannel::%s] localNotifyIdx[%u] out of the range of localDpuNotifyIds_[%u].",
@@ -758,6 +764,13 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
     HCCL_INFO("[HostCpuRoceChannel::WriteWithNotify] WriteWithNotify start");
+    
+    // 混合模式：使用 Write + Notify 方式
+    if (isHybridMode_) {
+        HCCL_INFO("[Hybrid][HostCpuRoceChannel] Using hybrid mode WriteWithNotifyHybrid");
+        // 注意：WriteWithNotifyHybrid 不是 const 方法，需要 const_cast
+        return const_cast<HostCpuRoceChannel*>(this)->WriteWithNotifyHybrid(dst, src, len, remoteNotifyIdx);
+    }
 
     CHK_PRT_RET(localRmaBuffers_.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] localRmaBuffer is Empty", __func__),
                 HCCL_E_ROCE_CONNECT);

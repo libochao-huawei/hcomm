@@ -1197,6 +1197,13 @@ u32 TransportIbverbs::GetActualQpNum(u32 maxLength)
 
 HcclResult TransportIbverbs::TxSendDataAndNotify(std::vector<WqeInfo> &wqeInfoVec, Stream &stream, bool useOneDoorbell)
 {
+    // 混合模式：使用 Write With Immediate 发送
+    if (isHybridMode_) {
+        HCCL_INFO("[Hybrid][TransportIbverbs] Using hybrid mode TxSendDataAndNotifyHybrid");
+        return TxSendDataAndNotifyHybrid(wqeInfoVec, stream, useOneDoorbell);
+    }
+    
+    // 原生模式：使用原有逻辑
     u32 maxLength = 0;
     for (u32 i = 0; i < wqeInfoVec.size(); i++) {
         if (wqeInfoVec[i].wqeData.memList.len > maxLength) {
