@@ -59,15 +59,15 @@ HcclResult SalStrToULong(const std::string str, int base, u32 &val)
         }
     }
     catch (std::invalid_argument&) {
-        HCCL_ERROR("[Transform][StrToULong]stoull invalid argument, str[%s] base[%d] val[%u]", str.c_str(), base, val);
+        HCCL_ERROR("[Transform][StrToULong]stoull invalid argument, str[%s] base[%d]", str.c_str(), base);
         return HCCL_E_PARA;
     }
     catch (std::out_of_range&) {
-        HCCL_ERROR("[Transform][StrToULong]stoull out of range, str[%s] base[%d] val[%u]", str.c_str(), base, val);
+        HCCL_ERROR("[Transform][StrToULong]stoull out of range, str[%s] base[%d]", str.c_str(), base);
         return HCCL_E_PARA;
     }
     catch (...) {
-        HCCL_ERROR("[Transform][StrToULong]stoull catch errror, str[%s] base[%d] val[%u]", str.c_str(), base, val);
+        HCCL_ERROR("[Transform][StrToULong]stoull catch errror, str[%s] base[%d]", str.c_str(), base);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -80,6 +80,7 @@ u64 SalGetCurrentTimestamp()
     int ret = gettimeofday(&tv, nullptr);
     if (ret != 0) {
         HCCL_ERROR("[Get][tCurrentTimestamp]get timestamp fail, return[%d].", ret);
+        Hccl::THROW<Hccl::CcuApiException>("gettimeofday failed");
     }
     timestamp = tv.tv_sec * 1000000 + tv.tv_usec; // 1000000: 单位转换 秒 -> 微秒
     return timestamp;
