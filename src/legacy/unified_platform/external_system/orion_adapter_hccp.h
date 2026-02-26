@@ -620,5 +620,19 @@ HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn in, AuxInfoOut &o
 MAKE_ENUM(JettyStatus, RESET, READY, SUSPENDED, ERROR);
 constexpr u32 MAX_JETTY_QUERY_NUM = 128;
 HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyStatusVec, u32 &num);
+
+struct SingleDeleteJettyInfo {
+    RdmaHandle rdmaHandle{nullptr};
+    JettyHandle unimportJetty{0};
+    JettyHandle deleteJetty{0};
+    bool isValid{false};
+};
+
+struct BatchDeleteJettyInfo {
+    std::unordered_map<RdmaHandle, std::vector<JettyHandle>> unimportJettyList;
+    std::unordered_map<RdmaHandle, std::vector<JettyHandle>> deleteJettyList;
+};
+constexpr u32 MAX_DELETE_JETTY_NUMS = 768;
+HcclResult HrtRaCtxQpDestoryBatch(const RdmaHandle handle, const std::vector<JettyHandle> &jettyHandles, std::vector<JettyHandle> &failJettyHandles);
 } // namespace Hccl
 #endif // HCCLV2_ADAPTER_HCCP_H
