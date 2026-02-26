@@ -33,7 +33,6 @@ u32 TransportDirectNpu::cqeErrQpn_ = 0;
 
 constexpr u32 DEV_PHY_ID_BIT = 32;
 constexpr u32 CQE_ARRAY_SIZE = 128;
-constexpr u16 MAX_VALUE_U16 = 0xFFFF;
 
 TransportDirectNpu::TransportDirectNpu(DispatcherPub *dispatcher,
                                    const std::unique_ptr<NotifyPool> &notifyPool,
@@ -899,7 +898,8 @@ HcclResult TransportDirectNpu::TxData(UserMemType dstMemType, u64 dstOffset, con
         apiParam.timeout, apiParam.localFlagAddr, apiParam.remoteFlagAddr, apiParam.lfKey, apiParam.rfKey, apiParam.qpInfo.qpPtr);
 
 #ifndef CCL_KERNEL
-    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16 ? MAX_VALUE_U16 : NOTIFY_DEFAULT_WAIT_TIME;
+    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
+                    std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
     CHK_PRT(AicpuAclKernelLaunch(stream.ptr(), reinterpret_cast<void *>(&apiParam), sizeof(apiParam),
             binHandle_, kernelName, true, timeOut));
 #else

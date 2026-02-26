@@ -272,7 +272,6 @@ static HcclResult FillChannelD2HMap(ChannelHandle *deviceChannelHandles,
 HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, uint32_t listNum,
     const std::string &commTag, aclrtBinHandle binHandle)
 {
-    constexpr u16 MAX_VALUE_U16 = 0xFFFF;
     HCCL_RUN_INFO("[%s] listNum[%u], commTag[%s]", __func__, listNum, commTag.c_str());
     std::vector<std::vector<char>> hostPackBuffers(listNum);
     HcclChannelUrmaRes channelParam{};
@@ -339,7 +338,8 @@ HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle
     InitTask customInitTask = {0};
     customInitTask.context = reinterpret_cast<u64>(addr.ptr());
     customInitTask.isCustom = false;
-    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16 ? MAX_VALUE_U16 : NOTIFY_DEFAULT_WAIT_TIME;
+    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
+                    std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
     CHK_RET(hccl::AicpuAclKernelLaunch(localStream.ptr(),
         reinterpret_cast<void *>(&customInitTask),
         sizeof(customInitTask),

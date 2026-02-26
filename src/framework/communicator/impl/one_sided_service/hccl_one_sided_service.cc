@@ -1203,7 +1203,8 @@ HcclResult HcclOneSidedService::AicpuUnfoldKernelLaunchV2(const std::string &ker
     u64 tilingDataSize, const rtStream_t stream)
 {
     u64 commContext = 0ULL;
-    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16 ? MAX_VALUE_U16 : NOTIFY_DEFAULT_WAIT_TIME;
+    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
+                    std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
     if (GetExternalInputHcclExecTimeoutSet() !=
         HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
         CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(identifier_)) {
@@ -1215,9 +1216,9 @@ HcclResult HcclOneSidedService::AicpuUnfoldKernelLaunchV2(const std::string &ker
             }
     }
 
-    if (tilingDataSize > std::numeric_limits<u32>::max()) {
+    if (tilingDataSize > std::numeric_limits<uint32_t>::max()) {
         HCCL_ERROR("[AicpuUnfoldKernelLaunchV2] tilingDataSize[%llu] exceeds the "
-                    "maximum allowed value for u32 [%u].", tilingDataSize, std::numeric_limits<u32>::max());
+                    "maximum allowed value for u32 [%u].", tilingDataSize, std::numeric_limits<uint32_t>::max());
         return HCCL_E_RUNTIME;
     }
 

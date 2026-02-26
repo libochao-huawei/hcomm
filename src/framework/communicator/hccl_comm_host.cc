@@ -28,7 +28,6 @@
 
 namespace hccl
 {
-    constexpr u16 MAX_VALUE_U16 = 0xFFFF;
     HcclResult hcclComm::AllReduce(const std::string &tag, void *inputPtr, void *outputPtr, u64 count,
                                    HcclDataType dataType, HcclReduceOp op, HcclRtStream stream, SyncMode syncMode)
     {
@@ -359,7 +358,8 @@ namespace hccl
         // 下kernel进行自定义算子aicpu侧通信域的公共初始化
         std::string kernelName = "RunAicpuIndOpCommInit";
         HCCL_INFO("AicpuAclKernelLaunch start");
-        u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16 ? MAX_VALUE_U16 : NOTIFY_DEFAULT_WAIT_TIME;
+        u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
+                        std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
         CHK_RET(AicpuAclKernelLaunch(localStream.ptr(), reinterpret_cast<void *>(&commAicpuParam_),
             sizeof(commAicpuParam_), binHandle_, kernelName, true, timeOut));
         HCCL_INFO("AicpuAclKernelLaunch end, hcclStreamSynchronize start");

@@ -18,7 +18,6 @@
 
 namespace hccl {
 
-constexpr u16 MAX_VALUE_U16 = 0xFFFF;
 IndependentOp::IndependentOp(){};
 
 HcclResult IndependentOp::SetIndependentOpConfig(const CommConfig &commConfig, const RankTable_t &rankTable,
@@ -79,7 +78,8 @@ HcclResult IndependentOp::KernelLaunchAicpuCommInit()
 
     // 下kernel进行自定义算子aicpu侧通信域的公共初始化
     std::string kernelName = "RunAicpuIndOpCommInit";
-    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > MAX_VALUE_U16 ? MAX_VALUE_U16 : NOTIFY_DEFAULT_WAIT_TIME;
+    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
+                    std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
     CHK_RET(AicpuAclKernelLaunch(localStream.ptr(), reinterpret_cast<void *>(&commAicpuParam_),
         sizeof(commAicpuParam_), binHandle_, kernelName, true, timeOut));
     CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut("")));
