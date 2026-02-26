@@ -15,7 +15,7 @@
 #include "thread.h"
 #include "launch_context.h"
 #include "resource_entities.h"
-
+#include "hcomm_notify_utils.h"
 #include "ub_transport_lite_impl.h"
 #include "device/framework/aicpu_hccl_process.h"
 
@@ -101,79 +101,36 @@ int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src
 
 int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx)
 {
-    ThreadEntity *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    auto *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
     CHK_PTR_NULL(threadEntityPtr);
-    ThreadEntity *const dstThreadEntityPtr = reinterpret_cast<ThreadEntity *>(dstThread);
+    auto *const dstThreadEntityPtr = reinterpret_cast<ThreadEntity *>(dstThread);
     CHK_PTR_NULL(dstThreadEntityPtr);
-    const CommEngine srcEngine = threadEntityPtr->engine;
-    const CommEngine dstEngine = dstThreadEntityPtr->engine;
-    const ThreadType srcType = threadEntityPtr->type;
-    const ThreadType dstType = dstThreadEntityPtr->type;
 
-    HCCL_INFO("[%s] START. thread[0x%llx] (engine[%d], type[%d]), dstThread[0x%llx] (engine[%d], type[%d]), dstNotifyIdx[%u].",
-        __func__, thread, srcEngine, srcType, dstThread, dstEngine, dstType, dstNotifyIdx);
+    HCCL_INFO("[%s] START. thread[0x%llx][%s], dstThread[0x%llx][%s], dstNotifyIdx[%u].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), dstThread, dstThreadEntityPtr->DescribeAttr().c_str(), dstNotifyIdx);
 
     int32_t ret = HCCL_SUCCESS;
-    if (srcEngine == COMM_ENGINE_AICPU && srcType == THREAD_TYPE_TS &&
-        dstEngine == COMM_ENGINE_CPU && dstType == THREAD_TYPE_CPU) { // AicpuTs -> Cpu
-        AddThread(threadEntityPtr->threadObjAddr);
-        auto *const threadPtr = reinterpret_cast<AicpuTsThread *>(threadEntityPtr->threadObjAddr);
-        CHK_PTR_NULL(threadPtr);
-        if (!threadPtr->IsDeviceA5()) {
-            HCCL_ERROR("[%s] AICPU-TS -> CPU is NOT supported on A3.", __func__);
+    NotifyRecordOpType notifyRecordOpType = GetNotifyRecordOpType(*threadEntityPtr, *dstThreadEntityPtr);
+    switch (notifyRecordOpType) {
+        case NotifyRecordOpType::AicpuTs_to_AicpuTs:
+            AddThread(threadEntityPtr->threadObjAddr);
+            ret = RecordAicpuTsToAicpuTs(*threadEntityPtr, *dstThreadEntityPtr, dstNotifyIdx);
+            break;
+        case NotifyRecordOpType::AicpuTs_to_Cpu:
+            AddThread(threadEntityPtr->threadObjAddr);
+            ret = RecordAicpuTsToCpu(*threadEntityPtr, *dstThreadEntityPtr, dstNotifyIdx);
+            break;
+        case NotifyRecordOpType::Cpu_to_AicpuTs:
+            ret = RecordCpuToAicpuTs(thread, dstThread, dstNotifyIdx, HcommRequestServiceOnThread);
+            break;
+        default:
+            HCCL_ERROR("[%s] Not supported combination of comm engines and thread types.", __func__);
             ret = HCCL_E_NOT_SUPPORT;
-            goto FINAL;
-        }
-        if (dstNotifyIdx >= dstThreadEntityPtr->notifyNum) {
-            HCCL_ERROR("[%s] dstNotifyIdx[%u] is out of range.", __func__, dstNotifyIdx);
-            ret = HCCL_E_PARA;
-            goto FINAL;
-        }
-        const NotifyEntity dstNotifyEntity = dstThreadEntityPtr->notifies[dstNotifyIdx];
-        ret = threadPtr->ThreadNotifyRecordCrossType(dstNotifyEntity);
-        goto FINAL;
+            break;
     }
-    if (srcEngine == COMM_ENGINE_CPU && srcType == THREAD_TYPE_CPU && 
-        dstEngine == COMM_ENGINE_AICPU && dstType == THREAD_TYPE_TS) { // Cpu -> AicpuTs
-        RecordServiceArgs tempRecordArgs = {
-            .threadHandle = thread,
-            .dstThreadHandle = dstThread,
-            .dstNotifyIdx = dstNotifyIdx,
-        };
-        const ThreadServiceArgs tempServiceArgs = {
-            .args = &tempRecordArgs,
-            .argsSizeByte = sizeof(tempRecordArgs),
-            .timeOutSecond = 32,
-        };
-        ret = HcommRequestServiceOnThread(thread, threadEntityPtr->cpuRes.recordService, &tempServiceArgs);
-        goto FINAL;
-    }
-    if (srcEngine == COMM_ENGINE_AICPU && srcType == THREAD_TYPE_TS &&
-        dstEngine == COMM_ENGINE_AICPU && dstType == THREAD_TYPE_TS) { // AicpuTs -> AicpuTs
-        AddThread(threadEntityPtr->threadObjAddr);
-        auto *const threadPtr = reinterpret_cast<AicpuTsThread *>(threadEntityPtr->threadObjAddr);
-        CHK_PTR_NULL(threadPtr);
-        auto *const dstThreadPtr = reinterpret_cast<AicpuTsThread *>(dstThreadEntityPtr->threadObjAddr);
-        CHK_PTR_NULL(dstThreadPtr);
-
-        if (threadPtr->IsDeviceA5()) {
-            LocalNotify *const notifyPtr = dstThreadPtr->GetNotify(dstNotifyIdx);
-            CHK_PTR_NULL(notifyPtr);
-            const uint32_t notifyId = notifyPtr->notifyId_;
-            EXECEPTION_CATCH(ret = threadPtr->LocalNotifyRecord(notifyId), ret = HCCL_E_INTERNAL);
-        } else {
-            Stream *stream = GetStream(thread);
-            CHK_PTR_NULL(stream);
-            LocalNotify *notify = GetNotify(dstThread, dstNotifyIdx);
-            CHK_PTR_NULL(notify);
-            ret = HcclLocalNotifyRecord(stream, notify);
-        }
-        goto FINAL;
-    }
-    HCCL_ERROR("[%s] Not supported combination of comm engines and thread types.", __func__);
-    ret = HCCL_E_NOT_SUPPORT;
-FINAL:
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx] (type[%d]), dstThread[0x%llx] (type[%d]), dstNotifyIdx[%u].", __func__, thread, srcType, dstThread, dstType, dstNotifyIdx), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, 
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx][%s], dstThread[0x%llx][%s], dstNotifyIdx[%u].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), dstThread, dstThreadEntityPtr->DescribeAttr().c_str(), dstNotifyIdx), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
