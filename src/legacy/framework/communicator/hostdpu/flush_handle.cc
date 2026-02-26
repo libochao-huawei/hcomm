@@ -24,8 +24,14 @@ FlushHandle::~FlushHandle()
 
 HcclResult FlushHandle::Init(IpAddress ip, u32 devPhyId)
 {
+    int lbMax = 0;
     // 获取 RDMA handle
     CHK_RET(GetRdmaHandle(ip, devPhyId, &rdmaHandle));
+
+    // 获取 LbMax
+    CHK_RET(GetLbMax(&rdmaHandle, &lbMax));
+
+    flushOpcodeSupport = lbMax > 0;
 
     // 分配 Host Memory
     CHK_RET(AllocateHostMemory());
@@ -43,6 +49,18 @@ HcclResult FlushHandle::Init(IpAddress ip, u32 devPhyId)
     CHK_RET(RegisterRemoteMr());
 
     flushIsInitialied = true;
+    return HCCL_SUCCESS;
+}
+
+HcclResult FlushHandle::GetLbMax(void *rdevHandle, int *lbMax)
+{
+    int ret = RaGetLbMax(rdevHandle, lbMax);
+    if (ret != 0) {
+        HcclResult eRet = Destroy();
+        HCCL_ERROR("[GetLbMax]Failed to get lb max. error_code=%d. Destroy Flush code=%d", ret, eRet);
+        return HCCL_E_ROCE_CONNECT;
+    }
+    HCCL_DEBUG("[GetLbMax]Loopback QP created successfully. QP Handle=%p", qpHandle);
     return HCCL_SUCCESS;
 }
 

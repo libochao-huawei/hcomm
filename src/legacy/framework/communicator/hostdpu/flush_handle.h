@@ -33,6 +33,7 @@ public:
     MrInfoT        loopBackQpMrRemoteInfo;
     MrInfoT        loopBackQpMrLocalInfo;
     LoopbackQpPair loopBackQpParam;
+    bool flushOpcodeSupport{false};
 
 private:
     bool           flushIsInitialied{false};
