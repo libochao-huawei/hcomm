@@ -384,9 +384,9 @@ HcclResult CheckRankIpFamily(const std::vector<RankInfo_t> &rankList)
                 "EI0014",
                 std::vector<std::string>({ "value", "variable" ,"expect" }),
                 std::vector<std::string>({std::to_string(rankList[index].hostIp.GetFamily()),
-                " \"Device Id of server Id " + std::to_string(rankList[index].serverId) + "\" ", "is unique"}));
+                " \"Device Id of server Id " + rankList[index].serverId + "\" ", "is unique"}));
             errormessage = "Value " + std::to_string(rankList[index].hostIp.GetFamily()) + " for rankTable variable \"Device Id of "\
-                "server Id " + std::to_string(rankList[index].serverId) + "\" is invalid, expected value is unique."
+                "server Id " + rankList[index].serverId + "\" is invalid, expected value is unique."
             CHK_PRT_RET(
                 ((rankList[index].hostIp.GetFamily() != AF_INET) && (rankList[index].hostIp.GetFamily() != AF_INET6)),
                 HCCL_ERROR("[%s][%s] %s",
@@ -399,7 +399,7 @@ HcclResult CheckRankIpFamily(const std::vector<RankInfo_t> &rankList)
                 "EI0014",
                 std::vector<std::string>({ "value", "variable" ,"expect" }),
                 std::vector<std::string>({std::to_string(rankList[index].hostIp.GetFamily()),
-                " \"Device Id of server Id " + std::to_string(rankList[index].serverId) + "\" ", "is unique"}));
+                " \"Device Id of server Id " + rankList[index].serverId + "\" ", "is unique"}));
             CHK_PRT_RET((hostFamily != 0 && hostFamily != rankList[index].hostIp.GetFamily()),
                 HCCL_ERROR("[%s][%s]%s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -420,9 +420,9 @@ HcclResult CheckRankIpFamily(const std::vector<RankInfo_t> &rankList)
                 "EI0014",
                 std::vector<std::string>({ "value", "variable" ,"expect" }),
                 std::vector<std::string>({std::to_string(rankList[index].hostIp.GetFamily()), " \"Device Id of "\
-                "server Id " + std::to_string(rankList[index].serverId) + " \" ", "is unique"}));
+                "server Id " + rankList[index].serverId + " \" ", "is unique"}));
             errormessage =  "Value " + std::to_string(rankList[index].hostIp.GetFamily()) + " for rankTable variable \"Device Id of "\
-                "server Id " + std::to_string(rankList[index].serverId) + " \" is invalid, expected value is unique."
+                "server Id " + rankList[index].serverId + " \" is invalid, expected value is unique."
             CHK_PRT_RET(((iter.GetFamily() != AF_INET) && (iter.GetFamily() != AF_INET6)),
                 HCCL_ERROR("[%s][%s]%s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
