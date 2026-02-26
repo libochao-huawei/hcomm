@@ -56,9 +56,6 @@ u32 InsTempBroadcastMesh1DTwoShot::CalcScratchMultiple(BufferType inBuffType, Bu
 // 按照mesh的方式计算SliceInfo，例如N张卡，就是N份slice
 HcclResult InsTempBroadcastMesh1DTwoShot::CalcDataSliceInfo(const u64 dataSize, RankSliceInfo &sliceInfoVec)
 {
-    // 校验 tempRankSize_ 是否大于零
-    CHK_PRT_RET(tempRankSize_ == 0, HCCL_ERROR("[InsTempBroadcastMesh1DTwoShot] tempRankSize_ is zero"),
-            HcclResult::HCCL_E_INTERNAL);
     // 一般情况下，mesh的temp是单级的
     u64 unitAllignSize;
     AllignInfo allignInfo = {false, 0, dataType_};

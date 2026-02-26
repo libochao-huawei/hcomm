@@ -2317,10 +2317,7 @@ CommunicatorImpl::~CommunicatorImpl()
 HcclResult CommunicatorImpl::DestroyDpuKernelResource()
 {
     // 释放
-    if (hostShareBuf != nullptr) {
-        free(hostShareBuf);
-        hostShareBuf = nullptr;
-    }
+    free(hostShareBuf);
 
     // 终止Dpu Kernel的TaskRun
     if (!isDpuKernelLaunched) {
@@ -3085,10 +3082,6 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     auto shMem              = GetKFCWorkSpace(DPUTAG);
     if (shMem == nullptr) {
         HCCL_ERROR("[CommunicatorImpl::%s] Get Dpu Workspace Failed", __func__);
-        if (hostShareBuf != nullptr) {
-            free(hostShareBuf);
-            hostShareBuf = nullptr;
-        }
         return HCCL_E_INTERNAL;
     }
     hostArgsTemp.shareHBM = reinterpret_cast<void *>(shMem->GetAddr());

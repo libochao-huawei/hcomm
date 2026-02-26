@@ -58,7 +58,7 @@ protected:
         std::cout << "A Test case in AicpuStreamManager TearDown" << std::endl;
     }
 
-    u32              fakeId       = 1;
+    s32              fakeId       = 1;
     s32              fakeDevLogId = 1;
     u32              fakeDevPhyId = 1;
     u32              fakeSqId     = 2;
