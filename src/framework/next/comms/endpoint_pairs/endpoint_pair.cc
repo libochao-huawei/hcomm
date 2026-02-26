@@ -13,6 +13,8 @@
 #include "hcomm_c_adpt.h"
 #include "orion_adpt_utils.h"
 
+#include "exception_handler.h"
+
 namespace hcomm {
 
 EndpointPair::~EndpointPair() 
@@ -40,18 +42,19 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
     const std::string &socketTag, Hccl::Socket*& socket)
 {
     // 临时方案：支持混跑新增，非Roce场景走orion socketMgr实现server socket复用
-    if (socketConfig.link.GetType() == Hccl::PortDeploymentType::HOST_NET) {
+    if (localEndpointDesc_.loc.locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST) {
         CHK_RET(this->GetSocket(socketTag, socket));
         return HCCL_SUCCESS;
     }
 
     Hccl::LinkData linkData = BuildDefaultLinkData();
-    CHK_RET(EndpointDescPairToLinkDataWithRankIds(localEndpointDesc_, remoteEndpointDesc_, rankId, remoteRankId, linkData));
+    CHK_RET(EndpointDescPairToLinkDataWithRankIds(myRank, rmtRank,
+        localEndpointDesc_, remoteEndpointDesc_, linkData));
     
     // 复用orion流程可能抛异常
     EXCEPTION_HANDLE_BEGIN
     socketMgrCompat_->BatchCreateSockets({linkData}); // 内部同时处理server端和connect端两类socket
-    SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, socketTag);
+    Hccl::SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, socketTag);
     socket = socketMgrCompat_->GetConnectedSocket(socketConfig);
     EXCEPTION_HANDLE_END
 

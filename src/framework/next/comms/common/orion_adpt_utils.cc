@@ -104,7 +104,7 @@ Hccl::LinkData BuildDefaultLinkData()
 static HcclResult EndpointLocTypeToPortDeploymentType(const EndpointLocType locType,
     Hccl::PortDeploymentType &deployType)
 {
-    switch (locEp.loc.locType) {
+    switch (locType) {
         case EndpointLocType::ENDPOINT_LOC_TYPE_HOST:
             deployType = Hccl::PortDeploymentType::HOST_NET;
             break;
@@ -112,7 +112,7 @@ static HcclResult EndpointLocTypeToPortDeploymentType(const EndpointLocType locT
             deployType = Hccl::PortDeploymentType::DEV_NET;
             break;
         default:
-            HCCL_ERROR("[%s] unknown type of EndpointLocType[%d]", __func__, locEp.loc.locType);
+            HCCL_ERROR("[%s] unknown type of EndpointLocType[%d]", __func__, locType);
             return HcclResult::HCCL_E_PARA;
     }
 

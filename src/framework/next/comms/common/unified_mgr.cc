@@ -1,0 +1,84 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include "unified_mgr.h"
+
+#include "hccl_common.h"
+
+// orion 通用平台层单例
+#include "hccp_hdc_manager.h"
+#include "hccp_peer_manager.h"
+#include "hccp_tlv_hdc_manager.h"
+#include "rdma_handle_manager.h"
+#include "inner_net_dev_manager.h"
+#include "socket_handle_manager.h"
+#include "host_socket_handle_manager.h"
+#include "tp_manager.h"
+// orion ccu单例
+#include "ccu_component.h"
+#include "../../../legacy/unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
+#include "ccu_context_mgr_imp.h"
+// 开源开放 ccu单例
+#include "ccu_comp.h"
+#include "../ccu/ccu_device/ccu_res_batch_allocator.h"
+#include "ccu_kernel_mgr.h"
+
+namespace hcomm {
+
+UnifiedMgr& UnifiedMgr::GetInstance(const uint32_t devicePhyId)
+{
+    uint32_t devPhyId = devicePhyId;
+    if (devPhyId >= MAX_MODULE_DEVICE_NUM) {
+        HCCL_WARNING("[UnifiedMgr][%s] use the backup device, devPhyId[%u] should be "
+            "less than %u.", __func__, devPhyId, MAX_MODULE_DEVICE_NUM);
+        devPhyId = MAX_MODULE_DEVICE_NUM; // 使用备份设备
+    }
+
+    // 临时方案：只声明单例对象做生命周期控制，不执行业务动作
+    // 未来需要将各种单例转为该数据结构的成员变量
+    // devicePhyId 目前不影响流程，只是触发静态对象声明
+    Hccl::HccpHdcManager::GetInstance();
+    Hccl::HccpPeerManager::GetInstance();
+    Hccl::HccpTlvHdcManager::GetInstance();
+    Hccl::RdmaHandleManager::GetInstance();
+    Hccl::InnerNetDevManager::GetInstance();
+    Hccl::SocketHandleManager::GetInstance();
+    Hccl::HostSocketHandleManager::GetInstance();
+    Hccl::TpManager::GetInstance(devicePhyId);
+
+    Hccl::CcuComponent::GetInstance(devicePhyId);
+    Hccl::CcuResBatchAllocator::GetInstance(devicePhyId);
+    Hccl::CtxMgrImp::GetInstance(devicePhyId);
+
+    // 开源开放架构下新增CCU类型单例，当前混跑时不使用
+    TpMgr::GetInstance(devicePhyId);
+    CcuComponent::GetInstance(devicePhyId);
+    CcuResBatchAllocator::GetInstance(devicePhyId);
+    CcuKernelMgr::GetInstance(devicePhyId);
+
+    static UnifiedMgr unifiedMgrs[MAX_MODULE_DEVICE_NUM + 1];
+    unifiedMgrs[devPhyId].devPhyId_ = devPhyId;
+
+    return unifiedMgrs[devPhyId];
+}
+
+UnifiedMgr::UnifiedMgr()
+{
+    // 临时方案：最小化修改不做处理
+    // 未来需在构造函数中触发各类成员变量声明
+}
+
+UnifiedMgr::~UnifiedMgr()
+{
+    // 临时方案：最小化修改不做处理
+    // 未来需在析构函数中主动调用各种单例销毁流程，保证销毁时序
+}
+
+} // namespace Hccl

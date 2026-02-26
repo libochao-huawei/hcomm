@@ -25,7 +25,8 @@
 #include "launch_aicpu.h"
 #include "comm_configer.h"
 #include "endpoint_map.h"
-#include "endpoint_map.h"
+
+#include "unified_mgr.h"
 
 namespace hcomm {
 static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
@@ -36,6 +37,14 @@ static std::mutex g_ChannelMapMtx;
 }  // namespace hcomm
 
 namespace hcomm {
+
+HcclResult HcommInit(const uint32_t devPhyId)
+{
+    // 临时方案：触发统一平台层单例触发静态对象声明
+    // 内部流程触发各种单例声明，保证时序
+    (void)UnifiedMgr::GetInstance(devPhyId);
+    return HcclResult::HCCL_SUCCESS;
+}
 
 /**
  * @brief 单锁版本：输入任意 channel handle（可能是 device/host），先通过 g_ChannelD2HMap 映射到
