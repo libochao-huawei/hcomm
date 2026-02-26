@@ -290,7 +290,7 @@ void CollServiceAiCpuImpl::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param
     auto ret = strcpy_s(param.kernel.comm.commId, sizeof(param.kernel.comm.commId), comm->GetId().data());
     if (ret != EOK) {
         THROW<InternalException>(
-            StringFormat("CollServiceAiCpuImpl::SetHcclKernelLaunchParam, strcpy_s commId failed!"));
+            StringFormat("CollServiceAiCpuImpl::SetHcclKernelLaunchParam, strcpy_s commId failed! ret[%d]", ret));
     }
     if (op.opMode == OpMode::OPBASE) {
         SetOpbaseBufferParam(param, comm, op);
@@ -377,17 +377,17 @@ void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollO
 
     s32 ret = strcpy_s(param.kernel.algName, sizeof(param.kernel.algName), algName.data());
     if (ret != EOK) {
-        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch, strcpy_s algName failed!"));
+        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch, strcpy_s algName failed! ret[%d]", ret));
     }
 
     ret = strcpy_s(param.kernel.opTag, sizeof(param.kernel.opTag), op.opTag.data());
     if (ret != EOK) {
-        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch, strcpy_s opTag failed!"));
+        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch, strcpy_s opTag failed! ret[%d]", ret));
     }
 
     ret = strcpy_s(param.kernel.tagKey, sizeof(param.kernel.tagKey), curTagKey.data());
     if (ret != EOK) {
-        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch, strcpy_s tagKey failed!"));
+        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch, strcpy_s tagKey failed! ret[%d]", ret));
     }
 
     HCCL_INFO("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch param.kernel.algName: %s, op.opTag %s", param.kernel.algName,
@@ -698,7 +698,7 @@ static void SetModuleDataName(ModuleData &module, const std::string &name)
 {
     int ret = strcpy_s(module.name, sizeof(module.name), name.c_str());
     if (ret != 0) {
-        THROW<InternalException>(StringFormat("strcpy_s name %s failed", name.c_str()));
+        THROW<InternalException>(StringFormat("strcpy_s name %s failed. ret[%d]", name.c_str(), ret));
     }
 }
 
@@ -835,7 +835,7 @@ void CollServiceAiCpuImpl::AicpuUpdateCommLaunch(Stream &stream, const DevBuffer
 
     s32 ret = strcpy_s(param.kernelName, sizeof(param.kernelName), "HcclUpdateCommKernelEntrance");
     if (ret != EOK) {
-        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuUpdateCommLaunch, strcpy_s kernelName failed!"));
+        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuUpdateCommLaunch, strcpy_s kernelName failed! ret[%d]", ret));
     }
     auto op = comm->GetCurrentCollOperator();
     AicpuKernelLaunch(param, stream, op->opMode);
