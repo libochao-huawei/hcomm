@@ -30,7 +30,7 @@ typedef __uint8_t__ uint8_t;
 namespace AscendC {
 
 extern int64_t block_idx;
-extern int64_t block_num;
+extern int64_t numBlocks_;
 
 using half = int16_t;
 using bfloat16_t = int16_t;
@@ -117,7 +117,7 @@ struct MemDetails {
 };
 
 extern __aicore__ inline int64_t GetBlockIdx() {return block_idx;};
-extern __aicore__ inline int64_t GetBlockNum() {return block_num;};
+extern __aicore__ inline int64_t GetBlockNum() {return numBlocks_;};
 extern __aicore__ inline int64_t GetSystemCycle() {return 0;};
 extern __aicore__ inline void InitDump(bool dump, uint8_t* dumpAddr, u32 dumpSize) {return;};
 extern __aicore__ inline void PRINTF(const char *__restrict format, ...) {
