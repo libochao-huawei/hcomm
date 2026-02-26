@@ -31,86 +31,6 @@
 #include <cstring>
 
 namespace hcomm {
-
-// ========== RoCECapability 序列化实现 ==========
-void RoCECapability::Serialize(Hccl::BinaryStream &stream)
-{
-    stream << magic;
-    stream << version;
-    stream << totalLength;
-    stream << nodeType;
-    stream << static_cast<uint8_t>(nicDeploy);
-    stream << static_cast<uint8_t>(commStack);
-    stream << static_cast<uint8_t>(syncMode);
-    for (int i = 0; i < 2; i++) {
-        stream << reserved[i];
-    }
-}
-
-void RoCECapability::Deserialize(Hccl::BinaryStream &stream)
-{
-    stream >> magic;
-    stream >> version;
-    stream >> totalLength;
-    stream >> nodeType;
-    uint8_t nicDeployVal, commStackVal, syncModeVal;
-    stream >> nicDeployVal;
-    stream >> commStackVal;
-    stream >> syncModeVal;
-    nicDeploy = static_cast<NicDeployType>(nicDeployVal);
-    commStack = static_cast<CommStackType>(commStackVal);
-    syncMode = static_cast<SyncMode>(syncModeVal);
-    for (int i = 0; i < 2; i++) {
-        stream >> reserved[i];
-    }
-}
-
-// ========== HybridExchangeData 序列化实现 ==========
-void HybridExchangeData::Serialize(Hccl::BinaryStream &stream)
-{
-    // QP 信息
-    stream << qpn;
-    stream << psn;
-    for (int i = 0; i < HCCP_GID_RAW_LEN; i++) {
-        stream << gid[i];
-    }
-    stream << gidIdx;
-    
-    // Buffer 信息
-    stream << bufAddr;
-    stream << bufRkey;
-    stream << bufLkey;
-    stream << bufSize;
-    
-    // Notify 信息
-    stream << dpuNotifyId;
-    stream << hostNotifyAddr;
-    stream << hostNotifyRkey;
-    stream << hostNotifyOffset;
-}
-
-void HybridExchangeData::Deserialize(Hccl::BinaryStream &stream)
-{
-    // QP 信息
-    stream >> qpn;
-    stream >> psn;
-    for (int i = 0; i < HCCP_GID_RAW_LEN; i++) {
-        stream >> gid[i];
-    }
-    stream >> gidIdx;
-    
-    // Buffer 信息
-    stream >> bufAddr;
-    stream >> bufRkey;
-    stream >> bufLkey;
-    stream >> bufSize;
-    
-    // Notify 信息
-    stream >> dpuNotifyId;
-    stream >> hostNotifyAddr;
-    stream >> hostNotifyRkey;
-    stream >> hostNotifyOffset;
-}
 constexpr u32 FENCE_TIMEOUT_MS = 30 * 1000; // 定义最大等待30秒
 constexpr u32 MEM_BLOCK_SIZE = 128;
 
@@ -883,56 +803,84 @@ HcclResult HostCpuRoceChannel::GetHcclBuffer(void*& addr, uint64_t& size)
 
 HcclResult HostCpuRoceChannel::ExchangeCapability()
 {
-    HCCL_INFO("[Hybrid] Starting capability exchange");
+    HCCL_INFO("[Hybrid][HostCpuRoceChannel] Starting capability exchange");
     
-    // 1. 构造本地能力信息
+    // 1. 构造本地能力信息（使用公共头文件中的默认值）
     RoCECapability localCap;
-    localCap.magic = ROCE_HYBRID_MAGIC;
-    localCap.version = ROCE_CAPABILITY_VERSION;
-    localCap.nodeType = 0;  // TODO: 获取实际设备类型
+    localCap.InitDefaults();
     localCap.nicDeploy = NicDeployType::NIC_DEPLOY_HOST;
     localCap.commStack = CommStackType::COMM_STACK_HOST_CPU_ROCE;
-    localCap.syncMode = SyncMode::SYNC_MODE_WRITE_IMM;
-    localCap.totalLength = sizeof(RoCECapability);
-    memset(localCap.reserved, 0, sizeof(localCap.reserved));
     
-    // 2. 发送本地能力（与 TransportIbverbs 协议一致：4字节大小前缀 + 原始结构体数据）
+    // 2. 发送本地能力（4字节大小前缀 + 原始结构体数据）
     uint32_t sendSize = sizeof(localCap);
     socket_->Send(&sendSize, sizeof(sendSize));
     socket_->Send(&localCap, sendSize);
+    HCCL_INFO("[Hybrid][HostCpuRoceChannel] Sent capability, version=%u", localCap.version);
     
     // 3. 接收对端能力（先读4字节大小，再读数据）
     uint32_t recvSize = 0;
     socket_->Recv(&recvSize, sizeof(recvSize));
-    CHK_PRT_RET(recvSize > 1024 || recvSize == 0,
-        HCCL_ERROR("[Hybrid] Invalid capability size: %u", recvSize),
-        HCCL_E_PARA);
+    
+    // 检查大小是否在合理范围内（必须 >= sizeof(RoCECapability) 且 <= 1024）
+    if (recvSize < sizeof(RoCECapability) || recvSize > 1024) {
+        HCCL_ERROR("[Hybrid][HostCpuRoceChannel] Invalid capability size: %u, expected [%zu, 1024]",
+            recvSize, sizeof(RoCECapability));
+        return HCCL_E_PARA;
+    }
     
     std::vector<char> recvData(recvSize);
     socket_->Recv(recvData.data(), recvSize);
     
-    // 4. 解析对端能力（直接内存拷贝，确保与 TransportIbverbs 兼容）
-    CHK_PRT_RET(recvSize < sizeof(RoCECapability),
-        HCCL_ERROR("[Hybrid] Received data too small: %u < %zu", recvSize, sizeof(RoCECapability)),
-        HCCL_E_PARA);
+    // 4. 先检查魔数（前4字节），如果不对可能是旧版本，需要回退
+    if (!RoCECapability::CheckMagic(reinterpret_cast<uint8_t*>(recvData.data()), recvSize)) {
+        HCCL_WARNING("[Hybrid][HostCpuRoceChannel] Magic mismatch, peer may be old version. "
+                     "Falling back to native mode.");
+        // 回退到原生模式
+        isHybridMode_ = false;
+        negotiatedSyncMode_ = SyncMode::SYNC_MODE_WRITE_IMM;
+        // 标记为"跳过混合模式协商"，后续流程继续使用原生模式
+        remoteCap_.magic = 0;  // 标记为无效
+        return HCCL_SUCCESS;
+    }
     
-    memcpy(&remoteCap_, recvData.data(), sizeof(RoCECapability));
+    // 5. 魔数正确，解析对端能力
+    if (!remoteCap_.Deserialize(reinterpret_cast<uint8_t*>(recvData.data()), recvSize)) {
+        HCCL_ERROR("[Hybrid][HostCpuRoceChannel] Failed to deserialize capability");
+        return HCCL_E_PARA;
+    }
     
-    // 5. 校验魔数和版本
-    CHK_PRT_RET(remoteCap_.magic != ROCE_HYBRID_MAGIC,
-        HCCL_ERROR("[Hybrid] Magic mismatch, expected 0x%x, got 0x%x", ROCE_HYBRID_MAGIC, remoteCap_.magic),
-        HCCL_E_VERSION);
+    // 6. 校验字段有效性
+    if (!remoteCap_.Validate()) {
+        HCCL_ERROR("[Hybrid][HostCpuRoceChannel] Capability validation failed");
+        return HCCL_E_VERSION;
+    }
     
-    CHK_PRT_RET(remoteCap_.version < ROCE_MIN_SUPPORTED_VERSION,
-        HCCL_ERROR("[Hybrid] Version too old, expected >= %u, got %u", ROCE_MIN_SUPPORTED_VERSION, remoteCap_.version),
-        HCCL_E_VERSION);
+    // 7. 版本兼容性处理（高版本兼容低版本）
+    if (remoteCap_.version > ROCE_CAPABILITY_VERSION) {
+        // 对端版本更高，使用本地版本的功能集（最小公分母）
+        HCCL_INFO("[Hybrid][HostCpuRoceChannel] Remote version %u > local %u, using local version features",
+            remoteCap_.version, ROCE_CAPABILITY_VERSION);
+    } else if (remoteCap_.version < ROCE_CAPABILITY_VERSION) {
+        // 对端版本更低，使用对端版本的功能集（向下兼容）
+        HCCL_INFO("[Hybrid][HostCpuRoceChannel] Remote version %u < local %u, using remote version features",
+            remoteCap_.version, ROCE_CAPABILITY_VERSION);
+    }
     
-    HCCL_INFO("[Hybrid] Capability exchange success, remote commStack=%u", static_cast<uint8_t>(remoteCap_.commStack));
+    HCCL_INFO("[Hybrid][HostCpuRoceChannel] Capability exchange success, "
+              "remote commStack=%u, version=%u",
+              static_cast<uint8_t>(remoteCap_.commStack), remoteCap_.version);
     return HCCL_SUCCESS;
 }
 
 HcclResult HostCpuRoceChannel::NegotiateMode()
 {
+    // 检查是否是回退到原生模式的情况（magic == 0 表示旧版本回退）
+    if (remoteCap_.magic == 0) {
+        HCCL_INFO("[Hybrid][HostCpuRoceChannel] Skipping mode negotiation, using native mode (fallback)");
+        // isHybridMode_ 已经在 ExchangeCapability 中设置为 false
+        return HCCL_SUCCESS;
+    }
+    
     if (remoteCap_.commStack == CommStackType::COMM_STACK_TRANSPORT_IBVERBS) {
         // 对端是 TransportIbverbs，切换到混合模式
         isHybridMode_ = true;
@@ -941,12 +889,12 @@ HcclResult HostCpuRoceChannel::NegotiateMode()
         
         // 初始化兼容层资源
         CHK_RET(InitHybridModeResources());
-        HCCL_INFO("[Hybrid] Negotiated to hybrid mode (Write + Notify)");
+        HCCL_INFO("[Hybrid][HostCpuRoceChannel] Negotiated to hybrid mode (Write + Notify)");
     } else {
         // 对端也是 HostCpuRoceChannel，使用原生模式
         isHybridMode_ = false;
         negotiatedSyncMode_ = SyncMode::SYNC_MODE_WRITE_IMM;
-        HCCL_INFO("[Hybrid] Using native mode (Write With Immediate)");
+        HCCL_INFO("[Hybrid][HostCpuRoceChannel] Using native mode (Write With Immediate)");
     }
     return HCCL_SUCCESS;
 }

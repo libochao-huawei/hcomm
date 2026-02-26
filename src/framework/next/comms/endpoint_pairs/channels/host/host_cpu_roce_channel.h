@@ -23,85 +23,14 @@
 
 // For hybrid mode
 #include "../../../../../../platform/resource/notify/local_ipc_notify.h"
+#include "hybrid_mode_types.h"
 
 // Forward declaration
 class NotifyPoolImpl;
 
 namespace hcomm {
 
-// ========== RoCE 混合模式（Cross-Mode）常量定义 ==========
-constexpr uint32_t ROCE_HYBRID_MAGIC = 0x48434C52;  // "HCLR"
-constexpr uint16_t ROCE_CAPABILITY_VERSION = 1;
-constexpr uint16_t ROCE_MIN_SUPPORTED_VERSION = 1;
-
-// 通信协议栈类型
-enum class CommStackType : uint8_t {
-    COMM_STACK_HOST_CPU_ROCE = 0,    // Host CPU RoCE (ibverbs)
-    COMM_STACK_TRANSPORT_IBVERBS = 1, // NPU RoCE (HCCP)
-    COMM_STACK_UNKNOWN = 255
-};
-
-// 节点部署类型
-enum class NicDeployType : uint8_t {
-    NIC_DEPLOY_HOST = 0,   // HOST NIC
-    NIC_DEPLOY_DPU = 1,    // DPU/NPU NIC
-    NIC_DEPLOY_UNKNOWN = 255
-};
-
-// 同步模式
-enum class SyncMode : uint8_t {
-    SYNC_MODE_WRITE_IMM = 0,      // Write With Immediate (原生模式)
-    SYNC_MODE_WRITE_NOTIFY = 1,   // Write + Notify (混合模式)
-    SYNC_MODE_UNKNOWN = 255
-};
-
-// RoCE 能力协商结构
-// 注意：使用 packed 属性确保与 TransportIbverbs 的格式一致
-struct RoCECapability {
-    uint32_t magic;              // 魔数：0x48434C52 ("HCLR")
-    uint16_t version;            // 版本号
-    uint16_t totalLength;        // 总长度（包括头部和变长数据）
-    
-    uint8_t nodeType;            // 节点类型（参考 HcclDeviceType）
-    NicDeployType nicDeploy;     // NIC 部署位置
-    CommStackType commStack;     // 通信协议栈类型
-    SyncMode syncMode;           // 支持的同步模式
-    
-    uint8_t reserved[2];         // 预留字段，用于未来扩展
-    
-    void Serialize(Hccl::BinaryStream &stream);
-    void Deserialize(Hccl::BinaryStream &stream);
-} __attribute__((packed));
-
-// 混合模式交换数据结构（非对称设计）
-// 注意：使用 packed 属性确保与 TransportIbverbs 的格式一致
-struct HybridExchangeData {
-    // --- QP 信息 ---
-    uint32_t qpn;
-    uint32_t psn;
-    uint8_t gid[HCCP_GID_RAW_LEN];
-    uint8_t gidIdx;
-    
-    // --- Buffer 信息 ---
-    uint64_t bufAddr;
-    uint32_t bufRkey;
-    uint32_t bufLkey;
-    uint64_t bufSize;
-    
-    // --- Notify 信息（非对称设计关键）---
-    // HostCpuRoceChannel 提供给 TransportIbverbs（作为立即数发送）
-    uint32_t dpuNotifyId;
-    
-    // TransportIbverbs 提供给 HostCpuRoceChannel（作为写入目标地址）
-    uint64_t hostNotifyAddr;
-    uint32_t hostNotifyRkey;
-    uint32_t hostNotifyOffset;
-    
-    void Serialize(Hccl::BinaryStream &stream);
-    void Deserialize(Hccl::BinaryStream &stream);
-} __attribute__((packed));
-
-// 混合模式专用错误码
+// 混合模式专用错误码（保留用于向后兼容，主要定义在 hybrid_mode_types.h）
 enum class HybridModeErrorCode {
     HYBRID_SUCCESS = 0,
     HYBRID_E_INVALID_QP_STATE = 1,
