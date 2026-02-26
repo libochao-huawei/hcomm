@@ -273,7 +273,7 @@ void Mc2Compont::MC2AllocCommRes(const CollAlgParams &params, std::shared_ptr<In
     }
 }
 
-static void saveAlgoInfo(uint32_t index, uint64_t templateSign) {
+static void Mc2Compont::saveAlgoInfo(uint32_t index, uint64_t templateSign) {
         HcclAlgoInfo hcclAlgoInfo;
         hcclAlgoInfo.opType = combinOpParam.opType[index];
         hcclAlgoInfo.algorithmType = combinOpParam.algorithmType[index];
