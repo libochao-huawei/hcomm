@@ -410,7 +410,7 @@ HcclResult TopoInfoExchangeAgent::GetConnection(HcclIpAddress &serverIp, u32 por
     auto timeout = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
 
     while (true) {
-        std::string errormessage = "1. The current node " + std::to_string(serverIp.GetReadableIP()) +
+        std::string errormessage = "1. The current node " + std::string(serverIp.GetReadableIP()) +
                                    " is disconnected from the host of the root node " + std::string(localRankHandle_.ip) + ". "\
                                    "2. the timeout set by the HCCL_CONNECT_TIMEOUT environment variable is too short.";
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
@@ -731,12 +731,12 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterDeviceIP(const RankTable_t &clust
         for (u32 j = (i + 1); j < clusterInfo.rankList.size(); j++) {
             bool err = HasRepeatedIP(clusterInfo.rankList[i].deviceInfo.deviceIp,
                 clusterInfo.rankList[j].deviceInfo.deviceIp);
-            std::string errormessage = "The device IP address " + std::to_string(clusterInfo.rankList[i].deviceInfo.deviceIp) +
+            std::string errormessage = "The device IP address " + std::string(clusterInfo.rankList[i].deviceInfo.deviceIp[0].GetReadableIP()) +
                                        " of rank " + std::to_string(clusterInfo.rankList[i].rankId) +
-                                       " on node " + std::to_string(clusterInfo.serverList[i].serverId) +
-                                       " is the same as the device IP address" + std::to_string(clusterInfo.rankList[j].deviceInfo.deviceIp) +
+                                       " on node " +clusterInfo.serverList[i].serverId +
+                                       " is the same as the device IP address" + std::string(clusterInfo.rankList[j].deviceInfo.deviceIp[0].GetReadableIP()) +
                                        " of rank " + std::to_string(clusterInfo.rankList[j].rankId) +
-                                       " on node " + std::to_string(clusterInfo.serverList[i].serverId) + ".";
+                                       " on node " + clusterInfo.serverList[j].serverId + ".";
             RPT_INPUT_ERR(err,
                 "EI0015",
                 std::vector<std::string>({"error_reason"}),
@@ -813,9 +813,9 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterBackupDeviceIP(RankTable_t &clust
             RPT_INPUT_ERR((backupDevPhyId == rankInfo.deviceInfo.devicePhyId),
                 "EI0014",
                 std::vector<std::string>({ "value", "variable" ,"expect" }),
-                std::vector<std::string>({ std::to_string(backupDevPhyId.GetReadableIP()), " \"backup_device_ip of "\
+                std::vector<std::string>({ std::string(backupDevPhyId.GetReadableIP()), " \"backup_device_ip of "\
                 "rank " + std::to_string(rankInfo.rankId) + "\" ", " \"is device_ip another Die under the same NPU\" " }));
-            errormessage = "Value " + std::to_string(backupDevPhyId.GetReadableIP()) + " for rankTable variable \"backup_device_ip of "\
+            errormessage = "Value " + std::string(backupDevPhyId.GetReadableIP()) + " for rankTable variable \"backup_device_ip of "\
                 "rank " + std::to_string(rankInfo.rankId) + "\" is invalid, expected value \"is device_ip another Die under the same NPU\".";
             CHK_PRT_RET(linkType != LinkTypeInServer::SIO_TYPE,
                 HCCL_ERROR(
@@ -853,9 +853,9 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterRankID(const RankTable_t &cluster
         for (u32 j = (i + 1); j < clusterInfo.rankList.size(); j++) {
             bool err = (clusterInfo.rankList[i].rankId == clusterInfo.rankList[j].rankId);
             std::string errormessage = "Rank ID" + std::to_string(clusterInfo.rankList[i].rankId) +
-                                       " of device ID " + std::to_string(clusterInfo.rankList[i].deviceInfo.devicePhyId) + " on node " + std::to_string(clusterInfo.serverList[i].serverId) +
+                                       " of device ID " + std::to_string(clusterInfo.rankList[i].deviceInfo.devicePhyId) + " on node " + clusterInfo.serverList[i].serverId +
                                        " is the same as that of device ID " + std::to_string(clusterInfo.rankList[j].deviceInfo.devicePhyId) +
-                                       " on node " + std::to_string(clusterInfo.serverList[j].serverId) + ".";
+                                       " on node " + clusterInfo.serverList[j].serverId + ".";
             RPT_INPUT_ERR(err,
                 "EI0015",
                 std::vector<std::string>({"error_reason"}),
@@ -880,7 +880,7 @@ HcclResult TopoInfoExchangeAgent::VerifyServerDevicePhysicID(const std::vector<R
         for (u32 j = (i + 1); j < serverInfo.size(); j++) {
             bool err = (serverInfo[i].deviceInfo.devicePhyId == serverInfo[j].deviceInfo.devicePhyId);
             std::string errormessage = "Rank" + std::to_string(serverInfo[i].rankId) + " of node" +
-                                       std::to_string(serverInfo[i].serverId) +
+                                       serverInfo[i].serverId +
                                        " has the same physical device ID" + std::to_string(serverInfo[i].deviceInfo.devicePhyId) + 
                                        " as the rank" + std::to_string(serverInfo[j].rankId) + ".";
             RPT_INPUT_ERR(err,

@@ -303,10 +303,10 @@ HcclResult TopoInfoParse::CheckServerInnerRankInfo()
         if (HCCL_AISERVER_VAILD_4P_RANKS.find(serverInnerDeviceInfo) == HCCL_AISERVER_VAILD_4P_RANKS.end()) {
             std::string errormessage = "Value " + selectedDevice + " for rankTable "\
                 "variable \"Device Id of server Id " + serverId_ + " \" is invalid, expected value is unique.";
-            errorManager += selectedDevice;
+            errormessage += selectedDevice;
             RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
                 std::vector<std::string>({ selectedDevice, " \"Device Id of server Id " + serverId_ + " \" ", "is unique" }));
-            HCCL_ERROR("[%s][%s] %s", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), errorManager.c_str());
+            HCCL_ERROR("[%s][%s] %s", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), errormessage.c_str());
             return HCCL_E_PARA;
         }
         HCCL_DEBUG("%s", selectedDevice.c_str());
