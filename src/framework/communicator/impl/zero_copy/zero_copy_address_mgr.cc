@@ -128,7 +128,7 @@ HcclResult ZeroCopyAddressMgr::DelLocalIpc2RemoteAddr(u32 devicePhyId, void *rem
         addrRange.erase(rangeIt);
     }
     CHK_RET(PushOne(item));
-    HCCL_INFO("[ZeroCopyAddressMgr][DelLocalIpc2RemoteAddr] dev[%u] del set localIpc[0x%lx] remote[0x%lx] length[%lu]",
+    HCCL_INFO("[ZeroCopyAddressMgr][DelLocalIpc2RemoteAddr] dev[%u] del localIpc[0x%lx] remote[0x%lx] len[%lu]",
         devicePhyId, item.addr.localIpcAddr, item.addr.remoteAddr, length);
     return HCCL_SUCCESS;
 }
