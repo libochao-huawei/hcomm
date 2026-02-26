@@ -258,6 +258,9 @@ inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t des
             channelDesc->notifyNum  = 0;
             channelDesc->memHandles = nullptr;
             channelDesc->memHandleNum = 0;
+            
+            // 初始化hccsAttr中字段
+            channelDesc->hccsAttr.hcclQos = hcclQos;
 
             // 显式设置EndpointDesc相关字段为无效值
             if (UNLIKELY(EndpointDescInit(&channelDesc->localEndpoint, 1) != HCCL_SUCCESS) ||
