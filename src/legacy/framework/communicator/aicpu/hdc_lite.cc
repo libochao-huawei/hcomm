@@ -28,6 +28,11 @@ HcclResult HDCommunicateLite::Init(const struct HDCommunicateParams &params)
 {
     CHK_PRT_RET((params.devMemSize == 0),
         HCCL_ERROR("[HDCommunicateLite][InitDevice]Invalid devMemSize=%u", params.devMemSize), HCCL_E_PARA);
+    // 确保 devMemSize 至少为 8 字节，以容纳控制字
+    constexpr u32 MIN_DEV_MEM_SIZE = HCCL_HDC_HEAD_POS * sizeof(u32);
+    CHK_PRT_RET((params.devMemSize < MIN_DEV_MEM_SIZE),
+        HCCL_ERROR("[HDCommunicateLite][InitDevice]devMemSize=%u is too small, minimum required=%u",
+                   params.devMemSize, MIN_DEV_MEM_SIZE), HCCL_E_PARA);
     void *deviceAddr = reinterpret_cast<void *>(params.deviceAddr);
     CHK_PTR_NULL(deviceAddr);
     readCacheAddr = reinterpret_cast<void *>(params.readCacheAddr);

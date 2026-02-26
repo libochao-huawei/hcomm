@@ -88,7 +88,12 @@ std::shared_ptr<InsQueue> CommunicatorImplLite::GetInsQueue(HcclKernelParamLite 
     CreateCollAlgComponentLite();
     HCCL_INFO("CommunicatorImplLite::GetInsQueue begin kernelParam->algName = %s", kernelParam->algName);
     std::shared_ptr<InsQueue> queue = std::make_shared<InsQueue>();
+
     auto it  = algTopoInfoMap.find(kernelParam->tagKey);
+    if (it == algTopoInfoMap.end()) {
+        HCCL_ERROR("CommunicatorImplLite::GetInsQueue tagKey %s not found in algTopoInfoMap", kernelParam->tagKey);
+        return nullptr;
+    }
     auto ret = algComponentLite->Orchestrate(kernelParam->op.algOperator, kernelParam->algName, it->second, queue);
     if (ret == HCCL_E_PARA) {
         return nullptr;

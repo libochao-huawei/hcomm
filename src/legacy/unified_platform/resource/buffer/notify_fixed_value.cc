@@ -22,10 +22,19 @@ NotifyFixedValue::NotifyFixedValue() : size(DevCapability::GetInstance().GetNoti
 {
     size = HrtGetDeviceType() == DevType::DEV_TYPE_910_95 ? V82_NOTIFY_SIZE : DevCapability::GetInstance().GetNotifySize();
     u64   notifyValueSize = LARGE_PAGE_MEMORY_MIN_SIZE; // 避免申请小页内存。最小2*1024*1024
-    void *ptr             = HrtMalloc(notifyValueSize, RT_MEMORY_HBM);
-    u32   notifyValue     = 1; // notify值写1表示record
-    HrtMemcpy(ptr, notifyValueSize, &notifyValue, size, RT_MEMCPY_HOST_TO_DEVICE);
-    addr = reinterpret_cast<uintptr_t>(ptr);
+    // 确保在异常发生时能够正确释放已分配的内存
+    void *ptr             = nullptr;
+    try {
+        ptr = HrtMalloc(notifyValueSize, RT_MEMORY_HBM);
+        u32   notifyValue     = 1; // notify值写1表示record
+        HrtMemcpy(ptr, notifyValueSize, &notifyValue, size, RT_MEMCPY_HOST_TO_DEVICE);
+        addr = reinterpret_cast<uintptr_t>(ptr);
+    } catch (...) {
+        if (ptr != nullptr) {
+            HrtFree(ptr);
+        }
+        throw;
+    }
 }
 
 NotifyFixedValue::~NotifyFixedValue()
