@@ -416,7 +416,6 @@ HcclResult CheckRankIpFamily(const std::vector<RankInfo_t> &rankList)
         }
 
         for (auto &iter : rankList[index].deviceInfo.deviceIp) {
-
             RPT_INPUT_ERR(((iter.GetFamily() != AF_INET) && (iter.GetFamily() != AF_INET6)),
                 "EI0014",
                 std::vector<std::string>({ "value", "variable" ,"expect" }),

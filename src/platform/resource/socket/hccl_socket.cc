@@ -87,7 +87,7 @@ HcclResult HcclSocket::Listen()
     std::string errormessage = "";
     if (socketType_ == NicType::VNIC_TYPE) {
         ret = NetworkManager::GetInstance(localDeviceLogicId_).StartVnic(localIp_, localPort_);
-        errormessage = "The IP address " + localIp_.GetReadableIP() +
+        errormessage = "The IP address " + std::stding(localIp_.GetReadableIP()) +
                                 " add port " + std::to_string(localPort_) + " have already been bound."
         RPT_INPUT_ERR(true, "EI0019", std::vector<std::string>({"reason"}),
             std::vector<std::string>({errormessage}));
@@ -96,7 +96,7 @@ HcclResult HcclSocket::Listen()
         HCCL_DEBUG("[%s]StartNic localDeviceLogicId_[%d], localIp_[%s], localPort_[%u], rdmaFlag[%d], "
             "socketType_[%d], backupIp_[%s]", __func__, localDeviceLogicId_, localIp_.GetReadableIP(),
             localPort_, rdmaFlag, socketType_, backupIp_.GetReadableIP());
-        errormessage = "The IP address " + localIp_.GetReadableIP() +
+        errormessage = "The IP address " + std::stding(localIp_.GetReadableIP()) +
                                 " add port " + std::to_string(localPort_) + " have already been bound."
         RPT_INPUT_ERR(true, "EI0020", std::vector<std::string>({"reason"}),
             std::vector<std::string>({errormessage}));
@@ -106,7 +106,7 @@ HcclResult HcclSocket::Listen()
         SocketHandle hostSocketHandle;
         ret = NetworkManager::GetInstance(localDeviceLogicId_).StartHostNetAndListen(
             localIp_, hostSocketHandle, localPort_, false);
-        errormessage = "The IP address " + localIp_.GetReadableIP() +
+        errormessage = "The IP address " + std::stding(localIp_.GetReadableIP()) +
                                 " add port " + std::to_string(localPort_) + " have already been bound."
         RPT_INPUT_ERR(true, "EI0019", std::vector<std::string>({"reason"}),
             std::vector<std::string>({errormessage}));
