@@ -1299,7 +1299,7 @@ HcclResult HcclGetOpArgsV2(void **opArgs)
         HCCL_RUN_INFO("Entry-HcclGetOpArgs V910_95, start malloc opArgs in %p", opArgs);
     }
     HcclOpArgs *opArgsMem = (HcclOpArgs *)malloc(sizeof(HcclOpArgs));
-    if (opArgs == nullptr) {
+    if (opArgsMem == nullptr) {
         HCCL_ERROR("[HcclGetOpArgs] malloc HcclOpArgs mem fail, please check.");
         return HCCL_E_INTERNAL;
     }
