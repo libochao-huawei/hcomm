@@ -84,18 +84,17 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
     CHK_PRT_RET(channelNum == 0,
         HCCL_ERROR("[%s] invalid param: channelNum is zero", __func__), HCCL_E_PARA);
 
-    uint32_t localRank = rankId_;
     for (uint32_t i = 0; i < channelNum; ++i) {
         const EndpointDesc &localEndpointDesc = channelDescs[i].localEndpoint;
         const EndpointDesc &remoteEndpointDesc = channelDescs[i].remoteEndpoint;
-        uint32_t remoteRank = channelDescs[i].remoteRank;
+        const uint32_t remoteRank = channelDescs[i].remoteRank;
         HCCL_INFO("[%s][%u/%u] remoteRank[%u] localProtocol[%d] remoteProtocol[%d]",
             __func__, i + 1, channelNum, remoteRank, localEndpointDesc.protocol, remoteEndpointDesc.protocol
         );
 
         hcomm::EndpointPair* endpointPair = nullptr;
-        RankIdPair rankIdPair = std::make_pair(localRank, remoteRank);
-        EndpointDescPair endpointDescPair = std::make_pair(localEndpointDesc, remoteEndpointDesc);
+        const RankIdPair rankIdPair = std::make_pair(rankId_, remoteRank);
+        const EndpointDescPair endpointDescPair = std::make_pair(localEndpointDesc, remoteEndpointDesc);
         RankPair* rankPair = nullptr;
         CHK_RET(rankPairMgr_->Get(rankIdPair, rankPair));
         CHK_PTR_NULL(rankPair);
@@ -103,7 +102,7 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
         CHK_PTR_NULL(endpointPair);
 
         Hccl::Socket* socket = nullptr;
-        auto ret = endpointPair->GetSocket(commTag, socket);
+        auto ret = endpointPair->GetSocket(rankId_, remoteRank, commTag, socket);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d]",
                 __func__, i, remoteRank, localEndpointDesc.protocol),

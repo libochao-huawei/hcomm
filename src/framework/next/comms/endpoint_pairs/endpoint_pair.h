@@ -18,6 +18,7 @@
 #include "socket_mgr.h"
 #include "socket.h"
 #include "../../../../legacy/unified_platform/resource/socket/socket.h"
+#include "../../../../legacy/framework/resource_manager/socket/socket_manager.h"
 
 using EndpointDescPair = std::pair<EndpointDesc, EndpointDesc>;
 
@@ -82,6 +83,7 @@ private:
     EndpointDesc localEndpointDesc_{};
     EndpointDesc remoteEndpointDesc_{};
     std::unique_ptr<SocketMgr> socketMgr_;
+    std::unique_ptr<Hccl::SocketManager> socketMgrCompat_;
     std::vector<ChannelHandle> channelHandles_{};
 };
 
