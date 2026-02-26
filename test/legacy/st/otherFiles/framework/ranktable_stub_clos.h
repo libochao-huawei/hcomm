@@ -72,7 +72,7 @@ const std::string RankTable2pClos = R"(
       "device_id": 1,
       "local_id": 1,
       "replaced_local_id": 10,
-      "device_port": 2222,
+      "device_port": 6666,
       "level_list": [
         {
           "net_layer": 0,
