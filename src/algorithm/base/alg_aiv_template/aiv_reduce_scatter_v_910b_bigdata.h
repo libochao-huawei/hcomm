@@ -83,7 +83,7 @@ __aicore__ inline void AivReduceScatterVBig910B::Process(GM_ADDR input, GM_ADDR 
      ExtraArgs &extraArgs)
 {
     uint32_t blockNumPerGroup = rankSize_;
-    uint32_t targetRank = block_idx >= rankSize_ ? block_idx - rankSize_ : block_idx;
+    uint32_t targetRank = GetBlockIdx() >= rankSize_ ? GetBlockIdx() - rankSize_ : GetBlockIdx();
 
     __gm__ T *inputGm = (__gm__ T *)(input + othersOffset);
     __gm__ T *inputGmSelf = (__gm__ T *)(input + selfOffset);
@@ -92,7 +92,7 @@ __aicore__ inline void AivReduceScatterVBig910B::Process(GM_ADDR input, GM_ADDR 
     __gm__ T *cclGmSelf = (__gm__ T *)(GM_IN[rank_]);
     __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[targetRank]);
 
-    if (block_idx < blockNumPerGroup) {
+    if (GetBlockIdx() < blockNumPerGroup) {
         int32_t inputOffset = extraArgs.sendDispls[targetRank];
         int32_t cclGmSelfOffset = targetRank * maxCount;
 
@@ -130,10 +130,10 @@ __aicore__ inline void aiv_reduce_scatter_v_910b_bigdata(EXTERN_KERNEL_ARGS_DEF)
     op.HeadCounter();
     uint64_t countLeft;
     uint64_t maxCountPerLoop = bufferSize / UB_ALIGN_SIZE * UB_ALIGN_SIZE / rankSize / sizeof(T);
-    if (block_idx >= rankSize) {
-        countLeft = extraArgs.sendCounts[block_idx - rankSize];
+    if (GetBlockIdx() >= rankSize) {
+        countLeft = extraArgs.sendCounts[GetBlockIdx() - rankSize];
     } else {
-        countLeft = extraArgs.sendCounts[block_idx];
+        countLeft = extraArgs.sendCounts[GetBlockIdx()];
     }
     uint64_t countSelf = extraArgs.sendCounts[rank];
     GM_ADDR curInput = input;
@@ -145,8 +145,8 @@ __aicore__ inline void aiv_reduce_scatter_v_910b_bigdata(EXTERN_KERNEL_ARGS_DEF)
     uint64_t selfOffset = 0;
     uint64_t othersOffset = 0;
     while (countLeft > 0 || countSelf > 0) {
-        if (block_idx == rank ||(block_idx >= rankSize && countSelf <= 0) ||
-            (block_idx < rankSize && countLeft <= 0)) {
+        if (GetBlockIdx() == rank ||(GetBlockIdx() >= rankSize && countSelf <= 0) ||
+            (GetBlockIdx() < rankSize && countLeft <= 0)) {
             break;
         }
         uint64_t curCount = (countLeft > maxCountPerLoop) ? maxCountPerLoop : countLeft;
