@@ -408,7 +408,6 @@ HcclResult TopoInfoExchangeAgent::GetConnection(HcclIpAddress &serverIp, u32 por
 {
     auto startTime = std::chrono::steady_clock::now();
     auto timeout = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
-
     while (true) {
         std::string errormessage = "1. The current node " + std::string(serverIp.GetReadableIP()) +
                                    " is disconnected from the host of the root node " + std::string(localRankHandle_.ip) + ". "\
@@ -424,7 +423,6 @@ HcclResult TopoInfoExchangeAgent::GetConnection(HcclIpAddress &serverIp, u32 por
             sleep(WAIT_ERROR_BROADCAST_TIME);
             return HCCL_E_TIMEOUT;
         }
-
         HcclSocketStatus status = socket->GetStatus();
         if (status == HcclSocketStatus::SOCKET_CONNECTING) {
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
@@ -448,13 +446,11 @@ HcclResult TopoInfoExchangeAgent::GetConnection(HcclIpAddress &serverIp, u32 por
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[Get][Connection]errNo[0x%016llx] agentID[%s] send local rank id to remote "\
                     "by client fdHandle failed, ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER), agentBuf, ret), ret);
-
             ret = socket->Send(&connSize_, sizeof(connSize_));
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[Get][Connection]errNo[0x%016llx] rank[%u] send local rank num[%u] to "\
                     "remote by client fdHandle failed, ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER),
                     localRankInfo_.rank, localRankInfo_.rankSize, ret), ret);
-
             HCCL_INFO("local rank[%u] get socket connection with server[%s] port[%u] success.",
                 localRankInfo_.rank, serverIp.GetReadableAddress(), port);
             break;
@@ -1024,20 +1020,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterTlsConsistency(const RankTable_t 
         HCCL_INFO("[Verify][TlsConsistency] All ranks tlsStatus are consistent");
     } else if (!isTlsConsistent && isSupportCheckTlsStatus) {
         // 2.通信域所有卡都支持查询TLS开关状态，但是TLS开关状态存在不一致，报错。
-        RPT_INPUT_ERR(true,
-            "EI0016",
-            std::vector<std::string>({"value", "variable", "expect"}),
-            std::vector<std::string>({tlsInconsistentTlsType,
-                                      " \"tls\" ",
-                                      " \"All ranks are consistent. Current status: rankList for enabled tls:" + tlsInconsistentStr + "; "\
-                                      "rankList for disabled tls:" + tlsInconsistentStr + " rankList "\
-                                      "for query failure tls:" + tlsUnknownRankStr + ".\" "}));
-        errormessage = "Value " + tlsInconsistentTlsType + " for config \"tls\" is invalid. Expected: \"All ranks are consistent. Current status: "\
-            "rankList for enabled tls: " + tlsInconsistentStr + "; rankList for disabled tls:" + tlsInconsistentStr + " rankList for query failure tls:" + tlsUnknownRankStr + ".\"";
-        HCCL_ERROR("[%s][%s] %s",
-            LOG_KEYWORDS_INIT_GROUP.c_str(),
-            LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
-            errormessage.c_str());
+        ReportTlsConfigurationError(tlsInconsistentTlsType, tlsInconsistentStr, tlsUnknownRankStr)
         return HCCL_E_PARA;
     } else if (isTlsConsistent && !isSupportCheckTlsStatus) {
     // 3.通信域内的部分卡不支持查询TLS开关状态，目前能查询到的卡的TLS开关状态是一致的，打印warning提醒
@@ -1045,21 +1028,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterTlsConsistency(const RankTable_t 
             "not support serverId/rankId: %s", tlsUnknownRankStr.c_str());
     } else {
         // 4.通信域内的部分卡不支持查询TLS开关状态，但是目前能查询到的卡的TLS开关状态已经不一致，报错
-        RPT_INPUT_ERR(true,
-            "EI0016",
-            std::vector<std::string>({"value", "variable", "expect"}),
-            std::vector<std::string>({tlsInconsistentTlsType,
-                                      " \"tls\" ",
-                                      " \"All ranks are consistent. Current status: rankList for enabled tls:" + tlsInconsistentStr + "; "\
-                                      "rankList for disabled tls:" + tlsInconsistentStr + " rankList "\
-                                      "for query failure tls:" + tlsUnknownRankStr + ".\" "}));
-        errormessage = "Value " + tlsInconsistentTlsType + " for config \"tls\" is invalid. Expected: \"All ranks are consistent. Current status: "\
-            "rankList for enabled tls: " + tlsInconsistentStr + "; rankList for disabled tls:" + tlsInconsistentStr + " rankList for query failure tls:" + tlsUnknownRankStr + ".\"";
-        HCCL_ERROR(
-            "[%s][%s] %s",
-            LOG_KEYWORDS_INIT_GROUP.c_str(),
-            LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
-            errormessage.c_str());
+        ReportTlsConfigurationError(tlsInconsistentTlsType, tlsInconsistentStr, tlsUnknownRankStr)
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -1093,5 +1062,19 @@ void TopoInfoExchangeAgent::GenerateTlsStatusStr(std::string &tlsStatusStr,
         tlsStatusStr += "];";
     }
     return;
+}
+
+void TopoInfoExchangeAgent::ReportTlsConfigurationError(const std::string& tlsInconsistentTlsType,
+        const std::string& tlsInconsistentStr, const std::string& tlsUnknownRankStr)
+{
+    std::string errormessage = "Value " + tlsInconsistentTlsType + " for config \"tls\" is invalid. Expected: \"All ranks are consistent. Current status: "\
+    "rankList for enabled tls: " + tlsInconsistentStr + "; rankList for disabled tls:" + tlsInconsistentStr + " rankList for query failure tls:" + tlsUnknownRankStr + ".\"";
+    RPT_INPUT_ERR(true,
+    "EI0016",
+    std::vector<std::string>({"value", "variable", "expect"}),
+    std::vector<std::string>({tlsInconsistentTlsType, " \"tls\" ",
+        " \"All ranks are consistent. Current status: rankList for enabled tls:" + tlsInconsistentStr + "; "\
+        "rankList for disabled tls:" + tlsInconsistentStr + " rankList for query failure tls:" + tlsUnknownRankStr + ".\" "}));
+    HCCL_ERROR("[%s][%s] %s", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), errormessage.c_str());
 }
 }
