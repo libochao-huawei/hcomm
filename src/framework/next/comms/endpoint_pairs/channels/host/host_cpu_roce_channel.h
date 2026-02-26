@@ -56,6 +56,7 @@ enum class SyncMode : uint8_t {
 };
 
 // RoCE 能力协商结构
+// 注意：使用 packed 属性确保与 TransportIbverbs 的格式一致
 struct RoCECapability {
     uint32_t magic;              // 魔数：0x48434C52 ("HCLR")
     uint16_t version;            // 版本号
@@ -70,7 +71,7 @@ struct RoCECapability {
     
     void Serialize(Hccl::BinaryStream &stream);
     void Deserialize(Hccl::BinaryStream &stream);
-};
+} __attribute__((packed));
 
 // 混合模式交换数据结构（非对称设计）
 struct HybridExchangeData {

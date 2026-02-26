@@ -2721,6 +2721,7 @@ HcclResult TransportIbverbs::ExchangeCapabilityHybrid()
         uint8_t nicDeploy;           // NIC 部署位置
         uint8_t commStack;           // 通信协议栈类型
         uint8_t syncMode;            // 支持的同步模式
+        uint8_t reserved[2];         // 预留字段，用于未来扩展
     } __attribute__((packed));
     
     constexpr uint32_t ROCE_HYBRID_MAGIC = 0x48434C52;
