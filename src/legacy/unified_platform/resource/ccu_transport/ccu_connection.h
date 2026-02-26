@@ -17,6 +17,8 @@
 #include "ccu_device_manager.h"
 
 namespace Hccl {
+constexpr u32 CONN_DESTORY = 0;
+constexpr u32 CONN_CLEAN = 1;
 
 MAKE_ENUM(CcuConnStatus,
     INIT,           // 初始化
@@ -46,7 +48,7 @@ public:
     {
         return ccuJettys_;
     }
-    void     Clean();
+    void Clean(BatchDeleteJettyInfo& batchDeleteJettyInfo);
 
 protected:
     TpProtocol tpProtocol{TpProtocol::INVALID};
@@ -101,6 +103,7 @@ private:
     vector<RequestHandle>  reqHandles;
     vector<vector<char_t>> reqDataBuffers;
     vector<void*>          remoteJettyHandlePtrs;
+    vector<TargetJettyHandle> remoteDelJettyList;
 
     HcclResult    StatusMachine();
     void          UpdateInitStatus();
@@ -114,7 +117,7 @@ private:
     HcclResult    StartImportJettyRequest(uint32_t jettyIndex, RequestHandle &reqHandle);
     bool          CheckRequestResults();
     void          ConfigChannel();
-    HcclResult    ReleaseConnRes();
+    HcclResult    ReleaseConnRes(const u32 release_type);
     void          ThrowAbnormalStatus(const std::string &funcName);
     std::string   Describe();
 };
