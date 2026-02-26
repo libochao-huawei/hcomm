@@ -105,19 +105,22 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
     CHK_PTR_NULL(threadEntityPtr);
     ThreadEntity *const dstThreadEntityPtr = reinterpret_cast<ThreadEntity *>(dstThread);
     CHK_PTR_NULL(dstThreadEntityPtr);
-    const hccl::ThreadType srcType = threadEntityPtr->type;
-    const hccl::ThreadType dstType = dstThreadEntityPtr->type;
+    const CommEngine srcEngine = threadEntityPtr->engine;
+    const CommEngine dstEngine = dstThreadEntityPtr->engine;
+    const ThreadType srcType = threadEntityPtr->type;
+    const ThreadType dstType = dstThreadEntityPtr->type;
 
-    HCCL_INFO("[%s] START. thread[0x%llx] (type[%d]), dstThread[0x%llx] (type[%d]), dstNotifyIdx[%u].", __func__, thread, srcType, dstThread, dstType, dstNotifyIdx);
+    HCCL_INFO("[%s] START. thread[0x%llx] (engine[%d], type[%d]), dstThread[0x%llx] (engine[%d], type[%d]), dstNotifyIdx[%u].",
+        __func__, thread, srcEngine, srcType, dstThread, dstEngine, dstType, dstNotifyIdx);
 
     int32_t ret = HCCL_SUCCESS;
-    if (srcType == THREAD_TYPE_TS && dstType == THREAD_TYPE_CPU) { // TS notifies non-TS
+    if (srcEngine == COMM_ENGINE_AICPU && srcType == THREAD_TYPE_TS &&
+        dstEngine == COMM_ENGINE_CPU && dstType == THREAD_TYPE_CPU) { // AicpuTs -> Cpu
         AddThread(threadEntityPtr->threadObjAddr);
-
-        Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
+        auto *const threadPtr = reinterpret_cast<AicpuTsThread *>(threadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(threadPtr);
         if (!threadPtr->IsDeviceA5()) {
-            HCCL_ERROR("[%s] NotifyRecord from TS thread to non-TS thread is NOT supported on A3.", __func__);
+            HCCL_ERROR("[%s] AICPU-TS -> CPU is NOT supported on A3.", __func__);
             ret = HCCL_E_NOT_SUPPORT;
             goto FINAL;
         }
@@ -128,7 +131,10 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
         }
         const NotifyEntity dstNotifyEntity = dstThreadEntityPtr->notifies[dstNotifyIdx];
         ret = threadPtr->ThreadNotifyRecordCrossType(dstNotifyEntity);
-    } else if (srcType == THREAD_TYPE_CPU && dstType == THREAD_TYPE_TS) { // non-TS notifies TS
+        goto FINAL;
+    }
+    if (srcEngine == COMM_ENGINE_CPU && srcType == THREAD_TYPE_CPU && 
+        dstEngine == COMM_ENGINE_AICPU && dstType == THREAD_TYPE_TS) { // Cpu -> AicpuTs
         RecordServiceArgs tempRecordArgs = {
             .threadHandle = thread,
             .dstThreadHandle = dstThread,
@@ -140,15 +146,14 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
             .timeOutSecond = 32,
         };
         ret = HcommRequestServiceOnThread(thread, threadEntityPtr->cpuRes.recordService, &tempServiceArgs);
-    } else if (srcType == THREAD_TYPE_CPU && dstType == THREAD_TYPE_CPU) { // non-TS notifies non-TS
-        HCCL_ERROR("[%s] NotifyRecord from non-TS thread to non-TS thread is NOT supported.", __func__);
-        ret = HCCL_E_NOT_SUPPORT;
-    } else if (srcType == THREAD_TYPE_TS && dstType == THREAD_TYPE_TS) { // TS notifies TS
+        goto FINAL;
+    }
+    if (srcEngine == COMM_ENGINE_AICPU && srcType == THREAD_TYPE_TS &&
+        dstEngine == COMM_ENGINE_AICPU && dstType == THREAD_TYPE_TS) { // AicpuTs -> AicpuTs
         AddThread(threadEntityPtr->threadObjAddr);
-
-        Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
+        auto *const threadPtr = reinterpret_cast<AicpuTsThread *>(threadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(threadPtr);
-        Thread *const dstThreadPtr = reinterpret_cast<Thread *>(dstThreadEntityPtr->threadObjAddr);
+        auto *const dstThreadPtr = reinterpret_cast<AicpuTsThread *>(dstThreadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(dstThreadPtr);
 
         if (threadPtr->IsDeviceA5()) {
@@ -163,7 +168,10 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
             CHK_PTR_NULL(notify);
             ret = HcclLocalNotifyRecord(stream, notify);
         }
+        goto FINAL;
     }
+    HCCL_ERROR("[%s] Not supported combination of comm engines and thread types.", __func__);
+    ret = HCCL_E_NOT_SUPPORT;
 FINAL:
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx] (type[%d]), dstThread[0x%llx] (type[%d]), dstNotifyIdx[%u].", __func__, thread, srcType, dstThread, dstType, dstNotifyIdx), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);

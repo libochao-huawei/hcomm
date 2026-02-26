@@ -24,8 +24,8 @@ typedef struct {
     NotifyType type;
     union {
         uint64_t deviceVA;  // type == HOST_MEM 时，为映射到 Device 侧的 notify_dVA
-        uint64_t notifyId;
-    } u;
+        uint64_t notifyId;  // RtsNotify.id
+    };
 } NotifyEntity;
 
 typedef struct {
@@ -37,8 +37,7 @@ typedef struct {
 } QueueInfo;
 
 /**
- * @brief ThreadHandle 线程实体结构体（Device 侧）
- * @note 申请内存大小: sizeof(ThreadENtity) + notifyNum * sizeof(NotifyEntity)
+ * @note 申请内存大小: sizeof(ThreadEntity) + notifyNum * sizeof(NotifyEntity)
  */
 typedef struct {
     ThreadType type;
@@ -49,8 +48,9 @@ typedef struct {
             // QueueInfo completionQueue;  // TODO: for DFX, not planned for now.
             ThreadServiceHandle waitService;
             ThreadServiceHandle recordService;
-        } cpuRes;
-        ThreadHandle threadObjAddr;
+        } cpuRes;  // 如果是 CPU Engine + CPU Type, 选择这个成员
+        uint64_t threadObjAddr;  // 如果是 AICPU Engine + TS Type, 为 Device 侧的 AicpuTsThread 对象地址
+                                 // 如果是 CPU Engine + TS Type, 为 Host 侧的 CpuTsThread 对象地址
         uint32_t raws[128];
     };
     uint32_t notifyNum;
