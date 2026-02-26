@@ -590,6 +590,11 @@ std::string CcuTransport::Describe() const
     return description;
 }
 
+void CcuTransport::GetDeleteJettyInfo(BatchDeleteJettyInfo& batchDeleteJettyInfo)
+{
+    ccuConnection->GetDeleteJettyInfo(batchDeleteJettyInfo);
+}
+
 HcclResult CcuTransport::Clean()
 {
     transStatus = TransStatus::INIT;
