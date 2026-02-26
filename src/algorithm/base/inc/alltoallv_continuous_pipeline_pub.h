@@ -115,16 +115,8 @@ private:
     // 主流等待RDMA从流，RDMA从流通知主流
     HcclResult WaitRdmaSubStreamFinish();
 
-    // 跨module通信，通过SDMA从link left读
-    HcclResult InterSdmaRx(const LINK& linkLeft, const LINK& linkRight, const std::vector<RxMemoryInfo>& recvMems,
-        Stream& stream);
-
-    // 跨module通信，通过SDMA向link right写
-    HcclResult InterSdmaTx(const LINK& linkLeft, const LINK& linkRight, const std::vector<TxMemoryInfo>& sendMems,
-        Stream& stream);
-
-    // 跨module通信，通过RDMA从link left读或向link right写
-    HcclResult InterRdmaTxRx(const LINK& linkLeft, const LINK& linkRight, std::vector<TxMemoryInfo>& sendMems,
+    // 跨module通信，从link left读或向link right写
+    HcclResult InterTxRx(const LINK& linkLeft, const LINK& linkRight, std::vector<TxMemoryInfo>& sendMems,
         std::vector<RxMemoryInfo>& recvMems, Stream& stream);
 
     // 获取本rank的counts和displacements信息
