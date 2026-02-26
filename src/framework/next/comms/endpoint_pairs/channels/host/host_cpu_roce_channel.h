@@ -74,6 +74,7 @@ struct RoCECapability {
 } __attribute__((packed));
 
 // 混合模式交换数据结构（非对称设计）
+// 注意：使用 packed 属性确保与 TransportIbverbs 的格式一致
 struct HybridExchangeData {
     // --- QP 信息 ---
     uint32_t qpn;
@@ -98,7 +99,7 @@ struct HybridExchangeData {
     
     void Serialize(Hccl::BinaryStream &stream);
     void Deserialize(Hccl::BinaryStream &stream);
-};
+} __attribute__((packed));
 
 // 混合模式专用错误码
 enum class HybridModeErrorCode {

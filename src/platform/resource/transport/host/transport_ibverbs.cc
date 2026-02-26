@@ -2871,12 +2871,29 @@ HcclResult TransportIbverbs::ExchangeDataHybrid()
     localData.hostNotifyRkey = localNotifyRkey_;
     localData.hostNotifyOffset = memMsg_[static_cast<u32>(MemType::DATA_NOTIFY_MEM)].offset;
     
-    // 发送本地数据
-    CHK_RET(Send(&localData, sizeof(localData)));
+    // 发送本地数据（与 HostCpuRoceChannel 协议一致：4字节大小前缀 + 数据）
+    uint32_t sendSize = sizeof(localData);
+    CHK_RET(Send(&sendSize, sizeof(sendSize)));
+    CHK_RET(Send(&localData, sendSize));
     
-    // 接收对端数据
+    // 接收对端数据（先读4字节大小，再读数据）
+    uint32_t recvSize = 0;
+    CHK_RET(Recv(&recvSize, sizeof(recvSize)));
+    CHK_PRT_RET(recvSize > 4096 || recvSize == 0,
+        HCCL_ERROR("[Hybrid][TransportIbverbs] Invalid receive size: %u", recvSize),
+        HCCL_E_PARA);
+    
+    std::vector<char> recvData(recvSize);
+    CHK_RET(Recv(recvData.data(), recvSize));
+    
+    // 解析对端数据（直接内存拷贝，确保与 HostCpuRoceChannel 兼容）
+    CHK_PRT_RET(recvSize < sizeof(HybridExchangeData),
+        HCCL_ERROR("[Hybrid][TransportIbverbs] Received data too small: %u < %zu", 
+            recvSize, sizeof(HybridExchangeData)),
+        HCCL_E_PARA);
+    
     HybridExchangeData remoteData;
-    CHK_RET(Recv(&remoteData, sizeof(remoteData)));
+    memcpy(&remoteData, recvData.data(), sizeof(HybridExchangeData));
     
     // 保存对端 DPU Notify ID（HostCpuRoceChannel 提供，作为立即数发送目标）
     remoteDpuNotifyId_ = remoteData.dpuNotifyId;

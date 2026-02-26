@@ -1025,15 +1025,10 @@ HcclResult HostCpuRoceChannel::ExchangeDataHybrid()
     localData.hostNotifyRkey = localNotifyRkey_;
     localData.hostNotifyOffset = hybridNotifyOffset_;
     
-    // 序列化并发送
-    Hccl::BinaryStream stream;
-    localData.Serialize(stream);
-    std::vector<char> sendData;
-    stream.Dump(sendData);
-    
-    uint32_t sendSize = sendData.size();
+    // 发送本地数据（与 TransportIbverbs 协议一致：4字节大小前缀 + 原始结构体数据）
+    uint32_t sendSize = sizeof(localData);
     socket_->Send(&sendSize, sizeof(sendSize));
-    socket_->Send(sendData.data(), sendSize);
+    socket_->Send(&localData, sendSize);
     
     // --- 2. 接收对端数据 ---
     uint32_t recvSize = 0;
@@ -1045,10 +1040,13 @@ HcclResult HostCpuRoceChannel::ExchangeDataHybrid()
     std::vector<char> recvData(recvSize);
     socket_->Recv(recvData.data(), recvSize);
     
-    // --- 3. 解析对端数据 ---
-    Hccl::BinaryStream recvStream(recvData);
+    // --- 3. 解析对端数据（直接内存拷贝，确保与 TransportIbverbs 兼容） ---
+    CHK_PRT_RET(recvSize < sizeof(HybridExchangeData),
+        HCCL_ERROR("[Hybrid] Received data too small: %u < %zu", recvSize, sizeof(HybridExchangeData)),
+        HCCL_E_PARA);
+    
     HybridExchangeData remoteData;
-    remoteData.Deserialize(recvStream);
+    memcpy(&remoteData, recvData.data(), sizeof(HybridExchangeData));
     
     // 校验关键字段
     CHK_PRT_RET(remoteData.dpuNotifyId == INVALID_DPU_NOTIFY_ID,
