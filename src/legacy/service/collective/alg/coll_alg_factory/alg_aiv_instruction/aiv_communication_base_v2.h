@@ -186,7 +186,7 @@ public:
         output_ = output;
         dataType_ = dataType;
         useDoubleBuffer_ = useDoubleBuffer;
-        numBlocks_ = block_num;
+        numBlocks_ = numBlocks_;
 
         inputSliceStride_ = inputSliceStride;
         outputSliceStride_ = outputSliceStride;

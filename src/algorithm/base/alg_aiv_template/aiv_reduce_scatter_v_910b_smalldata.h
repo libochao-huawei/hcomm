@@ -30,23 +30,23 @@ __aicore__ inline void AivReduceScatterVSmall910B::Process(GM_ADDR input, GM_ADD
 
     __gm__ T *inputGM = (__gm__ T *)input;
     __gm__ T *cclGMSelf = (__gm__ T *)(GM_IN[rank_] + dataOffset);
-    __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[block_idx] + dataOffset);
+    __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[GetBlockIdx()] + dataOffset);
     __gm__ T *outputGM = (__gm__ T *)output;
 
 
-    if (block_idx != rank_) {
+    if (GetBlockIdx() != rank_) {
 
         GlobalTensor<T> cclGTOther;
         cclGTOther.SetGlobalBuffer(cclGMOther, extraArgs.sendCounts[rank_]);
         GlobalTensor<T> outputGT;
         outputGT.SetGlobalBuffer(outputGM, extraArgs.sendCounts[rank_]);
 
-        CpGM2GM(cclGMSelf + extraArgs.sendDispls[block_idx], inputGM + extraArgs.sendDispls[block_idx],
-            extraArgs.sendCounts[block_idx]);
+        CpGM2GM(cclGMSelf + extraArgs.sendDispls[GetBlockIdx()], inputGM + extraArgs.sendDispls[GetBlockIdx()],
+            extraArgs.sendCounts[GetBlockIdx()]);
         // 卡间同步
         pipe_barrier(PIPE_ALL);
-        Record(tag, block_idx, AivNotifyType::DataSignal, 0, ifPingpong);
-        Wait(tag, block_idx, AivNotifyType::DataSignal, 0, ifPingpong);
+        Record(tag, GetBlockIdx(), AivNotifyType::DataSignal, 0, ifPingpong);
+        Wait(tag, GetBlockIdx(), AivNotifyType::DataSignal, 0, ifPingpong);
         pipe_barrier(PIPE_ALL);
         LocalTensor<T> localIn = inOutQue.AllocTensor<T>();
         DataCopyGM2UB(localIn, cclGTOther[extraArgs.sendDispls[rank_]], extraArgs.sendCounts[rank_]);
