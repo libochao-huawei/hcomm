@@ -4693,7 +4693,7 @@ namespace hccl
         }
 
         newTag += !opParam.isCapture ? "" : "_Capture";
-        auto isSupportAlg = [&](const std::string &algName, bool aicpuUnfoldMode) -> bool {
+        auto isSupportAlg = [](const std::string &algName, bool aicpuUnfoldMode) -> bool {
             return ((algName == "RunAlltoAllVFullMesh" || algName == "RunAlltoAllVTwoLevelPipeline") && aicpuUnfoldMode) ||
                 (algName == "RunAlltoAllDirectFullmesh");
         };
@@ -7617,7 +7617,7 @@ namespace hccl
         apiParam.x1 = reinterpret_cast<uint64_t>(inputPtr);
         apiParam.gatherOut = reinterpret_cast<uint64_t>(outputPtr);
         apiParam.context = addr;
-        apiParam.workspace = (u64)workSpace_.ptr();
+        apiParam.workspace = reinterpret_cast<uint64_t>(workSpace_.ptr());
         u16 timeOut = 0;
         if (opResPara_.config.notifyWaitTime == 0) {
             timeOut = opResPara_.config.notifyWaitTime;
