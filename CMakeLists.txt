@@ -93,6 +93,7 @@ if(ENABLE_TEST)
 
 elseif(BUILD_OPEN_PROJECT)
     include(cmake/third_party/openssl.cmake)
+    include(cmake/third_party/ubengine.cmake)
     include(cmake/third_party/json.cmake)
     include(cmake/hcomm_utils.cmake)
     include(cmake/config.cmake)
