@@ -44,6 +44,7 @@
 #include "task_exception.h"
 #include "ub_transport_lite_impl.h"
 #include "aicpu_cache_manager.h"
+#include "aicpu_async_unfolder.h"
 
 namespace hccl {
 
@@ -222,6 +223,7 @@ private:
     HcclResult InitTimeOutConfig(const HcclOpResParam *commParam);
     HcclResult InitHostDeviceLock(const HcclOpResParam *commParam);
     HcclResult InitOpRetry(const HcclOpResParam *commParam);
+    HcclResult InitAsyncUnfold(const HcclOpResParam *commParam);
     HcclResult InitZeroCopyExchanger(const HcclOpResParam *commParam);
     HcclResult PrepareZeroCopyExchanger(const std::string &newTag, OpParam &opParam,
         AlgResourceResponse *algResResponse);
@@ -294,7 +296,7 @@ private:
     bool HcclOpCheckNsRecovery();
     HcclResult OrchestrateHcclOp(const std::string &algName, OpParam &param,
         std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, uint32_t &beginSqePos,
-        uint32_t &endSqePos);
+        uint32_t &endSqePos, const AsyncUnfoldStage asyncUnfoldStage);
     HcclResult LaunchSlaveStreamTask(AlgResourceResponse &algResource);
     HcclResult GetAlltoAllvSendRecvInfo(const void* sendRecvInfoPtr, HcclDataType sendType, HcclDataType recvType);
     HcclResult GetAlltoAllvcSendRecvInfo(const void *sendCountMatrix, HcclDataType sendType, HcclDataType recvType);
@@ -604,6 +606,9 @@ private:
 
     // 维护aicpu算子展开的索引, 方便定位当前展开的算子信息
     size_t opUnfoldIdx_ = 0;
+
+    // AICPU异步展开单算子
+    AicpuAsyncUnfolder aicpuAsyncUnfolder_;
 };
 }  // namespace hccl
 #endif  // __AICPU_COMMUNICATOR_H__
