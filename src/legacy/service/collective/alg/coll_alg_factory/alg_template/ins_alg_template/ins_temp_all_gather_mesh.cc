@@ -30,6 +30,7 @@ HcclResult InsTempAllGatherMesh1D::CalcRes(AlgTempResReq &tempResReq)
     HCCL_DEBUG("[InsTempAllGatherMesh1D] Enter CalcRes");
     tempResReq.queNum = tempVTopo_[0].size();
     tempResReq.streamNum = tempResReq.queNum;
+    
     tempResReq.queNotifys = CreateMasterSlaveQueNotifiesRequest(tempResReq.queNum);
     HCCL_DEBUG("[InsTempAllGatherMesh1D] CalcRes queNotifys size[%zu]", tempResReq.queNotifys.size());
 
@@ -40,13 +41,8 @@ HcclResult InsTempAllGatherMesh1D::CalcRes(AlgTempResReq &tempResReq)
     u32 masterQId = 0;
     u32 localCopyQId = tempResReq.queNum - 1;
 
-    u32 topicIdStart = 0;
-    tempResReq.localPostCntNotify.emplace_back(masterQId, localCopyQId, topicIdStart);
-    tempResReq.localWaitCntNotify.emplace_back(localCopyQId, masterQId, topicIdStart);
-
-    u32 topicIdEnd = 1;
-    tempResReq.localPostCntNotify.emplace_back(localCopyQId, masterQId, topicIdEnd);
-    tempResReq.localWaitCntNotify.emplace_back(masterQId, localCopyQId, topicIdEnd);
+    tempResReq.queNotifys.emplace_back(masterQId, localCopyQId, 1);
+    tempResReq.queNotifys.emplace_back(localCopyQId, masterQId, 1);
 
     CHK_RET(CalcResLinksMesh(myRank_, tempRankSize_, tempVTopo_, linkNumBtwPeers_, tempResReq));
     HCCL_DEBUG("[InsTempAllGatherMesh1D] CalcRes done");
