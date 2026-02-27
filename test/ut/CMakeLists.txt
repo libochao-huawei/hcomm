@@ -80,6 +80,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/unique/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/buffer_manager
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/unfold_cache
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/async_unfold_cache
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/ping_mesh/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/inc/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/inc/adapter
@@ -346,6 +347,7 @@ add_subdirectory(platform/resource/notify)
 add_subdirectory(platform/resource/transport)
 add_subdirectory(platform/ping_mesh)
 add_subdirectory(platform/common/unfold_cache)
+add_subdirectory(platform/common/async_unfold_cache)
 add_subdirectory(platform/task)
 add_subdirectory(framework/communicator)
 add_subdirectory(framework/cluster_maintenance)
