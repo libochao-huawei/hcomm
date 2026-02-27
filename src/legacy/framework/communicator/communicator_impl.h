@@ -376,6 +376,7 @@ public:
     std::string GetTopoFilePath();
     std::vector<LinkData> GetFullMeshLinks() const;
     ErrorMessageReport GetAicpuTaskException();
+    void SetMasterStmId(u32 id); // 存masterstmid
 private:
     std::string                                id;
     static std::atomic<u32>                    globalIndex; // 全局通信域唯一一个index, 对应锁保护
@@ -487,6 +488,8 @@ private:
     CollOpParams                               curOpParams; // 当前算子参数
     std::map<std::pair<OpType, string>, std::pair<AcceleratorState, string>> 
         opAcceStateCache{}; // opType + algName --> acceleratorState + newAlgName
+
+    std::unordered_set<u32> masterStmId_; // aclgraph场景记录主流的隐式id
 
     void InitCommonData(const CommParams &commParams);
     void InitCommonDataNotInitDevType(const CommParams &commParams, const HcclCommConfig &commConfig);

@@ -328,7 +328,9 @@ TEST_F(Mc2CompontTest, should_skip_GenerateAlgoTemplatesV2_when_has_cache)
     commConfigPtr->srcDataType = HcclDataType::HCCL_DATA_TYPE_FP32;
     commConfigPtr->dstDataType = HcclDataType::HCCL_DATA_TYPE_FP32;
  
+    HcclAlgoInfo hcclAlgoInfo;
     mc2Compont.algoTemplateMap[0x0000000004010408] = {};    // mock algo template sign cache
+    mc2Compont.algoInfoMap_[0x0000000004010408] = hcclAlgoInfo;    // mock algo template sign cache
  
     EXPECT_NO_THROW(mc2Compont.GenerateAlgoTemplatesV2(mc2TilingPtr, algoTemplateRequire));
  

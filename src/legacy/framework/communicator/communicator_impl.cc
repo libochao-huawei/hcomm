@@ -2448,6 +2448,9 @@ void CommunicatorImpl::UpdateProfStat()
 
 void CommunicatorImpl::ReportProfInfo(uint64_t beginTime, bool cachedReq, bool opbased)
 {
+    // 将存起来的主流隐式id传下去
+    profilingReporter->GetMasterStmId(masterStmId_);
+
     // 上报task信息
     profilingReporter->ReportAllTasks(cachedReq);
 
@@ -3784,6 +3787,14 @@ ErrorMessageReport CommunicatorImpl::GetAicpuTaskException()
     }
     HCCL_INFO("[CommunicatorImpl::GetAicpuTaskException] end");
     return errorMessage;
+}
+
+void CommunicatorImpl::SetMasterStmId(u32 id)
+{
+    auto ret = masterStmId_.insert(id);
+    if (!ret->second) {
+        HCCL_WARNING("stream id exist before");
+    }
 }
 
 } // namespace Hccl

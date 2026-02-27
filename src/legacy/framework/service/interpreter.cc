@@ -124,6 +124,10 @@ void Interpreter::SubmitMasterQueueAlternatively(InsQueue::Iterator &masterQueue
     auto stream = streamMgr.GetMaster();
     auto &rule = insRuleMap.at(masterQueueIter->GetType());
     rule(*masterQueueIter, comm, *stream, taskConfig);
+    u32 taskId;
+    u32 streamId;
+    HrtGetTaskIdAndStreamID(taskId, streamId);
+    comm.SetMasterStmId(streamId);
     HCCL_INFO("[SubmitSlaveQueueAlternatively] master stream id[%u]. Instruction start %s",
                 stream->GetId(), masterQueueIter->Describe().c_str());
     // 切换至下一个task

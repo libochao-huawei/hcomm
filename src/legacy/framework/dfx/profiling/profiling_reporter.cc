@@ -76,7 +76,8 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
         }
         if (lastPoses_.find(streamId) == lastPoses_.end()&& currQueue->Begin() != nullptr) {
             TaskInfo task = (*(*(*currQueue->Begin())));
-            bool isMainStream = (it->first == task.dfxOpInfo_->mainStreamId_) ? true : false;
+            // bool isMainStream = (it->first == task.dfxOpInfo_->mainStreamId_) ? true : false;
+            bool isMainStream = (masterStmId_.find(it->first) != masterStmId_.end()) ? true : false;
             profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
                                                  task.taskParam_.endTime, isMainStream, cachedReq, true);
             profilingHandler_->ReportHcclTaskDetails(task, cachedReq);
@@ -87,7 +88,8 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
         ++(*(iter));
         for (; (*(iter)) != (*(currQueue->End())); ++(*(iter))) {//从iter下一个开始上报
             TaskInfo task = (*(*(*iter)));
-            bool isMainStream = (it->first == task.dfxOpInfo_->mainStreamId_) ? true : false;
+            //bool isMainStream = (it->first == task.dfxOpInfo_->mainStreamId_) ? true : false;
+            bool isMainStream = (masterStmId_.find(it->first) != masterStmId_.end()) ? true : false;
             profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
                                                  task.taskParam_.endTime, isMainStream, cachedReq, true);
             profilingHandler_->ReportHcclTaskDetails(task, cachedReq);
@@ -127,6 +129,14 @@ void ProfilingReporter::CallReportMc2CommInfo(const Stream &kfcStream, Stream &s
                                    const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm) const
 {
     profilingHandler_->ReportHcclMC2CommInfo(kfcStream, stream, aicpuStreams, id, myRank, rankSize, rankInParentComm);
+}
+
+void ProfilingReporter::GetMasterStmId(std::unordered_set<u32> masterStmId)
+{
+    // 清除原set
+    masterStmId_.clear();
+    // 更新set
+    masterStmId_ = masterStmId;
 }
  
 } // namespace Hccl
