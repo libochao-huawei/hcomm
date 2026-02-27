@@ -41,8 +41,11 @@ HcclResult InsTempAllGatherMesh1D::CalcRes(AlgTempResReq &tempResReq)
     u32 masterQId = 0;
     u32 localCopyQId = tempResReq.queNum - 1;
 
-    tempResReq.queNotifys.emplace_back(masterQId, localCopyQId, 1);
-    tempResReq.queNotifys.emplace_back(localCopyQId, masterQId, 1);
+    u32 topicIdStart = 0;
+    tempResReq.queNotifys.emplace_back(masterQId, localCopyQId, topicIdStart);
+
+    u32 topicIdEnd = 1;
+    tempResReq.queNotifys.emplace_back(localCopyQId, masterQId, topicIdEnd);
 
     CHK_RET(CalcResLinksMesh(myRank_, tempRankSize_, tempVTopo_, linkNumBtwPeers_, tempResReq));
     HCCL_DEBUG("[InsTempAllGatherMesh1D] CalcRes done");
