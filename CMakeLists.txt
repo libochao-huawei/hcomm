@@ -114,6 +114,7 @@ elseif(BUILD_OPEN_PROJECT)
         include/hccl/hccl_rank_graph.h
         include/hccl/hccl_res.h
         include/hccl/hcomm_primitives.h
+        include/hccl/hcomm_sym_win_primitives.h
         include/hcomm_res.h
         include/hcomm_res_defs.h
     )
