@@ -136,12 +136,14 @@ target_link_options(hccl_v2_native_alg_repo PRIVATE
     -Wl,-z,relro
     -Wl,-z,now
     -Wl,-z,noexecstack
+    $<$<CONFIG:Release>:-s>
 )
  
 target_link_options(hccl_v2_alg_frame PRIVATE
     -Wl,-z,relro
     -Wl,-z,now
     -Wl,-z,noexecstack
+    $<$<CONFIG:Release>:-s>
 )
  
 target_link_libraries(hccl_v2_native_alg_repo PRIVATE

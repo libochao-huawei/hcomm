@@ -312,6 +312,10 @@ HcclResult GetLocalSendRecvInfoforAlltoall(const CollAlgOperator &opParam, const
 
 HcclResult GetLocalSendRecvInfoforAlltoallV(const CollAlgOperator &opParam, const u32 userRank, const u32 userRankSize, A2ASendRecvInfo &localSendRecvInfo)
 {
+    CHK_PTR_NULL(opParam.all2AllVDataDes.sendCounts);
+    CHK_PTR_NULL(opParam.all2AllVDataDes.sdispls);
+    CHK_PTR_NULL(opParam.all2AllVDataDes.recvCounts);
+    CHK_PTR_NULL(opParam.all2AllVDataDes.rdispls);
     for (u32 j = 0; j < userRankSize; j++) {
         u64 curSendCounts = *(static_cast<const u64 *>(opParam.all2AllVDataDes.sendCounts) + j);
         u64 curSendDispls = *(static_cast<const u64 *>(opParam.all2AllVDataDes.sdispls) + j);
