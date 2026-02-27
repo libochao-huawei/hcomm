@@ -25,9 +25,9 @@
 #include "rs_ctx_inner.h"
 #include "rs_ctx.h"
 #include "rs_ub.h"
-#include "rs_ub_jetty.h"
+#include "rs_ub_jetty_960.h"
 
-void RsUbCtxExtJettyDelete(struct RsCtxJettyCb *jettyCb)
+void RsUbCtxExtJettyDelete960(struct RsCtxJettyCb *jettyCb)
 {
     urma_user_ctl_out_t out = {0};
     urma_user_ctl_in_t in = {0};
@@ -52,7 +52,7 @@ void RsUbCtxExtJettyDelete(struct RsCtxJettyCb *jettyCb)
     return;
 }
 
-void RsUbCtxExtJettyCreate(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg)
+void RsUbCtxExtJettyCreate960(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg)
 {
     struct udma_u_jetty_cfg_ex jettyExCfg = {0};
     struct udma_u_jetty_info jettyInfo = {0};
@@ -101,19 +101,19 @@ void RsUbCtxExtJettyCreate(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jetty
     if (jettyCb->jettyMode == JETTY_MODE_CCU) {
         ret = RsUbCtxRegJettyDb(jettyCb, &jettyInfo);
         if (ret != 0) {
-            RsUbCtxExtJettyDelete(jettyCb);
+            RsUbCtxExtJettyDelete960(jettyCb);
             jettyCb->jetty = NULL;
             hccp_err("rs_ub_ctx_reg_jetty_db failed, ret:%d", ret);
         }
     }
 }
 
-void RsUbVaMunmapBatch(struct RsCtxJettyCb **jettyCbArr, unsigned int num)
+void RsUbVaMunmapBatch960(struct RsCtxJettyCb **jettyCbArr, unsigned int num)
 {
     return; // The current version does not require processing
 }
 
-void RsUbFreeJettyIdBatch(struct RsCtxJettyCb **jettyCbArr, unsigned int num)
+void RsUbFreeJettyIdBatch960(struct RsCtxJettyCb **jettyCbArr, unsigned int num)
 {
     return; // The current version does not require processing
 }
