@@ -11,6 +11,7 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/config.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/param_check.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/json_utils.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/op_async_unfold_info.cc
 )
 
 target_sources(hcomm PRIVATE

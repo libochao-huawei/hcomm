@@ -17,23 +17,6 @@
 #include "dispatcher_task_types.h" // LinkType
 #include "stream_pub.h"
 
-// 确认ptr应该为空
-#define CHK_PTR_NOTNULL(ptr) \
-    do { \
-        if (UNLIKELY((ptr) != nullptr)) { \
-            HCCL_ERROR("[%s] errNo[0x%016llx] ptr[%s] is 0x%016llx (should be null), return HCCL_E_INTERNAL", \
-                __func__, HCCL_ERROR_CODE(HCCL_E_INTERNAL), #ptr, (ptr)); \
-            return HCCL_E_INTERNAL; \
-        } \
-    } while (0)
-
-// 确认ptrPtr不应该为空, 但*ptrPtr应该为空
-#define CHK_PTRPTR_NULL(ptrPtr) \
-    do { \
-        CHK_PTR_NULL(ptrPtr); \
-        CHK_PTR_NOTNULL(*(ptrPtr)); \
-    } while (0)
-
 namespace hccl {
 
 // 记录算子展开的输入/输出的内存范围

@@ -26,6 +26,7 @@ set(src_list
     dlhns_function.cc
     read_write_lock_base.cc
     read_write_lock.cc
+    aicpu_cache_utils.cc
 )
 
 target_sources(hccl_plf PRIVATE
