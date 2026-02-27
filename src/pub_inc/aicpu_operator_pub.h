@@ -207,6 +207,7 @@ constexpr u32 MEM_DETAILS_NUM = 2; // link信息中memDetails的大小：0对应
 constexpr u32 RDMA_QP_MAX_NUM = 33;
 constexpr u32 RDMA_NOTIFY_MAX_NUM = 8 * 3;
 constexpr u32 LOCAL_STREAM_MAX_NUM = 40U;
+constexpr u32 MAX_EXPORT_THREAD_NUM = 40U;
 constexpr u32 LOCAL_NOTIFY_MAX_NUM = 64;
 using RANK_TYPE = u32;
 using TAG_TYPE = u32;
