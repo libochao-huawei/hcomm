@@ -16,7 +16,6 @@
 #include "aicpu_hccl_sqcqv2.h"
 #include "op_unfold_key.h"
 #include "op_unfold_cache_entry.h"
-#include "rt_external_stars_define.h"
 
 namespace hccl {
 
@@ -35,16 +34,8 @@ public:
     HcclResult ClearEntry(const OpUnfoldKey& key); // 如果key存在对应的cache entry, 清理entry
 
     HcclResult ClearEntryForAlltoallv(); // 清理与alltoallv类算子相关的cache entry
-
-    // 只会在DEBUG_LEVEL下打印SQE内容 (通过比较打印算子正常展开的SQE与缓存的SQE, 判断刷新后的SQE是否正确)
-    static HcclResult DumpSqeContent(const uint8_t *sqePtr, const uint8_t sqeType);
-
 private:
     using CacheHashMap = std::unordered_map<OpUnfoldKey, OpUnfoldCacheEntry *>;
-
-    // 只会在DEBUG_LEVEL下打印SQE header的内容
-    static HcclResult DumpSqeHeader(const rtStarsSqeHeader_t& sqeHeader);
-    static HcclResult DumpSqeHeader(const rtStarsSqeHeaderV2_t& sqeHeader);
 
     CacheHashMap cacheHashMap_; // key-entry mapping
 };
