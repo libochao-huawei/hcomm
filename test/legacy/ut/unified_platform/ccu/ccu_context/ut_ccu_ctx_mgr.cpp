@@ -160,10 +160,10 @@ HcclResult CtxMgrGetInstructionNumStub(
 
 TEST_F(CcuContextManagerTest, AGTest)
 {
-    MOCKER(HrtGetDevice).defaults().will(returnValue(0));
+    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
@@ -278,10 +278,10 @@ HcclResult CtxMgrGetResourceSharedResStub(
 
 TEST_F(CcuContextManagerTest, TestSharedRes)
 {
-    MOCKER(HrtGetDevice).defaults().will(returnValue(0));
+    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
