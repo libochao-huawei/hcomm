@@ -474,6 +474,12 @@ HcclResult HcomAlltoAllVCV2(const void *sendBuf, const void *sendCountMatrix, Hc
     CHK_RET(hcclComm->GetRankSize(&rankSize));
     u32 myRank = INVALID_VALUE_RANKID;
     CHK_RET(hcclComm->GetRankId(myRank));
+    bool isEmpty = false;
+    CHK_RET(HcomCheckAlltoAllVCEmptyV2(sendBuf, sendCountMatrix, recvBuf, rankSize, isEmpty));
+    if(isEmpty) {
+        HCCL_INFO("[HcclAlltoAllVCV2] sendCountMatrix is Empty");
+        return HCCL_SUCCESS;
+    }
     CHK_RET(HcomCheckAlltoAllVCExternalMemV2(sendBuf, sendCountMatrix, recvBuf, rankSize, myRank));
 
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
