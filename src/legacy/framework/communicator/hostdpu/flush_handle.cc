@@ -218,11 +218,49 @@ HcclResult FlushHandle::FreeDeviceMemory()
         return HCCL_SUCCESS;
     }
 
-    HrtFree(deviceMem);
+    // 先保存指针地址
+    void *tempPtr = deviceMem;
 
+    // 立即将成员变量置空，防止 double free
     deviceMem = nullptr;
-    HCCL_DEBUG("[FreeDeviceMemory] Device memory successfully freed.");
-    return HCCL_SUCCESS;
+
+    try {
+        HrtFree(tempPtr);
+        HCCL_DEBUG("[FreeDeviceMemory] Device memory successfully freed.");
+        return HCCL_SUCCESS;
+    } catch (const Hccl::HcclException &e) {
+        // 第 1 层：捕获 HCCL 自定义异常
+        HcclResult errorCode = e.GetErrorCode();
+        const char *errorMsg = e.what();
+
+        HCCL_ERROR("[FreeDeviceMemory] HCCL exception caught while freeing device memory.");
+        HCCL_ERROR("[FreeDeviceMemory] Error code: 0x%016llx", HCOM_ERROR_CODE(errorCode));
+        HCCL_ERROR("[FreeDeviceMemory] Error message: %s", errorMsg);
+        
+        // 打印调用栈信息
+        auto backtrace = e.GetBackTraceStrings();
+        if (!backtrace.empty()) {
+            HCCL_ERROR("[FreeDeviceMemory] Backtrace:");
+            for (const auto &line : backtrace) {
+                HCCL_ERROR("[FreeDeviceMemory]   %s", line.c_str());
+            }
+        }
+
+        return errorCode;
+    } catch (const std::exception &e) {
+        // 第 2 层：捕获标准 C++ 异常
+        HCCL_ERROR("[FreeDeviceMemory] Standard exception caught while freeing device memory.");
+        HCCL_ERROR("[FreeDeviceMemory] Exception type: %s", typeid(e).name());
+        HCCL_ERROR("[FreeDeviceMemory] Exception message: %s", e.what());
+ 
+        return HCCL_E_RUNTIME;
+    } catch (...) {
+        // 第 3 层：捕获未知异常
+        HCCL_ERROR("[FreeDeviceMemory] Unknown exception caught while freeing device memory.");
+        HCCL_ERROR("[FreeDeviceMemory] Exception type cannot be identified.");
+
+        return HCCL_E_RUNTIME;
+    }
 }
 
 }  // namespace Hccl
