@@ -104,6 +104,9 @@ HcclResult InsTempScatterMesh1D::RunMesh(TemplateDataParams &tempAlgParams,
                 if (myAlgRank == algRank) {
                     continue;
                 }
+                if (tempInsQues.size() < tempVTopo_[0].size() - 1) {
+                    HCCL_ERROR("tempInsQues size [%zu] is smaller than tempVTopo_[0].size() -1 [%zu]", tempInsQues.size(), tempVTopo_[0].size() - 1)
+                }
                 u32 peerRank = tempVTopo_[0][algRank];
                 const LinkData &linkSend = tempResLinks.at(peerRank)[0];
                 u64 srcOffset = buffInfo_.inBuffType == BufferType::SCRATCH ?
