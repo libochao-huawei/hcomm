@@ -80,7 +80,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_1_rank_Paral
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
+    checkerOpParam.algName = "InsAllReduceFourTemplateMesh1DNHR";
 
     Checker checker;
     HcclResult ret;
@@ -106,7 +106,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_2_rank_Paral
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 4096;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
+    checkerOpParam.algName = "InsAllReduceFourTemplateMesh1DNHR";
     
     Checker checker;
     auto ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
@@ -132,7 +132,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_2_rank_Paral
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 1;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
+    checkerOpParam.algName = "InsAllReduceFourTemplateMesh1DNHR";
 
     Checker checker;
     HcclResult ret;
@@ -158,7 +158,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_3_rank_Paral
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
+    checkerOpParam.algName = "InsAllReduceFourTemplateMesh1DNHR";
 
     Checker checker;
     HcclResult ret;
@@ -183,7 +183,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_3_mul_3_rank_Paral
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
+    checkerOpParam.algName = "InsAllReduceFourTemplateMesh1DNHR";
 
     Checker checker;
     HcclResult ret;
@@ -207,7 +207,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_4_rank_Paral
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 210 * 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
+    checkerOpParam.algName = "InsAllReduceFourTemplateMesh1DNHR";
 
     Checker checker;
     HcclResult ret;
@@ -232,7 +232,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_8_rank_Paral
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
+    checkerOpParam.algName = "InsAllReduceFourTemplateMesh1DNHR";
 
     Checker checker;
     HcclResult ret;
@@ -257,7 +257,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_2_rank_Paral
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 0;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
+    checkerOpParam.algName = "InsAllReduceFourTemplateMesh1DNHR";
 
     Checker checker;
     HcclResult ret;
@@ -283,7 +283,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_3_mul_3_rank_Paral
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
+    checkerOpParam.algName = "InsAllReduceFourTemplateMesh1DNHR";
 
     Checker checker;
     HcclResult ret;
@@ -309,7 +309,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_2_rank_Paral
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 0;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
+    checkerOpParam.algName = "InsAllReduceFourTemplateMesh1DNHR";
 
     Checker checker;
     HcclResult ret;
@@ -332,7 +332,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_Asymmetric_2pod_2m
     checkerOpParam.DataDes.count = 1;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
+    checkerOpParam.algName = "InsAllReduceFourTemplateMesh1DNHR";
 
     Checker checker;
     HcclResult ret;
@@ -355,7 +355,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_Asymmetric_2pod_2m
     checkerOpParam.DataDes.count = 200;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
+    checkerOpParam.algName = "InsAllReduceFourTemplateMesh1DNHR";
 
     Checker checker;
     HcclResult ret;
@@ -378,7 +378,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_pod_Asymmetric_3
     checkerOpParam.DataDes.count = 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
+    checkerOpParam.algName = "InsAllReduceFourTemplateMesh1DNHR";
 
     Checker checker;
     HcclResult ret;
@@ -401,7 +401,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, AllGatherParallel_asymmetric_opbase_6n6n9)
     checkerOpParam.DataDes.count = 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
-    checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
+    checkerOpParam.algName = "InsAllReduceFourTemplateMesh1DNHR";
 
     Checker checker;
     HcclResult ret;
