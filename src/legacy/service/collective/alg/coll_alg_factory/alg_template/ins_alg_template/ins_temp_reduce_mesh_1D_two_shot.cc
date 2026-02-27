@@ -144,7 +144,7 @@ HcclResult InsTempReduceMesh1DTwoShot::RunReduceScatter(const RankSliceInfo &sli
 
             RankId targetRank = GetRankFromMap(rankId);
             if (targetRank == -1 || tempLinks.find(targetRank) == tempLinks.end()) {
-                HCCL_ERROR("[InsTempReduceMesh1DTwoShot] Invalid rank [%d] mapped to [%d] or link not found.", rankId, targetRank);
+                HCCL_ERROR("[InsTempReduceMesh1DTwoShot] Invalid rank [%u] mapped to [%d] or link not found.", rankId, targetRank);
                 return HcclResult::HCCL_E_INTERNAL;
             }
 
@@ -202,7 +202,7 @@ HcclResult InsTempReduceMesh1DTwoShot::RunGatherToRoot(const RankSliceInfo &slic
 
                 RankId targetRank = GetRankFromMap(rankIdx);
                 if (targetRank == -1 || tempLinks.find(targetRank) == tempLinks.end()) {
-                    HCCL_ERROR("[InsTempReduceMesh1DTwoShot] Gather root: Invalid rank [%d] mapped to [%d] or link not found.", rankIdx, targetRank);
+                    HCCL_ERROR("[InsTempReduceMesh1DTwoShot] Gather root: Invalid rank [%u] mapped to [%d] or link not found.", rankIdx, targetRank);
                     return HcclResult::HCCL_E_INTERNAL;
                 }
 
