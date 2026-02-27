@@ -47,6 +47,9 @@ static HcclResult GetHcclGroupParams(const std::string &strGroup, HcclGroupParam
 
 static HcclResult GetHcclCommV2(const char *group, std::shared_ptr<Hccl::HcclCommunicator> &hcclComm)
 {
+    if (hcclGroupMap.fing(group) == hcclGroupMap.end()) {
+        return HCCL_E_PARA;
+    }
     std::string strGroup = (group == nullptr || strlen(group) == 0) ? HCCL_WORLD_GROUP : group;
     HcclGroupParamsV2 hcclGroupParamsV2;
     HcclResult ret = GetHcclGroupParams(strGroup, hcclGroupParamsV2);
