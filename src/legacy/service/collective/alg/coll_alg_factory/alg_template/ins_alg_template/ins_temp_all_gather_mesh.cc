@@ -37,6 +37,17 @@ HcclResult InsTempAllGatherMesh1D::CalcRes(AlgTempResReq &tempResReq)
     tempResReq.localWaitGroupCntNotify.emplace_back(centerQ, 0);
     tempResReq.localBcastPostCntNotify.emplace_back(centerQ, 0);
 
+    u32 masterQId = 0;
+    u32 localCopyQId = tempResReq.queNum - 1;
+
+    u32 topicIdStart = 0;
+    tempResReq.localPostCntNotify.emplace_back(masterQId, localCopyQId, topicIdStart);
+    tempResReq.localWaitCntNotify.emplace_back(localCopyQId, masterQId, topicIdStart);
+
+    u32 topicIdEnd = 1;
+    tempResReq.localPostCntNotify.emplace_back(localCopyQId, masterQId, topicIdEnd);
+    tempResReq.localWaitCntNotify.emplace_back(masterQId, localCopyQId, topicIdEnd);
+
     CHK_RET(CalcResLinksMesh(myRank_, tempRankSize_, tempVTopo_, linkNumBtwPeers_, tempResReq));
     HCCL_DEBUG("[InsTempAllGatherMesh1D] CalcRes done");
     return HcclResult::HCCL_SUCCESS;
@@ -72,21 +83,25 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
         HcclResult::HCCL_E_INTERNAL);
 
     // queue arrangement
-    std::vector<InsQuePtr> mainInsQues;
-    for (u32 queIdx = 0; queIdx < majorQueNum_ + 1; queIdx++) {
+    std::vector<InsQuePtr> mainInsQues; 
+    for (u32 queIdx = 0; queIdx < majorQueNum_; queIdx++) {
         mainInsQues.push_back(tempInsQues[queIdx * queNumPerNeighbor_]);
     }
 
     // 主流通知 copy流开始工作
     if (tempInsQues.size() > 1) {
-        std::vector<InsQuePtr> preSyncQues; // 改名
-        preSyncQues.push_back(tempInsQues[0]);
-        preSyncQues.push_back(tempInsQues[tempInsQues.size() - 1]);
-        CHK_RET(PreSyncInterQueues(preSyncQues));
+        u32 masterQId = 0;
+        u32 localCopyQId = tempInsQues.size() - 1;
+        u32 topicIdStart = 0;
+
+        auto insPost = std::make_unique<InsLocalPostTo>(NotifyType::NORMAL, masterQId, localCopyQId, topicIdStart);
+        tempInsQues[masterQId]->Append(std::move(insPost));
+        auto insWait = std::make_unique<InsLocalWaitFrom>(localCopyQId, masterQId, topicIdStart);
+        tempInsQues[localCopyQId]->Append(std::move(insWait));
     }
 
     // Local Copy from Input to Output for OPBASE
-    CHK_RET(LocalDataCopy(mainInsQues));
+    CHK_RET(LocalDataCopy(tempInsQues));
     if (tempRankSize_ == 1) {
         return HcclResult::HCCL_SUCCESS;
     }
@@ -114,10 +129,15 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
     // 同步第0条流和最后一条流 (LocalCopy所在的流)
     // 确保 LocalDataCopy 完成后，整体任务才算结束
     if (tempInsQues.size() > 1) {
-        std::vector<InsQuePtr> postSyncQues;
-        postSyncQues.push_back(tempInsQues[0]);
-        postSyncQues.push_back(tempInsQues[tempInsQues.size() - 1]);
-        CHK_RET(PostSyncInterQueues(postSyncQues));
+        u32 masterQId = 0;
+        u32 localCopyQId = tempInsQues.size() - 1;
+        u32 topicIdEnd = 1;
+
+        auto insPostEnd = std::make_unique<InsLocalPostTo>(NotifyType::NORMAL, localCopyQId, masterQId, topicIdEnd);
+        tempInsQues[localCopyQId]->Append(std::move(insPostEnd));
+
+        auto insWaitEnd = std::make_unique<InsLocalWaitFrom>(masterQId, localCopyQId, topicIdEnd);
+        tempInsQues[masterQId]->Append(std::move(insWaitEnd));
     }
 
     return HcclResult::HCCL_SUCCESS;
