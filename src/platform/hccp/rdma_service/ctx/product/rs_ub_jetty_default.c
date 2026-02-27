@@ -14,28 +14,28 @@
 #include "user_log.h"
 #include "ra_rs_err.h"
 #include "rs_ctx_inner.h"
-#include "rs_ub_jetty.h"
+#include "rs_ub_jetty_default.h"
 
-void RsUbCtxExtJettyCreate(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg)
+void RsUbCtxExtJettyCreateDefault(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg)
 {
     hccp_err("product type do not support");
     jettyCb->jetty = NULL;
     return;
 }
 
-void RsUbCtxExtJettyDelete(struct RsCtxJettyCb *jettyCb)
+void RsUbCtxExtJettyDeleteDefault(struct RsCtxJettyCb *jettyCb)
 {
     hccp_err("product type do not support");
     return;
 }
 
-void RsUbVaMunmapBatch(struct RsCtxJettyCb **jettyCbArr, unsigned int num)
+void RsUbVaMunmapBatchDefault(struct RsCtxJettyCb **jettyCbArr, unsigned int num)
 {
     hccp_err("product type do not support");
     return;
 }
 
-void RsUbFreeJettyIdBatch(struct RsCtxJettyCb **jettyCbArr, unsigned int num)
+void RsUbFreeJettyIdBatchDefault(struct RsCtxJettyCb **jettyCbArr, unsigned int num)
 {
     hccp_err("product type do not support");
     return;
