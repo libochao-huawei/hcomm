@@ -43,7 +43,9 @@
 #include "aicpu_init_param.h"
 #include "task_exception.h"
 #include "ub_transport_lite_impl.h"
+#include "aicpu_cache_utils.h"
 #include "aicpu_cache_manager.h"
+#include "aicpu_async_unfolder.h"
 
 namespace hccl {
 
@@ -101,6 +103,10 @@ struct AicpuStreamMontior {
 };
 using AicpuKfcHandler = std::function<HcclResult(const std::vector<u64> &)>;
 class HcclCommAicpu {
+public:
+    // 注意: DeserializeOpParam依赖HcclCommAicpu, 而HcclCommAicpu异步展开时又依赖DeserializeOpParam
+    static HcclResult DeserializeOpParam(HcclCommAicpu *hcclCommAicpu, OpTilingData *tilingData,
+        HcclOpResParam *commParam, OpParam& opParam);
 public:
     explicit HcclCommAicpu();
     ~HcclCommAicpu();
@@ -196,6 +202,10 @@ public:
     HcclResult InitProfthreadResource(u32 threadNum);
 
     HcclResult SetDispatcherCtxOnThread();
+
+    // 用于异步展开备份
+    void SetFloatOverflowMode(u8 floatOverflowMode);
+    HcclResult SetAhcConfInfo(u32 *ahcConfInfo);
 private:
     HcclResult SetHrtWorkMode(const HcclOpResParam *commParam);
     HcclResult SetHrtDeviceSatMode(const HcclOpResParam *commParam);
@@ -222,6 +232,7 @@ private:
     HcclResult InitTimeOutConfig(const HcclOpResParam *commParam);
     HcclResult InitHostDeviceLock(const HcclOpResParam *commParam);
     HcclResult InitOpRetry(const HcclOpResParam *commParam);
+    HcclResult InitAsyncUnfold(const HcclOpResParam *commParam);
     HcclResult InitZeroCopyExchanger(const HcclOpResParam *commParam);
     HcclResult PrepareZeroCopyExchanger(const std::string &newTag, OpParam &opParam,
         AlgResourceResponse *algResResponse);
@@ -292,9 +303,14 @@ private:
     HcclResult SupportRetryWithInplaceCheck(const std::string &algName, OpParam &param);
     bool isPollutedZeroCopyOp(OpParam &param);
     bool HcclOpCheckNsRecovery();
+    // 正常展开 或者 异步展开应用阶段 (下一算子加载异步展开结果, 下发执行)
     HcclResult OrchestrateHcclOp(const std::string &algName, OpParam &param,
         std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, uint32_t &beginSqePos,
-        uint32_t &endSqePos);
+        uint32_t &endSqePos, const bool applyAsyncUnfold, AsyncUnfoldCacheEntry* asyncUnfoldCacheEntryPtr);
+    // 异步展开生成阶段 (当前算子提前生成下一算子的SQE)
+    HcclResult AsyncOrchestrateHcclOp(const std::string &algName, OpParam &param,
+        std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource,
+        AsyncUnfoldCacheEntry* asyncUnfoldCacheEntryPtr);
     HcclResult LaunchSlaveStreamTask(AlgResourceResponse &algResource);
     HcclResult GetAlltoAllvSendRecvInfo(const void* sendRecvInfoPtr, HcclDataType sendType, HcclDataType recvType);
     HcclResult GetAlltoAllvcSendRecvInfo(const void *sendCountMatrix, HcclDataType sendType, HcclDataType recvType);
@@ -494,6 +510,11 @@ private:
         usedSpecialLinkRdmaNum_;  // 记录已经被使用的通信域内根据tag构造的RDMA链路数量
     std::unordered_map<std::string, AlgResourceResponse> resMap_;
 
+    // 用于异步展开备份
+    u8 floatOverflowMode_ = 0;
+    ut64 algTypeVal_ = 0; // 用于异步展开备份
+    u32 *ahcConfInfo_ = nullptr; // 假设OpTilingData在aicpu kernel退出后才会释放
+
     std::vector<std::vector<std::vector<u32>>> serverAndsuperPodToRank_;
     std::vector<std::vector<std::vector<u32>>> commPlaneVector_;
     std::vector<bool> isBridgeVector_;
@@ -604,6 +625,9 @@ private:
 
     // 维护aicpu算子展开的索引, 方便定位当前展开的算子信息
     size_t opUnfoldIdx_ = 0;
+
+    // AICPU异步展开单算子
+    AicpuAsyncUnfolder aicpuAsyncUnfolder_;
 };
 }  // namespace hccl
 #endif  // __AICPU_COMMUNICATOR_H__

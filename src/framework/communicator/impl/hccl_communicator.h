@@ -57,6 +57,7 @@
 #include "new/hccl_dispatcher_ctx.h"
 #include "rank_graph.h"
 #include "symmetric_memory/symmetric_memory.h"
+#include "op_async_unfold_info.h"
 
 namespace hccl {
 using ServRankInfo_t = std::map<std::string, std::vector<RankInfo_t> >;
@@ -542,6 +543,13 @@ private:
     const std::string &kernelName, const AicpuOpTiling opTilingInfo);
     HcclResult AicpuKfcTilingDataLaunchExt(const OpParam &opParam, const HcclCMDType &opType,
         const DeviceMem &deviceContext, const std::string &kernelName, const AicpuOpTiling opTilingInfo, bool isCustom = false);
+    // 尝试异步展开
+    HcclResult TryAsyncUnfold(const OpParam &opParam, const HcclCMDType &opType,
+        const std::string &algName, const uint64_t dynamicDataSize);
+    // 检查是否需要关闭异步展开 (注意: 需要与aicpu_async_unfolder.cc::UpdateAsyncUnfoldFlag保持一致)
+    HcclResult UpdateAsyncUnfoldFlag(const OpParam &opParam);
+    // 将当前kernel对应的算子信息下发到OpH2DRingBuffer中进行异步展开
+    HcclResult AicpuOpAsyncUnfoldInfoPut(const uint64_t dynamicDataSize);
     u64 CalcOpTilingDynamicDataSize(const OpParam &opParam, const HcclCMDType &opType, const u32 &rankSize,
         const std::string &algName = "");
     u64 CalcOpTilingVDataDesVDataLen(const u32 rankSize) const;
@@ -818,6 +826,7 @@ private:
         const std::string &newTag, const HcclCMDType opType, const rtStream_t aicpuStream);
     HcclResult BuildCustomOpResParam();
     HcclResult BuildOpRetryParam(const AlgResourceResponse &algResource, const std::string &newTag);
+    HcclResult BuildAsyncUnfoldParam(); // 为AICPU异步展开单算子准备参数 (将相关HDC资源通过HcclOpResParam传递到device)
     HcclResult CopyHostListResToDeviceParam(const std::string &newTag, const ListCommon *headHostList, const u64 size);
     HcclResult CopyHostAirmaInfoToDeviceParam(const std::string &newTag, const HcclCMDType opType, const rtStream_t aiCpuStream);
     HcclResult CopyHostOpRemoteResToDeviceParam(const std::string &newTag);
@@ -1015,6 +1024,16 @@ private:
     // aicpu进程使用的host-device共享内存
     std::shared_ptr<HDCommunicate> kfcControlTransferH2D_;
     std::shared_ptr<HDCommunicate> kfcStatusTransferD2H_;
+
+    // aicpu进程使用的host-device共享内存 (用于aicpu异步展开单算子)
+    bool hasMc2_ = false; // 是否存在MC2算子
+    bool asyncUnfoldEnable_ = true; // AICPU异步展开开关 (host侧检测到当前算子为图模式/图下沉, 关闭开关)
+    uint64_t opBaseOpIdx_ = 0; // HCCL单算子模式下的aicpu算子索引 (异步展开只支持纯单算子模式)
+    std::shared_ptr<HDCommunicate> kfcTailH2D_; // uint64_t
+    std::shared_ptr<HDCommunicate> kfcHeadD2H_; // uint64_t
+    std::vector<std::shared_ptr<HDCommunicate>> kfcOpH2DRingBuffer_; // std::vector<OpAsyncUnfoldInfo>
+    uint64_t kfcTail_ = 0; // kfcTailH2D_的镜像值, 用于host读取tail
+    uint64_t kfcOpH2DRingBufferFullCnt_ = 0; // 统计kfcOpH2DRingBuffer_ full导致OpAsyncUnfoldInfo无法下发的次数
     // custom进程使用的host-device共享内存
     std::shared_ptr<HDCommunicate> customControlTransferH2D_;
     std::shared_ptr<HDCommunicate> customStatusTransferD2H_;
