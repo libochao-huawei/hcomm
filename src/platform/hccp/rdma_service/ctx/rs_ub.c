@@ -1109,7 +1109,7 @@ int rs_ub_get_tp_info_list(struct rs_ub_dev_cb *dev_cb, struct get_tp_cfg *cfg, 
     int ret = 0;
 
     udma_cfg.flag.value = cfg->flag.value;
-    udma_cfg.trans_mode = cfg->trans_mode;
+    udma_cfg.trans_mode = (urma_transport_mode_t)cfg->trans_mode;
     (void)memcpy_s(udma_cfg.local_eid.raw, sizeof(udma_cfg.local_eid.raw),
         cfg->local_eid.raw, sizeof(cfg->local_eid.raw));
     (void)memcpy_s(udma_cfg.peer_eid.raw, sizeof(udma_cfg.peer_eid.raw), cfg->peer_eid.raw, sizeof(cfg->peer_eid.raw));
@@ -1966,8 +1966,8 @@ STATIC int rs_ub_ctx_drv_jetty_import(struct rs_ctx_rem_jetty_cb *rjetty_cb)
     jetty_key_info = (struct rs_jetty_key_info *)rjetty_cb->jetty_key.value;
     rjetty.jetty_id = jetty_key_info->jetty_id;
     rjetty.trans_mode = jetty_key_info->trans_mode;
-    rjetty.policy = rjetty_cb->policy;
-    rjetty.type = rjetty_cb->type;
+    rjetty.policy = (urma_jetty_grp_policy_t)rjetty_cb->policy;
+    rjetty.type = (urma_target_type_t)rjetty_cb->type;
     rjetty.flag.value = rjetty_cb->flag.value;
     rjetty.tp_type = rjetty_cb->tp_type;
 
