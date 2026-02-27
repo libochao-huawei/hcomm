@@ -29,7 +29,7 @@ public:
     void RegisterProfilingCallback();
     
     // 获取MirrorTaskManager
-    MirrorTaskManager* GetMirrorTaskManager() const;
+    Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
     
     // Profiling相关接口（直接暴露，不通过GetProfilingImpl）
     void ReportAllTasks(bool cachedReq = false);
@@ -39,7 +39,7 @@ public:
     
 private:
     uint32_t deviceId_;
-    MirrorTaskManager* mirrorTaskManager_;  // 使用原始指针，不管理生命周期
+    Hccl::MirrorTaskManager* mirrorTaskManager_;  // 使用原始指针，不管理生命周期
     std::unique_ptr<HcclCommProfiling> profiling_;
 };
 

@@ -13,18 +13,18 @@ namespace hccl {
 
 HcclCommDfx::HcclCommDfx(uint32_t deviceId) {
     deviceId_ = deviceId;
-    mirrorTaskManager_ = new MirrorTaskManager(deviceId_, &GlobalMirrorTasks::Instance(), false);
+    mirrorTaskManager_ = new Hccl::MirrorTaskManager(deviceId_, &GlobalMirrorTasks::Instance(), false);
 }
 
 void HcclCommDfx::Init() {
     // 1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
     if (mirrorTaskManager_ == nullptr) {
         // 注意：实际实现中应该避免这种情况，CommunicatorImpl应该传入已经存在的MirrorTaskManager
-        mirrorTaskManager_ = new MirrorTaskManager(deviceId_, &GlobalMirrorTasks::Instance(), false);
+        mirrorTaskManager_ = new Hccl::MirrorTaskManager(deviceId_, &GlobalMirrorTasks::Instance(), false);
     }
     
     // 2. 创建Profiling管理类
-    profilingImpl_ = std::make_unique<HcclCommProfiling>(mirrorTaskManager_);
+    profiling_ = std::make_unique<HcclCommProfiling>(mirrorTaskManager_);
     
     // 3. 注册回调到单例
     RegisterProfilingCallback();
@@ -53,8 +53,8 @@ void HcclCommDfx::ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) {
 }
 
 // void HcclCommDfx::CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
-//     if (profilingImpl_) {
-//         profilingImpl_->CallReportMc2CommInfo(mc2CommInfo);
+//     if (profiling_) {
+//         profiling->CallReportMc2CommInfo(mc2CommInfo);
 //     }
 // }
 
@@ -64,7 +64,7 @@ void HcclCommDfx::UpdateProfStat() {
     }
 }
 
-MirrorTaskManager* HcclCommDfx::GetMirrorTaskManager() const {
+Hccl::MirrorTaskManager* HcclCommDfx::GetMirrorTaskManager() const {
     return mirrorTaskManager_;
 }
 
