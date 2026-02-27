@@ -270,6 +270,9 @@ HcclResult InsTempAllGatherMesh2D::LocalDataCopy(std::vector<InsQuePtr> &tempIns
 
 HcclResult InsTempAllGatherMesh2D::PostLocalCopy(std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[InsTempAllGatherMesh2D][PostLocalCopy] empty tempInsQues"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     const u64 scratchRepeatStride = tempAlgParams_.sliceSize * tempRankSize_;
     for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
         for (u32 i =0; i < tempVTopo_.size(); i++) {
