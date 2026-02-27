@@ -141,7 +141,11 @@ HcclResult HcclMemImportV2(const char *description, uint64_t descLen, bool isRem
     dto.Deserialize(remoteRdmaRmaBufferStream);
 
     // 构造RemoteUbRmaBuffer
-    RemoteUbRmaBuffer *remoteUbRmaBuffer = new RemoteUbRmaBuffer(hcclNetDevice->GetRdmaHandle(), dto);
+    RemoteUbRmaBuffer *remoteUbRmaBuffer = new(std::nothrow) RemoteUbRmaBuffer(hcclNetDevice->GetRdmaHandle(), dto);
+    if(remoteUbRmaBuffer == nullptr) {
+        HCCL_ERROR("[%s] Failed to allocate RemoteUbRmaBuffer", __func__);
+        return HCCL_E_PTR;
+    }
 
     // 填充HcclBuf
     outBuf->addr   = reinterpret_cast<void *>(remoteUbRmaBuffer->GetAddr());
