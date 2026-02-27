@@ -276,7 +276,7 @@ void Mc2Compont::MC2AllocCommRes(const CollAlgParams &params, std::shared_ptr<In
 void Mc2Compont::SaveAlgoInfo(uint32_t index, uint64_t templateSign, uint32_t opType, uint8_t algorithmType) {
     combinOpParam.opType[index]   = opType;
     combinOpParam.algorithmType[index]   = algorithmType;
-    HcclAlgoInfo hcclAlgoInfo;
+    HcclAlgoInfo hcclAlgoInfo{};
     hcclAlgoInfo.opType = opType;
     hcclAlgoInfo.algorithmType = algorithmType;
     algoInfoMap_[templateSign] = hcclAlgoInfo;
@@ -303,7 +303,7 @@ void Mc2Compont::GenerateAlgoTemplates(Mc2Tiling *mc2TilingPtr, std::unordered_s
         // 已经生成过的算法模板不再生成
         if (algoTemplateMap.find(templateSign) != algoTemplateMap.end()) {
             HCCL_INFO("A algoTemplate that meets the requirement already exists, index = [%u], templateSign = [%llu]", index, templateSign);
-            if(algoInfoMap_.find(templateSign) != algoInfoMap_.end()) {
+            if (algoInfoMap_.find(templateSign) != algoInfoMap_.end()) {
                 combinOpParam.opType[index]   = algoInfoMap_[templateSign].opType;
                 combinOpParam.algorithmType[index]   = algoInfoMap_[templateSign].algorithmType;
                 continue;
@@ -362,7 +362,7 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
         // 已经生成过的算法模板不再生成
         if (algoTemplateMap.find(templateSign) != algoTemplateMap.end()) {
             HCCL_INFO("A algoTemplate that meets the requirement already exists, index = [%u], templateSign = [%llu]", index, templateSign);
-            if(algoInfoMap_.find(templateSign) != algoInfoMap_.end()) {
+            if (algoInfoMap_.find(templateSign) != algoInfoMap_.end()) {
                 combinOpParam.opType[index]   = algoInfoMap_[templateSign].opType;
                 combinOpParam.algorithmType[index]   = algoInfoMap_[templateSign].algorithmType;
                 continue;

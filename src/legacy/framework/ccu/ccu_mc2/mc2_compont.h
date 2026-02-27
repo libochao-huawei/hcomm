@@ -19,7 +19,7 @@
 
 namespace Hccl {
 
-struct HcclAlgoInfo{
+struct HcclAlgoInfo {
     uint32_t opType;
     uint8_t  algorithmType;
 };
