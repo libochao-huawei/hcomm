@@ -142,6 +142,12 @@ HcclResult InsTempAllGatherNHR::LocalDataCopy(std::vector<InsQuePtr> &tempInsQue
 
 HcclResult InsTempAllGatherNHR::PostLocalCopy(std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+            HCCL_ERROR("[PostLocalCopy] tempInsQues is empty"),
+            HcclResult::HCCL_E_INTERNAL);
+    CHK_PRT_RET(tempInsQues[0] == nullptr,
+            HCCL_ERROR("[PostLocalCopy] tempInsQues[0] is nullptr"),
+            HcclResult::HCCL_E_INTERNAL);
     for (u64 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
         const u64 outBaseOff = tempAlgParams_.buffInfo.outBuffBaseOff + rpt * tempAlgParams_.outputRepeatStride;
         const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff +
