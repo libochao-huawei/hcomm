@@ -64,7 +64,7 @@ void HcclCommDfx::UpdateProfStat() {
     }
 }
 
-MirrorTaskManager* HcclCommDfx::GetMirrorTaskManager() const {
+Hccl::MirrorTaskManager* HcclCommDfx::GetMirrorTaskManager() const {
     return mirrorTaskManager_;
 }
 
