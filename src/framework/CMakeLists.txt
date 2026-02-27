@@ -738,6 +738,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/common/unique
         ${HCCL_BASE_DIR}/platform/common/unfold_cache
+        ${HCCL_BASE_DIR}/platform/common/async_unfold_cache
 
         ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
 
@@ -886,6 +887,7 @@ if(NOT BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/common/unique
         ${HCCL_BASE_DIR}/platform/common/unfold_cache
+        ${HCCL_BASE_DIR}/platform/common/async_unfold_cache
 
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network

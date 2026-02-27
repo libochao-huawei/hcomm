@@ -43,7 +43,9 @@
 #include "aicpu_init_param.h"
 #include "task_exception.h"
 #include "ub_transport_lite_impl.h"
+#include "aicpu_cache_utils.h"
 #include "aicpu_cache_manager.h"
+#include "aicpu_async_unfolder.h"
 
 namespace hccl {
 
@@ -222,6 +224,7 @@ private:
     HcclResult InitTimeOutConfig(const HcclOpResParam *commParam);
     HcclResult InitHostDeviceLock(const HcclOpResParam *commParam);
     HcclResult InitOpRetry(const HcclOpResParam *commParam);
+    HcclResult InitAsyncUnfold(const HcclOpResParam *commParam);
     HcclResult InitZeroCopyExchanger(const HcclOpResParam *commParam);
     HcclResult PrepareZeroCopyExchanger(const std::string &newTag, OpParam &opParam,
         AlgResourceResponse *algResResponse);
@@ -292,9 +295,14 @@ private:
     HcclResult SupportRetryWithInplaceCheck(const std::string &algName, OpParam &param);
     bool isPollutedZeroCopyOp(OpParam &param);
     bool HcclOpCheckNsRecovery();
+    // 正常展开 或者 异步展开应用阶段 (下一算子加载异步展开结果, 下发执行)
     HcclResult OrchestrateHcclOp(const std::string &algName, OpParam &param,
         std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, uint32_t &beginSqePos,
-        uint32_t &endSqePos);
+        uint32_t &endSqePos, const bool applyAsyncUnfold, AsyncUnfoldCacheEntry* asyncUnfoldCacheEntryPtr);
+    // 异步展开生成阶段 (当前算子提前生成下一算子的SQE)
+    HcclResult AsyncOrchestrateHcclOp(const std::string &algName, OpParam &param,
+        std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource,
+        AsyncUnfoldCacheEntry* asyncUnfoldCacheEntryPtr);
     HcclResult LaunchSlaveStreamTask(AlgResourceResponse &algResource);
     HcclResult GetAlltoAllvSendRecvInfo(const void* sendRecvInfoPtr, HcclDataType sendType, HcclDataType recvType);
     HcclResult GetAlltoAllvcSendRecvInfo(const void *sendCountMatrix, HcclDataType sendType, HcclDataType recvType);
@@ -604,6 +612,9 @@ private:
 
     // 维护aicpu算子展开的索引, 方便定位当前展开的算子信息
     size_t opUnfoldIdx_ = 0;
+
+    // AICPU异步展开单算子
+    AicpuAsyncUnfolder aicpuAsyncUnfolder_;
 };
 }  // namespace hccl
 #endif  // __AICPU_COMMUNICATOR_H__
