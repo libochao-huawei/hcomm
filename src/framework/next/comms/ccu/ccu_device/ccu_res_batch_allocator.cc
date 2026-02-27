@@ -582,23 +582,19 @@ static auto EraseReverse(std::vector<ResInfo>& vec,
 }
 
 static HcclResult DoReleaseNonBlockTypeRes(
-    int32_t devLogicId, 
-    uint8_t dieId,
-    std::array<ResTypeResInfo, NON_BLOCK_TYPE_NUM>& infoParas) // 去掉 const
+    int32_t devLogicId, uint8_t dieId,
+    std::array<ResTypeResInfo, NON_BLOCK_TYPE_NUM>& infoParas)
 {
     CcuComponent& ccuComponent = CcuComponent::GetInstance(devLogicId);
 
     for (auto& infos : infoParas) {
         const ResType resType = infos.first;
         std::vector<ResInfo>* resInfosPtr = infos.second;
-
-        if (pResInfos == nullptr || pResInfos->empty()) {
+        if (resInfosPtr == nullptr || resInfosPtr->empty()) {
             continue;
         }
-
         std::vector<ResInfo>& resInfos = *resInfosPtr;
-
-        // 倒序删除
+        // 倒序删除，减少vector元素移动
         for (auto it = resInfos.rbegin(); it != resInfos.rend(); ) {
             const uint32_t num = it->num;
             if (num == 0) {
