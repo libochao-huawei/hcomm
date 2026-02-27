@@ -158,7 +158,7 @@ TEST_F(CcuTransportGroupMgrTest, Test_CcuTransportGroupMgr_001)
     utTransports.push_back(std::move(utCcuTransport.get()));
 
     // 打桩CcuTransportGroup构造函数中调用的函数
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
 
     // 创建utCcuTransportGroup
@@ -332,7 +332,7 @@ TEST_F(CcuTransportGroupMgrTest, Test_CcuTransportGroupMgr_003)
     MOCKER_CPP(&CcuTransportMgr::Get, set<CcuTransport*>(CcuTransportMgr::*)(RankId)).stubs().with(any()).will(returnValue(utCcuTransportSet));
 
     // 打桩CcuTransportGroup构造函数中调用的函数
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
 
     // 创建utCcuTransportGroupMgr
@@ -431,7 +431,7 @@ TEST_F(CcuTransportGroupMgrTest, Test_CcuTransportGroupMgr_004)
     utTransports.push_back(std::move(utCcuTransport.get()));
 
     // 打桩CcuTransportGroup构造函数中调用的函数
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
 
     // 创建utCcuTransportGroup
@@ -598,7 +598,7 @@ TEST_F(CcuTransportGroupMgrTest, Test_CcuTransportGroupMgr_006)
     utCcuTransportVec.emplace_back(std::move(utCcuTransport.get()));
 
     // 打桩CcuTransportGroup构造函数中调用的函数
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
 
     // 创建utCcuTransportGroup
@@ -773,7 +773,7 @@ TEST_F(CcuTransportGroupMgrTest, GetAllTransportGroups)
     utTransports.push_back(std::move(utCcuTransport.get()));
 
     // 打桩CcuTransportGroup构造函数中调用的函数
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
     
     // 创建utCcuTransportGroup
@@ -872,6 +872,8 @@ TEST_F(CcuTransportGroupMgrTest, should_return_ccuTransportGroup_when_calling_Re
     GenRankTableFile1Ser8Dev();
 
     void *devPtr = nullptr;
+    MOCKER(HrtGetNotifyID).stubs().with(any(), any()).will(returnValue(static_cast<u32>(0)));
+    MOCKER(HrtFree).stubs().with(any(), any()).will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(commParams.devType));
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
@@ -943,7 +945,7 @@ TEST_F(CcuTransportGroupMgrTest, should_return_ccuTransportGroup_when_calling_Re
     MOCKER_CPP(&CcuTransportMgr::Get, set<CcuTransport*>(CcuTransportMgr::*)(RankId)).stubs().with(any()).will(returnValue(utCcuTransportSet));
 
     // 打桩CcuTransportGroup构造函数中调用的函数
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
 
     // 创建utCcuTransportGroupMgr
@@ -1049,7 +1051,7 @@ TEST_F(CcuTransportGroupMgrTest, should_throw_if_transportGroup_init_fail_when_c
     MOCKER_CPP(&CcuTransportMgr::Get, set<CcuTransport*>(CcuTransportMgr::*)(RankId)).stubs().with(any()).will(returnValue(utCcuTransportSet));
 
     // 打桩CcuTransportGroup构造函数中调用的函数
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(false));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_E_INTERNAL));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
 
     // 创建utCcuTransportGroupMgr
@@ -1156,7 +1158,7 @@ TEST_F(CcuTransportGroupMgrTest, should_no_throw_if_linkgroup_empty_when_calling
     MOCKER_CPP(&CcuTransportMgr::Get, set<CcuTransport*>(CcuTransportMgr::*)(RankId)).stubs().with(any()).will(returnValue(utCcuTransportSet));
 
     // 打桩CcuTransportGroup构造函数中调用的函数
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(false));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HCCL_E_INTERNAL));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
 
     // 创建utCcuTransportGroupMgr

@@ -104,6 +104,7 @@ protected:
 
 TEST_F(AicpuKernelLauncherTest, test_SetHcclKernelLaunchParam_offload)
 {
+    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     CollServiceAiCpuImpl collService{&comm};
     comm.collService = &collService;
     comm.collService->counterBuf = DevBuffer::Create(0x100, 10);
@@ -115,6 +116,7 @@ TEST_F(AicpuKernelLauncherTest, test_SetHcclKernelLaunchParam_offload)
 
 TEST_F(AicpuKernelLauncherTest, test_SetHcclKernelLaunchParam_opbase)
 {
+    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     CollServiceAiCpuImpl collService{&comm};
     comm.collService = &collService;
     comm.collService->counterBuf = DevBuffer::Create(0x100, 10);
