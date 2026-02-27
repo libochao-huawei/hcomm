@@ -3,7 +3,7 @@
 
 #include <memory>
 #include "mirror_task_manager.h"
-#include "HcclCommProfiling"
+#include "hcclCommProfiling.h"
 #include "global_mirror_tasks.h"
 
 namespace hccl {
