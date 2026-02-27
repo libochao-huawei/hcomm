@@ -3222,7 +3222,7 @@ HcclResult GetOpScratchMemSize(bool isOfflineCompilation, HcclCMDType hcclOpType
 
     std::shared_ptr<hccl::hcclComm> hcclComm;
     std::string group = hcomOpParam->group == nullptr ? HCCL_WORLD_GROUP : hcomOpParam->group;
-    // 获取通信域句柄，因为91095不需要获取通信域句柄以感知aivonly，暂时规避
+    // 获取通信域句柄，下面机子环境不需要获取通信域句柄以感知aivonly，暂时规避
     if (devType != DevType::DEV_TYPE_910_95) {
         CHK_RET(HcomGetCommByGroup(group.c_str(), hcclComm));
     }
@@ -3283,7 +3283,7 @@ HcclResult GetOpScratchMemSize(bool isOfflineCompilation, HcclCMDType hcclOpType
         bool isAivOnlyMode = false;
         u8 deterministic;
 
-        // 91095环境下，暂时不需要感知是否为aivonly模式
+        // 下面机子环境下，暂时不需要感知是否为aivonly模式
         if (devType != DevType::DEV_TYPE_910_95) {
             CHK_RET(hcclComm->GetOnlyAivModeConfig(isAivOnlyMode));
         }
