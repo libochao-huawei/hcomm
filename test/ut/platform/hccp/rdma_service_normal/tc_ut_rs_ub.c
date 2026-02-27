@@ -56,7 +56,7 @@ extern urma_eid_info_t *RsUrmaGetEidList(urma_device_t *dev, uint32_t *cnt);
 extern void RsUrmaFreeDeviceList(urma_device_t **deviceList);
 extern void RsUrmaFreeEidList(urma_eid_info_t *eidList);
 extern int RsUrmaGetEidByIp(const urma_context_t *ctx, const urma_net_addr_t *netAddr, urma_eid_t *eid);
-extern void RsUbCtxExtJettyCreate(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg);
+extern int RsUbCtxExtJettyCreate(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg);
 extern int RsUbCtxRegJettyDb(struct RsCtxJettyCb *jettyCb, struct udma_u_jetty_info *jettyInfo);
 extern int RsInitRscbCfg(struct rs_cb *rscb, struct RsInitConfig *cfg);
 extern int RsUbCreateCtx(urma_device_t *urmaDev, unsigned int eidIndex, urma_context_t **urmaCtx);
@@ -1295,6 +1295,9 @@ void TcRsUbCtxJettyDestroyBatch()
     unsigned int num = 0;
     int ret;
 
+    mocker(RsGetProductType, 1, PRODUCT_TYPE_910_96);
+    RsUbJettyApiInit();
+
     ret = RsUbCtxJettyDestroyBatch(&devCb, jettyIds, &num);
     EXPECT_INT_EQ(-EINVAL, ret);
 
@@ -1358,7 +1361,7 @@ void TcRsUbCtxJettyDestroyBatch()
     mocker(RsUrmaDeleteJettyBatch, 1, -1);
     mocker(RsUbGetJettyCb, 1, 0);
     ret = RsUbCtxJettyDestroyBatch(&devCb, jettyIds, &num);
-    EXPECT_INT_EQ(-1, ret);
+    EXPECT_INT_EQ(-22, ret);
     mocker_clean();
 
     num = 1;
@@ -1371,7 +1374,7 @@ void TcRsUbCtxJettyDestroyBatch()
     mocker(RsUrmaDeleteJfrBatch, 1, -1);
     mocker(RsUbGetJettyCb, 1, 0);
     ret = RsUbCtxJettyDestroyBatch(&devCb, jettyIds, &num);
-    EXPECT_INT_EQ(-1, ret);
+    EXPECT_INT_EQ(-22, ret);
     mocker_clean();
 
     pthread_mutex_destroy(&devCb.mutex);

@@ -26,7 +26,7 @@
 #include "rs_ctx_inner.h"
 #include "rs_ctx.h"
 #include "rs_ub.h"
-#include "rs_ub_jetty.h"
+#include "rs_ub_jetty_950.h"
 
 STATIC int RsResAddrMunmap(struct RsCtxJettyCb *jettyCb, struct UdmaVaInfo *vaInfo)
 {
@@ -125,7 +125,7 @@ munmap_sq_buff_va:
     return ret;
 }
 
-void RsUbCtxExtJettyDelete(struct RsCtxJettyCb *jettyCb)
+void RsUbCtxExtJettyDelete950(struct RsCtxJettyCb *jettyCb)
 {
     int ret = 0;
 
@@ -256,7 +256,7 @@ STATIC int RsCcuJettyDbReg(struct RsCtxJettyCb *jettyCb)
     return ret;
 }
 
-void RsUbCtxExtJettyCreate(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg)
+void RsUbCtxExtJettyCreate950(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg)
 {
     int ret = 0;
 
@@ -306,7 +306,7 @@ free_jetty:
     jettyCb->jetty = NULL;
 }
 
-void RsUbVaMunmapBatch(struct RsCtxJettyCb **jettyCbArr, unsigned int num)
+void RsUbVaMunmapBatch950(struct RsCtxJettyCb **jettyCbArr, unsigned int num)
 {
     unsigned int i;
 
@@ -315,7 +315,7 @@ void RsUbVaMunmapBatch(struct RsCtxJettyCb **jettyCbArr, unsigned int num)
     }
 }
 
-void RsUbFreeJettyIdBatch(struct RsCtxJettyCb **jettyCbArr, unsigned int num)
+void RsUbFreeJettyIdBatch950(struct RsCtxJettyCb **jettyCbArr, unsigned int num)
 {
     unsigned int i;
 

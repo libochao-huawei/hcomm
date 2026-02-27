@@ -26,8 +26,7 @@
 #include "rs_epoll.h"
 #include "rs_ctx_inner.h"
 #include "rs_ctx.h"
-#include "rs_ub_jetty.h"
-#include "rs_ub_jfc.h"
+#include "rs_ub_jetty_ops.h"
 #include "rs_ub.h"
 
 int RsUbGetDevEidInfoNum(unsigned int phyId, unsigned int *num)
@@ -575,7 +574,7 @@ STATIC void RsUbCtxDrvJettyDelete(struct RsCtxJettyCb *jettyCb)
     if (jettyCb->jettyMode == JETTY_MODE_URMA_NORMAL) {
         (void)RsUrmaDeleteJetty(jettyCb->jetty);
     } else {
-        RsUbCtxExtJettyDelete(jettyCb);
+        (void)RsUbCtxExtJettyDelete(jettyCb);
     }
 
     // ccu jetty unreg db addr
@@ -713,23 +712,33 @@ STATIC int RsUbDestroyJettyCbBatch(struct JettyDestroyBatchInfo *batchInfo, unsi
 {
     urma_jetty_t *badJetty = NULL;
     urma_jfr_t *badJfr = NULL;
-    int jettyDestroyRet = 0;
-    int jfrDestroyRet = 0;
+    int retVal = 0;
+    int ret = 0;
 
-    RsUbVaMunmapBatch(batchInfo->jettyCbArr, *num);
-    jettyDestroyRet = RsUrmaDeleteJettyBatch(batchInfo->jettyArr, (int)*num, &badJetty);
-    if (jettyDestroyRet != 0) {
-        hccp_err("rs_urma_delete_jetty_batch failed, jettyDestroyRet:%d, num:%u", jettyDestroyRet, *num);
+    ret = RsUbVaMunmapBatch(batchInfo->jettyCbArr, *num);
+    if (ret != 0) {
+        hccp_err("RsUbVaMunmapBatch failed, ret:%d", ret);
+        retVal = -EINVAL;
+    }
+    ret = RsUrmaDeleteJettyBatch(batchInfo->jettyArr, (int)*num, &badJetty);
+    if (ret != 0) {
+        hccp_err("rs_urma_delete_jetty_batch failed, ret:%d, num:%u", ret, *num);
+        retVal = -EINVAL;
     }
 
-    jfrDestroyRet = RsUrmaDeleteJfrBatch(batchInfo->jfrArr, (int)*num, &badJfr);
-    if (jfrDestroyRet != 0) {
-        hccp_err("rs_urma_delete_jfr_batch failed, jfrDestroyRet:%d, num:%u", jfrDestroyRet, *num);
+    ret = RsUrmaDeleteJfrBatch(batchInfo->jfrArr, (int)*num, &badJfr);
+    if (ret != 0) {
+        hccp_err("rs_urma_delete_jfr_batch failed, ret:%d, num:%u", ret, *num);
+        retVal = -EINVAL;
     }
 
-    RsUbFreeJettyIdBatch(batchInfo->jettyCbArr, *num);
+    ret = RsUbFreeJettyIdBatch(batchInfo->jettyCbArr, *num);
+    if (ret != 0) {
+        hccp_err("RsUbFreeJettyIdBatch failed, ret:%d", ret);
+        retVal = -EINVAL;
+    }
     RsUbFreeJettyCbBatch(batchInfo, num, badJetty, badJfr);
-    return jettyDestroyRet + jfrDestroyRet;
+    return retVal;
 }
 
 STATIC void RsUbDestroyJettyCbList(struct RsUbDevCb *devCb, struct RsListHead *jettyList)
@@ -1635,7 +1644,7 @@ STATIC void RsUbCtxExtJettyCreateTaCache(struct RsCtxJettyCb *jettyCb, urma_jett
     // ccu jetty reg db addr
     ret = RsUbCtxRegJettyDb(jettyCb, &jettyInfo);
     if (ret != 0) {
-        RsUbCtxExtJettyDelete(jettyCb);
+        (void)RsUbCtxExtJettyDelete(jettyCb);
         jettyCb->jetty = NULL;
         hccp_err("rs_ub_ctx_reg_jetty_db failed, ret:%d", ret);
     }
@@ -1669,7 +1678,8 @@ STATIC int RsUbCtxDrvJettyCreate(struct RsCtxJettyCb *jettyCb, struct RsCtxJfcCb
     } else if (jettyCb->jettyMode == JETTY_MODE_CCU_TA_CACHE) {
         RsUbCtxExtJettyCreateTaCache(jettyCb, &jettyInitCfg);
     } else {
-        RsUbCtxExtJettyCreate(jettyCb, &jettyInitCfg);
+        ret = RsUbCtxExtJettyCreate(jettyCb, &jettyInitCfg);
+        CHK_PRT_RETURN(ret != 0, hccp_err("Rs Ub Ctx ExtJettyCreate failed, ret:%d", ret), -EINVAL);
     }
 
     // create jetty failed, should delete jfr

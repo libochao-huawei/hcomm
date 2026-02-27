@@ -25,9 +25,9 @@
 #include "rs_inner.h"
 #include "rs_ctx_inner.h"
 #include "rs_ctx.h"
-#include "rs_ub_jfc.h"
+#include "rs_ub_jfc_960.h"
 
-int RsUbDeleteJfcExt(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb)
+int RsUbDeleteJfcExt960(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb)
 {
     urma_user_ctl_out_t out = {0};
     urma_user_ctl_in_t in = {0};
@@ -47,7 +47,7 @@ int RsUbDeleteJfcExt(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb)
     return 0;
 }
 
-int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urma_jfc_t **jfc)
+int RsUbCtxJfcCreateExt960(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urma_jfc_t **jfc)
 {
     union CreateJfcCfg createJfcIn = {0};
     urma_user_ctl_out_t out = {0};
