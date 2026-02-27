@@ -17,7 +17,7 @@ namespace hccl {
 class CollBatchSendRecvExecutor : public CollCommExecutor {
 public:
     CollBatchSendRecvExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollBatchSendRecvExecutor() = default;
+    ~CollBatchSendRecvExecutor() override = default;
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algResource) override;
     HcclResult GetAdjInfo(AlgResourceResponse& algRes, AdjInfo& adjInfo) override;
     // 增量建链资源计算接口

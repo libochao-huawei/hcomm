@@ -17,7 +17,7 @@ namespace hccl {
 class CollAllReduceSingleRankExecutor : public CollAllReduceExecutor {
 public:
     CollAllReduceSingleRankExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllReduceSingleRankExecutor() = default;
+    ~CollAllReduceSingleRankExecutor() override = default;
 
 private:
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
