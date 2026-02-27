@@ -1,11 +1,3 @@
-/*
- * @Author: c15029001705 caiyifan2@huawei.com
- * @Date: 2026-02-27 16:03:32
- * @LastEditors: c15029001705 caiyifan2@huawei.com
- * @LastEditTime: 2026-02-27 17:42:20
- * @FilePath: \hcomm_profiling\src\framework\next\coll_comms\dfx\hcclCommProfilingLite.cc
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of

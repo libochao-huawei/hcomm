@@ -10,11 +10,12 @@
 #ifndef HCCL_COMM_PROFILING_LITE_H
 #define HCCL_COMM_PROFILING_LITE_H
 #include "mirror_task_manager.h"
+#include "profiling_reporter_lite.h"
 namespace hccl {
 class HcclCommProfilingLite {
 public:
     // 构造函数
-    explicit HcclCommProfilingLite(MirrorTaskManager* mirrorTaskManager);
+    explicit HcclCommProfilingLite(Hccl::MirrorTaskManager* mirrorTaskManager);
     
     // 上报所有任务
     void ReportAllTasks();
