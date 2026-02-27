@@ -331,6 +331,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_003)
     RdmaHandle rdmaHandle = new int(1);
     u32 jettyNum = 1;   // 当前迭代，jettyNum默认为1
     u32 sqSize = 128;   // 当前迭代，默认使用MS，故sqSize固定为128。sqSize就是jetty深度
+    u32 cntCkeId;
     
     
     MOCKER(CcuDeviceManager::AllocXn).defaults().will(returnValue(HcclResult::HCCL_SUCCESS));
@@ -371,14 +372,17 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_003)
     utCcuTransportGroup.cntCkesGroup.emplace_back(1);
     utCcuTransportGroup.cntCkesGroup.emplace_back(2);
 
-    auto res1 = utCcuTransportGroup.GetCntCkeId(0);
-    EXPECT_EQ(0, res1);
+    HcclResult res1 = utCcuTransportGroup.GetCntCkeId(0, cntCkeId);
+    EXPECT_EQ(HCCL_SUCCESS, res1);
+    EXPECT_EQ(0, cntCkeId);
 
-    auto res2 = utCcuTransportGroup.GetCntCkeId(1);
-    EXPECT_EQ(1, res2);
+    HcclResult res2 = utCcuTransportGroup.GetCntCkeId(1, cntCkeId);
+    EXPECT_EQ(HCCL_SUCCESS, res2);
+    EXPECT_EQ(1, cntCkeId);
 
-    auto res3 = utCcuTransportGroup.GetCntCkeId(2);
-    EXPECT_EQ(2, res3);
+    HcclResult res3 = utCcuTransportGroup.GetCntCkeId(2, cntCkeId);
+    EXPECT_EQ(HCCL_SUCCESS, res3);
+    EXPECT_EQ(2, cntCkeId);
 
     delete socket;
     delete rdmaHandle;
