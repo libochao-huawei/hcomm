@@ -43,6 +43,7 @@
 #include "local_rma_buffer.h"
 #include "local_rdma_rma_buffer_manager.h"
  
+#include "hccp_peer_manager.h"
 #include "rdma_handle_manager.h"
 #include "socket/socket.h"
 #include "sal.h"
@@ -70,6 +71,20 @@ void *HrtMalloc(u64 size, aclrtMemType_t memType)
     return (void*)0x12345678;
 }
  
+HccpPeerManager::~HccpPeerManager()
+{
+}
+
+HccpPeerManager &HccpPeerManager::GetInstance()
+{
+    static HccpPeerManager hccpPeerManager;
+    return hccpPeerManager;
+}
+
+void HccpPeerManager::Init(s32 deviceLogicId)
+{
+}
+
 RdmaHandleManager::RdmaHandleManager()
 {
 }
