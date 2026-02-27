@@ -35,12 +35,13 @@ void HcclCommDfx::RegisterProfilingCallback() {
     auto callback = [this](const TaskInfo& taskInfo) {
         mirrorTaskManager_->AddTaskInfo(std::make_shared<TaskInfo>(taskInfo));
     };
-    HcomProfiling::GetInstance().RegisterAddTaskInfoCallback(callback);
+    // 待后续实现HcomProfiling类 
+    // HcomProfiling::GetInstance().RegisterAddTaskInfoCallback(callback);
 }
 
 // HcclCommDfx接口实现
 void HcclCommDfx::ReportAllTasks(bool cachedReq) {
-    if (profilingImpl_) {
+    if (profiling_) {
         profiling_->ReportAllTasks(cachedReq);
     }
 }
