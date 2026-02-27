@@ -91,6 +91,7 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/buffer_manager
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/unique
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/unfold_cache
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/common/async_unfold_cache
     ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport
     ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/transport/heterog
     ${HCOMM_DIR}/src/legacy/ascend910/platform/resource/notify
