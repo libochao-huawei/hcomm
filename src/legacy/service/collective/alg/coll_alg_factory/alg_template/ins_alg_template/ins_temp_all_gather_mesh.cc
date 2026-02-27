@@ -93,9 +93,9 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
         u32 localCopyQId = tempInsQues.size() - 1;
         u32 topicIdStart = 0;
 
-        auto insPost = std::make_unique<InsLocalPostTo>(NotifyType::NORMAL, masterQId, localCopyQId, topicIdStart);
+        auto insPost = std::make_unique<InsLocalPostTo>(localCopyQId, NotifyType::NORMAL, topicIdStart);
         tempInsQues[masterQId]->Append(std::move(insPost));
-        auto insWait = std::make_unique<InsLocalWaitFrom>(localCopyQId, masterQId, topicIdStart);
+        auto insWait = std::make_unique<InsLocalWaitFrom>(masterQId, topicIdStart);
         tempInsQues[localCopyQId]->Append(std::move(insWait));
     }
 
@@ -132,10 +132,9 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
         u32 localCopyQId = tempInsQues.size() - 1;
         u32 topicIdEnd = 1;
 
-        auto insPostEnd = std::make_unique<InsLocalPostTo>(NotifyType::NORMAL, localCopyQId, masterQId, topicIdEnd);
+        auto insPostEnd = std::make_unique<InsLocalPostTo>(masterQId, NotifyType::NORMAL, topicIdEnd);
         tempInsQues[localCopyQId]->Append(std::move(insPostEnd));
-
-        auto insWaitEnd = std::make_unique<InsLocalWaitFrom>(masterQId, localCopyQId, topicIdEnd);
+        auto insWaitEnd = std::make_unique<InsLocalWaitFrom>(localCopyQId, topicIdEnd);
         tempInsQues[masterQId]->Append(std::move(insWaitEnd));
     }
 
