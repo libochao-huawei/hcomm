@@ -131,6 +131,7 @@ HcclResult HcclCommAicpu::Init(const HcclOpResParam *commParam, bool isCustom)
     CHK_RET(InitHostDeviceLock(commParam));
     CHK_RET(InitTopoMatcher());
     CHK_RET(InitOpRetry(commParam));
+    CHK_RET(InitAsyncUnfold(commParam));
     CHK_RET(RegisterDispatcherCallback());
     CHK_RET(InitTinyMem(commParam));
     CHK_RET(InitProfResource());
@@ -249,6 +250,15 @@ HcclResult HcclCommAicpu::InitOpRetry(const HcclOpResParam *commParam)
         EXECEPTION_CATCH((kfcStatusTransferD2H_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commParam->kfcStatusTransferD2HParams));
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::InitAsyncUnfold(const HcclOpResParam *commParam)
+{
+    if (ASYNC_UNFOLD_ENABLE) {
+        CHK_RET(aicpuAsyncUnfolder_.Init(commParam->kfcTailH2DParams, commParam->kfcHeadD2HParams,
+            commParam->kfcOpH2DRingBufferParams, OP_H2D_RING_BUFFER_SIZE));
     }
     return HCCL_SUCCESS;
 }
@@ -3628,6 +3638,8 @@ HcclResult HcclCommAicpu::WaitFinishWhileLoop(Stream &mainStream, std::vector<St
     if (IsNoNeedWait()) {
         return HCCL_SUCCESS;
     }
+
+    // 判断是否超时, 判断是否执行完毕
     const uint64_t startUsec = GetCurCpuTimestamp();
     uint64_t lastUsec = startUsec;
     int32_t sqId = mainStream.sqId();
@@ -3635,6 +3647,19 @@ HcclResult HcclCommAicpu::WaitFinishWhileLoop(Stream &mainStream, std::vector<St
     uint32_t sqTail = 0;
     CHK_RET(QuerySqStatusByType(devId_, sqId, DRV_SQCQ_PROP_SQ_TAIL, sqTail));
     CHK_RET(QuerySqStatusByType(devId_, sqId, DRV_SQCQ_PROP_SQ_HEAD, sqHead));
+
+    // 用于AICPU异步展开单算子
+    bool isValid = false; // 是否为有效 (过时/后续) 算子信息
+    OpAsyncUnfoldInfo opAsyncUnfoldInfo;
+    bool isOutdated = true; // 是否为过时算子信息
+    // TODO: 判断AsyncUnfoldCache容量是否足够
+    // 注意: AsyncUnfoldCache只有等异步展开的后续kernel被执行后才会被释放, 而当前kernel退出前后续kernel不会被执行, 因此只需要检查一次
+    bool isCacheFull = false;
+    // TODO: 初始化预期的相邻算子为, 当前正在执行算子的下一个算子 (expectedAdjacentOp = curIdx + 1)
+    uint32_t expectedAdjacentOpIdx = 0;
+    bool isExpecctedAdjacentOp = true; // 后续算子是否为预期的相邻算子
+
+    // 轮询等待执行完毕直到超时 (或者有异常CQE或中断命令)
     do {
         HcclResult ret = CheckOpExecStatus(); // 检查执行状态，判断是否有异常cq或中断命令
         CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -3659,6 +3684,47 @@ HcclResult HcclCommAicpu::WaitFinishWhileLoop(Stream &mainStream, std::vector<St
                 "group[%s] tag[%s]", devId_, sqId, sqHead, sqTail, identifier_.c_str(), tag.c_str());
         }
         CHK_RET(CheckTaskTimeout(mainStream, startUsec));
+
+        // 如果既没有error CQE/stop KfcCommand, 也没有timeout, 则检查OpH2DRingBuffer, 查看是否存在需要异步展开的单算子
+        if (ASYNC_UNFOLD_ENABLE) {
+            if (!isOutdated && isCacheFull) { // 没有过时算子信息, 且AsyncUnfoldCache容量已满
+                // 无需再从OpH2DRingBuffer中获取后续算子信息, 因为一定不会触发异步展开
+            } else if (!isExpecctedAdjacentOp) { // 后续算子不是相邻算子
+                // 无需再从OpH2DRingBuffer中获取后续算子信息, 因为一定不需要触发异步展开 (否则SQE taskId不正确)
+            } else { // 存在过时算子信息待消费, 或者AsyncUnfoldCache容量未满 (即后续算子信息待异步展开)
+                CHK_RET(aicpuAsyncUnfolder_.GetOpAsyncUnfoldInfo(isValid, opAsyncUnfoldInfo));
+                if (isValid) { // 存在有效 (过时/后续) 算子信息
+                    // TODO: 判断获取的OpAsyncUnfoldInfo与当前kernel相比是否为过时算子信息 (即opIdx <= curIdx)
+                    // TODO: 更新isOutdated
+
+                    if (isOutdated) { // 过时算子信息
+                        // 更新OpH2DRingBuffer, 消费过时算子信息
+                        CHK_RET(aicpuAsyncUnfolder_.ConsumeOpAsyncUnfoldInfo());
+
+                        // 注意: 直接进入下一次loop, 重新从OpH2DRingBuffer中尝试获取算子信息
+                    } else { // 后续算子信息
+                        if (isCacheFull) { // Cache容量已满
+                            // 注意: 不消费当前算子信息, 直接进入下一次loop, 不再检查OpH2DRingBuffer
+                        } else { // Cache容量未满
+                            // TODO: 判断是否为预期的相邻算子 (即opIdx == expectedAdjacentOpIdx)
+                            // 如果不是, 则isExpecctedAdjacentOp = false
+
+                            if (isExpecctedAdjacentOp) {
+                                // 异步展开前, 备份各stream.SqeRingBuffer.tailSqeTaskId, 用于重执行恢复
+                                CHK_RET(aicpuAsyncUnfolder_.BackupTailSqeTaskIds(mainStream, subStreams));
+
+                                // TODO: 触发异步展开, 将展开的SQE保存为AsyncUnfoldCache中的new entry (if not exist)
+
+                                // 异步展开完成后, 更新isCacheFull, 并消费展开的算子信息
+                                // TODO: 更新isCacheFull
+                                CHK_RET(aicpuAsyncUnfolder_.ConsumeOpAsyncUnfoldInfo());
+                                isExpecctedAdjacentOp = true;
+                            }
+                        } // isCacheFull
+                    } // isOutdated
+                } // isValid
+            }
+        } // ASYNC_UNFOLD_ENABLE
     } while (sqHead != sqTail);
     return HCCL_SUCCESS;
 }
