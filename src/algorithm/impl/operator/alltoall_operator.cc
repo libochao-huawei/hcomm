@@ -267,7 +267,7 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
         algName = "RunAlltoAllVFor310PExecutor";
     } else if (IsA3PipelineCondition(param)) {
         algName = "RunAlltoAllVTwoLevelPipeline";
-    } else if (IsSatisfyAlltoallContinuousPipelineCondition()) {
+    } else if (IsSatisfyAlltoallContinuousPipelineCondition() && !useOneLevelAlgorithm) {
         algName = "RunAlltoAllVContinuousPipeline"; // continuous pipeline 算法
         HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s]", algName.c_str());
         return HCCL_SUCCESS ;
@@ -648,9 +648,8 @@ bool AlltoAllOperator::IsSatisfyAlltoallContinuousPipelineCondition()
     bool multiRankPerServer = meshAggregationRankSize_ > 1;
     bool isMultiServer = ((userRankSize_ > meshAggregationRankSize_) &&
         (userRankSize_ % meshAggregationRankSize_) == 0);
-    auto autoAlgTypeLevel1 = static_cast<u32>(algType_.algoLevel1);
-    bool satisfyAlgType =
-        (static_cast<AlgTypeLevel1>(autoAlgTypeLevel1) == AlgTypeLevel1::ALG_LEVEL1_CONTINUOUS_PIPELINE);
+    bool satisfyAlgType = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_CONTINUOUS_PIPELINE)
+        || (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RESERVED);
     bool res = (deviceType_ == DevType::DEV_TYPE_910B && satisfyAlgType && multiRankPerServer &&
         GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && isMultiServer &&
         !multiModuleDiffDeviceNumMode_ && cclBigEnough);
