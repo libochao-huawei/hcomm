@@ -50,6 +50,7 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/pub_inc/new
     ${HCOMM_DIR}/externel_depends/tsch
 
+<<<<<<< HEAD:src/legacy/ascend910/framework/ccl_kernel.cmake
     # src/common 头文件 (legacy/ascend910)
     ${HCOMM_DIR}/src/legacy/ascend910/common/stream
     ${HCOMM_DIR}/src/legacy/ascend910/common/debug/profiling/inc
@@ -114,6 +115,66 @@ target_include_directories(ccl_kernel PRIVATE
     ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/task
     ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/legacy
     ${HCOMM_DIR}/src/legacy/ascend910/algorithm/impl/coll_executor
+=======
+    # src/common 头文件
+    ${HCOMM_DIR}/src/common/stream
+    ${HCOMM_DIR}/src/common/debug/profiling/inc
+
+    # src/legacy 头文件，优先于 src/framework
+    ${HCOMM_DIR}/src/legacy/unified_platform/resource/socket
+    ${HCOMM_DIR}/src/legacy/framework/env_config
+
+    # src/framework 头文件
+    ${HCOMM_DIR}/src/framework
+    ${HCOMM_DIR}/src/framework/inc
+    ${HCOMM_DIR}/src/framework/op_base/src
+    ${HCOMM_DIR}/src/framework/cluster_maintenance/health/heartbeat
+    ${HCOMM_DIR}/src/framework/cluster_maintenance/recovery/operator_retry
+    ${HCOMM_DIR}/src/framework/common/src/exception
+    ${HCOMM_DIR}/src/framework/communicator/impl
+    ${HCOMM_DIR}/src/framework/communicator/impl/resource_manager
+    ${HCOMM_DIR}/src/framework/next/comms/api_c_adpt
+    ${HCOMM_DIR}/src/framework/next/comms/endpoints
+    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs
+    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/sockets
+    ${HCOMM_DIR}/src/framework/next/comms/endpoint_pairs/channels
+    ${HCOMM_DIR}/src/framework/next/comms/common/device
+    ${HCOMM_DIR}/src/framework/next/comms/ccu/ccu_device
+    ${HCOMM_DIR}/src/framework/next/coll_comms
+    ${HCOMM_DIR}/src/framework/next/coll_comms/communicator
+    ${HCOMM_DIR}/src/framework/next/coll_comms/rank
+    ${HCOMM_DIR}/src/framework/next/coll_comms/rank_pairs
+    ${HCOMM_DIR}/src/framework/next/coll_comms/dfx/profiling/aicpu
+
+    # src/platform 头文件
+    ${HCOMM_DIR}/src/platform/inc
+    ${HCOMM_DIR}/src/platform/inc/adapter
+    ${HCOMM_DIR}/src/platform/common
+    ${HCOMM_DIR}/src/platform/common/buffer_manager
+    ${HCOMM_DIR}/src/platform/common/unique
+    ${HCOMM_DIR}/src/platform/common/unfold_cache
+    ${HCOMM_DIR}/src/platform/common/async_unfold_cache
+    ${HCOMM_DIR}/src/platform/resource/transport
+    ${HCOMM_DIR}/src/platform/resource/transport/heterog
+    ${HCOMM_DIR}/src/platform/resource/notify
+    ${HCOMM_DIR}/src/platform/resource/dispatcher_ctx
+    ${HCOMM_DIR}/src/platform/resource/socket
+    ${HCOMM_DIR}/src/platform/task
+    ${HCOMM_DIR}/src/platform/hccp/inc
+    ${HCOMM_DIR}/src/platform/hccp/inc/network
+
+    # src/algorithm 头文件
+    ${HCOMM_DIR}/src/algorithm/pub_inc
+    ${HCOMM_DIR}/src/algorithm/base/inc
+    ${HCOMM_DIR}/src/algorithm/base/alg_template
+    ${HCOMM_DIR}/src/algorithm/base/communicator
+    ${HCOMM_DIR}/src/algorithm/base/communicator/legacy
+    ${HCOMM_DIR}/src/algorithm/impl
+    ${HCOMM_DIR}/src/algorithm/impl/resource_manager
+    ${HCOMM_DIR}/src/algorithm/impl/task
+    ${HCOMM_DIR}/src/algorithm/impl/legacy
+    ${HCOMM_DIR}/src/algorithm/impl/coll_executor
+>>>>>>> 5b0160c8... support aicpu async unfold for A3:src/framework/ccl_kernel.cmake
 
     # src/legacy 头文件
     ${LEGACY_ASCEND950_INCLUDE_LIST}
