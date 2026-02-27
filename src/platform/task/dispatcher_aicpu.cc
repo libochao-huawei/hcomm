@@ -20,6 +20,7 @@
 #include "dlhal_function.h"
 #include "adapter_hal_pub.h"
 #include "dispatcher_aicpu.h"
+#include "aicpu_cache_utils.h"
 
 namespace hccl {
 constexpr uint64_t NANOSECOND_TO_SECOND = 1000000000U;
@@ -509,7 +510,7 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
                 uint8_t *sqePtr = sqeArray + sqeIdx * HCCL_SQE_SIZE;
                 const uint8_t sqeType = sqeTypeArray[sqeIdx];
                 PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchNewTask] %uth cached SQE", sqeIdx);
-                CHK_RET(OpUnfoldCache::DumpSqeContent(sqePtr, sqeType));
+                CHK_RET(AicpuCacheUtils::DumpSqeContent(sqePtr, sqeType));
 
                 const AicpuDfxInfo& dfxinfo = sqeDfxInfoArray[sqeIdx];
                 PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchNewTask] AicpuDfxInfo: remoteRank[%u] opRingBufferIdx[%u] notifyId[%u]",
@@ -523,33 +524,15 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
         size_t sqeStartIdx = 0; // 要拷贝的SQE在sqeArray中的起始索引
         size_t profTimestampStartIdx = 0; // 要拷贝的profiling timestamp在profTimestamps中的起始索引
         for (size_t i = 0; i < flipInfos.size(); ++i) {
-            // Copy [sqeStartIdx, curZeroTaskidSqeIdx) + placeholder into RTSQ
+            // sqeArray[sqeStartIdx, curZeroTaskidSqeIdx) + placeholder
             const size_t curZeroTaskidSqeIdx = flipInfos[i].first;
-            const size_t curSqeCount = curZeroTaskidSqeIdx - sqeStartIdx + 1;
+            const size_t curSqeCount = curZeroTaskidSqeIdx - sqeStartIdx + 1; // including placeholder
             CHK_PRT_RET(curZeroTaskidSqeIdx < sqeStartIdx,
                 HCCL_ERROR("[DispatcherAiCpu][LaunchNewTask] curZeroTaskidSqeIdx[%u] < sqeStartIdx[%u]",
                     curZeroTaskidSqeIdx, sqeStartIdx),
                 HCCL_E_INTERNAL);
-
-            // Wait RTSQ for curSqeCount SQE (including placeholder) space
-            HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] wait rtsq for %u sqe space", curSqeCount);
-            CHK_RET(WaitRtsq(*streamPtr, curSqeCount, true));
-
-            // 下发sqeArray[sqeStartIdx, curZeroTaskidSqeIdx)到RTSQ中 (excluding placeholder)
-            if (curZeroTaskidSqeIdx > sqeStartIdx) { // 需要下发的cached SQE数量 > 0
-                HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] launch %uth sqeArray[%u:%u)",
-                    arrayIdx, sqeStartIdx, curZeroTaskidSqeIdx);
-                CHK_RET(MemcpyRtsq(*streamPtr, curSqeCount - 1,
-                    sqeArray + sqeStartIdx * HCCL_SQE_SIZE,
-                    sqeTypeArray + sqeStartIdx,
-                    sqeDfxInfoArray + sqeStartIdx,
-                    profL1Enable, profTimestamps, profTimestampStartIdx));
-                if (profL1Enable) {
-                    profTimestampStartIdx += (curSqeCount - 1); // Cached SQEs
-                }
-            }
-
-            // 根据具体SQE下发信息更新placeholder
+            
+            // 根据flipInfo更新placeholder SQE/type
             // 参考AddFlipTask, 设置placeholder SQE (streamId和stream相关, flipNum和SQE下发相关)
             // 注意: 由于flipPlaceholder DfxInfo在当前算子下不变, 提前设置, 后续只需要刷新placeholder即可
             const uint16_t curFlipNum = flipInfos[i].second;
@@ -561,14 +544,44 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
             addOneFlipPlaceHolderSqe_(streamId, curFlipNum, flipPlaceholderTaskId, placeholderSqe, &placeholderSqeType);
             HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] flip placeholder SQE with flipnum[%u] and streamid[%u]",
                 curFlipNum, streamId);
+            
+            if (useAsyncUnfold_) { // 异步展开生成阶段
+                CHK_PTR_NULL(asyncUnfoldCachePtr_);
+                CHK_PRT_RET(asyncUnfoldStage_ != AsyncUnfoldStage::ASYNC_UNFOLD_GENERATE,
+                    HCCL_ERROR("[DispatcherAiCpu][LaunchNewTask] asyncUnfoldStage[%u] != ASYNC_UNFOLD_GENERATE",
+                        asyncUnfoldStage_),
+                    HCCL_E_INTERNAL);
+                
+                // TODO: Copy [sqeStartIdx, curZeroTaskidSqeIdx) + placeholder into AsyncUnfoldCache
+            } else { // 正常展开
+                // Copy [sqeStartIdx, curZeroTaskidSqeIdx) + placeholder into RTSQ
 
-            // 下发placeholder SQE
-            HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] launch placeholder SQE after %uth sqeArray[%u:%u)",
-                arrayIdx, sqeStartIdx, curZeroTaskidSqeIdx);
-            CHK_RET(MemcpyRtsq(*streamPtr, 1, placeholderSqe, &placeholderSqeType, &placeholderSqeDfxInfo,
-                profL1Enable, profTimestamps, profTimestampStartIdx));
-            if (profL1Enable) {
-                profTimestampStartIdx += 1; // Flip placeholder
+                // Wait RTSQ for curSqeCount SQE (including placeholder) space
+                HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] wait rtsq for %u sqe space", curSqeCount);
+                CHK_RET(WaitRtsq(*streamPtr, curSqeCount, true));
+
+                // 下发sqeArray[sqeStartIdx, curZeroTaskidSqeIdx)到RTSQ中 (excluding placeholder)
+                if (curZeroTaskidSqeIdx > sqeStartIdx) { // 需要下发的cached SQE数量 > 0
+                    HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] launch %uth sqeArray[%u:%u)",
+                        arrayIdx, sqeStartIdx, curZeroTaskidSqeIdx);
+                    CHK_RET(MemcpyRtsq(*streamPtr, curSqeCount - 1,
+                        sqeArray + sqeStartIdx * HCCL_SQE_SIZE,
+                        sqeTypeArray + sqeStartIdx,
+                        sqeDfxInfoArray + sqeStartIdx,
+                        profL1Enable, profTimestamps, profTimestampStartIdx));
+                    if (profL1Enable) {
+                        profTimestampStartIdx += (curSqeCount - 1); // Cached SQEs
+                    }
+                }
+
+                // 下发placeholder SQE
+                HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] launch placeholder SQE after %uth sqeArray[%u:%u)",
+                    arrayIdx, sqeStartIdx, curZeroTaskidSqeIdx);
+                CHK_RET(MemcpyRtsq(*streamPtr, 1, placeholderSqe, &placeholderSqeType, &placeholderSqeDfxInfo,
+                    profL1Enable, profTimestamps, profTimestampStartIdx));
+                if (profL1Enable) {
+                    profTimestampStartIdx += 1; // Flip placeholder
+                }
             }
 
             sqeStartIdx = curZeroTaskidSqeIdx;
@@ -576,22 +589,32 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
 
         // 按需下发剩余SQE
         if (sqeStartIdx < sqeCount) {
-            // Copy [sqeStartIdx, sqeCount - 1] into RTSQ
             const size_t remainSqeCount = sqeCount - sqeStartIdx;
+            if (useAsyncUnfold_) { // 异步展开生成阶段
+                CHK_PTR_NULL(asyncUnfoldCachePtr_);
+                CHK_PRT_RET(asyncUnfoldStage_ != AsyncUnfoldStage::ASYNC_UNFOLD_GENERATE,
+                    HCCL_ERROR("[DispatcherAiCpu][LaunchNewTask] asyncUnfoldStage[%u] != ASYNC_UNFOLD_GENERATE",
+                        asyncUnfoldStage_),
+                    HCCL_E_INTERNAL);
+                
+                // TODO: Copy [sqeStartIdx, sqeCount - 1] into AsyncUnfoldCache
+            } else { // 正常展开
+                // Copy [sqeStartIdx, sqeCount - 1] into RTSQ
 
-            // Wait RTSQ for remainSqeCount SQE space
-            HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] wait rtsq for %u sqe space", remainSqeCount);
-            CHK_RET(WaitRtsq(*streamPtr, remainSqeCount, true));
+                // Wait RTSQ for remainSqeCount SQE space
+                HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] wait rtsq for %u sqe space", remainSqeCount);
+                CHK_RET(WaitRtsq(*streamPtr, remainSqeCount, true));
 
-            // 下发sqeArray[sqeStartIdx, sqeCount - 1]到RTSQ中
-            HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] launch %uth sqeArray[%u:%u]", arrayIdx, sqeStartIdx, sqeCount - 1);
-            CHK_RET(MemcpyRtsq(*streamPtr, remainSqeCount,
-                sqeArray + sqeStartIdx * HCCL_SQE_SIZE,
-                sqeTypeArray + sqeStartIdx,
-                sqeDfxInfoArray + sqeStartIdx,
-                profL1Enable, profTimestamps, profTimestampStartIdx));
-            if (profL1Enable) {
-                profTimestampStartIdx += remainSqeCount; // Remaining cached SQEs
+                // 下发sqeArray[sqeStartIdx, sqeCount - 1]到RTSQ中
+                HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] launch %uth sqeArray[%u:%u]", arrayIdx, sqeStartIdx, sqeCount - 1);
+                CHK_RET(MemcpyRtsq(*streamPtr, remainSqeCount,
+                    sqeArray + sqeStartIdx * HCCL_SQE_SIZE,
+                    sqeTypeArray + sqeStartIdx,
+                    sqeDfxInfoArray + sqeStartIdx,
+                    profL1Enable, profTimestamps, profTimestampStartIdx));
+                if (profL1Enable) {
+                    profTimestampStartIdx += remainSqeCount; // Remaining cached SQEs
+                }
             }
         }
 
@@ -606,6 +629,33 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
 
     // 下发完当前cache entry中所有SQE数组后, 更新input/output memory ranges, 与SQE中in-place update的addr-related fields保持一直
     CHK_RET(entryPtr->SetInputOutputMemRanges(userInputMemRanges, userOutputMemRanges));
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult DispatcherAiCpu::ClearLaunchAsyncContext()
+{
+    HCCL_INFO("[DispatcherAiCpu][ClearLaunchAsyncContext] clear launch context for async unfold");
+    useAsyncUnfold_ = false;
+    asyncUnfoldKey_ = AsyncUnfoldKey();
+    asyncUnfoldCachePtr_ = nullptr;
+    asyncUnfoldStage_ = AsyncUnfoldStage::NORMAL_UNFOLD;
+    return HCCL_SUCCESS;
+}
+
+HcclResult DispatcherAiCpu::SetLaunchAsyncContext(const AsyncUnfoldKey& asyncUnfoldKey, AsyncUnfoldCache* asyncUnfoldCachePtr,
+    const AsyncUnfoldStage asyncUnfoldStage)
+{
+    HCCL_INFO("[DispatcherAiCpu][SetLaunchAsyncContext] set launch context for async unfold");
+
+    CHK_PRT_RET(asyncUnfoldCachePtr == nullptr, HCCL_ERROR("asyncUnfoldCachePtr should not be nullptr"), HCCL_E_INTERNAL);
+    CHK_PRT_RET(asyncUnfoldStage_ != AsyncUnfoldStage::ASYNC_UNFOLD_GENERATE,
+        HCCL_ERROR("asyncUnfoldStage[%u] != ASYNC_UNFOLD_GENERATE", asyncUnfoldStage_), HCCL_E_INTERNAL);
+
+    useAsyncUnfold_ = true;
+    asyncUnfoldKey_ = asyncUnfoldKey;
+    asyncUnfoldCachePtr_ = asyncUnfoldCachePtr;
+    asyncUnfoldStage_ = asyncUnfoldStage;
 
     return HCCL_SUCCESS;
 }
@@ -745,7 +795,7 @@ HcclResult DispatcherAiCpu::LaunchTask(Stream &stream, bool isBlockLaunch)
                 PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchTask] %uth dispatched SQE", sqeIdx);
             }
             
-            CHK_RET(OpUnfoldCache::DumpSqeContent(sqePtr, sqeType));
+            CHK_RET(AicpuCacheUtils::DumpSqeContent(sqePtr, sqeType));
 
             const AicpuDfxInfo& dfxinfo = sqeDfxInfoArray[sqeIdx];
             PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchTask] AicpuDfxInfo: remoteRank[%u] opRingBufferIdx[%u] notifyId[%u]",
@@ -1055,6 +1105,8 @@ HcclResult DispatcherAiCpu::WaitRtsq(Stream& stream, const size_t& sqeCount, con
         // 当前流无法下发，把其他流都launch一遍，避免等待的其他流没有launch
         for (auto it = streamMap_.begin(); it != streamMap_.end(); ++it) {
             if (it->first != streamInfo.actualStreamId) { // 不是当前stream
+                // 注意: LaunchNewTask暂不支持非阻塞调用, 因此用LaunchTask占位
+                // 由于LaunchNewTask前强制执行LaunchTask的阻塞调用, 因此SqeRingBuffer一定为空, 即这里LaunchTask一定为空调用
                 CHK_RET(LaunchTask(it->second, false)); // 非阻塞launch
             }
         }
