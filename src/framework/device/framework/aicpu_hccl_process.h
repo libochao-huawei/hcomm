@@ -53,10 +53,6 @@ public:
     static HcclResult AicpuRegOpInfo(void* opInfo, u32 size);
     static HcclResult AicpuRegOpTaskException(HcommGetOpInfoCallback callback);
 private:
-    static HcclResult CalcDataSize(HcclCMDType op, HcclDataType type, u64 count, u32 rankSize,
-        u64 &inputSize, u64 &outputSize);
-    static HcclResult CalcDataSizeV(hccl::OpParam &param, u32 rankSize);
-    static u64 CalcOpTilingVDataDesVDataLen(u32 rankSize);
 };
 
 #endif // __AICPU_HCCL_PROCESS_HPP__
