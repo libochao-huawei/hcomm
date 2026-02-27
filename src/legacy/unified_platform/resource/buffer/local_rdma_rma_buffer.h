@@ -38,11 +38,11 @@ public:
     std::vector<char> Desc;
     
 private:
-    RdmaHandle rdmaHandle;
-    u8         key[RDMA_MEM_KEY_MAX_LEN]{0};
-    u32        lkey{0};
-    u32        rkey{0};
-    MrHandle   mrHandle{nullptr};
+    RdmaHandle         rdmaHandle;
+    u8                 key[RDMA_MEM_KEY_MAX_LEN]{0};
+    u32                lkey{0};
+    u32                rkey{0};
+    MrHandle           mrHandle{nullptr};
 };
 
 } // namespace Hccl

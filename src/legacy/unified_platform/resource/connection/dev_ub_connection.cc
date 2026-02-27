@@ -131,13 +131,16 @@ inline uint32_t GetRandomNum()
 
 RmaConnStatus DevUbConnection::GetStatus()
 {
+    HCCL_INFO("[DevUbConnection][%s] start, rmaConnStatus[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
+        ubConnStatus.Describe().c_str());
+
     if (!CheckRequestResult()) {
         return status;
     }
 
     switch (ubConnStatus) {
         case UbConnStatus::INIT: {
-            HCCL_INFO("[DevUbConnection][%s] start, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
+            HCCL_INFO("[DevUbConnection][%s] INIT, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
                       ubConnStatus.Describe().c_str());
 
             SetJettyInfo();
@@ -176,6 +179,9 @@ RmaConnStatus DevUbConnection::GetStatus()
         default:
             ThrowAbnormalStatus(std::string(__func__));
     }
+
+    HCCL_INFO("[DevUbConnection][%s] end, rmaConnStatus[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
+        ubConnStatus.Describe().c_str());
 
     return status;
 }
@@ -315,6 +321,8 @@ bool DevUbConnection::GetTpInfo()
         ThrowAbnormalStatus(std::string(__func__));
     }
     
+    HCCL_INFO("[DevUbConnection::GetTpInfo] devLogicId[%d].", devLogicId);
+    TpManager::GetInstance(devLogicId).Init();
     auto ret = TpManager::GetInstance(devLogicId).GetTpInfo(
         {locAddr, rmtAddr, tpProtocol}, tpInfo);
 
