@@ -235,6 +235,13 @@ namespace hccl
         (void)UnRegistTaskExceptionHandler();
         kfcControlTransferH2D_ = nullptr;
         kfcStatusTransferD2H_ = nullptr;
+        kfcTailH2D_ = nullptr;
+        kfcHeadD2H_ = nullptr;
+        if (kfcOpH2DRingBuffer_.size() > 0) {
+            for (size_t i = 0; i < kfcOpH2DRingBuffer_.size(); ++i) {
+                kfcOpH2DRingBuffer_[i] = nullptr;
+            }
+        }
         customControlTransferH2D_ = nullptr;
         customStatusTransferD2H_ = nullptr;
 
@@ -5489,6 +5496,29 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::BuildAsyncUnfoldParam()
+    {
+        if (ASYNC_UNFOLD_ENABLE) {
+            CHK_SMART_PTR_NULL(kfcTailH2D_);
+            opResPara_.kfcTailH2DParams = kfcTailH2D_->GetCommunicateParams();
+
+            CHK_SMART_PTR_NULL(kfcHeadD2H_);
+            opResPara_.kfcHeadD2HParams = kfcHeadD2H_->GetCommunicateParams();
+
+            // 注意: 只有AicpuResourceInit才会调用到BuildAsyncUnfoldParam, 因此一定支持HDC, 即kfcOpH2DRingBuffer_.size一定 > 0
+            CHK_PRT_RET(kfcOpH2DRingBuffer_.size() != OP_H2D_RING_BUFFER_SIZE,
+                HCCL_ERROR("[HcclCommunicator][BuildAsyncUnfoldParam] kfcOpH2DRingBuffer_.size[%u] != OP_H2D_RING_BUFFER_SIZE[%u]",
+                    kfcOpH2DRingBuffer_.size(), OP_H2D_RING_BUFFER_SIZE),
+                HCCL_E_INTERNAL);
+            for (size_t i = 0; i < OP_H2D_RING_BUFFER_SIZE; ++i) {
+                CHK_SMART_PTR_NULL(kfcOpH2DRingBuffer_[i]);
+                opResPara_.kfcOpH2DRingBufferParams[i] = kfcOpH2DRingBuffer_[i]->GetCommunicateParams();
+            }
+        }
+
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::BuildCommPlaneSubGroupRank(const std::string &algName)
     {
         opResPara_.hierarchicalAlgInfo.commplaneSubGroupRank = 0;
@@ -6076,6 +6106,7 @@ namespace hccl
         CHK_RET(BuildOpRemoteResParam(algResource, newTag, opType));
         CHK_RET(BuildOpTopoResParam(algName, algResource));
         CHK_RET(BuildOpRetryParam(algResource, newTag));
+        CHK_RET(BuildAsyncUnfoldParam());
         CHK_RET(BuildZeroCopyParam());
         CHK_RET(BuildAicpuCustomParam());
         CHK_RET(BuildAicpuOrderLaunchNotify()); // 先申请device侧的关于按序下发的Notify内存
@@ -6253,6 +6284,18 @@ namespace hccl
                        GetReduceOpEnumStr(param.reduceType).c_str());
             return ret;
         }
+        
+        // 按需下发OpAsyncUnfoldInfo用于AICPU异步展开
+        // 注意: HCCL host下发kernel之后, aicpu kernel在device侧的执行 (STARS -> AICPU framework -> HCCL device) 与HCCL host异步
+        if (ASYNC_UNFOLD_ENABLE) {
+            ret = AicpuOpAsyncUnfoldInfoPut();
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[HcclCommunicator][OrchestrateAicpu] fail to put OpAsyncUnfoldInfo of kernel[%s]: ret[%d]",
+                    kernelName.c_str(), ret);
+                return ret;
+            }
+        }
+
         return HCCL_SUCCESS;
     }
 
@@ -7597,6 +7640,43 @@ namespace hccl
             CHK_RET(AicpuKfcTilingDataLaunchIn(opParam, deviceContext, kernelName, opTilingInfo,
                                                sizeof(struct OpTilingData) + dynamicDataSize, isCustom));
         }
+
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::AicpuOpAsyncUnfoldInfoPut()
+    {
+        // 读取head
+        CHK_SMART_PTR_NULL(kfcHeadD2H_);
+        uint64_t head;
+        CHK_RET(kfcHeadD2H_->Get(0, sizeof(uint64_t), reinterpret_cast<uint8_t *>(&head)));
+
+        // 校验head
+        CHK_PRT_RET(head >= kfcOpH2DRingBuffer_.size(),
+            HCCL_ERROR("[HcclCommunicator][AicpuOpAsyncUnfoldInfoPut] head[%llu] should < kfcOpH2DRingBuffer_.size[%u]",
+                head, kfcOpH2DRingBuffer_.size()),
+            HCCL_E_INTERNAL);
+        
+        // 校验tail
+        CHK_PRT_RET(kfcTail_ >= kfcOpH2DRingBuffer_.size(),
+            HCCL_ERROR("[HcclCommunicator][AicpuOpAsyncUnfoldInfoPut] kfcTail_[%llu] should < kfcOpH2DRingBuffer_.size[%u]",
+                kfcTail_, kfcOpH2DRingBuffer_.size()),
+            HCCL_E_INTERNAL);
+        
+        HCCL_DEBUG("[HcclCommunicator][AicpuOpAsyncUnfoldInfoPut] head[%llu] tail[%llu] kfcOpH2DRingBuffer_.size[%u]",
+            head, kfcTail_, kfcOpH2DRingBuffer_.size());
+
+        // 判断是否能够下发算子信息
+        const uint64_t nextPos = (kfcTail_ + 1) % kfcOpH2DRingBuffer_.size();
+        if (nextPos != head) { // OpH2DRingBuffer存在剩余空间 (即能够下发算子信息用于异步展开)
+            // TODO
+        } else { // OpH2DRingBuffer已满 (即不能下发算子信息用于异步展开)
+            ++kfcOpH2DRingBufferFullCnt_;
+            HCCL_WARNING("[HcclCommunicator][AicpuOpAsyncUnfoldInfoPut] OpH2DRingBuffer is full: kfcOpH2DRingBufferFullCnt_[%llu]",
+                kfcOpH2DRingBufferFullCnt_);
+        }
+
+        // TODO
 
         return HCCL_SUCCESS;
     }
