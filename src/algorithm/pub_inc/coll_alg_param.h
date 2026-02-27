@@ -216,6 +216,7 @@ struct OpParam {
     void* outputSymWindow = nullptr;
     u64 outputOffset = 0;
     bool needIncreLink = false;
+    uint64_t opBaseOpIdx = 0; // HCCL单算子模式下的算子索引 (异步展开只支持纯单算子模式)
 
     inline HcclDataType GetDataType() const
     {
