@@ -10,6 +10,7 @@
 #include "hcclCommDfx.h"
 #include "global_mirror_tasks.h"
 #include "task_info.h"
+
 namespace hccl {
 
 HcclCommDfx::HcclCommDfx(uint32_t deviceId) {
@@ -34,7 +35,7 @@ void HcclCommDfx::Init() {
 // 回调注册实现
 void HcclCommDfx::RegisterProfilingCallback() {
     auto callback = [this](const Hccl::TaskInfo& taskInfo) {
-        mirrorTaskManager_->AddTaskInfo(std::make_shared<TaskInfo>(taskInfo));
+        mirrorTaskManager_->AddTaskInfo(std::make_shared<Hccl::TaskInfo>(taskInfo));
     };
     // 待后续实现HcomProfiling类 
     // HcomProfiling::GetInstance().RegisterAddTaskInfoCallback(callback);
@@ -55,7 +56,7 @@ void HcclCommDfx::ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) {
 
 // void HcclCommDfx::CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
 //     if (profiling_) {
-//         profiling->CallReportMc2CommInfo(mc2CommInfo);
+//         profiling_->CallReportMc2CommInfo(mc2CommInfo);
 //     }
 // }
 
