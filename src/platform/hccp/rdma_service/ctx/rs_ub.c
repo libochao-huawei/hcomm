@@ -1844,7 +1844,10 @@ STATIC int RsUbFillJettyInfo(struct RsCtxJettyCb *jettyCb, struct QpCreateInfo *
 
     jettyKeyInfo.jettyId = jettyCb->jetty->jetty_id;
     for (size_t i = 0; i < 16; i++) {
-        hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.eid.raw[%d]: %ld,", i, jettyCb->jetty->jetty_id.eid.raw[i]);
+        hccp_warn("@@@ RsUbFillJettyInfo u jettyCb->jetty->jetty_id.eid.raw[%d]: %u,", i, jettyCb->jetty->jetty_id.eid.raw[i]);
+    }
+    for (size_t i = 0; i < 16; i++) {
+        hccp_warn("@@@ RsUbFillJettyInfo x jettyCb->jetty->jetty_id.eid.raw[%d]: %x,", i, jettyCb->jetty->jetty_id.eid.raw[i]);
     }
     hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.eid.in4.reserved: %ld,", jettyCb->jetty->jetty_id.eid.in4.reserved);
     hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.eid.in4.prefix: %ld,", jettyCb->jetty->jetty_id.eid.in4.prefix);
@@ -2246,17 +2249,21 @@ STATIC int RsUbCtxDrvJettyImport(struct RsCtxRemJettyCb *rjettyCb)
     rjetty.flag.value = rjettyCb->flag.value;
     rjetty.tp_type = rjettyCb->tpType;
     for (size_t i = 0; i < 16; i++) {
-        hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.eid.raw[%d]: %ld,", i, rjetty.jetty_id.eid.raw[i]);
+        hccp_warn("@@@ RsUbCtxDrvJettyImport u rjetty.jetty_id.eid.raw[%d]: %u,", i, rjetty.jetty_id.eid.raw[i]);
+    }
+    for (size_t i = 0; i < 16; i++) {
+        hccp_warn("@@@ RsUbCtxDrvJettyImport x rjetty.jetty_id.eid.raw[%d]: %x,", i, rjetty.jetty_id.eid.raw[i]);
     }
     hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.eid.in4.reserved: %ld,", rjetty.jetty_id.eid.in4.reserved);
     hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.eid.in4.prefix: %ld,", rjetty.jetty_id.eid.in4.prefix);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.eid.in4.addr: %ld,", rjetty.jetty_id.eid.in4.addr);
     hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.uasid: %ld,", rjetty.jetty_id.uasid);
     hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.id: %ld,", rjetty.jetty_id.id);
 
     if (rjettyCb->mode == JETTY_IMPORT_MODE_NORMAL) {
         hccp_warn("@@@ RsUbCtxDrvJettyImport JETTY_IMPORT_MODE_NORMAL");
         rjettyCb->tjetty = RsUrmaImportJetty(rjettyCb->devCb->urmaCtx, &rjetty, &tokenValue);
-    }  else { // rjetty_cb->mode == JETTY_IMPORT_MODE_EXP
+    } else { // rjetty_cb->mode == JETTY_IMPORT_MODE_EXP
         hccp_warn("@@@ RsUbCtxDrvJettyImport else");
         RsUbCtxExpJettyImport(rjettyCb, &rjetty, &tokenValue);
     }
