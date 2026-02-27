@@ -592,3 +592,30 @@ HcclResult HcommThreadAllocWithStream(CommEngine engine,
         "notifyNum[%u]",  engine, stream, notifyNum);
     return HCCL_SUCCESS;
 }
+
+HcclResult HcommThreadResGetInfo(ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void *info)
+{
+    if (thread == nullptr) {
+        HCCL_ERROR("[%s] failed. thread is null.", __func__);
+        return HCCL_E_PARA;
+    }
+    if (resType == ThreadResType::THREAD_RES_TYPE_STREAM) {
+        if (infoLen < sizeof(ThreadResTypeStream)) {
+            HCCL_ERROR("[%s] failed. infoLen[%u] is less than sizeof(ThreadResTypeStream)[%zu]", 
+                       __func__, infoLen, sizeof(ThreadResTypeStream));
+            return HCCL_E_PARA;
+        }
+        
+        ThreadResTypeStream stream = thread.GetStream();
+        if (stream == nullptr) {
+            HCCL_ERROR("[%s] failed. thread.GetStream() returned null", __func__);
+            return HCCL_E_PARA;
+        }
+        memcpy(info, &stream, sizeof(ThreadResTypeStream));
+        CHK_PTR_NULL(info);
+    } else {
+        HCCL_ERROR("[%s] failed. resType[%u] is not supported.", __func__, static_cast<int32_t>(resType));
+        return HCCL_E_NOT_SUPPORT;
+    }
+    return HCCL_SUCCESS;
+}
