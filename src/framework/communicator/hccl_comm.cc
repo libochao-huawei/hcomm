@@ -1464,55 +1464,6 @@ HcclResult hcclComm::SetGroupMode(bool isGroup){
 bool hcclComm::GetGroupMode(){
     return isGroupMode_;
 }
- 
-HcclResult hcclComm::SetSendIndex(u32 index){
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->SetSendIndex(index));
-    return HCCL_SUCCESS;
-}
- 
-HcclResult hcclComm::SetRecvIndex(u32 index){
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->SetRecvIndex(index));
-    return HCCL_SUCCESS;
-}
- 
-HcclResult hcclComm::SetBufferSliceNum(u32 bufferSliceNum){
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->SetBufferSliceNum(bufferSliceNum));
-    return HCCL_SUCCESS;
-}
- 
-HcclResult hcclComm::SetNSend(u32 nSend){
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->SetNSend(nSend));
-    return HCCL_SUCCESS;
-}
- 
-HcclResult hcclComm::SetNRecv(u32 nRecv){
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->SetNRecv(nRecv));
-    return HCCL_SUCCESS;
-}
- 
-HcclResult hcclComm::GroupPrepareStreamAndNotify(HcclRtStream sendRecvMainStream){
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->GroupPrepareStreamAndNotify(sendRecvMainStream));
-    return HCCL_SUCCESS;
-}
- 
-HcclResult hcclComm::GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte){
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->GroupSyncMainstream(sendIdx2Byte, recvIdx2Byte));
-    return HCCL_SUCCESS;
-}
- 
-HcclResult hcclComm::GroupSubstreamsSync(){
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->GroupSubstreamsSync());
-    return HCCL_SUCCESS;
-}
- 
 
 HcclResult hcclComm::GetKFCWorkSpace(void **addr, uint64_t *size)
 {

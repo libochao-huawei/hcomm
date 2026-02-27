@@ -549,6 +549,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
 
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_send_receive/coll_batch_send_recv_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_send_receive/coll_batch_send_recv_retry_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_send_receive/coll_batch_send_recv_group_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_send_receive/coll_send_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_send_receive/coll_receive_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_send_receive/coll_batch_write_executor.cc
