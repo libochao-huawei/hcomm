@@ -3116,7 +3116,7 @@ HcclResult CommunicatorImpl::PrepareDpuKernelResource(aclrtFuncHandle &funcHandl
     aclrtBinHandle         binHandle;
     aclrtBinaryLoadOptions options;
     aclrtBinaryLoadOption  option;
-    option.type = ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE; // AI CPU算子注册模式 ????
+    option.type = ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE;
     option.value.cpuKernelMode = 1; // 0 ：仅需要加载json，1 ：加载cpu so & json，2: LoadFromData
     options.numOpt  = 1;
     options.options = &option;

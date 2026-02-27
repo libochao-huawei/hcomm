@@ -16,6 +16,7 @@
  namespace hcomm{
 Endpoint::Endpoint(const EndpointDesc &endpointDesc)
 {
+    HCCL_INFO("[%s::Endpoint] devPhyId[%u].", __func__, endpointDesc.loc.device.devPhyId);
     endpointDesc_ = endpointDesc;
 }
 
