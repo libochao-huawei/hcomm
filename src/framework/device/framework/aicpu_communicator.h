@@ -43,7 +43,9 @@
 #include "aicpu_init_param.h"
 #include "task_exception.h"
 #include "ub_transport_lite_impl.h"
+#include "aicpu_cache_utils.h"
 #include "aicpu_cache_manager.h"
+#include "aicpu_async_unfolder.h"
 
 namespace hccl {
 
@@ -99,8 +101,35 @@ struct AicpuStreamMontior {
     u32 historyTaskId;
     u32 historyType;
 };
+
+// 异步展开前备份的信息, 用于异步展开后恢复
+struct AsyncUnfoldBackup {
+    // 异步展开前, 备份当前算子的algOpContext_.opRetryHandler.*
+    u8 inplaceSupportRetry = 0;
+    u8 retryEnable = 0;
+    u8 inPlaceSupportRetryStatus = 0;
+    u8 isInplacePreSync = 0;
+    u8 isPostSync = 0;
+
+    // 如果是alltoallv.RunAlltoAllVTwoLevelPipeline, 异步展开前, 备份当前算子的hcclCommAicpu.sendRecvInfoPtr_
+    void* sendRecvInfoPtr = nullptr;
+
+    // 异步展开前, 备份当前算子的hcclCommAicpu.*
+    u8 floatOverflowMode = 0;
+    bool dumpDebug = false;
+    u64 algTypeVal = 0;
+    u8 debugMode = 0;
+    bool isDeviceMode = false;
+    s32 userStreamId = 0;
+    u32 *ahcConfInfo = nullptr;
+};
+
 using AicpuKfcHandler = std::function<HcclResult(const std::vector<u64> &)>;
 class HcclCommAicpu {
+public:
+    // 注意: 本函数只能放在这里, 因为DeserializeOpParam依赖HcclCommAicpu, 而HcclCommAicpu异步展开时又依赖DeserializeOpParam
+    static HcclResult DeserializeOpParam(HcclCommAicpu *hcclCommAicpu, OpTilingData *tilingData,
+        HcclOpResParam *commParam, OpParam& opParam);
 public:
     explicit HcclCommAicpu();
     ~HcclCommAicpu();
@@ -196,6 +225,10 @@ public:
     HcclResult InitProfthreadResource(u32 threadNum);
 
     HcclResult SetDispatcherCtxOnThread();
+
+    // 反序列化时保存tilingData信息, 异步展开前备份, 异步展开后恢复
+    void SetFloatOverflowMode(u8 floatOverflowMode);
+    HcclResult SetAhcConfInfo(u32 *ahcConfInfo);
 private:
     HcclResult SetHrtWorkMode(const HcclOpResParam *commParam);
     HcclResult SetHrtDeviceSatMode(const HcclOpResParam *commParam);
@@ -222,6 +255,7 @@ private:
     HcclResult InitTimeOutConfig(const HcclOpResParam *commParam);
     HcclResult InitHostDeviceLock(const HcclOpResParam *commParam);
     HcclResult InitOpRetry(const HcclOpResParam *commParam);
+    HcclResult InitAsyncUnfold(const HcclOpResParam *commParam);
     HcclResult InitZeroCopyExchanger(const HcclOpResParam *commParam);
     HcclResult PrepareZeroCopyExchanger(const std::string &newTag, OpParam &opParam,
         AlgResourceResponse *algResResponse);
@@ -256,7 +290,7 @@ private:
     HcclResult CalcResRequest(const std::string &algName, const OpParam &param,
         std::unique_ptr<CollExecutorBase> &executor, AlgResourceRequest &resourceRequest);
     HcclResult WaitFinishWhileLoop(Stream &mainStream, std::vector<Stream> &subStreams, std::string &tag, 
-        const uint32_t &beginSqePos, OpParam &param);
+        const uint32_t &beginSqePos, OpParam &param, const std::string& algName, HcclOpResParam *commParam);
     HcclResult CheckOpExecStatusCallback();
     HcclResult CheckOpExecStatus();
     HcclResult UpdateSuspendStatus(const OpParam &param, HcclOpExecFSM &fsmState, KfcError &errorCode, uint32_t retryCnt);
@@ -270,8 +304,9 @@ private:
     HcclResult HcclOpExecFsmLaunchProcess(const std::string &algName, OpParam &param,
         std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, HcclOpExecFSM &fsmState,
         KfcError &errorCode, uint32_t &beginSqePos, uint32_t &endSqePos, uint32_t retryCnt);
-    HcclResult HcclOpExecFsmWaitEndProcess(OpParam &param, AlgResourceResponse &algResource, HcclOpExecFSM &fsmState,
-        KfcError &errorCode, uint32_t retryCnt, std::string &tag, const uint32_t &beginSqePos);
+    HcclResult HcclOpExecFsmWaitEndProcess(OpParam &param, const std::string& algName, HcclOpResParam *commParam,
+        AlgResourceResponse &algResource, HcclOpExecFSM &fsmState, KfcError &errorCode, uint32_t retryCnt,
+        std::string &tag, const uint32_t &beginSqePos);
     HcclResult HcclOpExecFsmStoppingProcess(const OpParam &param, HcclOpExecFSM &fsmState, KfcError &errorCode, uint32_t retryCnt);
     HcclResult HcclOpExecFsmStoppedProcess(HcclOpExecFSM &fsmState, KfcError &errorCode, uint32_t retryCnt,
         const std::string &algName, OpParam &param, uint32_t beginSqePos, uint32_t endSqePos);
@@ -292,9 +327,20 @@ private:
     HcclResult SupportRetryWithInplaceCheck(const std::string &algName, OpParam &param);
     bool isPollutedZeroCopyOp(OpParam &param);
     bool HcclOpCheckNsRecovery();
+
+    // 正常展开 或者 异步展开应用阶段 (下一算子加载异步展开结果, 下发执行)
     HcclResult OrchestrateHcclOp(const std::string &algName, OpParam &param,
         std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, uint32_t &beginSqePos,
-        uint32_t &endSqePos);
+        uint32_t &endSqePos, const bool applyAsyncUnfold, AsyncUnfoldCacheEntry* asyncUnfoldCacheEntryPtr);
+
+    // 异步展开生成阶段 (当前算子提前生成下一算子的SQE)
+    HcclResult BackupHcclCommAicpuBeforeAsyncUnfold(const OpParam &param, const std::string &algName);
+    HcclResult AsyncOrchestrateHcclOp(const std::string &algName, OpParam &param,
+        std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource,
+        AsyncUnfoldCacheEntry* asyncUnfoldCacheEntryPtr);
+    HcclResult RestoreHcclCommAicpuAfterAsyncUnfold(const OpParam &param, const std::string &algName,
+        const HcclOpResParam *commParam);
+
     HcclResult LaunchSlaveStreamTask(AlgResourceResponse &algResource);
     HcclResult GetAlltoAllvSendRecvInfo(const void* sendRecvInfoPtr, HcclDataType sendType, HcclDataType recvType);
     HcclResult GetAlltoAllvcSendRecvInfo(const void *sendCountMatrix, HcclDataType sendType, HcclDataType recvType);
@@ -604,6 +650,17 @@ private:
 
     // 维护aicpu算子展开的索引, 方便定位当前展开的算子信息
     size_t opUnfoldIdx_ = 0;
+
+    // AICPU异步展开单算子
+    AicpuAsyncUnfolder aicpuAsyncUnfolder_;
+
+    // 反序列化时保存tilingData信息, 异步展开前备份, 异步展开后恢复
+    u8 floatOverflowMode_ = 0;
+    u64 algTypeVal_ = 0;
+    u32 *ahcConfInfo_ = nullptr; // 注意: 假设OpTilingData在aicpu kernel退出后才会释放
+
+    // 异步展开前备份的信息
+    AsyncUnfoldBackup asyncUnfoldBackup_;
 };
 }  // namespace hccl
 #endif  // __AICPU_COMMUNICATOR_H__
