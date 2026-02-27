@@ -1590,6 +1590,7 @@ STATIC int RsUbJettyCbInit(struct RsUbDevCb *devCb, struct CtxQpAttr *jettyAttr,
     jettyCb->devCb = devCb;
     jettyCb->jettyMode = jettyMode;
     jettyCb->jettyId = jettyAttr->ub.jettyId;
+    hccp_warn("@@@ RsUbJettyCbInit jettyCb->jettyId: %ld", jettyCb->jettyId);
     jettyCb->transportMode = jettyAttr->transportMode;
     jettyCb->state = RS_QP_STATUS_DISCONNECT;
     jettyCb->flag.value = jettyAttr->ub.flag.value;
@@ -1842,6 +1843,13 @@ STATIC int RsUbFillJettyInfo(struct RsCtxJettyCb *jettyCb, struct QpCreateInfo *
     int ret;
 
     jettyKeyInfo.jettyId = jettyCb->jetty->jetty_id;
+    for (size_t i = 0; i < 16; i++) {
+        hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.eid.raw[%d]: %ld,", i, jettyCb->jetty->jetty_id.eid.raw[i]);
+    }
+    hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.eid.in4.reserved: %ld,", i, jettyCb->jetty->jetty_id.eid.in4.reserved);
+    hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.eid.in4.prefix: %ld,", i, jettyCb->jetty->jetty_id.eid.in4.prefix);
+    hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.uasid: %ld,", i, jettyCb->jetty->jetty_id.uasid);
+    hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.id: %ld,", i, jettyCb->jetty->jetty_id.id);
     jettyKeyInfo.transMode = jettyCb->transportMode;
     ret = memcpy_s(jettyInfo->key.value, DEV_QP_KEY_SIZE, &jettyKeyInfo, sizeof(struct RsJettyKeyInfo));
     CHK_PRT_RETURN(ret != 0, hccp_err("memcpy jetty_key_info failed, ret:%d", ret), -ESAFEFUNC);
@@ -2237,6 +2245,13 @@ STATIC int RsUbCtxDrvJettyImport(struct RsCtxRemJettyCb *rjettyCb)
     rjetty.type = (urma_target_type_t)rjettyCb->type;
     rjetty.flag.value = rjettyCb->flag.value;
     rjetty.tp_type = rjettyCb->tpType;
+    for (size_t i = 0; i < 16; i++) {
+        hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.eid.raw[%d]: %ld,", i, rjetty.jetty_id.eid.raw[i]);
+    }
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.eid.in4.reserved: %ld,", i, rjetty.jetty_id.eid.in4.reserved);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.eid.in4.prefix: %ld,", i, rjetty.jetty_id.eid.in4.prefix);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.uasid: %ld,", i, rjetty.jetty_id.uasid);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.id: %ld,", i, rjetty.jetty_id.id);
 
     if (rjettyCb->mode == JETTY_IMPORT_MODE_NORMAL) {
         hccp_warn("@@@ RsUbCtxDrvJettyImport JETTY_IMPORT_MODE_NORMAL");
