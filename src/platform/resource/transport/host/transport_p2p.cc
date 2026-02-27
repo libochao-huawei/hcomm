@@ -111,8 +111,6 @@ HcclResult TransportP2p::Init()
     CHK_SMART_PTR_NULL(machinePara_.inputMem);
     CHK_SMART_PTR_NULL(machinePara_.outputMem);
     CHK_PTR_NULL(dispatcher_);
-    dispatcher_->SetHcclQos(machinePara_.hcclQos);
-    HCCL_INFO("TransportP2pInit hcclQos = %u", dispatcher_->GetHcclQos());
     CHK_SMART_PTR_NULL(notifyPool_);
     CHK_RET(CheckDeviceId());
     CHK_RET(CheckExchangeData());
