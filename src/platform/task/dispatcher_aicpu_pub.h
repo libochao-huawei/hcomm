@@ -104,7 +104,13 @@ public:
 
     void SetSqeTimeOut(const u64 timeOut)
     {
-        dfxTimeOutConfig_.sqeTimeOutTimeOut = timeOut;
+        if (timeOut > notifyMaxWaitTime_) {
+            dfxTimeOutConfig_.sqeTimeOutTimeOut = notifyMaxWaitTime_;
+            HCCL_WARNING("[SetSqeTimeOut] timeOut[%llu] exceeds the maximum allowed value "
+                "for notifyMaxWaitTime[%u].", timeOut, notifyMaxWaitTime_);
+        } else {
+            dfxTimeOutConfig_.sqeTimeOutTimeOut = timeOut;
+        }
         HCCL_INFO("[DispatcherAiCpu][SetSqeTimeOut]DFX timeout config init successfully with details: [%s]",
             dfxTimeOutConfig_.ToString().c_str());
         return;

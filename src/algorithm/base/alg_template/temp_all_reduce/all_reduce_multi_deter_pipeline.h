@@ -54,12 +54,15 @@ protected:
     // allgather部分
     HcclResult RunAllGatherInterServer(u32 step, const LINK &prevInterLink, const LINK &nextInterLink);
     HcclResult RunAllGatherIntraServer(u32 step);
+
+    u64 GetLocalReduceSerialThresh() override;
     // 初始化部分
     u64 lastSize_ = 0;
     bool isLastRank_ = false;
     u8 serverSizeParity_ = 0;
     DeviceMem outCclBuffer_;
     DeviceMem inCclBuffer_;
+    u64 perRankAvgDataSize_ = 0;
 };
 }  // namespace hccl
 

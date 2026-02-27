@@ -15,12 +15,12 @@
 #include "udma_u_ctl.h"
 #include "rs_ctx_inner.h"
 
-union create_jfc_cfg {
-    struct udma_u_lock_jfc_cfg lock_jfc_cfg;
-    struct udma_u_jfc_cfg_ex jfc_cfg_ex;
+union CreateJfcCfg {
+    struct udma_u_lock_jfc_cfg lockJfcCfg;
+    struct udma_u_jfc_cfg_ex jfcCfgEx;
 };
 
-int rs_ub_delete_jfc_ext(struct rs_ub_dev_cb *dev_cb, struct rs_ctx_jfc_cb *jfc_cb);
-int rs_ub_ctx_jfc_create_ext(struct rs_ctx_jfc_cb *ctx_jfc_cb, urma_jfc_cfg_t *jfc_cfg, urma_jfc_t **jfc);
+int RsUbDeleteJfcExt(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb);
+int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urma_jfc_t **jfc);
 
 #endif // RS_UB_JFC_H

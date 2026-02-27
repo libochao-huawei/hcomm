@@ -107,7 +107,7 @@ enum OpType {
     RA_RS_CTX_CHAN_CREATE = 84,
     RA_RS_CTX_CHAN_DESTROY = 85,
     RA_RS_AI_QP_CREATE_WITH_ATTRS = 86,
-    RA_RS_TLV_INIT = 87,
+    RA_RS_TLV_INIT_V1 = 87,
     RA_RS_TLV_DEINIT = 88,
     RA_RS_TLV_REQUEST = 89,
     RA_RS_CTX_TOKEN_ID_ALLOC = 90,
@@ -130,6 +130,7 @@ enum OpType {
     RA_RS_SET_TP_ATTR = 107,
     RA_RS_CTX_GET_CR_ERR_INFO_LIST = 108,
     RA_RS_CTX_GET_ASYNC_EVENTS = 109,
+    RA_RS_TLV_INIT = 110,
     RA_RS_EXTER_OP_MAX_NUM,
 
     // 上面opcode是对部opcode,下面是内部opcode
@@ -361,10 +362,10 @@ struct TlvRequestMsgHead {
 
 int ConverReturnCode(enum ModuleType module, int erroCode);
 
-static inline void ra_rs_set_dev_info(struct RaRsDevInfo *dev_info, unsigned int phy_id, unsigned int dev_index)
+static inline void RaRsSetDevInfo(struct RaRsDevInfo *devInfo, unsigned int phyId, unsigned int devIndex)
 {
-    dev_info->phyId = phy_id;
-    dev_info->devIndex = dev_index;
+    devInfo->phyId = phyId;
+    devInfo->devIndex = devIndex;
 }
 
 #endif

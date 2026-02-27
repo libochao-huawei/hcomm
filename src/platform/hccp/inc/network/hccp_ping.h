@@ -37,15 +37,15 @@ union PingQpAttr {
         uint32_t reserved[4U];
     } rdma;
     struct {
-        struct CqExtAttr cq_attr;
+        struct CqExtAttr cqAttr;
         struct {
             struct QpCap cap;
-            uint32_t token_value; /**< refer to urma_token_t */
+            uint32_t tokenValue; /**< refer to urma_token_t */
             uint32_t reserved[3U];
-        } qp_attr;
+        } qpAttr;
         struct {
-            uint32_t token_value;
-        } seg_attr;
+            uint32_t tokenValue;
+        } segAttr;
         uint32_t reserved[4U];
     } ub;
 };
@@ -61,7 +61,7 @@ struct PingLocalCommInfo {
             uint32_t reserved[7U];
         } rdma;
         struct {
-            struct QosAttr qos_attr;
+            struct QosAttr qosAttr;
             uint32_t reserved[7U];
         } ub;
     };
@@ -70,8 +70,8 @@ struct PingLocalCommInfo {
 union PingDev {
     struct rdev rdma;
     struct {
-        union hccp_eid eid;
-        uint32_t eid_index;
+        union HccpEid eid;
+        uint32_t eidIndex;
     } ub;
 };
 
@@ -89,7 +89,7 @@ struct PingInitAttr {
             uint32_t reserved[31U];
         } rdma;
         struct {
-            unsigned int phy_id;
+            unsigned int phyId;
             uint32_t reserved[30U];
         } ub;
     };
@@ -108,7 +108,7 @@ struct PingQpInfo {
             uint8_t size;
             uint8_t key[28U]; // refer to qp_key
             uint8_t reserved[7U];
-            uint32_t token_value;
+            uint32_t tokenValue;
         } ub;
     };
 };
@@ -147,7 +147,7 @@ struct PingPayloadInfo {
 struct PingTargetCommInfo {
     union {
         union HccpIpAddr ip;
-        union hccp_eid eid;
+        union HccpEid eid;
     };
     struct PingQpInfo qpInfo;
 };

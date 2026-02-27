@@ -50,17 +50,17 @@ private:
     // 创建rmaConnections
     unordered_map<std::string, unique_ptr<ConnectionsBuilder>> connectionsBuilders;
 
-    DevBuffer *OpBasedCollProcess(CollOperator &op, bool &needUpdateRes, const std::string &algName);
+    DevBuffer *OpBasedCollProcess(CollOperator &op, const std::string &algName);
     void SetOpbaseBufferParam(HcclKernelLaunchParam &param, CommunicatorImpl *comm, CollOperator &op) const;
     void SetOffloadBufferParam(HcclKernelLaunchParam &param, CommunicatorImpl *comm, CollOperator &op) const;
     void SetHcclKernelLaunchParam(HcclKernelLaunchParam &param, CommunicatorImpl *comm, bool isLaunch = true);
     void SetDeviceEnvConfigParam(HcclKernelLaunchParam &param) const;
     void AicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream, OpMode opMode);
-    void AicpuKernelEntranceLaunch(Stream &stream, const CollOperator &op, const string &algName, bool needUpdateRes,
+    void AicpuKernelEntranceLaunch(Stream &stream, const CollOperator &op, const string &algName, 
                                    const DevBuffer *mem);
-    void AicpuUpdateCommLaunch(Stream &stream, bool needUpdateRes, const DevBuffer *mem);
-    HcclResult AicpuMc2CommResourcePrepare(const CollOperator &op, const string &algName, bool needUpdateRes,
-                            const DevBuffer *mem, const std::string &opAlgTag, void **addr);
+    void AicpuUpdateCommLaunch(Stream &stream, const DevBuffer *mem);
+    HcclResult AicpuMc2CommResourcePrepare(const CollOperator &op, const string &algName, const DevBuffer *mem, 
+                                   const std::string &opAlgTag, void **addr);
 
     void AllocQueueNotify(std::vector<std::tuple<QId, QId, u32>> &queueNotifyReq) const;
     void AllocBcastPostCntNotify(std::vector<std::pair<QId, u32>> &bcastPostCntNotifyReq) const;
@@ -73,6 +73,9 @@ private:
     void AllocOpMem(const CollOperator &op);
     void AllocOpMemAlltoAllVC(const CollOperator &op);
     void AllocOpMemAlltoAllV(const CollOperator &op);
+    void AllocOpMemBatchSendRecv(const CollOperator &op);
+    u32 GetRemoteRankIdsHashValue(const CollOperator &op);
+
     std::set<LinkData> availableLinks;
     std::unordered_map<std::string, std::shared_ptr<DevBuffer>>
         collOpLoadedMap; // 集合通信算子资源加载到device侧的内存
@@ -83,10 +86,13 @@ private:
     std::vector<std::shared_ptr<DevBuffer>> sdisplsMem{};
     std::vector<std::shared_ptr<DevBuffer>> rdisplsMem{};
     std::vector<std::shared_ptr<DevBuffer>> sendCountMatrixMem{};
+    std::vector<std::shared_ptr<DevBuffer>> bsrItemsMem{};
+
     bool isCountMemInited{ false };
     bool isCountMemInitedAlltoAllVC{ false };
     u32 index{0};
     u32 indexAlltoAllVC{0};
+    std::string curTagKey{};
 
     std::vector<char> PackOpData(const std::string &opTag, const CollAlgOpReq &req) const;
     std::vector<char> PackAllTransportData() const;

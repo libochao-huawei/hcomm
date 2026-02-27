@@ -109,7 +109,7 @@ std::unique_ptr<CcuContext> CcuInsPreprocessor::CreateCcuCtx(const CcuInstructio
                __func__, transports.size(), createStatus, linkGroup.GetLinks().size(), cntCkeNum, createStatus,
                ccuInst.GetInstType().Describe().c_str());
 
-    std::unique_ptr<CcuCtxArg> ctxArg = std::move(ccuInst.GetCtxArg());
+    std::unique_ptr<CcuCtxArg> ctxArg = ccuInst.GetCtxArg();
     CHECK_NULLPTR(ctxArg, "[CcuInsPreprocessor::CreateCcuCtx] ctxArg is nullptr!");
     return CcuCtxCreatorRegistry::GetInstance().GetCreateFunc(ccuInst.GetInstType())(*ctxArg, transports,
                                                                                      *transportGrp);
@@ -347,8 +347,8 @@ void CcuInsPreprocessor::Preprocess(std::shared_ptr<InsQueue> &insQueue, bool is
     }
     // 若本地资源申请成功, 则进行握手
     // 资源确认
-    TRY_CATCH_PROCESS_THROW(
-        InternalException,  
+    TRY_CATCH_PROCESS_THROW (
+        InternalException,
         Confirm(),
         "[CCU Confirm] Comfirm Resources Error",
         // 建链失败时，清除临时创建的资源

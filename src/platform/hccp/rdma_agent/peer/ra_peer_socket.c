@@ -24,7 +24,7 @@ int RaPeerGetClientSocketErrInfo(unsigned int phyId, struct SocketConnectInfoT c
     ret = RaGetSocketConnectInfo(conn, num, connOut, MAX_SOCKET_NUM);
     CHK_PRT_RETURN(ret != 0, hccp_err("[get][ra_peer_socket]ra_get_socket_connect_info failed, "
         "ret(%d)", ret), ret);
-    
+
     RaPeerMutexLock(phyId);
     RsSetCtx(phyId);
     ret = RsSocketGetClientSocketErrInfo(connOut, err, num);

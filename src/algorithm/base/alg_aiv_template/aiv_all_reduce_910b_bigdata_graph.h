@@ -104,3 +104,29 @@ __aicore__ inline void aiv_all_reduce_910b_bigdata_graph(KERNEL_ARGS_DEF)
     op.TailCounter();
     return;
 }
+
+__aicore__ inline void sk_all_reduce_910b_bigdata_graph(SUPERKERNEL_ARGS_DEF)
+{
+    AivAllReduceBigGraph910B op;
+    op.Init(SUPERKERNEL_CLASS_INIT, 0, true);
+    #ifdef HCCL_DTYPE_INT8
+        op.Process<int8_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_INT16
+        op.Process<int16_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_INT32
+        op.Process<int32_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_FP16
+        op.Process<half>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_FP32
+        op.Process<float>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_BFP16
+        op.Process<bfloat16_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_UINT8
+        op.Process<uint8_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_UINT16
+        op.Process<uint16_t>(input, output, op.len_, op.tag_);
+    #elif defined HCCL_DTYPE_UINT32
+        op.Process<uint32_t>(input, output, op.len_, op.tag_);
+    #else
+    #endif
+}

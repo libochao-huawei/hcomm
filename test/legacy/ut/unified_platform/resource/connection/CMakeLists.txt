@@ -11,7 +11,7 @@ target_sources(hccl_v2_utest
         PUBLIC
         ut_p2p_connection.cc
         ut_dev_rdma_connection.cc
-        # ut_dev_ub_connection.cc
+        ut_dev_ub_connection.cc
         ut_ub_ci_updater.cc
         ut_rma_connection.cc
         ut_aicpu_ub_conn_lite.cc

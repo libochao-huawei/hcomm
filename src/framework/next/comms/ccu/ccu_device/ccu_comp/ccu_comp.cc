@@ -1,8 +1,12 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
- * Description: ccu device component
- * Create: 2025-02-08
- */
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "ccu_comp.h"
 
@@ -131,8 +135,8 @@ HcclResult CcuComponent::CheckDiesEnable()
     return HcclResult::HCCL_SUCCESS;
 }
 
-static HcclResult FindOneUsableEid(const int32_t devLogicId, const uint32_t devPhyId, const uint8_t dieId,
-    uint32_t &feId, CommAddr &commAddr)
+static HcclResult FindOneUsableEid(const int32_t devLogicId, const uint32_t devPhyId,
+    const uint8_t dieId, uint32_t &feId, CommAddr &commAddr)
 {
     std::vector<DevEidInfo> eidInfos;
     auto ret = EidInfoMgr::GetInstance(devPhyId).GetEidInfos(eidInfos);
@@ -547,11 +551,13 @@ HcclResult CcuComponent::ConfigMsIdToken()
         inBuff.data.dataInfo.dataArray[0].baseinfo.tokenId    = tokenId;
         inBuff.data.dataInfo.dataArray[0].baseinfo.tokenValue = tokenValue;
 
-        auto ret = ra_custom_channel(info,
-            reinterpret_cast<custom_chan_info_in *>(&inBuff),
-            reinterpret_cast<custom_chan_info_out *>(&outBuff));
+        auto ret = RaCustomChannel(info,
+            reinterpret_cast<CustomChanInfoIn *>(&inBuff),
+            reinterpret_cast<CustomChanInfoOut *>(&outBuff));
         if (ret != 0) {
-            HCCL_ERROR("");
+            HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
+                "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId_, dieId,
+                "SET_MSID_TOKEN");
             return HcclResult::HCCL_E_NETWORK;
         }
 
@@ -817,7 +823,7 @@ HcclResult CcuComponent::UnimportAllJettys()
             if (!ctxHandle || !remoteJettyHandle) {
                 continue;
             }
-            int32_t ret = ra_ctx_qp_unimport(ctxHandle, remoteJettyHandle);
+            int32_t ret = RaCtxQpUnimport(ctxHandle, remoteJettyHandle);
             if (ret != 0) {
                 HCCL_ERROR("[CcuComponent][%s] failed, ctxHandle[%p] "
                     "remoteJettyHandle[%p], devLogicId[%d].", __func__,
@@ -863,7 +869,7 @@ HcclResult CcuComponent::DestroyAllJettys()
             if (!jettyHandle) {
                 continue;
             }
-            int32_t ret = ra_ctx_qp_destroy(jettyHandle);
+            int32_t ret = RaCtxQpDestroy(jettyHandle);
             if (ret != 0) {
                 HCCL_ERROR("[CcuComponent][%s] failed, jettyHandle[%p], "
                     "devLogicId[%d].", __func__, jettyHandle, devLogicId_);

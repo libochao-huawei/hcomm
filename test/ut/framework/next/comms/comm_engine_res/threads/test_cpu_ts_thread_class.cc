@@ -10,6 +10,7 @@
  
 #include "../../../hccl_api_base_test.h"
 #include "local_notify_impl.h"
+#include "llt_hccl_stub_rank_graph.h"
 
 class TestCpuTsThread : public BaseInit {
 public:

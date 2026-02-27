@@ -18,7 +18,7 @@ namespace hccl {
 class CollAllGatherAivRdmaExecutor : public CollAllGatherExecutor {
 public:
     CollAllGatherAivRdmaExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherAivRdmaExecutor() = default;
+    ~CollAllGatherAivRdmaExecutor() override = default;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
 private:

@@ -509,11 +509,8 @@ void HrtMemset(void *dst, uint64_t destMax, uint64_t count)
 
 void HrtIpcSetMemoryName(void *ptr, char_t *name, u64 ptrMaxLen, u32 nameMaxLen)
 {
-    HCCL_INFO("[HrtIpcSetMemoryName] ptr[%p], name[%s], ptrMaxLen[%llu], nameMaxLen[%u].", 
-            ptr, name, ptrMaxLen, nameMaxLen);
-    CHECK_NULLPTR(ptr, "[HrtIpcSetMemoryName] ptr is nullptr!");
-    aclError ret = aclrtIpcMemGetExportKey(ptr, ptrMaxLen, name, nameMaxLen, 0UL);
-    HCCL_INFO("Call aclrtIpcMemGetExportKey, return value[%d], para: ptr[%p], name[%s], byteCount[%llu], nameLen[%u].",
+    aclError ret = aclrtIpcMemGetExportKey(ptr, ptrMaxLen, name, nameMaxLen, 1UL);
+    HCCL_INFO("Call aclrtIpcMemGetExportKey, return value[%d], para: ptr[%p], name[%s], byteCount[%llu], nameLen[%u]",
               ret, ptr, name, ptrMaxLen, nameMaxLen);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[Set][IpcMemoryName]errNo[0x%016llx] rtSet Ipc Memory Name. "

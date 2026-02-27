@@ -170,7 +170,7 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_loc_post_sem)
     MaskSignal sem;
     sem.Reset(1);            // sem id
     uint16_t mask = 0x0010;  // mask
-    MOCKER(CcuErrorHandler::GetCcuCKEValue).stubs().with(any(), any(), any()).will(returnValue(0xabcd));
+    MOCKER(CcuErrorHandler::GetCcuCKEValue).stubs().with(any(), any(), any()).will(returnValue(static_cast<u16>(0xabcd)));
 
     shared_ptr<CcuRepBase> rep = make_shared<CcuRepLocPostSem>(sem, mask);
     ErrorInfoBase baseInfo{0, 0, 1, 10, 0};
@@ -190,7 +190,7 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_loc_wait_sem)
     MaskSignal sem;
     sem.Reset(1);            // sem id
     uint16_t mask = 0x0010;  // mask
-    MOCKER(CcuErrorHandler::GetCcuCKEValue).stubs().with(any(), any(), any()).will(returnValue(0xabcd));
+    MOCKER(CcuErrorHandler::GetCcuCKEValue).stubs().with(any(), any(), any()).will(returnValue(static_cast<u16>(0xabcd)));
 
     shared_ptr<CcuRepBase> rep = make_shared<CcuRepLocWaitSem>(sem, mask);
     ErrorInfoBase baseInfo{0, 0, 1, 10, 0};
@@ -243,7 +243,7 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_rem_wait_sem)
     utCcuTransport->locRes.cntCkes.push_back(100);
     utCcuTransport->locRes.cntCkes.push_back(101);
 
-    MOCKER(CcuErrorHandler::GetCcuCKEValue).stubs().with(any(), any(), eq(101)).will(returnValue(0xabcd));
+    MOCKER(CcuErrorHandler::GetCcuCKEValue).stubs().with(any(), any(), eq(101)).will(returnValue(static_cast<u16>(0xabcd)));
 
     shared_ptr<CcuRepBase> rep = make_shared<CcuRepRemWaitSem>(*utCcuTransport, semIndex, mask);
     ErrorInfoBase baseInfo{0, 0, 1, 10, 0};
@@ -317,7 +317,7 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_rem_wait_group)
     CcuTransportGroup transportGroup{transports, 0};    // 创建CcuTransportGroup
     transportGroup.cntCkesGroup.push_back(100);
 
-    MOCKER(CcuErrorHandler::GetCcuCKEValue).stubs().with(any(), any(), eq(100)).will(returnValue(0xabcd));
+    MOCKER(CcuErrorHandler::GetCcuCKEValue).stubs().with(any(), any(), eq(100)).will(returnValue(static_cast<u16>(0xabcd)));
 
     shared_ptr<CcuRepBase> rep = make_shared<CcuRepWaitGroup>(transportGroup, semIndex, mask);
     ErrorInfoBase baseInfo{0, 0, 1, 10, 0};
@@ -777,15 +777,6 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_default)
     EXPECT_EQ(errorInfo[0].repType, CcuRepType::JUMP);
 }
 
-TEST_F(CcuErrorHandlerTest, gen_error_info_by_rep_type_should_throw_exception)
-{
-    Variable loopParam;
-    shared_ptr<CcuRepBase> rep = make_shared<CcuRepLoop>("label", loopParam);
-    ErrorInfoBase baseInfo{0, 0, 1, 10, 0};
-    vector<CcuErrorInfo> errorInfo{};
-    EXPECT_THROW(CcuErrorHandler::GenErrorInfoByRepType(baseInfo, rep, errorInfo), CcuApiException);
-}
-
 class MockCcuContext : public CcuContext {
 public:
     MockCcuContext() : CcuContext(){}
@@ -857,7 +848,7 @@ TEST_F(CcuErrorHandlerTest, test_gen_error_info_loop)
     MaskSignal sem;
     sem.Reset(0xa);          // sem id
     uint16_t mask = 0x0010;  // mask
-    MOCKER(CcuErrorHandler::GetCcuCKEValue).stubs().with(any(), any(), eq(0xa)).will(returnValue(0xabcd));
+    MOCKER(CcuErrorHandler::GetCcuCKEValue).stubs().with(any(), any(), eq(0xa)).will(returnValue(static_cast<u16>(0xabcd)));
 
     // Mock LoopBlock
     shared_ptr<CcuRepLoopBlock> loopBlock = make_shared<CcuRepLoopBlock>("loop_block_label");

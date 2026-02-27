@@ -38,6 +38,11 @@ HcclResult CollRunAlltoAllDirectFullmesh::Orchestrate(OpParam& param, AlgResourc
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollRunAlltoAllDirectFullmesh][Orchestrate]errNo[0x%016llx]executor run failed",
             HCCL_ERROR_CODE(ret)), ret);
+    
+    // Enforce task launch at the end of Orchestrate
+    // 注意: 不要删除这里的强制launch, 否则会导致aicpu cache功能问题
+    HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
+    CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
 
     HCCL_INFO("tag[%s], AlltoAllDirectFullmesh tempAlg orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
@@ -238,7 +243,7 @@ HcclResult CollRunAlltoAllDirectFullmesh::GetLocalSendRecvInfoforAlltoall(const 
         localSendRecvInfo_.recvOffset[j] = curRecvOffset;
         curRecvDispls += curRecvCounts;
         curRecvOffset += curRecvLength;
-        HCCL_DEBUG("GetLocalSendRecvInfoforAlltoall rank[%u], sendCounts[%llu], sendDispls[%llu] "\
+        HCCL_DEBUG("GetLocalSendRecvInfoforAlltoAll rank[%u], sendCounts[%llu], sendDispls[%llu] "\
             "recvCounts[%llu], recvDispls[%llu]", topoAttr_.userRank, localSendRecvInfo_.sendCounts[j],
             localSendRecvInfo_.sendDispls[j], localSendRecvInfo_.recvCounts[j],
             localSendRecvInfo_.recvDispls[j]);

@@ -18,7 +18,7 @@ namespace Hccl {
 const unordered_map<string, LinkProtocol> EdgeInfo::strToLinkProtocol =
     (unordered_map<string, LinkProtocol>{{"UB_CTP", LinkProtocol::UB_CTP},
         {"UB_TP", LinkProtocol::UB_TP},
-        {"RDMA", LinkProtocol::ROCE},
+        {"ROCE", LinkProtocol::ROCE},
         {"HCCS", LinkProtocol::HCCS},
         {"TCP", LinkProtocol::TCP},
         {"UB_MEM", LinkProtocol::UB_MEM}});

@@ -4374,6 +4374,9 @@ HcclResult HcclCommResume(HcclComm comm)
 
 uint32_t HcclGetCommConfigCapability()
 {
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclGetCommConfigCapabilityV2());
+#endif
     // RESERVED在枚举中是最后一个，返回RESERVED说明它前面所有的配置项都支持
     return static_cast<uint32_t>(HCCL_COMM_CONFIG_RESERVED);
 }

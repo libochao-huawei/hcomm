@@ -60,11 +60,7 @@ public:
     }
     
     // 获取MyRank
-    //TODO
     MyRank* GetMyRank() const { return myRank_.get(); }
-    
-    // 获取RankGraph
-    // std::shared_ptr<RankGraph> GetRankGraph() const { return rankGraph_; }
     
     // 获取Rank ID
     uint32_t GetMyRankId() const;

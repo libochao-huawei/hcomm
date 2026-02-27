@@ -27,7 +27,7 @@ HcclResult IpAddressToHccpEid(const Hccl::IpAddress &ipAddr, Eid &eid)
         return HcclResult::HCCL_E_MEMORY;
     }
     HCCL_INFO("[IpAddressToHccpEid] hccpEid.in6.subnetPrefix[%016llx], hccpEid.in6.interfaceId[%016llx]",
-              eid.in6.subnet_prefix, eid.in6.interface_id);
+              eid.in6.subnetPrefix, eid.in6.interfaceId);
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -41,7 +41,7 @@ HcclResult IpAddressToReverseHccpEid(const Hccl::IpAddress &ipAddr, Eid &eid)
         return HcclResult::HCCL_E_MEMORY;
     }
     HCCL_INFO("[IpAddressToHccpEid] hccpEid.in6.subnetPrefix[%016llx], hccpEid.in6.interfaceId[%016llx]",
-              eid.in6.subnet_prefix, eid.in6.interface_id);
+              eid.in6.subnetPrefix, eid.in6.interfaceId);
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -49,7 +49,7 @@ inline Hccl::IpAddress HccpEidToIpAddress(Eid& hccpEid)
 {
     Hccl::Eid eid{};
     HCCL_INFO("[HccpEidToIpAddress] hccpEid.in6.subnetPrefix[%016llx], hccpEid.in6.interfaceId[%016llx]",
-              hccpEid.in6.subnet_prefix, hccpEid.in6.interface_id);
+              hccpEid.in6.subnetPrefix, hccpEid.in6.interfaceId);
     s32 sRet = memcpy_s(eid.raw, sizeof(eid.raw), hccpEid.raw, sizeof(hccpEid.raw));
     if (sRet != EOK) {
         HCCL_ERROR("failed to change eid to ip");
@@ -61,16 +61,16 @@ inline Hccl::IpAddress HccpEidToIpAddress(Eid& hccpEid)
 HcclResult RaGetDevEidInfos(const RaInfo &raInfo, std::vector<DevEidInfo> &devEidInfos)
 {
     uint32_t num = 0;
-    int32_t ret = ra_get_dev_eid_info_num(raInfo, &num);
+    int32_t ret = RaGetDevEidInfoNum(raInfo, &num);
     if (ret != 0) {
-        HCCL_ERROR("call ra_get_dev_eid_info_num failed, error code =%d.", ret);
+        HCCL_ERROR("call RaGetDevEidInfoNum failed, error code =%d.", ret);
         return HcclResult::HCCL_E_NETWORK;
     }
 
-    struct dev_eid_info infoList[num] = {};
-    ret = ra_get_dev_eid_info_list(raInfo, infoList, &num);
+    struct HccpDevEidInfo infoList[num] = {};
+    ret = RaGetDevEidInfoList(raInfo, infoList, &num);
     if (ret != 0) {
-        HCCL_ERROR("call ra_get_dev_eid_info_list failed, error code =%d.", ret);
+        HCCL_ERROR("call RaGetDevEidInfoList failed, error code =%d.", ret);
         return HcclResult::HCCL_E_NETWORK;
     }
 
@@ -80,10 +80,10 @@ HcclResult RaGetDevEidInfos(const RaInfo &raInfo, std::vector<DevEidInfo> &devEi
         Hccl::IpAddress ipAddr = HccpEidToIpAddress(infoList[i].eid);
         CHK_RET(IpAddressToCommAddr(ipAddr, devEidInfos[i].commAddr));
         devEidInfos[i].type = infoList[i].type;
-        devEidInfos[i].eidIndex = infoList[i].eid_index;
-        devEidInfos[i].dieId = infoList[i].die_id;
-        devEidInfos[i].chipId = infoList[i].chip_id;
-        devEidInfos[i].funcId = infoList[i].func_id;
+        devEidInfos[i].eidIndex = infoList[i].eidIndex;
+        devEidInfos[i].dieId = infoList[i].dieId;
+        devEidInfos[i].chipId = infoList[i].chipId;
+        devEidInfos[i].funcId = infoList[i].funcId;
     }
 
     return HcclResult::HCCL_SUCCESS;
@@ -126,75 +126,75 @@ RequestResult HccpGetAsyncReqResult(RequestHandle &reqHandle)
     return RequestResult::COMPLETED;
 }
 
-const std::map<HrtTransportMode, transport_mode_t> HRT_TRANSPORT_MODE_MAP
-    = {{HrtTransportMode::RC, transport_mode_t::CONN_RC}, {HrtTransportMode::RM, transport_mode_t::CONN_RM}};
-const std::map<HrtJettyMode, jetty_mode> HRT_JETTY_MODE_MAP
-    = {{HrtJettyMode::STANDARD, jetty_mode::JETTY_MODE_URMA_NORMAL},
-       {HrtJettyMode::HOST_OFFLOAD, jetty_mode::JETTY_MODE_USER_CTL_NORMAL},
-       {HrtJettyMode::HOST_OPBASE, jetty_mode::JETTY_MODE_USER_CTL_NORMAL},
-       {HrtJettyMode::DEV_USED, jetty_mode::JETTY_MODE_USER_CTL_NORMAL},
-       {HrtJettyMode::CACHE_LOCK_DWQE, jetty_mode::JETTY_MODE_CACHE_LOCK_DWQE},
-       {HrtJettyMode::CCU_CCUM_CACHE, jetty_mode::JETTY_MODE_CCU}};
+const std::map<HrtTransportMode, TransportModeT> HRT_TRANSPORT_MODE_MAP
+    = {{HrtTransportMode::RC, TransportModeT::CONN_RC}, {HrtTransportMode::RM, TransportModeT::CONN_RM}};
+const std::map<HrtJettyMode, JettyMode> HRT_JETTY_MODE_MAP
+    = {{HrtJettyMode::STANDARD, JettyMode::JETTY_MODE_URMA_NORMAL},
+       {HrtJettyMode::HOST_OFFLOAD, JettyMode::JETTY_MODE_USER_CTL_NORMAL},
+       {HrtJettyMode::HOST_OPBASE, JettyMode::JETTY_MODE_USER_CTL_NORMAL},
+       {HrtJettyMode::DEV_USED, JettyMode::JETTY_MODE_USER_CTL_NORMAL},
+       {HrtJettyMode::CACHE_LOCK_DWQE, JettyMode::JETTY_MODE_CACHE_LOCK_DWQE},
+       {HrtJettyMode::CCU_CCUM_CACHE, JettyMode::JETTY_MODE_CCU}};
 
 constexpr uint8_t  RNR_RETRY = 7;
 constexpr uint32_t RQ_DEPTH  = 256;
 
 HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJettyParam &in, HrtRaUbJettyCreatedOutParam &out)
 {
-    struct qp_create_attr attr{};
-    attr.scq_handle     = reinterpret_cast<void *>(in.sjfcHandle);
-    attr.rcq_handle     = reinterpret_cast<void *>(in.rjfcHandle);
-    attr.srq_handle     = reinterpret_cast<void *>(in.sjfcHandle);
-    attr.rq_depth       = RQ_DEPTH;
-    attr.sq_depth       = in.sqDepth;
-    attr.transport_mode = HRT_TRANSPORT_MODE_MAP.at(in.transMode);
+    struct QpCreateAttr attr{};
+    attr.scqHandle     = reinterpret_cast<void *>(in.sjfcHandle);
+    attr.rcqHandle     = reinterpret_cast<void *>(in.rjfcHandle);
+    attr.srqHandle     = reinterpret_cast<void *>(in.sjfcHandle);
+    attr.rqDepth       = RQ_DEPTH;
+    attr.sqDepth       = in.sqDepth;
+    attr.transportMode = HRT_TRANSPORT_MODE_MAP.at(in.transMode);
     attr.ub.mode        = HRT_JETTY_MODE_MAP.at(in.jettyMode);
 
-    attr.ub.token_value       = in.tokenValue;
-    attr.ub.token_id_handle   = reinterpret_cast<void *>(in.tokenIdHandle);
+    attr.ub.tokenValue       = in.tokenValue;
+    attr.ub.tokenIdHandle   = reinterpret_cast<void *>(in.tokenIdHandle);
     attr.ub.flag.value        = 0;
-    attr.ub.err_timeout       = 0;
+    attr.ub.errTimeout       = 0;
     // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
     attr.ub.priority          = 2;
-    attr.ub.rnr_retry         = RNR_RETRY;
-    attr.ub.flag.bs.share_jfr = 1;
-    attr.ub.jetty_id          = in.jettyId;
+    attr.ub.rnrRetry         = RNR_RETRY;
+    attr.ub.flag.bs.shareJfr = 1;
+    attr.ub.jettyId          = in.jettyId;
     // 在continue模式下+配置了wqe的fence标记，并且远端有一些权限校验错误/内存异常错误，硬件会直接挂死
     // jfs_flag 的 error_suspend 设置为 1，
-    attr.ub.jfs_flag.bs.error_suspend = 1;
+    attr.ub.jfsFlag.bs.errorSuspend = 1;
 
-    attr.ub.ext_mode.sqebb_num = in.sqDepth;
+    attr.ub.extMode.sqebbNum = in.sqDepth;
     if (in.jettyMode == HrtJettyMode::HOST_OFFLOAD) {
-        attr.ub.ext_mode.pi_type = 1;
+        attr.ub.extMode.piType = 1;
     } else if (in.jettyMode == HrtJettyMode::CCU_CCUM_CACHE) {
-        attr.ub.token_value                   = in.tokenValue;
-        attr.ub.ext_mode.cstm_flag.bs.sq_cstm = 1;
-        attr.ub.ext_mode.sq.buff_size         = in.sqBufSize;
-        attr.ub.ext_mode.sq.buff_va           = in.sqBufVa;
+        attr.ub.tokenValue                   = in.tokenValue;
+        attr.ub.extMode.cstmFlag.bs.sqCstm = 1;
+        attr.ub.extMode.sq.buffSize         = in.sqBufSize;
+        attr.ub.extMode.sq.buffVa           = in.sqBufVa;
     } else if (in.jettyMode == HrtJettyMode::DEV_USED) {
-        attr.ub.ext_mode.cstm_flag.bs.sq_cstm = 1;
-        attr.ub.ext_mode.sq.buff_size         = in.sqBufSize;
-        attr.ub.ext_mode.sq.buff_va           = in.sqBufVa;
+        attr.ub.extMode.cstmFlag.bs.sqCstm = 1;
+        attr.ub.extMode.sq.buffSize         = in.sqBufSize;
+        attr.ub.extMode.sq.buffVa           = in.sqBufVa;
     }
 
     // 其他Mode暂时不需要额外更新特定字段
-    HCCL_INFO("Create jetty, input params: attr.ub.jetty_id[%u], attr.rq_depth[%u], "
-        "attr.sq_depth[%u], attr.transport_mode[%d], attr.ub.mode[%d], "
-        "attr.ub.ext_mode.sqebb_num[%u], attr.ub.ext_mode.sq.buff_va[%llx], "
-        "attr.ub.ext_mode.sq.buff_size[%u], attr.ub.ext_mode.pi_type[%u].",
-        attr.ub.jetty_id, attr.rq_depth, attr.sq_depth, attr.transport_mode,
-        attr.ub.mode, attr.ub.ext_mode.sqebb_num, attr.ub.ext_mode.sq.buff_va,
-        attr.ub.ext_mode.sq.buff_size, attr.ub.ext_mode.pi_type);
+    HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
+        "attr.sqDepth[%u], attr.transportMode[%d], attr.ub.mode[%d], "
+        "attr.ub.extMode.sqebbNum[%u], attr.ub.extMode.sq.buffVa[%llx], "
+        "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u].",
+        attr.ub.jettyId, attr.rqDepth, attr.sqDepth, attr.transportMode,
+        attr.ub.mode, attr.ub.extMode.sqebbNum, attr.ub.extMode.sq.buffVa,
+        attr.ub.extMode.sq.buffSize, attr.ub.extMode.piType);
 
-    struct qp_create_info info {};
+    struct QpCreateInfo info {};
     void *qpHandle = nullptr;
-    int32_t ret = ra_ctx_qp_create(ctxHandle, &attr, &info, &qpHandle);
+    int32_t ret = RaCtxQpCreate(ctxHandle, &attr, &info, &qpHandle);
     if (ret != 0) {
-        HCCL_ERROR("[%s] failed, ctxHandle[%p] jetty_id[%u] jetty_mode[%s] "
-            "sq_depth[%u] sq.buff_va[%llx] sq.buff_size[%u].", __func__,
-            ctxHandle, attr.ub.jetty_id, in.jettyMode.Describe().c_str(),
-            attr.sq_depth, attr.ub.ext_mode.sq.buff_va,
-            attr.ub.ext_mode.sq.buff_size);
+        HCCL_ERROR("[%s] failed, ctxHandle[%p] jetty_id[%u] JettyMode[%s] "
+            "sqDepth[%u] sq.buffVa[%llx] sq.buffSize[%u].", __func__,
+            ctxHandle, attr.ub.jettyId, in.jettyMode.Describe().c_str(),
+            attr.sqDepth, attr.ub.extMode.sq.buffVa,
+            attr.ub.extMode.sq.buffSize);
         return HcclResult::HCCL_E_NETWORK;
     }
 
@@ -205,8 +205,8 @@ HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJetty
     out.id        = info.ub.id;
     out.uasid     = info.ub.uasid;
     out.jettyVa   = info.va;
-    out.dbVa      = info.ub.db_addr;
-    out.dbTokenId = info.ub.db_token_id >> URMA_TOKEN_ID_RIGHT_SHIFT;
+    out.dbVa      = info.ub.dbAddr;
+    out.dbTokenId = info.ub.dbTokenId >> URMA_TOKEN_ID_RIGHT_SHIFT;
 
     int32_t sRet = memcpy_s(out.key, sizeof(out.key), info.key.value, info.key.size);
     if (sRet != 0) {
@@ -214,7 +214,7 @@ HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJetty
         return HcclResult::HCCL_E_MEMORY;
     }
     out.keySize = info.key.size;
-    attr.ub.token_value = 0; // 清理栈中的敏感信息
+    attr.ub.tokenValue = 0; // 清理栈中的敏感信息
     HCCL_INFO("[%s], output params: out.id[%u], out.dbVa[%llx]", __func__, out.id, out.dbVa);
 
     return HcclResult::HCCL_SUCCESS;
@@ -223,72 +223,72 @@ HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJetty
 HcclResult HccpUbCreateJettyAsync(const CtxHandle ctxhandle, const HrtRaUbCreateJettyParam &in,
     std::vector<char> &out, void *&jettyHandle, RequestHandle &reqHandle)
 {
-    struct qp_create_attr attr {};
-    attr.scq_handle     = reinterpret_cast<void *>(in.sjfcHandle);
-    attr.rcq_handle     = reinterpret_cast<void *>(in.rjfcHandle);
-    attr.srq_handle     = reinterpret_cast<void *>(in.sjfcHandle);
-    attr.rq_depth       = RQ_DEPTH;
-    attr.sq_depth       = in.sqDepth;
-    attr.transport_mode = HRT_TRANSPORT_MODE_MAP.at(in.transMode);
+    struct QpCreateAttr attr {};
+    attr.scqHandle     = reinterpret_cast<void *>(in.sjfcHandle);
+    attr.rcqHandle     = reinterpret_cast<void *>(in.rjfcHandle);
+    attr.srqHandle     = reinterpret_cast<void *>(in.sjfcHandle);
+    attr.rqDepth       = RQ_DEPTH;
+    attr.sqDepth       = in.sqDepth;
+    attr.transportMode = HRT_TRANSPORT_MODE_MAP.at(in.transMode);
     attr.ub.mode        = HRT_JETTY_MODE_MAP.at(in.jettyMode);
 
-    attr.ub.token_value       = in.tokenValue;
-    attr.ub.token_id_handle   = reinterpret_cast<void *>(in.tokenIdHandle);
+    attr.ub.tokenValue       = in.tokenValue;
+    attr.ub.tokenIdHandle   = reinterpret_cast<void *>(in.tokenIdHandle);
     attr.ub.flag.value        = 0;
-    attr.ub.err_timeout       = 0;
+    attr.ub.errTimeout       = 0;
     // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
     attr.ub.priority          = 2;
-    attr.ub.rnr_retry         = RNR_RETRY;
-    attr.ub.flag.bs.share_jfr = 1;
-    attr.ub.jetty_id          = in.jettyId;
+    attr.ub.rnrRetry         = RNR_RETRY;
+    attr.ub.flag.bs.shareJfr = 1;
+    attr.ub.jettyId          = in.jettyId;
     // 在continue模式下+配置了wqe的fence标记，并且远端有一些权限校验错误/内存异常错误，硬件会直接挂死
     // jfs_flag 的 error_suspend 设置为 1，
-    attr.ub.jfs_flag.bs.error_suspend = 1;
+    attr.ub.jfsFlag.bs.errorSuspend = 1;
 
-    attr.ub.ext_mode.sqebb_num = in.sqDepth;
+    attr.ub.extMode.sqebbNum = in.sqDepth;
     if (in.jettyMode == HrtJettyMode::HOST_OFFLOAD) {
-        attr.ub.ext_mode.pi_type = 1;
+        attr.ub.extMode.piType = 1;
     } else if (in.jettyMode == HrtJettyMode::CCU_CCUM_CACHE) {
-        attr.ub.token_value                   = in.tokenValue;
-        attr.ub.ext_mode.cstm_flag.bs.sq_cstm = 1;
-        attr.ub.ext_mode.sq.buff_size         = in.sqBufSize;
-        attr.ub.ext_mode.sq.buff_va           = in.sqBufVa;
+        attr.ub.tokenValue                   = in.tokenValue;
+        attr.ub.extMode.cstmFlag.bs.sqCstm = 1;
+        attr.ub.extMode.sq.buffSize         = in.sqBufSize;
+        attr.ub.extMode.sq.buffVa           = in.sqBufVa;
     } else if (in.jettyMode == HrtJettyMode::DEV_USED) {
-        attr.ub.ext_mode.cstm_flag.bs.sq_cstm = 1;
-        attr.ub.ext_mode.sq.buff_size         = in.sqBufSize;
-        attr.ub.ext_mode.sq.buff_va           = in.sqBufVa;
+        attr.ub.extMode.cstmFlag.bs.sqCstm = 1;
+        attr.ub.extMode.sq.buffSize         = in.sqBufSize;
+        attr.ub.extMode.sq.buffVa           = in.sqBufVa;
     }
 
     // 其他Mode暂时不需要额外更新特定字段
-    HCCL_INFO("Create jetty, input params: attr.ub.jetty_id[%u], attr.rq_depth[%u], "
-              "attr.sq_depth[%u], attr.transport_mode[%d], attr.ub.mode[%d], "
-              "attr.ub.ext_mode.sqebb_num[%u], attr.ub.ext_mode.sq.buff_va[%llx], "
-              "attr.ub.ext_mode.sq.buff_size[%u], attr.ub.ext_mode.pi_type[%u], priority[%u].",
-              attr.ub.jetty_id, attr.rq_depth, attr.sq_depth, attr.transport_mode, attr.ub.mode,
-              attr.ub.ext_mode.sqebb_num, attr.ub.ext_mode.sq.buff_va, attr.ub.ext_mode.sq.buff_size,
-              attr.ub.ext_mode.pi_type, attr.ub.priority);
+    HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
+              "attr.sqDepth[%u], attr.transportMode[%d], attr.ub.mode[%d], "
+              "attr.ub.extMode.sqebbNum[%u], attr.ub.extMode.sq.buffVa[%llx], "
+              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], priority[%u].",
+              attr.ub.jettyId, attr.rqDepth, attr.sqDepth, attr.transportMode, attr.ub.mode,
+              attr.ub.extMode.sqebbNum, attr.ub.extMode.sq.buffVa, attr.ub.extMode.sq.buffSize,
+              attr.ub.extMode.piType, attr.ub.priority);
 
     void *raReqHandle = nullptr;
-    out.resize(sizeof(qp_create_info));
-    s32 ret = ra_ctx_qp_create_async(ctxhandle, &attr, reinterpret_cast<qp_create_info *>(out.data()),
+    out.resize(sizeof(QpCreateInfo));
+    s32 ret = RaCtxQpCreateAsync(ctxhandle, &attr, reinterpret_cast<QpCreateInfo *>(out.data()),
         &jettyHandle, &raReqHandle);
     if (ret != 0 || !raReqHandle) {
         HCCL_ERROR("[%s] failed, call interface error[%d], raReqHandle[%p], "
             "ctxHanlde[%p].", __func__, ret, raReqHandle, ctxhandle);
         return HcclResult::HCCL_E_NETWORK;
     }
-    attr.ub.token_value = 0; // 清理栈中的token信息
+    attr.ub.tokenValue = 0; // 清理栈中的token信息
     HCCL_INFO("[%s] ok, get handle[%llu].", __func__, reinterpret_cast<RequestHandle>(raReqHandle));
     reqHandle = reinterpret_cast<RequestHandle>(raReqHandle);
     return HcclResult::HCCL_SUCCESS;
 }
 
 static HcclResult ImportJetty(const CtxHandle ctxHandle, u8 *key,
-    const u32 keyLen, const u32 tokenValue, const jetty_import_exp_cfg &cfg,
-    const jetty_import_mode mode, const TpProtocol protocol,
+    const u32 keyLen, const u32 tokenValue, const JettyImportExpCfg &cfg,
+    const JettyImportMode mode, const TpProtocol protocol,
     HrtRaUbJettyImportedOutParam &out)
 {
-    if (mode == jetty_import_mode::JETTY_IMPORT_MODE_NORMAL) {
+    if (mode == JettyImportMode::JETTY_IMPORT_MODE_NORMAL) {
         HCCL_ERROR("[%s] currently not support JETTY_IMPORT_MODE_NORMAL.",
             __func__);
         return HcclResult::HCCL_E_NOT_SUPPORT;
@@ -300,7 +300,7 @@ static HcclResult ImportJetty(const CtxHandle ctxHandle, u8 *key,
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 
-    struct qp_import_info_t info {};
+    struct QpImportInfoT info {};
     int res = memcpy_s(info.in.key.value, sizeof(info.in.key.value), key, keyLen);
     if (res != 0) {
         HCCL_ERROR("[%s] memcpy_s failed, ret = %d", __func__, res);
@@ -309,43 +309,43 @@ static HcclResult ImportJetty(const CtxHandle ctxHandle, u8 *key,
     info.in.key.size = keyLen;
 
     info.in.ub.mode = mode;
-    info.in.ub.token_value = tokenValue;
-    info.in.ub.policy = jetty_grp_policy::JETTY_GRP_POLICY_RR;
-    info.in.ub.type = target_type::TARGET_TYPE_JETTY;
+    info.in.ub.tokenValue = tokenValue;
+    info.in.ub.policy = JettyGrpPolicy::JETTY_GRP_POLICY_RR;
+    info.in.ub.type = TargetType::TARGET_TYPE_JETTY;
 
     info.in.ub.flag.value = 0;
-    info.in.ub.flag.bs.token_policy = TOKEN_POLICY_PLAIN_TEXT;
+    info.in.ub.flag.bs.tokenPolicy = TOKEN_POLICY_PLAIN_TEXT;
 
-    info.in.ub.exp_import_cfg = cfg;
+    info.in.ub.expImportCfg = cfg;
     // tp_type: 0->RTP, 1->CTP
-    info.in.ub.tp_type = protocol == TpProtocol::RTP ? 0 : 1;
+    info.in.ub.tpType = protocol == TpProtocol::RTP ? 0 : 1;
 
     void *remQpHandle = nullptr;
-    int32_t ret = ra_ctx_qp_import(ctxHandle, &info, &remQpHandle);
+    int32_t ret = RaCtxQpImport(ctxHandle, &info, &remQpHandle);
     if (ret != 0) {
         HCCL_ERROR("[%s] failed, ctxHandle[%p] loc tp handle[%llx] "
             "rmt tp handle[%llx] loc tag[%llu] loc psn[%u] rmt psn[%u]"
-            "protocol[%s].", __func__, ctxHandle, cfg.tp_handle, cfg.peer_tp_handle,
-            cfg.tag, cfg.tx_psn, cfg.rx_psn);
+            "protocol[%s].", __func__, ctxHandle, cfg.tpHandle, cfg.peerTpHandle,
+            cfg.tag, cfg.txPsn, cfg.rxPsn);
         return HcclResult::HCCL_E_NETWORK;
     }
 
     out.handle        = reinterpret_cast<TargetJettyHandle>(remQpHandle);
-    out.targetJettyVa = info.out.ub.tjetty_handle;
+    out.targetJettyVa = info.out.ub.tjettyHandle;
     out.tpn           = info.out.ub.tpn;
-    info.in.ub.token_value = 0; // 清理栈中的敏感信息
+    info.in.ub.tokenValue = 0; // 清理栈中的敏感信息
     return HcclResult::HCCL_SUCCESS;
 }
 
-static struct jetty_import_exp_cfg GetTpImportCfg(const JettyImportCfg &jettyImportCfg)
+static struct JettyImportExpCfg GetTpImportCfg(const JettyImportCfg &jettyImportCfg)
 {
-    struct jetty_import_exp_cfg cfg = {};
+    struct JettyImportExpCfg cfg = {};
 
-    cfg.tp_handle = jettyImportCfg.localTpHandle;
-    cfg.peer_tp_handle = jettyImportCfg.remoteTpHandle;
+    cfg.tpHandle = jettyImportCfg.localTpHandle;
+    cfg.peerTpHandle = jettyImportCfg.remoteTpHandle;
     cfg.tag = jettyImportCfg.localTag;
-    cfg.tx_psn = jettyImportCfg.localPsn;
-    cfg.rx_psn = jettyImportCfg.remotePsn;
+    cfg.txPsn = jettyImportCfg.localPsn;
+    cfg.rxPsn = jettyImportCfg.remotePsn;
 
     return cfg;
 }
@@ -354,24 +354,24 @@ HcclResult HccpUbTpImportJetty(const CtxHandle ctxHandle, u8 *key, const u32 key
     const u32 tokenValue, const JettyImportCfg &jettyImportCfg,
     HrtRaUbJettyImportedOutParam &out)
 {
-    struct jetty_import_exp_cfg cfg = GetTpImportCfg(jettyImportCfg);
-    const auto mode = jetty_import_mode::JETTY_IMPORT_MODE_EXP;
+    struct JettyImportExpCfg cfg = GetTpImportCfg(jettyImportCfg);
+    const auto mode = JettyImportMode::JETTY_IMPORT_MODE_EXP;
     return ImportJetty(ctxHandle, key, keyLen, tokenValue,
         cfg, mode, jettyImportCfg.protocol, out);
 }
 
 static HcclResult ImportJettyAsync(CtxHandle ctxHandle, const HccpUbJettyImportedInParam &in,
-    std::vector<char> &out, void *&remQpHandle, const jetty_import_exp_cfg &cfg, jetty_import_mode mode,
+    std::vector<char> &out, void *&remQpHandle, const JettyImportExpCfg &cfg, JettyImportMode mode,
     TpProtocol protocol, RequestHandle &reqHandle)
 {
-    if (mode == jetty_import_mode::JETTY_IMPORT_MODE_NORMAL) {
+    if (mode == JettyImportMode::JETTY_IMPORT_MODE_NORMAL) {
         HCCL_ERROR("[%s] currently not support JETTY_IMPORT_MODE_NORMAL.",
             __func__);
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 
-    out.resize(sizeof(qp_import_info_t));
-    struct qp_import_info_t *info = reinterpret_cast<qp_import_info_t *>(out.data());
+    out.resize(sizeof(QpImportInfoT));
+    struct QpImportInfoT *info = reinterpret_cast<QpImportInfoT *>(out.data());
 
     s32 ret = memcpy_s(info->in.key.value, sizeof(info->in.key.value), in.key, in.keyLen);
     if (ret != 0) {
@@ -381,14 +381,14 @@ static HcclResult ImportJettyAsync(CtxHandle ctxHandle, const HccpUbJettyImporte
 
     info->in.key.size = in.keyLen;
     info->in.ub.mode = mode;
-    info->in.ub.token_value = in.tokenValue;
-    info->in.ub.policy = jetty_grp_policy::JETTY_GRP_POLICY_RR;
-    info->in.ub.type = target_type::TARGET_TYPE_JETTY;
+    info->in.ub.tokenValue = in.tokenValue;
+    info->in.ub.policy = JettyGrpPolicy::JETTY_GRP_POLICY_RR;
+    info->in.ub.type = TargetType::TARGET_TYPE_JETTY;
 
     info->in.ub.flag.value = 0;
-    info->in.ub.flag.bs.token_policy = TOKEN_POLICY_PLAIN_TEXT;
+    info->in.ub.flag.bs.tokenPolicy = TOKEN_POLICY_PLAIN_TEXT;
 
-    info->in.ub.exp_import_cfg = cfg;
+    info->in.ub.expImportCfg = cfg;
 
     if (protocol != TpProtocol::RTP && protocol != TpProtocol::CTP) {
         HCCL_ERROR("[%s] failed, tp protocol[%s] is not expected, %s.",
@@ -396,16 +396,16 @@ static HcclResult ImportJettyAsync(CtxHandle ctxHandle, const HccpUbJettyImporte
         return HcclResult::HCCL_E_PARA;
     }
     // tp_type: 0->RTP, 1->CTP
-    info->in.ub.tp_type = protocol == TpProtocol::RTP ? 0 : 1;
+    info->in.ub.tpType = protocol == TpProtocol::RTP ? 0 : 1;
 
     void *raReqHandle = nullptr;
-    ret = ra_ctx_qp_import_async(ctxHandle, info, &remQpHandle, &raReqHandle);
+    ret = RaCtxQpImportAsync(ctxHandle, info, &remQpHandle, &raReqHandle);
     if (ret != 0 || !raReqHandle) {
         HCCL_ERROR("[%s] failed, call interface error[%d] raReqHandle[%p], "
             "ctxHandle[%p].", __func__, ret, raReqHandle, ctxHandle);
         return HcclResult::HCCL_E_NETWORK;
     }
-    info->in.ub.token_value = 0;
+    info->in.ub.tokenValue = 0;
     HCCL_INFO("[%s] ok, get handle[%llu]", __func__, reinterpret_cast<RequestHandle>(raReqHandle));
     reqHandle = reinterpret_cast<RequestHandle>(raReqHandle);
     return HcclResult::HCCL_SUCCESS;
@@ -414,8 +414,8 @@ static HcclResult ImportJettyAsync(CtxHandle ctxHandle, const HccpUbJettyImporte
 HcclResult HccpUbTpImportJettyAsync(const CtxHandle ctxHandle, const HccpUbJettyImportedInParam &in,
     std::vector<char> &out, void *&remQpHandle, RequestHandle &reqHandle)
 {
-    struct jetty_import_exp_cfg cfg = GetTpImportCfg(in.jettyImportCfg);
-    const auto mode = jetty_import_mode::JETTY_IMPORT_MODE_EXP;
+    struct JettyImportExpCfg cfg = GetTpImportCfg(in.jettyImportCfg);
+    const auto mode = JettyImportMode::JETTY_IMPORT_MODE_EXP;
     return ImportJettyAsync(ctxHandle, in, out, remQpHandle,
         cfg, mode, in.jettyImportCfg.protocol, reqHandle);
 }

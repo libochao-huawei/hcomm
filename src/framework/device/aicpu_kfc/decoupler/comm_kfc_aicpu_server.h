@@ -25,7 +25,7 @@ public:
     HcclApi::HcclMsgArea *GetMsgAreaAddr() const { return msgArea_; }
     u32 GetRankNum() const { return rankNum_; }
     HcclResult AddOpContext(const HcclApi::CommKfcContext *ctx);
-    HcclResult Orchestrate(const HcclApi::HcclMsg &msg, const HcclApi::HcclMsgExt &extMsg, u32 msgPos);
+    HcclResult Orchestrate(const HcclApi::HcclMsg &msg, HcclApi::HcclMsgExt &extMsg, u32 msgPos);
     HcclResult Finalize(u32 msgPos);
     HcclResult IsAllTaskFinished(u32 msgPos, bool &isFinish);
     HcclResult InterGroupSync(const CommKfcAicpuServer &otherServer, HcclHandle handle);
