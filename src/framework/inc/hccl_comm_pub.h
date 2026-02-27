@@ -405,14 +405,6 @@ public:
     // for group
     HcclResult SetGroupMode(bool isGroup);
     bool GetGroupMode();
-    HcclResult SetSendIndex(u32 index);
-    HcclResult SetRecvIndex(u32 index);
-    HcclResult SetBufferSliceNum(u32 bufferSliceNum);
-    HcclResult SetNSend(u32 nSend);
-    HcclResult SetNRecv(u32 nRecv);
-    HcclResult GroupPrepareStreamAndNotify(HcclRtStream sendRecvMainStream);
-    HcclResult GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte);
-    HcclResult GroupSubstreamsSync();
     HcclResult RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle);
     HcclResult DeregisterWindow(CommSymWindow winHandle);
     HcclResult GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset);

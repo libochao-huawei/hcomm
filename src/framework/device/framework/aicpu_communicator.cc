@@ -2009,11 +2009,15 @@ HcclResult HcclCommAicpu::GetAlgResponseRes(const std::string &newTag, const std
         } else {
             HCCL_INFO("[%s] Repeatedly inited for alg [%s] is not allowed.", __func__, algName.c_str());
         }
-    } else if (algName == "BatchSendRecv" || algName == "BatchSendRecvRetry") {
-        AlgResourceRequest resRequest;
-        HCCL_INFO("[%s]IncreAlloc resource for alg[%s], tag[%s]", __func__, algName.c_str(), newTag.c_str());
-        CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
-        CHK_RET(IncreAllocTransportResource(newTag, opParam, commParam, resRequest, resMap_[newTag]));
+    } else if (algName == "BatchSendRecv" || algName == "BatchSendRecvRetry" || algName == "BatchSendRecvGroup") {
+        // 如果是非aclgraph模式，而且不需要增量建链，则跳过CalcResRequest这个计算，节省时间。在非aclgraph模式下，跳过是安全的。
+        bool canSkipCalcResRequest = !opParam.isCapture && !opParam.needIncreLink;
+        if (!canSkipCalcResRequest) { // 如果不能跳过计算，则走一遍计算的流程，否则就跳过以下计算
+            AlgResourceRequest resRequest;
+            HCCL_INFO("[%s]IncreAlloc resource for alg[%s], tag[%s]", __func__, algName.c_str(), newTag.c_str());
+            CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
+            CHK_RET(IncreAllocTransportResource(newTag, opParam, commParam, resRequest, resMap_[newTag]));
+        }
     }
     CHK_PRT_RET(iter == resMap_.end(),
         HCCL_ERROR("[%s]Fail to find algResResponse for tag[%s]", __func__, newTag.c_str()), HCCL_E_PARA);

@@ -35,7 +35,6 @@ private:
     /* *************** 算法编排 *************** */
     HcclResult RunLoop(OpParam &param, AlgResourceResponse &algRes);
     HcclResult RunTemplate(const OpParam &param, DeviceMem &inputMem);
-    HcclResult NotifyMainstream(OpParam &param, AlgResourceResponse &algRes);
 
     bool DMAReduceFlag_{false}; // 是否DMA消减的标志
 };
