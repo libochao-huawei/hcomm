@@ -10,6 +10,6 @@
 #ifndef AICPU_SYMMETRIC_MEMORY_H_
 #define AICPU_SYMMETRIC_MEMORY_H_
 
-#include "hcomm_primitives.h"
+#include "hcomm_sym_win_primitives.h"
 
 #endif // AICPU_SYMMETRIC_MEMORY_H_
