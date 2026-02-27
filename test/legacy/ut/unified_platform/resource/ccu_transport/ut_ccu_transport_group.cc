@@ -573,9 +573,9 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_005)
 
     // 创建utCcuTransportGroup
     CcuTransportGroup utCcuTransportGroup(utCcuTransportVec, utCntCke);
-    HcclResult res = utCcuTransportGroup.CheckTransports(utCcuTransportVec);
+    auto res = utCcuTransportGroup.CheckTransports(utCcuTransportVec);
 
-    EXPECT_EQ(HCCL_E_INIERNAL, res);
+    EXPECT_EQ(false, res);
 
     delete socket;
     delete rdmaHandle;
