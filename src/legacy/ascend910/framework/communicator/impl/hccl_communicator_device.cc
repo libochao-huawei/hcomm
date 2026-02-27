@@ -1237,6 +1237,22 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::UpdateAsyncUnfoldFlag(const OpParam &opParam)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::TryAsyncUnfold(const OpParam &opParam, const HcclCMDType &opType,
+        const std::string &algName, const uint64_t dynamicDataSize, const std::string &kernelName)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::AicpuOpAsyncUnfoldInfoPut(const uint64_t dynamicDataSize)
+    {
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::AicpuUnfoldKernelLaunch(void *inputPtr, void *outputPtr, const rtStream_t stm, u64 addr,
                                                          void *tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode, const std::string &tag)
     {
