@@ -42,17 +42,29 @@ message(STATUS "[ThirdParty] Found hcomm_utils: ${hcomm_utils_FOUND}")
 if(hcomm_utils_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message(STATUS "[ThirdParty] hcomm_utils found in ${HCOMM_UTILS_INSTALL_PATH}, and not force rebuild cann third_party")
 else()
+    file(GLOB HCOMM_UTILS_PKG
+        LIST_DIRECTORIES True
+        ${CANN_UTILS_LIB_PATH}/cann-hcomm-utils_*_linux-${HCOMM_UTILS_ARCH}.tar.gz
+    )
+
     if(EXISTS ${HCOMM_UTILS_PKG_PATH})
         # 离线编译场景，优先使用已下载的包
         message(STATUS "[ThirdParty] Found local hcomm_utils package: ${HCOMM_UTILS_PKG_PATH}")
         set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_PKG_PATH})
+    elseif(EXISTS ${HCOMM_UTILS_PKG})
+        # 离线编译场景，优先使用已下载的包（忽略版本号）
+        message(STATUS "[ThirdParty] Found local hcomm_utils package: ${HCOMM_UTILS_PKG}")
+        set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_PKG})
     else()
         # 下载并解压
         message(STATUS "[ThirdParty] Downloading hcomm_utils from ${HCOMM_UTILS_URL}")
         set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_URL})
     endif()
 
-    if(HCOMM_UTILS_ARCH MATCHES "aarch64|ARM64|arm64")
+    if(EXISTS ${HCOMM_UTILS_PKG})
+        # 忽略版本号，不校验哈希值
+        set(HCOMM_UTILS_URL_HASH "")
+    elseif(HCOMM_UTILS_ARCH MATCHES "aarch64|ARM64|arm64")
         set(HCOMM_UTILS_URL_HASH "SHA256=b4c1eb4256268d83238b656e1b353142a5e4c4dbccf3662573ddc9a6d778f0a5")
     else()
         set(HCOMM_UTILS_URL_HASH "SHA256=a26dbc01269fb230927db0bd191a23dd07be2aa7925bf063ef978744f49415fd")
