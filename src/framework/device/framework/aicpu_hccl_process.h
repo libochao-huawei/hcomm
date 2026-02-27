@@ -20,6 +20,7 @@
 #include "hdc_pub.h"
 #include "stream_pub.h"
 #include "aicpu_launch_manager.h"
+#include "aicpu_ts_thread.h"
 
 class AicpuHcclProcess {
 public:
@@ -45,7 +46,12 @@ public:
     static HcclResult WaitAsyncFlag(hccl::Transport::Buffer *localFlagBufforCheck, const uint32_t flagValue,
         uint64_t timeOut);
     static HcclResult AicpuIndOpChannelInit(HcclIndOpChannelRemoteResV3 *commParam);
+    static HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
+    static HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
+    static HcclResult AicpuIndOpChannelInitV2Inner(HcclChannelUrmaRes *commParam);
     static HcclResult AicpuIndOpThreadInit(ThreadMgrAicpuParam *param);
+    static HcclResult InitThreads(ThreadMgrAicpuParam *param);
+    static HcclResult AicpuIndOpThreadInitInner(ThreadMgrAicpuParam *param);
     static HcclResult AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param);
     static HcclResult AicpuIndOpCommInit(CommAicpuParam *commAicpuParam);
 
@@ -57,6 +63,11 @@ private:
         u64 &inputSize, u64 &outputSize);
     static HcclResult CalcDataSizeV(hccl::OpParam &param, u32 rankSize);
     static u64 CalcOpTilingVDataDesVDataLen(u32 rankSize);
+
+    // 单边通信
+    static std::mutex memMutex_;
+    static std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
+    static std::vector<std::shared_ptr<hccl::Thread>> threads_;
 };
 
 #endif // __AICPU_HCCL_PROCESS_HPP__

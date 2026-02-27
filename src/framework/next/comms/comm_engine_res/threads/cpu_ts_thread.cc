@@ -34,6 +34,8 @@ HcclResult CpuTsThread::Init()
         s32 deviceLogicId;
         CHK_RET(hrtGetDevice(&deviceLogicId));
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devId_));
+        DevType devType = DevType::DEV_TYPE_COUNT;
+        CHK_RET(hrtGetDeviceType(devType));
         if (streamType_ == StreamType::STREAM_TYPE_DEVICE || notifyLoadType_ == NotifyLoadType::DEVICE_NOTIFY) {
             return HCCL_E_NOT_SUPPORT;
         }
@@ -45,6 +47,13 @@ HcclResult CpuTsThread::Init()
             stream_.reset(new (std::nothrow) Stream(rtStream_));
             CHK_SMART_PTR_NULL(stream_);
         }
+
+        if (devType == DevType::DEV_TYPE_910_95) {
+            HCCL_INFO("[CpuTsThread::%s] Running on A5.", __func__);
+        } else {
+            HCCL_INFO("[CpuTsThread::%s] NOT Running on A5.", __func__);
+        }
+
         notifys_.reserve(notifyNum_);
         for (uint32_t idx = 0; idx < notifyNum_; idx++) {
             notifys_.emplace_back(nullptr);
