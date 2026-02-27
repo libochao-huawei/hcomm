@@ -10,7 +10,7 @@
 #include "hcclCommProfilingLite.h"
 
 namespace hccl {
-HcclCommProfilingLite::HcclCommProfilingLite(MirrorTaskManager* mirrorTaskManager) {
+HcclCommProfilingLite::HcclCommProfilingLite(Hccl::MirrorTaskManager* mirrorTaskManager) {
     mirrorTaskManager_ = mirrorTaskManager;
     profilingReporterLite_ = std::make_shared<ProfilingReporterLite>();
 }
