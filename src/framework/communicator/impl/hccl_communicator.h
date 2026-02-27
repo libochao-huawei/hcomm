@@ -821,6 +821,7 @@ private:
         const std::string &newTag, const HcclCMDType opType, const rtStream_t aicpuStream);
     HcclResult BuildCustomOpResParam();
     HcclResult BuildOpRetryParam(const AlgResourceResponse &algResource, const std::string &newTag);
+    HcclResult BuildAsyncUnfoldParam(); // 为AICPU异步展开单算子准备参数 (将相关HDC资源通过HcclOpResParam传递到device)
     HcclResult CopyHostListResToDeviceParam(const std::string &newTag, const ListCommon *headHostList, const u64 size);
     HcclResult CopyHostAirmaInfoToDeviceParam(const std::string &newTag, const HcclCMDType opType, const rtStream_t aiCpuStream);
     HcclResult CopyHostOpRemoteResToDeviceParam(const std::string &newTag);
@@ -1023,6 +1024,10 @@ private:
     // aicpu进程使用的host-device共享内存
     std::shared_ptr<HDCommunicate> kfcControlTransferH2D_;
     std::shared_ptr<HDCommunicate> kfcStatusTransferD2H_;
+    // aicpu进程使用的host-device共享内存 (用于aicpu异步展开单算子)
+    std::shared_ptr<HDCommunicate> kfcTailH2D_; // uint64_t
+    std::shared_ptr<HDCommunicate> kfcHeadD2H_; // uint64_t
+    std::vector<std::shared_ptr<HDCommunicate>> kfcOpH2DRingBuffer_; // std::vector<OpAsyncUnfoldInfo>
     // custom进程使用的host-device共享内存
     std::shared_ptr<HDCommunicate> customControlTransferH2D_;
     std::shared_ptr<HDCommunicate> customStatusTransferD2H_;
