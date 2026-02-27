@@ -42,9 +42,19 @@ message(STATUS "[ThirdParty] Found hcomm_utils: ${hcomm_utils_FOUND}")
 if(hcomm_utils_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message(STATUS "[ThirdParty] hcomm_utils found in ${HCOMM_UTILS_INSTALL_PATH}, and not force rebuild cann third_party")
 else()
+    file(GLOB HCOMM_UTILS_PKG
+        LIST_DIRECTORIES True
+        ${CANN_UTILS_LIB_PATH}/cann-hcomm-utils_*_linux-${HCOMM_UTILS_ARCH}.tar.gz
+    )
+
     if(EXISTS ${HCOMM_UTILS_PKG_PATH})
         # 离线编译场景，优先使用已下载的包
         message(STATUS "[ThirdParty] Found local hcomm_utils package: ${HCOMM_UTILS_PKG_PATH}")
+        set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_PKG_PATH})
+    elseif(EXISTS ${HCOMM_UTILS_PKG})
+        # 离线编译场景，优先使用已下载的包（忽略版本号）
+        message(STATUS "[ThirdParty] Found local hcomm_utils package: ${HCOMM_UTILS_PKG}")
+        file(COPY ${HCOMM_UTILS_PKG} DESTINATION ${HCOMM_UTILS_PKG_PATH})
         set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_PKG_PATH})
     else()
         # 下载并解压
