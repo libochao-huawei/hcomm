@@ -50,8 +50,15 @@ namespace hccl {
         Stream& mainStream, std::vector<Stream>& slaveStreams, void *dispatcherPtr, const bool isDeviceMode,
         const HcclTopoInfo& topoinfo, std::unique_ptr<TopoMatcher>& topoMatcherPtr, const AlgOpContext& algContext,
         std::shared_ptr<AicpuZeroCopyExchanger>& zeroCopyExchangerPtr, const HcclWorkflowMode workflowMode,
-        const DeviceMem& tinySendRecvMem, std::function<HcclResult()> setProfStartCallback)
+        const DeviceMem& tinySendRecvMem, std::function<HcclResult()> setProfStartCallback,
+        const AsyncUnfoldStage asyncUnfoldStage)
     {
+        // 注意: 异步展开应用阶段, 直接使用异步展开的SQE, 不用查询aicpu cache触发SQE生成/刷新
+        CHK_PRT_RET(asyncUnfoldStage == ASYNC_UNFOLD_APPLY,
+            HCCL_ERROR("[AicpuCacheManager][LookupOpUnfoldCache] asyncUnfoldStage[%d] should not be ASYNC_UNFOLD_APPLY",
+                asyncUnfoldStage),
+            HCCL_E_INTERNAL);
+
         needExecute = true;
         isCacheMiss = false;
 
@@ -68,8 +75,10 @@ namespace hccl {
 
         // 判断是否需要cache
         bool needCache = false;
-        CHK_RET(NeedOpUnfoldCache(algName, param, algResource, isDeviceMode, topoinfo, topoMatcherPtr, algContext, workflowMode, needCache));
-        HCCL_INFO("[AicpuCacheManager][LookupOpUnfoldCache] needCache[%u]", needCache);
+        CHK_RET(NeedOpUnfoldCache(algName, param, algResource, isDeviceMode, topoinfo, topoMatcherPtr, algContext,
+            workflowMode, needCache));
+        HCCL_INFO("[AicpuCacheManager][LookupOpUnfoldCache] needCache[%u] asyncUnfoldStage[%d]",
+            needCache, asyncUnfoldStage);
 
         // Cacheable算子
         if (needCache) {
@@ -95,6 +104,8 @@ namespace hccl {
             CHK_RET(opUnfoldCachePtr_->FindEntry(opUnfoldKey, &entryPtr));
             if (entryPtr != nullptr) { // Cache hit
                 HCCL_INFO("[AicpuCacheManager][LookupOpUnfoldCache] cache hit for key %s", opUnfoldKey.GetKeyString().c_str());
+
+                // TODO: LaunchNewTask传入asyncUnfoldStage, 判断将刷新后的SQE直接下发到RTSQ, 还是保存到AsyncUnfoldCache
 
                 // 判断是否为alltoallv算子
                 CHK_PTR_NULL(dispatcherPtr);

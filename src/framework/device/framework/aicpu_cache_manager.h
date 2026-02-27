@@ -48,7 +48,8 @@ public:
         Stream& mainStream, std::vector<Stream>& slaveStreams, void *dispatcherPtr, const bool isDeviceMode,
         const HcclTopoInfo& topoinfo, std::unique_ptr<TopoMatcher>& topoMatcherPtr, const AlgOpContext& algContext,
         std::shared_ptr<AicpuZeroCopyExchanger>& zeroCopyExchangerPtr, const HcclWorkflowMode workflowMode,
-        const DeviceMem& tinySendRecvMem, std::function<HcclResult()> setProfStartCallback);
+        const DeviceMem& tinySendRecvMem, std::function<HcclResult()> setProfStartCallback,
+        const AsyncUnfoldStage asyncUnfoldStage);
     
     // 针对cache miss的预处理, 包括使能alltoallv executor感知cache
     HcclResult PreProcessForCacheMiss(const OpParam &param, std::unique_ptr<CollExecutorBase> &executor);
