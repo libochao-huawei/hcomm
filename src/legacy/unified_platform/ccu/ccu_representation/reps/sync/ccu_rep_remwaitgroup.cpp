@@ -29,7 +29,7 @@ bool CcuRepWaitGroup::Translate(CcuInstr *&instr, uint16_t &instrId, const Trans
 
     u32 cntCkeId;
  	HcclResult ret = transportGroup.GetCntCkeId(semIndex, cntCkeId);
- 	if (ret != HCCL_SUCCESS) {
+ 	if (ret != HcclResult::HCCL_SUCCESS) {
  	  	string msg = StringFormat("[Translate]rt get CntCkeId failed. "
  	  	                            "cntCkeId[%u] return[%d].", cntCkeId, ret);
  	  	MACRO_THROW(CcuApiException, msg);

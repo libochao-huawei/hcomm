@@ -174,7 +174,7 @@ void CcuRepContext::AddProfiling(const CcuTransportGroup &transportGroup, const 
     ccuProfilingInfoCache.name     = name;
     u32 cntCkeId;
  	HcclResult ret = transportGroup.GetCntCkeId(signalIndex, cntCkeId);
- 	if (ret != HCCL_SUCCESS) {
+ 	if (ret != HcclResult::HCCL_SUCCESS) {
  	    string msg = StringFormat("[AddProfiling]rt get cntCkeId failed. "
  	                                "cntCkeId[%u], return[%d].", cntCkeId, ret);
  	    MACRO_THROW(CcuApiException, msg);

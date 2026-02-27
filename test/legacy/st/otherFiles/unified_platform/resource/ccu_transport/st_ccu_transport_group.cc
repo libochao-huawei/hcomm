@@ -449,15 +449,15 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_003)
     utCcuTransportGroup.cntCkesGroup.emplace_back(2);
 
     HcclResult res1 = utCcuTransportGroup.GetCntCkeId(0, cntCkeId);
-    EXPECT_EQ(HCCL_SUCCESS, res1);
+    EXPECT_EQ(HcclResult::HCCL_SUCCESS, res1);
     EXPECT_EQ(0, cntCkeId);
 
     HcclResult res2 = utCcuTransportGroup.GetCntCkeId(1, cntCkeId);
-    EXPECT_EQ(HCCL_SUCCESS, res2);
+    EXPECT_EQ(HcclResult::HCCL_SUCCESS, res2);
     EXPECT_EQ(1, cntCkeId);
 
     HcclResult res3 = utCcuTransportGroup.GetCntCkeId(2, cntCkeId);
-    EXPECT_EQ(HCCL_SUCCESS, res3);
+    EXPECT_EQ(HcclResult::HCCL_SUCCESS, res3);
     EXPECT_EQ(2, cntCkeId);
 
     delete socket;
@@ -750,7 +750,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_006)
     CcuTransportGroup utCcuTransportGroup(utCcuTransportVec, utCntCke);
     HcclResult res = utCcuTransportGroup.CheckTransportCntCke();
 
-    EXPECT_EQ(HCCL_SUCCESS, res);
+    EXPECT_EQ(HcclResult::HCCL_SUCCESS, res);
 
     delete socket;
     delete rdmaHandle;
@@ -847,7 +847,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_007)
     CcuTransportGroup utCcuTransportGroup(utCcuTransportVec, utCntCke);
     HcclResult res = utCcuTransportGroup.CheckTransportCntCke();
 
-    EXPECT_EQ(HCCL_E_INTERNAL, res);
+    EXPECT_EQ(HcclResult::HCCL_E_INTERNAL, res);
 
     delete socket;
     delete rdmaHandle;
