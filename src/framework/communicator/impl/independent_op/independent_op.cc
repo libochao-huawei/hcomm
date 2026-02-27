@@ -50,12 +50,13 @@ HcclResult IndependentOp::SetIndependentOpConfig(const CommConfig &commConfig, c
     commAicpuParam_.kfcStatusTransferD2HParams = kfcStatusTransferD2HParams;
     commAicpuParam_.userRank = topoAttr.userRank;
     commAicpuParam_.userRankSize = topoAttr.userRankSize;
-    char *debugLevel = getenv("HCCL_DEBUG_LEVEL");
+    const char *debugLevel = getenv("HCCL_DEBUG_LEVEL");
     HCCL_INFO("[IndependentOp][%s] Hcom[%s] threadNum[%u], notifyPerThread[%u], cclBufferSize[%llu], deviceLogicId[%u], "
         "devicePhyId[%u], deviceType[%u], userRank[%u], userRankSize[%u], debugLevel[%s]",
         __func__, commId_.c_str(), threadNum_, notifyNumPerThread_,
         cclBufferSize_, commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId,
-        commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize, debugLevel);
+        commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize,
+        (debugLevel != nullptr) ? debugLevel : "not set");
     return HCCL_SUCCESS;
 }
 
@@ -81,7 +82,8 @@ HcclResult IndependentOp::KernelLaunchAicpuCommInit()
     // 下kernel进行自定义算子aicpu侧通信域的公共初始化
     std::string kernelName = "RunAicpuIndOpCommInit";
 
-    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME;
+    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ?
+                    std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
     CHK_RET(AicpuAclKernelLaunch(localStream.ptr(), reinterpret_cast<void *>(&commAicpuParam_),
         sizeof(commAicpuParam_), binHandle_, kernelName, true, timeOut));
     CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut("")));
