@@ -8,20 +8,11 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
-coll_comm.cc
+    my_rank.cc
 )
 
 target_sources(hcomm PRIVATE
     ${src_list}
 )
 
-add_subdirectory(common)
-add_subdirectory(rank)
-add_subdirectory(rank_pairs)
-add_subdirectory(api_c_adpt)
-add_subdirectory(dfx)
-
-target_include_directories(hcomm PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/rank_pairs
-)
-
+add_subdirectory(comm_mems)
