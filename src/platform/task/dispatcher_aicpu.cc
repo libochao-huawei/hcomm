@@ -1055,6 +1055,8 @@ HcclResult DispatcherAiCpu::WaitRtsq(Stream& stream, const size_t& sqeCount, con
         // 当前流无法下发，把其他流都launch一遍，避免等待的其他流没有launch
         for (auto it = streamMap_.begin(); it != streamMap_.end(); ++it) {
             if (it->first != streamInfo.actualStreamId) { // 不是当前stream
+                // 注意: LaunchNewTask暂不支持非阻塞调用, 因此用LaunchTask占位
+                // 由于LaunchNewTask前强制执行LaunchTask的阻塞调用, 因此SqeRingBuffer一定为空, 即这里LaunchTask一定为空调用
                 CHK_RET(LaunchTask(it->second, false)); // 非阻塞launch
             }
         }

@@ -32,7 +32,7 @@ namespace hccl {
 
             // 不能使用CHK_PTR_NULL，因为会return HcclResult
             if (UNLIKELY(entryPtr == nullptr)) {
-                HCCL_ERROR("[OpUnfoldCache][OpUnfoldCache] entryPtr is nullptr");
+                HCCL_ERROR("[OpUnfoldCache][~OpUnfoldCache] entryPtr is nullptr");
                 continue;
             }
 
