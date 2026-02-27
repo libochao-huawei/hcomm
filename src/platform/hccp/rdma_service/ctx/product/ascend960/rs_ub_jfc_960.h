@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef RS_UB_JFC_H
-#define RS_UB_JFC_H
+#ifndef RS_UB_JFC_960_H
+#define RS_UB_JFC_960_H
 
 #include "urma_types.h"
 #include "udma_u_ctl.h"
@@ -20,7 +20,7 @@ union CreateJfcCfg {
     struct udma_u_jfc_cfg_ex jfcCfgEx;
 };
 
-int RsUbDeleteJfcExt(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb);
-int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urma_jfc_t **jfc);
+int RsUbDeleteJfcExt960(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb);
+int RsUbCtxJfcCreateExt960(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urma_jfc_t **jfc);
 
 #endif // RS_UB_JFC_H

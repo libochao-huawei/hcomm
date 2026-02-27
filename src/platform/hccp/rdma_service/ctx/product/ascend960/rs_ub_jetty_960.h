@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef RS_UB_JETTY_H
-#define RS_UB_JETTY_H
+#ifndef RS_UB_JETTY_960_H
+#define RS_UB_JETTY_960_H
 
 #include "urma_types.h"
 #include "udma_u_ctl.h"
@@ -20,8 +20,8 @@
 #define PAGE_4K 0x1000
 #define ALIGN_DOWN(x, a) ((x) & (~((a) - 1)))
 
-void RsUbCtxExtJettyCreate(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg);
-void RsUbCtxExtJettyDelete(struct RsCtxJettyCb *jettyCb);
-void RsUbVaMunmapBatch(struct RsCtxJettyCb **jettyCbArr, unsigned int num);
-void RsUbFreeJettyIdBatch(struct RsCtxJettyCb **jettyCbArr, unsigned int num);
+void RsUbCtxExtJettyCreate960(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg);
+void RsUbCtxExtJettyDelete960(struct RsCtxJettyCb *jettyCb);
+void RsUbVaMunmapBatch960(struct RsCtxJettyCb **jettyCbArr, unsigned int num);
+void RsUbFreeJettyIdBatch960(struct RsCtxJettyCb **jettyCbArr, unsigned int num);
 #endif // RS_UB_JETTY_H
