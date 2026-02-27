@@ -170,7 +170,7 @@ HcclResult InsTempReduceMesh1DTwoShot::RunReduceScatter(const RankSliceInfo &sli
                 continue;
             }
             DataSlice currentSrc(tempAlgParams.buffInfo.scratBuffType, static_cast<u64>(i) * mySliceSize + scOff, mySliceSize);
-            CHK_RET(LocalReduce(tempInsQues[0], currentSrc, finalDest, dataType_, redOp_));
+            CHK_RET(LocalReduce(tempInsQues[myIdx_], currentSrc, finalDest, dataType_, redOp_));
         }
     }
 
