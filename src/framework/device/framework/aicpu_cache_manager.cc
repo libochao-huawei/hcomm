@@ -68,7 +68,8 @@ namespace hccl {
 
         // 判断是否需要cache
         bool needCache = false;
-        CHK_RET(NeedOpUnfoldCache(algName, param, algResource, isDeviceMode, topoinfo, topoMatcherPtr, algContext, workflowMode, needCache));
+        CHK_RET(NeedOpUnfoldCache(algName, param, algResource, isDeviceMode, topoinfo, topoMatcherPtr, algContext,
+            workflowMode, needCache));
         HCCL_INFO("[AicpuCacheManager][LookupOpUnfoldCache] needCache[%u]", needCache);
 
         // Cacheable算子
@@ -222,11 +223,14 @@ namespace hccl {
     }
 
     HcclResult AicpuCacheManager::ClearOpUnfoldCacheEntry(const std::string& algName, const OpParam &param,
-        const AlgResourceResponse& algResource, const bool isDeviceMode, const HcclTopoInfo& topoinfo,
+        const AlgResourceResponse& algResource, const bool isDeviceMode, void* dispatcherPtr, const HcclTopoInfo& topoinfo,
         std::unique_ptr<TopoMatcher>& topoMatcherPtr, const AlgOpContext& algContext, const HcclWorkflowMode workflowMode)
     {
         // 清理当前aicpu算子对应的cache entry, 避免异常状态下, cache命中
         CHK_PTR_NULL(opUnfoldCachePtr_);
+
+        // 清理DispatcherAicpu内aicpu cache的上下文, 避免故障算子重执行时触发aicpu cache
+        CHK_RET((reinterpret_cast<DispatcherAiCpu *>(dispatcherPtr))->ClearLaunchContext());
 
         // 判断是否需要cache
         bool needCache = false;
