@@ -436,7 +436,7 @@ HcclResult InsTempReduceScatterMesh2D::RunSecondReduce(std::vector<InsQuePtr> &t
                 "srcDataSlice: %s, dstDataSlice: %s", myRank_, srcFirDataSlice.Describe().c_str(),
                 dstFirDataSlice.Describe().c_str());
             if (srcFirDataSlice != dstFirDataSlice) {
-#if 1
+#if DATASLICE_ONE
                 srcFirDataSlices.push_back(srcFirDataSlice);
                 dstFirDataSlices.push_back(dstFirDataSlice);
 #else
