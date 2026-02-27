@@ -80,7 +80,7 @@ RdmaHandle RdmaHandleManager::Create(u32 devPhyId, const LinkProtoType &localPro
     return rdmaHandle;
 }
 
-RdmaHandle RdmaHandleManager::Get(u32 devPhyId, const PortData &localPort)
+RdmaHandle RdmaHandleManager::Get(u32 devPhyId, const PortData &localPort, LinkProtocol linkProtocol)
 {
     std::lock_guard<std::mutex> lock(managerMutex);
 
@@ -90,6 +90,10 @@ RdmaHandle RdmaHandleManager::Get(u32 devPhyId, const PortData &localPort)
     }
 
     IpAddress  localIp = localPort.GetAddr();
+    if (linkProtocol == LinkProtocol::UBOE) {
+        UboeIpv4ToEid(localIp);
+    }
+
     RdmaHandle res     = rdmaHandleMap[devPhyId][localProto][localIp];
     if (res == nullptr) {
         if (localProto == LinkProtoType::RDMA) {
@@ -248,6 +252,44 @@ void RdmaHandleManager::DestroyAll()
     DieAndFuncIdMap.clear();
     jfcHandleMap.clear();
     netWorkModeMap.clear();
+}
+
+void RdmaHandleManager::UboeIpv4ToEid(const IpAddress& ipAddress)
+{
+    /* 将IPV4转为EID
+    1、基于IPV4查询uboeIpv4EidMap，如果存在直接返回EID
+    2、不存在时，调用hccp接口根据IPV4查询EID，并将其保存到uboeIpv4EidMap中
+    */
+    auto it = uboeIpv4EidMap.find(addr);
+    if (it != uboeIpv4EidMap.end()) {
+        return;
+    }
+
+    // TODO 根据protocol类型判断是否转EID
+    // 1.获取一个可用EID  参考  FindOneUsableEid();
+    s32 deviceLogicId = HcclGetThreadDeviceId();
+    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceLogicId));
+    vector<HrtDevEidInfo> eidInfoList =  HrtRaGetDevEidInfoList(info);
+    if (eidInfoList.empty()) {
+        HCCL_WARNING("[AddressInfo::%s] Get EidInfo failed, deviceLogicId=%d", __func__, deviceLogicId);
+        return;
+    }
+    HrtDevEidInfo xx = eidInfoList.at(0);
+    // 2.根据EID初始化rdmaHandle
+
+    // 3.调用ra_get_eid_by_ip转换addr ip为eid
+
+    // 4.存储eid到AddressInfo
+}
+
+HcclResult RdmaHandleManager::GetEidByIpv4Addr(const IpAddress& addr, EID& eid)
+{
+    auto it = uboeIpv4EidMap.find(addr);
+    if (it == uboeIpv4EidMap.end()) {
+        return HCCL_E_PARA;
+    }
+    eid = it->second;
+    return HCCL_SUCCESS;
 }
 
 } // namespace Hccl
