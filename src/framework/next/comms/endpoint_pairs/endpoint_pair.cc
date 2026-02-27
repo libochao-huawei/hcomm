@@ -13,6 +13,7 @@
 #include "hcomm_c_adpt.h"
 #include "orion_adpt_utils.h"
 
+#include "hcom_common.h"
 #include "exception_handler.h"
 
 namespace hcomm {
@@ -53,6 +54,16 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
     
     // 复用orion流程可能抛异常
     EXCEPTION_HANDLE_BEGIN
+    if (!socketMgrCompat_) {
+        int32_t devLogicId_ = HcclGetThreadDeviceId();
+        uint32_t devPhyId{0};
+        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId_), devPhyId));
+
+        EXECEPTION_CATCH(socketMgrCompat_ =
+            std::make_unique<Hccl::SocketManager>(myRank, devPhyId, devLogicId_, socketTag),
+            return HCCL_E_PTR);
+    }
+    
     socketMgrCompat_->BatchCreateSockets({linkData}); // 内部同时处理server端和connect端两类socket
     Hccl::SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, socketTag);
     socket = socketMgrCompat_->GetConnectedSocket(socketConfig);

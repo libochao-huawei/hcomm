@@ -16,7 +16,6 @@
 #include "channels/channel.h"
 #include "../endpoints/endpoint.h"
 #include "socket_mgr.h"
-#include "socket.h"
 #include "../../../../legacy/unified_platform/resource/socket/socket.h"
 #include "../../../../legacy/framework/resource_manager/socket/socket_manager.h"
 
