@@ -53,6 +53,60 @@ const std::string HCCL_ALLTOALL = "ALLTOALL";
 const std::string HCCL_ALLTOALLV = "ALLTOALLV";
 const std::string HCCL_ALLTOALLVC = "ALLTOALLVC";
 
+// ==========================================
+// 【新增】HcclGetRankTable 从通信域中获取ranktable
+// ==========================================
+HcclResult HcclGetRankTable(HcclComm commHandle, RankTable_oxc *rankTable)
+{
+    // 1. 校验输入指针
+    CHK_PTR_NULL(commHandle);
+    CHK_PTR_NULL(rankTable);
+    // 2. 转换句柄
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(commHandle);
+    // 3. 定义底层接口需要的原生类型对象 (RankTable_t)
+    // 这里的 RankTable_t 是平台侧定义的完整结构体
+    RankTable_t nativeTable;
+    // 4. 调用底层接口获取原始数据
+    CHK_RET(hcclComm->GetCommRankTable(nativeTable));
+    // 5. 基础字段赋值 (RankTable_t -> RankTable_oxc)
+    rankTable->deviceNum = nativeTable.deviceNum;
+    rankTable->serverNum = nativeTable.serverNum;
+    rankTable->superPodNum = nativeTable.superPodNum;
+    rankTable->groupNum = nativeTable.groupNum;
+    rankTable->rankNum = nativeTable.rankNum;
+    rankTable->collectiveId = nativeTable.collectiveId;
+    rankTable->version = nativeTable.version;
+    rankTable->mode = nativeTable.mode;
+    rankTable->taskID = nativeTable.taskID;
+    // 6. RankList 转换 (RankInfo_t -> RankInfo_oxc)
+    // 先清空并预留空间，防止多次分配
+    rankTable->rankList.clear();
+    rankTable->rankList.reserve(nativeTable.rankList.size());
+    for (const auto& srcInfo : nativeTable.rankList) {
+    RankInfo_oxc dstInfo;
+    // --- 逐字段赋值 (只取 oxc 定义中存在的字段) ---
+    dstInfo.rankId = srcInfo.rankId;
+    dstInfo.localRank = srcInfo.localRank;
+    dstInfo.serverId = srcInfo.serverId;
+    dstInfo.serverIdx = srcInfo.serverIdx;
+    dstInfo.superDeviceId = srcInfo.superDeviceId;
+    dstInfo.superPodId = srcInfo.superPodId;
+    dstInfo.superPodIdx = srcInfo.superPodIdx;
+    dstInfo.hostIp = srcInfo.hostIp.GetReadableIP();
+    // 其他如 hostIp, port 等字段在 RankInfo_oxc 中已注释，故忽略
+    rankTable->rankList.push_back(dstInfo);
+}
+
+
+HCCL_INFO("HcclGetRankTable success. handle=%p, taskID=%u, rankNum=%lu",
+
+commHandle, rankTable->taskID, rankTable->rankList.size());
+
+
+return HCCL_SUCCESS;
+
+}
+
 HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType, uint64_t beginTime, u64 count,
     HcclDataType dataType, const std::string &tag)
 {

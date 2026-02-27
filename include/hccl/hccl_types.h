@@ -13,9 +13,15 @@
 
 #include <stdint.h>
 
+#include <stdint.h>
+#include <vector> 
+#include <string> 
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
+using u32 = uint32_t;
 
 /**
  * @brief HCCL functions return value definition
@@ -228,5 +234,46 @@ typedef enum {
 } HcclCMDType;
 #ifdef __cplusplus
 }
+
+using RankInfo_oxc = struct tagRankInfo {
+    u32 rankId = 0xFFFFFFFF;            // rank 标识，userRank,cloud时hcom计算填入
+    u32 localRank = 0xFFFFFFFF;         // 本server内rank号
+    std::string serverId;               // 集群内服务器唯一标识
+    u32 serverIdx = 0xFFFFFFFF;       // Server在ranktable中的自然顺序（用户指定）
+    u32 superDeviceId = 0xFFFFFFFF;   // 超节点device id，超节点内唯一
+    std::string superPodId;             // 超节点标识
+    u32 superPodIdx = 0xFFFFFFFF;     // SuperPod在ranktable中的自然顺序（用户指定）
+    std::string hostIp;               // 本server的host ip，用于host rdma通信
+    // u32 hostPort = HCCL_INVALID_PORT;   // 本rank进行host socket通信使用的端口
+    // u32 nodeId = INVALID_UINT;          // 离线编译逻辑ranktable 和NumaConfig中的node id相同
+    // s32 itemId = INVALID_UINT;          // 离线编译逻辑ranktable 和NumaConfig中的item id相同
+    // std::string groupName;              // [DEPRECATED]group名称
+    // std::string podName;                // [DEPRECATED]容器名称
+    // DeviceInfo_t deviceInfo;            // 设备信息
+    // std::vector<TransportInfo_t> transportInfo; // [DEPRECATED]本rank与其余rank的数据传输信息（抽象信息）
+    // s32 bindDeviceId = INVALID_INT;     // 绑定的device id
+    // TlsStatus tlsStatus = TlsStatus::UNKNOWN; // TLS开关状态
+    // std::string originalSuperPodId;     // 划分逻辑超节点前的原超节点ID，来源为用户配置
+};
+
+ 
+
+using RankTable_oxc = struct tagRankTable {
+    u32 deviceNum { 0 };                                              // 当前通信域内device数量
+    u32 serverNum { 0 };                                              // 集群内服务器总数
+    u32 superPodNum { 0 };                                            // 集群超节点总数
+    u32 groupNum { 0 };                                               // [DEPRECATED]集群内group总数
+    //NICDeployment nicDeploy { NICDeployment::NIC_DEPLOYMENT_DEVICE }; // 网卡挂载位置 0:host 1:device
+    //u32 nicNum { 0 };                     // [DEPRECATED]参数平面网卡数量
+    //std::vector<std::string> nicNames;    // [DEPRECATED]参数平面网卡名称
+    u32 rankNum { 0 };                    // 通信域内的rank总数
+    //std::vector<HcclBasicRankInfo> rankList;     // 通信域内所有的rank信息
+    std::vector<RankInfo_oxc> rankList;     // 通信域内所有的rank信息
+    //std::vector<ServerInfo_t> serverList; // [DEPRECATED]通信域内服务器信息 目前cloud和lab网卡在device场景置空
+    std::string collectiveId;             // 通信域ID
+    std::string version;                  // rankTable版本信息
+    std::string mode;                     // [DEPRECATED]通讯方式tcp/rdma
+    u32 taskID { 0 };                  //增加taskID
+};
 #endif // __cplusplus
 #endif // HCCL_TYPES_H_

@@ -117,6 +117,18 @@ extern HcclResult HcclGetConfig(HcclConfig config, HcclConfigValue *configValue)
  */
 extern HcclResult HcclGetCommName(HcclComm comm, char* commName) HCOMM_WEAK_SYMBOL;
 
+/**【新增】
+ * @brief 获取通信域的 RankTable 信息 (OXC 版本)
+ * * @param commHandle [IN]  HCCL 通信域句柄
+ * @param rankTable  [OUT] 接收 RankTable 信息的结构体指针，调用前需分配内存
+ * @return HcclResult 
+ * - HCCL_SUCCESS: 成功
+ * - HCCL_E_PTR: 指针为空
+ * - HCCL_E_INTERNAL: 内部错误
+ */
+
+extern HcclResult HcclGetRankTable(HcclComm commHandle, RankTable_oxc *rankTable) HCOMM_WEAK_SYMBOL;
+
 /**
  * @brief Get the rank size of this comm.
  *
