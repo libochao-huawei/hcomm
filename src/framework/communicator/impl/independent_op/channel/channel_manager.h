@@ -64,7 +64,7 @@ public:
 private:
     template <typename T>
     HcclResult CopyVectorToDeviceMem(const u64 len, DeviceMem &dstDeviceMem, const std::vector<T> &srcVec);
-    HcclResult AllocAndClearHostMem(u64 size, std::shared_ptr<HostMem> &buffer) const;
+    HcclResult AllocAndClearHostMem(u64 size, std::shared_ptr<HostMem> &bufferPtr) const;
     HcclResult CreateWorkSpace(u64 size, DeviceMem &buffer) const;
     HcclResult CheckNotifyOrQPMaxNum(u64 &existNum, const u64 &MaxNum, const bool &isNotifyRes);
     HcclResult DeepCopyH2DChannelP2p(const HcclChannelP2p &hostChannelP2p, HcclChannelP2p &deviceChannelP2p);
@@ -84,9 +84,9 @@ private:
 
     HcclResult CheckChannelParam(CommEngine engine, const HcclChannelDesc *channelDesc,
         uint32_t descNum);
-    HcclResult RegisterHandle(const std::string& key, CommEngine engine, const HcclChannelDesc& channelDesc, ChannelHandle channelHandle);
+    HcclResult RegisterHandle(const std::string& tag, CommEngine engine, const HcclChannelDesc& channelDesc, ChannelHandle channelHandle);
     HcclResult RegisterHandleHDPair(ChannelHandle deviceChannelHandle, ChannelHandle hostChannelHandle);
-    HcclResult UnregisterHandle(ChannelHandle channelHandle);
+    HcclResult UnregisterHandle(ChannelHandle channel);
     HcclResult PrepareHandleArray(const std::string &tag, CommEngine engine, const HcclChannelDesc *channelDesc, 
         uint32_t descNum, ChannelHandle *channelHandleArray, std::vector<HcclChannelDesc> &needCreateDescs,
         std::vector<uint32_t> &needCreateIndices);

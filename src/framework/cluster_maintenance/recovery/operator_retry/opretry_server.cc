@@ -691,7 +691,7 @@ bool SwitchNicServerCheckAllSwitchRanks::CheckRemotePorts(const u32 rankId, cons
     return true;
 }
 
-HcclResult SwitchNicServerCheckAllSwitchRanks::CollectSingleAgentActiveSwitchInfo(RetryContext *retryCtx, u32 rankId,
+HcclResult SwitchNicServerCheckAllSwitchRanks::CollectSingleAgentActiveSwitchInfo(RetryContext *retryCtx, const u32 rankId,
     HcclAgentRetryInfo &agentInfo)
 {
     std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();

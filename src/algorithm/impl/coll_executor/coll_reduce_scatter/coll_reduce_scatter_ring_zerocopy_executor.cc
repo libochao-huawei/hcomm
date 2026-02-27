@@ -130,7 +130,7 @@ HcclResult CollReduceScatterRingZerocopyExecutor::SemiRingReduceScatter(
         (level0CommInfo.localRankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level0CommInfo.localRank,
         profStage, HCCL_EXEC_STEP_NOT_SET, stream);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceScatterSemiRingExecutor][DoubleRingMidCountReduceScatter]"\
+        HCCL_ERROR("[CollReduceScatterRingZerocopyExecutor][SemiRingReduceScatter]"\
             "Double ring ReduceScatter failed,return[%d]", ret), ret);
 
     CHK_RET(executor->RunAsync());

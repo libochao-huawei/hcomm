@@ -580,9 +580,7 @@ HcclResult HcclCommInitClusterInfoWrapper(struct hcclAsyncJob* job_){
     /* 关键状态记录 */
     HCCL_RUN_INFO("[HCCL_TRACE]%s success, take time [%lld]us, clusterInfo[%s], rank[%u], deviceLogicId[%d].",
         __func__, DURATION_US(TIME_NOW() - startut), clusterInfo, rank, deviceLogicId);
-    return HCCL_SUCCESS;      
- 
-    return ret;
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclComm *comm)
@@ -4376,6 +4374,9 @@ HcclResult HcclCommResume(HcclComm comm)
 
 uint32_t HcclGetCommConfigCapability()
 {
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclGetCommConfigCapabilityV2());
+#endif
     // RESERVED在枚举中是最后一个，返回RESERVED说明它前面所有的配置项都支持
     return static_cast<uint32_t>(HCCL_COMM_CONFIG_RESERVED);
 }

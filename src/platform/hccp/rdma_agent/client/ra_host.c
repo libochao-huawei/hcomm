@@ -1,12 +1,13 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
 #include <sys/epoll.h>
 #include <stdlib.h>
 #include <string.h>
@@ -75,6 +76,7 @@ struct RaSocketOps gRaPeerSocketOps = {
 struct RaRdmaOps gRaHdcRdmaOps = {
     .raRdevInit = RaHdcRdevInit,
     .raRdevGetPortStatus = RaHdcRdevGetPortStatus,
+    .raGetLbMax = NULL,
     .raRdevDeinit = RaHdcRdevDeinit,
     .raSetTsqpDepth = RaHdcSetTsqpDepth,
     .raGetTsqpDepth = RaHdcGetTsqpDepth,
@@ -87,6 +89,8 @@ struct RaRdmaOps gRaHdcRdmaOps = {
     .raQpDestroy = RaHdcQpDestroy,
     .raTypicalQpModify = RaHdcTypicalQpModify,
     .raQpBatchModify = RaHdcQpBatchModify,
+    .raSetQpLbValue = NULL,
+    .raGetQpLbValue = NULL,
     .raQpConnectAsync = RaHdcQpConnectAsync,
     .raGetQpStatus = RaHdcGetQpStatus,
     .raMrReg = RaHdcMrReg,
@@ -122,6 +126,7 @@ struct RaRdmaOps gRaHdcRdmaOps = {
 struct RaRdmaOps gRaPeerRdmaOps = {
     .raRdevInit = RaPeerRdevInit,
     .raRdevGetPortStatus = NULL,
+    .raGetLbMax = RaPeerGetLbMax,
     .raRdevDeinit = RaPeerRdevDeinit,
     .raSetTsqpDepth = RaPeerSetTsqpDepth,
     .raGetTsqpDepth = RaPeerGetTsqpDepth,
@@ -134,6 +139,8 @@ struct RaRdmaOps gRaPeerRdmaOps = {
     .raQpDestroy = RaPeerQpDestroy,
     .raTypicalQpModify = RaPeerTypicalQpModify,
     .raQpBatchModify = NULL,
+    .raSetQpLbValue = RaPeerSetQpLbValue,
+    .raGetQpLbValue = RaPeerGetQpLbValue,
     .raQpConnectAsync = RaPeerQpConnectAsync,
     .raGetQpStatus = RaPeerGetQpStatus,
     .raMrReg = RaPeerMrReg,

@@ -1,12 +1,13 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
 #include "securec.h"
 #include "user_log.h"
 #include "ra_rs_comm.h"
@@ -17,12 +18,23 @@
 int RaHdcTlvInit(struct RaTlvHandle *tlvHandle)
 {
     unsigned int phyId = tlvHandle->initInfo.phyId;
+    unsigned int opCode = RA_RS_TLV_INIT_V1;
     union OpTlvInitData tlvData = { 0 };
+    unsigned int interfaceVersion = 0;
     int ret = 0;
 
     tlvData.txData.phyId = phyId;
 
-    ret = RaHdcProcessMsg(RA_RS_TLV_INIT, phyId, (char *)&tlvData, sizeof(union OpTlvInitData));
+    ret = RaHdcGetInterfaceVersion(phyId, RA_RS_TLV_INIT, &interfaceVersion);
+    if (ret == 0 && interfaceVersion >= RA_RS_OPCODE_BASE_VERSION) {
+        opCode = RA_RS_TLV_INIT;
+    } else {
+        ret = -ENOTSUPP;
+        hccp_warn("[init][ra_hdc_tlv]ra tlv init version not support, phy_id(%u)", phyId);
+        return ret;
+    }
+
+    ret = RaHdcProcessMsg(opCode, phyId, (char *)&tlvData, sizeof(union OpTlvInitData));
     CHK_PRT_RETURN(ret == -ENOTSUPP, hccp_warn("[init][ra_hdc_tlv]ra hdc message process unsuccessful ret(%d) phy_id(%u)",
         ret, phyId), ret);
     CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_hdc_tlv]ra hdc message process failed ret(%d) phy_id(%u)",

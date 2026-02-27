@@ -58,6 +58,10 @@ public:
     HcclResult SetOpCounter(const OpCounterInfo& opCounter);
 
     inline AlgDesc GetAlgDesc() {return desc_;}
+
+    // 用于alltoallv算子的aicpu展开cache
+    virtual HcclResult MarkNeedAlltoallvCache();
+    virtual HcclResult GetHcclOffsetDstRanksMap(std::unordered_map<uint64_t, std::vector<uint32_t>>& hcclOffsetDstRanksMap) const;
 protected:
     const HcclDispatcher dispatcher_;
     u64 inCCLbufferSize_{0}; // CCLIN大小，用于计算scratch

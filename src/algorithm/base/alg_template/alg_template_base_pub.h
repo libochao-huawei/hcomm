@@ -239,6 +239,8 @@ struct PrepareData {
     u64 reduceAttr = 0;
 
     AlgOpContext algOpContext;
+
+    bool needAlltoallvCache = false; // 用于alltoallv类算子的aicpu cache
 };
 
 struct HcclTopoInfo;
@@ -611,6 +613,9 @@ public:
     }
     virtual HcclResult GetNslbAdjInfo(const u32 rank, const u32 rankSize,
                                       const std::vector<LINK> &links, AdjInfo& nslbAdjInfo);
+
+    // 只用于alltoallv类算子的aicpu cache
+    virtual HcclResult GetHcclOffsetDstRanksMap(std::unordered_map<uint64_t, std::vector<uint32_t>>& hcclOffsetDstRanksMap) const;
 
 protected:
     HcclResult ExecuteBarrier(const std::shared_ptr<Transport> &preLink, const std::shared_ptr<Transport> &aftLink);

@@ -88,7 +88,7 @@ public:
     HcclResult GetIsUsedRdma(RankId remoteRankId, bool &useRdma);
 
     // 主要完成通信域粒度的数据面建链和已绑定MR的交换、使能
-    HcclResult Prepare(const std::string &commIdentifier, const HcclPrepareConfig* config, s32 timeoutSec);
+    HcclResult Prepare(const std::string &commIdentifier, const HcclPrepareConfig* prepareConfig, s32 timeoutSec);
     HcclResult InitIsUsedRdmaMap(bool& needInitNic, bool& needInitVnic);
     HcclResult DeInit() override;
 

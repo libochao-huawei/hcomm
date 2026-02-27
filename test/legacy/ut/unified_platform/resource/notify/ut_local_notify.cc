@@ -164,12 +164,12 @@ protected:
         RequestHandle fakeReqHandle = 1;
 
         vector<char_t> out;
-        out.resize(sizeof(struct mr_reg_info_t));
-        struct mr_reg_info_t* info = reinterpret_cast<struct mr_reg_info_t *>(out.data());
+        out.resize(sizeof(struct MrRegInfoT));
+        struct MrRegInfoT* info = reinterpret_cast<struct MrRegInfoT *>(out.data());
         memcpy_s(info->out.key.value, HRT_UB_MEM_KEY_MAX_LEN, fakeKey, HRT_UB_MEM_KEY_MAX_LEN);
         info->out.key.size = HRT_UB_MEM_KEY_MAX_LEN;
-        info->out.ub.token_id = fakeTokenId;
-        info->out.ub.target_seg_handle = fakeSegVa;
+        info->out.ub.tokenId = fakeTokenId;
+        info->out.ub.targetSegHandle = fakeSegVa;
 
         MOCKER(RaUbLocalMemRegAsync).stubs()
             .with(any(), any(), outBound(out), outBound(reinterpret_cast<void*>(fakeMemHandle)))

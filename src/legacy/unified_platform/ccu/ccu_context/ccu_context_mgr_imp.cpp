@@ -34,7 +34,7 @@ CtxMgrImp::~CtxMgrImp()
     if (initializedFlag_) {
         HCCL_INFO("[CtxMgrImp]~CtxMgrImp: deviceLogicId[%d], free addr[%p]", deviceLogicId_, instructionLoadDevMem_);
         if (instructionLoadDevMem_ != nullptr) {
-            HrtFree(instructionLoadDevMem_);
+            DECTOR_TRY_CATCH("CtxMgrImp", HrtFree(instructionLoadDevMem_));
             instructionLoadDevMem_ = nullptr;
         }
         ctxGroupMap_.clear();

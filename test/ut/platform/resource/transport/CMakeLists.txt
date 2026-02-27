@@ -33,13 +33,13 @@ target_compile_options(hccl_utest_platform_transport   PRIVATE
 
 target_link_libraries(hccl_utest_platform_transport  PRIVATE
     $<BUILD_INTERFACE:intf_pub>
-    -lpthread
+    -pthread
     hccl_llt
     -Wl,--whole-archive
     -Wl,--no-whole-archi
     -lgcov
     -lrt
-    -lpthread
+    -pthread
 )
 
 add_dependencies(hccl_utest_platform_transport hccl_llt)

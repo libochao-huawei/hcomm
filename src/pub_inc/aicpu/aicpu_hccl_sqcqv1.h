@@ -63,6 +63,24 @@ extern void AddOneEventWaitSqeV1(uint16_t streamId, int32_t eventId, uint16_t ta
 extern void AddOneFlipPlaceHolderSqeV1(uint16_t streamId, uint16_t flipNum, uint16_t taskId, const uint8_t *sqeIn,
     uint8_t *sqeType);
 
+extern void AddOneCacheMemcpyPlaceHolderSqeV1(uint16_t streamId, uint16_t taskId, const void *src, const void *dst,
+    uint8_t linkType, const uint8_t *sqeIn, uint8_t *sqeType, uint32_t hcclQos);
+
+extern void AddOneCacheNotifyWaitPlaceholderSqeV1(uint16_t streamId, uint16_t taskId, u64 notifyId, const uint8_t *sqeIn,
+    uint8_t *sqeType, const dfx::DfxTimeOutConfig &dfxTimeOutConfig);
+
+extern void AddOneCacheNotifyRecordPlaceholderSqeV1(uint16_t streamId, uint16_t taskId, u64 notifyId,
+    const uint8_t *sqeIn, uint8_t *sqeType);
+
+extern void AddOneCacheWriteValuePlaceholderSqeV1(uint16_t streamId, uint16_t taskId, u64 notifyWRAddr,
+    const uint8_t *sqeIn, uint8_t *sqeType);
+
+extern void AddOneCacheMemcpyRecordPlaceholderSqeV1(uint16_t streamId, uint16_t taskId, const void *src, uint32_t length,
+    const aclDataType runtimeDataType, aclrtReduceKind rtReduceOp, const void *dst, uint32_t partId, uint32_t ssid,
+    uint32_t devId, u64 overflowAddr, uint8_t linkType, const uint8_t *sqeIn, uint8_t *sqeType, uint32_t hcclQos);
+
+extern void SetCachePlaceholderHeaderV1(uint16_t streamId, uint16_t taskId, const uint8_t *sqeIn);
+
 // 分别返回硬件和软件的超时时长，二者一般只有一个值是有效的
 std::pair<uint64_t, uint64_t> GetTimeOutValue(const dfx::DfxTimeOutConfig &dfxTimeOutConfig);
 #endif // __AICPU_HCCL_SQCQV1_HPP__

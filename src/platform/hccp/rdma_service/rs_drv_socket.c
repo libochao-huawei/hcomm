@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #define _GNU_SOURCE
 #include <unistd.h>
@@ -103,7 +103,7 @@ enum RsHardwareType RsGetDeviceType(unsigned int phyId)
     unsigned int chipId;
     int64_t boardId;
     int ret;
- 
+
     CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("invalid param phy_id[%u]", phyId), RS_HARDWARE_UNKNOWN);
     ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
     CHK_PRT_RETURN(ret != 0, hccp_err("phy_id[%u] invalid, ret %d", phyId, ret), RS_HARDWARE_UNKNOWN);
@@ -127,7 +127,7 @@ enum RsHardwareType RsGetDeviceType(unsigned int phyId)
         }
         return RS_HARDWARE_SERVER;
     }
- 
+
     if (((boardType & RS_BOARDID_PCIE_CARD_MASK) == RS_BOARDID_PCIE_CARD_MASK_VALUE) &&
          (boardType != RS_BOARDID_AI_SERVER_MODULE) && (boardType != RS_BOARDID_ARM_SERVER_AG) &&
          (boardType != RS_BOARDID_ARM_POD) && (boardType != RS_BOARDID_X86_16P) &&
@@ -181,7 +181,7 @@ int RsCheckDstInterface(unsigned int phyId, const char *ifaName, enum RsHardware
     } else {
         ret = snprintf_s(dstIfaName, RS_INTERFACE_LEN + 1, RS_INTERFACE_LEN, "eth%u", phyId);
         CHK_PRT_RETURN(ret <= 0, hccp_err("copy eth name failed, %d", ret), -EAGAIN);
- 
+
         if (strncmp(dstIfaName, ifaName, RS_INTERFACE_LEN)) {
             return 0;
         }

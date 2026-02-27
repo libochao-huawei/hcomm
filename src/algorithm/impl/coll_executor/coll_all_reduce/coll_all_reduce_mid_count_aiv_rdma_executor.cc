@@ -134,7 +134,7 @@ HcclResult CollAllReduceMidCountAivRdmaExecutor::KernelRun(const OpParam &param,
     u32 sliceNum = level0CommInfo.localRankSize;
     CHK_RET(PrepareSliceDataWithAlignSize(totalSize, sliceNum, 0, dataSegsSlice, HCCL_ALIGN_COUNT_32_B));
     CHK_PRT_RET(commIndex >= dataSegsSlice.size(),
-        HCCL_ERROR("[CollAllReduceMeshExecutor][Run]commIndex[%u] >= dataSegsSlice size[%zu]", commIndex,
+        HCCL_ERROR("[CollAllReduceMidCountAivRdmaExecutor][Run]commIndex[%u] >= dataSegsSlice size[%zu]", commIndex,
         dataSegsSlice.size()), HCCL_E_INTERNAL);
     std::vector<hccl::LINK> intraLinks = level0CommInfo.links;
     std::vector<hccl::LINK> interLinks = level1CommInfo.links;

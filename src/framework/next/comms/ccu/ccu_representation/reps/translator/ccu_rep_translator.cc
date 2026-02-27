@@ -7,8 +7,6 @@
 #include "ccu_rep_translator_v1.h"
 #include "exception_util.h"
 #include "ccu_api_exception.h"
-#include "ccu_rep_postsharedvar_v1.h"
-#include "ccu_rep_postsharedsem_v1.h"
 #include "ccu_rep_loopcall_v1.h"
 #include "ccu_rep_funccall_v1.h"
 #include "ccu_rep_type_v1.h"

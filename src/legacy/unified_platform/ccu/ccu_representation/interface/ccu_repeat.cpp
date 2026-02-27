@@ -38,8 +38,10 @@ Repeat::Repeat(CcuRepContext *context, CcuRelationalOperator<Variable, uint64_t>
 
 Repeat::~Repeat()
 {
-    AppendToContext(context, jump);
-    AppendToContext(context, endLabel);
+    DECTOR_TRY_CATCH("Repeat",
+        AppendToContext(context, jump);
+        AppendToContext(context, endLabel);
+    );
 }
 
 void Repeat::Break()

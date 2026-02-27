@@ -38,7 +38,6 @@ HcclResult HcclEngineCtxCreate(HcclComm comm, const char *ctxTag, CommEngine eng
     else {
         auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
         ret = contextMgr.CreateCommEngineCtx(std::string(ctxTag), engine, size, ctx);
-        
     }
     if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[%s] Failed to create CommEngineCtx with ctxTag[%s], engine[%d], ctx size[%llu], ret[%d]",

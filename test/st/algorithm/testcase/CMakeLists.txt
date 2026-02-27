@@ -150,6 +150,7 @@ target_include_directories(hccl_alg_test PRIVATE
     ${HCOMM_COMMON_INCLUDE_LIST}
     ${HCOMM_LEGACY_INCLUDE_LIST}
     ${ASCEND_CANN_INCLUDE_LIST}
+    ${HCOMM_PLATFORM_INCLUDE_LIST}
 )
 
 target_compile_options(hccl_alg_test PRIVATE
@@ -172,9 +173,9 @@ target_compile_definitions(hccl_alg_test PRIVATE
 )
 
 target_link_libraries(hccl_alg_test PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     -Wl,--no-as-needed
     -Wl,--no-as-needed
-    ${THIRD_PARTY_PATH}/gtest_shared/lib/libgtest.so
     pthread
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
 )

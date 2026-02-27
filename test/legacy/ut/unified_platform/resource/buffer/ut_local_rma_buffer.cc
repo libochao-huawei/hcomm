@@ -109,7 +109,7 @@ TEST_F(LocalRmaBufferTest, getExchangeDto_ipc_test)
 TEST_F(LocalRmaBufferTest, generate_safe_random_number)
 {
     MOCKER(HrtGetDevice).stubs().will(returnValue(1));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     MOCKER(HrtRaGetSecRandom).stubs().with(any(), any());
     u32 token = GetUbToken();
 }

@@ -151,7 +151,6 @@ endif()
 
 target_compile_definitions(hccl_plf  PRIVATE
     $<$<STREQUAL:${PRODUCT_SIDE},device>:ASCEND_310P_DEVICE>
-    CONFIG_CONTEXT
     USE_AICORE_REDUCESUM
     USE_AICORE_GATHERV2
     USE_AICORE_GATHERV2_INFER

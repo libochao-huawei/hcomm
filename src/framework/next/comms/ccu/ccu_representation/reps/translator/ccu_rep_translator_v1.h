@@ -14,7 +14,7 @@
 #include "ccu_instr_info_v1.h"
 #include "ccu_rep_block_v1.h"
 #include "ccu_rep_reference_manager_v1.h"
-#include "ccu_context_resource_v1.h"
+#include "ccu_kernel_resource.h"
 #include "ccu_rep_base_v1.h"
 
 namespace hcomm {

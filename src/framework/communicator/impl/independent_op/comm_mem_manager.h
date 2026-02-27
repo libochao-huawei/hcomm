@@ -41,8 +41,8 @@ public:
     HcclResult GetHcclBuffer(CommBuffer *buffer);
     
     // 用户注册/反注册内存
-    HcclResult CommRegMem(const std::string& tag, const HcclMem& mem, HcclRegMemAttr attr, void** rawHandle);
-    HcclResult CommUnregMem(const std::string& tag, const void* rawHandle);
+    HcclResult CommRegMem(const std::string& memTag, const HcclMem& mem, HcclRegMemAttr attr, void** memHandle);
+    HcclResult CommUnregMem(const std::string& memTag, const void* memHandle);
     HcclResult CommGetLocalRegMemByTag(const std::string &tag, std::vector<HcclMem> &memVec);
 private:
     static inline MemKey MakeKey(void* addr, uint64_t size) {

@@ -14,7 +14,7 @@
 #include "ccu_u_api.h"
 #include "rs.h"
 
-int rs_ctx_ccu_custom_channel(const struct channel_info_in *in, struct channel_info_out *out);
-int rs_ctx_ccu_mission_kill(unsigned int die_id);
-int rs_ctx_ccu_mission_done(unsigned int die_id);
+int RsCtxCcuCustomChannel(const struct channel_info_in *in, struct channel_info_out *out);
+int RsCtxCcuMissionKill(unsigned int dieId);
+int RsCtxCcuMissionDone(unsigned int dieId);
 #endif // RS_CCU_H

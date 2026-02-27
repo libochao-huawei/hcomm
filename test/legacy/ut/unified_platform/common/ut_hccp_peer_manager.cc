@@ -78,7 +78,7 @@ TEST_F(HccpPeerManagerTest, hccp_peer_manager_init)
         .with(any())
         .will(returnValue(fakedevPhyId));
     MOCKER(HrtRaDeInit).stubs().with();
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
 
     // when
     HccpPeerManager::GetInstance().Init(deviceLogicId);

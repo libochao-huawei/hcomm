@@ -34,6 +34,13 @@ using AddOneEventRecordSqe = void(*)(uint16_t, int32_t, uint16_t, const uint8_t 
 using AddOneEventWaitSqe = void(*)(uint16_t, int32_t, uint16_t, const uint8_t *, uint8_t *);
 using AddOneRdmaDbSendSqe = void(*)(uint16_t, uint16_t, uint64_t, uint64_t, uint32_t, uint8_t, const uint8_t *, uint8_t *);
 using AddOnePlaceHolderSqe = void(*)(uint16_t, uint16_t, uint16_t, const uint8_t *, uint8_t *);
+using AddOneCacheMemcpyPlaceHolderSqe = void(*)(uint16_t, uint16_t, const void *, const void *, uint8_t, const uint8_t *,
+    uint8_t *, uint32_t);
+using AddOneCacheNotifyWaitPlaceholderSqe = void(*)(uint16_t, uint16_t, u64, const uint8_t *, uint8_t *, const dfx::DfxTimeOutConfig &);
+using AddOneCacheNotifyRecordPlaceholderSqe = void(*)(uint16_t, uint16_t, u64, const uint8_t *, uint8_t *);
+using AddOneCacheWriteValuePlaceholderSqe = void(*)(uint16_t, uint16_t, u64, const uint8_t *, uint8_t *);
+using AddOneCacheMemcpyRecordPlaceholderSqe = void(*)(uint16_t, uint16_t, const void *, uint32_t, const aclDataType,
+    aclrtReduceKind, const void *, uint32_t, uint32_t, uint32_t, u64, uint8_t, const uint8_t *, uint8_t *, uint32_t);
 
 class DispatcherAiCpu : public DispatcherPub {
 public:
@@ -66,8 +73,14 @@ public:
     HcclResult RdmaSend(u32 dbindex, u64 dbinfo, hccl::Stream &stream, RdmaTaskInfo &taskInfo) override;
     // 新增接口用于算子展开的动态缓存
     HcclResult ClearLaunchContext(); // 当前算子展开不需要使用动态缓存
-    HcclResult SetLaunchContext(const OpUnfoldKey& key, OpUnfoldCache *cachePtr, const std::vector<OpUnfoldMemRange>& userInputMemRanges, const std::vector<OpUnfoldMemRange>& userOutputMemRanges); // 设置launch context, 在LaunchTask时用于算子展开动态缓存的admission
-    HcclResult LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const std::vector<OpUnfoldMemRange>& userInputMemRanges, const std::vector<OpUnfoldMemRange>& userOutputMemRanges, Stream& mainStream, std::vector<Stream> &slaveStreams, const bool profL1Enable); // 缓存命中时, 使用缓存中的SQE信息下发给RTSQ
+    // 设置launch context, 在LaunchTask时用于算子展开动态缓存的admission (因为需要在DispatcherAicpu中暂存AlltoallvMetadata, 所以传入指针而不是引用)
+    HcclResult SetLaunchContext(const OpUnfoldKey& key, OpUnfoldCache *cachePtr,
+        const std::vector<OpUnfoldMemRange>& userInputMemRanges, const std::vector<OpUnfoldMemRange>& userOutputMemRanges,
+        const bool isAlltoallv, const AlltoallvMetadata* alltoallvMetadataPtr);
+    // 缓存命中时, 使用缓存中的SQE信息下发给RTSQ
+    HcclResult LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const std::vector<OpUnfoldMemRange>& userInputMemRanges,
+        const std::vector<OpUnfoldMemRange>& userOutputMemRanges, Stream& mainStream, std::vector<Stream> &slaveStreams,
+        const bool profL1Enable, const bool isAlltoallv, const AlltoallvMetadata& alltoallvMetadata, const AlltoallvSendRecvInfo& alltoallvSendRecvInfo);
 
     HcclResult LaunchTask(Stream &stream, bool isBlockLaunch);
     HcclResult TbeReduceAsync(const void *src1, const void *src2, u64 count, const HcclDataType datatype,
@@ -149,6 +162,11 @@ private:
     AddOneEventWaitSqe addOneEventWaitSqe_ = nullptr;
     AddOneRdmaDbSendSqe addOneRdmaDbSendSqe_ = nullptr;
     AddOnePlaceHolderSqe addOneFlipPlaceHolderSqe_ = nullptr;
+    AddOneCacheMemcpyPlaceHolderSqe addOneCacheMemcpyPlaceHolderSqe_ = nullptr;
+    AddOneCacheNotifyWaitPlaceholderSqe addOneCacheNotifyWaitPlaceholderSqe_ = nullptr;
+    AddOneCacheNotifyRecordPlaceholderSqe addOneCacheNotifyRecordPlaceholderSqe_ = nullptr;
+    AddOneCacheWriteValuePlaceholderSqe addOneCacheWriteValuePlaceholderSqe_ = nullptr;
+    AddOneCacheMemcpyRecordPlaceholderSqe addOneCacheMemcpyRecordPlaceholderSqe_ = nullptr;
     std::function<HcclResult()> checkOpExecStatusCallback_ = nullptr;
 
     HcclAicpuDispatcherInfo aicpuInfo_;
@@ -162,6 +180,8 @@ private:
     OpUnfoldCache *cachePtr_ = nullptr; // 算子展开的动态缓存
     std::vector<OpUnfoldMemRange> userInputMemRanges_; // 当前算子展开执行时, 通信域内各rank分配的user input memory range
     std::vector<OpUnfoldMemRange> userOutputMemRanges_; // 当前算子展开执行时, 通信域内各rank分配的user output memory range
+    bool isAlltoallv_ = false;
+    const AlltoallvMetadata* alltoallvMetadataPtr_ = nullptr; // alltoallv算子对应的metadata (与通信域绑定)
     bool needAddSqe_ = false;
 };
 } // namespace hccl

@@ -155,7 +155,7 @@ HcclResult TaskAbortHandler::DeInit(HcclCommunicator * communicator)
     ref_.Unref();
     if (ref_.Count() == 0) {
         commVector.clear();
-        CHK_RET(hrtTaskAbortHandleCallback(NULL, NULL));
+        CHK_RET(hrtTaskAbortHandleCallback(nullptr, nullptr));
     }
     return HCCL_SUCCESS;
 }

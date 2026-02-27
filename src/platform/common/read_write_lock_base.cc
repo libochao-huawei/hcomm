@@ -54,7 +54,6 @@ void ReadWriteLockBase::writeLock()
     // 第二步：循环尝试获取真正的写入权限
     while (true) {
         s = state_.load(std::memory_order_relaxed);
-
         // 只有当没有其他写者并且没有读者时，才写入
         if (!(s & WRITING_BIT) && (s & READER_MASK) == 0) {
             // 尝试原子设置写入标志位 WRITING_BIT 并清除 WAITING_BIT
@@ -79,7 +78,6 @@ void ReadWriteLockBase::writeUnlock()
 bool ReadWriteLockBase::tryReadLock()
 {
     uint64_t s = state_.load(std::memory_order_relaxed);
-
     // 检查是否有写者正在写或者有写者在等待
     if (s & (WRITING_BIT | WAITING_BIT)) {
         return false;     // 有写者正在写或者有写者在等待，无法获取读者锁
