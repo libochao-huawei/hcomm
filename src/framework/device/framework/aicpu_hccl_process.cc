@@ -437,6 +437,7 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
     opParam.isCapture = tilingData->isCapture;
     opParam.needIncreLink = tilingData->needIncreLink;
     opParam.aicpuCacheEnable = tilingData->aicpuCacheEnable;
+    opParam.opBaseOpIdx = tilingData->opBaseOpIdx;
     hcclCommAicpu->PrepareOpRetryHandler(tilingData->inplaceSupportRetry,
         tilingData->retryEnable, tilingData->inPlaceSupportRetryStatus,
         tilingData->isInplacePreSync, tilingData->isPostSync);

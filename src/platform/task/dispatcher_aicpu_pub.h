@@ -20,6 +20,7 @@
 #include "aicpu/aicpu_hccl_sqcqv1.h"
 #include "aicpu/aicpu_hccl_sqcqv2.h"
 
+#include "async_unfold_cache.h"
 #include "op_unfold_cache.h"
 
 namespace hccl {
@@ -81,6 +82,13 @@ public:
     HcclResult LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const std::vector<OpUnfoldMemRange>& userInputMemRanges,
         const std::vector<OpUnfoldMemRange>& userOutputMemRanges, Stream& mainStream, std::vector<Stream> &slaveStreams,
         const bool profL1Enable, const bool isAlltoallv, const AlltoallvMetadata& alltoallvMetadata, const AlltoallvSendRecvInfo& alltoallvSendRecvInfo);
+    
+    // 用于异步展开生成阶段
+    HcclResult ClearLaunchAsyncContext();
+    HcclResult SetLaunchAsyncContext(AsyncUnfoldCacheEntry* asyncUnfoldCacheEntryPtr, const bool profL1Enable);
+    // 用于异步展开应用阶段
+    HcclResult LaunchAsyncTask(AsyncUnfoldCacheEntry* asyncUnfoldCacheEntryPtr,
+        Stream& mainStream, std::vector<Stream> &slaveStreams, const bool profL1Enable);
 
     HcclResult LaunchTask(Stream &stream, bool isBlockLaunch);
     HcclResult TbeReduceAsync(const void *src1, const void *src2, u64 count, const HcclDataType datatype,
@@ -189,6 +197,11 @@ private:
     bool isAlltoallv_ = false;
     const AlltoallvMetadata* alltoallvMetadataPtr_ = nullptr; // alltoallv算子对应的metadata (与通信域绑定)
     bool needAddSqe_ = false;
+
+    // 用于异步展开生成阶段的上下文
+    bool useAsyncUnfold_ = false;
+    AsyncUnfoldCacheEntry* asyncUnfoldCacheEntryPtr_ = nullptr; // 异步展开的cache entry pointer
+    bool profL1Enable_ = false;
 };
 } // namespace hccl
 #endif // HCCL_DISPATCHER_AICPU_PUB_H
