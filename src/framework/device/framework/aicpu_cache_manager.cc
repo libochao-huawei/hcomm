@@ -47,7 +47,7 @@ namespace hccl {
 
     HcclResult AicpuCacheManager::LookupOpUnfoldCache(const std::string& algName, const OpParam &param,
         const AlgResourceResponse &algResource, bool& needExecute, bool& isCacheMiss,
-        Stream& mainStream, std::vector<Stream>& slaveStreams, void *dispatcherPtr, const bool isDeviceMode,
+        Stream& mainStream, std::vector<Stream>& slaveStreams, void *dispatcherPtr, const bool isUseRdma, const bool isDeviceMode,
         const HcclTopoInfo& topoinfo, std::unique_ptr<TopoMatcher>& topoMatcherPtr, const AlgOpContext& algContext,
         std::shared_ptr<AicpuZeroCopyExchanger>& zeroCopyExchangerPtr, const HcclWorkflowMode workflowMode,
         const DeviceMem& tinySendRecvMem, std::function<HcclResult()> setProfStartCallback)
@@ -68,7 +68,8 @@ namespace hccl {
 
         // 判断是否需要cache
         bool needCache = false;
-        CHK_RET(NeedOpUnfoldCache(algName, param, algResource, isDeviceMode, topoinfo, topoMatcherPtr, algContext, workflowMode, needCache));
+        CHK_RET(NeedOpUnfoldCache(algName, param, algResource, isUseRdma, isDeviceMode, topoinfo, topoMatcherPtr, algContext,
+            workflowMode, needCache));
         HCCL_INFO("[AicpuCacheManager][LookupOpUnfoldCache] needCache[%u]", needCache);
 
         // Cacheable算子
@@ -222,15 +223,19 @@ namespace hccl {
     }
 
     HcclResult AicpuCacheManager::ClearOpUnfoldCacheEntry(const std::string& algName, const OpParam &param,
-        const AlgResourceResponse& algResource, const bool isDeviceMode, const HcclTopoInfo& topoinfo,
+        const AlgResourceResponse& algResource, const bool isUseRdma, const bool isDeviceMode, void* dispatcherPtr, const HcclTopoInfo& topoinfo,
         std::unique_ptr<TopoMatcher>& topoMatcherPtr, const AlgOpContext& algContext, const HcclWorkflowMode workflowMode)
     {
         // 清理当前aicpu算子对应的cache entry, 避免异常状态下, cache命中
         CHK_PTR_NULL(opUnfoldCachePtr_);
 
+        // 清理DispatcherAicpu内aicpu cache的上下文, 避免故障算子重执行时触发aicpu cache
+        CHK_RET((reinterpret_cast<DispatcherAiCpu *>(dispatcherPtr))->ClearLaunchContext());
+
         // 判断是否需要cache
         bool needCache = false;
-        CHK_RET(NeedOpUnfoldCache(algName, param, algResource, isDeviceMode, topoinfo, topoMatcherPtr, algContext, workflowMode, needCache));
+        CHK_RET(NeedOpUnfoldCache(algName, param, algResource, isUseRdma, isDeviceMode, topoinfo, topoMatcherPtr,
+            algContext, workflowMode, needCache));
         HCCL_INFO("[AicpuCacheManager][ClearOpUnfoldCacheEntry] needCache[%u]", needCache);
 
         // Cacheable算子
@@ -269,7 +274,7 @@ namespace hccl {
     }
 
     HcclResult AicpuCacheManager::NeedOpUnfoldCache(const std::string& algName, const OpParam &param,
-        const AlgResourceResponse& algResource, const bool isDeviceMode, const HcclTopoInfo& topoinfo,
+        const AlgResourceResponse& algResource, const bool isUseRdma, const bool isDeviceMode, const HcclTopoInfo& topoinfo,
         std::unique_ptr<TopoMatcher>& topoMatcherPtr, const AlgOpContext& algContext, const HcclWorkflowMode workflowMode,
         bool& needCache) {
         // 初始化为不需要op-unfold cache
@@ -295,13 +300,9 @@ namespace hccl {
         HCCL_INFO("[AicpuCacheManager][NeedOpUnfoldCache] device mode is not MC2 op");
 
         // 判断当前通信域是否使用RDMA (例如跨超通信域), 使用则不cache (因为RoCE队列的WQE不可见)
-        const std::unordered_map<u32, bool>& isUsedRdmaMap = topoinfo.isUsedRdmaMap;
-        for (std::unordered_map<u32, bool>::const_iterator map_iter = isUsedRdmaMap.cbegin(); map_iter != isUsedRdmaMap.end(); ++map_iter) {
-            if (map_iter->second) {
-                HCCL_INFO("[AicpuCacheManager][NeedOpUnfoldCache] rank[%u] uses RDMA -> not supported for operator unfolding cache",
-                    map_iter->first);
-                return HCCL_SUCCESS;
-            }
+        if (isUseRdma) {
+            HCCL_INFO("[AicpuCacheManager][NeedOpUnfoldCache] use RDMA -> not supported for operator unfolding cache");
+            return HCCL_SUCCESS;
         }
         HCCL_INFO("[AicpuCacheManager][NeedOpUnfoldCache] all ranks do not use RDMA");
 

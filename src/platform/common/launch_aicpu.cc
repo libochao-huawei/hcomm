@@ -177,6 +177,9 @@ HcclResult AicpuAclKernelLaunchV2(const rtStream_t stm, void *addr, u32 size,
             hostBufferSize - sizeof(u64), tilingDataPtr, tilingDataSize);
         CHK_PRT_RET(memRet != EOK, HCCL_ERROR("[AicpuAclKernelLaunchV2]memcpy_s failed,return[%d]", memRet),
                     HCCL_E_INTERNAL);
+    
+        // TODOSSY: debug
+        HCCL_DEBUG("[launch_aicpu][AicpuAclKernelLaunchV2] tilingDataSize[%llu]", tilingDataSize);
     }
     aclrtLaunchKernelCfg cfg;
     aclrtLaunchKernelAttr attr;
