@@ -8,19 +8,22 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef RS_UB_JFC_H
-#define RS_UB_JFC_H
-
-#include "urma_types.h"
-#include "udma_u_ctl.h"
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include "user_log.h"
+#include "ra_rs_err.h"
 #include "rs_ctx_inner.h"
+#include "rs_ub_jfc_default.h"
 
-union CreateJfcCfg {
-    struct udma_u_lock_jfc_cfg lockJfcCfg;
-    struct udma_u_jfc_cfg_ex jfcCfgEx;
-};
+int RsUbDeleteJfcExtDefault(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb)
+{
+    hccp_err("product type do not support");
+    return -EOPENSRC;
+}
 
-int RsUbDeleteJfcExt(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb);
-int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urma_jfc_t **jfc);
-
-#endif // RS_UB_JFC_H
+int RsUbCtxJfcCreateExtDefault(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urma_jfc_t **jfc)
+{
+    hccp_err("product type do not support");
+    return -EOPENSRC;
+}
