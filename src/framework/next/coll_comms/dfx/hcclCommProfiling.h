@@ -12,12 +12,13 @@
 
 #include <memory>
 #include "mirror_task_manager.h"
+#include "profiling_reporter.h"
 
 namespace hccl {
 class HcclCommProfiling {
 public:
     // 构造函数
-    explicit HcclCommProfiling(MirrorTaskManager* mirrorTaskManager);
+    explicit HcclCommProfiling(Hccl::MirrorTaskManager* mirrorTaskManager);
     
     // 上报所有任务
     void ReportAllTasks(bool cachedReq = false);
@@ -26,17 +27,17 @@ public:
     void ReportOp(uint64_t beginTime, bool cachedReq, bool opbased);
     
     // 上报MC2通信信息
-    void CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo);
+    //void CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo);
     
     // 更新Profiling统计
     void UpdateProfStat();
     
     // 获取MirrorTaskManager
-    MirrorTaskManager* GetMirrorTaskManager() const;
+    Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
     
 private:
-    MirrorTaskManager* mirrorTaskManager_;
-    std::unique_ptr<ProfilingReporter> profilingReporter_;
+    Hccl::MirrorTaskManager* mirrorTaskManager_;
+    std::unique_ptr<Hccl::ProfilingReporter> profilingReporter_;
 };
 }// namespace hccl
 #endif // HCCL_COMM_PROFILING_H
