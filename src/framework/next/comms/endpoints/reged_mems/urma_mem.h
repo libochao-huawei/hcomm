@@ -20,6 +20,7 @@
 #include "local_ub_rma_buffer.h"
 #include "remote_rma_buffer.h"
 #include "exchange_ub_buffer_dto.h"
+#include "local_ub_rma_buffer.h"
  
 namespace hcomm {
 /**
@@ -42,7 +43,7 @@ public:
     HcclResult GetMemDesc(const EndpointDesc endpointDesc, Hccl::LocalUbRmaBuffer *localUbRmaBuffer);
     HcclResult GetParamsFromMemDesc(const void *memDesc, uint32_t descLen, 
                                         EndpointDesc &endpointDesc, Hccl::ExchangeUbBufferDto &dto);
- 
+
 private:
     std::unique_ptr<LocalUbRmaBufferMgr> localUbRmaBufferMgr_{};
     std::vector<std::shared_ptr<Hccl::LocalUbRmaBuffer>> allRegisteredBuffers_;
@@ -50,4 +51,4 @@ private:
 };
 }
  
-#endif //URMA_ENDPOINT_H
+#endif //URMA_MEMORY_H

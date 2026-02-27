@@ -45,6 +45,8 @@ void TpManager::Init()
 
     devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
     initFlag = true;
+
+    HCCL_INFO("[TpManager::Init] END. devLogicId[%d], devPhyId[%d]", devLogicId, devPhyId);
 }
 
 bool TpManager::CheckRequestResult(RequestHandle &reqHandle) const
@@ -158,6 +160,8 @@ bool TpManager::FindAndGetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo
 void TpManager::StartGetTpInfoListRequest(const RaUbGetTpInfoParam &param,
     TpManager::RequestCtx &reqCtx) const
 {
+    HCCL_INFO("[TpManager::StartGetTpInfoListRequest] START. devLogicId[%d], devPhyId[%d], locAddr[%s]",
+        devLogicId, devPhyId, param.locAddr.Describe().c_str());
     RdmaHandle rdmaHandle =
         RdmaHandleManager::GetInstance().GetByIp(devPhyId, param.locAddr);
     if (!rdmaHandle) {

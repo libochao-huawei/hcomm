@@ -7,17 +7,16 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include "hcomm_c_adpt.h"
+
 #include <mutex>
 
 #include "hccl_api.h"
 #include "hcomm_res.h"
 #include "hcomm_res_defs.h"
 #include "log.h"
-#include "hcomm_c_adpt.h"
 #include "../endpoints/endpoint.h"
 #include "../endpoint_pairs/channels/channel.h"
-#include "thread.h"
-#include "aicpu_ts_thread.h"
 #include "cpu_ts_thread.h"
 #include "aicpu_ts_urma_channel.h"
 #include "mem_device_pub.h"
@@ -25,13 +24,19 @@
 #include "launch_aicpu.h"
 #include "comm_configer.h"
 #include "endpoint_map.h"
-#include "endpoint_map.h"
+#include "exception_handler.h"
+#include "launch_aicpu.h"
+#include "launch_device.h"
+#include "aicpu_launch_manager.h"
 
 namespace hcomm {
 static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
 static std::unordered_map<ChannelHandle, ChannelHandle> g_ChannelD2HMap;
 static std::unordered_map<ThreadHandle, std::shared_ptr<hccl::Thread>> g_ThreadMap;
+static std::unordered_map<ThreadHandle, ThreadHandle> g_ThreadD2HMap;
+static aclrtBinHandle g_BinHandle;
 
+static std::mutex g_ThreadMapMtx;
 static std::mutex g_ChannelMapMtx;
 }  // namespace hcomm
 
@@ -95,6 +100,7 @@ HcclResult HcommEndpointGet_(EndpointHandle endpointHandle, void **endpoint)  //
 
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle)
 {
+    EXCEPTION_HANDLE_BEGIN
     if (endpoint->loc.locType != ENDPOINT_LOC_TYPE_DEVICE && endpoint->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
         HCCL_ERROR("[%s] Only support END_POINT_LOCATION_DEVICE AND END_POINT_LOCATION_HOST, but "
                    "endpoint->loc.locType is %d",
@@ -114,11 +120,13 @@ HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *end
     EXECEPTION_CATCH(g_EndpointMap.AddEndpoint(handle, std::move(endpointPtr)), return HCCL_E_INTERNAL);
     *endpointHandle = handle;
 
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
 HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle)
 {
+    EXCEPTION_HANDLE_BEGIN
     CHK_PTR_NULL(endpointHandle);
 
     auto ret = g_EndpointMap.RemoveEndpoint(endpointHandle);
@@ -128,41 +136,56 @@ HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle)
     }
     endpointHandle = nullptr;
 
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
 HcclResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, HcommMem mem, void **memHandle)
 {
+    EXCEPTION_HANDLE_BEGIN
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_RET(endpoint->RegisterMemory(mem, memTag, memHandle));
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
 HcclResult HcommMemUnreg(EndpointHandle endpointHandle, void *memHandle)
 {
+    EXCEPTION_HANDLE_BEGIN
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_RET(endpoint->UnregisterMemory(memHandle));
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
 HcclResult HcommMemExport(EndpointHandle endpointHandle, void *memHandle, void **memDesc, uint32_t *memDescLen)
 {
+    EXCEPTION_HANDLE_BEGIN
+    CHK_PTR_NULL(memDesc);
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    CHK_PTR_NULL(endpoint);
     CHK_RET(endpoint->MemoryExport(memHandle, memDesc, memDescLen));
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
 HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, HcommMem *outMem)
 {
+    EXCEPTION_HANDLE_BEGIN
+    CHK_PTR_NULL(memDesc);
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    CHK_PTR_NULL(endpoint);
     CHK_RET(endpoint->MemoryImport(memDesc, descLen, outMem));
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
 HcclResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen)
 {
+    EXCEPTION_HANDLE_BEGIN
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_RET(endpoint->MemoryUnimport(memDesc, descLen));
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
@@ -180,45 +203,10 @@ HcclResult HcommMemRemap(const EndpointHandle endpointHandle, const HcommMem *me
 
 HcclResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHandles, uint32_t *memHandleNum)
 {
+    EXCEPTION_HANDLE_BEGIN
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_RET(endpoint->GetAllMemHandles(memHandles, memHandleNum));
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine, HcommChannelDesc *channelDescs,
-    uint32_t channelNum, ChannelHandle *channels)
-{
-    CHK_PTR_NULL(channelDescs);
-    CHK_PTR_NULL(channels);
-
-    for (uint32_t i = 0; i < channelNum; ++i) {
-        // 1) 创建对象：不持全局表锁，避免扩大临界区
-        std::unique_ptr<Channel> tmpPtr = nullptr;
-        CHK_RET(Channel::CreateChannel(endpointHandle, engine, channelDescs[i], tmpPtr));
-        CHK_SMART_PTR_NULL(tmpPtr);
-
-        ChannelHandle handle = reinterpret_cast<ChannelHandle>(tmpPtr.get());
-        channels[i] = handle;
-        HCCL_INFO("%s handle[0x%llx], ptr[%p]", __func__, handle, tmpPtr.get());
-
-        // 2) 仅在修改全局表时持锁（该锁同时保护两张表）
-        {
-            std::lock_guard<std::mutex> lk(hcomm::g_ChannelMapMtx);
-
-            if (hcomm::g_ChannelMap.find(handle) != hcomm::g_ChannelMap.end()) {
-                HCCL_ERROR("[%s] channel handle already exists [0x%llx] in ChannelMap", __func__, handle);
-                return HCCL_E_INTERNAL;
-            }
-            if (hcomm::g_ChannelD2HMap.find(handle) != hcomm::g_ChannelD2HMap.end()) {
-                HCCL_ERROR("[%s] channel handle already exists [0x%llx] in g_ChannelD2HMap", __func__, handle);
-                return HCCL_E_INTERNAL;
-            }
-
-            hcomm::g_ChannelMap.emplace(handle, std::move(tmpPtr));
-            hcomm::g_ChannelD2HMap.emplace(handle, handle);
-        }
-    }
-
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
@@ -269,15 +257,31 @@ static HcclResult FillChannelD2HMap(ChannelHandle *deviceChannelHandles,
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, uint32_t listNum,
-    const std::string &commTag, aclrtBinHandle binHandle)
-{
+static HcclResult EnsureKernelBinLoaded() {
+    if (g_BinHandle != nullptr) {
+        return HCCL_SUCCESS;
+    }
+    std::string jsonPath;
+    CHK_RET(hccl::GetKernelFilePath(jsonPath));
+    jsonPath += "ccl_kernel.json";
+
+    HcclResult ret = hccl::LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, g_BinHandle);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[EnsureKernelBinLoaded] load aicpu file fail, path[%s]", jsonPath.c_str()),
+                ret);
+    return HCCL_SUCCESS;
+}
+
+// 公共内核启动逻辑
+static HcclResult LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
+                                            uint32_t listNum, const std::string &commTag,
+                                            aclrtBinHandle binHandle) {
     HCCL_RUN_INFO("[%s] listNum[%u], commTag[%s]", __func__, listNum, commTag.c_str());
     std::vector<std::vector<char>> hostPackBuffers(listNum);
     HcclChannelUrmaRes channelParam{};
     CHK_SAFETY_FUNC_RET(memset_s(&channelParam, sizeof(channelParam), 0, sizeof(channelParam)));
 
-    // 获取到host侧序列化的地址
+    // 获取host侧序列化的地址
     uint32_t totalListNum = 0;
     for (uint32_t index = 0; index < listNum; index++) {
         auto aicpuTsUrmaChannel = reinterpret_cast<hcomm::AicpuTsUrmaChannel *>(hostChannelHandles[index]);
@@ -314,13 +318,19 @@ HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle
     channelParam.uniqueIdSize = totalListNum;
     channelParam.singleUniqueIdSize = totalListNum / hostPackBuffers.size();
 
+    // 补充deviceType和deviceLogicId（内部版本需要）
+    CHK_RET(hrtGetDevice(&channelParam.deviceLogicId));
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    channelParam.deviceType = static_cast<u32>(devType);
+
     // 创建局部流
     hccl::Stream localStream(hccl::StreamType::STREAM_TYPE_ONLINE);
     constexpr u32 aicpuStreamMode = 1;
     CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
 
     // 下kernel
-    std::string kernelName = "RunAicpuIndOpChannelInitV2";
+    std::string kernelName = (binHandle == g_BinHandle) ? "RunAicpuIndOpChannelInitV2Internal" : "RunAicpuIndOpChannelInitV2";
     struct InitTask {
         u64 context;
         bool isCustom;
@@ -338,18 +348,16 @@ HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle
     InitTask customInitTask = {0};
     customInitTask.context = reinterpret_cast<u64>(addr.ptr());
     customInitTask.isCustom = false;
-    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
-                    std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
+
     CHK_RET(hccl::AicpuAclKernelLaunch(localStream.ptr(),
         reinterpret_cast<void *>(&customInitTask),
         sizeof(customInitTask),
         binHandle,
         kernelName,
         true,
-        timeOut));
+        NOTIFY_DEFAULT_WAIT_TIME));
 
-    CHK_RET(
-        hcclStreamSynchronize(localStream.ptr(), hccl::CommConfiger::GetInstance().GetCommConfigExecTimeOut(commTag)));
+    CHK_RET(hcclStreamSynchronize(localStream.ptr(), 60));
 
     // 将device侧的channelList拷贝回host侧的channelList
     CHK_RET(hrtMemSyncCopy(channelHandles,
@@ -361,6 +369,126 @@ HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle
     CHK_RET(FillChannelD2HMap(channelHandles, hostChannelHandles, listNum));
 
     HCCL_INFO("[%s] channel kernel launch success.", __func__);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
+                                    uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle) {
+    return LaunchChannelKernelCommon(channelHandles, hostChannelHandles, listNum, commTag, binHandle);
+}
+
+static HcclResult HcommChannelKernelLaunchInternal(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
+                                            uint32_t listNum) {
+    // 确保全局binHandle已加载
+    CHK_RET(EnsureKernelBinLoaded());
+    // 内部通信tag使用空字符串
+    return LaunchChannelKernelCommon(channelHandles, hostChannelHandles, listNum, "", g_BinHandle);
+}
+
+static HcclResult FinalizeChannels(ChannelHandle* targetChannels, ChannelHandle* userChannels,
+                                    uint32_t channelNum, CommEngine engine) {
+    constexpr uint32_t timeoutSec = 120;
+    constexpr auto timeout = std::chrono::seconds(timeoutSec);
+    auto startTime = std::chrono::steady_clock::now();
+
+    std::vector<int32_t> statusVec(channelNum, 0);
+    int32_t* statusList = statusVec.data();
+
+    while (true) {
+        HcclResult ret = HcommChannelPollStatus(targetChannels, channelNum, statusList);
+        if (ret == HCCL_E_AGAIN) {
+            continue;
+        }
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            HCCL_ERROR("[%s] channel connect timeout", __func__);
+            return HCCL_E_TIMEOUT;
+        }
+        if (ret == HCCL_SUCCESS) {
+            break;
+        } else {
+            HCCL_ERROR("[%s] FAIL, return HcclResult[%d]", __func__, ret);
+            return ret;
+        }
+    }
+
+    if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
+        CHK_RET(HcommChannelKernelLaunchInternal(userChannels, targetChannels, channelNum));
+    } else {
+        HCCL_INFO("[%s] engine[%d] no need to KernelLaunch.", __func__, engine);
+    }
+
+    HCCL_INFO("[%s] SUCCESS.", __func__);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine, HcommChannelDesc *channelDescs,
+    uint32_t channelNum, ChannelHandle *channels)
+{
+    HCCL_INFO("[%s] START. endpointHandle[0x%llx], engine[%d], channelNum[%u].",
+        __func__, endpointHandle, engine, channelNum);
+    CHK_PTR_NULL(channelDescs);
+    CHK_PTR_NULL(channels);
+
+    std::vector<ChannelHandle> hostChannelHandles;
+    ChannelHandle* targetChannels = channels;
+
+    // 是否需要后处理（等待状态完成和内核启动）
+    bool needPostProcess = (channelDescs[0].socket == nullptr);
+    if (needPostProcess && (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS)) {
+        hostChannelHandles.resize(channelNum);
+        targetChannels = hostChannelHandles.data();
+    }
+
+    for (uint32_t i = 0; i < channelNum; ++i) {
+        // 1) 创建对象：不持全局表锁，避免扩大临界区
+        std::unique_ptr<Channel> tmpPtr = nullptr;
+        CHK_RET(Channel::CreateChannel(endpointHandle, engine, channelDescs[i], tmpPtr));
+        CHK_SMART_PTR_NULL(tmpPtr);
+
+        ChannelHandle handle = reinterpret_cast<ChannelHandle>(tmpPtr.get());
+        targetChannels[i] = handle;
+        HCCL_INFO("[%s] handle[0x%llx], ptr[%p]", __func__, handle, tmpPtr.get());
+
+        // 2) 仅在修改全局表时持锁（该锁同时保护两张表）
+        {
+            std::lock_guard<std::mutex> lk(hcomm::g_ChannelMapMtx);
+
+            if (hcomm::g_ChannelMap.find(handle) != hcomm::g_ChannelMap.end()) {
+                HCCL_ERROR("[%s] channel handle already exists [0x%llx] in ChannelMap", __func__, handle);
+                return HCCL_E_INTERNAL;
+            }
+            if (hcomm::g_ChannelD2HMap.find(handle) != hcomm::g_ChannelD2HMap.end()) {
+                HCCL_ERROR("[%s] channel handle already exists [0x%llx] in g_ChannelD2HMap", __func__, handle);
+                return HCCL_E_INTERNAL;
+            }
+
+            hcomm::g_ChannelMap.emplace(handle, std::move(tmpPtr));
+            hcomm::g_ChannelD2HMap.emplace(handle, handle);
+        }
+    }
+
+    if (!needPostProcess) {
+        // socket非空为集合通信，直接返回成功
+        return HCCL_SUCCESS;
+    }
+
+    // 需要后处理：等待状态完成并启动内核
+    return FinalizeChannels(targetChannels, channels, channelNum, engine);
+}
+
+static HcclResult FillThreadD2HMap(ThreadHandle *deviceThreadHandles,
+    ThreadHandle *hostThreadHandles, uint32_t listNum)
+{
+    std::lock_guard<std::mutex> lk(hcomm::g_ThreadMapMtx);
+    for (uint32_t idx = 0; idx < listNum; idx++) {
+        auto deviceThreadHandle = deviceThreadHandles[idx];
+        auto hostThreadHandle = hostThreadHandles[idx];
+        HCCL_INFO("%s deviceThreadHandle[0x%llx], hostThreadHandle[0x%llx]",
+            __func__,
+            deviceThreadHandle,
+            hostThreadHandle);
+        g_ThreadD2HMap.emplace(deviceThreadHandle, hostThreadHandle);
+    }
 
     return HCCL_SUCCESS;
 }
@@ -385,8 +513,16 @@ HcclResult HcommChannelGet(const ChannelHandle channelHandle, void **channel)
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList)
+HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum,  int32_t* statusList)
 {
+    // 对外接口维持非阻塞形式
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommChannelPollStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList)
+{
+    EXCEPTION_HANDLE_BEGIN
+
     // 不得随意添加无效日志，可能造成刷屏
     CHK_PTR_NULL(channelList);
     CHK_PTR_NULL(statusList);
@@ -408,10 +544,10 @@ HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t list
             return ret;
         }
         CHK_PRT_RET(
-            status == ChannelStatus::FAILED, HCCL_ERROR("%s failed, status[%d]", __func__, status), HCCL_E_NETWORK);
+            status == ChannelStatus::FAILED, HCCL_ERROR("[%s] FAILED, status[%d]", __func__, status), HCCL_E_NETWORK);
 
         CHK_PRT_RET(status == ChannelStatus::SOCKET_TIMEOUT,
-            HCCL_ERROR("%s timeout, status[%d]", __func__, status),
+            HCCL_ERROR("[%s] TIMEOUT, status[%d]", __func__, status),
             HCCL_E_TIMEOUT);
 
         readyCount += (status == ChannelStatus::READY) ? 1 : 0;
@@ -420,6 +556,9 @@ HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t list
 
     HcclResult finalRet = (readyCount == listNum) ? HCCL_SUCCESS : HCCL_E_AGAIN;
     return finalRet;
+
+    EXCEPTION_HANDLE_END
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum)
@@ -431,12 +570,81 @@ HcclResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notif
     });
 }
 
+// 内部销毁内核启动函数（公共部分）
+static HcclResult LaunchChannelKernelDestroyCommon(ChannelHandle *channelHandles, uint32_t listNum,
+                                                   aclrtBinHandle binHandle) {
+    HCCL_RUN_INFO("[%s] listNum[%u]", __func__, listNum);
+    HcclChannelUrmaRes channelParam{};
+    CHK_SAFETY_FUNC_RET(memset_s(&channelParam, sizeof(channelParam), 0, sizeof(channelParam)));
+
+    // 将 host 侧的 channel handles 拷贝到 device 内存，供内核使用
+    hccl::DeviceMem deviceChannelList = hccl::DeviceMem::alloc(listNum * sizeof(ChannelHandle));
+    CHK_PTR_NULL(deviceChannelList.ptr());
+    CHK_RET(hrtMemSyncCopy(deviceChannelList.ptr(),
+        listNum * sizeof(ChannelHandle),
+        channelHandles,
+        listNum * sizeof(ChannelHandle),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+
+    // 填充 channelParam（只需 channelList 和 listNum）
+    channelParam.channelList = static_cast<void *>(deviceChannelList.ptr());
+    channelParam.listNum = listNum;
+
+    // 创建局部流
+    hccl::Stream localStream(hccl::StreamType::STREAM_TYPE_ONLINE);
+    constexpr u32 aicpuStreamMode = 1;
+    CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
+
+    // 下 kernel
+    std::string kernelName = "RunAicpuIndOpChannelDestroyV2Internal";
+    struct InitTask {
+        u64 context;
+        bool isCustom;
+    };
+
+    // 拷贝 channelParam 到 device
+    hccl::DeviceMem addr = hccl::DeviceMem::alloc(sizeof(channelParam));
+    CHK_PTR_NULL(addr.ptr());
+    CHK_RET(hrtMemSyncCopy(addr.ptr(),
+        sizeof(channelParam),
+        &channelParam,
+        sizeof(channelParam),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+
+    InitTask customInitTask = {0};
+    customInitTask.context = reinterpret_cast<u64>(addr.ptr());
+    customInitTask.isCustom = false;
+
+    CHK_RET(hccl::AicpuAclKernelLaunch(localStream.ptr(),
+        reinterpret_cast<void *>(&customInitTask),
+        sizeof(customInitTask),
+        binHandle,
+        kernelName,
+        true,
+        NOTIFY_DEFAULT_WAIT_TIME));
+
+    CHK_RET(hcclStreamSynchronize(localStream.ptr(), 60));
+
+    HCCL_INFO("[%s] channel kernel destroy success.", __func__);
+    return HCCL_SUCCESS;
+}
+
+// 内部销毁接口
+static HcclResult HcommChannelKernelDestroyInternal(ChannelHandle *channelHandles, uint32_t listNum) {
+    // 确保全局 binHandle 已加载
+    CHK_RET(EnsureKernelBinLoaded());
+    return LaunchChannelKernelDestroyCommon(channelHandles, listNum, g_BinHandle);
+}
+
 HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum)
 {
+    HCCL_INFO("[%s] START. 1st channelHandle[0x%llx], channelNum[%u].", __func__, channels[0], channelNum);
     CHK_PTR_NULL(channels);
 
     // 单锁：g_ChannelMapMtx 同时保护 g_ChannelMap + g_ChannelD2HMap
     std::lock_guard<std::mutex> lk(hcomm::g_ChannelMapMtx);
+
+    std::vector<ChannelHandle> deviceHandles; // 存放 device 侧 handle（即用户传入的 handle）
 
     for (uint32_t i = 0; i < channelNum; ++i) {
         const ChannelHandle inHandle = channels[i];
@@ -459,6 +667,7 @@ HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNu
                 mappedHandle);
             return HcclResult::HCCL_E_NOT_FOUND;
         }
+        deviceHandles.push_back(inHandle);
 
         HCCL_INFO("[Hcomm][%s] erase channel: inHandle[0x%llx], mappedHandle[0x%llx], ptr[%p]",
             __func__,
@@ -479,6 +688,11 @@ HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNu
         }
     }
 
+    // 如果有需要 device 销毁的 channel，调用销毁内核
+    if (!deviceHandles.empty()) {
+        CHK_RET(HcommChannelKernelDestroyInternal(deviceHandles.data(), deviceHandles.size()));
+    }
+    HCCL_INFO("[%s] SUCCESS.", __func__);
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -502,97 +716,194 @@ HcclResult HcommChannelGetUserRemoteMem(ChannelHandle channelHandle, CommMem **r
     });
 }
 
-HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads)
+static HcclResult ValidateThreadAllocParams(uint32_t threadNum, uint32_t notifyNumPerThread) 
 {
-    CHK_PTR_NULL(threads);
-
-    HCCL_INFO("[%s]ThreadAcquire begin. need threadNum[%u], notifyPerThread[%u]",
-        __func__,
-        threadNum,
-        notifyNumPerThread);
     if (threadNum <= 0 || threadNum > hccl::HCOMM_THREADNUM_MAX_NUM) {
-        HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.ThreadNum %u.threadNum range (0 , %u]", threadNum, hccl::HCOMM_THREADNUM_MAX_NUM);
+        HCCL_ERROR("[HcommThreadAlloc] ThreadAlloc failed. ThreadNum %u, range (0, %u]",
+                   threadNum, hccl::HCOMM_THREADNUM_MAX_NUM);
         return HCCL_E_PARA;
     }
-
-    if (notifyNumPerThread < 0 || notifyNumPerThread > hccl::HCOMM_NOTIFY_MAX_NUM) {
-        HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.notifyNumPerThread is %u,notifyNumPerThread range [0 , %u]", notifyNumPerThread, hccl::HCOMM_NOTIFY_MAX_NUM);
+    if (notifyNumPerThread > hccl::HCOMM_NOTIFY_MAX_NUM) {
+        HCCL_ERROR("[HcommThreadAlloc] ThreadAlloc failed. notifyNumPerThread %u, range [0, %u]",
+                   notifyNumPerThread, hccl::HCOMM_NOTIFY_MAX_NUM);
         return HCCL_E_PARA;
     }
+    return HCCL_SUCCESS;
+}
 
+static HcclResult CreateAndInitThreads(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread,
+    hccl::NotifyLoadType notifyLoadType, hccl::StreamType streamType, 
+    std::vector<std::shared_ptr<hccl::Thread>> &newThreads) 
+{
+    HCCL_INFO("[CreateAndInitThreads] Thread notifyLoadType[%u], streamType[%u]",
+        static_cast<int32_t>(notifyLoadType), static_cast<int32_t>(streamType));
+    for (uint32_t i = 0; i < threadNum; ++i) {
+        std::shared_ptr<hccl::Thread> tmpPtr;
+        HcclResult ret = CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, tmpPtr);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[CreateAndInitThreads] Failed to create thread index %u", i);
+            return ret;
+        }
+        ret = tmpPtr->Init();
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[CreateAndInitThreads] Failed to init thread index %u", i);
+            return ret;
+        }
+        newThreads.emplace_back(std::move(tmpPtr));
+    }
+    return HCCL_SUCCESS;
+}
+
+static HcclResult InsertThreadsToGlobalMap(const std::vector<std::shared_ptr<hccl::Thread>> &newThreads) {
+    for (const auto &threadPtr : newThreads) {
+        ThreadHandle handle = reinterpret_cast<ThreadHandle>(threadPtr.get());
+
+        std::lock_guard<std::mutex> lk(hcomm::g_ThreadMapMtx);
+
+        if (hcomm::g_ThreadMap.find(handle) != hcomm::g_ThreadMap.end()) {
+            HCCL_ERROR("[InsertThreadsToGlobalMap] thread handle already exists [0x%llx] in ThreadMap", handle);
+            return HCCL_E_INTERNAL;
+        }
+        if (hcomm::g_ThreadD2HMap.find(handle) != hcomm::g_ThreadD2HMap.end()) {
+            HCCL_ERROR("[InsertThreadsToGlobalMap] thread handle already exists [0x%llx] in g_ThreadD2HMap", handle);
+            return HCCL_E_INTERNAL;
+        }
+
+        hcomm::g_ThreadMap.emplace(handle, threadPtr);
+        hcomm::g_ThreadD2HMap.emplace(handle, handle);
+    }
+    return HCCL_SUCCESS;
+}
+
+static HcclResult ProcessAicpuThreads(std::vector<std::shared_ptr<hccl::Thread>> &newThreads,
+                                      ThreadHandle *threads) {
+    std::unique_ptr<ThreadHandle[]> hostHandle;
+    EXECEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(newThreads.size()),
+                     return HCCL_E_PTR);
+
+    // 确保内核已加载
+    CHK_RET(EnsureKernelBinLoaded());
+    HCCL_INFO("HcommThreadAlloc ThreadKernelLaunch start");
+    HcclResult ret = hccl::AicpuLaunchMgr::ThreadKernelLaunchInternal(newThreads, hostHandle, g_BinHandle);
+    HCCL_INFO("HcommThreadAlloc ThreadKernelLaunch end");
+
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[ProcessAicpuThreads] AiCpuKernelLaunch failed, return [%d].", ret), ret);
+
+    for (size_t i = 0; i < newThreads.size(); ++i) {
+        threads[i] = hostHandle[i];
+        ThreadHandle cpuTsHandle = reinterpret_cast<ThreadHandle>(newThreads[i].get());
+        CHK_RET(FillThreadD2HMap(&hostHandle[i], &cpuTsHandle, 1));
+        HCCL_INFO("[ProcessAicpuThreads] aicpu threadArray[%zu] = [%lu]", i, threads[i]);
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads) {
+    CHK_PTR_NULL(threads);
+    HCCL_INFO("[%s] ThreadAcquire begin. need threadNum[%u], notifyPerThread[%u]",
+              __func__, threadNum, notifyNumPerThread);
+
+    // 1. 参数校验
+    CHK_RET(ValidateThreadAllocParams(threadNum, notifyNumPerThread));
+
+    // 2. 获取引擎对应的类型
     hccl::NotifyLoadType notifyLoadType;
     hccl::StreamType streamType;
     CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
     CHK_RET(CommEngineToStreamType(engine, streamType));
 
-    HcclResult ret = HCCL_SUCCESS;
-    for (uint32_t i = 0; i < threadNum; ++i) {
-        std::shared_ptr<hccl::Thread> handle;
-        HCCL_INFO("[%s] Thread notifyLoadType[%u], streamType[%u]",
-            __func__,
-            static_cast<int32_t>(notifyLoadType),
-            static_cast<int32_t>(streamType));
-        ret = CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, handle);
-        if (ret != HCCL_SUCCESS ) {
-            HCCL_ERROR("[HcommThreadAlloc] Failed to create thread index %u", i);
-            if (i != 0) {
-                CHK_RET(HcommThreadFree(threads, i));
-            }
-            return ret;
+    // 3. 创建线程
+    std::vector<std::shared_ptr<hccl::Thread>> newThreads;
+    newThreads.reserve(threadNum);
+    CHK_RET(CreateAndInitThreads(engine, threadNum, notifyNumPerThread,
+                                  notifyLoadType, streamType, newThreads));
+
+    // 4. 插入全局映射表
+    CHK_RET(InsertThreadsToGlobalMap(newThreads));
+
+    // 5. 根据引擎类型处理
+    if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
+        CHK_RET(ProcessAicpuThreads(newThreads, threads));
+    } else {
+        for (size_t i = 0; i < newThreads.size(); ++i) {
+            threads[i] = reinterpret_cast<ThreadHandle>(newThreads[i].get());
+            HCCL_INFO("[%s] host threadArray[%zu] = [%lu]", __func__, i, threads[i]);
         }
-        ret = handle->Init();
-        if (ret != HCCL_SUCCESS ) {
-            HCCL_ERROR("[HcommThreadAlloc] Failed to init thread index %u", i);
-            if (i != 0) {
-                CHK_RET(HcommThreadFree(threads, i));
-            }
-            return ret;
-        }
-        threads[i] = reinterpret_cast<ThreadHandle>(handle.get());
-        hcomm::g_ThreadMap.emplace(threads[i], handle);
     }
 
-    HCCL_INFO("[HcommThreadAlloc] ThreadAcquire done: engine[%d] threadNum[%u],"
-              "notifyPerThread[%u]", engine, threadNum, notifyNumPerThread);
+    HCCL_INFO("[HcommThreadAlloc] ThreadAcquire done: engine[%d] threadNum[%u], notifyPerThread[%u]",
+              engine, threadNum, notifyNumPerThread);
     return HCCL_SUCCESS;
+}
+
+// 内部销毁接口
+static HcclResult HcommThreadKernelDestroyInternal(ThreadHandle *threadHandles, uint32_t listNum) {
+    // 确保全局 binHandle 已加载
+    CHK_RET(EnsureKernelBinLoaded());
+    return hccl::AicpuLaunchMgr::ThreadKernelLaunchDestroyInternal(threadHandles, listNum, g_BinHandle);
 }
 
 HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum)
 {
-    if (threads == nullptr) {
-        HCCL_ERROR("[HcommThreadfree] threads is null.");
-        return HCCL_E_PARA;
-    }
-
-    // 不允许空释放
-    if (threadNum == 0) {
-        HCCL_ERROR("[HcommThreadfree] threadNum is 0, nothing to free.");
-        return HCCL_E_PARA;
-    }
-
+    CHK_PRT_RET(threads == nullptr, HCCL_ERROR("[HcommThreadfree] threads is null."), HCCL_E_PARA);
+    CHK_PRT_RET(threadNum == 0, HCCL_ERROR("[HcommThreadfree] threadNum is 0, nothing to free."), HCCL_E_PARA);
     HCCL_INFO("[HcommThreadfree] begin to free %u threads", threadNum);
 
+    // 单锁：g_ThreadMapMtx 同时保护 g_ThreadMap + g_ThreadD2HMap
+    std::lock_guard<std::mutex> lk(hcomm::g_ThreadMapMtx);
+    std::vector<ThreadHandle> deviceHandles; // 存放 device 侧 handle（即用户传入的 handle）
+
     for (uint32_t i = 0; i < threadNum; ++i) {
-        auto handleIter = hcomm::g_ThreadMap.find(threads[i]);
-        if (handleIter == hcomm::g_ThreadMap.end()) {
-            HCCL_ERROR("[%s] failed to find thread[0x%llx].", __func__, threads[i]);
+        const ThreadHandle inHandle = threads[i];
+
+        // 1) 先做 D2H 映射（统一销毁入口 handle）
+        auto itH = hcomm::g_ThreadD2HMap.find(inHandle);
+        if (itH == hcomm::g_ThreadD2HMap.end()) {
+            HCCL_ERROR(
+                "[Hcomm][%s] failed to find handle mapping in g_ThreadD2HMap, inHandle[0x%llx].", __func__, inHandle);
             return HcclResult::HCCL_E_NOT_FOUND;
         }
-        hcomm::g_ThreadMap.erase(threads[i]);
-    }
+        const ThreadHandle mappedHandle = itH->second;
 
+        // 2) 从 ThreadMap 删除 thread（以 mappedHandle 为准）
+        auto itC = hcomm::g_ThreadMap.find(mappedHandle);
+        if (itC == hcomm::g_ThreadMap.end()) {
+            HCCL_ERROR("[Hcomm][%s] failed to find thread in g_ThreadMap, inHandle[0x%llx], mappedHandle[0x%llx].",
+                __func__, inHandle, mappedHandle);
+            return HcclResult::HCCL_E_NOT_FOUND;
+        }
+        deviceHandles.push_back(inHandle);
+
+        HCCL_INFO("[Hcomm][%s] erase thread: inHandle[0x%llx], mappedHandle[0x%llx], ptr[%p]",
+            __func__, inHandle, mappedHandle, itC->second.get());
+        // 3) 先 erase ThreadMap（unique_ptr 释放对象）
+        hcomm::g_ThreadMap.erase(itC);
+
+        // 4) 清理 D2HMap 中所有指向 mappedHandle 的映射，避免残留导致后续查到“已销毁”
+        for (auto it = hcomm::g_ThreadD2HMap.begin(); it != hcomm::g_ThreadD2HMap.end();) {
+            if (it->second == mappedHandle) {
+                it = hcomm::g_ThreadD2HMap.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+    // 如果有需要 device 销毁的 channel，调用销毁内核
+    if (!deviceHandles.empty()) {
+        CHK_RET(HcommThreadKernelDestroyInternal(deviceHandles.data(), deviceHandles.size()));
+    }
     HCCL_INFO("[HcommThreadfree] all threads freed successfully");
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommThreadAllocWithStream(CommEngine engine,
-    rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread)
+HcclResult HcommThreadAllocWithStream(CommEngine engine, void *stream, uint32_t notifyNum, ThreadHandle *thread)
 {
     CHK_PTR_NULL(thread);
     hccl::NotifyLoadType notifyLoadType;
     CHK_RET(CommHostEngineToNotifyLoadType(engine, notifyLoadType));
     std::shared_ptr<hccl::Thread> handle;
-    EXECEPTION_CATCH(handle = std::make_shared<hccl::CpuTsThread>(stream, notifyNum, notifyLoadType), return HCCL_E_PTR);
+    EXECEPTION_CATCH(handle = std::make_shared<hccl::CpuTsThread>(static_cast<rtStream_t>(stream), notifyNum, notifyLoadType), return HCCL_E_PTR);
     CHK_RET(handle->Init());
  
     // 返回第一个句柄

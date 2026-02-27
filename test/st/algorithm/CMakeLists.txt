@@ -144,7 +144,7 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/resource/engine
 
     ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads/slaves/
     ${HCOMM_CODE_FRAMEWORK}/next/coll_comms
     ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/communicator
     ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/communicator/aicpu
@@ -153,6 +153,7 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/channels
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/channels/aicpu/device/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/sockets/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoints/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/

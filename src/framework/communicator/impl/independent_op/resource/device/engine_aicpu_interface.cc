@@ -12,6 +12,7 @@
 #include "framework/aicpu_hccl_process.h"
 #include "adapter_rts.h"
 #include "aicpu_indop_process.h"
+#include "aicpu_thread_process.h"
 
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *args)
@@ -35,6 +36,38 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *ar
         return AicpuIndopProcess::AicpuIndOpThreadInit(param);
     }
     return AicpuHcclProcess::AicpuIndOpThreadInit(param);
+}
+
+__attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInitInternal(void *args)
+{
+    if (args == nullptr) {
+        HCCL_ERROR("args is null.");
+        return HCCL_E_PARA;
+    }
+ 
+    struct InitTask {
+        u64 context;
+        bool isCustom;
+    };
+    InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
+    ThreadMgrAicpuParam* param = reinterpret_cast<ThreadMgrAicpuParam*>(ctxArgs->context);
+    return AicpuThreadProcess::AicpuThreadInit(param);
+}
+
+__attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadDestroyInternal(void *args)
+{
+    if (args == nullptr) {
+        HCCL_ERROR("args is null.");
+        return HCCL_E_PARA;
+    }
+ 
+    struct InitTask {
+        u64 context;
+        bool isCustom;
+    };
+    InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
+    ThreadMgrAicpuParam* param = reinterpret_cast<ThreadMgrAicpuParam*>(ctxArgs->context);
+    return AicpuThreadProcess::AicpuThreadDestroy(param);
 }
 
 __attribute__((visibility("default"))) uint32_t RunAicpuIndOpNotify(void *args)

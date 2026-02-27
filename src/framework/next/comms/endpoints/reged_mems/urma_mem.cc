@@ -45,7 +45,7 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
         EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, mem.type, memTag)),
             return HCCL_E_PTR);
 
-        if(strcmp(memTag, "HcclBuffer") == 0) {
+        if( memTag && (strcmp(memTag, "HcclBuffer") == 0)) {
             EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr)),
                 return HCCL_E_PTR);
         }
@@ -87,7 +87,7 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
     CHK_PTR_NULL(this->localUbRmaBufferMgr_);
 
     Hccl::LocalUbRmaBuffer* buffer = static_cast<Hccl::LocalUbRmaBuffer*>(memHandle);
-
+    CHK_PTR_NULL(buffer);
     auto bufferInfo = buffer->GetBufferInfo();
 
     // 从LocalRamBuffer计数器删除
@@ -100,19 +100,20 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
                   "(used by other RemoteRank), do not deregister memory.");
         return HCCL_E_AGAIN;
     }
-    
-    // 删除vector中的LocalUbRmaBuffer
+        
+    // 删除vector中存放的LocalUbRmaBuffer
     auto it = std::find_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
             [buffer](const std::shared_ptr<Hccl::LocalUbRmaBuffer>& ptr) {
-                return ptr.get() == buffer;
+                return ptr.get() == buffer;  // 比较裸指针
             });
-
+        
     if (it == allRegisteredBuffers_.end()) {
         HCCL_ERROR("[UbRegedMemMgr][UnregisterMemory] Memory not found in vector!");
         return HCCL_E_NOT_FOUND;
     }
 
     allRegisteredBuffers_.erase(it);
+    HCCL_INFO("[UbRegedMemMgr][UnregisterMemory] Memory unregistered successfully!");
     return HCCL_SUCCESS;
 }
 
@@ -257,13 +258,17 @@ HcclResult UbRegedMemMgr::GetAllMemHandles(void **memHandles, uint32_t *memHandl
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(memHandleNum);
 
-    uint32_t bufferCount = static_cast<uint32_t>(allRegisteredBuffers_.size());
+    uint32_t bufferCount = static_cast<uint32_t>(this->allRegisteredBuffers_.size());
     *memHandleNum = bufferCount;
 
-    HCCL_INFO("[UbRegedMemMgr][[GetAllMemHandles] memHandleNum is [%d]", bufferCount);
+    HCCL_INFO("[UbRegedMemMgr][[GetAllMemHandleNum] memHandleNum is %d.", bufferCount);
 
-    *memHandles = (bufferCount == 0) ? nullptr : reinterpret_cast<void *>(allRegisteredBuffers_.data());
+    if (bufferCount == 0) {
+        *memHandles = nullptr;
+        return HCCL_SUCCESS;
+    }
 
+    *memHandles = reinterpret_cast<void*>(allRegisteredBuffers_.data());
     return HCCL_SUCCESS;
 }
 
