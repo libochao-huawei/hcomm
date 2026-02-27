@@ -9,6 +9,7 @@
  */
 #include "hcclCommProfiling.h"
 
+namespace hccl {
 // HcclCommProfiling任务上报
 void HcclCommProfiling::ReportAllTasks(bool cachedReq) {
     if (profilingReporter_) {
@@ -24,11 +25,11 @@ void HcclCommProfiling::ReportOp(uint64_t beginTime, bool cachedReq, bool opbase
 }
 
 // HcclCommProfiling::CallReportMc2CommInfo实现
-void HcclCommProfiling::CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
-    if (profilingReporter_) {
-        profilingReporter_->CallReportMc2CommInfo(mc2CommInfo);
-    }
-}
+// void HcclCommProfiling::CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
+//     if (profilingReporter_) {
+//         profilingReporter_->CallReportMc2CommInfo(mc2CommInfo);
+//     }
+// }
 
 // HcclCommProfiling::UpdateProfStat实现
 void HcclCommProfiling::UpdateProfStat() {
@@ -36,6 +37,7 @@ void HcclCommProfiling::UpdateProfStat() {
         profilingReporter_->UpdateProfStat();
     }
 }
-MirrorTaskManager* HcclCommProfiling::GetMirrorTaskManager() const {
+Hccl::MirrorTaskManager* HcclCommProfiling::GetMirrorTaskManager() const {
     return mirrorTaskManager_;
 }
+}// namespace hccl
