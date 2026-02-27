@@ -52,6 +52,7 @@ target_include_directories(hccl_plf PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common/
     ${CMAKE_CURRENT_SOURCE_DIR}/common/buffer_manager
     ${CMAKE_CURRENT_SOURCE_DIR}/common/unfold_cache
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/async_unfold_cache
     ${CMAKE_CURRENT_SOURCE_DIR}/common/p2p_mgmt
     ${CMAKE_CURRENT_SOURCE_DIR}/common/unique
     ${CMAKE_CURRENT_SOURCE_DIR}/common/misc/network_manager
