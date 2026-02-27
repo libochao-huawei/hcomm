@@ -282,6 +282,13 @@ HcclResult AicpuTsThread::HostInit()
         CHK_SMART_PTR_NULL(stream_);
         rtStream_ = stream_->ptr();
     }
+
+    if (devType_ == DevType::DEV_TYPE_910_95) {
+        HCCL_INFO("[AicpuTsThread::%s] Running on A5.", __func__);
+    } else {
+        HCCL_INFO("[AicpuTsThread::%s] NOT Running on A5.", __func__);
+    }
+
     notifys_.reserve(notifyNum_);
     for (uint32_t idx = 0; idx < notifyNum_; idx++) {
         notifys_.emplace_back(nullptr);

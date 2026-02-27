@@ -63,4 +63,4 @@ extern HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNu
 #ifdef __cplusplus
 }
 #endif // __cplusplus
-#endif // HCOMM_RES_H_
+#endif // HCOMM_RES_H
