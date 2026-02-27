@@ -8,16 +8,14 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ENGINE_AICPU_INTERFACE_H
-#define ENGINE_AICPU_INTERFACE_H
+#ifndef AICPU_TS_URMA_CAHNNEL_KERNEL_H
+#define AICPU_TS_URMA_CAHNNEL_KERNEL_H
 
 #include <cstdint>
 
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *args);
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInitInternal(void *args);
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadDestroyInternal(void *args);
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpNotify(void *args);
+__attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2(void *args);
+__attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2Internal(void *args);
 }
 
-#endif // CHANNEL_AICPU_INTERFACE_H
+#endif // AICPU_TS_URMA_CAHNNEL_KERNEL_H

@@ -8,13 +8,17 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef AICPU_TS_URMA_CAHNNEL_KERNEL_H
-#define AICPU_TS_URMA_CAHNNEL_KERNEL_H
 
-#include <cstdint>
+#ifndef __AICPU_CHANNEL_PROCESS_H__
+#define __AICPU_CHANNEL_PROCESS_H__
 
-extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2(void *args);
-}
-
-#endif // AICPU_TS_URMA_CAHNNEL_KERNEL_H
+#include "common.h"
+#include "channel_param.h"
+#include "aicpu_launch_manager.h"
+#include "aicpu_init_param.h"
+class AicpuIndopProcess {
+public:
+    ~AicpuIndopProcess() = default;
+    static HcclResult AicpuIndOpChannelInit(HcclChannelUrmaRes *commParam);
+};
+#endif // __AICPU_CHANNEL_PROCESS_H__

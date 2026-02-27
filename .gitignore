@@ -1,0 +1,12 @@
+build/
+build_out/
+third_party/
+delivery/
+scripts/
+utils/
+build_hccl/
+build_hccd/
+build*/
+build.log
+output/
+.vscode/

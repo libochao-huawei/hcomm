@@ -31,6 +31,7 @@ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(this->localRdmaRmaBufferMgr_);
     CHK_PTR_NULL(memHandle);
+    // memTag could be nullptr, no need to check.
 
     std::shared_ptr<Hccl::LocalRdmaRmaBuffer> localRdmaRmaBuffer = nullptr;
  
@@ -81,6 +82,7 @@ HcclResult RoceRegedMemMgr::UnregisterMemory(void* memHandle)
     CHK_PTR_NULL(this->localRdmaRmaBufferMgr_);
     CHK_PTR_NULL(memHandle);
     Hccl::LocalRdmaRmaBuffer* buffer = static_cast<Hccl::LocalRdmaRmaBuffer*>(memHandle);
+    CHK_PTR_NULL(buffer);
     auto bufferInfo = buffer->GetBufferInfo();
 
     // 从LocalRamBuffer计数器删除
@@ -106,6 +108,7 @@ HcclResult RoceRegedMemMgr::UnregisterMemory(void* memHandle)
     }
 
     allRegisteredBuffers_.erase(it);
+    HCCL_INFO("[RoceRegedMemMgr][UnregisterMemory] Memory unregistered successfully!");
     return HCCL_SUCCESS;
 }
 
@@ -250,9 +253,14 @@ HcclResult RoceRegedMemMgr::GetAllMemHandles(void **memHandles, uint32_t *memHan
     uint32_t bufferCount = static_cast<uint32_t>(allRegisteredBuffers_.size());
     *memHandleNum = bufferCount;
 
-    HCCL_INFO("[RoceRegedMemMgr][[GetAllMemHandles] memHandleNum is [%d]", bufferCount);
+    HCCL_INFO("[RoceRegedMemMgr][[GetAllMemHandleNum] memHandleNum is %d.", bufferCount);
 
-    *memHandles = (bufferCount == 0) ? nullptr : reinterpret_cast<void *>(allRegisteredBuffers_.data());
+    if (bufferCount == 0) {
+        *memHandles = nullptr;
+        return HCCL_SUCCESS;
+    }
+
+    *memHandles = reinterpret_cast<void*>(allRegisteredBuffers_.data());
 
     return HCCL_SUCCESS;
 }
