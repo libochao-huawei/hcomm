@@ -26,7 +26,7 @@
 #include "rs_inner.h"
 #include "rs_ctx_inner.h"
 #include "rs_ctx.h"
-#include "rs_ub_jfc.h"
+#include "rs_ub_jfc_950.h"
 
 struct ExtJfcAttr {
     urma_jfc_t *jfc;
@@ -227,7 +227,7 @@ STATIC int RsGetJfcOpt(struct RsCtxJfcCb *jfcCb, urma_jfc_t *jfc)
     return ret;
 }
 
-int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *jfcCb, urma_jfc_cfg_t *jfcCfg, urma_jfc_t **jfc)
+int RsUbCtxJfcCreateExt950(struct RsCtxJfcCb *jfcCb, urma_jfc_cfg_t *jfcCfg, urma_jfc_t **jfc)
 {
     struct ExtJfcAttr jfcAttr = {0};
     int ret = 0;
@@ -266,7 +266,7 @@ deinit_attr:
     return ret;
 }
 
-int RsUbDeleteJfcExt(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb)
+int RsUbDeleteJfcExt950(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb)
 {
     urma_jfc_t *jfc = (urma_jfc_t *)(uintptr_t)(jfcCb->jfcAddr);
     unsigned int jfcId = jfc->jfc_id.id;
