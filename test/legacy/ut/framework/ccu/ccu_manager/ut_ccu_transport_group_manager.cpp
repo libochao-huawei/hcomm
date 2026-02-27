@@ -873,6 +873,7 @@ TEST_F(CcuTransportGroupMgrTest, should_return_ccuTransportGroup_when_calling_Re
 
     void *devPtr = nullptr;
     MOCKER(HrtGetNotifyID).stubs().with(any(), any()).will(returnValue(static_cast<u32>(0)));
+    MOCKER(HrtGetDevice).stubs().with(any(), any()).will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtFree).stubs().with(any(), any()).will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(commParams.devType));
