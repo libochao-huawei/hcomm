@@ -572,12 +572,16 @@ void SetRetryEnable(DevType deviceType, const u32 &superPodNum, const u32 &serve
     hccl::HcclIpAddress &serverIp, hccl::HcclIpAddress &localIp, bool &retryEnable,
     bool isInterServerRetry, bool isInterSuperPodRetry)
 {
+    // TODOSSY
+    HCCL_INFO("isInterServerRetry[%d] isInterSuperPodRetry[%d]", isInterServerRetry, isInterSuperPodRetry);
+
     retryEnable = false;
     if (deviceType != DevType::DEV_TYPE_910_93 || isDiffDeviceType) {
         retryEnable = false;
     } else if (superPodNum > 1) { // L2重执行
         retryEnable = isInterSuperPodRetry  || isInterServerRetry;
-    } else if (serverNum > 1) { // L1重执行
+    // } else if (serverNum > 1) { // L1重执行
+    } else if (serverNum >= 1) { // L0+L1重执行 (TODOSSY)
         retryEnable = isInterServerRetry;
     }
 
