@@ -168,6 +168,7 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/unique
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/buffer_manager
     ${HCOMM_DIR}/src/legacy/ascend910/platform/common/unfold_cache
+    ${HCOMM_DIR}/src/legacy/ascend910/platform/common/async_unfold_cache
 
     # hccp (moved to base_comm/resources)
     ${HCOMM_DIR}/src/base_comm/resources/hccp
