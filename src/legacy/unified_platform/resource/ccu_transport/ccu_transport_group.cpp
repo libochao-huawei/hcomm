@@ -55,7 +55,7 @@ HcclResult CcuTransportGroup::CheckTransportCntCke()
     for (auto &transport : transportsGrp) {
         transport->SetCntCke(cntCkesGroup);
     }
-    return HCCL_SUCCESS;
+    return HcclResult::HCCL_SUCCESS;
 }
 
 CcuTransportGroup::CcuTransportGroup(const vector<CcuTransport*> &transports, u32 cntCkeNum):isDestroyed(false)
