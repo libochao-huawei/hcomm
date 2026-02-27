@@ -1637,4 +1637,9 @@ namespace hccl
     {
         return HCCL_SUCCESS;
     }
+
+    HcclResult InsertNewTagToTagMap(const std::string &newTag, const OpParam &opParam)
+    {
+        return HCCL_SUCCESS;
+    }
 }
