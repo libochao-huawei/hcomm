@@ -277,8 +277,8 @@ HcclResult CollRunAlltoAllDirectFullmesh::GetLocalSendRecvInfoforAlltoallVC(cons
         localSendRecvInfo_.recvOffset[j] = curRecvOffset;
         curRecvDispls += curRecvCounts;
         curRecvOffset += curRecvLength;
-        HCCL_DEBUG("GetLocalSendRecvInfoforAlltoallVC rank[%u], sendCounts[%llu], sendDispls[%llu] "\
-            "recvCounts[%llu], recvDispls[%llu]", topoAttr_.userRank, localSendRecvInfo_.sendCounts[j],
+        HCCL_DEBUG("GetLocalSendRecvInfoforAlltoallVC rank[%u], remoteRank[%u] sendCounts[%llu], sendDispls[%llu] "\
+            "recvCounts[%llu], recvDispls[%llu]", topoAttr_.userRank, j, localSendRecvInfo_.sendCounts[j],
             localSendRecvInfo_.sendDispls[j], localSendRecvInfo_.recvCounts[j],
             localSendRecvInfo_.recvDispls[j]);
     }
