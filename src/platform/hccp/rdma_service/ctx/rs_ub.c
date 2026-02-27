@@ -1846,10 +1846,10 @@ STATIC int RsUbFillJettyInfo(struct RsCtxJettyCb *jettyCb, struct QpCreateInfo *
     for (size_t i = 0; i < 16; i++) {
         hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.eid.raw[%d]: %ld,", i, jettyCb->jetty->jetty_id.eid.raw[i]);
     }
-    hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.eid.in4.reserved: %ld,", i, jettyCb->jetty->jetty_id.eid.in4.reserved);
-    hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.eid.in4.prefix: %ld,", i, jettyCb->jetty->jetty_id.eid.in4.prefix);
-    hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.uasid: %ld,", i, jettyCb->jetty->jetty_id.uasid);
-    hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.id: %ld,", i, jettyCb->jetty->jetty_id.id);
+    hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.eid.in4.reserved: %ld,", jettyCb->jetty->jetty_id.eid.in4.reserved);
+    hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.eid.in4.prefix: %ld,", jettyCb->jetty->jetty_id.eid.in4.prefix);
+    hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.uasid: %ld,", jettyCb->jetty->jetty_id.uasid);
+    hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.id: %ld,", jettyCb->jetty->jetty_id.id);
     jettyKeyInfo.transMode = jettyCb->transportMode;
     ret = memcpy_s(jettyInfo->key.value, DEV_QP_KEY_SIZE, &jettyKeyInfo, sizeof(struct RsJettyKeyInfo));
     CHK_PRT_RETURN(ret != 0, hccp_err("memcpy jetty_key_info failed, ret:%d", ret), -ESAFEFUNC);
@@ -2248,10 +2248,10 @@ STATIC int RsUbCtxDrvJettyImport(struct RsCtxRemJettyCb *rjettyCb)
     for (size_t i = 0; i < 16; i++) {
         hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.eid.raw[%d]: %ld,", i, rjetty.jetty_id.eid.raw[i]);
     }
-    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.eid.in4.reserved: %ld,", i, rjetty.jetty_id.eid.in4.reserved);
-    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.eid.in4.prefix: %ld,", i, rjetty.jetty_id.eid.in4.prefix);
-    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.uasid: %ld,", i, rjetty.jetty_id.uasid);
-    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.id: %ld,", i, rjetty.jetty_id.id);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.eid.in4.reserved: %ld,", rjetty.jetty_id.eid.in4.reserved);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.eid.in4.prefix: %ld,", rjetty.jetty_id.eid.in4.prefix);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.uasid: %ld,", rjetty.jetty_id.uasid);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.id: %ld,", rjetty.jetty_id.id);
 
     if (rjettyCb->mode == JETTY_IMPORT_MODE_NORMAL) {
         hccp_warn("@@@ RsUbCtxDrvJettyImport JETTY_IMPORT_MODE_NORMAL");
