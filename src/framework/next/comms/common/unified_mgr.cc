@@ -24,7 +24,7 @@
 // orion ccu单例
 #include "ccu_component.h"
 #include "../../../legacy/unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
-#include "ccu_context_mgr_imp.h"
+#include "../../../legacy/unified_platform/ccu/ccu_context/ccu_context_mgr_imp.h"
 // 开源开放 ccu单例
 #include "ccu_comp.h"
 #include "../ccu/ccu_device/ccu_res_batch_allocator.h"
@@ -57,7 +57,7 @@ UnifiedMgr& UnifiedMgr::GetInstance(const uint32_t devicePhyId)
     Hccl::CcuResBatchAllocator::GetInstance(devicePhyId);
     Hccl::CtxMgrImp::GetInstance(devicePhyId);
 
-    // 开源开放架构下新增CCU类型单例，当前混跑时不使用
+    // 开源开放架构下CCU模式新增类型单例，当前混跑时不使用
     TpMgr::GetInstance(devicePhyId);
     CcuComponent::GetInstance(devicePhyId);
     CcuResBatchAllocator::GetInstance(devicePhyId);

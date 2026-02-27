@@ -91,7 +91,7 @@ HcclOpInfoCtx &GetOpHcomInfo(uint32_t devId)
         devId = MAX_MODULE_DEVICE_NUM;
     }
     
-    (void)HcommInit(devId);
+    (void)HcommInitManager(devId);
 
     static HcclOpInfoCtx g_opHcomInfos[MAX_MODULE_DEVICE_NUM + 1];
     return g_opHcomInfos[devId];

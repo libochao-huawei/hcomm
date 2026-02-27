@@ -19,7 +19,7 @@
 extern "C" {
 #endif // __cplusplus
 
-HcclResult HcommInit(const uint32_t devPhyId);
+HcclResult HcommInitManager(const uint32_t devPhyId);
 
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
 
