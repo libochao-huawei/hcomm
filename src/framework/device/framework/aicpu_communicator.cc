@@ -131,6 +131,7 @@ HcclResult HcclCommAicpu::Init(const HcclOpResParam *commParam, bool isCustom)
     CHK_RET(InitHostDeviceLock(commParam));
     CHK_RET(InitTopoMatcher());
     CHK_RET(InitOpRetry(commParam));
+    CHK_RET(InitAsyncUnfold(commParam));
     CHK_RET(RegisterDispatcherCallback());
     CHK_RET(InitTinyMem(commParam));
     CHK_RET(InitProfResource());
@@ -250,6 +251,13 @@ HcclResult HcclCommAicpu::InitOpRetry(const HcclOpResParam *commParam)
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commParam->kfcStatusTransferD2HParams));
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::InitAsyncUnfold(const HcclOpResParam *commParam)
+{
+    CHK_RET(aicpuAsyncUnfolder_.Init(commParam->kfcTailH2DParams, commParam->kfcHeadD2HParams,
+        commParam->kfcOpH2DRingBufferParams, OP_H2D_RING_BUFFER_SIZE));
     return HCCL_SUCCESS;
 }
 
@@ -2333,8 +2341,11 @@ HcclResult HcclCommAicpu::Orchestrate(const std::string &newTag, const std::stri
                 break;
             case HcclOpExecFSM::HCCL_OP_EXEC_FSM_RETRY:
                 // 重执行前清理当前算子展开的SQE缓存 (if any), 防止命中非完整的cache
-                CHK_RET(aicpuCacheManager_.ClearOpUnfoldCacheEntry(algName, param, algResource, isDeviceMode_, topoInfo_,
-                    topoMatcher_, algOpContext_, GetWorkflowMode()));
+                CHK_RET(aicpuCacheManager_.ClearOpUnfoldCacheEntry(algName, param, algResource, isDeviceMode_, dispatcher_,
+                    topoInfo_, topoMatcher_, algOpContext_, GetWorkflowMode()));
+                // 重执行前清理异步展开信息 (if any)
+                CHK_RET(aicpuAsyncUnfolder_.ClearAsyncUnfoldInfo(param.opBaseOpIdx, mainStream_, algResource.slaveStreams,
+                    dispatcher_));
                 ret = HcclOpExecFsmRetryProcess(algName, param, executor, algResource, state, errorCode, retryCnt,
                     beginSqePos, endSqePos);
                 break;
@@ -2360,9 +2371,12 @@ HcclResult HcclCommAicpu::Orchestrate(const std::string &newTag, const std::stri
                 return HcclOpExecFsmEndProcess(retryCnt);
             case HcclOpExecFSM::HCCL_OP_EXEC_STOP_LAUNCH:
                 HCCL_DEBUG("[NsRecovery][AICPU] stop the kernel");
-                // 停止前清理当前算子展开的SQE缓存 (if any), 防止host侧重新展开该算子并命中非完整的cache (例如step快恢)
-                CHK_RET(aicpuCacheManager_.ClearOpUnfoldCacheEntry(algName, param, algResource, isDeviceMode_, topoInfo_,
-                    topoMatcher_, algOpContext_, GetWorkflowMode()));
+                // ns快恢停止前清理当前算子展开的SQE缓存 (if any), 防止host侧重新展开该算子并命中非完整的cache (例如step快恢)
+                CHK_RET(aicpuCacheManager_.ClearOpUnfoldCacheEntry(algName, param, algResource, isDeviceMode_, dispatcher_,
+                    topoInfo_, topoMatcher_, algOpContext_, GetWorkflowMode()));
+                // ns快恢停止前清理异步展开信息 (if any)
+                CHK_RET(aicpuAsyncUnfolder_.ClearAsyncUnfoldInfo(param.opBaseOpIdx, mainStream_, algResource.slaveStreams,
+                    dispatcher_));
                 if (!needsResponseStopLaunch_) {
                     return HCCL_E_SUSPENDING;
                 } else {
@@ -2477,7 +2491,7 @@ HcclResult HcclCommAicpu::HcclOpExecFsmLaunchProcess(const std::string &algName,
 {
     HCCL_DEBUG("hccl aicpu start launch task.");
 
-    HcclResult ret = OrchestrateHcclOp(algName, param, executor, algResource, beginSqePos, endSqePos);
+    HcclResult ret = OrchestrateHcclOp(algName, param, executor, algResource, beginSqePos, endSqePos, NORMAL_UNFOLD);
     if (ret == HCCL_SUCCESS) { // 下发成功, 并且没有检测到异常cq或中断命令
         fsmState = HcclOpExecFSM::HCCL_OP_EXEC_FSM_WAIT_END;
     } else if (ret == HCCL_E_SUSPENDING) { // 检测到异常cq或中断命令
@@ -3406,99 +3420,153 @@ void HcclCommAicpu::PrepareMc2Handler()
 
 HcclResult HcclCommAicpu::OrchestrateHcclOp(const std::string &algName, OpParam &param,
     std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, uint32_t &beginSqePos,
-    uint32_t &endSqePos)
+    uint32_t &endSqePos, const AsyncUnfoldStage asyncUnfoldStage)
 {
+    // 注意: 无论是正常展开, 还是异步展开生成/应用SQE, 都需要正常report error log
     LogControl logControl(false, false); // 重执行ERROR日志控制，析构时重置日志设置
-    PrepareMc2Handler();
-    HcclResult ret = HCCL_SUCCESS;
-    // task的尾指针，已便重执行stop时判断是否已执行该task，如果该task已执行完成则可支持通信重执行
-    CHK_RET(QuerySqStatusByType(devId_, mainStream_.sqId(), DRV_SQCQ_PROP_SQ_TAIL, beginSqePos));
 
+    // 注意: 异步展开生成/应用SQE时, 一定不是MC2算子, PrepareMc2Handler相当于空调用
+    PrepareMc2Handler();
+
+    // task的尾指针，已便重执行stop时判断是否已执行该task，如果该task已执行完成则可支持通信重执行
+    // 注意: 异步展开生成阶段, 不会改变RTSQ tail, 无需备份tail位置 (应用阶段备份即可)
+    HcclResult ret = HCCL_SUCCESS;
+    if (asyncUnfoldStage != AsyncUnfoldStage::ASYNC_UNFOLD_GENERATE) {
+        CHK_RET(QuerySqStatusByType(devId_, mainStream_.sqId(), DRV_SQCQ_PROP_SQ_TAIL, beginSqePos));
+    }
+
+    // 注意: 异步展开应用时直接从异步展开cache读取主从流的SQE, 无需重新生成
     const bool retryForBatchSndRcv = (param.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV && retryEnable_);
-    if (retryForBatchSndRcv) {
-        CHK_RET(QueryBatchSendRecvPairBeginPos());
-        if (param.BatchSendRecvDataDes.curIterNum == 0) {
-            // batchsendrecv算子拆分为多轮执行，只有第一个step和最后一个step需要和主stream交互
+    if (asyncUnfoldStage != AsyncUnfoldStage::ASYNC_UNFOLD_APPLY) {
+        if (retryForBatchSndRcv) {
+            // 注意: 异步展开生成阶段不会影响bsrSend/RecvStream (两个特殊的slaveStream) 的RTSQ tail;
+            // 因此, 异步展开生成阶段提前校验后, 异步展开应用阶段无需重复校验
+            CHK_RET(QueryBatchSendRecvPairBeginPos());
+            if (param.BatchSendRecvDataDes.curIterNum == 0) {
+                // batchsendrecv算子拆分为多轮执行，只有第一个step和最后一个step需要和主stream交互
+                CHK_RET(NotifyWait());
+            }
+            HCCL_INFO("batch send recv op: step %u, mode:%u", param.BatchSendRecvDataDes.curIterNum,
+                param.BatchSendRecvDataDes.curMode);
+        } else {
             CHK_RET(NotifyWait());
-        }
-        HCCL_INFO("batch send recv op: step %u, mode:%u", param.BatchSendRecvDataDes.curIterNum,
-            param.BatchSendRecvDataDes.curMode);
-    } else {
-        CHK_RET(NotifyWait());
-        // 重执行场景, 算子计数在host侧; MC2场景也不开启卡住检测能力
-        if (opCounterInfo_.isEnableCounter && !retryEnable_ && !isDeviceMode_) {
-            CHK_RET(HcclReduceAsync(dispatcher_, reinterpret_cast<void *>(opCounterInfo_.addOneMem), opCounterInfo_.memSize / sizeof(int32_t),
-                HCCL_DATA_TYPE_INT32, HCCL_REDUCE_SUM, mainStream_, reinterpret_cast<void *>(opCounterInfo_.headCountMem), INVALID_VALUE_RANKID,
-                LinkType::LINK_ONCHIP, INLINE_REDUCE_BIT));
+            // 重执行场景, 算子计数在host侧; MC2场景也不开启卡住检测能力
+            if (opCounterInfo_.isEnableCounter && !retryEnable_ && !isDeviceMode_) {
+                CHK_RET(HcclReduceAsync(dispatcher_, reinterpret_cast<void *>(opCounterInfo_.addOneMem), opCounterInfo_.memSize / sizeof(int32_t),
+                    HCCL_DATA_TYPE_INT32, HCCL_REDUCE_SUM, mainStream_, reinterpret_cast<void *>(opCounterInfo_.headCountMem), INVALID_VALUE_RANKID,
+                    LinkType::LINK_ONCHIP, INLINE_REDUCE_BIT));
+            }
         }
     }
 
-    // 打印当前展开的算子信息
-    HCCL_INFO("[HcclCommAicpu][OrchestrateHcclOp] opUnfoldIdx_[%u] opType[%d] curRank[%u] rankSize[%u] algName[%s]",
-        opUnfoldIdx_, param.opType, topoInfo_.userRank, GetRankSize(), algName.c_str());
-    HCCL_INFO("[HcclCommAicpu][OrchestrateHcclOp] inputPtr[0x%016llx] inputSize[%llu] outputPtr[0x%016llx] outputSize[%llu]",
-        param.inputPtr, param.inputSize, param.outputPtr, param.outputSize);
-    opUnfoldIdx_ += 1;
+    if (asyncUnfoldStage != AsyncUnfoldStage::ASYNC_UNFOLD_GENERATE) {
+        // 打印当前展开的算子信息
+        HCCL_INFO("[HcclCommAicpu][OrchestrateHcclOp] opUnfoldIdx_[%u] opType[%d] curRank[%u] rankSize[%u] algName[%s] "
+            "asyncUnfoldStage[%d]",
+            opUnfoldIdx_, param.opType, topoInfo_.userRank, GetRankSize(), algName.c_str(), asyncUnfoldStage);
+        HCCL_INFO("[HcclCommAicpu][OrchestrateHcclOp] inputPtr[0x%016llx] inputSize[%llu] outputPtr[0x%016llx] outputSize[%llu]",
+            param.inputPtr, param.inputSize, param.outputPtr, param.outputSize);
+        opUnfoldIdx_ += 1;
+    } else {
+        // 打印异步展开的算子信息
+        HCCL_INFO("[HcclCommAicpu][OrchestrateHcclOp] ASYNC_UNFOLD_GENERATE: expectedOpUnfoldIdx_[%u] opType[%d] "
+            "curRank[%u] rankSize[%u] algName[%s]",
+            opUnfoldIdx_ + 1, param.opType, topoInfo_.userRank, GetRankSize(), algName.c_str());
+        HCCL_INFO("[HcclCommAicpu][OrchestrateHcclOp] inputPtr[0x%016llx] inputSize[%llu] outputPtr[0x%016llx] outputSize[%llu]",
+            param.inputPtr, param.inputSize, param.outputPtr, param.outputSize);
+    }
 
-    // 检查算子展开的动态缓存, 确认是否可以跳过算子展开
-    bool needExecute = true;
-    bool isCacheMiss = false;
-    auto setProfStartCallback = [this](){
-        return this->InvokeKfcHandler(AicpuKfcHandlerType::kSetProfTimeStart, {});
-    };
-    CHK_RET(aicpuCacheManager_.LookupOpUnfoldCache(algName, param, algResource, needExecute, isCacheMiss,
-        mainStream_, slaveStreams_, dispatcher_, isDeviceMode_, topoInfo_, topoMatcher_, algOpContext_,
-        ZeroCopyExchanger_, GetWorkflowMode(), tinySendRecvMem_, setProfStartCallback));
-
-    // 根据needExecute有条件的执行算子展开
-    // 需要算子执行的场景: (i) expansion mode为AI_CPU_NO_CACHE; (ii) uncacheable算子/场景; (iii) cache miss
-    if (needExecute) {
-        // Cache miss前执行cache相关的预处理
-        if (isCacheMiss) {
-            CHK_RET(aicpuCacheManager_.PreProcessForCacheMiss(param, executor));
+    // 正常展开 or 异步展开生成阶段:
+    // TODO: (i) 缓存命中: LaunchNewTask根据异步展开上下文, 判断将刷新的SQE直接下发到RTSQ, 还是保存到AsyncUnfoldCache
+    // TODO: (ii) 不使能aicpu cache: LaunchTask根据异步展开上下文, 判断将生成的SQE直接下发到RTSQ, 还是保存到AsyncUnfoldCache
+    // TODO: (iii) 缓存不命中: LaunchTask根据异步展开上下文, 判断将生成的SQE直接下发到RTSQ, 还是保存到AsyncUnfoldCache;
+    //     但始终保存到aicpu cache (与AsyncUnfoldCache独立)
+    // 异步展开应用阶段:
+    // TODO: (i) 直接使用异步展开生成阶段保存的SQE, 不用查询aicpu cache触发SQE生成/刷新
+    if (asyncUnfoldStage != AsyncUnfoldStage::ASYNC_UNFOLD_APPLY) { // 正常展开 或者 异步展开生成阶段
+        // 通过SetLaunchAsyncContext设置DispatcherAicpu内异步展开的上下文
+        AsyncUnfoldKey asyncUnfoldKey;
+        if (asyncUnfoldStage == AsyncUnfoldStage::ASYNC_UNFOLD_GENERATE) {
+            // TODO: 构造AsyncUnfoldKey
+            CHK_RET((reinterpret_cast<DispatcherAiCpu *>(dispatcherPtr))->SetLaunchAsyncContext(
+                asyncUnfoldKey, &aicpuAsyncUnfolder_.GetAsyncUnfoldCache(), asyncUnfoldStage
+            ));
         }
 
-        // executor设置AlgOpContext
-        CHK_RET(executor->SetAlgOpContext(algOpContext_));
-        (void)InvokeKfcHandler(AicpuKfcHandlerType::kSetProfTimeStart, {});
-        ret = executor->Orchestrate(param, algResource);
+        // 检查算子展开的动态缓存, 确认是否可以跳过算子展开
+        bool needExecute = true;
+        bool isCacheMiss = false;
+        auto setProfStartCallback = [this](){
+            return this->InvokeKfcHandler(AicpuKfcHandlerType::kSetProfTimeStart, {});
+        };
+        CHK_RET(aicpuCacheManager_.LookupOpUnfoldCache(algName, param, algResource, needExecute, isCacheMiss,
+            mainStream_, slaveStreams_, dispatcher_, isDeviceMode_, topoInfo_, topoMatcher_, algOpContext_,
+            ZeroCopyExchanger_, GetWorkflowMode(), tinySendRecvMem_, setProfStartCallback));
+
+        // 根据needExecute有条件的执行算子展开
+        // 需要算子执行的场景: (i) expansion mode为AI_CPU_NO_CACHE; (ii) uncacheable算子/场景; (iii) cache miss
+        if (needExecute) {
+            // Cache miss前执行cache相关的预处理
+            if (isCacheMiss) {
+                CHK_RET(aicpuCacheManager_.PreProcessForCacheMiss(param, executor));
+            }
+
+            // executor设置AlgOpContext
+            CHK_RET(executor->SetAlgOpContext(algOpContext_));
+            (void)InvokeKfcHandler(AicpuKfcHandlerType::kSetProfTimeStart, {});
+            ret = executor->Orchestrate(param, algResource);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[HcclCommAicpu][Orchestrate]executor process failed algName[%s], ret = %u", algName.c_str(), ret);
+                printTaskExceptionForErr_ |= (ret == HCCL_E_AGAIN);
+                return ret;
+            }
+
+            // Cache miss后执行cache相关的后处理
+            if (isCacheMiss) {
+                CHK_RET(aicpuCacheManager_.PostProcessForCacheMiss(param, executor, mainStream_, slaveStreams_, dispatcher_,
+                    topoInfo_, algOpContext_, GetWorkflowMode()));
+            }
+        } // 正常算子展开
+
+        // batchsendrecv算子拆分为多轮执行，只有第一个step和最后一个step需要和主stream交互
+        if (!retryForBatchSndRcv || param.BatchSendRecvDataDes.curIterNum + 1 >= bsrSendRecvPairs_.size()) {
+            // 重执行场景, 算子计数在host侧 MC2场景也不开
+            if (opCounterInfo_.isEnableCounter && !retryEnable_ && !isDeviceMode_) {
+                CHK_RET(HcclReduceAsync(dispatcher_, reinterpret_cast<void *>(opCounterInfo_.addOneMem), opCounterInfo_.memSize / sizeof(int32_t),
+                    HCCL_DATA_TYPE_INT32, HCCL_REDUCE_SUM, mainStream_, reinterpret_cast<void *>(opCounterInfo_.tailCountMem), INVALID_VALUE_RANKID,
+                    LinkType::LINK_ONCHIP, INLINE_REDUCE_BIT));
+            }
+            CHK_RET(NotifyPost());
+        }
+        (void)InvokeKfcHandler(AicpuKfcHandlerType::kSetProfTimeOrch, {});
+        ret = LaunchTask(dispatcher_, const_cast<Stream &>(mainStream_));
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[HcclCommAicpu][Orchestrate]executor process failed algName[%s], ret = %u", algName.c_str(), ret);
+            HCCL_ERROR("[HcclCommAicpu][LaunchTask]algName[%s] ret = %u", algName.c_str(), ret);
+            printTaskExceptionForErr_ |= (ret == HCCL_E_AGAIN);
+            return ret;
+        }
+        ret = LaunchSlaveStreamTask(algResource);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclCommAicpu][LaunchSlaveStreamTask]algName[%s] ret = %u", algName.c_str(), ret);
             printTaskExceptionForErr_ |= (ret == HCCL_E_AGAIN);
             return ret;
         }
 
-        // Cache miss后执行cache相关的后处理
-        if (isCacheMiss) {
-            CHK_RET(aicpuCacheManager_.PostProcessForCacheMiss(param, executor, mainStream_, slaveStreams_, dispatcher_,
-                topoInfo_, algOpContext_, GetWorkflowMode()));
+        // 通过ClearLaunchAsyncContext清空DispatcherAicpu内异步展开的上下文
+        if (asyncUnfoldStage == AsyncUnfoldStage::ASYNC_UNFOLD_GENERATE) {
+            CHK_RET((reinterpret_cast<DispatcherAiCpu *>(dispatcherPtr))->ClearLaunchAsyncContext());
         }
-    } // 正常算子展开
+    } else { // 异步展开应用阶段
+        // TODO: LaunchAsyncTask, 利用上一算子异步展开缓存在AsyncUnfoldCache的结果, 直接下发RTSQ并执行
+    }
 
-    // batchsendrecv算子拆分为多轮执行，只有第一个step和最后一个step需要和主stream交互
-    if (!retryForBatchSndRcv || param.BatchSendRecvDataDes.curIterNum + 1 >= bsrSendRecvPairs_.size()) {
-        // 重执行场景, 算子计数在host侧 MC2场景也不开
-        if (opCounterInfo_.isEnableCounter && !retryEnable_ && !isDeviceMode_) {
-            CHK_RET(HcclReduceAsync(dispatcher_, reinterpret_cast<void *>(opCounterInfo_.addOneMem), opCounterInfo_.memSize / sizeof(int32_t),
-                HCCL_DATA_TYPE_INT32, HCCL_REDUCE_SUM, mainStream_, reinterpret_cast<void *>(opCounterInfo_.tailCountMem), INVALID_VALUE_RANKID,
-                LinkType::LINK_ONCHIP, INLINE_REDUCE_BIT));
-        }
-        CHK_RET(NotifyPost());
+    // 注意: 如果是异步展开, Start和Orch的prof time在异步展开生成阶段记录, 而End time在异步展开应用阶段记录
+    if (asyncUnfoldStage != AsyncUnfoldStage::ASYNC_UNFOLD_GENERATE) {
+        (void)InvokeKfcHandler(AicpuKfcHandlerType::kSetProfTimeEnd, {});
     }
-    (void)InvokeKfcHandler(AicpuKfcHandlerType::kSetProfTimeOrch, {});
-    ret = LaunchTask(dispatcher_, const_cast<Stream &>(mainStream_));
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HcclCommAicpu][LaunchTask]algName[%s] ret = %u", algName.c_str(), ret);
-        printTaskExceptionForErr_ |= (ret == HCCL_E_AGAIN);
-        return ret;
-    }
-    ret = LaunchSlaveStreamTask(algResource);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HcclCommAicpu][LaunchSlaveStreamTask]algName[%s] ret = %u", algName.c_str(), ret);
-        printTaskExceptionForErr_ |= (ret == HCCL_E_AGAIN);
-        return ret;
-    }
-    (void)InvokeKfcHandler(AicpuKfcHandlerType::kSetProfTimeEnd, {});
+
+    // TODO: END HERE
+
     if (retryForBatchSndRcv) {
         CHK_RET(QueryBatchSendRecvPairEndPos());
     }
@@ -3628,6 +3696,8 @@ HcclResult HcclCommAicpu::WaitFinishWhileLoop(Stream &mainStream, std::vector<St
     if (IsNoNeedWait()) {
         return HCCL_SUCCESS;
     }
+
+    // 判断是否超时, 判断是否执行完毕
     const uint64_t startUsec = GetCurCpuTimestamp();
     uint64_t lastUsec = startUsec;
     int32_t sqId = mainStream.sqId();
@@ -3635,6 +3705,21 @@ HcclResult HcclCommAicpu::WaitFinishWhileLoop(Stream &mainStream, std::vector<St
     uint32_t sqTail = 0;
     CHK_RET(QuerySqStatusByType(devId_, sqId, DRV_SQCQ_PROP_SQ_TAIL, sqTail));
     CHK_RET(QuerySqStatusByType(devId_, sqId, DRV_SQCQ_PROP_SQ_HEAD, sqHead));
+
+    // 用于AICPU异步展开单算子
+    bool hasSubsequentOp = false; // 是否有后续算子信息
+    // 判断AsyncUnfoldCache容量是否足够
+    // 注意: AsyncUnfoldCache只有等异步展开的后续kernel被执行后才会被释放, 而当前kernel退出前后续kernel不会被执行, 因此只需要检查一次
+    bool isAsyncUnfoldCacheFull = aicpuAsyncUnfolder_.GetAsyncUnfoldCache().IsAsyncUnfoldCacheFull();
+    // 初始化预期的相邻算子为, 当前正在执行算子的下一个算子 (expectedAdjacentOp = current opBaseOpIdx + 1)
+    uint64_t expectedAdjacentOpIdx = param.opBaseOpIdx + 1;
+    bool isExpectedAdjacentOp = true; // 后续算子是否为预期的相邻算子
+    HCCL_INFO("[HcclCommAicpu][WaitFinishWhileLoop] before async unfold: hasSubsequentOp[%d] isAsyncUnfoldCacheFull[%d] "
+        "expectedAdjacentOpIdx[%llu] isExpectedAdjacentOp[%d]",
+        hasSubsequentOp, isAsyncUnfoldCacheFull, expectedAdjacentOpIdx, isExpectedAdjacentOp);
+
+    // 轮询等待执行完毕直到超时 (或者有异常CQE或中断命令)
+    CHK_RET(aicpuAsyncUnfolder_.UpdateAsyncUnfoldFlag(GetWorkflowMode(), param, topoInfo_, isDeviceMode_));
     do {
         HcclResult ret = CheckOpExecStatus(); // 检查执行状态，判断是否有异常cq或中断命令
         CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -3659,6 +3744,78 @@ HcclResult HcclCommAicpu::WaitFinishWhileLoop(Stream &mainStream, std::vector<St
                 "group[%s] tag[%s]", devId_, sqId, sqHead, sqTail, identifier_.c_str(), tag.c_str());
         }
         CHK_RET(CheckTaskTimeout(mainStream, startUsec));
+
+        // 如果既没有error CQE/stop KfcCommand, 也没有timeout, 则检查OpH2DRingBuffer, 查看是否存在需要异步展开的单算子
+        // 注意: OpH2DRingBuffer的轮询一定要放在do-while循环中, 因为在等待SQE执行的过程中, HCCL host可能会下发新的算子信息
+        if (aicpuAsyncUnfolder_.IsAsyncUnfoldEnable()) {
+            if (hasSubsequentOp && (isAsyncUnfoldCacheFull || !isExpectedAdjacentOp)) { // 存在后续算子信息
+                // (i) AsyncUnfoldCache容量已满; or (ii) 后续算子不是相邻算子
+                // 上述任一条件满足, 一定不会触发异步展开, 无需再从OpH2DRingBuffer中获取后续算子信息
+            } else { // 存在过时算子信息待消费, 或者存在后续算子信息待展开 (AsyncUnfoldCache容量未满, 且后续算子为相邻算子)
+                // 从OpH2DRingBuffer中获取算子信息
+                bool isValid = false; // 是否为有效 (过时/后续) 算子信息
+                OpAsyncUnfoldInfo opAsyncUnfoldInfo;
+                CHK_RET(aicpuAsyncUnfolder_.GetOpAsyncUnfoldInfo(isValid, opAsyncUnfoldInfo));
+
+                if (isValid) { // 存在有效 (过时/后续) 算子信息
+                    // TODO: 从OpAsyncUnfoldInfo获取有效算子的opBaseOpIdx
+                    const uint64_t validOpBaseOpIdx = 0;
+
+                    // 判断获取的OpAsyncUnfoldInfo与当前kernel相比是否为后续算子信息
+                    hasSubsequentOp = (validOpBaseOpIdx > param.opBaseOpIdx);
+                    HCCL_INFO("[HcclCommAicpu][WaitFinishWhileLoop] validOpBaseOpIdx[%llu] "
+                        "param.opBaseOpIdx[%llu] hasSubsequentOp[%d]",
+                        validOpBaseOpIdx, param.opBaseOpIdx, hasSubsequentOp);
+
+                    if (!hasSubsequentOp) { // 过时算子信息
+                        HCCL_INFO("[HcclCommAicpu][WaitFinishWhileLoop] consume outdated opAsyncUnfoldInfo");
+
+                        // 更新OpH2DRingBuffer, 消费过时算子信息
+                        CHK_RET(aicpuAsyncUnfolder_.ConsumeOpAsyncUnfoldInfo());
+
+                        // 注意: 直接进入下一次loop, 重新从OpH2DRingBuffer中尝试获取算子信息
+                    } else { // 后续算子信息
+                        if (isAsyncUnfoldCacheFull) { // Cache容量已满
+                            // 注意: 不消费当前算子信息, 直接进入下一次loop, 不再检查OpH2DRingBuffer
+                            HCCL_INFO("[HcclCommAicpu][WaitFinishWhileLoop] find subsequent opAsyncUnfoldInfo, "
+                                "but AsyncUnfoldCache is full");
+                        } else { // Cache容量未满
+                            // 判断是否为预期的相邻算子
+                            isExpectedAdjacentOp = (validOpBaseOpIdx == expectedAdjacentOpIdx); // 更新isExpectedAdjacentOp
+                            HCCL_INFO("[HcclCommAicpu][WaitFinishWhileLoop] validOpBaseOpIdx[%llu] "
+                                "expectedAdjacentOpIdx[%llu] isExpectedAdjacentOp[%d]",
+                                validOpBaseOpIdx, expectedAdjacentOpIdx, isExpectedAdjacentOp);
+
+                            if (isExpectedAdjacentOp) {
+                                HCCL_INFO("[HcclCommAicpu][WaitFinishWhileLoop] find subsequent and adjacent opAsyncUnfoldInfo");
+
+                                // 异步展开前, 备份主从流的tailSqeTaskId和flipNum, 用于重执行恢复
+                                // 注意: expectedAdjacentOpIdx = param.opBaseOpIdx + 1, 一定>=1
+                                CHK_PRT_RET(expectedAdjacentOpIdx < 1,
+                                    HCCL_ERROR("expectedAdjacentOpIdx[%llu] is invalid", expectedAdjacentOpIdx),
+                                    HCCL_E_INTERNAL);
+                                CHK_RET(aicpuAsyncUnfolder_.BackupStreamInfo(expectedAdjacentOpIdx - 1,
+                                    mainStream, subStreams));
+
+                                // TODO: 触发异步展开, 将展开的SQE保存为AsyncUnfoldCache中的new entry (if not exist)
+
+                                // 异步展开完成后, 更新isAsyncUnfoldCacheFull, 并消费展开的算子信息
+                                isAsyncUnfoldCacheFull = aicpuAsyncUnfolder_.GetAsyncUnfoldCache().IsAsyncUnfoldCacheFull();
+                                CHK_RET(aicpuAsyncUnfolder_.ConsumeOpAsyncUnfoldInfo());
+                                expectedAdjacentOpIdx++; // 预期算子变成最近异步展开算子的下一算子
+
+                                HCCL_INFO("[HcclCommAicpu][WaitFinishWhileLoop] after async unfold: "
+                                    "isAsyncUnfoldCacheFull[%d] expectedAdjacentOpIdx[%llu]",
+                                    isAsyncUnfoldCacheFull, expectedAdjacentOpIdx);
+                            } else {
+                                HCCL_INFO("[HcclCommAicpu][WaitFinishWhileLoop] find subsequent opAsyncUnfoldInfo, "
+                                    "but it is not adjacent to the current aicpu kernel");
+                            } // isExpectedAdjacentOp
+                        } // isAsyncUnfoldCacheFull
+                    } // hasSubsequentOp
+                } // isValid
+            } // hasSubsequentOp && (isAsyncUnfoldCacheFull || !isExpectedAdjacentOp) -> 无需异步展开
+        } // IsAsyncUnfoldEnable
     } while (sqHead != sqTail);
     return HCCL_SUCCESS;
 }
