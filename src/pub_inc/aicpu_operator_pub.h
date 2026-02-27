@@ -612,6 +612,7 @@ struct AicpuCustomParam {
     TaskExceptionParam taskExceptionParam; // 故障上报信息
 };
 
+constexpr u32 OP_H2D_RING_BUFFER_SIZE = 1024; // kfcOpH2DRingBuffer_最大容纳的opH2D数量, 用于aicpu异步展开单算子
 struct HcclOpResParam {
     // 本地资源
     HcclMC2WorkSpace mc2WorkSpace;
@@ -644,6 +645,12 @@ struct HcclOpResParam {
     // communicate retry
     hccl::HDCommunicateParams kfcControlTransferH2DParams;
     hccl::HDCommunicateParams kfcStatusTransferD2HParams;
+    // HDC资源相关参数, 用于AICPU异步展开单算子
+    // 注意: kfcOpH2DRingBufferParams必须使用数组而不能使用vector, 因为hccl_communicator中会使用sizeof(HcclOpResParam)
+    // 分配DeviceMem opResDevicePara_并拷贝opResPara_
+    hccl::HDCommunicateParams kfcTailH2DParams;
+    hccl::HDCommunicateParams kfcHeadD2HParams;
+    hccl::HDCommunicateParams kfcOpH2DRingBufferParams[OP_H2D_RING_BUFFER_SIZE];
 
     u64 tinyMem;   // for all2all
     u64 tinyMemSize;
