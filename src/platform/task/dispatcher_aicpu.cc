@@ -20,6 +20,7 @@
 #include "dlhal_function.h"
 #include "adapter_hal_pub.h"
 #include "dispatcher_aicpu.h"
+#include "aicpu_cache_utils.h"
 
 namespace hccl {
 constexpr uint64_t NANOSECOND_TO_SECOND = 1000000000U;
@@ -509,7 +510,7 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
                 uint8_t *sqePtr = sqeArray + sqeIdx * HCCL_SQE_SIZE;
                 const uint8_t sqeType = sqeTypeArray[sqeIdx];
                 PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchNewTask] %uth cached SQE", sqeIdx);
-                CHK_RET(OpUnfoldCache::DumpSqeContent(sqePtr, sqeType));
+                CHK_RET(AicpuCacheUtils::DumpSqeContent(sqePtr, sqeType));
 
                 const AicpuDfxInfo& dfxinfo = sqeDfxInfoArray[sqeIdx];
                 PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchNewTask] AicpuDfxInfo: remoteRank[%u] opRingBufferIdx[%u] notifyId[%u]",
@@ -745,7 +746,7 @@ HcclResult DispatcherAiCpu::LaunchTask(Stream &stream, bool isBlockLaunch)
                 PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchTask] %uth dispatched SQE", sqeIdx);
             }
             
-            CHK_RET(OpUnfoldCache::DumpSqeContent(sqePtr, sqeType));
+            CHK_RET(AicpuCacheUtils::DumpSqeContent(sqePtr, sqeType));
 
             const AicpuDfxInfo& dfxinfo = sqeDfxInfoArray[sqeIdx];
             PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchTask] AicpuDfxInfo: remoteRank[%u] opRingBufferIdx[%u] notifyId[%u]",
@@ -1055,6 +1056,8 @@ HcclResult DispatcherAiCpu::WaitRtsq(Stream& stream, const size_t& sqeCount, con
         // 当前流无法下发，把其他流都launch一遍，避免等待的其他流没有launch
         for (auto it = streamMap_.begin(); it != streamMap_.end(); ++it) {
             if (it->first != streamInfo.actualStreamId) { // 不是当前stream
+                // 注意: LaunchNewTask暂不支持非阻塞调用, 因此用LaunchTask占位
+                // 由于LaunchNewTask前强制执行LaunchTask的阻塞调用, 因此SqeRingBuffer一定为空, 即这里LaunchTask一定为空调用
                 CHK_RET(LaunchTask(it->second, false)); // 非阻塞launch
             }
         }
