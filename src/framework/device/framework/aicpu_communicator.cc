@@ -131,6 +131,7 @@ HcclResult HcclCommAicpu::Init(const HcclOpResParam *commParam, bool isCustom)
     CHK_RET(InitHostDeviceLock(commParam));
     CHK_RET(InitTopoMatcher());
     CHK_RET(InitOpRetry(commParam));
+    CHK_RET(InitAsyncUnfold(commParam));
     CHK_RET(RegisterDispatcherCallback());
     CHK_RET(InitTinyMem(commParam));
     CHK_RET(InitProfResource());
@@ -248,6 +249,15 @@ HcclResult HcclCommAicpu::InitOpRetry(const HcclOpResParam *commParam)
         EXECEPTION_CATCH((kfcStatusTransferD2H_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commParam->kfcStatusTransferD2HParams));
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::InitAsyncUnfold(const HcclOpResParam *commParam)
+{
+    if (ASYNC_UNFOLD_ENABLE) {
+        CHK_RET(aicpuAsyncUnfolder_.Init(commParam->kfcTailH2DParams, commParam->kfcHeadD2HParams,
+            commParam->kfcOpH2DRingBufferParams, OP_H2D_RING_BUFFER_SIZE));
     }
     return HCCL_SUCCESS;
 }
@@ -3552,6 +3562,11 @@ HcclResult HcclCommAicpu::WaitFinishWhileLoop(Stream &mainStream, std::vector<St
                 "group[%s] tag[%s]", devId_, sqId, sqHead, sqTail, identifier_.c_str(), tag.c_str());
         }
         CHK_RET(CheckTaskTimeout(mainStream, startUsec));
+
+        // 如果既没有error CQE/stop KfcCommand, 也没有timeout, 则check OpH2DRingBuffer, 查看是否存在需要异步展开的单算子
+        if (ASYNC_UNFOLD_ENABLE) {
+            // TODO
+        }
     } while (sqHead != sqTail);
     return HCCL_SUCCESS;
 }
