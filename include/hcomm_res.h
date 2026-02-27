@@ -60,6 +60,15 @@ extern HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
 
+typedef enum {
+    THREAD_RES_TYPE_INVALID = -1,
+    THREAD_RES_TYPE_STREAM = 0,
+} ThreadResType;
+
+typedef aclrtStream ThreadResTypeStream; 
+
+extern HcclResult HcommThreadResGetInfo(ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void *info);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
