@@ -9,7 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 
 set(TLV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tlv)
-
+include(cmake/third_party/ubengine.cmake)
 set(rs_list
     rs.c
     rs_epoll.c
