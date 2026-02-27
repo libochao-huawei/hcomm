@@ -55,10 +55,6 @@ DevType AicpuHcclProcess::AicpuGetInnerDevType()
     return g_devType;
 }
 
-static constexpr uint32_t ALLTOALLV_INFO_INDEX_2 = 2;
-static constexpr uint32_t ALLTOALLV_INFO_INDEX_3 = 3;
-static constexpr uint32_t ALLTOALLV_INFO_INDEX_4 = 4;
-
 AicpuComContext *AicpuGetComContext()
 {
     auto clusterId = HcclAicpuUtils::GetCurClusterId();
@@ -86,91 +82,6 @@ void AicpuHcclProcess::CallMC2MaintenanceThread(AicpuComContext *ctx)
         static_cast<u32>(ctx->commOpenStatus));
     hrtHalStartMC2MaintenanceThread(
         dfx_tracer::ExecutorTracer::BackGroundDfx, ctx, dfx_tracer::ExecutorTracer::StopBackGroundDfx, ctx);
-}
-
-HcclResult AicpuHcclProcess::CalcDataSize(HcclCMDType op, HcclDataType type, u64 count,
-    u32 rankSize, u64 &inputSize, u64 &outputSize)
-{
-    u32 perDataSize = DataUnitSize(type);
-    if (perDataSize == 0) {
-        HCCL_ERROR("[AicpuHcclProcess][CalcDataSize] type [%u] DataUnitSize is 0", type);
-        return HCCL_E_PARA;
-    }
-
-    switch (op) {
-        case HcclCMDType::HCCL_CMD_ALLGATHER:
-            inputSize = count * perDataSize;
-            outputSize = rankSize * count * perDataSize;
-            break;
-        case HcclCMDType::HCCL_CMD_REDUCE_SCATTER:
-        case HcclCMDType::HCCL_CMD_SCATTER:
-            inputSize = rankSize * count * perDataSize;
-            outputSize = count * perDataSize;
-            break;
-        case HcclCMDType::HCCL_CMD_ALLREDUCE:
-        case HcclCMDType::HCCL_CMD_BROADCAST:
-        case HcclCMDType::HCCL_CMD_REDUCE:
-        case HcclCMDType::HCCL_CMD_SEND:
-        case HcclCMDType::HCCL_CMD_RECEIVE:
-        default:
-            inputSize = count * perDataSize;
-            outputSize = count * perDataSize;
-            break;
-    }
-
-    HCCL_DEBUG("[AicpuHcclProcess][CalcDataSize] perDataSize %u count %lu rankSize %u input %lu output %lu",
-        perDataSize, count, rankSize, inputSize, outputSize);
-    return HCCL_SUCCESS;
-}
-
-HcclResult AicpuHcclProcess::CalcDataSizeV(hccl::OpParam &param, u32 rankSize)
-{
-    const HcclDataType type = param.GetDataType();
-    u32 perDataSize = DataUnitSize(type);
-    if (perDataSize == 0) {
-        HCCL_ERROR("[AicpuHcclProcess][CalcDataSizeV] type[%u] DataUnitSize is 0", type);
-        return HCCL_E_PARA;
-    }
-
-    const u32 rankId = param.srcRank;
-    if (rankId >= rankSize) {
-        HCCL_ERROR("[AicpuHcclProcess][CalcDataSizeV] rankId[%u] should not be bigger than rankSize[%u]", rankId,
-            rankSize);
-        return HCCL_E_PARA;
-    }
-
-    const HcclCMDType op = param.opType;
-    switch (op) {
-        case HcclCMDType::HCCL_CMD_ALLGATHER_V:
-            {
-                const u64 *counts = static_cast<u64 *>(param.VDataDes.counts);
-                const u64 totalSize = std::accumulate(counts, counts + rankSize, 0ULL) * perDataSize;
-                param.inputSize = param.GetDataCount(rankId) * perDataSize;
-                param.outputSize = totalSize;
-                break;
-            }
-        case HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V:
-            {
-                const u64 *counts = static_cast<u64 *>(param.VDataDes.counts);
-                const u64 totalSize = std::accumulate(counts, counts + rankSize, 0ULL) * perDataSize;
-                param.inputSize = totalSize;
-                param.outputSize = param.GetDataCount(rankId) * perDataSize;
-                break;
-            }
-        default:
-            HCCL_ERROR("[AicpuHcclProcess][CalcDataSizeV] op[%u] is not supported", op);
-            return HCCL_E_PARA;
-    }
-
-    HCCL_DEBUG("[AicpuHcclProcess][CalcDataSizeV] opType[%u] perDataSize[%u] rankId[%u] rankSize[%u] input[%llu] "
-        "output[%llu]", op, perDataSize, rankId, rankSize, param.inputSize, param.outputSize);
-    return HCCL_SUCCESS;
-}
-
-u64 AicpuHcclProcess::CalcOpTilingVDataDesVDataLen(u32 rankSize)
-{
-    const u32 vFactor = 2;  // counts和displs 2个变长数组
-    return vFactor * rankSize * sizeof(u64);
 }
 
 u32 AicpuHcclProcess::AicpuRpcResInitV2(HcclOpResParam *commParam, bool isCustom)
@@ -412,129 +323,9 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
 
     CHK_RET(hcclCommAicpu->RecordHostOrder(commParam, tag, tilingData->orderLaunchMode));
 
+    // 反序列化opParam, 并设置hcclCommAicpu的相关成员变量
     hccl::OpParam opParam;
-    opParam.tag = tag;
-    opParam.inputPtr = reinterpret_cast<void *>(tilingData->inputPtr);
-    opParam.outputPtr = reinterpret_cast<void *>(tilingData->outputPtr);
-    opParam.reduceType = static_cast<HcclReduceOp>(tilingData->reduceType);
-    opParam.stream = hcclCommAicpu->GetMainStream();
-    opParam.syncMode = static_cast<SyncMode>(tilingData->syncMode);
-    opParam.inputSymWindow = reinterpret_cast<void *>(tilingData->inputSymWindow);
-    opParam.inputOffset = tilingData->inputOffset;
-    opParam.outputSymWindow = reinterpret_cast<void *>(tilingData->outputSymWindow);
-    opParam.outputOffset = tilingData->outputOffset;
-
-    hcclCommAicpu->UpdateNotifyWaitTimeOut(opParam.syncMode, commParam->config.notifyWaitTime);
-
-    opParam.opBaseAtraceInfo = nullptr;
-    opParam.root = tilingData->root;
-    opParam.dstRank = tilingData->dstRank;
-    opParam.srcRank = tilingData->srcRank;
-    opParam.opType = static_cast<HcclCMDType>(tilingData->opType);
-    opParam.isZeroCopy = tilingData->isZeroCopy;
-    opParam.supportSymmetricMemory = tilingData->isSymmetricMemory;
-    opParam.index = tilingData->index;
-    opParam.isCapture = tilingData->isCapture;
-    opParam.needIncreLink = tilingData->needIncreLink;
-    opParam.aicpuCacheEnable = tilingData->aicpuCacheEnable;
-    hcclCommAicpu->PrepareOpRetryHandler(tilingData->inplaceSupportRetry,
-        tilingData->retryEnable, tilingData->inPlaceSupportRetryStatus,
-        tilingData->isInplacePreSync, tilingData->isPostSync);
-    u8* dynamicDataPtr = reinterpret_cast<u8*>(tilingData) + sizeof(struct OpTilingData);
-    char stackLogBuffer[LOG_TMPBUF_SIZE];
-    if (opParam.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) {
-        struct OpTilingBatchSendRecvDataDes* batchSendRecvDataPtr =
-            reinterpret_cast<struct OpTilingBatchSendRecvDataDes*>(dynamicDataPtr);
-        opParam.BatchSendRecvDataDes.itemNum = batchSendRecvDataPtr->itemNum;
-        opParam.BatchSendRecvDataDes.sendRecvItemsPtr = batchSendRecvDataPtr->batchSendRecvItem;
-        opParam.BatchSendRecvDataDes.isDirectRemoteRank = reinterpret_cast<u8*>(batchSendRecvDataPtr->batchSendRecvItem +
-            batchSendRecvDataPtr->itemNum);
-        s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U, "tag:%s", opParam.tag.c_str());
-        CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", opParam.tag.c_str()));
-    } else if (opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
-        struct OpTilingAllToAllDataDes* a2ADataPtr =
-            reinterpret_cast<struct OpTilingAllToAllDataDes*>(dynamicDataPtr);
-        opParam.All2AllDataDes.sendType =  static_cast<HcclDataType>(a2ADataPtr->sendType);
-        opParam.All2AllDataDes.recvType =  static_cast<HcclDataType>(a2ADataPtr->recvType);
-        opParam.All2AllDataDes.sendCount = a2ADataPtr->sendCount;
-        HCCL_DEBUG("[AicpuHcclProcess][AicpuRunRpcServerV2] AllToAll aicpu, sendCounts[%llu] rankSize[%u]",
-            opParam.All2AllDataDes.sendCount, commParam->rankSize);
-        s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U, "tag:%s,ct:%llu,dt:%u",
-            opParam.tag.c_str(), opParam.All2AllDataDes.sendCount, opParam.All2AllDataDes.sendType);
-        CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", opParam.tag.c_str()));
-    } else if (opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) {
-        struct OpTilingAlltoallvDataDes* alltoallvDataPtr =
-            reinterpret_cast<struct OpTilingAlltoallvDataDes*>(dynamicDataPtr);
-        opParam.All2AllDataDes.sendType =  static_cast<HcclDataType>(alltoallvDataPtr->sendType);
-        opParam.All2AllDataDes.recvType =  static_cast<HcclDataType>(alltoallvDataPtr->recvType);
-        u64 rankSize =  commParam->rankSize;
-        opParam.All2AllDataDes.sendCounts =  static_cast<void *>(alltoallvDataPtr->sendRecvInfos);
-        opParam.All2AllDataDes.recvCounts =  static_cast<void *>(static_cast<u64 *>(alltoallvDataPtr->sendRecvInfos) + rankSize);
-        opParam.All2AllDataDes.sdispls =  static_cast<void *>(static_cast<u64 *>(alltoallvDataPtr->sendRecvInfos) + ALLTOALLV_INFO_INDEX_2 * rankSize);
-        opParam.All2AllDataDes.rdispls =  static_cast<void *>(static_cast<u64 *>(alltoallvDataPtr->sendRecvInfos) + ALLTOALLV_INFO_INDEX_3 * rankSize);
-        if (algName == "RunAlltoAllVTwoLevelPipeline") {
-            hcclCommAicpu->SetSendRecvInfoPtr(
-                static_cast<void *>(static_cast<u64 *>(alltoallvDataPtr->sendRecvInfos) + ALLTOALLV_INFO_INDEX_4 * rankSize));
-        }
-        HCCL_DEBUG("[AicpuHcclProcess][AicpuRunRpcServerV2] sendCountsPtr[%p], recvCountsPtr[%p], sdisplsPtr[%p], rdisplsPtr[%p].",
-            opParam.All2AllDataDes.sendCounts, opParam.All2AllDataDes.recvCounts, opParam.All2AllDataDes.sdispls, opParam.All2AllDataDes.rdispls);
-        for(u32 i= 0; i < rankSize; i++) {
-            HCCL_DEBUG("[AicpuHcclProcess][AicpuRunRpcServerV2] sendCounts[%llu], recvCounts[%llu].",
-                *(static_cast<const u64 *>(opParam.All2AllDataDes.sendCounts) + i), *(static_cast<const u64 *>(opParam.All2AllDataDes.recvCounts) + i));
-        }
-        s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U, "tag:%s,ct:%llu,dt:%u",
-            opParam.tag.c_str(), opParam.All2AllDataDes.sendCounts, opParam.All2AllDataDes.sendType);
-        CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", opParam.tag.c_str()));
-    } else if (opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC) {
-        struct OpTilingAlltoallvcDataDes* alltoallvcDataPtr =
-            reinterpret_cast<struct OpTilingAlltoallvcDataDes*>(dynamicDataPtr);
-        opParam.All2AllDataDes.sendType =  static_cast<HcclDataType>(alltoallvcDataPtr->sendType);
-        opParam.All2AllDataDes.recvType =  static_cast<HcclDataType>(alltoallvcDataPtr->recvType);
-        opParam.All2AllDataDes.sendCountMatrix = static_cast<void *>(alltoallvcDataPtr->sendCountMatrix);
-        s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U, "tag:%s,ct:%llu,dt:%u",
-            opParam.tag.c_str(), opParam.All2AllDataDes.sendCountMatrix, opParam.All2AllDataDes.sendType);
-        CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", opParam.tag.c_str()));
-    } else if (opParam.opType == HcclCMDType::HCCL_CMD_ALLGATHER_V ||
-        opParam.opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V) {
-        const u64 vStructSize = sizeof(struct OpTilingVDataDes);
-        CHK_PRT_RET(tilingData->length < vStructSize, HCCL_ERROR("[AicpuHcclProcess][AicpuRunRpcServerV2] TilingData "
-            "corrupt, length[%llu], expect[%llu]", tilingData->length, vStructSize), HCCL_E_PARA);
-        const u32 rankSize = commParam->rankSize;
-        struct OpTilingVDataDes* vDataPtr = reinterpret_cast<struct OpTilingVDataDes*>(dynamicDataPtr);
-        const u64 vDataLen = CalcOpTilingVDataDesVDataLen(rankSize);
-        CHK_PRT_RET(vDataPtr->vDataLen != vDataLen, HCCL_ERROR("[AicpuHcclProcess][AicpuRunRpcServerV2] TilingVDataDes "
-            "corrupt, length[%llu], expect[%llu], rankSize[%u]", vDataPtr->vDataLen, vDataLen, rankSize), HCCL_E_PARA);
-        opParam.VDataDes.dataType = static_cast<HcclDataType>(vDataPtr->dataType);
-        opParam.VDataDes.counts = static_cast<void *>(static_cast<u64 *>(vDataPtr->vData));
-        opParam.VDataDes.displs = static_cast<void *>(static_cast<u64 *>(vDataPtr->vData) + rankSize);
-        CHK_RET(CalcDataSizeV(opParam, rankSize));
-        s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U, "tag:%s,ct:%llu,ds:%llu,dt:%u",
-            opParam.tag.c_str(), opParam.VDataDes.counts, opParam.VDataDes.displs, opParam.VDataDes.dataType);
-        CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", opParam.tag.c_str()));
-    } else {
-        struct OpTilingDataDes* opDataDesPtr = reinterpret_cast<struct OpTilingDataDes*>(dynamicDataPtr);
-        opParam.DataDes.count = opDataDesPtr->count;
-        opParam.DataDes.dataType = static_cast<HcclDataType>(opDataDesPtr->dataType);
-        CHK_RET(CalcDataSize(opParam.opType, static_cast<HcclDataType>(opDataDesPtr->dataType), opDataDesPtr->count,
-            hcclCommAicpu->GetRankSize(), opParam.inputSize, opParam.outputSize));
-        HCCL_DEBUG("[AicpuHcclProcess][AicpuRunRpcServerV2] Entry AicpuRunRpcServerV2, "
-            "count[%llu], dataType[%u] inputSize[%lu] outputSize[%lu].",
-            opDataDesPtr->count, opDataDesPtr->dataType, opParam.inputSize, opParam.outputSize);
-        s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U, "tag:%s,ct:%llu,dt:%u",
-            opParam.tag.c_str(), opParam.DataDes.count, opParam.DataDes.dataType);
-        CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", opParam.tag.c_str()));
-    }
-
-    CHK_RET(hrtSetLocalDeviceSatMode(static_cast<aclrtFloatOverflowMode>(tilingData->floatOverflowMode)));
-    hcclCommAicpu->SetDumpDebug(tilingData->dumpDebug);
-    hcclCommAicpu->SetAlgType(tilingData->algType);
-    hcclCommAicpu->SetDebugMode(tilingData->debugMode);
-    hcclCommAicpu->SetIsDeviceMode(false);
-    hcclCommAicpu->SetUserStreamId(tilingData->userStreamId);
-    CHK_RET(hcclCommAicpu->ParseHierarchicalAlgOption(tilingData->ahcConfInfo));
-    /* 接口交互信息日志 */
-    std::string logInfo = std::string(stackLogBuffer);
-    CHK_RET_AND_PRINT_IDE(hcclCommAicpu->SaveTraceInfo(logInfo), opParam.tag.c_str());
+    CHK_RET(HcclCommAicpu::DeserializeOpParam(hcclCommAicpu, tilingData, commParam, opParam));
 
     HcclUs startut = TIME_NOW();
     HcclResult ret = hcclCommAicpu->ExecOp(newTag, algName, opParam, commParam);
