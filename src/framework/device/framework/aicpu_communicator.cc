@@ -131,6 +131,9 @@ HcclResult HcclCommAicpu::Init(const HcclOpResParam *commParam, bool isCustom)
     CHK_RET(InitHostDeviceLock(commParam));
     CHK_RET(InitTopoMatcher());
     CHK_RET(InitOpRetry(commParam));
+    CHK_RET(aicpuAsyncUnfolder_.Init(commParam->kfcTailH2DParams, commParam->kfcHeadD2HParams,
+        commParam->kfcOpH2DRingBufferParams, OP_H2D_RING_BUFFER_SIZE));
+    CHK_RET(InitAsyncUnfold(commParam));
     CHK_RET(RegisterDispatcherCallback());
     CHK_RET(InitTinyMem(commParam));
     CHK_RET(InitProfResource());

@@ -235,6 +235,13 @@ namespace hccl
         (void)UnRegistTaskExceptionHandler();
         kfcControlTransferH2D_ = nullptr;
         kfcStatusTransferD2H_ = nullptr;
+        kfcTailH2D_ = nullptr;
+        kfcHeadD2H_ = nullptr;
+        if (kfcOpH2DRingBuffer_.size() > 0) {
+            for (size_t i = 0; i < kfcOpH2DRingBuffer_.size(); ++i) {
+                kfcOpH2DRingBuffer_[i] = nullptr;
+            }
+        }
         customControlTransferH2D_ = nullptr;
         customStatusTransferD2H_ = nullptr;
 
@@ -5489,6 +5496,23 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::BuildAsyncUnfoldParam()
+    {
+        opResPara_.kfcTailH2DParams = kfcTailH2D_->GetCommunicateParams();
+        opResPara_.kfcHeadD2HParams = kfcHeadD2H_->GetCommunicateParams();
+
+        // 注意: 只有AicpuResourceInit才会调用到BuildAsyncUnfoldParam, 因此一定支持HDC, 即kfcOpH2DRingBuffer_.size一定 > 0
+        CHK_PRT_RET(kfcOpH2DRingBuffer_.size() != OP_H2D_RING_BUFFER_SIZE,
+            HCCL_ERROR("[HcclCommunicator][BuildAsyncUnfoldParam] kfcOpH2DRingBuffer_.size[%u] != OP_H2D_RING_BUFFER_SIZE[%u]",
+                kfcOpH2DRingBuffer_.size(), OP_H2D_RING_BUFFER_SIZE),
+            HCCL_E_INTERNAL);
+        for (size_t i = 0; i < OP_H2D_RING_BUFFER_SIZE; ++i) {
+            opResPara_.kfcOpH2DRingBufferParams[i] = kfcOpH2DRingBuffer_[i]->GetCommunicateParams();
+        }
+
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::BuildCommPlaneSubGroupRank(const std::string &algName)
     {
         opResPara_.hierarchicalAlgInfo.commplaneSubGroupRank = 0;
@@ -6076,6 +6100,7 @@ namespace hccl
         CHK_RET(BuildOpRemoteResParam(algResource, newTag, opType));
         CHK_RET(BuildOpTopoResParam(algName, algResource));
         CHK_RET(BuildOpRetryParam(algResource, newTag));
+        CHK_RET(BuildAsyncUnfoldParam());
         CHK_RET(BuildZeroCopyParam());
         CHK_RET(BuildAicpuCustomParam());
         CHK_RET(BuildAicpuOrderLaunchNotify()); // 先申请device侧的关于按序下发的Notify内存
