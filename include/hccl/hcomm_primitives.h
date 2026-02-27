@@ -372,17 +372,6 @@ extern int32_t HcommAcquireComm(const char* commId);
  */
 extern int32_t HcommReleaseComm(const char* commId);
 
-/**
- * @brief Get symmetric memory pointer.
- *
- * @param winHandle A pointer identifying the registered memory window handle.
- * @param offset A size_t identifying the offset of symmetric memory heap.
- * @param peerRank A u_integer identifying the identify for the peer rank.
- * @param ptr A pointer identifying the symmetric memory heap address.
- * @return HcclResult
- */
-extern HcclResult HcommSymWinGetPeerPointer(CommSymWindow winHandle, size_t offset, uint32_t peerRank, void** ptr);
-
 #define HCOMM_PRIMITIVES_H_MODIFIED
 
 
