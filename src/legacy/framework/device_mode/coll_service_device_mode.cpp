@@ -420,7 +420,6 @@ DevBuffer *CollServiceDeviceMode::GetAicpuResBuffer(std::string algName)
 }
 
 constexpr u32 TEMP_MAX_CNTCKE_NUM = 16; // 临时规避多轮不同算子导致CNTCKE资源不足，待后续正式方案修改
-
 void CollServiceDeviceMode::Resume()
 {
     CcuCommunicator *ccuComm = ccuInsPreprocessor.GetCcuComm();
