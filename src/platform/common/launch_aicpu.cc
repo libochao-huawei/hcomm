@@ -178,6 +178,7 @@ HcclResult AicpuAclKernelLaunchV2(const rtStream_t stm, void *addr, u32 size,
         CHK_PRT_RET(memRet != EOK, HCCL_ERROR("[AicpuAclKernelLaunchV2]memcpy_s failed,return[%d]", memRet),
                     HCCL_E_INTERNAL);
     }
+
     aclrtLaunchKernelCfg cfg;
     aclrtLaunchKernelAttr attr;
     attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
