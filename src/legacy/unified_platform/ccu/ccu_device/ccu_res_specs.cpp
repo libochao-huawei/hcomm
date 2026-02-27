@@ -141,6 +141,9 @@ HcclResult CcuResSpecifications::Init_()
     TRY_CATCH_RETURN(
         devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
         ccuVersion = CheckCcuVersion();
+        auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+        auto memTypeBitmap = GetCombinedMemTypeBitmap();
+        auto count = GetMemTypeVector().size();
         for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
             dieEnableFlags[dieId] = CheckDieEnable(devPhyId, dieId);
             if (!dieEnableFlags[dieId]) {
@@ -148,6 +151,7 @@ HcclResult CcuResSpecifications::Init_()
                 continue;
             }
             resSpecs[dieId] = CheckResSpecifications(devPhyId, dieId, ccuVersion);
+            HrtGetCcuMemInfo(tlvHandle, dieId, memTypeBitmap, &resSpecs[dieId].memInfoList, count);
         }
         HcclMainboardId hcclMainboardId;
         CHK_RET(HrtGetMainboardId(devLogicId, hcclMainboardId));
@@ -175,6 +179,14 @@ HcclResult CcuResSpecifications::GetDieEnableFlag(const uint8_t dieId, bool &die
     // 只校验dieId合法性，不校验die是否使能
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, {true, true}));
     dieEnableFlag = dieEnableFlags[dieId];
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuResSpecifications::GetCcuMemInfoList(const uint8_t dieId, struct CcuMemInfo *memInfoList, uint32_t *count) const
+{
+    CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
+    memInfoList = &resSpecs[dieId].memInfoList;
+    count = GetMemTypeVector().size();
     return HcclResult::HCCL_SUCCESS;
 }
 

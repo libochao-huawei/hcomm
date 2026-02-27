@@ -620,5 +620,10 @@ HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn in, AuxInfoOut &o
 MAKE_ENUM(JettyStatus, RESET, READY, SUSPENDED, ERROR);
 constexpr u32 MAX_JETTY_QUERY_NUM = 128;
 HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyStatusVec, u32 &num);
+
+HcclResult HrtSetMemInfoList(struct CcuMemInfo *memInfoList, uint32_t count, struct ccu_mem_info *recvMemList);
+void HrtInitTlvMsg(TlvMsg* send_msg, TlvMsg* recv_msg, uint32_t udie_idx = 0, uint64_t mem_type_bitmap = 0, uint32_t sendType = 0);
+void HrtDeinitTlvMsg(TlvMsg* send_msg, TlvMsg* recv_msg) noexcept;
+HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memTypeBitmap, struct CcuMemInfo *memInfoList, uint32_t count);
 } // namespace Hccl
 #endif // HCCLV2_ADAPTER_HCCP_H

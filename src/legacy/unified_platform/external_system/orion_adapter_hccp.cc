@@ -2216,4 +2216,105 @@ HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles,
     }
     return HCCL_SUCCESS;
 }
+
+// struct TlvMsg {
+//     uint32_t type;
+//     uint32_t length;
+//     char *data;
+// }
+
+// struct ccu_mem_req {
+//     u32 udie_idx;
+//     u64 mem_type_bitmap;
+// }
+
+// struct ccu_mem_rsp {
+//     u32 udie_idx;
+//     u32 num;
+//     struct ccu_mem_info list[64];
+// }
+
+// struct ccu_mem_info {
+//     uint64_t mem_va;
+//     uint32_t mem_size;
+//     uint32_t resv[1];
+// }
+
+void HrtInitTlvMsg(TlvMsg* send_msg, TlvMsg* recv_msg, 
+                        uint32_t udie_idx, uint64_t mem_type_bitmap, uint32_t sendType) {
+    // 初始化请求消息
+    send_msg->type = sendType;
+    send_msg->length = sizeof(ccu_mem_req);
+    send_msg->data = static_cast<char*>(std::malloc(send_msg->length));
+    
+    auto req = static_cast<ccu_mem_req*>(static_cast<void*>(send_msg->data));
+    req->udie_idx = udie_idx;
+    req->mem_type_bitmap = mem_type_bitmap;
+    
+    // 初始化响应消息
+    recv_msg->type = 0;
+    recv_msg->length = sizeof(ccu_mem_rsp);
+    recv_msg->data = static_cast<char*>(std::malloc(recv_msg->length));
+    
+    auto rsp = static_cast<ccu_mem_rsp*>(static_cast<void*>(recv_msg->data));
+    rsp->udie_idx = 0;
+    rsp->num = 0;
+    std::memset(rsp->list, 0, sizeof(rsp->list));
+}
+
+void HrtDeinitTlvMsg(TlvMsg* send_msg, TlvMsg* recv_msg) noexcept {
+    // 清理请求消息
+    if (send_msg) {
+        if (send_msg->data) {
+            std::free(send_msg->data);
+            send_msg->data = nullptr;
+        }
+        send_msg->type = 0;
+        send_msg->length = 0;
+    }
+    
+    // 清理响应消息
+    if (recv_msg) {
+        if (recv_msg->data) {
+            std::free(recv_msg->data);
+            recv_msg->data = nullptr;
+        }
+        recv_msg->type = 0;
+        recv_msg->length = 0;
+    }
+}
+HcclResult HrtSetMemInfoList(struct CcuMemInfo *memInfoList, uint32_t count, struct ccu_mem_info *recvMemList) {
+    std::vector<CcuMemTypeBitmap> bitMap = GetMemTypeVector();
+    for (size_t i = 0; i < count; ++i) {
+        memInfoList[i].memType = bitMap[i];
+        memInfoList[i].memVa   = recvMemList[i].mem_va;
+        memInfoList[i].memSize = recvMemList[i].mem_size;
+    }
+}
+
+HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memTypeBitmap, struct CcuMemInfo *memInfoList, uint32_t count) 
+{
+    s32 ret = 0;
+    u32 tlv_module_type = TLV_MODULE_TYPE_CCU;
+
+    struct TlvMsg send_msg = {};
+    struct TlvMsg recv_msg = {};
+    HrtInitTlvMsg(send_msg, recv_msg, udieIdx, memTypeBitmap, MSG_TYPE_CCU_GET_MEM_INFO);
+    
+    ret = RaTlvRequest(tlv_handle, tlv_module_type, &send_msg, &recv_msg);
+    if (ret != 0) {
+        if (ret == RA_TLV_REQUEST_UNAVAIL) {
+            HCCL_WARNING("[HrtGetCcuMemInfo]ra tlv request UNAVAIL. return: ret[%d]", ret);
+            return HCCL_E_UNAVAIL;
+        }
+        HCCL_ERROR("[Request][RaTlv]errNo[0x%016llx] ra tlv request fail. return: ret[%d], module type[%u], message type[%u]", 
+                   HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), ret, tlv_module_type, send_msg->type);
+        throw NetworkApiException(StringFormat("call ra_tlv_request failed"));
+    }
+    // todo: check count == num
+    HrtSetMemInfoList(memInfoList, count, &recv_msg.list);
+    HrtDeinitTlvMsg(send_msg, recv_msg);
+    HCCL_INFO("tlv request success, tlv module type[%u], message type[%u]", tlv_module_type, send_msg->type);
+    return HCCL_SUCCESS;
+}
 } // namespace Hccl

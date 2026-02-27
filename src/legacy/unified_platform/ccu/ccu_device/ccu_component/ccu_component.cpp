@@ -239,8 +239,20 @@ void CcuComponent::CreateCcuRmaBuffer()
         CHECK_NULLPTR(rdmaHandle, StringFormat("[CcuComponent][%s] failed, rdmaHandle is nullptr, "
             "devLogicId[%d] dieId[%u]", __func__, devLogicId, dieId));
 
-        const auto ccuBuffer = std::make_shared<Buffer>(ccuResAddr, CCU_RESOURCE_SIZE);
-        ccuRmaBufferMap.emplace(dieId, std::make_unique<LocalUbRmaBuffer>(ccuBuffer, rdmaHandle));
+        // todo: 变成for循环
+        CcuMemInfo memInfoList{};
+        uint32_t count{0};
+        ccuResSpecs.GetCcuMemInfoList(dieId, &memInfoList, &count);
+
+        for (uint32_t i = 0; i < count; i++) {
+            if (memInfoList[i].memVa == ccuResAddr) {
+                const auto ccuBuffer = std::make_shared<Buffer>(ccuResAddr, memInfoList[i].memSize);
+                ccuRmaBufferMap.emplace(dieId, std::make_unique<LocalUbRmaBuffer>(ccuBuffer, rdmaHandle));
+            } else {
+                const auto ccuBuffer = std::make_shared<Buffer>(memInfoList[i].memVa, memInfoList[i].memSize);
+                additionalCcuRmaBufferMap.emplace(dieId, std::make_unique<LocalUbRmaBuffer>(ccuBuffer, rdmaHandle));
+            }
+        }
     }
 }
 

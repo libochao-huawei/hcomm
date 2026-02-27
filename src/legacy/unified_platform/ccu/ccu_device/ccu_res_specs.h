@@ -29,6 +29,7 @@ constexpr uint32_t CCU_SQ_BUFFER_SIZE = 256 * 1024; // ccu 每个jetty sq buffer
 constexpr uint32_t CCU_WQEBB_RESOURCE_NUM = 4096;
 constexpr uint32_t CCU_V1_PER_DIE_PFE_RESERVED_NUM = 16; // ccu 每个IO die预留16个PFE表
 constexpr uint32_t CCU_PER_DIE_JETTY_RESERVED_NUM = 128; // ccu 每个IO die默认jetty数量
+constexpr uint32_t CCU_MEM_INFO_SIZE = 64;
 
 constexpr uint64_t CCU_RESOURCE_INS_RESERVE_SIZE = 0x100000;  // INS预留空间1M
 constexpr uint64_t CCU_V1_RESOURCE_GSA_RESERVE_SIZE = 0x8000; // v1 GSA预留空间32K
@@ -50,6 +51,72 @@ struct CcuBlockResStrategy {
     uint32_t missionNum{2};
 };
 
+enum CcuMemTypeBitmap {
+    CCU_MEMTYPE_INVALID = 0,
+    CCU_MEMTYPE_INS = 1U << 1,
+    CCU_MEMTYPE_GSA = 1U << 2,
+    CCU_MEMTYPE_XN = 1U << 3,
+    CCU_MEMTYPE_CKE = 1U << 4,
+    CCU_MEMTYPE_LOOP_CKE = 1U << 5,
+    CCU_MEMTYPE_PFE = 1U << 6,
+    CCU_MEMTYPE_CHN = 1U << 7,
+    CCU_MEMTYPE_JETTY_CTX = 1U << 8,
+    CCU_MEMTYPE_MISSION_CTX = 1U << 9,
+    CCU_MEMTYPE_LOOP_CTX = 1U << 10,
+    CCU_MEMTYPE_MISSION_SQE = 1U << 11,
+    CCU_MEMTYPE_CQE_BLOCK0 = 1U << 12,
+    CCU_MEMTYPE_CQE_BLOCK1 = 1U << 13,
+    CCU_MEMTYPE_CQE_BLOCK2 = 1U << 14,
+    CCU_MEMTYPE_WQEBB = 1U << 15,
+
+    CCU_MEMTYPE_MS_BLOCK0 = 1U << 32,
+    CCU_MEMTYPE_MS_BLOCK1 = 1U << 33,
+    CCU_MEMTYPE_MS_BLOCK2 = 1U << 34,
+    CCU_MEMTYPE_MS_BLOCK3 = 1U << 35
+}
+
+std::vector<CcuMemTypeBitmap> GetMemTypeVector() {
+    return {
+        CCU_MEMTYPE_INS,
+        CCU_MEMTYPE_GSA,
+        CCU_MEMTYPE_XN,
+        CCU_MEMTYPE_CKE,
+        CCU_MEMTYPE_LOOP_CKE,
+        CCU_MEMTYPE_PFE,
+        CCU_MEMTYPE_CHN,
+        CCU_MEMTYPE_JETTY_CTX,
+        CCU_MEMTYPE_MISSION_CTX,
+        CCU_MEMTYPE_LOOP_CTX,
+        CCU_MEMTYPE_MISSION_SQE,
+        CCU_MEMTYPE_CQE_BLOCK0,
+        CCU_MEMTYPE_CQE_BLOCK1,
+        CCU_MEMTYPE_CQE_BLOCK2,
+        CCU_MEMTYPE_WQEBB,
+        CCU_MEMTYPE_MS_BLOCK0,
+        CCU_MEMTYPE_MS_BLOCK1,
+        CCU_MEMTYPE_MS_BLOCK2,
+        CCU_MEMTYPE_MS_BLOCK3
+    };
+}
+
+uint64_t GetCombinedMemTypeBitmap() {
+    auto memTypes = GetMemTypeVector();
+    uint64_t combined = 0;
+    
+    for (const auto& memType : memTypes) {
+        combined |= static_cast<uint64_t>(memType);
+    }
+    
+    return combined;
+}
+
+struct CcuMemInfo {
+    CcuMemTypeBitmap memType{CcuMemTypeBitmap::CCU_MEMTYPE_INVALID};
+    uint64_t memVa{0};
+    uint32_t memSize{0};
+    uint32_t resv[1];
+}
+
 struct CcuResSpecInfo {
     // 基础信息
     uint32_t msId{0};
@@ -69,6 +136,10 @@ struct CcuResSpecInfo {
     // 额外资源信息
     uint32_t wqeBBNum{CCU_WQEBB_RESOURCE_NUM};
     uint32_t dieNum{MAX_CCU_IODIE_NUM};
+
+    // 内存信息
+    uint32_t memNum{0};
+    struct CcuMemInfo memInfoList[CCU_MEM_INFO_SIZE];
 };
 
 class CcuResSpecifications {
@@ -106,6 +177,9 @@ public:
     HcclResult GetPfeReservedNum(const uint8_t dieId, uint32_t &pfeNum) const;
     HcclResult GetPfeNum(const uint8_t dieId, uint32_t &pfeNum) const;
     HcclResult GetWqeBBNum(const uint8_t dieId, uint32_t &wqeBBNum) const;
+
+    // ccu mem info 
+    HcclResult CcuResSpecifications::GetCcuMemInfoList(const uint8_t dieId, struct CcuMemInfo *memInfoList, uint32_t *count) const
 
 private:
     int32_t devLogicId{0};
