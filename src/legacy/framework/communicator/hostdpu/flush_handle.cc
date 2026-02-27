@@ -218,11 +218,16 @@ HcclResult FlushHandle::FreeDeviceMemory()
         return HCCL_SUCCESS;
     }
 
-    HrtFree(deviceMem);
-
-    deviceMem = nullptr;
-    HCCL_DEBUG("[FreeDeviceMemory] Device memory successfully freed.");
-    return HCCL_SUCCESS;
+    try {
+        HrtFree(deviceMem);
+        deviceMem = nullptr;
+        HCCL_DEBUG("[FreeDeviceMemory] Device memory successfully freed.");
+        return HCCL_SUCCESS;
+    } catch(...) {
+        HCCL_ERROR("[FreeDeviceMemory] Exception caught while freeing device memory.");
+        deviceMem = nullptr;
+        return HCCL_E_RUNTIME;
+    }
 }
 
 }  // namespace Hccl
