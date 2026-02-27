@@ -100,6 +100,12 @@ struct InitTask
     bool isCustom;
 };
 
+struct AclgraphDestroyCallbackParam
+{
+    HcclCommunicator *communicator;
+    u64 modelId;
+};
+
 using rankTagSignalInfo_t = std::unordered_map<u32, std::unordered_map<std::string, std::vector<HcclSignalInfo>>>;
 using rankTagKey_t = std::unordered_map<u32, std::unordered_map<std::string, std::vector<u32>>>;
 using rankTagAddr_t = std::unordered_map<u32, std::unordered_map<std::string, std::vector<u64>>>;
@@ -622,6 +628,10 @@ private:
 
     HcclResult SetAicpuUnfoldFlag();
     bool GetAicpuUnfoldFlag();
+
+    HcclResult CleanCaptureRes(u64 modelId);
+    HcclResult InsertNewTagToCaptureResMap(const std::string &newTag, const OpParam &opParam);
+
     u32 deviceNumPerServer_;
     HcclDispatcher dispatcher_; // dispatcher放到最后析构
     DispatcherCtxPtr dispatcherCtx_{nullptr};
@@ -1137,6 +1147,8 @@ private:
     u32 hcclQos_ = EnvConfig::HCCL_QOS_DEFAULT;
     std::shared_ptr<SymmetricMemoryAgent> symmetricMemoryAgent_;
     std::unique_ptr<SymmetricMemory> symmetricMemory_;
+
+    std::map<u64, std::unordered_set<std::string>> captureResMap_;
 };
 }  // end namespace hccl
 #endif  // HCCL_IMPL_BASE_H
