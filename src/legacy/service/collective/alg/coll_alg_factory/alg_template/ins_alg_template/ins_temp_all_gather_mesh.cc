@@ -96,7 +96,6 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
         auto insPost = std::make_unique<InsLocalPostTo>(localCopyQId, NotifyType::NORMAL, topicIdStart);
         tempInsQues[masterQId]->Append(std::move(insPost));
         
-        // 【修正】显式传入 NotifyType::NORMAL
         auto insWait = std::make_unique<InsLocalWaitFrom>(masterQId, NotifyType::NORMAL, topicIdStart);
         tempInsQues[localCopyQId]->Append(std::move(insWait));
     }
