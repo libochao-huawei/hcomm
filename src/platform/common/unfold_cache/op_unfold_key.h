@@ -23,7 +23,7 @@ namespace hccl {
 // 作为展开算子的标识符
 // 注意: 由于给定通信域下, 相同数据量相同算子的算法选择是固定的, 不需要在标识符中维护algType或algName
 // 注意: 图模式或单算子模式是全局固定的, 不需要在标识符中维护
-struct OpUnfoldKey{
+struct OpUnfoldKey {
     explicit OpUnfoldKey();
     explicit OpUnfoldKey(const OpUnfoldKey& other); // 拷贝构造函数 (make_pair需要)
 
