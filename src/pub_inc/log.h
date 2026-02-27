@@ -25,6 +25,66 @@
 #define T_DESC(_msg, _y) ((_y) ? true : false)
 #endif
 
+// TODOSSY: 性能打点
+#define ENABLE_ASYNC_UNFOLD_BREAKDOWN
+#ifdef ENABLE_ASYNC_UNFOLD_BREAKDOWN
+struct TimerEntry {
+    uint64_t startTime;
+    uint64_t endTime;
+    uint32_t timerLevel;
+    std::string name;
+
+    TimerEntry(uint64_t startTime, uint32_t timerLevel, std::string name)
+        : startTime(startTime), timerLevel(timerLevel), name(name) {}
+    
+    void PrintLog()
+    {
+        uint64_t elapsedNano = endTime - startTime;
+        HCCL_ERROR("TIMER: Level[%lu] Timer[%s] Start[%llu] End[%llu] Duration[%llu] ns",
+            timerLevel, name.c_str(), startTime, endTime, elapsedNano);
+    }
+};
+class HcclTimer {
+public:
+    static uint64_t timerCounter;
+    static std::vector<TimerEntry> timerEntries;
+    uint64_t GetCurAicpuTimestamp()
+    {
+        struct timespec timestamp;
+        (void)clock_gettime(1, &timestamp);
+        return static_cast<uint64_t>(timestamp.tv_sec * 1000000000 + timestamp.tv_nsec);
+    }
+    explicit HcclTimer(const std::string& name) {
+        timerCounter++;
+        timerIdx = timerEntries.size();
+        timerEntries.emplace_back(GetCurAicpuTimestamp(), timerCounter, name);
+    }
+    ~HcclTimer() {
+        timerEntries[timerIdx].endTime = GetCurAicpuTimestamp();
+        timerCounter--;
+    }
+
+    static void DumpTimerLogs() {
+        for (auto& entry : timerEntries) {
+            entry.PrintLog();
+        }
+        timerEntries.clear();
+    }
+private:
+    size_t timerIdx;
+};
+#define CURRENT_FUNCTION_LOCATION (std::string(__FILE__) + ":" + std::to_string(__func__))
+#define MY_TIMER2(name, counter) HcclTimer myTimer##counter(name)
+#define MY_TIMER1(name, counter) MY_TIMER2(name, counter)
+#define MY_TIMER(name) MY_TIMER1(name, __COUNTER__)
+#define FUNCTION_TRACE_COUNTER2(counter) HcclTimer timer##counter(CURRENT_FUNCTION_LOCATION)
+#define FUNCTION_TRACE_COUNTER(counter) FUNCTION_TRACE_COUNTER2(counter)
+#define FUNCTION_TRACE FUNCTION_TRACE_COUNTER(__COUNTER__)
+#else
+#define MY_TIMER(name) (void)
+#define FUNCTION_TRACE (void)
+#endif
+
 #if T_DESC("日志处理适配", true)
 
 enum class HcclSubModuleID {
