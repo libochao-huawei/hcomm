@@ -4455,6 +4455,7 @@ namespace hccl
             CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
             // 移除tag对应的指令信息
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+            CHK_RET(InsertNewTagToCaptureResMap(newTag, opParam));
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
         bool needIncreLink = false;
@@ -4719,6 +4720,7 @@ namespace hccl
             CHK_RET(RecordOpPara(opType, opParam));
             CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+            CHK_RET(InsertNewTagToCaptureResMap(newTag, opParam));
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
         if (resMap_.find(newTag) == resMap_.end()) {
@@ -9148,5 +9150,42 @@ namespace hccl
     {
         CHK_SMART_PTR_NULL(symmetricMemory_);
         return symmetricMemory_->FindSymmetricWindow(ptr, size, winHandle, reinterpret_cast<u64*>(offset));
+    }
+
+    void AclgraphDestroyCallback(void *fnData)
+    {
+        u64 *modelId = static_cast<u64 *>(fnData);
+        HcclResult ret;
+
+        auto it = captureResMap_.find(*modelId);
+        if (it == captureResMap_.end()) {
+            HCCL_ERROR("[%s] modelID[%llu] is not record", __func__, *modelId);
+            return;
+        }
+
+        for (auto& tag : it->second) {
+            ret = ClearOpResource(tag);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[%s] modelID[%llu] tag[%s] resource release fail", __func__, *modelId, tag.c_str())
+            }
+            HCCL_DEBUG("[%s] modelID[%llu] tag[%s] resource release success", __func__, *modelId, tag.c_str())
+        }
+
+        captureResMap_.earse(*modelId);
+        HCCL_INFO("[%s] modelID[%llu] resource release success", __func__, *modelId)
+    }
+
+    HcclResult InsertNewTagToCaptureResMap(const std::string &newTag, const OpParam &opParam)
+    {
+        aclmdlRI rtModel = nullptr;
+        bool isCapture = false;
+        u64 modelId = 0;
+        CHK_RET(GetStreamCaptureInfo(opParam.stream.ptr(), rtModel, isCapture));
+        CHK_PTR_NULL(rtModel);
+        CHK_RET(GetModelId(rtModel, modelId));
+        if (captureResMap_.find(modelId) == captureResMap_.end()) {
+            // aclmdlRIDestroyRegisterCallback(rtModel, AclgraphDestroyCallback, static_cast<void *>&modelId);
+        }
+        captureResMap_[modelId].insert(newTag);
     }
 }

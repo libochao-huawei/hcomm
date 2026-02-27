@@ -905,6 +905,8 @@ private:
     HcclResult RegisterToSnapshot();
     HcclResult UnRegisterFromSnapshot();
 
+    HcclResult InsertNewTagToCaptureResMap(const std::string &newTag, const OpParam &opParam);
+
     // reduce类算子的prod操作或者int64数据类型不支持重执行
     bool IsReduceWithInt64OrProd(HcclCMDType opType, const OpParam &opParam) const;
     // 控制当前通信域首次检测到reduce类算子的prod操作或者int64数据类型时打印不能重执行的约束
@@ -1137,6 +1139,8 @@ private:
     u32 hcclQos_ = EnvConfig::HCCL_QOS_DEFAULT;
     std::shared_ptr<SymmetricMemoryAgent> symmetricMemoryAgent_;
     std::unique_ptr<SymmetricMemory> symmetricMemory_;
+
+    std::map<u64, std::unordered_set<String>> captureResMap_;
 };
 }  // end namespace hccl
 #endif  // HCCL_IMPL_BASE_H
