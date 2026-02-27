@@ -944,7 +944,7 @@ HcclResult HcclAlltoAllVCV2(const void *sendBuf, const void *sendCountMatrix, Hc
     CHK_RET(communicator->GetRankId(myRank));
     bool isEmpty;
     CHK_RET(HcomCheckAlltoAllVCEmptyV2(sendBuf, sendCountMatrix, recvBuf, rankSize, isEmpty));
-    if( isEmpty ) {
+    if(!isEmpty ) {
         HCCL_INFO("[HcclAlltoAllVCV2] sendCountMatrix is Empty");
         return HCCL_SUCCESS;
     }
