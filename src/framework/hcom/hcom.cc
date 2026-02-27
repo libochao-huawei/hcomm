@@ -3216,10 +3216,17 @@ HcclResult GetOpScratchMemSize(bool isOfflineCompilation, HcclCMDType hcclOpType
     u64 count = hcomOpParam->count;
     std::string sCollectiveType(hcomOpParam->opType);
 
+    std::string socVersionStr(hcomOpParam->socVersion);
+    DevType devType = DevType::DEV_TYPE_COUNT;
+    CHK_RET(hrtGetDeviceTypeBySocVersion(socVersionStr, devType));
+
     std::shared_ptr<hccl::hcclComm> hcclComm;
     std::string group = hcomOpParam->group == nullptr ? HCCL_WORLD_GROUP : hcomOpParam->group;
-    // 获取通信域句柄
-    CHK_RET(HcomGetCommByGroup(group.c_str(), hcclComm));
+    // 获取通信域句柄，因为91095不需要获取通信域句柄以感知aivonly，暂时规避
+    if (devType != DevType::DEV_TYPE_910_95) {
+        CHK_RET(HcomGetCommByGroup(group.c_str(), hcclComm));
+    }
+
     std::vector<HcclAlgoType> algoTypeArr = CommConfiger::GetInstance().GetCommConfigAlgoConfig(group, HcclCMDType::HCCL_CMD_ALLTOALLV);
     bool UseOneLayerAlltoAllv = (algoTypeArr[0] == HcclAlgoType::HCCL_ALGO_TYPE_NA &&
         algoTypeArr[1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE);
@@ -3274,12 +3281,12 @@ HcclResult GetOpScratchMemSize(bool isOfflineCompilation, HcclCMDType hcclOpType
     } else if (hcclOpType == HCCL_CMD_ALLREDUCE) {
         // 判断 aiv_only
         bool isAivOnlyMode = false;
-        CHK_RET(hcclComm->GetOnlyAivModeConfig(isAivOnlyMode));
-
         u8 deterministic;
-        std::string socVersionStr(hcomOpParam->socVersion);
-        DevType devType = DevType::DEV_TYPE_COUNT;
-        CHK_RET(hrtGetDeviceTypeBySocVersion(socVersionStr, devType));
+
+        // 91095环境下，暂时不需要感知是否为aivonly模式
+        if (devType != DevType::DEV_TYPE_910_95) {
+            CHK_RET(hcclComm->GetOnlyAivModeConfig(isAivOnlyMode));
+        }
         CHK_RET(GetDeterministic(devType, hcomOpParam->geDeterministic, deterministic));
 
         if (deterministic != DETERMINISTIC_DISABLE) {
