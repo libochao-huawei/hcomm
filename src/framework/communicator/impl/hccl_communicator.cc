@@ -318,7 +318,7 @@ namespace hccl
 
         hccl::DispatcherCtx *Ctx_tmp = static_cast<DispatcherCtx *>(dispatcherCtx_);
         HCCL_INFO("[%s] RegisterLoadTaskCallBack Dispatcher = [%p], Ctx_tmp = [%p]", 
-            __func__, Ctx_tmp->GetDispatcher(), (void*)Ctx_tmp);
+            __func__, Ctx_tmp->GetDispatcher(), static_cast<void *>(Ctx_tmp));
         (void)RegisterLoadTaskCallBack(Ctx_tmp->GetDispatcher(), static_cast<void *>(profilerManager_.get()), TaskProfilerCallBack);
 
         CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_VIRTURAL, devicePhyId_, &vDispatcher_));

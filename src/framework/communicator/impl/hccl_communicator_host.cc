@@ -4520,7 +4520,7 @@ namespace hccl
         }
 
         newTag += !opParam.isCapture ? "" : "_Capture";
-        auto isSupportAlg = [&](const std::string &algName, bool aicpuUnfoldMode) -> bool {
+        auto isSupportAlg = [](const std::string &algName, bool aicpuUnfoldMode) -> bool {
             return ((algName == "RunAlltoAllVFullMesh" || algName == "RunAlltoAllVTwoLevelPipeline") && aicpuUnfoldMode) ||
                 (algName == "RunAlltoAllDirectFullmesh");
         };
@@ -5453,9 +5453,9 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::BuildOpRemoteLinkRoceResParam(const LINK &link, HccltagRemoteResV3 &tagRemoteRes,
-                                                               bool isBackup, bool isRetry, bool IsSecondBuild)
+                                                               bool isBackup, bool isRetry, bool isSecondBuild)
     {
-        u32 iter = IsSecondBuild ? 2 : 0;
+        u32 iter = isSecondBuild ? 2 : 0;
         HcclLinkRoceV2 *linkRoce = isBackup ? &(tagRemoteRes.tagRemoteResPtr->linkRoce[AICPU_RETRY_LINKROCE_BACKUP + iter])
                                             : &(tagRemoteRes.tagRemoteResPtr->linkRoce[AICPU_RETRY_LINKROCE_DEFAULT + iter]);
         if (!isRetry && linkRoce->localNotifyList != 0) {
@@ -5541,7 +5541,7 @@ namespace hccl
         HCCL_DEBUG("[%s] finish set Qp info qpNum[%u], linkRoce->localNotifyList[0].resId[%llu], "
                    "notifyNum[%u], isBackup[%d], isSecond[%d], qpPtr[%llu], useAtomicWrite[%d]",
                    __func__, linkRoce->qpsPerConnection,
-                   signalInfos[0].resId, linkRoce->singleQPNotifyNum, isBackup, IsSecondBuild,
+                   signalInfos[0].resId, linkRoce->singleQPNotifyNum, isBackup, isSecondBuild,
                    linkRoce->QpInfo[0].qpPtr, linkRoce->useAtomicWrite);
         return HCCL_SUCCESS;
     }
@@ -7415,7 +7415,7 @@ namespace hccl
         apiParam.x1 = reinterpret_cast<uint64_t>(inputPtr);
         apiParam.gatherOut = reinterpret_cast<uint64_t>(outputPtr);
         apiParam.context = addr;
-        apiParam.workspace = (u64)workSpace_.ptr();
+        apiParam.workspace = reinterpret_cast<uint64_t>(workSpace_.ptr());
         u16 timeOut = 0;
         if (opResPara_.config.notifyWaitTime == 0) {
             timeOut = opResPara_.config.notifyWaitTime;

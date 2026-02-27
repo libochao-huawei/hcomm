@@ -255,7 +255,7 @@ void ZeroCopyMemoryAgent::RequestBatchSendAsync()
                                 sendMgr.reqDataSize_ - sendMgr.sentSize_,
                                 &sendMgr.lastSendSize_, &sendMgr.lastSendHandle_);
         if (ret != HCCL_SUCCESS && ret != HCCL_E_AGAIN) {  // 发送失败的场景
-            RequestType requestType = *(const RequestType *)req->data();
+            RequestType requestType = *reinterpret_cast<const RequestType *>(req->data());
             HCCL_ERROR("[ZeroCopyMemoryAgent][RequestBatchSendAsync] failed, ret[%d] remote[%u] requestType[%s] sentSize[%llu]",
                        ret, kv.first, GetReadableRequestType(requestType), sendMgr.sentSize_);
         }
@@ -294,7 +294,7 @@ void ZeroCopyMemoryAgent::CheckBatchSendAsyncResult()
             sendMgr.sentSize_ = 0;
             sendMgr.hasReq_[sendMgr.currIndex_] = false;
             HCCL_DEBUG("[ZeroCopyMemoryAgent][CheckBatchSendAsyncResult]SendAsync success, requestType[%s] remote[%u]",
-                    GetReadableRequestType(*((RequestType *)sendMgr.reqDatas_[sendMgr.currIndex_]->data())), kv.first);
+                    GetReadableRequestType(*reinterpret_cast<const RequestType *>(sendMgr.reqDatas_[sendMgr.currIndex_]->data())), kv.first);
         }
     }
 }
@@ -363,7 +363,7 @@ void ZeroCopyMemoryAgent::CheckBatchRecvAsyncResult()
 inline void ZeroCopyMemoryAgent::RecvRequest(ZeroCopyMemoryAgentRecvMgr &recvMgr, u32 remoteDevicePhyId)
 {
     std::vector<u8> &req = recvMgr.receivedData_[recvMgr.recvIndex_];
-    RequestType requestType = *(RequestType *)req.data();
+    RequestType requestType = *reinterpret_cast<RequestType *>(req.data());
     HCCL_DEBUG("[ZeroCopyMemoryAgent][RecvRequest] recv requestType[%s] remote[%u]",
         GetReadableRequestType(requestType), remoteDevicePhyId);
 
@@ -393,7 +393,7 @@ void ZeroCopyMemoryAgent::ParseReceivedRequests()
             std::vector<u8> &req = recvMgr.receivedData_[recvMgr.praseIndex_];
             CHK_PRT_CONT(ParseReceivedRequest(req, remoteRank) != HCCL_SUCCESS,
                     HCCL_ERROR("[ZeroCopyMemoryAgent][ParseReceivedRequest] failed prase requestType[%s] remote[%u]",
-                        GetReadableRequestType(*((RequestType *)req.data())), kv.first));
+                        GetReadableRequestType(*reinterpret_cast<RequestType *>(req.data())), kv.first));
             recvMgr.praseIndex_++;
             if (recvMgr.praseIndex_ == ZERO_COPY_MEMORY_AGENT_RECV_QUEUE_SIZE) {
                 recvMgr.praseIndex_ = 0;
