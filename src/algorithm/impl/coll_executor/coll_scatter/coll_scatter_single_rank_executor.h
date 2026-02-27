@@ -18,7 +18,7 @@ namespace hccl {
 class CollScatterSingleRankExecutor : public CollScatterExecutor {
 public:
     CollScatterSingleRankExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollScatterSingleRankExecutor() = default;
+    ~CollScatterSingleRankExecutor() override = default;
 private:
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
 };

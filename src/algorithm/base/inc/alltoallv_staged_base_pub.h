@@ -18,7 +18,7 @@ namespace hccl {
 class AlltoAllVStagedBase : public AlgTemplateBase{
 public:
     explicit AlltoAllVStagedBase(const HcclDispatcher dispatcher);
-    virtual ~AlltoAllVStagedBase();
+    ~AlltoAllVStagedBase() override;
 
     virtual HcclResult Prepare(DeviceMem &sendMem, DeviceMem &recvMem, StageAlltoAllVAddrInfo& sendAddrInfo,
         StageAlltoAllVAddrInfo& recvAddrInfo, bool isAlltoAllZCopyMode, Stream &mainStream) override;
