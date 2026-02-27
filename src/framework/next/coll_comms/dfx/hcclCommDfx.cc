@@ -8,7 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "hcclCommDfx.h"
-
+#include "global_mirror_tasks.h"
+#include "task_info.h"
 namespace hccl {
 
 HcclCommDfx::HcclCommDfx(uint32_t deviceId) {
