@@ -25,6 +25,7 @@
 #include "rs_ub.h"
 #include "rs_ub_tp.h"
 #include "rs_ub_dfx.h"
+#include "rs_ub_jetty_ops.h"
 #include "rs_ctx.h"
 
 int RsGetChipProtocol(unsigned int chipId, enum NetworkMode hccpMode, enum ProtocolTypeT *protocol,
@@ -68,6 +69,8 @@ int RsCtxApiInit(enum NetworkMode hccpMode, enum ProtocolTypeT protocol)
             CHK_PRT_RETURN(ret != 0, hccp_err("RsApiInit failed, protocol[%u], ret[%d]", protocol, ret), ret);
             break;
         case PROTOCOL_UDMA:
+            ret = RsUbJettyApiInit();
+            CHK_PRT_RETURN(ret != 0, hccp_err("RsApiInit failed"), ret);
             ret = RsUbApiInit();
             CHK_PRT_RETURN(ret != 0, hccp_err("rs_ub_api_init failed, protocol[%u], ret[%d]", protocol, ret), ret);
             ret = RsCcuApiInit();
@@ -107,6 +110,7 @@ int RsCtxApiDeinit(enum NetworkMode hccpMode, enum ProtocolTypeT protocol)
             RsUbApiDeinit();
             RsCcuApiDeinit();
             RsNetApiDeinit();
+            RsUbJettyApiDeinit();
             break;
         default:
             hccp_err("unsupported protocol[%u]", protocol);

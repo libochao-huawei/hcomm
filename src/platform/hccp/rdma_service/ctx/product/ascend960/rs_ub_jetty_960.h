@@ -8,22 +8,18 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include "user_log.h"
-#include "ra_rs_err.h"
+#ifndef RS_UB_JETTY_960_H
+#define RS_UB_JETTY_960_H
+
+#include "urma_types.h"
 #include "rs_ctx_inner.h"
-#include "rs_ub_jfc.h"
 
-int RsUbDeleteJfcExt(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb)
-{
-    hccp_err("product type do not support");
-    return -EOPENSRC;
-}
+#define WQEBB_NUM_PER_SQE 4ULL
+#define PAGE_4K 0x1000
+#define ALIGN_DOWN(x, a) ((x) & (~((a) - 1)))
 
-int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urma_jfc_t **jfc)
-{
-    hccp_err("product type do not support");
-    return -EOPENSRC;
-}
+void RsUbCtxExtJettyCreate960(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg);
+void RsUbCtxExtJettyDelete960(struct RsCtxJettyCb *jettyCb);
+void RsUbVaMunmapBatch960(struct RsCtxJettyCb **jettyCbArr, unsigned int num);
+void RsUbFreeJettyIdBatch960(struct RsCtxJettyCb **jettyCbArr, unsigned int num);
+#endif // RS_UB_JETTY_H
