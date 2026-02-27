@@ -532,7 +532,7 @@ TEST_F(CollServiceDefaultImplTest, test_init)
 TEST_F(CollServiceDefaultImplTest, test_load_with_op_based_mode)
 {
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetNotityID).stubs().will(returnValue(static_cast<u32>(0)));
+    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     DevType devType = DevType::DEV_TYPE_910_95;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
@@ -622,7 +622,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_op_based_mode)
 
 TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode)
 {
-    MOCKER(HrtGetNotityID).stubs().will(returnValue(static_cast<u32>(0)));
+    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     DevType devType = DevType::DEV_TYPE_910_95;
