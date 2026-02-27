@@ -205,6 +205,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/unique
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/unfold_cache
+    ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/async_unfold_cache
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/common/buffer_manager
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/inc
     ${HCCL_CODE_ROOT}/src/legacy/ascend910/platform/inc/adapter
