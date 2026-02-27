@@ -7,24 +7,33 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+
 set(src_list
-    aicpu_hccl_process.cc
-    aicpu_communicator.cc
-    aicpu_hdc.cc
-    zero_copy_address_mgr.cc
-    aicpu_zero_copy_exchanger.cc
-    aicpu_share_data_manager.cc
-    aicpu_one_side_service.cc
-    aicpu_symmetric_memory.cc
-    aicpu_cache_manager.cc
-    aicpu_async_unfolder.cc
+    async_unfold_cache_entry.cc
+    async_unfold_cache.cc
+    async_unfold_key.cc
 )
 
-if(TARGET ccl_kernel)
-    target_sources(ccl_kernel PRIVATE
+if(TARGET hccl_plf)
+    target_sources(hccl_plf PRIVATE
         ${src_list}
     )
-    target_include_directories(ccl_kernel PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
+endif()
+
+if(TARGET hccd)
+    target_sources(hccd PRIVATE
+        ${src_list}
+    )
+endif()
+
+if(TARGET ccl_kernel_plf)
+    target_sources(ccl_kernel_plf PRIVATE
+        ${src_list}
+    )
+endif()
+
+if(TARGET ccl_kernel_plf_a)
+    target_sources(ccl_kernel_plf_a  PRIVATE
+        ${src_list}
     )
 endif()

@@ -26,6 +26,7 @@ set(src_list
     dlhns_function.cc
     read_write_lock_base.cc
     read_write_lock.cc
+    aicpu_cache_utils.cc
 )
 
 if(TARGET hccl_plf)
@@ -70,3 +71,4 @@ add_subdirectory(adapter)
 add_subdirectory(misc)
 add_subdirectory(p2p_mgmt)
 add_subdirectory(unfold_cache)
+add_subdirectory(async_unfold_cache)
