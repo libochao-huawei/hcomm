@@ -49,13 +49,13 @@ public:
     HcclResult Clean();
 
     static HcclResult Create(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
-                            std::unique_ptr<CcuJetty> &ccuJetty){
+                            std::unique_ptr<CcuJetty> &ccuJetty) {
                                 ccuJetty = std::make_unique<CcuJetty> (ipAddr, jettyInfo);
                                 TRY_CATCH_RETURN(ccuJetty->Initialize());
                                 return HcclResult::HCCL_SUCCESS;
                             }
 private:
-    void Initialize(){
+    void Initialize() {
         devLogicId_ = HrtGetDevice();
         uint32_t devPhyId = HrtGetDevicePhyIdByIndex(devLogicId_);
         auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
