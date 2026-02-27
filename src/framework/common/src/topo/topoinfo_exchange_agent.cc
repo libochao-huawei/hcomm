@@ -416,9 +416,7 @@ HcclResult TopoInfoExchangeAgent::GetConnection(HcclIpAddress &serverIp, u32 por
             RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}), \
                 std::vector<std::string>({errormessage}));
             HCCL_ERROR("[%s][%s] topo exchange agent get socket timeout! timeout[%lld s]",
-                LOG_KEYWORDS_INIT_GROUP.c_str(),
-                LOG_KEYWORDS_RANKTABLE_DETECT.c_str(),
-                timeout);
+                LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), timeout);
             PrintSocketTimeoutReasons(serverIp, port, socket);
             sleep(WAIT_ERROR_BROADCAST_TIME);
             return HCCL_E_TIMEOUT;
@@ -729,10 +727,10 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterDeviceIP(const RankTable_t &clust
                 clusterInfo.rankList[j].deviceInfo.deviceIp);
             std::string errormessage = "The device IP address " + std::string(clusterInfo.rankList[i].deviceInfo.deviceIp[0].GetReadableIP()) +
                                        " of rank " + std::to_string(clusterInfo.rankList[i].rankId) +
-                                       " on node " +clusterInfo.serverList[i].serverId +
+                                       " on node " +clusterInfo.rankList[i].serverId +
                                        " is the same as the device IP address" + std::string(clusterInfo.rankList[j].deviceInfo.deviceIp[0].GetReadableIP()) +
                                        " of rank " + std::to_string(clusterInfo.rankList[j].rankId) +
-                                       " on node " + clusterInfo.serverList[j].serverId + ".";
+                                       " on node " + clusterInfo.rankList[j].serverId + ".";
             RPT_INPUT_ERR(err,
                 "EI0015",
                 std::vector<std::string>({"error_reason"}),
@@ -849,9 +847,9 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterRankID(const RankTable_t &cluster
         for (u32 j = (i + 1); j < clusterInfo.rankList.size(); j++) {
             bool err = (clusterInfo.rankList[i].rankId == clusterInfo.rankList[j].rankId);
             std::string errormessage = "Rank ID" + std::to_string(clusterInfo.rankList[i].rankId) +
-                                       " of device ID " + std::to_string(clusterInfo.rankList[i].deviceInfo.devicePhyId) + " on node " + clusterInfo.serverList[i].serverId +
+                                       " of device ID " + std::to_string(clusterInfo.rankList[i].deviceInfo.devicePhyId) + " on node " + clusterInfo.rankList[i].serverId +
                                        " is the same as that of device ID " + std::to_string(clusterInfo.rankList[j].deviceInfo.devicePhyId) +
-                                       " on node " + clusterInfo.serverList[j].serverId + ".";
+                                       " on node " + clusterInfo.rankList[j].serverId + ".";
             RPT_INPUT_ERR(err,
                 "EI0015",
                 std::vector<std::string>({"error_reason"}),
