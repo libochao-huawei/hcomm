@@ -162,7 +162,6 @@ bool CcuConnection::CreateJetty()
         }
 
         if (ret != HcclResult::HCCL_SUCCESS) {
-            isJettyCreated = true;
             HCCL_ERROR("[CcuConnection][%s] failed, hccl result[%d]", __func__, ret);
             ThrowAbnormalStatus(std::string(__func__));
         }
