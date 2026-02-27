@@ -2671,7 +2671,7 @@ HcclResult HcomGetL0TopoTypeEx(const char *group, CommTopo *topoType, uint32_t f
     CHK_PTR_NULL(topoType);
     CHK_PTR_NULL(group);
 
-    bool isSetDevice = (bool)(flag & (~(0xfffffffe)));
+    bool isSetDevice = static_cast<bool>(flag & (~(0xfffffffe)));
     if (isSetDevice) {
         HCCL_ERROR("current only support no setdevice, flag[%u]", flag);
         return HCCL_E_PARA;
@@ -2688,7 +2688,7 @@ HcclResult HcomGetRankSizeEx(const char *group, uint32_t *rankSize, uint32_t fla
     CHK_PTR_NULL(rankSize);
     CHK_PTR_NULL(group);
 
-    bool isSetDevice = (bool)(flag & (~(0xfffffffe)));
+    bool isSetDevice = static_cast<bool>(flag & (~(0xfffffffe)));
     if (isSetDevice) {
         HCCL_ERROR("current only support no setdevice, flag[%u]", flag);
         return HCCL_E_PARA;
@@ -3249,7 +3249,7 @@ HcclResult GetOpScratchMemSize(bool isOfflineCompilation, HcclCMDType hcclOpType
         }
     } else if ((hcclOpType == HCCL_CMD_ALLTOALLV ||
         hcclOpType == HCCL_CMD_ALLTOALLVC) &&
-        !UseOneLayerAlltoAllv && (u32)rankSize > HCCL_ALLTOALLV_P2P_SIZE) {
+        !UseOneLayerAlltoAllv && static_cast<u32>(rankSize) > HCCL_ALLTOALLV_P2P_SIZE) {
         // 离线编译场景需要重新计算
         if (isOfflineCompilation) {
             if (hcclOpType == HCCL_CMD_ALLTOALLV) {
