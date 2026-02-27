@@ -13,6 +13,7 @@
 
 #include "op_unfold_cache_entry.h"
 
+#include "aicpu_cache_utils.h"
 #include "aicpu_hccl_sqcq.h"
 #include "aicpu_hccl_sqcqv1.h"
 #include "aicpu_hccl_sqcqv2.h"
@@ -641,8 +642,14 @@ namespace hccl {
         HCCL_INFO("[OpUnfoldCacheEntry][UpdateAndGetSqeArray] update and get SQEs from %uth SQE array; isAlltoallv[%u]", arrayIdx, isAlltoallv);
 
         // 检验入参
-        CHK_PRT_RET(arrayIdx >= sqeArrays_.size(), HCCL_ERROR("[OpUnfoldCacheEntry][MemcpySqeArray] arrayIdx %u is out of range [0, %u)", arrayIdx, sqeArrays_.size()), HCCL_E_INTERNAL);
-        CHK_PRT_RET(arrayIdx >= streamSeqIdxes_.size(), HCCL_ERROR("[OpUnfoldCacheEntry][MemcpySqeArray] arrayIdx %u is out of range [0, %u)", arrayIdx, streamSeqIdxes_.size()), HCCL_E_INTERNAL);
+        CHK_PRT_RET(arrayIdx >= sqeArrays_.size(),
+            HCCL_ERROR("[OpUnfoldCacheEntry][UpdateAndGetSqeArray] arrayIdx %u is out of range [0, %u)",
+                arrayIdx, sqeArrays_.size()),
+            HCCL_E_INTERNAL);
+        CHK_PRT_RET(arrayIdx >= streamSeqIdxes_.size(),
+            HCCL_ERROR("[OpUnfoldCacheEntry][UpdateAndGetSqeArray] arrayIdx %u is out of range [0, %u)",
+                arrayIdx, streamSeqIdxes_.size()),
+            HCCL_E_INTERNAL);
         // 检查指针, arrayPtr不应该是null, 但*arrayPtr应该是null
         CHK_PTRPTR_NULL(sqeArrayPtr);
         CHK_PTRPTR_NULL(sqeTypeArrayPtr);
