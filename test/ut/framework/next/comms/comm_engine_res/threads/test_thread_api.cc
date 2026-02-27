@@ -183,9 +183,9 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_AicpuTsThread_Allocate_expec
 
     Thread * threadptr0 = reinterpret_cast<Thread *>(thread[0]);
     Thread * threadptr1 = reinterpret_cast<Thread *>(thread[1]);
-    
-    EXPECT_EQ(threadptr0->GetNotifyNum(), 3);
-    EXPECT_EQ(threadptr1->GetNotifyNum(), 3);
+    // thread内部暂时会多申请一个notify用于host&device侧同步
+    EXPECT_EQ(threadptr0->GetNotifyNum(), 4);
+    EXPECT_EQ(threadptr1->GetNotifyNum(), 4);
     ret =  HcommThreadFree(thread, 2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
