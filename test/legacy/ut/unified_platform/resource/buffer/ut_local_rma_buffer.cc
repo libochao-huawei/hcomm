@@ -101,7 +101,7 @@ TEST_F(LocalRmaBufferTest, getExchangeDto_ipc_test)
     localIpcRmaBuffer.Describe();
     localIpcRmaBuffer.GetExchangeDto();
 
-    u32 pid = 1;
+    int pid = 1;
     MOCKER(HrtDeviceGetBareTgid).stubs().will(returnValue(pid));
     localIpcRmaBuffer.Grant(pid);
 };
