@@ -28,6 +28,8 @@ struct ThreadMgrAicpuParam {
     char threadParam[LOCAL_STREAM_MAX_NUM][THREAD_UNIQUE_ID_MAX_SIZE]; // 含序列化后thread信息，约40KB
     void* deviceHandle;
     u32 rsv1;
+    s32   deviceLogicId{0};          // 单边通信使用
+    u32   deviceType{0};             // 单边通信使用
 };
 
 struct NotifyMgrAicpuParam {
@@ -63,6 +65,10 @@ public:
     static HcclResult KernelLaunch(OpParam &opParam, ApiParam &apiParam, rtStream_t aicpuInitStream);
     static HcclResult ThreadKernelLaunch(std::vector<std::shared_ptr<Thread>> &newThreads,
         const std::string commId, std::unique_ptr<ThreadHandle[]> &hostHandle, aclrtBinHandle binCustomHandle);
+    static HcclResult ThreadKernelLaunchInternal(std::vector<std::shared_ptr<Thread>> &newThreads,
+        std::unique_ptr<ThreadHandle[]> &hostHandle, aclrtBinHandle binCustomHandle);
+    static HcclResult ThreadKernelLaunchDestroyInternal(ThreadHandle *threadHandles, 
+        uint32_t listNum, aclrtBinHandle binCustomHandle);
     static HcclResult NotifyKernelLaunchAlloc(std::vector<std::unique_ptr<LocalNotify>> &newNotifys,
         const std::string &commId, std::unique_ptr<NotifyHandle[]> &hostHandle, aclrtBinHandle binCustomHandle);
     static HcclResult NotifyKernelLaunchFree(std::vector<NotifyHandle> &aicpuNotifys, uint32_t notifyNum,
@@ -70,6 +76,7 @@ public:
     template <typename OpParam>
     static HcclResult KernelLaunchAicpuCustom(OpParam &opParam, std::string kernelName, rtStream_t aicpuInitStream,
         aclrtBinHandle binCustomHandle);
+
 private:
     HcclResult AiCpuStreamAllocAndGet(rtStream_t &aiCpuStream);
     static HcclResult PrepareAicpuNotifyParam(NotifyMgrAicpuParam &opParam, const std::string &commId,

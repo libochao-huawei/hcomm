@@ -21,6 +21,7 @@ class SocketConfig {
 public:
     RankId            remoteRank;
     LinkData          link;
+    uint16_t          listeningPort;
     const std::string tag;
 
     SocketConfig(RankId remoteRank, const LinkData &link, const std::string &tag)
@@ -33,15 +34,12 @@ public:
                             link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
     {}
 
-    SocketConfig(const LinkData &link, const std::string &tag)
-        : remoteRank(link.GetRemoteRankId()), link(link), tag(tag),
+    SocketConfig(const LinkData &link, , const uint16_t port, const std::string &tag)
+        : remoteRank(link.GetRemoteRankId()), link(link), listeningPort(port), tag(tag),
           role(link.GetLocalAddr() < link.GetRemoteAddr() ? SocketRole::SERVER : SocketRole::CLIENT),
           hccpTag(role == SocketRole::SERVER
-                      ? tag + "_" + to_string(link.GetLocalRankId()) + "_" + to_string(link.GetRemoteRankId()) + "_" +
-                            link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr()
-                      : tag + "_" + to_string(link.GetRemoteRankId()) + "_" + to_string(link.GetLocalRankId()) + "_" +
-                            link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
-
+                      ? tag + "_" + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr() + "_" + to_string(port)
+                      : tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr() + "_" + to_string(port))
     {}
 
     SocketRole GetRole() const

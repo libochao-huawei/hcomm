@@ -17,8 +17,6 @@
 
 namespace hcomm {
 
-constexpr uint32_t TempServerListenPort = 60001;    // 临时固定监听端口，用于功能验证
-
 HcclResult SocketMgr::Init()
 {
     if (isLoaded_) {
@@ -28,7 +26,6 @@ HcclResult SocketMgr::Init()
     s32 devLogicId;
     CHK_RET(hrtGetDevice(&devLogicId));
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
-    serverListenPort_ = TempServerListenPort;
     return HCCL_SUCCESS;
 }
 
@@ -99,7 +96,7 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
     if (socketConfig.link.GetType() == Hccl::PortDeploymentType::DEV_NET) {
         EXECEPTION_CATCH(
             tmpSocket = std::make_unique<Hccl::Socket>(
-                socketHandle, localIpAddress, serverListenPort_,
+                socketHandle, localIpAddress, socketConfig.listeningPort,
                 remoteIpAddress, hccpSocketTag,
                 socketRole, Hccl::NicType::DEVICE_NIC_TYPE
             ),
@@ -111,7 +108,7 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
         EXECEPTION_CATCH(
             tmpSocket = std::make_unique<Hccl::Socket>(socketHandle,
             localIpAddress,
-            serverListenPort_,
+            socketConfig.listeningPort,
             remoteIpAddress,
             hccpSocketTag,
             socketRole,
