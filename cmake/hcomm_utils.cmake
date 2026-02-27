@@ -46,6 +46,11 @@ else()
         # 离线编译场景，优先使用已下载的包
         message(STATUS "[ThirdParty] Found local hcomm_utils package: ${HCOMM_UTILS_PKG_PATH}")
         set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_PKG_PATH})
+    elseif(EXISTS ${CANN_UTILS_LIB_PATH}/${HCOMM_UTILS_FILE})
+        # 离线编译场景，优先使用已下载的包
+        message(STATUS "[ThirdParty] Found local hcomm_utils package: ${CANN_UTILS_LIB_PATH}/${HCOMM_UTILS_FILE}")
+        file(COPY ${CANN_UTILS_LIB_PATH}/${HCOMM_UTILS_FILE} DESTINATION ${HCOMM_UTILS_PKG_PATH})
+        set(HCOMM_UTILS_PROJECT_URL ${HCOMM_UTILS_PKG_PATH})
     else()
         # 下载并解压
         message(STATUS "[ThirdParty] Downloading hcomm_utils from ${HCOMM_UTILS_URL}")

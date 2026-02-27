@@ -83,6 +83,11 @@ else()
         # 离线编译场景，优先使用已下载的包
         message(STATUS "[ThirdParty] Found local openssl package: ${OPENSSL_PKG_PATH}")
         set(OPENSSL_PROJECT_URL ${OPENSSL_PKG_PATH})
+    elseif(EXISTS ${CANN_3RD_LIB_PATH}/openssl)
+        # 离线编译场景，优先使用源代码目录
+        file(COPY ${CANN_3RD_LIB_PATH}/openssl DESTINATION ${OPENSSL_SRC_PATH})
+        message(STATUS "[ThirdParty] Found local openssl source: ${CANN_3RD_LIB_PATH}/openssl")
+        set(OPENSSL_PROJECT_URL "")
     else()
         # 下载并编译安装
         message(STATUS "[ThirdParty] Downloading openssl from ${OPENSSL_URL}")
