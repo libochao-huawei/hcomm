@@ -43,7 +43,7 @@ public:
 
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
-    
+
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
     HcclResult ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
 private:

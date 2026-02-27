@@ -15,6 +15,7 @@ namespace Hccl {
 
 HostSocketHandleManager::HostSocketHandleManager()
 {
+    HCCL_INFO("[HostSocketHandleManager::HostSocketHandleManager] start");
     hostSocketHandleMap.resize(MAX_DEVICE_NUM);
 }
 

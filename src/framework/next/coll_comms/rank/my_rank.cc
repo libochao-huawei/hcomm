@@ -236,7 +236,7 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
     int32_t* statusList = statusVec.data();
     uint32_t retryCount = 0;
     while (true) {
-        HcclResult ret = HcommChannelGetStatus(channelHandles, channelNum, statusList);
+        HcclResult ret = HcommChannelGetStatusInner(channelHandles, channelNum, statusList);
 
         // 卫语句：先处理异常情况
 
@@ -317,6 +317,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
             channelNum * sizeof(ChannelHandle),
             hostChannelHandleList,
             channelNum * sizeof(ChannelHandle)));
+        printf("channel succ \n");
         return HCCL_SUCCESS;
     }
 

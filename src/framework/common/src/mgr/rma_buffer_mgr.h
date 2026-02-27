@@ -12,6 +12,7 @@
 #define RMA_BUFFER_MGR_H
 
 #include <map>
+#include <vector>
 #include "buffer_key.h"
 #include "log.h"
 
