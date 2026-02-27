@@ -26,8 +26,7 @@
 #include "rs_epoll.h"
 #include "rs_ctx_inner.h"
 #include "rs_ctx.h"
-#include "rs_ub_jetty.h"
-#include "rs_ub_jfc.h"
+#include "rs_ub_jetty_ops.h"
 #include "rs_ub.h"
 
 int RsUbGetDevEidInfoNum(unsigned int phyId, unsigned int *num)
