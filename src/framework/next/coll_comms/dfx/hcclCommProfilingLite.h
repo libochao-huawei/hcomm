@@ -20,6 +20,7 @@ public:
     // 上报所有任务
     void ReportAllTasks();
     
+    
     // 上报算子信息（包装ProfilingHandlerLite::GetInstance().ReportHcclOpInfo）
     void ReportHcclOpInfo(const HcclOpInfo& hcclOpInfo);
     
