@@ -92,6 +92,7 @@ using RankTable_t = struct tagRankTable {
     std::string collectiveId;             // 通信域ID
     std::string version;                  // rankTable版本信息
     std::string mode;                     // [DEPRECATED]通讯方式tcp/rdma
+    u32 taskID { 0 };
 };
 
 using RoleTableNodeInfo = struct RoleTableNodeInfoTag {
