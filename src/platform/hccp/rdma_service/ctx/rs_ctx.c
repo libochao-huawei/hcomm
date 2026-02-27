@@ -25,6 +25,7 @@
 #include "rs_ub.h"
 #include "rs_ub_tp.h"
 #include "rs_ub_dfx.h"
+#include "rs_ub_jetty_ops.h"
 #include "rs_ctx.h"
 
 int RsGetChipProtocol(unsigned int chipId, enum NetworkMode hccpMode, enum ProtocolTypeT *protocol,
@@ -62,6 +63,8 @@ int RsCtxApiInit(enum NetworkMode hccpMode, enum ProtocolTypeT protocol)
         return ret;
     }
 
+    ret = RsUbJettyApiInit();
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsApiInit failed"), ret);
     switch (protocol) {
         case PROTOCOL_RDMA:
             ret = RsApiInit();
@@ -99,6 +102,7 @@ int RsCtxApiDeinit(enum NetworkMode hccpMode, enum ProtocolTypeT protocol)
         return 0;
     }
 
+    RsUbJettyApiDeinit();
     switch (protocol) {
         case PROTOCOL_RDMA:
             RsApiDeinit();
