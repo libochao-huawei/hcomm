@@ -199,6 +199,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/platform/common/
     ${HCCL_CODE_ROOT}/src/platform/common/unique
     ${HCCL_CODE_ROOT}/src/platform/common/unfold_cache
+    ${HCCL_CODE_ROOT}/src/platform/common/async_unfold_cache
     ${HCCL_CODE_ROOT}/src/platform/common/buffer_manager
     ${HCCL_CODE_ROOT}/src/platform/inc
     ${HCCL_CODE_ROOT}/src/platform/inc/adapter

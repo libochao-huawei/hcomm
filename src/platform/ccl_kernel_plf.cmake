@@ -159,6 +159,7 @@ set(CCL_KERNEL_PLF_INCLUDE_LIST
     ${HCOMM_DIR}/src/platform/common/unique
     ${HCOMM_DIR}/src/platform/common/buffer_manager
     ${HCOMM_DIR}/src/platform/common/unfold_cache
+    ${HCOMM_DIR}/src/platform/common/async_unfold_cache
     ${HCOMM_DIR}/src/platform/hccp
     ${HCOMM_DIR}/src/platform/hccp/inc
     ${HCOMM_DIR}/src/platform/hccp/inc/network
