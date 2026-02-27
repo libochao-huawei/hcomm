@@ -45,7 +45,7 @@ public:
     // 查找op-unfold cache, hit则直接刷新并下发缓存的SQE
     HcclResult LookupOpUnfoldCache(const std::string& algName, const OpParam &param,
         const AlgResourceResponse &algResource, bool& needExecute, bool& isCacheMiss,
-        Stream& mainStream, std::vector<Stream>& slaveStreams, void *dispatcherPtr, const bool isDeviceMode,
+        Stream& mainStream, std::vector<Stream>& slaveStreams, void *dispatcherPtr, const bool isUseRdma, const bool isDeviceMode,
         const HcclTopoInfo& topoinfo, std::unique_ptr<TopoMatcher>& topoMatcherPtr, const AlgOpContext& algContext,
         std::shared_ptr<AicpuZeroCopyExchanger>& zeroCopyExchangerPtr, const HcclWorkflowMode workflowMode,
         const DeviceMem& tinySendRecvMem, std::function<HcclResult()> setProfStartCallback);
@@ -59,7 +59,7 @@ public:
 
     // 故障快恢/重执行时清理中断的cache entry (if any), 避免命中不完整的缓存
     HcclResult ClearOpUnfoldCacheEntry(const std::string& algName, const OpParam &param,
-        const AlgResourceResponse& algResource, const bool isDeviceMode, const HcclTopoInfo& topoinfo,
+        const AlgResourceResponse& algResource, const bool isUseRdma, const bool isDeviceMode, void* dispatcherPtr, const HcclTopoInfo& topoinfo,
         std::unique_ptr<TopoMatcher>& topoMatcherPtr, const AlgOpContext& algContext, const HcclWorkflowMode workflowMode);
 private:
     // 故障快恢/重执行时清理alltoallv metadata, 避免复用不完整的metadata
@@ -67,7 +67,7 @@ private:
 
     // 判断是否需要使用aicpu op-unfold cache
     HcclResult NeedOpUnfoldCache(const std::string& algName, const OpParam &param,
-        const AlgResourceResponse& algResource, const bool isDeviceMode, const HcclTopoInfo& topoinfo,
+        const AlgResourceResponse& algResource, const bool isUseRdma, const bool isDeviceMode, const HcclTopoInfo& topoinfo,
         std::unique_ptr<TopoMatcher>& topoMatcherPtr, const AlgOpContext& algContext, const HcclWorkflowMode workflowMode,
         bool& needCache);
     HcclResult IsInplace(const OpParam &param, bool& isInplace, const HcclTopoInfo& topoinfo); // 是否为inplace场景 (inplace则不做cache)
