@@ -1217,6 +1217,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::AicpuOpAsyncUnfoldInfoPut()
+    {
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::AicpuUnfoldKernelLaunch(void *inputPtr, void *outputPtr, const rtStream_t stm, u64 addr,
                                                          void *tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode, const std::string &tag)
     {

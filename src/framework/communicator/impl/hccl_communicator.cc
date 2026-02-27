@@ -599,6 +599,27 @@ namespace hccl
                              return HCCL_E_PTR);
             CHK_RET(kfcStatusTransferD2H_->InitHost());
 
+            // 初始化aicpu进程host-device共享内存 (用于aicpu异步展开单算子)
+            if (ASYNC_UNFOLD_ENABLE) {
+                EXECEPTION_CATCH((kfcTailH2D_ =
+                    std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_H2D, sizeof(uint64_t))),
+                return HCCL_E_PTR);
+                CHK_RET(kfcTailH2D_->InitHost());
+
+                EXECEPTION_CATCH((kfcHeadD2H_ =
+                        std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_D2H, sizeof(uint64_t))),
+                    return HCCL_E_PTR);
+                CHK_RET(kfcHeadD2H_->InitHost());
+
+                kfcOpH2DRingBuffer_.resize(OP_H2D_RING_BUFFER_SIZE, nullptr);
+                for (size_t i = 0; i < OP_H2D_RING_BUFFER_SIZE; i++) {
+                    EXECEPTION_CATCH((kfcOpH2DRingBuffer_[i] =
+                        std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_H2D, sizeof(OpAsyncUnfoldInfo))),
+                        return HCCL_E_PTR);
+                    CHK_RET(kfcOpH2DRingBuffer_[i]->InitHost());
+                }
+            }
+
             if (IsEnableCustom())
             {
                 // 初始化custom进程host-device共享内存
