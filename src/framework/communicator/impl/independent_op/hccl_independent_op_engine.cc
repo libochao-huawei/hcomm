@@ -225,8 +225,8 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
     CHK_PTR_NULL(exportedThreads);
     CHK_PRT_RET(!IsValidCommEngine(dstCommEngine),
                 HCCL_ERROR("[%s] commEngine[%d] is invalid", __func__, static_cast<int32_t>(dstCommEngine)), HCCL_E_PARA);
-    if (threadNum == 0) {
-        HCCL_ERROR("[%s] threadNum is 0", __func__);
+    if (threadNum == 0 || threadNum > 40) {
+        HCCL_ERROR("[%s] threadNum is 0 or greater than 40", __func__);
         return HCCL_E_PARA;
     }
 
