@@ -12,29 +12,61 @@
 #include "framework/aicpu_hccl_process.h"
 #include "adapter_rts.h"
 #include "aicpu_indop_process.h"
+#include "aicpu_thread_process.h"
 
-extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *args)
-{
+namespace {
+struct ThreadTask {
+    u64 context;
+    bool isCustom;
+};
+
+ThreadMgrAicpuParam* ParseThreadTaskArgs(void* args) {
     if (args == nullptr) {
         HCCL_ERROR("args is null.");
+        return nullptr;
+    }
+    
+    ThreadTask* ctxArgs = reinterpret_cast<ThreadTask*>(args);
+    return reinterpret_cast<ThreadMgrAicpuParam*>(ctxArgs->context);
+}
+}  // namespace
+
+extern "C" {
+
+__attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void* args) {
+    ThreadMgrAicpuParam* param = ParseThreadTaskArgs(args);
+    if (param == nullptr) {
         return HCCL_E_PARA;
     }
- 
-    struct InitTask {
-        u64 context;
-        bool isCustom;
-    };
-    InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
-    ThreadMgrAicpuParam* param = reinterpret_cast<ThreadMgrAicpuParam*>(ctxArgs->context);
+    
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
+    
     if (devType == DevType::DEV_TYPE_910_95) {
         HCCL_INFO("[RunAicpuIndOpThreadInit] group[%s], threadNum[%u], deviceType[%u]",
-                param->hcomId, param->threadNum, devType);
+                  param->hcomId, param->threadNum, devType);
         return AicpuIndopProcess::AicpuIndOpThreadInit(param);
     }
+    
     return AicpuHcclProcess::AicpuIndOpThreadInit(param);
+}
+
+__attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInitInternal(void* args) {
+    ThreadMgrAicpuParam* param = ParseThreadTaskArgs(args);
+    if (param == nullptr) {
+        return HCCL_E_PARA;
+    }
+    
+    return AicpuThreadProcess::AicpuThreadInit(param);
+}
+
+__attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadDestroyInternal(void* args) {
+    ThreadMgrAicpuParam* param = ParseThreadTaskArgs(args);
+    if (param == nullptr) {
+        return HCCL_E_PARA;
+    }
+    
+    return AicpuThreadProcess::AicpuThreadDestroy(param);
 }
 
 __attribute__((visibility("default"))) uint32_t RunAicpuIndOpNotify(void *args)
@@ -59,4 +91,4 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpNotify(void *args)
     }
     return AicpuHcclProcess::AicpuIndOpNotifyInit(param);
 }
-}
+}  // extern "C"
