@@ -11,6 +11,7 @@
 #ifndef HCCLV2_ADAPTER_HCCP_H
 #define HCCLV2_ADAPTER_HCCP_H
 #include <vector>
+#include <unordered_set>
 #include "ip_address.h"
 #include "data_type.h"
 #include "reduce_op.h"
@@ -631,5 +632,18 @@ HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn in, AuxInfoOut &o
 MAKE_ENUM(JettyStatus, RESET, READY, SUSPENDED, ERROR);
 constexpr u32 MAX_JETTY_QUERY_NUM = 128;
 HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyStatusVec, u32 &num);
+
+struct ConnJettyInfo {
+    RdmaHandle rdmaHandle{nullptr};
+    JettyHandle remoteJetty{0};
+    JettyHandle localJetty{0};
+};
+
+struct BatchDeleteJettyInfo {
+    std::unordered_map<RdmaHandle, std::unordered_set<JettyHandle>> unimportJettyList;
+    std::unordered_map<RdmaHandle, std::unordered_set<JettyHandle>> deleteJettyList;
+};
+constexpr u32 MAX_DELETE_JETTY_NUMS = 768;
+HcclResult HrtRaCtxQpDestoryBatch(const RdmaHandle handle, const std::unordered_set<JettyHandle> &jettyHandles, std::vector<JettyHandle> &failJettyHandles);
 } // namespace Hccl
 #endif // HCCLV2_ADAPTER_HCCP_H
