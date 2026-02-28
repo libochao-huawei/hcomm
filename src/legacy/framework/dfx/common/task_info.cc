@@ -18,8 +18,8 @@
 namespace Hccl {
 using namespace std;
 
-TaskInfo::TaskInfo(u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam, std::shared_ptr<DfxOpInfo> dfxOpInfo)
-    : streamId_(streamId), taskId_(taskId), remoteRank_(remoteRank), taskParam_(taskParam), dfxOpInfo_(dfxOpInfo)
+TaskInfo::TaskInfo(u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam, bool isMaster, std::shared_ptr<DfxOpInfo> dfxOpInfo)
+    : streamId_(streamId), taskId_(taskId), remoteRank_(remoteRank), taskParam_(taskParam), isMaster_(isMaster), dfxOpInfo_(dfxOpInfo)
 {}
 
 std::string TaskInfo::Describe() const
