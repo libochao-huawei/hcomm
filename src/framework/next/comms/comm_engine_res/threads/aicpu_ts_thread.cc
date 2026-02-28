@@ -11,11 +11,6 @@
 #include "aicpu_ts_thread.h"
 #include "aicpu/aicpu_hccl_sqcq.h"
 
-// specify namespaces for the macro TRY_CATCH_*
-using string = std::string;
-using exception = std::exception;
-using HcclException = Hccl::HcclException;
-
 namespace hccl {
 AicpuTsThread::AicpuTsThread(StreamType streamType, uint32_t notifyNum, const NotifyLoadType notifyLoadType)
     : streamType_(streamType), notifyNum_(notifyNum), notifyLoadType_(notifyLoadType)
@@ -182,8 +177,8 @@ HcclResult AicpuTsThread::InitStream(HcclStreamParam &streamParam)
 
 HcclResult AicpuTsThread::InitStreamLite(HcclStreamInfo &streamParam, uint32_t hostPhyId)
 {
-    TRY_CATCH_RETURN(streamA5_ = std::make_unique<Hccl::StreamLite>(
-        streamParam.streamIds, streamParam.sqIds, hostPhyId, streamParam.cqIds));
+    EXECEPTION_CATCH(pImpl_ = std::make_unique<Hccl::IAicpuTsThread>(), return HCCL_E_PTR);
+    pImpl_->StreamLiteInit(streamParam.streamIds, streamParam.sqIds, hostPhyId, streamParam.cqIds);
     return HCCL_SUCCESS;
 }
 
@@ -216,153 +211,67 @@ Stream *AicpuTsThread::GetStream() const
 }
 
 // A5 Stream
-Hccl::StreamLite *AicpuTsThread::GetStreamLitePtr() const
+void *AicpuTsThread::GetStreamLitePtr() const
 {
-    return streamA5_.get();
-}
-
-HcclResult AicpuTsThread::LaunchTask() const
-{
-    CHK_PTR_NULL(streamA5_);
-    HCCL_INFO("[AicpuTsThread::%s] streamId[%u]", __func__, streamA5_->GetId());
-    Hccl::RtsqBase *const rtsqPtr = streamA5_->GetRtsq();
-    CHK_PTR_NULL(rtsqPtr);
-    TRY_CATCH_RETURN(rtsqPtr->LaunchTask());
-    return HCCL_SUCCESS;
-}
-
-namespace { // make the definitions file-scoped
-
-std::unordered_map<HcommReduceOp, Hccl::ReduceOp> mapU32ToReduceOp = {
-    {HCOMM_REDUCE_SUM, Hccl::ReduceOp::SUM},
-    {HCOMM_REDUCE_PROD, Hccl::ReduceOp::PROD},
-    {HCOMM_REDUCE_MAX, Hccl::ReduceOp::MAX},
-    {HCOMM_REDUCE_MIN, Hccl::ReduceOp::MIN},
-};
-
-std::unordered_map<HcommDataType, Hccl::DataType> mapU32ToDataType = {
-    {HCOMM_DATA_TYPE_INT8, Hccl::DataType::INT8},
-    {HCOMM_DATA_TYPE_INT16, Hccl::DataType::INT16},
-    {HCOMM_DATA_TYPE_INT32, Hccl::DataType::INT32},
-    {HCOMM_DATA_TYPE_FP16, Hccl::DataType::FP16},
-    {HCOMM_DATA_TYPE_FP32, Hccl::DataType::FP32},
-    {HCOMM_DATA_TYPE_INT64, Hccl::DataType::INT64},
-    {HCOMM_DATA_TYPE_UINT64, Hccl::DataType::UINT64},
-    {HCOMM_DATA_TYPE_UINT8, Hccl::DataType::UINT8},
-    {HCOMM_DATA_TYPE_UINT16, Hccl::DataType::UINT16},
-    {HCOMM_DATA_TYPE_UINT32, Hccl::DataType::UINT32},
-    {HCOMM_DATA_TYPE_FP64, Hccl::DataType::FP64},
-    {HCOMM_DATA_TYPE_BFP16, Hccl::DataType::BFP16},
-    {HCOMM_DATA_TYPE_INT128, Hccl::DataType::INT128},
-#ifndef OPEN_BUILD_PROJECT
-    {HCOMM_DATA_TYPE_HIF8, Hccl::DataType::HIF8},
-    {HCOMM_DATA_TYPE_FP8E4M3, Hccl::DataType::FP8E4M3},
-    {HCOMM_DATA_TYPE_FP8E5M2, Hccl::DataType::FP8E5M2},
-    {HCOMM_DATA_TYPE_FP8E8M0, Hccl::DataType::FP8E8M0},
-#endif
-};
-
-inline HcclResult CheckDataTypeAndReduceOp(HcommDataType dataType, HcommReduceOp reduceOp)
-{
-    if (mapU32ToDataType.find(dataType) == mapU32ToDataType.end()) {
-        HCCL_ERROR("[AicpuTsThread][%s] type[%u] is not supported.", __func__, dataType);
-        return HCCL_E_PARA;
+    if (pImpl_ == nullptr) {
+        return nullptr;
     }
-    if (mapU32ToReduceOp.find(reduceOp) == mapU32ToReduceOp.end()) {
-        HCCL_ERROR("[AicpuTsThread][%s] op[%u] is not supported.", __func__, reduceOp);
-        return HCCL_E_PARA;
-    }
-    return HCCL_SUCCESS;
+    void *streamLiteVoidPtr = nullptr;
+    pImpl_->GetStreamLitePtr(&streamLiteVoidPtr);
+    return streamLiteVoidPtr;
 }
 
-} // namespace
+void AicpuTsThread::LaunchTask() const
+{
+    if (pImpl_ == nullptr) {
+        HCCL_ERROR("[AicpuTsThread][%s] pImpl_ is nullptr", __func__);
+        return;
+    }
+    pImpl_->LaunchTask();
+    return;
+}
 
 // Local Data Plane Functions
 HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId) const
 {
-    CHK_PTR_NULL(streamA5_);
-    HCCL_INFO("[AicpuTsThread::%s] streamId[%u], notifyId[%u]", __func__, streamA5_->GetId(), notifyId);
-    Hccl::RtsqBase *const rtsqPtr = streamA5_->GetRtsq();
-    CHK_PTR_NULL(rtsqPtr);
-    TRY_CATCH_RETURN(rtsqPtr->NotifyWait(notifyId));
+    CHK_PTR_NULL(pImpl_);
+    CHK_RET(pImpl_->NotifyWait(notifyId));
     return HCCL_SUCCESS;
 }
 
 HcclResult AicpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
 {
-    CHK_PTR_NULL(streamA5_);
-    HCCL_INFO("[AicpuTsThread::%s] streamId[%u], notifyId[%u]", __func__, streamA5_->GetId(), notifyId);
-    Hccl::RtsqBase *const rtsqPtr = streamA5_->GetRtsq();
-    CHK_PTR_NULL(rtsqPtr);
-    TRY_CATCH_RETURN(rtsqPtr->NotifyRecordLoc(notifyId));
+    CHK_PTR_NULL(pImpl_);
+    CHK_RET(pImpl_->NotifyRecordLoc(notifyId));
     return HCCL_SUCCESS;
 }
 
 HcclResult AicpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByte) const
 {
-    if (sizeByte > std::numeric_limits<uint32_t>::max()) {
-        HCCL_ERROR("[AicpuTsThread::%s] sizeByte[%llu] exceeds the maximum value of uint32", __func__, sizeByte);
-        return HCCL_E_PARA;
-    }
-
-    CHK_PTR_NULL(streamA5_);
-    Hccl::RtsqBase *const rtsqPtr = streamA5_->GetRtsq();
-    CHK_PTR_NULL(rtsqPtr);
-
+    CHK_PTR_NULL(pImpl_);
     // No need to check nullptr for dst & src
-    const uint64_t dstAddr = reinterpret_cast<uint64_t>(dst);
-    const uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
-    const uint32_t sizeByteU32 = static_cast<uint32_t>(sizeByte);
-    const uint32_t partId = 0;  // partId will not be used.
-
-    HCCL_INFO("[AicpuTsThread::%s] streamId[%u], dst[0x%llx], src[0x%llx], sizeByte[%u]",
-        __func__, streamA5_->GetId(), dst, src, sizeByteU32);
-
-    TRY_CATCH_RETURN(rtsqPtr->SdmaCopy(dstAddr, srcAddr, sizeByteU32, partId));
-    return HCCL_SUCCESS;
+    uint64_t dstAddr = reinterpret_cast<uint64_t>(dst);
+    uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
+    return pImpl_->SdmaCopy(dstAddr, srcAddr, sizeByte);
 }
 
 HcclResult AicpuTsThread::LocalReduce(
     void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const
 {
-    if (sizeByte > std::numeric_limits<uint32_t>::max()) {
-        HCCL_ERROR("[AicpuTsThread::%s] sizeByte[%llu] exceeds the maximum value of uint32", __func__, sizeByte);
-        return HCCL_E_PARA;
-    }
-
-    CHK_PTR_NULL(streamA5_);
-    Hccl::RtsqBase *const rtsqPtr = streamA5_->GetRtsq();
-    CHK_PTR_NULL(rtsqPtr);
-
+    CHK_PTR_NULL(pImpl_);
     // No need to check nullptr for dst & src
-    const uint64_t dstAddr = reinterpret_cast<uint64_t>(dst);
-    const uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
-    const uint32_t sizeByteU32 = static_cast<uint32_t>(sizeByte);
-    const uint32_t partId = 0;  // partId will not be used.
-    CHK_RET(CheckDataTypeAndReduceOp(dataType, reduceOp));
-    const Hccl::DataType dataTypeA5 = mapU32ToDataType[dataType];
-    const Hccl::ReduceOp reduceOpA5 = mapU32ToReduceOp[reduceOp];
-    const Hccl::ReduceIn reduceIn{dataTypeA5, reduceOpA5};
-
-    HCCL_INFO("[AicpuTsThread::%s] streamId[%u], dst[0x%llx], src[0x%llx], sizeByte[%u], dataType[%d], reduceOp[%d]", 
-        __func__, streamA5_->GetId(), dst, src, sizeByteU32, dataTypeA5, reduceOpA5);
-
-    TRY_CATCH_RETURN(rtsqPtr->SdmaReduce(dstAddr, srcAddr, sizeByteU32, partId, reduceIn));
-    return HCCL_SUCCESS;
+    uint64_t dstAddr = reinterpret_cast<uint64_t>(dst);
+    uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
+    uint32_t dataTypeRaw = static_cast<uint32_t>(dataType);
+    uint32_t reduceOpRaw = static_cast<uint32_t>(reduceOp);
+    return pImpl_->SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw);
 }
 
-HcclResult AicpuTsThread::ThreadNotifyRecordCrossType(const NotifyEntity notifyEntity) const
+ HcclResult AicpuTsThread::ThreadNotifyRecordCrossType(const NotifyEntity notifyEntity) const
 {
-    if (notifyEntity.type != NOTIFY_TYPE_HOST_MEM) {
-        HCCL_ERROR("[AicpuTsThread::%s] non-HOST_MEM notify is NOT supported.", __func__);
-        return HCCL_E_PARA;
-    }
-    CHK_PTR_NULL(streamA5_);
-    Hccl::RtsqBase *const rtsqPtr = streamA5_->GetRtsq();
-    CHK_PTR_NULL(rtsqPtr);
-    
+    CHK_PTR_NULL(pImpl_);
     const uint64_t notifyDeviceVA = notifyEntity.deviceVA;
-    TRY_CATCH_RETURN(rtsqPtr->WriteValue(notifyDeviceVA, 1));
+    CHK_RET(pImpl_->WriteValue(notifyDeviceVA, 1));
     return HCCL_SUCCESS;
 }
 
@@ -454,9 +363,10 @@ HcclResult AicpuTsThread::DeviceInit()
 HcclResult AicpuTsThread::GetSqHeadAndTail(uint32_t& sqHead, uint32_t& sqTail)
 {
 #ifdef CCL_KERNEL_AICPU
-    CHK_PTR_NULL(streamA5_);
+    CHK_PTR_NULL(pImpl_);
 
-    const uint32_t sqIds = streamA5_->GetSqId();
+    uint32_t sqIds{0};
+    CHK_RET(pImpl_->GetSqId(sqIds));
 
     HCCL_INFO("[AicpuTsThread::%s] START. devId=%u, sqId=%u.", __func__, devId_, sqIds);
 

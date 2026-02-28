@@ -12,6 +12,8 @@
 
 #include <vector>
 #include "thread.h"
+#include "aicpu_ts_thread_interface.h"
+#include "resource_entities.h"
 
 namespace hccl {
 class AicpuTsThread : public Thread {
@@ -30,8 +32,8 @@ public:
     // A3 Stream & A5 Stream
     bool IsDeviceA5() const override;
     Stream *GetStream() const override;
-    Hccl::StreamLite *GetStreamLitePtr() const override;
-    HcclResult LaunchTask() const override;
+    void *GetStreamLitePtr() const override;
+    void LaunchTask() const override;
 
     // Local Data Plane Functions
     HcclResult LocalNotifyWait(uint32_t notifyId) const override;
@@ -73,11 +75,11 @@ private:
     NotifyLoadType notifyLoadType_ = NotifyLoadType::HOST_NOTIFY;
     uint32_t devId_ = INVALID_UINT;
     std::unique_ptr<Stream> stream_ = nullptr;
-    std::unique_ptr<Hccl::StreamLite> streamA5_ = nullptr;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
     std::string uniqueIdStr_;
     DeviceMem sqCqeContext_;
     DevType devType_ = DevType::DEV_TYPE_COUNT;
+    std::unique_ptr<Hccl::IAicpuTsThread> pImpl_{nullptr};
 };
 
 }  // namespace hccl
