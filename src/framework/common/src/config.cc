@@ -439,7 +439,7 @@ HcclResult CheckRankIpFamily(const std::vector<RankInfo_t> &rankList)
                     "configured for the rank[" + rankId + "]. The default NPU IP address is used for communication. "
                     "Therefore, the IP address cannot be used for communication. Configure an NPU IP address of "
                     "the AF_INET type for the rank[" + rankId + "].";
-                RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"env", "tips"}),
+                RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
                     std::vector<std::string>({ "RankIpFamily", ipFamilyError }));
                 CHK_PRT_RET(true,
                     HCCL_ERROR("[%s][%s]rank[%u] device ip family[%d] is not same with others[%d].",

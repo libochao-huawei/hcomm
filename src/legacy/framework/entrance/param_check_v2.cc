@@ -221,8 +221,8 @@ HcclResult HcomCheckReductionOpV2(const HcclReduceOp op)
 {
     if (HCCL_SUPPORT_REDUCE_OP_V2.find(op) == HCCL_SUPPORT_REDUCE_OP_V2.end()) {
         RPT_INPUT_ERR(true, "EI0003", vector<string>({"ccl_op", "parameter", "value", "tips"}),\
-            vector<string>({"HcomCheckReductionOpV2", "op", "not find", 
-            "please check ReduceOp that is not supported"}));
+            vector<string>({"HcomCheckReductionOpV2",  GetReduceOpEnumStrV2(op), "op",
+            "one of " + join(HCCL_SUPPORT_REDUCE_OP_V2, ",")}));
         HCCL_ERROR("[Check][ReductionOp]errNo[0x%016llx] Op:[%s] not supported", HCCL_E_PARA,
             GetReduceOpEnumStrV2(op).c_str());
         return HCCL_E_NOT_SUPPORT;
@@ -234,8 +234,8 @@ HcclResult HcomCheckProdDataTypeV2(const HcclDataType dataType)
 {
     if (HCCL_SUPPORT_PROD_DATA_TYPE_V2.find(dataType) == HCCL_SUPPORT_PROD_DATA_TYPE_V2.end()) {
         RPT_INPUT_ERR(true, "EI0003", vector<string>({"ccl_op", "parameter", "value", "tips"}),\
-            vector<string>({"HcomCheckProdDataTypeV2", "dataType", "not supported for product", 
-            "please check DataType & ReduceOp that is not supported"}));
+            vector<string>({"HcomCheckProdDataTypeV2", GetDataTypeEnumStrV2(dataType), "dataType", 
+            "one of" + join(HCCL_SUPPORT_PROD_DATA_TYPE_V2, ", ")}));
         HCCL_ERROR("[Check][ProdDataType]errNo[0x%016llx] DataType:[%s] not supported PROD", HCCL_E_PARA,
             GetDataTypeEnumStrV2(dataType).c_str());
         return HCCL_E_NOT_SUPPORT;

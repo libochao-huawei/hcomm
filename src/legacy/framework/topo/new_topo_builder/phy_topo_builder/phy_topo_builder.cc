@@ -46,7 +46,7 @@ void PhyTopoBuilder::Build(const std::string &topoPath)
 
     if (topoPath.empty()) {
         RPT_INPUT_ERR(true, "EI0004", std::vector<std::string>({"error_reason", "ranktable_path"}),
-                      std::vector<std::string>({"Topo path is empty.", "Please check the path "
+                      std::vector<std::string>({RANKTABLE_PARSE_ERROR_REASON, "Please check the path "
                                                                        "configuration of the topo json file."}));
         THROW<InvalidParamsException>("[PhyTopoBuilder::%s] Topo path is empty.", __func__);
     }

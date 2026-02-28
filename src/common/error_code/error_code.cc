@@ -21,22 +21,22 @@ const std::string hcomm_g_msg = R"(
       "errClass": "HCCL Errors",
       "errTitle": "Config_Error_Invalid_Environment_Variable",
       "ErrCode": "EI0001",
-      "ErrMessage": "Environment variable [%s] is invalid. Reason: %s.",
-      "Arglist": "env,tips",
+      "ErrMessage": "Value %s for environment variable [%s] is invalid. Expected value: %s.",
+      "Arglist": "value,env,expect",
       "suggestion": {
-        "Possible Cause": "The environment variable configuration is invalid.",
-        "Solution": "Try again with valid environment variable configuration."
+        "Possible Cause": "N/A",
+        "Solution": "N/A"
       }
     },
     {
       "errClass": "HCCL Errors",
       "errTitle": "Communication_Error_Timeout",
       "ErrCode": "EI0002",
-      "ErrMessage": "The wait execution of the Notify register times out. Reason: The Notify register has not received the Notify record from remote rank: [%s]. base information: [%s]. task information: [%s]. group information: [%s]",
+      "ErrMessage": "Communication operator execution waiting times out. Waiting peer end: %s; task information: %s; Communication operator information: %s; Communication: %s.",
       "Arglist": "remote_rankid, base_information, task_information, group_rank_content",
       "suggestion": {
-        "Possible Cause": "1. An exception occurs during the execution on some NPUs in the cluster. As a result, collective communication operation failed.2. The execution speed on some NPU in the cluster is too slow to complete a communication operation within the timeout interval. (default 1800s, You can set the interval by using HCCL_EXEC_TIMEOUT.)3. The number of training samples of each NPU is inconsistent.4. Packet loss or other connectivity problems occur on the communication link.",
-        "Solution": "1. If this error is reported on part of these ranks, check other ranks to see whether other errors have been reported earlier.2. If this error is reported for all ranks, check whether the error reporting time is consistent (the maximum difference must not exceed 1800s). If not, locate the cause or adjust the locate the cause or set the HCCL_EXEC_TIMEOUT environment variable to a larger value.3. Check whether the completion queue element (CQE) of the error exists in the plog(grep -rn 'error cqe'). If so, check the network connection status. 4. Ensure that the number of training samples of each NPU is consistent."
+        "Possible Cause": "1. An exception occurs during the execution on some NPUs in the cluster. As a result, collective communication operation failed.2. The execution speed on some NPU in the cluster is too slow to complete a communication operation within the timeout interval. (The default timeout interval is 1800s, You can set the interval by using HCCL_EXEC_TIMEOUT.)3. The number of training samples of each NPU is inconsistent.4. Packet loss or other connectivity problems occur on the communication link.",
+        "Solution": "1. If this error is reported on part of these ranks, check other ranks to see whether other errors have been reported earlier.2. If this error is reported for all ranks, check whether the error reporting time is consistent (the maximum difference must not exceed 1800s). If not, locate the cause or set the HCCL_EXEC_TIMEOUT environment variable to a larger value. 3. Ensure that the number of training samples of each NPU is consistent. 4. Check whether the completion queue element (CQE) of the error exists in the plog(grep -rn 'error cqe'). If so, check the network connection status. For details about the troubleshooting method, search for the keyword "EI0002" on https://www.hiascend.com/en/document/."
       }
     },
     {
@@ -47,29 +47,29 @@ const std::string hcomm_g_msg = R"(
       "Arglist": "ccl_op,value,parameter,value",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "Try again with a valid argument."
+        "Solution": "N/A"
       }
     },
     {
       "errClass": "HCCL Errors",
-      "errTitle": "Config_Error_Ranktable_Configuration",
+      "errTitle": "File_Operation_Error_Parse",
       "ErrCode": "EI0004",
-      "ErrMessage": "The ranktable or rank is invalid,Reason:[%s]. Please check the configured ranktable. [%s]",
+      "ErrMessage": "Failed to parse the ranktable file %s. Reason: %s",
       "Arglist": "error_reason,ranktable_path",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "Try again with a valid cluster configuration in the ranktable file. Ensure that the configuration matches the operating environment."
+        "Solution": "N/A"
       }
     },
     {
       "errClass": "HCCL Errors ",
-      "errTitle": "Inconsistent_Collective_Communication_Arguments_Between_Ranks",
+      "errTitle": "Invalid_Argument",
       "ErrCode": "EI0005",
-      "ErrMessage": "The arguments for collective communication are inconsistent between ranks: tag [%s], parameter [%s], local [%s], remote [%s]",
-      "Arglist": "tag,para_name,local_para,remote_para",
+      "ErrMessage": "The arguments for collective communication are inconsistent between ranks, parameter %s, local end %s, remote end %s.",
+      "Arglist": "para_name,local_para,remote_para",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "Check whether the training script and ranktable of each NPU are consistent."
+        "Solution": "N/A"
       }
     },
     {
@@ -80,17 +80,17 @@ const std::string hcomm_g_msg = R"(
       "Arglist": "reason",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "1. Check the rank service processes with other errors or no errors in the cluster.2. If this error is reported for all NPUs, check whether the time difference between the earliest and latest errors is greater than the connect timeout interval (120s by default). If so, adjust the timeout interval by using the HCCL_CONNECT_TIMEOUT environment variable.3. Check the connectivity of the communication link between nodes. (For example, run the 'hccn_tool -i $devid -tls -g' command to check the TLS status of each NPU)."
+        "Solution": "N/A"
       }
     },
     {
       "errClass": "HCCL Errors",
       "errTitle": "Resource_Error",
       "ErrCode": "EI0007",
-      "ErrMessage": "Failed to allocate resource[%s] with info [%s]. Reason: Memory resources are exhausted.",
+      "ErrMessage": "Failed to allocate resource %s with info %s. Reason: Resources are exhausted.",
       "Arglist": "resource_type, resource_info",
       "suggestion": {
-        "Possible Cause": "Failed to allocate memory or the Notify register due to resource insufficiency.",
+        "Possible Cause": "N/A",
         "Solution": "N/A"
       }
     },
@@ -98,8 +98,8 @@ const std::string hcomm_g_msg = R"(
       "errClass": "HCCL Errors",
       "errTitle": "Package_Error_Incorrect_HCCL_Version",
       "ErrCode": "EI0008",
-      "ErrMessage": "The HCCL versions are inconsistent: tag [%s], local_version [%s], remote_version [%s]",
-      "Arglist": "tag,local_version,remote_version",
+      "ErrMessage": "The HCCL versions are inconsisten. The local version is %s, while the remote version is %s.",
+      "Arglist": "local_version, remote_version",
       "suggestion": {
         "Possible Cause": "N/A",
         "Solution": "Install the same HCCL version."
@@ -222,7 +222,7 @@ const std::string hcomm_g_msg = R"(
       "errClass": "HCCL Errors",
       "errTitle": "Communication_Error_Bind_IP_Port",
       "ErrCode": "EI0019",
-      "ErrMessage": "Failed to enable listebing for the host network adapter socket. Reason: %s",
+      "ErrMessage": "Failed to enable listening for the host network adapter socket. Reason: %s",
       "Arglist": "reason",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -233,7 +233,7 @@ const std::string hcomm_g_msg = R"(
       "errClass": "HCCL Errors",
       "errTitle": "Communication_Error_Bind_IP_Port",
       "ErrCode": "EI0020",
-      "ErrMessage": "Failed to enable listebing for the host network adapter socket. Reason: %s",
+      "ErrMessage": "Failed to enable listening for the host network adapter socket. Reason: %s",
       "Arglist": "reason",
       "suggestion": {
         "Possible Cause": "N/A",

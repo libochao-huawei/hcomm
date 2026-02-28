@@ -813,33 +813,36 @@ namespace hccl
             std::sort(devIdList0.begin(), devIdList0.end());
             std::sort(devIdList1.begin(), devIdList1.end());
 
+            auto buildDeviceListStr = [](const std::vector<u32>& list) -> std::string {
+                std:: string result;
+                for(const auto& id : list) {
+                    if (!result.empty()) {
+                        result += " ";
+                    }
+                    result += std::to_string(id);
+                }
+                return result;
+            };
+
+            std::string devList0Str = buildDeviceListStr(devIdList0);
+            std::string devList1Str = buildDeviceListStr(devIdList1);
+
             if (devIdList0.size() != devIdList1.size()) {
-                char errorLogBuffer[LOG_TMPBUF_SIZE];
-                s32 ret = snprintf_s(errorLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-                                     "errNo[0x%016llx]. In A+X serverNum_[%d], moduleNum_[%d] case: "
-                                     "deviceNum in module0:[%d] not equal to deviceNum in module1:[%d], "
-                                     "you can export HCCL_INTRA_ROCE_ENABLE=1 to enable this scenario.",
-                                     HCCL_ERROR_CODE(HCCL_E_NOT_SUPPORT), serverNum_, moduleNum_, devIdList0.size(), devIdList1.size());
-                CHK_PRT_CONT(ret == -1, HCCL_ERROR("Failed to build log info"));
+                std::string errormessage = "Device ID " + devList0Str + " in module 0 and device ID " + devList1Str + " in module 1 are not on the same plane.";
                 RPT_INPUT_ERR(true, "EI0010", std::vector<std::string>({"reason"}),
-                              std::vector<std::string>({std::string(errorLogBuffer)}));
+                              std::vector<std::string>({ errormessage }));
                 HCCL_ERROR("[%s][%s]%s",
-                    LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_TIMEOUT.c_str(), errorLogBuffer);
+                    LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_TIMEOUT.c_str(), errormessage.c_str());
                 return HCCL_E_NOT_SUPPORT;
             }
             for (size_t i = 0; i < devIdList0.size(); i++) {
                 if (devIdList0[i] % DEVICE_PER_MODULE != devIdList1[i] % DEVICE_PER_MODULE) {
                     char errorLogBuffer[LOG_TMPBUF_SIZE];
-                    s32 ret = snprintf_s(errorLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-                                         "errNo[0x%016llx]. In A+X serverNum_[%d], moduleNum_[%d] case: "
-                                         "deviceId[%d] in module0 and deviceId[%d] in module1 are not on the same plane, "
-                                         "you can export HCCL_INTRA_ROCE_ENABLE=1 to enable this scenario.",
-                                         HCCL_ERROR_CODE(HCCL_E_NOT_SUPPORT), serverNum_, moduleNum_, devIdList0[i], devIdList1[i]);
-                    CHK_PRT_CONT(ret == -1, HCCL_ERROR("Failed to build log info"));
+                    std::string errormessage = "Device ID " + std::to_string(devIdList0[i]) + " in module 0 and device ID " + std::to_string(devIdList1[i]) + " in module 1 are not on the same plane.";
                     RPT_INPUT_ERR(true, "EI0010", std::vector<std::string>({"reason"}),
-                                  std::vector<std::string>({std::string(errorLogBuffer)}));
+                                  std::vector<std::string>({ errormessage }));
                     HCCL_ERROR("[%s][%s]%s",
-                        LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_TIMEOUT.c_str(), errorLogBuffer);
+                        LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_TIMEOUT.c_str(), errormessage.c_str());
                     return HCCL_E_NOT_SUPPORT;
                 }
             }
@@ -857,7 +860,8 @@ namespace hccl
                         "EI0003",
                         infoTitle,
                         vector<string>(
-                            {"CheckDataType", "dataType", GetDataTypeEnumStr(dataType), "please check dataType"}));
+                            {"CheckDataType", GetDataTypeEnumStr(dataType), "dataType", "HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_INT16, HCCL_DATA_TYPE_INT32, "\
+                            "HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP32"}));
                     HCCL_ERROR("[%s][%s]errNo[0x%016llx] data type[%s] not supported, support range=[%s]",
                         LOG_KEYWORDS_TASK_EXEC.c_str(),
                         LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
@@ -867,7 +871,6 @@ namespace hccl
                     return HCCL_E_NOT_SUPPORT;
                 }
             }
-
             if ((dataType == HCCL_DATA_TYPE_UINT64) ||
                 (dataType == HCCL_DATA_TYPE_UINT8) || (dataType == HCCL_DATA_TYPE_UINT16) ||
                 (dataType == HCCL_DATA_TYPE_UINT32) || (dataType == HCCL_DATA_TYPE_FP64) ||
@@ -876,7 +879,8 @@ namespace hccl
                     "EI0003",
                     infoTitle,
                     vector<string>(
-                        {"CheckDataType", "dataType", GetDataTypeEnumStr(dataType), "please check dataType"}));
+                        {"CheckDataType", GetDataTypeEnumStr(dataType), "dataType", "HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_INT16, HCCL_DATA_TYPE_INT32, "\
+                        "HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP32"}));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] data type[%s] not supported, support range=[%s]",
                     LOG_KEYWORDS_TASK_EXEC.c_str(),
                     LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
@@ -892,7 +896,8 @@ namespace hccl
                     "EI0003",
                     infoTitle,
                     vector<string>(
-                        {"CheckDataType", "dataType", GetDataTypeEnumStr(dataType), "please check dataType"}));
+                        {"CheckDataType",  GetDataTypeEnumStr(dataType), "dataType", "HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_INT16, HCCL_DATA_TYPE_INT32, "\
+                            "HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP32, HCCL_DATA_TYPE_UINT8, HCCL_DATA_TYPE_UINT16, HCCL_DATA_TYPE_UINT32"}));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] data type[%s] not supported, support range=[%s]",
                     LOG_KEYWORDS_TASK_EXEC.c_str(),
                     LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
@@ -1039,11 +1044,11 @@ namespace hccl
                 ((dataType == HCCL_DATA_TYPE_INT16) || (dataType == HCCL_DATA_TYPE_BFP16))) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
                     std::vector<std::string>({"CheckReduceDataType",
-                        "dataType",
                         GetDataTypeEnumStr(dataType),
-                        "please check dataType when optype is prod"}));
+                        "dataType",
+                        "HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_INT32, HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP32"}));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] device type[%d] does not support the data type[%s] and data "
                            "type[%s] for Op[%s]",
                     LOG_KEYWORDS_TASK_EXEC.c_str(),
@@ -1059,11 +1064,11 @@ namespace hccl
             if (dataType == HCCL_DATA_TYPE_INT16) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
                     std::vector<std::string>({"CheckReduceDataType",
-                        "dataType",
                         GetDataTypeEnumStr(dataType),
-                        "please check the data type when the device type is 910."}));
+                        "dataType",
+                        "HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_INT32, HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP32"}));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] device type[%d] does not support the data type[%s]",
                     LOG_KEYWORDS_TASK_EXEC.c_str(),
                     LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
@@ -1076,11 +1081,11 @@ namespace hccl
             if (dataType == HcclDataType::HCCL_DATA_TYPE_INT16 && op != HcclReduceOp::HCCL_REDUCE_SUM) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
                     std::vector<std::string>({"CheckReduceDataType",
-                        "op",
                         GetReduceOpEnumStr(op),
-                        "please check operation type when the data type is int16."}));
+                        "op",
+                        "sum"}));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] device type[%d] does not support the data type[%s] for Op[%s]",
                     LOG_KEYWORDS_TASK_EXEC.c_str(),
                     LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
