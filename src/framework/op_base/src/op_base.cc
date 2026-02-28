@@ -43,6 +43,7 @@
 #include "../nslbdp/hccl_nslbdp.h"
 #include "comm_configer.h"
 #include "hccl_group.h"
+#include "../../next/comms/api_c_adpt/hcomm_c_adpt.h"
 
 #define DOUBLE_SIZE 2
 
@@ -83,7 +84,19 @@ HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType
 thread_local s32 g_hcclDeviceId = INVALID_INT;
 std::mutex g_opHcomInfosMutex{};
 std::mutex g_opHcomOneSideMutex{};
-HcclOpInfoCtx g_opHcomInfos[MAX_MODULE_DEVICE_NUM + 1];
+
+HcclOpInfoCtx &GetOpHcomInfo(uint32_t devId)
+{
+    if (devId >= MAX_MODULE_DEVICE_NUM + 1) {
+        devId = MAX_MODULE_DEVICE_NUM;
+    }
+    
+    (void)HcommInitManager(devId);
+
+    static HcclOpInfoCtx g_opHcomInfos[MAX_MODULE_DEVICE_NUM + 1];
+    return g_opHcomInfos[devId];
+}
+
 
 HcclResult HcclGetDeviceId(void)
 {
@@ -111,17 +124,20 @@ s32 HcclGetThreadDeviceId()
 HcclOpInfoCtx &GetHcclExistDeviceOpInfoCtx(void)
 {
     std::lock_guard<std::mutex> lock(g_opHcomInfosMutex);
-    if (!g_opHcomInfos[g_hcclDeviceId].isUsed) {
+    auto &opHcomInfo = GetOpHcomInfo(g_hcclDeviceId);
+    if (!opHcomInfo.isUsed) {
         HCCL_INFO("[GetHcclOpInfoCtx] Set device, use g_hcclDeviceId[%d] ", g_hcclDeviceId);
-        if (g_opHcomInfos[MAX_MODULE_DEVICE_NUM].isUsed) {
+        auto &backUpOpHcomInfo = GetOpHcomInfo(MAX_MODULE_DEVICE_NUM);
+        if (backUpOpHcomInfo.isUsed) {
             g_hcclDeviceId = MAX_MODULE_DEVICE_NUM;
             HCCL_INFO("[GetHcclOpInfoCtx] Used cover bottom g_hcclDeviceId[%d]", g_hcclDeviceId);
-            return g_opHcomInfos[g_hcclDeviceId];
+            return backUpOpHcomInfo;
         }
     }
+
     HCCL_INFO("[GetHcclExistDeviceOpInfoCtx] use g_hcclDeviceId[%d] opHcomInfos", g_hcclDeviceId);
-    g_opHcomInfos[g_hcclDeviceId].isUsed = true;
-    return g_opHcomInfos[g_hcclDeviceId];
+    opHcomInfo.isUsed = true;
+    return opHcomInfo;
 }
 
 HcclOpInfoCtx &GetHcclOpInfoCtx(void)
@@ -132,16 +148,19 @@ HcclOpInfoCtx &GetHcclOpInfoCtx(void)
 
     std::lock_guard<std::mutex> lock(g_opHcomInfosMutex);
     for (u32 i = 0; i < MAX_MODULE_DEVICE_NUM; i++) {
-        if (g_opHcomInfos[i].isUsed) {
+        auto &opHcomInfo = GetOpHcomInfo(i);
+        if (opHcomInfo.isUsed) {
             g_hcclDeviceId = i;
             HCCL_INFO("[GetHcclOpInfoCtx] Not set device, Used g_hcclDeviceId[%u] ", i);
-            return g_opHcomInfos[g_hcclDeviceId];
+            return opHcomInfo;
         }
     }
+
     g_hcclDeviceId = MAX_MODULE_DEVICE_NUM;
-    g_opHcomInfos[MAX_MODULE_DEVICE_NUM].isUsed = true;
+    auto &backUpOpHcomInfo = GetOpHcomInfo(g_hcclDeviceId);
+    backUpOpHcomInfo.isUsed = true;
     HCCL_INFO("[GetHcclOpInfoCtx] Used cover bottom g_hcclDeviceId[%d]", g_hcclDeviceId);
-    return g_opHcomInfos[MAX_MODULE_DEVICE_NUM];
+    return backUpOpHcomInfo;
 }
 
 HcclResult GetDeviceComm(uint32_t ndev, const HcclRootInfo &rootHandle, const s32 rank, const s32 logicDeviceId,
