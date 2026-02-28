@@ -90,6 +90,8 @@ bool CcuContextScatterMesh2D::SameColumnWithRoot()
 void CcuContextScatterMesh2D::PrepareVariables()
 {
     u32 transportId = 0;
+    CHK_PRT_RET(transports.size() < localSize_,
+                HCCL_ERROR("[CcuContextScatterMesh2D] transports size is less than localSize"),);
     input_ = CreateVariable();
     sliceSize_ = CreateVariable();
     stride_ = CreateVariable();

@@ -62,8 +62,8 @@ CcuContextHalfAllToAllVMesh1D::CcuContextHalfAllToAllVMesh1D(
     goSize_ = CreateGroupOpSize();
 
     curSrc_ = CreateMemory();
-    if (transports.size() == 0) {
-        THROW<NullPtrException>(StringFormat("CcuContextHalfAllToAllVMesh1D transports is empty"));
+    if (transports.size() == 0 || transports.size() < rankSize_ -1) {
+        THROW<NullPtrException>(StringFormat("CcuContextHalfAllToAllVMesh1D transports is empty or size is less"));
     }
     for (uint32_t i = 0; i < rankSize_; i++) {
         // curDst在初始化时即赋值各个rank的cclBuffer地址

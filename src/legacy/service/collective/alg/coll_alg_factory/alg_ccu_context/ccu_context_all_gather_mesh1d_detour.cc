@@ -88,8 +88,8 @@ CcuContextAllGatherMeshDetour1D::CcuContextAllGatherMeshDetour1D(const CcuCtxArg
         } else {
             HCCL_INFO("[CcuContextAllGatherMeshDetour1D] MyRank[%u], PeerId[%llu], TransportId[%u]",
                 rankId_, peerId, transportIdx);
-            CHK_PRT_RET(detourTransports_[0][transportIdx] == nullptr,
-                HCCL_ERROR("[CcuContextAllGatherMeshDetour1D] Algorithm transport ptr is null"),);
+            CHK_PRT_RET(detourTransports_[0][transportIdx] == nullptr || transportIdx >= detourTransports_[0].size(),
+                HCCL_ERROR("[CcuContextAllGatherMeshDetour1D] Algorithm transport ptr is null or out of bounds"),);
             output_.push_back(CreateVariable((*detourTransports_[0][transportIdx]), OUTPUT_XN_ID));
             token_.push_back(CreateVariable((*detourTransports_[0][transportIdx]), TOKEN_XN_ID));
             transportIdx++;
