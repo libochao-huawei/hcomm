@@ -8,6 +8,10 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include "gtest/gtest.h"
+#include <mockcpp/mokc.h>
+#include <mockcpp/mockcpp.hpp>
+
 #define private public
 #define protected public
 #include "communicator_impl.h"
@@ -21,9 +25,6 @@
 #include "hccp_ctx.h"
 #include "hccp_common.h"
 
-#include "gtest/gtest.h"
-#include <mockcpp/mokc.h>
-#include <mockcpp/mockcpp.hpp>
 #include <stdexcept>
 #include <string>
 #include <exception>
@@ -57,20 +58,22 @@
 #include "stream_manager.h"
 #include "virtual_topo_stub.h"
 #include "ins_all_reduce_sole_executor.h"
+#include "ins_v2_all_reduce_sole_executor.h"
 #include "topo_match_mesh.h"
 #include "ccu_temp_all_reduce_mesh_1D_one_shot.h"
 #include "ccu_context_all_reduce_mesh1d_one_shot.h"
 #include "ccu_instruction_all_reduce_mesh1d_one_shot.h"
-#include "ccu_instruction_all_reduce_mesh1d_multimission.h"
-#include "ccu_context_all_reduce_mesh1d_multimission.h"
-#include "ccu_temp_all_reduce_mesh_1D_multimission.h"
+
+#include "ccu_temp_all_reduce_mesh_1D_mem2mem.h"
+#include "ccu_context_all_reduce_mesh1d_mem2mem.h"
+#include "ccu_instruction_all_reduce_mesh1d_mem2mem.h"
+
 #include "ccu_ins_group.h"
 #include "env_config_stub.h"
 #include "coll_alg_component.h"
 #include "hccl_communicator.h"
 #include "op_base_v2.h"
-// #include "hccl.h"
-#include "ranktable_stub_clos.h"
+#include "hccl_comm.h"
 #include "ranktable_stub_clos.h"
 #undef private
 #undef protected
@@ -78,6 +81,9 @@
 using namespace Hccl;
 std::map<std::string, std::string> envCommCfgMap = defaultEnvCfgMap;
 constexpr u32 TEMP_UES_CNTCKE_NUM = 16;
+
+#define HCCL_HDC_TYPE_D2H 0
+#define HCCL_HDC_TYPE_H2D 1
 
 char *commGetenv_stub(const char *__name)
 {
@@ -110,7 +116,7 @@ protected:
         MOCKER(HrtNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtGetNotifyID).stubs().will(returnValue(fakeNotifyId));
-        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(fakeDevPhyId));
+        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
         MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
         MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
         MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
@@ -252,7 +258,7 @@ void MockCommunicatorImpl()
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtOpenTsdProcess).stubs().with(any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(HrtRaTlvInit).stubs().with(any()).will(returnValue(HcclResult::HCCL_SUCCESS));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<s32>(1)));
     MOCKER(RaInit).stubs().with(any()).will(returnValue(0));
     MOCKER(RaTlvInit).stubs().with(any()).will(returnValue(0));
     MOCKER_CPP(&CommunicatorImpl::InitRankGraph, void(CommunicatorImpl::*)(const std::string &))
@@ -274,7 +280,7 @@ void MockCommunicatorImpl()
     MOCKER_CPP(&CtxMgrImp::Init).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&RmaConnManager::Clear).stubs();
 
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
 }
 
 class LoadOffloadCollOpTest : public CommunicatorImplTest {
@@ -552,7 +558,7 @@ TEST_F(CommunicatorImplTest, should_return_success_when_normal_calling_new_init_
     MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
     MOCKER(HrtOpenTsdProcess).stubs().with(any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<s32>(1)));
     MOCKER(RaInit).stubs().with(any()).will(returnValue(0));
     MOCKER_CPP(&CommunicatorImpl::InitNotifyManager).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&CommunicatorImpl::InitStreamManager).stubs().will(ignoreReturnValue());
@@ -567,8 +573,6 @@ TEST_F(CommunicatorImplTest, should_return_success_when_normal_calling_new_init_
     MOCKER_CPP(&CtxMgrImp::Init).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&HccpTlvHdcManager::Init).stubs().with(any()).will(ignoreReturnValue());
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
     TaskAbortHandler::GetInstance();
     
     void* mockTlvHandle = reinterpret_cast<void*>(0x1234);
@@ -583,6 +587,7 @@ TEST_F(CommunicatorImplTest, should_return_success_when_normal_calling_new_init_
     comm.ccuDrvHandle = std::make_shared<Hccl::CcuDriverHandle>(0);
     comm.rankGraph->peers_[0] = make_shared<NetInstance::Peer>(0, 1, 1, 0);
     const string rankTablePath = "ranktable.json";
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
     MOCKER_CPP(&CommunicatorImpl::InitRankGraph, void(CommunicatorImpl::*)(const string &rankTablePath))
         .stubs()
         .with(any())
@@ -612,7 +617,7 @@ TEST_F(CommunicatorImplTest, init_with_two_parameters)
     MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
     MOCKER(HrtOpenTsdProcess).stubs().with(any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<s32>(1)));
     MOCKER(RaInit).stubs().with(any()).will(returnValue(0));
     MOCKER_CPP(&CommunicatorImpl::InitNotifyManager).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&CommunicatorImpl::InitStreamManager).stubs().will(ignoreReturnValue());
@@ -626,8 +631,7 @@ TEST_F(CommunicatorImplTest, init_with_two_parameters)
     MOCKER_CPP(&CcuResBatchAllocator::Init).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&CtxMgrImp::Init).stubs().will(ignoreReturnValue());
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
     CommunicatorImpl comm;
     comm.devLogicId = 0;
     HcclCommConfig config;
@@ -1039,7 +1043,7 @@ TEST_F(CommunicatorImplTest, RecoverComm_NormalCase)
     MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtOpenTsdProcess).stubs().with(any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<s32>(1)));
     MOCKER(RaInit).stubs().with(any()).will(returnValue(0));
     MOCKER_CPP(&CommunicatorImpl::RecoverRankGraphData).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::InitNotifyManager).stubs().will(ignoreReturnValue());
@@ -1056,8 +1060,8 @@ TEST_F(CommunicatorImplTest, RecoverComm_NormalCase)
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(HcclResult::HCCL_SUCCESS));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
     MOCKER_CPP(&CommunicatorImpl::TryInitCcuFeature).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
     CommunicatorImpl comm;
     comm.RegisterAcceStateCallBack(CommunicatorCallback());
     CollServiceAiCpuImpl collService{&comm};
@@ -1132,7 +1136,7 @@ TEST_F(CommunicatorImplTest, RecoverComm_SubCommNormalCase)
     MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtOpenTsdProcess).stubs().with(any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<s32>(1)));
     MOCKER(RaInit).stubs().with(any()).will(returnValue(0));
     MOCKER_CPP(&CommunicatorImpl::InitRankGraph, void(CommunicatorImpl::*)(std::unique_ptr<RankGraph> &))
         .stubs()
@@ -1154,8 +1158,8 @@ TEST_F(CommunicatorImplTest, RecoverComm_SubCommNormalCase)
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(HcclResult::HCCL_SUCCESS));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
     MOCKER_CPP(&CommunicatorImpl::TryInitCcuFeature).stubs().with(any()).will(ignoreReturnValue());
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
 
     s32 myRank = 0;
     std::unique_ptr<RankGraph> virtualTopo = std::make_unique<RankGraph>(myRank);
@@ -1241,7 +1245,7 @@ TEST_F(CommunicatorImplTest, should_no_throw_exception_when_only_ccu_enabled)
     MOCKER(HrtNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
     MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
     MOCKER(HrtGetNotifyID).stubs().will(returnValue(fakeNotifyId));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(fakeDevPhyId));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
     MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
     MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
@@ -1275,7 +1279,8 @@ TEST_F(CommunicatorImplTest, should_no_throw_exception_when_only_ccu_enabled)
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr1));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
 
     CommunicatorImpl comm;
     comm.InitNotifyManager();
@@ -1324,7 +1329,7 @@ TEST_F(CommunicatorImplTest, RecoverRankGraphData_ShouldReturnSuccess_WhenInputI
 {
     SnapShotComm snapShotComm;
     CommunicatorImpl commImpl;
-    const char *filePath = "test";
+    const char *filePath = "test_legacy";
     EXPECT_THROW(commImpl.RecoverRankGraphData(snapShotComm, filePath), InternalException);
 }
 
@@ -2118,7 +2123,7 @@ TEST_F(CommunicatorImplTest, Ut_CommunicatorImpl_When_EnableSuperFastLoad_Expect
     u64 fakeStmMode = 3;
     MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeId));
     MOCKER(HrtGetDevice).stubs().will(returnValue(fakeDevLogId));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(fakeDevPhyId));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
     MOCKER(HrtStreamGetSqId).stubs().will(returnValue(fakeSqId));
     MOCKER(HrtStreamDestroy).stubs();
     MOCKER_CPP(&CommunicatorImpl::ExecAlgSelect).stubs().will(ignoreReturnValue());
@@ -2497,7 +2502,7 @@ TEST_F(CommunicatorImplTest, Ut_AppendLocalDieId_When_OneP_return)
     EXPECT_NO_THROW(comm.AppendLocalDieIdForLinks());
 }
 
-TEST(CommunicatorImplTest, St_CheckAcceleratorConsistency)
+TEST_F(CommunicatorImplTest, St_CheckAcceleratorConsistency)
 {
     CommunicatorImpl comm;
     EXPECT_NO_THROW(comm.CheckAcceleratorConsistency(AcceleratorState::AIV, AcceleratorState::AIV));
@@ -3255,7 +3260,7 @@ TEST_F(CommunicatorImplTest, Ut_AllocCollOpResource_When_Normal_Expect_ReturnIsH
     param.staticShape = true;
     param.dataType = DataType::INT8;
     param.opType = OpType::ALLREDUCE;
-    param.commEngine = 7;
+    param.commEngine = HcclAccelerator::AICPU_TS;
     void *addr = nullptr;
     auto ret = fakeComm.AllocCollOpResource(param, &addr);
     EXPECT_EQ(HcclResult::HCCL_SUCCESS, ret);
@@ -3289,7 +3294,7 @@ TEST_F(CommunicatorImplTest, Ut_AllocCollOpResource_When_Status_Error_Expect_Ret
     CollOpParams param{};
     param.opType = OpType::ALLREDUCE;
     param.dataType = DataType::INT32;
-    param.commEngine = 7;
+    param.commEngine = HcclAccelerator::AICPU_TS;
     void *addr = nullptr;
     auto ret = fakeComm.AllocCollOpResource(param, &addr);
     EXPECT_EQ(HcclResult::HCCL_E_INTERNAL, ret);
@@ -3301,7 +3306,7 @@ TEST_F(CommunicatorImplTest, Ut_AllocCollOpResource_When_Status_Suspended_Expect
     CollOpParams param{};
     param.opType = OpType::ALLREDUCE;
     param.dataType = DataType::INT32;
-    param.commEngine = 7;
+    param.commEngine = HcclAccelerator::AICPU_TS;
     void *addr = nullptr;
     auto ret = fakeComm.AllocCollOpResource(param, &addr);
     EXPECT_EQ(HcclResult::HCCL_E_SUSPENDING, ret);
@@ -3320,7 +3325,7 @@ TEST_F(CommunicatorImplTest, Ut_AllocCollOpResource_When_Service_Default_Expect_
     CollOpParams param{};
     param.opType = OpType::ALLREDUCE;
     param.dataType = DataType::INT32;
-    param.commEngine = 7;
+    param.commEngine = HcclAccelerator::AICPU_TS;
     void *addr = nullptr;
     auto ret = fakeComm.AllocCollOpResource(param, &addr);
     EXPECT_EQ(HcclResult::HCCL_E_NOT_SUPPORT, ret);
@@ -3342,7 +3347,7 @@ TEST_F(CommunicatorImplTest, Ut_AllocCollOpResource_When_DataType_Check_Fail_Exp
     param.staticShape = true;
     param.dataType = DataType::HIF8;
     param.opType = OpType::ALLREDUCE;
-    param.commEngine = 7;
+    param.commEngine = HcclAccelerator::AICPU_TS;
     void *addr = nullptr;
     auto ret = fakeComm.AllocCollOpResource(param, &addr);
     EXPECT_EQ(HcclResult::HCCL_E_PARA, ret);
@@ -3357,7 +3362,7 @@ TEST_F(CommunicatorImplTest, Ut_GetEndpointNum_When_Valid_Return_HCCL_SUCCESS)
     CommParams params;
 
     RankGraphBuilder rankGraphBuilder;
-    string topoFilePath = "llt/ace/comop/hccl/orion/ut/framework/communicator/topo2p.json";
+    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/communicator/topo2p.json"};
     comm.rankGraph = rankGraphBuilder.Build(RankTable2pEnd, topoFilePath, 0);
     EXPECT_NE(comm.rankGraph, nullptr);
 
@@ -3377,7 +3382,7 @@ TEST_F(CommunicatorImplTest, Ut_GetEndpointDesc_When_Valid_Return_HCCL_SUCCESS)
     CommParams params;
 
     RankGraphBuilder rankGraphBuilder;
-    string topoFilePath = "llt/ace/comop/hccl/orion/ut/framework/communicator/topo2p.json";
+    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/communicator/topo2p.json"};
     comm.rankGraph = rankGraphBuilder.Build(RankTable2pEnd, topoFilePath, 0);
     EXPECT_NE(comm.rankGraph, nullptr);
 
@@ -3409,7 +3414,7 @@ TEST_F(CommunicatorImplTest, Ut_GetEndpointDesc_When_NoPeer_Return_HCCL_SUCCESS)
     CommParams params;
 
     RankGraphBuilder rankGraphBuilder;
-    string topoFilePath = "llt/ace/comop/hccl/orion/st/otherFiles/rank_graph/topo2pclos.json";
+    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/communicator/topo2pclos.json"};
     comm.rankGraph = rankGraphBuilder.Build(RankTable2pClos, topoFilePath, 0);
     EXPECT_NE(comm.rankGraph, nullptr);
 
@@ -3439,7 +3444,7 @@ TEST_F(CommunicatorImplTest, Ut_GetInfo_When_BW_COEFF_Return_Success)
     CommParams params;
 
     RankGraphBuilder rankGraphBuilder;
-    string topoFilePath = "llt/ace/comop/hccl/orion/st/otherFiles/rank_graph/topo2pclos.json";
+    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/communicator/topo2pclos.json"};
     comm.rankGraph = rankGraphBuilder.Build(RankTable2pClos, topoFilePath, 0);
     EXPECT_NE(comm.rankGraph, nullptr);
 
@@ -3470,7 +3475,7 @@ TEST_F(CommunicatorImplTest, Ut_GetInfo_When_endpointDecsNull_Return_Hccl_E_PTR)
     CommParams params;
 
     RankGraphBuilder rankGraphBuilder;
-    string topoFilePath = "llt/ace/comop/hccl/orion/st/otherFiles/rank_graph/topo2pclos.json";
+    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/communicator/topo2pclos.json"};
     comm.rankGraph = rankGraphBuilder.Build(RankTable2pClos, topoFilePath, 0);
     EXPECT_NE(comm.rankGraph, nullptr);
 

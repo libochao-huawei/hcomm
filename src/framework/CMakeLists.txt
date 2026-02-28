@@ -135,7 +135,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
         ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
         ${HCCL_BASE_DIR}/platform/common
-        ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
+        ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
         ${HCCL_BASE_DIR}/platform/legacy/inc
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
         ${HCCL_BASE_DIR}/platform/hccp/inc/
@@ -550,6 +550,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
 
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_send_receive/coll_batch_send_recv_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_send_receive/coll_batch_send_recv_retry_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_send_receive/coll_batch_send_recv_group_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_send_receive/coll_send_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_send_receive/coll_receive_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_send_receive/coll_batch_write_executor.cc

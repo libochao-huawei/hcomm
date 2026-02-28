@@ -17,7 +17,7 @@ class CollScatterRingFor91093Executor : public CollScatterExecutor {
 public:
     explicit CollScatterRingFor91093Executor(const HcclDispatcher dispatcher,
                                 std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollScatterRingFor91093Executor() = default;
+    ~CollScatterRingFor91093Executor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

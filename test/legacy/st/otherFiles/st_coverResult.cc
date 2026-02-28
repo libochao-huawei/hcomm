@@ -605,7 +605,7 @@ TEST(LocalRmaBufferTest, localubrmabuffer_serialize)
 TEST(LocalRmaBufferTest, generate_safe_random_number)
 {
     MOCKER(HrtGetDevice).stubs().will(returnValue(1));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(1));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     MOCKER(HrtRaGetSecRandom).stubs().with(any(), any());
     u32 token = GetUbToken();
 };
@@ -1494,7 +1494,7 @@ TEST(CommunicatorImplTest, should_success_when_comm_LoadOpbasedCollOp_ccu)
     MOCKER(HrtNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
     MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
     MOCKER(HrtGetNotifyID).stubs().will(returnValue(fakeNotifyId));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(fakeDevPhyId));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
     MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
     MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
@@ -1622,7 +1622,7 @@ TEST(CommunicatorImplTest, should_success_when_comm_LoadOpbasedCollOp_aicpu)
     MOCKER(HrtNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
     MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
     MOCKER(HrtGetNotifyID).stubs().will(returnValue(fakeNotifyId));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(fakeDevPhyId));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
     MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
     MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));

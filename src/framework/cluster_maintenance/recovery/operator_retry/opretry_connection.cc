@@ -190,8 +190,8 @@ HcclResult OpRetryConnection::Init(u32 rankId, u32 rankSize, const HcclIpAddress
     localIp_ = localIp;
     rootRank_ = rootRank;
 
-    HCCL_INFO("[OpRetryConnection][Init] rankId[%u] rankSize[%d] rootRank[%u] serverIp[%s:%u]", rankId_,
-        rankSize_, rootRank_, serverIp.GetReadableIP(), serverPort_);
+    HCCL_INFO("[OpRetryConnection][Init] rankId[%u] rankSize[%d] rootRank[%u] serverIp[%s:%u] serverDevId[%d]", rankId_,
+        rankSize_, rootRank_, serverIp.GetReadableIP(), serverPort_, serverDevId);
 
     CHK_RET(InitHcclNet());
 
@@ -369,7 +369,7 @@ HcclResult OpRetryConnection::StartListen()
     CHK_PTR_NULL(serverNetCtx_);
 
     auto enableWhiteList_ = GetExternalInputHcclEnableWhitelist();
-    if (enableWhiteList_) {
+    if (enableWhiteList_ != 0) {
         CHK_RET(GetHostSocketWhiteList());
     }
 
@@ -378,7 +378,7 @@ HcclResult OpRetryConnection::StartListen()
     CHK_RET(listenSocket_->Init());
     CHK_RET(listenSocket_->Listen());
 
-    if (enableWhiteList_) {
+    if (enableWhiteList_ != 0) {
         CHK_RET(AddListenSocketWhiteList());
     }
 

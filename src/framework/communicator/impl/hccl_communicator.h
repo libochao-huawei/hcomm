@@ -74,7 +74,6 @@ constexpr float CACHEMAP_CLEARPERCENT = 0.1;
 constexpr u32 RDMA_NOTIFY_MIN_NUM = 3;
 constexpr u32 RDMA_NOTIFY_MAX_NUM = 8192;
 constexpr u32 COMM_LAYER_NUM_MAX = 2;
-constexpr u32 GROUP_SYNC_NOTIFY_NUM = 2;
 
 struct RemoteRes {
     u64 inbufferSize;
@@ -466,19 +465,7 @@ public:
     // for Group
     HcclResult SetGroupMode(bool isGroup);
     bool GetGroupMode();
-    HcclResult SetSendIndex(u32 index);
-    HcclResult GetSendIndex(u32 &index);
-    HcclResult SetRecvIndex(u32 index);
-    HcclResult GetRecvIndex(u32 &index);
-    HcclResult SetBufferSliceNum(u32 bufferSliceNum_);
-    HcclResult GetBufferSliceNum(u32 &bufferSliceNum_);
-    HcclResult SetNSend(u32 index);
-    HcclResult GetNSend(u32 &index);
-    HcclResult SetNRecv(u32 index);
-    HcclResult GetNRecv(u32 &index);
-    HcclResult GroupPrepareStreamAndNotify(HcclRtStream sendRecvMainStream);
-    HcclResult GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte);
-    HcclResult GroupSubstreamsSync();
+
     void SetReleaseChannel(std::function<HcclResult()> releaseChannel);
 
     void SetHcclQos(u32 hcclQos);
@@ -894,14 +881,6 @@ private:
     HcclResult CheckSetRetryStateToWaitResume();
     HcclResult CheckExitWaitResumeState(bool &isChangedLink);
 
-    //for group
-    HcclResult CreateGroupSendNotifies();
-    HcclResult CreateGroupRecvNotifies();
-    HcclResult CreateGroupSendStreams();
-    HcclResult CreateGroupRecvStreams();
-    HcclResult SetGroupMainStream(HcclRtStream sendRecvMainStream);
-    HcclResult GetSliceSize(u64 &sliceSize);
-
     HcclResult RegisterToSnapshot();
     HcclResult UnRegisterFromSnapshot();
 
@@ -1116,16 +1095,6 @@ private:
 
     // for group
     bool isGroupMode_ {false};
-    u32 iSend {0};
-    u32 iRecv {0};
-    u32 nSend {0};
-    u32 nRecv {0};
-    u32 bufferSliceNum {0};
-    std::vector<std::shared_ptr<LocalNotify>> groupSendNotifies {};
-    std::vector<std::shared_ptr<LocalNotify>> groupRecvNotifies {};
-    std::vector<Stream> groupSendStreams {};
-    std::vector<Stream> groupRecvStreams {};
-    Stream groupSendRecvMainStream;
 
     // 独立算子
     std::vector<std::shared_ptr<DeviceMem>> channelRemoteParamMem_;

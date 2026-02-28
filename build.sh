@@ -202,6 +202,7 @@ function build_ut() {
   mk_dir "${BUILD_DIR}"
   local report_dir="${OUTPUT_PATH}/report/ut" && mk_dir "${report_dir}"
   cd "${BUILD_DIR}"
+  unset LD_LIBRARY_PATH
 
   local LLT_KILL_TIME=1200
   CMAKE_ARGS="-DPRODUCT_SIDE=host \
@@ -244,8 +245,10 @@ function make_ut_gov() {
     cd ${CURRENT_DIR}
     rm -rf ${CURRENT_DIR}/cov
     mkdir -p ${CURRENT_DIR}/cov
-    lcov -c -d ${BUILD_DIR}/test/ut/ -o cov/tmp.info
-    LCOV_COMMAND="lcov -r cov/tmp.info ${CURRENT_DIR}src/* -o cov/coverage.info" && ${LCOV_COMMAND}
+    lcov -c -d ${BUILD_DIR}/test/ut/ -o cov/all.info
+    lcov -r cov/all.info */src/platform/hccp/external_depends/* -o cov/tmp.info
+    lcov -e cov/all.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
+    # LCOV_COMMAND="lcov -r cov/tmp.info ${CURRENT_DIR}src/* -o cov/coverage.info" && ${LCOV_COMMAND}
     # lcov -r cov/tmp.info "/usr/*" "${OUTPUT_PATH}/*" "${BASEPATH}/test/*" "${ASCEND_INSTALL_PATH}/*" "${CANN_3RD_LIB_PATH}/*" -o cov/coverage.info
 
     cd ${CURRENT_DIR}/cov
