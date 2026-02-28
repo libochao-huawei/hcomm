@@ -187,10 +187,10 @@ HcclResult CcuResSpecifications::GetCcuMemInfoList(const uint8_t dieId, struct C
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
     *count = static_cast<uint32_t>(GetMemTypeVector().size());
-    for (uint32_t i = 0; i < actualCount; ++i) {
+    for (uint32_t i = 0; i < *count; ++i) {
         memInfoList[i] = resSpecs[dieId].memInfoList[i];
     }
-    
+
     return HcclResult::HCCL_SUCCESS;
 }
 
