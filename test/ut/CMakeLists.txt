@@ -49,6 +49,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/detect/detect_connect_anomalies/
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/recovery/operator_retry
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/snapshot
+    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/aclgraph
     ${HCCL_CODE_ROOT}/src/framework/common/src
     ${HCCL_CODE_ROOT}/src/framework/common/src/host
     ${HCCL_CODE_ROOT}/src/framework/common/src/task
@@ -291,6 +292,7 @@ add_subdirectory(platform/resource/notify)
 add_subdirectory(platform/resource/transport)
 add_subdirectory(platform/ping_mesh)
 add_subdirectory(framework/communicator)
+add_subdirectory(framework/cluster_maintenance)
 add_subdirectory(framework/op_base_api)
 # add_subdirectory(framework/hcom) // 单个ut测试文件已经编译通过，但是耦合编译会出现段错误问题，暂不开启
 add_subdirectory(framework/communicator/impl)

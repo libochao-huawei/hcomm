@@ -54,6 +54,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/cluster_maintenance/recovery/operator_retry/
     ${HCCL_BASE_DIR}/framework/cluster_maintenance/detect/detect_connect_anomalies/
     ${HCCL_BASE_DIR}/framework/cluster_maintenance/snapshot/
+    ${HCCL_BASE_DIR}/framework/cluster_maintenance/aclgraph/
     ${HCCL_BASE_DIR}/framework/common/src/
     ${HCCL_BASE_DIR}/framework/common/src/host
     ${HCCL_BASE_DIR}/framework/common/src/config
