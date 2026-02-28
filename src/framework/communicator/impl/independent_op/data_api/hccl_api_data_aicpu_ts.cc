@@ -19,11 +19,6 @@
 #include "ub_transport_lite_impl.h"
 #include "device/framework/aicpu_hccl_process.h"
 
-// specify namespaces for the macro TRY_CATCH_PRINT_ERROR
-using string = std::string;
-using exception = std::exception;
-using HcclException = Hccl::HcclException;
-
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
 
@@ -764,27 +759,64 @@ int32_t HcommChannelFence(ChannelHandle channel)
     return HCCL_E_NOT_SUPPORT;
 }
 
-int32_t HcommRequestServiceOnThread(ThreadHandle threadHandle, ThreadServiceHandle serviceHandle, const void *args, uint64_t argsSizeByte)
+int32_t HcommRequestServiceOnThread(ThreadHandle dstThreadHandle, ThreadServiceHandle serviceHandle, const void *args, uint64_t argsSizeByte)
 {
-    HCCL_INFO("[%s] START. threadHandle[0x%llx], serviceHandle[0x%llx], args[0x%llx], argsSizeByte[%llu].", __func__, threadHandle, serviceHandle, args, argsSizeByte);
-    ThreadEntity *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(threadHandle);
-    // TODO: CHK PTR NULL serviceHandle
-    CHK_PTR_NULL(threadEntityPtr);
+    ThreadEntity *const dstThreadEntityPtr = reinterpret_cast<ThreadEntity *>(dstThreadHandle);
+    void *const serviceHandlePtr = reinterpret_cast<void *>(serviceHandle);
+    CHK_PTR_NULL(dstThreadEntityPtr);
+    CHK_PTR_NULL(serviceHandlePtr);
     CHK_PTR_NULL(args);
+    HCCL_INFO("[%s] START. dstThreadHandle[0x%llx][%s], serviceHandle[0x%llx], args[0x%llx], argsSizeByte[%llu].",
+        __func__, dstThreadHandle, dstThreadEntityPtr->DescribeAttr().c_str(), serviceHandle, args, argsSizeByte);
 
-    if (!(threadEntityPtr->type == THREAD_TYPE_CPU && threadEntityPtr->engine == COMM_ENGINE_CPU)) {
-        HCCL_ERROR("[%s] thread type should be THREAD_TYPE_CPU and engine should be COMM_ENGINE_CPU.", __func__);
+    if (!(dstThreadEntityPtr->engine == COMM_ENGINE_AICPU && dstThreadEntityPtr->type == THREAD_TYPE_CPU)) {
+        HCCL_ERROR("[%s] thread engine should be COMM_ENGINE_AICPU and type should be THREAD_TYPE_CPU.", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
-    // TODO: free the memory after the service is completed.
+
+    // Serialize enqueue sequence to prevent interleaving across concurrent callers.
+    static std::mutex s_requestServiceMtx;
+    std::lock_guard<std::mutex> lock(s_requestServiceMtx);
+
+    const hccl::QueueInfo &queueInfo = dstThreadEntityPtr->cpuRes.sendQueue;
+    const uint64_t headIdx = *reinterpret_cast<uint64_t *>(queueInfo.headIdxAddr);
+    const uint64_t tailIdx = *reinterpret_cast<uint64_t *>(queueInfo.tailIdxAddr);
+    const uint64_t capacity = queueInfo.capacity;
+    const uint64_t nextTail = (tailIdx + 1) % capacity;
+    if (nextTail == headIdx) {
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx]'s send queue is full. headIdx[%llu], tailIdx[%llu], capacity[%llu].",
+            __func__, dstThreadHandle, headIdx, tailIdx, capacity);
+        return HCCL_E_INTERNAL;
+    }
+    HCCL_INFO("[%s] thread[0x%llx]'s send queue is not full. headIdx[%llu], tailIdx[%llu], capacity[%llu].",
+        __func__, dstThreadHandle, headIdx, tailIdx, capacity);
+
+    // serviceArgsPtrOnHeap will be freed by CpuThread on Host after processing the service request.
     void *const serviceArgsPtrOnHeap = malloc(argsSizeByte);
     CHK_PTR_NULL(serviceArgsPtrOnHeap);
     errno_t cpyRet = memcpy_s(serviceArgsPtrOnHeap, argsSizeByte, args, argsSizeByte);
-    CHK_PRT_RET(cpyRet != EOK, HCCL_ERROR("[%s] FAIL. memcpy_s args from stack[0x%llx] to heap[0x%llx] failed, errno[%d].",
-        __func__, args, serviceArgsPtrOnHeap, cpyRet), HCCL_E_INTERNAL);
-    // TODO: push service request to thread entity's send queue
-    return HCCL_E_NOT_SUPPORT;
-}int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
+    if (cpyRet != EOK) {
+        free(serviceArgsPtrOnHeap);
+        HCCL_ERROR("[%s] FAIL. memcpy_s args from stack[0x%llx] to heap[0x%llx] failed, errno[%d].",
+            __func__, args, serviceArgsPtrOnHeap, cpyRet);
+        return HCCL_E_INTERNAL;
+    }
+    HCCL_INFO("[%s] Copy args from stack[0x%llx] to heap[0x%llx] SUCCESS.", __func__, args, serviceArgsPtrOnHeap);
+
+    // Push service request to thread entity's send queue
+    static uint32_t s_msgId = 0;
+    ThreadMsgEntity *const msgQueueBasePtr = reinterpret_cast<ThreadMsgEntity *>(queueInfo.addr);
+    ThreadMsgEntity tempMsgEnt = {s_msgId, serviceHandle, serviceArgsPtrOnHeap, argsSizeByte};
+    msgQueueBasePtr[tailIdx] = tempMsgEnt;
+    *reinterpret_cast<uint64_t *>(queueInfo.tailIdxAddr) = (tailIdx + 1) % capacity;  // update tail index.
+    HCCL_INFO("[%s] Push service request to thread[0x%llx]'s send queue SUCCESS. msgId[%u]. New headIdx[%llu], tailIdx[%llu]",
+        __func__, dstThreadHandle, s_msgId, 
+        *reinterpret_cast<uint64_t *>(queueInfo.headIdxAddr), *reinterpret_cast<uint64_t *>(queueInfo.tailIdxAddr));
+    s_msgId++;
+    return HCCL_SUCCESS;
+}
+
+int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
 {
     hccl::Thread *threadPtr = reinterpret_cast<hccl::Thread *>(thread);
     CHK_PTR_NULL(threadPtr);

@@ -267,11 +267,24 @@ HcclResult AicpuTsThread::LocalReduce(
     return pImpl_->SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw);
 }
 
- HcclResult AicpuTsThread::ThreadNotifyRecordCrossType(const NotifyEntity notifyEntity) const
+ HcclResult AicpuTsThread::InterKernelNotifyRecord(const NotifyEntity notifyEntity) const
 {
     CHK_PTR_NULL(pImpl_);
-    const uint64_t notifyDeviceVA = notifyEntity.identifier;
-    CHK_RET(pImpl_->WriteValue(notifyDeviceVA, 1));
+    const uint64_t identifier = notifyEntity.identifier;
+    switch (notifyEntity.type) {
+        case NOTIFY_TYPE_RTS_NOTIFY:
+            CHK_RET(pImpl_->NotifyRecordLoc(identifier));  // identifier is RTS notifyId.
+            return HCCL_SUCCESS;
+        case NOTIFY_TYPE_RTS_EVENT:
+            HCCL_ERROR("[AicpuTsThread::%s] not support notify type[%d]", __func__, notifyEntity.type);
+            return HCCL_E_NOT_SUPPORT;
+        case NOTIFY_TYPE_DEVICE_MEM:
+            CHK_RET(pImpl_->WriteValue(identifier, 1));  // identifier is a device memory address.
+            return HCCL_SUCCESS;
+        default:
+            HCCL_ERROR("[AicpuTsThread::%s] invalid notify type[%d]", __func__, notifyEntity.type);
+            return HCCL_E_PARA;
+    }
     return HCCL_SUCCESS;
 }
 
