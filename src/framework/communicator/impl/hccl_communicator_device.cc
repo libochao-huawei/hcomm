@@ -1614,4 +1614,14 @@ namespace hccl
     {
         return false;
     }
+
+    HcclResult HcclCommunicator::CleanCaptureRes(u64 modelId)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::InsertNewTagToCaptureResMap(const std::string &newTag, const OpParam &opParam)
+    {
+        return HCCL_SUCCESS;
+    }
 }

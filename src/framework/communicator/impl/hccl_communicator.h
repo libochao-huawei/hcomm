@@ -99,6 +99,12 @@ struct InitTask
     bool isCustom;
 };
 
+struct AclgraphDestroyCallbackParam
+{
+    HcclCommunicator *communicator;
+    u64 modelId;
+};
+
 using rankTagSignalInfo_t = std::unordered_map<u32, std::unordered_map<std::string, std::vector<HcclSignalInfo>>>;
 using rankTagKey_t = std::unordered_map<u32, std::unordered_map<std::string, std::vector<u32>>>;
 using rankTagAddr_t = std::unordered_map<u32, std::unordered_map<std::string, std::vector<u64>>>;
@@ -474,6 +480,8 @@ public:
     HcclResult DeregisterWindow(CommSymWindow winHandle);
     HcclResult InitSymmetricMemory();
     HcclResult GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
+    HcclResult CleanCaptureRes(u64 modelId);
+    HcclResult InsertNewTagToCaptureResMap(const std::string &newTag, const OpParam &opParam);
 private:
 
     bool IsEnableRoce();
@@ -1108,6 +1116,9 @@ private:
     u32 hcclQos_ = EnvConfig::HCCL_QOS_DEFAULT;
     std::shared_ptr<SymmetricMemoryAgent> symmetricMemoryAgent_;
     std::unique_ptr<SymmetricMemory> symmetricMemory_;
+
+    std::unordered_map<u64, std::unordered_set<std::string>> captureResMap_;
+    std::unordered_map<u64, AclgraphDestroyCallbackParam> captureCallbackParamMap_;
 };
 }  // end namespace hccl
 #endif  // HCCL_IMPL_BASE_H

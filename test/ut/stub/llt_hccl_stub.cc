@@ -5480,3 +5480,8 @@ aclError aclrtGetMemInfo(aclrtMemAttr attr, size_t *free, size_t *total)
     *free = 50 * GIGABYTE_TO_BYTE;
     return ACL_SUCCESS;
 }
+
+ aclError aclmdlRIDestroyRegisterCallback(aclmdlRI modelRI, aclrtCallback func, void *ptr)
+ {
+    return ACL_SUCCESS;
+ }
