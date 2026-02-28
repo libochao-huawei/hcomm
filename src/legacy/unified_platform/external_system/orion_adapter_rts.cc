@@ -370,17 +370,15 @@ void HcclStreamSynchronize(HcclRtStream ptr)
  *RT_MEMORY_DDR：ACL_MEM_TYPE_LOW_BAND_WIDTH
  *RT_MEMORY_HBM：ACL_MEM_TYPE_HIGH_BAND_WIDTH
 */
-void *HrtMalloc(u64 size)
+void *HrtMalloc(u64 size, aclrtMemType_t memType)
 {
     aclError ret = ACL_SUCCESS;
     void     *devPtr = nullptr;
-    constexpr int policy = static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH) | static_cast<int>
-            (ACL_MEM_MALLOC_HUGE_FIRST);
     aclrtMallocAttrValue moduleIdValue;
     moduleIdValue.moduleId = HCCL;
     aclrtMallocAttribute attrs{.attr = ACL_RT_MEM_ATTR_MODULE_ID, .value = moduleIdValue};
     aclrtMallocConfig cfg{.attrs = &attrs, .numAttrs = 1};
-    ret = aclrtMallocWithCfg(&devPtr, size, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
+    ret = aclrtMallocWithCfg(&devPtr, size, static_cast<aclrtMemMallocPolicy>(memType), &cfg);
     HCCL_INFO("Call aclrtMallocWithCfg, return value[%d] size[%llu] devPtr[%p], moudleId: HCCL.", ret, size, devPtr);
     if (ret == ACL_ERROR_RT_MEMORY_ALLOCATION) {
         HCCL_ERROR("[Malloc][Mem]errNo[0x%016llx] aclrtMallocWithCfg failed, "

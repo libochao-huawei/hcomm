@@ -353,8 +353,8 @@ TEST_F(AdapterRtsTest, HrtMalloc_return_ok)
 
     // when
     u64         size    = 100;
-    rtMemType_t memType = 2;
-    void       *devPtr  = HrtMalloc(size);
+    aclrtMemType_t memType = 2;
+    void       *devPtr  = HrtMalloc(size, memType);
     // then
     EXPECT_EQ(fakeDevPtr, devPtr);
 }
@@ -364,9 +364,9 @@ TEST_F(AdapterRtsTest, HrtMalloc_return_nok)
     // Given
     MOCKER(aclrtMallocWithCfg).stubs().will(returnValue(1));
     u64         size    = 100;
-    rtMemType_t memType = 2;
+	aclrtMemType_t memType = 2;
     // then
-    EXPECT_THROW(HrtMalloc(size), RuntimeApiException);
+    EXPECT_THROW(HrtMalloc(size, memType), RuntimeApiException);
 }
 
 TEST_F(AdapterRtsTest, HrtFree_return_nok)

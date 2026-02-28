@@ -64,8 +64,8 @@
 #include "../../../legacy/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
 
 namespace Hccl {
- 
-void *HrtMalloc(u64 size, rtMemType_t memType)
+
+void *HrtMalloc(u64 size, aclrtMemType_t memType)
 {
     return (void*)0x12345678;
 }

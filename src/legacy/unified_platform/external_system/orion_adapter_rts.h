@@ -84,11 +84,7 @@ typedef struct tagRtDevBinary {
 * aclrtCntNotifyGetId —— rtsCntNotifyGetId
 * aclrtMallocWithCfg —— rtsMalloc
 */
-#define RT_MEMORY_DEFAULT (0x0U)   // default memory on device
-#define RT_MEMORY_HBM (0x2U)       // HBM memory on device
-#define RT_MEMORY_RDMA_HBM (0x3U)  // RDMA-HBM memory on device
-#define RT_MEMORY_DDR (0x4U)       // DDR memory on device
-#define RT_MEMORY_POLICY_HUGE_PAGE_ONLY (0x800U)     // Malloc mem only use huge page, 0x1U << 11U
+using aclrtMemType_t = int;
 extern rtError_t rtIpcCloseMemory(const void *ptr);
 extern rtError_t rtIpcDestroyMemoryName(const char_t *name);
 extern rtError_t rtMemPrefetchToDevice(void *devPtr, uint64_t len, int32_t devId);
@@ -186,7 +182,7 @@ void       HcclStreamSynchronize(HcclRtStream ptr);
 s32        HrtGetStreamId(aclrtStream ptr);
 void       HrtStreamActive(aclrtStream activeStream, aclrtStream stream);
 
-void                 *HrtMalloc(u64 size);
+void                 *HrtMalloc(u64 size, aclrtMemType_t memType);
 void                  HrtFree(void *devPtr);
 void                  HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, rtMemcpyKind_t kind);
 void                  HrtMemset(void *dst, uint64_t destMax, uint64_t count);
