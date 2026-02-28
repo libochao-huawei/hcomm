@@ -2242,7 +2242,29 @@ HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles,
 
 
 enum CcuMemTypeBitmap : uint64_t;
-inline std::vector<CcuMemTypeBitmap> GetMemTypeVector();
+inline std::vector<CcuMemTypeBitmap> GetMemTypeVector() {
+    return {
+        CCU_MEMTYPE_INS,
+        CCU_MEMTYPE_GSA,
+        CCU_MEMTYPE_XN,
+        CCU_MEMTYPE_CKE,
+        CCU_MEMTYPE_LOOP_CKE,
+        CCU_MEMTYPE_PFE,
+        CCU_MEMTYPE_CHN,
+        CCU_MEMTYPE_JETTY_CTX,
+        CCU_MEMTYPE_MISSION_CTX,
+        CCU_MEMTYPE_LOOP_CTX,
+        CCU_MEMTYPE_MISSION_SQE,
+        CCU_MEMTYPE_CQE_BLOCK0,
+        CCU_MEMTYPE_CQE_BLOCK1,
+        CCU_MEMTYPE_CQE_BLOCK2,
+        CCU_MEMTYPE_WQEBB,
+        CCU_MEMTYPE_MS_BLOCK0,
+        CCU_MEMTYPE_MS_BLOCK1,
+        CCU_MEMTYPE_MS_BLOCK2,
+        CCU_MEMTYPE_MS_BLOCK3
+    };
+}
 void HrtInitTlvMsg(TlvMsg* send_msg, TlvMsg* recv_msg, 
                         uint32_t udie_idx, uint64_t mem_type_bitmap, uint32_t sendType) {
     // 初始化请求消息
