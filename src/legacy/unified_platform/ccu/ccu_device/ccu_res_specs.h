@@ -74,7 +74,7 @@ enum CcuMemTypeBitmap : uint64_t {
     CCU_MEMTYPE_MS_BLOCK3 = 1ULL << 35
 };
 
-std::vector<CcuMemTypeBitmap> GetMemTypeVector() {
+inline std::vector<CcuMemTypeBitmap> GetMemTypeVector() {
     return {
         CCU_MEMTYPE_INS,
         CCU_MEMTYPE_GSA,
@@ -98,7 +98,7 @@ std::vector<CcuMemTypeBitmap> GetMemTypeVector() {
     };
 }
 
-uint64_t GetCombinedMemTypeBitmap() {
+inline uint64_t GetCombinedMemTypeBitmap() {
     auto memTypes = GetMemTypeVector();
     uint64_t combined = 0;
     
