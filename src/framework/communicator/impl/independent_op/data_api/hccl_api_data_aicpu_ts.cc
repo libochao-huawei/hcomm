@@ -814,6 +814,7 @@ int32_t HcommRequestServiceOnThread(ThreadHandle dstThreadHandle, ThreadServiceH
         *reinterpret_cast<uint64_t *>(queueInfo.headIdxAddr), *reinterpret_cast<uint64_t *>(queueInfo.tailIdxAddr));
     s_msgId++;
     return HCCL_SUCCESS;
+    
 }
 
 int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
