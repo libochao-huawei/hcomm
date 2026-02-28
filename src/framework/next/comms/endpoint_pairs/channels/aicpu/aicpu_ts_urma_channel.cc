@@ -151,6 +151,8 @@ HcclResult AicpuTsUrmaChannel::BuildUbMemTransport()
         ),
         return HCCL_E_PTR
     );
+    CHK_PTR_NULL(memTransport_);
+    CHK_RET(memTransport_->FillTagVec());
     return HCCL_SUCCESS;
 }
 
@@ -247,5 +249,8 @@ HcclResult AicpuTsUrmaChannel::H2DResPack(std::vector<char>& buffer)
     return HCCL_SUCCESS;
 }
 
-
+HcclResult AicpuTsUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
+{
+    return memTransport_->GetUserRemoteMem(remoteMem, memTag, memNum);
+}
 } // namespace hcomm
