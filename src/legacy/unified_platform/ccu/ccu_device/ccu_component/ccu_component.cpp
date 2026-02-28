@@ -242,7 +242,7 @@ void CcuComponent::CreateCcuRmaBuffer()
         // todo: 变成for循环
         struct CcuMemInfo memInfoList[CCU_MEM_INFO_SIZE];
         uint32_t count{0};
-        ccuResSpecs.GetCcuMemInfoList(dieId, &memInfoList, &count);
+        ccuResSpecs.GetCcuMemInfoList(dieId, memInfoList, &count);
 
         for (uint32_t i = 0; i < count; i++) {
             if (memInfoList[i].memVa == ccuResAddr) {

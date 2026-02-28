@@ -186,8 +186,11 @@ HcclResult CcuResSpecifications::GetDieEnableFlag(const uint8_t dieId, bool &die
 HcclResult CcuResSpecifications::GetCcuMemInfoList(const uint8_t dieId, struct CcuMemInfo *memInfoList, uint32_t *count)
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
-    memInfoList = resSpecs[dieId].memInfoList;
     *count = static_cast<uint32_t>(GetMemTypeVector().size());
+    for (uint32_t i = 0; i < actualCount; ++i) {
+        memInfoList[i] = resSpecs[dieId].memInfoList[i];
+    }
+    
     return HcclResult::HCCL_SUCCESS;
 }
 
