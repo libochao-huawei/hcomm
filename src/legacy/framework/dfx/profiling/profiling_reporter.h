@@ -10,6 +10,7 @@
 #ifndef HCCL_PROFILING_REPORTER_H
 #define HCCL_PROFILING_REPORTER_H
 #include <mutex>
+#include <unordered_set>
 #include "mirror_task_manager.h"
 #include "profiling_handler.h"
 #include "queue.h"
@@ -24,6 +25,7 @@ public:
     void UpdateProfStat();
     void     CallReportMc2CommInfo(const Stream &kfcStream, Stream &stream, const std::vector<Stream *> &aicpuStreams,
                                    const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm) const;
+    void GetMasterStmId(std::unordered_set<u32> masterStmId);
 
 private:
     void ReportCallBackAllTasks(bool cachedReq = false);
@@ -36,6 +38,7 @@ private:
     static thread_local std::unordered_map<u32,  std::shared_ptr<Queue<std::shared_ptr<TaskInfo>>::Iterator>> lastPoses_;
     ProfilingHandler*                               profilingHandler_{nullptr};
     std::mutex profMutex;
+    std::unordered_set<u32> masterStmId_;
 };
 } // namespace Hccl
  
