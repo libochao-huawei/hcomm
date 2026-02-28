@@ -98,7 +98,7 @@ private:
     std::vector<char> PackAllTransportData() const;
 
     shared_ptr<DevBuffer> devBatchSendRecvItemBufs;
-    void SaveDfxTaskInfo(const TaskParam &taskParam, const RankId remoteRankId) const;
+    void SaveDfxTaskInfo(const TaskParam &taskParam, const RankId remoteRankId, const bool isMaster) const;
 
     void LoadWithOpBasedModeNoRegister(CollOperator &op);
     void LoadWithOffloadModeNoRegister(CollOperator &op);
