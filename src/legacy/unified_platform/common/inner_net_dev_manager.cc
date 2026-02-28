@@ -14,7 +14,7 @@
 namespace Hccl {
 HcclResult InnerNetDevManager::AddDevice(const NetDevInfo &info, HcclNetDevice *&device)
 {
-    device = new HcclNetDevice(info);  
+    device = new(nothrow) HcclNetDevice(info);  
     if(device == nullptr) {
         HCCL_ERROR("new HcclNetDevice fail, devId[%u]", info.devId);
         return HCCL_E_PTR;
@@ -27,6 +27,10 @@ HcclResult InnerNetDevManager::AddDevice(const NetDevInfo &info, HcclNetDevice *
         innerNetDev = new(nothrow) InnerNetDev(info);
         if(innerNetDev == nullptr || !innerNetDev->GetIsValid()) {
             HCCL_ERROR("new InnerNetDev fail, devId[%u]", info.devId);
+            // 释放已分配的 HcclNetDevice
+            pltNetDevVec_.pop_back();
+            delete device;
+            device = nullptr;
             return HCCL_E_PARA;
         }
         netDevMap_.insert(std::make_pair(info, std::unique_ptr<InnerNetDev>(innerNetDev)));

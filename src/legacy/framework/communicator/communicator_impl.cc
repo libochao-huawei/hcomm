@@ -3084,6 +3084,14 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     hostArgsTemp.memorySize = SHARE_HBM_MEMORY_SIZE;
     hostArgsTemp.hostMem    = hostShareBuf;
     auto shMem              = GetKFCWorkSpace(DPUTAG);
+    if (shMem == nullptr) {
+        HCCL_ERROR("[CommunicatorImpl::%s] Get Dpu Workspace Failed", __func__);
+        if (hostShareBuf != nullptr) {
+            free(hostShareBuf);
+            hostShareBuf = nullptr;
+        }
+        return HCCL_E_INTERNAL;
+    }
     hostArgsTemp.shareHBM = reinterpret_cast<void *>(shMem->GetAddr());
     hostArgsTemp.deviceId = devLogicId;
     HCCL_INFO("[CommunicatorImpl::%s] DpuKernelLaunchParam{commId:%s; memorySize:%u; shareHBM:%p; hostMem:%p}",
@@ -3113,6 +3121,11 @@ HcclResult CommunicatorImpl::InitAndLaunchDpuKernel()
         return HCCL_E_RUNTIME;
     }
     hostShareBuf = malloc(SHARE_HBM_MEMORY_SIZE);
+    if (hostShareBuf == nullptr) {
+        HCCL_ERROR("[CommunicatorImpl::InitCommResource] Alloc Share HBM Failed");
+        return HCCL_E_INTERNAL;
+    }
+
     // 设置XPU
     HCCL_INFO("[CommunicatorImpl::%s] Switch to Dpu Ctx", __func__);
     if (aclrtGetCurrentContext(&npuContext) != ACL_SUCCESS) {

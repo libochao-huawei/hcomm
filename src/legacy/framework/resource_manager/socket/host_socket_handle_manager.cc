@@ -92,7 +92,15 @@ void HostSocketHandleManager::DestroyAll()
             u32 count = innerMap.second.second.Count();
             CHK_PRT_CONT(count != 0, HCCL_WARNING("[HostSocketHandleManager::%s] release is not as expected, "
                          "devicePhyId[%u] hostIp[%s] ref[%u]", __func__, i, innerMap.first.c_str(), count));
-            HrtRaSocketDeInit(innerMap.second.first);
+            try {
+                HrtRaSocketDeInit(innerMap.second.first);
+            } catch (const std::exception &e) {
+                HCCL_ERROR("[HostSocketHandleManager::%s] devicePhyId[%u] hostIp[%s] deinit exception: %s.", 
+                           __func__, i, innerMap.first.c_str(), e.what());
+            } catch (...) {
+                HCCL_ERROR("[HostSocketHandleManager::%s] devicePhyId[%u] hostIp[%s] deinit unknown exception.", 
+                           __func__, i, innerMap.first.c_str());
+            }
         }
         hostSocketHandleMap[i].clear();
     }

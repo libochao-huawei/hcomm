@@ -79,8 +79,17 @@ void HccpPeerManager::DeInitAll()
         HRaInitConfig cfg;
         cfg.phyId = HrtGetDevicePhyIdByIndex(instance.first);
         cfg.mode  = HrtNetworkMode::PEER;
-        HrtRaDeInit(cfg);
-        HCCL_INFO("[HccpPeerManager::%s] devLogicId [%d] ra deinit success.", __func__, instance.first);
+        // 循环中try捕获异常，避免实例异常导致其他实例无法释放
+        try {
+            HrtRaDeInit(cfg);
+            HCCL_INFO("[HccpPeerManager::%s] devLogicId [%d] ra deinit success.", __func__, instance.first);
+        } catch (const std::exception &e) {
+            HCCL_ERROR("[HccpPeerManager::%s] devLogicId [%d] ra deinit exception: %s.", 
+                       __func__, instance.first, e.what());
+        } catch (...) {
+            HCCL_ERROR("[HccpPeerManager::%s] devLogicId [%d] ra deinit unknown exception.", 
+                       __func__, instance.first);
+        }
     }
 
     instances_.clear();
