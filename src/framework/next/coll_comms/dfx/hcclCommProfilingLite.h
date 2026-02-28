@@ -30,7 +30,7 @@ public:
     void UpdateProfStat();
     
     // 获取MirrorTaskManager
-    MirrorTaskManager* GetMirrorTaskManager() const;
+    Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
     
 private:
     Hccl::MirrorTaskManager* mirrorTaskManager_;
