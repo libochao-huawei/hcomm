@@ -416,7 +416,7 @@ HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds)
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
             "group",
             "a non-empty string of length 1 to " + std::to_string(GROUP_NAME_MAX_LEN) +
-            ", containing only alphanumeric characters and underscores";
+            ", containing only alphanumeric characters and underscores"
         }
     ));
     CHK_PRT_RET(ret != HCCL_SUCCESS,

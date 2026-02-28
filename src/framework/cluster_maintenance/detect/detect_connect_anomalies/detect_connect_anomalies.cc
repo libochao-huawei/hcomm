@@ -130,10 +130,10 @@ HcclResult DetectConnectionAnomalies::ProcessDetectionResults()
             std::string localServerIdStr(detectInfo.second.localServerId);
             std::string eventInfo = FormatDetectMessage(localServerIdStr, detectInfo.second.localDeviceId, detectInfo.second, true);
             HCCL_ERROR("%s", eventInfo.c_str());
-            errMsg += "std::to_string("\n")" + eventInfo;
+            errMsg += "\n" + eventInfo;
         }
         HCCL_ERROR("%s", GET_SOCKET_TIMEOUT_REASON_WITH_EVENT.c_str());
-        errMsg += std::to_string("\n") + GET_SOCKET_TIMEOUT_REASON_WITH_EVENT;
+        errMsg += "\n" + GET_SOCKET_TIMEOUT_REASON_WITH_EVENT;
     } else {
         const auto& firstDetectInfo = recvErrorInfoMap_.begin()->second;
         std::string localServerIdStr(firstDetectInfo.localServerId);
@@ -141,7 +141,7 @@ HcclResult DetectConnectionAnomalies::ProcessDetectionResults()
         HCCL_ERROR("%s", eventInfo.c_str());
         errMsg = eventInfo;
         HCCL_ERROR("%s", GET_SOCKET_TIMEOUT_REASON_WITHOUT_EVENT.c_str());
-        errMsg += std::to_string("\n") + GET_SOCKET_TIMEOUT_REASON_WITHOUT_EVENT;
+        errMsg += "\n" + GET_SOCKET_TIMEOUT_REASON_WITHOUT_EVENT;
     }
     HCCL_ERROR("----------------------------------------------------------------------");
 
@@ -554,7 +554,7 @@ HcclResult DetectConnectionAnomalies::CreateClients(struct ErrInfo errInfo, std:
     return HCCL_SUCCESS;
 }
 
-std::string DetectConnectionAnomalies::FormatDetectMessage(const std::string &localServerId, s32 localDeviceId, const DetectInfo &detectInfo, bool hasError = true)
+std::string DetectConnectionAnomalies::FormatDetectMessage(const std::string &localServerId, s32 localDeviceId, const DetectInfo &detectInfo, bool hasError)
 {
     if (hasError) {
         return std::string("This node (server ") + 
