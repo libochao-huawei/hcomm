@@ -102,7 +102,13 @@ recreate_common_stub_softlink() {
 whl_uninstall_package() {
     local _module="$1"
     local _module_apth="$2"
+
+    log "WARNING" "WHL_INSTALL_DIR_PATH: ${WHL_INSTALL_DIR_PATH}"
+    log "WARNING" "_module_apth: ${_module_apth}"
+
     if [ ! -d "${WHL_INSTALL_DIR_PATH}/${_module}" ]; then
+        log "WARNING" "Hit 1"
+
         pip3 show "${_module}" > /dev/null 2>&1
         if [ $? -ne 0 ]; then
             log "WARNING" "${_module} is not exist."
@@ -117,6 +123,8 @@ whl_uninstall_package() {
             fi
         fi
     else
+        log "WARNING" "Hit 2"
+
         export PYTHONPATH="${_module_apth}"
         export PIP_BREAK_SYSTEM_PACKAGES=1  # 强制卸载系统包
         pip3 uninstall -y "${_module}" > /dev/null 2>&1
