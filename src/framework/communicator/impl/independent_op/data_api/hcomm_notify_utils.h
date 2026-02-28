@@ -14,8 +14,9 @@
 #include "resource_entities.h"
 #include "aicpu_ts_thread.h"
 #include "new/hccl_primitive_local.h"
+#include "exception_util.h"
 
-using RequestServiceFunc = int32_t(*)(ThreadHandle, ThreadServiceHandle, const ThreadServiceArgs*);
+using RequestServiceWithHandleFunc = int32_t(*)(ThreadHandle, ThreadServiceHandle, const void*, uint64_t);
 
 // specify namespaces for the macro TRY_CATCH_*
 using string = std::string;
@@ -82,19 +83,14 @@ HcclResult RecordAicpuTsToCpu(const ThreadEntity &srcEnt, const ThreadEntity &ds
     return HCCL_SUCCESS;
 }
 
-HcclResult RecordCpuToAicpuTs(const ThreadHandle srcHdl, const ThreadHandle dstHdl, uint32_t dstNotifyIdx, RequestServiceFunc requestServiceFunc) {
+HcclResult RecordCpuToAicpuTs(const ThreadHandle srcHdl, const ThreadHandle dstHdl, uint32_t dstNotifyIdx, RequestServiceWithHandleFunc requestServiceFunc) {
     RecordServiceArgs tempRecordArgs = {
         .threadHandle = srcHdl,
         .dstThreadHandle = dstHdl,
         .dstNotifyIdx = dstNotifyIdx,
     };
-    const ThreadServiceArgs tempServiceArgs = {
-        .args = &tempRecordArgs,
-        .argsSizeByte = sizeof(tempRecordArgs),
-        .timeOutSecond = 32,
-    };
     ThreadEntity *const srcEntPtr = reinterpret_cast<ThreadEntity *>(srcHdl); // nullptr checked outside
-    CHK_RET(static_cast<HcclResult>(requestServiceFunc(srcHdl, srcEntPtr->cpuRes.recordService, &tempServiceArgs)));
+    CHK_RET(static_cast<HcclResult>(requestServiceFunc(srcHdl, srcEntPtr->cpuRes.recordService, &tempRecordArgs, sizeof(tempRecordArgs))));
     return HCCL_SUCCESS;
 }
 
