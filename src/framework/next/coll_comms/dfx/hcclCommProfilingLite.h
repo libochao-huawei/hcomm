@@ -11,7 +11,13 @@
 #define HCCL_COMM_PROFILING_LITE_H
 #include "mirror_task_manager.h"
 #include "profiling_reporter_lite.h"
+
 namespace hccl {
+typedef struct 
+{
+    int id;
+}HcclOpInfo;
+
 class HcclCommProfilingLite {
 public:
     // 构造函数
@@ -28,11 +34,11 @@ public:
     void UpdateProfStat();
     
     // 获取MirrorTaskManager
-    MirrorTaskManager* GetMirrorTaskManager() const;
+    Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
     
 private:
     Hccl::MirrorTaskManager* mirrorTaskManager_;
-    std::unique_ptr<ProfilingReporterLite> profilingReporterLite_;
+    std::unique_ptr<Hccl::ProfilingReporterLite> profilingReporterLite_;
 };
 }
 

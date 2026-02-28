@@ -36,10 +36,10 @@ void HcclCommDfxLite::Init() {
 }
 
 void HcclCommDfxLite::RegisterProfilingCallback() {
-    auto callback = [this](const Hccl::TaskInfo& taskInfo) {
-        mirrorTaskManager_->AddTaskInfo(std::make_shared<Hccl::TaskInfo>(taskInfo));
-    };
-    HcomProfilingLite::GetInstance().RegisterAddTaskInfoCallback(callback);
+    // auto callback = [this](const Hccl::TaskInfo& taskInfo) {
+    //     mirrorTaskManager_->AddTaskInfo(std::make_shared<Hccl::TaskInfo>(taskInfo));
+    // };
+    // HcomProfilingLite::GetInstance().RegisterAddTaskInfoCallback(callback);todo:待后续实现HcomProfilingLite类 
 }
 
 // HcclCommDfxLite接口实现

@@ -12,7 +12,7 @@
 namespace hccl {
 HcclCommProfilingLite::HcclCommProfilingLite(Hccl::MirrorTaskManager* mirrorTaskManager) {
     mirrorTaskManager_ = mirrorTaskManager;
-    profilingReporterLite_ = std::make_shared<ProfilingReporterLite>();
+    //profilingReporterLite_ = std::make_shared<ProfilingReporterLite>();todo:make_shared和uniqe不能转化，且ProfilingReporterLite没有入参
 }
 
 // HcclCommProfilingLite任务上报
@@ -24,7 +24,7 @@ void HcclCommProfilingLite::ReportAllTasks() {
 
 // HcclCommProfilingLite::ReportHcclOpInfo实现
 void HcclCommProfilingLite::ReportHcclOpInfo(const HcclOpInfo& hcclOpInfo) {
-    ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(hcclOpInfo);
+    //Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(hcclOpInfo);todo:输入不一致
 }
 
 // HcclCommProfilingLite::UpdateProfStat实现
@@ -34,7 +34,7 @@ void HcclCommProfilingLite::UpdateProfStat() {
     }
 }
     
- Hccl::MirrorTaskManager* GetMirrorTaskManager() const{
+ Hccl::MirrorTaskManager* HcclCommProfilingLite::GetMirrorTaskManager() const{
     return mirrorTaskManager_;
  }
 

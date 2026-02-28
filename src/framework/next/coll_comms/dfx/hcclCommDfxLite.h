@@ -10,9 +10,6 @@
 #include "mirror_task_manager.h"
 #include "hcclCommProfilingLite.h"
 
-typedef  struct {
-    int id;
-} HcclOpInfo;
 
 namespace hccl {
 class HcclCommDfxLite {

@@ -32,9 +32,9 @@ void HcclCommDfx::Init() {
 
 // 回调注册实现
 void HcclCommDfx::RegisterProfilingCallback() {
-    auto callback = [this](const TaskInfo& taskInfo) {
-        mirrorTaskManager_->AddTaskInfo(std::make_shared<TaskInfo>(taskInfo));
-    };
+    // auto callback = [this](const TaskInfo& taskInfo) {
+    //     mirrorTaskManager_->AddTaskInfo(std::make_shared<TaskInfo>(taskInfo));
+    // };todo:下面未实现编译报错未使用
     // 待后续实现HcomProfiling类 
     // HcomProfiling::GetInstance().RegisterAddTaskInfoCallback(callback);
 }
