@@ -744,6 +744,7 @@ TEST_F(CollServiceDefaultImplTest, col_service_default_impl_update_ub_ci_if_need
     MOCKER(HrtGetStreamId).stubs().will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtEventDestroy).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtEventRecord).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtEventQueryStatus).stubs().will(returnValue(HRT_EVENT_STATUS_MAP));
     u32 remoteRank = 1;
     CommunicatorImpl comm;
     CollOpParams collOpParams;
