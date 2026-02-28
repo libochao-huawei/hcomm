@@ -76,7 +76,7 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
         }
         if (lastPoses_.find(streamId) == lastPoses_.end()&& currQueue->Begin() != nullptr) {
             TaskInfo task = (*(*(*currQueue->Begin())));
-            bool isMainStream = (it->first == task.dfxOpInfo_->mainStreamId_) ? true : false;
+            bool isMainStream = task.isMaster_ ? true : false;
             profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
                                                  task.taskParam_.endTime, isMainStream, cachedReq, true);
             profilingHandler_->ReportHcclTaskDetails(task, cachedReq);
@@ -87,7 +87,7 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
         ++(*(iter));
         for (; (*(iter)) != (*(currQueue->End())); ++(*(iter))) {//从iter下一个开始上报
             TaskInfo task = (*(*(*iter)));
-            bool isMainStream = (it->first == task.dfxOpInfo_->mainStreamId_) ? true : false;
+            bool isMainStream = task.isMaster_ ? true : false;
             profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
                                                  task.taskParam_.endTime, isMainStream, cachedReq, true);
             profilingHandler_->ReportHcclTaskDetails(task, cachedReq);
