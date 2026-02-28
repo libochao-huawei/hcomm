@@ -136,7 +136,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/common
         ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
         ${HCCL_BASE_DIR}/platform/legacy/inc
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
+        ${RDMA_CORE_INCLUDE_DIR}
         ${HCCL_BASE_DIR}/platform/hccp/inc/
         ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
@@ -724,7 +724,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
 
         ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
 
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
+        ${RDMA_CORE_INCLUDE_DIR}
         ${HCCL_BASE_DIR}/platform/
         ${HCCL_BASE_DIR}/platform/inc/
         ${HCCL_BASE_DIR}/platform/inc/adapter
@@ -777,7 +777,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
 
         ${HCCL_BASE_DIR}/../externel_depends/tsch/
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
+        ${RDMA_CORE_INCLUDE_DIR}
         ${THIRD_PARTY_NLOHMANN_PATH}
 
         
