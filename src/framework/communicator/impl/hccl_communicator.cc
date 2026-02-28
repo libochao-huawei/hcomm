@@ -697,6 +697,8 @@ namespace hccl
                         singleSubCommTransport.links[i]->DeInit();
                     }
                 }
+                singleSubCommTransport.virtualLinks.clear();
+                singleSubCommTransport.links.clear();
             }
         }
     }
