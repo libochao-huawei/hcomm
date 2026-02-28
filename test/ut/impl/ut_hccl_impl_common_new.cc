@@ -563,3 +563,41 @@ TEST_F(HcclImplCommonNewTest, ut_HcclCommunicator_AddStreamToModel)
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
     GlobalMockObject::verify();
 }
+
+TEST_F(HcclImplCommonNewTest, ut_InsertNewTagToCaptureResMap_When_Capture_Expect_SUCCESS)
+{
+    int mockModel = 0;
+    void *pmockModel = &mockModel;
+    aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE;
+    MOCKER(aclmdlRICaptureGetInfo)
+    .stubs()
+    .with(any(), outBoundP(&captureStatus, sizeof(captureStatus)), outBoundP(&pmockModel, sizeof(pmockModel)))
+    .will(returnValue(0));
+
+    std::string newTag = "tag";
+    OpParam opParam;
+    HcclResult ret = InsertNewTagToCaptureResMap(newTag, opParam);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclImplCommonNewTest, ut_AclgraphDestroyCallback_When_ModelId_Valid_Expect_Success)
+{
+    HcclCommunicator communicator;
+    AclgraphDestroyCallbackParam callbackParam;
+    callbackParam.communicator = &communicator;
+    callbackParam.modelId = 0;
+
+    AclgraphDestroyCallback(&callbackParam);
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclImplCommonNewTest, ut_AclgraphDestroyCallback_When_Comm_Invalid_Expect_Fail)
+{
+    AclgraphDestroyCallbackParam callbackParam;
+    callbackParam.communicator = nullptr;
+    callbackParam.modelId = 0;
+
+    AclgraphDestroyCallback(&callbackParam);
+    GlobalMockObject::verify();
+}
