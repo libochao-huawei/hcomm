@@ -17,6 +17,7 @@ namespace Hccl {
 constexpr u64 RS_2D_SMALL_DATA_SIZE = 1024 * 1024;
 constexpr u64 RS_M2M_1D_MAX_DATA_SIZE = 8 * 1024 * 1024;
 constexpr u64 RS_AICPU_1D_MAX_DATA_SIZE = 16 * 1024 * 1024;
+constexpr double DEFAULT_RANK_SIZE = 8.0;
 
 SelectorStatus ReduceScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,
@@ -27,7 +28,8 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoIn
         HCCL_WARNING("[Algo][ReduceScatterAutoSelector] levelNum > 1 is not supported yet for ccu_ms mode.");
         return SelectorStatus::NOT_MATCH;
     }
-
+    u32 rankSize_2P = 2;
+ 	u32 rankSize_4P = 4; 
     // MS 模式不支持 int8
     CHK_PRT_RET(op.dataType == DataType::INT8,
         HCCL_WARNING("[Algo][ReduceScatterAutoSelector] dataType[%s] is not supported yet for ccu_ms mode.",
@@ -45,8 +47,8 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoIn
         SelectorStatus::NOT_MATCH);
 
     HcclDetourType detourType = EnvConfig::GetInstance().GetDetourConfig().GetDetourType();
-    CHK_PRT_RET((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ != 2)||
-        (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ != 4),
+    CHK_PRT_RET((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ != rankSize_2P)||
+        (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ != rankSize_4P),
         HCCL_WARNING("[Algo][ReduceScatterAutoSelector] detourType not match for rankSize."),
         SelectorStatus::NOT_MATCH);
 
@@ -61,8 +63,8 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoIn
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
             if (Is2DieFullMesh()) {
                 primQueueGenName = "CcuReduceScatterMesh1D2Die";
-            } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == 2)||
-                (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == 4)) {
+            } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == rankSize_2P)||
+                (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == rankSize_4P)) {
                 primQueueGenName = "CcuReduceScatterMeshDetour1D";
             } else {
                 primQueueGenName = "CcuReduceScatterMesh1D";
@@ -72,8 +74,8 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoIn
         } else if (topoInfo.level0Shape == Level0Shape::MESH_1D_CLOS) {
             if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
-                if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == 2)||
-                    (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == 4)) {
+                if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == rankSize_2P)||
+                    (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == rankSize_4P)) {
                     primQueueGenName = "CcuReduceScatterMeshDetour1D";
                 } else {
                     primQueueGenName = "CcuReduceScatterMesh1D";
@@ -143,7 +145,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &
                 HCCL_WARNING("[ReduceScatterAutoSelector]the selector is not set RankSize_]");
                 ratio = 1;
             } else {
-                ratio = 8.0 / rankSize_;
+                ratio = DEFAULT_RANK_SIZE / rankSize_;
             }
             if (dataSize_ * ratio >= RS_M2M_1D_MAX_DATA_SIZE) {
                 return SelectorStatus::NOT_MATCH;
@@ -164,7 +166,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &
                     HCCL_WARNING("[ReduceScatterAutoSelector]the selector is not set RankSize_]");
                     ratio = 1;
                 } else {
-                    ratio = 8.0 / rankSize_;
+                    ratio = DEFAULT_RANK_SIZE / rankSize_;
                 }
                 if (dataSize_ * ratio > RS_M2M_1D_MAX_DATA_SIZE) {
                     return SelectorStatus::NOT_MATCH;
@@ -224,7 +226,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoIn
                     HCCL_WARNING("[ReduceScatterAutoSelector]the selector is not set RankSize_]");
                     ratio = 1;
                 } else {
-                    ratio = (8.0 / rankSize_) * (8.0 / rankSize_);
+                    ratio = (DEFAULT_RANK_SIZE / rankSize_) * (DEFAULT_RANK_SIZE / rankSize_);
                 }
                 if (dataSize_ * ratio > RS_AICPU_1D_MAX_DATA_SIZE) {
                     primQueueGenName = "InsReduceScatterMesh1DMeshChunk";
@@ -251,7 +253,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoIn
                         HCCL_WARNING("[ReduceScatterAutoSelector]the selector is not set RankSize_]");
                         ratio = 1;
                     } else {
-                        ratio = (8.0 / rankSize_) * (8.0 / rankSize_);
+                        ratio = (DEFAULT_RANK_SIZE / rankSize_) * (DEFAULT_RANK_SIZE / rankSize_);
                     }
                     if (dataSize_ * ratio > RS_AICPU_1D_MAX_DATA_SIZE) {
                         primQueueGenName = "InsReduceScatterMesh1DMeshChunk";
