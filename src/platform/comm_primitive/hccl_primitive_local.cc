@@ -16,10 +16,33 @@
 #include "dispatcher_aicpu_pub.h"
 #include "local_notify.h"
 #include "dispatcher_ctx.h"
+#include "adapter_rts.h"
+
+const std::unordered_map<HcclDataType, aclDataType> hccl2rtDataTypeMap = {
+    {HCCL_DATA_TYPE_INT8, ACL_INT8},
+    {HCCL_DATA_TYPE_INT16, ACL_INT16},
+    {HCCL_DATA_TYPE_INT32, ACL_INT32},
+    {HCCL_DATA_TYPE_FP16, ACL_FLOAT16},
+    {HCCL_DATA_TYPE_FP32, ACL_FLOAT},
+    {HCCL_DATA_TYPE_BFP16, ACL_BF16},
+};
+
+const std::unordered_map<HcclReduceOp, aclrtReduceKind> hccl2rtReduceOpMap = {
+    {HCCL_REDUCE_SUM, ACL_RT_MEMCPY_SDMA_AUTOMATIC_SUM},
+    {HCCL_REDUCE_MAX, ACL_RT_MEMCPY_SDMA_AUTOMATIC_MAX},
+    {HCCL_REDUCE_MIN, ACL_RT_MEMCPY_SDMA_AUTOMATIC_MIN},
+};
 
 HcclResult GetPubDispatcher(hccl::DispatcherPub** dispatcherPtr)
 {
     DispatcherCtxPtr ctx = nullptr;
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    std::string targetChipVerStr = socNamePtr;
+    HCCL_DEBUG("[%s]SocVersion = %s.", __func__, targetChipVerStr.c_str());
+    if (targetChipVerStr.find("Ascend950") != std::string::npos) {
+ 	    return HCCL_SUCCESS;
+    }
     CHK_RET(AcquireDispatcherCtx(&ctx));
     CHK_PTR_NULL(ctx);
     hccl::DispatcherCtx* ctx_temp = reinterpret_cast<hccl::DispatcherCtx *>(ctx);
@@ -42,6 +65,17 @@ HcclResult HcclLocalCopy(StreamHandle streamHandle, HcclBuf *dst, HcclBuf *src)
 
     hccl::DispatcherPub* dispatcherPtr = nullptr;
     CHK_RET(GetPubDispatcher(&dispatcherPtr));
+
+    if (dispatcherPtr == nullptr) {
+        if (src->len == 0 || src->addr == dst->addr) {
+        HCCL_DEBUG("count is 0 or src == dst, return success.");
+        return HCCL_SUCCESS;
+        }
+
+        CHK_RET(hrtMemAsyncCopy(dst->addr, src->len, src->addr, src->len,
+            HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE, stream->ptr()));
+        return HCCL_SUCCESS;
+    }
     HCCL_INFO("[%s] dispatcherPtr[%p]", __func__, (void*)dispatcherPtr);
     return dispatcherPtr->MemcpyAsync(dstDevMem, srcDevMem, *stream);
 }
@@ -60,6 +94,23 @@ HcclResult HcclLocalCopyReduce(StreamHandle streamHandle, HcclBuf *dst, HcclBuf 
     CHK_RET(GetPubDispatcher(&dispatcherPtr));
 
     hccl::Stream *stream = reinterpret_cast<hccl::Stream*>(streamHandle);
+
+    if (dispatcherPtr == nullptr) {
+        aclDataType runtimeDataType = ACL_DT_UNDEFINED;
+        aclrtReduceKind rtReduceOp = ACL_RT_MEMCPY_SDMA_AUTOMATIC_EQUAL;
+        try {
+            runtimeDataType = hccl2rtDataTypeMap.at(reduceInfo.dataType);
+            rtReduceOp = hccl2rtReduceOpMap.at(reduceInfo.reduceOp);
+        } catch (...) {
+            HCCL_ERROR("[HcclLocalCopyReduce]data type[%s] or reduceOp[%s] is not support",
+                GetDataTypeEnumStr(reduceInfo.dataType).c_str(), GetReduceOpEnumStr(reduceInfo.reduceOp).c_str());
+            return HCCL_E_PARA;
+        }
+
+        CHK_RET(hrtReduceAsync(dst->addr, src->len, src->addr, src->len, 
+        rtReduceOp, runtimeDataType, stream->ptr()));
+        return HCCL_SUCCESS;
+    }
 
     return dispatcherPtr->InlineReduceAsync(src->addr, src->len / SIZE_TABLE[reduceInfo.dataType], reduceInfo.dataType,
         reduceInfo.reduceOp, *stream, dst->addr, INVALID_VALUE_RANKID, hccl::LinkType::LINK_ONCHIP);
