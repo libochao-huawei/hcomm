@@ -11,6 +11,7 @@
 #define RESOURCE_ENTITIES_H
 
 #include "hccl_res.h"
+#include "hccl_api.h"
 
 #include <string>
 
@@ -22,7 +23,8 @@ typedef enum {
 } ThreadType;
 
 typedef struct {
-    uint64_t identifier;  // AicpuTs -> Cpu 场景下使用，为一块 device 能直接访问的地址
+    NotifyType type;
+    uint64_t identifier;  // AicpuTs -> Cpu 场景下, type == DEVICE_MEM，为一块 device 能直接访问的地址
 } NotifyEntity;
 
 typedef struct {
@@ -45,7 +47,7 @@ typedef struct {
             // QueueInfo completionQueue;  // TODO: for DFX, not planned for now.
             ThreadServiceHandle waitService;
             ThreadServiceHandle recordService;
-        } cpuRes;  // 如果是 CPU Engine + CPU Type, 选择这个成员
+        } cpuRes;                // 如果是 AICPU Engine + CPU Type, 选择这个成员
         uint64_t threadObjAddr;  // 如果是 AICPU Engine + TS Type, 为 Device 侧的 AicpuTsThread 对象地址
                                  // 如果是 CPU Engine + TS Type, 为 Host 侧的 CpuTsThread 对象地址
         uint32_t raws[128];
@@ -68,6 +70,13 @@ typedef struct {
     ThreadHandle threadHandle;
     uint32_t notifyIdx;
 } WaitServiceArgs;
+
+typedef struct {
+    uint32_t msgId;
+    uint64_t serviceHandle;
+    void *args;  // -> RecordServiceArgs, WaitServiceArgs, or other custom args struct
+    uint64_t argsSizeByte;
+} ThreadMsgEntity;
 
 } // namespace hccl
 
