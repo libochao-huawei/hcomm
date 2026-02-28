@@ -772,7 +772,7 @@ int32_t HcommRequestServiceOnThread(ThreadHandle dstThreadHandle, ThreadServiceH
     // TODO: add lock to make sure headIdxAddr is not updated by Host.
 
     const hccl::QueueInfo &queueInfo = dstThreadEntityPtr->cpuRes.sendQueue;
-    ThreadMsgEntity *const msgQueueBasePtr = queueInfo.addr;
+    ThreadMsgEntity *const msgQueueBasePtr = reinterpret_cast<ThreadMsgEntity *>(queueInfo.addr);
     const uint64_t headIdx = *reinterpret_cast<uint64_t *>(queueInfo.headIdxAddr);
     const uint64_t tailIdx = *reinterpret_cast<uint64_t *>(queueInfo.tailIdxAddr);
     const uint64_t capacity = queueInfo.capacity;
