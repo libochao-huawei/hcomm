@@ -10,6 +10,7 @@
 set(src_to_test_list
     main.cc
     ut_HcclGetOpScratchMemSize_API_test.cc
+    ut_HcomSelectAlg_API_test.cc
 )
 
 add_executable(hccl_utest_framework_hcom ${src_to_test_list})
