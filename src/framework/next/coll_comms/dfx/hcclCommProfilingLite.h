@@ -9,8 +9,10 @@
  */
 #ifndef HCCL_COMM_PROFILING_LITE_H
 #define HCCL_COMM_PROFILING_LITE_H
+#include <memory>
 #include "mirror_task_manager.h"
 #include "profiling_reporter_lite.h"
+#include "hcclCommDfxLite.h"
 namespace hccl {
 class HcclCommProfilingLite {
 public:
@@ -32,7 +34,7 @@ public:
     
 private:
     Hccl::MirrorTaskManager* mirrorTaskManager_;
-    std::unique_ptr<ProfilingReporterLite> profilingReporterLite_;
+    std::unique_ptr<Hccl::ProfilingReporterLite> profilingReporterLite_;
 };
 }
 
