@@ -313,6 +313,13 @@ HcclResult CcuComponent::CreateLoopChannel(const uint8_t dieId, uint32_t &channe
         return HcclResult::HCCL_SUCCESS;
     }
 
+    // 根据ipAddr获取EID
+    if (link.GetLinkProtocol() == LinkProtocol::UBOE) {
+        IpAddress eidAddress;
+        RdmaHandleManager::GetInstance().UboeIpv4ToEid(ipAddr, eidAddress);
+        ipAddr = eidAddress;
+    }
+
     std::vector<ChannelInfo> channelInfos; // 按jetty组分配
     const ChannelPara channelPara{feId, LOOP_CHANNEL_USE_JETTY, LOOP_CHANNEL_USE_SQSIZE};
     auto ret = channelMgrs[dieId]->Alloc(channelPara, channelInfos);
