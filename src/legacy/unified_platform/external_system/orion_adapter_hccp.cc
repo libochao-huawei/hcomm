@@ -1179,7 +1179,8 @@ void HrtRaUbRemoteMemUnimport(RdmaHandle rdmaHandle, RemMemHandle rmemHandle)
 
 const std::map<HrtUbJfcMode, JfcMode> HRT_UB_JFC_MODE_MAP = {{HrtUbJfcMode::NORMAL, JfcMode::JFC_MODE_NORMAL},
                                                               {HrtUbJfcMode::STARS_POLL, JfcMode::JFC_MODE_STARS_POLL},
-                                                              {HrtUbJfcMode::CCU_POLL, JfcMode::JFC_MODE_CCU_POLL}};
+                                                              {HrtUbJfcMode::CCU_POLL, JfcMode::JFC_MODE_CCU_POLL},
+                                                              {HrtUbJfcMode::USER_CTL, JfcMode::JFC_MODE_USER_CTL_NORMAL}};
 
 constexpr u32 CQ_DEPTH     = 1024 * 1024 / 64;
 constexpr u32 CCU_CQ_DEPTH = 64;
@@ -1217,6 +1218,38 @@ void HrtRaUbDestroyJfc(RdmaHandle handle, JfcHandle jfcHandle)
         string msg = StringFormat("ubCqDestroy failed, rdmaHandle=%p, jfcHandle=0x%llx", handle, jfcHandle);
         THROW<NetworkApiException>(msg);
     }
+}
+
+
+JfcHandle HrtRaUbCreateJfcUserCtl(RdmaHandle handle, CqCreateInfo& cqInfo)
+{
+    struct CqInfoT info {};
+
+    info.in.chanHandle = nullptr;
+    info.in.depth = CQ_DEPTH;
+    info.in.ub.userCtx   = 0;
+    info.in.ub.mode       = JfcMode::JFC_MODE_USER_CTL_NORMAL;
+    info.in.ub.ceqn       = 0;
+    info.in.ub.flag.value = 0;
+
+    void *jfcHandle = nullptr;
+
+    s32 ret = RaCtxCqCreate(handle, &info, &jfcHandle);
+    if (ret != 0) {
+        string msg = StringFormat("ubCreateCq failed, rdmaHandle=%p,", handle);
+        THROW<NetworkApiException>(msg);
+    }
+
+    HCCL_INFO("[HrtRaUbCreateJfcUserCtl] jfcId[%u], cqVA[%llx], cqeSize[%u], cqDepth[%u], dbAddr[%llx]", 
+            info.out.id, info.out.bufAddr, info.out.cqeSize, CQ_DEPTH, info.out.swdbAddr);
+
+    cqInfo.va = info.out.bufAddr;
+    cqInfo.id = info.out.id;
+    cqInfo.cqeSize = info.out.cqeSize;
+    cqInfo.cqDepth = CQ_DEPTH;
+    cqInfo.swdbAddr = info.out.swdbAddr;
+
+    return reinterpret_cast<JfcHandle>(jfcHandle);
 }
 
 const std::map<HrtTransportMode, TransportModeT> HRT_TRANSPORT_MODE_MAP
