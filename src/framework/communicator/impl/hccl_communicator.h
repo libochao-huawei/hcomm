@@ -57,6 +57,7 @@
 #include "new/hccl_dispatcher_ctx.h"
 #include "rank_graph.h"
 #include "symmetric_memory/symmetric_memory.h"
+#include "aclgraph_callback.h"
 
 namespace hccl {
 using ServRankInfo_t = std::map<std::string, std::vector<RankInfo_t> >;
