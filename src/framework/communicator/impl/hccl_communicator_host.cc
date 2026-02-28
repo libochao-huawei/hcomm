@@ -4498,7 +4498,7 @@ namespace hccl
             }
         }
 
-        if (deviceType_ == DevType::DEV_TYPE_910B) {
+        if (deviceType_ == DevType::DEV_TYPE_910B && userRankSize_ > 1) {
             // 用于AIV支持Roce直驱判断
             CHK_RET(IsSupportAIVNormalQP(devicePhyId_, opParam.supportRoceDirect));
         }
