@@ -2249,4 +2249,63 @@ HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles,
     }
     return HCCL_SUCCESS;
 }
+
+HcclResult HrtRaCtxQpDestoryBatch(const RdmaHandle handle, const std::unordered_set<JettyHandle> &jettyHandles, std::vector<JettyHandle> &failJettyHandles)
+{
+    std::vector<void*> qp_handle;
+    failJettyHandles.clear();
+    for (auto jettyHandle : jettyHandles) {
+        qp_handle.push_back(reinterpret_cast<void*>(jettyHandle));
+    }
+    unsigned int delNum = min(qp_handle.size(), static_cast<size_t>(MAX_DELETE_JETTY_NUMS));
+    std::vector<void*> del_qp_handle;
+    while (true) {
+        void *raReqHandle = nullptr;
+        delNum = min(qp_handle.size(), static_cast<size_t>(MAX_DELETE_JETTY_NUMS));
+        del_qp_handle.assign(qp_handle.begin(), qp_handle.begin() + delNum);
+        auto ret = RaCtxQpDestroyBatchAsync(handle, del_qp_handle.data(), &delNum, &raReqHandle);
+        if (ret != 0) {
+            HCCL_ERROR("[%s] failed, ret is [%d].", __func__, ret);
+            return HCCL_E_INTERNAL;
+        }
+
+        RequestHandle           reqHandle         = reinterpret_cast<RequestHandle>(raReqHandle);
+        auto                    startTime         = std::chrono::steady_clock::now();
+        constexpr uint32_t      pollTimeoutMs     = 10000; // 轮询超时时间10s
+        auto                    waitPollTimeOutMs = std::chrono::milliseconds(pollTimeoutMs);
+        while (true) {
+            if ((std::chrono::steady_clock::now() - startTime) >= waitPollTimeOutMs) {
+                HCCL_ERROR("[%s]poll timeout, originalJettyCount[%u], undeleteJettyCount[%u].", __func__, jettyHandles.size(), failJettyHandles.size());
+                return HCCL_E_TIMEOUT;
+            }
+            ReqHandleResult result;
+            TRY_CATCH_RETURN(result = HrtRaGetAsyncReqResult(reqHandle));
+            if (result == ReqHandleResult::NOT_COMPLETED) {
+                continue;
+            } else if (result == ReqHandleResult::COMPLETED) {
+                break;
+            } else {
+                HCCL_ERROR("[%s] failed, result[%s] is unexpected.", __func__, result.Describe().c_str());
+                return HCCL_E_INTERNAL;
+            }
+        }
+
+        // 检查是否删除完成
+        if (delNum > del_qp_handle.size()) {
+            HCCL_ERROR("[%s] run RaCtxQpDestroyBatchAsync error, del jetty num[%u] greater than all jetty num[%u].", __func__, delNum, del_qp_handle.size());
+            return HCCL_E_INTERNAL;
+        } else if (del_qp_handle.size() == delNum) {
+            qp_handle.erase(qp_handle.begin(), qp_handle.begin() + delNum);
+        } else {
+            failJettyHandles.push_back(reinterpret_cast<JettyHandle>(del_qp_handle[delNum]));
+            qp_handle.erase(qp_handle.begin(), qp_handle.begin() + delNum + 1);
+        }
+        if (qp_handle.size() == 0) {
+            break;
+        }
+    }
+    HCCL_INFO("[%s] run success, originalJettyCount[%u], undeleteJettyCount[%u].", __func__, jettyHandles.size(), failJettyHandles.size());
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl
