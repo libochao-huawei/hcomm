@@ -422,7 +422,7 @@ void CcuErrorHandler::GenErrorInfoRemWaitGroup(const ErrorInfoBase &baseInfo, sh
  	ret = (rep->transportGroup.GetCntCkeId(rep->semIndex, cntCkeId));
  	if (ret != HcclResult::HCCL_SUCCESS) {
  	    string msg = StringFormat("[GenErrorInfoRemWaitGroup]rt get CntCkeId failed. "
- 	                                "cntCkeId[%u] return[%d].", cntCkeId, ret);
+ 	                                "semIndex[%u], cntCkeId[%u] return[%d].", rep->semIndex, cntCkeId, ret);
  	    MACRO_THROW(CcuApiException, msg);
  	}
  	errorMsg.msg.waitSignal.signalId         = cntCkeId;

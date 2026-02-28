@@ -31,7 +31,7 @@ bool CcuRepWaitGroup::Translate(CcuInstr *&instr, uint16_t &instrId, const Trans
  	HcclResult ret = transportGroup.GetCntCkeId(semIndex, cntCkeId);
  	if (ret != HcclResult::HCCL_SUCCESS) {
  	  	string msg = StringFormat("[Translate]rt get CntCkeId failed. "
- 	  	                            "cntCkeId[%u] return[%d].", cntCkeId, ret);
+ 	  	                            "semIndex[%u], cntCkeId[%u] return[%d].", semIndex, cntCkeId, ret);
  	  	MACRO_THROW(CcuApiException, msg);
  	}
     // 需要profiling的使用SetCKEInstr, 否则使用ClearCKEInstr
