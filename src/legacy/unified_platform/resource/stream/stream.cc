@@ -13,13 +13,13 @@
 #include "binary_stream.h"
 namespace Hccl {
 
-Stream::Stream(aclrtStream ptr) : ptr(ptr), selfOwned(false)
+Stream::Stream(aclrtStream ptr, bool isMaster) : ptr(ptr), selfOwned(false), isMaster_(isMaster)
 {
     id = static_cast<u32>(HrtGetStreamId(ptr));
     InitDevPhyId();
 }
 
-Stream::Stream(bool deviceUsed) : selfOwned(true), devUsed(deviceUsed)
+Stream::Stream(bool deviceUsed, bool isMaster) : selfOwned(true), devUsed(deviceUsed), isMaster_(isMaster)
 {
     try {
         if (deviceUsed) {
@@ -66,6 +66,11 @@ aclrtStream Stream::GetPtr() const
 u32 Stream::GetId() const
 {
     return id;
+}
+
+bool Stream::GetIsMaster() const
+{
+    return isMaster_;
 }
 
 bool Stream::IsSelfOwned() const
