@@ -67,7 +67,7 @@ HcclResult UrmaEndpoint::ServerSocketListen()
     // endpoint中避免重复拉起socket，跳过
     constexpr bool IsCompatibleMode = true;
     if (IsCompatibleMode) {
-        HCCL_RUN_INFO("[UrmaEndpoint][%s] passed, now running on compatible mode.");
+        HCCL_RUN_INFO("[UrmaEndpoint][%s] passed, now running on compatible mode.", __func__);
         return HcclResult::HCCL_SUCCESS;
     }
 
