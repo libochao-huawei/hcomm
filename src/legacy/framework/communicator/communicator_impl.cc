@@ -462,7 +462,6 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
         dfxOpInfo->algType_      = AlgType::MESH;
         dfxOpInfo->index_        = GetIdIndex();
         dfxOpInfo->comm_         = this;
-        dfxOpInfo->mainStreamId_ = HrtGetStreamId(stream);
         dfxOpInfo->beginTime_    = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
         GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);
         ExecuteFastCcuLaunch(opParams, stream, params);
@@ -598,7 +597,7 @@ HcclResult CommunicatorImpl::OffloadResourcePre(std::string &opTag, const CollOp
     std::vector<rtStream_t> slaveStreams;
     slaveStreams.resize(resReq.requiredSubQueNum);
     for (u64 i = 0; i < resReq.requiredSubQueNum; ++i) {
-        slaveStreams[i] = static_cast<rtStream_t>(std::make_unique<Stream>(true).get());
+        slaveStreams[i] = static_cast<rtStream_t>(std::make_unique<Stream>(true, false).get());
     }
     CHK_RET(SetCollOffloadSlaveStreams(opTag, slaveStreams));
     CHK_RET(SetCollOffloadScratchBuf(opTag, reinterpret_cast<void *>(GetCclBuffer()->GetAddr()),
