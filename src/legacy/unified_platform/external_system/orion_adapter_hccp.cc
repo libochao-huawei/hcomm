@@ -2216,4 +2216,35 @@ HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles,
     }
     return HCCL_SUCCESS;
 }
+
+HcclResult HrtRaGetEidByIp(const RdmaHandle handle, const vector<IpAddress>& ipV4AddrList, vector<IpAddress>& eidAddrList)
+{
+    size_t num = ipAddrList.size();
+    struct IpInfo ipInfoList[num] = {0};
+    for (size_t i = 0; i < num; i++) {
+        ipInfoList[i].ipInfo.family = ipAddress.family;
+        ipInfoList[i].ipInfo.ip                 = IpAddressToHccpIpAddr(ipAddress);
+    }
+
+    union HccpEid eidList[num] = {0};
+    s32 ret = RaGetEidByIp(&handle, ipInfoList, &eidList, &num);
+    if (ret != 0) {
+        string msg = StringFormat("call RaGetEidByIp failed, error code =%d.", ret);
+        THROW<NetworkApiException>(msg);
+    }
+
+    if (num != ipAddrList.size()) {
+        string msg = StringFormat("call RaGetEidByIp failed, The number of ipInfoList and eidList is inconsistent, 
+           ipAddrList size =%d, eidList size =%d", ipAddrList.size(), num);
+        return HCCL_E_INTERNAL;
+    }
+
+    for (unsigned int i = 0; i < num; i++) {
+        IpAddress eidAddr = HccpEidToIpAddress(eidList[i]);
+        eidAddrList.push_back(eidAddr);
+    }
+    HCCL_INFO("[HrtRaGetEidByIp] success, eidAddrList size=%u", eidAddrList.size());
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl
