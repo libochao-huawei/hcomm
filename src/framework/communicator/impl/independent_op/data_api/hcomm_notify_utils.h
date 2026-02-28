@@ -37,9 +37,9 @@ NotifyRecordOpType GetNotifyRecordOpType(const ThreadEntity &srcEnt, const Threa
         dstEnt.engine == COMM_ENGINE_AICPU && dstEnt.type == THREAD_TYPE_TS) {
         return NotifyRecordOpType::AicpuTs_to_AicpuTs;
     } else if (srcEnt.engine == COMM_ENGINE_AICPU && srcEnt.type == THREAD_TYPE_TS &&
-               dstEnt.engine == COMM_ENGINE_CPU && dstEnt.type == THREAD_TYPE_CPU) {
+               dstEnt.engine == COMM_ENGINE_AICPU && dstEnt.type == THREAD_TYPE_CPU) {
         return NotifyRecordOpType::AicpuTs_to_Cpu;
-    } else if (srcEnt.engine == COMM_ENGINE_CPU && srcEnt.type == THREAD_TYPE_CPU &&
+    } else if (srcEnt.engine == COMM_ENGINE_AICPU && srcEnt.type == THREAD_TYPE_CPU &&
                dstEnt.engine == COMM_ENGINE_AICPU && dstEnt.type == THREAD_TYPE_TS) {
         return NotifyRecordOpType::Cpu_to_AicpuTs;
     }
@@ -79,7 +79,7 @@ HcclResult RecordAicpuTsToCpu(const ThreadEntity &srcEnt, const ThreadEntity &ds
         return HCCL_E_PARA;
     }
     const NotifyEntity dstNotifyEntity = dstEnt.notifies[dstNotifyIdx];
-    CHK_RET(threadPtr->ThreadNotifyRecordCrossType(dstNotifyEntity));
+    CHK_RET(threadPtr->InterKernelNotifyRecord(dstNotifyEntity));
     return HCCL_SUCCESS;
 }
 
