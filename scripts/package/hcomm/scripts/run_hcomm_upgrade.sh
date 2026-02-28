@@ -28,7 +28,7 @@
 username="$(id -un)"
 usergroup="$(id -gn)"
 is_quiet=n
-pylocal=n
+pylocal=y # 子包安装默认将Python包安装到CANN包目录下
 in_install_for_all=n
 setenv_flag=n
 docker_root=""

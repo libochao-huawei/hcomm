@@ -13,7 +13,7 @@ common_parse_dir=""
 logfile=""
 stage=""
 is_quiet="n"
-pylocal="n"
+pylocal="y" # 子包安装默认将Python包安装到CANN包目录下
 hetero_arch="n"
 
 while true; do
