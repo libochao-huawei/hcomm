@@ -42,7 +42,7 @@ target_include_directories(hccl_v2_native_alg_repo PRIVATE
     ${HCCL_BASE_DIR}/inc/adapter
     ${HCCL_BASE_DIR}/src/algorithm/impl/resource_manager
     ${HCCL_BASE_DIR}/src/platform/hccp/inc/network
-    ${HCCL_BASE_DIR}/src/platform/hccp/external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
 
     ${HCCL_BASE_DIR}/pkg_inc
     ${HCCL_BASE_DIR}/include
@@ -83,7 +83,7 @@ target_include_directories(hccl_v2_alg_frame PRIVATE
     ${HCCL_BASE_DIR}/src/hccl/algorithm/base/communicator
     ${HCCL_BASE_DIR}/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction
     ${HCCL_BASE_DIR}/src/platform/hccp/inc/network
-    ${HCCL_BASE_DIR}/src/platform/hccp/external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
 
     ${THIRD_PARTY_NLOHMANN_PATH}
     ${ASCEND_CANN_PACKAGE_PATH}/include/
