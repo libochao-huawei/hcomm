@@ -240,7 +240,7 @@ void CcuComponent::CreateCcuRmaBuffer()
             "devLogicId[%d] dieId[%u]", __func__, devLogicId, dieId));
 
         // todo: 变成for循环
-        CcuMemInfo memInfoList{};
+        struct CcuMemInfo memInfoList[CCU_MEM_INFO_SIZE];
         uint32_t count{0};
         ccuResSpecs.GetCcuMemInfoList(dieId, &memInfoList, &count);
 
