@@ -14,6 +14,7 @@
 #include "orion_adapter_rts.h"
 #include "orion_adapter_hccp.h"
 #include "ccu_device_manager.h"
+#include "hccp_tlv_hdc_manager.h"
 
 namespace Hccl {
 
