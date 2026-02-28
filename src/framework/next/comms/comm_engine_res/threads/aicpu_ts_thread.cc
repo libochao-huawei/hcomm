@@ -270,7 +270,7 @@ HcclResult AicpuTsThread::LocalReduce(
  HcclResult AicpuTsThread::ThreadNotifyRecordCrossType(const NotifyEntity notifyEntity) const
 {
     CHK_PTR_NULL(pImpl_);
-    const uint64_t notifyDeviceVA = notifyEntity.deviceVA;
+    const uint64_t notifyDeviceVA = notifyEntity.identifier;
     CHK_RET(pImpl_->WriteValue(notifyDeviceVA, 1));
     return HCCL_SUCCESS;
 }

@@ -11,7 +11,6 @@
 #define RESOURCE_ENTITIES_H
 
 #include "hccl_res.h"
-#include "hccl_api.h"
 
 #include <string>
 
@@ -23,17 +22,13 @@ typedef enum {
 } ThreadType;
 
 typedef struct {
-    NotifyType type;
-    union {
-        uint64_t deviceVA;  // type == HOST_MEM 时，为映射到 Device 侧的 notify_dVA
-        uint64_t notifyId;  // RtsNotify.id
-    };
+    uint64_t identifier;  // AicpuTs -> Cpu 场景下使用，为一块 device 能直接访问的地址
 } NotifyEntity;
 
 typedef struct {
-    uint64_t addr;  // on HBM
-    uint64_t head;
-    uint64_t tail;
+    uint64_t addr;         // on HBM
+    uint64_t headIdxAddr;  // on HBM, 指向 head 索引的地址
+    uint64_t tailIdxAddr;  // on HBM, 指向 tail 索引的地址
     uint32_t msgSize;
     uint32_t capacity;
 } QueueInfo;
