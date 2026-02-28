@@ -764,22 +764,24 @@ int32_t HcommChannelFence(ChannelHandle channel)
     return HCCL_E_NOT_SUPPORT;
 }
 
-int32_t HcommRequestServiceOnThread(ThreadHandle threadHandle, ThreadServiceHandle serviceHandle, const ThreadServiceArgs *serviceArgs)
+int32_t HcommRequestServiceOnThread(ThreadHandle threadHandle, ThreadServiceHandle serviceHandle, const void *args, uint64_t argsSizeByte)
 {
-    HCCL_INFO("[%s] threadHandle[0x%llx], serviceHandle[0x%llx], serviceArgs[0x%llx].", __func__, threadHandle, serviceHandle, serviceArgs);
+    HCCL_INFO("[%s] START. threadHandle[0x%llx], serviceHandle[0x%llx], args[0x%llx], argsSizeByte[%llu].", __func__, threadHandle, serviceHandle, args, argsSizeByte);
     ThreadEntity *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(threadHandle);
     // TODO: CHK PTR NULL serviceHandle
     CHK_PTR_NULL(threadEntityPtr);
-    CHK_PTR_NULL(serviceArgs);
+    CHK_PTR_NULL(args);
 
     if (!(threadEntityPtr->type == THREAD_TYPE_CPU && threadEntityPtr->engine == COMM_ENGINE_CPU)) {
         HCCL_ERROR("[%s] thread type should be THREAD_TYPE_CPU and engine should be COMM_ENGINE_CPU.", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
     // TODO: free the memory after the service is completed.
-    const ThreadServiceArgs *const serviceArgsPtrOnHeap = malloc(sizeof(ThreadServiceArgs));
+    void *const serviceArgsPtrOnHeap = malloc(argsSizeByte);
     CHK_PTR_NULL(serviceArgsPtrOnHeap);
-    memcpy(serviceArgsPtrOnHeap, serviceArgs, sizeof(ThreadServiceArgs));
+    errno_t cpyRet = memcpy_s(serviceArgsPtrOnHeap, argsSizeByte, args, argsSizeByte);
+    CHK_PRT_RET(cpyRet != EOK, HCCL_ERROR("[%s] FAIL. memcpy_s args from stack[0x%llx] to heap[0x%llx] failed, errno[%d].",
+        __func__, args, serviceArgsPtrOnHeap, cpyRet), HCCL_E_INTERNAL);
     // TODO: push service request to thread entity's send queue
     return HCCL_E_NOT_SUPPORT;
 }

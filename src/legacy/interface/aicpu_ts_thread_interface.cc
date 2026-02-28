@@ -12,9 +12,13 @@
 
 #include <memory>
 #include <limits>
+#include <algorithm>
 
 #include "stream_lite.h"
 #include "rtsq_a5.h"
+
+using string = std::string;
+using exception = std::exception;
 
 namespace Hccl {
 
