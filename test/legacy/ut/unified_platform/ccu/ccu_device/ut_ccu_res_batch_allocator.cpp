@@ -175,7 +175,7 @@ TEST_F(CcuResBatchAllocatorTest, Ut_Init_When_AX_Mainboard_Expect_Return_Ok)
     allocater.devLogicId = devLogicId;
 
     EXPECT_NO_THROW(allocater.Init());
-    constexpr uint32_t BLOCK_SIZE_MS_AX_DIE0 = 64;
+    constexpr uint32_t BLOCK_SIZE_MS_AX_DIE0 = 128;
     EXPECT_EQ(allocater.resStrategys[0].msNum, BLOCK_SIZE_MS_AX_DIE0);
     ASSERT_EQ(allocater.resBlocks[0].size(), 3);
     DumpBlockResInfo(ResType::LOOP, allocater.resBlocks[0][0]);
