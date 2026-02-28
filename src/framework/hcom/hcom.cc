@@ -1720,20 +1720,21 @@ HcclResult HcomExecSelectAlg(s64 comm, const char *group, HcclCMDType opType, u6
 }
 
 HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts, HcclDataType dataType, HcclReduceOp op,
-    HcclCMDType opType, int32_t aivCoreLimit, bool &ifAiv, char *algName)
+    HcclCMDType opType, int32_t aivCoreLimit, bool *ifAiv, char *algName)
 {
-    HCCLV2_FUNC_RUN(HcomExecSelectAlg(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, algName));
+    CHK_PTR_NULL(ifAiv);
+    HCCLV2_FUNC_RUN(HcomExecSelectAlg(comm, group, opType, count, dataType, op, aivCoreLimit, *ifAiv, algName));
     HcclWorkflowMode lastWorkflowMode = GetWorkflowMode();
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
     std::string tempAlgName;
     if (comm != static_cast<int64_t>(CommNumHcom::COMM_VALUE_DEFAULT)) {
         hccl::hcclComm* hcclHcomComm = reinterpret_cast<hccl::hcclComm*>(comm);
-        CHK_RET(hcclHcomComm->HcclSelectAlg(opType, count, counts, dataType, op, aivCoreLimit, ifAiv, tempAlgName));
+        CHK_RET(hcclHcomComm->HcclSelectAlg(opType, count, counts, dataType, op, aivCoreLimit, *ifAiv, tempAlgName));
     } else {
         std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
         std::shared_ptr<hccl::hcclComm> hcclComm;
         CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
-        CHK_RET(hcclComm->HcclSelectAlg(opType, count, counts, dataType, op, aivCoreLimit, ifAiv, tempAlgName));
+        CHK_RET(hcclComm->HcclSelectAlg(opType, count, counts, dataType, op, aivCoreLimit, *ifAiv, tempAlgName));
     }
     int32_t sret = memcpy_s(algName, ALG_NAME_MAX_LEN, tempAlgName.c_str(), (tempAlgName.length() + 1));
     CHK_PRT_RET(sret != EOK, HCCL_ERROR("[HcomSelectAlg][algName]memcpy failed. ret[%d],"
@@ -1742,6 +1743,15 @@ HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts, H
     SetWorkflowMode(lastWorkflowMode);
     return HCCL_SUCCESS;
 }
+
+// 临时兼容处理：旧接口（引用版本）调用新接口,等待 GE 仓同步修改后，删除此兼容代码
+#ifdef HCOM_SELECT_ALG_COMPAT_MODE
+HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts,
+    HcclDataType dataType, HcclReduceOp op, HcclCMDType opType, int32_t aivCoreLimit, bool &ifAiv, char *algName) {
+    // 将引用转换为指针，调用新接口
+    return HcomSelectAlg(comm, group, count, counts, dataType, op, opType, aivCoreLimit, &ifAiv, algName);
+}
+#endif
 
 HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
         char *algName, u32 *numBlocks)
@@ -4067,24 +4077,5 @@ HcclResult HcomTbeMemClean(int64_t addrList[], int64_t sizeList[], uint32_t coun
     aclrtStream stream, int32_t deviceLogicId)
 {
     CHK_RET(HcclTbeMemClean(addrList, sizeList, count, stream,deviceLogicId));
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcomGetHcclComm(int64_t comm, std::string &group)
-{   
-    hccl::hcclComm* hcclComm = nullptr;
-    if (comm == static_cast<int64_t>(CommNumHcom::COMM_VALUE_DEFAULT)) {
-        std::shared_ptr<hccl::hcclComm> hcclCommPtr;
-        HcclResult ret = HcomGetCommByGroup(group.c_str(), hcclCommPtr);
-        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_WARNING("%s HcomGetCommByGroup fail, skip", __func__), HCCL_SUCCESS);
-        hcclComm = hcclCommPtr.get();
-    } else {
-        hcclComm = reinterpret_cast<hccl::hcclComm*>(comm);
-        CHK_PRT_RET(hcclComm == nullptr, HCCL_WARNING("%s comm is null, skip", __func__), HCCL_SUCCESS);
-        group = hcclComm->GetIdentifier();
-    }
-    CHK_PRT_RET(hcclComm == nullptr, HCCL_WARNING("%s hcclComm is null, skip", __func__), HCCL_SUCCESS);
-
-    HCCL_INFO("%s success, comm:%llu, group:%s, hcclComm:%p", __func__, comm, group.c_str(), hcclComm);
     return HCCL_SUCCESS;
 }
