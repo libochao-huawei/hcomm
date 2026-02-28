@@ -837,7 +837,6 @@ namespace hccl
             }
             for (size_t i = 0; i < devIdList0.size(); i++) {
                 if (devIdList0[i] % DEVICE_PER_MODULE != devIdList1[i] % DEVICE_PER_MODULE) {
-                    char errorLogBuffer[LOG_TMPBUF_SIZE];
                     std::string errormessage = "Device ID " + std::to_string(devIdList0[i]) + " in module 0 and device ID " + std::to_string(devIdList1[i]) + " in module 1 are not on the same plane.";
                     RPT_INPUT_ERR(true, "EI0010", std::vector<std::string>({"reason"}),
                                   std::vector<std::string>({ errormessage }));
