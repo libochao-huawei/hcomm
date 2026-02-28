@@ -38,6 +38,26 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
     HCCL_INFO("source: %s", locCntNotifyRes.Describe().c_str());
 }
 
+HcclResult UbMemTransport::FillTagVec()
+{
+    localUserMemTag_.reserve(commLocRes_.bufferVec.size());
+    HCCL_INFO("bufferNum: %d", commLocRes_.bufferVec.size());
+    uint32_t index = 0;
+    for (auto &localRmaBuffer : commLocRes_.bufferVec) {
+        std::array<char, HCCL_RES_TAG_MAX_LEN> tag{};
+        if (localRmaBuffer == nullptr) {
+            HCCL_WARNING("[UbMemTransport][FillTagVec] localRmaBuffer is nullptr. memHandleNum: %d", index);
+        } else {
+            CHK_SAFETY_FUNC_RET(memcpy_s(tag.data(), tag.size(), 
+                localIpcRmaBuffer->GetBuf()->GetMemTag(), HCCL_RES_TAG_MAX_LEN));
+            HCCL_INFO("[AivUbMemTransport][Init] memHandleNum[%d] memTag[%s]", index, tag.data());
+        }
+        localUserMemTag_.push_back(tag);
+        index++;
+    }
+    return HCCL_SUCCESS;
+}
+
 std::string UbMemTransport::Describe() const
 {
     string msg = StringFormat("UbMemTransport=[commonLocRes=%s, locCntNotifyRes=%s, ubStatus=%s, ",
@@ -520,6 +540,13 @@ void UbMemTransport::BufferVecPack(BinaryStream &binaryStream)
         }
         pos++;
     }
+
+    for (const auto& tag : localUserMemTag_) {
+        // 逐个字节传输
+        for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; ++i) {
+            binaryStream << static_cast<u8>(tag[i]);
+        }
+    }
 }
 
 void UbMemTransport::CntNotifyVecPack(BinaryStream &binaryStream)
@@ -571,10 +598,6 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
 
     HCCL_INFO("unpack %s %s, locNum=%u, rmtNum=%u", type.Describe().c_str(), GetLinkDescInfo().c_str(), locNum,
                rmtNum);
-    if (rmtNum != locNum) {
-        MACRO_THROW(InvalidParamsException,
-                    StringFormat("%s, locNum=%u is not equal to rmtNum=%u", type.Describe().c_str(), locNum, rmtNum));
-    }
 
     for (u32 i = 0; i < rmtNum; i++) {
         u32 pos;
@@ -595,6 +618,15 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
             bufferVec.push_back(make_unique<RemoteUbRmaBuffer>(rdmaHandle, dto));
             FillRmtRmaBufferVec(bufferVec.back().get(), type);
             HCCL_INFO("unpack buffer pos=%u, rmtRmaBuffer=%s", pos, bufferVec.back()->Describe().c_str());
+        }
+    }
+
+    remoteUserMemTag_.resize(vecSize);
+    for (auto& tag : remoteUserMemTag_) {
+        for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; ++i) {
+            u8 byte;
+            binaryStream >> byte;
+            tag[i] = static_cast<char>(byte);
         }
     }
 }
@@ -850,4 +882,52 @@ HcclResult UbMemTransport::DeInit() const
     return HCCL_SUCCESS;
 }
 
+HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+{
+    CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetUserRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!memTags, HCCL_ERROR("[GetUserRemoteMem] memTags is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!memNum, HCCL_ERROR("[GetUserRemoteMem] memNum is nullptr"), HCCL_E_PARA);
+    *remoteMem = nullptr;
+    *memTags = nullptr;
+    *memNum = 0;
+    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
+    uint32_t cclbufferNum = 1;
+    uint32_t userMemCount = rmtBufferVec_.size() - cclbufferNum;
+    if (userMemCount == 0) {
+        HCCL_INFO("[GetUserRemoteMem] No user remote memory found");
+        return HCCL_SUCCESS;
+    }
+    // 检查是否有缓存
+    if (!cacheValid_) {
+        remoteUserMems_.resize(userMemCount);
+        tagCopies_.clear();
+        tagCopies_.reserve(userMemCount);
+        tagPointers_.clear();
+        tagPointers_.reserve(userMemCount);
+        for (uint32_t i = 0; i < userMemCount; i++) {
+            auto& rmtBuffer = rmtBufferVec_[i+cclbufferNum];
+            switch (rmtBuffer->GetMemType()) {
+                case HCCL_MEM_TYPE_DEVICE:
+                    remoteUserMems_[i].type = COMM_MEM_TYPE_DEVICE;
+                    break;
+                case HCCL_MEM_TYPE_HOST:
+                    remoteUserMems_[i].type = COMM_MEM_TYPE_HOST;
+                    break;
+                default:
+                    remoteUserMems_[i].type = COMM_MEM_TYPE_INVALID;
+            }
+            remoteUserMems_[i].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
+            remoteUserMems_[i].size = rmtBuffer->GetSize();
+            const char* src = remoteUserMemTag_[i+cclbufferNum].data();
+            std::string tagCopy(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
+            tagCopies_.push_back(std::move(tagCopy));
+            tagPointers_.push_back(const_cast<char*>(tagCopies_.back().c_str()));
+        }
+        cacheValid_ = true;
+    }
+    *remoteMem = remoteUserMems_.data();
+    *memTags = tagPointers_.data();
+    *memNum = userMemCount;
+    return HCCL_SUCCESS;
+}
 } // namespace Hccl

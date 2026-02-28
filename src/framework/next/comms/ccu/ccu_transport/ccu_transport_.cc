@@ -42,9 +42,41 @@ HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConne
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConnectionInfo &ccuConnectionInfo,
+    const std::vector<CcuTransport::CclBufferInfo> &bufferInfos, std::unique_ptr<CcuTransport> &ccuTransport)
+{
+    CHK_PTR_NULL(socket);
+    std::unique_ptr<CcuConnection> ccuConnection{nullptr};
+    if (ccuConnectionInfo.type == CcuTransport::CcuConnectionType::UBC_CTP) {
+        ccuConnection.reset(new (std::nothrow) CcuCtpConnection(
+            ccuConnectionInfo.locAddr, ccuConnectionInfo.rmtAddr,
+            ccuConnectionInfo.channelInfo, ccuConnectionInfo.ccuJettys));
+    } else {
+        ccuConnection.reset(new (std::nothrow) CcuRtpConnection(
+            ccuConnectionInfo.locAddr, ccuConnectionInfo.rmtAddr,
+            ccuConnectionInfo.channelInfo, ccuConnectionInfo.ccuJettys));
+    }
+    CHK_PTR_NULL(ccuConnection);
+    CHK_RET(ccuConnection->Init());
+
+    ccuTransport.reset(new (std::nothrow)
+        CcuTransport(socket, std::move(ccuConnection), bufferInfos));
+    CHK_PTR_NULL(ccuTransport);
+    CHK_RET(ccuTransport->Init());
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
 CcuTransport::CcuTransport(Hccl::Socket *socket, std::unique_ptr<CcuConnection> &&connection,
     const CclBufferInfo &locCclBufInfo)
-    : socket_(socket), ccuConnection_(std::move(connection)), locCclBufInfo_(locCclBufInfo)
+    : socket_(socket), ccuConnection_(std::move(connection))
+{
+    locBufferInfos_.push_back(locCclBufInfo);
+}
+
+CcuTransport::CcuTransport(Hccl::Socket *socket, std::unique_ptr<CcuConnection> &&connection,
+    const CclBufferInfo &locCclBufInfo)
+    : socket_(socket), ccuConnection_(std::move(connection)), bufferInfos_(bufferInfos)
 {
 }
 
@@ -225,7 +257,7 @@ HcclResult CcuTransport::SendConnAndTransInfo()
     CHK_RET(HandshakeMsgPack(binaryStream));
     CHK_RET(ConnInfoPack(binaryStream));
     CHK_RET(TransResPack(binaryStream));
-    CHK_RET(CclBufferInfoPack(binaryStream));
+    CHK_RET(BufferInfoPack(binaryStream));
     binaryStream.Dump(sendData_);
     // 当前socket失败会抛异常，需要统一整改
     EXCEPTION_HANDLE_BEGIN
@@ -250,7 +282,7 @@ HcclResult CcuTransport::RecvDataProcess()
     CHK_RET(HandshakeMsgUnpack(binaryStream));
     CHK_RET(ConnInfoUnpackProc(binaryStream));
     CHK_RET(TransResUnpackProc(binaryStream));
-    CHK_RET(CclBufferInfoUnpack(binaryStream));
+    CHK_RET(BufferInfoUnpack(binaryStream));
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -317,9 +349,13 @@ HcclResult CcuTransport::TransResPack(Hccl::BinaryStream &binaryStream)
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuTransport::CclBufferInfoPack(Hccl::BinaryStream &binaryStream) const
+HcclResult CcuTransport::BufferInfoPack(Hccl::BinaryStream &binaryStream) const
 {
-    locCclBufInfo_.Pack(binaryStream);
+    u32 locBufferNum = locBufferInfos_.size();
+    binaryStream << bufferNum;
+    for (u32 pos = 0; pos < bufferNum; ++pos) {
+        locBufferInfos_.Pack(binaryStream);
+    }
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -368,9 +404,16 @@ HcclResult CcuTransport::TransResUnpackProc(Hccl::BinaryStream &binaryStream)
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuTransport::CclBufferInfoUnpack(Hccl::BinaryStream &binaryStream)
+HcclResult CcuTransport::BufferInfoUnpack(Hccl::BinaryStream &binaryStream)
 {
-    rmtCclBufInfo_.Unpack(binaryStream);
+    rmtBufferInfos_.clear();
+    u32 rmtBufferNum{0};
+    binaryStream >> rmtBufferNum;
+    for (u32 pos = 0; pos < bufferNum; ++pos) {
+        CclBufferInfo rmtBufferInfo{};
+        rmtBufferInfo.Unpack(binaryStream);
+        rmtBufferInfos_.push_back(rmtBufferInfo);
+    }
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -511,14 +554,14 @@ HcclResult CcuTransport::GetRmtXnByIndex(const uint32_t index, uint32_t &rmtXnId
 HcclResult CcuTransport::GetLocBuffer(CclBufferInfo &bufferInfo, const uint32_t &bufNum) const
 {
     (void)bufNum;
-    bufferInfo = locCclBufInfo_;
+    bufferInfo = locBufferInfos_[0];
     return HCCL_SUCCESS;
 }
 
 HcclResult CcuTransport::GetRmtBuffer(CclBufferInfo &bufferInfo, const uint32_t &bufNum) const
 {
     (void)bufNum;
-    bufferInfo = rmtCclBufInfo_;
+    bufferInfo = rmtBufferInfos_[0];
     return HCCL_SUCCESS;
 }
 
@@ -555,4 +598,43 @@ void CcuTransport::Clean()
     ccuConnection_->Clean();
 }
 
+HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+{
+    CHK_PRT_RET(!remoteMem, HCCL_ERROR("[GetUserRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!memTags, HCCL_ERROR("[GetUserRemoteMem] memTags is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(!memNum, HCCL_ERROR("[GetUserRemoteMem] memNum is nullptr"), HCCL_E_PARA);
+    *remoteMem = nullptr;
+    *memTags = nullptr;
+    *memNum = 0;
+    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
+    uint32_t cclbufferNum = 1;
+    uint32_t userMemCount = rmtBufferVec_.size() - cclbufferNum;
+    if (userMemCount == 0) {
+        HCCL_INFO("[GetUserRemoteMem] No user remote memory found");
+        return HCCL_SUCCESS;
+    }
+    // 检查是否有缓存
+    if (!cacheValid_) {
+        remoteUserMems_.resize(userMemCount);
+        tagCopies_.clear();
+        tagCopies_.reserve(userMemCount);
+        tagPointers_.clear();
+        tagPointers_.reserve(userMemCount);
+        for (uint32_t i = 0; i < userMemCount; i++) {
+            auto& rmtBufferInfo = rmtBufferInfos_[i+cclbufferNum];
+            remoteUserMems_[i].type = rmtBufferInfo.type;
+            remoteUserMems_[i].addr = rmtBufferInfo.addr;
+            remoteUserMems_[i].size = rmtBufferInfo.size;
+            const char* src = rmtBufferInfo.memTag.data();
+            std::string tagCopy(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
+            tagCopies_.push_back(std::move(tagCopy));
+            tagPointers_.push_back(const_cast<char*>(tagCopies_.back().c_str()));
+        }
+        cacheValid_ = true;
+    }
+    *remoteMem = remoteUserMems_.data();
+    *memTags = tagPointers_.data();
+    *memNum = userMemCount;
+    return HCCL_SUCCESS;
+}
 } // namespace hcomm

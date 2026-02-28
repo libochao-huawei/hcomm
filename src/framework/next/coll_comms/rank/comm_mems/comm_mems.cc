@@ -83,6 +83,12 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
     CHK_PRT_RET(mem.addr == nullptr || mem.size == 0, HCCL_ERROR("[CommRegMem] invalid mem. addr[%p] size[%llu]",
         mem.addr, (unsigned long long)mem.size), HCCL_E_PARA);
  
+    auto opIt = opBindings_.find(memTag);
+    if (opIt != opBindings_.end()) {
+        HCCL_ERROR("[CommRegMem] memTag has already been registered.");
+        return HCCL_E_PARA;
+    }
+
     // 组装句柄（仅域内管理，无进程级注册）
     Handle h;
     EXECEPTION_CATCH(h = std::make_shared<CommMemHandle>(), return HCCL_E_PTR);
@@ -110,10 +116,7 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
     }
  
     // 加入绑定map
-    auto opIt = opBindings_.find(memTag);
-    if (opIt == opBindings_.end()) {
-        opBindings_.emplace(memTag, h); 
-    }
+    opBindings_.emplace(memTag, h);
 
     // 新增反查map，用于aiv建链交换内存
     auto opRevIt = opReverseBindings_.find(h.get());
