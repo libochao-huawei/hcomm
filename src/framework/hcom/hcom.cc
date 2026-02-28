@@ -1378,6 +1378,7 @@ HcclResult HcomGetLocalRankSize(const char *group, u32 *localRankSize)
         "group",
         "a non-empty string of length 1 to " + std::to_string(GROUP_NAME_MAX_LEN) +
         ", containing only alphanumeric characters and underscores"
+    }));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] get local ranksize " \
         "group name is invalid", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
@@ -1417,6 +1418,7 @@ HcclResult HcomGetRankId(const char *group, u32 *rankId)
         "group",
         "a non-empty string of length 1 to " + std::to_string(GROUP_NAME_MAX_LEN) +
         ", containing only alphanumeric characters and underscores"
+    }));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] get_rank_id group name is invalid",
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
