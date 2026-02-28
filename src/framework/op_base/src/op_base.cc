@@ -3153,6 +3153,76 @@ HcclResult HcclCommDestroy(HcclComm comm)
     return HCCL_SUCCESS;
 }
 
+static HcclConfigTypeOpExpansionMode OpExpanionModeValueToModeEnum(const uint32_t value)
+{
+    constexpr uint32_t defaultMode = 0;
+    constexpr uint32_t hostTsMode = 1;
+    constexpr uint32_t aicpuTsMode = 2;
+    constexpr uint32_t aivMode = 3;
+    constexpr uint32_t aivOnlyMode = 4;
+    constexpr uint32_t ccuMsMode = 5;
+    constexpr uint32_t ccuSchedMode = 6;
+    constexpr uint32_t aicpuMode = 7;
+
+    swith(value) {
+        case defaultMode:
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_CCU_SCHED;
+        case hostTsMode:
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_HOST_TS;
+        case aicpuTsMode:
+        case aicpuMode:
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_AI_CPU;
+        case ccuMsMode:
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_CCU_MS;
+        case ccuSchedMode:
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_CCU_SCHED;
+        case aivMode:
+        case aivOnlyMode:
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_AIV;
+        default:
+            break;
+    }
+
+    return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_INVALID;
+}
+
+HcclResult HcclConfigGetInfo(HcclComm comm, HcclConfigType cfgType,
+    uint32_t infoLen, void *info)
+{
+    HCCL_RUN_INFO("Entry-%s", __func__);
+    CHK_PTR_NULL(comm);
+
+    if (cfgType != HcclConfigType::HCCL_CONFIG_TYPE_OP_EXPANSION_MODE) {
+        HCCL_ERROR("[%s] cfgType[%d] is not supported yet.", __func__, cfgType);
+        return HcclResult::HCCL_E_NOT_SUPPORT;
+    }
+
+    constexpr size_t infoExpetedLen = sizeof(HcclConfigTypeOpExpansionMode);
+    if (static_cast<size_t>(infoLen) != infoExpetedLen) {
+        HCCL_ERROR("[%s] cfgType[%d] infoLen[%u] is less than expected[%zu].",
+            __func__, cfgType, infoLen, infoExpetedLen);
+        return HcclResult::HCCL_E_PARA;
+    }
+
+    auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    auto *collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+
+    auto *myRank = collComm->GetMyRank();
+    CHK_PTR_NULL(myRank);
+    const uint32_t opExpansionModeValue = myRank->GetOpExpansionMode();
+    const auto opExpansionMode = OpExpanionModeValueToModeEnum(opExpansionModeValue);
+    if (opExpansionMode == HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_INVALID) {
+        HCCL_ERROR("[%s] unknown expansion mode[%d].", __func__, opExpansionMode);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
+    auto *modeInfo = static_cast<HcclConfigTypeOpExpansionMode *>(info);
+    *modeInfo = opExpansionMode;
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult HcclGenerateCommId(hccl::HcclCommParams &params)
 {
     s32 sRet = memset_s(params.id.internal, HCCL_ROOT_INFO_BYTES, 0, sizeof(params.id.internal));
