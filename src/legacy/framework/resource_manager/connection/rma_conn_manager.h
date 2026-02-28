@@ -43,6 +43,8 @@ public:
     void Clear();
 
 private:
+    void                      GetDeleteJettys(BatchDeleteJettyInfo &batchDeleteJettyInfo);
+    void                      BatchDeleteJettys();
     unique_ptr<RmaConnection> CreateRdmaConn(Socket *socket, const std::string &tag, const LinkData &linkData) const;
     unique_ptr<RmaConnection> CreateUbConn(Socket *socket, const std::string &tag, const LinkData &linkData, 
                                            const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL) const;

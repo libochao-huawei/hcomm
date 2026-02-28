@@ -673,11 +673,6 @@ HrtUbJfcMode DevUbConnection::GetUbJfcMode() const
     return jfcMode;
 }
 
-JettyHandle DevUbConnection::GetJettyHandle() const
-{
-    return 3;
-}
-
 u32 DevUbConnection::GetPiVal() const
 {
     return 4;
