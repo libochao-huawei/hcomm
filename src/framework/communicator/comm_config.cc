@@ -350,7 +350,7 @@ HcclResult CommConfig::SetConfigOpExpansionMode(const CommConfigHandle &config)
             // 目前只有A3和300I支持Aicpu展开
             DevType deviceType;
             CHK_RET(hrtGetDeviceType(deviceType));
-            if (deviceType == DevType::DEV_TYPE_910_93) {
+            if (deviceType == DevType::DEV_TYPE_910_93 || deviceType == DevType::DEV_TYPE_910B) {
                 aicpuUnfold_ = true;
                 aivMode_ = false;
                 HCCL_INFO("CommConfig is set to 2(aicpuUnfold_), aicpuUnfold_ is [%d] and aivMode_ is [%d].", aicpuUnfold_, aivMode_);
