@@ -688,6 +688,8 @@ namespace hccl
                     if (singleSubCommTransport.virtualLinks[i] != nullptr)
                     {
                         singleSubCommTransport.virtualLinks[i]->DeInit();
+                        HCCL_ERROR("[TEST]virtualLinks[%u] count[%d]", i, singleSubCommTransport.virtualLinks[i].use_count());
+                        
                     }
                 }
                 for (u32 i = 0; i < singleSubCommTransport.links.size(); i++)
@@ -695,14 +697,18 @@ namespace hccl
                     if (singleSubCommTransport.transportRequests[i].isValid && singleSubCommTransport.links[i] != nullptr)
                     {
                         singleSubCommTransport.links[i]->DeInit();
+                        HCCL_ERROR("[TEST]links[%u] count[%d]", i, singleSubCommTransport.links[i].use_count());
                     }
                 }
+                singleSubCommTransport.virtualLinks.clear();
+                singleSubCommTransport.links.clear();
             }
         }
     }
 
     void HcclCommunicator::DestroyAlgResource(AlgResourceResponse &res)
     {
+        HCCL_ERROR("[TEST][%s]entry DestroyOpTransportResponse", __func__);
         DestroyOpTransportResponse(res.opTransportResponse);
         if (IsEnableBackupLink())
         {
