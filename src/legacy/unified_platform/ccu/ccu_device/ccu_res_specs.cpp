@@ -152,7 +152,7 @@ HcclResult CcuResSpecifications::Init_()
                 continue;
             }
             resSpecs[dieId] = CheckResSpecifications(devPhyId, dieId, ccuVersion);
-            HrtGetCcuMemInfo(tlvHandle, dieId, memTypeBitmap, &resSpecs[dieId].memInfoList, count);
+            HrtGetCcuMemInfo(tlvHandle, dieId, memTypeBitmap, resSpecs[dieId].memInfoList, count);
         }
         HcclMainboardId hcclMainboardId;
         CHK_RET(HrtGetMainboardId(devLogicId, hcclMainboardId));
@@ -186,8 +186,8 @@ HcclResult CcuResSpecifications::GetDieEnableFlag(const uint8_t dieId, bool &die
 HcclResult CcuResSpecifications::GetCcuMemInfoList(const uint8_t dieId, struct CcuMemInfo *memInfoList, uint32_t *count) const
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
-    memInfoList = &resSpecs[dieId].memInfoList;
-    count = GetMemTypeVector().size();
+    memInfoList = resSpecs[dieId].memInfoList;
+    count = static_cast<uint32_t>(GetMemTypeVector().size());
     return HcclResult::HCCL_SUCCESS;
 }
 
