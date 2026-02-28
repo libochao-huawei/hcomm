@@ -233,7 +233,7 @@ HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum) // host fft
             Thread *threadPtrLoop = reinterpret_cast<Thread *>(threads[i]);
             CHK_PTR_NULL(threadPtrLoop);
             HCCL_INFO("[%s] Launching task in thread[0x%llx].", __func__, threads[i]);
-            CHK_RET(threadPtrLoop->LaunchTask());
+            EXECEPTION_CATCH(threadPtrLoop->LaunchTask(), return HCCL_E_INTERNAL);
         }
         return HCCL_SUCCESS;
     }
@@ -312,7 +312,7 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
     if (threadPtr->IsDeviceA5()) {
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
-        auto *const streamLitePtr = threadPtr->GetStreamLitePtr();
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
 
         Hccl::RmaBufferLite locRmaBuf;
@@ -358,7 +358,7 @@ int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, voi
     if (threadPtr->IsDeviceA5()) {
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
-        auto *const streamLitePtr = threadPtr->GetStreamLitePtr();
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
 
         Hccl::RmaBufferLite locRmaBuf;
@@ -431,7 +431,7 @@ int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel,
         HCCL_DEBUG("[%s] Running on A5.", __func__);
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
-        auto *const streamLitePtr = threadPtr->GetStreamLitePtr();
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
 
         Hccl::RmaBufferLite locRmaBuf;
@@ -480,7 +480,7 @@ int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHandle ch
         HCCL_DEBUG("[%s] Running on A5.", __func__);
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
-        auto *const streamLitePtr = threadPtr->GetStreamLitePtr();
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
 
         Hccl::RmaBufferLite locRmaBuf;
@@ -525,7 +525,7 @@ int32_t HcommReadOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
     if (threadPtr->IsDeviceA5()) {
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
-        auto *const streamLitePtr = threadPtr->GetStreamLitePtr();
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
 
         Hccl::RmaBufferLite locRmaBuf;
@@ -571,7 +571,7 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
     if (threadPtr->IsDeviceA5()) {
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
-        auto *const streamLitePtr = threadPtr->GetStreamLitePtr();
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
 
         Hccl::RmaBufferLite locRmaBuf;
@@ -647,7 +647,7 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
         HCCL_DEBUG("[%s] Running on A5.", __func__);
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
-        auto *const streamLitePtr = threadPtr->GetStreamLitePtr();
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
 
         EXECEPTION_CATCH(ubTransportLitePtr->Post(remoteNotifyIdx, *streamLitePtr), ret = HCCL_E_INTERNAL);
@@ -682,7 +682,7 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
         HCCL_DEBUG("[%s] Running on A5.", __func__);
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
-        auto *const streamLitePtr = threadPtr->GetStreamLitePtr();
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
 
         (void)timeout;
@@ -764,13 +764,18 @@ int32_t HcommRequestServiceOnThread(ThreadHandle threadHandle, ThreadServiceHand
 {
     HCCL_INFO("[%s] threadHandle[0x%llx], serviceHandle[0x%llx], serviceArgs[0x%llx].", __func__, threadHandle, serviceHandle, serviceArgs);
     ThreadEntity *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(threadHandle);
+    // TODO: CHK PTR NULL serviceHandle
     CHK_PTR_NULL(threadEntityPtr);
+    CHK_PTR_NULL(serviceArgs);
 
-    if (!(threadEntityPtr->type == THREAD_TYPE_CPU && threadEntityPtr->engine == COMM_ENGINE_AICPU)) {
-        HCCL_ERROR("[%s] thread type should be THREAD_TYPE_CPU.", __func__);
+    if (!(threadEntityPtr->type == THREAD_TYPE_CPU && threadEntityPtr->engine == COMM_ENGINE_CPU)) {
+        HCCL_ERROR("[%s] thread type should be THREAD_TYPE_CPU and engine should be COMM_ENGINE_CPU.", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
-    // TODO: Malloc a memory to store serviceArgs, free the memory after the service is completed.
+    // TODO: free the memory after the service is completed.
+    const ThreadServiceArgs *const serviceArgsPtrOnHeap = malloc(sizeof(ThreadServiceArgs));
+    CHK_PTR_NULL(serviceArgsPtrOnHeap);
+    memcpy(serviceArgsPtrOnHeap, serviceArgs, sizeof(ThreadServiceArgs));
     // TODO: push service request to thread entity's send queue
     return HCCL_E_NOT_SUPPORT;
 }

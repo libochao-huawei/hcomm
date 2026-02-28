@@ -161,14 +161,14 @@ Stream *CpuTsThread::GetStream() const
 }
 
 // A5 Stream
-Hccl::StreamLite *CpuTsThread::GetStreamLitePtr() const
+void *CpuTsThread::GetStreamLitePtr() const
 {
     return nullptr;  // Not implemented
 }
 
-HcclResult CpuTsThread::LaunchTask() const
+void CpuTsThread::LaunchTask() const
 {
-    return HCCL_E_NOT_SUPPORT;  // Not implemented
+    return;
 }
 
 // Local Data Plane Functions
