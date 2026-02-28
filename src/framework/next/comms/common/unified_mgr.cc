@@ -10,6 +10,8 @@
 
 #include "unified_mgr.h"
 
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+
 #include "hccl_common.h"
 
 // orion 通用平台层单例
@@ -30,6 +32,8 @@
 #include "../ccu/ccu_device/ccu_res_batch_allocator.h"
 #include "ccu_kernel_mgr.h"
 
+#endif
+
 namespace hcomm {
 
 UnifiedMgr& UnifiedMgr::GetInstance(const uint32_t devicePhyId)
@@ -40,7 +44,7 @@ UnifiedMgr& UnifiedMgr::GetInstance(const uint32_t devicePhyId)
             "less than %u.", __func__, devPhyId, MAX_MODULE_DEVICE_NUM);
         devPhyId = MAX_MODULE_DEVICE_NUM; // 使用备份设备
     }
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     // 临时方案：只声明单例对象做生命周期控制，不执行业务动作
     // 未来需要将各种单例转为该数据结构的成员变量
     // devicePhyId 目前不影响流程，只是触发静态对象声明
@@ -62,7 +66,7 @@ UnifiedMgr& UnifiedMgr::GetInstance(const uint32_t devicePhyId)
     CcuComponent::GetInstance(devicePhyId);
     CcuResBatchAllocator::GetInstance(devicePhyId);
     CcuKernelMgr::GetInstance(devicePhyId);
-
+#endif
     static UnifiedMgr unifiedMgrs[MAX_MODULE_DEVICE_NUM + 1];
     unifiedMgrs[devPhyId].devPhyId_ = devPhyId;
 
