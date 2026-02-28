@@ -688,6 +688,7 @@ namespace hccl
                     if (singleSubCommTransport.virtualLinks[i] != nullptr)
                     {
                         singleSubCommTransport.virtualLinks[i]->DeInit();
+                        
                     }
                 }
                 for (u32 i = 0; i < singleSubCommTransport.links.size(); i++)
@@ -697,6 +698,8 @@ namespace hccl
                         singleSubCommTransport.links[i]->DeInit();
                     }
                 }
+                singleSubCommTransport.virtualLinks.clear();
+                singleSubCommTransport.links.clear();
             }
         }
     }
