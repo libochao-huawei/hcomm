@@ -4536,6 +4536,18 @@ ACL_FUNC_VISIBILITY aclError aclrtCacheLastTaskOpInfo(const void * const infoPtr
  * @retval OtherValues Failure
  */
 ACL_FUNC_VISIBILITY aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t flags);
+
+/**
+ * @ingroup AscendCL
+ * @brief register callback func for model destroy
+ * @param [in] modelRI  model to execute
+ * @param [in] func     callback func
+ * @param [in] ptr      User data to be passed to the callback function
+ * @retval ACL_SUCCESS The function is successfully executed.
+ * @retval OtherValues Failure
+ */
+ACL_FUNC_VISIBILITY aclError aclmdlRIDestroyRegisterCallback(aclmdlRI modelRI, aclrtCallback func, void *userData);
+
 #ifdef __cplusplus
 }
 #endif
