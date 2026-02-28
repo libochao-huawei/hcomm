@@ -178,7 +178,7 @@ public:
     HcclResult GetWqeBBNum(const uint8_t dieId, uint32_t &wqeBBNum) const;
 
     // ccu mem info 
-    HcclResult GetCcuMemInfoList(const uint8_t dieId, struct CcuMemInfo *memInfoList, uint32_t *count) const;
+    HcclResult GetCcuMemInfoList(const uint8_t dieId, struct CcuMemInfo *memInfoList, uint32_t *count);
 
 private:
     int32_t devLogicId{0};
