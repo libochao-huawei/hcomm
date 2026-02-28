@@ -154,6 +154,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/detect/detect_connect_anomalies/
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/recovery/operator_retry
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/snapshot
+    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/aclgraph
     ${HCCL_CODE_ROOT}/src/framework/common/src/host
     ${HCCL_CODE_ROOT}/src/framework/common/src/config
     ${HCCL_CODE_ROOT}/src/framework/common/src/task
