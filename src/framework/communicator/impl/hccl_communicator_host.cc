@@ -4280,6 +4280,7 @@ namespace hccl
             CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
             // 移除tag对应的指令信息
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+            CHK_RET(InsertNewTagToCaptureResMap(newTag, opParam));
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
         bool needIncreLink = false;
@@ -4545,6 +4546,7 @@ namespace hccl
             CHK_RET(RecordOpPara(opType, opParam));
             CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+            CHK_RET(InsertNewTagToCaptureResMap(newTag, opParam));
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
         if (resMap_.find(newTag) == resMap_.end()) {
@@ -8954,5 +8956,72 @@ namespace hccl
         }
         HCCL_INFO("[%s] aicpuUnfoldConfig[%u]", __func__, GetAicpuUnfoldConfig());
         return GetAicpuUnfoldConfig();
+    }
+
+    void AclgraphDestroyCallback(void *fnData)
+    {
+        AclgraphDestroyCallbackParam *callbackParam = static_cast<AclgraphDestroyCallbackParam *>(fnData);
+        HCCL_INFO("[%s] Entry", __func__);
+        HCCL_INFO("[%s] callbackParam[%p]", __func__, callbackParam);
+        HcclCommunicator *communicator = callbackParam->communicator;
+        HCCL_INFO("[%s] communicator[%p]", __func__, communicator);
+        HCCL_INFO("[%s] modelId[%llu]", __func__, callbackParam->modelId);
+
+        HcclResult ret = communicator->CleanCaptureRes(callbackParam->modelId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[%s] modelID[%llu] CleanCaptureRes failed", __func__, callbackParam->modelId);
+        }
+    }
+
+    HcclResult HcclCommunicator::CleanCaptureRes(u64 modelId)
+    {
+        HcclResult ret;
+
+        auto it = captureResMap_.find(modelId);
+        if (it == captureResMap_.end()) {
+            HCCL_ERROR("[%s] modelID[%llu] is not record", __func__, modelId);
+            return HCCL_E_NOT_FOUND;
+        }
+        HCCL_INFO("[%s] modelID[%llu] found", __func__, modelId);
+
+        for (const auto& tag : it->second) {
+            HCCL_INFO("[%s] modelID[%llu] tag[%s]", __func__, modelId, tag.c_str());
+            ret = ClearOpResource(tag);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[%s] modelID[%llu] tag[%s] resource release fail", __func__, modelId, tag.c_str());
+                return ret;
+            }
+            HCCL_INFO("[%s] modelID[%llu] tag[%s] resource release success", __func__, modelId, tag.c_str());
+        }
+
+        captureResMap_.erase(modelId);
+        captureCallbackParamMap_.erase(modelId);
+        HCCL_INFO("[%s] modelID[%llu] resource release success", __func__, modelId);
+
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::InsertNewTagToCaptureResMap(const std::string &newTag, const OpParam &opParam)
+    {
+        aclmdlRI rtModel = nullptr;
+        bool isCapture = false;
+        u64 modelId = 0;
+        CHK_RET(GetStreamCaptureInfo(opParam.stream.ptr(), rtModel, isCapture));
+        CHK_PTR_NULL(rtModel);
+        CHK_RET(GetModelId(rtModel, modelId));
+        if (captureResMap_.find(modelId) == captureResMap_.end()) {
+            captureCallbackParamMap_[modelId].communicator = this;
+            captureCallbackParamMap_[modelId].modelId = modelId;
+            HCCL_INFO("[%s] callbackParam[%p]", __func__, &captureCallbackParamMap_[modelId]);
+            aclError aclRet = aclmdlRIDestroyRegisterCallback(rtModel, AclgraphDestroyCallback,
+                static_cast<void *>(&captureCallbackParamMap_[modelId]));
+            CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[%s] aclmdlRIDestroyRegisterCallback fail, modelId[%llu]",
+                __func__, modelId), HCCL_E_RUNTIME);
+            HCCL_INFO("[%s] aclmdlRIDestroyRegisterCallback success modelID[%llu]", __func__, modelId);
+        }
+        captureResMap_[modelId].insert(newTag);
+        HCCL_INFO("[%s] captureResMap insert tag[%s] to modelID[%llu]", __func__, newTag.c_str(), modelId);
+
+        return HCCL_SUCCESS;
     }
 }
