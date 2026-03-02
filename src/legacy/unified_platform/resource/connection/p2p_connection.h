@@ -9,12 +9,14 @@
  */
 #ifndef HCCLV2_RMA_P2P_CONNECTION_H
 #define HCCLV2_RMA_P2P_CONNECTION_H
-#include "socket_manager.h"
-#include "virtual_topo.h"
-#include "rma_connection.h"
 
 #include <map>
 #include <string>
+
+#include "socket_manager.h"
+#include "virtual_topo.h"
+#include "rma_connection.h"
+#include "task.h"
 
 namespace Hccl {
 
