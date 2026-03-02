@@ -7,13 +7,14 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include "hcomm_c_adpt.h"
+
 #include <mutex>
 
 #include "hccl_api.h"
 #include "hcomm_res.h"
 #include "hcomm_res_defs.h"
 #include "log.h"
-#include "hcomm_c_adpt.h"
 #include "../endpoints/endpoint.h"
 #include "../endpoint_pairs/channels/channel.h"
 #include "thread.h"
@@ -25,7 +26,8 @@
 #include "launch_aicpu.h"
 #include "comm_configer.h"
 #include "endpoint_map.h"
-#include "endpoint_map.h"
+#include "resource_entities.h"
+#include "orion_adapter_rts.h"
 
 namespace hcomm {
 static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
@@ -663,4 +665,73 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
     }
     HCCL_INFO("[%s]copy engine ctx success, engine[%d]", __func__, engine);
     return HCCL_SUCCESS;
+}
+
+/* Built-in services for AICPU engine + CPU thread type */
+HcclResult RecordService(void *args, uint64_t argsSizeByte)
+{
+    CHK_PTR_NULL(args);
+    if (argsSizeByte != sizeof(hccl::RecordServiceArgs)) {
+        HCCL_ERROR("[%s] invalid argsSizeByte[%llu], expected sizeof(RecordServiceArgs)[%zu]", __func__, argsSizeByte, sizeof(hccl::RecordServiceArgs));
+        return HCCL_E_PARA;
+    }
+    const auto &serviceArgs = *reinterpret_cast<hccl::RecordServiceArgs *>(args);
+    const ThreadHandle srcThreadHdl = serviceArgs.threadHandle;
+    const ThreadHandle dstThreadHdl = serviceArgs.dstThreadHandle;
+    const uint32_t     dstNotifyIdx = serviceArgs.dstNotifyIdx;
+    HCCL_INFO("[%s] START. srcThreadHandle[0x%llx], dstThreadHandle[0x%llx], dstNotifyIdx[%u]",
+        __func__, srcThreadHdl, dstThreadHdl, dstNotifyIdx);
+    
+    if (hcomm::g_ThreadMap.find(dstThreadHdl) == hcomm::g_ThreadMap.end()) {
+        HCCL_ERROR("[%s] FAIL. dstThreadHandle[0x%llx] not found in g_ThreadMap.", __func__, dstThreadHdl);
+        return HCCL_E_NOT_FOUND;
+    }
+    hccl::Thread *const dstThread = hcomm::g_ThreadMap[dstThreadHdl].get();
+    auto *const dstAicpuTsThread = dynamic_cast<hccl::AicpuTsThread *>(dstThread);
+    if (dstAicpuTsThread == nullptr) {
+        HCCL_ERROR("[%s] FAIL. g_ThreadMap.at(dstThreadHandle) is not AicpuTsThread.", __func__);
+        return HCCL_E_PARA;
+    }
+
+    LocalNotify *dstNotifyPtr = dstAicpuTsThread->GetLocalNotify(dstNotifyIdx);
+    if (dstNotifyPtr == nullptr) {
+        HCCL_ERROR("[%s] FAIL. dstAicpuTsThread->GetLocalNotify failed for dstNotifyIdx[%u].", __func__, dstNotifyIdx);
+        return HCCL_E_PARA;
+    }
+    HcclSignalInfo notifyInfo{};
+    CHK_RET(dstNotifyPtr->GetNotifyData(notifyInfo));
+    void *const notifyAddrOnDev = notifyInfo.addr;
+    const uint64_t recordValue = 1;
+    const uint64_t notifySize = sizeof(uint8_t);  // on 91095, notify size is 8 bit.
+    TRY_CATCH_RETURN(HrtMemCpy(notifyAddrOnDev, notifySize, &recordValue, notifySize, RT_MEMCPY_HOST_TO_DEVICE));
+    return HCCL_SUCCESS;
+}
+
+HcclResult WaitService(void *args, uint64_t argsSizeByte)
+{
+    CHK_PTR_NULL(args);
+    if (argsSizeByte != sizeof(hccl::WaitServiceArgs)) {
+        HCCL_ERROR("[%s] invalid argsSizeByte[%llu], expected sizeof(WaitServiceArgs)[%zu]", __func__, argsSizeByte, sizeof(hccl::WaitServiceArgs));
+        return HCCL_E_PARA;
+    }
+    const auto &serviceArgs = *reinterpret_cast<hccl::WaitServiceArgs *>(args);
+    const ThreadHandle threadHdl = serviceArgs.threadHandle;
+    const uint32_t     notifyIdx = serviceArgs.notifyIdx;
+    HCCL_INFO("[%s] START. threadHandle[0x%llx], notifyIdx[%u]", __func__, threadHdl, notifyIdx);
+
+    if (hcomm::g_ThreadMap.find(threadHdl) == hcomm::g_ThreadMap.end()) {
+        HCCL_ERROR("[%s] FAIL. threadHandle[0x%llx] not found in g_ThreadMap.", __func__, threadHdl);
+        return HCCL_E_NOT_FOUND;
+    }
+    hccl::Thread *const thread = hcomm::g_ThreadMap[threadHdl].get();
+    hccl::CpuThread *const cpuThread = dynamic_cast<hccl::CpuThread *>(thread);
+    if (cpuThread == nullptr) {
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx] is not CpuThread.", __func__, threadHdl);
+        return HCCL_E_INTERNAL;
+    }
+
+    //TODO:
+
+    return HCCL_SUCCESS;
+
 }
