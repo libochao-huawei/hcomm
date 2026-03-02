@@ -820,6 +820,9 @@ const ReduceOp InsAicpuReduce::GetReduceOp() const
 template <typename T>
 void InsAicpuReduce::AicpuReduceTemplate(T* dst, u64 dstSize, T* src, u64 srcSize, ReduceOp reduceOp)
 {
+    if (dst == nullptr || src == nullptr) {
+        THROW<NullPtrException>(StringFormat("nsAicpuReduce::AicpuReduceTemplate dst or src is nullptr"));
+    }
     if (dstSize != srcSize) {
         string msg = StringFormat("srcSize[" PRIu64 "] should be equal to dstSize[" PRIu64 "]",
                 srcSize, dstSize);

@@ -489,6 +489,7 @@ HcclResult InsBatchSendRecvExecutor<AlgTopoMatch>::Orchestrate(const AlgTopoInfo
     CHK_RET(InitQueue(tempResReq.queNum, requiredQue_));
     HCCL_DEBUG("[InsBatchSendRecvExecutor] Rank[%d], requiredQue Num [%u].", myRank_, tempResReq.queNum);
 
+    CHK_PTR_NULL(linkMgr);
     CHK_RET(PrepResLinks(myRank_, tempResReq.links, linkMgr, tempResLinks_));
 
     // cclbuffer
