@@ -40,7 +40,7 @@ HcclResult hcclH2dTlv::InitHccpChannel(u32 devicePhyId)
         return HCCL_SUCCESS;
     }
 
-    u32 phyID = ((s32)devicePhyId == HOST_DEVICE_ID) ? 0 : devicePhyId;
+    u32 phyID = (static_cast<s32>(devicePhyId) == HOST_DEVICE_ID) ? 0 : devicePhyId;
     nslb_inithccp_info nslbHccp;
     nslbHccp.version = NSLBDP_HCCP_VERSION;
     nslbHccp.phyId = phyID;
