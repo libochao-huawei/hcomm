@@ -70,27 +70,43 @@ std::pair<TokenIdHandle, uint32_t> InnerNetDev::getTokenIdInfo(const BufferKey<u
 
 InnerNetDev::~InnerNetDev()
 {
-    if (localProto_ == LinkProtoType::RDMA) {
-        if (tokenHandle_ != 0) {
-            RaUbFreeTokenIdHandle(rdmaHandle_, tokenId_);
-        }
-        if (rdmaHandle_ != nullptr) {
-            HrtRaRdmaDeInit(rdmaHandle_, netMode_);
-        }
-    } else if (localProto_ == LinkProtoType::UB) {
-        if (tokenInfoManager_ != nullptr) {
-            tokenInfoManager_->Destroy();
-        }
-        if (rdmaHandle_ != nullptr) {
-            HrtRaUbCtxDestroy(rdmaHandle_);
-        }
-    }
     try {
         if (ubJfcHandle_ != 0) {
             HrtRaUbDestroyJfc(rdmaHandle_, ubJfcHandle_);
         }
     } catch (const NetworkApiException &e) {
-        HCCL_ERROR(e.what());
+        HCCL_ERROR("Failed to destory JFC handle: %s.", e.what());
+    }
+    if (localProto_ == LinkProtoType::RDMA) {
+        try {
+            if (tokenHandle_ != 0) {
+                RaUbFreeTokenIdHandle(rdmaHandle_, tokenId_);
+            }
+        } catch (const NetworkApiException &e) {
+            HCCL_ERROR("Failed to destory ID handle: %s.", e.what());
+        }
+        try {
+            if (rdmaHandle_ != nullptr) {
+                HrtRaRdmaDeInit(rdmaHandle_, netMode_);
+            }
+        } catch (const NetworkApiException &e) {
+            HCCL_ERROR("Failed to destory RDMA handle: %s.", e.what());
+        }
+    } else if (localProto_ == LinkProtoType::UB) {
+        try {
+            if (tokenInfoManager_ != nullptr) {
+                tokenInfoManager_->Destroy();
+            }
+        } catch (const NetworkApiException &e) {
+            HCCL_ERROR("Failed to destory INFO handle: %s.", e.what());
+        }
+        try {
+            if (rdmaHandle_ != nullptr) {
+                HrtRaUbCtxDestroy(rdmaHandle_);
+            }
+        } catch (const NetworkApiException &e) {
+            HCCL_ERROR("Failed to destory UB handle: %s.", e.what());
+        }
     }
 }
 
