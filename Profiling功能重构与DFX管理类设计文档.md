@@ -17,12 +17,12 @@
 ## 变更记录
 | 版本 | 日期 | 修改人 | 修改说明 |
 |------|------|--------|----------|
-| v1.8 | 2026-02-26 | AI | 新增四个C函数：HcclDfxRegOpInfoImpl、HcclDfxRegOpInfoImplLite、HcclProfilingReportOpImpl、HcclProfilingReportOpImplLite |
+| v1.8 | 2026-02-26 | AI | 新增四个C函数：HcclDfxRegOpInfo 、HcclDfxRegOpInfoLite、HcclProfilingReportOp 、HcclProfilingReportOpLite |
 | v1.7 | 2026-02-26 | AI | 补充所有函数定义，修改构造函数接收MirrorTaskManager指针 |
 | v1.6 | 2026-02-26 | AI | 补充HcommProfilingReportKernelStartTask和HcommProfilingReportKernelEndTask接口 |
 | v1.5 | 2026-02-26 | AI | 补充ReportMainStreamTask接口，被外部类InsExecutor调用 |
-| v1.4 | 2026-02-26 | AI | 修改HcclCommDfx和HcclCommDfxLite接口，直接暴露Profiling接口，移除GetProfilingImpl() |
-| v1.3 | 2026-02-26 | AI | 补充HcclCommProfilingImpl和HcclCommProfilingImplLite的接口，包装7个外部调用接口 |
+| v1.4 | 2026-02-26 | AI | 修改HcclCommDfx和HcclCommDfxLite接口，直接暴露Profiling接口，移除GetProfiling () |
+| v1.3 | 2026-02-26 | AI | 补充HcclCommProfiling 和HcclCommProfilingLite的接口，包装7个外部调用接口 |
 | v1.2 | 2026-02-26 | AI | 修改函数名：CallAddTaskInfoCallback改为HcommProfilingAddTask |
 | v1.1 | 2026-02-26 | AI | 修正架构图，使用Mermaid类图格式 |
 | v1.0 | 2026-02-26 | AI | 初始版本，完成完整设计方案 |
@@ -37,13 +37,13 @@
 
 ### 1.1 项目背景
 现有HCCL通信框架中的Profiling功能存在以下问题：
-1. CommunicatorImpl类职责过重，同时管理MirrorTaskManager和ProfilingReporter
+1. Communicator 类职责过重，同时管理MirrorTaskManager和ProfilingReporter
 2. Host和AICPU环境有大量相似代码，存在代码重复
 3. 类关系复杂，多层嵌套的组合关系增加了理解和维护难度
 4. 缺乏统一的DFX管理，Profiling只是DFX功能的一部分
 
 ### 1.2 设计目标
-1. **职责分离**：将DFX相关职责从CommunicatorImpl中分离
+1. **职责分离**：将DFX相关职责从Communicator 中分离
 2. **统一管理**：创建统一的DFX管理类
 3. **减少重复**：减少Host和AICPU环境的代码重复
 4. **简化关系**：简化类关系，减少多层嵌套
@@ -52,14 +52,13 @@
 ### 1.3 范围定义
 #### 包含范围：
 1. 设计新的DFX管理类：HcclCommDfx和HcclCommDfxLite
-2. 设计新的Profiling管理类：HcclCommProfilingImpl和HcclCommProfilingImplLite
-3. 设计新的回调单例类：HcomProfilingImpl和HcomProfilingImplLite
-4. 修改CommunicatorImpl和CommunicatorImplLite，使用新的DFX管理类
+2. 设计新的Profiling管理类：HcclCommProfiling 和HcclCommProfilingLite
+3. 设计新的回调单例类：HcomProfiling 和HcomProfilingLite
+4. 修改Communicator 和CommunicatorLite，使用新的DFX管理类
 
 #### 不包含范围：
 1. 不修改现有的ProfilingHandler和ProfilingHandlerLite单例类
 2. 不修改现有的MirrorTaskManager核心功能
-3. 不修改对外的HcclCommunicator接口
 
 ## 2. 需求分析
 
@@ -86,8 +85,7 @@
    - 保持环境间的差异适配
 
 #### 2.2.2 接口兼容性需求
-1. **对外接口不变**：HcclCommunicator的所有对外接口保持不变
-2. **内部接口调整**：CommunicatorImpl的内部接口需要调整，但对外透明
+2. **内部接口调整**：Communicator 的内部接口需要调整，但对外透明
 3. **回调机制新增**：新增回调注册机制，但不影响现有调用
 
 ### 2.3 非功能需求
@@ -134,22 +132,9 @@
 ```mermaid
 classDiagram
     %% Host环境类图
-    class HcclCommunicator {
-        +LoadOpbasedCollOp() HcclResult
-        +LoadOffloadCollOp() HcclResult
-        +Init() HcclResult
-        +Suspend() HcclResult
-        +Clean() HcclResult
-        +Resume() HcclResult
-    }
     
-    class CommunicatorImpl {
-        +InitCommResource() void
-        +LoadOpbasedCollOp() HcclResult
-        +LoadOffloadCollOp() HcclResult
-        +ReportProfInfo() void
-        +GetMirrorTaskManager() MirrorTaskManager&
-        +GetProfilingReporter() ProfilingReporter&
+    class CollCom {
+        +Init() HcclResult
     }
     
     class HcclCommDfx {
@@ -170,7 +155,7 @@ classDiagram
         +GetQueue() Queue~TaskInfo~*
     }
     
-    class HcclCommProfilingImpl {
+    class HcclCommProfiling  {
         +ReportAllTasks() void
         +UpdateProfStat() void
         +GetMirrorTaskManager() MirrorTaskManager*
@@ -190,18 +175,16 @@ classDiagram
         +CommandHandle() int32_t
     }
     
-    class HcomProfilingImpl {
-        +GetInstance() HcomProfilingImpl&
+    class HcomProfiling {
+        +GetInstance() HcomProfiling&
         +RegisterAddTaskInfoCallback() void
         +HcommProfilingAddTask() void
         +HasCallback() bool
     }
     
     %% AICPU环境类图
-    class CommunicatorImplLite {
-        +Init() void
-        +LoadOpbasedCollOp() HcclResult
-        +LoadOffloadCollOp() HcclResult
+    class CollComAicpu {
+        +Init() HcclResult
     }
     
     class HcclCommDfxLite {
@@ -219,7 +202,7 @@ classDiagram
 
 
     
-    class HcclCommProfilingImplLite {
+    class HcclCommProfilingLite {
         +ReportAllTasks() void
         +UpdateProfStat() void
         +GetMirrorTaskManager() MirrorTaskManager*
@@ -237,35 +220,34 @@ classDiagram
         +ReportMainStreamTask() void
     }
     
-    class HcomProfilingImplLite {
-        +GetInstance() HcomProfilingImplLite&
+    class HcomProfilingLite {
+        +GetInstance() HcomProfilingLite&
         +RegisterAddTaskInfoCallback() void
         +HcommProfilingAddTask() void
         +HasCallback() bool
     }
     
     %% Host环境关系
-    HcclCommunicator --> CommunicatorImpl : 委托实现
-    CommunicatorImpl --> HcclCommDfx : 管理
+    CollCom --> HcclCommDfx : 管理
     HcclCommDfx --> MirrorTaskManager : 管理
-    HcclCommDfx --> HcclCommProfilingImpl : 管理
-    HcclCommProfilingImpl --> ProfilingReporter : 管理
+    HcclCommDfx --> HcclCommProfiling  : 管理
+    HcclCommProfiling  --> ProfilingReporter : 管理
     ProfilingReporter --> ProfilingHandler : 上报
-    HcclCommDfx --> HcomProfilingImpl : 注册回调
+    HcclCommDfx --> HcomProfiling : 注册回调
     
     %% AICPU环境关系
-    CommunicatorImplLite --> HcclCommDfxLite : 管理
+    CollComAicpu --> HcclCommDfxLite : 管理
     HcclCommDfxLite --> MirrorTaskManager : 管理
-    HcclCommDfxLite --> HcclCommProfilingImplLite : 管理
-    HcclCommProfilingImplLite --> ProfilingReporterLite : 管理
+    HcclCommDfxLite --> HcclCommProfilingLite : 管理
+    HcclCommProfilingLite --> ProfilingReporterLite : 管理
     ProfilingReporterLite --> ProfilingHandlerLite : 上报
-    HcclCommDfxLite --> HcomProfilingImplLite : 注册回调
+    HcclCommDfxLite --> HcomProfilingLite : 注册回调
     
     %% 单例关系
     ProfilingHandler --> "1" ProfilingHandler : 单例
     ProfilingHandlerLite --> "1" ProfilingHandlerLite : 单例
-    HcomProfilingImpl --> "1" HcomProfilingImpl : 单例
-    HcomProfilingImplLite --> "1" HcomProfilingImplLite : 单例
+    HcomProfiling --> "1" HcomProfiling : 单例
+    HcomProfilingLite --> "1" HcomProfilingLite : 单例
 ```
 
 #### 3.1.2 类关系说明
@@ -274,39 +256,37 @@ classDiagram
 
 错误3：参考dispatcher，通过类似于dispather的类型去触发
 ```
-HcclCommunicator (PIMPL模式)
-    └── 委托：所有方法委托给CommunicatorImpl实现
     
-CommunicatorImpl (通信器实现类)
+CollCom (通信器实现类)
     └── 管理：HcclCommDfx (DFX管理类)
         ├── 管理：MirrorTaskManager (任务信息管理器)
-        ├── 管理：HcclCommProfilingImpl (Profiling管理类)
+        ├── 管理：HcclCommProfiling  (Profiling管理类)
         │   └── 管理：ProfilingReporter (Profiling报告器)
         │       └── 上报：ProfilingHandler (Profiling处理器单例)
-        └── 注册回调：HcomProfilingImpl (回调单例)
+        └── 注册回调：HcomProfiling  (回调单例)
 ```
 
 **AICPU环境类关系**：
 ```
-CommunicatorImplLite (AICPU通信器实现类)
+CollComAicpu (AICPU通信器实现类)
     └── 管理：HcclCommDfxLite (AICPU DFX管理类)
         ├── 管理：MirrorTaskManager (任务信息管理器)
-        ├── 管理：HcclCommProfilingImplLite (AICPU Profiling管理类)
+        ├── 管理：HcclCommProfilingLite (AICPU Profiling管理类)
         │   └── 管理：ProfilingReporterLite (AICPU Profiling报告器)
         │       └── 上报：ProfilingHandlerLite (AICPU Profiling处理器单例)
-        └── 注册回调：HcomProfilingImplLite (AICPU回调单例)
+        └── 注册回调：HcomProfilingLite (AICPU回调单例)
 ```
 
 **回调机制关系**：
 
-错误4：HcomProfilingImpl改成HcomTask
+错误4：HcomProfiling 改成HcomTask
 
 ```
 HcclCommDfx::RegisterProfilingCallback()
-    └── 注册：lambda函数到HcomProfilingImpl单例
+    └── 注册：lambda函数到HcomProfiling 单例
          lambda函数：调用mirrorTaskManager_->AddTaskInfo()
 
-外部调用：HcomProfilingImpl::HcommProfilingAddTask(taskInfo)
+外部调用：HcomProfiling ::HcommProfilingAddTask(taskInfo)
     └── 调用：注册的回调函数
          └── 调用：mirrorTaskManager_->AddTaskInfo(taskInfo)
 ```
@@ -314,11 +294,10 @@ HcclCommDfx::RegisterProfilingCallback()
 
 #### 3.1.3 架构图说明
 1. **分层架构**：
-   - **接口层**：HcclCommunicator（PIMPL模式，对外接口）
-   - **实现层**：CommunicatorImpl/CommunicatorImplLite（通信器实现）
+   - **实现层**：Communicator /CommunicatorLite（通信器实现）
    - **DFX管理层**：HcclCommDfx/HcclCommDfxLite（DFX统一管理）
    - **组件层**：MirrorTaskManager、Profiling管理类等（具体功能组件）
-   - **单例层**：ProfilingHandler、HcomProfilingImpl等（全局单例）
+   - **单例层**：ProfilingHandler、HcomProfiling 等（全局单例）
 
 2. **组合关系**：
    - 使用std::unique_ptr实现强所有权组合关系
@@ -331,9 +310,8 @@ HcclCommDfx::RegisterProfilingCallback()
 ### 3.2 技术选型
 1. **编程语言**：C++11/14
 2. **设计模式**：
-   - 单例模式：HcomProfilingImpl、HcomProfilingImplLite
+   - 单例模式：HcomProfiling 、HcomProfilingLite
    - 组合模式：HcclCommDfx整合多个组件
-   - PIMPL模式：HcclCommunicator隐藏实现细节
 3. **智能指针**：使用std::unique_ptr管理资源生命周期
 4. **回调机制**：使用std::function实现类型安全的回调
 
@@ -352,7 +330,7 @@ HcclCommDfx::RegisterProfilingCallback()
 ### 3.4 数据架构
 1. **任务信息流**：
    ```
-   任务执行 → HcomProfilingImpl单例 → 回调 → MirrorTaskManager → ProfilingReporter → ProfilingHandler
+   任务执行 → HcomProfiling 单例 → 回调 → MirrorTaskManager → ProfilingReporter → ProfilingHandler
    ```
 2. **控制流**：
 
@@ -363,7 +341,7 @@ HcclCommDfx::RegisterProfilingCallback()
    ```
 3. **初始化流**：
    ```
-   CommunicatorImpl初始化 → HcclCommDfx初始化 → 组件创建 → 回调注册
+   Communicator 初始化 → HcclCommDfx初始化 → 组件创建 → 回调注册
    ```
 
 ## 4. 详细设计
@@ -376,7 +354,7 @@ HcclCommDfx::RegisterProfilingCallback()
 ```cpp
 class HcclCommDfx {
 public:
-    // 构造函数（接收CommunicatorImpl中已经存在的MirrorTaskManager指针）
+    // 构造函数（接收Communicator 中已经存在的MirrorTaskManager指针）
     explicit HcclCommDfx(uint32_t deviceId);
     
     // 初始化DFX系统
@@ -388,7 +366,7 @@ public:
     // 获取MirrorTaskManager
     MirrorTaskManager* GetMirrorTaskManager() const;
     
-    // Profiling相关接口（直接暴露，不通过GetProfilingImpl）
+    // Profiling相关接口（直接暴露，不通过GetProfiling ）
     void ReportAllTasks(bool cachedReq = false);
     void ReportOp(uint64_t beginTime, bool cachedReq, bool opbased);
     void CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo);
@@ -397,7 +375,7 @@ public:
 private:
     uint32_t deviceId_;
     MirrorTaskManager* mirrorTaskManager_;  // 使用原始指针，不管理生命周期
-    std::unique_ptr<HcclCommProfilingImpl> profilingImpl_;
+    std::unique_ptr<HcclCommProfiling > profiling _;
 };
 
 ```
@@ -409,7 +387,7 @@ private:
 ```cpp
 class HcclCommDfxLite {
 public:
-    // 构造函数（接收CommunicatorImplLite中已经存在的MirrorTaskManager指针）
+    // 构造函数（接收CommunicatorLite中已经存在的MirrorTaskManager指针）
     explicit HcclCommDfxLite(MirrorTaskManager* existingMirrorTaskManager = nullptr);
     
     // 初始化DFX系统
@@ -421,7 +399,7 @@ public:
     // 获取MirrorTaskManager
     MirrorTaskManager* GetMirrorTaskManager() const;
     
-    // Profiling相关接口（直接暴露，不通过GetProfilingImpl）
+    // Profiling相关接口（直接暴露，不通过GetProfiling ）
     void ReportAllTasks();
     void ReportHcclOpInfo(const HcclOpInfo& hcclOpInfo);
     void UpdateProfStat();
@@ -430,7 +408,7 @@ public:
     
 private:
     MirrorTaskManager* mirrorTaskManager_;  // 使用原始指针，不管理生命周期
-    std::unique_ptr<HcclCommProfilingImplLite> profilingImpl_;
+    std::unique_ptr<HcclCommProfilingLite> profiling _;
 };
 
 ```
@@ -439,14 +417,14 @@ private:
     void HcommProfilingReportKernelStartTask(const KernelTaskInfo& kernelTaskInfo);// 之前A3是C接口现在是类成员？？？？？
     void HcommProfilingReportKernelEndTask(const KernelTaskInfo& kernelTaskInfo);
 
-#### 4.1.3 HcclCommProfilingImpl模块
+#### 4.1.3 HcclCommProfiling 模块
 **职责**：Host环境Profiling管理
 **接口**：
 ```cpp
-class HcclCommProfilingImpl {
+class HcclCommProfiling  {
 public:
     // 构造函数
-    explicit HcclCommProfilingImpl(MirrorTaskManager* mirrorTaskManager);
+    explicit HcclCommProfiling (MirrorTaskManager* mirrorTaskManager);
     
     // 上报所有任务
     void ReportAllTasks(bool cachedReq = false);
@@ -470,14 +448,14 @@ private:
 ```
 
 
-#### 4.1.4 HcclCommProfilingImplLite模块
+#### 4.1.4 HcclCommProfilingLite模块
 **职责**：AICPU环境Profiling管理
 **接口**：
 ```cpp
-class HcclCommProfilingImplLite {
+class HcclCommProfilingLite {
 public:
     // 构造函数
-    explicit HcclCommProfilingImplLite(MirrorTaskManager* mirrorTaskManager);
+    explicit HcclCommProfilingLite(MirrorTaskManager* mirrorTaskManager);
     
     // 上报所有任务
     void ReportAllTasks();
@@ -498,14 +476,14 @@ private:
 ```
 
 
-#### 4.1.5 HcomProfilingImpl模块
+#### 4.1.5 HcomProfiling 模块
 **职责**：Host环境Profiling回调单例
 **接口**：
 ```cpp
-class HcomProfilingImpl {
+class HcomProfiling {
 public:
     // 获取单例实例
-    static HcomProfilingImpl& GetInstance();
+    static HcomProfiling& GetInstance();
     
     // 回调函数类型定义
     using AddTaskInfoCallback = std::function<void(const TaskInfo&)>;
@@ -521,24 +499,24 @@ public:
     
 private:
     // 私有构造函数
-    HcomProfilingImpl();
+    HcomProfiling();
     
     // 禁止拷贝和赋值
-    HcomProfilingImpl(const HcomProfilingImpl&) = delete;
-    HcomProfilingImpl& operator=(const HcomProfilingImpl&) = delete;
+    HcomProfiling(const HcomProfiling&) = delete;
+    HcomProfiling& operator=(const HcomProfiling&) = delete;
     
     // 回调函数存储
     AddTaskInfoCallback addTaskInfoCallback_;
     
     // 单例实例
-    static HcomProfilingImpl instance_;
+    static HcomProfiling instance_;
 };
 
 ```
 
-#### 4.1.6 HcomProfilingImplLite模块
+#### 4.1.6 HcomProfilingLite模块
 **职责**：AICPU环境Profiling回调单例
-**接口**：与HcomProfilingImpl类似，适配AICPU环境
+**接口**：与HcomProfiling 类似，适配AICPU环境
 
 ### 4.2 接口设计
 
@@ -550,21 +528,18 @@ HcclCommDfx::HcclCommDfx(uint32_t deviceId, MirrorTaskManager* existingMirrorTas
     // 如果外部没有传入MirrorTaskManager，则创建新的
     if (mirrorTaskManager_ == nullptr) {
         // 注意：这里只是示例，实际实现中可能需要根据具体情况决定是否创建
-        // 在CommunicatorImpl中，应该传入已经存在的MirrorTaskManager指针
+        // 在Communicator 中，应该传入已经存在的MirrorTaskManager指针
     }
 }
 
 // HcclCommDfx初始化流程
 void HcclCommDfx::Init() {
-    // 1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
-    if (mirrorTaskManager_ == nullptr) {
-        // 注意：实际实现中应该避免这种情况，CommunicatorImpl应该传入已经存在的MirrorTaskManager
-        mirrorTaskManager_ = new MirrorTaskManager(
-            deviceId_, &GlobalMirrorTasks::Instance(), false);
-    }
+    // 1. 创建MirrorTaskManager（按照现有代码中的初始化方式）
+    mirrorTaskManager_ = std::make_unique<MirrorTaskManager>(
+        deviceId_, &GlobalMirrorTasks::Instance(), false); // host侧写死false
     
     // 2. 创建Profiling管理类
-    profilingImpl_ = std::make_unique<HcclCommProfilingImpl>(mirrorTaskManager_);
+    profilingImpl_ = std::make_unique<HcclCommProfilingImpl>(mirrorTaskManager_.get());
     
     // 3. 注册回调到单例
     RegisterProfilingCallback();
@@ -576,21 +551,18 @@ HcclCommDfxLite::HcclCommDfxLite(MirrorTaskManager* existingMirrorTaskManager)
     // 如果外部没有传入MirrorTaskManager，则创建新的
     if (mirrorTaskManager_ == nullptr) {
         // 注意：这里只是示例，实际实现中可能需要根据具体情况决定是否创建
-        // 在CommunicatorImplLite中，应该传入已经存在的MirrorTaskManager指针
+        // 在CommunicatorLite中，应该传入已经存在的MirrorTaskManager指针
     }
 }
 
 // HcclCommDfxLite初始化流程
 void HcclCommDfxLite::Init() {
-    // 1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
-    if (mirrorTaskManager_ == nullptr) {
-        // 注意：实际实现中应该避免这种情况，CommunicatorImplLite应该传入已经存在的MirrorTaskManager
-        mirrorTaskManager_ = new MirrorTaskManager(
-            0, &GlobalMirrorTasks::Instance(), true);
-    }
+    // 1. 创建MirrorTaskManager（按照现有代码中的初始化方式）
+    mirrorTaskManager_ = std::make_unique<MirrorTaskManager>(
+        0, &GlobalMirrorTasks::Instance(), true);
     
     // 2. 创建Profiling管理类
-    profilingImpl_ = std::make_unique<HcclCommProfilingImplLite>(mirrorTaskManager_);
+    profilingImpl_ = std::make_unique<HcclCommProfilingImplLite>(mirrorTaskManager_.get());
     
     // 3. 注册回调到单例
     RegisterProfilingCallback();
@@ -602,68 +574,68 @@ void HcclCommDfx::RegisterProfilingCallback() {
     auto callback = [this](const TaskInfo& taskInfo) {
         mirrorTaskManager_->AddTaskInfo(std::make_shared<TaskInfo>(taskInfo));
     };
-    HcomProfilingImpl::GetInstance().RegisterAddTaskInfoCallback(callback);
+    HcomProfiling::GetInstance().RegisterAddTaskInfoCallback(callback);
 }
 
 void HcclCommDfxLite::RegisterProfilingCallback() {
     auto callback = [this](const TaskInfo& taskInfo) {
         mirrorTaskManager_->AddTaskInfo(std::make_shared<TaskInfo>(taskInfo));
     };
-    HcomProfilingImplLite::GetInstance().RegisterAddTaskInfoCallback(callback);
+    HcomProfilingLite::GetInstance().RegisterAddTaskInfoCallback(callback);
 }
 ```
 
 #### 4.2.2 任务上报接口设计
 ```cpp
-// HcclCommProfilingImpl任务上报
-void HcclCommProfilingImpl::ReportAllTasks(bool cachedReq) {
+// HcclCommProfiling 任务上报
+void HcclCommProfiling ::ReportAllTasks(bool cachedReq) {
     if (profilingReporter_) {
         profilingReporter_->ReportAllTasks(cachedReq);
     }
 }
 
-// HcclCommProfilingImpl::ReportOp实现
-void HcclCommProfilingImpl::ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) {
+// HcclCommProfiling ::ReportOp实现
+void HcclCommProfiling ::ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) {
     if (profilingReporter_) {
         profilingReporter_->ReportOp(beginTime, cachedReq, opbased);
     }
 }
 
-// HcclCommProfilingImpl::CallReportMc2CommInfo实现
-void HcclCommProfilingImpl::CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
+// HcclCommProfiling ::CallReportMc2CommInfo实现
+void HcclCommProfiling ::CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
     if (profilingReporter_) {
         profilingReporter_->CallReportMc2CommInfo(mc2CommInfo);
     }
 }
 
-// HcclCommProfilingImpl::UpdateProfStat实现
-void HcclCommProfilingImpl::UpdateProfStat() {
+// HcclCommProfiling ::UpdateProfStat实现
+void HcclCommProfiling ::UpdateProfStat() {
     if (profilingReporter_) {
         profilingReporter_->UpdateProfStat();
     }
 }
 
-// HcclCommProfilingImplLite任务上报
-void HcclCommProfilingImplLite::ReportAllTasks() {
+// HcclCommProfilingLite任务上报
+void HcclCommProfilingLite::ReportAllTasks() {
     if (profilingReporterLite_) {
         profilingReporterLite_->ReportAllTasks();
     }
 }
 
-// HcclCommProfilingImplLite::ReportHcclOpInfo实现
-void HcclCommProfilingImplLite::ReportHcclOpInfo(const HcclOpInfo& hcclOpInfo) {
+// HcclCommProfilingLite::ReportHcclOpInfo实现
+void HcclCommProfilingLite::ReportHcclOpInfo(const HcclOpInfo& hcclOpInfo) {
     ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(hcclOpInfo);
 }
 
-// HcclCommProfilingImplLite::UpdateProfStat实现
-void HcclCommProfilingImplLite::UpdateProfStat() {
+// HcclCommProfilingLite::UpdateProfStat实现
+void HcclCommProfilingLite::UpdateProfStat() {
     if (profilingReporterLite_) {
         profilingReporterLite_->UpdateProfStat();
     }
 }
 
-// HcomProfilingImpl回调调用
-void HcomProfilingImpl::HcommProfilingAddTask(const TaskInfo& taskInfo) {
+// HcomProfiling 回调调用
+void HcomProfiling::HcommProfilingAddTask(const TaskInfo& taskInfo) {
     if (addTaskInfoCallback_) {
         addTaskInfoCallback_(taskInfo);
     }
@@ -671,26 +643,26 @@ void HcomProfilingImpl::HcommProfilingAddTask(const TaskInfo& taskInfo) {
 
 // HcclCommDfx接口实现
 void HcclCommDfx::ReportAllTasks(bool cachedReq) {
-    if (profilingImpl_) {
-        profilingImpl_->ReportAllTasks(cachedReq);
+    if (profiling _) {
+        profiling _->ReportAllTasks(cachedReq);
     }
 }
 
 void HcclCommDfx::ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) {
-    if (profilingImpl_) {
-        profilingImpl_->ReportOp(beginTime, cachedReq, opbased);
+    if (profiling _) {
+        profiling _->ReportOp(beginTime, cachedReq, opbased);
     }
 }
 
 void HcclCommDfx::CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
-    if (profilingImpl_) {
-        profilingImpl_->CallReportMc2CommInfo(mc2CommInfo);
+    if (profiling _) {
+        profiling _->CallReportMc2CommInfo(mc2CommInfo);
     }
 }
 
 void HcclCommDfx::UpdateProfStat() {
-    if (profilingImpl_) {
-        profilingImpl_->UpdateProfStat();
+    if (profiling _) {
+        profiling _->UpdateProfStat();
     }
 }
 
@@ -700,14 +672,14 @@ MirrorTaskManager* HcclCommDfx::GetMirrorTaskManager() const {
 
 // HcclCommDfxLite接口实现
 void HcclCommDfxLite::ReportAllTasks() {
-    if (profilingImpl_) {
-        profilingImpl_->ReportAllTasks();
+    if (profiling _) {
+        profiling _->ReportAllTasks();
     }
 }
 
 void HcclCommDfxLite::ReportHcclOpInfo(const HcclOpInfo& hcclOpInfo) {
-    if (profilingImpl_) {
-        profilingImpl_->ReportHcclOpInfo(hcclOpInfo);
+    if (profiling _) {
+        profiling _->ReportHcclOpInfo(hcclOpInfo);
     }
 }
 
@@ -728,8 +700,8 @@ void HcclCommDfxLite::HcommProfilingReportKernelEndTask(const KernelTaskInfo& ke
 }
 
 void HcclCommDfxLite::UpdateProfStat() {
-    if (profilingImpl_) {
-        profilingImpl_->UpdateProfStat();
+    if (profiling _) {
+        profiling _->UpdateProfStat();
     }
 }
 
@@ -737,62 +709,62 @@ MirrorTaskManager* HcclCommDfxLite::GetMirrorTaskManager() const {
     return mirrorTaskManager_;
 }
 
-// 新增C函数：HcclDfxRegOpInfoImpl
-// 功能：调用CommunicatorImpl里面的MirrorTaskManager成员对象的SetCurrDfxOpInfo
+// 新增C函数：HcclDfxRegOpInfo 
+// 功能：调用Communicator 里面的MirrorTaskManager成员对象的SetCurrDfxOpInfo
 // 参数：通信域为入参
-void HcclDfxRegOpInfoImpl(HcclComm communicator, const DfxOpInfo& dfxOpInfo) {
+void HcclDfxRegOpInfo (HcclComm communicator, const DfxOpInfo& dfxOpInfo) {
     if (communicator == nullptr) {
         return;
     }
     
-    // 获取CommunicatorImpl实例
-    CommunicatorImpl* commImpl = static_cast<CommunicatorImpl*>(communicator);
+    // 获取Communicator 实例
+    CollCom* comm  = static_cast<CollCom*>(communicator);
     
     // 获取MirrorTaskManager
-    MirrorTaskManager* mirrorTaskManager = commImpl->GetMirrorTaskManager();
+    MirrorTaskManager* mirrorTaskManager = comm ->GetMirrorTaskManager();
     if (mirrorTaskManager != nullptr) {
         mirrorTaskManager->SetCurrDfxOpInfo(dfxOpInfo);
     }
 }
 
-// 新增C函数：HcclDfxRegOpInfoImplLite
-// 功能：调用CommunicatorImplLite里面的MirrorTaskManager成员对象的SetCurrDfxOpInfo
+// 新增C函数：HcclDfxRegOpInfoLite
+// 功能：调用CommunicatorLite里面的MirrorTaskManager成员对象的SetCurrDfxOpInfo
 // 参数：通信域为入参
-void HcclDfxRegOpInfoImplLite(HcclComm communicator, const DfxOpInfo& dfxOpInfo) {
+void HcclDfxRegOpInfoLite(HcclComm communicator, const DfxOpInfo& dfxOpInfo) {
     if (communicator == nullptr) {
         return;
     }
     
-    // 获取CommunicatorImplLite实例
-    CommunicatorImplLite* commImplLite = static_cast<CommunicatorImplLite*>(communicator);
+    // 获取CommunicatorLite实例
+    CollComAicpu* commLite = static_cast<CollComAicpu*>(communicator);
     
     // 获取MirrorTaskManager
-    MirrorTaskManager* mirrorTaskManager = commImplLite->GetMirrorTaskManager();
+    MirrorTaskManager* mirrorTaskManager = commLite->GetMirrorTaskManager();
     if (mirrorTaskManager != nullptr) {
         mirrorTaskManager->SetCurrDfxOpInfo(dfxOpInfo);
     }
 }
 
-// 新增C函数：HcclProfilingReportOpImpl
-// 功能：调用CommunicatorImpl->HcclCommDfx->HcclCommProfilingImpl的ReportOp
-void HcclProfilingReportOpImpl(HcclComm communicator, uint64_t beginTime, bool cachedReq, bool opbased) {
+// 新增C函数：HcclProfilingReportOp 
+// 功能：调用Communicator ->HcclCommDfx->HcclCommProfiling 的ReportOp
+void HcclProfilingReportOp (HcclComm communicator, uint64_t beginTime, bool cachedReq, bool opbased) {
     if (communicator == nullptr) {
         return;
     }
     
-    // 获取CommunicatorImpl实例
-    CommunicatorImpl* commImpl = static_cast<CommunicatorImpl*>(communicator);
+    // 获取Communicator 实例
+    CollCom* comm  = static_cast<CollCom*>(communicator);
     
     // 获取HcclCommDfx
-    HcclCommDfx* dfxImpl = commImpl->GetHcclCommDfx();
-    if (dfxImpl != nullptr) {
-        dfxImpl->ReportOp(beginTime, cachedReq, opbased);
+    HcclCommDfx* dfx  = comm ->GetHcclCommDfx();
+    if (dfx  != nullptr) {
+        dfx ->ReportOp(beginTime, cachedReq, opbased);
     }
 }
 
-// 新增C函数：HcclProfilingReportOpImplLite
+// 新增C函数：HcclProfilingReportOpLite
 // 功能：调用ProfilingHandlerLite::GetInstance().ReportHcclOpInfo()
-void HcclProfilingReportOpImplLite(const HcclOpInfo& hcclOpInfo) {
+void HcclProfilingReportOpLite(const HcclOpInfo& hcclOpInfo) {
     ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(hcclOpInfo);
 }
 
@@ -843,8 +815,8 @@ using AddTaskInfoCallback = std::function<void(const TaskInfo&)>;
 输出：任务信息存储到MirrorTaskManager
 
 算法步骤：
-1. 外部代码调用HcomProfilingImpl::HcommProfilingAddTask(taskInfo)
-2. HcomProfilingImpl检查是否有注册的回调函数
+1. 外部代码调用HcomProfiling ::HcommProfilingAddTask(taskInfo)
+2. HcomProfiling 检查是否有注册的回调函数
 3. 如果有回调函数，调用回调函数addTaskInfoCallback_(taskInfo)
 4. 回调函数内部调用mirrorTaskManager_->AddTaskInfo(taskInfo)
 5. MirrorTaskManager将任务信息存储到对应stream的队列中
@@ -858,8 +830,8 @@ using AddTaskInfoCallback = std::function<void(const TaskInfo&)>;
 
 算法步骤：
 1. 创建MirrorTaskManager实例
-2. 创建HcclCommProfilingImpl/HcclCommProfilingImplLite实例
-3. 注册回调函数到HcomProfilingImpl/HcomProfilingImplLite单例
+2. 创建HcclCommProfiling /HcclCommProfilingLite实例
+3. 注册回调函数到HcomProfiling /HcomProfilingLite单例
 4. 返回初始化完成的DFX管理对象
 ```
 
@@ -873,7 +845,7 @@ using AddTaskInfoCallback = std::function<void(const TaskInfo&)>;
 
 2. **线程安全**：
    - MirrorTaskManager内部已有线程安全机制
-   - HcomProfilingImpl单例需要考虑线程安全
+   - HcomProfiling 单例需要考虑线程安全
    - 建议使用std::mutex保护回调函数的注册和调用
 
 3. **异常安全**：
@@ -939,13 +911,13 @@ using AddTaskInfoCallback = std::function<void(const TaskInfo&)>;
 
 #### 阶段二：核心功能实现（1周）
 1. 实现HcclCommDfx和HcclCommDfxLite
-2. 实现HcclCommProfilingImpl和HcclCommProfilingImplLite
-3. 实现HcomProfilingImpl和HcomProfilingImplLite单例
+2. 实现HcclCommProfiling 和HcclCommProfilingLite
+3. 实现HcomProfiling 和HcomProfilingLite单例
 4. 实现回调注册和调用机制
 
 #### 阶段三：集成修改（1周）
-1. 修改CommunicatorImpl，使用新的DFX管理类
-2. 修改CommunicatorImplLite，使用新的DFX管理类
+1. 修改Communicator ，使用新的DFX管理类
+2. 修改CommunicatorLite，使用新的DFX管理类
 3. 修改SaveDfxTaskInfo等调用点
 4. 编译测试和基础功能测试
 
@@ -953,8 +925,8 @@ using AddTaskInfoCallback = std::function<void(const TaskInfo&)>;
 #### 单元测试（3天）
 1. **新类单元测试**：
    - 测试HcclCommDfx初始化
-   - 测试HcclCommProfilingImpl任务上报
-   - 测试HcomProfilingImpl回调机制
+   - 测试HcclCommProfiling 任务上报
+   - 测试HcomProfiling 回调机制
 
 2. **接口兼容性测试**：
    - 测试对外接口兼容性
@@ -962,7 +934,7 @@ using AddTaskInfoCallback = std::function<void(const TaskInfo&)>;
    - 测试异常情况处理
 
 #### 集成测试（3天）
-1. **CommunicatorImpl集成测试**：
+1. **Communicator 集成测试**：
    - 测试与HcclCommDfx的集成
    - 测试Profiling功能完整性
    - 测试环境适配正确性
@@ -1023,7 +995,6 @@ using AddTaskInfoCallback = std::function<void(const TaskInfo&)>;
    - **概率**：低
    - **影响**：高
    - **应对策略**：
-     - 保持HcclCommunicator对外接口不变
      - PIMPL模式隔离内部变化
      - 详细接口测试
 
@@ -1099,7 +1070,7 @@ using AddTaskInfoCallback = std::function<void(const TaskInfo&)>;
 | **MirrorTaskManager** | 任务信息管理器，存储和管理任务信息 |
 | **回调机制** | 通过函数指针或std::function实现的回调调用机制 |
 | **单例模式** | 设计模式，确保一个类只有一个实例 |
-| **PIMPL模式** | Pointer to Implementation，隐藏实现细节的设计模式 |
+| **PIMPL模式** | Pointer to  ementation，隐藏实现细节的设计模式 |
 
 ### 8.2 参考资料
 1. `A_Profiling相关类分析文档.md`
@@ -1117,7 +1088,6 @@ using AddTaskInfoCallback = std::function<void(const TaskInfo&)>;
 - [x] **非功能性设计验证**：考虑安全性、可靠性、性能等
 
 #### 8.3.2 兼容性验证
-- [x] **对外接口兼容**：HcclCommunicator接口保持不变
 - [x] **功能兼容**：Profiling功能完全保持
 - [x] **环境兼容**：Host和AICPU环境适配保持
 
@@ -1191,7 +1161,7 @@ using AddTaskInfoCallback = std::function<void(const TaskInfo&)>;
 5. **全面的风险评估**：识别了技术风险和项目风险，制定了应对策略
 
 ### 9.2 设计价值
-1. **架构优化**：将DFX相关职责从CommunicatorImpl中分离，提高了代码的可维护性
+1. **架构优化**：将DFX相关职责从Communicator 中分离，提高了代码的可维护性
 2. **统一管理**：创建了统一的DFX管理类，为未来DFX功能扩展提供了基础
 3. **代码复用**：减少了Host和AICPU环境的代码重复
 4. **功能保持**：确保现有Profiling功能完全不受影响
@@ -1225,7 +1195,7 @@ using AddTaskInfoCallback = std::function<void(const TaskInfo&)>;
 - [x] **维护成本是否合理**：通过职责分离和简化关系，降低了维护成本
 
 ### 9.4 最终结论
-本设计方案基于对现有Profiling功能的深入分析，提出了合理的重构方案。通过创建统一的DFX管理类，将DFX相关职责从CommunicatorImpl中分离，提高了代码的可维护性和可扩展性。设计方案完整、一致、可行，且具有良好的可维护性。建议按照实施计划进行代码实现和测试验证。
+本设计方案基于对现有Profiling功能的深入分析，提出了合理的重构方案。通过创建统一的DFX管理类，将DFX相关职责从Communicator 中分离，提高了代码的可维护性和可扩展性。设计方案完整、一致、可行，且具有良好的可维护性。建议按照实施计划进行代码实现和测试验证。
 
 ---
 
