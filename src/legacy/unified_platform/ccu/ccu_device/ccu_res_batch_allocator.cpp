@@ -10,7 +10,10 @@
 
 #include "ccu_res_batch_allocator.h"
 
+#include <array>
 #include <memory>
+#include <utility>
+#include <iterator>
 #include <algorithm>
 
 #include "hccl_common_v2.h"
@@ -544,52 +547,68 @@ void CcuResBatchAllocator::ReleaseBlockResource(std::unique_ptr<CcuResRepository
     }
 }
 
-using ResTypeResInfo = std::pair<ResType, std::vector<ResInfo>&>;
-static HcclResult DoReleaseNonBlockTypeRes(int32_t devLogicId, uint8_t dieId,
-    const std::array<ResTypeResInfo, NON_BLOCK_TYPE_NUM> &infoParas)
+using ResTypeResInfo = std::pair<ResType, std::vector<ResInfo>*>;
+static auto EraseReverse(std::vector<ResInfo>& vec,
+                        std::vector<ResInfo>::reverse_iterator it)
+    -> std::vector<ResInfo>::reverse_iterator
 {
-    CcuComponent &ccuComponent = CcuComponent::GetInstance(devLogicId);
+    return std::vector<ResInfo>::reverse_iterator(
+        vec.erase(std::next(it).base())
+    );
+}
+
+static HcclResult DoReleaseNonBlockTypeRes(
+    int32_t devLogicId, uint8_t dieId,
+    std::array<ResTypeResInfo, NON_BLOCK_TYPE_NUM>& infoParas)
+{
+    CcuComponent& ccuComponent = CcuComponent::GetInstance(devLogicId);
+
     for (auto& infos : infoParas) {
-        const ResType resType = std::get<0>(infos);
-        std::vector<ResInfo> &resInfos= std::get<1>(infos);
-        const uint32_t reqSize = resInfos.size();
-        for (uint32_t i = 0; i < reqSize; i++) {
-            const uint32_t num = resInfos[i].num;
+        const ResType resType = infos.first;
+        std::vector<ResInfo>* resInfosPtr = infos.second;
+        if (resInfosPtr == nullptr || resInfosPtr->empty()) {
+            continue;
+        }
+        std::vector<ResInfo>& resInfos = *resInfosPtr;
+        // 倒序删除，减少vector元素移动
+        for (auto it = resInfos.rbegin(); it != resInfos.rend(); ) {
+            const uint32_t num = it->num;
             if (num == 0) {
+                it = EraseReverse(resInfos, it);
                 continue;
             }
 
-            const uint32_t startId = resInfos[i].startId;
+            const uint32_t startId = it->startId;
             auto ret = ccuComponent.ReleaseRes(dieId, resType, startId, num);
             if (ret != HcclResult::HCCL_SUCCESS) {
                 HCCL_ERROR("[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
                     "failed to release %s resource, startId[%u], num[%u].", __func__,
-                    devLogicId, dieId, resType.Describe().c_str(), startId, num);
+                    devLogicId, dieId, resType.Describe().c_str(), startId, num);	 
                 return ret;
             }
 
-            resInfos.erase(resInfos.begin() + i);
+            it = EraseReverse(resInfos, it);
         }
     }
     return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult CcuResBatchAllocator::ReleaseNonBlockTypeRes(
-    std::unique_ptr<CcuResRepository> &resRepoPtr) const
+    std::unique_ptr<CcuResRepository>& resRepoPtr) const
 {
     for (uint8_t i = 0; i < MAX_CCU_IODIE_NUM; i++) {
         if (!dieEnableFlags[i]) {
             continue;
         }
 
-        const std::array<ResTypeResInfo, NON_BLOCK_TYPE_NUM> infoParas = {
-            std::make_pair(ResType::LOOP, std::ref(resRepoPtr->loopEngine[i])),
-            std::make_pair(ResType::MS, std::ref(resRepoPtr->ms[i])),
-            std::make_pair(ResType::CKE, std::ref(resRepoPtr->cke[i])),
-            std::make_pair(ResType::XN, std::ref(resRepoPtr->continuousXn[i])),
-            std::make_pair(ResType::XN, std::ref(resRepoPtr->xn[i])),
-            std::make_pair(ResType::GSA, std::ref(resRepoPtr->gsa[i]))
-        };
+        std::array<ResTypeResInfo, NON_BLOCK_TYPE_NUM> infoParas = {{
+            {ResType::LOOP, &resRepoPtr->loopEngine[i]},
+            {ResType::MS, &resRepoPtr->ms[i]},
+            {ResType::CKE, &resRepoPtr->cke[i]},
+            {ResType::XN, &resRepoPtr->continuousXn[i]},
+            {ResType::XN, &resRepoPtr->xn[i]},
+            {ResType::GSA, &resRepoPtr->gsa[i]}
+        }};
     
         CHK_RET(DoReleaseNonBlockTypeRes(devLogicId, i, infoParas));
     }
