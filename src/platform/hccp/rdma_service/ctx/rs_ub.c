@@ -2259,6 +2259,11 @@ STATIC int RsUbCtxDrvJettyImport(struct RsCtxRemJettyCb *rjettyCb)
     hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.eid.in4.addr: %ld,", rjetty.jetty_id.eid.in4.addr);
     hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.uasid: %ld,", rjetty.jetty_id.uasid);
     hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.id: %ld,", rjetty.jetty_id.id);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.trans_mode: %ld,", rjetty.trans_mode);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.flag.value: %ld,", rjetty.flag.value);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.flag.bs.order_type: %ld,", rjetty.flag.bs.order_type);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.flag.bs.share_tp: %ld,", rjetty.flag.bs.share_tp);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.tp_type: %ld,", rjetty.tp_type);
 
     if (rjettyCb->mode == JETTY_IMPORT_MODE_NORMAL) {
         hccp_warn("@@@ RsUbCtxDrvJettyImport JETTY_IMPORT_MODE_NORMAL");
