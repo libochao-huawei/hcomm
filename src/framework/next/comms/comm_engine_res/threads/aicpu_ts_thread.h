@@ -43,7 +43,7 @@ public:
         void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const override;
 
     // Non-override functions
-    HcclResult InterKernelNotifyRecord(const NotifyEntity notifyEntity) const;  // 跨通知类型的 Thread 间同步
+    HcclResult NotifyRecord(const NotifyEntity notifyEntity) const;  // Support different types of Notify.
     HcclResult GetSqHeadAndTail(uint32_t& sqHead, uint32_t& sqTail);
 
 private:
