@@ -16,7 +16,7 @@ class CollRunAlltoAllVFullMesh : public CollAlltoAllExecutor {
 
 public:
     CollRunAlltoAllVFullMesh(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollRunAlltoAllVFullMesh() = default;
+    ~CollRunAlltoAllVFullMesh() override = default;
 
 private:
     HcclResult CalcStreamNum(u32& streamNum) override;

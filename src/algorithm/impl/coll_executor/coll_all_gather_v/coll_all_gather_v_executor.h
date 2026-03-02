@@ -16,7 +16,7 @@ class CollAllGatherVExecutor : public CollCommExecutor {
 
 public:
     explicit CollAllGatherVExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherVExecutor() = default;
+    ~CollAllGatherVExecutor() override = default;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
     HcclResult GetAdjInfo(AlgResourceResponse& algRes, AdjInfo& adjInfo) override;

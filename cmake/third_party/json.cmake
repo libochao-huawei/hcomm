@@ -16,13 +16,13 @@ unset(JSON_INCLUDE CACHE)
 set(JSON_FILE "include.zip")
 set(JSON_URL "https://gitcode.com/cann-src-third-party/json/releases/download/v3.11.3/${JSON_FILE}")
 set(JSON_PKG_PATH ${CANN_3RD_LIB_PATH}/${JSON_FILE})
-set(JSON_INSTALL_PATH ${CANN_3RD_LIB_PATH}/json)
+set(JSON_SRC_PATH ${CANN_3RD_LIB_PATH}/json)
 
 find_path(JSON_INCLUDE
     NAMES nlohmann/json.hpp
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH
-    PATHS ${JSON_INSTALL_PATH}/include
+    PATHS ${JSON_SRC_PATH}/include
 )
 
 include(FindPackageHandleStandardArgs)
@@ -34,7 +34,7 @@ find_package_handle_standard_args(json
 )
 
 if(json_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
-    message(STATUS "[ThirdParty] nlohmann_json found in ${JSON_INSTALL_PATH}, and not force rebuild cann third_party")
+    message(STATUS "[ThirdParty] nlohmann_json found in ${JSON_SRC_PATH}, and not force rebuild cann third_party")
 else()
     if(EXISTS ${JSON_PKG_PATH})
         # 离线编译场景，优先使用已下载的包
@@ -49,10 +49,11 @@ else()
     include(ExternalProject)
     ExternalProject_Add(third_party_json
         URL ${JSON_PROJECT_URL}
+        URL_HASH SHA256=a22461d13119ac5c78f205d3df1db13403e58ce1bb1794edc9313677313f4a9d
         TLS_VERIFY OFF
         DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}
         DOWNLOAD_NO_PROGRESS TRUE
-        SOURCE_DIR ${JSON_INSTALL_PATH}
+        SOURCE_DIR ${JSON_SRC_PATH}
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
@@ -62,7 +63,7 @@ endif()
 
 # 创建导入的目标
 add_library(json INTERFACE)
-set(THIRD_PARTY_NLOHMANN_PATH ${JSON_INSTALL_PATH}/include)
+set(THIRD_PARTY_NLOHMANN_PATH ${JSON_SRC_PATH}/include)
 target_include_directories(json INTERFACE
     ${THIRD_PARTY_NLOHMANN_PATH}
 )

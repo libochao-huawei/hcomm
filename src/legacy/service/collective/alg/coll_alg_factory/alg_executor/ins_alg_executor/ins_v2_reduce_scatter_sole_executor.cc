@@ -20,6 +20,7 @@
 #ifndef CCL_KERNEL_AICPU
 #include "aiv_temp_reduce_scatter_mesh_1D.h"
 #include "ccu_temp_reduce_scatter_nhr_1D_mem2mem.h"
+#include "ccu_temp_reduce_scatter_mesh_1D_2die.h"
 #endif
 #include "ins_v2_reduce_scatter_sole_executor.h"
 #include "ins_temp_reduce_scatter_aicpu_reduce.h"
@@ -284,5 +285,7 @@ INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCESCATTER, CcuReduceScatterMeshMem2Mem1D, 
                           CcuTempReduceScatterMeshMem2Mem1D);
 INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCESCATTER, CcuReduceScatterNHR1DMem2Mem, InsV2ReduceScatterSoleExecutor,
     TopoMatchMesh, CcuTempReduceScatterNHR1DMem2Mem);
+INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCESCATTER, CcuReduceScatterMesh1D2Die, InsV2ReduceScatterSoleExecutor,
+    TopoMatchMesh, CcuTempReduceScatterMesh1D2Die);
 #endif
 } // namespace Hccl

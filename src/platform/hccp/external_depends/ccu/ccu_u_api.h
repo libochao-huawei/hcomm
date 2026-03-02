@@ -25,10 +25,18 @@ struct ccu_u_op_handle {
     int (*op_handle)(const struct channel_info_in *, struct channel_info_out *);
 };
 
+struct ccu_mem_rsp {
+    unsigned int die_id;
+    unsigned int num;
+    struct ccu_mem_info list[64U];
+};
+
 CCU_ATTRI_VISI_DEF int ccu_init(void);
 CCU_ATTRI_VISI_DEF int ccu_uninit(void);
 CCU_ATTRI_VISI_DEF unsigned long long ccu_get_cqe_base_addr(unsigned int die_id);
 CCU_ATTRI_VISI_DEF int ccu_custom_channel(const struct channel_info_in *in, struct channel_info_out *out);
+CCU_ATTRI_VISI_DEF int ccu_get_mem_info(unsigned int die_id, unsigned long long mem_type_bitmap,
+    struct ccu_mem_rsp *rsp);
 int get_ccu_u_info(unsigned int die_id, struct ccu_u_info *info);
 int get_region_by_op(ccu_u_opcode_t op, struct ccu_region **region);
 

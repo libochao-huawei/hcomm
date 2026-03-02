@@ -238,7 +238,7 @@ TEST_F(HcomTest, HcomGetWorkspaceSubStreamNumV2_func)
  
     char group1[64] = "testgroup";
     ret = HcomGetWorkspaceSubStreamNumV2(group1, streamNum, dataSize, HCCL_DATA_TYPE_INT8, optype);
-    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
  
     HcclCMDType optype1 = HcclCMDType::HCCL_CMD_INVALID;
     ret = HcomGetWorkspaceSubStreamNumV2(group, streamNum, dataSize, HCCL_DATA_TYPE_INT8, optype1);
@@ -318,12 +318,12 @@ TEST_F(HcomTest, HcomGetWorkspaceMemSizeV2_func_err)
     char group[64] = "testGroup";
     u64 memSize = 0;
     HcclResult ret = HcomGetWorkspaceMemSizeV2(opType, count, dataType, group, memSize);
-    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
  
     char group1[64];
     opType = "null";
     ret = HcomGetWorkspaceMemSizeV2(opType, count, dataType, group1, memSize);
-    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
  
 TEST_F(HcomTest, HcomSetWorkspaceResource_V2_func)
@@ -353,7 +353,7 @@ TEST_F(HcomTest, HcomSetWorkspaceResource_V2_func)
  
     char group1[64] = "testgroup";
     ret = HcomSetWorkspaceResourceV2(tag, group1, streamList, memptr, memSize);
-    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
  
     HcclGroupParamsV2 hcclGroupParamsV2_1;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
