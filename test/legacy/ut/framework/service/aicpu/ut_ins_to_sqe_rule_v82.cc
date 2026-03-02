@@ -204,6 +204,7 @@ protected:
 
     virtual void SetUp()
     {
+        MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
         MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910A2));
         MOCKER_CPP(&RtsqBase::QuerySqBaseAddr).stubs().with(any()).will(returnValue(reinterpret_cast<u64>(&mockSq)));
         MOCKER_CPP(&RtsqBase::QuerySqStatusByType).stubs().with(any()).will(returnValue(static_cast<u32>(0)));

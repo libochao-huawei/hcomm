@@ -37,6 +37,16 @@ aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType
     return ACL_SUCCESS;
 }
 
+<<<<<<< HEAD
+=======
+rtError_t rtStreamCreateWithFlags(rtStream_t *stream, int32_t priority, uint32_t flag)
+{
+    *stream = reinterpret_cast<rtStream_t>(0x123);
+    return RT_ERROR_NONE;
+}
+
+
+>>>>>>> deeb0532... update
 int rtModelFake = 0;
 aclError aclmdlRICaptureGetInfo(aclrtStream stream, aclmdlRICaptureStatus *status, aclmdlRI *modelRI)
 {   
@@ -61,6 +71,7 @@ aclError aclrtSetDeviceTaskAbortCallback(const char *regName, aclrtDeviceTaskAbo
 
 aclError aclrtCreateEventWithFlag(aclrtEvent *event, uint32_t flag)
 {
+    *event = reinterpret_cast<aclrtEvent>(0x123);
     return aclrtCreateEvent(event);
 }
 
@@ -211,6 +222,15 @@ rtError_t rtGetP2PStatus(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t *status)
     return RT_ERROR_NONE;
 }
 
+<<<<<<< HEAD
+=======
+rtError_t rtMalloc(void **devPtr, uint64_t size, rtMemType_t type, const uint16_t moduleId)
+{
+    *devPtr = reinterpret_cast<void*>(0x123);
+    return RT_ERROR_NONE;
+}
+
+>>>>>>> deeb0532... update
 rtError_t aclrtFree(void *devPtr)
 {
     return RT_ERROR_NONE;
@@ -349,6 +369,7 @@ aclError aclrtNotifyGetExportKey(aclrtNotify notify, char *key, size_t len, uint
 
 aclError aclrtGetNotifyId(aclrtNotify notify, uint32_t *notifyId)
 {
+    notify = reinterpret_cast<aclrtNotify>(0x123);
     return ACL_SUCCESS;
 }
 

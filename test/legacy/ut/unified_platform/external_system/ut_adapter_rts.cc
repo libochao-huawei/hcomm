@@ -219,8 +219,9 @@ TEST_F(AdapterRtsTest, HrtIpcSetNotifyName_return_ok)
         .will(returnValue(ACL_SUCCESS));
 
     // when
+    int mockObject = 0;
     char_t name[128] = {0};
-    HrtIpcSetNotifyName(nullptr, name, 128);
+    HrtIpcSetNotifyName(&mockObject, name, 128);
 
     // then
     EXPECT_EQ(0, strcmp(name, fakeName));
@@ -233,7 +234,8 @@ TEST_F(AdapterRtsTest, HrtIpcSetNotifyName_return_nok)
     MOCKER(aclrtNotifyGetExportKey).stubs().will(returnValue(1));
 
     // when
-    EXPECT_THROW(HrtIpcSetNotifyName(nullptr, "xxx", 128), RuntimeApiException);
+    int mockObject = 0;
+    EXPECT_THROW(HrtIpcSetNotifyName(&mockObject, "xxx", 128), RuntimeApiException);
 }
 
 TEST_F(AdapterRtsTest, HrtGetNotifyID_return_ok)
@@ -246,7 +248,8 @@ TEST_F(AdapterRtsTest, HrtGetNotifyID_return_ok)
         .will(returnValue(ACL_SUCCESS));
 
     // when
-    u32 notifyID = HrtGetNotifyID(nullptr);
+    int mockObject = 0;
+    u32 notifyID = HrtGetNotifyID(&mockObject);
 
     // then
     EXPECT_EQ(notifyID, fakeNotifyID);
@@ -258,9 +261,10 @@ TEST_F(AdapterRtsTest, HrtGetNotifyID_return_nok)
     MOCKER(aclrtGetNotifyId).stubs().will(returnValue(1));
 
     // when
+    int mockObject = 0;
 
     // then
-    EXPECT_THROW(HrtGetNotifyID(nullptr), RuntimeApiException);
+    EXPECT_THROW(HrtGetNotifyID(&mockObject), RuntimeApiException);
 }
 
 TEST_F(AdapterRtsTest, HrtGetStreamId_return_ok)
