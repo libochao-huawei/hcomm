@@ -4463,6 +4463,12 @@ HcclResult HcclCommResume(HcclComm comm)
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommGetStatus(HcclComm comm, HcclCommStatus *status)
+{
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    return hcclComm->GetCommStatus(status);
+}
+
 uint32_t HcclGetCommConfigCapability()
 {
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))

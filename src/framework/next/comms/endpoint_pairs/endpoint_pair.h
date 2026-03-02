@@ -78,6 +78,8 @@ public:
     HcclResult CreateChannel(EndpointHandle endpointHandle, CommEngine engine, 
         HcommChannelDesc *channelDescs, ChannelHandle *channels);
 
+    std::vector<ChannelHandle> GetChannelHandles();
+
 private:
     EndpointDesc localEndpointDesc_{};
     EndpointDesc remoteEndpointDesc_{};

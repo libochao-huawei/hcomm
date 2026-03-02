@@ -1368,6 +1368,11 @@ HcclResult hcclComm::Resume()
     CHK_RET(communicator_->Resume());
     return HCCL_SUCCESS;
 }
+HcclResult hcclComm::GetCommStatus(HcclCommStatus *status)
+{
+    *status = collComm_->GetCommStatus();
+    return HCCL_SUCCESS;
+}
 
 HcclResult hcclComm::InitZeroCopyMemoryAgent()
 {

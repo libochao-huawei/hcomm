@@ -56,6 +56,9 @@ HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t noti
 HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
 
 HcclResult HcommThreadAllocWithStream(CommEngine engine, rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
+
+HcclResult HcommChannelClean(const ChannelHandle *channelList, uint32_t listNum);
+HcclResult HcommChannelResume(const ChannelHandle *channelList, uint32_t listNum);
  
 #ifdef __cplusplus
 }
