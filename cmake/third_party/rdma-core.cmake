@@ -10,7 +10,7 @@
 
 message("Build third party library rdma-core")
 set(RDMA_CORE_NAME "rdma-core")
-set(ROOT_BUILD_PATH "${CMAKE_BINARY_DIR}")
+set(ROOT_BUILD_PATH "${CMAKE_SOURCE_DIR}/third_party")
 set(RDMA_CORE_SEARCH_PATHS "${CANN_3RD_LIB_PATH}/${RDMA_CORE_NAME}")
 set(RDMA_CORE_ROOT_DIR ${ROOT_BUILD_PATH}/rdma-core)
 set(RDMA_CORE_SRC_DIR ${ROOT_BUILD_PATH}/rdma-core/src)
