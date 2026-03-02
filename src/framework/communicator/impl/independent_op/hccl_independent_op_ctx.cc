@@ -61,7 +61,6 @@ HcclResult HcclEngineCtxCreate(HcclComm comm, const char *ctxTag, CommEngine eng
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
     HcclResult ret = contextMgr.CreateCommEngineCtx(ctxTagTmp, engine, size, ctx);
-
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to create CommEngineCtx with ctxTag[%s], engine[%d], ctx size[%llu], ret[%d]",
             __func__, ctxTagTmp, engine, size, ret);
@@ -167,7 +166,6 @@ HcclResult HcclEngineCtxCopy(HcclComm comm, CommEngine engine, const char *ctxTa
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
     HcclResult ret = contextMgr.CopyCommEngineCtx(std::string(ctxTagTmp), engine, srcCtx, size, dstCtxOffset);
-    
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to copy CommEngineCtx with ctxTag[%s], engine[%d], size[%llu], dstCtxOffset[%llu],"
             " ret[%d]", __func__, ctxTagTmp, engine, size, dstCtxOffset, ret);
