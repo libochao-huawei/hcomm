@@ -109,7 +109,7 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
         __func__, thread, threadEntityPtr->DescribeAttr().c_str(), dstThread, dstThreadEntityPtr->DescribeAttr().c_str(), dstNotifyIdx);
 
     int32_t ret = HCCL_SUCCESS;
-    NotifyRecordOpType notifyRecordOpType = GetNotifyRecordOpType(*threadEntityPtr, *dstThreadEntityPtr);
+    const NotifyRecordOpType notifyRecordOpType = GetNotifyRecordOpType(*threadEntityPtr, *dstThreadEntityPtr);
     switch (notifyRecordOpType) {
         case NotifyRecordOpType::AicpuTs_to_AicpuTs:
             AddThread(threadEntityPtr->threadObjAddr);
@@ -120,10 +120,10 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
             ret = RecordAicpuTsToCpu(*threadEntityPtr, *dstThreadEntityPtr, dstNotifyIdx);
             break;
         case NotifyRecordOpType::Cpu_to_AicpuTs:
-            ret = RecordCpuToAicpuTs(thread, dstThread, dstNotifyIdx, HcommRequestServiceOnThread);
+            ret = RecordCpuToAicpuTs(*threadEntityPtr, *dstThreadEntityPtr, dstNotifyIdx);
             break;
         default:
-            HCCL_ERROR("[%s] Not supported combination of comm engines and thread types.", __func__);
+            HCCL_ERROR("[%s] Not supported: thread type[%d], dstThread type[%d].", __func__, threadEntityPtr->type, dstThreadEntityPtr->type);
             ret = HCCL_E_NOT_SUPPORT;
             break;
     }
@@ -136,27 +136,34 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
 
 int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeOut)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], notifyIdx[%u], timeOut[%u].", __func__, thread, notifyIdx, timeOut);
+    auto *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    CHK_PTR_NULL(threadEntityPtr);
 
-    AddThread(thread);
+    HCCL_INFO("[%s] START. thread[0x%llx][%s], notifyIdx[%u], timeOut[%u].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), notifyIdx, timeOut);
 
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
-    CHK_PTR_NULL(threadPtr);
-
-    HcclResult ret = HCCL_SUCCESS;
-    if (threadPtr->IsDeviceA5()) {
-        LocalNotify *const notifyPtr = threadPtr->GetNotify(notifyIdx);
-        CHK_PTR_NULL(notifyPtr);
-        const uint32_t notifyId = notifyPtr->notifyId_;
-        EXECEPTION_CATCH(ret = threadPtr->LocalNotifyWait(notifyId), ret = HCCL_E_INTERNAL);
-    } else {
-        Stream *stream = GetStream(thread);
-        CHK_PTR_NULL(stream);
-        LocalNotify *notify = GetNotify(thread, notifyIdx);
-        CHK_PTR_NULL(notify);
-        ret = HcclLocalNotifyWait(stream, notify, timeOut);
+    if (notifyIdx >= threadEntityPtr->notifyNum) {
+        HCCL_ERROR("[%s] notifyIdx[%u] is out of range, notifyNum[%u].", __func__, notifyIdx, threadEntityPtr->notifyNum);
+        return HCCL_E_PARA;
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeOut[%u].", __func__, thread, notifyIdx, timeOut), ret);
+    
+    int32_t ret = HCCL_SUCCESS;
+    const ThreadType threadType = threadEntityPtr->type;
+    switch (threadType) {
+        case THREAD_TYPE_TS:
+            AddThread(threadEntityPtr->threadObjAddr);
+            ret = WaitAicpuTs(*threadEntityPtr, notifyIdx, timeOut);
+            break;
+        case THREAD_TYPE_CPU:
+            ret = WaitCpu(*threadEntityPtr, notifyIdx, timeOut);
+            break;
+        default:
+            HCCL_ERROR("[%s] Not supported thread type[%d].", __func__, threadType);
+            ret = HCCL_E_NOT_SUPPORT;
+            break;
+    }
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx][%s], notifyIdx[%u], timeOut[%u].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), notifyIdx, timeOut), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -814,7 +821,7 @@ int32_t HcommRequestServiceOnThread(ThreadHandle dstThreadHandle, ThreadServiceH
         *reinterpret_cast<uint64_t *>(queueInfo.headIdxAddr), *reinterpret_cast<uint64_t *>(queueInfo.tailIdxAddr));
     s_msgId++;
     return HCCL_SUCCESS;
-    
+
 }
 
 int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
