@@ -107,9 +107,8 @@ void HrtGetSocVer(std::string &socName)
     if (socNamePtr == nullptr) {
         HCCL_ERROR("[Get][SocVer]errNo[0x%016llx] rtGet deviceVer failed.",
                    HCCL_ERROR_CODE((HcclResult::HCCL_E_RUNTIME)));
-        throw RuntimeApiException("call rtGetSocVersion failed.");
-    }
-
+        throw RuntimeApiException("call rtGetSocVersion failed. ");
+        }
     socName = socNamePtr;
 }
 
@@ -118,9 +117,9 @@ s32 HrtGetDevice()
     s32 deviceLogicId = 0;
     aclError ret = aclrtGetDevice(&deviceLogicId);
     if (ret != ACL_SUCCESS) {
-        string msg = StringFormat("[Get][Device]errNo[0x%016llx] rtGet device fail. "	 
-                      "please make sure that device is set. return[%d], para:deviceLogicId[%d].",	 
-                      HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, deviceLogicId);	 
+        string msg = StringFormat("[Get][Device]errNo[0x%016llx] rtGet device fail. "
+                      "please make sure that device is set. return[%d], para:deviceLogicId[%d].",
+                      HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, deviceLogicId);
         MACRO_THROW(RuntimeApiException, msg);
     }
     HCCL_INFO("[HrtGetDevice]deviceLogicId=%d.",deviceLogicId);
@@ -214,7 +213,7 @@ void HrtStreamSetMode(HcclRtStream streamPtr, const uint64_t stmMode)
     ret = aclrtSetStreamAttribute(streamPtr, ACL_STREAM_ATTR_FAILURE_MODE, &value);
     HCCL_INFO("Call rtStreamSetMode return value[%d]. stmMode[%llu].", ret, stmMode);
     if (ret != ACL_SUCCESS) {
-        string msg = StringFormat("[Stream][SetMode]errNo[0x%016llx] rtStreamSetMode error. " 
+        string msg = StringFormat("[Stream][SetMode]errNo[0x%016llx] rtStreamSetMode error. "
             "streamPtr[%p], rtRet[%d], stmMode[%llu].", 
             HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), streamPtr, ret, stmMode);
         MACRO_THROW(RuntimeApiException, msg);
@@ -286,8 +285,7 @@ const std::unordered_map<uint64_t, HcclMainboardId> rtMainboardIdToHcclMainboard
  */
 HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainboardId)
 {
-    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%d], hcclMainboardId[%s].",
-              deviceLogicId, hcclMainboardId.Describe().c_str());
+    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%d].", deviceLogicId);
     constexpr int32_t moduleType = DEV_MODULE_TYPE::MODULE_TYPE_SYSTEM;
     constexpr aclrtDevAttr infoType = aclrtDevAttr::ACL_DEV_ATTR_MAINBOARD_ID;
     constexpr uint64_t BITS_5 = 5;
@@ -518,11 +516,11 @@ void HrtIpcDestroyMemoryName(const char_t *name)
 {
     CHECK_NULLPTR(name, "[HrtIpcDestroyMemoryName] name is nullptr!");
     rtError_t ret = rtIpcDestroyMemoryName(reinterpret_cast<const char *>(name));
-    HCCL_INFO("Call rtIpcDestroyMemoryName, return[%d], para: name[%s]", ret, name);
+    HCCL_INFO("Call rtIpcDestroyMemoryName, return[%d], para: name[%s].", ret, name);
     if (ret != RT_ERROR_NONE) {
-        HCCL_ERROR("[Destroy][IpcMemoryName]errNo[0x%016llx] "
-                   "rtDestroy Ipc memory name fail. return[%d], para: name[%s]",
-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, name);
+        HCCL_ERROR("[Destroy][IpcMemoryName]errNo[0x%016llx] "	 
+                    "rtDestroy Ipc memory name fail. return[%d], para: name[%s]",	 
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, name);
         throw RuntimeApiException(StringFormat("call rtIpcDestroyMemoryName failed, name=%s", name));
     }
 }
@@ -547,8 +545,8 @@ void HrtIpcCloseMemory(const void *ptr)
     CHECK_NULLPTR(ptr, "[HrtIpcCloseMemory] ptr is nullptr!");
     rtError_t ret = rtIpcCloseMemory(ptr);
     if (ret != RT_ERROR_NONE) {
-        HCCL_ERROR("[Close][IpcMemory]errNo[0x%016llx] "
-                   "rtClose ipc memory fail, return[%d]. para: ptr[%p]",
+        string msg = StringFormat("[Close][IpcMemory]errNo[0x%016llx] "
+                   "rtClose ipc memory failed. return[%d], para: ptr[%p].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr);
         throw RuntimeApiException(StringFormat("call rtIpcMemClose failed, ptr=%p", ptr));
     }
@@ -556,9 +554,9 @@ void HrtIpcCloseMemory(const void *ptr)
 
 void HrtIpcSetMemoryPid(const char_t *name, int pid)
 {
+    CHECK_NULLPTR(name, "[HrtIpcSetMemoryPid] name is nullptr!");
     aclError ret = aclrtIpcMemSetImportPid(name, &pid, 1);
     HCCL_INFO("Call aclrtIpcMemSetImportPid, return value[%d], pid[%d], name[%s].", ret, pid, name);
-    CHECK_NULLPTR(name, "[HrtIpcSetMemoryPid] name is nullptr!");
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[Set][IpcMemoryPid]errNo[0x%016llx] "
                    "rtSet ipc memory pid fail. return[%d], pid[%d], name[%s].",
@@ -682,9 +680,8 @@ void HrtNotifyDestroy(RtNotify_t ptr)
 
 void HrtIpcSetNotifyName(RtNotify_t ptr, char_t *name, uint32_t len)
 {
-    HCCL_INFO("[HrtIpcSetNotifyName] ptr[%p], name[%s], len[%u].", ptr, name, len);
+    HCCL_INFO("[HrtIpcSetNotifyName] ptr[%p], len[%u].", ptr, len);
     CHECK_NULLPTR(ptr, "[HrtIpcSetNotifyName] ptr is nullptr!");
-    CHECK_NULLPTR(name, "[HrtIpcSetNotifyName] name is nullptr!");
     if (HrtGetDeviceType() == DevType::DEV_TYPE_910_95) {
         return;
     }
@@ -869,6 +866,7 @@ void HrtRDMADBSend(uint32_t dbindex, uint64_t dbinfo, aclrtStream streamPtr)
 
 void HrtGetTaskIdAndStreamID(u32 &taskId, u32 &streamId)
 {
+    HCCL_INFO("[HrtGetTaskIdAndStreamID] taskId[%u], streamId[%u].", taskId, streamId);
     rtError_t ret = rtGetTaskIdAndStreamID(&taskId, &streamId);
     HCCL_INFO("Call rtGetTaskIdAndStreamId, return value[%d], para: taskId[%u], streamId[%u].", ret, taskId, streamId);
     if (ret != RT_ERROR_NONE) {
@@ -1252,9 +1250,11 @@ HcclResult HrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode)
 
 HcclResult HrtMemPrefetchToDevice(void *devPtr, uint64_t len)
 {
+    HCCL_INFO("[HrtMemPrefetchToDevice] devPtr[%p], len[%llu].", devPtr, len);
+    CHECK_NULLPTR(devPtr, "[HrtMemPrefetchToDevice] devPtr is nullptr!");
     int ret = rtMemPrefetchToDevice(devPtr, len, HrtGetDevice());
     if (ret != 0) {
-        HCCL_ERROR("rtMemPrefetchToDevice fail ret = %d", ret);
+        HCCL_ERROR("rtMemPrefetchToDevice fail ret=%d, devPtr=%p, len=%llu.", ret, devPtr, len);
         return HCCL_E_RUNTIME;
     }
     return HCCL_SUCCESS;
