@@ -36,7 +36,6 @@ using RtCntNotify_t = void*;
 constexpr u32 RTS_IPC_MEM_NAME_LEN       = 65;
 constexpr u32 RTS_IPC_MEM_ALIGNMENT_BYTE = 32;
 constexpr u32 CHIP_VERSION_MAX_LEN       = 32;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -75,13 +74,7 @@ typedef struct tagRtDevBinary {
     const void *data;  // binary data
     uint64_t length;   // binary length
 } rtDevBinary_t;
-extern rtError_t rtFunctionRegister(void *binHandle, const void *stubFunc, const char_t *stubName, const void *kernelInfoExt,
-                             uint32_t funcMode);
-extern rtError_t rtDevBinaryRegister(const rtDevBinary_t *bin, void **hdl);
-extern rtError_t rtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t numBlocks, rtArgsEx_t *argsInfo,
-                                   rtSmDesc_t *smDesc, rtStream_t stm, uint32_t flags, const rtTaskCfgInfo_t *cfgInfo);
-extern rtError_t rtWriteValue(rtWriteValueInfo_t * const info, rtStream_t const stm);
-/* 3-8包不支持的接口 
+/* 3-8包不支持的接口
 * aclrtCntNotifyWaitWithTimeout —— rtsCntNotifyWaitWithTimeout
 * aclrtCntNotifyRecord —— rtsCntNotifyRecord
 * aclrtCntNotifyDestroy —— rtCntNotifyDestroy
@@ -91,85 +84,10 @@ extern rtError_t rtWriteValue(rtWriteValueInfo_t * const info, rtStream_t const 
 * aclrtCntNotifyGetId —— rtsCntNotifyGetId
 * aclrtMallocWithCfg —— rtsMalloc
 */
-typedef enum {
-    RT_CNT_NOTIFY_WAIT_LESS_MODE = 0x0U,
-    RT_CNT_NOTIFY_WAIT_EQUAL_MODE = 0x1U,
-    RT_CNT_NOTIFY_WAIT_BIGGER_MODE = 0x2U,
-    RT_CNT_NOTIFY_WAIT_BIGGER_OR_EQUAL_MODE = 0x3U,
-    RT_CNT_NOTIFY_WAIT_EQUAL_WITH_BITMASK_MODE = 0x4U,
-    RT_CNT_NOTIFY_WAIT_MODE_MAX
-} rtCntNotifyWaitMode;
-typedef struct {
-    rtCntNotifyWaitMode mode;
-    uint32_t value;
-    uint32_t timeout;
-    bool isClear;
-    uint8_t rev[3U];
-} rtCntNotifyWaitInfo_t;
-typedef enum {
-    RT_CNT_NOTIFY_RECORD_SET_VALUE_MODE = 0x0U,
-    RT_CNT_NOTIFY_RECORD_ADD_MODE = 0x1U,
-    RT_CNT_NOTIFY_RECORD_BIT_OR_MODE = 0x2U,
-
-    RT_CNT_NOTIFY_RECORD_BIT_AND_MODE = 0x4U,
-    RT_CNT_NOTIFY_RECORD_MODE_MAX
-} rtCntNotifyRecordMode;
-
-typedef struct {
-    rtCntNotifyRecordMode mode;
-    uint32_t value;
-} rtCntNotifyRecordInfo_t;
-using rtCntNotify_t =  void*;
-extern rtError_t rtsCntNotifyWaitWithTimeout(rtCntNotify_t cntNotify, rtStream_t stm,
-                                      rtCntNotifyWaitInfo_t *info);
-extern rtError_t rtsCntNotifyRecord(rtCntNotify_t cntNotify, rtStream_t stm, rtCntNotifyRecordInfo_t *info);
-extern rtError_t rtCntNotifyDestroy(rtCntNotify_t const inCntNotify);
-extern rtError_t rtCntNotifyCreateServer(rtCntNotify_t * const cntNotify, uint64_t flags);
-extern rtError_t rtsGetPhyDevIdByLogicDevId(int32_t logicDevId, int32_t * const phyDevId);
-typedef enum {
-    RT_DEVICE_TASK_ABORT_PRE = 0,
-    RT_DEVICE_TASK_ABORT_POST
-} rtDeviceTaskAbortStage;
-
-typedef int32_t (*rtsDeviceTaskAbortCallback)(uint32_t devId, rtDeviceTaskAbortStage stage, uint32_t timeout, void *args);
-extern rtError_t rtsSetDeviceTaskAbortCallback(const char_t *regName, rtsDeviceTaskAbortCallback callback, void *args);
-extern rtError_t rtsCntNotifyGetId(rtCntNotify_t cntNotify, uint32_t *notifyId);
-
-
-#define RT_MEMORY_DEFAULT (0x0U)   // default memory on device
-#define RT_MEMORY_HBM (0x2U)       // HBM memory on device
-#define RT_MEMORY_RDMA_HBM (0x3U)  // RDMA-HBM memory on device
-#define RT_MEMORY_DDR (0x4U)       // DDR memory on device
-#define RT_MEMORY_POLICY_HUGE_PAGE_ONLY (0x800U)     // Malloc mem only use huge page, 0x1U << 11U
-extern rtError_t rtMalloc(void **devPtr, uint64_t size, rtMemType_t type, const uint16_t moduleId);
-extern rtError_t rtStreamCreateWithFlags(rtStream_t *stm, int32_t priority, uint32_t flags);
-extern rtError_t rtMemPrefetchToDevice(void *devPtr, uint64_t len, int32_t devId);
-
-typedef enum tagRtMemoryType {
-    RT_MEMORY_TYPE_HOST = 1,
-    RT_MEMORY_TYPE_DEVICE = 2,
-    RT_MEMORY_TYPE_SVM = 3,
-    RT_MEMORY_TYPE_DVPP = 4,
-    RT_MEMORY_TYPE_USER = 5 // by user malloc, unkown memory
-} rtMemoryType_t;
-
-typedef enum {
-    RT_MEMORY_LOC_HOST = 0,
-    RT_MEMORY_LOC_DEVICE,
-    RT_MEMORY_LOC_UNREGISTERED,
-    RT_MEMORY_LOC_MANAGED,
-    RT_MEMORY_LOC_MAX,
-} rtMemLocationType;
-
-typedef struct tagRtPointerAttributes {
-    rtMemoryType_t memoryType;  // host memory or device memory
-    rtMemLocationType locationType;
-    uint32_t deviceID;          // device ID
-    uint32_t pageSize;
-} rtPointerAttributes_t;
+using aclrtMemType_t = int;
 extern rtError_t rtIpcCloseMemory(const void *ptr);
 extern rtError_t rtIpcDestroyMemoryName(const char_t *name);
-extern rtError_t rtPointerGetAttributes(rtPointerAttributes_t *attributes, const void *ptr);
+extern rtError_t rtMemPrefetchToDevice(void *devPtr, uint64_t len, int32_t devId);
 // DPU
 typedef enum tagRtXpuDevType {
     RT_DEV_TYPE_DPU = 0,
@@ -177,6 +95,10 @@ typedef enum tagRtXpuDevType {
 } rtXpuDevType;
 extern rtError_t rtResetXpuDevice(rtXpuDevType devType, const uint32_t devId);
 extern rtError_t rtSetXpuDevice(rtXpuDevType devType, const uint32_t devId);
+extern rtError_t rtCCULaunch(rtCcuTaskInfo_t *taskInfo,  rtStream_t const stm);
+extern rtError_t rtReleaseDevResAddress(rtDevResInfo * const resInfo);
+extern rtError_t rtGetDevResAddress(rtDevResInfo * const resInfo, rtDevResAddrInfo * const addrInfo);
+extern rtError_t rtUbDevQueryInfo(rtUbDevQueryCmd cmd, void *devInfo);
 #ifdef __cplusplus
 }
 #endif
@@ -241,7 +163,7 @@ enum class HcclRtMemcpyKind {
     HCCL_RT_MEMCPY_ADDR_DEVICE_TO_DEVICE, /**< Level-2 address copy, device to device */
     HCCL_RT_MEMCPY_KIND_RESERVED,
 };
-s32     HrtGetDevicePhyIdByIndex(s32 deviceLogicId);
+DevId     HrtGetDevicePhyIdByIndex(s32 deviceLogicId);
 DevType HrtGetDeviceType();
 s32     HrtDeviceGetBareTgid();
 void    HrtGetSocVer(std::string &socName);
@@ -250,15 +172,9 @@ s32     HrtGetDevice();
 void                  HrtSetDevice(s32 deviceLogicId);
 void                  HrtResetDevice(s32 deviceLogicId);
 u32                   HrtGetDeviceCount();
-
-
-
-HcclResult HrtGetDeviceInfo(uint32_t deviceLogicId, int32_t moduleType, int32_t infoType, int64_t &val);
+HcclResult HrtGetDeviceInfo(uint32_t deviceLogicId, int32_t moduleType, aclrtDevAttr infoType, int64_t &val);
 HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainboardId);
-
-void *HrtDevBinaryRegister(const rtDevBinary_t *bin);
-
-aclrtStream HrtStreamCreateWithFlags(int32_t priority, uint32_t flags);
+aclrtStream HrtStreamCreateWithFlags(uint32_t priority, uint32_t flag);
 void       HrtStreamDestroy(aclrtStream ptr);
 void       HrtStreamSetMode(HcclRtStream streamPtr, const uint64_t stmMode);
 u64        HrtStreamGetMode(HcclRtStream const ptr);
@@ -266,7 +182,7 @@ void       HcclStreamSynchronize(HcclRtStream ptr);
 s32        HrtGetStreamId(aclrtStream ptr);
 void       HrtStreamActive(aclrtStream activeStream, aclrtStream stream);
 
-void                 *HrtMalloc(u64 size, rtMemType_t memType);
+void                 *HrtMalloc(u64 size, aclrtMemType_t memType);
 void                  HrtFree(void *devPtr);
 void                  HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, rtMemcpyKind_t kind);
 void                  HrtMemset(void *dst, uint64_t destMax, uint64_t count);
@@ -275,7 +191,7 @@ void                  HrtIpcDestroyMemoryName(const char_t *name);
 void                 *HrtIpcOpenMemory(const char_t *name);
 void                  HrtIpcCloseMemory(const void *ptr);
 void                  HrtIpcSetMemoryPid(const char_t *name, int pid);
-rtPointerAttributes_t HrtPointerGetAttributes(const void *ptr);
+aclrtPtrAttributes    HrtPointerGetAttributes(const void *ptr);
 void                  PrintMemoryAttr(const void *memAddr);
 void                  HrtDevMemAlignWithPage(void *ptr, u64 size, void *&ipcPtr, u64 &ipcSize, u64 &ipcOff);
 HcclResult            HrtMemPrefetchToDevice(void *devPtr, uint64_t len);
@@ -312,14 +228,9 @@ void HrtReduceAsync(void *dst, uint64_t destMax, const void *src, uint64_t count
 void HrtRDMASend(u32 qpn, u32 wqeIndex, aclrtStream streamPtr); // 910A offload
 void HrtRDMADBSend(uint32_t dbindex, uint64_t dbinfo,
                    aclrtStream streamPtr); // 910A opbase and 910A2/910A3
-
-void HrtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t numBlocks, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
-    rtStream_t stream, uint32_t flags, const rtTaskCfgInfo_t *cfgInfo);
-void HrtFunctionRegister(void *binHandle, const void *stubFunc, const char *stubName, const void *devFunc,
-                                uint32_t funcMode);
-void HrtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uint32_t numBlocks,
-                                    const rtAicpuArgsEx_t *argsInfo, rtSmDesc_t * const smDesc, const rtStream_t stream,
-                                    uint32_t flags);
+void HrtAicpuLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t numBlocks, aclrtStream stream,
+                                      aclrtLaunchKernelCfg *cfg, void *hostArgs, size_t argsSize,
+                                      aclrtPlaceHolderInfo *placeHolderArray = nullptr, size_t placeHolderNum = 0);
 
 // rts task exception api
 void HrtRegTaskFailCallbackByModule(aclrtExceptionInfoCallback callback);
@@ -404,7 +315,7 @@ void           HrtEventRecord(RtEvent_t eventPtr, aclrtStream streamPtr);
 HrtEventStatus HrtEventQueryStatus(RtEvent_t eventPtr);
 
 void HrtWriteValue(u64 addr, u32 piVal, const aclrtStream streamPtr);
-void HrtDeviceAbortRegCallBack(rtsDeviceTaskAbortCallback callback, void *args);
+void HrtDeviceAbortRegCallBack(aclrtDeviceTaskAbortCallback callback, void *args);
 } // namespace Hccl
 
 #endif // HCCL_ADAPTER_RTS_H

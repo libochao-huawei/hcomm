@@ -743,7 +743,7 @@ TEST_F(TaskExceptionHandlerTest, test_process_ccu)
     // 打桩清除TaskKill状态, 清除表项, 清除CKE操作
     MOCKER(CcuCleanDieCkes).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CcuComponent::Init).stubs();
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(0)));
     MOCKER(HrtRaCustomChannel).stubs();
 
     // 调用 TaskExceptionHandler::Process() 打印异常DFX信息
