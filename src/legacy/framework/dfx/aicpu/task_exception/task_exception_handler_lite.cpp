@@ -210,6 +210,26 @@ HcclResult SendTaskExceptionByMBox(CommunicatorImplLite *aicpuComm, const rtLogi
     return HCCL_SUCCESS;
 }
 
+string GetOpDataInfo(const TaskInfo& taskInfo)
+{
+    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
+        HCCL_ERROR("[TaskInfo][%s]TaskInfo communicator is nullptr.", __func__);
+        return "";
+    }
+    const CommunicatorImplLite* aicpuComm = static_cast<CommunicatorImplLite*>(taskInfo.dfxOpInfo_->comm_);
+    u32 localDeviceId = 0;
+    u32 devPhyId = aicpuComm->GetDevPhyId();
+
+    HCCL_INFO("[GetOpDataInfo] HostToDeviceLogicId[%u]", devPhyId);
+    auto ret = drvGetLocalDevIDByHostDevID(devPhyId, &localDeviceId);
+    if (ret != 0) {
+        HCCL_ERROR("[GetOpDataInfo] HostToDeviceLogicId[%u] failed.",
+        devPhyId);
+        return HCCL_E_DRV;
+    }
+    return StringFormat("deviceId[%u], %s", localDeviceId, curTask->GetOpInfo().c_str());
+}
+
 void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicCqReport_t* exceptionInfo)
 {
     if (exceptionInfo == nullptr) {
@@ -258,26 +278,6 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(*curTask).c_str());
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, opData information is %s.", GetOpDataInfo(*curTask).c_str());
-}
-
-string TaskExceptionHandlerLite::GetOpDataInfo(const TaskInfo& taskInfo)
-{
-    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo communicator is nullptr.", __func__);
-        return "";
-    }
-    const CommunicatorImplLite* aicpuComm = static_cast<CommunicatorImplLite*>(taskInfo.dfxOpInfo_->comm_);
-    u32 localDeviceId = 0;
-    u32 devPhyId = aicpuComm->GetDevPhyId();
-
-    HCCL_INFO("[TaskExceptionHandlerLite][GetOpDataInfo] HostToDeviceLogicId[%u]", devPhyId);
-    auto ret = drvGetLocalDevIDByHostDevID(devPhyId, &localDeviceId);
-    if (ret != 0) {
-        HCCL_ERROR("[TaskExceptionHandlerLite][GetOpDataInfo] HostToDeviceLogicId[%u] failed.",
-        devPhyId);
-        return HCCL_E_DRV;
-    }
-    return StringFormat("deviceId[%u], %s", localDeviceId, curTask->GetOpInfo().c_str());
 }
 
 string TaskExceptionHandlerLite::GetGroupRankInfo(const TaskInfo& taskInfo)
