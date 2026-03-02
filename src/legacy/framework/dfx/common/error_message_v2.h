@@ -37,6 +37,11 @@ struct ErrorMessageReport {
 
     Eid locEid{};
     Eid rmtEid{};
+
+    uint8_t  rtCqErrorType = 0;
+    uint32_t rtCqErrorCode = 0;
+    uint16_t ubCqeStatus = 0;
+    uint8_t opType = 0;
 };
 
 } // namespace Hccl

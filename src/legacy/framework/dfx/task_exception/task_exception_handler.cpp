@@ -539,9 +539,9 @@ inline void PrintBaseErrorLog(const std::string &stageErrInfo, const std::string
     HCCL_ERROR("%sTask run failed, base information is %s", stageErrInfo.c_str(), baseInfo.c_str());
 }
 
-inline void PrintParaErrorLog(const std::string &stageErrInfo, const std::string &paraInfoStr, const std::string &tag)
+inline void PrintParaErrorLog(const std::string &stageErrInfo, const std::string &paraInfoStr)
 {
-    HCCL_ERROR("%sTask run failed, para information is %s, tag[%s].", stageErrInfo.c_str(), paraInfoStr.c_str(), tag.c_str());
+    HCCL_ERROR("%sTask run failed, para information is %s.", stageErrInfo.c_str(), paraInfoStr.c_str());
 }
 
 inline void PrintOpDataErrorLog(const std::string &stageErrInfo, const std::string &opDataContent)
@@ -549,9 +549,9 @@ inline void PrintOpDataErrorLog(const std::string &stageErrInfo, const std::stri
     HCCL_ERROR("%sTask run failed, opData information is %s", stageErrInfo.c_str(), opDataContent.c_str());
 }
 
-inline void PrintGroupErrorLog(const std::string &stageErrInfo, const std::string &groupRankContent, const std::string &tag)
+inline void PrintGroupErrorLog(const std::string &stageErrInfo, const std::string &groupRankContent)
 {
-    HCCL_ERROR("%sTask run failed, groupRank information is %s, tag[%s].", stageErrInfo.c_str(), groupRankContent.c_str(), tag.c_str());
+    HCCL_ERROR("%sTask run failed, groupRank information is %s.", stageErrInfo.c_str(), groupRankContent.c_str());
 }
 
 void TaskExceptionHandler::PrintGroupErrorMessage(ErrorMessageReport &errorMessage, TaskInfo &exceptionTaskInfo,
@@ -561,13 +561,11 @@ void TaskExceptionHandler::PrintGroupErrorMessage(ErrorMessageReport &errorMessa
     groupRankContent += std::string(errorMessage.group);
     groupRankContent += "], rankSize[";
     groupRankContent += std::to_string(errorMessage.rankSize);
-    groupRankContent += "], rankId[";
+    groupRankContent += "], myRank[";
     groupRankContent += std::to_string(errorMessage.rankId);
-    groupRankContent += " ";
-    groupRankContent += std::to_string(errorMessage.remoteUserRank);
     groupRankContent += "]";
 
-    PrintGroupErrorLog(stageErrInfo, groupRankContent, errorMessage.tag);
+    PrintGroupErrorLog(stageErrInfo, groupRankContent);
     return;
 }
 
@@ -624,6 +622,12 @@ inline std::string GetDataTypeEnumStr(u32 dataType)
     return GetDataTypeEnumStr(hcclDataType);
 }
 
+inline std::string GetOpTypeEnumStr(u32 dataType)
+{
+    auto opType = static_cast<OpType>(opType);
+    return opType.Describe();
+}
+
 void TaskExceptionHandler::PrintOpDataErrorMessage(u32 deviceId, ErrorMessageReport &errorMessage, string &stageErrInfo)
 {
     stringstream opDataStr;
@@ -643,6 +647,8 @@ void TaskExceptionHandler::PrintOpDataErrorMessage(u32 deviceId, ErrorMessageRep
     opDataContent += std::to_string(deviceId);
     opDataContent += "], index[";
     opDataContent += std::to_string(errorMessage.opIndex);
+    opDataContent += "], opType[";
+    opDataContent += GetOpTypeEnumStr(errorMessage.opType);
     opDataContent += "], count[";
     opDataContent += std::to_string(errorMessage.count);
     opDataContent += "], ";
@@ -712,16 +718,18 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
             HCCL_ERROR("%sTask from HCCL run failed.", stageErrInfo.c_str());
             // 防止tag字符串过长， 信息分开打印
             PrintBaseErrorLog(stageErrInfo, exceptionTaskInfo.GetBaseInfo());
-            PrintParaErrorLog(stageErrInfo, exceptionTaskInfo.GetParaInfo(), tag);
+            PrintParaErrorLog(stageErrInfo, exceptionTaskInfo.GetParaInfo());
             PrintGroupErrorMessage(errorMessage, exceptionTaskInfo, groupRankContent, stageErrInfo);
             PrintOpDataErrorMessage(exceptionInfo->deviceid, errorMessage, stageErrInfo);
-            HCCL_ERROR("errorMessage taskType is: %s", errorMessage.taskType.Describe().c_str());
+            HCCL_ERROR("errorMessage taskType[%s], rtCqErrorType[%], rtCqErrorCode[%u]. ", errorMessage.taskType.Describe().c_str(), 
+                      (u32)errorMessage.rtCqErrorType, errorMessage.rtCqErrorCode);
 
             // 打印UB DFX寄存器信息
             if (errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY 
                 || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
                 || errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE
                 || errorMessage.taskType == TaskParamType::TASK_UB_REDUCE_INLINE) {
+                HCCL_ERROR("errorMessage ubCqeStatus[%u]. ", (u32)errorMessage.ubCqeStatus);
                 auto reverseAddr = IpAddress(errorMessage.locEid);
                 auto addr = IpAddress(reverseAddr.GetReverseEid());
                 u32 devPhyId = HrtGetDevicePhyIdByIndex(exceptionInfo->deviceid);

@@ -601,6 +601,8 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
     taskParam.taskPara.Reduce.linkType = DfxLinkType::UB;
     taskParam.taskPara.Reduce.reduceOp = ConvertReduceOpToHcclReduceOp(reduceIn.reduceOp);
     taskParam.taskPara.Reduce.dataType = DataTypeToHcclDataType(reduceIn.dataType);
+    taskParam.taskPara.Reduce.locEid   = GetLocEid();
+    taskParam.taskPara.Reduce.rmtEid   = GetRmtEid();
     callback_(stream.GetSqId(), taskId, taskParam);
 }
 
