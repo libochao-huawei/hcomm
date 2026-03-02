@@ -183,7 +183,8 @@ namespace hccl {
         CHK_RET(entryPtr->CalcStreamSeqIdxes(mainStream, slaveStreams));
 
         // 第一个需要cache的alltoallv类算子
-        if (IsAlltoallvType(param.opType)) {
+        // 注意: 同一个通信域下, alltoallv类算子展开得到的hcclOffsetDstRanksMap是相同的, 所以只需要初始化一次
+        if (IsAlltoallvType(param.opType) && !isInitAlltoallvMetadata_) {
             // 获得hcclOffset-dstRanks mapping
             // 注意: 只有当alltoallv的algName为"RunAlltoAllDirectFullmesh"时, 才会进入cache, 所以使用的一定是CollRunAlltoAllDirectFullmesh executor
             CHK_PTR_NULL(executor.get());
@@ -210,6 +211,8 @@ namespace hccl {
 
             // 根据hcclOffset-dstRank mapping更新PrepareIntraData case下dstRefreshInfo中的rank id
             CHK_RET(entryPtr->UpdateRefreshAddrInfoForAlltoallv(topoinfo.userRank, alltoallvMetadata_));
+
+            isInitAlltoallvMetadata_ = true;
         }
         
         return HCCL_SUCCESS;
@@ -240,14 +243,23 @@ namespace hccl {
         }
 
         // 针对alltoallv算子的缓存进行metadata清理
+        // 注意: 即使当前故障算子不是alltoallv类算子, 由于NS快恢可能会重新分配资源 (例如hccl input / notify/ signal),
+        //     为了保证alltoallvMetadata_的正确性, 必须重新计算并初始化alltoallvMetadata_
         CHK_RET(ClearMetadataForFirstAlltoallv());
+
+        // 清理alltoallv类算子的cache entry
+        // 注意: 为了保证NS快恢/重执行后, 必定进入alltoallvMetadata_重新计算和初始化的流程, 需要清理与alltoallv类算子相关的entry,
+        //     但对aicpu cache影响有限, 因为alltoallv类算子的cache entry数量有限 (只区分opType/isBigCount), 所以性能影响有限
+        CHK_RET(opUnfoldCachePtr_->ClearEntryForAlltoallv());
 
         return HCCL_SUCCESS;
     }
 
     HcclResult AicpuCacheManager::ClearMetadataForFirstAlltoallv()
     {
-        isFirstAlltoallv_ = true; // 确保故障/重执行后第一次可能被cache的alltoallv算子仍然会重新计算metadata
+        // 确保故障/重执行后第一次可能被cache的alltoallv算子仍然会重新计算/初始化metadata
+        isCalcAlltoallvMetadata_ = false;
+        isInitAlltoallvMetadata_ = false;
         alltoallvMetadata_.Clear();
 
         return HCCL_SUCCESS;
@@ -333,16 +345,16 @@ namespace hccl {
                 return HCCL_SUCCESS;
             }
 
-            if (isFirstAlltoallv_) { // 当前通信域下第一次可能被cache的alltoallv, 需要计算相应metadata
+            if (!isCalcAlltoallvMetadata_) { // 当前通信域下第一次可能被cache的alltoallv, 需要计算相应metadata
                 CHK_RET(CalcMetadataForFirstAlltoallv(algResource, isDeviceMode, topoinfo, topoMatcherPtr, algContext));
 
                 // 后续不再重复计算alltoallv metadata
-                // 注意: (i) 虽然alltoallvMetadata_中的相关mapping还未被初始化, 但isFirstAlltoallv_只是为了避免重复计算部分metadata
+                // 注意: (i) 虽然alltoallvMetadata_中的相关mapping还未被初始化, 但isCalcAlltoallvMetadata_只是为了避免重复计算部分metadata
                 // (ii) 参考CalcMetadataForFirstAlltoallv, 例如sdmaDataBlockSize, hcclInputMemRanges, notifyIdRankRflagMap等
                 // 如果有故障发生:
-                // (i) 发生在isFirstAlltoallv_ = false前, 则ClearOpUnfoldCacheEntry会重新计算sdmaDataBlockSize来判断是否需要清理cache entry
-                // (ii) 发生在设置false后, 即使在初始化相关mapping前, 也不影响清理时needCache的判断 (只依赖sdmaDataBlockSize)
-                isFirstAlltoallv_ = false;
+                // (i) 发生在isCalcAlltoallvMetadata_ = true前, 则ClearOpUnfoldCacheEntry会重新计算sdmaDataBlockSize来判断是否需要清理cache entry
+                // (ii) 发生在设置true后, 即使在PostProcessForCacheMiss初始化相关mapping前, 也不影响清理时needCache的判断 (只依赖sdmaDataBlockSize)
+                isCalcAlltoallvMetadata_ = true;
             }
 
             // 判断是否为小数据量的alltoallv类算子
