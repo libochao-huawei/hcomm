@@ -77,10 +77,10 @@ TEST(MaskEventTest, MaskEventRecord_ok)
 
     MOCKER(HrtGetDevicePhyIdByIndex)
         .stubs()
-        .will(returnValue(1));
+        .will(returnValue(static_cast<DevId>(1)));
     
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
 
     // when
     MaskEvent maskEvent;

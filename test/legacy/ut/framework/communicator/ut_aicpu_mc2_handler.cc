@@ -663,6 +663,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLTOALLVC_Expect_ReturnSuccess
     data.output = 0x2000000;
     data.all2AllVCDataDes.sendType = HcclDataType::HCCL_DATA_TYPE_INT8;
     data.all2AllVCDataDes.recvType = HcclDataType::HCCL_DATA_TYPE_INT8;
+	uint64_t sendCountMatrixTmp = 0;
+	data.all2AllVCDataDes.sendCountMatrix = &sendCountMatrixTmp;
     kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HCCL_CMD_ALLTOALLVC);
     AicpuUtils::GetInstance().kernelParam_ = kernelParam;
     AicpuUtils::GetInstance().kernelParamMap_[0] = AicpuUtils::GetInstance().kernelParam_;

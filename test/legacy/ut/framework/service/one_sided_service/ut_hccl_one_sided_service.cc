@@ -57,7 +57,7 @@ protected:
         MOCKER(HrtNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtGetNotifyID).stubs().will(returnValue(fakeNotifyId));
-        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
+        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
         MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
         MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
         MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
@@ -258,7 +258,7 @@ TEST_F(HcclOneSidedServiceTest, test_BatchGet_BatchPut)
     u32 descNum = 1;
 
     rtStream_t stream = nullptr;
-    MOCKER(rtStreamCreateWithFlags).stubs().with(outBoundP(&stream, sizeof(stream))).will(returnValue(RT_ERROR_NONE));
+    MOCKER(aclrtCreateStreamWithConfig).stubs().with(outBoundP(&stream, sizeof(stream))).will(returnValue(ACL_SUCCESS));
     fakeCommA.hostDeviceSyncNotifyManager = std::make_unique<HostDeviceSyncNotifyManager>();
 
     fakeCommA.InitStreamManager();
