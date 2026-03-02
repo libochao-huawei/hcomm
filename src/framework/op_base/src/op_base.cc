@@ -3183,7 +3183,7 @@ static HcclConfigTypeOpExpansionMode OpExpanionModeValueToModeEnum(const uint32_
     constexpr uint32_t ccuSchedMode = 6;
     constexpr uint32_t aicpuMode = 7;
 
-    swith(value) {
+    switch(value) {
         case defaultMode:
             return HcclOpExpansionMode::HCCL_OP_EXPANSION_CCU_SCHED;
         case hostTsMode:
@@ -3209,6 +3209,8 @@ HcclResult HcclConfigGetInfo(HcclComm comm, HcclConfigType cfgType,
     uint32_t infoLen, void *info)
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
+
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     CHK_PTR_NULL(comm);
 
     if (cfgType != HcclConfigType::HCCL_CONFIG_TYPE_OP_EXPANSION_MODE) {
@@ -3238,8 +3240,11 @@ HcclResult HcclConfigGetInfo(HcclComm comm, HcclConfigType cfgType,
 
     auto *modeInfo = static_cast<HcclConfigTypeOpExpansionMode *>(info);
     *modeInfo = opExpansionMode;
-
     return HcclResult::HCCL_SUCCESS;
+#endif
+
+    HCCL_ERROR("[%s] is not support for hccd or kernel.", __func__);
+    return HcclResult::HCCL_E_NOT_SUPPORT;
 }
 
 HcclResult HcclGenerateCommId(hccl::HcclCommParams &params)
