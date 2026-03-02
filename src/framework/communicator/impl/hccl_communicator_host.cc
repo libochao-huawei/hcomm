@@ -3224,8 +3224,6 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]AlltoAllVC is not supported",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -3477,8 +3475,6 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]Scatter Not Supported Yet",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -3526,8 +3522,6 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]ScatterOutPlace Not Supported Yet",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -3583,8 +3577,6 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]Reduce Not Supported Yet",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -4014,8 +4006,6 @@ namespace hccl
         }
 
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]SendOutPlace is not supported",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -4122,8 +4112,6 @@ namespace hccl
         }
 
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]ReceiveOutPlace is not supported",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -8135,8 +8123,6 @@ namespace hccl
                                                                    u64 *recvCounts, u64 *rdispls, HcclDataType recvType, u64 &memSize)
     {
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]GetAlltoAllStagedWorkSpaceMemSize Not Supported!",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;

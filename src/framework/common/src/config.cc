@@ -429,18 +429,9 @@ HcclResult CheckRankIpFamily(const std::vector<RankInfo_t> &rankList)
                     LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
                     errormessage.c_str()),
                 HCCL_E_PARA);
-            std::string localIpFamily = iter.GetFamily() == AF_INET ? "AF_INET" : "AF_INET6";
-            std::string otherIpFamily = iter.GetFamily() == AF_INET ? "AF_INET6" : "AF_INET";
-            std::string rankId = std::to_string(rankList[index].rankId);
-            if (deviceFamily != 0 && deviceFamily != iter.GetFamily()) {
-                const std::string ipFamilyError = "rank[" + rankId + \
-                    "] device ip family[" + localIpFamily + "] is not same with others[" + otherIpFamily + \
-                    "]The possible causes are as follows: If ipfamily is AF_INET6, the NPU IP address is not "
-                    "configured for the rank[" + rankId + "]. The default NPU IP address is used for communication. "
-                    "Therefore, the IP address cannot be used for communication. Configure an NPU IP address of "
-                    "the AF_INET type for the rank[" + rankId + "].";
+            if (deviceFamily != 0 &&  != iter.GetFamily()) {
                 RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
-                    std::vector<std::string>({ "RankIpFamily", ipFamilyError }));
+                    std::vector<std::string>({std::to_string(iter.GetFamily()) "RankIpFamily", deviceFamily }));
                 CHK_PRT_RET(true,
                     HCCL_ERROR("[%s][%s]rank[%u] device ip family[%d] is not same with others[%d].",
                         LOG_KEYWORDS_INIT_GROUP.c_str(),
