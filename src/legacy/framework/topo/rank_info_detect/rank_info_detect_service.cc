@@ -169,7 +169,7 @@ bool RankInfoDetectService::RecvRemoteAgentId(SocketAgent &connSocketAgent, std:
     u64 revMsgLen = 0;
     char msg[MAX_AGENT_BUF_SIZE] = {0};
     bool ret = connSocketAgent.RecvMsg(msg, revMsgLen);
-    CHK_PRT_RET(!ret || revMsgLen > MAX_AGENT_BUF_SIZE, 
+    CHK_PRT_RET(!ret || revMsgLen >= MAX_AGENT_BUF_SIZE, 
         HCCL_ERROR("[RankInfoDetectService::%s] recv error, revMsgLen[%llu].", __func__, revMsgLen), false);
 
     // 解析agentId

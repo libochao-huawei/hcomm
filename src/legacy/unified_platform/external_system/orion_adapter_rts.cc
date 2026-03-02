@@ -306,6 +306,7 @@ HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainbo
     int64_t val = 0;
     CHK_RET(HrtGetDeviceInfo(deviceLogicId, moduleType, infoType, val));
     HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%d] val[%ld].", deviceLogicId, val);
+    CHK_PRT_RET(val < 0, HCCL_ERROR("[HrtGetMainboardId]val[%lld] < 0", val), HCCL_E_RUNTIME);
     uint64_t mainboardId = (static_cast<uint64_t>(val) >> BITS_5) & MASK_7; // 提取val的5-7位，判断整机形态
     auto it = rtMainboardIdToHcclMainboardId.find(mainboardId);
     if (it != rtMainboardIdToHcclMainboardId.end()) {
