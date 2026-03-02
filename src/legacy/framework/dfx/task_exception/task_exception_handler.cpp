@@ -622,10 +622,10 @@ inline std::string GetDataTypeEnumStr(u32 dataType)
     return GetDataTypeEnumStr(hcclDataType);
 }
 
-inline std::string GetOpTypeEnumStr(u32 dataType)
+inline std::string GetOpTypeEnumStr(u8 opType)
 {
-    auto opType = static_cast<OpType>(opType);
-    return opType.Describe();
+    auto hcclOpType = static_cast<OpType>(opType);
+    return hcclOpType.Describe();
 }
 
 void TaskExceptionHandler::PrintOpDataErrorMessage(u32 deviceId, ErrorMessageReport &errorMessage, string &stageErrInfo)

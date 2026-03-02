@@ -14,6 +14,7 @@
 #include "string_util.h"
 #include "const_val.h"
 #include "reduce_op.h"
+#include "communicator_impl_lite.h"
 
 namespace Hccl {
 using namespace std;
