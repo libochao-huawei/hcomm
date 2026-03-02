@@ -164,7 +164,7 @@ u32 HrtGetDeviceCount()
 // 兜底extern, 正式适配待todo
 void *HrtDevBinaryRegister(const rtDevBinary_t *bin)
 {
-    HCCL_INFO("[HrtDevBinaryRegister] bin magic=%u, version=%u, data=%p, length=%u.", bin->magic,
+    HCCL_INFO("[HrtDevBinaryRegister] bin magic=%u, version=%u, data=%p, length=%llu.", bin->magic,
                 bin->version, bin->data, bin->length);
     void     *handle = nullptr;
     rtError_t ret    = rtDevBinaryRegister(bin, &handle);
