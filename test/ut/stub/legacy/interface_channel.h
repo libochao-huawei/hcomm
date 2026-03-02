@@ -10,7 +10,6 @@
 
 #ifndef INTERFACE_CHANNEL_H
 #define INTERFACE_CHANNEL_H
-#include "hccl_api.h"
 #include "hccl/hccl_res.h"
 #include "hccl_types.h"
 
