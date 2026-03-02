@@ -15,7 +15,7 @@ namespace hccl {
 class CollRunAlltoAllDirectFullmesh : public CollAlltoAllExecutor {
 public:
     CollRunAlltoAllDirectFullmesh(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollRunAlltoAllDirectFullmesh() = default;
+    ~CollRunAlltoAllDirectFullmesh() override = default;
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
     HcclResult GetAdjInfo(AlgResourceResponse& algRes, AdjInfo& adjInfo) override;
 

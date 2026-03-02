@@ -21,7 +21,7 @@ class CollScatterMeshExecutor : public CollScatterExecutor {
 public:
     explicit CollScatterMeshExecutor(const HcclDispatcher dispatcher,
                                 std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollScatterMeshExecutor() = default;
+    ~CollScatterMeshExecutor() override = default;
 protected:
     /* *************** 资源计算 *************** */
     HcclResult CalcLevel0CommInfo(TransportMemType inputType,
