@@ -75,7 +75,7 @@ CcuTransport::CcuTransport(Hccl::Socket *socket, std::unique_ptr<CcuConnection> 
 }
 
 CcuTransport::CcuTransport(Hccl::Socket *socket, std::unique_ptr<CcuConnection> &&connection,
-    const CclBufferInfo &locCclBufInfo)
+    const vector<CclBufferInfo> &bufferInfos)
     : socket_(socket), ccuConnection_(std::move(connection)), bufferInfos_(bufferInfos)
 {
 }
@@ -352,9 +352,9 @@ HcclResult CcuTransport::TransResPack(Hccl::BinaryStream &binaryStream)
 HcclResult CcuTransport::BufferInfoPack(Hccl::BinaryStream &binaryStream) const
 {
     u32 locBufferNum = locBufferInfos_.size();
-    binaryStream << bufferNum;
-    for (u32 pos = 0; pos < bufferNum; ++pos) {
-        locBufferInfos_.Pack(binaryStream);
+    binaryStream << locbufferNum;
+    for (u32 pos = 0; pos < locbufferNum; ++pos) {
+        locBufferInfos_[pos].Pack(binaryStream);
     }
     return HcclResult::HCCL_SUCCESS;
 }
@@ -409,7 +409,7 @@ HcclResult CcuTransport::BufferInfoUnpack(Hccl::BinaryStream &binaryStream)
     rmtBufferInfos_.clear();
     u32 rmtBufferNum{0};
     binaryStream >> rmtBufferNum;
-    for (u32 pos = 0; pos < bufferNum; ++pos) {
+    for (u32 pos = 0; pos < rmtbufferNum; ++pos) {
         CclBufferInfo rmtBufferInfo{};
         rmtBufferInfo.Unpack(binaryStream);
         rmtBufferInfos_.push_back(rmtBufferInfo);
@@ -608,7 +608,7 @@ HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, 
     *memNum = 0;
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     uint32_t cclbufferNum = 1;
-    uint32_t userMemCount = rmtBufferVec_.size() - cclbufferNum;
+    uint32_t userMemCount = rmtBufferInfos_.size() - cclbufferNum;
     if (userMemCount == 0) {
         HCCL_INFO("[GetUserRemoteMem] No user remote memory found");
         return HCCL_SUCCESS;
@@ -623,7 +623,7 @@ HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, 
         for (uint32_t i = 0; i < userMemCount; i++) {
             auto& rmtBufferInfo = rmtBufferInfos_[i+cclbufferNum];
             remoteUserMems_[i].type = rmtBufferInfo.type;
-            remoteUserMems_[i].addr = rmtBufferInfo.addr;
+            remoteUserMems_[i].addr = reinterpret_cast<void *>(rmtBufferInfo.addr);
             remoteUserMems_[i].size = rmtBufferInfo.size;
             const char* src = rmtBufferInfo.memTag.data();
             std::string tagCopy(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
