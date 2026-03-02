@@ -429,7 +429,7 @@ HcclResult CheckRankIpFamily(const std::vector<RankInfo_t> &rankList)
                     LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
                     errormessage.c_str()),
                 HCCL_E_PARA);
-            if (deviceFamily != 0 &&  != iter.GetFamily()) {
+            if (deviceFamily != 0 && deviceFamily != iter.GetFamily()) {
                 RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
                     std::vector<std::string>({std::to_string(iter.GetFamily()) "RankIpFamily", deviceFamily }));
                 CHK_PRT_RET(true,
