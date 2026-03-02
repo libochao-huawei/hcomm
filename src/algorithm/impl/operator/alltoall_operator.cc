@@ -650,7 +650,9 @@ bool AlltoAllOperator::IsSatisfyAlltoallContinuousPipelineCondition(const OpPara
         (userRankSize_ % meshAggregationRankSize_) == 0);
     bool isDefaultAlgo = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING)
         || (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD);
-    bool satisfyAlgType = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_CONTINUOUS_PIPELINE) || isDefaultAlgo;
+    bool isPipelineAlgo = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_CONTINUOUS_PIPELINE) ||
+        (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE)
+    bool satisfyAlgType = isPipelineAlgo || isDefaultAlgo;
     bool isAlltoAllv = param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV;
     bool res = (deviceType_ == DevType::DEV_TYPE_910B && isAlltoAllv && satisfyAlgType && multiRankPerServer &&
         GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && isMultiServer &&
