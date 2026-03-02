@@ -125,6 +125,27 @@ namespace hccl {
         return HCCL_SUCCESS;
     }
 
+    HcclResult OpUnfoldCache::ClearEntryForAlltoallv() {
+        // 清理所有与alltoallv类算子相关的cache entry
+        for (CacheHashMap::iterator iter = cacheHashMap_.begin(); iter != cacheHashMap_.end();) {
+            // 先备份iter的下一个位置 (使用std::next避免修改iter本身)
+            CacheHashMap::iterator nextIter = std::next(iter);
+
+            // 清理alltoallv类算子的cache entry
+            const HcclCMDType opType = iter->first.opType;
+            if (opType == HcclCMDType::HCCL_CMD_ALLTOALLV || opType == HcclCMDType::HCCL_CMD_ALLTOALLVC) {
+                CHK_RET(ClearEntry(iter->first));
+            }
+            
+            // 注意: ClearEntry后不能再访问iter (已经从cacheHashMap_中被erase了)
+
+            // 推进iter到下一个位置
+            iter = nextIter;
+        }
+
+        return HCCL_SUCCESS;
+    }
+
     HcclResult OpUnfoldCache::DumpSqeContent(const uint8_t *sqePtr, const uint8_t sqeType) {
         // 根据sqe type打印debug信息
         // 设置HCCL_DEBUG_CONFIG="task", 或者设置ASCEND_GLOBAL_LOG_LEVEL=0
