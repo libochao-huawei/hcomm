@@ -450,7 +450,7 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     taskParam.taskType = TaskParamType::TASK_AICPU_KERNEL;
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
-    SaveDfxTaskInfo(taskParam, -1);
+    SaveDfxTaskInfo(taskParam, -1, stream.GetIsMaster());
     AddWaitToUserStream(stream);
 }
 
@@ -503,7 +503,7 @@ void CollServiceAiCpuImpl::AddPostToUserStream(const Stream &stream)
     taskParam.taskPara.Notify.notifyID = postNotify->GetId();
     taskParam.taskPara.Notify.value = 1;
  
-    SaveDfxTaskInfo(taskParam, -1);
+    SaveDfxTaskInfo(taskParam, -1, stream.GetIsMaster());
 }
 
 void CollServiceAiCpuImpl::AddWaitToUserStream(const Stream &stream)
@@ -524,7 +524,7 @@ void CollServiceAiCpuImpl::AddWaitToUserStream(const Stream &stream)
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     taskParam.taskPara.Notify.notifyID = waitNotify->GetId();
     taskParam.taskPara.Notify.value = 1;
-    SaveDfxTaskInfo(taskParam, -1);
+    SaveDfxTaskInfo(taskParam, -1, stream.GetIsMaster());
 }
 
 void CollServiceAiCpuImpl::AllocWorkStream(u32 primQueueNum) const
@@ -763,14 +763,14 @@ std::vector<char> CollServiceAiCpuImpl::PackOpData(const std::string &opTag, con
     return helper.GetPackedData(dataVec);
 }
 
-void CollServiceAiCpuImpl::SaveDfxTaskInfo(const TaskParam &taskParam, const RankId remoteRankId) const
+void CollServiceAiCpuImpl::SaveDfxTaskInfo(const TaskParam &taskParam, const RankId remoteRankId, const bool isMaster) const
 {
     u32 taskId;
     u32 streamId;
     HrtGetTaskIdAndStreamID(taskId, streamId);
  
     shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId, remoteRankId, taskParam,
-        comm->GetMirrorTaskManager().GetCurrDfxOpInfo());
+        comm->GetMirrorTaskManager().GetCurrDfxOpInfo(), isMaster);
  
     comm->GetMirrorTaskManager().AddTaskInfo(taskInfo);
 }
