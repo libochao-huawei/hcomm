@@ -9,6 +9,7 @@
  */
 
 #include "hccp_dl.h"
+#include "hccp_tlv.h"
 #include "dl_ccu_function.h"
 
 void *gCcuApiHandle = NULL;
@@ -20,6 +21,7 @@ struct RsCcuOps gCcuOps = {
     .rsCcuUninit = ccu_uninit,
     .rsCcuCustomChannel = ccu_custom_channel,
     .rsCcuGetCqeBaseAddr = ccu_get_cqe_base_addr,
+    .rsCcuGetMemInfo = ccu_get_mem_info,
 };
 #endif
 
@@ -39,6 +41,10 @@ STATIC int RsCcuDeviceApiInit(void)
     gCcuOps.rsCcuGetCqeBaseAddr = (unsigned long long (*)(unsigned int dieId))
         HccpDlsym(gCcuApiHandle, "ccu_get_cqe_base_addr");
     DL_API_RET_IS_NULL_CHECK(gCcuOps.rsCcuGetCqeBaseAddr, "ccu_get_cqe_base_addr");
+
+    gCcuOps.rsCcuGetMemInfo = (int (*)(unsigned int dieId, unsigned long long memTypeBitmap,
+        struct ccu_mem_rsp *rsp)) HccpDlsym(gCcuApiHandle, "ccu_get_mem_info");
+    DL_API_RET_IS_NULL_CHECK(gCcuOps.rsCcuGetCqeBaseAddr, "ccu_get_mem_info");
 #endif
     return 0;
 }
@@ -137,4 +143,19 @@ int RsCcuUninit(void)
 #endif
     }
     return gCcuOps.rsCcuUninit();
+}
+
+int RsCcuGetMemInfo(char *dataIn, char* dataOut, unsigned int *bufferSize)
+{
+    struct ccu_mem_rsp *rsp = (struct ccu_mem_rsp *)dataOut;
+    struct CcuMemReq *memReq = (struct CcuMemReq *)dataIn;
+
+    if (gCcuApiHandle == NULL || gCcuOps.rsCcuGetMemInfo == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("g_ccu_api_handle is NULL or rsCcuGetMemInfo is NULL");
+        return -EINVAL;
+#endif
+    }
+    *bufferSize = sizeof(struct ccu_mem_rsp);
+    return gCcuOps.rsCcuGetMemInfo(memReq->udieIdx, memReq->memTypeBitmap, rsp);
 }
