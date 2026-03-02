@@ -269,6 +269,7 @@ TEST_F(CollServiceDefaultImplTest, col_service_default_impl_load_with_op_based_m
     service.connectionsBuilders[comm.id] = std::make_unique<ConnectionsBuilder>(comm);
     DevType devType = DevType::DEV_TYPE_910A;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
+    MOCKER(HrtGetStreamId).stubs().will(returnValue(static_cast<s32>(0)));
 
     MOCKER_CPP(&CollServiceDefaultImpl::RegisterOpBufToBufMgr).stubs();
     MOCKER_CPP(&CollServiceDefaultImpl::RegisterOpbasedStream).stubs();
@@ -352,6 +353,7 @@ TEST_F(CollServiceDefaultImplTest, coll_service_default_impl_orchestrate_with_in
     service.connectionsBuilders[comm.id] = std::make_unique<ConnectionsBuilder>(comm);
 
     DevType devType = DevType::DEV_TYPE_910A;
+    MOCKER(HrtGetStreamId).stubs().will(returnValue(static_cast<s32>(0)));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER_CPP(&CollServiceDefaultImpl::RegisterOpBufToBufMgr).stubs();
     MOCKER_CPP(&CollServiceDefaultImpl::RegisterOpbasedStream).stubs();
@@ -530,6 +532,7 @@ TEST_F(CollServiceDefaultImplTest, test_init)
 TEST_F(CollServiceDefaultImplTest, test_load_with_op_based_mode)
 {
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     DevType devType = DevType::DEV_TYPE_910_95;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
@@ -619,6 +622,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_op_based_mode)
 
 TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode)
 {
+    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     DevType devType = DevType::DEV_TYPE_910_95;
@@ -737,6 +741,9 @@ TEST_F(CollServiceDefaultImplTest, col_service_default_impl_update_ub_ci_if_need
 {
     DevType devType = DevType::DEV_TYPE_910A;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
+    MOCKER(HrtGetStreamId).stubs().will(returnValue(static_cast<s32>(0)));
+    MOCKER(HrtEventDestroy).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtEventRecord).stubs().will(returnValue(static_cast<void*>(0)));
     u32 remoteRank = 1;
     CommunicatorImpl comm;
     CollOpParams collOpParams;
@@ -807,6 +814,7 @@ TEST_F(CollServiceDefaultImplTest, AddCountTask)
 
 TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode_with_task)
 {
+    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
     DevType devType = DevType::DEV_TYPE_910_95;
