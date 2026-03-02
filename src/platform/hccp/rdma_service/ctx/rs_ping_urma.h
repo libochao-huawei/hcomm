@@ -15,7 +15,6 @@
 
 #define PING_URMA_DEV_CNT 1
 #define RS_PING_URMA_RECV_WC_NUM 16
-#define PINGMESH_DEF_ACCESS (URMA_ACCESS_READ | URMA_ACCESS_WRITE | URMA_ACCESS_ATOMIC)
 
 struct RsPingPongOps *RsPingUrmaGetOps(void);
 struct RsPingPongDfx *RsPingUrmaGetDfx(void);

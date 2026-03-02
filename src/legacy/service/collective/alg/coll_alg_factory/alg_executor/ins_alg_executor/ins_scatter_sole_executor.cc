@@ -282,7 +282,7 @@ HcclResult InsScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::GenInsQues4Opba
     tempFuncs.isBottom            = true; // CCL Buff to Usr Buff required
 
     // 计算CCL的循环次数，dataSize_为Scatter的outputSize（小的）,看CCLout与ScatterOut的倍数关系
-    u32 sendRecvTimes = (dataSize_ / scratchOutputMemSize) + ((dataSize_ % scratchOutputMemSize) == 0 ? 0 : 1);
+    u64 sendRecvTimes = (dataSize_ / scratchOutputMemSize) + ((dataSize_ % scratchOutputMemSize) == 0 ? 0 : 1);
     HCCL_INFO("[insScatterSoleExecutor] Rank [%d], sendRecvTimes [%u].", myRank_, sendRecvTimes);
 
     for (u32 idx = 0; idx < sendRecvTimes; idx++) {

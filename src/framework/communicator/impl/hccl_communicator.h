@@ -884,6 +884,8 @@ private:
     HcclResult RegisterToSnapshot();
     HcclResult UnRegisterFromSnapshot();
 
+    bool EnableAicpuUnfold();
+
     // reduce类算子的prod操作或者int64数据类型不支持重执行
     bool IsReduceWithInt64OrProd(HcclCMDType opType, const OpParam &opParam) const;
     // 控制当前通信域首次检测到reduce类算子的prod操作或者int64数据类型时打印不能重执行的约束

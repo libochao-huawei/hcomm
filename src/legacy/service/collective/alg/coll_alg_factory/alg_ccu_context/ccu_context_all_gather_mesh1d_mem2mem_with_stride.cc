@@ -33,7 +33,7 @@ CcuContextAllGatherMesh1DMem2MemWithStride::CcuContextAllGatherMesh1DMem2MemWith
     if (ctxArg->dimSize_.size() > 0) {
         rankSize_ = ctxArg->dimSize_[0];
     }
-    HCCL_INFO("[CcuContextAllGatherMesh1DMem2MemWithStride] CtxArg: rankId[%u] rankSize[%u] repeatNum[%u].", rankId_,
+    HCCL_INFO("[CcuContextAllGatherMesh1DMem2MemWithStride] CtxArg: rankId[%u] rankSize[%u].", rankId_,
               rankSize_);
 }
 

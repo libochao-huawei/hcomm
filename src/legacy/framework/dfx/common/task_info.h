@@ -45,10 +45,11 @@ public:
     u32                        remoteRank_;
     TaskParam                  taskParam_;
     std::shared_ptr<DfxOpInfo> dfxOpInfo_;
+    bool                       isMaster_;
 
 public:
     TaskInfo(u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam,
-             std::shared_ptr<DfxOpInfo> dfxOpInfo = nullptr);
+              std::shared_ptr<DfxOpInfo> dfxOpInfo = nullptr, bool isMaster = false);
 
     std::string Describe() const;
 
