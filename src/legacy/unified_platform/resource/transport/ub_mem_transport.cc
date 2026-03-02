@@ -49,7 +49,7 @@ HcclResult UbMemTransport::FillTagVec()
             HCCL_WARNING("[UbMemTransport][FillTagVec] localRmaBuffer is nullptr. memHandleNum: %d", index);
         } else {
             CHK_SAFETY_FUNC_RET(memcpy_s(tag.data(), tag.size(), 
-                localIpcRmaBuffer->GetBuf()->GetMemTag(), HCCL_RES_TAG_MAX_LEN));
+                localRmaBuffer->GetBuf()->GetMemTag(), HCCL_RES_TAG_MAX_LEN));
             HCCL_INFO("[AivUbMemTransport][Init] memHandleNum[%d] memTag[%s]", index, tag.data());
         }
         localUserMemTag_.push_back(tag);
@@ -621,7 +621,7 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
         }
     }
 
-    remoteUserMemTag_.resize(vecSize);
+    remoteUserMemTag_.resize(rmtNum);
     for (auto& tag : remoteUserMemTag_) {
         for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; ++i) {
             u8 byte;
@@ -905,7 +905,7 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
         tagPointers_.clear();
         tagPointers_.reserve(userMemCount);
         for (uint32_t i = 0; i < userMemCount; i++) {
-            auto& rmtBuffer = rmtBufferVec_[i+cclbufferNum];
+            auto& rmtBuffer = rmtBufferVec[i+cclbufferNum];
             switch (rmtBuffer->GetMemType()) {
                 case HCCL_MEM_TYPE_DEVICE:
                     remoteUserMems_[i].type = COMM_MEM_TYPE_DEVICE;
