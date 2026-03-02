@@ -67,7 +67,7 @@
 #include "topoinfo_exchange_dispatcher.h"
 #include "heartbeat.h"
 #include <dirent.h>
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 using namespace std;
 
 using namespace hccl;
