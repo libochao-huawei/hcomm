@@ -262,7 +262,6 @@ TEST_F(CcuTransportGroupMgrTest, Test_CcuTransportGroupMgr_003)
     GenRankTableFile1Ser8Dev();
 
     void *devPtr = nullptr;
-    MOCKER(HrtFree).stubs().with(any(), any()).will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtNotifyDestroy).stubs().with(any(), any()).will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtGetNotifyID).stubs().with(any(), any()).will(returnValue(static_cast<u32>(0)));
     MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
@@ -887,7 +886,6 @@ TEST_F(CcuTransportGroupMgrTest, should_return_ccuTransportGroup_when_calling_Re
     MOCKER_CPP(&CommunicatorImpl::InitCollService).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
     impl.rankGraph = make_unique<RankGraph>(0);
-    impl.rankGraph->peers_[0] = make_shared<NetInstance::Peer>(0, 0, 0, 0);
     MOCKER_CPP(&CommunicatorImpl::InitRankGraph, void(CommunicatorImpl::*)(const std::string &))
         .stubs().with(any()).will(ignoreReturnValue());
     MOCKER_CPP(&CommunicatorImpl::ExecAlgSelect).stubs().will(ignoreReturnValue());
@@ -987,7 +985,6 @@ TEST_F(CcuTransportGroupMgrTest, should_throw_if_transportGroup_init_fail_when_c
     GenRankTableFile1Ser8Dev();
 
     void *devPtr = nullptr;
-    MOCKER(HrtFree).stubs().with(any(), any()).will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtNotifyDestroy).stubs().with(any(), any()).will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtGetNotifyID).stubs().with(any(), any()).will(returnValue(static_cast<u32>(0)));
     MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
