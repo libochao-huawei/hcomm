@@ -561,8 +561,10 @@ void TaskExceptionHandler::PrintGroupErrorMessage(ErrorMessageReport &errorMessa
     groupRankContent += std::string(errorMessage.group);
     groupRankContent += "], rankSize[";
     groupRankContent += std::to_string(errorMessage.rankSize);
-    groupRankContent += "], myRank[";
+    groupRankContent += "], localRank[";
     groupRankContent += std::to_string(errorMessage.rankId);
+    groupRankContent += "], remoteRank[";
+    groupRankContent += std::to_string(errorMessage.remoteUserRank);
     groupRankContent += "]";
 
     PrintGroupErrorLog(stageErrInfo, groupRankContent);

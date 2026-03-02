@@ -287,8 +287,8 @@ string TaskExceptionHandlerLite::GetGroupRankInfo(const TaskInfo& taskInfo)
         return "";
     }
     const CommunicatorImplLite* commImplLite = static_cast<CommunicatorImplLite*>(taskInfo.dfxOpInfo_->comm_);
-    return StringFormat("group:[%s], rankSize[%u], myRank[%d]",
-        commImplLite->GetId().c_str(), commImplLite->GetRankSize(), commImplLite->GetMyRank());
+    return StringFormat("group:[%s], rankSize[%u], localRank[%d], remoteRank[%u]",
+        commImplLite->GetId().c_str(), commImplLite->GetRankSize(), commImplLite->GetMyRank(), taskInfo.remoteRank_);
 }
 
 void TaskExceptionHandlerLite::PrintTaskContextInfo(uint32_t sqId, uint32_t taskId)

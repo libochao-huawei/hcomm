@@ -77,7 +77,6 @@ string TaskInfo::GetParaInfo() const
 string TaskInfo::GetParaDMA() const
 {
     const auto& taskPara = this->taskParam_.taskPara;
-    const CommunicatorImplLite* commImplLite = static_cast<CommunicatorImplLite*>(taskInfo.dfxOpInfo_->comm_);
     return StringFormat("src:[0x%llx], dst:[0x%llx], size:[0x%llx], notify id:[0x%016llx], "
                         "link type:[%s], remote rank:[%s]",
                         static_cast<u64>(reinterpret_cast<uintptr_t>(taskPara.DMA.src)),
@@ -91,7 +90,6 @@ string TaskInfo::GetParaDMA() const
 string TaskInfo::GetParaReduce() const
 {
     const auto& taskPara = this->taskParam_.taskPara;
-    const CommunicatorImplLite* commImplLite = static_cast<CommunicatorImplLite*>(taskInfo.dfxOpInfo_->comm_);
     return StringFormat("src:[0x%llx], dst:[0x%llx], size:[0x%llx], notify id:[0x%016llx], "
                         "op:[%u], data type:[%u], link type:[%s], remote rank:[%s]",
                         static_cast<u64>(reinterpret_cast<uintptr_t>(taskPara.Reduce.src)),
@@ -107,7 +105,6 @@ string TaskInfo::GetParaReduce() const
 string TaskInfo::GetParaNotify() const
 {
     const auto& taskPara = this->taskParam_.taskPara;
-    const CommunicatorImplLite* commImplLite = static_cast<CommunicatorImplLite*>(taskInfo.dfxOpInfo_->comm_);
     return StringFormat("notify id:[0x%016llx], value:[%u], remote rank[%s]",
         taskPara.Notify.notifyID,
         taskPara.Notify.value,
