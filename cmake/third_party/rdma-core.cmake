@@ -10,7 +10,7 @@
 
 message("Build third party library rdma-core")
 set(RDMA_CORE_NAME "rdma-core")
-set(ROOT_BUILD_PATH "${CMAKE_BINARY_DIR}")
+set(ROOT_BUILD_PATH "${CMAKE_SOURCE_DIR}")
 set(RDMA_CORE_SEARCH_PATHS "${CANN_3RD_LIB_PATH}/${RDMA_CORE_NAME}")
 set(RDMA_CORE_ROOT_DIR ${ROOT_BUILD_PATH}/rdma-core)
 set(RDMA_CORE_SRC_DIR ${ROOT_BUILD_PATH}/rdma-core/src)
@@ -35,19 +35,23 @@ else()
     message(STATUS "downloading ${RDMA_CORE_URL} to ${RDMA_CORE_ROOT_DIR}")
 endif()
 
-include(FetchContent)
-
-FetchContent_Declare(
-    rdma-core
+ExternalProject_Add(${RDMA_CORE_NAME}
     ${FETCH_COMMAND}
+    CONFIGURE_COMMAND ${CMAKE_COMMAND}
+                    -DNO_MAN_PAGES=1
+                    -DENABLE_RESOLVE_NEIGH=0
+                    -DCMAKE_SKIP_RPATH=True
+                    -DNO_PYVERBS=1
+                    <SOURCE_DIR>
+    BUILD_COMMAND $(MAKE) kern-abi
+    INSTALL_COMMAND ""
     SOURCE_DIR "${RDMA_CORE_SRC_DIR}"
     BINARY_DIR "${RDMA_CORE_BUILD_DIR}"
 )
 
-set(NO_MAN_PAGES ON CACHE BOOL "Disable man page generation" FORCE)
-set(ENABLE_RESOLVE_NEIGH OFF CACHE BOOL "Disable resolve-neigh feature" FORCE)
-set(NO_PYVERBS ON CACHE BOOL "Disable Python bindings" FORCE)
-set(CMAKE_SKIP_RPATH ON CACHE BOOL "Disable RPATH" FORCE)
-FetchContent_MakeAvailable(rdma-core)
+execute_process(
+  COMMAND ${CMAKE_COMMAND} --build . --target ${RDMA_CORE_NAME}
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
 
 set(RDMA_CORE_INCLUDE_DIR ${RDMA_CORE_BUILD_DIR}/include)
