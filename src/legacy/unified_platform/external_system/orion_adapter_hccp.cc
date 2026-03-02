@@ -2402,7 +2402,7 @@ HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memType
         throw NetworkApiException(StringFormat("call ra_tlv_request failed"));
     }
     // todo: check count == num
-    auto rsp = static_cast<ccu_mem_rsp*>(static_cast<void*>(recv_msg->data));
+    auto rsp = static_cast<ccu_mem_rsp*>(static_cast<void*>(recv_msg.data));
     HrtSetMemInfoList(memInfoList, count, rsp->list);
     HrtDeinitTlvMsg(&send_msg, &recv_msg);
     HCCL_INFO("tlv request success, tlv module type[%u], message type[%u]", tlv_module_type, send_msg.type);
