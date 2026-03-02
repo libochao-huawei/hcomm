@@ -15,7 +15,7 @@ namespace hccl {
 class CollAllGatherSmallCountExecutor : public CollAllGatherExecutor {
 public:
     explicit CollAllGatherSmallCountExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherSmallCountExecutor() = default;
+    ~CollAllGatherSmallCountExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

@@ -18,7 +18,7 @@ class CollReduceScatterSingleRankExecutor : public CollReduceScatterExecutor {
 public:
     explicit CollReduceScatterSingleRankExecutor(const HcclDispatcher dispatcher,
     std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceScatterSingleRankExecutor() = default;
+    ~CollReduceScatterSingleRankExecutor() override = default;
 
 private:
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;

@@ -18,5 +18,6 @@
 
 RS_ATTRI_VISI_DEF int RsTlvInit(unsigned int phyId, unsigned int *bufferSize);
 RS_ATTRI_VISI_DEF int RsTlvDeinit(unsigned int phyId);
-RS_ATTRI_VISI_DEF int RsTlvRequest(struct TlvRequestMsgHead *head, char *data);
+RS_ATTRI_VISI_DEF int RsTlvRequest(struct TlvRequestMsgHead *head, char *dataIn, char *dataOut,
+    unsigned int *bufferSize);
 #endif // RS_TLV_H

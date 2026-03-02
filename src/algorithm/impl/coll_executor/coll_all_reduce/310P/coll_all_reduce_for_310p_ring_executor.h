@@ -16,7 +16,7 @@ class CollAllReduceFor310PRingExecutor : public CollAllReduceExecutor {
 
 public:
     CollAllReduceFor310PRingExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllReduceFor310PRingExecutor() = default;
+    ~CollAllReduceFor310PRingExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

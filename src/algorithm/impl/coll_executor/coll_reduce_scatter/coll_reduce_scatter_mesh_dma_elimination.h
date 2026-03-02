@@ -17,7 +17,7 @@ class CollReduceScatterMeshDmaEliminationExecutor : public CollReduceScatterExec
 public:
     explicit CollReduceScatterMeshDmaEliminationExecutor(const HcclDispatcher dispatcher,
     std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceScatterMeshDmaEliminationExecutor() = default;
+    ~CollReduceScatterMeshDmaEliminationExecutor() override = default;
 
 private:
     void ParseParam(const OpParam& param) override;

@@ -465,7 +465,6 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
         dfxOpInfo->algType_      = AlgType::MESH;
         dfxOpInfo->index_        = GetIdIndex();
         dfxOpInfo->comm_         = this;
-        dfxOpInfo->mainStreamId_ = HrtGetStreamId(stream);
         dfxOpInfo->beginTime_    = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
         GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);
         ExecuteFastCcuLaunch(opParams, stream, params);
@@ -656,7 +655,7 @@ HcclResult CommunicatorImpl::OffloadResourcePre(std::string &opTag, const CollOp
     std::vector<rtStream_t> slaveStreams;
     slaveStreams.resize(resReq.requiredSubQueNum);
     for (u64 i = 0; i < resReq.requiredSubQueNum; ++i) {
-        slaveStreams[i] = static_cast<rtStream_t>(std::make_unique<Stream>(true).get());
+        slaveStreams[i] = static_cast<rtStream_t>(std::make_unique<Stream>(true, false).get());
     }
     CHK_RET(SetCollOffloadSlaveStreams(opTag, slaveStreams));
     CHK_RET(SetCollOffloadScratchBuf(opTag, reinterpret_cast<void *>(GetCclBuffer()->GetAddr()),
@@ -3133,7 +3132,8 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     aclrtLaunchKernelCfg  cfg;
     aclrtLaunchKernelAttr kernelAttr;
     kernelAttr.id            = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
-    kernelAttr.value.timeout = NOTIFY_DEFAULT_WAIT_TIME;
+    kernelAttr.value.timeout = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
+                                std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
     cfg.numAttrs             = 1;
     cfg.attrs                = &kernelAttr;
     constexpr u32 numBlocks   = 1;

@@ -58,7 +58,7 @@ Stream *OpbaseStreamManager::GetOrCreateSlave()
     u32 slavesSize = slaves.size();
     HCCL_INFO("[OpbaseStreamManager::%s] slavesSize[%u] slaveIndex[%u]", __func__, slavesSize, slaveIndex);
     if (slaveIndex >= slavesSize) {
-        slaves.emplace_back(std::make_unique<Stream>(comm->GetOpAiCpuTSFeatureFlag())); // 算子粒度
+        slaves.emplace_back(std::make_unique<Stream>(comm->GetOpAiCpuTSFeatureFlag(), false)); // 算子粒度
         if (master != nullptr && !comm->GetOpAiCpuTSFeatureFlag()) {  // 算子粒度
             slaves[slaveIndex]->SetStmMode(master->GetMode());
         }
