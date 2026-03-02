@@ -40,10 +40,10 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
 
 HcclResult UbMemTransport::FillTagVec()
 {
-    localUserMemTag_.reserve(commLocRes_.bufferVec.size());
-    HCCL_INFO("bufferNum: %d", commLocRes_.bufferVec.size());
+    localUserMemTag_.reserve(commonLocRes_.bufferVec.size());
+    HCCL_INFO("bufferNum: %d", commonLocRes_.bufferVec.size());
     uint32_t index = 0;
-    for (auto &localRmaBuffer : commLocRes_.bufferVec) {
+    for (auto &localRmaBuffer : commonLocRes_.bufferVec) {
         std::array<char, HCCL_RES_TAG_MAX_LEN> tag{};
         if (localRmaBuffer == nullptr) {
             HCCL_WARNING("[UbMemTransport][FillTagVec] localRmaBuffer is nullptr. memHandleNum: %d", index);
