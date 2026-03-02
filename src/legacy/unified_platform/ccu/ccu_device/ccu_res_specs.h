@@ -51,28 +51,7 @@ struct CcuBlockResStrategy {
     uint32_t missionNum{2};
 };
 
-enum CcuMemTypeBitmap : uint64_t {
-    CCU_MEMTYPE_INVALID = 0,
-    CCU_MEMTYPE_INS = 1ULL << 1,
-    CCU_MEMTYPE_GSA = 1ULL << 2,
-    CCU_MEMTYPE_XN = 1ULL << 3,
-    CCU_MEMTYPE_CKE = 1ULL << 4,
-    CCU_MEMTYPE_LOOP_CKE = 1ULL << 5,
-    CCU_MEMTYPE_PFE = 1ULL << 6,
-    CCU_MEMTYPE_CHN = 1ULL << 7,
-    CCU_MEMTYPE_JETTY_CTX = 1ULL << 8,
-    CCU_MEMTYPE_MISSION_CTX = 1ULL << 9,
-    CCU_MEMTYPE_LOOP_CTX = 1ULL << 10,
-    CCU_MEMTYPE_MISSION_SQE = 1ULL << 11,
-    CCU_MEMTYPE_CQE_BLOCK0 = 1ULL << 12,
-    CCU_MEMTYPE_CQE_BLOCK1 = 1ULL << 13,
-    CCU_MEMTYPE_CQE_BLOCK2 = 1ULL << 14,
-    CCU_MEMTYPE_WQEBB = 1ULL << 15,
-    CCU_MEMTYPE_MS_BLOCK0 = 1ULL << 32,
-    CCU_MEMTYPE_MS_BLOCK1 = 1ULL << 33,
-    CCU_MEMTYPE_MS_BLOCK2 = 1ULL << 34,
-    CCU_MEMTYPE_MS_BLOCK3 = 1ULL << 35
-};
+enum CcuMemTypeBitmap : uint64_t;
 
 inline std::vector<CcuMemTypeBitmap> GetMemTypeVector() {
     return {
@@ -80,7 +59,6 @@ inline std::vector<CcuMemTypeBitmap> GetMemTypeVector() {
         CCU_MEMTYPE_GSA,
         CCU_MEMTYPE_XN,
         CCU_MEMTYPE_CKE,
-        CCU_MEMTYPE_LOOP_CKE,
         CCU_MEMTYPE_PFE,
         CCU_MEMTYPE_CHN,
         CCU_MEMTYPE_JETTY_CTX,
@@ -109,12 +87,7 @@ inline uint64_t GetCombinedMemTypeBitmap() {
     return combined;
 }
 
-struct CcuMemInfo {
-    CcuMemTypeBitmap memType{CcuMemTypeBitmap::CCU_MEMTYPE_INVALID};
-    uint64_t memVa{0};
-    uint32_t memSize{0};
-    uint32_t resv[1];
-};
+struct CcuMemInfo;
 
 struct CcuResSpecInfo {
     // 基础信息
@@ -178,7 +151,7 @@ public:
     HcclResult GetWqeBBNum(const uint8_t dieId, uint32_t &wqeBBNum) const;
 
     // ccu mem info 
-    HcclResult GetCcuMemInfoList(const uint8_t dieId, struct CcuMemInfo *memInfoList, uint32_t *count);
+    HcclResult GetCcuMemInfoList(const uint8_t dieId, struct CcuMemInfo *memInfoList, uint32_t &count);
 
 private:
     int32_t devLogicId{0};
