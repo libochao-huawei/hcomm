@@ -30,6 +30,7 @@ using namespace std;
 using namespace hccl;
 
 constexpr u32 MAX_PORT_ID = 65535;
+
 TopoinfoRanktableHeterog::TopoinfoRanktableHeterog(const std::string &rankTableM,
     const std::string &identify, DevType deviceType)
     : TopoInfoRanktableParser(rankTableM, identify), deviceType_(deviceType)

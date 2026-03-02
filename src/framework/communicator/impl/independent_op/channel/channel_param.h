@@ -13,7 +13,7 @@
 #include "hccl_mem_defs.h"
 #include "hccl_common.h"
 #include "transport_pub.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "aicpu_operator_pub.h"
 #include "hccl_types.h"
 

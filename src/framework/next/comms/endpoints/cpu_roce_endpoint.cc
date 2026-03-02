@@ -10,7 +10,7 @@
 #include "endpoint_mgr.h"
 #include "hccl_mem_defs.h"
 #include "cpu_roce_endpoint.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "log.h"
 #include "reged_mems/roce_mem.h"
 #include "host_socket_handle_manager.h"
