@@ -12,7 +12,10 @@
 #define HCCLV2_EXCEPTION_UTIL_H
 
 #include "../exception/null_ptr_exception.h"
+#include "log.h"
+#include "string_util.h"
 #include <string>
+#include <exception>
 
 #define MACRO_THROW(EXCEPTION, MSG)                                                                                    \
     do {                                                                                                               \

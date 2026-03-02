@@ -564,7 +564,7 @@ void CollServiceDeviceMode::GeneratorAivSuperKernelArgs(const AivOpArgs &aivOpAr
     superArgs.output             = aivOpArgs.output;
     superArgs.cclBufferSize      = comm->GetBufferSize();
 
-    HCCL_INFO("[CollServiceDeviceMode::%s] Tag %llu, clearEnable %llu, numBlocks %llu, dataCount %llu, cclBufferSize %llu.", __func__, superArgs.tag,
+    HCCL_INFO("[CollServiceDeviceMode::%s] Tag %lld, clearEnable %lld, numBlocks %llu, dataCount %llu, cclBufferSize %llu.", __func__, superArgs.tag,
               superArgs.clearEnable, superArgs.numBlocks, dataCount, superArgs.cclBufferSize);
 }
 

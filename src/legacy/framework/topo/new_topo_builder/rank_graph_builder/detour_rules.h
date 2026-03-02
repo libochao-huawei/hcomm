@@ -12,6 +12,7 @@
 #define DETOUR_RULES_H
 
 #include <unordered_map>
+#include <vector>
 #include "topo_common_types.h"
 
 namespace Hccl {
