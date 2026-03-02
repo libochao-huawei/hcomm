@@ -7,12 +7,5 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-set(src_list
-    my_rank.cc
-)
-
-target_sources(hcomm PRIVATE
-    ${src_list}
-)
-
-add_subdirectory(comm_mems)
+add_subdirectory(profiling)
+add_subdirectory(taskException)
