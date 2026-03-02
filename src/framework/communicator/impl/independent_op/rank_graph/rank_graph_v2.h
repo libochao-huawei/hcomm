@@ -19,15 +19,15 @@ public:
     RankGraphV2(void *rankGraphPtr);
     ~RankGraphV2() override;
 
-    HcclResult GetRankId(uint32_t *rank);
-    HcclResult GetRankSize(uint32_t *rankSize);
-    HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink **linkList, uint32_t *listSize);
-    HcclResult GetRankGraphInfo(GraphType type, void **graph, uint32_t *len);
-    HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
-    HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType);
-    HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
-    HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
-    HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
+    HcclResult GetRankId(uint32_t *rank) override;
+    HcclResult GetRankSize(uint32_t *rankSize) override;
+    HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink **linkList, uint32_t *listSize) override;
+    HcclResult GetRankGraphInfo(GraphType type, void **graph, uint32_t *len) override;
+    HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum) override;
+    HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType) override;
+    HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum) override;
+    HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum) override;
+    HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize) override;
     HcclResult GetTopoInstsByLayer(uint32_t netLayer, uint32_t** topoInsts, uint32_t* topoInstNum);
     HcclResult GetTopoType(const uint32_t netLayer, const uint32_t topoInstId, CommTopo* topoType);
     HcclResult GetRanksByTopoInst(const uint32_t netLayer, const uint32_t topoInstId, uint32_t** ranks, uint32_t* rankNum);

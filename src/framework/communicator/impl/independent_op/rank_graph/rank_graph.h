@@ -34,18 +34,18 @@ enum class HcclNetLayerlevel {
 };
 
 public:
-    HcclResult Init(const RankTable_t& rankTable, const HcclTopoAttr &topoAttr);
+    HcclResult Init(const RankTable_t& rankTable, const HcclTopoAttr &topoAttr) override;
     HcclResult Init(const HcclTopoAttr &topoAttr);
     HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink** linkList,
-        uint32_t* listSize);
+        uint32_t* listSize) override;
     HcclResult GetHeterogMode(HcclHeterogMode *mode) const;
     const RankInfo_t* FindRank(uint32_t rankId) const;
-    HcclResult GetRankGraphInfo(GraphType type, void **graph, uint32_t *len);
-    HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
-    HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType);
-    HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
-    HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
-    HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
+    HcclResult GetRankGraphInfo(GraphType type, void **graph, uint32_t *len) override;
+    HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum) override;
+    HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType) override;
+    HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum) override;
+    HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum) override;
+    HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize) override;
 
 private:
     HcclResult DevTypeToCommProtocol(DevType &type, CommProtocol &protocol);

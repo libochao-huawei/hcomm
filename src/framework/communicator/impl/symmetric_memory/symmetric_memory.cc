@@ -440,7 +440,7 @@ HcclResult SymmetricMemory::RegisterSymmetricMem(void* ptr, size_t size, void** 
         paMapInfo->refCount = 1;
         paMappingMap_.emplace(paHandle, paMapInfo);
     }
-    std::shared_ptr<SymmetricWindow> pWin(new (std::nothrow) SymmetricWindow());
+    std::shared_ptr<SymmetricWindow> pWin = std::make_shared<SymmetricWindow>();
     pWin->userVa = baseUserVa;
     pWin->userSize = baseVaSize;
     pWin->baseVa = static_cast<uint8_t*>(heapBase_) + paMapInfo->heapBaseOffset;
