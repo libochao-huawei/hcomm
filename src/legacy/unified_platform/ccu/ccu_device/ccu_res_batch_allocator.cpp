@@ -552,14 +552,13 @@ static HcclResult DoReleaseNonBlockTypeRes(int32_t devLogicId, uint8_t dieId,
     for (auto& infos : infoParas) {
         const ResType resType = std::get<0>(infos);
         std::vector<ResInfo> &resInfos= std::get<1>(infos);
-        for (uint32_t i = 0; i < resInfos.size(); ) {
-            const uint32_t num = resInfos[i].num;
-            if (num == 0) {
-                resInfos.erase(resInfos.begin() + i);
-                continue;
-            }
+        auto newEnd = std::remove_if(resInfos.begin(), resInfos.end(),
+                        [](const ResInfo& info) { return info.num == 0; });
+        resInfos.erase(newEnd, resInfos.end());
 
-            const uint32_t startId = resInfos[i].startId;
+        for (const auto& resInfo : resInfos) {
+            const uint32_t num = resInfos.num;
+            const uint32_t startId = resInfos.startId;
             auto ret = ccuComponent.ReleaseRes(dieId, resType, startId, num);
             if (ret != HcclResult::HCCL_SUCCESS) {
                 HCCL_ERROR("[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
@@ -567,8 +566,6 @@ static HcclResult DoReleaseNonBlockTypeRes(int32_t devLogicId, uint8_t dieId,
                     devLogicId, dieId, resType.Describe().c_str(), startId, num);
                 return ret;
             }
-
-            resInfos.erase(resInfos.begin() + i);
         }
     }
     return HcclResult::HCCL_SUCCESS;
