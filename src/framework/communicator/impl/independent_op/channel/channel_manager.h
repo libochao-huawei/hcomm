@@ -10,7 +10,7 @@
 #ifndef CHANNEL_MANAGER_H
 #define CHANNEL_MANAGER_H
 
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "hccl_types.h"
 #include "transport_pub.h"
 #include "hccl_common.h"
@@ -19,6 +19,7 @@
 #include "aicpu_operator_pub.h"
 #include "channel_param.h"
 #include "manager_common.h"
+#include "hccl_independent_common.h"
 
 #include <unordered_map>
 #include <unordered_set>

@@ -12,7 +12,7 @@
 #include "urma_mem.h"
 #include <algorithm>
 #include "log.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "hccl_mem_v2.h"
 #include "exchange_ub_buffer_dto.h"
 #include "local_ub_rma_buffer_manager.h"

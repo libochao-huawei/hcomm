@@ -11,7 +11,8 @@
 #ifndef INDEPENDENT_OP_CONTEXT_MANAGER_H
 #define INDEPENDENT_OP_CONTEXT_MANAGER_H
 
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
+#include "hccl_mem_defs.h"
 #include <functional>
 #include <unordered_map>
 #include <mutex>

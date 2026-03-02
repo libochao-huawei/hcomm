@@ -56,7 +56,7 @@ HcclResult CommEngineResMgr::HcclGetNotifyNumInThread(ThreadHandle thread, CommE
     return threadMgr_->HcclGetNotifyNumInThread(thread, notifyNum);
 }
 
-HcclResult CommEngineResMgr::HcclAllocNotify(CommEngine commEngine, NotifyType notifyType, uint32_t notifyNum,
+HcclResult CommEngineResMgr::HcclAllocNotify(CommEngine commEngine, ::NotifyType notifyType, uint32_t notifyNum,
     NotifyHandle **notifyHandleList)
 {
     CHK_SMART_PTR_NULL(threadMgr_);
