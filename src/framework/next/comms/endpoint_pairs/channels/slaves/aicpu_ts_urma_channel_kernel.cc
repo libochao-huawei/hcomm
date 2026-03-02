@@ -12,6 +12,7 @@
 #include "aicpu_ts_urma_channel_kernel.h"
 #include "framework/aicpu_hccl_process.h"
 #include "channel_param.h"
+#include "aicpu_indop_process.h"
 
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2(void *args)
@@ -25,6 +26,6 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2(void 
     InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
     HcclChannelUrmaRes *commParam = reinterpret_cast<HcclChannelUrmaRes *>(ctxArgs->context);
 
-    return AicpuHcclProcess::AicpuIndOpChannelInitV2(commParam);
+    return AicpuIndopProcess::AicpuIndOpChannelInit(commParam);
 }
 }

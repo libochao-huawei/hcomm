@@ -8,13 +8,14 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-add_subdirectory(common)
-add_subdirectory(rank)
-add_subdirectory(rank_pairs)
-add_subdirectory(api_c_adpt)
-add_subdirectory(communicator)
-
-target_include_directories(hcomm PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/rank_pairs
+set(src_list
+    aicpu_indop_process.cc
+    coll_comm_aicpu_mgr.cc
+    coll_comm_aicpu.cc
 )
 
+if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+    target_sources(ccl_kernel PRIVATE
+        ${src_list}
+    )
+endif()
