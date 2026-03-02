@@ -674,7 +674,7 @@ struct CcuMemInfo {
  	uint64_t memVa{0};
  	uint32_t memSize{0};
  	uint32_t resv[1];
-}
+};
 
 HcclResult HrtSetMemInfoList(struct CcuMemInfo *memInfoList, uint32_t count, struct ccu_mem_info *recvMemList);
 void HrtInitTlvMsg(TlvMsg* send_msg, TlvMsg* recv_msg, uint32_t udie_idx = 0, uint64_t mem_type_bitmap = 0, uint32_t sendType = 0);
