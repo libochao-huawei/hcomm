@@ -1490,11 +1490,13 @@ HcclResult hcclComm::SetHcclQos(u32 hcclQos)
         return HCCL_SUCCESS;
     }
 
-    // 若设置的hcclQos不在有效范围内，则报错
+    // 若设置的hcclQos不在有效范围内，则使用默认值
     if (hcclQos < EnvConfig::HCCL_QOS_MIN || hcclQos > EnvConfig::HCCL_QOS_MAX) {
-        HCCL_ERROR("[SetHcclQos]hcclQos is invalid. except[%u, %u], actual[%u]",
-                   EnvConfig::HCCL_QOS_MIN, EnvConfig::HCCL_QOS_MAX, hcclQos);
-        return HCCL_E_PARA;
+        HCCL_INFO("[SetHcclQos]hcclQos is invalid, expect[%u, %u], actual[%u]. "
+                  "It will use the default value. QoS[%u]", EnvConfig::HCCL_QOS_MIN, EnvConfig::HCCL_QOS_MAX, hcclQos,
+                   EnvConfig::HCCL_QOS_DEFAULT);
+        communicator_->SetHcclQos(EnvConfig::HCCL_QOS_DEFAULT);
+        return HCCL_SUCCESS;
     }
 
     HCCL_INFO("[SetHcclQos] hcclQos[%u]", hcclQos);
