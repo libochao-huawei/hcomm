@@ -13,6 +13,7 @@
 #include "local_cnt_notify.h"
 #include "local_ub_rma_buffer.h"
 #include "task_param.h"
+#include "virtual_topo.h"
 
 namespace Hccl {
 
@@ -71,7 +72,7 @@ public:
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
 
     HcclResult Init();
-    HcclResult DeInit();
+    HcclResult DeInit() const;
 
 private:
     RdmaHandle rdmaHandle;

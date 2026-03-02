@@ -14,6 +14,7 @@
 #include "types.h"
 #include "virtual_topo.h"
 #include "hash_utils.h"
+#include "enum_factory.h"
 
 namespace Hccl {
 MAKE_ENUM(SocketRole, SERVER, CLIENT)
@@ -24,33 +25,25 @@ public:
     const std::string tag;
 
     SocketConfig(RankId remoteRank, const LinkData &link, const std::string &tag)
-        : remoteRank(remoteRank), link(link), tag(tag)
-    {
-        role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT;
-
-        if (role == SocketRole::SERVER) { // server: tag_local_remote
-            hccpTag = tag + "_" + to_string(link.GetLocalRankId()) + "_" + to_string(link.GetRemoteRankId()) + "_" +
-                      link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr();
-        } else { // client: tag_remote_local
-            hccpTag = tag + "_" + to_string(link.GetRemoteRankId()) + "_" + to_string(link.GetLocalRankId()) + "_" +
-                      link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr();
-        }
-    }
+        : remoteRank(remoteRank), link(link), tag(tag),
+          role(role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT),
+          hccpTag(role == SocketRole::SERVER
+                      ? tag + "_" + to_string(link.GetLocalRankId()) + "_" + to_string(link.GetRemoteRankId()) + "_" +
+                            link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr()
+                      : tag + "_" + to_string(link.GetRemoteRankId()) + "_" + to_string(link.GetLocalRankId()) + "_" +
+                            link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
+    {}
 
     SocketConfig(const LinkData &link, const std::string &tag)
-        : link(link), tag(tag)
-    {
-        remoteRank = link.GetRemoteRankId();
-        role = link.GetLocalAddr() < link.GetRemoteAddr() ? SocketRole::SERVER : SocketRole::CLIENT;
- 
-        if (role == SocketRole::SERVER) { // server: tag_local_remote
-            hccpTag = tag + "_" + to_string(link.GetLocalRankId()) + "_" + to_string(link.GetRemoteRankId()) + "_" +
-                      link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr();
-        } else { // client: tag_remote_local
-            hccpTag = tag + "_" + to_string(link.GetRemoteRankId()) + "_" + to_string(link.GetLocalRankId()) + "_" +
-                      link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr();
-        }
-    }
+        : remoteRank(link.GetRemoteRankId()), link(link), tag(tag),
+          role(role = link.GetLocalRankId() < link.GetRemoteRankId() ? SocketRole::SERVER : SocketRole::CLIENT),
+          hccpTag(role == SocketRole::SERVER
+                      ? tag + "_" + to_string(link.GetLocalRankId()) + "_" + to_string(link.GetRemoteRankId()) + "_" +
+                            link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr()
+                      : tag + "_" + to_string(link.GetRemoteRankId()) + "_" + to_string(link.GetLocalRankId()) + "_" +
+                            link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr())
+
+    {}
 
     SocketRole GetRole() const
     {
