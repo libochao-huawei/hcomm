@@ -15,7 +15,8 @@
 #include <string>
 #include <unordered_set>
 #include <atomic>
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
+#include "hccl_independent_common.h"
 #include "reg_mem_manager.h"
 #include "comm_mem_manager.h"
 #include "comm_engine_res_manager.h"

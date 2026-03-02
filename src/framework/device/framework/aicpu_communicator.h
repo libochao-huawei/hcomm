@@ -35,7 +35,7 @@
 #include "hccl_trace_info.h"
 #include "aicpu_share_data_manager.h"
 #include "read_write_lock.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "channel_param.h"
 #include "aicpu_launch_manager.h"
 #include "aicpu_ts_thread.h"

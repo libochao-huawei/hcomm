@@ -13,7 +13,7 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "hccl/hccl_types.h"
 #include "hcomm_res_defs.h"
 #include <string>

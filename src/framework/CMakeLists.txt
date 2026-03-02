@@ -88,6 +88,8 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/common/launch_device/
 
     ${HCCL_BASE_DIR}/platform/resource/socket
+    ${HCCL_BASE_DIR}/platform/resource/notify
+    ${HCCL_BASE_DIR}/platform/task
     ${HCCL_BASE_DIR}/platform/inc
     ${HCCL_BASE_DIR}/platform/inc/adapter
 
