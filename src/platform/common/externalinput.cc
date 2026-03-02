@@ -104,7 +104,7 @@ HcclResult InitEnvVarParam()
 
     // 解析server内通信方式
     ret = ParseIntraLinkType();
-    std:: string userInput = "PCIE enable: "GET_ENV(MM_ENV_HCCL_INTRA_PCIE_ENABLE) + "or ROCE enable:" + GET_ENV(MM_ENV_HCCL_INTRA_ROCE_ENABLE);
+    std:: string userInput = "PCIE enable: "+ std::string(GET_ENV(MM_ENV_HCCL_INTRA_PCIE_ENABLE)) + "or ROCE enable:" + std::string(GET_ENV(MM_ENV_HCCL_INTRA_ROCE_ENABLE));
     if (pcieValue != "0" && pcieValue != "1") {
         RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
             std::vector<std::string>({userInput,
