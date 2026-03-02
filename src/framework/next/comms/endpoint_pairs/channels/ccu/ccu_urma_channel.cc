@@ -78,7 +78,7 @@ static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
         auto *locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memHandles[i]);
         CHK_PTR_NULL(locRmaBuffer);
         HCCL_INFO("[CcuUrmaChannel::CreateTransportByLink] locRmaBuffer[%s]", locRmaBuffer->Describe().c_str());
-        auto *buffer = locCclRmaBuffer->GetBuf();
+        auto *buffer = locRmaBuffer->GetBuf();
         CHK_PTR_NULL(buffer);
 
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
@@ -282,6 +282,6 @@ HcclResult CcuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
 
 HcclResult CcuUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
 {
-    return transport_->GetUserRemoteMem(remoteMem, memTag, memNum);
+    return impl_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
 }  // namespace hcomm

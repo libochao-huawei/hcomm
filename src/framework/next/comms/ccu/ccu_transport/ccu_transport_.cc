@@ -75,8 +75,8 @@ CcuTransport::CcuTransport(Hccl::Socket *socket, std::unique_ptr<CcuConnection> 
 }
 
 CcuTransport::CcuTransport(Hccl::Socket *socket, std::unique_ptr<CcuConnection> &&connection,
-    const vector<CclBufferInfo> &bufferInfos)
-    : socket_(socket), ccuConnection_(std::move(connection)), bufferInfos_(bufferInfos)
+    const std::vector<CclBufferInfo> &bufferInfos)
+    : socket_(socket), ccuConnection_(std::move(connection)), locBufferInfos_(bufferInfos)
 {
 }
 
@@ -352,8 +352,8 @@ HcclResult CcuTransport::TransResPack(Hccl::BinaryStream &binaryStream)
 HcclResult CcuTransport::BufferInfoPack(Hccl::BinaryStream &binaryStream) const
 {
     u32 locBufferNum = locBufferInfos_.size();
-    binaryStream << locbufferNum;
-    for (u32 pos = 0; pos < locbufferNum; ++pos) {
+    binaryStream << locBufferNum;
+    for (u32 pos = 0; pos < locBufferNum; ++pos) {
         locBufferInfos_[pos].Pack(binaryStream);
     }
     return HcclResult::HCCL_SUCCESS;
@@ -409,7 +409,7 @@ HcclResult CcuTransport::BufferInfoUnpack(Hccl::BinaryStream &binaryStream)
     rmtBufferInfos_.clear();
     u32 rmtBufferNum{0};
     binaryStream >> rmtBufferNum;
-    for (u32 pos = 0; pos < rmtbufferNum; ++pos) {
+    for (u32 pos = 0; pos < rmtBufferNum; ++pos) {
         CclBufferInfo rmtBufferInfo{};
         rmtBufferInfo.Unpack(binaryStream);
         rmtBufferInfos_.push_back(rmtBufferInfo);
