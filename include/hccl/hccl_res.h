@@ -254,13 +254,11 @@ inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t des
             channelDesc->notifyNum  = 0;
             channelDesc->memHandles = nullptr;
             channelDesc->memHandleNum = 0;
-            
             // 显式设置EndpointDesc相关字段为无效值
             if (UNLIKELY(EndpointDescInit(&channelDesc->localEndpoint, 1) != HCCL_SUCCESS) ||
                 UNLIKELY(EndpointDescInit(&channelDesc->remoteEndpoint, 1) != HCCL_SUCCESS)) {
                 return HCCL_E_INTERNAL;
             }
-
             channelDesc++;  // 移动到下一个描述符
         } else {
             return HCCL_E_PTR;
