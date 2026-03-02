@@ -17,11 +17,9 @@ namespace hcomm {
 constexpr uint32_t FINISH_MSG_SIZE = 128;
 constexpr char FINISH_MSG[FINISH_MSG_SIZE] = "Transport exchange data ready!";
 
-HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConnectionInfo &ccuConnectionInfo,
-    const CcuTransport::CclBufferInfo &cclBufferInfo, std::unique_ptr<CcuTransport> &ccuTransport)
+HcclResult BuildCcuConnection(const CcuTransport::CcuConnectionInfo &ccuConnectionInfo, 
+    std::unique_ptr<CcuConnection> &ccuConnection)
 {
-    CHK_PTR_NULL(socket);
-    std::unique_ptr<CcuConnection> ccuConnection{nullptr};
     if (ccuConnectionInfo.type == CcuTransport::CcuConnectionType::UBC_CTP) {
         ccuConnection.reset(new (std::nothrow) CcuCtpConnection(
             ccuConnectionInfo.locAddr, ccuConnectionInfo.rmtAddr,
@@ -33,7 +31,16 @@ HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConne
     }
     CHK_PTR_NULL(ccuConnection);
     CHK_RET(ccuConnection->Init());
+    return HCCL_SUCCESS;
+}
 
+HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConnectionInfo &ccuConnectionInfo,
+    const CcuTransport::CclBufferInfo &cclBufferInfo, std::unique_ptr<CcuTransport> &ccuTransport)
+{
+    CHK_PTR_NULL(socket);
+    std::unique_ptr<CcuConnection> ccuConnection{nullptr};
+    BuildCcuConnection(ccuConnectionInfo, ccuConnection);
+    
     ccuTransport.reset(new (std::nothrow)
         CcuTransport(socket, std::move(ccuConnection), cclBufferInfo));
     CHK_PTR_NULL(ccuTransport);
@@ -47,17 +54,7 @@ HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConne
 {
     CHK_PTR_NULL(socket);
     std::unique_ptr<CcuConnection> ccuConnection{nullptr};
-    if (ccuConnectionInfo.type == CcuTransport::CcuConnectionType::UBC_CTP) {
-        ccuConnection.reset(new (std::nothrow) CcuCtpConnection(
-            ccuConnectionInfo.locAddr, ccuConnectionInfo.rmtAddr,
-            ccuConnectionInfo.channelInfo, ccuConnectionInfo.ccuJettys));
-    } else {
-        ccuConnection.reset(new (std::nothrow) CcuRtpConnection(
-            ccuConnectionInfo.locAddr, ccuConnectionInfo.rmtAddr,
-            ccuConnectionInfo.channelInfo, ccuConnectionInfo.ccuJettys));
-    }
-    CHK_PTR_NULL(ccuConnection);
-    CHK_RET(ccuConnection->Init());
+    BuildCcuConnection(ccuConnectionInfo, ccuConnection);
 
     ccuTransport.reset(new (std::nothrow)
         CcuTransport(socket, std::move(ccuConnection), bufferInfos));
