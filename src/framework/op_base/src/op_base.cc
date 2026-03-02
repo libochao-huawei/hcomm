@@ -43,7 +43,10 @@
 #include "../nslbdp/hccl_nslbdp.h"
 #include "comm_configer.h"
 #include "hccl_group.h"
+
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
 #include "../../next/comms/api_c_adpt/hcomm_c_adpt.h"
+#endif
 
 #define DOUBLE_SIZE 2
 
@@ -90,8 +93,10 @@ HcclOpInfoCtx &GetOpHcomInfo(uint32_t devId)
     if (devId >= MAX_MODULE_DEVICE_NUM + 1) {
         devId = MAX_MODULE_DEVICE_NUM;
     }
-    
+
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     (void)HcommInitManager(devId);
+#endif
 
     static HcclOpInfoCtx g_opHcomInfos[MAX_MODULE_DEVICE_NUM + 1];
     return g_opHcomInfos[devId];
