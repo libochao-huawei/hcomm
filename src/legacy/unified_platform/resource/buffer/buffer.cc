@@ -12,6 +12,7 @@
 #include "range_utils.h"
 #include "log.h"
 #include "internal_exception.h"
+#include "string_util.h"
 namespace Hccl {
 
 Buffer::Buffer(uintptr_t addr, std::size_t size) : addr_(addr), size_(size)
@@ -58,7 +59,7 @@ HcclMemType Buffer::GetMemType() const
     return memType_;
 }
 
-const char* Buffer::GetMemTag() const
+const std::string Buffer::GetMemTag() const
 {
     return mem_Tag_;
 }

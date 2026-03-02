@@ -825,7 +825,7 @@ HcclResult UbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
         remoteMemsPtr_[i].type = rmtRmaBuffer->GetMemType();
         remoteMemsPtr_[i].addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
         remoteMemsPtr_[i].size = rmtRmaBuffer->GetSize();
-        memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag());
+        memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag().c_str());
         HCCL_INFO("[%s] addr[%p] size[%zu] rmtRmaBuffer[%p]", 
             __func__, reinterpret_cast<void *>(rmtRmaBuffer->GetAddr()), rmtRmaBuffer->GetSize(), rmtRmaBuffer.get());
     }
@@ -844,7 +844,7 @@ HcclResult UbMemTransport::Init()
     return HCCL_SUCCESS;
 }
  
-HcclResult UbMemTransport::DeInit() 
+HcclResult UbMemTransport::DeInit() const
 {
     socket->Destroy();
     return HCCL_SUCCESS;

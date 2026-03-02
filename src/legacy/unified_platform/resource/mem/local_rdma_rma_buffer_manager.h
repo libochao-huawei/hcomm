@@ -11,6 +11,10 @@
 #ifndef LOCAL_RDMA_RMA_BUFFER_MANAGER_H
 #define LOCAL_RDMA_RMA_BUFFER_MANAGER_H
 
+#include <memory>
+
+#include "hccl/base.h"
+#include "buffer_key.h"
 #include "../buffer/local_rdma_rma_buffer.h"
 #include "../../pub_inc/rma_buffer_mgr.h"
 

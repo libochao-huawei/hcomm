@@ -13,6 +13,8 @@
 #include "rma_connection.h"
 #include "op_mode.h"
 #include "orion_adapter_hccp.h"
+#include "socket.h"
+#include "task.h"
 namespace Hccl {
 
 class DevRdmaConnection : public RmaConnection {

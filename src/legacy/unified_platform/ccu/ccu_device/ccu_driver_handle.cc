@@ -21,7 +21,6 @@ namespace Hccl {
 
 CcuDriverHandle::CcuDriverHandle(s32 deviceLogicId) : devLogicId(deviceLogicId)
 {
-
 }                                                                                                                                   
 
 CcuDriverHandle::~CcuDriverHandle()
@@ -44,12 +43,11 @@ CcuDriverHandle::~CcuDriverHandle()
     HCCL_INFO("Destory CCU success, deviceLogicId: %d", devLogicId);
 }
 
-HcclResult CcuDriverHandle::Init()
+HcclResult CcuDriverHandle::Init() const
 {
     HCCL_RUN_INFO("Start initiating CCU, deviceLogicId: %d", devLogicId);
 
     auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
-
     if (HrtRaTlvRequest(tlvHandle, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_INIT) == HCCL_E_UNAVAIL) {
         return HCCL_E_UNAVAIL;
     }
