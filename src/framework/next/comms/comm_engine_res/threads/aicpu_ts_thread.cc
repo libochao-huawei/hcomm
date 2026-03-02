@@ -267,7 +267,7 @@ HcclResult AicpuTsThread::LocalReduce(
     return pImpl_->SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw);
 }
 
- HcclResult AicpuTsThread::InterKernelNotifyRecord(const NotifyEntity notifyEntity) const
+ HcclResult AicpuTsThread::NotifyRecord(const NotifyEntity notifyEntity) const
 {
     CHK_PTR_NULL(pImpl_);
     const uint64_t identifier = notifyEntity.identifier;
