@@ -157,7 +157,7 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::UpdateZeroCopy(const OpParam &opParam, const AlgResourceResponse &resp)
+    HcclResult HcclCommunicator::UpdateZeroCopy(const OpParam &opParam, const AlgResourceResponse &algResource)
     {
         return HCCL_SUCCESS;
     }
@@ -537,7 +537,7 @@ namespace hccl
         return HCCL_E_NOT_SUPPORT;
     }
 
-    HcclResult HcclCommunicator::AddOpInfoToHeartBeat(const OpInfoDesc &opInfo, const std::string &newTag)
+    HcclResult HcclCommunicator::AddOpInfoToHeartBeat(const OpInfoDesc &opInfo, const std::string &tag)
     {
         return HCCL_E_NOT_SUPPORT;
     }
@@ -951,7 +951,7 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::BuildOpRemoteLinkRoceResParam(const LINK &link, HccltagRemoteResV3 &tagRemoteRes,
-                                                               bool isBackup, bool isRetry, bool IsSecondBuild)
+                                                               bool isBackup, bool isRetry, bool isSecondBuild)
     {
         return HCCL_SUCCESS;
     }
@@ -1027,7 +1027,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::OrchestrateAicpu(const HcclCMDType &opType, const std::string &algName,
                                                   const OpParam &param, const AlgResourceResponse &algResource, const std::string &newTag, AlgType algType,
-                                                  bool isCustom, bool needIncreAlloc)
+                                                  bool isCustom, bool needIncreLink)
     {
         return HCCL_SUCCESS;
     }
@@ -1045,7 +1045,7 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::AllocAlgResource(const std::string &newTag, HcclCMDType opType, const OpParam &opParam,
-        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool isNeedHostSlaveStream)
+        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool selectAivAlg)
     {
         SaveLinkRes(algResResponse.opTransportResponse);
         SaveLinkRes(algResResponse.opTransportResponseBackUp);

@@ -97,7 +97,7 @@ HcclResult TaskException::PrintTaskExceptionByTaskId(u8 sqeType, u16 taskId, hcc
     SqeRingBuffer *sqeContextBuffer = &(sqeContext->buffer);
     CHK_PTR_NULL(sqeContextBuffer);
     uint8_t *sqeMirrorBufferAddr = sqeContextBuffer->rtsMirrorBuffer + (tail - 1) * HCCL_SQE_SIZE;
-    rtStarsSqeHeader_t * const sqeHeader = (rtStarsSqeHeader_t * const)sqeMirrorBufferAddr;
+    rtStarsSqeHeader_t * const sqeHeader = reinterpret_cast<rtStarsSqeHeader_t * const>(sqeMirrorBufferAddr);
     CHK_PTR_NULL(sqeHeader);
 
     s32 taskNum = sqeHeader->taskId - taskId;
@@ -173,7 +173,7 @@ void TaskException::PrintTaskExceptionOpInfo(IndOpInfo& indOp)
 std::string TaskException::GetTaskBriefsInfo(u32 idx, SqeRingBuffer *sqeContextBuffer)
 {
     uint8_t *sqeMirrorBufferAddr = sqeContextBuffer->rtsMirrorBuffer + idx * HCCL_SQE_SIZE;
-    rtStarsSqeHeader_t * const sqeHeader = (rtStarsSqeHeader_t * const)sqeMirrorBufferAddr;
+    rtStarsSqeHeader_t * const sqeHeader = reinterpret_cast<rtStarsSqeHeader_t * const>(sqeMirrorBufferAddr);
     uint8_t sqeType = sqeHeader->type;
 
     SqeInfo sqeInfo;
