@@ -222,15 +222,6 @@ rtError_t rtGetP2PStatus(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t *status)
     return RT_ERROR_NONE;
 }
 
-<<<<<<< HEAD
-=======
-rtError_t rtMalloc(void **devPtr, uint64_t size, rtMemType_t type, const uint16_t moduleId)
-{
-    *devPtr = reinterpret_cast<void*>(0x123);
-    return RT_ERROR_NONE;
-}
-
->>>>>>> deeb0532... update
 rtError_t aclrtFree(void *devPtr)
 {
     return RT_ERROR_NONE;

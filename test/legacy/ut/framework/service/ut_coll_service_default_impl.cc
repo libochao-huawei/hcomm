@@ -534,12 +534,8 @@ TEST_F(CollServiceDefaultImplTest, test_init)
 TEST_F(CollServiceDefaultImplTest, test_load_with_op_based_mode)
 {
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-<<<<<<< HEAD
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
-=======
     MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
->>>>>>> deeb0532... update
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
     DevType devType = DevType::DEV_TYPE_910_95;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER(HrtIpcSetMemoryName).stubs();
