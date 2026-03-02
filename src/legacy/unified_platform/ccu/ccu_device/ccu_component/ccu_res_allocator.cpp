@@ -149,13 +149,15 @@ HcclResult CcuResIdAllocator::Release(const uint32_t startId, const uint32_t num
     return HcclResult::HCCL_SUCCESS;
 }
 
+constexpr u32 INVALID_UINT = 0xFFFFFFFF;
 size_t CcuResIdAllocator::FindReleaseResIndex(const uint32_t startId) const
 {
     size_t resIndex = 0;
     const size_t maxIndex = resInfos.size();
     while (resIndex < maxIndex) {
         const auto &resInfo = resInfos[resIndex];
-        if (startId >= resInfo.startId + resInfo.num) {
+        // 检查resInfo.startId + resInfo.num是否会u32溢出
+        if ((resInfo.startId < INVALID_UINT - resInfo.num) && startId >= resInfo.startId + resInfo.num) {
             resIndex++;
             continue;
         }
