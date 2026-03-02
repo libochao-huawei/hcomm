@@ -13,7 +13,7 @@
 extern HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum); // host ffts+或aicpu stars使用"
 extern HcclResult CommTaskPrepare(char *key, uint32_t keyLen); // host ffts+使用
 
-bool LaunchContext::IsBatchLaunchMode()
+bool LaunchContext::IsBatchLaunchMode() const
 {
     if (mode_ == HCOMM_LAUNCH_MODE_BATCH) {
         return true;
