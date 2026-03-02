@@ -396,14 +396,14 @@ TEST_F(CollServiceDefaultImplTest, test_base_register_offload_buf)
     MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
 
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
     DevType devType = DevType::DEV_TYPE_910_95;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER(HrtIpcSetMemoryName).stubs();
     MOCKER(HrtDevMemAlignWithPage).stubs();
     MOCKER(HrtIpcDestroyMemoryName).stubs();
     void *devPtr = nullptr;
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(devPtr));
 
     GenRankTableFile4p();
     GenTopoFile();
@@ -497,7 +497,7 @@ TEST_F(CollServiceDefaultImplTest, test_init)
     MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
 
     MOCKER(HrtGetDevice).stubs().will(returnValue(1));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
     DevType devType = DevType::DEV_TYPE_910_95;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER(HrtIpcSetMemoryName).stubs();
@@ -533,7 +533,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_op_based_mode)
 {
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
     DevType devType = DevType::DEV_TYPE_910_95;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER(HrtIpcSetMemoryName).stubs();
@@ -624,7 +624,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode)
 {
     MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
     DevType devType = DevType::DEV_TYPE_910_95;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER(HrtIpcSetMemoryName).stubs();
@@ -800,7 +800,7 @@ TEST_F(CollServiceDefaultImplTest, AddCountTask)
     MOCKER(HrtReduceAsync).stubs().with(any());
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
     void *devPtr = nullptr;
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(devPtr));
 
     CommunicatorImpl comm;
     comm.streamManager = make_unique<StreamManager>(&comm);
@@ -816,7 +816,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode_with_task)
 {
     MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
     DevType devType = DevType::DEV_TYPE_910_95;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER(HrtIpcSetMemoryName).stubs();

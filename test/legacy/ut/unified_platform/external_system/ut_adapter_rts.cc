@@ -263,6 +263,52 @@ TEST_F(AdapterRtsTest, HrtGetNotifyID_return_nok)
 
     // then
     EXPECT_THROW(HrtGetNotifyID(&mockObject), RuntimeApiException);
+<<<<<<< HEAD
+=======
+}
+
+TEST_F(AdapterRtsTest, HrtGetDeviceInfo_return_ok)
+{
+    // Given
+    void *fakeHandle = nullptr;
+    MOCKER(rtGetDeviceInfo)
+        .stubs()
+        .with(any(), outBoundP(&fakeHandle, sizeof(fakeHandle)))
+        .will(returnValue(RT_ERROR_NONE));
+
+    // when
+    void *handle = HrtDevBinaryRegister(nullptr);
+
+    // then
+    EXPECT_EQ(fakeHandle, handle);
+}
+
+TEST_F(AdapterRtsTest, HrtDevBinaryRegister_return_ok)
+{
+    // Given
+    void *fakeHandle = nullptr;
+    MOCKER(rtDevBinaryRegister)
+        .stubs()
+        .with(any(), outBoundP(&fakeHandle, sizeof(fakeHandle)))
+        .will(returnValue(RT_ERROR_NONE));
+
+    // when
+    void *handle = HrtDevBinaryRegister(nullptr);
+
+    // then
+    EXPECT_EQ(fakeHandle, handle);
+}
+
+TEST_F(AdapterRtsTest, HrtDevBinaryRegister_return_nok)
+{
+    // Given
+    MOCKER(rtDevBinaryRegister).stubs().will(returnValue(1));
+
+    // when
+    rtDevBinary_t bin = {1, 2, nullptr, 4};
+    // then
+    EXPECT_THROW(HrtDevBinaryRegister(&bin), RuntimeApiException);
+>>>>>>> 2aeaf9ec... update
 }
 
 TEST_F(AdapterRtsTest, HrtGetDeviceInfo_return_ok)
