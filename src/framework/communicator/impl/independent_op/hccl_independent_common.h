@@ -13,7 +13,7 @@
 
 #include "hccl/hccl_res.h"
 #include "hccl_common.h"
-#include "notify/notify_base.h"
+#include "notify_base.h"
 #include "orion_adapter_hccp.h"
 #ifdef __cplusplus
 extern "C" {
