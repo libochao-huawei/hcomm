@@ -624,9 +624,9 @@ inline std::string GetDataTypeEnumStr(u32 dataType)
     return GetDataTypeEnumStr(hcclDataType);
 }
 
-inline std::string GetOpTypeEnumStr(u8 opType)
+inline std::string GetOpTypeEnumStr(u32 opType)
 {
-    auto hcclOpType = static_cast<OpType>(opType);
+    auto hcclOpType = static_cast<OpType::Value>(opType);
     return hcclOpType.Describe();
 }
 
