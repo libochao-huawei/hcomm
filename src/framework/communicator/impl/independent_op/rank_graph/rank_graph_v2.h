@@ -9,8 +9,15 @@
  */
 #ifndef HCOMM_RANK_GRAPH_V2_H
 #define HCOMM_RANK_GRAPH_V2_H
-#include "rank_graph_base.h"
+#include "topoinfo_struct.h"
+#include "hccl/hccl_res.h"
+#include "hccl_independent_common.h"
+#include "hccl_common.h"
+#include "hccl_impl_pub.h"
+#include "hccl_rank_graph.h"
+#include "hccl_rankgraph.h"
 #include "rank_graph_interface.h"
+#include "rank_graph_base.h"
 namespace hccl {
 
 class RankGraphV2 : public RankGraph {
