@@ -105,7 +105,7 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
         __func__, thread, threadEntityPtr->DescribeAttr().c_str(), dstThread, dstThreadEntityPtr->DescribeAttr().c_str(), dstNotifyIdx);
 
     int32_t ret = HCCL_SUCCESS;
-    NotifyRecordOpType notifyRecordOpType = GetNotifyRecordOpType(*threadEntityPtr, *dstThreadEntityPtr);
+    const NotifyRecordOpType notifyRecordOpType = GetNotifyRecordOpType(*threadEntityPtr, *dstThreadEntityPtr);
     switch (notifyRecordOpType) {
         case NotifyRecordOpType::AicpuTs_to_AicpuTs:
             AddThread(threadEntityPtr->threadObjAddr);
@@ -116,10 +116,10 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
             ret = RecordAicpuTsToCpu(*threadEntityPtr, *dstThreadEntityPtr, dstNotifyIdx);
             break;
         case NotifyRecordOpType::Cpu_to_AicpuTs:
-            ret = RecordCpuToAicpuTs(thread, dstThread, dstNotifyIdx, HcommRequestServiceOnThread);
+            ret = RecordCpuToAicpuTs(*threadEntityPtr, *dstThreadEntityPtr, dstNotifyIdx);
             break;
         default:
-            HCCL_ERROR("[%s] Not supported combination of comm engines and thread types.", __func__);
+            HCCL_ERROR("[%s] Not supported: thread type[%d], dstThread type[%d].", __func__, threadEntityPtr->type, dstThreadEntityPtr->type);
             ret = HCCL_E_NOT_SUPPORT;
             break;
     }
@@ -132,27 +132,34 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
 
 int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeOut)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], notifyIdx[%u], timeOut[%u].", __func__, thread, notifyIdx, timeOut);
+    auto *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    CHK_PTR_NULL(threadEntityPtr);
 
-    AddThread(thread);
+    HCCL_INFO("[%s] START. thread[0x%llx][%s], notifyIdx[%u], timeOut[%u].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), notifyIdx, timeOut);
 
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
-    CHK_PTR_NULL(threadPtr);
-
-    HcclResult ret = HCCL_SUCCESS;
-    if (threadPtr->IsDeviceA5()) {
-        LocalNotify *const notifyPtr = threadPtr->GetNotify(notifyIdx);
-        CHK_PTR_NULL(notifyPtr);
-        const uint32_t notifyId = notifyPtr->notifyId_;
-        EXECEPTION_CATCH(ret = threadPtr->LocalNotifyWait(notifyId), ret = HCCL_E_INTERNAL);
-    } else {
-        Stream *stream = GetStream(thread);
-        CHK_PTR_NULL(stream);
-        LocalNotify *notify = GetNotify(thread, notifyIdx);
-        CHK_PTR_NULL(notify);
-        ret = HcclLocalNotifyWait(stream, notify, timeOut);
+    if (notifyIdx >= threadEntityPtr->notifyNum) {
+        HCCL_ERROR("[%s] notifyIdx[%u] is out of range, notifyNum[%u].", __func__, notifyIdx, threadEntityPtr->notifyNum);
+        return HCCL_E_PARA;
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeOut[%u].", __func__, thread, notifyIdx, timeOut), ret);
+    
+    int32_t ret = HCCL_SUCCESS;
+    const ThreadType threadType = threadEntityPtr->type;
+    switch (threadType) {
+        case THREAD_TYPE_TS:
+            AddThread(threadEntityPtr->threadObjAddr);
+            ret = WaitAicpuTs(*threadEntityPtr, notifyIdx, timeOut);
+            break;
+        case THREAD_TYPE_CPU:
+            ret = WaitCpu(*threadEntityPtr, notifyIdx, timeOut);
+            break;
+        default:
+            HCCL_ERROR("[%s] Not supported thread type[%d].", __func__, threadType);
+            ret = HCCL_E_NOT_SUPPORT;
+            break;
+    }
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx][%s], notifyIdx[%u], timeOut[%u].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), notifyIdx, timeOut), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -757,7 +764,8 @@ int32_t HcommChannelFence(ChannelHandle channel)
 
 int32_t HcommRequestServiceOnThread(ThreadHandle dstThreadHandle, ThreadServiceHandle serviceHandle, const void *args, uint64_t argsSizeByte)
 {
-    HCCL_INFO("[%s] START. dstThreadHandle[0x%llx], serviceHandle[0x%llx], args[0x%llx], argsSizeByte[%llu].", __func__, dstThreadHandle, serviceHandle, args, argsSizeByte);
+    HCCL_INFO("[%s] START. dstThreadHandle[0x%llx], serviceHandle[0x%llx], args[0x%llx], argsSizeByte[%llu].",
+        __func__, dstThreadHandle, serviceHandle, args, argsSizeByte);
     ThreadEntity *const dstThreadEntityPtr = reinterpret_cast<ThreadEntity *>(dstThreadHandle);
     void *const serviceHandlePtr = reinterpret_cast<void *>(serviceHandle);
     CHK_PTR_NULL(dstThreadEntityPtr);
@@ -772,7 +780,6 @@ int32_t HcommRequestServiceOnThread(ThreadHandle dstThreadHandle, ThreadServiceH
     // TODO: add lock to make sure headIdxAddr is not updated by Host.
 
     const hccl::QueueInfo &queueInfo = dstThreadEntityPtr->cpuRes.sendQueue;
-    ThreadMsgEntity *const msgQueueBasePtr = reinterpret_cast<ThreadMsgEntity *>(queueInfo.addr);
     const uint64_t headIdx = *reinterpret_cast<uint64_t *>(queueInfo.headIdxAddr);
     const uint64_t tailIdx = *reinterpret_cast<uint64_t *>(queueInfo.tailIdxAddr);
     const uint64_t capacity = queueInfo.capacity;
@@ -782,6 +789,8 @@ int32_t HcommRequestServiceOnThread(ThreadHandle dstThreadHandle, ThreadServiceH
             __func__, dstThreadHandle, headIdx, tailIdx, capacity);
         return HCCL_E_INTERNAL;
     }
+    HCCL_INFO("[%s] thread[0x%llx]'s send queue has [%llu] empty slots. headIdx[%llu], tailIdx[%llu], capacity[%llu].",
+        __func__, dstThreadHandle, numEmptySlot, headIdx, tailIdx, capacity);
 
     // serviceArgsPtrOnHeap will be freed by CpuThread on Host after processing the service request.
     void *const serviceArgsPtrOnHeap = malloc(argsSizeByte);
@@ -791,12 +800,15 @@ int32_t HcommRequestServiceOnThread(ThreadHandle dstThreadHandle, ThreadServiceH
         __func__, args, serviceArgsPtrOnHeap, cpyRet), HCCL_E_INTERNAL);
     HCCL_INFO("[%s] Copy args from stack[0x%llx] to heap[0x%llx] SUCCESS.", __func__, args, serviceArgsPtrOnHeap);
 
-    // TODO: push service request to thread entity's send queue
+    // Push service request to thread entity's send queue
     static uint32_t s_msgId = 0;
+    ThreadMsgEntity *const msgQueueBasePtr = reinterpret_cast<ThreadMsgEntity *>(queueInfo.addr);
     ThreadMsgEntity tempMsgEnt = {s_msgId, serviceHandle, serviceArgsPtrOnHeap, argsSizeByte};
     msgQueueBasePtr[tailIdx] = tempMsgEnt;
     *reinterpret_cast<uint64_t *>(queueInfo.tailIdxAddr) = (tailIdx + 1) % capacity;  // update tail index.
-    HCCL_INFO("[%s] Push service request to thread[0x%llx]'s send queue SUCCESS. msgId[%u].", __func__, dstThreadHandle, s_msgId);
+    HCCL_INFO("[%s] Push service request to thread[0x%llx]'s send queue SUCCESS. msgId[%u]. New headIdx[%llu], tailIdx[%llu]",
+        __func__, dstThreadHandle, s_msgId, 
+        *reinterpret_cast<uint64_t *>(queueInfo.headIdxAddr), *reinterpret_cast<uint64_t *>(queueInfo.tailIdxAddr));
     s_msgId++;
     return HCCL_SUCCESS;
 }
