@@ -18,7 +18,7 @@ class CollReduceScatterVMeshOpbaseExecutor : public CollReduceScatterVExecutor {
 public:
     explicit CollReduceScatterVMeshOpbaseExecutor(const HcclDispatcher dispatcher,
     std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceScatterVMeshOpbaseExecutor() = default;
+    ~CollReduceScatterVMeshOpbaseExecutor() override = default;
 
 private:
     void ParseParam(const OpParam& param) override;
