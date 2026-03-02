@@ -31,7 +31,7 @@ void AicpuStreamManager::AllocStreams(u32 num)
     }
     streams.resize(num);
     for (int i = size; i < static_cast<int>(num); i++) {
-        streams[i] = std::make_unique<Stream>(true);
+        streams[i] = std::make_unique<Stream>(true, false);
         stream_pointers.push_back(streams[i].get());
     }
 }
@@ -68,7 +68,7 @@ std::vector<char> AicpuStreamManager::GetPackedData()
 void AicpuStreamManager::AllocFreeStream()
 {
     if (freeStream  == nullptr) {
-        freeStream = std::make_unique<Stream>(false);
+        freeStream = std::make_unique<Stream>(false, false);
     }
 }
 

@@ -102,6 +102,7 @@ private:
     std::vector<char> rankTableMsg_;
 
     std::mutex wakeMutex_;
+    std::atomic<bool> epollCreate_{false};
     std::atomic<bool> ready_{false};
     std::atomic<bool> stop_{false};
     std::condition_variable wakeManager_;

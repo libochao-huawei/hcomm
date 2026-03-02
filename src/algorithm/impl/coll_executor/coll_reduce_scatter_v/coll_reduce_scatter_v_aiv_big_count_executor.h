@@ -19,7 +19,7 @@ class CollReduceScatterVAIVBigCountExecutor : public CollReduceScatterVExecutor 
 public:
     explicit CollReduceScatterVAIVBigCountExecutor(const HcclDispatcher dispatcher,
     std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceScatterVAIVBigCountExecutor() = default;
+    ~CollReduceScatterVAIVBigCountExecutor() override = default;
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
     HcclResult GetAdjInfo(AlgResourceResponse& algRes, AdjInfo& adjInfo) override;
 private:

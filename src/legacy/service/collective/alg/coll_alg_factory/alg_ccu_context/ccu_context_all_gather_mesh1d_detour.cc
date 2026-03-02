@@ -105,8 +105,9 @@ CcuContextAllGatherMeshDetour1D::CcuContextAllGatherMeshDetour1D(const CcuCtxArg
 void CcuContextAllGatherMeshDetour1D::AllocDetourRes()
 {
     // 预期给每个对端使用的MS数量都相等
+    u32 interleave = 8;
     moConfig.loopCount = CcuRep::CCU_MS_DEFAULT_LOOP_COUNT;
-    moConfig.msInterleave = 8;  // Bcast为msNum*1，Reduce为msNum*rankSize_
+    moConfig.msInterleave = interleave;  // Bcast为msNum*1，Reduce为msNum*rankSize_
     if (moRes.executor.size() == 0) {
         moRes.executor = CreateBlockExecutor(moConfig.loopCount);
         moRes.maskSignal = CreateBlockMaskSignal(moConfig.loopCount);

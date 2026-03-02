@@ -348,6 +348,38 @@ HcclResult HcomCheckAlltoAllVCExternalMemV2(const void *sendBuf, const void *sen
     return HCCL_SUCCESS;
 }
 
+HcclResult HcomCheckAlltoAllVCEmptyV2(const void *sendBuf, const void *sendCountMatrix,
+    const void *recvBuf, u32 rankSize, bool &isEmpty)
+{
+    CHK_PRT_RET(sendBuf != nullptr && recvBuf != nullptr && sendBuf == recvBuf,
+        HCCL_ERROR("[HcomCheckAlltoAllVCEmptyV2] sendBuf and recvBuf addr cannot be same."),
+        HCCL_E_PARA);
+    
+    CHECK_NULLPTR(sendCountMatrix, "[HcomCheckAlltoAllVCEmptyV2] sendCountMatrix is nullptr!");
+    u64 *sendCountMatrixPtr = const_cast<u64 *>(static_cast<const u64 *>(sendCountMatrix));
+    bool hasSend = false;
+    bool hasRecv = false;
+
+    for (u32 i = 0; i < rankSize; i++) {
+        for(u32 j = 0; j < rankSize; j++) {
+            u64 sendCount = *(sendCountMatrixPtr + i * rankSize + j);
+            CHK_RET(HcomCheckCountV2(sendCount));
+            if (hasSend == false && sendCount != 0) {
+                hasSend = true;
+            }
+            u64 recvCount = *(sendCountMatrixPtr + j * rankSize + i);
+            CHK_RET(HcomCheckCountV2(recvCount));
+            if (hasRecv == false && recvCount != 0) {
+                hasRecv = true;
+            }
+            HCCL_DEBUG("[HcomCheckAlltoAllVCEmptyV2] myrank[%u] rmtrank[%u] sendCount[%llu] recvCount[%llu]", 
+                        i, j, sendCount, recvCount);
+        }
+    }
+    isEmpty = !(hasSend | hasRecv);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcomCheckUserRankV2(const u32 totalRanks, const u32 userRank)
 {
     if (userRank >= totalRanks) {

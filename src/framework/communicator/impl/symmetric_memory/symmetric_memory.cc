@@ -40,7 +40,7 @@ public:
                 i++, block.offset, block.offset, block.size, block.size, block.offset + block.size);
             freeSum += block.size;
         }
-        HCCL_ERROR("  Total Free: %zu (%.2f%%)", freeSum, (double)freeSum / totalSize_ * 100.0);
+        HCCL_ERROR("  Total Free: %zu (%.2f%%)", freeSum, static_cast<double>(freeSum) / totalSize_ * 100.0);
         HCCL_ERROR("==========================================");
     }
 
@@ -238,7 +238,7 @@ HcclResult SymmetricMemory::Init()
     CHK_PRT_RET(stride_ % granularity_ != 0,
         HCCL_ERROR("[SymmetricMemory][Init] Stride %llu is not a multiple of granularity %zu.", stride_, granularity_), HCCL_E_PARA);
 
-    size_t totalHeapSize = (size_t)stride_ * rankSize_;    // 每个rank都预留一个总大小为 totalHeapSize 的VA空间。
+    size_t totalHeapSize = static_cast<size_t>(stride_ * rankSize_); // 每个rank都预留一个总大小为 totalHeapSize 的VA空间。
     void* hintPtr = reinterpret_cast<void*>(targetStartTB);
 
     if (aclrtReserveMemAddressNoUCMemory(&heapBase_, totalHeapSize, 0, hintPtr, 0) != ACL_SUCCESS) {
@@ -268,7 +268,7 @@ HcclResult SymmetricMemory::GetAllRankPid()
     }
     HCCL_INFO("[SymmetricMemory][GetAllRankPid] Local pid: %d.", localPid);
 
-    CHK_RET(symmetricMemoryAgent_->ExchangeInfo((void*)&localPid, (void*)remoteShareablePids.data(), sizeof(localPid)));
+    CHK_RET(symmetricMemoryAgent_->ExchangeInfo(static_cast<void*>(&localPid), static_cast<void*>(remoteShareablePids.data()), sizeof(localPid)));
 
     std::string pidStr;
     for (u32 i = 0; i < remoteShareablePids.size(); i++) {
@@ -321,8 +321,8 @@ HcclResult SymmetricMemory::AddSymmetricWindow(std::shared_ptr<SymmetricWindow> 
     sortedWindows_.push_back(win);
     std::sort(sortedWindows_.begin(), sortedWindows_.end(), 
         [](const std::shared_ptr<SymmetricWindow>& a, const std::shared_ptr<SymmetricWindow>& b) {
-            return ((uintptr_t)a->userVa < (uintptr_t)b->userVa) || 
-                (((uintptr_t)a->userVa == (uintptr_t)b->userVa) && (a->userSize < b->userSize));
+            return (reinterpret_cast<uintptr_t>(a->userVa) < reinterpret_cast<uintptr_t>(b->userVa)) || 
+                ((reinterpret_cast<uintptr_t>(a->userVa) == reinterpret_cast<uintptr_t>(b->userVa)) && (a->userSize < b->userSize));
     });
 
     windowMap_[win->devWin] = win;
@@ -563,13 +563,13 @@ HcclResult SymmetricMemory::RegisterInternal(aclrtDrvMemHandle &paHandle, size_t
     aclrtMemFabricHandle shareableHandle;
     if(paMappingMap_[paHandle]->refCount == 1) {
         if (aclrtMemExportToShareableHandleV2(paHandle, 0, 
-            ACL_MEM_SHARE_HANDLE_TYPE_FABRIC, (void*)&shareableHandle) != ACL_SUCCESS) {
+            ACL_MEM_SHARE_HANDLE_TYPE_FABRIC, static_cast<void*>(&shareableHandle)) != ACL_SUCCESS) {
             HCCL_ERROR("[SymmetricMemory][RegisterInternal] Failed to export shareable handle. offset: %zu, size: %zu",
                 offset, mapSize);
             return HCCL_E_DRV;
         }
 
-        if(aclrtMemSetPidToShareableHandleV2((void*)&shareableHandle, ACL_MEM_SHARE_HANDLE_TYPE_FABRIC,
+        if(aclrtMemSetPidToShareableHandleV2(static_cast<void*>(&shareableHandle), ACL_MEM_SHARE_HANDLE_TYPE_FABRIC,
             remoteShareablePids.data(), remoteShareablePids.size()) != ACL_SUCCESS) {
             HCCL_ERROR("[SymmetricMemory][RegisterInternal] Failed to aclrtMemSetPidToShareableHandleV2");
             return HCCL_E_DRV;
@@ -582,7 +582,7 @@ HcclResult SymmetricMemory::RegisterInternal(aclrtDrvMemHandle &paHandle, size_t
     ShareableInfo shareableInfo{offset, mapSize, shareableHandle};
     std::vector<ShareableInfo> remoteShareableInfos(rankSize_);
 
-    CHK_RET(symmetricMemoryAgent_->ExchangeInfo((void*)&shareableInfo, (void*)remoteShareableInfos.data(), sizeof(ShareableInfo)));
+    CHK_RET(symmetricMemoryAgent_->ExchangeInfo(static_cast<void*>(&shareableInfo), static_cast<void*>(remoteShareableInfos.data()), sizeof(ShareableInfo)));
     for (u32 i = 0; i < rankSize_; i++) {
         if (remoteShareableInfos[i].offset != offset || remoteShareableInfos[i].size != mapSize) {
             HCCL_ERROR("[SymmetricMemory][RegisterInternal] rank[%u]:[offset: %llu, mapSize: %llu] is not equal to "
@@ -599,7 +599,7 @@ HcclResult SymmetricMemory::RegisterInternal(aclrtDrvMemHandle &paHandle, size_t
             void* targetVa = static_cast<uint8_t*>(heapBase_) + (stride_ * i) + offset;
             if (i == rank_) {
                 importedHandle = paHandle;
-            } else if (aclrtMemImportFromShareableHandleV2((void*)&(remoteShareableInfos[i].handle), ACL_MEM_SHARE_HANDLE_TYPE_FABRIC, 0,
+            } else if (aclrtMemImportFromShareableHandleV2(static_cast<void*>(&remoteShareableInfos[i].handle), ACL_MEM_SHARE_HANDLE_TYPE_FABRIC, 0,
                 &importedHandle) != ACL_SUCCESS) {
                 HCCL_ERROR("[SymmetricMemory][RegisterInternal] Failed to import handle from rank %u.", i);
                 goto MAP_ERROR;

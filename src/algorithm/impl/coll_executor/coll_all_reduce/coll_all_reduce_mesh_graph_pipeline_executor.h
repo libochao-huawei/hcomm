@@ -17,7 +17,7 @@ namespace hccl {
 class CollAllReduceMeshGraphPipelineExecutor : public CollAllReduceExecutor {
 public:
     CollAllReduceMeshGraphPipelineExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllReduceMeshGraphPipelineExecutor() = default;
+    ~CollAllReduceMeshGraphPipelineExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

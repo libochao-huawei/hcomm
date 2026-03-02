@@ -53,6 +53,9 @@ HcclResult HcomCheckAlltoAllVExternalMemV2(const void *sendBuf, const void *send
 // AlltoAllVC count和buff合法性检测
 HcclResult HcomCheckAlltoAllVCExternalMemV2(const void *sendBuf, const void *sendCountMatrix,
     const void *recvBuf, u32 rankSize, u32 rank);
+// AlltoAllVC Matrix传输值是否为空
+HcclResult HcomCheckAlltoAllVCEmptyV2(const void *sendBuf, const void *sendCountMatrix,
+    const void *recvBuf, u32 rankSize, bool &isEmpty);
 
 HcclResult HcomCheckUserRankV2(const u32 totalRanks, const u32 userRank);
 

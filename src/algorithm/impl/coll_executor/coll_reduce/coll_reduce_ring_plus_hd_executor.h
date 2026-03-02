@@ -17,7 +17,7 @@ class CollReduceRingPlusHdExecutor : public CollReduceExecutor {
 public:
     CollReduceRingPlusHdExecutor(const HcclDispatcher dispatcher,
     std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceRingPlusHdExecutor() = default;
+    ~CollReduceRingPlusHdExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

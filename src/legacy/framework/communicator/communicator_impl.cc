@@ -462,7 +462,6 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
         dfxOpInfo->algType_      = AlgType::MESH;
         dfxOpInfo->index_        = GetIdIndex();
         dfxOpInfo->comm_         = this;
-        dfxOpInfo->mainStreamId_ = HrtGetStreamId(stream);
         dfxOpInfo->beginTime_    = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
         GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);
         ExecuteFastCcuLaunch(opParams, stream, params);
@@ -598,7 +597,7 @@ HcclResult CommunicatorImpl::OffloadResourcePre(std::string &opTag, const CollOp
     std::vector<rtStream_t> slaveStreams;
     slaveStreams.resize(resReq.requiredSubQueNum);
     for (u64 i = 0; i < resReq.requiredSubQueNum; ++i) {
-        slaveStreams[i] = static_cast<rtStream_t>(std::make_unique<Stream>(true).get());
+        slaveStreams[i] = static_cast<rtStream_t>(std::make_unique<Stream>(true, false).get());
     }
     CHK_RET(SetCollOffloadSlaveStreams(opTag, slaveStreams));
     CHK_RET(SetCollOffloadScratchBuf(opTag, reinterpret_cast<void *>(GetCclBuffer()->GetAddr()),
@@ -2631,9 +2630,17 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
             commAccelerator = AcceleratorState::CCU_SCHED;
             break;
         case HcclAccelerator::AIV:
+            if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置AIV加速模式拦截报错
+                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s", hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
+                return HCCL_E_NOT_SUPPORT;
+            }
             commAccelerator = AcceleratorState::AIV;
             break;
         case HcclAccelerator::AIV_ONLY:
+            if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置AIV_ONLY加速模式拦截报错
+                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s", hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
+                return HCCL_E_NOT_SUPPORT;
+            }
             commAccelerator = AcceleratorState::AIV_ONLY;
             break;
         case HcclAccelerator::AICPU_TS:
@@ -3075,7 +3082,8 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     aclrtLaunchKernelCfg  cfg;
     aclrtLaunchKernelAttr kernelAttr;
     kernelAttr.id            = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
-    kernelAttr.value.timeout = NOTIFY_DEFAULT_WAIT_TIME;
+    kernelAttr.value.timeout = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
+                                std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
     cfg.numAttrs             = 1;
     cfg.attrs                = &kernelAttr;
     constexpr u32 numBlocks   = 1;
@@ -3655,6 +3663,8 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
         hcclAccelerator = static_cast<HcclAccelerator::Value>(accelerator);
     }
     HCCL_INFO("[CommunicatorImpl::%s] hcclAccelerator[%s].", __func__, hcclAccelerator.Describe().c_str());
+    HcclMainboardId hcclMainboardId;
+    CHK_RET(HrtGetMainboardId(devLogicId, hcclMainboardId));
     switch (hcclAccelerator) {
         case HcclAccelerator::DEFAULT:
             acceleratorState = AcceleratorState::CCU_SCHED; // 默认按照CCU_SCHED
@@ -3666,9 +3676,17 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
             acceleratorState = AcceleratorState::CCU_SCHED;
             break;
         case HcclAccelerator::AIV:
+            if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置AIV加速模式拦截报错
+                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s", hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
+                return HCCL_E_NOT_SUPPORT;
+            }
             acceleratorState = AcceleratorState::AIV;
             break;
         case HcclAccelerator::AIV_ONLY:
+            if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置AIV加速模式拦截报错
+                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s", hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
+                return HCCL_E_NOT_SUPPORT;
+            }
             acceleratorState = AcceleratorState::AIV_ONLY;
             break;
         default:

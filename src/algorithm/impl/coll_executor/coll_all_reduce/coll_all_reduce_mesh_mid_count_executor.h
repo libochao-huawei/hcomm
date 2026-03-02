@@ -17,7 +17,7 @@ namespace hccl {
 class CollAllReduceMeshMidCountExecutor : public CollAllReduceExecutor {
 public:
     CollAllReduceMeshMidCountExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllReduceMeshMidCountExecutor() = default;
+    ~CollAllReduceMeshMidCountExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

@@ -18,7 +18,7 @@ class CollAllReduceMixExecutor : public CollAllReduceExecutor {
 
 public:
     CollAllReduceMixExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllReduceMixExecutor() = default;
+    ~CollAllReduceMixExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

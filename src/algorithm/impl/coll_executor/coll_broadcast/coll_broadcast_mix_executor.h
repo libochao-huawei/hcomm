@@ -17,7 +17,7 @@ class CollBroadCastMix : public CollBroadcastExecutor {
 
 public:
     CollBroadCastMix(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollBroadCastMix() = default;
+    ~CollBroadCastMix() override = default;
 
 private:
     /* *************** 资源计算 *************** */
