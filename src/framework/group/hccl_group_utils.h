@@ -14,9 +14,9 @@
 #include <string>
 #include <hccl/hccl_types.h>
 #include <hccl_inner.h>
+#include "op_base.h"
 #include "hccl_comm_pub.h"
 
-const u32 MAX_CONCURRENT = 16;
 namespace hccl{
 
 typedef enum hcclGroupJobState {
@@ -105,30 +105,14 @@ struct hcclTaskP2p {
 };
  
 struct hcclKernelPlanner {
-    struct Peer {/*peer即send/recv入参中的dstRank/srcRank*/
-        std::deque<std::shared_ptr<struct hcclTaskP2p>> sendQueue;
-        std::deque<std::shared_ptr<struct hcclTaskP2p>> recvQueue;
-    };
-    std::vector<struct Peer> peers; /*[nRanks, number of NPUs in communicator]*/
     s32 nTasksColl = -1;
     s32 nTasksP2p = -1;//该plan中Coll和P2p task的个数
-    u32 nSend = 0;
-    u32 nRecv = 0;
     u32 rankSize = 0;
 
     std::set<HcclRtStream> collStreams;
     HcclRtStream sendRecvMainStream; // sendRecv的主流，用于跟从流同步
-    std::vector<bool> srcExist; // for sendRecv
-    std::vector<bool> dstExist; // for sendRecv
-    std::vector<s32> seenSrcs;
-    std::vector<s32> seenDsts;
-    s32 iSend; //同一个dst，同一个iSend
-    s32 iRecv;
-    std::deque<std::pair<std::shared_ptr<struct hcclTaskP2p>, s32>> sendRecvOrderedTasks;
-    std::unordered_map<u32, std::vector<u64>> sendIdx2Byte; // iSend, vector<bytes>
-    std::unordered_map<u32, std::vector<u64>> recvIdx2Byte; // iRecv, vector<bytes>
-    std::vector<std::deque<std::shared_ptr<struct hcclTaskP2p>>> sendStreamTasks; // 存放sendTask
-    std::vector<std::deque<std::shared_ptr<struct hcclTaskP2p>>> recvStreamTasks; // 存放recvTask
+
+    std::vector<HcclSendRecvItem> sendRecvInfo;
 
     std::deque<struct hcclOpInfo> collTaskQueue;
 };

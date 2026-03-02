@@ -16,11 +16,11 @@ namespace Hccl {
 
 class Stream {
 public:
-    explicit Stream(aclrtStream ptr);
+    explicit Stream(aclrtStream ptr, bool isMaster = true);
 
-    explicit Stream(bool deviceUsed = false);
+    explicit Stream(bool deviceUsed = false, bool isMaster = true);
 
-    Stream(const Stream &stream) = delete;
+    Stream(const Stream &stream, bool isMaster = true) = delete;
 
     Stream &operator=(const Stream &stream) = delete;
 
@@ -42,6 +42,8 @@ public:
 
     u32 GetId() const;
 
+    bool GetIsMaster() const;
+
     bool IsSelfOwned() const;
 
     u64 GetMode() const;
@@ -62,6 +64,7 @@ private:
     u32        sqId{0};
     u32        cqId{0};
     u32        devPhyId{0};
+    bool       isMaster_{true};
 
     void InitDevPhyId();
 };

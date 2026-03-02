@@ -17,7 +17,7 @@ class AlltoAllOperator : public CollAlgOperator {
 public:
     AlltoAllOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
         HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~AlltoAllOperator();
+    ~AlltoAllOperator() override;
 
     HcclResult GetAlltoAllStagedWorkSpaceMemSize(const OpParam& param, u64 &memSize);
     HcclResult GetAlltoAllStagedWorkSpaceMemSize(std::vector<SendRecvInfo> &allMeshAggregationSendRecvInfo,

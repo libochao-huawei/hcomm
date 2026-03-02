@@ -16,6 +16,7 @@
 #include "ins_temp_all_to_all_mesh_2D.h"
 #ifndef CCL_KERNEL_AICPU
 #include "aiv_temp_all_to_all_mesh_1D.h"
+#include "ccu_temp_all_to_all_mesh_1D_2Die.h"
 #endif  
 
 namespace Hccl {
@@ -299,5 +300,7 @@ INS_REGISTER_IMPL_BY_TEMP(OpType::ALLTOALL, InsAlltoAllMesh2D, InsV2AlltoAllSole
 #ifndef CCL_KERNEL_AICPU   
 INS_REGISTER_IMPL_BY_TEMP(OpType::ALLTOALL, AivAlltoAllMesh1D, InsV2AlltoAllSoleExecutor, TopoMatchMesh,
                           AivTempAlltoAllMesh1D);
+INS_REGISTER_IMPL_BY_TEMP(OpType::ALLTOALL, CcuAlltoAllMesh1D2Die, InsV2AlltoAllSoleExecutor, TopoMatchMesh,
+                          CcuTempAllToAllMesh1D2Die);
 #endif                           
 }  // namespace Hccl

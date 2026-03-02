@@ -162,6 +162,10 @@ void Mc2Compont::Alloc()
     // inputMem给算法编排使用，只需要申请一次，按照最大数据类型申请
     inputMem = std::make_shared<DevBuffer>(dataCount * DataTypeSizeGet(DataType::INT64) * comm->GetRankSize());
     HCCL_INFO("[Mc2Compont][Alloc]inputMem addr[%p] size = [%llu]", inputMem->GetAddr(), inputMem->GetSize());
+    for(uint32_t i = 0; i < MAX_OP_NUM; i++) {
+        combinOpParam.opType[i] = 0;
+        combinOpParam.algorithmType[i] = 0;
+    }
     if (ccuResourceAlloced) {
         return;
     }
@@ -195,6 +199,10 @@ void Mc2Compont::AllocV2()
 {
     inputMem = std::make_shared<DevBuffer>(dataCount * DataTypeSizeGet(DataType::INT64) * comm->GetRankSize());
     HCCL_INFO("[Mc2Compont][AllocV2]inputMem addr[%p] size = [%llu]", inputMem->GetAddr(), inputMem->GetSize());
+    for(uint32_t i = 0; i < MAX_OP_NUM; i++) {
+        combinOpParam.opType[i] = 0;
+        combinOpParam.algorithmType[i] = 0;
+    }
     if (ccuResourceAlloced) {
         return;
     }
@@ -265,6 +273,16 @@ void Mc2Compont::MC2AllocCommRes(const CollAlgParams &params, std::shared_ptr<In
     }
 }
 
+void Mc2Compont::SaveAlgoInfo(uint32_t index, uint64_t templateSign, uint32_t opType, uint8_t algorithmType) {
+    combinOpParam.opType[index]   = opType;
+    combinOpParam.algorithmType[index]   = algorithmType;
+    HcclAlgoInfo hcclAlgoInfo{};
+    hcclAlgoInfo.opType = opType;
+    hcclAlgoInfo.algorithmType = algorithmType;
+    algoInfoMap_[templateSign] = hcclAlgoInfo;
+    return;
+}
+
 void Mc2Compont::GenerateAlgoTemplates(Mc2Tiling *mc2TilingPtr, std::unordered_set<uint64_t> &algoTemplateRequire)
 {
     HCCL_INFO("GenerateAlgoTemplates start v1");
@@ -284,9 +302,14 @@ void Mc2Compont::GenerateAlgoTemplates(Mc2Tiling *mc2TilingPtr, std::unordered_s
         algoTemplateRequire.insert(templateSign);
         // 已经生成过的算法模板不再生成
         if (algoTemplateMap.find(templateSign) != algoTemplateMap.end()) {
-            HCCL_INFO("A algoTemplate that meets the requirement already exists, index = [%u], templateSign = [%llu]",
-                       index, templateSign);
-            continue;
+            HCCL_INFO("A algoTemplate that meets the requirement already exists, index = [%u], templateSign = [%llu]", index, templateSign);
+            if (algoInfoMap_.find(templateSign) != algoInfoMap_.end()) {
+                combinOpParam.opType[index]   = algoInfoMap_[templateSign].opType;
+                combinOpParam.algorithmType[index]   = algoInfoMap_[templateSign].algorithmType;
+                continue;
+            } else {
+                THROW<Hccl::InternalException>(StringFormat("algoInfoMap_ do not has templateSign = [%llu]", templateSign));
+            }
         }
 
         FillCollOperator(commConfig);
@@ -295,11 +318,9 @@ void Mc2Compont::GenerateAlgoTemplates(Mc2Tiling *mc2TilingPtr, std::unordered_s
         MC2AllocCommRes(params, insQueue, commConfig.communicationEngine);
 
         std::string algName = comm->GetCurAlgName();
-        HCCL_INFO("Orchestrate: index = [%u], algName = [%s], templateSign = [%llu]", index, algName.c_str(),
-                templateSign);
+        HCCL_INFO("Orchestrate: index = [%u], algName = [%s], templateSign = [%llu]", index, algName.c_str(), templateSign);
         if (insQueue->Iter()->GetType() != InstructionType::CCU_INS) {
-            THROW<Hccl::InternalException>(
-                StringFormat("InstructionType is not ccu ins, algName = [%s]", algName.c_str()));
+            THROW<Hccl::InternalException>(StringFormat("InstructionType is not ccu ins, algName = [%s]", algName.c_str()));
         }
 
         // 获取taskParam
@@ -307,12 +328,10 @@ void Mc2Compont::GenerateAlgoTemplates(Mc2Tiling *mc2TilingPtr, std::unordered_s
         std::vector<std::vector<CcuTaskParam>> taskParams;
         ccuInstruction.Translate(taskParams);
         if (taskParams.empty()) {
-            THROW<Hccl::InternalException>(
-                StringFormat("CcuInstruction translate faild, index = [%u], algName = [%s]", index, algName.c_str()));
+            THROW<Hccl::InternalException>(StringFormat("CcuInstruction translate faild, index = [%u], algName = [%s]", index, algName.c_str()));
         }
         algoTemplateMap[templateSign] = taskParams;
-        combinOpParam.opType[index]   = commConfig.opType;
-        combinOpParam.algorithmType[index]   = comm->GetAlgorithmType();
+        SaveAlgoInfo(index, templateSign, commConfig.opType, comm->GetAlgorithmType());
         for (const auto &task : taskParams) {
             HCCL_INFO("taskParam: dieId = [%u], instStartId = [%u]", task[0].dieId, task[0].instStartId);
             SaveMc2DfxTaskInfo(task[0], ccuInstruction.GetExecId());
@@ -331,8 +350,7 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
     params.maxTmpMemSize = tmpMemSize;
     params.isMc2         = true;
     if(mc2TilingPtr->mc2HcommCnt > MAX_OP_NUM) {
-        THROW<Hccl::InternalException>(
-                StringFormat("mc2HcommCnt is lager than MAX_OP_NUM, mc2HcommCnt = [%u]", mc2TilingPtr->mc2HcommCnt));
+        THROW<Hccl::InternalException>(StringFormat("mc2HcommCnt is lager than MAX_OP_NUM, mc2HcommCnt = [%u]", mc2TilingPtr->mc2HcommCnt));
     }
 
     for (uint32_t index = 0; index < mc2TilingPtr->mc2HcommCnt; index++) {
@@ -343,9 +361,14 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
         algoTemplateRequire.insert(templateSign);
         // 已经生成过的算法模板不再生成
         if (algoTemplateMap.find(templateSign) != algoTemplateMap.end()) {
-            HCCL_INFO("A algoTemplate that meets the requirement already exists, index = [%u], templateSign = [%llu]",
-                       index, templateSign);
-            continue;
+            HCCL_INFO("A algoTemplate that meets the requirement already exists, index = [%u], templateSign = [%llu]", index, templateSign);
+            if (algoInfoMap_.find(templateSign) != algoInfoMap_.end()) {
+                combinOpParam.opType[index]   = algoInfoMap_[templateSign].opType;
+                combinOpParam.algorithmType[index]   = algoInfoMap_[templateSign].algorithmType;
+                continue;
+            } else {
+                THROW<Hccl::InternalException>(StringFormat("algoInfoMap_ do not has templateSign = [%llu]", templateSign));
+            }
         }
 
         FillCollOperatorV2(commConfig);
@@ -354,11 +377,9 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
         MC2AllocCommRes(params, insQueue, commConfig.communicationEngine);
 
         std::string algName = comm->GetCurAlgName();
-        HCCL_INFO("Orchestrate: index = [%u], algName = [%s], templateSign = [%llu]", index, algName.c_str(),
-                templateSign);
+        HCCL_INFO("Orchestrate: index = [%u], algName = [%s], templateSign = [%llu]", index, algName.c_str(), templateSign);
         if (insQueue->Iter()->GetType() != InstructionType::CCU_INS) {
-            THROW<Hccl::InternalException>(
-                StringFormat("InstructionType is not ccu ins, algName = [%s]", algName.c_str()));
+            THROW<Hccl::InternalException>(StringFormat("InstructionType is not ccu ins, algName = [%s]", algName.c_str()));
         }
 
         // 获取taskParam
@@ -366,12 +387,10 @@ void Mc2Compont::GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr,
         std::vector<std::vector<CcuTaskParam>> taskParams;
         ccuInstruction.Translate(taskParams);
         if (taskParams.empty()) {
-            THROW<Hccl::InternalException>(
-                StringFormat("CcuInstruction translate faild, index = [%u], algName = [%s]", index, algName.c_str()));
+            THROW<Hccl::InternalException>(StringFormat("CcuInstruction translate faild, index = [%u], algName = [%s]", index, algName.c_str()));
         }
         algoTemplateMap[templateSign] = taskParams;
-        combinOpParam.opType[index]   = commConfig.opType;
-        combinOpParam.algorithmType[index]   = comm->GetAlgorithmType();
+        SaveAlgoInfo(index, templateSign, commConfig.opType, comm->GetAlgorithmType());
         for (const auto &task : taskParams) {
             HCCL_INFO("taskParam: dieId = [%u], instStartId = [%u]", task[0].dieId, task[0].instStartId);
             SaveMc2DfxTaskInfo(task[0], ccuInstruction.GetExecId());

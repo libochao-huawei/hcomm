@@ -78,9 +78,35 @@ STATIC int RaHdTlvRequestForSendNullMsg(unsigned int phyId, union OpTlvRequestDa
         head, sizeof(struct TlvRequestMsgHead));
 
     ret = RaHdcProcessMsg(RA_RS_TLV_REQUEST, phyId, (char *)tlvData, sizeof(union OpTlvRequestData));
+    CHK_PRT_RETURN(ret == -EUSERS, hccp_warn("[request][ra_hdc_tlv]hdc message process unsuccessful ret(%d) phy_id(%u)",
+        ret, phyId), ret);
     CHK_PRT_RETURN(ret != 0, hccp_err("[request][ra_hdc_tlv]hdc message process failed ret(%d) phy_id(%u)",
         ret, phyId), ret);
 
+    recvMsg->type = head->type;
+    recvMsg->length = tlvData->rxData.recvBytes;
+    return ret;
+}
+
+STATIC int RaTlvRequestGetTlvMsg(struct TlvRequestMsgHead *head, union OpTlvRequestData *tlvData, struct TlvMsg *recvMsg)
+{
+    int ret = 0;
+
+    if (recvMsg->data == NULL || recvMsg->length == 0) {
+        tlvData->rxData.recvBytes = 0;
+        goto out;
+    }
+
+    CHK_PRT_RETURN(tlvData->rxData.recvBytes > recvMsg->length,
+        hccp_err("[request][ra_hdc_tlv]rxData.recvBytes(%u) > recvLen(%u), phyId(%u)", tlvData->rxData.recvBytes,
+        recvMsg->length, head->phyId), -EINVAL);
+
+    ret = memcpy_s(recvMsg->data, recvMsg->length, tlvData->rxData.recvData, tlvData->rxData.recvBytes);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[request][ra_hdc_tlv]memcpy_s recvData failed, ret(%d) rxData.recvBytes(%u)"
+        " recvLen(%u) phyId(%u)", ret, tlvData->rxData.recvBytes, recvMsg->length, head->phyId), -ESAFEFUNC);
+
+out:
+    recvMsg->type = head->type;
     recvMsg->length = tlvData->rxData.recvBytes;
     return ret;
 }
@@ -110,11 +136,15 @@ int RaHdcTlvRequest(struct RaTlvHandle *tlvHandle, unsigned int moduleType,
             ret, phyId, head.sendBytes), -ESAFEFUNC);
 
         ret = RaHdcProcessMsg(RA_RS_TLV_REQUEST, phyId, (char *)&tlvData, sizeof(union OpTlvRequestData));
+        CHK_PRT_RETURN(ret == -EUSERS, hccp_warn("[request][ra_hdc_tlv]hdc message process unsuccessful ret(%d) phy_id(%u)",
+            ret, phyId), ret);
         CHK_PRT_RETURN(ret != 0, hccp_err("[request][ra_hdc_tlv]hdc message process failed ret(%d) phy_id(%u)",
             ret, phyId), ret);
         head.offset += head.sendBytes;
     }
 
-    recvMsg->length = tlvData.rxData.recvBytes;
+    ret = RaTlvRequestGetTlvMsg(&head, &tlvData, recvMsg);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[request][ra_hdc_tlv]RaTlvRequestGetTlvMsg failed ret(%d) phy_id(%u)",
+        ret, phyId), ret);
     return ret;
 }
