@@ -195,7 +195,7 @@ CollAlgOpReq CollAlgComponent::GetCollAlgOpReq(const CollAlgOperator &op, const 
     CollAlgOpReq collAlgOpReq;
 
     collAlgOpReq.algName =  collAlgName;
-    if (algName2Res.find(collAlgName) != algName2Res.end()) {
+    if (algName2Res.find(collAlgName) != algName2Res.end() && op.opType != OpType::BATCHSENDRECV && op.opType != OpType::SEND && op.opType != OpType::RECV) {
         collAlgOpReq.resReq = algName2Res[collAlgName];
         return collAlgOpReq;
     }

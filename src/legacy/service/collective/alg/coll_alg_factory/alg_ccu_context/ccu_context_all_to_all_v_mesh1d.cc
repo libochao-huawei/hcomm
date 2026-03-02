@@ -358,15 +358,15 @@ void CcuContextAllToAllVMesh1D::RefreshArgs(CollOpParams opParams, u32 rankSize,
     u32 loopCount = LOCAL_COPY_MS_PER_LOOP;
     u32 memSlice = CCU_MS_LOCAL_COPY_LOOP_COUNT * CcuRep::CCU_MS_SIZE;
     GroupOpConfig moConfig{CcuRep::CCU_MS_INTERLEAVE, loopCount, memSlice};
-    uint64_t xnMaxTransportGoSize = CcuContext::CalGoSizeStatic(xnMaxTransportSize, moConfig);
+    uint64_t xnMaxTransportGoSize = CcuContext::CalGoSizeStatic(xnMaxTransportSize_, moConfig);
     for (auto val : xnMaxTransportGoSize) {
         args.push_back(val);
     }
 
     for (u32 i = 0; i < rankSize; i++) {
         u64 curSendCounts = *(static_cast<const u64 *>(opParams.all2AllVDataDes.sendCounts) + i);
-        U64 curSendDispls = *(static_cast<const u64 *>(opParams.all2AllVDataDes.sdispls) + i);
-        u64 sendLenth = curSendCounts * DataTypeSizeGet(opParams.all2AllVDataDes.sendType);
+        u64 curSendDispls = *(static_cast<const u64 *>(opParams.all2AllVDataDes.sdispls) + i);
+        u64 sendLength = curSendCounts * DataTypeSizeGet(opParams.all2AllVDataDes.sendType);
         u64 sendOffset = curSendDispls * DataTypeSizeGet(opParams.all2AllVDataDes.sendType);
 
         u64 curRecvDispls = *(static_cast<const u64 *>(opParams.all2AllVDataDes.rdispls) + i);

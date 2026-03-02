@@ -44,4 +44,8 @@ target_sources(hccl_v2_native_alg_repo PRIVATE
         ccu_context_all_reduce_nhr1d_mem2mem.cc
         ccu_context_reduce_scatter_nhr1d_mem2mem.cc
         ccu_context_scatter_nhr1d_mem2mem.cc
+        ccu_context_all_gather_mesh1d_2die.cc
+        ccu_context_all_to_all_mesh1d_2Die.cc
+        ccu_context_all_to_all_v_mesh2die.cc
+        ccu_context_reduce_scatter_mesh1d_2die.cc
 )

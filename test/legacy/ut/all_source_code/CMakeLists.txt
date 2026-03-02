@@ -82,6 +82,7 @@ target_sources(hccl_v2_utest
         ${HCCL_V2_CODE_ROOT}/framework/resource_manager/transport/ub_memory_transport_mgr.cc
 
         ${HCCL_V2_CODE_ROOT}/unified_platform/aiv/ub_memory_transport.cc
+        ${HCCL_V2_CODE_ROOT}/unified_platform/aiv/urma_direct_transport.cc
 
         ${HCCL_V2_CODE_ROOT}/unified_platform/common/rdma_handle_manager.cc
         ${HCCL_V2_CODE_ROOT}/unified_platform/common/hccp_hdc_manager.cc
