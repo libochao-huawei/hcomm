@@ -924,8 +924,7 @@ void HrtCntNotifyDestroy(const aclrtCntNotify inCntNotify)
     aclError ret = aclrtCntNotifyDestroy(inCntNotify);
     HCCL_INFO("Call rtCntNotifyDestroy, return value[%d], inCntNotify[%p].", ret, inCntNotify);
     if (ret != ACL_SUCCESS) {
-        string msg = StringFormat("Call rtCntNotifyDestroy failed. return[%d], inCntNotify[%p].", 
-            ret, inCntNotify);
+        string msg = StringFormat("Call aclrtCntNotifyDestroy failed");
         THROW<RuntimeApiException>(msg);
     }
 }
