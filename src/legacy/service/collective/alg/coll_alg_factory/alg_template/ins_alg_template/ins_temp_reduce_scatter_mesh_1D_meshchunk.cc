@@ -177,7 +177,13 @@ HcclResult InsTempReduceScatterMesh1DMeshChunk::DoMeshChunk(const ResLinks &temp
                 repeatIdx * tempAlgParams.inputRepeatStride + frontRank * tempAlgParams.inputSliceStride + sliceSendOffset_, sliceSize[i]); // 发送源
             DataSlice txDstSlice = DataSlice(tempAlgParams.buffInfo.scratBuffType, tempAlgParams.buffInfo.scratchBuffBaseOff + 
                 sliceSendOffset_, sliceSize[i]);  // 发送目标
-
+            
+            u32 rankFromRank = GetRankFromMap(toRank);
+            auto it =  tempLinks.find(rankFromRank);
+            if (it == tempLinks.end()) {
+                HCCL_ERROR("rankFromRank [%u] not in tempLinks.", rankFromRank);
+                return HcclResult::HCCL_E_PARA;
+            }
             const std::vector<LinkData> &linkRecv = tempLinks.at(GetRankFromMap(toRank));
             const std::vector<LinkData> &linkSend = tempLinks.at(GetRankFromMap(toRank));
             std::vector<DataSlice> txSrcSlices;
