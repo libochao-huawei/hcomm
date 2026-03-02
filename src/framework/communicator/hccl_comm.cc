@@ -1498,7 +1498,6 @@ HcclResult hcclComm::SetHcclQos(u32 hcclQos)
         communicator_->SetHcclQos(EnvConfig::HCCL_QOS_DEFAULT);
         return HCCL_SUCCESS;
     }
-    }
 
     HCCL_INFO("[SetHcclQos] hcclQos[%u]", hcclQos);
     communicator_->SetHcclQos(hcclQos);
