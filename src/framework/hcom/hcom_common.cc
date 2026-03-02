@@ -67,17 +67,17 @@ DevType MakeEnumToDevType(int makeEnum)
     return DevType::DEV_TYPE_NOSOC;
 }
 
-typedef HcclResult (*HcomCreateGroupCallback)(const std::string &, const std::vector<u32> &);
-typedef bool (*HcomCallBackGroupIsInit)(HcomInfo &);
-typedef HcclResult (*HcomDestroyGroupCallback)(const std::string &);
-typedef HcclResult (*HcomDestroyCallback)(HcomInfo &);
+using HcomCreateGroupCallback = HcclResult (*)(const std::string &, const std::vector<u32> &);
+using HcomCallBackGroupIsInit = bool (*)(HcomInfo &);
+using HcomDestroyGroupCallback = HcclResult (*)(const std::string &);
+using HcomDestroyCallback = HcclResult (*)(HcomInfo &);
 HcomCreateGroupCallback g_hcomCreateGroupCallback = nullptr;
 HcomCallBackGroupIsInit g_hcomCallBackGroupIsInit = nullptr;
 HcomDestroyGroupCallback g_hcomDestroyGroupCallback = nullptr;
 HcomDestroyCallback g_hcomDestroyCallback = nullptr;
 
-typedef HcclResult (*HcomSetGroupTopoInfoPtr)(const char *, uint32_t);
-typedef void (*HcomUnsetGroupTopoInfoPtr)(const char *);
+using HcomSetGroupTopoInfoPtr = HcclResult (*)(const char *, uint32_t);
+using HcomUnsetGroupTopoInfoPtr = void (*)(const char *);
 HcomSetGroupTopoInfoPtr g_hcomSetGroupTopoInfo = nullptr;
 HcomUnsetGroupTopoInfoPtr g_hcomUnsetGroupTopoInfo = nullptr;
 
@@ -602,7 +602,7 @@ HcclResult HcomFlushBackloggedGroups()
     HCCL_INFO("HcomFlushBackloggedGroups");
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     std::unique_lock<std::mutex> backGroupParaLock(g_backloggedGroupLock);
-    typedef map<string, std::vector<u32>>::iterator ITER;
+    using ITER = map<string, std::vector<u32>>::iterator;
     for (ITER iter = g_backloggedGroup.begin(); iter != g_backloggedGroup.end();) {
         HCCL_INFO("HcomFlushBackloggedGroups[%s], rank[%u]", iter->first.c_str(), hcomInfo.params.rank);
         if (std::count(iter->second.begin(), iter->second.end(), hcomInfo.params.rank)) {
@@ -1062,14 +1062,14 @@ void HcomGroupCallbackFuncInstall(HcclResult (*p1)(const std::string &, const st
     g_hcomDestroyCallback = p4;
 }
 
-HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32 *inputIdxList)
+HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32 *IdxList)
 {
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
     if (isAutoTuneModeOpen) {
         return HCCL_SUCCESS;
     }
 
-    RPT_INPUT_ERR(inputIdxList == nullptr,
+    RPT_INPUT_ERR(IdxList == nullptr,
         "EI0003",
         std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
         std::vector<std::string>({"HcomSetGradFusionByIndex", "nullptr", "inputIdxList", "non-null pointer"}));
@@ -1081,7 +1081,7 @@ HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32
         std::vector<std::string>(
             {"HcomSetGradFusionByIndex", std::to_string(0), "segmentNum", "must be a positive integer (greater than 0)"}));
     CHK_PRT_RET(bRet,
-        HCCL_ERROR("[%s][%s]errNo[0x%016llx] set split inputIdxList length is zero",
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] set split IdxList length is zero",
             LOG_KEYWORDS_TASK_EXEC.c_str(),
             LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
             HCOM_ERROR_CODE(HCCL_E_PARA)),
@@ -1090,13 +1090,13 @@ HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32
     string idxList;
     for (u32 i = 0; i < segmentNum; i++) {
         if (i < segmentNum - 1) {
-            idxList += to_string(inputIdxList[i]) + ',';
+            idxList += to_string(IdxList[i]) + ',';
         } else if (i == segmentNum - 1) {
-            idxList += to_string(inputIdxList[i]);
+            idxList += to_string(IdxList[i]);
         }
     }
     /* 接口交互信息日志 */
-    HCCL_RUN_INFO("Entry-HcomSetGradFusionByIndex:group[%s], segmentNum[%u], inputIdxList[%s]",
+    HCCL_RUN_INFO("Entry-HcomSetGradFusionByIndex:group[%s], segmentNum[%u], IdxList[%s]",
         strGroup.c_str(), segmentNum, idxList.c_str());
 
     CHK_RET(HcomCheckGroupName(strGroup.c_str()));
@@ -1104,7 +1104,7 @@ HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32
     std::vector<u32> tempList;
 
     for (u32 segidx = 0; segidx < segmentNum; segidx++) {
-        tempList.push_back(inputIdxList[segidx]);
+        tempList.push_back(IdxList[segidx]);
     }
 
     for (u32 i = 0; i < tempList.size() - 1; i++) {

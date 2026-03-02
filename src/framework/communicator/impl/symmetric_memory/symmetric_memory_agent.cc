@@ -16,6 +16,7 @@ using namespace std;
 
 const string STR_IPC_MEM_EXCHANGE = "Exchange_Info";
 constexpr u32 USLEEP_ONE_THOUSAND = 1000;
+constexpr u32 RING_RANK_SIZE_MIN = 2;
 
 SymmetricMemoryAgent::SymmetricMemoryAgent(const std::unique_ptr<HcclSocketManager> &socketManager, u32 devicePhyId,
     s32 deviceLogicId, const HcclIpAddress &localVnicIp, const std::vector<RankInfo> &rankInfoList, u32 userRank,
