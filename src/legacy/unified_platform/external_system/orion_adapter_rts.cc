@@ -147,10 +147,10 @@ u32 HrtGetDeviceCount()
 {
     u32       count = 0;
     aclError ret   = aclrtGetDeviceCount(&count);
-    HCCL_INFO("Call rtGetDeviceCount, return value[%d], para: count[%d].", ret, count);
+    HCCL_INFO("Call rtGetDeviceCount, return value[%d], para: count[%u].", ret, count);
     if (ret != ACL_SUCCESS) {
         HCCL_ERROR("[Get][DeviceCount]errNo[0x%016llx] rtGet device count fail, "
-                   "return[%d], para:count[%d]",
+                   "return[%d], para:count[%u]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, count);
         throw RuntimeApiException("call rtDeviceReset failed. ");
     }
@@ -305,7 +305,7 @@ HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainbo
     constexpr uint64_t MASK_7 = 0x7;
     int64_t val = 0;
     CHK_RET(HrtGetDeviceInfo(deviceLogicId, moduleType, infoType, val));
-    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%d] val[%ld].", deviceLogicId, val);
+    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%u] val[%ld].", deviceLogicId, val);
     uint64_t mainboardId = (static_cast<uint64_t>(val) >> BITS_5) & MASK_7; // 提取val的5-7位，判断整机形态
     auto it = rtMainboardIdToHcclMainboardId.find(mainboardId);
     if (it != rtMainboardIdToHcclMainboardId.end()) {
@@ -313,7 +313,7 @@ HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainbo
     } else {
         hcclMainboardId = HcclMainboardId::MAINBOARD_OTHERS;
     }
-    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%d] mainboardId[%llu] hcclMainboardId[%s].",
+    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%u] mainboardId[%llu] hcclMainboardId[%s].",
               deviceLogicId, mainboardId, hcclMainboardId.Describe().c_str());
     return HcclResult::HCCL_SUCCESS;
 }
@@ -873,7 +873,7 @@ rtCntNotify_t HrtCntNotifyCreate(u32 deviceId)
 { 
     rtCntNotify_t handle;
     aclError     ret = rtCntNotifyCreateServer(&handle, RT_NOTIFY_FLAG_DEFAULT);
-    HCCL_INFO("Call rtGetTaskIdAndStreamId, return value[%d] devId[%d].", ret, deviceId);
+    HCCL_INFO("Call rtGetTaskIdAndStreamId, return value[%d] devId[%u].", ret, deviceId);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("Call rtCntNotifyCreate failed");
         THROW<RuntimeApiException>(msg);
