@@ -2319,16 +2319,16 @@ HcclResult HrtRaCtxQpDestoryBatch(const RdmaHandle handle, const std::unordered_
 //     u64 mem_type_bitmap;
 // }
 
-struct ccu_mem_rsp {
-    unsigned int die_id;
-    unsigned int  num;
-    struct ccu_mem_info list[64U];
-};
-
 struct ccu_mem_info {
     unsigned int long long mem_va;
     unsigned int mem_size;
     unsigned int resv[1];
+};
+
+struct ccu_mem_rsp {
+    unsigned int die_id;
+    unsigned int  num;
+    struct ccu_mem_info list[64U];
 };
 
 void HrtInitTlvMsg(TlvMsg* send_msg, TlvMsg* recv_msg, 
