@@ -27,7 +27,7 @@ static void OneSidedSetModuleDataName(ModuleData &module, const std::string &nam
 {
     int ret = strcpy_s(module.name, sizeof(module.name), name.c_str());
     if (ret != 0) {
-        THROW<InternalException>(StringFormat("strcpy_s name %s failed", name.c_str()));
+        THROW<InternalException>(StringFormat("strcpy_s name %s failed. ret[%d]", name.c_str(), ret));
     }
 }
 
@@ -370,7 +370,7 @@ void HcclOneSidedService::SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &pa
     auto ret = strcpy_s(param.kernel.comm.commId, sizeof(param.kernel.comm.commId), comm_->GetId().data());
     if (ret != EOK) {
         THROW<InternalException>(
-            StringFormat("HcclOneSidedService::SetOneSidedKernelLaunchParam, strcpy_s commId failed!"));
+            StringFormat("HcclOneSidedService::SetOneSidedKernelLaunchParam, strcpy_s commId failed! ret[%d]", ret));
     }
 
     param.kernel.oneSidedComm  = true;
@@ -479,6 +479,12 @@ HcclResult HcclOneSidedService::BatchOpKernelLaunch(OpType opType, RankId remote
     param.kernel.op.batchPutGetDescNum    = descNum;
     param.kernel.op.batchPutGetLocalAddr  = reinterpret_cast<void *>(devBatchPutGetLocalBufs.get()->GetAddr());
     param.kernel.op.batchPutGetRemoteAddr = reinterpret_cast<void *>(devBatchPutGetRemoteBufs.get()->GetAddr());
+    auto ret = strcpy_s(param.kernel.tagKey, sizeof(param.kernel.tagKey), opReq.algName.c_str());
+    if (ret != EOK) {
+        THROW<InternalException>(
+            StringFormat("[HcclOneSidedService][BatchOpKernelLaunch], strcpy_s opReq.algName failed! ret[%d]", ret));
+    }
+
     HCCL_INFO("[HcclOneSidedService][BatchOpKernelLaunch] OneSidedAicpuKernelLaunch start");
     // 启动kernel
     OneSidedAicpuKernelLaunch(param, *stream);

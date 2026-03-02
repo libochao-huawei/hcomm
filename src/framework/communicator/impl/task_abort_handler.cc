@@ -133,7 +133,7 @@ HcclResult TaskAbortHandler::Init(HcclCommunicator * communicator)
     std::unique_lock<std::mutex> lock(mutex_);
     HCCL_INFO("TaskAbortHandler::Init commVector size is [%d], ref_ count is [%d]", commVector.size(), ref_.Count());
     if (ref_.Count() == 0) {
-        CHK_RET(hrtTaskAbortHandleCallback(ProcessTaskAbortHandleCallback, (void *)&commVector));
+        CHK_RET(hrtTaskAbortHandleCallback(ProcessTaskAbortHandleCallback, static_cast<void *>(&commVector)));
     }
     ref_.Ref();
     commVector.push_back(communicator);

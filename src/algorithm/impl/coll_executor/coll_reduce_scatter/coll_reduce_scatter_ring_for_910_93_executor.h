@@ -17,7 +17,7 @@ class CollReduceScatterRingFor91093Executor : public CollReduceScatterExecutor {
 public:
     explicit CollReduceScatterRingFor91093Executor(const HcclDispatcher dispatcher,
     std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceScatterRingFor91093Executor() = default;
+    ~CollReduceScatterRingFor91093Executor() override = default;
 
 protected:
     u64 CalcTotalCount(const OpParam &param) const;
