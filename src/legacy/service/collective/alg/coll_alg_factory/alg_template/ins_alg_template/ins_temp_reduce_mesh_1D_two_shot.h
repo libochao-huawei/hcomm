@@ -30,7 +30,7 @@ public:
 
     HcclResult CalcRes(AlgTempResReq &tempResReq) override;
     u32 CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType) const;
-    HcclResult GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &dataParams,
+    HcclResult GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &tempAlgParams,
         const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues);
 
 private:

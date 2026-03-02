@@ -18,6 +18,7 @@ constexpr u64 AR_M2M_1D_MAX_DATA_SIZE = 8 * 1024 * 1024;
 constexpr u64 AR_AICPU_1D_SMALL_DATA_SIZE = 8 * 1024 * 1024;
 constexpr u64 AR_AICPU_1D_MAX_DATA_SIZE = 16 * 1024 * 1024;
 constexpr u64 AR_ONESHOT_1D_MAX_DATA_SIZE = 16 * 1024;
+constexpr double DEFAULT_RANK_SIZE = 8.0;
 
 SelectorStatus AllReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,
@@ -25,7 +26,8 @@ SelectorStatus AllReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                                                     std::string &primQueueGenName) const
 {
     HCCL_DEBUG("[AllReduceAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
-
+    u32 rankSize_2P = 2;
+ 	u32 rankSize_4P = 4;
     // MS 模式不支持 int8
     CHK_PRT_RET(op.dataType == DataType::INT8,
         HCCL_WARNING("[Algo][AllReduceAutoSelector] dataType[%s] is not supported yet for ccu_ms mode.",
@@ -43,8 +45,8 @@ SelectorStatus AllReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
         SelectorStatus::NOT_MATCH);
 
     HcclDetourType detourType = EnvConfig::GetInstance().GetDetourConfig().GetDetourType();
-    CHK_PRT_RET((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ != 2)||
-        (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ != 4),
+    CHK_PRT_RET((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ != rankSize_2P)||
+        (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ != rankSize_4P),
         HCCL_WARNING("[Algo][AllReduceAutoSelector] detourType not match for rankSize."),
         SelectorStatus::NOT_MATCH);
 
@@ -64,8 +66,8 @@ SelectorStatus AllReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
             if (Is2DieFullMesh()) {
                 HCCL_WARNING("[Algo][AllReduceAutoSelector] 2DieFullMesh is not supported yet for ccu_ms mode.");
                 return SelectorStatus::NOT_MATCH;
-            } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == 2)||
-                (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == 4)) {
+            } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == rankSize_2P)||
+                (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == rankSize_4P)) {
                 primQueueGenName = "CcuAllReduceMeshDetour1D";
             } else if (dataSize_ / rankSize_ > AR_ONESHOT_1D_MAX_DATA_SIZE) {
                 primQueueGenName = "CcuAllReduceMesh1D";
@@ -85,8 +87,8 @@ SelectorStatus AllReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                     // 不支持 inplace 场景
                     return SelectorStatus::NOT_MATCH;
                 }
-                if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == 2)||
-                    (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == 4)) {
+                if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == rankSize_2P)||
+                    (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == rankSize_4P)) {
                     primQueueGenName = "CcuAllReduceMeshDetour1D";
                 } else if (dataSize_ / rankSize_ > AR_ONESHOT_1D_MAX_DATA_SIZE) {
                     primQueueGenName = "CcuAllReduceMesh1D";
@@ -160,7 +162,7 @@ SelectorStatus AllReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
                 HCCL_WARNING("[AllReduceAutoSelector]the selector is not set RankSize_]");
                 ratio = 1;
             } else {
-                ratio = 8.0 / rankSize_ / rankSize_;
+                ratio = DEFAULT_RANK_SIZE / rankSize_ / rankSize_;
             }
             if (Is2DieFullMesh()) {
                 HCCL_WARNING("[Algo][AllReduceAutoSelector] 2DieFullMesh is not supported yet for schedule mode.");
@@ -184,7 +186,7 @@ SelectorStatus AllReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
                     HCCL_WARNING("[AllReduceAutoSelector]the selector is not set RankSize_]");
                     ratio = 1;
                 } else {
-                    ratio = 8.0 / rankSize_ / rankSize_;
+                    ratio = DEFAULT_RANK_SIZE / rankSize_ / rankSize_;
                 }
                 if (dataSize_ * ratio > AR_M2M_1D_MAX_DATA_SIZE) {
                     return SelectorStatus::NOT_MATCH;
@@ -238,7 +240,7 @@ SelectorStatus AllReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, 
                 HCCL_WARNING("[AllReduceAutoSelector]the selector is not set RankSize_]");
                 ratio = 1;
             } else {
-                ratio = 8.0 / rankSize_ / rankSize_;
+                ratio = DEFAULT_RANK_SIZE / rankSize_ / rankSize_;
             }
             if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64 ||
                 op.reduceOp == ReduceOp::PROD) {
@@ -265,7 +267,7 @@ SelectorStatus AllReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, 
                     HCCL_WARNING("[AllReduceAutoSelector]the selector is not set RankSize_]");
                     ratio = 1;
                 } else {
-                    ratio = 8.0 / rankSize_ / rankSize_;
+                    ratio = DEFAULT_RANK_SIZE / rankSize_ / rankSize_;
                 }
                 if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 ||
                     op.dataType == DataType::FP64 || op.reduceOp == ReduceOp::PROD) {

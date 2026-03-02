@@ -17,7 +17,7 @@ class CollBroadCastRingFor91093 : public CollBroadcastExecutor {
 public:
     CollBroadCastRingFor91093(const HcclDispatcher dispatcher,
                                         std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollBroadCastRingFor91093() = default;
+    ~CollBroadCastRingFor91093() override = default;
 
 private:
     /* *************** 资源计算 *************** */

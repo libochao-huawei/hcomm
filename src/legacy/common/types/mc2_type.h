@@ -222,6 +222,31 @@ struct KFCTaskV2 {
     uint64_t tilingData;               // 通信
 };
 
+struct HcclAiRMAWQ {
+    u32 jettyId;
+    u64 sqVA;
+    u32 wqeSize;
+    u32 sqDepth;
+    u64 headAddr; // AIV无依赖
+    u64 tailAddr; // AIV无依赖
+    u64 dbAddr;
+    u32 tp_id;
+    uint8_t rmtEid[16];
+    uint32_t rmtObjId; // rmtTokenID
+    uint32_t rmtTokenValue;
+    uint32_t localTokenId;
+};
+
+struct HcclAiRMACQ {
+    u32 jfcId;
+    u64 cqVA;
+    u32 cqeSize;
+    u32 cqDepth;
+    u64 headAddr;
+    u64 tailAddr;
+    u64 dbAddr;
+};
+
 struct HcclCombinOpParam {
     uint64_t workSpace; // client和server之间通信的地址
     uint64_t workSpaceSize; // client和server之间通信的空间大小
@@ -236,6 +261,10 @@ struct HcclCombinOpParam {
     uint64_t ckeAddr; // CKE寄存器其实地址
     uint64_t msAddr; // MS地址，预留
     uint64_t msSize; // 可写的MS个数，预留
+    
+    HcclAiRMAWQ wq[MAX_RANK_NUM];
+ 	HcclAiRMACQ cq[MAX_RANK_NUM];
+
     uint32_t opType[MAX_OP_NUM];
     uint8_t  algorithmType[MAX_OP_NUM];
 };
@@ -301,7 +330,8 @@ struct Mc2CcTilingInner {
     uint8_t  skipBufferWindowCopy; // 跳过hbm到window间搬运 0不跳过，1跳过snd-window, 2跳过window-rcv
     uint8_t  stepSize;             // 通信步长，粗粒度融合时填0,
     uint8_t  version;              // 版本号
-    char     reserved[9];         // 保留字段
+    char     reserved[8];         // 保留字段
+    uint8_t  protocol;            // 协议类型 0:ubmemory 1:urma
     uint8_t  communicationEngine; // 用于标记使用AIV、CCU、AICPU做通信加速器，定义同通信域加速器配置 0:默认ccu 1:ccu 2:aiv
     uint8_t  srcDataType;          // 输入数据类型
     uint8_t  dstDataType;          // 输出数据类型

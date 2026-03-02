@@ -211,6 +211,7 @@ public:
     void SetPortConfig(bool devPortSwitchOn);
     HcclResult CheckLinkNumAndSwitchLinkType(TransportType& type, MachinePara& machinePara, const std::vector<std::shared_ptr<HcclSocket> > sockets);
     void SetOpType(HcclCMDType opType);
+    HcclResult SetGroupMode(bool groupMode);
     std::map<u32, TransportType> GetRemoteTransportMap();
 private:
     HcclResult GetIOMem(const TransportIOMem &transMem,
@@ -238,6 +239,7 @@ private:
     void SetTransportParam(TransportPara &para, MachinePara &machinePara);
     HcclResult TransportInit(const u32 dstRank, MachinePara &machinePara,
         std::shared_ptr<Transport> &link, bool useOneDoorbell, bool isUsedRdma, TransportType type);
+    HcclResult AllocSliceMem(DeviceMem &inputMem,  DeviceMem &outputMem, u32 remoteUserRank);
     HcclResult CreateLink(const std::string &tag, const ErrContextPub &error_context, const MachineType machineType,
         const std::string &serverId, const u32 remoteRank, const bool supportDataReceivedAck, const LinkMode linkMode,
         const bool enableUseOneDoorbell, const std::string threadStr,
@@ -290,6 +292,8 @@ private:
 
     std::vector<std::string> socketTagVec_;
     std::vector<DeviceMem> extraMem_;
+
+    bool isGroupMode_ = false;
 
     std::atomic<bool> stopFlag_{false};
     HcclWorkflowMode workflowMode_{HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE};

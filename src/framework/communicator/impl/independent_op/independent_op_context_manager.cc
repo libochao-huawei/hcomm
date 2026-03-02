@@ -86,13 +86,14 @@ HcclResult ContextManager::CopyCommEngineCtx(const std::string &tag, CommEngine 
 {
     void *dstCtx;
     uint64_t dstSize = 0;
-    if (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU) {
+    if (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU
+        || engine == COMM_ENGINE_AIV) {
         CHK_RET(GetCommEngineCtx(tag, engine, &dstCtx, &dstSize));
         // 从Host内存拷贝到Device Context内存上
         CHK_RET(hrtMemSyncCopy(reinterpret_cast<uint8_t*>(dstCtx) + dstCtxOffset, size, srcCtx, size,
             HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     } else if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
-        || engine == COMM_ENGINE_CCU || engine == COMM_ENGINE_AIV) {
+        || engine == COMM_ENGINE_CCU) {
         CHK_RET(GetCommEngineCtx(tag, engine, &dstCtx, &dstSize));
         (void)memcpy_s(reinterpret_cast<uint8_t*>(dstCtx) + dstCtxOffset, size, srcCtx, size);
     } else {

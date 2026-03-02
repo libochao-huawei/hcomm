@@ -919,9 +919,6 @@ typedef struct {
  * @param clientHandle 
  * @return HcclResult 
  */
-// extern HcclResult HixlCSClientCreate(const EndPoint *ctlEndPoint, uint32_t port,
-//     EndPoint *dstCtlEndPoint, uint32_t dstPort, void **clientHandle);
-// const EndPoint *ctlEndPoint, uint32_t port,
 extern HcclResult HixlCSClientCreate(char *serverIp, uint32_t serverPort, const EndPoint *srcEndPoint,
     const EndPoint *dstEndPoint, void **clientHandle);
 
@@ -930,7 +927,6 @@ extern HcclResult HixlCSClientCreate(char *serverIp, uint32_t serverPort, const 
  * 
  * @return HcclResult 
  */
-// const CSChannelDesc *channeDesc
  
 extern HcclResult HixlCSClientConnect(void *clientHandle);
 
@@ -1109,14 +1105,6 @@ extern HcclResult HcclChannelGetStatus(HcclComm comm, const ChannelHandle *chann
  * @return 无
  * @note 建议在HcommLocalCopyNbi等接口调用前调用,在设置的缓存空间不够时，可再次调用该接口调整缓存大小。
  * 当前只支持AIV，暂不支持AIC，若支持，AIC只支持RoCE和URMA。
- * 910A3上每个AIV最大8个eventId，通信缓存大小192KB。使用参考：
- * @code {.c}
- * uint32_t len = 32 * 1024;
- * __ubuf__ uint8_t *addr = (__ubuf__ uint8_t *)((191 - 32) * 1024);
- * TEventID eventId = 7;
- * HcommInit(addr, len, evtid);
- * HcommLocalCopyNbi(dst, src, len);
- * @endcode
  */
 __aicore__ inline void HcommInit(__ubuf__ uint8_t *addr, uint32_t len, TEventID eventId);
 
