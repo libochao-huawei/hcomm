@@ -16,7 +16,7 @@ class CollReduceScatterSemiRingExecutor : public CollReduceScatterRingFor91093Ex
 
 public:
     explicit CollReduceScatterSemiRingExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceScatterSemiRingExecutor() = default;
+    ~CollReduceScatterSemiRingExecutor() override = default;
 
 private:
     void ParseParam(const OpParam& param) override;

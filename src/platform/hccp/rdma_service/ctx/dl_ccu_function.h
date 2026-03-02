@@ -18,6 +18,7 @@ struct RsCcuOps {
     int (*rsCcuUninit)(void);
     int (*rsCcuCustomChannel)(const struct channel_info_in *in, struct channel_info_out *out);
     unsigned long long (*rsCcuGetCqeBaseAddr)(unsigned int dieId);
+    int (*rsCcuGetMemInfo)(unsigned int dieId, unsigned long long memTypeBitmap, struct ccu_mem_rsp *rsp);
 };
 
 int RsCcuApiInit(void);
@@ -27,5 +28,5 @@ int RsCcuInit(void);
 int RsCcuUninit(void);
 int RsCcuCustomChannel(const struct channel_info_in *in, struct channel_info_out *out);
 int RsCcuGetCqeBaseAddr(unsigned int dieId, unsigned long long *cqeBaseAddr);
-
+int RsCcuGetMemInfo(char *dataIn, char *dataOut, unsigned int *bufferSize);
 #endif // DL_CCU_FUNCTION_H

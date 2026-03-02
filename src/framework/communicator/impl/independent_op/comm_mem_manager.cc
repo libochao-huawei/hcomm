@@ -35,7 +35,7 @@ HcclResult CommMemMgr::CommRegMem(const std::string& memTag, const HcclMem& mem,
 {
     CHK_PRT_RET(memHandle == nullptr, HCCL_ERROR("[CommRegMem] memHandle is null. tag[%s]", memTag.c_str()), HCCL_E_PARA);
     CHK_PRT_RET(mem.addr == nullptr || mem.size == 0, HCCL_ERROR("[CommRegMem] invalid mem. addr[%p] size[%llu]",
-        mem.addr, (unsigned long long)mem.size), HCCL_E_PARA);
+        mem.addr, mem.size), HCCL_E_PARA);
 
     // 组装句柄（仅域内管理，无进程级注册）
     Handle h;
@@ -73,11 +73,11 @@ HcclResult CommMemMgr::CommRegMem(const std::string& memTag, const HcclMem& mem,
     // 幂等加入绑定列表（同memHandle不重复）
     auto& vec = opBindings_[memTag];
     bool exists = std::any_of(vec.begin(), vec.end(),
-        [&](const Handle& x){ return x && (x.get() == h.get()); });
+        [&h](const Handle& x){ return x && (x.get() == h.get()); });
     if (!exists) vec.emplace_back(h);
 
     *memHandle = h.get();
-    HCCL_INFO("[CommRegMem] ok. tag[%s] memHandle[%p] size[%llu]", memTag.c_str(), *memHandle, (unsigned long long)h->size);
+    HCCL_INFO("[CommRegMem] ok. tag[%s] memHandle[%p] size[%llu]", memTag.c_str(), *memHandle, h->size);
     return HCCL_SUCCESS;
 }
 

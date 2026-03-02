@@ -17,7 +17,7 @@ namespace hccl {
 class CollBatchSendRecvExecutor : public CollCommExecutor {
 public:
     CollBatchSendRecvExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollBatchSendRecvExecutor() = default;
+    ~CollBatchSendRecvExecutor() override = default;
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algResource) override;
     HcclResult GetAdjInfo(AlgResourceResponse& algRes, AdjInfo& adjInfo) override;
     // 增量建链资源计算接口
@@ -38,6 +38,11 @@ protected:
     HcclResult ProcessRecvDataSlice(Stream& stream, bool retryEnable);
     HcclResult CalcSendSlices(AlgResourceResponse& algRes);
     HcclResult CalcRecvSlices(AlgResourceResponse& algRes);
+    HcclResult GetPairWiseList(HcclSendRecvItem *sendRecvInfo, u32 itemNum);
+    HcclResult ProcessSelfSendRecvTasks(Stream& stream);
+    HcclResult SendKernelRun(Stream& stream, ExecMem &execMem, u32 remoteUserRank, bool retryEnable);
+    HcclResult RecvKernelRun(Stream& stream, ExecMem &execMem, u32 remoteUserRank, bool retryEnable);
+    HcclResult GetTransport(u32 commIndex, u32 remoteUserRank, LINK &targetLink);
     struct SendRecvSlice {
         u8* addr;
         u64 size;
@@ -53,16 +58,11 @@ private:
     HcclResult RunLoopInHostUnfoldMode(OpParam& param);
     HcclResult RunLoopInAicpuUnfoldMode(OpParam& param);
     HcclResult CalcStreamNum(u32& streamNum) override;
-    HcclResult GetPairWiseList(HcclSendRecvItem *sendRecvInfo, u32 itemNum);
-    HcclResult ProcessSelfSendRecvTasks(Stream& stream);
 
     HcclResult MainPostSubWait(Stream& mainStream, Stream& subStream);
     HcclResult SubPostMainWait(Stream& mainStream, Stream& subStream);
-    HcclResult SendKernelRun(Stream& stream, ExecMem &execMem, u32 remoteUserRank, bool retryEnable);
-    HcclResult RecvKernelRun(Stream& stream, ExecMem &execMem, u32 remoteUserRank, bool retryEnable);
-    HcclResult GetTransport(u32 commIndex, u32 remoteUserRank, LINK &targetLink);
 
-private:
+protected:
 
     std::set<u32> commTargetUserRankSet_;
     std::deque<HcclSendRecvItem*> sendToSelfDeque_;

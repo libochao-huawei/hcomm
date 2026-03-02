@@ -20,7 +20,7 @@ class CollScatterExecutor : public CollCommExecutor {
 public:
     explicit CollScatterExecutor(const HcclDispatcher dispatcher,
                                 std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollScatterExecutor() = default;
+    ~CollScatterExecutor() override = default;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
 protected:

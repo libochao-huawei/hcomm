@@ -229,6 +229,12 @@ inline HccnResult HccnRpingInitTargetAttr(HccnRpingTargetInfo *targetInter, Rpin
     return HCCN_SUCCESS;
 }
 
+HccnResult HccnRpingAddTargetV2(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target,
+    HccnRpingAddTargetConfig *config)
+{
+    return HccnRpingAddTargetWithCfg(rpingCtx, targetNum, target, config);
+}
+
 HccnResult HccnRpingAddTargetWithCfg(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target,
     HccnRpingAddTargetConfig *config)
 {

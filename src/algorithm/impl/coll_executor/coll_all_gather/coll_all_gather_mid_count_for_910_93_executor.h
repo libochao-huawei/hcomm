@@ -15,7 +15,7 @@ namespace hccl {
 class CollAllGatherMidCountFor91093Executor : public CollAllGatherExecutor {
 public:
     explicit CollAllGatherMidCountFor91093Executor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherMidCountFor91093Executor() = default;
+    ~CollAllGatherMidCountFor91093Executor() override = default;
 
 private:
     /* *************** 资源计算 *************** */
@@ -41,4 +41,4 @@ private:
 
 } // namespace hccl
 
-#endif
+#endif
