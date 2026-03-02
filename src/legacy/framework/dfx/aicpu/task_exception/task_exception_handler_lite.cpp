@@ -69,7 +69,7 @@ HcclResult GenerateErrorMessageReport(CommunicatorImplLite *aicpuComm, std::shar
         errMsgInfo.notifyId = taskInfo->taskParam_.taskPara.Notify.notifyID;
     } else if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
-        errMsgInfo.notifyId = taskInfo->taskParam_.taskPara.Reduce.notifyID
+        errMsgInfo.notifyId = taskInfo->taskParam_.taskPara.Reduce.notifyID;
     } else if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY) {
         errMsgInfo.notifyId = taskInfo->taskParam_.taskPara.DMA.notifyID;
