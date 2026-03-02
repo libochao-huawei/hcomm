@@ -2885,7 +2885,8 @@ HcclResult HcclCommAicpu::StreamTaskMonitor(void)
         }
 
         auto timeVal = DURATION_US(curTime - streamMontior.historyTime).count();
-        if (timeVal >= taskMonitorInterval_ * 1000) {
+        constexpr uint64_t MS_TO_US = 1000;
+        if (timeVal >= taskMonitorInterval_ * MS_TO_US) {
             HCCL_RUN_INFO("[StreamTaskMonitor]prof monitor streamId:%d, sqid:%d, head:%u, tail:%u, time %s us, %s",
                 stream.id(), stream.sqId(), sqHead, sqTail, std::to_string(timeVal).c_str(), tmp.c_str());
             HCCL_RUN_INFO("[StreamTaskMonitor]prof monitor %s", GetTaskExceptionOpInfo(sqHead,sqeContextBuffer).c_str());

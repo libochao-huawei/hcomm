@@ -122,8 +122,6 @@ public:
     Variable token;
 };
 
-
-
 /*------------------将Memory改为LocalAddr与RemoteAddr------------------------*/
 class LocalAddr {
 public:
