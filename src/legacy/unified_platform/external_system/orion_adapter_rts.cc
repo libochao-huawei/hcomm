@@ -511,10 +511,10 @@ void HrtIpcDestroyMemoryName(const char_t *name)
     rtError_t ret = rtIpcDestroyMemoryName(reinterpret_cast<const char *>(name));
     HCCL_INFO("Call rtIpcDestroyMemoryName, return[%d], para: name[%s].", ret, name);
     if (ret != RT_ERROR_NONE) {
-        HCCL_ERROR("[Destroy][IpcMemoryName]errNo[0x%016llx] "	 
-                    "rtDestroy Ipc memory name fail. return[%d], para: name[%s]",	 
-                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, name);
-        throw RuntimeApiException(StringFormat("call rtIpcDestroyMemoryName failed, name=%s", name));
+        string msg = StringFormat("[Destroy][IpcMemoryName]errNo[0x%016llx] "
+                   "rtDestroy Ipc memory name fail. return[%d], para: name[%s].",
+                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, name);
+        MACRO_THROW(RuntimeApiException, msg);
     }
 }
 
@@ -535,13 +535,14 @@ void *HrtIpcOpenMemory(const char_t *name)
 
 void HrtIpcCloseMemory(const void *ptr)
 {
+    HCCL_INFO("[HrtIpcCloseMemory] ptr[%p].", ptr);
     CHECK_NULLPTR(ptr, "[HrtIpcCloseMemory] ptr is nullptr!");
     rtError_t ret = rtIpcCloseMemory(ptr);
     if (ret != RT_ERROR_NONE) {
         string msg = StringFormat("[Close][IpcMemory]errNo[0x%016llx] "
                    "rtClose ipc memory failed. return[%d], para: ptr[%p].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr);
-        throw RuntimeApiException(StringFormat("call rtIpcMemClose failed, ptr=%p", ptr));
+        MACRO_THROW(RuntimeApiException, msg);
     }
 }
 
@@ -550,6 +551,7 @@ void HrtIpcSetMemoryPid(const char_t *name, int pid)
     CHECK_NULLPTR(name, "[HrtIpcSetMemoryPid] name is nullptr!");
     aclError ret = aclrtIpcMemSetImportPid(name, &pid, 1);
     HCCL_INFO("Call aclrtIpcMemSetImportPid, return value[%d], pid[%d], name[%s].", ret, pid, name);
+    CHECK_NULLPTR(name, "[HrtIpcSetMemoryPid] name is nullptr!");
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[Set][IpcMemoryPid]errNo[0x%016llx] "
                    "rtSet ipc memory pid fail. return[%d], pid[%d], name[%s].",
@@ -642,6 +644,7 @@ void HrtFreeHost(void *hostPtr)
 
 aclrtNotify HrtNotifyCreate(s32 deviceLogicId)
 {
+    HCCL_INFO("[HrtNotifyCreate] deviceLogicId[%d].", deviceLogicId);
     aclrtNotify ptr = nullptr;
     // aclrtCreateNotify 中通过 aclrtGetDevice 获取 deviceId，所以要求当前线程设置过 setDevice
     aclError  ret = aclrtCreateNotify(&ptr, ACL_NOTIFY_DEFAULT);
@@ -910,9 +913,10 @@ void HrtCntNotifyDestroy(const aclrtCntNotify inCntNotify)
     HCCL_INFO("[HrtCntNotifyDestroy] inCntNotify[%p].", inCntNotify);
     CHECK_NULLPTR(inCntNotify, "[HrtCntNotifyDestroy] inCntNotify is nullptr!");
     aclError ret = aclrtCntNotifyDestroy(inCntNotify);
-    HCCL_INFO("Call aclrtCntNotifyDestroy, return value[%d], inCntNotify[%p]", ret, inCntNotify);
+    HCCL_INFO("Call rtCntNotifyDestroy, return value[%d], inCntNotify[%p].", ret, inCntNotify);
     if (ret != ACL_SUCCESS) {
-        string msg = StringFormat("Call aclrtCntNotifyDestroy failed");
+        string msg = StringFormat("Call rtCntNotifyDestroy failed. return[%d], inCntNotify[%p].", 
+            ret, inCntNotify);
         THROW<RuntimeApiException>(msg);
     }
 }
