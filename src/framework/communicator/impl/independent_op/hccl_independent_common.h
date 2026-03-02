@@ -11,11 +11,27 @@
 #ifndef HCCL_INDEPENDENT_COMMON_H
 #define HCCL_INDEPENDENT_COMMON_H
 
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "hccl_common.h"
+#include "notify/notify_base.h"
+#include "orion_adapter_hccp.h"
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
+
+typedef enum {
+    RANK_GRAPH_RESERVED = -1,
+    RANK_GRAPH_910_93 = 0,
+    RANK_GRAPH_910_95 = 1,
+} GraphType;
+
+typedef enum {
+    NOTIFY_TYPE_RESERVED = -1,
+    NOTIFY_TYPE_RTS_NOTIFY = 0,
+    NOTIFY_TYPE_RTS_EVENT = 1,
+    NOTIFY_TYPE_DEVICE_MEM = 2,
+} NotifyType;
+
 constexpr u32 NOTIFY_MAX_NUM = 2048;
 inline bool IsValidCommEngine(CommEngine engine)
 {

@@ -13,7 +13,8 @@
 
 #include "local_notify.h"
 #include "hccl_common.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
+#include "hccl_independent_common.h"
 #include "manager_common.h"
 
 namespace hccl {
