@@ -207,7 +207,7 @@ inline void HcclCommConfigInit(HcclCommConfig *config)
         uint64_t reserved;
     } configInfo_t;
 
-    configInfo_t *info = (configInfo_t *)config;
+    configInfo_t *info = reinterpret_cast<configInfo_t *>(config);
 
     info->size = sizeof(HcclCommConfig);
     info->magicWord = HCCL_COMM_CONFIG_MAGIC_WORD;

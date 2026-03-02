@@ -13,6 +13,7 @@
 #include "adapter_hccp_common.h"
 #include "externalinput.h"
 #include "transport_pub.h"
+#include "rt_external.h"
 
 namespace hccl {
 

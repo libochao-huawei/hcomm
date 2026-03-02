@@ -531,7 +531,7 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
 }
 
 HcclResult HcclCommInitClusterInfoWrapper(struct hcclAsyncJob* job_){
-    struct hcclCommInitRankTableAsyncJob* job = (hcclCommInitRankTableAsyncJob*) job_;
+    struct hcclCommInitRankTableAsyncJob* job = static_cast<hcclCommInitRankTableAsyncJob*>(job_);
     uint32_t rank = job->rank;
     HcclComm* comm = job->initComm;
     const char *clusterInfo = job->clusterInfo;
@@ -730,7 +730,7 @@ HcclResult HcclCommInitClusterInfoMemConfig(const char *rankTableString, uint32_
 }
 
 HcclResult HcclCommInitClusterInfoConfigWrapper(struct hcclAsyncJob* job_){
-    struct hcclCommInitRankTableConfigAsyncJob* job = (hcclCommInitRankTableConfigAsyncJob*) job_;
+    struct hcclCommInitRankTableConfigAsyncJob* job = static_cast<hcclCommInitRankTableConfigAsyncJob*>(job_);
     uint32_t rank = job->rank;
     HcclComm* comm = job->initComm;
     const char *clusterInfo = job->clusterInfo;
@@ -1688,7 +1688,7 @@ HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootIn
 
 HcclResult HcclCommInitRootInfoInnerWrapper(struct hcclAsyncJob* job_)
 {
-    struct hcclCommInitAsyncJob* job = (hcclCommInitAsyncJob*) job_;
+    struct hcclCommInitAsyncJob* job = static_cast<hcclCommInitAsyncJob*>(job_);
     uint32_t nRanks = job->nRanks;
     const HcclRootInfo* rootInfo = job->rootInfo;
     uint32_t rank = job->rank;
@@ -1820,7 +1820,7 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
 }
 
 HcclResult HcclCommInitRootInfoConfigInnerWrapper(struct hcclAsyncJob* job_){
-    struct hcclCommInitConfigAsyncJob* job = (hcclCommInitConfigAsyncJob*) job_;
+    struct hcclCommInitConfigAsyncJob* job = static_cast<hcclCommInitConfigAsyncJob*>(job_);
     uint32_t nRanks = job->nRanks;
     const HcclRootInfo* rootInfo = job->rootInfo;
     uint32_t rank = job->rank;
@@ -2935,7 +2935,7 @@ static HcclResult ResetDevice(hccl::hcclComm* hcclComm)
 }
 
 HcclResult HcclCommDestroyWrapper(struct hcclAsyncJob* job_){
-    struct hcclCommDestroyAsyncJob* job = (hcclCommDestroyAsyncJob*) job_;
+    struct hcclCommDestroyAsyncJob* job = static_cast<hcclCommDestroyAsyncJob*>(job_);
     HcclComm comm = job->initComm;
     s32 devId = job->devId;
     HCCL_DEBUG("[HcclCommDestroyWrapper] Set device devId: %d", devId);
@@ -3047,8 +3047,7 @@ HcclResult HcclCommDestroy(HcclComm comm)
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
             // 先拷贝orion通信域地址，避免coll comm销毁后无法获取
             HcclComm commV2 = hcclComm->GetCommunicatorV2();
-            string group;
-            group = hcclComm->GetIdentifier();
+            string group = hcclComm->GetIdentifier();
             HcclOpInfoCtx& opBaseHcom = GetHcclOpInfoCtx();
             std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
             auto iter = opBaseHcom.opGroup2CommMap.find(group);

@@ -93,19 +93,19 @@ HcclResult HcommEndpointGet_(EndpointHandle endpointHandle, void **endpoint)  //
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle)
+HcclResult HcommEndpointCreate(const EndpointDesc *endPoint, EndpointHandle *endpointHandle)
 {
-    if (endpoint->loc.locType != ENDPOINT_LOC_TYPE_DEVICE && endpoint->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
+    if (endPoint->loc.locType != ENDPOINT_LOC_TYPE_DEVICE && endPoint->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
         HCCL_ERROR("[%s] Only support END_POINT_LOCATION_DEVICE AND END_POINT_LOCATION_HOST, but "
-                   "endpoint->loc.locType is %d",
+                   "endPoint->loc.locType is %d",
             __func__,
-            endpoint->loc.locType);
+            endPoint->loc.locType);
         return HCCL_E_PARA;
     }
 
     std::unique_ptr<Endpoint> endpointPtr = nullptr;
 
-    CHK_RET(Endpoint::CreateEndpoint(*endpoint, endpointPtr));
+    CHK_RET(Endpoint::CreateEndpoint(*endPoint, endpointPtr));
     CHK_PTR_NULL(endpointPtr);
     CHK_RET(endpointPtr->Init());
 
