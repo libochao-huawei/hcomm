@@ -626,7 +626,7 @@ inline std::string GetDataTypeEnumStr(u32 dataType)
 
 inline std::string GetOpTypeEnumStr(u32 opType)
 {
-    auto hcclOpType = static_cast<OpType::Value>(opType);
+    OpType hcclOpType = static_cast<OpType::Value>(opType);
     return hcclOpType.Describe();
 }
 
