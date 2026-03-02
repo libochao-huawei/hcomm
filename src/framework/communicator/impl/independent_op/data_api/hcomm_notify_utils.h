@@ -12,11 +12,10 @@
 #define HCOMM_NOTIFY_UTILS_H
 
 #include "resource_entities.h"
-#include "aicpu_ts_thread.h"
+#include "hcomm_primitives.h"
 #include "new/hccl_primitive_local.h"
+#include "aicpu_ts_thread.h"
 #include "exception_util.h"
-
-using RequestServiceWithHandleFunc = int32_t(*)(ThreadHandle, ThreadServiceHandle, const void*, uint64_t);
 
 // specify namespaces for the macro TRY_CATCH_*
 using string = std::string;
@@ -33,14 +32,14 @@ enum class NotifyRecordOpType {
 };
 
 NotifyRecordOpType GetNotifyRecordOpType(const ThreadEntity &srcEnt, const ThreadEntity &dstEnt) {
-    if (srcEnt.engine == COMM_ENGINE_AICPU && srcEnt.type == THREAD_TYPE_TS &&
-        dstEnt.engine == COMM_ENGINE_AICPU && dstEnt.type == THREAD_TYPE_TS) {
+    if (srcEnt.type == THREAD_TYPE_TS &&
+        dstEnt.type == THREAD_TYPE_TS) {
         return NotifyRecordOpType::AicpuTs_to_AicpuTs;
-    } else if (srcEnt.engine == COMM_ENGINE_AICPU && srcEnt.type == THREAD_TYPE_TS &&
-               dstEnt.engine == COMM_ENGINE_AICPU && dstEnt.type == THREAD_TYPE_CPU) {
+    } else if (srcEnt.type == THREAD_TYPE_TS &&
+               dstEnt.type == THREAD_TYPE_CPU) {
         return NotifyRecordOpType::AicpuTs_to_Cpu;
-    } else if (srcEnt.engine == COMM_ENGINE_AICPU && srcEnt.type == THREAD_TYPE_CPU &&
-               dstEnt.engine == COMM_ENGINE_AICPU && dstEnt.type == THREAD_TYPE_TS) {
+    } else if (srcEnt.type == THREAD_TYPE_CPU &&
+               dstEnt.type == THREAD_TYPE_TS) {
         return NotifyRecordOpType::Cpu_to_AicpuTs;
     }
     return NotifyRecordOpType::Others;
@@ -79,18 +78,49 @@ HcclResult RecordAicpuTsToCpu(const ThreadEntity &srcEnt, const ThreadEntity &ds
         return HCCL_E_PARA;
     }
     const NotifyEntity dstNotifyEntity = dstEnt.notifies[dstNotifyIdx];
-    CHK_RET(threadPtr->InterKernelNotifyRecord(dstNotifyEntity));
+    CHK_RET(threadPtr->NotifyRecord(dstNotifyEntity));
     return HCCL_SUCCESS;
 }
 
-HcclResult RecordCpuToAicpuTs(const ThreadHandle srcHdl, const ThreadHandle dstHdl, uint32_t dstNotifyIdx, RequestServiceWithHandleFunc requestServiceFunc) {
+HcclResult RecordCpuToAicpuTs(const ThreadEntity &srcEnt, const ThreadEntity &dstEnt, uint32_t dstNotifyIdx) {
+    const ThreadHandle srcHdl = reinterpret_cast<ThreadHandle>(&srcEnt);
+    const ThreadHandle dstHdl = reinterpret_cast<ThreadHandle>(&dstEnt);
     RecordServiceArgs tempRecordArgs = {
-        .threadHandle = srcHdl,
+        .threadHandle = dstHdl,
         .dstThreadHandle = dstHdl,
         .dstNotifyIdx = dstNotifyIdx,
     };
-    ThreadEntity *const srcEntPtr = reinterpret_cast<ThreadEntity *>(srcHdl); // nullptr checked outside
-    CHK_RET(static_cast<HcclResult>(requestServiceFunc(srcHdl, srcEntPtr->cpuRes.recordService, &tempRecordArgs, sizeof(tempRecordArgs))));
+    CHK_RET(static_cast<HcclResult>(HcommRequestServiceOnThread(srcHdl, srcEnt.cpuRes.recordService, &tempRecordArgs, sizeof(tempRecordArgs))));
+    return HCCL_SUCCESS;
+}
+
+HcclResult WaitAicpuTs(const ThreadEntity &ent, uint32_t dstNotifyIdx, uint32_t timeOut) {
+    auto *const threadPtr = reinterpret_cast<AicpuTsThread *>(ent.threadObjAddr);
+    CHK_PTR_NULL(threadPtr);
+
+    if (threadPtr->IsDeviceA5()) {
+        LocalNotify *const notifyPtr = threadPtr->GetNotify(dstNotifyIdx);
+        CHK_PTR_NULL(notifyPtr);
+        const uint32_t notifyId = notifyPtr->notifyId_;
+        TRY_CATCH_RETURN(threadPtr->LocalNotifyWait(notifyId));
+    } else {
+        Stream *stream = GetStream(ent.threadObjAddr);
+        CHK_PTR_NULL(stream);
+        LocalNotify *notify = GetNotify(ent.threadObjAddr, dstNotifyIdx);
+        CHK_PTR_NULL(notify);
+        CHK_RET(HcclLocalNotifyWait(stream, notify, timeOut));
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult WaitCpu(const ThreadEntity &ent, uint32_t notifyIdx, uint32_t timeOut) {
+    const ThreadHandle hdl = reinterpret_cast<ThreadHandle>(&ent);
+    WaitServiceArgs tempWaitArgs = {
+        .threadHandle = hdl,
+        .notifyIdx = notifyIdx,
+    };
+    (void)timeOut;
+    CHK_RET(static_cast<HcclResult>(HcommRequestServiceOnThread(hdl, ent.cpuRes.waitService, &tempWaitArgs, sizeof(tempWaitArgs))));
     return HCCL_SUCCESS;
 }
 
