@@ -141,7 +141,7 @@ set(include_list
     ${HCCL_BASE_DIR}/platform/ping_mesh
     ${HCCL_BASE_DIR}/platform/resource/socket
     ${HCCL_BASE_DIR}/platform/task
-    ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
+    ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
     ${HCCL_BASE_DIR}/platform/typical
 
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank_pairs
@@ -172,7 +172,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../pkg_inc/hccl
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
+        ${RDMA_CORE_INCLUDE_DIR}
         ${HCCL_BASE_DIR}/legacy/interface
 
         # runtime头文件
@@ -194,9 +194,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
 
-        # 临时依赖，后续删除
         ${HCCL_BASE_DIR}/../externel_depends/tsch/
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
 
         ${THIRD_PARTY_NLOHMANN_PATH}
     )
@@ -318,7 +316,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
+        ${RDMA_CORE_INCLUDE_DIR}
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
@@ -341,7 +339,7 @@ if(BUILD_OPEN_PROJECT)
 
         # 临时依赖头文件，待删除
         ${HCCL_BASE_DIR}/../externel_depends/tsch/
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
+        ${RDMA_CORE_INCLUDE_DIR}
 
         ${THIRD_PARTY_NLOHMANN_PATH}
     )
@@ -354,7 +352,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
+        ${RDMA_CORE_INCLUDE_DIR}
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
@@ -377,7 +375,7 @@ if(BUILD_OPEN_PROJECT)
 
         # 临时依赖头文件，待删除
         ${HCCL_BASE_DIR}/../externel_depends/tsch/
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
+        ${RDMA_CORE_INCLUDE_DIR}
 
         ${THIRD_PARTY_NLOHMANN_PATH}
     )
@@ -472,6 +470,7 @@ else()
 endif()
 
 add_dependencies(ccl_kernel_plf json)
+add_dependencies(hccd json)
 
 target_compile_definitions(ccl_kernel_plf PRIVATE
     $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
@@ -700,7 +699,7 @@ if(DEVICE_MODE)
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra_hdc> ${HCCD_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra> ${HCCD_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hccd> ${HCCD_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/lib/lib* ${HCCD_TAR_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/lib/lib* ${HCCD_TAR_DIR}
         COMMAND chmod 750 ${HCCD_TAR_DIR}/lib*
         COMMENT "Copying libhccd.so to ${HCCD_TAR_DIR}"
     )

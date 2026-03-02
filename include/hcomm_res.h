@@ -18,19 +18,19 @@ extern "C" {
 #endif  // __cplusplus
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommEndpointCreate(const EndpointDesc *endPoint, EndpointHandle *endPointHandle);
+extern HcclResult HcommEndpointCreate(const EndpointDesc *endPoint, EndpointHandle *endpointHandle);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommEndpointDestroy(EndpointHandle endPointHandle);
+extern HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommMemReg(EndpointHandle endPointHandle, const char *memTag, HcommMem mem, void **memHandle);
+extern HcclResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, HcommMem mem, void **memHandle);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommMemUnreg(EndpointHandle endPointHandle, void *memHandle);
+extern HcclResult HcommMemUnreg(EndpointHandle endpointHandle, void *memHandle);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommMemExport(EndpointHandle endPointHandle, void *memHandle, void **memDesc, uint32_t *memDescLen);
+extern HcclResult HcommMemExport(EndpointHandle endpointHandle, void *memHandle, void **memDesc, uint32_t *memDescLen);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, HcommMem *outMem);
@@ -39,7 +39,7 @@ extern HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memD
 extern HcclResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommChannelCreate(EndpointHandle endPointHandle, CommEngine engine, HcommChannelDesc *channelDescs,
+extern HcclResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine, HcommChannelDesc *channelDescs,
     uint32_t channelNum, ChannelHandle *channels);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API

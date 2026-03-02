@@ -16,7 +16,7 @@ class CollAllGatherSingleRankExecutor : public CollAllGatherExecutor {
 
 public:
     explicit CollAllGatherSingleRankExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherSingleRankExecutor() = default;
+    ~CollAllGatherSingleRankExecutor() override = default;
 
 private:
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;

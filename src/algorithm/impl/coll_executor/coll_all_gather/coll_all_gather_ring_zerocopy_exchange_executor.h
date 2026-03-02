@@ -17,7 +17,7 @@ namespace hccl {
 class CollAllGatherRingZerocopyExchangeExecutor : public CollAllGatherRingZerocopyExecutor {
 public:
     explicit CollAllGatherRingZerocopyExchangeExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherRingZerocopyExchangeExecutor() = default;
+    ~CollAllGatherRingZerocopyExchangeExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */
