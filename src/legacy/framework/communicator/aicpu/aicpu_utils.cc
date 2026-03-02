@@ -56,7 +56,7 @@ HcclResult AicpuUtils::WaitCommFree(CommunicatorImplLite *communicatorImplLite, 
     while (true) {
         if (communicatorImplLite->IsUsed()) {
             if ((std::chrono::steady_clock::now() - startTime) >= waitPollTimeOutMs) {
-                HCCL_ERROR("%s poll timeout, comm id [%d] has been used", funcName, communicatorImplLite->GetCommIdIndex());
+                HCCL_ERROR("%s poll timeout, comm id [%u] has been used", funcName, communicatorImplLite->GetCommIdIndex());
                 return HCCL_E_TIMEOUT;
             }
             aicpuLock.unlock();
@@ -94,7 +94,7 @@ HcclResult AicpuUtils::GetCommHandle(CommunicatorImplLite *communicatorImplLite,
     return HCCL_SUCCESS;
 }
 
-int AicpuUtils::GetException(StreamLite *curStream, uint32_t flag, CommunicatorImplLite *aicpuComm, string additionInfo) const
+int AicpuUtils::GetException(StreamLite *curStream, uint32_t flag, CommunicatorImplLite *communicatorImplLite, string additionInfo) const
 {
     // 遍历主从流的状态
     auto               recvInfo         = make_shared<halReportRecvInfo>();
@@ -131,21 +131,21 @@ int AicpuUtils::GetException(StreamLite *curStream, uint32_t flag, CommunicatorI
                 if (additionInfo != "") {
                     HCCL_ERROR("%s", additionInfo.c_str());
                 }
-                TaskExceptionHandlerLite::Process(aicpuComm, &reportOfOne);
+                TaskExceptionHandlerLite::Process(communicatorImplLite, &reportOfOne);
             }
         }
     }
     return 0;
 }
 
-void AicpuUtils::GetStreamException(StreamLite *curStream, string nullInfo, CommunicatorImplLite *aicpuComm, string additionInfo) const
+void AicpuUtils::GetStreamException(StreamLite *curStream, string nullInfo, CommunicatorImplLite *communicatorImplLite, string additionInfo) const
 {
     if (curStream == nullptr) {
         HCCL_WARNING("[%s]%s", __func__, nullInfo.c_str());
         return;
     }
-    if (aicpuComm == nullptr) {
-        HCCL_WARNING("[%s]aicpuComm is nullptr", __func__);
+    if (communicatorImplLite == nullptr) {
+        HCCL_WARNING("[%s]communicatorImplLite is nullptr", __func__);
         return;
     }
     auto *curRtsq = curStream->GetRtsq();
@@ -159,7 +159,7 @@ void AicpuUtils::GetStreamException(StreamLite *curStream, string nullInfo, Comm
     string finishInfo = "finished";
     if (curSqHead != curSqTail) {
         finishInfo = "unfinished";
-        GetException(curStream, GET_EXCEPTION_INFO, aicpuComm, additionInfo);
+        GetException(curStream, GET_EXCEPTION_INFO, communicatorImplLite, additionInfo);
     }
     HCCL_INFO("[%s]Stream %u %s, sq id %u, head %u, tail %u.", __func__, curStream->GetId(), finishInfo.c_str(), curStream->GetSqId(),
                 curSqHead, curSqTail);
@@ -347,7 +347,7 @@ HcclResult AicpuUtils::FillKernelParam(HcclOpData *data) const
     kernelParam_->op.algOperator.root               = data->root;
     kernelParam_->op.algOperator.sendRecvRemoteRank = data->sendRecvRemoteRank;
     HCCL_INFO("[%s]opType=%s, reduceOp=%u, dataType=%u, outputDataType=%u, dataCount=%u, root=%u, sendRecvRemoteRank=%u", __func__,
-              kernelParam_->op.algOperator.opType.Describe().c_str(), data->reduceOp, data->dataType ,data->outputDataType, data->dataCount);
+              kernelParam_->op.algOperator.opType.Describe().c_str(), data->reduceOp, data->dataType, data->outputDataType, data->dataCount);
     if (kernelParam_->op.algOperator.opType == OpType::ALLTOALL) {
         kernelParam_->op.algOperator.all2AllDataDes.recvType = HcclDataTypeToDataType(data->all2AllDataDes.recvType);
         CHECK_DATA_TYPE(kernelParam_->op.algOperator.all2AllDataDes.recvType);

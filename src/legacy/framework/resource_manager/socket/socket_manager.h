@@ -16,11 +16,13 @@
 #include <mutex>
 #include <unordered_map>
 #include <functional>
+#include <memory>
 
 #include "socket.h"
 #include "virtual_topo.h"
 #include "socket_config.h"
 #include "env_func.h"
+#include "orion_adapter_hccp.h"
 
 namespace Hccl {
 
@@ -41,7 +43,7 @@ public:
 
     void ServerInit(PortData &localPort);
 
-    void ServerInitAll(const vector<LinkData> &links, u32 &linstenPort);
+    void ServerInitAll(const vector<LinkData> &links, u32 &linstenPort) const;
 
     bool ServerDeInit(PortData &localPort) const;
 
