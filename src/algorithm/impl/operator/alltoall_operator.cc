@@ -273,7 +273,11 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
         return HCCL_SUCCESS ;
     } else if (IsSupportDirectFullmeshForAlltoallv(param, deviceType_, useSuperPodMode_, serverNum_,
         isSingleMeshAggregation_, userRankSize_, cclBufferManager_.GetInCCLbufferSize()) || param.aicpuUnfoldMode || deviceType_ == DevType::DEV_TYPE_310P3) {
-        algName = "RunAlltoAllDirectFullmesh";
+        if (param.supportSymmetricMemory && superPodNum_ == 1 && !GetExternalInputInterHccsDisable()) {
+            algName = "RunAlltoAllFullMeshSymmetricMemory";
+        } else {
+            algName = "RunAlltoAllDirectFullmesh";
+        }
         HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s]", algName.c_str());
         return HCCL_SUCCESS;
     } else if (IsSatisfyAlltoallPipelineCondition()) {
