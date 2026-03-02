@@ -49,6 +49,9 @@ u32 InsTempReduceAicpuReduceMesh2D::CalcScratchMultiple(BufferType inBuffType, B
 
 HcclResult InsTempReduceAicpuReduceMesh2D::RunAicpuLocalReduce(const TemplateDataParams &templateDataParams, std::vector<InsQuePtr> &tempInsQues)
 {   
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[InsTempReduceAicpuReduceMesh2D][RunAicpuLocalReduce] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     if (u32(myRank_) != root_) {
         return HCCL_SUCCESS;
     }
