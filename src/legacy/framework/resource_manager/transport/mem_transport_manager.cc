@@ -68,7 +68,8 @@ void MemTransportManager::CreateOpbasedUbMemTransport(BaseMemTransport::CommonLo
     CntNotifyResHelper                tool;
     BaseMemTransport::LocCntNotifyRes locCntNotifyRes = tool.GetCntNotifyRes(topicIdCntNotifyVecMap);
     HCCL_INFO("locCntNotifyRes=%s, linkData=%s", locCntNotifyRes.Describe().c_str(), linkData.Describe().c_str());
-    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
+    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(
+        comm->GetDevicePhyId(), linkData.GetLocalPort(), linkData.GetLinkProtocol());
 
     // DFX：注册transportCallBack, 用于信息保存
     auto transportCallBack = MemTransportCallback(linkData, comm->GetMirrorTaskManager());
@@ -85,7 +86,8 @@ void MemTransportManager::CreateOffloadUbMemTransport(const string &opTag, BaseM
     CntNotifyResHelper                tool;
     BaseMemTransport::LocCntNotifyRes locCntNotifyRes = tool.GetCntNotifyRes(topicIdCntNotifyVecMap);
     HCCL_INFO("locCntNotifyRes=%s, linkData=%s", locCntNotifyRes.Describe().c_str(), linkData.Describe().c_str());
-    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
+    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(
+        comm->GetDevicePhyId(), linkData.GetLocalPort(), linkData.GetLinkProtocol());
 
     // DFX：注册transportCallBack, 用于信息保存
     auto transportCallBack = MemTransportCallback(linkData, comm->GetMirrorTaskManager());
@@ -856,7 +858,8 @@ void MemTransportManager::CreateOneSidedUbMemTransport(BaseMemTransport::CommonL
     CntNotifyResHelper                tool;
     BaseMemTransport::LocCntNotifyRes locCntNotifyRes = tool.GetCntNotifyRes(topicIdCntNotifyVecMap);
     HCCL_INFO("locCntNotifyRes=%s, linkData=%s", locCntNotifyRes.Describe().c_str(), linkData.Describe().c_str());
-    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
+    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(
+        comm->GetDevicePhyId(), linkData.GetLocalPort(), linkData.GetLinkProtocol());
 
     // DFX：注册transportCallBack, 用于信息保存
     auto transportCallBack = MemTransportCallback(linkData, comm->GetMirrorTaskManager());
@@ -936,7 +939,8 @@ void MemTransportManager::BatchBuildOneSidedTransports(const vector<LinkData> &l
 void MemTransportManager::CreateUrmaDirectTransport(BaseMemTransport::CommonLocRes &locRes, BaseMemTransport::Attribution &attr,
                                                     const LinkData &linkData, const Socket &socket)
 {
-    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
+    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(
+        comm->GetDevicePhyId(), linkData.GetLocalPort(), linkData.GetLinkProtocol());
 
     // DFX：注册transportCallBack, 用于信息保存
     auto transportCallBack = MemTransportCallback(linkData, comm->GetMirrorTaskManager());

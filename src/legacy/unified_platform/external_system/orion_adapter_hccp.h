@@ -645,5 +645,7 @@ struct BatchDeleteJettyInfo {
 };
 constexpr u32 MAX_DELETE_JETTY_NUMS = 768;
 HcclResult HrtRaCtxQpDestoryBatch(const RdmaHandle handle, const std::unordered_set<JettyHandle> &jettyHandles, std::vector<JettyHandle> &failJettyHandles);
+
+HcclResult HrtRaGetEidByIp(RdmaHandle handle, const vector<IpAddress>& ipV4AddrList, vector<IpAddress>& eidAddrList);
 } // namespace Hccl
 #endif // HCCLV2_ADAPTER_HCCP_H
