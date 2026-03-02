@@ -35,25 +35,14 @@ HcclResult initGroupPlanner(HcclComm comm) {
     hcclComm->GetRankSize(rankSize);
     planner->rankSize = rankSize;
     HCCL_DEBUG("[initGroupPlanner] ranksize: %d", rankSize);
-    planner->peers.resize(rankSize);
     
-    planner->srcExist.resize(rankSize, false);
-    planner->dstExist.resize(rankSize, false);
-    planner->seenSrcs.resize(rankSize, -1);
-    planner->seenDsts.resize(rankSize, -1);
-    planner->iSend = 0;
-    planner->iRecv = 0;
     planner->nTasksP2p = 0;
     planner->nTasksColl = 0;
-    planner->sendStreamTasks.resize(MAX_CONCURRENT);
-    planner->recvStreamTasks.resize(MAX_CONCURRENT);
- 
     return HCCL_SUCCESS;
 }
 
 HcclResult taskAppend(HcclComm comm, hcclOpInfo& info) {
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-    hcclComm->SetGroupMode(true);
     std::shared_ptr<struct hcclKernelPlanner> planner = hcclComm->planner;
     if(planner->nTasksP2p == -1){
         initGroupPlanner(comm);
@@ -61,43 +50,22 @@ HcclResult taskAppend(HcclComm comm, hcclOpInfo& info) {
 
     HcclResult ret = HCCL_SUCCESS;
     if (info.coll == HcclCMDType::HCCL_CMD_SEND || info.coll == HcclCMDType::HCCL_CMD_RECEIVE) {
-        /*处理p2p算子*/
-        std::shared_ptr<struct hcclTaskP2p> p2p;
-        EXECEPTION_CATCH((p2p = std::make_shared<struct hcclTaskP2p>()), return HCCL_E_PARA);
+        hcclComm->SetGroupMode(true);
+        bool isSendOp = (info.coll == HcclCMDType::HCCL_CMD_SEND);
+        HcclSendRecvItem item;
+        item.sendRecvType = isSendOp ? HcclSendRecvType::HCCL_SEND : HcclSendRecvType::HCCL_RECV;
+        item.buf = const_cast<void*>(isSendOp ? info.sendbuff : info.recvbuff);
+        item.count  = isSendOp ? info.sendCount : info.recvCount;
+        item.dataType = isSendOp ? info.sendType : info.recvType;
+        item.remoteRank = info.root;
+
+        planner->sendRecvInfo.push_back(item);
 
         if (planner->sendRecvMainStream == nullptr) { // 用第一条用户流作为主流
             planner->sendRecvMainStream = info.stream;
             HCCL_INFO("[TaskAppend] planner->sendRecvMainStream[%p]", planner->sendRecvMainStream);
         }
         
-        bool isSendOp = (info.coll == HcclCMDType::HCCL_CMD_SEND);
-        p2p->func = info.coll;
-        p2p->buff = const_cast<void *>(isSendOp ? info.sendbuff : info.recvbuff);
-        p2p->count = isSendOp ? info.sendCount : info.recvCount;
-        p2p->datatype = isSendOp ? info.sendType : info.recvType;
-        p2p->root = info.root;
-        p2p->comm = info.comm;
-        
-        u32 dataTypeSize = 0;
-        CHK_RET(SalGetDataTypeSize(isSendOp ? info.sendType : info.recvType, dataTypeSize));
-        p2p->bytes = dataTypeSize * p2p->count;
-        
-        u32 peer = info.root; 
-        HCCL_INFO("[taskAppend] send-recv appending, task ptr [%p]", p2p.get());
-        if (isSendOp) {
-            if (planner->dstExist[p2p->root] == false) {
-                planner->nSend++;
-                planner->dstExist[p2p->root] = true;
-            }
-            planner->peers[peer].sendQueue.push_back(p2p);
-        }
-        else {
-            if (planner->srcExist[p2p->root] == false) {
-                planner->nRecv++;
-                planner->srcExist[p2p->root] = true;
-            }
-            planner->peers[peer].recvQueue.push_back(p2p);
-        }
         planner->nTasksP2p += 1;
     }
     else {
@@ -186,190 +154,17 @@ static HcclResult asyncJobLaunch()
     return HCCL_SUCCESS;
 }
 
-HcclResult FetchSend(std::shared_ptr<struct hcclKernelPlanner> planner, u32 &peer){
-    std::shared_ptr<struct hcclTaskP2p> taskSend = planner->peers[peer].sendQueue.front();
-    planner->peers[peer].sendQueue.pop_front();
-    if(planner->seenDsts[taskSend->root] == -1){
-        planner->seenDsts[taskSend->root] = planner->iSend++;
-    }
-    planner->sendStreamTasks[planner->seenDsts[taskSend->root] % MAX_CONCURRENT].push_back(taskSend);
-    planner->sendIdx2Byte[planner->seenDsts[taskSend->root] % MAX_CONCURRENT].push_back(taskSend->bytes);
-    return HCCL_SUCCESS;
-}
-
-HcclResult FetchRecv(std::shared_ptr<struct hcclKernelPlanner> planner, u32 &peer){
-    std::shared_ptr<struct hcclTaskP2p> taskRecv = planner->peers[peer].recvQueue.front();
-    planner->peers[peer].recvQueue.pop_front();
-    if(planner->seenSrcs[taskRecv->root] == -1){
-        planner->seenSrcs[taskRecv->root] = planner->iRecv++;
-    }
-    planner->recvStreamTasks[planner->seenSrcs[taskRecv->root] % MAX_CONCURRENT].push_back(taskRecv);
-    planner->recvIdx2Byte[planner->seenSrcs[taskRecv->root] % MAX_CONCURRENT].push_back(taskRecv->bytes);
-    return HCCL_SUCCESS;
-}
-
-HcclResult SortSendRecvTasks(std::shared_ptr<struct hcclKernelPlanner> planner, hccl::hcclComm * comm)
-{
-    bool isAnyQueueAvailable = true;
-    while (isAnyQueueAvailable){
-        isAnyQueueAvailable = false;
-        for (u32 peer = 0; peer < planner->rankSize; peer++) {
-            bool sendToPeer = !planner->peers[peer].sendQueue.empty();
-            bool recvFromPeer = !planner->peers[peer].recvQueue.empty();
-            isAnyQueueAvailable |= (sendToPeer || recvFromPeer);
-            if (!sendToPeer && !recvFromPeer) continue;
-            if (sendToPeer && ! recvFromPeer) FetchSend(planner, peer);
-            if (!sendToPeer && recvFromPeer) FetchRecv(planner, peer);
-            if (sendToPeer && recvFromPeer){
-                u32 myRank = INVALID_VALUE_RANKID;
-                CHK_RET(comm->GetUserRank(myRank));
-                if(myRank < peer){
-                    FetchSend(planner, peer);
-                    FetchRecv(planner, peer);
-                }
-                else {
-                    FetchRecv(planner, peer);
-                    FetchSend(planner, peer);
-                }
-            }
-        }
-    }
-    return HCCL_SUCCESS;
-}
-
-HcclResult SortSendTasks(std::shared_ptr<struct hcclKernelPlanner> planner, hccl::hcclComm * comm)
-{
-    bool isAnyQueueAvailable = true;
-    u32 myRank = INVALID_VALUE_RANKID;
-    CHK_RET(comm->GetUserRank(myRank));
-    u32 rankSize = INVALID_VALUE_RANKSIZE;
-    CHK_RET(comm->GetRankSize(rankSize));
-    while (isAnyQueueAvailable){
-        isAnyQueueAvailable = false;
-        u32 peer = myRank;
-        for (u32 i = 0; i < rankSize; i++) {
-            bool sendToPeer = !planner->peers[peer].sendQueue.empty();
-            isAnyQueueAvailable |= sendToPeer;
-            if (sendToPeer) FetchSend(planner, peer);
-            peer = (peer + 1) % rankSize;
-        }
-    }
-    return HCCL_SUCCESS;
-}
-
-HcclResult SortRecvTasks(std::shared_ptr<struct hcclKernelPlanner> planner, hccl::hcclComm * comm)
-{
-    bool isAnyQueueAvailable = true;
-    u32 myRank = INVALID_VALUE_RANKID;
-    CHK_RET(comm->GetUserRank(myRank));
-    u32 rankSize = INVALID_VALUE_RANKSIZE;
-    CHK_RET(comm->GetRankSize(rankSize));
-    while (isAnyQueueAvailable){
-        isAnyQueueAvailable = false;
-        u32 peer = myRank;
-        for (u32 i = 0; i < rankSize; i++) {
-            bool recvToPeer = !planner->peers[peer].recvQueue.empty();
-            isAnyQueueAvailable |= recvToPeer;
-            if (recvToPeer) FetchRecv(planner, peer);
-            if (peer == 0) {
-                peer = rankSize - 1;
-            }
-            else {
-                --peer;
-            }
-        }
-    }
-    return HCCL_SUCCESS;
-}
-
-HcclResult ExecuteGroupSync(std::shared_ptr<struct hcclKernelPlanner> planner, hccl::hcclComm * hcclComm) {
-    s32 devId; 
-    hcclComm->GetDeviceId(devId);
-    CHK_PRT_RET(hrtSetDevice(devId) != HCCL_SUCCESS,
-        HCCL_ERROR("[HcclRecv] set fail device[%d]", devId), HCCL_E_INTERNAL);
-    CHK_RET(hcclComm->GroupSyncMainstream(planner->sendIdx2Byte, planner->recvIdx2Byte));
-    return HCCL_SUCCESS;
-}
-
 static HcclResult doLaunches(HcclComm comm)
 {
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     std::shared_ptr<struct hcclKernelPlanner> planner = hcclComm->planner;
     HcclUs startutime = TIME_NOW();
-    if (planner->nTasksP2p != 0) {
-        u32 rankSize = INVALID_VALUE_RANKSIZE;
-        CHK_RET(hcclComm->GetRankSize(rankSize));
-        u32 myRank = INVALID_VALUE_RANKSIZE;
-        CHK_RET(hcclComm->GetUserRank(myRank));
-        CHK_RET(hcclComm->SetBufferSliceNum(std::min(rankSize, MAX_CONCURRENT)));
-        CHK_RET(hcclComm->SetNSend(planner->nSend));
-        CHK_RET(hcclComm->SetNRecv(planner->nRecv));
-        CHK_RET(hcclComm->GroupPrepareStreamAndNotify(planner->sendRecvMainStream));
-
-        CHK_RET(SortSendTasks(planner, hcclComm));
-        CHK_RET(SortRecvTasks(planner, hcclComm));
-        std::thread syncThread(ExecuteGroupSync, planner, hcclComm);
-        bool isAnyQueueAvailable = true;
-        while (isAnyQueueAvailable) {
-            isAnyQueueAvailable = false;
-            std::vector<std::pair<std::shared_ptr<struct hcclTaskP2p>, std::shared_ptr<struct hcclTaskP2p>>> tasksToKeepConsistency;
-            tasksToKeepConsistency.resize(rankSize);
-            for (u32 i = 0; i < MAX_CONCURRENT; i++){
-                if (!planner->sendStreamTasks[i].empty()) {
-                    std::shared_ptr<struct hcclTaskP2p> taskSend = planner->sendStreamTasks[i].front();
-                    CHK_PRT_RET(!taskSend, HCCL_ERROR("taskSend is nullptr"), HCCL_E_INTERNAL);
-                    planner->sendStreamTasks[i].pop_front();
-                    tasksToKeepConsistency[taskSend->root].first = taskSend;
-                    isAnyQueueAvailable |= !planner->sendStreamTasks[i].empty();
-                }
-                if (!planner->recvStreamTasks[i].empty()) {
-                    std::shared_ptr<struct hcclTaskP2p> taskRecv = planner->recvStreamTasks[i].front();
-                    CHK_PRT_RET(!taskRecv, HCCL_ERROR("taskRecv is nullptr"), HCCL_E_INTERNAL);
-                    planner->recvStreamTasks[i].pop_front();
-                    tasksToKeepConsistency[taskRecv->root].second = taskRecv;
-                    isAnyQueueAvailable |= !planner->recvStreamTasks[i].empty();
-                }
-            }
-            HCCL_INFO("start to exec tasks");
-            for (u32 i = 0; i < rankSize; i++){
-                std::shared_ptr<struct hcclTaskP2p> taskSend = tasksToKeepConsistency[i].first;
-                std::shared_ptr<struct hcclTaskP2p> taskRecv = tasksToKeepConsistency[i].second;
-                bool sendToPeer = taskSend != nullptr;
-                bool recvToPeer = taskRecv != nullptr;
-                if (!sendToPeer && !recvToPeer) continue;
-                else if (sendToPeer && !recvToPeer) {
-                    CHK_RET(hcclComm->SetSendIndex(planner->seenDsts[taskSend->root]));
-                    HCCL_INFO("[doLaunches] Task Send");
-                    CHK_RET(HcclSendInner(taskSend->buff, taskSend->count, taskSend->datatype, taskSend->root, taskSend->comm, planner->sendRecvMainStream));
-                }
-                else if (!sendToPeer && recvToPeer){
-                    CHK_RET(hcclComm->SetRecvIndex(planner->seenSrcs[taskRecv->root]));
-                    HCCL_INFO("[doLaunches] Task Recv");
-                    CHK_RET(HcclRecvInner(taskRecv->buff, taskRecv->count, taskRecv->datatype, taskRecv->root, taskRecv->comm, planner->sendRecvMainStream));
-                }
-                else {
-                    if (myRank < static_cast<u32>(taskSend->root)) {
-                        CHK_RET(hcclComm->SetSendIndex(planner->seenDsts[taskSend->root]));
-                        HCCL_INFO("[doLaunches] Task Send");
-                        CHK_RET(HcclSendInner(taskSend->buff, taskSend->count, taskSend->datatype, taskSend->root, taskSend->comm, planner->sendRecvMainStream));
-                        CHK_RET(hcclComm->SetRecvIndex(planner->seenSrcs[taskRecv->root]));
-                        HCCL_INFO("[doLaunches] Task Recv");
-                        CHK_RET(HcclRecvInner(taskRecv->buff, taskRecv->count, taskRecv->datatype, taskRecv->root, taskRecv->comm, planner->sendRecvMainStream));
-                    }
-                    else {
-                        CHK_RET(hcclComm->SetRecvIndex(planner->seenSrcs[taskRecv->root]));
-                        HCCL_INFO("[doLaunches] Task Recv");
-                        CHK_RET(HcclRecvInner(taskRecv->buff, taskRecv->count, taskRecv->datatype, taskRecv->root, taskRecv->comm, planner->sendRecvMainStream));
-                        CHK_RET(hcclComm->SetSendIndex(planner->seenDsts[taskSend->root]));
-                        HCCL_INFO("[doLaunches] Task Send");
-                        CHK_RET(HcclSendInner(taskSend->buff, taskSend->count, taskSend->datatype, taskSend->root, taskSend->comm, planner->sendRecvMainStream));
-                    }
-                }
-            }
-        }
-        syncThread.join();
+    if (planner->nTasksP2p != 0) { 
+        // 将所有send/recv的任务打包作为一个集合通信算子来执行
+        HCCL_INFO("HcclBatchSendRecvGroup, sendRecvInfo.size()[%u]", static_cast<u32>(planner->sendRecvInfo.size()));
+        CHK_RET(HcclBatchSendRecvGroup(planner->sendRecvInfo.data(), planner->sendRecvInfo.size(), comm, planner->sendRecvMainStream));
     }
-    HCCL_RUN_INFO("[doLaunches] take time [%lld]us.", DURATION_US(TIME_NOW() - startutime));
+    HCCL_INFO("[doLaunches] take time [%lld]us.", DURATION_US(TIME_NOW() - startutime));
     if (planner->nTasksColl != 0) {
         /*展开下发集合通信算子*/
         while(!planner->collTaskQueue.empty()){
@@ -442,10 +237,6 @@ static HcclResult groupLaunch()
     for (HcclComm comm : hcclGroupCommList){
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         std::shared_ptr<struct hcclKernelPlanner> planner = hcclComm->planner;
-        if (planner->sendRecvMainStream != nullptr){
-            CHK_RET(hcclStreamSynchronize(planner->sendRecvMainStream));
-            CHK_RET(hcclComm->GroupSubstreamsSync());
-        }
         for (auto it : planner->collStreams){
             CHK_RET(hcclStreamSynchronize(it));
         }
@@ -461,10 +252,6 @@ inline void groupLocalResetJobState()
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         hcclComm->planner = std::make_shared<hcclKernelPlanner>();
         hcclComm->SetGroupMode(false);
-        hcclComm->SetNSend(0);
-        hcclComm->SetNRecv(0);
-        hcclComm->SetSendIndex(0);
-        hcclComm->SetRecvIndex(0);
     }
     hcclGroupCommList.clear();
 

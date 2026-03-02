@@ -17,7 +17,7 @@ class CollReduceScatterFastDoubleRingFor91093Executor : public CollAlignedReduce
 public:
     explicit CollReduceScatterFastDoubleRingFor91093Executor(
         const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceScatterFastDoubleRingFor91093Executor() = default;
+    ~CollReduceScatterFastDoubleRingFor91093Executor() override = default;
 
 private:
     /* *************** 算法编排 *************** */

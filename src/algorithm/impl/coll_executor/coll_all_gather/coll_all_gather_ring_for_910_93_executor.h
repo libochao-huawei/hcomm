@@ -15,7 +15,7 @@ namespace hccl {
 class CollAllGatherRingFor91093Executor : public CollAllGatherExecutor {
 public:
     explicit CollAllGatherRingFor91093Executor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherRingFor91093Executor() = default;
+    ~CollAllGatherRingFor91093Executor() override = default;
 
 private:
     /* *************** 资源计算 *************** */
