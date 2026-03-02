@@ -48,7 +48,7 @@ CcuContextAllReduceMeshDetour1D::CcuContextAllReduceMeshDetour1D(const CcuCtxArg
         outputDataType_.Describe().c_str(), reduceOp_.Describe().c_str());
 
     HCCL_INFO("[CcuContextAllReduceMeshDetour1D] transport.size[%zu]", transports.size());
-    if (transports.size() < rankSize_ -1) {
+    if (transports.size() < rankSize -1) {
         THROW<NullPtrException>(StringFormat("CcuContextAllReduceMeshDetour1D transports size is less"));
     }
     for (uint64_t i = 0; i < pathNumPerPeer; i++) {

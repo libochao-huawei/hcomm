@@ -484,11 +484,9 @@ void CcuContextScatterMesh2D::Algorithm()
     } else if (SameRowWithRoot() or SameColumnWithRoot()) {
         RelaySendAlgorithm();
         return;
-    } else if (!SameColumnWithRoot() && !SameRowWithRoot()) {  // 非直连
-        NonDirectRecvAlgorithm();
-        return;
     } else {
-        HCCL_INFO("[CcuContextScatterMesh2D] [Algorithm] ScatterMesh2D NOT a normal case");
+        // 非直连
+        NonDirectRecvAlgorithm();
         return;
     }
     HCCL_INFO("[ccuScatterMesh2D_context] ScatterMesh2D end");
