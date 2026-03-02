@@ -181,7 +181,6 @@ public:
         regex ipv6Pattern(R"(^([\da-fA-F]{1,4}:){6}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^::([\da-fA-F]{1,4}:){0,4}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:):([\da-fA-F]{1,4}:){0,3}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){2}:([\da-fA-F]{1,4}:){0,2}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){3}:([\da-fA-F]{1,4}:){0,1}((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){4}:((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^([\da-fA-F]{1,4}:){7}[\da-fA-F]{1,4}$|^:((:[\da-fA-F]{1,4}){1,6}|:)$|^[\da-fA-F]{1,4}:((:[\da-fA-F]{1,4}){1,5}|:)$|^([\da-fA-F]{1,4}:){2}((:[\da-fA-F]{1,4}){1,4}|:)$|^([\da-fA-F]{1,4}:){3}((:[\da-fA-F]{1,4}){1,3}|:)$|^([\da-fA-F]{1,4}:){4}((:[\da-fA-F]{1,4}){1,2}|:)$|^([\da-fA-F]{1,4}:){5}:([\da-fA-F]{1,4})?$|^([\da-fA-F]{1,4}:){6}:$)");
         return regex_match(str, ipv6Pattern);
     }
-
     /*All the five types of IPV4 addresses,ABCDE,can be identified.
         A: 1.0.0.1 - 126.255.255.254
         B: 128.0.0.1 - 191.255.255.254
@@ -197,12 +196,10 @@ public:
         size_t len = str.length();
         if (len < MIN_IPV4_LEN || len > MAX_IPV4_LEN) {
             return false;
-        }
-        
+        } 
         uint32_t num = 0;
         uint32_t dotCount = 0;
         bool hasDigit = false;
-        
         for (size_t i = 0; i < len; ++i) {
             char c = str[i];
             
@@ -214,7 +211,6 @@ public:
                 
                 num = num * BASE + (c - '0');
                 hasDigit = true;
-                
                 if (num > MAX_IPV4_SEGMENT_VALUE) {
                     return false;
                 }
@@ -223,7 +219,6 @@ public:
                 if (!hasDigit || dotCount >= MAX_DOT_COUNT || i == 0 || i == len - 1) {
                     return false;
                 }
-                
                 dotCount++;
                 num = 0;
                 hasDigit = false;
@@ -231,7 +226,6 @@ public:
                 return false;
             }
         }
-        
         return dotCount == MAX_DOT_COUNT && hasDigit;
     }
 

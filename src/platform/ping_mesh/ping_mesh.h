@@ -133,7 +133,7 @@ struct RpingEidHead {
     u8 reserved[44];
 
 };
- 
+
 enum class RpingState {
     UNINIT,
     INITED,
@@ -142,7 +142,7 @@ enum class RpingState {
     STOP,
     RESERVED
 };
- 
+
 enum class RpingLinkState {
     CONNECTED,
     CONNECTING,

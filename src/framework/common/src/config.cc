@@ -431,7 +431,7 @@ HcclResult CheckRankIpFamily(const std::vector<RankInfo_t> &rankList)
                 HCCL_E_PARA);
             if (deviceFamily != 0 && deviceFamily != iter.GetFamily()) {
                 RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
-                    std::vector<std::string>({std::to_string(iter.GetFamily()) "RankIpFamily", deviceFamily }));
+                    std::vector<std::string>({std::to_string(iter.GetFamily()), "RankIpFamily", deviceFamily}));
                 CHK_PRT_RET(true,
                     HCCL_ERROR("[%s][%s]rank[%u] device ip family[%d] is not same with others[%d].",
                         LOG_KEYWORDS_INIT_GROUP.c_str(),
