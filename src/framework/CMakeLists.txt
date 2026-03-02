@@ -88,6 +88,8 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/common/launch_device/
 
     ${HCCL_BASE_DIR}/platform/resource/socket
+    ${HCCL_BASE_DIR}/platform/resource/notify
+    ${HCCL_BASE_DIR}/platform/task
     ${HCCL_BASE_DIR}/platform/inc
     ${HCCL_BASE_DIR}/platform/inc/adapter
 
@@ -157,6 +159,9 @@ if(BUILD_OPEN_PROJECT)
 
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_ENV_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/mmpa/
 
         # acl头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
@@ -762,6 +767,9 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_ENV_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/mmpa/
 
         # 包间接口
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/

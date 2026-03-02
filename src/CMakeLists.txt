@@ -487,6 +487,9 @@ set(ccl_kernel_plf_include_list
     ${HCCL_BASE_DIR}/hccl/hccl_comm/wrapper/notify/
     ${HCCL_BASE_DIR}/common/debug/profiling/inc/aicpu
     ${HCCL_BASE_DIR}/framework/common/src/aicpu
+    # mmpa headers (some toolkits provide under include/mmpa, not pkg_inc/mmpa)
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
 )
 
 # 指定ccl_kernel_plf所需头文件搜索路径
