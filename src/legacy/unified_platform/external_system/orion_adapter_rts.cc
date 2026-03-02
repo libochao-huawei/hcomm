@@ -382,6 +382,7 @@ void HcclStreamSynchronize(HcclRtStream ptr)
 */
 void *HrtMalloc(u64 size, aclrtMemType_t memType)
 {
+    HCCL_INFO("[HrtMalloc] size[%llu], memType[%d].", size, memType);
     aclError ret = ACL_SUCCESS;
     void     *devPtr = nullptr;
     aclrtMallocAttrValue moduleIdValue;
@@ -911,6 +912,7 @@ u32 HrtGetCntNotifyId(const aclrtCntNotify inCntNotify)
 
 void HrtCntNotifyDestroy(const aclrtCntNotify inCntNotify)
 {
+    HCCL_INFO("[HrtCntNotifyDestroy] inCntNotify[%p].", inCntNotify);
     CHECK_NULLPTR(inCntNotify, "[HrtCntNotifyDestroy] inCntNotify is nullptr!");
     aclError ret = aclrtCntNotifyDestroy(inCntNotify);
     HCCL_INFO("Call aclrtCntNotifyDestroy, return value[%d], inCntNotify[%p]", ret, inCntNotify);
@@ -998,6 +1000,12 @@ void HrtAicpuLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t numBl
                                       aclrtLaunchKernelCfg *cfg, void *hostArgs, size_t argsSize,
                                       aclrtPlaceHolderInfo *placeHolderArray, size_t placeHolderNum)
 {
+    HCCL_INFO("[HrtAicpuKernelLaunchExWithArgs] kernelType[%u], opName[%s], numBlocks[%u], argsInfo[%p], "
+                "smDesc[%p], stream[%p], flags[%u].", 
+                kernelType, opName, numBlocks, argsInfo, smDesc, stream, flags);
+    CHECK_NULLPTR(argsInfo, "[HrtAicpuKernelLaunchExWithArgs] argsInfo is nullptr!");
+    CHECK_NULLPTR(smDesc, "[HrtAicpuKernelLaunchExWithArgs] smDesc is nullptr!");
+    CHECK_NULLPTR(stream, "[HrtAicpuKernelLaunchExWithArgs] stream is nullptr!");
     rtError_t ret = aclrtLaunchKernelWithHostArgs(funcHandle, numBlocks, stream, cfg, hostArgs, argsSize,
                                                   placeHolderArray, placeHolderNum);
     if (ret != RT_ERROR_NONE) {
