@@ -89,7 +89,7 @@ HcclResult HcclOneSidedService::IsUsedRdma(RankId remoteRankId, bool &useRdma)
     RankInfo_t remoteRankInfo = (rankTable_->rankList).at(remoteRankId);
     if (deviceType == DevType::DEV_TYPE_910B) {
         // 外部使能RDMA，或者节点间通信
-        if (GetExternalInputIntraRoceSwitch() || localRankInfo.serverId != remoteRankInfo.serverId) {
+        if (GetExternalInputIntraRoceSwitch() != 0 || localRankInfo.serverId != remoteRankInfo.serverId) {
             useRdma = true;
             return HCCL_SUCCESS;
         }
@@ -109,7 +109,7 @@ HcclResult HcclOneSidedService::IsUsedRdma(RankId remoteRankId, bool &useRdma)
         useRdma = false;
         return HCCL_SUCCESS;
     } else if (deviceType == DevType::DEV_TYPE_910_93) {
-        if (GetExternalInputIntraRoceSwitch() || localRankInfo.superPodId != remoteRankInfo.superPodId) {
+        if (GetExternalInputIntraRoceSwitch() != 0 || localRankInfo.superPodId != remoteRankInfo.superPodId) {
             useRdma = true;
             return HCCL_SUCCESS;
         }
@@ -332,9 +332,9 @@ HcclResult HcclOneSidedService::InitAicpuUnfoldMode()
 
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
-    aicpuUnfoldMode_ = (deviceType == DevType::DEV_TYPE_910_93) &&
+    aicpuUnfoldMode_ = (deviceType == DevType::DEV_TYPE_910_93 || deviceType == DevType::DEV_TYPE_910B) &&
         commConfig_.GetConfigAicpuUnfold();  // keep env flag for perf test
-    HCCL_INFO("[InitAicpuUnfoldMode] A3[%u] rdma[%u] aicpu[%u]", (deviceType == DevType::DEV_TYPE_910_93),
+    HCCL_INFO("[InitAicpuUnfoldMode] deviceType[%u] rdma[%u] aicpu[%u]", deviceType,
         (netDevRdmaCtx_ != nullptr), aicpuUnfoldMode_);
     if (aicpuUnfoldMode_) {
         CHK_PRT(LoadAICPUKernel());
@@ -1203,7 +1203,8 @@ HcclResult HcclOneSidedService::AicpuUnfoldKernelLaunchV2(const std::string &ker
     u64 tilingDataSize, const rtStream_t stream)
 {
     u64 commContext = 0ULL;
-    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME;
+    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
+                    std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
     if (GetExternalInputHcclExecTimeoutSet() !=
         HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
         CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(identifier_)) {
@@ -1213,6 +1214,12 @@ HcclResult HcclOneSidedService::AicpuUnfoldKernelLaunchV2(const std::string &ker
             } else {
                 timeOut = execTimeOut;
             }
+    }
+
+    if (tilingDataSize > std::numeric_limits<uint32_t>::max()) {
+        HCCL_ERROR("[AicpuUnfoldKernelLaunchV2] tilingDataSize[%llu] exceeds the "
+                    "maximum allowed value for u32 [%u].", tilingDataSize, std::numeric_limits<uint32_t>::max());
+        return HCCL_E_RUNTIME;
     }
 
     CHK_RET(AicpuAclKernelLaunchV2(stream, reinterpret_cast<void *>(&commContext),

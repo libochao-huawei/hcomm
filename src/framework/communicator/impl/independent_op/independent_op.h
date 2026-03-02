@@ -84,7 +84,7 @@ private:
     ChannelManager channelMgr_;
 
     bool isAicpuCommInit_ = false;
-    CommAicpuParam commAicpuParam_;
+    CommAicpuParam commAicpuParam_{};
 };
 
 }  // namespace hccl

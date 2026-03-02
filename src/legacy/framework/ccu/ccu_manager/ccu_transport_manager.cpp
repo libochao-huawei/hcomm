@@ -247,8 +247,57 @@ vector<std::pair<CcuTransport *, LinkData>> CcuTransportMgr::GetUnConfirmedTrans
 
 void CcuTransportMgr::Clean()
 {
+    BatchDeleteJettyInfo batchDeleteJettyInfo;
+    // 获取所有transport的unimportJetty和deleteJetty
     for (auto &linkTransPair : ccuLink2TransportMap) {
-        if (linkTransPair.second->Clean() !=HCCL_SUCCESS) {
+        if (linkTransPair.second == nullptr) {
+            continue;
+        }
+        auto partInfo = linkTransPair.second->GetJettyInfo();
+        for (auto& jettyInfo : partInfo) {
+            if (jettyInfo.localJetty) {
+                batchDeleteJettyInfo.deleteJettyList[jettyInfo.rdmaHandle].insert(jettyInfo.localJetty);
+            }
+            if (jettyInfo.remoteJetty) {
+                batchDeleteJettyInfo.unimportJettyList[jettyInfo.rdmaHandle].insert(jettyInfo.remoteJetty);
+            }
+        }
+    }
+
+    // 循环unimport
+    for (auto& tmp : batchDeleteJettyInfo.unimportJettyList) {
+        auto& unimportJettys = tmp.second;
+        for (auto& unimportJetty : unimportJettys) {
+            HrtRaUbUnimportJetty(tmp.first, unimportJetty);
+        }
+    }
+
+    // 批量销毁jetty
+    std::vector<JettyHandle> failJettyHandles;
+    for (auto& tmp : batchDeleteJettyInfo.deleteJettyList) {
+        auto& rdmaHandle = tmp.first;
+        auto& delJettys = tmp.second;
+        auto ret = HrtRaCtxQpDestoryBatch(rdmaHandle, delJettys, failJettyHandles);
+        for (u64 failJetty : failJettyHandles) {
+            HCCL_ERROR("[%s]delete jetty[%llu] fail", __func__, failJetty);
+        }
+        if (ret == HCCL_E_INTERNAL || ret == HCCL_E_TIMEOUT) {
+            HCCL_ERROR("[%s]HrtRaCtxQpDestoryBatch finish, ret[%u], rdmaHandle[%p], originalJettyCount[%u], undeleteJettyCount[%u]",
+                __func__, ret, rdmaHandle, delJettys.size(), failJettyHandles.size());
+            continue;
+        } else {
+            HCCL_INFO("[%s]HrtRaCtxQpDestoryBatch finish, ret[%u], rdmaHandle[%p], originalJettyCount[%u], undeleteJettyCount[%u]",
+                __func__, ret, rdmaHandle, delJettys.size(), failJettyHandles.size());
+        }
+        failJettyHandles.clear();
+    }
+
+    // 清理transport
+    for (auto &linkTransPair : ccuLink2TransportMap) {
+        if (linkTransPair.second == nullptr) {
+            continue;
+        }
+        if (linkTransPair.second->Clean() != HCCL_SUCCESS) {
             THROW<CcuApiException>("[CcuTransportMgr::%s]CcuTransport clean failed.", __func__);
         }
     }
@@ -286,6 +335,7 @@ void CcuTransportMgr::Fallback()
 void CcuTransportMgr::Destroy()
 {
     isDestroyed = true;
+    Clean();
     ccuLink2TransportMap.clear();
     ccuRank2TransportsMap.clear();
 }
