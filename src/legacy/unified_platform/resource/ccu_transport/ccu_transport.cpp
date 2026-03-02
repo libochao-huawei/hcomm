@@ -590,6 +590,11 @@ std::string CcuTransport::Describe() const
     return description;
 }
 
+std::vector<ConnJettyInfo> CcuTransport::GetJettyInfo()
+{
+    return ccuConnection->GetJettyInfo();
+}
+
 HcclResult CcuTransport::Clean()
 {
     transStatus = TransStatus::INIT;

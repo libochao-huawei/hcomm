@@ -671,3 +671,184 @@ TEST_F(AllToAllVTest, alltoallv_test_910B_opbase_AclGraph_RunAlltoAllDirectFullm
 
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
+
+TEST_F(AllToAllVTest, alltoallv_test_910B_opbase_RunAlltoAllVContinuousPipeline_2srv_2nodes)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, 2, 2);
+    setenv("HCCL_BUFFSIZE", "1", 1);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLTOALLV;
+    checkerOpParam.tag = "AllToAll";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.algName = "RunAlltoAllVContinuousPipeline";
+
+    checkerOpParam.All2AllDataDes.sendType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT8;
+
+    u32 rankNum = GetRankNumFormTopoMeta(topoMeta);
+    GenAllToAllVParams(rankNum, 128, checkerOpParam.All2AllDataDes.sendCounts,
+        checkerOpParam.All2AllDataDes.sdispls, checkerOpParam.All2AllDataDes.recvCounts,
+        checkerOpParam.All2AllDataDes.rdispls);
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllToAllVTest, alltoallv_test_910B_opbase_RunAlltoAllVContinuousPipeline_2srv_4nodes)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, 4, 4);
+    
+    setenv("HCCL_BUFFSIZE", "1", 1);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLTOALLV;
+    checkerOpParam.tag = "AllToAll";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.algName = "RunAlltoAllVContinuousPipeline";
+
+    checkerOpParam.All2AllDataDes.sendType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT8;
+
+    u32 rankNum = GetRankNumFormTopoMeta(topoMeta);
+    GenAllToAllVParams(rankNum, 1024*1024 / 16 - 128, checkerOpParam.All2AllDataDes.sendCounts,
+        checkerOpParam.All2AllDataDes.sdispls, checkerOpParam.All2AllDataDes.recvCounts,
+        checkerOpParam.All2AllDataDes.rdispls);
+
+    Checker checker;
+    HcclResult ret;
+    checker.EnableTaskPrint();
+    ret = checker.Check(checkerOpParam, topoMeta);
+
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllToAllVTest, alltoallv_test_910B_opbase_RunAlltoAllVContinuousPipeline_1srv_16nodes_ax)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta {{{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}}};
+    
+    setenv("HCCL_BUFFSIZE", "1", 1);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLTOALLV;
+    checkerOpParam.tag = "AllToAll";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.algName = "RunAlltoAllVContinuousPipeline";
+
+    checkerOpParam.All2AllDataDes.sendType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT8;
+
+    u32 rankNum = GetRankNumFormTopoMeta(topoMeta);
+    GenAllToAllVParams(rankNum, 128, checkerOpParam.All2AllDataDes.sendCounts,
+        checkerOpParam.All2AllDataDes.sdispls, checkerOpParam.All2AllDataDes.recvCounts,
+        checkerOpParam.All2AllDataDes.rdispls);
+
+    Checker checker;
+    HcclResult ret;
+    checker.EnableTaskPrint();
+    ret = checker.Check(checkerOpParam, topoMeta);
+
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllToAllVTest, alltoallv_test_910B_opbase_RunAlltoAllVContinuousPipeline_2srv_8nodes)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, 2, 8);
+    
+    setenv("HCCL_BUFFSIZE", "1", 1);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLTOALLV;
+    checkerOpParam.tag = "AllToAll";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.algName = "RunAlltoAllVContinuousPipeline";
+
+    checkerOpParam.All2AllDataDes.sendType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT8;
+
+    u32 rankNum = GetRankNumFormTopoMeta(topoMeta);
+    GenAllToAllVParams(rankNum, 128, checkerOpParam.All2AllDataDes.sendCounts,
+        checkerOpParam.All2AllDataDes.sdispls, checkerOpParam.All2AllDataDes.recvCounts,
+        checkerOpParam.All2AllDataDes.rdispls);
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllToAllVTest, alltoallv_test_910B_opbase_RunAlltoAllVContinuousPipeline_4srv_8nodes)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, 4, 8);
+    
+    setenv("HCCL_BUFFSIZE", "1", 1);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLTOALLV;
+    checkerOpParam.tag = "AllToAll";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.algName = "RunAlltoAllVContinuousPipeline";
+
+    checkerOpParam.All2AllDataDes.sendType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT8;
+
+    u32 rankNum = GetRankNumFormTopoMeta(topoMeta);
+    GenAllToAllVParams(rankNum, 128, checkerOpParam.All2AllDataDes.sendCounts,
+        checkerOpParam.All2AllDataDes.sdispls, checkerOpParam.All2AllDataDes.recvCounts,
+        checkerOpParam.All2AllDataDes.rdispls);
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllToAllVTest, alltoallv_test_910B_opbase_RunAlltoAllVContinuousPipeline_2srv_2nodes_large_count)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, 2, 2);
+    
+    setenv("HCCL_BUFFSIZE", "1", 1);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLTOALLV;
+    checkerOpParam.tag = "AllToAll";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.algName = "RunAlltoAllVContinuousPipeline";
+
+    checkerOpParam.All2AllDataDes.sendType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT8;
+
+    u32 rankNum = GetRankNumFormTopoMeta(topoMeta);
+    GenAllToAllVParams(rankNum, 256*1024, checkerOpParam.All2AllDataDes.sendCounts,
+        checkerOpParam.All2AllDataDes.sdispls, checkerOpParam.All2AllDataDes.recvCounts,
+        checkerOpParam.All2AllDataDes.rdispls);
+
+    Checker checker;
+    checker.EnableTaskPrint();
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}

@@ -58,6 +58,7 @@
 #include "hostdpu/flush_manager.h"
 #include "hostdpu/dpu_kernel_entrance.h"
 #include "json_parser.h"
+#include "ccu_context_all_to_all_v_mesh1d.h"
 
 namespace Hccl {
 constexpr u64 HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE = (1 * 1024 * 1024); // 指定bufferSize的单位为MB
@@ -454,6 +455,10 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
         return false;
     }
     CachedCCUParams &params = ccuParamsMappingKeyIter->second;
+
+    if (opParams.OpType == OpType::ALLTOALLV && params.insType != CcuInstType::CCU_ALLTOALLV_MESH_1D_2DIE) {
+        return false;
+    }
     if (enableProfilingEnv) {
         uint64_t beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
         UpdateProfStat();
@@ -465,7 +470,6 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
         dfxOpInfo->algType_      = AlgType::MESH;
         dfxOpInfo->index_        = GetIdIndex();
         dfxOpInfo->comm_         = this;
-        dfxOpInfo->mainStreamId_ = HrtGetStreamId(stream);
         dfxOpInfo->beginTime_    = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
         GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);
         ExecuteFastCcuLaunch(opParams, stream, params);
@@ -490,6 +494,23 @@ static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const Tas
     comm.GetMirrorTaskManager().AddTaskInfo(taskInfo);
 }
 
+void CommunicatorImpl::FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams)
+{
+    std::vector<uint64_t> args;
+    CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, args);
+    rtCcuTaskInfo_t *currCcuParam = ccuParams;
+    for (u32 i = 0; i < args.size(); i++) {
+        // skip token info
+        if (i == 2) {
+            continue;
+        }
+        currCcuParam->args[i % RT_CCU_SQE_ARGS_LEN] = args[i];
+        if ((i + 1) % RT_CCU_SQE_ARGS_LEN == 0) {
+            currCcuParam += 1;
+        }
+    }
+}
+
 void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream, CachedCCUParams &params)
 {
     static thread_local int slaveIndex = 0;
@@ -501,19 +522,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
     rtCcuTaskInfo_t *&ccuParams = params.ccuParams;
 
     if (params.insType == CcuInstType::CCU_ALLTOALLV_MESH_1D_DIRECT) {
-        std::vector<uint64_t> args;
-        CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, args);
-        rtCcuTaskInfo_t *currCcuParam = ccuParams;
-        for (u32 i = 0; i < args.size(); i++) {
-            // skip token info
-            if (i == 2) {
-                continue;
-            }
-            currCcuParam->args[i % RT_CCU_SQE_ATGS_LEN] = args[i];
-            if ((i + 1) % RT_CCU_SQE_ATGS_LEN == 0) {
-                currCcuParam += 1;
-            }
-        }
+        FillAllToAllVArgs(opParams, ccuParams);
     } else {
         (void)memcpy_s(&ccuParams[0].args[0], sizeof(ccuParams[0].args[0]), &opParams.sendBuf,
                     sizeof(ccuParams[0].args[0]));
@@ -591,7 +600,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
             taskParam.taskPara.Reduce.notifyID   = INVALID_VALUE_NOTIFYID;
             taskParam.taskPara.Reduce.linkType   = DfxLinkType::ONCHIP;
             taskParam.taskPara.Reduce.dataType   = DataTypeToHcclDataType(opParams.dataType);
-            taskParam.taskPara.Reduce.linkType   = ReduceOpToHcclReduceOp(opParams.reduceOp);
+            taskParam.taskPara.Reduce.reduceOp   = ReduceOpToHcclReduceOp(opParams.reduceOp);
             FastCcuLaunchSaveDfxTaskInfo(*this, taskParam, GetMyRank());
         } else {
             aclrtReduceKind rtReduceOp = static_cast<aclrtReduceKind>(static_cast<int>(RtReduceOpGet(opParams.reduceOp)));
@@ -603,12 +612,6 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
             HrtReduceAsync(dst, scratchSize, src, scratchSize, rtReduceOp, rtDataType, stream);
         }       
     }
-<<<<<<< Updated upstream
-    if(params.insType == CcuInstType::CCU_ALLTOALLV_MESH_1D_DIRECT) {
-        CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, ccuParmas[0].args);
-    }
-=======
->>>>>>> Stashed changes
 
     slaveIndex = 0;
     collOpIndex++;
@@ -656,7 +659,7 @@ HcclResult CommunicatorImpl::OffloadResourcePre(std::string &opTag, const CollOp
     std::vector<rtStream_t> slaveStreams;
     slaveStreams.resize(resReq.requiredSubQueNum);
     for (u64 i = 0; i < resReq.requiredSubQueNum; ++i) {
-        slaveStreams[i] = static_cast<rtStream_t>(std::make_unique<Stream>(true).get());
+        slaveStreams[i] = static_cast<rtStream_t>(std::make_unique<Stream>(true, false).get());
     }
     CHK_RET(SetCollOffloadSlaveStreams(opTag, slaveStreams));
     CHK_RET(SetCollOffloadScratchBuf(opTag, reinterpret_cast<void *>(GetCclBuffer()->GetAddr()),
@@ -3133,7 +3136,8 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     aclrtLaunchKernelCfg  cfg;
     aclrtLaunchKernelAttr kernelAttr;
     kernelAttr.id            = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
-    kernelAttr.value.timeout = NOTIFY_DEFAULT_WAIT_TIME;
+    kernelAttr.value.timeout = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
+                                std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
     cfg.numAttrs             = 1;
     cfg.attrs                = &kernelAttr;
     constexpr u32 numBlocks   = 1;

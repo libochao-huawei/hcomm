@@ -21,7 +21,7 @@ class CollScatterCommExecutor : public CollScatterExecutor {
 public:
     explicit CollScatterCommExecutor(const HcclDispatcher dispatcher,
                                 std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollScatterCommExecutor() = default;
+    ~CollScatterCommExecutor() override = default;
 protected:
     /* *************** 资源计算 *************** */
     HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport) override;

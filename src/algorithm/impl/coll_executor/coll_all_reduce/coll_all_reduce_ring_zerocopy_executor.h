@@ -18,7 +18,7 @@ class CollAllReduceRingZerocopyExecutor : public CollAllReduceExecutor {
 
 public:
     CollAllReduceRingZerocopyExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllReduceRingZerocopyExecutor() = default;
+    ~CollAllReduceRingZerocopyExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */
