@@ -2323,13 +2323,13 @@ struct ccu_mem_rsp {
     unsigned int die_id;
     unsigned int  num;
     struct ccu_mem_info list[64U];
-}
+};
 
 struct ccu_mem_info {
     unsigned int long long mem_va;
     unsigned int mem_size;
     unsigned int resv[1];
-}
+};
 
 void HrtInitTlvMsg(TlvMsg* send_msg, TlvMsg* recv_msg, 
                         uint32_t udie_idx, uint64_t mem_type_bitmap, uint32_t sendType) {
