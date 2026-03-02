@@ -9,6 +9,12 @@
  */
 #ifndef PROFILING_COMMON_H
 #define PROFILING_COMMON_H
+#include <map>
+#include <string>
+
+#include "task_param.h"
+#include "enum_factory.h"
+
 namespace Hccl {
 
 MAKE_ENUM(HcclWorkflowMode, HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB = 0, HCCL_WORKFLOW_MODE_OP_BASE = 1,
