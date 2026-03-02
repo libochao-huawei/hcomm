@@ -61,6 +61,7 @@ aclError aclrtSetDeviceTaskAbortCallback(const char *regName, aclrtDeviceTaskAbo
 
 aclError aclrtCreateEventWithFlag(aclrtEvent *event, uint32_t flag)
 {
+    *event = reinterpret_cast<aclrtEvent>(0x123);
     return aclrtCreateEvent(event);
 }
 
@@ -339,6 +340,7 @@ aclError aclrtNotifyGetExportKey(aclrtNotify notify, char *key, size_t len, uint
 
 aclError aclrtGetNotifyId(aclrtNotify notify, uint32_t *notifyId)
 {
+    notify = reinterpret_cast<aclrtNotify>(0x123);
     return ACL_SUCCESS;
 }
 
