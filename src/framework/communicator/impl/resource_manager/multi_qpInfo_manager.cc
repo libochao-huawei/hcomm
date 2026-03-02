@@ -461,7 +461,7 @@ HcclResult EnvConfigPathCache::LoadMultiQpSrcPortFromFile()
             RPT_INPUT_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
                 std::vector<std::string>({strIpPort[0], "IP pair", "valid IPv4 or IPv6 address"}));
             HCCL_ERROR("[%s][%s] %s",
-                LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_ENV_CONFIG.c_str(), IP_FORMAT_ERROR.c_str());
+                LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_ENV_CONFIG.c_str(), "IP format error");
             inFile.close();
             return ret;
         }
@@ -473,7 +473,7 @@ HcclResult EnvConfigPathCache::LoadMultiQpSrcPortFromFile()
             RPT_INPUT_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
                 std::vector<std::string>({strIpPort[1], "Source Ports", "comma-separated list of valid ports"}));
             HCCL_ERROR("[%s][%s] %s",
-                LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_ENV_CONFIG.c_str(), PORT_FORMAT_ERROR.c_str());
+                LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_ENV_CONFIG.c_str(), "port format error");
             inFile.close();
             return ret;
         }

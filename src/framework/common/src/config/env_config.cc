@@ -168,11 +168,11 @@ HcclResult InitEnvParam()
     ret = g_envConfig.ParseRDMATrafficClass();
     char* mmSysGetTrafficClassEnvValue = nullptr;
     MM_SYS_GET_ENV(MM_ENV_HCCL_RDMA_TC, mmSysGetTrafficClassEnvValue);
-    std::string envValue = (mmSysGetTrafficClassEnvValue != nullptr) ? mmSysGetTrafficClassEnvValue : "EmptyString";
+    std::string mmSysGetTrafficClassEnv = (mmSysGetTrafficClassEnvValue != nullptr) ? mmSysGetTrafficClassEnvValue : "EmptyString";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({envValue, "HCCL_RDMA_TC", "range[0, 255], Must be a multiple of 4"}));
+        std::vector<std::string>({mmSysGetTrafficClassEnv, "HCCL_RDMA_TC", "range[0, 255], Must be a multiple of 4"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_RDMA_TC failed. errorno[%d]",
@@ -185,11 +185,11 @@ HcclResult InitEnvParam()
     ret = g_envConfig.ParseRDMAServerLevel();
     char* mmSysGetServerLevelEnvValue = nullptr;
     MM_SYS_GET_ENV(MM_ENV_HCCL_RDMA_SL, mmSysGetServerLevelEnvValue);
-    std::string envValue = (mmSysGetServerLevelEnvValue != nullptr) ? mmSysGetServerLevelEnvValue : "EmptyString";
+    std::string mmSysGetServerLevel = (mmSysGetServerLevelEnvValue != nullptr) ? mmSysGetServerLevelEnvValue : "EmptyString";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({"HCCL_RDMA_SL", "Value range[0, 7]"}));
+        std::vector<std::string>({mmSysGetServerLevel, "HCCL_RDMA_SL", "Value range[0, 7]"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_RDMA_SL failed. errorno[%d]",
