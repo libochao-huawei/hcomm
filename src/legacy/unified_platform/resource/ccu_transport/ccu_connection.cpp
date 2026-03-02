@@ -10,7 +10,8 @@
 
 #include "ccu_connection.h"
 
-#include <random>
+#include <cstdlib>
+#include <ctime>
 
 #include "hccp_ctx.h"
 
@@ -173,6 +174,7 @@ bool CcuConnection::CreateJetty()
 
 inline uint32_t GetRandomNum()
 {
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
     uint32_t randNum = std::rand();
     return randNum;
 }
