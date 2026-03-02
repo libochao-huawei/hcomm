@@ -40,10 +40,10 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
 
 HcclResult UbMemTransport::FillTagVec()
 {
-    localUserMemTag_.reserve(commonLocRes_.bufferVec.size());
-    HCCL_INFO("bufferNum: %d", commonLocRes_.bufferVec.size());
+    localUserMemTag_.reserve(commonLocRes.bufferVec.size());
+    HCCL_INFO("bufferNum: %d", commonLocRes.bufferVec.size());
     uint32_t index = 0;
-    for (auto &localRmaBuffer : commonLocRes_.bufferVec) {
+    for (auto &localRmaBuffer : commonLocRes.bufferVec) {
         std::array<char, HCCL_RES_TAG_MAX_LEN> tag{};
         if (localRmaBuffer == nullptr) {
             HCCL_WARNING("[UbMemTransport][FillTagVec] localRmaBuffer is nullptr. memHandleNum: %d", index);
@@ -892,7 +892,7 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
     *memNum = 0;
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     uint32_t cclbufferNum = 1;
-    uint32_t userMemCount = rmtBufferVec_.size() - cclbufferNum;
+    uint32_t userMemCount = rmtBufferVec.size() - cclbufferNum;
     if (userMemCount == 0) {
         HCCL_INFO("[GetUserRemoteMem] No user remote memory found");
         return HCCL_SUCCESS;
