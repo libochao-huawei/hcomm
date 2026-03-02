@@ -15,7 +15,7 @@ namespace hccl {
 class CollReduceScatterMixExecutor : public CollReduceScatterExecutor {
 public:
     explicit CollReduceScatterMixExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceScatterMixExecutor() = default;
+    ~CollReduceScatterMixExecutor() override = default;
 
 private:
     void ParseParam(const OpParam& param) override;

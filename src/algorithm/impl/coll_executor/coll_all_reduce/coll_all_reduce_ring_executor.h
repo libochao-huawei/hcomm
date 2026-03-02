@@ -17,7 +17,7 @@ namespace hccl {
 class CollAllReduceRingExecutor : public CollAllReduceExecutor {
 public:
     CollAllReduceRingExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllReduceRingExecutor() = default;
+    ~CollAllReduceRingExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

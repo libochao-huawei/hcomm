@@ -48,13 +48,16 @@ enum {
 enum {
     SLOG = 0,               /* Slog module */
     IDEDD = 1,              /* IDE daemon device */
+    SCC = 2,
     HCCL = 3,               /* HCCL */
     FMK = 4,                /* Adapter */
+    CCU = 5,
     DVPP = 6,               /* DVPP */
     RUNTIME = 7,            /* Runtime */
     CCE = 8,                /* CCE */
     HDC = 9,                /* HDC */
     DRV = 10,               /* Driver */
+    NET = 11,
     DEVMM = 22,             /* Dlog memory managent */
     KERNEL = 23,            /* Kernel */
     LIBMEDIA = 24,          /* Libmedia */

@@ -425,7 +425,6 @@ HcclResult HcclGetRankSize(HcclComm comm, uint32_t *rankSize)
 HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank)
 {
     // 入参合法性校验
-    //TODO:
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rank);
     HCCLV2_FUNC_RUN(

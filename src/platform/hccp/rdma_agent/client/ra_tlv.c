@@ -132,7 +132,10 @@ HCCP_ATTRI_VISI_DEF int RaTlvRequest(void *tlvHandle, unsigned int moduleType, s
 
     RA_PTHREAD_MUTEX_LOCK(&tlvHandleTmp->mutex);
     ret = tlvHandleTmp->tlvOps->raTlvRequest(tlvHandleTmp, moduleType, sendMsg, recvMsg);
-    if (ret != 0) {
+    if (ret == -EUSERS) {
+        hccp_warn("[request][ra_tlv]ra_tlv_request unsuccessful, ret(%d), phyId(%u) sendType(%u)",
+            ret, tlvHandleTmp->initInfo.phyId, sendMsg->type);
+    } else if (ret != 0) {
         hccp_err("[request][ra_tlv]ra_tlv_request failed, ret(%d), phyId(%u) sendType(%u)",
             ret, tlvHandleTmp->initInfo.phyId, sendMsg->type);
     }

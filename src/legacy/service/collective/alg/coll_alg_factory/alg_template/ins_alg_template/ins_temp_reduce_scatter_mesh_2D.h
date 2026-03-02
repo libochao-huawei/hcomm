@@ -15,6 +15,9 @@
 #include "ins_temp_all_gather_nhr.h"
 #include "ins_alg_template_base.h"
 #include "executor_utils.h"
+
+#define DATASLICE_ONE 1
+
 namespace Hccl {
 
 constexpr u32 PARALLEL_SIZE = 2;
