@@ -61,21 +61,29 @@ HcclResult GenerateErrorMessageReport(CommunicatorImplLite *aicpuComm, std::shar
     errMsgInfo.opType = taskInfo->dfxOpInfo_->op_.opType;
     errMsgInfo.count = taskInfo->dfxOpInfo_->op_.dataCount;
     errMsgInfo.dataType = taskInfo->dfxOpInfo_->op_.dataType;
-    errMsgInfo.dstAddr = static_cast<u64>(taskInfo->dfxOpInfo_->op_.inputMem->GetAddr());
-    errMsgInfo.srcAddr = static_cast<u64>(taskInfo->dfxOpInfo_->op_.outputMem->GetAddr());
+    errMsgInfo.srcAddr = static_cast<u64>(taskInfo->dfxOpInfo_->op_.inputMem->GetAddr());
+    errMsgInfo.dstAddr = static_cast<u64>(taskInfo->dfxOpInfo_->op_.outputMem->GetAddr());
     errMsgInfo.taskType = taskInfo->taskParam_.taskType;
 
     if (taskInfo->taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
         errMsgInfo.notifyId = taskInfo->taskParam_.taskPara.Notify.notifyID;
+        errMsgInfo.notifyValue = taskInfo->taskParam_.taskPara.Notify.value;
     } else if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
         errMsgInfo.notifyId = taskInfo->taskParam_.taskPara.Reduce.notifyID;
+        errMsgInfo.notifyValue = taskInfo->taskParam_.taskPara.Reduce.notifyValue;
     } else if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY) {
         errMsgInfo.notifyId = taskInfo->taskParam_.taskPara.DMA.notifyID;
+        errMsgInfo.notifyValue = taskInfo->taskParam_.taskPara.DMA.notifyValue;
     }
 
-    errMsgInfo.reduceType = taskInfo->taskParam_.taskPara.Reduce.reduceOp;
+    if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
+        || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
+        || taskInfo->taskParam_.taskType == TaskParamType::TASK_REDUCE_INLINE) {
+        errMsgInfo.reduceType = taskInfo->taskParam_.taskPara.Reduce.reduceOp;
+    }
+
     memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag), taskInfo->dfxOpInfo_->op_.opTag.c_str(),
         taskInfo->dfxOpInfo_->op_.opTag.size());
     memcpy_s(errMsgInfo.group, sizeof(errMsgInfo.group), aicpuComm->GetId().c_str(), aicpuComm->GetId().size());

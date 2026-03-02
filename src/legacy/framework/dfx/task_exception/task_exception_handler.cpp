@@ -576,7 +576,7 @@ const std::map<HcclReduceOp, std::string> HCOM_REDUCE_OP_STR_MAP{
     {HcclReduceOp::HCCL_REDUCE_PROD, "prod"},
     {HcclReduceOp::HCCL_REDUCE_MAX, "max"},
     {HcclReduceOp::HCCL_REDUCE_MIN, "min"},
-    {HcclReduceOp::HCCL_REDUCE_RESERVED, "reserved"}
+    {HcclReduceOp::HCCL_REDUCE_RESERVED, "invalid"}
 };
 
 inline std::string GetReduceOpEnumStr(HcclReduceOp reduceOp)
@@ -712,8 +712,21 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
             std::string tag = std::string(errorMessage.tag);
             TaskParam taskParam{};
             taskParam.taskType = errorMessage.taskType;
+            if (errorMessage.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
+                taskParam.taskPara.Notify.notifyID = errorMessage.notifyId;
+                taskParam.taskPara.Notify.value = errorMessage.notifyValue;
+            } else if (errorMessage.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
+                || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
+                taskParam.taskPara.Reduce.notifyID = errorMessage.notifyId;
+                taskParam.taskPara.Reduce.notifyValue = errorMessage.notifyValue;
+            } else if (errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE
+                || errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY) {
+                taskParam.taskPara.DMA.notifyID = errorMessage.notifyId;
+                taskParam.taskPara.DMA.notifyValue = errorMessage.notifyValue;
+            }
             std::shared_ptr<DfxOpInfo> dfxOpInfo = std::make_shared<DfxOpInfo>();
             dfxOpInfo->tag_ = tag;
+            dfxOpInfo->algType_ = errorMessage.algType;
             TaskInfo exceptionTaskInfo(streamId, errorMessage.taskId, errorMessage.remoteUserRank, taskParam, dfxOpInfo);
             auto logKeywordL2 = exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
             auto stageErrInfo = "[" + LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + LOG_KEYWORDS_AICPU + "]";

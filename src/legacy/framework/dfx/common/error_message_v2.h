@@ -23,6 +23,7 @@ struct ErrorMessageReport {
     s32 streamId = 0;
     u32 taskId = 0;
     u32 notifyId = 0;
+    u32 notifyValue = 0;
     s32 stage = 0;
     u32 rankId = 0;
     u32 rankSize = 0;
