@@ -202,9 +202,9 @@ void CcuContextHalfAllToAllVMesh1D::CreateLocalCopyLoop()
         CcuRep::CcuBuffer  buf = moRes.ccuBuffer[index * moConfig.msInterleave];
         CcuRep::MaskSignal sem = moRes.maskSignal[index];
 
-        CHK_RET(LocalCopy(buf, src, len, sem));
+        LocalCopy(buf, src, len, sem);
         LocalWait(sem);
-        CHK_RET(LocalCopy(dst, buf, len, sem));
+        LocalCopy(dst, buf, len, sem);
         LocalWait(sem);
     }
     return;
