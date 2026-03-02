@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <string>
+#include "string_util.h"
 #include "hash_utils.h"
 namespace Hccl {
 

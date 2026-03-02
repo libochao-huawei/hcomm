@@ -10,6 +10,9 @@
 
 #ifndef HCCLV2_OP_TASK_CONFIG_H
 #define HCCLV2_OP_TASK_CONFIG_H
+
+#include <hccl/base.h>
+
 namespace Hccl {
 
 constexpr u32 INVALID_QOSCFG           = 0xFFFFFFFF;

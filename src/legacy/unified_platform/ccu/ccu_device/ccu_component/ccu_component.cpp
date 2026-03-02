@@ -8,7 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <random>
+#include <cstdlib>
+#include <ctime>
 #include "ccu_component.h"
 
 #include "sal.h"
@@ -430,6 +431,7 @@ TpInfo CcuComponent::GetTpInfo(const IpAddress &ipAddr)
 
 inline uint32_t GetRandomNum()
 {
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
     uint32_t randNum = std::rand();
     return randNum;
 }
