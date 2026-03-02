@@ -105,7 +105,7 @@ string TaskInfo::GetParaReduce() const
 string TaskInfo::GetParaNotify() const
 {
     const auto& taskPara = this->taskParam_.taskPara;
-    return StringFormat("notify id:[0x%016llx], value:[%u], remote rank[%s]",
+    return StringFormat("notify id:[0x%016llx], value:[%u], remote rank:[%s]",
         taskPara.Notify.notifyID,
         taskPara.Notify.value,
         this->GetRemoteRankInfo().c_str());
