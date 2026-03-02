@@ -10,7 +10,7 @@
 #ifndef CHANNEL_MANAGER_H
 #define CHANNEL_MANAGER_H
 
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "hccl_types.h"
 #include "transport_pub.h"
 #include "hccl_common.h"

@@ -12,7 +12,8 @@
 #define RANK_GRAPH_V1_H
 
 #include "topoinfo_struct.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
+#include "hccl_independent_common.h"
 #include "hccl_common.h"
 #include "hccl_impl_pub.h"
 #include "hccl_rank_graph.h"
