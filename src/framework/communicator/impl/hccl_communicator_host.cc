@@ -4474,7 +4474,7 @@ namespace hccl
         AlltoAllOperator *alltoAllOperator = dynamic_cast<AlltoAllOperator *>(algOperator.get());
         CHK_PTR_NULL(alltoAllOperator);
 
-        if (alltoAllOperator->IsSatisfyAlltoallContinuousPipelineCondition()) {
+        if (alltoAllOperator->IsSatisfyAlltoallContinuousPipelineCondition(opParam)) {
             opParam.aicpuUnfoldMode = true;
             opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         }
