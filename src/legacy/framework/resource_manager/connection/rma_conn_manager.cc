@@ -40,7 +40,8 @@ unique_ptr<RmaConnection> RmaConnManager::CreateRdmaConn(Socket *socket, const s
                                                          const LinkData &linkData) const
 {
     CHECK_NULLPTR(socket, "[RmaConnManager::CreateRdmaConn] socket is nullptr!");
-    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
+    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(
+        comm->GetDevicePhyId(), linkData.GetLocalPort(), linkData.GetLinkProtocol());
 
     OpMode                        opMode     = comm->GetCurrentCollOperator()->opMode;
     unique_ptr<DevRdmaConnection> rmaNetConn = make_unique<DevRdmaConnection>(socket, rdmaHandle, opMode);
@@ -65,19 +66,26 @@ unique_ptr<RmaConnection> RmaConnManager::CreateRdmaConn(Socket *socket, const s
 }
 
 unique_ptr<RmaConnection> RmaConnManager::CreateUbConn(Socket *socket, const std::string &tag,
-                                                       const LinkData &linkData, const HrtUbJfcMode jfcMode) const
+                                                       const LinkData &linkData, const HrtUbJfcMode jfcMode)
 {
-    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
+    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort(), linkData.GetLinkProtocol());
     OpMode opMode = comm->GetCurrentCollOperator()->opMode;
     HCCL_INFO("[RmaConnManager][%s]opMode[%d],linkData[%s],devicePhyId[%u], tag[%s]",
         __func__, static_cast<int32_t>(opMode), linkData.Describe().c_str(),
         comm->GetDevicePhyId(), tag.c_str());
 
     unique_ptr<DevUbConnection> ubConn = nullptr;
-    IpAddress locAddr = linkData.GetLocalAddr();
-    IpAddress rmtAddr = linkData.GetRemoteAddr();
+    locAddr = linkData.GetLocalAddr();
+    rmtAddr = linkData.GetRemoteAddr();
+
+    HCCL_INFO("[RmaConnManager][%s] LinkProtocol[%s]", __func__, linkData.GetLinkProtocol().Describe().c_str());
+    if (linkData.GetLinkProtocol() == LinkProtocol::UBOE) {
+        // socket建链状态ok，并交换数据
+        WaitUboeSocketReady(socket, linkData);
+    }
+    
     bool devUsed = comm->GetOpAiCpuTSFeatureFlag();
-    if (linkData.GetLinkProtocol() == LinkProtocol::UB_TP) {
+    if (linkData.GetLinkProtocol() == LinkProtocol::UB_TP || linkData.GetLinkProtocol() == LinkProtocol::UBOE) {
         ubConn = make_unique<DevUbTpConnection>(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode);
         return std::unique_ptr<RmaConnection>(ubConn.release());
     }
@@ -299,6 +307,127 @@ void RmaConnManager::BatchCreate(vector<LinkData> &links)
     HCCL_INFO("[NsRecovery][Resume]RmaConnManager::BatchCreate, after Create, rmaConnectionMap size[%u], "
                "rmaConnectionMap[comm->GetId()] size[%u]",
                rmaConnectionMap.size(), rmaConnectionMap[tag].size());
+}
+
+bool RmaConnManager::IsSocketReady(Socket *socket, const LinkData &linkData)
+{
+    if (socket == nullptr) {
+        MACRO_THROW(InternalException, StringFormat("%s socket is nullptr, please check", linkData.Describe().c_str()));
+    }
+
+    SocketStatus socketStatus = socket->GetAsyncStatus();
+    if (socketStatus == SocketStatus::OK) {
+        uboeStatus = UboeStatus::SOCKET_OK;
+        return true;
+    } else if (socketStatus == SocketStatus::TIMEOUT) {
+        uboeStatus = UboeStatus::SOCKET_TIMEOUT;
+        return false;
+    }
+
+    return false;
+}
+
+UboeStatus RmaConnManager::GetUboeSocketStatus(Socket *socket, const LinkData &linkData)
+{
+    if (uboeStatus == UboeStatus::READY) {
+        return uboeStatus;
+    } else if (uboeStatus == UboeStatus::INIT) {
+        ubStatus = UbStatus::INIT;
+    }
+
+    if (!IsSocketReady(socket, linkData)) {
+        return uboeStatus;
+    }
+
+    switch (ubStatus) {
+        case UbStatus::INIT:
+            ubStatus = UbStatus::SOCKET_OK;
+            uboeStatus = UboeStatus::SOCKET_OK;
+            break;
+        case UbStatus::SOCKET_OK:
+            ubStatus = UbStatus::SEND_DATA;
+            SendExchangeData(socket, linkData);
+            break;
+        case UbStatus::SEND_DATA:
+            RecvExchangeData(socket, linkData);
+            ubStatus = UbStatus::RECV_DATA;
+            break;
+        case UbStatus::RECV_DATA:
+            RecvDataProcess(linkData);
+            ubStatus = UbStatus::RECV_FIN;
+            uboeStatus = UboeStatus::READY;
+            break;
+        default:
+            break;
+    }
+    return uboeStatus;
+}
+
+void RmaConnManager::WaitUboeSocketReady(Socket *socket, const LinkData &linkData)
+{
+    HCCL_INFO("[RmaConnManager][%s] begain", __func__);
+    auto timeout   = std::chrono::seconds(EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
+    HcclUs startTime = std::chrono::steady_clock::now();
+    while (true) {
+        auto status = GetUboeSocketStatus(socket, linkData);
+        if (status == UboeStatus::READY) {
+            break;
+        }
+        if (status == UboeStatus::SOCKET_TIMEOUT) {
+            MACRO_THROW(TimeoutException,
+                        StringFormat("[RmaConnManager][%s] %s socket timeout, commId[%s], please check",
+                                        __func__, linkData.Describe().c_str(),
+                                        comm->GetId().c_str()));
+        }
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            string timeoutMsg = StringFormat("WaitUboeSocketReady timeout, commId[%s].", comm->GetId().c_str());
+            HCCL_ERROR(timeoutMsg.c_str());
+            THROW<InternalException>(timeoutMsg);
+        }
+    }
+    HCCL_INFO("[RmaConnManager][%s] end", __func__);
+}
+
+void RmaConnManager::Ipv4Pack(BinaryStream& binaryStream)
+{
+    IpAddress locEidAddr;
+    RdmaHandleManager::GetInstance().GetEidByIpv4Addr(locAddr, locEidAddr);
+    binaryStream << locEidAddr.GetEid();
+}
+
+void RmaConnManager::Ipv4UnPack(BinaryStream& binaryStream)
+{
+    Eid rmtAddrEid;
+    binaryStream >> rmtAddrEid;
+    rmtAddr.SetEid(rmtAddrEid);
+}
+
+void RmaConnManager::SendExchangeData(Socket *socket, const LinkData &linkData)
+{
+    BinaryStream binaryStream;
+    Ipv4Pack(binaryStream);
+
+    binaryStream.Dump(sendData);
+    socket->SendAsync(reinterpret_cast<u8 *>(sendData.data()), sendData.size());
+    exchangeDataSize = sendData.size();
+ 
+    HCCL_INFO("send data %s, size=%llu", linkData.Describe().c_str(), exchangeDataSize);
+}
+
+void RmaConnManager::RecvExchangeData(Socket *socket, const LinkData &linkData)
+{
+    recvData.resize(exchangeDataSize);
+    socket->RecvAsync(reinterpret_cast<u8 *>(recvData.data()), recvData.size());
+
+    HCCL_INFO("recv data %s, size=%llu", linkData.Describe().c_str(), recvData.size());
+}
+
+void RmaConnManager::RecvDataProcess(const LinkData &linkData)
+{
+    HCCL_INFO("RecvDataProcess: link=%s, size=%llu, exchangeDataSize=%u", linkData.Describe().c_str(), recvData.size(),
+               exchangeDataSize);
+    BinaryStream binaryStream(recvData);
+    Ipv4UnPack(binaryStream);
 }
 
 } // namespace Hccl

@@ -17,6 +17,7 @@
 #include "virtual_topo.h"
 #include "ccu_transport.h"
 #include "socket_manager.h"
+#include "rma_conn_manager.h"
 
 namespace Hccl {
 
@@ -46,6 +47,15 @@ private:
     unordered_map<RankId, set<CcuTransport *>>        ccuRank2TransportsMap;
     vector<LinkData>                                  tempTransport;
 
+    IpAddress locAddr;
+    IpAddress rmtAddr;
+    UboeStatus  uboeStatus{UboeStatus::INIT};
+    MAKE_ENUM(UbStatus, INIT, SOCKET_OK, SEND_DATA, RECV_DATA, SEND_FIN, RECV_FIN, PROCESS_DATA, CONN_OK)
+    UbStatus    ubStatus{UbStatus::INIT};
+    vector<char> sendData{};
+    vector<char> recvData{};
+    u32 exchangeDataSize{0}; // 交换的消息大小
+
     vector<std::pair<CcuTransport*, LinkData>> GetUnConfirmedTrans();
     HcclResult CreateTransportByLink(const LinkData &link, CcuTransport *&transport);
     void       TransportsConnect();
@@ -54,6 +64,15 @@ private:
 
     void RecoverTransportsConnect();
     void WaitTransportsRecoverReady(vector<std::pair<CcuTransport*, LinkData>> &transports) const;
+
+    bool                         IsSocketReady(Socket *socket, const LinkData &linkData);
+    UboeStatus                   GetUboeSocketStatus(Socket *socket, const LinkData &linkData);
+    void                         WaitUboeSocketReady(Socket *socket, const LinkData &linkData);
+    void                         Ipv4Pack(BinaryStream& binaryStream);
+    void                         Ipv4UnPack(BinaryStream& binaryStream);
+    void                         SendExchangeData(Socket *socket, const LinkData &linkData);
+    void                         RecvExchangeData(Socket *socket, const LinkData &linkData);
+    void                         RecvDataProcess(const LinkData &linkData);
 };
 
 } // namespace Hccl
