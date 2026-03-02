@@ -16,7 +16,7 @@ namespace hccl {
 class CollRunAlltoAllVTwoLevelPipeline : public CollAlltoAllExecutor {
 public:
     CollRunAlltoAllVTwoLevelPipeline(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollRunAlltoAllVTwoLevelPipeline() = default;
+    ~CollRunAlltoAllVTwoLevelPipeline() override = default;
 
 private:
     u64 GetAlltoall2LevelPipelineScratchSize910B(u32 rank, std::vector<SendRecvInfo> &allMeshAggregationSendRecvInfo);

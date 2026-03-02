@@ -74,6 +74,26 @@ void AivMc2Compont::GenerateCommContext(void **commContext)
 
     HCCL_RUN_INFO("hcclCombinOpParam info: workSpace = [%llu], rankId = [%u], rankDim = [%u]",
                   combinOpParam.workSpace, combinOpParam.rankId, combinOpParam.rankDim);
+    
+    auto collService = dynamic_cast<CollServiceDeviceMode *>(comm->GetCollService());
+    auto protocol = collService->GetAivInsPreprocessor()->GetProtocol();
+    if (protocol == 1) {    // urma
+        GenerateAivUrmaCommContext(combinOpParam);
+    } else if (protocol == 0) { // ubmemory
+        GenerateAivMemoryCommContext(combinOpParam);
+    } else {
+        THROW<InvalidParamsException>(StringFormat("protocol[%u] not supported", protocol));
+    }
+    auto paramSize      = sizeof(HcclCombinOpParam);
+    combinOpParamBuffer = std::make_shared<DevBuffer>(paramSize);
+    HrtMemcpy(reinterpret_cast<void *>(combinOpParamBuffer->GetAddr()), paramSize, static_cast<void *>(&combinOpParam),
+        paramSize, RT_MEMCPY_HOST_TO_DEVICE);
+    *commContext = reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
+}
+
+void AivMc2Compont::GenerateAivMemoryCommContext(HcclCombinOpParam &combinOpParam)
+{
+    HCCL_INFO("[AivMc2Compont][GenerateAivMemoryCommContext] ubmemory");
     // add cclbuffer info
     if (comm->GetCclBuffer() == nullptr) {
         THROW<Hccl::InternalException>(StringFormat("Cannot get CCL Buffer to fill window!"));
@@ -93,12 +113,54 @@ void AivMc2Compont::GenerateCommContext(void **commContext)
         uint64_t rmtBufferAddr = static_cast<uint64_t>(rmtMemBuffer->GetAddr());
         AddCclBuffer(combinOpParam, rmtBufferSize, rmtBufferAddr, rmtRank);
     }
+}
 
-    auto paramSize      = sizeof(HcclCombinOpParam);
-    combinOpParamBuffer = std::make_shared<DevBuffer>(paramSize);
-    HrtMemcpy(reinterpret_cast<void *>(combinOpParamBuffer->GetAddr()), paramSize, static_cast<void *>(&combinOpParam),
-              paramSize, RT_MEMCPY_HOST_TO_DEVICE);
-    *commContext = reinterpret_cast<void *>(combinOpParamBuffer->GetAddr());
+void AivMc2Compont::GenerateAivUrmaCommContext(HcclCombinOpParam &combinOpParam)
+{
+    HCCL_INFO("[AivMc2Compont][GenerateAivMemoryCommContext] aiv urma");
+    auto collService = dynamic_cast<CollServiceDeviceMode *>(comm->GetCollService());
+    auto links = comm->GetFullMeshLinks();
+    if (links.empty()) {
+        THROW<InvalidParamsException>(StringFormat("AivMc2Compont::GenerateCommContext links is empty"));
+    }
+    auto localBuffer = comm->GetLocalRmaBufManager().Get(comm->GetId(), links[0].GetLocalPort(), BufferType::SCRATCH);
+    CHECK_NULLPTR(localBuffer, "[AivMc2Compont::GenerateCommContext] localBuffer is nullptr!");
+    uint64_t localBufferSize = static_cast<uint64_t>(localBuffer->GetBuf()->GetSize());
+    uint64_t localBufferAddr = static_cast<uint64_t>(localBuffer->GetBuf()->GetAddr());
+    AddCclBuffer(combinOpParam, localBufferSize, localBufferAddr, comm->GetMyRank());
+    for (auto &link : links) {
+        auto rmtBuffer = comm->GetMemTransportManager()->GetUrmaDirectTransport(link)->GetRmtRmaBuffer(2);
+        CHECK_NULLPTR(rmtBuffer, "[AivMc2Compont::GenerateCommContext] rmtBuffer is nullptr!");
+        uint64_t rmtBufferSize = static_cast<uint64_t>(rmtBuffer->GetSize());
+        uint64_t rmtBufferAddr = static_cast<uint64_t>(rmtBuffer->GetAddr());
+        AddCclBuffer(combinOpParam, rmtBufferSize, rmtBufferAddr, link.GetRemoteRankId());
+    }
+
+    auto wqs = collService->GetAivInsPreprocessor()->GetWqs();
+    for (size_t i = 0; i < wqs.size(); i++) {
+        combinOpParam.wq[links[i].GetRemoteRankId()] = wqs[i];
+    }
+    HCCL_INFO("[AivMc2Compont][GenerateCommContext] wq info:");
+    for (auto& wq : wqs) {
+        HCCL_INFO("[AivMc2Compont][GenerateCommContext]jettyId[%u], sqVA[%llx], wqeSize[%u], sqDepth[%u], "
+                  "headAddr[%llx], tailAddr[%llx], dbAddr[%llx], tp_id[%u]", wq.jettyId, wq.sqVA, wq.wqeSize, 
+                  wq.sqDepth, wq.headAddr, wq.tailAddr, wq.dbAddr, wq.tp_id);
+        for (size_t i = 0; i < 16; i++) { // 遍历rmtEid
+            HCCL_INFO("[AivMc2Compont][GenerateCommContext]rmtEid[%llu][%u]", i, wq.rmtEid[i]);
+        }
+        HCCL_INFO("[AivMc2Compont][GenerateCommContext]rmtObjId[%u]", wq.rmtObjId);
+    }
+
+    auto cqs = collService->GetAivInsPreprocessor()->GetCqs();
+    for (size_t i = 0; i < cqs.size(); i++) {
+        combinOpParam.cq[links[i].GetRemoteRankId()] = cqs[i];
+    }
+    HCCL_INFO("[AivMc2Compont][GenerateCommContext] cq info:");
+    for (auto& cq : cqs) {
+        HCCL_INFO("[AivMc2Compont][GenerateCommContext]jfcId[%u], cqVA[%llx], cqeSize[%u], cqDepth[%u], headAddr[%llx], "
+                  "tailAddr[%llx], dbAddr[%llx]", cq.jfcId, cq.cqVA, cq.cqeSize, cq.cqDepth, cq.headAddr, 
+                  cq.tailAddr, cq.dbAddr);
+    }
 }
 
 void AivMc2Compont::AivMC2AllocCommRes(Mc2Tiling *mc2TilingPtr) const
@@ -146,6 +208,13 @@ void AivMc2Compont::AivMC2AllocCommResV2(Mc2InitTilingInner *mc2TilingPtr) const
     const auto  offset = mc2TilingPtr->offset[0];
     const auto &commConfig
         = *(reinterpret_cast<const Mc2CcTilingInner *>(reinterpret_cast<const uint8_t *>(mc2TilingPtr) + offset));
+    HCCL_RUN_INFO("[AivMc2Compont][AivMC2AllocCommRes] Mc2CcTilingInner skipLocalRankCopy[%u], skipBufferWindowCopy[%u], "
+                  "stepSize[%u], version[%u], protocol[%u], communicationEngine[%u], srcDataType[%u], dstDataType[%u], "
+                  "algConfig[%s], opType[%u], reduceType[%u]",
+                  commConfig.skipLocalRankCopy, commConfig.skipBufferWindowCopy, commConfig.stepSize, commConfig.version, 
+                  commConfig.protocol, commConfig.communicationEngine, commConfig.srcDataType, commConfig.dstDataType,
+                  commConfig.algConfig, commConfig.opType, commConfig.reduceType);
+    HCCL_RUN_INFO("[AivMc2Compont][AivMC2AllocCommRes] groupName[%s]", commConfig.groupName);
     FillCollOperatorV2(commConfig);
 
     AivOpArgs aivArgs {};
@@ -157,6 +226,7 @@ void AivMc2Compont::AivMC2AllocCommResV2(Mc2InitTilingInner *mc2TilingPtr) const
     comm->GetSocketManager().BatchCreateSockets(aivLinks);
 
     // 对insQueue中ccuIns进行预处理 创建transport
+    collService->GetAivInsPreprocessor()->SetProtocol(commConfig.protocol);
     collService->GetAivInsPreprocessor()->Preprocess(insQueue);
     HCCL_INFO("AivMC2AllocCommResV2 success");
 }
