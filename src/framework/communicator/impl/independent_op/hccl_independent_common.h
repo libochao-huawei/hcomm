@@ -13,8 +13,9 @@
 
 #include "hccl/hccl_res.h"
 #include "hccl_common.h"
-#include "notify/notify_base.h"
+#include "notify_base.h"
 #include "orion_adapter_hccp.h"
+#include "hcomm_res_defs.h"
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -31,6 +32,22 @@ typedef enum {
     NOTIFY_TYPE_RTS_EVENT = 1,
     NOTIFY_TYPE_DEVICE_MEM = 2,
 } NotifyType;
+
+typedef uint64_t NotifyHandle;
+
+typedef union {
+    struct {
+        uint64_t requireShare : 1;
+        uint64_t rsvd : 63;
+    };
+    uint64_t value;
+} HcclRegMemAttr;
+
+typedef struct {
+    HcclMemType type;
+    void *addr;
+    uint64_t size;
+} CommBuffer;
 
 constexpr u32 NOTIFY_MAX_NUM = 2048;
 inline bool IsValidCommEngine(CommEngine engine)
