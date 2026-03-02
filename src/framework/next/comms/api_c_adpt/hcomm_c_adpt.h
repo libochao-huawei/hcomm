@@ -63,6 +63,11 @@ HcclResult HcommEngineCtxDestroy(CommEngine engine, void *ctx);
 
 HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size);
 
+/* Built-in services for AICPU engine + CPU thread type */
+HcclResult RecordService(void *args, uint64_t argsSizeByte);
+
+HcclResult WaitService(void *args, uint64_t argsSizeByte);
+ 
 #ifdef __cplusplus
 }
 #endif // __cplusplus

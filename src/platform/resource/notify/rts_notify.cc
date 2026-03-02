@@ -179,6 +179,34 @@ HcclResult RtsNotify::Alloc()
     }
     CHK_RET(hrtNotifyGetOffset(notifyPtr, notifyInfo_.ipcNotify.offset));
     notifyInfo_.ipcNotify.ptr = notifyPtr;
+
+    // Get notify address and size for 910_95. Used by notify record from CPU thread -> AicpuTs thread.
+    DevType devType = DevType::DEV_TYPE_COUNT;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType == DevType::DEV_TYPE_910_95) {
+        rtDevResInfo resInfo{
+            .dieId    = 0,
+            .procType = RT_PROCESS_HCCP,
+            .resType  = RT_RES_TYPE_STARS_NOTIFY_RECORD,
+            .resId    = id,
+            .flag     = 0
+        };
+    
+        uint64_t tempAddr = 0;
+        u32      tempLen  = 0;
+        rtDevResAddrInfo addrInfo{
+            .resAddress = &tempAddr,
+            .len        = &tempLen
+        };
+        auto ret = rtGetDevResAddress(&resInfo, &addrInfo);
+        if (ret != RT_ERROR_NONE) {
+            HCCL_ERROR("[RtsNotify::%s] rtGetDevResAddress failed for 910_95, id[%u], ret[%d].", __func__, id, ret);
+            return HCCL_E_DRV;
+        }
+        address = tempAddr;
+        HCCL_INFO("[RtsNotify::%s] rtGetDevResAddress succeeded for 910_95, id[%u], addr[0x%llx].",
+            __func__, id, address);
+    }
     return HCCL_SUCCESS;
 }
 
