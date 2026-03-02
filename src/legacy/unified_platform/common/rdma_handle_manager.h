@@ -35,7 +35,7 @@ public:
     ~RdmaHandleManager();
 
     RdmaHandle GetByAddr(u32 devPhyId, const LinkProtoType &localProtocolType, IpAddress &localIp, PortDeploymentType type);
-    RdmaHandle Get(u32 devPhyId, const PortData &localPort);
+    RdmaHandle Get(u32 devPhyId, const PortData &localPort, LinkProtocol linkProtocol);
     RdmaHandle GetByIp(u32 devPhyId, const IpAddress &localIp); // only support ccu create loop channel
     JfcHandle  GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jfcMode);
     JfcHandle  GetJfcHandleAndCqInfo(RdmaHandle rdmaHandle, CqCreateInfo& cqInfo, HrtUbJfcMode jfcMode);
@@ -46,6 +46,8 @@ public:
     RdmaHandleManager(const RdmaHandleManager &rdmaHandleManager) = delete;
     RdmaHandleManager &operator=(const RdmaHandleManager &rdmaHandleManager) = delete;
     void DestroyAll();
+
+    HcclResult GetEidByIpv4Addr(const IpAddress& addr, IpAddress& eidAddr);
 private:
     std::mutex managerMutex;
 
@@ -60,10 +62,14 @@ private:
 
     std::unordered_map<RdmaHandle, HrtNetworkMode> netWorkModeMap;
 
+    std::unordered_map<IpAddress, EID> uboeIpv4EidMap;
+
     RdmaHandleManager();
 
     RdmaHandle Create(u32 devPhyId, const PortData &localPort);
     RdmaHandle Create(u32 devPhyId, const LinkProtoType &localProtocolType, const IpAddress &localIp, PortDeploymentType type);
+
+    void UboeIpv4ToEid(const IpAddress& ipAddress);
 };
 
 } // namespace Hccl

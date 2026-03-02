@@ -23,6 +23,8 @@
 
 namespace Hccl {
 
+MAKE_ENUM(UboeStatus, READY, INIT, SOCKET_OK, SOCKET_TIMEOUT);
+
 class RmaConnManager {
 public:
     explicit RmaConnManager(const CommunicatorImpl &comm);
@@ -57,10 +59,27 @@ private:
 
     u32                     localRank{0};
     const CommunicatorImpl *comm;
+    
+    IpAddress locAddr;
+    IpAddress rmtAddr;
+    UboeStatus  uboeStatus{UboeStatus::INIT};
+    UbStatus    ubStatus{UbStatus::INIT};
+    vector<char> sendData{};
+    vector<char> recvData{};
+    u32 exchangeDataSize{0}; // 交换的消息大小
 
     std::vector<RmaConnection *> GetAllConns() const;
     void                         RecreateAllConns();
     void                         BindRemoteRmaBuffers();
+
+    bool                         IsSocketReady(Socket *socket);
+    UboeStatus                   GetUboeSocketStatus(Socket *socket);
+    void                         WaitUboeSocketReady(Socket *socket, const LinkData &linkData) const;
+    void                         Ipv4Pack(BinaryStream& binaryStream);
+    void                         Ipv4UnPack(BinaryStream& binaryStream);
+    void                         SendExchangeData(Socket *socket, const LinkData &linkData);
+    void                         RecvExchangeData(Socket *socket, const LinkData &linkData);
+    void                         RecvDataProcess(const LinkData &linkData);
 };
 
 } // namespace Hccl
