@@ -61,8 +61,8 @@ HcclResult GenerateErrorMessageReport(CommunicatorImplLite *aicpuComm, std::shar
     errMsgInfo.opType = taskInfo->dfxOpInfo_->op_.opType;
     errMsgInfo.count = taskInfo->dfxOpInfo_->op_.dataCount;
     errMsgInfo.dataType = taskInfo->dfxOpInfo_->op_.dataType;
-    errMsgInfo.dstAddr = reinterpret_cast<u64>(taskInfo->dfxOpInfo_->op_.inputMem->GetAddr());
-    errMsgInfo.srcAddr = reinterpret_cast<u64>(taskInfo->dfxOpInfo_->op_.outputMem->GetAddr());
+    errMsgInfo.dstAddr = static_cast<u64>(taskInfo->dfxOpInfo_->op_.inputMem->GetAddr());
+    errMsgInfo.srcAddr = static_cast<u64>(taskInfo->dfxOpInfo_->op_.outputMem->GetAddr());
     errMsgInfo.taskType = taskInfo->taskParam_.taskType;
 
     if (taskInfo->taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
@@ -213,21 +213,20 @@ HcclResult SendTaskExceptionByMBox(CommunicatorImplLite *aicpuComm, const rtLogi
 string GetOpDataInfo(const TaskInfo& taskInfo)
 {
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-        HCCL_ERROR("[TaskInfo][%s]TaskInfo communicator is nullptr.", __func__);
+        HCCL_ERROR("[GetOpDataInfo]TaskInfo communicator is nullptr.");
         return "";
     }
-    const CommunicatorImplLite* aicpuComm = static_cast<CommunicatorImplLite*>(taskInfo.dfxOpInfo_->comm_);
+    CommunicatorImplLite* aicpuComm = static_cast<CommunicatorImplLite*>(taskInfo.dfxOpInfo_->comm_);
     u32 localDeviceId = 0;
     u32 devPhyId = aicpuComm->GetDevPhyId();
 
     HCCL_INFO("[GetOpDataInfo] HostToDeviceLogicId[%u]", devPhyId);
     auto ret = drvGetLocalDevIDByHostDevID(devPhyId, &localDeviceId);
     if (ret != 0) {
-        HCCL_ERROR("[GetOpDataInfo] HostToDeviceLogicId[%u] failed.",
-        devPhyId);
-        return HCCL_E_DRV;
+        HCCL_ERROR("[GetOpDataInfo] HostToDeviceLogicId[%u] failed.", devPhyId);
+        return "";
     }
-    return StringFormat("deviceId[%u], %s", localDeviceId, curTask->GetOpInfo().c_str());
+    return StringFormat("deviceId[%u], %s", localDeviceId, taskInfo.GetOpInfo().c_str());
 }
 
 void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicCqReport_t* exceptionInfo)
