@@ -65,6 +65,11 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
 
 HcclResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHandles, uint32_t *memHandleNum);
 
+/* Built-in services for AICPU engine + CPU thread type */
+HcclResult RecordService(void *args, uint64_t argsSizeByte);
+
+HcclResult WaitService(void *args, uint64_t argsSizeByte);
+ 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
