@@ -17,7 +17,7 @@ class CollBroadcastRingExecutor : public CollBroadcastExecutor {
 public:
     CollBroadcastRingExecutor(const HcclDispatcher dispatcher,
     std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollBroadcastRingExecutor() = default;
+    ~CollBroadcastRingExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

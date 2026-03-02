@@ -17,7 +17,7 @@ class CollReduceMeshExecutor : public CollReduceExecutor {
 public:
     CollReduceMeshExecutor(const HcclDispatcher dispatcher,
     std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceMeshExecutor() = default;
+    ~CollReduceMeshExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

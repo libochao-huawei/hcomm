@@ -11,12 +11,13 @@
 #ifndef HCCL_CCU_JETTY_H
 #define HCCL_CCU_JETTY_H
 
+#include <unordered_map>
+#include <vector>
 #include "ip_address.h"
 #include "ccu_dev_mgr.h"
 #include "orion_adapter_hccp.h"
 
 namespace Hccl {
-
 class CcuJetty final {
 public:
     CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo);
@@ -44,6 +45,7 @@ public:
         return jettyInfo_.taJettyId;
     }
     void Clean();
+    void GetJettyInfo(ConnJettyInfo& connJettyInfo);
 
 private:
     int32_t devLogicId_{0};

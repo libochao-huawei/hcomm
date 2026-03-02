@@ -17,7 +17,7 @@ class CollAllReduceFor310PDoublingDirectExecutor : public CollAllReduceExecutor 
 public:
     CollAllReduceFor310PDoublingDirectExecutor(const HcclDispatcher dispatcher,
                                                std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllReduceFor310PDoublingDirectExecutor() = default;
+    ~CollAllReduceFor310PDoublingDirectExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

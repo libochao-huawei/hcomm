@@ -2671,7 +2671,7 @@ HcclResult HcomGetL0TopoTypeEx(const char *group, CommTopo *topoType, uint32_t f
     CHK_PTR_NULL(topoType);
     CHK_PTR_NULL(group);
 
-    bool isSetDevice = (bool)(flag & (~(0xfffffffe)));
+    bool isSetDevice = static_cast<bool>(flag & (~(0xfffffffe)));
     if (isSetDevice) {
         HCCL_ERROR("current only support no setdevice, flag[%u]", flag);
         return HCCL_E_PARA;
@@ -2688,7 +2688,7 @@ HcclResult HcomGetRankSizeEx(const char *group, uint32_t *rankSize, uint32_t fla
     CHK_PTR_NULL(rankSize);
     CHK_PTR_NULL(group);
 
-    bool isSetDevice = (bool)(flag & (~(0xfffffffe)));
+    bool isSetDevice = static_cast<bool>(flag & (~(0xfffffffe)));
     if (isSetDevice) {
         HCCL_ERROR("current only support no setdevice, flag[%u]", flag);
         return HCCL_E_PARA;
@@ -3213,10 +3213,21 @@ HcclResult GetOpWorkspaceMemSize(bool isOfflineCompilation, HcclCMDType hcclOpTy
 HcclResult GetOpScratchMemSize(bool isOfflineCompilation, HcclCMDType hcclOpType, HcomOpParam *hcomOpParam,
     u64 &opMemSize, u32 dataTypeSize, s32 rankSize, s32 serverNum)
 {
+    constexpr u8 devType_950 = 6; // 950枚举值为6，需要统一整改
     u64 count = hcomOpParam->count;
     std::string sCollectiveType(hcomOpParam->opType);
 
+    std::string socVersionStr(hcomOpParam->socVersion);
+    DevType devType = DevType::DEV_TYPE_COUNT;
+    CHK_RET(hrtGetDeviceTypeBySocVersion(socVersionStr, devType));
+
+    std::shared_ptr<hccl::hcclComm> hcclComm;
     std::string group = hcomOpParam->group == nullptr ? HCCL_WORLD_GROUP : hcomOpParam->group;
+    // 获取通信域句柄，因为91095不需要获取通信域句柄以感知aivonly，暂时规避
+    if (static_cast<u8>(devType) != devType_950) {
+        CHK_RET(HcomGetCommByGroup(group.c_str(), hcclComm));
+    }
+
     std::vector<HcclAlgoType> algoTypeArr = CommConfiger::GetInstance().GetCommConfigAlgoConfig(group, HcclCMDType::HCCL_CMD_ALLTOALLV);
     bool UseOneLayerAlltoAllv = (algoTypeArr[0] == HcclAlgoType::HCCL_ALGO_TYPE_NA &&
         algoTypeArr[1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE);
@@ -3246,7 +3257,7 @@ HcclResult GetOpScratchMemSize(bool isOfflineCompilation, HcclCMDType hcclOpType
         }
     } else if ((hcclOpType == HCCL_CMD_ALLTOALLV ||
         hcclOpType == HCCL_CMD_ALLTOALLVC) &&
-        !UseOneLayerAlltoAllv && (u32)rankSize > HCCL_ALLTOALLV_P2P_SIZE) {
+        !UseOneLayerAlltoAllv && static_cast<u32>(rankSize) > HCCL_ALLTOALLV_P2P_SIZE) {
         // 离线编译场景需要重新计算
         if (isOfflineCompilation) {
             if (hcclOpType == HCCL_CMD_ALLTOALLV) {
@@ -3269,16 +3280,21 @@ HcclResult GetOpScratchMemSize(bool isOfflineCompilation, HcclCMDType hcclOpType
             CHK_RET(hrtResetDevice(deviceLogicId));
         }
     } else if (hcclOpType == HCCL_CMD_ALLREDUCE) {
+        // 判断 aiv_only
+        bool isAivOnlyMode = false;
         u8 deterministic;
-        std::string socVersionStr(hcomOpParam->socVersion);
-        DevType devType = DevType::DEV_TYPE_COUNT;
-        CHK_RET(hrtGetDeviceTypeBySocVersion(socVersionStr, devType));
+
+        // 91095环境下，暂时不需要感知是否为aivonly模式
+        if (static_cast<u8>(devType) != devType_950) {
+            CHK_RET(hcclComm->GetOnlyAivModeConfig(isAivOnlyMode));
+        }
         CHK_RET(GetDeterministic(devType, hcomOpParam->geDeterministic, deterministic));
 
         if (deterministic != DETERMINISTIC_DISABLE) {
             CHK_RET(GetAllReduceScratchMemSize(isOfflineCompilation, hcomOpParam, serverNum, rankSize, opMemSize));
         } else {
-            if (count * dataTypeSize <= HCCL_MID_COUNT_16_MB) {
+            // 数据量大以及aivOnly的情况下需要申请scratch mem
+            if (count * dataTypeSize <= HCCL_MID_COUNT_16_MB || isAivOnlyMode) {
                 opMemSize += count * dataTypeSize * HCCL_MEMSIZE_HD_FACTOR;
             }
         }

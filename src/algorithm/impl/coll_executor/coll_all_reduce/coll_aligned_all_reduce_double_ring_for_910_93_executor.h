@@ -19,7 +19,7 @@ class CollAlignedAllReduceDoubleRingFor91093Executor : public CollAllReduceRingF
 public:
     CollAlignedAllReduceDoubleRingFor91093Executor(
         const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAlignedAllReduceDoubleRingFor91093Executor() = default;
+    ~CollAlignedAllReduceDoubleRingFor91093Executor() override = default;
 
 private:
     /* *************** 算法编排 *************** */

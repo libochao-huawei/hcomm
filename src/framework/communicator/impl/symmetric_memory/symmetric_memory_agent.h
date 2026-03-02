@@ -18,7 +18,7 @@
 #include <atomic>
 #include <queue>
 #include <condition_variable>
-#include <cstring>
+#include <string>
 #include <memory>
 
 #include "hccl/hccl_types.h"
@@ -70,8 +70,8 @@ private:
     HcclIpAddress localVnicIp_;
     const std::vector<RankInfo> &rankInfoList_;
     u32 userRank_;
-    u32 leftRank_;
-    u32 rightRank_;
+    u32 leftRank_{0};
+    u32 rightRank_{0};
     u32 rankSize_;
     bool useSuperPodMode_;
     std::string identifier_{};
