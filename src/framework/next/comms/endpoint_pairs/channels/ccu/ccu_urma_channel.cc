@@ -32,6 +32,29 @@ CcuUrmaChannel::CcuUrmaChannel(const EndpointHandle locEndpointHandle,
 {
 }
 
+HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
+    std::vector<CcuTransport::CclBufferInfo> &bufferInfos)
+{
+    for (uint32_t i = 0; i < memHandleNum; ++i) {
+        auto *locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memHandles[i]);
+        CHK_PTR_NULL(locRmaBuffer);
+        HCCL_INFO("[CcuUrmaChannel::CreateTransportByLink] locRmaBuffer[%s]", locRmaBuffer->Describe().c_str());
+        auto *buffer = locRmaBuffer->GetBuf();
+        CHK_PTR_NULL(buffer);
+
+        std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
+        CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), buffer->GetMemTag(), HCCL_RES_TAG_MAX_LEN));
+        bufferInfos.emplace_back(
+            buffer->GetAddr(),
+            static_cast<uint32_t>(buffer->GetSize()),
+            locRmaBuffer->GetTokenId(),
+            locRmaBuffer->GetTokenValue(),
+            hccl::ConvertHcclToCommMemType(buffer->GetMemType()),
+            memTag);
+    }
+    return HCCL_SUCCESS;
+}
+
 static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
     const Hccl::LinkData &linkData, Hccl::Socket *socket, void **memHandles,
     uint32_t memHandleNum, std::unique_ptr<CcuTransport> &impl)
@@ -74,23 +97,7 @@ static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
         locAddr, rmtAddr, channelInfo, ccuJettys};
 
     std::vector<CcuTransport::CclBufferInfo> bufferInfos{};
-    for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto *locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memHandles[i]);
-        CHK_PTR_NULL(locRmaBuffer);
-        HCCL_INFO("[CcuUrmaChannel::CreateTransportByLink] locRmaBuffer[%s]", locRmaBuffer->Describe().c_str());
-        auto *buffer = locRmaBuffer->GetBuf();
-        CHK_PTR_NULL(buffer);
-
-        std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
-        CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), buffer->GetMemTag(), HCCL_RES_TAG_MAX_LEN));
-        bufferInfos.emplace_back(
-            buffer->GetAddr(),
-            static_cast<uint32_t>(buffer->GetSize()),
-            locRmaBuffer->GetTokenId(),
-            locRmaBuffer->GetTokenValue(),
-            hccl::ConvertHcclToCommMemType(buffer->GetMemType()),
-            memTag);
-    }
+    BuildBufferInfos(memHandles, memHandleNum, bufferInfos);
 
     // 调用底层的创建函数 (CcuCreateTransport 通常是全局函数或静态函数)
     ret = CcuCreateTransport(socket, connectionInfo, bufferInfos, impl);

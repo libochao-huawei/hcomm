@@ -192,6 +192,9 @@ private:
     std::vector<char*>                       tagPointers_;        // Tag 缓存
 };
 
+HcclResult BuildCcuConnection(const CcuTransport::CcuConnectionInfo &ccuConnectionInfo, 
+    std::unique_ptr<CcuConnection> &ccuConnection);
+
 HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConnectionInfo &ccuConnectionInfo,
     const CcuTransport::CclBufferInfo &cclBufferInfo, std::unique_ptr<CcuTransport> &ccuTransport);
 
