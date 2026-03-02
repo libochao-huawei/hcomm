@@ -3172,6 +3172,7 @@ HcclResult HcclCommDestroy(HcclComm comm)
     return HCCL_SUCCESS;
 }
 
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
 static HcclConfigTypeOpExpansionMode OpExpanionModeValueToModeEnum(const uint32_t value)
 {
     constexpr uint32_t defaultMode = 0;
@@ -3204,6 +3205,7 @@ static HcclConfigTypeOpExpansionMode OpExpanionModeValueToModeEnum(const uint32_
 
     return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_INVALID;
 }
+#endif
 
 HcclResult HcclConfigGetInfo(HcclComm comm, HcclConfigType cfgType,
     uint32_t infoLen, void *info)
