@@ -357,6 +357,252 @@ HcclResult TransportManager::AllocSubCommLinks(const std::string &tag, const Tra
     return HCCL_SUCCESS;
 }
 
+HcclResult TransportManager::CreateBatchSendRecvLinks(const std::string &tag, const TransportIOMem &transMem,
+    struct LinkPoolPara &linkPoolPara, bool isAicpuModeEn, bool isBackup, u32 subCommIndex, bool isCapture,
+    const HcclCMDType &opType, bool isIndOp)
+{
+    HcclResult ret = hrtSetDevice(deviceLogicId_);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateBatchSendRecvLinks]hrtSetDevice failed, ret[%d]", ret);
+        linkPoolPara.abortFlag = true;
+        return ret;
+    }
+    struct SingleSubCommTransport &singleSubCommTransport = linkPoolPara.singleSubCommTransport;
+    u32 currentIdx = 0;
+    u32 requestIdx = 0;
+    while (true) {
+        currentIdx = linkPoolPara.taskIndex.fetch_add(1);
+        if (currentIdx >= linkPoolPara.taskList.size() || linkPoolPara.abortFlag) {
+            break;
+        }
+        requestIdx = linkPoolPara.taskList[currentIdx].second;
+
+        auto &transportRequest = singleSubCommTransport.transportRequests[requestIdx];
+        auto &link = singleSubCommTransport.links[requestIdx];
+
+        // 无效请求、link已创建、备用链路，这三种情况不需要创建link
+        if ((!transportRequest.isValid) || (link != nullptr) || (isBackup && !transportRequest.isUsedRdma)) {
+            HCCL_INFO("[%s]: no need to create p2p back link, remote UserRank[%u], userRank[%u], "
+                "isUsedRdma[%u], isBackup[%d]", __func__, transportRequest.remoteUserRank, userRank_,
+                transportRequest.isUsedRdma, isBackup);
+            continue;
+        }
+
+        DeviceMem inputMem;
+        DeviceMem outputMem;
+        DeviceMem expMem;
+        GetIOMem(transMem, transportRequest.inputMemType, transportRequest.outputMemType, inputMem, outputMem, expMem);
+        HCCL_DEBUG("[CreateBatchSendRecvLinks]transportRequest.inputMemType[%d] transportRequest.outputMemType[%d], isBackup[%d]",
+            transportRequest.inputMemType, transportRequest.outputMemType, isBackup);
+
+        IndOpMem indOpMem;
+        if (isIndOp) {
+            indOpMem = transMem.indOpMem;
+            HCCL_DEBUG("[CreateBatchSendRecvLinks]transportRequest indOpMem, userHostMem size[%llu], userDeviceMem size[%llu]",
+                indOpMem.userHostMem.size(), indOpMem.userDeviceMem.size());
+        }
+
+        std::vector<std::shared_ptr<HcclSocket>> connectSockets;
+        bool isInterRdma = false;
+        bool chooseBackup = transportRequest.isUsedRdma ? isBackup : false;
+        HcclNetDevCtx netDevCtx;
+        {
+            std::lock_guard<std::mutex> lock(createSocketMutex_);
+            ret = CreateDestSockets(tag, transportRequest.remoteUserRank, singleSubCommTransport.taskNum, connectSockets,
+                netDevCtx, isInterRdma, transportRequest.isUsedRdma, chooseBackup, subCommIndex, transportRequest.linkType);
+        }
+        HCCL_DEBUG("[%s]CreateDestSockets finished, chooseBackup[%d], remoteUserRank[%u], userRank[%u], isUsedRdma[%u]",
+            __func__, chooseBackup, transportRequest.remoteUserRank, userRank_, transportRequest.isUsedRdma);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[CreateBatchSendRecvLinks]Create dest sockets failed");
+            linkPoolPara.linkResults[currentIdx] = ret;
+            linkPoolPara.abortFlag = true;
+            return ret;
+        }
+
+        MachineType machineType = transportRequest.localUserRank < transportRequest.remoteUserRank ?
+            MachineType::MACHINE_SERVER_TYPE : MachineType::MACHINE_CLIENT_TYPE;
+        std::string threadStr = (isInterRdma ? "HcclTerL_" : "HcclIntra_") + std::to_string(requestIdx);
+        HCCL_INFO("[%s]threadStr[%s], poolName[%s]", __func__, threadStr.c_str(), linkPoolPara.poolName.c_str());
+        ret = CreateLink(tag, hrtErrMGetErrorContextPub(), 
+                machineType, rankInfoList_[userRank_].serverId, transportRequest.remoteUserRank, 
+                singleSubCommTransport.supportDataReceivedAck, singleSubCommTransport.linkMode, 
+                singleSubCommTransport.enableUseOneDoorbell, threadStr,
+                connectSockets, inputMem, outputMem, transportRequest.isUsedRdma, 
+                link, isAicpuModeEn, linkPoolPara.linkResults[currentIdx], netDevCtx,
+                transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
+                isIndOp, indOpMem, opType, false);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[CreateBatchSendRecvLinks]Create Link failed");
+            linkPoolPara.linkResults[currentIdx] = ret;
+            (void)hrtResetDevice(deviceLogicId_);   // CreateLink会调用一次hrtSetDevice
+            linkPoolPara.abortFlag = true;
+            return ret;
+        }
+        ret = hrtResetDevice(deviceLogicId_);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[CreateBatchSendRecvLinks]hrtResetDevice failed");
+            linkPoolPara.linkResults[currentIdx] = ret;
+            linkPoolPara.abortFlag = true;
+            return ret;
+        }
+        singleSubCommTransport.status[requestIdx] = TransportStatus::READY; // 建链后 transport设置为ready状态
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportManager::WaitBatchSendRecvThreadsComplete(struct LinkPoolPara &linkPoolPara)
+{
+    for (u32 i = 0; i < linkPoolPara.linkThreads.size(); i++) {
+        if (linkPoolPara.linkThreads[i] == nullptr || !linkPoolPara.linkThreads[i]->joinable()) {
+            continue;
+        }
+        linkPoolPara.linkThreads[i]->join(); // 等待线程执行完毕
+        CHK_RET(hrtResetDevice(deviceLogicId_)); // 防止线程里面异常退出，在进程中reset
+    }
+    linkPoolPara.linkThreads.clear();
+    CHK_PRT_RET(GetStopFlag(), HCCL_ERROR("Terminating operation due to external request"), HCCL_E_INTERNAL);
+
+    for (u32 i = 0; i < linkPoolPara.linkResults.size(); i++) {
+        CHK_RET(linkPoolPara.linkResults[i]);
+    }
+    CHK_PRT_RET(linkPoolPara.abortFlag, HCCL_ERROR("[WaitBatchSendRecvThreadsComplete] abortFlag is set"), HCCL_E_INTERNAL);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportManager::CheckBatchSendRecvLinkStatus(const std::string &tag, struct SingleSubCommTransport &singleSubCommTransport, bool isBackup)
+{
+    for (u32 i = 0; i < singleSubCommTransport.transportRequests.size(); ++i) {
+        auto &transportRequest = singleSubCommTransport.transportRequests[i];
+        if (transportRequest.isValid) {
+            // 备用链路不需要创建p2p
+            if (isBackup && !transportRequest.isUsedRdma) {
+                HCCL_INFO("[%s]: no need to check p2p backup link, remoteUserRank[%u], userRank[%u], "
+                    "isUsedRdma[%u], isBackup[%d]", __func__, transportRequest.remoteUserRank, userRank_,
+                    transportRequest.isUsedRdma, isBackup);
+                continue;
+            }
+
+            if (singleSubCommTransport.links[i] == nullptr) {
+                HCCL_ERROR("[Create]errNo[0x%016llx] transport create fail in thread, local rank[%u] remote rank[%u], inputMemType[%d], outputMemType[%d]",
+                    HCCL_ERROR_CODE(HCCL_E_NOT_FOUND), userRank_, transportRequest.remoteUserRank, transportRequest.inputMemType, transportRequest.outputMemType);
+                SaluSleep(EXCEPTION_DELAY_US_COUNT);
+                (void)notifyPool_->UnregisterOp(tag);
+                return HCCL_E_NOT_FOUND;
+            }
+        }
+    }
+
+    for (auto &tmpTag : socketTagVec_) {
+        (void)socketManager_->DestroySockets(tmpTag);
+    }
+    socketTagVec_.clear();
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportManager::PrepareTaskLists(HcclSendRecvItem *sendRecvItemsPtr, u32 itemNum, const SingleSubCommTransport &singleSubCommTransport,
+    std::vector<std::pair<u32, u32>> &senderList, std::vector<std::pair<u32, u32>> &receiverList)
+{
+    if (sendRecvItemsPtr == nullptr || itemNum == 0) {
+        HCCL_INFO("[%s] SendRecvItemsPtr is empty", __func__);
+        return HCCL_SUCCESS;
+    }
+
+    std::unordered_set<u32> senderSet;
+    std::unordered_set<u32> receiverSet;
+
+    for (u32 i = 0; i < itemNum; ++i) {
+        if (sendRecvItemsPtr[i].sendRecvType == HcclSendRecvType::HCCL_SEND) {
+            receiverSet.insert(sendRecvItemsPtr[i].remoteRank);
+        } else if (sendRecvItemsPtr[i].sendRecvType == HcclSendRecvType::HCCL_RECV) {
+            senderSet.insert(sendRecvItemsPtr[i].remoteRank);
+        }
+    }
+
+    for (u32 i = 0; i < singleSubCommTransport.transportRequests.size(); i++) {
+        if (singleSubCommTransport.transportRequests[i].isValid) {
+            u32 remoteRank = singleSubCommTransport.transportRequests[i].remoteUserRank;
+            bool isSender = senderSet.count(remoteRank);
+            bool isReceiver = receiverSet.count(remoteRank);
+            
+            if (isSender && (!isReceiver || remoteRank < userRank_)) {
+                senderList.emplace_back(std::make_pair(remoteRank, i));
+            } else if (isReceiver) {
+                receiverList.emplace_back(std::make_pair(remoteRank, i));
+            }
+        }
+    }
+
+    auto cmp = [](const std::pair<u32, u32> &a, const std::pair<u32, u32> &b) {
+        return a.first < b.first;
+    };
+    std::sort(senderList.begin(), senderList.end(), cmp);
+    std::sort(receiverList.begin(), receiverList.end(), cmp);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportManager::AllocBatchSendRecvLinks(HcclSendRecvItem *sendRecvItemsPtr, u32 itemNum,
+    const std::string &tag, const TransportIOMem &transMem, struct SingleSubCommTransport &singleSubCommTransport,
+    bool isAicpuModeEn, bool isBackup, u32 subCommIndex, bool isCapture, const HcclCMDType &opType, bool isIndOp)
+{
+    // 记录pair<remoteRank, idx>, idx表示remoteRank对应的建链信息在transportRequests中的索引位置
+    std::vector<std::pair<u32, u32>> senderList;
+    std::vector<std::pair<u32, u32>> receiverList;
+
+    CHK_RET(PrepareTaskLists(sendRecvItemsPtr, itemNum, singleSubCommTransport, senderList, receiverList));
+    if (senderList.empty() && receiverList.empty()) {
+        HCCL_INFO("[%s] TransportRequests is empty", __func__);
+        return HCCL_SUCCESS;
+    }
+
+    if (singleSubCommTransport.needVirtualLink) {
+        // task多线程并行下发，根据当前transport创建vtransport信息
+        CHK_RET(CreateVirturalTransport(singleSubCommTransport));
+    }
+
+    struct LinkPoolPara senderLinkPoolPara(singleSubCommTransport, "sender", senderList);
+    struct LinkPoolPara receiverLinkPoolPara(singleSubCommTransport, "receiver", receiverList);
+    for (u32 i = 0; i < senderLinkPoolPara.linkThreads.size(); ++i) {
+        senderLinkPoolPara.linkThreads[i].reset(new (std::nothrow) std::thread(
+            &TransportManager::CreateBatchSendRecvLinks, this, 
+            tag, std::ref(transMem), std::ref(senderLinkPoolPara),
+            isAicpuModeEn, isBackup, subCommIndex, isCapture, opType, isIndOp
+        ));
+
+        if (senderLinkPoolPara.linkThreads[i] == nullptr) {
+            HCCL_ERROR("[AllocBatchSendRecvLinks] Failed to create sender thread %u", i);
+            senderLinkPoolPara.abortFlag = true;
+            WaitBatchSendRecvThreadsComplete(senderLinkPoolPara);   // 清理已建立的线程
+            return HCCL_E_PTR;
+        }
+    }
+    for (u32 i = 0; i < receiverLinkPoolPara.linkThreads.size(); ++i) {
+        receiverLinkPoolPara.linkThreads[i].reset(new (std::nothrow) std::thread(
+            &TransportManager::CreateBatchSendRecvLinks, this, 
+            tag, std::ref(transMem), std::ref(receiverLinkPoolPara),
+            isAicpuModeEn, isBackup, subCommIndex, isCapture, opType, isIndOp
+        ));
+
+        if (receiverLinkPoolPara.linkThreads[i] == nullptr) {
+            HCCL_ERROR("[AllocBatchSendRecvLinks] Failed to create receiver thread %u", i);
+            receiverLinkPoolPara.abortFlag = true;
+            senderLinkPoolPara.abortFlag = true;
+            WaitBatchSendRecvThreadsComplete(senderLinkPoolPara);
+            WaitBatchSendRecvThreadsComplete(receiverLinkPoolPara);
+            return HCCL_E_PTR;
+        }
+    }
+
+    CHK_RET(WaitBatchSendRecvThreadsComplete(senderLinkPoolPara));
+    CHK_RET(WaitBatchSendRecvThreadsComplete(receiverLinkPoolPara));
+    CHK_RET(CheckBatchSendRecvLinkStatus(tag, singleSubCommTransport, isBackup));
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult TransportManager::AllocSliceMem(DeviceMem &inputMem,  DeviceMem &outputMem, u32 remoteUserRank)
 {
     u64 inputSize = inputMem.size();
@@ -374,9 +620,10 @@ HcclResult TransportManager::AllocSliceMem(DeviceMem &inputMem,  DeviceMem &outp
 
     return HCCL_SUCCESS;
 }
+
 HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem &transMem,
     OpCommTransport &opTransportResponse, bool isAicpuModeEn, bool isBackup, bool isZeroCopy, const HcclCMDType &opType,
-        bool isCapture, bool isIndOp, bool isNpuDirectRoce)
+        bool isCapture, bool isIndOp, bool isNpuDirectRoce, const OpParam *opParam)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     CHK_RET(notifyPool_->RegisterOp(tag));
@@ -400,8 +647,14 @@ HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem 
                         }
                     }
                 }
-                CHK_RET(AllocSubCommLinks(tag, transMem, singleSubCommTransport, isAicpuModeEn, isBackup, subCommIndex,
-                    isCapture, opType, isIndOp));
+                if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) {
+                    CHK_PTR_NULL(opParam);
+                    CHK_RET(AllocBatchSendRecvLinks(opParam->BatchSendRecvDataDes.sendRecvItemsPtr, opParam->BatchSendRecvDataDes.itemNum,
+                        tag, transMem, singleSubCommTransport, isAicpuModeEn, isBackup, subCommIndex, isCapture, opType, isIndOp));
+                } else {
+                    CHK_RET(AllocSubCommLinks(tag, transMem, singleSubCommTransport, isAicpuModeEn, isBackup, subCommIndex,
+                        isCapture, opType, isIndOp));
+                }
                 continue;
             }
 
