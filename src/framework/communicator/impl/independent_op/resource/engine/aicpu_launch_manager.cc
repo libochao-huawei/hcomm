@@ -45,8 +45,10 @@ HcclResult AicpuLaunchMgr::KernelLaunchAicpuCustom(OpParam &opParam, std::string
     customInitTask.isCustom = false;
 
     // Step 3. 启动 
+    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
+                    std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
     CHK_RET(AicpuAclKernelLaunch(aicpuInitStream, reinterpret_cast<void *>(&customInitTask),
-            sizeof(customInitTask), binCustomHandle, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));
+            sizeof(customInitTask), binCustomHandle, kernelName, true, timeOut));
     return HCCL_SUCCESS;
 }
 

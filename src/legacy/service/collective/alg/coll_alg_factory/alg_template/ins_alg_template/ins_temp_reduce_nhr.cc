@@ -227,7 +227,7 @@ HcclResult InsTempReduceNHR::RunReduceScatter(const RankSliceInfo &sliceInfoVec,
             dataType_, redOp_
         };
 
-        CHK_PRT_RET(SendRecvReduce(sendRecvReduceInfo, tempInsQues[0], 0, true, dmaMode_),
+        CHK_PRT_RET(SendRecvReduce(sendRecvReduceInfo, tempInsQues[0], 0, true, dmaMode_) != HcclResult::HCCL_SUCCESS,
             HCCL_ERROR("[InsTempReduceNHR] RunReduceScatter SendRecvReduce failed"),
             HcclResult::HCCL_E_INTERNAL);
     }
@@ -262,7 +262,7 @@ HcclResult InsTempReduceNHR::RunGather(const RankSliceInfo &sliceInfoVec, const 
         TxRxSlicesList sendRecvSlicesList({txSlices, txSlices}, {rxSlices, rxSlices});
 
         SendRecvInfo sendRecvInfo(sendRecvLinks, sendRecvSlicesList);
-        CHK_PRT_RET(SendRecv(sendRecvInfo, tempInsQues[0], 0, true, dmaMode_),
+        CHK_PRT_RET(SendRecv(sendRecvInfo, tempInsQues[0], 0, true, dmaMode_) != HcclResult::HCCL_SUCCESS,
             HCCL_ERROR("[InsTempReduceNHR] RunGather send/recv failed"),
             HcclResult::HCCL_E_INTERNAL);
     }

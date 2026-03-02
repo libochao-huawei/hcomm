@@ -399,13 +399,13 @@ HcclResult SetSocketPortRange(const std::string &envName, const std::string &soc
     portRangeVec.clear();
 
     // the environment variable is not set
-    if (!socketPortRange.compare(ENV_EMPTY_STRING)) {
+    if (socketPortRange.compare(ENV_EMPTY_STRING) == 0) {
         CHK_RET(SetDefaultSocketPortRange(socketLoc, portRangeVec));
         return HCCL_SUCCESS;
     }
 
     // the socket port range is set to auto, then the os will listen on the ports dynamically and automatically.
-    if (!socketPortRange.compare(HCCL_AUTO_PORT_CONFIG)) {
+    if (socketPortRange.compare(HCCL_AUTO_PORT_CONFIG) == 0) {
         HcclSocketPortRange autoSocketPortRange = {
             HCCL_SOCKET_PORT_RANGE_AUTO,
             HCCL_SOCKET_PORT_RANGE_AUTO
@@ -479,7 +479,7 @@ HcclResult ParseNpuSocketPortRange()
 // 通用的环境变量解析函数
 HcclResult ParseEnvConfig(const EnvConfigParam& param, std::string& envValue, u32& resultValue)
 {
-    if (!envValue.compare(ENV_EMPTY_STRING)) {
+    if (envValue.compare(ENV_EMPTY_STRING) == 0) {
         HCCL_RUN_INFO("%s set by default to [%u]", param.envName.c_str(), param.defaultValue);
         resultValue = param.defaultValue;
         return HCCL_SUCCESS;

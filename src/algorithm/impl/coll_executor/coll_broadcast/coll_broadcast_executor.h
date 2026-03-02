@@ -19,7 +19,7 @@ class CollBroadcastExecutor : public CollCommExecutor {
 public:
     CollBroadcastExecutor(const HcclDispatcher dispatcher,
     std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollBroadcastExecutor() = default;
+    ~CollBroadcastExecutor() override = default;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
 protected:

@@ -107,6 +107,11 @@ TEST_F(AivMc2CompontTest, should_return_success_when_calling_GenerateCommContext
     comm.cclBuffer = DevBuffer::Create(0x100, 0x100);
     comm.ubMemoryTransportMgr = std::make_unique<UbMemoryTransportMgr>(comm);
 
+    auto tmp = std::make_shared<CollServiceDeviceMode>(&comm);
+    comm.collService = tmp.get();
+    auto collService = dynamic_cast<CollServiceDeviceMode *>(comm.GetCollService());
+    collService->GetAivInsPreprocessor()->SetProtocol(0);
+
     void *commContext;
     // check
     Mc2Tiling mc2Tiling;
@@ -130,6 +135,11 @@ TEST_F(AivMc2CompontTest, should_throw_InternalException_when_calling_GenerateCo
     comm->rankSize = 1;
     AivMc2Compont aivMc2Compont(comm.get());
     comm->cclBuffer = nullptr;
+
+    auto tmp = std::make_shared<CollServiceDeviceMode>(comm.get());
+    comm->collService = tmp.get();
+    auto collService = dynamic_cast<CollServiceDeviceMode *>(comm->GetCollService());
+    collService->GetAivInsPreprocessor()->SetProtocol(0);
 
     void *commContext;
     // check
