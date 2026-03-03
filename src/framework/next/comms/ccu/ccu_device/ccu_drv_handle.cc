@@ -9,9 +9,12 @@
  */
 
 #include "ccu_drv_handle.h"
+
 #include "log.h"
+
 #include "hccp_tlv.h"
 #include "hccp_tlv_hdc_mgr.h"
+
 #include "ccu_res_specs.h"
 #include "ccu_pfe_cfg_mgr.h"
 #include "ccu_comp.h"
@@ -19,6 +22,7 @@
 #include "ccu_kernel_mgr.h"
 
 namespace hcomm {
+
 static HcclResult HccpRaTlvRequest(const TlvHandle tlvHandle,
     const u32 tlvModuleType, const u32 tlvCcuMsgType)
 {
@@ -49,11 +53,14 @@ HcclResult CcuDrvHandle::Init()
     CHK_RET(tlvHdcMgr.Init());
     tlvHandle_ = tlvHdcMgr.GetHandle();
     CHK_PTR_NULL(tlvHandle_);
+
     CHK_RET(HccpRaTlvRequest(tlvHandle_, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_INIT));
     CHK_RET(CcuResSpecifications::GetInstance(devLogicId_).Init());
     CHK_RET(CcuPfeCfgMgr::GetInstance(devLogicId_).Init());
     CHK_RET(CcuComponent::GetInstance(devLogicId_).Init());
     CHK_RET(CcuResBatchAllocator::GetInstance(devLogicId_).Init());
+    // CHK_RET(CcuKernelMgr::GetInstance(devLogicId_).Init());
+
     return HcclResult::HCCL_SUCCESS;
 }
 
