@@ -11,7 +11,7 @@
 #include "profiling_reporter.h"
 namespace hccl {
     
-explicit HcclCommProfiling(DevId deviceId){
+explicit HcclCommProfiling(DevId deviceId) {
     mirrorTaskManager_ = std::make_unique<MirrorTaskManager>(deviceId, &GlobalMirrorTasks::Instance(), false);
     profilingReporter_ = std::make_unique<ProfilingReporter>(mirrorTaskManager_, &ProfilingHandler::GetInstance());
 }
