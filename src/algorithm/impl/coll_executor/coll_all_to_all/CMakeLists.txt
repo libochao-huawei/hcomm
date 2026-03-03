@@ -22,6 +22,7 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_v_continuous_pipeline_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_direct_fullmesh_aiv_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_v_aiv_direct_executor.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_to_all_symmetric_memory_executor.cc
 )
 
 target_sources(hccl_alg PRIVATE
