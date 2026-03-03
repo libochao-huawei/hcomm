@@ -1422,10 +1422,14 @@ STATIC void RsUbFillJfcInfo(struct RsCtxJfcCb *jfcCb, struct CtxCqInfo *info)
     info->ub.cqeSize = WQE_BB_SIZE;
     info->ub.bufAddr = jfcCb->bufAddr;
     info->ub.swdbAddr = jfcCb->swdbAddr;
+    hccp_warn("@@@ RsUbFillJfcInfo info->ub.cqeSize: %ld", info->ub.cqeSize);
+    hccp_warn("@@@ RsUbFillJfcInfo info->ub.bufAddr: %ld", info->ub.bufAddr);
+    hccp_warn("@@@ RsUbFillJfcInfo info->ub.swdbAddr: %ld", info->ub.swdbAddr);
 }
 
 int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct CtxCqInfo *info)
 {
+    hccp_warn("@@@ enter RsUbCtxJfcCreate");
     struct RsCtxJfcCb *jfcCb = NULL;
     urma_jfc_cfg_t jfcCfg = {0};
     urma_jfc_t *outJfc = NULL;
@@ -1444,6 +1448,7 @@ int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct Ctx
     jfcCfg.jfce = attr->chanAddr == 0 ? NULL : (urma_jfce_t *)(uintptr_t)attr->chanAddr;
     if (attr->ub.mode == JFC_MODE_STARS_POLL || attr->ub.mode == JFC_MODE_CCU_POLL ||
         attr->ub.mode == JFC_MODE_USER_CTL_NORMAL) {
+        hccp_warn("@@@ RsUbCtxJfcCreate RsUbCtxJfcCreateExt");
         if (attr->ub.mode == JFC_MODE_CCU_POLL && attr->ub.ccuExCfg.valid) {
             jfcCb->ccuExCfg.valid = attr->ub.ccuExCfg.valid;
             jfcCb->ccuExCfg.cqeFlag = attr->ub.ccuExCfg.cqeFlag;
@@ -1454,6 +1459,7 @@ int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct Ctx
             goto jfc_cb_init_err;
         }
     } else if (attr->ub.mode == JFC_MODE_NORMAL) {
+        hccp_warn("@@@ RsUbCtxJfcCreate RsUbCtxJfcCreateNormal");
         jfcCfg.jfce = (attr->chanAddr == 0) ? NULL : (urma_jfce_t *)(uintptr_t)attr->chanAddr;
         ret = RsUbCtxJfcCreateNormal(devCb, &jfcCfg, &outJfc);
         if (ret != 0) {
