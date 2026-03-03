@@ -35,12 +35,13 @@ public:
         HCCL_ERROR("[%s] === VA Allocator Dump (Total: %zu) ===", tag, totalSize_);
         size_t freeSum = 0;
         int i = 0;
+        constexpr double kPercentageMultiplier = 100.0;
         for (auto &block : freeList_) {
             HCCL_ERROR("  Block[%d]: offset %zu (0x%zx) -> size %zu (0x%zx) | end: %zu", 
                 i++, block.offset, block.offset, block.size, block.size, block.offset + block.size);
             freeSum += block.size;
         }
-        HCCL_ERROR("  Total Free: %zu (%.2f%%)", freeSum, static_cast<double>(freeSum) / totalSize_ * 100.0);
+        HCCL_ERROR("  Total Free: %zu (%.2f%%)", freeSum, static_cast<double>(freeSum) / totalSize_ * kPercentageMultiplier);
         HCCL_ERROR("==========================================");
     }
 
