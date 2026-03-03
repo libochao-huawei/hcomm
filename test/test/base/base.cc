@@ -33,4 +33,7 @@ uint32_t RemoteNotify::GetNotifyOffset(uint64_t &notifyOffset)
 {
     return 0;
 }
+
+void test()
+{}
 }

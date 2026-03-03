@@ -26,6 +26,7 @@ private:
     // std::unique_ptr<RemoteNotifyImpl> pimpl_;
 };
 
+void test();
 }
 
 #endif // BASE_H
