@@ -300,7 +300,7 @@ HcclResult HcomCheckGroupName(const char *group)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomCheckReductionOp(const std::sting& callerOpName, const HcclReduceOp op)
+HcclResult HcomCheckReductionOp(const std::string& callerOpName, const HcclReduceOp op)
 {
     if (HCCL_SUPPORT_REDUCE_OP.find(op) == HCCL_SUPPORT_REDUCE_OP.end()) {
         std::string supportedOpsStr;
