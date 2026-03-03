@@ -215,8 +215,6 @@ HcclResult TransportManager::createSubCommLinkThreads(const std::string &tag, co
         MachineType machineType = transportRequest.localUserRank < transportRequest.remoteUserRank ?
             MachineType::MACHINE_SERVER_TYPE : MachineType::MACHINE_CLIENT_TYPE;
         std::string threadStr = (isInterRdma ? "HcclTerL_" : "HcclIntra_") + std::to_string(i);
-        hcclQos_ = transportRequest.hcclQos;
-        HCCL_INFO("createSubCommLinkThreads hcclQos = %u", hcclQos_);
         subCommLinkPara.linkThreads[i].reset(
             new (std::nothrow) std::thread(&TransportManager::CreateLink,
                 this, tag, hrtErrMGetErrorContextPub(), 
@@ -1206,7 +1204,7 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
     HcclResult ret = HCCL_SUCCESS;
     do {
         ret = SetMachinePara(tag, machineType, serverId, remoteRank, supportDataReceivedAck, linkMode, sockets,
-            inputMem, outputMem, expMem, isAicpuModeEn, isBackup, isCapture, notifyNum, trafficClass_, serviceLevel_, hcclQos_, machinePara,
+            inputMem, outputMem, expMem, isAicpuModeEn, isBackup, isCapture, notifyNum, trafficClass_, serviceLevel_, machinePara,
             loaclRankInfo, remoteRankInfo, netDevCtx, linkType, indOpMem, isIndOp, opType, isNpuDirectRoce);
         retOut = ret;
         std::string tmpErrInfo = ret == HCCL_E_TIMEOUT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
@@ -1300,7 +1298,7 @@ HcclResult TransportManager::SetMachinePara(const std::string &tag, MachineType 
     const bool supportDataReceivedAck, const LinkMode linkMode,
     const std::vector<std::shared_ptr<HcclSocket> > &socketList,
     const DeviceMem &inputMem, const DeviceMem &outputMem, const DeviceMem &expMem, bool isAicpuModeEn, 
-    bool isBackup, bool isCapture, u32 notifyNum, u32 trafficClass, u32 serviceLevel, u32 hcclQos, MachinePara &machinePara,
+    bool isBackup, bool isCapture, u32 notifyNum, u32 trafficClass, u32 serviceLevel, MachinePara &machinePara,
     RankInfo &loaclRank, RankInfo &remoteRank, const HcclNetDevCtx &netDevCtx, TransportLinkType linkType,
     const IndOpMem &indOpMem, bool isIndOp, const HcclCMDType &opType, bool isNpuDirectRoce)
 {
@@ -1318,7 +1316,6 @@ HcclResult TransportManager::SetMachinePara(const std::string &tag, MachineType 
     machinePara.outputMem = outputMem;
     machinePara.tc = trafficClass;
     machinePara.sl = serviceLevel;
-    machinePara.hcclQos = hcclQos;
     if(expMem.ptr() != nullptr){
         machinePara.mem.push_back(expMem);
     } else {

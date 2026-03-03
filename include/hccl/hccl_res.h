@@ -218,13 +218,9 @@ typedef struct {
             uint8_t sl;               ///< 服务等级(QoS)
         } roceAttr;
     };
-
-    union {
-        uint8_t hccsRaws[128]; ///< 通用缓存
         struct {
             uint32_t hcclQos;
         } hccsAttr;
-    };
 } HcclChannelDesc;
 
 #ifndef LIKELY
@@ -239,7 +235,7 @@ typedef struct {
  * @param[in] descNum 描述数量
  * @return HcclResult 执行结果状态码
  */
-inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum, uint32_t hcclQos)
+inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum)
 {
     for (uint32_t idx = 0; idx < descNum; idx++) {
         if (channelDesc != nullptr) {
@@ -259,17 +255,12 @@ inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t des
             channelDesc->memHandles = nullptr;
             channelDesc->memHandleNum = 0;
             
-            // 初始化hccsAttr中字段
-            channelDesc->hccsAttr.hcclQos = hcclQos;
-
             // 显式设置EndpointDesc相关字段为无效值
             if (UNLIKELY(EndpointDescInit(&channelDesc->localEndpoint, 1) != HCCL_SUCCESS) ||
                 UNLIKELY(EndpointDescInit(&channelDesc->remoteEndpoint, 1) != HCCL_SUCCESS)) {
                 return HCCL_E_INTERNAL;
             }
 
-            // 初始化hccsAttr中字段
-            channelDesc->hccsAttr.hcclQos = hcclQos;
             channelDesc++;  // 移动到下一个描述符
         } else {
             return HCCL_E_PTR;
