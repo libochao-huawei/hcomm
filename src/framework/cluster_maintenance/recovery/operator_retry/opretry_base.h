@@ -244,8 +244,7 @@ public:
     }
 
     const char *GetOpRetryMachineType() const {
-        std::string ctxType = isRootRetryCtx_ ? "Server" : "Agent";
-        return ctxType.c_str();
+        return isRootRetryCtx_ ? "Server" : "Agent";
     }
 
     bool IsRootRetryCtx() {
