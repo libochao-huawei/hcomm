@@ -37,7 +37,7 @@ public:
     HcclResult GetCcuResourceSpaceTokenInfo(const uint8_t dieId, uint64_t &tokenId,
         uint64_t &tokenValue) const;
     HcclResult GetCcuResourceSpaceTokenInfoForLocal(const uint8_t dieId, uint64_t &tokenId,
-    uint64_t &tokenValue) const
+    uint64_t &tokenValue) const;
 
     HcclResult AllocChannels(const uint8_t dieId, const ChannelPara &channelPara,
         std::vector<ChannelInfo> &channelInfos);
