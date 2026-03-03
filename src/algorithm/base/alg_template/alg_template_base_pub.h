@@ -414,7 +414,7 @@ public:
         const Stream &stream, std::vector<Stream> &subStreams, 
         std::vector<std::shared_ptr<LocalNotify>> &meshSignal, std::vector<std::shared_ptr<LocalNotify>> &meshSignalAux,
         GroupSlicesInfo &grouSlicesInfo, const HcclReduceOp reductionOp, u32 all2allOffset, const HcclDataType dataType,
-        bool isNeedSpaceBorrow, bool reverseMemUsage = false);
+        bool isNeedSpaceBorrow, bool reverseMemUsage = false, bool isA3CrossNode = false);
 
     // ReduceScatterPlantLocalReduceCombine
     virtual HcclResult Prepare(DeviceMem &cclInMem, DeviceMem &outputMem,

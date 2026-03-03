@@ -28,6 +28,9 @@ CcuContextAllGatherNHR1D::CcuContextAllGatherNHR1D(const CcuCtxArg &arg, const s
     : CcuContext(arg, transports, group)
 {
     const CcuCtxArgAllGatherNHR1D *ctxArg = dynamic_cast<const CcuCtxArgAllGatherNHR1D *>(&arg);
+    if (ctxArg == nullptr) {
+        THROW<NullPtrException>(StringFormat("CcuContextAllGatherNHR1D::ctxArg ptr is null"));
+    }
     rankId_                               = ctxArg->rankId_;
     axisId_                               = ctxArg->axisId_;
     axisSize_                             = ctxArg->axisSize_;

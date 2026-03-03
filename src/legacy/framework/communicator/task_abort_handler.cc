@@ -15,8 +15,71 @@
 namespace Hccl {
 using HcclUs = std::chrono::steady_clock::time_point;
 static std::mutex vecMutex;
+static int32_t TaskAbortPre(const std::vector<HcclCommunicator *> &commVector,
+                            const std::chrono::seconds &localtimeout)
+{
+  HcclResult ret = HCCL_SUCCESS;
+  bool isUseTimeOut = localtimeout != std::chrono::seconds(0);
+  std::chrono::seconds elapsed{};
+  for (const auto& comm : commVector) {
+    if (isUseTimeOut) {
+      std::chrono::steady_clock::time_point startTime =
+          std::chrono::steady_clock::now();
+      ret = comm->Suspend();
+      elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+          std::chrono::steady_clock::now() - startTime);
+    } else {
+      ret = comm->Suspend();
+    }
+    if (ret != HCCL_SUCCESS && ret != HCCL_E_SUSPENDING) {
+      HCCL_ERROR("[NsRecovery] finish suspend failed");
+      return static_cast<int>(TaskAbortResult::TASK_ABORT_FAIL);
+    }
+    HCCL_DEBUG("[NsRecovery]finish suspend success");
+    if (isUseTimeOut) {
+      CHK_PRT_RET(
+          elapsed > localtimeout,
+          HCCL_ERROR("[NsRecovery][suspend] NsRecovery suspend timeOut"),
+          static_cast<int>(TaskAbortResult::TASK_ABORT_TIMEOUT));
+    }
+  }
+  return static_cast<int>(TaskAbortResult::TASK_ABORT_SUCCESS);
+}
 
-int32_t ProcessTaskAbortHandleCallback(uint32_t deviceLogicId, rtDeviceTaskAbortStage stage, uint32_t timeout, void *args)
+static int32_t TaskAbortPost(const std::vector<HcclCommunicator *> &commVector,
+                             int32_t deviceLogicId,
+                             const std::chrono::seconds &localtimeout) {
+  HcclResult ret = HCCL_SUCCESS;
+  bool isUseTimeOut = localtimeout != std::chrono::seconds(0);
+  std::chrono::seconds elapsed{};
+  CHK_RET(HcclCcuTaskKillPreProcess(deviceLogicId));
+  for (const auto& comm : commVector) {
+    if (isUseTimeOut) {
+      std::chrono::steady_clock::time_point startTime =
+          std::chrono::steady_clock::now();
+      ret = comm->Clean();
+      elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+          std::chrono::steady_clock::now() - startTime);
+    } else {
+      ret = comm->Clean();
+    }
+    if (ret != HCCL_SUCCESS && ret != HCCL_E_SUSPENDING) {
+      HCCL_ERROR("[NsRecovery][Callback] finish clean failed");
+      return static_cast<int>(TaskAbortResult::TASK_ABORT_FAIL);
+    }
+    HCCL_INFO("[NsRecovery][Callback] finish clean success");
+    if (isUseTimeOut) {
+      CHK_PRT_RET(elapsed > localtimeout,
+                  HCCL_ERROR("[NsRecovery][Callback] NsRecovery Clean timeout"),
+                  static_cast<int>(TaskAbortResult::TASK_ABORT_TIMEOUT));
+    }
+  }
+  CHK_RET(HcclCcuTaskKillPostProcess(deviceLogicId));
+  return static_cast<int>(TaskAbortResult::TASK_ABORT_SUCCESS);
+}
+
+int32_t ProcessTaskAbortHandleCallback(int32_t deviceLogicId, aclrtDeviceTaskAbortStage stage, uint32_t timeout,
+                                       void* args)
 {
     HcclUs startut = std::chrono::steady_clock::now();
     CHK_PTR_NULL(args);
@@ -25,63 +88,19 @@ int32_t ProcessTaskAbortHandleCallback(uint32_t deviceLogicId, rtDeviceTaskAbort
               "size [%lu]",
               deviceLogicId, stage, commVector.size());
     const std::chrono::seconds localtimeout = std::chrono::seconds(timeout);
-    HcclResult                 ret          = HCCL_SUCCESS;
-    if (localtimeout != std::chrono::seconds(0)) {
-        if (stage == RT_DEVICE_TASK_ABORT_PRE) {
-            for (size_t i = 0; i < commVector.size(); i++) {
-                std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
-                ret                                             = commVector[i]->Suspend();
-                std::chrono::steady_clock::time_point curTime   = std::chrono::steady_clock::now();
-                if (ret != HCCL_SUCCESS && ret != HCCL_E_SUSPENDING) {
-                    HCCL_ERROR("[NsRecovery][Callback] finish suspend failed");
-                    return static_cast<int>(TaskAbortResult::TASK_ABORT_FAIL);
-                }
-                HCCL_INFO("[NsRecovery][Callback] finish suspend success");
-                const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(curTime - startTime);
-                CHK_PRT_RET(elapsed > localtimeout, HCCL_ERROR("[NsRecovery][Callback] NsRecovery suspend timeout"),
-                            static_cast<int>(TaskAbortResult::TASK_ABORT_TIMEOUT));
-            }
-        } else if (stage == RT_DEVICE_TASK_ABORT_POST) {
-            CHK_RET(HcclCcuTaskKillPreProcess(deviceLogicId));
-            for (size_t i = 0; i < commVector.size(); i++) {
-                std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
-                ret                                             = commVector[i]->Clean();
-                std::chrono::steady_clock::time_point curTime   = std::chrono::steady_clock::now();
-                if (ret != HCCL_SUCCESS && ret != HCCL_E_SUSPENDING) {
-                    HCCL_ERROR("[NsRecovery][Callback] finish clean failed");
-                    return static_cast<int>(TaskAbortResult::TASK_ABORT_FAIL);
-                }
-                HCCL_INFO("[NsRecovery][Callback] finish clean success");
-                const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(curTime - startTime);
-                CHK_PRT_RET(elapsed > localtimeout, HCCL_ERROR("[NsRecovery][Callback] NsRecovery Clean timeout"),
-                            static_cast<int>(TaskAbortResult::TASK_ABORT_TIMEOUT));
-            }
-            CHK_RET(HcclCcuTaskKillPostProcess(deviceLogicId));
-        }
-    } else {
-        if (stage == RT_DEVICE_TASK_ABORT_PRE) {
-            for (size_t i = 0; i < commVector.size(); i++) {
-                ret = commVector[i]->Suspend();
-                if (ret != HCCL_SUCCESS && ret != HCCL_E_SUSPENDING) {
-                    HCCL_ERROR("[NsRecovery][Callback] finish suspend failed");
-                    return static_cast<int>(TaskAbortResult::TASK_ABORT_FAIL);
-                }
-                HCCL_INFO("[NsRecovery][Callback] finish suspend success");
-            }
-        } else if (stage == RT_DEVICE_TASK_ABORT_POST) {
-            CHK_RET(HcclCcuTaskKillPreProcess(deviceLogicId));
-            for (size_t i = 0; i < commVector.size(); i++) {
-                ret = commVector[i]->Clean();
-                if (ret != HCCL_SUCCESS && ret != HCCL_E_SUSPENDING) {
-                    HCCL_ERROR("[NsRecovery][Callback] finish clean failed");
-                    return static_cast<int>(TaskAbortResult::TASK_ABORT_FAIL);
-                }
-                HCCL_INFO("[NsRecovery][Callback] finish clean success");
-            }
-            CHK_RET(HcclCcuTaskKillPostProcess(deviceLogicId));
+
+    if (stage == aclrtDeviceTaskAbortStage::ACL_RT_DEVICE_TASK_ABORT_PRE) {
+        auto result = TaskAbortPre(commVector, localtimeout);
+        if (result != static_cast<int>(TaskAbortResult::TASK_ABORT_SUCCESS)) {
+            return result;
         }
     }
-
+    else if (stage == aclrtDeviceTaskAbortStage::ACL_RT_DEVICE_TASK_ABORT_POST) {
+        auto result = TaskAbortPost(commVector, deviceLogicId, localtimeout);
+        if (result != static_cast<int>(TaskAbortResult::TASK_ABORT_SUCCESS)) {
+          return result;
+        }
+    }
     HcclUs endut = std::chrono::steady_clock::now();
     HCCL_INFO("[NsRecovery][Callback] ProcessTaskAbortHandleCallback success, take time:[%lld]us",
               std::chrono::duration_cast<std::chrono::microseconds>(endut - startut).count());

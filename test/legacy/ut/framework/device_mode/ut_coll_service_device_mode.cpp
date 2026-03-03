@@ -70,7 +70,7 @@ protected:
         MOCKER(HrtNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtGetNotifyID).stubs().will(returnValue(fakeNotifyId));
-        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
+        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
         MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
         MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
         MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
@@ -295,7 +295,7 @@ TEST_F(CollServiceDeviceModeTest, test_alloc_comm_resource_by_tiling_success)
     std::vector<Hccl::LinkData> linkVec;
     char *buf = new char[16 * 1024 * 1024];
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(buf)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x100000));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)0x100000));
 
     rtFusionArgsEx_t fusionArgs;
     rtCcuTaskGroup_t ccuTaskGroup;
@@ -720,7 +720,7 @@ TEST_F(CollServiceDeviceModeTest, should_success_when_AllocCommResource_aiv)
     std::vector<Hccl::LinkData> linkVec;
     char *buf = new char[16 * 1024 * 1024];
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(buf)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x100000));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)0x100000));
 
     rtFusionArgsEx_t fusionArgs;
     rtCcuTaskGroup_t ccuTaskGroup;
@@ -810,7 +810,7 @@ TEST_F(CollServiceDeviceModeTest, Ut_AllocCommResource_When_versionIs0_Expect_TH
     std::vector<Hccl::LinkData> linkVec;
     char *buf = new char[16 * 1024 * 1024];
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(buf)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x100000));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)0x100000));
 
     rtFusionArgsEx_t fusionArgs;
     rtCcuTaskGroup_t ccuTaskGroup;
@@ -916,7 +916,7 @@ TEST_F(CollServiceDeviceModeTest, Ut_AllocCommResource_When_versionIs100_Expect_
     std::vector<Hccl::LinkData> linkVec;
     char *buf = new char[16 * 1024 * 1024];
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(buf)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x100000));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)0x100000));
 
     void* mem = malloc(sizeof(Mc2InitTilingInner) + sizeof(Mc2CcTilingInner));
     Mc2InitTilingInner *mc2TilingPtr = reinterpret_cast<Mc2InitTilingInner *>(mem);
