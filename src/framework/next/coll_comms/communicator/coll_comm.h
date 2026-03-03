@@ -85,6 +85,7 @@ private:
     uint32_t rankId_{};
     std::string commId_;
     CommConfig config_{};
+    HcclCommStatus commStatus_{HcclCommStatus::HCCL_COMM_UNKNOWN};
     ManagerCallbacks callbacks_;
     
     std::unique_ptr<RankGraph> rankgraph_{nullptr};
@@ -99,12 +100,7 @@ private:
     std::size_t size_{0};
     HcclMemType memType_{HcclMemType::HCCL_MEM_TYPE_DEVICE};
 
-    HcclCommStatus commStatus_{HcclCommStatus::HCCL_COMM_UNKNOWN};
-
     // NS recover
-    std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D_{nullptr};
-    std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H_{nullptr};
-    bool isAicpuKernelLaunched_{false};
     bool isCleaned_{false};
 };
 }  // namespace hccl

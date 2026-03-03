@@ -11,9 +11,51 @@
 #ifndef NS_RESUME_LITE_H
 #define NS_RESUME_LITE_H
 
-#include "coll_comm.h"
+#include "coll_comm_aicpu.h"
+#include "aicpu/daemon/daemon_func.h"
 
 namespace hccl {
+
+using ts_kill_task_info_t = struct {
+    volatile uint8_t resv[40];
+};
+
+using ts_query_task_info_t = struct {
+    volatile uint32_t choice; // APP_ABORT_STS_QUERY_CHOICE
+    volatile uint32_t sqId;
+    volatile uint8_t resv[32];
+};
+
+using ts_query_task_ack_info_t = struct {
+    volatile uint32_t status; // APP_ABORT_STAUTS
+    volatile uint8_t resv[36];
+};
+
+using ts_ctrl_msg_body_t = struct {
+    volatile uint32_t type;
+    union {
+        ts_kill_task_info_t killTaskInfo;
+        ts_query_task_info_t query_task_info;
+        ts_query_task_ack_info_t query_task_ack_info;
+    } u; // 40 bytes
+}; // 44 bytes
+
+MAKE_ENUM(OPERATION_TYPE,
+          OP_ABORT_APP,
+          OP_QUERY_ABORT_STATUS,
+          OP_INVALID)
+
+MAKE_ENUM(APP_ABORT_STS_QUERY_CHOICE,
+          APP_ABORT_STS_QUERY_BY_SQ,
+          APP_ABORT_STS_QUERY_BY_PID,
+          APP_ABORT_STS_QUERY_INVALID)
+
+MAKE_ENUM(APP_ABORT_STAUTS,
+          APP_ABORT_TERMINATE_FAIL,
+          APP_ABORT_INIT,
+          APP_ABORT_KILL_FINISH,
+          APP_ABORT_TERMINATE_FINISH,
+          APP_ABORT_STATUS_INVALID)
 
 /**
  * @note N秒快恢device侧的处理
@@ -22,8 +64,7 @@ namespace hccl {
 class NsResumeLiteFunc : public DaemonFunc {
 public:
     static NsResumeLiteFunc &GetInstance();
-    ~NsResumeLiteFunc() override = default;
-    void Call() override;
+    virtual void Call() override;
 private:
     void HandleStopLaunch(CollCommAicpu *comm) const;
     void HandleClean(CollCommAicpu *comm);

@@ -12,6 +12,7 @@
 #include "pthread.h"
 #include "log.h"
 #include "coll_comm.h"
+#include "../../../comms/ccu/ccu_device/ccu_comp/ccu_comp.h"
 
 namespace hccl {
 using HcclUs = std::chrono::steady_clock::time_point;
@@ -43,7 +44,7 @@ int32_t ProcessTaskAbortHandleCallback(uint32_t deviceLogicId, rtDeviceTaskAbort
                             static_cast<int>(TaskAbortResult::TASK_ABORT_TIMEOUT));
             }
         } else if (stage == ACL_RT_DEVICE_TASK_ABORT_POST) {
-            CHK_RET(HcclCcuTaskKillPreProcess(deviceLogicId));
+            CHK_RET(hcomm::CcuComponent::GetInstance(deviceLogicId).SetTaskKill());
             for (size_t i = 0; i < commVector.size(); i++) {
                 std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
                 ret                                             = commVector[i]->Clean();
@@ -57,7 +58,7 @@ int32_t ProcessTaskAbortHandleCallback(uint32_t deviceLogicId, rtDeviceTaskAbort
                 CHK_PRT_RET(elapsed > localtimeout, HCCL_ERROR("[NsRecovery][Callback] NsRecovery Clean timeout"),
                             static_cast<int>(TaskAbortResult::TASK_ABORT_TIMEOUT));
             }
-            CHK_RET(HcclCcuTaskKillPostProcess(deviceLogicId));
+            CHK_RET(hcomm::CcuComponent::GetInstance(deviceLogicId).SetTaskKillDone());
         }
     } else {
         if (stage == ACL_RT_DEVICE_TASK_ABORT_PRE) {
@@ -70,7 +71,7 @@ int32_t ProcessTaskAbortHandleCallback(uint32_t deviceLogicId, rtDeviceTaskAbort
                 HCCL_INFO("[NsRecovery][Callback] finish suspend success");
             }
         } else if (stage == ACL_RT_DEVICE_TASK_ABORT_POST) {
-            CHK_RET(HcclCcuTaskKillPreProcess(deviceLogicId));
+            CHK_RET(hcomm::CcuComponent::GetInstance(deviceLogicId).SetTaskKill());
             for (size_t i = 0; i < commVector.size(); i++) {
                 ret = commVector[i]->Clean();
                 if (ret != HCCL_SUCCESS && ret != HCCL_E_SUSPENDING) {
@@ -79,7 +80,7 @@ int32_t ProcessTaskAbortHandleCallback(uint32_t deviceLogicId, rtDeviceTaskAbort
                 }
                 HCCL_INFO("[NsRecovery][Callback] finish clean success");
             }
-            CHK_RET(HcclCcuTaskKillPostProcess(deviceLogicId));
+            CHK_RET(hcomm::CcuComponent::GetInstance(deviceLogicId).SetTaskKillDone());
         }
     }
 
@@ -91,7 +92,7 @@ int32_t ProcessTaskAbortHandleCallback(uint32_t deviceLogicId, rtDeviceTaskAbort
 
 TaskAbortHandler::TaskAbortHandler()
 {
-    HrtDeviceAbortRegCallBack(ProcessTaskAbortHandleCallback, static_cast<void *>(&commVector));
+    Hccl::HrtDeviceAbortRegCallBack(ProcessTaskAbortHandleCallback, static_cast<void *>(&commVector));
 }
 
 TaskAbortHandler::~TaskAbortHandler()

@@ -394,4 +394,22 @@ namespace hccl
         return collComm_!= nullptr ? collComm_.get() : nullptr;
     }
 
+    HcclResult hcclComm::Resume()
+    {
+        #ifndef CCL_KERNEL_AICPU
+            #ifndef HCCD
+                CHK_RET(collComm_->Resume());
+                return HCCL_SUCCESS;
+            #endif
+        #endif
+        
+        CHK_RET(communicator_->Resume());
+        return HCCL_SUCCESS;
+    }
+    HcclResult hcclComm::GetCommStatus(HcclCommStatus *status)
+    {
+        *status = collComm_->GetCommStatus();
+        return HCCL_SUCCESS;
+    }
+
 } // namespace hccl

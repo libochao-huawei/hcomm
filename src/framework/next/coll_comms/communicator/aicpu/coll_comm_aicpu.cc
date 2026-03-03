@@ -1,14 +1,3 @@
-<<<<<<< HEAD
-#include "coll_comm_aicpu.h"
-
-namespace hcomm {
-
-void CollCommAicpu::NsCommClean()
-{
-    ubTransportMap_.clear();
-}
-
-=======
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
@@ -27,8 +16,14 @@ void CollCommAicpu::NsCommClean()
 #include "ub_transport_lite_impl.h"
 #include "notify_manager.h"
 #include "aicpu_hccl_def.h"
+#include "coll_comm_lite_mgr.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
+
+CollCommAicpu::~CollCommAicpu()
+{
+    CollCommLiteMgr::GetInstance()->UnRegisteCollComm(this);
+}
 
 HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
@@ -63,6 +58,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     }
 
     indOpCommInitialized_ = true;
+    CollCommLiteMgr::GetInstance()->RegisteCollComm(this);
     
     HCCL_RUN_INFO("%s group[%s] success!, deviceLogicId[%u], devicePhyId[%u], deviceType[%u]",
          __func__, identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType);
@@ -238,5 +234,23 @@ HcclResult CollCommAicpu::NotifyAlloc(NotifyMgrAicpuParam *param)
     HCCL_INFO("[CollCommAicpu][%s] comm identifier[%s], alloc notifys num[%u] success",
         __func__, hcomId.c_str(), notifyNum);
     return HCCL_SUCCESS;
->>>>>>> 528b2a436d7c7a67952b989d5f442965dedf9bbf
+}
+
+std::string CollCommAicpu::GetIdentifier()
+{
+    return identifier_;
+}
+u32 CollCommAicpu::GetDevPhyId()
+{
+    return topoInfo_.devicePhyId;
+}
+
+void CollCommAicpu::NsCommClean()
+{
+    ubTransportMap_.clear();
+}
+
+std::vector<std::shared_ptr<Thread>> CollCommAicpu::GetThreads()
+{
+    return threads_；
 }

@@ -24,6 +24,7 @@
 #include "aicpu_launch_manager.h"
 #include "channel_param.h"
 #include "hdc_pub.h"
+#include "kfc.h"
 
 using namespace hccl;
 class CollCommAicpu {
@@ -36,11 +37,15 @@ public:
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
 
     std::string GetIdentifier();
+    u32 GetDevPhyId();
 
     // N秒快恢
     void NsCommClean();
-    KfcCommand BackGroundGetCmd(){}
-    void BackGroundSetStatus(KfcStatus status, KfcErrType errorCode = KfcErrType::NONE){}
+    Hccl::KfcCommand BackGroundGetCmd(){return Hccl::KfcCommand::NS_CLEAN;}
+    void BackGroundSetStatus(Hccl::KfcStatus status, Hccl::KfcErrType errorCode = Hccl::KfcErrType::NONE){}
+    void ResetErrorReported() {
+        isErrorReported = false;
+    }
     void SetIsCommReady(bool flag)
     {
         isCommReady = flag;
@@ -85,6 +90,7 @@ private:
     bool isCommReady;
     bool needClean;
     bool isSuspended;
+    bool isErrorReported;
 };
 
 

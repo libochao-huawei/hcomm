@@ -94,6 +94,10 @@ private:
     void SetProcess(CcuOpcodeType opCode) const;
 
 private:
+    // CCU Task Kill相关状态
+    enum class CcuTaskKillStatus : uint8_t { INIT = 0, TASK_KILL = 1, KILL_DONE = 2, CLEAN_TIF = 3, INVALID = 4};
+    CcuTaskKillStatus status_{CcuTaskKillStatus::INVALID};
+    
     std::mutex innerMutex_;
     static constexpr uint32_t INVALID_DEV_ID = 0xFFFFFFFF;
     bool initFlag_{false};

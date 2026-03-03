@@ -11,7 +11,7 @@
 #ifndef HCCL_DAEMON_FUNC_NEXT_H
 #define HCCL_DAEMON_FUNC_NEXT_H
 
-namespace Hccl {
+namespace hccl {
 class DaemonFunc {
 public:
     virtual ~DaemonFunc() = default;

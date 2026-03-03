@@ -8,9 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "ns_resume_lite.h"
-#include "hcomm_c_adpt.h"
-#include "coll_comm_aicpu.h"
 #include "kfc.h"
+#include "sal_pub.h"
 #include "coll_comm_lite_mgr.h"
 
 namespace hccl {
@@ -23,65 +22,66 @@ NsResumeLiteFunc &NsResumeLiteFunc::GetInstance()
 void NsResumeLiteFunc::Call()
 {
     auto commLites = CollCommLiteMgr::GetInstance()->GetAllCollComms();
-    for (auto &comm : commLites) {
-        if (!comm.second->IsCommReady()) {
+    for (auto &deviceComm : commLites) {
+        if (!deviceComm.second->IsCommReady()) {
             continue;
         }
-        HandleStopLaunch(comm);
-        HandleClean(comm);
+        HandleStopLaunch(deviceComm.second);
+        HandleClean(deviceComm.second);
     }
 }
 
-void NsResumeLiteFunc::HandleStopLaunch(CollCommAicpu *comm) const
+void NsResumeLiteFunc::HandleStopLaunch(CollCommAicpu *deviceComm) const
 {
-    if (comm->IsSuspended()) {
+    if (deviceComm->IsSuspended()) {
         return;
     }
 
-    Hccl::KfcCommand cmd = comm->BackGroundGetCmd();
+    Hccl::KfcCommand cmd = deviceComm->BackGroundGetCmd();
     if (cmd != Hccl::KfcCommand::NS_STOP_LAUNCH) {
         return;
     }
     HCCL_INFO("[NsRecovery][BackGround] received KfcCommand[NS_STOP_LAUNCH]");
-    comm->SetNeedClean(true);
-    comm->SetIsSuspended(true);
-    comm->BackGroundSetStatus(Hccl::KfcStatus::STOP_LAUNCH_DONE);
+    deviceComm->SetNeedClean(true);
+    deviceComm->SetIsSuspended(true);
+    deviceComm->BackGroundSetStatus(Hccl::KfcStatus::STOP_LAUNCH_DONE);
     HCCL_INFO("[NsRecovery][BackGround] send KfcStatus[STOP_LAUNCH_DONE]");
 }
 
-void NsResumeLiteFunc::HandleClean(CollCommAicpu *comm)
+void NsResumeLiteFunc::HandleClean(CollCommAicpu *deviceComm)
 {
-    if (!comm->IsNeedClean()) {
+    if (!deviceComm->IsNeedClean()) {
         return;
     }
-    Hccl::KfcCommand cmd = comm->BackGroundGetCmd();
+    Hccl::KfcCommand cmd = deviceComm->BackGroundGetCmd();
     if (cmd != Hccl::KfcCommand::NS_CLEAN) {
         return;
     }
     HCCL_INFO("[NsRecovery][BackGround] received KfcCommand[NS_CLEAN]");
     deviceComm->NsCommClean();
-    StreamClean(comm);
-    comm->SetNeedClean(false);
-    comm->BackGroundSetStatus(Hccl::KfcStatus::CLEAN_DONE);
-    comm->ResetErrorReported();
+    StreamClean(deviceComm);
+    deviceComm->SetNeedClean(false);
+    deviceComm->BackGroundSetStatus(Hccl::KfcStatus::CLEAN_DONE);
+    deviceComm->ResetErrorReported();
     HCCL_INFO("[NsRecovery][BackGround] send KfcStatus[CLEAN_DONE]");
 }
 
 constexpr u64 DEVICE_QUERY_TIMEOUT_NSEC = 5000000000U; // 5秒
 
-void NsResumeLiteFunc::StreamClean(CollCommAicpu *comm)
+void NsResumeLiteFunc::StreamClean(CollCommAicpu *deviceComm)
 {
     // 查询停流是否完成
-    u32 localDevId=0;
+    u32 localDevId{0};
     auto ret = drvGetLocalDevIDByHostDevID(deviceComm->GetDevPhyId(), &localDevId);
     if (ret != DRV_ERROR_NONE) {
-        std::string formatStr = StringFormat(
-            "NsResumeLiteFunc::%s call drvGetLocalDevIDByHostDevID failed, devPhyId %u, ret %d", __func__, comm->GetDevPhyId(), ret);
-        THROW<DrvApiException>(formatStr);
+        HCCL_ERROR("NsResumeLiteFunc::%s call drvGetLocalDevIDByHostDevID failed, devPhyId %u, ret %d", __func__, 
+            deviceComm->GetDevPhyId(), ret);
+        return;
     }
     if (DeviceQuery(localDevId, APP_ABORT_STAUTS::APP_ABORT_KILL_FINISH, DEVICE_QUERY_TIMEOUT_NSEC) != HCCL_SUCCESS) {
         deviceComm->BackGroundSetStatus(Hccl::KfcStatus::ERROR, Hccl::KfcErrType::EXEC);
-        THROW<InternalException>("[NsRecovery][BackGround] Stream Stop failed");
+        HCCL_ERROR("[NsRecovery][BackGround] Stream Stop failed");
+        return;
     }
 
     // 通过thread获得streamlite信息，清理资源
