@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCL_DAEMON_FUNC_H
-#define HCCL_DAEMON_FUNC_H
+#ifndef HCCL_DAEMON_FUNC_NEXT_H
+#define HCCL_DAEMON_FUNC_NEXT_H
 
 namespace Hccl {
 class DaemonFunc {
@@ -18,4 +18,4 @@ public:
     virtual void Call() = 0;
 };
 } // namespace Hccl
-#endif // HCCL_DAEMON_FUNC_H
+#endif // HCCL_DAEMON_FUNC_NEXT_H

@@ -688,6 +688,8 @@ HcclResult HcommChannelResume(const ChannelHandle *channelList, uint32_t channel
     }
 
     return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx)
 {
     if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
