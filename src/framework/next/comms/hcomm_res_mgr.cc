@@ -81,4 +81,4 @@ HcommResMgr::~HcommResMgr()
     // 未来需在析构函数中主动调用各种单例销毁流程，保证销毁时序
 }
 
-} // namespace Hccl
+} // namespace hcomm
