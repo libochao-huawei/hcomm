@@ -474,7 +474,7 @@ static void ReleaseBlockRes(const uint32_t blockSize, std::vector<BlockInfo> &bl
     uint32_t startBlockId = (startId - blocks[0].startId) / blockSize;
     uint32_t blockNum     = num / blockSize;
 
-    for (uint32_t k = startBlockId; k < startBlockId + blockNum; k++) {
+    for (uint32_t k = startBlockId; (k < startBlockId + blockNum) && (k < blocks.size()); k++) {
         blocks[k].handle    = 0;
         blocks[k].allocated = false;
     }
