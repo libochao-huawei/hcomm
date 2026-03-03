@@ -77,6 +77,7 @@ InnerNetDev::~InnerNetDev()
     } catch (const NetworkApiException &e) {
         HCCL_ERROR("Failed to destory JFC handle: %s.", e.what());
     }
+
     if (localProto_ == LinkProtoType::RDMA) {
         try {
             if (tokenHandle_ != 0) {
