@@ -40,6 +40,7 @@ set(rdma_agent_utest_list
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client/async/ra_ctx.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client/async/ra_socket.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/adapter/ra_adp.c
+    ${SRC_DIR}/src/platform/hccp/rdma_agent/adapter/ra_adp_ping.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/adapter/ra_adp_socket.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/adapter/tlv/ra_adp_tlv.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/adapter/async/ra_adp_pool.c

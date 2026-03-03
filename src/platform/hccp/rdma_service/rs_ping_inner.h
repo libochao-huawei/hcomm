@@ -263,5 +263,6 @@ struct RsPingPongDfx {
 };
 
 uint32_t RsPingGetTripTime(struct RsPingTimestamp *timestamp);
+int RsEpollEventPingHandle(struct rs_cb *rsCb, int fd);
 
 #endif // RS_PING_INNER_H
