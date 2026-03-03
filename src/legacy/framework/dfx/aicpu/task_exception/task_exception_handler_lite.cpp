@@ -48,6 +48,25 @@ void TaskExceptionHandlerLite::Register() const
     TaskExceptionFunc::GetInstance().RegisterCallback(Process);
 }
 
+void GetErrMsgInfo(std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &errorMessage) {
+    if (taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
+        || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
+        || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB) {
+        errMsgInfo.locEid = taskInfo->taskParam_.taskPara.DMA.locEid;
+        errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.DMA.rmtEid;
+        errMsgInfo.ubCqeStatus = exceptionInfo->errorCode & 0xFF;
+        errMsgInfo.linkType = taskInfo->taskParam_.taskPara.DMA.linkType;
+        errMsgInfo.size = taskInfo->taskParam_.taskPara.DMA.size;
+    } else if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
+        || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
+        errMsgInfo.locEid = taskInfo->taskParam_.taskPara.Reduce.locEid;
+        errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.Reduce.rmtEid;
+        errMsgInfo.ubCqeStatus = exceptionInfo->errorCode & 0xFF;
+        errMsgInfo.linkType = taskInfo->taskParam_.taskPara.Reduce.linkType;
+        errMsgInfo.size = taskInfo->taskParam_.taskPara.DMA.size;
+    }
+}
+
 HcclResult GenerateErrorMessageReport(CommunicatorImplLite *aicpuComm, std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &errMsgInfo, const rtLogicCqReport_t* exceptionInfo)
 {
     // 获取需要上报的关键信息
@@ -86,18 +105,8 @@ HcclResult GenerateErrorMessageReport(CommunicatorImplLite *aicpuComm, std::shar
 
     memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag), taskInfo->dfxOpInfo_->op_.opTag.c_str(), taskInfo->dfxOpInfo_->op_.opTag.size());
     memcpy_s(errMsgInfo.group, sizeof(errMsgInfo.group), aicpuComm->GetId().c_str(), aicpuComm->GetId().size());
-    if (taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
-        || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
-        || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB) {
-        errMsgInfo.locEid = taskInfo->taskParam_.taskPara.DMA.locEid;
-        errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.DMA.rmtEid;
-        errMsgInfo.ubCqeStatus = exceptionInfo->errorCode & 0xFF;
-    } else if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
-        || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
-        errMsgInfo.locEid = taskInfo->taskParam_.taskPara.Reduce.locEid;
-        errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.Reduce.rmtEid;
-        errMsgInfo.ubCqeStatus = exceptionInfo->errorCode & 0xFF;
-    }
+
+    GetErrMsgInfo(taskInfo, errMsgInfo);
 
     errMsgInfo.rtCqErrorType = exceptionInfo->errorType;
     errMsgInfo.rtCqErrorCode = exceptionInfo->errorCode;
