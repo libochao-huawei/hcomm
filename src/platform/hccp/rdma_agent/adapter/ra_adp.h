@@ -21,7 +21,6 @@
 #define TOKEN_RATE      400 /* 400 tokens per 1ms */
 #define HDC_ACCEPT_SLEEP_TIME 100 /* 100us */
 #define HCCP_MAX_CHIP_ID 3U
-#define ERR_EJ1 "EJ0001"
 #define ERR_LEN 6
 #define HAVE_OP_RIGHT 1
 #define HAVE_NOT_OP_RIGHT 0

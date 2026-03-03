@@ -116,32 +116,29 @@ constexpr uint32_t HCCL_QOS_LEVEL_2_LIMIT = 4;
 constexpr uint32_t HCCL_QOS_LEVEL_3_LIMIT = 7;
 
 /* error message相关 */
+    /* EI0004 */
+    const std::string RANKTABLE_PARSE_ERROR_REASON =
+        "The rankTable file path does not exist, the permission is insufficient, or the JSON format is incorrect.";
+    /* EI0006 */
     const std::string GET_SOCKET_TIMEOUT_REASON_CLOSE_DETECT =
-    " Connection fault detection has been disabled. "
-    "1. The remote does not initiate a connect request. some NPUs in the cluster are abnormal.\
-    2. The remote does not initiate a connect request because the collective communication operator is " \
-        "started too late or is not started by some NPU in the cluster.\
-    3. The communication link is disconnected. (For example, the IP addresses are not on " \
+        "Connection fault detection has been disabled. "\
+        "1. The remote end does not initiate a connection request. some NPUs in the cluster are abnormal. "\
+        "2. The remote end does not initiate a connection request because the collective communication operator is "\
+        "started too late or is not started by some NPUs in the cluster. "\
+        "3. The communication link is disconnected. (For example, the IP addresses are not on "\
         "the same network segment or the TLS configurations are inconsistent.)";
-    const std::string BLOCK_RECV_TIMEOUT_REASON =
-    "Remote Rank did not send the data in time. Please check the reason for the rank being stuck";
     const std::string GET_SOCKET_TIMEOUT_REASON_WITH_EVENT =
-    "The error above was caused by a failure at the site in the cluster where the events happened.Please "\
-            "confirm whether the link between SRCRANK and DSTRANK or the DSTRANK process is healthy.";
-    const std::string GET_SOCKET_TIMEOUT_REASON_WITH_EVENT_NOTE =
-    "NOTE: The detection results are only used to assist in locating the problem and may not represent the "\
-        "actual fault site in some complex scenarios. Please continue to analyze and confirm based on the current "\
-        "detected fault site";
+        "1. If the link setup timeout is reported on both ends, check the network connectivity between the two ends."\
+        "2. If dstRank reports other exceptions, locate the cause based on the exception information of dstRank."\
+        "3. If dstRank does not report any error, the possible cause is that the service process is suspended or exits in advance";
     const std::string GET_SOCKET_TIMEOUT_REASON_WITHOUT_EVENT =
-    "No abnormal periods were discovered. please prioritize investigating the consistency of cluster script behaviors.";
-
-    const std::string RANKTABLE_DETECT_CONNECT_TIMEOUT_REASON =
-        "1. The NIC configuration on the host side is incorrect or not connected, "\
-        "or the HCCL_SOCKET_IFNAME environment variable is configured incorrectly."\
-        "2. The timeout interval for the HCCL_CONNECT_TIMEOUT environment variable is set too short."\
-        "3. The peer process may have encountered an exception.";
-    const std::string RANKTABLE_DETECT_RECV_FAULT_REASON = "Within the timeout period, all ranks in the communication"\
-        " domain failed to connect to the server.";
+        "1. The communication operator types or parameters called by some ranks in a communicator are inconsistent. "\
+        "For example, some ranks call allreduce, while other ranks call broadcast."\
+        "2. The send recv operator depends on the ring."\
+        "You can check the peer dependency relationship of link establishment and the operator information in the plog logs "\
+        "to locate and analyze the fault. (You need to enable log recording using HCCL_ENTRY_LOG_ENABLE.) "\
+        "For details about the troubleshooting method, search for the keyword \"EI0006\" on "\
+        "https://www.hiascend.com/en/dovument/.";
 
 /* 对关键报错日志提供多级检索关键字 */
 /* 一级检索关键字 */
