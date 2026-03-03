@@ -1,5 +1,5 @@
-#ifndef BASE_H
-#define BASE_H
+#ifndef BASE_IMPL_H
+#define BASE_IMPL_H
 
 #include <memory>
 #include <vector>
@@ -10,11 +10,10 @@
 
 
 namespace hcomm {
-class RemoteNotifyNewImpl;
-class RemoteNotifyNew {
+class RemoteNotifyNewImpl {
 public:
-    RemoteNotifyNew() __attribute__((weak));
-    ~RemoteNotifyNew() __attribute__((weak));
+    RemoteNotifyNewImpl() __attribute__((weak));
+    ~RemoteNotifyNewImpl() __attribute__((weak));
     uint32_t Init(const std::vector<char>& byteVector) __attribute__((weak));
 
     uint32_t Open() __attribute__((weak));
@@ -26,11 +25,9 @@ public:
     uint32_t String(std::string test) __attribute__((weak));
 
 private:
-    std::unique_ptr<RemoteNotifyNewImpl> pimpl_;
-};
 
-void test();
+};
 
 }
 
-#endif // BASE_H
+#endif // BASE_IMPL_H
