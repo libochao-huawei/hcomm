@@ -196,19 +196,17 @@ public:
         size_t len = str.length();
         if (len < MIN_IPV4_LEN || len > MAX_IPV4_LEN) {
             return false;
-        } 
+        }
         uint32_t num = 0;
         uint32_t dotCount = 0;
         bool hasDigit = false;
         for (size_t i = 0; i < len; ++i) {
             char c = str[i];
-            
             if (c >= '0' && c <= '9') {
                 // 检查前导零
                 if (!hasDigit && c == '0' && i + 1 < len && str[i + 1] != '.') {
                     return false;
                 }
-                
                 num = num * BASE + (c - '0');
                 hasDigit = true;
                 if (num > MAX_IPV4_SEGMENT_VALUE) {
