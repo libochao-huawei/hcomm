@@ -497,6 +497,9 @@ void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rm
 void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
     const std::vector<BaseTransportLiteImpl::TransferOp> &transferOp, const StreamLite &stream)
 {
+    if (UNLIKELY(loc.empty())) {
+        return;
+    }
     ClearConnOut();
     SqeConfigLite cfg;
     auto taskId = stream.GetRtsq()->GetTaskId();
