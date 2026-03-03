@@ -603,6 +603,10 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
 
     HCCL_INFO("unpack %s %s, locNum=%u, rmtNum=%u", type.Describe().c_str(), GetLinkDescInfo().c_str(), locNum,
                rmtNum);
+    if ((type != UbRmtBufType::BUFFER) && (rmtNum != locNum)) { 
+        MACRO_THROW(InvalidParamsException, 
+                    StringFormat("%s, locNum=%u is not equal to rmtNum=%u", type.Describe().c_str(), locNum, rmtNum)); 
+    }
 
     for (u32 i = 0; i < rmtNum; i++) {
         u32 pos;
