@@ -225,7 +225,7 @@ HcclResult HcomDestroyGroup(const char *group);
  * @param IdxList A list identifying the index of end gradient in each segment.
  * @return HcclResult
  */
-extern HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32 *IdxList);
+extern HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32 *inputIdxList);
 
 /**
  * @brief Set the gradient split strategy with in the group, according to gradient data size.

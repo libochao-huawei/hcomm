@@ -182,7 +182,6 @@ public:
         }
     }
 
-
     bool operator != (const HcclIpAddress &that) const
     {
         return !(*this == that);
@@ -199,10 +198,8 @@ public:
                                            (this->readableAddr < that.readableAddr);
     }
 
-
     HcclResult SetReadableAddress(const std::string &address);
     HcclResult SetIfName(const std::string &name);
-
 private:
     HcclResult SetBianryAddress(s32 family, const union HcclInAddr &address);
 
@@ -213,8 +210,6 @@ private:
     s32 family{};
     s32 scopeID{};
     Eid eid{};
-    
-
 };
 }
 #endif // HCCL_IP_ADDRESS_H
