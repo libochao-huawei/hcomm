@@ -93,6 +93,7 @@ set(hccl_include_list
 
     ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
     ${HCCL_BASE_DIR}/framework/next/coll_comms/
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank/comm_mems/
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank_pairs
@@ -789,7 +790,8 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/sockets/
         ${HCCL_BASE_DIR}/framework/next/comms/endpoints/
         ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
-
+        ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator/aicpu
+        
     )
 
     target_include_directories(ccl_kernel PRIVATE

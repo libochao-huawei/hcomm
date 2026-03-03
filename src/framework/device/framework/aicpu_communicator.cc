@@ -5172,69 +5172,6 @@ HcclResult HcclCommAicpu::AllocChannelResource(HcclIndOpChannelRemoteResV3 *comm
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommAicpu::AllocChannelResourceV2(HcclChannelUrmaRes *commParam)
-{
-    HCCL_INFO("[HcclCommAicpu][%s] deviceLogicId[%d], devicePhyId[%u], deviceType[%d], commParam->channelList[%p], "
-        "commParam->listNum[%u], commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
-        __func__, topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType, commParam->channelList,
-        commParam->listNum, commParam->uniqueIdAddr, commParam->uniqueIdSize);
-    CHK_PRT(InitUrmaChannel(commParam));
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcclCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
-{
-    HCCL_INFO("[HcclCommAicpu][%s] commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
-        __func__, commParam->uniqueIdAddr, commParam->uniqueIdSize);
-
-    for (u32 index = 0; index < commParam->listNum; index++) {
-        std::vector<char> data(commParam->singleUniqueIdSize);
-
-        // 计算地址块的偏移
-        u8* currentSrcAddr = reinterpret_cast<u8*>(commParam->uniqueIdAddr) + index * commParam->singleUniqueIdSize;
-        CHK_SAFETY_FUNC_RET(memcpy_s(data.data(), data.size(), currentSrcAddr, commParam->singleUniqueIdSize));
-
-        // 反序列化得到device侧transport对象
-        Hccl::AicpuResPackageHelper helper;
-        auto dataVec = helper.ParsePackedData(data);
-
-        Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM; // todo 待修改
-        if (static_cast<u32>(resType) >= dataVec.size()) {
-            HCCL_ERROR("[HcclCommAicpu][%s] fail, resType[%d], dataVec size[%u]", __func__, resType, dataVec.size());
-            return HCCL_E_PARA;
-        }
-        ChannelHandle channelHandle;
-        CHK_RET(ParsePackData(dataVec[resType].data, channelHandle));
-
-        // 恢复出的channelHandle回填到commParam中
-        ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
-        channelList[index] = channelHandle;
-        HCCL_INFO("[HcclCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
-            __func__, index, currentSrcAddr, commParam->singleUniqueIdSize, channelHandle);
-    }
-
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcclCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &handle)
-{
-    HCCL_DEBUG("[HcclCommAicpu][%s] data: ptr[%p], size[%u]", __func__, data.data(), data.size());
-    Hccl::BinaryStream binaryStream(data);
-
-    std::vector<char> transpUniqueId;
-    binaryStream >> transpUniqueId;
-
-    std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
-    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
-        return HCCL_E_PTR);
-    CHK_SMART_PTR_NULL(ubTransportLiteImpl);
-
-    handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
-    ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
-
-    return HCCL_SUCCESS;
-}
-
 HcclResult HcclCommAicpu::InitP2pChannel(HcclIndOpChannelRemoteResV3 *commParam, uint32_t channelIndex)
 {
     HcclIndOpChannelRemoteResV2 &remoteResV2 = commParam->remoteResV2[channelIndex];
