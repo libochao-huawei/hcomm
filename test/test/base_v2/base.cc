@@ -82,3 +82,13 @@ uint32_t RemoteNotifyV2::V2Func()
     return 0;
 }
 }
+
+hcomm::IRemoteNotify* CreateRemoteNotify()
+{
+    return new hcomm::RemoteNotifyV2();
+}
+
+void DestroyRemoteNotify(hcomm::IRemoteNotify* ptr)
+{
+    delete ptr;
+}

@@ -6,7 +6,7 @@
 #include <cstdint>
 #include "stdio.h"
 #include "stdlib.h"
-
+#include "base_interface.h"
 
 namespace hcomm {
 // class RemoteNotifyImpl;
@@ -28,7 +28,7 @@ private:
     // std::unique_ptr<RemoteNotifyImpl> pimpl_;
 };
 
-class RemoteNotifyV2 {
+class RemoteNotifyV2 : public IRemoteNotify {
 public:
     RemoteNotifyV2();
     ~RemoteNotifyV2();
