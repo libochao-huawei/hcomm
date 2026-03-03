@@ -135,7 +135,6 @@ typedef int32_t (*rtsDeviceTaskAbortCallback)(uint32_t devId, rtDeviceTaskAbortS
 extern rtError_t rtsSetDeviceTaskAbortCallback(const char_t *regName, rtsDeviceTaskAbortCallback callback, void *args);
 extern rtError_t rtsCntNotifyGetId(rtCntNotify_t cntNotify, uint32_t *notifyId);
 
-
 #define RT_MEMORY_DEFAULT (0x0U)   // default memory on device
 #define RT_MEMORY_HBM (0x2U)       // HBM memory on device
 #define RT_MEMORY_RDMA_HBM (0x3U)  // RDMA-HBM memory on device
@@ -250,8 +249,6 @@ s32     HrtGetDevice();
 void                  HrtSetDevice(s32 deviceLogicId);
 void                  HrtResetDevice(s32 deviceLogicId);
 u32                   HrtGetDeviceCount();
-
-
 
 HcclResult HrtGetDeviceInfo(uint32_t deviceLogicId, int32_t moduleType, int32_t infoType, int64_t &val);
 HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainboardId);

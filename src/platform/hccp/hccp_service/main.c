@@ -133,7 +133,6 @@ int llt_main(int argc, char *argv[])
 
     ret = HccpInit(param.chipId, param.pid, param.hdcType, param.whiteListStatus);
     if (ret) {
-        ReportProcessStartUpErrorCode((uint32_t)param.logicId, 0, (uint32_t)param.pid, 0, ERR_EJ1, ERR_LEN);
         hccp_err("hccp init error[%d]", ret);
         goto hccp_init_fail;
     }
