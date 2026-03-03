@@ -218,6 +218,7 @@ STATIC int RsGetJfcOpt(struct RsCtxJfcCb *jfcCb, urma_jfc_t *jfc)
 
     jfcCb->bufAddr = cqBuffVa;
     jfcCb->swdbAddr = dbVa;
+    hccp_warn("@@@ RsGetJfcOpt cqBuffVa: %lu, dbVa: %ld", cqBuffVa, dbVa);
 
     ret = RsMmapJfcVa(jfcCb);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_mmap_jfc_va failed, ret:%d", ret), ret);
