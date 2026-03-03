@@ -698,8 +698,8 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/rank_graph
         ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel
         ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel/device
-        
-
+        ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/data_api
+    
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_reduce
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoall

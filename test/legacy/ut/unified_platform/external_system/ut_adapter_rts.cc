@@ -13,6 +13,8 @@
 #include <mockcpp/mockcpp.hpp>
 #define private public
 #define protected public
+#include "kernel_param_lite.h"
+#include "not_support_exception.h"
 #include "orion_adapter_rts.h"
 #include "runtime_api_exception.h"
 #include "invalid_params_exception.h"
@@ -91,7 +93,7 @@ TEST_F(AdapterRtsTest, HrtGetDevicePhyIdByIndex_return_ok)
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue(fakeDeviceType));
 
     int32_t fakeDevicePhyId = 0;
-    MOCKER(rtsGetPhyDevIdByLogicDevId)
+    MOCKER(aclrtGetPhyDevIdByLogicDevId)
         .stubs()
         .with(any(), outBoundP(&fakeDevicePhyId, sizeof(fakeDevicePhyId)))
         .will(returnValue(RT_ERROR_NONE));
@@ -106,7 +108,7 @@ TEST_F(AdapterRtsTest, HrtGetDevicePhyIdByIndex_return_ok)
 TEST_F(AdapterRtsTest, HrtGetDevicePhyIdByIndex_return_nok)
 {
     // Given
-    MOCKER(rtsGetPhyDevIdByLogicDevId).stubs().will(returnValue(1));
+    MOCKER(aclrtGetPhyDevIdByLogicDevId).stubs().will(returnValue(1));
 
     // when
 
@@ -261,49 +263,6 @@ TEST_F(AdapterRtsTest, HrtGetNotifyID_return_nok)
     EXPECT_THROW(HrtGetNotifyID(nullptr), RuntimeApiException);
 }
 
-TEST_F(AdapterRtsTest, HrtGetDeviceInfo_return_ok)
-{
-    // Given
-    void *fakeHandle = nullptr;
-    MOCKER(rtGetDeviceInfo)
-        .stubs()
-        .with(any(), outBoundP(&fakeHandle, sizeof(fakeHandle)))
-        .will(returnValue(RT_ERROR_NONE));
-
-    // when
-    void *handle = HrtDevBinaryRegister(nullptr);
-
-    // then
-    EXPECT_EQ(fakeHandle, handle);
-}
-
-TEST_F(AdapterRtsTest, HrtDevBinaryRegister_return_ok)
-{
-    // Given
-    void *fakeHandle = nullptr;
-    MOCKER(rtDevBinaryRegister)
-        .stubs()
-        .with(any(), outBoundP(&fakeHandle, sizeof(fakeHandle)))
-        .will(returnValue(RT_ERROR_NONE));
-
-    // when
-    void *handle = HrtDevBinaryRegister(nullptr);
-
-    // then
-    EXPECT_EQ(fakeHandle, handle);
-}
-
-TEST_F(AdapterRtsTest, HrtDevBinaryRegister_return_nok)
-{
-    // Given
-    MOCKER(rtDevBinaryRegister).stubs().will(returnValue(1));
-
-    // when
-    rtDevBinary_t bin = {1, 2, nullptr, 4};
-    // then
-    EXPECT_THROW(HrtDevBinaryRegister(&bin), RuntimeApiException);
-}
-
 TEST_F(AdapterRtsTest, HrtGetStreamId_return_ok)
 {
     // Given
@@ -390,11 +349,11 @@ TEST_F(AdapterRtsTest, HrtMalloc_return_ok)
 {
     // Given
     void *fakeDevPtr = nullptr;
-    MOCKER(rtMalloc).stubs().with(outBoundP(&fakeDevPtr, sizeof(fakeDevPtr))).will(returnValue(RT_ERROR_NONE));
+    MOCKER(aclrtMallocWithCfg).stubs().with(outBoundP(&fakeDevPtr, sizeof(fakeDevPtr))).will(returnValue(ACL_SUCCESS));
 
     // when
     u64         size    = 100;
-    rtMemType_t memType = 2;
+    aclrtMemType_t memType = 2;
     void       *devPtr  = HrtMalloc(size, memType);
     // then
     EXPECT_EQ(fakeDevPtr, devPtr);
@@ -403,9 +362,9 @@ TEST_F(AdapterRtsTest, HrtMalloc_return_ok)
 TEST_F(AdapterRtsTest, HrtMalloc_return_nok)
 {
     // Given
-    MOCKER(rtMalloc).stubs().will(returnValue(1));
+    MOCKER(aclrtMallocWithCfg).stubs().will(returnValue(1));
     u64         size    = 100;
-    rtMemType_t memType = 2;
+	aclrtMemType_t memType = 2;
     // then
     EXPECT_THROW(HrtMalloc(size, memType), RuntimeApiException);
 }
@@ -584,25 +543,25 @@ TEST_F(AdapterRtsTest, HrtStreamActive_return_nok)
 
 TEST_F(AdapterRtsTest, HrtPointerGetAttributes_return_ok)
 {
-    rtPointerAttributes_t ptrAttr
-        = {tagRtMemoryType::RT_MEMORY_TYPE_DEVICE, rtMemLocationType::RT_MEMORY_LOC_DEVICE, 0, 32};
+	aclrtPtrAttributes  ptrAttr
+        = {.location = {.id = 0, .type = aclrtMemLocationType::ACL_MEM_LOCATION_TYPE_DEVICE}, .pageSize = 32 };
     // Given
-    MOCKER(rtPointerGetAttributes).stubs().with(outBoundP(&ptrAttr, sizeof(ptrAttr))).will(returnValue(RT_ERROR_NONE));
+    MOCKER(aclrtPointerGetAttributes).stubs().with(any(), outBoundP(&ptrAttr, sizeof(ptrAttr))).will(
+		returnValue(ACL_SUCCESS));
 
     // when
-    rtPointerAttributes_t result = HrtPointerGetAttributes(nullptr);
+    aclrtPtrAttributes  result = HrtPointerGetAttributes(nullptr);
 
     // then
-    EXPECT_EQ(ptrAttr.memoryType, result.memoryType);
-    EXPECT_EQ(ptrAttr.locationType, result.locationType);
-    EXPECT_EQ(ptrAttr.deviceID, result.deviceID);
+    EXPECT_EQ(ptrAttr.location.id, result.location.id);
+    EXPECT_EQ(ptrAttr.location.type, result.location.type);
     EXPECT_EQ(ptrAttr.pageSize, result.pageSize);
 }
 
 TEST_F(AdapterRtsTest, HrtPointerGetAttributes_return_nok)
 {
     // Given
-    MOCKER(rtPointerGetAttributes).stubs().will(returnValue(1));
+    MOCKER(aclrtPointerGetAttributes).stubs().will(returnValue(1));
 
     // then
     EXPECT_THROW(HrtPointerGetAttributes(nullptr), RuntimeApiException);
@@ -610,18 +569,18 @@ TEST_F(AdapterRtsTest, HrtPointerGetAttributes_return_nok)
 
 TEST_F(AdapterRtsTest, PrintMemoryAttr_run)
 {
-    rtPointerAttributes_t memAttr
-        = {rtMemoryType_t::RT_MEMORY_TYPE_DEVICE, rtMemLocationType::RT_MEMORY_LOC_DEVICE, 0, 1};
+	aclrtPtrAttributes ptrAttr
+		= {.location = {.id = 0, .type = aclrtMemLocationType::ACL_MEM_LOCATION_TYPE_DEVICE}, .pageSize = 1};
     // Given
-    MOCKER(HrtPointerGetAttributes).stubs().will(returnValue(memAttr));
+    MOCKER(HrtPointerGetAttributes).stubs().will(returnValue(ptrAttr));
     PrintMemoryAttr(nullptr);
 }
 
 TEST_F(AdapterRtsTest, HrtDevMemAlignWithPage_pagesize_zero)
 {
     // Given
-    tagRtPointerAttributes ptrAttr
-        = {tagRtMemoryType::RT_MEMORY_TYPE_DEVICE, rtMemLocationType::RT_MEMORY_LOC_DEVICE, 1, 0};
+    aclrtPtrAttributes ptrAttr
+	    = {.location = {.id = 0, .type = aclrtMemLocationType::ACL_MEM_LOCATION_TYPE_DEVICE}, .pageSize = 0};
     MOCKER(HrtPointerGetAttributes).stubs().with(any()).will(returnValue(ptrAttr));
 
     // when
@@ -638,8 +597,8 @@ TEST_F(AdapterRtsTest, HrtDevMemAlignWithPage_pagesize_zero)
 TEST_F(AdapterRtsTest, HrtDevMemAlignWithPage_pargesize_nzero)
 {
     // Given
-    tagRtPointerAttributes ptrAttr
-        = {tagRtMemoryType::RT_MEMORY_TYPE_DEVICE, rtMemLocationType::RT_MEMORY_LOC_DEVICE, 1, 32};
+    aclrtPtrAttributes ptrAttr
+	    = {.location = {.id = 0, .type = aclrtMemLocationType::ACL_MEM_LOCATION_TYPE_DEVICE}, .pageSize = 32};
     MOCKER(HrtPointerGetAttributes).stubs().with(any()).will(returnValue(ptrAttr));
     // when
     // when
@@ -656,7 +615,7 @@ TEST_F(AdapterRtsTest, HrtDevMemAlignWithPage_pargesize_nzero)
 TEST_F(AdapterRtsTest, HrtDevMemAlignWithPage_return_nok)
 {
     // Given
-    MOCKER(rtPointerGetAttributes).stubs().will(returnValue(1));
+    MOCKER(aclrtPointerGetAttributes).stubs().will(returnValue(1));
 
     // then
     void *ptr     = nullptr;
@@ -827,7 +786,7 @@ TEST_F(AdapterRtsTest, HrtGetCntNotifyId_return_nok)
     auto res = HrtGetCntNotifyId(nullptr);
 }
 
-TEST_F(AdapterRtsTest, HrtUbDbSend_run_success)
+TEST_F(AdapterRtsTest, HrtUbDbSend_run_exception_NotSupportException)
 {
     // Given
     rtNotify_t ptr = (rtNotify_t *)0x1000000;
@@ -846,10 +805,10 @@ TEST_F(AdapterRtsTest, HrtUbDbSend_run_success)
     info.info[0] = hrtUbDbDetailInfo1;
 
     // then
-    HrtUbDbSend(info, ptr);
+    EXPECT_THROW(HrtUbDbSend(info, ptr), NotSupportException);
 }
 
-TEST_F(AdapterRtsTest, HrtUbDirectSend_run_success)
+TEST_F(AdapterRtsTest, HrtUbDirectSend_run_exception_NotSupportException)
 {
     // Given
     rtNotify_t ptr = (rtNotify_t *)0x1000000;
@@ -863,7 +822,7 @@ TEST_F(AdapterRtsTest, HrtUbDirectSend_run_success)
     info.wqeSize    = 1;
 
     // then
-    HrtUbDirectSend(info, ptr);
+    EXPECT_THROW(HrtUbDirectSend(info, ptr), NotSupportException);
 }
 
 TEST_F(AdapterRtsTest, test_HrtNotifyCreateWithFlag_return_ok)
@@ -891,30 +850,41 @@ TEST_F(AdapterRtsTest, HrtNotifyCreateWithFlag_return_nok)
     EXPECT_THROW(HrtNotifyCreateWithFlag(100, 100), RuntimeApiException);
 }
 
-TEST_F(AdapterRtsTest, test_HrtAicpuKernelLaunchExWithArgs_ok)
+TEST_F(AdapterRtsTest, test_HrtAicpuLaunchKernelWithHostArgs_ok)
 {
     // Given
-    MOCKER(rtAicpuKernelLaunchExWithArgs).stubs().will(returnValue(0));
+    MOCKER(aclrtLaunchKernelWithHostArgs).stubs().will(returnValue(0));
 
     const char_t   *name = "aaa";
     rtAicpuArgsEx_t argsInfo;
     argsInfo.args = (void *)name;
     argsInfo.soNameAddrOffset = 0;
     argsInfo.kernelNameAddrOffset = 0;
-    EXPECT_NO_THROW(HrtAicpuKernelLaunchExWithArgs(0, name, 0, &argsInfo, nullptr, nullptr, 0));
+	aclrtFuncHandle funcHandle;
+	constexpr u32 numBlocks = 1;
+	aclrtStream stream;
+	aclrtLaunchKernelCfg cfg;
+	HcclKernelParamLite kernel;
+	aclrtPlaceHolderInfo placeHolderArray;
+	constexpr std::size_t placeHolderNum = 0;
+	EXPECT_NO_THROW(HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, stream,
+										 &cfg, &kernel, sizeof(HcclKernelParamLite)));
 }
 
-TEST_F(AdapterRtsTest, test_HrtAicpuKernelLaunchExWithArgs_nok)
+TEST_F(AdapterRtsTest, test_HrtAicpuLaunchKernelWithHostArgs_nok)
 {
     // Given
-    MOCKER(rtAicpuKernelLaunchExWithArgs).stubs().will(returnValue(1));
+    MOCKER(aclrtLaunchKernelWithHostArgs).stubs().will(returnValue(1));
 
-    const char_t   *name = "aaa";
-    rtAicpuArgsEx_t argsInfo;
-    argsInfo.args = (void *)name;
-    argsInfo.soNameAddrOffset = 0;
-    argsInfo.kernelNameAddrOffset = 0;
-    EXPECT_THROW(HrtAicpuKernelLaunchExWithArgs(0, name, 0, &argsInfo, nullptr, nullptr, 0), RuntimeApiException);
+	aclrtFuncHandle funcHandle;
+	constexpr u32 numBlocks = 1;
+	aclrtStream stream;
+	aclrtLaunchKernelCfg cfg;
+	HcclKernelParamLite kernel;
+	aclrtPlaceHolderInfo placeHolderArray;
+	constexpr std::size_t placeHolderNum = 0;
+	EXPECT_THROW(HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, stream,
+	                                                 &cfg, &kernel, sizeof(HcclKernelParamLite)), RuntimeApiException);
 }
 
 TEST_F(AdapterRtsTest, test_HrtStreamGetSqId_ok)
@@ -1114,10 +1084,7 @@ TEST_F(AdapterRtsTest, HrtEventQueryStatus_return_nok)
 
 TEST_F(AdapterRtsTest, HrtWriteValue_run_fail)
 {
-    // Given
-    MOCKER(rtWriteValue).stubs().with(any(),any()).will(returnValue(1));
-    // then
-    EXPECT_THROW(HrtWriteValue(0,0,nullptr), RuntimeApiException);
+    EXPECT_THROW(HrtWriteValue(0,0,nullptr), NotSupportException);
 }
 
 TEST_F(AdapterRtsTest, HrtUbDevQueryToken_run_OK)
