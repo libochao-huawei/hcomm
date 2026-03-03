@@ -137,13 +137,12 @@ namespace hccl {
         return HCCL_SUCCESS;
     }
 
-    HcclResult DispatcherCtx::SetHcclDispatcherHcclQos(u32 hcclQos)
+    HcclResult DispatcherCtx::SetDispatcherHcclQos(u32 hcclQos)
     {
-        HCCL_INFO("SetHcclDispatcherHcclQos hcclQos = %u", hcclQos);
+        HCCL_INFO("SetDispatcherHcclQos hcclQos = %u", hcclQos);
         CHK_PTR_NULL(dispatcher_);
         auto aiCpuDispatcher = static_cast<DispatcherAiCpu*>(dispatcher_);
         aiCpuDispatcher->SetHcclQos(hcclQos);
-        HCCL_INFO("SetHcclDispatcherHcclQos aiCpuDispatcher->hcclQos = %u", aiCpuDispatcher->GetHcclQos());
         return HCCL_SUCCESS;
     }
 }

@@ -305,7 +305,7 @@ HcclResult ChannelManager::ParseChannelRemoteDataToMem(const OpCommTransport &op
             // sdma -> P2P
             CHK_RET(BuildOpRemoteChannelP2pResParam(tempLink, channelParam.remoteResV2[linkIdx]));
             channelParam.remoteResV2[linkIdx].channelP2p.hcclQos = transportRequest.hcclQos;
-            HCCL_INFO("ChannelManager::ParseChannelRemoteDataToMem  hcclQos = %u", transportRequest.hcclQos);
+            HCCL_INFO("[ChannelManager] [ParseChannelRemoteDataToMem] hcclQos = %u", transportRequest.hcclQos);
         } else {
             // rdma -> roce
             CHK_RET(BuildOpRemoteChannelRoceResParam(tempLink, channelParam.remoteResV2[linkIdx]));

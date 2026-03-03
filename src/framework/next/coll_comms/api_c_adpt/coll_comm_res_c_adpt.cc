@@ -68,7 +68,7 @@ HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannel
         switch (channelDesc.channelProtocol) {
             case COMM_PROTOCOL_HCCS:
                 channelDescFinal.hccsAttr.hcclQos = (channelDesc.hccsAttr.qos == 0xFF) ? static_cast<hcclComm *>(comm)->GetHcclQos() : channelDesc.hccsAttr.qos;
-                HCCL_INFO("[%s]Qos = %u", channelDescFinal.hccsAttr.hcclQos);
+                HCCL_INFO("[%s]Qos = %u",  __func__, channelDescFinal.hccsAttr.hcclQos);
             case COMM_PROTOCOL_PCIE:
             case COMM_PROTOCOL_SIO:
             case COMM_PROTOCOL_UBC_CTP:
