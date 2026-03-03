@@ -175,7 +175,10 @@ public:
         service2HandleMap_.erase(cb);
         handle2ServiceMap_.erase(serviceHandle);
         return HCCL_SUCCESS;
-    }
+    };
+    std::shared_ptr<MsgQueue> GetSendQueue() {
+        return sendQueue_;
+    };
 private:
     std::mutex mtx_;
     std::unordered_map<ThreadService*, ThreadServiceHandle> service2HandleMap_;
