@@ -12,6 +12,9 @@
 #define HCCL_CCU_MICROCODE_H
 #include <cstdint>
 
+#include <string>
+#include <cstdint>
+
 namespace Hccl {
 namespace CcuRep {
 

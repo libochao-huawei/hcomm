@@ -89,8 +89,13 @@ string LocalUbRmaBuffer::Describe() const
 
 std::unique_ptr<Serializable> LocalUbRmaBuffer::GetExchangeDto()
 {
-    std::unique_ptr<ExchangeUbBufferDto> dto
-        = make_unique<ExchangeUbBufferDto>(buf->GetAddr(), buf->GetSize(), buf->GetMemType(), buf->GetMemTag(), tokenValue, tokenId, keySize);
+    std::unique_ptr<ExchangeUbBufferDto> dto = make_unique<ExchangeUbBufferDto>(buf->GetAddr(),
+        buf->GetSize(),
+        buf->GetMemType(),
+        buf->GetMemTag().c_str(),
+        tokenValue,
+        tokenId,
+        keySize);
     (void)memcpy_s(dto->key, HRT_UB_MEM_KEY_MAX_LEN, key, HRT_UB_MEM_KEY_MAX_LEN);
     return std::unique_ptr<Serializable>(dto.release());
 }

@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include "types.h"
+#include "string_util.h"
 #include "exception_util.h"
 #include "internal_exception.h"
 namespace Hccl {

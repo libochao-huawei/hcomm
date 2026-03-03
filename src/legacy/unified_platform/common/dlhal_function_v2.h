@@ -13,9 +13,7 @@
 
 #include <functional>
 #include <mutex>
-#include "hccl/base.h"
 
-#include "base.h"
 #include "ascend_hal.h"
 #include "ascend_hal_define.h"
 #include <hccl/hccl_types.h>
