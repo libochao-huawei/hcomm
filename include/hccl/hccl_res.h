@@ -191,7 +191,7 @@ inline HcclResult EndpointDescInit(EndpointDesc *endpoint, uint32_t num)
 }
 
 const uint32_t HCCL_CHANNEL_MAGIC_WORD = 0x0f0f0f0f;
-const uint32_t HCCL_CHANNEL_VERSION = 2;    // HcclChannelDesc更新时，HCCL_CHANNEL_VERSION + 1
+const uint32_t HCCL_CHANNEL_VERSION = 1;    // HcclChannelDesc更新时，HCCL_CHANNEL_VERSION + 1
 
 /**
  * @brief 通道描述参数
@@ -219,7 +219,7 @@ typedef struct {
         } roceAttr;
     };
         struct {
-            uint32_t hcclQos;
+            uint32_t qos;
         } hccsAttr;
 } HcclChannelDesc;
 

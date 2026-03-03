@@ -86,6 +86,11 @@ typedef struct {
             uint32_t tc;
             uint32_t sl;
         } roceAttr;
+        struct
+        {
+            uint32_t qos;
+        } hccsAttr;
+        
     };
  
     HcommSocket socket;
