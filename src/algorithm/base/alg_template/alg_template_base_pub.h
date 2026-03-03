@@ -169,6 +169,7 @@ enum TemplateType {
     TEMPLATE_ALL_GATHER_V_GRAPH_PIPELINE = 101, // AllGatherV Graph pipeline
     TEMPLATE_REDUCESCATTER_MULTI_DETERMINISTIC_PIPELINE = 102,
     TEMPLATE_ALL_REDUCE_MULTI_DETERMINISTIC_PIPELINE = 103,
+    TEMPLATE_ALL_2_ALL_FULL_MESH_SYMMETRIC_MEMORY = 104,
 
     TEMPLATE_NATIVE_MAX_NUM,                        // 内置template最大值
 
@@ -234,6 +235,7 @@ struct PrepareData {
     HcclCMDType opType = HcclCMDType::HCCL_CMD_INVALID;
 
     const SendRecvInfo *localSendRecvInfoPtr = nullptr;
+    const ZCopySendRecvInfo *sendRecvInfoPtr = nullptr;
     u32 devNumInlocalPod = 0;
     u32 rankIdxInPod = 0;
     u64 reduceAttr = 0;

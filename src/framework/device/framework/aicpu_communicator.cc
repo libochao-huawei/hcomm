@@ -1879,24 +1879,28 @@ HcclResult HcclCommAicpu::PrepareSymmetricMemory(const OpParam &param, OpCommTra
         HCCL_E_PARA);
     
     const std::unordered_set<LinkType> supportedLinkTypes = {LinkType::LINK_HCCS, LinkType::LINK_SIO, LinkType::LINK_HCCS_SW};
-
-    for (auto &singleSubCommTransport : opTransportResponse[COMM_LEVEL0]) {
-        for (u64 i = 0; i < singleSubCommTransport.links.size(); ++i) {
-            LINK &link = singleSubCommTransport.links[i];
-            if (link == nullptr || !singleSubCommTransport.transportRequests[i].isValid || supportedLinkTypes.count(link->GetLinkType()) == 0) {
-                continue;   // 无效或者不支持的链路
+    for (u32 levelIdx = 0; levelIdx < opTransportResponse.size(); levelIdx ++) {
+        for (auto &singleSubCommTransport : opTransportResponse[levelIdx]) {
+            if (singleSubCommTransport.isZeroCopy == false) {
+                continue;
             }
-            u32 peerRank = link->GetRemoteRank();
-            void *remoteIn = nullptr;
-            CHK_RET(HcommSymWinGetPeerPointer(param.inputSymWindow, param.inputOffset, peerRank, &remoteIn));
-            void *remoteOut = nullptr;
-            CHK_RET(HcommSymWinGetPeerPointer(param.outputSymWindow, param.outputOffset, peerRank, &remoteOut));
+            for (u64 i = 0; i < singleSubCommTransport.links.size(); ++i) {
+                LINK &link = singleSubCommTransport.links[i];
+                if (link == nullptr || !singleSubCommTransport.transportRequests[i].isValid || supportedLinkTypes.count(link->GetLinkType()) == 0) {
+                    continue;   // 无效或者不支持的链路
+                }
+                u32 peerRank = link->GetRemoteRank();
+                void *remoteIn = nullptr;
+                CHK_RET(HcommSymWinGetPeerPointer(param.inputSymWindow, param.inputOffset, peerRank, &remoteIn));
+                void *remoteOut = nullptr;
+                CHK_RET(HcommSymWinGetPeerPointer(param.outputSymWindow, param.outputOffset, peerRank, &remoteOut));
 
-            CHK_PRT_RET(remoteIn == nullptr || remoteOut == nullptr,
-                HCCL_ERROR("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p] is invalid", peerRank, remoteIn, remoteOut),
-                HCCL_E_INTERNAL);
-            HCCL_INFO("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p]", peerRank, remoteIn, remoteOut);
-            CHK_RET(link->UpdateRemoteAddr(remoteIn, remoteOut));
+                CHK_PRT_RET(remoteIn == nullptr || remoteOut == nullptr,
+                    HCCL_ERROR("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p] is invalid", peerRank, remoteIn, remoteOut),
+                    HCCL_E_INTERNAL);
+                HCCL_INFO("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p]", peerRank, remoteIn, remoteOut);
+                CHK_RET(link->UpdateRemoteAddr(remoteIn, remoteOut));
+            }
         }
     }
     return HCCL_SUCCESS;
