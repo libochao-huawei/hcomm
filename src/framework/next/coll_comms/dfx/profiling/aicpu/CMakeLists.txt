@@ -10,3 +10,7 @@
 set(src_list
 hcclCommProfilingLite.cc
 )
+
+target_sources(hcomm PRIVATE
+    ${src_list}
+)

@@ -14,3 +14,7 @@ hcclCommDfxLite.cc
 
 add_subdirectory(profiling)
 add_subdirectory(taskException)
+
+target_sources(hcomm PRIVATE
+    ${src_list}
+)
