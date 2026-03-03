@@ -7,18 +7,9 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#ifndef HCCL_API_DATA_AICPU_TS_H
+#define HCCL_API_DATA_AICPU_TS_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <fstream>
-#include "gtest/gtest.h"
-#include "comm.h"
-#include "llt_hccl_stub_pub.h"
-GTEST_API_ int main(int argc, char **argv) {
-    printf("Running hccl_api_single_thread_test\n");
-    setTargetPort(27743, 31123);
-    testing::InitGoogleTest(&argc, argv);
-    setenv("HCCL_DEBUG_CONFIG", "alg", 1);
-    setenv("HCCL_DFS_CONFIG", "connection_fault_detction_time:0", 1);
-    return RUN_ALL_TESTS();
-}
+bool IsBatchLaunchMode();
+
+#endif // HCCL_API_DATA_AICPU_TS_H
