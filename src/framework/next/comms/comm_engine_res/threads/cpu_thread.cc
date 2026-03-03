@@ -9,16 +9,14 @@
  */
 
 #include "cpu_thread.h"
-#include "ascend_hal.h"
+#include "orion_adapter_rts.h"
 
 namespace hccl {
-
-#define SVM_REGISTER_FLAG_WITH_ACCESS_VA (1ULL << 0ULL)
-#define SVM_MEM_READ (0x1 << 0)
-#define SVM_MEM_WRITE (0x1 << 1)
-extern drvError_t __attribute__((weak)) halSvmRegister(uint32_t dev_id, uint64_t va, uint64_t size, uint64_t flag, uint64_t *access_va);
-extern drvError_t __attribute__((weak)) halSvmAccess(uint32_t dev_id, uint64_t dst, uint64_t src, uint64_t size, uint64_t flag);
-extern drvError_t __attribute__((weak)) halSvmUnregister(uint32_t dev_id, uint64_t va, uint64_t size, uint64_t flag);
+struct HostArgs {
+    void* cpuThread;
+    s32 deviceId;
+};
+HostArgs hostArgsTemp;
 
 HcclResult CpuThread::PrepareDpuKernelResource(aclrtFuncHandle &funcHandle)
 {
@@ -82,15 +80,7 @@ HcclResult CpuThread::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     cfg.attrs                = &kernelAttr;
     constexpr u32 numBlocks   = 1;
     // 核函数入参
-    hostArgsTemp.commId     = id;
-    hostArgsTemp.memorySize = SHARE_HBM_MEMORY_SIZE;
-    hostArgsTemp.hostMem    = hostShareBuf;
-    auto shMem              = GetKFCWorkSpace(DPUTAG);
-    hostArgsTemp.shareHBM = reinterpret_cast<void *>(shMem->GetAddr());
-    hostArgsTemp.deviceId = devLogicId;
-    HCCL_INFO("[CommunicatorImpl::%s] DpuKernelLaunchParam{commId:%s; memorySize:%u; shareHBM:%p; hostMem:%p}",
-              __func__, hostArgsTemp.commId.c_str(), hostArgsTemp.memorySize, hostArgsTemp.shareHBM,
-              hostArgsTemp.hostMem);
+    hostArgsTemp.cpuThread = static_cast<void*>(this);
     size_t               argsSize = sizeof(hostArgsTemp);
     aclrtPlaceHolderInfo placeHolderArrays;
     size_t               placeHolderNum = 0;
@@ -105,23 +95,26 @@ HcclResult CpuThread::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
 
 HcclResult CpuThread::Init()
 {
+    // 申请notify
+    uint64_t notifySize = 10;
+    for (uint32_t i = 0; i < notifyNum_; ++i) {
+        auto notify = std::make_unique<MemNotify>();
+        notify->Alloc(notifySize);
+        notifys_.push_back(std::move(notify));
+    }
+    
+    // 初始化scheduler
+    serviceScheduler_ = std::make_unique<ServiceScheduler>();
+    CHK_RET(serviceScheduler_->Init());
+    // 注册recordService和waitService
+    serviceScheduler_->ServiceRegister(RecordService, &recordServiceHandle_);
+    serviceScheduler_->ServiceRegister(WaitService, &waitServiceHandle_);
+
     s32 devId = 0;
     CHK_RET(hrtGetDevice(&devId));
-    int64_t value = 0;
-    hrtHalGetDeviceInfo(devId, MODULE_TYPE_PCIE, INFO_TYPE_ID, &value); // ?
-    void* notify{nullptr};
-    uint64_t notifySize = 10;
-    void* deviceVa{nullptr};
-    if (PCIe) {
-        // 申请notify
-        hrtMalloc(&deviceVa, notifySize);
-        // 对齐
-        uint64_t va = reinterpret_cast<uint64_t>(notifySize + 4096ULL);
-        void* registerVa = (va + (4096ULL - 1ULL)) & ~(4096ULL - 1ULL);
-        drvError ret = halSvmRegister(devId, registerVa, notifySize, &notify);
-    } else {
-        //
-    }
+    hostArgsTemp.deviceId = devId;
+
+    //--------------------------------------------------------------------------------
     // 设置XPU
     HCCL_INFO("[CommunicatorImpl::%s] Switch to Dpu Ctx", __func__);
     if (aclrtGetCurrentContext(&npuContext_) != ACL_SUCCESS) {
@@ -146,7 +139,7 @@ HcclResult CpuThread::Init()
 
     // 切换回当前Ctx
     HCCL_INFO("[CommunicatorImpl::%s] Switch to Npu Ctx", __func__);
-    if (ACL_SUCCESS != aclrtSetCurrentContext(npuContext)) {
+    if (ACL_SUCCESS != aclrtSetCurrentContext(npuContext_)) {
         HCCL_ERROR("[CommunicatorImpl::%s] Reset Current Ctx Failed", __func__);
         return HCCL_E_INTERNAL;
     }
@@ -159,27 +152,49 @@ HcclResult CpuThread::DeInit()
 {
 
 };
-~CpuThread::CpuThread()
-{
 
+CpuThread::~CpuThread() {
 };
-HcclResult CpuThread::ServiceRegister(Service serviceCb, ServiceHandle service)
-{
 
+HcclResult CpuThread::ServiceRegister(ThreadService serviceCb, ThreadServiceHandle* serviceHandle)
+{
+    return serviceScheduler_->ServiceRegister(serviceCb, serviceHandle);
 };
-HcclResult CpuThread::ServiceUnregister(ServiceHandle service)
+HcclResult CpuThread::ServiceUnregister(ThreadServiceHandle serviceHandle)
 {
-
+    return serviceScheduler_->ServiceUnregister(serviceHandle);
 };
 HcclResult CpuThread::KernelRun()
 {
     //
-    while (true) {
-        if (!sendQueue_.empty()) {
-            sendQueue.pop(serviceHandle, args);
-            // 
-        }
-    }
+    serviceScheduler_->ServiceRun();
 }
 
+HcclResult CpuThread::GetThreadEntity(ThreadEntity* threadEntity)
+{
+    threadEntity->type = THREAD_TYPE_CPU;
+    threadEntity->engine = COMM_ENGINE_AICPU;
+    threadEntity->cpuRes.sendQueue = sendQueue_->GetQueueInfo();
+    threadEntity->cpuRes.recordService = recordServiceHandle_;
+    threadEntity->cpuRes.waitService = waitServiceHandle_;
+    threadEntity->notifyNum = notifyNum_;
+    for (size_t i = 0; i < notifys_.size(); i++)
+    {
+        threadEntity->notifies[i].type = NOTIFY_TYPE_DEVICE_MEM;
+        threadEntity->notifies[i].identifier = notifys_[i]->GetIdentifier();
+    }
+    return HCCL_SUCCESS; 
+}
+
+MemNotify *CpuThread::GetNotify(uint32_t notifyIndex)
+{
+    if (notifyIndex >= notifys_.size()) {
+        return nullptr;
+    }
+    return notifys_[notifyIndex].get();
+}
+uint32_t CpuThread::GetNotifyNum() const
+{
+    return notifyNum_;
+}
 }
