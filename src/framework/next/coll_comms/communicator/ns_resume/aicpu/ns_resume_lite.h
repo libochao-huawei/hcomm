@@ -10,8 +10,8 @@
 
 #ifndef NS_RESUME_LITE_H
 #define NS_RESUME_LITE_H
+
 #include "coll_comm.h"
-#include "orion_adapter_rts.h"
 
 namespace hccl {
 
@@ -19,10 +19,10 @@ namespace hccl {
  * @note N秒快恢device侧的处理
  */
 
-class NsRecoveryHandlerFunc : public DaemonFunc {
+class NsResumeLiteFunc : public DaemonFunc {
 public:
-    static NsRecoveryHandlerFunc &GetInstance();
-    ~NsRecoveryHandlerFunc() override = default;
+    static NsResumeLiteFunc &GetInstance();
+    ~NsResumeLiteFunc() override = default;
     void Call() override;
 private:
     void HandleStopLaunch(CollCommAicpu *comm) const;
@@ -30,9 +30,11 @@ private:
     void StreamClean(CollCommAicpu *comm);
     HcclResult DeviceQuery(const uint32_t devId, const uint32_t step, const uint64_t timeout);
 
-    NsRecoveryHandlerFunc() = default;
-    NsRecoveryHandlerFunc(const NsRecoveryHandlerFunc&) = delete;
-    NsRecoveryHandlerFunc& operator=(const NsRecoveryHandlerFunc&) = delete;
+    NsResumeLiteFunc() = default;
+    NsResumeLiteFunc(const NsResumeLiteFunc&) = delete;
+    NsResumeLiteFunc& operator=(const NsResumeLiteFunc&) = delete;
 };
 
 }
+
+#endif

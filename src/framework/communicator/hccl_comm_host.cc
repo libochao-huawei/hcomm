@@ -299,14 +299,16 @@ namespace hccl
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(commAicpuParam_.deviceLogicId), commAicpuParam_.devicePhyId));
         CHK_RET(hrtGetDeviceType(devType_));
         commAicpuParam_.deviceType = static_cast<u32>(devType_);
-        EXECEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>(commAicpuParam_.deviceLogicId, HCCL_HDC_TYPE_H2D, 
+        std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D{nullptr};
+        std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H{nullptr};
+        EXECEPTION_CATCH((kfcControlTransferH2D = std::make_shared<hccl::HDCommunicate>(commAicpuParam_.deviceLogicId, HCCL_HDC_TYPE_H2D, 
             sizeof(KfcExecControl))), return HCCL_E_PTR);
-        CHK_RET(kfcControlTransferH2D_->InitHost());
-        EXECEPTION_CATCH((kfcStatusTransferD2H_ = std::make_shared<hccl::HDCommunicate>(commAicpuParam_.deviceLogicId, HCCL_HDC_TYPE_D2H, 
+        CHK_RET(kfcControlTransferH2D->InitHost());
+        EXECEPTION_CATCH((kfcStatusTransferD2H = std::make_shared<hccl::HDCommunicate>(commAicpuParam_.deviceLogicId, HCCL_HDC_TYPE_D2H, 
             sizeof(KfcExecStatus))), return HCCL_E_PTR);
-        CHK_RET(kfcStatusTransferD2H_->InitHost());
-        commAicpuParam_.kfcControlTransferH2DParams = kfcControlTransferH2D_->GetCommunicateParams();
-        commAicpuParam_.kfcStatusTransferD2HParams = kfcStatusTransferD2H_->GetCommunicateParams();
+        CHK_RET(kfcStatusTransferD2H->InitHost());
+        commAicpuParam_.kfcControlTransferH2DParams = kfcControlTransferH2D->GetCommunicateParams();
+        commAicpuParam_.kfcStatusTransferD2HParams = kfcStatusTransferD2H->GetCommunicateParams();
 
         // json表解析
         std::string jsonPath;
@@ -328,8 +330,8 @@ namespace hccl
         return HCCL_E_PTR);
 
         CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
-        collComm_->SetKfcControlTransfer(kfcControlTransferH2D_, kfcStatusTransferD2H_);
-        collComm->SetCommStatus(HcclCommStatus::HCCL_COMM_READY);
+        collComm_->SetKfcControlTransfer(kfcControlTransferH2D, kfcStatusTransferD2H);
+        collComm_->SetCommStatus(HcclCommStatus::HCCL_COMM_READY);
         return HCCL_SUCCESS;
     }
 

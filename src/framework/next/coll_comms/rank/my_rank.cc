@@ -375,11 +375,12 @@ HcclResult MyRank::Clean()
     ChannelTable channelTable = rankPairMgr_->GetChannelTable();
     std::vector<ChannelHandle> channelList;
     for (const auto& rankPair : channelTable) {
-        for (const auto& endPointPair : rankPair) {
+        for (const auto& endPointPair : rankPair.second) {
             channelList.insert(channelList.end(), endPointPair.second.begin(), endPointPair.second.end());
         }
     }
-    HcommChannelClean(channelList.data(), channelList.size());
+
+    return HcommChannelClean(channelList.data(), channelList.size());
 }
 
 HcclResult MyRank::Resume()
@@ -387,7 +388,7 @@ HcclResult MyRank::Resume()
     ChannelTable channelTable = rankPairMgr_->GetChannelTable();
     std::vector<ChannelHandle> channelList;
     for (const auto& rankPair : channelTable) {
-        for (const auto& endPointPair : rankPair) {
+        for (const auto& endPointPair : rankPair.second) {
             channelList.insert(channelList.end(), endPointPair.second.begin(), endPointPair.second.end());
         }
     }
@@ -396,8 +397,10 @@ HcclResult MyRank::Resume()
     for (const auto& resumeData : nsResumeDatas_) {
         if (resumeData.first == COMM_ENGINE_AICPU || resumeData.first == COMM_ENGINE_AICPU_TS) {
             // KernelLaunch时会将CollCommAicpu下的ubTransportMap_链路恢复,只打包transport
-            CHK_RET(HcommChannelKernelLaunch(resumeData.second.channelHandles_, resumeData.second.hostChannelHandleList_, 
-                resumeData.second.channelNum_, resumeData.second.commTag_, binHandle_)); 
+            for (const auto& handleData : resumeData.second) {
+                CHK_RET(HcommChannelKernelLaunch(handleData.channelHandles_, handleData.hostChannelHandleList_, 
+                handleData.channelNum_, handleData.commTag_, binHandle_));
+            }
         }
     }
     return HCCL_SUCCESS;

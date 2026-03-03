@@ -19,6 +19,7 @@
 #include "common.h"
 #include "comm_mems/comm_mems.h"
 #include "endpoint_mgr.h"
+#include "ns_resume.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 

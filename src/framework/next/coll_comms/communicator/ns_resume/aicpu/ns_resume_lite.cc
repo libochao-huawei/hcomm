@@ -11,27 +11,28 @@
 #include "hcomm_c_adpt.h"
 #include "coll_comm_aicpu.h"
 #include "kfc.h"
+#include "coll_comm_lite_mgr.h"
 
 namespace hccl {
-NsRecoveryHandlerFunc &NsRecoveryHandlerFunc::GetInstance()
+NsResumeLiteFunc &NsResumeLiteFunc::GetInstance()
 {
-    static NsRecoveryHandlerFunc func;
+    static NsResumeLiteFunc func;
     return func;
 }
 
-void NsRecoveryHandlerFunc::Call()
+void NsResumeLiteFunc::Call()
 {
-    // std::vector<CollCommAicpu *> commLites = CollCommAicpuMgr::GetInstance().GetAll();
-    // for (auto &comm : commLites) {
-    //     if (!comm->IsCommReady()) {
-    //         continue;
-    //     }
-    //     HandleStopLaunch(comm);
-    //     HandleClean(comm);
-    // }
+    auto commLites = CollCommLiteMgr::GetInstance()->GetAllCollComms();
+    for (auto &comm : commLites) {
+        if (!comm.second->IsCommReady()) {
+            continue;
+        }
+        HandleStopLaunch(comm);
+        HandleClean(comm);
+    }
 }
 
-void NsRecoveryHandlerFunc::HandleStopLaunch(CollCommAicpu *comm) const
+void NsResumeLiteFunc::HandleStopLaunch(CollCommAicpu *comm) const
 {
     if (comm->IsSuspended()) {
         return;
@@ -48,7 +49,7 @@ void NsRecoveryHandlerFunc::HandleStopLaunch(CollCommAicpu *comm) const
     HCCL_INFO("[NsRecovery][BackGround] send KfcStatus[STOP_LAUNCH_DONE]");
 }
 
-void NsRecoveryHandlerFunc::HandleClean(CollCommAicpu *comm)
+void NsResumeLiteFunc::HandleClean(CollCommAicpu *comm)
 {
     if (!comm->IsNeedClean()) {
         return;
@@ -68,24 +69,21 @@ void NsRecoveryHandlerFunc::HandleClean(CollCommAicpu *comm)
 
 constexpr u64 DEVICE_QUERY_TIMEOUT_NSEC = 5000000000U; // 5秒
 
-void NsRecoveryHandlerFunc::StreamClean(CollCommAicpu *comm)
+void NsResumeLiteFunc::StreamClean(CollCommAicpu *comm)
 {
     // 查询停流是否完成
     u32 localDevId=0;
     auto ret = drvGetLocalDevIDByHostDevID(deviceComm->GetDevPhyId(), &localDevId);
     if (ret != DRV_ERROR_NONE) {
         std::string formatStr = StringFormat(
-            "NsRecoveryHandlerFunc::%s call drvGetLocalDevIDByHostDevID failed, devPhyId %u, ret %d", __func__, comm->GetDevPhyId(), ret);
+            "NsResumeLiteFunc::%s call drvGetLocalDevIDByHostDevID failed, devPhyId %u, ret %d", __func__, comm->GetDevPhyId(), ret);
         THROW<DrvApiException>(formatStr);
     }
     if (DeviceQuery(localDevId, APP_ABORT_STAUTS::APP_ABORT_KILL_FINISH, DEVICE_QUERY_TIMEOUT_NSEC) != HCCL_SUCCESS) {
         deviceComm->BackGroundSetStatus(Hccl::KfcStatus::ERROR, Hccl::KfcErrType::EXEC);
         THROW<InternalException>("[NsRecovery][BackGround] Stream Stop failed");
     }
-}
 
-void NsRecoveryHandlerFunc::ThreadClean(hcomm::CollCommAicpu *const deviceComm)
-{
     // 通过thread获得streamlite信息，清理资源
     std::vector<std::shared_ptr<hccl::Thread>> threads = deviceComm->GetThreads();
     for (auto &thread : threads) {
@@ -105,7 +103,7 @@ inline u64 GetCurCpuTimestamp()
 
 constexpr u32 FIVE_MILLISECOND_OF_USLEEP = 5000U;
 
-HcclResult NsRecoveryHandlerFunc::DeviceQuery(const uint32_t devId, const uint32_t step, const uint64_t timeout)
+HcclResult NsResumeLiteFunc::DeviceQuery(const uint32_t devId, const uint32_t step, const uint64_t timeout)
 {
     uint32_t status;
     uint64_t endTime;

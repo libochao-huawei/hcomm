@@ -28,11 +28,14 @@
 using namespace hccl;
 class CollCommAicpu {
 public:
+    ~CollCommAicpu();
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
     HcclResult AllocChannelResource(HcclChannelUrmaRes *commParam);
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
+
+    std::string GetIdentifier();
 
     // N秒快恢
     void NsCommClean();

@@ -20,6 +20,9 @@ struct NsResumeData {
     ChannelHandle* hostChannelHandleList_;
     uint32_t channelNum_;
     std::string commTag_;
-}
+};
 
 }
+
+#endif
+

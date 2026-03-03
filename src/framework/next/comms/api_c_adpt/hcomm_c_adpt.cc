@@ -637,7 +637,7 @@ HcclResult HcommChannelResumeConcurrency(const ChannelHandle *channelList, uint3
             HCCL_ERROR("[%s] Get ChannelHandle failed.", __func__);
             return ret;
         }
-        readyCount += (ret == HcclResult::SUCCESS) ? 1 : 0;
+        readyCount += (ret == HcclResult::HCCL_SUCCESS) ? 1 : 0;
     }
 
     HcclResult finalRet = (readyCount == channelNum) ? HCCL_SUCCESS : HCCL_E_AGAIN;
@@ -654,7 +654,6 @@ HcclResult HcommChannelResume(const ChannelHandle *channelList, uint32_t channel
 
     uint32_t retryCount{0};
     while (true) {
-        uint32_t readyCount{0};
         HcclResult ret = HcommChannelResumeConcurrency(channelList, channelNum);
         // 1. 检查超时
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {

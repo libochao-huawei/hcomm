@@ -8,15 +8,15 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCL_AICPU_DAEMON_SERVICE_H
-#define HCCL_AICPU_DAEMON_SERVICE_H
+#ifndef HCCL_AICPU_DAEMON_SERVICE_NEXT_H
+#define HCCL_AICPU_DAEMON_SERVICE_NEXT_H
 
 #include <cstdint>
 #include <vector>
 #include "daemon_func.h"
 #include "enum_factory.h"
 
-namespace Hccl {
+namespace hccl {
 
 using Funcs = void (*)(void *);
 extern "C" {
@@ -37,5 +37,5 @@ private:
     std::vector<DaemonFunc *> daemonFuncs;
     bool                      needBreak{false};
 };
-} // namespace Hccl
-#endif // HCCL_AICPU_DAEMON_SERVICE_H
+} // namespace hccl
+#endif // HCCL_AICPU_DAEMON_SERVICE_NEXT_H
