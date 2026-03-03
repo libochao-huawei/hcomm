@@ -1974,8 +1974,8 @@ HcclResult Heartbeat::CheckOpInconsistentError(const std::string &identifier, Hc
     if (search != inconsistentOpMap_.end()) {
         result = HCCL_E_PARA;
         HCCL_ERROR("[%s]find inconsistent op error [%d], in comm [%s]", __func__, result, identifier.c_str());
-        RPT_INPUT_ERR(true, "EI0005", std::vector<std::string>({ "tag", "para_name", "local_para", "remote_para" }),
-            std::vector<std::string>({ identifier, GetInconsistentTypeStr(search->second.inconsistentType),
+        RPT_INPUT_ERR(true, "EI0005", std::vector<std::string>({"para_name", "local_para", "remote_para" }),
+            std::vector<std::string>({ GetInconsistentTypeStr(search->second.inconsistentType),
             search->second.localInfo, search->second.remoteInfo }));
     }
     return HCCL_SUCCESS;

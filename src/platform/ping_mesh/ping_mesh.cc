@@ -603,7 +603,6 @@ HcclResult PingMesh::RpingSendInitInfo(u32 deviceId, u32 port, HcclIpAddress ipA
 {
     // 给当前线程添加名字
     SetThreadName("Hccl_PingMesh");
-
     // 等待client端发送的建链请求
     HcclIpAddress remoteIp = HcclIpAddress();
     std::string tag = "PingMesh" + std::string(ipAddr.GetReadableIP());
@@ -1083,7 +1082,6 @@ HcclResult PingMesh::HccnRpingRemoveTarget(u32 deviceId, u32 targetNum, RpingInp
     // 判断当前状态
     CHK_RET(RpingstateCheck(rpingState_, RpingState::READY));
     CHK_RET(RpingstateCheck(rpingState_, RpingState::INITED)); // 所有目标都被移除时回到READY前的状态
-
     if (pingHandle_ == nullptr) {
         HCCL_ERROR("[HCCN][HccnRpingRemoveTarget]Device[%u] cannot add targets because it is not inited.", deviceId);
         return HCCL_E_NOT_FOUND;
@@ -1094,7 +1092,6 @@ HcclResult PingMesh::HccnRpingRemoveTarget(u32 deviceId, u32 targetNum, RpingInp
     PingTargetCommInfo *target = new (std::nothrow) PingTargetCommInfo[targetNum];
     std::shared_ptr<HcclSocket> socket = nullptr;
     ret = HccnTarRemoveAttrInter(targetNum, input, target, socket);
-    
     if (ret != HCCL_SUCCESS) {
         delete[] target;
         HCCL_ERROR("[HCCN][HccnRpingRemoveTarget]Target info is not correct, ret[%d].", ret);
@@ -1131,14 +1128,11 @@ HcclResult PingMesh::HccnRpingGetTarget(u32 deviceId, u32 targetNum, RpingInput 
             continue;
         }
         HcclSocketStatus socketStatus = socketMaps_[std::string(input[i].dip.GetReadableIP())]->GetStatus();
-
         // 转换状态信息
         RpingLinkState linkStatus = ConvertHcclSocketStatus(socketStatus);
-
         // 记录查询结果
         targetStat[i] = static_cast<int>(linkStatus);
     }
-
     return HCCL_SUCCESS;
 }
 
@@ -1153,7 +1147,6 @@ HcclResult PingMesh::HccnRpingBatchPingStart(u32 deviceId, u32 pktNum, u32 inter
         HCCL_ERROR("[HCCN][HccnRpingBatchPingStart]Device[%u] cannot start ping because it is not inited.", deviceId);
         return HCCL_E_NOT_FOUND;
     }
-
     // 计算内存空间能否保存全部的payload信息，内存不足的话不可以发起ping请求
     PingBufferInfo *bufferInfo = &(initInfo_.result);
     u32 targetNum = rpingTargetNum_;
@@ -1163,16 +1156,13 @@ HcclResult PingMesh::HccnRpingBatchPingStart(u32 deviceId, u32 pktNum, u32 inter
         payloadLen, bufferInfo->bufferSize, pktNum, targetNum);
         return HCCL_E_MEMORY;
     }
-
     PingTaskAttr attr;
     attr.packetCnt = pktNum;
     attr.packetInterval = interval;
     attr.timeoutInterval = timeout;
-
     CHK_RET(hrtRaPingTaskStart(pingHandle_, &attr));
     HCCL_INFO("[HCCN][HccnRpingBatchPingStart]pingmesh task is started on device[%u].", deviceId);
     rpingState_ = RpingState::RUN;
-
     return HCCL_SUCCESS;
 }
 
@@ -1284,8 +1274,6 @@ HcclResult PingMesh::HccnRpingRefillPayloadHead(u8 *originalHead, u32 payloadNum
     return HCCL_SUCCESS;
 }
 
-
-
 HcclResult PingMesh::HccnRpingRefillUbPayloadHead(u8 *originalHead, u32 payloadNum)
 {
     for (u32 i = 0; i < payloadNum; i++) {
@@ -1341,7 +1329,6 @@ HcclResult PingMesh::HccnRpingRefillUbPayloadHead(u8 *originalHead, u32 payloadN
         head->addrType = HCCN_RPING_ADDR_TYPE_EID;
         originalHead += BYTE_PER_TARGET_DEFAULT;
     }
-
     return HCCL_SUCCESS;
 }
 

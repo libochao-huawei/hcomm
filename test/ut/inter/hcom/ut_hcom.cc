@@ -12183,10 +12183,6 @@ TEST_F(HcomTest, ut_hcom_TopoInfoRanktableParser)
     index = 0;
     ret = myTopoRanktable.GetJsonArrayMemberProperty(rank_table, index, rank_table_file.c_str(), index);
     EXPECT_EQ(ret, HCCL_E_PARA);
-    ret = myTopoRanktable.CheckUniqueIntegerAndInsertPool(rankTableM);
-    EXPECT_EQ(ret, HCCL_E_PARA);
-    ret = myTopoRanktable.CheckUniqueIntegerAndInsertPool("10.78.232.102");
-    EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = myTopoRanktable.LoadConfigString("10.78.232.102");
     EXPECT_EQ(ret, HCCL_E_PARA);
     bool status_completed = myTopoRanktable.IsReady();

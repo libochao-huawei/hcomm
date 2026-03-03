@@ -397,8 +397,8 @@ void RankConsistentcyChecker::ReportCmdInfoCheckFailed(const std::string &tag, c
 {
     RPT_INPUT_ERR(true,
         "EI0005",
-        std::vector<std::string>({"tag", "para_name", "local_para", "remote_para"}),
-        std::vector<std::string>({tag, paraName, localPara, remotePara}));
+        std::vector<std::string>({"para_name", "local_para", "remote_para"}),
+        std::vector<std::string>({paraName, localPara, remotePara}));
     HCCL_ERROR("[%s][%s]CMD information %s check fail. local[%s], remote[%s]",
         LOG_KEYWORDS_INIT_CHANNEL.c_str(),
         LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(),
@@ -412,8 +412,8 @@ void RankConsistentcyChecker::ReportCmdInfoCheckFailed(const std::string &tag, c
 {
     RPT_INPUT_ERR(true,
         "EI0005",
-        std::vector<std::string>({"tag", "para_name", "local_para", "remote_para"}),
-        std::vector<std::string>({tag, paraName, std::to_string(localPara), std::to_string(remotePara)}));
+        std::vector<std::string>({"para_name", "local_para", "remote_para"}),
+        std::vector<std::string>({paraName, std::to_string(localPara), std::to_string(remotePara)}));
     HCCL_ERROR("[%s][%s]CMD information %s check fail. local[%u], remote[%u]",
         LOG_KEYWORDS_INIT_CHANNEL.c_str(),
         LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(),
@@ -428,8 +428,8 @@ void RankConsistentcyChecker::ReportCrcCheckFailed(const std::string &tag, HcclC
     const auto crcTypeStr = GetCRCTypeEnumStr(crcType);
     RPT_INPUT_ERR(true,
         "EI0005",
-        std::vector<std::string>({"tag", "para_name", "local_para", "remote_para"}),
-        std::vector<std::string>({tag, crcTypeStr, std::to_string(localCrc), std::to_string(remoteCrc)}));
+        std::vector<std::string>({"para_name", "local_para", "remote_para"}),
+        std::vector<std::string>({crcTypeStr, std::to_string(localCrc), std::to_string(remoteCrc)}));
     HCCL_ERROR("[%s][%s]CRC for %s check fail. local[%u], remote[%u]",
         LOG_KEYWORDS_INIT_CHANNEL.c_str(),
         LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(),
@@ -540,8 +540,8 @@ bool RankConsistentcyChecker::CompareFrame(HcclCheckInfo &checkInfo, HcclCheckIn
             HCCL_WARNING("[RankConsistentcyChecker][CompareFrame] CANN version str is empty. local_version %s, "
                 "remote_version %s.", checkInfo.version, checkInfoRecv.version);
         } else if (localCannVersion != remoteCannVersion) { // cann版本信息读取成功，且版本不一致
-            RPT_INPUT_ERR(true, "EI0008", std::vector<std::string>({"tag", "local_version", "remote_version"}),
-                std::vector<std::string>({checkInfo.cmdInfo.tag, localCannVersion, remoteCannVersion}));
+            RPT_INPUT_ERR(true, "EI0008", std::vector<std::string>({"local_version", "remote_version"}),
+                std::vector<std::string>({localCannVersion, remoteCannVersion}));
             HCCL_ERROR("[%s][%s] errNo[0x%016llx] Inconsistent HCCL Versions. local_version %s, remote_version %s.",
                 LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_VERSION_CONFLICT.c_str(),
                 HCCL_ERROR_CODE(HCCL_E_INTERNAL), checkInfo.version, checkInfoRecv.version);
