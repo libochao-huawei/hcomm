@@ -11,7 +11,7 @@
 // #include "rank_graphs/rank_graph.h"
 #include "exception_handler.h"
 #include "rank_graph_v2.h"
-
+#include "hcclCommDxf.h"
 
 namespace hccl {
 CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, const ManagerCallbacks& callbacks)
@@ -49,7 +49,12 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
         opExpansionMode = config->hcclOpExpansionMode;
     }
     CHK_RET(myRank_->Init(cclBuffer, opExpansionMode, rankNum));
-
+    s32 deviceId = 0;
+    if (hrtGetDevice(&deviceId) != HCCL_SUCCESS) {
+        HCCL_INFO("[CollComm][Init] collComm Get Device");
+        return HCCL_E_INVALID_PARAM;
+    }
+    dfx_.Init(deviceId);
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }

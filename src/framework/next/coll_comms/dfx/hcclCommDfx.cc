@@ -11,12 +11,11 @@
 
 namespace hccl {
 
-HcclCommDfx::HcclCommDfx(u32 deviceId) {
-    deviceId_ = deviceId;
-    mirrorTaskManager_ = new Hccl::MirrorTaskManager(deviceId_, &Hccl::GlobalMirrorTasks::Instance(), false);
-}SS
+HcclCommDfx::HcclCommDfx() {
+}
 
-void HcclCommDfx::Init() {
+void HcclCommDfx::Init(u32 deviceId) {
+    deviceId_ = deviceId;
     // 1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
     if (mirrorTaskManager_ == nullptr) {
         // 注意：实际实现中应该避免这种情况，CommunicatorImpl应该传入已经存在的MirrorTaskManager
@@ -66,6 +65,29 @@ void HcclCommDfx::UpdateProfStat() {
 
 Hccl::MirrorTaskManager* HcclCommDfx::GetMirrorTaskManager() const {
     return mirrorTaskManager_;
+}
+
+// 将remoteRankId添加到channelRemoteRankId_表中
+void HcclCommDfx::AddChannelRemoteRankId(const std::string& commTag, u64 handle, u32 remoteRankId) {
+    rwLock_.writelock();
+    channelRemoteRankId_[commTag][handle] = remoteRankId;
+    rwLock_.writeUnLock();
+}
+// 在channelRemoteRankId_表中对remoteRankId进行查找
+HcclResult HcclCommDfx::GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId) {
+    rwLock_.readlock();
+    if(channelRemoteRankId_.find(commTag) == channelRemoteRankId_.end()) {
+        rwLock_.readUnLock();
+        HCCL_ERROR("[HcclCommDfx]commTag:[%s] not found", commTag.c_str());
+        return HCCL_RESULT_INVALID_PARAM;
+    }
+    if(channelRemoteRankId_[commTag].find(handle) == channelRemoteRankId_[commTag].end()) {
+         HCCL_ERROR("[HcclCommDfx]handle not found,commTag:[%s],handle:[%lu]", commTag.c_str(), handle);
+        rwLock_.readUnLock();
+        return HCCL_RESULT_INVALID_PARAM;
+    }
+    remoteRankId = channelRemoteRankId_[commTag][handle];
+    rwLock_.readUnLock();
 }
 
 }

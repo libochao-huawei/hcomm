@@ -10,17 +10,11 @@
 #include "hcclCommDfxLite.h"
 namespace hccl {
 // HcclCommDfxLite构造函数实现
-HcclCommDfxLite::HcclCommDfxLite(Hccl::MirrorTaskManager* existingMirrorTaskManager)
-    : mirrorTaskManager_(existingMirrorTaskManager) {
-    // 如果外部没有传入MirrorTaskManager，则创建新的
-    if (mirrorTaskManager_ == nullptr) {
-        // 注意：这里只是示例，实际实现中可能需要根据具体情况决定是否创建
-        // 在CommunicatorImplLite中，应该传入已经存在的MirrorTaskManager指针
-    }
+HcclCommDfxLite::HcclCommDfxLite() {
 }
 
 // HcclCommDfxLite初始化流程
-void HcclCommDfxLite::Init() {
+void HcclCommDfxLite::Init(c) {
     // 1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
     if (mirrorTaskManager_ == nullptr) {
         // 注意：实际实现中应该避免这种情况，CommunicatorImplLite应该传入已经存在的MirrorTaskManager
@@ -59,6 +53,28 @@ void HcclCommDfxLite::UpdateProfStat() {
     if (profilingImpl_) {
         profilingImpl_->UpdateProfStat();
     }
+}
+
+void HcclCommDfxLite::AddChannelRemoteRankId(const std::string& commTag, u64 handle, u32 remoteRankId) {
+    rwLock_.writelock();
+    channelRemoteRankIdLite_[commTag][handle] = remoteRankId;
+    rwLock_.writeUnLock();
+}
+// 在channelRemoteRankIdLite_表中对remoteRankId进行查找
+HcclResult HcclCommDfxLite::GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId) {
+    rwLock_.readlock();
+    if(channelRemoteRankIdLite_.find(commTag) == channelRemoteRankIdLite_.end()) {
+        rwLock_.readUnLock();
+        HCCL_ERROR("[HcclCommDfxLite]commTag:[%s] not found", commTag.c_str());
+        return HCCL_RESULT_INVALID_PARAM;
+    }
+    if(channelRemoteRankIdLite_[commTag].find(handle) == channelRemoteRankIdLite_[commTag].end()) {
+         HCCL_ERROR("[HcclCommDfxLite]handle not found,commTag:[%s],handle:[%lu]", commTag.c_str(), handle);
+        rwLock_.readUnLock();
+        return HCCL_RESULT_INVALID_PARAM;
+    }
+    remoteRankId = channelRemoteRankIdLite_[commTag][handle];
+    rwLock_.readUnLock();
 }
 
 Hccl::MirrorTaskManager* HcclCommDfxLite::GetMirrorTaskManager() const {
