@@ -55,6 +55,27 @@ private:
         [] (const std::string &s) -> std::vector<SocketPortRange> { return CastSocketPortRange(s, "HCCL_NPU_SOCKET_PORT_RANGE"); }};
 };
 
+std::ostream& operator<<(std::ostream& os, const IpAddress& hcclIfIp)
+{
+    os << hcclIfIp.Describe();
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const std::vector<SocketPortRange>& rangeVec)
+{
+    os << "{";
+    bool isVecFirst = true;
+    for (const auto& range : rangeVec) {
+        if (!isVecFirst) {
+            os << ",";
+        }
+        os << range;
+        isVecFirst = false;
+    }   
+    os << "}";
+    return os;
+}
+
 // Socket公共配置
 class EnvSocketConfig : public BaseConfig {
 public:
@@ -172,6 +193,47 @@ private:
     CfgField<HcclAccelerator> hcclAccelerator_{"HCCL_OP_EXPANSION_MODE", HcclAccelerator::CCU_SCHED,
                                               CastHcclAccelerator};
 };
+
+std::ostream& operator<<(std::ostream& os, HcclAccelerator hcclAccelerator)
+{
+    return os << hcclAccelerator.Describe();
+}
+
+std::ostream& operator<<(std::ostream& os, OpType op)
+{
+    return os << op.Describe();
+}
+
+std::ostream& operator<<(std::ostream& os, HcclAlgoType algo)
+{
+    return os << algo.Describe();
+}
+
+std::ostream& operator<<(std::ostream& os, const std::map<OpType, std::vector<HcclAlgoType>>& map)
+{
+    os << "{";
+    bool isMapFirst = true;
+    for (const auto& pair : map) {
+        const auto& op = pair.first;
+        const auto& algVec = pair.second;
+        if (!isMapFirst) {
+            os << ",";
+        }
+        os << op << "=>[";
+        bool isVecFirst = true;
+        for (const auto& alg : algVec) {
+            if (!isVecFirst) {
+                os << ",";
+            }
+            os << alg;
+            isVecFirst = false;
+        }
+        os << "]";
+        isMapFirst = false;
+    }
+    os << "}";
+    return os;
+}
 
 // 日志/DFX配置
 class EnvLogConfig : public BaseConfig {

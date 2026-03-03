@@ -119,38 +119,45 @@ void CcuContext::AllocGoResource(uint32_t parallelDim, uint32_t msPerLoop)
 
 std::vector<uint64_t> CcuContext::CalGoSize(uint64_t size)
 {
+    return CalGoSizeStatic(size, moConfig);
+}
+
+std::vector<uint64_t> CcuContext::CalGoSizeStatic(uint64_t size, GroupOpConfig &moCfg)
+{
     uint64_t offset        = 0;
     uint64_t loopIterNum   = 0;
     uint64_t loopExtendNum = 0;
     uint64_t tailSize      = 0;
 
-    uint64_t loopSize = moConfig.loopCount * moConfig.memSlice;
+    uint64_t loopSize = moCfg.loopCount * moCfg.memSlice;
     uint64_t maxSize = loopSize * (CcuRep::GetMaxLoopIterNum() + 1);
 
-    if (moConfig.loopCount == 0 || moConfig.memSlice == 0) {
-        THROW<CcuApiException>("Please Check Configure, loopCount = %u, memSlice = %u", moConfig.loopCount,
-                               moConfig.memSlice);
+    if (moCfg.loopCount == 0 || moCfg.memSlice == 0) {
+        THROW<CcuApiException>("Please Check Configure, loopCount = %u, memSlice = %u", moCfg.loopCount,
+                               moCfg.memSlice);
     }
     if (size > maxSize) {
         THROW<CcuApiException>("Too Large Size, size = %lu, maxSize = %lu", size, maxSize);
     }
 
     uint64_t m = size / loopSize;
-    uint64_t n = (size - m * loopSize) / moConfig.memSlice;
-    uint64_t p = size - m * loopSize - n * moConfig.memSlice;
+    uint64_t n = (size - m * loopSize) / moCfg.memSlice;
+    uint64_t p = size - m * loopSize - n * moCfg.memSlice;
 
     if (size == maxSize) {
         m = CcuRep::GetMaxLoopIterNum();
-        n = moConfig.loopCount - 1;
-        p = moConfig.memSlice;
+        n = moCfg.loopCount - 1;
+        p = moCfg.memSlice;
     }
 
+    HCCL_INFO("[CalGoSizeStatic] moCfg.memSlice[%u], moCfg.loopCount[%u], moCfg.msInterleave[%u]", 
+        moCfg.memSlice, moCfg.loopCount, moCfg.msInterleave);
     HCCL_INFO("Ccu Slice Split: m = %lu, n = %lu, p = %lu", m, n, p);
 
     // 数据量 < 256K, 跳过LoopGroup0
     // 此时loopIterNum == 0
     // 可以以此做为跳过LoopGroup0的条件
-    offset = moConfig.memSlice * moConfig.loopCount * m;
+    offset = moCfg.memSlice * moCfg.loopCount * m;
     // 未实现, 这里可以只传入m, 在内部通过加法获得完整的参数
     loopIterNum = m;
 
@@ -163,7 +170,7 @@ std::vector<uint64_t> CcuContext::CalGoSize(uint64_t size)
         // 数据量为256K * m + 4K * n
         // 因为p == 0, 所以只需要使用第一个Loop, 数据量4K, 展开成n次
         loopExtendNum = CcuRep::GetParallelParam(n - 1, 0, 1); // loopExtendNum 赋值
-        tailSize      = moConfig.memSlice;                     // tailSize 赋值
+        tailSize      = moCfg.memSlice;                     // tailSize 赋值
     } else if (n == 0 && p != 0) {
         // 数据量为256K * m + p
         // 因为n == 0, 所以只需要使用第一个Loop, 数据量p, 不展开
