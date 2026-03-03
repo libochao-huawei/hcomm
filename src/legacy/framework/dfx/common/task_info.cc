@@ -124,8 +124,9 @@ string TaskInfo::GetOpInfo() const
             static_cast<u64>(opInfo->op_.inputMem->GetAddr()),
             static_cast<u64>(opInfo->op_.outputMem->GetAddr()));
     }
-    return StringFormat("index[%u], count[%llu], reduceType[%s], %sdataType[%s]",
+    return StringFormat("index[%u], opType[%s], count[%llu], reduceType[%s], %sdataType[%s]",
         opInfo->index_,
+        opInfo->op_.opType.Describe().c_str(),
         opInfo->op_.dataCount,
         opInfo->op_.reduceOp.Describe().c_str(),
         addr.c_str(),

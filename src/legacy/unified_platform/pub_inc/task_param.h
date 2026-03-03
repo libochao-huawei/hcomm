@@ -63,6 +63,7 @@ struct ParaDMA {
     const void *dst;
     std::size_t size;
     u64         notifyID;
+    u32         notifyValue;
     DfxLinkType linkType;
     DmaOp       dmaOp;
     Eid         locEid{};
@@ -74,6 +75,7 @@ struct ParaReduce {
     const void  *dst;
     std::size_t  size;
     u64          notifyID;
+    u32          notifyValue;
     DfxLinkType  linkType;
     HcclReduceOp reduceOp{HcclReduceOp::HCCL_REDUCE_RESERVED};
     HcclDataType dataType{HcclDataType::HCCL_DATA_TYPE_RESERVED};

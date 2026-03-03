@@ -94,7 +94,6 @@ private:
     // 私有拷贝构造函数和赋值运算符，防止对象被拷贝
     TaskExceptionHandlerManager(const TaskExceptionHandlerManager &)            = delete;
     TaskExceptionHandlerManager &operator=(const TaskExceptionHandlerManager &) = delete;
-    void RegisterGetAicpuTaskException(u32 streamId, ErrorMessageReport errorMessageReport);
 
 private:
     // 全局静态数组，存储异常处理器指针
