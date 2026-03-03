@@ -12,9 +12,9 @@ int main()
         remoteNotify->V2Func();
     }
 
-    // if (&hcomm::RemoteNotifyV2 != nullptr) {
-    //     remoteNotify->V2Func();
-    // }
+    if (&hcomm::RemoteNotifyV2::RemoteNotifyV2 != nullptr) {
+        remoteNotify->V2Func();
+    }
 
     return 0;
 }
