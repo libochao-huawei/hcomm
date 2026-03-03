@@ -46,8 +46,9 @@ static void SFLReportCcuProfilingInfoInitPart(uint64_t execId, std::vector<CcuPr
 }
 
 CachedCCUParams::CachedCCUParams(std::vector<std::vector<Hccl::CcuTaskParam>> &&ccuInstruction,
-                             std::vector<std::vector<CcuProfilingInfo>> &&profilingInfo, std::size_t execId, bool isSlave,
-                             void* comm): execId(execId), isSlave(isSlave)
+                             std::vector<std::vector<CcuProfilingInfo>> &&profilingInfo, std::size_t execId,
+                             CcuInstType insType, bool isSlave, void* comm)
+    : execId(execId), insType(insType), isSlave(isSlave)
 {
     std::vector<std::vector<rtCcuTaskInfo_t>> ccuTaskInstruction{};
     auto& commImpl = *(static_cast<CommunicatorImpl *>(comm));
@@ -83,11 +84,12 @@ CachedCCUParams::CachedCCUParams(std::vector<std::vector<Hccl::CcuTaskParam>> &&
                                           commImpl, taskParam);
         taskParams.emplace_back(std::move(taskParam));
     }
+    HCCL_RUN_INFO("Save CcuInstType: %d", insType);
 }
 
 CachedCCUParams::CachedCCUParams(CachedCCUParams &&other) noexcept : ccuParams(std::exchange(other.ccuParams, nullptr)),
-    execId(other.execId), count(std::move(other.count)), totalCounts(other.totalCounts), isSlave(other.isSlave),
-    taskParams(std::move(other.taskParams))
+    count(std::move(other.count)), taskParams(std::move(other.taskParams)), execId(other.execId), totalCounts(other.totalCounts),
+     insType(other.insType), isSlave(other.isSlave)
 {
 }
 
@@ -101,6 +103,7 @@ CachedCCUParams& CachedCCUParams::operator=(CachedCCUParams &&other) noexcept
         totalCounts = other.totalCounts;
         isSlave   = other.isSlave;
         taskParams = std::move(other.taskParams);
+        insType = other.insType;
     }
     return *this;
 }

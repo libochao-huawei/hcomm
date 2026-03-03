@@ -60,12 +60,36 @@ struct SocketIfName {
         : configIfNames(configIfNames), searchNot(searchNot), searchExact(searchExact){};
 };
 
+inline std::ostream& operator<<(std::ostream& os, const SocketIfName& socketIfName)
+{
+    os << "[ifNames:";
+    bool isFirst = true;
+    for (const auto& name : socketIfName.configIfNames)
+    {
+        if (!isFirst) {
+            os << ",";
+        }
+        os << name;
+        isFirst = false;
+    }
+    os << "; isSearch:" << (socketIfName.searchNot ? "true" : "false") 
+        << "; isSearchExact:" << (socketIfName.searchExact ? "true" : "false")
+        << "; configIfName:" << socketIfName.configIfNameStr << "]";
+    return os;
+}
+
 struct DfsConfig {
     bool taskExceptionEnable{true};
     DfsConfig() = default;
     DfsConfig(bool taskException)
         : taskExceptionEnable(taskException){};
 };
+
+inline std::ostream& operator<<(std::ostream& os, const DfsConfig& dfsConfig)
+{
+    os << dfsConfig.taskExceptionEnable;
+    return os;
+}
 
 enum class NpuProtoType {
     TCP = 1, // 拉远TCP模式
@@ -80,6 +104,12 @@ using SocketPortRange = struct SocketPortRangeDef {
         return min == other.min && max == other.max;
     }
 };
+
+inline std::ostream& operator<<(std::ostream& os, const SocketPortRangeDef& range)
+{
+    os << "[" << range.min << "," << range.max << "]";
+    return os;
+}
 
 // HCCL通信算法类型
 MAKE_ENUM(HcclAlgoType,
@@ -116,7 +146,7 @@ template <class T> inline T Str2T(const std::string &s)
 {
     // 检查数字长度
     if (s.size() > MAX_LEN_OF_DIGIT_ENV) {
-        THROW<InvalidParamsException>(StringFormat("Invalid env len, len is bigger than %u.", MAX_LEN_OF_DIGIT_ENV));
+        THROW<InvalidParamsException>(StringFormat("Invalid env len, len[%u] should not be bigger than %u.", s.size(), MAX_LEN_OF_DIGIT_ENV));
     }
     // 检查是否为全数字
     if (!std::all_of(s.begin(), s.end(), ::isdigit)) {
