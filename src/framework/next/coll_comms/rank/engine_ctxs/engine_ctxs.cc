@@ -8,21 +8,22 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
  
-#include "independent_op_context_manager.h"
+#include "engine_ctxs.h"
 #include "hccl_comm_pub.h"
 #include "log.h"
 #include "adapter_rts_common.h"
+#include "hcomm_c_adpt.h"
 
 namespace hccl {
-ContextManager::ContextManager()
+EngineCtxs::EngineCtxs()
 {
 }
 
-ContextManager::~ContextManager()
+EngineCtxs::~EngineCtxs()
 {
 }
 
-HcclResult ContextManager::CreateCommEngineCtx(const std::string &tag, CommEngine engine, uint64_t size, void **ctx)
+HcclResult EngineCtxs::CreateCommEngineCtx(const std::string &tag, CommEngine engine, uint64_t size, void **ctx)
 {
     std::lock_guard<std::mutex> lock(mutex_); 
     // 阻止重复创建
@@ -33,32 +34,13 @@ HcclResult ContextManager::CreateCommEngineCtx(const std::string &tag, CommEngin
             __func__, tag.c_str(), engine), HCCL_E_PARA);
     }
 
-    void* ctxData = nullptr;
-    // 区分设备类型
-    HcclMemType type;
-    if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
-        || engine == COMM_ENGINE_CCU) {
-        type = HCCL_MEM_TYPE_HOST;
-        ctxData = malloc(size);
-        CHK_PTR_NULL(ctxData);
-        CHK_SAFETY_FUNC_RET(memset_s(ctxData, size, 0, size));
-    } else if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS
-        || engine == COMM_ENGINE_AIV) {
-        type = HCCL_MEM_TYPE_DEVICE;
-        CHK_RET(hrtMalloc(&ctxData, size));
-    } else {
-        HCCL_ERROR("[%s] not support engine type[%d]", __func__, engine);
-        return HCCL_E_PARA;
-    }
-
-    contextMap_[tag][engine] = {type, ctxData, size};
-    *ctx = contextMap_[tag][engine].addr;
+    CHK_RET(HcommEngineCtxCreate(engine, size, ctx));
+    contextMap_[tag][engine] = {HCCL_MEM_TYPE_NUM, *ctx, size}; // type不需要使用
     HCCL_INFO("[%s]create context success, tag[%s], engine[%d]", __func__, tag.c_str(), engine);
-
     return HCCL_SUCCESS;
 }
 
-HcclResult ContextManager::GetCommEngineCtx(const std::string &tag, CommEngine engine, void **ctx, uint64_t *size)
+HcclResult EngineCtxs::GetCommEngineCtx(const std::string &tag, CommEngine engine, void **ctx, uint64_t *size)
 {
     std::lock_guard<std::mutex> lock(mutex_); 
     // Ctx未创建返回
@@ -79,30 +61,18 @@ HcclResult ContextManager::GetCommEngineCtx(const std::string &tag, CommEngine e
     return HCCL_SUCCESS;
 }
 
-HcclResult ContextManager::CopyCommEngineCtx(const std::string &tag, CommEngine engine, const void *srcCtx,
+HcclResult EngineCtxs::CopyCommEngineCtx(const std::string &tag, CommEngine engine, const void *srcCtx,
     uint64_t size, uint64_t dstCtxOffset)
 {
     void *dstCtx;
     uint64_t dstSize = 0;
-    if (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU
-        || engine == COMM_ENGINE_AIV) {
-        CHK_RET(GetCommEngineCtx(tag, engine, &dstCtx, &dstSize));
-        // 从Host内存拷贝到Device Context内存上
-        CHK_RET(hrtMemSyncCopy(reinterpret_cast<uint8_t*>(dstCtx) + dstCtxOffset, size, srcCtx, size,
-            HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
-    } else if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
-        || engine == COMM_ENGINE_CCU) {
-        CHK_RET(GetCommEngineCtx(tag, engine, &dstCtx, &dstSize));
-        (void)memcpy_s(reinterpret_cast<uint8_t*>(dstCtx) + dstCtxOffset, size, srcCtx, size);
-    } else {
-        HCCL_ERROR("[%s]copy engine ctx failed, Unsupported engine[%d], tag[%s]", __func__, engine, tag.c_str());
-        return HCCL_E_PARA;
-    }
+    CHK_RET(GetCommEngineCtx(tag, engine, &dstCtx, &dstSize));
+    CHK_RET(HcommEngineCtxCopy(engine, reinterpret_cast<uint8_t*>(dstCtx) + dstCtxOffset, srcCtx, size)); // 增加大小判断，增加强转
     HCCL_INFO("[%s]copy engine ctx success, tag[%s], engine[%d]", __func__, tag.c_str(), engine);
     return HCCL_SUCCESS;
 }
 
-HcclResult ContextManager::DestroyCommEngineCtx(const std::string &tag, CommEngine engine)
+HcclResult EngineCtxs::DestroyEngineCtx(const std::string &tag, CommEngine engine)
 {
     std::lock_guard<std::mutex> lock(mutex_); 
     // Ctx不存在返回错误
@@ -117,15 +87,7 @@ HcclResult ContextManager::DestroyCommEngineCtx(const std::string &tag, CommEngi
     }
     // 获取内存信息
     HcclMem& memInfo = engineCtxMap[engine];
-    // 释放内存
-    if (memInfo.type == HCCL_MEM_TYPE_HOST) {
-        free(memInfo.addr);
-    } else if (memInfo.type == HCCL_MEM_TYPE_DEVICE) {
-        CHK_RET(hrtFree(memInfo.addr));
-    } else {
-        HCCL_ERROR("[%s] invalid memory type[%d]", __func__, memInfo.type);
-        return HCCL_E_PARA;
-    }
+    CHK_RET(HcommEngineCtxDestroy(engine, memInfo.addr));
     // 从映射中移除
     engineCtxMap.erase(engine);
     if (engineCtxMap.empty()) {

@@ -16,6 +16,8 @@ class RtsqA5 : public RtsqBase {
 public:
     RtsqA5(u32 devPhyId, u32 streamId, u32 sqId);
 
+    RtsqA5(u32 devPhyId, u32 streamId, u32 sqId, bool launchFlag);
+
     void Reset() override;
 
     void LaunchTask() override;
@@ -68,6 +70,8 @@ private:
     u32 pendingSqeCnt{0};
 
     bool isPreStreamSync = false;
+
+    bool launchFlag_ = false;
 
     static constexpr u32 rtsqSqeSize     = 64;
     static constexpr u32 perLaunchSqeCnt = 128; // 最大launch 128个SQE
