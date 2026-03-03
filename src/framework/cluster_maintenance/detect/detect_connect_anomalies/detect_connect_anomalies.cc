@@ -120,25 +120,28 @@ HcclResult DetectConnectionAnomalies::WaitForDectect()
     isPrint_ = true;
     return HCCL_SUCCESS;
 }
+
 HcclResult DetectConnectionAnomalies::ProcessDetectionResults()
 {
     std::string errMsg;
     HCCL_ERROR("-------------------CONNECT TIMEOUT DETECT RESULT-----------------------");
-    for (const auto& detectInfo : recvErrorInfoMap_) {
-        std::string eventInfo = PrintDetectInfo(detectInfo.second.localServerId, detectInfo.second.localDeviceId, detectInfo.second);
-        HCCL_ERROR("%s", eventInfo.c_str());
-        errMsg = errMsg + std::string("\n") + eventInfo;
-    }
-
     if (recvErrorInfoMap_.size() >= 1) {
-        HCCL_ERROR("----------------------------------------------------------------------");
+        for (const auto& detectInfo : recvErrorInfoMap_) {
+            std::string localServerIdStr(detectInfo.second.localServerId);
+            std::string eventInfo = FormatDetectMessage(localServerIdStr, detectInfo.second.localDeviceId, detectInfo.second, true);
+            HCCL_ERROR("%s", eventInfo.c_str());
+            errMsg += "\n" + eventInfo;
+        }
         HCCL_ERROR("%s", GET_SOCKET_TIMEOUT_REASON_WITH_EVENT.c_str());
-        HCCL_ERROR("%s", GET_SOCKET_TIMEOUT_REASON_WITH_EVENT_NOTE.c_str());
-        errMsg = errMsg + std::string("\n") + GET_SOCKET_TIMEOUT_REASON_WITH_EVENT;
-        errMsg = errMsg + std::string("\n") + GET_SOCKET_TIMEOUT_REASON_WITH_EVENT_NOTE;
+        errMsg += "\n" + GET_SOCKET_TIMEOUT_REASON_WITH_EVENT;
     } else {
+        const auto& firstDetectInfo = recvErrorInfoMap_.begin()->second;
+        std::string localServerIdStr(firstDetectInfo.localServerId);
+        std::string eventInfo = FormatDetectMessage(localServerIdStr, firstDetectInfo.localDeviceId, firstDetectInfo, false);
+        HCCL_ERROR("%s", eventInfo.c_str());
+        errMsg = eventInfo;
         HCCL_ERROR("%s", GET_SOCKET_TIMEOUT_REASON_WITHOUT_EVENT.c_str());
-        errMsg = GET_SOCKET_TIMEOUT_REASON_WITHOUT_EVENT;
+        errMsg += "\n" + GET_SOCKET_TIMEOUT_REASON_WITHOUT_EVENT;
     }
     HCCL_ERROR("----------------------------------------------------------------------");
 
@@ -551,18 +554,21 @@ HcclResult DetectConnectionAnomalies::CreateClients(struct ErrInfo errInfo, std:
     return HCCL_SUCCESS;
 }
 
-std::string DetectConnectionAnomalies::PrintDetectInfo(const char *localServerId, s32 localDeviceId, const DetectInfo &detectInfo)
+std::string DetectConnectionAnomalies::FormatDetectMessage(const std::string &localServerId, s32 localDeviceId, const DetectInfo &detectInfo, bool hasError)
 {
-    errorCount_++;
-    char errorLogBuffer[LOG_TMPBUF_SIZE];
-    s32 ret = snprintf_s(errorLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-        "TRANSPORT DETECT EVENT[%d]:Rank[%s/%d]: srcRank[%s/%d] connect destRank[%s/%d] fail.", \
-        errorCount_.load(), localServerId, localDeviceId, detectInfo.localServerId, detectInfo.localDeviceId, detectInfo.remoteServerId,
-        detectInfo.remoteDeviceId);
-    if (ret == -1) {
-        HCCL_RUN_WARNING("[DetectConnectionAnomalies][%s] snprintf_s failed",  __func__);
+    if (hasError) {
+        return std::string("This node (server ") + 
+            localServerId  + ", device ID " + std::to_string(localDeviceId) +
+            ") detects that srcRank (server " + detectInfo.localServerId + 
+            ", device ID " + std::to_string(detectInfo.localDeviceId) + 
+            ") fails to connect to dstRank (server " + detectInfo.remoteServerId +
+            ", device ID " + std::to_string(detectInfo.remoteDeviceId) + 
+            "). Continue to analyze the fault based on the logs of srcRank and dstRank.";
+    } else {
+        return std::string("This node (server ") +
+            localServerId + ", device ID " + std::to_string(localDeviceId) +
+            ") detects no exception event. The possible cause is that the behaviors of different ranks are inconsistent. The possible causes are as follows:";
     }
-    return std::string(errorLogBuffer);
 }
 
 void DetectConnectionAnomalies::ThreadDestroy()

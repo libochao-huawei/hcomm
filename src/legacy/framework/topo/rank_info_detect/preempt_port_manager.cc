@@ -112,8 +112,10 @@ void PreemptPortManager::PreemptPortInRange(const std::shared_ptr<Socket> &liste
         }
     }
     // 所有端口范围内的端口都已经被占用，没有可用的端口，抢占监听失败
-    RPT_INPUT_ERR(true, "EJ0003", std::vector<std::string>({"reason"}),
-        std::vector<std::string>({"The IP address and ports have been bound already."}));
+    std::string errormessage = "The IP address " + ipAddr +
+                              " add port " + std::to_string(usePort) + " have already been bound.";
+    RPT_INPUT_ERR(true, "EI0019", std::vector<std::string>({"reason"}),
+        std::vector<std::string>({errormessage}));
     std::string portRangeStr = GetRangeStr(portRange);
     HCCL_ERROR("[PreemptPortManager::%s] Complete polling of socket port range:%s", __func__, portRangeStr.c_str());
     HCCL_ERROR("[PreemptPortManager::%s] All ports in socket port range are bound already. "
