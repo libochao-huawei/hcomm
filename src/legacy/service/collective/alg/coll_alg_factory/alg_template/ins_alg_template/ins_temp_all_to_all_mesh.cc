@@ -226,6 +226,13 @@ HcclResult InsTempAlltoAllMesh::SendRecvData(u32 step, const std::vector<u32> &c
                                              const ResLinks &tempLinks,
                                              std::vector<InsQuePtr> &queues) const
 {
+    CHK_PRT_RET(queues.empty(),
+        HCCL_ERROR("[InsTempAlltoAllMesh][SendRecvData] empty queues"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(queues[0]);
+    if (commRanks.size() > queues.size()) {
+        HCCL_ERROR("[InsTempAlltoAllMesh][SendRecvData] commRanks.size() > queues.size() is wrong");
+        return HcclResult::HCCL_E_INTERNAL;
+    }
     for(u32 i = 0 ; i < commRanks.size(); i++) {
         s32 remoteRank = static_cast<s32>(commRanks[i]);
         InsQuePtr queue = queues[i];

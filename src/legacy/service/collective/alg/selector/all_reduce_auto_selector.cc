@@ -216,8 +216,8 @@ SelectorStatus AllReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, 
     HCCL_DEBUG("[AllReduceAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {
-        if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
-            HCCL_ERROR("[SelectAicpuAlgo] INT64, UINT64, FP64 only support in-box fullmesh algo type now.");
+        if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64 || op.reduceOp == ReduceOp::PROD) {
+            HCCL_ERROR("[SelectAicpuAlgo] INT64, UINT64, FP64 and reduceop::prod only support in-box fullmesh algo type now.");
             return SelectorStatus::NOT_MATCH;
         }
         if (topoInfo.Level1Nhr) {
