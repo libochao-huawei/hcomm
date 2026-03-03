@@ -55,6 +55,27 @@ private:
         [] (const std::string &s) -> std::vector<SocketPortRange> { return CastSocketPortRange(s, "HCCL_NPU_SOCKET_PORT_RANGE"); }};
 };
 
+std::ostrema& operator<<(std::ostream& os, const IpAddress& hcclIfIp)
+{
+    os << hcclIfIp.Describe();
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const std::vector<SocketPortRange>& rangeVec)
+{
+    os << "{";
+    bool isVecFirst = true;
+    for (const auto& range : rangeVec) {
+        if (!isVecFirst) {
+            os << ",";
+        }
+        os << range;
+        isVecFirst = false;
+    }   
+    os << "}";
+    return os;
+}
+
 // Socket公共配置
 class EnvSocketConfig : public BaseConfig {
 public:
@@ -172,6 +193,74 @@ private:
     CfgField<HcclAccelerator> hcclAccelerator_{"HCCL_OP_EXPANSION_MODE", HcclAccelerator::CCU_SCHED,
                                               CastHcclAccelerator};
 };
+
+std::ostream& operator<<(std::ostream& os, HcclAccelerator hcclAccelerator)
+{
+    return os << hcclAccelerator.Describe();
+}
+
+std::ostream& operator<<(std::ostream& os, OpType op)
+{
+    return os << op.Describe();
+}
+
+std::ostream& operator<<(std::ostream& os, HcclAlgoType algo)
+{
+    switch(algo) {
+        case HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT:
+            return os << "HCCL_ALGO_TYPE_DEFAULT";
+        case HcclAlgoType::HCCL_ALGO_TYPE_RING:
+            return os << "HCCL_ALGO_TYPE_RING";
+        case HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE:
+            return os << "HCCL_ALGO_TYPE_PIPELINE";
+        case HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH:
+            return os << "HCCL_ALGO_TYPE_FULLMESH";
+        case HcclAlgoType::HCCL_ALGO_TYPE_HDR:
+            return os << "HCCL_ALGO_TYPE_HDR";
+        case HcclAlgoType::HCCL_ALGO_TYPE_NHR:
+            return os << "HCCL_ALGO_TYPE_NHR";
+        case HcclAlgoType::HCCL_ALGO_TYPE_NHR_V1:
+            return os << "HCCL_ALGO_TYPE_NHR_V1";
+        case HcclAlgoType::HCCL_ALGO_TYPE_NB:
+            return os << "HCCL_ALGO_TYPE_NB";
+        case HcclAlgoType::HCCL_ALGO_TYPE_NULL:
+            return os << "HCCL_ALGO_TYPE_NULL";
+        case HcclAlgoType::HCCL_ALGO_TYPE_NA:
+            return os << "HCCL_ALGO_TYPE_NA";
+        case HcclAlgoType::HCCL_ALGO_TYPE_AHC:
+            return os << "HCCL_ALGO_TYPE_AHC";
+        case HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE:
+            return os << "HCCL_ALGO_TYPE_AHC_BROKE";
+        default: return os << "UNKNOWN";
+        
+    }
+}
+
+std::ostream& operator<<(std::stream& os, const std::map<OpType, std::vector<HcclAlgoType>>& map)
+{
+    os << "{";
+    bool isMapFirst = true;
+    for (const auto& pair : map) {
+        const auto& op = pair.first;
+        const auto& algVec = pair.second;
+        if (!isMapFirst) {
+            os << ",";
+        }
+        os << op << "=>[";
+        bool isVecFirst = true;
+        for (const auto& alg : algVec) {
+            if (!isVecFirst) {
+                os << ",";
+            }
+            os << alg;
+            isVecFirst = false;
+        }
+        os << "]";
+        isMapFirst = false;
+    }
+    os << "}";
+    return os;
+}
 
 // 日志/DFX配置
 class EnvLogConfig : public BaseConfig {

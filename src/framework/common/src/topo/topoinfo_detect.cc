@@ -626,9 +626,8 @@ HcclResult TopoInfoDetect::Teardown()
 HcclResult TopoInfoDetect::ReadHostSocketWhitelist(vector<HcclIpAddress> &whitelist) const
 {
     RPT_ENV_ERR((GetExternalInputHcclWhiteListFile().length() == 0), "EI0001",
-        vector<string>({ "env", "tips" }),
-        vector<string>({ "HCCL_WHITELIST_FILE", "HCCL_WHITELIST_DISABLE is [0]"
-        "but HCCL_WHITELIST_FILE is not set or not exist" }));
+        std::vector<std::string>({"value", "env", "expect"}),
+        vector<string>({"", "HCCL_WHITELIST_FILE", "a valid file path" }));
 
     CHK_PRT_RET((GetExternalInputHcclWhiteListFile().length() == 0),
         HCCL_ERROR("[%s][%s]environmental variable HCCL_WHITELIST_DISABLE is [0], "
@@ -640,13 +639,11 @@ HcclResult TopoInfoDetect::ReadHostSocketWhitelist(vector<HcclIpAddress> &whitel
     // 文件路径在处理外部输入时已经做过合法性判断, 无需再次校验
     HcclResult ret =
         HcclWhitelist::GetInstance().LoadConfigFile(GetExternalInputHcclWhiteListFile());
-    
-    std::string WhiteFileError =
-        "hccl whitelist load config file[" + GetExternalInputHcclWhiteListFile() + "] failed.";
 
     RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001",
-        std::vector<std::string>({ "env", "tips" }),
-        std::vector<std::string>({ "HCCL_WHITELIST_FILE", WhiteFileError}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({GetExternalInputHcclWhiteListFile(), "HCCL_WHITELIST_FILE",
+        "a valid whitelist file format"}));
           
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]hccl whitelist load config file[%s] failed. ret[%u].",
