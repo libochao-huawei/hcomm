@@ -171,6 +171,9 @@ void InsExecutor::ExecuteSlaveQueue91095(list<InsQueue::Iterator> &slaveQueueIte
         if (UNLIKELY(slaveStream == nullptr)) {
             THROW<NullPtrException>(StringFormat("InsExecutor::%s slaveStream is null,", __func__));
         }
+        if (slaveStream->GetRtsq() == nullptr) {
+            THROW<NullPtrException>(StringFormat("InsExecutor::%s GetRtsq returned null for slaveStream Id(%u)", __func__, slaveStream->GetId()));
+        }
         // 判断rtsq队列中的空间是否充足
         bool isRtsqQueueSpaceSufficient = slaveStream->GetRtsq()->IsRtsqQueueSpaceSufficient();
         // 判断当前从流是否有Int64类型reduce算子，是否需要等其他流任务下发完成
@@ -239,6 +242,9 @@ void InsExecutor::CheckPreStreamSync(StreamLiteMgr *streamLiteMgr, u32 slaveQueu
         StreamLite *slaveStream = streamLiteMgr->GetSlave(slaveStreamIndex);
         if (slaveStream == nullptr) {
             THROW<NullPtrException>(StringFormat("InsExecutor::%s slaveStream is null,", __func__));
+        }
+        if (slaveStream->GetRtsq() == nullptr) {
+            THROW<NullPtrException>(StringFormat("InsExecutor::%s GetRtsq returned null for slaveStream Id(%u)", __func__, slaveStream->GetId()));
         }
         if (slaveStream->GetRtsq()->GetPreStreamSyncStatus()) {
             ++preStreamSyncValue;

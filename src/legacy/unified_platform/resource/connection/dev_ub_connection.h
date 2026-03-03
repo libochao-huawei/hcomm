@@ -16,6 +16,8 @@
 #include "orion_adapter_hccp.h"
 #include "tp_manager.h"
 #include "local_ub_rma_buffer.h"
+#include "stream.h"
+#include "task.h"
 #include "mc2_type.h"
 
 namespace Hccl {

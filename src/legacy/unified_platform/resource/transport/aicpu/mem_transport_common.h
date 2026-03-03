@@ -9,7 +9,10 @@
  */
 #ifndef MEM_TRANSPORT_COMMON_H
 #define MEM_TRANSPORT_COMMON_H
+
+#include "string_util.h"
 #include "reduce_in.h"
+
 namespace Hccl {
 MAKE_ENUM(TransportType, P2P, UB)
 MAKE_ENUM(TransportNotifyType, NORMAL, COUNT)

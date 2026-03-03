@@ -37,7 +37,7 @@ public:
 
     HcclMemType GetMemType() const;
 
-    const char* GetMemTag() const;
+    const std::string GetMemTag() const;
 
     virtual std::string Describe() const;
 

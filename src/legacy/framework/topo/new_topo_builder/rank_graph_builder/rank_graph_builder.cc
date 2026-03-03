@@ -206,7 +206,7 @@ void RankGraphBuilder::AddTopoDescFabricInfo()
         auto peer2netEdges = phyTopoGraph->GetEdges(localId, PhyTopo::Fabric::GetId());
 
         HCCL_RUN_INFO(
-            "[RankGraphBuilder][AddTopoDescFabricInfo] Processing rank %u (localId: %u), found %zu peer2net edges",
+            "[RankGraphBuilder][AddTopoDescFabricInfo] Processing rank %d (localId: %u), found %zu peer2net edges",
             rankId, localId, peer2netEdges.size());
 
         for (const auto& link : peer2netEdges) {

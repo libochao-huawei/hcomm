@@ -10,6 +10,9 @@
 #ifndef HCCL_MC2_TYPE_H
 #define HCCL_MC2_TYPE_H
 
+#include <string>
+#include <unordered_map>
+#include <vector>
 #include "exception_util.h"
 #include "ccu_api_exception.h"
 #include "op_type.h"

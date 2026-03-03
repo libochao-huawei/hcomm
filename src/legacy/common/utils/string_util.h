@@ -12,11 +12,10 @@
 #define HCCLV2_STRING_UTIL_H
 
 #include <string>
-#include <vector>
 #include <sstream>
 #include <iomanip>
+#include <vector>
 #include "securec.h"
-#include "hccl_types.h"
 #include "log.h"
 
 namespace Hccl {
