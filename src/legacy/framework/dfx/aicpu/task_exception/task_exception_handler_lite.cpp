@@ -87,7 +87,8 @@ HcclResult GenerateErrorMessageReport(CommunicatorImplLite *aicpuComm, std::shar
     memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag), taskInfo->dfxOpInfo_->op_.opTag.c_str(), taskInfo->dfxOpInfo_->op_.opTag.size());
     memcpy_s(errMsgInfo.group, sizeof(errMsgInfo.group), aicpuComm->GetId().c_str(), aicpuComm->GetId().size());
     if (taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
-        || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE) {
+        || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
+        || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB) {
         errMsgInfo.locEid = taskInfo->taskParam_.taskPara.DMA.locEid;
         errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.DMA.rmtEid;
         errMsgInfo.ubCqeStatus = exceptionInfo->errorCode & 0xFF;
@@ -236,7 +237,8 @@ void PrintEid(std::shared_ptr<TaskInfo> taskInfo) {
     if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
         HCCL_ERROR("[PrintEid] Error UB link info: localEid[%s], remoteEid[%s]. ", taskInfo->taskParam_.taskPara.Reduce.locEid.Describe().c_str(),
             taskInfo->taskParam_.taskPara.Reduce.rmtEid.Describe().c_str());
-    } else if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY) {
+    } else if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
+        || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB) {
         HCCL_ERROR("[PrintEid] Error UB link info: localEid[%s], remoteEid[%s]. ", taskInfo->taskParam_.taskPara.DMA.locEid.Describe().c_str(),
             taskInfo->taskParam_.taskPara.DMA.rmtEid.Describe().c_str());
     }
@@ -286,7 +288,8 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
         PrintTaskContextInfo(exceptionInfo->sqId, sqeId);
     }
     if (curTask->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY || curTask->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
-        || curTask->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE || curTask->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE) {
+        || curTask->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE || curTask->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
+        || curTask->taskParam_.taskType == TaskParamType::TASK_UB) {
         HCCL_ERROR("[TaskExceptionHandlerLite] ubCqeStatus[%u]", (u32)(exceptionInfo->errorCode & 0xFF));
     }
     PrintEid(curTask);

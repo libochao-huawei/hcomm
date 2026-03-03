@@ -393,7 +393,7 @@ void UbTransportLiteImpl::ProfilingProcess(const RmaBufferLite &loc, const Buffe
     }
 
     TaskParam taskParam{};
-    taskParam.taskType = TaskParamType::TASK_RDMA;
+    taskParam.taskType = TaskParamType::TASK_UB;
     taskParam.beginTime = ProfGetCurCpuTimestamp();
     taskParam.taskPara.DMA.src      = reinterpret_cast<void *>(GetRmaBufSlicelite(loc).GetAddr());
     taskParam.taskPara.DMA.dst      = reinterpret_cast<void *>(GetRmtRmaBufSliceLite(rmt).GetAddr());
@@ -402,6 +402,8 @@ void UbTransportLiteImpl::ProfilingProcess(const RmaBufferLite &loc, const Buffe
     taskParam.taskPara.DMA.notifyValue = 0xffffffff;
     taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
     taskParam.taskPara.DMA.dmaOp    = dmaOp;
+    taskParam.taskPara.DMA.locEid = GetLocEid();
+    taskParam.taskPara.DMA.rmtEid = GetRmtEid();
     callback_(stream.GetSqId(), taskId, taskParam);
 }
 

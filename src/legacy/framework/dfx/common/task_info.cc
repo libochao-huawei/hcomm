@@ -58,6 +58,7 @@ string TaskInfo::GetParaInfo() const
         case TaskParamType::TASK_RDMA:
         case TaskParamType::TASK_SEND_PAYLOAD:
         case TaskParamType::TASK_UB_INLINE_WRITE:
+        case TaskParamType::TASK_UB:
             return GetParaDMA();
         case TaskParamType::TASK_REDUCE_INLINE:
         case TaskParamType::TASK_UB_REDUCE_INLINE:
@@ -147,6 +148,7 @@ string TaskInfo::GetTaskConciseName() const
             {TaskParamType::TASK_SEND_PAYLOAD, "SP"},
             {TaskParamType::TASK_REDUCE_INLINE, "IR"},
             {TaskParamType::TASK_UB_REDUCE_INLINE, "IR"},
+            {TaskParamType::TASK_UB, "WorR"},
             {TaskParamType::TASK_REDUCE_TBE, "R"},
             {TaskParamType::TASK_NOTIFY_RECORD, "NR"},
             {TaskParamType::TASK_NOTIFY_WAIT, "NW"},
