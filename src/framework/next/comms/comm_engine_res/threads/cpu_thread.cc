@@ -10,7 +10,8 @@
 
 #include "cpu_thread.h"
 #include "orion_adapter_rts.h"
-
+HcclResult RecordService(void *args, uint64_t argsSizeByte);
+HcclResult WaitService(void *args, uint64_t argsSizeByte);
 namespace hccl {
 struct HostArgs {
     void* cpuThread;
@@ -96,10 +97,9 @@ HcclResult CpuThread::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
 HcclResult CpuThread::Init()
 {
     // 申请notify
-    uint64_t notifySize = 10;
     for (uint32_t i = 0; i < notifyNum_; ++i) {
         auto notify = std::make_unique<MemNotify>();
-        notify->Alloc(notifySize);
+        notify->Alloc();
         notifys_.push_back(std::move(notify));
     }
     
@@ -186,7 +186,7 @@ HcclResult CpuThread::GetThreadEntity(ThreadEntity* threadEntity)
     return HCCL_SUCCESS; 
 }
 
-MemNotify *CpuThread::GetNotify(uint32_t notifyIndex)
+MemNotify *CpuThread::GetMemNotify(uint32_t notifyIndex)
 {
     if (notifyIndex >= notifys_.size()) {
         return nullptr;

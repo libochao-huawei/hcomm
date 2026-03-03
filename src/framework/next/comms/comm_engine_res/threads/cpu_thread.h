@@ -24,8 +24,6 @@ extern drvError_t __attribute__((weak)) halSvmRegister(uint32_t dev_id, uint64_t
 extern drvError_t __attribute__((weak)) halSvmAccess(uint32_t dev_id, uint64_t dst, uint64_t src, uint64_t size, uint64_t flag);
 extern drvError_t __attribute__((weak)) halSvmUnregister(uint32_t dev_id, uint64_t va, uint64_t size, uint64_t flag);
 
-//-----------------------------------------------------------------------------------------------------------------------------------
-
 namespace hccl {
 
 // 循环队列
@@ -67,13 +65,60 @@ public:
         }
         head_ = reinterpret_cast<uint64_t>(headPtr);
         tail_ = reinterpret_cast<uint64_t>(tailPtr);
+        initialized_ = true;
         return HCCL_SUCCESS;
     };
 
     HcclResult pop(ThreadMsgEntity &entity) {
-        // TODO: 补充流程
+        if (!initialized_) {
+            return HCCL_E_PARA;
+        }
+
+        // 检查队列是否为空
+        if (empty()) {
+            return HCCL_E_AGAIN;  // 队列为空
+        }
+
+        // 1. 获取当前 head 值
+        uint64_t head;
+        aclError err = aclrtMemcpy(&head, sizeof(uint64_t), 
+                                   reinterpret_cast<void*>(head_), sizeof(uint64_t), 
+                                   ACL_MEMCPY_DEVICE_TO_HOST);
+        if (err != ACL_ERROR_NONE) {
+            return HCCL_E_RUNTIME;
+        }
+
+        // 2. 获取当前 tail 值（用于计算队列长度）
+        uint64_t tail;
+        err = aclrtMemcpy(&tail, sizeof(uint64_t), 
+                          reinterpret_cast<void*>(tail_), sizeof(uint64_t), 
+                          ACL_MEMCPY_DEVICE_TO_HOST);
+        if (err != ACL_ERROR_NONE) {
+            return HCCL_E_RUNTIME;
+        }
+
+        // 3. 计算消息在队列中的偏移位置
+        uint64_t offset = (head % capacity_) * msgSize_;
+        void* msgPtr = reinterpret_cast<void*>(addr_ + offset);
+
+        // 4. 从设备端队列拷贝消息到主机端
+        err = aclrtMemcpy(&entity, sizeof(ThreadMsgEntity), msgPtr, sizeof(ThreadMsgEntity), ACL_MEMCPY_DEVICE_TO_HOST);
+        if (err != ACL_ERROR_NONE) {
+            return HCCL_E_RUNTIME;
+        }
+
+        // 5. 更新 head 指针
+        head++;
+        head = head % capacity_;  // 循环队列
+        err = aclrtMemcpy(reinterpret_cast<void*>(head_), sizeof(uint64_t), 
+                          &head, sizeof(uint64_t), ACL_MEMCPY_HOST_TO_DEVICE);
+        if (err != ACL_ERROR_NONE) {
+            return HCCL_E_RUNTIME;
+        }
         return HCCL_SUCCESS;
-    };
+    }
+
+
     HcclResult push(const ThreadMsgEntity &entity) {
         // TODO: 补充流程
         return HCCL_SUCCESS;
@@ -82,6 +127,8 @@ public:
         uint64_t head, tail;
         aclrtMemcpy(&head, sizeof(uint64_t), reinterpret_cast<void*>(head_), sizeof(uint64_t), ACL_MEMCPY_DEVICE_TO_HOST);
         aclrtMemcpy(&tail, sizeof(uint64_t), reinterpret_cast<void*>(tail_), sizeof(uint64_t), ACL_MEMCPY_DEVICE_TO_HOST);
+        head = head % capacity_;
+        tail = tail % capacity_;
         return (head == tail);
     };
 
@@ -95,12 +142,13 @@ public:
         return queueInfo;
     };
 private:
+    bool initialized_{false};
     uint64_t addr_;
     uint64_t capacity_;
     uint64_t msgSize_;
     uint64_t head_;
     uint64_t tail_;
-    // 一条消息包含：ThreadServiceHandle + ThreadServiceArgs
+    // 一条消息包含：ThreadMsgEntity
 };
 
 class ServiceScheduler {
@@ -124,7 +172,6 @@ public:
         return HCCL_SUCCESS;
     }
     HcclResult executeService(ThreadServiceHandle service, void* args, uint64_t argsSize) {
-        //
         if (handle2ServiceMap_.find(service) == handle2ServiceMap_.end()) {
             HCCL_ERROR("service not found");
             return HCCL_E_NOT_FOUND;
@@ -171,25 +218,59 @@ public:
     ~MemNotify() {
         //TODO: 内存销毁
     };
-    HcclResult NotifyRecord() {
+    HcclResult Record() {
         return HCCL_SUCCESS;
     };
-    HcclResult NotifyWait() {
+    HcclResult Wait() {
+        // TODO: 等待notify被写入
+        s32 devId = 0;
+        CHK_RET(hrtGetDevice(&devId));
+        int64_t connectType = 0;
+        hrtHalGetDeviceInfo(devId, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, &connectType); // ?
+        if (connectType == 1) { // PCIe
+            // 轮询notifyDeviceVa_地址，等待被写入
+            while (true) {
+                uint8_t flag;
+                aclError err = aclrtMemcpy(&flag, sizeof(uint8_t), notifyDeviceVa_, sizeof(uint8_t), ACL_MEMCPY_DEVICE_TO_HOST);
+                if (err != ACL_ERROR_NONE) {
+                    return HCCL_E_RUNTIME;
+                }
+                if (flag != 0) {
+                    // reset flag
+                    uint8_t resetFlag = 0;
+                    err = aclrtMemcpy(notifyDeviceVa_, sizeof(uint8_t), &resetFlag, sizeof(uint8_t), ACL_MEMCPY_HOST_TO_DEVICE);
+                    if (err != ACL_ERROR_NONE) {
+                        return HCCL_E_RUNTIME;
+                    }
+                    break; // notify被写入
+                }
+            }
+        } else {
+            // 轮询notifyHostVa_地址，等待被写入
+            while (true) {
+                uint8_t flag = *reinterpret_cast<uint8_t*>(notifyHostVa_);
+                if (flag != 1) {
+                    // reset flag
+                    *reinterpret_cast<uint8_t*>(notifyHostVa_) = 0;
+                    break; // notify被写入
+                }
+            }
+        }
         return HCCL_SUCCESS;
     };
-    HcclResult Alloc(uint32_t notifySize) {
+    HcclResult Alloc() {
         s32 devId = 0;
         CHK_RET(hrtGetDevice(&devId));
         int64_t connectType = 0;
         hrtHalGetDeviceInfo(devId, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, &connectType); // ?
         if (connectType == 1) { // PCIe
             // 申请notify
-            hrtMalloc(&notifyDeviceVa_, notifySize);
+            aclrtMalloc(&notifyDeviceVa_, sizeof(uint8_t), ACL_MEM_MALLOC_HUGE_ONLY); // device
             // 对齐
-            uint64_t va = static_cast<uint64_t>(notifySize + 4096ULL);
+            uint64_t va = static_cast<uint64_t>(sizeof(uint8_t) + 4096ULL);
             uint64_t registerVa = (va + (4096ULL - 1ULL)) & ~(4096ULL - 1ULL);
             uint64_t accessVa;
-            int32_t ret = halSvmRegister(devId, registerVa, notifySize, SVM_REGISTER_FLAG_WITH_ACCESS_VA, &accessVa);
+            int32_t ret = halSvmRegister(devId, registerVa, sizeof(uint8_t), SVM_REGISTER_FLAG_WITH_ACCESS_VA, &accessVa);
             if (ret != 0) {
                 HCCL_ERROR("halSvmRegister failed, ret = %d", ret);
                 return HCCL_E_INTERNAL;
@@ -197,8 +278,8 @@ public:
             notifyDeviceVa_ = reinterpret_cast<void*>(accessVa);
         } else {
             //
-            notifyHostVa_ = malloc(notifySize);
-            aclError aclRet = aclrtHostRegister(notifyHostVa_, notifySize, ACL_HOST_REGISTER_MAPPED, &notifyDeviceVa_);
+            notifyHostVa_ = malloc(sizeof(uint8_t)); // host
+            aclError aclRet = aclrtHostRegister(notifyHostVa_, sizeof(uint8_t), ACL_HOST_REGISTER_MAPPED, &notifyDeviceVa_);
             if (aclRet != ACL_SUCCESS) {
                 HCCL_ERROR("aclrtHostRegister failed, ret = %d", aclRet);
                 free(notifyHostVa_);
@@ -268,7 +349,7 @@ public:
     HcclResult ServiceUnregister(ThreadServiceHandle service);
     HcclResult KernelRun();
     HcclResult GetThreadEntity(ThreadEntity* threadEntity);
-    MemNotify* GetNotify(uint32_t notifyIndex);
+    MemNotify* GetMemNotify(uint32_t notifyIndex);
     uint32_t GetNotifyNum() const override;
 
 private:
