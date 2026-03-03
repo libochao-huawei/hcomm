@@ -11,7 +11,7 @@
 
 namespace hccl {
 
-HcclCommDfx::HcclCommDfx(uint32_t deviceId) {
+HcclCommDfx::HcclCommDfx(u32 deviceId) {
     deviceId_ = deviceId;
     mirrorTaskManager_ = new Hccl::MirrorTaskManager(deviceId_, &Hccl::GlobalMirrorTasks::Instance(), false);
 }SS
@@ -31,7 +31,7 @@ void HcclCommDfx::Init() {
 }
 
 // 回调注册实现
-void HcclCommDfx::RegisterProfilingCallback() {
+void HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const TaskParam &taskParam, u64 handle);
     // auto callback = [this](const TaskInfo& taskInfo) {
     //     mirrorTaskManager_->AddTaskInfo(std::make_shared<TaskInfo>(taskInfo));
     // };todo:下面未实现编译报错未使用
@@ -46,7 +46,7 @@ void HcclCommDfx::ReportAllTasks(bool cachedReq) {
     }
 }
 
-void HcclCommDfx::ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) {
+void HcclCommDfx::ReportOp(u64 beginTime, bool cachedReq, bool opbased) {
     if (profiling_) {
         profiling_->ReportOp(beginTime, cachedReq, opbased);
     }
