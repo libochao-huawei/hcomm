@@ -50,7 +50,6 @@ void ReadWriteLockBase::writeLock()
 
     // 第一步：标记有写者在等待，阻断后续读者进入
     s = state_.fetch_or(WAITING_BIT, std::memory_order_relaxed);
-
     // 第二步：循环尝试获取真正的写入权限
     while (true) {
         s = state_.load(std::memory_order_relaxed);
