@@ -12,6 +12,8 @@
 #define HCCLV2_COLLSERVICEBASE_H
 
 #include <string>
+#include <thread>
+#include <chrono>
 #include <unordered_map>
 #include "dev_buffer.h"
 #include "coll_operator.h"
