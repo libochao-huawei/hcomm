@@ -48,7 +48,7 @@ void TaskExceptionHandlerLite::Register() const
     TaskExceptionFunc::GetInstance().RegisterCallback(Process);
 }
 
-void GetErrMsgInfo(std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &errorMessage) {
+void GetErrMsgInfo(std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &errMsgInfo) {
     if (taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB) {
