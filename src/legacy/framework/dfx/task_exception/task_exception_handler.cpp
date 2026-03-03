@@ -691,6 +691,20 @@ void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankCo
     }
 }
 
+void GetNotifyInfo(TaskParam &taskParam, const ErrorMessageReport &errorMessage) {
+    HCCL_INFO("GetNotifyInfo start.");
+    if (errorMessage.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
+        taskParam.taskPara.Notify.notifyID = errorMessage.notifyId;
+        taskParam.taskPara.Notify.value = errorMessage.notifyValue;
+    } else if (errorMessage.taskType == TaskParamType::TASK_UB_REDUCE_INLINE || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
+        taskParam.taskPara.Reduce.notifyID = errorMessage.notifyId;
+        taskParam.taskPara.Reduce.notifyValue = errorMessage.notifyValue;
+    } else if (errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE || errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY) {
+        taskParam.taskPara.DMA.notifyID = errorMessage.notifyId;
+        taskParam.taskPara.DMA.notifyValue = errorMessage.notifyValue;
+    }
+}
+
 void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
 {
     ErrorMessageReport errorMessage;
@@ -707,25 +721,15 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
         // 找到对应的通信域，并调用回调函数从HDC通道获取AICPU异常信息
         errorMessage = (Hccl::g_communicatorCallbackMapV2[exceptionInfo->deviceid])[exceptionInfo->streamid]();
         if (strlen(errorMessage.tag) > 0) {
-            string groupRankContent;
+            std::string groupRankContent;
             u32 streamId = static_cast<u32>(errorMessage.streamId);
-            std::string tag = std::string(errorMessage.tag);
             TaskParam taskParam{};
             taskParam.taskType = errorMessage.taskType;
-            if (errorMessage.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
-                taskParam.taskPara.Notify.notifyID = errorMessage.notifyId;
-                taskParam.taskPara.Notify.value = errorMessage.notifyValue;
-            } else if (errorMessage.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
-                || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
-                taskParam.taskPara.Reduce.notifyID = errorMessage.notifyId;
-                taskParam.taskPara.Reduce.notifyValue = errorMessage.notifyValue;
-            } else if (errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE
-                || errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY) {
-                taskParam.taskPara.DMA.notifyID = errorMessage.notifyId;
-                taskParam.taskPara.DMA.notifyValue = errorMessage.notifyValue;
-            }
+
+            GetNotifyInfo(taskParam, errorMessage);
+
             std::shared_ptr<DfxOpInfo> dfxOpInfo = std::make_shared<DfxOpInfo>();
-            dfxOpInfo->tag_ = tag;
+            dfxOpInfo->tag_ = std::string(errorMessage.tag);
             dfxOpInfo->algType_ = errorMessage.algType;
             TaskInfo exceptionTaskInfo(streamId, errorMessage.taskId, errorMessage.remoteUserRank, taskParam, dfxOpInfo);
             auto logKeywordL2 = exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
@@ -736,14 +740,11 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
             PrintParaErrorLog(stageErrInfo, exceptionTaskInfo.GetParaInfo());
             PrintGroupErrorMessage(errorMessage, exceptionTaskInfo, groupRankContent, stageErrInfo);
             PrintOpDataErrorMessage(exceptionInfo->deviceid, errorMessage, stageErrInfo);
-            HCCL_ERROR("errorMessage taskType[%s], rtCqErrorType[%], rtCqErrorCode[%u]. ", errorMessage.taskType.Describe().c_str(), 
-                      (u32)errorMessage.rtCqErrorType, errorMessage.rtCqErrorCode);
+            HCCL_ERROR("errorMessage taskType[%s], rtCqErrorType[%], rtCqErrorCode[%u]. ", errorMessage.taskType.Describe().c_str(), (u32)errorMessage.rtCqErrorType, errorMessage.rtCqErrorCode);
 
             // 打印UB DFX寄存器信息
-            if (errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY 
-                || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
-                || errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE
-                || errorMessage.taskType == TaskParamType::TASK_UB_REDUCE_INLINE) {
+            if (errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
+                || errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE || errorMessage.taskType == TaskParamType::TASK_UB_REDUCE_INLINE) {
                 HCCL_ERROR("errorMessage ubCqeStatus[%u]. ", (u32)errorMessage.ubCqeStatus);
                 auto reverseAddr = IpAddress(errorMessage.locEid);
                 auto addr = IpAddress(reverseAddr.GetReverseEid());

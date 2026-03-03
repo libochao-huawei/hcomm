@@ -84,27 +84,22 @@ HcclResult GenerateErrorMessageReport(CommunicatorImplLite *aicpuComm, std::shar
         errMsgInfo.reduceType = taskInfo->taskParam_.taskPara.Reduce.reduceOp;
     }
 
-    memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag), taskInfo->dfxOpInfo_->op_.opTag.c_str(),
-        taskInfo->dfxOpInfo_->op_.opTag.size());
+    memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag), taskInfo->dfxOpInfo_->op_.opTag.c_str(), taskInfo->dfxOpInfo_->op_.opTag.size());
     memcpy_s(errMsgInfo.group, sizeof(errMsgInfo.group), aicpuComm->GetId().c_str(), aicpuComm->GetId().size());
     if (taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE) {
         errMsgInfo.locEid = taskInfo->taskParam_.taskPara.DMA.locEid;
         errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.DMA.rmtEid;
+        errMsgInfo.ubCqeStatus = exceptionInfo->errorCode & 0xFF;
     } else if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
         errMsgInfo.locEid = taskInfo->taskParam_.taskPara.Reduce.locEid;
         errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.Reduce.rmtEid;
+        errMsgInfo.ubCqeStatus = exceptionInfo->errorCode & 0xFF;
     }
 
     errMsgInfo.rtCqErrorType = exceptionInfo->errorType;
     errMsgInfo.rtCqErrorCode = exceptionInfo->errorCode;
-    if (taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
-        || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
-        || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
-        || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
-        errMsgInfo.ubCqeStatus = exceptionInfo->errorCode & 0xFF;
-    }
     return HCCL_SUCCESS;
 }
 
