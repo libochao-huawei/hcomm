@@ -21,7 +21,7 @@ public:
     void Init();
     
     // 注册回调到单例
-    void RegisterProfilingCallback();
+    void AddTaskInfoCallback(u32 streamId, u32 taskId, const TaskParam &taskParam, u64 handle);
     
     // 获取MirrorTaskManager
     Hccl::MirrorTaskManager* GetMirrorTaskManager() const;

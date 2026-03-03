@@ -35,7 +35,7 @@ void HcclCommDfxLite::Init() {
     RegisterProfilingCallback();
 }
 
-void HcclCommDfxLite::RegisterProfilingCallback() {
+void HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const TaskParam &taskParam, u64 handle) {
     // auto callback = [this](const Hccl::TaskInfo& taskInfo) {
     //     mirrorTaskManager_->AddTaskInfo(std::make_shared<Hccl::TaskInfo>(taskInfo));
     // };
