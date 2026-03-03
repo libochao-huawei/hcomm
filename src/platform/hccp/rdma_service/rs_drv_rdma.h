@@ -36,6 +36,7 @@ int RsDrvCreateCq(struct RsQpCb *qpCb, int isExt);
 int RsDrvCreateCqWithAttrs(struct RsQpCb *qpCb, int isExt, struct CqExtAttr *cqAttr);
 int RsDrvQpStateModifytoReset(struct RsQpCb *qpCb);
 int RsDrvQpStateModifytoInit(struct RsQpCb *qpCb, struct ibv_qp_attr *attr);
+enum ibv_mtu RsDrvSetMtu(struct RsQpCb *qpCb);
 int RsDrvQpStateModifytoRtr(struct RsQpCb *qpCb, struct ibv_qp_attr *attr);
 int RsDrvQpStateModifytoRts(struct RsQpCb *qpCb, struct ibv_qp_attr *attr);
 struct ibv_mr* RsDrvMrReg(struct ibv_pd *pd, char *addr, size_t length, int access);
