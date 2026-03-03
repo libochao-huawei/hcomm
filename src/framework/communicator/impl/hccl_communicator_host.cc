@@ -6335,7 +6335,7 @@ namespace hccl
             StateGuard<HcclCommunicator, HcclCommState> guard(this, HcclCommState::BUILDING);
             ret = transportManager_->Alloc(opParam.tag, transMem, algResResponse.opTransportResponse,
                                            opParam.aicpuUnfoldMode, false, opParam.isZeroCopy, opParam.opType,
-                                           opParam.isCapture, false, opParam.isNpuDirectRoce);
+                                           opParam.isCapture, false, opParam.isNpuDirectRoce, &opParam);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[%s]Alloc transports failed, tag[%s]", __func__, newTag.c_str()), ret);
         }
