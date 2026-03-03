@@ -396,11 +396,10 @@ HcclResult EnvConfigPathCache::LoadMultiQpSrcPortFromFile()
     std::string fileStr = GetExternalInputQpSrcPortConfigPath() + "/MultiQpSrcPort.cfg";
     std::array<char, PATH_MAX> realFile{};
     if (realpath(fileStr.c_str(), realFile.data()) == nullptr) {
-        const std::string CFG_FILE_PATH_ERROR = "file path " + fileStr + " is invalid.";
         RPT_INPUT_ERR(true,
             "EI0001",
-            std::vector<std::string>({"env", "tips"}),
-            std::vector<std::string>({fileStr, CFG_FILE_PATH_ERROR}));
+            std::vector<std::string>({"value", "env", "expect"}),
+            std::vector<std::string>({fileStr, "config file path", "valid absolute path"}));
         HCCL_ERROR("[%s][%s]file[%s] path invalid.",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_ENV_CONFIG.c_str(),
@@ -410,9 +409,8 @@ HcclResult EnvConfigPathCache::LoadMultiQpSrcPortFromFile()
 
     std::ifstream inFile(fileStr.c_str(), std::ifstream::in);
     if (!inFile) {
-        const std::string  CFG_FILE_OPEN_ERROR = "open file " + fileStr + " failed.";
-        RPT_INPUT_ERR(true, "EI0001", std::vector<std::string>({"env", "tips"}),
-            std::vector<std::string>({fileStr, CFG_FILE_OPEN_ERROR}));
+        RPT_INPUT_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
+            std::vector<std::string>({fileStr, "config file", "file exists and readable"}));
         HCCL_ERROR("[%s][%s]open config file[%s] failed.",
             LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_ENV_CONFIG.c_str(),fileStr.c_str());
         return HcclResult::HCCL_E_PARA;
@@ -441,17 +439,16 @@ HcclResult EnvConfigPathCache::LoadMultiQpSrcPortFromFile()
         // 切分字符串, 检查配置格式
         std::vector<std::string> strIpPort = Split(lineInfo, "=");
         if (strIpPort.size() != MULTI_QP_CONFIG_IP_NUM) {
-            const std::string CFG_FORMAT_ERROR =
-                "[line: " + std::to_string(lineCnt) + "] invalid format, " +
-                "Expected format per line and start with: 'srcIPN,dstIPN=srcPort0,srcPort1,...,srcPortN'";
+            const std::string formattedExpect =
+                "[line: " + std::to_string(lineCnt) + "] Expected format: 'srcIPN,dstIPN=srcPort0,srcPort1,...,srcPortN'";
             RPT_INPUT_ERR(true,
                 "EI0001",
-                std::vector<std::string>({"env", "tips"}),
-                std::vector<std::string>({fileStr, CFG_FORMAT_ERROR}));
+                std::vector<std::string>({"value", "env", "expect"}),
+                std::vector<std::string>({lineInfo, "config line format", formattedExpect}));
             HCCL_ERROR("[%s][%s] %s Config content[%s]",
                 LOG_KEYWORDS_INIT_GROUP.c_str(),
                 LOG_KEYWORDS_ENV_CONFIG.c_str(),
-                CFG_FORMAT_ERROR.c_str(),
+                formattedExpect.c_str(),
                 lineAvator.c_str());
             inFile.close();
             return HcclResult::HCCL_E_PARA;
@@ -461,11 +458,10 @@ HcclResult EnvConfigPathCache::LoadMultiQpSrcPortFromFile()
         std::string ipPair;
         auto ret = GetIpPairFromString(strIpPort[0], ipPair, lineCnt, lineAvator);
         if (ret != HcclResult::HCCL_SUCCESS) {
-            const std::string  IP_FORMAT_ERROR = "[line: " + std::to_string(lineCnt) + "] is an invalid IP or IPv6.";
-            RPT_INPUT_ERR(true, "EI0001", std::vector<std::string>({"env", "tips"}),
-                std::vector<std::string>({fileStr, IP_FORMAT_ERROR}));
+            RPT_INPUT_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
+                std::vector<std::string>({strIpPort[0], "IP pair", "valid IPv4 or IPv6 address"}));
             HCCL_ERROR("[%s][%s] %s",
-                LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_ENV_CONFIG.c_str(), IP_FORMAT_ERROR.c_str());
+                LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_ENV_CONFIG.c_str(), "IP format error");
             inFile.close();
             return ret;
         }
@@ -474,11 +470,10 @@ HcclResult EnvConfigPathCache::LoadMultiQpSrcPortFromFile()
         std::vector<std::uint16_t> srcPorts;
         ret = GetSrcPortsFromString(strIpPort[1], srcPorts, lineCnt, lineAvator);
         if (ret != HcclResult::HCCL_SUCCESS) {
-            const std::string  PORT_FORMAT_ERROR = "[line: " + std::to_string(lineCnt) + "] invalid src port format.";
-            RPT_INPUT_ERR(true, "EI0001", std::vector<std::string>({"env", "tips"}),
-                std::vector<std::string>({fileStr, PORT_FORMAT_ERROR}));
+            RPT_INPUT_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
+                std::vector<std::string>({strIpPort[1], "Source Ports", "comma-separated list of valid ports"}));
             HCCL_ERROR("[%s][%s] %s",
-                LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_ENV_CONFIG.c_str(), PORT_FORMAT_ERROR.c_str());
+                LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_ENV_CONFIG.c_str(), "port format error");
             inFile.close();
             return ret;
         }
@@ -486,8 +481,8 @@ HcclResult EnvConfigPathCache::LoadMultiQpSrcPortFromFile()
         // 配置源端口号
         if (cacheInfo_.find(ipPair) != cacheInfo_.end()) {
             const std::string  DUPLICATE_IPPAIR_ERROR = "[line: " + std::to_string(lineCnt) + "] ip pair: " + ipPair + " has existed.";
-            RPT_INPUT_ERR(true, "EI0001", std::vector<std::string>({"env", "tips"}),
-                std::vector<std::string>({fileStr, DUPLICATE_IPPAIR_ERROR}));
+            RPT_INPUT_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
+                std::vector<std::string>({ipPair, "IP pair Key", "unique IP pair whitout duplicates"}));
             HCCL_ERROR("[%s][%s][line: %u]ip pair[%s] has existed.[%s]",
                 LOG_KEYWORDS_INIT_GROUP.c_str(),
                 LOG_KEYWORDS_ENV_CONFIG.c_str(),
