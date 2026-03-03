@@ -322,6 +322,9 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         return HCCL_SUCCESS;
     }
 
+    NsResumeData data{channelHandles, hostChannelHandleList, channelNum, commTag};
+    nsResumeDatas_[engine].push_back(data);
+
     HCCL_ERROR("[MyRank][%s] unsupported comm engine[%d].", __func__, engine);
     return HCCL_E_NOT_SUPPORT;
 }
@@ -368,4 +371,41 @@ HcclResult MyRank::ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMe
     }
     return HCCL_SUCCESS;
 }
+
+HcclResult MyRank::Clean()
+{
+    ChannelTable channelTable = rankPairMgr_->GetChannelTable();
+    std::vector<ChannelHandle> channelList;
+    for (const auto& rankPair : channelTable) {
+        for (const auto& endPointPair : rankPair.second) {
+            channelList.insert(channelList.end(), endPointPair.second.begin(), endPointPair.second.end());
+        }
+    }
+
+    return HcommChannelClean(channelList.data(), channelList.size());
+}
+
+HcclResult MyRank::Resume()
+{
+    ChannelTable channelTable = rankPairMgr_->GetChannelTable();
+    std::vector<ChannelHandle> channelList;
+    for (const auto& rankPair : channelTable) {
+        for (const auto& endPointPair : rankPair.second) {
+            channelList.insert(channelList.end(), endPointPair.second.begin(), endPointPair.second.end());
+        }
+    }
+    HcommChannelResume(channelList.data(), channelList.size());
+    // 批量建链
+    for (const auto& resumeData : nsResumeDatas_) {
+        if (resumeData.first == COMM_ENGINE_AICPU || resumeData.first == COMM_ENGINE_AICPU_TS) {
+            // KernelLaunch时会将CollCommAicpu下的ubTransportMap_链路恢复,只打包transport
+            for (const auto& handleData : resumeData.second) {
+                CHK_RET(HcommChannelKernelLaunch(handleData.channelHandles_, handleData.hostChannelHandleList_, 
+                handleData.channelNum_, handleData.commTag_, binHandle_));
+            }
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
 } // namespace hccl

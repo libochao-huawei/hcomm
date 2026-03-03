@@ -55,6 +55,9 @@ public:
     virtual HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum);
     // ------------------ 数据面接口 ------------------
 
+    virtual HcclResult Clean()        = 0;
+    virtual HcclResult Resume()      = 0;
+
 
     // ------------------ 工厂 ------------------
     static HcclResult CreateChannel(EndpointHandle endpointHandle, 

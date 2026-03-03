@@ -47,6 +47,9 @@ public:
     HcclResult ChannelFence() const;
     HcclResult GetHcclBuffer(void*& addr, uint64_t& size);
 
+    virtual HcclResult Clean() override;
+    virtual HcclResult Resume() override;
+
 private:
     HcclResult ParseInputParam();
     // HcclResult BuildAttr();

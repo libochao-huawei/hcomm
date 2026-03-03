@@ -58,6 +58,11 @@ public:
     HcclResult AllocXn(const uint8_t dieId, const uint32_t num, std::vector<ResInfo> &xnInfos);
     HcclResult ReleaseXn(const uint8_t dieId, const std::vector<ResInfo> &xnInfos);
 
+    HcclResult CleanDieCkes(const uint8_t dieId) const;
+    HcclResult SetTaskKill();
+    HcclResult SetTaskKillDone();
+    HcclResult CleanTaskKillState() const;
+
     std::array<bool, CCU_MAX_IODIE_NUM> GetDieEnableFlags() const;
 
 private:
@@ -85,6 +90,8 @@ private:
     HcclResult UnimportAllJettys();
     HcclResult ReleaseAllTpInfos();
     HcclResult DestroyAllJettys();
+
+    void SetProcess(CcuOpcodeType opCode) const;
 
 private:
     std::mutex innerMutex_;

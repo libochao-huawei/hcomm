@@ -20,6 +20,7 @@
 #include "comm_mems/comm_mems.h"
 #include "engine_ctxs/engine_ctxs.h"
 #include "endpoint_mgr.h"
+#include "ns_resume.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
@@ -49,6 +50,11 @@ public:
     
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
     HcclResult ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
+
+    // Ns resume
+    HcclResult Clean();
+    HcclResult Resume();
+
 private:
     HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
         const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs);
@@ -73,6 +79,9 @@ private:
     std::unique_ptr<hcomm::CcuResContainer> ccuResContainer_{nullptr};
 
     ManagerCallbacks callbacks_;
+
+    // Ns resume的临时数据，后续channel会维护自己的数据，此数据会删掉
+    std::unordered_map<CommEngine, std::vector<NsResumeData>> nsResumeDatas_;
 };
 
 } // namespace hccl

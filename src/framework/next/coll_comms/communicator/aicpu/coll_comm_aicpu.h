@@ -28,12 +28,44 @@
 using namespace hccl;
 class CollCommAicpu {
 public:
+    ~CollCommAicpu();
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
     HcclResult AllocChannelResource(HcclChannelUrmaRes *commParam);
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
 
+    std::string GetIdentifier();
+
+    // N秒快恢
+    void NsCommClean();
+    KfcCommand BackGroundGetCmd(){}
+    void BackGroundSetStatus(KfcStatus status, KfcErrType errorCode = KfcErrType::NONE){}
+    void SetIsCommReady(bool flag)
+    {
+        isCommReady = flag;
+    }
+    bool IsCommReady() const
+    {
+        return isCommReady;
+    }
+    void SetNeedClean(bool flag)
+    {
+        needClean = flag;
+    }
+    bool IsNeedClean() const
+    {
+        return needClean;
+    }
+    void SetIsSuspended(bool status)
+    {
+        isSuspended = status;
+    }
+    bool IsSuspended() const
+    {
+        return isSuspended;
+    }
+    std::vector<std::shared_ptr<Thread>> GetThreads();
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
@@ -49,6 +81,10 @@ private:
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
     // A5 独立算子
     std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
+
+    bool isCommReady;
+    bool needClean;
+    bool isSuspended;
 };
 
 

@@ -1,3 +1,14 @@
+<<<<<<< HEAD
+#include "coll_comm_aicpu.h"
+
+namespace hcomm {
+
+void CollCommAicpu::NsCommClean()
+{
+    ubTransportMap_.clear();
+}
+
+=======
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
@@ -227,4 +238,5 @@ HcclResult CollCommAicpu::NotifyAlloc(NotifyMgrAicpuParam *param)
     HCCL_INFO("[CollCommAicpu][%s] comm identifier[%s], alloc notifys num[%u] success",
         __func__, hcomId.c_str(), notifyNum);
     return HCCL_SUCCESS;
+>>>>>>> 528b2a436d7c7a67952b989d5f442965dedf9bbf
 }
