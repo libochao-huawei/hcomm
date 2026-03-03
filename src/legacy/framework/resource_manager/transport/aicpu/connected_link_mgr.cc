@@ -43,6 +43,7 @@ void ConnectedLinkMgr::ParsePackedData(std::vector<char> &data)
 {
     u32 levelRankPairsNum;
     u32 linkSize;
+    u32 totalNum = 0;
     std::vector<std::pair<u32, RankId>> leveRankPairs;
     std::vector<u32> numVec;
     BinaryStream binaryStream(data);
@@ -58,8 +59,14 @@ void ConnectedLinkMgr::ParsePackedData(std::vector<char> &data)
         binaryStream >> num;
         leveRankPairs.emplace_back(level, rank);
         numVec.push_back(num);
+        totalNum += num;
         HCCL_INFO("level=%u, RankId=%d, num=%u", level, rank, numVec[idx]);
     }
+
+    if (totalNum > linkSize) {
+ 	    HCCL_ERROR("[ParsePackedData] numVec total sum[%u] exceeds linkSize[%u].", totalNum, linkSize);
+ 	    return;
+ 	}
 
     std::vector<LinkData> allLinkVec;
     for (u32 idx = 0; idx < linkSize; idx++) {
