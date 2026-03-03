@@ -509,6 +509,7 @@ void HrtIpcSetMemoryName(void *ptr, char_t *name, u64 ptrMaxLen, u32 nameMaxLen)
 
 void HrtIpcDestroyMemoryName(const char_t *name)
 {
+    CHECK_NULLPTR(name, "[HrtIpcDestroyMemoryName] name is nullptr!");
     rtError_t ret = rtIpcDestroyMemoryName(reinterpret_cast<const char *>(name));
     HCCL_INFO("Call rtIpcDestroyMemoryName, return[%d], para: name[%s]", ret, name);
     if (ret != RT_ERROR_NONE) {
@@ -536,6 +537,7 @@ void *HrtIpcOpenMemory(const char_t *name)
 
 void HrtIpcCloseMemory(const void *ptr)
 {
+    CHECK_NULLPTR(ptr, "[HrtIpcCloseMemory] ptr is nullptr!");
     rtError_t ret = rtIpcCloseMemory(ptr);
     if (ret != RT_ERROR_NONE) {
         HCCL_ERROR("[Close][IpcMemory]errNo[0x%016llx] "
@@ -642,7 +644,6 @@ void HrtFreeHost(void *hostPtr)
 
 aclrtNotify HrtNotifyCreate(s32 deviceLogicId)
 {
-    HCCL_INFO("[HrtNotifyCreate] deviceLogicId[%d].", deviceLogicId);
     aclrtNotify ptr = nullptr;
     // aclrtCreateNotify 中通过 aclrtGetDevice 获取 deviceId，所以要求当前线程设置过 setDevice
     aclError  ret = aclrtCreateNotify(&ptr, ACL_NOTIFY_DEFAULT);
@@ -815,8 +816,6 @@ void HrtMemAsyncCopy(void *dst, uint64_t destMax, const void *src, uint64_t coun
 void HrtReduceAsync(void *dst, uint64_t destMax, const void *src, uint64_t count, aclrtReduceKind kind,
                     aclDataType type, aclrtStream streamPtr)
 {
-    HCCL_INFO("[HrtReduceAsync] dst[%p], destMax[%llu], src[%p], count[%llu], kind[%d], type[%d], streamPtr[%p].", 
-                dst, destMax, src, count, kind, type, streamPtr);
     CHECK_NULLPTR(dst, "[HrtReduceAsync] dst is nullptr!");
     CHECK_NULLPTR(src, "[HrtReduceAsync] src is nullptr!");
     CHECK_NULLPTR(streamPtr, "[HrtReduceAsync] streamPtr is nullptr!");
@@ -835,7 +834,6 @@ void HrtReduceAsync(void *dst, uint64_t destMax, const void *src, uint64_t count
 
 void HrtRDMASend(u32 qpn, u32 wqeIndex, aclrtStream streamPtr)
 {
-    HCCL_INFO("[HrtRDMASend] qpn[%u], wqeIndex[%u], streamPtr[%p].", qpn, wqeIndex, streamPtr);
     CHECK_NULLPTR(streamPtr, "[HrtRDMASend] streamPtr is nullptr!");
     rtError_t ret = rtRDMASend(qpn, wqeIndex, streamPtr);
     HCCL_INFO("Call rtRDMASend, return value[%d]. Params: qpn[%u], wqeIndex[%u], streamPtr[%p].", ret, qpn, wqeIndex, streamPtr);
@@ -862,7 +860,6 @@ void HrtRDMADBSend(uint32_t dbindex, uint64_t dbinfo, aclrtStream streamPtr)
 
 void HrtGetTaskIdAndStreamID(u32 &taskId, u32 &streamId)
 {
-    HCCL_INFO("[HrtGetTaskIdAndStreamID] taskId[%u], streamId[%u].", taskId, streamId);
     rtError_t ret = rtGetTaskIdAndStreamID(&taskId, &streamId);
     HCCL_INFO("Call rtGetTaskIdAndStreamId, return value[%d], para: taskId[%u], streamId[%u].", ret, taskId, streamId);
     if (ret != RT_ERROR_NONE) {
@@ -1000,12 +997,6 @@ void HrtAicpuLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t numBl
                                       aclrtLaunchKernelCfg *cfg, void *hostArgs, size_t argsSize,
                                       aclrtPlaceHolderInfo *placeHolderArray, size_t placeHolderNum)
 {
-    HCCL_INFO("[HrtAicpuKernelLaunchExWithArgs] kernelType[%u], opName[%s], numBlocks[%u], argsInfo[%p], "
-                "smDesc[%p], stream[%p], flags[%u].", 
-                kernelType, opName, numBlocks, argsInfo, smDesc, stream, flags);
-    CHECK_NULLPTR(argsInfo, "[HrtAicpuKernelLaunchExWithArgs] argsInfo is nullptr!");
-    CHECK_NULLPTR(smDesc, "[HrtAicpuKernelLaunchExWithArgs] smDesc is nullptr!");
-    CHECK_NULLPTR(stream, "[HrtAicpuKernelLaunchExWithArgs] stream is nullptr!");
     rtError_t ret = aclrtLaunchKernelWithHostArgs(funcHandle, numBlocks, stream, cfg, hostArgs, argsSize,
                                                   placeHolderArray, placeHolderNum);
     if (ret != RT_ERROR_NONE) {
@@ -1137,6 +1128,7 @@ HrtDevResAddrInfo HrtGetDevResAddress(const HrtDevResInfo &devResInfo)
     HCCL_INFO("devResAddrInfo.address[%llu], devResAddrInfo.len[%u].", devResAddrInfo.address, devResAddrInfo.len);
     return devResAddrInfo;
 }
+
 void HrtReleaseDevResAddress(const HrtDevResInfo &devResInfo)
 {
     HCCL_INFO("[HrtReleaseDevResAddress] devResInfo.dieId[%u], devResInfo.procType[%u], "
