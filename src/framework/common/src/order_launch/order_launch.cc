@@ -36,32 +36,27 @@ OrderLaunch::~OrderLaunch()
 {
     std::unique_lock<std::mutex> mapLock(streamMutex_);
     initialized_ = false;
-    groupSet_.clear();
-    DestoryRes();
+    groupCtxMap_.clear();
+    DestroyRes();
 }
 
-void OrderLaunch::DestoryRes()
+void OrderLaunch::DestroyRes()
 {
-    opbaseStream_.reset();
-    aclgraphStream_.reset();
-    hcomStreamMap_.clear();
-
-    for (u32 i = 0; i < AICPU_ORDER_EVENT_SIZE; ++i) {
-        if (aclgraphEvents_[i].event != nullptr) {
-            (void)hrtEventDestroy(aclgraphEvents_[i].event);
-            aclgraphEvents_[i].event = nullptr;
-        }
+    for (auto &entry : contextResMgrMap_) {
+        entry.second.DestroyResources();
     }
+    contextResMgrMap_.clear();
+    hcomStreamMap_.clear();
 }
 
 HcclResult OrderLaunch::RegisterOrderLaunch(const std::string &group)
 {
     std::unique_lock<std::mutex> mapLock(streamMutex_);
-    if (groupSet_.find(group) != groupSet_.end()) {
+    if (groupCtxMap_.find(group) != groupCtxMap_.end()) {
         HCCL_WARNING("%s skip, group[%s] has already been registered", __func__, group.c_str());
         return HCCL_SUCCESS;
     }
-    groupSet_.insert(group);
+    groupCtxMap_.insert({group, INVALID_U64}); // 只记录group，context暂不赋值，只在算子下发阶段对context赋值
     HCCL_INFO("%s success, group[%s]", __func__, group.c_str());
     return HCCL_SUCCESS;
 }
@@ -70,15 +65,26 @@ HcclResult OrderLaunch::UnRegisterOrderLaunch(const std::string &group)
 {
     CHK_PRT_RET(initialized_ == false, HCCL_WARNING("OrderLaunch has been destroyed"), HCCL_SUCCESS);
     std::unique_lock<std::mutex> mapLock(streamMutex_);
-    if (groupSet_.find(group) == groupSet_.end()) {
+    auto it = groupCtxMap_.find(group);
+    if (it == groupCtxMap_.end()) {
         HCCL_WARNING("%s skip, group[%s] has not been registered", __func__, group.c_str());
         return HCCL_SUCCESS;
     }
 
-    groupSet_.erase(group);
-    if (groupSet_.empty()) { // 没有注册的通信域，销毁全局的流
-        DestoryRes();
+    u64 context = it->second;
+    if (contextGroupsMap_.find(context) != contextGroupsMap_.end()) {
+        contextGroupsMap_[context].erase(group);
+        if (contextGroupsMap_[context].empty()) {
+            contextGroupsMap_.erase(context);
+            if (contextResMgrMap_.find(context) != contextResMgrMap_.end()) {
+                contextResMgrMap_[context].DestroyResources();
+                contextResMgrMap_.erase(context);
+            }
+            HCCL_INFO("%s contextGroupsMap_ erase context[0x%llx]", __func__, context);
+        }
     }
+
+    groupCtxMap_.erase(it);
     HCCL_INFO("%s success, group[%s]", __func__, group.c_str());
     return HCCL_SUCCESS;
 }
@@ -90,56 +96,81 @@ HcclResult OrderLaunch::SetHcomStream(u32 graphId, const Stream& hcomAttachedStr
     return HCCL_SUCCESS;
 }
 
+HcclResult OrderLaunch::InitGroupCtx(const std::string &group)
+{
+    u64 currentContext = GetCurrentContext();
+
+    if (contextResMgrMap_.find(currentContext) == contextResMgrMap_.end()) {
+        contextResMgrMap_[currentContext] = OrderLaunchResMgr();
+        contextResMgrMap_[currentContext].context = currentContext;
+    }
+
+    groupCtxMap_[group] = currentContext;
+    contextGroupsMap_[currentContext].insert(group);
+
+    HCCL_RUN_INFO("[%s]group[%s] init or update context[0x%llx]", __func__, group.c_str(), currentContext);
+    return HCCL_SUCCESS;
+}
+
 // aclgraph模式下，先在kernel stream上写record，再在上order stream写wait；解order stream的wait
 HcclResult OrderLaunch::AclgraphLaunchInOrderToOrderStream(std::string &group, const Stream& kernelStream,
-    std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut)
+    std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut, HcclRtEvent event)
 {
     std::unique_lock<std::mutex> mapLock(streamMutex_);
-    if (groupSet_.find(group) == groupSet_.end()) {
-        return HCCL_E_PARA;
+    // group未注册过，或者未记录过算子下发阶段的线程context
+    if (groupCtxMap_.find(group) == groupCtxMap_.end() || groupCtxMap_[group] == INVALID_U64) {
+        CHK_RET(InitGroupCtx(group));
     }
+
+    u64 context = groupCtxMap_[group];
+    Stream& aclgraphStream = contextResMgrMap_[context].aclgraphStream;
+    EnsureOrderStreamForGroup(group, aclgraphStream); // aclgraph控制流
 
     aclError ret = ACL_SUCCESS;
-    u32 index0 = static_cast<u32>(AicpuOrderEventIdx::ACLGRAPH_ORDER_EVENT_0);
-    if (aclgraphStream_ == nullptr) {
-        // 申请唯一控制流 order stream
-        EXECEPTION_CATCH(aclgraphStream_ = std::make_unique<Stream>(StreamType::STREAM_TYPE_ONLINE), return HCCL_E_PTR);
-
-        for (u32 i = 0; i < AICPU_ORDER_EVENT_SIZE; ++i) {
-            ret = aclrtCreateEventExWithFlag(&aclgraphEvents_[i].event, ACL_EVENT_SYNC); // 申请全局唯一event对，但是此时还不能获取id
-            CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtCreateEventExWithFlag failed, ret[%d] event[%p].",
-                __func__, ret, aclgraphEvents_[i].event), HCCL_E_RUNTIME);
-        }
-    }
-
-    // kernelStream -> aclgraphStream_
-    ret = aclrtRecordEvent(aclgraphEvents_[index0].event, kernelStream.ptr());
+    // kernelStream -> aclgraphStream
+    ret = aclrtRecordEvent(event, kernelStream.ptr());
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtRecordEvent failed, ret[%d]", __func__, ret), HCCL_E_RUNTIME);
     HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtRecordEvent para: kernelStreamId[%d]", __func__, kernelStream.id());
 
-    ret = aclrtStreamWaitEvent(aclgraphStream_->ptr(), aclgraphEvents_[index0].event);
+    ret = aclrtStreamWaitEvent(aclgraphStream.ptr(), event);
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtStreamWaitEvent failed, ret[%d]", __func__, ret), HCCL_E_RUNTIME);
-    HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtStreamWaitEvent para: orderStreamId[%d]",  __func__, aclgraphStream_->id());
+    HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtStreamWaitEvent para: orderStreamId[%d]",  __func__, aclgraphStream.id());
 
-    HCCL_INFO("[%s] group[%s], orderStreamId[%u]", __func__, group.c_str(), aclgraphStream_->id());
-    CHK_RET(LaunchInOrder(group, kernelStream, *aclgraphStream_, notify0, notify1, timeOut));
+    HCCL_INFO("[%s] group[%s], kernelStreamId[%u], orderStreamId[%u], context[0x%llx]",
+        __func__, group.c_str(), kernelStream.id(), aclgraphStream.id(), context);
+    CHK_RET(LaunchInOrder(group, kernelStream, aclgraphStream, notify0, notify1, timeOut));
     return HCCL_SUCCESS;
 }
 
 // aclgraph模式下，接着在order stream上做record，再在kernel stream上做wait；解kernel stream的wait
-HcclResult OrderLaunch::AclgraphLaunchInOrderToKernelStream(std::string &group, const Stream& kernelStream)
+HcclResult OrderLaunch::AclgraphLaunchInOrderToKernelStream(std::string &group, const Stream& kernelStream,
+    HcclRtEvent event)
 {
-    aclError ret = ACL_SUCCESS;
-    u32 index1 = static_cast<u32>(AicpuOrderEventIdx::ACLGRAPH_ORDER_EVENT_1);
-    ret = aclrtRecordEvent(aclgraphEvents_[index1].event, aclgraphStream_->ptr());
-    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtRecordEvent failed, ret[%d]", __func__, ret), HCCL_E_RUNTIME);
-    HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtRecordEvent para: orderStreamId[%d]", __func__, aclgraphStream_->id());
+    std::unique_lock<std::mutex> mapLock(streamMutex_);
 
-    ret = aclrtStreamWaitEvent(kernelStream.ptr(), aclgraphEvents_[index1].event);
+    auto ctxIt = groupCtxMap_.find(group);
+    CHK_PRT_RET(ctxIt == groupCtxMap_.end(), HCCL_ERROR("[%s]fail, group[%s] is not in groupCtxMap_",
+        __func__, group.c_str()), HCCL_E_NOT_FOUND);
+
+    u64 context = ctxIt->second;
+    if (contextResMgrMap_.find(context) == contextResMgrMap_.end()) {
+        HCCL_ERROR("[%s]fail, context[0x%llx] is not in contextResMgrMap_", __func__, context);
+        return HCCL_E_NOT_FOUND;
+    }
+
+    Stream& aclgraphStream = contextResMgrMap_[context].aclgraphStream;
+
+    aclError ret = ACL_SUCCESS;
+    ret = aclrtRecordEvent(event, aclgraphStream.ptr());
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtRecordEvent failed, ret[%d]", __func__, ret), HCCL_E_RUNTIME);
+    HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtRecordEvent para: orderStreamId[%d]", __func__, aclgraphStream.id());
+
+    ret = aclrtStreamWaitEvent(kernelStream.ptr(), event);
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtStreamWaitEvent failed, ret[%d]", __func__, ret), HCCL_E_RUNTIME);
     HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtStreamWaitEvent para: kernelStreamId[%d]", __func__, kernelStream.id());
-    HCCL_INFO("[%s] group[%s], kernelStreamId[%u]", __func__, group.c_str(), kernelStream.id());
 
+    HCCL_INFO("[%s] group[%s], kernelStreamId[%u], orderStreamId[%u], context[0x%llx]",
+        __func__, group.c_str(), kernelStream.id(), aclgraphStream.id(), ctxIt->second);
     return HCCL_SUCCESS;
 }
 
@@ -147,20 +178,18 @@ HcclResult OrderLaunch::OpbaseLaunchInOrder(std::string &group, const Stream& ke
     std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut)
 {
     std::unique_lock<std::mutex> mapLock(streamMutex_);
-    if (groupSet_.find(group) == groupSet_.end()) {
-        HCCL_ERROR("[%s] fail, group[%s] has not been registered", __func__, group.c_str());
-        return HCCL_E_PARA;
+    // group未注册过，或者未记录过算子下发阶段的线程context
+    if (groupCtxMap_.find(group) == groupCtxMap_.end() || groupCtxMap_[group] == INVALID_U64) {
+        CHK_RET(InitGroupCtx(group));
     }
-    // 申请控制流
-    Stream hostOrderStream;
-    if (opbaseStream_ == nullptr) {
-        EXECEPTION_CATCH(opbaseStream_ = std::make_unique<Stream>(StreamType::STREAM_TYPE_ONLINE), return HCCL_E_PTR);
-        HCCL_INFO("[%s] group[%s] alloc streamId[%u]", __func__, group.c_str(), opbaseStream_->id());
-    }
-    hostOrderStream = *opbaseStream_;
-    CHK_PTR_NULL(hostOrderStream.ptr());
-    HCCL_INFO("[%s] group[%s], streamId[%u]", __func__, group.c_str(), hostOrderStream.id());
-    CHK_RET(LaunchInOrder(group, kernelStream, hostOrderStream, notify0, notify1, timeOut));
+
+    u64 context = groupCtxMap_[group];
+    Stream& opbaseStream = contextResMgrMap_[context].opbaseStream;
+    EnsureOrderStreamForGroup(group, opbaseStream); // 单算子控制流
+
+    HCCL_INFO("[%s] group[%s], kernelStreamId[%u], orderStreamId[%u], context[0x%llx]",
+        __func__, group.c_str(), kernelStream.id(), opbaseStream.id(), context);
+    CHK_RET(LaunchInOrder(group, kernelStream, opbaseStream, notify0, notify1, timeOut));
     return HCCL_SUCCESS;
 }
 
@@ -168,10 +197,6 @@ HcclResult OrderLaunch::HcomLaunchInOrder(std::string &group, const Stream& kern
     std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut)
 {
     std::unique_lock<std::mutex> mapLock(streamMutex_);
-    if (groupSet_.find(group) == groupSet_.end()) {
-        HCCL_ERROR("[%s] fail, group[%s] has not been registered", __func__, group.c_str());
-        return HCCL_E_PARA;
-    }
     Stream hostOrderStream;
     if (hcomStreamMap_.find(graphId) == hcomStreamMap_.end()) {
         HCCL_ERROR("[%s] graphId[%u] group[%s] stream not found", __func__, graphId, group.c_str());
@@ -208,5 +233,56 @@ HcclResult OrderLaunch::LaunchInOrder(std::string &group, const Stream &kernelSt
     HCCL_CONFIG_INFO(HCCL_TASK, "[%s] aclrtWaitAndResetNotify para: notifyId[%u], streamId[%d], timeOut[%d s]",
         __func__, notify1->notifyId_, hostOrderStream.id(), timeOut);
     return HCCL_SUCCESS;
+}
+
+HcclResult OrderLaunch::EnsureOrderStreamForGroup(std::string &group, Stream &orderStream) {
+    auto it = groupCtxMap_.find(group);
+    if (it == groupCtxMap_.end()) {
+        HCCL_ERROR("[%s] group[%s] not found", __func__, group.c_str());
+        return HCCL_E_PARA;
+    }
+
+    u64 context = it->second;
+    if (contextResMgrMap_.find(context) == contextResMgrMap_.end()) {
+        HCCL_ERROR("[%s] context[0x%llx] not found for group[%s]", __func__, context, group.c_str());
+        return HCCL_E_PARA;
+    }
+
+    auto& groupCtxRes = contextResMgrMap_[context];
+    u64 currentContext = GetCurrentContext();
+
+    if (!groupCtxRes.IsCtxMatch(currentContext) || orderStream.ptr() == nullptr) {
+        if (orderStream.ptr() != nullptr) {
+            HCCL_INFO("[OrderLaunch] Destroying existing order stream with mismatched context.");
+            orderStream.Destroy();
+        }
+        orderStream = Stream(StreamType::STREAM_TYPE_ONLINE);
+        constexpr u32 streamMode = 1; // 使能遇错即停，避免出错后流卡住不退
+        CHK_RET_VOID(hrtStreamSetMode(orderStream.ptr(), streamMode));
+        HCCL_INFO("[OrderLaunch] Created new order stream with context [0x%llx]", currentContext);
+
+        // 对group->contextResource的映射关系进行更新
+        groupCtxRes.UpdateContext(currentContext);
+        // 对context->group的映射关系进行更新
+        contextGroupsMap_[currentContext].insert(group);
+    }
+
+    return HCCL_SUCCESS;
+}
+
+u64 OrderLaunch::GetCurrentContext() {
+    std::lock_guard<std::mutex> lock(streamMutex_);
+    // 获取当前上下文
+    HcclRtContext rtCtx = nullptr;
+    CHK_RET(hrtCtxGetCurrent(&rtCtx));
+    u64 currentContext = reinterpret_cast<u64>(rtCtx);
+
+    if (currentContext == INVALID_U64)
+    {
+        HCCL_ERROR("[%s] GetCurrentContext failed", __func__);
+        return HCCL_E_RUNTIME;
+    }
+    
+    return currentContext;
 }
 }
