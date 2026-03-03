@@ -295,6 +295,12 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
     CHK_RET(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
+    // 添加初始化时进行填表
+    for (u32 i = 0; i<channelNum; ++i){
+        CHK_RET(CheckChannelParam(engine,channelDescs[i],i));
+        u32 removeRank = channelDescs[i].removeRank;
+        dfx::map<commTag>.addPair(hostChannelHandleList[i], removeRank);
+    }
 
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
         // 新增：添加 kernelLaunchAicpuCommInit 调用
