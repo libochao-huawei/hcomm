@@ -14,7 +14,7 @@ namespace hccl {
 HcclCommDfx::HcclCommDfx(uint32_t deviceId) {
     deviceId_ = deviceId;
     mirrorTaskManager_ = new Hccl::MirrorTaskManager(deviceId_, &Hccl::GlobalMirrorTasks::Instance(), false);
-}
+}SS
 
 void HcclCommDfx::Init() {
     // 1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
