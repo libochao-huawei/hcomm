@@ -36,7 +36,7 @@ using namespace hccl;
  */
 
 const uint32_t HCCL_CHANNEL_VERSION_ONE = 1;
-HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal)
+HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, HcclComm comm)
 {
     if (channelDesc.header.size < channelDescFinal.header.size) {
         // 需要前向兼容HcclChannelDesc，末尾部分字段不支持处理
@@ -67,6 +67,8 @@ HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannel
         // 根据协议类型拷贝union中的相应成员
         switch (channelDesc.channelProtocol) {
             case COMM_PROTOCOL_HCCS:
+                channelDescFinal.hccsAttr.hcclQos = (channelDesc.hccsAttr.qos == 0xFF) ? static_cast<hcclComm *>(comm)->GetHcclQos() : channelDesc.hccsAttr.qos;
+                HCCL_INFO("[%s]Qos = %u", channelDescFinal.hccsAttr.hcclQos);
             case COMM_PROTOCOL_PCIE:
             case COMM_PROTOCOL_SIO:
             case COMM_PROTOCOL_UBC_CTP:
@@ -104,21 +106,6 @@ HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannel
     // 1) 在底层为新的结构体和版本（version为2）上，会正常执行下面的判断处理逻辑；
     // 2) 在底层为旧的结构体和版本（version为1）上，下面的逻辑没有，version的2 > 1的部分会被忽略掉；
     if (channelDesc.header.version >= 2) {
-        switch (channelDesc.channelProtocol) {
-            case COMM_PROTOCOL_HCCS:
-                channelDescFinal.hccsAttr.hcclQos = (channelDesc.hccsAttr.hcclQos == HCCL_COMM_QOS_CONFIG_NOT_SET) ? SDMA_QOS_DEFAULT : channelDesc.hccsAttr.hcclQos;
-                HCCL_INFO("[ProcessHcclResPackReq] hcclQos = %u version = %u", channelDescFinal.hccsAttr.hcclQos, channelDesc.header.version);
-            case COMM_PROTOCOL_PCIE:
-            case COMM_PROTOCOL_SIO:
-            case COMM_PROTOCOL_UBC_CTP:
-            case COMM_PROTOCOL_UB_MEM:
-                break;
-            case COMM_PROTOCOL_ROCE:
-                break;
-            default:
-                HCCL_ERROR("[%s]Unsupported protocol[%d] found in HcclChannelDesc.", __func__, channelDesc.channelProtocol);
-                return HCCL_E_PARA;
-        }
     }
  
     return HCCL_SUCCESS;
@@ -165,7 +152,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         HcclChannelDesc channelDescFinal;
         HcclChannelDescInit(&channelDescFinal, 1);
         HCCL_INFO("[HcclChannelAcquire] hcclQos = %u", hcclComm->GetHcclQos());
-        ret = ProcessHcclResPackReq(channelDescs[idx], channelDescFinal);
+        ret = ProcessHcclResPackReq(channelDescs[idx], channelDescFinal, comm);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[%s] Failed check channelDesc, channelDesc idx[%u], group[%s], engine[%d], "
                 "channelNum[%llu], ret[%d]", __func__, idx, hcclComm->GetIdentifier().c_str(),
