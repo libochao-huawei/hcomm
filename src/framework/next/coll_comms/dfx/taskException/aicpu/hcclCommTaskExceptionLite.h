@@ -10,23 +10,29 @@
 #ifndef HCCL_COMM_TASKEXCEPTION_H
 #define HCCL_COMM_TASKEXCEPTION_H
 
+#include "daemon_func.h"
 #include "mirror_task_manager.h"
-#include "aicpu_communicator.h"
+#include "coll_comm_aicpu.h"
+#include "aicpu_hccl_sqcq.h"
 
-namespace hccl {
+namespace hcomm {
 
-class HcclCommTaskExceptionLite : public DaemonFunc {
+class HcclCommTaskExceptionLite : public Hccl::DaemonFunc {
 public:
-    static TaskExceptionHandlerLite &GetInstance();
+    static HcclCommTaskExceptionLite &GetInstance();
     HcclResult Init(u32 deviceId);
-    static void Process(HcclCommAicpu *aicpuComm, rtLogicCqReport_t* exceptionInfo);
     void Call() override;
 
 private:
     HcclCommTaskExceptionLite();
     ~HcclCommTaskExceptionLite();
 
+    HcclResult ProcessCqe(CollCommAicpu *aicpuComm, rtLogicCqReport_t* exceptionInfo);
+    HcclResult HandleExceptionCqe();
+    HcclResult GetThreadCqe(Thread* thread, rtLogicCqReport_t &cqeException, CqeStatus &cqeStatus);
+
     bool initFlag_{false};
+    bool stopCall_{false};
     u32 deviceId_{INVALID_UINT};
     Hccl::MirrorTaskManager* mirrorTaskManager_{nullptr};  // 使用原始指针，不管理生命周期
 };

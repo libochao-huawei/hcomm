@@ -34,6 +34,10 @@ public:
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
 
+    void GetAllThread(std::vector<std::shared_ptr<Thread>> &threads) { threads = threads_; };
+    bool IsErrorReported() {return isErrorReported_; }
+    void SetErrorReported(bool isErrorReported) { isErrorReported_ = isErrorReported; }
+
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
@@ -49,6 +53,9 @@ private:
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
     // A5 独立算子
     std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
+
+    // dfx
+    bool isErrorReported_{false}; // 是否上报了taskException信息
 };
 
 
