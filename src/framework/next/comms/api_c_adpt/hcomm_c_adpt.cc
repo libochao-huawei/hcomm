@@ -540,17 +540,19 @@ HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t noti
 
     hccl::NotifyLoadType notifyLoadType;
     hccl::StreamType streamType;
+    ThreadType threadType = THREAD_TYPE_TS;
     CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
     CHK_RET(CommEngineToStreamType(engine, streamType));
 
     HcclResult ret = HCCL_SUCCESS;
     for (uint32_t i = 0; i < threadNum; ++i) {
         std::shared_ptr<hccl::Thread> handle;
-        HCCL_INFO("[%s] Thread notifyLoadType[%u], streamType[%u]",
+        HCCL_INFO("[%s] Thread notifyLoadType[%d], streamType[%d], threadType[%d]",
             __func__,
             static_cast<int32_t>(notifyLoadType),
-            static_cast<int32_t>(streamType));
-        ret = CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, handle);
+            static_cast<int32_t>(streamType),
+            threadType);
+        ret = CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, threadType, handle);
         if (ret != HCCL_SUCCESS ) {
             HCCL_ERROR("[HcommThreadAlloc] Failed to create thread index %u", i);
             if (i != 0) {
@@ -647,10 +649,11 @@ HcclResult HcommThreadAllocWithType(CommEngine engine, uint32_t threadNum, uint3
     HcclResult ret = HCCL_SUCCESS;
     for (uint32_t i = 0; i < threadNum; ++i) {
         std::shared_ptr<hccl::Thread> hostHandle;
-        HCCL_INFO("[%s] Thread notifyLoadType[%u], streamType[%u]",
+        HCCL_INFO("[%s] Thread notifyLoadType[%d], streamType[%d], threadType[%d]",
             __func__,
             static_cast<int32_t>(notifyLoadType),
-            static_cast<int32_t>(streamType));
+            static_cast<int32_t>(streamType),
+            type);
         ret = CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, type, hostHandle);
         if (ret != HCCL_SUCCESS ) {
             HCCL_ERROR("[HcommThreadAlloc] Failed to create thread index %u", i);
@@ -713,11 +716,13 @@ HcclResult HcommThreadServiceRegister(ThreadHandle threadHandle, ThreadService s
         ACL_MEMCPY_HOST_TO_DEVICE);
     *serviceHandle = reinterpret_cast<ThreadServiceHandle>(deviceHandle);
 
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcommThreadServiceUnregister(ThreadHandle threadHandle, ThreadService service, ThreadServiceHandle *serviceHandle)
 {
     //
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx)
