@@ -55,16 +55,19 @@ void SocketManager::BatchAddWhiteList(const vector<LinkData> &links)
 
     for (const auto &link : links) {
         // 通过虚拟拓扑获取Peer可能为空，如果为空，需要抛异，NullPtrException
-        auto peer = comm->GetRankGraph()->GetPeer(link.GetRemoteRankId());
-        if (peer == nullptr) {
-            auto msg = StringFormat("Fail to get peer of rank %d!", link.GetRemoteRankId());
-            THROW<NullPtrException>(msg);
+        if (comm) {
+            auto peer = comm->GetRankGraph()->GetPeer(link.GetRemoteRankId());
+            if (peer == nullptr) {
+                auto msg = StringFormat("Fail to get peer of rank %d!", link.GetRemoteRankId());
+                THROW<NullPtrException>(msg);
+            }
         }
+
         RaSocketWhitelist wlistInfo{};;
         wlistInfo.connLimit = 1;
         wlistInfo.remoteIp = link.GetRemoteAddr();
 
-        SocketConfig socketConfig(link.GetRemoteRankId(), link, comm->GetEstablishLinkSocketTag());
+        SocketConfig socketConfig(link.GetRemoteRankId(), link, socketTag_);
         string       hccpSocketTag = socketConfig.GetHccpTag();
 
         wlistInfo.tag = hccpSocketTag;
@@ -82,7 +85,7 @@ void SocketManager::BatchCreateConnectedSockets(const vector<LinkData> &links)
 {
     for (auto &link : links) {
         auto         remoteRank = link.GetRemoteRankId();
-        std::string  socketTag  = comm->GetEstablishLinkSocketTag();
+        std::string  socketTag  = socketTag_;
         SocketConfig socketConfig(remoteRank, link, socketTag);
         CreateConnectedSocket(socketConfig);
     }
@@ -254,6 +257,16 @@ SocketManager::SocketManager(
     if (socketProducer != nullptr) {
         this->socketProducer = socketProducer;
     }
+
+    if (comm != nullptr) {
+        socketTag_ = comm->GetEstablishLinkSocketTag();
+    }
+}
+
+SocketManager::SocketManager(u32 localRank, u32 devicePhyId, u32 deviceLogicId, const std::string &socketTag)
+    : comm(nullptr), localRank(localRank), devicePhyId(devicePhyId), deviceLogicId_(deviceLogicId)
+{
+    socketTag_ = socketTag;
 }
 
 void SocketManager::AddWhiteList(PortData &localPort, vector<RaSocketWhitelist> &wlistInfoVec) const
