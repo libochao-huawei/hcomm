@@ -957,9 +957,9 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
         HcclResult dataTypeChkRes = OpParamsChecker::CheckOpDataTypeOffload(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv); // 算子粒度
         if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
-            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-                std::vector<std::string>({"CommunicatorImpl::LoadOffloadCollOp", "dataTypeChkRes",
-                "no success", "please check DataType that check fail"}));
+            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+                std::vector<std::string>({"CommunicatorImpl::LoadOffloadCollOp", "no success", "dataTypeChkRes",
+                "success"}));
             HCCL_ERROR("[CommunicatorImpl::LoadOffloadCollOp] DataType check fail.");
             status = CommStatus::COMM_READY;
             return dataTypeChkRes;

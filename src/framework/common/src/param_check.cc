@@ -58,7 +58,7 @@ HcclResult HcomGetRanktableRealPath(const char *rankTable, std::string &realFile
         RPT_INPUT_ERR(true,
         "EI0004",
         std::vector<std::string>({"error_reason", "ranktable_path"}),
-        std::vector<std::string>({"rankTable file name is invalid", std::string(rankTable)}));
+        std::vector<std::string>({RANKTABLE_PARSE_ERROR_REASON, std::string(rankTable)}));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] rankTable file name is invalid, len is %u", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankTablePathLen);
         return HCCL_E_PARA;
@@ -69,7 +69,7 @@ HcclResult HcomGetRanktableRealPath(const char *rankTable, std::string &realFile
         RPT_INPUT_ERR(true,
             "EI0004",
             std::vector<std::string>({"error_reason", "ranktable_path"}),
-            std::vector<std::string>({"ranktable path is not a valid real path.", std::string(rankTable)}));
+            std::vector<std::string>({RANKTABLE_PARSE_ERROR_REASON, std::string(rankTable)}));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] path %s is not a valid real path", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankTable);
         return HCCL_E_PARA;
@@ -87,7 +87,7 @@ HcclResult HcomCheckRankTable(const char *rankTableM, u32 &rankTableSize)
         RPT_INPUT_ERR(true,
             "EI0004",
             std::vector<std::string>({"error_reason", "ranktable_path"}),
-            std::vector<std::string>({"rankTable string is invalid.", std::string(rankTableM)}));
+            std::vector<std::string>({RANKTABLE_PARSE_ERROR_REASON, std::string(rankTableM)}));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] rankTable string is invalid, len is %u", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankTableLen);
         return HCCL_E_PARA;
@@ -208,14 +208,14 @@ HcclResult HcomCheckAlltoAllVExternalMem(const void *sendBuf, const void *sendCo
 
     if (hasSend) {
         RPT_INPUT_ERR(sendBuf == nullptr, "EI0003",\
-            std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-            std::vector<std::string>({"HcomCheckAlltoAllVExternalMem", "sendBuf", "nullptr", "please check sendBuf"}));
+            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+            std::vector<std::string>({"HcomCheckAlltoAllVExternalMem", "nullptr", "sendBuf", "not nullptr"}));
         CHK_PTR_NULL(sendBuf);
     }
     if (hasRecv) {
         RPT_INPUT_ERR(recvBuf == nullptr, "EI0003",\
-            std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-            std::vector<std::string>({"HcomCheckAlltoAllVExternalMem", "recvBuf", "nullptr", "please check recvBuf"}));
+            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+            std::vector<std::string>({"HcomCheckAlltoAllVExternalMem", "nullptr", "recvBuf", "not nullptr"}));
         CHK_PTR_NULL(recvBuf);
     }
     return HCCL_SUCCESS;
@@ -247,14 +247,14 @@ HcclResult HcomCheckAlltoAllVCExternalMem(const void *sendBuf, const void *sendC
     }
     if (hasSend) {
         RPT_INPUT_ERR(sendBuf == nullptr, "EI0003",\
-            std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-            std::vector<std::string>({"HcomCheckAlltoAllVCExternalMem", "sendBuf", "nullptr", "please check sendBuf"}));
+            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+            std::vector<std::string>({"HcomCheckAlltoAllVCExternalMem", "nullptr", "sendBuf", "not nullptr"}));
         CHK_PTR_NULL(sendBuf);
     }
     if (hasRecv) {
         RPT_INPUT_ERR(recvBuf == nullptr, "EI0003",\
-            std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-            std::vector<std::string>({"HcomCheckAlltoAllVCExternalMem", "recvBuf", "nullptr", "please check recvBuf"}));
+            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+            std::vector<std::string>({"HcomCheckAlltoAllVCExternalMem", "nullptr", "recvBuf", "not nullptr"}));
         CHK_PTR_NULL(recvBuf);
     }
     return HCCL_SUCCESS;
@@ -300,11 +300,18 @@ HcclResult HcomCheckGroupName(const char *group)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomCheckReductionOp(const HcclReduceOp op)
+HcclResult HcomCheckReductionOp(const std::string& callerOpName, const HcclReduceOp op)
 {
     if (HCCL_SUPPORT_REDUCE_OP.find(op) == HCCL_SUPPORT_REDUCE_OP.end()) {
-        RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-            std::vector<std::string>({ "HcomCheckReductionOp", "op", GetReduceOpEnumStr(op), "op not supported" }));
+        std::string supportedOpsStr;
+        for (const auto& supportedOp : HCCL_SUPPORT_REDUCE_OP) {
+            if (!supportedOpsStr.empty()) {
+                supportedOpsStr += ", ";
+            }
+            supportedOpsStr += GetReduceOpEnumStr(supportedOp);
+        }
+        RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+            std::vector<std::string>({ callerOpName, GetReduceOpEnumStr(op), "op", supportedOpsStr }));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] Op:[%s] not supported",
             LOG_KEYWORDS_TASK_EXEC.c_str(),
             LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
@@ -320,12 +327,12 @@ HcclResult HcomCheckReduceDataType(const HcclDataType dataType, const HcclReduce
     if ((deviceType == DevType::DEV_TYPE_910B) || (deviceType == DevType::DEV_TYPE_910_93)) {
         if ((op == HCCL_REDUCE_PROD) &&
         ((dataType == HCCL_DATA_TYPE_INT16) || (dataType == HCCL_DATA_TYPE_BFP16))) {
-            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
+            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
                 std::vector<std::string>({
                 "HcomCheckReduceDataType",
-                "dataType",
                 GetDataTypeEnumStr(dataType),
-                "please check dataType when optype is prod"
+                "dataType",
+                "float16, float32, int32"
                 }));
             HCCL_ERROR(
                 "[%s][%s]errNo[0x%016llx] device type[%d] does not support the data type[%s] and data "\
@@ -338,12 +345,12 @@ HcclResult HcomCheckReduceDataType(const HcclDataType dataType, const HcclReduce
         }
     } else if (deviceType == DevType::DEV_TYPE_910) {
         if (dataType == HCCL_DATA_TYPE_INT16) {
-            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
+            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
                 std::vector<std::string>({
                 "HcomCheckReduceDataType",
-                "dataType",
                 GetDataTypeEnumStr(dataType),
-                "please check the data type when the device type is 910."
+                "dataType",
+                "float16, float32"
                 }));
             HCCL_ERROR(
                 "[%s][%s]errNo[0x%016llx] device type[%d] does not support the data type[%s]",\
@@ -354,12 +361,12 @@ HcclResult HcomCheckReduceDataType(const HcclDataType dataType, const HcclReduce
         }
     } else if (deviceType == DevType::DEV_TYPE_310P3) {
         if (dataType == HcclDataType::HCCL_DATA_TYPE_INT16 && op != HcclReduceOp::HCCL_REDUCE_SUM) {
-            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
+            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
                 std::vector<std::string>({
                 "HcomCheckReduceDataType",
-                "op",
                 GetReduceOpEnumStr(op),
-                "please check operation type when the data type is int16."
+                "op",
+                "sum"
             }));
             HCCL_ERROR(
                 "[%s][%s]errNo[0x%016llx] device type[%d] does not support the data type[%s] for Op[%s]",\
@@ -387,8 +394,8 @@ HcclResult HcomCheckOpParam(const char *tag, const u64 count, const HcclDataType
     const void *stream)
 {
     HcclResult ret = HcomCheckGroupName(group);
-    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({tag, "group", group, "please check group"}));
+    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({tag, group, "group", "non-empty string with only letters, dights, and underscores"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] group name is invalid",
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
@@ -401,8 +408,8 @@ HcclResult HcomCheckOpParam(const char *tag, const u64 count, const HcclDataType
 {
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
 
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({tag, "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({tag, "nullptr", "stream", "non-null device stream pointer"}));
     CHK_PTR_NULL(stream);
 
     return HCCL_SUCCESS;
@@ -411,20 +418,20 @@ HcclResult HcomCheckOpParam(const char *tag, const u64 count, const HcclDataType
 HcclResult HcomCheckOpParam(const char *tag, const u64 count, const HcclDataType dataType)
 {
     HcclResult ret = HcomCheckTag(tag);
-    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomCheckTag", "tag", tag, "please check tag"}));
+    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomCheckTag", tag, "tag", "supported operation name (e.g., \"AllReduce\", \"AllGather\")"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] tag is invalid",
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
     ret = HcomCheckCount(count);
-    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({tag, "count", std::to_string(count), "please check count"}));
+    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({tag, std::to_string(count), "count", "positive integer (>=1)"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] count is out of range",
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
     ret = HcomCheckDataType(dataType);
-    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({tag, "dataType", GetDataTypeEnumStr(dataType), "please check dataType"}));
+    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({tag, GetDataTypeEnumStr(dataType), "dataType", "valid data type (e.g., HCCL_DATA_TYPE_FP32, HCCL_DATA_TYPE_INT64)"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] dataType is invalid",
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
