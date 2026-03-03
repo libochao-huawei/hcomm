@@ -408,20 +408,19 @@ HcclResult TopoInfoExchangeAgent::GetConnection(HcclIpAddress &serverIp, u32 por
 {
     auto startTime = std::chrono::steady_clock::now();
     auto timeout = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
-
     while (true) {
+        std::string errormessage = "1. The current node " + std::string(serverIp.GetReadableIP()) +
+                                   " is disconnected from the host of the root node " + std::string(localRankHandle_.ip) + ". "\
+                                   "2. the timeout set by the HCCL_CONNECT_TIMEOUT environment variable is too short.";
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}), \
-                std::vector<std::string>({RANKTABLE_DETECT_CONNECT_TIMEOUT_REASON}));
+                std::vector<std::string>({errormessage}));
             HCCL_ERROR("[%s][%s] topo exchange agent get socket timeout! timeout[%lld s]",
-                LOG_KEYWORDS_INIT_GROUP.c_str(),
-                LOG_KEYWORDS_RANKTABLE_DETECT.c_str(),
-                timeout);
+                LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), timeout);
             PrintSocketTimeoutReasons(serverIp, port, socket);
             sleep(WAIT_ERROR_BROADCAST_TIME);
             return HCCL_E_TIMEOUT;
         }
-
         HcclSocketStatus status = socket->GetStatus();
         if (status == HcclSocketStatus::SOCKET_CONNECTING) {
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
@@ -445,13 +444,11 @@ HcclResult TopoInfoExchangeAgent::GetConnection(HcclIpAddress &serverIp, u32 por
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[Get][Connection]errNo[0x%016llx] agentID[%s] send local rank id to remote "\
                     "by client fdHandle failed, ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER), agentBuf, ret), ret);
-
             ret = socket->Send(&connSize_, sizeof(connSize_));
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[Get][Connection]errNo[0x%016llx] rank[%u] send local rank num[%u] to "\
                     "remote by client fdHandle failed, ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER),
                     localRankInfo_.rank, localRankInfo_.rankSize, ret), ret);
-
             HCCL_INFO("local rank[%u] get socket connection with server[%s] port[%u] success.",
                 localRankInfo_.rank, serverIp.GetReadableAddress(), port);
             break;
@@ -589,13 +586,9 @@ HcclResult TopoInfoExchangeAgent::DetectTransportType(const RankInfo_t& localRan
 
 HcclResult TopoInfoExchangeAgent::VerifyClusterInfo(RankTable_t &clusterInfo)
 {
-    std::string errormessage = "rank num[" + std::to_string(localRankInfo_.rankSize) +
-                               "]is different with rank list size[" + std::to_string(clusterInfo.rankList.size()) +
-                               "] in total topo rank info.";
-    RPT_INPUT_ERR((clusterInfo.rankList.size() != localRankInfo_.rankSize),
-        "EI0015",
-        std::vector<std::string>({"error_reason"}),
-        std::vector<std::string>({errormessage}));
+    std::string errormessage = "The number of ranks[" + std::to_string(localRankInfo_.rankSize) +
+                               "]passed by the communicator initialization interface does not match the number of ranks[" + std::to_string(clusterInfo.rankList.size()) +
+                               "] obtained during cluster information negotiction.";
     CHK_PRT_RET((clusterInfo.rankList.size() != localRankInfo_.rankSize),
         HCCL_ERROR("[%s][%s]%s",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -603,11 +596,9 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterInfo(RankTable_t &clusterInfo)
             errormessage.c_str()),
         HCCL_E_PARA);
 
-    errormessage = "rank num[" + std::to_string(localRankInfo_.rankSize) + "] is different with rank num[" +
-                   std::to_string(clusterInfo.rankNum) + "] in total topo rank info.";
-    RPT_INPUT_ERR((clusterInfo.rankNum != localRankInfo_.rankSize), "EI0015",
-        std::vector<std::string>({ "error_reason"}),
-        std::vector<std::string>({ errormessage }));
+    errormessage = "The number of ranks[" + std::to_string(localRankInfo_.rankSize) +
+                               "]passed by the communicator initialization interface does not match the number of ranks[" + std::to_string(clusterInfo.rankNum) +
+                               "] obtained during cluster information negotiction.";
     CHK_PRT_RET((clusterInfo.rankNum != localRankInfo_.rankSize),
         HCCL_ERROR("[%s][%s]%s",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -628,8 +619,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterInfo(RankTable_t &clusterInfo)
         HCCL_E_PARA);
 
     errormessage = "nicDeploy[" + std::to_string(static_cast<int>(localRankInfo_.nicDeploy)) +
-                   "] is different with nicDeploy[" + std::to_string(static_cast<int>(clusterInfo.nicDeploy)) +
-                   "] in total topo rank info.";
+                   "] is different with nicDeploy[" + std::to_string(static_cast<int>(clusterInfo.nicDeploy)) + "] in total topo rank info.";
     RPT_INPUT_ERR((clusterInfo.nicDeploy != localRankInfo_.nicDeploy), "EI0015",
         std::vector<std::string>({ "error_reason"}),
         std::vector<std::string>({ errormessage }));
@@ -735,9 +725,12 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterDeviceIP(const RankTable_t &clust
         for (u32 j = (i + 1); j < clusterInfo.rankList.size(); j++) {
             bool err = HasRepeatedIP(clusterInfo.rankList[i].deviceInfo.deviceIp,
                 clusterInfo.rankList[j].deviceInfo.deviceIp);
-            std::string errormessage = "rank[" + std::to_string(clusterInfo.rankList[i].rankId) +
-                                       "]'s device ip is repeated with rank[" +
-                                       std::to_string(clusterInfo.rankList[j].rankId) + "].";
+            std::string errormessage = "The device IP address " + std::string(clusterInfo.rankList[i].deviceInfo.deviceIp[0].GetReadableIP()) +
+                                       " of rank " + std::to_string(clusterInfo.rankList[i].rankId) +
+                                       " on node " +clusterInfo.rankList[i].serverId +
+                                       " is the same as the device IP address" + std::string(clusterInfo.rankList[j].deviceInfo.deviceIp[0].GetReadableIP()) +
+                                       " of rank " + std::to_string(clusterInfo.rankList[j].rankId) +
+                                       " on node " + clusterInfo.rankList[j].serverId + ".";
             RPT_INPUT_ERR(err,
                 "EI0015",
                 std::vector<std::string>({"error_reason"}),
@@ -811,15 +804,13 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterBackupDeviceIP(RankTable_t &clust
 
             LinkTypeInServer linkType = LinkTypeInServer::RESERVED_LINK_TYPE;
             CHK_RET(hrtGetPairDeviceLinkType(rankInfo.deviceInfo.devicePhyId, backupDevPhyId, linkType));
-            errormessage = "link between device phyId[" + std::to_string(rankInfo.deviceInfo.devicePhyId) +
-                           "] and backup device phyId[" + std::to_string(backupDevPhyId) +
-                           "] is not sio link, backup device ip[" + backupIpStr +
-                           "]. "
-                           "Please check backup ip validation and whether it is on a pair device!";
             RPT_INPUT_ERR((backupDevPhyId == rankInfo.deviceInfo.devicePhyId),
                 "EI0014",
-                std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({ errormessage }));
+                std::vector<std::string>({ "value", "variable" ,"expect" }),
+                std::vector<std::string>({ std::to_string(backupDevPhyId), " \"backup_device_ip of "\
+                "rank " + std::to_string(rankInfo.rankId) + "\" ", " \"is device_ip another Die under the same NPU\" " }));
+            errormessage = "Value " + std::to_string(backupDevPhyId) + " for rankTable variable \"backup_device_ip of "\
+                "rank " + std::to_string(rankInfo.rankId) + "\" is invalid, expected value \"is device_ip another Die under the same NPU\".";
             CHK_PRT_RET(linkType != LinkTypeInServer::SIO_TYPE,
                 HCCL_ERROR(
                     "[%s][%s]errNo[0x%016llx], %s",
@@ -855,11 +846,14 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterRankID(const RankTable_t &cluster
     for (u32 i = 0; i < (clusterInfo.rankList.size() - 1); i++) {
         for (u32 j = (i + 1); j < clusterInfo.rankList.size(); j++) {
             bool err = (clusterInfo.rankList[i].rankId == clusterInfo.rankList[j].rankId);
-            std::string errormessage = "rank id[" + std::to_string(clusterInfo.rankList[i].rankId) +"] is repeated.";
+            std::string errormessage = "Rank ID" + std::to_string(clusterInfo.rankList[i].rankId) +
+                                       " of device ID " + std::to_string(clusterInfo.rankList[i].deviceInfo.devicePhyId) + " on node " + clusterInfo.rankList[i].serverId +
+                                       " is the same as that of device ID " + std::to_string(clusterInfo.rankList[j].deviceInfo.devicePhyId) +
+                                       " on node " + clusterInfo.rankList[j].serverId + ".";
             RPT_INPUT_ERR(err,
                 "EI0015",
                 std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({ errormessage }));
+                std::vector<std::string>({errormessage}));
             CHK_PRT_RET(err,
                 HCCL_ERROR("[%s][%s]%s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -879,11 +873,10 @@ HcclResult TopoInfoExchangeAgent::VerifyServerDevicePhysicID(const std::vector<R
     for (u32 i = 0; i < (serverInfo.size() - 1); i++) {
         for (u32 j = (i + 1); j < serverInfo.size(); j++) {
             bool err = (serverInfo[i].deviceInfo.devicePhyId == serverInfo[j].deviceInfo.devicePhyId);
-            std::string errormessage = "rank[" + std::to_string(serverInfo[i].rankId) + "] and rank[" +
-                                       std::to_string(serverInfo[j].rankId) +
-                                       "] has the same device "
-                                       "physic id[" +
-                                       std::to_string(serverInfo[i].deviceInfo.devicePhyId) + "].";
+            std::string errormessage = "Rank" + std::to_string(serverInfo[i].rankId) + " of node" +
+                                       serverInfo[i].serverId +
+                                       " has the same physical device ID" + std::to_string(serverInfo[i].deviceInfo.devicePhyId) + 
+                                       " as the rank" + std::to_string(serverInfo[j].rankId) + ".";
             RPT_INPUT_ERR(err,
                 "EI0015",
                 std::vector<std::string>({"error_reason"}),
@@ -915,19 +908,20 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterSuperPodInfo(const std::vector<Ra
     CHK_PRT_RET(useSuperPodMode == false,
         HCCL_DEBUG("[Verify][SuperPodInfo] does not need verify superPod info"), HCCL_SUCCESS);
 
+    std::string errormessage = "";
     // 获取每个超节点内的serverId
     std::map<std::string, std::set<std::string>> superPodSrvIdMap; // super_pod_id -> serverId
     std::map<std::string, std::unordered_map<u32, u32>> superPodSdidMap; // super_pod_id -> superDeviceId
     for (u32 i = 0; i < rankInfo.size(); i++) {
-        std::string errormessage = "superDeviceId[" + std::to_string(rankInfo[i].superDeviceId) + "] or superPod[" +
-                                   rankInfo[i].superPodId + "] in rank[" + std::to_string(rankInfo[i].rankId) +
-                                   "] is invalid.";
         // 超节点模式下, 校验superPodId和sdid值有效
         RPT_INPUT_ERR((rankInfo[i].superPodId.empty() || rankInfo[i].superDeviceId == INVALID_UINT) &&
                           rankInfo[i].deviceInfo.deviceType == DevType::DEV_TYPE_910_93,
             "EI0014",
-            std::vector<std::string>({"error_reason"}),
-            std::vector<std::string>({errormessage}));
+            std::vector<std::string>({ "value", "variable" ,"expect" }),
+            std::vector<std::string>({std::to_string(rankInfo[i].superDeviceId), "super_device_id",
+            "is less than the communication size " + std::to_string(rankInfo.size()) + " and must be unique"}));
+        errormessage = "Value " + std::to_string(rankInfo[i].superDeviceId) + " for rankTable variable superDeviceId is invalid, "\
+                    "expected value is less than the communication size " + std::to_string(rankInfo.size()) + " and must be unique.";
         CHK_PRT_RET((rankInfo[i].superPodId.empty() || rankInfo[i].superDeviceId == INVALID_UINT) &&
                         rankInfo[i].deviceInfo.deviceType == DevType::DEV_TYPE_910_93,
             HCCL_ERROR("[%s][%s]%s",
@@ -953,15 +947,13 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterSuperPodInfo(const std::vector<Ra
         } else if (it->second.find(rankInfo[i].superDeviceId) == it->second.end()) {
             it->second.insert({rankInfo[i].superDeviceId, rankInfo[i].rankId});
         } else {
-            errormessage = "devices have same superDeviceId[" + std::to_string(rankInfo[i].superDeviceId) +
-				"] in superPod[" + it->first + "]. Current device info: serverId[" + rankInfo[i].serverId +
-				"], rankId[" + std::to_string(rankInfo[i].rankId) + "], group[" + rankInfo[i].groupName +
-				"]. Another device info: rankId[" + std::to_string(it->second[rankInfo[i].superDeviceId]) + "].";
             // 超节点内superDeviceId在超节点内唯一
             RPT_INPUT_ERR(it->second.find(rankInfo[i].superDeviceId) != it->second.end(),
                 "EI0014",
-                std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({errormessage}));
+                std::vector<std::string>({ "value", "variable" ,"expect" }),
+                std::vector<std::string>({std::to_string(rankInfo[i].superDeviceId), " \"Device Id of server Id " + rankInfo[i].serverId + "\" ", "is unique"}));
+            errormessage = "Value " + std::to_string(rankInfo[i].superDeviceId) + " for rankTable "\
+                "variable \"Device Id of server Id " + rankInfo[i].serverId + "\" is invalid, expected value is unique.";
             CHK_PRT_RET(it->second.find(rankInfo[i].superDeviceId) != it->second.end(),
                 HCCL_ERROR("[%s][%s]%s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -1014,7 +1006,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterTlsConsistency(const RankTable_t 
         tlsInconsistentTlsType = (tlsEnableRank.size() >= tlsDisableRank.size()) ? "Disable" : "Enable";
         GenerateTlsStatusStr(tlsInconsistentStr, target);
     }
-    std::string errormessage;
+    std::string errormessage = "";
     // 将不支持查询的卡的信息汇总成一个string
     std::string tlsUnknownRankStr = "";
     if (!isSupportCheckTlsStatus) {
@@ -1025,39 +1017,16 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterTlsConsistency(const RankTable_t 
     // 1.通信域所有卡都支持查询TLS开关状态，并且TLS开关状态都是一致的。
         HCCL_INFO("[Verify][TlsConsistency] All ranks tlsStatus are consistent");
     } else if (!isTlsConsistent && isSupportCheckTlsStatus) {
-        errormessage = "Some ranks tlsStatus are inconsistent. The tlsStatus of inconsistent ranks are [" +
-                       tlsInconsistentTlsType +"]. Inconsistent serverId/rankId[" +
-                       tlsInconsistentStr + "].";
         // 2.通信域所有卡都支持查询TLS开关状态，但是TLS开关状态存在不一致，报错。
-        RPT_INPUT_ERR(true,
-            "EI0014",
-            std::vector<std::string>({"error_reason"}),
-            std::vector<std::string>({errormessage}));
-        HCCL_ERROR("[%s][%s] %s",
-            LOG_KEYWORDS_INIT_GROUP.c_str(),
-            LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
-            errormessage.c_str());
+        ReportTlsConfigurationError(tlsInconsistentTlsType, tlsInconsistentStr, tlsUnknownRankStr);
         return HCCL_E_PARA;
     } else if (isTlsConsistent && !isSupportCheckTlsStatus) {
     // 3.通信域内的部分卡不支持查询TLS开关状态，目前能查询到的卡的TLS开关状态是一致的，打印warning提醒
         HCCL_RUN_WARNING("[Verify][TlsConsistency] Some ranks do not support to check tlsStatus, " \
             "not support serverId/rankId: %s", tlsUnknownRankStr.c_str());
     } else {
-        errormessage =
-            "Some rank tlsStatus are inconsistent, "
-            "and some other ranks do not support to check tlsStatus. The tlsStatus of inconsistent ranks are [" +
-            tlsInconsistentTlsType + "]. Inconsistent serverId/rankId: " +
-            tlsInconsistentStr + ". Not support serverId/rankId[" + tlsUnknownRankStr + "].";
         // 4.通信域内的部分卡不支持查询TLS开关状态，但是目前能查询到的卡的TLS开关状态已经不一致，报错
-        RPT_INPUT_ERR(true,
-            "EI0014",
-            std::vector<std::string>({"error_reason"}),
-            std::vector<std::string>({errormessage}));
-        HCCL_ERROR(
-            "[%s][%s] %s",
-            LOG_KEYWORDS_INIT_GROUP.c_str(),
-            LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
-            errormessage.c_str());
+        ReportTlsConfigurationError(tlsInconsistentTlsType, tlsInconsistentStr, tlsUnknownRankStr);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -1091,5 +1060,19 @@ void TopoInfoExchangeAgent::GenerateTlsStatusStr(std::string &tlsStatusStr,
         tlsStatusStr += "];";
     }
     return;
+}
+
+void TopoInfoExchangeAgent::ReportTlsConfigurationError(const std::string& tlsInconsistentTlsType,
+        const std::string& tlsInconsistentStr, const std::string& tlsUnknownRankStr)
+{
+    std::string errormessage = "Value " + tlsInconsistentTlsType + " for config \"tls\" is invalid. Expected: \"All ranks are consistent. Current status: "\
+    "rankList for enabled tls: " + tlsInconsistentStr + "; rankList for disabled tls:" + tlsInconsistentStr + " rankList for query failure tls:" + tlsUnknownRankStr + ".\"";
+    RPT_INPUT_ERR(true,
+    "EI0016",
+    std::vector<std::string>({"value", "variable", "expect"}),
+    std::vector<std::string>({tlsInconsistentTlsType, " \"tls\" ",
+        " \"All ranks are consistent. Current status: rankList for enabled tls:" + tlsInconsistentStr + "; "\
+        "rankList for disabled tls:" + tlsInconsistentStr + " rankList for query failure tls:" + tlsUnknownRankStr + ".\" "}));
+    HCCL_ERROR("[%s][%s] %s", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), errormessage.c_str());
 }
 }
