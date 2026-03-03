@@ -2199,7 +2199,7 @@ TEST_F(CommunicatorImplTest, Ut_CommunicatorImpl_When_EnableSuperFastLoad_Expect
     ccuParams1.push_back({ccuTaskParam, ccuTaskParam});
     ccuParams1.push_back({ccuTaskParam});
     ccuProfilingInfo1.resize(2);
-    comm.saveCCUParams(std::move(ccuParams1), std::move(ccuProfilingInfo1), 0, true);
+    comm.saveCCUParams(std::move(ccuParams1), std::move(ccuProfilingInfo1), 0, CcuInstType::CCU_INS_GROUP, true);
  
     comm.ccuParamsMappingKey = {static_cast<std::uint32_t>(opParams.reduceOp),
                                 static_cast<std::uint32_t>(opParams.dataType),
@@ -2210,8 +2210,8 @@ TEST_F(CommunicatorImplTest, Ut_CommunicatorImpl_When_EnableSuperFastLoad_Expect
     ccuParams2.push_back({ccuTaskParam, ccuTaskParam, ccuTaskParam});
     std::vector<std::vector<CcuProfilingInfo>> ccuProfilingInfo2{};
     ccuProfilingInfo2.resize(3);
-    comm.saveCCUParams(std::move(ccuParams2), std::move(ccuProfilingInfo2), 0, true);
-    comm.saveCCUParams(std::move(ccuParams2), std::move(ccuProfilingInfo2), 0, true);
+    comm.saveCCUParams(std::move(ccuParams2), std::move(ccuProfilingInfo2), 0, CcuInstType::CCU_INS_GROUP, true);
+    comm.saveCCUParams(std::move(ccuParams2), std::move(ccuProfilingInfo2), 0, CcuInstType::CCU_INS_GROUP, true);
  
     comm.ccuParamsMappingKey = {static_cast<std::uint32_t>(opParams.reduceOp),
                             static_cast<std::uint32_t>(opParams.dataType),
@@ -2226,7 +2226,7 @@ TEST_F(CommunicatorImplTest, Ut_CommunicatorImpl_When_EnableSuperFastLoad_Expect
     ccuProfilingInfo3[0].resize(1);
     ccuProfilingInfo3[1].resize(2);
     ccuProfilingInfo3[2].resize(3);
-    comm.saveCCUParams(std::move(ccuParams), std::move(ccuProfilingInfo3), 0, true);
+    comm.saveCCUParams(std::move(ccuParams), std::move(ccuProfilingInfo3), 0, CcuInstType::CCU_INS_GROUP, true);
  
     Stream stream(fakePtr);
     stream.SetStmMode(fakeStmMode);
