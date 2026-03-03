@@ -30,6 +30,11 @@
 #include "resource_entities.h"
 #include "orion_adapter_rts.h"
 
+// specify namespaces for the macro TRY_CATCH_*
+using string = std::string;
+using exception = std::exception;
+using HcclException = Hccl::HcclException;
+
 namespace hcomm {
 static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
 static std::unordered_map<ChannelHandle, ChannelHandle> g_ChannelD2HMap;
@@ -668,17 +673,17 @@ HcclResult RecordService(void *args, uint64_t argsSizeByte)
         return HCCL_E_PARA;
     }
 
-    LocalNotify *dstNotifyPtr = dstAicpuTsThread->GetLocalNotify(dstNotifyIdx);
+    hccl::LocalNotify *dstNotifyPtr = dstAicpuTsThread->GetNotify(dstNotifyIdx);
     if (dstNotifyPtr == nullptr) {
-        HCCL_ERROR("[%s] FAIL. dstAicpuTsThread->GetLocalNotify failed for dstNotifyIdx[%u].", __func__, dstNotifyIdx);
+        HCCL_ERROR("[%s] FAIL. dstAicpuTsThread->GetNotify failed for dstNotifyIdx[%u].", __func__, dstNotifyIdx);
         return HCCL_E_PARA;
     }
     HcclSignalInfo notifyInfo{};
     CHK_RET(dstNotifyPtr->GetNotifyData(notifyInfo));
-    void *const notifyAddrOnDev = notifyInfo.addr;
+    void *const notifyAddrOnDev = reinterpret_cast<void *>(notifyInfo.addr);
     const uint64_t recordValue = 1;
     const uint64_t notifySize = sizeof(uint8_t);  // on 91095, notify size is 8 bit.
-    TRY_CATCH_RETURN(HrtMemCpy(notifyAddrOnDev, notifySize, &recordValue, notifySize, RT_MEMCPY_HOST_TO_DEVICE));
+    TRY_CATCH_RETURN(Hccl::HrtMemcpy(notifyAddrOnDev, notifySize, &recordValue, notifySize, Hccl::rtMemcpyKind_t::RT_MEMCPY_HOST_TO_DEVICE));
     return HCCL_SUCCESS;
 }
 
@@ -699,11 +704,12 @@ HcclResult WaitService(void *args, uint64_t argsSizeByte)
         return HCCL_E_NOT_FOUND;
     }
     hccl::Thread *const thread = hcomm::g_ThreadMap[threadHdl].get();
-    hccl::CpuThread *const cpuThread = dynamic_cast<hccl::CpuThread *>(thread);
-    if (cpuThread == nullptr) {
-        HCCL_ERROR("[%s] FAIL. thread[0x%llx] is not CpuThread.", __func__, threadHdl);
-        return HCCL_E_INTERNAL;
-    }
+    // hccl::CpuThread *const cpuThread = dynamic_cast<hccl::CpuThread *>(thread);
+    // if (cpuThread == nullptr) {
+    //     HCCL_ERROR("[%s] FAIL. thread[0x%llx] is not CpuThread.", __func__, threadHdl);
+    //     return HCCL_E_INTERNAL;
+    // }
+    (void)thread;
 
     //TODO:
 
