@@ -103,7 +103,7 @@ TEST_F(TopoParserTest, Ut_Deserialize_When_Normal_Expect_Success) {
 		    {
                 "net_layer": 2,
                 "link_type": "PEER2NET",
-			    "protocols": ["RDMA"],   
+			    "protocols": ["ROCE"],   
 			    "local_a": 0,
 			    "local_a_ports": ["0/0"],
 			    "position": "DEVICE"

@@ -55,8 +55,8 @@ void CcuContextBroadcastMesh1D::CreateAllVariables()
         } else {
             HCCL_INFO("[CcuContextBroadcastMesh1D] MyRank[%u], PeerId[%llu], TransportId[%hu]",
                 rankId_, peerId, transportIdx);
-            CHK_PRT_RET(transports[transportIdx] == nullptr,
-                HCCL_ERROR("[CcuContextBroadcastMesh1D] Algorithm transport ptr is null"),);
+            CHK_PRT_RET(transports[transportIdx] == nullptr || transportIdx >= transports.size(),
+                    HCCL_ERROR("[CcuContextBroadcastMesh1D] Algorithm transport ptr is null or transportIdx is out of bounds"),);
             output_.push_back(CreateVariable((*transports[transportIdx]), CKE_IDX_1));  // 获取transport中id=2的Var来传递output
             token_.push_back(CreateVariable((*transports[transportIdx]), CKE_IDX_2));
             transportIdx++;

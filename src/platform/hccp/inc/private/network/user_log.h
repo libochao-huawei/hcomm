@@ -68,22 +68,22 @@
 #define hccp_event(fmt, args...)  HCCPDlogForC(HCCP, EVENT_LEVEL, "tid:%d,%s : " fmt, \
     syscall(__NR_gettid), __func__, ##args)
 
-/* ROCE module */
-#define roce_err(fmt, args...)    HCCPDlogForC(ROCE, ERROR_LEVEL, "%s : " fmt, __func__, ##args)
-#define roce_warn(fmt, args...)   HCCPDlogForC(ROCE, WARN_LEVEL, "%s : " fmt, __func__, ##args)
-#define roce_info(fmt, args...)   HCCPDlogForC(ROCE, INFO_LEVEL, "%s : " fmt, __func__, ##args)
-#define roce_dbg(fmt, args...)    HCCPDlogForC(ROCE, DEBUG_LEVEL, "%s : " fmt, __func__, ##args)
+/* NET module */
+#define roce_err(fmt, args...)    HCCPDlogForC(NET, ERROR_LEVEL, "%s : " fmt, __func__, ##args)
+#define roce_warn(fmt, args...)   HCCPDlogForC(NET, WARN_LEVEL, "%s : " fmt, __func__, ##args)
+#define roce_info(fmt, args...)   HCCPDlogForC(NET, INFO_LEVEL, "%s : " fmt, __func__, ##args)
+#define roce_dbg(fmt, args...)    HCCPDlogForC(NET, DEBUG_LEVEL, "%s : " fmt, __func__, ##args)
 
-#define roce_run_err(fmt, args...)    HCCPDlogForC(ROCE | RUN_LOG_MASK, ERROR_LEVEL, "%s : " fmt, \
+#define roce_run_err(fmt, args...)    HCCPDlogForC(NET | RUN_LOG_MASK, ERROR_LEVEL, "%s : " fmt, \
     __func__, ##args)
-#define roce_run_warn(fmt, args...)   HCCPDlogForC(ROCE | RUN_LOG_MASK, WARN_LEVEL, "%s : " fmt,  \
+#define roce_run_warn(fmt, args...)   HCCPDlogForC(NET | RUN_LOG_MASK, WARN_LEVEL, "%s : " fmt,  \
     __func__, ##args)
-#define roce_run_info(fmt, args...)   HCCPDlogForC(ROCE | RUN_LOG_MASK, INFO_LEVEL, "%s : " fmt,  \
+#define roce_run_info(fmt, args...)   HCCPDlogForC(NET | RUN_LOG_MASK, INFO_LEVEL, "%s : " fmt,  \
     __func__, ##args)
-#define roce_run_dbg(fmt, args...)    HCCPDlogForC(ROCE | RUN_LOG_MASK, DEBUG_LEVEL, "%s : " fmt, \
+#define roce_run_dbg(fmt, args...)    HCCPDlogForC(NET | RUN_LOG_MASK, DEBUG_LEVEL, "%s : " fmt, \
     __func__, ##args)
 
-#define roce_event(fmt, args...)  HCCPDlogForC(ROCE, EVENT_LEVEL, "%s : " fmt, __func__, ##args)
+#define roce_event(fmt, args...)  HCCPDlogForC(NET, EVENT_LEVEL, "%s : " fmt, __func__, ##args)
 #else
 #define hccp_dlog(moduleId, level, fmt, ...)                                                   \
     do {                                                                                       \
@@ -113,22 +113,22 @@
 #define hccp_event(fmt, args...)  hccp_dlog(HCCP, EVENT_LEVEL, "tid:%d,%s : " fmt, \
     syscall(__NR_gettid), __func__, ##args)
 
-/* ROCE module */
-#define roce_err(fmt, args...)    hccp_dlog(ROCE, ERROR_LEVEL, "%s : " fmt, __func__, ##args)
-#define roce_warn(fmt, args...)   hccp_dlog(ROCE, WARN_LEVEL, "%s : " fmt, __func__, ##args)
-#define roce_info(fmt, args...)   hccp_dlog(ROCE, INFO_LEVEL, "%s : " fmt, __func__, ##args)
-#define roce_dbg(fmt, args...)    hccp_dlog(ROCE, DEBUG_LEVEL, "%s : " fmt, __func__, ##args)
+/* NET module */
+#define roce_err(fmt, args...)    hccp_dlog(NET, ERROR_LEVEL, "%s : " fmt, __func__, ##args)
+#define roce_warn(fmt, args...)   hccp_dlog(NET, WARN_LEVEL, "%s : " fmt, __func__, ##args)
+#define roce_info(fmt, args...)   hccp_dlog(NET, INFO_LEVEL, "%s : " fmt, __func__, ##args)
+#define roce_dbg(fmt, args...)    hccp_dlog(NET, DEBUG_LEVEL, "%s : " fmt, __func__, ##args)
 
-#define roce_run_err(fmt, args...)    hccp_dlog(ROCE | RUN_LOG_MASK, ERROR_LEVEL, "%s : " fmt, \
+#define roce_run_err(fmt, args...)    hccp_dlog(NET | RUN_LOG_MASK, ERROR_LEVEL, "%s : " fmt, \
     __func__, ##args)
-#define roce_run_warn(fmt, args...)   hccp_dlog(ROCE | RUN_LOG_MASK, WARN_LEVEL, "%s : " fmt,  \
+#define roce_run_warn(fmt, args...)   hccp_dlog(NET | RUN_LOG_MASK, WARN_LEVEL, "%s : " fmt,  \
     __func__, ##args)
-#define roce_run_info(fmt, args...)   hccp_dlog(ROCE | RUN_LOG_MASK, INFO_LEVEL, "%s : " fmt,  \
+#define roce_run_info(fmt, args...)   hccp_dlog(NET | RUN_LOG_MASK, INFO_LEVEL, "%s : " fmt,  \
     __func__, ##args)
-#define roce_run_dbg(fmt, args...)    hccp_dlog(ROCE | RUN_LOG_MASK, DEBUG_LEVEL, "%s : " fmt, \
+#define roce_run_dbg(fmt, args...)    hccp_dlog(NET | RUN_LOG_MASK, DEBUG_LEVEL, "%s : " fmt, \
     __func__, ##args)
 
-#define roce_event(fmt, args...)  hccp_dlog(ROCE, "%s : " fmt, __func__, ##args)
+#define roce_event(fmt, args...)  hccp_dlog(NET, "%s : " fmt, __func__, ##args)
 #endif
 #endif
 #endif

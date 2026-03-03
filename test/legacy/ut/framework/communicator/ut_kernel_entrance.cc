@@ -13,6 +13,7 @@
 #include <mockcpp/mockcpp.hpp>
 #include "kernel_entrance.h"
 #include "communicator_impl_lite.h"
+#include "dlhal_function_v2.h"
 
 using namespace Hccl;
 
@@ -24,6 +25,7 @@ TEST(KernelEntranceTest, test_hccl_kernel_entrance_with_nullptr)
 
 TEST(KernelEntranceTest, test_hccl_kernel_entrance_with_valid_param)
 {
+    MOCKER_CPP(&DlHalFunctionV2::DlHalFunctionInit).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     HcclKernelParamLite param;
 
     MOCKER_CPP(&CommunicatorImplLite::LoadWithOpBasedMode).stubs().with(any()).will(returnValue(1));

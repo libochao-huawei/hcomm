@@ -43,7 +43,7 @@ protected:
         MOCKER(HrtStreamGetSqId).stubs().will(returnValue(fakeSqId));
         MOCKER(HrtStreamDestroy).stubs();
         MOCKER(HrtGetDevice).stubs().will(returnValue(fakeDevLogId));
-        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
+        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
 
         streamManager->AllocStreams(1);
         streamManager->AllocFreeStream();
@@ -58,7 +58,7 @@ protected:
         std::cout << "A Test case in AicpuStreamManager TearDown" << std::endl;
     }
 
-    u32              fakeId       = 1;
+    s32              fakeId       = 1;
     s32              fakeDevLogId = 1;
     u32              fakeDevPhyId = 1;
     u32              fakeSqId     = 2;

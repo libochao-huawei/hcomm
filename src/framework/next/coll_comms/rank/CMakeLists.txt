@@ -16,3 +16,4 @@ target_sources(hcomm PRIVATE
 )
 
 add_subdirectory(comm_mems)
+add_subdirectory(engine_ctxs)

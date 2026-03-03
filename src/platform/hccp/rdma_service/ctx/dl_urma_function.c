@@ -366,12 +366,12 @@ STATIC int RsOpenUrmaSo(void)
     pthread_mutex_lock(&gUrmaApiLock);
 #ifndef CA_CONFIG_LLT
     if (gUrmaApiHandle == NULL) {
-        gUrmaApiHandle = HccpDlopen("liburma-udma.so", RTLD_NOW);
+        gUrmaApiHandle = HccpDlopen("liburma.so.0", RTLD_NOW);
         if (gUrmaApiHandle != NULL) {
             goto out;
         }
 
-        gUrmaApiHandle = HccpDlopen("/usr/lib64/urma/liburma-udma.so", RTLD_NOW);
+        gUrmaApiHandle = HccpDlopen("/lib64/liburma.so.0", RTLD_NOW);
         if (gUrmaApiHandle != NULL) {
             goto out;
         }
@@ -413,7 +413,7 @@ STATIC int RsUrmaApiInit(void)
     int ret;
 
     ret = RsOpenUrmaSo();
-    CHK_PRT_RETURN(ret, hccp_err("HccpDlopen[liburma-udma.so] failed! ret=[%d], "
+    CHK_PRT_RETURN(ret, hccp_err("HccpDlopen[liburma.so] failed! ret=[%d], "
     "Please check network adapter driver has been installed", ret), ret);
 
     ret = RsUrmaDeviceApiInit();

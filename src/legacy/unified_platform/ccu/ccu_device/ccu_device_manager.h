@@ -11,12 +11,14 @@
 #ifndef CCU_DEVICE_MANAGER_H
 #define CCU_DEVICE_MANAGER_H
 
+#include <array>
 #include "hccl/hccl_types.h"
 
 #include "ip_address.h"
 #include "ccu_dev_mgr.h"
 #include "orion_adapter_hccp.h"
 #include "local_ub_rma_buffer.h"
+#include <array>
 
 namespace Hccl {
 

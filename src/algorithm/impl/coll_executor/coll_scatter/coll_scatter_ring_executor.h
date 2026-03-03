@@ -21,7 +21,7 @@ class CollScatterRingExecutor : public CollScatterExecutor {
 public:
     explicit CollScatterRingExecutor(const HcclDispatcher dispatcher,
                                 std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollScatterRingExecutor() = default;
+    ~CollScatterRingExecutor() override = default;
 protected:
     /* *************** 资源计算 *************** */
     HcclResult CalcLevel0CommInfo(TransportMemType inputType,

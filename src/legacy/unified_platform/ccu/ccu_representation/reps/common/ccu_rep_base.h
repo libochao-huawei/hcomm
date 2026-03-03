@@ -12,6 +12,7 @@
 #define HCCL_CCU_REPRESENTATION_BASE
 
 #include <string>
+#include <cstdint>
 
 #include "ccu_microcode.h"
 #include "ccu_rep_type.h"

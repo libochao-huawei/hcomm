@@ -13,6 +13,7 @@
 
 #include <mutex>
 #include <map>
+#include <array>
 #include "hccl/base.h"
 #include "mem_name_repository_pub.h"
 #include "local_ipc_notify.h"

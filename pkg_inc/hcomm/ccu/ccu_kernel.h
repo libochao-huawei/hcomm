@@ -48,7 +48,7 @@ class CcuKernel : public CcuRep::CcuRepContext {
 public:
     explicit CcuKernel(const CcuKernelArg &arg);
     CcuKernel() = default;
-    ~CcuKernel() override = default;
+    ~CcuKernel() override;
     HcclResult Init();
 
     CcuResReq          GetResourceRequest();

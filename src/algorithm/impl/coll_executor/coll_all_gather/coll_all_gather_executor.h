@@ -16,7 +16,7 @@ class CollAllGatherExecutor : public CollCommExecutor {
 
 public:
     explicit CollAllGatherExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherExecutor() = default;
+    ~CollAllGatherExecutor() override = default;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
 protected:

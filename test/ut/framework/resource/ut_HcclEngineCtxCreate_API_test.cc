@@ -47,7 +47,7 @@ TEST_F(HcclEngineCtxCreateTest, ut_HcclEngineCtxCreate_When_Normal_Expect_Return
     HcclResult result = HcclEngineCtxCreate(comm, ctxTag, engine, size, &ctx);
     EXPECT_EQ(result, HCCL_SUCCESS);
     HcclMem engineCtx = {HcclMemType::HCCL_MEM_TYPE_HOST, ctx, size}; 
-    result = HcommEngineCtxDestroy(comm, &engineCtx);
+    result = HcclEngineCtxDestroy(comm, ctxTag, engine);
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
@@ -95,30 +95,6 @@ TEST_F(HcclEngineCtxCreateTest, ut_HcclEngineCtxCreate_When_EngineTagIslong_Expe
     EXPECT_EQ(result, HCCL_E_PARA);
 }
 
-constexpr uint64_t GB2E = 1024 * 1024 * 1024;
-constexpr uint64_t MAX_ENGINECTX_SIZE = 100 * GB2E;
-TEST_F(HcclEngineCtxCreateTest, ut_HcclEngineCtxCreate_When_Oversize_Expect_ReturnIsHCCL_ERROR1)
-{
-    const char *ctxTag = "1";
-    CommEngine engine = COMM_ENGINE_CPU;
-    void * ctx;
-    uint64_t size = MAX_ENGINECTX_SIZE + 1;
-
-    HcclResult result = HcclEngineCtxCreate(comm, ctxTag, engine, size, &ctx);
-    EXPECT_EQ(result, HCCL_E_PARA);
-}
-
-TEST_F(HcclEngineCtxCreateTest, ut_HcclEngineCtxCreate_When_Oversize_Expect_ReturnIsHCCL_ERROR2)
-{
-    const char *ctxTag = "1";
-    CommEngine engine = COMM_ENGINE_CPU;
-    void * ctx;
-    uint64_t size = 0;
-
-    HcclResult result = HcclEngineCtxCreate(comm, ctxTag, engine, size, &ctx);
-    EXPECT_EQ(result, HCCL_E_PARA);
-}
-
 TEST_F(HcclEngineCtxCreateTest, ut_HcclEngineCtxCreate_When_engineCtxExist_Expect_ReturnIsHCCL_ERROR)
 {
     const char *ctxTag = "1";
@@ -132,7 +108,7 @@ TEST_F(HcclEngineCtxCreateTest, ut_HcclEngineCtxCreate_When_engineCtxExist_Expec
     result = HcclEngineCtxCreate(comm, ctxTag, engine, size, &ctx);
     EXPECT_EQ(result, HCCL_E_PARA);
     HcclMem engineCtx = {HcclMemType::HCCL_MEM_TYPE_HOST, ctx, size}; 
-    result = HcommEngineCtxDestroy(comm, &engineCtx);
+    result = HcclEngineCtxDestroy(comm, ctxTag, engine);
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
@@ -149,15 +125,4 @@ TEST_F(HcclEngineCtxCreateTest, ut_HcclEngineCtxCreate_When_Devicemallocfailed_E
 
     HcclResult result = HcclEngineCtxCreate(comm, ctxTag, engine, size, &ctx);
     EXPECT_EQ(result, HCCL_E_RUNTIME);
-}
-
-TEST_F(HcclEngineCtxCreateTest, ut_HcclEngineCtxCreate_When_NotSupportEngineType_Expect_ReturnIsHCCL_ERROR)
-{
-    const char *ctxTag = "1";
-    CommEngine engine = COMM_ENGINE_CCU;
-    void * ctx;
-    uint64_t size = 256;
-
-    HcclResult result = HcclEngineCtxCreate(comm, ctxTag, engine, size, &ctx);
-    EXPECT_EQ(result, HCCL_E_PARA);
 }

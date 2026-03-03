@@ -1228,7 +1228,7 @@ bool HcomCheckrtMemcpyAddrAsync(const std::string& group)
     void *deviceMemSrc = nullptr;
     void *deviceMemDst = nullptr;
 
-     auto deleter = [&](void *dst) {
+    auto deleter = [&deviceMemSrcLevel2, &deviceMemDstLevel2, &deviceMemSrc, &deviceMemDst](void *dst) {
         if (dst != nullptr) {
             CHK_PRT(hrtFree(dst));
             if (dst == deviceMemSrcLevel2) {

@@ -80,6 +80,7 @@ HcclResult TaskService::ReadTaskType(uint8_t *srcTaskTypePtr, std::string &taskT
     CHK_PTR_NULL(srcTaskTypePtr);
     // 读 taskType
     char    *taskType = new char[TASKTYPE_ADDR_LENGTH];
+    CHK_PTR_NULL(taskType);
     aclError ret      = aclrtMemcpy(taskType, (sizeof(char) * TASKTYPE_ADDR_LENGTH), srcTaskTypePtr,
                                     (sizeof(char) * TASKTYPE_ADDR_LENGTH), aclrtMemcpyKind::ACL_MEMCPY_DEVICE_TO_HOST);
     if (ret != ACL_SUCCESS) {

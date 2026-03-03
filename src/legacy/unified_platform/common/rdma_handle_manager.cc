@@ -182,6 +182,28 @@ JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jf
     return jfcHandleMap[rdmaHandle][jfcMode];
 }
 
+JfcHandle  RdmaHandleManager::GetJfcHandleAndCqInfo(RdmaHandle rdmaHandle, CqCreateInfo& cqInfo, HrtUbJfcMode jfcMode)
+{
+    std::lock_guard<std::mutex> lock(managerMutex);
+
+    if (rdmaHandle == nullptr) {
+        THROW<InvalidParamsException>("[RdmaHandleManager][GetJfcHandleAndCqInfo]rdmaHandle is nullptr, please check input.");
+    }
+
+    if (jfcMode != HrtUbJfcMode::USER_CTL) {
+    THROW<InvalidParamsException>("[RdmaHandleManager][GetJfcHandleAndCqInfo]jfcMode[%s] is not USER_CTL, "
+            "please check input.", jfcMode.Describe().c_str());
+    }
+
+    if (jfcHandleMap.find(rdmaHandle) != jfcHandleMap.end() && 
+        jfcHandleMap[rdmaHandle].find(jfcMode) != jfcHandleMap[rdmaHandle].end()) {
+        return jfcHandleMap[rdmaHandle][jfcMode];
+    }
+    
+    jfcHandleMap[rdmaHandle][jfcMode] = HrtRaUbCreateJfcUserCtl(rdmaHandle, cqInfo);
+    return jfcHandleMap[rdmaHandle][jfcMode];
+}
+
 std::pair<uint32_t, uint32_t> RdmaHandleManager::GetDieAndFuncId(RdmaHandle rdmaHandle)
 {
     std::lock_guard<std::mutex> lock(managerMutex);
