@@ -254,6 +254,8 @@ void CcuComponent::CreateCcuRmaBuffer()
                 additionalCcuRmaBufferMap.emplace(i, std::make_unique<LocalUbRmaBuffer>(ccuBuffer, rdmaHandle));
             }
         }
+        const auto ccuBuffer = std::make_shared<Buffer>(ccuResAddr, 72*1024*1024);
+        localCcuRmaBufferMap.emplace(dieId, std::make_unique<LocalUbRmaBuffer>(ccuBuffer, rdmaHandle));
     }
 }
 
@@ -558,6 +560,23 @@ HcclResult CcuComponent::GetCcuResourceSpaceBufInfo(const uint8_t dieId, uint64_
     const auto rawBuffer = res->second->GetBuf();
     addr = static_cast<uint64_t>(rawBuffer->GetAddr());
     size = static_cast<uint64_t>(rawBuffer->GetSize());
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuComponent::GetCcuResourceSpaceTokenInfoForLocal(const uint8_t dieId, uint64_t &tokenId,
+    uint64_t &tokenValue) const
+{
+    CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
+
+    auto res = localCcuRmaBufferMap.find(dieId);
+    CHK_PRT_RET(res == localCcuRmaBufferMap.end(),
+        HCCL_WARNING("[CcuComponent][%s] failed, ccu rma buffer of die[%u] is not existed, "
+            "devLogicId[%d].", __func__, dieId, devLogicId),
+        HcclResult::HCCL_E_NOT_FOUND);
+
+    const auto &ccuRmaBuffer = res->second;
+    tokenId = static_cast<uint64_t>(ccuRmaBuffer->GetTokenId());
+    tokenValue = static_cast<uint64_t>(ccuRmaBuffer->GetTokenValue());
     return HcclResult::HCCL_SUCCESS;
 }
 

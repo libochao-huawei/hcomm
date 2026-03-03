@@ -387,7 +387,7 @@ HcclResult CtxMgrImp::InstantiationTranslator(uint16_t dieId)
     // 获取ccu token信息
     uint64_t tokenId = 0;
     uint64_t tokenValue = 0;
-    ret = CcuDeviceManager::GetCcuResourceSpaceTokenInfo(deviceLogicId_, dieId, tokenId, tokenValue);
+    ret = CcuDeviceManager::GetCcuResourceSpaceTokenInfoForLocal(deviceLogicId_, dieId, tokenId, tokenValue);
     if (ret != HcclResult::HCCL_SUCCESS) {
         THROW<CcuApiException>("Failed to get ccu resource space token info. deviceLogicId = %d, dieId = %u, ret = %d",
                                deviceLogicId_, dieId, ret);
