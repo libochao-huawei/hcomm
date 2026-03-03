@@ -8,26 +8,26 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef UNIFIED_MGR_H
-#define UNIFIED_MGR_H
+#ifndef HCOMM_RES_MGR_H
+#define HCOMM_RES_MGR_H
 
 #include <mutex>
 
 namespace hcomm {
 
-class UnifiedMgr {
+class HcommResMgr {
 public:
-    static UnifiedMgr &GetInstance(const uint32_t devicePhyId);
+    static HcommResMgr &GetInstance(const uint32_t devicePhyId);
 
 private:
-    UnifiedMgr();
-    ~UnifiedMgr();
-    UnifiedMgr(const UnifiedMgr &that) = delete;
-    UnifiedMgr &operator=(const UnifiedMgr &that) = delete;
+    HcommResMgr();
+    ~HcommResMgr();
+    HcommResMgr(const HcommResMgr &that) = delete;
+    HcommResMgr &operator=(const HcommResMgr &that) = delete;
 
     uint32_t devPhyId_{0};
 };
 
 } // namespace hcomm
 
-#endif // TP_MGR_H
+#endif // HCOMM_RES_MGR_H

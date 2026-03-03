@@ -26,7 +26,7 @@
 #include "comm_configer.h"
 #include "endpoint_map.h"
 
-#include "unified_mgr.h"
+#include "hcomm_res_mgr.h"
 
 #include "param_check_pub.h"
 
@@ -86,17 +86,15 @@ static inline HcclResult WithChannelByHandleLocked(ChannelHandle inHandle, Func 
 using namespace hcomm;
 static HcommEndpointMap g_EndpointMap;
 
-HcclResult HcommInitManager(const uint32_t devPhyId)
+HcclResult HcommResMgrInit(uint32_t devPhyId)
 {
     // 临时方案：触发统一平台层单例触发静态对象声明
     // 内部流程触发各种单例声明，保证时序
-#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
-            (void)UnifiedMgr::GetInstance(devPhyId);
+            (void)HcommResMgr::GetInstance(devPhyId);
             return HcclResult::HCCL_SUCCESS;
         }());
-#endif
     return HcclResult::HCCL_SUCCESS;
 }
 

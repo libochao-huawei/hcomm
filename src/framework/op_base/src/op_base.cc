@@ -95,7 +95,7 @@ HcclOpInfoCtx &GetOpHcomInfo(uint32_t devId)
     }
 
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    (void)HcommInitManager(devId);
+    (void)HcommResMgrInit(devId);
 #endif
 
     static HcclOpInfoCtx g_opHcomInfos[MAX_MODULE_DEVICE_NUM + 1];

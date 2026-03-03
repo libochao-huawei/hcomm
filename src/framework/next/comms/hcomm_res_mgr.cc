@@ -8,9 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "unified_mgr.h"
-
-#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+#include "hcomm_res_mgr.h"
 
 #include "hccl_common.h"
 
@@ -32,19 +30,17 @@
 #include "../ccu/ccu_device/ccu_res_batch_allocator.h"
 #include "ccu_kernel_mgr.h"
 
-#endif
-
 namespace hcomm {
 
-UnifiedMgr& UnifiedMgr::GetInstance(const uint32_t devicePhyId)
+HcommResMgr& HcommResMgr::GetInstance(const uint32_t devicePhyId)
 {
     uint32_t devPhyId = devicePhyId;
     if (devPhyId >= MAX_MODULE_DEVICE_NUM) {
-        HCCL_WARNING("[UnifiedMgr][%s] use the backup device, devPhyId[%u] should be "
+        HCCL_WARNING("[HcommResMgr][%s] use the backup device, devPhyId[%u] should be "
             "less than %u.", __func__, devPhyId, MAX_MODULE_DEVICE_NUM);
         devPhyId = MAX_MODULE_DEVICE_NUM; // 使用备份设备
     }
-#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+
     // 临时方案：只声明单例对象做生命周期控制，不执行业务动作
     // 未来需要将各种单例转为该数据结构的成员变量
     // devicePhyId 目前不影响流程，只是触发静态对象声明
@@ -66,20 +62,20 @@ UnifiedMgr& UnifiedMgr::GetInstance(const uint32_t devicePhyId)
     CcuComponent::GetInstance(devicePhyId);
     CcuResBatchAllocator::GetInstance(devicePhyId);
     CcuKernelMgr::GetInstance(devicePhyId);
-#endif
-    static UnifiedMgr unifiedMgrs[MAX_MODULE_DEVICE_NUM + 1];
-    unifiedMgrs[devPhyId].devPhyId_ = devPhyId;
 
-    return unifiedMgrs[devPhyId];
+    static HcommResMgr hcommResMgrs[MAX_MODULE_DEVICE_NUM + 1];
+    hcommResMgrs[devPhyId].devPhyId_ = devPhyId;
+
+    return hcommResMgrs[devPhyId];
 }
 
-UnifiedMgr::UnifiedMgr()
+HcommResMgr::HcommResMgr()
 {
     // 临时方案：最小化修改不做处理
     // 未来需在构造函数中触发各类成员变量声明
 }
 
-UnifiedMgr::~UnifiedMgr()
+HcommResMgr::~HcommResMgr()
 {
     // 临时方案：最小化修改不做处理
     // 未来需在析构函数中主动调用各种单例销毁流程，保证销毁时序
