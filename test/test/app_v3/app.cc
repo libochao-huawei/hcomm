@@ -9,7 +9,7 @@ int main()
         std::vector<char> byteVector;
         remoteNotify->Init(byteVector);
     } else {
-        printf("nullptr\n")
+        printf("nullptr\n");
     }
 
     return 0;
