@@ -150,7 +150,7 @@ HcclResult CpuThread::Init()
 
 HcclResult CpuThread::DeInit()
 {
-
+    return HCCL_SUCCESS;
 };
 
 CpuThread::~CpuThread() {
@@ -167,7 +167,7 @@ HcclResult CpuThread::ServiceUnregister(ThreadServiceHandle serviceHandle)
 HcclResult CpuThread::KernelRun()
 {
     //
-    serviceScheduler_->ServiceRun();
+    return serviceScheduler_->ServiceRun();
 }
 
 HcclResult CpuThread::GetThreadEntity(ThreadEntity* threadEntity)

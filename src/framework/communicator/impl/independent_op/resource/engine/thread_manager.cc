@@ -70,6 +70,7 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
 
     NotifyLoadType notifyLoadType;
     StreamType streamType;
+    ThreadType threadType = THREAD_TYPE_TS;
     CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
     CHK_RET(CommEngineToStreamType(engine, streamType));
     std::vector<std::shared_ptr<Thread>> newThreads;
@@ -78,9 +79,9 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
 
     for (uint32_t i = 0; i < threadNum; ++i) {
         std::shared_ptr<Thread> handle;
-        HCCL_INFO("[ThreadMgr][%s] Hcom[%s] AicpuTsThread notifyLoadType[%u], streamType[%u]",
-                __func__, commId_.c_str(), static_cast<int32_t>(notifyLoadType), static_cast<int32_t>(streamType));
-        CHK_RET(CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, handle));
+        HCCL_INFO("[ThreadMgr][%s] Hcom[%s] AicpuTsThread notifyLoadType[%d], streamType[%d], threadType[%d].",
+                __func__, commId_.c_str(), static_cast<int32_t>(notifyLoadType), static_cast<int32_t>(streamType), threadType);
+        CHK_RET(CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, threadType, handle));
         ret = handle->Init();
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[ThreadMgr][HcclThreadAcquire] Failed to init thread index %u", i);
