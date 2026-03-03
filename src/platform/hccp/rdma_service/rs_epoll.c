@@ -786,3 +786,216 @@ int RsEpollWaitHandle(int eventHandle, struct epoll_event *events, int timeout, 
     *eventsNum = (unsigned int)eventCount;
     return 0;
 }
+
+RS_ATTRI_VISI_DEF int RsEpollCtlAdd(const void *fdHandle, enum RaEpollEvent event)
+{
+    struct RsHeterogTcpFdInfo *fdNode = NULL;
+    unsigned int tmpEvent = event;
+    int fd = RS_FD_INVALID;
+    int ret;
+
+    if (event == RA_EPOLLONESHOT) {
+        tmpEvent = EPOLLIN | EPOLLET | EPOLLONESHOT;
+    } else if (event == RA_EPOLLIN) {
+        tmpEvent = EPOLLIN;
+    } else {
+        hccp_err("unknown event[%u]", tmpEvent);
+        return -EINVAL;
+    }
+
+    if (gRsCb == NULL) {
+        gRsCb = RsGetCurRsCb();
+        if (gRsCb == NULL) {
+            hccp_err("rs_get_cur_rs_cb failed rs_cb(NULL)");
+            return -EINVAL;
+        }
+    }
+    tmpEvent = tmpEvent | EPOLLRDHUP;
+    fdNode = calloc(1, sizeof(struct RsHeterogTcpFdInfo));
+    CHK_PRT_RETURN(fdNode == NULL, hccp_err("no memory for fd_node"), -ENOMEM);
+
+    fd = ((const struct SocketPeerInfo *)fdHandle)->fd;
+    fdNode->fd = fd;
+    RS_PTHREAD_MUTEX_LOCK(&gRsCb->mutex);
+    RsListAddTail(&fdNode->list, &gRsCb->heterogTcpFdList);
+    gRsCb->fdMap[fd] = fdHandle;
+    RS_PTHREAD_MUTEX_ULOCK(&gRsCb->mutex);
+    ret = RsEpollCtl(gRsCb->connCb.epollfd, EPOLL_CTL_ADD, fd, tmpEvent);
+    if (ret != 0) {
+        hccp_err("RsEpollCtl failed ret(%d), fd:%d, event:%u", ret, fd, event);
+        goto out;
+    }
+    return 0;
+out:
+    RsHeterogTcpFreeFdNode(fdNode);
+    fdNode = NULL;
+    return ret;
+}
+
+RS_ATTRI_VISI_DEF int RsEpollCtlMod(const void *fdHandle, enum RaEpollEvent event)
+{
+    unsigned int tmpEvent = event;
+    int fd = RS_FD_INVALID;
+    int ret;
+
+    if (event == RA_EPOLLONESHOT) {
+        tmpEvent = EPOLLIN | EPOLLET | EPOLLONESHOT;
+    } else if (event == RA_EPOLLIN) {
+        tmpEvent = EPOLLIN;
+    } else {
+        hccp_err("unknown event[%u]", event);
+        return -EINVAL;
+    }
+
+    tmpEvent = tmpEvent | EPOLLRDHUP;
+    fd = ((const struct SocketPeerInfo *)fdHandle)->fd;
+
+    if (gRsCb == NULL) {
+        gRsCb = RsGetCurRsCb();
+        if (gRsCb == NULL) {
+            hccp_err("rs_get_cur_rs_cb failed rs_cb(NULL)");
+            return -EINVAL;
+        }
+    }
+
+    ret = RsEpollCtl(gRsCb->connCb.epollfd, EPOLL_CTL_MOD, fd, tmpEvent);
+    CHK_PRT_RETURN(ret, hccp_err("RsEpollCtl failed ret(%d), fd:%d, event:%u",
+        ret, fd, event), ret);
+    return 0;
+}
+
+RS_ATTRI_VISI_DEF int RsEpollCtlDel(int fd)
+{
+    int ret;
+    struct RsHeterogTcpFdInfo *fdNode = NULL;
+    struct RsHeterogTcpFdInfo *fdNode1 = NULL;
+
+    if (gRsCb == NULL) {
+        gRsCb = RsGetCurRsCb();
+        if (gRsCb == NULL) {
+            hccp_err("rs_get_cur_rs_cb failed rs_cb(NULL)");
+            return -EINVAL;
+        }
+    }
+    RS_LIST_GET_HEAD_ENTRY(fdNode, fdNode1, &gRsCb->heterogTcpFdList, list, struct RsHeterogTcpFdInfo);
+    for (; (&fdNode->list) != &gRsCb->heterogTcpFdList;
+        fdNode = fdNode1, fdNode1 = list_entry(fdNode1->list.next, struct RsHeterogTcpFdInfo, list)) {
+        if (fdNode->fd == fd) {
+            // 删除节点
+            RsHeterogTcpFreeFdNode(fdNode);
+            fdNode = NULL;
+            break; //lint !e108
+        }
+    }
+
+    // 为了兼容epoll不同版本，这里加EPOLLIN参数
+    ret = RsEpollCtl(gRsCb->connCb.epollfd, EPOLL_CTL_DEL, fd, EPOLLIN);
+    CHK_PRT_RETURN(ret, hccp_err("RsEpollCtl failed ret(%d), fd:%d", ret, fd), ret);
+    return 0;
+}
+
+RS_ATTRI_VISI_DEF void RsSetTcpRecvCallback(const void *callback)
+{
+    if (gRsCb == NULL) {
+        hccp_err("param error, gRsCb is NULL");
+        return;
+    }
+    gRsCb->tcpRecvCallback = (void (*)(const void *))callback;
+}
+
+RS_ATTRI_VISI_DEF int RsCreateEventHandle(int *eventHandle)
+{
+    int ret;
+
+    ret = RsEpollCreateEpollfd(eventHandle);
+    CHK_PRT_RETURN(ret, hccp_err("rs_epoll_create_epollfd failed ret(%d)", ret), ret);
+    return 0;
+}
+
+RS_ATTRI_VISI_DEF int RsCtlEventHandle(int eventHandle, const void *fdHandle, int opcode,
+    enum RaEpollEvent event)
+{
+    int fd = RS_FD_INVALID;
+    unsigned int tmpEvent;
+    int ret;
+
+    if (eventHandle < 0) {
+        hccp_err("event_handle[%d] is invalid", eventHandle);
+        return -EINVAL;
+    }
+    if (fdHandle == NULL) {
+        hccp_err("fd_handle is NULL");
+        return -EINVAL;
+    }
+    if (opcode != EPOLL_CTL_ADD && opcode != EPOLL_CTL_DEL && opcode != EPOLL_CTL_MOD) {
+        hccp_err("opcode[%d] invalid, valid opcode includes {%d, %d, %d}",
+            opcode, EPOLL_CTL_ADD, EPOLL_CTL_DEL, EPOLL_CTL_MOD);
+        return -EINVAL;
+    }
+
+    if (event == RA_EPOLLONESHOT) {
+        tmpEvent = EPOLLIN | EPOLLET | EPOLLONESHOT;
+    } else if (event == RA_EPOLLIN) {
+        tmpEvent = EPOLLIN;
+    } else if (event == RA_EPOLLOUT) {
+        tmpEvent = EPOLLOUT;
+    } else if (event == RA_EPOLLOUT_LET_ONESHOT) {
+        tmpEvent = EPOLLOUT | EPOLLET | EPOLLONESHOT;
+    } else {
+        hccp_err("unknown event[%d]", event);
+        return -EINVAL;
+    }
+
+    tmpEvent = tmpEvent | EPOLLRDHUP;
+    fd = ((const struct SocketPeerInfo *)fdHandle)->fd;
+
+    ret = RsEpollCtlFdHandle(eventHandle, opcode, fd, tmpEvent, (void*)fdHandle);
+    CHK_PRT_RETURN(ret, hccp_err("rs_epoll_ctl_fd_handle failed ret(%d), fd:%d", ret, fd), ret);
+    return 0;
+}
+
+RS_ATTRI_VISI_DEF int RsWaitEventHandle(int eventHandle, struct SocketEventInfoT *eventInfos,
+    int timeout, unsigned int maxevents, unsigned int *eventsNum)
+{
+    int ret;
+
+    if (eventHandle < 0) {
+        hccp_err("event_handle[%d] is invalid", eventHandle);
+        return -EINVAL;
+    }
+
+    if (eventInfos == NULL) {
+        hccp_err("event_info is NULL");
+        return -EINVAL;
+    }
+
+    if (timeout < -1) {
+        hccp_err("timeout[%d] is invalid", timeout);
+        return -EINVAL;
+    }
+
+    if (maxevents > MAX_SOCKET_EVENT_NUM) {
+        hccp_err("maxevents[%u] exceeds %u", maxevents, MAX_SOCKET_EVENT_NUM);
+        return -EINVAL;
+    }
+
+    if (eventsNum == NULL) {
+        hccp_err("events_num is NULL");
+        return -EINVAL;
+    }
+
+    ret = RsEpollWaitHandle(eventHandle, (struct epoll_event *)eventInfos,
+        timeout, maxevents, eventsNum);
+    CHK_PRT_RETURN(ret, hccp_err("rs_epoll_wait_handle failed ret(%d)", ret), ret);
+
+    return 0;
+}
+
+RS_ATTRI_VISI_DEF int RsDestroyEventHandle(int *eventHandle)
+{
+    int ret;
+
+    ret = RsEpollDestroyFd(eventHandle);
+    CHK_PRT_RETURN(ret, hccp_err("rs_epoll_destroy_fd failed ret(%d)", ret), ret);
+    return 0;
+}
