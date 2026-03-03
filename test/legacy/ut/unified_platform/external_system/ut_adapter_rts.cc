@@ -604,7 +604,7 @@ TEST_F(AdapterRtsTest, HrtPointerGetAttributes_return_ok)
         = {tagRtMemoryType::RT_MEMORY_TYPE_DEVICE, rtMemLocationType::RT_MEMORY_LOC_DEVICE, 0, 32};
     // Given
     MOCKER(rtPointerGetAttributes).stubs().with(outBoundP(&ptrAttr, sizeof(ptrAttr))).will(returnValue(RT_ERROR_NONE));
-    rtStream_t pid = reinterpret_cast<rtStream_t>(0x123);;
+    rtStream_t ptr = reinterpret_cast<rtStream_t>(0x123);;
 
     // when
     rtPointerAttributes_t result = HrtPointerGetAttributes(ptr);
@@ -940,7 +940,7 @@ TEST_F(AdapterRtsTest, test_HrtAicpuKernelLaunchExWithArgs_ok)
     argsInfo.soNameAddrOffset = 0;
     argsInfo.kernelNameAddrOffset = 0;
     rtSmDesc_t smDesc;
-    rtSmDesc_t stream = reinterpret_cast<rtStream_t>(0x123);
+    rtStream_t stream = reinterpret_cast<rtStream_t>(0x123);
     EXPECT_NO_THROW(HrtAicpuKernelLaunchExWithArgs(0, name, 0, &argsInfo, &smDesc, stream, 0));
 }
 
@@ -956,7 +956,7 @@ TEST_F(AdapterRtsTest, test_HrtAicpuKernelLaunchExWithArgs_nok)
     argsInfo.kernelNameAddrOffset = 0;
     rtSmDesc_t smDesc;
     rtStream_t stream = reinterpret_cast<rtStream_t>(0x123);
-    EXPECT_THROW(HrtAicpuKernelLaunchExWithArgs(0, name, 0, &argsInfo, &argsInfo, &smDesc, 0), RuntimeApiException);
+    EXPECT_THROW(HrtAicpuKernelLaunchExWithArgs(0, name, 0, &argsInfo, &smDesc, stream,  0), RuntimeApiException);
 }
 
 TEST_F(AdapterRtsTest, test_HrtStreamGetSqId_ok)
