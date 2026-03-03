@@ -29,6 +29,7 @@
 #include "../hcomm_res_mgr.h"
 
 #include "param_check_pub.h"
+#include "exception_handler.h"
 
 namespace hcomm {
 static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
@@ -90,11 +91,12 @@ HcclResult HcommResMgrInit(uint32_t devPhyId)
 {
     // 临时方案：触发统一平台层单例触发静态对象声明
     // 内部流程触发各种单例声明，保证时序
-    HCCLV2_FUNC_RUN(
-        [&]() -> HcclResult {
-            (void)HcommResMgr::GetInstance(devPhyId);
-            return HcclResult::HCCL_SUCCESS;
-        }());
+    EXCEPTION_HANDLE_BEGIN
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        (void)HcommResMgr::GetInstance(devPhyId);
+        return HcclResult::HCCL_SUCCESS;
+    }());
+    EXCEPTION_HANDLE_END
     return HcclResult::HCCL_SUCCESS;
 }
 

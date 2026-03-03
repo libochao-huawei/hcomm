@@ -95,6 +95,8 @@ HcclOpInfoCtx &GetOpHcomInfo(uint32_t devId)
     }
 
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    // 临时方案：声明comm各类基础单例
+    // 仅触发空对象声明，不执行业务动作，故不会失败
     (void)HcommResMgrInit(devId);
 #endif
 

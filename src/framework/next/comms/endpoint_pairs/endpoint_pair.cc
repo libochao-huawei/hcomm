@@ -55,12 +55,12 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
     // 复用orion流程可能抛异常
     EXCEPTION_HANDLE_BEGIN
     if (!socketMgrCompat_) {
-        int32_t devLogicId_ = HcclGetThreadDeviceId();
+        int32_t devLogicId = HcclGetThreadDeviceId();
         uint32_t devPhyId{0};
-        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId_), devPhyId));
+        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId), devPhyId));
 
         EXECEPTION_CATCH(socketMgrCompat_ =
-            std::make_unique<Hccl::SocketManager>(myRank, devPhyId, devLogicId_, socketTag),
+            std::make_unique<Hccl::SocketManager>(myRank, devPhyId, devLogicId, socketTag),
             return HCCL_E_PTR);
     }
     
