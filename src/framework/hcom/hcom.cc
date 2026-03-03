@@ -364,14 +364,14 @@ HcclResult HcomAllGather(const char *tag, void *inputPtr, void *outputPtr, u64 i
     CHK_PRT_RET(inputCount == 0, HCCL_WARNING("input count is 0, return AllGather success"), HCCL_SUCCESS);
     // 参数合法性校验
 
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomAllGather", "inputPtr", "nullptr", "please check inputPtr"}));
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomAllGather",  "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomAllGather", "outputPtr", "nullptr", "please check outputPtr"}));
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomAllGather",  "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomAllGather", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomAllGather",  "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
@@ -418,14 +418,14 @@ HcclResult HcomAllGatherV(const char *tag, const void *sendBuf, u64 sendCount, c
     // 参数合法性校验
     CHK_PTR_NULL(recvCounts);
     CHK_PTR_NULL(rdispls);
-    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomAllGatherV", "sendBuf", "nullptr", "please check sendBuf"}));
+    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomAllGatherV", "nullptr", "sendBuf", "non-null pointer"}));
     CHK_PTR_NULL(sendBuf);
-    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomAllGatherV", "recvBuf", "nullptr", "please check recvBuf"}));
+    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomAllGatherV", "nullptr", "recvBuf", "non-null pointer"}));
     CHK_PTR_NULL(recvBuf);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomAllGatherV", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomAllGatherV", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
@@ -480,18 +480,18 @@ HcclResult HcomAllReduce(const char *tag, void *inputPtr, void *outputPtr, u64 c
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return AllReduce success"), HCCL_SUCCESS);
     // 入参合法性校验
 
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomAllReduce", "inputPtr", "nullptr", "please check inputPtr"}));
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomAllReduce", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomAllReduce", "outputPtr", "nullptr", "please check outputPtr"}));
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomAllReduce", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomAllReduce", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomAllReduce", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
     s32 streamId = 0;
-    CHK_RET(HcomCheckReductionOp(op));
+    CHK_RET(HcomCheckReductionOp("HcomAllReduce", op));
     CHK_RET(hrtGetStreamId(stream, streamId));
 
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
@@ -533,11 +533,11 @@ HcclResult HcomBroadcast(const char *tag, void *ptr, u64 count, HcclDataType dat
 
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return BroadCast success"), HCCL_SUCCESS);
     // 入参合法性校验
-    RPT_INPUT_ERR(ptr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomBroadcast", "ptr", "nullptr", "please check ptr"}));
+    RPT_INPUT_ERR(ptr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomBroadcast", "nullptr", "ptr", "non-null pointer"}));
     CHK_PTR_NULL(ptr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomBroadcast", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomBroadcast", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
     s32 streamId = 0;
@@ -584,19 +584,19 @@ HcclResult HcomReduce(const char *tag, void *inputPtr, void *outputPtr, u64 coun
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return Reduce success"), HCCL_SUCCESS);
 
     // 入参合法性校验
-    RPT_INPUT_ERR(tag == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomReduce", "tag", "nullptr", "please check tag"}));
+    RPT_INPUT_ERR(tag == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomReduce", "nullptr", "tag", "non-null pointer"}));
     CHK_PTR_NULL(tag);
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomReduce", "inputPtr", "nullptr", "please check inputPtr"}));
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomReduce", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomReduce", "outputPtr", "nullptr", "please check outputPtr"}));
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomReduce", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomReduce", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomReduce", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
-    CHK_RET(HcomCheckReductionOp(op));
+    CHK_RET(HcomCheckReductionOp("HcomReduce", op));
 
     s32 streamId = 0;
     CHK_RET(hrtGetStreamId(stream, streamId));
@@ -646,16 +646,16 @@ HcclResult HcomReduceScatter(const char *tag, void *inputPtr, void *outputPtr, u
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return ReduceScatter success"), HCCL_SUCCESS);
     // 入参合法性校验
 
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomReduceScatter", "inputPtr", "nullptr", "please check inputPtr"}));
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomReduceScatter", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomReduceScatter", "outputPtr", "nullptr", "please check outputPtr"}));
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomReduceScatter", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomReduceScatter", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomReduceScatter", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
-    CHK_RET(HcomCheckReductionOp(op));
+    CHK_RET(HcomCheckReductionOp("HcomReduceScatter", op));
 
     s32 streamId = 0;
     CHK_RET(hrtGetStreamId(stream, streamId));
@@ -695,15 +695,15 @@ HcclResult HcomReduceScatterV(const char *tag, void *sendBuf, const void *sendCo
     // 入参合法性校验
     CHK_PTR_NULL(sendCounts);
     CHK_PTR_NULL(sdispls);
-    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomReduceScatterV", "sendBuf", "nullptr", "please check sendBuf"}));
+    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomReduceScatterV", "nullptr", "sendBuf", "non-null pointer"}));
     CHK_PTR_NULL(sendBuf);
-    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomReduceScatterV", "recvBuf", "nullptr", "please check recvBuf"}));
+    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomReduceScatterV", "nullptr", "recvBuf", "non-null pointer"}));
     CHK_PTR_NULL(recvBuf);
-    CHK_RET(HcomCheckReductionOp(op));
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomReduceScatterV", "stream", "nullptr", "please check stream"}));
+    CHK_RET(HcomCheckReductionOp("HcomReduceScatterV", op));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomReduceScatterV", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
     s32 streamId = 0;
@@ -752,11 +752,11 @@ HcclResult HcomSend(const char *tag, void *inputPtr, u64 count, HcclDataType dat
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return send success"), HCCL_SUCCESS);
 
     // 入参合法性校验
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomSend", "inputPtr", "nullptr", "please check inputPtr"}));
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomSend", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomSend", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomSend", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
     s32 streamId = 0;
@@ -809,11 +809,11 @@ HcclResult HcomReceive(const char *tag, void *outputPtr, u64 count, HcclDataType
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return receive success"), HCCL_SUCCESS);
 
     // 入参合法性校验
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomReceive", "outputPtr", "nullptr", "please check outputPtr"}));
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomReceive", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomReceive", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomReceive", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
     s32 streamId = 0;
@@ -861,14 +861,14 @@ HcclResult HcclCommGraphAllGather(const char *tag, void *inputPtr, void *outputP
     uint64_t beginTime = hrtMsprofSysCycleTime();
     CHK_PRT_RET(inputCount == 0, HCCL_WARNING("input count is 0, return AllGather success"), HCCL_SUCCESS);
     // 参数合法性校验
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphAllGather", "inputPtr", "nullptr", "please check inputPtr"}));
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphAllGather", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphAllGather", "outputPtr", "nullptr", "please check outputPtr"}));
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphAllGather", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphAllGather", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphAllGather", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
     s32 streamId = 0;
@@ -907,16 +907,16 @@ HcclResult HcclCommGraphAllReduce(const char *tag, void *inputPtr, void *outputP
     uint64_t beginTime = hrtMsprofSysCycleTime();
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return AllReduce success"), HCCL_SUCCESS);
     // 入参合法性校验
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphAllReduce", "inputPtr", "nullptr", "please check inputPtr"}));
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphAllReduce", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphAllReduce", "outputPtr", "nullptr", "please check outputPtr"}));
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphAllReduce", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphAllReduce", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphAllReduce", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
-    CHK_RET(HcomCheckReductionOp(op));
+    CHK_RET(HcomCheckReductionOp("HcclCommGraphAllReduce", op));
     s32 streamId = 0;
     CHK_RET(hrtGetStreamId(stream, streamId));
 
@@ -954,19 +954,19 @@ HcclResult HcclCommGraphReduce(const char *tag, void *inputPtr, void *outputPtr,
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return Reduce success"), HCCL_SUCCESS);
 
     // 入参合法性校验
-    RPT_INPUT_ERR(tag == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphReduce", "tag", "nullptr", "please check tag"}));
+    RPT_INPUT_ERR(tag == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphReduce", "nullptr", "tag", "non-null pointer"}));
     CHK_PTR_NULL(tag);
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphReduce", "inputPtr", "nullptr", "please check inputPtr"}));
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphReduce", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphReduce", "outputPtr", "nullptr", "please check outputPtr"}));
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphReduce", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphReduce", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphReduce", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
-    CHK_RET(HcomCheckReductionOp(op));
+    CHK_RET(HcomCheckReductionOp("HcclCommGraphReduce", op));
     u32 totalRanks = 0;
     CHK_RET(HcclCommGraphGetRankSize(opBaseHcom, &totalRanks));
     CHK_RET(HcomCheckUserRank(totalRanks, root));
@@ -1008,11 +1008,11 @@ HcclResult HcclCommGraphBroadcast(const char *tag, void *ptr, u64 count, HcclDat
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return BroadCast success"), HCCL_SUCCESS);
 
     // 入参合法性校验
-    RPT_INPUT_ERR(ptr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphBroadcast", "ptr", "nullptr", "please check ptr"}));
+    RPT_INPUT_ERR(ptr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphBroadcast", "nullptr", "ptr", "non-null pointer"}));
     CHK_PTR_NULL(ptr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphBroadcast", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphBroadcast", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     u32 totalRanks = 0;
     CHK_RET(HcclCommGraphGetRankSize(opBaseHcom, &totalRanks));
@@ -1054,16 +1054,16 @@ HcclResult HcclCommGraphReduceScatter(const char *tag, void *inputPtr, void *out
     uint64_t beginTime = hrtMsprofSysCycleTime();
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return ReduceScatter success"), HCCL_SUCCESS);
     // 入参合法性校验
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphReduceScatter", "inputPtr", "nullptr", "please check inputPtr"}));
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphReduceScatter", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphReduceScatter", "outputPtr", "nullptr", "please check outputPtr"}));
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphReduceScatter", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphReduceScatter", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphReduceScatter", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
-    CHK_RET(HcomCheckReductionOp(op));
+    CHK_RET(HcomCheckReductionOp("HcclCommGraphReduceScatter", op));
 
     s32 streamId = 0;
     CHK_RET(hrtGetStreamId(stream, streamId));
@@ -1101,11 +1101,11 @@ HcclResult HcclCommGraphSend(const char *tag, void *inputPtr, u64 count, HcclDat
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return send success"), HCCL_SUCCESS);
 
     // 入参合法性校验
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphSend", "inputPtr", "nullptr", "please check inputPtr"}));
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphSend", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphSend", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphSend", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     u32 totalRanks = 0;
     CHK_RET(HcclCommGraphGetRankSize(opBaseHcom, &totalRanks));
@@ -1147,11 +1147,11 @@ HcclResult HcclCommGraphReceive(const char *tag, void *outputPtr, u64 count, Hcc
     uint64_t beginTime = hrtMsprofSysCycleTime();
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return receive success"), HCCL_SUCCESS);
     // 入参合法性校验
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphReceive", "outputPtr", "nullptr", "please check outputPtr"}));
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphReceive", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphReceive", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphReceive", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     u32 totalRanks = 0;
     CHK_RET(HcclCommGraphGetRankSize(opBaseHcom, &totalRanks));
@@ -1214,8 +1214,8 @@ HcclResult HcclCommGraphSetWorkspaceResource(const std::string &tag, s64 opBaseH
 
 HcclResult HcclCommGraphGetRankSize(s64 opBaseHcom, u32 *rankSize)
 {
-    RPT_INPUT_ERR(rankSize == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphGetRankSize", "rankSize", "nullptr", "please check rankSize"}));
+    RPT_INPUT_ERR(rankSize == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphGetRankSize", "nullptr", "rankSize", "non-null pointer"}));
     CHK_PTR_NULL(rankSize);
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
     if (isAutoTuneModeOpen) {
@@ -1235,8 +1235,8 @@ HcclResult HcclCommGraphGetRankSize(s64 opBaseHcom, u32 *rankSize)
 
 HcclResult HcclCommGraphGetRankId(s64 opBaseHcom, u32 *rankId)
 {
-    RPT_INPUT_ERR(rankId == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclCommGraphGetRankId", "rankId", "nullptr", "please check rankId"}));
+    RPT_INPUT_ERR(rankId == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclCommGraphGetRankId", "nullptr", "rankId", "non-null pointer"}));
     CHK_PTR_NULL(rankId);
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
     if (isAutoTuneModeOpen) {
@@ -1356,8 +1356,8 @@ HcclResult HcclCommGraphGetDevId(s64 opBaseHcom, s32 *devId)
 HcclResult HcomGetLocalRankSize(const char *group, u32 *localRankSize)
 {
     RPT_INPUT_ERR(localRankSize == nullptr, "EI0003",
-        std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
-        std::vector<std::string>({ "HcomGetLocalRankSize", "localRankSize", "nullptr", "please check localRankSize" }));
+        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({ "HcomGetLocalRankSize", "nullptr", "localRankSize", "non-null pointer" }));
     CHK_PTR_NULL(localRankSize);
 
     HCCLV2_FUNC_RUN(HcomGetLocalRankSizeV2(group, localRankSize));
@@ -1372,11 +1372,13 @@ HcclResult HcomGetLocalRankSize(const char *group, u32 *localRankSize)
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
         "EI0003",
-        std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
         std::vector<std::string>({ "HcomGetLocalRankSize",
-        "group",
         { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
-        "please check group name" }));
+        "group",
+        "a non-empty string of length 1 to " + std::to_string(GROUP_NAME_MAX_LEN) +
+        ", containing only alphanumeric characters and underscores"
+    }));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] get local ranksize " \
         "group name is invalid", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
@@ -1398,8 +1400,8 @@ HcclResult HcomGetLocalRankSize(const char *group, u32 *localRankSize)
 
 HcclResult HcomGetRankId(const char *group, u32 *rankId)
 {
-    RPT_INPUT_ERR(rankId == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomGetRankId", "rankId", "nullptr", "please check rankId"}));
+    RPT_INPUT_ERR(rankId == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomGetRankId", "nullptr", "rankId", "non-null pointer"}));
     CHK_PTR_NULL(rankId);
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
     if (isAutoTuneModeOpen) {
@@ -1410,11 +1412,13 @@ HcclResult HcomGetRankId(const char *group, u32 *rankId)
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
         "EI0003",
-        std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
         std::vector<std::string>({ "HcomGetRankId",
-        "group",
         { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
-        "please check group name" }));
+        "group",
+        "a non-empty string of length 1 to " + std::to_string(GROUP_NAME_MAX_LEN) +
+        ", containing only alphanumeric characters and underscores"
+    }));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] get_rank_id group name is invalid",
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
@@ -2114,8 +2118,8 @@ HcclResult HcomAlltoAllV(const void *sendBuf, const void *sendCounts, const void
     CHK_PTR_NULL(sdispls);
     CHK_PTR_NULL(recvCounts);
     CHK_PTR_NULL(rdispls);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomAlltoAllV", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomAlltoAllV", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     s32 streamId = 0;
     CHK_RET(hrtGetStreamId(stream, streamId));
@@ -2179,8 +2183,8 @@ HcclResult HcomAlltoAllVC(const void *sendBuf, const void *sendCountMatrix, Hccl
     uint64_t beginTime = hrtMsprofSysCycleTime();
     // 入参合法性校验
     CHK_PTR_NULL(sendCountMatrix);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomAlltoAllVC", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomAlltoAllVC", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     s32 streamId = 0;
     CHK_RET(hrtGetStreamId(stream, streamId));
@@ -2550,8 +2554,8 @@ HcclResult HcomAllToAll(const void *sendBuf, u64 sendCount, HcclDataType sendTyp
     // 入参合法性校验
     CHK_PTR_NULL(sendBuf);
     CHK_PTR_NULL(recvBuf);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomAllToAll", "stream", "nullptr", "please check stream"}));
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomAllToAll", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
     s32 streamId = 0;

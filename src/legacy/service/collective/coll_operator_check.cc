@@ -18,8 +18,8 @@ namespace Hccl {
 void ReportOpCheckFailed(const std::string &paraName, const std::string &localPara, const std::string &remotePara)
 {
     // 上报故障码EI0005
-    RPT_INPUT_ERR(true, "EI0005", std::vector<std::string>({"tag", "para_name", "local_para", "remote_para"}),
-                            std::vector<std::string>({"Please check whether is the same.", paraName, localPara, remotePara}));
+    RPT_INPUT_ERR(true, "EI0005", std::vector<std::string>({"para_name", "local_para", "remote_para"}),
+                            std::vector<std::string>({paraName, localPara, remotePara}));
     THROW<InvalidParamsException>(StringFormat(
         "[RankConsistentImpl][CompareFrame][%s]op information %s check fail. "
         "local[%s], remote[%s]", __func__, paraName.c_str(), localPara.c_str(), remotePara.c_str()));
@@ -28,8 +28,8 @@ void ReportOpCheckFailed(const std::string &paraName, const std::string &localPa
 void ReportOpCheckFailed(const std::string &paraName, uint32_t localPara, uint32_t remotePara)
 {
     // 上报故障码EI0005
-    RPT_INPUT_ERR(true, "EI0005", std::vector<std::string>({"tag", "para_name", "local_para", "remote_para"}),
-                            std::vector<std::string>({"Please check whether is the same.", paraName, std::to_string(localPara), std::to_string(remotePara)}));
+    RPT_INPUT_ERR(true, "EI0005", std::vector<std::string>({"para_name", "local_para", "remote_para"}),
+                            std::vector<std::string>({paraName, std::to_string(localPara), std::to_string(remotePara)}));
     THROW<InvalidParamsException>(StringFormat(
         "[RankConsistentImpl][CompareFrame][%s]op information %s check fail. "
         "local[%u], remote[%u]", __func__, paraName.c_str(), localPara, remotePara));
