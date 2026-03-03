@@ -43,7 +43,7 @@ void CcuPfeCfgGenerator::Init(const int32_t deviceLogicId)
     std::vector<HrtDevEidInfo> eidInfoList;
     (void)CcuEidInfo::GetInstance(devLogicId).GetEidInfo(devLogicId, eidInfoList);
     if (eidInfoList.empty()) {
-        HCCL_WARNING("[CcuPfeCfgGenerator][%s] failed to get eid infos, devLogicId[%d]",
+        HCCL_RUN_INFO("[CcuPfeCfgGenerator][%s] eid infos are empty, devLogicId[%d]",
             __func__, devLogicId);
         initFlag = true;
         return;

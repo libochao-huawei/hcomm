@@ -26,13 +26,13 @@ CollCommLiteMgr* CollCommLiteMgr::GetInstance()
 
 CollCommLiteMgr::CollCommLiteMgr()
 {
-    HCCL_INFO("CommunicatorImplLiteMgr:: start");
+    HCCL_INFO("CollCommLiteMgr:: start");
     static auto commandToBackGroud = CommandToBackGroud::Default;
-    HCCL_INFO("CommunicatorImplLiteMgr:: gen daemon service run func");
+    HCCL_INFO("CollCommLiteMgr:: gen daemon service run func");
     static auto daemonServiceRun = [](void *info) {
         AicpuDaemonService::GetInstance().ServiceRun(info);
     };
-    HCCL_INFO("CommunicatorImplLiteMgr:: gen daemon service stop func");
+    HCCL_INFO("CollCommLiteMgr:: gen daemon service stop func");
     static auto daemonServiceStop = [](void *info) {
         AicpuDaemonService::GetInstance().ServiceStop(info);
     };
@@ -43,7 +43,7 @@ CollCommLiteMgr::CollCommLiteMgr()
     // 启动背景线程
     if (StartMC2MaintenanceThread != nullptr) {
         StartMC2MaintenanceThread(daemonServiceRun, &commandToBackGroud, daemonServiceStop, &commandToBackGroud);
-        HCCL_INFO("[CommunicatorImplLiteMgr] start BackGround thread success.");
+        HCCL_INFO("[CollCommLiteMgr] start BackGround thread success.");
     } else {
         HCCL_WARNING("Aicpu api StartMC2MaintenanceThread func is nullptr");
     }

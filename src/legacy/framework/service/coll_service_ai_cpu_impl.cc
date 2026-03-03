@@ -576,6 +576,10 @@ void CollServiceAiCpuImpl::AllocOpMemAlltoAllVC(const CollOperator &op)
         }
         isCountMemInitedAlltoAllVC = true;
     }
+    if (indexAlltoAllVC >= MAX_ALLTOALLV_MEM_NUM) {
+        THROW<InternalException>(StringFormat("Invalid indexAlltoAllVC: %u, max allowed: %u", 
+                                       indexAlltoAllVC, MAX_ALLTOALLV_MEM_NUM - 1));
+    }
     HrtMemcpy(reinterpret_cast<void *>(sendCountMatrixMem[indexAlltoAllVC].get()->GetAddr()),
               sendCountMatrixMem[indexAlltoAllVC].get()->GetSize(),
               op.all2AllVCDataDes.sendCountMatrix, size,
