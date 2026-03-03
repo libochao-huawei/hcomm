@@ -43,7 +43,7 @@ const std::string hcomm_g_msg = R"(
       "errClass": "HCCL Errors",
       "errTitle": "Invalid_Argument_Collective_Communication_Operator",
       "ErrCode": "EI0003",
-      "ErrMessage": "In [%s], value [%s] for parameter [%s] is invalid. Reason: The collective communication operator has an invalid argument. Reason[%s]",
+      "ErrMessage": "Failed to verify parameters of operator %s (operator name). Value %s for parmeter %s is invalid. The expected value is %s.
       "Arglist": "ccl_op,value,parameter,value",
       "suggestion": {
         "Possible Cause": "N/A",
