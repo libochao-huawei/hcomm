@@ -298,9 +298,6 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, opData information is %s.", GetOpDataInfo(*curTask).c_str());
 }
 
-        errMsgInfo.locEid = taskInfo->taskParam_.taskPara.Reduce.locEid;
-        errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.Reduce.rmtEid;
-
 string TaskExceptionHandlerLite::GetGroupRankInfo(const TaskInfo& taskInfo)
 {
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
