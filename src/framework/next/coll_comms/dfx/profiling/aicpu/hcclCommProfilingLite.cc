@@ -12,7 +12,7 @@
 #include "mirror_task_manager.h"
 
 namespace hccl {
-HcclCommProfilingLite::HcclCommProfilingLite(DevID deviceId) {
+HcclCommProfilingLite::HcclCommProfilingLite(DevId deviceId) {
     // 获取deviceID
     mirrorTaskManager_ = std::make_unique<MirrorTaskManager>(deviceId,&GlobalMirrorTasks::Instance(),false);
 
