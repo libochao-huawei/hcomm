@@ -14,6 +14,7 @@
 #include "ra_rs_comm.h"
 #include "hccp_ping.h"
 
+int RsEpollEventPingHandle(struct rs_cb *rsCb, int fd);
 RS_ATTRI_VISI_DEF int RsPingHandleInit(unsigned int chipId, int hdcType, unsigned int whiteListStatus);
 RS_ATTRI_VISI_DEF int RsPingHandleDeinit(unsigned int chipId);
 RS_ATTRI_VISI_DEF int RsPingInit(struct PingInitAttr *attr, struct PingInitInfo *info,

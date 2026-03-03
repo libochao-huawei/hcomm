@@ -33,6 +33,7 @@
 #include "rs_inner.h"
 #include "ascend_hal.h"
 #include "dl_hal_function.h"
+#include "rs_drv_socket.h"
 #include "rs_socket.h"
 
 static unsigned int gVnics[RS_VNIC_MAX] = {0};

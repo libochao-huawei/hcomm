@@ -14,7 +14,6 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <sys/time.h>
-#include <ifaddrs.h>
 #include <infiniband/verbs.h>
 #include <semaphore.h>
 #ifndef CA_CONFIG_LLT
@@ -175,7 +174,6 @@ struct RsSecPara {
     } \
 } while (0)
 
-
 #define RS_CHECK_POINTER_NULL_WITH_RET(ptr) do { \
         if ((ptr) == NULL) { \
             hccp_err("pointer is NULL!"); \
@@ -218,25 +216,9 @@ struct RsSecPara {
     } \
 } while (0)
 
-#define RS_MAX_SOCKET_NUM      16
-
 #define RS_MAX_DEV_NUM         64
 
 #define RS_MAX_WLIST_NUM       16
-
-#define RS_SOCKET_PARA_CHECK(num, conn) do { \
-    if (((num) <= 0) || ((num) > RS_MAX_SOCKET_NUM) || ((conn) == NULL)) { \
-        hccp_err("rs socket param error ! number:%d", num); \
-        return (-EINVAL); \
-    } \
-} while (0)
-
-#define RS_QP_PARA_CHECK(phyId) do { \
-    if ((phyId) >= RS_MAX_DEV_NUM) { \
-        hccp_err("rs qp param error ! physical_id:%d", phyId); \
-        return (-EINVAL); \
-    } \
-} while (0)
 
 #define RS_FD_INVALID       (-1)
 
@@ -495,11 +477,7 @@ struct RsCqContext {
     int numRecvCqEvents;
 };
 
-#define RS_PORT_DEF     1
-
 /* rs_cb->state enum */
-#define RS_STATE_RESET 0
-#define RS_STATE_READY 2
 #define RS_STATE_HALT 4
 
 struct RsAkid {
@@ -577,6 +555,7 @@ struct TlvBufInfo {
     unsigned int bufferSize;
     char *buf;
 };
+
 struct RsNslbCb {	
     bool initFlag;	
     void *netcoCb;
@@ -639,47 +618,23 @@ struct rs_cb {
     bool grpSetupFlag;
 };
 
-union RsSocketaddr {
-    struct sockaddr_in sAddr;
-    struct sockaddr_in6 sAddr6;
-};
-
-struct RsSocketaddrInfo {
-    int family;
-    union RsSocketaddr addr;
-};
-
-int RsQpInfoSync(struct RsQpCb *qpCb);
-int RsSetDevice(int devId);
-int RsSocketConnectAsync(struct RsConnInfo *conn, struct rs_cb *rscb);
-int RsGetSocketConnectState(struct RsConnInfo *conn);
-int RsAllocConnNode(struct RsConnInfo **conn, unsigned short serverPort);
-
 extern __thread struct rs_cb *gRsCb;
 
 int RsSocketNodeid2vnic(uint32_t nodeId, uint32_t *ipAddr);
 int RsGetHccpMode(unsigned int chipId);
 int RsDev2conncb(uint32_t chipId, struct RsConnCb **connCb);
-int RsFd2conn(int fd, struct RsConnInfo **conn);
 int RsDev2rscb(uint32_t chipId, struct rs_cb **rsCb, bool initFlag);
 int RsQpn2qpcb(unsigned int phyId, unsigned int rdevIndex, uint32_t qpn, struct RsQpCb **qpCb);
 int RsRdev2rdevCb(unsigned int chipId, unsigned int rdevIndex, struct RsRdevCb **rdevCb);
 int RsGetRdevCb(struct rs_cb *rsCb, unsigned int rdevIndex, struct RsRdevCb **rdevCb);
 void RsAccpetListNodeFree(struct rs_cb *rscb);
 int RsWlistCheckConnAdd(struct rs_cb *rsCb, struct RsConnInfo* connTmp);
-void ShowConnNode(struct RsListHead *listHead);
-enum ibv_mtu RsDrvSetMtu(struct RsQpCb *qpCb);
-enum RsHardwareType RsGetDeviceType(unsigned int phyId);
-
-int RsConvertIpAddr(int family, union HccpIpAddr *ipAddr, struct RsIpAddrInfo *ip);
-bool RsCompareIpAddr(struct RsIpAddrInfo *a, struct RsIpAddrInfo *b);
 #ifdef CUSTOM_INTERFACE
 int RsSetupSharemem(struct rs_cb *rsCb, bool backupFlag, unsigned int backupPhyid);
 #endif
 int RsQueryMrCb(struct RsRdevCb *devCb, uint64_t addr, struct RsMrCb **mrCb, struct RsListHead *mrList);
 int RsGetRsCb(unsigned int phyId, struct rs_cb **rsCb);
 int RsQueryGid(struct rdev rdevInfo, struct ibv_context *ibCtxTmp, uint8_t ibPort, int *gidIdx);
-int RsEpollEventPingHandle(struct rs_cb *rsCb, int fd);
 int RsSensorNodeRegister(unsigned int phyId, struct rs_cb *rsCb);
 void RsSensorNodeUnregister(struct rs_cb *rsCb);
 int RsRetryTimeoutExceptionCheck(struct SensorNode *snesorNode);
