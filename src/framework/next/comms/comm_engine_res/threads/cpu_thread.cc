@@ -121,7 +121,7 @@ HcclResult CpuThread::Init()
         HCCL_ERROR("[CommunicatorImpl::%s] Get Npu Ctx Failed", __func__);
         return HCCL_E_INTERNAL;
     }
-    if (rtSetXpuDevice(RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
+    if (Hccl::rtSetXpuDevice(Hccl::RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::%s] Switch to Dpu Ctx Failed", __func__);
         return HCCL_E_INTERNAL;
     }
@@ -174,7 +174,7 @@ HcclResult CpuThread::GetThreadEntity(ThreadEntity* threadEntity)
 {
     threadEntity->type = THREAD_TYPE_CPU;
     threadEntity->engine = COMM_ENGINE_AICPU;
-    threadEntity->cpuRes.sendQueue = sendQueue_->GetQueueInfo();
+    threadEntity->cpuRes.sendQueue = serviceScheduler_->GetSendQueue()->GetQueueInfo();
     threadEntity->cpuRes.recordService = recordServiceHandle_;
     threadEntity->cpuRes.waitService = waitServiceHandle_;
     threadEntity->notifyNum = notifyNum_;
