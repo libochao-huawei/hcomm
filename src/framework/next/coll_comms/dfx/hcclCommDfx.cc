@@ -70,6 +70,7 @@ Hccl::MirrorTaskManager* HcclCommDfx::GetMirrorTaskManager() const {
 // 将remoteRankId添加到channelRemoteRankId_表中
 void HcclCommDfx::AddChannelRemoteRankId(const std::string& commTag, u64 handle, u32 remoteRankId) {
     rwLock_.writelock();
+    HCCL_INFO("[HcclCommDfx][AddChannelRemoteRankId] commTag:[%s], handle:[%lu], remoteRankId:[%u]", commTag.c_str(), handle, remoteRankId);
     channelRemoteRankId_[commTag][handle] = remoteRankId;
     rwLock_.writeUnLock();
 }

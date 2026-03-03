@@ -57,6 +57,7 @@ void HcclCommDfxLite::UpdateProfStat() {
 
 void HcclCommDfxLite::AddChannelRemoteRankId(const std::string& commTag, u64 handle, u32 remoteRankId) {
     rwLock_.writelock();
+    HCCL_INFO("[HcclCommDfxLite][AddChannelRemoteRankId] commTag:[%s], handle:[%lu], remoteRankId:[%u]", commTag.c_str(), handle, remoteRankId);
     channelRemoteRankIdLite_[commTag][handle] = remoteRankId;
     rwLock_.writeUnLock();
 }
