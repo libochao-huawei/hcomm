@@ -55,15 +55,11 @@ void GetErrMsgInfo(std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &errMs
         errMsgInfo.locEid = taskInfo->taskParam_.taskPara.DMA.locEid;
         errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.DMA.rmtEid;
         errMsgInfo.ubCqeStatus = exceptionInfo->errorCode & 0xFF;
-        errMsgInfo.linkType = taskInfo->taskParam_.taskPara.DMA.linkType;
-        errMsgInfo.size = taskInfo->taskParam_.taskPara.DMA.size;
     } else if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
         errMsgInfo.locEid = taskInfo->taskParam_.taskPara.Reduce.locEid;
         errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.Reduce.rmtEid;
         errMsgInfo.ubCqeStatus = exceptionInfo->errorCode & 0xFF;
-        errMsgInfo.linkType = taskInfo->taskParam_.taskPara.Reduce.linkType;
-        errMsgInfo.size = taskInfo->taskParam_.taskPara.DMA.size;
     }
 }
 

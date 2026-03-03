@@ -702,17 +702,9 @@ void GetNotifyInfo(TaskParam &taskParam, const ErrorMessageReport &errorMessage)
     } else if (errorMessage.taskType == TaskParamType::TASK_UB_REDUCE_INLINE || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
         taskParam.taskPara.Reduce.notifyID = errorMessage.notifyId;
         taskParam.taskPara.Reduce.notifyValue = errorMessage.notifyValue;
-        taskParam.taskPara.Reduce.src = errorMessage.srcAddr;
-        taskParam.taskPara.Reduce.dst = errorMessage.dstAddr;
-        taskParam.taskPara.Reduce.linkType = errMsgInfo.linkType;
-        taskParam.taskPara.Reduce.size = errMsgInfo.size;
     } else if (errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE || errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY) {
         taskParam.taskPara.DMA.notifyID = errorMessage.notifyId;
         taskParam.taskPara.DMA.notifyValue = errorMessage.notifyValue;
-        taskParam.taskPara.DMA.src = errorMessage.srcAddr;
-        taskParam.taskPara.DMA.dst = errorMessage.dstAddr;
-        taskParam.taskPara.DMA.linkType = errMsgInfo.linkType;
-        taskParam.taskPara.DMA.size = errMsgInfo.size;
     }
 }
 
