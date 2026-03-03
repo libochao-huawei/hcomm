@@ -375,8 +375,8 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const Ip
     const auto rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
     const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle, HrtUbJfcMode::CCU_POLL);
 
-    const auto &rmaBufferIter = ccuRmaBufferMap.find(dieId);
-    CHK_PRT_RET(rmaBufferIter == ccuRmaBufferMap.end(),
+    const auto &rmaBufferIter = localCcuRmaBufferMap.find(dieId);
+    CHK_PRT_RET(rmaBufferIter == localCcuRmaBufferMap.end(),
         HCCL_WARNING("[CcuComponent][%s] failed, ccu rma buffer of die[%u] is not existed, "
             "devLogicId[%d].", __func__, dieId, devLogicId),
         HcclResult::HCCL_E_NOT_FOUND);
