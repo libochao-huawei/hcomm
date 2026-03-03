@@ -248,7 +248,7 @@ TEST_F(EdgeParserTest, St_Deserialize_When_ToManyLinkProtocols_Expect_Exception)
     std::string edgeString = R"({
 			"net_layer": 2,
 			"link_type": "PEER2PEER",
-			"protocols": ["UB_CTP", "RDMA"],
+			"protocols": ["UB_CTP", "ROCE"],
             "topo_type": "1DMESH",
             "topo_instance_id": 0,
 			"local_a": 0,

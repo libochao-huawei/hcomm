@@ -23,7 +23,6 @@
 #include "local_ub_rma_buffer.h"
 
 namespace Hccl {
-
 CcuConnection::CcuConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
     const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
     : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys)
@@ -163,7 +162,6 @@ bool CcuConnection::CreateJetty()
         }
 
         if (ret != HcclResult::HCCL_SUCCESS) {
-            isJettyCreated = true;
             HCCL_ERROR("[CcuConnection][%s] failed, hccl result[%d]", __func__, ret);
             ThrowAbnormalStatus(std::string(__func__));
         }
@@ -483,6 +481,22 @@ uint32_t CcuConnection::GetChannelId() const
 int32_t CcuConnection::GetDevLogicId() const
 {
     return devLogicId;
+}
+
+std::vector<ConnJettyInfo> CcuConnection::GetJettyInfo()
+{
+    std::vector<ConnJettyInfo> connJettyInfos;
+    ConnJettyInfo jettyInfo;
+    for (size_t i = 0; i < jettyNum; i++) {
+        ccuJettys_[i]->GetJettyInfo(jettyInfo);
+        jettyInfo.rdmaHandle = rdmaHandle;
+        if (importJettyCtxs[i].outParam.handle != 0) {
+            jettyInfo.remoteJetty = importJettyCtxs[i].outParam.handle;
+            importJettyCtxs[i].outParam.handle = 0;
+        }
+        connJettyInfos.push_back(jettyInfo);
+    }
+    return connJettyInfos;
 }
 
 void CcuConnection::Clean()

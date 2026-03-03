@@ -718,3 +718,27 @@ TEST_F(AllToAllTest, alltoall_test_910B_opbase_RunAlltoAllTwoLevelPipeline_pingp
 
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
+
+TEST_F(AllToAllTest, alltoall_test_910_93_opbase_RunAlltoAllFullMeshSymmetricMemory)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, 1, 16);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLTOALL;
+    checkerOpParam.tag = "AllToAll";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.algName = "RunAlltoAllFullMeshSymmetricMemory";
+
+    // 生成sendCountMatrix矩阵，alltoall的底层实现走alltoallvc
+    u32 rankNum = GetRankNumFormTopoMeta(topoMeta);
+    checkerOpParam.All2AllDataDes.sendCountMatrix = GenerateSendCountMatrix(100, rankNum);
+    checkerOpParam.All2AllDataDes.sendType = CheckerDataType::DATA_TYPE_FP16;
+    checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_FP16;
+    checkerOpParam.All2AllDataDes.sendCount = 100;
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+}

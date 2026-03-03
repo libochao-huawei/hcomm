@@ -64,8 +64,8 @@
 #include "../../../legacy/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
 
 namespace Hccl {
- 
-void *HrtMalloc(u64 size, rtMemType_t memType)
+
+void *HrtMalloc(u64 size, aclrtMemType_t memType)
 {
     return (void*)0x12345678;
 }
@@ -299,9 +299,9 @@ s32 HrtGetDevice()
 {
     return 1;
 }
-s32 HrtGetDevicePhyIdByIndex(s32 deviceLogicId)
+u32 HrtGetDevicePhyIdByIndex(s32 deviceLogicId)
 {
-    return 1;
+    return 1U;
 }
 
 DevType HrtGetDeviceType()
@@ -481,19 +481,19 @@ std::vector<char> AicpuResPackageHelper::GetPackedData(
 
 
 DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const OpMode opMode, const bool devUsed)
+    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
     : RmaConnection(nullptr, RmaConnType::UB), rdmaHandle(rdmaHandle), locAddr(locAddr), rmtAddr(rmtAddr),
-      opMode(opMode), rmtEid(rmtAddr.GetReverseEid())
+      opMode(opMode), jfcMode(jfcMode), rmtEid(rmtAddr.GetReverseEid())
 {}
 
 DevUbTpConnection::DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const OpMode opMode, const bool devUsed)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed)
+    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
 {}
 
 DevUbCtpConnection::DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const OpMode opMode, const bool devUsed)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed)
+    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
 {}
 
 std::vector<char> DevUbConnection::GetUniqueId() const
@@ -671,11 +671,6 @@ void DevUbConnection::AddNop(const Stream &stream)
 HrtUbJfcMode DevUbConnection::GetUbJfcMode() const
 {
     return jfcMode;
-}
-
-JettyHandle DevUbConnection::GetJettyHandle() const
-{
-    return 3;
 }
 
 u32 DevUbConnection::GetPiVal() const

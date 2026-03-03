@@ -97,7 +97,7 @@ TEST_F(AivMc2CompontTest, should_return_success_when_calling_GenerateCommContext
     MOCKER(CcuRep::GetTokenInfo).stubs().with(any(), any()).will(returnValue(1000));
     HcclCombinOpParam opParam;
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(&opParam)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x10000));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)0x10000));
 
     // then
     CommunicatorImpl comm{};
@@ -106,6 +106,11 @@ TEST_F(AivMc2CompontTest, should_return_success_when_calling_GenerateCommContext
     AivMc2Compont aivMc2Compont(&comm);
     comm.cclBuffer = DevBuffer::Create(0x100, 0x100);
     comm.ubMemoryTransportMgr = std::make_unique<UbMemoryTransportMgr>(comm);
+
+    auto tmp = std::make_shared<CollServiceDeviceMode>(&comm);
+    comm.collService = tmp.get();
+    auto collService = dynamic_cast<CollServiceDeviceMode *>(comm.GetCollService());
+    collService->GetAivInsPreprocessor()->SetProtocol(0);
 
     void *commContext;
     // check
@@ -123,13 +128,18 @@ TEST_F(AivMc2CompontTest, should_throw_InternalException_when_calling_GenerateCo
     MOCKER(CcuRep::GetTokenInfo).stubs().with(any(), any()).will(returnValue(1000));
     HcclCombinOpParam opParam;
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(&opParam)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x10000));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)0x10000));
 
     // then
     std::unique_ptr<CommunicatorImpl> comm = std::make_unique<CommunicatorImpl>();
     comm->rankSize = 1;
     AivMc2Compont aivMc2Compont(comm.get());
     comm->cclBuffer = nullptr;
+
+    auto tmp = std::make_shared<CollServiceDeviceMode>(comm.get());
+    comm->collService = tmp.get();
+    auto collService = dynamic_cast<CollServiceDeviceMode *>(comm->GetCollService());
+    collService->GetAivInsPreprocessor()->SetProtocol(0);
 
     void *commContext;
     // check

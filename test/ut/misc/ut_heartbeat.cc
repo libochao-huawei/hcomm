@@ -30,7 +30,7 @@
 using namespace std;
 using namespace hccl;
 
-HcclResult stub_GetRaResourceInfo(RaResourceInfo &raResourceInfo)
+HcclResult stub_GetRaResourceInfo(NetworkManager* that, RaResourceInfo &raResourceInfo)
 {
     static bool initialized = false;
     static RaResourceInfo fake_raResourceInfo;

@@ -32,6 +32,10 @@ __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_
         return HCCL_E_PARA;
     }
 
+    if (reinterpret_cast<uint64_t>(args) + sizeof(DpuKernelLaunchParam) < reinterpret_cast<uint64_t>(args)) {
+        HCCL_ERROR("[%s] Invalid args address.", __func__);
+        return HCCL_E_PARA;
+    }
     // 解析参数信息
     DpuKernelLaunchParam *params = reinterpret_cast<DpuKernelLaunchParam *>(args);
 

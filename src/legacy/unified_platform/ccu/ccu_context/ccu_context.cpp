@@ -516,6 +516,11 @@ void CcuContext::CreateMultiOpCopy()
 
 void CcuContext::GroupCopy(CcuRep::Memory dst, CcuRep::Memory src, GroupOpSize goSize)
 {
+    CcuRep::Memory tmpDst = CreateMemory();
+    tmpDst = dst;
+    CcuRep::Memory tmpSrc = CreateMemory();
+    tmpSrc = src;
+
     CreateMultiOpCopy();
     CCU_IF(goSize.addrOffset != 0)
     {
@@ -525,7 +530,7 @@ void CcuContext::GroupCopy(CcuRep::Memory dst, CcuRep::Memory src, GroupOpSize g
 
         CcuRep::Variable sliceSize = CreateVariable();
         sliceSize                  = moConfig.memSlice;
-        auto lc                    = Loop("localcopy_loop_0")(src, dst, sliceSize);
+        auto lc                    = Loop("localcopy_loop_0")(tmpSrc, tmpDst, sliceSize);
 
         CcuRep::Variable paraCfg   = CreateVariable();
         paraCfg                    = CcuRep::GetParallelParam(moConfig.loopCount - 1, 0, 1);
@@ -538,15 +543,15 @@ void CcuContext::GroupCopy(CcuRep::Memory dst, CcuRep::Memory src, GroupOpSize g
     {
         CcuRep::Condition cond(this, goSize.parallelParam != 0);
 
-        src.addr += goSize.addrOffset;
-        dst.addr += goSize.addrOffset;
-        auto lc0 = Loop("localcopy_loop_0")(src, dst, goSize.residual);
+        tmpSrc.addr += goSize.addrOffset;
+        tmpDst.addr += goSize.addrOffset;
+        auto lc0 = Loop("localcopy_loop_0")(tmpSrc, tmpDst, goSize.residual);
 
-        src.addr += goSize.residual;
-        dst.addr += goSize.residual;
+        tmpSrc.addr += goSize.residual;
+        tmpDst.addr += goSize.residual;
         CcuRep::Variable sliceSize = CreateVariable();
         sliceSize                  = moConfig.memSlice;
-        auto lc1                   = Loop("localcopy_loop_1")(src, dst, sliceSize);
+        auto lc1                   = Loop("localcopy_loop_1")(tmpSrc, tmpDst, sliceSize);
 
         CcuRep::Variable loopCfg0  = CreateVariable();
         loopCfg0                   = CcuRep::GetLoopParam(0, 0, 1);
@@ -596,6 +601,228 @@ void CcuContext::CreateMultiOpBroadcast(const std::vector<CcuTransport *> &trans
     }
 
     registeredLoop.insert(loopType);
+}
+
+void CcuContext::CreateMultiOpBroadcastWithoutMyRank(const std::vector<CcuTransport *> &ccuTransports)
+{
+    AllocGoResource();
+
+    std::string loopType = "broadcast";
+    if (registeredLoop.find(loopType) != registeredLoop.end()) {
+        return;
+    }
+
+    uint32_t size = ccuTransports.size() + 1;
+
+    for (uint32_t index = 0; index < 2; index++) { // 需要实现化2个Loop
+        CcuRep::Memory              src = CreateMemory();
+        std::vector<CcuRep::Memory> dst;
+        for (uint32_t i = 0; i < size; i++) {
+            dst.emplace_back(CreateMemory());
+        }
+        CcuRep::Variable            len = CreateVariable();
+        CcuRep::LoopBlock           lb(this, loopType + "_loop_" + std::to_string(index));
+        lb(src, dst, len);
+
+        CcuRep::CcuBuffer  buf = moRes.ccuBuffer[index * moConfig.msInterleave];
+        CcuRep::MaskSignal sem = moRes.maskSignal[index];
+
+        LocalCopy(buf, src, len, sem);
+        LocalWait(sem);
+
+        for (uint32_t i = 0; i < ccuTransports.size(); i++) {
+            if (ccuTransports[i] == nullptr) {
+                THROW<CcuApiException>("transport is nullptr");
+            }
+            Write(*ccuTransports[i], dst[i], buf, len, sem, 1 << i);
+        }
+        LocalWait(sem, (1 << ccuTransports.size()) - 1);
+    }
+
+    registeredLoop.insert(loopType);
+}
+
+void CcuContext::GroupBroadcastWithoutMyRank(const std::vector<CcuTransport*> &ccuTransports, std::vector<CcuRep::Memory> dst,
+                                CcuRep::Memory src, GroupOpSize goSize)
+{
+    CreateMultiOpBroadcastWithoutMyRank(ccuTransports);
+
+    uint32_t size = ccuTransports.size() + 1;
+
+    CCU_IF(goSize.addrOffset != 0)
+    {
+        CcuRep::Variable loopParam = CreateVariable();
+        loopParam = CcuRep::GetLoopParam(0, moConfig.memSlice * moConfig.loopCount, 0);
+        loopParam += goSize.loopParam;
+
+        CcuRep::Variable sliceSize = CreateVariable();
+        sliceSize = moConfig.memSlice;
+        auto lc   = Loop("broadcast_loop_0")(src, dst, sliceSize);
+
+        CcuRep::Variable paraCfg = CreateVariable();
+        paraCfg = CcuRep::GetParallelParam(moConfig.loopCount - 1, 0, 1);
+        CcuRep::Variable offsetCfg = CreateVariable();
+        offsetCfg = CcuRep::GetOffsetParam(moConfig.memSlice, moConfig.msInterleave, 1);
+
+        LoopGroup({lc}, {loopParam}, paraCfg, offsetCfg);
+        AddCcuProfiling(goSize, ccuTransports);
+    }
+
+    CCU_IF(goSize.parallelParam != 0)
+    {
+        src.addr += goSize.addrOffset;
+        for (uint32_t i = 0; i < size; i++) {
+            dst[i].addr += goSize.addrOffset;
+        }
+
+        auto lc0 = Loop("broadcast_loop_0")(src, dst, goSize.residual);
+
+        src.addr += goSize.residual;
+        for (uint32_t i = 0; i < size; i++) {
+            dst[i].addr += goSize.residual;
+        }
+
+        CcuRep::Variable sliceSize = CreateVariable();
+        sliceSize = moConfig.memSlice;
+        auto lc1  = Loop("broadcast_loop_1")(src, dst, sliceSize);
+
+        CcuRep::Variable loopCfg0 = CreateVariable();
+        loopCfg0 = CcuRep::GetLoopParam(0, 0, 1);
+        CcuRep::Variable loopCfg1 = CreateVariable();
+        loopCfg1 = CcuRep::GetLoopParam(0, 0, 1);
+        CcuRep::Variable offsetCfg = CreateVariable();
+        offsetCfg = CcuRep::GetOffsetParam(moConfig.memSlice, moConfig.msInterleave, 1);
+
+        LoopGroup({lc0, lc1}, {loopCfg0, loopCfg1}, goSize.parallelParam, offsetCfg);
+        AddCcuProfiling(goSize, ccuTransports);
+    }
+}
+
+void CcuContext::CreateMultiOpReduceWithoutMyRank(const std::vector<CcuTransport*> &ccuTransports, DataType dataType,
+                                     DataType outputDataType, ReduceOp opType)
+{
+    AllocGoResource();
+
+    std::string loopType = CcuRep::GetReduceTypeStr(dataType, opType);
+    if (registeredLoop.find(loopType) != registeredLoop.end()) {
+        return;
+    }
+
+    uint32_t size         = ccuTransports.size();
+    uint32_t expansionNum = CcuRep::GetReduceExpansionNum(opType, dataType, outputDataType);
+    uint32_t usedBufNum   = size > expansionNum ? size : expansionNum;
+
+    for (int32_t index = 0; index < 2; index++) { // 需要实现化2个Loop
+        std::vector<CcuRep::Memory> src;
+        for (uint32_t i = 0; i < size; i++) {
+            src.emplace_back(CreateMemory());
+        }
+        CcuRep::Memory              dst = CreateMemory();
+        CcuRep::Variable            len = CreateVariable();
+        CcuRep::Variable            lenForExpansion = CreateVariable();
+        CcuRep::LoopBlock           lb(this, loopType + "_loop_" + std::to_string(index));
+        lb(src, dst, len, lenForExpansion);
+
+        std::vector<CcuRep::CcuBuffer> bufs = {moRes.ccuBuffer.begin() + index * moConfig.msInterleave,
+                                               moRes.ccuBuffer.begin() + index * moConfig.msInterleave + usedBufNum};
+        CcuRep::MaskSignal             sem  = moRes.maskSignal[index];
+        for (uint32_t i = 0; i < ccuTransports.size(); i++) {
+            if (ccuTransports[i] == nullptr) {
+                THROW<CcuApiException>("transport is nullptr");
+            }
+            Read(*ccuTransports[i], bufs[i], src[i], len, sem, 1 << i);
+        }
+        LocalWait(sem, (1 << size) - 1);
+
+        if (size > 1) {
+            LocalReduce(bufs, size, dataType, outputDataType, opType, sem, len);
+            LocalWait(sem);
+        }
+
+        LocalCopy(dst, bufs[0], lenForExpansion, sem);
+
+        LocalWait(sem);
+    }
+
+    registeredLoop.insert(loopType);
+}
+
+void CcuContext::GroupReduceWithoutMyRank(const std::vector<CcuTransport*> &ccuTransports, CcuRep::Memory &dst,
+                                std::vector<CcuRep::Memory> &src, GroupOpSize &goSize, DataType dataType,
+                                DataType outputDataType, ReduceOp opType)
+{
+    CreateMultiOpReduceWithoutMyRank(ccuTransports, dataType, outputDataType, opType);
+
+    uint32_t         size         = src.size();
+    uint32_t         expansionNum = CcuRep::GetReduceExpansionNum(opType, dataType, outputDataType);
+    CcuRep::Variable sliceSizeExpansion = CreateVariable();
+
+    if (expansionNum != 1) {
+        CcuRep::Variable tmp = CreateVariable();
+        tmp = CcuRep::GetExpansionParam(expansionNum);
+        dst.token += tmp;
+    }
+
+    CCU_IF(goSize.loopParam != 0)
+    {
+        CcuRep::Variable loopParam = CreateVariable();
+        loopParam = CcuRep::GetLoopParam(0, moConfig.memSlice * moConfig.loopCount, 0);
+        loopParam += goSize.loopParam;
+
+        CcuRep::Variable sliceSize = CreateVariable();
+        sliceSize          = moConfig.memSlice;
+        sliceSizeExpansion = moConfig.memSlice * expansionNum;
+
+        auto lc = Loop(CcuRep::GetReduceTypeStr(dataType, opType) + "_loop_0")(src, dst, sliceSize, sliceSizeExpansion);
+
+        CcuRep::Variable paraCfg = CreateVariable();
+        paraCfg = CcuRep::GetParallelParam(moConfig.loopCount - 1, 0, 1);
+        CcuRep::Variable offsetCfg = CreateVariable();
+        offsetCfg = CcuRep::GetOffsetParam(moConfig.memSlice, moConfig.msInterleave, 1);
+
+        LoopGroup({lc}, {loopParam}, paraCfg, offsetCfg);
+        AddCcuProfiling(goSize, ccuTransports, dataType, outputDataType, opType);
+    }
+
+    CCU_IF(goSize.parallelParam != 0)
+    {
+        for (uint32_t i = 0; i < size; i++) {
+            src[i].addr += goSize.addrOffset;
+        }
+        for (uint32_t i = 0; i < expansionNum; i++) {
+            dst.addr += goSize.addrOffset;
+        }
+
+        sliceSizeExpansion = 0;
+        for (uint32_t i = 0; i < expansionNum; i++) {
+            sliceSizeExpansion += goSize.residual;
+        }
+
+        auto lc0 = Loop(CcuRep::GetReduceTypeStr(dataType, opType) + "_loop_0")(src, dst, goSize.residual, sliceSizeExpansion);
+
+        for (uint32_t i = 0; i < size; i++) {
+            src[i].addr += goSize.residual;
+        }
+        for (uint32_t i = 0; i < expansionNum; i++) {
+            dst.addr += goSize.residual;
+        }
+
+        CcuRep::Variable sliceSize = CreateVariable();
+        sliceSize          = moConfig.memSlice;
+        sliceSizeExpansion = moConfig.memSlice * expansionNum;
+
+        auto lc1 = Loop(CcuRep::GetReduceTypeStr(dataType, opType) + "_loop_1")(src, dst, sliceSize, sliceSizeExpansion);
+
+        CcuRep::Variable loopCfg0 = CreateVariable();
+        loopCfg0 = CcuRep::GetLoopParam(0, 0, 1);
+        CcuRep::Variable loopCfg1 = CreateVariable();
+        loopCfg1 = CcuRep::GetLoopParam(0, 0, 1);
+        CcuRep::Variable offsetCfg = CreateVariable();
+        offsetCfg = CcuRep::GetOffsetParam(moConfig.memSlice, moConfig.msInterleave, 1);
+
+        LoopGroup({lc0, lc1}, {loopCfg0, loopCfg1}, goSize.parallelParam, offsetCfg);
+        AddCcuProfiling(goSize, ccuTransports, dataType, outputDataType, opType);
+    }
 }
 
 void CcuContext::GroupBroadcast(const std::vector<CcuTransport*> &transports, std::vector<CcuRep::Memory> dst,

@@ -17,7 +17,6 @@ namespace Hccl {
 u32 GetKernelExecTimeoutFromEnvConfig()
 {
     const u32 envTimeout  = CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout;
-    HCCL_INFO("[SQE] HcclExecTimeout=%u s.", envTimeout);
     return envTimeout;
 }
 
@@ -37,7 +36,7 @@ void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, uint8_t * cons
     sqe->notifyId          = notifyId;
     sqe->timeout           = GetKernelExecTimeoutFromEnvConfig();
 
-    HCCL_INFO("[SQE] notify wait: notifyId=%lu, streamId=%u, taskId(sqeId)=%u.", notifyId, streamId, taskId);
+    HCCL_INFO("[SQE]NotifyWait: notifyId=%lu, timeout=%us, streamId=%u, taskId=%u", notifyId, sqe->timeout, streamId, taskId);
 }
 
 void BuildA5SqeNotifyRecord(u32 streamId, u32 taskId, u32 notifyId, uint8_t * const sqeIn)
@@ -52,7 +51,7 @@ void BuildA5SqeNotifyRecord(u32 streamId, u32 taskId, u32 notifyId, uint8_t * co
     sqe->header.wrCqe      = 1U;
     sqe->notifyId          = notifyId;
 
-    HCCL_INFO("[SQE] notify record: notifyId=%lu, streamId=%u, taskId(sqeId)=%u.", notifyId, streamId, taskId);
+    HCCL_INFO("[SQE]NotifyRecord: notifyId=%lu, streamId=%u, taskId=%u", notifyId, streamId, taskId);
 }
 
 void BuildA5SqeCnt1toNNotifyRecord(u32 streamId, u32 taskId, u32 notifyId, u32 cntValue, uint8_t * const sqeIn)
@@ -123,10 +122,18 @@ void BuildA5SqeCntNto1NotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 cnt
     sqe->cntValue = cntValue;
 }
 
+void SetSqeHeaderTaskFields(void* sqe, u32 taskId) 
+{
+    auto header = reinterpret_cast<Rt91095StarsSqeHeader*>(sqe);
+    header->rtStreamId     = static_cast<uint16_t>(taskId);
+    header->taskId         = static_cast<uint16_t>(taskId >> 16);
+}
+
 void BuildA5SqeSdmaCopy(u32 streamId, u32 taskId, u64 dstAddr, u64 srcAddr, u32 size, u32 partId, u32 opcode,
                         uint8_t * const sqeIn)
 {
     Rt91095StarsMemcpySqe *sqe = (Rt91095StarsMemcpySqe *)sqeIn;
+    SetSqeHeaderTaskFields(sqe, taskId);
     sqe->header.type           = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_SDMA);
     sqe->opcode                = opcode; // opcode为非0，代表 SDMA Reduce Copy; 0代表SDMA Copy
     sqe->kernelCredit          = RT_STARS_DEFAULT_KERNEL_CREDIT;
@@ -134,9 +141,7 @@ void BuildA5SqeSdmaCopy(u32 streamId, u32 taskId, u64 dstAddr, u64 srcAddr, u32 
     sqe->dssv                  = 1U;
     sqe->sns                   = 1U;
     sqe->dns                   = 1U;
-    sqe->mapamPartId           = 0U; // 这里走的memcpy，如果走withcfg,需要传入qoscfg
-    sqe->header.rtStreamId     = static_cast<uint16_t>(taskId);
-    sqe->header.taskId         = static_cast<uint16_t>(taskId >> 16);
+    sqe->mapamPartId           = partId; // 这里走的memcpy，如果走withcfg,需要传入qoscfg
     sqe->header.wrCqe          = 1U;
 
     sqe->u.strideMode0.lengthMove  = size;
@@ -144,37 +149,28 @@ void BuildA5SqeSdmaCopy(u32 streamId, u32 taskId, u64 dstAddr, u64 srcAddr, u32 
     sqe->u.strideMode0.srcAddrHigh = static_cast<uint32_t>((srcAddr & 0xffffffff00000000U) >> 32); // 高 32bit
     sqe->u.strideMode0.dstAddrLow  = static_cast<uint32_t>(dstAddr & 0x00000000ffffffffU);
     sqe->u.strideMode0.dstAddrHigh = static_cast<uint32_t>((dstAddr & 0xffffffff00000000U) >> 32); // 高 32bit
-    sqe->mapamPartId               = partId;
 
-    HCCL_INFO("[SQE]MemcpySqe size=%u, srcAddr=0x%llx, dstAddr=0x%llx, partId=%u, streamId=%u,"
-               " taskId=%u\n",
-               size, srcAddr, dstAddr, partId, streamId, taskId);
-    HCCL_INFO("[SQE]MemcpySqe sqe->opcode=%u sqe->u.strideMode0.srcAddrLow=0x%x,"
-               " sqe->u.strideMode0.srcAddrHigh=0x%x,sqe->u.strideMode0.dstAddrLow=0x%x,"
-               " sqe->u.strideMode0.dstAddrHigh=0x%x\n",
-               sqe->opcode, sqe->u.strideMode0.srcAddrLow, sqe->u.strideMode0.srcAddrHigh,
-               sqe->u.strideMode0.dstAddrLow, sqe->u.strideMode0.dstAddrHigh);
+    HCCL_INFO("[SQE]Memcpy: size=%u, srcAddr=0x%llx, dstAddr=0x%llx, partId=%u, opcode=%u, streamId=%u, taskId=%u",
+               size, srcAddr, dstAddr, partId, opcode, streamId, taskId);
 }
 
 void BuildA5SqeUbDbSend(u32 streamId, u32 taskId, const UbJettyLiteId &jettyLiteId, u16 piValue, uint8_t * const sqeIn)
 {
     (void)streamId;
     Rt91095StarsUbdmaDBmodeSqe *sqe = (Rt91095StarsUbdmaDBmodeSqe *)sqeIn;
+    SetSqeHeaderTaskFields(sqe, taskId);
     sqe->header.type = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_UBDMA);
 
     sqe->mode              = Rt91095UbDmaSqeMode::RT_91095_SQE_DOORBELL_MODE;
     sqe->kernelCredit      = RT_STARS_DEFAULT_KERNEL_CREDIT;
-    sqe->header.rtStreamId = static_cast<uint16_t>(taskId);
-    sqe->header.taskId     = static_cast<uint16_t>(taskId >> 16);
 
     sqe->doorbellNum = 1U;
     sqe->jettyId1    = jettyLiteId.GetJettyId();
     sqe->funcId1     = jettyLiteId.GetFuncId();
     sqe->piValue1    = piValue;
     sqe->dieId1      = jettyLiteId.GetDieId();
-    HCCL_INFO("[SQE]UbDmaSendSqe streamId=%u, taskId(sqeId)=%u, jettyid=%u, funcId=%u, dieId=%u, piValue=%u\n",
-              streamId, taskId, jettyLiteId.GetJettyId(), jettyLiteId.GetFuncId(),
-              jettyLiteId.GetDieId(), piValue);
+    HCCL_INFO("[SQE]UbDmaSend: dieId=%u, funcId=%u, jettyid=%u, piValue=%u, streamId=%u, taskId=%u",
+              jettyLiteId.GetDieId(), jettyLiteId.GetFuncId(), jettyLiteId.GetJettyId(), piValue, streamId, taskId);
 }
 
 namespace 
@@ -238,7 +234,7 @@ void ConstructNop(Rt91095StarsCondOpNop_t &nop)
 }
 } 
 
-void BuildA5SqeCCoreNotifyWait(u32 streamId, u32 taskId, u64 waitAddr, u64 curTurnCntAddr, bool last, uint8_t * const sqeIn)
+void BuildA5SqeCCoreNotifyWait(u32 streamId, u32 taskId, u64 waitAddr, u64 actAddr, bool last, uint8_t * const sqeIn)
 {
     Rt91095StarsCCoreSqeNotifyWait* sqe = (Rt91095StarsCCoreSqeNotifyWait *)sqeIn;
     sqe->header.type = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_COND);
@@ -254,7 +250,7 @@ void BuildA5SqeCCoreNotifyWait(u32 streamId, u32 taskId, u64 waitAddr, u64 curTu
     constexpr Rt91095StarsCondIsaRegister_t r3 = Rt91095StarsCondIsaRegister_t::RT_91095_STARS_COND_ISA_REGISTER_R3;
 
     // load current Turn to r3
-    ConstructLoadImm(r3, curTurnCntAddr, Rt91095StarsCondIsaLoadImmFunc3_t::RT_91095_STARS_COND_ISA_LOAD_IMM_FUNC3_LHU, sqe->ldrImm1);
+    ConstructLoadImm(r3, actAddr, Rt91095StarsCondIsaLoadImmFunc3_t::RT_91095_STARS_COND_ISA_LOAD_IMM_FUNC3_LHU, sqe->ldrImm1);
 
     // load sendcnt to r2
     ConstructLoadImm(r2, waitAddr, Rt91095StarsCondIsaLoadImmFunc3_t::RT_91095_STARS_COND_ISA_LOAD_IMM_FUNC3_LHU, sqe->ldrImm2);
@@ -280,9 +276,9 @@ void BuildA5SqeCCoreNotifyWait(u32 streamId, u32 taskId, u64 waitAddr, u64 curTu
         }
     }
 
-    HCCL_INFO("WaitStart waitAddr %p, curTurnCntAddr %p, loadInstrOff %u, streamId %u, taskId %u, last %u"
-        "ISA: %08x %08x %08x %08x %08x %08x %08x.",
-        waitAddr, curTurnCntAddr, loadInstrOff, streamId, taskId, last,
+    HCCL_INFO("[SQE]CCoreWait: waitAddr=%p, actAddr=%p, last=%u, streamId=%u, taskId=%u, "
+        "ISA=%08x %08x %08x %08x %08x %08x %08x",
+        waitAddr, actAddr, last, streamId, taskId,
         sqe->ldrImm1, sqe->ldrImm2, sqe->beq, sqe->clear.llwi1, sqe->clear.lhwi1, sqe->clear.sw, sqe->clear.nop[0]);
 }
 
@@ -308,8 +304,8 @@ void BuildA5SqeCCoreNotifyRecord(u32 streamId, u32 taskId, u64 writeAddr, u64 va
         ConstructNop(nop);
     }
 
-    HCCL_INFO("CCore write value: writeAddr %p, valueAddr %p, streamId %u, taskId %u"
-        "ISA: %08x %08x %08x %08x %08x.",
+    HCCL_INFO("[SQE]CCoreWrite: writeAddr=%p, valueAddr=%p, streamId=%u, taskId=%u, "
+        "ISA=%08x %08x %08x %08x %08x",
         writeAddr, valueAddr, streamId, taskId,
         sqe->ldrImm, sqe->llwi1, sqe->lhwi1, sqe->sw, sqe->nop[0]);
 }
