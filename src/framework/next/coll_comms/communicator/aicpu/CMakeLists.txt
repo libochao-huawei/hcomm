@@ -9,23 +9,14 @@
 # -----------------------------------------------------------------------------------------------------------
 
 set(src_list
-<<<<<<< HEAD
-    coll_comm_aicpu.cpp
+    aicpu_indop_process.cc
+    coll_comm_aicpu_mgr.cc
+    coll_comm_aicpu.cc
+    coll_comm_lite_mgr.cc
 )
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
 target_sources(ccl_kernel PRIVATE
     ${src_list}
 )
-=======
-    aicpu_indop_process.cc
-    coll_comm_aicpu_mgr.cc
-    coll_comm_aicpu.cc
-)
-
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
-    target_sources(ccl_kernel PRIVATE
-        ${src_list}
-    )
->>>>>>> 528b2a436d7c7a67952b989d5f442965dedf9bbf
 endif()

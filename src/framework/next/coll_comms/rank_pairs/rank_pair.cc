@@ -22,7 +22,7 @@ HcclResult RankPair::GetEndpointPair(const EndpointDescPair &epDescPair, hcomm::
     return endpointPairMgr_->Get(epDescPair, out);
 }
 
-EpChannelList GetEpChannelList()
+EpChannelList RankPair::GetEpChannelList()
 {
     return endpointPairMgr_->GetEpChannelList();
 }

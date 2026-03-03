@@ -32,7 +32,7 @@ public:
 
 private:
     static CollCommLiteMgr* instance_;
-    std::unordered_map<std::string, CollCommAicpu*> allCollComms_;
+    std::unordered_map<std::string, CollCommAicpu*> allCollCommLites_;
 };
 }
 #endif // COLL_COMM_LITE_MGR_H

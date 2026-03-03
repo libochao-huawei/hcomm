@@ -13,7 +13,7 @@
 #include "log.h"
 #include "coll_comm.h"
 
-namespace hcomm {
+namespace hccl {
 using HcclUs = std::chrono::steady_clock::time_point;
 static std::mutex vecMutex;
 

@@ -53,10 +53,11 @@ public:
     virtual HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) = 0;
     virtual ChannelStatus GetStatus() = 0;
     virtual HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum);
-    // ------------------ 数据面接口 ------------------
 
     virtual HcclResult Clean()        = 0;
-    virtual HcclResult Resume()      = 0;
+    virtual HcclResult Resume()       = 0;
+    // ------------------ 数据面接口 ------------------
+
 
 
     // ------------------ 工厂 ------------------
