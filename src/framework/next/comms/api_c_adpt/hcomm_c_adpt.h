@@ -21,7 +21,7 @@ extern "C" {
 
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
 
-HcclResult HcommEndpointGet_(const EndpointHandle endpointHandle, void **endpoint);
+HcclResult HcommEndpointGet(const EndpointHandle endpointHandle, void **endpoint);
 
 HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle);
 
