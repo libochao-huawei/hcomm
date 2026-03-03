@@ -155,11 +155,19 @@ HcclResult InsTempReduceScatterMesh2D::PreCopy(const TemplateDataParams &tempAlg
 HcclResult InsTempReduceScatterMesh2D::SendRecvProcess(const ResLinks &tempLinks, std::vector<std::vector<DataSlice>> allSliceVec,
                                                        std::vector<InsQuePtr> &tempInsQues, u32 remoteRank, u32 queIdx) const
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[InsTempReduceScatterMesh2D][SendRecvProcess] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     HCCL_DEBUG("[InsTempReduceScatterMesh2D][SendRecvProcess] SendRecvProcess start");
     const std::vector<LinkData> &linkRecv = tempLinks.at(remoteRank);
     const std::vector<LinkData> &linkSend = tempLinks.at(remoteRank);
     SendRecvInfo sendRecvInfo{{linkSend[0], linkRecv[0]},
                                 {{allSliceVec[2], allSliceVec[3]}, {allSliceVec[0], allSliceVec[1]}}};
+
+    CHK_PRT_THROW(queIdx >= tempInsQues.size(),
+                    HCCL_ERROR("[InsTempReduceScatterMesh2D] queIdx[%u] is bigger than tempInsQues size[%zu].", queIdx,
+                                tempInsQues.size()),
+                    InvalidParamsException, "queIdx is invalid");                                
     // 做了DMA消减之后只支持PUT
     CHK_PRT_RET(SendRecv(sendRecvInfo, tempInsQues[queIdx], 0, true, DmaMode::PUT),
                 HCCL_ERROR("[InsTempReduceScatterMesh2D] RunReduceScatter SendReduce failed"),

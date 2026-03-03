@@ -51,7 +51,7 @@ public:
     void SetParallelTaskLoader(ParallelTaskLoader* parallelTaskLoader);
     bool IsSatisfyAlltoAllAivCondition(const OpParam& param);
     bool IsSatisfy91093OffloadCondition();
-    bool IsSatisfyAlltoallContinuousPipelineCondition();
+    bool IsSatisfyAlltoallContinuousPipelineCondition(const OpParam& param);
 
 private:
     bool IsA3PipelineCondition(const OpParam& param);

@@ -423,6 +423,11 @@ HcclResult InsBatchSendRecvExecutor<AlgTopoMatch>::SendRun(DataBuffer &execBuffe
     // 获取远端内存地址, 获取的是scratch的基起始地址
     DataBuffer remoteBuffer = rmaDataBufferMgr_->GetBuffer(link, BufferType::SCRATCH);
     uint64_t remoteBufferAddr = remoteBuffer.GetAddr();
+
+    CHK_PRT_RET((offsetOfRemoteScratchBase + sendSize > remoteBuffer.GetSize()),
+        HCCL_ERROR("[InsBatchSendRecvExecutor][SendRun] offsetOfRemoteScratchBase + sendSize exceeds remoteBuffer size"),
+        HcclResult::HCCL_E_PARA);
+
     DataBuffer sendRemoteBuffer(remoteBufferAddr + offsetOfRemoteScratchBase, sendSize);
     HCCL_DEBUG("[InsBatchSendRecvExecutor][SendRun] myRank[%d] send Size[%llu], remoteBuffer[%llu], remoteUserRank[%u].",
         myRank_, sendSize, remoteBuffer.GetAddr(), remoteUserRank);
@@ -489,6 +494,7 @@ HcclResult InsBatchSendRecvExecutor<AlgTopoMatch>::Orchestrate(const AlgTopoInfo
     CHK_RET(InitQueue(tempResReq.queNum, requiredQue_));
     HCCL_DEBUG("[InsBatchSendRecvExecutor] Rank[%d], requiredQue Num [%u].", myRank_, tempResReq.queNum);
 
+    CHK_PTR_NULL(linkMgr);
     CHK_RET(PrepResLinks(myRank_, tempResReq.links, linkMgr, tempResLinks_));
 
     // cclbuffer

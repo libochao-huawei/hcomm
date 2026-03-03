@@ -139,7 +139,7 @@ std::unique_ptr<CommunicatorImpl> MockCommImpl()
     GenRankTableFile1Ser8Dev();
 
     void *devPtr = nullptr;
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(devPtr));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(commParams.devType));
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
     MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());

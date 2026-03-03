@@ -23,11 +23,11 @@ Stream::Stream(bool deviceUsed, bool isMaster) : selfOwned(true), devUsed(device
 {
     try {
         if (deviceUsed) {
-            ptr  = HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH, RT_STREAM_CP_PROCESS_USE);
+            ptr  = HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH, ACL_STREAM_DEVICE_USE_ONLY);
             sqId = HrtStreamGetSqId(ptr);
             cqId = HrtStreamGetCqId(ptr);
         } else {
-            ptr = HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH, RT_STREAM_FAST_LAUNCH  | RT_STREAM_FAST_SYNC);
+            ptr = HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH, ACL_STREAM_FAST_LAUNCH | ACL_STREAM_FAST_SYNC);
         }
         id = static_cast<u32>(HrtGetStreamId(ptr));
         InitDevPhyId();

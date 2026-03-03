@@ -48,6 +48,9 @@ CcuContextAllReduceMeshDetour1D::CcuContextAllReduceMeshDetour1D(const CcuCtxArg
         outputDataType_.Describe().c_str(), reduceOp_.Describe().c_str());
 
     HCCL_INFO("[CcuContextAllReduceMeshDetour1D] transport.size[%zu]", transports.size());
+    if (transports.size() < rankSize -1) {
+        THROW<NullPtrException>(StringFormat("CcuContextAllReduceMeshDetour1D transports size is less"));
+    }
     for (uint64_t i = 0; i < pathNumPerPeer; i++) {
         // 到每个对端有pathNum个transport，故detourTransport中共有pathNum组
         detourTransports_.emplace_back(std::vector<CcuTransport*>());
