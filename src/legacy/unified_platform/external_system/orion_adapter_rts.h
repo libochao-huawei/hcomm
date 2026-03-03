@@ -171,12 +171,14 @@ extern rtError_t rtIpcCloseMemory(const void *ptr);
 extern rtError_t rtIpcDestroyMemoryName(const char_t *name);
 extern rtError_t rtPointerGetAttributes(rtPointerAttributes_t *attributes, const void *ptr);
 // DPU
+#ifndef rtSetXpuDevice
 typedef enum tagRtXpuDevType {
     RT_DEV_TYPE_DPU = 0,
     RT_DEV_TYPE_REV
 } rtXpuDevType;
 extern rtError_t rtResetXpuDevice(rtXpuDevType devType, const uint32_t devId);
 extern rtError_t rtSetXpuDevice(rtXpuDevType devType, const uint32_t devId);
+#endif
 #ifdef __cplusplus
 }
 #endif
