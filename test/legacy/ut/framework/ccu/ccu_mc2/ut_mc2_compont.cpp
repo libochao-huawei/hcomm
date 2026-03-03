@@ -101,7 +101,7 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_Alloc)
     MOCKER(CcuRep::GetTokenInfo).stubs().with(any(), any()).will(returnValue(1000));
     HcclCombinOpParam opParam;
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(&opParam)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x10000));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)0x10000));
 
     // then
     std::unique_ptr<CommunicatorImpl> comm = std::make_unique<CommunicatorImpl>();
@@ -120,7 +120,7 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_AllocV2)
     MOCKER(CcuRep::GetTokenInfo).stubs().with(any(), any()).will(returnValue(1000));
     HcclCombinOpParam opParam;
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(&opParam)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x10000));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)0x10000));
 
     // then
     std::unique_ptr<CommunicatorImpl> comm = std::make_unique<CommunicatorImpl>();

@@ -42,8 +42,8 @@ protected:
 TEST_F(HccpHdcManagerTest, hccp_hdc_manager_getInstance)
 {
     // Given
-    s32 fakedevPhyId  = 3;
-    s32 fakedevPhyId1  = 4;
+    DevId fakedevPhyId  = 3;
+	DevId fakedevPhyId1  = 4;
     MOCKER(HrtGetDevicePhyIdByIndex)
         .stubs()
         .with(any())
@@ -66,7 +66,7 @@ TEST_F(HccpHdcManagerTest, hccp_hdc_manager_init)
     s32 deviceLogicId = 0;
     s32 deviceLogicId1 = 1;
     s32 deviceLogicId2 = 2;
-    s32 fakedevPhyId   = 3;
+	DevId fakedevPhyId   = 3;
     MOCKER(HrtGetDevicePhyIdByIndex)
         .stubs()
         .with(any())
