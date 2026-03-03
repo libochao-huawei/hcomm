@@ -230,18 +230,6 @@ extern HcclResult CommChannelDestroy(HcclComm comm, ChannelHandle channel, uint3
  * @{
  */
 
-/**
- * @brief 销毁算子资源上下文
- * @param[in] comm 通信域句柄
- * @param[in] engineCtx 通信引擎上下文\n
- *                      -size: ctx内存大小；\n
- *                      -addr: ctx内存地址；\n
- *                      -type: ctx内存类型，分host和device。
- * @return HcclResult 执行结果状态码
- * @warning 考虑统一成通信引擎资源上下文
- */
-extern HcclResult HcommEngineCtxDestroy(HcclComm comm, const HcclMem *engineCtx);
-
 /** @} */  // 通信引擎上下文管理接口（编程控制面可选接口）
  /**
  * @defgroup 其他数据面接口
@@ -919,9 +907,6 @@ typedef struct {
  * @param clientHandle 
  * @return HcclResult 
  */
-// extern HcclResult HixlCSClientCreate(const EndPoint *ctlEndPoint, uint32_t port,
-//     EndPoint *dstCtlEndPoint, uint32_t dstPort, void **clientHandle);
-// const EndPoint *ctlEndPoint, uint32_t port,
 extern HcclResult HixlCSClientCreate(char *serverIp, uint32_t serverPort, const EndPoint *srcEndPoint,
     const EndPoint *dstEndPoint, void **clientHandle);
 
@@ -930,7 +915,6 @@ extern HcclResult HixlCSClientCreate(char *serverIp, uint32_t serverPort, const 
  * 
  * @return HcclResult 
  */
-// const CSChannelDesc *channeDesc
  
 extern HcclResult HixlCSClientConnect(void *clientHandle);
 
@@ -1109,14 +1093,6 @@ extern HcclResult HcclChannelGetStatus(HcclComm comm, const ChannelHandle *chann
  * @return 无
  * @note 建议在HcommLocalCopyNbi等接口调用前调用,在设置的缓存空间不够时，可再次调用该接口调整缓存大小。
  * 当前只支持AIV，暂不支持AIC，若支持，AIC只支持RoCE和URMA。
- * 910A3上每个AIV最大8个eventId，通信缓存大小192KB。使用参考：
- * @code {.c}
- * uint32_t len = 32 * 1024;
- * __ubuf__ uint8_t *addr = (__ubuf__ uint8_t *)((191 - 32) * 1024);
- * TEventID eventId = 7;
- * HcommInit(addr, len, evtid);
- * HcommLocalCopyNbi(dst, src, len);
- * @endcode
  */
 __aicore__ inline void HcommInit(__ubuf__ uint8_t *addr, uint32_t len, TEventID eventId);
 
@@ -1821,17 +1797,6 @@ extern HcclResult HcommGetEngineCtx(HcclComm comm, const char *engineTag, CommEn
  */
 extern HcclResult HcommEngineCtxAcquire(HcclComm comm, const char *engineTag, CommEngine engine, HcclMem *engineCtx,
     bool *exist);
-
-/**
- * @brief 销毁通信引擎上下文
- * @param[in] comm 通信域句柄
- * @param[in] engineCtx 通信引擎上下文\n
- *                      -size: ctx内存大小；\n
- *                      -addr: ctx内存地址；\n
- *                      -type: ctx内存类型，分host和device。
- * @return HcclResult 执行结果状态码
- */
-extern HcclResult HcommEngineCtxDestroy(HcclComm comm, const HcclMem *engineCtx);
 
 // \cond
 /**

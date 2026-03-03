@@ -19,6 +19,9 @@
 #include "sqe_build_a5.h"
 #include "sqe.h"
 #include "communicator_impl_lite_manager.h"
+#ifdef CCL_KERNEL_AICPU
+#include "hccl_api_data_aicpu_ts.h"
+#endif
 
 namespace Hccl {
 using namespace std;
@@ -29,6 +32,14 @@ RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId) : RtsqBase(devPhyId, stream
     if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
         taskId_ = 0;
     }
+}
+
+RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId, bool launchFlag) : RtsqBase(devPhyId, streamId, sqId)
+{
+    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
+        taskId_ = 0;
+    }
+    launchFlag_ = launchFlag;
 }
 
 void RtsqA5::Reset()
@@ -170,6 +181,13 @@ void RtsqA5::RefreshInfo()
     }
     pendingSqeCnt++;
     HCCL_INFO("RtsqA5::%s: Updated: taskId_[%u], pendingSqeCnt[%u]", __func__, taskId_, pendingSqeCnt);
+    
+#ifdef CCL_KERNEL_AICPU
+    if (launchFlag_ && !IsBatchLaunchMode()) {
+        LaunchTask();
+        return;
+    }
+#endif
 
     if (pendingSqeCnt != perLaunchSqeCnt) {
         return;
@@ -273,25 +291,17 @@ void RtsqA5::SdmaReduce(u64 srcAddr, u64 dstAddr, u32 size, u32 partId, const Re
 
 bool RtsqA5::IsRtsqQueueSpaceSufficient()
 {
-    sqHead_         = QuerySqHead();
+    // 判断逻辑与rtsq内部保持一致，rtsq剩余空间需要大于（rtsq挂起的任务数量+本次任务）
     u32  availableSpace = GetTailToHeadDist();
-    // 判断逻辑与rtsq内部保持一致，rtsq剩余空间需要大于（rtsq挂起的任务数量+本次任务） 
-    // isPreStreamSync用于判断是否有Int64类型reduce算子，是否需要等其他流任务下发完成
-    auto isInsufficient = ((availableSpace <= pendingSqeCnt + 1) || isPreStreamSync);
-
-    if (!isInsufficient) {
-        HCCL_INFO("[Rtsq][%s], rtsq sqId_[%u], streamId_[%u] is sufficient. sqHead_[%u], sqTail_[%u], sqDepth[%u], availableSpace[%u], pendingSqeCnt[%u]", 
-            __func__, sqId_, streamId_, sqHead_, sqTail_, sqDepth_, availableSpace, pendingSqeCnt);
+    if (availableSpace > pendingSqeCnt + 1) {
         return true;
     }
 
-    sqHead_ = QuerySqHead();
+    // 否则的话，需要再次查询一次head，确认是否是因为head没有更新导致空间不足，如果查询后空间仍然不足，则返回false
+    sqHead_        = QuerySqHead();
     availableSpace = GetTailToHeadDist();
-    isInsufficient = ((availableSpace <= pendingSqeCnt + 1) || isPreStreamSync);
-    HCCL_INFO("[Rtsq][%s], rtsq sqId_[%u], streamId_[%u], sqHead_[%u], sqTail_[%u], sqDepth[%u], availableSpace[%u], pendingSqeCnt[%u]", 
-            __func__, sqId_, streamId_, sqHead_, sqTail_, sqDepth_, availableSpace, pendingSqeCnt);
 
-    return !isInsufficient; 
+    return (availableSpace > pendingSqeCnt + 1);
 }
 
 HcclResult RtsqA5::SetPreStreamSyncReady() 

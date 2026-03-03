@@ -70,6 +70,10 @@ HcclResult CollAllGatherRingZerocopyExecutor::CalcLevel0CommInfo(TransportMemTyp
 {
     CommParaInfo commParaLevel0(COMM_LEVEL0, CommType::COMM_TAG_RING_INNER);
     CHK_RET(CalcCommPlaneInfo(tag_, commParaLevel0, opTransport[COMM_LEVEL0], inputType, outputType));
+    LevelNSubCommTransport &commTransportLevel0 = opTransport[COMM_LEVEL0];
+    for (u32 subCommIndex = 0; subCommIndex < commTransportLevel0.size(); subCommIndex++) {
+        commTransportLevel0[subCommIndex].isZeroCopy = true;
+    }
     return HCCL_SUCCESS;
 }
 
@@ -107,7 +111,7 @@ HcclResult CollAllGatherRingZerocopyExecutor::SemiRingAllGather(
         (level0CommInfo.localRankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level0CommInfo.localRank,
         profStage, HCCL_EXEC_STEP_NOT_SET, stream);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllGatherSemiRingExecutor][DoubleRingMidCountAllGather]Double ring "
+        HCCL_ERROR("[CollAllGatherRingZerocopyExecutor][SemiRingAllGather]Double ring "
         "AllGather failed, return[%d]", ret), ret);
     CHK_RET(executor->RunAsync());
     return ret;

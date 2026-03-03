@@ -27,7 +27,8 @@ DevBuffer::DevBuffer(std::size_t allocSize) : Buffer(allocSize), selfOwned(true)
         std::string msg = "allocaSize should not be 0!";
         THROW<InternalException>(msg);
     }
-    addr_ = reinterpret_cast<uintptr_t>(HrtMalloc(allocSize, RT_MEMORY_HBM));
+    addr_ = reinterpret_cast<uintptr_t>(HrtMalloc(allocSize,
+												  static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH)));
 }
 
 std::shared_ptr<DevBuffer> DevBuffer::Create(uintptr_t devAddr, std::size_t devSize)
@@ -43,11 +44,13 @@ DevBuffer::DevBuffer(std::size_t allocSize, std::uint32_t policy, PolicyTag /*ta
         std::string msg = "allocaSize should not be 0!";
         THROW<InternalException>(msg);
     }
-    addr_ = reinterpret_cast<uintptr_t>(HrtMalloc(allocSize, RT_MEMORY_HBM | policy));
+    addr_ = reinterpret_cast<uintptr_t>(HrtMalloc(allocSize,
+                                                  static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH) |
+	                                                  static_cast<int>(policy)));
 }
 
 std::shared_ptr<DevBuffer> DevBuffer::CreateHugePageBuf(std::size_t size){
-    return std::make_shared<DevBuffer>(size, RT_MEMORY_POLICY_HUGE_PAGE_ONLY, PolicyTag{});
+	return std::make_shared<DevBuffer>(size, static_cast<int>(ACL_MEM_MALLOC_HUGE_ONLY), PolicyTag{});
 }
 
 DevBuffer::~DevBuffer()

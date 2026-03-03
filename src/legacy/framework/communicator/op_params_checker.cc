@@ -49,6 +49,41 @@ HcclResult OpParamsChecker::CheckOpDataTypeOffload(const CollOpParams &opParams,
     return ret;
 }
 
+static void ReportOpTypeErrMsg(OpType opType)
+{
+    RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
+            std::vector<std::string>({"CheckOpDataTypeByMap", opType.Describe(), "opType",
+            "please check opType that is not supported"}));
+}
+
+static void ReportInputDataTypeMC2HighPErrMsg(OpType opType, DataType inputDataType)
+{
+    RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
+                    std::vector<std::string>({"CheckOpDataTypeMC2", opType.Describe() + ":" + inputDataType.Describe(), "opType:dataType",
+                    "FP32,FP16,BF16,UINT8,INT16,INT32"}));
+}
+
+static void ReportInputDataTypeMC2LowPErrMsg(OpType opType, DataType inputDataType)
+{
+    RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
+                    std::vector<std::string>({"CheckOpDataTypeMC2", opType.Describe() + ":" + inputDataType.Describe(),
+                        "opType:inputDataType and outputDataType", "Mc2LowP input:HIF8,E4M3,E5M2,INT8"}));
+}
+
+static void ReportOutputDataTypeMC2LowPErrMsg(OpType opType, DataType outputDataType)
+{
+    RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
+                    std::vector<std::string>({"CheckOpDataTypeMC2", opType.Describe() + ":" + outputDataType.Describe(),
+                         "opType:inputDataType and outputDataType", "Mc2LowP output:FP32,FP16,BF16"}));
+}
+
+static void ReportDataTypeNotTheSameErrMsg(OpType opType, DataType inputDataType, DataType outputDataType)
+{
+    RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
+                    std::vector<std::string>({"CheckOpDataTypeMC2", opType.Describe() + ":" + inputDataType.Describe() + "and" + outputDataType.Describe(),
+                         "opType:inputDataType and outputDataType", "should be same"}));
+}
+
 HcclResult OpParamsChecker::CheckOpDataTypeMC2(const Mc2CommConfig &config)
 {
     OpType opType           = MC2OpType(static_cast<AicpuComType>(config.opType));
@@ -58,9 +93,7 @@ HcclResult OpParamsChecker::CheckOpDataTypeMC2(const Mc2CommConfig &config)
     // 支持算子情况检验
     auto iter = opDataTypeSupportMapMC2.find(opType);
     if (iter == opDataTypeSupportMapMC2.end()) {
-        RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
-            std::vector<std::string>({"CheckOpDataTypeByMap", opType.Describe(), "opType",
-            "please check opType that is not supported"}));
+        ReportOpTypeErrMsg(opType);
         std::string msg = StringFormat("[OpParamsChecker::%s] unsupported opType [%s].",
                           __func__, opType.Describe().c_str());
         THROW<InvalidParamsException>(msg);
@@ -77,9 +110,7 @@ HcclResult OpParamsChecker::CheckOpDataTypeMC2(const Mc2CommConfig &config)
         if (inputDataType == outputDataType){
             checkResult = dataTypeMC2HighP.test(static_cast<int>(inputDataType));
             if (!checkResult){
-                RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
-                    std::vector<std::string>({"CheckOpDataTypeMC2", opType.Describe() + ":" + inputDataType.Describe(), "opType:dataType",
-                    "FP32,FP16,BF16,UINT8,INT16,INT32"}));
+                ReportInputDataTypeMC2HighPErrMsg(opType, inputDataType);
                 std::string msg = StringFormat("[OpParamsChecker::%s] opType [%s] not support data type [%s].",
                                   __func__, opType.Describe().c_str(), inputDataType.Describe().c_str());
                 THROW<InvalidParamsException>(msg);
@@ -87,18 +118,14 @@ HcclResult OpParamsChecker::CheckOpDataTypeMC2(const Mc2CommConfig &config)
         } else {
             checkResult = inputDataTypeMC2LowP.test(static_cast<int>(inputDataType));
             if (!checkResult){
-                RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
-                    std::vector<std::string>({"CheckOpDataTypeMC2", opType.Describe() + ":" + inputDataType.Describe(),
-                         "opType:inputDataType and outputDataType", "Mc2LowP input:HIF8,E4M3,E5M2,INT8"}));
+                ReportInputDataTypeMC2LowPErrMsg(opType, inputDataType);
                 std::string msg = StringFormat("[OpParamsChecker::%s] Mc2LowP InputDataType[%s] != OutputDataType[%s] for OpType[%s], not support input data type [%s].",
                                   __func__, inputDataType.Describe().c_str(), outputDataType.Describe().c_str(), opType.Describe().c_str(), inputDataType.Describe().c_str());
                 THROW<InvalidParamsException>(msg);
             }
             checkResult = OutputDataTypeMC2LowP.test(static_cast<int>(outputDataType));
             if (!checkResult){
-                RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
-                    std::vector<std::string>({"CheckOpDataTypeMC2", opType.Describe() + ":" + outputDataType.Describe(),
-                         "opType:inputDataType and outputDataType", "Mc2LowP output:FP32,FP16,BF16"}));
+                ReportOutputDataTypeMC2LowPErrMsg(opType, outputDataType);
                 std::string msg = StringFormat("[OpParamsChecker::%s] Mc2LowP InputDataType[%s] != OutputDataType[%s] for OpType[%s], not support output data type [%s].",
                                   __func__, inputDataType.Describe().c_str(), outputDataType.Describe().c_str(), opType.Describe().c_str(), outputDataType.Describe().c_str());
                 THROW<InvalidParamsException>(msg);
@@ -106,9 +133,7 @@ HcclResult OpParamsChecker::CheckOpDataTypeMC2(const Mc2CommConfig &config)
         }
     } else {
         if (inputDataType != outputDataType) {
-            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
-                    std::vector<std::string>({"CheckOpDataTypeMC2", opType.Describe() + ":" + inputDataType.Describe() + "and" + outputDataType.Describe(),
-                         "opType:inputDataType and outputDataType", "should be same"}));
+            ReportDataTypeNotTheSameErrMsg(opType, inputDataType, outputDataType);
             std::string msg = StringFormat("[OpParamsChecker::%s] DataType[%s] != OutputDataType[%s] for OpType[%s].",
                               __func__, inputDataType.Describe().c_str(),
                               outputDataType.Describe().c_str(), opType.Describe().c_str());
@@ -127,9 +152,7 @@ HcclResult OpParamsChecker::CheckOpDataTypeMC2V2(const Mc2CcTilingInner &config)
     // 支持算子情况检验
     auto iter = opDataTypeSupportMapMC2.find(opType);
     if (iter == opDataTypeSupportMapMC2.end()) {
-        RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
-            std::vector<std::string>({"CheckOpDataTypeMC2V2", opType.Describe(), "opType",
-            "please check opType that is not supported"}));
+        ReportOpTypeErrMsg(opType);
         std::string msg = StringFormat("[OpParamsChecker::%s] unsupported opType [%s].",
                           __func__, opType.Describe().c_str());
         THROW<InvalidParamsException>(msg);
@@ -146,9 +169,7 @@ HcclResult OpParamsChecker::CheckOpDataTypeMC2V2(const Mc2CcTilingInner &config)
         if (inputDataType == outputDataType){
             checkResult = dataTypeMC2HighP.test(static_cast<int>(inputDataType));
             if (!checkResult){
-                RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
-                    std::vector<std::string>({"CheckOpDataTypeMC2V2", opType.Describe() + ":" + inputDataType.Describe(), "opType:dataType",
-                    "FP32,FP16,BF16,UINT8,INT16,INT32"}));
+                ReportInputDataTypeMC2HighPErrMsg(opType, inputDataType);
                 std::string msg = StringFormat("[OpParamsChecker::%s] opType [%s] not support data type [%s].",
                                   __func__, opType.Describe().c_str(), inputDataType.Describe().c_str());
                 THROW<InvalidParamsException>(msg);
@@ -156,18 +177,14 @@ HcclResult OpParamsChecker::CheckOpDataTypeMC2V2(const Mc2CcTilingInner &config)
         } else {
             checkResult = inputDataTypeMC2LowP.test(static_cast<int>(inputDataType));
             if (!checkResult){
-                RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
-                    std::vector<std::string>({"CheckOpDataTypeMC2V2", opType.Describe() + ":" + inputDataType.Describe(),
-                         "opType:inputDataType and outputDataType", "Mc2LowP input:HIF8,E4M3,E5M2,INT8"}));
+                ReportInputDataTypeMC2LowPErrMsg(opType, inputDataType);
                 std::string msg = StringFormat("[OpParamsChecker::%s] Mc2LowP InputDataType[%s] != OutputDataType[%s] for OpType[%s], not support input data type [%s].",
                                   __func__, inputDataType.Describe().c_str(), outputDataType.Describe().c_str(), opType.Describe().c_str(), inputDataType.Describe().c_str());
                 THROW<InvalidParamsException>(msg);
             }
             checkResult = OutputDataTypeMC2LowP.test(static_cast<int>(outputDataType));
             if (!checkResult){
-                RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
-                    std::vector<std::string>({"CheckOpDataTypeMC2V2", opType.Describe() + ":" + outputDataType.Describe(),
-                         "opType:inputDataType and outputDataType", "Mc2LowP output:FP32,FP16,BF16"}));
+                ReportOutputDataTypeMC2LowPErrMsg(opType, outputDataType);
                 std::string msg = StringFormat("[OpParamsChecker::%s] Mc2LowP InputDataType[%s] != OutputDataType[%s] for OpType[%s], not support output data type [%s].",
                                   __func__, inputDataType.Describe().c_str(), outputDataType.Describe().c_str(), opType.Describe().c_str(), outputDataType.Describe().c_str());
                 THROW<InvalidParamsException>(msg);
@@ -175,9 +192,7 @@ HcclResult OpParamsChecker::CheckOpDataTypeMC2V2(const Mc2CcTilingInner &config)
         }
     } else {
         if (inputDataType != outputDataType) {
-            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
-                    std::vector<std::string>({"CheckOpDataTypeMC2V2", opType.Describe() + ":" + inputDataType.Describe() + "and" + outputDataType.Describe(),
-                         "opType:inputDataType and outputDataType", "should be same"}));
+            ReportDataTypeNotTheSameErrMsg(opType, inputDataType, outputDataType);
             std::string msg = StringFormat("[OpParamsChecker::%s] DataType[%s] != OutputDataType[%s] for OpType[%s].",
                               __func__, inputDataType.Describe().c_str(),
                               outputDataType.Describe().c_str(), opType.Describe().c_str());

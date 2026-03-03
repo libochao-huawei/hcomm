@@ -28,7 +28,8 @@ namespace Hccl {
 
 RankInfoDispather::~RankInfoDispather()
 {
-    CleanResource();
+    DECTOR_TRY_CATCH("RankInfoDispather", CleanResource());
+    DECTOR_TRY_CATCH("RankInfoDispather", CloseEpollFd());
 }
 
 void RankInfoDispather::BroadcastRankTable(const std::unordered_map<std::string, std::shared_ptr<Socket>> &connectSockets,
@@ -100,6 +101,7 @@ void RankInfoDispather::PrepareResource(const std::unordered_map<std::string, st
     s32 res = RaCreateEventHandle(&epollFds_);
     CHK_PRT_THROW(res != 0, HCCL_ERROR("[RankInfoDispather::%s] create epoll event failed, res[%d].", __func__, res),
                   NetworkApiException, "create epoll event error.");
+    epollCreate_ = true;
 
     BinaryStream binaryStream;
     clusterInfo.GetBinStream(true, binaryStream);
@@ -235,9 +237,12 @@ void RankInfoDispather::ProcessSend()
 
 void RankInfoDispather::CloseEpollFd()
 {
-    s32 ret = RaDestroyEventHandle(&epollFds_);
-    CHK_PRT_THROW(ret != 0, HCCL_ERROR("[RankInfoDispather::%s] destroy epoll event failed, res[%d].", __func__, ret),
-                  NetworkApiException, "destroy epoll event error.");
+    if (epollCreate_) {
+        s32 ret = RaDestroyEventHandle(&epollFds_);
+        CHK_PRT_THROW(ret != 0, HCCL_ERROR("[RankInfoDispather::%s] destroy epoll event failed, res[%d].", __func__, ret),
+                    NetworkApiException, "destroy epoll event error.");
+        epollCreate_ = false;
+    }
 }
 
 bool RankInfoDispather::SendState::Send(std::shared_ptr<Socket> socket)

@@ -2676,6 +2676,7 @@ HcclResult HcclSendInner(void* sendBuf, uint64_t count, HcclDataType dataType, u
         HCCL_INFO("[HcclSend] Finish taskAppend, count [%lld] dataType [%s] destRank [%u]", count, GetDataTypeEnumStr(dataType).c_str(), destRank);
         return HCCL_SUCCESS;
     }
+    HCCL_INFO("[HcclSendInner] groupDepth[%d]", hcclGroupDepth);
 
     HcclUs startut = TIME_NOW();
     bool isCapture;
@@ -2769,6 +2770,7 @@ HcclResult HcclRecvInner(void* recvBuf, uint64_t count, HcclDataType dataType, u
         HCCL_INFO("[HcclRecv] Finish taskAppend, count [%d] dataType [%s] srcRank [%u]", count, GetDataTypeEnumStr(dataType).c_str(), srcRank);
 	    return HCCL_SUCCESS;
     }
+    HCCL_INFO("[HcclRecvInner] groupDepth[%d]", hcclGroupDepth);
 
     HcclUs startut = TIME_NOW();
     bool isCapture;
@@ -2909,10 +2911,10 @@ HcclResult HcclCommDestroyWrapper(struct hcclAsyncJob* job_){
     struct hcclCommDestroyAsyncJob* job = (hcclCommDestroyAsyncJob*) job_;
     HcclComm comm = job->initComm;
     s32 devId = job->devId;
-    HCCL_DEBUG("[HcclCommInitClusterInfoWrapper] Set device devId: %d", devId);
+    HCCL_DEBUG("[HcclCommDestroyWrapper] Set device devId: %d", devId);
     CHK_PRT_RET(hrtSetDevice(devId) != HCCL_SUCCESS,
-        HCCL_ERROR("[HcclCommInitClusterInfoWrapper] set fail"), HCCL_E_INTERNAL);
-    HCCL_DEBUG("[HcclCommInitClusterInfoWrapper] Done Set device devId: %d", devId);
+        HCCL_ERROR("[HcclCommDestroyWrapper] set fail"), HCCL_E_INTERNAL);
+    HCCL_DEBUG("[HcclCommDestroyWrapper] Done Set device devId: %d", devId);
  
     HCCL_RUN_INFO("Entry-%s: op_base comm destroy begin", __func__);
  
@@ -4193,6 +4195,95 @@ HcclResult HcclGetAicpuOpStreamAndNotify(HcclComm comm, rtStream_t* opstream, u8
 #ifdef __cplusplus
 }
 #endif // __cplusplus
+
+HcclResult HcclBatchSendRecvGroup(HcclSendRecvItem* sendRecvInfo, uint32_t itemNum, HcclComm comm, aclrtStream stream)
+{
+    HcclUs startut = TIME_NOW();
+    bool isCapture;
+    aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
+    uint64_t modelId = 0xFFFFFFFF;
+    CHK_PRT(GetCaptureInfo(stream, captureStatus, modelId, isCapture));
+    if (!isCapture) {
+        HcclSetIfProfile();
+    }
+    s32 threadID = SalGetTid();
+    ProfilingManagerPub::SetThreadCaptureStatus(threadID, isCapture);
+    uint64_t beginTime = hrtMsprofSysCycleTime();
+
+    // 入参校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(stream);
+
+    CHK_PTR_NULL(sendRecvInfo);
+    CHK_PRT_RET((itemNum == 0), HCCL_WARNING("[BatchSendRecvGroup] taskList itemNum is zero."), HCCL_SUCCESS);
+
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
+    // 若任务不同，也复用tag
+    const string tag = "worldBatchSendRecvGroup_" + hcclComm->GetIdentifier();
+    u32 rankSize = INVALID_VALUE_RANKSIZE;
+    CHK_RET_AND_PRINT_IDE(hcclComm->GetRankSize(rankSize), tag.c_str());
+    u32 rankId = INVALID_VALUE_RANKID;
+    CHK_RET_AND_PRINT_IDE(hcclComm->GetGroupRank(rankId), tag.c_str());
+
+    /* 记录接口交互信息日志 */
+    char stackLogBuffer[LOG_TMPBUF_SIZE];
+    if (GetExternalInputHcclEnableEntryLog()) {
+        s32 deviceLogicId = 0;
+        CHK_RET(HcclDeviceRefresh(deviceLogicId));
+
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
+        s32 streamId = 0;
+        CHK_RET(hrtGetStreamId(stream, streamId));
+
+        s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
+            "tag[%s], itemNum[%u], localRank[%u], streamId[%d], deviceLogicId[%d]", tag.c_str(), itemNum, localRank, streamId, deviceLogicId);
+
+        CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
+        std::string logInfo = "Entry-HcclBatchSendRecvGroup:" + std::string(stackLogBuffer) +
+            ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
+        CHK_RET(hcclComm->SaveTraceInfo(logInfo));
+    }
+
+    for (u32 i = 0; i < itemNum; i++) {
+        CHK_PTR_NULL((sendRecvInfo + i)->buf);
+        CHK_RET(HcomCheckDataType((sendRecvInfo + i)->dataType));
+        CHK_RET(HcomCheckCount((sendRecvInfo + i)->count));
+        CHK_RET(HcomCheckUserRank(rankSize, (sendRecvInfo + i)->remoteRank));
+        if (GetExternalInputHcclEnableEntryLog()) {
+            char stackLogBuffer[LOG_TMPBUF_SIZE];
+            s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
+                "SendRecvItem : SendRecvType[%d], remoteRank[%d], count[%llu], dataType[%d], buf[%p].",
+                (sendRecvInfo + i)->sendRecvType, (sendRecvInfo + i)->remoteRank, (sendRecvInfo + i)->count,
+                (sendRecvInfo + i)->dataType, (sendRecvInfo + i)->buf);
+            CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
+            std::string logInfo = "[HcclBatchSendRecvGroup]" + std::string(stackLogBuffer);
+            CHK_RET(hcclComm->SaveTraceInfo(logInfo));
+        }
+    }
+
+    CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));
+    HCCL_INFO("About to enter BatchSendRecv, itemNum[%u]", itemNum);
+    CHK_RET_AND_PRINT_IDE(hcclComm->BatchSendRecv(tag, sendRecvInfo, itemNum, stream), tag.c_str());
+    CHK_RET(CallMsprofReportHostApi(hcclComm, HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, beginTime, sendRecvInfo->count,
+        sendRecvInfo->dataType, tag));
+    if (!isCapture) {
+        HcclResetIfProfile();
+    }
+    ProfilingManagerPub::DeleteThreadCaptureStatus(threadID);
+
+    if (GetExternalInputHcclEnableEntryLog()) {
+        HcclUs endut = TIME_NOW();
+        /* 关键状态记录 */
+        std::string endInfo = "HcclBatchSendRecvGroup:success,take time: " +
+            std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag;
+        CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
+    }
+
+    return HCCL_SUCCESS;
+}
 
 HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemNum, HcclComm comm, aclrtStream stream)
 {

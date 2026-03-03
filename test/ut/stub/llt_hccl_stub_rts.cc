@@ -48,3 +48,13 @@ rtError_t rtCCULaunch(rtCcuTaskInfo_t *taskInfo,  rtStream_t const stm)
 {
     return 0;
 }
+
+rtError_t rtReleaseDevResAddress(rtDevResInfo * const resInfo)
+{
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtGetDevResAddress(rtDevResInfo * const resInfo, rtDevResAddrInfo * const addrInfo)
+{
+    return RT_ERROR_NONE;
+}

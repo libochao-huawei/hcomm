@@ -18,7 +18,7 @@ constexpr u64 SMALL_SIZE_FULLMESH = 262144;
 class CollAlltoAllExecutor : public CollNativeExecutorBase {
 public:
     CollAlltoAllExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAlltoAllExecutor() = default;
+    ~CollAlltoAllExecutor() override = default;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
     HcclResult GetAdjInfo(AlgResourceResponse& algRes, AdjInfo& adjInfo) override;

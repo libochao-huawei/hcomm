@@ -182,14 +182,14 @@ inline vector<RtsCntNotify *> LocalCntNotifyGet(ConnLocalCntNotifyManager &connL
     return notifyList;
 }
 
-static void SaveDfxTaskInfo(const CommunicatorImpl &comm, const TaskParam &taskParam, const RankId remoteRankId)
+static void SaveDfxTaskInfo(const CommunicatorImpl &comm, const TaskParam &taskParam, const RankId remoteRankId, bool isMaster = false)
 {
     u32 taskId;
     u32 streamId;
     HrtGetTaskIdAndStreamID(taskId, streamId);
 
-    shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId, remoteRankId, taskParam,
-        comm.GetMirrorTaskManager().GetCurrDfxOpInfo());
+    shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId, remoteRankId, taskParam, 
+        comm.GetMirrorTaskManager().GetCurrDfxOpInfo(), isMaster);
  
     HCCL_INFO("Begin to AddTaskInfo: streamId[%lu], taskId[%lu], remoteRankId[%u].", streamId, taskId, remoteRankId);
     comm.GetMirrorTaskManager().AddTaskInfo(taskInfo);
@@ -577,7 +577,7 @@ static void LaunchCcuTasks(vector<CcuTaskParam> params, const Stream *stream, Ta
 }
 
 static void ReportCcuProfilingInfo(uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
-                                   const CommunicatorImpl &comm, TaskParam &taskParam)
+                                   const CommunicatorImpl &comm, TaskParam &taskParam, bool isMaster)
 {
     if (streamProfilingInfo.empty()) {
         HCCL_INFO("There is no ccu profiling info.");
@@ -602,7 +602,7 @@ static void ReportCcuProfilingInfo(uint64_t execId, std::vector<CcuProfilingInfo
     }
     taskParam.ccuDetailInfo = std::make_shared<std::vector<CcuProfilingInfo>>(streamProfilingInfo);
     HCCL_INFO("Begin to SaveDfxTaskInfo. taskType[%d]", static_cast<int32_t>(TaskParamType::TASK_CCU));
-    SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID);
+    SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID, isMaster);
 }
 
 static void GetCcuProfilingInfo(const CcuInstruction &ccuInstruction, const vector<vector<CcuTaskParam>> &ccuParams,
@@ -654,7 +654,7 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
 
     // launch ccu task
     LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig);
-    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam);
+    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.GetIsMaster());
 
     // launch LocalWaitFrom on stream
     RtsCntNotify *cntNotifyNTo1 = comm.GetCcuStreamSyncNotifyManager().GetRtsNTo1CntNotify(stream.GetId());
@@ -682,7 +682,7 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
 
         // launch ccu task
         LaunchCcuTasks(ccuParams[ccuProfIdx], slave, taskParam, taskConfig);
-        ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[ccuProfIdx], comm, taskParam);
+        ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[ccuProfIdx], comm, taskParam, slave->GetIsMaster());
 
         // launch localPostTo on extra streams
         cntNotifyNTo1->PostBits(bitValue, *slave);
@@ -733,7 +733,7 @@ static void SubmitCcuTasks(const CcuInstruction &ccuInstruction, CommunicatorImp
     
     //esl 2die适配，先申请从流再启动task
     LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig);
-    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam);
+    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.GetIsMaster());
 
     std::size_t totalSize = 0;
     for (const auto &ccuParam : ccuParams) {

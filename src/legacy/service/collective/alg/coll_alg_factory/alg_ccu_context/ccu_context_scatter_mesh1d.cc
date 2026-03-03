@@ -57,8 +57,8 @@ void CcuContextScatterMesh1D::InitResource()
         } else {
             HCCL_INFO("[CcuContextScatterMesh1D] MyRank[%u], PeerId[%llu], TransportId[%u]",
                 rankId_, peerId, transportIdx);
-            CHK_PRT_RET(transports[transportIdx] == nullptr,
-                HCCL_ERROR("[CcuContextScatterMesh1D] Algorithm transport ptr is null"),);
+            CHK_PRT_RET(transports[transportIdx] == nullptr || transportIdx >= transports.size(),
+                HCCL_ERROR("[CcuContextScatterMesh1D] Algorithm transport ptr is null or transportIdx is out of bounds"),);
             output_.push_back(CreateVariable((*transports[transportIdx]), OUTPUT_XN_ID));  // 获取transport中id=1的Var来传递output
             token_.push_back(CreateVariable((*transports[transportIdx]), TOKEN_XN_ID));
             transportIdx++;

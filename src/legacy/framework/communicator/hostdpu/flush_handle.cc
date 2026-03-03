@@ -85,7 +85,7 @@ HcclResult FlushHandle::AllocateHostMemory()
 HcclResult FlushHandle::AllocateDeviceMemory()
 {
     u64 bufferSize = FLUSH_BUFFER_SIZE;
-    deviceMem = HrtMalloc(bufferSize, RT_MEMORY_HBM);
+	deviceMem = HrtMalloc(bufferSize, static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
     if (deviceMem == nullptr) {
         HcclResult eRet = Destroy();
         HCCL_ERROR("[AllocateDeviceMemory]Failed to Allocate Device Memory. Destroy Flush code=%d", eRet);
@@ -218,11 +218,16 @@ HcclResult FlushHandle::FreeDeviceMemory()
         return HCCL_SUCCESS;
     }
 
-    HrtFree(deviceMem);
-
-    deviceMem = nullptr;
-    HCCL_DEBUG("[FreeDeviceMemory] Device memory successfully freed.");
-    return HCCL_SUCCESS;
+    try {
+        HrtFree(deviceMem);
+        deviceMem = nullptr;
+        HCCL_DEBUG("[FreeDeviceMemory] Device memory successfully freed.");
+        return HCCL_SUCCESS;
+    } catch(...) {
+        HCCL_ERROR("[FreeDeviceMemory] Exception caught while freeing device memory.");
+        deviceMem = nullptr;
+        return HCCL_E_RUNTIME;
+    }
 }
 
 }  // namespace Hccl
