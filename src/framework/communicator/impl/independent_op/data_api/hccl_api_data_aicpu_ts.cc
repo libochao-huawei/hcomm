@@ -21,6 +21,10 @@
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
 
+bool IsBatchLaunchMode() {
+    return g_threadLaunchCtx.IsBatchLaunchMode();
+}
+
 void AddThread(ThreadHandle thread) {
     g_threadLaunchCtx.AddThread(thread);
 }

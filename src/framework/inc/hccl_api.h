@@ -230,18 +230,6 @@ extern HcclResult CommChannelDestroy(HcclComm comm, ChannelHandle channel, uint3
  * @{
  */
 
-/**
- * @brief 销毁算子资源上下文
- * @param[in] comm 通信域句柄
- * @param[in] engineCtx 通信引擎上下文\n
- *                      -size: ctx内存大小；\n
- *                      -addr: ctx内存地址；\n
- *                      -type: ctx内存类型，分host和device。
- * @return HcclResult 执行结果状态码
- * @warning 考虑统一成通信引擎资源上下文
- */
-extern HcclResult HcommEngineCtxDestroy(HcclComm comm, const HcclMem *engineCtx);
-
 /** @} */  // 通信引擎上下文管理接口（编程控制面可选接口）
  /**
  * @defgroup 其他数据面接口
@@ -1809,17 +1797,6 @@ extern HcclResult HcommGetEngineCtx(HcclComm comm, const char *engineTag, CommEn
  */
 extern HcclResult HcommEngineCtxAcquire(HcclComm comm, const char *engineTag, CommEngine engine, HcclMem *engineCtx,
     bool *exist);
-
-/**
- * @brief 销毁通信引擎上下文
- * @param[in] comm 通信域句柄
- * @param[in] engineCtx 通信引擎上下文\n
- *                      -size: ctx内存大小；\n
- *                      -addr: ctx内存地址；\n
- *                      -type: ctx内存类型，分host和device。
- * @return HcclResult 执行结果状态码
- */
-extern HcclResult HcommEngineCtxDestroy(HcclComm comm, const HcclMem *engineCtx);
 
 // \cond
 /**
