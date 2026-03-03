@@ -219,7 +219,7 @@ using AivKernelArgs = struct AivKernelArgsDef {
     u32 deterministic;
     u64 rmaInfo;
 
-   AivKernelArgsDef(const void** buffIn, const void** buffOut, const void* input, const void* output, u32 rank,
+   AivKernelArgsDef(void** buffIn, void** buffOut, const void* input, const void* output, u32 rank,
         u32 rankSize, u64 len, u32 dataType, u32 reduceOp, u32 root, s32 tag, bool isOpBase = true,
         u64 bufferSize = 200 * 1024 * 1024, s32 aivRdmaStep = -1, bool useAivRdmaSmall = false, u32 serverNum = 1,
         u32 devType = 2, void* headCounterAddr = nullptr, void* tailCounterAddr = nullptr, void* addOneAddr = nullptr,
@@ -264,7 +264,7 @@ using AivExtraKernelArgs = struct AivExtraKernelArgsDef {
     u64 rmaInfo;
     ExtraArgs extraArgs; // A2/A3单机
 
-    AivExtraKernelArgsDef(const void** buffIn, const void** buffOut, const void* input, const void* output, u32 rank,
+    AivExtraKernelArgsDef(void** buffIn, void** buffOut, const void* input, const void* output, u32 rank,
         u32 rankSize, u64 len, u32 dataType, u32 reduceOp, u32 root, s32 tag, bool isOpBase = true,
         u64 bufferSize = 200 * 1024 * 1024, s32 aivRdmaStep = -1, bool useAivRdmaSmall = false, u32 serverNum = 1,
         u32 devType = 2, void* headCounterAddr = nullptr, void* tailCounterAddr = nullptr, void* addOneAddr = nullptr,
