@@ -39,8 +39,8 @@ HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConne
 {
     CHK_PTR_NULL(socket);
     std::unique_ptr<CcuConnection> ccuConnection{nullptr};
-    BuildCcuConnection(ccuConnectionInfo, ccuConnection);
-    
+    CHK_RET(BuildCcuConnection(ccuConnectionInfo, ccuConnection));
+
     ccuTransport.reset(new (std::nothrow)
         CcuTransport(socket, std::move(ccuConnection), cclBufferInfo));
     CHK_PTR_NULL(ccuTransport);
@@ -54,7 +54,7 @@ HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConne
 {
     CHK_PTR_NULL(socket);
     std::unique_ptr<CcuConnection> ccuConnection{nullptr};
-    BuildCcuConnection(ccuConnectionInfo, ccuConnection);
+    CHK_RET(BuildCcuConnection(ccuConnectionInfo, ccuConnection));
 
     ccuTransport.reset(new (std::nothrow)
         CcuTransport(socket, std::move(ccuConnection), bufferInfos));

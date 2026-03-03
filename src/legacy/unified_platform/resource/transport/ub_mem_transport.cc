@@ -41,7 +41,7 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
 HcclResult UbMemTransport::FillTagVec()
 {
     localUserMemTag_.reserve(commonLocRes.bufferVec.size());
-    HCCL_INFO("bufferNum: %d", commonLocRes.bufferVec.size());
+    HCCL_INFO("bufferNum: %u", static_cast<uint32_t>(commonLocRes.bufferVec.size()));
     uint32_t index = 0;
     for (auto &localRmaBuffer : commonLocRes.bufferVec) {
         std::array<char, HCCL_RES_TAG_MAX_LEN> tag{};
@@ -50,7 +50,7 @@ HcclResult UbMemTransport::FillTagVec()
         } else {
             CHK_SAFETY_FUNC_RET(memcpy_s(tag.data(), tag.size(), 
                 localRmaBuffer->GetBuf()->GetMemTag(), HCCL_RES_TAG_MAX_LEN));
-            HCCL_INFO("[AivUbMemTransport][Init] memHandleNum[%d] memTag[%s]", index, tag.data());
+            HCCL_INFO("[UbMemTransport][FillTagVec] memHandleNum[%d] memTag[%s]", index, tag.data());
         }
         localUserMemTag_.push_back(tag);
         index++;
