@@ -511,6 +511,7 @@ HrtRaUbSendWrRespParam HrtRaUbPostSend(JettyHandle jettyHandle, HrtRaUbSendWrReq
 void                   HrtRaUbPostNops(JettyHandle jettyHandle, JettyHandle remoteJettyHandle, const u32 numNop);
 
 std::pair<uint32_t, uint32_t> HraGetDieAndFuncId(RdmaHandle handle);
+bool HraGetRtpEnable(RdmaHandle handle);
 
 struct HRaInfo {
     HrtNetworkMode mode;
