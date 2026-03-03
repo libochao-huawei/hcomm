@@ -41,7 +41,7 @@ private:
     u32 deviceId_;
     Hccl::MirrorTaskManager* mirrorTaskManager_;  // 使用原始指针，不管理生命周期
     std::unique_ptr<HcclCommProfiling> profiling_;
-    std::unordered_map<CollComm, > commTable_;
+    std::unordered_map<CollComm,std::unordered_map<u64, u32 remoteRankId> > commTable_;
 };
 
 }
