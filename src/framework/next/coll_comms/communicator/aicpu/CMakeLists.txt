@@ -7,13 +7,15 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-set(src_list_pub
-    ${CMAKE_CURRENT_SOURCE_DIR}/allltoall_pipeline_base.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/allltoall_pipeline_mesh_pairwise_ping_pong.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/allltoall_pipeline_mesh_pairwise_ccl_enough.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/alltoall_symmetric_memory.cc
+
+set(src_list
+    aicpu_indop_process.cc
+    coll_comm_aicpu_mgr.cc
+    coll_comm_aicpu.cc
 )
 
-target_sources(hccl_alg PRIVATE
-    ${src_list_pub}
-)
+if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+    target_sources(ccl_kernel PRIVATE
+        ${src_list}
+    )
+endif()
