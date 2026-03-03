@@ -340,7 +340,7 @@ typedef struct {
     uint16_t specifiedNotifyTypeNum;
 } ThreadConfig;
 
-typedef HcclResult (ThreadService)(void* args, uint64_t argsSize);
+typedef HcclResult(ThreadService)(void* args, uint64_t argsSize);
 
 typedef struct {
     uint64_t service; // service 在host侧对应指针
