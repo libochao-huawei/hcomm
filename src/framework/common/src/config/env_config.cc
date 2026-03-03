@@ -112,10 +112,14 @@ HcclResult ResetEnvConfigInitState()
 HcclResult InitEnvParam()
 {
     HcclResult ret = ParseHostSocketPortRange();
+    char* mmSysGetHostEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_HOST_SOCKET_PORT_RANGE, mmSysGetHostEnvValue);
+    std::string hostSocketPortRangeEnv = (mmSysGetHostEnvValue != nullptr) ? mmSysGetHostEnvValue : "EmptyString";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_HOST_SOCKET_PORT_RANGE", "Please check whether the port range is valid."}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({hostSocketPortRangeEnv, "HCCL_HOST_SOCKET_PORT_RANGE",
+        "a valid port range in the format of port1-port2, where port1 and port2 are valid port numbers (0-65535)"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_HOST_SOCKET_PORT_RANGE failed. errorno[%d]",
@@ -126,10 +130,14 @@ HcclResult InitEnvParam()
         ret);
 
     ret = ParseNpuSocketPortRange();
+    char* mmSysGetNpuEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_NPU_SOCKET_PORT_RANGE, mmSysGetNpuEnvValue);
+    std::string npuSocketPortRangeEnv = (mmSysGetNpuEnvValue != nullptr) ? mmSysGetNpuEnvValue : "EmptyString";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_NPU_SOCKET_PORT_RANGE", "Please check whether the port range is valid."}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({npuSocketPortRangeEnv, "HCCL_NPU_SOCKET_PORT_RANGE",
+        "a valid port range in the format of port1-port2, where port1 and port2 are valid port numbers (0-65535)"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_NPU_SOCKET_PORT_RANGE failed. errorno[%d]",
@@ -140,10 +148,13 @@ HcclResult InitEnvParam()
         ret);
 
     ret = ParseDFSConfig();
+    char* dfsConfigValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_DFS_CONFIG, dfsConfigValue);
+    std::string dfsConfigEnv = (dfsConfigValue != nullptr) ? dfsConfigValue : "EmptyString";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_DFS_CONFIG", "Please check whether the DFS config is valid."}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({dfsConfigEnv, "HCCL_DFS_CONFIG", "comma-separated key-value pairs (e.g., cluter_heartbeat=on,stuck_detection=off)"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_DFS_CONFIG failed. errorno[%d]",
@@ -154,10 +165,13 @@ HcclResult InitEnvParam()
         ret);
 
     ret = g_envConfig.ParseRDMATrafficClass();
+    char* mmSysGetTrafficClassEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_RDMA_TC, mmSysGetTrafficClassEnvValue);
+    std::string mmSysGetTrafficClassEnv = (mmSysGetTrafficClassEnvValue != nullptr) ? mmSysGetTrafficClassEnvValue : "EmptyString";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_RDMA_TC", "Value range[0, 255], Must be a multiple of 4"}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({mmSysGetTrafficClassEnv, "HCCL_RDMA_TC", "range[0, 255], Must be a multiple of 4"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_RDMA_TC failed. errorno[%d]",
@@ -168,10 +182,13 @@ HcclResult InitEnvParam()
         ret);
 
     ret = g_envConfig.ParseRDMAServerLevel();
+    char* mmSysGetServerLevelEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_RDMA_SL, mmSysGetServerLevelEnvValue);
+    std::string mmSysGetServerLevel = (mmSysGetServerLevelEnvValue != nullptr) ? mmSysGetServerLevelEnvValue : "EmptyString";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_RDMA_SL", "Value range[0, 7]"}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({mmSysGetServerLevel, "HCCL_RDMA_SL", "Value range[0, 7]"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_RDMA_SL failed. errorno[%d]",
@@ -184,12 +201,15 @@ HcclResult InitEnvParam()
     // 解析RDMATimeOut
     std::pair<u32, u32> rdmaTimeOutRange;
     ret = g_envConfig.ParseRDMATimeOut(rdmaTimeOutRange);
+    char* mmSysGetTimeOutEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_RDMA_TIMEOUT, mmSysGetTimeOutEnvValue);
+    std::string timeOutEnv = (mmSysGetTimeOutEnvValue != nullptr) ? mmSysGetTimeOutEnvValue : "EmptyString";
     std::string vaildRange =
-        "Value range[" + std::to_string(rdmaTimeOutRange.first) + " ," + std::to_string(rdmaTimeOutRange.second) + "]";
+        "range[" + std::to_string(rdmaTimeOutRange.first) + " ," + std::to_string(rdmaTimeOutRange.second) + "]";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_RDMA_TIMEOUT", vaildRange}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({timeOutEnv, "HCCL_RDMA_TIMEOUT", vaildRange}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_RDMA_TIMEOUT failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -200,10 +220,13 @@ HcclResult InitEnvParam()
 
     // 解析RDMARetryCnt
     ret = g_envConfig.ParseRDMARetryCnt();
+    char* mmSysGetRetryCntEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_RDMA_RETRY_CNT, mmSysGetRetryCntEnvValue);
+    std::string retryCntEnv = (mmSysGetRetryCntEnvValue != nullptr) ? mmSysGetRetryCntEnvValue : "EmptyString";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_RDMA_RETRY_CNT", "Value range[1, 7]"}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({retryCntEnv, "HCCL_RDMA_RETRY_CNT", "range[1, 7]"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_RDMA_RETRY_CNT failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -213,10 +236,13 @@ HcclResult InitEnvParam()
         ret);
 
     ret = InitDebugConfigByEnv();
+    char* env = nullptr; // 环境变量值
+    MM_SYS_GET_ENV(MM_ENV_HCCL_DEBUG_CONFIG, env);
+    std::string envValue = env ? std::string(env) : "null";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_DEBUG_CONFIG", "Please check whether the env is valid"}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({envValue, "HCCL_DEBUG_CONFIG", "ALG,TASK,RESOURCE,AIV_OPS_EXC(optionally prefixed with'^'"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_DEBUG_CONFIG failed. errorno[%d]",
@@ -228,11 +254,14 @@ HcclResult InitEnvParam()
 
     // 解析算法配置
     ret = ParseHcclAlgo();
+    char* mmSysGetEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_ALGO, mmSysGetEnvValue);
+    std::string hcclAlgo = (mmSysGetEnvValue != nullptr) ? mmSysGetEnvValue : "EmptyString";
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_ALGO",
-            "expect: level0:NA;level1:<algo> or <op0>=level0:NA;level1:<algo0>/<op1>=level0:NA;level1:<algo1>"}));
+        std::vector<std::string>({"value", "env", "expect"}),
+        std::vector<std::string>({hcclAlgo, "HCCL_ALGO",
+            "level0:NA;level1:<algo> or <op0>=level0:NA;level1:<algo0>/<op1>=level0:NA;level1:<algo1>"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse "
                    "hccl algorithm config failed. errorno[%d]",
