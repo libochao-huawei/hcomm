@@ -83,7 +83,7 @@ static inline HcclResult WithChannelByHandleLocked(ChannelHandle inHandle, Func 
 using namespace hcomm;
 static HcommEndpointMap g_EndpointMap;
 
-HcclResult HcommEndpointGet_(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
+HcclResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
 {
     auto it = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(it == nullptr, HCCL_ERROR("[%s] endpoint not found in g_EndpointMap, endpointHandle[%p]",
@@ -95,6 +95,9 @@ HcclResult HcommEndpointGet_(EndpointHandle endpointHandle, void **endpoint)  //
 
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle)
 {
+    CHK_PTR_NULL(endpoint);
+    CHK_PTR_NULL(endpointHandle);
+
     if (endpoint->loc.locType != ENDPOINT_LOC_TYPE_DEVICE && endpoint->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
         HCCL_ERROR("[%s] Only support END_POINT_LOCATION_DEVICE AND END_POINT_LOCATION_HOST, but "
                    "endpoint->loc.locType is %d",
@@ -105,9 +108,11 @@ HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *end
 
     std::unique_ptr<Endpoint> endpointPtr = nullptr;
 
-    CHK_RET(Endpoint::CreateEndpoint(*endpoint, endpointPtr));
+    HcclResult ret = Endpoint::CreateEndpoint(*endpoint, endpointPtr);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("call Endpoint::CreateEndpoint failed"), HCCL_E_INTERNAL);
     CHK_PTR_NULL(endpointPtr);
-    CHK_RET(endpointPtr->Init());
+    ret = endpointPtr->Init();
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("call endpointPtr->Init failed"), HCCL_E_INTERNAL);
 
     const EndpointHandle handle = reinterpret_cast<EndpointHandle>(endpointPtr.get());
     CHK_PTR_NULL(handle);
