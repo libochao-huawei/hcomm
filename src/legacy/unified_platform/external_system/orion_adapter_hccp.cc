@@ -280,6 +280,7 @@ void HrtRaSocketCloseOne(RaSocketCloseParam &in)
     struct SocketCloseInfoT closeInfo;
     closeInfo.fdHandle     = in.fdHandle;
     closeInfo.socketHandle = in.socketHandle;
+    closeInfo.disuseLinger = 0;
     HRaSocketBatchClose(&closeInfo, 1);
 }
 
