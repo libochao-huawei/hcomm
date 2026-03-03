@@ -129,6 +129,3 @@ install(TARGETS  rs
 )
 
 add_dependencies(rs crypto_static)
-if(BUILD_OPEN_PROJECT)
-add_dependencies(rs kern-abi)
-endif()
