@@ -241,7 +241,7 @@ std::vector<SocketPortRange> CastSocketPortRange(const std::string &s, const std
     // load ranges from string
     SplitHcclSocketPortRange(envName, socketPortRange, hcclSocketPortRange);
     CHK_PRT_THROW(hcclSocketPortRange.size() == 0, 
-        HCCL_ERROR("Load empty port range from HCCL_HOST_SOCKET_PORT_RANGE, please check."),
+        HCCL_ERROR("Load empty port range from HCCL_HOST_SOCKET_PORT_RANGE, should not empty, please check."),
         InvalidParamsException, "parser portRange fail.");
     
     PrintSocketPortRange(envName, hcclSocketPortRange);
@@ -252,8 +252,8 @@ constexpr u32 HCCL_RDMA_TC_BASE = 4;    // RDMATrafficClass需要是4的整数�
 void CheckRDMATrafficClass(const u32 &rdmaTrafficClass)
 {
     if (rdmaTrafficClass % HCCL_RDMA_TC_BASE != 0) {
-        RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"env", "tips"}),
-                            std::vector<std::string>({"HCCL_RDMA_TC", "Please check whether the value is multiple of four."}));
+        RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
+                            std::vector<std::string>({std::to_string(rdmaTrafficClass), "HCCL_RDMA_TC", "value should be multiple of four."}));
         HCCL_ERROR("rdmaTrafficClass[%u] is not a multiple of [%u]", rdmaTrafficClass, HCCL_RDMA_TC_BASE);
         THROW<InvalidParamsException>(
             StringFormat("rdmaTrafficClass[%u] is not a multiple of [%u]", rdmaTrafficClass, HCCL_RDMA_TC_BASE));
@@ -626,7 +626,8 @@ HcclAccelerator CastHcclAccelerator(const std::string &s)
         mode = HcclAccelerator::CCU_SCHED;
     } else {
         THROW<InvalidParamsException>(
-            StringFormat("Env HCCL_OP_EXPANSION_MODE config \"%s\" is invalid.", s.c_str()));
+            StringFormat("Env HCCL_OP_EXPANSION_MODE config \"%s\" is invalid."
+                "it should be one of [AI_CPU, AIV, CCU_MS, CCU_SCHED].", s.c_str()));
     }
     return mode;
 }
@@ -824,7 +825,7 @@ void CheckFilePath(const string &filePath)
 {
     if (filePath.length() >= (PATH_MAX) || filePath.length() == 0) {
         THROW<InvalidParamsException>(
-            StringFormat("env[HCCL_WHITELIST_FILE] is invalid, len is %u", filePath.length()));
+            StringFormat("env[HCCL_WHITELIST_FILE] is invalid, len is %u, should be (0,4096)", filePath.length()));
     }
 }
 /*-------------------------- post process functions -------------------------*/

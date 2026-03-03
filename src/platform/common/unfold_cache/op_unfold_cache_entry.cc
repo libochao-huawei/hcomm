@@ -947,7 +947,6 @@ namespace hccl {
 
     HcclResult OpUnfoldCacheEntry::CheckMemTypeForAlltoallv(const uint8_t *sqePtr, const uint8_t sqeType,
         const RefreshAddrInfo& srcRefreshAddrInfo, const RefreshAddrInfo& dstRefreshAddrInfo) const {
-
         // 对于所有算子, SQE第一次admit时, 在MemcpySqeArray中, 遍历memory ranges获取每个地址字段对应的rankId和memType
         // 对于alltoallv算子, cache miss后处理时, 在UpdateRefreshAddrInfoForAlltoallv中, 进一步更新memType和dstRank
 

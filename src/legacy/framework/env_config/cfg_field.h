@@ -45,8 +45,8 @@ public:
                 value = cast(str);
             } catch (const InvalidParamsException &e) {
                 // 有异常上报故障码EI0001
-                RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"env", "tips"}),
-                            std::vector<std::string>({name, "Please check whether the value is valid."}));
+                RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
+                            std::vector<std::string>({GetValueAsString(value), name, e.what()}));
                 THROW<InvalidParamsException>(StringFormat("[Init][EnvVarParam]Env config \"%s\" value is invalid.%s", name.c_str(), e.what()));
             } catch (const NotSupportException &e) { // 临时修改方案 HCCL_SOCKET_IFNAME等当前不支持配置 且需要报错
                 THROW<NotSupportException>(
@@ -62,8 +62,8 @@ public:
                 validate(value);
             } catch (const InvalidParamsException &e) {
                 // 有异常上报故障码EI0001
-                RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"env", "tips"}),
-                            std::vector<std::string>({name, "Please check whether the value is valid."}));
+                RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
+                            std::vector<std::string>({GetValueAsString(value), name, e.what()}));
                 THROW<InvalidParamsException>(StringFormat("[Init][EnvVarParam]Env config \"%s\" value is invalid.%s", name.c_str(), e.what()));
             }
         }
@@ -87,6 +87,13 @@ public:
                 StringFormat("Env config %s is not parsed. Should not use it.", name.c_str()));
         }
         return value;
+    }
+
+    std::string GetValueAsString(const T &value)
+    {
+        std::ostringstream oss;
+        oss << value;
+        return oss.str();
     }
 
 private:

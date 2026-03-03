@@ -405,17 +405,18 @@ HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds)
     if (isAutoTuneModeOpen) {
         return HCCL_SUCCESS;
     }
-    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomCreateGroup", "group", "nullptr", "please check group"}));
+    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomCreateGroup", "nullptr", "group", "non-null pointer"}));
     CHK_PTR_NULL(group);
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+        "EI0003", std::vector<std::string>({ "ccl_op", "value", "parameter", "value" }),
         std::vector<std::string>({
             "HcomCreateGroup",
-            "group",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
-            "please check group name"
+            "group",
+            "a non-empty string of length 1 to " + std::to_string(GROUP_NAME_MAX_LEN) +
+            ", containing only alphanumeric characters and underscores"
         }
     ));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -430,17 +431,17 @@ HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds)
             LOG_KEYWORDS_INVALID_ARGUMENT.c_str()),
         HCCL_E_PARA);
 
-    RPT_INPUT_ERR(rankIds == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomCreateGroup", "rankIds", "nullptr", "please check rankIds"}));
+    RPT_INPUT_ERR(rankIds == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomCreateGroup", "nullptr", "rankIds", "non-null pointer"}));
     CHK_PTR_NULL(rankIds);
 
     if (rankNum == 0) {
-        RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+        RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
             std::vector<std::string>({
                 "HcomCreateGroup",
-                "rankNum",
                 std::to_string(rankNum),
-                "please check rankNum"
+                "rankNum",
+                "must be a positive integer (greater than 0)"
             }
         ));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] group[%s] rankNum[%u] is invalid",
@@ -564,8 +565,8 @@ HcclResult HcomDestroyGroup(const char *group)
         return HCCL_SUCCESS;
     }
 
-    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomDestroyGroup", "group", "nullptr", "please check group"}));
+    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomDestroyGroup", "nullptr", "group", "non-null pointer"}));
     CHK_PTR_NULL(group);
     CHK_RET(HcomCheckGroupName(group));
 
@@ -734,8 +735,8 @@ HcclResult HcomQueryGroupRef(const char *group, u32 &groupRef)
 
 HcclResult HcomGetWorldRankFromGroupRank(const char *group, u32 groupRank, u32 *worldRank)
 {
-    RPT_INPUT_ERR(worldRank == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomGetWorldRankFromGroupRank", "worldRank", "nullptr", "please check worldRank"}));
+    RPT_INPUT_ERR(worldRank == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomGetWorldRankFromGroupRank", "nullptr", "worldRank", "non-null pointer"}));
     CHK_PTR_NULL(worldRank);
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
     if (isAutoTuneModeOpen) {
@@ -746,12 +747,13 @@ HcclResult HcomGetWorldRankFromGroupRank(const char *group, u32 groupRank, u32 *
 
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
         std::vector<std::string>({
             "HcomGetWorldRankFromGroupRank",
-            "group",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
-            "please check group name"
+            "group",
+            "a non-empty string of length 1 to " + std::to_string(GROUP_NAME_MAX_LEN) +
+            ", containing only alphanumeric characters and underscores"
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] group name is invalid",
@@ -773,8 +775,8 @@ HcclResult HcomGetWorldRankFromGroupRank(const char *group, u32 groupRank, u32 *
 
 HcclResult HcomGetGroupRankFromWorldRank(u32 worldRank, const char *group, u32 *groupRank)
 {
-    RPT_INPUT_ERR(groupRank == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomGetGroupRankFromWorldRank", "groupRank", "nullptr", "please check groupRank"}));
+    RPT_INPUT_ERR(groupRank == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomGetGroupRankFromWorldRank", "nullptr", "groupRank", "non-null pointer"}));
     CHK_PTR_NULL(groupRank);
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
     if (isAutoTuneModeOpen) {
@@ -785,12 +787,13 @@ HcclResult HcomGetGroupRankFromWorldRank(u32 worldRank, const char *group, u32 *
 
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
         std::vector<std::string>({
             "HcomGetGroupRankFromWorldRank",
-            "group",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
-            "please check group name"
+            "group",
+            "a non-empty string of length 1 to " + std::to_string(GROUP_NAME_MAX_LEN) +
+            ", containing only alphanumeric characters and underscores"
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] group name is invalid",
@@ -910,8 +913,8 @@ HcclResult GetGroupRankInfo(const char *group, RankInfoType rankType, u32 inPara
 
 HcclResult HcomGetRankSize(const char *group, u32 *rankSize)
 {
-    RPT_INPUT_ERR(rankSize == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomGetRankSize", "rankSize", "nullptr", "please check rankSize"}));
+    RPT_INPUT_ERR(rankSize == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomGetRankSize", "nullptr", "rankSize", "non-null pointer"}));
     CHK_PTR_NULL(rankSize);
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
     if (isAutoTuneModeOpen) {
@@ -920,12 +923,13 @@ HcclResult HcomGetRankSize(const char *group, u32 *rankSize)
     }
 
     HcclResult ret = HcomCheckGroupName(group);
-    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
         std::vector<std::string>({
             "HcomGetRankSize",
-            "group",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
-            "please check group name"
+            "group",
+            "a non-empty string of length 1 to " + std::to_string(GROUP_NAME_MAX_LEN) +
+            ", containing only alphanumeric characters and underscores"
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] group name is invalid",
@@ -1067,15 +1071,15 @@ HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32
 
     RPT_INPUT_ERR(inputIdxList == nullptr,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
-        std::vector<std::string>({"HcomSetGradFusionByIndex", "inputIdxList", "nullptr", "please check inputIdxList"}));
+        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"HcomSetGradFusionByIndex", "nullptr", "inputIdxList", "non-null pointer"}));
     CHK_PTR_NULL(inputIdxList);
     bool bRet = segmentNum == 0;
     RPT_INPUT_ERR(bRet,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
         std::vector<std::string>(
-            {"HcomSetGradFusionByIndex", "segmentNum", std::to_string(0), "please check segmentNum"}));
+            {"HcomSetGradFusionByIndex", std::to_string(0), "segmentNum", "must be a positive integer (greater than 0)"}));
     CHK_PRT_RET(bRet,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] set split inputIdxList length is zero",
             LOG_KEYWORDS_TASK_EXEC.c_str(),
@@ -1123,16 +1127,16 @@ HcclResult HcomSetGradFusionBySize(const char *group, u32 segmentNum, const floa
         return HCCL_SUCCESS;
     }
 
-    RPT_INPUT_ERR(sizeList == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomSetGradFusionBySize", "sizeList", "nullptr", "please check sizeList"}));
+    RPT_INPUT_ERR(sizeList == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomSetGradFusionBySize", "nullptr", "sizeList", "non-null pointer"}));
     CHK_PTR_NULL(sizeList);
     bool bRet = segmentNum == 0;
-    RPT_INPUT_ERR(bRet, "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+    RPT_INPUT_ERR(bRet, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
         std::vector<std::string>({
             "HcomSetGradFusionBySize",
-            "segmentNum",
             std::to_string(0),
-            "please check segmentNum"
+            "segmentNum",
+            "must be a positive integer (greater than 0)"
         }
     ));
     CHK_PRT_RET(bRet, HCCL_ERROR("[%s][%s]errNo[0x%016llx] set split sizeList length is zero",
@@ -1385,9 +1389,9 @@ HcclResult HcomCheckInitClusterInfo(const char *rankTableM, const char *identify
     ret = HcomCheckIdentify(identify);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
         std::vector<std::string>(
-            {"HcomInit", "identify", {identify, strnlen(identify, IDENTIFY_MAX_LEN + 1)}, "please check identify"}));
+            {"HcomInit", {identify, strnlen(identify, IDENTIFY_MAX_LEN + 1)}, "identify", "a valid node identifier"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] identify parameter error",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -1464,18 +1468,19 @@ DevType HcomGetDeviceType()
 
 HcclResult HcomCreateCommCCLbuffer(const char *group)
 {
-    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomGetDevType", "group", "nullptr", "please check group"}));
+    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomGetDevType", "nullptr", "group", "non-null pointer"}));
     CHK_PTR_NULL(group);
  
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
         std::vector<std::string>({
             "HcomGetDevType",
-            "group",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
-            "please check group name"
+            "group",
+            "a non-empty string of length 1 to " + std::to_string(GROUP_NAME_MAX_LEN) +
+            ", containing only alphanumeric characters and underscores"
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Get][HcomGetDevType]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
@@ -1497,18 +1502,19 @@ HcclResult HcomCreateCommCCLbuffer(const char *group)
  
 HcclResult HcomGetInCCLbuffer(const char *group, void** buffer, u64 *size)
 {   
-    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomGetInCCLbuffer", "group", "nullptr", "please check group"}));
+    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomGetInCCLbuffer", "nullptr", "group", "non-null pointer"}));
     CHK_PTR_NULL(group);
  
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
         std::vector<std::string>({
             "HcomGetInCCLbuffer",
-            "group",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
-            "please check group name"
+            "group",
+            "a non-empty string of length 1 to " + std::to_string(GROUP_NAME_MAX_LEN) +
+            ", containing only alphanumeric characters and underscores"
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Get][HcomGetInCCLbuffer]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
@@ -1529,18 +1535,19 @@ HcclResult HcomGetInCCLbuffer(const char *group, void** buffer, u64 *size)
  
 HcclResult HcomGetOutCCLbuffer(const char *group, void** buffer, u64 *size)
 {   
-    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomGetOutCCLbuffer", "group", "nullptr", "please check group"}));
+    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomGetOutCCLbuffer", "nullptr", "group", "non-null pointer"}));
     CHK_PTR_NULL(group);
  
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
         std::vector<std::string>({
             "HcomGetOutCCLbuffer",
-            "group",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
-            "please check group name"
+            "group",
+            "a non-empty string of length 1 to " + std::to_string(GROUP_NAME_MAX_LEN) +
+            ", containing only alphanumeric characters and underscores"
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Get][HcomGetOutCCLbuffer]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
@@ -1561,18 +1568,19 @@ HcclResult HcomGetOutCCLbuffer(const char *group, void** buffer, u64 *size)
  
 HcclResult HcomGetAicpuOpStreamNotify(const char *group, HcclRtStream *opStream, u8 aicpuNotifyNum, void** aicpuNotify)
 {   
-    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomGetDevType", "group", "nullptr", "please check group"}));
+    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomGetDevType", "nullptr", "group", "non-null pointer"}));
     CHK_PTR_NULL(group);
  
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
         std::vector<std::string>({
             "HcomGetDevType",
-            "group",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
-            "please check group name"
+            "group",
+            "a non-empty string of length 1 to " + std::to_string(GROUP_NAME_MAX_LEN) +
+            ", containing only alphanumeric characters and underscores"
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Get][HcomGetDevType]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
@@ -1585,8 +1593,8 @@ HcclResult HcomGetAicpuOpStreamNotify(const char *group, HcclRtStream *opStream,
  
 HcclResult HcomMc2AiCpuStreamAllocAndGet(const char *group, u32 streamMode, rtStream_t *aiCpuStream)
 {   
-    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcomGetDevType", "group", "nullptr", "please check group"}));
+    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomGetDevType", "nullptr", "group", "non-null pointer"}));
     CHK_PTR_NULL(group);
 
  #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
@@ -1595,12 +1603,13 @@ HcclResult HcomMc2AiCpuStreamAllocAndGet(const char *group, u32 streamMode, rtSt
 
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
         std::vector<std::string>({
             "HcomGetDevType",
-            "group",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
-            "please check group name"
+            "group",
+            "a non-empty string of length 1 to " + std::to_string(GROUP_NAME_MAX_LEN) +
+            ", containing only alphanumeric characters and underscores"
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Get][HcomGetDevType]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
