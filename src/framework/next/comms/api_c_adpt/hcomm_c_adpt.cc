@@ -673,7 +673,7 @@ HcclResult RecordService(void *args, uint64_t argsSizeByte)
         return HCCL_E_PARA;
     }
 
-    hccl::LocalNotify *dstNotifyPtr = dstAicpuTsThread->GetNotify(dstNotifyIdx);
+    hccl::LocalNotify *const dstNotifyPtr = dstAicpuTsThread->GetNotify(dstNotifyIdx);
     if (dstNotifyPtr == nullptr) {
         HCCL_ERROR("[%s] FAIL. dstAicpuTsThread->GetNotify failed for dstNotifyIdx[%u].", __func__, dstNotifyIdx);
         return HCCL_E_PARA;
@@ -704,15 +704,22 @@ HcclResult WaitService(void *args, uint64_t argsSizeByte)
         return HCCL_E_NOT_FOUND;
     }
     hccl::Thread *const thread = hcomm::g_ThreadMap[threadHdl].get();
-    // hccl::CpuThread *const cpuThread = dynamic_cast<hccl::CpuThread *>(thread);
-    // if (cpuThread == nullptr) {
-    //     HCCL_ERROR("[%s] FAIL. thread[0x%llx] is not CpuThread.", __func__, threadHdl);
-    //     return HCCL_E_INTERNAL;
-    // }
+#ifdef WIP  // TODO: 等到 CpuThread 实现后取消此编译宏
+    hccl::CpuThread *const cpuThread = dynamic_cast<hccl::CpuThread *>(thread);
+    if (cpuThread == nullptr) {
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx] is not CpuThread.", __func__, threadHdl);
+        return HCCL_E_PARA;
+    }
+
+    hccl::MemNotify *const memNotify = cpuThread->GetNotify(notifyIdx);
+    if (memNotify == nullptr) {
+        HCCL_ERROR("[%s] FAIL. cpuThread->GetNotify failed for notifyIdx[%u].", __func__, notifyIdx);
+        return HCCL_E_PARA;
+    }
+    CHK_RET(memNotify->Wait());
+#endif
+
     (void)thread;
-
-    //TODO:
-
     return HCCL_SUCCESS;
 
 }
