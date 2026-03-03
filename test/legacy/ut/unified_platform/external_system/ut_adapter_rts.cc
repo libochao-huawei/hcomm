@@ -908,7 +908,7 @@ TEST_F(AdapterRtsTest, test_HrtAicpuLaunchKernelWithHostArgs_ok)
 	EXPECT_NO_THROW(HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, stream,
 										 &cfg, &kernel, sizeof(HcclKernelParamLite)));
     rtSmDesc_t smDesc;
-    rtSmDesc_t stream = reinterpret_cast<rtStream_t>(0x123);
+    rtStream_t stream = reinterpret_cast<rtStream_t>(0x123);
     EXPECT_NO_THROW(HrtAicpuKernelLaunchExWithArgs(0, name, 0, &argsInfo, &smDesc, stream, 0));
 }
 
