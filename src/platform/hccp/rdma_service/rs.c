@@ -455,7 +455,7 @@ STATIC int RsInitRscbCfg(struct rs_cb *rscb)
     productType = RsGetProductType(rscb->logicId);
     CHK_PRT_RETURN(productType == PRODUCT_TYPE_INVALID, hccp_err("rs get product type failed", ret), -EINVAL);
 #ifdef CUSTOM_INTERFACE
-    if (RsIsUdmaSupported()) {
+    if (RsIsUdmaSupported() || RsIsRdmaSupported()) {
         ret = RsGetChipProtocol(rscb->chipId, rscb->hccpMode, &rscb->protocol, rscb->logicId);
         CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_chip_protocol failed, ret[%d]", ret), ret);
         ret = RsCtxApiInit(rscb->hccpMode, rscb->protocol);
@@ -515,7 +515,7 @@ STATIC void RsDeinitRscbCfg(struct rs_cb *rscb)
     int ret;
 
 #ifdef CUSTOM_INTERFACE
-    if (RsIsUdmaSupported()) {
+    if (RsIsUdmaSupported() || RsIsRdmaSupported()) {
         RsDeInitNetAdapt(rscb);
         RsEschedDeinit(rscb->protocol);
         (void)RsCtxApiDeinit(rscb->hccpMode, rscb->protocol);
