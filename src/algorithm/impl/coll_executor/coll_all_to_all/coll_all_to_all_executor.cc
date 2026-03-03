@@ -50,7 +50,7 @@ HcclResult CollAlltoAllExecutor::Orchestrate(OpParam& param, AlgResourceResponse
         ret = KernelRun(param, execMem);
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollRunAlltoAllVFullMesh][Orchestrate]errNo[0x%016llx]executor run failed",
+        HCCL_ERROR("[CollAlltoAllExecutor][Orchestrate]errNo[0x%016llx]executor run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     // Enforce task launch at the end of Orchestrate
@@ -217,7 +217,7 @@ void CollAlltoAllExecutor::CalcIntraMeshAggregationSendInfo(const AlltoAllUserRa
                     myMeshAggregationSendRecvInfo[k].sendLength.size()) {
                     remoteOffset += myMeshAggregationSendRecvInfo[k].sendLength[j];
                 } else {
-                    HCCL_ERROR("[AlltoAllVStagedCalculator] invalid MeshAggregationSendRecvInfo size[%zu]",
+                    HCCL_ERROR("[CalcIntraMeshAggregationSendInfo] invalid MeshAggregationSendRecvInfo size[%zu]",
                         myMeshAggregationSendRecvInfo.size());
                     return;
                 }
@@ -404,7 +404,7 @@ bool CollAlltoAllExecutor::HasMassTasks(std::vector<SendRecvInfo> &allMeshAggreg
     const u64 maxTasksPerStep = 10;  // BCOPY中每次和远端通信最多消耗task数
     const u64 maxTasksBaseCost = 50; // BCOPY中除每步和远端通信外，最多消耗的task数
     u64 maxTasks = (maxSendTimes + maxRecvTimes) * maxTasksPerStep + maxTasksBaseCost;
-    HCCL_DEBUG("[AlltoAllV] bcopy maxSendTimes[%llu], maxRecvTimes[%llu], maxTasks[%llu], hasMassTask[%u]",
+    HCCL_DEBUG("[AlltoAll] bcopy maxSendTimes[%llu], maxRecvTimes[%llu], maxTasks[%llu], hasMassTask[%u]",
         maxSendTimes, maxRecvTimes, maxTasks, (maxTasks > massThreshold));
     return (maxTasks > massThreshold);
 }

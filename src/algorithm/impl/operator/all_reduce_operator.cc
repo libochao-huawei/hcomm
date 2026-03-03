@@ -172,6 +172,13 @@ HcclResult AllReduceOperator::SelectAlg(const std::string& tag, const OpParam& p
 HcclResult AllReduceOperator::SelectAlgforMix(const OpParam& param, std::string& algName)
 {
     (void) param;
+
+    // 混合组网场景不支持规约保序
+    if (IsNeedStrictMode(param)) {
+        HCCL_ERROR("[AllReduceOperator][SelectAlgforMix] not support DETERMINISTIC_STRICT mode.");
+        return HCCL_E_NOT_SUPPORT;
+    }
+
     if (gcdDeviceNumPerAggregation_ > 1) {
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
         HCCL_WARNING("[AllReduceOperator][SelectAlgforMix] only support NHR in AlgoLevel1 yet, "\
@@ -468,7 +475,7 @@ HcclResult AllReduceOperator::SelectAlgfor910B(const OpParam& param, std::string
     if (isOnlyAiv && !isAivMode) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");
         CHK_PRT_RET(!IsSupportAIVReduce(param.DataDes.dataType, param.reduceType), HCCL_ERROR("current data type[%s] or reduceType[%s] not supported, "\
-            "data type support range:[int8, int16, int32, uint8, uint16, uint32, float16, float32, bfloat16] reduce type support range:[sum, max, min]",
+            "data type support range:[int8, int16, int32, float16, float32, bfloat16] reduce type support range:[sum, max, min]",
             GetDataTypeEnumStr(param.DataDes.dataType).c_str(), GetReduceOpEnumStr(param.reduceType).c_str()), HCCL_E_NOT_SUPPORT);
 
         CHK_PRT_RET(!isMesh, HCCL_ERROR("current algoLevel0Mesh[%d] not supported", algType_.algoLevel0), HCCL_E_NOT_SUPPORT);
@@ -609,8 +616,21 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
                     && (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE)
                     && (!retryEnable_)
                     && !multiModuleDiffDeviceNumMode_;
+    
+    if (IsNeedStrictMode(param)) {
+        if (multiModuleDiffDeviceNumMode_ || multiSuperPodDiffDeviceNumMode_ || multiSuperPodDiffServerNumMode_ 
+            || param.reduceType == HCCL_REDUCE_PROD || param.DataDes.dataType == HCCL_DATA_TYPE_FP64
+            || GetExternalInputInterHccsDisable()) {
+            HCCL_ERROR("[AllReduceOperator][SelectAlgfor91093] not support DETERMINISTIC_STRICT mode.");
+            return HCCL_E_NOT_SUPPORT;
+        } else {
+            algName = "AllReduceOrderPreservedFor91093Executor";
+            HCCL_INFO("[SelectAlgfor91093] allreduce SelectAlgfor91093 algName [%s].", algName.c_str());
+            return HCCL_SUCCESS;
+        }
+    }
 
-    if (isSupportAivDeter){
+    if (isSupportAivDeter) {
         algName = "AllReduceMeshAivFor91093Executor";
         HCCL_INFO("[SelectAlgfor91093] allreduce SelectAlgfor91093 algName [%s].", algName.c_str());
         return HCCL_SUCCESS;
@@ -704,7 +724,7 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
     if (isOnlyAiv && !isAivMode && !isSupportAivDeter) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");
         CHK_PRT_RET(!IsSupportAIVReduce(param.DataDes.dataType, param.reduceType), HCCL_ERROR("current data type[%s] or reduceType[%s] not supported, "\
-            "data type support range:[int8, int16, int32, uint8, uint16, uint32, float16, float32, bfloat16] reduce type support range:[sum, max, min]",
+            "data type support range:[int8, int16, int32, float16, float32, bfloat16] reduce type support range:[sum, max, min]",
             GetDataTypeEnumStr(param.DataDes.dataType).c_str(), GetReduceOpEnumStr(param.reduceType).c_str()), HCCL_E_NOT_SUPPORT);
 
         CHK_PRT_RET(retryEnable_, HCCL_ERROR("retryEnable [%d] not supported", retryEnable_), HCCL_E_NOT_SUPPORT);

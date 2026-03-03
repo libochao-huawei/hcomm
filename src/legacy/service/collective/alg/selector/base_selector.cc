@@ -286,12 +286,14 @@ HcclResult BaseSelector::ExtractTopoDetails(TopoInfo &topoInfo) const
 HcclResult BaseSelector::CalcLevel0TopoShape(TopoInfo &topoInfo) const
 {
     u32 netLayer = 0;
+    u32 topoInstNum2 = 2;
+ 	u32 topoInstNum3 = 3;
     CHK_PRT_RET(topoInfo.topoInstDetailsOfLayer.size() <= netLayer,
-        HCCL_ERROR("[BaseSelector][CalcLevel0TopoShape] topoInstNumOfLayer size[%u] <= netLayer[%u]", netLayer),
+        HCCL_ERROR("[BaseSelector][CalcLevel0TopoShape] topoInstNumOfLayer size[%u] <= netLayer[%u]", topoInfo.topoInstDetailsOfLayer.size(), netLayer),
         HCCL_E_INTERNAL);
     TopoInstDetails &level0TopoInstDetails = topoInfo.topoInstDetailsOfLayer[netLayer];
     CHK_PRT_RET(topoInfo.netLayerDetails.localNetInsSizeOfLayer.size() <= netLayer,
-        HCCL_ERROR("[BaseSelector][CalcLevel0TopoShape] localNetInsSizeOfLayer size[%u] <= netLayer[%u]", netLayer),
+        HCCL_ERROR("[BaseSelector][CalcLevel0TopoShape] localNetInsSizeOfLayer size[%u] <= netLayer[%u]", topoInfo.netLayerDetails.localNetInsSizeOfLayer.size(), netLayer),
         HCCL_E_INTERNAL);
     u32 level0LocalRankSize = topoInfo.netLayerDetails.localNetInsSizeOfLayer[netLayer];
 
@@ -316,7 +318,7 @@ HcclResult BaseSelector::CalcLevel0TopoShape(TopoInfo &topoInfo) const
             HCCL_E_INTERNAL);
         topoInfo.level0Shape = Level0Shape::CLOS;
         return HCCL_SUCCESS;
-    } else if (topoInstNum == 2 && rankNumForTopoType[TopoType::CLOS].size() == 1 &&
+    } else if (topoInstNum == topoInstNum2 && rankNumForTopoType[TopoType::CLOS].size() == 1 &&
                rankNumForTopoType[TopoType::MESH_1D].size() == 1) {
         // MESH_1D_CLOS 拓扑校验
         CHK_PRT_RET(rankNumForTopoType[TopoType::CLOS][0] != level0LocalRankSize,
@@ -326,7 +328,7 @@ HcclResult BaseSelector::CalcLevel0TopoShape(TopoInfo &topoInfo) const
             HCCL_E_INTERNAL);
         topoInfo.level0Shape = Level0Shape::MESH_1D_CLOS;
         return HCCL_SUCCESS;
-    } else if (topoInstNum == 3 && rankNumForTopoType[TopoType::MESH_1D].size() == 2 &&
+    } else if (topoInstNum == topoInstNum3 && rankNumForTopoType[TopoType::MESH_1D].size() == topoInstNum2 &&
                rankNumForTopoType[TopoType::CLOS].size() == 1) {
         // MESH_2D 拓扑校验
         CHK_PRT_RET(rankNumForTopoType[TopoType::MESH_1D][0] * rankNumForTopoType[TopoType::MESH_1D][1] != level0LocalRankSize,
@@ -450,7 +452,7 @@ bool BaseSelector::Is2DieFullMesh() const
         }
         std::vector<NetInstance::Path> paths = rankGraph_->GetPaths(netLayer, myRank_, rankId);
         CHK_PRT_RET(paths.size() == 0 || paths[0].links.size() == 0,
-            HCCL_INFO("[BaseSelector][Is2DieFullMesh], Can not find path from Local[%u] to Rmt[%u], in netLayer %u. "
+            HCCL_INFO("[BaseSelector][Is2DieFullMesh], Can not find path from Local[%d] to Rmt[%u], in netLayer %u. "
                       "Topo is not mesh",
                 myRank_,
                 rankId,
@@ -461,13 +463,13 @@ bool BaseSelector::Is2DieFullMesh() const
         u32 dieID = connInterface->GetLocalDieId();
         CHK_PRT_RET(dieID >= dieNum,
             HCCL_WARNING(
-                "[BaseSelector][Is2DieFullMesh], Link from Local[%u] to Rmt[%u] die id[%u] is out of range[%u].",
+                "[BaseSelector][Is2DieFullMesh], Link from Local[%d] to Rmt[%u] die id[%u] is out of range[%u].",
                 myRank_,
                 rankId,
                 dieID,
                 dieNum), false);
         dieLinkCounter[dieID]++;
-        HCCL_INFO("[BaseSelector][Is2DieFullMesh], Link from Local[%u] to Rmt[%u] use die[%u], current counter[%u]",
+        HCCL_INFO("[BaseSelector][Is2DieFullMesh], Link from Local[%d] to Rmt[%u] use die[%u], current counter[%u]",
             myRank_, rankId, dieID, dieLinkCounter[dieID]);
     }
     for (u32 i = 0; i < dieNum; i++) {

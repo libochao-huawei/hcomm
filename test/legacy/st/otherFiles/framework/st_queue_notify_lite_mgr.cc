@@ -53,7 +53,7 @@ TEST_F(QueueNotifyLiteMgrTest, test_parse_packed_data)
             .will(returnValue((void*)(0)));
     MOCKER(HrtGetDevicePhyIdByIndex)
             .stubs()
-            .will(returnValue(1));
+            .will(returnValue(static_cast<DevId>(1)));
     MOCKER(HrtGetNotifyID)
             .stubs()
             .will(returnValue(1))

@@ -306,7 +306,7 @@ HcclResult CommConfig::SetConfigDeterministic(const CommConfigHandle &config)
 
 HcclResult CommConfig::SetConfigCommName(const CommConfigHandle &config)
 {
-    if (config.commName != nullptr && config.commName[0] != '\0') {
+    if (config.commName[0] != '\0') {
         auto commNameLength = strlen(config.commName);
         commNameLength = commNameLength < COMM_NAME_MAX_LENGTH ? commNameLength : COMM_NAME_MAX_LENGTH;
         commName_ = std::string(config.commName, commNameLength);
@@ -316,21 +316,19 @@ HcclResult CommConfig::SetConfigCommName(const CommConfigHandle &config)
 
 HcclResult CommConfig::SetConfigUdi(const CommConfigHandle &config)
 {
-    if (config.udi != nullptr) {
-        if (config.udi[0] == '\0') {
-            udi_ = "Unspecified";
-            return HCCL_SUCCESS;
-        }
-        auto udiLength = strlen(config.udi);
-        udiLength = udiLength < COMM_NAME_MAX_LENGTH ? udiLength : COMM_NAME_MAX_LENGTH;
-        udi_ = std::string(config.udi, udiLength);
+    if (config.udi[0] == '\0') {
+        udi_ = "Unspecified";
+        return HCCL_SUCCESS;
     }
+    auto udiLength = strlen(config.udi);
+    udiLength = udiLength < COMM_NAME_MAX_LENGTH ? udiLength : COMM_NAME_MAX_LENGTH;
+    udi_ = std::string(config.udi, udiLength);
     return HCCL_SUCCESS;
 }
 
 HcclResult CommConfig::SetConfigBufferName(const CommConfigHandle &config)
 {
-    if (config.bufferName != nullptr && config.bufferName[0] != '\0') {
+    if (config.bufferName[0] != '\0') {
         auto bufferNameLength = strlen(config.bufferName);
         bufferNameLength = bufferNameLength < BUFFER_NAME_MAX_LENGTH ? bufferNameLength : BUFFER_NAME_MAX_LENGTH;
         bufferName_ = std::string(config.bufferName, bufferNameLength);
@@ -352,7 +350,7 @@ HcclResult CommConfig::SetConfigOpExpansionMode(const CommConfigHandle &config)
             // 目前只有A3和300I支持Aicpu展开
             DevType deviceType;
             CHK_RET(hrtGetDeviceType(deviceType));
-            if (deviceType == DevType::DEV_TYPE_910_93) {
+            if (deviceType == DevType::DEV_TYPE_910_93 || deviceType == DevType::DEV_TYPE_910B) {
                 aicpuUnfold_ = true;
                 aivMode_ = false;
                 HCCL_INFO("CommConfig is set to 2(aicpuUnfold_), aicpuUnfold_ is [%d] and aivMode_ is [%d].", aicpuUnfold_, aivMode_);
@@ -420,7 +418,7 @@ HcclResult CommConfig::SetConfigExecTimeout(const CommConfigHandle &config)
  
 HcclResult CommConfig::SetConfigHcclAlgo(const CommConfigHandle &config)
 {
-    if (config.hcclAlgo == nullptr || config.hcclAlgo[0] == '\0') {
+    if (config.hcclAlgo[0] == '\0') {
         return HCCL_SUCCESS;
     }
  
@@ -454,7 +452,7 @@ HcclResult CommConfig::SetConfigHcclAlgo(const CommConfigHandle &config)
  
 HcclResult CommConfig::SetConfigHcclRetryEnable(const CommConfigHandle &config)
 {
-    if (config.hcclRetryEnable == nullptr || config.hcclRetryEnable[0] == '\0') {
+    if (config.hcclRetryEnable[0] == '\0') {
         return HCCL_SUCCESS;
     }
     auto retryEnableLength = strlen(config.hcclRetryEnable);
@@ -560,7 +558,7 @@ HcclResult CommConfig::SetConfigRetryEnable(const std::vector<std::string> &retr
  
 HcclResult CommConfig::SetConfigHcclRetryParams(const CommConfigHandle &config)
 {
-    if (config.hcclRetryParams == nullptr || config.hcclRetryParams[0] == '\0') {
+    if (config.hcclRetryParams[0] == '\0') {
         return HCCL_SUCCESS;
     }
     auto retryParamsLength = strlen(config.hcclRetryParams);

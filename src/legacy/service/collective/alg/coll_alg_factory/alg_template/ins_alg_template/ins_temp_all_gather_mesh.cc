@@ -73,28 +73,22 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
 
     // queue arrangement
     std::vector<InsQuePtr> mainInsQues;
-    for (u32 queIdx = 0; queIdx < majorQueNum_ + 1; queIdx++) {
+    for (u32 queIdx = 0; queIdx < majorQueNum_; queIdx++) {
         mainInsQues.push_back(tempInsQues[queIdx * queNumPerNeighbor_]);
     }
 
-    // 主流通知 copy流开始工作
-    if (tempInsQues.size() > 1) {
-        std::vector<InsQuePtr> preSyncQues; // 改名
-        preSyncQues.push_back(tempInsQues[0]);
-        preSyncQues.push_back(tempInsQues[tempInsQues.size() - 1]);
-        CHK_RET(PreSyncInterQueues(preSyncQues));
-    }
-
-    // Local Copy from Input to Output for OPBASE
-    CHK_RET(LocalDataCopy(mainInsQues));
-    if (tempRankSize_ == 1) {
-        return HcclResult::HCCL_SUCCESS;
-    }
+    std::vector<InsQuePtr> localInsQues;
+    localInsQues.push_back(tempInsQues[0]);
+    localInsQues.push_back(tempInsQues[tempInsQues.size() - 1]);
 
     // semaphore sync
-    if (majorQueNum_ > 1) { // more than one rank
-        CHK_RET(PreSyncInterQueues(mainInsQues));
-    }
+    CHK_RET(PreSyncInterQueues(localInsQues));
+
+    // Local Copy from Input to Output for OPBASE
+    CHK_RET(LocalDataCopy(tempInsQues));
+
+    // semaphore sync
+    CHK_RET(PreSyncInterQueues(mainInsQues));
 
     // locate myRank in tempVTopo -> algRank
     u32 myAlgRank;
@@ -107,18 +101,7 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
         HcclResult::HCCL_E_INTERNAL);
 
     // semaphore sync
-    if (majorQueNum_ > 1) { // more than one rank
-        CHK_RET(PostSyncInterQueues(mainInsQues));
-    }
-
-    // 同步第0条流和最后一条流 (LocalCopy所在的流)
-    // 确保 LocalDataCopy 完成后，整体任务才算结束
-    if (tempInsQues.size() > 1) {
-        std::vector<InsQuePtr> postSyncQues;
-        postSyncQues.push_back(tempInsQues[0]);
-        postSyncQues.push_back(tempInsQues[tempInsQues.size() - 1]);
-        CHK_RET(PostSyncInterQueues(postSyncQues));
-    }
+    CHK_RET(PostSyncInterQueues(tempInsQues));
 
     return HcclResult::HCCL_SUCCESS;
 }
@@ -208,7 +191,11 @@ HcclResult InsTempAllGatherMesh1D::RunMesh(const u32 myAlgRank, const std::vecto
             
             u32 connectedAlgRank = 0;
             CHK_RET(GetAlgRank(connectedRank, tempVTopo_[0], connectedAlgRank));
-
+            auto it = tempLinks_.find(connectedRank);
+            if (it == tempLinks_.end()) {
+                HCCL_ERROR("[InsTempAllGatherMesh1D] connectedRank does not exist");
+                return HcclResult::HCCL_E_PARA;
+            }
             CHK_PRT_RET(queIdx >= tempInsQues.size() || tempLinks_.at(connectedRank).empty(),
                 HCCL_ERROR("[InsTempAllGatherMesh1D] queIdx=%u, tempInsQues.size=%u, connectedRank=%d, tempLinks_.size=%u",
                            queIdx, tempInsQues.size(), connectedRank, tempLinks_.size()),

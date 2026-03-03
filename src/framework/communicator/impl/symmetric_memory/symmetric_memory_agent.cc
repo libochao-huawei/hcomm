@@ -210,7 +210,7 @@ void SymmetricMemoryAgent::DealWithRequest()
             if (!requestQueue_.empty()) {
                 Packet pkt = requestQueue_.front();
                 std::unique_lock<std::mutex> sockLock(socketMutex_);
-                HcclResult ret = mapRankIdconnectedSockets_[rightRank_]->Send((u8*)&pkt, PACKET_TOTAL_LEN);
+                HcclResult ret = mapRankIdconnectedSockets_[rightRank_]->Send(static_cast<void*>(&pkt), PACKET_TOTAL_LEN);
                 if (ret == HCCL_SUCCESS) {
                     requestQueue_.pop();
                 }else {

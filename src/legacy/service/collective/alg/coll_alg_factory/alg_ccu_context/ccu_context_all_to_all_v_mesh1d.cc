@@ -81,8 +81,8 @@ void CcuContextAllToAllVMesh1D::CreateVariables()
             token_.push_back(CreateVariable());
         }
         else { // 非本地，使用远端Variable
-            CHK_PRT_RET(transports[transportId] == nullptr,
-                HCCL_ERROR("[CcuContextAllToAllVMesh1D] Algorithm transport ptr is null"),);
+            CHK_PRT_RET(transports[transportId] == nullptr || transportId >= transports.size(),
+                HCCL_ERROR("[CcuContextAllToAllVMesh1D] Algorithm transport ptr is null or transportIdx is out of bounds"),);
             output_.push_back(CreateVariable((*transports[transportId]), OUTPUT_XN_ID)); // 与远端交换本卡的接收地址
             token_.push_back(CreateVariable((*transports[transportId]), TOKEN_XN_ID));
             transportId++;
