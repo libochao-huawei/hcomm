@@ -85,9 +85,7 @@ typedef struct tagRtDevBinary {
 * aclrtMallocWithCfg —— rtsMalloc
 */
 using aclrtMemType_t = int;
-extern rtError_t rtIpcCloseMemory(const void *ptr);
-extern rtError_t rtIpcDestroyMemoryName(const char_t *name);
-extern rtError_t rtMemPrefetchToDevice(void *devPtr, uint64_t len, int32_t devId);
+__attribute__((weak)) ACL_FUNC_VISIBILITY aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t flags);
 // DPU
 #ifndef rtSetXpuDevice
 typedef enum tagRtXpuDevType {
