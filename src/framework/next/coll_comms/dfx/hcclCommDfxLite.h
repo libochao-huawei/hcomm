@@ -42,6 +42,7 @@ public:
 private:
     Hccl::MirrorTaskManager* mirrorTaskManager_;  // 使用原始指针，不管理生命周期
     std::unique_ptr<HcclCommProfilingLite> profilingImpl_;
+    std::unordered_map<CollComm,std::unordered_map<u64, u32 remoteRankId> > channelRemoteRankId_;
 };
 
 }
