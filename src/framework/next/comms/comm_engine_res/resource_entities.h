@@ -16,11 +16,6 @@
 #include <string>
 
 namespace hccl {
-typedef enum {
-    THREAD_TYPE_INVALID = -1,
-    THREAD_TYPE_CPU = 0,
-    THREAD_TYPE_TS = 1,
-} ThreadType;
 
 typedef struct {
     NotifyType type;
