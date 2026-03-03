@@ -26,7 +26,7 @@
 #include "comm_configer.h"
 #include "endpoint_map.h"
 
-#include "hcomm_res_mgr.h"
+#include "../hcomm_res_mgr.h"
 
 #include "param_check_pub.h"
 
