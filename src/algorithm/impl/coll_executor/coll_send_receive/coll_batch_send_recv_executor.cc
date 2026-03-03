@@ -93,7 +93,7 @@ HcclResult CollBatchSendRecvExecutor::GetPairWiseList(HcclSendRecvItem *sendRecv
         1.sendDeque元素顺序是:先放remoteRank号小于等于root rank的第一个任务，依次减小(循环索引)直至放完
         2.recvDeque元素顺序是:先放remoteRank号大于等于root rank的第一个任务，依次增大(循环索引)直至放完
     */
-    auto sendCompare = [this](HcclSendRecvItem* a, HcclSendRecvItem* b) {
+    auto sendCompare = [this](const HcclSendRecvItem* a, const HcclSendRecvItem* b) {
         u32 aFlag = (a->remoteRank <= topoAttr_.userRank) ? (a->remoteRank + topoAttr_.userRankSize) : a->remoteRank;
         u32 bFlag = (b->remoteRank <= topoAttr_.userRank) ? (b->remoteRank + topoAttr_.userRankSize) : b->remoteRank;
         return aFlag > bFlag;
