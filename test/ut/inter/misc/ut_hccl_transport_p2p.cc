@@ -31,6 +31,8 @@
 #include "remote_notify.h"
 
 #include "adapter_rts.h"
+#include "transport.h"
+#include "mem_name_repository.h"
 
 
 using namespace std;
@@ -600,4 +602,42 @@ TEST_F(LinkPcieTest, ut_SpecifyLink)
     MOCKER(aclrtIpcMemSetAttr).stubs().with(any()).will(returnValue(1));
     ret = hrtIpcSetMemoryAttr(&name, 0, 1);
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
+}
+
+TEST_F(LinkPcieTest, SetDeviceUnavailable_SetUnavailable)
+{
+    bool unavailable = true;
+    MemNameRepository::GetInstance(0)->SetDeviceUnavailable(unavailable);
+    EXPECT_TRUE(MemNameRepository::GetInstance(0)->unavailable());
+}
+
+TEST_F(LinkPcieTest, CloseIpcMem_NullName)
+{
+    const u8* name = nullptr;
+    MemNameRepository::GetInstance(0)->CloseIpcMem(name);
+}
+
+TEST_F(LinkPcieTest, CloseIpcMem_Unavailable)
+{
+    const u8* name[HCCL_IPC_MEM_NAME_LEN] = {0};
+    MemNameRepository::GetInstance(0)->SetDeviceUnavailable(true);
+    MemNameRepository::GetInstance(0)->CloseIpcMem(name);
+    EXPECT_FALSE(MemNameRepository::GetInstance(0)->unavailable());
+}
+
+TEST_F(LinkPcieTest, DestoryIpcMem_Nullptr)
+{
+    void* ptr = nullptr;
+    MemNameRepository::GetInstance(0)->DestoryIpcMem(ptr, 0, false);
+}
+
+TEST_F(LinkPcieTest, DestoryIpcMem_Unavailable)
+{
+    void* ptr = reinterpret_cast<void*>(0x1234);
+    u64 size = 1024;
+    bool isSioToHccs = false;
+
+    MemNameRepository::GetInstance(0)->SetDeviceUnavailable(true);
+    MemNameRepository::GetInstance(0)->DestoryIpcMem(ptr, size, isSioToHccs);
+    EXPECT_FALSE(MemNameRepository::GetInstance(0)->unavailable());
 }
