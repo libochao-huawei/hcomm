@@ -155,6 +155,7 @@ private:
             // 情况4：addr_ > prevIt->first.addr_的子集情况；
             if (prevIt->first.IsSuperset(key)) {
                 regKey = prevIt->first;
+                return std::make_pair(prevIt, false);
             }
             // 情况5：addr_ > prevIt->first.addr_
             // 情况6：addr_ == prevIt->first.addr_，size_ > prevIt->first.size
