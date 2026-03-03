@@ -65,7 +65,6 @@ void HccpPeerManager::DeInit(s32 deviceLogicId)
         instances_.erase(deviceLogicId);
         HCCL_INFO("[HccpPeerManager::%s] devLogicId [%d] ra deinit success.", __func__, deviceLogicId);
     }
-
 }
 
 void HccpPeerManager::DeInitAll()
