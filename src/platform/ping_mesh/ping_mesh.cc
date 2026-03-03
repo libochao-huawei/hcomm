@@ -537,7 +537,6 @@ HcclResult PingMesh::RpingResultInfoInit(PingTargetResult *resultInfo, std::map<
             resultInfo[i].remoteInfo.qpInfo.rdma.gid = rdmainfo->rdma.gid;
             resultInfo[i].remoteInfo.qpInfo.rdma.qpn = rdmainfo->rdma.qpn;
             resultInfo[i].remoteInfo.qpInfo.rdma.qkey = rdmainfo->rdma.qkey;
-
         }
         const char *socNamePtr = aclrtGetSocName();
         CHK_PTR_NULL(socNamePtr);
@@ -1024,7 +1023,6 @@ HcclResult PingMesh::HccnRpingAddTarget(u32 deviceId, u32 targetNum, RpingInput 
     PingTargetInfo target[1] = { {0} }; // hccp侧只能一个一个处理，因此数组大小固定为1
     
     ret = HccnTargetAttrInter(targetNum, input, config, target);
-
     if ((ret == HCCL_SUCCESS) && (rpingState_ == RpingState::INITED)) { // 从初始化完成的状态切换到ready to start的状态
         rpingState_ = RpingState::READY;
     }
@@ -1094,7 +1092,6 @@ HcclResult PingMesh::HccnRpingRemoveTarget(u32 deviceId, u32 targetNum, RpingInp
     PingTargetCommInfo *target = new (std::nothrow) PingTargetCommInfo[targetNum];
     std::shared_ptr<HcclSocket> socket = nullptr;
     ret = HccnTarRemoveAttrInter(targetNum, input, target, socket);
-    
     if (ret != HCCL_SUCCESS) {
         delete[] target;
         HCCL_ERROR("[HCCN][HccnRpingRemoveTarget]Target info is not correct, ret[%d].", ret);

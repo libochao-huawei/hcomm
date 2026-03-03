@@ -59,7 +59,8 @@ HcclResult AicpuZeroCopyExchanger::ExchangeAddress(const std::string &tag, void 
     auto timeVal = DURATION_US(endut - startut).count();
     if (taskMonitorInterval_ != 0 && timeVal >= taskMonitorInterval_ * 1000) {
         std::string endInfo;
-        endInfo.reserve(100);
+        const int kLogMessageBufferSize = 100;
+        endInfo.reserve(kLogMessageBufferSize);
         endInfo = "task time: " + std::to_string(timeVal) + " us," +
             "taskMonitor" + std::to_string(taskMonitorInterval_ * 1000) + " us";
         HCCL_RUN_INFO("[ExchangeAddress] %s, %s", tag.c_str(), endInfo.c_str());
