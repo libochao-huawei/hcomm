@@ -319,10 +319,9 @@ TEST_F(HcomTest, HcomGetWorkspaceMemSizeV2_func_err)
     u64 memSize = 0;
     HcclResult ret = HcomGetWorkspaceMemSizeV2(opType, count, dataType, group, memSize);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
- 
-    char group1[64];
+
     opType = "null";
-    ret = HcomGetWorkspaceMemSizeV2(opType, count, dataType, group1, memSize);
+    ret = HcomGetWorkspaceMemSizeV2(opType, count, dataType, group, memSize);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
  
