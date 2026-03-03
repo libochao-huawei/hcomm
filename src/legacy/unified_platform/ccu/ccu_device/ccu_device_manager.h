@@ -252,6 +252,8 @@ public:
 
     static HcclResult GetCcuResourceSpaceBufInfo(const int32_t deviceLogicId, const uint8_t dieId,
         uint64_t &addr, uint64_t &size);
+    static HcclResult GetCcuResourceSpaceTokenInfo(const int32_t deviceLogicId, const uint8_t dieId,
+        uint64_t &tokenId, uint64_t &tokenValue);
     static HcclResult GetCcuResourceSpaceTokenInfoForLocal(const int32_t deviceLogicId, const uint8_t dieId,
         uint64_t &tokenId, uint64_t &tokenValue);
     
