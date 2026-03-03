@@ -40,8 +40,13 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
 
 HcclResult UbMemTransport::FillTagVec()
 {
-    localUserMemTag_.reserve(commonLocRes.bufferVec.size());
-    HCCL_INFO("bufferNum: %u", static_cast<uint32_t>(commonLocRes.bufferVec.size()));
+    uint32_t bufferNum = commonLocRes.bufferVec.size();
+    if (bufferNum == 0) {
+        HCCL_ERROR("[UbMemTransport][FillTagVec] bufferNum is 0.");
+        return HCCL_E_PARA;
+    }
+    localUserMemTag_.reserve(bufferNum);
+    HCCL_INFO("bufferNum: %u", bufferNum);
     uint32_t index = 0;
     for (auto &localRmaBuffer : commonLocRes.bufferVec) {
         std::array<char, HCCL_RES_TAG_MAX_LEN> tag{};
@@ -621,12 +626,14 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
         }
     }
 
-    remoteUserMemTag_.resize(rmtNum);
-    for (auto& tag : remoteUserMemTag_) {
-        for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; ++i) {
-            u8 byte;
-            binaryStream >> byte;
-            tag[i] = static_cast<char>(byte);
+    if (type == UbRmtBufType::BUFFER) {
+        remoteUserMemTag_.resize(rmtNum);
+        for (auto& tag : remoteUserMemTag_) {
+            for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; ++i) {
+                u8 byte;
+                binaryStream >> byte;
+                tag[i] = static_cast<char>(byte);
+            }
         }
     }
 }
