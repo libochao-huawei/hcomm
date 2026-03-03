@@ -13,12 +13,13 @@
 #include <memory>
 #include "mirror_task_manager.h"
 #include "profiling_reporter.h"
+#include "types.h"
 
 namespace hccl {
 class HcclCommProfiling {
 public:
     // 构造函数
-    explicit HcclCommProfiling(Hccl::MirrorTaskManager* mirrorTaskManager);
+    explicit HcclCommProfiling(DevId deviceId);
     
     // 上报所有任务
     void ReportAllTasks(bool cachedReq = false);

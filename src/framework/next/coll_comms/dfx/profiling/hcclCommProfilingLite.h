@@ -11,6 +11,7 @@
 #define HCCL_COMM_PROFILING_LITE_H
 #include "mirror_task_manager.h"
 #include "profiling_reporter_lite.h"
+#include "types.h"
 
 namespace hccl {
 typedef struct 
@@ -21,7 +22,7 @@ typedef struct
 class HcclCommProfilingLite {
 public:
     // 构造函数
-    explicit HcclCommProfilingLite(Hccl::MirrorTaskManager* mirrorTaskManager);
+    explicit HcclCommProfilingLite(DevId deviceId);
     
     // 上报所有任务
     void ReportAllTasks();

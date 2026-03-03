@@ -8,8 +8,14 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "hcclCommProfiling.h"
-
+#include "profiling_reporter.h"
 namespace hccl {
+    
+explicit HcclCommProfiling(DevId deviceId){
+    mirrorTaskManager_ = std::make_unique<MirrorTaskManager>(deviceId,&GlobalMirrorTasks::Instance(),false);
+    profilingReporter_ = std::make_unique<ProfilingReporter>(mirrorTaskManager_, &ProfilingHandler::GetInstance());
+}
+
 // HcclCommProfiling任务上报
 void HcclCommProfiling::ReportAllTasks(bool cachedReq) {
     if (profilingReporter_) {

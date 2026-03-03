@@ -8,11 +8,15 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "hcclCommProfilingLite.h"
+#include "profiling_reporter_lite.h"
+#include "mirror_task_manager.h"
 
 namespace hccl {
-HcclCommProfilingLite::HcclCommProfilingLite(Hccl::MirrorTaskManager* mirrorTaskManager) {
-    mirrorTaskManager_ = mirrorTaskManager;
-    //profilingReporterLite_ = std::make_shared<ProfilingReporterLite>();todo:make_shared和uniqe不能转化，且ProfilingReporterLite没有入参
+HcclCommProfilingLite::HcclCommProfilingLite(DevID deviceId) {
+    // 获取deviceID
+    mirrorTaskManager_ = std::make_unique<MirrorTaskManager>(deviceId,&GlobalMirrorTasks::Instance(),false);
+
+    profilingReporterLite_ = std::make_unique<ProfilingReporterLite>(mirrorTaskManager_, &ProfilingHandlerLite::GetInstance());
 }
 
 // HcclCommProfilingLite任务上报
