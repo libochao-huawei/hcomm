@@ -42,9 +42,9 @@ public:
     HcclResult TaskRegister(std::string taskType, CallbackTemplate callback);
     HcclResult TaskUnRegister(std::string taskType);
 private:
-    HcclResult WriteFlag(uint8_t *flagPtr, uint8_t newFlag);
-    HcclResult ReadFlag(uint8_t *srcFlagPtr, uint8_t &flag);
-    HcclResult ReadTaskType(uint8_t *srcTaskTypePtr, std::string &taskTypeStr);
+    HcclResult WriteFlag(uint8_t *flagPtr, uint8_t newFlag) const;
+    HcclResult ReadFlag(uint8_t *srcFlagPtr, uint8_t &flag) const;
+    HcclResult ReadTaskType(uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const;
     HcclResult ExecuteTask(uint8_t *srcPtr, std::string taskTypeStr);
     HcclResult SynchronizeControlInfo();
 private:
