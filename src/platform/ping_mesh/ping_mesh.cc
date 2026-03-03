@@ -892,7 +892,8 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
     // 绑定信息
     pingHandle_ = pingHandle;
     rpingState_ = RpingState::INITED;
-    ipAddr_ = &ipAddr;
+    ipAddr_ = ipAddr;
+    ipAddrValid_ = true;
     isUsePayload_ = bufferSize == 0 ? false : true;
 
     return HCCL_SUCCESS;
@@ -1251,7 +1252,7 @@ HcclResult PingMesh::HccnRpingRefillPayloadHead(u8 *originalHead, u32 payloadNum
         HcclInAddr srcIpBinary;
         HcclInAddr dstIpBinary;
         // 报文来自对端，因此srcIp和dstIp需要调换过来
-        if (ipAddr_->GetFamily() == AF_INET) {
+        if (ipAddr_.GetFamily() == AF_INET) {
             srcIpBinary.addr.s_addr = ipHeadTmp.ipv4.dstIp;
             dstIpBinary.addr.s_addr = ipHeadTmp.ipv4.srcIp;
         } else {
@@ -1260,13 +1261,13 @@ HcclResult PingMesh::HccnRpingRefillPayloadHead(u8 *originalHead, u32 payloadNum
             srcIpBinary = *dstIpBinary6;
             dstIpBinary = *srcIpBinary6;
         }
-        HcclIpAddress srcIp = HcclIpAddress(ipAddr_->GetFamily(), srcIpBinary);
+        HcclIpAddress srcIp = HcclIpAddress(ipAddr_.GetFamily(), srcIpBinary);
         u32 ipAddrStrLen = std::string(srcIp.GetReadableIP()).size();
         memRet = memcpy_s(head->srcIp, IP_ADDRESS_BUFFER_LEN, srcIp.GetReadableIP(), ipAddrStrLen);
         CHK_PRT_RET(memRet != EOK,
             HCCL_ERROR("[HCCN][HccnRpingRefillPayloadHead]Memcpy ret %d, dst:%p, dstMax:%u, src:%p, length:%u",
             memRet, head->srcIp, IP_ADDRESS_BUFFER_LEN, srcIp.GetReadableIP(), ipAddrStrLen), HCCL_E_MEMORY);
-        HcclIpAddress dstIp = HcclIpAddress(ipAddr_->GetFamily(), dstIpBinary);
+        HcclIpAddress dstIp = HcclIpAddress(ipAddr_.GetFamily(), dstIpBinary);
         ipAddrStrLen = std::string(dstIp.GetReadableIP()).size();
         memRet = memcpy_s(head->dstIp, IP_ADDRESS_BUFFER_LEN, dstIp.GetReadableIP(), ipAddrStrLen);
         CHK_PRT_RET(memRet != EOK,
