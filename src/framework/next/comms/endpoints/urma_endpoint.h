@@ -46,6 +46,7 @@ public:
     HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
 
 private:
+    HcclResult HalMemUbSegment(uintptr_t addr, u64 size, bool flag);
     std::unique_ptr<CcuChannelCtxPool> ccuChannelCtxPool_{nullptr};
 };
 }
