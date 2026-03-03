@@ -250,6 +250,7 @@ STATIC int RsUbGetDevAttr(struct RsUbDevCb *devCb, struct DevBaseAttr *devAttr, 
 {
     urma_device_attr_t attr = {0};
     int ret;
+    int i;
 
     ret = RsUrmaQueryDevice(devCb->urmaDev, &attr);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_query_device failed ret:%d", ret), -EOPENSRC);
@@ -260,6 +261,14 @@ STATIC int RsUbGetDevAttr(struct RsUbDevCb *devCb, struct DevBaseAttr *devAttr, 
     devAttr->rqMaxSge = attr.dev_cap.max_jfr_sge;
     devAttr->ub.maxJfsInlineLen = attr.dev_cap.max_jfs_inline_len;
     devAttr->ub.maxJfsRsge = attr.dev_cap.max_jfs_rsge;
+    devAttr->ub.rmTpCap.value = attr.dev_cap.rm_tp_cap.value;
+    devAttr->ub.rcTpCap.value = attr.dev_cap.rc_tp_cap.value;
+    devAttr->ub.umTpCap.value = attr.dev_cap.um_tp_cap.value;
+    devAttr->ub.tpFeat.value = attr.dev_cap.tp_feature.value;
+    for (i = 0; i < MAX_PRIORITY_CNT && i < URMA_MAX_PRIORITY_CNT; i++) {
+        devAttr->ub.priorityInfo[i].SL = attr.dev_cap.priority_info[i].SL;
+        devAttr->ub.priorityInfo[i].tpType.value = attr.dev_cap.priority_info[i].tp_type.value;
+    }
     ret = RsUbGetUeInfo(devCb->urmaCtx, devAttr);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_ub_get_ue_info failed ret:%d", ret), -EOPENSRC);
 
