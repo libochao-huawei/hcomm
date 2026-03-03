@@ -232,6 +232,17 @@ string GetOpDataInfo(const TaskInfo& taskInfo)
     return StringFormat("deviceId[%u], %s", localDeviceId, taskInfo.GetOpInfo().c_str());
 }
 
+void PrintEid(std::shared_ptr<TaskInfo> taskInfo) {
+    HCCL_INFO("PrintEid start.");
+    if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
+        HCCL_ERROR("[PrintEid] Error UB link info: localEid[%s], remoteEid[%s]. ", taskInfo->taskParam_.taskPara.Reduce.locEid.Describe().c_str(),
+            taskInfo->taskParam_.taskPara.Reduce.rmtEid.Describe().c_str());
+    } else if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY) {
+        HCCL_ERROR("[PrintEid] Error UB link info: localEid[%s], remoteEid[%s]. ", taskInfo->taskParam_.taskPara.DMA.locEid.Describe().c_str(),
+            taskInfo->taskParam_.taskPara.DMA.rmtEid.Describe().c_str());
+    }
+}
+
 void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicCqReport_t* exceptionInfo)
 {
     if (exceptionInfo == nullptr) {
@@ -275,12 +286,20 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
     if (curTask->taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
         PrintTaskContextInfo(exceptionInfo->sqId, sqeId);
     }
+    if (curTask->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY || curTask->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
+        || curTask->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE || curTask->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE) {
+        HCCL_ERROR("[TaskExceptionHandlerLite] ubCqeStatus[%u]", (u32)(exceptionInfo->errorCode & 0xFF));
+    }
+    PrintEid(curTask);
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, base information is %s.", curTask->GetBaseInfo().c_str());
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, para information is %s.", curTask->GetParaInfo().c_str());
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(*curTask).c_str());
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, opData information is %s.", GetOpDataInfo(*curTask).c_str());
 }
+
+        errMsgInfo.locEid = taskInfo->taskParam_.taskPara.Reduce.locEid;
+        errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.Reduce.rmtEid;
 
 string TaskExceptionHandlerLite::GetGroupRankInfo(const TaskInfo& taskInfo)
 {

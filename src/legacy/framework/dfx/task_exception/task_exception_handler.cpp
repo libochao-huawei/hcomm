@@ -121,9 +121,12 @@ void PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
 
     uint16_t isAuxInfoExisted{false};
     for (u32 i = 0; i < auxInfo.auxInfoNum; i++) {
-        if (auxInfo.auxInfoValues[i]) { // 非零进行打印
+        if (auxInfo.auxInfoValues[i]) { // 非零进行ERROR打印
             isAuxInfoExisted = true;
             HCCL_ERROR("devLogicId[%d], cqe_aux_info_type[%u], cqe_aux_info_value[0x%x]",
+                devLogicId, auxInfo.auxInfoTypes[i], auxInfo.auxInfoValues[i]);
+        } else {
+            HCCL_INFO("devLogicId[%d], cqe_aux_info_type[%u], cqe_aux_info_value[0x%x]",
                 devLogicId, auxInfo.auxInfoTypes[i], auxInfo.auxInfoValues[i]);
         }
     }
@@ -745,7 +748,7 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
             // 打印UB DFX寄存器信息
             if (errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
                 || errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE || errorMessage.taskType == TaskParamType::TASK_UB_REDUCE_INLINE) {
-                HCCL_ERROR("errorMessage ubCqeStatus[%u]. ", (u32)errorMessage.ubCqeStatus);
+                HCCL_ERROR("errorMessage ubCqeStatus[%u], localEid[%s], remoteEid[%s]. ", (u32)errorMessage.ubCqeStatus, errorMessage.locEid.Describe().c_str(), errorMessage.rmtEid.Describe().c_str());
                 auto reverseAddr = IpAddress(errorMessage.locEid);
                 auto addr = IpAddress(reverseAddr.GetReverseEid());
                 u32 devPhyId = HrtGetDevicePhyIdByIndex(exceptionInfo->deviceid);
