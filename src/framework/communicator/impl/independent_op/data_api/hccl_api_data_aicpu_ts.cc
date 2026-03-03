@@ -42,13 +42,22 @@ bool IsSupportReduce(HcommDataType dataType, HcommReduceOp op)
 
 int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, thread, dst, src, len);
+    auto *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    CHK_PTR_NULL(threadEntityPtr);
+    HCCL_INFO("[%s] START. thread[0x%llx][%s], dst[0x%llx], src[0x%llx], len[%llu].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), dst, src, len);
+    CHK_PRT_RET((threadEntityPtr->engine != COMM_ENGINE_AICPU && threadEntityPtr->engine != COMM_ENGINE_AICPU_TS),
+        HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->engine, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(threadEntityPtr->type != THREAD_TYPE_TS,
+        HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->type, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    AddThread(threadEntityPtr->threadObjAddr);
 
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
     CHK_PTR_NULL(threadPtr);
 
     HcclResult ret = HCCL_SUCCESS;
@@ -57,11 +66,13 @@ int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, 
     } else {
         HcclBuf srcBuf{const_cast<void *>(src), len, nullptr};
         HcclBuf dstBuf{dst, len, nullptr};
-        Stream *stream = GetStream(thread);
+        Stream *stream = GetStream(threadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(stream);
         ret = HcclLocalCopy(stream, &dstBuf, &srcBuf);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, thread, dst, src, len), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx][%s], dst[0x%llx], src[0x%llx], len[%llu].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), dst, src, len), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -69,13 +80,22 @@ int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, 
 int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t count,
     HcommDataType dataType, HcommReduceOp reduceOp)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].", __func__, thread, dst, src, count, dataType, reduceOp);
+    auto *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    CHK_PTR_NULL(threadEntityPtr);
+    HCCL_INFO("[%s] START. thread[0x%llx][%s], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), dst, src, count, dataType, reduceOp);
+    CHK_PRT_RET((threadEntityPtr->engine != COMM_ENGINE_AICPU && threadEntityPtr->engine != COMM_ENGINE_AICPU_TS),
+        HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->engine, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(threadEntityPtr->type != THREAD_TYPE_TS,
+        HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->type, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    AddThread(threadEntityPtr->threadObjAddr);
 
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
     CHK_PTR_NULL(threadPtr);
 
     uint64_t len = count * SIZE_TABLE[dataType];
@@ -89,11 +109,13 @@ int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src
         HcclBuf srcBuf{const_cast<void *>(src), len, nullptr};
         HcclBuf dstBuf{dst, len, nullptr};
         HcclReduceInfo reduceInfo{static_cast<HcclDataType>(dataType), static_cast<HcclReduceOp>(reduceOp)};
-        Stream *stream = GetStream(thread);
+        Stream *stream = GetStream(threadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(stream);
         ret = HcclLocalCopyReduce(stream, &dstBuf, &srcBuf, reduceInfo);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].", __func__, thread, dst, src, count, dataType, reduceOp), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx][%s], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), dst, src, count, dataType, reduceOp), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -170,44 +192,66 @@ int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, u
 
 int32_t HcommAclrtNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], dstNotifyId[%llu].", __func__, thread, dstNotifyId);
+    auto *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    CHK_PTR_NULL(threadEntityPtr);
+    HCCL_INFO("[%s] START. thread[0x%llx][%s], dstNotifyId[%llu].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), dstNotifyId);
+    CHK_PRT_RET((threadEntityPtr->engine != COMM_ENGINE_AICPU && threadEntityPtr->engine != COMM_ENGINE_AICPU_TS),
+        HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->engine, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(threadEntityPtr->type != THREAD_TYPE_TS,
+        HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->type, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
 
-    AddThread(thread);
+    AddThread(threadEntityPtr->threadObjAddr);
 
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
     CHK_PTR_NULL(threadPtr);
 
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
         EXECEPTION_CATCH(ret = threadPtr->LocalNotifyRecord(dstNotifyId), ret = HCCL_E_INTERNAL);
     } else {
-        Stream *stream = GetStream(thread);
+        Stream *stream = GetStream(threadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(stream);
         ret = HcclLocalBareNotifyRecord(stream, dstNotifyId);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dstNotifyId[%llu].", __func__, thread, dstNotifyId), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx][%s], dstNotifyId[%llu].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), dstNotifyId), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
 
 int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], notifyId[%llu], timeOut[%u].", __func__, thread, notifyId, timeOut);
+    auto *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    CHK_PTR_NULL(threadEntityPtr);
+    HCCL_INFO("[%s] START. thread[0x%llx][%s], notifyId[%llu], timeOut[%u].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), notifyId, timeOut);
+    CHK_PRT_RET((threadEntityPtr->engine != COMM_ENGINE_AICPU && threadEntityPtr->engine != COMM_ENGINE_AICPU_TS),
+        HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->engine, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(threadEntityPtr->type != THREAD_TYPE_TS,
+        HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->type, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
 
-    AddThread(thread);
+    AddThread(threadEntityPtr->threadObjAddr);
 
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
     CHK_PTR_NULL(threadPtr);
 
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
         EXECEPTION_CATCH(ret = threadPtr->LocalNotifyWait(notifyId), ret = HCCL_E_INTERNAL);
     } else {
-        Stream *stream = GetStream(thread);
+        Stream *stream = GetStream(threadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(stream);
         ret = HcclLocalBareNotifyWait(stream, notifyId, timeOut);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyId[%llu], timeOut[%u].", __func__, thread, notifyId, timeOut), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx][%s], notifyId[%llu], timeOut[%u].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), notifyId, timeOut), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -230,15 +274,32 @@ HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum) // host fft
     CHK_PTR_NULL(threads);
     CHK_PRT_RET(threadNum < 1, HCCL_ERROR("[CommTaskLaunch]threadNum is less than 1"), HCCL_E_PARA);
 
-    Thread *threadPtr = reinterpret_cast<Thread *>(threads[0]);
+    ThreadEntity *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(threads[0]);
+    CHK_PTR_NULL(threadEntityPtr);
+    CHK_PRT_RET((threadEntityPtr->engine != COMM_ENGINE_AICPU && threadEntityPtr->engine != COMM_ENGINE_AICPU_TS),
+        HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->engine, threads[0], threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(threadEntityPtr->type != THREAD_TYPE_TS,
+        HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->type, threads[0], threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    Thread *threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
     CHK_PTR_NULL(threadPtr);
 
     if (threadPtr->IsDeviceA5()) {
         HCCL_INFO("[%s] Running on A5.", __func__);
         for (uint32_t i = 0; i < threadNum; i++) {
-            Thread *threadPtrLoop = reinterpret_cast<Thread *>(threads[i]);
+            ThreadEntity *const threadEntityPtrLoop = reinterpret_cast<ThreadEntity *>(threads[i]);
+            CHK_PTR_NULL(threadEntityPtrLoop);
+            CHK_PRT_RET((threadEntityPtrLoop->engine != COMM_ENGINE_AICPU && threadEntityPtrLoop->engine != COMM_ENGINE_AICPU_TS),
+                HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+                __func__, threadEntityPtrLoop->engine, threads[i], threadEntityPtrLoop->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+            CHK_PRT_RET(threadEntityPtrLoop->type != THREAD_TYPE_TS,
+                HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+                __func__, threadEntityPtrLoop->type, threads[i], threadEntityPtrLoop->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+            Thread *threadPtrLoop = reinterpret_cast<Thread *>(threadEntityPtrLoop->threadObjAddr);
             CHK_PTR_NULL(threadPtrLoop);
-            HCCL_INFO("[%s] Launching task in thread[0x%llx].", __func__, threads[i]);
+            HCCL_INFO("[%s] Launching task in thread[0x%llx][%s].",
+                __func__, threads[i], threadEntityPtrLoop->DescribeAttr().c_str());
             EXECEPTION_CATCH(threadPtrLoop->LaunchTask(), return HCCL_E_INTERNAL);
         }
         return HCCL_SUCCESS;
@@ -246,7 +307,15 @@ HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum) // host fft
 
     std::vector<hccl::Stream> streams;
     for (uint32_t i = 0; i < threadNum; i++) {
-        hccl::Stream *stream = GetStream(threads[i]);
+        ThreadEntity *const threadEntityPtrLoop = reinterpret_cast<ThreadEntity *>(threads[i]);
+        CHK_PTR_NULL(threadEntityPtrLoop);
+        CHK_PRT_RET((threadEntityPtrLoop->engine != COMM_ENGINE_AICPU && threadEntityPtrLoop->engine != COMM_ENGINE_AICPU_TS),
+            HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+            __func__, threadEntityPtrLoop->engine, threads[i], threadEntityPtrLoop->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+        CHK_PRT_RET(threadEntityPtrLoop->type != THREAD_TYPE_TS,
+            HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+            __func__, threadEntityPtrLoop->type, threads[i], threadEntityPtrLoop->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+        hccl::Stream *stream = GetStream(threadEntityPtrLoop->threadObjAddr);
         CHK_PTR_NULL(stream);
         streams.push_back(*stream);
     }
@@ -304,14 +373,22 @@ inline HcclResult CheckDataTypeAndReduceOp(HcommDataType dataType, HcommReduceOp
 
 int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
-        __func__, thread, channel, dst, src, len);
+    auto *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    CHK_PTR_NULL(threadEntityPtr);
+    HCCL_INFO("[%s] START. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, len);
+    CHK_PRT_RET((threadEntityPtr->engine != COMM_ENGINE_AICPU && threadEntityPtr->engine != COMM_ENGINE_AICPU_TS),
+        HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->engine, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(threadEntityPtr->type != THREAD_TYPE_TS,
+        HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->type, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    AddThread(threadEntityPtr->threadObjAddr);
 
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
     CHK_PTR_NULL(threadPtr);
 
     HcclResult ret = HCCL_SUCCESS;
@@ -324,8 +401,8 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
         Hccl::RmaBufferLite locRmaBuf;
         ret = ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(src), len, locRmaBuf);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
-            __func__, thread, channel, dst, src, len), ret);
+            HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
+            __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, len), ret);
         const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(dst), len};
 
         EXECEPTION_CATCH(ubTransportLitePtr->Write(locRmaBuf, rmtBuf, *streamLitePtr), ret = HCCL_E_INTERNAL);
@@ -333,14 +410,14 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
         HcclBuf locBuf{const_cast<void *>(src), len, nullptr};
         HcclBuf rmtBuf{dst, len, nullptr};
 
-        Stream *stream = GetStream(thread);
+        Stream *stream = GetStream(threadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(stream);
 
         ret = HcclRemoteWrite(stream, reinterpret_cast<void *>(channel), &rmtBuf, &locBuf);
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
-        __func__, thread, channel, dst, src, len), ret);
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, len), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -348,14 +425,22 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
 int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
-        __func__, thread, channel, dst, src, count, dataType, reduceOp);
+    auto *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    CHK_PTR_NULL(threadEntityPtr);
+    HCCL_INFO("[%s] START. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, count, dataType, reduceOp);
+    CHK_PRT_RET((threadEntityPtr->engine != COMM_ENGINE_AICPU && threadEntityPtr->engine != COMM_ENGINE_AICPU_TS),
+        HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->engine, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(threadEntityPtr->type != THREAD_TYPE_TS,
+        HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->type, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    AddThread(threadEntityPtr->threadObjAddr);
 
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
     CHK_PTR_NULL(threadPtr);
 
     uint64_t len = count * SIZE_TABLE[dataType];
@@ -370,14 +455,14 @@ int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, voi
         Hccl::RmaBufferLite locRmaBuf;
         ret = ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(src), len, locRmaBuf);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
-            __func__, thread, channel, dst, src, count, dataType, reduceOp), ret);
+            HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
+            __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, count, dataType, reduceOp), ret);
         const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(dst), len};
 
         ret = CheckDataTypeAndReduceOp(dataType, reduceOp);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] FAIL at CheckDataTypeAndReduceOp. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
-            __func__, thread, channel, dst, src, count, dataType, reduceOp), ret);
+            HCCL_ERROR("[%s] FAIL at CheckDataTypeAndReduceOp. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
+            __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, count, dataType, reduceOp), ret);
         Hccl::ReduceIn reduceIn{mapHcommDataTypeToA5.at(dataType), mapHcommReduceOpToA5.at(reduceOp)};
 
         EXECEPTION_CATCH(ubTransportLitePtr->WriteReduce(locRmaBuf, rmtBuf, reduceIn, *streamLitePtr), ret = HCCL_E_INTERNAL);
@@ -388,14 +473,14 @@ int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, voi
         HcclBuf rmtBuf{dst, len, nullptr};
         HcclReduceInfo reduceInfo{static_cast<HcclDataType>(dataType), static_cast<HcclReduceOp>(reduceOp)};
 
-        Stream *stream = GetStream(thread);
+        Stream *stream = GetStream(threadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(stream);
 
         ret = HcclRemoteWriteReduce(stream, reinterpret_cast<void *>(channel), &rmtBuf, &locBuf, reduceInfo);
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
-        __func__, thread, channel, dst, src, count, dataType, reduceOp), ret);
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, count, dataType, reduceOp), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -403,16 +488,24 @@ int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, voi
 HcclResult CommWriteReduceWithNotify(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp, uint32_t remoteNotifyIdx)
 {
+    ThreadEntity *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    CHK_PTR_NULL(threadEntityPtr);
+    CHK_PRT_RET((threadEntityPtr->engine != COMM_ENGINE_AICPU && threadEntityPtr->engine != COMM_ENGINE_AICPU_TS),
+        HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->engine, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(threadEntityPtr->type != THREAD_TYPE_TS,
+        HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->type, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
-    AddThread(thread);
+    AddThread(threadEntityPtr->threadObjAddr);
     CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[%s] Not support reduce, "
         "dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d]", __func__, dst, src, count, dataType, reduceOp), HCCL_E_PARA);
     HcclBuf locBuf{const_cast<void*>(src), count * SIZE_TABLE[dataType], nullptr};
     HcclBuf rmtBuf{dst, count * SIZE_TABLE[dataType], nullptr};
     HcclReduceInfo reduceInfo{static_cast<HcclDataType>(dataType), static_cast<HcclReduceOp>(reduceOp)};
 
-    Stream *stream = GetStream(thread);
+    Stream *stream = GetStream(threadEntityPtr->threadObjAddr);
     CHK_PTR_NULL(stream);
 
     return HcclRemoteWriteReduceWithNotify(stream, reinterpret_cast<void*>(channel), &rmtBuf, &locBuf, reduceInfo,
@@ -422,14 +515,22 @@ HcclResult CommWriteReduceWithNotify(ThreadHandle thread, ChannelHandle channel,
 int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
-        __func__, thread, channel, dst, src, len, remoteNotifyIdx);
+    auto *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    CHK_PTR_NULL(threadEntityPtr);
+    HCCL_INFO("[%s] START. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, len, remoteNotifyIdx);
+    CHK_PRT_RET((threadEntityPtr->engine != COMM_ENGINE_AICPU && threadEntityPtr->engine != COMM_ENGINE_AICPU_TS),
+        HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->engine, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(threadEntityPtr->type != THREAD_TYPE_TS,
+        HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->type, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    AddThread(threadEntityPtr->threadObjAddr);
 
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
     CHK_PTR_NULL(threadPtr);
 
     HcclResult ret = HCCL_SUCCESS;
@@ -443,8 +544,8 @@ int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel,
         Hccl::RmaBufferLite locRmaBuf;
         ret = ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(src), len, locRmaBuf);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
-            __func__, thread, channel, dst, src, len, remoteNotifyIdx), ret);
+            HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
+            __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, len, remoteNotifyIdx), ret);
         const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(dst), len};
 
         Hccl::WithNotifyIn withNotify{Hccl::TransportNotifyType::NORMAL, remoteNotifyIdx};
@@ -454,14 +555,14 @@ int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel,
         HcclBuf locBuf{const_cast<void *>(src), len, nullptr};
         HcclBuf rmtBuf{dst, len, nullptr};
 
-        Stream *stream = GetStream(thread);
+        Stream *stream = GetStream(threadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(stream);
 
         ret = HcclRemoteWriteWithNotify(stream, reinterpret_cast<void *>(channel), &rmtBuf, &locBuf, remoteNotifyIdx);
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
-        __func__, thread, channel, dst, src, len, remoteNotifyIdx), ret);
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, len, remoteNotifyIdx), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -469,14 +570,22 @@ int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel,
 int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
     const void *src, uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp, uint32_t remoteNotifyIdx)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d], remoteNotifyIdx[%u].", 
-        __func__, thread, channel, dst, src, count, dataType, reduceOp, remoteNotifyIdx);
+    auto *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    CHK_PTR_NULL(threadEntityPtr);
+    HCCL_INFO("[%s] START. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d], remoteNotifyIdx[%u].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, count, dataType, reduceOp, remoteNotifyIdx);
+    CHK_PRT_RET((threadEntityPtr->engine != COMM_ENGINE_AICPU && threadEntityPtr->engine != COMM_ENGINE_AICPU_TS),
+        HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->engine, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(threadEntityPtr->type != THREAD_TYPE_TS,
+        HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->type, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    AddThread(threadEntityPtr->threadObjAddr);
 
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
     CHK_PTR_NULL(threadPtr);
 
     uint64_t len = count * SIZE_TABLE[dataType];
@@ -492,14 +601,14 @@ int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHandle ch
         Hccl::RmaBufferLite locRmaBuf;
         ret = ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(src), len, locRmaBuf);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d], remoteNotifyIdx[%u].",
-            __func__, thread, channel, dst, src, count, dataType, reduceOp, remoteNotifyIdx), ret);
+            HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d], remoteNotifyIdx[%u].",
+            __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, count, dataType, reduceOp, remoteNotifyIdx), ret);
         const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(dst), len};
         
         ret = CheckDataTypeAndReduceOp(dataType, reduceOp);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] FAIL at CheckDataTypeAndReduceOp. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d], remoteNotifyIdx[%u].",
-            __func__, thread, channel, dst, src, count, dataType, reduceOp, remoteNotifyIdx), ret);
+            HCCL_ERROR("[%s] FAIL at CheckDataTypeAndReduceOp. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d], remoteNotifyIdx[%u].",
+            __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, count, dataType, reduceOp, remoteNotifyIdx), ret);
         Hccl::ReduceIn reduceIn{mapHcommDataTypeToA5.at(dataType), mapHcommReduceOpToA5.at(reduceOp)};
 
         Hccl::WithNotifyIn withNotify{Hccl::TransportNotifyType::NORMAL, remoteNotifyIdx};
@@ -509,22 +618,30 @@ int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHandle ch
         ret = HCCL_E_NOT_SUPPORT;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d], remoteNotifyIdx[%u].",
-        __func__, thread, channel, dst, src, count, dataType, reduceOp, remoteNotifyIdx), ret);
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d], remoteNotifyIdx[%u].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, count, dataType, reduceOp, remoteNotifyIdx), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
 
 int32_t HcommReadOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
-        __func__, thread, channel, dst, src, len);
+    auto *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    CHK_PTR_NULL(threadEntityPtr);
+    HCCL_INFO("[%s] START. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, len);
+    CHK_PRT_RET((threadEntityPtr->engine != COMM_ENGINE_AICPU && threadEntityPtr->engine != COMM_ENGINE_AICPU_TS),
+        HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->engine, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(threadEntityPtr->type != THREAD_TYPE_TS,
+        HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->type, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    AddThread(threadEntityPtr->threadObjAddr);
 
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
     CHK_PTR_NULL(threadPtr);
 
     HcclResult ret = HCCL_SUCCESS;
@@ -537,8 +654,8 @@ int32_t HcommReadOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
         Hccl::RmaBufferLite locRmaBuf;
         ret = ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(dst), len, locRmaBuf);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
-            __func__, thread, channel, dst, src, len), ret);
+            HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
+            __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, len), ret);
         const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(src), len};
 
         EXECEPTION_CATCH(ubTransportLitePtr->Read(locRmaBuf, rmtBuf, *streamLitePtr), ret = HCCL_E_INTERNAL);
@@ -546,14 +663,14 @@ int32_t HcommReadOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
         HcclBuf locBuf{dst, len, nullptr};
         HcclBuf rmtBuf{const_cast<void *>(src), len, nullptr};
 
-        Stream *stream = GetStream(thread);
+        Stream *stream = GetStream(threadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(stream);
 
         ret = HcclRemoteRead(stream, reinterpret_cast<void *>(channel), &locBuf, &rmtBuf);
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
-        __func__, thread, channel, dst, src, len), ret);
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, len), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -561,14 +678,22 @@ int32_t HcommReadOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
 int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
-        __func__, thread, channel, dst, src, count, dataType, reduceOp);
+    auto *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    CHK_PTR_NULL(threadEntityPtr);
+    HCCL_INFO("[%s] START. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, count, dataType, reduceOp);
+    CHK_PRT_RET((threadEntityPtr->engine != COMM_ENGINE_AICPU && threadEntityPtr->engine != COMM_ENGINE_AICPU_TS),
+        HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->engine, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(threadEntityPtr->type != THREAD_TYPE_TS,
+        HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->type, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    AddThread(thread);
+    AddThread(threadEntityPtr->threadObjAddr);
 
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
     CHK_PTR_NULL(threadPtr);
 
     uint64_t len = count * SIZE_TABLE[dataType];
@@ -583,14 +708,14 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
         Hccl::RmaBufferLite locRmaBuf;
         ret = ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(dst), len, locRmaBuf);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
-            __func__, thread, channel, dst, src, count, dataType, reduceOp), ret);
+            HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
+            __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, count, dataType, reduceOp), ret);
         const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(src), len};
 
         ret = CheckDataTypeAndReduceOp(dataType, reduceOp);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] FAIL at CheckDataTypeAndReduceOp. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
-            __func__, thread, channel, dst, src, count, dataType, reduceOp), ret);
+            HCCL_ERROR("[%s] FAIL at CheckDataTypeAndReduceOp. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
+            __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, count, dataType, reduceOp), ret);
         Hccl::ReduceIn reduceIn{mapHcommDataTypeToA5.at(dataType), mapHcommReduceOpToA5.at(reduceOp)};
 
         EXECEPTION_CATCH(ubTransportLitePtr->ReadReduce(locRmaBuf, rmtBuf, reduceIn, *streamLitePtr), ret = HCCL_E_INTERNAL);
@@ -601,14 +726,14 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
         HcclBuf rmtBuf{const_cast<void *>(src), len, nullptr};
         HcclReduceInfo reduceInfo{static_cast<HcclDataType>(dataType), static_cast<HcclReduceOp>(reduceOp)};
 
-        Stream *stream = GetStream(thread);
+        Stream *stream = GetStream(threadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(stream);
 
         ret = HcclRemoteReadReduce(stream, reinterpret_cast<void *>(channel), &locBuf, &rmtBuf, reduceInfo);
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
-        __func__, thread, channel, dst, src, count, dataType, reduceOp), ret);
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx][%s], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, dst, src, count, dataType, reduceOp), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -641,11 +766,20 @@ int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t
 
 int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", __func__, thread, channel, remoteNotifyIdx);
+    auto *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    CHK_PTR_NULL(threadEntityPtr);
+    HCCL_INFO("[%s] START. thread[0x%llx][%s], channel[0x%llx], remoteNotifyIdx[%u].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, remoteNotifyIdx);
+    CHK_PRT_RET((threadEntityPtr->engine != COMM_ENGINE_AICPU && threadEntityPtr->engine != COMM_ENGINE_AICPU_TS),
+        HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->engine, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(threadEntityPtr->type != THREAD_TYPE_TS,
+        HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->type, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
 
-    AddThread(thread);
+    AddThread(threadEntityPtr->threadObjAddr);
 
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
     CHK_PTR_NULL(threadPtr);
 
     HcclResult ret = HCCL_SUCCESS;
@@ -658,12 +792,14 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
 
         EXECEPTION_CATCH(ubTransportLitePtr->Post(remoteNotifyIdx, *streamLitePtr), ret = HCCL_E_INTERNAL);
     } else {
-        Stream *stream = GetStream(thread);
+        Stream *stream = GetStream(threadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(stream);
 
         ret = HcclRemoteNotifyRecord(stream, reinterpret_cast<void *>(channel), remoteNotifyIdx);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", __func__, thread, channel, remoteNotifyIdx), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx][%s], channel[0x%llx], remoteNotifyIdx[%u].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, remoteNotifyIdx), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -676,11 +812,20 @@ int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx
 
 int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, thread, channel, localNotifyIdx, timeout);
+    auto *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    CHK_PTR_NULL(threadEntityPtr);
+    HCCL_INFO("[%s] START. thread[0x%llx][%s], channel[0x%llx], localNotifyIdx[%u], timeout[%u].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, localNotifyIdx, timeout);
+    CHK_PRT_RET((threadEntityPtr->engine != COMM_ENGINE_AICPU && threadEntityPtr->engine != COMM_ENGINE_AICPU_TS),
+        HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->engine, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(threadEntityPtr->type != THREAD_TYPE_TS,
+        HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->type, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
 
-    AddThread(thread);
+    AddThread(threadEntityPtr->threadObjAddr);
 
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    Thread *const threadPtr = reinterpret_cast<Thread *>(threadEntityPtr->threadObjAddr);
     CHK_PTR_NULL(threadPtr);
 
     HcclResult ret = HCCL_SUCCESS;
@@ -694,12 +839,14 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
         (void)timeout;
         EXECEPTION_CATCH(ubTransportLitePtr->Wait(localNotifyIdx, *streamLitePtr), ret = HCCL_E_INTERNAL);
     } else {
-        Stream *stream = GetStream(thread);
+        Stream *stream = GetStream(threadEntityPtr->threadObjAddr);
         CHK_PTR_NULL(stream);
 
         ret = HcclRemoteNotifyWait(stream, reinterpret_cast<void *>(channel), localNotifyIdx, timeout);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, thread, channel, localNotifyIdx, timeout), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx][%s], channel[0x%llx], localNotifyIdx[%u], timeout[%u].",
+        __func__, thread, threadEntityPtr->DescribeAttr().c_str(), channel, localNotifyIdx, timeout), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -712,8 +859,17 @@ int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, u
 
 HcclResult CommFence(ThreadHandle thread, ChannelHandle channel) // 控制前后的任务保序
 {
-    HCCL_DEBUG("[CommFence] thread[0x%llx], channel[0x%llx].", thread, channel);
-    Stream *stream = GetStream(thread);
+    ThreadEntity *const threadEntityPtr = reinterpret_cast<ThreadEntity *>(thread);
+    CHK_PTR_NULL(threadEntityPtr);
+    HCCL_DEBUG("[CommFence] thread[0x%llx][%s], channel[0x%llx].",
+        thread, threadEntityPtr->DescribeAttr().c_str(), channel);
+    CHK_PRT_RET((threadEntityPtr->engine != COMM_ENGINE_AICPU && threadEntityPtr->engine != COMM_ENGINE_AICPU_TS),
+        HCCL_ERROR("[%s] Not supported thread engine[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->engine, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(threadEntityPtr->type != THREAD_TYPE_TS,
+        HCCL_ERROR("[%s] Not supported thread type[%d]. thread[0x%llx][%s].",
+        __func__, threadEntityPtr->type, thread, threadEntityPtr->DescribeAttr().c_str()), HCCL_E_NOT_SUPPORT);
+    Stream *stream = GetStream(threadEntityPtr->threadObjAddr);
     CHK_PTR_NULL(stream);
 
     return HcclRemoteFence(stream, reinterpret_cast<void *>(channel), false);
@@ -768,13 +924,13 @@ int32_t HcommChannelFence(ChannelHandle channel)
 
 int32_t HcommRequestServiceOnThread(ThreadHandle dstThreadHandle, ThreadServiceHandle serviceHandle, const void *args, uint64_t argsSizeByte)
 {
-    HCCL_INFO("[%s] START. dstThreadHandle[0x%llx], serviceHandle[0x%llx], args[0x%llx], argsSizeByte[%llu].",
-        __func__, dstThreadHandle, serviceHandle, args, argsSizeByte);
     ThreadEntity *const dstThreadEntityPtr = reinterpret_cast<ThreadEntity *>(dstThreadHandle);
     void *const serviceHandlePtr = reinterpret_cast<void *>(serviceHandle);
     CHK_PTR_NULL(dstThreadEntityPtr);
     CHK_PTR_NULL(serviceHandlePtr);
     CHK_PTR_NULL(args);
+    HCCL_INFO("[%s] START. dstThreadHandle[0x%llx][%s], serviceHandle[0x%llx], args[0x%llx], argsSizeByte[%llu].",
+        __func__, dstThreadHandle, dstThreadEntityPtr->DescribeAttr().c_str(), serviceHandle, args, argsSizeByte);
 
     if (!(dstThreadEntityPtr->engine == COMM_ENGINE_AICPU && dstThreadEntityPtr->type == THREAD_TYPE_CPU)) {
         HCCL_ERROR("[%s] thread engine should be COMM_ENGINE_AICPU and type should be THREAD_TYPE_CPU.", __func__);
