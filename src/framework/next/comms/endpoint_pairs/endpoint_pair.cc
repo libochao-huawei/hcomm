@@ -67,6 +67,7 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
     socketMgrCompat_->BatchCreateSockets({linkData}); // 内部同时处理server端和connect端两类socket
     Hccl::SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, socketTag);
     socket = socketMgrCompat_->GetConnectedSocket(socketConfig);
+    CHK_PTR_NULL(socket);
     EXCEPTION_HANDLE_END
 
     return HCCL_SUCCESS;
