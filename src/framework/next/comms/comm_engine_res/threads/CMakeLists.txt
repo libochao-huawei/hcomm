@@ -11,6 +11,7 @@ set(src_list
     cpu_ts_thread.cc
     aicpu_ts_thread.cc
     aiv_thread.cc
+    cpu_thread.cc
     thread.cc
 )
 
