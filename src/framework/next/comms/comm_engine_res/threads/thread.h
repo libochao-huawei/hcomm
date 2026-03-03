@@ -78,7 +78,8 @@ inline LocalNotify *GetNotify(uint64_t thread, uint32_t index)
 }
 
 HcclResult CreateThread(CommEngine engine, StreamType streamType, uint32_t notifyNum,
-                        NotifyLoadType loadType, std::shared_ptr<Thread>& out_thread);
+                        const NotifyLoadType loadType, const ThreadType threadType,
+                        std::shared_ptr<Thread>& out_thread);
 HcclResult CommEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type);
 HcclResult CommHostEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type);
 HcclResult CommEngineToStreamType(CommEngine engine, StreamType &type);
