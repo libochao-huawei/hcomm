@@ -61,7 +61,7 @@ HcclResult HcommThreadAllocWithType(CommEngine engine, uint32_t threadNum, uint3
 
 HcclResult HcommThreadServiceRegister(ThreadHandle threadHandle, ThreadService service, ThreadServiceHandle *serviceHandle);
 
-HcclResult HcommThreadServiceUnregister(ThreadHandle threadHandle, ThreadService service, ThreadServiceHandle *serviceHandle);
+HcclResult HcommThreadServiceUnregister(ThreadHandle threadHandle, ThreadServiceHandle serviceHandle);
 
 HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx);
 
