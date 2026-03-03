@@ -660,7 +660,7 @@ HcclResult HcomGetLocalRankSizeV2(const char *group, u32 *localRankSize)
     }
     *localRankSize = rankSize / layer0NetInstanceNum;
     HCCL_INFO("[HcomGetLocalRankSizeV2] end, layer0NetInstanceNum[%u], localRankSize[%u], rankSize[%u], commId[%s]",
-        layer0NetInstanceNum, localRankSize, rankSize, hcclComm->GetId().c_str());
+        layer0NetInstanceNum, *localRankSize, rankSize, hcclComm->GetId().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -679,7 +679,7 @@ HcclResult HcomGetLocalRankIdV2(const char *group, u32 *localRankId)
     }
     *localRankId = rankId % localRankSize;
     HCCL_INFO("[HcomGetLocalRankIdV2] end, rankId[%u], localRankSize[%u], localRankId[%u], commId[%s]",
-        rankId, localRankSize, localRankId, hcclComm->GetId().c_str());
+        rankId, localRankSize, *localRankId, hcclComm->GetId().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -1189,7 +1189,7 @@ HcclResult HcomCalcNumBlocksV2(const char *group, HcclCMDType opType, u64 count,
 
     HcclOpType hcclOpType = static_cast<HcclOpType::Value>(opType);
     if (OP_TYPE_MAP.find(opType) == OP_TYPE_MAP.end()) {
-        HCCL_ERROR("[HcomGraphSelectAlgV2], not support opType[%u].", hcclOpType.Describe().c_str());
+        HCCL_ERROR("[HcomGraphSelectAlgV2], not support opType[%s].", hcclOpType.Describe().c_str());
         return HCCL_E_NOT_SUPPORT;
     }
     Hccl::OpType optype = OP_TYPE_MAP.at(opType);
@@ -1231,7 +1231,7 @@ HcclResult HcomGetL0TopoTypeExV2(const char *group, CommTopo *topoType, uint32_t
     CHK_PTR_NULL(topoType);
     CHK_PTR_NULL(group);
 
-    bool isSetDevice = (bool)(flag & (~(0xfffffffe)));
+    bool isSetDevice = static_cast<bool>(flag & (~(0xfffffffe)));
     if (isSetDevice) {
         HCCL_ERROR("current only support no setdevice, flag[%u]", flag);
         return HCCL_E_PARA;
@@ -1247,7 +1247,7 @@ HcclResult HcomGetRankSizeExV2(const char *group, uint32_t *rankSize, uint32_t f
     CHK_PTR_NULL(rankSize);
     CHK_PTR_NULL(group);
 
-    bool isSetDevice = (bool)(flag & (~(0xfffffffe)));
+    bool isSetDevice = static_cast<bool>(flag & (~(0xfffffffe)));
     if (isSetDevice) {
         HCCL_ERROR("current only support no setdevice, flag[%u]", flag);
         return HCCL_E_PARA;
@@ -1259,6 +1259,9 @@ HcclResult HcomGetRankSizeExV2(const char *group, uint32_t *rankSize, uint32_t f
 
 HcclResult HcomMc2AiCpuStreamAllocAndGetV2(const char *group, u32 streamMode, rtStream_t *aiCpuStream)
 {
+    (void)group;
+    (void)streamMode;
+    (void)aiCpuStream;
     HCCL_WARNING("[HcomMc2AiCpuStreamAllocAndGetV2] Not support");
     return HCCL_E_NOT_FOUND;
 }

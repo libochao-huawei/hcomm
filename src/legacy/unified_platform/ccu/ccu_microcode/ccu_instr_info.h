@@ -11,6 +11,7 @@
 #ifndef HCCL_CCU_INSTR_INFO_H
 #define HCCL_CCU_INSTR_INFO_H
 
+#include <cstdint>
 #include <vector>
 #include "ccu_microcode.h"
 

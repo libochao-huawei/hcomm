@@ -13,7 +13,6 @@
 #include <map>
 #include "log.h"
 #include <dlfcn.h>
-#include <stdio.h>
 
 namespace Hccl {
 DlHalFunctionV2 &DlHalFunctionV2::GetInstance()

@@ -122,7 +122,6 @@ public:
     {
         return ccuConnection.get();
     }
- 	
 
     // 下面接口为平台层接口，不能在框架层使用
     CcuTransport(Socket *socket, std::unique_ptr<CcuConnection> &&connection, const CclBufferInfo &locCclBufInfo);

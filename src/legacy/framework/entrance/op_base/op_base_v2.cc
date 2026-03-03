@@ -634,7 +634,7 @@ HcclResult HcclAlltoAllV2(const void *sendBuf, uint64_t sendCount, HcclDataType 
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBufferV2, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%p], recvCount[%p], sendType[%s],"
+            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], recvCount[%llu], sendType[%s],"
             "recvType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCount, recvCount, GetDataTypeEnumStrV2(sendType).c_str(),
             GetDataTypeEnumStrV2(recvType).c_str(), localRank, streamId, deviceLogicId);
@@ -774,7 +774,7 @@ HcclResult HcclCreateSubCommConfigV2(const HcclComm *comm, uint32_t rankNum, uin
         rankIdSet.insert(rankIds[i]);
     }
 
-    HCCL_RUN_INFO("Entry-HcclCreateSubCommConfig V910_95 rankIds[%s], subCommRankId, commEngine[%u], hcclBufferSize[%u] MB",
+    HCCL_RUN_INFO("Entry-HcclCreateSubCommConfig V910_95 rankIds[%s], subCommRankId[%u], commEngine[%u], hcclBufferSize[%u] MB",
                 printRankIds.str().c_str(), subCommRankId, config->hcclOpExpansionMode, config->hcclBufferSize);
 
     HcclCommInfoV2 &opbasedCommInfoV2 = GetCommInfoV2();
@@ -1384,7 +1384,7 @@ HcclResult HcclSetOpAlgConfigV2(void *opArgs, char *algConfig)
     HcclOpArgs *opArgsPtr = static_cast<HcclOpArgs *>(opArgs);
     s32 ret = strcpy_s(opArgsPtr->algConfig, ALG_CONFIG_SIZE, algConfig);
     if (ret != EOK) {
-        HCCL_ERROR("[HcclSetOpAlgConfig]strcpy_s algConfig failed! result %u, the algConfig len must be less than %u", ret, ALG_CONFIG_SIZE);
+        HCCL_ERROR("[HcclSetOpAlgConfig]strcpy_s algConfig failed! result %d, the algConfig len must be less than %u", ret, ALG_CONFIG_SIZE);
         return HCCL_E_PARA;
     }
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
@@ -1869,7 +1869,7 @@ HcclResult HcclAllGatherVV2(void *sendBuf, uint64_t sendCount, void *recvBuf, vo
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBufferV2, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], recvCounts[%llu], recvDispls[%llu], "
+            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], recvCounts[%p], recvDispls[%p], "
             "dataType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCount, recvCounts, recvDispls,
             GetDataTypeEnumStrV2(dataType).c_str(), localRank, streamId, deviceLogicId);
@@ -2772,7 +2772,7 @@ HcclResult HcclGetLinksV2(HcclComm comm, uint32_t netLayer, uint32_t srcRank, ui
         return HCCL_E_NOT_FOUND;
     }
     /* 关键状态记录 */
-    HCCL_INFO("HcclGetLinks success, netLayer[%u], srcRank = %u,dstRank=%u,listSize=%u", srcRank, dstRank, *listSize);
+    HCCL_INFO("HcclGetLinks success, netLayer[%u], srcRank = %u, dstRank=%u, listSize=%u", netLayer, srcRank, dstRank, *listSize);
     return HCCL_SUCCESS;
 }
 
@@ -2849,7 +2849,7 @@ HcclResult HcclRankGraphGetEndpointInfoV2(HcclComm comm, uint32_t rankId, const 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetEndpointInfo(rankId, endpointDesc, endpointAttr, infoLen, info);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("HcclRankGraphGetEndpointInfo get info from communicator failed with endpointAttr [%u]", endpointAttr);
+        HCCL_ERROR("HcclRankGraphGetEndpointInfo get info from communicator failed with endpointAttr [%d]", static_cast<s32>(endpointAttr));
         return HCCL_E_NOT_FOUND;
     }
     return HCCL_SUCCESS;

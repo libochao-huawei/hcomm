@@ -26,6 +26,8 @@ constexpr u32 SIG_MOVE_LEFT_BITS = 20;
 constexpr u32 AIV_BUFFER_PING_PONG_FACTOR = 2;
 constexpr u32 MAX_BIN_FILE_SIZE = 100 * 1024 * 1024;
 constexpr s32 RESET_TAIL_SYNC_TAG = 2;
+constexpr uint64_t MIN_NPU_TIMEOUT = 1;
+constexpr uint64_t MAX_NPU_TIMEOUT = 254;
 
 static bool g_init = false;
 static mutex g_mut;
@@ -277,8 +279,8 @@ HcclResult GetMinAndMaxNpuSchedTimeOut(u64 &minNpuSchedTimeout, u64 &maxNpuSched
         aclRet), HCCL_E_RUNTIME);
 
     // NPU超时范围(1, 254) * interval
-    minNpuSchedTimeout = 1 * interval;
-    maxNpuSchedTimeout = 254 * interval;
+    minNpuSchedTimeout = MIN_NPU_TIMEOUT * interval;
+    maxNpuSchedTimeout = MAX_NPU_TIMEOUT * interval;
     HCCL_INFO("GetMinAndMaxNpuSchedTimeOut minNpuSchedTimeout[%u]us, maxNpuSchedTimeout[%u]us.",
         minNpuSchedTimeout, maxNpuSchedTimeout);
     return HCCL_SUCCESS;

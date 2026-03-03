@@ -30,7 +30,7 @@ HcclResult AivUbMemTransport::Init()
         localRmaBufferVec_.push_back(localIpcRmaBuffer);
         std::array<char, HCCL_RES_TAG_MAX_LEN> tag;
         CHK_SAFETY_FUNC_RET(memcpy_s(tag.data(), tag.size(), 
-            localIpcRmaBuffer->GetBuf()->GetMemTag(), HCCL_RES_TAG_MAX_LEN));
+            localIpcRmaBuffer->GetBuf()->GetMemTag().c_str(), HCCL_RES_TAG_MAX_LEN));
         HCCL_INFO("[AivUbMemTransport][Init] memHandleNum[%d] memTag[%s]", i, tag.data());
         localUserMemTag_.push_back(tag);
     }
