@@ -599,7 +599,7 @@ HcclResult CollServiceDeviceMode::GetAlgExecParam(bool clearEnable, u32 numBlock
 
     void *sendAlgParamMemPtr = nullptr;
     // alloc device 地址
-    sendAlgParamMemPtr = HrtMalloc(sizeof(AivSuperKernelArgs), RT_MEMORY_HBM);
+    sendAlgParamMemPtr = HrtMalloc(sizeof(AivSuperKernelArgs), static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
     CHK_PTR_NULL(sendAlgParamMemPtr);
     HCCL_INFO("SPK sendalgparam %p.", sendAlgParamMemPtr);
 

@@ -54,7 +54,7 @@ protected:
 
         memset_s(devBuf, sizeof(devBuf), 0, sizeof(devBuf));
         memset_s(devCache, sizeof(devCache), 0, sizeof(devCache));
-        MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(static_cast<void *>(devBuf)))
+        MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(static_cast<void *>(devBuf)))
                                                     .then(returnValue(static_cast<void *>(devCache)));
 
         MOCKER(HrtDrvMemCpy).stubs().with().will(invoke(HrtDrvMemCpyStub));
