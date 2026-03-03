@@ -623,15 +623,14 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
             || GetExternalInputInterHccsDisable()) {
             HCCL_ERROR("[AllReduceOperator][SelectAlgfor91093] not support DETERMINISTIC_STRICT mode.");
             return HCCL_E_NOT_SUPPORT;
-        }
-        else {
+        } else {
             algName = "AllReduceOrderPreservedFor91093Executor";
             HCCL_INFO("[SelectAlgfor91093] allreduce SelectAlgfor91093 algName [%s].", algName.c_str());
             return HCCL_SUCCESS;
         }
     }
 
-    if (isSupportAivDeter){
+    if (isSupportAivDeter) {
         algName = "AllReduceMeshAivFor91093Executor";
         HCCL_INFO("[SelectAlgfor91093] allreduce SelectAlgfor91093 algName [%s].", algName.c_str());
         return HCCL_SUCCESS;

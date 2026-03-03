@@ -166,6 +166,7 @@ HcclResult CollAllReduceOrderPreservedFor91093Executor::RunReduceScatterLevel1(c
     
     std::unique_ptr<AlgTemplateBase> level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_REDUCESCATTER_PLANT_LOCAL_REDUCE, dispatcher_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_PLANT_LOCAL_REDUCE in COMM_COMBINE_L1", __func__);
     CHK_SMART_PTR_NULL(level1TempAlg);
     
     DeviceMem outputMem = scratchMemFlag_ ? execMem.scratchMem : execMem.outputMem;
@@ -203,6 +204,7 @@ HcclResult CollAllReduceOrderPreservedFor91093Executor::RunReduceScatterLevel2(c
     DeviceMem outputMem = scratchMemFlag_ ? execMem.scratchMem : execMem.outputMem;
     std::unique_ptr<AlgTemplateBase> level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_REDUCESCATTER_PLANT_LOCAL_REDUCE_COMBINE, dispatcher_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_PLANT_LOCAL_REDUCE_COMBINE in COMM_LEVEL2", __func__);
     CHK_SMART_PTR_NULL(level2TempAlg);
 
     u32 level1LastRank = level1Ranksize - 1;
@@ -237,6 +239,7 @@ HcclResult CollAllReduceOrderPreservedFor91093Executor::RunAllGatherLevel1(const
     
     std::unique_ptr<AlgTemplateBase> level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NHR in COMM_COMBINE_L1", __func__);
 
     CHK_SMART_PTR_NULL(level1TempAlg);
     CHK_RET(level1TempAlg->Prepare(outputMem, outputMem, outputMem, count, param.DataDes.dataType, param.stream,
@@ -259,15 +262,15 @@ HcclResult CollAllReduceOrderPreservedFor91093Executor::RunAllGatherLevel2(const
     if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_RING) {
         level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_ALL_GATHER_RING, dispatcher_);
-        HCCL_INFO("AllGather mesh: using ring algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_RING in COMM_LEVEL2", __func__);
     } else if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NB) {
         level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_ALL_GATHER_NB, dispatcher_);
-        HCCL_INFO("AllGather mesh: using nonuniform-bruck algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NB in COMM_LEVEL2", __func__);
     } else {
         level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
-        HCCL_INFO("AllGather mesh: using nhr algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NHR in COMM_LEVEL2", __func__);
     }
 
     DeviceMem outputMem = scratchMemFlag_ ? execMem.scratchMem : execMem.outputMem;

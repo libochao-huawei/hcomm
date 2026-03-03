@@ -134,6 +134,7 @@ HcclResult CollReduceScatterOrderPreservedFor91093Executor::RunReduceScatterLeve
     all2allOffset_ = topoAttr_.superPodNum > 1 ? 1 : 0;  // 多机场景需要偏移1（给L1预留计算位，减少拷贝次数） 
     std::unique_ptr<AlgTemplateBase> level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_REDUCESCATTER_PLANT_LOCAL_REDUCE, dispatcher_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_PLANT_LOCAL_REDUCE in COMM_COMBINE_L1", __func__);
     CHK_SMART_PTR_NULL(level1TempAlg);
 
     // execMem.scratchMem在单算子模式下为cclout，图模式为scrach，因此output传入scrach即可
@@ -171,6 +172,7 @@ HcclResult CollReduceScatterOrderPreservedFor91093Executor::RunReduceScatterLeve
 
     std::unique_ptr<AlgTemplateBase> level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_REDUCESCATTER_PLANT_LOCAL_REDUCE_COMBINE, dispatcher_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_PLANT_LOCAL_REDUCE_COMBINE in COMM_LEVEL2", __func__);
     CHK_SMART_PTR_NULL(level2TempAlg);
 
     u32 level0LastRank = level0Ranksize - 1;
