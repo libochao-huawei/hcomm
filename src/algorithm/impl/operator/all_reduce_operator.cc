@@ -172,6 +172,13 @@ HcclResult AllReduceOperator::SelectAlg(const std::string& tag, const OpParam& p
 HcclResult AllReduceOperator::SelectAlgforMix(const OpParam& param, std::string& algName)
 {
     (void) param;
+
+    // 混合组网场景不支持规约保序
+    if (IsNeedStrictMode(param)) {
+        HCCL_ERROR("[AllReduceOperator][SelectAlgforMix] not support DETERMINISTIC_STRICT mode.");
+        return HCCL_E_NOT_SUPPORT;
+    }
+
     if (gcdDeviceNumPerAggregation_ > 1) {
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
         HCCL_WARNING("[AllReduceOperator][SelectAlgforMix] only support NHR in AlgoLevel1 yet, "\
@@ -609,8 +616,21 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
                     && (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE)
                     && (!retryEnable_)
                     && !multiModuleDiffDeviceNumMode_;
+    
+    if (IsNeedStrictMode(param)) {
+        if (multiModuleDiffDeviceNumMode_ || multiSuperPodDiffDeviceNumMode_ || multiSuperPodDiffServerNumMode_ 
+            || param.reduceType == HCCL_REDUCE_PROD || param.DataDes.dataType == HCCL_DATA_TYPE_FP64
+            || GetExternalInputInterHccsDisable()) {
+            HCCL_ERROR("[AllReduceOperator][SelectAlgfor91093] not support DETERMINISTIC_STRICT mode.");
+            return HCCL_E_NOT_SUPPORT;
+        } else {
+            algName = "AllReduceOrderPreservedFor91093Executor";
+            HCCL_INFO("[SelectAlgfor91093] allreduce SelectAlgfor91093 algName [%s].", algName.c_str());
+            return HCCL_SUCCESS;
+        }
+    }
 
-    if (isSupportAivDeter){
+    if (isSupportAivDeter) {
         algName = "AllReduceMeshAivFor91093Executor";
         HCCL_INFO("[SelectAlgfor91093] allreduce SelectAlgfor91093 algName [%s].", algName.c_str());
         return HCCL_SUCCESS;
