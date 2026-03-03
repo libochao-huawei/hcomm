@@ -25,27 +25,6 @@ extern drvError_t __attribute__((weak)) halSvmAccess(uint32_t dev_id, uint64_t d
 extern drvError_t __attribute__((weak)) halSvmUnregister(uint32_t dev_id, uint64_t va, uint64_t size, uint64_t flag);
 
 //-----------------------------------------------------------------------------------------------------------------------------------
-typedef struct {
-    ThreadHandle thread;
-    ThreadHandle dstThread;
-    uint32_t notifyIdx;
-} RecordServiceArgs;
-
-int32_t RecordService (void* args, uint64_t argsSize)
-{
-    // TODO: 补充流程
-    return 0;
-}
-typedef struct {
-    ThreadHandle thread;
-    uint32_t notifyIdx;
-} WaitServiceArgs;
-
-int32_t WaitService (void* args, uint64_t argsSize)
-{
-    // TODO: 补充流程
-    return 0;
-}
 
 namespace hccl {
 
@@ -137,7 +116,7 @@ public:
     HcclResult ServiceRun() {
         while (true) {
             if (!sendQueue_->empty()) {
-                ThreadMsgEntity entity;
+                ThreadMsgEntity entity{};
                 sendQueue_->pop(entity);
                 executeService(entity.serviceHandle, entity.args, entity.argsSizeByte);
             }
