@@ -122,7 +122,7 @@ HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, Hccl
 
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParam(tag.c_str(), count, dataType, stream), tag.c_str());
 
-    CHK_RET_AND_PRINT_IDE(HcomCheckReductionOp(op), tag.c_str());
+    CHK_RET_AND_PRINT_IDE(HcomCheckReductionOp("HcclAllReduceInner", op), tag.c_str());
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     CHK_RET_AND_PRINT_IDE(HcomCheckReduceDataType(dataType, op, devType), tag.c_str());

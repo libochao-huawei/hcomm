@@ -491,7 +491,7 @@ HcclResult HcomAllReduce(const char *tag, void *inputPtr, void *outputPtr, u64 c
     CHK_PTR_NULL(stream);
 
     s32 streamId = 0;
-    CHK_RET(HcomCheckReductionOp(op));
+    CHK_RET(HcomCheckReductionOp("HcomAllReduce", op));
     CHK_RET(hrtGetStreamId(stream, streamId));
 
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
@@ -596,7 +596,7 @@ HcclResult HcomReduce(const char *tag, void *inputPtr, void *outputPtr, u64 coun
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcomReduce", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
-    CHK_RET(HcomCheckReductionOp(op));
+    CHK_RET(HcomCheckReductionOp("HcomReduce", op));
 
     s32 streamId = 0;
     CHK_RET(hrtGetStreamId(stream, streamId));
@@ -655,7 +655,7 @@ HcclResult HcomReduceScatter(const char *tag, void *inputPtr, void *outputPtr, u
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcomReduceScatter", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
-    CHK_RET(HcomCheckReductionOp(op));
+    CHK_RET(HcomCheckReductionOp("HcomReduceScatter", op));
 
     s32 streamId = 0;
     CHK_RET(hrtGetStreamId(stream, streamId));
@@ -701,7 +701,7 @@ HcclResult HcomReduceScatterV(const char *tag, void *sendBuf, const void *sendCo
     RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcomReduceScatterV", "nullptr", "recvBuf", "non-null pointer"}));
     CHK_PTR_NULL(recvBuf);
-    CHK_RET(HcomCheckReductionOp(op));
+    CHK_RET(HcomCheckReductionOp("HcomReduceScatterV", op));
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcomReduceScatterV", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
@@ -916,7 +916,7 @@ HcclResult HcclCommGraphAllReduce(const char *tag, void *inputPtr, void *outputP
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcclCommGraphAllReduce", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
-    CHK_RET(HcomCheckReductionOp(op));
+    CHK_RET(HcomCheckReductionOp("HcclCommGraphAllReduce", op));
     s32 streamId = 0;
     CHK_RET(hrtGetStreamId(stream, streamId));
 
@@ -966,7 +966,7 @@ HcclResult HcclCommGraphReduce(const char *tag, void *inputPtr, void *outputPtr,
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcclCommGraphReduce", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
-    CHK_RET(HcomCheckReductionOp(op));
+    CHK_RET(HcomCheckReductionOp("HcclCommGraphReduce", op));
     u32 totalRanks = 0;
     CHK_RET(HcclCommGraphGetRankSize(opBaseHcom, &totalRanks));
     CHK_RET(HcomCheckUserRank(totalRanks, root));
@@ -1063,7 +1063,7 @@ HcclResult HcclCommGraphReduceScatter(const char *tag, void *inputPtr, void *out
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcclCommGraphReduceScatter", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
-    CHK_RET(HcomCheckReductionOp(op));
+    CHK_RET(HcomCheckReductionOp("HcclCommGraphReduceScatter", op));
 
     s32 streamId = 0;
     CHK_RET(hrtGetStreamId(stream, streamId));

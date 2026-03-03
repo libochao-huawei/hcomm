@@ -2069,7 +2069,7 @@ HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCou
 
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParam(tag.c_str(), recvCount, dataType, stream), tag.c_str());
 
-    CHK_RET_AND_PRINT_IDE(HcomCheckReductionOp(op), tag.c_str());
+    CHK_RET_AND_PRINT_IDE(HcomCheckReductionOp("HcclReduceScatterInner", op), tag.c_str());
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     CHK_RET_AND_PRINT_IDE(HcomCheckReduceDataType(dataType, op, devType), tag.c_str());
@@ -2186,7 +2186,7 @@ HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const 
 
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParam(tag.c_str(), recvCount, dataType, stream), tag.c_str());
 
-    CHK_RET_AND_PRINT_IDE(HcomCheckReductionOp(op), tag.c_str());
+    CHK_RET_AND_PRINT_IDE(HcomCheckReductionOp("HcclReduceScatterVInner", op), tag.c_str());
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     CHK_RET_AND_PRINT_IDE(HcomCheckReduceDataType(dataType, op, devType), tag.c_str());
@@ -3626,7 +3626,7 @@ HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
     const string tag = "Reduce_" + hcclComm->GetIdentifier();
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParam(tag.c_str(), count, dataType, stream), tag.c_str());
 
-    CHK_RET_AND_PRINT_IDE(HcomCheckReductionOp(op), tag.c_str());
+    CHK_RET_AND_PRINT_IDE(HcomCheckReductionOp("HcclReduceInner", op), tag.c_str());
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     CHK_RET_AND_PRINT_IDE(HcomCheckReduceDataType(dataType, op, devType), tag.c_str());

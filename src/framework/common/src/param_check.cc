@@ -300,7 +300,7 @@ HcclResult HcomCheckGroupName(const char *group)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomCheckReductionOp(const HcclReduceOp op)
+HcclResult HcomCheckReductionOp(const std::sting& callerOpName, const HcclReduceOp op)
 {
     if (HCCL_SUPPORT_REDUCE_OP.find(op) == HCCL_SUPPORT_REDUCE_OP.end()) {
         std::string supportedOpsStr;
@@ -311,7 +311,7 @@ HcclResult HcomCheckReductionOp(const HcclReduceOp op)
             supportedOpsStr += GetReduceOpEnumStr(supportedOp);
         }
         RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-            std::vector<std::string>({ "HcomCheckReductionOp", GetReduceOpEnumStr(op), "op", supportedOpsStr }));
+            std::vector<std::string>({ callerOpName, GetReduceOpEnumStr(op), "op", supportedOpsStr }));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] Op:[%s] not supported",
             LOG_KEYWORDS_TASK_EXEC.c_str(),
             LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),

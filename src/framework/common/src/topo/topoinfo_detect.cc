@@ -627,7 +627,7 @@ HcclResult TopoInfoDetect::ReadHostSocketWhitelist(vector<HcclIpAddress> &whitel
 {
     RPT_ENV_ERR((GetExternalInputHcclWhiteListFile().length() == 0), "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        vector<string>({"0", "HCCL_WHITELIST_FILE", "a valid file path" }));
+        vector<string>({"", "HCCL_WHITELIST_FILE", "a valid file path" }));
 
     CHK_PRT_RET((GetExternalInputHcclWhiteListFile().length() == 0),
         HCCL_ERROR("[%s][%s]environmental variable HCCL_WHITELIST_DISABLE is [0], "
