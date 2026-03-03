@@ -93,6 +93,7 @@ set(hccl_include_list
 
     ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
     ${HCCL_BASE_DIR}/framework/next/coll_comms/
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank/comm_mems/
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank_pairs
@@ -380,6 +381,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoall/allltoall_pipeline_base.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoall/allltoall_pipeline_mesh_pairwise_ping_pong.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoall/allltoall_pipeline_mesh_pairwise_ccl_enough.cc
+        ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoall/alltoall_symmetric_memory.cc
 
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoallv/alltoallv_pairwise.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoallv/alltoallv_staged_base.cc
@@ -560,6 +562,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_single_rank_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_fullmesh_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_direct_fullmesh_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_symmetric_memory_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_2level_pipeline_excecutor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/310P/coll_all_to_all_v_for_310p_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_continuous_pipeline_executor.cc
@@ -787,7 +790,8 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/sockets/
         ${HCCL_BASE_DIR}/framework/next/comms/endpoints/
         ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
-
+        ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator/aicpu
+        
     )
 
     target_include_directories(ccl_kernel PRIVATE

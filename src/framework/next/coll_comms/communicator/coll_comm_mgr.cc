@@ -7,6 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+<<<<<<< HEAD
 #include "coll_comm_mgr.h"
 #include "ns_resume/task_abort_handler.h"
 
@@ -45,3 +46,17 @@ std::unordered_map<std::string, CollComm*> CollCommMgr::GetAllCollComms()
 }
 
 }
+=======
+
+#ifndef HCCL_DAEMON_FUNC_H
+#define HCCL_DAEMON_FUNC_H
+
+namespace Hccl {
+class DaemonFunc {
+public:
+    virtual ~DaemonFunc() = default;
+    virtual void Call() = 0;
+};
+} // namespace Hccl
+#endif // HCCL_DAEMON_FUNC_H
+>>>>>>> 528b2a436d7c7a67952b989d5f442965dedf9bbf

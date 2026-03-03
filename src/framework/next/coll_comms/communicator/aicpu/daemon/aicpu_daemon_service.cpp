@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "aicpu_daemon_service.h"
-#include "sal.h"
+#include "sal_pub.h"
 #include "log.h"
 
 namespace hccl {
