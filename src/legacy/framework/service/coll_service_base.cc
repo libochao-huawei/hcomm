@@ -241,6 +241,7 @@ void CollServiceBase::WaitOffloadTransportReady(const std::string &opTag) const
             comm->GetMemTransportManager()->DumpNotReadyTransportsOffload(opTag);
             THROW<InternalException>(timeoutMsg);
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 

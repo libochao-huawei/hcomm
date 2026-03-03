@@ -272,7 +272,7 @@ HcclResult HcomCheckReduceDataTypeV2(const HcclDataType dataType, const HcclRedu
             CHK_RET(HcomCheckProdDataTypeV2(dataType));
             break;
         default:
-            break;
+            return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;
 }
