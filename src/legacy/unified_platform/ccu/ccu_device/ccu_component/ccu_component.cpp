@@ -513,8 +513,8 @@ void CcuComponent::ConfigMsIdToken()
     struct CustomChannelInfoOut outBuff{};
 
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
-        const auto &dieIter = ccuRmaBufferMap.find(dieId);
-        if (dieIter == ccuRmaBufferMap.end()) {
+        const auto &dieIter = localCcuRmaBufferMap.find(dieId);
+        if (dieIter == localCcuRmaBufferMap.end()) {
             HCCL_WARNING("[CcuComponent][%s] failed but passed, ccu rma buffer of die[%u] "
                 "is not existed, devLogicId[%d].", __func__, dieId, devLogicId);
             continue;
