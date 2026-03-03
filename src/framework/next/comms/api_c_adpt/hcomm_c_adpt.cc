@@ -20,6 +20,7 @@
 #include "thread.h"
 #include "aicpu_ts_thread.h"
 #include "cpu_ts_thread.h"
+#include "cpu_thread.h"
 #include "aicpu_ts_urma_channel.h"
 #include "mem_device_pub.h"
 #include "channel_param.h"
@@ -594,6 +595,104 @@ HcclResult HcommThreadAllocWithStream(CommEngine engine,
     HCCL_INFO("[ThreadMgr]  ThreadAcquireWithStream done: engine[%d] stream[%p],"
         "notifyNum[%u]",  engine, stream, notifyNum);
     return HCCL_SUCCESS;
+}
+
+HcclResult HcommThreadAllocWithType(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, const ThreadType type, ThreadHandle *threads) {
+    CHK_PTR_NULL(threads);
+
+    HCCL_INFO("[%s]ThreadAcquire begin. need threadNum[%u], notifyPerThread[%u]",
+        __func__,
+        threadNum,
+        notifyNumPerThread);
+    if (threadNum <= 0 || threadNum > hccl::HCOMM_THREADNUM_MAX_NUM) {
+        HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.ThreadNum %u.threadNum range (0 , %u]", threadNum, hccl::HCOMM_THREADNUM_MAX_NUM);
+        return HCCL_E_PARA;
+    }
+
+    if (notifyNumPerThread < 0 || notifyNumPerThread > hccl::HCOMM_NOTIFY_MAX_NUM) {
+        HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.notifyNumPerThread is %u,notifyNumPerThread range [0 , %u]", notifyNumPerThread, hccl::HCOMM_NOTIFY_MAX_NUM);
+        return HCCL_E_PARA;
+    }
+
+    hccl::NotifyLoadType notifyLoadType;
+    hccl::StreamType streamType;
+    CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
+    CHK_RET(CommEngineToStreamType(engine, streamType));
+
+    HcclResult ret = HCCL_SUCCESS;
+    for (uint32_t i = 0; i < threadNum; ++i) {
+        std::shared_ptr<hccl::Thread> hostHandle;
+        HCCL_INFO("[%s] Thread notifyLoadType[%u], streamType[%u]",
+            __func__,
+            static_cast<int32_t>(notifyLoadType),
+            static_cast<int32_t>(streamType));
+        ret = CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, type, hostHandle);
+        if (ret != HCCL_SUCCESS ) {
+            HCCL_ERROR("[HcommThreadAlloc] Failed to create thread index %u", i);
+            if (i != 0) {
+                CHK_RET(HcommThreadFree(threads, i));
+            }
+            return ret;
+        }
+        ret = hostHandle->Init();
+        if (ret != HCCL_SUCCESS ) {
+            HCCL_ERROR("[HcommThreadAlloc] Failed to init thread index %u", i);
+            if (i != 0) {
+                CHK_RET(HcommThreadFree(threads, i));
+            }
+            return ret;
+        }
+
+        void* deviceHandle;
+        if (engine == COMM_ENGINE_AICPU) {
+            hccl::ThreadEntity threadEntity;
+            hccl::CpuThread* cpuThread = dynamic_cast<hccl::CpuThread*>(hostHandle.get());
+            cpuThread->GetThreadEntity(&threadEntity);
+            uint32_t threadSize = sizeof(hccl::ThreadEntity) + threadEntity.notifyNum * sizeof(hccl::NotifyEntity);
+            aclrtMalloc(&deviceHandle, threadSize, ACL_MEM_MALLOC_NORMAL_ONLY);
+
+            aclrtMemcpy(deviceHandle, threadSize, &threadEntity, threadSize, ACL_MEMCPY_HOST_TO_DEVICE);
+            threads[i] = reinterpret_cast<ThreadHandle>(deviceHandle); // 越界风险
+        } else {
+            threads[i] = reinterpret_cast<ThreadHandle>(hostHandle.get()); // 越界风险
+        }
+        hcomm::g_ThreadMap.emplace(threads[i], hostHandle);
+    }
+
+    HCCL_INFO("[HcommThreadAlloc] ThreadAcquire done: engine[%d] threadNum[%u],"
+              "notifyPerThread[%u]", engine, threadNum, notifyNumPerThread);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommThreadServiceRegister(ThreadHandle threadHandle, ThreadService service, ThreadServiceHandle *serviceHandle)
+{
+    if (hcomm::g_ThreadMap.find(threadHandle) == hcomm::g_ThreadMap.end()) {
+        HCCL_ERROR("Unknown ThreadHandle");
+        return HCCL_E_NOT_FOUND;
+    }
+    auto hostThread = hcomm::g_ThreadMap[threadHandle];
+    hccl::CpuThread* cpuThread = dynamic_cast<hccl::CpuThread*>(hostThread.get());
+    ThreadServiceHandle deviceServiceHandle{};
+    // aclrtMalloc(&deviceServiceHandle, sizeof(ThreadServiceEntity), ACL_MEM_MALLOC_NORMAL_ONLY);
+    if (cpuThread->ServiceRegister(service, &deviceServiceHandle) == HCCL_E_AGAIN) {
+        // aclrtFree(deviceServiceHandle);
+        return HCCL_E_AGAIN;
+    }
+
+    void* deviceHandle{};
+    aclrtMemcpy(
+        deviceHandle, 
+        sizeof(ThreadServiceHandle), 
+        &deviceServiceHandle, 
+        sizeof(ThreadServiceHandle), 
+        ACL_MEMCPY_HOST_TO_DEVICE);
+    *serviceHandle = reinterpret_cast<ThreadServiceHandle>(deviceHandle);
+
+}
+
+HcclResult HcommThreadServiceUnregister(ThreadHandle threadHandle, ThreadService service, ThreadServiceHandle *serviceHandle)
+{
+    //
 }
 
 HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx)
