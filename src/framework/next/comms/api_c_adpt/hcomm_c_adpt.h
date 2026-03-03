@@ -56,7 +56,13 @@ HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t noti
 HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
 
 HcclResult HcommThreadAllocWithStream(CommEngine engine, rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
- 
+
+HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx);
+
+HcclResult HcommEngineCtxDestroy(CommEngine engine, void *ctx);
+
+HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
