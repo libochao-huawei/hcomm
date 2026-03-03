@@ -64,7 +64,7 @@ HcclResult HcomCheckDataType(const HcclDataType dataType);
 HcclResult HcomCheckGroupName(const char *group = nullptr);
 
 // reduction op合法性检测
-HcclResult HcomCheckReductionOp(const HcclReduceOp op);
+HcclResult HcomCheckReductionOp( const std::string& callerOpName, const HcclReduceOp op);
 
 // Reduce data type合法性检测
 HcclResult HcomCheckReduceDataType(const HcclDataType dataType, const HcclReduceOp op, DevType deviceType);

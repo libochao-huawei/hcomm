@@ -275,6 +275,7 @@ std::vector<uint64_t> CcuContextAllToAllVMesh1D::GeneArgs(const CcuTaskArg &arg)
         return processReturn;
     }
     uint64_t xnMaxTransportSize   = UB_MAX_TRANS_SIZE;
+    HCCL_INFO("[CcuContextAllToAllVMesh1D][GeneArgs] CalGoSize size[%llu]", xnMaxTransportSize);
     auto     xnMaxTransportGoSize = CalGoSize(xnMaxTransportSize);
     for (auto val : xnMaxTransportGoSize) {
         processReturn.push_back(val);
@@ -285,6 +286,7 @@ std::vector<uint64_t> CcuContextAllToAllVMesh1D::GeneArgs(const CcuTaskArg &arg)
         uint64_t loopNum = UINT64_MAX - 1 - (taskArg->localSendRecvInfo.sendLength[i] / UB_MAX_TRANS_SIZE);
         uint64_t sendOffset = taskArg->localSendRecvInfo.sendOffset[i];
         uint64_t recvOffset = taskArg->localSendRecvInfo.recvOffset[i];
+        HCCL_INFO("[CcuContextAllToAllVMesh1D][GeneArgs] CalGoSize size[%llu]", tailSize);
         auto tailGoSize = CalGoSize(tailSize);
         processReturn.push_back(tailSize);
         processReturn.push_back(loopNum);
@@ -332,6 +334,65 @@ void CcuContextAllToAllVMesh1D::LoadAll2allSendRecvInfo(A2AsingleSendRecvInfo &s
         Load(sendRecvInfo.sendOffset);
         Load(sendRecvInfo.recvOffset);
         Load(sendRecvInfo.tailGoSize);
+    }
+}
+
+void CcuContextAllToAllVMesh1D::RefreshArgs(CollOpParams opParams, u32 rankSize, std::vector<uint64_t> &args) 
+{
+    uint64_t inputAddr;
+    uint64_t outputAddr;
+    uint64_t token = 0;
+    uint64_t srcOffset = 0;
+    uint64_t dstOffset = 0;
+
+    inputAddr = reinterpret_cast<uint64_t>(opParams.sendBuf);
+    outputAddr = reinterpret_cast<uint64_t>(opParams.recvBuf);
+
+    args.push_back(inputAddr);
+    args.push_back(outputAddr);
+    args.push_back(token);
+    args.push_back(srcOffset);
+    args.push_back(dstOffset);
+
+    //配置本地拷贝的moConfig参数
+    u32 loopCount = LOCAL_COPY_MS_PER_LOOP;
+    u32 memSlice = CCU_MS_LOCAL_COPY_LOOP_COUNT * CcuRep::CCU_MS_SIZE;
+    GroupOpConfig moConfig{CcuRep::CCU_MS_INTERLEAVE, loopCount, memSlice};
+    uint64_t  xnMaxTransportSize = UB_MAX_TRANS_SIZE;
+
+    HCCL_INFO("[CcuContextAllToAllVMesh1D][RefreshArgs] CalGoSizeStatic size [%llu]", xnMaxTransportSize);
+    auto xnMaxTransportGoSize = CcuContext::CalGoSizeStatic(xnMaxTransportSize, moConfig);
+    for (auto val : xnMaxTransportGoSize) {
+        args.push_back(val);
+    }
+
+    for (u32 i = 0; i < rankSize; i++) {
+        u64 curSendCounts = *(static_cast<const u64 *>(opParams.all2AllVDataDes.sendCounts) + i);
+        u64 curSendDispls = *(static_cast<const u64 *>(opParams.all2AllVDataDes.sdispls) + i);
+        u64 sendLength = curSendCounts * DataTypeSizeGet(opParams.all2AllVDataDes.sendType);
+        u64 sendOffset = curSendDispls * DataTypeSizeGet(opParams.all2AllVDataDes.sendType);
+
+        u64 curRecvDispls = *(static_cast<const u64 *>(opParams.all2AllVDataDes.rdispls) + i);
+        u64 recvOffset = curRecvDispls * DataTypeSizeGet(opParams.all2AllVDataDes.recvType);
+
+        uint64_t tailSize = sendLength % UB_MAX_TRANS_SIZE;
+        uint64_t loopNum = UINT64_MAX - 1 - (sendLength / UB_MAX_TRANS_SIZE);
+
+        HCCL_INFO("[CcuContextAllToAllVMesh1D][RefreshArgs] CalGoSizeStatic size [%llu]", tailSize);
+        auto tailGoSize = CcuContext::CalGoSizeStatic(tailSize, moConfig);
+
+        args.push_back(tailSize);
+        args.push_back(loopNum);
+        args.push_back(sendOffset);
+        args.push_back(recvOffset);
+
+        for (auto val : tailGoSize) {
+            args.push_back(val);
+        }
+    }
+    
+    for (u32 i = 0; i < args.size(); i++) {
+        HCCL_INFO("[CcuContextAllToAllVMesh1D][RefreshArgs] SFL args[%u] is [%llu]", i, args[i]);
     }
 }
 }

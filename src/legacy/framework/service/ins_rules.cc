@@ -22,6 +22,7 @@
 #include "dlprof_function.h"
 #include "hccl_aiv_utils.h"
 #include "sal.h"
+#include "ccu_ins_group.h"
 
 namespace Hccl {
 
@@ -619,6 +620,32 @@ static void GetCcuProfilingInfo(const CcuInstruction &ccuInstruction, const vect
     }
 }
 
+static void FastLoadSaveParams(const CcuInstruction &ccuInstruction, CommunicatorImpl &comm, const OpTaskConfig &taskConfig, 
+                            const Stream &stream, std::vector<std::vector<CcuTaskParam>> &ccuParams,
+                            std::vector<std::vector<CcuProfilingInfo>> &ccuProfilingInfo)
+{
+    std::size_t totalSize = 0;
+    for (const auto &ccuParam : ccuParams) {
+        totalSize += ccuParam.size();
+    }
+    if (totalSize != 0 && comm.isEnableSuperFasterLoad()) {
+        CcuInstType insType = ccuInstruction.GetInstType();
+        if (ccuInstruction.GetInstType() == CcuInstType::CCU_INS_GROUP) {
+            const CcuInsGroup *insGroup = dynamic_cast<const CcuInsGroup *>(&ccuInstruction);
+            if (insGroup == nullptr) {
+                THROW<NullPtrException>(StringFormat("%s CcuInsGroup trans failed", __func__));
+            } 
+            if (insGroup->GetCcuInstructions().empty()) {
+                THROW<InvalidParamsException>(StringFormat("%s insGroup CcuInstructions isEmpty", __func__));
+            }
+            insType = insGroup->GetCcuInstructions()[0]->GetInstType();
+        }
+        HCCL_RUN_INFO("current CcuInstType: %d", static_cast<int>(insType));
+        comm.saveCCUParams(std::move(ccuParams), std::move(ccuProfilingInfo), ccuInstruction.GetExecId(), insType,
+                           stream.GetId() != comm.GetStreamManager().GetMaster()->GetId());
+    }
+}
+
 void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorImpl &comm, const OpTaskConfig &taskConfig, 
                             const Stream &stream, std::vector<std::vector<CcuTaskParam>> &ccuParams)
 {
@@ -687,15 +714,7 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
         // launch localPostTo on extra streams
         cntNotifyNTo1->PostBits(bitValue, *slave);
     }    
-
-    std::size_t totalSize = 0;
-    for (const auto &ccuParam : ccuParams) {
-        totalSize += ccuParam.size();
-    }
-    if (totalSize != 0 && comm.isEnableSuperFasterLoad()) {
-        comm.saveCCUParams(std::move(ccuParams), std::move(ccuProfilingInfo), ccuInstruction.GetExecId(),
-                    stream.GetId() != comm.GetStreamManager().GetMaster()->GetId());
-    }
+    FastLoadSaveParams(ccuInstruction, comm, taskConfig, stream, ccuParams, ccuProfilingInfo);
 }
 
 static void SubmitCcuTasks(const CcuInstruction &ccuInstruction, CommunicatorImpl &comm, const OpTaskConfig &taskConfig, const Stream &stream)
@@ -734,15 +753,7 @@ static void SubmitCcuTasks(const CcuInstruction &ccuInstruction, CommunicatorImp
     //esl 2die适配，先申请从流再启动task
     LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig);
     ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.GetIsMaster());
-
-    std::size_t totalSize = 0;
-    for (const auto &ccuParam : ccuParams) {
-        totalSize += ccuParam.size();
-    }
-    if (totalSize != 0 && comm.isEnableSuperFasterLoad()) {
-        comm.saveCCUParams(std::move(ccuParams), std::move(ccuProfilingInfo), ccuInstruction.GetExecId(),
-                    stream.GetId() != comm.GetStreamManager().GetMaster()->GetId());
-    }
+    FastLoadSaveParams(ccuInstruction, comm, taskConfig, stream, ccuParams, ccuProfilingInfo);
 }
 
 void Interpret(const CcuInstruction &ccuInstruction, CommunicatorImpl &comm, const Stream &stream,
