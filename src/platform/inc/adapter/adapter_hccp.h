@@ -33,6 +33,8 @@ constexpr u32 MAX_PORT_ID = 65535;
 constexpr u32 MIN_PORT_ID = 1024;
 constexpr u32 AUTO_LISTEN_PORT = 0;
 constexpr u32 MAX_SEND_SGE_NUM = 8;
+constexpr u32 HOST_SQ_CQ_DEPTH = 8192;  // 8K
+constexpr u32 AICPU_SQ_CQ_DEPTH = 2048; // 2K
 
 // QP CQ default attr
 constexpr u32 DEFAULT_OPBASE_MAX_SEND_WR = 32768;
@@ -178,7 +180,7 @@ inline HcclResult CheckQpDepth(uint32_t depth)
 }
 
 HcclResult ConstructQpAttrs(s32 qpMode, struct QpExtAttrs &attrs, const QueueDepthAttr& qpDepth,
-    bool isWorkFlowLib = false);
+    bool isWorkFlowLib = false, bool useAicpu = false);
 
 HcclResult HrtRaGetQpDepth(RdmaHandle rdmaHandle, unsigned int *tempDepth, unsigned int *qpNum);
 HcclResult HrtRaSetQpDepth(RdmaHandle rdmaHandle, unsigned int tempDepth, unsigned int *qpNum);
