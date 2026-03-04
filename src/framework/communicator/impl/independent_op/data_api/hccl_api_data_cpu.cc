@@ -450,30 +450,36 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
     return HCCL_SUCCESS;
 }
 
-int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len)
+int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
-    HCCL_INFO("[%s] START. channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
-        __func__, channel, dst, src, len);
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
+        __func__, thread, channel, dst, src, len);
 
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
 
-    auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
-    CHK_PTR_NULL(hostCpuRoceChannelPtr);
-
-    HcclResult ret = hostCpuRoceChannelPtr->Write(dst, src, len);
+    HcclResult ret = HCCL_SUCCESS;
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType == DevType::DEV_TYPE_910_95) {
+        auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
+        CHK_PTR_NULL(hostCpuRoceChannelPtr);
+        ret = hostCpuRoceChannelPtr->Write(dst, src, len);
+    } else {
+        ret = HCCL_E_NOT_SUPPORT;
+    }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] FAIL. channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
-        __func__, channel, dst, src, len), ret);
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
+        __func__, thread, channel, dst, src, len), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
 
-int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const void *src,
+int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx)
 {
-    HCCL_INFO("[%s] START. channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
-        __func__, channel, dst, src, len, remoteNotifyIdx);
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
+        __func__, thread, channel, dst, src, len, remoteNotifyIdx);
 
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
@@ -489,27 +495,33 @@ int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const void *sr
         ret = HCCL_E_NOT_SUPPORT;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] FAIL. channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
-        __func__, channel, dst, src, len, remoteNotifyIdx), ret);
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
+        __func__, thread, channel, dst, src, len, remoteNotifyIdx), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
 
-int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len)
+int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
-    HCCL_INFO("[%s] START. channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
-        __func__, channel, dst, src, len);
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
+        __func__, thread, channel, dst, src, len);
 
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
 
-    auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
-    CHK_PTR_NULL(hostCpuRoceChannelPtr);
-
-    HcclResult ret = hostCpuRoceChannelPtr->Read(dst, src, len);
+    HcclResult ret = HCCL_SUCCESS;
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType == DevType::DEV_TYPE_910_95) {
+        auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
+        CHK_PTR_NULL(hostCpuRoceChannelPtr);
+        ret = hostCpuRoceChannelPtr->Read(dst, src, len);
+    } else {
+        ret = HCCL_E_NOT_SUPPORT;
+    }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] FAIL. channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
-        __func__, channel, dst, src, len), ret);
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
+        __func__, thread, channel, dst, src, len), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -517,24 +529,6 @@ int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t
 int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, const uint32_t remoteNotifyIdx)
 {
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", __func__, thread, channel, remoteNotifyIdx);
-
-    AddThread(thread);
-
-    Thread *threadPtr = reinterpret_cast<Thread *>(thread);
-    CHK_PTR_NULL(threadPtr);
-
-    Stream *stream = GetStream(thread);
-    CHK_PTR_NULL(stream);
-
-    HcclResult ret = HcclRemoteNotifyRecord(stream, reinterpret_cast<void *>(channel), remoteNotifyIdx);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", __func__, thread, channel, remoteNotifyIdx), ret);
-    HCCL_INFO("[%s] SUCCESS.", __func__);
-    return ret;
-}
-
-int32_t HcommChannelNotifyRecord(ChannelHandle channel, const uint32_t remoteNotifyIdx)
-{
-    HCCL_INFO("[%s] START. channel[0x%llx], remoteNotifyIdx[%u].", __func__, channel, remoteNotifyIdx);
 
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
@@ -544,34 +538,24 @@ int32_t HcommChannelNotifyRecord(ChannelHandle channel, const uint32_t remoteNot
         CHK_PTR_NULL(hostCpuRoceChannelPtr);
         ret = hostCpuRoceChannelPtr->NotifyRecord(remoteNotifyIdx);
     } else {
-        ret = HCCL_E_NOT_SUPPORT;
+        AddThread(thread);
+
+        Thread *threadPtr = reinterpret_cast<Thread *>(thread);
+        CHK_PTR_NULL(threadPtr);
+
+        Stream *stream = GetStream(thread);
+        CHK_PTR_NULL(stream);
+
+        ret = HcclRemoteNotifyRecord(stream, reinterpret_cast<void *>(channel), remoteNotifyIdx);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. channel[0x%llx], remoteNotifyIdx[%u].", __func__, channel, remoteNotifyIdx), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", __func__, thread, channel, remoteNotifyIdx), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
-    return HCCL_SUCCESS;
+    return ret;
 }
 
 int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
 {
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, thread, channel, localNotifyIdx, timeout);
-
-    AddThread(thread);
-
-    Thread *threadPtr = reinterpret_cast<Thread *>(thread);
-    CHK_PTR_NULL(threadPtr);
-
-    Stream *stream = GetStream(thread);
-    CHK_PTR_NULL(stream);
-
-    HcclResult ret = HcclRemoteNotifyWait(stream, reinterpret_cast<void *>(channel), localNotifyIdx, timeout);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, thread, channel, localNotifyIdx, timeout), ret);
-    HCCL_INFO("[%s] SUCCESS.", __func__);
-    return HCCL_SUCCESS;
-}
-
-int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
-{
-    HCCL_INFO("[%s] START. channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, channel, localNotifyIdx, timeout);
 
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
@@ -581,9 +565,17 @@ int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, u
         CHK_PTR_NULL(hostCpuRoceChannelPtr);
         ret = hostCpuRoceChannelPtr->NotifyWait(localNotifyIdx, timeout);
     } else {
-        ret = HCCL_E_NOT_SUPPORT;
+        AddThread(thread);
+
+        Thread *threadPtr = reinterpret_cast<Thread *>(thread);
+        CHK_PTR_NULL(threadPtr);
+
+        Stream *stream = GetStream(thread);
+        CHK_PTR_NULL(stream);
+
+        ret = HcclRemoteNotifyWait(stream, reinterpret_cast<void *>(channel), localNotifyIdx, timeout);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, channel, localNotifyIdx, timeout), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, thread, channel, localNotifyIdx, timeout), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -630,24 +622,30 @@ int32_t HcommReleaseComm(const char* commId)
     return HCCL_SUCCESS;
 }
 
-int32_t HcommFlush()
+int32_t HcommFenceOnThread(ThreadHandle thread)
 {
-    HCCL_INFO("[%s] START.", __func__);
+    HCCL_INFO("[%s] START. thread[0x%llx].", __func__, thread);
     HcclResult ret = HcommFlushV2();
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL.", __func__), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx].", __func__, thread), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
 
-int32_t HcommChannelFence(ChannelHandle channel)
+int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
 {
-    HCCL_INFO("[%s] START. channel[0x%llx].", __func__, channel);
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx].", __func__, thread, channel);
 
-    auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
-    CHK_PTR_NULL(hostCpuRoceChannelPtr);
-
-    HcclResult ret = hostCpuRoceChannelPtr->ChannelFence();
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. channel[0x%llx].", __func__, channel), ret);
+    HcclResult ret = HCCL_SUCCESS;
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType == DevType::DEV_TYPE_910_95) {
+        auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
+        CHK_PTR_NULL(hostCpuRoceChannelPtr);
+        ret = hostCpuRoceChannelPtr->ChannelFence();
+    } else {
+        ret = HCCL_E_NOT_SUPPORT;
+    }
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx].", __func__, thread, channel), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
