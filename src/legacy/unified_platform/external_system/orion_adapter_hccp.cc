@@ -2308,17 +2308,6 @@ HcclResult HrtRaCtxQpDestoryBatch(const RdmaHandle handle, const std::unordered_
     return HCCL_SUCCESS;
 }
 
-// struct TlvMsg {
-//     uint32_t type;
-//     uint32_t length;
-//     char *data;
-// }
-
-// struct ccu_mem_req {
-//     u32 udie_idx;
-//     u64 mem_type_bitmap;
-// }
-
 struct ccu_mem_info {
     unsigned int long long mem_va;
     unsigned int mem_size;
@@ -2374,7 +2363,7 @@ void HrtDeinitTlvMsg(TlvMsg* send_msg, TlvMsg* recv_msg) noexcept {
         recv_msg->length = 0;
     }
 }
-HcclResult HrtSetMemInfoList(struct CcuMemInfo *memInfoList, uint32_t count, struct ccu_mem_info *recvMemList) {
+void HrtSetMemInfoList(struct CcuMemInfo *memInfoList, uint32_t count, struct ccu_mem_info *recvMemList) {
     for (size_t i = 0; i < count; ++i) {
         memInfoList[i].memVa   = recvMemList[i].mem_va;
         memInfoList[i].memSize = recvMemList[i].mem_size;
@@ -2401,7 +2390,6 @@ HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memType
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), ret, tlv_module_type, send_msg.type);
         throw NetworkApiException(StringFormat("call ra_tlv_request failed"));
     }
-    // todo: check count == num
     auto rsp = static_cast<ccu_mem_rsp*>(static_cast<void*>(recv_msg.data));
     HrtSetMemInfoList(memInfoList, count, rsp->list);
     HrtDeinitTlvMsg(&send_msg, &recv_msg);

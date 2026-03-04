@@ -241,10 +241,9 @@ void CcuComponent::CreateCcuRmaBuffer()
         CHECK_NULLPTR(rdmaHandle, StringFormat("[CcuComponent][%s] failed, rdmaHandle is nullptr, "
             "devLogicId[%d] dieId[%u]", __func__, devLogicId, dieId));
 
-        // todo: 变成for循环
         struct CcuMemInfo memInfoList[CCU_MEM_INFO_SIZE];
         uint32_t count{0};
-        ccuResSpecs.GetCcuMemInfoList(dieId, memInfoList, count);
+        CHK_RET(ccuResSpecs.GetCcuMemInfoList(dieId, memInfoList, count));
         HCCL_ERROR("count %d", count);
         for (uint32_t i = 0; i < count; i++) {
             HCCL_ERROR("memInfoList[i].memVa %lld memInfoList[i].memSize %lld ccuResAddr %lld", memInfoList[i].memVa, memInfoList[i].memSize, ccuResAddr);
