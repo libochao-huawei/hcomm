@@ -101,7 +101,9 @@ void AivInsPreprocessor::BatchBuildUrmaTransports(const vector<LinkData> &links)
         }
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             transportMgr->DumpNotReadyTransportsUrma();
-            THROW<InternalException>("WaitTransportReady timeout, commId[%s].",
+            RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}),
+                            std::vector<std::string>({"Aiv urma wait transports ready timeout."}));
+            THROW<InternalException>("Aiv WaitTransportReady timeout, commId[%s].",
                                     comm->GetId().c_str());
             break;
         }
