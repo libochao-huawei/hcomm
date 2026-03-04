@@ -8,13 +8,22 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
-hcclCommDfx.cc
-hcclCommDfxLite.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/hcclCommDfx.cc
 )
-
-add_subdirectory(profiling)
-add_subdirectory(taskException)
 
 target_sources(hcomm PRIVATE
     ${src_list}
 )
+
+set(device_src_list
+    ${CMAKE_CURRENT_SOURCE_DIR}/hcclCommDfxLite.cc
+)
+
+if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+    target_sources(ccl_kernel PRIVATE
+        ${device_src_list}
+    )
+endif()
+
+add_subdirectory(profiling)
+add_subdirectory(taskException)

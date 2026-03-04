@@ -42,7 +42,7 @@ public:
     // taskException
     bool IsErrorReported() { return isErrorReported_; }
     void SetErrorReported(bool isErrorReported) { isErrorReported_ = isErrorReported; }
-    HcclResult SendErrorMessageReportToHost(Hccl::ErrorMessageReport & errMsgInfo);
+    HcclResult SendErrorMessageReportToHost(Hccl::ErrorMessageReport& errMsgInfo);
 
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);

@@ -47,13 +47,18 @@ TEST_F(HcclEngineCtxDestroyTest, Ut_HcclEngineCtxDestroy_When_InputParamNull_Exp
     EXPECT_EQ(result, HCCL_E_PTR);
 }
 
-// 测试空ctxTag指针传入
-TEST_F(HcclEngineCtxDestroyTest, Ut_HcclEngineCtxDestroy_When_CtxTagNull_Expect_Return_ERROR)
+// 测试空ctxTag指针传入，tag替换为空字符串，预期不报错
+TEST_F(HcclEngineCtxDestroyTest, Ut_HcclEngineCtxDestroy_When_CtxTagNull_Expect_Success)
 {
     CommEngine engine = COMM_ENGINE_CPU;
+    void * ctx;
+    uint64_t size = 256;
+
+    HcclResult createResult = HcclEngineCtxCreate(comm, nullptr, engine, size, &ctx);
+    EXPECT_EQ(createResult, HCCL_SUCCESS);
     
     HcclResult result = HcclEngineCtxDestroy(comm, nullptr, engine);
-    EXPECT_EQ(result, HCCL_E_PTR);
+    EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
 // 测试销毁不存在的Context
