@@ -2355,7 +2355,7 @@ HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memType
     auto rsp = reinterpret_cast<ccu_mem_rsp*>(recv_msg.data);
     rsp->die_id = 0;
     rsp->num = 0;
-    std::memset(rsp->list, 0, sizeof(rsp->list));
+    std::fill(std::begin(rsp->list), std::end(rsp->list), ccu_mem_info{});
     
     ret = RaTlvRequest(tlv_handle, tlv_module_type, &send_msg, &recv_msg);
     if (ret != 0) {
