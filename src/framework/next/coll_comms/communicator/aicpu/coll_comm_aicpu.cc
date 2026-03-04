@@ -232,3 +232,11 @@ HcclResult CollCommAicpu::NotifyAlloc(NotifyMgrAicpuParam *param)
         __func__, hcomId.c_str(), notifyNum);
     return HCCL_SUCCESS;
 }
+
+HcclResult CollCommAicpu::SendErrorMessageReportToHost(Hccl::ErrorMessageReport & errMsgInfo)
+{
+    CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
+    CHK_RET(kfcStatusTransferD2H_->Put(sizeof(Hccl::KfcStatus) + sizeof(Hccl::KfcErrType), sizeof(errMsgInfo),
+        reinterpret_cast<uint8_t *>(&errMsgInfo)));
+    return HCCL_SUCCESS;
+}
