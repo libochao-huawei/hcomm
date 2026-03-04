@@ -271,7 +271,6 @@ OpCommTransport ChannelManager::BuildChannelRequests(const std::vector<HcclChann
         tmpTransport.inputMemType = TransportMemType::CCL_INPUT;
         tmpTransport.outputMemType = TransportMemType::CCL_OUTPUT;
         tmpTransport.isUsedRdma = (desc.channelProtocol == CommProtocol::COMM_PROTOCOL_ROCE);
-        tmpTransport.hcclQos = hcclQos_;
         commTransport.transportRequests.push_back(tmpTransport);
     }
     
@@ -304,8 +303,8 @@ HcclResult ChannelManager::ParseChannelRemoteDataToMem(const OpCommTransport &op
         if (!transportRequest.isUsedRdma) {
             // sdma -> P2P
             CHK_RET(BuildOpRemoteChannelP2pResParam(tempLink, channelParam.remoteResV2[linkIdx]));
-            channelParam.remoteResV2[linkIdx].channelP2p.qos = transportRequest.hcclQos;
-            HCCL_INFO("[ChannelManager] [ParseChannelRemoteDataToMem] hcclQos[%u]", transportRequest.hcclQos);
+            channelParam.remoteResV2[linkIdx].channelP2p.qos =  hcclQos_;
+            HCCL_INFO("[ChannelManager] [ParseChannelRemoteDataToMem] hcclQos[%u]", channelParam.remoteResV2[linkIdx].channelP2p.qos);
         } else {
             // rdma -> roce
             CHK_RET(BuildOpRemoteChannelRoceResParam(tempLink, channelParam.remoteResV2[linkIdx]));
