@@ -1983,7 +1983,7 @@ HcclResult DestroyCq(RdmaHandle rdmaHandle, CqInfo& cq)
     return HCCL_SUCCESS;
 }
 
-HcclResult ConstructQpAttrs(s32 qpMode, struct QpExtAttrs &attrs, const QueueDepthAttr& qpDepth, bool isWorkFlowLib)
+HcclResult ConstructQpAttrs(s32 qpMode, struct QpExtAttrs &attrs, const QueueDepthAttr& qpDepth, bool isWorkFlowLib, bool useAicpu)
 {
     HCCL_INFO("[ConstructQpAttrs][qpDepth]sendCqDepth[%u], recvCqDepth[%u], sqDepth[%u], rqDepth[%u]", qpDepth.sendCqDepth, qpDepth.recvCqDepth,
         qpDepth.sqDepth, qpDepth.rqDepth);
@@ -2009,22 +2009,34 @@ HcclResult ConstructQpAttrs(s32 qpMode, struct QpExtAttrs &attrs, const QueueDep
     attrs.qpAttr.cap.max_recv_sge = DEFAULT_MAX_RECV_SGE;
     attrs.qpAttr.qp_type = IBV_QPT_RC;
 
-    if (qpDepth.sqDepth == INVALID_UINT) {
-        if (qpMode == OFFLINE_QP_MODE_EXT || isWorkFlowLib) {
-            attrs.qpAttr.cap.max_send_wr = DEFAULT_OFFLINE_MAX_SEND_WR;
+    // 处理发送队列和发送CQ深度 - 根据useAicpu选择不同深度
+    if (useAicpu) {
+        // AI CPU展开：使用2K深度
+        attrs.qpAttr.cap.max_send_wr = AICPU_SQ_CQ_DEPTH;
+        attrs.cqAttr.sendCqDepth = AICPU_SQ_CQ_DEPTH;
+    } else if (qpDepth.sqDepth == INVALID_UINT) {
+        // Host展开且未指定sqDepth：使用8K深度
+        attrs.qpAttr.cap.max_send_wr = HOST_SQ_CQ_DEPTH;
+        
+        if (qpDepth.sendCqDepth == INVALID_UINT) {
+            attrs.cqAttr.sendCqDepth = HOST_SQ_CQ_DEPTH;
+            if (qpMode == OFFLINE_QP_MODE_EXT || qpMode == OFFLINE_QP_MODE || isWorkFlowLib) {
+                attrs.cqAttr.sendCqDepth = HCCL_SEND_CQ_DEPTH_DEFAULT;
+            }
         } else {
-            attrs.qpAttr.cap.max_send_wr = DEFAULT_OPBASE_MAX_SEND_WR;
+            attrs.cqAttr.sendCqDepth = qpDepth.sendCqDepth;
         }
     } else {
+        // 使用用户指定的sqDepth
         attrs.qpAttr.cap.max_send_wr = qpDepth.sqDepth;
-    }
-    if (qpDepth.sendCqDepth == INVALID_UINT) {
-        attrs.cqAttr.sendCqDepth = DEFAULT_MAX_SEND_CQ_DEPTH;
-        if (qpMode == OFFLINE_QP_MODE_EXT || qpMode == OFFLINE_QP_MODE || isWorkFlowLib) {
-            attrs.cqAttr.sendCqDepth = HCCL_SEND_CQ_DEPTH_DEFAULT;
+        if (qpDepth.sendCqDepth == INVALID_UINT) {
+            attrs.cqAttr.sendCqDepth = HOST_SQ_CQ_DEPTH;
+            if (qpMode == OFFLINE_QP_MODE_EXT || qpMode == OFFLINE_QP_MODE || isWorkFlowLib) {
+                attrs.cqAttr.sendCqDepth = HCCL_SEND_CQ_DEPTH_DEFAULT;
+            }
+        } else {
+            attrs.cqAttr.sendCqDepth = qpDepth.sendCqDepth;
         }
-    } else {
-        attrs.cqAttr.sendCqDepth = qpDepth.sendCqDepth;
     }
     HCCL_INFO("[ConstructQpAttrs][attr]sendCqDepth[%d], recvCqDepth[%d], max_send_wr[%u], max_recv_wr[%u]", attrs.cqAttr.sendCqDepth,
         attrs.cqAttr.recvCqDepth, attrs.qpAttr.cap.max_send_wr, attrs.qpAttr.cap.max_recv_wr);
