@@ -21,6 +21,9 @@
 #include "local_ub_rma_buffer.h"
 #include "socket_exception.h"
 #include "exchange_ub_conn_dto.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
+#include "internal_exception.h"
 #undef protected
 #undef private
 #include "stub_communicator_impl_trans_mgr.h"

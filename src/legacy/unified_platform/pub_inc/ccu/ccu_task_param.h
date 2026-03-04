@@ -11,6 +11,8 @@
 #ifndef HCCL_CCU_TASK_PARAM_H
 #define HCCL_CCU_TASK_PARAM_H
 
+#include <cstdint>
+
 namespace Hccl {
 
 constexpr uint32_t CCU_SQE_ARGS_LEN = 13;

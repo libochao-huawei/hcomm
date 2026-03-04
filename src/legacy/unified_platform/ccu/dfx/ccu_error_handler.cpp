@@ -127,10 +127,10 @@ void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, c
     const uint16_t endIns = missionContext.GetEndIns();
     const uint16_t startIns = missionContext.GetStartIns();
     // 获取异常指令对应的Rep
-    HCCL_ERROR("[CcuErrorHandler]device %u, execMissionId[%u], startIns[%u], endIns[%u], currIns[%u]",
+    HCCL_ERROR("[CcuErrorHandler]device %d, execMissionId[%u], startIns[%u], endIns[%u], currIns[%u]",
                deviceId, ccuTaskParam.execMissionId, startIns, endIns, currIns);
     if (endIns == currIns) {
-        HCCL_ERROR("[CcuErrorHandler]device %u SQE != CQE, endIns[%u], currIns[%u]", deviceId, endIns, currIns);
+        HCCL_ERROR("[CcuErrorHandler]device %d SQE != CQE, endIns[%u], currIns[%u]", deviceId, endIns, currIns);
     }
 
     // 安全地获取currIns - 10的值

@@ -10,6 +10,9 @@
 
 #ifndef HCCLV2_SQE_V82_H
 #define HCCLV2_SQE_V82_H
+
+#include <cstdint>
+
 #include "sqe.h"
 namespace Hccl {
 

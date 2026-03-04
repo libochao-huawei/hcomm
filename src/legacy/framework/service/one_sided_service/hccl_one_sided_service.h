@@ -14,6 +14,7 @@
 #include "hccl_one_sided_conn.h"
 #include "kernel_param_lite.h"
 #include "stream.h"
+#include "dev_buffer.h"
 #include "coll_alg_params.h"
 #include "hccl_net_dev.h"
 

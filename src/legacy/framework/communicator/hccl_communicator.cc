@@ -435,7 +435,7 @@ HcclResult HcclCommunicator::GetKFCWorkSpace(const char *memTag, uint64_t *size,
     shared_ptr<DevBuffer> buff = pimpl->GetKFCWorkSpace(memTag);
     *addr = reinterpret_cast<void*>(buff.get()->GetAddr());
     if (*size != static_cast<uint64_t>(buff.get()->GetSize())) {
-        HCCL_ERROR("HcclCommunicator::GetKFCWorkSpace, The size of mem %p is non-consistent. [%u->%u]", *size, buff.get()->GetSize());
+        HCCL_ERROR("HcclCommunicator::GetKFCWorkSpace, The size of mem is non-consistent. [%u->%u]", *size, buff.get()->GetSize());
         return HCCL_E_PARA;
     }
     return HcclResult::HCCL_SUCCESS;

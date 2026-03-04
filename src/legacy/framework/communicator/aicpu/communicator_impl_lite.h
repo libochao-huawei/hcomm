@@ -185,12 +185,14 @@ public:
         return profilingReporterLite.get();
     }
 
-    HcclResult SendErrorMessageReportToHost(ErrorMessageReport & errMsgInfo);
-    u32 GetUserStreamId() {
+    HcclResult SendErrorMessageReportToHost(ErrorMessageReport &errMsgInfo);
+    u32 GetUserStreamId() const
+    {
         return userStreamId_;
     }
 
-    bool IsErrorReported() {
+    bool IsErrorReported() const
+    {
         return isErrorReported_;
     }
 
