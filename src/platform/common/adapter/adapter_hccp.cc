@@ -1983,7 +1983,7 @@ HcclResult DestroyCq(RdmaHandle rdmaHandle, CqInfo& cq)
     return HCCL_SUCCESS;
 }
 
-HcclResult ConstructQpAttrs(s32 qpMode, struct QpExtAttrs &attrs, const QueueDepthAttr& qpDepth, bool isWorkFlowLib)
+HcclResult ConstructQpAttrs(s32 qpMode, struct QpExtAttrs &attrs, const QueueDepthAttr& qpDepth, bool isWorkFlowLib, bool useAicpu)
 {
     HCCL_INFO("[ConstructQpAttrs][qpDepth]sendCqDepth[%u], recvCqDepth[%u], sqDepth[%u], rqDepth[%u]", qpDepth.sendCqDepth, qpDepth.recvCqDepth,
         qpDepth.sqDepth, qpDepth.rqDepth);
@@ -2012,16 +2012,27 @@ HcclResult ConstructQpAttrs(s32 qpMode, struct QpExtAttrs &attrs, const QueueDep
     if (qpDepth.sqDepth == INVALID_UINT) {
         if (qpMode == OFFLINE_QP_MODE_EXT || isWorkFlowLib) {
             attrs.qpAttr.cap.max_send_wr = DEFAULT_OFFLINE_MAX_SEND_WR;
-        } else {
-            attrs.qpAttr.cap.max_send_wr = DEFAULT_OPBASE_MAX_SEND_WR;
+        } else if (qpMode == OPBASE_QP_MODE_EXT){
+            if (useAicpu) {
+                attrs.qpAttr.cap.max_send_wr = AICPU_SQ_CQ_DEPTH;
+            }
+            else {
+                attrs.qpAttr.cap.max_send_wr = HOST_SQ_CQ_DEPTH;
+            }
         }
     } else {
         attrs.qpAttr.cap.max_send_wr = qpDepth.sqDepth;
     }
     if (qpDepth.sendCqDepth == INVALID_UINT) {
-        attrs.cqAttr.sendCqDepth = DEFAULT_MAX_SEND_CQ_DEPTH;
         if (qpMode == OFFLINE_QP_MODE_EXT || qpMode == OFFLINE_QP_MODE || isWorkFlowLib) {
             attrs.cqAttr.sendCqDepth = HCCL_SEND_CQ_DEPTH_DEFAULT;
+        } else if (qpMode == OPBASE_QP_MODE_EXT) {
+            if (useAicpu) {
+                attrs.cqAttr.sendCqDepth = AICPU_SQ_CQ_DEPTH;
+            }
+            else {
+                attrs.cqAttr.sendCqDepth = HOST_SQ_CQ_DEPTH;
+            }
         }
     } else {
         attrs.cqAttr.sendCqDepth = qpDepth.sendCqDepth;
