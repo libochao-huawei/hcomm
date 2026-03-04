@@ -91,6 +91,7 @@ typedef struct {
             uint32_t qos;
         } hccsAttr;
     };
+
     HcommSocket socket;
     // socket 监听指定端口号（源/目的端口号）
     uint16_t port;
