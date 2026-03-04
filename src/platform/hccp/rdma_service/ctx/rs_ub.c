@@ -1403,9 +1403,9 @@ int RsUbCtxRmemImport(struct RsUbDevCb *devCb, struct MemImportAttrT *memAttr,
 
     hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segInfo.addr: %lu", remSegCb->segInfo.addr);
     hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segInfo.len: %lu", remSegCb->segInfo.len);
-    hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segInfo.seg.ubva.va: %lu", remSegCb->seg.ubva.va);
-    hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segInfo.seg.len: %lu", remSegCb->seg.len);
-    hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segInfo.seg.token_id: %lu", remSegCb->seg.token_id);
+    hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segInfo.seg.ubva.va: %lu", remSegCb->segInfo.seg.ubva.va);
+    hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segInfo.seg.len: %lu", remSegCb->segInfo.seg.len);
+    hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segInfo.seg.token_id: %lu", remSegCb->segInfo.seg.token_id);
     hccp_warn("@@@ RsUbCtxRmemImport remSegCb->state: %lu", remSegCb->state);
     hccp_warn("@@@ RsUbCtxRmemImport remSegCb->tokenValue.token: %lu", remSegCb->tokenValue.token);
 
