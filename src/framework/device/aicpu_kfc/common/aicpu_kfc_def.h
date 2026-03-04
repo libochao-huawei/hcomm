@@ -18,6 +18,34 @@
 #include "hccl_msg.h"
 #include "aicpu_operator_pub.h"
 
+#ifndef HCCL_MSG_HAS_COMM_KFC_DEF
+namespace HcclApi {
+constexpr uint32_t DECOUPLED_CTX_VER = 2U;
+struct CommKfcParamDesc {
+    uint64_t version : 4;    // 版本号，解耦context方案是2，否则是1
+    uint64_t itemNum : 4;    // ctx数量
+    uint64_t hasFfts : 1;    // 910下是否是ffts融合算子
+    uint64_t tilingOff : 7;  // tilingdata指针所在的参数索引
+    uint64_t isDyn : 48;     // 输入参数是否是动态输入
+};
+
+struct CommKfcApiContext {
+    uint64_t version;
+    uint64_t workSpace;
+    uint64_t workSpaceSize;
+    uint32_t rankId;
+    uint32_t rankNum;
+};
+
+struct CommKfcContext {
+    uint64_t version;
+    uint64_t hcclContext;
+    char reserved[48];
+    CommKfcApiContext apiCtx;
+};
+}
+#endif
+
 constexpr int32_t AICPU_CNT = 8;
 constexpr int32_t CLUSTER_CNT = 2;
 constexpr u64 HCCL_COPY_ALIGN = 16 * 1024;
