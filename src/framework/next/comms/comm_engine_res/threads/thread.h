@@ -22,6 +22,7 @@
 #include "adapter_hal_pub.h"
 #include "device_capacity.h"
 #include "hccl_api.h"
+#include "resource_entities.h"
 
 namespace hccl {
 constexpr u32 HCOMM_NOTIFY_MAX_NUM = 64;
@@ -37,6 +38,9 @@ public:
     virtual std::string &GetUniqueId() = 0;
     virtual uint32_t GetNotifyNum() const = 0;
     virtual LocalNotify *GetNotify(uint32_t index) const = 0;
+    virtual HcclResult GetThreadEntity(ThreadEntity* threadEntity) const {
+        return HCCL_E_NOT_SUPPORT;
+    };
 
     // A3 Stream & A5 Stream
     virtual bool IsDeviceA5() const = 0;
