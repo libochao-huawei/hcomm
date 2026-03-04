@@ -17,6 +17,7 @@
 #include "log.h"
 #include "ccu_ctx.h"
 #include "ccu_datatype.h"
+#include "hccl_params_pub.h"
 
 namespace Hccl {
 
@@ -28,6 +29,7 @@ public:
 
     void Algorithm() override;
     std::vector<uint64_t> GeneArgs(const CcuTaskArg &arg) override;
+    static void RefreshArgs(CollOpParams opParams, u32 rankSize, std::vector<uint64_t> &args);
 
 protected:
     // a2a 对每个对端的发送接收信息

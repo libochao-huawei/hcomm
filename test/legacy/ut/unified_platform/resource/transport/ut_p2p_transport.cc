@@ -124,7 +124,7 @@ protected:
         std::cout << "A Test case in P2PTransport SetUP" << std::endl;
         MOCKER(HrtMemAsyncCopy).stubs().with(any());
         MOCKER(HrtReduceAsync).stubs().with(any());
-        MOCKER(rtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue((void *)100));
+        MOCKER(aclrtCreateStreamWithConfig).stubs().with(any(), any()).will(returnValue((void *)100));
         MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
         MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910A2));
         MOCKER(HrtIpcOpenNotify).stubs().with(any()).will(returnValue((void *)fakeNotifyHandleAddr));

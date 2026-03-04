@@ -69,7 +69,6 @@ struct CcuRepArg {
     std::vector<LocalAddr>  localAddrList; // 新增成员变量
     RemoteAddr              remoteAddr;
     std::vector<RemoteAddr> remoteAddrList;
-
 };
 
 }; // namespace CcuRep

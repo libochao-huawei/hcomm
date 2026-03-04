@@ -71,8 +71,8 @@ void CcuContextReduceMeshMem2Mem1D::InitResource()
             HCCL_INFO("[CcuContextReduceMeshMem2Mem1D] MyRank[%u], PeerId[%llu], TransportId[%hu]", rankId_, peerId,
                       transportIdx);
             // 判断transport是否为空，为空直接报错
-            CHK_PRT_RET(transports[transportIdx] == nullptr,
-                        HCCL_ERROR("[CcuContextReduceMeshMem2Mem1D] Algorithm transport ptr is null"), );
+            CHK_PRT_RET(transports[transportIdx] == nullptr || transportIdx >= transports.size(),
+                    HCCL_ERROR("[CcuContextReduceMeshMem2Mem1D] Algorithm transport ptr is null or transportIdx is out of bounds"),);
             input_.push_back(
                 CreateVariable((*transports[transportIdx]), CKE_IDX_0)); // 获取transport中id=1的Var来传递input
             output_.push_back(

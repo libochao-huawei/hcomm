@@ -30,7 +30,7 @@ protected:
 
     virtual void SetUp()
     {
-        MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<s32>(0)));
+        MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<DevId>(0)));
         void *rdmaHandle = (void*)0x200;
         MOCKER(HrtRaUbCtxInit).stubs().with(any(), any()).will(returnValue(rdmaHandle));
         std::cout << "A Test case in TpManagerTest SetUP" << std::endl;

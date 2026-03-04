@@ -42,7 +42,7 @@ class TaskInfo {
 public:
     u32                        streamId_;
     u32                        taskId_;
-    u32                        remoteRank_;
+    u32                        remoteRank_{0xffffffff};
     TaskParam                  taskParam_;
     std::shared_ptr<DfxOpInfo> dfxOpInfo_;
     bool                       isMaster_;

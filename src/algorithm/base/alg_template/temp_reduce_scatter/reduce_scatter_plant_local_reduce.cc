@@ -13,6 +13,8 @@
 #include "reduce_scatter_plant_local_reduce.h"
 
 namespace hccl {
+constexpr u32 DEVICE_EIGHT = 8;
+constexpr u32 FACTOR_NUM_TWO = 2;
 ReduceScatterPlantLocalReduce::ReduceScatterPlantLocalReduce(const HcclDispatcher dispatcher)
     : AlgTemplateBase(dispatcher)
 {}
@@ -24,7 +26,7 @@ HcclResult ReduceScatterPlantLocalReduce::Prepare(void *inputMemPtr, DeviceMem &
     const Stream &stream, std::vector<Stream> &subStreams, std::vector<std::shared_ptr<LocalNotify>> &meshSignal,
     std::vector<std::shared_ptr<LocalNotify>> &meshSignalAux, GroupSlicesInfo &grouSlicesInfo,
     const HcclReduceOp reductionOp, u32 all2allOffset, const HcclDataType dataType, bool isNeedSpaceBorrow,
-    bool reverseMemUsage)
+    bool reverseMemUsage, bool isA3CrossNode)
 {
     inputMemPtr_ = inputMemPtr;       // UserInPtr，All2All使用
     inputMem_ = cclInMem;             // 空拷贝 & 存放最后一块数据（Allreduce非整除场景）
@@ -38,6 +40,7 @@ HcclResult ReduceScatterPlantLocalReduce::Prepare(void *inputMemPtr, DeviceMem &
     all2allOffset_ = all2allOffset;
     dataType_ = dataType;
     isNeedSpaceBorrow_ = isNeedSpaceBorrow;
+    isA3CrossNode_ = isA3CrossNode;
     if (reverseMemUsage) {
         // 交换两块buffer的用途，in buffer作为输出buffer
         HCCL_INFO("[%s] reverse memory usage.", __func__);
@@ -124,7 +127,7 @@ HcclResult ReduceScatterPlantLocalReduce::RunAsync(const u32 rank, const u32 ran
 
     // All2All主流（主流）通知LocalReduce主流开始准备执行,
     // All2All需要rankSize条流，其中主流完成LocalCopy&第一个A2A任务，因此主从同步需要rankSize-2个任务。lRMainStreamId_需要-2
-    all2allSubStreamNum_ = rankSize - 2;
+    all2allSubStreamNum_ = std::min(rankSize, DEVICE_EIGHT) - 2;
     lRMainStreamId_ = all2allSubStreamNum_;
 
     CHK_RET(AlgTemplateBase::ExecEmptyTask(inputMem_, outputMem_, stream_, dispatcher_));
@@ -136,8 +139,12 @@ HcclResult ReduceScatterPlantLocalReduce::RunAsync(const u32 rank, const u32 ran
     HcclResult ret = HCCL_SUCCESS;
     for (u32 groupId = 0; groupId < groupSlicesInfo_.size(); groupId++) {
         const MemBlockInfo& memBlockInfo = groupSlicesInfo_[groupId];
-        ret = RunAlltoAll(links, groupId, memBlockInfo);
-        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]RunAlltoAll failed, localRank[%u], groupId[%u]",
+        if (isA3CrossNode_) {
+            ret = RunGroupAlltoAll(links, groupId, memBlockInfo);
+        } else {
+            ret = RunAlltoAll(links, groupId, memBlockInfo);
+        }
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]RunAlltoAll or RunGroupAlltoAll failed, localRank[%u], groupId[%u]",
             __func__, localRank_, groupId), ret);
         
         CHK_RET(LocalNotify::Wait(stream_, dispatcher_, (*meshSignalPtr_)[lRMainStreamId_], profilerInput_.stage));
@@ -249,6 +256,85 @@ HcclResult ReduceScatterPlantLocalReduce::RunAlltoAll(const std::vector<LINK> &l
     return HCCL_SUCCESS;
 }
 
+HcclResult ReduceScatterPlantLocalReduce::RunGroupAlltoAll(const std::vector<LINK> &links, u32 groupId,
+    const MemBlockInfo& memBlockInfo)
+{
+    constexpr u32 numInGroup = 8;
+    u32 numOfGroups = (rankSize_ + numInGroup - 1) / numInGroup;
+
+    // 本卡优先拷贝同号位数据
+    CHK_RET(LocalCopy(groupId, memBlockInfo));
+
+    for (u32 idGroup = 0; idGroup < numOfGroups; ++idGroup) {
+        // 主流通知从流可以开始接受数据
+        u32 all2allfirstSubStreamId = 0;
+        CHK_RET(MainRecordSub(stream_, all2allfirstSubStreamId, all2allSubStreamNum_));
+        CHK_RET(SubWaitMain(all2allfirstSubStreamId, all2allSubStreamNum_));
+
+        // 开始数据拷贝
+        u32 streamIndex = 0;
+        for (u32 cnt = 0, round = idGroup * numInGroup; round < rankSize_ && cnt < numInGroup; ++round, ++cnt) {
+            if (round == 0) {
+                continue;
+            }
+            u32 sendRank = (localRank_ + round) % rankSize_;
+            u32 recvRank = (rankSize_ + localRank_ - round) % rankSize_;
+            Stream &subStream = (streamIndex == 0) ? stream_ : subStreams_[streamIndex - 1];
+            CHK_SMART_PTR_NULL(links[sendRank]);
+            CHK_SMART_PTR_NULL(links[recvRank]);
+            CHK_RET(links[recvRank]->TxAck(subStream));
+            CHK_RET(links[sendRank]->RxAck(subStream));
+            streamIndex++;
+        }
+
+        CHK_RET(SubRecordMain(all2allfirstSubStreamId, all2allSubStreamNum_));
+        CHK_RET(MainWaitSub(stream_, all2allfirstSubStreamId, all2allSubStreamNum_));
+        CHK_RET(AlgTemplateBase::ExecEmptyTask(inputMem_, outputMem_, subStreams_[lRMainStreamId_], dispatcher_));
+
+        CHK_RET(MainRecordSub(stream_, all2allfirstSubStreamId, all2allSubStreamNum_));
+        CHK_RET(SubWaitMain(all2allfirstSubStreamId, all2allSubStreamNum_));
+        streamIndex = 0;
+        for (u32 cnt = 0, round = idGroup * numInGroup; round < rankSize_ && cnt < numInGroup; ++round, ++cnt) {
+            if (round == 0) {
+                continue;
+            }
+            u32 sendRank = (localRank_ + round) % rankSize_;
+            u32 recvRank = (rankSize_ + localRank_ - round) % rankSize_;
+            Stream &subStream = (streamIndex == 0) ? stream_ : subStreams_[streamIndex - 1];
+            CHK_SMART_PTR_NULL(links[sendRank]);
+            CHK_SMART_PTR_NULL(links[recvRank]);
+
+            u64 sliceSize = memBlockInfo.size[sendRank];
+            if (sliceSize != 0) {
+                u64 userMemInOffset = memBlockInfo.userInputOffsets[sendRank];
+                DeviceMem src = DeviceMem::create(static_cast<u8 *>(inputMemPtr_) + userMemInOffset, sliceSize);
+                u32 outputIndex = CalcOutputIndex(sendRank);
+                u64 dstOffset = 0;
+                void *remMemPtr = nullptr;
+                if (isNeedSpaceBorrow_ && isLastBlockData(outputIndex) && !(isLastRank(sendRank) && isLastGroup(groupId))) {
+                    CHK_RET(links[sendRank]->GetRemoteMem(scratchMemType_, &remMemPtr));
+                    dstOffset = memBlockInfo.outputOffsets[sendRank];
+                } else {
+                    CHK_RET(links[sendRank]->GetRemoteMem(outputMemType_, &remMemPtr));
+                    dstOffset = memBlockInfo.outputOffsets[outputIndex];
+                }
+                DeviceMem dst = DeviceMem::create(static_cast<u8 *>(remMemPtr) + dstOffset, sliceSize);
+                CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dst, src, subStream, links[sendRank]->GetRemoteRank(),
+                        links[sendRank]->GetLinkType()));
+            }
+            CHK_RET(links[sendRank]->TxDataSignal(subStream));
+            CHK_RET(links[recvRank]->RxDataSignal(subStream));
+            streamIndex++;
+        }
+
+        // 从流通知主流完成拷贝
+        CHK_RET(SubRecordMain(all2allfirstSubStreamId, all2allSubStreamNum_));
+        CHK_RET(MainWaitSub(stream_, all2allfirstSubStreamId, all2allSubStreamNum_));
+    }
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult ReduceScatterPlantLocalReduce::RunLocalReduce(u32 groupId, const MemBlockInfo& memBlockInfo)
 {
     u32 reduceStep = static_cast<u32>(std::ceil(log2(rankSize_)));
@@ -265,8 +351,9 @@ HcclResult ReduceScatterPlantLocalReduce::RunLocalReduce(u32 groupId, const MemB
     for (u32 round = 0; round < reduceStep; round++) {
         u32 tailIndex = std::min(rankSize_, static_cast<u32>(1 << static_cast<int>(reduceStep - round))) - 1;
         u32 headIndex = static_cast<u32>(1 << static_cast<int>((reduceStep - round - 1)));
+        u32 reduceSubStreamNum = std::min(tailIndex - headIndex, DEVICE_EIGHT / FACTOR_NUM_TWO - 1);
         // LR主流通知从流可以开始接受数据
-        for (u32 offset = 0; offset < tailIndex - headIndex; offset++) {
+        for (u32 offset = 0; offset < reduceSubStreamNum; offset++) {
             u32 streamId = lRMainStreamId_ + offset + 1;
             // 只有reduce任务 > 1时才需要主从流同步: LR主流通知从流, 从流Wait LR主流
             CHK_RET(LocalNotify::Post(subStreams_[lRMainStreamId_], dispatcher_, (*meshSignalAuxPtr_)[streamId],
@@ -279,7 +366,8 @@ HcclResult ReduceScatterPlantLocalReduce::RunLocalReduce(u32 groupId, const MemB
         for (u32 offset = 0; offset <= tailIndex - headIndex; offset++) {   
             u32 inputIndex = CalcOutputIndex(headIndex + offset); // reduce的源数据offset
             u32 outputIndex = CalcOutputIndex(offset);            // reduce的目标offset
-            Stream &subStream = subStreams_[lRMainStreamId_ + offset];
+            u32 streamOffset = offset % (reduceSubStreamNum + 1);
+            Stream &subStream = subStreams_[lRMainStreamId_ + streamOffset];
             if (sliceSize == 0) {
                 continue;
             }
@@ -302,7 +390,7 @@ HcclResult ReduceScatterPlantLocalReduce::RunLocalReduce(u32 groupId, const MemB
         }
 
         // 从流通知LR主流可以开始下一轮
-        for (u32 offset = 0; offset < tailIndex - headIndex; offset++) {
+        for (u32 offset = 0; offset < reduceSubStreamNum; offset++) {
             u32 streamId = lRMainStreamId_ + offset + 1;
             // 只有reduce任务 > 1时才需要主从流同步: LR主流通知从流, 从流Wait LR主流
             CHK_RET(LocalNotify::Post(subStreams_[streamId], dispatcher_, (*meshSignalPtr_)[streamId],

@@ -16,7 +16,6 @@
 #include "llt_hccl_stub_pub.h"
 GTEST_API_ int main(int argc, char **argv) {
     printf("Running hccl_api_single_thread_test\n");
-    testing::GTEST_FLAG(filter) = "CommChannelGetStatusTest.ut_HcclTaskRegister_When_Normal_Expect_Return_HCCL_SUCCESS";
     setTargetPort(27743, 31123);
     testing::InitGoogleTest(&argc, argv);
     setenv("HCCL_DEBUG_CONFIG", "alg", 1);
