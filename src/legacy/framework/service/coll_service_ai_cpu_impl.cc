@@ -443,21 +443,16 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     {
         THROW<RuntimeApiException>(StringFormat("Call aclrtBinaryGetFunction failed, with ret[%d]", aclRet));
     }
-	if (opMode == OpMode::OPBASE) {
-		HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, comm->GetAicpuStreamManager().GetFreeStream()->GetPtr(), &cfg,
+    auto& mStream = (opMode == OpMode::OPBASE) ? (*comm->GetAicpuStreamManager().GetFreeStream()) : stream;
+    std::string mode = (opMode == OpMode::OPBASE) ? "OPBASE" : "OFFLOAD";
+    HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, mStream.GetPtr(), &cfg,
 			&param.kernel, sizeof(HcclKernelParamLite));
-		HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s OPBASE mode "
-		          "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName);
-	} else if (opMode == OpMode::OFFLOAD) {
-		HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, stream.GetPtr(), &cfg,
-			&param.kernel, sizeof(HcclKernelParamLite));
-		HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s OFFLOAD mode "
-		          "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName);
-	}
+    HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s, %s mode "
+                "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName, mode.c_str());
     taskParam.taskType = TaskParamType::TASK_AICPU_KERNEL;
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
-    SaveDfxTaskInfo(taskParam, -1, stream.GetIsMaster());
+    SaveDfxTaskInfo(taskParam, -1, mStream.GetIsMaster());
     AddWaitToUserStream(stream);
 }
 
