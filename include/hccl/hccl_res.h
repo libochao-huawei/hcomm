@@ -218,9 +218,6 @@ typedef struct {
             uint8_t sl;               ///< 服务等级(QoS)
         } roceAttr;
     };
-        struct {
-            uint32_t qos;
-        } hccsAttr;
 } HcclChannelDesc;
 
 #ifndef LIKELY

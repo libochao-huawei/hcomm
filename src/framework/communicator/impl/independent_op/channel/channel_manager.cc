@@ -271,7 +271,7 @@ OpCommTransport ChannelManager::BuildChannelRequests(const std::vector<HcclChann
         tmpTransport.inputMemType = TransportMemType::CCL_INPUT;
         tmpTransport.outputMemType = TransportMemType::CCL_OUTPUT;
         tmpTransport.isUsedRdma = (desc.channelProtocol == CommProtocol::COMM_PROTOCOL_ROCE);
-        tmpTransport.hcclQos = desc.hccsAttr.qos;
+        tmpTransport.hcclQos = hcclQos_;
         commTransport.transportRequests.push_back(tmpTransport);
     }
     
@@ -772,5 +772,11 @@ HcclResult ChannelManager::ReleaseChannel()
     }
     channelLinks_.clear();
     return HCCL_SUCCESS;
+}
+
+HcclResult ChannelManager::SetHcclQos(u32 hcclQos)
+{
+    HCCL_INFO("[ChannelManager] [ChannelManager] hcclQos[%u]", hcclQos);
+    hcclQos_ = hcclQos;
 }
 } // namespace hccl
