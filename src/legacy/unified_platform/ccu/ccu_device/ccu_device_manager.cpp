@@ -113,6 +113,14 @@ HcclResult CcuDeviceManager::GetCcuResourceSpaceTokenInfo(const int32_t deviceLo
     );
 }
 
+HcclResult CcuDeviceManager::GetCcuResourceSpaceTokenInfoForLocal(const int32_t deviceLogicId, const uint8_t dieId,
+    uint64_t &tokenId, uint64_t &tokenValue)
+{
+    TRY_CATCH_RETURN(
+        return CcuComponent::GetInstance(deviceLogicId).GetCcuResourceSpaceTokenInfoForLocal(dieId, tokenId, tokenValue);
+    );
+}
+
 HcclResult CcuDeviceManager::ConfigChannel(const int32_t deviceLogicId, const uint8_t dieId,
     ChannelCfg &cfg)
 {
