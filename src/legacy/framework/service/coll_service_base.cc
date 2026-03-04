@@ -359,7 +359,6 @@ void CollServiceBase::SaveMirrorDfxOpInfo()
 {
     auto dfxOpInfo = std::make_shared<DfxOpInfo>();
     CHECK_NULLPTR(comm, "[CollServiceBase::SaveMirrorDfxOpInfo] comm is nullptr!");
-    std::pair<u32,u32> counter = GetOpCount();
 
     dfxOpInfo->op_ = *comm->GetCurrentCollOperator();
     dfxOpInfo->tag_ = OpTypeToString(dfxOpInfo->op_.opType);
