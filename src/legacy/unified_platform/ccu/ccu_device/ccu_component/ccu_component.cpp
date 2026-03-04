@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <random>
+#include <cstdlib>
 #include "ccu_component.h"
 
 #include "sal.h"
@@ -43,8 +43,8 @@ constexpr u32 CCU_MEM_LOCAL_SIZE = 72 * 1024 * 1024;
 // 清理CKE批量申请大小
 constexpr u32 MAX_CKE_DATA_ARRAY_SIZE = 8;
 
-// 环境是A+X时，配置die0的MS交织粒度为1<<6 = 64
-constexpr uint32_t MSID_CONFIG_AX_MAINBOARD = 6;
+// 环境是A+X时，配置die0的MS交织粒度为1<<7 = 128
+constexpr uint32_t MSID_CONFIG_AX_MAINBOARD = 7;
 constexpr TpProtocol LOOP_JETTY_PROTOCOL = TpProtocol::TP; // 环回使用TP避免被环境link down阻塞
 
 CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)

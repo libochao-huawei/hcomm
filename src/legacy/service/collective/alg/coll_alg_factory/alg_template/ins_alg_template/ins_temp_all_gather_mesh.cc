@@ -191,7 +191,11 @@ HcclResult InsTempAllGatherMesh1D::RunMesh(const u32 myAlgRank, const std::vecto
             
             u32 connectedAlgRank = 0;
             CHK_RET(GetAlgRank(connectedRank, tempVTopo_[0], connectedAlgRank));
-
+            auto it = tempLinks_.find(connectedRank);
+            if (it == tempLinks_.end()) {
+                HCCL_ERROR("[InsTempAllGatherMesh1D] connectedRank does not exist");
+                return HcclResult::HCCL_E_PARA;
+            }
             CHK_PRT_RET(queIdx >= tempInsQues.size() || tempLinks_.at(connectedRank).empty(),
                 HCCL_ERROR("[InsTempAllGatherMesh1D] queIdx=%u, tempInsQues.size=%u, connectedRank=%d, tempLinks_.size=%u",
                            queIdx, tempInsQues.size(), connectedRank, tempLinks_.size()),

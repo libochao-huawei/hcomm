@@ -11,6 +11,7 @@
 #include "gtest/gtest.h"
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
+#include "aicpu/launch_device.h"
 #define private public
 #define protected public
 #include "hccl_aiv_utils.h"
@@ -67,8 +68,7 @@ TEST_F(AivUtilsTest, aiv_utils_test)
 
     MOCKER(LoadBinaryFromFile)
     .stubs()
-    .with(any())
-    .will(returnValue(0));
+    .with(any());
 
     MOCKER(realpath)
     .stubs()

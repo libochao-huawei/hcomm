@@ -15,6 +15,7 @@
 #include "host/exchange_rdma_conn_dto.h"
 #include "socket.h"
 #include "hccp.h"
+#include "types/types.h"
 
 #define private public
 using namespace hcomm;
@@ -37,7 +38,7 @@ protected:
         Hccl::DevType dev = Hccl::DevType::DEV_TYPE_910_95;
         MOCKER(Hccl::HrtGetDevice).stubs().will(returnValue(0));
         MOCKER(Hccl::HrtGetDeviceType).stubs().will(returnValue(dev));
-        MOCKER(Hccl::HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(0));
+        MOCKER(Hccl::HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<Hccl::DevId>(0)));
         RdmaHandle rdmaHandle = (void *)0x1000000;
         MOCKER(Hccl::HrtRaRdmaInit).stubs().with(any(), any()).will(returnValue(rdmaHandle));
         EndpointDesc endpointDesc{};

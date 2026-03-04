@@ -93,6 +93,7 @@ set(hccl_include_list
 
     ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
     ${HCCL_BASE_DIR}/framework/next/coll_comms/
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank/comm_mems/
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank_pairs
@@ -380,6 +381,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoall/allltoall_pipeline_base.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoall/allltoall_pipeline_mesh_pairwise_ping_pong.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoall/allltoall_pipeline_mesh_pairwise_ccl_enough.cc
+        ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoall/alltoall_symmetric_memory.cc
 
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoallv/alltoallv_pairwise.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoallv/alltoallv_staged_base.cc
@@ -425,6 +427,8 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_reduce_scatter/reduce_scatter_pipeline.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_reduce_scatter/reduce_scatter_unified_march.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_reduce_scatter/reduce_scatter_hccs_sio.cc
+        ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_reduce_scatter/reduce_scatter_plant_local_reduce.cc
+        ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_reduce_scatter/reduce_scatter_plant_local_reduce_combine.cc
 
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_scatter/scatter_ring_concurrent_direct.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_scatter/scatter_double_ring_direct.cc
@@ -467,10 +471,10 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/coll_all_reduce_order_preserved_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/coll_all_reduce_ars_for_910_93_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/coll_all_reduce_mid_count_for_910_93_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/coll_all_reduce_order_preserved_for_910_93_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/310P/coll_all_reduce_for_310p_ring_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/310P/coll_all_reduce_for_310p_doubling_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/310P/coll_all_reduce_for_310p_doubling_direct_executor.cc
-        
 
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/coll_all_gather_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/coll_all_gather_comm_executor.cc
@@ -532,6 +536,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_ring_zerocopy_exchange_pipeline_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_order_preserved_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_ars_for_910_93_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_order_preserved_for_910_93_executor.cc
         
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter_v/coll_reduce_scatter_v_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter_v/coll_reduce_scatter_v_aiv_big_count_executor.cc
@@ -560,6 +565,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_single_rank_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_fullmesh_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_direct_fullmesh_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_symmetric_memory_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_2level_pipeline_excecutor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/310P/coll_all_to_all_v_for_310p_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_continuous_pipeline_executor.cc
@@ -695,8 +701,8 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/rank_graph
         ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel
         ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel/device
-        
-
+        ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/data_api
+    
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_reduce
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoall
@@ -787,7 +793,8 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/sockets/
         ${HCCL_BASE_DIR}/framework/next/comms/endpoints/
         ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
-
+        ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator/aicpu
+        
     )
 
     target_include_directories(ccl_kernel PRIVATE

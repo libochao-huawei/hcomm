@@ -10,10 +10,8 @@
 
 #include "ccu_connection.h"
 
-#include <random>
-
+#include <cstdlib>
 #include "hccp_ctx.h"
-
 #include "buffer.h"
 #include "exception_util.h"
 #include "orion_adapter_rts.h"
@@ -162,7 +160,6 @@ bool CcuConnection::CreateJetty()
         }
 
         if (ret != HcclResult::HCCL_SUCCESS) {
-            isJettyCreated = true;
             HCCL_ERROR("[CcuConnection][%s] failed, hccl result[%d]", __func__, ret);
             ThrowAbnormalStatus(std::string(__func__));
         }

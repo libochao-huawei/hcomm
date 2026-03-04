@@ -128,11 +128,11 @@ HcclResult CommConfig::CheckMagicWord(const CommConfigHandle &config)
     if (config.info.magicWord != COMM_CONFIG_MAGIC_WORD) {
         RPT_INPUT_ERR(true,
             "EI0003",
-            std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
             std::vector<std::string>({"HcclCommInitRootInfoConfig",
-                "magic word",
                 std::to_string(config.info.magicWord),
-                "Please make sure the config has been initialized by HcclCommConfigInit()."}));
+                "magic word",
+                "The magic word must be initialized with the result of HcclCommConfigInit()"}));
         HCCL_ERROR("[CheckMagicWord] Invalid magic word[0x%x]. Please make sure the config has been initialized by "
             "HcclCommConfigInit().",
             config.info.magicWord);
@@ -195,11 +195,11 @@ HcclResult CommConfig::SetConfigByVersion(const CommConfigHandle &config)
         // 版本大于等于7，支持配置AclGraph使能/去使能
         RPT_INPUT_ERR(config.aclGraphZeroCopyEnable > 1,
             "EI0003",
-            std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
             std::vector<std::string>({"HcclCommInitRootInfoConfig",
-                "aclGraphZeroCopy",
                 std::to_string(config.aclGraphZeroCopyEnable),
-                "aclGraphZeroCopyEnable Value is invalid. support 0 or 1."}));
+                "aclGraphZeroCopy",
+                "0 or 1."}));
         CHK_PRT_RET(config.aclGraphZeroCopyEnable > 1,
             HCCL_ERROR("[CommConfig][SetConfigByVersion] aclGraphZeroCopyEnable value=[%u] invalid. support 0 or 1", config.aclGraphZeroCopyEnable),
             HCCL_E_PARA);
@@ -240,11 +240,11 @@ HcclResult CommConfig::SetConfigBufferSize(const CommConfigHandle &config)
     } else if (config.bufferSize < HCCL_CCL_COMM_BUFFER_MIN) {
         RPT_INPUT_ERR(true,
             "EI0003",
-            std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
             std::vector<std::string>({"HcclCommInitRootInfoConfig",
-                "hcclBufferSize",
                 std::to_string(config.bufferSize),
-                "Value should be equal to or greater than 1(MB)."}));
+                "hcclBufferSize",
+                "should be equal to or greater than 1(MB)."}));
         HCCL_ERROR("[%s][%s] The configuration of hcclBufferSize[%u(MB)] is invalid, which should be "
                    "greater than %u(MB).",
             LOG_KEYWORDS_TASK_EXEC.c_str(),
@@ -268,11 +268,11 @@ HcclResult CommConfig::SetConfigDeterministic(const CommConfigHandle &config)
     } else if (config.deterministic > DETERMINISTIC_STRICT) {
         RPT_INPUT_ERR(true,
             "EI0003",
-            std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
             std::vector<std::string>({"HcclCommInitRootInfoConfig",
-                "hcclDeterministic",
                 std::to_string(config.deterministic),
-                "Value should be 0(disable) , 1(enable) or 2(strict)."}));
+                "hcclDeterministic",
+                "should be 0(disable) , 1(enable) or 2(strict)."}));
         HCCL_ERROR("[%s][%s] The configuration of hcclDeterministic[%u] is invalid, "
                    "which should be 0(disable) , 1(enable) or 2(strict).",
             LOG_KEYWORDS_TASK_EXEC.c_str(),
@@ -286,11 +286,11 @@ HcclResult CommConfig::SetConfigDeterministic(const CommConfigHandle &config)
             if (deviceType != DevType::DEV_TYPE_910B) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
                     std::vector<std::string>({"HcclCommInitRootInfoConfig",
-                        "hcclDeterministic",
                         std::to_string(config.deterministic),
-                        "Value is set to 2(strict), only support A2."}));
+                        "hcclDeterministic",
+                        "set to 2(strict), only support A2."}));
                 HCCL_ERROR("[%s][%s] The configuration of hcclDeterministic[%u] is set to "
                            "2(strict), and only support A2",
                     LOG_KEYWORDS_TASK_EXEC.c_str(),

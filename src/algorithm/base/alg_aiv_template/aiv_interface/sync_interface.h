@@ -25,13 +25,14 @@ __aicore__ inline void SyncFunc() {
 }
 
 // 在gm上设置同步信号的值
-__aicore__ inline void SetSignalValue(__gm__ int32_t* gmSignalAddr, LocalTensor<int32_t>& localTensor, int32_t value)
+__aicore__ inline void SetSignalValue(__gm__ int32_t* gmSignalAddr, LocalTensor<int32_t>& localTensor, int32_t value, bool ifSet = true)
 {
     GlobalTensor<int32_t> globalTensor;
     globalTensor.SetGlobalBuffer(gmSignalAddr, UB_FLAG_PAD_COUNT);
-
-    localTensor.SetValue(0, value);
-    SyncFunc<HardEvent::S_MTE3>();
+    if (ifSet) {
+        localTensor.SetValue(0, value);
+        SyncFunc<HardEvent::S_MTE3>();
+    }
     DataCopy(globalTensor, localTensor, UB_FLAG_PAD_COUNT);
     return;
 }

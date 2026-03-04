@@ -45,8 +45,8 @@ protected:
 TEST_F(HccpPeerManagerTest, hccp_peer_manager_getInstance)
 {
     // Given
-    s32 fakedevPhyId  = 3;
-    s32 fakedevPhyId1  = 4;
+    DevId fakedevPhyId  = 3;
+	DevId fakedevPhyId1  = 4;
     MOCKER(HrtGetDevicePhyIdByIndex)
         .stubs()
         .with(any())
@@ -72,13 +72,13 @@ TEST_F(HccpPeerManagerTest, hccp_peer_manager_init)
     s32 deviceLogicId = 0;
     s32 deviceLogicId1 = 1;
     s32 deviceLogicId2 = 2;
-    s32 fakedevPhyId   = 3;
+	DevId fakedevPhyId   = 3;
     MOCKER(HrtGetDevicePhyIdByIndex)
         .stubs()
         .with(any())
         .will(returnValue(fakedevPhyId));
     MOCKER(HrtRaDeInit).stubs().with();
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
 
     // when
     HccpPeerManager::GetInstance().Init(deviceLogicId);
