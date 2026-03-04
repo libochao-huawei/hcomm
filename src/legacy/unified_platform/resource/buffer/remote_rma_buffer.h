@@ -11,12 +11,11 @@
 #ifndef HCCLV2_REMOTE_RMA_BUFFER_H
 #define HCCLV2_REMOTE_RMA_BUFFER_H
 
-#include <string>
-#include <memory>
-#include "rma_buffer.h"
-#include "dev_buffer.h"
+#include "orion_adapter_hccp.h"
+#include "orion_adapter_rts.h"
 #include "rma_type.h"
 #include "serializable.h"
+#include <hcomm_res_defs.h>
 namespace Hccl {
 
 class RemoteRmaBuffer {
@@ -47,9 +46,9 @@ public:
         return memType;
     }
 
-    inline const char* GetMemTag() const
+    inline const std::string GetMemTag() const
     {
-        return memTag.c_str();
+        return memTag;
     }
 
     u64 GetMemHandle() const
@@ -57,7 +56,7 @@ public:
         return memHandle;
     }
 
-    virtual string Describe() const = 0;
+    virtual std::string Describe() const = 0;
 
 protected:
     uintptr_t   addr{0};
@@ -74,7 +73,7 @@ public:
 
     explicit RemoteIpcRmaBuffer(const Serializable &rmtDto);
     
-    RemoteIpcRmaBuffer(const Serializable &rmtDto, const string tag);
+    RemoteIpcRmaBuffer(const Serializable &rmtDto, const std::string tag);
 
     ~RemoteIpcRmaBuffer() override;
 
@@ -82,7 +81,7 @@ public:
 
     RemoteIpcRmaBuffer &operator=(const RemoteIpcRmaBuffer &that) = delete;
 
-    string Describe() const override;
+    std::string Describe() const override;
 
 private:
     void Close() const;
@@ -108,14 +107,17 @@ public:
 
     RemoteRdmaRmaBuffer &operator=(const RemoteRdmaRmaBuffer &that) = delete;
 
-    string Describe() const override;
+    std::string Describe() const override;
 
     const u8 *GetKey() const
     {
         return key;
     }
 
-    u32 GetRkey() {return rkey;}
+    u32 GetRkey() const
+    {
+        return rkey;
+    }
 
 private:
     RdmaHandle rdmaHandle{nullptr};
@@ -137,7 +139,7 @@ public:
 
     RemoteUbRmaBuffer &operator=(const RemoteUbRmaBuffer &that) = delete;
 
-    string Describe() const final;
+    std::string Describe() const final;
 
     uint32_t GetTokenId() const
     {

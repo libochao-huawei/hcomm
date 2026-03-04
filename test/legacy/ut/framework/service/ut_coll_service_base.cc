@@ -20,6 +20,7 @@
 #include "mem_transport_manager.h"
 #include "base_config.h"
 #include "ub_mem_transport.h"
+#include "internal_exception.h"
 
 #undef protected
 #undef private

@@ -35,6 +35,7 @@ constexpr u32 AICPU_RETRY_BACKUP_PORT = 16667;     // aicpu重执行备份默认
 constexpr u32 MASSIVE_IBV_CONNECTION_COUNT = 1000; // bsr大于这个链路数量就切换链路类型
 constexpr u32 SEND_QP_DEPTH_FOR_BSR = 512; // 使用Transport NpuDriect链路的时候设置send深度为512
 constexpr u32 RECV_QP_DEPTH_FOR_BSR = 128; // // 使用Transport NpuDriect链路的时候设置recv深度为128
+constexpr u32 MAX_THREAD_NUM = 8;  // BatchSendRecv建链时单个线程池的最大线程数量
 
 struct TransportData {
     LinkMode linkMode{LinkMode::LINK_RESERVED_MODE};
@@ -102,6 +103,39 @@ struct SubCommLinkPara {
     remoteRankIdNum(remoteRankIdNum) {}
 
     ~SubCommLinkPara()
+    {
+        for (auto &linkThread : linkThreads) {
+            if (linkThread != nullptr && linkThread->joinable()) {
+                linkThread->join();
+            }
+        }
+    }
+};
+
+struct LinkPoolPara {
+    struct SingleSubCommTransport &singleSubCommTransport;
+    std::string poolName;
+    // 记录pair<remoteRank, idx>, idx表示remoteRank对应的建链信息在transportRequests中的索引位置
+    std::vector<std::pair<u32, u32>> taskList;
+
+    std::atomic<u32> taskIndex{0};
+    std::atomic<bool> abortFlag{false};
+
+    std::vector<std::unique_ptr<std::thread>> linkThreads;
+    std::vector<HcclResult> linkResults;
+
+    LinkPoolPara(struct SingleSubCommTransport &transport, 
+        const std::string &name, const std::vector<std::pair<u32, u32>> &tasks)
+        : singleSubCommTransport(transport),
+        poolName(name),
+        taskList(tasks)
+    {
+        u32 threadNum = std::min(MAX_THREAD_NUM, static_cast<u32>(taskList.size()));
+        linkThreads.resize(threadNum);
+        linkResults.resize(taskList.size(), HCCL_SUCCESS);
+    }
+
+    ~LinkPoolPara()
     {
         for (auto &linkThread : linkThreads) {
             if (linkThread != nullptr && linkThread->joinable()) {
@@ -188,7 +222,7 @@ public:
     HcclResult CreateVirturalTransport(SingleSubCommTransport& singleSubCommTransport);
     HcclResult Alloc(const std::string &tag, const TransportIOMem &transMem, OpCommTransport &opTransportResponse,
         bool isAicpuModeEn, bool isBackup = false, bool isZeroCopy = false, const HcclCMDType &opType=HcclCMDType::HCCL_CMD_INVALID,
-        bool isCapture = false, bool isIndOp = false, bool isNpuDirectRoce = false);
+        bool isCapture = false, bool isIndOp = false, bool isNpuDirectRoce = false, const OpParam *opParam = nullptr);
     HcclResult IncreAlloc(const std::string &tag, const TransportIOMem &transMem, OpCommTransport &opTransportReq,
         OpCommTransport &opTransportResponse, bool isAicpuModeEn, bool isBackup = false, bool isCapture = false,
         const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID);
@@ -262,6 +296,18 @@ private:
         bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
     HcclResult IsInterServer(const u32 dstRank, bool& isInterServer);
     HcclResult PrintErrorInfo(NicType nicType);
+    HcclResult CreateBatchSendRecvLinks(const std::string &tag, const TransportIOMem &transMem,
+        struct LinkPoolPara &linkPoolPara, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
+        bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
+    HcclResult WaitBatchSendRecvThreadsComplete(struct LinkPoolPara &linkPoolPara);
+    HcclResult CheckBatchSendRecvLinkStatus(const std::string &tag, struct SingleSubCommTransport &singleSubCommTransport, bool isBackup);
+    HcclResult AllocBatchSendRecvLinks(HcclSendRecvItem *sendRecvItemsPtr, u32 itemNum,
+        const std::string &tag, const TransportIOMem &transMem,
+        struct SingleSubCommTransport &singleSubCommTransport, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
+        bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
+    HcclResult PrepareTaskLists(HcclSendRecvItem *sendRecvItemsPtr, u32 itemNum, const SingleSubCommTransport &singleSubCommTransport,
+    std::vector<std::pair<u32, u32>> &senderList, std::vector<std::pair<u32, u32>> &receiverList);
+
     std::mutex mutex_;	// 用于控制互斥资源的访问
     CCLBufferManager &cclBufferManager_;
     const std::unique_ptr<HcclSocketManager> &socketManager_;
@@ -305,6 +351,7 @@ private:
     HcclCMDType opType_ = HcclCMDType::HCCL_CMD_INVALID;
     bool isStandardCard_ = false;
     std::unique_ptr<MulQpInfo> mulQpinfo_ = { nullptr };
+    std::mutex createSocketMutex_;    // BatchSendRecv建链调用CreateDestSockets时，保护socketTagVec_等资源
 };
 }  // namespace hccl
 

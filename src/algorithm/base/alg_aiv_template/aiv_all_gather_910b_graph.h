@@ -24,7 +24,7 @@ __aicore__ inline void AivAllGatherBigGraph910B::Process(GM_ADDR input, GM_ADDR 
 {
     uint32_t avgLengthPerSlice = len;
     uint32_t avgSizePerSlice = avgLengthPerSlice * sizeof(T);
-    uint32_t targetRank = block_idx; 
+    uint32_t targetRank = GetBlockIdx(); 
 
     // 共用16个flag
     __gm__ T *inputGm = (__gm__ T *)input;

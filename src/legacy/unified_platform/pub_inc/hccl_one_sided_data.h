@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCL_ONE_SIDED_SERVICES_H
-#define HCCL_ONE_SIDED_SERVICES_H
+#ifndef HCCL_ONE_SIDED_DATA_H
+#define HCCL_ONE_SIDED_DATA_H
 #include "hccl/base.h"
 #include "hccl_mem_defs.h"
 
@@ -30,11 +30,6 @@ struct HcclOneSideOpDesc {
     u64          count;
     HcclDataType dataType;
 };
-
-#endif // HCCL_ONE_SIDED_SERVICES_H
-
-#ifndef HCCL_ONE_SIDED_DATA_H
-#define HCCL_ONE_SIDED_DATA_H
 
 constexpr size_t TRANSPORT_EMD_ESC_SIZE = 512U - (sizeof(u32) * 2);
 struct RmaMemDesc {

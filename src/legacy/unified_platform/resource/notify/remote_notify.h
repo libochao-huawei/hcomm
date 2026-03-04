@@ -12,7 +12,8 @@
 
 #include "rts_notify.h"
 #include "task.h"
-#include "rma_connection.h"
+#include "rma_type.h"
+#include "serializable.h"
 
 namespace Hccl {
 

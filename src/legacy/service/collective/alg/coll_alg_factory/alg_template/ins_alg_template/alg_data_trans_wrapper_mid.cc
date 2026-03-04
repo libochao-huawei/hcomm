@@ -155,6 +155,7 @@ HcclResult RxFin(const LinkData &link, InsQuePtr queue, u32 topicId, DmaMode dma
     (void)topicId;
     DmaMode mode;
     CHK_RET(GetDMAMode(dmaMode, link.GetType(), mode));
+    CHK_PTR_NULL(queue);
     if (mode == DmaMode::PUT) {
         queue->Append(std::make_unique<InsWaitFin>(link.GetRemoteRankId(), link));
     } else {
@@ -402,6 +403,8 @@ HcclResult MultiRxReduceWithFinCounter(const std::vector<LinkData> &links, const
                                        const std::vector<ReduceSlicesList> &slices, u32 topicId, DmaMode dmaMode)
 {
     (void)slices;
+    CHK_PRT_RET(queues.empty(), HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiRxReduceWithFinCounter: queue is empty"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(queues[0]);
     CHK_PRT_RET(
         !DevCapability::GetInstance().IsSupportWriteWithNotify(),
         HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiRxReduceWithFinCounter: inter-rank counterNotify is "
@@ -550,6 +553,7 @@ HcclResult TxRxReduce(const TxRxLinks &txRxlinks, InsQuePtr queue, const TxRxRed
 HcclResult TxRxDataWithFin(const TxRxLinks &txRxlinks, InsQuePtr queue, const TxRxSlicesList &txRxSlices, u32 topicId,
                            DmaMode dmaMode)
 {
+    CHK_PTR_NULL(queue);
     DmaMode txMode;
     CHK_RET(GetDMAMode(dmaMode, txRxlinks.txLink_.GetType(), txMode));
     DmaMode rxMode;
@@ -762,26 +766,33 @@ HcclResult LocalReduceSlices(InsQuePtr queue, const std::vector<DataSlice> &srcS
                        "is not equal to dst slice size [%u].",
                        sliceIdx, srcSlices[sliceIdx].GetSize(), dstSlices[sliceIdx].GetSize()),
             HcclResult::HCCL_E_INTERNAL);
+        try {
+            if (sliceIdx == (srcSlices.size() - 1)) {
+                // last slice
+                std::unique_ptr<InsLocalReduce> insLocalReduce
+                    = std::make_unique<InsLocalReduce>(tmpSrcSlice, tmpDstSlice, dataType, reduceOp);
+                queue->Append(std::move(insLocalReduce));
+            } else if (IsContinuousSlice(srcSlices[sliceIdx + 1], tmpSrcSlice)
+                    && IsContinuousSlice(dstSlices[sliceIdx + 1], tmpDstSlice)) {
+                // nxtSlice is continuous with tmpSlice, update tmpSlice
+                u64 newTmpSize = tmpSrcSlice.GetSize() + srcSlices[sliceIdx + 1].GetSize();
+                tmpSrcSlice    = DataSlice(tmpSrcSlice.GetType(), tmpSrcSlice.GetOffset(), newTmpSize);
+                tmpDstSlice    = DataSlice(tmpDstSlice.GetType(), tmpDstSlice.GetOffset(), newTmpSize);
+            } else {
+                // nxtSlice is not continuous with tmpSlice, copy tmpSlice, update tmpSlice with nxtSlice
+                std::unique_ptr<InsLocalReduce> insLocalReduce
+                    = std::make_unique<InsLocalReduce>(tmpSrcSlice, tmpDstSlice, dataType, reduceOp);
+                queue->Append(std::move(insLocalReduce));
 
-        if (sliceIdx == (srcSlices.size() - 1)) {
-            // last slice
-            std::unique_ptr<InsLocalReduce> insLocalReduce
-                = std::make_unique<InsLocalReduce>(tmpSrcSlice, tmpDstSlice, dataType, reduceOp);
-            queue->Append(std::move(insLocalReduce));
-        } else if (IsContinuousSlice(srcSlices[sliceIdx + 1], tmpSrcSlice)
-                   && IsContinuousSlice(dstSlices[sliceIdx + 1], tmpDstSlice)) {
-            // nxtSlice is continuous with tmpSlice, update tmpSlice
-            u64 newTmpSize = tmpSrcSlice.GetSize() + srcSlices[sliceIdx + 1].GetSize();
-            tmpSrcSlice    = DataSlice(tmpSrcSlice.GetType(), tmpSrcSlice.GetOffset(), newTmpSize);
-            tmpDstSlice    = DataSlice(tmpDstSlice.GetType(), tmpDstSlice.GetOffset(), newTmpSize);
-        } else {
-            // nxtSlice is not continuous with tmpSlice, copy tmpSlice, update tmpSlice with nxtSlice
-            std::unique_ptr<InsLocalReduce> insLocalReduce
-                = std::make_unique<InsLocalReduce>(tmpSrcSlice, tmpDstSlice, dataType, reduceOp);
-            queue->Append(std::move(insLocalReduce));
-
-            tmpSrcSlice = srcSlices[sliceIdx + 1];
-            tmpDstSlice = dstSlices[sliceIdx + 1];
+                tmpSrcSlice = srcSlices[sliceIdx + 1];
+                tmpDstSlice = dstSlices[sliceIdx + 1];
+            }
+        } catch (const std::bad_alloc& e) {
+            HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] LocalReduceSlices: memory allocation failed");
+            return HcclResult::HCCL_E_MEMORY;
+        } catch (const std::exception& e) {
+            HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] LocalReduceSlices: exception occurred - %s", e.what());
+            return HcclResult::HCCL_E_INTERNAL;
         }
     }
 
@@ -846,7 +857,10 @@ HcclResult LocalCopySlices(InsQuePtr queue, const std::vector<DataSlice> &srcSli
 }
 
 HcclResult StreamSync(std::vector<InsQuePtr> &queues)
-{   
+{
+    CHK_PRT_RET(queues.empty(), HCCL_ERROR("[alg_data_trans_wrapper_mid][StreamSync] empty queue"),
+                HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(queues[0]);
     for (auto &queue : queues) {
         std::unique_ptr<InsPreStreamSync> insPreStreamSync = std::make_unique<InsPreStreamSync>();
         queue->Append(std::move(insPreStreamSync));

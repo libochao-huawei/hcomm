@@ -64,6 +64,10 @@ HcclResult CollBroadCastRingZerocopyExecutor::CalcLevel0CommInfo(TransportMemTyp
 {
     CommParaInfo commParaLevel0(COMM_LEVEL0, CommType::COMM_TAG_RING_INNER);
     CHK_RET(CalcCommPlaneInfo(tag_, commParaLevel0, opTransport[COMM_LEVEL0], inputType, outputType));
+    LevelNSubCommTransport &commTransportLevel0 = opTransport[COMM_LEVEL0];
+    for (u32 subCommIndex = 0; subCommIndex < commTransportLevel0.size(); subCommIndex++) {
+        commTransportLevel0[subCommIndex].isZeroCopy = true;
+    }
     return HCCL_SUCCESS;
 }
 

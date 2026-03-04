@@ -32,7 +32,7 @@ __aicore__ inline void AivAllReduceCrossnode91093::InitDataCopyOffset(uint64_t p
     // 以下根据不同情况，计算每个aiv核的数据搬运参数
     // 当rankSize大于总aiv核数，使用1个aiv服务一个对端，需要多次通信
     if (rankSize_ > usedBlockNum_) {
-        CalcNumTargetsAndTargetRanksDeter();
+        CalcNumTargetsAndTargetRanksGroup();
 
         blockNumPerGroup = 1;
         blockIdxInGroup = 0;
@@ -123,37 +123,6 @@ __aicore__ inline void AivAllReduceCrossnode91093::Process(GM_ADDR buffIn0, GM_A
     __gm__ T *inputGM = (__gm__ T *)input;
     __gm__ T *outputGM = (__gm__ T *)output;
     __gm__ T *cclGMSelf = (__gm__ T *)buffIn0;
-
-    GlobalTensor<uint64_t> bufferArgsGT;
-    __gm__ uint64_t *buffersGmAddr = (__gm__ uint64_t *)(commInfoAddr);
-    bufferArgsGT.SetGlobalBuffer(buffersGmAddr, FLAG_SIZE * rankSize_ / sizeof(uint64_t));
-
-    // 准备参数，buffer地址和最大收发count
-    GM_ADDR buffersIn[MAX_TARGET_NUM] = {};
-    GM_ADDR buffersOut[MAX_TARGET_NUM] = {};
-
-    for (uint32_t i = 0; i < numTargets; i++) {
-        uint32_t targetRank = targetRanks[i];
-        DataCopy(bufferArgsTensor[i * 4], bufferArgsGT[2 * targetRank], 4); // buffersIn buffersOut
-    }
-    SyncFunc<HardEvent::MTE2_S>();
-    for (uint32_t i = 0; i < numTargets; i++) {
-        uint32_t curIdx = i * 4;
-        buffersIn[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx));
-        buffersOut[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx + 1));
-    }
-
-    PipeBarrier<PIPE_ALL>();
-    if (clearEnable_ == 1) {
-        workLocal = syncQue.AllocTensor<int32_t>();
-        Barrier(buffersOut, 1);
-        SyncAll(syncGlobal, workLocal, numBlocks_);
-        ClearGM();
-        Barrier(buffersOut, 2);
-        SyncAll(syncGlobalSecond, workLocal, numBlocks_);
-	    syncQue.FreeTensor(workLocal);
-        PipeBarrier<PIPE_ALL>();
-    }
 
     int32_t curTag = (tag << TAG_MOVE_LEFT_BITS);
     uint64_t curOffset = 0;
@@ -274,7 +243,7 @@ __aicore__ inline void aiv_all_reduce_crossnode_91093(KERNEL_ARGS_DEF_A3)
     uint64_t avgBufferCount = totalBufferCount / rankSize;
     uint64_t calTotalBufferCount = avgBufferCount * rankSize;
 
-    op.InitDeter<T>(buffOut0, rank, rankSize, reduceOp, tag, false);
+    op.InitDeter<T>(buffOut0, buffOut1, rank, rankSize, reduceOp, tag, numBlocks, false);
     op.InitDataCopyOffset<T>(avgBufferCount, totalBufferCount, len);
     op.InitOpCounter(headCountMem, tailCountMem, addOneMem, SIZE_OF_INT32, isEnableCounter);
     op.HeadCounter();
