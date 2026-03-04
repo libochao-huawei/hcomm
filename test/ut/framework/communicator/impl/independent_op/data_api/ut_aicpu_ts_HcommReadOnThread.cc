@@ -86,3 +86,14 @@ TEST_F(UtAicpuTsHcommReadOnThreadTest, Ut_HcommReadOnThread_When_normal_Expect_H
     // 后置验证
     EXPECT_EQ(res, HCCL_SUCCESS);
 }
+
+TEST_F(UtAicpuTsHcommReadOnThreadTest, Ut_HcommReadOnThread_When_Fence_Expect_HCCL_SUCCESS)
+{
+    // 前置条件
+    auto res = HcommChannelFenceOnThread(thread, devHandle);
+    // 执行步骤
+    res = HcommReadOnThread(thread, devHandle, dst, src, len);
+
+    // 后置验证
+    EXPECT_EQ(res, HCCL_SUCCESS);
+}
