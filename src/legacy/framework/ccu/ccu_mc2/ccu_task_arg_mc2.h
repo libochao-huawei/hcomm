@@ -11,6 +11,7 @@
 #ifndef HCCL_CCU_TASK_ARG_MC2_H
 #define HCCL_CCU_TASK_ARG_MC2_H
 
+#include <cstdint>
 #include "ccu_task_arg.h"
 namespace Hccl {
 class CcuTaskArgMc2 : public CcuTaskArg {

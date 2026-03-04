@@ -9,6 +9,9 @@
  */
 #ifndef MEM_TRANSPORT_MANAGER_H
 #define MEM_TRANSPORT_MANAGER_H
+#include <unordered_map>
+#include <vector>
+#include <string>
 #include "base_mem_transport.h"
 #include "virtual_topo.h"
 #include "mem_transport_callback.h"

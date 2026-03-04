@@ -53,7 +53,7 @@ HcclResult TaskService::TaskUnRegister(std::string taskType)
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::WriteFlag(uint8_t *flagPtr, uint8_t newFlag)
+HcclResult TaskService::WriteFlag(uint8_t *flagPtr, uint8_t newFlag) const
 {
     aclError ret = aclrtMemcpy(flagPtr, sizeof(newFlag), &newFlag, sizeof(newFlag), aclrtMemcpyKind::ACL_MEMCPY_HOST_TO_DEVICE);
     if (ret != ACL_SUCCESS) {
@@ -63,7 +63,7 @@ HcclResult TaskService::WriteFlag(uint8_t *flagPtr, uint8_t newFlag)
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::ReadFlag(uint8_t *srcFlagPtr, uint8_t &flag)
+HcclResult TaskService::ReadFlag(uint8_t *srcFlagPtr, uint8_t &flag) const
 {
     CHK_PTR_NULL(srcFlagPtr);
     aclError ret
@@ -75,7 +75,7 @@ HcclResult TaskService::ReadFlag(uint8_t *srcFlagPtr, uint8_t &flag)
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::ReadTaskType(uint8_t *srcTaskTypePtr, std::string &taskTypeStr)
+HcclResult TaskService::ReadTaskType(uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const
 {
     CHK_PTR_NULL(srcTaskTypePtr);
     // 读 taskType

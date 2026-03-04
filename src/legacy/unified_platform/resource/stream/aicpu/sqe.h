@@ -10,7 +10,12 @@
 
 #ifndef HCCLV2_SQE_H
 #define HCCLV2_SQE_H
+
+#include <cstdint>
+
 #include "enum_factory.h"
+#include "hccl/base.h"
+
 namespace Hccl {
 
 constexpr u32 AC_SQE_SIZE                          = 64U;

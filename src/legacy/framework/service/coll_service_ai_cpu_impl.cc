@@ -199,13 +199,13 @@ HcclResult CollServiceAiCpuImpl::AicpuMc2CommResourcePrepare(const CollOperator 
     HcclKernelLaunchParam param{};
     s32 ret = strcpy_s(param.kernel.algName, sizeof(param.kernel.algName), algName.data());
     if (ret != EOK) {
-        HCCL_ERROR("CollServiceAiCpuImpl::AicpuMc2CommResourcePrepare, strcpy_s algName failed! ret: %u, algName: %s", ret, algName.c_str());
+        HCCL_ERROR("CollServiceAiCpuImpl::AicpuMc2CommResourcePrepare, strcpy_s algName failed! ret: %d, algName: %s", ret, algName.c_str());
         return HCCL_E_INTERNAL;
     }
 
     ret = strcpy_s(param.kernel.opTag, sizeof(param.kernel.opTag), op.opTag.data());
     if (ret != EOK) {
-        HCCL_ERROR("CollServiceAiCpuImpl::AicpuMc2CommResourcePrepare, strcpy_s opTag failed! ret: %u, op.opTag: %s", ret, op.opTag.c_str());
+        HCCL_ERROR("CollServiceAiCpuImpl::AicpuMc2CommResourcePrepare, strcpy_s opTag failed! ret: %d, op.opTag: %s", ret, op.opTag.c_str());
         return HCCL_E_INTERNAL;
     }
 

@@ -12,6 +12,7 @@
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
 #include "hccp.h"
+#include "dev_buffer.h"
 #include "local_rdma_rma_buffer.h"
 #include "remote_rma_buffer.h"
 

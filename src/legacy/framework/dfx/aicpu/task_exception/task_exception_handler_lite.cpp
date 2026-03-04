@@ -13,7 +13,6 @@
 #include "communicator_impl_lite.h"
 #include "error_message_v2.h"
 #include "dlhal_function_v2.h"
-#include "sqe_v82.h"
 #include "task_param.h"
 
 #include "task_struct_v2.h"
@@ -213,7 +212,6 @@ HcclResult SendTaskExceptionByMBox(CommunicatorImplLite *aicpuComm, const rtLogi
     }
     HCCL_INFO("[TaskExceptionHandlerLite][SendTaskExceptionByMBox] HostToDeviceLogicId[%u], localDeviceid[%u]",
         devPhyId, localDeviceId);
-
     
     CHK_RET(SendTaskExceptionByMBox(localDeviceId, notifyId, 0, aicpuComm->GetUserStreamId(), exceptionInfo));
     return HCCL_SUCCESS;

@@ -232,7 +232,7 @@ void Mc2Compont::AllocV2()
                                         static_cast<uint64_t>(workspaceBuffer->GetSize()));
 }
 
-void Mc2Compont::MC2Orchestrate(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue, uint8_t commEngine)
+void Mc2Compont::MC2Orchestrate(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue, uint8_t commEngine) const
 {
     auto op = comm->GetCurrentCollOperator();
     
@@ -258,7 +258,7 @@ void Mc2Compont::MC2Orchestrate(const CollAlgParams& params, std::shared_ptr<Ins
     }
 }
 
-void Mc2Compont::MC2AllocCommRes(const CollAlgParams &params, std::shared_ptr<InsQueue> &insQueue, uint8_t commEngine)
+void Mc2Compont::MC2AllocCommRes(const CollAlgParams &params, std::shared_ptr<InsQueue> &insQueue, uint8_t commEngine) const
 {
     MC2Orchestrate(params, insQueue, commEngine);
     // 获取LinkData
