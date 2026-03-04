@@ -11,12 +11,13 @@
 #ifndef HCCLV2_REMOTE_RMA_BUFFER_MANAGER_H
 #define HCCLV2_REMOTE_RMA_BUFFER_MANAGER_H
 
-#include "remote_rma_buffer.h"
-#include "rma_conn_manager.h"
-#include "rma_connection.h"
-
 #include <string>
 #include <memory>
+#include <unordered_map>
+
+#include "remote_rma_buffer.h"
+#include "rma_conn_manager.h"
+#include "buffer_type.h"
 
 namespace Hccl {
 using namespace std;
