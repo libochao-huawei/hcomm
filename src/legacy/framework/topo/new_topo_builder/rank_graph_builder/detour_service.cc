@@ -143,6 +143,9 @@ void AddDetourLink(NetInstance *innerNetInst, const DetourData &data,
 
 std::vector<LocalId> GetInnerLocalIds(const RankGraph *rankGraph)
 {
+    if (rankGraph == nullptr) {
+        THROW<NullPtrException>(StringFormat("[GetInnerLocalIds] rankGraph is nullptr"));
+    }
     const NetInstance *innerNetInst = rankGraph->GetNetInstanceByRankId(0, rankGraph->GetMyRank());
     if (innerNetInst == nullptr) {
         THROW<NullPtrException>(StringFormat("[GetInnerLocalIds] innerNetInst is nullptr"));

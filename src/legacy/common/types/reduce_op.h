@@ -12,7 +12,11 @@
 #define HCCLV2_REDUCE_OP_H
 
 #include <map>
+#include <string>
 #include <hccl/hccl_types.h>
+
+#include "enum_factory.h"
+#include "string_util.h"
 #include "../utils/exception_util.h"
 #include "../exception/invalid_params_exception.h"
 namespace Hccl {
