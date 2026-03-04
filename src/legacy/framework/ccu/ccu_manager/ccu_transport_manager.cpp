@@ -21,6 +21,7 @@
 #include "timeout_exception.h"
 #include "internal_exception.h"
 #include "coll_service_device_mode.h"
+#include "adapter_error_manager_pub.h"
 
 namespace Hccl {
 
@@ -181,9 +182,12 @@ void CcuTransportMgr::WaitTransportsReady(vector<std::pair<CcuTransport*, LinkDa
         }
 
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            string timeoutMsg = StringFormat("WaitTransportReady timeout, commId[%s]", comm->GetId().c_str());
+            string timeoutMsg = StringFormat("CcuTransportMgr::WaitTransportReady timeout, commId[%s]", comm->GetId().c_str());
             HCCL_ERROR(timeoutMsg.c_str());
             DumpNotReadyTransports(transports);
+            // 上报EI0006
+            RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}),
+                            std::vector<std::string>({"CcuTransportMgr wait transports ready timeout."}));
             THROW<InternalException>(timeoutMsg);
         }
     }
