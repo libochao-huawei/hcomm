@@ -77,7 +77,7 @@ void CcuComponent::Init()
 
     ifInit = true;
 }
-
+// 资源清理
 void CcuComponent::Deinit()
 {
     std::lock_guard<std::mutex> _lock(innerMutex);
@@ -101,6 +101,8 @@ void CcuComponent::Deinit()
 
     loopFeIpAddrMap.clear();
     ccuRmaBufferMap.clear();
+    localCcuRmaBufferMap.clear();
+    additionalCcuRmaBufferMap.clear();
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
         channelMgrs[dieId] = nullptr;
         resAllocators[dieId] = nullptr;
