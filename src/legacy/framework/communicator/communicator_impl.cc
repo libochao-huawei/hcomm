@@ -2401,10 +2401,10 @@ HcclResult CommunicatorImpl::DestroyDpuKernelResource()
     }
     // reset DPU kernel 线程
     HCCL_INFO("Start to reset DPU device");
-    if (rtResetXpuDevice(RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
-        HCCL_ERROR("ResetXpuDevice Failed");
-        return HCCL_E_RUNTIME;
-    }
+    // if (rtResetXpuDevice(RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
+    //     HCCL_ERROR("ResetXpuDevice Failed");
+    //     return HCCL_E_RUNTIME;
+    // }
     // 切回 npu ctx
     if (ACL_SUCCESS != aclrtSetCurrentContext(npuContext)) {
         HCCL_ERROR("set npu Ctx Failed");
@@ -3172,42 +3172,44 @@ HcclResult CommunicatorImpl::InitAndLaunchDpuKernel()
 {
     HCCL_INFO("[CommunicatorImpl::%s] Start to Launch Dpu Kernel", __func__);
     // 申请共享内存(需要在npu ctx 下进行)
-    bool       newCreate = false;
-    uint64_t   memSize   = static_cast<uint64_t>(SHARE_HBM_MEMORY_SIZE);
-    HcclResult memRet    = CreateWorkspaceBuf(DPUTAG, &memSize, &newCreate);
-    if (memRet != HCCL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::InitCommResource] Alloc Share HBM Failed");
-        return HCCL_E_RUNTIME;
-    }
-    hostShareBuf = malloc(SHARE_HBM_MEMORY_SIZE);
+    // bool       newCreate = false;
+    // uint64_t   memSize   = static_cast<uint64_t>(SHARE_HBM_MEMORY_SIZE);
+    // HcclResult memRet    = CreateWorkspaceBuf(DPUTAG, &memSize, &newCreate);
+    // if (memRet != HCCL_SUCCESS) {
+    //     HCCL_ERROR("[CommunicatorImpl::InitCommResource] Alloc Share HBM Failed");
+    //     return HCCL_E_RUNTIME;
+    // }
+    // hostShareBuf = malloc(SHARE_HBM_MEMORY_SIZE);
     // 设置XPU
-    HCCL_INFO("[CommunicatorImpl::%s] Switch to Dpu Ctx", __func__);
-    if (aclrtGetCurrentContext(&npuContext) != ACL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::%s] Get Npu Ctx Failed", __func__);
-        return HCCL_E_INTERNAL;
-    }
-    if (rtSetXpuDevice(RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::%s] Switch to Dpu Ctx Failed", __func__);
-        return HCCL_E_INTERNAL;
-    }
-    if (aclrtGetCurrentContext(&dpuContext) != ACL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::%s] Get Dpu Ctx Failed", __func__);
-        return HCCL_E_INTERNAL;
-    }
+    // HCCL_INFO("[CommunicatorImpl::%s] Switch to Dpu Ctx", __func__);
+    // if (aclrtGetCurrentContext(&npuContext) != ACL_SUCCESS) {
+    //     HCCL_ERROR("[CommunicatorImpl::%s] Get Npu Ctx Failed", __func__);
+    //     return HCCL_E_INTERNAL;
+    // }
+    // if (rtSetXpuDevice(RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
+    //     HCCL_ERROR("[CommunicatorImpl::%s] Switch to Dpu Ctx Failed", __func__);
+    //     return HCCL_E_INTERNAL;
+    // }
+    // if (aclrtGetCurrentContext(&dpuContext) != ACL_SUCCESS) {
+    //     HCCL_ERROR("[CommunicatorImpl::%s] Get Dpu Ctx Failed", __func__);
+    //     return HCCL_E_INTERNAL;
+    // }
 
     // 准备资源
-    aclrtFuncHandle funcHandle;
-    CHK_RET(PrepareDpuKernelResource(funcHandle));
+    // aclrtFuncHandle funcHandle;
+    // CHK_RET(PrepareDpuKernelResource(funcHandle));
 
     // 下发
-    CHK_RET(LaunchDpuKernel(funcHandle));
+    // CHK_RET(LaunchDpuKernel(funcHandle));
 
     // 切换回当前Ctx
-    HCCL_INFO("[CommunicatorImpl::%s] Switch to Npu Ctx", __func__);
-    if (ACL_SUCCESS != aclrtSetCurrentContext(npuContext)) {
-        HCCL_ERROR("[CommunicatorImpl::%s] Reset Current Ctx Failed", __func__);
-        return HCCL_E_INTERNAL;
-    }
+    // HCCL_INFO("[CommunicatorImpl::%s] Switch to Npu Ctx", __func__);
+    // if (ACL_SUCCESS != aclrtSetCurrentContext(npuContext)) {
+    //     HCCL_ERROR("[CommunicatorImpl::%s] Reset Current Ctx Failed", __func__);
+    //     return HCCL_E_INTERNAL;
+    // }
+
+    // isDpuKernelLaunched = true;
 
     HCCL_INFO("[CommunicatorImpl::%s] Launch Dpu Kernel End", __func__);
     return HCCL_SUCCESS;
