@@ -277,10 +277,10 @@ static void HRaSocketBatchClose(struct SocketCloseInfoT conn[], u32 num)
 
 void HrtRaSocketCloseOne(RaSocketCloseParam &in)
 {
-    struct SocketCloseInfoT closeInfo;
+    struct SocketCloseInfoT closeInfo = {0};
     closeInfo.fdHandle     = in.fdHandle;
     closeInfo.socketHandle = in.socketHandle;
-    closeInfo.disuseLinger = 0;
+
     HRaSocketBatchClose(&closeInfo, 1);
 }
 
@@ -1281,7 +1281,13 @@ static struct QpCreateAttr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
     attr.ub.tokenValue       = in.tokenValue;
     attr.ub.tokenIdHandle   = reinterpret_cast<void *>(in.tokenIdHandle);
     attr.ub.flag.value        = 0;
-    attr.ub.errTimeout       = 0;
+    /* errTime配置值：0-31
+       0-7代表芯片配置值b00:128ms
+       8-15代表芯片配置值b01:1s
+       16-23代表芯片配置值b10:8s
+       24-31代表芯片配置值b11:64s
+    */
+    attr.ub.errTimeout       = UB_ERR_TIMEOUT_8S;
     // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
     attr.ub.priority          = 2;
     attr.ub.rnrRetry         = RNR_RETRY;
@@ -1728,7 +1734,7 @@ RequestHandle RaSocketConnectOneAsync(RaSocketConnectParam &in)
 
 RequestHandle RaSocketCloseOneAsync(RaSocketCloseParam &in)
 {
-    struct SocketCloseInfoT closeInfo;
+    struct SocketCloseInfoT closeInfo = {0};
     closeInfo.fdHandle     = in.fdHandle;
     closeInfo.socketHandle = in.socketHandle;
 
