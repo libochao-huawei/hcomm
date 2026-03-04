@@ -146,12 +146,12 @@ struct ProfilingDeviceCommResInfo {
     uint32_t commStreamIds[8]; // 具体streamId
     uint32_t reserve;
 };
-typedef struct {
+struct rtMemUbTokenInfo{
     uint64_t va;
     uint64_t size;
     uint32_t tokenId;
     uint32_t tokenValue;
-} rtMemUbTokenInfo;
+};
 constexpr uint32_t RT_STREAM_FAST_LAUNCH = 0x200U;
 constexpr uint32_t RT_STREAM_FAST_SYNC = 0x400U;
 constexpr uint32_t RT_STREAM_CP_PROCESS_USE = 0x800U; // RT_STREAM_CP_PROCESS_USE does not support OR with other flags

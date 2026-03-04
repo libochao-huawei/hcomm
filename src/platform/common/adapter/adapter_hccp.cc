@@ -708,8 +708,8 @@ HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHan
         vector<string>({"device_id", "reason"}),
         vector<string>({std::to_string(rdevInfo.phyId), "The network port is down."})
     );
+#ifndef HCCD
     vector<HcclIpAddress> deviceIp;
-     
     CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
     CHK_PRT_RET(deviceIp.size() < 1,
         HCCL_ERROR("Get ip address failed, phyId[%u]", rdevInfo.phyId), HCCL_E_INTERNAL);
@@ -719,6 +719,7 @@ HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHan
         vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()),
         "[IP]", string(deviceIp[0].GetReadableIP()) })
     );
+#endif
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str()));
@@ -746,7 +747,7 @@ HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rd
     CHK_PRT_CONT(ret == HCCP_ELINKDOWN, 
         HCCL_ERROR("[%s][%s]rdma init failed because RoCE link status is down, please check the network adapter configuration.",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str()));
-
+#ifndef HCCD
     vector<HcclIpAddress> deviceIp;
     CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
     CHK_PRT_RET(deviceIp.size() < 1,
@@ -756,6 +757,7 @@ HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rd
         vector<string>({ "value", "variable" ,"expect" }),
         vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()), "[IP]", string(deviceIp[0].GetReadableIP()) })
     );
+#endif
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str()));
@@ -790,7 +792,7 @@ HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev
     CHK_PRT_CONT(ret == HCCP_ELINKDOWN, 
         HCCL_ERROR("[%s][%s]rdma init failed because RoCE link status is down, please check the network adapter configuration.",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str()));
-
+#ifndef HCCD
     vector<HcclIpAddress> deviceIp;
     CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
     CHK_PRT_RET(deviceIp.size() < 1,
@@ -800,6 +802,7 @@ HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev
         vector<string>({ "value", "variable" ,"expect" }),
         vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()), "[IP]", string(deviceIp[0].GetReadableIP()) })
     );
+#endif
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str()));

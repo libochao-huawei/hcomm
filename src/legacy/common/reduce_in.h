@@ -9,6 +9,7 @@
  */
 #ifndef HCCLV2_REDUCE_IN_H
 #define HCCLV2_REDUCE_IN_H
+#include <string>
 #include "data_type.h"
 #include "reduce_op.h"
 namespace Hccl {

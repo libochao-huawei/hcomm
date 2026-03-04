@@ -1109,7 +1109,7 @@ HcclResult UbMemTransport::Init()
     return HCCL_SUCCESS;
 }
 
-HcclResult UbMemTransport::DeInit()
+HcclResult UbMemTransport::DeInit() const
 {
 
     return HCCL_SUCCESS;

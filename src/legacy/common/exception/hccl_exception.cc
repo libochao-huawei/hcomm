@@ -8,9 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <execinfo.h>
 #include "hccl_exception.h"
-#include "exception_util.h"
 
 namespace Hccl {
 

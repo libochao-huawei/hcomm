@@ -11,6 +11,7 @@
 #include <hccl_params_pub.h>
 #include "exception_util.h"
 #include "not_support_exception.h"
+#include "string_util.h"
 namespace Hccl {
 std::string CollOpParams::Describe() const
 {

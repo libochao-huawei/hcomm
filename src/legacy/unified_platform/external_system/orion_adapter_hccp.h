@@ -627,11 +627,11 @@ struct AuxInfoOut {
     uint32_t auxInfoValues[MAX_AUX_INFO_NUM];
     uint32_t auxInfoNum{0};
 };
-HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn in, AuxInfoOut &out);
+HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInfoOut &auxInfoOut);
 
 MAKE_ENUM(JettyStatus, RESET, READY, SUSPENDED, ERROR);
 constexpr u32 MAX_JETTY_QUERY_NUM = 128;
-HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyStatusVec, u32 &num);
+HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyAttrs, u32 &num);
 
 struct ConnJettyInfo {
     RdmaHandle rdmaHandle{nullptr};

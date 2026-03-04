@@ -10,10 +10,8 @@
 
 #include "ccu_connection.h"
 
-#include <random>
-
+#include <cstdlib>
 #include "hccp_ctx.h"
-
 #include "buffer.h"
 #include "exception_util.h"
 #include "orion_adapter_rts.h"

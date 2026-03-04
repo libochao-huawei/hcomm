@@ -34,6 +34,8 @@
 #include "ccu_component.h"
 #include "rank_gph.h"
 #include "rdma_handle_manager.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 #undef protected
 #undef private
 #include "hccl_comm.h"
