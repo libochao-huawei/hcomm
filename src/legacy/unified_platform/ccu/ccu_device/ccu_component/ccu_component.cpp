@@ -247,9 +247,7 @@ void CcuComponent::CreateCcuRmaBuffer()
         std::array<CcuMemInfo, CCU_MEM_INFO_SIZE> memInfoList{};
         uint32_t count{0};
         ccuResSpecs.GetCcuMemInfoList(dieId, memInfoList.data(), count);
-        HCCL_ERROR("count %d", count);
         for (uint32_t i = 0; i < count; i++) {
-            HCCL_ERROR("memInfoList[i].memVa %lld memInfoList[i].memSize %lld ccuResAddr %lld", memInfoList[i].memVa, memInfoList[i].memSize, ccuResAddr);
             if (memInfoList[i].memVa == ccuResAddr) {
                 const auto ccuBuffer = std::make_shared<Buffer>(ccuResAddr, memInfoList[i].memSize);
                 ccuRmaBufferMap.emplace(dieId, std::make_unique<LocalUbRmaBuffer>(ccuBuffer, rdmaHandle));
