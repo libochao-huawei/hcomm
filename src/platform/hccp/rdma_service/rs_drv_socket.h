@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <ifaddrs.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -52,6 +53,16 @@ enum RsHardwareType {
     RS_HARDWARE_UNKNOWN,
 };
 
+union RsSocketaddr {
+    struct sockaddr_in sAddr;
+    struct sockaddr_in6 sAddr6;
+};
+
+struct RsSocketaddrInfo {
+    int family;
+    union RsSocketaddr addr;
+};
+
 int RsInetNtop(int family, union HccpIpAddr *ip, char readAddr[], unsigned int len);
 int RsConvertIpAddr(int family, union HccpIpAddr *ipAddr, struct RsIpAddrInfo *ip);
 bool RsCompareIpAddr(struct RsIpAddrInfo *a, struct RsIpAddrInfo *b);
@@ -83,4 +94,5 @@ int RsFindWhiteList(struct RsConnCb *connCb, struct RsIpAddrInfo *serverIp,
 void RsSocketGetBindByChip(unsigned int chipId, bool *bindIp);
 bool RsSocketIsVnicIp(unsigned int chipId, unsigned int ipAddr);
 void RsConnCostTime(struct RsConnInfo *conn);
+int RsFd2conn(int fd, struct RsConnInfo **conn);
 #endif // RS_DRV_SOCKET_H
