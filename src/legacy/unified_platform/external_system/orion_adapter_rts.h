@@ -86,15 +86,8 @@ typedef struct tagRtDevBinary {
 */
 using aclrtMemType_t = int;
 __attribute__((weak)) ACL_FUNC_VISIBILITY aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t flags);
-// DPU
-#ifndef rtSetXpuDevice
-typedef enum tagRtXpuDevType {
-    RT_DEV_TYPE_DPU = 0,
-    RT_DEV_TYPE_REV
-} rtXpuDevType;
-extern rtError_t rtResetXpuDevice(rtXpuDevType devType, const uint32_t devId);
-extern rtError_t rtSetXpuDevice(rtXpuDevType devType, const uint32_t devId);
-#endif
+HcclResult HrtResetXpuDevice(uint32_t devType, const uint32_t devId);
+HcclResult HrtSetXpuDevice(uint32_t devType, const uint32_t devId);
 extern rtError_t rtCCULaunch(rtCcuTaskInfo_t *taskInfo,  rtStream_t const stm);
 extern rtError_t rtReleaseDevResAddress(rtDevResInfo * const resInfo);
 extern rtError_t rtGetDevResAddress(rtDevResInfo * const resInfo, rtDevResAddrInfo * const addrInfo);
