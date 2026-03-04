@@ -5212,6 +5212,7 @@ HcclResult HcclCommAicpu::InitP2pChannel(HcclIndOpChannelRemoteResV3 *commParam,
     TransportPara para{};
     const std::unique_ptr<NotifyPool> notifyPool;
     DispatcherCtx *ctx = static_cast<DispatcherCtx *>(dispatcherCtx_);
+    CHK_PRT(ctx->SetDispatcherHcclQos(remoteResV2.channelP2p.qos)); // 调度器添加hcclQos
     CHK_PTR_NULL(ctx);
     link.reset(new (std::nothrow) Transport(
         TransportType::TRANS_TYPE_DEVICE_P2P, para, ctx->GetDispatcher(), notifyPool, machinePara, transDevP2pData));
