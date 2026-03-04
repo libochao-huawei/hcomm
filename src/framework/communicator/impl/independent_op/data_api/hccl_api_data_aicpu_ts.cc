@@ -18,6 +18,7 @@
 #include "hcomm_notify_utils.h"
 #include "ub_transport_lite_impl.h"
 #include "device/framework/aicpu_hccl_process.h"
+#include <mutex>
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
