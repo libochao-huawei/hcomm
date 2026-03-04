@@ -525,4 +525,5 @@ Trace& HcclCommunicator::GetTrace() const
 {
     return pimpl->GetTrace();
 }
+ 	 
 } // namespace Hccl

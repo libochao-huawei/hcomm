@@ -125,13 +125,17 @@ string TaskInfo::GetOpInfo() const
             static_cast<u64>(opInfo->op_.inputMem->GetAddr()),
             static_cast<u64>(opInfo->op_.outputMem->GetAddr()));
     }
-    return StringFormat("index[%u], opType[%s], count[%llu], reduceType[%s], %sdataType[%s]",
-        opInfo->index_,
+    return StringFormat("index[%u], opType[%s], commId[%s], count[%llu], reduceType[%s], %sdataType[%s], opIndex[%u], headOpCounter[%llx], tailOpCounter[%llx]",
+        opInfo->commIndex_,
         opInfo->op_.opType.Describe().c_str(),
+        opInfo->commId.c_str(),
         opInfo->op_.dataCount,
         opInfo->op_.reduceOp.Describe().c_str(),
         addr.c_str(),
-        opInfo->op_.dataType.Describe().c_str());
+        opInfo->op_.dataType.Describe().c_str(),
+        opInfo->opIndex_,
+        opInfo->headOpCounter_,
+        opInfo->tailOpCounter_);
 }
 
 string TaskInfo::GetRemoteRankInfo(bool needConcise) const

@@ -72,7 +72,7 @@ HcclResult GenerateErrorMessageReport(CommunicatorImplLite *aicpuComm, std::shar
     errMsgInfo.rankId = aicpuComm->GetMyRank();
     errMsgInfo.rankSize = aicpuComm->GetRankSize();
     errMsgInfo.algType = taskInfo->dfxOpInfo_ == nullptr ? static_cast<Hccl::AlgType>(AlgType::MESH) : taskInfo->dfxOpInfo_->algType_;
-    errMsgInfo.opIndex = taskInfo->dfxOpInfo_ == nullptr ? 0 : taskInfo->dfxOpInfo_->index_;
+    errMsgInfo.opIndex = taskInfo->dfxOpInfo_ == nullptr ? 0 : taskInfo->dfxOpInfo_->commIndex_;
     errMsgInfo.opType = taskInfo->dfxOpInfo_->op_.opType;
     errMsgInfo.count = taskInfo->dfxOpInfo_->op_.dataCount;
     errMsgInfo.dataType = taskInfo->dfxOpInfo_->op_.dataType;
@@ -302,6 +302,10 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, para information is %s.", curTask->GetParaInfo().c_str());
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(*curTask).c_str());
+    std::pair<float, float> floatCounter;
+ 	floatCounter.first =  *(reinterpret_cast<float *>(curTask->dfxOpInfo_->headOpCounterAddr_));
+ 	floatCounter.second = *(reinterpret_cast<float *>(curTask->dfxOpInfo_->tailOpCounterAddr_));
+ 	HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, headOpCounter[%u] tailOpCounter[%u].", static_cast<u32>(floatCounter.first), static_cast<u32>(floatCounter.second));
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, opData information is %s.", GetOpDataInfo(*curTask).c_str());
 }
 
