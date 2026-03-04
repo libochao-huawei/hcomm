@@ -443,6 +443,12 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     {
         THROW<RuntimeApiException>(StringFormat("Call aclrtBinaryGetFunction failed, with ret[%d]", aclRet));
     }
+    auto& mStream = OpMode::OPBASE ? comm->GetAicpuStreamManager().GetFreeStream() : stream;
+    std::string mode = OpMode::OPBASE ? "OPBASE" : "OFFLOAD";
+    HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, mStream->GetPtr(), &cfg,
+			&param.kernel, sizeof(HcclKernelParamLite));
+    HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s " + mode + " mode "
+                "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName);
 	if (opMode == OpMode::OPBASE) {
 		HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, comm->GetAicpuStreamManager().GetFreeStream()->GetPtr(), &cfg,
 			&param.kernel, sizeof(HcclKernelParamLite));
@@ -457,7 +463,7 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     taskParam.taskType = TaskParamType::TASK_AICPU_KERNEL;
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
-    SaveDfxTaskInfo(taskParam, -1, stream.GetIsMaster());
+    SaveDfxTaskInfo(taskParam, -1, mStream.GetIsMaster());
     AddWaitToUserStream(stream);
 }
 
