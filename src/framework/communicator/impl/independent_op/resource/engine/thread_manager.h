@@ -28,8 +28,8 @@ public:
     ~ThreadMgr() = default;
     HcclResult HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
         uint32_t notifyNumPerThread, ThreadHandle *threads, std::vector<uint32_t> &threadId);
-    HcclResult HcclThreadAcquireWithType(CommEngine engine, uint32_t threadNum,
-        uint32_t notifyNumPerThread, const ThreadType type, ThreadHandle *threads);
+    HcclResult HcclThreadAcquireWithConfig(CommEngine engine, uint32_t threadNum,
+        const ThreadConfig config, const ThreadType type, ThreadHandle *threads);
     HcclResult HcclThreadAcquireWithStream(CommEngine engine,
         rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
     HcclResult HcclGetNotifyNumInThread(ThreadHandle thread, uint32_t *notifyNum);
