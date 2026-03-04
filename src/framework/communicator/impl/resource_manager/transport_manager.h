@@ -306,7 +306,7 @@ private:
         struct SingleSubCommTransport &singleSubCommTransport, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
         bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
     HcclResult PrepareTaskLists(HcclSendRecvItem *sendRecvItemsPtr, u32 itemNum, const SingleSubCommTransport &singleSubCommTransport,
-    std::vector<std::pair<u32, u32>> &senderList, std::vector<std::pair<u32, u32>> &receiverList);
+        std::vector<std::pair<u32, u32>> &senderList, std::vector<std::pair<u32, u32>> &receiverList);
 
     std::mutex mutex_;	// 用于控制互斥资源的访问
     CCLBufferManager &cclBufferManager_;
