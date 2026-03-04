@@ -17,9 +17,8 @@ HcclCommDfx::HcclCommDfx() {
 void HcclCommDfx::Init(u32 deviceId) {
     deviceId_ = deviceId;
     // 1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
-    if (mirrorTaskManager_ == nullptr) {
-        // 注意：实际实现中应该避免这种情况，CommunicatorImpl应该传入已经存在的MirrorTaskManager
-        mirrorTaskManager_ = new Hccl::MirrorTaskManager(deviceId_, &Hccl::GlobalMirrorTasks::Instance(), false);
+    if (!mirrorTaskManager_) {
+        mirrorTaskManager_ = std::make_unique<Hccl::MirrorTaskManager>(deviceId_, &Hccl::GlobalMirrorTasks::Instance(), false);
     }
     
     // 2. 创建Profiling管理类

@@ -1,3 +1,11 @@
+/*
+ * @Author: c15029001705 caiyifan2@huawei.com
+ * @Date: 2026-03-03 12:03:58
+ * @LastEditors: c15029001705 caiyifan2@huawei.com
+ * @LastEditTime: 2026-03-04 10:18:55
+ * @FilePath: \hcomm_profiling\src\framework\next\coll_comms\communicator\aicpu\coll_comm_aicpu.cc
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
@@ -16,7 +24,6 @@
 #include "ub_transport_lite_impl.h"
 #include "notify_manager.h"
 #include "aicpu_hccl_def.h"
-#include "hcclCommDfx.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
 
@@ -40,7 +47,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
     CHK_RET(hrtSetlocalDeviceType(topoInfo_.deviceType));
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(topoInfo_.devicePhyId, &devId_));
-    
+    dfx_.Init(devId_);
     if (commAicpuParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
         EXECEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
@@ -115,8 +122,6 @@ HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
 {
     HCCL_INFO("[CollCommAicpu][%s] commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
         __func__, commParam->uniqueIdAddr, commParam->uniqueIdSize);
-    HcclCommDfxLite dfx;
-    dfx.Init(devId_);
     for (u32 index = 0; index < commParam->listNum; index++) {
         std::vector<char> data(commParam->singleUniqueIdSize);
 

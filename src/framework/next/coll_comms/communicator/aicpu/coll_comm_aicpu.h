@@ -24,6 +24,7 @@
 #include "aicpu_launch_manager.h"
 #include "channel_param.h"
 #include "hdc_pub.h"
+#include "hcclCommDfxLite.h"
 
 using namespace hccl;
 class CollCommAicpu {
@@ -56,6 +57,7 @@ private:
 
     // dfx
     bool isErrorReported_{false}; // 是否上报了taskException信息
+    HcclCommDfxLite dfx_;
 };
 
 

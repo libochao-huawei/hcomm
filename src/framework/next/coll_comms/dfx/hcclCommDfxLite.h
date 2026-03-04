@@ -43,7 +43,7 @@ public:
     // 在channelRemoteRankId_表中对remoteRankId进行查找
     static HcclResult GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId);
 private:
-    Hccl::MirrorTaskManager* mirrorTaskManager_;  // 使用原始指针，不管理生命周期
+    std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;  // 使用原始指针，不管理生命周期
     std::unique_ptr<HcclCommProfilingLite> profilingImpl_;
     std::unordered_map<std::string,std::unordered_map<u64, u32 remoteRankId> > channelRemoteRankIdLite_;
 };

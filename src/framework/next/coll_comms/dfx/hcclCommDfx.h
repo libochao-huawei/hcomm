@@ -53,7 +53,7 @@ public:
     static HcclResult GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId);
 private:
     u32 deviceId_;
-    Hccl::MirrorTaskManager* mirrorTaskManager_;  // 使用原始指针，不管理生命周期
+    std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;  // 使用原始指针，不管理生命周期TODO
     std::unique_ptr<HcclCommProfiling> profiling_;
     static std::unordered_map<std::string,std::unordered_map<u64, u32 remoteRankId> > channelRemoteRankId_;
     ReadWriteLock rwLock_; // 读写锁
