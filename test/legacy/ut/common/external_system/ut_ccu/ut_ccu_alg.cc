@@ -15,6 +15,8 @@
 #include "buffer_type.h"
 #include "phy_topo_builder.h"
 #define private public
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 #include "ccu_alg_mesh_1D.h"
 #include "ccu_alg_mesh_2D.h"
 #include "env_config.h"

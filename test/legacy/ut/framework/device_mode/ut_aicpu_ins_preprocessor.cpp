@@ -17,6 +17,8 @@
 #include "ccu_instruction_all_gather_mesh1d.h"
 #include "aicpu_res_package_helper.h"
 #include "alg_topo_package_helper.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 #undef private
 #undef protected
 

@@ -268,7 +268,7 @@ HcclResult UbTransportLiteImpl::BuildLocRmaBufferLite(const uintptr_t addr, cons
     HCCL_INFO("[UbTransportLiteImpl::%s] start to find addr[0x%llx], size[0x%llx] in locBufferVec, whose size is %zu. ",
         __func__, addr, size, locBufferVec.size());
     if (locBufferVec.empty()) {
-        HCCL_ERROR("[UbTransportLiteImpl::%s] locBufferVec is empty.");
+        HCCL_ERROR("[UbTransportLiteImpl::%s] locBufferVec is empty.", __func__);
         return HCCL_E_INTERNAL;
     }
 

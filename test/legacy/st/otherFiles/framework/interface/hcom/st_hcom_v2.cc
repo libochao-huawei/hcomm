@@ -283,6 +283,7 @@ TEST_F(HcomTest, HcomGetWorkspaceMemSizeV2_func_err)
     CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm;
     MOCKER(HrtGetDevice).stubs().with(any()).will(returnValue(0));
     MOCKER_CPP(&HcclCommunicator::CalcCollOffloadOpRes).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(GetHcclCommV2).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     std::string opType = "HcomAllReduce";
     u64 count = 0;
     HcclDataType dataType = HCCL_DATA_TYPE_INT8;

@@ -25,6 +25,7 @@
 #include "ccu_instruction_all_gather_mesh1d.h"
 #include "ccu_context_all_gather_mesh1d.h"
 #include "ccu_ctx_signature.h"
+#include "internal_exception.h"
 #undef private
 #undef protected
 

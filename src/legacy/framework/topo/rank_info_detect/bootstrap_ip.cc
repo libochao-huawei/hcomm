@@ -90,7 +90,7 @@ bool FindHostIpByIfName(const std::vector<std::pair<std::string, IpAddress>> &ho
                 configIfNamesFlag = true;
             }
         }
-        if ((configIfNamesFlag) ^ (socketIfName.searchNot)) {
+        if (configIfNamesFlag != socketIfName.searchNot) {
             configIfNamesFlag = false;
             ipAddress         = hostIfInfo.second;
             HCCL_INFO("[%s] find hostIp success by ifName. name[%s] ip[%s]", __func__, hostIfInfo.first.c_str(),
