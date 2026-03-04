@@ -387,7 +387,7 @@ HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
         hcclMem->type = rmtRmaBuffer->GetMemType();
         hcclMem->addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
         hcclMem->size = rmtRmaBuffer->GetSize();
-        memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag());
+        memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag().c_str());
         remoteMem[i] = hcclMem.get();
         HCCL_INFO("[HostCpuRoceChannel::%s] rmtBuf[addr[%p], size[%lu]]", 
             __func__, remoteMem[i]->addr, remoteMem[i]->size);

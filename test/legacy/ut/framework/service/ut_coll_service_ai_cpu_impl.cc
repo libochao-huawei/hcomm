@@ -35,6 +35,9 @@
 #include "ccu_ins_preprocessor.h"
 #include "aicpu_ins_preprocessor.h"
 #include "stream.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
+#include "internal_exception.h"
 
 #undef protected
 #undef private

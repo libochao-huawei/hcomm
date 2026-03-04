@@ -23,6 +23,9 @@
 #include "mc2_compont.h"
 #include "communicator_impl.h"
 #include "ccu_ins_preprocessor.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
+#include "internal_exception.h"
 #undef private
 #undef protected
 

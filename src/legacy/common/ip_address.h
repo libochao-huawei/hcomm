@@ -15,6 +15,9 @@
 #include <string>
 #include <vector>
 #include <regex>
+#include <cstring>
+
+#include "hccl/base.h"
 #include "string_util.h"
 #include "not_support_exception.h"
 #include "exception_util.h"

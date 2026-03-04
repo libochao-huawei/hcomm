@@ -12,6 +12,8 @@
 #define HCCLV2_ITERATOR_H
 
 #include <iterator>
+#include <memory>
+
 namespace Hccl {
 
 template <typename T, typename Enable = void> struct IsSharedPtr final {

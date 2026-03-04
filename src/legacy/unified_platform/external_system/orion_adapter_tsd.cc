@@ -14,13 +14,14 @@
 
 namespace Hccl {
 
+const std::string HDC_TYPE_EXT_PAM = "--hdcType=18";
+
 HcclResult HrtOpenTsdProcess(u32 deviceLogicId)
 {
-    std::string extPam("--hdcType=18");
     rtNetServiceOpenArgs openArgs;
     rtProcExtParam extParam{};
-    extParam.paramInfo = extPam.c_str();
-    extParam.paramLen = extPam.size();
+    extParam.paramInfo = HDC_TYPE_EXT_PAM.c_str();
+    extParam.paramLen = HDC_TYPE_EXT_PAM.size();
     openArgs.extParamCnt = 1UL;
     openArgs.extParamList = &extParam;
     rtError_t aclret = rtOpenNetService(&openArgs);

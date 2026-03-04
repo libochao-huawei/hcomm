@@ -14,6 +14,8 @@
 #include "communicator_impl.h"
 #include "data_buf_manager.h"
 #include "internal_exception.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 using namespace Hccl;
 class DataBufManagerTest : public testing::Test {
 protected:
