@@ -1333,9 +1333,9 @@ void TcRsUbCtxJettyDestroyBatch()
 
     num = 1;
     jettyCbStub.state = RS_JETTY_STATE_CREATED;
-    pthread_mutex_init(&devCb.mutex, NULL);
-    RS_INIT_LIST_HEAD(&devCb.jettyList);
-    RsListAddTail(&jettyCbStub.list, &devCb.jettyList);
+    pthread_mutex_init(&devCb->jettyList.mutex, NULL);
+    RS_INIT_LIST_HEAD(&devCb.jettyList.list);
+    RsListAddTail(&jettyCbStub.list, &devCb.jettyList.list);
     devCb.jettyCnt++;
     mocker_invoke(RsUbGetJettyCb, RsUbGetJettyCbStub, 1);
     mocker(RsUbDestroyJettyCbBatch, 1, 0);
@@ -1346,7 +1346,7 @@ void TcRsUbCtxJettyDestroyBatch()
 
     num = 1;
     jettyCbStub.state = RS_JETTY_STATE_CREATED;
-    RsListAddTail(&jettyCbStub.list, &devCb.jettyList);
+    RsListAddTail(&jettyCbStub.list, &devCb.jettyList.list);
     devCb.jettyCnt++;
     mocker_invoke(RsUbGetJettyCb, RsUbGetJettyCbStub, 1);
     mocker_invoke(RsUbFreeJettyCbBatch, RsUbFreeJettyCbBatchStub, 1);
@@ -1358,7 +1358,7 @@ void TcRsUbCtxJettyDestroyBatch()
 
     num = 1;
     jettyCbStub.state = RS_JETTY_STATE_CREATED;
-    RsListAddTail(&jettyCbStub.list, &devCb.jettyList);
+    RsListAddTail(&jettyCbStub.list, &devCb.jettyList.list);
     devCb.jettyCnt++;
     mocker_invoke(RsUbGetJettyCb, RsUbGetJettyCbStub, 1);
     mocker_invoke(RsUbFreeJettyCbBatch, RsUbFreeJettyCbBatchStub, 1);
@@ -1369,7 +1369,7 @@ void TcRsUbCtxJettyDestroyBatch()
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
-    pthread_mutex_destroy(&devCb.mutex);
+    pthread_mutex_destroy(&devCb->jettyList.mutex);
 }
 
 void TcRsUbCtxQueryJettyBatch()
