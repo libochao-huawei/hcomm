@@ -282,7 +282,7 @@ HcclResult AicpuTsThread::HostInit()
         CHK_SMART_PTR_NULL(stream_);
         rtStream_ = stream_->ptr();
     }
-    notifys_.reserve(notifyNum_);
+
     for (uint32_t idx = 0; idx < notifyNum_; idx++) {
         notifys_.emplace_back(nullptr);
         notifys_[idx].reset(new (std::nothrow) LocalNotify());
@@ -291,6 +291,15 @@ HcclResult AicpuTsThread::HostInit()
         if (devType_ != DevType::DEV_TYPE_910_95) {
             CHK_RET(notifys_[idx]->SetIpc());
         }
+    }
+
+    // A5 aicpu场景thread多申请一个host类型notify，用于host&device同步
+    if (devType_ == DevType::DEV_TYPE_910_95) {
+        notifys_.emplace_back(nullptr);
+        notifys_[notifyNum_].reset(new (std::nothrow) LocalNotify());
+        CHK_SMART_PTR_NULL(notifys_[notifyNum_]);
+        CHK_RET(notifys_[notifyNum_]->Init(NotifyLoadType::HOST_NOTIFY));
+        notifyNum_ += 1;
     }
 
     if (streamType_ == StreamType::STREAM_TYPE_DEVICE && devType_ != DevType::DEV_TYPE_910_95) {
