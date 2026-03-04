@@ -24,6 +24,7 @@ constexpr u32 UB_RELAX_ORDER       = 0X01; // Relax Order表示当前SQE与后�
 constexpr u32 UB_STRONG_ORDER      = 0X02; // Strong Order表示当前SQE有保序要求，该SQE不能超越前面的Relax Order SQE
 constexpr u32 UB_NO_COMPLETION     = 0;    // 表示当前报文和前面报文没有completion序要求，报文对应的CQE可以乱序上报
 constexpr u32 UB_COMPLETION        = 1;    // 表示当前报文和前面报文有completion序要求，报文对应的CQE需要保序上报
+constexpr u8  UB_FENCE_ENABLED     = 1;    // fence使能
 UbTransportLiteImpl::UbTransportLiteImpl(
     std::vector<char> &uniqueId, std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback)
 {
@@ -407,6 +408,12 @@ void UbTransportLiteImpl::Read(const RmaBufferLite &loc, const Buffer &rmt, cons
 {
     ClearConnOut();
     SqeConfigLite cfg;
+    cfg.fence = fence_ ? UB_FENCE_ENABLED : cfg.fence;
+    fence_ = false;
+    if (cfg.cqeEn) {
+        cfg.placeOdr  = UB_STRONG_ORDER;
+        cfg.compOrder = UB_COMPLETION;
+    }
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::Read"); // 待修改优化, 检查connection
     // 当前使用1个connection,下标为0
@@ -420,6 +427,12 @@ void UbTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, con
 {
     ClearConnOut();
     SqeConfigLite cfg;
+    cfg.fence = fence_ ? UB_FENCE_ENABLED : cfg.fence;
+    fence_ = false;
+    if (cfg.cqeEn) {
+        cfg.placeOdr  = UB_STRONG_ORDER;
+        cfg.compOrder = UB_COMPLETION;
+    }
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::Write"); // 待修改优化, 检查connection
     // 当前使用1个connection，下标为0
@@ -434,6 +447,12 @@ void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt
 {
     ClearConnOut();
     SqeConfigLite cfg;
+    cfg.fence = fence_ ? UB_FENCE_ENABLED : cfg.fence;
+    fence_ = false;
+    if (cfg.cqeEn) {
+        cfg.placeOdr  = UB_STRONG_ORDER;
+        cfg.compOrder = UB_COMPLETION;
+    }
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::ReadReduce"); // 待修改优化, 检查connection
     // 当前使用1个connection，下标为0
@@ -484,6 +503,12 @@ void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rm
 {
     ClearConnOut();
     SqeConfigLite cfg;
+    cfg.fence = fence_ ? UB_FENCE_ENABLED : cfg.fence;
+    fence_ = false;
+    if (cfg.cqeEn) {
+        cfg.placeOdr  = UB_STRONG_ORDER;
+        cfg.compOrder = UB_COMPLETION;
+    }
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::WriteReduce"); // 待修改优化, 检查connection
     // 当前使用1个connection，下标为0
@@ -499,6 +524,12 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
 {
     ClearConnOut();
     SqeConfigLite cfg;
+    cfg.fence = fence_ ? UB_FENCE_ENABLED : cfg.fence;
+    fence_ = false;
+    if (cfg.cqeEn) {
+        cfg.placeOdr  = UB_STRONG_ORDER;
+        cfg.compOrder = UB_COMPLETION;
+    }
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::BatchTransfer"); // 待修改优化, 检查connection
     u32 insNum = loc.size();
@@ -643,5 +674,11 @@ Eid UbTransportLiteImpl::GetRmtEid() const
         return connVec[0]->GetRmtEid();
     }
     return eid;
+}
+
+HcclResult UbTransportLiteImpl::Fence()
+{
+    fence_ = true;
+    return HCCL_SUCCESS;
 }
 } // namespace Hccl

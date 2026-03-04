@@ -744,5 +744,8 @@ int32_t HcommFlush()
 int32_t HcommChannelFence(ChannelHandle channel)
 {
     HCCL_DEBUG("[%s] channel[0x%llx].", __func__, channel);
-    return HCCL_E_NOT_SUPPORT;
+    auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
+    CHK_PTR_NULL(ubTransportLitePtr);
+    CHK_RET(ubTransportLitePtr->Fence());
+    return HCCL_SUCCESS;
 }
