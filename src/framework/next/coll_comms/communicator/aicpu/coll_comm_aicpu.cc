@@ -24,7 +24,6 @@
 #include "ub_transport_lite_impl.h"
 #include "notify_manager.h"
 #include "aicpu_hccl_def.h"
-#include "error_message_v2.h"
 #include "kfc.h"
 #include "dlhal_function_v2.h"
 
