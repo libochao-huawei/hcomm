@@ -28,6 +28,7 @@ public:
     std::string &GetUniqueId() override;
     uint32_t GetNotifyNum() const override;
     LocalNotify *GetNotify(uint32_t index) const override;
+    HcclResult GetThreadEntity(ThreadEntity* threadEntity) const override;
 
     // A3 Stream & A5 Stream
     bool IsDeviceA5() const override;
