@@ -363,7 +363,7 @@ extern HcclResult HcclThreadAcquireWithConfig(HcclComm comm, CommEngine engine, 
 
 extern HcclResult HcommThreadServiceRegister(ThreadHandle threadHandle, ThreadService service, ThreadServiceHandle *serviceHandle);
 
-extern HcclResult HcommThreadServiceUnregister(ThreadHandle threadHandle, ThreadService service, ThreadServiceHandle *serviceHandle);
+extern HcclResult HcommThreadServiceUnregister(ThreadHandle threadHandle, ThreadServiceHandle serviceHandle);
 
 /** @} */  // 通信引擎资源管理
 
