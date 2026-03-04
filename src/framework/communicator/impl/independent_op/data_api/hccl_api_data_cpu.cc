@@ -16,6 +16,7 @@
 #include "launch_context.h"
 
 #include "adapter_hal_pub.h"
+#include "adapter_rts.h"
 #include "op_base_v2.h"
 #include "host/host_cpu_roce_channel.h"
 #include "hccl_comm_pub.h"
@@ -24,6 +25,21 @@
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
+const std::unordered_map<HcclDataType, aclDataType> hccl2rtDataTypeMap = { 
+    {HCCL_DATA_TYPE_INT8, ACL_INT8}, 
+    {HCCL_DATA_TYPE_INT16, ACL_INT16}, 
+    {HCCL_DATA_TYPE_INT32, ACL_INT32}, 
+    {HCCL_DATA_TYPE_FP16, ACL_FLOAT16}, 
+    {HCCL_DATA_TYPE_FP32, ACL_FLOAT}, 
+    {HCCL_DATA_TYPE_BFP16, ACL_BF16}, 
+}; 
+ 
+ 
+const std::unordered_map<HcclReduceOp, aclrtReduceKind> hccl2rtReduceOpMap = { 
+    {HCCL_REDUCE_SUM, ACL_RT_MEMCPY_SDMA_AUTOMATIC_SUM}, 
+    {HCCL_REDUCE_MAX, ACL_RT_MEMCPY_SDMA_AUTOMATIC_MAX}, 
+    {HCCL_REDUCE_MIN, ACL_RT_MEMCPY_SDMA_AUTOMATIC_MIN}, 
+};
 
 void AddThread(ThreadHandle thread) {
     g_threadLaunchCtx.AddThread(thread);
@@ -54,6 +70,17 @@ int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, 
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
 
+    if (threadPtr->IsDeviceA5()) {
+        if (len == 0 || src == dst) { 
+            HCCL_DEBUG("count is 0 or src == dst, return success."); 
+            return HCCL_SUCCESS; 
+        }
+
+        CHK_RET(hrtMemAsyncCopy(dst, len, src, len,
+                                HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE, stream->ptr()));
+        return HCCL_SUCCESS;
+    }
+
     HcclResult ret = HcclLocalCopy(stream, &dstBuf, &srcBuf);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, thread, dst, src, len), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
@@ -82,6 +109,26 @@ int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
 
+    if (threadPtr->IsDeviceA5()) {
+        auto dataTypeIt = hccl2rtDataTypeMap.find(reduceInfo.dataType);
+        if (dataTypeIt == hccl2rtDataTypeMap.end()) {
+            HCCL_ERROR("[HcommLocalReduceOnThread]data type[%s] is not supported",
+                       GetDataTypeEnumStr(reduceInfo.dataType).c_str());
+            return HCCL_E_PARA;
+        }
+        
+        auto reduceOpIt = hccl2rtReduceOpMap.find(reduceInfo.reduceOp);
+        if (reduceOpIt == hccl2rtReduceOpMap.end()) {
+            HCCL_ERROR("[HcommLocalReduceOnThread]reduceOp[%s] is not supported",
+                       GetReduceOpEnumStr(reduceInfo.reduceOp).c_str());
+            return HCCL_E_PARA;
+        }
+
+        CHK_RET(hrtReduceAsync(dst, len, src, len,
+                               reduceOpIt->second, dataTypeIt->second, stream->ptr()));
+        return HCCL_SUCCESS;
+    }
+
     HcclResult ret = HcclLocalCopyReduce(stream, &dstBuf, &srcBuf, reduceInfo);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].", __func__, thread, dst, src, count, dataType, reduceOp), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
@@ -103,8 +150,7 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
     LocalNotify *notify = GetNotify(dstThread, dstNotifyIdx);
     CHK_PTR_NULL(notify);
 
-    if (threadPtr->IsDeviceA5())
-    {
+    if (threadPtr->IsDeviceA5()) {
         HcclResult ret = notify->Post(*stream);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dstThread[0x%llx], notifyIdx[%u].",
             __func__, thread, dstThread, dstNotifyIdx), ret);

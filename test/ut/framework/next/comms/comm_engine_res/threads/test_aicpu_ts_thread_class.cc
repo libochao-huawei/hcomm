@@ -60,7 +60,8 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Host_When_Normal_Expect_Re
     Stream *stream = aicpuThread.GetStream();
     EXPECT_NE(stream, nullptr);
     uint32_t notifyNum = aicpuThread.GetNotifyNum();
-    EXPECT_EQ(2, notifyNum);
+    // thread内部暂时会多申请一个notify用于host&device侧同步
+    EXPECT_EQ(3, notifyNum);
     void *notify = aicpuThread.GetNotify(1);
     EXPECT_NE(nullptr, notify);
 }
