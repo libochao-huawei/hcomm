@@ -14,6 +14,7 @@
 #include "orion_adapter_rts.h"
 #include "orion_adapter_hccp.h"
 #include "ccu_device_manager.h"
+#include "hccp_tlv_hdc_manager.h"
 
 namespace Hccl {
 
@@ -141,6 +142,9 @@ HcclResult CcuResSpecifications::Init_()
     TRY_CATCH_RETURN(
         devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
         ccuVersion = CheckCcuVersion();
+        auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
+        auto memTypeBitmap = GetCombinedMemTypeBitmap();
+        auto count = GetMemTypeVector().size();
         for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
             dieEnableFlags[dieId] = CheckDieEnable(devPhyId, dieId);
             if (!dieEnableFlags[dieId]) {
@@ -148,6 +152,7 @@ HcclResult CcuResSpecifications::Init_()
                 continue;
             }
             resSpecs[dieId] = CheckResSpecifications(devPhyId, dieId, ccuVersion);
+            HrtGetCcuMemInfo(tlvHandle, dieId, memTypeBitmap, resSpecs[dieId].memInfoList.data(), count);
         }
         HcclMainboardId hcclMainboardId;
         CHK_RET(HrtGetMainboardId(devLogicId, hcclMainboardId));
@@ -175,6 +180,16 @@ HcclResult CcuResSpecifications::GetDieEnableFlag(const uint8_t dieId, bool &die
     // 只校验dieId合法性，不校验die是否使能
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, {true, true}));
     dieEnableFlag = dieEnableFlags[dieId];
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuResSpecifications::GetCcuMemInfoList(const uint8_t dieId, struct CcuMemInfo *memInfoList, uint32_t &count)
+{
+    CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
+    count = static_cast<uint32_t>(GetMemTypeVector().size());
+    // 使用 std::copy 将 std::array 的内容拷贝到 C 风格指针数组
+    std::copy_n(resSpecs[dieId].memInfoList.begin(), count, memInfoList);
+
     return HcclResult::HCCL_SUCCESS;
 }
 

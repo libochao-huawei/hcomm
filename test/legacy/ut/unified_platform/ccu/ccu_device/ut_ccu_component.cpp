@@ -91,6 +91,8 @@ void MockCcuResources(const int32_t devLogicId, const CcuVersion ccuVersion)
         ccuResSpecs.resSpecs[dieId].pfeNum = 10;
 
         ccuResSpecs.resSpecs[dieId].resourceAddr = 0xE7FFBF800000;
+
+        ccuResSpecs.resSpecs[dieId].memInfoList[0].memVa = 0xE7FFBF800000;
     }
 }
 
