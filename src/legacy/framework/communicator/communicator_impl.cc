@@ -2401,10 +2401,10 @@ HcclResult CommunicatorImpl::DestroyDpuKernelResource()
     }
     // reset DPU kernel 线程
     HCCL_INFO("Start to reset DPU device");
-    if (rtResetXpuDevice(RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
-        HCCL_ERROR("ResetXpuDevice Failed");
-        return HCCL_E_RUNTIME;
-    }
+    // if (rtResetXpuDevice(RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
+    //     HCCL_ERROR("ResetXpuDevice Failed");
+    //     return HCCL_E_RUNTIME;
+    // }
     // 切回 npu ctx
     if (ACL_SUCCESS != aclrtSetCurrentContext(npuContext)) {
         HCCL_ERROR("set npu Ctx Failed");
@@ -3186,10 +3186,10 @@ HcclResult CommunicatorImpl::InitAndLaunchDpuKernel()
         HCCL_ERROR("[CommunicatorImpl::%s] Get Npu Ctx Failed", __func__);
         return HCCL_E_INTERNAL;
     }
-    if (rtSetXpuDevice(RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::%s] Switch to Dpu Ctx Failed", __func__);
-        return HCCL_E_INTERNAL;
-    }
+    // if (rtSetXpuDevice(RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
+    //     HCCL_ERROR("[CommunicatorImpl::%s] Switch to Dpu Ctx Failed", __func__);
+    //     return HCCL_E_INTERNAL;
+    // }
     if (aclrtGetCurrentContext(&dpuContext) != ACL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::%s] Get Dpu Ctx Failed", __func__);
         return HCCL_E_INTERNAL;
