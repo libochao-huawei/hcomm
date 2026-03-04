@@ -267,12 +267,12 @@ HcclResult HcclCommInitAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
 
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
-        HcclCommInitAllV2(ndev, devices, comms);
+        CHK_RET(HcclCommInitAllV2(ndev, devices, comms));
         std::vector<HcclComm> hcclComms;
         for (uint32_t rankId = 0; rankId < ndev; rankId++) {
             constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
-            HcclComm *newComm = nullptr;
-            HcclResult ret = HcclCommInitCollComm(rankId, &comms[rankId], config, newComm);
+            HcclComm newComm;
+            HcclResult ret = HcclCommInitCollComm(rankId, &comms[rankId], config, &newComm);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild. Destroy comv2");
                 for (uint32_t i = 0; i < rankId; i++) {
@@ -286,7 +286,7 @@ HcclResult HcclCommInitAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
                 }
                 return ret;
             }
-            hcclComms.push_back(*newComm);
+            hcclComms.push_back(newComm);
         }
 
         for (uint32_t i = 0; i < ndev; i++) {
