@@ -14,6 +14,7 @@
 #include "mirror_task_manager.h"
 #include "coll_comm_aicpu.h"
 #include "aicpu_hccl_sqcq.h"
+#include "error_message_v2.h"
 
 namespace hcomm {
 
@@ -27,9 +28,13 @@ private:
     HcclCommTaskExceptionLite();
     ~HcclCommTaskExceptionLite();
 
-    HcclResult ProcessCqe(CollCommAicpu *aicpuComm, rtLogicCqReport_t* exceptionInfo);
+    HcclResult ProcessCqe(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo);
     HcclResult HandleExceptionCqe();
-    HcclResult GetThreadCqe(Thread* thread, rtLogicCqReport_t &cqeException, CqeStatus &cqeStatus);
+    HcclResult GetThreadCqe(hccl::Thread* thread, rtLogicCqReport_t &cqeException, CqeStatus &cqeStatus);
+    HcclResult GenerateErrorMessageReport(CollCommAicpu *aicpuComm, const Hccl::TaskInfo* taskInfo,
+        Hccl::ErrorMessageReport &errMsgInfo, const rtLogicCqReport_t &exceptionInfo);
+    void GetErrMsgInfo(const Hccl::TaskInfo* taskInfo, Hccl::ErrorMessageReport &errMsgInfo,
+        const rtLogicCqReport_t &exceptionInfo);
 
     bool initFlag_{false};
     bool stopCall_{false};

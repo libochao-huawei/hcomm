@@ -35,9 +35,14 @@ public:
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
 
-    void GetAllThread(std::vector<std::shared_ptr<Thread>> &threads) { threads = threads_; };
-    bool IsErrorReported() {return isErrorReported_; }
+    const std::vector<std::shared_ptr<Thread>>& GetAllThread() { return threads_; };
+    const HcclTopoInfo& GetTopoInfo() { return topoInfo_; }
+    const std::string& GetIdentifier() { return identifier_; }
+
+    // taskException
+    bool IsErrorReported() { return isErrorReported_; }
     void SetErrorReported(bool isErrorReported) { isErrorReported_ = isErrorReported; }
+    HcclResult SendErrorMessageReportToHost(Hccl::ErrorMessageReport & errMsgInfo);
 
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
