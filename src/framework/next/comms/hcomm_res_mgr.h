@@ -11,7 +11,6 @@
 #ifndef HCOMM_RES_MGR_H
 #define HCOMM_RES_MGR_H
 
-#include <mutex>
 #include <cstdint>
 
 namespace hcomm {

@@ -59,7 +59,7 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
 
     opExpansionMode_ = opExpansionMode;
 
-    // 配了自定算子ccu环境变量，不需要初始化资源
+    // 仅自定义算子ccu流程初始化资源
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
     if ((indOp != nullptr && strcmp(indOp, "") != 0) && !ccuResContainer_ && rankNum != 1) {
         ccuResContainer_.reset(new (std::nothrow)CcuResContainer(opExpansionMode_));
