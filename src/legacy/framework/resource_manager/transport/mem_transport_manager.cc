@@ -11,6 +11,7 @@
 #include "rdma_handle_manager.h"
 #include "communicator_impl.h"
 #include "ub_mem_transport.h"
+#include "urma_direct_transport.h"
 #include "p2p_transport.h"
 #include "cnt_notify_res_helper.h"
 #include "notify_count.h"
@@ -226,6 +227,18 @@ void MemTransportManager::DumpNotReadyTransportsOffload(const std::string &opTag
     }
 }
 
+void MemTransportManager::DumpNotReadyTransportsUrma()
+{
+    HCCL_RUN_INFO("[MemTransportManager][%s] start", __func__);
+    for (auto &it : urmaDirectMap_) {
+        auto status = it.second->GetStatus();
+        if (status != TransportStatus::READY) {
+            HCCL_INFO("linkData[%s] status[%s]", it.first.Describe().c_str(),
+                    status.Describe().c_str());
+        }
+    }
+}
+
 bool MemTransportManager::IsAllOpbasedTransportReady()
 {
     bool result = true;
@@ -317,6 +330,17 @@ bool MemTransportManager::IsAllTransportReady()
             result = false;
         }
     }
+    for (auto &it : urmaDirectMap_) {
+        auto status = it.second->GetStatus();
+        if (status != TransportStatus::READY) { // 任意一个没有ready，结果为 false
+            if (status == TransportStatus::SOCKET_TIMEOUT) {
+                MACRO_THROW(TimeoutException,
+                            StringFormat("[MemTransportManager][%s] %s socket timeout, commId[%s], please check",
+                                        __func__, it.second->GetLinkDescInfo().c_str(), comm->GetId().c_str()));
+            }
+            result = false;
+        }
+    }
     return result;
 }
 
@@ -371,6 +395,15 @@ BaseMemTransport *MemTransportManager::GetOffloadTransport(const std::string &op
     return opTagOffloadMap[opTag][linkData].get();
 }
 
+BaseMemTransport *MemTransportManager::GetUrmaDirectTransport(const LinkData &linkData)
+{
+    if (urmaDirectMap_.find(linkData) == urmaDirectMap_.end()) {
+        HCCL_WARNING("GetUrmaDirectTransport, linkData=%s find transport is null", linkData.Describe().c_str());
+        return nullptr;
+    }
+    return urmaDirectMap_[linkData].get();
+}
+
 std::vector<char> MemTransportManager::GetOneSidedPackedData()
 {
     if (!IsAllOneSidedTransportReady()) {
@@ -397,6 +430,45 @@ std::vector<char> MemTransportManager::GetOneSidedPackedData()
     
     binaryStream.Dump(result);
     return result;
+}
+
+std::vector<HcclAiRMAWQ> MemTransportManager::GetUrmaWqs()
+{
+    if (!IsAllTransportReady()) {
+        std::string msg
+            = StringFormat("status of some transports is not ready, please check.");
+        THROW<InternalException>(msg);
+    }
+
+    std::vector<HcclAiRMAWQ> wqs;
+
+    for (auto &it : urmaDirectMap_) {
+        UrmaDirectTransport *urmaTransport = reinterpret_cast<UrmaDirectTransport *>(it.second.get());
+
+        wqs.push_back(urmaTransport->GetAiRMAWQ());
+        HCCL_INFO("MemTransportManager::GetUrmaWq: %s.", it.first.Describe().c_str());
+    }
+    return wqs;
+}
+
+std::vector<HcclAiRMACQ> MemTransportManager::GetUrmaCqs()
+{
+    if (!IsAllTransportReady()) {
+        std::string msg
+            = StringFormat("status of some transports is not ready, please check.");
+        THROW<InternalException>(msg);
+    }
+
+    std::vector<HcclAiRMACQ> cqs;
+
+    for (auto &it : urmaDirectMap_) {
+        UrmaDirectTransport *urmaTransport = reinterpret_cast<UrmaDirectTransport *>(it.second.get());
+
+        cqs.push_back(urmaTransport->GetAiRMACQ());
+        HCCL_INFO("MemTransportManager::GetUrmaCq: %s.", it.first.Describe().c_str());
+    }
+
+    return cqs;
 }
 
 std::vector<char> MemTransportManager::GetOpbasedPackedData()
@@ -858,6 +930,68 @@ void MemTransportManager::BatchBuildOneSidedTransports(const vector<LinkData> &l
             continue;
         }
         CreateOneSidedTransport(link);
+    }
+}
+
+void MemTransportManager::CreateUrmaDirectTransport(BaseMemTransport::CommonLocRes &locRes, BaseMemTransport::Attribution &attr,
+                                                    const LinkData &linkData, const Socket &socket)
+{
+    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
+
+    // DFX：注册transportCallBack, 用于信息保存
+    auto transportCallBack = MemTransportCallback(linkData, comm->GetMirrorTaskManager());
+    auto transport = make_unique<UrmaDirectTransport>(locRes, attr, linkData, socket, rdmaHandle, transportCallBack);
+    HCCL_INFO("[CreateUrmaDirectTransport] Add urmaDirectMap_");
+    urmaDirectMap_[linkData] = std::move(transport);
+}
+
+BaseMemTransport *MemTransportManager::CreateUrmaDirectTransport(const LinkData &linkData)
+{
+    auto op = comm->GetCurrentCollOperator();
+    HCCL_INFO("link=%s Entry CreateMemTransport", linkData.Describe().c_str());
+    HCCL_INFO("Entry CreateMemTransport, opInfo=[%s]", CollOpToString(*op).c_str());
+    BaseMemTransport::CommonLocRes locRes;
+
+    // buffer 来自localRmaBufferManager, input/output/scratch
+    locRes.bufferVec = GetBufferVec(comm->GetId(), linkData, OpMode::OPBASE);
+    HCCL_INFO("link=%s get bufferVec OK", linkData.Describe().c_str());
+
+    // connection是一个，来自 RmaConnManager
+    locRes.connVec = GetConnVec(comm->GetId(), linkData);
+    HCCL_INFO("link=%s get connVec OK", linkData.Describe().c_str());
+
+    HCCL_INFO("locRes=%s", locRes.Describe().c_str());
+
+    BaseMemTransport::Attribution attr;
+    attr.devicePhyId = linkData.GetLocalPort().GetId();
+    // 握手消息定义，未来包括 cann版本号，rankTable CRC等字段
+    attr.handshakeMsg = op->GetUniqueId();
+
+    SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, comm->GetEstablishLinkSocketTag());
+    auto         socket = comm->GetSocketManager().GetConnectedSocket(socketConfig);
+    if (socket == nullptr) {
+        throw std::runtime_error("CreateMemTransport GetConnectedSocket failed, socket is nullptr");
+    }
+
+    CreateUrmaDirectTransport(locRes, attr, linkData, *socket);
+
+    urmaDirectMap_[linkData]->Establish();
+
+    HCCL_INFO("link=%s OK.", linkData.Describe().c_str());
+    HCCL_INFO("create transport %s OK.", urmaDirectMap_[linkData]->Describe().c_str());
+
+    return urmaDirectMap_[linkData].get();
+}
+
+void MemTransportManager::BatchBuildUrmaDirectTransports(const vector<LinkData> &links) 
+{
+    HCCL_INFO("Batch build urma direct transports start, link num is [%u]", links.size());
+    for (auto &link : links) {
+        if (urmaDirectMap_.find(link) != urmaDirectMap_.end()) {
+            HCCL_WARNING("linkData=%s already exists, do not need to create transport", link.Describe().c_str());
+            continue;
+        }
+        CreateUrmaDirectTransport(link);
     }
 }
 

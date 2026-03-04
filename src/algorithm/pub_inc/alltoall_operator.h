@@ -17,7 +17,7 @@ class AlltoAllOperator : public CollAlgOperator {
 public:
     AlltoAllOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
         HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~AlltoAllOperator();
+    ~AlltoAllOperator() override;
 
     HcclResult GetAlltoAllStagedWorkSpaceMemSize(const OpParam& param, u64 &memSize);
     HcclResult GetAlltoAllStagedWorkSpaceMemSize(std::vector<SendRecvInfo> &allMeshAggregationSendRecvInfo,
@@ -51,7 +51,7 @@ public:
     void SetParallelTaskLoader(ParallelTaskLoader* parallelTaskLoader);
     bool IsSatisfyAlltoAllAivCondition(const OpParam& param);
     bool IsSatisfy91093OffloadCondition();
-    bool IsSatisfyAlltoallContinuousPipelineCondition();
+    bool IsSatisfyAlltoallContinuousPipelineCondition(const OpParam& param);
 
 private:
     bool IsA3PipelineCondition(const OpParam& param);

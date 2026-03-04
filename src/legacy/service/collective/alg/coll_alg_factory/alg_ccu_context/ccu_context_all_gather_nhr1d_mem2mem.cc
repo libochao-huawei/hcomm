@@ -28,6 +28,9 @@ CcuContextAllGatherNHR1D::CcuContextAllGatherNHR1D(const CcuCtxArg &arg, const s
     : CcuContext(arg, transports, group)
 {
     const CcuCtxArgAllGatherNHR1D *ctxArg = dynamic_cast<const CcuCtxArgAllGatherNHR1D *>(&arg);
+    if (ctxArg == nullptr) {
+        THROW<NullPtrException>(StringFormat("CcuContextAllGatherNHR1D::ctxArg ptr is null"));
+    }
     rankId_                               = ctxArg->rankId_;
     axisId_                               = ctxArg->axisId_;
     axisSize_                             = ctxArg->axisSize_;
@@ -240,7 +243,6 @@ void CcuContextAllGatherNHR1D::DoRepeatAllGatherNHRSingleStep(const NHRStepInfo 
         dstMem_.addr += outputSliceOffset_[sendSliceIdx];
         DoRepeatSendRecvSlices(nhrStepInfo.toRank, srcMem_, dstMem_, i % BIT_NUM_PER_CKE);
     }
-    LocalWait(localSignal_, (1 << (sendSliceIdxList.size() % BIT_NUM_PER_CKE)) - 1);
 
 if (nhrStepInfo.step + 1 != stepInfoVector_.size()){
     uint16_t selfSignalId = rankId_ / BIT_NUM_PER_CKE;
@@ -275,6 +277,7 @@ void CcuContextAllGatherNHR1D::DoRepeatSendRecvSlices(const u32 &toRank, CcuRep:
             }
         }
         Write(*sendTransport, dst, src, sliceSize, localSignal_, 1 << signalIndex);
+        LocalWait(localSignal_, 1 << signalIndex);
         repeatTimeflag_ = 1;
     }
 }

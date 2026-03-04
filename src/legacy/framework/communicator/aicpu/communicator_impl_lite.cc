@@ -88,8 +88,7 @@ std::shared_ptr<InsQueue> CommunicatorImplLite::GetInsQueue(HcclKernelParamLite 
     CreateCollAlgComponentLite();
     HCCL_INFO("CommunicatorImplLite::GetInsQueue begin kernelParam->algName = %s", kernelParam->algName);
     std::shared_ptr<InsQueue> queue = std::make_shared<InsQueue>();
-
-    auto it  = algTopoInfoMap.find(kernelParam->algName);
+    auto it  = algTopoInfoMap.find(kernelParam->tagKey);
     auto ret = algComponentLite->Orchestrate(kernelParam->op.algOperator, kernelParam->algName, it->second, queue);
     if (ret == HCCL_E_PARA) {
         return nullptr;
@@ -118,11 +117,7 @@ void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
     UpdateCommParam(kernelParam);
     UpdateLocBuffer(kernelParam);
     UpdateUserStreamId(kernelParam);
-    if (kernelParam->op.algOperator.opMode == OpMode::OPBASE) {
-        UpdateOpRes(kernelParam);
-    } else  {
-        UpdateOffloadRes(kernelParam);
-    }
+    UpdateRes(kernelParam);
     SetDfxOpInfo(beginTime);
 
     UpdateHDCommnicate(kernelParam);
@@ -240,10 +235,6 @@ void CommunicatorImplLite::UpdateLocBuffer(HcclKernelParamLite *kernelParam)
 
 void CommunicatorImplLite::UpdateTransports(HcclKernelParamLite *kernelParam)
 {
-    if (!kernelParam->needUpdateRes) {
-        HCCL_WARNING("CommunicatorImplLite::UpdateTransports needUpdateRes FALSE");
-        return;
-    }
     HCCL_INFO("[NsRecovery] RestoreAllTransports start");
     RestoreAllTransports(kernelParam->binaryResAddr, kernelParam->binaryResSize);
     HCCL_INFO("[NsRecovery] RestoreAllTransports end");
@@ -266,15 +257,25 @@ void CommunicatorImplLite::RestoreAllTransports(u64 addr, u64 bufSize)
     HCCL_INFO("[NsRecovery] CommunicatorImplLite::RestoreAllTransports: GetResMgr %s Data", resType.Describe().c_str());
 }
 
-
-void CommunicatorImplLite::UpdateOpRes(HcclKernelParamLite *kernelParam)
+bool CommunicatorImplLite::CheckNeedUpdateRes(HcclKernelParamLite *kernelParam)
 {
-    if (!kernelParam->needUpdateRes) {
-        HCCL_WARNING("CommunicatorImplLite::UpdateOpRes needUpdateRes FALSE");
-        return;
+    std::string tagKey = kernelParam->tagKey;
+    auto it = loadedOpSet.find(tagKey);
+    if (it != loadedOpSet.end()) {
+        HCCL_INFO("[CheckNeedUpdateRes] Corresponding resources of tag[%s] have been loaded", tagKey.c_str());
+        return false;
     }
+    loadedOpSet.insert(tagKey);
+    return true;
+}
 
-    RestoreOpRes(kernelParam->opTag, kernelParam->algName, kernelParam->binaryResAddr, kernelParam->binaryResSize);
+void CommunicatorImplLite::UpdateRes(HcclKernelParamLite *kernelParam)
+{
+    if (CheckNeedUpdateRes(kernelParam)) {   
+        HCCL_INFO("[UpdateRes] start, opMode[%s]", kernelParam->op.algOperator.opMode.Describe().c_str());
+        RestoreOpRes(kernelParam->opTag, kernelParam->tagKey, kernelParam->binaryResAddr, kernelParam->binaryResSize);
+        HCCL_INFO("[UpdateRes] end");
+    }
 }
 
 void CommunicatorImplLite::UpdateHDCommnicate(HcclKernelParamLite *kernelParam)
@@ -285,22 +286,6 @@ void CommunicatorImplLite::UpdateHDCommnicate(HcclKernelParamLite *kernelParam)
             kfcStatusTransferD2H->Init(kernelParam->kfcControlTransferD2HParams));
     std::unique_lock<std::mutex> lock(hdcShmLock_);
     hdcHandler = make_unique<AicpuHdcHandler>(*kfcControlTransferH2D, *kfcStatusTransferD2H);
-}
-
-void CommunicatorImplLite::UpdateOffloadRes(HcclKernelParamLite *kernelParam)
-{
-    HCCL_INFO("CommunicatorImplLite::UpdateOffloadRes opTag[%s]", kernelParam->opTag);
-
-    // 通过opTag查找offloadOpSet中是否存在，不存在再处理资源
-    auto iter = offloadOpSet.find(kernelParam->opTag);
-    if (iter != offloadOpSet.end()) {
-        HCCL_INFO("CommunicatorImplLite::UnfoldOp opTag[%s] is in offloadOpSet", kernelParam->opTag);
-        return;
-    }
-
-    offloadOpSet.insert(kernelParam->opTag);
-
-    RestoreOpRes(kernelParam->opTag, kernelParam->algName, kernelParam->binaryResAddr, kernelParam->binaryResSize);
 }
 
 HostDeviceSyncNotifyLiteMgr *CommunicatorImplLite::GetHostDeviceSyncNotifyLiteMgr()
@@ -356,7 +341,7 @@ void CommunicatorImplLite::BackGroundSetStatus(KfcStatus status, KfcErrType erro
 }
 
 // 从 buffer中解析出算子需要的信息 ，对应 Host侧的 PackOpData
-void CommunicatorImplLite::RestoreOpRes(const string &opTag, const string &algName, u64 addr, u64 bufSize)
+void CommunicatorImplLite::RestoreOpRes(const string &opTag, const string &tagKey, u64 addr, u64 bufSize)
 {
     std::vector<char> data;
     data.resize(bufSize);
@@ -403,9 +388,9 @@ void CommunicatorImplLite::RestoreOpRes(const string &opTag, const string &algNa
 
     resType = AicpuResMgrType::ALG_TOPO;
     AlgTopoPackageHelper algTopoHelper;
-    algTopoInfoMap[algName] = algTopoHelper.GetAlgTopoInfo(dataVec[resType].data);
-    HCCL_INFO("CommunicatorImplLite::RestoreOpRes: opTag %s GetResMgr %s Data, algName=%s", opTag.c_str(), resType.Describe().c_str(),
-               algName.c_str());
+    algTopoInfoMap[tagKey] = algTopoHelper.GetAlgTopoInfo(dataVec[resType].data);
+    HCCL_INFO("CommunicatorImplLite::RestoreOpRes: opTag %s GetResMgr %s Data, tagKey=%s", opTag.c_str(), resType.Describe().c_str(),
+               tagKey.c_str());
 
     resType = AicpuResMgrType::CONNECTD_MGR;
     GetConnectedLinkMgr()->ParsePackedData(dataVec[resType].data);
@@ -462,10 +447,14 @@ void CommunicatorImplLite::SetDfxOpInfo(uint64_t beginTime)
     dfxopInfo->comm_         = this;
     dfxopInfo->commId_       = commId;
  	dfxopInfo->opIndex_      = opIndex;
+<<<<<<< HEAD
  	dfxopInfo->headOpCounterAddr_ = opCounterAddr + size;
  	dfxopInfo->tailOpCounterAddr_ = opCounterAddr + size * 2;
+=======
+ 	dfxopInfo->headOpCounter_ = *(reinterpret_cast<u32 *>(opCounterAddr + size));
+ 	dfxopInfo->tailOpCounter_ = *(reinterpret_cast<u32 *>(opCounterAddr + size * 2));
+>>>>>>> temp-branch
     CHECK_NULLPTR(streamLiteMgr->GetMaster(), "[SetDfxOpInfo]master stream is nullptr!");
-    dfxopInfo->mainStreamId_ = streamLiteMgr->GetMaster()->GetId();
     mirrorTaskMgr->SetCurrDfxOpInfo(dfxopInfo);
 }
 

@@ -12,6 +12,7 @@
 
 #include <map>
 #include <memory>
+#include <array>
 #include "dfx_common.h"
 #include "queue.h"
 #include "task_info.h"
@@ -19,6 +20,7 @@
 #include "internal_exception.h"
 #include "circular_queue.h"
 #include "vector_queue.h"
+#include <array>
 
 namespace Hccl {
 

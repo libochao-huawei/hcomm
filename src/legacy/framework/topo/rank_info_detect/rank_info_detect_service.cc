@@ -39,6 +39,15 @@ void RankInfoDetectService::Setup()
     BroadcastRankTable();
 }
 
+void RankInfoDetectService::Update()
+{    
+    // 1. 接收所有rank发来的新localRankTable并整合为全局RankTable
+    GetRankTable();
+    
+    // 2. 将完整RankTable广播给所有rank
+    BroadcastRankTable();
+}
+
 void RankInfoDetectService::GetConnections()
 {
     HCCL_INFO("[RankInfoDetectService::%s] start.", __func__);
@@ -116,6 +125,7 @@ void RankInfoDetectService::GetRankTable()
     HCCL_INFO("[RankInfoDetectService::%s] start.", __func__);
 
     // 接收localRankTable并组全局RankTableInfo
+    rankTable_ = RankTableInfo{};
     for (auto &iter : connSockets_) {
         vector<char> rankInfoMsg{};
         SocketAgent socketAgent(iter.second.get());
@@ -159,7 +169,7 @@ bool RankInfoDetectService::RecvRemoteAgentId(SocketAgent &connSocketAgent, std:
     u64 revMsgLen = 0;
     char msg[MAX_AGENT_BUF_SIZE] = {0};
     bool ret = connSocketAgent.RecvMsg(msg, revMsgLen);
-    CHK_PRT_RET(!ret || revMsgLen > MAX_AGENT_BUF_SIZE, 
+    CHK_PRT_RET(!ret || revMsgLen >= MAX_AGENT_BUF_SIZE, 
         HCCL_ERROR("[RankInfoDetectService::%s] recv error, revMsgLen[%llu].", __func__, revMsgLen), false);
 
     // 解析agentId

@@ -44,9 +44,9 @@ constexpr uint64_t INVALID_ADDR  = 0;
 
 // CcuBlockResStrategy 定义了资源管理块资源类型的块大小
 struct CcuBlockResStrategy {
-    uint32_t loopNum{8};
-    uint32_t ckeNum{8};
-    uint32_t msNum{64};
+    uint32_t loopNum{16};
+    uint32_t ckeNum{16};
+    uint32_t msNum{128};
     uint32_t missionNum{2};
 };
 

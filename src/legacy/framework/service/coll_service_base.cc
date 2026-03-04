@@ -359,6 +359,7 @@ void CollServiceBase::SaveMirrorDfxOpInfo()
 {
     auto dfxOpInfo = std::make_shared<DfxOpInfo>();
     CHECK_NULLPTR(comm, "[CollServiceBase::SaveMirrorDfxOpInfo] comm is nullptr!");
+    std::pair<u32,u32> counter = GetOpCount();
 
     dfxOpInfo->op_ = *comm->GetCurrentCollOperator();
     dfxOpInfo->tag_ = OpTypeToString(dfxOpInfo->op_.opType);
@@ -370,8 +371,13 @@ void CollServiceBase::SaveMirrorDfxOpInfo()
     dfxOpInfo->commId_ = comm->GetId();
     dfxOpInfo->opIndex_ = comm->GetOpIndex();
     u64 size = FOUR_BYTES;
+<<<<<<< HEAD
     dfxOpInfo->headOpCounterAddr_ = counterBuf->GetAddr() + size;
     dfxOpInfo->tailOpCounterAddr_ = counterBuf->GetAddr() + size * 2;
+=======
+ 	dfxOpInfo->headOpCounterAddr_ = counterBuf->GetAddr() + size;
+ 	dfxOpInfo->tailOpCounterAddr_ = counterBuf->GetAddr() + size * 2;
+>>>>>>> temp-branch
 
     comm->GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);
 }

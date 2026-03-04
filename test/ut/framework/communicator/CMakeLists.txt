@@ -13,6 +13,7 @@ set(src_to_test_list
     # ut_HcclSetConfig_API_test.cc
     ut_HcclGetConfig_API_test.cc
     ut_HcclGetCommName_API_test.cc
+    ut_HcclCommGetHandleWithName_API_test.cc
     ut_HcclCommInitAll_API_test.cc
     ut_HcclGetErrorString_API_test.cc
     ut_HcclGetCommConfigCapability_API_test.cc
@@ -47,7 +48,7 @@ target_link_directories(hccl_utest_framework_communicator PRIVATE
 target_link_libraries(hccl_utest_framework_communicator PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
-    -lpthread
+    -pthread
     hccl_llt
     -Wl,--whole-archive
     -Wl,--no-whole-archi

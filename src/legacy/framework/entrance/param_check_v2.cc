@@ -106,7 +106,7 @@ HcclResult HcomCheckTagV2(const char *tag)
 
     u32 tagLen = strnlen(tag, TAG_MAX_LEN + 1);
     if (tagLen == (TAG_MAX_LEN + 1) || tagLen == 0) {
-        HCCL_ERROR("[Check][Tag]errNo[0x%llx] tag is too long", HCCL_E_PARA);
+        HCCL_ERROR("[Check][Tag]errNo[0x%llx] tag is too long, range[1,%u]", HCCL_E_PARA, TAG_MAX_LEN);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -220,9 +220,18 @@ HcclResult HcomCheckOpParamV2(const u64 count, const HcclDataType dataType)
 HcclResult HcomCheckReductionOpV2(const HcclReduceOp op)
 {
     if (HCCL_SUPPORT_REDUCE_OP_V2.find(op) == HCCL_SUPPORT_REDUCE_OP_V2.end()) {
+        std::string supportedList;
+        bool first = true;
+        for(const auto& validOp : HCCL_SUPPORT_REDUCE_OP_V2) {
+            if (!first) {
+                supportedList += ", ";
+            }
+            supportedList += GetReduceOpEnumStrV2(validOp);
+            first  = false;
+        }
         RPT_INPUT_ERR(true, "EI0003", vector<string>({"ccl_op", "parameter", "value", "tips"}),\
-            vector<string>({"HcomCheckReductionOpV2", "op", "not find", 
-            "please check ReduceOp that is not supported"}));
+            vector<string>({"HcomCheckReductionOpV2",  GetReduceOpEnumStrV2(op), "op",
+            "one of " + supportedList}));
         HCCL_ERROR("[Check][ReductionOp]errNo[0x%016llx] Op:[%s] not supported", HCCL_E_PARA,
             GetReduceOpEnumStrV2(op).c_str());
         return HCCL_E_NOT_SUPPORT;
@@ -233,9 +242,18 @@ HcclResult HcomCheckReductionOpV2(const HcclReduceOp op)
 HcclResult HcomCheckProdDataTypeV2(const HcclDataType dataType)
 {
     if (HCCL_SUPPORT_PROD_DATA_TYPE_V2.find(dataType) == HCCL_SUPPORT_PROD_DATA_TYPE_V2.end()) {
+        std::string supportedList;
+        bool first = true;
+        for(const auto& validType : HCCL_SUPPORT_PROD_DATA_TYPE_V2) {
+            if (!first) {
+                supportedList += ", ";
+            }
+            supportedList += GetDataTypeEnumStrV2(validType);
+            first  = false;
+        }
         RPT_INPUT_ERR(true, "EI0003", vector<string>({"ccl_op", "parameter", "value", "tips"}),\
-            vector<string>({"HcomCheckProdDataTypeV2", "dataType", "not supported for product", 
-            "please check DataType & ReduceOp that is not supported"}));
+            vector<string>({"HcomCheckProdDataTypeV2", GetDataTypeEnumStrV2(dataType), "dataType", 
+            "one of " + supportedList}));
         HCCL_ERROR("[Check][ProdDataType]errNo[0x%016llx] DataType:[%s] not supported PROD", HCCL_E_PARA,
             GetDataTypeEnumStrV2(dataType).c_str());
         return HCCL_E_NOT_SUPPORT;
@@ -345,6 +363,38 @@ HcclResult HcomCheckAlltoAllVCExternalMemV2(const void *sendBuf, const void *sen
     if (hasRecv) {
         CHK_PTR_NULL(recvBuf);
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcomCheckAlltoAllVCEmptyV2(const void *sendBuf, const void *sendCountMatrix,
+    const void *recvBuf, u32 rankSize, bool &isEmpty)
+{
+    CHK_PRT_RET(sendBuf != nullptr && recvBuf != nullptr && sendBuf == recvBuf,
+        HCCL_ERROR("[HcomCheckAlltoAllVCEmptyV2] sendBuf and recvBuf addr cannot be same."),
+        HCCL_E_PARA);
+    
+    CHECK_NULLPTR(sendCountMatrix, "[HcomCheckAlltoAllVCEmptyV2] sendCountMatrix is nullptr!");
+    u64 *sendCountMatrixPtr = const_cast<u64 *>(static_cast<const u64 *>(sendCountMatrix));
+    bool hasSend = false;
+    bool hasRecv = false;
+
+    for (u32 i = 0; i < rankSize; i++) {
+        for(u32 j = 0; j < rankSize; j++) {
+            u64 sendCount = *(sendCountMatrixPtr + i * rankSize + j);
+            CHK_RET(HcomCheckCountV2(sendCount));
+            if (hasSend == false && sendCount != 0) {
+                hasSend = true;
+            }
+            u64 recvCount = *(sendCountMatrixPtr + j * rankSize + i);
+            CHK_RET(HcomCheckCountV2(recvCount));
+            if (hasRecv == false && recvCount != 0) {
+                hasRecv = true;
+            }
+            HCCL_DEBUG("[HcomCheckAlltoAllVCEmptyV2] myrank[%u] rmtrank[%u] sendCount[%llu] recvCount[%llu]", 
+                        i, j, sendCount, recvCount);
+        }
+    }
+    isEmpty = !(hasSend | hasRecv);
     return HCCL_SUCCESS;
 }
 

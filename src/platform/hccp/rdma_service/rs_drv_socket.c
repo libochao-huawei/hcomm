@@ -103,7 +103,7 @@ enum RsHardwareType RsGetDeviceType(unsigned int phyId)
     unsigned int chipId;
     int64_t boardId;
     int ret;
- 
+
     CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("invalid param phy_id[%u]", phyId), RS_HARDWARE_UNKNOWN);
     ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
     CHK_PRT_RETURN(ret != 0, hccp_err("phy_id[%u] invalid, ret %d", phyId, ret), RS_HARDWARE_UNKNOWN);
@@ -127,7 +127,7 @@ enum RsHardwareType RsGetDeviceType(unsigned int phyId)
         }
         return RS_HARDWARE_SERVER;
     }
- 
+
     if (((boardType & RS_BOARDID_PCIE_CARD_MASK) == RS_BOARDID_PCIE_CARD_MASK_VALUE) &&
          (boardType != RS_BOARDID_AI_SERVER_MODULE) && (boardType != RS_BOARDID_ARM_SERVER_AG) &&
          (boardType != RS_BOARDID_ARM_POD) && (boardType != RS_BOARDID_X86_16P) &&
@@ -181,7 +181,7 @@ int RsCheckDstInterface(unsigned int phyId, const char *ifaName, enum RsHardware
     } else {
         ret = snprintf_s(dstIfaName, RS_INTERFACE_LEN + 1, RS_INTERFACE_LEN, "eth%u", phyId);
         CHK_PRT_RETURN(ret <= 0, hccp_err("copy eth name failed, %d", ret), -EAGAIN);
- 
+
         if (strncmp(dstIfaName, ifaName, RS_INTERFACE_LEN)) {
             return 0;
         }

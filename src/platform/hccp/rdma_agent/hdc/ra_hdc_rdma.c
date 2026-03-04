@@ -989,7 +989,7 @@ STATIC void RaHdcSendWrlistNormalInit(union OpSendNormalWrlistData *sendWrlist, 
     sendWrlist->txData.sendNum = ((wrlistNum.sendNum - completeCnt) >= MAX_WR_NUM) ? MAX_WR_NUM :
         wrlistNum.sendNum - completeCnt;
 }
- 
+
 STATIC int RaHdcSendWrlistNormal(struct RaQpHandle *qpHdc, struct WrInfo wr[], struct SendWrRsp opRsp[],
     struct WrlistSendCompleteNum wrlistNum)
 {
@@ -998,10 +998,10 @@ STATIC int RaHdcSendWrlistNormal(struct RaQpHandle *qpHdc, struct WrInfo wr[], s
     unsigned int completeCnt = 0;
     unsigned int i;
     int ret = 0;
- 
+
     sendWrlist = calloc(1, sizeof(union OpSendNormalWrlistData));
     CHK_PRT_RETURN(sendWrlist == NULL, hccp_err("[send][send_wrlist]send_wrlist calloc failed"), -ENOMEM);
- 
+
     while (completeCnt < wrlistNum.sendNum) {
         RaHdcSendWrlistNormalInit(sendWrlist, qpHdc, completeCnt, wrlistNum);
         ret = memcpy_s(sendWrlist->txData.wrlist, (sizeof(struct WrInfo) * MAX_WR_NUM),
@@ -1014,14 +1014,14 @@ STATIC int RaHdcSendWrlistNormal(struct RaQpHandle *qpHdc, struct WrInfo wr[], s
         currentSendNum = sendWrlist->txData.sendNum;
         ret = RaHdcProcessMsg(RA_RS_SEND_NORMAL_WRLIST, qpHdc->phyId, (char *)sendWrlist,
             sizeof(union OpSendNormalWrlistData));
- 
+
         if (sendWrlist->rxData.completeNum > currentSendNum) {
             hccp_err("[send][send_wrlist]complete_num[%u] is larger than send_num[%u], ret(%d)",
                 sendWrlist->rxData.completeNum, currentSendNum, ret);
             ret = -EINVAL;
             goto err_send_wrlist;
         }
- 
+
         for (i = 0; i < sendWrlist->rxData.completeNum; i++) {
             if (qpHdc->qpMode == RA_RS_GDR_TMPL_QP_MODE) {
                 opRsp[completeCnt + i].wqeTmp = sendWrlist->rxData.wrRsp[i].wqeTmp;
@@ -1040,7 +1040,7 @@ STATIC int RaHdcSendWrlistNormal(struct RaQpHandle *qpHdc, struct WrInfo wr[], s
         }
         goto err_send_wrlist;
     }
- 
+
 err_send_wrlist:
     free(sendWrlist);
     sendWrlist = NULL;

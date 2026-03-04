@@ -556,7 +556,7 @@ int RaHdcCtxQpDestroyBatchAsync(struct RaCtxHandle *ctxHandle, void *qpHandle[],
     ret = QpDestroyBatchParamCheck(ctxHandle, qpHandle, asyncData.txData.ids, num);
     CHK_PRT_RETURN(ret != 0, hccp_err("[destroy_batch][ra_hdc_ctx_qp]param check failed, phyId[%u] devIndex[0x%x]",
         phyId, ctxHandle->devIndex), ret);
-    
+
     asyncData.txData.phyId = phyId;
     asyncData.txData.devIndex = ctxHandle->devIndex;
     asyncData.txData.num = *num;

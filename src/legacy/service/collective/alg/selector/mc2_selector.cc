@@ -56,7 +56,7 @@ const std::map<OpType, std::string> MC2_AICPU_1D_DEFAULT_ALG_MAP = {
     {OpType::RECV, "InsRecv"},
 };
 
-AlgorithmType Mc2Selector::GetAlgorithmTypeForMC2(const std::string& name) {
+AlgorithmType Mc2Selector::GetAlgorithmTypeForMC2CCU(const std::string& name) {
     auto it = algorithmMap_.find(name);
     if (it == algorithmMap_.end()) {
         THROW<InvalidParamsException>(StringFormat("Unknown algorithm name: [%s] ", name.c_str()));
@@ -94,7 +94,7 @@ SelectorStatus Mc2Selector::SelectDefaultCcuMsAlgo(const CollAlgOperator &op,con
 }
 
 SelectorStatus Mc2Selector::SelectDefaultCcuSchedAlgo(const CollAlgOperator &op, const CollAlgParams &params,
-                                   std::string &primQueueGenName)
+                                   std::string &primQueueGenName) const
 {
     (void) params;
     TopoInfo topoInfo;
@@ -118,7 +118,7 @@ SelectorStatus Mc2Selector::SelectDefaultCcuSchedAlgo(const CollAlgOperator &op,
 }
 
 SelectorStatus Mc2Selector::SelectDefaultAicpuAlgo(const CollAlgOperator &op,const CollAlgParams &params,
-                                   std::string &primQueueGenName)
+                                   std::string &primQueueGenName) const
 {
     (void) params;
     TopoInfo topoInfo;
@@ -172,7 +172,7 @@ SelectorStatus Mc2Selector::SelectCcuSchedAlgo(const CollAlgOperator &op, CollAl
 }
 
 SelectorStatus Mc2Selector::SelectAicpuAlgo(const CollAlgOperator &op, CollAlgParams &params,
-                                   std::string &primQueueGenName)
+                                   std::string &primQueueGenName) const
 {
     // 校验 algConfig 是否为空
     if (params.algConfig.empty()) {

@@ -86,6 +86,7 @@ enum RaHdcRecvMode {
 #define RA_RSVD_NUM_50 50
 #define RA_RSVD_NUM_53 53
 #define RA_RSVD_NUM_61 61
+#define RA_RSVD_NUM_62 62
 #define RA_RSVD_NUM_63 63
 #define RA_RSVD_NUM_64 64
 #define RA_RSVD_NUM_801 801

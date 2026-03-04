@@ -75,9 +75,9 @@ void CollAlgComponent::SetDmaMode(const DmaMode dmaMode)
     return;
 }
 
-AlgorithmType CollAlgComponent::GetAlgorithmTypeForMC2(const std::string& name)
+AlgorithmType CollAlgComponent::GetAlgorithmTypeForMC2CCU(const std::string& name)
 {
-    return collAlgSelector_->GetAlgorithmTypeForMC2(name);
+    return collAlgSelector_->GetAlgorithmTypeForMC2CCU(name);
 }
 
 HcclResult CollAlgComponent::ExecAlgSelect(const CollAlgOperator &op, const CollAlgParams &params,std::string &algName, OpExecuteConfig &opExecuteConfig)
@@ -195,7 +195,7 @@ CollAlgOpReq CollAlgComponent::GetCollAlgOpReq(const CollAlgOperator &op, const 
     CollAlgOpReq collAlgOpReq;
 
     collAlgOpReq.algName =  collAlgName;
-    if (algName2Res.find(collAlgName) != algName2Res.end()) {
+    if (algName2Res.find(collAlgName) != algName2Res.end() && op.opType != OpType::BATCHSENDRECV && op.opType != OpType::SEND && op.opType != OpType::RECV) {
         collAlgOpReq.resReq = algName2Res[collAlgName];
         return collAlgOpReq;
     }

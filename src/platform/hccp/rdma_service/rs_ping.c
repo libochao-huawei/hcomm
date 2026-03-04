@@ -289,7 +289,7 @@ RS_ATTRI_VISI_DEF int RsPingInit(struct PingInitAttr *attr, struct PingInitInfo 
     struct rs_cb *rscb = NULL;
     unsigned int phyId;
     int ret = 0;
-    
+
     CHK_PRT_RETURN(attr == NULL || info == NULL || devIndex == NULL,
         hccp_err("param error, attr or info or devIndex is NULL"), -EINVAL);
 

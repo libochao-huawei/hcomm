@@ -19,7 +19,7 @@ public:
     explicit CalcPartialMeshTransportReq(std::vector<std::vector<u32>> &subCommPlaneVector,
         std::vector<bool> &isBridgeVector, u32 userRank);
 
-    ~CalcPartialMeshTransportReq();
+    ~CalcPartialMeshTransportReq() override;
 
     HcclResult CalcTransportRequest(const std::string &tag, TransportMemType inputMemType,
     TransportMemType outputMemType, const CommParaInfo &commParaInfo,

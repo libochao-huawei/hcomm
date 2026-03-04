@@ -17,6 +17,10 @@
 namespace Hccl {
 
 constexpr u32 INVALID_VALUE_RANKID = 0xFFFFFFFF;    // rank id非法值
+<<<<<<< HEAD
+=======
+constexpr u32 INVALID_VALUE_OPCOUNTER = 0xFFFFFFFF; // OpCounter非法值
+>>>>>>> temp-branch
 
 class DfxOpInfo {
 public:
@@ -30,15 +34,25 @@ public:
     u32          mainStreamId_;
     std::string  commId_{};
     u32          opIndex_{0};             // 下发算子总计数(单算子/图模式/CCU快速下发)
+<<<<<<< HEAD
     u64          headOpCounterAddr_{0};   // 执行算子头计数器地址（执行前加一）
     u64          tailOpCounterAddr_{0};   // 执行算子尾计数器地址（执行后加一）
+=======
+	u64          headOpCounterAddr_{0};   // 执行算子头计数器地址（执行前加一）
+ 	u64          tailOpCounterAddr_{0};   // 执行算子尾计数器地址（执行后加一）
+>>>>>>> temp-branch
 
 public:
     std::string Describe() const
     {
         return StringFormat(
+<<<<<<< HEAD
             "DfxOpInfo: [collOperator:[%s], tag:[%s], algType:[%u], commIndex:[%u], commId[%s], beginTime:[%llu], endTime:[%llu], opIndex[%u], headOpCounterAddr[0x%x], tailOpCounterAddr[0x%x]",
             CollOpToString(op_).c_str(), tag_.c_str(), algType_, commIndex_, commId_.c_str(), beginTime_, endTime_, opIndex_, headOpCounterAddr_, tailOpCounterAddr_);
+=======
+            "DfxOpInfo: [collOperator:[%s], tag:[%s], algType:[%u], commIndex:[%u], commId[%s], beginTime:[%llu], endTime:[%llu], opIndex[%u], headOpCounter[%llx], tailOpCounter[%llx]",
+            CollOpToString(op_).c_str(), tag_.c_str(), algType_, commIndex_, commId_.c_str(), beginTime_, endTime_, opIndex_, headOpCounter_, tailOpCounter_);
+>>>>>>> temp-branch
     }
 };
 
@@ -46,13 +60,14 @@ class TaskInfo {
 public:
     u32                        streamId_;
     u32                        taskId_;
-    u32                        remoteRank_;
+    u32                        remoteRank_{0xffffffff};
     TaskParam                  taskParam_;
     std::shared_ptr<DfxOpInfo> dfxOpInfo_;
+    bool                       isMaster_;
 
 public:
     TaskInfo(u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam,
-             std::shared_ptr<DfxOpInfo> dfxOpInfo = nullptr);
+              std::shared_ptr<DfxOpInfo> dfxOpInfo = nullptr, bool isMaster = false);
 
     std::string Describe() const;
 

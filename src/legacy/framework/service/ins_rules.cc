@@ -22,6 +22,7 @@
 #include "dlprof_function.h"
 #include "hccl_aiv_utils.h"
 #include "sal.h"
+#include "ccu_ins_group.h"
 
 namespace Hccl {
 
@@ -182,14 +183,14 @@ inline vector<RtsCntNotify *> LocalCntNotifyGet(ConnLocalCntNotifyManager &connL
     return notifyList;
 }
 
-static void SaveDfxTaskInfo(const CommunicatorImpl &comm, const TaskParam &taskParam, const RankId remoteRankId)
+static void SaveDfxTaskInfo(const CommunicatorImpl &comm, const TaskParam &taskParam, const RankId remoteRankId, bool isMaster = false)
 {
     u32 taskId;
     u32 streamId;
     HrtGetTaskIdAndStreamID(taskId, streamId);
 
-    shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId, remoteRankId, taskParam,
-        comm.GetMirrorTaskManager().GetCurrDfxOpInfo());
+    shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId, remoteRankId, taskParam, 
+        comm.GetMirrorTaskManager().GetCurrDfxOpInfo(), isMaster);
  
     HCCL_INFO("Begin to AddTaskInfo: streamId[%lu], taskId[%lu], remoteRankId[%u].", streamId, taskId, remoteRankId);
     comm.GetMirrorTaskManager().AddTaskInfo(taskInfo);
@@ -577,7 +578,7 @@ static void LaunchCcuTasks(vector<CcuTaskParam> params, const Stream *stream, Ta
 }
 
 static void ReportCcuProfilingInfo(uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
-                                   const CommunicatorImpl &comm, TaskParam &taskParam)
+                                   const CommunicatorImpl &comm, TaskParam &taskParam, bool isMaster)
 {
     if (streamProfilingInfo.empty()) {
         HCCL_INFO("There is no ccu profiling info.");
@@ -602,7 +603,7 @@ static void ReportCcuProfilingInfo(uint64_t execId, std::vector<CcuProfilingInfo
     }
     taskParam.ccuDetailInfo = std::make_shared<std::vector<CcuProfilingInfo>>(streamProfilingInfo);
     HCCL_INFO("Begin to SaveDfxTaskInfo. taskType[%d]", static_cast<int32_t>(TaskParamType::TASK_CCU));
-    SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID);
+    SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID, isMaster);
 }
 
 static void GetCcuProfilingInfo(const CcuInstruction &ccuInstruction, const vector<vector<CcuTaskParam>> &ccuParams,
@@ -616,6 +617,32 @@ static void GetCcuProfilingInfo(const CcuInstruction &ccuInstruction, const vect
     if (ccuProfilingInfo.size() != ccuParams.size()) {
         string msg = StringFormat("Get ccu profiling info size error(%u-%u).", ccuProfilingInfo.size(), ccuParams.size());
         THROW<NotSupportException>(msg);
+    }
+}
+
+static void FastLoadSaveParams(const CcuInstruction &ccuInstruction, CommunicatorImpl &comm, const OpTaskConfig &taskConfig, 
+                            const Stream &stream, std::vector<std::vector<CcuTaskParam>> &ccuParams,
+                            std::vector<std::vector<CcuProfilingInfo>> &ccuProfilingInfo)
+{
+    std::size_t totalSize = 0;
+    for (const auto &ccuParam : ccuParams) {
+        totalSize += ccuParam.size();
+    }
+    if (totalSize != 0 && comm.isEnableSuperFasterLoad()) {
+        CcuInstType insType = ccuInstruction.GetInstType();
+        if (ccuInstruction.GetInstType() == CcuInstType::CCU_INS_GROUP) {
+            const CcuInsGroup *insGroup = dynamic_cast<const CcuInsGroup *>(&ccuInstruction);
+            if (insGroup == nullptr) {
+                THROW<NullPtrException>(StringFormat("%s CcuInsGroup trans failed", __func__));
+            } 
+            if (insGroup->GetCcuInstructions().empty()) {
+                THROW<InvalidParamsException>(StringFormat("%s insGroup CcuInstructions isEmpty", __func__));
+            }
+            insType = insGroup->GetCcuInstructions()[0]->GetInstType();
+        }
+        HCCL_RUN_INFO("current CcuInstType: %d", static_cast<int>(insType));
+        comm.saveCCUParams(std::move(ccuParams), std::move(ccuProfilingInfo), ccuInstruction.GetExecId(), insType,
+                           stream.GetId() != comm.GetStreamManager().GetMaster()->GetId());
     }
 }
 
@@ -654,7 +681,7 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
 
     // launch ccu task
     LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig);
-    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam);
+    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.GetIsMaster());
 
     // launch LocalWaitFrom on stream
     RtsCntNotify *cntNotifyNTo1 = comm.GetCcuStreamSyncNotifyManager().GetRtsNTo1CntNotify(stream.GetId());
@@ -682,20 +709,12 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
 
         // launch ccu task
         LaunchCcuTasks(ccuParams[ccuProfIdx], slave, taskParam, taskConfig);
-        ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[ccuProfIdx], comm, taskParam);
+        ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[ccuProfIdx], comm, taskParam, slave->GetIsMaster());
 
         // launch localPostTo on extra streams
         cntNotifyNTo1->PostBits(bitValue, *slave);
     }    
-
-    std::size_t totalSize = 0;
-    for (const auto &ccuParam : ccuParams) {
-        totalSize += ccuParam.size();
-    }
-    if (totalSize != 0 && comm.isEnableSuperFasterLoad()) {
-        comm.saveCCUParams(std::move(ccuParams), std::move(ccuProfilingInfo), ccuInstruction.GetExecId(),
-                    stream.GetId() != comm.GetStreamManager().GetMaster()->GetId());
-    }
+    FastLoadSaveParams(ccuInstruction, comm, taskConfig, stream, ccuParams, ccuProfilingInfo);
 }
 
 static void SubmitCcuTasks(const CcuInstruction &ccuInstruction, CommunicatorImpl &comm, const OpTaskConfig &taskConfig, const Stream &stream)
@@ -733,16 +752,8 @@ static void SubmitCcuTasks(const CcuInstruction &ccuInstruction, CommunicatorImp
     
     //esl 2die适配，先申请从流再启动task
     LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig);
-    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam);
-
-    std::size_t totalSize = 0;
-    for (const auto &ccuParam : ccuParams) {
-        totalSize += ccuParam.size();
-    }
-    if (totalSize != 0 && comm.isEnableSuperFasterLoad()) {
-        comm.saveCCUParams(std::move(ccuParams), std::move(ccuProfilingInfo), ccuInstruction.GetExecId(),
-                    stream.GetId() != comm.GetStreamManager().GetMaster()->GetId());
-    }
+    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.GetIsMaster());
+    FastLoadSaveParams(ccuInstruction, comm, taskConfig, stream, ccuParams, ccuProfilingInfo);
 }
 
 void Interpret(const CcuInstruction &ccuInstruction, CommunicatorImpl &comm, const Stream &stream,
