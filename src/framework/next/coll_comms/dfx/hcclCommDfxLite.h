@@ -41,7 +41,7 @@ private:
     static ReadWriteLockBase baseLock_; // 基类锁成员
     static ReadWriteLock rwLock_; // 读写锁
 };
-    ReadWriteLockBase baseLock_; // 基类锁成员
-    ReadWriteLock rwLock_(HcclDfx::baseLock_); // 读写锁
+    ReadWriteLockBase HcclCommDfxLite::baseLock_; // 基类锁成员
+    ReadWriteLock HcclCommDfxLite::rwLock_(HcclCommDfxLite::baseLock_); // 读写锁
 
 }

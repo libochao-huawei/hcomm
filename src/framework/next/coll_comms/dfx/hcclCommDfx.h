@@ -51,8 +51,8 @@ private:
     static ReadWriteLock rwLock_; // 读写锁
 };
 
-ReadWriteLockBase HcclDfx::baseLock_;
-ReadWriteLock HcclDfx::rwLock_(HcclDfx::baseLock_);
+ReadWriteLockBase HcclCommDfx::baseLock_;
+ReadWriteLock HcclCommDfx::rwLock_(HcclCommDfx::baseLock_);
 
 }
 
