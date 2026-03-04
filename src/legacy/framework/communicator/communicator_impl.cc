@@ -1353,10 +1353,7 @@ void CommunicatorImpl::InitDataBufferManager()
         scratchBufSize = scratchBufSize * HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE;
     }
     // 如果是自定义算子流程，cclBufferSize的大小为2倍
-    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if (indOp != nullptr && strcmp(indOp, "1") == 0) {
-        scratchBufSize = scratchBufSize * 2;
-    }
+    scratchBufSize = scratchBufSize * 2;
     cclBufferSize = scratchBufSize;
 
     // aiv mc2预埋1M，并不暴露在内部算子执行逻辑里
