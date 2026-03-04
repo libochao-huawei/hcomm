@@ -1228,6 +1228,33 @@ HcclResult HcclGetCommHandle(const char *commName, std::shared_ptr<hccl::hcclCom
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommGetHandleWithName(const char* commName, HcclComm* comm)
+{
+    CHK_PTR_NULL(commName);
+    CHK_PTR_NULL(comm);
+    std::string group(commName);
+
+    s32 deviceLogicId = 0;
+    HcclResult ret = HCCL_SUCCESS;
+    ret = hrtGetDevice(&deviceLogicId);
+    if (ret == HCCL_SUCCESS && IsCommNameExistInOneSidedComms(deviceLogicId, commName)) {
+        HcclOpInfoCtx &oneSidedHcom = GetOneSidedOpInfoCtx(deviceLogicId, commName);
+        *comm = static_cast<HcclComm>(oneSidedHcom.pComm.get());
+        return HCCL_SUCCESS;
+    }
+
+    HcclOpInfoCtx &opBaseHcom = GetHcclOpInfoCtx();
+    std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
+    auto iter = opBaseHcom.opGroup2CommMap.find(group);
+    if (iter == opBaseHcom.opGroup2CommMap.end()) {
+        HCCL_ERROR("please check the group name is correct, group=%s", commName);
+        return HCCL_E_PARA;
+    } else {
+        *comm = static_cast<HcclComm>(iter->second.get());
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclGetCommConnections(const HcclRootHandle &rootHandle, const std::string &identifier,
     HcclCommConnections &commConnections)
 {
