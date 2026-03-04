@@ -95,7 +95,7 @@ HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
         if (ccuEngine == CcuEngine::CCU_MS) {
             resReq.loopEngineReq[dieId] = 0;
             resReq.blockLoopEngineReq[dieId] = 8 * 8 * 2;
-            resReq.msReq[dieId] = 0;    
+            resReq.msReq[dieId] = 0;
             resReq.blockMsReq[dieId] = 64 * 8 * 2;
             resReq.ckeReq[dieId] = 32;
             resReq.blockCkeReq[dieId] = 8 * 8 * 2;
