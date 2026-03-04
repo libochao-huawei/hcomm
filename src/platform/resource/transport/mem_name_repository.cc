@@ -19,12 +19,7 @@
 namespace hccl {
 MemNameRepository::~MemNameRepository()
 {
-    std::unique_lock<std::mutex> lock(memMutex_);
-    setNameMap_.clear();
-    openedNameMap_.clear();
-    setNameMapRef_.clear();
-    openedNameMapRef_.clear();
-    alignPtrMap_.clear();
+    ClearMemNameRepository();
 }
 
 MemNameRepository* MemNameRepository::GetInstance(s32 deviceLogicID)
@@ -39,6 +34,13 @@ MemNameRepository* MemNameRepository::GetInstance(s32 deviceLogicID)
         return &instances[0];
     }
     return &instances[deviceLogicID];
+}
+
+HcclResult MemNameRepository::SetDeviceUnavailable(bool unavailable)
+{
+    unavailable_ = unavailable;
+    HCCL_RUN_INFO("SetDeviceUnavailable unavailable[%d]", unavailable);
+    return HCCL_SUCCESS;
 }
 
 HcclResult MemNameRepository::SetIpcMem(void *ptr, u64 size, u8 *name, u32 nameLen, u64 &offset, bool isSioToHccs)
@@ -219,6 +221,13 @@ void MemNameRepository::CloseIpcMem(const u8* name)
         return;
     }
 
+    if(unavailable_) {
+        ClearMemNameRepositoryImpl();
+        unavailable_ = false;
+        HCCL_RUN_INFO("CloseIpMem unavailable_[%d]", unavailable_);
+        return;
+    }
+
     auto iter = openedNameMap_.begin();
     while (iter != openedNameMap_.end()) {
         SecIpcName_t memName = iter->second;
@@ -247,6 +256,13 @@ void MemNameRepository::DestroyIpcMem(void *ptr, u64 size, bool isSioToHccs)
 
     if (ptr == nullptr) {
         HCCL_WARNING("In mem repository, destroy null ipc ptr");
+        return;
+    }
+
+    if(unavailable_) {
+        ClearMemNameRepositoryImpl();
+        unavailable_ = false;
+        HCCL_RUN_INFO("DestoryIpcMem unavailable_[%d]", unavailable_);
         return;
     }
 
@@ -284,13 +300,18 @@ void MemNameRepository::DestroyIpcMem(void *ptr, u64 size, bool isSioToHccs)
     }
 }
 
-void MemNameRepository::ClearMemNameRepository()
+void MemNameRepository::ClearMemNameRepositoryImpl()
 {
-    std::unique_lock<std::mutex> lock(memMutex_);
     setNameMap_.clear();
     openedNameMap_.clear();
     setNameMapRef_.clear();
     openedNameMapRef_.clear();
     alignPtrMap_.clear();
+}
+
+void MemNameRepository::ClearMemNameRepository()
+{
+    std::unique_lock<std::mutex> lock(memMutex_);
+    ClearMemNameRepositoryImpl();
 }
 }  // namespace hccl

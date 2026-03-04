@@ -10,6 +10,8 @@
 #ifndef HOST_CPU_ROCE_CHANNEL_H
 #define HOST_CPU_ROCE_CHANNEL_H
 
+#include <mutex>
+
 #include "../channel.h"
 #include "enum_factory.h"
 #include "hccl_common.h"

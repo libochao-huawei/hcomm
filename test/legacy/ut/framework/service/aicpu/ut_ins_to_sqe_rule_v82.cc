@@ -22,6 +22,7 @@
 #include "mem_transport_lite.h"
 #include "ins_to_sqe_rule.h"
 #include "mem_transport_callback.h"
+#include "dev_buffer.h"
 #undef protected
 #undef private
 #include "null_ptr_exception.h"

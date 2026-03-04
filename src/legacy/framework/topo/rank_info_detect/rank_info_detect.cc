@@ -297,7 +297,7 @@ void RankInfoDetect::GetRankTable(RankTableInfo &ranktable) const
     ranktable = rankTable_;
 }
 
-void RankInfoDetect::WaitComplete(u32 listenPort, u32 listenStatus)
+void RankInfoDetect::WaitComplete(u32 listenPort, u32 listenStatus) const
 {
     // 若server拓扑探测已正常结束则退出
     auto iter = g_detectServerStatus_.Find(listenPort);

@@ -31,27 +31,6 @@ __aicore__ inline void AivReduceScatterCrossNode91093::Process(GM_ADDR buffIn0, 
     __gm__ T *outputGM = (__gm__ T *)output;
     __gm__ T *cclGMSelf = (__gm__ T *)buffIn0;
 
-    GlobalTensor<uint64_t> bufferArgsGT;
-    __gm__ uint64_t *buffersGmAddr = (__gm__ uint64_t *)(commInfoAddr);
-    bufferArgsGT.SetGlobalBuffer(buffersGmAddr, FLAG_SIZE * rankSize_ / sizeof(uint64_t));
-
-    // 准备参数，buffer地址
-    GM_ADDR buffersIn[MAX_TARGET_NUM] = {};
-    GM_ADDR buffersOut[MAX_TARGET_NUM] = {};
-
-    for (uint32_t i = 0; i < numTargets; i++) {
-        uint32_t targetRank = targetRanks[i];
-        DataCopy(bufferArgsTensor[i * 4], bufferArgsGT[2 * targetRank], 4); // buffersIn buffersOut
-    }
-    uint32_t bufferLoopNum = (len + avgBufferCount - 1) / avgBufferCount;
-
-    SyncFunc<HardEvent::MTE2_S>();
-    for (uint32_t i = 0; i < numTargets; i++) {
-        uint32_t curIdx = i * 4;
-        buffersIn[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx));
-        buffersOut[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx + 1));
-    }
-
     // RS需要先保证input->output完成，再做remote copy进行原子累加
     if (localCopyCores) {
         CpGM2GM(outputGM + blockOffset, inputGM + rank_ * len + blockOffset, countPerCore);
@@ -65,6 +44,7 @@ __aicore__ inline void AivReduceScatterCrossNode91093::Process(GM_ADDR buffIn0, 
     uint64_t curOffset = 0;
     uint64_t curCount;
     uint64_t curBlockOffset;
+     uint32_t bufferLoopNum = (len + avgBufferCount - 1) / avgBufferCount;
 
     for (uint32_t loop = 0; loop < bufferLoopNum; loop++) {
         if (loop == bufferLoopNum - 1) { // 最后一轮ccl填充
@@ -119,7 +99,7 @@ __aicore__ inline void aiv_reduce_scatter_crossnode_91093(KERNEL_ARGS_DEF_A3)
     // 每张卡的CCLBuffer大小为bufferSize，平均分给ranksize块，每块的大小
     uint64_t avgBufferCount = (uint64_t) bufferSize / rankSize / sizeof(T);
 
-    op.Init<T>(buffOut0, rank, rankSize, avgBufferCount, len, reduceOp, tag, step, true);
+    op.Init<T>(buffOut0, buffOut1, rank, rankSize, avgBufferCount, len, reduceOp, tag, step, numBlocks, true);
     op.InitOpCounter(headCountMem, tailCountMem, addOneMem, SIZE_OF_INT32, isEnableCounter);
     op.HeadCounter();
     op.Process<T>(buffIn0, buffOut0, buffOut1, input, output, tag, avgBufferCount, len);

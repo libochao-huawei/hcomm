@@ -11,13 +11,11 @@
 #ifndef HCCL_SERIALIZATION_H
 #define HCCL_SERIALIZATION_H
 
-#include <vector>
-#include <cstdint>
-#include <sstream>
 #include <algorithm>
 
+#include "hccl/base.h"
 #include "exception_util.h"
-#include "internal_exception.h"
+#include "log.h"
 
 namespace Hccl {
 
