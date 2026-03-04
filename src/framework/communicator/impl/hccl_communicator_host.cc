@@ -458,7 +458,7 @@ namespace hccl
         HCCL_DEBUG("[%s]hcclRankLinkInfo_ userRank[%u], devicePhyId[%u], ip[%s], port[%u]", __func__,
                    hcclRankLinkInfo_.userRank, hcclRankLinkInfo_.devicePhyId, hcclRankLinkInfo_.ip.GetReadableIP(),
                    hcclRankLinkInfo_.port);
-        CHK_RET(oneSideService_->Config(dispatcher_, hcclRankLinkInfo_, &rankTable, identifier_));
+        CHK_RET(oneSideService_->Config(dispatcher_, hcclRankLinkInfo_, &rankTable, identifier_, isStandardCard_));
         return HCCL_SUCCESS;
     }
 
@@ -1298,6 +1298,7 @@ namespace hccl
                 enableP2PDevices_.push_back(iterServ->second[i].deviceInfo.devicePhyId);
             }
         }
+        HCCL_DEBUG("[Init][PreResource]Current deviceType[%d], isStandardCard[%s]", deviceType_, isStandardCard_ ? "true" : "false");
         if (deviceType_ != DevType::DEV_TYPE_310P3 && !isStandardCard_) {
             HcclResult ret = P2PMgmtPub::EnableP2P(enableP2PDevices_);
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][PreResource]Enable P2P Failed, deviceLogicId[%d], ret[%u]", deviceLogicId_, ret), ret);
