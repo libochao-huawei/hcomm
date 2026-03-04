@@ -861,9 +861,9 @@ HcclResult WaitService(void *args, uint64_t argsSizeByte)
         return HCCL_E_PARA;
     }
 
-    hccl::MemNotify *const memNotify = cpuThread->GetNotify(notifyIdx);
+    hccl::MemNotify *const memNotify = cpuThread->GetMemNotify(notifyIdx);
     if (memNotify == nullptr) {
-        HCCL_ERROR("[%s] FAIL. cpuThread->GetNotify failed for notifyIdx[%u].", __func__, notifyIdx);
+        HCCL_ERROR("[%s] FAIL. cpuThread->GetMemNotify failed for notifyIdx[%u].", __func__, notifyIdx);
         return HCCL_E_PARA;
     }
     CHK_RET(memNotify->Wait());
