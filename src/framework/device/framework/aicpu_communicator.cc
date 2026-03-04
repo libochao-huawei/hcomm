@@ -5194,8 +5194,6 @@ HcclResult HcclCommAicpu::InitP2pChannel(HcclIndOpChannelRemoteResV3 *commParam,
     MachinePara machinePara;
     CHK_RET(SetTransportMachinePara(machinePara, remoteResV2.remoteRank, commParam->channelTag));
     machinePara.notifyNum = remoteResV2.p2pNotifyNum;
-    machinePara.hcclQos = remoteResV2.channelP2p.qos;
-    HCCL_INFO("InitP2pChannel hcclQos = %u", machinePara.hcclQos);
     // 获取localMem & remoteMem
     TransportDeviceP2pData transDevP2pData;
     transDevP2pData.inputBufferPtr = reinterpret_cast<void *>(channelP2p.remoteHcclbuffer.addr);
@@ -5214,7 +5212,7 @@ HcclResult HcclCommAicpu::InitP2pChannel(HcclIndOpChannelRemoteResV3 *commParam,
     TransportPara para{};
     const std::unique_ptr<NotifyPool> notifyPool;
     DispatcherCtx *ctx = static_cast<DispatcherCtx *>(dispatcherCtx_);
-    ctx->SetDispatcherHcclQos(machinePara.hcclQos); // 调度器添加hcclQos
+    ctx->SetDispatcherHcclQos(remoteResV2.channelP2p.qos); ; // 调度器添加hcclQos
     CHK_PTR_NULL(ctx);
     link.reset(new (std::nothrow) Transport(
         TransportType::TRANS_TYPE_DEVICE_P2P, para, ctx->GetDispatcher(), notifyPool, machinePara, transDevP2pData));
