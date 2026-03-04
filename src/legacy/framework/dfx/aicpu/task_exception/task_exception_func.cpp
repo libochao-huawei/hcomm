@@ -10,7 +10,11 @@
 
 #include "task_exception_func.h"
 #include "communicator_impl_lite_manager.h"
-#include "exception_util.h"
+#include "log.h"
+#include <map>
+#include <vector>
+#include <memory>
+#include <string>
 
 namespace Hccl {
 TaskExceptionFunc &TaskExceptionFunc::GetInstance()
@@ -192,7 +196,7 @@ void TaskExceptionFunc::Call()
                     HCCL_ERROR("[TaskExceptionFunc]stream of in aicpuComm[%s] is nullptr", aicpuComm->GetId().c_str());
                     continue;
                 }
-                if (GetReporterInfo(aicpuStream, recvInfo)) {
+                if (GetReporterInfo(aicpuStream, recvInfo) != 0) {
                     continue;
                 }
                 uint32_t reportNum = recvInfo->report_cqe_num;
