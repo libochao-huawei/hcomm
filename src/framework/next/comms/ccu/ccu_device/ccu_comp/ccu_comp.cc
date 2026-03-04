@@ -17,6 +17,8 @@
 #include "adapter_rts.h"
 #include "rdma_handle_manager.h"
 
+#include "../../../../../legacy/unified_platform/external_system/orion_adapter_hccp.h"
+
 #include "eid_info_mgr.h"
 #include "ccu_res_specs.h"
 #include "ccu_channel_ctx_mgr_v1.h"
@@ -35,6 +37,8 @@ constexpr uint32_t LOOP_CHANNEL_USE_SQSIZE = 16;
 constexpr uint32_t LOOP_CHANNEL_WAIT_TIMEOUT_MS = 10000;
 // 环回获取TP信息间隔100us
 constexpr u32 ONE_HUNDRED_MICROSEC_OF_USLEEP = 100;
+// 清理CKE批量申请大小
+constexpr u32 MAX_CKE_DATA_ARRAY_SIZE = 8;
 
 // 环境是ARM+X86时，配置 die0 的 MS 交织粒度为 1<<6 = 64
 constexpr uint32_t MSID_CONFIG_ARMX86_MAINBOARD = 6;
@@ -878,6 +882,119 @@ HcclResult CcuComponent::DestroyAllJettys()
         }
     }
     createdOutParamMap_.clear();
+    return HcclResult::HCCL_SUCCESS;
+}
+
+
+// 以下接口用于n秒快恢与TaskException
+HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
+{
+    CHK_PRT_RET(dieId >= CCU_MAX_IODIE_NUM,
+        HCCL_WARNING("[CcuComponent][%s] failed, dieId[%u] is invalid, shoudle be in [0-%u), devLogicId[%d].",
+            __func__, dieId, CCU_MAX_IODIE_NUM, devLogicId_),
+        HcclResult::HCCL_E_PARA);
+
+    if (!dieEnableFlags_[dieId]) { // 不可用的die不清理
+        return HcclResult::HCCL_SUCCESS;
+    }    
+    Hccl::HRaInfo               info(Hccl::HrtNetworkMode::HDC, devPhyId_);
+    CustomChannelInfoIn   inBuff{};
+    CustomChannelInfoOut  outBuff{};
+
+    //设置操作码和数据
+    uint32_t ckeNum = 0;
+    CHK_RET(CcuResSpecifications::GetInstance(devLogicId_).GetCkeNum(dieId,ckeNum));
+    HCCL_INFO("[CcuComponent][CleanAllCke]Nsrecovery devLogicId[%d], dieId[%u] ckeNum[%u].",
+        devLogicId_, dieId, ckeNum);
+    
+    inBuff.op                            = CcuOpcodeType::CCU_U_OP_SET_CKE;
+    inBuff.data.dataInfo.udieIdx         = dieId;
+    
+    // 接口限制，目前方案每次最多清理8个cke，超过8个时分多次清理
+    for (uint32_t startIdx = 0; startIdx < ckeNum; startIdx += MAX_CKE_DATA_ARRAY_SIZE) {
+        inBuff.data.dataInfo.dataArraySize = std::min(ckeNum - startIdx, MAX_CKE_DATA_ARRAY_SIZE);
+        inBuff.data.dataInfo.dataLen       = sizeof(CcuDataByte8) * inBuff.data.dataInfo.dataArraySize;
+        inBuff.offsetStartIdx              = startIdx;
+        Hccl::HrtRaCustomChannel(info, static_cast<void *>(&inBuff), static_cast<void *>(&outBuff)); //next下没有该函数
+    }
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+void CcuComponent::SetProcess(CcuOpcodeType opCode) const
+{
+    const Hccl::HRaInfo info(Hccl::HrtNetworkMode::HDC, devPhyId_);
+    struct CustomChannelInfoIn  inBuff;
+    struct CustomChannelInfoOut outBuff;
+
+    inBuff.op = opCode;
+    for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
+        if (!dieEnableFlags_[dieId]) {
+            HCCL_WARNING("[CcuComponent::SetProcess] devLogicId[%d], dieId[%u] is not enable,"
+                "skip SetProcess.", devLogicId_, dieId);
+            continue;
+        }
+        HCCL_INFO("[CcuComponent::SetProcess] devLogicId[%d], dieId[%u] start.", devLogicId_, dieId);   
+        inBuff.data.dataInfo.udieIdx = dieId;
+        Hccl::HrtRaCustomChannel(info, static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
+    }
+}
+
+HcclResult CcuComponent::SetTaskKill()
+{
+    std::lock_guard<std::mutex> _lock(innerMutex_);// 加锁，确保线程安全
+    // 初始化状态下，设置任务kill状态
+    if (status_ == CcuTaskKillStatus::INVALID) {
+        status_ = CcuTaskKillStatus::INIT;
+    }
+
+    if (status_ == CcuTaskKillStatus::TASK_KILL) {
+        HCCL_INFO("No need to set task kill, state = %u, devLogicId = %u", status_, devLogicId_);
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    if (status_ != CcuTaskKillStatus::INIT) {
+        HCCL_ERROR("[CcuComponent][%s] failed, cannot be invoked in the current state, "
+            "state = %u, devLogicId = %d.", __func__, status_, devLogicId_);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
+    SetProcess(CcuOpcodeType::CCU_U_OP_SET_TASKKILL);
+    status_ = CcuTaskKillStatus::TASK_KILL;
+    HCCL_INFO("[CcuComponent][%s] success, state = %u, devLogicId = %d.", __func__, status_, devLogicId_);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuComponent::SetTaskKillDone()
+{
+    std::lock_guard<std::mutex> _lock(innerMutex_);
+
+    if (status_ == CcuTaskKillStatus::INVALID) {
+        HCCL_ERROR("[CcuComponent][%s] failed, cannot be invoked in the current state, "
+            "state = %u, devLogicId = %d.", __func__, status_, devLogicId_);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
+    if (status_ == CcuTaskKillStatus::INIT) {
+        HCCL_INFO("No need to set task kill done, state = %u, devLogicId = %u", status_, devLogicId_);
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    if (status_ != CcuTaskKillStatus::TASK_KILL) {
+        HCCL_ERROR("[CcuComponent][%s] failed, cannot be invoked in the current state, "
+            "state = %u, devLogicId = %d.", __func__, status_, devLogicId_);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
+    SetProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE);
+    status_ = CcuTaskKillStatus::INIT;
+    HCCL_INFO("[CcuComponent][%s] success, state = %u, devLogicId = %d", __func__, status_, devLogicId_);   
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuComponent::CleanTaskKillState() const
+{
+    SetProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE);
     return HcclResult::HCCL_SUCCESS;
 }
 

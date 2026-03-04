@@ -16,4 +16,10 @@ target_sources(hcomm PRIVATE
 )
 
 add_subdirectory(aicpu)
+add_subdirectory(ns_resume)
+
+target_include_directories(hcomm PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/ns_resume
+)
+
 

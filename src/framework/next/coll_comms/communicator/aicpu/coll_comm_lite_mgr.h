@@ -7,33 +7,32 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef COLL_COMM_MGR_H
-#define COLL_COMM_MGR_H
+#ifndef COLL_COMM_LITE_MGR_H
+#define COLL_COMM_LITE_MGR_H
 
-#include <unordered_set>
 #include <memory>
 #include <mutex>
 #include <vector>
-#include "coll_comm.h"
+#include "coll_comm_aicpu.h"
 
 namespace hccl {
 /**
  * @note 职责：实现多个集合通信通信域上下文的创建、销毁管理，及多通信域资源、信息的共享等。
  */
-class CollCommMgr {
+class CollCommLiteMgr {
 private:
-    CollCommMgr();
-    ~CollCommMgr();
+    CollCommLiteMgr();
+    ~CollCommLiteMgr();
 
 public:
-    static CollCommMgr *GetInstance();
-    void RegisteCollComm(CollComm* collComm);
-    void UnRegisteCollComm(CollComm* collComm);
-    std::unordered_map<std::string, CollComm*> GetAllCollComms();
+    static CollCommLiteMgr *GetInstance();
+    void RegisteCollComm(CollCommAicpu* collComm);
+    void UnRegisteCollComm(CollCommAicpu* collComm);
+    std::unordered_map<std::string, CollCommAicpu*> GetAllCollComms();
 
 private:
-    static CollCommMgr* instance_;
-    std::unordered_map<std::string, CollComm*> allCollComms_;
+    static CollCommLiteMgr* instance_;
+    std::unordered_map<std::string, CollCommAicpu*> allCollCommLites_;
 };
 }
-#endif // COLL_COMM_MGR_H
+#endif // COLL_COMM_LITE_MGR_H

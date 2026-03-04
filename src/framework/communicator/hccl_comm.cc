@@ -1363,12 +1363,6 @@ HcclResult hcclComm::Suspend()
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::Resume()
-{
-    CHK_RET(communicator_->Resume());
-    return HCCL_SUCCESS;
-}
-
 HcclResult hcclComm::InitZeroCopyMemoryAgent()
 {
     CHK_SMART_PTR_NULL(communicator_);

@@ -24,16 +24,53 @@
 #include "aicpu_launch_manager.h"
 #include "channel_param.h"
 #include "hdc_pub.h"
+#include "kfc.h"
 
 using namespace hccl;
 class CollCommAicpu {
 public:
+    ~CollCommAicpu();
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
     HcclResult AllocChannelResource(HcclChannelUrmaRes *commParam);
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
 
+    std::string GetIdentifier();
+    u32 GetDevPhyId();
+
+    // N秒快恢
+    void NsCommClean();
+    Hccl::KfcCommand BackGroundGetCmd(){return Hccl::KfcCommand::NS_CLEAN;}
+    void BackGroundSetStatus(Hccl::KfcStatus status, Hccl::KfcErrType errorCode = Hccl::KfcErrType::NONE){}
+    void ResetErrorReported() {
+        isErrorReported = false;
+    }
+    void SetIsCommReady(bool flag)
+    {
+        isCommReady = flag;
+    }
+    bool IsCommReady() const
+    {
+        return isCommReady;
+    }
+    void SetNeedClean(bool flag)
+    {
+        needClean = flag;
+    }
+    bool IsNeedClean() const
+    {
+        return needClean;
+    }
+    void SetIsSuspended(bool status)
+    {
+        isSuspended = status;
+    }
+    bool IsSuspended() const
+    {
+        return isSuspended;
+    }
+    std::vector<std::shared_ptr<Thread>> GetThreads();
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
@@ -49,6 +86,11 @@ private:
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
     // A5 独立算子
     std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
+
+    bool isCommReady;
+    bool needClean;
+    bool isSuspended;
+    bool isErrorReported;
 };
 
 

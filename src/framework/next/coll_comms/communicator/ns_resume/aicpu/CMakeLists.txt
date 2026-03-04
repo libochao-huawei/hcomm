@@ -9,10 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 
 set(src_list
-    aicpu_indop_process.cc
-    coll_comm_aicpu_mgr.cc
-    coll_comm_aicpu.cc
-    coll_comm_lite_mgr.cc
+    ns_resume_lite.cc
 )
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))

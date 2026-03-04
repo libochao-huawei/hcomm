@@ -13,6 +13,7 @@
 #include "channel.h"
 #include "endpoint_pair.h"
 #include "hccl_res.h"
+#include "kfc.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器
 
 using namespace hcomm;
@@ -322,6 +323,9 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         return HCCL_SUCCESS;
     }
 
+    NsResumeData data{channelHandles, hostChannelHandleList, channelNum, commTag};
+    nsResumeDatas_[engine].push_back(data);
+
     HCCL_ERROR("[MyRank][%s] unsupported comm engine[%d].", __func__, engine);
     return HCCL_E_NOT_SUPPORT;
 }
@@ -368,4 +372,131 @@ HcclResult MyRank::ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMe
     }
     return HCCL_SUCCESS;
 }
+
+void MyRank::SetKfcControlTransfer(std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D, 
+        std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H)
+{
+    kfcControlTransferH2D_ = kfcControlTransferH2D;
+    kfcStatusTransferD2H_ = kfcStatusTransferD2H;
+}
+
+HcclResult MyRank::Suspend()
+{
+    for (const auto& resumeData : nsResumeDatas_) {
+        if (resumeData.first == COMM_ENGINE_AICPU || resumeData.first == COMM_ENGINE_AICPU_TS) {
+            // Aicpu场景
+            Hccl::KfcCommand opCmd = Hccl::KfcCommand::NS_STOP_LAUNCH;
+            CHK_RET(kfcControlTransferH2D_->Put(0, sizeof(Hccl::KfcCommand), reinterpret_cast<uint8_t *>(&opCmd)));
+            HCCL_INFO("[NsRecovery][Suspend] send KfcCommand[%d] success, which is NS_STOP_LAUNCH.", opCmd);
+            Hccl::KfcExecStatus opInfo;
+            auto timeout   = std::chrono::milliseconds(WAIT_CMD_TIMEOUT);
+            auto startTime = std::chrono::steady_clock::now();
+            while (true) {
+                CHK_RET(kfcStatusTransferD2H_->Get(0, sizeof(Hccl::KfcExecStatus), reinterpret_cast<uint8_t *>(&opInfo)));
+                if (opInfo.kfcStatus == Hccl::KfcStatus::STOP_LAUNCH_DONE) {
+                    HCCL_INFO("[NsRecovery][Suspend] received KfcStatus[%d], which is STOP_LAUNCH_DONE", opInfo.kfcStatus);
+                    return HcclResult::HCCL_E_SUSPENDING;
+                } else if (opInfo.kfcStatus == Hccl::KfcStatus::ERROR){
+                    HCCL_ERROR("[NsRecovery][Suspend] received KfcStatus[%d], which is ERROR", opInfo.kfcStatus);
+                    return HcclResult::HCCL_E_INTERNAL;
+                } else {
+                    if((std::chrono::steady_clock::now() - startTime) >= timeout){
+                        HCCL_ERROR("[NsRecovery][Suspend] Wait suspend response status timeout[%u ms] and get the opExecStatus is [%u].", WAIT_CMD_TIMEOUT,
+                                opInfo.kfcStatus);
+                        return HcclResult::HCCL_E_TIMEOUT;
+                    }
+                    continue;
+                }
+            }
+            return HcclResult::HCCL_SUCCESS;  // todo：多CommEngine的管理存在问题
+        } else {
+            HCCL_INFO("[NsRecovery][Suspend] Aicpu kernel is not launched yet. Suspend host only.");
+        }
+    }
+    
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult MyRank::Clean()
+{
+    ChannelTable channelTable = rankPairMgr_->GetChannelTable();
+    std::vector<ChannelHandle> channelList;
+    for (const auto& rankPair : channelTable) {
+        for (const auto& endPointPair : rankPair.second) {
+            channelList.insert(channelList.end(), endPointPair.second.begin(), endPointPair.second.end());
+        }
+    }
+
+    auto ret = HcommChannelClean(channelList.data(), channelList.size());
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[NsRecovery][Clean] MyRank::Clean failed!");
+        return ret;
+    }
+
+    for (const auto& resumeData : nsResumeDatas_) {
+        if (resumeData.first == COMM_ENGINE_AICPU || resumeData.first == COMM_ENGINE_AICPU_TS) {
+            // 再清理device，后续优化全用host管理
+            HCCL_INFO("[NsRecovery][Clean] start to clean device, waiting for device STOP_LAUNCH_DONE");
+            Hccl::KfcExecStatus opInfo;
+            CHK_RET(kfcStatusTransferD2H_->Get(0, sizeof(Hccl::KfcExecStatus), reinterpret_cast<uint8_t *>(&opInfo)));
+            if (opInfo.kfcStatus == Hccl::KfcStatus::STOP_LAUNCH_DONE) {
+                HCCL_INFO("[NsRecovery][Clean] received KfcStatus[%d], which is STOP_LAUNCH_DONE", opInfo.kfcStatus);
+                // 通知背景线程清理device侧资源
+                Hccl::KfcCommand opCmd = Hccl::KfcCommand::NS_CLEAN;
+                CHK_RET(kfcControlTransferH2D_->Put(0, sizeof(Hccl::KfcCommand), reinterpret_cast<uint8_t *>(&opCmd)));
+                HCCL_INFO("[NsRecovery][Clean] send KfcCommand [%d] success, which is NS_CLEAN", opCmd);
+                // 监听背景线程状态
+                auto timeout   = std::chrono::milliseconds(WAIT_CMD_TIMEOUT);
+                auto startTime = std::chrono::steady_clock::now();
+                while (true) {
+                    CHK_RET(kfcStatusTransferD2H_->Get(0, sizeof(Hccl::KfcExecStatus), reinterpret_cast<uint8_t *>(&opInfo)));
+                    if (opInfo.kfcStatus == Hccl::KfcStatus::CLEAN_DONE) {
+                        HCCL_INFO("[NsRecovery][Clean] received KfcStatus[%d], which is CLEAN_DONE", opInfo.kfcStatus);
+                        return HcclResult::HCCL_E_SUSPENDING;
+                    } else if (opInfo.kfcStatus == Hccl::KfcStatus::ERROR){
+                        HCCL_ERROR("[NsRecovery][Clean] received KfcStatus[%d], which is ERROR", opInfo.kfcStatus);
+                        return HcclResult::HCCL_E_INTERNAL;
+                    } else {
+                        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+                            HCCL_ERROR("[NsRecovery][Clean] Wait clean response status timeout[%u ms] and get the opExecStatus is [%u].", WAIT_CMD_TIMEOUT,
+                                    opInfo.kfcStatus);
+                            return HcclResult::HCCL_E_TIMEOUT;
+                        }
+                        continue;
+                    }
+                }
+            } else {
+                HCCL_ERROR("[NsRecovery][Clean] Aicpu kernel is not stopped yet. Cannot clean.");
+                return HcclResult::HCCL_E_INTERNAL;
+            }
+            return HcclResult::HCCL_SUCCESS;
+        }
+    }
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult MyRank::Resume()
+{
+    ChannelTable channelTable = rankPairMgr_->GetChannelTable();
+    std::vector<ChannelHandle> channelList;
+    for (const auto& rankPair : channelTable) {
+        for (const auto& endPointPair : rankPair.second) {
+            channelList.insert(channelList.end(), endPointPair.second.begin(), endPointPair.second.end());
+        }
+    }
+    HcommChannelResume(channelList.data(), channelList.size());
+    // 批量建链
+    for (const auto& resumeData : nsResumeDatas_) {
+        if (resumeData.first == COMM_ENGINE_AICPU || resumeData.first == COMM_ENGINE_AICPU_TS) {
+            // KernelLaunch时会将CollCommAicpu下的ubTransportMap_链路恢复,只打包transport
+            for (const auto& handleData : resumeData.second) {
+                CHK_RET(HcommChannelKernelLaunch(handleData.channelHandles_, handleData.hostChannelHandleList_, 
+                handleData.channelNum_, handleData.commTag_, binHandle_));
+            }
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
 } // namespace hccl
