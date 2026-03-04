@@ -1840,13 +1840,13 @@ __aicore__ inline void HcommWriteReduceWithNotifyNbi(ChannelHandle channel, __gm
  * @brief 通信通道级内存屏障操作
  * @param[in] thread 线程句柄
  * @param[in] channel 通道句柄
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  * @note 确保该通道上此前的所有任务都已经执行完成
  * @warning  1）其他channel相关的接口，是否都要加上channel？\n
  *          2）channel加了fence，local数据接口是否要由对应的CommLocalFence？——不用，因为当前是阻塞完成的？\n 
  *          3) 参数是否含有channel，有分歧。倾向于有
  */
-extern HcclResult HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel);
+extern int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel);
 
 /** @} */  // 通信通道上内存屏障
 

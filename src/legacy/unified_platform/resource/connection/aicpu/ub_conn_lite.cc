@@ -50,7 +50,7 @@ void UbConnLite::FillCommSqe(UdmaSqeCommon *sqe, const RmtRmaBufSliceLite &rmt, 
     sqe->compOrder = cfg.compOrder;
     // 表示是否使能fence保序。为1时表示使能，为0时表示不使能。对于send/write/atomic SQE
     // 当fence为1时需要等待前面所有read和Atomic完成才开始执行，即等待前面发出的read或Atomic接收到所有response。
-    sqe->fence = 1;
+    sqe->fence = cfg.fence;
 
     sqe->se           = 1; // 表示是否使能solicited event
     sqe->rmtJettyType = 1; // 00 JFR  01:JETTY  10:jettyGroup 11:reserved
@@ -68,8 +68,9 @@ void UbConnLite::FillCommSqe(UdmaSqeCommon *sqe, const RmtRmaBufSliceLite &rmt, 
     sqe->rmtAddrLow    = rmt.GetAddr() & ADDR_BIT_LOW;
     sqe->rmtAddrHigh   = rmt.GetAddr() >> ADDR_BIT_OFFSET;
     HCCL_INFO("UbConnLite FillCommSqe UdmaSqeCommon sqe->cqe =%u, sqe->owner = %u sqe->opcode =%u"
-              "sqe->tpn = %u, sqe->rmtObjId = %u, sqe->rmtAddrLow = %u, sqe->rmtAddrHigh = %u",
-              sqe->cqe, sqe->owner, sqe->opcode, sqe->tpn, sqe->rmtObjId, sqe->rmtAddrLow, sqe->rmtAddrHigh);
+              "sqe->tpn = %u, sqe->rmtObjId = %u, sqe->rmtAddrLow = %u, sqe->rmtAddrHigh = %u, sqe->placeOdr = %u"
+              "sqe->compOrder = %u, sqe->fence = %u", sqe->cqe, sqe->owner, sqe->opcode, sqe->tpn, sqe->rmtObjId,
+              sqe->rmtAddrLow, sqe->rmtAddrHigh, sqe->placeOdr, sqe->compOrder, sqe->fence);
 }
 
 void UbConnLite::FillCommSqeReduceInfo(UdmaSqeCommon &sqeComm, ReduceOp reduceOp, DataType dataType, u32 udfType) const
