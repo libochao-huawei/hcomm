@@ -18,6 +18,7 @@
 #include "hcomm_notify_utils.h"
 #include "ub_transport_lite_impl.h"
 #include "device/framework/aicpu_hccl_process.h"
+#include <mutex>
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
@@ -937,7 +938,9 @@ int32_t HcommRequestServiceOnThread(ThreadHandle dstThreadHandle, ThreadServiceH
         return HCCL_E_NOT_SUPPORT;
     }
 
-    // TODO: add lock to make sure headIdxAddr is not updated by Host.
+    // Serialize enqueue sequence to prevent interleaving across concurrent callers.
+    static std::mutex s_requestServiceMtx;
+    std::lock_guard<std::mutex> lock(s_requestServiceMtx);
 
     const hccl::QueueInfo &queueInfo = dstThreadEntityPtr->cpuRes.sendQueue;
     const uint64_t headIdx = *reinterpret_cast<uint64_t *>(queueInfo.headIdxAddr);
