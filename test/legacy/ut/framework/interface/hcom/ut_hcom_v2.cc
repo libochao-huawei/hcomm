@@ -322,11 +322,7 @@ TEST_F(HcomTest, HcomGetWorkspaceMemSizeV2_func_err)
  
     char worldGroup[64] = "hccl_world_group";
     opType = "null";
-<<<<<<< HEAD
     ret = HcomGetWorkspaceMemSizeV2(opType, count, dataType, worldGroup, memSize);
-=======
-    ret = HcomGetWorkspaceMemSizeV2(opType, count, dataType, group1, memSize);
->>>>>>> 29e09381 (test: fix incorrect expected error code in HcomGetWorkspaceMemSizeV2_func_err)
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
  
