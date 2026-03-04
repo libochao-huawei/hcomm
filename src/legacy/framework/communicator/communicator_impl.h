@@ -166,6 +166,8 @@ public:
 
     virtual u32 GetOpBaseOpIndex() const;
 
+    virtual u32 GetOpIndex() const;
+
     u32 GetSubmittedOpCnt() const;
 
     HDCommunicate &GetKfcControlTransferH2D() const;
@@ -431,6 +433,7 @@ private:
     u32 step           = 0; // 全局device信息的step
     u32 opBaseOpIndex  = 0; // 单算子次数
     u32 collOpIndex    = 0; // 集合通信算子次数
+    u32 opIndex        = 0; // 下发算子总计数(单算子/图模式/CCU快速下发)
     u32 sendRecvIndex  = 0; // send/recv 算子次数
     u32 submittedOpCnt = 0;
     u32 aivCoreLimit   = MAX_NUM_BLOCKS;
