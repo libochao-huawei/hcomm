@@ -27,3 +27,9 @@ int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urm
     hccp_err("product type do not support");
     return -EOPENSRC;
 }
+
+int RsMmapJfcVa(struct RsCtxJfcCb *jfcCb)
+{
+    hccp_err("@@@RsMmapJfcVa enter src/platform/hccp/rdma_service/ctx/product/stub/rs_ub_jfc.c");
+    return -EOPENSRC;
+}

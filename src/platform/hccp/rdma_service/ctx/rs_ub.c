@@ -14,6 +14,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <dlfcn.h>
+#include <urma_types.h>
 #include <urma_opcode.h>
 #include <udma_u_ctl.h>
 #include "securec.h"
@@ -31,6 +32,17 @@
 #include "rs_ub.h"
 
 urma_cr_t gCrBuf[RS_WC_NUM];
+
+#define CHECK_TYPES_MATCH(expr1, expr2)		\
+	((typeof(expr1) *)0 != (typeof(expr2) *)0)
+
+#define CONTAINER_OFF(containing_type, member)                                 \
+	offsetof(containing_type, member)
+#define CONTAINER_OF(member_ptr, containing_type, member)                      \
+	 ((containing_type *)                                                  \
+	  ((void *)(member_ptr)                                                \
+	   - CONTAINER_OFF(containing_type, member))                           \
+	  + (uint8_t)CHECK_TYPES_MATCH(*(member_ptr), ((containing_type *)0)->member))
 
 int RsUbGetDevEidInfoNum(unsigned int phyId, unsigned int *num)
 {
@@ -1217,6 +1229,7 @@ STATIC int RsUbInitSegCb(struct MemRegAttrT *memAttr, struct RsUbDevCb *devCb, s
 
     // token id in cfg is valid, get token id by mem_attr->ub.token_id_addr
     if (segCfg.flag.bs.token_id_valid == URMA_TOKEN_ID_VALID) {
+        hccp_warn("@@@ RsUbInitSegCb URMA_TOKEN_ID_VALID");
         ret = RsUbGetTokenIdCb(devCb, memAttr->ub.tokenIdAddr, &tokenIdCb);
         if (ret != 0) {
             hccp_err("get token_id_cb failed! ret %d, devIndex:0x%x, tokenId addr:0x%llx", ret, devCb->index,
@@ -1226,6 +1239,10 @@ STATIC int RsUbInitSegCb(struct MemRegAttrT *memAttr, struct RsUbDevCb *devCb, s
         segCfg.token_id = tokenIdCb->tokenId;
     }
 
+    hccp_warn("@@@ RsUbInitSegCb segCfg.token_value: %ld", segCfg.token_value);
+    hccp_warn("@@@ RsUbInitSegCb segCfg.token_id->token_id: %ld", segCfg.token_id->token_id);
+    hccp_warn("@@@ RsUbInitSegCb segCfg.va: %ld", segCfg.va);
+    hccp_warn("@@@ RsUbInitSegCb segCfg.len: %ld", segCfg.len);
     segCb->segment = RsUrmaRegisterSeg(devCb->urmaCtx, &segCfg);
     if (segCb->segment == NULL) {
         hccp_err("[init][rs_ctx_lmem]rs_urma_register_seg len[0x%llx] failed, errno:%d", segCfg.len, errno);
@@ -1268,6 +1285,7 @@ int RsUbCtxLmemReg(struct RsUbDevCb *devCb, struct MemRegAttrT *memAttr, struct 
     CHK_PRT_RETURN(lsegCb == NULL, hccp_err("[init][rs_ctx_lmem]calloc lseg_cb failed"), -ENOMEM);
     lsegCb->devCb = devCb;
     lsegCb->tokenValue.token = memAttr->ub.tokenValue;
+    hccp_warn("@@@ RsUbCtxLmemReg lsegCb->tokenValue.token: %ld", lsegCb->tokenValue.token);
 
     ret = RsUbInitSegCb(memAttr, devCb, lsegCb);
     if (ret != 0) {
@@ -1284,6 +1302,28 @@ int RsUbCtxLmemReg(struct RsUbDevCb *devCb, struct MemRegAttrT *memAttr, struct 
     memInfo->key.size = sizeof(urma_seg_t);
     memInfo->ub.tokenId = lsegCb->segment->token_id->token_id;
     memInfo->ub.targetSegHandle = (uintptr_t)lsegCb->segment;
+
+    hccp_warn("@@@ lsegCb->segInfo.addr: %ld", lsegCb->segInfo.addr);
+    hccp_warn("@@@ lsegCb->segInfo.len: %ld", lsegCb->segInfo.len);
+    hccp_warn("@@@ lsegCb->segment->seg.len: %ld", lsegCb->segment->seg.len);
+    hccp_warn("@@@ lsegCb->segment->seg.token_id: %ld", lsegCb->segment->seg.token_id);
+    hccp_warn("@@@ lsegCb->segment->seg.ubva.va: %ld", lsegCb->segment->seg.ubva.va);
+    hccp_warn("@@@ lsegCb->segment->mva: %ld", lsegCb->segment->mva);
+    hccp_warn("@@@ lsegCb->segment->token_id->token_id: %ld", lsegCb->segment->token_id->token_id);
+    hccp_warn("@@@ lsegCb->segment->handle: %ld", lsegCb->segment->handle);
+
+
+    struct udma_u_segment *udma_segment = CONTAINER_OF(lsegCb->segment, struct udma_u_segment, urma_tseg);
+    memInfo->udma_segment.token_value = udma_segment->token_value.token;
+    memInfo->udma_segment.token_value_valid = udma_segment->token_value_valid;
+    memInfo->udma_segment.len = udma_segment->len;
+    memInfo->udma_segment.va = udma_segment->va;
+    memInfo->udma_segment.tid = lsegCb->segment->token_id->token_id;
+    hccp_warn("@@@ memInfo->udma_segment.token_value: %ld", memInfo->udma_segment.token_value);
+    hccp_warn("@@@ memInfo->udma_segment.token_value_valid: %ld", memInfo->udma_segment.token_value_valid);
+    hccp_warn("@@@ memInfo->udma_segment.len: %ld", memInfo->udma_segment.len);
+    hccp_warn("@@@ memInfo->udma_segment.va: %ld", memInfo->udma_segment.va);
+    hccp_warn("@@@ memInfo->udma_segment.tid: %ld", memInfo->udma_segment.tid);
 
     hccp_info("[init][rs_ctx_lmem]reg succ, devIndex:0x%x addr:0x%llx, len[0x%llx], access[0x%x]",
         devCb->index, memAttr->mem.addr, memAttr->mem.size, memAttr->ub.flags.bs.access);
@@ -1353,6 +1393,7 @@ int RsUbCtxRmemImport(struct RsUbDevCb *devCb, struct MemImportAttrT *memAttr,
         goto free_rem_seg_cb;
     }
 
+
     memInfo->ub.targetSegHandle = (uintptr_t)remSegCb->segment;
     // resv len as 1 to save addr for later unimport to query
     remSegCb->segInfo.addr = memInfo->ub.targetSegHandle;
@@ -1363,6 +1404,25 @@ int RsUbCtxRmemImport(struct RsUbDevCb *devCb, struct MemImportAttrT *memAttr,
     RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
     RsListAddTail(&remSegCb->list, &devCb->rsegList);
     RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+
+    hccp_warn("@@@ RsUbCtxRmemImport devCb->phyId: %lu", devCb->phyId);
+    hccp_warn("@@@ RsUbCtxRmemImport devCb->index: %lu", devCb->index);
+    hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segment->seg.ubva.va: %lu", remSegCb->segment->seg.ubva.va);
+    hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segment->seg.len: %lu", remSegCb->segment->seg.len);
+    hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segment->seg.token_id: %lu", remSegCb->segment->seg.token_id);
+    hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segment->user_ctx: %lu", remSegCb->segment->user_ctx);
+    hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segment->mva: %lu", remSegCb->segment->mva);
+    // hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segment->token_id->token_id: %lu", remSegCb->segment->token_id->token_id);
+    // hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segment->token_id->handle: %lu", remSegCb->segment->token_id->handle);
+    // hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segment->handle: %lu", remSegCb->segment->handle);
+
+    hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segInfo.addr: %lu", remSegCb->segInfo.addr);
+    hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segInfo.len: %lu", remSegCb->segInfo.len);
+    // hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segInfo.seg.ubva.va: %lu", remSegCb->segInfo.seg.ubva.va);
+    // hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segInfo.seg.len: %lu", remSegCb->segInfo.seg.len);
+    // hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segInfo.seg.token_id: %lu", remSegCb->segInfo.seg.token_id);
+    // hccp_warn("@@@ RsUbCtxRmemImport remSegCb->state: %lu", remSegCb->state);
+    // hccp_warn("@@@ RsUbCtxRmemImport remSegCb->tokenValue.token: %lu", remSegCb->tokenValue.token);
 
     return 0;
 
@@ -1422,6 +1482,10 @@ STATIC void RsUbFillJfcInfo(struct RsCtxJfcCb *jfcCb, struct CtxCqInfo *info)
     info->ub.cqeSize = WQE_BB_SIZE;
     info->ub.bufAddr = jfcCb->bufAddr;
     info->ub.swdbAddr = jfcCb->swdbAddr;
+    hccp_warn("@@@RsUbFillJfcInfo info->ub.id: %ld", info->ub.id);
+    hccp_warn("@@@RsUbFillJfcInfo info->ub.cqeSize: %ld", info->ub.cqeSize);
+    hccp_warn("@@@RsUbFillJfcInfo info->ub.bufAddr: %ld", info->ub.bufAddr);
+    hccp_warn("@@@RsUbFillJfcInfo info->ub.swdbAddr: %ld", info->ub.swdbAddr);
 }
 
 int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct CtxCqInfo *info)
@@ -1444,6 +1508,7 @@ int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct Ctx
     jfcCfg.jfce = attr->chanAddr == 0 ? NULL : (urma_jfce_t *)(uintptr_t)attr->chanAddr;
     if (attr->ub.mode == JFC_MODE_STARS_POLL || attr->ub.mode == JFC_MODE_CCU_POLL ||
         attr->ub.mode == JFC_MODE_USER_CTL_NORMAL) {
+        hccp_warn("@@@RsUbCtxJfcCreate before RsUbCtxJfcCreateExt");
         if (attr->ub.mode == JFC_MODE_CCU_POLL && attr->ub.ccuExCfg.valid) {
             jfcCb->ccuExCfg.valid = attr->ub.ccuExCfg.valid;
             jfcCb->ccuExCfg.cqeFlag = attr->ub.ccuExCfg.cqeFlag;
@@ -1454,12 +1519,33 @@ int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct Ctx
             goto jfc_cb_init_err;
         }
     } else if (attr->ub.mode == JFC_MODE_NORMAL) {
+        hccp_warn("@@@RsUbCtxJfcCreate before RsUbCtxJfcCreateNormal");
         jfcCfg.jfce = (attr->chanAddr == 0) ? NULL : (urma_jfce_t *)(uintptr_t)attr->chanAddr;
         ret = RsUbCtxJfcCreateNormal(devCb, &jfcCfg, &outJfc);
         if (ret != 0) {
             hccp_err("rs_ub_ctx_jfc_create_normal failed, jfcMode:%d ret:%d", attr->ub.mode, ret);
             goto jfc_cb_init_err;
         }
+
+        uint64_t cqBuffVa = 0, dbVa = 0;
+
+        ret = RsUrmaGetJfcOpt(outJfc, URMA_JFC_CQE_BASE_ADDR, &cqBuffVa, sizeof(uint64_t));
+        CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_get_jfc_opt URMA_JFC_CQE_BASE_ADDR failed, ret:%d, errno:%d", ret, errno),
+            -EOPENSRC);
+
+        ret = RsUrmaGetJfcOpt(outJfc, URMA_JFC_DB_ADDR, &dbVa, sizeof(uint64_t));
+        CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_get_jfc_opt URMA_JFC_DB_ADDR failed, ret:%d, errno:%d",
+            ret, errno), -EOPENSRC);
+
+        jfcCb->bufAddr = cqBuffVa;
+        jfcCb->swdbAddr = dbVa;
+        hccp_warn("@@@RsUbCtxJfcCreate after RsUrmaGetJfcOpt cqBuffVa: %ld, dbVa: %ld", cqBuffVa, dbVa);
+
+        ret = RsMmapJfcVa(jfcCb);
+        CHK_PRT_RETURN(ret != 0, hccp_err("rs_mmap_jfc_va failed, ret:%d", ret), ret);
+        hccp_warn("@@@RsUbCtxJfcCreate after RsMmapJfcVa jfcCb->bufAddr: %ld, jfcCb->swdbAddr: %ld",
+            jfcCb->bufAddr, jfcCb->swdbAddr);
+
     } else {
         hccp_err("jfc_type %d is invalid, not support!", attr->ub.mode);
         ret = -EINVAL;
@@ -1467,6 +1553,21 @@ int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct Ctx
     }
     jfcCb->jfcAddr = (uint64_t)(uintptr_t)outJfc; // urma_jfc_t *
     RsUbFillJfcInfo(jfcCb, info);
+
+    struct udma_u_jfc *udma_jfc = CONTAINER_OF(outJfc, struct udma_u_jfc, base);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.qbuf: %ld", udma_jfc->cq.qbuf);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.qbuf_size: %ld", udma_jfc->cq.qbuf_size);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.pi: %ld", udma_jfc->cq.pi);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.ci: %ld", udma_jfc->cq.ci);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.baseblk_shift: %ld", udma_jfc->cq.baseblk_shift);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.baseblk_cnt: %ld", udma_jfc->cq.baseblk_cnt);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.sqe_bb_cnt: %ld", udma_jfc->cq.sqe_bb_cnt);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.db.type: %ld", udma_jfc->cq.db.type);
+    hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.db.addr: %ld", udma_jfc->cq.db.addr);
+    // hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.qbuf_end: %ld", udma_jfc->cq.qbuf_end);
+    // hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.qbuf_curr: %ld", udma_jfc->cq.qbuf_curr);
+    // hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.max_sge_num: %ld", udma_jfc->cq.max_sge_num);
+    // hccp_warn("@@@RsUbCtxJfcCreate udma_jfc->cq.cstm: %ld", udma_jfc->cq.cstm);
 
     hccp_info("jfc addr:0x%llx", jfcCb->jfcAddr);
 
@@ -1509,6 +1610,7 @@ STATIC int RsUbJettyCbInit(struct RsUbDevCb *devCb, struct CtxQpAttr *jettyAttr,
     jettyCb->devCb = devCb;
     jettyCb->jettyMode = jettyMode;
     jettyCb->jettyId = jettyAttr->ub.jettyId;
+    hccp_warn("@@@ RsUbJettyCbInit jettyCb->jettyId: %ld", jettyCb->jettyId);
     jettyCb->transportMode = jettyAttr->transportMode;
     jettyCb->state = RS_QP_STATUS_DISCONNECT;
     jettyCb->flag.value = jettyAttr->ub.flag.value;
@@ -1520,9 +1622,11 @@ STATIC int RsUbJettyCbInit(struct RsUbDevCb *devCb, struct CtxQpAttr *jettyAttr,
     jettyCb->errTimeout = jettyAttr->ub.errTimeout;
 
     if (jettyCb->jettyMode == JETTY_MODE_CCU_TA_CACHE) {
+        hccp_warn("@@@ RsUbJettyCbInit JETTY_MODE_CCU_TA_CACHE");
         jettyCb->taCacheMode.lockFlag = jettyAttr->ub.taCacheMode.lockFlag;
         jettyCb->taCacheMode.sqeBufIdx = jettyAttr->ub.taCacheMode.sqeBufIdx;
     } else {
+        hccp_warn("@@@ RsUbJettyCbInit else");
         jettyCb->extMode.sq = jettyAttr->ub.extMode.sq;
         jettyCb->extMode.piType = jettyAttr->ub.extMode.piType;
         jettyCb->extMode.cstmFlag = jettyAttr->ub.extMode.cstmFlag;
@@ -1693,6 +1797,7 @@ STATIC void RsUbCtxExtJettyCreateTaCache(struct RsCtxJettyCb *jettyCb, urma_jett
 
     jettyCb->jetty = jettyInfo.jetty;
     jettyCb->dbAddr = (uint64_t)(uintptr_t)jettyInfo.db_addr;
+    hccp_warn("@@@ rs_ub_ctx_ext_jetty_create_ta_cache jettyCb->dbAddr: %d", jettyCb->dbAddr);
 
     // ccu jetty reg db addr
     ret = RsUbCtxRegJettyDb(jettyCb, &jettyInfo);
@@ -1724,13 +1829,16 @@ STATIC int RsUbCtxDrvJettyCreate(struct RsCtxJettyCb *jettyCb, struct RsCtxJfcCb
     jettyInitCfg.shared.jfc = (urma_jfc_t *)(uintptr_t)recvJfcCb->jfcAddr;
 
     if (jettyCb->jettyMode == JETTY_MODE_URMA_NORMAL) {
+        hccp_warn("@@@ rs_ub_ctx_drv_jetty_create JETTY_MODE_URMA_NORMAL");
         jettyCb->jetty = RsUrmaCreateJetty(jettyCb->devCb->urmaCtx, &jettyInitCfg);
         if (jettyCb->jetty == NULL) {
             hccp_err("rs_urma_create_jetty failed, errno=%d", errno);
         }
     } else if (jettyCb->jettyMode == JETTY_MODE_CCU_TA_CACHE) {
+        hccp_warn("@@@ rs_ub_ctx_drv_jetty_create JETTY_MODE_CCU_TA_CACHE");
         RsUbCtxExtJettyCreateTaCache(jettyCb, &jettyInitCfg);
     } else {
+        hccp_warn("@@@ rs_ub_ctx_drv_jetty_create else");
         RsUbCtxExtJettyCreate(jettyCb, &jettyInitCfg);
     }
 
@@ -1755,6 +1863,16 @@ STATIC int RsUbFillJettyInfo(struct RsCtxJettyCb *jettyCb, struct QpCreateInfo *
     int ret;
 
     jettyKeyInfo.jettyId = jettyCb->jetty->jetty_id;
+    for (size_t i = 0; i < 16; i++) {
+        hccp_warn("@@@ RsUbFillJettyInfo u jettyCb->jetty->jetty_id.eid.raw[%d]: %u,", i, jettyCb->jetty->jetty_id.eid.raw[i]);
+    }
+    for (size_t i = 0; i < 16; i++) {
+        hccp_warn("@@@ RsUbFillJettyInfo x jettyCb->jetty->jetty_id.eid.raw[%d]: %x,", i, jettyCb->jetty->jetty_id.eid.raw[i]);
+    }
+    hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.eid.in4.reserved: %ld,", jettyCb->jetty->jetty_id.eid.in4.reserved);
+    hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.eid.in4.prefix: %ld,", jettyCb->jetty->jetty_id.eid.in4.prefix);
+    hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.uasid: %ld,", jettyCb->jetty->jetty_id.uasid);
+    hccp_warn("@@@ RsUbFillJettyInfo jettyCb->jetty->jetty_id.id: %ld,", jettyCb->jetty->jetty_id.id);
     jettyKeyInfo.transMode = jettyCb->transportMode;
     ret = memcpy_s(jettyInfo->key.value, DEV_QP_KEY_SIZE, &jettyKeyInfo, sizeof(struct RsJettyKeyInfo));
     CHK_PRT_RETURN(ret != 0, hccp_err("memcpy jetty_key_info failed, ret:%d", ret), -ESAFEFUNC);
@@ -1769,6 +1887,181 @@ STATIC int RsUbFillJettyInfo(struct RsCtxJettyCb *jettyCb, struct QpCreateInfo *
     jettyInfo->va = (uint64_t)(uintptr_t)jettyCb->jetty;
     jettyInfo->ub.shareInfoAddr = (uint64_t)(uintptr_t)jettyCb->qpShareInfoAddr;
     jettyInfo->ub.shareInfoLen = sizeof(struct CtxQpShareInfo);
+    hccp_warn("@@@ jettyCb->extMode.sqebbNum: %ld", jettyCb->extMode.sqebbNum);
+
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_id.eid: %ld", jettyCb->jetty->jetty_id.eid);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_id.uasid: %ld", jettyCb->jetty->jetty_id.uasid);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_id.id: %ld", jettyCb->jetty->jetty_id.id);
+    hccp_warn("@@@@@@ jettyCb->jetty->handle: %ld", jettyCb->jetty->handle);
+    hccp_warn("@@@@@@ jettyCb->jetty->async_events_acked: %ld", jettyCb->jetty->async_events_acked);
+
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.id: %ld", jettyCb->jetty->jetty_cfg.id);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.flag.bs.share_jfr: %ld", jettyCb->jetty->jetty_cfg.flag.bs.share_jfr);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.flag.value: %ld", jettyCb->jetty->jetty_cfg.flag.value);
+
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.jfs_cfg.depth: %ld", jettyCb->jetty->jetty_cfg.jfs_cfg.depth);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.jfs_cfg.flag.bs.order_type: %ld",
+        jettyCb->jetty->jetty_cfg.jfs_cfg.flag.bs.order_type);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.jfs_cfg.flag.bs.multi_path: %ld",
+        jettyCb->jetty->jetty_cfg.jfs_cfg.flag.bs.multi_path);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.jfs_cfg.flag.value: %ld",
+        jettyCb->jetty->jetty_cfg.jfs_cfg.flag.value);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.jfs_cfg.max_sge: %ld", jettyCb->jetty->jetty_cfg.jfs_cfg.max_sge);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.jfs_cfg.max_rsge: %ld", jettyCb->jetty->jetty_cfg.jfs_cfg.max_rsge);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.jfs_cfg.max_inline_data: %ld", jettyCb->jetty->jetty_cfg.jfs_cfg.max_inline_data);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.jfs_cfg.rnr_retry: %ld", jettyCb->jetty->jetty_cfg.jfs_cfg.rnr_retry);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.jfs_cfg.err_timeout: %ld", jettyCb->jetty->jetty_cfg.jfs_cfg.err_timeout);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.jfs_cfg.jfc->handle: %ld", jettyCb->jetty->jetty_cfg.jfs_cfg.jfc->handle);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.jfs_cfg.jfc->async_events_acked: %ld",
+        jettyCb->jetty->jetty_cfg.jfs_cfg.jfc->async_events_acked);
+
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.shared.jfr->jfr_id.eid: %ld",
+        jettyCb->jetty->jetty_cfg.shared.jfr->jfr_id.eid);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.shared.jfr->jfr_id.uasid: %ld",
+        jettyCb->jetty->jetty_cfg.shared.jfr->jfr_id.uasid);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.shared.jfr->jfr_id.id: %ld",
+        jettyCb->jetty->jetty_cfg.shared.jfr->jfr_id.id);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.shared.jfr->handle: %ld",
+        jettyCb->jetty->jetty_cfg.shared.jfr->handle);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.shared.jfr->async_events_acked: %ld",
+        jettyCb->jetty->jetty_cfg.shared.jfr->async_events_acked);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.shared.jfr->jfr_cfg.depth: %ld",
+        jettyCb->jetty->jetty_cfg.shared.jfr->jfr_cfg.depth);
+
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.shared.jfc->jfc_id.eid: %ld",
+        jettyCb->jetty->jetty_cfg.shared.jfc->jfc_id.eid);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.shared.jfc->jfc_id.uasid: %ld",
+        jettyCb->jetty->jetty_cfg.shared.jfc->jfc_id.uasid);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.shared.jfc->jfc_id.id: %ld",
+        jettyCb->jetty->jetty_cfg.shared.jfc->jfc_id.id);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.shared.jfc->handle: %ld",
+        jettyCb->jetty->jetty_cfg.shared.jfc->handle);
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.shared.jfc->async_events_acked: %ld",
+        jettyCb->jetty->jetty_cfg.shared.jfc->async_events_acked);
+
+    hccp_warn("@@@@@@ jettyCb->jetty->jetty_cfg.user_ctx: %ld",
+        jettyCb->jetty->jetty_cfg.user_ctx);
+
+
+    hccp_warn("@@@@@@@@@ jettyCb->jetty->urma_jetty_opt.is_actived: %ld",
+        jettyCb->jetty->urma_jetty_opt.is_actived);
+    hccp_warn("@@@@@@@@@ jettyCb->jetty->urma_jetty_opt.jfs_opt.jfs_opt_mask.value: %ld",
+        jettyCb->jetty->urma_jetty_opt.jfs_opt.jfs_opt_mask.value);
+    hccp_warn("@@@@@@@@@ jettyCb->jetty->urma_jetty_opt.jfs_opt.is_actived: %ld",
+        jettyCb->jetty->urma_jetty_opt.jfs_opt.is_actived);
+    hccp_warn("@@@@@@@@@ jettyCb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_sqe_base_addr: %ld",
+        jettyCb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_sqe_base_addr);
+    hccp_warn("@@@@@@@@@ jettyCb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_db_addr: %ld",
+        jettyCb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_db_addr);
+    hccp_warn("@@@@@@@@@ jettyCb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_id: %ld",
+        jettyCb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_id);
+    hccp_warn("@@@@@@@@@ jettyCb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_pi: %ld",
+        jettyCb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_pi);
+    hccp_warn("@@@@@@@@@ jettyCb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_pi_type: %ld",
+        jettyCb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_pi_type);
+    hccp_warn("@@@@@@@@@ jettyCb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_ci: %ld",
+        jettyCb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_ci);
+    hccp_warn("@@@@@@@@@ jettyCb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_db_status: %ld",
+        jettyCb->jetty->urma_jetty_opt.jfs_opt.urma_jfs_db_status);
+
+    struct udma_u_jetty *udma_jetty = CONTAINER_OF(jettyCb->jetty, struct udma_u_jetty, base);
+
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_id.eid: %ld", udma_jetty->base.jetty_id.eid);
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_id.uasid: %ld", udma_jetty->base.jetty_id.uasid);
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_id.id: %ld", udma_jetty->base.jetty_id.id);
+
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.id: %ld", udma_jetty->base.jetty_cfg.id);
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.jfs_cfg.depth: %ld", udma_jetty->base.jetty_cfg.jfs_cfg.depth);
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.jfs_cfg.jfc->: %ld", udma_jetty->base.jetty_cfg.jfs_cfg.jfc);
+
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.shared.jfr->jfr_id.eid: %ld",
+        udma_jetty->base.jetty_cfg.shared.jfr->jfr_id.eid);
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.shared.jfr->jfr_id.uasid: %ld",
+        udma_jetty->base.jetty_cfg.shared.jfr->jfr_id.uasid);
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.shared.jfr->jfr_id.id: %ld",
+        udma_jetty->base.jetty_cfg.shared.jfr->jfr_id.id);
+
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.shared.jfc->jfc_id.eid: %ld",
+        udma_jetty->base.jetty_cfg.shared.jfc->jfc_id.eid);
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.shared.jfc->jfc_id.uasid: %ld",
+        udma_jetty->base.jetty_cfg.shared.jfc->jfc_id.uasid);
+    hccp_warn("@@@@@@ udma_jetty->base.jetty_cfg.shared.jfc->jfc_id.id: %ld",
+        udma_jetty->base.jetty_cfg.shared.jfc->jfc_id.id);
+
+    hccp_warn("@@@@@@ udma_jetty->jetty_type: %ld", udma_jetty->jetty_type);
+    hccp_warn("@@@@@@ udma_jetty->pi_type: %ld", udma_jetty->pi_type);
+    hccp_warn("@@@@@@ udma_jetty->sq.max_sge_num: %ld", udma_jetty->sq.max_sge_num);
+
+    jettyInfo->udma_jetty_sq.qbuf = udma_jetty->sq.qbuf;
+    jettyInfo->udma_jetty_sq.qbuf_size = udma_jetty->sq.qbuf_size;
+    jettyInfo->udma_jetty_sq.pi = udma_jetty->sq.pi;
+    jettyInfo->udma_jetty_sq.ci = udma_jetty->sq.ci;
+    jettyInfo->udma_jetty_sq.baseblk_shift = udma_jetty->sq.baseblk_shift;
+    jettyInfo->udma_jetty_sq.baseblk_cnt = udma_jetty->sq.baseblk_cnt;
+    jettyInfo->udma_jetty_sq.sqe_bb_cnt = udma_jetty->sq.sqe_bb_cnt;
+    jettyInfo->udma_jetty_sq.db_type = udma_jetty->sq.db.type;
+    jettyInfo->udma_jetty_sq.db_addr = udma_jetty->sq.db.addr;
+    // jettyInfo->udma_jetty_sq.qbuf_end = udma_jetty->sq.qbuf_end;
+    // jettyInfo->udma_jetty_sq.qbuf_curr = udma_jetty->sq.qbuf_curr;
+    // jettyInfo->udma_jetty_sq.max_sge_num = udma_jetty->sq.max_sge_num;
+    // jettyInfo->udma_jetty_sq.cstm = udma_jetty->sq.cstm;
+
+    hccp_warn("@@@ jettyInfo->va: %ld", jettyInfo->va);
+    hccp_warn("@@@ jettyInfo->udma_jetty_sq.qbuf: %ld", jettyInfo->udma_jetty_sq.qbuf);
+    hccp_warn("@@@ jettyInfo->udma_jetty_sq.qbuf_size: %ld", jettyInfo->udma_jetty_sq.qbuf_size);
+    hccp_warn("@@@ jettyInfo->udma_jetty_sq.pi: %ld", jettyInfo->udma_jetty_sq.pi);
+    hccp_warn("@@@ jettyInfo->udma_jetty_sq.ci: %ld", jettyInfo->udma_jetty_sq.ci);
+    hccp_warn("@@@ jettyInfo->udma_jetty_sq.baseblk_shift: %ld", jettyInfo->udma_jetty_sq.baseblk_shift);
+    hccp_warn("@@@ jettyInfo->udma_jetty_sq.baseblk_cnt: %ld", jettyInfo->udma_jetty_sq.baseblk_cnt);
+    hccp_warn("@@@ jettyInfo->udma_jetty_sq.sqe_bb_cnt: %ld", jettyInfo->udma_jetty_sq.sqe_bb_cnt);
+    hccp_warn("@@@ jettyInfo->udma_jetty_sq.db_type: %ld", jettyInfo->udma_jetty_sq.db_type);
+    hccp_warn("@@@ jettyInfo->udma_jetty_sq.db_addr: %ld", jettyInfo->udma_jetty_sq.db_addr);
+    // hccp_warn("@@@ jettyInfo->udma_jetty_sq.qbuf_end: %ld", jettyInfo->udma_jetty_sq.qbuf_end);
+    // hccp_warn("@@@ jettyInfo->udma_jetty_sq.qbuf_curr: %ld", jettyInfo->udma_jetty_sq.qbuf_curr);
+    // hccp_warn("@@@ jettyInfo->udma_jetty_sq.max_sge_num: %ld", jettyInfo->udma_jetty_sq.max_sge_num);
+    // hccp_warn("@@@ jettyInfo->udma_jetty_sq.cstm: %ld", jettyInfo->udma_jetty_sq.cstm);
+
+    // hccp_warn("123123123123123123 jettyInfo->udma_jetty_sq.db_addr value_rd before : %d",
+    //     *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_sq.db_addr + 0x80));
+    // int value_wr = 123;
+    // *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_sq.db_addr + 0x80) = value_wr;
+    // int value_rd = *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_sq.db_addr + 0x80);
+    // hccp_warn("123123123123123123 jettyInfo->udma_jetty_sq.db_addr value_rd after: %d", value_rd);
+
+    struct udma_u_jfc *udma_jfc = CONTAINER_OF(jettyCb->jetty->jetty_cfg.shared.jfc, struct udma_u_jfc, base);
+    jettyInfo->udma_jetty_cq.qbuf = udma_jfc->cq.qbuf;
+    jettyInfo->udma_jetty_cq.qbuf_size = udma_jfc->cq.qbuf_size;
+    jettyInfo->udma_jetty_cq.pi = udma_jfc->cq.pi;
+    jettyInfo->udma_jetty_cq.ci = udma_jfc->cq.ci;
+    jettyInfo->udma_jetty_cq.baseblk_shift = udma_jfc->cq.baseblk_shift;
+    jettyInfo->udma_jetty_cq.baseblk_cnt = udma_jfc->cq.baseblk_cnt;
+    jettyInfo->udma_jetty_cq.sqe_bb_cnt = udma_jfc->cq.sqe_bb_cnt;
+    jettyInfo->udma_jetty_cq.db_type = udma_jfc->cq.db.type;
+    jettyInfo->udma_jetty_cq.db_addr = udma_jfc->cq.db.addr;
+    // jettyInfo->udma_jetty_cq.qbuf_end = udma_jfc->cq.qbuf_end;
+    // jettyInfo->udma_jetty_cq.qbuf_curr = udma_jfc->cq.qbuf_curr;
+    // jettyInfo->udma_jetty_cq.max_sge_num = udma_jfc->cq.max_sge_num;
+    // jettyInfo->udma_jetty_cq.cstm = udma_jfc->cq.cstm;
+
+    // hccp_warn("123123123123123123 jettyInfo->udma_jetty_cq.db_addr value_rd before: %d",
+    //     *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_cq.db_addr + 0x80));
+    // *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_cq.db_addr + 0x80) = value_wr;
+    // value_rd = *(volatile int *)((uintptr_t)jettyInfo->udma_jetty_cq.db_addr + 0x80);
+    // hccp_warn("123123123123123123 jettyInfo->udma_jetty_cq.db_addr value_rd after: %d", value_rd);
+
+    hccp_warn("@@@ jettyInfo->udma_jetty_cq.qbuf: %ld", jettyInfo->udma_jetty_cq.qbuf);
+    hccp_warn("@@@ jettyInfo->udma_jetty_cq.qbuf_size: %ld", jettyInfo->udma_jetty_cq.qbuf_size);
+    hccp_warn("@@@ jettyInfo->udma_jetty_cq.pi: %ld", jettyInfo->udma_jetty_cq.pi);
+    hccp_warn("@@@ jettyInfo->udma_jetty_cq.ci: %ld", jettyInfo->udma_jetty_cq.ci);
+    hccp_warn("@@@ jettyInfo->udma_jetty_cq.baseblk_shift: %ld", jettyInfo->udma_jetty_cq.baseblk_shift);
+    hccp_warn("@@@ jettyInfo->udma_jetty_cq.baseblk_cnt: %ld", jettyInfo->udma_jetty_cq.baseblk_cnt);
+    hccp_warn("@@@ jettyInfo->udma_jetty_cq.sqe_bb_cnt: %ld", jettyInfo->udma_jetty_cq.sqe_bb_cnt);
+    hccp_warn("@@@ jettyInfo->udma_jetty_cq.db_type: %ld", jettyInfo->udma_jetty_cq.db_type);
+    hccp_warn("@@@ jettyInfo->udma_jetty_cq.db_addr: %ld", jettyInfo->udma_jetty_cq.db_addr);
+    // hccp_warn("@@@ jettyInfo->udma_jetty_cq.qbuf_end: %ld", jettyInfo->udma_jetty_cq.qbuf_end);
+    // hccp_warn("@@@ jettyInfo->udma_jetty_cq.qbuf_curr: %ld", jettyInfo->udma_jetty_cq.qbuf_curr);
+    // hccp_warn("@@@ jettyInfo->udma_jetty_cq.max_sge_num: %ld", jettyInfo->udma_jetty_cq.max_sge_num);
+    // hccp_warn("@@@ jettyInfo->udma_jetty_cq.cstm: %ld", jettyInfo->udma_jetty_cq.cstm);
 
     return 0;
 }
@@ -1975,10 +2268,28 @@ STATIC int RsUbCtxDrvJettyImport(struct RsCtxRemJettyCb *rjettyCb)
     rjetty.type = (urma_target_type_t)rjettyCb->type;
     rjetty.flag.value = rjettyCb->flag.value;
     rjetty.tp_type = rjettyCb->tpType;
+    for (size_t i = 0; i < 16; i++) {
+        hccp_warn("@@@ RsUbCtxDrvJettyImport u rjetty.jetty_id.eid.raw[%d]: %u,", i, rjetty.jetty_id.eid.raw[i]);
+    }
+    for (size_t i = 0; i < 16; i++) {
+        hccp_warn("@@@ RsUbCtxDrvJettyImport x rjetty.jetty_id.eid.raw[%d]: %x,", i, rjetty.jetty_id.eid.raw[i]);
+    }
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.eid.in4.reserved: %ld,", rjetty.jetty_id.eid.in4.reserved);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.eid.in4.prefix: %ld,", rjetty.jetty_id.eid.in4.prefix);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.eid.in4.addr: %ld,", rjetty.jetty_id.eid.in4.addr);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.uasid: %ld,", rjetty.jetty_id.uasid);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.jetty_id.id: %ld,", rjetty.jetty_id.id);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.trans_mode: %ld,", rjetty.trans_mode);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.flag.value: %ld,", rjetty.flag.value);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.flag.bs.order_type: %ld,", rjetty.flag.bs.order_type);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.flag.bs.share_tp: %ld,", rjetty.flag.bs.share_tp);
+    hccp_warn("@@@ RsUbCtxDrvJettyImport rjetty.tp_type: %ld,", rjetty.tp_type);
 
     if (rjettyCb->mode == JETTY_IMPORT_MODE_NORMAL) {
+        hccp_warn("@@@ RsUbCtxDrvJettyImport JETTY_IMPORT_MODE_NORMAL");
         rjettyCb->tjetty = RsUrmaImportJetty(rjettyCb->devCb->urmaCtx, &rjetty, &tokenValue);
-    }  else { // rjetty_cb->mode == JETTY_IMPORT_MODE_EXP
+    } else { // rjetty_cb->mode == JETTY_IMPORT_MODE_EXP
+        hccp_warn("@@@ RsUbCtxDrvJettyImport else");
         RsUbCtxExpJettyImport(rjettyCb, &rjetty, &tokenValue);
     }
     CHK_PRT_RETURN(rjettyCb->tjetty == NULL, hccp_err("import_jetty failed, mode:%d errno:%d", rjettyCb->mode, errno),
@@ -2004,6 +2315,15 @@ int RsUbCtxJettyImport(struct RsUbDevCb *devCb, struct RsJettyImportAttr *import
     importInfo->remJettyId = rjettyCb->tjetty->id.id;
     importInfo->info.tjettyHandle = (uint64_t)(uintptr_t)rjettyCb->tjetty;
     importInfo->info.tpn = rjettyCb->tjetty->tp.tpn;
+
+    hccp_warn("@@@ RsUbCtxJettyImport importInfo->info.tpn: %ld", importInfo->info.tpn);
+    hccp_warn("@@@ RsUbCtxJettyImport rjettyCb->tjetty->id.uasid: %ld", rjettyCb->tjetty->id.uasid);
+    hccp_warn("@@@ RsUbCtxJettyImport rjettyCb->tjetty->id.id: %ld", rjettyCb->tjetty->id.id);
+    hccp_warn("@@@ RsUbCtxJettyImport rjettyCb->tjetty->trans_mode: %ld", rjettyCb->tjetty->trans_mode);
+    hccp_warn("@@@ RsUbCtxJettyImport rjettyCb->tjetty->type: %ld", rjettyCb->tjetty->type);
+    hccp_warn("@@@ RsUbCtxJettyImport rjettyCb->tjetty->flag.value: %ld", rjettyCb->tjetty->flag.value);
+    hccp_warn("@@@ RsUbCtxJettyImport rjettyCb->tjetty->policy: %ld", rjettyCb->tjetty->policy);
+    hccp_warn("@@@ RsUbCtxJettyImport rjettyCb->tjetty->tp_type: %ld", rjettyCb->tjetty->tp_type);
 
     RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
     RsListAddTail(&rjettyCb->list, &devCb->rjettyList);

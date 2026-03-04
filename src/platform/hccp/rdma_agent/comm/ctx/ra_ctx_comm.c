@@ -37,6 +37,12 @@ void RaCtxGetLmemInfo(struct MemRegInfoT *memInfo, struct MrRegInfoT *lmemInfo,
     lmemInfo->out.ub.tokenId = memInfo->ub.tokenId;
     lmemInfo->out.ub.targetSegHandle = memInfo->ub.targetSegHandle;
     lmemHandle->addr = lmemInfo->out.ub.targetSegHandle;
+    
+    lmemInfo->out.udma_segment.token_value = memInfo->udma_segment.token_value;
+    lmemInfo->out.udma_segment.token_value_valid = memInfo->udma_segment.token_value_valid;
+    lmemInfo->out.udma_segment.len = memInfo->udma_segment.len;
+    lmemInfo->out.udma_segment.va = memInfo->udma_segment.va;
+    lmemInfo->out.udma_segment.tid = memInfo->udma_segment.tid;
 }
 
 void RaCtxPrepareRmemImport(struct MrImportInfoT *rmemInfo, struct MemImportAttrT *memAttr)
