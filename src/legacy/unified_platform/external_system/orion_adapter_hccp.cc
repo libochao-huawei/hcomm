@@ -2320,26 +2320,11 @@ struct ccu_mem_rsp {
     struct ccu_mem_info list[64U];
 };
 
-void HrtInitTlvMsg(TlvMsg* send_msg, TlvMsg* recv_msg, 
-                        uint32_t udie_idx, uint64_t mem_type_bitmap, uint32_t sendType) {
-    // 初始化请求消息
-    send_msg->type = sendType;
-    send_msg->length = sizeof(CcuMemReq);
-    send_msg->data = static_cast<char*>(std::malloc(send_msg->length));
-    
-    auto req = static_cast<CcuMemReq*>(static_cast<void*>(send_msg->data));
-    req->udieIdx = udie_idx;
-    req->memTypeBitmap = mem_type_bitmap;
-    
-    // 初始化响应消息
-    recv_msg->type = 0;
-    recv_msg->length = sizeof(ccu_mem_rsp);
-    recv_msg->data = static_cast<char*>(std::malloc(recv_msg->length));
-    
-    auto rsp = static_cast<ccu_mem_rsp*>(static_cast<void*>(recv_msg->data));
-    rsp->die_id = 0;
-    rsp->num = 0;
-    std::memset(rsp->list, 0, sizeof(rsp->list));
+void HrtSetMemInfoList(struct CcuMemInfo *memInfoList, uint32_t count, struct ccu_mem_info *recvMemList) { 
+    for (size_t i = 0; i < count; ++i) { 
+        memInfoList[i].memVa   = recvMemList[i].mem_va; 
+        memInfoList[i].memSize = recvMemList[i].mem_size; 
+    }
 }
 
 HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memTypeBitmap, struct CcuMemInfo *memInfoList, uint32_t count) 
