@@ -155,7 +155,7 @@ HcclResult HcclThreadAcquireWithConfig(HcclComm comm, CommEngine engine, uint32_
         CHK_PTR_NULL(collComm);
         CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
         CHK_PTR_NULL(engineResMgr);
-        ret = engineResMgr->HcclThreadAcquireWithType(engine, threadNum, config.notifyNumPerThread, type, threads);
+        ret = engineResMgr->HcclThreadAcquireWithConfig(engine, threadNum, config, type, threads);
     } else {
         return HCCL_E_NOT_SUPPORT;
     }

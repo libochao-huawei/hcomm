@@ -624,20 +624,20 @@ HcclResult HcommThreadAllocWithStream(CommEngine engine,
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommThreadAllocWithType(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, const ThreadType type, ThreadHandle *threads) {
+HcclResult HcommThreadAllocWithConfig(CommEngine engine, uint32_t threadNum, const ThreadConfig config, const ThreadType type, ThreadHandle *threads) {
     CHK_PTR_NULL(threads);
 
     HCCL_INFO("[%s]ThreadAcquire begin. need threadNum[%u], notifyPerThread[%u]",
         __func__,
         threadNum,
-        notifyNumPerThread);
+        config.notifyNumPerThread);
     if (threadNum <= 0 || threadNum > hccl::HCOMM_THREADNUM_MAX_NUM) {
         HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.ThreadNum %u.threadNum range (0 , %u]", threadNum, hccl::HCOMM_THREADNUM_MAX_NUM);
         return HCCL_E_PARA;
     }
 
-    if (notifyNumPerThread < 0 || notifyNumPerThread > hccl::HCOMM_NOTIFY_MAX_NUM) {
-        HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.notifyNumPerThread is %u,notifyNumPerThread range [0 , %u]", notifyNumPerThread, hccl::HCOMM_NOTIFY_MAX_NUM);
+    if (config.notifyNumPerThread < 0 || config.notifyNumPerThread > hccl::HCOMM_NOTIFY_MAX_NUM) {
+        HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.notifyNumPerThread is %u,notifyNumPerThread range [0 , %u]", config.notifyNumPerThread, hccl::HCOMM_NOTIFY_MAX_NUM);
         return HCCL_E_PARA;
     }
 
@@ -654,7 +654,7 @@ HcclResult HcommThreadAllocWithType(CommEngine engine, uint32_t threadNum, uint3
             static_cast<int32_t>(notifyLoadType),
             static_cast<int32_t>(streamType),
             type);
-        ret = CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, type, hostHandle);
+        ret = CreateThread(engine, streamType, config.notifyNumPerThread, notifyLoadType, type, hostHandle);
         if (ret != HCCL_SUCCESS ) {
             HCCL_ERROR("[HcommThreadAlloc] Failed to create thread index %u", i);
             if (i != 0) {
@@ -677,7 +677,7 @@ HcclResult HcommThreadAllocWithType(CommEngine engine, uint32_t threadNum, uint3
             hccl::CpuThread* cpuThread = dynamic_cast<hccl::CpuThread*>(hostHandle.get());
             cpuThread->GetThreadEntity(&threadEntity);
             uint32_t threadSize = sizeof(hccl::ThreadEntity) + threadEntity.notifyNum * sizeof(hccl::NotifyEntity);
-            aclrtMalloc(&deviceHandle, threadSize, ACL_MEM_MALLOC_NORMAL_ONLY);
+            aclrtMalloc(&deviceHandle, threadSize, ACL_MEM_MALLOC_NORMAL_ONLY); // TODO: 内存释放
 
             aclrtMemcpy(deviceHandle, threadSize, &threadEntity, threadSize, ACL_MEMCPY_HOST_TO_DEVICE);
             threads[i] = reinterpret_cast<ThreadHandle>(deviceHandle); // 越界风险
@@ -688,7 +688,7 @@ HcclResult HcommThreadAllocWithType(CommEngine engine, uint32_t threadNum, uint3
     }
 
     HCCL_INFO("[HcommThreadAlloc] ThreadAcquire done: engine[%d] threadNum[%u],"
-              "notifyPerThread[%u]", engine, threadNum, notifyNumPerThread);
+              "notifyPerThread[%u]", engine, threadNum, config.notifyNumPerThread);
     return HCCL_SUCCESS;
 }
 

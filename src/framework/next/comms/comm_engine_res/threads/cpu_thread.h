@@ -14,7 +14,6 @@
 #include <vector>
 #include <unordered_map>
 #include "thread.h"
-#include "resource_entities.h"
 #include "acl/acl_rt.h"
 #include "ascend_hal.h"
 #define SVM_REGISTER_FLAG_WITH_ACCESS_VA (1ULL << 0ULL)
@@ -25,7 +24,7 @@ extern drvError_t __attribute__((weak)) halSvmAccess(uint32_t dev_id, uint64_t d
 extern drvError_t __attribute__((weak)) halSvmUnregister(uint32_t dev_id, uint64_t va, uint64_t size, uint64_t flag);
 
 namespace hccl {
-
+constexpr uint32_t MSG_QUEUE_CAPACITY = 256;
 // 循环队列
 class MsgQueue {
 public:
@@ -123,13 +122,24 @@ public:
         // TODO: 补充流程
         return HCCL_SUCCESS;
     };
-    bool empty() {
+    HcclResult empty(bool &isEmpty) {
         uint64_t head, tail;
-        aclrtMemcpy(&head, sizeof(uint64_t), reinterpret_cast<void*>(head_), sizeof(uint64_t), ACL_MEMCPY_DEVICE_TO_HOST);
-        aclrtMemcpy(&tail, sizeof(uint64_t), reinterpret_cast<void*>(tail_), sizeof(uint64_t), ACL_MEMCPY_DEVICE_TO_HOST);
+        aclError ret = aclrtMemcpy(&head, sizeof(uint64_t), reinterpret_cast<void*>(head_), sizeof(uint64_t), ACL_MEMCPY_DEVICE_TO_HOST);
+        if (ret != ACL_ERROR_NONE) {
+            HCCL_ERROR("[MsgQueue::%s] copy head from device failed: %d", __func__, ret);
+            isEmpty = true;
+            return HCCL_E_RUNTIME;
+        }
+        ret = aclrtMemcpy(&tail, sizeof(uint64_t), reinterpret_cast<void*>(tail_), sizeof(uint64_t), ACL_MEMCPY_DEVICE_TO_HOST);
+        if (ret != ACL_ERROR_NONE) {
+            HCCL_ERROR("[MsgQueue::%s] copy tail from device failed: %d", __func__, ret);
+            isEmpty = true;
+            return HCCL_E_RUNTIME;
+        }
         head = head % capacity_;
         tail = tail % capacity_;
-        return (head == tail);
+        isEmpty = (head == tail);
+        return HCCL_SUCCESS;
     };
 
     QueueInfo GetQueueInfo() {
@@ -157,16 +167,20 @@ public:
     ~ServiceScheduler();
     HcclResult Init() {
         // 初始化sq和cq
-        sendQueue_ = std::make_shared<MsgQueue>(1024, 128);
-        completeQueue_ = std::make_shared<MsgQueue>(1024, 128);
+        EXECEPTION_CATCH(
+        sendQueue_ = std::make_shared<MsgQueue>(MSG_QUEUE_CAPACITY, sizeof(ThreadMsgEntity)), return HCCL_E_PTR);
+        EXECEPTION_CATCH(
+        completeQueue_ = std::make_shared<MsgQueue>(MSG_QUEUE_CAPACITY, sizeof(ThreadMsgEntity)), return HCCL_E_PTR);
         return HCCL_SUCCESS;
     };
     HcclResult ServiceRun() {
+        bool isEmpty = false;
         while (true) {
-            if (!sendQueue_->empty()) {
+            CHK_RET(sendQueue_->empty(isEmpty));
+            if (!isEmpty) {
                 ThreadMsgEntity entity{};
-                sendQueue_->pop(entity);
-                executeService(entity.serviceHandle, entity.args, entity.argsSizeByte);
+                CHK_RET(sendQueue_->pop(entity));
+                CHK_RET(executeService(entity.serviceHandle, entity.args, entity.argsSizeByte));
             }
         }
         return HCCL_SUCCESS;
@@ -184,7 +198,7 @@ public:
     HcclResult ServiceRegister(ThreadService serviceCb, ThreadServiceHandle* serviceHandle) {
         CHK_PTR_NULL(serviceHandle);
         if (service2HandleMap_.find(serviceCb) != service2HandleMap_.end()) {
-            HCCL_ERROR("xxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+            HCCL_ERROR("[ServiceScheduler::%s] service already registered", __func__);
             return HCCL_E_AGAIN;
         }
         *serviceHandle = reinterpret_cast<uint64_t>(serviceCb);
@@ -194,7 +208,7 @@ public:
     };
     HcclResult ServiceUnregister(ThreadServiceHandle serviceHandle) {
         if (handle2ServiceMap_.find(serviceHandle) == handle2ServiceMap_.end()) {
-            HCCL_ERROR("not found");
+            HCCL_ERROR("[ServiceScheduler::%s] service handle not found", __func__);
             return HCCL_E_NOT_FOUND;
         }
         auto cb = handle2ServiceMap_[serviceHandle];
@@ -202,7 +216,7 @@ public:
         handle2ServiceMap_.erase(serviceHandle);
         return HCCL_SUCCESS;
     };
-    std::shared_ptr<MsgQueue> GetSendQueue() {
+    std::shared_ptr<MsgQueue>& GetSendQueue() {
         return sendQueue_;
     };
 private:
@@ -216,7 +230,30 @@ private:
 class MemNotify {
 public:
     ~MemNotify() {
-        //TODO: 内存销毁
+        if (!isInit_) {
+            return;
+        }
+        s32 devId = 0;
+        hrtGetDevice(&devId);
+        int64_t connectType = 0;
+        hrtHalGetDeviceInfo(devId, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, &connectType); // ?
+        if (connectType == 1) { // PCIe
+            // 释放notify
+            aclrtFree(&notifyDeviceVa_); // device
+            // 对齐
+            uint64_t va = reinterpret_cast<uint64_t>(notifyDeviceVa_);
+            uint64_t registerVa = (va + (4096ULL - 1ULL)) & ~(4096ULL - 1ULL);
+            int32_t ret = halSvmUnregister(devId, registerVa, sizeof(uint8_t), SVM_REGISTER_FLAG_WITH_ACCESS_VA);
+            if (ret != 0) {
+                HCCL_ERROR("halSvmUnregister failed, ret = %d", ret);
+            }
+        } else {
+            free(notifyHostVa_); // host
+            aclError aclRet = aclrtHostUnregister(notifyHostVa_);
+            if (aclRet != ACL_SUCCESS) {
+                HCCL_ERROR("aclrtHostUnregister failed, ret = %d", aclRet);
+            }
+        }
     };
     HcclResult Record() {
         return HCCL_SUCCESS;
@@ -265,14 +302,14 @@ public:
         hrtHalGetDeviceInfo(devId, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, &connectType); // ?
         if (connectType == 1) { // PCIe
             // 申请notify
-            aclrtMalloc(&notifyDeviceVa_, sizeof(uint8_t), ACL_MEM_MALLOC_HUGE_ONLY); // device
-            // 对齐
-            uint64_t va = static_cast<uint64_t>(sizeof(uint8_t) + 4096ULL);
+            aclrtMalloc(&notifyDeviceVa_, sizeof(uint8_t) + 4096ULL, ACL_MEM_MALLOC_HUGE_ONLY); // device// 对齐
+            uint64_t va = reinterpret_cast<uint64_t>(notifyDeviceVa_);
             uint64_t registerVa = (va + (4096ULL - 1ULL)) & ~(4096ULL - 1ULL);
             uint64_t accessVa;
             int32_t ret = halSvmRegister(devId, registerVa, sizeof(uint8_t), SVM_REGISTER_FLAG_WITH_ACCESS_VA, &accessVa);
             if (ret != 0) {
                 HCCL_ERROR("halSvmRegister failed, ret = %d", ret);
+                aclrtFree(&notifyDeviceVa_);
                 return HCCL_E_INTERNAL;
             }
             notifyDeviceVa_ = reinterpret_cast<void*>(accessVa);
@@ -286,12 +323,14 @@ public:
                 return HCCL_E_INTERNAL;
             }
         }
+        isInit_ = true;
         return HCCL_SUCCESS;
     };
     uint64_t GetIdentifier() {
         return reinterpret_cast<uint64_t>(notifyDeviceVa_);
     };
 private:
+    bool isInit_ = false;
     void* notifyHostVa_{};
     void* notifyDeviceVa_{};
 };
@@ -348,7 +387,7 @@ public:
     HcclResult ServiceRegister(ThreadService serviceCb, ThreadServiceHandle* serviceHandle);
     HcclResult ServiceUnregister(ThreadServiceHandle service);
     HcclResult KernelRun();
-    HcclResult GetThreadEntity(ThreadEntity* threadEntity);
+    HcclResult GetThreadEntity(ThreadEntity* threadEntity) const override;
     MemNotify* GetMemNotify(uint32_t notifyIndex);
     uint32_t GetNotifyNum() const override;
 
@@ -368,37 +407,6 @@ private:
     ThreadServiceHandle recordServiceHandle_;
     ThreadServiceHandle waitServiceHandle_;
 };
-
-__attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_t args)
-{
-    struct DpuKernelLaunchParam {
-        void*       cpuThread;
-        int32_t    deviceId;
-    };
-
-    HCCL_INFO("[%s] Launch Dpu Kernel: 0x%lx", __func__, args);
-    if (args == 0) {
-        HCCL_ERROR("[%s] args is null.", __func__);
-        return HCCL_E_PARA;
-    }
-
-    // 解析参数信息
-    DpuKernelLaunchParam *params = reinterpret_cast<DpuKernelLaunchParam *>(args);
-
-    // 实例化
-    CpuThread* cpuThread = static_cast<CpuThread*>(params->cpuThread);
-
-    aclError ret = aclrtSetDevice(params->deviceId);
-    if (ret != ACL_SUCCESS) {
-        HCCL_ERROR("[%s] set device fail. DeviceId: %d.", __func__, params->deviceId);
-        return HCCL_E_RUNTIME;
-    }
-
-    // Run
-    HCCL_INFO("[%s] start to TaskRun", __func__);
-    CHK_RET(cpuThread->KernelRun());
-    return HCCL_SUCCESS;
-}
 
 }  // namespace hccl
 
