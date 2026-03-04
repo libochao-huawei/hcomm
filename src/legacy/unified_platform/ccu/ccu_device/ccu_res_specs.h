@@ -53,6 +53,7 @@ struct CcuBlockResStrategy {
 
 enum CcuMemTypeBitmap : uint64_t;
 
+// 当前需要申请权限的内存为18块
 inline const std::array<CcuMemTypeBitmap, 18>& GetMemTypeVector() {
     static const std::array<CcuMemTypeBitmap, 18> kMemTypeArray = {{
         CCU_MEMTYPE_INS,
