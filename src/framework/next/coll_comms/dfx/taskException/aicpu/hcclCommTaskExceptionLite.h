@@ -21,7 +21,7 @@ namespace hcomm {
 class HcclCommTaskExceptionLite : public Hccl::DaemonFunc {
 public:
     static HcclCommTaskExceptionLite &GetInstance();
-    HcclResult Init(u32 deviceId);
+    HcclResult Init(u32 devId);
     void Call() override;
 
 private:
@@ -32,13 +32,18 @@ private:
     HcclResult HandleExceptionCqe();
     HcclResult GetThreadCqe(hccl::Thread* thread, rtLogicCqReport_t &cqeException, CqeStatus &cqeStatus);
     HcclResult GenerateErrorMessageReport(CollCommAicpu *aicpuComm, const Hccl::TaskInfo* taskInfo,
-        Hccl::ErrorMessageReport &errMsgInfo, const rtLogicCqReport_t &exceptionInfo);
+        const rtLogicCqReport_t &exceptionInfo, Hccl::ErrorMessageReport &errMsgInfo);
     void GetErrMsgInfo(const Hccl::TaskInfo* taskInfo, Hccl::ErrorMessageReport &errMsgInfo,
         const rtLogicCqReport_t &exceptionInfo);
+    HcclResult SendTaskExceptionByMBox(const u32 notifyId, const u32 tsId, const rtLogicCqReport_t &exceptionInfo);
+    uint16_t SwitchUBCqeErrCodeToTsErrCode(u32 cqeErrCode);
+    uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode);
+    HcclResult PrintTaskContextInfo(u32 sqId, u32 taskId);
+    std::string GetGroupRankInfo(const Hccl::TaskInfo& taskInfo);
 
     bool initFlag_{false};
     bool stopCall_{false};
-    u32 deviceId_{INVALID_UINT};
+    u32 devId_{INVALID_UINT};
     Hccl::MirrorTaskManager* mirrorTaskManager_{nullptr};  // 使用原始指针，不管理生命周期
 };
 
