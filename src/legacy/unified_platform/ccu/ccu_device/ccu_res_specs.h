@@ -53,8 +53,8 @@ struct CcuBlockResStrategy {
 
 enum CcuMemTypeBitmap : uint64_t;
 
-inline std::vector<CcuMemTypeBitmap> GetMemTypeVector() {
-    return {
+inline const std::array<CcuMemTypeBitmap, 18>& GetMemTypeVector() {
+    static const std::array<CcuMemTypeBitmap, 18> kMemTypeArray = {{
         CCU_MEMTYPE_INS,
         CCU_MEMTYPE_GSA,
         CCU_MEMTYPE_XN,
@@ -73,11 +73,12 @@ inline std::vector<CcuMemTypeBitmap> GetMemTypeVector() {
         CCU_MEMTYPE_MS_BLOCK1,
         CCU_MEMTYPE_MS_BLOCK2,
         CCU_MEMTYPE_MS_BLOCK3
-    };
+    }};
+    return kMemTypeArray;
 }
 
 inline uint64_t GetCombinedMemTypeBitmap() {
-    auto memTypes = GetMemTypeVector();
+    const auto& memTypes memTypes = GetMemTypeVector();
     uint64_t combined = 0;
     
     for (const auto& memType : memTypes) {
@@ -111,7 +112,7 @@ struct CcuResSpecInfo {
 
     // 内存信息
     uint32_t memNum{0};
-    struct CcuMemInfo memInfoList[CCU_MEM_INFO_SIZE];
+    std::array<CcuMemInfo, CCU_MEM_INFO_SIZE> memInfoList{};
 };
 
 class CcuResSpecifications {

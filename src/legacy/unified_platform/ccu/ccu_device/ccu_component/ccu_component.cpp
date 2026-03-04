@@ -241,9 +241,9 @@ void CcuComponent::CreateCcuRmaBuffer()
         CHECK_NULLPTR(rdmaHandle, StringFormat("[CcuComponent][%s] failed, rdmaHandle is nullptr, "
             "devLogicId[%d] dieId[%u]", __func__, devLogicId, dieId));
 
-        struct CcuMemInfo memInfoList[CCU_MEM_INFO_SIZE];
+        std::array<CcuMemInfo, CCU_MEM_INFO_SIZE> memInfoList{};
         uint32_t count{0};
-        CHK_RET(ccuResSpecs.GetCcuMemInfoList(dieId, memInfoList, count));
+        CHK_RET(ccuResSpecs.GetCcuMemInfoList(dieId, memInfoList.data(), count));
         HCCL_ERROR("count %d", count);
         for (uint32_t i = 0; i < count; i++) {
             HCCL_ERROR("memInfoList[i].memVa %lld memInfoList[i].memSize %lld ccuResAddr %lld", memInfoList[i].memVa, memInfoList[i].memSize, ccuResAddr);
@@ -252,7 +252,7 @@ void CcuComponent::CreateCcuRmaBuffer()
                 ccuRmaBufferMap.emplace(dieId, std::make_unique<LocalUbRmaBuffer>(ccuBuffer, rdmaHandle));
             } else {
                 const auto ccuBuffer = std::make_shared<Buffer>(memInfoList[i].memVa, memInfoList[i].memSize);
-                additionalCcuRmaBufferMap.emplace(i, std::make_unique<LocalUbRmaBuffer>(ccuBuffer, rdmaHandle));
+                additionalCcuRmaBufferMap.emplace_back(std::make_unique<LocalUbRmaBuffer>(ccuBuffer, rdmaHandle));
             }
         }
         const auto ccuBuffer = std::make_shared<Buffer>(ccuResAddr, 72*1024*1024);

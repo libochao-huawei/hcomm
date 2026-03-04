@@ -152,7 +152,7 @@ HcclResult CcuResSpecifications::Init_()
                 continue;
             }
             resSpecs[dieId] = CheckResSpecifications(devPhyId, dieId, ccuVersion);
-            HrtGetCcuMemInfo(tlvHandle, dieId, memTypeBitmap, resSpecs[dieId].memInfoList, count);
+            HrtGetCcuMemInfo(tlvHandle, dieId, memTypeBitmap, resSpecs[dieId].memInfoList.data(), count);
         }
         HcclMainboardId hcclMainboardId;
         CHK_RET(HrtGetMainboardId(devLogicId, hcclMainboardId));
@@ -187,9 +187,8 @@ HcclResult CcuResSpecifications::GetCcuMemInfoList(const uint8_t dieId, struct C
 {
     CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
     count = static_cast<uint32_t>(GetMemTypeVector().size());
-    for (uint32_t i = 0; i < count; ++i) {
-        memInfoList[i] = resSpecs[dieId].memInfoList[i];
-    }
+    // 使用 std::copy 将 std::array 的内容拷贝到 C 风格指针数组
+    std::copy_n(resSpecs[dieId].memInfoList.begin(), count, memInfoList);
 
     return HcclResult::HCCL_SUCCESS;
 }
