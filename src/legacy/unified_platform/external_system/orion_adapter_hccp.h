@@ -49,7 +49,7 @@ constexpr u32 URMA_TOKEN_ID_RIGHT_SHIFT = 8;
 // HCCL 默认无效端口号
 constexpr u32 HCCL_INVALID_PORT = 65536;
 
-constexpr uint8_t UB_ERR_TIMEOUT_8S = 16; // errTimeout 16-23: 芯片配置b10, 超时8s
+constexpr u32 DEFAULT_UB_ERR_TIMEOUT_8S = 16; // errTimeout 16-23: 芯片配置b10, 超时8s
 
 using RdmaHandle = void *;
 using QpHandle   = void *;

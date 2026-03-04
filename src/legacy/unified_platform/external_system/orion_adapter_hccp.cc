@@ -1287,9 +1287,9 @@ static struct QpCreateAttr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
        16-23代表芯片配置值b10:8s
        24-31代表芯片配置值b11:64s
     */
-    attr.ub.errTimeout       = UB_ERR_TIMEOUT_8S;
+    attr.ub.errTimeout       = DEFAULT_UB_ERR_TIMEOUT_8S;
     // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
-    attr.ub.priority          = 2;
+    attr.ub.priority         = 2;
     attr.ub.rnrRetry         = RNR_RETRY;
     attr.ub.flag.bs.shareJfr = 1;
     attr.ub.jettyId          = in.jettyId;
