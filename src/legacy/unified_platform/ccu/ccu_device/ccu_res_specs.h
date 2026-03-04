@@ -78,7 +78,7 @@ inline const std::array<CcuMemTypeBitmap, 18>& GetMemTypeVector() {
 }
 
 inline uint64_t GetCombinedMemTypeBitmap() {
-    const auto& memTypes memTypes = GetMemTypeVector();
+    const auto& memTypes = GetMemTypeVector();
     uint64_t combined = 0;
     
     for (const auto& memType : memTypes) {

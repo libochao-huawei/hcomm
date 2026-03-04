@@ -37,6 +37,9 @@ constexpr uint32_t LOOP_CHANNEL_WAIT_TIMEOUT_MS = 10000;
 // 环回获取TP信息间隔1ms
 constexpr u32 ONE_MILLISECOND_OF_USLEEP         = 1000;
 
+// ccu资源空间的内存总大小
+constexpr u32 CCU_MEM_LOCAL_SIZE = 72 * 1024 * 1024;
+
 // 清理CKE批量申请大小
 constexpr u32 MAX_CKE_DATA_ARRAY_SIZE = 8;
 
@@ -255,7 +258,8 @@ void CcuComponent::CreateCcuRmaBuffer()
                 additionalCcuRmaBufferMap.emplace_back(std::make_unique<LocalUbRmaBuffer>(ccuBuffer, rdmaHandle));
             }
         }
-        const auto ccuBuffer = std::make_shared<Buffer>(ccuResAddr, 72*1024*1024);
+        const auto ccuBuffer = std::make_shared<Buffer>(ccuResAddr, CCU_MEM_LOCAL_SIZE);
+        // 本端专用的buffer，具有整块内存的权限
         localCcuRmaBufferMap.emplace(dieId, std::make_unique<LocalUbRmaBuffer>(ccuBuffer, rdmaHandle));
     }
 }

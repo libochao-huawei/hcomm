@@ -2368,7 +2368,6 @@ void HrtSetMemInfoList(struct CcuMemInfo *memInfoList, uint32_t count, struct cc
         memInfoList[i].memVa   = recvMemList[i].mem_va;
         memInfoList[i].memSize = recvMemList[i].mem_size;
     }
-    return HCCL_SUCCESS;
 }
 
 HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memTypeBitmap, struct CcuMemInfo *memInfoList, uint32_t count) 
