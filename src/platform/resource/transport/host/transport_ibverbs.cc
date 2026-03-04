@@ -583,7 +583,7 @@ HcclResult TransportIbverbs::CreateOneQp(
     // 判断是否为NORMALQP需要使用qpMode_; hostnic场景的qpmode也是NORMALQP
     if (useAicpu || qpMode_ == QPMode::NORMAL) {
         bool isWorkFlowLib = (workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
-        CHK_RET(ConstructQpAttrs(qpMode, attrs, machinePara_.queueDepthAttr, isWorkFlowLib));
+        CHK_RET(ConstructQpAttrs(qpMode, attrs, machinePara_.queueDepthAttr, isWorkFlowLib, useAicpu));
         // A3 aicpu图模式使用单个qp, qp深度为socket数量*128
         bool isAicpuLib = machinePara_.isAicpuModeEn &&
                             (machinePara_.deviceType == DevType::DEV_TYPE_910_93) &&
@@ -607,7 +607,7 @@ HcclResult TransportIbverbs::CreateOneQp(
         HCCL_ERROR("qpsPerConnection[%u] is set but qpMode[%d] is not supported", qpsPerConnection, qpMode);
         return HCCL_E_PARA;
     } else {
-        CHK_RET(ConstructQpAttrs(qpMode, attrs, machinePara_.queueDepthAttr));
+        CHK_RET(ConstructQpAttrs(qpMode, attrs, machinePara_.queueDepthAttr, false, useAicpu));
         if (UseMultiQp()) {
             MultiQpAdjustQpCapacity(attrs);
         }
