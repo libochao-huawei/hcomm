@@ -1405,8 +1405,8 @@ int RsUbCtxRmemImport(struct RsUbDevCb *devCb, struct MemImportAttrT *memAttr,
     RsListAddTail(&remSegCb->list, &devCb->rsegList);
     RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
 
-    hccp_warn("@@@ RsUbCtxRmemImport remSegCb->devCb->phyId: %lu", remSegCb->devCb->phyId);
-    hccp_warn("@@@ RsUbCtxRmemImport remSegCb->devCb->index: %lu", remSegCb->devCb->index);
+    hccp_warn("@@@ RsUbCtxRmemImport devCb->phyId: %lu", devCb->phyId);
+    hccp_warn("@@@ RsUbCtxRmemImport devCb->index: %lu", devCb->index);
     hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segment->seg.ubva.va: %lu", remSegCb->segment->seg.ubva.va);
     hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segment->seg.len: %lu", remSegCb->segment->seg.len);
     hccp_warn("@@@ RsUbCtxRmemImport remSegCb->segment->seg.token_id: %lu", remSegCb->segment->seg.token_id);
