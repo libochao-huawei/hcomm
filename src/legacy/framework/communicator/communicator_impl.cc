@@ -62,6 +62,7 @@
 
 namespace Hccl {
 constexpr u64 HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE = (1 * 1024 * 1024); // 指定bufferSize的单位为MB
+constexpr u64 HCCL_AIV_OFFLOAD_TAG_BUFFER_SIZE = (4 * 1024 * 1024); // 指定bufferSize的单位为MB
 constexpr u64 HCCL_MC2_ON_AICPU_FIXED_CALC_BUFFER_SIZE = 1 * HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE;  // MC2适配AICPU，额外需要1M
 std::atomic<u32> Hccl::CommunicatorImpl::globalIndex(0);
 constexpr u64 HCCL_CCL_AIV_TAG_BUFFER_SIZE = 2; // 指定存放aiv tag的大小为2M
@@ -69,6 +70,10 @@ constexpr u32 HCCL_CCL_AIV_CLEAR_STEP_MAX = 1000; // aiv tag算子下发时++，
 constexpr u32      BASE_BIT             = 1; // 用于左移设置二进制数的特定位
 constexpr u64 SHARE_HBM_MEMORY_SIZE = (100 * 1024 * 1024);
 constexpr const char* DPUTAG = "DPUTAG";
+constexpr u64 INDEPENDENT_OP_BUFFER_SIZE_TIMES = 2; //自定义算子buffer倍数
+constexpr uint8_t DEVICE_SIGNAL_SECOND = 2;
+constexpr uint8_t DEVICE_SIGNAL_THIRD = 3;
+
 struct DpuKernelLaunchParam {
     u64         memorySize;
     void       *shareHBM;
@@ -183,7 +188,7 @@ std::unordered_set<IpAddress> CommunicatorImpl::GetHostIpFromRankGraph()
     std::vector<std::shared_ptr<NetInstance::ConnInterface>> interfaces = rankGraph->GetPeer(myRank)->GetIfaces();
     for (auto interface : interfaces) {
         // 找到所有在host上和LinkProtocol有rdma的ip进行注册
-        if (interface->GetPos() == AddrPosition::HOST && interface->GetLinkProtocols().count(LinkProtocol::ROCE)) {
+        if (interface->GetPos() == AddrPosition::HOST && interface->GetLinkProtocols().count(LinkProtocol::ROCE) != 0) {
             IpAddress ip = interface->GetAddr();
             ips.insert(ip);
         }
@@ -627,10 +632,10 @@ HcclResult CommunicatorImpl::SetAivControledCoreNum(bool isAiv)
             HCCL_ERROR("[CommunicatorImpl::SetAivControledCoreNum] aclrtGetResInCurrentThread failed, ret=[%d]", acl_ret),
             HCCL_E_PARA);
         CHK_PRT_RET(numBlocksLimit < 1,
-            HCCL_ERROR("[CommunicatorImpl::SetAivControledCoreNum] block num less than 1, block num[%d]", numBlocksLimit),
+            HCCL_ERROR("[CommunicatorImpl::SetAivControledCoreNum] block num less than 1, block num[%u]", numBlocksLimit),
             HCCL_E_PARA);
         currentCollOperator->numBlocksLimit = numBlocksLimit;
-        HCCL_INFO("[CommunicatorImpl::SetAivControledCoreNum] Aiv core limit is [%d].", numBlocksLimit);
+        HCCL_INFO("[CommunicatorImpl::SetAivControledCoreNum] Aiv core limit is [%u].", numBlocksLimit);
     }
     return HCCL_SUCCESS;
 }
@@ -905,7 +910,7 @@ void CommunicatorImpl::RegisterOffloadScratchBuffer(const std::string &opTag, vo
     auto scratchBuffer = DevBuffer::Create(reinterpret_cast<uintptr_t>(scratchMemPtr), requiredScratchMemSize);
     if(scratchBuffer){
         offloadScrachBufferMap[opTag] = scratchBuffer;
-        HCCL_RUN_INFO("[CommunicatorImpl] offloadScratchBuffer register, opTag[%s], offloadScrachBufferAddr[%p], "
+        HCCL_RUN_INFO("[CommunicatorImpl] offloadScratchBuffer register, opTag[%s], offloadScrachBufferAddr[%llu], "
                       "offloadScrachBufferBufSize[%llu]M",
                       opTag.c_str(), scratchBuffer->GetAddr(),
                       scratchBuffer->GetSize() / HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE);
@@ -967,7 +972,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
 
         if (isAiv) {
             currentCollOperator->numBlocksLimit = aivCoreLimit;
-            HCCL_INFO("[CommunicatorImpl::LoadOffloadCollOp] Aiv core limit is [%d].", aivCoreLimit);
+            HCCL_INFO("[CommunicatorImpl::LoadOffloadCollOp] Aiv core limit is [%u].", aivCoreLimit);
         }
 
         auto info = StringFormat("Entry-Hccl(opType[%s]): group[%s], rankInGroup[%d], rankSizeInGroup[%u], "
@@ -1285,7 +1290,7 @@ void CommunicatorImpl::InitRankGraph(const string &ranktableM)
     InitRankGraph(rankTableInfo);
 }
 
-std::string CommunicatorImpl::GetTopoFilePath()
+std::string CommunicatorImpl::GetTopoFilePath() const
 {
     HCCL_INFO("[CommunicatorImpl::%s] start.", __func__);
 
@@ -1324,7 +1329,7 @@ void CommunicatorImpl::InitRankGraph(const RankTableInfo &ranktable)
     }
 }
 
-HcclResult CommunicatorImpl::InitDeviceListenPort(u32 &linstenPort)
+HcclResult CommunicatorImpl::InitDeviceListenPort(u32 &linstenPort) const
 {
     std::vector<LinkData> fullLinks = GetFullMeshLinks();
     GetSocketManager().ServerInitAll(fullLinks, linstenPort);
@@ -1355,7 +1360,7 @@ void CommunicatorImpl::InitDataBufferManager()
     // 如果是自定义算子流程，cclBufferSize的大小为2倍
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
     if (indOp != nullptr && strcmp(indOp, "1") == 0) {
-        scratchBufSize = scratchBufSize * 2;
+        scratchBufSize = scratchBufSize * INDEPENDENT_OP_BUFFER_SIZE_TIMES;
     }
     cclBufferSize = scratchBufSize;
 
@@ -1363,10 +1368,10 @@ void CommunicatorImpl::InitDataBufferManager()
     scratchBufSize += HCCL_MC2_ON_AICPU_FIXED_CALC_BUFFER_SIZE;
 
     if (rankSize > 1) {
-        aivOffloadTagBuffer = std::move(DevBuffer::CreateHugePageBuf(4 * 1024 * 1024));
+        aivOffloadTagBuffer = std::move(DevBuffer::CreateHugePageBuf(HCCL_AIV_OFFLOAD_TAG_BUFFER_SIZE));
         cclBuffer = std::move(DevBuffer::CreateHugePageBuf(scratchBufSize));
         HCCL_RUN_INFO(
-            "[CommunicatorImpl][InitDataBufferManager] cclBuffer create, commId[%s], addr[%p], size[%llu]M",
+            "[CommunicatorImpl][InitDataBufferManager] cclBuffer create, commId[%s], addr[%llu], size[%llu]M",
             GetId().c_str(), cclBuffer->GetAddr(), cclBufferSize / HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE);
 
         u64 aivTagBufSize = HCCL_CCL_AIV_TAG_BUFFER_SIZE * HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE;
@@ -2425,7 +2430,7 @@ HcclResult CommunicatorImpl::WaitDpuKernelThreadTerminate()
         return HCCL_E_MEMORY;
     }
     uint8_t *dstPtr = reinterpret_cast<uint8_t *>(shMem->GetAddr());
-    uint8_t  flag   = 2;
+    uint8_t  flag   = DEVICE_SIGNAL_SECOND;
     auto     ret = aclrtMemcpy(dstPtr, sizeof(flag), &flag, sizeof(flag), aclrtMemcpyKind::ACL_MEMCPY_HOST_TO_DEVICE);
     if (ret != ACL_SUCCESS) {
         HCCL_ERROR("Terminate TaskRun Fail");
@@ -2444,7 +2449,7 @@ HcclResult CommunicatorImpl::WaitDpuKernelThreadTerminate()
             HCCL_ERROR("Read Terminate TaskRun Signal Fail");
             return HCCL_E_RUNTIME;
         }
-    } while (flag != 3);
+    } while (flag != DEVICE_SIGNAL_THIRD);
     return HCCL_SUCCESS;
 }
 
@@ -3079,7 +3084,7 @@ bool CommunicatorImpl::IsNeedDpu()
     return false;
 }
 
-void CommunicatorImpl::InitHccpPeer()
+void CommunicatorImpl::InitHccpPeer() const
 {
     RaSocketSetWhiteListStatus(1); // PEER模式需要手动开启白名单模式
     HccpPeerManager::GetInstance().Init(devLogicId);
@@ -3361,7 +3366,7 @@ HcclResult CommunicatorImpl::GetInstSizeListByNetLayer(uint32_t netLayer, uint32
         instSizeVec.clear();
         auto ret = rankGraph->GetNetInstanceList(netLayer, instSizeVec, size);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[CommunicatorImpl::GetInstSizeListByNetLayer] Failed to get instSzie[%u] at netLayer[%u]",
+            HCCL_ERROR("[CommunicatorImpl::GetInstSizeListByNetLayer] Failed to get instSzie[%p] at netLayer[%u]",
                        listSize, netLayer);
             return ret;
         }
@@ -3541,14 +3546,14 @@ HcclResult CommunicatorImpl::GetTopoType(uint32_t netLayer, uint32_t topoInstId,
         auto currNetType = rankGraph->GetNetType(netLayer);
         if (currNetType != NetType::TOPO_FILE_DESC) {
             HCCL_ERROR(
-                "[CommunicatorImpl::GetTopoInstsByLayer] Only support TOPO_FILE_DESC netType ,current netType is [%d]",
+                "[CommunicatorImpl::GetTopoInstsByLayer] Only support TOPO_FILE_DESC netType, current netType is [%d]",
                 currNetType);
             return HCCL_E_PARA;
         }
         Hccl::TopoType type;
         HcclResult ret = rankGraph->GetTopoType(netLayer, topoInstId, type);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[CommunicatorImpl::GetTopoType] Failed to get topo type at netLayer [%u] ret=%d", ret);
+            HCCL_ERROR("[CommunicatorImpl::GetTopoType] Failed to get topo type at netLayer [%u] ret=%d", netLayer, ret);
             return ret;
         }
         static const std::unordered_map<Hccl::TopoType, CommTopo> topoTypeMap = {
@@ -3582,14 +3587,14 @@ HcclResult CommunicatorImpl::GetRanksByTopoInst(uint32_t netLayer, uint32_t topo
         auto currNetType = rankGraph->GetNetType(netLayer);
         if (currNetType != NetType::TOPO_FILE_DESC) {
             HCCL_ERROR(
-                    "[CommunicatorImpl::GetTopoInstsByLayer] Only support TOPO_FILE_DESC netType ,current netType is [%d]",
+                    "[CommunicatorImpl::GetTopoInstsByLayer] Only support TOPO_FILE_DESC netType, current netType is [%d]",
                     currNetType);
             return HCCL_E_PARA;
         }
         u32  num = 0;
         auto ret = rankGraph->GetRanksByTopoInst(netLayer, topoInstId, ranksVec, num);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[CommunicatorImpl::GetRanksByTopoInst] Failed to get topo type at netLayer [%u] ret=%d", ret);
+            HCCL_ERROR("[CommunicatorImpl::GetRanksByTopoInst] Failed to get topo type at netLayer [%u] ret=%d", netLayer, ret);
             return ret;
         }
         *ranks   = ranksVec.data();
@@ -3631,7 +3636,7 @@ HcclResult CommunicatorImpl::GetEndpointNum(uint32_t layer, uint32_t topoInstId,
     CHK_PTR_NULL(rankGraph);
     HcclResult ret = rankGraph->GetEndpointNum(layer, topoInstId, num);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::GetEndpointNum] Faild to get endpoint num at netLayer [%u] with topoInstId", layer, topoInstId);
+        HCCL_ERROR("[CommunicatorImpl::GetEndpointNum] Faild to get endpoint num at netLayer [%u] with topoInstId[%u]", layer, topoInstId);
         return ret;
     }
     return HCCL_SUCCESS;
@@ -3642,7 +3647,7 @@ HcclResult CommunicatorImpl::GetEndpointDesc(uint32_t layer, uint32_t topoInstId
     CHK_PTR_NULL(rankGraph);
     HcclResult ret = rankGraph->GetEndpointDesc(layer, topoInstId, descNum, endpointDesc);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::GetEndpointDesc] Failed to get endpoint desc at netLayer [%u] with descNum [%u]", layer, descNum);
+        HCCL_ERROR("[CommunicatorImpl::GetEndpointDesc] Failed to get endpoint desc at netLayer [%u] with descNum [%p]", layer, descNum);
         return ret;
     }
     return HCCL_SUCCESS;
@@ -3715,7 +3720,7 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
             = *(reinterpret_cast<const Mc2CcTilingInner *>(reinterpret_cast<const uint8_t *>(mc2TilingPtr) + offset));
         accelerator = commConfig.communicationEngine;
  
-        HCCL_INFO("[CommunicatorImpl::%s] tilingAccelerator[%d].", __func__, accelerator);
+        HCCL_INFO("[CommunicatorImpl::%s] tilingAccelerator[%u].", __func__, accelerator);
     }
  
     HcclAccelerator hcclAccelerator = HcclAccelerator::DEFAULT;

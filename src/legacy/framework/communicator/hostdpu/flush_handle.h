@@ -30,9 +30,9 @@ public:
     HcclResult Destroy();
 
     // 成员变量
-    MrInfoT        loopBackQpMrRemoteInfo;
-    MrInfoT        loopBackQpMrLocalInfo;
-    LoopbackQpPair loopBackQpParam;
+    MrInfoT        loopBackQpMrRemoteInfo = {};
+    MrInfoT        loopBackQpMrLocalInfo = {};
+    LoopbackQpPair loopBackQpParam = {};
 
 private:
     bool           flushIsInitialied{false};
@@ -44,7 +44,7 @@ private:
     RdmaHandle     rdmaHandle{nullptr};
 
     // 初始化方法
-    HcclResult GetRdmaHandle(IpAddress ip, u32 devPhyId, void **rdmaHandle);
+    HcclResult GetRdmaHandle(IpAddress ip, u32 devPhyId, void **rdmaHandle) const;
     HcclResult AllocateDeviceMemory();
     HcclResult AllocateHostMemory();
     HcclResult CreateLoopbackQp();
@@ -52,7 +52,7 @@ private:
     HcclResult RegisterRemoteMr();
 
     // 销毁方法
-    HcclResult DeregisterMr(MrHandle &mrHandle, std::string logTag);
+    HcclResult DeregisterMr(MrHandle &mrHandle, std::string logTag) const;
     HcclResult DestroyLoopbackQp();
     HcclResult FreeHostMemory();
     HcclResult FreeDeviceMemory();

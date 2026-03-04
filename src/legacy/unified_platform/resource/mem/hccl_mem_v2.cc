@@ -86,8 +86,8 @@ HcclResult HcclMemDeregV2(const HcclBuf *buf)
 HcclResult HcclMemExportV2(HcclBuf *buf, char **outDesc, uint64_t *outDescLen)
 {
     if (buf == nullptr || buf->handle == nullptr || outDesc == nullptr || outDescLen == nullptr) {
-        HCCL_ERROR("[%s] buf[%p] or hanele[%p] or outDesc[%p] or outDescLen[%p] is null",
-            __func__, buf->handle, buf, outDesc, outDescLen);
+        HCCL_ERROR("[%s] buf[%p] or buf->hanele or outDesc[%p] or outDescLen[%p] is null",
+            __func__, buf, outDesc, outDescLen);
         return HCCL_E_PTR;
     }
     HCCL_INFO("[%s] Begin, addr[%p], size[%llu], handle[%p]", __func__, buf->addr, buf->len, buf->handle);
@@ -158,7 +158,7 @@ HcclResult HcclMemImportV2(const char *description, uint64_t descLen, bool isRem
 HcclResult HcclMemCloseV2(HcclBuf *buf)
 {
     if (buf == nullptr || buf->handle == nullptr) {
-        HCCL_ERROR("[%s] buf[%p] or buf->handle[%p] is null", __func__,  buf, buf->handle);
+        HCCL_ERROR("[%s] buf[%p] or buf->handle is null", __func__,  buf);
         return HCCL_E_PTR;
     }
     HCCL_INFO("[%s] Begin, addr[%p], size[%llu], handle[%p]", __func__, buf->addr, buf->len, buf->handle);
