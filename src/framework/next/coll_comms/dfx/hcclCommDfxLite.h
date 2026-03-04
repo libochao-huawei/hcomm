@@ -1,11 +1,3 @@
-/*
- * @Author: c15029001705 caiyifan2@huawei.com
- * @Date: 2026-03-03 10:53:53
- * @LastEditors: c15029001705 caiyifan2@huawei.com
- * @LastEditTime: 2026-03-03 21:18:43
- * @FilePath: \hcomm_profiling\src\framework\next\coll_comms\dfx\hcclCommDfxLite.h
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
@@ -17,7 +9,7 @@
  */
 #include "mirror_task_manager.h"
 #include "hcclCommProfilingLite.h"
-
+#include "read_write_lock.h"
 
 namespace hccl {
 class HcclCommDfxLite {
@@ -29,7 +21,7 @@ public:
     void Init(u32 deviceId);
     
     // 注册回调到单例
-    void AddTaskInfoCallback(u32 streamId, u32 taskId, const TaskParam &taskParam, u64 handle);
+    void AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle);
     
     // 获取MirrorTaskManager
     Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
@@ -43,9 +35,11 @@ public:
     // 在channelRemoteRankId_表中对remoteRankId进行查找
     static HcclResult GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId);
 private:
-    std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;  // 使用原始指针，不管理生命周期
+    std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_; 
     std::unique_ptr<HcclCommProfilingLite> profilingImpl_;
-    std::unordered_map<std::string,std::unordered_map<u64, u32 remoteRankId> > channelRemoteRankIdLite_;
+    std::unordered_map<std::string,std::unordered_map<u64, u32> > channelRemoteRankIdLite_;
 };
+    static ReadWriteLockBase baseLock_; // 基类锁成员
+    static ReadWriteLock rwLock_; // 读写锁
 
 }

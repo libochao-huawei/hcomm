@@ -22,7 +22,7 @@ typedef struct
 class HcclCommProfilingLite {
 public:
     // 构造函数
-    explicit HcclCommProfilingLite(DevId deviceId);
+    HcclCommProfilingLite(Hccl::DevId deviceId);
     
     // 上报所有任务
     void ReportAllTasks();
@@ -38,7 +38,7 @@ public:
     Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
     
 private:
-    Hccl::MirrorTaskManager* mirrorTaskManager_;
+    std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;
     std::unique_ptr<Hccl::ProfilingReporterLite> profilingReporterLite_;
 };
 }
