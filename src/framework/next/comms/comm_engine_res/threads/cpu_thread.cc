@@ -61,7 +61,7 @@ HcclResult CpuThread::PrepareDpuKernelResource(aclrtFuncHandle &funcHandle)
     }
 
     // 查找核函数
-    if (aclrtBinaryGetFunction(binHandle, "RunDpuRpcSrvLaunch", &funcHandle) != ACL_SUCCESS) {
+    if (aclrtBinaryGetFunction(binHandle, "RunDpuRpcSrvLaunchNew", &funcHandle) != ACL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::%s] Get Function Failed", __func__);
         return HCCL_E_INTERNAL;
     }
@@ -170,8 +170,9 @@ HcclResult CpuThread::KernelRun()
     return serviceScheduler_->ServiceRun();
 }
 
-HcclResult CpuThread::GetThreadEntity(ThreadEntity* threadEntity)
+HcclResult CpuThread::GetThreadEntity(ThreadEntity* threadEntity) const
 {
+    CHK_PTR_NULL(threadEntity);
     threadEntity->type = THREAD_TYPE_CPU;
     threadEntity->engine = COMM_ENGINE_AICPU;
     threadEntity->cpuRes.sendQueue = serviceScheduler_->GetSendQueue()->GetQueueInfo();
