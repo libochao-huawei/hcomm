@@ -704,15 +704,15 @@ void GetTaskParam(TaskParam &taskParam, const ErrorMessageReport &errorMessage) 
         taskParam.taskPara.Reduce.notifyValue = errorMessage.notifyValue;
         taskParam.taskPara.Reduce.src = reinterpret_cast<void *>(errorMessage.srcAddr);
  	    taskParam.taskPara.Reduce.dst = reinterpret_cast<void *>(errorMessage.dstAddr);
- 	    taskParam.taskPara.Reduce.linkType = errMsgInfo.linkType;
- 	    taskParam.taskPara.Reduce.size = errMsgInfo.size;
+ 	    taskParam.taskPara.Reduce.linkType = errorMessage.linkType;
+ 	    taskParam.taskPara.Reduce.size = errorMessage.size;
     } else if (errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE || errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY) {
         taskParam.taskPara.DMA.notifyID = errorMessage.notifyId;
         taskParam.taskPara.DMA.notifyValue = errorMessage.notifyValue;
         taskParam.taskPara.DMA.src = reinterpret_cast<void *>(errorMessage.srcAddr);
  	    taskParam.taskPara.DMA.dst = reinterpret_cast<void *>(errorMessage.dstAddr);
- 	    taskParam.taskPara.DMA.linkType = errMsgInfo.linkType;
- 	    taskParam.taskPara.DMA.size = errMsgInfo.size;
+ 	    taskParam.taskPara.DMA.linkType = errorMessage.linkType;
+ 	    taskParam.taskPara.DMA.size = errorMessage.size;
     }
 }
 
