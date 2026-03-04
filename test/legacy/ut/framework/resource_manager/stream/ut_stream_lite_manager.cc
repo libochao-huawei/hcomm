@@ -25,6 +25,7 @@
 #include "mem_transport_lite.h"
 #include "mem_transport_callback.h"
 #include "rdma_handle_manager.h"
+#include "dev_buffer.h"
 #undef private
 #undef protected
 #include "null_ptr_exception.h"
