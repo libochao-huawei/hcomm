@@ -36,7 +36,7 @@ using namespace hccl;
  */
 
 const uint32_t HCCL_CHANNEL_VERSION_ONE = 1;
-HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, HcclComm comm)
+HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal)
 {
     if (channelDesc.header.size < channelDescFinal.header.size) {
         // 需要前向兼容HcclChannelDesc，末尾部分字段不支持处理
@@ -149,7 +149,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
     for (uint32_t idx = 0; idx < channelNum; idx++) {
         HcclChannelDesc channelDescFinal;
         HcclChannelDescInit(&channelDescFinal, 1);
-        ret = ProcessHcclResPackReq(channelDescs[idx], channelDescFinal, comm);
+        ret = ProcessHcclResPackReq(channelDescs[idx], channelDescFinal);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[%s] Failed check channelDesc, channelDesc idx[%u], group[%s], engine[%d], "
                 "channelNum[%llu], ret[%d]", __func__, idx, hcclComm->GetIdentifier().c_str(),

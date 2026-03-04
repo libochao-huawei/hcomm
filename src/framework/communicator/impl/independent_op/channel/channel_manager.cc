@@ -778,5 +778,6 @@ HcclResult ChannelManager::SetHcclQos(u32 hcclQos)
 {
     HCCL_INFO("[ChannelManager] [ChannelManager] hcclQos[%u]", hcclQos);
     hcclQos_ = hcclQos;
+    return HCCL_SUCCESS;
 }
 } // namespace hccl
