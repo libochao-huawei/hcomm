@@ -71,6 +71,7 @@ public:
 
     HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const;
 
+    void setCallback(std::function<HcclResult(u32, u32, const TaskParam&, u32)> callback);
 private:
     u32 notifyNum{0};
     u32 bufferNum{0};
@@ -123,6 +124,8 @@ private:
     std::vector<RmaConnLite *> connVec;
 
     std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback_{nullptr};
+    
+    std::function<HcclResult(u32, u32, const TaskParam&, u32)> newCallback_{nullptr};
 
     void ProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream, DmaOp dmaOp,
                             u32 taskId);
