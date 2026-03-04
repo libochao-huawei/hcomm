@@ -2308,4 +2308,67 @@ HcclResult HrtRaCtxQpDestoryBatch(const RdmaHandle handle, const std::unordered_
     return HCCL_SUCCESS;
 }
 
+struct ccu_mem_info {
+    unsigned int long long mem_va;
+    unsigned int mem_size;
+    unsigned int resv[1];
+};
+
+struct ccu_mem_rsp {
+    unsigned int die_id;
+    unsigned int  num;
+    struct ccu_mem_info list[64U];
+};
+
+void HrtSetMemInfoList(struct CcuMemInfo *memInfoList, uint32_t count, struct ccu_mem_info *recvMemList) { 
+    for (size_t i = 0; i < count; ++i) { 
+        memInfoList[i].memVa   = recvMemList[i].mem_va; 
+        memInfoList[i].memSize = recvMemList[i].mem_size; 
+    }
+}
+
+HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memTypeBitmap, struct CcuMemInfo *memInfoList, uint32_t count) 
+{
+    s32 ret = 0;
+    u32 tlv_module_type = TLV_MODULE_TYPE_CCU;
+
+    struct TlvMsg send_msg = {};
+    struct TlvMsg recv_msg = {};
+    // 使用unique_ptr管理动态分配的内存，实现RAII
+    auto send_data = std::make_unique<char[]>(sizeof(CcuMemReq));
+    auto recv_data = std::make_unique<char[]>(sizeof(ccu_mem_rsp));
+
+    // 初始化请求消息
+    send_msg.type = MSG_TYPE_CCU_GET_MEM_INFO;
+    send_msg.length = sizeof(CcuMemReq);
+    send_msg.data = send_data.get();
+    
+    auto req = reinterpret_cast<CcuMemReq*>(send_msg.data);
+    req->udieIdx = udieIdx;
+    req->memTypeBitmap = memTypeBitmap;
+    
+    // 初始化响应消息
+    recv_msg.type = 0;
+    recv_msg.length = sizeof(ccu_mem_rsp);
+    recv_msg.data = recv_data.get();
+    
+    auto rsp = reinterpret_cast<ccu_mem_rsp*>(recv_msg.data);
+    rsp->die_id = 0;
+    rsp->num = 0;
+    std::fill(std::begin(rsp->list), std::end(rsp->list), ccu_mem_info{});
+    
+    ret = RaTlvRequest(tlv_handle, tlv_module_type, &send_msg, &recv_msg);
+    if (ret != 0) {
+        if (ret == RA_TLV_REQUEST_UNAVAIL) {
+            HCCL_WARNING("[HrtGetCcuMemInfo]ra tlv request UNAVAIL. return: ret[%d]", ret);
+            return HCCL_E_UNAVAIL;
+        }
+        HCCL_ERROR("[Request][RaTlv]errNo[0x%016llx] ra tlv request fail. return: ret[%d], module type[%u], message type[%u]", 
+                   HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), ret, tlv_module_type, send_msg.type);
+        throw NetworkApiException(StringFormat("call ra_tlv_request failed"));
+    }
+    HrtSetMemInfoList(memInfoList, count, rsp->list);
+    HCCL_INFO("tlv request success, tlv module type[%u], message type[%u]", tlv_module_type, send_msg.type);
+    return HCCL_SUCCESS;
+}
 } // namespace Hccl
