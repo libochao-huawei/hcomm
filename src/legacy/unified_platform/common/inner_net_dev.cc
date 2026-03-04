@@ -108,5 +108,5 @@ InnerNetDev::~InnerNetDev()
  	        HCCL_ERROR("Failed to destory UB handle: %s.", e.what());
  	    }
     }
-
+}
 } // namespace Hccl
