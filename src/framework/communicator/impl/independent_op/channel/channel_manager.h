@@ -60,7 +60,7 @@ public:
     HcclResult ChannelCommGetHcclBuffer(ChannelHandle channel, CommBuffer *buffer);
     HcclResult ChannelCommGetRemoteMem(ChannelHandle channel, HcclMem **remoteMem, uint32_t *memNum);
     HcclResult ReleaseChannel();
-    HcclResult SetHcclQos();
+    HcclResult SetHcclQos(u32 hcclQos);
 
 private:
     template <typename T>

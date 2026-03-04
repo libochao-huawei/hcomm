@@ -5194,7 +5194,7 @@ HcclResult HcclCommAicpu::InitP2pChannel(HcclIndOpChannelRemoteResV3 *commParam,
     MachinePara machinePara;
     CHK_RET(SetTransportMachinePara(machinePara, remoteResV2.remoteRank, commParam->channelTag));
     machinePara.notifyNum = remoteResV2.p2pNotifyNum;
-    machinePara.hcclQos = remoteResV2.channelP2p.hcclQos;
+    machinePara.hcclQos = remoteResV2.channelP2p.qos;
     HCCL_INFO("InitP2pChannel hcclQos = %u", machinePara.hcclQos);
     // 获取localMem & remoteMem
     TransportDeviceP2pData transDevP2pData;

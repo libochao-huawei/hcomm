@@ -25,7 +25,7 @@ struct HcclChannelP2p {
     HcclSignalInfo localIpcSignal[LINK_P2P_MAX_NUM];    // localnotify
     HcclSignalInfo remoteIpcSignal[LINK_P2P_MAX_NUM];
     hccl::TransportAttr transportAttr;
-    u32 hcclQos;
+    u32 qos;
 };
  
 struct HcclChannelRoce {
