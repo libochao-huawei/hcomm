@@ -26,6 +26,9 @@
 #include "local_ipc_rma_buffer.h"
 #include "remote_rma_buffer.h"
 #include "communicator_impl.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
+#include "internal_exception.h"
 #undef private
 
 using namespace Hccl;

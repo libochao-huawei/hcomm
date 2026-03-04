@@ -16,6 +16,7 @@
 #include "phy_topo_builder.h"
 #include "detour_service.h"
 #include "ranktable_builder.h"
+#include "internal_exception.h"
 
 using namespace Hccl;
  

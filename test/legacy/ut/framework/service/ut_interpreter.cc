@@ -31,6 +31,8 @@
 #include "ccu_context_all_to_all_mesh2d.h"
 #include "stream_manager.h"
 #include "stream_utils.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 #undef private
 #undef protected
 

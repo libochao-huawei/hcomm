@@ -10,6 +10,8 @@
 
 #ifndef HCCL_SERIALIZABLE_H
 #define HCCL_SERIALIZABLE_H
+
+#include <string>
 #include "binary_stream.h"
 
 namespace Hccl {
