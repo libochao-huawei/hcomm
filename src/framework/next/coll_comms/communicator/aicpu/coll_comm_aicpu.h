@@ -25,6 +25,7 @@
 #include "channel_param.h"
 #include "hdc_pub.h"
 #include "hcclCommDfxLite.h"
+#include "error_message_v2.h"
 
 using namespace hccl;
 class CollCommAicpu {
