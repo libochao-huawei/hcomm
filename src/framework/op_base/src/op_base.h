@@ -101,6 +101,9 @@ HcclResult GetCaptureInfo(aclrtStream stream, aclmdlRICaptureStatus& captureStat
 
 HcclResult HcclGetInitTilingList(const void *mc2Tiling, const void *p[], uint32_t &cnt);
 
+HcclResult HcclMc2ComOpResCtx(HcclComm comm, uint8_t opType, HcclDataType srcDataType, HcclDataType dstDataType,
+                              HcclReduceOp reduceType, uint64_t count, char *algConfig, uint32_t commEngine, rtStream_t &aicpuStream);
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus

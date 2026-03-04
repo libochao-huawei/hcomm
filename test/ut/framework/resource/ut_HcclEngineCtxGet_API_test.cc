@@ -63,14 +63,17 @@ TEST_F(HcclEngineCtxGetTest, ut_HcclEngineCtxGet_When_commNULL_Expect_ReturnIsHC
     EXPECT_EQ(result, HCCL_E_PTR);
 }
 
-TEST_F(HcclEngineCtxGetTest, ut_HcclEngineCtxGet_When_EngineTagIsNull_Expect_ReturnIsHCCL_ERROR)
+TEST_F(HcclEngineCtxGetTest, ut_HcclEngineCtxGet_When_EngineTagIsNull_Expect_ReturnIsHCCL_SUCCESS)
 {
     CommEngine engine = COMM_ENGINE_CPU;
     void * ctx;
     uint64_t size = 256;
 
-    HcclResult result = HcclEngineCtxGet(comm, nullptr, engine, &ctx, &size);
-    EXPECT_EQ(result, HCCL_E_PTR);
+    HcclResult result = HcclEngineCtxCreate(comm, nullptr, engine, size, &ctx);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    result = HcclEngineCtxGet(comm, nullptr, engine, &ctx, &size);
+    EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
 TEST_F(HcclEngineCtxGetTest, ut_HcclEngineCtxGet_When_ctxIsNull_Expect_ReturnIsHCCL_ERROR)
