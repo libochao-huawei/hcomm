@@ -828,7 +828,6 @@ HcclResult WaitService(void *args, uint64_t argsSizeByte)
         return HCCL_E_NOT_FOUND;
     }
     hccl::Thread *const thread = hcomm::g_ThreadMap[threadHdl].get();
-#ifdef WIP  // TODO: 等到 CpuThread 实现后取消此编译宏
     hccl::CpuThread *const cpuThread = dynamic_cast<hccl::CpuThread *>(thread);
     if (cpuThread == nullptr) {
         HCCL_ERROR("[%s] FAIL. thread[0x%llx] is not CpuThread.", __func__, threadHdl);
@@ -841,9 +840,7 @@ HcclResult WaitService(void *args, uint64_t argsSizeByte)
         return HCCL_E_PARA;
     }
     CHK_RET(memNotify->Wait());
-#endif
 
-    (void)thread;
     return HCCL_SUCCESS;
 
 }
