@@ -686,3 +686,11 @@ int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
+
+int32_t HcommRequestServiceOnThread(ThreadHandle dstThreadHandle, ThreadServiceHandle serviceHandle, const void *args, uint64_t argsSizeByte)
+{
+    HCCL_INFO("[%s] START. dstThreadHandle[0x%llx], serviceHandle[0x%llx], args[0x%llx], argsSizeByte[%llu].",
+        __func__, dstThreadHandle, serviceHandle, args, argsSizeByte);
+    HCCL_ERROR("[%s] NOT SUPPORT on host side.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}

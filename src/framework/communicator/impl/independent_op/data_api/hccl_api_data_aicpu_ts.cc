@@ -747,6 +747,14 @@ int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, uint64_
     return HCCL_E_NOT_SUPPORT;
 }
 
+int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
+        __func__, thread, channel, dst, src, len);
+    HCCL_ERROR("[%s] NOT SUPPORT on device side.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
 int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx)
 {
@@ -757,11 +765,28 @@ int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const void *sr
     return HCCL_E_NOT_SUPPORT;
 }
 
+int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
+    uint64_t len, uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
+        __func__, thread, channel, dst, src, len, remoteNotifyIdx);
+    HCCL_ERROR("[%s] NOT SUPPORT on device side.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
 int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
     HCCL_DEBUG("[%s] channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, channel, dst, src, len);
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
+        __func__, thread, channel, dst, src, len);
+    HCCL_ERROR("[%s] NOT SUPPORT on device side.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -920,6 +945,13 @@ int32_t HcommFlush()
 int32_t HcommChannelFence(ChannelHandle channel)
 {
     HCCL_DEBUG("[%s] channel[0x%llx].", __func__, channel);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
+{
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx].", __func__, thread, channel);
+    HCCL_ERROR("[%s] NOT SUPPORT on device side.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
