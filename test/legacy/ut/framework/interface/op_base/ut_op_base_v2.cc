@@ -33,6 +33,7 @@
 #include "communicator_impl.h"
 #include "communicator_callback.h"
 #include "task_abort_handler.h"
+#include "internal_exception.h"
 #undef private
  
 using namespace Hccl;

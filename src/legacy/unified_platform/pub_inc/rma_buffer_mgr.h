@@ -12,7 +12,8 @@
 #define RMA_BUFFER_MGR_V2_H
 
 #include <map>
-#include "buffer_key.h"
+
+#include "hccl/base.h"
 
 namespace Hccl {
 template<typename KeyType, typename BufferType, template <typename...> class M = std::map, typename... MapArgs>

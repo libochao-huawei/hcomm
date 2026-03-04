@@ -39,6 +39,8 @@
 #include "aiv_ins.h"
 #include "aiv_ins_preprocessor.h"
 #include "aiv_temp_all_reduce_mesh_1D_oneshot.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 #undef protected
 #undef private
 using namespace Hccl;

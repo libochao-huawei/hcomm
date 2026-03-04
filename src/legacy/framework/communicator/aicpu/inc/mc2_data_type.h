@@ -29,9 +29,9 @@ struct HcclOpData {
     uint64_t dataCount{0};
     uint32_t root{0};
     uint32_t sendRecvRemoteRank{0};
-    uint64_t input;
-    uint64_t output;
-    uint64_t rev[10];
+    uint64_t input{0};
+    uint64_t output{0};
+    uint64_t rev[10] = {0};
 
     union {
         struct {

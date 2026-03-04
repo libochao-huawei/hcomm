@@ -17,9 +17,6 @@
 #include "stream.h"
 #include "serializable.h"
 
-#include <unordered_map>
-#include <string>
-
 namespace Hccl {
 
 struct MemoryBuffer {
