@@ -9,6 +9,7 @@
  */
 #include "mirror_task_manager.h"
 #include "hcclCommProfilingLite.h"
+#include "read_write_lock.h"
 
 namespace hccl {
 class HcclCommDfxLite {
@@ -20,7 +21,7 @@ public:
     void Init(u32 deviceId);
     
     // 注册回调到单例
-    void AddTaskInfoCallback(u32 streamId, u32 taskId, const TaskParam &taskParam, u64 handle);
+    void AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle);
     
     // 获取MirrorTaskManager
     Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
@@ -34,9 +35,11 @@ public:
     // 在channelRemoteRankId_表中对remoteRankId进行查找
     static HcclResult GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId);
 private:
-    std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;  // 使用原始指针，不管理生命周期
+    std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_; 
     std::unique_ptr<HcclCommProfilingLite> profilingImpl_;
-    std::unordered_map<std::string,std::unordered_map<u64, u32 remoteRankId> > channelRemoteRankIdLite_;
+    std::unordered_map<std::string,std::unordered_map<u64, u32> > channelRemoteRankIdLite_;
 };
+    static ReadWriteLockBase baseLock_; // 基类锁成员
+    static ReadWriteLock rwLock_; // 读写锁
 
 }

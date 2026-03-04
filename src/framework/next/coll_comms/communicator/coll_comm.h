@@ -20,6 +20,7 @@
 #include "independent_op_context_manager.h"
 #include "comm_mem_manager.h"
 #include "channel_manager.h"
+#include "hcclCommDfx.h"
 namespace hccl {
 /**
  * @note 职责：集合通信通信域上下文管理，包括RankGraph和本rank信息资源等内容。

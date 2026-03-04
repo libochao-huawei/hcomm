@@ -25,7 +25,7 @@
 #include "launch_aicpu.h"
 #include "comm_configer.h"
 #include "endpoint_map.h"
-#include "endpoint_map.h"
+#include "hcclCommDfx.h"
 
 namespace hcomm {
 static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
@@ -316,10 +316,10 @@ HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle
     hccl::DeviceMem remoteRankList = hccl::DeviceMem::alloc(listNum * sizeof(u32));
     for( u32 i = 0; i < listNum; ++i) {
         u32 remoteRankId {0};
-        CHK_RET(HcclCommDfx::GetChannelRemoteRankId(commTag, hostChannelHandles[i]));
-        remoteRankList[i] = remoteRankId;
+        CHK_RET(hccl::HcclCommDfx::GetChannelRemoteRankId(commTag, hostChannelHandles[i], remoteRankId));
+        static_cast<u32*>(remoteRankList.ptr())[i] = remoteRankId;
     }
-    channelParam.remoteRankList = static_cast<void *>(remoteRankList.ptr());
+    channelParam.remoteRankList = static_cast<u32 *>(remoteRankList.ptr());
     // 创建局部流
     hccl::Stream localStream(hccl::StreamType::STREAM_TYPE_ONLINE);
     constexpr u32 aicpuStreamMode = 1;
