@@ -40,8 +40,8 @@ constexpr u32 ONE_MILLISECOND_OF_USLEEP         = 1000;
 // 清理CKE批量申请大小
 constexpr u32 MAX_CKE_DATA_ARRAY_SIZE = 8;
 
-// 环境是A+X时，配置die0的MS交织粒度为1<<6 = 64
-constexpr uint32_t MSID_CONFIG_AX_MAINBOARD = 6;
+// 环境是A+X时，配置die0的MS交织粒度为1<<7 = 128
+constexpr uint32_t MSID_CONFIG_AX_MAINBOARD = 7;
 constexpr TpProtocol LOOP_JETTY_PROTOCOL = TpProtocol::TP; // 环回使用TP避免被环境link down阻塞
 
 CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)

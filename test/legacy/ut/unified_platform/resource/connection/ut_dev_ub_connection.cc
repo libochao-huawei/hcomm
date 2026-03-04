@@ -703,7 +703,7 @@ TEST_F(DevUbConnectionTest, rma_net_connection_prepare_write_task_in_offload_mod
     MOCKER(HrtRaUbPostNops).stubs().with(any(), any(), any());
     MOCKER(HrtUbDbSend).stubs().with(any(), any());
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
     Stream stream;
     devUbConnection.AddNop(stream);
 

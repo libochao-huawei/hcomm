@@ -97,6 +97,7 @@ struct SingleSubCommTransport {
     bool enableUseOneDoorbell = false;
     bool needVirtualLink = false; // for alltoall 多线程性能提升使用
     std::vector<LINK> virtualLinks; // for alltoall 多线程性能提升使用
+    bool isZeroCopy = false;
 };
 using LevelNSubCommTransport = std::vector<SingleSubCommTransport>;
 using OpCommTransport = std::vector<LevelNSubCommTransport>;

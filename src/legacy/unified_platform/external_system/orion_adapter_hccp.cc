@@ -881,9 +881,9 @@ void HrtRaQpDestroy(QpHandle qpHandle)
         } else if (ret == SOCK_EAGAIN) {
             bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
             if (bTimeout != 0) {
-                HCCL_ERROR("[Destroy][RaQp]errNo[0x%016llx] ra qp destroy timeout[%d]. "
-                           "return[%d].",
-                           HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), timeout, ret);
+                MACRO_THROW(NetworkApiException, StringFormat("[Destroy][RaQp]errNo[0x%016llx] ra qp destroy timeout[%d]. "
+                            "return[%d].",
+                            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), timeout, ret));
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
@@ -1459,7 +1459,7 @@ void HrtRaUbJettyUnbind(JettyHandle jettyHandle)
 {
     s32 ret = RaCtxQpUnbind(reinterpret_cast<void *>(jettyHandle));
     if (ret != 0) {
-        string msg = StringFormat("ubJettyUbbind failed, jettyHandle=0x%llx", jettyHandle);
+        string msg = StringFormat("ubJettyUnbind failed, jettyHandle=0x%llx", jettyHandle);
         THROW<NetworkApiException>(msg);
     }
 }
