@@ -214,19 +214,6 @@ TEST_F(TaskInfoTest, test_get_op_info)
 
     taskInfo.dfxOpInfo_->opIndex_ = 0;
     taskInfo.dfxOpInfo_->commIndex_ = 3;
-<<<<<<< HEAD
-    taskInfo.dfxOpInfo_->headOpCounterAddr_ = 0;
-    taskInfo.dfxOpInfo_->tailOpCounterAddr_ = 0;
-    taskInfo.dfxOpInfo_->op_.dataCount = 0xaaaabbbbcccc;
-    taskInfo.dfxOpInfo_->op_.reduceOp = ReduceOp::SUM;
-    taskInfo.dfxOpInfo_->op_.dataType = DataType::UINT64;
-    EXPECT_EQ(taskInfo.GetOpInfo(), "commIndex[3], commId[], count[187650270809292], reduceType[ReduceOp::SUM], dataType[DataType::UINT64], opIndex[0]");
-
-    taskInfo.dfxOpInfo_->op_.inputMem = make_shared<Buffer>(0x111122223333, 0);
-    taskInfo.dfxOpInfo_->op_.outputMem = make_shared<Buffer>(0xaaaabbbbcccc, 0);
-    EXPECT_EQ(taskInfo.GetOpInfo(), "commIndex[3], commId[], count[187650270809292], reduceType[ReduceOp::SUM], src:[0x111122223333], dst:[0xaaaabbbbcccc], dataType[DataType::UINT64], opIndex[0]");
-
-=======
     taskInfo.dfxOpInfo_->headOpCounter_ = 0;
     taskInfo.dfxOpInfo_->tailOpCounter_ = 0;
     taskInfo.dfxOpInfo_->op_.dataCount = 0xaaaabbbbcccc;
@@ -237,7 +224,6 @@ TEST_F(TaskInfoTest, test_get_op_info)
     taskInfo.dfxOpInfo_->op_.inputMem = make_shared<Buffer>(0x111122223333, 0);
     taskInfo.dfxOpInfo_->op_.outputMem = make_shared<Buffer>(0xaaaabbbbcccc, 0);
     EXPECT_EQ(taskInfo.GetOpInfo(), "commIndex[3], opType[OpType::Invalid], count[187650270809292], reduceType[ReduceOp::SUM], src:[0x111122223333], dst:[0xaaaabbbbcccc], dataType[DataType::UINT64], opIndex[0], headOpCounter[0], tailOpCounter[0]");
->>>>>>> temp-branch
     taskInfo.dfxOpInfo_ = shared_ptr<DfxOpInfo>(nullptr);
     EXPECT_EQ(taskInfo.GetOpInfo(), "");
 }

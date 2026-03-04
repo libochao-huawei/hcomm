@@ -73,18 +73,11 @@ HcclResult GenerateErrorMessageReport(CommunicatorImplLite *aicpuComm, std::shar
     errMsgInfo.rankSize = aicpuComm->GetRankSize();
     errMsgInfo.algType = taskInfo->dfxOpInfo_ == nullptr ? static_cast<Hccl::AlgType>(AlgType::MESH) : taskInfo->dfxOpInfo_->algType_;
     errMsgInfo.opIndex = taskInfo->dfxOpInfo_ == nullptr ? 0 : taskInfo->dfxOpInfo_->commIndex_;
-<<<<<<< HEAD
-    errMsgInfo.count = taskInfo->taskParam_.taskPara.DMA.size;
-    errMsgInfo.dataType = taskInfo->taskParam_.taskPara.Reduce.dataType;
-    errMsgInfo.dstAddr = reinterpret_cast<u64>(taskInfo->taskParam_.taskPara.DMA.dst);
-    errMsgInfo.srcAddr = reinterpret_cast<u64>(taskInfo->taskParam_.taskPara.DMA.src);
-=======
     errMsgInfo.opType = taskInfo->dfxOpInfo_->op_.opType;
     errMsgInfo.count = taskInfo->dfxOpInfo_->op_.dataCount;
     errMsgInfo.dataType = taskInfo->dfxOpInfo_->op_.dataType;
     errMsgInfo.srcAddr = static_cast<u64>(taskInfo->dfxOpInfo_->op_.inputMem->GetAddr());
     errMsgInfo.dstAddr = static_cast<u64>(taskInfo->dfxOpInfo_->op_.outputMem->GetAddr());
->>>>>>> temp-branch
     errMsgInfo.taskType = taskInfo->taskParam_.taskType;
 
     if (taskInfo->taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
@@ -310,17 +303,10 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(*curTask).c_str());
     std::pair<float, float> floatCounter;
-<<<<<<< HEAD
-    floatCounter.first =  *(reinterpret_cast<float *>(curTask->dfxOpInfo_->headOpCounterAddr_));
-    floatCounter.second = *(reinterpret_cast<float *>(curTask->dfxOpInfo_->tailOpCounterAddr_));
-    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, headOpCounter[%u] tailOpCounter[%u].", static_cast<u32>(floatCounter.first), static_cast<u32>(floatCounter.second));
-    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, opData information is %s.", curTask->GetOpInfo().c_str());
-=======
  	floatCounter.first =  *(reinterpret_cast<float *>(curTask->dfxOpInfo_->headOpCounterAddr_));
  	floatCounter.second = *(reinterpret_cast<float *>(curTask->dfxOpInfo_->tailOpCounterAddr_));
  	HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, headOpCounter[%u] tailOpCounter[%u].", static_cast<u32>(floatCounter.first), static_cast<u32>(floatCounter.second));
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, opData information is %s.", GetOpDataInfo(*curTask).c_str());
->>>>>>> temp-branch
 }
 
 string TaskExceptionHandlerLite::GetGroupRankInfo(const TaskInfo& taskInfo)

@@ -371,13 +371,8 @@ void CollServiceBase::SaveMirrorDfxOpInfo()
     dfxOpInfo->commId_ = comm->GetId();
     dfxOpInfo->opIndex_ = comm->GetOpIndex();
     u64 size = FOUR_BYTES;
-<<<<<<< HEAD
-    dfxOpInfo->headOpCounterAddr_ = counterBuf->GetAddr() + size;
-    dfxOpInfo->tailOpCounterAddr_ = counterBuf->GetAddr() + size * 2;
-=======
  	dfxOpInfo->headOpCounterAddr_ = counterBuf->GetAddr() + size;
  	dfxOpInfo->tailOpCounterAddr_ = counterBuf->GetAddr() + size * 2;
->>>>>>> temp-branch
 
     comm->GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);
 }
