@@ -305,14 +305,14 @@ static void DelTopoFile()
 TEST(CollServiceDefaultImplTest, test_base_register_offload_buf)
 {
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
     DevType devType = DevType::DEV_TYPE_910_95;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER(HrtIpcSetMemoryName).stubs();
     MOCKER(HrtDevMemAlignWithPage).stubs();
     MOCKER(HrtIpcDestroyMemoryName).stubs();
     void *devPtr = nullptr;
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(devPtr));
     MOCKER(HrtMemset).stubs().with(any(), any(), any(), any());
     MOCKER_CPP(&CommunicatorImpl::InitNotifyFixedValue).stubs().will(ignoreReturnValue());
     GenRankTableFile4p();
@@ -514,7 +514,7 @@ TEST(CollServiceDefaultImplTest, test_communicator_impl_hostDeviceSyncNotifyMana
     MOCKER(HrtNotifyCreate).stubs().will(returnValue((void *)(1)));
     MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void *)(1)));
     MOCKER(HrtGetNotifyID).stubs().will(returnValue(1));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
 
     CommunicatorImpl comm;
     comm.hostDeviceSyncNotifyManager = std::make_unique<HostDeviceSyncNotifyManager>();
@@ -696,7 +696,7 @@ TEST(CollServiceDefaultImplTest, AddCountTask)
     MOCKER(HrtReduceAsync).stubs().with(any());
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
     void *devPtr = nullptr;
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(devPtr));
     MOCKER(HrtMemset).stubs().with(any(), any(), any(), any());
  
     CommunicatorImpl comm;

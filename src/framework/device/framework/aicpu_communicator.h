@@ -184,9 +184,6 @@ public:
     HcclResult InitRoceChannel(HcclIndOpChannelRemoteResV3 *commParam, uint32_t channelIndex);
     HcclResult AllocChannelResource(HcclIndOpChannelRemoteResV3 *commParam);
 
-    HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
-    HcclResult AllocChannelResourceV2(HcclChannelUrmaRes *commParam);
-
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
     bool GetIsInitIndOp() { return indOpCommInitialized_; };
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
@@ -307,7 +304,6 @@ private:
     HcclResult GetAlltoAllTotalCount(OpParam &param, u64 &sendCount, u64 &recvCount);
     HcclResult GetAlltoAllVTotalCount(OpParam &param, u64 &sendCount, u64 &recvCount);
     HcclResult GetAlltoAllVCTotalCount(OpParam &param, u64 &sendCount, u64 &recvCount);
-    HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
 
     // taskException
     void PollCqeException(hccl::Stream &stream, bool isReadClear, rtLogicCqReport_t &cqeException, CqeStatus &cqeStatus);
@@ -573,8 +569,6 @@ private:
     std::vector<std::shared_ptr<Thread>> threads_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
     TaskException taskExecption_;
-    // A5 独立算子
-    std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
 
     // A3消息语义算子展开aicpu cache
     AicpuCacheManager aicpuCacheManager_;

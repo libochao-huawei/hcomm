@@ -208,8 +208,8 @@ HcclResult HcclCommunicatorAttrs::CheckSuperDeviceId(const RankTable_t &rankTabl
             CHK_RET(hrtGetDeviceInfo(deviceLogicId_, HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM,
                 HcclRtDeviceInfoType::HCCL_INFO_TYPE_SDID, drvSuperDeviceID));
             if (superDeviceId_ != static_cast<u32>(drvSuperDeviceID)) {
-                RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
-                    std::vector<std::string>({ "the 'super_device_id' in the ranktable is invalid" }));
+                RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
+                    std::vector<std::string>({ "[" + std::to_string(superDeviceId_) + "]", "[super_device_id]", std::to_string(drvSuperDeviceID) }));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] super_device_id is invalid, " \
                     "expect value [0x%x], ranktable config value [0x%x]", LOG_KEYWORDS_INIT_GROUP.c_str(),
                     LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), drvSuperDeviceID,

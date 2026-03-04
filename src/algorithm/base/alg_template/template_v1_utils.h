@@ -40,6 +40,13 @@ struct SendRecvInfo {
     std::vector<u64> recvDispls;
 };
 
+struct ZCopySendRecvInfo {
+    // 存放数据长度和偏移长度
+    std::vector<u64> localRecvLength;
+    std::vector<u64> localRecvOffset;
+    std::vector<u64> remoteSendOffset;
+};
+
 struct Slice {
     u64 offset{0}; // Slice相对于input/output的偏移字节数，gather类操作取output，scatter类操作取input
     u64 size{0};    // Slice的数据大小，单位：字节

@@ -126,8 +126,9 @@ HcclResult CcuJettyMgrPrepareCreateStub(CcuJettyMgr *self, const std::vector<Lin
 
 void MockCcuTransportMgrDevs()
 {
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue((int32_t)MAX_MODULE_DEVICE_NUM - 1));
-    
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<DevId>(MAX_MODULE_DEVICE_NUM -
+	    1)));
+
     HcclResult OkResult = HcclResult::HCCL_SUCCESS;
     HcclResult AgainResult = HcclResult::HCCL_E_AGAIN;
     MOCKER(CcuDeviceManager::AllocCke).stubs().will(invoke(AllocCcuResStub));
@@ -510,7 +511,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_And_Destory_Success_When_InterfaceOk_Expect
     const uint32_t fakeSqDepth = 4;
     const IpAddress locAddr{"1.1.1.1"};
     const IpAddress rmtAddr{"2.2.2.2"};
-    
+
     vector<unique_ptr<CcuJetty>> ccuJettys;
     vector<CcuJetty *> ccuJettyPtrs;
     for (uint32_t i = 0; i < CCU_JETTY_GOURP_SIZE; i++) {
@@ -593,7 +594,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     auto commImpl = MockCommImpl();
     MockCcuTransportMgrDevs();
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(invoke(HrtRaGetAsyncReqResult_Uncompleted_CCU));
-    
+
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
@@ -631,7 +632,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     const uint32_t fakeSqDepth = 4;
     const IpAddress locAddr{"1.1.1.1"};
     const IpAddress rmtAddr{"2.2.2.2"};
-    
+
     vector<unique_ptr<CcuJetty>> ccuJettys;
     vector<CcuJetty *> ccuJettyPtrs;
     for (uint32_t i = 0; i < CCU_JETTY_GOURP_SIZE; i++) {
@@ -680,7 +681,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     ReqHandleResult result = ReqHandleResult::COMPLETED;
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
     MOCKER(&RaCtxQpDestroyBatchAsync).stubs().with().will(invoke(RaCtxQpDestroyBatchAsync_no_delete_CCU));
-    
+
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
@@ -718,7 +719,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     const uint32_t fakeSqDepth = 4;
     const IpAddress locAddr{"1.1.1.1"};
     const IpAddress rmtAddr{"2.2.2.2"};
-    
+
     vector<unique_ptr<CcuJetty>> ccuJettys;
     vector<CcuJetty *> ccuJettyPtrs;
     for (uint32_t i = 0; i < CCU_JETTY_GOURP_SIZE; i++) {
@@ -767,7 +768,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     ReqHandleResult result = ReqHandleResult::COMPLETED;
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
     MOCKER(&RaCtxQpDestroyBatchAsync).stubs().with().will(invoke(RaCtxQpDestroyBatchAsync_return_false_CCU));
-    
+
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
@@ -805,7 +806,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     const uint32_t fakeSqDepth = 4;
     const IpAddress locAddr{"1.1.1.1"};
     const IpAddress rmtAddr{"2.2.2.2"};
-    
+
     vector<unique_ptr<CcuJetty>> ccuJettys;
     vector<CcuJetty *> ccuJettyPtrs;
     for (uint32_t i = 0; i < CCU_JETTY_GOURP_SIZE; i++) {
@@ -854,7 +855,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     ReqHandleResult result = ReqHandleResult::COMPLETED;
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
     MOCKER(&RaCtxQpDestroyBatchAsync).stubs().with().will(invoke(RaCtxQpDestroyBatchAsync_num_false_CCU));
-    
+
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
@@ -892,7 +893,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     const uint32_t fakeSqDepth = 4;
     const IpAddress locAddr{"1.1.1.1"};
     const IpAddress rmtAddr{"2.2.2.2"};
-    
+
     vector<unique_ptr<CcuJetty>> ccuJettys;
     vector<CcuJetty *> ccuJettyPtrs;
     for (uint32_t i = 0; i < CCU_JETTY_GOURP_SIZE; i++) {
@@ -939,7 +940,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     auto commImpl = MockCommImpl();
     MockCcuTransportMgrDevs();
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(invoke(HrtRaGetAsyncReqResult_TimeOut_CCU));
-    
+
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
@@ -977,7 +978,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     const uint32_t fakeSqDepth = 4;
     const IpAddress locAddr{"1.1.1.1"};
     const IpAddress rmtAddr{"2.2.2.2"};
-    
+
     vector<unique_ptr<CcuJetty>> ccuJettys;
     vector<CcuJetty *> ccuJettyPtrs;
     for (uint32_t i = 0; i < CCU_JETTY_GOURP_SIZE; i++) {

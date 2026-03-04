@@ -121,10 +121,11 @@ constexpr uint8_t RT_STARS_EXIST_ERROR = 0x3FU;
 
 bool TaskExceptionFunc::IsExceptionCqe(const rtLogicCqReport_t &reportOfOne) const
 {
-    HCCL_INFO("ReportOfOne info [%s]", StringLogicCqReportInfo(reportOfOne).c_str());
     if ((reportOfOne.errorType & RT_STARS_EXIST_ERROR) == 0U) { // 取低6位
+        HCCL_INFO("ReportOfOne info [%s]", StringLogicCqReportInfo(reportOfOne).c_str());
         return false;
     }
+    HCCL_ERROR("ReportOfOne error info [%s]", StringLogicCqReportInfo(reportOfOne).c_str());
     return true;
 }
 

@@ -122,10 +122,18 @@ void BuildA5SqeCntNto1NotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 cnt
     sqe->cntValue = cntValue;
 }
 
+void SetSqeHeaderTaskFields(void* sqe, u32 taskId) 
+{
+    auto header = reinterpret_cast<Rt91095StarsSqeHeader*>(sqe);
+    header->rtStreamId     = static_cast<uint16_t>(taskId);
+    header->taskId         = static_cast<uint16_t>(taskId >> 16);
+}
+
 void BuildA5SqeSdmaCopy(u32 streamId, u32 taskId, u64 dstAddr, u64 srcAddr, u32 size, u32 partId, u32 opcode,
                         uint8_t * const sqeIn)
 {
     Rt91095StarsMemcpySqe *sqe = (Rt91095StarsMemcpySqe *)sqeIn;
+    SetSqeHeaderTaskFields(sqe, taskId);
     sqe->header.type           = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_SDMA);
     sqe->opcode                = opcode; // opcode为非0，代表 SDMA Reduce Copy; 0代表SDMA Copy
     sqe->kernelCredit          = RT_STARS_DEFAULT_KERNEL_CREDIT;
@@ -133,9 +141,7 @@ void BuildA5SqeSdmaCopy(u32 streamId, u32 taskId, u64 dstAddr, u64 srcAddr, u32 
     sqe->dssv                  = 1U;
     sqe->sns                   = 1U;
     sqe->dns                   = 1U;
-    sqe->mapamPartId           = 0U; // 这里走的memcpy，如果走withcfg,需要传入qoscfg
-    sqe->header.rtStreamId     = static_cast<uint16_t>(taskId);
-    sqe->header.taskId         = static_cast<uint16_t>(taskId >> 16);
+    sqe->mapamPartId           = partId; // 这里走的memcpy，如果走withcfg,需要传入qoscfg
     sqe->header.wrCqe          = 1U;
 
     sqe->u.strideMode0.lengthMove  = size;
@@ -143,7 +149,6 @@ void BuildA5SqeSdmaCopy(u32 streamId, u32 taskId, u64 dstAddr, u64 srcAddr, u32 
     sqe->u.strideMode0.srcAddrHigh = static_cast<uint32_t>((srcAddr & 0xffffffff00000000U) >> 32); // 高 32bit
     sqe->u.strideMode0.dstAddrLow  = static_cast<uint32_t>(dstAddr & 0x00000000ffffffffU);
     sqe->u.strideMode0.dstAddrHigh = static_cast<uint32_t>((dstAddr & 0xffffffff00000000U) >> 32); // 高 32bit
-    sqe->mapamPartId               = partId;
 
     HCCL_INFO("[SQE]Memcpy: size=%u, srcAddr=0x%llx, dstAddr=0x%llx, partId=%u, opcode=%u, streamId=%u, taskId=%u",
                size, srcAddr, dstAddr, partId, opcode, streamId, taskId);
@@ -153,12 +158,11 @@ void BuildA5SqeUbDbSend(u32 streamId, u32 taskId, const UbJettyLiteId &jettyLite
 {
     (void)streamId;
     Rt91095StarsUbdmaDBmodeSqe *sqe = (Rt91095StarsUbdmaDBmodeSqe *)sqeIn;
+    SetSqeHeaderTaskFields(sqe, taskId);
     sqe->header.type = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_UBDMA);
 
     sqe->mode              = Rt91095UbDmaSqeMode::RT_91095_SQE_DOORBELL_MODE;
     sqe->kernelCredit      = RT_STARS_DEFAULT_KERNEL_CREDIT;
-    sqe->header.rtStreamId = static_cast<uint16_t>(taskId);
-    sqe->header.taskId     = static_cast<uint16_t>(taskId >> 16);
 
     sqe->doorbellNum = 1U;
     sqe->jettyId1    = jettyLiteId.GetJettyId();

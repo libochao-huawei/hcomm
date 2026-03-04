@@ -62,7 +62,7 @@ TEST_F(BufferTest, DevBuffer_selfowned)
 
     uintptr_t fakeAddr = 1000;
     size_t fakeSize = 1000;
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)fakeAddr));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)fakeAddr));
     MOCKER(HrtFree).stubs().with(any());
 
     DevBuffer buffer(fakeSize);

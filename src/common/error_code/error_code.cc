@@ -21,55 +21,55 @@ const std::string hcomm_g_msg = R"(
       "errClass": "HCCL Errors",
       "errTitle": "Config_Error_Invalid_Environment_Variable",
       "ErrCode": "EI0001",
-      "ErrMessage": "Environment variable [%s] is invalid. Reason: %s.",
-      "Arglist": "env,tips",
+      "ErrMessage": "Value %s for environment variable [%s] is invalid. Expected value: %s.",
+      "Arglist": "value,env,expect",
       "suggestion": {
-        "Possible Cause": "The environment variable configuration is invalid.",
-        "Solution": "Try again with valid environment variable configuration."
+        "Possible Cause": "N/A",
+        "Solution": "N/A"
       }
     },
     {
       "errClass": "HCCL Errors",
       "errTitle": "Communication_Error_Timeout",
       "ErrCode": "EI0002",
-      "ErrMessage": "The wait execution of the Notify register times out. Reason: The Notify register has not received the Notify record from remote rank: [%s]. base information: [%s]. task information: [%s]. group information: [%s]",
+      "ErrMessage": "Communication operator execution waiting times out. Waiting peer end: %s; task information: %s; Communication operator information: %s; Communication: %s.",
       "Arglist": "remote_rankid, base_information, task_information, group_rank_content",
       "suggestion": {
-        "Possible Cause": "1. An exception occurs during the execution on some NPUs in the cluster. As a result, collective communication operation failed.2. The execution speed on some NPU in the cluster is too slow to complete a communication operation within the timeout interval. (default 1800s, You can set the interval by using HCCL_EXEC_TIMEOUT.)3. The number of training samples of each NPU is inconsistent.4. Packet loss or other connectivity problems occur on the communication link.",
-        "Solution": "1. If this error is reported on part of these ranks, check other ranks to see whether other errors have been reported earlier.2. If this error is reported for all ranks, check whether the error reporting time is consistent (the maximum difference must not exceed 1800s). If not, locate the cause or adjust the locate the cause or set the HCCL_EXEC_TIMEOUT environment variable to a larger value.3. Check whether the completion queue element (CQE) of the error exists in the plog(grep -rn 'error cqe'). If so, check the network connection status. 4. Ensure that the number of training samples of each NPU is consistent."
+        "Possible Cause": "1. An exception occurs during the execution on some NPUs in the cluster. As a result, collective communication operation failed.2. The execution speed on some NPU in the cluster is too slow to complete a communication operation within the timeout interval. (The default timeout interval is 1800s, You can set the interval by using HCCL_EXEC_TIMEOUT.)3. The number of training samples of each NPU is inconsistent.4. Packet loss or other connectivity problems occur on the communication link.",
+        "Solution": "1. If this error is reported on part of these ranks, check other ranks to see whether other errors have been reported earlier.2. If this error is reported for all ranks, check whether the error reporting time is consistent (the maximum difference must not exceed 1800s). If not, locate the cause or set the HCCL_EXEC_TIMEOUT environment variable to a larger value. 3. Ensure that the number of training samples of each NPU is consistent. 4. Check whether the completion queue element (CQE) of the error exists in the plog(grep -rn 'error cqe'). If so, check the network connection status. For details about the troubleshooting method, search for the keyword "EI0002" on https://www.hiascend.com/en/document/."
       }
     },
     {
       "errClass": "HCCL Errors",
       "errTitle": "Invalid_Argument_Collective_Communication_Operator",
       "ErrCode": "EI0003",
-      "ErrMessage": "In [%s], value [%s] for parameter [%s] is invalid. Reason: The collective communication operator has an invalid argument. Reason[%s]",
-      "Arglist": "ccl_op,value,parameter,value",
+      "ErrMessage": "Failed to verify parameters of operator %s (operator name). Value %s for parmeter %s is invalid. The expected value is %s.
+      "Arglist": "ccl_op,value,parameter,expect",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "Try again with a valid argument."
+        "Solution": "N/A"
       }
     },
     {
       "errClass": "HCCL Errors",
-      "errTitle": "Config_Error_Ranktable_Configuration",
+      "errTitle": "File_Operation_Error_Parse",
       "ErrCode": "EI0004",
-      "ErrMessage": "The ranktable or rank is invalid,Reason:[%s]. Please check the configured ranktable. [%s]",
+      "ErrMessage": "Failed to parse the ranktable file %s. Reason: %s",
       "Arglist": "error_reason,ranktable_path",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "Try again with a valid cluster configuration in the ranktable file. Ensure that the configuration matches the operating environment."
+        "Solution": "N/A"
       }
     },
     {
       "errClass": "HCCL Errors ",
-      "errTitle": "Inconsistent_Collective_Communication_Arguments_Between_Ranks",
+      "errTitle": "Invalid_Argument",
       "ErrCode": "EI0005",
-      "ErrMessage": "The arguments for collective communication are inconsistent between ranks: tag [%s], parameter [%s], local [%s], remote [%s]",
-      "Arglist": "tag,para_name,local_para,remote_para",
+      "ErrMessage": "The arguments for collective communication are inconsistent between ranks, parameter %s, local end %s, remote end %s.",
+      "Arglist": "para_name,local_para,remote_para",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "Check whether the training script and ranktable of each NPU are consistent."
+        "Solution": "N/A"
       }
     },
     {
@@ -80,17 +80,17 @@ const std::string hcomm_g_msg = R"(
       "Arglist": "reason",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "1. Check the rank service processes with other errors or no errors in the cluster.2. If this error is reported for all NPUs, check whether the time difference between the earliest and latest errors is greater than the connect timeout interval (120s by default). If so, adjust the timeout interval by using the HCCL_CONNECT_TIMEOUT environment variable.3. Check the connectivity of the communication link between nodes. (For example, run the 'hccn_tool -i $devid -tls -g' command to check the TLS status of each NPU)."
+        "Solution": "N/A"
       }
     },
     {
       "errClass": "HCCL Errors",
       "errTitle": "Resource_Error",
       "ErrCode": "EI0007",
-      "ErrMessage": "Failed to allocate resource[%s] with info [%s]. Reason: Memory resources are exhausted.",
+      "ErrMessage": "Failed to allocate resource %s with info %s. Reason: Resources are exhausted.",
       "Arglist": "resource_type, resource_info",
       "suggestion": {
-        "Possible Cause": "Failed to allocate memory or the Notify register due to resource insufficiency.",
+        "Possible Cause": "N/A",
         "Solution": "N/A"
       }
     },
@@ -98,11 +98,25 @@ const std::string hcomm_g_msg = R"(
       "errClass": "HCCL Errors",
       "errTitle": "Package_Error_Incorrect_HCCL_Version",
       "ErrCode": "EI0008",
-      "ErrMessage": "The HCCL versions are inconsistent: tag [%s], local_version [%s], remote_version [%s]",
-      "Arglist": "tag,local_version,remote_version",
+      "ErrMessage": "The HCCL versions are inconsisten. The local version is %s, while the remote version is %s.",
+      "Arglist": "local_version, remote_version",
       "suggestion": {
         "Possible Cause": "N/A",
         "Solution": "Install the same HCCL version."
+      }
+    },
+    {
+      "errClass": "HCCL Errors",
+      "errTitle": "Communication_Error_Initialize_Transport",
+      "ErrCode": "EI0009",
+      "ErrMessage": "Device %d transport init error. Reason: %s.",
+      "Arglist": "device_id,reason",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution": "Use the following hccn_tool commands to check whether the port link is down. (The scope of i represents the number of NPUs of each node. 8 is used as an example.) "\
+                    "1. for i in {0..7}; do hccn_tool -i $i -optical -g; done | grep present: Check whether the optical module is in position. "\
+                    "2. for i in {0..7}; do hccn_tool -i $i -ip -g; done. Check whether the IP address is configured. "\
+                    "3. for i in {0..7}; do hccn_tool -i $i -lldp -g: Check whether the switch is connected."
       }
     },
     {
@@ -151,10 +165,10 @@ const std::string hcomm_g_msg = R"(
     },
     {
       "errClass": "HCCL Errors",
-      "errTitle": "Ranktable_Check_Failed",
+      "errTitle": "Config_Error_Ranktable",
       "ErrCode": "EI0014",
-      "ErrMessage": "The ranktable information check failed, Reason:[%s].",
-      "Arglist": "error_reason",
+      "ErrMessage": "Value %s for ranktable variable %s is invalid. Expected value: %s.",
+      "Arglist": "value, variable, expect",
       "suggestion": {
         "Possible Cause": "Failed to verify the content of the ranktable file, possibly due to inconsistency between the file content and the actual device information.",
         "Solution": "Try again with a valid cluster configuration in the ranktable file. Ensure that the configuration matches the operating environment."
@@ -162,7 +176,7 @@ const std::string hcomm_g_msg = R"(
     },
     {
       "errClass": "HCCL Errors",
-      "errTitle": "Ranktable_Detect_Failed",
+      "errTitle": "Communication_Error_Ranktable_Detect",
       "ErrCode": "EI0015",
       "ErrMessage": "Failed to collect cluster information of the communicator based on rootInfo detection. Reason: %s.",
       "Arglist": "error_reason",
@@ -176,7 +190,7 @@ const std::string hcomm_g_msg = R"(
       "errTitle": "Config_Error",
       "ErrCode": "EI0016",
       "ErrMessage": "Value %s for config %s is invalid. Expected value: %s.",
-      "Arglist": "value,variable,expect",
+      "Arglist": "value, variable, expect",
       "suggestion": {
         "Possible Cause": "N/A",
         "Solution": "N/A"
@@ -194,58 +208,36 @@ const std::string hcomm_g_msg = R"(
       }
     },
     {
-      "errClass": "HCCP Errors",
-      "errTitle": "HCCP_Process_Initialization_Failure",
-      "ErrCode": "EJ0001",
-      "ErrMessage": "Failed to initialize the HCCP process. Reason: Maybe the last training process is running.",
-      "Arglist": "",
-      "suggestion": {
-        "Possible Cause": "N/A",
-        "Solution": "Wait for 10s after killing the last training process and try again."
-      }
-    },
-    {
       "errClass": "HCCL Errors",
       "errTitle": "Execution_Error_UB_CQE",
       "ErrCode": "EI0018",
       "ErrMessage": "An error CQE occurred during operator execution. Local information: server %s, device ID %s, device IP %s. Peer information: server %s, device ID %s, device IP %s.",
-      "Arglist": "localServerId,localDeviceId,localDeviceIp,remoteServerId,remoteDeviceId,remoteDeviceIp",
+      "Arglist": "localServerId, localDeviceId, localDeviceIp, remoteServerId, remoteDeviceId, remoteDeviceIp",
       "suggestion": {
         "Possible Cause": "1. The network between two devices is abnormal. For example, the network port is intermittently disconnected. 2. The peer process exits unexpectedly in advance. As a result, the local end cannot receive the response from the peer end. 3.The hardware of the HBM or UB chip processing module of either device is abnormal.",
         "Solution": "1. Check whether the network devices between the two ends are abnormal. Generally, packet loss occurs due to intermittent disconnection of the port. If the ping test fails, check whether the port is linkdown or the network configuration is incorrect.2. Check whether the peer process exits first. If yes, check the reason why the process exit.3.Use the RAS fault check mechanism to check whether the hardware of the HBM or UB chip processing module of either device is abnormal.If the hardware is abnormal, contact Huawei technical support."
       }
     },
     {
-      "errClass": "HCCP Errors",
-      "errTitle": "Environment_Error",
-      "ErrCode": "EJ0002",
-      "ErrMessage": "The network port is down.Suggest: %s",
-      "Arglist": "suggest",
-      "suggestion": {
-        "Possible Cause": "N/A",
-        "Solution": "N/A"
-      }
-    },
-    {
-      "errClass": "HCCP Errors",
+      "errClass": "HCCL Errors",
       "errTitle": "Communication_Error_Bind_IP_Port",
-      "ErrCode": "EJ0003",
-      "ErrMessage": "Failed to bind the IP port. Reason: %s",
+      "ErrCode": "EI0019",
+      "ErrMessage": "Failed to enable listening for the host network adapter socket. Reason: %s",
       "Arglist": "reason",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "N/A"
+        "Solution": "1. Check whether this port has been occupied by another process. If yes, you can make adjustment using the environment variable HCCL_IF_BASE_PORT and use sysctl -w net.ipv4.ip_local_reserved_ports=****-**** to adjust the scope of reserved ports. 2. Check whether the service process is started multiple times on a device during this service."
       }
     },
     {
-      "errClass": "HCCP Errors",
-      "errTitle": "Invalid_Argument_IP_Address",
-      "ErrCode": "EJ0004",
-      "ErrMessage": "Check ip fail. Reason: %s",
+      "errClass": "HCCL Errors",
+      "errTitle": "Communication_Error_Bind_IP_Port",
+      "ErrCode": "EI0020",
+      "ErrMessage": "Failed to enable listening for the host network adapter socket. Reason: %s",
       "Arglist": "reason",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "N/A"
+        "Solution": "Check whether the single-card multi-process scenario is used. If yes, configure the port number using the environment variable HCCL_NPU_SOCKET_PORT_RANGE."
       }
     }
   ]

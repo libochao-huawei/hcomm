@@ -603,3 +603,54 @@ HcclResult HcommThreadAllocWithStream(CommEngine engine,
         "notifyNum[%u]",  engine, stream, notifyNum);
     return HCCL_SUCCESS;
 }
+
+HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx)
+{
+    if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
+        || engine == COMM_ENGINE_CCU) {
+        *ctx = malloc(size);
+        CHK_PTR_NULL(*ctx);
+        CHK_SAFETY_FUNC_RET(memset_s(*ctx, size, 0, size));
+    } else if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS
+        || engine == COMM_ENGINE_AIV) {
+        CHK_RET(hrtMalloc(ctx, size));
+    } else {
+        HCCL_ERROR("[%s] not support engine type[%d]", __func__, engine);
+        return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommEngineCtxDestroy(CommEngine engine, void *ctx)
+{
+    CHK_PTR_NULL(ctx);
+    if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
+        || engine == COMM_ENGINE_CCU) {
+        free(ctx);
+    } else if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS
+        || engine == COMM_ENGINE_AIV) {
+        CHK_RET(hrtFree(ctx));
+    } else {
+        HCCL_ERROR("[%s] invalid engine[%d]", __func__, engine);
+        return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size)
+{
+    if (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU
+        || engine == COMM_ENGINE_AIV) {
+        // 从Host内存拷贝到Device Context内存上
+        CHK_RET(hrtMemSyncCopy(reinterpret_cast<uint8_t*>(dstCtx), size, srcCtx, size,
+            HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+    } else if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
+        || engine == COMM_ENGINE_CCU) {
+        CHK_SAFETY_FUNC_RET(memcpy_s(reinterpret_cast<uint8_t*>(dstCtx), size, srcCtx, size));
+    } else {
+        HCCL_ERROR("[%s]copy engine ctx failed, Unsupported engine[%d]", __func__, engine);
+        return HCCL_E_PARA;
+    }
+    HCCL_INFO("[%s]copy engine ctx success, engine[%d]", __func__, engine);
+    return HCCL_SUCCESS;
+}

@@ -26,8 +26,8 @@
 #include "../../../../../../../src/orion/framework/resource_manager/socket/host_socket_handle_manager.h"
  
 namespace Hccl {
- 
-void *HrtMalloc(u64 size, rtMemType_t memType)
+
+void *HrtMalloc(u64 size, aclrtMemType_t memType)
 {
     return (void*)0x12345678;
 }

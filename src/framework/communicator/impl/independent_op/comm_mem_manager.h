@@ -56,7 +56,7 @@ private:
 
     // cclbuffer内存
     std::mutex bufferMutex_;
-    CCLBufferManager bufferManager_;
+    CCLBufferManager* bufferManager_{nullptr};
 
     // 用户绑定内存
     std::mutex memMutex_;

@@ -77,6 +77,8 @@ public:
     // 清空map
     void ClearMemNameRepository();
 
+    HcclResult SetDeviceUnavailable(bool unavailable);
+
 private:
     std::map<IpcMemInfo, SecIpcName_t> setNameMap_;  // 记录用于input/output和mem name对应关系，由link模块填充
     std::map<IpcMemInfo, SecIpcName_t> openedNameMap_;  // 记录已打开的mem name 与ptr对应关系
@@ -84,6 +86,10 @@ private:
     std::map<IpcMemInfo, Referenced> openedNameMapRef_;  // 记录已打开的mem name 与ptr对应关系的引用计数
     std::map<IpcMemInfo, IpcMemInfo> alignPtrMap_; // 记录根据页表对齐前后的ipc mem对应关系
     std::mutex memMutex_;
+    bool unavailable_{false};
+    
+    // 清空map不加锁
+    void ClearMemNameRepositoryImpl();
 };
 }  // namespace hccl
 

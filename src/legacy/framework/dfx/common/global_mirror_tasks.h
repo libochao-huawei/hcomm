@@ -20,6 +20,7 @@
 #include "internal_exception.h"
 #include "circular_queue.h"
 #include "vector_queue.h"
+#include <array>
 
 namespace Hccl {
 
