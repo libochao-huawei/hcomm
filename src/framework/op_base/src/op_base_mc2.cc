@@ -205,7 +205,11 @@ HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Ti
     CHK_RET(hrtGetDeviceType(devType));
     HCCL_INFO("[%s]version ptr[%p] val[%u] devType[%u]", __func__, pVersion, *pVersion, devType);
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcclAllocComResourceByTilingV2(comm, stream, Mc2Tiling, commContext));
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+        CHK_RET(HcclAllocComResourceByTilingV2(hcclComm->GetCommunicatorV2(), stream, Mc2Tiling, commContext));
+        return HCCL_SUCCESS;
+    }());
 #endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     string commIdentifier = hcclComm->GetIdentifier();
@@ -324,7 +328,11 @@ HcclResult HcclCommResPrepare(HcclComm comm, char *opName, void *opArgs, void **
     CHK_PTR_NULL(opName);
     CHK_PTR_NULL(opArgs);
     CHK_PTR_NULL(addr);
-    HCCLV2_FUNC_RUN(HcclCommResPrepareV2(comm, opName, opArgs, addr));
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+        CHK_RET(HcclCommResPrepareV2(hcclComm->GetCommunicatorV2(), opName, opArgs, addr));
+        return HCCL_SUCCESS;
+    }());
     return HCCL_SUCCESS;
 }
 
@@ -333,10 +341,6 @@ HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t *size, 
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(size);
     CHK_PTR_NULL(addr);
-    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if (indOp == nullptr || strcmp(indOp, "") == 0) {
-        HCCLV2_FUNC_RUN(HcclDevMemAcquireV2(comm, memTag, size, addr, newCreated));
-    }
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     HCCLV2_FUNC_RUN(HcclDevMemAcquireV2(hcclComm->GetCommunicatorV2(), memTag, size, addr, newCreated));
     return HCCL_SUCCESS;
@@ -348,7 +352,11 @@ HcclResult HcclGetRemoteIpcHcclBuf(HcclComm comm, uint64_t remoteRank, void **ad
     CHK_PTR_NULL(addr);
     CHK_PTR_NULL(size);
 
-    HCCLV2_FUNC_RUN(HcclGetRemoteIpcHcclBuf(comm, remoteRank, addr, size));
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+        CHK_RET(HcclGetRemoteIpcHcclBuf(hcclComm->GetCommunicatorV2(), remoteRank, addr, size));
+        return HCCL_SUCCESS;
+    }());
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     void *opResCtx = nullptr;
     hcclComm->GetCommResource(opResCtx);
