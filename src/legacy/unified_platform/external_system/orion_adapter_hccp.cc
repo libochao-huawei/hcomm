@@ -2342,34 +2342,6 @@ void HrtInitTlvMsg(TlvMsg* send_msg, TlvMsg* recv_msg,
     std::memset(rsp->list, 0, sizeof(rsp->list));
 }
 
-void HrtDeinitTlvMsg(TlvMsg* send_msg, TlvMsg* recv_msg) noexcept {
-    // 清理请求消息
-    if (send_msg) {
-        if (send_msg->data) {
-            std::free(send_msg->data);
-            send_msg->data = nullptr;
-        }
-        send_msg->type = 0;
-        send_msg->length = 0;
-    }
-    
-    // 清理响应消息
-    if (recv_msg) {
-        if (recv_msg->data) {
-            std::free(recv_msg->data);
-            recv_msg->data = nullptr;
-        }
-        recv_msg->type = 0;
-        recv_msg->length = 0;
-    }
-}
-void HrtSetMemInfoList(struct CcuMemInfo *memInfoList, uint32_t count, struct ccu_mem_info *recvMemList) {
-    for (size_t i = 0; i < count; ++i) {
-        memInfoList[i].memVa   = recvMemList[i].mem_va;
-        memInfoList[i].memSize = recvMemList[i].mem_size;
-    }
-}
-
 HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memTypeBitmap, struct CcuMemInfo *memInfoList, uint32_t count) 
 {
     s32 ret = 0;
@@ -2377,7 +2349,28 @@ HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memType
 
     struct TlvMsg send_msg = {};
     struct TlvMsg recv_msg = {};
-    HrtInitTlvMsg(&send_msg, &recv_msg, udieIdx, memTypeBitmap, MSG_TYPE_CCU_GET_MEM_INFO);
+    // 使用unique_ptr管理动态分配的内存，实现RAII
+    auto send_data = std::make_unique<char[]>(sizeof(CcuMemReq));
+    auto recv_data = std::make_unique<char[]>(sizeof(ccu_mem_rsp));
+
+    // 初始化请求消息
+    send_msg.type = MSG_TYPE_CCU_GET_MEM_INFO;
+    send_msg.length = sizeof(CcuMemReq);
+    send_msg.data = send_data.get();
+    
+    auto req = reinterpret_cast<CcuMemReq*>(send_msg.data);
+    req->udieIdx = udieIdx;
+    req->memTypeBitmap = memTypeBitmap;
+    
+    // 初始化响应消息
+    recv_msg.type = 0;
+    recv_msg.length = sizeof(ccu_mem_rsp);
+    recv_msg.data = recv_data.get();
+    
+    auto rsp = reinterpret_cast<ccu_mem_rsp*>(recv_msg.data);
+    rsp->die_id = 0;
+    rsp->num = 0;
+    std::memset(rsp->list, 0, sizeof(rsp->list));
     
     ret = RaTlvRequest(tlv_handle, tlv_module_type, &send_msg, &recv_msg);
     if (ret != 0) {
@@ -2389,9 +2382,7 @@ HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memType
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), ret, tlv_module_type, send_msg.type);
         throw NetworkApiException(StringFormat("call ra_tlv_request failed"));
     }
-    auto rsp = static_cast<ccu_mem_rsp*>(static_cast<void*>(recv_msg.data));
     HrtSetMemInfoList(memInfoList, count, rsp->list);
-    HrtDeinitTlvMsg(&send_msg, &recv_msg);
     HCCL_INFO("tlv request success, tlv module type[%u], message type[%u]", tlv_module_type, send_msg.type);
     return HCCL_SUCCESS;
 }
