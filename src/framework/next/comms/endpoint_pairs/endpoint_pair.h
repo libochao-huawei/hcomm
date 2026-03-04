@@ -16,8 +16,8 @@
 #include "channels/channel.h"
 #include "../endpoints/endpoint.h"
 #include "socket_mgr.h"
-#include "socket.h"
 #include "../../../../legacy/unified_platform/resource/socket/socket.h"
+#include "../../../../legacy/framework/resource_manager/socket/socket_manager.h"
 
 using EndpointDescPair = std::pair<EndpointDesc, EndpointDesc>;
 
@@ -74,7 +74,12 @@ public:
     ~EndpointPair();
 
     HcclResult Init();
-    HcclResult GetSocket(const std::string &socketTag, Hccl::Socket*& socket);
+    HcclResult GetSocket(const std::string &socketTag, Hccl::Socket *&socket);
+    
+    // 临时方案：新增临时接口用于支持混跑
+    HcclResult GetSocket(const uint32_t myRank, const uint32_t rmtRank,
+        const std::string &socketTag, Hccl::Socket *&socket);
+
     HcclResult CreateChannel(EndpointHandle endpointHandle, CommEngine engine, 
         HcommChannelDesc *channelDescs, ChannelHandle *channels);
 
@@ -82,6 +87,7 @@ private:
     EndpointDesc localEndpointDesc_{};
     EndpointDesc remoteEndpointDesc_{};
     std::unique_ptr<SocketMgr> socketMgr_;
+    std::unique_ptr<Hccl::SocketManager> socketMgrCompat_;
     std::vector<ChannelHandle> channelHandles_{};
 };
 

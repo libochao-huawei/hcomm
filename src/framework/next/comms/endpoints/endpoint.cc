@@ -37,4 +37,4 @@ HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::uniqu
     return HCCL_SUCCESS;
 }
 
- }
+}
