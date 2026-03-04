@@ -106,7 +106,7 @@ static bool IsMC2Exception(rtExceptionInfo_t* exceptionInfo)
         exceptionInfo->expandInfo.u.fusionInfo.type == RT_FUSION_AICORE_CCU;
 }
 
-void PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
+void PrintUbRegisters(s32 devLogicId, const RdmaHandle rdmaHandle)
 {
     HCCL_INFO("[PrintUbRegisters] start");
     AuxInfoIn in;
@@ -119,9 +119,9 @@ void PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
         HCCL_ERROR("[PrintUbRegister]GetUbRegisterInfo failed.");
     }
 
-    uint16_t isAuxInfoExisted{false};
+    bool isAuxInfoExisted = false;
     for (u32 i = 0; i < auxInfo.auxInfoNum; i++) {
-        if (auxInfo.auxInfoValues[i]) { // // 非零进行ERROR打印
+        if (auxInfo.auxInfoValues[i] != 0) { // 非零进行打印
             isAuxInfoExisted = true;
             HCCL_ERROR("devLogicId[%d], cqe_aux_info_type[%u], cqe_aux_info_value[0x%x]",
  	            devLogicId, auxInfo.auxInfoTypes[i], auxInfo.auxInfoValues[i]);
@@ -155,7 +155,7 @@ void PrintCcuUbRegisters(s32 devLogicId, const ParaCcu &ccuTaskParam)
     for (u32 i = 0; i < jettyNum; ++i) {
         if (jettyStatusVec[i] == JettyStatus::ERROR) {
             auto rdmaHandle = ccuJettys[i]->GetRdmaHandle();
-            HCCL_ERROR("PrintCcuUbRegisters jettyId[%d]", ccuJettys[i]->GetJettyId());
+            HCCL_ERROR("PrintCcuUbRegisters jettyId[%u]", ccuJettys[i]->GetJettyId());
             PrintUbRegisters(devLogicId, rdmaHandle);
             break;
         }
@@ -203,7 +203,7 @@ void TaskExceptionHandler::ProcessAivException(rtExceptionInfo_t* exceptionInfo,
     
     HCCL_ERROR("[TaskExceptionHandler][AIV]Task run failed, para information is "
                 "deviceId[%u] streamId[%u], TaskId[%u], cmdType[%u], "
-                "tag[%d],rank[%u],rankSize[%u], dataCount[%u], numBlocks[%d],"
+                "tag[%u],rank[%u],rankSize[%u], dataCount[%u], numBlocks[%u],"
                 "dataType:[%u], beginTime:[%llu], flagMem[%p]",
                 exceptionInfo->deviceid, exceptionInfo->streamid, 
                 exceptionInfo->taskid, taskInfo.taskParam_.taskPara.Aiv.cmdType, 
@@ -283,7 +283,7 @@ void TaskExceptionHandler::PrintAivPreviousTaskException(rtExceptionInfo_t *exce
         if ((**taskItorPtr)->taskId_ != taskId && (**taskItorPtr)->taskParam_.taskType == TaskParamType::TASK_AIV) {
                 HCCL_ERROR("[TaskExceptionHandler][AIV] "
                 "previous TaskId[%u],streamId[%u], cmdType[%u], "
-                "tag[%d],rank[%u],rankSize[%u], dataCount[%u], numBlocks[%d],"
+                "tag[%u],rank[%u],rankSize[%u], dataCount[%u], numBlocks[%u],"
                 "dataType:[%u], beginTime:[%llu], flagMem[%p]",
                 (**taskItorPtr)->taskId_, 
                 (**taskItorPtr)->streamId_,
@@ -506,7 +506,7 @@ vector<CcuTaskParam> TaskExceptionHandler::GetMC2AlgTaskParam(const TaskInfo& ta
     return collServiceCcu->GetMc2Compont().GetAlgoCcuTaskInfo(taskInfo.taskParam_.taskPara.Ccu.executeId);
 }
 
- void TaskExceptionHandler::ProcessCcuException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo)
+void TaskExceptionHandler::ProcessCcuException(const rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo)
 {
     auto deviceId = exceptionInfo->deviceid;
     HCCL_ERROR("[TaskExceptionHandler][%s]Task from HCCL run failed.", __func__);
@@ -557,7 +557,7 @@ inline void PrintGroupErrorLog(const std::string &stageErrInfo, const std::strin
     HCCL_ERROR("%sTask run failed, groupRank information is %s.", stageErrInfo.c_str(), groupRankContent.c_str());
 }
 
-void TaskExceptionHandler::PrintGroupErrorMessage(ErrorMessageReport &errorMessage, TaskInfo &exceptionTaskInfo,
+void TaskExceptionHandler::PrintGroupErrorMessage(ErrorMessageReport &errorMessage, const TaskInfo &exceptionTaskInfo,
     string &groupRankContent, string &stageErrInfo)
 {
     groupRankContent += "group:[";
@@ -669,6 +669,7 @@ void TaskExceptionHandler::PrintOpDataErrorMessage(u32 deviceId, ErrorMessageRep
 
 void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankContent, const ErrorMessageReport &errorMessage, const rtExceptionInfo_t *exceptionInfo)
 {
+    (void)groupRankContent;
     HCCL_INFO("[ReportErrorMsg] start");
     if (exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
         HCCL_ERROR("[ReportErrorMsg] EI0002");

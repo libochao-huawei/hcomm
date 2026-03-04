@@ -34,6 +34,7 @@
 #include "ccu_context_mgr_imp.h"
 #include "coll_operator_check.h"
 #include "recover_info.h"
+#include "internal_exception.h"
 
 #undef private
 

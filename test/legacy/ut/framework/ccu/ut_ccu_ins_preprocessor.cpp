@@ -42,6 +42,7 @@
 #include "coll_operator_check.h"
 #include "timeout_exception.h"
 #include "rdma_handle_manager.h"
+#include "internal_exception.h"
 
 #undef private
 #undef protected

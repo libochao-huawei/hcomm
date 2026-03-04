@@ -394,7 +394,7 @@ HcclResult HcomCheckAlltoAllVCEmptyV2(const void *sendBuf, const void *sendCount
                         i, j, sendCount, recvCount);
         }
     }
-    isEmpty = !(hasSend | hasRecv);
+    isEmpty = !(hasSend || hasRecv);
     return HCCL_SUCCESS;
 }
 

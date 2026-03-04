@@ -13,7 +13,6 @@
 #define HCCLV2_LOCAL_RDMA_RMA_BUFFER_H
 
 #include "local_rma_buffer.h"
-
 #include "orion_adapter_hccp.h"
 
 namespace Hccl {
@@ -32,7 +31,10 @@ public:
 
     std::unique_ptr<Serializable> GetExchangeDto() override;
 
-    u32 GetLkey() {return lkey;}
+    u32 GetLkey() const 
+    {
+        return lkey;
+    }
     std::pair<uintptr_t, u64> GetBufferInfo() {return make_pair(buf->GetAddr(), buf->GetSize());}
 
     std::vector<char> Desc;

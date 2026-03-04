@@ -21,6 +21,9 @@
 #include "communicator_callback.h"
 #include "stream_utils.h"
 #include "rdma_handle_manager.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
+#include "internal_exception.h"
 #undef private
 #undef protected
 
