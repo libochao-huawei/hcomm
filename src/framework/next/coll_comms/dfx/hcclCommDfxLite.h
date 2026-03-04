@@ -40,6 +40,6 @@ private:
     std::unordered_map<std::string,std::unordered_map<u64, u32> > channelRemoteRankIdLite_;
 };
     static ReadWriteLockBase baseLock_; // 基类锁成员
-    static ReadWriteLock rwLock_; // 读写锁
+    static ReadWriteLock rwLock_(HcclDfx::baseLock_); // 读写锁
 
 }
