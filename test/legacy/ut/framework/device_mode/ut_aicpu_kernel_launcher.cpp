@@ -18,6 +18,8 @@
 #include "aicpu_res_package_helper.h"
 #include "alg_topo_package_helper.h"
 #include "aicpu_kernel_launcher.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 #undef private
 #undef protected
 

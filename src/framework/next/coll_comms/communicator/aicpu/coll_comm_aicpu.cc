@@ -56,6 +56,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
     }
+    nsRecoveryLitePtr_ = std::make_shared<NsRecoveryLite>(kfcControlTransferH2D_, kfcStatusTransferD2H_);
 
     indOpCommInitialized_ = true;
     CollCommLiteMgr::GetInstance()->RegisteCollComm(this);
@@ -245,12 +246,17 @@ u32 CollCommAicpu::GetDevPhyId()
     return topoInfo_.devicePhyId;
 }
 
+std::vector<std::shared_ptr<Thread>> CollCommAicpu::GetThreads()
+{
+    return threads_;
+}
+
 void CollCommAicpu::NsCommClean()
 {
     ubTransportMap_.clear();
 }
 
-std::vector<std::shared_ptr<Thread>> CollCommAicpu::GetThreads()
+hccl::NsRecoveryLitePtr CollCommAicpu::GetNsRecoveryLitePtr()
 {
-    return threads_；
+    return nsRecoveryLitePtr_;
 }

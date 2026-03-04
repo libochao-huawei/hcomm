@@ -9,7 +9,8 @@
 # -----------------------------------------------------------------------------------------------------------
 
 set(src_list
-    ns_resume_lite.cc
+    ns_recovery_func_lite.cc
+    ns_recovery_lite.cc
 )
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))

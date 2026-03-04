@@ -57,7 +57,7 @@ HcclResult FlushHandle::Destroy()
     return finalResult;
 }
 
-HcclResult FlushHandle::GetRdmaHandle(IpAddress ip, u32 devPhyId, void **rdmaHandle)
+HcclResult FlushHandle::GetRdmaHandle(IpAddress ip, u32 devPhyId, void **rdmaHandle) const
 {
     *rdmaHandle =
         RdmaHandleManager::GetInstance().GetByAddr(devPhyId, LinkProtoType::RDMA, ip, PortDeploymentType::HOST_NET);
@@ -148,7 +148,7 @@ HcclResult FlushHandle::RegisterRemoteMr()
 }
 
 // 销毁 MR
-HcclResult FlushHandle::DeregisterMr(MrHandle &mrHandle, std::string logTag)
+HcclResult FlushHandle::DeregisterMr(MrHandle &mrHandle, std::string logTag) const
 {
     HCCL_DEBUG("[DeregisterMr] Starting to destroy %s MR...", logTag.c_str());
 

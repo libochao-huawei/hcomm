@@ -8,14 +8,14 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef NS_RESUME_H
-#define NS_RESUME_H
+#ifndef NS_RECOVERY_H
+#define NS_RECOVERY_H
 
 #include "hccl_res.h"
 
 namespace hccl {
 
-struct NsResumeData {
+struct NsRecoveryData {
     ChannelHandle *channelHandles_;
     ChannelHandle* hostChannelHandleList_;
     uint32_t channelNum_;

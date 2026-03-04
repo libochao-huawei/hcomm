@@ -11,6 +11,7 @@
 #include <numeric>
 #include "sal_pub.h"
 #include "hccl_one_sided_conn.h"
+#include "p2p_mgmt_pub.h"
 
 namespace hccl {
 using namespace std;
@@ -18,9 +19,9 @@ using namespace std;
 HcclOneSidedConn::HcclOneSidedConn(const HcclNetDevCtx &netDevCtx, const HcclRankLinkInfo &localRankInfo,
     const HcclRankLinkInfo &remoteRankInfo, std::unique_ptr<HcclSocketManager> &socketManager,
     std::unique_ptr<NotifyPool> &notifyPool, const HcclDispatcher &dispatcher, const bool &useRdma, u32 sdid,
-    u32 serverId, u32 trafficClass, u32 serviceLevel, bool aicpuUnfoldMode)
+    u32 serverId, u32 trafficClass, u32 serviceLevel, bool aicpuUnfoldMode, bool isStandardCard)
     : localRankInfo_(localRankInfo), socketManager_(socketManager),  notifyPool_(notifyPool),
-    aicpuUnfoldMode_(aicpuUnfoldMode)
+    aicpuUnfoldMode_(aicpuUnfoldMode), isStandardCard_(isStandardCard)
 {
     netDevCtx_ = netDevCtx;
     remoteRankInfo_ = remoteRankInfo;
@@ -63,6 +64,27 @@ HcclResult HcclOneSidedConn::Connect(const std::string &commIdentifier, s32 time
             string(localRankInfo_.ip.GetReadableIP()) + "_" + to_string(localRankInfo_.port) + "_" + commIdentifier;
     }
     HCCL_DEBUG("[HcclOneSidedConn][Connect]socket tag:%s", newTag.c_str());
+
+    if (isStandardCard_ && !useRdma_) {
+        std::vector<u32> enableP2PDevices;
+        enableP2PDevices.push_back(remoteRankInfo_.devicePhyId);
+        HCCL_INFO("[HcclOneSidedConn][Connect]localDevicePhyId[%u] enable p2p with remoteDevicePhyId[%u]",
+            localRankInfo_.devicePhyId, remoteRankInfo_.devicePhyId);
+        HcclResult ret = P2PMgmtPub::EnableP2P(enableP2PDevices);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[HcclOneSidedConn][Connect]Enable P2P Failed, localPhyId[%u], remotephyId[%u], ret[%u]",
+            localRankInfo_.devicePhyId, remoteRankInfo_.devicePhyId, ret), ret);
+    }
+
+    std::vector<u32> WaitP2PEnabledDevices;
+    WaitP2PEnabledDevices.push_back(remoteRankInfo_.devicePhyId);
+    HCCL_INFO("[HcclOneSidedConn][Connect]localDevicePhyId[%u] wait p2p enable with remoteDevicePhyId[%u]",
+        localRankInfo_.devicePhyId, remoteRankInfo_.devicePhyId);
+    HcclResult ret = P2PMgmtPub::WaitP2PEnabled(WaitP2PEnabledDevices, [this]() -> bool { return socketManager_->GetStopFlag(); });
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[HcclOneSidedConn][Connect]Wait Enable P2P Failed, src devicePhyId[%u], dst devicePhyId[%u], ret[%u]",
+        localRankInfo_.devicePhyId, remoteRankInfo_.devicePhyId, ret), ret);
+
     std::vector<std::shared_ptr<HcclSocket>> connectSockets;
     CHK_RET(socketManager_->CreateSingleLinkSocket(newTag, netDevCtx_, remoteRankInfo_, connectSockets, true, true, timeoutSec));
     CHK_RET(transportMemPtr_->SetDataSocket(connectSockets[0]));

@@ -323,8 +323,8 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         return HCCL_SUCCESS;
     }
 
-    NsResumeData data{channelHandles, hostChannelHandleList, channelNum, commTag};
-    nsResumeDatas_[engine].push_back(data);
+    NsRecoveryData data{channelHandles, hostChannelHandleList, channelNum, commTag};
+    nsRecoveryDatas_[engine].push_back(data);
 
     HCCL_ERROR("[MyRank][%s] unsupported comm engine[%d].", __func__, engine);
     return HCCL_E_NOT_SUPPORT;
@@ -380,10 +380,11 @@ void MyRank::SetKfcControlTransfer(std::shared_ptr<hccl::HDCommunicate> kfcContr
     kfcStatusTransferD2H_ = kfcStatusTransferD2H;
 }
 
+constexpr u32 WAIT_CMD_TIMEOUT = 10 * 1000; // 最大等待10秒
 HcclResult MyRank::Suspend()
 {
-    for (const auto& resumeData : nsResumeDatas_) {
-        if (resumeData.first == COMM_ENGINE_AICPU || resumeData.first == COMM_ENGINE_AICPU_TS) {
+    for (const auto& recoveryData : nsRecoveryDatas_) {
+        if (recoveryData.first == COMM_ENGINE_AICPU || recoveryData.first == COMM_ENGINE_AICPU_TS) {
             // Aicpu场景
             Hccl::KfcCommand opCmd = Hccl::KfcCommand::NS_STOP_LAUNCH;
             CHK_RET(kfcControlTransferH2D_->Put(0, sizeof(Hccl::KfcCommand), reinterpret_cast<uint8_t *>(&opCmd)));
@@ -433,8 +434,8 @@ HcclResult MyRank::Clean()
         return ret;
     }
 
-    for (const auto& resumeData : nsResumeDatas_) {
-        if (resumeData.first == COMM_ENGINE_AICPU || resumeData.first == COMM_ENGINE_AICPU_TS) {
+    for (const auto& recoveryData : nsRecoveryDatas_) {
+        if (recoveryData.first == COMM_ENGINE_AICPU || recoveryData.first == COMM_ENGINE_AICPU_TS) {
             // 再清理device，后续优化全用host管理
             HCCL_INFO("[NsRecovery][Clean] start to clean device, waiting for device STOP_LAUNCH_DONE");
             Hccl::KfcExecStatus opInfo;
@@ -487,10 +488,10 @@ HcclResult MyRank::Resume()
     }
     HcommChannelResume(channelList.data(), channelList.size());
     // 批量建链
-    for (const auto& resumeData : nsResumeDatas_) {
-        if (resumeData.first == COMM_ENGINE_AICPU || resumeData.first == COMM_ENGINE_AICPU_TS) {
+    for (const auto& recoveryData : nsRecoveryDatas_) {
+        if (recoveryData.first == COMM_ENGINE_AICPU || recoveryData.first == COMM_ENGINE_AICPU_TS) {
             // KernelLaunch时会将CollCommAicpu下的ubTransportMap_链路恢复,只打包transport
-            for (const auto& handleData : resumeData.second) {
+            for (const auto& handleData : recoveryData.second) {
                 CHK_RET(HcommChannelKernelLaunch(handleData.channelHandles_, handleData.hostChannelHandleList_, 
                 handleData.channelNum_, handleData.commTag_, binHandle_));
             }

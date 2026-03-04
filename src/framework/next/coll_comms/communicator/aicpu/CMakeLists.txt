@@ -13,6 +13,7 @@ set(src_list
     coll_comm_aicpu_mgr.cc
     coll_comm_aicpu.cc
     coll_comm_lite_mgr.cc
+    aicpu_hdc_hander.cc
 )
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))

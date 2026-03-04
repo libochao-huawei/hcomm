@@ -20,7 +20,8 @@
 #include "comm_mems/comm_mems.h"
 #include "engine_ctxs/engine_ctxs.h"
 #include "endpoint_mgr.h"
-#include "communicator/ns_resume/ns_resume.h"
+#include "communicator/ns_recovery/ns_recovery.h"
+#include "hdc_pub.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
@@ -52,7 +53,7 @@ public:
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
     HcclResult ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
 
-    // Ns resume
+    // Ns recovery
     void SetKfcControlTransfer(std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D, 
         std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H);
     HcclResult Suspend();
@@ -84,10 +85,10 @@ private:
 
     ManagerCallbacks callbacks_;
 
-    // Ns resume的临时数据，后续channel会维护自己的数据，此数据会删掉
+    // Ns recovery的临时数据，后续channel会维护自己的数据，此数据会删掉
     std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D_{nullptr};
     std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H_{nullptr};
-    std::unordered_map<CommEngine, std::vector<NsResumeData>> nsResumeDatas_;
+    std::unordered_map<CommEngine, std::vector<NsRecoveryData>> nsRecoveryDatas_;
 };
 
 } // namespace hccl

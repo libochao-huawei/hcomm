@@ -21,6 +21,7 @@
 #include "task_param.h"
 #include "mirror_task_manager.h"
 #include "communicator_impl_lite.h"
+#include "internal_exception.h"
 #undef private
 #undef protected
 

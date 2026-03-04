@@ -18,7 +18,7 @@ namespace hccl {
 using HcclUs = std::chrono::steady_clock::time_point;
 static std::mutex vecMutex;
 
-int32_t ProcessTaskAbortHandleCallback(uint32_t deviceLogicId, rtDeviceTaskAbortStage stage, uint32_t timeout, void *args)
+int32_t ProcessTaskAbortHandleCallback(int32_t deviceLogicId, rtDeviceTaskAbortStage stage, uint32_t timeout, void *args)
 {
     HcclUs startut = std::chrono::steady_clock::now();
     CHK_PTR_NULL(args);

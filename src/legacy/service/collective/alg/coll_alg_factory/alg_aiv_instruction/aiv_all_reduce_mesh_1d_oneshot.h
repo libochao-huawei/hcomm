@@ -109,7 +109,7 @@ __aicore__ inline void AivAllReduceV2Mesh1DOneShot(EXTERN_KERNEL_ARGS_DEF_V2)
         op.BarrierForFirstOP();
     }
     SyncAll<true>();
-    if(rankSize+1<=block_num){
+    if(rankSize+1<= block_num){
       op.ProcessCoreLargeCase(len, tag, inputSliceStride);
     }else{
       op.ProcessCoreSmallCase(len, tag, inputSliceStride);

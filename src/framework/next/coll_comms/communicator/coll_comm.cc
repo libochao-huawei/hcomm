@@ -11,7 +11,6 @@
 // #include "rank_graphs/rank_graph.h"
 #include "exception_handler.h"
 #include "rank_graph_v2.h"
-#include "kfc.h"
 #include "coll_comm_mgr.h"
 
 namespace hccl {

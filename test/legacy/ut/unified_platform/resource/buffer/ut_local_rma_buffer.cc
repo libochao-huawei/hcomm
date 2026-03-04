@@ -11,7 +11,8 @@
 #include "gtest/gtest.h"
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
-
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 #include "local_ub_rma_buffer.h"
 #include "local_rdma_rma_buffer.h"
 #include "local_ipc_rma_buffer.h"

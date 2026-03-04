@@ -11,19 +11,20 @@
 #include "kfc.h"
 #include "sal_pub.h"
 #include "coll_comm_lite_mgr.h"
+#include "ns_recovery_lite.h"
 
 namespace hccl {
-NsResumeLiteFunc &NsResumeLiteFunc::GetInstance()
+NsRecoveryFuncLite &NsRecoveryFuncLite::GetInstance()
 {
-    static NsResumeLiteFunc func;
+    static NsRecoveryFuncLite func;
     return func;
 }
 
-void NsResumeLiteFunc::Call()
+void NsRecoveryFuncLite::Call()
 {
     auto commLites = CollCommLiteMgr::GetInstance()->GetAllCollComms();
     for (auto &deviceComm : commLites) {
-        if (!deviceComm.second->IsCommReady()) {
+        if (!deviceComm.second->GetNsRecoveryLitePtr()->IsCommReady()) {
             continue;
         }
         HandleStopLaunch(deviceComm.second);
@@ -31,55 +32,55 @@ void NsResumeLiteFunc::Call()
     }
 }
 
-void NsResumeLiteFunc::HandleStopLaunch(CollCommAicpu *deviceComm) const
+void NsRecoveryFuncLite::HandleStopLaunch(CollCommAicpu *deviceComm) const
 {
-    if (deviceComm->IsSuspended()) {
+    if (deviceComm->GetNsRecoveryLitePtr()->IsSuspended()) {
         return;
     }
 
-    Hccl::KfcCommand cmd = deviceComm->BackGroundGetCmd();
+    Hccl::KfcCommand cmd = deviceComm->GetNsRecoveryLitePtr()->BackGroundGetCmd();
     if (cmd != Hccl::KfcCommand::NS_STOP_LAUNCH) {
         return;
     }
     HCCL_INFO("[NsRecovery][BackGround] received KfcCommand[NS_STOP_LAUNCH]");
-    deviceComm->SetNeedClean(true);
-    deviceComm->SetIsSuspended(true);
-    deviceComm->BackGroundSetStatus(Hccl::KfcStatus::STOP_LAUNCH_DONE);
+    deviceComm->GetNsRecoveryLitePtr()->SetNeedClean(true);
+    deviceComm->GetNsRecoveryLitePtr()->SetIsSuspended(true);
+    deviceComm->GetNsRecoveryLitePtr()->BackGroundSetStatus(Hccl::KfcStatus::STOP_LAUNCH_DONE);
     HCCL_INFO("[NsRecovery][BackGround] send KfcStatus[STOP_LAUNCH_DONE]");
 }
 
-void NsResumeLiteFunc::HandleClean(CollCommAicpu *deviceComm)
+void NsRecoveryFuncLite::HandleClean(CollCommAicpu *deviceComm)
 {
-    if (!deviceComm->IsNeedClean()) {
+    if (!deviceComm->GetNsRecoveryLitePtr()->IsNeedClean()) {
         return;
     }
-    Hccl::KfcCommand cmd = deviceComm->BackGroundGetCmd();
+    Hccl::KfcCommand cmd = deviceComm->GetNsRecoveryLitePtr()->BackGroundGetCmd();
     if (cmd != Hccl::KfcCommand::NS_CLEAN) {
         return;
     }
     HCCL_INFO("[NsRecovery][BackGround] received KfcCommand[NS_CLEAN]");
     deviceComm->NsCommClean();
     StreamClean(deviceComm);
-    deviceComm->SetNeedClean(false);
-    deviceComm->BackGroundSetStatus(Hccl::KfcStatus::CLEAN_DONE);
-    deviceComm->ResetErrorReported();
+    deviceComm->GetNsRecoveryLitePtr()->SetNeedClean(false);
+    deviceComm->GetNsRecoveryLitePtr()->BackGroundSetStatus(Hccl::KfcStatus::CLEAN_DONE);
+    deviceComm->GetNsRecoveryLitePtr()->ResetErrorReported();
     HCCL_INFO("[NsRecovery][BackGround] send KfcStatus[CLEAN_DONE]");
 }
 
 constexpr u64 DEVICE_QUERY_TIMEOUT_NSEC = 5000000000U; // 5秒
 
-void NsResumeLiteFunc::StreamClean(CollCommAicpu *deviceComm)
+void NsRecoveryFuncLite::StreamClean(CollCommAicpu *deviceComm)
 {
     // 查询停流是否完成
     u32 localDevId{0};
     auto ret = drvGetLocalDevIDByHostDevID(deviceComm->GetDevPhyId(), &localDevId);
     if (ret != DRV_ERROR_NONE) {
-        HCCL_ERROR("NsResumeLiteFunc::%s call drvGetLocalDevIDByHostDevID failed, devPhyId %u, ret %d", __func__, 
+        HCCL_ERROR("NsRecoveryFuncLite::%s call drvGetLocalDevIDByHostDevID failed, devPhyId %u, ret %d", __func__, 
             deviceComm->GetDevPhyId(), ret);
         return;
     }
     if (DeviceQuery(localDevId, APP_ABORT_STAUTS::APP_ABORT_KILL_FINISH, DEVICE_QUERY_TIMEOUT_NSEC) != HCCL_SUCCESS) {
-        deviceComm->BackGroundSetStatus(Hccl::KfcStatus::ERROR, Hccl::KfcErrType::EXEC);
+        deviceComm->GetNsRecoveryLitePtr()->BackGroundSetStatus(Hccl::KfcStatus::ERROR, Hccl::KfcErrType::EXEC);
         HCCL_ERROR("[NsRecovery][BackGround] Stream Stop failed");
         return;
     }
@@ -103,7 +104,7 @@ inline u64 GetCurCpuTimestamp()
 
 constexpr u32 FIVE_MILLISECOND_OF_USLEEP = 5000U;
 
-HcclResult NsResumeLiteFunc::DeviceQuery(const uint32_t devId, const uint32_t step, const uint64_t timeout)
+HcclResult NsRecoveryFuncLite::DeviceQuery(const uint32_t devId, const uint32_t step, const uint64_t timeout)
 {
     uint32_t status;
     uint64_t endTime;

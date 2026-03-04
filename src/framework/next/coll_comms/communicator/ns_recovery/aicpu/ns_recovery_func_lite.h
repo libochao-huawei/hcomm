@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef NS_RESUME_LITE_H
-#define NS_RESUME_LITE_H
+#ifndef NS_RECOVERY_FUNC_LITE_H
+#define NS_RECOVERY_FUNC_LITE_H
 
 #include "coll_comm_aicpu.h"
 #include "aicpu/daemon/daemon_func.h"
@@ -61,9 +61,9 @@ MAKE_ENUM(APP_ABORT_STAUTS,
  * @note N秒快恢device侧的处理
  */
 
-class NsResumeLiteFunc : public DaemonFunc {
+class NsRecoveryFuncLite : public DaemonFunc {
 public:
-    static NsResumeLiteFunc &GetInstance();
+    static NsRecoveryFuncLite &GetInstance();
     virtual void Call() override;
 private:
     void HandleStopLaunch(CollCommAicpu *comm) const;
@@ -71,9 +71,9 @@ private:
     void StreamClean(CollCommAicpu *comm);
     HcclResult DeviceQuery(const uint32_t devId, const uint32_t step, const uint64_t timeout);
 
-    NsResumeLiteFunc() = default;
-    NsResumeLiteFunc(const NsResumeLiteFunc&) = delete;
-    NsResumeLiteFunc& operator=(const NsResumeLiteFunc&) = delete;
+    NsRecoveryFuncLite() = default;
+    NsRecoveryFuncLite(const NsRecoveryFuncLite&) = delete;
+    NsRecoveryFuncLite& operator=(const NsRecoveryFuncLite&) = delete;
 };
 
 }

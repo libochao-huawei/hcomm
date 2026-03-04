@@ -33,59 +33,24 @@ __aicore__ inline void AivReduceScatter91093Deter::InitDataCopyOffset(uint64_t p
 {
     // 以下根据不同情况，计算每个aiv核的数据搬运参数
     // 当rankSize大于总aiv核数时，使用1个aiv服务一个对端，需要多次通信
-    if (rankSize_ > numBlocks_) {
-        CalcNumTargetsAndTargetRanksDeter();
-
-        blockNumPerGroup = 1;
-        blockIdxInGroup = 0;
-        if (len <= perRankBufferCount) { // ccl够用，只需要搬一轮的情况
-            countMid = 0;
-            countTail = len;
-        } else if (len % perRankBufferCount == 0) { // ccl不够用，要搬多轮的情况1: 能整除
-            countMid = perRankBufferCount;
-            countTail = perRankBufferCount;
-        } else { // ccl不够用，要搬多轮的情况2: 不能整除
-            countMid = perRankBufferCount;
-            countTail = len % perRankBufferCount;
-        }
-        blockOffsetMid = 0;
-        blockOffsetTail = 0;
-        flagOffsetInGroup = 0;
-        countPerCore = len;
-        blockOffset = 0;
-        groupMid_ = countMid;
-        groupTail_ = countTail;
-    // 当rankSize小于等于总aiv核数时，根据ranksize和数据量大小选择使用多个aiv服务一个对端（多核并行），只需一次通信
-    } else {
-        numTargets = 1;
-        blockNumPerGroup = numBlocks_ / rankSize_; // 多少个aiv服务一个rank
-        targetRanks[0] = GetBlockIdx() / blockNumPerGroup;
-
-        uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
-        blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
-
-        if (len <= perRankBufferCount) { // ccl够用，只需要搬一轮的情况
-            countMid = 0;
-            blockOffsetMid = 0;
-            groupMid_ = 0;
-            CalCountAndBlockOffset(len, blockNumPerGroup, blockIdxInGroup, padCount, countTail, blockOffsetTail);
-            groupTail_ = len;
-        } else if (len % perRankBufferCount == 0) { // ccl不够用，要搬多轮的情况1: 能整除
-            CalCountAndBlockOffset(perRankBufferCount, blockNumPerGroup, blockIdxInGroup, padCount, countMid, blockOffsetMid);
-            countTail = countMid;
-            blockOffsetTail = blockOffsetMid;
-            groupMid_ = perRankBufferCount;
-            groupTail_ = groupMid_;
-        } else { // ccl不够用，要搬多轮的情况2: 不能整除
-            CalCountAndBlockOffset(perRankBufferCount, blockNumPerGroup, blockIdxInGroup, padCount, countMid, blockOffsetMid);
-            uint64_t remainLen = len % perRankBufferCount;
-            CalCountAndBlockOffset(remainLen, blockNumPerGroup, blockIdxInGroup, padCount, countTail, blockOffsetTail);
-            groupMid_ = perRankBufferCount;
-            groupTail_ = remainLen;
-        }
-        flagOffsetInGroup = blockIdxInGroup * FLAG_SIZE;
-        CalCountAndBlockOffset(len, blockNumPerGroup, blockIdxInGroup, padCount, countPerCore, blockOffset);
+    if (len <= perRankBufferCount) { // ccl够用，只需要搬一轮的情况
+        countMid = 0;
+        countTail = len;
+    } else if (len % perRankBufferCount == 0) { // ccl不够用，要搬多轮的情况1: 能整除
+        countMid = perRankBufferCount;
+        countTail = perRankBufferCount;
+    } else { // ccl不够用，要搬多轮的情况2: 不能整除
+        countMid = perRankBufferCount;
+        countTail = len % perRankBufferCount;
     }
+    blockOffsetMid = 0;
+    blockOffsetTail = 0;
+    flagOffsetInGroup = 0;
+    countPerCore = len;
+    blockOffset = 0;
+    groupMid_ = countMid;
+    groupTail_ = countTail;
+    // 当rankSize小于等于总aiv核数时，根据ranksize和数据量大小选择使用多个aiv服务一个对端（多核并行），只需一次通信
 }
 
 __aicore__ inline int64_t AivReduceScatter91093Deter::GetDeterministicRankOffset(int64_t x)
@@ -125,35 +90,6 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
     __gm__ T *outputGM = (__gm__ T *)output;
     __gm__ T *cclGMSelf = (__gm__ T *)buffIn0;
 
-    GlobalTensor<uint64_t> bufferArgsGT;
-    __gm__ uint64_t *buffersGmAddr = (__gm__ uint64_t *)(commInfoAddr);
-    bufferArgsGT.SetGlobalBuffer(buffersGmAddr, FLAG_SIZE * rankSize_ / sizeof(uint64_t));
-    GM_ADDR buffersIn[MAX_TARGET_NUM] = {};
-    GM_ADDR buffersOut[MAX_TARGET_NUM] = {};
-
-    for (uint32_t i = 0; i < numTargets; i++) {
-        uint32_t targetRank = targetRanks[i];
-        DataCopy(bufferArgsTensor[i * 4], bufferArgsGT[2 * targetRank], 4); // buffersIn buffersOut
-    }
-    SyncFunc<HardEvent::MTE2_S>();
-    for (uint32_t i = 0; i < numTargets; i++) {
-        uint32_t curIdx = i * 4;
-        buffersIn[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx));
-        buffersOut[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx + 1));
-    }
-    PipeBarrier<PIPE_ALL>();
-
-    if (clearEnable_ == 1) {
-        workLocal = syncQue.AllocTensor<int32_t>();
-        Barrier(buffersOut, 1);
-        SyncAll(syncGlobal, workLocal, numBlocks_);
-        ClearGM();
-        Barrier(buffersOut, 2);
-        SyncAll(syncGlobalSecond, workLocal, numBlocks_);
-	    syncQue.FreeTensor(workLocal);
-        PipeBarrier<PIPE_ALL>();
-    }
-    
     int32_t curTag = (tag << TAG_MOVE_LEFT_BITS);
     bool pingpong = false;
     uint64_t halfBufferCount = avgBufferCount*rankSize_;
@@ -279,7 +215,7 @@ __aicore__ inline void aiv_reduce_scatter_91093_deter(KERNEL_ARGS_DEF_A3)
     // 每张卡的CCLBuffer大小为bufferSize, 平均分给ranksize*2块，每块的大小为avgBufferCount
     uint64_t avgBufferCount = (uint64_t)bufferSize / 2 / rankSize / sizeof(T);
 
-    op.InitDeter<T>(buffOut0, rank, rankSize, reduceOp, tag, false);
+    op.InitDeter<T>(buffOut0, buffOut1, rank, rankSize, reduceOp, tag, numBlocks, false);
     op.InitDataCopyOffset<T>(avgBufferCount, len);
     op.InitOpCounter(headCountMem, tailCountMem, addOneMem, SIZE_OF_INT32, isEnableCounter);
     op.HeadCounter();

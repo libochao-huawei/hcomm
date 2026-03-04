@@ -24,6 +24,7 @@ struct ErrorMessageReport {
     u32 taskId = 0;
     u32 notifyId = 0;
     s32 stage = 0;
+    u32 notifyValue = 0;
     u32 rankId = 0;
     u32 rankSize = 0;
     AlgType algType;
@@ -37,6 +38,11 @@ struct ErrorMessageReport {
 
     Eid locEid{};
     Eid rmtEid{};
+
+    uint8_t  rtCqErrorType = 0;
+    uint32_t rtCqErrorCode = 0;
+    uint16_t ubCqeStatus = 0;
+    uint8_t opType = 0;
 };
 
 } // namespace Hccl

@@ -18,6 +18,8 @@
 #include "types.h"
 #include "data_type.h"
 #include "reduce_op.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 
 using namespace Hccl;
 
