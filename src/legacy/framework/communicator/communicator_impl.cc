@@ -1264,13 +1264,13 @@ void CommunicatorImpl::CheckRankGraph() const
     }
 }
 
-u32 GetLocalDieId(PortData&& port)
+u32 GetLocalDieId(PortData&& port, LinkProtocol linkProtocol)
 {
     auto     devLogicId = HrtGetDevice();
     uint32_t devPhyId   = HrtGetDevicePhyIdByIndex(devLogicId);
  
     auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
-    auto  rdmaHandle    = rdmaHandleMgr.Get(devPhyId, port);
+    auto  rdmaHandle    = rdmaHandleMgr.Get(devPhyId, port, linkProtocol);
     auto  dieId         = rdmaHandleMgr.GetDieAndFuncId(rdmaHandle).first;
     return dieId;
 }
@@ -3228,7 +3228,8 @@ void CommunicatorImpl::AppendLocalDieIdForLinks()
             if (iface->GetPos() == AddrPosition::HOST) {
                 continue;
             }
-            u32 dieId = GetLocalDieId({myRank, *iface});
+            // TODO 确认是否可以获取link的第一个Protocol
+            u32 dieId = GetLocalDieId({myRank, *iface}, *(link->GetLinkProtocols().begin()));
             HCCL_INFO("[CommunicatorImpl][AppendLocalDieIdForLinks] get link dieid[%u]", dieId);
             iface->SetLocalDieId(dieId); 
         }
