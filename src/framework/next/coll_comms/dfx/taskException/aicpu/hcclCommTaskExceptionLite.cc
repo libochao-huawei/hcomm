@@ -1,0 +1,348 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+#include "hcclCommTaskExceptionLite.h"
+#include "aicpu_indop_process.h"
+#include "stream_lite.h"
+#include "global_mirror_tasks.h"
+#include "task_scheduler_error.h"
+#include "task_struct_v2.h"
+#include "dlhal_function_v2.h"
+
+namespace hcomm {
+constexpr u32 RT_SDMA_COMPERR = 0x9; // A3 sdma error类型为0x9时，表示写拷贝发生超时代答，或者数据搬移时地址译码错误
+constexpr u32 RT_SDMA_COMPDATAERR = 0xa; // A3 sdma error类型为0xa时，表示读拷贝发生超时代答，或者读HBM返回ERROR
+constexpr u32 RT_SDMA_DATAERR = 0x8; // A3 sdma error类型为0x8时，表示读HBM返回ERROR
+constexpr u32 RT_UB_LOCAL_OPERATIOINERR = 0x2; // A5 ub error类型为0x2时，表示UB本端返回ERROR
+constexpr u32 RT_UB_REMOTE_OPERATIOINERR = 0x3; // A5 ub error类型为0x3时，表示UB远端返回ERROR
+
+constexpr uint32_t TASK_CONTEXT_SIZE = 50; // task 执行失败时打印谦虚task信息的数量
+constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失败时打印前序task信息的长度限制
+
+HcclCommTaskExceptionLite &HcclCommTaskExceptionLite::GetInstance()
+{
+    static HcclCommTaskExceptionLite instance; // aicpu侧一个dev一个进程，不需要按dev区分单例对象
+    return instance;
+}
+
+HcclCommTaskExceptionLite::HcclCommTaskExceptionLite()
+{
+
+}
+
+HcclCommTaskExceptionLite::~HcclCommTaskExceptionLite()
+{
+    initFlag_ = false;
+}
+
+HcclResult HcclCommTaskExceptionLite::Init(u32 devId_)
+{
+    CHK_PRT_RET(initFlag_ == true, HCCL_DEBUG("%s has been initialized", __func__), HCCL_SUCCESS);
+    initFlag_ = true;
+    devId_ = devId_;
+    HCCL_INFO("%s success, devId_[%u]", __func__, devId_);
+    return HCCL_SUCCESS;
+}
+
+void HcclCommTaskExceptionLite::Call()
+{
+    if (initFlag_ == true || stopCall_ == true) {
+        return;
+    }
+
+    HcclResult ret = HandleExceptionCqe();
+    if (ret != HCCL_SUCCESS) {
+        stopCall_ = true;
+        HCCL_ERROR("HandleExceptionCqe fail, set stopCall_[%d]", stopCall_); // 函数调用失败，停止调用避免刷屏
+    }
+}
+
+HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
+{
+    std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
+    CHK_RET(AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo));
+
+    for (auto &commInfo : aicpuCommInfo) {
+        CollCommAicpu *aicpuComm = commInfo.second->GetCollCommAicpu();
+        CHK_PTR_NULL(aicpuComm);
+
+        const std::vector<std::shared_ptr<hccl::Thread>> threads = aicpuComm->GetAllThread();
+        for (auto thread : threads) {
+            rtLogicCqReport_t cqeException;
+            dfx::CqeStatus cqeStatus = dfx::CqeStatus::kDefault;
+            CHK_RET(GetThreadCqe(thread.get(), cqeException, cqeStatus));
+            if (cqeStatus != dfx::CqeStatus::kDefault) {
+                CHK_RET(ProcessCqe(aicpuComm, cqeException));
+            }
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommTaskExceptionLite::GetThreadCqe(hccl::Thread* thread, rtLogicCqReport_t &cqeException,
+    dfx::CqeStatus &cqeStatus)
+{
+    CHK_SMART_PTR_NULL(thread);
+    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(thread->GetStreamLitePtr());
+    CHK_PTR_NULL(streamLite);
+
+    constexpr u32 reportSize = MAX_REPORT_CNT;
+    rtLogicCqReport_t streamReport[reportSize];
+    
+    CqeQueryInput cqeQueryInput;
+    cqeQueryInput.devId = devId_;
+    cqeQueryInput.streamId = streamLite->GetId();
+    cqeQueryInput.sqId = streamLite->GetSqId();
+    cqeQueryInput.cqId = streamLite->GetCqId();
+    cqeQueryInput.type = static_cast<uint32_t>(DRV_LOGIC_TYPE);
+    cqeQueryInput.cqeAddr = reinterpret_cast<uint8_t *>(streamReport);
+    
+    cqeStatus = CqReportRecv(cqeQueryInput, cqeException);
+    cqeStatus = dfx::CqeStatus::kCqeException;
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo)
+{
+    CHK_PTR_NULL(aicpuComm);
+
+    // exceptionInfo->taskId和exceptionInfo->streamId拼成sqeId
+    const u32 sqeId = static_cast<uint32_t>(exceptionInfo.taskId << 16) | static_cast<uint32_t>(exceptionInfo.streamId);
+    const auto curTask = Hccl::GlobalMirrorTasks::Instance().GetTaskInfo(0, exceptionInfo.sqId, sqeId);
+    if (curTask == nullptr) {
+        // 未找到异常对应的TaskInfo
+        HCCL_ERROR("Exception task not found. devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
+            devId_, exceptionInfo.sqId, sqeId);
+        return HCCL_E_PARA;
+    }
+
+    // 每个通信域仅首次上报（N秒快恢时重置）
+    if (!aicpuComm->IsErrorReported()) {
+        // 1) errorMessage上报
+        Hccl::ErrorMessageReport errMsgInfo{};
+        CHK_RET(GenerateErrorMessageReport(aicpuComm, curTask.get(), exceptionInfo, errMsgInfo));
+        CHK_RET(aicpuComm->SendErrorMessageReportToHost(errMsgInfo));
+
+        // 2) send mbox to tsfw
+        u32 notifyId = 0; // TODO: 获取notify方式待定
+        CHK_RET(SendTaskExceptionByMBox(notifyId, 0, exceptionInfo));
+        aicpuComm->SetErrorReported(true);
+    }
+
+    HCCL_ERROR("[TaskExceptionHandlerLite][%s]Task from HCCL run failed.", __func__);
+    if (curTask->taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
+        CHK_RET(PrintTaskContextInfo(exceptionInfo.sqId, sqeId));
+    }
+    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, base information is %s.", curTask->GetBaseInfo().c_str());
+    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, para information is %s.", curTask->GetParaInfo().c_str());
+    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, groupRank information is %s.",
+        GetGroupRankInfo(*curTask).c_str());
+    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, opData information is %s.", curTask->GetOpInfo().c_str());
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommTaskExceptionLite::GenerateErrorMessageReport(CollCommAicpu *aicpuComm,
+    const Hccl::TaskInfo* taskInfo, const rtLogicCqReport_t &exceptionInfo, Hccl::ErrorMessageReport &errMsgInfo)
+{
+    // 获取需要上报的关键信息
+    errMsgInfo.remoteUserRank = taskInfo->remoteRank_;
+    errMsgInfo.streamId = taskInfo->streamId_;
+    errMsgInfo.taskId = taskInfo->taskId_;
+    errMsgInfo.rankId = aicpuComm->GetTopoInfo().userRank;
+    errMsgInfo.rankSize = aicpuComm->GetTopoInfo().userRankSize;
+    errMsgInfo.algType = taskInfo->dfxOpInfo_ == nullptr ?
+        static_cast<Hccl::AlgType>(Hccl::AlgType::MESH) : taskInfo->dfxOpInfo_->algType_;
+    errMsgInfo.opIndex = taskInfo->dfxOpInfo_ == nullptr ? 0 : taskInfo->dfxOpInfo_->index_;
+    errMsgInfo.opType = taskInfo->dfxOpInfo_->op_.opType;
+    errMsgInfo.count = taskInfo->dfxOpInfo_->op_.dataCount;
+    errMsgInfo.dataType = taskInfo->dfxOpInfo_->op_.dataType;
+    errMsgInfo.srcAddr = static_cast<u64>(taskInfo->dfxOpInfo_->op_.inputMem->GetAddr());
+    errMsgInfo.dstAddr = static_cast<u64>(taskInfo->dfxOpInfo_->op_.outputMem->GetAddr());
+    errMsgInfo.taskType = taskInfo->taskParam_.taskType;
+
+    if (taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
+        errMsgInfo.notifyId = taskInfo->taskParam_.taskPara.Notify.notifyID;
+        errMsgInfo.notifyValue = taskInfo->taskParam_.taskPara.Notify.value;
+    } else if (taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE
+        || taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
+        errMsgInfo.notifyId = taskInfo->taskParam_.taskPara.Reduce.notifyID;
+        errMsgInfo.notifyValue = taskInfo->taskParam_.taskPara.Reduce.notifyValue;
+    } else if (taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_UB_INLINE_WRITE
+        || taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_WITH_NOTIFY) {
+        errMsgInfo.notifyId = taskInfo->taskParam_.taskPara.DMA.notifyID;
+        errMsgInfo.notifyValue = taskInfo->taskParam_.taskPara.DMA.notifyValue;
+    }
+
+    if (taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE
+        || taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
+        || taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_REDUCE_INLINE) {
+        errMsgInfo.reduceType = taskInfo->taskParam_.taskPara.Reduce.reduceOp;
+    }
+
+    CHK_SAFETY_FUNC_RET(memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag),
+        taskInfo->dfxOpInfo_->op_.opTag.c_str(), taskInfo->dfxOpInfo_->op_.opTag.size()));
+    CHK_SAFETY_FUNC_RET(memcpy_s(errMsgInfo.group, sizeof(errMsgInfo.group),
+        aicpuComm->GetIdentifier().c_str(), aicpuComm->GetIdentifier().size()));
+
+    GetErrMsgInfo(taskInfo, errMsgInfo, exceptionInfo);
+
+    errMsgInfo.rtCqErrorType = exceptionInfo.errorType;
+    errMsgInfo.rtCqErrorCode = exceptionInfo.errorCode;
+    return HCCL_SUCCESS;
+}
+
+void HcclCommTaskExceptionLite::GetErrMsgInfo(const Hccl::TaskInfo* taskInfo, Hccl::ErrorMessageReport &errMsgInfo,
+    const rtLogicCqReport_t &exceptionInfo)
+{
+    if (taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_WITH_NOTIFY
+        || taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_UB_INLINE_WRITE
+        || taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_UB) {
+        errMsgInfo.locEid = taskInfo->taskParam_.taskPara.DMA.locEid;
+        errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.DMA.rmtEid;
+        errMsgInfo.ubCqeStatus = exceptionInfo.errorCode & 0xFF;
+    } else if (taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE
+        || taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
+        errMsgInfo.locEid = taskInfo->taskParam_.taskPara.Reduce.locEid;
+        errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.Reduce.rmtEid;
+        errMsgInfo.ubCqeStatus = exceptionInfo.errorCode & 0xFF;
+    } else {
+        HCCL_ERROR("%s taskType[%d] not match", __func__, taskInfo->taskParam_.taskType);
+    }
+}
+
+HcclResult HcclCommTaskExceptionLite::SendTaskExceptionByMBox(const u32 notifyId, const u32 tsId,
+    const rtLogicCqReport_t &exceptionInfo)
+{
+    ts_aicpu_msg_info_t aicpuSqe = {};
+    u32 hostpid = 0;
+    u32 vfId = 0;
+    int pid = getpid();
+    HCCL_INFO("[%s] getpid[%d]", __func__, pid);
+    // 调整drvQueryProcessHostPid获取pid和vf_id的值
+    CHK_RET(HrtHalDrvQueryProcessHostPid(pid, nullptr, &vfId, &hostpid, nullptr));
+
+    aicpuSqe.pid = hostpid;
+    aicpuSqe.cmd_type = TS_AICPU_RECORD;
+    aicpuSqe.vf_id = vfId;
+    aicpuSqe.tid = 0U;  // notify is no need tid
+    aicpuSqe.u.aicpu_record.record_type = AICPU_MSG_NOTIFY_RECORD_V2;
+    aicpuSqe.u.aicpu_record.record_id = notifyId;
+    aicpuSqe.ts_id = static_cast<uint8_t>(tsId);
+    aicpuSqe.u.aicpu_record.fault_task_id = 0xffffffff;
+
+    HCCL_ERROR("[%s] exceptionInfo errorType[%u], errorCode[%u]",
+        __func__, (u32)exceptionInfo.errorType, exceptionInfo.errorCode);
+    if (exceptionInfo.errorType == 1) { // ub类型为1
+        aicpuSqe.u.aicpu_record.ret_code = SwitchUBCqeErrCodeToTsErrCode(exceptionInfo.errorCode & 0xFF);
+    } else {
+        aicpuSqe.u.aicpu_record.ret_code = SwitchSdmaCqeErrCodeToTsErrCode(exceptionInfo.errorCode);
+    }
+
+    struct event_summary event;
+    event.dst_engine = TS_CPU;
+    event.policy = ONLY;
+    event.pid = 0;
+    event.grp_id = 0;
+    event.event_id = EVENT_TS_CTRL_MSG;
+    event.subevent_id = 0U;
+    event.msg_len = static_cast<uint32_t>(sizeof(ts_aicpu_msg_info_t));
+    event.msg = reinterpret_cast<char_t *>(&aicpuSqe);
+    drvError_t ret = Hccl::DlHalFunctionV2::GetInstance().dlHalEschedSubmitEvent(devId_, &event);
+    if (ret != DRV_ERROR_NONE) {
+        HCCL_ERROR("[%s]dlHalEschedSubmitEvent failed, ret=%d, notifyId=%u, hostpid=%u, vfId=%u, tsId=%u",
+            __func__, ret, notifyId, hostpid, vfId, tsId);
+        return HCCL_E_DRV;
+    }
+    HCCL_RUN_INFO("[%s]fininsh, notifyId=%u, hostpid=%u, vfId=%u, tsId=%u, errorCode=%u, ret_code=%u",
+        __func__, notifyId, hostpid, vfId, tsId, exceptionInfo.errorCode, aicpuSqe.u.aicpu_record.ret_code);
+    return HCCL_SUCCESS;
+}
+
+// 把UB类错误码转换成Ts对应的错误码
+uint16_t HcclCommTaskExceptionLite::SwitchUBCqeErrCodeToTsErrCode(u32 cqeErrCode) {
+    switch (cqeErrCode) {
+        case RT_UB_LOCAL_OPERATIOINERR:
+            return TS_ERROR_LOCAL_MEM_ERROR;
+        case RT_UB_REMOTE_OPERATIOINERR:
+            return TS_ERROR_REMOTE_MEM_ERROR;
+        default:
+            return TS_ERROR_HCCL_OTHER_ERROR;
+    }
+}
+
+// 把SDMA类错误码转换成Ts对应的错误码
+uint16_t HcclCommTaskExceptionLite::SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode) {
+    switch (cqeErrCode) {
+        case RT_SDMA_COMPERR:
+            return TS_ERROR_SDMA_LINK_ERROR;
+        case RT_SDMA_COMPDATAERR:
+            return TS_ERROR_SDMA_POISON_ERROR;
+        case RT_SDMA_DATAERR:
+            return TS_ERROR_SDMA_DDRC_ERROR;
+        default:
+            return TS_ERROR_HCCL_OTHER_ERROR;
+    }
+}
+
+HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(u32 sqId, u32 taskId)
+{
+    auto queue = Hccl::GlobalMirrorTasks::Instance().GetQueue(devId_, sqId);
+    CHK_PRT_RET(queue == nullptr, HCCL_ERROR("[%s] GetQueue nullptr, devId[%u], sqId[%u].", devId_, sqId), HCCL_E_PARA);
+
+    auto func = [taskId] (const std::shared_ptr<Hccl::TaskInfo>& task) { return task->taskId_ == taskId; };
+    auto taskItorPtr = queue->Find(func);
+    CHK_PRT_RET(taskItorPtr == nullptr || *taskItorPtr == *queue->End(),
+        HCCL_ERROR("[%s] exception task not found, devId[%u], sqId[%u], taskId[%u]", devId_, sqId, taskId), HCCL_E_PARA);
+
+    // 找到当前异常task的前50个task(至多)
+    std::vector<std::shared_ptr<Hccl::TaskInfo>> taskContext {};
+    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskItorPtr != *queue->Begin(); ++i, --(*taskItorPtr)) {
+        if ((**taskItorPtr)->taskId_ > taskId) {
+            HCCL_ERROR("[%s]prev taskId[%u] is bigger than err taskId[%u], stop traversal",
+                __func__, (**taskItorPtr)->taskId_, taskId);
+            break;
+        }
+        if ((**taskItorPtr)->taskId_ != taskId) {
+            taskContext.emplace_back(**taskItorPtr);
+        }
+    }
+
+    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, context sequence before error task is "
+        "[SDMA:M(rank), RDMA:RS(rank,id), SendPayload:SP(rank), InlineReduce:IR(rank), Reduce:R(rank), "
+        "NotifyRecord:NR(rank,id), NotifyWait:NW(rank,id), SendNotify:SN(rank,id), "
+        "WriteWithNotify:WN(rank,id), WriteReduceWithNotify:WRN(rank,id)]:");
+
+    std::string taskContextInfo = "";
+    for (auto it = taskContext.rbegin(); it != taskContext.rend(); ++it) {
+        std::string conciseInfo = (*it)->GetConciseBaseInfo();
+        conciseInfo += ",";
+
+        if (taskContextInfo.size() + conciseInfo.size() >= TASK_CONTEXT_INFO_SIZE) {
+            HCCL_ERROR("[TaskExceptionHandlerLite]%s", taskContextInfo.c_str());
+            taskContextInfo = "";
+        }
+
+        taskContextInfo += conciseInfo;
+    }
+    HCCL_ERROR("[TaskExceptionHandlerLite]%s end.", taskContextInfo.c_str());
+    return HCCL_SUCCESS;
+}
+
+std::string HcclCommTaskExceptionLite::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
+{
+    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
+        HCCL_ERROR("[%s]TaskInfo communicator is nullptr.", __func__);
+        return "";
+    }
+    CollCommAicpu* aicpuComm = static_cast<CollCommAicpu*>(taskInfo.dfxOpInfo_->comm_);
+    return Hccl::StringFormat("group:[%s], rankSize[%u], localRank[%d], remoteRank[%u]",
+ 	    aicpuComm->GetIdentifier().c_str(), aicpuComm->GetTopoInfo().userRankSize, aicpuComm->GetTopoInfo().userRank,
+        taskInfo.remoteRank_);
+}
+}
