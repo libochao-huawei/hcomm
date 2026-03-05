@@ -757,6 +757,7 @@ int RaHdcCustomChannel(unsigned int phyId, struct CustomChanInfoIn *in, struct C
     (void)memcpy_s(&opData.txData.info, sizeof(struct CustomChanInfoIn), in, sizeof(struct CustomChanInfoIn));
 
     ret = RaHdcProcessMsg(RA_RS_CUSTOM_CHANNEL, phyId, (char *)&opData, sizeof(union OpCustomChannelData));
+    CHK_PRT_RETURN(ret == -ENXIO, hccp_warn("[custom]hdc message process unsuccessful ret[%d], phyId[%u]", ret, phyId), ret);
     CHK_PRT_RETURN(ret != 0, hccp_err("[custom]hdc message process failed ret[%d], phyId[%u]", ret, phyId), ret);
 
     (void)memcpy_s(out, sizeof(struct CustomChanInfoOut), &opData.rxData.info,
