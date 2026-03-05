@@ -21,7 +21,7 @@ extern "C" {
 
 struct NdaOps {
     void *(*alloc)(size_t size);
-    void (free)(void *ptr);
+    void (*free)(void *ptr);
 
     int (*memset_s)(void *dst, int value, size_t count);
     int (*memcpy_s)(void *dst, size_t dstSize, void *src, size_t srcSize);
@@ -47,10 +47,10 @@ struct queueBuf {
 };
 
 #ifndef _SYS_UIO_H
-struct iovec {
-    void *iov_base;
-    size_t iov_len;
-};
+// struct iovec {
+//     void *iov_base;
+//     size_t iov_len;
+// };
 #endif // _SYS_UIO_H
 
 struct queueInfo {
