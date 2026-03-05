@@ -64,9 +64,9 @@ void ConnectedLinkMgr::ParsePackedData(std::vector<char> &data)
     }
 
     if (totalNum > linkSize) {
- 	    HCCL_ERROR("[ParsePackedData] numVec total sum[%u] exceeds linkSize[%u].", totalNum, linkSize);
- 	    return;
- 	}
+        HCCL_ERROR("[ParsePackedData] numVec total sum[%u] exceeds linkSize[%u].", totalNum, linkSize);
+        return;
+    }
 
     std::vector<LinkData> allLinkVec;
     for (u32 idx = 0; idx < linkSize; idx++) {
