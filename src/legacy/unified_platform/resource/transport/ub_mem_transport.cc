@@ -54,7 +54,7 @@ HcclResult UbMemTransport::FillTagVec()
             HCCL_WARNING("[UbMemTransport][FillTagVec] localRmaBuffer is nullptr. memHandleNum: %d", index);
         } else {
             CHK_SAFETY_FUNC_RET(memcpy_s(tag.data(), tag.size(), 
-                static_cast<const void*>(localRmaBuffer->GetBuf()->GetMemTag()), HCCL_RES_TAG_MAX_LEN));
+                static_cast<const void*>(localRmaBuffer->GetBuf()->GetMemTag().c_str()), HCCL_RES_TAG_MAX_LEN));
             HCCL_INFO("[UbMemTransport][FillTagVec] memHandleNum[%d] memTag[%s]", index, tag.data());
         }
         localUserMemTag_.push_back(tag);
