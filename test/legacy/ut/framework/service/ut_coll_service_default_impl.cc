@@ -694,6 +694,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode)
 
     CollServiceDefaultImpl service(&comm);
     CollOperator op;
+    service.AddOpCounterMems();
     op.inputMem = DevBuffer::Create(0x100, 1);
     op.outputMem = DevBuffer::Create(0x100, 1);
     op.scratchMem = DevBuffer::Create(0x100, 1);
@@ -881,6 +882,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode_with_task)
 
     CollServiceDefaultImpl service(&comm);
     CollOperator op;
+    service.AddOpCounterMems();
     op.inputMem = DevBuffer::Create(0x100, 1);
     op.outputMem = DevBuffer::Create(0x100, 1);
     op.scratchMem = DevBuffer::Create(0x100, 1);
