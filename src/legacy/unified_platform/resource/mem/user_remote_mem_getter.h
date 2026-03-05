@@ -60,9 +60,6 @@ HcclResult GetRemoteUserMem(RemoteMemCtx<T> &remoteMemCtx)
         remoteMemCtx.tagPointers.clear();
         remoteMemCtx.tagPointers.reserve(remoteMemCtx.userMemCount);
         for (uint32_t i = 0; i < remoteMemCtx.userMemCount; ++i) {
-            if (remoteMemCtx.rmtBufferVec[i + 1] == nullptr) {
-                continue;
-            }
             remoteMemCtx.cacheBuilder(remoteMemCtx, i);
             const char* src = remoteMemCtx.remoteUserMemTag[i + 1].data();
             std::string tagCopy(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));

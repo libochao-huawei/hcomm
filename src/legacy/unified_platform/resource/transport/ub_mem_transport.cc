@@ -901,6 +901,9 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
     uint32_t userMemCount = rmtBufferVec.size() - 1; // 默认 cclBuffer 数量为1，后续出现1的含义也是 cclBufferNum
     auto cacheBuilder = [](RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> &remoteMemCtx, uint32_t index) {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index + 1];
+        if (rmtBuffer == nullptr) {
+            return HCCL_SUCCESS;
+        }
         switch (rmtBuffer->GetMemType()) {
                 case HCCL_MEM_TYPE_DEVICE:
                     remoteMemCtx.remoteUserMems[index].type = COMM_MEM_TYPE_DEVICE;
