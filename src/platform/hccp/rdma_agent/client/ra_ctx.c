@@ -541,9 +541,6 @@ HCCP_ATTRI_VISI_DEF int RaCtxCqCreate(void *ctxHandle, struct CqInfoT *info, voi
             ret, ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex);
         goto err;
     }
-    hccp_warn("@@@ RaCtxCqCreate info->out.cqeSize: %ld", info->out.cqeSize);
-    hccp_warn("@@@ RaCtxCqCreate info->out.bufAddr: %ld", info->out.bufAddr);
-    hccp_warn("@@@ RaCtxCqCreate info->out.swdbAddr: %ld", info->out.swdbAddr);
 
     *cqHandle = (void *)cqHandleTmp;
     return 0;
