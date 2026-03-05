@@ -39,7 +39,8 @@ public:
     template<typename... BufferArgs>
     std::pair<Iterator, bool> Add(const KeyType& key, BufferArgs&&... bufferArgs)
     {
-        auto overlapResult = CheckOverlap(key);
+        KeyType regKey = key;
+        auto overlapResult = CheckOverlap(key, regKey);
         if (overlapResult.second) {
             HCCL_ERROR("Error: Buffer key overlaps with existing buffer key.");
             return std::make_pair(intervalTree_.end(), false);
@@ -47,7 +48,7 @@ public:
 
         auto result = intervalTree_.emplace(
             std::piecewise_construct,
-            std::forward_as_tuple(key),
+            std::forward_as_tuple(regKey),
             std::forward_as_tuple(BufferWithRef{ BufferType{ std::forward<BufferArgs>(bufferArgs)... }, 1 })
         );
         if (!result.second) {
@@ -59,7 +60,7 @@ public:
             }
             else if(result.first->second.ref > 1) {
                 HCCL_RUN_INFO("Memory is already registered, just increase the reference count, "
-                    "current memory reference count[%llu], %s.", result.first->second.ref, key.ToString().c_str());
+                    "current memory reference count[%llu], %s.", result.first->second.ref, regKey.ToString().c_str());
             }
         }
 
@@ -139,7 +140,7 @@ public:
 private:
     MapType intervalTree_;
 
-    std::pair<Iterator, bool> CheckOverlap(const KeyType& key)
+    std::pair<Iterator, bool> CheckOverlap(const KeyType& key, KeyType& regKey)
     {
         auto it = intervalTree_.lower_bound(key);
         if (it != intervalTree_.end()) {
@@ -147,10 +148,13 @@ private:
             if (it->first == key) {
                 return std::make_pair(it, false);
             }
-
-            // 情况2：addr_ == it->first.addr_ && size_ < it->first.size_。it->first.IsSubset(key)非必须
+            // 情况2：addr_ == it->first.addr_ && size_ < it->first.size_
+            if (it->first.IsSuperset(key)) {
+                regKey = it->first;
+                return std::make_pair(it, false);
+            }
             // 情况3：addr_ < it->first.addr_
-            if (it->first.IsSuperset(key) || it->first.IsIntersect(key)) { 
+            if (it->first.IsSubset(key) || it->first.IsIntersect(key)) { 
                 return std::make_pair(it, true);
             }
         }
@@ -158,14 +162,18 @@ private:
         // 剩下的是空集
         if (it != intervalTree_.begin()) {
             auto prevIt = std::prev(it);
-            // 情况4：addr_ > prevIt->first.addr_
-            // 情况5： 1) addr_ > prevIt->first.addr_的子集情况；
-            // 2) addr_ == prevIt->first.addr_，size_ > prevIt->first.size
-            if (prevIt->first.IsIntersect(key) || prevIt->first.IsSubset(key) || prevIt->first.IsSuperset(key)) {
+            // 情况4：addr_ > prevIt->first.addr_的子集情况；
+            if (prevIt->first.IsSuperset(key)) {
+                regKey = prevIt->first;
+                return std::make_pair(prevIt, false);
+            }
+            // 情况5：addr_ > prevIt->first.addr_
+            // 情况6：addr_ == prevIt->first.addr_，size_ > prevIt->first.size
+            if (prevIt->first.IsIntersect(key) || prevIt->first.IsSubset(key)) {
                 return std::make_pair(prevIt, true);
             }
 
-            // 6. 剩下的是空集
+            // 7. 剩下的是空集
             return std::make_pair(prevIt, false);
         }
 
