@@ -112,7 +112,6 @@ HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *end
         HCCL_ERROR("call Endpoint::CreateEndpoint failed");
         return ret;
     }
-    //CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("call Endpoint::CreateEndpoint failed"), ret);
     CHK_PTR_NULL(endpointPtr);
     CHK_RET(endpointPtr->Init());
 
