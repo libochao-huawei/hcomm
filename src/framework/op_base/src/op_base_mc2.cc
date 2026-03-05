@@ -205,7 +205,20 @@ HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Ti
     CHK_RET(hrtGetDeviceType(devType));
     HCCL_INFO("[%s]version ptr[%p] val[%u] devType[%u]", __func__, pVersion, *pVersion, devType);
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcclAllocComResourceByTilingV2(comm, stream, Mc2Tiling, commContext));
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            void* commV2{nullptr};
+            commV2 = comm;
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp != nullptr && strcmp(indOp, "1") == 0) {
+                hccl::hcclComm *gComm = static_cast<hccl::hcclComm*>(comm);
+                CHK_PTR_NULL(gComm);
+                commV2 = gComm->GetCommunicatorV2();
+                CHK_PTR_NULL(commV2);
+            }
+            CHK_RET(HcclAllocComResourceByTilingV2(commV2, stream, Mc2Tiling, commContext));
+            return HCCL_SUCCESS;
+        }());
 #endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     string commIdentifier = hcclComm->GetIdentifier();

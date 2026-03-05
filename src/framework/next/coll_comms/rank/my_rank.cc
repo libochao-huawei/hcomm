@@ -373,15 +373,15 @@ HcclResult MyRank::ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMe
     return HCCL_SUCCESS;
 }
 
-void MyRank::SetKfcControlTransfer(std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D, 
-        std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H)
+void MyRank::SetKfcControlTransfer(std::shared_ptr<Hccl::HDCommunicate> kfcControlTransferH2D, 
+        std::shared_ptr<Hccl::HDCommunicate> kfcStatusTransferD2H)
 {
     kfcControlTransferH2D_ = kfcControlTransferH2D;
     kfcStatusTransferD2H_ = kfcStatusTransferD2H;
 }
 
 constexpr u32 WAIT_CMD_TIMEOUT = 10 * 1000; // 最大等待10秒
-HcclResult MyRank::Suspend()
+HcclResult MyRank::StopLaunch()
 {
     for (const auto& recoveryData : nsRecoveryDatas_) {
         if (recoveryData.first == COMM_ENGINE_AICPU || recoveryData.first == COMM_ENGINE_AICPU_TS) {
@@ -486,7 +486,13 @@ HcclResult MyRank::Resume()
             channelList.insert(channelList.end(), endPointPair.second.begin(), endPointPair.second.end());
         }
     }
-    HcommChannelResume(channelList.data(), channelList.size());
+
+    auto ret = HcommChannelResume(channelList.data(), channelList.size());
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[NsRecovery][Clean] MyRank::Clean failed!");
+        return ret;
+    }
+
     // 批量建链
     for (const auto& recoveryData : nsRecoveryDatas_) {
         if (recoveryData.first == COMM_ENGINE_AICPU || recoveryData.first == COMM_ENGINE_AICPU_TS) {

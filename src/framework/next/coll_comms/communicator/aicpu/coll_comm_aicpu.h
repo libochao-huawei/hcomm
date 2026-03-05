@@ -29,7 +29,6 @@
 using namespace hccl;
 class CollCommAicpu {
 public:
-    ~CollCommAicpu();
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
     HcclResult AllocChannelResource(HcclChannelUrmaRes *commParam);
@@ -39,16 +38,17 @@ public:
     std::string GetIdentifier();
     u32 GetDevPhyId();
     std::vector<std::shared_ptr<Thread>> GetThreads();
+    void CleanUbTransportMap();
 
     // N秒快恢
     hccl::NsRecoveryLitePtr GetNsRecoveryLitePtr();
-    void NsCommClean();
     
 private:
+    HcclResult InitBackgroundThread();
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
     u32 devId_;
-    
+
     //通用的通道
     hccl::HDCommunicatePtr kfcControlTransferH2D_{nullptr};
     hccl::HDCommunicatePtr kfcStatusTransferD2H_{nullptr};

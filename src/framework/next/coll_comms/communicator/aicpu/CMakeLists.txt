@@ -12,7 +12,6 @@ set(src_list
     aicpu_indop_process.cc
     coll_comm_aicpu_mgr.cc
     coll_comm_aicpu.cc
-    coll_comm_lite_mgr.cc
     aicpu_hdc_hander.cc
 )
 

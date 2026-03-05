@@ -59,11 +59,37 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     nsRecoveryLitePtr_ = std::make_shared<NsRecoveryLite>(kfcControlTransferH2D_, kfcStatusTransferD2H_);
 
     indOpCommInitialized_ = true;
-    CollCommLiteMgr::GetInstance()->RegisteCollComm(this);
+    InitBackgroundThread();
     
     HCCL_RUN_INFO("%s group[%s] success!, deviceLogicId[%u], devicePhyId[%u], deviceType[%u]",
          __func__, identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType);
     return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::InitBackgroundThread()
+{
+    HCCL_INFO("InitBackgroundThread:: start");
+    static auto commandToBackGroud = CommandToBackGroud::Default;
+    HCCL_INFO("InitBackgroundThread:: gen daemon service run func");
+    static auto daemonServiceRun = [](void *info) {
+        AicpuDaemonService::GetInstance().ServiceRun(info);
+    };
+    HCCL_INFO("InitBackgroundThread:: gen daemon service stop func");
+    static auto daemonServiceStop = [](void *info) {
+        AicpuDaemonService::GetInstance().ServiceStop(info);
+    };
+
+    // 注册守护进程函数
+    AicpuDaemonService::GetInstance().Register(&NsRecoveryFuncLite::GetInstance());
+
+    // 启动背景线程
+    if (StartMC2MaintenanceThread != nullptr) {
+        StartMC2MaintenanceThread(daemonServiceRun, &commandToBackGroud, daemonServiceStop, &commandToBackGroud);
+        HCCL_INFO("[InitBackgroundThread] start BackGround thread success.");
+    } else {
+        HCCL_WARNING("Aicpu api StartMC2MaintenanceThread func is nullptr");
+    }
+    HCCL_INFO("InitBackgroundThread::end");
 }
 
 HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
@@ -251,7 +277,7 @@ std::vector<std::shared_ptr<Thread>> CollCommAicpu::GetThreads()
     return threads_;
 }
 
-void CollCommAicpu::NsCommClean()
+void CollCommAicpu::CleanUbTransportMap()
 {
     ubTransportMap_.clear();
 }

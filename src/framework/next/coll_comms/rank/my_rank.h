@@ -21,9 +21,10 @@
 #include "engine_ctxs/engine_ctxs.h"
 #include "endpoint_mgr.h"
 #include "communicator/ns_recovery/ns_recovery.h"
-#include "hdc_pub.h"
 
+#include "../../../../legacy/framework/communicator/hdc.h"
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
+
 
 namespace hccl {
 
@@ -54,9 +55,9 @@ public:
     HcclResult ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
 
     // Ns recovery
-    void SetKfcControlTransfer(std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D, 
-        std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H);
-    HcclResult Suspend();
+    void SetKfcControlTransfer(std::shared_ptr<Hccl::HDCommunicate> kfcControlTransferH2D, 
+        std::shared_ptr<Hccl::HDCommunicate> kfcStatusTransferD2H);
+    HcclResult StopLaunch();
     HcclResult Clean();
     HcclResult Resume();
 
@@ -86,8 +87,8 @@ private:
     ManagerCallbacks callbacks_;
 
     // Ns recovery的临时数据，后续channel会维护自己的数据，此数据会删掉
-    std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D_{nullptr};
-    std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H_{nullptr};
+    std::shared_ptr<Hccl::HDCommunicate> kfcControlTransferH2D_{nullptr};
+    std::shared_ptr<Hccl::HDCommunicate> kfcStatusTransferD2H_{nullptr};
     std::unordered_map<CommEngine, std::vector<NsRecoveryData>> nsRecoveryDatas_;
 };
 

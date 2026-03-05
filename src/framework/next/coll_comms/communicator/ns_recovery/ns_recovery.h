@@ -22,6 +22,10 @@ struct NsRecoveryData {
     std::string commTag_;
 };
 
+HcclResult HcommChannelClean(const ChannelHandle *channelList, uint32_t channelNum);
+
+HcclResult HcommChannelResume(const ChannelHandle *channelList, uint32_t channelNum);
+
 }
 
 #endif

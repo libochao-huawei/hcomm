@@ -483,7 +483,7 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
     return true;
 }
 
-static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const TaskParam &taskParam, 
+static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const TaskParam &taskParam, bool isMaster,
     const RankId remoteRankId = INVALID_RANKID)
 {
     u32 taskId;
@@ -491,7 +491,7 @@ static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const Tas
     HrtGetTaskIdAndStreamID(taskId, streamId);
  
     shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId, remoteRankId, taskParam,
-        comm.GetMirrorTaskManager().GetCurrDfxOpInfo());
+        comm.GetMirrorTaskManager().GetCurrDfxOpInfo(), isMaster);
  
     HCCL_INFO("Begin to AddTaskInfo: streamId[%lu], taskId[%lu], remoteRankId[%u].", streamId, taskId, remoteRankId);
     comm.GetMirrorTaskManager().AddTaskInfo(taskInfo);
@@ -554,7 +554,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
         params.taskParams[0].beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
         SuperFastLoad(ccuParams, mStream, vector_zero_count);
         params.taskParams[0].endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-        FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[0]);
+        FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[0], (!params.isSlave));
     } else {
         SuperFastLoad(ccuParams, mStream, vector_zero_count);
     }
@@ -574,7 +574,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
                 params.taskParams[i + 1].beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
                 SuperFastLoad(ccuParams + params.count[i], slave->GetPtr(), params.count[i + 1]);
                 params.taskParams[i + 1].endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-                FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[i + 1]);
+                FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[i + 1], slave->GetIsMaster());
             }
             else{
                 SuperFastLoad(ccuParams + params.count[i], slave->GetPtr(), params.count[i + 1]);
@@ -604,7 +604,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
             taskParam.taskPara.Reduce.linkType   = DfxLinkType::ONCHIP;
             taskParam.taskPara.Reduce.dataType   = DataTypeToHcclDataType(opParams.dataType);
             taskParam.taskPara.Reduce.reduceOp   = ReduceOpToHcclReduceOp(opParams.reduceOp);
-            FastCcuLaunchSaveDfxTaskInfo(*this, taskParam, GetMyRank());
+            FastCcuLaunchSaveDfxTaskInfo(*this, taskParam, true, GetMyRank()); // stream为主流
         } else {
             aclrtReduceKind rtReduceOp = static_cast<aclrtReduceKind>(static_cast<int>(RtReduceOpGet(opParams.reduceOp)));
             aclDataType rtDataType = static_cast<aclDataType>(static_cast<int>(RtDataTypeGet(opParams.dataType)));

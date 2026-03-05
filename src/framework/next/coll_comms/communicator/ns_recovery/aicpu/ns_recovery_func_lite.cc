@@ -12,6 +12,7 @@
 #include "sal_pub.h"
 #include "coll_comm_lite_mgr.h"
 #include "ns_recovery_lite.h"
+#include "aicpu_indop_process.h"
 
 namespace hccl {
 NsRecoveryFuncLite &NsRecoveryFuncLite::GetInstance()
@@ -22,13 +23,15 @@ NsRecoveryFuncLite &NsRecoveryFuncLite::GetInstance()
 
 void NsRecoveryFuncLite::Call()
 {
-    auto commLites = CollCommLiteMgr::GetInstance()->GetAllCollComms();
-    for (auto &deviceComm : commLites) {
-        if (!deviceComm.second->GetNsRecoveryLitePtr()->IsCommReady()) {
+    std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
+    AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo);
+    for (auto &commInfo : aicpuCommInfo) {
+        CollCommAicpu* deviceComm = commInfo.second->GetCollCommAicpu();
+        if (!deviceComm->GetNsRecoveryLitePtr()->IsCommReady()) {
             continue;
         }
-        HandleStopLaunch(deviceComm.second);
-        HandleClean(deviceComm.second);
+        HandleStopLaunch(deviceComm);
+        HandleClean(deviceComm);
     }
 }
 
@@ -59,7 +62,7 @@ void NsRecoveryFuncLite::HandleClean(CollCommAicpu *deviceComm)
         return;
     }
     HCCL_INFO("[NsRecovery][BackGround] received KfcCommand[NS_CLEAN]");
-    deviceComm->NsCommClean();
+    deviceComm->CleanUbTransportMap();
     StreamClean(deviceComm);
     deviceComm->GetNsRecoveryLitePtr()->SetNeedClean(false);
     deviceComm->GetNsRecoveryLitePtr()->BackGroundSetStatus(Hccl::KfcStatus::CLEAN_DONE);

@@ -20,7 +20,6 @@
 #include "independent_op_context_manager.h"
 #include "comm_mem_manager.h"
 #include "channel_manager.h"
-#include "hdc_pub.h"
 
 namespace hccl {
 /**
@@ -72,10 +71,9 @@ public:
 
     std::string GetCollCommName();
     // Todo:在这里做N秒快恢
-    void SetKfcControlTransfer(std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D, 
-        std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H);
+    void SetKfcControlTransfer(std::shared_ptr<Hccl::HDCommunicate> kfcControlTransferH2D, 
+        std::shared_ptr<Hccl::HDCommunicate> kfcStatusTransferD2H);
     HcclCommStatus GetCommStatus();
-    void SetCommStatus(const HcclCommStatus& status);
     HcclResult Suspend();
     HcclResult Clean();
     HcclResult Resume();

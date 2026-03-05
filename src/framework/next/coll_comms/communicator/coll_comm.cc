@@ -17,7 +17,6 @@ namespace hccl {
 CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, const ManagerCallbacks& callbacks)
     : comm_(comm), rankId_(rankId), commId_ (commName), callbacks_(callbacks)
 {
-    CollCommMgr::GetInstance()->RegisteCollComm(this); 
 }
 
 CollComm::~CollComm()
@@ -52,6 +51,9 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
         opExpansionMode = config->hcclOpExpansionMode;
     }
     CHK_RET(myRank_->Init(cclBuffer, opExpansionMode, rankNum));
+    
+    CollCommMgr::GetInstance()->RegisteCollComm(this); 
+    commStatus_ = HcclCommStatus::HCCL_COMM_READY;
 
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
@@ -67,22 +69,17 @@ std::string CollComm::GetCollCommName()
     return commId_;
 }
 
-void CollComm::SetKfcControlTransfer(std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D, 
-        std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H)
+void CollComm::SetKfcControlTransfer(std::shared_ptr<Hccl::HDCommunicate> kfcControlTransferH2D, 
+        std::shared_ptr<Hccl::HDCommunicate> kfcStatusTransferD2H)
 {
     myRank_->SetKfcControlTransfer(kfcControlTransferH2D, kfcStatusTransferD2H);
 }
 
-void CollComm::SetCommStatus(const HcclCommStatus& status)
-{
-    commStatus_ = status;
-}
 HcclCommStatus CollComm::GetCommStatus()
 {
     return commStatus_;
 }
 
-constexpr u32 WAIT_CMD_TIMEOUT = 10 * 1000; // 最大等待10秒
 HcclResult CollComm::Suspend()
 {
     if (commStatus_ == HcclCommStatus::HCCL_COMM_SUSPENDING) {
@@ -91,7 +88,7 @@ HcclResult CollComm::Suspend()
     }
     commStatus_ = HcclCommStatus::HCCL_COMM_SUSPENDING;
 
-    return myRank_->Suspend();
+    return myRank_->StopLaunch();
 }
 
 HcclResult CollComm::Clean()

@@ -13,7 +13,7 @@
 #include "orion_adapter_rts.h"
 
 namespace hccl {
-int32_t ProcessTaskAbortHandleCallback(uint32_t deviceLogicId, rtDeviceTaskAbortStage stage, uint32_t timeout, void *args);
+int32_t ProcessTaskAbortHandleCallback(int32_t deviceLogicId, aclrtDeviceTaskAbortStage stage, uint32_t timeout, void *args);
 
 MAKE_ENUM(TaskAbortResult,
     TASK_ABORT_SUCCESS = 0,  // taskabortSuccess
@@ -22,18 +22,18 @@ MAKE_ENUM(TaskAbortResult,
 
 class CollComm;
 
-class TaskAbortHandler {
+class HcclTaskAbortHandler {
 public:
-    TaskAbortHandler();
-    ~TaskAbortHandler();
-    static TaskAbortHandler &GetInstance();
+    HcclTaskAbortHandler();
+    ~HcclTaskAbortHandler();
+    static HcclTaskAbortHandler &GetInstance();
     HcclResult Register(CollComm *communicator);
     HcclResult UnRegister(CollComm *communicator);
 private:
     std::vector<CollComm *> commVector;
 
-    TaskAbortHandler(const TaskAbortHandler&) = delete;
-    TaskAbortHandler& operator=(const TaskAbortHandler&) = delete;
+    HcclTaskAbortHandler(const HcclTaskAbortHandler&) = delete;
+    HcclTaskAbortHandler& operator=(const HcclTaskAbortHandler&) = delete;
 };
 }
 

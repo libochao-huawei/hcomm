@@ -885,7 +885,6 @@ HcclResult CcuComponent::DestroyAllJettys()
     return HcclResult::HCCL_SUCCESS;
 }
 
-
 // 以下接口用于n秒快恢与TaskException
 HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
 {

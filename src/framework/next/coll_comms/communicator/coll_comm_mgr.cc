@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "coll_comm_mgr.h"
-#include "ns_resume/task_abort_handler.h"
+#include "ns_recovery/task_abort_handler.h"
 
 namespace hccl {
 
@@ -35,7 +35,7 @@ void CollCommMgr::RegisteCollComm(CollComm* collComm)
     allCollComms_[collComm->GetCollCommName()] = collComm;
 
     // 注册到需要的地方
-    TaskAbortHandler::GetInstance().Register(collComm);
+    HcclTaskAbortHandler::GetInstance().Register(collComm);
 }
 
 void CollCommMgr::UnRegisteCollComm(CollComm* collComm)
@@ -43,7 +43,7 @@ void CollCommMgr::UnRegisteCollComm(CollComm* collComm)
     allCollComms_.erase(collComm->GetCollCommName());
 
     // 从通信域里面注销
-    TaskAbortHandler::GetInstance().UnRegister(collComm);
+    HcclTaskAbortHandler::GetInstance().UnRegister(collComm);
 }
 
 std::unordered_map<std::string, CollComm*> CollCommMgr::GetAllCollComms()

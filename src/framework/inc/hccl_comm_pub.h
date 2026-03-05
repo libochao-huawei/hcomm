@@ -345,7 +345,7 @@ public:
     std::mutex operatorlock_;
     HcclResult Suspend();
     HcclResult Resume();
-    HcclResult GetCommStatus(HcclCommStatus *status);
+    HcclResult GetCommStatus(HcclCommStatus &status);
 
     HcclResult InitZeroCopyMemoryAgent();
     HcclResult DeinitZeroCopyMemoryAgent();

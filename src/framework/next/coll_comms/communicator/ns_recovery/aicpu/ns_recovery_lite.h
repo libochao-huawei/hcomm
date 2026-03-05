@@ -33,10 +33,10 @@ public:
     bool IsSuspended() const;
 
 private:
-    bool isCommReady_;
-    bool needClean_;
-    bool isSuspended_;
-    bool isErrorReported_;
+    bool isCommReady_{false};
+    bool needClean_{false};
+    bool isSuspended_{false};
+    bool isErrorReported_{false};
 
     std::unique_ptr<AicpuHdcHandler> hdcHandler_{nullptr};
     std::mutex hdcShmLock_;

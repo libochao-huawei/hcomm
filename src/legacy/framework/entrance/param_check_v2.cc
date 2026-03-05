@@ -46,7 +46,8 @@ const std::unordered_set<HcclDataType, EnumHashV2> HCCL_SUPPORT_DATA_TYPE_V2 = {
     HCCL_DATA_TYPE_HIF8,
     HCCL_DATA_TYPE_FP8E4M3,
     HCCL_DATA_TYPE_FP8E5M2,
-    HCCL_DATA_TYPE_FP8E8M0
+    HCCL_DATA_TYPE_FP8E8M0,
+    HCCL_DATA_TYPE_MXFP8
 };
 
 const std::unordered_set<HcclReduceOp, EnumHashV2> HCCL_SUPPORT_REDUCE_OP_V2 = {
@@ -87,6 +88,7 @@ const std::map<HcclDataType, std::string> HCOM_DATA_TYPE_STR_MAP_V2 {
     {HcclDataType::HCCL_DATA_TYPE_FP8E4M3, "fp8e4m3"},
     {HcclDataType::HCCL_DATA_TYPE_FP8E5M2, "fp8e5m2"},
     {HcclDataType::HCCL_DATA_TYPE_FP8E8M0, "fp8e8m0"},
+    {HcclDataType::HCCL_DATA_TYPE_MXFP8, "mxfp8"},
     {HcclDataType::HCCL_DATA_TYPE_RESERVED, "reserved"}
 };
 

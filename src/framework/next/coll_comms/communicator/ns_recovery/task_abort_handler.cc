@@ -18,7 +18,7 @@ namespace hccl {
 using HcclUs = std::chrono::steady_clock::time_point;
 static std::mutex vecMutex;
 
-int32_t ProcessTaskAbortHandleCallback(int32_t deviceLogicId, rtDeviceTaskAbortStage stage, uint32_t timeout, void *args)
+int32_t ProcessTaskAbortHandleCallback(int32_t deviceLogicId, aclrtDeviceTaskAbortStage stage, uint32_t timeout, void *args)
 {
     HcclUs startut = std::chrono::steady_clock::now();
     CHK_PTR_NULL(args);
@@ -90,42 +90,42 @@ int32_t ProcessTaskAbortHandleCallback(int32_t deviceLogicId, rtDeviceTaskAbortS
     return static_cast<int>(TaskAbortResult::TASK_ABORT_SUCCESS);
 }
 
-TaskAbortHandler::TaskAbortHandler()
+HcclTaskAbortHandler::HcclTaskAbortHandler()
 {
     Hccl::HrtDeviceAbortRegCallBack(ProcessTaskAbortHandleCallback, static_cast<void *>(&commVector));
 }
 
-TaskAbortHandler::~TaskAbortHandler()
+HcclTaskAbortHandler::~HcclTaskAbortHandler()
 {
-    DECTOR_TRY_CATCH("TaskAbortHandler", HrtDeviceAbortRegCallBack(nullptr, nullptr));
+    // DECTOR_TRY_CATCH("HcclTaskAbortHandler", HrtDeviceAbortRegCallBack(nullptr, nullptr));
 }
 
-TaskAbortHandler &TaskAbortHandler::GetInstance()
+HcclTaskAbortHandler &HcclTaskAbortHandler::GetInstance()
 {
-    static TaskAbortHandler handler;
+    static HcclTaskAbortHandler handler;
     return handler;
 }
 
-HcclResult TaskAbortHandler::Register(CollComm *communicator)
+HcclResult HcclTaskAbortHandler::Register(CollComm *communicator)
 {
     std::lock_guard<std::mutex> lock(vecMutex);
     commVector.push_back(communicator);
-    HCCL_INFO("TaskAbortHandler::Register success, commVector size is [%lu]", commVector.size());
+    HCCL_INFO("HcclTaskAbortHandler::Register success, commVector size is [%lu]", commVector.size());
 
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskAbortHandler::UnRegister(CollComm *communicator)
+HcclResult HcclTaskAbortHandler::UnRegister(CollComm *communicator)
 {
     std::lock_guard<std::mutex> lock(vecMutex);
-    HCCL_INFO("TaskAbortHandler::UnRegister Begin, commVector size is [%lu]", commVector.size());
+    HCCL_INFO("HcclTaskAbortHandler::UnRegister Begin, commVector size is [%lu]", commVector.size());
     auto it = std::find(commVector.begin(), commVector.end(), communicator);
     if (it != commVector.end()) {
         commVector.erase(it);
     } else {
-        HCCL_WARNING("TaskAbortHandler::UnRegister, comm not found.");
+        HCCL_WARNING("HcclTaskAbortHandler::UnRegister, comm not found.");
     }
-    HCCL_INFO("TaskAbortHandler::UnRegister finish, commVector size is [%lu]", commVector.size());
+    HCCL_INFO("HcclTaskAbortHandler::UnRegister finish, commVector size is [%lu]", commVector.size());
     return HCCL_SUCCESS;
 }
 }
