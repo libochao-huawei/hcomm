@@ -107,11 +107,9 @@ HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *end
 
     std::unique_ptr<Endpoint> endpointPtr = nullptr;
 
-    HcclResult ret = Endpoint::CreateEndpoint(*endpoint, endpointPtr);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("call Endpoint::CreateEndpoint failed"), HCCL_E_INTERNAL);
+    CHK_RET(Endpoint::CreateEndpoint(*endpoint, endpointPtr));
     CHK_PTR_NULL(endpointPtr);
-    ret = endpointPtr->Init();
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("call endpointPtr->Init failed"), HCCL_E_INTERNAL);
+    CHK_RET(endpointPtr->Init());
 
     const EndpointHandle handle = reinterpret_cast<EndpointHandle>(endpointPtr.get());
     CHK_PTR_NULL(handle);
