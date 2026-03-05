@@ -14,6 +14,7 @@
 #include "hcomm_res_defs.h"
 #include "hccl/hccl_res.h"
 #include "mem_host_pub.h"
+#include "thread.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,6 +63,8 @@ HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx);
 HcclResult HcommEngineCtxDestroy(CommEngine engine, void *ctx);
 
 HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size);
+
+HcclResult HcommThreadGet(const ThreadHandle thread, std::shared_ptr<hccl::Thread> &handle);
 
 #ifdef __cplusplus
 }
