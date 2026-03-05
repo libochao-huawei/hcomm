@@ -139,7 +139,7 @@ private:
     CcuInstType instType_ = CcuInstType::CCU_ALLGATHER_MESH_1D_2DIE;
     std::vector<uint64_t> dimSize_;
     uint32_t rankId_{0};
-    bool withMyRank_;
+    bool withMyRank_{false};
     uint64_t inputAddr_{0};
     uint64_t outputAddr_{0};
     uint64_t sliceSize_{0};

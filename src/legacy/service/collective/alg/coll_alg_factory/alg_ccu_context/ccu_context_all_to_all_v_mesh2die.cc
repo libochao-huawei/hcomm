@@ -328,7 +328,7 @@ std::vector<uint64_t> CcuContextAllToAllVMesh2Die::GeneArgs(const CcuTaskArg &ar
         taskParams.push_back(sendTailSize);
         taskParams.insert(taskParams.cend(), sendTailGoSize.cbegin(), sendTailGoSize.cend());
         taskParams.push_back(sendLoopNum);
-        HCCL_DEBUG("[CcuContextAllToAllVMesh2Die][sliceInfo] RankId[%u], dstRank[%u]: sendOffset[%llu], "
+        HCCL_DEBUG("[CcuContextAllToAllVMesh2Die][sliceInfo] RankId[%u], dstRank[%d]: sendOffset[%llu], "
             "recvOffset[%llu], sendLength[%llu], sendTailSize[%llu], sendLoopNum[%llu]", rankId_, peerId, sendOffset,
             recvOffset, taskArg->localSendRecvInfo.sendLength[peerId], sendTailSize, sendLoopNum);
     }
