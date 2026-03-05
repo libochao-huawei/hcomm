@@ -460,12 +460,12 @@ typedef struct urma_jfc_opt {
                                             bit5:ci, bit6:db_status */
     bool is_actived;
     uint64_t urma_jfc_cqe_base_addr; /* [Optional] CQ Queue Address (VA) */
-    uint64_t urma_jfc_db_addr; /* [Optional] CQ Queue Doorbell Address (VA) */
     uint32_t urma_jfc_id;      /* [Optional] the id of jfc */
+    uint64_t urma_jfc_db_addr; /* [Optional] CQ Queue Doorbell Address (VA) */
+    uint8_t urma_jfc_db_status; /* [Optional] JFC Doorbell status, used for live migration (0 invalid, 1 valid) */
     uint16_t urma_jfc_pi;     /* [Optional] PI value of the JFC */
     uint16_t urma_jfc_pi_type; /* [Optional] PI type, 0: absolute value, 1: cumulative value */
     uint16_t urma_jfc_ci;     /* [Optional] CI value of the JFC */
-    uint8_t urma_jfc_db_status; /* [Optional] JFC Doorbell status, used for live migration (0 invalid, 1 valid) */
     uint64_t reserved[URMA_OPT_REVERSED_NUM];
 } urma_jfc_opt_t;
 
@@ -528,14 +528,15 @@ typedef struct urma_jfs_opt {
                                             bit5:ci, bit6:db_status */
     bool is_actived;
     uint64_t urma_jfs_sqe_base_addr; /* [Optional] SQ Queue Address (VA) */
-    uint64_t urma_jfs_db_addr; /* [Optional] SQ Queue Doorbell Address (VA) */
     uint32_t urma_jfs_id;     /* [Optional] the id of jfs */
+    uint64_t urma_jfs_db_addr; /* [Optional] SQ Queue Doorbell Address (VA) */
+    uint8_t urma_jfs_db_status; /* [Optional] JFS Doorbell status, used for live migration (0 invalid, 1 valid) */
     uint16_t urma_jfs_pi;     /* [Optional] PI value of the JFS */
     uint16_t urma_jfs_pi_type; /* [Optional] PI type, 0: absolute value, 1: cumulative value */
     uint16_t urma_jfs_ci;     /* [Optional] CI value of the JFS */
-    uint8_t urma_jfs_db_status; /* [Optional] JFS Doorbell status, used for live migration (0 invalid, 1 valid) */
     uint64_t reserved[URMA_OPT_REVERSED_NUM];
 } urma_jfs_opt_t;
+
 
 typedef struct urma_jfs_cfg {
     uint32_t depth;           /* [Required] the depth of jfs, defaut urma_device_cap_t->jfs_depth */
@@ -618,12 +619,12 @@ typedef struct urma_jfr_opt {
                                         bit5:ci, bit6:db_status */
     bool is_actived;
     uint64_t urma_jfr_rqe_base_addr; /* [Optional] RQ Queue Address (VA) */
-    uint64_t urma_jfr_db_addr; /* [Optional] RQ Queue Doorbell Address (VA) */
     uint32_t urma_jfr_id;     /* [Optional] the id of jfr */
+    uint64_t urma_jfr_db_addr; /* [Optional] RQ Queue Doorbell Address (VA) */
+    uint8_t urma_jfr_db_status; /* [Optional] JFR Doorbell status, used for live migration (0 invalid, 1 valid) */
     uint16_t urma_jfr_pi;     /* [Optional] PI value of the JFR */
     uint16_t urma_jfr_pi_type; /* [Optional] PI type, 0: absolute value, 1: cumulative value */
     uint16_t urma_jfr_ci;     /* [Optional] CI value of the JFR */
-    uint8_t urma_jfr_db_status; /* [Optional] JFR Doorbell status, used for live migration (0 invalid, 1 valid) */
     uint64_t reserved[URMA_OPT_REVERSED_NUM];
 } urma_jfr_opt_t;
 
@@ -771,8 +772,8 @@ typedef struct urma_jetty_attr {
 typedef struct urma_jetty_opt {
     bool is_actived;
     urma_jfs_opt_t jfs_opt;
-    urma_jfr_opt_t jfr_opt;
-    urma_jfc_opt_t jfc_opt;
+    // urma_jfr_opt_t jfr_opt;
+    // urma_jfc_opt_t jfc_opt;
     uint64_t reserved[URMA_OPT_REVERSED_NUM];
 } urma_jetty_opt_t;
 
@@ -1017,7 +1018,8 @@ typedef union urma_jfs_wr_flag {
                                           1: Notify local process after the task is completed. */
         uint32_t inline_flag : 1;      /* 0: not inline.
                                           1: inline data. */
-        uint32_t reserved : 25;
+        uint32_t db_bypass : 1;
+        uint32_t reserved : 24;
     } bs;
     uint32_t value;
 } urma_jfs_wr_flag_t;
@@ -1365,7 +1367,12 @@ typedef struct urma_tp_attr_value {
     uint8_t at_times : 5;
     uint8_t sl : 4;
     uint8_t ttl;
-    uint8_t reserved[78];
+    uint16_t ack_udp_srcport : 16;
+    uint16_t data_udp_srcport : 16;
+    uint8_t udp_srcport_range : 4;
+    uint8_t spray_en : 1;
+    uint8_t udp_global_en : 1;
+    uint8_t reserved[38];
 } urma_tp_attr_value_t;
 #pragma pack()
 
