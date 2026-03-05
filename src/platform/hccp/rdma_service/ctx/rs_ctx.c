@@ -722,6 +722,7 @@ RS_ATTRI_VISI_DEF int RsCtxCustomChannel(const struct CustomChanInfoIn *in, stru
     CHK_PRT_RETURN(ret != 0, hccp_err("[ccu]memcpy_s in failed, ret[%d]", ret), -ESAFEFUNC);
 
     ret = RsCtxCcuCustomChannel(&chanIn, &chanOut);
+    CHK_PRT_RETURN(ret == -ENXIO, hccp_err("[ccu]rs_ctx_ccu_custom_channel unsuccessful, ret[%d]", ret), ret);
     CHK_PRT_RETURN(ret != 0, hccp_err("[ccu]rs_ctx_ccu_custom_channel failed, ret[%d]", ret), ret);
 
     // prepare output data
