@@ -48,6 +48,7 @@ public:
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
+    HcclResult RegisterChannelAddDfxTaskInfo(ChannelHandle channel);
     u32 devId_;
     //通用的通道
     std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D_{nullptr};

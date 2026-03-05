@@ -14,19 +14,18 @@
 #include "types.h"
 
 namespace hccl {
-typedef struct 
+typedef struct
 {
     int id;
-}HcclOpInfo;
+} HcclOpInfo;
 
 class HcclCommProfilingLite {
 public:
     // 构造函数
-    HcclCommProfilingLite(Hccl::DevId deviceId);
+    HcclCommProfilingLite(Hccl::DevId deviceId, Hccl::MirrorTaskManager* mirrorTaskManager);
     
     // 上报所有任务
     void ReportAllTasks();
-    
     
     // 上报算子信息（包装ProfilingHandlerLite::GetInstance().ReportHcclOpInfo）
     void ReportHcclOpInfo(const HcclOpInfo& hcclOpInfo);
@@ -38,7 +37,7 @@ public:
     Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
     
 private:
-    std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;
+    Hccl::MirrorTaskManager* mirrorTaskManager_;
     std::unique_ptr<Hccl::ProfilingReporterLite> profilingReporterLite_;
 };
 }

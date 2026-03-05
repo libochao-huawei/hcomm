@@ -49,7 +49,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
     CHK_RET(hrtSetlocalDeviceType(topoInfo_.deviceType));
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(topoInfo_.devicePhyId, &devId_));
-    dfx_.Init(devId_);
+    dfx_.Init(devId_, identifier_);
     if (commAicpuParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
         EXECEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
@@ -147,6 +147,7 @@ HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
         // 恢复出的channelHandle回填到commParam中
         ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
         channelList[index] = channelHandle;
+        CHK_RET(RegisterChannelAddDfxTaskInfo(channelHandle));
         
         HcclCommDfxLite::AddChannelRemoteRankId(identifier_, channelHandle, commParam->remoteRankId[index]);
         HCCL_INFO("[CollCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
@@ -173,6 +174,13 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
     ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
 
     return HCCL_SUCCESS;
+}
+
+HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel,
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // TODO: 临时，该接口头文件还没定
+
+HcclResult CollCommAicpu::RegisterChannelAddDfxTaskInfo(ChannelHandle channel) {
+    return HcommChannelRegisterDfx(channel, dfx_.GetCallback());
 }
 
 HcclResult CollCommAicpu::NotifyFree(NotifyMgrAicpuParam *param)
