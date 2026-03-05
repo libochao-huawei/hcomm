@@ -5042,6 +5042,19 @@ HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, CommSymWindo
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclGetCcuTaskInfoLegacy(HcclComm comm, void *tilingData, void *ccuTaskGroup)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(tilingData);
+    CHK_PTR_NULL(ccuTaskGroup);
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU)) 
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    comm = hcclComm->GetCommunicatorV2();
+    CHK_RET(HcclGetCcuTaskInfoLegacy(comm, tilingData, ccuTaskGroup));
+#endif
+    return HCCL_SUCCESS;
+}
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
