@@ -1563,9 +1563,31 @@ std::pair<uint32_t, uint32_t> HraGetDieAndFuncId(RdmaHandle handle)
     struct DevBaseAttr out {};
     auto                   ret = RaGetDevBaseAttr(handle, &out);
     if (ret != 0) {
-        THROW<NetworkApiException>(StringFormat("call ra_get_dev_base_attr failed, error code =%d.", ret));
+        THROW<NetworkApiException>(StringFormat("[%s] call RaGetDevBaseAttr failed, error code =%d.", __func__, ret));
     }
     return std::make_pair(out.ub.dieId, out.ub.funcId);
+}
+
+bool HraGetRtpEnable(RdmaHandle handle)
+{
+    struct DevBaseAttr out {};
+    auto ret = RaGetDevBaseAttr(handle, &out);
+    if (ret != 0) {
+        THROW<NetworkApiException>(StringFormat("[%s] call RaGetDevBaseAttr failed, error code =%d.", __func__, ret));
+    }
+
+    HCCL_RUN_INFO("[%s] rmTpCap[%u] rcTpCap[%u] umTpCap[%u] tpFeat[%u]",
+        __func__, out.ub.rmTpCap.value, out.ub.rcTpCap.value, out.ub.umTpCap.value, out.ub.tpFeat.value);
+
+    for (int i = 0; i < MAX_PRIORITY_CNT; i++) {
+        const CtxSlInfo &priorityInfo = out.ub.priorityInfo[i];
+        HCCL_RUN_INFO("[%s] priorityInfo[%d]: SL[%u] tpType[%u] rtp[%u]",
+            __func__, i, priorityInfo.SL, priorityInfo.tpType.value, priorityInfo.tpType.bs.rtp);
+        if (priorityInfo.tpType.bs.rtp == 1 && priorityInfo.SL != 0) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void HrtRaCustomChannel(const HRaInfo &raInfo, void *customIn, void *customOut)
