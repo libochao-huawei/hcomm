@@ -25,6 +25,8 @@
 #include "ut_dispatch.h"
 #include "stub/ibverbs.h"
 #include "rs.h"
+#include "rs_ub_tp.h"
+#include "rs_ub_dfx.h"
 #include "rs_ub.h"
 #include "rs_ccu.h"
 #include "rs_ctx.h"
