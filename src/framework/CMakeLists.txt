@@ -1038,11 +1038,15 @@ if(DEVICE_MODE AND KERNEL_MODE)
     )
 
     add_library(aicpu_custom SHARED)
+<<<<<<< HEAD
     get_target_property(CCL_KERNEL_ALL_SOURCES ccl_kernel SOURCES)
     if(CCL_KERNEL_ALL_SOURCES)
         list(REMOVE_DUPLICATES CCL_KERNEL_ALL_SOURCES)
         target_sources(aicpu_custom PRIVATE ${CCL_KERNEL_ALL_SOURCES})
     endif()
+=======
+    target_sources(aicpu_custom PRIVATE ${CCL_KERNEL_SRC_LIST})
+>>>>>>> 6ec747a3 (feat: 实现libaicpu_custom.so独立编译和静态库链接)
     target_compile_definitions(aicpu_custom PRIVATE ${AICPU_CUSTOM_COMPILE_DEFINITIONS})
     target_compile_options(aicpu_custom PRIVATE
         -Werror
@@ -1069,7 +1073,11 @@ if(DEVICE_MODE AND KERNEL_MODE)
         ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
     )
     target_link_libraries(aicpu_custom PRIVATE ${AICPU_CUSTOM_LINK_LIBRARIES})
+<<<<<<< HEAD
     add_dependencies(aicpu_custom ccl_kernel ccl_kernel_plf_a aicpu_custom_json)
+=======
+    add_dependencies(aicpu_custom ccl_kernel_plf_a aicpu_custom_json)
+>>>>>>> 6ec747a3 (feat: 实现libaicpu_custom.so独立编译和静态库链接)
     set_target_properties(aicpu_custom PROPERTIES
         OUTPUT_NAME aicpu_custom
         PREFIX "lib"
