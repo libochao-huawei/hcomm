@@ -840,6 +840,24 @@ qp1_create_err:
     return ret;
 }
 
+int RaPeerNdaQpCreate(struct RaRdmaHandle *rdmaHandle, struct NdaQpInitAttr *attr, struct NdaQpInfo *info,
+    void **qpHandle)
+{
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    struct RaQpHandle *qpPeer = NULL;
+    struct RsQpResp qpResp = {0};
+    int ret = 0;
+
+    qpPeer = (struct RaQpHandle *)calloc(1, sizeof(struct RaQpHandle));
+    CHK_PRT_RETURN(qpPeer == NULL, hccp_err("[create][NdaQp]qp_peer calloc failed."), -ENOMEM);
+
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phyId]);
+    RsSetCtx(qpPeer->phyId);
+
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phyId]);
+    return ret;
+}
+
 STATIC void RaPeerLoopbackQpDestroy(struct RaQpHandle *qpHandle0)
 {
     struct RaQpHandle *qpHandle1 = qpHandle0->loopbackQpHandle;
@@ -1241,6 +1259,23 @@ notify_base_addr_uninit:
     retVal = NotifyBaseAddrUninit(notifyType, rdevInfo.phyId);
     CHK_PRT_RETURN(retVal, hccp_err("[init][ra_peer_rdev] notify_base_addr_uninit failed, ret(%d)",
         retVal), retVal);
+    return ret;
+}
+
+int RaPeerNdaGetDirectFlag(struct RaRdmaHandle *rdmaHandle, int *directFlag)
+{
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    int ret = 0;
+
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[phyId]);
+    RsSetCtx(phyId);
+    ret = RsNdaGetDirectFlag(phyId, rdmaHandle->rdevIndex, &rdmaHandle->directFlag);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[phyId]);
+    if (ret != 0) {
+        hccp_err("[get][directFlag]RsNdaGetDirectFlag failed ret:%d", ret);
+    }
+
+    *directFlag = rdmaHandle->directFlag;
     return ret;
 }
 
