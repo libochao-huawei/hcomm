@@ -9,11 +9,12 @@
  */
 #include "hcclCommProfiling.h"
 #include "profiling_reporter.h"
+#include "profiling_handler.h"
 namespace hccl {
     
-explicit HcclCommProfiling(DevId deviceId) {
-    mirrorTaskManager_ = std::make_unique<MirrorTaskManager>(deviceId, &GlobalMirrorTasks::Instance(), false);
-    profilingReporter_ = std::make_unique<ProfilingReporter>(mirrorTaskManager_, &ProfilingHandler::GetInstance());
+HcclCommProfiling::HcclCommProfiling(u32 deviceId) {
+    mirrorTaskManager_ = std::make_unique<Hccl::MirrorTaskManager>(deviceId, &Hccl::GlobalMirrorTasks::Instance(), false);
+    profilingReporter_ = std::make_unique<Hccl::ProfilingReporter>(mirrorTaskManager_.get(), &Hccl::ProfilingHandler::GetInstance());
 }
 
 // HcclCommProfiling任务上报
@@ -44,6 +45,6 @@ void HcclCommProfiling::UpdateProfStat() {
     }
 }
 Hccl::MirrorTaskManager* HcclCommProfiling::GetMirrorTaskManager() const {
-    return mirrorTaskManager_;
+    return mirrorTaskManager_.get();
 }
 }// namespace hccl

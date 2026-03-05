@@ -24,6 +24,8 @@
 #include "ub_transport_lite_impl.h"
 #include "notify_manager.h"
 #include "aicpu_hccl_def.h"
+#include "kfc.h"
+#include "dlhal_function_v2.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
 
@@ -47,7 +49,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
     CHK_RET(hrtSetlocalDeviceType(topoInfo_.deviceType));
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(topoInfo_.devicePhyId, &devId_));
-    dfx_.Init(devId_);
+    dfx_.Init(devId_, identifier_);
     if (commAicpuParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
         EXECEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
@@ -58,6 +60,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
     }
+    CHK_RET(Hccl::DlHalFunctionV2::GetInstance().DlHalFunctionInit());
 
     indOpCommInitialized_ = true;
     
@@ -144,6 +147,7 @@ HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
         // 恢复出的channelHandle回填到commParam中
         ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
         channelList[index] = channelHandle;
+        CHK_RET(RegisterChannelAddDfxTaskInfo(channelHandle));
         
         HcclCommDfxLite::AddChannelRemoteRankId(identifier_, channelHandle, commParam->remoteRankId[index]);
         HCCL_INFO("[CollCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
@@ -170,6 +174,13 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
     ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
 
     return HCCL_SUCCESS;
+}
+
+HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel,
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // TODO: 临时，该接口头文件还没定
+
+HcclResult CollCommAicpu::RegisterChannelAddDfxTaskInfo(ChannelHandle channel) {
+    return HcommChannelRegisterDfx(channel, dfx_.GetCallback());
 }
 
 HcclResult CollCommAicpu::NotifyFree(NotifyMgrAicpuParam *param)
@@ -238,10 +249,22 @@ HcclResult CollCommAicpu::NotifyAlloc(NotifyMgrAicpuParam *param)
     return HCCL_SUCCESS;
 }
 
-HcclResult CollCommAicpu::SendErrorMessageReportToHost(Hccl::ErrorMessageReport & errMsgInfo)
+HcclResult CollCommAicpu::SendErrorMessageReportToHost(Hccl::ErrorMessageReport& errMsgInfo)
 {
     CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
     CHK_RET(kfcStatusTransferD2H_->Put(sizeof(Hccl::KfcStatus) + sizeof(Hccl::KfcErrType), sizeof(errMsgInfo),
         reinterpret_cast<uint8_t *>(&errMsgInfo)));
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::RegisterProfCallBack()
+{
+    if (MsprofRegisterCallback != nullptr) {
+        HCCL_INFO("RegisterProfCallBack not null");
+        int32_t ret = MsprofRegisterCallback(AICPU, &DeviceCommandHandle);
+        CHK_PRT_RET((ret != 0), HCCL_ERROR("[%s] failed. ret = [%d]", __func__, ret), HCCL_E_PARA);
+    } else {
+        HCCL_INFO("RegisterProfCallBack is null");
+    }
     return HCCL_SUCCESS;
 }

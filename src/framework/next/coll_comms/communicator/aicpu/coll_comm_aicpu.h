@@ -25,6 +25,7 @@
 #include "channel_param.h"
 #include "hdc_pub.h"
 #include "hcclCommDfxLite.h"
+#include "error_message_v2.h"
 
 using namespace hccl;
 class CollCommAicpu {
@@ -42,11 +43,14 @@ public:
     // taskException
     bool IsErrorReported() { return isErrorReported_; }
     void SetErrorReported(bool isErrorReported) { isErrorReported_ = isErrorReported; }
-    HcclResult SendErrorMessageReportToHost(Hccl::ErrorMessageReport & errMsgInfo);
+    HcclResult SendErrorMessageReportToHost(Hccl::ErrorMessageReport& errMsgInfo);
+    HcclResult RegisterProfCallBack();
+    HcclCommDfxLite* GetHcclCommDfxLite() { return &dfx_; };
 
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
+    HcclResult RegisterChannelAddDfxTaskInfo(ChannelHandle channel);
     u32 devId_;
     //通用的通道
     std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D_{nullptr};
