@@ -24,6 +24,8 @@
 #include "ub_transport_lite_impl.h"
 #include "notify_manager.h"
 #include "aicpu_hccl_def.h"
+#include "kfc.h"
+#include "dlhal_function_v2.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
 
@@ -58,6 +60,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
     }
+    CHK_RET(Hccl::DlHalFunctionV2::GetInstance().DlHalFunctionInit());
 
     indOpCommInitialized_ = true;
     
@@ -243,7 +246,7 @@ HcclResult CollCommAicpu::NotifyAlloc(NotifyMgrAicpuParam *param)
     return HCCL_SUCCESS;
 }
 
-HcclResult CollCommAicpu::SendErrorMessageReportToHost(Hccl::ErrorMessageReport & errMsgInfo)
+HcclResult CollCommAicpu::SendErrorMessageReportToHost(Hccl::ErrorMessageReport& errMsgInfo)
 {
     CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
     CHK_RET(kfcStatusTransferD2H_->Put(sizeof(Hccl::KfcStatus) + sizeof(Hccl::KfcErrType), sizeof(errMsgInfo),

@@ -8,7 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
-    hcclCommTaskExceptionLite.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/hcclCommTaskExceptionLite.cc
 )
  	 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))

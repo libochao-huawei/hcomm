@@ -1,11 +1,3 @@
-/*
- * @Author: c15029001705 caiyifan2@huawei.com
- * @Date: 2026-03-03 10:53:53
- * @LastEditors: c15029001705 caiyifan2@huawei.com
- * @LastEditTime: 2026-03-03 20:33:37
- * @FilePath: \hcomm_profiling\src\framework\next\coll_comms\dfx\hcclCommDfx.h
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
@@ -23,7 +15,6 @@
 #include "hcclCommProfiling.h"
 #include "global_mirror_tasks.h"
 #include "read_write_lock.h"
-#include "coll_common.h"
 #include <unordered_map>
 namespace hccl {
 
@@ -33,7 +24,7 @@ public:
     explicit HcclCommDfx();
     
     // 初始化DFX系统
-    void Init(u32 deviceId);
+    HcclResult Init(u32 deviceId);
     
     // 注册回调函数
     HcclResult AddTaskInfoCallback(u32 streamId, u32 taskId, const TaskParam &taskParam, u32 handle);
@@ -42,10 +33,10 @@ public:
     Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
     
     // Profiling相关接口（直接暴露，不通过GetProfilingImpl）
-    void ReportAllTasks(bool cachedReq = false);
-    void ReportOp(u64 beginTime, bool cachedReq, bool opbased);
+    HcclResult ReportAllTasks(bool cachedReq);
+    HcclResult ReportOp(u64 beginTime, bool cachedReq, bool opbased);
     // void CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo);
-    void UpdateProfStat();
+    HcclResult UpdateProfStat();
     
     // 将remoteRankId添加到channelRemoteRankId_表中
     static void AddChannelRemoteRankId(const std::string& commTag, u64 handle, u32 remoteRankId);
@@ -58,12 +49,16 @@ private:
     u32 deviceId_;
     std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;  // 使用原始指针，不管理生命周期TODO
     std::unique_ptr<HcclCommProfiling> profiling_;
-    static std::unordered_map<std::string,std::unordered_map<u64, u32 remoteRankId> > channelRemoteRankId_;
-    ReadWriteLock rwLock_; // 读写锁
+    static std::unordered_map<std::string,std::unordered_map<u64, u32> > channelRemoteRankId_;
+    static ReadWriteLockBase baseLock_; // 基类锁成员
+    static ReadWriteLock rwLock_; // 读写锁
     std::string comTag_;
     u32 deviceId_;
     std::function<HcclResult(u32, u32, const TaskParam&, u32)> setAddTaskCallback_;
 };
+
+ReadWriteLockBase HcclCommDfx::baseLock_;
+ReadWriteLock HcclCommDfx::rwLock_(HcclCommDfx::baseLock_);
 
 }
 

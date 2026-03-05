@@ -73,35 +73,29 @@ HcclResult HcclCommDfx::UpdateProfStat() {
 }
 
 Hccl::MirrorTaskManager* HcclCommDfx::GetMirrorTaskManager() const {
-    return mirrorTaskManager_;
+    return mirrorTaskManager_.get();
 }
 
-// 将remoteRankId添加到channelRemoteRankId_表中 - 修改为返回HcclResult类型
-HcclResult HcclCommDfx::AddChannelRemoteRankId(const std::string& commTag, u64 handle, u32 remoteRankId) {
-    rwLock_.writelock();
-    try {
-        HCCL_INFO("[HcclCommDfx][AddChannelRemoteRankId] commTag:[%s], handle:[%lu], remoteRankId:[%u]", commTag.c_str(), handle, remoteRankId);
-        channelRemoteRankId_[commTag][handle] = remoteRankId;
-        rwLock_.writeUnLock();
-        return HCCL_SUCCESS; // 添加成功返回成功码
-    } catch (...) {
-        rwLock_.writeUnLock(); // 异常时解锁，避免死锁
-        return HCCL_E_INTERNAL; // 内部错误返回对应错误码
-    }
+// 将remoteRankId添加到channelRemoteRankId_表中
+void HcclCommDfx::AddChannelRemoteRankId(const std::string& commTag, u64 handle, u32 remoteRankId) {
+    rwLock_.writeLock();
+    HCCL_INFO("[HcclCommDfx][AddChannelRemoteRankId] commTag:[%s], handle:[%lu], remoteRankId:[%u]", commTag.c_str(), handle, remoteRankId);
+    channelRemoteRankId_[commTag][handle] = remoteRankId;
+    rwLock_.writeUnlock();
 }
 
 // 在channelRemoteRankId_表中对remoteRankId进行查找（原有逻辑补充返回值）
 HcclResult HcclCommDfx::GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId) {
-    rwLock_.readlock();
+    rwLock_.readLock();
     if(channelRemoteRankId_.find(commTag) == channelRemoteRankId_.end()) {
-        rwLock_.readUnLock();
+        rwLock_.readUnlock();
         HCCL_ERROR("[HcclCommDfx]commTag:[%s] not found", commTag.c_str());
-        return HCCL_RESULT_INVALID_PARAM;
+        return HCCL_E_PARA;
     }
     if(channelRemoteRankId_[commTag].find(handle) == channelRemoteRankId_.end()) {
          HCCL_ERROR("[HcclCommDfx]handle not found,commTag:[%s],handle:[%lu]", commTag.c_str(), handle);
-        rwLock_.readUnLock();
-        return HCCL_RESULT_INVALID_PARAM;
+        rwLock_.readUnlock();
+        return HCCL_E_PARA;
     }
     remoteRankId = channelRemoteRankId_[commTag][handle];
     rwLock_.readUnLock();
