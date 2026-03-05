@@ -54,6 +54,7 @@ HcclResult UbMemTransport::FillTagVec()
         if (localRmaBuffer == nullptr) {
             HCCL_WARNING("[UbMemTransport][FillTagVec] localRmaBuffer is nullptr. memHandleNum: %d", index);
         } else {
+            CHK_PTR_NULL(localRmaBuffer->GetBuf());
             CHK_SAFETY_FUNC_RET(memcpy_s(tag.data(), tag.size(), 
                 static_cast<const void*>(localRmaBuffer->GetBuf()->GetMemTag().c_str()), HCCL_RES_TAG_MAX_LEN));
             HCCL_INFO("[UbMemTransport][FillTagVec] memHandleNum[%d] memTag[%s]", index, tag.data());
@@ -898,7 +899,7 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     uint32_t userMemCount = rmtBufferVec.size() - 1; // 默认 cclBuffer 数量为1，后续出现1的含义也是 cclBufferNum
-    auto cacheBuilder = [](Hccl::RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> &remoteMemCtx, uint32_t index) {
+    auto cacheBuilder = [](RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> &remoteMemCtx, uint32_t index) {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index + 1];
         switch (rmtBuffer->GetMemType()) {
                 case HCCL_MEM_TYPE_DEVICE:
@@ -913,7 +914,7 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
         remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
         remoteMemCtx.remoteUserMems[index].size = rmtBuffer->GetSize();
     };
-    Hccl::RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> remoteMemCtx{
+    RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> remoteMemCtx{
         userMemCount,
         cacheValid_,
         rmtBufferVec,
