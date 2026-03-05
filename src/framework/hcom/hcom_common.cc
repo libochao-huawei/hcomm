@@ -208,7 +208,10 @@ HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle)
     CHK_PTR_NULL(commHandle);
     CHK_PTR_NULL(group);
 #if ((!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU)))
-    HCCLV2_FUNC_RUN(HcclGetRawCommHandle(group, commHandle));
+    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+    if (indOp == nullptr || strcmp(indOp, "") == 0) {
+        HCCLV2_FUNC_RUN(HcclGetRawCommHandle(group, commHandle));
+    }
 #endif
     std::shared_ptr<hcclComm> hcclComm;
     s32 deviceLogicId = 0;
