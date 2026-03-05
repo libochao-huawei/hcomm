@@ -360,7 +360,10 @@ void CollServiceBase::SaveMirrorDfxOpInfo()
 
     dfxOpInfo->op_ = *comm->GetCurrentCollOperator();
     dfxOpInfo->tag_ = OpTypeToString(dfxOpInfo->op_.opType);
-    dfxOpInfo->algType_ = AlgType::MESH;
+    AlgType algType;
+    HcclCMDType opType=dfxOpInfo->op_.opType;
+    HcclResult ret =comm->GetAlgType(algType,opType);
+    dfxOpInfo->algType_ = algType;
     dfxOpInfo->index_ = comm->GetIdIndex();
     dfxOpInfo->comm_ = comm;
     dfxOpInfo->mainStreamId_ = comm->GetStreamManager().GetMaster()->GetId();
