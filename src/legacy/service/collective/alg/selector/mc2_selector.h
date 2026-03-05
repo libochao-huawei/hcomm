@@ -46,9 +46,9 @@ public:
     SelectorStatus SelectDefaultAicpuAlgo(
         const CollAlgOperator &op,const CollAlgParams &params, std::string &primQueueGenName) const;
 
-    SelectorStatus SelectCcuMsAlgo(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName) const;
+    SelectorStatus SelectCcuMsAlgo(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName);
 
-    SelectorStatus SelectCcuSchedAlgo(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName);
+    SelectorStatus SelectCcuSchedAlgo(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName) const;
 
     SelectorStatus SelectAicpuAlgo(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName) const;
 
