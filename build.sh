@@ -186,7 +186,7 @@ function build_test() {
 function build_kernel() {
     cmake_config
     log "Info: build_kernel"
-    build ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json
+    build ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json aicpu_custom
 }
 
 function mk_dir() {

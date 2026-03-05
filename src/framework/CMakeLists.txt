@@ -991,12 +991,12 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         )
 
         add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-            COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/aicpu_custom.ini ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
+            COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${HCCL_BASE_DIR}/../src/framework/device/framework/aicpu_custom.ini ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
         add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-            DESTINATION ${CMAKE_CURRENT_BINARY_DIR} OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
         )
 
         target_link_directories(ccl_kernel PRIVATE
@@ -1017,13 +1017,90 @@ if(DEVICE_MODE AND KERNEL_MODE)
         COMMENT "Copying libccl_kernel_plf.so libccl_kernel.so to ${CCL_KERNEL_TAR_DIR}"
     )
 
-    set(AICPU_CUSTOM_DIR ${HCCL_BASE_DIR}/../build_device/aicpu_custom/)
-    add_custom_command(
-        TARGET ccl_kernel
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${AICPU_CUSTOM_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ccl_kernel> ${AICPU_CUSTOM_DIR}/libaicpu_custom.so
-        COMMAND chmod 750 ${AICPU_CUSTOM_DIR}/lib*
-        COMMENT "Copying libccl_kernel.so to ${AICPU_CUSTOM_DIR}/libaicpu_custom.so"
+    add_library(aicpu_custom SHARED)
+    target_sources(aicpu_custom PRIVATE ${CCL_KERNEL_SRC_LIST})
+    # TODO 需要加CCL_KERNEL和HCCD的宏; 2)每个递归的cmakelists文件需要加aicpu_custom有关内容
+    target_compile_definitions(aicpu_custom PRIVATE
+        OPEN_BUILD_PROJECT
+        -D_GLIBCXX_USE_CXX11_ABI=1
+    )
+    target_include_directories(aicpu_custom PRIVATE
+        ${HCCL_BASE_DIR}/../include
+        ${HCCL_BASE_DIR}/../include/hccl
+        ${HCCL_BASE_DIR}/algorithm/base/inc
+        ${HCCL_BASE_DIR}/algorithm/base/alg_aiv_template
+        ${HCCL_BASE_DIR}/algorithm/base/alg_template
+        ${HCCL_BASE_DIR}/algorithm/base/alg_template/component
+        ${HCCL_BASE_DIR}/algorithm/base/communicator
+        ${HCCL_BASE_DIR}/algorithm/base/communicator/legacy
+        ${HCCL_BASE_DIR}/algorithm/impl
+        ${HCCL_BASE_DIR}/algorithm/impl/inc
+        ${HCCL_BASE_DIR}/algorithm/impl/task
+        ${HCCL_BASE_DIR}/algorithm/impl/resource_manager
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor
+        ${HCCL_BASE_DIR}/pub_inc
+        ${HCCL_BASE_DIR}/pub_inc/new
+        ${HCCL_BASE_DIR}/platform/inc
+        ${HCCL_BASE_DIR}/platform/inc/adapter
+        ${HCCL_BASE_DIR}/platform/resource/socket
+        ${HCCL_BASE_DIR}/platform/resource/transport/host/
+        ${HCCL_BASE_DIR}/platform/resource/transport/
+        ${HCCL_BASE_DIR}/platform/resource/notify/
+        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
+        ${HCCL_BASE_DIR}/platform/task
+        ${HCCL_BASE_DIR}/platform/common
+        ${HCCL_BASE_DIR}/platform/common/unique
+        ${HCCL_BASE_DIR}/platform/common/unfold_cache
+        ${HCCL_BASE_DIR}/platform/hccp/inc
+        ${HCCL_BASE_DIR}/platform/hccp/inc/network
+        ${HCCL_BASE_DIR}/../pkg_inc/
+        ${HCCL_BASE_DIR}/../pkg_inc/hccl/
+        ${HCCL_BASE_DIR}/framework
+        ${HCCL_BASE_DIR}/framework/common
+        ${HCCL_BASE_DIR}/framework/common/src
+        ${HCCL_BASE_DIR}/framework/common/src/mgr
+        ${HCCL_BASE_DIR}/framework/communicator
+        ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/resource/engine
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver
+        ${HCCL_BASE_DIR}/../externel_depends/tsch/
+        ${THIRD_PARTY_NLOHMANN_PATH}
+    )
+    target_link_directories(aicpu_custom PRIVATE
+        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
+    )
+    target_link_libraries(aicpu_custom PRIVATE
+        -Wl,--no-as-needed
+        ascend_hal
+        c_sec
+        mmpa
+        -Wl,--whole-archive
+        ccl_kernel_plf_a
+        -Wl,--no-whole-archive
+        -Wl,--as-needed
+        -lrt
+        -ldl
+        -lpthread
+    )
+    add_dependencies(aicpu_custom ccl_kernel_plf_a aicpu_custom_json)
+    set_target_properties(aicpu_custom PROPERTIES
+        OUTPUT_NAME aicpu_custom
+        PREFIX "lib"
+        SUFFIX ".so"
+    )
+    install(TARGETS aicpu_custom
+        LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+    )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
     )
 endif()
