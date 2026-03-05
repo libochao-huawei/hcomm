@@ -10,7 +10,7 @@
 
 #include "aicpu_indop_process.h"
 #include "coll_comm_aicpu_mgr.h"
-
+#include "hcclCommOp.h"
 using namespace hccl;
 
 namespace {
@@ -211,7 +211,7 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, st
 {
     // 获取device侧的通信域
     CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(commTag);
-    CHK_PRT_RET(!collCommAicpuMgr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
+    CHK_PRT_RET(!collCommAicpuMgr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, commTag.c_str()), HCCL_E_PTR);
     CollCommAicpu* collComm = collCommAicpuMgr->GetCollCommAicpu();
 
     // HcclDfxOpInfo 转为DfxOpInfo
@@ -220,7 +220,7 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, st
     
     // 注册
     HcclCommDfxLite* hcclCommDfxLite = collComm->GetHcclCommDfxLite();
-    MirrorTaskManager* mirrorTaskMgr = hcclCommDfxLite->GetMirrorTaskManager();
+    Hccl::MirrorTaskManager* mirrorTaskMgr = hcclCommDfxLite->GetMirrorTaskManager();
     mirrorTaskMgr->SetCurrDfxOpInfo(dfxOpInfoOnce);
 
     return HCCL_SUCCESS;
