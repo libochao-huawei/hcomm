@@ -21,6 +21,7 @@
 #include "const_val.h"
 #include "dev_type.h"
 #include "exception_util.h"
+#include "adapter_error_manager_pub.h"
 
 namespace Hccl {
 
@@ -28,22 +29,30 @@ void RankTableInfo::Check()
 {
     if (version != "2.0") {
         HCCL_ERROR("[RankTableInfo::%s] failed with version [%s] is not \"2.0\".", __func__ , version.c_str());
+        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+                            std::vector<std::string>({version, "version", "2.0"}));
         THROW<InvalidParamsException>(
             StringFormat("[RankTableInfo::%s] failed with version is not \"2.0\" in ranktable file.", __func__));
     }
 
     if (rankCount > MAX_RANKCOUNT) {
+        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+                            std::vector<std::string>({std::to_string(rankCount), "rankCount", "lower than " + std::to_string(MAX_RANKCOUNT)}));
         THROW<InvalidParamsException>(StringFormat(
             "[RankTableInfo::%s] failed with rankCount [%u] exceeds maximum limit of [%u]",
             __func__, rankCount, MAX_RANKCOUNT));
     }
 
     if (rankCount == 0) {
+        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+                            std::vector<std::string>({std::to_string(rankCount), "rankCount", "should not be 0"}));
         THROW<InvalidParamsException>(StringFormat(
             "[RankTableInfo::%s] failed with rankCount [%u] exceeds minimum limit of [%u]",__func__, rankCount, 0));
     }
 
     if (rankCount != ranks.size()) {
+        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+                            std::vector<std::string>({std::to_string(rankCount), "rankCount","rankCount is equal to rankSize[" + std::to_string(ranks.size()) + "]"}));
         THROW<InvalidParamsException>(StringFormat("[RankTableInfo::%s] failed with rankCount is not equal "
                                                    "to rank_list size. version[%s], rankCount[%u], ranks.size[%u]",
                                                    __func__, version.c_str(), rankCount, ranks.size()));
@@ -54,11 +63,15 @@ void RankTableInfo::Check()
     u32 recordedReplaceLocalId{UNDEFIEND_LOCAL_ID};
     for (auto &rank : ranks) {
         if (static_cast<u32>(rank.rankId) >= rankCount) {
+            RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+                            std::vector<std::string>({std::to_string(rank.rankId), "rankId", "[0," + std::to_string(rankCount) + ")"}));
             THROW<InvalidParamsException>(StringFormat("[Parse][ClusterInfo][RankTableInfo::%s] failed with rank_id is "
                                                        "out of range. version[%s], rankCount[%u], rank_id[%d]",
                                                        __func__, version.c_str(), rankCount, rank.rankId));
         }
         if (rankIdSet.count(rank.rankId) > 0) {
+            RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+                            std::vector<std::string>({std::to_string(rank.rankId), "rankId", "rank_id is not repeat."}));
             THROW<InvalidParamsException>(StringFormat("[Parse][ClusterInfo][RankTableInfo::%s] failed with rank_id is "
                                                        "repeat. version[%s], rankCount[%u], rank_id[%d]",
                                                        __func__, version.c_str(), rankCount, rank.rankId));
@@ -66,12 +79,17 @@ void RankTableInfo::Check()
         rankIdSet.insert(rank.rankId);
 
         if (rank.localId != BACKUP_LOCAL_ID && rank.localId != rank.replacedLocalId) {
+            RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+                            std::vector<std::string>({std::to_string(rank.replacedLocalId), "replacedLocalId", 
+                                "replacedLocalId equal to locaId[" + std::to_string(rank.localId) + "]"}));
             THROW<InvalidParamsException>(StringFormat("[Parse][ClusterInfo][RankTableInfo::Check] "
             "failed with replacedLocalId[%u] not equal to localId[%u].", rank.replacedLocalId, rank.localId));
         } else if (rank.localId == BACKUP_LOCAL_ID) {
             if (recordedReplaceLocalId == UNDEFIEND_LOCAL_ID) {
                 recordedReplaceLocalId = rank.replacedLocalId;
             } else {
+                RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+                            std::vector<std::string>({"NA", "NA", "multiple replaced rank is configured."}));
                 THROW<InvalidParamsException>(StringFormat("[Parse][ClusterInfo][RankTableInfo::Check] "
                                                            "multiple replaced rank is configured"));
             }
@@ -82,6 +100,8 @@ void RankTableInfo::Check()
 
     for (u32 rankRange = 0; rankRange < rankCount; rankRange++) {
         if (rankIdSet.find(rankRange) == rankIdSet.end()) {
+            RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+                            std::vector<std::string>({std::to_string(rankRange),"rankId", "rank_id is continuous."}));
             THROW<InvalidParamsException>(StringFormat("[Parse][ClusterInfo][RankTableInfo::%s] failed with rank_id is "
                                                        "not continuous. version[%s], rankCount[%u], rankRange[%d]",
                                                            __func__, version.c_str(), rankCount, rankRange));
@@ -96,6 +116,9 @@ void RankTableInfo::Check()
     }
 
     if(localIdSet.find(recordedReplaceLocalId) != localIdSet.end()) {
+        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+                            std::vector<std::string>({std::to_string(recordedReplaceLocalId), "recordedReplacedLocalId",
+                                 "failed with configuring same local_id with replaced one simutaneously."}));
         THROW<InvalidParamsException>(StringFormat("[Parse][ClusterInfo][RankTableInfo::%s] failed with configuring "
                                                    "same local_id[%u] with replaced one simutaneously",
                                                     __func__, recordedReplaceLocalId));
