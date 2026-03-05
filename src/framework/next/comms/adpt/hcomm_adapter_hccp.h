@@ -27,7 +27,6 @@ namespace hcomm {
 
 // 暂时放在adapter
 constexpr uint32_t URMA_EID_LEN = 16;
-constexpr uint32_t UB_ERR_TIMEOUT_8S = 16; // errTimeout 16-23: 芯片配置b10, 超时8s
 
 using Eid = HccpEid; // 使用hccp定义的union表示eid
 
