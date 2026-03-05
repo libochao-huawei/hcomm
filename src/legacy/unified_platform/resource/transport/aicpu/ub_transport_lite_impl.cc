@@ -132,9 +132,9 @@ void UbTransportLiteImpl::ParseLocNotifyVec(std::vector<char> &data)
         return;
     }
     if (data.size() % notifyNum != 0) {
- 	    HCCL_ERROR("data.size()=%llu cannot be divided by notifyNum=%u", data.size(), notifyNum);
- 	    return;
- 	}
+        HCCL_ERROR("data.size()=%llu cannot be divided by notifyNum=%u", data.size(), notifyNum);
+        return;
+    }
     u32 notifySizePerDto = data.size() / notifyNum;
 
     for (u32 idx = 0; idx < notifyNum; idx++) {
@@ -211,9 +211,9 @@ void UbTransportLiteImpl::ParseConnVec(std::vector<char> &data)
         return;
     }
     if (data.size() % connNum != 0) {
- 	    HCCL_ERROR("data.size()=%llu cannot be divided by connNum=%u", data.size(), connNum);
- 	    return;
- 	}
+        HCCL_ERROR("data.size()=%llu cannot be divided by connNum=%u", data.size(), connNum);
+        return;
+    }
     u32 connSizePerDto = data.size() / connNum;
     HCCL_INFO("Parse ConnVec num=%u, connSizePerDto=%u", connNum, connSizePerDto);
     for (u32 idx = 0; idx < connNum; idx++) {
@@ -518,15 +518,15 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::BatchTransfer"); // 待修改优化, 检查connection
     size_t insNum = loc.size();
- 	if (insNum == 0) {
- 	    HCCL_WARNING("[BatchTransfer] insNum is 0");
- 	    return;
- 	}
- 	if (insNum > std::numeric_limits<u32>::max()) {
- 	    HCCL_ERROR("[BatchTransfer] insNum[%llu] exceeds u32 max value", insNum);
- 	    return;
- 	}
- 	for (size_t i = 0; i < insNum; i++) {
+    if (insNum == 0) {
+        HCCL_WARNING("[BatchTransfer] insNum is 0");
+        return;
+    }
+    if (insNum > std::numeric_limits<u32>::max()) {
+        HCCL_ERROR("[BatchTransfer] insNum[%llu] exceeds u32 max value", insNum);
+        return;
+    }
+    for (size_t i = 0; i < insNum; i++) {
         cfg.cqeEn     = (i == insNum - 1) ? true : false; // 返回最后一个sqe的cqe
         cfg.placeOdr  = UB_RELAX_ORDER;
         cfg.compOrder = UB_NO_COMPLETION;
