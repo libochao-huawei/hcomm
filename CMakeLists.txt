@@ -190,7 +190,8 @@ elseif(BUILD_OPEN_PROJECT)
             ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
             ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
             ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
-            ${BUILD_DEVICE_DIR}/aicpu_custom/libaicpu_custom.so
+            ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.so
+            ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.json
         )
         install(FILES ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
@@ -201,7 +202,10 @@ elseif(BUILD_OPEN_PROJECT)
         install(FILES ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
         )
-        install(FILES ${BUILD_DEVICE_DIR}/aicpu_custom/libaicpu_custom.so
+        install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.so
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+        )
+        install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.json
             DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
         )
         add_dependencies(install_tar hcomm)
