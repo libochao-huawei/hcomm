@@ -621,7 +621,7 @@ HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, 
         memTags,
         memNum
     };
-    GetRemoteUserMem(remoteMemCtx);
+    Hccl::GetRemoteUserMem(remoteMemCtx);
     return HCCL_SUCCESS;
 }
 } // namespace hcomm

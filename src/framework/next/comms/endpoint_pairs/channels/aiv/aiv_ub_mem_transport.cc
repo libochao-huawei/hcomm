@@ -268,7 +268,7 @@ HcclResult AivUbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memT
         memTags,
         memNum
     };
-    GetRemoteUserMem(remoteMemCtx);
+    Hccl::GetRemoteUserMem(remoteMemCtx);
     return HCCL_SUCCESS;
 }
 }
