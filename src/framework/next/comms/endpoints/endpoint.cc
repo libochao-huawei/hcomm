@@ -21,6 +21,7 @@ Endpoint::Endpoint(const EndpointDesc &endpointDesc)
 
 HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::unique_ptr<Endpoint> &endpointPtr)
 {
+    // test
     if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<CpuRoceEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_UBC_TP && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
