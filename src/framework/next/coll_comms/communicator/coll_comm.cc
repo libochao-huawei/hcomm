@@ -53,7 +53,7 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
         HCCL_INFO("[CollComm][Init] collComm Get Device");
         return HCCL_E_PARA;
     }
-    dfx_.Init(deviceId);
+    dfx_.Init(deviceId, commId_);
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }

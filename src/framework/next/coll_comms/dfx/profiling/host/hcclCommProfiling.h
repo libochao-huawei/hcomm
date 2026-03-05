@@ -19,7 +19,7 @@ namespace hccl {
 class HcclCommProfiling {
 public:
     // 构造函数
-    HcclCommProfiling(Hccl::DevId deviceId);
+    HcclCommProfiling(u32  deviceId);
     
     // 上报所有任务
     void ReportAllTasks(bool cachedReq = false);

@@ -10,6 +10,7 @@
 #include "mirror_task_manager.h"
 #include "hcclCommProfilingLite.h"
 #include "read_write_lock.h"
+#include "hccl_common.h"
 
 namespace hccl {
 class HcclCommDfxLite {
@@ -42,10 +43,9 @@ private:
     std::string commTag_;
     u32 deviceId_;
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> addTaskCallback_;
-    static ReadWriteLockBase baseLock_; // 基类锁成员
-    static ReadWriteLock rwLock_; // 读写锁
+    static ReadWriteLockBase baseLockLite_; // 基类锁成员
+    static ReadWriteLock rwLockLite_; // 读写锁
 };
-    ReadWriteLockBase HcclCommDfxLite::baseLock_; // 基类锁成员
-    ReadWriteLock HcclCommDfxLite::rwLock_(HcclCommDfxLite::baseLock_); // 读写锁
+
 
 }

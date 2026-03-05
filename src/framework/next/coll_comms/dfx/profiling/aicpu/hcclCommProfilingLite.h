@@ -37,7 +37,7 @@ public:
     Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
     
 private:
-    Hccl::MirrorTaskManager* mirrorTaskManager_;
+    std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;
     std::unique_ptr<Hccl::ProfilingReporterLite> profilingReporterLite_;
 };
 }

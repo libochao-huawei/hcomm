@@ -15,7 +15,9 @@
 #include "hcclCommProfiling.h"
 #include "global_mirror_tasks.h"
 #include "read_write_lock.h"
+#include "hccl_common.h"
 #include <unordered_map>
+
 namespace hccl {
 
 class HcclCommDfx {
@@ -24,10 +26,10 @@ public:
     explicit HcclCommDfx();
     
     // 初始化DFX系统
-    HcclResult Init(u32 deviceId, std::string comTag);
+    HcclResult Init(u32 deviceId, const std::string comTag);
     
     // 注册回调函数
-    HcclResult AddTaskInfoCallback(u32 streamId, u32 taskId, const TaskParam &taskParam, u32 handle);
+    HcclResult AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u32 handle);
     
     // 获取MirrorTaskManager
     Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
@@ -42,7 +44,7 @@ public:
     static void AddChannelRemoteRankId(const std::string& commTag, u64 handle, u32 remoteRankId);
     // 在channelRemoteRankId_表中对remoteRankId进行查找
     static HcclResult GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId);
-    std::function<HcclResult(u32, u32, const TaskParam&, u32)> GetCallback() {
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetCallback() {
         return setAddTaskCallback_;
     }
 private:
@@ -52,13 +54,12 @@ private:
     static std::unordered_map<std::string,std::unordered_map<u64, u32> > channelRemoteRankId_;
     static ReadWriteLockBase baseLock_; // 基类锁成员
     static ReadWriteLock rwLock_; // 读写锁
-    std::string comTag_;
+    std::string commTag_;
     u32 deviceId_;
-    std::function<HcclResult(u32, u32, const TaskParam&, u32)> setAddTaskCallback_;
+    std::function<HcclResult(u32, u32, const TaskParam&, u64)> setAddTaskCallback_;
 };
 
-ReadWriteLockBase HcclCommDfx::baseLock_;
-ReadWriteLock HcclCommDfx::rwLock_(HcclCommDfx::baseLock_);
+
 
 }
 

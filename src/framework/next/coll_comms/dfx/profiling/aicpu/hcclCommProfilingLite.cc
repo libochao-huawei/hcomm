@@ -15,8 +15,8 @@ namespace hccl {
 // 构造函数
 HcclCommProfilingLite::HcclCommProfilingLite(Hccl::DevId deviceId, Hccl::MirrorTaskManager* mirrorTaskManager) {
     // 获取deviceID
-    mirrorTaskManager_ = mirrorTaskManager;
-    profilingReporterLite_ = std::make_unique<Hccl::ProfilingReporterLite>(mirrorTaskManager_, &Hccl::ProfilingHandlerLite::GetInstance());
+    mirrorTaskManager_ = std::unique_ptr<Hccl::MirrorTaskManager>(mirrorTaskManager);
+    profilingReporterLite_ = std::make_unique<Hccl::ProfilingReporterLite>(mirrorTaskManager_.get(), &Hccl::ProfilingHandlerLite::GetInstance());
 }
 
 // HcclCommProfilingLite任务上报
