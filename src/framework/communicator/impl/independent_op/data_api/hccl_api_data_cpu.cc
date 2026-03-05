@@ -56,7 +56,8 @@ bool IsSupportReduce(HcommDataType dataType, HcommReduceOp op)
 
 bool IsDevice950(DevType type)
 {
-    return type == DevType::DEV_TYPE_910_95;
+    int devType950Raw = 6;
+    return type == static_cast<DevType>(devType950Raw);
 }
 
 int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len)
