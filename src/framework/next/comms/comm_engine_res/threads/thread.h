@@ -22,6 +22,7 @@
 #include "adapter_hal_pub.h"
 #include "device_capacity.h"
 #include "hccl_api.h"
+#include "task_param.h"
 
 namespace hccl {
 constexpr u32 HCOMM_NOTIFY_MAX_NUM = 64;
@@ -53,17 +54,17 @@ public:
 
     HcclResult AddThreadHandleToMap(CommEngine commEngine, ThreadHandle threadHandle);
     Thread *FindThreadByCommEngine(CommEngine commEngine);
-    HcclResult SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const TaskParam&, u64)> callback) {
+    HcclResult SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback) {
  	    CHK_PTR_NULL(callback);
  	    callback_ = callback;
  	    return HCCL_SUCCESS;
  	}
- 	std::function<HcclResult(u32, u32, const TaskParam&, u64)> GetCallback() {
+ 	std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetCallback() {
  	         return callback_;
  	}
 private:
     std::unordered_map<CommEngine, ThreadHandle> threadHandleMap_; // CPU_TS上的ThreadHandle与其他引擎上的ThreadHandle的映射
-    std::function<HcclResult(u32, u32, const TaskParam&, u32)> callback_;
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u32)> callback_;
 };
 
 inline Stream *GetStream(uint64_t thread)
