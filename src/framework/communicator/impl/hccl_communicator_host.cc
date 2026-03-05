@@ -446,7 +446,7 @@ namespace hccl
         // 读取customEnable环境变量，开启了就执行
         std::string jsonPath;
         CHK_RET(GetCustomKernelFilePath(jsonPath));
-        jsonPath += "aicpu_custom.json";
+        jsonPath += "libaicpu_custom.json";
         CHK_RET(LoadCustomFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 1, binHandle_));
         return HCCL_SUCCESS;
     }
@@ -8438,6 +8438,11 @@ namespace hccl
     HcclResult HcclCommunicator::LoadCustomFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
                                                 aclrtBinHandle &binHandle)
     {
+        // 非910_93不支持custom kernel进程调用
+        if (devType_ != DevType::DEV_TYPE_910_93) {
+            HCCL_RUN_WARNING("[%s] custom kernel is not supported on device type[%d].", __func__, devType_);
+            return HCCL_SUCCESS;
+        }
         s64 isOpenCustomSwitch = 0;
         CHK_RET(hrtGetDeviceInfo(deviceLogicId_, HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM,
                                  HcclRtDeviceInfoType::HCCL_INFO_TYPE_CUST_OP_ENHANCE, isOpenCustomSwitch));
