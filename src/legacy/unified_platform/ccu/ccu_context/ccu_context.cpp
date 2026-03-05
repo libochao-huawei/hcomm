@@ -1299,8 +1299,8 @@ HcclResult CcuContext::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Cc
     HCCL_INFO("[GetCcuProfilingInfo] create varId2VarIdMap start. size=%lu", lgProfInfo.assignProfilingReps.size());
 
     if (lgProfInfo.lgProfilingReps.size() % 2 !=0) {
- 	    THROW<CcuApiException>("[GetCcuProfilingInfo] lgProfilingReps size is not even: %lu", lgProfInfo.lgProfilingReps.size());
- 	}
+        THROW<CcuApiException>("[GetCcuProfilingInfo] lgProfilingReps size is not even: %lu", lgProfInfo.lgProfilingReps.size());
+    }
 
     std::unordered_map<uint16_t, uint16_t> varId2VarIdMap;
     for (auto &iter : lgProfInfo.assignProfilingReps) {

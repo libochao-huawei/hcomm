@@ -425,8 +425,8 @@ HcclResult InsBatchSendRecvExecutor<AlgTopoMatch>::SendRun(DataBuffer &execBuffe
     uint64_t remoteBufferAddr = remoteBuffer.GetAddr();
 
     CHK_PRT_RET((offsetOfRemoteScratchBase + sendSize > remoteBuffer.GetSize()),
- 	    HCCL_ERROR("[InsBatchSendRecvExecutor][SendRun] offsetOfRemoteScratchBase + sendSize exceeds remoteBuffer size"),
- 	    HcclResult::HCCL_E_PARA);
+        HCCL_ERROR("[InsBatchSendRecvExecutor][SendRun] offsetOfRemoteScratchBase + sendSize exceeds remoteBuffer size"),
+        HcclResult::HCCL_E_PARA);
     
     DataBuffer sendRemoteBuffer(remoteBufferAddr + offsetOfRemoteScratchBase, sendSize);
     HCCL_DEBUG("[InsBatchSendRecvExecutor][SendRun] myRank[%d] send Size[%llu], remoteBuffer[%llu], remoteUserRank[%u].",
