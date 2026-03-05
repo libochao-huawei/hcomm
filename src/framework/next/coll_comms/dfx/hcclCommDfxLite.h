@@ -7,10 +7,15 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#ifndef HCCL_COMM_DFX_LITE_H
+#define HCCL_COMM_DFX_LITE_H
 #include "mirror_task_manager.h"
 #include "hcclCommProfilingLite.h"
 #include "read_write_lock.h"
 #include "hccl_common.h"
+#include "buffer.h"
+#include "common.h"
+#include "hcclCommOp.h"
 
 namespace hccl {
 class HcclCommDfxLite {
@@ -49,3 +54,4 @@ private:
 
 
 }
+#endif
