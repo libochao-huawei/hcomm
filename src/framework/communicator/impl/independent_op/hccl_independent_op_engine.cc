@@ -78,6 +78,10 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
         CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
         CHK_PTR_NULL(engineResMgr);
         ret = engineResMgr->HcclThreadAcquire(engine, threadNum, notifyNumPerThread, threads, threadId);
+        auto hcclCommDfxCallback = collComm->GetDfxCallback();
+ 	    for (int num = 0; num < threadNum; threadNum++) {
+ 	        CHK_RET(HcommThreadRegisterDfx(threads[i], hcclCommDfxCallback));
+ 	    }
     }
     else {
         auto& engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
@@ -120,6 +124,8 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
         CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
         CHK_PTR_NULL(engineResMgr);
         ret = engineResMgr->HcclThreadAcquireWithStream(engine, stream, notifyNum, thread);
+        auto hcclCommDfxCallback = collComm->GetDfxCallback();
+        CHK_RET(HcommThreadRegisterDfx(threads[i], hcclCommDfxCallback));
     }
     else {
         auto& engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
