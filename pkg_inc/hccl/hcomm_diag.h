@@ -13,6 +13,7 @@
 
 #include <cstddef>
 #include <hccl/hccl_types.h>
+#include "thread.h"
 
 #ifdef __cplusplus
 extern "C" {
