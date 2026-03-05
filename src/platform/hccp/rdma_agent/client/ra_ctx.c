@@ -902,6 +902,8 @@ HCCP_ATTRI_VISI_DEF int RaCustomChannel(struct RaInfo info, struct CustomChanInf
 
     if (info.mode == NETWORK_OFFLINE) {
         ret = RaHdcCustomChannel(info.phyId, in, out);
+        CHK_PRT_RETURN(ret == -ENXIO, hccp_warn("[custom]ra_hdc_custom_channel unsuccessful, ret(%d) phyId(%u)",
+            ret, info.phyId), ConverReturnCode(RDMA_OP, ret));
         CHK_PRT_RETURN(ret != 0, hccp_err("[custom]ra_hdc_custom_channel failed, ret(%d) phyId(%u)",
             ret, info.phyId), ConverReturnCode(RDMA_OP, ret));
     } else {
