@@ -18,6 +18,7 @@
 #include "ascend_hal.h"
 #include "drv_api_exception.h"
 #include "rtsq_base.h"
+#include "internal_exception.h"
 #undef protected
 #undef private
 

@@ -10,15 +10,11 @@
 #ifndef HCCLV2_SOCKET_BASE_H
 #define HCCLV2_SOCKET_BASE_H
 
-#include <map>
 #include <chrono>
-#include <string>
-#include <arpa/inet.h>
 
 #include "ip_address.h"
 #include "socket_config.h"
 #include "orion_adapter_hccp.h"
-#include "socket_handle_manager.h"
 
 namespace Hccl {
 

@@ -812,8 +812,7 @@ void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &com
     aivOpArgs.aivTag = aivOpArgs.isOpBase ? (static_cast<uint32_t>(comm.GetAivTag()) << AIV_TAG_MOVE_LEFT_BITS) | static_cast<uint32_t>(aivOpArgs.aivTag):
                         (static_cast<uint32_t>(comm.GetAivOffloadTag()) << AIV_TAG_MOVE_LEFT_BITS) | static_cast<uint32_t>(aivOpArgs.aivTag);                        
     HCCL_INFO("%s AivTag[%u]", __func__, aivOpArgs.aivTag);
-    void* buffersInAddr;
-    buffersInAddr = aivOpArgs.isOpBase ? reinterpret_cast<void*>(comm.GetAivTagBuffer()->GetAddr()) : reinterpret_cast<void*>(comm.GetAivOffloadTagBuffer()->GetAddr());
+    void* buffersInAddr = aivOpArgs.isOpBase ? reinterpret_cast<void*>(comm.GetAivTagBuffer()->GetAddr()) : reinterpret_cast<void*>(comm.GetAivOffloadTagBuffer()->GetAddr());
     aivOpArgs.buffersIn = buffersInAddr;
 
     if((aivOpArgs.aivTag & AIV_LOW_16_BITS) == 1 && (aivOpArgs.aivTag >> AIV_TAG_MOVE_LEFT_BITS) == 1){

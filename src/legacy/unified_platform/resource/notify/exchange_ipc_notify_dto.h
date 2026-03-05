@@ -16,6 +16,7 @@
 #include "string_util.h"
 #include "types.h"
 #include "binary_stream.h"
+#include "orion_adapter_rts.h"
 namespace Hccl {
 
 class ExchangeIpcNotifyDto : public Serializable { // Ipc Notify  需要交换的DTO

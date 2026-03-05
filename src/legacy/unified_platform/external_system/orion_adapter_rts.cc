@@ -148,10 +148,10 @@ u32 HrtGetDeviceCount()
 {
     u32       count = 0;
     aclError ret   = aclrtGetDeviceCount(&count);
-    HCCL_INFO("Call rtGetDeviceCount, return value[%d], para: count[%d].", ret, count);
+    HCCL_INFO("Call rtGetDeviceCount, return value[%d], para: count[%u].", ret, count);
     if (ret != ACL_SUCCESS) {
         HCCL_ERROR("[Get][DeviceCount]errNo[0x%016llx] rtGet device count fail, "
-                   "return[%d], para:count[%d]",
+                   "return[%d], para:count[%u]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, count);
         throw RuntimeApiException("call rtDeviceReset failed. ");
     }
@@ -285,7 +285,7 @@ HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainbo
     constexpr uint64_t MASK_7 = 0x7;
     int64_t val = 0;
     CHK_RET(HrtGetDeviceInfo(deviceLogicId, moduleType, infoType, val));
-    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%d] val[%ld].", deviceLogicId, val);
+    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%u] val[%ld].", deviceLogicId, val);
     CHK_PRT_RET(val < 0, HCCL_ERROR("[HrtGetMainboardId]val[%lld] < 0", val), HCCL_E_RUNTIME);
     uint64_t mainboardId = (static_cast<uint64_t>(val) >> BITS_5) & MASK_7; // 提取val的5-7位，判断整机形态
     auto it = rtMainboardIdToHcclMainboardId.find(mainboardId);
@@ -294,7 +294,7 @@ HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainbo
     } else {
         hcclMainboardId = HcclMainboardId::MAINBOARD_OTHERS;
     }
-    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%d] mainboardId[%llu] hcclMainboardId[%s].",
+    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%u] mainboardId[%llu] hcclMainboardId[%s].",
               deviceLogicId, mainboardId, hcclMainboardId.Describe().c_str());
     return HcclResult::HCCL_SUCCESS;
 }
@@ -494,13 +494,13 @@ void HrtIpcSetMemoryName(void *ptr, char_t *name, u64 ptrMaxLen, u32 nameMaxLen)
 
 void HrtIpcDestroyMemoryName(const char_t *name)
 {
-    rtError_t ret = rtIpcDestroyMemoryName(reinterpret_cast<const char *>(name));
-    HCCL_INFO("Call rtIpcDestroyMemoryName, return[%d], para: name[%s]", ret, name);
-    if (ret != RT_ERROR_NONE) {
+    aclError ret = aclrtIpcMemClose(reinterpret_cast<const char *>(name));
+    HCCL_INFO("Call aclrtIpcMemClose, return[%d], para: name[%s]", ret, reinterpret_cast<const char *>(name));
+    if (ret != ACL_SUCCESS) {
         HCCL_ERROR("[Destroy][IpcMemoryName]errNo[0x%016llx] "
                    "rtDestroy Ipc memory name fail. return[%d], para: name[%s]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, name);
-        throw RuntimeApiException(StringFormat("call rtIpcDestroyMemoryName failed, name=%s", name));
+        throw RuntimeApiException(StringFormat("call aclrtIpcMemClose failed, name=%s", name));
     }
 }
 
@@ -519,12 +519,13 @@ void *HrtIpcOpenMemory(const char_t *name)
 
 void HrtIpcCloseMemory(const void *ptr)
 {
-    rtError_t ret = rtIpcCloseMemory(ptr);
-    if (ret != RT_ERROR_NONE) {
+    aclError ret = aclrtIpcMemClose(reinterpret_cast<const char *>(ptr));
+    HCCL_INFO("Call aclrtIpcMemClose, return[%d], para: name[%s]", ret, reinterpret_cast<const char *>(ptr));
+    if (ret != ACL_SUCCESS) {
         HCCL_ERROR("[Close][IpcMemory]errNo[0x%016llx] "
                    "rtClose ipc memory fail, return[%d]. para: ptr[%p]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr);
-        throw RuntimeApiException(StringFormat("call rtIpcMemClose failed, ptr=%p", ptr));
+        throw RuntimeApiException(StringFormat("call aclrtIpcMemClose failed, ptr=%p", ptr));
     }
 }
 
@@ -821,7 +822,7 @@ aclrtCntNotify HrtCntNotifyCreate(u32 deviceId)
 {
 	aclrtCntNotify handle;
     aclError     ret = aclrtCntNotifyCreate(&handle, RT_NOTIFY_FLAG_DEFAULT);
-    HCCL_INFO("Call aclrtCntNotifyCreate, return value[%d] devId[%d].", ret, deviceId);
+    HCCL_INFO("Call aclrtCntNotifyCreate, return value[%d] devId[%u].", ret, deviceId);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("Call aclrtCntNotifyCreate failed");
         THROW<RuntimeApiException>(msg);
@@ -1106,9 +1107,12 @@ HcclResult HrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode)
 
 HcclResult HrtMemPrefetchToDevice(void *devPtr, uint64_t len)
 {
-    int ret = rtMemPrefetchToDevice(devPtr, len, HrtGetDevice());
-    if (ret != 0) {
-        HCCL_ERROR("rtMemPrefetchToDevice fail ret = %d", ret);
+    CHK_PRT_RET(aclrtMemP2PMap == nullptr, HCCL_ERROR("aclrtMemP2PMap is nullptr, "
+            "Does not support this interface."), HCCL_E_RUNTIME);
+	aclError ret = aclrtMemP2PMap(devPtr, static_cast<size_t>(len), HrtGetDevice(), 0);
+    HCCL_INFO("Call [HrtMemPrefetchToDevice]aclrtMemP2PMap ret = %d", ret);
+    if (ret != ACL_SUCCESS) {
+        HCCL_ERROR("aclrtMemP2PMap fail ret = %d", ret);
         return HCCL_E_RUNTIME;
     }
     return HCCL_SUCCESS;

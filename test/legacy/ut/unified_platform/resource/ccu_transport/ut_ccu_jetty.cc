@@ -22,7 +22,7 @@
 #include "orion_adapter_rts.h"
 #include "orion_adapter_hccp.h"
 #include "ccu_dev_mgr.h"
-
+#include "internal_exception.h"
 #undef private
 #undef protected
 

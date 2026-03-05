@@ -18,6 +18,8 @@
 #include "rdma_handle_manager.h"
 #include "invalid_params_exception.h"
 #include "internal_exception.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 #undef protected
 #undef private
 using namespace Hccl;

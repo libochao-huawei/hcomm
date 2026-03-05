@@ -13,6 +13,7 @@
 #include <mockcpp/mockcpp.hpp>
 #include "tp_manager.h"
 #include "orion_adapter_rts.h"
+#include "internal_exception.h"
 
 using namespace Hccl;
 

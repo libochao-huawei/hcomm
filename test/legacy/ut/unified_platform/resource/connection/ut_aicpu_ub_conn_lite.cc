@@ -18,6 +18,7 @@
 #include "ascend_hal.h"
 #include "rtsq_base.h"
 #include "sqe.h"
+#include "internal_exception.h"
 #undef private
 
 using namespace Hccl;

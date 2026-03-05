@@ -85,9 +85,7 @@ typedef struct tagRtDevBinary {
 * aclrtMallocWithCfg —— rtsMalloc
 */
 using aclrtMemType_t = int;
-extern rtError_t rtIpcCloseMemory(const void *ptr);
-extern rtError_t rtIpcDestroyMemoryName(const char_t *name);
-extern rtError_t rtMemPrefetchToDevice(void *devPtr, uint64_t len, int32_t devId);
+__attribute__((weak)) ACL_FUNC_VISIBILITY aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t flags);
 // DPU
 #ifndef rtSetXpuDevice
 typedef enum tagRtXpuDevType {
@@ -146,12 +144,12 @@ struct ProfilingDeviceCommResInfo {
     uint32_t commStreamIds[8]; // 具体streamId
     uint32_t reserve;
 };
-typedef struct {
+struct rtMemUbTokenInfo{
     uint64_t va;
     uint64_t size;
     uint32_t tokenId;
     uint32_t tokenValue;
-} rtMemUbTokenInfo;
+};
 constexpr uint32_t RT_STREAM_FAST_LAUNCH = 0x200U;
 constexpr uint32_t RT_STREAM_FAST_SYNC = 0x400U;
 constexpr uint32_t RT_STREAM_CP_PROCESS_USE = 0x800U; // RT_STREAM_CP_PROCESS_USE does not support OR with other flags
