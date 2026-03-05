@@ -22,7 +22,7 @@ class DfxOpInfo {
 public:
     CollOperator op_;
     std::string  tag_;
-    AlgType      algType_;
+    std::string  algType_;
     u32          index_;
     u64          beginTime_;
     u64          endTime_;
