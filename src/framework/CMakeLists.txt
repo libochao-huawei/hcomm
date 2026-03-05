@@ -1019,8 +1019,9 @@ if(DEVICE_MODE AND KERNEL_MODE)
 
     add_library(aicpu_custom SHARED)
     target_sources(aicpu_custom PRIVATE ${CCL_KERNEL_SRC_LIST})
-    # TODO 需要加CCL_KERNEL和HCCD的宏; 2)每个递归的cmakelists文件需要加aicpu_custom有关内容
     target_compile_definitions(aicpu_custom PRIVATE
+        HCCD
+        CCL_KERNEL_AICPU
         OPEN_BUILD_PROJECT
         -D_GLIBCXX_USE_CXX11_ABI=1
     )
