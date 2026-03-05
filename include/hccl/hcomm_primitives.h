@@ -410,7 +410,7 @@ extern int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, u
  * @return int32_t 执行结果状态码
  * 
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
-*/
+ */
 extern int32_t HcommFenceOnThread(ThreadHandle thread);
 
 /**
