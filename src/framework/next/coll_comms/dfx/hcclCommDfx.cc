@@ -14,40 +14,52 @@ namespace hccl {
 HcclCommDfx::HcclCommDfx() {
 }
 
-void HcclCommDfx::Init(u32 deviceId) {
+HcclResult HcclCommDfx::Init(u32 deviceId, std::string comTag) {
     deviceId_ = deviceId;
+    comTag_ = comTag;
     // 1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
     if (!mirrorTaskManager_) {
         mirrorTaskManager_ = std::make_unique<Hccl::MirrorTaskManager>(deviceId_, &Hccl::GlobalMirrorTasks::Instance(), false);
     }
     
     // 2. 创建Profiling管理类
-    profiling_ = std::make_unique<HcclCommProfiling>(deviceId);
+    EXECEPTION_CATCH(profiling_ = std::make_unique<HcclCommProfiling>(mirrorTaskManager_), return HCCL_E_PTR);
     
     // 3. 注册回调到单例
     // RegisterProfilingCallback();
+    setAddTaskCallback_ = [this](u32 streamId, u32 taskId, const TaskParam &taskParam, u32 handle) {
+        return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle)
+    };
+    return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 
 // 回调注册实现
-void HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const &Hccl::taskParam, u64 handle);
-    // auto callback = [this](const TaskInfo& taskInfo) {
-    //     mirrorTaskManager_->AddTaskInfo(std::make_shared<TaskInfo>(taskInfo));
-    // };todo:下面未实现编译报错未使用
-    // 待后续实现HcomProfiling类 
-    // HcomProfiling::GetInstance().RegisterAddTaskInfoCallback(callback);
+HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const TaskParam &taskParam, u32 handle) {
+    if (handle == 0xffffff) {
+        remoteRankId = 0xffffff;
+    } else {
+        CHK_RET(GetChannelRemoteRankId(commTag_, handle, &remoteRankId));
+    }
+    shared_ptr<TaskInfo> taskInfo{nullptr};
+    EXECEPTION_CATCH(taskInfo = std::make_shared<TaskInfo>(streamId, taskId,
+    remoteRankId, taskParam, mirrorTaskManager_->GetCurrDfxOpInfo()), return HCCL_E_PTR);
+    EXECEPTION_CATCH(mirrorTaskManager_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
+    return HCCL_SUCCESS;
 }
 
-// HcclCommDfx接口实现
-void HcclCommDfx::ReportAllTasks(bool cachedReq) {
+/ HcclCommDfx接口实现 - 修改为返回HcclResult类型
+HcclResult HcclCommDfx::ReportAllTasks(bool cachedReq) {
     if (profiling_) {
         profiling_->ReportAllTasks(cachedReq);
     }
+    return HCCL_E_PTR; // profiling_为空返回指针错误码
 }
 
-void HcclCommDfx::ReportOp(u64 beginTime, bool cachedReq, bool opbased) {
+HcclResult HcclCommDfx::ReportOp(u64 beginTime, bool cachedReq, bool opbased) {
     if (profiling_) {
         profiling_->ReportOp(beginTime, cachedReq, opbased);
     }
+    return HCCL_E_PTR; // profiling_为空返回指针错误码
 }
 
 // void HcclCommDfx::CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
@@ -56,10 +68,11 @@ void HcclCommDfx::ReportOp(u64 beginTime, bool cachedReq, bool opbased) {
 //     }
 // }
 
-void HcclCommDfx::UpdateProfStat() {
+HcclResult HcclCommDfx::UpdateProfStat() {
     if (profiling_) {
         profiling_->UpdateProfStat();
     }
+    return HCCL_E_PTR; // profiling_为空返回指针错误码
 }
 
 Hccl::MirrorTaskManager* HcclCommDfx::GetMirrorTaskManager() const {
@@ -73,7 +86,8 @@ void HcclCommDfx::AddChannelRemoteRankId(const std::string& commTag, u64 handle,
     channelRemoteRankId_[commTag][handle] = remoteRankId;
     rwLock_.writeUnlock();
 }
-// 在channelRemoteRankId_表中对remoteRankId进行查找
+
+// 在channelRemoteRankId_表中对remoteRankId进行查找（原有逻辑补充返回值）
 HcclResult HcclCommDfx::GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId) {
     rwLock_.readLock();
     if(channelRemoteRankId_.find(commTag) == channelRemoteRankId_.end()) {
@@ -81,14 +95,14 @@ HcclResult HcclCommDfx::GetChannelRemoteRankId(const std::string& commTag, u64 h
         HCCL_ERROR("[HcclCommDfx]commTag:[%s] not found", commTag.c_str());
         return HCCL_E_PARA;
     }
-    if(channelRemoteRankId_[commTag].find(handle) == channelRemoteRankId_[commTag].end()) {
+    if(channelRemoteRankId_[commTag].find(handle) == channelRemoteRankId_.end()) {
          HCCL_ERROR("[HcclCommDfx]handle not found,commTag:[%s],handle:[%lu]", commTag.c_str(), handle);
         rwLock_.readUnlock();
         return HCCL_E_PARA;
     }
     remoteRankId = channelRemoteRankId_[commTag][handle];
-    rwLock_.readUnlock();
-    return HCCL_SUCCESS;
+    rwLock_.readUnLock();
+    return HCCL_SUCCESS; // 查找成功补充返回成功码
 }
 
 }

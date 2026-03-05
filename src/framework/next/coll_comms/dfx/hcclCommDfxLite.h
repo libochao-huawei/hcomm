@@ -14,22 +14,23 @@
 namespace hccl {
 class HcclCommDfxLite {
 public:
-    // 构造函数（接收CommunicatorImplLite中已经存在的MirrorTaskManager指针）
+     // 构造函数（接收CommunicatorImplLite中已经存在的MirrorTaskManager指针）
     explicit HcclCommDfxLite();
     
-    // 初始化DFX系统
-    void Init(u32 deviceId);
-    
+    // 初始化DFX系统 - 修改为返回HcclResult类型
+    HcclResult Init(u32 deviceId, std::string comTag);
     // 注册回调到单例
-    void AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle);
-    
+    HcclResult AddTaskInfoCallback(u32 streamId, u32 taskId, const TaskParam &taskParam, u32 handle);
     // 获取MirrorTaskManager
     Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
     
-    // Profiling相关接口（直接暴露，不通过GetProfilingImpl）
-    void ReportAllTasks();
-    void ReportHcclOpInfo(const HcclOpInfo& hcclOpInfo);
-    void UpdateProfStat();
+    // Profiling相关接口（直接暴露，不通过GetProfilingImpl）- 全部修改为返回HcclResult类型
+    HcclResult ReportAllTasks();
+    HcclResult ReportHcclOpInfo(const HcclOpInfo& hcclOpInfo);
+    HcclResult UpdateProfStat();
+    std::function<HcclResult(u32, u32, const TaskParam&, u32)> GetCallback() {
+        return setAddTaskCallback_;
+    }
     // 将remoteRankId添加到channelRemoteRankId_表中
     static void AddChannelRemoteRankId(const std::string& commTag, u64 handle, u32 remoteRankId);
     // 在channelRemoteRankId_表中对remoteRankId进行查找
@@ -38,6 +39,9 @@ private:
     std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_; 
     std::unique_ptr<HcclCommProfilingLite> profilingImpl_;
     static std::unordered_map<std::string,std::unordered_map<u64, u32> > channelRemoteRankIdLite_;
+    std::string comTag_;
+    u32 deviceId_;
+    std::function<HcclResult(u32, u32, const TaskParam&, u32)> setAddTaskCallback_;
     static ReadWriteLockBase baseLock_; // 基类锁成员
     static ReadWriteLock rwLock_; // 读写锁
 };

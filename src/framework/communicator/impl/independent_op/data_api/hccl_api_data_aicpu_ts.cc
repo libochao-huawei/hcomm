@@ -731,6 +731,12 @@ int32_t HcommAcquireComm(const char* commId)
     }
     return HCCL_SUCCESS;
 }
+int32_t HcommChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(u32, u32, const TaskParam&, u32)> callback) {
+    CHK_PTR_NULL(channel);
+    auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
+    CHK_PTR_NULL(ubTransportLitePtr);
+    ubTransportLitePtr->setCallback(callback);
+}
 
 int32_t HcommReleaseComm(const char* commId)
 {
