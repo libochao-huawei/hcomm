@@ -600,6 +600,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_op_based_mode)
 
     CollServiceDefaultImpl service(&comm);
     CollOperator op;
+    service.AddOpCounterMems();
     op.inputMem = DevBuffer::Create(0x100, 1);
     op.outputMem = DevBuffer::Create(0x100, 1);
     op.scratchMem = DevBuffer::Create(0x100, 1);
