@@ -39,6 +39,7 @@ struct RsIbverbsOps {
     int (*rsIbvGetCqEvent)(struct ibv_comp_channel *channel, struct ibv_cq **cq, void **cqContext);
     int (*rsIbvDestroyCq)(struct ibv_cq *cq);
     int (*rsIbvModifyQp)(struct ibv_qp *qp, struct ibv_qp_attr *attr, int attrMask);
+    int (*rsIbvQueryDevice)(struct ibv_context *context, struct ibv_device_attr *deviceAttr);
     int (*rsIbvQueryPort)(struct ibv_context *context, uint8_t portNum, struct ibv_port_attr *portAttr);
     int (*rsIbvQueryGid)(struct ibv_context *context, uint8_t portNum, int index, union ibv_gid *gid);
     int (*rsIbvCloseDevice)(struct ibv_context *context);
@@ -130,6 +131,7 @@ int RsIbvPollCq(struct ibv_cq *cq, int numEntries, struct ibv_wc *wc);
 int RsIbvReqNotifyCq(struct ibv_cq *cq, int solicitedOnly);
 int RsIbvDestroyCq(struct ibv_cq *cq);
 int RsIbvModifyQp(struct ibv_qp *qp, struct ibv_qp_attr *attr, int attrMask);
+int RsIbvQueryDevice(struct ibv_context *context, struct ibv_device_attr *deviceAttr);
 int RsIbvQueryPort(struct ibv_context *context, uint8_t portNum, struct ibv_port_attr *portAttr);
 int RsIbvQueryGid(struct ibv_context *context, uint8_t portNum, int index, union ibv_gid *gid);
 int RsIbvCloseDevice(struct ibv_context *context);

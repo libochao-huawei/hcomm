@@ -658,6 +658,12 @@ enum SaveSnapshotAction {
     SAVE_SNAPSHOT_ACTION_MAX,
 };
 
+enum {
+    DIRECT_FLAG_NOTSUPP = 0,
+    DIRECT_FLAG_PCIE = 1,
+    DIRECT_FLAG_UB = 2,
+};
+
 #ifdef __cplusplus
 }
 #endif
