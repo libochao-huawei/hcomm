@@ -8627,11 +8627,6 @@ namespace hccl
         return topoAttr;
     }
 
-    aclrtBinHandle HcclCommunicator::GetBinHandle()
-    {
-        return binHandle_;
-    }
-
     HcclResult HcclCommunicator::GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams,
         HDCommunicateParams &kfcStatusTransferD2HParams)
     {
