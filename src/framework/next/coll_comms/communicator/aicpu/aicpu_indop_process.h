@@ -24,6 +24,7 @@ public:
     static HcclResult AicpuIndOpThreadInit(ThreadMgrAicpuParam *param);
     static HcclResult AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param);
     static HcclResult AicpuIndOpCommInit(CommAicpuParam *commAicpuParam);
+    static HcclResult AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, std::string &commTag);
 
     static HcclResult AcquireAicpuCommMgr(const std::string &group, CollCommAicpuMgr **aicpuCommMgrPtr);
     static CollCommAicpuMgr *AicpuGetCommMgrbyGroup(const std::string &group);

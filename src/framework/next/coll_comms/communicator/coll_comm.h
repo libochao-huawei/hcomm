@@ -73,12 +73,12 @@ public:
     HcclCommDfx* GetHcclCommDfx() {
  	    return hcclCommDfx_ != nullptr ? hcclCommDfx_.get() : nullptr;
  	}
-    std::function<HcclResult(u32, u32, const TaskParam&, u64)> GetDfxCallback() {
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetDfxCallback() {
         if (hcclCommDfx_ == nullptr) {
             HCCL_ERROR("[CollComm]CollComm DfxCallBack failed. hcclCommDfx is nullptr");
             return nullptr;
         }
-        return hcclCommDfx_->GetCallBack();
+        return hcclCommDfx_->GetCallback();
     }
 private:
     void* comm_{nullptr};
