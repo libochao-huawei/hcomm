@@ -164,3 +164,19 @@ HCCP_ATTRI_VISI_DEF int RaGetQpLbValue(void *qpHandle, int *lbValue)
     ret = raQpHandle->rdmaOps->raGetQpLbValue(raQpHandle, lbValue);
     return ConverReturnCode(RDMA_OP, ret);
 }
+
+HCCP_ATTRI_VISI_DEF int RaNdaGetDirectFlag(void *rdmaHandle, int *directFlag)
+{
+    struct RaRdmaHandle *rdevHandleTmp = (struct RaRdmaHandle *)rdmaHandle;
+    int ret = 0;
+
+    CHK_PRT_RETURN(rdmaHandle == NULL || directFlag == NULL,
+        hccp_err("[get][directFlag]rdmaHandle or directFlag is NULL, invalid"), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(rdmaHandle->rdmaOps == NULL || rdmaHandle->rdmaOps->raNdaGetDirectFlag == NULL,
+        hccp_err("[get][directFlag]rdmaOps is NULL or rdmaOps->raNdaGetDirectFlag is NULL, invalid"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    ret = rdmaHandle->rdmaOps->raNdaGetDirectFlag(rdevHandleTmp, directFlag);
+    return ConverReturnCode(RDMA_OP, ret);
+}

@@ -46,6 +46,7 @@ struct RaSocketOps {
 struct RaRdmaOps {
     int (*raRdevInit)(
         struct RaRdmaHandle *rdmaHandle, unsigned int notifyType, struct rdev rdevInfo, unsigned int *rdevIndex);
+    int (*raNdaGetDirectFlag)(struct RaRdmaHandle *rdmaHandle, int *directFlag);
     int (*raRdevGetPortStatus)(struct RaRdmaHandle *rdmaHandle, enum PortStatus *status);
     int (*raGetLbMax)(struct RaRdmaHandle *rdmaHandle, int *lbMax);
     int (*raRdevDeinit)(struct RaRdmaHandle *rdmaHandle, unsigned int notifyType);
