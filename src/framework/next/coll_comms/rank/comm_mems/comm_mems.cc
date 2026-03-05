@@ -96,7 +96,7 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
 
     auto opIt = opBindings_.find(memTag);
     if (opIt != opBindings_.end()) {
-        HCCL_ERROR("[CommRegMem] memTag has already been registered.");
+        HCCL_ERROR("[CommRegMem] memTag[%s] has already been registered.", memTag.c_str());
         return HCCL_E_PARA;
     }
 
