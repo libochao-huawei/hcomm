@@ -40,7 +40,7 @@ constexpr u32 MAX_SEND_SGE_NUM = 8;
 constexpr u32 MAX_RECV_SGE_NUM = 1;
 constexpr u32 MAX_CQ_DEPTH = 65535;
 constexpr u32 MAX_INLINE_DATA = 128;
-constexpr u32 RA_TLV_REQUEST_UNAVAIL = 328307;
+constexpr u32 RA_TLV_REQUEST_UNAVAIL = 128308;
 constexpr u32 ROCE_ENOMEM_RET = 328100;
 
 const std::unordered_map<HrtNetworkMode, NetworkMode, EnumClassHash> HRT_NETWORK_MODE_MAP
