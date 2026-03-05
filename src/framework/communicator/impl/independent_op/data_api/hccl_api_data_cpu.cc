@@ -747,6 +747,37 @@ void SetCollopDataDes(Hccl::CollOperator& collOp, const HcclDfxOpInfo& dfxOpInfo
     }
 }
 
+std::make_shared<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpInfo, hccl::hcclComm* hcclComm) {
+    auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
+    Hccl::CollOperator collOp{};
+    collOp.opMode = dfxOpInfo.opMode; 
+    collOp.opType = Hccl::OP_TYPE_MAP.at(dfxOpInfo.opType);
+    collOp.reduceOp = Hccl::REDUCE_OP_MAP.at(dfxOpInfo.reduceOp);
+    collOp.dataType = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.dataType);
+    collOp.outputDataType = ccl::DATA_TYPE_MAP.at(dfxOpInfo.outputDataType);
+    collOp.dataCount = dfxOpInfo.dataCount;
+    collOp.root = dfxOpInfo.root;
+    collOp.staticAddr = dfxOpInfo.staticAddr;
+    collOp.staticShape = dfxOpInfo.staticShape;
+    collOp.numBlocksLimit = dfxOpInfo.numBlocksLimit;
+    SetCollopDataDes(collOp, dfxOpInfo);
+    collOp.inputMem = CreateBufferShared(dfxOpInfo.inputMem);
+    collOp.outputMem = CreateBufferShared(dfxOpInfo.outputMem);
+    collOp.srcatchMem = CreateBufferShared(dfxOpInfo.srcatchMem);
+    dfxOpInfoOnce->op_= std::move(collOp);
+    dfxOpInfoOnce->tag_ = dfxOpInfo.tag_;
+    dfxOpInfoOnce->algType_ = dfxOpInfo.algType_;
+    dfxOpInfoOnce->index_ = dfxOpInfo.index_;
+    dfxOpInfoOnce->comm_ = hcclComm->GetCommunicatorV2();
+    dfxOpInfoOnce->mainStreamId_ = dfxOpInfo.mainStreamId_;
+    dfxOpInfoOnce->beginTime_ = dfxOpInfo.beginTime_;
+    return dfxOpInfoOnce;
+}
+
+static std::shared_ptr<Hccl::Buffer> CreateBufferShared(const Buffer* buffer) {
+    return buffer ? std::shared_ptr<Hccl::Buffer>(buffer->GetAddr(), buffer->GetSize()) : nullptr;
+}
+
 HcclResult HcclDfxRegOpInfo(HcclComm comm, HcclDfxOpInfo dfxOpInfo)
 {
     UpdataProfStat();
@@ -765,45 +796,15 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, HcclDfxOpInfo dfxOpInfo)
     if (opBased) {
         dfxOpInfo.opTag = hcclComm->GetIdentifier();
     }
-    
+    dfxOpInfo.myRank = collComm->GetMyRankId;//opType
     dfxOpInfo.tag_ = OpTypeToString(dfxOpInfo.opType);//opType
     dfxOpInfo.index_ = 0;
     dfxOpInfo.beginTime_ = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
     //HcclDfxOpInfo转为DfxOpInfo
     auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
-    Hccl::CollOperator collOp;
-    collOp.opMode = dfxOpInfo.opMode; 
-    collOp.opType = Hccl::OP_TYPE_MAP.at(dfxOpInfo.opType);
-    collOp.reduceOp = Hccl::REDUCE_OP_MAP.at(dfxOpInfo.reduceOp);
-    collOp.dataType = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.dataType);
-    collOp.outputDataType = ccl::DATA_TYPE_MAP.at(dfxOpInfo.outputDataType);
-    collOp.dataCount = dfxOpInfo.dataCount;
-    collOp.root = dfxOpInfo.root;
-    collOp.staticAddr = dfxOpInfo.staticAddr;
-    collOp.staticShape = dfxOpInfo.staticShape;
-    collOp.numBlocksLimit = dfxOpInfo.numBlocksLimit;
-    SetCollopDataDes(collOp, dfxOpInfo);
-    collOp.inputMem = std::make_shared<Hccl::Buffer>(
-        dfxOpInfo.inputMem->GetAddr(),
-        dfxOpInfo.inputMem->GetSize()
-    );
-    collOp.outputMem = std::make_shared<Hccl::Buffer>(
-        dfxOpInfo.outputMem->GetAddr(),
-        dfxOpInfo.outputMem->GetSize()
-    );
-    collOp.srcatchMem = std::make_shared<Hccl::Buffer>(
-        dfxOpInfo.srcatchMem->GetAddr(),
-        dfxOpInfo.srcatchMem->GetSize()
-    );
+    dfxOpInfoOnce = ConvertToDfxOpInfo(dfxOpInfo, hcclComm);
     
-    dfxOpInfoOnce->op_= collOp;
-    dfxOpInfoOnce->tag_ = dfxOpInfo.tag_;
-    dfxOpInfoOnce->algType_ = dfxOpInfo.algType_;
-    dfxOpInfoOnce->index_ = dfxOpInfo.index_;
-    dfxOpInfoOnce->comm_ = hcclComm->GetCommunicatorV2();
-    dfxOpInfoOnce->mainStreamId_ = dfxOpInfo.mainStreamId_;
-    dfxOpInfoOnce->beginTime_ = dfxOpInfo.beginTime_;
  
     Hccl::MirrorTaskManager* mirrorTaskManage = collComm->GetMirrorTaskManager();
     CHK_PTR_NULL(mirrorTaskManage);
