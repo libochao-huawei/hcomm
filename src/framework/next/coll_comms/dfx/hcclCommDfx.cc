@@ -31,13 +31,13 @@ HcclResult HcclCommDfx::Init(u32 deviceId, const std::string comTag) {
     // 3. 注册回调到单例
     // RegisterProfilingCallback();
     setAddTaskCallback_ = [this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
-        return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle)
+        return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle);
     };
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 
 // 回调注册实现
-HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const TaskParam &taskParam, u32 handle) {
+HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u32 handle) {
     CHK_SMART_PTR_NULL(mirrorTaskManager_);
     u32 remoteRankId = INVALID_UINT;
     if (handle != INVALID_U64) {

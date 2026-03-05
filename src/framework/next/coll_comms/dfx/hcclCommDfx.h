@@ -17,6 +17,9 @@
 #include "read_write_lock.h"
 #include "hccl_common.h"
 #include <unordered_map>
+#include "buffer.h"
+#include "common.h"
+#include "hcclCommOp.h"
 
 namespace hccl {
 
@@ -56,7 +59,7 @@ private:
     static ReadWriteLock rwLock_; // 读写锁
     std::string commTag_;
     u32 deviceId_;
-    std::function<HcclResult(u32, u32, const TaskParam&, u64)> setAddTaskCallback_;
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> setAddTaskCallback_;
 };
 
 
