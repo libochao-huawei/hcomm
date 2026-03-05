@@ -244,7 +244,7 @@ HcclResult AivUbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memT
     auto cacheBuilder = [](Hccl::RemoteMemCtx<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> &remoteMemCtx, uint32_t index) {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index + 1];
         if (rmtBuffer == nullptr) {
-            return HCCL_SUCCESS;
+            return;
         }
         remoteMemCtx.remoteUserMems[index].type = hccl::ConvertHcclToCommMemType(rmtBuffer->GetMemType());
         remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer->GetAddr());
