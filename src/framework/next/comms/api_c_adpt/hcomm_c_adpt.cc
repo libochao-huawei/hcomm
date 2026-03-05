@@ -31,7 +31,6 @@ static std::unordered_map<ChannelHandle, ChannelHandle> g_ChannelD2HMap;
 static std::unordered_map<ThreadHandle, std::shared_ptr<hccl::Thread>> g_ThreadMap;
 
 static std::mutex g_ChannelMapMtx;
-static std::mutex g_ThreadMapMtx;
 }  // namespace hcomm
 
 namespace hcomm {
@@ -525,7 +524,6 @@ HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t noti
     CHK_RET(CommEngineToStreamType(engine, streamType));
 
     HcclResult ret = HCCL_SUCCESS;
-    std::lock_guard<std::mutex> lock(hcomm::g_ThreadMapMtx);
     for (uint32_t i = 0; i < threadNum; ++i) {
         std::shared_ptr<hccl::Thread> handle;
         HCCL_INFO("[%s] Thread notifyLoadType[%u], streamType[%u]",
@@ -571,7 +569,6 @@ HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum)
     }
 
     HCCL_INFO("[HcommThreadfree] begin to free %u threads", threadNum);
-    std::lock_guard<std::mutex> lock(hcomm::g_ThreadMapMtx);
     for (uint32_t i = 0; i < threadNum; ++i) {
         auto handleIter = hcomm::g_ThreadMap.find(threads[i]);
         if (handleIter == hcomm::g_ThreadMap.end()) {
@@ -595,7 +592,6 @@ HcclResult HcommThreadAllocWithStream(CommEngine engine,
     EXECEPTION_CATCH(handle = std::make_shared<hccl::CpuTsThread>(stream, notifyNum, notifyLoadType), return HCCL_E_PTR);
     CHK_RET(handle->Init());
  
-    std::lock_guard<std::mutex> lock(hcomm::g_ThreadMapMtx);
     // 返回第一个句柄
     *thread = reinterpret_cast<ThreadHandle>(handle.get());
     hcomm::g_ThreadMap.emplace(*thread , handle);
@@ -658,7 +654,6 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
 HcclResult HcommThreadResGetInfo(ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void *info)
 {
     CHK_PTR_NULL(info);
-    std::lock_guard<std::mutex> lock(hcomm::g_ThreadMapMtx);
     auto it = hcomm::g_ThreadMap.find(thread);
     if (it == hcomm::g_ThreadMap.end()) {
         HCCL_ERROR("[%s] failed. thread[0x%llx] not found.", __func__, thread);
@@ -685,7 +680,6 @@ HcclResult HcommThreadResGetInfo(ThreadHandle thread, ThreadResType resType, uin
 
 HcclResult HcommThreadGet(const ThreadHandle thread, std::shared_ptr<hccl::Thread> &handle)
 {
-    std::lock_guard<std::mutex> lock(hcomm::g_ThreadMapMtx);
     auto it = hcomm::g_ThreadMap.find(thread);
     if (it == hcomm::g_ThreadMap.end()) {
         HCCL_ERROR("[%s] failed. thread[0x%llx] not found.", __func__, thread);
