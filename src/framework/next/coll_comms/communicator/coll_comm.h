@@ -70,7 +70,7 @@ public:
     uint32_t GetRankSize() const;
 
     // 获取HcclCommDfx
-    HcclCommDfx* GetHcclCommDfx() { return dfx_; };
+    HcclCommDfx* GetHcclCommDfx() { return &dfx_; };
 
 private:
     void* comm_{nullptr};
