@@ -29,6 +29,12 @@
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
 
+HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel,
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // TODO: 临时，该接口头文件还没定
+
+HcclResult __attribute__((weak)) HcommThreadRegisterDfx(ThreadHandle thread,
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // TODO: 临时，该接口头文件还没定
+
 HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
     if (indOpCommInitialized_) {
@@ -103,12 +109,18 @@ HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
     for (size_t i = 0; i < threadNum; ++i) {
         threadArray[i] = reinterpret_cast<ThreadHandle>(outThreads[i].get());  // 拷贝裸指针
         HCCL_INFO("[CollCommAicpu][%s] threadArray[%u] = [%lu]", __func__, i, threadArray[i]);
+        CHK_RET(RegisterThreadAddDfxTaskInfo(threadArray[i]));
     }
     threads_.insert(threads_.end(), std::make_move_iterator(outThreads.begin()),
         std::make_move_iterator(outThreads.end()));
     HCCL_INFO("[CollCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
         __func__, hcomId.c_str(), threadNum);
     return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::RegisterThreadAddDfxTaskInfo(ThreadHandle thread) 
+{
+ 	return HcommThreadRegisterDfx(thread, dfx_->GetCallBack());
 }
 
 HcclResult CollCommAicpu::AllocChannelResource(HcclChannelUrmaRes *commParam)
@@ -175,9 +187,6 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
 
     return HCCL_SUCCESS;
 }
-
-HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel,
-    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // TODO: 临时，该接口头文件还没定
 
 HcclResult CollCommAicpu::RegisterChannelAddDfxTaskInfo(ChannelHandle channel) {
     return HcommChannelRegisterDfx(channel, dfx_.GetCallback());
