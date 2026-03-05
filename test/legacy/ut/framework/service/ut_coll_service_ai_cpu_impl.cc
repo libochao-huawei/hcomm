@@ -529,7 +529,6 @@ TEST_F(CollServiceAiCpuImplTest, Ut_Resume_When_Normal_Expect_Success)
     auto stream = std::make_unique<Stream>(ptr);
     MOCKER(HrtStreamGetMode).stubs().will(returnValue((unsigned long long)0));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(static_cast<s32>(0)));
-    MOCKER(HrtAicpuKernelLaunchExWithArgs).stubs().will(returnValue(static_cast<void*>(0)));
     comm.streamManager->opbase->RegisterMaster(std::move(stream));
     void* ptr2;
     auto freeStream = make_unique<Stream>(ptr2);
@@ -562,7 +561,6 @@ TEST_F(CollServiceAiCpuImplTest, Ut_LoadWithOpBasedMode_When_Normal_Expect_Succe
     Buffer *buf = nullptr;
     LocalRmaBuffer *rmaBuf = nullptr;
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
-    MOCKER(HrtAicpuKernelLaunchExWithArgs).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
         LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
@@ -658,7 +656,6 @@ TEST_F(CollServiceAiCpuImplTest, Ut_LoadWithOpBasedMode_When_Loop_Expect_Success
     Buffer *buf = nullptr;
     LocalRmaBuffer *rmaBuf = nullptr;
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
-    MOCKER(HrtAicpuKernelLaunchExWithArgs).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
         LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
@@ -816,7 +813,6 @@ TEST_F(CollServiceAiCpuImplTest, test_LoadWithOffloadMode_Success)
     Buffer *buf = nullptr;
     LocalRmaBuffer *rmaBuf = nullptr;
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
-    MOCKER(HrtAicpuKernelLaunchExWithArgs).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
         LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
