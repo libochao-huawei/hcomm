@@ -927,7 +927,7 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
         memTags,
         memNum
     };
-    GetRemoteUserMem(remoteMemCtx);
+    CHK_RET(GetRemoteUserMem(remoteMemCtx));
     return HCCL_SUCCESS;
 }
 } // namespace Hccl
