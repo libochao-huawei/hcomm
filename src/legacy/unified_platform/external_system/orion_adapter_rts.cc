@@ -307,17 +307,17 @@ HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainbo
 
 aclrtStream HrtStreamCreateWithFlags(uint32_t priority, uint32_t flag)
 {
-    HCCL_INFO("[HrtStreamCreateWithFlags] priority[%d], flags[%u].", priority, flags);
+    HCCL_INFO("[HrtStreamCreateWithFlags] priority[%d], flag[%u].", priority, flag);
     aclrtStream ptr = nullptr;
     aclError ret = aclrtCreateStreamWithConfig(&ptr, priority, flag);
-    HCCL_INFO("Call rtGetStreamId return value[%d]. Params: flags[%u].", ret, flag);
+    HCCL_INFO("Call rtGetStreamId return value[%d]. Params: flag[%u].", ret, flag);
 
     if (ret != ACL_SUCCESS) {
         HCCL_ERROR("[Stream][CreateWithFlags]errNo[0x%016llx] rtStreamCreate error, "
-                   "rtRet[%d], flags[%u]",
+                   "rtRet[%d], flag[%u]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, flag);
         throw RuntimeApiException(
-                StringFormat("call aclrtCreateStreamWithConfig failed, priority=%p, flags=%u", priority, flag));
+                StringFormat("call aclrtCreateStreamWithConfig failed, priority=%p, flag=%u", priority, flag));
     }
     CHECK_NULLPTR(ptr, "[HrtStreamCreateWithFlags] ptr is nullptr!");
     HCCL_INFO("[HrtStreamCreateWithFlags] ptr[%p].", ptr);
