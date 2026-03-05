@@ -696,3 +696,8 @@ int RsGetLbMax(unsigned int phyId, unsigned int rdevIndex, int *lbMax)
 {
 	return 0;
 }
+
+int RsNdaGetDirectFlag(unsigned int phyId, unsigned int rdevIndex, int *directFlag)
+{
+    return 0;
+}

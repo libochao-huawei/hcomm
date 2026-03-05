@@ -675,6 +675,17 @@ HCCP_ATTRI_VISI_DEF int RaRdevInitWithBackup(struct RdevInitInfo *initInfo, stru
     struct rdev *backupRdevInfo, void **rdmaHandle);
 
 /**
+ * @ingroup libinit
+ * @brief get direct flag
+ * @param rdmaHandle [IN] rdma handle
+ * @param directFlag [OUT] rdma direct flag
+ * @see RaRdevInit
+ * @retval #zero Success
+ * @retval #non-zero Failure
+ */
+HCCP_ATTRI_VISI_DEF int RaNdaGetDirectFlag(void *rdmaHandle, int *directFlag);
+
+/**
  * @ingroup librdma
  * @brief get max load balance value
  * @param rdevHandle [IN] rdev handle
