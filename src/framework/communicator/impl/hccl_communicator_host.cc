@@ -4275,6 +4275,9 @@ namespace hccl
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
+        if (opParam.isCapture) {
+            CHK_RET(InsertNewTagToCaptureResMap(newTag, opParam));
+        }
         bool needIncreLink = false;
         // aiv算法不需要申请host和device侧的从流
         bool selectAivAlg = algDesc.isAivMode;
@@ -4541,6 +4544,9 @@ namespace hccl
             CHK_RET(RecordOpPara(opType, opParam));
             CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+        }
+        if (opParam.isCapture) {
+            CHK_RET(InsertNewTagToCaptureResMap(newTag, opParam));
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
         if (resMap_.find(newTag) == resMap_.end()) {
@@ -8950,5 +8956,66 @@ namespace hccl
         }
         HCCL_INFO("[%s] aicpuUnfoldConfig[%u]", __func__, GetAicpuUnfoldConfig());
         return GetAicpuUnfoldConfig();
+    }
+
+    void AclgraphDestroyCallback(void *fnData)
+    {
+        AclgraphDestroyCallbackParam *callbackParam = static_cast<AclgraphDestroyCallbackParam *>(fnData);
+        HcclCommunicator *communicator = callbackParam->communicator;
+        HCCL_INFO("[%s] Entry, communicator[%p], modelId[%llu]", __func__, communicator, callbackParam->modelId);
+
+        HcclResult ret = communicator->CleanCaptureRes(callbackParam->modelId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[%s] modelID[%llu] CleanCaptureRes failed", __func__, callbackParam->modelId);
+        }
+    }
+
+    HcclResult HcclCommunicator::CleanCaptureRes(u64 modelId)
+    {
+        HcclResult ret;
+
+        auto it = captureResMap_.find(modelId);
+        if (it == captureResMap_.end()) {
+            HCCL_ERROR("[%s] modelID[%llu] is not record", __func__, modelId);
+            return HCCL_E_NOT_FOUND;
+        }
+
+        for (const auto& tag : it->second) {
+            ret = ClearOpResource(tag);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[%s] modelID[%llu] tag[%s] resource release fail", __func__, modelId, tag.c_str());
+                return ret;
+            }
+            HCCL_DEBUG("[%s] modelID[%llu] tag[%s] resource release success", __func__, modelId, tag.c_str());
+        }
+
+        captureResMap_.erase(modelId);
+        captureCallbackParamMap_.erase(modelId);
+        HCCL_INFO("[%s] modelID[%llu] resource release success", __func__, modelId);
+
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::InsertNewTagToCaptureResMap(const std::string &newTag, const OpParam &opParam)
+    {
+        aclmdlRI rtModel = nullptr;
+        bool isCapture = false;
+        u64 modelId = 0;
+        CHK_RET(GetStreamCaptureInfo(opParam.stream.ptr(), rtModel, isCapture));
+        CHK_PTR_NULL(rtModel);
+        CHK_RET(GetModelId(rtModel, modelId));
+        if (captureResMap_.find(modelId) == captureResMap_.end()) {
+            captureCallbackParamMap_[modelId].communicator = this;
+            captureCallbackParamMap_[modelId].modelId = modelId;
+            aclError aclRet = aclmdlRIDestroyRegisterCallback(rtModel, AclgraphDestroyCallback,
+                static_cast<void *>(&captureCallbackParamMap_[modelId]));
+            CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[%s] aclmdlRIDestroyRegisterCallback fail, modelId[%llu]",
+                __func__, modelId), HCCL_E_RUNTIME);
+            HCCL_INFO("[%s] aclmdlRIDestroyRegisterCallback success modelID[%llu]", __func__, modelId);
+        }
+        captureResMap_[modelId].insert(newTag);
+        HCCL_DEBUG("[%s] captureResMap insert tag[%s] to modelID[%llu]", __func__, newTag.c_str(), modelId);
+
+        return HCCL_SUCCESS;
     }
 }
