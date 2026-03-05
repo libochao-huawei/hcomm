@@ -79,8 +79,12 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
         CHK_PTR_NULL(engineResMgr);
         ret = engineResMgr->HcclThreadAcquire(engine, threadNum, notifyNumPerThread, threads, threadId);
         auto hcclCommDfxCallback = collComm->GetDfxCallback();
- 	    for (int num = 0; num < threadNum; threadNum++) {
- 	        CHK_RET(HcommThreadRegisterDfx(threads[i], hcclCommDfxCallback));
+ 	    for (u32 num = 0; num < threadNum; threadNum++) {
+            int hret = HcommThreadRegisterDfx(&threads[num], hcclCommDfxCallback);
+            if (hret != HCCL_SUCCESS) {
+                HCCL_ERROR("[HcclThreadAcquire] HcclThreadAcquire  HcommThreadRegisterDfx failed ");
+                return HCCL_E_PTR;
+            }
  	    }
     }
     else {
@@ -125,7 +129,11 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
         CHK_PTR_NULL(engineResMgr);
         ret = engineResMgr->HcclThreadAcquireWithStream(engine, stream, notifyNum, thread);
         auto hcclCommDfxCallback = collComm->GetDfxCallback();
-        CHK_RET(HcommThreadRegisterDfx(threads[i], hcclCommDfxCallback));
+        int hret = HcommThreadRegisterDfx(thread, hcclCommDfxCallback);
+        if (hret != 0) {
+            HCCL_ERROR("[HcclThreadAcquire] HcclThreadAcquire  HcommThreadRegisterDfx failed");
+            return HCCL_E_PTR;
+        }
     }
     else {
         auto& engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
