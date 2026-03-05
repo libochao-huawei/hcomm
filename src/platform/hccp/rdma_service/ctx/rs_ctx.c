@@ -13,6 +13,7 @@
 #include "securec.h"
 #include "dl_hal_function.h"
 #include "dl_ibverbs_function.h"
+#include "dl_nda_function.h"
 #include "dl_urma_function.h"
 #include "dl_ccu_function.h"
 #include "dl_net_function.h"
@@ -66,6 +67,8 @@ int RsCtxApiInit(enum NetworkMode hccpMode, enum ProtocolTypeT protocol)
         case PROTOCOL_RDMA:
             ret = RsApiInit();
             CHK_PRT_RETURN(ret != 0, hccp_err("RsApiInit failed, protocol[%u], ret[%d]", protocol, ret), ret);
+            ret = RsNdaApiInit();
+            CHK_PRT_RETURN(ret != 0, hccp_err("RsNdaApiInit failed, protocol[%u], ret[%d]", protocol, ret), ret);
             break;
         case PROTOCOL_UDMA:
             ret = RsUbApiInit();
@@ -102,6 +105,7 @@ int RsCtxApiDeinit(enum NetworkMode hccpMode, enum ProtocolTypeT protocol)
     switch (protocol) {
         case PROTOCOL_RDMA:
             RsApiDeinit();
+            RsNdaApiDeinit();
             break;
         case PROTOCOL_UDMA:
             RsUbApiDeinit();
