@@ -93,6 +93,13 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
     const auto key = MakeKey(mem.addr, static_cast<size_t>(mem.size));
  
     std::lock_guard<std::mutex> addLock(memMutex_);
+
+    auto opIt = opBindings_.find(memTag);
+    if (opIt != opBindings_.end()) {
+        HCCL_ERROR("[CommRegMem] memTag[%s] has already been registered.", memTag.c_str());
+        return HCCL_E_PARA;
+    }
+
     auto& reg = tagRegs_[memTag];
  
     // 同tag内做区间冲突/幂等复用
@@ -110,10 +117,7 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
     }
  
     // 加入绑定map
-    auto opIt = opBindings_.find(memTag);
-    if (opIt == opBindings_.end()) {
-        opBindings_.emplace(memTag, h); 
-    }
+    opBindings_.emplace(memTag, h);
 
     // 新增反查map，用于aiv建链交换内存
     auto opRevIt = opReverseBindings_.find(h.get());
