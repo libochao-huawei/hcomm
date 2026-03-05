@@ -63,8 +63,6 @@
 
 #include "../../../legacy/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
 
-#include "user_remote_mem_getter.h"
-
 namespace Hccl {
 
 void *HrtMalloc(u64 size, aclrtMemType_t memType)
