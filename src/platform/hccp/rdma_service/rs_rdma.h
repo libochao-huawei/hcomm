@@ -30,6 +30,8 @@
 #define RS_MAX_TEMPTH_DEPTH 4096
 #define RS_MR_STATE_SYNCED  1
 
+#define DIRECT_FLAG_UB_VENDOR_ID 0x18
+
 struct RsQpLenInfo {
     uint32_t cmd;
     uint32_t len;
