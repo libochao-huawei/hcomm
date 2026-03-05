@@ -69,6 +69,9 @@ public:
     // 获取Rank数量
     uint32_t GetRankSize() const;
 
+    // 获取HcclCommDfx
+    HcclCommDfx* GetHcclCommDfx() { return &dfx_; };
+
 private:
     void* comm_{nullptr};
     uint32_t rankId_{};

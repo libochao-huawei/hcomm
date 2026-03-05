@@ -256,3 +256,15 @@ HcclResult CollCommAicpu::SendErrorMessageReportToHost(Hccl::ErrorMessageReport&
         reinterpret_cast<uint8_t *>(&errMsgInfo)));
     return HCCL_SUCCESS;
 }
+
+HcclResult CollCommAicpu::RegisterProfCallBack()
+{
+    if (MsprofRegisterCallback != nullptr) {
+        HCCL_INFO("RegisterProfCallBack not null");
+        int32_t ret = MsprofRegisterCallback(AICPU, &DeviceCommandHandle);
+        CHK_PRT_RET((ret != 0), HCCL_ERROR("[%s] failed. ret = [%d]", __func__, ret), HCCL_E_PARA);
+    } else {
+        HCCL_INFO("RegisterProfCallBack is null");
+    }
+    return HCCL_SUCCESS;
+}
