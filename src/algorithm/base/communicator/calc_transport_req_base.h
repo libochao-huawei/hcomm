@@ -19,8 +19,8 @@
 namespace hccl {
 class CalcTransportReqBase {
 public:
-    explicit CalcTransportReqBase(std::vector<std::vector<u32>> &subCommPlaneVector,
-        std::vector<bool> &isBridgeVector, u32 userRank);
+    explicit CalcTransportReqBase(const std::vector<std::vector<u32>> &subCommPlaneVector,
+        const std::vector<bool> &isBridgeVector, u32 userRank);
 
     virtual ~CalcTransportReqBase();
 
