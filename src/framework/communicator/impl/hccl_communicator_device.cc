@@ -1177,6 +1177,16 @@ namespace hccl
         return;
     }
 
+    HcclResult HcclCommunicator::LoadCustomKernel(void)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    void HcclCommunicator::UnloadCustomKernel(void)
+    {
+        return;
+    }
+
     HcclResult HcclCommunicator::AicpuKfcTilingDataLaunch(const OpParam &opParam, const HcclCMDType &opType,
                                                           const DeviceMem &deviceContext, const std::string &kernelName, const AicpuOpTiling opTilingInfo)
     {
