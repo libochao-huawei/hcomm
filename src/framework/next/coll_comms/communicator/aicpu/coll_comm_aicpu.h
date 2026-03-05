@@ -45,7 +45,7 @@ public:
     void SetErrorReported(bool isErrorReported) { isErrorReported_ = isErrorReported; }
     HcclResult SendErrorMessageReportToHost(Hccl::ErrorMessageReport& errMsgInfo);
     HcclResult CollCommAicpu::RegisterProfCallBack();
-    HcclCommDfxLite* GetHcclCommDfxLite() { return dfx_.get(); };
+    HcclCommDfxLite* GetHcclCommDfxLite() { return dfx_; };
 
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
