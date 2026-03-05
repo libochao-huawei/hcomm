@@ -731,11 +731,12 @@ int32_t HcommAcquireComm(const char* commId)
     }
     return HCCL_SUCCESS;
 }
-int32_t HcommChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(u32, u32, const TaskParam&, u32)> callback) {
-    CHK_PTR_NULL(channel);
+
+int32_t HcommChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback) {
     auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
     CHK_PTR_NULL(ubTransportLitePtr);
-    ubTransportLitePtr->setCallback(callback);
+    CHK_RET(ubTransportLitePtr->SetAddTaskInfoCallback(callback));
+    return HCCL_SUCCESS;
 }
 
 int32_t HcommReleaseComm(const char* commId)

@@ -176,8 +176,11 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
     return HCCL_SUCCESS;
 }
 
+HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel,
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // TODO: 临时，该接口头文件还没定
+
 HcclResult CollCommAicpu::RegisterChannelAddDfxTaskInfo(ChannelHandle channel) {
-    return HcommChannelRegisterDfx(channel, dfx_->GetCallBack());
+    return HcommChannelRegisterDfx(channel, dfx_.GetCallback());
 }
 
 HcclResult CollCommAicpu::NotifyFree(NotifyMgrAicpuParam *param)

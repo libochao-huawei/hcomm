@@ -72,7 +72,7 @@ UbTransportLiteImpl::UbTransportLiteImpl(std::vector<char> &uniqueId)
     std::vector<char> locBufferUniqueIds;
     binaryStream >> locBufferUniqueIds;
     ParseLocBufferVec(locBufferUniqueIds, locBufferVec, RmaUbBufType::BUFFER);
- 
+
     std::vector<char> rmtBufferUniqueIds;
     binaryStream >> rmtBufferUniqueIds;
     ParseRmtBufferVec(rmtBufferUniqueIds, rmtBufferVec, RmaUbBufType::BUFFER);
@@ -82,8 +82,10 @@ UbTransportLiteImpl::UbTransportLiteImpl(std::vector<char> &uniqueId)
     ParseConnVec(connUniqueIds);
 }
 
-void UbTransportLiteImpl::setCallback(std::function<HcclResult(u32, u32, const TaskParam&, u32)> callback) {
-    newCallBack_ = callback;
+HcclResult UbTransportLiteImpl::SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const TaskParam&, u64)> callback) {
+    CHK_PTR_NULL(callback);
+    newCallback_ = callback;
+    return HCCL_SUCCESS;
 }
 
 UbTransportLiteImpl::~UbTransportLiteImpl()
@@ -368,9 +370,8 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
         callback_(stream.GetSqId(), taskId, taskParam);
     }
 
-
     if (newCallback_ != nullptr) {
-        newCallback_(stream.GetSqId(), taskId, taskParam, static_cast<void*> this);
+        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
     }
     
 }
@@ -392,12 +393,12 @@ void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
     taskParam.beginTime                = ProfGetCurCpuTimestamp();
     taskParam.taskPara.Notify.notifyID = notifyId;
     taskParam.taskPara.Notify.value    = 1;
-        if (callback_ != nullptr) {
+    if (callback_ != nullptr) {
         callback_(stream.GetSqId(), taskId, taskParam);
     }
 
     if (newCallback_ != nullptr) {
-        newCallback_(stream.GetSqId(), taskId, taskParam, static_cast<void*> this);
+        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
     }
 }
 
@@ -427,7 +428,7 @@ void UbTransportLiteImpl::ProfilingProcess(const RmaBufferLite &loc, const Buffe
     }
 
     if (newCallback_ != nullptr) {
-        newCallback_(stream.GetSqId(), taskId, taskParam, static_cast<void*> this);
+        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
     }
 }
 
@@ -510,7 +511,7 @@ void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufferLite &loc, const
     }
 
     if (newCallback_ != nullptr) {
-        newCallback_(stream.GetSqId(), taskId, taskParam, static_cast<void*> this);
+        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
     }
 }
 
@@ -607,12 +608,12 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
     taskParam.taskPara.DMA.dmaOp    = DmaOp::HCCL_DMA_WRITE;
     taskParam.taskPara.DMA.locEid = GetLocEid();
     taskParam.taskPara.DMA.rmtEid = GetRmtEid();
-        if (callback_ != nullptr) {
+    if (callback_ != nullptr) {
         callback_(stream.GetSqId(), taskId, taskParam);
     }
 
     if (newCallback_ != nullptr) {
-        newCallback_(stream.GetSqId(), taskId, taskParam, static_cast<void*> this);
+        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
     }
 }
 
@@ -649,12 +650,12 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
     taskParam.taskPara.Reduce.dataType = DataTypeToHcclDataType(reduceIn.dataType);
     taskParam.taskPara.Reduce.locEid   = GetLocEid();
     taskParam.taskPara.Reduce.rmtEid   = GetRmtEid();
-        if (callback_ != nullptr) {
+    if (callback_ != nullptr) {
         callback_(stream.GetSqId(), taskId, taskParam);
     }
 
     if (newCallback_ != nullptr) {
-        newCallback_(stream.GetSqId(), taskId, taskParam, static_cast<void*> this);
+        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
     }
 }
 

@@ -75,19 +75,18 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
         const std::vector<std::shared_ptr<hccl::Thread>> threads = aicpuComm->GetAllThread();
         for (auto thread : threads) {
             rtLogicCqReport_t cqeException;
-            CqeStatus cqeStatus = CqeStatus::kDefault;
+            dfx::CqeStatus cqeStatus = dfx::CqeStatus::kDefault;
             CHK_RET(GetThreadCqe(thread.get(), cqeException, cqeStatus));
             if (cqeStatus != dfx::CqeStatus::kDefault) {
                 CHK_RET(ProcessCqe(aicpuComm, cqeException));
             }
         }
-        
-        
     }
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommTaskExceptionLite::GetThreadCqe(hccl::Thread* thread, rtLogicCqReport_t &cqeException,
-    CqeStatus &cqeStatus)
+    dfx::CqeStatus &cqeStatus)
 {
     CHK_SMART_PTR_NULL(thread);
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(thread->GetStreamLitePtr());
@@ -105,7 +104,7 @@ HcclResult HcclCommTaskExceptionLite::GetThreadCqe(hccl::Thread* thread, rtLogic
     cqeQueryInput.cqeAddr = reinterpret_cast<uint8_t *>(streamReport);
     
     cqeStatus = CqReportRecv(cqeQueryInput, cqeException);
-    cqeStatus == dfx::CqeStatus::kCqeException;
+    cqeStatus = dfx::CqeStatus::kCqeException;
     return HCCL_SUCCESS;
 }
 
@@ -145,6 +144,7 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(*curTask).c_str());
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, opData information is %s.", curTask->GetOpInfo().c_str());
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommTaskExceptionLite::GenerateErrorMessageReport(CollCommAicpu *aicpuComm,
