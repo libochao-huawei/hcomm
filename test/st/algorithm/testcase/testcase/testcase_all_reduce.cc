@@ -1990,7 +1990,7 @@ TEST_F(AllReduceTest, AllReduceOrderPreservedFor91093Executor2)
     CheckerOpParam checkerOpParam;
     checkerOpParam.opType = CheckerOpType::ALLREDUCE;
     checkerOpParam.tag = "AllREDUCE";
-    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
     checkerOpParam.DataDes.count = 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
