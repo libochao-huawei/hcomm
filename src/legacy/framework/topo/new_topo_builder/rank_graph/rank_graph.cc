@@ -565,7 +565,7 @@ void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId
                 shared_ptr<NetInstance> &newNetInstance, RankId2PeerMap &tmpPeers)
 {
     // 不添加绕路link
-    if (oldLink.GetHop() > 1) {
+    if (oldLink.GetHop() > 1 && oldLink.GetType() != LinkType::PEER2NET) {
         return;
     }
 
