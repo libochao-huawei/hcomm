@@ -734,7 +734,7 @@ int32_t HcommFenceOnThread(ThreadHandle thread)
     return HCCL_E_NOT_SUPPORT;
 }
 
-int32_t HcommChannelFenceOnThread(ThreadHandle thread,ChannelHandle channel)
+int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
 {
     HCCL_DEBUG("[%s] thread[0x%llx], channel[0x%llx].", __func__, thread, channel);
     return HCCL_E_NOT_SUPPORT;
