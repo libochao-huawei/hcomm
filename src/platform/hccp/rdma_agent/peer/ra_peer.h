@@ -139,6 +139,8 @@ int RaPeerGetIfaddrs(unsigned int phyId, struct InterfaceInfo interfaceInfos[], 
 int RaPeerRdevInit(
     struct RaRdmaHandle *rdmaHandle, unsigned int notifyType, struct rdev rdevInfo, unsigned int *rdevIndex);
 
+int RaPeerNdaGetDirectFlag(struct RaRdmaHandle *rdmaHandle, int *directFlag);
+
 int RaPeerGetLbMax(struct RaRdmaHandle *rdmaHandle, int *lbMax);
 
 int RaPeerRdevDeinit(struct RaRdmaHandle *rdmaHandle, unsigned int notifyType);
