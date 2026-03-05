@@ -650,55 +650,55 @@ protected:
 class HcclDfxOpInfo {
 public:
     std::string  opTag;
-    Hccl::RankId       myRank;
-    Hccl::OpMode       opMode{Hccl::OpMode::INVALID};
-    Hccl::OpType       opType{Hccl::OpType::DEBUGCASE};
-    Hccl::ReduceOp     reduceOp{Hccl::ReduceOp::INVALID};
-    Hccl::DataType     dataType{Hccl::DataType::INVALID};
-    HcclDataType     outputDataType{Hccl::DataType::INVALID};
+    RankId       myRank; //hcomm可填
+    OpMode       opMode;
+    HcclCMDType  opType = HcclCMDType::HCCL_CMD_INVALID;
+    HcclReduceOp reduceType = HcclReduceOp::HCCL_REDUCE_RESERVED;
+    HcclDataType dataType;
+    HcclDataType outputType;
     u64          dataCount{0};
-    u32          root{0};
+    u32          root = INVALID_VALUE_RANKID;
     u32          numBlocksLimit{0};
-    bool                    staticAddr{false};
-    bool                    staticShape{false};
+    bool         staticAddr{false};
+    bool         staticShape{false};
     std::shared_ptr<Buffer> inputMem{nullptr};
     std::shared_ptr<Buffer> outputMem{nullptr};
     std::shared_ptr<Buffer> scratchMem{nullptr};
     std::string  tag_;
-    AlgType      algType_;
-    u32          index_;
+    AlgType      algType;
+    u32          index_{0};
     u64          beginTime_;
     u64          endTime_;
-    u32          mainStreamId_ 
+    u32          mainStreamId_; 
     u32          notifyId; //host wait device notifyId
     union {
         struct {
             u64 dataCount;
-            DataType dataType;
-            DataType dataOutputType;
+            HcclDataType dataType;
+            HcclDataType dataOutputType;
         } dataDes;
         struct {
             void* counts;
             void* displs;
-            DataType dataType;
+            HcclDataType dataType;
         } vDataDes;
         struct {
-            DataType sendType;
-            DataType recvType;
+            HcclDataType sendType;
+            HcclDataType recvType;
             u64 sendCount;
             u64 recvCount;
         } all2AllDataDes;
         struct {
-            DataType sendType;
-            DataType recvType;
+            HcclDataType sendType;
+            HcclDataType recvType;
             void* sendCounts;
             void* recvCounts;
             void* sdispls;
             void* rdispls;
         } all2AllVDataDes;
         struct {
-            DataType sendType;
-            DataType recvType;
+            HcclDataType sendType;
+            HcclDataType recvType;
             void* sendCountMatrix;
         } all2AllVCDataDes;
         struct {
@@ -716,34 +716,34 @@ public:
     }
 };
 
-void SetCollopDataDes(Hccl::CollOperator& collop, const HcclDfxOpInfo& dfxOpInfo) {
-    if (collop.opType = Hccl::OpType::ALLGATHERV) {
-        collop.vDataDes.counts = dfxOpInfo.vDataDes.counts;
-        collop.vDataDes.displs = dfxOpInfo.vDataDes.displs;
-        collop.vDataDes.dataType = dfxOpInfo.vDataDes.dataType;
-    } else if (collop.opType = == Hccl::OpType::ALLTOALL) {
-        collop.all2AllDataDes.sendType  = dfxOpInfo.all2AllDataDes.sendType;
-        collop.all2AllDataDes.recvType  = dfxOpInfo.all2AllDataDes.recvType;
-        collop.all2AllDataDes.sendCount = dfxOpInfo.all2AllDataDes.sendCount;
-        collop.all2AllDataDes.recvCount = dfxOpInfo.all2AllDataDes.recvCount;
-    } else if (collop.opType = == Hccl::OpType::ALLTOALLV) {
-        collop.all2AllVDataDes.sendType  = dfxOpInfo.all2AllVDataDes.sendType;
-        collop.all2AllVDataDes.recvType  = dfxOpInfo.all2AllVDataDes.recvType;
-        collop.all2AllVDataDes.sendCounts = dfxOpInfo.all2AllVDataDes.sendCounts;
-        collop.all2AllVDataDes.recvCounts = dfxOpInfo.all2AllVDataDes.recvCounts;
-        collop.all2AllVDataDes.sdispls = dfxOpInfo.all2AllVDataDes.sdispls;
-        collop.all2AllVDataDes.rdispls = dfxOpInfo.all2AllVDataDes.rdispls;
-    } else if (collop.opType = == Hccl::OpType::ALLTOALLVC) {
-        collop.all2AllVCDataDes.sendType  = dfxOpInfo.all2AllVCDataDes.sendType;
-        collop.all2AllVCDataDes.recvType  = dfxOpInfo.all2AllVCDataDes.recvType;
-        collop.all2AllVCDataDes.sendCountMatrix = dfxOpInfo.all2AllVCDataDes.sendCountMatrix;
-    } else if (collop.opType = == Hccl::OpType::BATCHSENDRECV) {
-        collop.batchSendRecvDataDes.itemNum = dfxOpInfo.batchSendRecvDataDes.itemNum;
-        collop.batchSendRecvDataDes.sendRecvItems = static_cast<void *>(dfxOpInfo.batchSendRecvDataDes.sendRecvItemsPtr);
+void SetCollopDataDes(Hccl::CollOperator& collOp, const HcclDfxOpInfo& dfxOpInfo) {
+    if (collOp.opType == Hccl::OpType::ALLGATHERV) {
+        collOp.vDataDes.counts = dfxOpInfo.vDataDes.counts;
+        collOp.vDataDes.displs = dfxOpInfo.vDataDes.displs;
+        collOp.vDataDes.dataType = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.vDataDes.dataType);
+    } else if (collOp.opType == Hccl::OpType::ALLTOALL) {
+        collOp.all2AllDataDes.sendType  = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.all2AllDataDes.sendType);
+        collOp.all2AllDataDes.recvType  = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.all2AllDataDes.recvType);
+        collOp.all2AllDataDes.sendCount = dfxOpInfo.all2AllDataDes.sendCount;
+        collOp.all2AllDataDes.recvCount = dfxOpInfo.all2AllDataDes.recvCount;
+    } else if (collOp.opType == Hccl::OpType::ALLTOALLV) {
+        collOp.all2AllVDataDes.sendType  = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.all2AllVDataDes.sendType);
+        collOp.all2AllVDataDes.recvType  = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.all2AllVDataDes.recvType);
+        collOp.all2AllVDataDes.sendCounts = dfxOpInfo.all2AllVDataDes.sendCounts;
+        collOp.all2AllVDataDes.recvCounts = dfxOpInfo.all2AllVDataDes.recvCounts;
+        collOp.all2AllVDataDes.sdispls = dfxOpInfo.all2AllVDataDes.sdispls;
+        collOp.all2AllVDataDes.rdispls = dfxOpInfo.all2AllVDataDes.rdispls;
+    } else if (collOp.opType == Hccl::OpType::ALLTOALLVC) {
+        collOp.all2AllVCDataDes.sendType  = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.all2AllVCDataDes.sendType);
+        collOp.all2AllVCDataDes.recvType  = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.all2AllVCDataDes.recvType);
+        collOp.all2AllVCDataDes.sendCountMatrix = dfxOpInfo.all2AllVCDataDes.sendCountMatrix;
+    } else if (collOp.opType == Hccl::OpType::BATCHSENDRECV) {
+        collOp.batchSendRecvDataDes.itemNum = dfxOpInfo.batchSendRecvDataDes.itemNum;
+        collOp.batchSendRecvDataDes.sendRecvItems = static_cast<void *>(dfxOpInfo.batchSendRecvDataDes.sendRecvItemsPtr);
     } else {
-        collop.dataDes.dataCount = dfxOpInfo.dataDes.dataCount
-        collop.dataDes.dataType = dfxOpInfo.dataDes.dataType;
-        collop.dataDes.strideCount = dfxOpInfo.dataDes.strideCount;
+        collOp.dataDes.dataCount = dfxOpInfo.dataDes.dataCount
+        collOp.dataDes.dataType = dfxOpInfo.dataDes.dataType;
+        collOp.dataDes.strideCount = dfxOpInfo.dataDes.strideCount;
     }
 }
 
@@ -761,42 +761,43 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, HcclDfxOpInfo dfxOpInfo)
     hccl::CollComm* collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
     //单算子模式，覆盖opTag
-    dfxOpInfo.opTag = hcclComm->GetIdentifier();
+    bool opBased = true;
+    if (opBased) {
+        dfxOpInfo.opTag = hcclComm->GetIdentifier();
+    }
+    
     dfxOpInfo.tag_ = OpTypeToString(dfxOpInfo.opType);//opType
     dfxOpInfo.index_ = 0;
     dfxOpInfo.beginTime_ = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
     //HcclDfxOpInfo转为DfxOpInfo
     auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
-    Hccl::CollOperator collop;
-    collop.opMode = dfxOpInfo.opMode;
-    collop.opType = dfxOpInfo.opType;
-    collop.reduceOp = dfxOpInfo.reduceOp;
-    collop.dataType = dfxOpInfo.dataType;
-    collop.outputDataType = dfxOpInfo.outputDataType;
-    collop.dataCount = dfxOpInfo.dataCount;
-    collop.root = dfxOpInfo.root;
-    collop.numBlocksLimit = dfxOpInfo.numBlocksLimit;
-    collop.inputMem = std::make_shared<Hccl::Buffer>(
+    Hccl::CollOperator collOp;
+    collOp.opMode = dfxOpInfo.opMode; 
+    collOp.opType = Hccl::OP_TYPE_MAP.at(dfxOpInfo.opType);
+    collOp.reduceOp = Hccl::REDUCE_OP_MAP.at(dfxOpInfo.reduceOp);
+    collOp.dataType = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.dataType);
+    collOp.outputDataType = ccl::DATA_TYPE_MAP.at(dfxOpInfo.outputDataType);
+    collOp.dataCount = dfxOpInfo.dataCount;
+    collOp.root = dfxOpInfo.root;
+    collOp.staticAddr = dfxOpInfo.staticAddr;
+    collOp.staticShape = dfxOpInfo.staticShape;
+    collOp.numBlocksLimit = dfxOpInfo.numBlocksLimit;
+    SetCollopDataDes(collOp, dfxOpInfo);
+    collOp.inputMem = std::make_shared<Hccl::Buffer>(
         dfxOpInfo.inputMem->GetAddr(),
         dfxOpInfo.inputMem->GetSize()
     );
-    collop.outputMem = std::make_shared<Hccl::Buffer>(
+    collOp.outputMem = std::make_shared<Hccl::Buffer>(
         dfxOpInfo.outputMem->GetAddr(),
         dfxOpInfo.outputMem->GetSize()
     );
-    collop.srcatchMem = std::make_shared<Hccl::Buffer>(
+    collOp.srcatchMem = std::make_shared<Hccl::Buffer>(
         dfxOpInfo.srcatchMem->GetAddr(),
         dfxOpInfo.srcatchMem->GetSize()
     );
-    // dfxOpInfo.inputMem->addr_;
-    // collop.inputMem->size_ = dfxOpInfo.inputMem->size_;
-    // collop.outputMem->addr_  = dfxOpInfo.outputMem->addr_;
-    // collop.outputMem->size_  = dfxOpInfo.outputMem->size_;
-    // collop.srcatchMem->addr_  = dfxOpInfo.srcatchMem->addr_;
-    // collop.srcatchMem->size_  = dfxOpInfo.srcatchMem->size_;
     
-    dfxOpInfoOnce->op_= collop;
+    dfxOpInfoOnce->op_= collOp;
     dfxOpInfoOnce->tag_ = dfxOpInfo.tag_;
     dfxOpInfoOnce->algType_ = dfxOpInfo.algType_;
     dfxOpInfoOnce->index_ = dfxOpInfo.index_;
