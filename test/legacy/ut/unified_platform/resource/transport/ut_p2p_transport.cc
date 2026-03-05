@@ -25,6 +25,8 @@
 #include "socket_exception.h"
 #include "local_ipc_rma_buffer.h"
 #include "ipc_local_notify.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 using namespace Hccl;
 
 static int memcpy_stub(void *dest, int dest_max, const void *src, int count)

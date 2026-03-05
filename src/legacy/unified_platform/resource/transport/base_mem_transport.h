@@ -12,6 +12,7 @@
 
 #include <memory>
 #include <unordered_map>
+
 #include "task.h"
 #include "local_rma_buffer.h"
 #include "remote_rma_buffer.h"
@@ -23,6 +24,9 @@
 #include "mem_transport_common.h"
 #include "task_param.h"
 #include "transport_status.h"
+#include "socket.h"
+#include "virtual_topo.h"
+
 namespace Hccl {
 
 struct RmaBufferSlice {

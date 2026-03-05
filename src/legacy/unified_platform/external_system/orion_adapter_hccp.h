@@ -627,11 +627,11 @@ struct AuxInfoOut {
     uint32_t auxInfoValues[MAX_AUX_INFO_NUM];
     uint32_t auxInfoNum{0};
 };
-HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn in, AuxInfoOut &out);
+HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInfoOut &auxInfoOut);
 
 MAKE_ENUM(JettyStatus, RESET, READY, SUSPENDED, ERROR);
 constexpr u32 MAX_JETTY_QUERY_NUM = 128;
-HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyStatusVec, u32 &num);
+HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyAttrs, u32 &num);
 
 struct ConnJettyInfo {
     RdmaHandle rdmaHandle{nullptr};
@@ -645,5 +645,38 @@ struct BatchDeleteJettyInfo {
 };
 constexpr u32 MAX_DELETE_JETTY_NUMS = 768;
 HcclResult HrtRaCtxQpDestoryBatch(const RdmaHandle handle, const std::unordered_set<JettyHandle> &jettyHandles, std::vector<JettyHandle> &failJettyHandles);
+
+enum CcuMemTypeBitmap : uint64_t {
+    CCU_MEMTYPE_INVALID = 0,
+    CCU_MEMTYPE_INS = 1ULL << 0,
+    CCU_MEMTYPE_GSA = 1ULL << 1,
+    CCU_MEMTYPE_XN = 1ULL << 2,
+    CCU_MEMTYPE_CKE = 1ULL << 3,
+    CCU_MEMTYPE_LOOP_CKE = 1ULL << 4,
+    CCU_MEMTYPE_PFE = 1ULL << 5,
+    CCU_MEMTYPE_CHN = 1ULL << 6,
+    CCU_MEMTYPE_JETTY_CTX = 1ULL << 7,
+    CCU_MEMTYPE_MISSION_CTX = 1ULL << 8,
+    CCU_MEMTYPE_LOOP_CTX = 1ULL << 9,
+    CCU_MEMTYPE_MISSION_SQE = 1ULL << 10,
+    CCU_MEMTYPE_CQE_BLOCK0 = 1ULL << 11,
+    CCU_MEMTYPE_CQE_BLOCK1 = 1ULL << 12,
+    CCU_MEMTYPE_CQE_BLOCK2 = 1ULL << 13,
+    CCU_MEMTYPE_WQEBB = 1ULL << 14,
+    CCU_MEMTYPE_MS_BLOCK0 = 1ULL << 32,
+    CCU_MEMTYPE_MS_BLOCK1 = 1ULL << 33,
+    CCU_MEMTYPE_MS_BLOCK2 = 1ULL << 34,
+    CCU_MEMTYPE_MS_BLOCK3 = 1ULL << 35
+};
+
+struct CcuMemInfo {
+ 	CcuMemTypeBitmap memType{CcuMemTypeBitmap::CCU_MEMTYPE_INVALID};
+ 	uint64_t memVa{0};
+ 	uint32_t memSize{0};
+ 	uint32_t resv[1];
+};
+
+void HrtSetMemInfoList(struct CcuMemInfo *memInfoList, uint32_t count, struct ccu_mem_info *recvMemList);
+HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memTypeBitmap, struct CcuMemInfo *memInfoList, uint32_t count);
 } // namespace Hccl
 #endif // HCCLV2_ADAPTER_HCCP_H

@@ -118,7 +118,7 @@ void SocketManager::ServerInit(PortData &localPort)
     serverSocketMap[localPort] = std::move(serverSocket);
 }
 
-void SocketManager::ServerInitAll(const vector<LinkData> &links, u32 &linstenPort)
+void SocketManager::ServerInitAll(const vector<LinkData> &links, u32 &linstenPort) const
 {
     std::lock_guard<std::mutex> lock(socketLock);
     vector<SocketPortRange> listenPortRanges = EnvConfig::GetInstance().GetHostNicConfig().GetDeviceSocketPortRange();
@@ -183,7 +183,7 @@ Socket *SocketManager::CreateConnectedSocket(SocketConfig &socketConfig)
 
     auto tmpSocket = socketProducer(localIpAddress, remoteIpAddress, serverListenPort, socketHandle, hccpSocketTag,
                                     socketRole, NicType::DEVICE_NIC_TYPE);
-    HCCL_INFO("[SocketManager::%s] Device %u connect async the remote rank %u port %u.", __func__, devicePhyId, socketConfig.remoteRank, serverListenPort);
+    HCCL_INFO("[SocketManager::%s] Device %u connect async the remote rank %d port %u.", __func__, devicePhyId, socketConfig.remoteRank, serverListenPort);
     tmpSocket->ConnectAsync();
     connectedSocketMap[socketConfig] = std::move(tmpSocket);
     return connectedSocketMap[socketConfig].get();

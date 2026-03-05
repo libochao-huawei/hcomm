@@ -28,7 +28,8 @@
 #include "rank_table.h"
 #include "kfc.h"
 #include "transport_urma_mem.h"
-
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 #undef protected
 #undef private
  

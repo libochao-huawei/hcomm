@@ -25,6 +25,7 @@
 #include "orion_adapter_rts.h"
 #include "rdma_handle_manager.h"
 #include "hccl_common_v2.h"
+#include "internal_exception.h"
 
 #undef private
 #undef protected

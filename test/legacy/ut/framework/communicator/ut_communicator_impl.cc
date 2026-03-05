@@ -75,6 +75,8 @@
 #include "op_base_v2.h"
 #include "hccl_comm.h"
 #include "ranktable_stub_clos.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 #undef private
 #undef protected
 

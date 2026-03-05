@@ -25,6 +25,7 @@
 #include "orion_adapter_rts.h"
 #include "invalid_params_exception.h"
 #include "host_ip_not_found_exception.h"
+#include "internal_exception.h"
 #include "null_ptr_exception.h"
 #include "env_config.h"
 #include "env_func.h"

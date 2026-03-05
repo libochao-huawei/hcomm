@@ -16,7 +16,6 @@
 #include <sstream>
 #include <set>
 #include "exception_util.h"
-#include "invalid_params_exception.h"
 #include "dma_mode.h"
 #include "ip_address.h"
 #include "op_type.h"

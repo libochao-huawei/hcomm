@@ -32,14 +32,14 @@ __aicore__ inline void AivReduceScatterMid910B::Process(GM_ADDR input, GM_ADDR o
     __gm__ T *inputGm = (__gm__ T *)input;
     __gm__ T *outputGm = (__gm__ T *)output;
     __gm__ T *cclGmSelf = (__gm__ T *)(GM_IN[rank_] + dataOffset);
-    __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[block_idx] + dataOffset);
-    if (block_idx != rank_) {
-        CpGM2GM(cclGmSelf + block_idx * count, inputGm + block_idx * count, count);
+    __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[GetBlockIdx()] + dataOffset);
+    if (GetBlockIdx() != rank_) {
+        CpGM2GM(cclGmSelf + GetBlockIdx() * count, inputGm + GetBlockIdx() * count, count);
         // 卡内同步
         WaitNv1(tag, rank_, AivNotifyType::DataSignal, 0, ifPingpong);
         pipe_barrier(PIPE_ALL);
-        Record(tag, block_idx, AivNotifyType::DataSignal, 0, ifPingpong);
-        Wait(tag, block_idx, AivNotifyType::DataSignal, 0, ifPingpong);
+        Record(tag, GetBlockIdx(), AivNotifyType::DataSignal, 0, ifPingpong);
+        Wait(tag, GetBlockIdx(), AivNotifyType::DataSignal, 0, ifPingpong);
         pipe_barrier(PIPE_ALL);
         CpGM2GM(outputGm, cclGmOther + rank_ * count, count, true, reduceOp_);
     } else {

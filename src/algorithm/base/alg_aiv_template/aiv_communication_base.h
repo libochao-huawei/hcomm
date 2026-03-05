@@ -60,7 +60,9 @@ using AivRdmaArgs = struct AivRdmaArgsDef {
 enum class AivNotifyType {
     ACK,
     DataSignal,
-    Done
+    Done,
+    ClearACK,
+    ClearDataSingal
 };
 
 enum class CommPattern {
@@ -93,7 +95,7 @@ GM_ADDR buffOut4, GM_ADDR buffOut5, GM_ADDR buffOut6, GM_ADDR buffOut7, \
 GM_ADDR buffOut8, GM_ADDR buffOut9, GM_ADDR buffOut10, GM_ADDR buffOut11, \
 GM_ADDR buffOut12, GM_ADDR buffOut13, GM_ADDR buffOut14, GM_ADDR buffOut15, \
 GM_ADDR input, GM_ADDR output, uint32_t rank, uint32_t rankSize, uint64_t len, \
-uint32_t dataType, uint32_t reduceOp, uint32_t root, int32_t tag, bool isOpBase, uint64_t bufferSize, \
+uint32_t dataType, uint32_t reduceOp, uint32_t root, int32_t tag, uint32_t numBlocks, bool isOpBase, uint64_t bufferSize, \
 int32_t aivRdmaStep, bool useAivRdmaSmall, int32_t serverNum, uint32_t devType, GM_ADDR headCountMem, \
 GM_ADDR tailCountMem, GM_ADDR addOneMem, uint32_t counterMemSize, bool isEnableCounter, uint32_t deterministic, \
 uint64_t rmaInfo
@@ -103,7 +105,7 @@ buffIn0, buffIn1, buffIn2, buffIn3, buffIn4, buffIn5, buffIn6, buffIn7, \
 buffIn8, buffIn9, buffIn10, buffIn11, buffIn12, buffIn13, buffIn14, buffIn15, \
 buffOut0, buffOut1, buffOut2, buffOut3, buffOut4, buffOut5, buffOut6, buffOut7, \
 buffOut8, buffOut9, buffOut10, buffOut11, buffOut12, buffOut13, buffOut14, buffOut15, \
-input, output, rank, rankSize, len, dataType, reduceOp, root, tag, isOpBase, bufferSize, aivRdmaStep, useAivRdmaSmall, \
+input, output, rank, rankSize, len, dataType, reduceOp, root, tag, numBlocks, isOpBase, bufferSize, aivRdmaStep, useAivRdmaSmall, \
 serverNum, devType, headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter, deterministic, rmaInfo
 
 #define KERNEL_CLASS_INIT \
@@ -111,7 +113,7 @@ buffIn0, buffIn1, buffIn2, buffIn3, buffIn4, buffIn5, buffIn6, buffIn7, \
 buffIn8, buffIn9, buffIn10, buffIn11, buffIn12, buffIn13, buffIn14, buffIn15, \
 buffOut0, buffOut1, buffOut2, buffOut3, buffOut4, buffOut5, buffOut6, buffOut7, \
 buffOut8, buffOut9, buffOut10, buffOut11, buffOut12, buffOut13, buffOut14, buffOut15, \
-rank, rankSize, dataType, reduceOp, root, tag, headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter
+rank, rankSize, dataType, reduceOp, root, tag, numBlocks, headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter
 
 #define EXTERN_KERNEL_ARGS_DEF \
 KERNEL_ARGS_DEF, ExtraArgs extraArgs
@@ -256,7 +258,7 @@ public:
                                 GM_ADDR buffOut6, GM_ADDR buffOut7, GM_ADDR buffOut8, GM_ADDR buffOut9,
                                 GM_ADDR buffOut10, GM_ADDR buffOut11, GM_ADDR buffOut12, GM_ADDR buffOut13,
                                 GM_ADDR buffOut14, GM_ADDR buffOut15, uint32_t rank, uint32_t rankSize,
-                                uint32_t dataType, uint32_t reduceOp, uint32_t root, int32_t tag, GM_ADDR headCountMem,
+                                uint32_t dataType, uint32_t reduceOp, uint32_t root, int32_t tag, int32_t numBlocks, GM_ADDR headCountMem,
                                 GM_ADDR tailCountMem, GM_ADDR addOneMem, uint32_t counterMemSize, bool isEnableCounter,
                                 bool useDoubleBuffer)
     {
@@ -275,7 +277,7 @@ public:
         tag_ = tag;
 
         useDoubleBuffer_ = useDoubleBuffer;
-        numBlocks_ = block_num;
+        numBlocks_ = numBlocks;
 
         localOffset = (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
         multiOffset = MAX_NUM_BLOCKS * DOUBLE * FLAG_SIZE+ localOffset;
@@ -304,6 +306,10 @@ public:
 
         pipe.InitBuffer(flagInQue, AIV_PING_PONG_FACTOR_TWO, UB_FLAG_SIZE);
         InitOpCounter(headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter);
+        if (tag_ == 1) {
+            ClearSyncBuf();
+            pipe_barrier(PIPE_ALL);
+        }
     }
 
     __aicore__ inline void Init(GM_ADDR hiddenInput, uint64_t threshold, bool useDoubleBuffer = false)
@@ -346,7 +352,7 @@ public:
             pipe.InitBuffer(inOutQue, 1, UB_MAX_DATA_SIZE);
         }
 
-        if (args->clearEnable == 1) {
+        if (args->tag == 1) {
             ClearSyncBuf();
         }
     }
@@ -403,7 +409,7 @@ public:
                                 GM_ADDR buffOut6, GM_ADDR buffOut7, GM_ADDR buffOut8, GM_ADDR buffOut9,
                                 GM_ADDR buffOut10, GM_ADDR buffOut11, GM_ADDR buffOut12, GM_ADDR buffOut13,
                                 GM_ADDR buffOut14, GM_ADDR buffOut15, uint32_t rank, uint32_t rankSize,
-                                uint32_t dataType, uint32_t reduceOp, uint32_t root, int32_t tag, GM_ADDR headCountMem,
+                                uint32_t dataType, uint32_t reduceOp, uint32_t root, int32_t tag, int32_t numBlocks, GM_ADDR headCountMem,
                                 GM_ADDR tailCountMem, GM_ADDR addOneMem, uint32_t counterMemSize, bool isEnableCounter,
                                 bool useDoubleBuffer)
     {
@@ -411,7 +417,7 @@ public:
         rankSize_ = rankSize;
         reduceOp_ = reduceOp;
         useDoubleBuffer_ = useDoubleBuffer;
-        numBlocks_ = block_num;
+        numBlocks_ = numBlocks;
         tag_ = tag;
 
         localOffset = (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
@@ -535,7 +541,7 @@ public:
 
     __aicore__ inline void HeadCounter()
     {
-        if (block_idx == 0 && isEnableCounter_) {
+        if (GetBlockIdx() == 0 && isEnableCounter_) {
             CpGM2GM((__gm__ int32_t*)headCountMem_, (__gm__ int32_t*)addOneMem_, counterMemSize_ / sizeof(int32_t), true,
                 HcclReduceOp::HCCL_REDUCE_SUM);
         }
@@ -543,7 +549,7 @@ public:
 
     __aicore__ inline void TailCounter()
     {
-        if (block_idx == 0 && isEnableCounter_) {
+        if (GetBlockIdx() == 0 && isEnableCounter_) {
             CpGM2GM((__gm__ int32_t*)tailCountMem_, (__gm__ int32_t*)addOneMem_, counterMemSize_ / sizeof(int32_t), true,
                 HcclReduceOp::HCCL_REDUCE_SUM);
         }
