@@ -37,16 +37,6 @@ aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType
     return ACL_SUCCESS;
 }
 
-<<<<<<< HEAD
-=======
-rtError_t rtStreamCreateWithFlags(rtStream_t *stream, int32_t priority, uint32_t flag)
-{
-    *stream = reinterpret_cast<rtStream_t>(0x123);
-    return RT_ERROR_NONE;
-}
-
-
->>>>>>> deeb0532... update
 int rtModelFake = 0;
 aclError aclmdlRICaptureGetInfo(aclrtStream stream, aclmdlRICaptureStatus *status, aclmdlRI *modelRI)
 {   
