@@ -809,6 +809,10 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, HcclDfxOpInfo dfxOpInfo)
     Hccl::MirrorTaskManager* mirrorTaskManage = collComm->GetMirrorTaskManager();
     CHK_PTR_NULL(mirrorTaskManage);
     mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
+   
+   // 下发device侧
+    HcommDfxKernelLaunch(hcclComm->GetIdentifier(), hcclComm->GetBinHandle(), dfxOpInfo);
+
     return HCCL_SUCCESS;
 
 }

@@ -663,7 +663,7 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommDfxKernelLaunch(const std::string &commTag, HcclDfxOpInfo dfxOpInfo)
+HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, HcclDfxOpInfo dfxOpInfo)
 {
     // 申请host侧内存
     hccl::HostMem hostPackBuf = hccl::HostMem::alloc(sizeof(dfxOpInfo));
