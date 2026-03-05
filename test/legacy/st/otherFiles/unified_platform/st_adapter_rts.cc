@@ -90,7 +90,7 @@ TEST_F(AdapterRtsTest, HrtGetDevicePhyIdByIndex_return_ok)
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue(fakeDeviceType));
 
     u32 fakeDevicePhyId = 0;
-    MOCKER(rtsGetPhyDevIdByLogicDevId)
+    MOCKER(aclrtGetPhyDevIdByLogicDevId)
         .stubs()
         .with(any(), outBoundP(&fakeDevicePhyId, sizeof(fakeDevicePhyId)))
         .will(returnValue(RT_ERROR_NONE));
@@ -105,7 +105,7 @@ TEST_F(AdapterRtsTest, HrtGetDevicePhyIdByIndex_return_ok)
 TEST_F(AdapterRtsTest, HrtGetDevicePhyIdByIndex_return_nok)
 {
     // Given
-    MOCKER(rtsGetPhyDevIdByLogicDevId).stubs().will(returnValue(1));
+    MOCKER(aclrtGetPhyDevIdByLogicDevId).stubs().will(returnValue(1));
 
     // when
 
@@ -310,42 +310,6 @@ TEST_F(AdapterRtsTest, HrtGetDeviceInfo_return_ok)
     EXPECT_EQ(fakeHandle, handle);
 }
 
-TEST_F(AdapterRtsTest, HrtDevBinaryRegister_return_ok)
-{
-    // Given
-    void *fakeHandle = nullptr;
-    MOCKER(rtDevBinaryRegister)
-        .stubs()
-        .with(any(), outBoundP(&fakeHandle, sizeof(fakeHandle)))
-        .will(returnValue(RT_ERROR_NONE));
-
-    // when
-    void *handle = HrtDevBinaryRegister(nullptr);
-
-    // then
-    EXPECT_EQ(fakeHandle, handle);
-}
-
-TEST_F(AdapterRtsTest, HrtDevBinaryRegister_return_nok)
-{
-    // Given
-    MOCKER(rtDevBinaryRegister).stubs().will(returnValue(1));
-
-    // when
-    rtDevBinary_t bin = {1, 2, nullptr, 4};
-    // then
-    EXPECT_THROW(HrtDevBinaryRegister(&bin), RuntimeApiException);
-}
-
-TEST_F(AdapterRtsTest, HrtDevBinaryUnRegister_return_nok)
-{
-    // Given
-    MOCKER(rtDevBinaryUnRegister).stubs().will(returnValue(1));
-
-    // then
-    EXPECT_THROW(HrtDevBinaryUnRegister(nullptr), RuntimeApiException);
-}
-
 TEST_F(AdapterRtsTest, HrtEnableP2P_return_nok)
 {
     // Given
@@ -425,7 +389,7 @@ TEST_F(AdapterRtsTest, HrtStreamCreateWithFlags_return_ok)
 {
     // Given
     rtStream_t fakePtr = nullptr;
-    MOCKER(rtStreamCreateWithFlags).stubs().with(outBoundP(&fakePtr, sizeof(fakePtr))).will(returnValue(RT_ERROR_NONE));
+    MOCKER(aclrtCreateStreamWithConfig).stubs().with(outBoundP(&fakePtr, sizeof(fakePtr))).will(returnValue(ACL_SUCCESS));
 
     // when
     void* ptr = HrtStreamCreateWithFlags(32, 1);
@@ -436,7 +400,7 @@ TEST_F(AdapterRtsTest, HrtStreamCreateWithFlags_return_ok)
 TEST_F(AdapterRtsTest, HrtStreamCreateWithFlags_return_nok)
 {
     // Given
-    MOCKER(rtStreamCreateWithFlags).stubs().will(returnValue(1));
+    MOCKER(aclrtCreateStreamWithConfig).stubs().will(returnValue(1));
 
     // then
     EXPECT_THROW(HrtStreamCreateWithFlags(32, 1), RuntimeApiException);
@@ -466,11 +430,11 @@ TEST_F(AdapterRtsTest, HrtMalloc_return_ok)
 {
     // Given
     void *fakeDevPtr = nullptr;
-    MOCKER(rtMalloc).stubs().with(outBoundP(&fakeDevPtr, sizeof(fakeDevPtr))).will(returnValue(RT_ERROR_NONE));
+    MOCKER(aclrtMallocWithCfg).stubs().with(outBoundP(&fakeDevPtr, sizeof(fakeDevPtr))).will(returnValue(ACL_SUCCESS));
 
     // when
     u64         size    = 100;
-    rtMemType_t memType = 2;
+	aclrtMemType_t memType = 2;
     void       *devPtr  = HrtMalloc(size, memType);
     // then
     EXPECT_EQ(fakeDevPtr, devPtr);
@@ -479,9 +443,9 @@ TEST_F(AdapterRtsTest, HrtMalloc_return_ok)
 TEST_F(AdapterRtsTest, HrtMalloc_return_nok)
 {
     // Given
-    MOCKER(rtMalloc).stubs().will(returnValue(1));
+    MOCKER(aclrtMallocWithCfg).stubs().will(returnValue(1));
     u64         size    = 100;
-    rtMemType_t memType = 2;
+	aclrtMemType_t memType = 2;
     // then
     EXPECT_THROW(HrtMalloc(size, memType), RuntimeApiException);
 }
@@ -516,7 +480,7 @@ TEST_F(AdapterRtsTest, HrtIpcSetMemoryName_return_nok)
 TEST_F(AdapterRtsTest, HrtIpcDestroyMemoryName_return_nok)
 {
     // Given
-    MOCKER(rtIpcCloseMemory).stubs().will(returnValue(1));
+    MOCKER(rtIpcDestroyMemoryName).stubs().will(returnValue(1));
 
     // then
     EXPECT_THROW(HrtIpcDestroyMemoryName(nullptr), RuntimeApiException);
@@ -639,13 +603,13 @@ TEST_F(AdapterRtsTest, HrtStreamActive_return_nok)
 
 TEST_F(AdapterRtsTest, HrtPointerGetAttributes_return_ok)
 {
-    rtPointerAttributes_t ptrAttr
+    aclrtPtrAttributes  ptrAttr
         = {tagRtMemoryType::RT_MEMORY_TYPE_DEVICE, rtMemLocationType::RT_MEMORY_LOC_DEVICE, 0, 32};
     // Given
-    MOCKER(rtPointerGetAttributes).stubs().with(outBoundP(&ptrAttr, sizeof(ptrAttr))).will(returnValue(RT_ERROR_NONE));
+    MOCKER(aclrtPointerGetAttributes).stubs().with(outBoundP(&ptrAttr, sizeof(ptrAttr))).will(returnValue(ACL_SUCCESS));
 
     // when
-    rtPointerAttributes_t result = HrtPointerGetAttributes(nullptr);
+    aclrtPtrAttributes  result = HrtPointerGetAttributes(nullptr);
 
     // then
     EXPECT_EQ(ptrAttr.memoryType, result.memoryType);
@@ -657,7 +621,7 @@ TEST_F(AdapterRtsTest, HrtPointerGetAttributes_return_ok)
 TEST_F(AdapterRtsTest, HrtPointerGetAttributes_return_nok)
 {
     // Given
-    MOCKER(rtPointerGetAttributes).stubs().will(returnValue(1));
+    MOCKER(aclrtPointerGetAttributes).stubs().will(returnValue(1));
 
     // then
     EXPECT_THROW(HrtPointerGetAttributes(nullptr), RuntimeApiException);
@@ -665,7 +629,7 @@ TEST_F(AdapterRtsTest, HrtPointerGetAttributes_return_nok)
 
 TEST_F(AdapterRtsTest, PrintMemoryAttr_run)
 {
-    rtPointerAttributes_t memAttr
+    aclrtPtrAttributes  memAttr
         = {rtMemoryType_t::RT_MEMORY_TYPE_DEVICE, rtMemLocationType::RT_MEMORY_LOC_DEVICE, 0, 1};
     // Given
     MOCKER(HrtPointerGetAttributes).stubs().will(returnValue(memAttr));
@@ -711,7 +675,7 @@ TEST_F(AdapterRtsTest, HrtDevMemAlignWithPage_pargesize_nzero)
 TEST_F(AdapterRtsTest, HrtDevMemAlignWithPage_return_nok)
 {
     // Given
-    MOCKER(rtPointerGetAttributes).stubs().will(returnValue(1));
+    MOCKER(aclrtPointerGetAttributes).stubs().will(returnValue(1));
 
     // then
     void *ptr     = nullptr;
@@ -985,24 +949,24 @@ TEST_F(AdapterRtsTest, HrtNotifyCreateWithFlag_return_nok)
     EXPECT_THROW(HrtNotifyCreateWithFlag(100, 100), RuntimeApiException);
 }
 
-TEST_F(AdapterRtsTest, test_HrtAicpuKernelLaunchExWithArgs_ok)
+TEST_F(AdapterRtsTest, test_HrtAicpuLaunchKernelWithHostArgs_ok)
 {
     // Given
-    MOCKER(rtAicpuKernelLaunchExWithArgs).stubs().will(returnValue(0));
+    MOCKER(aclrtLaunchKernelWithHostArgs).stubs().will(returnValue(0));
 
     const char_t   *name = "aaa";
     rtAicpuArgsEx_t argsInfo;
-    EXPECT_NO_THROW(HrtAicpuKernelLaunchExWithArgs(0, name, 0, &argsInfo, nullptr, nullptr, 0));
+    EXPECT_NO_THROW(HrtAicpuLaunchKernelWithHostArgs(0, name, 0, &argsInfo, nullptr, nullptr, 0));
 }
 
-TEST_F(AdapterRtsTest, test_HrtAicpuKernelLaunchExWithArgs_nok)
+TEST_F(AdapterRtsTest, test_HrtAicpuLaunchKernelWithHostArgs_nok)
 {
     // Given
-    MOCKER(rtAicpuKernelLaunchExWithArgs).stubs().will(returnValue(1));
+    MOCKER(aclrtLaunchKernelWithHostArgs).stubs().will(returnValue(1));
 
     const char_t   *name = "aaa";
     rtAicpuArgsEx_t argsInfo;
-    EXPECT_THROW(HrtAicpuKernelLaunchExWithArgs(0, name, 0, &argsInfo, nullptr, nullptr, 0), RuntimeApiException);
+    EXPECT_THROW(HrtAicpuLaunchKernelWithHostArgs(0, name, 0, &argsInfo, nullptr, nullptr, 0), RuntimeApiException);
 }
 
 TEST_F(AdapterRtsTest, test_HrtStreamGetSqId_ok)
@@ -1202,10 +1166,7 @@ TEST_F(AdapterRtsTest, HrtEventQueryStatus_return_nok)
 
 TEST_F(AdapterRtsTest, HrtWriteValue_run_fail)
 {
-    // Given
-   MOCKER(rtWriteValue).stubs().with(any(),any()).will(returnValue(1));
-    // then
-    EXPECT_THROW(HrtWriteValue(0,0,nullptr), RuntimeApiException);
+    EXPECT_THROW(HrtWriteValue(0,0,nullptr), NotSupportException);
 }
 
 TEST_F(AdapterRtsTest, HrtUbDevQueryToken_run_OK)

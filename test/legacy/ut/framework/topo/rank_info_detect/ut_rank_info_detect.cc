@@ -25,6 +25,7 @@
 #include "orion_adapter_rts.h"
 #include "invalid_params_exception.h"
 #include "host_ip_not_found_exception.h"
+#include "internal_exception.h"
 #include "null_ptr_exception.h"
 #include "env_config.h"
 #include "env_func.h"
@@ -40,10 +41,6 @@ using namespace std;
 using namespace Hccl;
 
 string whitelistFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/rank_info_detect/whitelist.json"};
-
-const u32 RANKINFO_DETECT_SERVER_STATUS_IDLE = 0;
-const u32 RANKINFO_DETECT_SERVER_STATUS_RUNING = 1;
-const u32 RANKINFO_DETECT_SERVER_STATUS_ERROR = 2;
 
 class RankInfoDetectTest : public testing::Test {
 protected:
@@ -66,7 +63,7 @@ protected:
         MOCKER_CPP(&HostSocketHandleManager::Create).stubs().with(any(), any()).will(returnValue(hostSocketHandle));
         MOCKER(HrtRaSocketWhiteListAdd).stubs().with(any(), any(), any()).will(ignoreReturnValue());
         MOCKER(HrtGetDevice).stubs().with().will(returnValue(0));
-        MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(0));
+        MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<DevId>(0)));
         MOCKER(HrtRaInit).stubs().with(any()).will(ignoreReturnValue());
         MOCKER(HrtRaDeInit).stubs().with(any()).will(ignoreReturnValue());
         MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
@@ -244,7 +241,6 @@ TEST_F(RankInfoDetectTest, Ut_WaitComplete_When_Input_Expect_Right)
     // when
     const u32 RANKINFO_DETECT_SERVER_STATUS_IDLE = 0;
     const u32 RANKINFO_DETECT_SERVER_STATUS_RUNING = 1;
-    const u32 RANKINFO_DETECT_SERVER_STATUS_ERROR = 2;
     RankInfoDetect::g_detectServerStatus_[5000] = RANKINFO_DETECT_SERVER_STATUS_ERROR;
     RankInfoDetect::g_detectServerStatus_[6000] = RANKINFO_DETECT_SERVER_STATUS_IDLE;
     RankInfoDetect::g_detectServerStatus_[4000] = RANKINFO_DETECT_SERVER_STATUS_RUNING;
@@ -252,8 +248,8 @@ TEST_F(RankInfoDetectTest, Ut_WaitComplete_When_Input_Expect_Right)
     // check
     RankInfoDetect rankInfoDetect;
     HcclRootHandleV2 rootHandle;
-    EXPECT_THROW(rankInfoDetect.WaitComplete(5000), InternalException);
-    EXPECT_NO_THROW(rankInfoDetect.WaitComplete(6000));
+    EXPECT_THROW(rankInfoDetect.WaitComplete(5000, RANKINFO_DETECT_SERVER_STATUS_IDLE), InternalException);
+    EXPECT_NO_THROW(rankInfoDetect.WaitComplete(6000, RANKINFO_DETECT_SERVER_STATUS_IDLE));
 
     // when
     EnvSocketConfig envConfig;
@@ -263,6 +259,6 @@ TEST_F(RankInfoDetectTest, Ut_WaitComplete_When_Input_Expect_Right)
     MOCKER_CPP(&EnvConfig::GetSocketConfig).stubs().will(returnValue(fakeEnvConfig));
 
     // check
-    EXPECT_THROW(rankInfoDetect.WaitComplete(4000), TimeoutException);
+    EXPECT_THROW(rankInfoDetect.WaitComplete(4000, RANKINFO_DETECT_SERVER_STATUS_IDLE), TimeoutException);
 }
 

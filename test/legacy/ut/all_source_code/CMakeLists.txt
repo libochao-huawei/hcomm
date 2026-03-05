@@ -22,6 +22,8 @@ target_sources(hccl_v2_utest
         ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/aicpu_mc2_handler.cc
         ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/hccl_mc2_ex.cc
         ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/aicpu_utils.cc
+        ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/launch_device.cc
+
 
         ${HCCL_V2_CODE_ROOT}/framework/service/coll_service_base.cc
         ${HCCL_V2_CODE_ROOT}/framework/service/coll_service_ai_cpu_impl.cc
@@ -34,7 +36,6 @@ target_sources(hccl_v2_utest
         ${HCCL_V2_CODE_ROOT}/framework/service/aicpu/ins_executor.cc
         ${HCCL_V2_CODE_ROOT}/framework/service/aicpu/ins_to_sqe_rule.cc
         ${HCCL_V2_CODE_ROOT}/framework/service/aicpu/ins_to_sqe_rule_v82.cc
-
         ${HCCL_V2_CODE_ROOT}/framework/resource_manager/stream/aicpu/stream_lite_mgr.cc
 
         ${HCCL_V2_CODE_ROOT}/framework/resource_manager/notify/queue_notify_manager.cc
@@ -82,6 +83,7 @@ target_sources(hccl_v2_utest
         ${HCCL_V2_CODE_ROOT}/framework/resource_manager/transport/ub_memory_transport_mgr.cc
 
         ${HCCL_V2_CODE_ROOT}/unified_platform/aiv/ub_memory_transport.cc
+        ${HCCL_V2_CODE_ROOT}/unified_platform/aiv/urma_direct_transport.cc
 
         ${HCCL_V2_CODE_ROOT}/unified_platform/common/rdma_handle_manager.cc
         ${HCCL_V2_CODE_ROOT}/unified_platform/common/hccp_hdc_manager.cc

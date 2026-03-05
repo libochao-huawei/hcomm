@@ -229,8 +229,8 @@ void CcuContextAllReduceMesh2DTwoShot::InitVariables()
         } else {
             HCCL_INFO("[CcuContextAllReduceMesh2DTwoShot] MyRank[%u], PeerId[%llu], TransportId[%u]",
                        myRankIdxInCurrentAxis_, peerId, transportIdx);
-            CHK_PRT_RET(transports[transportIdx] == nullptr,
-                        HCCL_ERROR("[CcuContextAllReduceMesh2DTwoShot] Algorithm transport ptr is null"), );
+            CHK_PRT_RET(transports[transportIdx] == nullptr || transportIdx >= transports.size(),
+                        HCCL_ERROR("[CcuContextAllReduceMesh2DTwoShot] Algorithm transport ptr is null or transportIdx is out of bounds"), );
             inputAddr_.push_back(CreateVariable((*transports[transportIdx]), INPUT_XN_ID));
             outputAddr_.push_back(CreateVariable((*transports[transportIdx]), OUTPUT_XN_ID));
             token_.push_back(CreateVariable((*transports[transportIdx]), TOKEN_XN_ID));

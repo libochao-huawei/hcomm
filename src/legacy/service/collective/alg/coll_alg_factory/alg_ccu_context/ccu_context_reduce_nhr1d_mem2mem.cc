@@ -28,6 +28,9 @@ CcuContextReduceNHR1DMem2mem::CcuContextReduceNHR1DMem2mem(const CcuCtxArg &arg,
     : CcuContext(arg, transports, group)
 {
     const CcuCtxArgReduceNHR1D *ctxArg = dynamic_cast<const CcuCtxArgReduceNHR1D *>(&arg);
+    if (ctxArg == nullptr) {
+        THROW<NullPtrException>(StringFormat("CcuContextReduceNHR1DMem2mem::ctxArg ptr is null"));
+    }
     rankId_                               = ctxArg->rankId_;
     rootId_                               = ctxArg->rootId_;
     axisId_                               = ctxArg->axisId_;

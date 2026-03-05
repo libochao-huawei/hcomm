@@ -19,7 +19,7 @@ class CollBatchWriteExecutor: public CollExecutorBase {
 public:
     CollBatchWriteExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher):
         CollExecutorBase(dispatcher, topoMatcher) {}
-    ~CollBatchWriteExecutor() = default;
+    ~CollBatchWriteExecutor() override = default;
     HcclResult Orchestrate(OpParam &param, AlgResourceResponse &algRes) override;
     HcclResult CalcResRequest(const OpParam &param, AlgResourceRequest &resourceRequest) override;
 };

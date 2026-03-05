@@ -15,6 +15,7 @@
 #include "binary_stream.h"
 #include "serializable.h"
 #include "orion_adapter_rts.h"
+#include "string_util.h"
 namespace Hccl {
 
 class ExchangeIpcBufferDto : public Serializable { // Ipc Rma Buffer 需要交换的DTO

@@ -1879,24 +1879,28 @@ HcclResult HcclCommAicpu::PrepareSymmetricMemory(const OpParam &param, OpCommTra
         HCCL_E_PARA);
     
     const std::unordered_set<LinkType> supportedLinkTypes = {LinkType::LINK_HCCS, LinkType::LINK_SIO, LinkType::LINK_HCCS_SW};
-
-    for (auto &singleSubCommTransport : opTransportResponse[COMM_LEVEL0]) {
-        for (u64 i = 0; i < singleSubCommTransport.links.size(); ++i) {
-            LINK &link = singleSubCommTransport.links[i];
-            if (link == nullptr || !singleSubCommTransport.transportRequests[i].isValid || supportedLinkTypes.count(link->GetLinkType()) == 0) {
-                continue;   // 无效或者不支持的链路
+    for (u32 levelIdx = 0; levelIdx < opTransportResponse.size(); levelIdx ++) {
+        for (auto &singleSubCommTransport : opTransportResponse[levelIdx]) {
+            if (singleSubCommTransport.isZeroCopy == false) {
+                continue;
             }
-            u32 peerRank = link->GetRemoteRank();
-            void *remoteIn = nullptr;
-            CHK_RET(HcommSymWinGetPeerPointer(param.inputSymWindow, param.inputOffset, peerRank, &remoteIn));
-            void *remoteOut = nullptr;
-            CHK_RET(HcommSymWinGetPeerPointer(param.outputSymWindow, param.outputOffset, peerRank, &remoteOut));
+            for (u64 i = 0; i < singleSubCommTransport.links.size(); ++i) {
+                LINK &link = singleSubCommTransport.links[i];
+                if (link == nullptr || !singleSubCommTransport.transportRequests[i].isValid || supportedLinkTypes.count(link->GetLinkType()) == 0) {
+                    continue;   // 无效或者不支持的链路
+                }
+                u32 peerRank = link->GetRemoteRank();
+                void *remoteIn = nullptr;
+                CHK_RET(HcommSymWinGetPeerPointer(param.inputSymWindow, param.inputOffset, peerRank, &remoteIn));
+                void *remoteOut = nullptr;
+                CHK_RET(HcommSymWinGetPeerPointer(param.outputSymWindow, param.outputOffset, peerRank, &remoteOut));
 
-            CHK_PRT_RET(remoteIn == nullptr || remoteOut == nullptr,
-                HCCL_ERROR("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p] is invalid", peerRank, remoteIn, remoteOut),
-                HCCL_E_INTERNAL);
-            HCCL_INFO("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p]", peerRank, remoteIn, remoteOut);
-            CHK_RET(link->UpdateRemoteAddr(remoteIn, remoteOut));
+                CHK_PRT_RET(remoteIn == nullptr || remoteOut == nullptr,
+                    HCCL_ERROR("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p] is invalid", peerRank, remoteIn, remoteOut),
+                    HCCL_E_INTERNAL);
+                HCCL_INFO("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p]", peerRank, remoteIn, remoteOut);
+                CHK_RET(link->UpdateRemoteAddr(remoteIn, remoteOut));
+            }
         }
     }
     return HCCL_SUCCESS;
@@ -2009,11 +2013,15 @@ HcclResult HcclCommAicpu::GetAlgResponseRes(const std::string &newTag, const std
         } else {
             HCCL_INFO("[%s] Repeatedly inited for alg [%s] is not allowed.", __func__, algName.c_str());
         }
-    } else if (algName == "BatchSendRecv" || algName == "BatchSendRecvRetry") {
-        AlgResourceRequest resRequest;
-        HCCL_INFO("[%s]IncreAlloc resource for alg[%s], tag[%s]", __func__, algName.c_str(), newTag.c_str());
-        CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
-        CHK_RET(IncreAllocTransportResource(newTag, opParam, commParam, resRequest, resMap_[newTag]));
+    } else if (algName == "BatchSendRecv" || algName == "BatchSendRecvRetry" || algName == "BatchSendRecvGroup") {
+        // 如果是非aclgraph模式，而且不需要增量建链，则跳过CalcResRequest这个计算，节省时间。在非aclgraph模式下，跳过是安全的。
+        bool canSkipCalcResRequest = !opParam.isCapture && !opParam.needIncreLink;
+        if (!canSkipCalcResRequest) { // 如果不能跳过计算，则走一遍计算的流程，否则就跳过以下计算
+            AlgResourceRequest resRequest;
+            HCCL_INFO("[%s]IncreAlloc resource for alg[%s], tag[%s]", __func__, algName.c_str(), newTag.c_str());
+            CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
+            CHK_RET(IncreAllocTransportResource(newTag, opParam, commParam, resRequest, resMap_[newTag]));
+        }
     }
     CHK_PRT_RET(iter == resMap_.end(),
         HCCL_ERROR("[%s]Fail to find algResResponse for tag[%s]", __func__, newTag.c_str()), HCCL_E_PARA);
@@ -2881,7 +2889,8 @@ HcclResult HcclCommAicpu::StreamTaskMonitor(void)
         }
 
         auto timeVal = DURATION_US(curTime - streamMontior.historyTime).count();
-        if (timeVal >= taskMonitorInterval_ * 1000) {
+        const int TIME_CONVERSION = 1000;
+        if (timeVal >= taskMonitorInterval_ * TIME_CONVERSION) {
             HCCL_RUN_INFO("[StreamTaskMonitor]prof monitor streamId:%d, sqid:%d, head:%u, tail:%u, time %s us, %s",
                 stream.id(), stream.sqId(), sqHead, sqTail, std::to_string(timeVal).c_str(), tmp.c_str());
             HCCL_RUN_INFO("[StreamTaskMonitor]prof monitor %s", GetTaskExceptionOpInfo(sqHead,sqeContextBuffer).c_str());
@@ -5161,69 +5170,6 @@ HcclResult HcclCommAicpu::AllocChannelResource(HcclIndOpChannelRemoteResV3 *comm
             CHK_RET(InitP2pChannel(commParam, idx));
         }
     }
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcclCommAicpu::AllocChannelResourceV2(HcclChannelUrmaRes *commParam)
-{
-    HCCL_INFO("[HcclCommAicpu][%s] deviceLogicId[%d], devicePhyId[%u], deviceType[%d], commParam->channelList[%p], "
-        "commParam->listNum[%u], commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
-        __func__, topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType, commParam->channelList,
-        commParam->listNum, commParam->uniqueIdAddr, commParam->uniqueIdSize);
-    CHK_PRT(InitUrmaChannel(commParam));
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcclCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
-{
-    HCCL_INFO("[HcclCommAicpu][%s] commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
-        __func__, commParam->uniqueIdAddr, commParam->uniqueIdSize);
-
-    for (u32 index = 0; index < commParam->listNum; index++) {
-        std::vector<char> data(commParam->singleUniqueIdSize);
-
-        // 计算地址块的偏移
-        u8* currentSrcAddr = reinterpret_cast<u8*>(commParam->uniqueIdAddr) + index * commParam->singleUniqueIdSize;
-        CHK_SAFETY_FUNC_RET(memcpy_s(data.data(), data.size(), currentSrcAddr, commParam->singleUniqueIdSize));
-
-        // 反序列化得到device侧transport对象
-        Hccl::AicpuResPackageHelper helper;
-        auto dataVec = helper.ParsePackedData(data);
-
-        Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM; // todo 待修改
-        if (static_cast<u32>(resType) >= dataVec.size()) {
-            HCCL_ERROR("[HcclCommAicpu][%s] fail, resType[%d], dataVec size[%u]", __func__, resType, dataVec.size());
-            return HCCL_E_PARA;
-        }
-        ChannelHandle channelHandle;
-        CHK_RET(ParsePackData(dataVec[resType].data, channelHandle));
-
-        // 恢复出的channelHandle回填到commParam中
-        ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
-        channelList[index] = channelHandle;
-        HCCL_INFO("[HcclCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
-            __func__, index, currentSrcAddr, commParam->singleUniqueIdSize, channelHandle);
-    }
-
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcclCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &handle)
-{
-    HCCL_DEBUG("[HcclCommAicpu][%s] data: ptr[%p], size[%u]", __func__, data.data(), data.size());
-    Hccl::BinaryStream binaryStream(data);
-
-    std::vector<char> transpUniqueId;
-    binaryStream >> transpUniqueId;
-
-    std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
-    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
-        return HCCL_E_PTR);
-    CHK_SMART_PTR_NULL(ubTransportLiteImpl);
-
-    handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
-    ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
-
     return HCCL_SUCCESS;
 }
 

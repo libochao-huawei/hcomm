@@ -90,6 +90,8 @@ bool CcuContextScatterMesh2D::SameColumnWithRoot()
 void CcuContextScatterMesh2D::PrepareVariables()
 {
     u32 transportId = 0;
+    CHK_PRT_RET(transports.size() < localSize_,
+                HCCL_ERROR("[CcuContextScatterMesh2D] transports size is less than localSize"),);
     input_ = CreateVariable();
     sliceSize_ = CreateVariable();
     stride_ = CreateVariable();
@@ -482,11 +484,9 @@ void CcuContextScatterMesh2D::Algorithm()
     } else if (SameRowWithRoot() or SameColumnWithRoot()) {
         RelaySendAlgorithm();
         return;
-    } else if (!SameColumnWithRoot() && !SameRowWithRoot()) {  // 非直连
-        NonDirectRecvAlgorithm();
-        return;
     } else {
-        HCCL_INFO("[CcuContextScatterMesh2D] [Algorithm] ScatterMesh2D NOT a normal case");
+        // 非直连
+        NonDirectRecvAlgorithm();
         return;
     }
     HCCL_INFO("[ccuScatterMesh2D_context] ScatterMesh2D end");

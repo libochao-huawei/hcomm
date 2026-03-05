@@ -30,9 +30,9 @@ public:
     HcclResult Destroy();
 
     // 成员变量
-    MrInfoT        loopBackQpMrRemoteInfo;
-    MrInfoT        loopBackQpMrLocalInfo;
-    LoopbackQpPair loopBackQpParam;
+    MrInfoT        loopBackQpMrRemoteInfo = {};
+    MrInfoT        loopBackQpMrLocalInfo = {};
+    LoopbackQpPair loopBackQpParam = {};
 
     bool GetFlushOpcodeSupport() {
         return flushOpcodeSupport_;
@@ -53,7 +53,7 @@ private:
     RdmaHandle     rdmaHandle{nullptr};
 
     // 初始化方法
-    HcclResult GetRdmaHandle(IpAddress ip, u32 devPhyId, void **rdmaHandle);
+    HcclResult GetRdmaHandle(IpAddress ip, u32 devPhyId, void **rdmaHandle) const;
     HcclResult GetLbMax(void *rdevHandle, int *lbMax);
     HcclResult AllocateDeviceMemory();
     HcclResult AllocateHostMemory();
@@ -62,7 +62,7 @@ private:
     HcclResult RegisterRemoteMr();
 
     // 销毁方法
-    HcclResult DeregisterMr(MrHandle &mrHandle, std::string logTag);
+    HcclResult DeregisterMr(MrHandle &mrHandle, std::string logTag) const;
     HcclResult DestroyLoopbackQp();
     HcclResult FreeHostMemory();
     HcclResult FreeDeviceMemory();

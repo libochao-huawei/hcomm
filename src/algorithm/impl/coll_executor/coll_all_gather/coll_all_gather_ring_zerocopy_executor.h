@@ -15,7 +15,7 @@ namespace hccl {
 class CollAllGatherRingZerocopyExecutor : public CollAllGatherExecutor {
 public:
     explicit CollAllGatherRingZerocopyExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherRingZerocopyExecutor() = default;
+    ~CollAllGatherRingZerocopyExecutor() override = default;
 
 protected:
     HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport) override;

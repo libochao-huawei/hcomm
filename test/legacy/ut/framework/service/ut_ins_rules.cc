@@ -39,6 +39,8 @@
 #include "aiv_ins.h"
 #include "aiv_ins_preprocessor.h"
 #include "aiv_temp_all_reduce_mesh_1D_oneshot.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 #undef protected
 #undef private
 using namespace Hccl;
@@ -388,7 +390,7 @@ TEST_F(InsRulesTest, Interpret_local_post_to)
     InsLocalPostTo insLocalPostTo(1, NotifyType::NORMAL, 0);
     insLocalPostTo.SetPostQid(0);
 
-    MOCKER(rtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(0));
+    MOCKER(aclrtCreateStreamWithConfig).stubs().with(any(), any()).will(returnValue(0));
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     Stream       stream;
     OpTaskConfig taskConfig{};
@@ -1652,7 +1654,7 @@ TEST_F(InsRulesTest, Interpret_aiv_instruction)
     AivInstruction ins(links, aivOpArgs);
 
     rtStream_t fakePtr = nullptr;
-    MOCKER(rtStreamCreateWithFlags).stubs().with(outBoundP(&fakePtr, sizeof(fakePtr))).will(returnValue(RT_ERROR_NONE));
+    MOCKER(aclrtCreateStreamWithConfig).stubs().with(outBoundP(&fakePtr, sizeof(fakePtr))).will(returnValue(ACL_SUCCESS));
     MOCKER_CPP(&Hccl::MirrorTaskManager::AddTaskInfo).stubs().with(any()).will(ignoreReturnValue());
     
     s32 fakeStreamId = 123;

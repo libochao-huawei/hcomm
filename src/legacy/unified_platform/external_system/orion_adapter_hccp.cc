@@ -881,9 +881,9 @@ void HrtRaQpDestroy(QpHandle qpHandle)
         } else if (ret == SOCK_EAGAIN) {
             bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
             if (bTimeout != 0) {
-                HCCL_ERROR("[Destroy][RaQp]errNo[0x%016llx] ra qp destroy timeout[%d]. "
-                           "return[%d].",
-                           HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), timeout, ret);
+                MACRO_THROW(NetworkApiException, StringFormat("[Destroy][RaQp]errNo[0x%016llx] ra qp destroy timeout[%d]. "
+                            "return[%d].",
+                            HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), timeout, ret));
             }
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
@@ -1179,7 +1179,8 @@ void HrtRaUbRemoteMemUnimport(RdmaHandle rdmaHandle, RemMemHandle rmemHandle)
 
 const std::map<HrtUbJfcMode, JfcMode> HRT_UB_JFC_MODE_MAP = {{HrtUbJfcMode::NORMAL, JfcMode::JFC_MODE_NORMAL},
                                                               {HrtUbJfcMode::STARS_POLL, JfcMode::JFC_MODE_STARS_POLL},
-                                                              {HrtUbJfcMode::CCU_POLL, JfcMode::JFC_MODE_CCU_POLL}};
+                                                              {HrtUbJfcMode::CCU_POLL, JfcMode::JFC_MODE_CCU_POLL},
+                                                              {HrtUbJfcMode::USER_CTL, JfcMode::JFC_MODE_USER_CTL_NORMAL}};
 
 constexpr u32 CQ_DEPTH     = 1024 * 1024 / 64;
 constexpr u32 CCU_CQ_DEPTH = 64;
@@ -1217,6 +1218,38 @@ void HrtRaUbDestroyJfc(RdmaHandle handle, JfcHandle jfcHandle)
         string msg = StringFormat("ubCqDestroy failed, rdmaHandle=%p, jfcHandle=0x%llx", handle, jfcHandle);
         THROW<NetworkApiException>(msg);
     }
+}
+
+
+JfcHandle HrtRaUbCreateJfcUserCtl(RdmaHandle handle, CqCreateInfo& cqInfo)
+{
+    struct CqInfoT info {};
+
+    info.in.chanHandle = nullptr;
+    info.in.depth = CQ_DEPTH;
+    info.in.ub.userCtx   = 0;
+    info.in.ub.mode       = JfcMode::JFC_MODE_USER_CTL_NORMAL;
+    info.in.ub.ceqn       = 0;
+    info.in.ub.flag.value = 0;
+
+    void *jfcHandle = nullptr;
+
+    s32 ret = RaCtxCqCreate(handle, &info, &jfcHandle);
+    if (ret != 0) {
+        string msg = StringFormat("ubCreateCq failed, rdmaHandle=%p,", handle);
+        THROW<NetworkApiException>(msg);
+    }
+
+    HCCL_INFO("[HrtRaUbCreateJfcUserCtl] jfcId[%u], cqVA[%llx], cqeSize[%u], cqDepth[%u], dbAddr[%llx]", 
+            info.out.id, info.out.bufAddr, info.out.cqeSize, CQ_DEPTH, info.out.swdbAddr);
+
+    cqInfo.va = info.out.bufAddr;
+    cqInfo.id = info.out.id;
+    cqInfo.cqeSize = info.out.cqeSize;
+    cqInfo.cqDepth = CQ_DEPTH;
+    cqInfo.swdbAddr = info.out.swdbAddr;
+
+    return reinterpret_cast<JfcHandle>(jfcHandle);
 }
 
 const std::map<HrtTransportMode, TransportModeT> HRT_TRANSPORT_MODE_MAP
@@ -1426,7 +1459,7 @@ void HrtRaUbJettyUnbind(JettyHandle jettyHandle)
 {
     s32 ret = RaCtxQpUnbind(reinterpret_cast<void *>(jettyHandle));
     if (ret != 0) {
-        string msg = StringFormat("ubJettyUbbind failed, jettyHandle=0x%llx", jettyHandle);
+        string msg = StringFormat("ubJettyUnbind failed, jettyHandle=0x%llx", jettyHandle);
         THROW<NetworkApiException>(msg);
     }
 }
@@ -2214,6 +2247,128 @@ HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles,
         JettyStatus jettyStatus = static_cast<JettyStatus::Value>(static_cast<int>(raJettyAttrs[i].state));
         jettyAttrs.push_back(jettyStatus);
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaCtxQpDestoryBatch(const RdmaHandle handle, const std::unordered_set<JettyHandle> &jettyHandles, std::vector<JettyHandle> &failJettyHandles)
+{
+    std::vector<void*> qp_handle;
+    failJettyHandles.clear();
+    for (auto jettyHandle : jettyHandles) {
+        qp_handle.push_back(reinterpret_cast<void*>(jettyHandle));
+    }
+    unsigned int delNum = min(qp_handle.size(), static_cast<size_t>(MAX_DELETE_JETTY_NUMS));
+    std::vector<void*> del_qp_handle;
+    while (true) {
+        void *raReqHandle = nullptr;
+        delNum = min(qp_handle.size(), static_cast<size_t>(MAX_DELETE_JETTY_NUMS));
+        del_qp_handle.assign(qp_handle.begin(), qp_handle.begin() + delNum);
+        auto ret = RaCtxQpDestroyBatchAsync(handle, del_qp_handle.data(), &delNum, &raReqHandle);
+        if (ret != 0) {
+            HCCL_ERROR("[%s] failed, ret is [%d].", __func__, ret);
+            return HCCL_E_INTERNAL;
+        }
+
+        RequestHandle           reqHandle         = reinterpret_cast<RequestHandle>(raReqHandle);
+        auto                    startTime         = std::chrono::steady_clock::now();
+        constexpr uint32_t      pollTimeoutMs     = 10000; // 轮询超时时间10s
+        auto                    waitPollTimeOutMs = std::chrono::milliseconds(pollTimeoutMs);
+        while (true) {
+            if ((std::chrono::steady_clock::now() - startTime) >= waitPollTimeOutMs) {
+                HCCL_ERROR("[%s]poll timeout, originalJettyCount[%u], undeleteJettyCount[%u].", __func__, jettyHandles.size(), failJettyHandles.size());
+                return HCCL_E_TIMEOUT;
+            }
+            ReqHandleResult result;
+            TRY_CATCH_RETURN(result = HrtRaGetAsyncReqResult(reqHandle));
+            if (result == ReqHandleResult::NOT_COMPLETED) {
+                continue;
+            } else if (result == ReqHandleResult::COMPLETED) {
+                break;
+            } else {
+                HCCL_ERROR("[%s] failed, result[%s] is unexpected.", __func__, result.Describe().c_str());
+                return HCCL_E_INTERNAL;
+            }
+        }
+
+        // 检查是否删除完成
+        if (delNum > del_qp_handle.size()) {
+            HCCL_ERROR("[%s] run RaCtxQpDestroyBatchAsync error, del jetty num[%u] greater than all jetty num[%u].", __func__, delNum, del_qp_handle.size());
+            return HCCL_E_INTERNAL;
+        } else if (del_qp_handle.size() == delNum) {
+            qp_handle.erase(qp_handle.begin(), qp_handle.begin() + delNum);
+        } else {
+            failJettyHandles.push_back(reinterpret_cast<JettyHandle>(del_qp_handle[delNum]));
+            qp_handle.erase(qp_handle.begin(), qp_handle.begin() + delNum + 1);
+        }
+        if (qp_handle.size() == 0) {
+            break;
+        }
+    }
+    HCCL_INFO("[%s] run success, originalJettyCount[%u], undeleteJettyCount[%u].", __func__, jettyHandles.size(), failJettyHandles.size());
+    return HCCL_SUCCESS;
+}
+
+struct ccu_mem_info {
+    unsigned int long long mem_va;
+    unsigned int mem_size;
+    unsigned int resv[1];
+};
+
+struct ccu_mem_rsp {
+    unsigned int die_id;
+    unsigned int  num;
+    struct ccu_mem_info list[64U];
+};
+
+void HrtSetMemInfoList(struct CcuMemInfo *memInfoList, uint32_t count, struct ccu_mem_info *recvMemList) { 
+    for (size_t i = 0; i < count; ++i) { 
+        memInfoList[i].memVa   = recvMemList[i].mem_va; 
+        memInfoList[i].memSize = recvMemList[i].mem_size; 
+    }
+}
+
+HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memTypeBitmap, struct CcuMemInfo *memInfoList, uint32_t count) 
+{
+    s32 ret = 0;
+    u32 tlv_module_type = TLV_MODULE_TYPE_CCU;
+
+    struct TlvMsg send_msg = {};
+    struct TlvMsg recv_msg = {};
+    // 使用unique_ptr管理动态分配的内存，实现RAII
+    auto send_data = std::make_unique<char[]>(sizeof(CcuMemReq));
+    auto recv_data = std::make_unique<char[]>(sizeof(ccu_mem_rsp));
+
+    // 初始化请求消息
+    send_msg.type = MSG_TYPE_CCU_GET_MEM_INFO;
+    send_msg.length = sizeof(CcuMemReq);
+    send_msg.data = send_data.get();
+    
+    auto req = reinterpret_cast<CcuMemReq*>(send_msg.data);
+    req->udieIdx = udieIdx;
+    req->memTypeBitmap = memTypeBitmap;
+    
+    // 初始化响应消息
+    recv_msg.type = 0;
+    recv_msg.length = sizeof(ccu_mem_rsp);
+    recv_msg.data = recv_data.get();
+    
+    auto rsp = reinterpret_cast<ccu_mem_rsp*>(recv_msg.data);
+    rsp->die_id = 0;
+    rsp->num = 0;
+    std::fill(std::begin(rsp->list), std::end(rsp->list), ccu_mem_info{});
+    
+    ret = RaTlvRequest(tlv_handle, tlv_module_type, &send_msg, &recv_msg);
+    if (ret != 0) {
+        if (ret == RA_TLV_REQUEST_UNAVAIL) {
+            HCCL_WARNING("[HrtGetCcuMemInfo]ra tlv request UNAVAIL. return: ret[%d]", ret);
+            return HCCL_E_UNAVAIL;
+        }
+        HCCL_ERROR("[Request][RaTlv]errNo[0x%016llx] ra tlv request fail. return: ret[%d], module type[%u], message type[%u]", 
+                   HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), ret, tlv_module_type, send_msg.type);
+        throw NetworkApiException(StringFormat("call ra_tlv_request failed"));
+    }
+    HrtSetMemInfoList(memInfoList, count, rsp->list);
+    HCCL_INFO("tlv request success, tlv module type[%u], message type[%u]", tlv_module_type, send_msg.type);
     return HCCL_SUCCESS;
 }
 } // namespace Hccl

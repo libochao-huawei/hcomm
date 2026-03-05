@@ -129,30 +129,26 @@ HcclResult TopoinfoRanktableHeterog::ParserClusterInfo(hccl::HcclCommParams &par
         }
 
         u32 rankId = INVALID_VALUE_RANKID;
+        std::string errormessage = "";
         if (SalStrToULong(identify_, HCCL_BASE_DECIMAL, rankId) != HCCL_SUCCESS) {
-            RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"error_reason"}), \
-                std::vector<std::string>({"The identify must be digit."}));
-            HCCL_ERROR("[%s][%s]errNo[0x%016llx] identify[%s] is invalid", LOG_KEYWORDS_INIT_GROUP.c_str(),
-                LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), identify_.c_str());
+            errormessage = "Value [" + identify_ + "] for rankTable variable [rank_id] is invalid, expected value is a valid integer.";
+            HCCL_ERROR("[%s][%s]errNo[0x%016llx] [%s]", LOG_KEYWORDS_INIT_GROUP.c_str(),
+                LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), errormessage.c_str());
             return HCCL_E_PARA;
         }
-
         // 校验rank id合法性
         if (rankId >= rankTable.rankList.size() || rankId < 0) {
-            RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"error_reason"}), \
-                std::vector<std::string>({"rankId[" + std::to_string(rankId) + "] is invalid."}));
-            HCCL_ERROR("[%s][%s]rankId[%u] is invalid", LOG_KEYWORDS_INIT_GROUP.c_str(),
-                LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),rankId);
+            errormessage = "Value [" + std::to_string(rankId) + "] for rankTable variable [rank_id] is invalid, "\
+                "expected value is a valid rank ID in [0, " + std::to_string(rankTable.rankList.size() - 1) + "].";
+            HCCL_ERROR("[%s][%s] [%s]", LOG_KEYWORDS_INIT_GROUP.c_str(),
+                LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), errormessage.c_str());
             return HCCL_E_PARA;
         }
-        RPT_INPUT_ERR(rankId != rankTable.rankList[rankId].rankId,
-            "EI0014",
-            std::vector<std::string>({"error_reason"}),
-            std::vector<std::string>({"check rankList[" + std::to_string(rankId) + "] rankId[" +
-                                      std::to_string(rankTable.rankList[rankId].rankId) + "] failed."}));
+        errormessage = "The current node's rankId [" + std::to_string(rankId) + "] does not match "\
+            "the rankId [" + std::to_string(rankTable.rankList[rankId].rankId) + "] in the rankTable.";
         CHK_PRT_RET(rankId != rankTable.rankList[rankId].rankId,
-            HCCL_ERROR("[%s][%s]check rankList[%u] rankId[%u] failed", LOG_KEYWORDS_INIT_GROUP.c_str(),
-                LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),rankId, rankTable.rankList[rankId].rankId), HCCL_E_UNAVAIL);
+            HCCL_ERROR("[%s][%s] [%s]", LOG_KEYWORDS_INIT_GROUP.c_str(),
+                LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), errormessage.c_str()), HCCL_E_UNAVAIL);
 
         // params内容填入
         params.rank = rankId;
@@ -389,11 +385,11 @@ HcclResult TopoinfoRanktableHeterog::GetSingleRank91093(const nlohmann::json &ra
     rankInfo.deviceInfo.port = port;
     rankInfo.deviceInfo.deviceIp.push_back(rankIp);
  
+    std::string errormessage = "";    
     if (SalStrToULong(rankId, HCCL_BASE_DECIMAL, rankInfo.rankId) != HCCL_SUCCESS) {
-        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
-            std::vector<std::string>({ "The rankid in ranktable is invalid. Please check ranktable" }));
-        HCCL_ERROR("[%s][%s]errNo[0x%016llx] rankid[%s] is invalid", LOG_KEYWORDS_INIT_GROUP.c_str(),
-            LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankId.c_str());
+        errormessage = "Value [" + rankId + "] for rankTable variable [rank_id] is invalid, expected value is a non-negative integer.";
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] [%s]", LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), errormessage.c_str());
         return HCCL_E_PARA;
     }
  
@@ -458,11 +454,11 @@ HcclResult TopoinfoRanktableHeterog::GetSingleRank(const nlohmann::json &ranksOb
     rankInfo.deviceInfo.devicePhyId = devicePhyId;
     rankInfo.deviceInfo.port = port;
     rankInfo.deviceInfo.deviceIp.push_back(rankIp);
+    std::string errormessage = "";    
     if (SalStrToULong(rankId, HCCL_BASE_DECIMAL, rankInfo.rankId) != HCCL_SUCCESS) {
-        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
-            std::vector<std::string>({ "The rankid in ranktable is invalid. Please check ranktable" }));
-        HCCL_ERROR("[%s][%s]errNo[0x%016llx] rankid[%s] is invalid", LOG_KEYWORDS_INIT_GROUP.c_str(),
-            LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankId.c_str());
+        errormessage = "Value [" + rankId + "] for rankTable variable [rank_id] is invalid, expected value is a non-negative integer.";
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] [%s]", LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), errormessage.c_str());
         return HCCL_E_PARA;
     }
     rankInfo.podName = "";  // podname在新场景下置空

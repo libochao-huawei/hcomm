@@ -11,9 +11,9 @@
 #ifndef SOCKET_MGR_H
 #define SOCKET_MGR_H
 
-#include "hccl/hccl_res.h"
+#include <mutex>
 
-// Orion
+#include "hccl/hccl_res.h"
 #include "../../../../../legacy/unified_platform/resource/socket/socket.h"
 #include "virtual_topo.h"
 #include "socket_config.h"

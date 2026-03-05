@@ -707,3 +707,8 @@ int RaGetLbMax(void *rdevHandle, int *lbMax)
 {
     return 0;
 }
+
+int RaCtxQpDestroyBatchAsync(void *ctx_handle, void*qp_handle[], unsigned int *num, void **req_handle)
+{
+    return 0;
+}

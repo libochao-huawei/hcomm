@@ -35,6 +35,9 @@
 #include "ccu_ins_preprocessor.h"
 #include "aicpu_ins_preprocessor.h"
 #include "stream.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
+#include "internal_exception.h"
 
 #undef protected
 #undef private
@@ -62,7 +65,7 @@ protected:
         MOCKER(HrtNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtGetNotifyID).stubs().will(returnValue(fakeNotifyId));
-        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(fakeDevPhyId));
+        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
         MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
         MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
         MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
@@ -133,6 +136,7 @@ protected:
 
 TEST_F(CollServiceAiCpuImplTest, Ut_SetHcclKernelLaunchParam_When_Op_DEBUGCASE_Expect_OK)
 {
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
     comm.InitHDCommunicate();
     HcclKernelLaunchParam param;
     comm.currentCollOperator->opType = OpType::DEBUGCASE;
@@ -143,6 +147,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_SetHcclKernelLaunchParam_When_Op_DEBUGCASE_E
 
 TEST_F(CollServiceAiCpuImplTest, Ut_SetHcclKernelLaunchParam_When_Op_BATCHSENDRECV_Expect_OK)
 {
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
     comm.InitHDCommunicate();
     HcclKernelLaunchParam param;
     comm.currentCollOperator->opType = OpType::BATCHSENDRECV;
@@ -171,6 +176,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_SetHcclKernelLaunchParam_When_Op_BATCHSENDRE
 
 TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_Op_ALLTOALLV_Expect_MemSize_Right)
 {
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
     comm.InitHDCommunicate();
     HcclKernelLaunchParam param;
     comm.rankSize = 4; 
@@ -216,6 +222,8 @@ TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_Op_ALLTOALLV_Expect_MemSize_
     op.all2AllVDataDes.sdispls = sendDispls;
     op.all2AllVDataDes.rdispls = recvDispls;
 
+    comm.streamManager->offload->RegisterMaster(op.opTag, std::move(make_unique<Stream>()));
+
     CollServiceAiCpuImpl service(&comm);
     EXPECT_NO_THROW(service.AllocOpMem(op));
     service.counterBuf = DevBuffer::Create(0x100, 10);
@@ -229,6 +237,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_Op_ALLTOALLV_Expect_MemSize_
 
 TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_BATCHSENDRECV_Expect_OK)
 {
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
     comm.InitHDCommunicate();
     HcclKernelLaunchParam param;
     comm.rankSize = 4;
@@ -275,6 +284,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_BATCHSENDRECV_Expect_OK)
 
 TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_Op_ALLTOALLVC_Expect_Success)
 {
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
     comm.InitHDCommunicate();
     comm.rankSize = 4;
     comm.currentCollOperator->opMode = OpMode::OFFLOAD;
@@ -324,6 +334,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_InitAicpuLocBufLite_When_Before_SetHcclKerne
     EXPECT_EQ(lite.tokenId, 0);
     EXPECT_EQ(lite.tokenValue, 1);
 
+    MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
     comm.InitHDCommunicate();
     comm.currentCollOperator->opMode = OpMode::OPBASE;
     comm.currentCollOperator->opType = OpType::DEBUGCASE;
@@ -409,7 +420,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_RecoverTransport_When_Normal_Expect_Success)
         .will(returnValue(rmaBuffer));
 
     void *addr = reinterpret_cast<void *>(0x12345678);
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(addr));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(addr));
     MOCKER(HrtFree).stubs();
 
     comm.currentCollOperator->opMode = OpMode::OPBASE;
@@ -945,7 +956,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_AllocCollOpResource_When_Normal_Loop_Expect_
     MOCKER_CPP(&Trace::Save).stubs();
     MOCKER_CPP(&CollServiceAiCpuImpl::SetHcclKernelLaunchParam).stubs().with(any(), any());
     void *addr = reinterpret_cast<void *>(0x12345678);
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(addr));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(addr));
 
     OpExecuteConfig opConfig;  // aicpu 展开
     opConfig.accState = AcceleratorState::AICPU_TS;
