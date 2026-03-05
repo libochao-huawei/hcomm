@@ -158,7 +158,7 @@ private:
     std::vector<LinkData> links_;
     CollAlgOperator op_;
     std::vector<std::vector<RankId>> tempVTopo_;
-    bool withMyRank_;
+    bool withMyRank_{false};
 };
 
 }

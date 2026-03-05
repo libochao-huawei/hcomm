@@ -68,7 +68,7 @@ const std::map<OpType, std::string> MC2_AICPU_2D_DEFAULT_ALG_MAP = {
 };
 
 SelectorStatus Mc2Selector::SelectDefaultCcuMsAlgo(const CollAlgOperator &op,const CollAlgParams &params,
-                                   std::string &primQueueGenName)
+                                   std::string &primQueueGenName) const
 {
     (void) params;
     TopoInfo topoInfo;
@@ -158,7 +158,7 @@ SelectorStatus Mc2Selector::SelectCcuMsAlgo(const CollAlgOperator &op, CollAlgPa
 }
 
 SelectorStatus Mc2Selector::SelectCcuSchedAlgo(const CollAlgOperator &op, CollAlgParams &params,
-                                   std::string &primQueueGenName)
+                                   std::string &primQueueGenName) const
 {
     // 校验 algConfig 是否为空
     if (params.algConfig.empty()) {
