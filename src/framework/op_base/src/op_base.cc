@@ -56,6 +56,10 @@ const std::string HCCL_ALLTOALLVC = "ALLTOALLVC";
 HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType, uint64_t beginTime, u64 count,
     HcclDataType dataType, const std::string &tag)
 {
+    // 检查tag长度是否超过限制
+    if (tag.length() > MAX_TAG_LENGTH) {
+        HCCL_WARNING("[%s] tag length [%zu] exceeds max limit [%d], it will be truncated.", __func__, tag.length(), MAX_TAG_LENGTH);
+    }
     if (GetIfProfile()) {
         AlgType algType;
         if(cmdType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV){
