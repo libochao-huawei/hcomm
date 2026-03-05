@@ -212,4 +212,24 @@ HcclResult GetKernelFilePath(std::string &binaryPath)
     return HCCL_SUCCESS;
 }
 
+HcclResult GetCustomKernelFilePath(std::string &binaryPath)
+{
+    // 获取二进制文件路径
+    std::string libPath;
+    char *getPath = getenv("ASCEND_HOME_PATH");
+    MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, getPath);
+    if (getPath != nullptr) {
+        libPath = getPath;
+    } else {
+        libPath = "/usr/local/Ascend/cann/";
+        HCCL_WARNING("[GetCustomKernelFilePath]ENV:ASCEND_HOME_PATH is not set");
+    }
+
+    libPath += "/opp/built-in/op_impl/aicpu/kernel/";
+    binaryPath = libPath;
+    HCCL_DEBUG("[GetCustomKernelFilePath]kernel folder path[%s]", binaryPath.c_str());
+
+    return HCCL_SUCCESS;
+}
+
 }   // ~~ namespace hccl
