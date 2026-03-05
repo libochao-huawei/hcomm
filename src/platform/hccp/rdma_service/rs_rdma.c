@@ -21,6 +21,7 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include "securec.h"
+#include "hccp_nda.h"
 #include "rs.h"
 #include "ra_rs_err.h"
 #include "rs_common_inner.h"
@@ -2546,6 +2547,19 @@ STATIC int RsQueryRdevCb(unsigned int phyId, unsigned int rdevIndex, struct RsRd
     CHK_PRT_RETURN(ret, hccp_err("rs_get_rdev_cb failed! ret:%d, rdevIndex:%u", ret, rdevIndex), ret);
 
     return 0;
+}
+
+RS_ATTRI_VISI_DEF int RsNdaGetDirectFlag(unsigned int phyId, unsigned int rdevIndex, int *directFlag)
+{
+    struct RsRdevCb *rdevCb = NULL;
+    int ret = 0;
+
+    ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsQueryRdevCb phyId:%u rdev_index:%u ret:%d", phyId, rdevIndex, ret), ret);
+
+    rdevCb->directFlag = (rdevCb->deviceAttr.vendor_id == RS_VENDOR_ID_19E5) ? DIRECT_FLAG_UB : DIRECT_FLAG_PCIE;
+    *directFlag = rdevCb->directFlag;
+    return ret;
 }
 
 RS_ATTRI_VISI_DEF int RsGetLbMax(unsigned int phyId, unsigned int rdevIndex, int *lbMax)

@@ -513,6 +513,7 @@ struct RsRdevCb {
     int notifyAccess;
     unsigned int cqeErrCnt;
     pthread_mutex_t cqeErrCntMutex;
+    int directFlag;
 
     pthread_mutex_t rdevMutex;
 
