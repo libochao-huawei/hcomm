@@ -75,6 +75,7 @@ struct RaSocketOps gRaPeerSocketOps = {
 /* rdma: nic on device, need use hdc channel, support:910 */
 struct RaRdmaOps gRaHdcRdmaOps = {
     .raRdevInit = RaHdcRdevInit,
+    .raNdaGetDirectFlag = NULL,
     .raRdevGetPortStatus = RaHdcRdevGetPortStatus,
     .raGetLbMax = NULL,
     .raRdevDeinit = RaHdcRdevDeinit,
@@ -125,6 +126,7 @@ struct RaRdmaOps gRaHdcRdmaOps = {
 /* rdma: nic on host/device, support:cx6 1822 */
 struct RaRdmaOps gRaPeerRdmaOps = {
     .raRdevInit = RaPeerRdevInit,
+    .raNdaGetDirectFlag = RaPeerNdaGetDirectFlag,
     .raRdevGetPortStatus = NULL,
     .raGetLbMax = RaPeerGetLbMax,
     .raRdevDeinit = RaPeerRdevDeinit,
