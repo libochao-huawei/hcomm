@@ -27,6 +27,9 @@ HcclResult HcclCommDfx::Init(u32 deviceId, std::string comTag) {
     
     // 3. 注册回调到单例
     // RegisterProfilingCallback();
+    setAddTaskCallback_ = [this](u32 streamId, u32 taskId, const TaskParam &taskParam, u32 handle) {
+        return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle)
+    };
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 
@@ -47,14 +50,14 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Task
 / HcclCommDfx接口实现 - 修改为返回HcclResult类型
 HcclResult HcclCommDfx::ReportAllTasks(bool cachedReq) {
     if (profiling_) {
-        return profiling_->ReportAllTasks(cachedReq);
+        profiling_->ReportAllTasks(cachedReq);
     }
     return HCCL_E_PTR; // profiling_为空返回指针错误码
 }
 
 HcclResult HcclCommDfx::ReportOp(u64 beginTime, bool cachedReq, bool opbased) {
     if (profiling_) {
-        return profiling_->ReportOp(beginTime, cachedReq, opbased);
+        profiling_->ReportOp(beginTime, cachedReq, opbased);
     }
     return HCCL_E_PTR; // profiling_为空返回指针错误码
 }
@@ -67,7 +70,7 @@ HcclResult HcclCommDfx::ReportOp(u64 beginTime, bool cachedReq, bool opbased) {
 
 HcclResult HcclCommDfx::UpdateProfStat() {
     if (profiling_) {
-        return profiling_->UpdateProfStat();
+        profiling_->UpdateProfStat();
     }
     return HCCL_E_PTR; // profiling_为空返回指针错误码
 }

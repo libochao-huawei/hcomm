@@ -25,7 +25,7 @@ HcclCommDfxLite::HcclCommDfxLite() {
 // HcclCommDfxLite初始化流程 - 修改为返回HcclResult类型
 HcclResult HcclCommDfxLite::Init(u32 deviceId, std::string comTag) {
     deviceId_ = deviceId;
-    
+    comTag_ = comTag;
     // 1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
         // 注意：实际实现中应该避免这种情况，CommunicatorImplLite应该传入已经存在的MirrorTaskManager
         mirrorTaskManager_ = std::make_unique<Hccl::MirrorTaskManager>(
