@@ -25,6 +25,7 @@ static const std::unordered_map<int, std::function<void(bool&)>> captureStatusHa
         [](bool& isCapture) { HCCL_ERROR("[GetStreamCaptureInfo]Stream capture status invalidated."); }}
 };
 
+
 HcclResult GetStreamCaptureInfo(aclrtStream stream, aclmdlRI &rtModel, bool &isCapture)
 {
     isCapture = false;
