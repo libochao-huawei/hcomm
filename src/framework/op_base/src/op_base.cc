@@ -274,7 +274,7 @@ HcclResult HcclCommInitAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
             HcclComm newComm;
             HcclResult ret = HcclCommInitCollComm(rankId, &comms[rankId], config, &newComm);
             if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild. Destroy comv2");
+                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm failed. Destroy comv2");
                 for (uint32_t i = 0; i < rankId; i++) {
                     CHK_RET(HcclCommDestroy(hcclComms[i]));
                     comms[i] = nullptr;
@@ -740,7 +740,7 @@ HcclResult HcclCommInitClusterInfoMemConfig(const char *rankTableString, uint32_
             constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
             if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
+                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm failed.Destroy comv2");
                 CHK_RET(HcclCommDestroyV2(commV2));
                 commV2 = nullptr;
                 *comm = nullptr;
@@ -835,7 +835,6 @@ HcclResult HcclCommInitClusterInfoConfigWrapper(struct hcclAsyncJob* job_){
         [&]() -> HcclResult {
             void *commV2 = nullptr;
             CHK_RET(HcclCommInitClusterInfoConfigV2(clusterInfo, rank, config, &commV2));
-                        constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
             u32 rankNum = 0;
             CHK_RET(HcclGetRankSizeV2(commV2, &rankNum));
             char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
@@ -843,7 +842,7 @@ HcclResult HcclCommInitClusterInfoConfigWrapper(struct hcclAsyncJob* job_){
             CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
             if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
+                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm failed.Destroy comv2");
                 CHK_RET(HcclCommDestroyV2(commV2));
                 commV2 = nullptr;
                 *comm = nullptr;
@@ -1173,8 +1172,8 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
             CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
             HcclResult ret = HcclCommInitCollComm(subCommRankId, &subCommV2, config, subComm);
             if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
-                CHK_RET(HcclCommDestroyV2(commV2));
+                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm failed. Destroy subCommV2");
+                CHK_RET(HcclCommDestroyV2(subCommV2));
                 subCommV2 = nullptr;
                 *subComm = nullptr;
                 return ret;    
@@ -3060,7 +3059,18 @@ HcclResult HcclCommDestroyWrapper(struct hcclAsyncJob* job_){
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclCommDestroyV2(hcclComm->GetCommunicatorV2()));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        string group = hcclComm->GetIdentifier();
+        HcclOpInfoCtx& opBaseHcom = GetHcclOpInfoCtx();
+        std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
+        auto iter = opBaseHcom.opGroup2CommMap.find(group);
+        if (iter != opBaseHcom.opGroup2CommMap.end()) {
+            EXECEPTION_CATCH(opBaseHcom.opGroup2CommMap.erase(group), return HCCL_E_MEMORY);
+        } else {
+                HCCL_ERROR("[HcclCommDestroy] comm is not exist, comm=%p, group=%s, deviceLogicId=%d", comm, group.c_str(), deviceLogicId);
+                return HCCL_E_PARA;
+        }
+        CHK_RET(HcclCommDestroyV2(commV2));
         return HCCL_SUCCESS;
     }());
 #endif

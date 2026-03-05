@@ -1021,6 +1021,7 @@ HcclResult HcclCommGraphReduce(const char *tag, void *inputPtr, void *outputPtr,
 
     return HCCL_SUCCESS;
 }
+
 HcclResult HcclCommGraphBroadcast(const char *tag, void *ptr, u64 count, HcclDataType dataType, u32 root,
     s64 opBaseHcom, rtStream_t stream)
 {
@@ -1767,7 +1768,9 @@ HcclResult HcomExecSelectAlg(s64 comm, const char *group, HcclCMDType opType, u6
     std::string tempAlgName;
     if (comm != static_cast<int64_t>(CommNumHcom::COMM_VALUE_DEFAULT)) {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(comm);
-        comm = reinterpret_cast<s64>(hcclComm->GetCommunicatorV2());
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        comm = reinterpret_cast<s64>(commV2);
         CHK_RET(HcomSelectAlgV2(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, tempAlgName));
     } else {
         std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
