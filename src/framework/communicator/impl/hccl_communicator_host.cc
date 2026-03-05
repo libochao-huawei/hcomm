@@ -446,7 +446,7 @@ namespace hccl
         // 读取customEnable环境变量，开启了就执行
         std::string jsonPath;
         CHK_RET(GetCustomKernelFilePath(jsonPath));
-        jsonPath += "aicpu_custom.json";
+        jsonPath += "libaicpu_custom.json";
         CHK_RET(LoadCustomFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 1, binHandle_));
         return HCCL_SUCCESS;
     }
