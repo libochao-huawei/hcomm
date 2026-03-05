@@ -622,7 +622,9 @@ int RaRsCustomChannel(char *inBuf, char *outBuf, int *outLen, int *opResult, int
         opResult);
 
     *opResult = gRaRsCtxOps.ccuCustomChannel(&opData->txData.info, &opDataOut->rxData.info);
-    if (*opResult != 0) {
+    if (*opResult == -ENXIO) {
+        hccp_warn("[ccu]custom channel unsuccessful, ret[%d], phyId[%u]", *opResult, opData->txData.phyId);
+    } else if (*opResult != 0) {
         hccp_err("[ccu]custom channel failed, ret[%d], phyId[%u]", *opResult, opData->txData.phyId);
     }
 

@@ -40,7 +40,8 @@ constexpr u32 MAX_SEND_SGE_NUM = 8;
 constexpr u32 MAX_RECV_SGE_NUM = 1;
 constexpr u32 MAX_CQ_DEPTH = 65535;
 constexpr u32 MAX_INLINE_DATA = 128;
-constexpr u32 RA_TLV_REQUEST_UNAVAIL = 328307;
+constexpr u32 RA_CUSTOM_CHANNEL_UNAVAIL = 328107;
+constexpr u32 RA_TLV_REQUEST_UNAVAIL = 128308;
 
 const std::unordered_map<HrtNetworkMode, NetworkMode, EnumClassHash> HRT_NETWORK_MODE_MAP
     = {{HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE}, {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
@@ -1576,6 +1577,10 @@ void HrtRaCustomChannel(const HRaInfo &raInfo, void *customIn, void *customOut)
 
     int ret = RaCustomChannel(info, in, out);
     if (ret != 0) {
+        if (ret == RA_CUSTOM_CHANNEL_UNAVAIL) {
+            HCCL_WARNING("[HrtRaCustomChannel] UNAVAIL. return: ret[%d]", ret);
+            return;
+        }
         THROW<NetworkApiException>(StringFormat("call ra_custom_channel failed, error code =%d.", ret));
     }
 }
