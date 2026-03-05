@@ -70,8 +70,16 @@ public:
     uint32_t GetRankSize() const;
 
     // 获取HcclCommDfx
-    HcclCommDfx* GetHcclCommDfx() { return &dfx_; };
-
+    HcclCommDfx* GetHcclCommDfx() {
+ 	    return hcclCommDfx_ != nullptr ? hcclCommDfx_.get() : nullptr;
+ 	}
+    std::function<HcclResult(u32, u32, const TaskParam&, u64)> GetDfxCallback() {
+        if (hcclCommDfx_ == nullptr) {
+            HCCL_ERROR("[CollComm]CollComm DfxCallBack failed. hcclCommDfx is nullptr");
+            return nullptr;
+        }
+        return hcclCommDfx_->GetCallBack();
+    }
 private:
     void* comm_{nullptr};
     uint32_t rankId_{};
@@ -88,6 +96,7 @@ private:
     
     //TODO
     std::shared_ptr<MyRank> myRank_{};
+    std::unique_ptr<HcclCommDfx> hcclCommDfx_{nullptr};
     uintptr_t   addr_{0};
     std::size_t size_{0};
     HcclMemType memType_{HcclMemType::HCCL_MEM_TYPE_DEVICE};

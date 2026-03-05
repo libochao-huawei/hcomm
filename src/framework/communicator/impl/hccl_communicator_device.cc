@@ -1614,4 +1614,8 @@ namespace hccl
     {
         return false;
     }
+
+    aclrtBinHandle HcclCommunicator::GetBinHandle() {
+        return nullptr;
+    }
 }

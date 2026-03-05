@@ -53,8 +53,17 @@ public:
 
     HcclResult AddThreadHandleToMap(CommEngine commEngine, ThreadHandle threadHandle);
     Thread *FindThreadByCommEngine(CommEngine commEngine);
+    HcclResult SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const TaskParam&, u64)> callback) {
+ 	    CHK_PTR_NULL(callback);
+ 	    callback_ = callback;
+ 	    return HCCL_SUCCESS;
+ 	}
+ 	std::function<HcclResult(u32, u32, const TaskParam&, u64)> GetCallback() {
+ 	         return callback_;
+ 	}
 private:
     std::unordered_map<CommEngine, ThreadHandle> threadHandleMap_; // CPU_TS上的ThreadHandle与其他引擎上的ThreadHandle的映射
+    std::function<HcclResult(u32, u32, const TaskParam&, u32)> callback_;
 };
 
 inline Stream *GetStream(uint64_t thread)
