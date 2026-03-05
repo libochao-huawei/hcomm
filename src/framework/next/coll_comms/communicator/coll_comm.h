@@ -20,6 +20,7 @@
 #include "independent_op_context_manager.h"
 #include "comm_mem_manager.h"
 #include "channel_manager.h"
+#include "hcclCommDfx.h"
 namespace hccl {
 /**
  * @note 职责：集合通信通信域上下文管理，包括RankGraph和本rank信息资源等内容。
@@ -68,6 +69,9 @@ public:
     // 获取Rank数量
     uint32_t GetRankSize() const;
 
+    // 获取HcclCommDfx
+    HcclCommDfx* GetHcclCommDfx() { return &dfx_; };
+
 private:
     void* comm_{nullptr};
     uint32_t rankId_{};
@@ -87,6 +91,7 @@ private:
     uintptr_t   addr_{0};
     std::size_t size_{0};
     HcclMemType memType_{HcclMemType::HCCL_MEM_TYPE_DEVICE};
+    HcclCommDfx dfx_;
 };
 }  // namespace hccl
 

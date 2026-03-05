@@ -24,6 +24,8 @@
 #include "aicpu_launch_manager.h"
 #include "channel_param.h"
 #include "hdc_pub.h"
+#include "hcclCommDfxLite.h"
+#include "error_message_v2.h"
 
 using namespace hccl;
 class CollCommAicpu {
@@ -34,9 +36,21 @@ public:
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
 
+    const std::vector<std::shared_ptr<Thread>>& GetAllThread() { return threads_; };
+    const HcclTopoInfo& GetTopoInfo() { return topoInfo_; }
+    const std::string& GetIdentifier() { return identifier_; }
+
+    // taskException
+    bool IsErrorReported() { return isErrorReported_; }
+    void SetErrorReported(bool isErrorReported) { isErrorReported_ = isErrorReported; }
+    HcclResult SendErrorMessageReportToHost(Hccl::ErrorMessageReport& errMsgInfo);
+    HcclResult RegisterProfCallBack();
+    HcclCommDfxLite* GetHcclCommDfxLite() { return &dfx_; };
+
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
+    HcclResult RegisterChannelAddDfxTaskInfo(ChannelHandle channel);
     u32 devId_;
     //通用的通道
     std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D_{nullptr};
@@ -49,6 +63,10 @@ private:
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
     // A5 独立算子
     std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
+
+    // dfx
+    bool isErrorReported_{false}; // 是否上报了taskException信息
+    HcclCommDfxLite dfx_;
 };
 
 
