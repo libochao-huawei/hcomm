@@ -48,7 +48,7 @@ void TaskExceptionHandlerLite::Register() const
     TaskExceptionFunc::GetInstance().RegisterCallback(Process);
 }
 
-void GetErrMsgInfo(std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &errMsgInfo, const rtLogicCqReport_t* exceptionInfo) {
+void GetUbErrMsgInfo(std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &errMsgInfo, const rtLogicCqReport_t* exceptionInfo) {
     if (taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB) {
@@ -56,7 +56,10 @@ void GetErrMsgInfo(std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &errMs
         errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.DMA.rmtEid;
         errMsgInfo.ubCqeStatus = exceptionInfo->errorCode & 0xFF;
         errMsgInfo.linkType = taskInfo->taskParam_.taskPara.DMA.linkType;
- 	    errMsgInfo.size = taskInfo->taskParam_.taskPara.Reduce.size;
+ 	    errMsgInfo.size = taskInfo->taskParam_.taskPara.DMA.size;
+        errMsgInfo.taskSrcAddr = reinterpret_cast<u64>(taskInfo->taskParam_.taskPara.DMA.src);
+        errMsgInfo.taskDstAddr = reinterpret_cast<u64>(taskInfo->taskParam_.taskPara.DMA.dst);
+        
     } else if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
         errMsgInfo.locEid = taskInfo->taskParam_.taskPara.Reduce.locEid;
@@ -64,7 +67,11 @@ void GetErrMsgInfo(std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &errMs
         errMsgInfo.ubCqeStatus = exceptionInfo->errorCode & 0xFF;
         errMsgInfo.linkType = taskInfo->taskParam_.taskPara.Reduce.linkType;
  	    errMsgInfo.size = taskInfo->taskParam_.taskPara.Reduce.size;
+        errMsgInfo.taskSrcAddr = reinterpret_cast<u64>(taskInfo->taskParam_.taskPara.Reduce.src);
+        errMsgInfo.taskDstAddr = reinterpret_cast<u64>(taskInfo->taskParam_.taskPara.Reduce.dst);
     }
+    errMsgInfo.rtCqErrorType = exceptionInfo->errorType;
+    errMsgInfo.rtCqErrorCode = exceptionInfo->errorCode;
 }
 
 HcclResult GenerateErrorMessageReport(CommunicatorImplLite *aicpuComm, std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &errMsgInfo, const rtLogicCqReport_t* exceptionInfo)
@@ -106,10 +113,8 @@ HcclResult GenerateErrorMessageReport(CommunicatorImplLite *aicpuComm, std::shar
     memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag), taskInfo->dfxOpInfo_->op_.opTag.c_str(), taskInfo->dfxOpInfo_->op_.opTag.size());
     memcpy_s(errMsgInfo.group, sizeof(errMsgInfo.group), aicpuComm->GetId().c_str(), aicpuComm->GetId().size());
 
-    GetErrMsgInfo(taskInfo, errMsgInfo, exceptionInfo);
+    GetUbErrMsgInfo(taskInfo, errMsgInfo, exceptionInfo);
 
-    errMsgInfo.rtCqErrorType = exceptionInfo->errorType;
-    errMsgInfo.rtCqErrorCode = exceptionInfo->errorCode;
     return HCCL_SUCCESS;
 }
 

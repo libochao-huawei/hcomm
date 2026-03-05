@@ -40,6 +40,8 @@ struct ErrorMessageReport {
 
     Eid locEid{};
     Eid rmtEid{};
+    uint64_t taskDstAddr = 0;
+    uint64_t taskSrcAddr = 0;
 
     uint8_t  rtCqErrorType = 0;
     uint32_t rtCqErrorCode = 0;

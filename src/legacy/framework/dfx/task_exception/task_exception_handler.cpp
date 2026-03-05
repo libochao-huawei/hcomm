@@ -702,15 +702,15 @@ void GetTaskParam(TaskParam &taskParam, const ErrorMessageReport &errorMessage) 
     } else if (errorMessage.taskType == TaskParamType::TASK_UB_REDUCE_INLINE || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
         taskParam.taskPara.Reduce.notifyID = errorMessage.notifyId;
         taskParam.taskPara.Reduce.notifyValue = errorMessage.notifyValue;
-        taskParam.taskPara.Reduce.src = reinterpret_cast<void *>(errorMessage.srcAddr);
- 	    taskParam.taskPara.Reduce.dst = reinterpret_cast<void *>(errorMessage.dstAddr);
+        taskParam.taskPara.Reduce.src = reinterpret_cast<void *>(errorMessage.taskSrcAddr);
+ 	    taskParam.taskPara.Reduce.dst = reinterpret_cast<void *>(errorMessage.taskDstAddr);
  	    taskParam.taskPara.Reduce.linkType = errorMessage.linkType;
  	    taskParam.taskPara.Reduce.size = errorMessage.size;
     } else if (errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE || errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY) {
         taskParam.taskPara.DMA.notifyID = errorMessage.notifyId;
         taskParam.taskPara.DMA.notifyValue = errorMessage.notifyValue;
-        taskParam.taskPara.DMA.src = reinterpret_cast<void *>(errorMessage.srcAddr);
- 	    taskParam.taskPara.DMA.dst = reinterpret_cast<void *>(errorMessage.dstAddr);
+        taskParam.taskPara.DMA.src = reinterpret_cast<void *>(errorMessage.taskSrcAddr);
+ 	    taskParam.taskPara.DMA.dst = reinterpret_cast<void *>(errorMessage.taskDstAddr);
  	    taskParam.taskPara.DMA.linkType = errorMessage.linkType;
  	    taskParam.taskPara.DMA.size = errorMessage.size;
     }
