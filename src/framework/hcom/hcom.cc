@@ -885,7 +885,9 @@ HcclResult HcclCommGraphAllGather(const char *tag, void *inputPtr, void *outputP
     // HcclCommGraphAllGatherV2
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
-        opBaseHcom = reinterpret_cast<s64>(hcclComm->GetCommunicatorV2());
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
         CHK_RET(HcclCommGraphAllGatherV2(tag, inputPtr, outputPtr, inputCount, dataType, opBaseHcom, stream));
         return HCCL_SUCCESS;
     }());
@@ -935,7 +937,9 @@ HcclResult HcclCommGraphAllReduce(const char *tag, void *inputPtr, void *outputP
     // HcomGraphAllReduceV2
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
-        opBaseHcom = reinterpret_cast<s64>(hcclComm->GetCommunicatorV2());
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
         CHK_RET(HcomGraphAllReduceV2(tag, inputPtr, outputPtr, count, dataType, op, opBaseHcom, stream));
         return HCCL_SUCCESS;
     }());
@@ -993,7 +997,9 @@ HcclResult HcclCommGraphReduce(const char *tag, void *inputPtr, void *outputPtr,
      // HcomGraphReduceV2
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
-        opBaseHcom = reinterpret_cast<s64>(hcclComm->GetCommunicatorV2());
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
         CHK_RET(HcomGraphReduceV2(tag, inputPtr, outputPtr, count, dataType, op, root, opBaseHcom, stream));
         return HCCL_SUCCESS;
     }());
@@ -1043,7 +1049,9 @@ HcclResult HcclCommGraphBroadcast(const char *tag, void *ptr, u64 count, HcclDat
     CHK_RET(PrintMemoryAttr(ptr));
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
-        opBaseHcom = reinterpret_cast<s64>(hcclComm->GetCommunicatorV2());
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
         CHK_RET(HcomGraphBroadcastV2(tag, ptr, count, dataType, root, opBaseHcom, stream));
         return HCCL_SUCCESS;
     }());
@@ -1095,7 +1103,9 @@ HcclResult HcclCommGraphReduceScatter(const char *tag, void *inputPtr, void *out
 
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
-        opBaseHcom = reinterpret_cast<s64>(hcclComm->GetCommunicatorV2());
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
         CHK_RET(HcomGraphReduceScatterV2(tag, inputPtr, outputPtr, count, dataType, op, opBaseHcom, stream));
         return HCCL_SUCCESS;
     }());
@@ -1145,7 +1155,9 @@ HcclResult HcclCommGraphSend(const char *tag, void *inputPtr, u64 count, HcclDat
     CHK_RET(PrintMemoryAttr(inputPtr));
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
-        opBaseHcom = reinterpret_cast<s64>(hcclComm->GetCommunicatorV2());
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
         CHK_RET(HcomGraphSendV2(tag, inputPtr, count, dataType, destRank, srTag, opBaseHcom, stream));
         return HCCL_SUCCESS;
     }());
@@ -1194,7 +1206,9 @@ HcclResult HcclCommGraphReceive(const char *tag, void *outputPtr, u64 count, Hcc
     CHK_RET(PrintMemoryAttr(outputPtr));
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
-        opBaseHcom = reinterpret_cast<s64>(hcclComm->GetCommunicatorV2());
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
         CHK_RET(HcomGraphReceiveV2(tag, outputPtr, count, dataType, srcRank, srTag, opBaseHcom, stream));
         return HCCL_SUCCESS;
     }());
@@ -1257,7 +1271,9 @@ HcclResult HcclCommGraphGetRankSize(s64 opBaseHcom, u32 *rankSize)
     HCCL_INFO("HcclCommGraphGetRankSize:opBaseHcom[%lld]", opBaseHcom);
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
-        opBaseHcom = reinterpret_cast<s64>(hcclComm->GetCommunicatorV2());
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
         CHK_RET(HcclCommGraphGetRankSizeV2(opBaseHcom, rankSize));
         return HCCL_SUCCESS;
     }());
@@ -1282,7 +1298,9 @@ HcclResult HcclCommGraphGetRankId(s64 opBaseHcom, u32 *rankId)
     HCCL_INFO("HcclCommGraphGetRankId:opBaseHcom[%lld]", opBaseHcom);
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
-        opBaseHcom = reinterpret_cast<s64>(hcclComm->GetCommunicatorV2());
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
         CHK_RET(HcclCommGraphGetRankIdV2(opBaseHcom, rankId));
         return HCCL_SUCCESS;
     }());
@@ -2480,7 +2498,9 @@ HcclResult HcclCommGraphUnloadTask(s64 opBaseHcom, const char *tag)
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
-        opBaseHcom = reinterpret_cast<s64>(hcclComm->GetCommunicatorV2());
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
         CHK_RET(HcclCommGraphUnloadTaskV2(opBaseHcom, tag));
         return HCCL_SUCCESS;
     }());

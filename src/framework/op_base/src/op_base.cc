@@ -3271,6 +3271,7 @@ HcclResult HcclConfigGetInfo(HcclComm comm, HcclConfigType cfgType,
 
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(info);
 
     if (cfgType != HcclConfigType::HCCL_CONFIG_TYPE_OP_EXPANSION_MODE) {
         HCCL_ERROR("[%s] cfgType[%d] is not supported yet.", __func__, cfgType);
