@@ -902,7 +902,7 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
     auto cacheBuilder = [](RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> &remoteMemCtx, uint32_t index) {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index + 1];
         if (rmtBuffer == nullptr) {
-            return HCCL_SUCCESS;
+            return;
         }
         switch (rmtBuffer->GetMemType()) {
                 case HCCL_MEM_TYPE_DEVICE:
