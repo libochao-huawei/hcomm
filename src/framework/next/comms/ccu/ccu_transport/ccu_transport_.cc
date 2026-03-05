@@ -598,7 +598,7 @@ void CcuTransport::Clean()
     ccuConnection_->Clean();
 }
 
-HcclResult AivUbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
     uint32_t userMemCount = rmtBufferInfos_.size() - 1; // 默认 cclBuffer 数量为1，后续出现1的含义也是 cclBufferNum
