@@ -86,7 +86,7 @@ struct TaskInfo {
     std::string tag;
     TaskType taskType;
     bool isAlgInfo;
-    AlgType algType;
+    std::string algType;
     u32 index;
     union {
         ParaDMA DMA;        // taskType = SDMA/RDMA使用, 包括rtRDMASend写notify
