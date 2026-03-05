@@ -55,12 +55,12 @@ std::string P2PTransport::Describe() const
 
 static void SubmitTask(const TaskP2pMemcpy &p2pMemcpy, const Stream &stream)
 {
-    HCCL_INFO("not support, %p %p",p2pMemcpy.GetDstAddr(), stream.GetPtr());
+    HCCL_INFO("[P2PTransport::%s]not support, p2p dst addr[%llu], stream[%p]", __func__, p2pMemcpy.GetDstAddr(), stream.GetPtr());
 }
 
 static void SubmitTask(const TaskSdmaReduce &sdmaReduce, const Stream &stream)
 {
-    HCCL_INFO("not support, %p %p",sdmaReduce.GetDstAddr(), stream.GetPtr());
+    HCCL_INFO("[P2PTransport::%s]not support, sdmaReduce dst addr[%llu], stream[%p]", __func__, sdmaReduce.GetDstAddr(), stream.GetPtr());
 }
 
 template <typename TaskType> std::function<void(const BaseTask &, const Stream &)> GetSubmitP2PTaskFunction()

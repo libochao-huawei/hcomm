@@ -21,8 +21,9 @@
 #include "hccl_comm_pub.h"
 #include "hccl_independent_common.h"
 #include "profiling/profiling.h"
-
+#include "aicpu_operator_pub.h"
 using namespace hccl;
+constexpr u32 MAX_EXPORT_THREAD_NUM = 40U;
 
 HcclResult HcclGetNotifyNumInThread(HcclComm comm, ThreadHandle thread,
     CommEngine engine, uint32_t *notifyNum)
@@ -225,8 +226,8 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
     CHK_PTR_NULL(exportedThreads);
     CHK_PRT_RET(!IsValidCommEngine(dstCommEngine),
                 HCCL_ERROR("[%s] commEngine[%d] is invalid", __func__, static_cast<int32_t>(dstCommEngine)), HCCL_E_PARA);
-    if (threadNum == 0) {
-        HCCL_ERROR("[%s] threadNum is 0", __func__);
+    if (threadNum == 0 || threadNum > MAX_EXPORT_THREAD_NUM) {
+        HCCL_ERROR("[%s] threadNum is 0 or greater than %u", __func__, MAX_EXPORT_THREAD_NUM);
         return HCCL_E_PARA;
     }
 
@@ -234,8 +235,18 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
     std::string commId = hcclComm->GetIdentifier();
     HCCL_INFO("Entry-[%s]:comm[%s], threadNum[%u], commEngine[%d], threadsPtr[%p], exportedThreadsPtr[%p]", 
              __func__, commId.c_str(), threadNum, dstCommEngine, threads, exportedThreads);
-    auto &engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
-    HcclResult ret = engineResMgr.HcclThreadExportToCommEngine(threadNum, threads, dstCommEngine, exportedThreads);
+    HcclResult ret;
+    if (hcclComm->IsCommunicatorV2()) {
+        hccl::CollComm* collComm = hcclComm->GetCollComm();
+        CHK_PTR_NULL(collComm);
+        CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
+        CHK_PTR_NULL(engineResMgr);
+        ret = engineResMgr->HcclThreadExportToCommEngine(threadNum, threads, dstCommEngine, exportedThreads);
+    } else {
+        auto &engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
+        ret = engineResMgr.HcclThreadExportToCommEngine(threadNum, threads, dstCommEngine, exportedThreads);
+    }
+
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] Thread export failed. Export threadNum[%u], commEngine[%d], threadsPtr[%p], exportedThreadsPtr[%p]",
          __func__, threadNum, dstCommEngine, threads, exportedThreads), ret);
     HCCL_INFO("[%s]:comm[%s] export success. ", __func__, commId.c_str());

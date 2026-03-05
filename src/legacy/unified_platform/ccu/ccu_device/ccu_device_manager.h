@@ -18,6 +18,7 @@
 #include "ccu_dev_mgr.h"
 #include "orion_adapter_hccp.h"
 #include "local_ub_rma_buffer.h"
+#include <array>
 
 namespace Hccl {
 
@@ -253,6 +254,8 @@ public:
     static HcclResult GetCcuResourceSpaceBufInfo(const int32_t deviceLogicId, const uint8_t dieId,
         uint64_t &addr, uint64_t &size);
     static HcclResult GetCcuResourceSpaceTokenInfo(const int32_t deviceLogicId, const uint8_t dieId,
+        uint64_t &tokenId, uint64_t &tokenValue);
+    static HcclResult GetCcuResourceSpaceTokenInfoForLocal(const int32_t deviceLogicId, const uint8_t dieId,
         uint64_t &tokenId, uint64_t &tokenValue);
     
     static HcclResult ConfigChannel(const int32_t deviceLogicId, const uint8_t dieId, ChannelCfg &cfg);

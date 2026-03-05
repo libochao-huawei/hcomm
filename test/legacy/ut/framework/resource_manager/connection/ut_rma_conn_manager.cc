@@ -121,7 +121,7 @@ TEST_F(RmaConnManagerTest,
     collOpParams.staticShape = true;
 
     void *devPtr = nullptr;
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(devPtr));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(commParams.devType));
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
     MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
@@ -223,7 +223,7 @@ TEST_F(RmaConnManagerTest, should_return_normally_when_calling_addwhitelist_with
     GenRankTableFile1Ser8Dev();
 
     void *devPtr = nullptr;
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(devPtr));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(commParams.devType));
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
     MOCKER_CPP(&CommunicatorImpl::InitCollService).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
@@ -269,7 +269,7 @@ TEST_F(RmaConnManagerTest, should_return_valid_ptr_when_calling_creatermadevnetc
     GenRankTableFile1Ser8Dev();
 
     void *devMemPtr = nullptr;
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devMemPtr));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(devMemPtr));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(commParams.devType));
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
     MOCKER_CPP(&CommunicatorImpl::InitCollService).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
@@ -359,7 +359,7 @@ TEST_F(RmaConnManagerTest, should_return_valid_ptr_when_calling_createdevubconn_
     GenRankTableFile1Ser8Dev();
 
     void *devMemPtr = nullptr;
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devMemPtr));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(devMemPtr));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(commParams.devType));
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
     MOCKER_CPP(&CommunicatorImpl::InitCollService).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));

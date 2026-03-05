@@ -17,6 +17,8 @@
 #include "exchange_ipc_buffer_dto.h"
 #define private public
 #define protected public
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 #include "remote_rma_buffer.h"
 #include "buffer_type.h"
 #undef protected

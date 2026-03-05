@@ -20,6 +20,7 @@ class StreamLite {
 public:
     explicit StreamLite(std::vector<char> &uniqueId);
     StreamLite(u32 id, u32 sqIds, u32 phyId, u32 cqIds);
+    StreamLite(u32 id, u32 sqIds, u32 phyId, u32 cqIds, bool launchFlag);
     u32 GetId() const;
     u32 GetSqId() const;    
     u32 GetCqId() const;

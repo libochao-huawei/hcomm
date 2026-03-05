@@ -15,6 +15,8 @@
 #include "local_ipc_rma_buffer.h"
 #include "remote_rma_buffer.h"
 #include "remote_ipc_rma_buffer.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 
 using namespace Hccl;
 

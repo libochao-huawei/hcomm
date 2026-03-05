@@ -10,10 +10,8 @@
 
 #include "ccu_connection.h"
 
-#include <random>
-
+#include <cstdlib>
 #include "hccp_ctx.h"
-
 #include "buffer.h"
 #include "exception_util.h"
 #include "orion_adapter_rts.h"
@@ -81,7 +79,7 @@ CcuConnStatus CcuConnection::GetStatus()
 
     return status;
 }
-
+// 获取本端内存，为部分远端不可写的tokenId
 HcclResult CcuConnection::GetLocalCcuRmaBufferInfo()
 {
     uint64_t ccuBufSize = 0; // 暂未使用
@@ -162,7 +160,6 @@ bool CcuConnection::CreateJetty()
         }
 
         if (ret != HcclResult::HCCL_SUCCESS) {
-            isJettyCreated = true;
             HCCL_ERROR("[CcuConnection][%s] failed, hccl result[%d]", __func__, ret);
             ThrowAbnormalStatus(std::string(__func__));
         }

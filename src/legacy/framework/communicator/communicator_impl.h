@@ -94,7 +94,7 @@ public:
     HcclResult GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num);
     HcclResult GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
     HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
-    HcclResult InitDeviceListenPort(u32 &linstenPort);
+    HcclResult InitDeviceListenPort(u32 &linstenPort) const;
 
     u32 GetCcuMc2ServerNum();
 
@@ -340,7 +340,8 @@ public:
     virtual CcuStreamSyncNotifyManager &GetCcuStreamSyncNotifyManager() const;
 
     void saveCCUParams(std::vector<std::vector<CcuTaskParam>> &&ccuParams,
-        std::vector<std::vector<CcuProfilingInfo>>&&ccuProfilingInfo, u64 execId, bool isSlave = false)
+                       std::vector<std::vector<CcuProfilingInfo>>&&ccuProfilingInfo, u64 execId, CcuInstType insType, 
+                       bool isSlave = false)
     {
         auto &ccuParamsMapping = colCcuParamMapping[currentCollOperator->opType];
         auto &ccuParamsNotCacheKey = colParamsNotCacheKey[currentCollOperator->opType];
@@ -348,7 +349,7 @@ public:
             ccuParamsNotCacheKey.find(ccuParamsMappingKey) == ccuParamsNotCacheKey.end()) {
             ccuParamsMapping.emplace(std::piecewise_construct, std::forward_as_tuple(ccuParamsMappingKey),
                                      std::forward_as_tuple(std::move(ccuParams), std::move(ccuProfilingInfo), execId,
-                                                           isSlave, static_cast<void*>(this)));
+                                                           insType, isSlave, static_cast<void *>(this)));
         } else {
             ccuParamsMapping.erase(ccuParamsMappingKey);
             if (ccuParamsMapping.empty()) {
@@ -373,7 +374,7 @@ public:
     
     HcclResult ClearOpResource(const std::string &opTag);// 清空opTag所属资源
     HcclResult GetAicpuOpStreamNotify(rtStream_t *opStream, u8 aicpuNotifyNum, void** aicpuNotify) const;
-    std::string GetTopoFilePath();
+    std::string GetTopoFilePath() const;
     std::vector<LinkData> GetFullMeshLinks() const;
     ErrorMessageReport GetAicpuTaskException();
 private:
@@ -524,7 +525,7 @@ private:
     void ConvertCollOperatorMemV(const CollOpParams &opParams);
 
     // dpu相关
-    void InitHccpPeer();           // 拉起peer模式HCCP进程
+    void InitHccpPeer() const;           // 拉起peer模式HCCP进程
     bool IsNeedDpu();             // 判断是否需要Host网卡参与集合通信
     void InitDpuKernel();
     std::unordered_set<IpAddress> GetHostIpFromRankGraph();
@@ -559,6 +560,7 @@ private:
     bool taskExceptionEnv{true}; // 默认HCCL_DFS_CONFIG="task_exception:on" 且默认on下不开启快速下发
     bool enableProfilingEnv{false};
     bool TryFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream);
+    void FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams);
     void ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream, CachedCCUParams &params);
 
     void OpAcceleratorStateFallback(); // 算子粒度加速模式状态回退

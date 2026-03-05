@@ -12,7 +12,6 @@
 #include "orion_adapter_tsd.h"
 #include "orion_adapter_rts.h"
 #include "orion_adapter_hccp.h"
-#include "hccp.h"
 
 namespace Hccl {
 
@@ -65,7 +64,6 @@ void HccpPeerManager::DeInit(s32 deviceLogicId)
         instances_.erase(deviceLogicId);
         HCCL_INFO("[HccpPeerManager::%s] devLogicId [%d] ra deinit success.", __func__, deviceLogicId);
     }
-
 }
 
 void HccpPeerManager::DeInitAll()

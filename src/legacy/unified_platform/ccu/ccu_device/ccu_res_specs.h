@@ -29,6 +29,7 @@ constexpr uint32_t CCU_SQ_BUFFER_SIZE = 256 * 1024; // ccu 每个jetty sq buffer
 constexpr uint32_t CCU_WQEBB_RESOURCE_NUM = 4096;
 constexpr uint32_t CCU_V1_PER_DIE_PFE_RESERVED_NUM = 16; // ccu 每个IO die预留16个PFE表
 constexpr uint32_t CCU_PER_DIE_JETTY_RESERVED_NUM = 128; // ccu 每个IO die默认jetty数量
+constexpr uint32_t CCU_MEM_INFO_SIZE = 64;
 
 constexpr uint64_t CCU_RESOURCE_INS_RESERVE_SIZE = 0x100000;  // INS预留空间1M
 constexpr uint64_t CCU_V1_RESOURCE_GSA_RESERVE_SIZE = 0x8000; // v1 GSA预留空间32K
@@ -50,6 +51,46 @@ struct CcuBlockResStrategy {
     uint32_t missionNum{2};
 };
 
+enum CcuMemTypeBitmap : uint64_t;
+
+// 当前需要申请权限的内存为18块
+inline const std::array<CcuMemTypeBitmap, 18>& GetMemTypeVector() {
+    static const std::array<CcuMemTypeBitmap, 18> kMemTypeArray = {{
+        CCU_MEMTYPE_INS,
+        CCU_MEMTYPE_GSA,
+        CCU_MEMTYPE_XN,
+        CCU_MEMTYPE_CKE,
+        CCU_MEMTYPE_PFE,
+        CCU_MEMTYPE_CHN,
+        CCU_MEMTYPE_JETTY_CTX,
+        CCU_MEMTYPE_MISSION_CTX,
+        CCU_MEMTYPE_LOOP_CTX,
+        CCU_MEMTYPE_MISSION_SQE,
+        CCU_MEMTYPE_CQE_BLOCK0,
+        CCU_MEMTYPE_CQE_BLOCK1,
+        CCU_MEMTYPE_CQE_BLOCK2,
+        CCU_MEMTYPE_WQEBB,
+        CCU_MEMTYPE_MS_BLOCK0,
+        CCU_MEMTYPE_MS_BLOCK1,
+        CCU_MEMTYPE_MS_BLOCK2,
+        CCU_MEMTYPE_MS_BLOCK3
+    }};
+    return kMemTypeArray;
+}
+
+inline uint64_t GetCombinedMemTypeBitmap() {
+    const auto& memTypes = GetMemTypeVector();
+    uint64_t combined = 0;
+    
+    for (const auto& memType : memTypes) {
+        combined |= static_cast<uint64_t>(memType);
+    }
+    
+    return combined;
+}
+
+struct CcuMemInfo;
+
 struct CcuResSpecInfo {
     // 基础信息
     uint32_t msId{0};
@@ -69,6 +110,10 @@ struct CcuResSpecInfo {
     // 额外资源信息
     uint32_t wqeBBNum{CCU_WQEBB_RESOURCE_NUM};
     uint32_t dieNum{MAX_CCU_IODIE_NUM};
+
+    // 内存信息
+    uint32_t memNum{0};
+    std::array<CcuMemInfo, CCU_MEM_INFO_SIZE> memInfoList{};
 };
 
 class CcuResSpecifications {
@@ -106,6 +151,9 @@ public:
     HcclResult GetPfeReservedNum(const uint8_t dieId, uint32_t &pfeNum) const;
     HcclResult GetPfeNum(const uint8_t dieId, uint32_t &pfeNum) const;
     HcclResult GetWqeBBNum(const uint8_t dieId, uint32_t &wqeBBNum) const;
+
+    // ccu mem info 
+    HcclResult GetCcuMemInfoList(const uint8_t dieId, struct CcuMemInfo *memInfoList, uint32_t &count);
 
 private:
     int32_t devLogicId{0};

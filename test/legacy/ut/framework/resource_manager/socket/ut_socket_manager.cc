@@ -14,6 +14,7 @@
 #define private public
 #define protected public
 #include "socket_manager.h"
+#include "socket_handle_manager.h"
 #include "communicator_impl.h"
 #undef protected
 #undef private
