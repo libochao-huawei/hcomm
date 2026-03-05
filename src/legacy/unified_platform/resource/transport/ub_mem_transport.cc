@@ -915,18 +915,8 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
         remoteMemCtx.remoteUserMems[index].size = rmtBuffer->GetSize();
     };
     RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> remoteMemCtx{
-        userMemCount,
-        cacheValid_,
-        rmtBufferVec,
-        remoteUserMemTag_,
-        remoteUserMems_,
-        tagCopies_,
-        tagPointers_,
-        cacheBuilder,
-        remoteMem,
-        memTags,
-        memNum
-    };
+        userMemCount, cacheValid_, rmtBufferVec, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
+        cacheBuilder, remoteMem, memTags, memNum};
     CHK_RET(GetRemoteUserMem(remoteMemCtx));
     return HCCL_SUCCESS;
 }
