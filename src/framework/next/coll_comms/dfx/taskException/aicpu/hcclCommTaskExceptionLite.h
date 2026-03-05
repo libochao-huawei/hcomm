@@ -40,6 +40,7 @@ private:
     uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode);
     HcclResult PrintTaskContextInfo(u32 sqId, u32 taskId);
     std::string GetGroupRankInfo(const Hccl::TaskInfo& taskInfo);
+    void PrintEid(const Hccl::TaskInfo* taskInfo);
 
     bool initFlag_{false};
     bool stopCall_{false};

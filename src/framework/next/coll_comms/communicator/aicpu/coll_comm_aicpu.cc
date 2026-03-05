@@ -26,14 +26,15 @@
 #include "aicpu_hccl_def.h"
 #include "kfc.h"
 #include "dlhal_function_v2.h"
+#include "profiling_command_handle_lite.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
 
 HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel,
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // TODO: 临时，该接口头文件还没定
 
-HcclResult __attribute__((weak)) HcommThreadRegisterDfx(ThreadHandle thread,
-    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // TODO: 临时，该接口头文件还没定
+// HcclResult __attribute__((weak)) HcommThreadRegisterDfx(ThreadHandle thread,
+//     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // TODO: 临时，该接口头文件还没定
 
 HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
@@ -120,7 +121,7 @@ HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
 
 HcclResult CollCommAicpu::RegisterThreadAddDfxTaskInfo(ThreadHandle thread) 
 {
- 	return HcommThreadRegisterDfx(thread, dfx_->GetCallBack());
+ 	return HcommThreadRegisterDfx(thread, dfx_.GetCallback());
 }
 
 HcclResult CollCommAicpu::AllocChannelResource(HcclChannelUrmaRes *commParam)
@@ -270,7 +271,7 @@ HcclResult CollCommAicpu::RegisterProfCallBack()
 {
     if (MsprofRegisterCallback != nullptr) {
         HCCL_INFO("RegisterProfCallBack not null");
-        int32_t ret = MsprofRegisterCallback(AICPU, &DeviceCommandHandle);
+        int32_t ret = MsprofRegisterCallback(AICPU, &Hccl::DeviceCommandHandle);
         CHK_PRT_RET((ret != 0), HCCL_ERROR("[%s] failed. ret = [%d]", __func__, ret), HCCL_E_PARA);
     } else {
         HCCL_INFO("RegisterProfCallBack is null");
