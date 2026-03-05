@@ -696,16 +696,24 @@ void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankCo
     }
 }
 
-void GetNotifyInfo(TaskParam &taskParam, const ErrorMessageReport &errorMessage) {
+void GetTaskParam(TaskParam &taskParam, const ErrorMessageReport &errorMessage) {
     if (errorMessage.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
         taskParam.taskPara.Notify.notifyID = errorMessage.notifyId;
         taskParam.taskPara.Notify.value = errorMessage.notifyValue;
     } else if (errorMessage.taskType == TaskParamType::TASK_UB_REDUCE_INLINE || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
         taskParam.taskPara.Reduce.notifyID = errorMessage.notifyId;
         taskParam.taskPara.Reduce.notifyValue = errorMessage.notifyValue;
+        taskParam.taskPara.Reduce.src = reinterpret_cast<void *>(errorMessage.taskSrcAddr);
+ 	    taskParam.taskPara.Reduce.dst = reinterpret_cast<void *>(errorMessage.taskDstAddr);
+ 	    taskParam.taskPara.Reduce.linkType = errorMessage.linkType;
+ 	    taskParam.taskPara.Reduce.size = errorMessage.size;
     } else if (errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE || errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY) {
         taskParam.taskPara.DMA.notifyID = errorMessage.notifyId;
         taskParam.taskPara.DMA.notifyValue = errorMessage.notifyValue;
+        taskParam.taskPara.DMA.src = reinterpret_cast<void *>(errorMessage.taskSrcAddr);
+ 	    taskParam.taskPara.DMA.dst = reinterpret_cast<void *>(errorMessage.taskDstAddr);
+ 	    taskParam.taskPara.DMA.linkType = errorMessage.linkType;
+ 	    taskParam.taskPara.DMA.size = errorMessage.size;
     }
 }
 
@@ -730,7 +738,7 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
             TaskParam taskParam{};
             taskParam.taskType = errorMessage.taskType;
 
-            GetNotifyInfo(taskParam, errorMessage);
+            GetTaskParam(taskParam, errorMessage);
 
             std::shared_ptr<DfxOpInfo> dfxOpInfo = std::make_shared<DfxOpInfo>();
             dfxOpInfo->tag_ = std::string(errorMessage.tag);
