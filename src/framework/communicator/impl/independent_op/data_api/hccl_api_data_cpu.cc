@@ -710,9 +710,9 @@ public:
 public:
     std::string Describe() const
     {
-        return StringFormat(
-            "DfxOpInfo: [collOperator:[%s], tag:[%s], algType:[%u], index:[%u], beginTime:[%llu], endTime:[%llu]",
-            CollOpToString(op_).c_str(), tag_.c_str(), algType_, index_, beginTime_, endTime_);
+        return Hccl::StringFormat(
+            "DfxOpInfo: [tag:[%s], algType:[%u], index:[%u], beginTime:[%llu], endTime:[%llu]",
+             tag_.c_str(), algType_, index_, beginTime_, endTime_);
     }
 };
 
@@ -739,11 +739,11 @@ void SetCollopDataDes(Hccl::CollOperator& collOp, const HcclDfxOpInfo& dfxOpInfo
         collOp.all2AllVCDataDes.sendCountMatrix = dfxOpInfo.all2AllVCDataDes.sendCountMatrix;
     } else if (collOp.opType == Hccl::OpType::BATCHSENDRECV) {
         collOp.batchSendRecvDataDes.itemNum = dfxOpInfo.batchSendRecvDataDes.itemNum;
-        collOp.batchSendRecvDataDes.sendRecvItems = static_cast<void *>(dfxOpInfo.batchSendRecvDataDes.sendRecvItemsPtr);
+        collOp.batchSendRecvDataDes.sendRecvItemsPtr = static_cast<void *>(dfxOpInfo.batchSendRecvDataDes.sendRecvItemsPtr);
     } else {
-        collOp.dataDes.dataCount = dfxOpInfo.dataDes.dataCount
-        collOp.dataDes.dataType = dfxOpInfo.dataDes.dataType;
-        collOp.dataDes.strideCount = dfxOpInfo.dataDes.strideCount;
+        collOp.dataDes.dataCount = dfxOpInfo.dataDes.dataCount;
+        collOp.dataDes.dataType = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.dataDes.dataType);
+        collOp.dataDes.strideCount = dfxOpInfo.dataDes.dataCount;
     }
 }
 
@@ -785,7 +785,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, HcclDfxOpInfo dfxOpInfo)
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
     if (!hcclComm->IsCommunicatorV2()) {
-        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__)
+        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
 
         return HCCL_E_NOT_SUPPORT;
     }
@@ -797,7 +797,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, HcclDfxOpInfo dfxOpInfo)
         dfxOpInfo.opTag = hcclComm->GetIdentifier();
     }
     dfxOpInfo.myRank = collComm->GetMyRankId;//opType
-    dfxOpInfo.tag_ = OpTypeToString(dfxOpInfo.opType);//opType
+    dfxOpInfo.tag_ = Hccl::OpTypeToString(Hccl::OP_TYPE_MAP.at(dfxOpInfo.opType));//opType
     dfxOpInfo.index_ = 0;
     dfxOpInfo.beginTime_ = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
@@ -805,8 +805,9 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, HcclDfxOpInfo dfxOpInfo)
     auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
     dfxOpInfoOnce = ConvertToDfxOpInfo(dfxOpInfo, hcclComm);
     
- 
-    Hccl::MirrorTaskManager* mirrorTaskManage = collComm->GetMirrorTaskManager();
+    HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+    CHK_PTR_NULL(hcclCommDfx);
+    Hccl::MirrorTaskManager* mirrorTaskManage = hcclCommDfx->GetMirrorTaskManager();
     CHK_PTR_NULL(mirrorTaskManage);
     mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
     return HCCL_SUCCESS;
@@ -823,34 +824,34 @@ HcclResult HcclProfilingReportOp(HcclComm comm, unit64_t beginTime)
     hccl::CollComm* collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
     HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+    CHK_PTR_NULL(hcclCommDfx);
     //单算子模式暂时默认true
-    bool opbased = true;
-    bool cachedReq = true;
-    HcclCommDfx->ReportOp(beginTime, cachedReq, opbased);
+    hcclCommDfx->ReportOp(beginTime, true, true);
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclReportAicpuKernel(HcclComm comm, unit64_t beginTime, ThreadHandle thread)
 {
     HCCL_INFO("[%s] START.", __func__);
-    CHK_PRT_RET(thread == nullptr,  HCCL_ERROR("[%s] thread is null", __func__), HCCL_E_PTR);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     u32 taskId = 0;
     u32 streamId =0 ;
     u32 remoteRankId = 0;
     //填充taskId和streamId
-    HrtGetTaskIdAndStreamID(taskId, streamId);
+    Hccl::HrtGetTaskIdAndStreamID(taskId, streamId);
 
     //填入remoteRankId
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
     if (!hcclComm->IsCommunicatorV2()) {
-        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__)
+        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
 
         return HCCL_E_NOT_SUPPORT;
     }
     hccl::CollComm* collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
+    HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+    CHK_PTR_NULL(hcclCommDfx);
     remoteRankId = collComm->GetMyRankId();//todo::查表拿chanelhandle,才能拿到
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
@@ -859,12 +860,12 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, unit64_t beginTime, ThreadHandle
     CHK_PRT_RET(streamPtr == nullptr,  HCCL_ERROR("[%s] streamPtr is null", __func__), HCCL_E_PTR); 
     Hccl::TaskParam taskParam {};
     taskParam.beginTime = beginTime;
-    taskParam.taskType = TaskParamType::TASK_AICPU_KERNEL;
+    taskParam.taskType = Hccl::TaskParamType::TASK_AICPU_KERNEL;
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
  
     shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId, remoteRankId, taskParam,
-        comm->GetMirrorTaskManager().GetCurrDfxOpInfo(), streamPtr->GetIsMaster);
+        hcclCommDfx->GetMirrorTaskManager().GetCurrDfxOpInfo(), streamPtr->GetIsMaster);
  
-    comm->GetMirrorTaskManager().AddTaskInfo(taskInfo);
+    hcclCommDfx->GetMirrorTaskManager().AddTaskInfo(taskInfo);
     HCCL_INFO("[%s] SUCCESS.", __func__);
 }
