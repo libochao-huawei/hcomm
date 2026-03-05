@@ -11,8 +11,8 @@
 #include "calc_transport_req_base.h"
 
 namespace hccl {
-CalcTransportReqBase::CalcTransportReqBase(std::vector<std::vector<u32>> &subCommPlaneVector,
-    std::vector<bool> &isBridgeVector, u32 userRank)
+CalcTransportReqBase::CalcTransportReqBase(const std::vector<std::vector<u32>> &subCommPlaneVector,
+    const std::vector<bool> &isBridgeVector, u32 userRank)
     : subCommPlaneVector_(subCommPlaneVector), isBridgeVector_(isBridgeVector),
     userRank_(userRank)
 {
