@@ -1244,6 +1244,21 @@ notify_base_addr_uninit:
     return ret;
 }
 
+int RaPeerNdaGetDirectFlag(struct RaRdmaHandle *rdmaHandle, int *directFlag)
+{
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    int ret = 0;
+
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[phyId]);
+    RsSetCtx(phyId);
+    ret = RsNdaGetDirectFlag(phyId, rdmaHandle->rdevIndex, directFlag);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[phyId]);
+    if (ret != 0) {
+        hccp_err("[get][directFlag]RsNdaGetDirectFlag failed ret:%d", ret);
+    }
+    return ret;
+}
+
 int RaPeerGetLbMax(struct RaRdmaHandle *rdmaHandle, int *lbMax)
 {
     unsigned int phyId = rdmaHandle->rdevInfo.phyId;
