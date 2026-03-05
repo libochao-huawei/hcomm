@@ -7,14 +7,17 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+
+#include "orion_adapter_rts.h"
 #include "runtime_api_exception.h"
 #include "exception_util.h"
-#include "orion_adapter_rts.h"
 #include "invalid_params_exception.h"
 #include "log.h"
 #include "acl/acl_rt.h"
 #include "driver/ascend_hal.h"
 #include "not_support_exception.h"
+#include "adapter_error_manager_pub.h"
+
 
 using namespace std;
 namespace Hccl {
@@ -382,12 +385,16 @@ void *HrtMalloc(u64 size, aclrtMemType_t memType)
     ret = aclrtMallocWithCfg(&devPtr, size, static_cast<aclrtMemMallocPolicy>(memType), &cfg);
     HCCL_INFO("Call aclrtMallocWithCfg, return value[%d] size[%llu] devPtr[%p], moudleId: HCCL.", ret, size, devPtr);
     if (ret == ACL_ERROR_RT_MEMORY_ALLOCATION) {
+        RPT_INPUT_ERR(true, "EI0007", std::vector<std::string>({"resource_type", "resource_info"}),
+                            std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size)}));
         HCCL_ERROR("[Malloc][Mem]errNo[0x%016llx] aclrtMallocWithCfg failed, "
                    "Reason: out of memory, return[%d], para: devPtrAddr[%p], size[%llu]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, devPtr, size);
         throw RuntimeApiException(StringFormat("call HrtMalloc failed, size=0x%llu", size));
     }
     if (ret != ACL_SUCCESS) {
+        RPT_INPUT_ERR(true, "EI0007", std::vector<std::string>({"resource_type", "resource_info"}),
+                            std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size)}));
         HCCL_ERROR("[Malloc][Mem]errNo[0x%016llx] aclrtMallocWithCfg failed, "
                    "return[%d], para: devPtrAddr[%p], size[%llu]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, devPtr, size);
@@ -593,6 +600,8 @@ void *HrtMallocHost(u64 size)
     HCCL_INFO("Call aclrtMallocHostWithCfg, return value[%d], para: hostPtr[%p], size[%llu], moudleId: HCCL.", ret,
               hostPtr, size);
     if (ret != ACL_SUCCESS) {
+        RPT_INPUT_ERR(true, "EI0007", std::vector<std::string>({"resource_type", "resource_info"}),
+                            std::vector<std::string>({"HostMemory", std::string("size:") + std::to_string(size)}));
         HCCL_ERROR("[Malloc][Host]errNo[0x%016llx] rt malloc host fail. return[%d], "
                    "para: size[%llu].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, size);
