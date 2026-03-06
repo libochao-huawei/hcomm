@@ -99,13 +99,13 @@ void CcuContextAllReduceMesh1D::Algorithm()
             transportIdx++;
         }
     }
-    offSet_      = CreateVariable();
+    offset_      = CreateVariable();
     groupOpSize_ = CreateGroupOpSize();
 
     Load(input_[rankId_]);
     Load(output_[rankId_]);
     Load(token_[rankId_]);
-    Load(offSet_);
+    Load(offset_);
 
     if (ccuVersion_ == CcuVersion::CCU_V1) {
         Load(groupOpSize_);
@@ -130,7 +130,7 @@ void CcuContextAllReduceMesh1D::Algorithm()
     CcuRep::Memory reduceScatterDst = CreateMemory();
     // DST
     reduceScatterDst.addr  = output_[rankId_];
-    reduceScatterDst.addr += offSet_;
+    reduceScatterDst.addr += offset_;
     reduceScatterDst.token = token_[rankId_];
 
     uint32_t dstId = 0;
@@ -144,7 +144,7 @@ void CcuContextAllReduceMesh1D::Algorithm()
             curId = rankSize_ - 1;
         }
         reduceScatterSrc[curId].addr = input_[rankIdx];
-        reduceScatterSrc[curId].addr += offSet_;
+        reduceScatterSrc[curId].addr += offset_;
         reduceScatterSrc[curId].token = token_[rankIdx];
     }
     RunReduce(reduceScatterDst, reduceScatterSrc);
@@ -156,7 +156,7 @@ void CcuContextAllReduceMesh1D::Algorithm()
     }
     // allGather 的输入就是 reduceScatter 的输出
     allGatherSrc.addr  = output_[rankId_];
-    allGatherSrc.addr  += offSet_;
+    allGatherSrc.addr  += offset_;
     allGatherSrc.token = token_[rankId_];
 
     dstId = 0;
@@ -169,7 +169,7 @@ void CcuContextAllReduceMesh1D::Algorithm()
             curId = rankSize_ - 1;
         }
         allGatherDst[curId].addr = output_[rankIdx];
-        allGatherDst[curId].addr += offSet_;
+        allGatherDst[curId].addr += offset_;
         allGatherDst[curId].token = token_[rankIdx];
     }
     RunBroadcast(allGatherDst, allGatherSrc);
@@ -192,7 +192,7 @@ std::vector<uint64_t> CcuContextAllReduceMesh1D::GeneArgs(const CcuTaskArg &arg)
     uint64_t outputAddr = taskArg->outputAddr_;
     uint64_t tokenInfo  = taskArg->token_;
     uint64_t sliceSize  = taskArg->sliceSize_;
-    uint64_t offset     = taskArg->offSet_;
+    uint64_t offset     = taskArg->offset_;
 
     if (ccuVersion_ == CcuVersion::CCU_V1) {
         auto goSize = CalGoSize(sliceSize);
