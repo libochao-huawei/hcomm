@@ -82,13 +82,7 @@ CcuTransportGroup::CcuTransportGroup(const vector<CcuTransport*> &transports, u3
 
 TransportGrpStatus CcuTransportGroup::GetGrpStatus() const
 {
-    const char* statusStr = nullptr;
-    switch (grpStatus) {
-        case TransportGrpStatus::INIT: statusStr = "INIT"; break;
-        case TransportGrpStatus::FAIL: statusStr = "FAIL"; break;
-        default: statusStr = "UNKNOWN";
-    }
-    HCCL_INFO("[CcuTransportGroup] current group status [%s].", statusStr);
+    HCCL_INFO("[CcuTransportGroup] current group status [%s].", grpStatus.Describe().c_str());
     return grpStatus;
 }
 
