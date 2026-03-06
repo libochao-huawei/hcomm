@@ -51,7 +51,7 @@ HcclResult UbMemTransport::FillTagVec()
     uint32_t index = 0;
     for (auto &localRmaBuffer : commonLocRes.bufferVec) {
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
-        std::string tag = localRmaBuffer->GetBuf()->GetMemTag()
+        std::string tag = localRmaBuffer->GetBuf()->GetMemTag();
         if (localRmaBuffer == nullptr) {
             HCCL_WARNING("[UbMemTransport][FillTagVec] localRmaBuffer is nullptr. memHandleNum: %d", index);
         } else {
