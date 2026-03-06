@@ -33,6 +33,7 @@ HcclResult HcclCommDfx::Init(u32 deviceId, const std::string comTag) {
     setAddTaskCallback_ = [this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
         return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle);
     };
+    HCCL_INFO("[%s]deviceId[%u], comTag[%s]", __func__, deviceId, comTag.c_str());
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 
@@ -47,22 +48,21 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl
     EXECEPTION_CATCH(taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
         remoteRankId, taskParam, mirrorTaskManager_->GetCurrDfxOpInfo()), return HCCL_E_PTR);
     EXECEPTION_CATCH(mirrorTaskManager_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
+    HCCL_INFO("[%s]taskInfo: %s", __func__, taskInfo->Describe().c_str());
     return HCCL_SUCCESS;
 }
 
 // HcclCommDfx接口实现 - 修改为返回HcclResult类型
 HcclResult HcclCommDfx::ReportAllTasks(bool cachedReq) {
-    if (profiling_) {
-        profiling_->ReportAllTasks(cachedReq);
-    }
-    return HCCL_E_PTR; // profiling_为空返回指针错误码
+    CHK_PTR_NULL(profiling_);
+    profiling_->ReportAllTasks(cachedReq);
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommDfx::ReportOp(u64 beginTime, bool cachedReq, bool opbased) {
-    if (profiling_) {
-        profiling_->ReportOp(beginTime, cachedReq, opbased);
-    }
-    return HCCL_E_PTR; // profiling_为空返回指针错误码
+    CHK_PTR_NULL(profiling_);
+    profiling_->ReportOp(beginTime, cachedReq, opbased);
+    return HCCL_SUCCESS;
 }
 
 // void HcclCommDfx::CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
@@ -72,10 +72,9 @@ HcclResult HcclCommDfx::ReportOp(u64 beginTime, bool cachedReq, bool opbased) {
 // }
 
 HcclResult HcclCommDfx::UpdateProfStat() {
-    if (profiling_) {
-        profiling_->UpdateProfStat();
-    }
-    return HCCL_E_PTR; // profiling_为空返回指针错误码
+    CHK_PTR_NULL(profiling_);
+    profiling_->UpdateProfStat();
+    return HCCL_SUCCESS;
 }
 
 Hccl::MirrorTaskManager* HcclCommDfx::GetMirrorTaskManager() const {
@@ -99,7 +98,7 @@ HcclResult HcclCommDfx::GetChannelRemoteRankId(const std::string& commTag, u64 h
         return HCCL_E_PARA;
     }
     if(channelRemoteRankId_[commTag].find(handle) == channelRemoteRankId_[commTag].end()) {
-         HCCL_ERROR("[HcclCommDfx]handle not found,commTag:[%s],handle:[%lu]", commTag.c_str(), handle);
+        HCCL_ERROR("[HcclCommDfx]handle not found,commTag:[%s],handle:[%lu]", commTag.c_str(), handle);
         rwLock_.readUnlock();
         return HCCL_E_PARA;
     }
