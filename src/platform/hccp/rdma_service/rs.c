@@ -366,11 +366,6 @@ STATIC int RsGetChipLogicId(unsigned int chipId, enum NetworkMode hccpMode, unsi
 {
     int ret = 0;
 
-    // other modes skip
-    if (hccpMode != NETWORK_OFFLINE) {
-        return 0;
-    }
-
     ret = DlDrvDeviceGetIndexByPhyId(chipId, logicId);
     CHK_PRT_RETURN(ret != 0, hccp_err("hal get logicId failed, chipId[%u], ret[%d]", chipId, ret), -ENODEV);
 
