@@ -75,7 +75,7 @@ public:
 
     HcclResult Init();
     HcclResult GetSocket(const std::string &socketTag, Hccl::Socket*& socket);
-    HcclResult CreateChannel(EndpointHandle endpointHandle, CommEngine engine, 
+    HcclResult CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels);
 
 private:
