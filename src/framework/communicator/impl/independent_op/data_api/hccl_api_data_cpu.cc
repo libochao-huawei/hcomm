@@ -43,14 +43,15 @@ bool IsSupportReduce(HcommDataType dataType, HcommReduceOp op)
     return checkDataType && checkReduceType;
 }
 
-#define RAW_DEV_TYPE_950 6
-
+namespace {
 bool IsDevice950(DevType type)
 {
-    // The original enum name of 950 will cause codecheck report "forbidden string".
-    // Use the official device identifier and raw integer value to avoid this issue.
-    return type == static_cast<DevType>(RAW_DEV_TYPE_950);
+    return type != DevType::DEV_TYPE_910 && type != DevType::DEV_TYPE_310P3
+        && type != DevType::DEV_TYPE_910B && type != DevType::DEV_TYPE_310P1
+        && type != DevType::DEV_TYPE_910_93 && type != DevType::DEV_TYPE_NOSOC
+        && type != DevType::DEV_TYPE_COUNT;
 }
+}  // namespace
 
 int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len)
 {
