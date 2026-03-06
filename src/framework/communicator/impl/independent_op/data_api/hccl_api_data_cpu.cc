@@ -485,9 +485,9 @@ int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *d
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
         __func__, thread, channel, dst, src, len);
 
-    (void)thread;
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
+    (void)thread;
 
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
