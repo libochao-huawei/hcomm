@@ -164,12 +164,12 @@ HcclResult TopoMatchBase::GenerateLevel1(
     std::vector<std::vector<RankId>> &virtRanks) const
 {
     CHK_PRT_RET((gcdInstSize == 0),
-                HCCL_ERROR("[CollAlgFactory] [TopoMatchConcurrMeshNHR] Rank [%d], gcdInstSize = 0", myRank_),
+                HCCL_ERROR("[CollAlgFactory] [TopoMatchBase] Rank [%d], gcdInstSize = 0", myRank_),
                 HcclResult::HCCL_E_PARA);
 
     auto rankIter = rankSetLevel1.find(rankId);
     CHK_PRT_RET((rankIter == rankSetLevel1.end()),
-                HCCL_ERROR("[CollAlgFactory] [TopoMatchConcurrMeshNHR] Rank [%d], "
+                HCCL_ERROR("[CollAlgFactory] [TopoMatchBase] Rank [%d], "
                            "failed to find this rank in rankSetLevel1[%s].",
                            myRank_, PrintSet<RankId>(rankSetLevel1).c_str()),
                 HcclResult::HCCL_E_PARA);
