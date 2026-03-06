@@ -9,6 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hcclCommDfx.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/hcclCommOp.cc
 )
 
 target_sources(hcomm PRIVATE
@@ -17,6 +18,7 @@ target_sources(hcomm PRIVATE
 
 set(device_src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hcclCommDfxLite.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/hcclCommOp.cc
 )
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))

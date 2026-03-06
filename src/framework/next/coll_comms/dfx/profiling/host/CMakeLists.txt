@@ -8,7 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
-hcclCommProfiling.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/hcclCommProfiling.cc
 )
 
 target_sources(hcomm PRIVATE

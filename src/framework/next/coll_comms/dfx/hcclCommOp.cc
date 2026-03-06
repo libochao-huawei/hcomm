@@ -68,7 +68,7 @@ std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpIn
     dfxOpInfoOnce->tag_ = dfxOpInfo.tag_;
     dfxOpInfoOnce->algType_ = dfxOpInfo.algType;
     dfxOpInfoOnce->index_ = dfxOpInfo.index_;
-    dfxOpInfoOnce->mainStreamId_ = dfxOpInfo.mainStreamId_;
+    // dfxOpInfoOnce->mainStreamId_ = dfxOpInfo.mainStreamId_;
     dfxOpInfoOnce->beginTime_ = dfxOpInfo.beginTime_;
     return dfxOpInfoOnce;
 }
