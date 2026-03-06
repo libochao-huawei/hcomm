@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCLV2_TOPO_MATCH_MESH
-#define HCCLV2_TOPO_MATCH_MESH
+#ifndef HCCLV2_TOPO_MATCH_PARTIAL_MESH
+#define HCCLV2_TOPO_MATCH_PARTIAL_MESH
 #include <string>
 #include <vector>
 #include <map>
@@ -48,4 +48,4 @@ private:
 };
 } // namespace Hccl
 
-#endif // !HCCLV2_TOPO_MATCH_MESH
+#endif // !HCCLV2_TOPO_MATCH_PARTIAL_MESH

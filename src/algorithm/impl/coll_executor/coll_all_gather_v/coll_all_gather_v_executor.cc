@@ -177,13 +177,13 @@ HcclResult CollAllGatherVExecutor::RunLoop(OpParam &param, AlgResourceResponse &
             ret);
         
         if (!DMAReduceFlag_) {
-            u64 offSetCount = 0;
+            u64 offsetCount = 0;
             // 如果使用CCL buffer，需要将CCL buffer out中的结果拷贝到user buffer out
             for (u32 i = 0; i < topoAttr_.userRankSize; i++) {
                 // 拷贝中转output上每个slice的数据到output内存，目的端中每个slice的size固定为output的size
                 DeviceMem dstMem = DeviceMem::create(curOutputPtr + curDispls[i] * unitSize, curCounts[i] * unitSize);
-                DeviceMem srcMem = DeviceMem::create(commOutputPtr + offSetCount * unitSize, curCounts[i] * unitSize);
-                offSetCount += curCounts[i];
+                DeviceMem srcMem = DeviceMem::create(commOutputPtr + offsetCount * unitSize, curCounts[i] * unitSize);
+                offsetCount += curCounts[i];
                 CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, param.stream));
             }
         }
