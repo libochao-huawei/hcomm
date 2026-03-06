@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <unordered_map>
 #include "virtual_topo.h"
 #include "string_util.h"
 #include "binary_stream.h"
@@ -564,7 +565,7 @@ void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId
                 shared_ptr<NetInstance> &newNetInstance, RankId2PeerMap &tmpPeers)
 {
     // 不添加绕路link
-    if (oldLink.GetHop() > 1) {
+    if (oldLink.GetHop() > 1 && oldLink.GetType() != LinkType::PEER2NET) {
         return;
     }
 

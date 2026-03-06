@@ -16,7 +16,6 @@
 #include <sstream>
 #include <set>
 #include "exception_util.h"
-#include "invalid_params_exception.h"
 #include "dma_mode.h"
 #include "ip_address.h"
 #include "op_type.h"
@@ -116,7 +115,7 @@ template <class T> inline T Str2T(const std::string &s)
 {
     // 检查数字长度
     if (s.size() > MAX_LEN_OF_DIGIT_ENV) {
-        THROW<InvalidParamsException>(StringFormat("Invalid env len, len is bigger than %u.", MAX_LEN_OF_DIGIT_ENV));
+        THROW<InvalidParamsException>(StringFormat("Invalid env len, len[%zu] should not be bigger than %u.", s.size(), MAX_LEN_OF_DIGIT_ENV));
     }
     // 检查是否为全数字
     if (!std::all_of(s.begin(), s.end(), ::isdigit)) {

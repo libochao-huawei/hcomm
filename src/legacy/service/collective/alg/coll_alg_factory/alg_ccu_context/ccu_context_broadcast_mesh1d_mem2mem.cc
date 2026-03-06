@@ -70,8 +70,8 @@ void CcuContextBroadcastMesh1DMem2Mem::InitResource()
                        rankId_, peerId, transportIdx);
             // 判断transport是否为空，为空直接报错
             CHK_PRT_THROW(
-                transports[transportIdx] == nullptr,
-                HCCL_ERROR("[CcuContextBroadcastMesh1DMem2Mem] [InitResource] transports[%u] is nullptr",
+                transports[transportIdx] == nullptr || transportIdx >= transports.size(),
+                HCCL_ERROR("[CcuContextBroadcastMesh1DMem2Mem] [InitResource] transports[%u] is nullptr or out of bounds",
                            transportIdx),
                 NullPtrException, "transport is null");
             input_.push_back(

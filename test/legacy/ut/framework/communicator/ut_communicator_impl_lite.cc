@@ -266,13 +266,8 @@ TEST_F(CommunicatorImplLiteTest, test_update_comm_success)
     MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::NotifyWait).stubs().with(any());
     MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::NotifyRecordLoc).stubs().with(any());
 
-    // 不需要更新资源
-    service.isSuspended = true;
     HcclKernelParamLite kernelParam;
-    auto ret = service.UpdateComm(&kernelParam);
-    EXPECT_EQ(ret, 0);
-
-    // 需要更新资源
+    // Ns快恢模式，必须更新资源
     service.isSuspended = true;
     MOCKER_CPP(&CommunicatorImplLite::CheckNeedUpdateRes).stubs().will(returnValue(true));
 
@@ -285,7 +280,7 @@ TEST_F(CommunicatorImplLiteTest, test_update_comm_success)
     kernelParam.binaryResSize = buffer.size();
 
     MOCKER_CPP(&MemTransportLiteMgr::ParseAllPackedData).stubs().with(any());
-    ret = service.UpdateComm(&kernelParam);
+    auto ret = service.UpdateComm(&kernelParam);
     EXPECT_EQ(ret, 0);
 }
 

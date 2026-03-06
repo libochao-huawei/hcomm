@@ -42,6 +42,7 @@
 #include "coll_operator_check.h"
 #include "timeout_exception.h"
 #include "rdma_handle_manager.h"
+#include "internal_exception.h"
 
 #undef private
 #undef protected
@@ -634,7 +635,7 @@ TEST_F(CcuInsPreprocessorTest, should_error_log_when_calling_fallback)
 TEST_F(CcuInsPreprocessorTest, should_when_calling_createccuctx)
 {
     // when
-    CcuTransportGroup *group;
+    CcuTransportGroup *group = (CcuTransportGroup*)0xabcd;
     MOCKER_CPP(&CcuTransportGroupMgr::PrepareCreate).stubs().with(any(), any()).will(returnValue(group));
     MOCKER(GenerateCcuCtxSignature)
         .stubs()

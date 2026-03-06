@@ -30,6 +30,8 @@ set(rs_list
     ctx/rs_ctx.c
     ctx/rs_esched.c
     ctx/rs_ub.c
+    ctx/rs_ub_dfx.c
+    ctx/rs_ub_tp.c
     ctx/product/ascend910_95/rs_ub_jetty.c
     ctx/product/ascend910_95/rs_ub_jfc.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/dl_hal_function.c
@@ -59,11 +61,11 @@ target_include_directories(rs PRIVATE
 
     # 第三方库依赖路径
     ${OPENSSL_INCLUDE_DIR}
-    ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/tls_adp
-    ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/kms
+    ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/tls_adp
+    ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/kms
 
     # rdma头文件
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/inc/driver
@@ -74,6 +76,7 @@ target_include_directories(rs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ccu
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/net_adapt
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ubengine
+    ${URMA_INCLUDE_DIR}
 )
 
 if(NOT BUILD_OPEN_PROJECT)
@@ -107,6 +110,7 @@ target_compile_definitions(rs PRIVATE
     $<$<AND:$<STREQUAL:${USE_ALOG},0>,$<STREQUAL:${PRODUCT_SIDE},device>>:CUSTOM_INTERFACE>
     $<$<STREQUAL:${PRODUCT_SIDE},device>:google=ascend_private>
     $<$<STREQUAL:${PRODUCT_SIDE},device>:CONFIG_TLV>
+    CONFIG_V121
 )
 
 

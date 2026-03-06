@@ -38,19 +38,19 @@ enum AlgorithmType {
 class Mc2Selector : public BaseSelector {
 public:
     SelectorStatus SelectDefaultCcuMsAlgo(
-        const CollAlgOperator &op,const CollAlgParams &params, std::string &primQueueGenName);
+        const CollAlgOperator &op,const CollAlgParams &params, std::string &primQueueGenName) const;
 
     SelectorStatus SelectDefaultCcuSchedAlgo(
-        const CollAlgOperator &op, const CollAlgParams &params, std::string &primQueueGenName);
+        const CollAlgOperator &op, const CollAlgParams &params, std::string &primQueueGenName) const;
 
     SelectorStatus SelectDefaultAicpuAlgo(
-        const CollAlgOperator &op,const CollAlgParams &params, std::string &primQueueGenName);
+        const CollAlgOperator &op,const CollAlgParams &params, std::string &primQueueGenName) const;
 
     SelectorStatus SelectCcuMsAlgo(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName);
 
-    SelectorStatus SelectCcuSchedAlgo(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName);
+    SelectorStatus SelectCcuSchedAlgo(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName) const;
 
-    SelectorStatus SelectAicpuAlgo(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName);
+    SelectorStatus SelectAicpuAlgo(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName) const;
 
     SelectorStatus Select(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName) override;
 

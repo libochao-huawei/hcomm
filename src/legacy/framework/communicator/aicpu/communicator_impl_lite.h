@@ -185,12 +185,14 @@ public:
         return profilingReporterLite.get();
     }
 
-    HcclResult SendErrorMessageReportToHost(ErrorMessageReport & errMsgInfo);
-    u32 GetUserStreamId() {
+    HcclResult SendErrorMessageReportToHost(ErrorMessageReport &errMsgInfo);
+    u32 GetUserStreamId() const
+    {
         return userStreamId_;
     }
 
-    bool IsErrorReported() {
+    bool IsErrorReported() const
+    {
         return isErrorReported_;
     }
 
@@ -240,7 +242,7 @@ private:
 
     std::unique_ptr<CollAlgComponentLite>          algComponentLite{};
 
-    void RestoreOpRes(const string &opTag, const string &algName, u64 addr, u64 bufSize);
+    void RestoreOpRes(const string &opTag, const string &tagKey, u64 addr, u64 bufSize);
 
     void RestoreAllTransports(u64 addr, u64 bufSize);
     unique_ptr<HDCommunicateLite> kfcControlTransferH2D = std::make_unique<HDCommunicateLite>();

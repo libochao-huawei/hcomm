@@ -27,7 +27,6 @@ public:
     u64          beginTime_;
     u64          endTime_;
     void        *comm_;
-    u32          mainStreamId_;
 
 public:
     std::string Describe() const
@@ -42,13 +41,14 @@ class TaskInfo {
 public:
     u32                        streamId_;
     u32                        taskId_;
-    u32                        remoteRank_;
+    u32                        remoteRank_{0xffffffff};
     TaskParam                  taskParam_;
     std::shared_ptr<DfxOpInfo> dfxOpInfo_;
+    bool                       isMaster_;
 
 public:
     TaskInfo(u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam,
-             std::shared_ptr<DfxOpInfo> dfxOpInfo = nullptr);
+              std::shared_ptr<DfxOpInfo> dfxOpInfo = nullptr, bool isMaster = false);
 
     std::string Describe() const;
 

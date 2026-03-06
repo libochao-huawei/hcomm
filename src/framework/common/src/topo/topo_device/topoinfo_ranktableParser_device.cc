@@ -164,11 +164,6 @@ void TopoInfoRanktableParser::GenerateSuperPodIdx(const std::string &superPodId,
     return;
 }
 
-HcclResult TopoInfoRanktableParser::CheckUniqueIntegerAndInsertPool(const std::string &serverId)
-{
-    return HCCL_E_NOT_SUPPORT;
-}
-
 HcclResult TopoInfoRanktableParser::ConvertIpAddress(const std::string &ipStr, HcclIpAddress &ipAddr)
 {
     return HCCL_E_NOT_SUPPORT;

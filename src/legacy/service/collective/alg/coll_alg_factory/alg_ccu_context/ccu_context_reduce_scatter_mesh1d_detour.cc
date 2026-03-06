@@ -46,8 +46,8 @@ CcuContextReduceScatterMeshDetour1D::CcuContextReduceScatterMeshDetour1D(const C
     HCCL_INFO("[CcuContextReduceScatterMeshDetour1D] Init, CtxArgs are rankId[%u], rankSize[%u], dataType[%s], "
         "outputDataType[%s], reduceOp[%s]", rankId_, rankSize_, dataType_.Describe().c_str(),
         outputDataType_.Describe().c_str(), reduceOp.Describe().c_str());
-    if (transports.size() == 0) {
-        THROW<NullPtrException>(StringFormat("CcuContextReduceScatterMeshDetour1D transports is empty"));
+    if (transports.size() == 0 || transports.size() < rankSize_ - 1) {
+        THROW<NullPtrException>(StringFormat("CcuContextReduceScatterMeshDetour1D transports is empty or size is less"));
     }
     HCCL_INFO("[CcuContextReduceScatterMeshDetour1D] transport.size[%zu]", transports.size());
     for (uint32_t i = 0; i < pathNumPerPeer_; i++) {

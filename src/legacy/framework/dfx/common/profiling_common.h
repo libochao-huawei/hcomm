@@ -9,6 +9,12 @@
  */
 #ifndef PROFILING_COMMON_H
 #define PROFILING_COMMON_H
+#include <map>
+#include <string>
+
+#include "task_param.h"
+#include "enum_factory.h"
+
 namespace Hccl {
 
 MAKE_ENUM(HcclWorkflowMode, HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB = 0, HCCL_WORKFLOW_MODE_OP_BASE = 1,
@@ -30,6 +36,7 @@ const std::map<TaskParamType, std::string> PROF_TASK_OP_NAME_V2 = {
     {TaskParamType::TASK_WRITE_WITH_NOTIFY, "Write_With_Notify"},
     {TaskParamType::TASK_UB_INLINE_WRITE, "Ub_Inline_Write"},
     {TaskParamType::TASK_UB_REDUCE_INLINE, "Ub_Reduce_Inline"},
+    {TaskParamType::TASK_UB, "Ub_Write_Or_Read"},
     {TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY, "Reuce_With_Notify"},
     {TaskParamType::TASK_CCU, "Ccu"},
     {TaskParamType::TASK_AICPU_KERNEL, "AicpuKernel"},

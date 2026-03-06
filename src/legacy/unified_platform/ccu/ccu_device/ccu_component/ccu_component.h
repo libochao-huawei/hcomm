@@ -36,6 +36,8 @@ public:
     HcclResult GetCcuResourceSpaceBufInfo(const uint8_t dieId, uint64_t &addr, uint64_t &size) const;
     HcclResult GetCcuResourceSpaceTokenInfo(const uint8_t dieId, uint64_t &tokenId,
         uint64_t &tokenValue) const;
+    HcclResult GetCcuResourceSpaceTokenInfoForLocal(const uint8_t dieId, uint64_t &tokenId,
+    uint64_t &tokenValue) const;
 
     HcclResult AllocChannels(const uint8_t dieId, const ChannelPara &channelPara,
         std::vector<ChannelInfo> &channelInfos);
@@ -76,6 +78,8 @@ private:
     std::unordered_map<uint8_t, std::pair<uint32_t, IpAddress>> loopFeIpAddrMap{};
     // 记录CCU资源空间Buffer，避免重复内存注册
     std::unordered_map<uint8_t, std::unique_ptr<LocalUbRmaBuffer>> ccuRmaBufferMap{};
+    std::unordered_map<uint8_t, std::unique_ptr<LocalUbRmaBuffer>> localCcuRmaBufferMap{};
+    std::vector<std::unique_ptr<LocalUbRmaBuffer>> additionalCcuRmaBufferMap{};
     // 资源管理器
     std::array<std::unique_ptr<CcuChannelMgr>, MAX_CCU_IODIE_NUM> channelMgrs{};
     std::array<std::unique_ptr<CcuResAllocator>, MAX_CCU_IODIE_NUM> resAllocators{};

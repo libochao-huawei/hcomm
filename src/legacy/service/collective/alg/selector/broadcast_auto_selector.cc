@@ -98,7 +98,8 @@ SelectorStatus BroadcastAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
                 primQueueGenName = "CcuBroadcastParallelMesh1DNHR";
             }
         } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
-            HCCL_WARNING("[Algo][BroadcastAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.");
+            HCCL_WARNING("[Algo][BroadcastAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
+                topoInfo.level0Shape);
                 return SelectorStatus::NOT_MATCH;
         } else {
             HCCL_WARNING("[Algo][BroadcastAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",

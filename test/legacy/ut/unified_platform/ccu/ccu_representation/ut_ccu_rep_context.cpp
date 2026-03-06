@@ -20,6 +20,7 @@
 #include "ccu_rep_context.h"
 #include "ccu_context_resource.h"
 #include "ccu_rep.h"
+#include "internal_exception.h"
 #undef protected
 #undef private
 #include "log.h"

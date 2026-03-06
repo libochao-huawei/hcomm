@@ -25,7 +25,9 @@
 #include <dlfcn.h>
 #include <fnmatch.h>
 #include "securec.h"
+#include "rs_common_inner.h"
 #include "rs_inner.h"
+#include "rs_rdma_inner.h"
 #include "rs_drv_rdma.h"
 #include "rs_epoll.h"
 #include "rs_tls.h"
@@ -142,6 +144,7 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_GET_VNIC_IP_INFOS_V1, 1},
     {RA_RS_GET_VNIC_IP_INFOS, 1},
 #ifdef CONFIG_TLV
+    {RA_RS_TLV_INIT_V1, 2},
     {RA_RS_TLV_INIT, 1},
     {RA_RS_TLV_DEINIT, 1},
     {RA_RS_TLV_REQUEST, 1},
@@ -325,51 +328,6 @@ int RsRdev2rdevCb(unsigned int chipId, unsigned int rdevIndex, struct RsRdevCb *
     return 0;
 }
 
-int RsFd2conn(int fd, struct RsConnInfo **conn)
-{
-    struct rs_cb *rsCb = NULL;
-    struct RsConnInfo *connTmp = NULL;
-    struct RsConnInfo *connTmp2 = NULL;
-    struct RsListHead *head = NULL;
-
-    if (gRsCb != NULL) {
-        rsCb = gRsCb;
-    } else {
-        hccp_err("g_rs_cb is NULL");
-        return -ENODEV;
-    }
-
-    RS_PTHREAD_MUTEX_LOCK(&rsCb->connCb.connMutex);
-    head = &rsCb->connCb.serverConnList;
-    RS_LIST_GET_HEAD_ENTRY(connTmp, connTmp2, head, list, struct RsConnInfo);
-    for (; &connTmp->list != head;
-        connTmp = connTmp2, connTmp2 = list_entry(connTmp2->list.next, struct RsConnInfo, list)) {
-        if (connTmp->connfd == fd) {
-            *conn = connTmp;
-            RS_PTHREAD_MUTEX_ULOCK(&rsCb->connCb.connMutex);
-            return 0;
-        }
-    }
-
-    head = &rsCb->connCb.clientConnList;
-    RS_LIST_GET_HEAD_ENTRY(connTmp, connTmp2, head, list, struct RsConnInfo);
-    for (; &connTmp->list != head;
-        connTmp = connTmp2, connTmp2 = list_entry(connTmp2->list.next, struct RsConnInfo, list)) {
-        if (connTmp->connfd == fd) {
-            *conn = connTmp;
-            RS_PTHREAD_MUTEX_ULOCK(&rsCb->connCb.connMutex);
-            return 0;
-        }
-    }
-
-    RS_PTHREAD_MUTEX_ULOCK(&rsCb->connCb.connMutex);
-
-    hccp_warn("cannot find conn node for fd:%d!", fd);
-    *conn = NULL;
-
-    return -ENODEV;
-}
-
 STATIC int RsPthreadMutexInit(struct rs_cb *rscb, struct RsInitConfig *cfg)
 {
     int ret;
@@ -454,7 +412,7 @@ STATIC int RsInitRscbCfg(struct rs_cb *rscb)
     productType = RsGetProductType(rscb->logicId);
     CHK_PRT_RETURN(productType == PRODUCT_TYPE_INVALID, hccp_err("rs get product type failed", ret), -EINVAL);
 #ifdef CUSTOM_INTERFACE
-    if (RsIsUdmaSupported()) {
+    if (RsIsUdmaSupported() || RsIsRdmaSupported()) {
         ret = RsGetChipProtocol(rscb->chipId, rscb->hccpMode, &rscb->protocol, rscb->logicId);
         CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_chip_protocol failed, ret[%d]", ret), ret);
         ret = RsCtxApiInit(rscb->hccpMode, rscb->protocol);
@@ -496,7 +454,7 @@ create_pthread_err:
     rs_ssl_deinit(rscb);
 ssl_init_err:
 #ifdef CUSTOM_INTERFACE
-    if (RsIsUdmaSupported()) {
+    if (RsIsUdmaSupported() || RsIsRdmaSupported()) {
         RsDeInitNetAdapt(rscb);
 net_adapt_init_err:
         RsEschedDeinit(rscb->protocol);
@@ -514,7 +472,7 @@ STATIC void RsDeinitRscbCfg(struct rs_cb *rscb)
     int ret;
 
 #ifdef CUSTOM_INTERFACE
-    if (RsIsUdmaSupported()) {
+    if (RsIsUdmaSupported() || RsIsRdmaSupported()) {
         RsDeInitNetAdapt(rscb);
         RsEschedDeinit(rscb->protocol);
         (void)RsCtxApiDeinit(rscb->hccpMode, rscb->protocol);
@@ -1414,7 +1372,6 @@ STATIC void RsHeterogTcpFreeFdNode(struct RsHeterogTcpFdInfo *fdNode)
     RS_PTHREAD_MUTEX_ULOCK(&gRsCb->mutex);
 }
 
-/*lint -e429 */
 RS_ATTRI_VISI_DEF int RsEpollCtlAdd(const void *fdHandle, enum RaEpollEvent event)
 {
     struct RsHeterogTcpFdInfo *fdNode = NULL;
@@ -1459,7 +1416,6 @@ out:
     fdNode = NULL;
     return ret;
 }
-/*lint +e429 */
 
 RS_ATTRI_VISI_DEF int RsEpollCtlMod(const void *fdHandle, enum RaEpollEvent event)
 {
@@ -2033,7 +1989,7 @@ STATIC void RsDeinitFreeRscb(struct rs_cb *rscb)
     RsDestroyEpoll(rscb);
 
 #ifdef CUSTOM_INTERFACE
-    if (RsIsUdmaSupported()) {
+    if (RsIsUdmaSupported() || RsIsRdmaSupported()) {
         RsDeInitNetAdapt(rscb);
         RsEschedDeinit(rscb->protocol);
         (void)RsCtxApiDeinit(rscb->hccpMode, rscb->protocol);
@@ -2336,103 +2292,6 @@ RS_ATTRI_VISI_DEF int RsGetCqeErrInfoList(unsigned int phyId, unsigned int rdevI
 
     *num = cqeErrIdx;
 
-    return 0;
-}
-
-RS_ATTRI_VISI_DEF int RsCreateEventHandle(int *eventHandle)
-{
-    int ret;
-
-    ret = RsEpollCreateEpollfd(eventHandle);
-    CHK_PRT_RETURN(ret, hccp_err("[rs_create_event_handle]rs_epoll_create_epollfd failed ret(%d)", ret), ret);
-    return 0;
-}
-
-RS_ATTRI_VISI_DEF int RsCtlEventHandle(int eventHandle, const void *fdHandle, int opcode,
-    enum RaEpollEvent event)
-{
-    int fd = RS_FD_INVALID;
-    unsigned int tmpEvent;
-    int ret;
-
-    if (eventHandle < 0) {
-        hccp_err("[rs_ctl_event_handle]event_handle[%d] is invalid", eventHandle);
-        return -EINVAL;
-    }
-    if (fdHandle == NULL) {
-        hccp_err("[rs_ctl_event_handle]fd_handle is NULL");
-        return -EINVAL;
-    }
-    if (opcode != EPOLL_CTL_ADD && opcode != EPOLL_CTL_DEL && opcode != EPOLL_CTL_MOD) {
-        hccp_err("[rs_ctl_event_handle]opcode[%d] invalid, valid opcode includes {%d, %d, %d}",
-            opcode, EPOLL_CTL_ADD, EPOLL_CTL_DEL, EPOLL_CTL_MOD);
-        return -EINVAL;
-    }
-
-    if (event == RA_EPOLLONESHOT) {
-        tmpEvent = EPOLLIN | EPOLLET | EPOLLONESHOT;
-    } else if (event == RA_EPOLLIN) {
-        tmpEvent = EPOLLIN;
-    } else if (event == RA_EPOLLOUT) {
-        tmpEvent = EPOLLOUT;
-    } else if (event == RA_EPOLLOUT_LET_ONESHOT) {
-        tmpEvent = EPOLLOUT | EPOLLET | EPOLLONESHOT;
-    } else {
-        hccp_err("[rs_ctl_event_handle]unknown event[%d]", event);
-        return -EINVAL;
-    }
-
-    tmpEvent = tmpEvent | EPOLLRDHUP;
-    fd = ((const struct SocketPeerInfo *)fdHandle)->fd;
-
-    ret = RsEpollCtlFdHandle(eventHandle, opcode, fd, tmpEvent, (void*)fdHandle);
-    CHK_PRT_RETURN(ret, hccp_err("[rs_ctl_event_handle]rs_epoll_ctl_fd_handle failed ret(%d), fd:%d", ret, fd), ret);
-    return 0;
-}
-
-RS_ATTRI_VISI_DEF int RsWaitEventHandle(int eventHandle, struct SocketEventInfoT *eventInfos,
-    int timeout, unsigned int maxevents, unsigned int *eventsNum)
-{
-    int ret;
-
-    if (eventHandle < 0) {
-        hccp_err("[rs_wait_event_handle]event_handle[%d] is invalid", eventHandle);
-        return -EINVAL;
-    }
-
-    if (eventInfos == NULL) {
-        hccp_err("[rs_wait_event_handle]event_info is NULL");
-        return -EINVAL;
-    }
-
-    if (timeout < -1) {
-        hccp_err("[rs_wait_event_handle]timeout[%d] is invalid", timeout);
-        return -EINVAL;
-    }
-
-    if (maxevents > MAX_SOCKET_EVENT_NUM) {
-        hccp_err("[rs_wait_event_handle]maxevents[%u] exceeds %u", maxevents, MAX_SOCKET_EVENT_NUM);
-        return -EINVAL;
-    }
-
-    if (eventsNum == NULL) {
-        hccp_err("[rs_wait_event_handle]events_num is NULL");
-        return -EINVAL;
-    }
-
-    ret = RsEpollWaitHandle(eventHandle, (struct epoll_event *)eventInfos,
-        timeout, maxevents, eventsNum);
-    CHK_PRT_RETURN(ret, hccp_err("[rs_wait_event_handle]rs_epoll_wait_handle failed ret(%d)", ret), ret);
-
-    return 0;
-}
-
-RS_ATTRI_VISI_DEF int RsDestroyEventHandle(int *eventHandle)
-{
-    int ret;
-
-    ret = RsEpollDestroyFd(eventHandle);
-    CHK_PRT_RETURN(ret, hccp_err("[rs_destroy_event_handle]rs_epoll_destroy_fd failed ret(%d)", ret), ret);
     return 0;
 }
 

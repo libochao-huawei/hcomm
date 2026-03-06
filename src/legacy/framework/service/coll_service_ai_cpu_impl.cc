@@ -21,6 +21,11 @@
 #include "alg_topo_package_helper.h"
 #include "dlprof_function.h"
 #include "task_exception_handler.h"
+#include "aicpu/launch_device.h"
+#include "exception_util.h"
+#include "invalid_params_exception.h"
+#include "runtime_api_exception.h"
+
 namespace Hccl {
 
 template <class T, class U> u16 CalcFieldOffset(T *target, U *base)
@@ -32,6 +37,18 @@ void CollServiceAiCpuImpl::Init()
 {
     // 算子执行次数计数器buffer申请
     AddOpCounterMems();
+}
+
+static std::string GetTagKey(CollOperator &op, std::string algName, u32 bsrRemoteRanksHashValue)
+{
+    std::string tmp{};
+    tmp = (op.opMode == OpMode::OPBASE) ? algName : op.opTag;
+    if (op.opType == OpType::BATCHSENDRECV) {
+        tmp = tmp + std::to_string(bsrRemoteRanksHashValue);
+    } else if (op.opType == OpType::SEND || op.opType == OpType::RECV) {
+        tmp = tmp + std::to_string(op.sendRecvRemoteRank);
+    }
+    return tmp;
 }
 
 DevBuffer *CollServiceAiCpuImpl::OpBasedCollProcess(CollOperator &op, const std::string &algName)
@@ -75,10 +92,16 @@ DevBuffer *CollServiceAiCpuImpl::OpBasedCollProcess(CollOperator &op, const std:
         WaitOffloadTransportReady(op.opTag);
     }
 
-    std::string tagKey = (op.opMode == OpMode::OPBASE) ? req.algName : op.opTag;
-    auto it = collOpLoadedMap.find(tagKey);
+    u32 bsrRemoteRanksHashValue;
+    if (op.opType == OpType::BATCHSENDRECV) {
+        bsrRemoteRanksHashValue = GetRemoteRankIdsHashValue(op);
+    }
+
+    curTagKey = GetTagKey(op, req.algName, bsrRemoteRanksHashValue);
+
+    auto it = collOpLoadedMap.find(curTagKey);
     if (it != collOpLoadedMap.end()) { // 已经向Device Mem写过资源
-        HCCL_INFO("[OpBasedCollProcess] tag[%s] devMem has been allocated, reuse it", tagKey.c_str());
+        HCCL_INFO("[OpBasedCollProcess] tag[%s] devMem has been allocated, reuse it", curTagKey.c_str());
         return it->second.get();
     }
 
@@ -86,8 +109,8 @@ DevBuffer *CollServiceAiCpuImpl::OpBasedCollProcess(CollOperator &op, const std:
     shared_ptr<DevBuffer> devMem = make_shared<DevBuffer>(buffer.size()); // 申请device内存
     HrtMemcpy(reinterpret_cast<void *>(devMem->GetAddr()), devMem->GetSize(), buffer.data(), buffer.size(),
               RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将资源拷贝到device内存
-    collOpLoadedMap.insert(make_pair(tagKey, devMem));
 
+    collOpLoadedMap[curTagKey] = devMem;
     return devMem.get();
 }
 
@@ -176,13 +199,13 @@ HcclResult CollServiceAiCpuImpl::AicpuMc2CommResourcePrepare(const CollOperator 
     HcclKernelLaunchParam param{};
     s32 ret = strcpy_s(param.kernel.algName, sizeof(param.kernel.algName), algName.data());
     if (ret != EOK) {
-        HCCL_ERROR("CollServiceAiCpuImpl::AicpuMc2CommResourcePrepare, strcpy_s algName failed! ret: %u, algName: %s", ret, algName.c_str());
+        HCCL_ERROR("CollServiceAiCpuImpl::AicpuMc2CommResourcePrepare, strcpy_s algName failed! ret: %d, algName: %s", ret, algName.c_str());
         return HCCL_E_INTERNAL;
     }
 
     ret = strcpy_s(param.kernel.opTag, sizeof(param.kernel.opTag), op.opTag.data());
     if (ret != EOK) {
-        HCCL_ERROR("CollServiceAiCpuImpl::AicpuMc2CommResourcePrepare, strcpy_s opTag failed! ret: %u, op.opTag: %s", ret, op.opTag.c_str());
+        HCCL_ERROR("CollServiceAiCpuImpl::AicpuMc2CommResourcePrepare, strcpy_s opTag failed! ret: %d, op.opTag: %s", ret, op.opTag.c_str());
         return HCCL_E_INTERNAL;
     }
 
@@ -272,7 +295,7 @@ void CollServiceAiCpuImpl::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param
     auto ret = strcpy_s(param.kernel.comm.commId, sizeof(param.kernel.comm.commId), comm->GetId().data());
     if (ret != EOK) {
         THROW<InternalException>(
-            StringFormat("CollServiceAiCpuImpl::SetHcclKernelLaunchParam, strcpy_s commId failed!"));
+            StringFormat("CollServiceAiCpuImpl::SetHcclKernelLaunchParam, strcpy_s commId failed! ret[%d]", ret));
     }
     if (op.opMode == OpMode::OPBASE) {
         SetOpbaseBufferParam(param, comm, op);
@@ -359,12 +382,17 @@ void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollO
 
     s32 ret = strcpy_s(param.kernel.algName, sizeof(param.kernel.algName), algName.data());
     if (ret != EOK) {
-        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch, strcpy_s algName failed!"));
+        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch, strcpy_s algName failed! ret[%d]", ret));
     }
 
     ret = strcpy_s(param.kernel.opTag, sizeof(param.kernel.opTag), op.opTag.data());
     if (ret != EOK) {
-        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch, strcpy_s opTag failed!"));
+        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch, strcpy_s opTag failed! ret[%d]", ret));
+    }
+
+    ret = strcpy_s(param.kernel.tagKey, sizeof(param.kernel.tagKey), curTagKey.data());
+    if (ret != EOK) {
+        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch, strcpy_s tagKey failed! ret[%d]", ret));
     }
 
     HCCL_INFO("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch param.kernel.algName: %s, op.opTag %s", param.kernel.algName,
@@ -383,23 +411,14 @@ void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollO
 void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream, OpMode opMode)
 {
     param.kernel.op.userStreamId = stream.GetId();
-    rtHostInputInfo hostInputInfo;
-    hostInputInfo.addrOffset = KERNEL_PARAM_ADDR_OFFSET;
-    hostInputInfo.dataOffset = KERNEL_PARAM_DATA_OFFSET;
-
-    rtAicpuArgsEx_t args;
-    args.args                 = reinterpret_cast<void *>(&param);
-    args.argsSize             = sizeof(HcclKernelLaunchParam);
-    args.hostInputInfoPtr     = &hostInputInfo;
-    args.hostInputInfoNum     = 0;
-    args.kernelOffsetInfoPtr  = nullptr;
-    args.kernelOffsetInfoNum  = 0;
-    args.kernelNameAddrOffset = CalcFieldOffset(param.kernelName, &param);
-    args.soNameAddrOffset     = CalcFieldOffset(param.soName, &param);
-    args.isNoNeedH2DCopy      = false;
-    auto timeoutCheck         = EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
-    args.timeout              = static_cast<u16>((timeoutCheck == 0) ? timeoutCheck : (timeoutCheck + 30)); // aicpu kernal超时时间: X+30s
-    HCCL_INFO("[CollServiceAiCpuImpl][%s] args timeout[%u]s", __func__, args.timeout);
+    aclrtLaunchKernelCfg cfg;
+	aclrtLaunchKernelAttr attr;
+	attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
+	auto timeoutCheck         = EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
+	attr.value.timeout = static_cast<u16>((timeoutCheck == 0) ? timeoutCheck : (timeoutCheck + 30)); // aicpu kernal超时时间: X+30s
+	cfg.numAttrs = 1;
+	cfg.attrs = &attr;
+    HCCL_INFO("[CollServiceAiCpuImpl][%s] args timeout[%u]s", __func__, attr.value.timeout);
 
     AddPostToUserStream(stream);
     TaskParam taskParam {};
@@ -412,22 +431,28 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
 
     HCCL_INFO("[CollServiceAiCpuImpl][%s] param.soName: %s, param.kernelName: %s",
               __func__, param.soName, param.kernelName);
-    if (opMode == OpMode::OPBASE) {
-        HrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU_KFC, param.opName, 1, &args, nullptr,
-                                       comm->GetAicpuStreamManager().GetFreeStream()->GetPtr(), RT_KERNEL_USE_SPECIAL_TIMEOUT);
-        HCCL_INFO("[CollServiceAiCpuImpl][%s] param.kernel.algName: %s OPBASE mode "
-                "HrtAicpuKernelLaunchExWithArgs end!",
-                __func__, param.kernel.algName);
-    } else if (opMode == OpMode::OFFLOAD) {
-        HrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU_KFC, param.opName, 1, &args, nullptr, stream.GetPtr(), RT_KERNEL_USE_SPECIAL_TIMEOUT);
-        HCCL_INFO("[CollServiceAiCpuImpl][%s] param.kernel.algName: %s OFFLOAD mode "
-                "HrtAicpuKernelLaunchExWithArgs end!",
-                __func__, param.kernel.algName);
+	std::string jsonPath;
+    GetKernelFilePath(jsonPath);
+	jsonPath += "ccl_kernel.json";
+	aclrtBinHandle binHandle;
+	LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, binHandle);
+	aclrtFuncHandle funcHandle;
+	constexpr u32 numBlocks = 1;
+	aclError aclRet = aclrtBinaryGetFunction(binHandle, param.kernelName, &funcHandle);
+    if(aclRet != ACL_SUCCESS)
+    {
+        THROW<RuntimeApiException>(StringFormat("Call aclrtBinaryGetFunction failed, with ret[%d]", aclRet));
     }
+    auto& mStream = (opMode == OpMode::OPBASE) ? (*comm->GetAicpuStreamManager().GetFreeStream()) : stream;
+    std::string mode = (opMode == OpMode::OPBASE) ? "OPBASE" : "OFFLOAD";
+    HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, mStream.GetPtr(), &cfg,
+			&param.kernel, sizeof(HcclKernelParamLite));
+    HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s, %s mode "
+                "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName, mode.c_str());
     taskParam.taskType = TaskParamType::TASK_AICPU_KERNEL;
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
-    SaveDfxTaskInfo(taskParam, -1);
+    SaveDfxTaskInfo(taskParam, -1, mStream.GetIsMaster());
     AddWaitToUserStream(stream);
 }
 
@@ -480,7 +505,7 @@ void CollServiceAiCpuImpl::AddPostToUserStream(const Stream &stream)
     taskParam.taskPara.Notify.notifyID = postNotify->GetId();
     taskParam.taskPara.Notify.value = 1;
  
-    SaveDfxTaskInfo(taskParam, -1);
+    SaveDfxTaskInfo(taskParam, -1, stream.GetIsMaster());
 }
 
 void CollServiceAiCpuImpl::AddWaitToUserStream(const Stream &stream)
@@ -501,7 +526,7 @@ void CollServiceAiCpuImpl::AddWaitToUserStream(const Stream &stream)
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     taskParam.taskPara.Notify.notifyID = waitNotify->GetId();
     taskParam.taskPara.Notify.value = 1;
-    SaveDfxTaskInfo(taskParam, -1);
+    SaveDfxTaskInfo(taskParam, -1, stream.GetIsMaster());
 }
 
 void CollServiceAiCpuImpl::AllocWorkStream(u32 primQueueNum) const
@@ -545,6 +570,10 @@ void CollServiceAiCpuImpl::AllocOpMemAlltoAllVC(const CollOperator &op)
             sendCountMatrixMem.push_back(sendMem);
         }
         isCountMemInitedAlltoAllVC = true;
+    }
+    if (indexAlltoAllVC >= MAX_ALLTOALLV_MEM_NUM) {
+        THROW<InternalException>(StringFormat("Invalid indexAlltoAllVC: %u, max allowed: %u", 
+                                       indexAlltoAllVC, MAX_ALLTOALLV_MEM_NUM - 1));
     }
     HrtMemcpy(reinterpret_cast<void *>(sendCountMatrixMem[indexAlltoAllVC].get()->GetAddr()),
               sendCountMatrixMem[indexAlltoAllVC].get()->GetSize(),
@@ -595,14 +624,22 @@ void CollServiceAiCpuImpl::AllocOpMemAlltoAllV(const CollOperator &op)
               RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将资源拷贝到RDISPLS内存
 }
 
+void CollServiceAiCpuImpl::AllocOpMemBatchSendRecv(const CollOperator &op)
+{
+    u32 itemNum = op.batchSendRecvDataDes.itemNum;
+    devBatchSendRecvItemBufs = make_shared<DevBuffer>(itemNum * sizeof(HcclSendRecvItem));
+    bsrItemsMem.push_back(devBatchSendRecvItemBufs);
+
+    HrtMemcpy(reinterpret_cast<void *>(devBatchSendRecvItemBufs.get()->GetAddr()), devBatchSendRecvItemBufs.get()->GetSize(),
+            op.batchSendRecvDataDes.sendRecvItemsPtr, itemNum * sizeof(HcclSendRecvItem),
+            RT_MEMCPY_HOST_TO_DEVICE);
+
+}
+
 void CollServiceAiCpuImpl::AllocOpMem(const CollOperator &op)
 {
     if (op.opType == OpType::BATCHSENDRECV) {
-        u32 itemNum = op.batchSendRecvDataDes.itemNum;
-        devBatchSendRecvItemBufs = make_shared<DevBuffer>(itemNum * sizeof(HcclSendRecvItem));
-        HrtMemcpy(reinterpret_cast<void *>(devBatchSendRecvItemBufs.get()->GetAddr()), devBatchSendRecvItemBufs.get()->GetSize(),
-              op.batchSendRecvDataDes.sendRecvItemsPtr, itemNum * sizeof(HcclSendRecvItem),
-              RT_MEMCPY_HOST_TO_DEVICE);
+        AllocOpMemBatchSendRecv(op);
         return;
     }
 
@@ -667,7 +704,7 @@ static void SetModuleDataName(ModuleData &module, const std::string &name)
 {
     int ret = strcpy_s(module.name, sizeof(module.name), name.c_str());
     if (ret != 0) {
-        THROW<InternalException>(StringFormat("strcpy_s name %s failed", name.c_str()));
+        THROW<InternalException>(StringFormat("strcpy_s name %s failed. ret[%d]", name.c_str(), ret));
     }
 }
 
@@ -732,14 +769,14 @@ std::vector<char> CollServiceAiCpuImpl::PackOpData(const std::string &opTag, con
     return helper.GetPackedData(dataVec);
 }
 
-void CollServiceAiCpuImpl::SaveDfxTaskInfo(const TaskParam &taskParam, const RankId remoteRankId) const
+void CollServiceAiCpuImpl::SaveDfxTaskInfo(const TaskParam &taskParam, const RankId remoteRankId, const bool isMaster) const
 {
     u32 taskId;
     u32 streamId;
     HrtGetTaskIdAndStreamID(taskId, streamId);
  
     shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId, remoteRankId, taskParam,
-        comm->GetMirrorTaskManager().GetCurrDfxOpInfo());
+        comm->GetMirrorTaskManager().GetCurrDfxOpInfo(), isMaster);
  
     comm->GetMirrorTaskManager().AddTaskInfo(taskInfo);
 }
@@ -804,7 +841,7 @@ void CollServiceAiCpuImpl::AicpuUpdateCommLaunch(Stream &stream, const DevBuffer
 
     s32 ret = strcpy_s(param.kernelName, sizeof(param.kernelName), "HcclUpdateCommKernelEntrance");
     if (ret != EOK) {
-        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuUpdateCommLaunch, strcpy_s kernelName failed!"));
+        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::AicpuUpdateCommLaunch, strcpy_s kernelName failed! ret[%d]", ret));
     }
     auto op = comm->GetCurrentCollOperator();
     AicpuKernelLaunch(param, stream, op->opMode);
@@ -861,6 +898,27 @@ HcclResult CollServiceAiCpuImpl::ClearOpLoadedInfo(const std::string &opTag)
     }
     collOpLoadedMap.erase(opTag);
     return HCCL_SUCCESS;
+}
+
+u32 CollServiceAiCpuImpl::GetRemoteRankIdsHashValue(const CollOperator &op)
+{
+    vector<RankId> tempRankIds;
+    HcclSendRecvItem* itemPtr = reinterpret_cast<HcclSendRecvItem *>(op.batchSendRecvDataDes.sendRecvItemsPtr);
+    u32 itemNum = op.batchSendRecvDataDes.itemNum;
+    CHK_PTR_NULL(itemPtr);
+    for (u32 i = 0; i < itemNum; i++) {
+        u32 remoteRankId = (itemPtr + i)->remoteRank;
+        tempRankIds.push_back(remoteRankId);
+        HCCL_INFO("[CollServiceAiCpuImpl][GetRemoteRankIdsHashValue] insert remoteUserRank[%u] to vector", remoteRankId);
+    }
+    std::sort(tempRankIds.begin(), tempRankIds.end());
+
+    u32 seed = tempRankIds.size();
+    const u32 goldRatio = 0x9e3779b9;
+    for (u32 rankId : tempRankIds) {
+        seed ^= std::hash<uint32_t>()(rankId) + goldRatio + (seed << 6) + (seed >> 2);
+    }
+    return seed;
 }
 
 } // namespace Hccl

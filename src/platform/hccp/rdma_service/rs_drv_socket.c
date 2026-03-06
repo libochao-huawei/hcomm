@@ -103,7 +103,7 @@ enum RsHardwareType RsGetDeviceType(unsigned int phyId)
     unsigned int chipId;
     int64_t boardId;
     int ret;
- 
+
     CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("invalid param phy_id[%u]", phyId), RS_HARDWARE_UNKNOWN);
     ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
     CHK_PRT_RETURN(ret != 0, hccp_err("phy_id[%u] invalid, ret %d", phyId, ret), RS_HARDWARE_UNKNOWN);
@@ -127,7 +127,7 @@ enum RsHardwareType RsGetDeviceType(unsigned int phyId)
         }
         return RS_HARDWARE_SERVER;
     }
- 
+
     if (((boardType & RS_BOARDID_PCIE_CARD_MASK) == RS_BOARDID_PCIE_CARD_MASK_VALUE) &&
          (boardType != RS_BOARDID_AI_SERVER_MODULE) && (boardType != RS_BOARDID_ARM_SERVER_AG) &&
          (boardType != RS_BOARDID_ARM_POD) && (boardType != RS_BOARDID_X86_16P) &&
@@ -181,7 +181,7 @@ int RsCheckDstInterface(unsigned int phyId, const char *ifaName, enum RsHardware
     } else {
         ret = snprintf_s(dstIfaName, RS_INTERFACE_LEN + 1, RS_INTERFACE_LEN, "eth%u", phyId);
         CHK_PRT_RETURN(ret <= 0, hccp_err("copy eth name failed, %d", ret), -EAGAIN);
- 
+
         if (strncmp(dstIfaName, ifaName, RS_INTERFACE_LEN)) {
             return 0;
         }
@@ -346,6 +346,51 @@ out:
     }
 
     return 0;
+}
+
+int RsFd2conn(int fd, struct RsConnInfo **conn)
+{
+    struct RsConnInfo *connTmp = NULL;
+    struct RsConnInfo *connTmp2 = NULL;
+    struct RsListHead *head = NULL;
+    struct rs_cb *rsCb = NULL;
+
+    if (gRsCb != NULL) {
+        rsCb = gRsCb;
+    } else {
+        hccp_err("g_rs_cb is NULL");
+        return -ENODEV;
+    }
+
+    RS_PTHREAD_MUTEX_LOCK(&rsCb->connCb.connMutex);
+    head = &rsCb->connCb.serverConnList;
+    RS_LIST_GET_HEAD_ENTRY(connTmp, connTmp2, head, list, struct RsConnInfo);
+    for (; &connTmp->list != head;
+        connTmp = connTmp2, connTmp2 = list_entry(connTmp2->list.next, struct RsConnInfo, list)) {
+        if (connTmp->connfd == fd) {
+            *conn = connTmp;
+            RS_PTHREAD_MUTEX_ULOCK(&rsCb->connCb.connMutex);
+            return 0;
+        }
+    }
+
+    head = &rsCb->connCb.clientConnList;
+    RS_LIST_GET_HEAD_ENTRY(connTmp, connTmp2, head, list, struct RsConnInfo);
+    for (; &connTmp->list != head;
+        connTmp = connTmp2, connTmp2 = list_entry(connTmp2->list.next, struct RsConnInfo, list)) {
+        if (connTmp->connfd == fd) {
+            *conn = connTmp;
+            RS_PTHREAD_MUTEX_ULOCK(&rsCb->connCb.connMutex);
+            return 0;
+        }
+    }
+
+    RS_PTHREAD_MUTEX_ULOCK(&rsCb->connCb.connMutex);
+
+    hccp_warn("cannot find conn node for fd:%d!", fd);
+    *conn = NULL;
+
+    return -ENODEV;
 }
 
 int RsDrvSocketSend(int fd, const void *data, uint64_t size, int flags)

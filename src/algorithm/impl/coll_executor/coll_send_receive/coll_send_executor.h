@@ -18,12 +18,13 @@ class CollSendExecutor : public CollNativeExecutorBase {
 
 public:
     CollSendExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollSendExecutor() = default;
+    ~CollSendExecutor() override = default;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
     HcclResult GetAdjInfo(AlgResourceResponse& algRes, AdjInfo& adjInfo) override;
 
 private:
+    using CollNativeExecutorBase::CalcCommInfo;
     /* *************** 资源计算 *************** */
     HcclResult CalcResRequest(const OpParam& param, AlgResourceRequest &resourceRequest) override;
     HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport, u32 dstRank);
@@ -34,7 +35,6 @@ private:
     /* *************** 算法编排 *************** */
     HcclResult RunLoop(OpParam &param, AlgResourceResponse &algRes);
     HcclResult RunTemplate(const OpParam &param, DeviceMem &inputMem);
-    HcclResult NotifyMainstream(OpParam &param, AlgResourceResponse &algRes);
 
     bool DMAReduceFlag_{false}; // 是否DMA消减的标志
 };

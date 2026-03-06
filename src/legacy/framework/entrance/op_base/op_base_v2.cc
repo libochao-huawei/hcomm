@@ -56,7 +56,7 @@ static OpType GetOpTypeV2(std::string opTypeName) {
 
 static void LoadConfigCommName(string &commId, const HcclCommConfig &config)
 {
-    if (config.hcclCommName == nullptr || config.hcclCommName[0] == '\0') {
+    if (config.hcclCommName[0] == '\0') {
         HCCL_WARNING("[LoadConfigCommName] config.hcclCommName is empty, use default commId[%s]", commId.c_str());
         return;
     }
@@ -617,13 +617,13 @@ HcclResult HcclAlltoAllV2(const void *sendBuf, uint64_t sendCount, HcclDataType 
     bool isCapture;
     rtModel_t rtModel = nullptr;
     u32 modelId = 0;
-    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "ALLTOALL_" + communicator->GetId();
 
     CHK_RET(HcomCheckOpParamV2(tag.c_str(), 0, sendType, stream));
     CHK_RET(HcomCheckDataTypeV2(recvType));
+    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     // 接口交互信息日志
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
@@ -634,7 +634,7 @@ HcclResult HcclAlltoAllV2(const void *sendBuf, uint64_t sendCount, HcclDataType 
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBufferV2, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%p], recvCount[%p], sendType[%s],"
+            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], recvCount[%llu], sendType[%s],"
             "recvType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCount, recvCount, GetDataTypeEnumStrV2(sendType).c_str(),
             GetDataTypeEnumStrV2(recvType).c_str(), localRank, streamId, deviceLogicId);
@@ -682,7 +682,6 @@ HcclResult HcclAlltoAllVV2(const void *sendBuf, const void *sendCounts, const vo
     bool isCapture;
     rtModel_t rtModel = nullptr;
     u32 modelId = 0;
-    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "HCCL_ALLTOALLV_" + communicator->GetId();
@@ -691,6 +690,7 @@ HcclResult HcclAlltoAllVV2(const void *sendBuf, const void *sendCounts, const vo
     CHK_RET_AND_PRINT_IDE(HcomCheckDataTypeV2(recvType), tag.c_str());
     CHK_RET(HcomCheckDataTypeV2(sendType));
     CHK_RET(HcomCheckDataTypeV2(recvType));
+    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
     /* 根据ranksize校验相关入参 */
     u32 rankSize = 0;
     CHK_RET(communicator->GetRankSize(&rankSize));
@@ -774,7 +774,7 @@ HcclResult HcclCreateSubCommConfigV2(const HcclComm *comm, uint32_t rankNum, uin
         rankIdSet.insert(rankIds[i]);
     }
 
-    HCCL_RUN_INFO("Entry-HcclCreateSubCommConfig V910_95 rankIds[%s], subCommRankId, commEngine[%u], hcclBufferSize[%u] MB",
+    HCCL_RUN_INFO("Entry-HcclCreateSubCommConfig V910_95 rankIds[%s], subCommRankId[%u], commEngine[%u], hcclBufferSize[%u] MB",
                 printRankIds.str().c_str(), subCommRankId, config->hcclOpExpansionMode, config->hcclBufferSize);
 
     HcclCommInfoV2 &opbasedCommInfoV2 = GetCommInfoV2();
@@ -942,6 +942,12 @@ HcclResult HcclAlltoAllVCV2(const void *sendBuf, const void *sendCountMatrix, Hc
     CHK_RET(communicator->GetRankSize(&rankSize));
     u32 myRank = INVALID_VALUE_RANKID;
     CHK_RET(communicator->GetRankId(myRank));
+    bool isEmpty = false;
+    CHK_RET(HcomCheckAlltoAllVCEmptyV2(sendBuf, sendCountMatrix, recvBuf, rankSize, isEmpty));
+    if(isEmpty) {
+        HCCL_INFO("[HcclAlltoAllVCV2] sendCountMatrix is Empty");
+        return HCCL_SUCCESS;
+    }
     CHK_RET(HcomCheckAlltoAllVCExternalMemV2(sendBuf, sendCountMatrix, recvBuf, rankSize, myRank));
 
     u64 sendCountMatrixHash;
@@ -999,7 +1005,6 @@ HcclResult HcclReduceV2(void *sendBuf, void *recvBuf, uint64_t count, HcclDataTy
     bool isCapture;
     rtModel_t rtModel = nullptr;
     u32 modelId = 0;
-    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "Reduce_" + communicator->GetId();
@@ -1010,6 +1015,7 @@ HcclResult HcclReduceV2(void *sendBuf, void *recvBuf, uint64_t count, HcclDataTy
     u32 rankSize = INVALID_VALUE_RANKSIZE;
     CHK_RET_AND_PRINT_IDE(communicator->GetRankSize(&rankSize), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckUserRankV2(rankSize, root), tag.c_str());
+    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
@@ -1065,16 +1071,14 @@ HcclResult HcclAllReduceV2(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
     bool isCapture;
     rtModel_t rtModel = nullptr;
     u32 modelId = 0;
-    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "AllReduce_" + communicator->GetId();
 
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
-
     CHK_RET_AND_PRINT_IDE(HcomCheckReductionOpV2(op), tag.c_str());
-
     CHK_RET_AND_PRINT_IDE(HcomCheckReduceDataTypeV2(dataType, op), tag.c_str());
+    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
@@ -1130,7 +1134,6 @@ HcclResult HcclBroadcastV2(void *buf, uint64_t count, HcclDataType dataType, uin
     bool isCapture;
     rtModel_t rtModel = nullptr;
     u32 modelId = 0;
-    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "Broadcast_" + communicator->GetId();
@@ -1139,6 +1142,7 @@ HcclResult HcclBroadcastV2(void *buf, uint64_t count, HcclDataType dataType, uin
     u32 rankSize = INVALID_VALUE_RANKSIZE;
     CHK_RET_AND_PRINT_IDE(communicator->GetRankSize(&rankSize), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckUserRankV2(rankSize, root), tag.c_str());
+    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
     
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
@@ -1380,7 +1384,7 @@ HcclResult HcclSetOpAlgConfigV2(void *opArgs, char *algConfig)
     HcclOpArgs *opArgsPtr = static_cast<HcclOpArgs *>(opArgs);
     s32 ret = strcpy_s(opArgsPtr->algConfig, ALG_CONFIG_SIZE, algConfig);
     if (ret != EOK) {
-        HCCL_ERROR("[HcclSetOpAlgConfig]strcpy_s algConfig failed! result %u, the algConfig len must be less than %u", ret, ALG_CONFIG_SIZE);
+        HCCL_ERROR("[HcclSetOpAlgConfig]strcpy_s algConfig failed! result %d, the algConfig len must be less than %u", ret, ALG_CONFIG_SIZE);
         return HCCL_E_PARA;
     }
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
@@ -1569,8 +1573,13 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
     std::shared_ptr<RankInfoDetect> rankInfoDetectAgent = std::make_shared<RankInfoDetect>();
     RankTableInfo rankTable{};
     HcclResult ret = RootInfoDetect(rankInfoDetectAgent, nRanks, rank, rootHandle, rankTable);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", 
-        __func__, HCCL_ERROR_CODE(ret));rankTable.Dump(), ret);
+    if (ret != HCCL_SUCCESS) {
+        RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
+                            std::vector<std::string>({"RootInfoDetect failed."}));
+        HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", __func__, HCCL_ERROR_CODE(ret));
+        rankTable.Dump();
+        return ret;
+    }
     
     // 打印ranktable
     rankTable.Dump();
@@ -1682,8 +1691,13 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
     RankTableInfo rankTable{};
     std::shared_ptr<RankInfoDetect> rankInfoDetectAgent = std::make_shared<RankInfoDetect>();
     HcclResult ret = RootInfoDetect(rankInfoDetectAgent, nRanks, rank, rootHandle, rankTable);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] errNo[0x%016llx] RankInfoDetect failed.", __func__, HCCL_ERROR_CODE(ret));rankTable.Dump(), ret);
+    if (ret != HCCL_SUCCESS) {
+        RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
+                            std::vector<std::string>({"RootInfoDetect failed."}));
+        HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", __func__, HCCL_ERROR_CODE(ret));
+        rankTable.Dump();
+        return ret;
+    }
     
     // 打印ranktable
     rankTable.Dump();
@@ -1711,7 +1725,6 @@ HcclResult HcclScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclD
     bool isCapture;
     rtModel_t rtModel = nullptr;
     u32 modelId = 0;
-    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "Scatter_" + communicator->GetId();
@@ -1720,6 +1733,7 @@ HcclResult HcclScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclD
     u32 rankSize = INVALID_VALUE_RANKSIZE;
     CHK_RET_AND_PRINT_IDE(communicator->GetRankSize(&rankSize), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckUserRankV2(rankSize, root), tag.c_str());
+    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     u32 rankId = INVALID_VALUE_RANKID;
     CHK_RET(communicator->GetRankId(rankId));
@@ -1778,12 +1792,12 @@ HcclResult HcclAllGatherV2(void *sendBuf, void *recvBuf, uint64_t sendCount, Hcc
     bool isCapture;
     rtModel_t rtModel = nullptr;
     u32 modelId = 0;
-    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "AllGather_" + communicator->GetId();
     
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), sendCount, dataType, stream), tag.c_str());
+    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
     
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
@@ -1837,7 +1851,6 @@ HcclResult HcclAllGatherVV2(void *sendBuf, uint64_t sendCount, void *recvBuf, vo
     bool isCapture;
     rtModel_t rtModel = nullptr;
     u32 modelId = 0;
-    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     // 获取通信域
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
@@ -1855,6 +1868,7 @@ HcclResult HcclAllGatherVV2(void *sendBuf, uint64_t sendCount, void *recvBuf, vo
     }
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), sendCount, dataType, stream), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckVOpParamV2(rankId, rankSize, sendCount, recvCounts), tag.c_str());
+    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
     
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
@@ -1865,7 +1879,7 @@ HcclResult HcclAllGatherVV2(void *sendBuf, uint64_t sendCount, void *recvBuf, vo
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBufferV2, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], recvCounts[%llu], recvDispls[%llu], "
+            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], recvCounts[%p], recvDispls[%p], "
             "dataType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCount, recvCounts, recvDispls,
             GetDataTypeEnumStrV2(dataType).c_str(), localRank, streamId, deviceLogicId);
@@ -1882,14 +1896,17 @@ HcclResult HcclAllGatherVV2(void *sendBuf, uint64_t sendCount, void *recvBuf, vo
     }
     
     u64* counts = static_cast<u64 *>(recvCounts);
-    u64 inputCount = 0;
+    u64 output = 0;
     for(size_t index = 0; index < rankSize; index++){
-        inputCount += counts[index];
+        output += counts[index];
     }
-    if(inputCount == 0){
-        HCCL_INFO("[%s] inputCount[%llu] is equal to zero", __func__, inputCount);
+    if(output == 0){
+        HCCL_INFO("[%s] output[%llu] is equal to zero", __func__, output);
         return HCCL_SUCCESS;
     }
+    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
+    std::vector<std::string>({"HcclReduceScatterVV2", "recvBuf", "nullptr", "please check recvBuf"}));
+    CHK_PTR_NULL(recvBuf);
     // opParams组装
     Hccl::CollOpParams opParams;
     opParams.opType = Hccl::OpType::ALLGATHERV;
@@ -1922,27 +1939,28 @@ HcclResult HcclSendV2(
     bool isCapture;
     rtModel_t rtModel = nullptr;
     u32 modelId = 0;
-    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "Send_" + communicator->GetId();
     
     CHK_RET(HcomCheckDataTypeV2(dataType));
+    CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
+    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     /* 接口交互信息日志 */
-    char stackLogBufferV2[LOG_TMPBUF_SIZE];
+    char hcclSendStackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         s32 streamId = HrtGetStreamId(stream);
         s32 deviceLogicId = HrtGetDevice();
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
-        s32 ret = snprintf_s(stackLogBufferV2, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
+        s32 ret = snprintf_s(hcclSendStackLogBufferV2, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], sendBuf[%p], count[%llu], dataType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, count, GetDataTypeEnumStrV2(dataType).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclSendV2:" + std::string(stackLogBufferV2);
+        std::string logInfo = "Entry-HcclSendV2:" + std::string(hcclSendStackLogBufferV2);
         if (isCapture) {
             CHK_PTR_NULL(rtModel);
             // 获取不到modelId会报错
@@ -1967,7 +1985,7 @@ HcclResult HcclSendV2(
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
         std::string endInfo = "HcclAllGatherVV2:success,take time: " +
-            std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(stackLogBufferV2);
+            std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(hcclSendStackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }
 
@@ -1981,27 +1999,28 @@ HcclResult HcclRecvV2(
     bool isCapture;
     rtModel_t rtModel = nullptr;
     u32 modelId = 0;
-    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "Recv_" + communicator->GetId();
     
     CHK_RET(HcomCheckDataTypeV2(dataType));
+    CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
+    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     /* 接口交互信息日志 */
-    char stackLogBufferV2[LOG_TMPBUF_SIZE];
+    char hcclRecvStackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         s32 streamId = HrtGetStreamId(stream);
         s32 deviceLogicId = HrtGetDevice();
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET_AND_PRINT_IDE(communicator->GetRankId(localRank), tag.c_str());
 
-        s32 ret = snprintf_s(stackLogBufferV2, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
+        s32 ret = snprintf_s(hcclRecvStackLogBufferV2, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], recvBuf[%p], count[%llu], dataType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), recvBuf, count, GetDataTypeEnumStrV2(dataType).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclRecvV2:" + std::string(stackLogBufferV2);
+        std::string logInfo = "Entry-HcclRecvV2:" + std::string(hcclRecvStackLogBufferV2);
         if (isCapture) {
             CHK_PTR_NULL(rtModel);
             // 获取不到modelId会报错
@@ -2026,7 +2045,7 @@ HcclResult HcclRecvV2(
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
         std::string endInfo = "HcclAllGatherVV2:success,take time: " +
-            std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(stackLogBufferV2);
+            std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(hcclRecvStackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }
 
@@ -2040,7 +2059,6 @@ HcclResult HcclReduceScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount,
     bool isCapture;
     rtModel_t rtModel = nullptr;
     u32 modelId = 0;
-    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "ReduceScatter_" + communicator->GetId();
@@ -2048,6 +2066,7 @@ HcclResult HcclReduceScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount,
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), recvCount, dataType, stream), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckReductionOpV2(op), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckReduceDataTypeV2(dataType, op), tag.c_str());
+    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
@@ -2103,7 +2122,6 @@ HcclResult HcclReduceScatterVV2(void *sendBuf, void *sendCounts, void *sendDispl
     bool isCapture;
     rtModel_t rtModel = nullptr;
     u32 modelId = 0;
-    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     // 获取通信域
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
@@ -2123,6 +2141,7 @@ HcclResult HcclReduceScatterVV2(void *sendBuf, void *sendCounts, void *sendDispl
     CHK_RET_AND_PRINT_IDE(HcomCheckReductionOpV2(op), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckReduceDataTypeV2(dataType, op), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckVOpParamV2(rankId, rankSize, recvCount, sendCounts), tag.c_str());
+    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
     
     /* 接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
@@ -2158,6 +2177,9 @@ HcclResult HcclReduceScatterVV2(void *sendBuf, void *sendCounts, void *sendDispl
         HCCL_INFO("[%s] inputCount[%llu] is equal to zero", __func__, inputCount);
         return HCCL_SUCCESS;
     }
+    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
+    std::vector<std::string>({"HcclReduceScatterVV2", "sendBuf", "nullptr", "please check sendBuf"}));
+    CHK_PTR_NULL(sendBuf);
     if (op == HCCL_REDUCE_PROD) {
         HCCL_ERROR("[Check][ReductionOp] Op:[HCCL_REDUCE_PROD] not supported");
         return HCCL_E_NOT_SUPPORT;
@@ -2194,7 +2216,6 @@ HcclResult HcclBatchSendRecvV2(HcclSendRecvItem *sendRecvInfo, uint32_t itemNum,
     bool isCapture;
     rtModel_t rtModel = nullptr;
     u32 modelId = 0;
-    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     CHK_PTR_NULL(comm);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
@@ -2203,6 +2224,7 @@ HcclResult HcclBatchSendRecvV2(HcclSendRecvItem *sendRecvInfo, uint32_t itemNum,
     CHK_PTR_NULL(stream);
     CHK_PTR_NULL(sendRecvInfo);
     CHK_PRT_RET(itemNum == 0, HCCL_WARNING("[BatchSendRecv] taskList itemNum is zero."), HCCL_SUCCESS);
+    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
     /* 记录接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
@@ -2760,7 +2782,7 @@ HcclResult HcclGetLinksV2(HcclComm comm, uint32_t netLayer, uint32_t srcRank, ui
         return HCCL_E_NOT_FOUND;
     }
     /* 关键状态记录 */
-    HCCL_INFO("HcclGetLinks success, netLayer[%u], srcRank = %u,dstRank=%u,listSize=%u", srcRank, dstRank, *listSize);
+    HCCL_INFO("HcclGetLinks success, netLayer[%u], srcRank = %u, dstRank=%u, listSize=%u", netLayer, srcRank, dstRank, *listSize);
     return HCCL_SUCCESS;
 }
 
@@ -2837,7 +2859,7 @@ HcclResult HcclRankGraphGetEndpointInfoV2(HcclComm comm, uint32_t rankId, const 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetEndpointInfo(rankId, endpointDesc, endpointAttr, infoLen, info);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("HcclRankGraphGetEndpointInfo get info from communicator failed with endpointAttr [%u]", endpointAttr);
+        HCCL_ERROR("HcclRankGraphGetEndpointInfo get info from communicator failed with endpointAttr [%d]", static_cast<s32>(endpointAttr));
         return HCCL_E_NOT_FOUND;
     }
     return HCCL_SUCCESS;
@@ -2892,6 +2914,10 @@ HcclResult HcclCommDeactivateCommMemoryV2(HcclComm comm, void *virPtr)
     return HCCL_E_NOT_SUPPORT;
 }
 
+uint32_t HcclGetCommConfigCapabilityV2()
+{
+    return static_cast<uint32_t>(HCCL_COMM_CONFIG_RETRY);
+}
 
 #ifdef __cplusplus
 }

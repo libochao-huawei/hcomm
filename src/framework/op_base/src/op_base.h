@@ -87,6 +87,8 @@ HcclResult HcclCreateComResourceByComm(HcclComm comm, u32 streamMode, bool isOpb
 
 HcclResult HcclDeviceRefresh(s32 &deviceLogicId);
 
+HcclResult HcclBatchSendRecvGroup(HcclSendRecvItem* sendRecvInfo, uint32_t itemNum, HcclComm comm, aclrtStream stream);
+
 HcclResult HcclSetIfProfile(void);
 
 void HcclResetIfProfile(void);
@@ -98,6 +100,9 @@ void CheckCountsAndDispls(const u32 length, const void *counts, const void *disp
 HcclResult GetCaptureInfo(aclrtStream stream, aclmdlRICaptureStatus& captureStatus, uint64_t& modelId, bool& isCapture);
 
 HcclResult HcclGetInitTilingList(const void *mc2Tiling, const void *p[], uint32_t &cnt);
+
+HcclResult HcclMc2ComOpResCtx(HcclComm comm, uint8_t opType, HcclDataType srcDataType, HcclDataType dstDataType,
+                              HcclReduceOp reduceType, uint64_t count, char *algConfig, uint32_t commEngine, rtStream_t &aicpuStream);
 
 #ifdef __cplusplus
 extern "C" {

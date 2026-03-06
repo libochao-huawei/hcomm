@@ -51,6 +51,8 @@ set(rs_ut_normal_list
     ${CTX_DIR}/dl_urma_function.c
     ${CTX_DIR}/dl_net_function.c
     ${CTX_DIR}/rs_ccu.c
+    ${CTX_DIR}/rs_ub_dfx.c
+    ${CTX_DIR}/rs_ub_tp.c
     ${CTX_DIR}/rs_ub.c
     ${CTX_DIR}/rs_ctx.c
     ${CTX_DIR}/rs_esched.c
@@ -84,8 +86,8 @@ target_include_directories(rs_ut_normal PRIVATE
     ${SRC_DIR}/src/platform/hccp/external_depends/ubengine
     ${SRC_DIR}/src/platform/hccp/external_depends/net_adapt
     ${SRC_DIR}/src/platform/hccp/external_depends/ccu
-    ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include
-    ${HCOMM_UTILS_PATH}/hcomm_utils/host/include/tls_adp
+    ${RDMA_CORE_INCLUDE_DIR}
+    ${CANN_3RD_LIB_PATH}/hcomm_utils/host/include/tls_adp
     ${CANN_3RD_LIB_PATH}/json/include/
     ${CANN_3RD_LIB_PATH}/gtest/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/

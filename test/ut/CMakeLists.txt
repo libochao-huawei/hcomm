@@ -104,7 +104,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/platform/typical
     ${HCCL_CODE_ROOT}/src/platform/hccp/inc
     ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network
-    ${HCCL_CODE_ROOT}/src/platform/hccp/external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
 
     # hccl/algorithm 目录下头文件
     ${HCCL_CODE_ROOT}/src/algorithm/pub_inc
@@ -292,6 +292,7 @@ add_subdirectory(platform/resource/transport)
 add_subdirectory(platform/ping_mesh)
 add_subdirectory(framework/communicator)
 add_subdirectory(framework/op_base_api)
+# add_subdirectory(framework/hcom) // 单个ut测试文件已经编译通过，但是耦合编译会出现段错误问题，暂不开启
 add_subdirectory(framework/communicator/impl)
 add_subdirectory(framework/resource)
 add_subdirectory(framework/communicator/impl/independent_op/data_api)

@@ -17,7 +17,7 @@ namespace hccl {
 class CollAllReduceMeshOpbaseExecutor : public CollAllReduceExecutor {
 public:
     CollAllReduceMeshOpbaseExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllReduceMeshOpbaseExecutor() = default;
+    ~CollAllReduceMeshOpbaseExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

@@ -18,7 +18,7 @@ class CollAllReduceCommExecutor : public CollAllReduceExecutor {
 
 public:
     CollAllReduceCommExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllReduceCommExecutor() = default;
+    ~CollAllReduceCommExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

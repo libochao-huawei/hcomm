@@ -13,21 +13,21 @@
 #include "binary_stream.h"
 namespace Hccl {
 
-Stream::Stream(aclrtStream ptr) : ptr(ptr), selfOwned(false)
+Stream::Stream(aclrtStream ptr, bool isMaster) : ptr(ptr), selfOwned(false), isMaster_(isMaster)
 {
     id = static_cast<u32>(HrtGetStreamId(ptr));
     InitDevPhyId();
 }
 
-Stream::Stream(bool deviceUsed) : selfOwned(true), devUsed(deviceUsed)
+Stream::Stream(bool deviceUsed, bool isMaster) : selfOwned(true), devUsed(deviceUsed), isMaster_(isMaster)
 {
     try {
         if (deviceUsed) {
-            ptr  = HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH, RT_STREAM_CP_PROCESS_USE);
+            ptr  = HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH, ACL_STREAM_DEVICE_USE_ONLY);
             sqId = HrtStreamGetSqId(ptr);
             cqId = HrtStreamGetCqId(ptr);
         } else {
-            ptr = HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH, RT_STREAM_FAST_LAUNCH  | RT_STREAM_FAST_SYNC);
+            ptr = HrtStreamCreateWithFlags(HCCL_STREAM_PRIORITY_HIGH, ACL_STREAM_FAST_LAUNCH | ACL_STREAM_FAST_SYNC);
         }
         id = static_cast<u32>(HrtGetStreamId(ptr));
         InitDevPhyId();
@@ -66,6 +66,11 @@ aclrtStream Stream::GetPtr() const
 u32 Stream::GetId() const
 {
     return id;
+}
+
+bool Stream::GetIsMaster() const
+{
+    return isMaster_;
 }
 
 bool Stream::IsSelfOwned() const

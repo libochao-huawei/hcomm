@@ -113,8 +113,8 @@ HcclResult HcclOneSideServiceAicpu::Init(const std::string &tag, const OpTilingD
     const u32 hostDevId = commResParaPtr_->aicpuOpNotify[0].devId;
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(hostDevId, &devId_));
     CHK_RET(hrtHalGetDeviceType(devId_, devType_));
-    CHK_PRT_RET(devType_ != DevType::DEV_TYPE_910_93, HCCL_ERROR("[Init] Expect devType[%u] is A3[%u]", devType_,
-        DevType::DEV_TYPE_910_93), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(devType_ != DevType::DEV_TYPE_910_93 && devType_ != DevType::DEV_TYPE_910B,
+        HCCL_ERROR("[Init] Expect devType[%u] is A2 or A3", devType_), HCCL_E_NOT_SUPPORT);
     CHK_RET(hrtHalGetDeviceInfo(devId_, MODULE_TYPE_SYSTEM, INFO_TYPE_PHY_CHIP_ID, &chipId_));
 
     s32 devLogicId = INVALID_INT;
@@ -222,7 +222,8 @@ HcclResult HcclOneSideServiceAicpu::FillMemDetails(MemDetails &localMems, MemDet
 HcclResult HcclOneSideServiceAicpu::PrepareRdmaLink(u32 remoteRankId, const struct HcclQpInfoV2 &qpInfo)
 {
     if (rdmaLinks_[remoteRankId] == nullptr) {
-        linkTimeout_ = 4096ULL * (1 << qpInfo.retryTime) * (qpInfo.retryCnt + 1) / 1000;    // RDMA超时基数是4.096us
+        const int UNIT_CONVERSION = 1000;
+        linkTimeout_ = 4096ULL * (1 << qpInfo.retryTime) * (qpInfo.retryCnt + 1) / UNIT_CONVERSION;    // RDMA超时基数是4.096us
         TransportMem::AttrInfo attrInfo{};
         attrInfo.localRankId = rankId_;
         attrInfo.remoteRankId = remoteRankId;

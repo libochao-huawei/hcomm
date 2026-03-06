@@ -60,6 +60,7 @@ public:
     HcclResult ChannelCommGetHcclBuffer(ChannelHandle channel, CommBuffer *buffer);
     HcclResult ChannelCommGetRemoteMem(ChannelHandle channel, HcclMem **remoteMem, uint32_t *memNum);
     HcclResult ReleaseChannel();
+    HcclResult SetHcclQos(u32 hcclQos);
 
 private:
     template <typename T>
@@ -107,6 +108,7 @@ private:
     aclrtBinHandle binHandle_;
     ManagerCallbacks callbacks_;  // 存储回调函数
     ChannelManagerCallbacks channelCallbacks_;  // channelMgr的回调函数
+    u32 hcclQos_;
 };
 
 } // namespace hccl

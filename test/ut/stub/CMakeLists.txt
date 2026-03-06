@@ -139,7 +139,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/pub_inc/new
     ${HCCL_CODE_ROOT}/src/platform/hccp/inc
     ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network
-    ${HCCL_CODE_ROOT}/src/platform/hccp/external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
     ${HCCL_CODE_ROOT}/src/pkg_inc
     ${HCCL_CODE_ROOT}/external_depends
 

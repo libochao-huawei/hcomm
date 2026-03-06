@@ -131,7 +131,7 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::GetAivExecParam(const OpParam
  
     u32 localRank = level0CommInfo.localRank;
     u32 localRankSize = level0CommInfo.localRankSize;
-    HCCL_DEBUG("[CollAllGatherMeshAivExecutor][GetAivExecParam] userRank [%d] localRank [%d]",
+    HCCL_DEBUG("[CollAllGatherMeshAivSmallCountExecutor][GetAivExecParam] userRank [%d] localRank [%d]",
         topoAttr_.userRank, localRank);
  
     for (u32 i = 0; i < localRankSize; i++) {
@@ -151,7 +151,7 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::GetAivExecParam(const OpParam
     args.reduceOp = param.reduceType;
     args.devType = static_cast<u32>(topoAttr_.deviceType);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllGatherMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
+        HCCL_ERROR("[CollAllGatherMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AllGather executor getalgexecparam success, take time [%lld]us.",
@@ -204,9 +204,6 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::KernelRun(const OpParam &para
     algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
-    if (aivClearEnable_) {
-        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
-    }
 
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);
     CHK_PRT_RET(ret != HCCL_SUCCESS,

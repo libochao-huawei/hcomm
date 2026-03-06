@@ -417,6 +417,7 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
     opParam.supportSymmetricMemory = tilingData->isSymmetricMemory;
     opParam.index = tilingData->index;
     opParam.isCapture = tilingData->isCapture;
+    opParam.needIncreLink = tilingData->needIncreLink;
     opParam.aicpuCacheEnable = tilingData->aicpuCacheEnable;
     hcclCommAicpu->PrepareOpRetryHandler(tilingData->inplaceSupportRetry,
         tilingData->retryEnable, tilingData->inPlaceSupportRetryStatus,

@@ -4524,6 +4524,18 @@ ACL_FUNC_VISIBILITY aclError aclrtSnapShotCallbackUnregister(aclrtSnapShotStage 
  */
 ACL_FUNC_VISIBILITY aclError aclrtCacheLastTaskOpInfo(const void * const infoPtr, const size_t infoSize);
 
+/**
+ * @ingroup AscendCL
+ * @brief Used for inter-card memory mapping within the same process
+ * @param devPtr [IN]   Device memory address
+ * @param size [IN]  Size of the memory
+ * @param dstDevId [IN]  Device id to which the page table mapping is to be created
+ * @param flags [IN]  Reserved param
+ *
+ * @retval ACL_SUCCESS The function is successfully executed.
+ * @retval OtherValues Failure
+ */
+ACL_FUNC_VISIBILITY aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t flags);
 #ifdef __cplusplus
 }
 #endif

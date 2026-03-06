@@ -23,10 +23,12 @@
 #include "securec.h"
 #include "rs.h"
 #include "ra_rs_err.h"
+#include "rs_common_inner.h"
 #include "rs_inner.h"
 #include "rs_rdma_inner.h"
 #include "rs_epoll.h"
 #include "dl_ibverbs_function.h"
+#include "rs_drv_socket.h"
 #include "rs_drv_rdma.h"
 #include "rs_rdma.h"
 
@@ -2464,7 +2466,7 @@ RS_ATTRI_VISI_DEF int RsGetQpStatus(unsigned int phyId, unsigned int rdevIndex, 
     struct hns_roce_qpc_attr_val qpAttrVal = { 0 };
     struct RsQpCb *qpCb = NULL;
     int ret;
-    
+
     CHK_PRT_RETURN(qpInfo == NULL, hccp_err("param error, qpInfo is NULL"), -EINVAL);
 
     CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("phyId:%u >= [%d], is invalid",

@@ -109,7 +109,7 @@ std::unique_ptr<CcuContext> CcuInsPreprocessor::CreateCcuCtx(const CcuInstructio
                __func__, transports.size(), createStatus, linkGroup.GetLinks().size(), cntCkeNum, createStatus,
                ccuInst.GetInstType().Describe().c_str());
 
-    std::unique_ptr<CcuCtxArg> ctxArg = std::move(ccuInst.GetCtxArg());
+    std::unique_ptr<CcuCtxArg> ctxArg = ccuInst.GetCtxArg();
     CHECK_NULLPTR(ctxArg, "[CcuInsPreprocessor::CreateCcuCtx] ctxArg is nullptr!");
     return CcuCtxCreatorRegistry::GetInstance().GetCreateFunc(ccuInst.GetInstType())(*ctxArg, transports,
                                                                                      *transportGrp);
@@ -377,7 +377,7 @@ CcuInsPreprocessor::~CcuInsPreprocessor()
 HcclResult CcuInsPreprocessor::RecoverCcuTransportCtx(const std::vector<LinkData> &links,
     vector<std::pair<LinkGroup, u32>> linkGroupPair)
 {
-    HCCL_INFO("[CcuInsPreprocessor::%s] start, links size[%d], linkGroupPair size[%d]", __func__, links.size(),
+    HCCL_INFO("[CcuInsPreprocessor::%s] start, links size[%u], linkGroupPair size[%u]", __func__, links.size(),
               linkGroupPair.size());
 
     CHK_RET(ccuComm.GetCcuJettyMgr()->PrepareCreate(links));

@@ -9,7 +9,10 @@
  */
 #ifndef P2P_TRANSPORT_H
 #define P2P_TRANSPORT_H
+
 #include "base_mem_transport.h"
+#include "virtual_topo.h"
+
 namespace Hccl {
 class P2PTransport : public BaseMemTransport {
 public:

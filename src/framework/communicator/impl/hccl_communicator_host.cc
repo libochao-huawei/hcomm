@@ -458,7 +458,7 @@ namespace hccl
         HCCL_DEBUG("[%s]hcclRankLinkInfo_ userRank[%u], devicePhyId[%u], ip[%s], port[%u]", __func__,
                    hcclRankLinkInfo_.userRank, hcclRankLinkInfo_.devicePhyId, hcclRankLinkInfo_.ip.GetReadableIP(),
                    hcclRankLinkInfo_.port);
-        CHK_RET(oneSideService_->Config(dispatcher_, hcclRankLinkInfo_, &rankTable, identifier_));
+        CHK_RET(oneSideService_->Config(dispatcher_, hcclRankLinkInfo_, &rankTable, identifier_, isStandardCard_));
         return HCCL_SUCCESS;
     }
 
@@ -601,6 +601,7 @@ namespace hccl
         // 目前只支持allgather, allreduce, reducescatter
         CHK_PRT_RET(opType != HcclCMDType::HCCL_CMD_ALLGATHER && 
                     opType != HcclCMDType::HCCL_CMD_ALLREDUCE &&
+                    opType != HcclCMDType::HCCL_CMD_ALLTOALL &&
                     opType != HcclCMDType::HCCL_CMD_REDUCE_SCATTER,
                     HCCL_INFO("[%s] opType[%d] not support symmetric memory", 
                             __func__, opType),
@@ -813,33 +814,35 @@ namespace hccl
             std::sort(devIdList0.begin(), devIdList0.end());
             std::sort(devIdList1.begin(), devIdList1.end());
 
+            auto buildDeviceListStr = [](const std::vector<u32>& list) -> std::string {
+                std:: string result;
+                for(const auto& id : list) {
+                    if (!result.empty()) {
+                        result += " ";
+                    }
+                    result += std::to_string(id);
+                }
+                return result;
+            };
+
+            std::string devList0Str = buildDeviceListStr(devIdList0);
+            std::string devList1Str = buildDeviceListStr(devIdList1);
+
             if (devIdList0.size() != devIdList1.size()) {
-                char errorLogBuffer[LOG_TMPBUF_SIZE];
-                s32 ret = snprintf_s(errorLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-                                     "errNo[0x%016llx]. In A+X serverNum_[%d], moduleNum_[%d] case: "
-                                     "deviceNum in module0:[%d] not equal to deviceNum in module1:[%d], "
-                                     "you can export HCCL_INTRA_ROCE_ENABLE=1 to enable this scenario.",
-                                     HCCL_ERROR_CODE(HCCL_E_NOT_SUPPORT), serverNum_, moduleNum_, devIdList0.size(), devIdList1.size());
-                CHK_PRT_CONT(ret == -1, HCCL_ERROR("Failed to build log info"));
+                std::string errormessage = "Device ID " + devList0Str + " in module 0 and device ID " + devList1Str + " in module 1 are not on the same plane.";
                 RPT_INPUT_ERR(true, "EI0010", std::vector<std::string>({"reason"}),
-                              std::vector<std::string>({std::string(errorLogBuffer)}));
+                              std::vector<std::string>({ errormessage }));
                 HCCL_ERROR("[%s][%s]%s",
-                    LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_TIMEOUT.c_str(), errorLogBuffer);
+                    LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_TIMEOUT.c_str(), errormessage.c_str());
                 return HCCL_E_NOT_SUPPORT;
             }
             for (size_t i = 0; i < devIdList0.size(); i++) {
                 if (devIdList0[i] % DEVICE_PER_MODULE != devIdList1[i] % DEVICE_PER_MODULE) {
-                    char errorLogBuffer[LOG_TMPBUF_SIZE];
-                    s32 ret = snprintf_s(errorLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-                                         "errNo[0x%016llx]. In A+X serverNum_[%d], moduleNum_[%d] case: "
-                                         "deviceId[%d] in module0 and deviceId[%d] in module1 are not on the same plane, "
-                                         "you can export HCCL_INTRA_ROCE_ENABLE=1 to enable this scenario.",
-                                         HCCL_ERROR_CODE(HCCL_E_NOT_SUPPORT), serverNum_, moduleNum_, devIdList0[i], devIdList1[i]);
-                    CHK_PRT_CONT(ret == -1, HCCL_ERROR("Failed to build log info"));
+                    std::string errormessage = "Device ID " + std::to_string(devIdList0[i]) + " in module 0 and device ID " + std::to_string(devIdList1[i]) + " in module 1 are not on the same plane.";
                     RPT_INPUT_ERR(true, "EI0010", std::vector<std::string>({"reason"}),
-                                  std::vector<std::string>({std::string(errorLogBuffer)}));
+                                  std::vector<std::string>({ errormessage }));
                     HCCL_ERROR("[%s][%s]%s",
-                        LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_TIMEOUT.c_str(), errorLogBuffer);
+                        LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_TIMEOUT.c_str(), errormessage.c_str());
                     return HCCL_E_NOT_SUPPORT;
                 }
             }
@@ -857,7 +860,8 @@ namespace hccl
                         "EI0003",
                         infoTitle,
                         vector<string>(
-                            {"CheckDataType", "dataType", GetDataTypeEnumStr(dataType), "please check dataType"}));
+                            {"CheckDataType", GetDataTypeEnumStr(dataType), "dataType", "HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_INT16, HCCL_DATA_TYPE_INT32, "\
+                            "HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP32"}));
                     HCCL_ERROR("[%s][%s]errNo[0x%016llx] data type[%s] not supported, support range=[%s]",
                         LOG_KEYWORDS_TASK_EXEC.c_str(),
                         LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
@@ -867,7 +871,6 @@ namespace hccl
                     return HCCL_E_NOT_SUPPORT;
                 }
             }
-
             if ((dataType == HCCL_DATA_TYPE_UINT64) ||
                 (dataType == HCCL_DATA_TYPE_UINT8) || (dataType == HCCL_DATA_TYPE_UINT16) ||
                 (dataType == HCCL_DATA_TYPE_UINT32) || (dataType == HCCL_DATA_TYPE_FP64) ||
@@ -876,7 +879,8 @@ namespace hccl
                     "EI0003",
                     infoTitle,
                     vector<string>(
-                        {"CheckDataType", "dataType", GetDataTypeEnumStr(dataType), "please check dataType"}));
+                        {"CheckDataType", GetDataTypeEnumStr(dataType), "dataType", "HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_INT16, HCCL_DATA_TYPE_INT32, "\
+                        "HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP32"}));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] data type[%s] not supported, support range=[%s]",
                     LOG_KEYWORDS_TASK_EXEC.c_str(),
                     LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
@@ -892,7 +896,8 @@ namespace hccl
                     "EI0003",
                     infoTitle,
                     vector<string>(
-                        {"CheckDataType", "dataType", GetDataTypeEnumStr(dataType), "please check dataType"}));
+                        {"CheckDataType",  GetDataTypeEnumStr(dataType), "dataType", "HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_INT16, HCCL_DATA_TYPE_INT32, "\
+                            "HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP32, HCCL_DATA_TYPE_UINT8, HCCL_DATA_TYPE_UINT16, HCCL_DATA_TYPE_UINT32"}));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] data type[%s] not supported, support range=[%s]",
                     LOG_KEYWORDS_TASK_EXEC.c_str(),
                     LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
@@ -1039,11 +1044,11 @@ namespace hccl
                 ((dataType == HCCL_DATA_TYPE_INT16) || (dataType == HCCL_DATA_TYPE_BFP16))) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
                     std::vector<std::string>({"CheckReduceDataType",
-                        "dataType",
                         GetDataTypeEnumStr(dataType),
-                        "please check dataType when optype is prod"}));
+                        "dataType",
+                        "HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_INT32, HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP32"}));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] device type[%d] does not support the data type[%s] and data "
                            "type[%s] for Op[%s]",
                     LOG_KEYWORDS_TASK_EXEC.c_str(),
@@ -1059,11 +1064,11 @@ namespace hccl
             if (dataType == HCCL_DATA_TYPE_INT16) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
                     std::vector<std::string>({"CheckReduceDataType",
-                        "dataType",
                         GetDataTypeEnumStr(dataType),
-                        "please check the data type when the device type is 910."}));
+                        "dataType",
+                        "HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_INT32, HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP32"}));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] device type[%d] does not support the data type[%s]",
                     LOG_KEYWORDS_TASK_EXEC.c_str(),
                     LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
@@ -1076,11 +1081,11 @@ namespace hccl
             if (dataType == HcclDataType::HCCL_DATA_TYPE_INT16 && op != HcclReduceOp::HCCL_REDUCE_SUM) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
                     std::vector<std::string>({"CheckReduceDataType",
-                        "op",
                         GetReduceOpEnumStr(op),
-                        "please check operation type when the data type is int16."}));
+                        "op",
+                        "sum"}));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] device type[%d] does not support the data type[%s] for Op[%s]",
                     LOG_KEYWORDS_TASK_EXEC.c_str(),
                     LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
@@ -1291,10 +1296,9 @@ namespace hccl
         for (u32 i = 0; i < iterServ->second.size(); i++) {
             if (iterServ->second[i].deviceInfo.devicePhyId != HOST_DEVICE_ID) {
                 enableP2PDevices_.push_back(iterServ->second[i].deviceInfo.devicePhyId);
-                HCCL_INFO("[InitPreResource]Insert all devices in the current server[%s] into the enablep2p queue, devicePhyId[%d]",
-                    iterServ->second[i].serverId.c_str(), iterServ->second[i].deviceInfo.devicePhyId);
             }
         }
+        HCCL_DEBUG("[Init][PreResource]Current deviceType[%d], isStandardCard[%s]", deviceType_, isStandardCard_ ? "true" : "false");
         if (deviceType_ != DevType::DEV_TYPE_310P3 && !isStandardCard_) {
             HcclResult ret = P2PMgmtPub::EnableP2P(enableP2PDevices_);
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][PreResource]Enable P2P Failed, deviceLogicId[%d], ret[%u]", deviceLogicId_, ret), ret);
@@ -1855,12 +1859,14 @@ namespace hccl
         CHK_PRT_RET(algOperator->CalNumBlocks(algName, param, numBlocks, aivCoreLimit) != HCCL_SUCCESS,
             HCCL_ERROR("[%s] CalNumBlocks failed", __func__),
             HCCL_E_PARA);
+        if (clearEnable) {
+            aivOffloadTag_ = 1;
+        }
         GetAivTag(algDesc.aivTagNum, false, aivSuperKernelArgs.tag); // workflowmode为图模式
-        aivSuperKernelArgs.clearEnable = (clearEnable ? 1 : 0);
         aivSuperKernelArgs.numBlocks = numBlocks;
 
-        HCCL_INFO("SPK, Tag %llu clearEnable %llu, aivCoreLimit %u, numBlocks %llu.", aivSuperKernelArgs.tag,
-                  aivSuperKernelArgs.clearEnable, aivCoreLimit, aivSuperKernelArgs.numBlocks);
+        HCCL_INFO("SPK, Tag %llu  aivCoreLimit %u, numBlocks %llu.", aivSuperKernelArgs.tag,
+                  aivCoreLimit, aivSuperKernelArgs.numBlocks);
         // clearenable
         //  拷贝到Device
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
@@ -2083,160 +2089,6 @@ namespace hccl
     HcclResult HcclCommunicator::InitCCLbuffer(u64 inCCLbufferSize, u64 outCCLbufferSize)
     {
         return cclBufferManager_.InitCCLbuffer(inCCLbufferSize, outCCLbufferSize);
-    }
-
-    HcclResult HcclCommunicator::SetGroupMainStream(HcclRtStream sendRecvMainStream){
-        Stream streamObj(sendRecvMainStream);
-        groupSendRecvMainStream = streamObj;
-        HCCL_INFO("groupSendRecvMainStream[%p], id[%d]", groupSendRecvMainStream, groupSendRecvMainStream.id());
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::CreateGroupSendNotifies(){
-        u32 sendStreamNum = std::min(nSend, MAX_CONCURRENT);
-        if (groupSendNotifies.size() >= GROUP_SYNC_NOTIFY_NUM * sendStreamNum) {
-            return HCCL_SUCCESS;
-        }
-        u32 currentSize = groupSendNotifies.size();
-        groupSendNotifies.resize(GROUP_SYNC_NOTIFY_NUM * sendStreamNum);
-        for (u32 i = currentSize; i < GROUP_SYNC_NOTIFY_NUM * sendStreamNum; i++){
-            EXECEPTION_CATCH((groupSendNotifies[i] = std::make_shared<LocalNotify>()), return HCCL_E_PTR);
-            CHK_RET(groupSendNotifies[i]->Init(NotifyLoadType::HOST_NOTIFY));
-            CHK_RET(groupSendNotifies[i]->SetIpc());
-            HCCL_INFO("Create Send Notify[%d]", i);
-        }
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::CreateGroupRecvNotifies(){
-        u32 recvStreamNum = std::min(nRecv, MAX_CONCURRENT);
-        if (groupRecvNotifies.size() >= GROUP_SYNC_NOTIFY_NUM * recvStreamNum) {
-            return HCCL_SUCCESS;
-        }
-        u32 currentSize = groupRecvNotifies.size();
-        groupRecvNotifies.resize(GROUP_SYNC_NOTIFY_NUM * recvStreamNum);
-        for (u32 i = currentSize; i < GROUP_SYNC_NOTIFY_NUM * recvStreamNum; i++){
-            EXECEPTION_CATCH((groupRecvNotifies[i] = std::make_shared<LocalNotify>()), return HCCL_E_PTR);
-            CHK_RET(groupRecvNotifies[i]->Init(NotifyLoadType::HOST_NOTIFY));
-            CHK_RET(groupRecvNotifies[i]->SetIpc());
-            HCCL_INFO("Create Recv Notify[%d]", i);
-        }
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::CreateGroupSendStreams(){
-        u32 sendStreamNum = std::min(nSend, MAX_CONCURRENT);
-        if (groupSendStreams.size() >= sendStreamNum){
-            return HCCL_SUCCESS;
-        }
- 
-        u32 currentSize = groupSendStreams.size();
-        groupSendStreams.resize(sendStreamNum);
-        for (u32 i = currentSize; i < sendStreamNum; i++){
-            groupSendStreams[i] = Stream(StreamType::STREAM_TYPE_ONLINE);
-        }
- 
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::CreateGroupRecvStreams(){
-        u32 recvStreamNum = std::min(nRecv, MAX_CONCURRENT);
-        if (groupRecvStreams.size() >= recvStreamNum){
-            return HCCL_SUCCESS;
-        }
- 
-        u32 currentSize = groupRecvStreams.size();
-        groupRecvStreams.resize(recvStreamNum);
-        for (u32 i = currentSize; i < recvStreamNum; i++){
-            groupRecvStreams[i] = Stream(StreamType::STREAM_TYPE_ONLINE);
-        }
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte){
-        HcclUs startutime = TIME_NOW();
-        u64 sliceSize;
-        CHK_RET(GetSliceSize(sliceSize));
-        u32 sendStreamNum = std::min(nSend, MAX_CONCURRENT);
-        u32 recvStreamNum = std::min(nRecv, MAX_CONCURRENT);
-        std::unordered_map<u32, u32> sendStreamIters; // <sendstream 编号，需要本地拷贝的次数>，这决定了需要同步的次数
-        std::unordered_map<u32, u32> recvStreamIters; // <recvstream 编号，需要本地拷贝的次数>
-        HCCL_INFO("sendStreamNum[%d], recvStreamNum[%d], sendIdx2Byte.size[%d], recvIdx2Byte.size[%d]", sendStreamNum, recvStreamNum, sendIdx2Byte.size(), recvIdx2Byte.size());
-        for (auto &it : sendIdx2Byte){
-            for (u32 i = 0; i < it.second.size(); i++){
-                sendStreamIters[it.first % sendStreamNum] += (it.second[i] + sliceSize - 1) / sliceSize; //取上整
-                HCCL_INFO("sendStreamIters[%d] = %d, sendIdx[%d] bytes[%lld], sliceSize[%lld]", it.first % sendStreamNum, sendStreamIters[it.first % sendStreamNum], it.first, it.second[i], sliceSize);
-            }
-        }
-        for (auto &it : recvIdx2Byte){
-            for (u32 i = 0; i < it.second.size(); i++){
-                recvStreamIters[it.first % recvStreamNum] += (it.second[i] + sliceSize - 1) / sliceSize; //取上整
-                HCCL_INFO("recvStreamIters[%d] = %d, recvIdx[%d] bytes[%lld], sliceSize[%lld]", it.first % recvStreamNum, recvStreamIters[it.first % recvStreamNum], it.first, it.second[i], sliceSize);
-            }
-        }
-        u32 emptySend = 0;
-        u32 emptyRecv = 0;
-        // one round(while loop) corresponds one local copy
-        // one round dispatches M+N Wait, M+N Record to the Mainstream
-        // M = the counts of sendStream which still has local copy tasks, N = the counts of recvStream which still has local copy tasks
-        while ((emptySend < sendStreamNum || sendStreamNum == 0) && (emptyRecv < recvStreamNum || recvStreamNum == 0) && sendStreamNum + recvStreamNum > 0) {
-            std::vector<u32> aliveSendTasks; // the size should be M
-            std::vector<u32> aliveRecvTasks; // the size should be N
-            for (auto it = sendStreamIters.begin(); it != sendStreamIters.end(); ) {
-                if (it->second > 0) {
-                    aliveSendTasks.push_back(it->first);
-                    it->second--;
-                    ++it;
-                } else {
-                    emptySend++;
-                    it = sendStreamIters.erase(it); // 删除并返回下一个迭代器，下次进入while循环就不会遍历到这个消耗完了的stream
-                }
-            }
- 
-            for (auto it = recvStreamIters.begin(); it != recvStreamIters.end(); ) {
-                if (it->second > 0) {
-                    aliveRecvTasks.push_back(it->first);
-                    it->second--;
-                    ++it;
-                } else {
-                    emptyRecv++;
-                    it = recvStreamIters.erase(it); // 删除并返回下一个迭代器，下次进入while循环就不会遍历到这个消耗完了的stream
-                }
-            }
- 
-            for (u32 sendStreamId : aliveSendTasks){
-                CHK_RET(LocalNotify::Wait(groupSendRecvMainStream, dispatcher_, groupSendNotifies[GROUP_SYNC_NOTIFY_NUM * sendStreamId], INVALID_VALUE_STAGE));
-                HCCL_INFO("Mainstream[%d] Wait, thread id[%d]", groupSendRecvMainStream.id(), std::this_thread::get_id());
-            }
-            for (u32 recvStreamId : aliveRecvTasks){
-                CHK_RET(LocalNotify::Wait(groupSendRecvMainStream, dispatcher_, groupRecvNotifies[GROUP_SYNC_NOTIFY_NUM * recvStreamId], INVALID_VALUE_STAGE));
-                HCCL_INFO("Mainstream[%d] Wait, thread id[%d]", groupSendRecvMainStream.id(), std::this_thread::get_id());
-            }
- 
-            for (u32 sendStreamId : aliveSendTasks){
-                CHK_RET(LocalNotify::Post(groupSendRecvMainStream, dispatcher_, groupSendNotifies[GROUP_SYNC_NOTIFY_NUM * sendStreamId + 1], INVALID_VALUE_STAGE));
-                HCCL_INFO("Mainstream[%d] Post, thread id[%d]", groupSendRecvMainStream.id(), std::this_thread::get_id());
-            }
-            for (u32 recvStreamId : aliveRecvTasks){
-                CHK_RET(LocalNotify::Post(groupSendRecvMainStream, dispatcher_, groupRecvNotifies[GROUP_SYNC_NOTIFY_NUM * recvStreamId + 1], INVALID_VALUE_STAGE));
-                HCCL_INFO("Mainstream[%d] Post, thread id[%d]", groupSendRecvMainStream.id(), std::this_thread::get_id());
-            }
-        }
-        HCCL_RUN_INFO("[GroupSyncMainstream] take time [%lld]us.", DURATION_US(TIME_NOW() - startutime));
-        
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult HcclCommunicator::GroupSubstreamsSync(){
-        for(auto substream : groupSendStreams){
-            hcclStreamSynchronize(substream.ptr());
-        }
- 
-        for(auto substream : groupRecvStreams){
-            hcclStreamSynchronize(substream.ptr());
-        }
- 
-        return HCCL_SUCCESS;
     }
 
     u32 HcclCommunicator::GetLocalNicPort(NicType nicType)
@@ -2619,8 +2471,7 @@ namespace hccl
                                            HcclDataType dataType, HcclRtStream stream, HcomCollOpInfo *opInfo)
     {
         bool aicpuUnfoldMode = false;
-        if (GetAicpuUnfoldConfig() == true &&
-            (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
+        if (EnableAicpuUnfold() && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -2789,7 +2640,7 @@ namespace hccl
         }
 
         bool aicpuUnfoldMode = false;
-        if (GetAicpuUnfoldConfig() == true && (deviceType_ == DevType::DEV_TYPE_910_93) && (userRankSize_ != 1)) {
+        if (EnableAicpuUnfold() && (userRankSize_ != 1)) {
             aicpuUnfoldMode = true;
         }
 
@@ -3136,7 +2987,7 @@ namespace hccl
         opParam.All2AllDataDes.rdispls = const_cast<void *>(rdispls);
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLV;
-        opParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetAicpuUnfoldConfig();
+        opParam.aicpuUnfoldMode = EnableAicpuUnfold();
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
 
@@ -3195,7 +3046,7 @@ namespace hccl
         opParam.All2AllDataDes.rdispls = const_cast<void *>(rdispls);
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLV;
-        opParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetAicpuUnfoldConfig();
+        opParam.aicpuUnfoldMode = EnableAicpuUnfold();
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
 
@@ -3220,8 +3071,6 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]AlltoAllVC is not supported",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -3254,7 +3103,7 @@ namespace hccl
         opParam.All2AllDataDes.sendCountMatrix = const_cast<void *>(sendCountMatrix);
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLVC;
-        opParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetAicpuUnfoldConfig();
+        opParam.aicpuUnfoldMode = EnableAicpuUnfold();
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
 
@@ -3309,7 +3158,7 @@ namespace hccl
         opParam.All2AllDataDes.sendCountMatrix = const_cast<void *>(sendCountMatrix);
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLVC;
-        opParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetAicpuUnfoldConfig();
+        opParam.aicpuUnfoldMode = EnableAicpuUnfold();
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
 
@@ -3364,8 +3213,8 @@ namespace hccl
         opParam.aicpuUnfoldMode = false;
         opParam.aicpuCacheEnable = 0;
         opParam.isCapture = isCapture;
-        if (deviceType_ == DevType::DEV_TYPE_910_93) {
-            opParam.aicpuUnfoldMode = GetAicpuUnfoldConfig();
+        if (EnableAicpuUnfold()) {
+            opParam.aicpuUnfoldMode = true;
             opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         }
 
@@ -3473,8 +3322,6 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]Scatter Not Supported Yet",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -3522,8 +3369,6 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]ScatterOutPlace Not Supported Yet",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -3579,8 +3424,6 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]Reduce Not Supported Yet",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -3952,6 +3795,10 @@ namespace hccl
         opParam.BatchSendRecvDataDes.sendRecvItemsPtr = sendRecvItemsPtr;
         opParam.BatchSendRecvDataDes.itemNum = itemNum;
         opParam.opType = HcclCMDType::HCCL_CMD_BATCH_SEND_RECV;
+        opParam.isGroupMode = isGroupMode_;
+        if (isGroupMode_) {
+            opParam.aicpuUnfoldMode = true; // A2的GroupSendRecv也走aicpu模式
+        }
 
         CHK_RET(ExecOp(HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, opParam));
 
@@ -4010,8 +3857,6 @@ namespace hccl
         }
 
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]SendOutPlace is not supported",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -4050,17 +3895,6 @@ namespace hccl
         opParam.dstRank = destRank;
         opParam.opType = HcclCMDType::HCCL_CMD_SEND;
         opParam.localGroupRank = userRank_;
-        opParam.isGroupMode = GetGroupMode();
-        if (opParam.isGroupMode) {
-            opParam.aicpuUnfoldMode = false;
-            opParam.aicpuCacheEnable = 0;
-            GetNSend(opParam.nSend);
-            GetNRecv(opParam.nRecv);
-            GetSendIndex(opParam.iSend);
-            GetRecvIndex(opParam.iRecv);
-            opParam.stream = groupSendStreams[opParam.iSend % std::min(opParam.nSend, MAX_CONCURRENT)]; // opParam.stream修改为执行流，也就是从流，目的是为了减少代码修改
-            HCCL_INFO("SendSubstream Id [%d], destRank[%d], opParam.iSend[%d]", opParam.stream.id(), destRank, opParam.iSend);
-        }
         CHK_RET(ExecOp(HcclCMDType::HCCL_CMD_SEND, opParam));
 
         return HCCL_SUCCESS;
@@ -4118,8 +3952,6 @@ namespace hccl
         }
 
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]ReceiveOutPlace is not supported",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -4158,17 +3990,6 @@ namespace hccl
         opParam.srcRank = srcRank;
         opParam.opType = HcclCMDType::HCCL_CMD_RECEIVE;
         opParam.localGroupRank = userRank_;
-        opParam.isGroupMode = GetGroupMode();
-        if (opParam.isGroupMode) {
-            opParam.aicpuUnfoldMode = false;
-            opParam.aicpuCacheEnable = 0;
-            GetNSend(opParam.nSend);
-            GetNRecv(opParam.nRecv);
-            GetSendIndex(opParam.iSend);
-            GetRecvIndex(opParam.iRecv);
-            opParam.stream = groupRecvStreams[opParam.iRecv % std::min(opParam.nRecv, MAX_CONCURRENT)]; // opParam.stream修改为执行流，也就是从流，目的是为了减少代码修改
-            HCCL_INFO("RecvSubstream Id [%d], srcRank[%d], opParam.iRecv[%d]", opParam.stream.id(), srcRank, opParam.iRecv);
-        }
         CHK_RET(ExecOp(HcclCMDType::HCCL_CMD_RECEIVE, opParam));
 
         return HCCL_SUCCESS;
@@ -4280,9 +4101,6 @@ namespace hccl
         CHK_RET(RegisterDfxInfo(opParam, algType, resMap_[newTag].slaveStreams, selectAivAlg));
         // 头计数
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, HEAD, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
-        if (aivClearEnable_) {
-            CHK_RET(ClearAivSyncBuf(cacheInfo.buffersOut, cacheInfo.resourceArgs, cacheInfo.topoArgs, cacheInfo.algArgs));
-        }
         u64 dataSize = (opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALL ?
             opParam.All2AllDataDes.sendCount * SIZE_TABLE[opParam.All2AllDataDes.sendType] : 0);
         if (opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V || opType == HcclCMDType::HCCL_CMD_ALLGATHER_V ||
@@ -4501,6 +4319,7 @@ namespace hccl
                 CHK_RET(RecordOpPara(opType, opParam));
                 CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
                 CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+                opParam.needIncreLink = true;
             }
         }
 
@@ -4635,6 +4454,8 @@ namespace hccl
         ForceProf(opParam.isCapture);
         bool isInGraphCaptureZeroCopy = false;
         zeroCopyAclGraph_->SetRetryEnable(retryEnable_);
+        opParam.supportSymmetricMemory = IsSupportSymmetricMemory(opType, opParam);
+        opParam.supportZeroCopy = !opParam.supportSymmetricMemory && IsSupportZeroCopy(opParam);
         opParam.aclGraphZeroCopyEnable = GetConfigAclGraphZeroCopyEnable();
         isInGraphCaptureZeroCopy = zeroCopyAclGraph_->SetAclGraphZeroCopyMode(
             deviceType_, opType, opParam, implAlg_.get(), cclBufferManager_.GetOutCCLbufferSize());
@@ -4648,7 +4469,7 @@ namespace hccl
         AlltoAllOperator *alltoAllOperator = dynamic_cast<AlltoAllOperator *>(algOperator.get());
         CHK_PTR_NULL(alltoAllOperator);
 
-        if (alltoAllOperator->IsSatisfyAlltoallContinuousPipelineCondition()) {
+        if (alltoAllOperator->IsSatisfyAlltoallContinuousPipelineCondition(opParam)) {
             opParam.aicpuUnfoldMode = true;
             opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         }
@@ -4672,7 +4493,7 @@ namespace hccl
             }
         }
 
-        if (deviceType_ == DevType::DEV_TYPE_910B) {
+        if (deviceType_ == DevType::DEV_TYPE_910B && userRankSize_ > 1) {
             // 用于AIV支持Roce直驱判断
             CHK_RET(IsSupportAIVNormalQP(devicePhyId_, opParam.supportRoceDirect));
         }
@@ -4691,11 +4512,12 @@ namespace hccl
                 "aiv only not support, please ensure rankNum is greater than one", opTypeName.c_str());
             return HCCL_E_NOT_SUPPORT;
         }
+        CHK_RET(PrepareZeroCopy(algName, algDesc, opParam));
 
         newTag += !opParam.isCapture ? "" : "_Capture";
-        auto isSupportAlg = [&](const std::string &algName, bool aicpuUnfoldMode) -> bool {
+        auto isSupportAlg = [](const std::string &algName, bool aicpuUnfoldMode) -> bool {
             return ((algName == "RunAlltoAllVFullMesh" || algName == "RunAlltoAllVTwoLevelPipeline") && aicpuUnfoldMode) ||
-                (algName == "RunAlltoAllDirectFullmesh");
+                (algName == "RunAlltoAllDirectFullmesh" || algName == "RunAlltoAllFullMeshSymmetricMemory");
         };
         bool isOpbaseMode = GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
         if ((isOpbaseMode && userRankSize_ > 1) || (isSupportAlg(algName, opParam.aicpuUnfoldMode))) {
@@ -4744,6 +4566,7 @@ namespace hccl
                 }
                 CHK_RET(RegisterToHeartBeat());
             }
+            CHK_RET(UpdateZeroCopy(opParam, resMap_[newTag]));
         }
         else
         {
@@ -4840,6 +4663,7 @@ namespace hccl
                 "RunAlltoAllVFullMesh",
                 "RunAlltoAllDirectFullmesh",
                 "RunAlltoAllVTwoLevelPipeline",
+                "RunAlltoAllFullMeshSymmetricMemory",
                 "RunAlltoAllVContinuousPipeline"
             };
             return aicpuAlgs.count(algName) > 0;
@@ -5626,9 +5450,9 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::BuildOpRemoteLinkRoceResParam(const LINK &link, HccltagRemoteResV3 &tagRemoteRes,
-                                                               bool isBackup, bool isRetry, bool IsSecondBuild)
+                                                               bool isBackup, bool isRetry, bool isSecondBuild)
     {
-        u32 iter = IsSecondBuild ? 2 : 0;
+        u32 iter = isSecondBuild ? 2 : 0;
         HcclLinkRoceV2 *linkRoce = isBackup ? &(tagRemoteRes.tagRemoteResPtr->linkRoce[AICPU_RETRY_LINKROCE_BACKUP + iter])
                                             : &(tagRemoteRes.tagRemoteResPtr->linkRoce[AICPU_RETRY_LINKROCE_DEFAULT + iter]);
         if (!isRetry && linkRoce->localNotifyList != 0) {
@@ -5714,7 +5538,7 @@ namespace hccl
         HCCL_DEBUG("[%s] finish set Qp info qpNum[%u], linkRoce->localNotifyList[0].resId[%llu], "
                    "notifyNum[%u], isBackup[%d], isSecond[%d], qpPtr[%llu], useAtomicWrite[%d]",
                    __func__, linkRoce->qpsPerConnection,
-                   signalInfos[0].resId, linkRoce->singleQPNotifyNum, isBackup, IsSecondBuild,
+                   signalInfos[0].resId, linkRoce->singleQPNotifyNum, isBackup, isSecondBuild,
                    linkRoce->QpInfo[0].qpPtr, linkRoce->useAtomicWrite);
         return HCCL_SUCCESS;
     }
@@ -6407,40 +6231,6 @@ namespace hccl
 
         algResResponse.cclInputMem = cclBufferManager_.GetInCCLbuffer();
         algResResponse.cclOutputMem = cclBufferManager_.GetOutCCLbuffer();
-        if (GetGroupMode() && (opType == HcclCMDType::HCCL_CMD_SEND || opType == HcclCMDType::HCCL_CMD_RECEIVE)){// 做CCLBuffer的切分，stream资源、notify资源的分配
-            if (opType == HcclCMDType::HCCL_CMD_SEND) {
-                u32 iSend;
-                u32 nSend;
-                CHK_RET(GetSendIndex(iSend));
-                CHK_RET(GetNSend(nSend));
-                u32 sendStreamNum = std::min(nSend, MAX_CONCURRENT);
-                // 流分配和Notify分配
-                algResResponse.notifiesMain.push_back(groupSendNotifies[GROUP_SYNC_NOTIFY_NUM * (iSend % sendStreamNum)]);
-                algResResponse.notifiesAux.push_back(groupSendNotifies[GROUP_SYNC_NOTIFY_NUM * (iSend % sendStreamNum) + 1]);
-                // CCL Buffer分配
-                DeviceMem cclin = cclBufferManager_.GetInCCLbuffer();
-                u64 sliceSize;
-                CHK_RET(GetSliceSize(sliceSize));
-                algResResponse.cclInputMem = cclin.range(iSend % bufferSliceNum * sliceSize, sliceSize);
-                HCCL_INFO("Send[%d] algResResponse.cclInputMem[%p], size[%d]", iSend, algResResponse.cclInputMem.ptr(), algResResponse.cclInputMem.size());
-            }
-            else {
-                u32 iRecv;
-                u32 nRecv;
-                CHK_RET(GetRecvIndex(iRecv));
-                CHK_RET(GetNRecv(nRecv));
-                u32 recvStreamNum = std::min(nRecv, MAX_CONCURRENT);
-                // 流分配和Notify分配
-                algResResponse.notifiesMain.push_back(groupRecvNotifies[GROUP_SYNC_NOTIFY_NUM * (iRecv % recvStreamNum)]);
-                algResResponse.notifiesAux.push_back(groupRecvNotifies[GROUP_SYNC_NOTIFY_NUM * (iRecv % recvStreamNum) + 1]);
-                // CCL Buffer分配
-                DeviceMem cclout = cclBufferManager_.GetOutCCLbuffer();
-                u64 sliceSize;
-                CHK_RET(GetSliceSize(sliceSize));
-                algResResponse.cclOutputMem = cclout.range(iRecv % bufferSliceNum * sliceSize, sliceSize);
-                HCCL_INFO("Recv[%d] algResResponse.cclOutputMem[%p], size[%d]", iRecv, algResResponse.cclOutputMem.ptr(), algResResponse.cclOutputMem.size());
-            }
-        }
         DeviceMem expMem = cclBufferManager_.GetCommCCLBuffer(); // 获取拓展内存
         if (opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALLV || opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC || opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
             DeviceMem tinySendRecvMem;
@@ -6537,7 +6327,7 @@ namespace hccl
             StateGuard<HcclCommunicator, HcclCommState> guard(this, HcclCommState::BUILDING);
             ret = transportManager_->Alloc(opParam.tag, transMem, algResResponse.opTransportResponse,
                                            opParam.aicpuUnfoldMode, false, opParam.isZeroCopy, opParam.opType,
-                                           opParam.isCapture, false, opParam.isNpuDirectRoce);
+                                           opParam.isCapture, false, opParam.isNpuDirectRoce, &opParam);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[%s]Alloc transports failed, tag[%s]", __func__, newTag.c_str()), ret);
         }
@@ -7257,6 +7047,7 @@ namespace hccl
         opTilingData->isCapture = opParam.isCapture;
         opTilingData->orderLaunchMode = GetOrderLaunchMode(opParam.isCapture);
         opTilingData->isSymmetricMemory = opParam.supportSymmetricMemory;
+        opTilingData->needIncreLink = opParam.needIncreLink;
         // 有没有存在对应的Notify
         CHK_RET(InitAndCheckAicpuOrderNotify(opTilingData->orderLaunchMode));
         CHK_RET(BuildHierarchicalAlgOption(opTilingData->ahcConfInfo));
@@ -7295,10 +7086,14 @@ namespace hccl
                 CHK_PTR_NULL(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
                 batchSendRecvDataPtr->batchSendRecvItem[i] = *(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
             }
-            u8 *isDirectRemoteRankPtr = reinterpret_cast<u8*>(batchSendRecvDataPtr->batchSendRecvItem + opParam.BatchSendRecvDataDes.itemNum);
-            for (u32 i = 0; i < userRankSize_; i++) {
-                CHK_PTR_NULL(isDirectRemoteRankPtr + i);
-                isDirectRemoteRankPtr[i] = *(opParam.BatchSendRecvDataDes.isDirectRemoteRank + i);
+            if (deviceType_ == DevType::DEV_TYPE_910B && isGroupMode_) {
+                // 如果是A2的GroupSendRecv则跳过下面这段
+            } else {
+                u8 *isDirectRemoteRankPtr = reinterpret_cast<u8*>(batchSendRecvDataPtr->batchSendRecvItem + opParam.BatchSendRecvDataDes.itemNum);
+                for (u32 i = 0; i < userRankSize_; i++) {
+                    CHK_PTR_NULL(isDirectRemoteRankPtr + i);
+                    isDirectRemoteRankPtr[i] = *(opParam.BatchSendRecvDataDes.isDirectRemoteRank + i);
+                }
             }
         } else if (opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
             CHK_RET(SetDynamicTilingDataAlltoall(opParam, dynamicDataMem));
@@ -7617,7 +7412,7 @@ namespace hccl
         apiParam.x1 = reinterpret_cast<uint64_t>(inputPtr);
         apiParam.gatherOut = reinterpret_cast<uint64_t>(outputPtr);
         apiParam.context = addr;
-        apiParam.workspace = (u64)workSpace_.ptr();
+        apiParam.workspace = reinterpret_cast<uint64_t>(workSpace_.ptr());
         u16 timeOut = 0;
         if (opResPara_.config.notifyWaitTime == 0) {
             timeOut = opResPara_.config.notifyWaitTime;
@@ -8132,8 +7927,6 @@ namespace hccl
                                                                    u64 *recvCounts, u64 *rdispls, HcclDataType recvType, u64 &memSize)
     {
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]GetAlltoAllStagedWorkSpaceMemSize Not Supported!",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -9148,5 +8941,14 @@ namespace hccl
     {
         CHK_SMART_PTR_NULL(symmetricMemory_);
         return symmetricMemory_->FindSymmetricWindow(ptr, size, winHandle, reinterpret_cast<u64*>(offset));
+    }
+
+    bool HcclCommunicator::EnableAicpuUnfold()
+    {
+        if (deviceType_ != DevType::DEV_TYPE_910_93 && deviceType_ != DevType::DEV_TYPE_910B) {
+            return false;
+        }
+        HCCL_INFO("[%s] aicpuUnfoldConfig[%u]", __func__, GetAicpuUnfoldConfig());
+        return GetAicpuUnfoldConfig();
     }
 }

@@ -13,11 +13,6 @@ get_filename_component(HCCL_CODE_ROOT "${HCCL_CODE_ROOT}" REALPATH)
 get_filename_component(HCCL_LLT_ROOT "${HCCL_LLT_ROOT}" REALPATH)
 set(HCCL_V2_CODE_ROOT ${HCCL_CODE_ROOT}/src/legacy/)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -O0 -fprofile-arcs -ftest-coverage")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fprofile-arcs -ftest-coverage")
-
 file(GLOB_RECURSE HCCL_V2_UTEST_FILES RELATIVE ${CMAKE_CURRENT_LIST_DIR}
     main.cc
 )
@@ -71,7 +66,7 @@ target_include_directories(hccl_v2_utest PRIVATE
 
         ${HCCL_CODE_ROOT}/src/pub_inc/
         ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network/
-        ${HCCL_CODE_ROOT}/src/platform/hccp/external_depends/rdma-core/include
+        ${RDMA_CORE_INCLUDE_DIR}
 
         ${CANN_3RD_LIB_PATH}/json/include/
         ${CANN_3RD_LIB_PATH}/gtest/include/

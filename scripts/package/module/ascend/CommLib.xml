@@ -48,7 +48,7 @@
         <file value="ccu_assist_pub.h"/>
         <file value="ccu_common.h"/>
         <file value="ccu_condition_v1.h"/>
-        <file value="ccu_context_resource_v1.h"/>
+        <file value="ccu_kernel_resource.h"/>
         <file value="ccu_datatype_v1.h"/>
         <file value="ccu_funccall_v1.h"/>
         <file value="ccu_instr_info_v1.h"/>
@@ -88,6 +88,10 @@
     </file_info>
     <file_info value="json" copy_type="delivery" src_path="build" dst_path="built-in/data/op/aicpu" install_path="opp/built-in/op_impl/aicpu/config" install_type="all" install_mod="440">
         <file value="ccl_kernel.json"/>
+    </file_info>
+    <file_info value="aicpu_custom" copy_type="delivery" src_path="build" dst_path="built-in/data/op/aicpu" install_path="opp/built-in/op_impl/aicpu/kernel" install_type="all" install_mod="550">
+        <file value="libaicpu_custom.so" file_type="shared"/>
+        <file value="libaicpu_custom.json"/>
     </file_info>
     <file_info value="json" copy_type="delivery" src_path="build" dst_path="built-in/data/op/dpu" install_path="opp/built-in/op_impl/dpu" install_type="all" install_mod="440">
         <file value="libccl_dpu.json"/>

@@ -196,7 +196,7 @@ HcclResult ChannelManager::CheckNotifyOrQPMaxNum(u64 &existNum, const u64 &MaxNu
 
 HcclResult ChannelManager::CreateWorkSpace(u64 size, DeviceMem &buffer) const
 {
-    CHK_PRT_RET(!size, HCCL_INFO("[Create][WorkSpace]work space size is zero. not need to malloc memory"),
+    CHK_PRT_RET(size == 0, HCCL_INFO("[Create][WorkSpace]work space size is zero. not need to malloc memory"),
                 HCCL_SUCCESS);
 
     CHK_PRT_RET((size > ULONG_MAX),
@@ -206,7 +206,7 @@ HcclResult ChannelManager::CreateWorkSpace(u64 size, DeviceMem &buffer) const
 
     u64 memSize = size;
     buffer = DeviceMem::alloc(memSize);
-    CHK_PRT_RET(size && !buffer, HCCL_ERROR("[Create][WorkSpace]Create work space size[%llu] fail,"
+    CHK_PRT_RET(size > 0 && !buffer, HCCL_ERROR("[Create][WorkSpace]Create work space size[%llu] fail,"
                                             "please check workspace size.",
                                             size),
                 HCCL_E_PTR);
@@ -216,7 +216,7 @@ HcclResult ChannelManager::CreateWorkSpace(u64 size, DeviceMem &buffer) const
 
 HcclResult ChannelManager::AllocAndClearHostMem(u64 size, std::shared_ptr<HostMem> &bufferPtr) const
 {
-    CHK_PRT_RET(!size,
+    CHK_PRT_RET(size == 0,
                 HCCL_INFO("[ChannelManager][AllocAndClearHostMem] host memory size is zero. not need to malloc memory"),
                 HCCL_SUCCESS);
 
@@ -227,7 +227,7 @@ HcclResult ChannelManager::AllocAndClearHostMem(u64 size, std::shared_ptr<HostMe
     HostMem tmpBuffer = HostMem::alloc(size);
     EXECEPTION_CATCH((bufferPtr = std::make_shared<HostMem>(std::move(tmpBuffer))), return HCCL_E_PTR);
 
-    CHK_PRT_RET(size && !bufferPtr.get()->ptr(),
+    CHK_PRT_RET(size > 0 && !bufferPtr.get()->ptr(),
                 HCCL_ERROR("[ChannelManager][AllocAndClearHostMem]host memory space size[%llu] fail,"
                             "please check workspace size.",
                             size),
@@ -239,7 +239,7 @@ HcclResult ChannelManager::AllocAndClearHostMem(u64 size, std::shared_ptr<HostMe
 template <typename T>
 HcclResult ChannelManager::CopyVectorToDeviceMem(const u64 len, DeviceMem &dstDeviceMem, const std::vector<T> &srcVec)
 {
-    CHK_PRT_RET(!len,
+    CHK_PRT_RET(len == 0,
                 HCCL_INFO("[ChannelManager][CopyVectorToDeviceMem] space size is zero. not need to malloc memory"),
                 HCCL_SUCCESS);
 
@@ -303,6 +303,8 @@ HcclResult ChannelManager::ParseChannelRemoteDataToMem(const OpCommTransport &op
         if (!transportRequest.isUsedRdma) {
             // sdma -> P2P
             CHK_RET(BuildOpRemoteChannelP2pResParam(tempLink, channelParam.remoteResV2[linkIdx]));
+            channelParam.remoteResV2[linkIdx].channelP2p.qos =  hcclQos_;
+            HCCL_INFO("[ChannelManager] [ParseChannelRemoteDataToMem] hcclQos[%u]", channelParam.remoteResV2[linkIdx].channelP2p.qos);
         } else {
             // rdma -> roce
             CHK_RET(BuildOpRemoteChannelRoceResParam(tempLink, channelParam.remoteResV2[linkIdx]));
@@ -390,8 +392,8 @@ HcclResult ChannelManager::BuildOpRemoteChannelRoceResParam(const LINK &link, Hc
     if ((signalInfos.size() != notifyAddrKey.size()) || (signalInfos.size() < RDMA_NOTIFY_MIN_NUM) ||
         (signalInfos.size() > RDMA_NOTIFY_MAX_NUM) || (notifyAddrKey.size() < RDMA_NOTIFY_MIN_NUM) ||
         (notifyAddrKey.size() > RDMA_NOTIFY_MAX_NUM) ||
-        ((signalInfos.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce.qpsPerConnection) ||
-        ((notifyAddrKey.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce.qpsPerConnection)) {
+        ((signalInfos.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce.qpsPerConnection) != 0 ||
+        ((notifyAddrKey.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce.qpsPerConnection) != 0) {
         return HCCL_E_INTERNAL;
     }
     u64 notifyNum = (notifyAddrKey.size() - RDMA_NOTIFY_MIN_NUM) / linkRoce.qpsPerConnection - static_cast<u32>(linkRoce.qpsPerConnection > 1);
@@ -607,8 +609,10 @@ HcclResult ChannelManager::AicpuChannelInit(const std::string &commId, const std
     customInitTask.context = reinterpret_cast<u64>(addr.ptr());
     customInitTask.isCustom = false;
 
+    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
+                    std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
     CHK_RET(AicpuAclKernelLaunch(localStream.ptr(), reinterpret_cast<void *>(&customInitTask),
-        sizeof(customInitTask), binHandle_, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));
+        sizeof(customInitTask), binHandle_, kernelName, true, timeOut));
     CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut(tag)));
 
     // 将device侧的channelList拷贝回host侧的channelList
@@ -766,6 +770,13 @@ HcclResult ChannelManager::ReleaseChannel()
         }
     }
     channelLinks_.clear();
+    return HCCL_SUCCESS;
+}
+
+HcclResult ChannelManager::SetHcclQos(u32 hcclQos)
+{
+    HCCL_INFO("[ChannelManager] [SetHcclQos] hcclQos[%u]", hcclQos);
+    hcclQos_ = hcclQos;
     return HCCL_SUCCESS;
 }
 } // namespace hccl

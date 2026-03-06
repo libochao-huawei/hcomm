@@ -1,8 +1,12 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
- * Description: ccu pfe manager implement file
- * Create: 2025-02-18
- */
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "ccu_pfe_mgr.h"
 
@@ -13,16 +17,16 @@
 
 namespace hcomm {
 
-inline PfeCtx BuildPfeCtx(const PfeJettyCtxCfg &cfg)
+inline PfeCtx BuildPfeCtx(const uint8_t dieId, const PfeJettyCtxCfg &cfg)
 {
     struct PfeCtx ctx = {0};
     ctx.startJettyId = cfg.startTaJettyId;
     ctx.jettyNum = cfg.size - 1; // PFE给CCU分配的Jetty个数，配置硬件时需减1
     ctx.startLocalJettyCtxId = cfg.startJettyCtxId;
 
-    HCCL_RUN_INFO("CcuPfeManager[%s]: feId[%u], startJettyId[%u], jettyNum(-1)[%u], "
-        "startLocalJettyCtxId[%u], pfe ctx size[%u]", __func__, cfg.feId, ctx.startJettyId,
-        ctx.jettyNum, ctx.startLocalJettyCtxId, sizeof(PfeCtx));
+    HCCL_RUN_INFO("[CcuPfeMgr][%s]: dieId[%u] feId[%u], startJettyId[%u], jettyNum(-1)[%u], "
+        "startLocalJettyCtxId[%u], pfe ctx size[%u]", __func__, dieId, cfg.feId,
+        ctx.startJettyId, ctx.jettyNum, ctx.startLocalJettyCtxId, sizeof(PfeCtx));
     return ctx;
 }
 
@@ -65,7 +69,9 @@ static HcclResult ConfigPfeTable(const uint32_t devPhyId, const uint8_t dieId, c
         reinterpret_cast<CustomChanInfoIn *>(&inBuff),
         reinterpret_cast<CustomChanInfoOut *>(&outBuff));
     if (ret != 0) {
-        HCCL_WARNING("");
+        HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
+            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,
+            "SET_PFE");
         return HcclResult::HCCL_E_NETWORK;
     }
     
@@ -99,7 +105,7 @@ HcclResult CcuPfeMgr::Init()
         }
         pfeJettyMap_[feId] = BuildStrategy(cfg);
 
-        const auto &pfeCtx = BuildPfeCtx(cfg);
+        const auto &pfeCtx = BuildPfeCtx(dieId_, cfg);
         CHK_RET(ConfigPfeTable(devPhyId_, dieId_, feId, pfeReservedNum, pfeCtx));
     }
 
@@ -116,6 +122,11 @@ HcclResult CcuPfeMgr::GetPfeStrategy(uint32_t feId, PfeJettyStrategy &pfeJettySt
     }
 
     pfeJettyStrategy = iter->second;
+    HCCL_RUN_INFO("[CcuPfeMgr][%s] dieId[%u] feId[%u] pfeId[%u] size[%u] "
+ 	    "startTaJettyId[%u] startLocalJettyCtxId[%u]", __func__, dieId_,
+ 	    pfeJettyStrategy.feId, pfeJettyStrategy.pfeId, pfeJettyStrategy.size,
+ 	    pfeJettyStrategy.startTaJettyId, pfeJettyStrategy.startLocalJettyCtxId);  
+
     return HCCL_SUCCESS;
 }
 

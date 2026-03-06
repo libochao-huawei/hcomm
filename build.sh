@@ -103,7 +103,7 @@ function build_package(){
 function build_device(){
     cmake_config
     log "Info: build_device"
-    TARGET_LIST="hccp_service.bin rs ccl_kernel_plf ccl_kernel_plf_a ccl_kernel"
+    TARGET_LIST="hccp_service.bin rs ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json aicpu_custom"
     echo "TARGET_LIST=${TARGET_LIST}"
     PKG_TARGET_LIST="generate_device_hccp_package generate_device_aicpu_package"
     echo "PKG_TARGET_LIST=${PKG_TARGET_LIST}"
@@ -186,7 +186,7 @@ function build_test() {
 function build_kernel() {
     cmake_config
     log "Info: build_kernel"
-    build ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json
+    build ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json aicpu_custom
 }
 
 function mk_dir() {
@@ -202,6 +202,7 @@ function build_ut() {
   mk_dir "${BUILD_DIR}"
   local report_dir="${OUTPUT_PATH}/report/ut" && mk_dir "${report_dir}"
   cd "${BUILD_DIR}"
+  unset LD_LIBRARY_PATH
 
   local LLT_KILL_TIME=1200
   CMAKE_ARGS="-DPRODUCT_SIDE=host \
@@ -244,8 +245,10 @@ function make_ut_gov() {
     cd ${CURRENT_DIR}
     rm -rf ${CURRENT_DIR}/cov
     mkdir -p ${CURRENT_DIR}/cov
-    lcov -c -d ${BUILD_DIR}/test/ut/ -o cov/tmp.info
-    LCOV_COMMAND="lcov -r cov/tmp.info ${CURRENT_DIR}src/* -o cov/coverage.info" && ${LCOV_COMMAND}
+    lcov -c -d ${BUILD_DIR}/test/ut/ -o cov/all.info
+    lcov -r cov/all.info */src/platform/hccp/external_depends/* -o cov/tmp.info
+    lcov -e cov/all.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
+    # LCOV_COMMAND="lcov -r cov/tmp.info ${CURRENT_DIR}src/* -o cov/coverage.info" && ${LCOV_COMMAND}
     # lcov -r cov/tmp.info "/usr/*" "${OUTPUT_PATH}/*" "${BASEPATH}/test/*" "${ASCEND_INSTALL_PATH}/*" "${CANN_3RD_LIB_PATH}/*" -o cov/coverage.info
 
     cd ${CURRENT_DIR}/cov
@@ -576,6 +579,14 @@ elif [ "${FULL_MODE}" == "true" ]; then
     build_package
     rm -rf ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
 else
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
+    cd ..
+    mkdir -p ${BUILD_DEVICE_DIR}
+    cd ${BUILD_DEVICE_DIR}
+    CURRENT_CUSTOM_OPTION="${CUSTOM_OPTION}"
+    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=ON -DKERNEL_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device -DUSE_ALOG=0 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN} -DVERSION_INFO=${VERSION_INFO}"
+    build_kernel
+    cd .. & cd ${BUILD_DIR}
+    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
     build_package
+    rm -rf ${BUILD_DEVICE_DIR}
 fi

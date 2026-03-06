@@ -18,7 +18,7 @@ constexpr uint64_t UB_ADDRESS_PAD_COUNT = 4;
 
 template<HardEvent event> __aicore__ void SyncFunc();
 
-__aicore__ void SetSignalValue(__gm__ int32_t* gmSignalAddr, LocalTensor<int32_t>& localTensor, int32_t value);
+__aicore__ void SetSignalValue(__gm__ int32_t* gmSignalAddr, LocalTensor<int32_t>& localTensor, int32_t value, bool ifSet = true);
 
 __aicore__ void AddSignalValue(__gm__ int32_t* gmSignalAddr, LocalTensor<int32_t>& localTensor, int32_t value);
 

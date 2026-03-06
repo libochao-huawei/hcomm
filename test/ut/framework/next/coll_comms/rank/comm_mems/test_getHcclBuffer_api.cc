@@ -217,13 +217,21 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_CommMemsNullptr_Return_H
 
 TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBufferA3_When_Normal_Return_HCCL_Success)
 {
-    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    DevType deviceType = DevType::DEV_TYPE_910_93;
+    MOCKER(hrtGetDeviceType)
+    .stubs()
+    .with(outBound(deviceType))
+    .will(returnValue(HCCL_SUCCESS));
 
-    void* comm = static_cast<HcclComm>(hcclCommPtr.get());
+    HcclComm commHandle;
+    UT_USE_RANK_TABLE_910_1SERVER_1RANK;
+    UT_COMM_CREATE_DEFAULT(commHandle);
+
     void* buffer;
     uint64_t size;
-    int ret =  HcclGetHcclBuffer(comm, &buffer, &size);
-    EXPECT_EQ(ret, 0);
+    HcclResult ret = HcclGetHcclBuffer(commHandle, &buffer, &size);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 
+    Ut_Comm_Destroy(commHandle);
+    GlobalMockObject::verify();
 }

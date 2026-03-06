@@ -88,15 +88,24 @@ if(ENABLE_TEST)
     include(cmake/third_party/json.cmake)
     include(cmake/third_party/gtest.cmake)
     include(cmake/third_party/mockcpp.cmake)
+    include(cmake/third_party/rdma-core.cmake)
     add_subdirectory(test)
     return()
 
 elseif(BUILD_OPEN_PROJECT)
     include(cmake/third_party/openssl.cmake)
+    include(cmake/third_party/ubengine.cmake)
+    include(cmake/third_party/rdma-core.cmake)
     include(cmake/third_party/json.cmake)
-    include(cmake/utils.cmake)
+    include(cmake/hcomm_utils.cmake)
     include(cmake/config.cmake)
     include(cmake/package.cmake)
+    include(cmake/func.cmake)
+    include(version.cmake)
+    if(ENABLE_OPEN_SRC)
+ 	    check_pkg_build_deps("hcomm")
+    endif()
+    add_version_info_targets()
     pack_built_in()
     add_subdirectory(src)
     add_subdirectory(python)
@@ -117,7 +126,6 @@ elseif(BUILD_OPEN_PROJECT)
     )
 
     if(DEVICE_MODE)
-        include(cmake/func.cmake)
         set(HCCP_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/tar_pkg/)
         set(CCL_KERNEL_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/ccl_kernel_tar_pkg/)
         set(HCCD_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/hccd_tar_pkg/)
@@ -182,7 +190,8 @@ elseif(BUILD_OPEN_PROJECT)
             ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
             ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
             ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
-            ${BUILD_DEVICE_DIR}/aicpu_custom/libaicpu_custom.so
+            ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.so
+            ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.json
         )
         install(FILES ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
@@ -193,7 +202,10 @@ elseif(BUILD_OPEN_PROJECT)
         install(FILES ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
         )
-        install(FILES ${BUILD_DEVICE_DIR}/aicpu_custom/libaicpu_custom.so
+        install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.so
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+        )
+        install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.json
             DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
         )
         add_dependencies(install_tar hcomm)
@@ -224,7 +236,7 @@ elseif(BUILD_OPEN_PROJECT)
         pkg_inc/hcomm/ccu/ccu_assist_pub.h
         pkg_inc/hcomm/ccu/ccu_common.h
         pkg_inc/hcomm/ccu/ccu_condition_v1.h
-        pkg_inc/hcomm/ccu/ccu_context_resource_v1.h
+        pkg_inc/hcomm/ccu/ccu_kernel_resource.h
         pkg_inc/hcomm/ccu/ccu_datatype_v1.h
         pkg_inc/hcomm/ccu/ccu_funccall_v1.h
         pkg_inc/hcomm/ccu/ccu_instr_info_v1.h

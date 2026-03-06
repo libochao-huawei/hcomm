@@ -13,6 +13,7 @@ set(hccl_utest_impl_list
     ut_hccl_impl_common_new.cc
     # ut_hccl_impl_common.cc
     # ut_hccl_impl.cc
+    ut_hccl_impl_new.cc
     # ut_zero_copy_memory_agent.cc
     ut_preempt_port_manager.cc
     ut_template_base.cc

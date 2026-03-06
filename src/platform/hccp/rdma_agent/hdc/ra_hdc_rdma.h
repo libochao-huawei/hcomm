@@ -215,7 +215,7 @@ union OpQpInfoData {
         unsigned int qpn;
         unsigned int rsvd[32U];
     } txData;
- 
+
     struct {
         int status;
         unsigned int udpSport;
@@ -427,7 +427,7 @@ union OpSendNormalWrlistData {
         struct WrInfo wrlist[MAX_WR_NUM];
         unsigned int rsvd[RA_RSVD_NUM_50];
     } txData;
- 
+
     struct {
         unsigned int completeNum;
         struct SendWrRsp wrRsp[MAX_WR_NUM];

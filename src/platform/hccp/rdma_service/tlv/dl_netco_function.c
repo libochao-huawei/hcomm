@@ -148,7 +148,7 @@ int RsNetcoTblAddUpd(void *netcoHandle, unsigned int type, char *data, unsigned 
 {
     if (gNetcoOps.rsNetcoTblAddUpd == NULL) {
 #ifndef CA_CONFIG_LLT
-        hccp_err("rs_netco_tbl_add_upd is null");
+        hccp_err("rs_netco_tbl_add_upd is null, type(%u)", type);
         return -EINVAL;
 #endif
     }

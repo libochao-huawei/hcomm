@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <array>
 #include "rank_graph_builder.h"
 #include "detour_service.h"
 #include "env_func.h"
@@ -205,7 +206,7 @@ void RankGraphBuilder::AddTopoDescFabricInfo()
         auto peer2netEdges = phyTopoGraph->GetEdges(localId, PhyTopo::Fabric::GetId());
 
         HCCL_RUN_INFO(
-            "[RankGraphBuilder][AddTopoDescFabricInfo] Processing rank %u (localId: %u), found %zu peer2net edges",
+            "[RankGraphBuilder][AddTopoDescFabricInfo] Processing rank %d (localId: %u), found %zu peer2net edges",
             rankId, localId, peer2netEdges.size());
 
         for (const auto& link : peer2netEdges) {
@@ -363,7 +364,7 @@ void RankGraphBuilder::SetEndpointDesc()
 
 std::shared_ptr<NetInstance> RankGraphBuilder::GetNetInstance(const RankLevelInfo &levelInfo){
     auto it = tempNetInsts_[levelInfo.netLayer].find(levelInfo.netInstId);
-    if (it != tempNetInsts_[levelInfo.netLayer].end()) {
+    if (it == tempNetInsts_[levelInfo.netLayer].end()) {
         return nullptr;
     }
     // 若NetInstance存在, type不一致则报错
