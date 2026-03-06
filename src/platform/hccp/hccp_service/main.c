@@ -29,10 +29,10 @@ typedef void (*SighandlerT)(int);
 
 STATIC int HccpAddToCgroup()
 {
-    int ret;
-    pid_t hccpPid;
-    SighandlerT oldHandler;
     char cmd[HCCP_CMD_MAX_LEN] = {0};
+    SighandlerT oldHandler;
+    pid_t hccpPid;
+    int ret;
 
     hccpPid = getpid();
     CHK_PRT_RETURN(hccpPid < 0, hccp_err("getpid error[%d]", hccpPid), -EINVAL);
@@ -104,15 +104,6 @@ int llt_main(int argc, char *argv[])
     hccp_run_info("hccp init start!");
     ret = HccpChangeNumOfFile();
     CHK_PRT_RETURN(ret, hccp_err("hccp change limit of nofile failed, ret = %d", ret), ret);
-    // Cache result after first query, skip exception checking for subsequent queries
-    productType = RsGetProductType(param.logicId);
-    CHK_PRT_RETURN(productType == PRODUCT_TYPE_INVALID, hccp_err("rs get product type failed", ret), -EINVAL);
-#ifdef CONFIG_CGROUP
-    if (productType == PRODUCT_TYPE_910 || productType == PRODUCT_TYPE_310p){
-        ret = HccpAddToCgroup();
-        CHK_PRT_RETURN(ret, hccp_err("HccpAddToCgroup error[%d] productType:[%d]", ret, productType), ret);
-    }
-#endif
 
     ret = DlHalInit();
     CHK_PRT_RETURN(ret, hccp_err("dl_hal_init error[%d]", ret), ret);
@@ -122,6 +113,19 @@ int llt_main(int argc, char *argv[])
         hccp_err("hccp_param_parse error[%d]", ret);
         goto out;
     }
+
+    // Cache result after first query, skip exception checking for subsequent queries
+    productType = RsGetProductType(param.logicId);
+    CHK_PRT_RETURN(productType == PRODUCT_TYPE_INVALID, hccp_err("rs get product type failed", ret), -EINVAL);
+#ifdef CONFIG_CGROUP
+    if (productType == PRODUCT_TYPE_910 || productType == PRODUCT_TYPE_310p){
+        ret = HccpAddToCgroup();
+        if (ret != 0) {
+            hccp_err("HccpAddToCgroup error[%d] productType:[%d]", ret, productType)
+            goto out;
+        }
+    }
+#endif
 
     ret = HccpSetLogInfo(&param);
     if (ret != 0) {
