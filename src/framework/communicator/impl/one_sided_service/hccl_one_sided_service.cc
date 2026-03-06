@@ -526,14 +526,6 @@ void HcclOneSidedService::BatchGet(RankId remoteRankId, const HcclOneSideOpDesc*
 // 绑定一块全局内存
 HcclResult HcclOneSidedService::BindMem(void* memRecordHandle, const std::string &commIdentifier)
 {
-    if (boundMemPtrSet_.size() == MAX_COMM_MEM_BIND_COUNT) {
-        // 进程粒度最多注册MAX_COMM_MEM_BIND_COUNT块独立的内存，报错退出
-        HCCL_ERROR("[HcclOneSidedService][BindMem] The number of memory bound in the comm has reached the maximum"
-                   " value[%u]. Cannot bind more memories.",
-            MAX_COMM_MEM_BIND_COUNT);
-        return HCCL_E_UNAVAIL;
-    }
-
     auto memRecordPtr = static_cast<GlobalMemRecord*>(memRecordHandle);
     CHK_RET(memRecordPtr->BindToComm(commIdentifier));
 
