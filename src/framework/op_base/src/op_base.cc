@@ -350,9 +350,8 @@ HcclResult HcclCollCommInitAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
         return ret;
     }
     s32 deviceLogicId = HcclGetThreadDeviceId();
-    s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
-    HCCL_RUN_INFO("HcclCollCommInitAll success, take time [%lld]us, deviceLogicId[%d], devPhyId[%d].", DURATION_US(TIME_NOW() - startut),
-                  deviceLogicId, devPhyId);
+    HCCL_RUN_INFO("HcclCollCommInitAll success, take time [%lld]us, deviceLogicId[%d].", DURATION_US(TIME_NOW() - startut),
+                  deviceLogicId);
     return HCCL_SUCCESS;
 }
 
