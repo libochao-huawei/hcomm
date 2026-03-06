@@ -58,8 +58,8 @@ DevType HrtGetDeviceType()
     auto iter = SOC_VER_CONVERT.find(targetChipVerStr);
     if (iter == SOC_VER_CONVERT.end()) {
         string msg = StringFormat("[Get][DeviceType]errNo[0x%016llx] rtGetSocVersion get "
-                   "illegal chipver, chip_ver[%s], return[%d].",
-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), targetChipVerStr.c_str(), iter);
+                   "illegal chipver, chip_ver[%s].",
+                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), targetChipVerStr.c_str());
         MACRO_THROW(RuntimeApiException, msg);
     }
 
@@ -157,7 +157,7 @@ u32 HrtGetDeviceCount()
     HCCL_INFO("Call rtGetDeviceCount, return value[%d], para: count[%u].", ret, count);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[Get][DeviceCount]errNo[0x%016llx] rtGet device count fail. "
-                   "return[%d], para:count[%d].",
+                   "return[%d], para:count[%u].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, count);
         MACRO_THROW(RuntimeApiException, msg);
     }
@@ -314,11 +314,10 @@ aclrtStream HrtStreamCreateWithFlags(uint32_t priority, uint32_t flag)
     HCCL_INFO("Call rtGetStreamId return value[%d]. Params: flags[%u].", ret, flag);
 
     if (ret != ACL_SUCCESS) {
-        HCCL_ERROR("[Stream][CreateWithFlags]errNo[0x%016llx] rtStreamCreate error, "
-                   "rtRet[%d], flags[%u]",
+        string msg = StringFormat("[Stream][CreateWithFlags]errNo[0x%016llx] rtStreamCreate error, "
+                   "rtRet[%d], flags[%u].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, flag);
-        throw RuntimeApiException(
-                StringFormat("call aclrtCreateStreamWithConfig failed, priority=%p, flags=%u", priority, flag));
+        MACRO_THROW(RuntimeApiException, msg);
     }
     CHECK_NULLPTR(ptr, "[HrtStreamCreateWithFlags] ptr is nullptr!");
     HCCL_INFO("[HrtStreamCreateWithFlags] ptr[%p].", ptr);
@@ -395,18 +394,18 @@ void *HrtMalloc(u64 size, aclrtMemType_t memType)
     if (ret == ACL_ERROR_RT_MEMORY_ALLOCATION) {
         RPT_INPUT_ERR(true, "EI0007", std::vector<std::string>({"resource_type", "resource_info"}),
                             std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size)}));
-        HCCL_ERROR("[Malloc][Mem]errNo[0x%016llx] aclrtMallocWithCfg failed, "
+        string msg = StringFormat("[Malloc][Mem]errNo[0x%016llx] aclrtMallocWithCfg failed, "
                    "Reason: out of memory, return[%d], para: devPtrAddr[%p], size[%llu]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, devPtr, size);
-        throw RuntimeApiException(StringFormat("call HrtMalloc failed, size=0x%llu", size));
+        MACRO_THROW(RuntimeApiException, msg);;
     }
     if (ret != ACL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0007", std::vector<std::string>({"resource_type", "resource_info"}),
                             std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size)}));
-        HCCL_ERROR("[Malloc][Mem]errNo[0x%016llx] aclrtMallocWithCfg failed, "
+        string msg = StringFormat("[Malloc][Mem]errNo[0x%016llx] aclrtMallocWithCfg failed, "
                    "return[%d], para: devPtrAddr[%p], size[%llu]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, devPtr, size);
-        throw RuntimeApiException(StringFormat("call HrtMalloc failed, size=0x%llu", size));
+        MACRO_THROW(RuntimeApiException, msg);
     }
     CHECK_NULLPTR(devPtr, "[HrtMalloc] ptr is nullptr!");
     return devPtr;
@@ -415,7 +414,9 @@ void *HrtMalloc(u64 size, aclrtMemType_t memType)
 void HrtFree(void *devPtr)
 {
     HCCL_INFO("[HrtFree] devPtr[%p].", devPtr);
-    CHECK_NULLPTR(devPtr, "[HrtFree] ptr is nullptr!");
+    if (devPtr == nullptr) {
+        return;
+    }
     aclError ret = aclrtFree(devPtr);
     HCCL_INFO("Call aclrtFree, return value[%d], para: dev_ptr[%p].", ret, devPtr);
     if (ret != RT_ERROR_NONE) {
@@ -494,7 +495,7 @@ void HrtMemset(void *dst, uint64_t destMax, uint64_t count)
     }
     hcclRet = HrtThreadExchangeCaptureMode(&mode);
     CHK_PRT_CONT(hcclRet != HCCL_SUCCESS && hcclRet != HCCL_E_NOT_SUPPORT,
-        HCCL_ERROR("[hrtMemSet] HrtThreadExchangeCaptureMode return [%d].", hcclRet));
+        HCCL_WARNING("[hrtMemSet] HrtThreadExchangeCaptureMode return [%d].", hcclRet));
 }
 
 void HrtIpcSetMemoryName(void *ptr, char_t *name, u64 ptrMaxLen, u32 nameMaxLen)
@@ -781,9 +782,8 @@ void HrtNotifyWaitWithTimeOut(RtNotify_t notifyPtr, aclrtStream streamPtr, uint3
     aclError ret = aclrtWaitAndResetNotify(notifyPtr, streamPtr, timeOut);
     HCCL_INFO("Call aclrtWaitAndResetNotify, return value[%d].", ret);
     if (ret != ACL_SUCCESS) {
-        throw RuntimeApiException(
-            StringFormat("call aclrtWaitAndResetNotify failed. notifyPtr=%p, streamPtr=%p, return=%d.", notifyPtr, streamPtr, ret));
-        ;
+        string msg = StringFormat("call aclrtWaitAndResetNotify failed. notifyPtr=%p, streamPtr=%p, return=%d.", notifyPtr, streamPtr, ret);
+        MACRO_THROW(RuntimeApiException, msg);
     }
 }
 
@@ -795,8 +795,8 @@ void HrtNotifyRecord(RtNotify_t notifyPtr, aclrtStream streamPtr)
     aclError ret = aclrtRecordNotify(notifyPtr, streamPtr);
     HCCL_INFO("Call aclrtRecordNotify, return value[%d].", ret);
     if (ret != ACL_SUCCESS) {
-        throw RuntimeApiException(
-            StringFormat("call HrtNotifyRecord failed. notifyPtr=%p, streamPtr=%p, return=%d.", notifyPtr, streamPtr, ret));
+        string msg = StringFormat("call HrtNotifyRecord failed. notifyPtr=%p, streamPtr=%p, return=%d.", notifyPtr, streamPtr, ret);
+        MACRO_THROW(RuntimeApiException, msg);
     }
 }
 
@@ -965,7 +965,7 @@ void HrtCntNotifyWaitWithTimeOut(const aclrtCntNotify inCntNotify, const aclrtSt
     HCCL_INFO("Call aclrtCntNotifyWaitWithTimeout, return value[%d], inCntNotify[%p]", ret, inCntNotify);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("Call rtCntNotifyWaitWithTimeout failed. return[%d], inCntNotify[%p], streamPtr[%p], "
-                    "mode[%d], value[%u], timeout[%u], isClear[%s].", 
+                    "mode[%d], value[%u], timeout[%u], isClear[%d].", 
                     ret, inCntNotify, streamPtr, mode, value, timeout, isClear);
         THROW<RuntimeApiException>(msg);
     }
@@ -1057,7 +1057,7 @@ void HrtCcuLaunch(rtCcuTaskInfo_t &taskInfo, aclrtStream const streamPtr)
     CHECK_NULLPTR(streamPtr, "[HrtCcuLaunch] streamPtr is nullptr!");
     auto ret = rtCCULaunch(&taskInfo, streamPtr);
     if (ret != RT_ERROR_NONE) {
-        string msg = StringFormat("Call rtCCULaunch failed. return[%d], taskInfo[%d], streamPtr[%p].", 
+        string msg = StringFormat("Call rtCCULaunch failed. return[%d], taskInfo[%p], streamPtr[%p].", 
                                 ret, taskInfo, streamPtr);
         THROW<RuntimeApiException>(msg);
     }

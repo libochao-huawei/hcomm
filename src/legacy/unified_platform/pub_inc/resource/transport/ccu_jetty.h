@@ -51,11 +51,12 @@ public:
     void GetJettyInfo(ConnJettyInfo& connJettyInfo);
 
     static HcclResult Create(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
-                            std::unique_ptr<CcuJetty> &ccuJetty) {
-                                ccuJetty = std::make_unique<CcuJetty> (ipAddr, jettyInfo);
-                                TRY_CATCH_RETURN(ccuJetty->Initialize());
-                                return HcclResult::HCCL_SUCCESS;
-                            }
+                        std::unique_ptr<CcuJetty> &ccuJetty) {
+        auto tmp = std::make_unique<CcuJetty>(ipAddr, jettyInfo);
+        TRY_CATCH_RETURN(tmp->Initialize());
+        ccuJetty = std::move(tmp);
+        return HcclResult::HCCL_SUCCESS;
+}
 private:
     void Initialize() {
         devLogicId_ = HrtGetDevice();
