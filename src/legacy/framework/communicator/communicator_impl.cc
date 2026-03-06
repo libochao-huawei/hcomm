@@ -58,6 +58,7 @@
 #include "hostdpu/flush_manager.h"
 #include "hostdpu/dpu_kernel_entrance.h"
 #include "json_parser.h"
+#include "adapter_error_manager_pub.h"
 #include "ccu_context_all_to_all_v_mesh1d.h"
 
 namespace Hccl {
@@ -483,7 +484,7 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
     return true;
 }
 
-static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const TaskParam &taskParam, 
+static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const TaskParam &taskParam, bool isMaster,
     const RankId remoteRankId = INVALID_RANKID)
 {
     u32 taskId;
@@ -491,7 +492,7 @@ static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const Tas
     HrtGetTaskIdAndStreamID(taskId, streamId);
  
     shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId, remoteRankId, taskParam,
-        comm.GetMirrorTaskManager().GetCurrDfxOpInfo());
+        comm.GetMirrorTaskManager().GetCurrDfxOpInfo(), isMaster);
  
     HCCL_INFO("Begin to AddTaskInfo: streamId[%lu], taskId[%lu], remoteRankId[%u].", streamId, taskId, remoteRankId);
     comm.GetMirrorTaskManager().AddTaskInfo(taskInfo);
@@ -554,7 +555,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
         params.taskParams[0].beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
         SuperFastLoad(ccuParams, mStream, vector_zero_count);
         params.taskParams[0].endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-        FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[0]);
+        FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[0], (!params.isSlave));
     } else {
         SuperFastLoad(ccuParams, mStream, vector_zero_count);
     }
@@ -574,7 +575,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
                 params.taskParams[i + 1].beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
                 SuperFastLoad(ccuParams + params.count[i], slave->GetPtr(), params.count[i + 1]);
                 params.taskParams[i + 1].endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-                FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[i + 1]);
+                FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[i + 1], slave->GetIsMaster());
             }
             else{
                 SuperFastLoad(ccuParams + params.count[i], slave->GetPtr(), params.count[i + 1]);
@@ -604,7 +605,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
             taskParam.taskPara.Reduce.linkType   = DfxLinkType::ONCHIP;
             taskParam.taskPara.Reduce.dataType   = DataTypeToHcclDataType(opParams.dataType);
             taskParam.taskPara.Reduce.reduceOp   = ReduceOpToHcclReduceOp(opParams.reduceOp);
-            FastCcuLaunchSaveDfxTaskInfo(*this, taskParam, GetMyRank());
+            FastCcuLaunchSaveDfxTaskInfo(*this, taskParam, true, GetMyRank()); // stream为主流
         } else {
             aclrtReduceKind rtReduceOp = static_cast<aclrtReduceKind>(static_cast<int>(RtReduceOpGet(opParams.reduceOp)));
             aclDataType rtDataType = static_cast<aclDataType>(static_cast<int>(RtDataTypeGet(opParams.dataType)));
@@ -703,7 +704,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         status = CommStatus::COMM_READY;
         CHK_RET(OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv));
 
-        // AICPU aclgraph场景传入的stream被capture且算子时支持零拷贝算法的，会切换到图模式
+        // AICPU aclgraph场景传入的stream被capture且算子时支持零拷贝算法的,会切换到图模式
         if (opExecuteConfig.accState == AcceleratorState::AICPU_TS && IsOpSupportZeroCopyAlg(opParams, stream)) {
             std::string tag = opParams.opTag + "_" + std::to_string(tagResourceIndex_++);
             OffloadResourcePre(tag, opParams);
@@ -779,7 +780,7 @@ HcclResult CommunicatorImpl::AllocCollOpResource(const CollOpParams &opParams, v
 {
     try {
         if (opParams.commEngine != HcclAccelerator::AICPU && opParams.commEngine != HcclAccelerator::AICPU_TS) {
-            HCCL_ERROR("[AllocCollOpResource::%s]It's support aicpu unfold on mc2. input is %s", __func__, opParams.commEngine.Describe().c_str());
+            HCCL_ERROR("[CommunicatorImpl][%s]It's support aicpu unfold on mc2. input is %s", __func__, opParams.commEngine.Describe().c_str());
  	        return HCCL_E_NOT_SUPPORT;
  	    }
         CHK_RET(CheckCommStatus());
@@ -941,8 +942,6 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
             SingleRankProc(opParams, stream);
             return HcclResult::HCCL_SUCCESS;
         }
-        // 避免transport建链前，通讯域被摧毁
-        status = CommStatus::COMM_INUSE;
         uint64_t beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
         // 更新开关状态
@@ -960,15 +959,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         }
 
         bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
-        HcclResult dataTypeChkRes = OpParamsChecker::CheckOpDataTypeOffload(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv); // 算子粒度
-        if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
-            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-                std::vector<std::string>({"CommunicatorImpl::LoadOffloadCollOp", "no success", "dataTypeChkRes",
-                "success"}));
-            HCCL_ERROR("[CommunicatorImpl::LoadOffloadCollOp] DataType check fail.");
-            status = CommStatus::COMM_READY;
-            return dataTypeChkRes;
-        }
+        CHK_RET(OpParamsChecker::CheckOpDataTypeOffload(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv)); // 算子粒度
 
         if (isAiv) {
             currentCollOperator->numBlocksLimit = aivCoreLimit;
@@ -987,6 +978,8 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
             aivOffloadTag++;
         }    
         
+        // 避免transport建链前，通讯域被摧毁
+        status = CommStatus::COMM_INUSE;
         HcclUs startut = std::chrono::steady_clock::now();
         collService->LoadWithOffloadMode(*currentCollOperator, std::make_unique<Stream>(stream));
         status = CommStatus::COMM_READY;

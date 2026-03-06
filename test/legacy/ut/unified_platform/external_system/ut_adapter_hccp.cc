@@ -771,3 +771,27 @@ TEST_F(AdapterHccpTest, ut_HrtRaSocketWhiteListDel_With_Enormous_WhiteList)
 
     EXPECT_NO_THROW(HrtRaSocketWhiteListDel(nullptr, wlists));
 }
+
+TEST_F(AdapterHccpTest, Ut_HraGetRtpEnable_When_RTP_Equals_1_Expect_Return_True)
+{
+    DevBaseAttr out {};
+    out.ub.priorityInfo[0].SL = 1;
+    out.ub.priorityInfo[0].tpType.bs.rtp = 1;
+    MOCKER(RaGetDevBaseAttr).stubs()
+        .with(any(), outBoundP(&out, sizeof(out)))
+        .will(returnValue(0));
+    RdmaHandle handle = (void *)0x1234;
+
+    EXPECT_EQ(HraGetRtpEnable(handle), true);
+}
+
+TEST_F(AdapterHccpTest, Ut_HraGetRtpEnable_When_RTP_Equals_0_Expect_Return_False)
+{
+    DevBaseAttr out {};
+    MOCKER(RaGetDevBaseAttr).stubs()
+        .with(any(), outBoundP(&out, sizeof(out)))
+        .will(returnValue(0));
+    RdmaHandle handle = (void *)0x1234;
+
+    EXPECT_EQ(HraGetRtpEnable(handle), false);
+}

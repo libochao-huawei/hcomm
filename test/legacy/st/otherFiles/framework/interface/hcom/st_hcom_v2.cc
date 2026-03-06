@@ -291,10 +291,10 @@ TEST_F(HcomTest, HcomGetWorkspaceMemSizeV2_func_err)
     HcclResult ret = HcomGetWorkspaceMemSizeV2(opType, count, dataType, group, memSize);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
  
-    char group1[64];
+    char worldGroup[64] = "hccl_world_group";
     opType = "null";
-    ret = HcomGetWorkspaceMemSizeV2(opType, count, dataType, group1, memSize);
-    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+    ret = HcomGetWorkspaceMemSizeV2(opType, count, dataType, worldGroup, memSize);
+    EXPECT_EQ(ret, HCCL_E_PARA);
 }
  
 TEST_F(HcomTest, HcomSetWorkspaceResource_V2_func)
