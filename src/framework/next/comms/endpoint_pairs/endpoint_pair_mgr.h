@@ -25,10 +25,11 @@ public:
 
     ~EndpointPairMgr() = default;
 
-    HcclResult Get(const EndpointDescPair &endpointDescPair, EndpointPair*& out);
+    HcclResult Get(CommEngine engine, const EndpointDescPair &endpointDescPair, EndpointPair*& out);
 
 private:
-    std::unordered_map<EndpointDescPair, std::unique_ptr<EndpointPair>> endpointPairMap_{};
+    std::unordered_map<CommEngine, std::unordered_map<EndpointDescPair,
+        std::unique_ptr<EndpointPair>>> endpointPairMap_{};
 };
 
 } // namespace hcomm
