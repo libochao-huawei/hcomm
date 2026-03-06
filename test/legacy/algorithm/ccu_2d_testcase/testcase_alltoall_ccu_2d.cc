@@ -70,7 +70,7 @@ TEST_F(All2AllCCU2DTest, all2all2d_ccu_case_test_2_mul_2_rank)
     checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.All2AllDataDes.sendCount = 100;
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllMesh2D";
 
     Checker checker;
@@ -98,7 +98,7 @@ TEST_F(All2AllCCU2DTest, all2all2d_ccu_case_test_3_mul_3_rank)
     checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.All2AllDataDes.sendCount = 100;
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllMesh2D";
 
     Checker checker;
@@ -126,7 +126,7 @@ TEST_F(All2AllCCU2DTest, all2all2d_ccu_case_test_4_mul_4_rank)
     checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.All2AllDataDes.sendCount = 100;
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllMesh2D";
 
     Checker checker;
@@ -154,7 +154,7 @@ TEST_F(All2AllCCU2DTest, all2all2d_ccu_case_test_5_mul_5_rank)
     checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.All2AllDataDes.sendCount = 100;
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllMesh2D";
 
     Checker checker;
@@ -182,7 +182,7 @@ TEST_F(All2AllCCU2DTest, all2all2d_ccu_case_test_3_mul_4rank)
     checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.All2AllDataDes.sendCount = 100;
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllMesh2D";
 
     Checker checker;
@@ -210,7 +210,7 @@ TEST_F(All2AllCCU2DTest, all2all2d_ccu_case_test_3_mul_4rank_600_count)
     checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.All2AllDataDes.sendCount = 600;
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllMesh2D";
 
     Checker checker;
@@ -238,7 +238,7 @@ TEST_F(All2AllCCU2DTest, all2all2d_ccu_case_test_3_mul_4rank_600_offload_count)
     checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.All2AllDataDes.sendCount = 600;
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllMesh2D";
 
     Checker checker;

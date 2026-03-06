@@ -73,7 +73,7 @@ protected:
         checkerOpParam.opType = CheckerOpType::ALLTOALLV;
         checkerOpParam.tag = "AllToAllV";
         checkerOpParam.opMode = opMode;
-        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
         checkerOpParam.All2AllDataDes.sendType = CheckerDataType::DATA_TYPE_FP16;
         checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_FP16;
         checkerOpParam.algName = algName;

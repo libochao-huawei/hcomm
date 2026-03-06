@@ -82,7 +82,7 @@ TEST_F(EnvConfigValidateTest, test_parse_HCCL_EXEC_TIMEOUT_should_success_when_v
 {
     EnvRtsConfig rtsCfg{};
     MOCKER(SalGetEnv).stubs().will(returnValue(string("0")));
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     rtsCfg.execTimeOut.Parse();
     EXPECT_EQ(rtsCfg.execTimeOut.Get(), 0);
 }
@@ -91,7 +91,7 @@ TEST_F(EnvConfigValidateTest, test_parse_HCCL_EXEC_TIMEOUT_should_success_when_v
 {
     EnvRtsConfig rtsCfg{};
     MOCKER(SalGetEnv).stubs().will(returnValue(string("2147483587")));
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     rtsCfg.execTimeOut.Parse();
     EXPECT_EQ(rtsCfg.execTimeOut.Get(), 2147483587);
 }
@@ -100,7 +100,7 @@ TEST_F(EnvConfigValidateTest, test_parse_HCCL_EXEC_TIMEOUT_shoudl_success_v910_9
 {
     EnvRtsConfig rtsCfg{};
     MOCKER(SalGetEnv).stubs().will(returnValue(string("300")));
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     rtsCfg.execTimeOut.Parse();
     EXPECT_EQ(rtsCfg.execTimeOut.Get(), 300);
 }

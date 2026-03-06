@@ -83,7 +83,7 @@ protected:
         checkerOpParam.tag = "ReduceScatter";
         checkerOpParam.opMode = opMode;
         checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
         checkerOpParam.DataDes.count = dataCount;
         checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
         checkerOpParam.algName = algName;
@@ -151,7 +151,7 @@ TEST_F(AivReduceScatterMesh1D, ReduceScatter_excutor_template_test)
     string rankTable = "test";
     virtTopo.TopoInit91095OneTimesFour(rankTable);
     RankGraph* rankGraphPtr = static_cast<RankGraph*>(&virtTopo);
-    CollAlgComponent collAlgComponent(rankGraphPtr, DevType::DEV_TYPE_910_95, u32(0), u32(4));
+    CollAlgComponent collAlgComponent(rankGraphPtr, DevType::DEV_TYPE_950, u32(0), u32(4));
     u64 dataSize = 1000;
     std::string algName = "AivReduceScatterMesh1D";
     collAlgComponent.CalNumBlocks(numBlocks, dataSize, OpType::REDUCESCATTER, algName, 56);

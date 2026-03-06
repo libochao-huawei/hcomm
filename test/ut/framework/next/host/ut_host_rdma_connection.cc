@@ -48,7 +48,7 @@ protected:
 
 TEST_F(HostRdmaConnectionTest, Ut_When_Normal_Call_Expect_Status_Consisitent)
 {
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(hrtGetDeviceType).stubs()
                             .with(outBound(devType))
                             .will(returnValue(HCCL_SUCCESS));
@@ -140,7 +140,7 @@ TEST_F(HostRdmaConnectionTest, Ut_When_DevType_NotExpected_Expect_ERROR)
 // SOCKET_TIME_OUT
 TEST_F(HostRdmaConnectionTest, Ut_When_Socket_TIMEOUT_Expect_ERROR)
 {
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(hrtGetDeviceType).stubs()
                             .with(outBound(devType))
                             .will(returnValue(HCCL_SUCCESS));
@@ -178,7 +178,7 @@ TEST_F(HostRdmaConnectionTest, Ut_When_Socket_TIMEOUT_Expect_ERROR)
 // // Qp Create 失败
 TEST_F(HostRdmaConnectionTest, Ut_When_Call_GetStatus_Expect_Return_Ready)
 {
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(hrtGetDeviceType).stubs()
                             .with(outBound(devType))
                             .will(returnValue(HCCL_SUCCESS));

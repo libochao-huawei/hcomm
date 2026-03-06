@@ -61,7 +61,7 @@ TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_2_pod_Para
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 400;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
@@ -82,7 +82,7 @@ TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_2_server_P
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 400;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
@@ -104,7 +104,7 @@ TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_3_pod_Para
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 400;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
@@ -126,7 +126,7 @@ TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_3_pod2mul2
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 400;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
@@ -148,7 +148,7 @@ TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_2_server_3
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 400;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
@@ -170,7 +170,7 @@ TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_2_server_3
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 400;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
@@ -192,7 +192,7 @@ TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_2_pod_Symm
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 / sizeof(DATA_TYPE_UINT16);
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_UINT16;
     checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
@@ -214,7 +214,7 @@ TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_2_pod_Symm
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MIN;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 1;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_UINT8;
     checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
@@ -236,7 +236,7 @@ TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_3_pod_Symm
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_UINT64;
     checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
@@ -259,7 +259,7 @@ TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_3_pod_Symm
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MIN;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 1025;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
@@ -284,7 +284,7 @@ TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_2_pod_Asym
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
 
     Checker checker;
@@ -307,7 +307,7 @@ TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_3_pod_Asym
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MIN;
     checkerOpParam.DataDes.count = 1000;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
 
     Checker checker;
@@ -330,7 +330,7 @@ TEST_F(ReduceScatterAICPUMesh2dNHRTest, reduceScatter_aicpu_case_test_3_pod_Asym
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterParallelMesh2DNHR";
 
     Checker checker;
