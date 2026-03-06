@@ -71,7 +71,7 @@ protected:
         checkerOpParam.All2AllDataDes.recvType = dataType;
         checkerOpParam.All2AllDataDes.sendCount = dataCountPerRank;
 
-        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
         checkerOpParam.algName = "AivAlltoAllMesh1D";
 
         Checker checker;

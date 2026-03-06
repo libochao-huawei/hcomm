@@ -123,7 +123,7 @@ TEST_F(NewCollServiceCcuImplTest, should_return_success_when_calling_LoadWithOpB
 
 class FakeCollAlgComponent : public CollAlgComponent {
 public:
-    FakeCollAlgComponent() : CollAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1){};
+    FakeCollAlgComponent() : CollAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1){};
     HcclResult Orchestrate(const CollAlgOperator &op, const CollAlgParams &params,
                                    InsQuePtr queue, string &algName)
     {

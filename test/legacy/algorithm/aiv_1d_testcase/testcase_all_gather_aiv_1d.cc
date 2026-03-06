@@ -84,7 +84,7 @@ protected:
         checkerOpParam.opType = CheckerOpType::ALLGATHER;
         checkerOpParam.tag = "AllGather";
         checkerOpParam.opMode = opMode;
-        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
         checkerOpParam.DataDes.count = dataCount;
         checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
         checkerOpParam.algName = algName;
@@ -147,7 +147,7 @@ TEST_F(AivAllGatherMesh1D, AllGather_excutor_template_test)
     string rankTable = "test";
     virtTopo.TopoInit91095OneTimesFour(rankTable);
     RankGraph* rankGraphPtr = static_cast<RankGraph*>(&virtTopo);
-    CollAlgComponent collAlgComponent(rankGraphPtr, DevType::DEV_TYPE_910_95, u32(0), u32(4));
+    CollAlgComponent collAlgComponent(rankGraphPtr, DevType::DEV_TYPE_950, u32(0), u32(4));
     u64 dataSize = 1000;
     std::string algName = "AivAllGatherMesh1D";
     collAlgComponent.CalNumBlocks(numBlocks, dataSize, OpType::ALLGATHER, algName, 56);

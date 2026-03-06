@@ -64,7 +64,7 @@ TEST_F(AllGatherCCUTestDetour, allgather_ccu_case_test_2rank_detour)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMeshDetour1D";
 
     Checker checker;
@@ -87,7 +87,7 @@ TEST_F(AllGatherCCUTestDetour, allgather_ccu_case_test_2rank_count101_detour)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 101;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMeshDetour1D";
 
     Checker checker;
