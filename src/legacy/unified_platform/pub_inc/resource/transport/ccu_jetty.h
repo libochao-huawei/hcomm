@@ -48,6 +48,7 @@ public:
         return jettyInfo_.taJettyId;
     }
     HcclResult Clean();
+
     void GetJettyInfo(ConnJettyInfo& connJettyInfo);
 
     static HcclResult Create(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
