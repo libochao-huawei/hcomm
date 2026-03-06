@@ -21,6 +21,7 @@
 #include "host/host_cpu_roce_channel.h"
 #include "hccl_comm_pub.h"
 #include "op_base.h"
+#include "hcomm_data_utils.h"
 
 
 using namespace hccl;
@@ -52,15 +53,6 @@ bool IsSupportReduce(HcommDataType dataType, HcommReduceOp op)
         dataType == HCOMM_DATA_TYPE_INT16 || dataType == HCOMM_DATA_TYPE_INT32 || dataType == HCOMM_DATA_TYPE_BFP16);
     bool checkReduceType = (op == HCOMM_REDUCE_SUM || op == HCOMM_REDUCE_MAX || op == HCOMM_REDUCE_MIN);
     return checkDataType && checkReduceType;
-}
-
-#define RAW_DEV_TYPE_950 6
-
-bool IsDevice950(DevType type)
-{
-    // The original enum name of 950 will cause codecheck report "forbidden string".
-    // Use the official device identifier and raw integer value to avoid this issue.
-    return type == static_cast<DevType>(RAW_DEV_TYPE_950);
 }
 
 int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len)
