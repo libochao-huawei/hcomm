@@ -66,9 +66,8 @@ std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpIn
     collOp.scratchMem = CreateBufferShared(dfxOpInfo.scratchMem.get());
     dfxOpInfoOnce->op_= std::move(collOp);
     dfxOpInfoOnce->tag_ = dfxOpInfo.tag_;
-    dfxOpInfoOnce->algType_ = dfxOpInfo.algType;
+    dfxOpInfoOnce->algType_ = dfxOpInfo.algType_;
     dfxOpInfoOnce->index_ = dfxOpInfo.index_;
-    // dfxOpInfoOnce->mainStreamId_ = dfxOpInfo.mainStreamId_;
     dfxOpInfoOnce->beginTime_ = dfxOpInfo.beginTime_;
     return dfxOpInfoOnce;
 }

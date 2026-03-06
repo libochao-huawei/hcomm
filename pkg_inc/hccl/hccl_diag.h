@@ -13,6 +13,8 @@
 
 #include <cstddef>
 #include <hccl/hccl_types.h>
+#include "thread.h"
+#include "hcclCommOp.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +33,7 @@ extern HcclResult HcclDfxRegOpInfo(HcclComm comm, HcclDfxOpInfo dfxOpInfo);
  * @return HcclResult 执行结果状态码
  * @note host侧
  */
-extern HcclResult HcclProfilingReportOp(HcclComm comm, unit64_t beginTime);
+extern HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime);
 
 /**
  * @brief kernel上报
@@ -41,7 +43,7 @@ extern HcclResult HcclProfilingReportOp(HcclComm comm, unit64_t beginTime);
  * @return HcclResult 执行结果状态码
  * @note host侧
  */
-extern HcclResult HcclReportAicpuKernel(HcclComm comm, unit64_t beginTime, ThreadHandle thread);
+extern HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, ThreadHandle thread);
 
 #ifdef __cplusplus
 }

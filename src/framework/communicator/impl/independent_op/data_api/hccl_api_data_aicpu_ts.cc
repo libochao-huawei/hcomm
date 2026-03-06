@@ -771,15 +771,22 @@ int32_t HcommChannelFence(ChannelHandle channel)
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult HcommProfilingReportDeviceOp(std::string groupname) {
+HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
+    HCCL_INFO("[%s] START.", __func__);
+    CHK_PTR_NULL(groupname);
+    HCCL_DEBUG("HcommProfilingReportDeviceOp groupname[%s]", groupname);
     //通过groipname获取通信域
     CollCommAicpuMgr* hcclCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(groupname);
-    CHK_PRT_RET(!hcclCommAicpuMgr, HCCL_ERROR("%s hcclComm is null, groupname[%s]", __func__, groupname.c_str()), HCCL_E_PTR);
+    CHK_PRT_RET(hcclCommAicpuMgr == nullptr, HCCL_ERROR("%s hcclComm is null, groupname[%s]", __func__, groupname), HCCL_E_PTR);
+
     CollCommAicpu* collCommAicpu = hcclCommAicpuMgr->GetCollCommAicpu();
+    CHK_PRT_RET(collCommAicpu == nullptr, HCCL_ERROR("%s hcclComm is null, groupname[%s]", __func__, groupname), HCCL_E_PTR);
     //collCommAicpu得到HcclCommDfx
     //HcclCommDfx再得到GetMirrorTaskManager
     HcclCommDfxLite* hcclCommDfxLite = collCommAicpu->GetHcclCommDfxLite();
+    CHK_PRT_RET(hcclCommDfxLite == nullptr, HCCL_ERROR("%s hcclCommDfxLite is null", __func__), HCCL_E_PTR);
     Hccl::MirrorTaskManager* mirrorTaskMgr = hcclCommDfxLite->GetMirrorTaskManager();
+    CHK_PRT_RET(mirrorTaskMgr == nullptr, HCCL_ERROR("%s hcclCommDfxLite is null", __func__), HCCL_E_PTR);
 
     Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgr->GetCurrDfxOpInfo());
     return HCCL_SUCCESS;
@@ -787,30 +794,43 @@ HcclResult HcommProfilingReportDeviceOp(std::string groupname) {
 
 HcclResult HcommProfilingReportKernelStartTask(ThreadHandle thread)
 {
+    HCCL_INFO("[%s] START.", __func__);
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
     auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
-    CHK_PRT_RET(streamLitePtr == nullptr,  HCCL_ERROR("[%s] streamLitePtr is null", __func__), HCCL_E_PTR);
+    CHK_PTR_NULL(streamLitePtr);
     Hccl::FlagTaskInfo flagTaskInfo;
     flagTaskInfo.streamId = streamLitePtr->GetId();
     flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId();
     flagTaskInfo.type = Hccl::MainStreamTaskType::HEAD;
     Hccl::ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
+    HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommProfilingReportKernelEndTask(ThreadHandle thread)
+HcclResult HcommProfilingReportKernelEndTask(ThreadHandle thread, const char* groupname)
 {
+    HCCL_INFO("[%s] START.", __func__);
+    CHK_PTR_NULL(groupname);
     HCCL_INFO("[HcommProfilingReportKernelEndTask] HcommProfilingReportKernelEndTask start");
     Thread *const threadPtr = reinterpret_cast<Thread*>(thread);
     CHK_PRT_RET(threadPtr == nullptr,  HCCL_ERROR("[%s] threadPtr is null", __func__), HCCL_E_PTR);
-    auto* streamLitePtr = static_cast<Hccl::StreamLite*>(threadPtr->GetStreamLitePtr());
+    auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
     CHK_PRT_RET(streamLitePtr == nullptr,  HCCL_ERROR("[%s] streamLitePtr is null", __func__), HCCL_E_PTR);
+    //FlagTaskInfo Report
     Hccl::FlagTaskInfo flagTaskInfo;
     flagTaskInfo.streamId = streamLitePtr->GetId();
     flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId();
     flagTaskInfo.type = Hccl::MainStreamTaskType::TAIL;
     Hccl::ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
-    // ProfilingReporterLite::GetInstance().ReportAllTasks();
+
+    CollCommAicpuMgr* hcclCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(groupname);
+    CHK_PRT_RET(hcclCommAicpuMgr == nullptr, HCCL_ERROR("%s hcclCommAicpuMgr is null", __func__), HCCL_E_PTR);
+    CollCommAicpu* collCommAicpu = hcclCommAicpuMgr->GetCollCommAicpu();
+    CHK_PRT_RET(collCommAicpu == nullptr, HCCL_ERROR("%s collCommAicpu is null", __func__), HCCL_E_PTR);
+  
+    HcclCommDfxLite* hcclCommDfxLite = collCommAicpu->GetHcclCommDfxLite();
+    hcclCommDfxLite->ReportAllTasks();
+    HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }

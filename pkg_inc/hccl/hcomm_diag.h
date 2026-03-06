@@ -46,7 +46,7 @@ extern HcclResult HcommRegOpTaskException(const char* commId, HcommGetOpInfoCall
  * @return HcclResult 执行结果状态码
  * @note Device侧
  */
-extern HcclResult HcommProfilingReportDeviceOp(uint64_t groupname);
+extern HcclResult HcommProfilingReportDeviceOp(const char* groupname);
 /**
  * @brief 上报内核启动任务事件
  * @param[in] thread 线程上下文
