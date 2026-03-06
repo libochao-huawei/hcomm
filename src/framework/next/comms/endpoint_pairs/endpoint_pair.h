@@ -80,7 +80,7 @@ public:
     HcclResult GetSocket(const uint32_t myRank, const uint32_t rmtRank,
         const std::string &socketTag, Hccl::Socket *&socket);
 
-    HcclResult CreateChannel(EndpointHandle endpointHandle, CommEngine engine, 
+    HcclResult CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels);
 
 private:
