@@ -823,7 +823,6 @@ HcclResult HcclCommInitClusterInfoMemConfig(const char *rankTableString, uint32_
         [&]() -> HcclResult {
             void *commV2 = nullptr;
             CHK_RET(HcclCommInitClusterInfoMemConfigV2(rankTableString, rank, config, &commV2));
-            constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm failed.Destroy comv2");
@@ -1362,7 +1361,9 @@ HcclResult HcclGetCommName(HcclComm commHandle, char *commName)
     HCCLV2_FUNC_RUN(
     [&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(commHandle);
-        CHK_RET(HcclGetCommNameV2(hcclComm->GetCommunicatorV2(), commName));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclGetCommNameV2(commV2, commName));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -2126,7 +2127,9 @@ HcclResult HcclBroadcastInner(void *buf, uint64_t count, HcclDataType dataType, 
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclBroadcastV2(buf, count, dataType, root, hcclComm->GetCommunicatorV2(), stream));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclBroadcastV2(buf, count, dataType, root, commV2, stream));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -2252,7 +2255,9 @@ HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCou
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclReduceScatterV2(sendBuf, recvBuf, recvCount, dataType, op, hcclComm->GetCommunicatorV2(), stream));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclReduceScatterV2(sendBuf, recvBuf, recvCount, dataType, op, commV2, stream));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -2376,7 +2381,9 @@ HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const 
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclReduceScatterVV2(sendBuf, const_cast<void*>(sendCounts), const_cast<void*>(sendDispls), recvBuf, recvCount, dataType, op, hcclComm->GetCommunicatorV2(), stream));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclReduceScatterVV2(sendBuf, const_cast<void*>(sendCounts), const_cast<void*>(sendDispls), recvBuf, recvCount, dataType, op, commV2, stream));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -2527,7 +2534,9 @@ HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, Hc
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclScatterV2(sendBuf, recvBuf, recvCount, dataType, root, hcclComm->GetCommunicatorV2(), stream));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclScatterV2(sendBuf, recvBuf, recvCount, dataType, root, commV2, stream));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -2662,7 +2671,9 @@ HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, 
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclAllGatherV2(sendBuf, recvBuf, sendCount, dataType, hcclComm->GetCommunicatorV2(), stream));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclAllGatherV2(sendBuf, recvBuf, sendCount, dataType, commV2, stream));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -2771,7 +2782,9 @@ HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclAllGatherVV2(sendBuf, sendCount, recvBuf, const_cast<void*>(recvCounts), const_cast<void*>(recvDispls), dataType, hcclComm->GetCommunicatorV2(), stream));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclAllGatherVV2(sendBuf, sendCount, recvBuf, const_cast<void*>(recvCounts), const_cast<void*>(recvDispls), dataType, commV2, stream));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -2911,7 +2924,9 @@ HcclResult HcclSendInner(void* sendBuf, uint64_t count, HcclDataType dataType, u
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclSendV2(sendBuf, count, dataType, destRank, hcclComm->GetCommunicatorV2(), stream));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclSendV2(sendBuf, count, dataType, destRank, commV2, stream));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -3009,7 +3024,9 @@ HcclResult HcclRecvInner(void* recvBuf, uint64_t count, HcclDataType dataType, u
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclRecvV2(recvBuf, count, dataType, srcRank, hcclComm->GetCommunicatorV2(), stream));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclRecvV2(recvBuf, count, dataType, srcRank, commV2, stream));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -3148,6 +3165,7 @@ HcclResult HcclCommDestroyWrapper(struct hcclAsyncJob* job_){
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
         string group = hcclComm->GetIdentifier();
         HcclOpInfoCtx& opBaseHcom = GetHcclOpInfoCtx();
         std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
@@ -3592,7 +3610,9 @@ HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataTy
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclAlltoAllV2(sendBuf, sendCount, sendType, recvBuf, recvCount, recvType, hcclComm->GetCommunicatorV2(), stream));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclAlltoAllV2(sendBuf, sendCount, sendType, recvBuf, recvCount, recvType, commV2, stream));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -3702,7 +3722,9 @@ HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclAlltoAllVV2(sendBuf, sendCounts, sdispls, sendType, recvBuf, recvCounts, rdispls, recvType, hcclComm->GetCommunicatorV2(), stream));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclAlltoAllVV2(sendBuf, sendCounts, sdispls, sendType, recvBuf, recvCounts, rdispls, recvType, commV2, stream));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -3817,7 +3839,9 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclAlltoAllVCV2(sendBuf, sendCountMatrix, sendType, recvBuf, recvType, hcclComm->GetCommunicatorV2(), stream));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclAlltoAllVCV2(sendBuf, sendCountMatrix, sendType, recvBuf, recvType, commV2, stream));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -3939,7 +3963,9 @@ HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclReduceV2(sendBuf, recvBuf, count, dataType, op, root, hcclComm->GetCommunicatorV2(), stream));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclReduceV2(sendBuf, recvBuf, count, dataType, op, root, commV2, stream));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -4510,7 +4536,9 @@ HcclResult HcclGetAicpuOpStreamAndNotify(HcclComm comm, rtStream_t* opstream, u8
  #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclGetAicpuOpStreamAndNotifyV2(hcclComm->GetCommunicatorV2(), opstream, aicpuNotifyNum, aicpuNotify));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclGetAicpuOpStreamAndNotifyV2(commV2, opstream, aicpuNotifyNum, aicpuNotify));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -4617,7 +4645,9 @@ HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemN
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclBatchSendRecvV2(sendRecvInfo, itemNum, hcclComm->GetCommunicatorV2(), stream));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclBatchSendRecvV2(sendRecvInfo, itemNum, commV2, stream));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -4723,7 +4753,9 @@ int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb)
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     CHK_PTR_NULL(comm);
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-    return HcclTaskRegisterV2(hcclComm->GetCommunicatorV2(), msgTag, cb);
+    HcclComm commV2 = hcclComm->GetCommunicatorV2();
+    CHK_PTR_NULL(commV2);
+    return HcclTaskRegisterV2(commV2, msgTag, cb);
 #endif
     return HCCL_E_NOT_SUPPORT;
 }
@@ -4734,7 +4766,9 @@ int32_t HcclTaskUnRegister(HcclComm comm,  const char *msgTag)
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     CHK_PTR_NULL(comm);
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-    return HcclTaskUnRegisterV2(hcclComm->GetCommunicatorV2(), msgTag);
+    HcclComm commV2 = hcclComm->GetCommunicatorV2();
+    CHK_PTR_NULL(commV2);
+    return HcclTaskUnRegisterV2(commV2, msgTag);
 #endif
     return HCCL_E_NOT_SUPPORT;
 }
@@ -4769,7 +4803,9 @@ HcclResult HcclCommSuspend(HcclComm comm)
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclCommSuspendV2(hcclComm->GetCommunicatorV2()));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclCommSuspendV2(commV2));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -4789,7 +4825,9 @@ HcclResult HcclCommResume(HcclComm comm)
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclCommResumeV2(hcclComm->GetCommunicatorV2()));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclCommResumeV2(commV2));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -4840,7 +4878,9 @@ HcclResult HcclCommUnsetMemoryRange(HcclComm comm, void *baseVirPtr)
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclCommUnsetMemoryRangeV2(hcclComm->GetCommunicatorV2(), baseVirPtr));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclCommUnsetMemoryRangeV2(commV2, baseVirPtr));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -4864,7 +4904,9 @@ HcclResult HcclCommActivateCommMemory(HcclComm comm, void *virPtr, size_t size, 
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclCommActivateCommMemoryV2(hcclComm->GetCommunicatorV2(), virPtr, size, offset, handle, flags));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclCommActivateCommMemoryV2(commV2, virPtr, size, offset, handle, flags));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -4888,7 +4930,9 @@ HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr)
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclCommDeactivateCommMemoryV2(hcclComm->GetCommunicatorV2(), virPtr));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclCommDeactivateCommMemoryV2(commV2, virPtr));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -4907,7 +4951,9 @@ HcclResult HcclCommWorkingDevNicSet(HcclComm comm, uint32_t *ranks, bool *useBac
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(HcclCommWorkingDevNicSetV2(hcclComm->GetCommunicatorV2(), ranks, useBackup, nRanks));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(HcclCommWorkingDevNicSetV2(commV2, ranks, useBackup, nRanks));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -5060,7 +5106,9 @@ HcclResult CommGetCCLBufSizeCfg(HcclComm comm, uint64_t *cclBufSize)
     CHK_PTR_NULL(socNamePtr);
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-        CHK_RET(CommGetCCLBufSizeCfgV2(hcclComm->GetCommunicatorV2(), cclBufSize));
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        CHK_RET(CommGetCCLBufSizeCfgV2(commV2, cclBufSize));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -5149,6 +5197,7 @@ HcclResult HcclGetCcuTaskInfoLegacy(HcclComm comm, void *tilingData, void *ccuTa
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU)) 
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     comm = hcclComm->GetCommunicatorV2();
+    CHK_PTR_NULL(comm);
     CHK_RET(HcclGetCcuTaskInfoLegacy(comm, tilingData, ccuTaskGroup));
 #endif
     return HCCL_SUCCESS;

@@ -144,7 +144,9 @@ HcclResult HcclRegisterMem(HcclComm comm, u32 remoteRank, int type,
         CHK_PTR_NULL(desc);
         HCCLV2_FUNC_RUN([&]() -> HcclResult {
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-            CHK_RET(HcclRegisterMemV2(hcclComm->GetCommunicatorV2(), remoteRank, type, addr, size, desc));
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclRegisterMemV2(commV2, remoteRank, type, addr, size, desc));
             return HCCL_SUCCESS;
         }());
         u32 localRank = INVALID_VALUE_RANKID;
@@ -198,7 +200,9 @@ HcclResult HcclDeregisterMem(HcclComm comm, HcclMemDesc* desc)
         CHK_PTR_NULL(desc);
         HCCLV2_FUNC_RUN([&]() -> HcclResult {
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-            CHK_RET(HcclDeregisterMemV2(hcclComm->GetCommunicatorV2(), desc));
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclDeregisterMemV2(commV2, desc));
             return HCCL_SUCCESS;
         }());
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -260,7 +264,9 @@ HcclResult HcclExchangeMemDesc(HcclComm comm, u32 remoteRank, HcclMemDescs* loca
         HCCL_E_PARA);
         HCCLV2_FUNC_RUN([&]() -> HcclResult {
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-            CHK_RET(HcclExchangeMemDescV2(hcclComm->GetCommunicatorV2(), remoteRank, local, timeout, remote, actualNum));
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclExchangeMemDescV2(commV2, remoteRank, local, timeout, remote, actualNum));
             return HCCL_SUCCESS;
         }());
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -306,7 +312,9 @@ HcclResult HcclEnableMemAccess(HcclComm comm, HcclMemDesc* remoteMemDesc, HcclMe
     CHK_PTR_NULL(remoteMem);
         HCCLV2_FUNC_RUN([&]() -> HcclResult {
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-            CHK_RET(HcclEnableMemAccessV2(hcclComm->GetCommunicatorV2(), remoteMemDesc, remoteMem));
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclEnableMemAccessV2(commV2, remoteMemDesc, remoteMem));
             return HCCL_SUCCESS;
         }());
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -341,7 +349,9 @@ HcclResult HcclDisableMemAccess(HcclComm comm, HcclMemDesc* remoteMemDesc)
     CHK_PTR_NULL(remoteMemDesc);
         HCCLV2_FUNC_RUN([&]() -> HcclResult {
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-            CHK_RET(HcclDisableMemAccessV2(hcclComm->GetCommunicatorV2(), remoteMemDesc));
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclDisableMemAccessV2(commV2, remoteMemDesc));
             return HCCL_SUCCESS;
         }());
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -413,7 +423,9 @@ HcclResult HcclBatchPut(HcclComm comm, u32 remoteRank, HcclOneSideOpDesc* desc, 
     EXCEPTION_HANDLE_BEGIN
         HCCLV2_FUNC_RUN([&]() -> HcclResult {
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-            CHK_RET(HcclBatchPutV2(hcclComm->GetCommunicatorV2(), remoteRank, desc, descNum, stream));
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclBatchPutV2(commV2, remoteRank, desc, descNum, stream));
             return HCCL_SUCCESS;
         }());
         HcclOneSidedSetIfProfile();
@@ -453,7 +465,9 @@ HcclResult HcclBatchGet(HcclComm comm, u32 remoteRank, HcclOneSideOpDesc* desc, 
     EXCEPTION_HANDLE_BEGIN
         HCCLV2_FUNC_RUN([&]() -> HcclResult {
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-            CHK_RET(HcclBatchGetV2(hcclComm->GetCommunicatorV2(), remoteRank, desc, descNum, stream));
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclBatchGetV2(commV2, remoteRank, desc, descNum, stream));
             return HCCL_SUCCESS;
         }());
         HcclOneSidedSetIfProfile();
