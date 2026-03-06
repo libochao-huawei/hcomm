@@ -24,7 +24,7 @@ HcclResult HcclEngineCtxCreate(HcclComm comm, const char *ctxTag, CommEngine eng
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(ctx);
-    const char * ctxTagTmp = ctxTag == nullptr ? COMM_RESERVE_CTX_TAG : ctxTag;
+    const char *ctxTagTmp = (ctxTag == nullptr) ? COMM_RESERVE_CTX_TAG : ctxTag;
     CHK_PRT_RET(strlen(ctxTagTmp) > HCCL_RES_TAG_MAX_LEN,
         HCCL_ERROR("[%s] ctxTag length exceeds maximum length, ctxTag length[%zu], max length[%d]",
             __func__,  strlen(ctxTagTmp), HCCL_RES_TAG_MAX_LEN), HCCL_E_PARA);
@@ -61,7 +61,6 @@ HcclResult HcclEngineCtxCreate(HcclComm comm, const char *ctxTag, CommEngine eng
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
     HcclResult ret = contextMgr.CreateCommEngineCtx(ctxTagTmp, engine, size, ctx);
-
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to create CommEngineCtx with ctxTag[%s], engine[%d], ctx size[%llu], ret[%d]",
             __func__, ctxTagTmp, engine, size, ret);
@@ -78,7 +77,7 @@ HcclResult HcclEngineCtxGet(HcclComm comm, const char *ctxTag, CommEngine engine
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(ctx);
     CHK_PTR_NULL(size);
-    const char * ctxTagTmp = ctxTag == nullptr ? COMM_RESERVE_CTX_TAG : ctxTag;
+    const char *ctxTagTmp = (ctxTag == nullptr) ? COMM_RESERVE_CTX_TAG : ctxTag;
     CHK_PRT_RET(strlen(ctxTagTmp) > HCCL_RES_TAG_MAX_LEN,
         HCCL_ERROR("[%s] ctxTag length exceeds maximum length, ctxTag length[%zu], max length[%d]",
             __func__, strlen(ctxTagTmp), HCCL_RES_TAG_MAX_LEN), HCCL_E_PARA);
@@ -130,7 +129,7 @@ HcclResult HcclEngineCtxCopy(HcclComm comm, CommEngine engine, const char *ctxTa
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(srcCtx);
-    const char * ctxTagTmp = ctxTag == nullptr ? COMM_RESERVE_CTX_TAG : ctxTag;
+    const char *ctxTagTmp = (ctxTag == nullptr) ? COMM_RESERVE_CTX_TAG : ctxTag;
     CHK_PRT_RET(strlen(ctxTagTmp) > HCCL_RES_TAG_MAX_LEN,
         HCCL_ERROR("[%s] ctxTag length exceeds maximum length, ctxTag length[%zu], max length[%d]",
             __func__,  strlen(ctxTagTmp), HCCL_RES_TAG_MAX_LEN), HCCL_E_PARA);
@@ -167,7 +166,6 @@ HcclResult HcclEngineCtxCopy(HcclComm comm, CommEngine engine, const char *ctxTa
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
     HcclResult ret = contextMgr.CopyCommEngineCtx(std::string(ctxTagTmp), engine, srcCtx, size, dstCtxOffset);
-    
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to copy CommEngineCtx with ctxTag[%s], engine[%d], size[%llu], dstCtxOffset[%llu],"
             " ret[%d]", __func__, ctxTagTmp, engine, size, dstCtxOffset, ret);
@@ -182,7 +180,7 @@ HcclResult HcclEngineCtxCopy(HcclComm comm, CommEngine engine, const char *ctxTa
 HcclResult HcclEngineCtxDestroy(HcclComm comm, const char *ctxTag, CommEngine engine)
 {
     CHK_PTR_NULL(comm);
-    const char * ctxTagTmp = ctxTag == nullptr ? COMM_RESERVE_CTX_TAG : ctxTag;
+    const char *ctxTagTmp = (ctxTag == nullptr) ? COMM_RESERVE_CTX_TAG : ctxTag;
     CHK_PRT_RET(strlen(ctxTagTmp) > HCCL_RES_TAG_MAX_LEN,
         HCCL_ERROR("[%s] ctxTag length exceeds maximum length, ctxTag length[%zu], max length[%d]",
             __func__,  strlen(ctxTagTmp), HCCL_RES_TAG_MAX_LEN), HCCL_E_PARA);
