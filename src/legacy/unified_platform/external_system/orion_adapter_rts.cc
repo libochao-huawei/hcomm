@@ -108,7 +108,7 @@ void HrtGetSocVer(std::string &socName)
         HCCL_ERROR("[Get][SocVer]errNo[0x%016llx] rtGet deviceVer failed.",
                    HCCL_ERROR_CODE((HcclResult::HCCL_E_RUNTIME)));
         throw RuntimeApiException("call rtGetSocVersion failed. ");
-        }
+    }
     socName = socNamePtr;
 }
 
@@ -559,7 +559,6 @@ void HrtIpcSetMemoryPid(const char_t *name, int pid)
     CHECK_NULLPTR(name, "[HrtIpcSetMemoryPid] name is nullptr!");
     aclError ret = aclrtIpcMemSetImportPid(name, &pid, 1);
     HCCL_INFO("Call aclrtIpcMemSetImportPid, return value[%d], pid[%d], name[%s].", ret, pid, name);
-    CHECK_NULLPTR(name, "[HrtIpcSetMemoryPid] name is nullptr!");
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[Set][IpcMemoryPid]errNo[0x%016llx] "
                    "rtSet ipc memory pid fail. return[%d], pid[%d], name[%s].",
