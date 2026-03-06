@@ -360,8 +360,8 @@ namespace hccl
         if (deviceType_ == DevType::DEV_TYPE_910B || deviceType_ == DevType::DEV_TYPE_910_93){
             CHK_RET(RegisterKernel(deviceType_));
         }
-        CHK_RET(LoadAICPUKernel());
         CHK_RET(LoadCustomKernel());
+        CHK_RET(LoadAICPUKernel());
         CHK_RET(InitHDCommunicate());
         CHK_RET(InitOpRetry());
         CHK_RET(InitOpResPara());
@@ -393,8 +393,8 @@ namespace hccl
         CHK_RET(InitTransportManager());
         CHK_RET(InitMemoryManagerSubGroup());
         CHK_RET(InitHcclAlg());
-        CHK_RET(LoadAICPUKernel());
         CHK_RET(LoadCustomKernel());
+        CHK_RET(LoadAICPUKernel());
         CHK_RET(InitHDCommunicate());
         CHK_RET(InitOpRetry());
         CHK_RET(InitOpResPara());
@@ -413,14 +413,16 @@ namespace hccl
 
     HcclResult HcclCommunicator::LoadAICPUKernel(void)
     {
-        std::string jsonPath;
-        CHK_RET(GetKernelFilePath(jsonPath));
-        jsonPath += "ccl_kernel.json";
-        HcclResult ret = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0,
-            binHandle_);
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[LoadAICPUKernel]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
-            "cpuKernelMode[%u].", ret, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0), ret);
+        if (binHandle_ == nullptr) {
+            std::string jsonPath;
+            CHK_RET(GetKernelFilePath(jsonPath));
+            jsonPath += "ccl_kernel.json";
+            HcclResult ret = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0,
+                binHandle_);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[LoadAICPUKernel]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
+                "cpuKernelMode[%u].", ret, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0), ret);
+        }
         return HCCL_SUCCESS;
     }
 
@@ -434,6 +436,25 @@ namespace hccl
             }
             binHandle_ = nullptr;
         }
+        return;
+    }
+
+    HcclResult HcclCommunicator::LoadCustomKernel(void)
+    {
+        // 加载自定义算子
+        // 请勿删除，该函数为用户自定义算子时使用，应加载句柄
+        // 读取customEnable环境变量，开启了就执行
+        std::string jsonPath;
+        CHK_RET(GetCustomKernelFilePath(jsonPath));
+        jsonPath += "libaicpu_custom.json";
+        CHK_RET(LoadCustomFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 1, binHandle_));
+        return HCCL_SUCCESS;
+    }
+
+    void HcclCommunicator::UnloadCustomKernel(void)
+    {
+        // 卸载自定义算子
+        // 请勿删除，该函数为用户自定义算子时使用，应释放句柄：UnloadBinary(binCustomHandle_);
         return;
     }
 
@@ -8417,19 +8438,16 @@ namespace hccl
     HcclResult HcclCommunicator::LoadCustomFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
                                                 aclrtBinHandle &binHandle)
     {
+        // 非910_93不支持custom kernel进程调用
+        if (deviceType_ != DevType::DEV_TYPE_910_93) {
+            HCCL_RUN_WARNING("[%s] custom kernel is not supported on device type[%d].", __func__, deviceType_);
+            return HCCL_SUCCESS;
+        }
         s64 isOpenCustomSwitch = 0;
         CHK_RET(hrtGetDeviceInfo(deviceLogicId_, HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM,
                                  HcclRtDeviceInfoType::HCCL_INFO_TYPE_CUST_OP_ENHANCE, isOpenCustomSwitch));
         if (isOpenCustomSwitch == 1) {
-            std::string cannPath;
-            HcclResult ret = GetCannPath(binPath, cannPath);
-            CHK_PRT_RET(ret != HCCL_SUCCESS,
-                        HCCL_ERROR("[LoadCustomFile]errNo[0x%016llx]load custom file fail, path[%s] optionType[%u]"
-                                   "cpuKernelMode[%u].",
-                                   ret, binPath, optionType, cpuKernelMode),
-                        ret);
-
-            ret = LoadBinaryFromFile(cannPath.c_str(), optionType, cpuKernelMode, binHandle);
+            HcclResult ret = LoadBinaryFromFile(binPath, optionType, cpuKernelMode, binHandle);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                         HCCL_ERROR("[LoadCustomFile]errNo[0x%016llx]load custom file fail, path[%s] optionType[%u]"
                                    "cpuKernelMode[%u].",
