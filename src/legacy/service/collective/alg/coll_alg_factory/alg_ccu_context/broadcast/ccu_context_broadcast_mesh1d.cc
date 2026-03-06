@@ -62,7 +62,7 @@ void CcuContextBroadcastMesh1D::CreateAllVariables()
             transportIdx++;
         }
     }
-    offSet_      = CreateVariable();
+    offset_      = CreateVariable();
     slicesize_   = CreateVariable();
     groupOpSize_ = CreateGroupOpSize();
     return;
@@ -76,7 +76,7 @@ void CcuContextBroadcastMesh1D::LoadAndExchangeData()
     Load(input_);
     Load(output_[rankId_]);
     Load(token_[rankId_]);
-    Load(offSet_);
+    Load(offset_);
     Load(slicesize_);
     Load(groupOpSize_);
     for (auto t : transports) {
@@ -144,7 +144,7 @@ std::vector<uint64_t> CcuContextBroadcastMesh1D::GeneArgs(const CcuTaskArg &arg)
     uint64_t inputAddr  = taskArg->inputAddr_;
     uint64_t outputAddr = taskArg->outputAddr_;
     uint64_t tokenInfo  = taskArg->token_;
-    uint64_t offset     = taskArg->offSet_;
+    uint64_t offset     = taskArg->offset_;
     uint64_t sliceSize  = taskArg->sliceSize_;
     auto     goSize     = CalGoSize(sliceSize);
 
