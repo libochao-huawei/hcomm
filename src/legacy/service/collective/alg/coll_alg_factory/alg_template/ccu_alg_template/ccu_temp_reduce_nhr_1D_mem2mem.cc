@@ -80,6 +80,9 @@ HcclResult CcuTempReduceNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, Temp
                                                 const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
     HCCL_INFO("[CcuTempReduceNHR][GenExtIns] ReduceNHR begin: rank[%d] start", myRank_);
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempReduceNHR] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     opMode_ = tempFuncs.opMode;
     rootId_ = op_.root;
     std::vector<uint64_t> dimSize;

@@ -71,7 +71,7 @@ private:
         {"CcuReduceMesh2D", CcuReduceMesh2D},
         {"CcuAlltoAllMesh1D", CcuAlltoAllMesh1D},
         {"CcuAlltoAllVMesh1D", CcuAlltoAllVMesh1D},
-        {"CcuHalfAll2AllVMesh1D", CcuAlltoAllVMesh1D}
+        {"CcuHalfAll2AllVMesh1D", CcuHalfAll2AllVMesh1D}
     };
 };
 }  // namespace Hccl

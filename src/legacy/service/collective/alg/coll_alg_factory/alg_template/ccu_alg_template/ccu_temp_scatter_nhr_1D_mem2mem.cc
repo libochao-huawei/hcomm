@@ -70,6 +70,9 @@ u32 CcuTempScatterNHRMem2Mem1D::CalcScratchMultiple(BufferType input, BufferType
 HcclResult CcuTempScatterNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, TemplateDataParams &tempAlgParams,
                                                  const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuInstructionScatterNHR1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     opMode_                           = tempFuncs.opMode;
     uint64_t                   rootId = tempVirtRankMap_[rootId_];
     CcuInstructionScatterNHR1D ccuInsScatterNHR1D;
