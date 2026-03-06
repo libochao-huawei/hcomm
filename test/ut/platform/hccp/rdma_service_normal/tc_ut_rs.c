@@ -31,6 +31,7 @@
 #include "ut_dispatch.h"
 #include "stub/ibverbs.h"
 #include "rs.h"
+#include "rs_common_inner.h"
 #include "rs_inner.h"
 #include "rs_ping_inner.h"
 #include "rs_ping.h"
