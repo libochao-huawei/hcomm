@@ -27,6 +27,7 @@ public:
     std::string &GetUniqueId() override;
     uint32_t GetNotifyNum() const override;
     LocalNotify *GetNotify(uint32_t index) const override;
+    HcclResult SupplementNotify(uint32_t notifyNum) override;
 
     // A3 Stream & A5 Stream
     bool IsDeviceA5() const override;
@@ -54,6 +55,7 @@ private:
         uint64_t sqCqContextAddr = 0;  // 记录sqeContext地址
         uint64_t sqCqContextSize = 0;  // 记录sqeContext大小
     };
+    std::string &UpdateUniqueId();
     rtStream_t rtStream_ = nullptr;
     bool isDeviceSide_ = false;
     StreamType streamType_ = StreamType::STREAM_TYPE_RESERVED;
