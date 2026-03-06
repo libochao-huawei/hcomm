@@ -63,7 +63,7 @@ protected:
         checkerOpParam.tag = "AllReduce";
         checkerOpParam.opMode = opMode;
         checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
         checkerOpParam.DataDes.count = dataCount;
         checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
         checkerOpParam.algName = algName;

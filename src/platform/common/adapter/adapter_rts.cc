@@ -431,7 +431,7 @@ HcclResult hrtGetDeviceTypeBySocVersion(std::string &socVersion, DevType &devTyp
         HCCL_WARNING("hrtGetDeviceTypeBySocVersion Ascend310B1 not support! please check usage");
     }
     if (socVersion.find("Ascend950") != std::string::npos) {
-        devType = DevType::DEV_TYPE_910_95;
+        devType = DevType::DEV_TYPE_950;
         return HCCL_SUCCESS;
     }
     auto iter = SOC_VER_CONVERT.find(socVersion);
@@ -489,7 +489,7 @@ HcclResult __hrtGetDeviceType(DevType &devType)
     //  根据芯片版本号获取芯片类型
     HCCL_DEBUG("[hrtGetDeviceType]socName = %s.", socName.c_str());
     if (socName.find("Ascend950") != std::string::npos) {
-        devType = DevType::DEV_TYPE_910_95;
+        devType = DevType::DEV_TYPE_950;
         g_deviceType = devType;
         HCCL_DEBUG("[hrtGetDeviceType]DeviceType = %d.", static_cast<s32>(g_deviceType));
         return HCCL_SUCCESS;

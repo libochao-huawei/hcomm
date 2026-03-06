@@ -76,7 +76,7 @@ protected:
         MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
         MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
         MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
-        MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+        MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
 
         // 资源初始化
         MOCKER_CPP(&CcuInsPreprocessor::Preprocess).stubs().with().will(ignoreReturnValue());
@@ -163,7 +163,7 @@ protected:
         std::vector<std::pair<u32, RankId>> levelRankPairs;
         levelRankPairs.push_back({1, 1});
         collAlgOpReq.resReq.levelRankPairs = levelRankPairs;
-        CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+        CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
         MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::Orchestrate,
                            HcclResult(CollAlgComponent::*)(const CollAlgOperator &op, const CollAlgParams &params,
                                                            const string &algName, InsQuePtr queue))
@@ -401,12 +401,12 @@ TEST_F(CollServiceDeviceModeTest, test_GetSnapShotDynamicBuf)
     u32 utCntCke = 3;
     vector<CcuTransport *> utCcuTransportVec;
     MOCKER_CPP(&CcuTransportGroupMgr::GetAllTransportGroups).stubs().with().will(returnValue(utLinkGroups));
-    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
     MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::GetCollAlgOpReq)
         .stubs()
         .with(any(), any())
         .will(returnValue(collAlgOpReq));
-    comm.collAlgComponent = make_shared<CollAlgComponent>(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    comm.collAlgComponent = make_shared<CollAlgComponent>(nullptr, DevType::DEV_TYPE_950, 0, 1);
     CollOperator op;
     BinaryStream bs{};
 
