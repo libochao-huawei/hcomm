@@ -21,10 +21,11 @@ SelectorStatus AllGatherAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, 
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
     HCCL_DEBUG("[AllGatherAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
-
+    u32 rankSize_2P = 2;
+ 	u32 rankSize_4P = 4;  
     HcclDetourType detourType = EnvConfig::GetInstance().GetDetourConfig().GetDetourType();
-    CHK_PRT_RET((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ != 2)||
-        (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ != 4),
+    CHK_PRT_RET((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ != rankSize_2P)||
+        (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ != rankSize_4P),
         HCCL_WARNING("[Algo][AllGatherAutoSelector] detourType not match for rankSize."),
         SelectorStatus::NOT_MATCH);
 
@@ -39,8 +40,8 @@ SelectorStatus AllGatherAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, 
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
             if (Is2DieFullMesh()) {
                 primQueueGenName = "CcuAllGatherMesh1D2Die";
-            } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == 2)||
-                (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == 4)) {
+            } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == rankSize_2P)||
+                (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == rankSize_4P)) {
                 primQueueGenName = "CcuAllGatherMeshDetour1D";
             } else {
                 primQueueGenName = "CcuAllGatherMesh1D";
@@ -50,8 +51,8 @@ SelectorStatus AllGatherAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, 
         } else if (topoInfo.level0Shape == Level0Shape::MESH_1D_CLOS) {
             if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
-                if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == 2)||
-                    (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == 4)) {
+                if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == rankSize_2P)||
+                    (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == rankSize_4P)) {
                     primQueueGenName = "CcuAllGatherMeshDetour1D";
                 } else {
                     primQueueGenName = "CcuAllGatherMesh1D";

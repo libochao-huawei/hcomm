@@ -5384,6 +5384,15 @@ aclError aclrtSnapShotCallbackUnregister(aclrtSnapShotStage stage, aclrtSnapShot
     return ACL_SUCCESS;
 }
 
+aclError aclmdlRIBindStream(aclmdlRI modelRI, aclrtStream stream, uint32_t flag)
+{
+    return ACL_SUCCESS;
+}
+
+aclError aclmdlRIUnbindStream(aclmdlRI modelRI, aclrtStream stream)
+{
+    return ACL_SUCCESS;
+}
 
 const char *aclrtGetSocName()
 {

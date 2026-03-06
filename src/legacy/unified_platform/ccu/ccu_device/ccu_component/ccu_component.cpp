@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <random>
+#include <cstdlib>
 #include "ccu_component.h"
 
 #include "sal.h"
@@ -40,8 +40,8 @@ constexpr u32 ONE_MILLISECOND_OF_USLEEP         = 1000;
 // 清理CKE批量申请大小
 constexpr u32 MAX_CKE_DATA_ARRAY_SIZE = 8;
 
-// 环境是A+X时，配置die0的MS交织粒度为1<<6 = 64
-constexpr uint32_t MSID_CONFIG_AX_MAINBOARD = 6;
+// 环境是A+X时，配置die0的MS交织粒度为1<<7 = 128
+constexpr uint32_t MSID_CONFIG_AX_MAINBOARD = 7;
 constexpr TpProtocol LOOP_JETTY_PROTOCOL = TpProtocol::TP; // 环回使用TP避免被环境link down阻塞
 
 CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)
@@ -77,7 +77,7 @@ void CcuComponent::Init()
 
     ifInit = true;
 }
-
+// 资源清理
 void CcuComponent::Deinit()
 {
     std::lock_guard<std::mutex> _lock(innerMutex);
@@ -101,6 +101,8 @@ void CcuComponent::Deinit()
 
     loopFeIpAddrMap.clear();
     ccuRmaBufferMap.clear();
+    localCcuRmaBufferMap.clear();
+    additionalCcuRmaBufferMap.clear();
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
         channelMgrs[dieId] = nullptr;
         resAllocators[dieId] = nullptr;
@@ -151,22 +153,32 @@ static HcclResult FindOneUsableEid(const uint32_t devLogicId, const uint8_t dieI
 
     std::string name;
     bool findFlag = false;
-    // 当前结论，除仅包含UBOE的FE外
-    // 其他eid均支持源与目标eid一致时应用环回
-    // 故当前版本选择首个可用eid即可
+    u32 devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+    auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
+    // 当前结论，需要选择可以申请到Tp handle的eid
     for (auto &eidInfo : eidInfoList) {
         if (eidInfo.dieId != dieId) {
             continue;
         }
 
-        feId = eidInfo.funcId;
-        ipAddr = eidInfo.ipAddress;
-        name = eidInfo.name;
-        findFlag = true;
+        const RdmaHandle rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, eidInfo.ipAddress);
+        const bool rtpEnable = rdmaHandleMgr.GetRtpEnable(rdmaHandle);
+
+        if (rtpEnable) {
+            feId = eidInfo.funcId;
+            ipAddr = eidInfo.ipAddress;
+            name = eidInfo.name;
+            HCCL_RUN_INFO("[%s] rtpEnable[%d] dieId[%u] choose:"
+                "name[%s] feId[%u] ipAddr[%s], devLogicId[%u]",
+                __func__, rtpEnable, dieId, name.c_str(), feId,
+                ipAddr.Describe().c_str(), devLogicId);
+            findFlag = true;
+            break;
+        }
     }
 
     if (!findFlag) {
-        HCCL_WARNING("[CcuComponent][%s] dieId[%u] doesn't have usable func ID, "
+        HCCL_RUN_INFO("[CcuComponent][%s] dieId[%u] doesn't have usable func ID, "
             "devLogicId[%u].", __func__, dieId, devLogicId);
         return HcclResult::HCCL_E_INTERNAL;
     }
@@ -239,8 +251,21 @@ void CcuComponent::CreateCcuRmaBuffer()
         CHECK_NULLPTR(rdmaHandle, StringFormat("[CcuComponent][%s] failed, rdmaHandle is nullptr, "
             "devLogicId[%d] dieId[%u]", __func__, devLogicId, dieId));
 
+        std::array<CcuMemInfo, CCU_MEM_INFO_SIZE> memInfoList{};
+        uint32_t count{0};
+        ccuResSpecs.GetCcuMemInfoList(dieId, memInfoList.data(), count);
+        for (uint32_t i = 0; i < count; i++) {
+            if (memInfoList[i].memVa == ccuResAddr) {
+                const auto ccuBuffer = std::make_shared<Buffer>(ccuResAddr, memInfoList[i].memSize);
+                ccuRmaBufferMap.emplace(dieId, std::make_unique<LocalUbRmaBuffer>(ccuBuffer, rdmaHandle));
+            } else {
+                const auto ccuBuffer = std::make_shared<Buffer>(memInfoList[i].memVa, memInfoList[i].memSize);
+                additionalCcuRmaBufferMap.emplace_back(std::make_unique<LocalUbRmaBuffer>(ccuBuffer, rdmaHandle));
+            }
+        }
         const auto ccuBuffer = std::make_shared<Buffer>(ccuResAddr, CCU_RESOURCE_SIZE);
-        ccuRmaBufferMap.emplace(dieId, std::make_unique<LocalUbRmaBuffer>(ccuBuffer, rdmaHandle));
+        // 本端专用的buffer，具有整块内存的权限
+        localCcuRmaBufferMap.emplace(dieId, std::make_unique<LocalUbRmaBuffer>(ccuBuffer, rdmaHandle));
     }
 }
 
@@ -360,8 +385,8 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const Ip
     const auto rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
     const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle, HrtUbJfcMode::CCU_POLL);
 
-    const auto &rmaBufferIter = ccuRmaBufferMap.find(dieId);
-    CHK_PRT_RET(rmaBufferIter == ccuRmaBufferMap.end(),
+    const auto &rmaBufferIter = localCcuRmaBufferMap.find(dieId);
+    CHK_PRT_RET(rmaBufferIter == localCcuRmaBufferMap.end(),
         HCCL_WARNING("[CcuComponent][%s] failed, ccu rma buffer of die[%u] is not existed, "
             "devLogicId[%d].", __func__, dieId, devLogicId),
         HcclResult::HCCL_E_NOT_FOUND);
@@ -498,8 +523,8 @@ void CcuComponent::ConfigMsIdToken()
     struct CustomChannelInfoOut outBuff{};
 
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
-        const auto &dieIter = ccuRmaBufferMap.find(dieId);
-        if (dieIter == ccuRmaBufferMap.end()) {
+        const auto &dieIter = localCcuRmaBufferMap.find(dieId);
+        if (dieIter == localCcuRmaBufferMap.end()) {
             HCCL_WARNING("[CcuComponent][%s] failed but passed, ccu rma buffer of die[%u] "
                 "is not existed, devLogicId[%d].", __func__, dieId, devLogicId);
             continue;
@@ -545,6 +570,23 @@ HcclResult CcuComponent::GetCcuResourceSpaceBufInfo(const uint8_t dieId, uint64_
     const auto rawBuffer = res->second->GetBuf();
     addr = static_cast<uint64_t>(rawBuffer->GetAddr());
     size = static_cast<uint64_t>(rawBuffer->GetSize());
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuComponent::GetCcuResourceSpaceTokenInfoForLocal(const uint8_t dieId, uint64_t &tokenId,
+    uint64_t &tokenValue) const
+{
+    CHK_RET(CheckDieValid(__func__, devLogicId, dieId, dieEnableFlags));
+
+    auto res = localCcuRmaBufferMap.find(dieId);
+    CHK_PRT_RET(res == localCcuRmaBufferMap.end(),
+        HCCL_WARNING("[CcuComponent][%s] failed, ccu rma buffer of die[%u] is not existed, "
+            "devLogicId[%d].", __func__, dieId, devLogicId),
+        HcclResult::HCCL_E_NOT_FOUND);
+
+    const auto &ccuRmaBuffer = res->second;
+    tokenId = static_cast<uint64_t>(ccuRmaBuffer->GetTokenId());
+    tokenValue = static_cast<uint64_t>(ccuRmaBuffer->GetTokenValue());
     return HcclResult::HCCL_SUCCESS;
 }
 

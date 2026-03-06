@@ -198,7 +198,7 @@ void UbMemTransport::ReadReduce(const RmaBufferSlice &locSlice, const RmtRmaBuff
                                                             reduceIn.dataType, reduceIn.reduceOp, config),
                  stream);
 
-    taskParam.taskType = TaskParamType::TASK_REDUCE_INLINE;
+    taskParam.taskType = TaskParamType::TASK_UB_REDUCE_INLINE;
     taskParam.endTime = DlProfFunc::GetInstance().dlMsprofSysCycleTime();
     taskParam.taskPara.DMA.src = reinterpret_cast<const void*>(locSlice.addr);
     taskParam.taskPara.DMA.dst = reinterpret_cast<const void*>(rmtSlice.addr);
@@ -243,7 +243,7 @@ void UbMemTransport::WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBuf
                                                              reduceIn.dataType, reduceIn.reduceOp, config),
                  stream);
 
-    taskParam.taskType = TaskParamType::TASK_REDUCE_INLINE;
+    taskParam.taskType = TaskParamType::TASK_UB_REDUCE_INLINE;
     taskParam.endTime = DlProfFunc::GetInstance().dlMsprofSysCycleTime();
     taskParam.taskPara.DMA.src = reinterpret_cast<const void*>(locSlice.addr);
     taskParam.taskPara.DMA.dst = reinterpret_cast<const void*>(rmtSlice.addr);
@@ -825,7 +825,7 @@ HcclResult UbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
         remoteMemsPtr_[i].type = rmtRmaBuffer->GetMemType();
         remoteMemsPtr_[i].addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
         remoteMemsPtr_[i].size = rmtRmaBuffer->GetSize();
-        memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag());
+        memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag().c_str());
         HCCL_INFO("[%s] addr[%p] size[%zu] rmtRmaBuffer[%p]", 
             __func__, reinterpret_cast<void *>(rmtRmaBuffer->GetAddr()), rmtRmaBuffer->GetSize(), rmtRmaBuffer.get());
     }
@@ -844,7 +844,7 @@ HcclResult UbMemTransport::Init()
     return HCCL_SUCCESS;
 }
  
-HcclResult UbMemTransport::DeInit() 
+HcclResult UbMemTransport::DeInit() const
 {
     socket->Destroy();
     return HCCL_SUCCESS;

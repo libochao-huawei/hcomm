@@ -1,8 +1,8 @@
-/**	
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.	
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of	
- * CANN Open Software License Agreement Version 2.0 (the "License").	
- * Please refer to the License for details. You may not use this file except in compliance with the License.	
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
@@ -61,12 +61,12 @@ STATIC int RaPingInitGetHandle(struct PingInitAttr *initAttr, struct PingInitInf
         hccp_run_info("Input parameters: phyId[%u], nicPosition[%d] family[%d] ip[%s] bufferSize[0x%x]",
             initAttr->dev.rdma.phyId, initAttr->mode, initAttr->dev.rdma.family, localIp, initAttr->bufferSize);
     } else if (initAttr->protocol == PROTOCOL_UDMA) {
-        ret = RaUdevInitCheck(initAttr->ub.phy_id, pingHandle);
+        ret = RaUdevInitCheck(initAttr->ub.phyId, pingHandle);
         CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_ping]ra_ub_dev_init_check failed, ret(%d)", ret), -EINVAL);
 
-        pingHandle->phyId = initAttr->ub.phy_id;
-        hccp_run_info("Input parameters: phyId[%u], nicPosition[%d], eid_index[%u] bufferSize[0x%x]",
-            initAttr->ub.phy_id, initAttr->mode, initAttr->dev.ub.eid_index, initAttr->bufferSize);
+        pingHandle->phyId = initAttr->ub.phyId;
+        hccp_run_info("Input parameters: phyId[%u], nicPosition[%d], eidIndex[%u] bufferSize[0x%x]",
+            initAttr->ub.phyId, initAttr->mode, initAttr->dev.ub.eidIndex, initAttr->bufferSize);
     } else {
         hccp_err("[init][ra_ping]protocol:%d do not support", initAttr->protocol);
         return -ENOTSUPP;
@@ -367,7 +367,7 @@ STATIC int RaPingDeinitParaCheck(struct RaPingHandle *pingHandle)
             pingHandle->taskCnt);
     } else if (pingHandle->protocol == PROTOCOL_UDMA) {
         hccp_run_info("Input parameters: eid_index[%u] eid[0x%016llx%016llx] target_cnt[%u] task_cnt[%u]",
-            devInfo.ub.eid_index, devInfo.ub.eid.in6.subnet_prefix, devInfo.ub.eid.in6.interface_id,
+            devInfo.ub.eidIndex, devInfo.ub.eid.in6.subnetPrefix, devInfo.ub.eid.in6.interfaceId,
             pingHandle->targetCnt, pingHandle->taskCnt);
     } else {
         hccp_err("[deinit][ra_ping]protocol:%d do not support", pingHandle->protocol);

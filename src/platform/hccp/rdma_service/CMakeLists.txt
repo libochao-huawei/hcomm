@@ -1,3 +1,13 @@
+# -----------------------------------------------------------------------------------------------------------
+# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# -----------------------------------------------------------------------------------------------------------
+
 set(TLV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tlv)
 
 set(rs_list
@@ -49,11 +59,11 @@ target_include_directories(rs PRIVATE
 
     # 第三方库依赖路径
     ${OPENSSL_INCLUDE_DIR}
-    ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/tls_adp
-    ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/kms
+    ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/tls_adp
+    ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/kms
 
     # rdma头文件
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/inc/driver
@@ -64,6 +74,7 @@ target_include_directories(rs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ccu
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/net_adapt
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ubengine
+    ${URMA_INCLUDE_DIR}
 )
 
 if(NOT BUILD_OPEN_PROJECT)
@@ -97,6 +108,7 @@ target_compile_definitions(rs PRIVATE
     $<$<AND:$<STREQUAL:${USE_ALOG},0>,$<STREQUAL:${PRODUCT_SIDE},device>>:CUSTOM_INTERFACE>
     $<$<STREQUAL:${PRODUCT_SIDE},device>:google=ascend_private>
     $<$<STREQUAL:${PRODUCT_SIDE},device>:CONFIG_TLV>
+    CONFIG_V121
 )
 
 

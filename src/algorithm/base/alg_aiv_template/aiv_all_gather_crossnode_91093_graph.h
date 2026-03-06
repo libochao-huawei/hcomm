@@ -30,55 +30,6 @@ __aicore__ inline void AivAllGatherCrossNodeGraph91093::Process(GM_ADDR buffOut0
     __gm__ T *inputGM = (__gm__ T *)input;
     __gm__ T *outputGM = (__gm__ T *)output;
 
-    uint64_t argsCount = FLAG_SIZE * rankSize_ / sizeof(uint64_t);
-    GlobalTensor<uint64_t> bufferArgsGT;
-    __gm__ uint64_t *buffersGmAddr = (__gm__ uint64_t *)(commInfoAddr);
-    bufferArgsGT.SetGlobalBuffer(buffersGmAddr, argsCount);
-
-    // 准备参数
-    GM_ADDR buffersIn[MAX_TARGET_NUM] = {};
-    GM_ADDR buffersOut[MAX_TARGET_NUM] = {};
-
-    // 把buffer地址搬到ub，把偏移参数搬到GM
-    for (uint32_t i = 0; i < numTargets; i++) {
-        uint32_t targetRank = targetRanks[i];
-        DataCopy(bufferArgsTensor[i * 4], bufferArgsGT[2 * targetRank], 4); // buffersIn buffersOut
-    }
-
-    SyncFunc<HardEvent::MTE2_S>();
-
-    for (uint32_t i = 0; i < numTargets; i++) {
-        uint32_t curIdx = i * 4;
-        buffersIn[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx));
-        buffersOut[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx + 1));
-    }
-
-    PipeBarrier<PIPE_ALL>();
-
-    if (clearEnable_ == 1) {
-        TQue<AscendC::TPosition::VECIN, 1> syncQue;
-        GlobalTensor<int32_t> syncGlobal;
-        GlobalTensor<int32_t> syncGlobalSecond;
-        uint32_t syncBufferSize = numBlocks_ * 32;
-        LocalTensor<int32_t> workLocal;
-
-        pipe.InitBuffer(syncQue, 1, syncBufferSize);
-        syncGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + syncAllOffset), syncBufferSize);
-        syncGlobalSecond.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + syncAllOffset + syncBufferSize), syncBufferSize);
-        workLocal = syncQue.AllocTensor<int32_t>();
-        if (blockIdxInGroup == 0) {
-            Barrier(buffersOut, 1);
-        }
-        SyncAll(syncGlobal, workLocal);
-        if (blockIdxInGroup == 0) {
-            ClearGM();
-            Barrier(buffersOut, 2);
-        }
-        SyncAll(syncGlobalSecond, workLocal);
-        syncQue.FreeTensor(workLocal);
-        PipeBarrier<PIPE_ALL>();
-    }
-
     // 首次卡间同步
     BatchRecordWait(tag, buffersOut);
 
@@ -100,7 +51,7 @@ template<typename T>
 __aicore__ inline void aiv_all_gather_crossnode_91093_graph(KERNEL_ARGS_DEF_A3)
 {
     AivAllGatherCrossNodeGraph91093 op;
-    op.Init<T>(buffOut0, rank, rankSize, len, reduceOp, tag, step, true);
+    op.Init<T>(buffOut0, buffOut1, rank, rankSize, len, reduceOp, tag, step, numBlocks, true);
     op.InitOpCounter(headCountMem, tailCountMem, addOneMem, SIZE_OF_INT32, isEnableCounter);
     op.HeadCounter();
     op.Process<T>(buffOut0, buffOut1, input, output, tag, len);
@@ -111,7 +62,6 @@ __aicore__ inline void sk_all_gather_crossnode(SUPERKERNEL_ARGS_DEF)
 {
     AivAllGatherCrossNodeGraph91093 op;
     op.InitSuperKernel(hiddenInput, true);
-    op.CalcNumTargetsAndTargetRanksGroup();
     uint32_t padCount = UB_ALIGN_SIZE / op.unitSize_;
     op.CalCountAndBlockOffset(op.len_, op.blockNumPerGroup, op.blockIdxInGroup, padCount, op.countPerCore, op.blockOffset);
    

@@ -17,10 +17,12 @@
 #include <sstream>
 #include <set>
 #include <unordered_map>
+#include <array>
 
 #include "sal.h"
 #include "string_util.h"
 #include "orion_adapter_rts.h"
+#include "adapter_error_manager_pub.h"
 
 namespace Hccl {
 
@@ -239,7 +241,7 @@ std::vector<SocketPortRange> CastSocketPortRange(const std::string &s, const std
     // load ranges from string
     SplitHcclSocketPortRange(envName, socketPortRange, hcclSocketPortRange);
     CHK_PRT_THROW(hcclSocketPortRange.size() == 0, 
-        HCCL_ERROR("Load empty port range from HCCL_HOST_SOCKET_PORT_RANGE, please check."),
+        HCCL_ERROR("Load empty port range from HCCL_HOST_SOCKET_PORT_RANGE, should not empty, please check."),
         InvalidParamsException, "parser portRange fail.");
     
     PrintSocketPortRange(envName, hcclSocketPortRange);
@@ -250,6 +252,8 @@ constexpr u32 HCCL_RDMA_TC_BASE = 4;    // RDMATrafficClass需要是4的整数�
 void CheckRDMATrafficClass(const u32 &rdmaTrafficClass)
 {
     if (rdmaTrafficClass % HCCL_RDMA_TC_BASE != 0) {
+        RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
+                            std::vector<std::string>({std::to_string(rdmaTrafficClass), "HCCL_RDMA_TC", "value should be multiple of four."}));
         HCCL_ERROR("rdmaTrafficClass[%u] is not a multiple of [%u]", rdmaTrafficClass, HCCL_RDMA_TC_BASE);
         THROW<InvalidParamsException>(
             StringFormat("rdmaTrafficClass[%u] is not a multiple of [%u]", rdmaTrafficClass, HCCL_RDMA_TC_BASE));
@@ -284,6 +288,8 @@ static void ParseAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlgoTyp
         {"NHR", HcclAlgoType::HCCL_ALGO_TYPE_NHR},
         {"NB", HcclAlgoType::HCCL_ALGO_TYPE_NB},
         {"NA", HcclAlgoType::HCCL_ALGO_TYPE_NA},
+        {"NHR_V1", HcclAlgoType::HCCL_ALGO_TYPE_NHR_V1},
+        {"AHC", HcclAlgoType::HCCL_ALGO_TYPE_AHC},
     };
 
     auto iterAlgoLevel = hcclAlgoLevelMap.find(orginalLevel);
@@ -418,6 +424,8 @@ HcclResult ParserHcclAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlg
         {"NHR", HcclAlgoType::HCCL_ALGO_TYPE_NHR},
         {"NB", HcclAlgoType::HCCL_ALGO_TYPE_NB},
         {"NA", HcclAlgoType::HCCL_ALGO_TYPE_NA},
+        {"NHR_V1", HcclAlgoType::HCCL_ALGO_TYPE_NHR_V1},
+        {"AHC", HcclAlgoType::HCCL_ALGO_TYPE_AHC},
     };
 
     auto iterAlgoLevel = hcclAlgoLevelMap.find(orginalLevel);
@@ -449,6 +457,8 @@ const std::map<HcclAlgoType, std::string> HcclAlgoTypeMap = {
     {HcclAlgoType::HCCL_ALGO_TYPE_NB, "NB"},
     {HcclAlgoType::HCCL_ALGO_TYPE_NULL, "null"},
     {HcclAlgoType::HCCL_ALGO_TYPE_NA, "NA"},
+    {HcclAlgoType::HCCL_ALGO_TYPE_NHR_V1, "NHR_V1"},
+    {HcclAlgoType::HCCL_ALGO_TYPE_AHC, "AHC"},
 };
 
 HcclResult SplitHcclAlgoLevel(const std::string &algoConfig, std::vector<std::string> &algos)
@@ -577,7 +587,8 @@ std::map<OpType, std::vector<HcclAlgoType>> SetHcclAlgoConfig(const std::string 
     HcclResult splitRet = SplitHcclOpType(algoConfig, algoPerOptype);
     if (splitRet != HCCL_SUCCESS) {
         THROW<InvalidParamsException>(
-            StringFormat("Env HCCL_ALGO config \"%s\" is invalid.", hcclAlgo.c_str()));
+            StringFormat("Env HCCL_ALGO config \"%s\" is invalid. example [level0:NA;level1:NHR] or"
+                "[allreduce=level0:NA;level1:ring/allgather=level0:NA;level1:H-D_R]", hcclAlgo.c_str()));
     }
 
     bool anyCommonConfig = false;
@@ -585,7 +596,8 @@ std::map<OpType, std::vector<HcclAlgoType>> SetHcclAlgoConfig(const std::string 
     HcclResult checkRet = CheckAlgoConfigValid(algoPerOptype, anyCommonConfig, anySpecificConfig);
     if (checkRet != HCCL_SUCCESS) {
         THROW<InvalidParamsException>(
-            StringFormat("Env HCCL_ALGO config \"%s\" is invalid.", hcclAlgo.c_str()));
+            StringFormat("Env HCCL_ALGO config \"%s\" is invalid. example [level0:NA;level1:NHR] or"
+                "[allreduce=level0:NA;level1:ring/allgather=level0:NA;level1:H-D_R]", hcclAlgo.c_str()));
     }
     HcclResult ret = HCCL_SUCCESS;
     if (anyCommonConfig) {
@@ -595,7 +607,8 @@ std::map<OpType, std::vector<HcclAlgoType>> SetHcclAlgoConfig(const std::string 
     }
     if (ret != HCCL_SUCCESS) {
         THROW<InvalidParamsException>(
-            StringFormat("Env HCCL_ALGO config \"%s\" is invalid.", hcclAlgo.c_str()));
+            StringFormat("Env HCCL_ALGO config \"%s\" is invalid. example [level0:NA;level1:NHR] or"
+                "[allreduce=level0:NA;level1:ring/allgather=level0:NA;level1:H-D_R]", hcclAlgo.c_str()));
     }
     return hcclAlgoConfig;
 }
@@ -616,7 +629,8 @@ HcclAccelerator CastHcclAccelerator(const std::string &s)
         mode = HcclAccelerator::CCU_SCHED;
     } else {
         THROW<InvalidParamsException>(
-            StringFormat("Env HCCL_OP_EXPANSION_MODE config \"%s\" is invalid.", s.c_str()));
+            StringFormat("Env HCCL_OP_EXPANSION_MODE config \"%s\" is invalid."
+                "it should be one of [AI_CPU, AIV, CCU_MS, CCU_SCHED].", s.c_str()));
     }
     return mode;
 }
@@ -777,7 +791,7 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
         if (itemPair.size() != ITEM_SIZE
             || std::find(taskExceptionName.begin(), taskExceptionName.end(), itemPair[0]) == taskExceptionName.end()) {
             THROW<InvalidParamsException>(
-                StringFormat("env[HCCL_DFS_CONFIG] value[%s] is invalid,  please check", dfsConfigEnv.c_str()));
+                StringFormat("env[HCCL_DFS_CONFIG] value[%s] is invalid,  please check, example [task_exception:on]", dfsConfigEnv.c_str()));
         }
         if (itemPair[0] == taskExceptionName[0]) {
             auto taskException = itemPair[1];
@@ -792,7 +806,7 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
             }
         }
     }
-    DfsConfig config{.taskExceptionEnable = taskExceptionEnable};
+    DfsConfig config{taskExceptionEnable};
     HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG task_exception set by environment to [%d]", config.taskExceptionEnable);
     return config;
 }
@@ -814,7 +828,7 @@ void CheckFilePath(const string &filePath)
 {
     if (filePath.length() >= (PATH_MAX) || filePath.length() == 0) {
         THROW<InvalidParamsException>(
-            StringFormat("env[HCCL_WHITELIST_FILE] is invalid, len is %u", filePath.length()));
+            StringFormat("env[HCCL_WHITELIST_FILE] is invalid, len is %u, should be (0,4096)", filePath.length()));
     }
 }
 /*-------------------------- post process functions -------------------------*/

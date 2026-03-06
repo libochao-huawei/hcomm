@@ -10,9 +10,7 @@
 
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
-
 #include <string>
-
 #define private public
 #define protected public
 #include "hccl_alg.h"
@@ -36,6 +34,7 @@
 #undef private
 #undef protected
 #include "dlra_function.h"
+#include "adapter_rts.h"
 
 using namespace hccl;
 using namespace std;
@@ -79,6 +78,21 @@ protected:
         MOCKER_CPP(&Heartbeat::Init)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HcclCommunicator::InitPreResource)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&Stream::ptr)
+        .stubs()
+        .with(any())
+        .will(returnValue((void*)0x12345678));
+        MOCKER_CPP(&Stream::IsMainStream)
+        .stubs()
+        .with(any())
+        .will(returnValue(false));
+        MOCKER(hrtNotifyWaitWithTimeOut)
+            .stubs()
+            .with(any())
+            .will(returnValue(HCCL_SUCCESS));
         setenv("HCCL_OP_RETRY_ENABLE", "L0:0, L1:0, L2:0", 1);
         std::cout << "A Test SetUP" << std::endl;
     }
@@ -221,9 +235,6 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_CollReduceScatterDoubleRingExecutor_Ring)
     MOCKER_CPP(&CollNativeExecutorBase::CheckCommSize)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatter)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
 
     std::unique_ptr<TopoMatcher> &topoMatcher = implBase->implAlg_->topoMatcher_;
     topoMatcher->topoInfo_.deviceLogicId = 0;
@@ -320,9 +331,6 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_CollReduceScatterFastDoubleRingFor91093Exec
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CollNativeExecutorBase::CheckCommSize)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatter)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
 
@@ -425,9 +433,6 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_SuperPod_CollReduceScatterDoubleRingExecuto
     MOCKER_CPP(&CollNativeExecutorBase::CheckCommSize)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatter)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
 
     std::unique_ptr<TopoMatcher> &topoMatcher = implBase->implAlg_->topoMatcher_;
     topoMatcher->topoInfo_.deviceLogicId = 0;
@@ -513,12 +518,6 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_CollReduceDoubleRingExecutor_Ring)
     MOCKER_CPP(&TransportManager::Alloc)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatter)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingGather)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
     MOCKER(CollExecutorBase::RunTemplate)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
@@ -590,12 +589,6 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_CollReduceDoubleRingExecutor_Ring_level2)
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalWait, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u32,
         s32, bool, u32, u32)).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportManager::Alloc)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatter)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingGather)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
     MOCKER(CollExecutorBase::RunTemplate)
@@ -699,19 +692,9 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_AllGatherDoubleRingExecutor_Ring_SuperPod)
     MOCKER_CPP(&TransportManager::Alloc)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-
     MOCKER_CPP(&CollNativeExecutorBase::CheckCommSize)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatter)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-
-    MOCKER_CPP(&CollCommExecutor::MultiRingAllGather)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-
     MOCKER(CollExecutorBase::RunTemplate)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
@@ -809,12 +792,6 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_CollAllGatherDoubleRingExecutor_Ring)
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalWait, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u32,
         s32, bool, u32, u32)).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&TransportManager::Alloc)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatter)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingAllGather)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
     MOCKER(CollExecutorBase::RunTemplate)
@@ -947,9 +924,6 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_CollReduceScatterDoubleRingExecutor_UpdateO
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CollNativeExecutorBase::CheckCommSize)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollCommExecutor::MultiRingReduceScatter)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
 

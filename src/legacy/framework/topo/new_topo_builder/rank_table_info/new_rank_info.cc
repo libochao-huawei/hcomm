@@ -36,6 +36,7 @@ void CheakLevelJsonsSize(u64 levelJsonsSize){
         THROW<InvalidParamsException>(StringFormat("level_list size [%u], exceeds the maximum limit [%u]", levelJsonsSize, MAX_LEVEL_lIST));
     }
 }
+
 void NewRankInfo::Deserialize(const nlohmann::json &newRankInfoJson)
 {
     std::string msgRankid  = "error occurs when parser object of propName \"rank_id\"";
@@ -57,7 +58,7 @@ void NewRankInfo::Deserialize(const nlohmann::json &newRankInfoJson)
     std::string msgDeviceid  = "error occurs when parser object of propName \"device_id\"";
     std::string msgdeviceport = "error occurs when parser object of propName \"device_port\"";
     TRY_CATCH_THROW(InvalidParamsException, msgDeviceid, deviceId = GetJsonPropertyUInt(newRankInfoJson, "device_id"););
-    TRY_CATCH_THROW(InvalidParamsException, msgdeviceport, devicePort = GetJsonPropertyUInt(newRankInfoJson, "device_port", false, MAX_VALUE_DEVICEPORT););
+    TRY_CATCH_THROW(InvalidParamsException, msgdeviceport, devicePort = GetJsonPropertyUInt(newRankInfoJson, "device_port", false, DEFAULT_VALUE_DEVICEPORT););
     CheakDeviceIdAndDevicePort(deviceId, devicePort);
     nlohmann::json levelJsons;
     std::string msgLevellist = "error occurs when parser object of propName \"level_list\"";
@@ -92,8 +93,8 @@ void NewRankInfo::Deserialize(const nlohmann::json &newRankInfoJson)
 
 std::string NewRankInfo::Describe() const
 {
-    return StringFormat("NewRankInfo[rankId=%d, localId=%d, replacedLocalId=%d, ranklevelInfos size=%d]",
-                        rankId, localId, replacedLocalId, rankLevelInfos.size());
+    return StringFormat("NewRankInfo[rankId=%d, localId=%d, replacedLocalId=%d, ranklevelInfos size=%d, device_port=%d]",
+                        rankId, localId, replacedLocalId, rankLevelInfos.size(), devicePort);
 }
 
 NewRankInfo::NewRankInfo(BinaryStream &binStream)

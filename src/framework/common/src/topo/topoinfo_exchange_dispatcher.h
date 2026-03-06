@@ -92,7 +92,7 @@ private:
     HcclResult PrepareLeaderResource(const std::map<std::string, std::shared_ptr<HcclSocket>> connectSockets,
         const GroupLeader_t &leaderInfo);
     HcclResult SendOnce();
-    HcclResult ProcessOneSendEvent(int epollFd, FdHandle &fdHandle);
+    HcclResult ProcessOneSendEvent(s32 epollFd, FdHandle &fdHandle);
     HcclResult ProcessSend();
     void CleanResource();
     HcclResult CloseEpollFd();

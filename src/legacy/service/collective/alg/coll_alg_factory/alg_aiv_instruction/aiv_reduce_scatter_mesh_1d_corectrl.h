@@ -19,11 +19,11 @@ using namespace AscendC;
 template<typename T>
 class AivReduceScatterMesh1DCoreCtrl : public AivCommBase {
     constexpr static uint32_t STAGE_NUM = 2;
-    constexpr static uint32_t MAX_RANK_SIZE = 8;
+
 public:
     __aicore__ inline AivReduceScatterMesh1DCoreCtrl() {}
 
-    // 0 < block_num < 2 * rankSize
+    // 0 < numBlocks_ < 2 * rankSize
     __aicore__ inline void InitCoreInfo(uint64_t len, uint64_t inputStride)
     {
         lenPerRank_ = len;

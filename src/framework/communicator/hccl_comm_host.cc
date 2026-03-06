@@ -271,7 +271,7 @@ namespace hccl
         return communicator_->GetHeterogMode(mode);
     }
 
-    HcclResult hcclComm::InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
+     HcclResult hcclComm::InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
         HcclMem cclBuffer, const std::string &commName, HcclCommConfig *config) {
         // 不校验config，为空时配置默认加速模式
 
@@ -358,8 +358,10 @@ namespace hccl
         // 下kernel进行自定义算子aicpu侧通信域的公共初始化
         std::string kernelName = "RunAicpuIndOpCommInit";
         HCCL_INFO("AicpuAclKernelLaunch start");
+        u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
+                        std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
         CHK_RET(AicpuAclKernelLaunch(localStream.ptr(), reinterpret_cast<void *>(&commAicpuParam_),
-            sizeof(commAicpuParam_), binHandle_, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));
+            sizeof(commAicpuParam_), binHandle_, kernelName, true, timeOut));
         HCCL_INFO("AicpuAclKernelLaunch end, hcclStreamSynchronize start");
         CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut("")));
 

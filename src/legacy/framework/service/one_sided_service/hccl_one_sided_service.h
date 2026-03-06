@@ -14,6 +14,7 @@
 #include "hccl_one_sided_conn.h"
 #include "kernel_param_lite.h"
 #include "stream.h"
+#include "dev_buffer.h"
 #include "coll_alg_params.h"
 #include "hccl_net_dev.h"
 
@@ -90,9 +91,9 @@ private:
 
     void FillOneSidedOperator(OpType type, RankId remoteRankId, const HcclOneSideOpDesc *desc) const;
 
-    DevBuffer *PackResToKernelLanuch(CollAlgOpReq &opReq, bool &needUpdateRes);
+    DevBuffer *PackResToKernelLanuch(CollAlgOpReq &opReq);
 
-    void SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &param, bool needUpdateRes, const DevBuffer *mem) const;
+    void SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &param, const DevBuffer *mem) const;
 
     void OneSidedAicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream)const ;
 

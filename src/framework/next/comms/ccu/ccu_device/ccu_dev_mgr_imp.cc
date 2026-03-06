@@ -18,6 +18,8 @@
 #include "ccu_res_specs.h"
 #include "ccu_res_batch_allocator.h"
 
+#include "adapter_rts.h"
+
 namespace hcomm {
 
 static std::unordered_map<int32_t, std::shared_ptr<CcuDrvHandle>> ccuDrvHandleMap;
@@ -92,14 +94,14 @@ HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
 
         if (ccuEngine == CcuEngine::CCU_MS) {
             resReq.loopEngineReq[dieId] = 0;
-            resReq.blockLoopEngineReq[dieId] = 8 * 8;
+            resReq.blockLoopEngineReq[dieId] = 8 * 8 * 2;
             resReq.msReq[dieId] = 0;
-            resReq.blockMsReq[dieId] = 64 * 8;
-            resReq.ckeReq[dieId] = 200;
-            resReq.blockCkeReq[dieId] = 8 * 8;
+            resReq.blockMsReq[dieId] = 64 * 8 * 2;
+            resReq.ckeReq[dieId] = 32;
+            resReq.blockCkeReq[dieId] = 8 * 8 * 2;
             resReq.continuousXnReq[dieId] = 0;
-            resReq.xnReq[dieId] = 200;
-            resReq.gsaReq[dieId] = 200;
+            resReq.xnReq[dieId] = 400;
+            resReq.gsaReq[dieId] = 400;
             resReq.missionReq.reqType = MissionReqType::FUSION_MULTIPLE_DIE;
             resReq.missionReq.req[dieId] = 2;
         } else {
@@ -107,11 +109,11 @@ HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
             resReq.blockLoopEngineReq[dieId] = 16;
             resReq.msReq[dieId] = 0;
             resReq.blockMsReq[dieId] = 128;
-            resReq.ckeReq[dieId] = 200;
+            resReq.ckeReq[dieId] = 32;
             resReq.blockCkeReq[dieId] = 16;
             resReq.continuousXnReq[dieId] = 0;
-            resReq.xnReq[dieId] = 200;
-            resReq.gsaReq[dieId] = 200;
+            resReq.xnReq[dieId] = 400;
+            resReq.gsaReq[dieId] = 400;
             resReq.missionReq.reqType = MissionReqType::FUSION_MULTIPLE_DIE;
             resReq.missionReq.req[dieId] = 2;
         }
@@ -144,8 +146,11 @@ HcclResult CcuAllocChannels(const int32_t deviceLogicId, const CcuChannelPara &c
         ipAddr.Describe().c_str(), ccuChannelPara.channelNum,
         ccuChannelPara.jettyNum, ccuChannelPara.sqSize);
 
+    uint32_t devPhyId{0};
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId));
+
     DevEidInfo eidInfo{};
-    CHK_RET(EidInfoMgr::GetInstance(deviceLogicId).GetEidInfoByAddr(ccuChannelPara.commAddr, eidInfo));
+    CHK_RET(EidInfoMgr::GetInstance(devPhyId).GetEidInfoByAddr(ccuChannelPara.commAddr, eidInfo));
     const uint8_t dieId = static_cast<uint8_t>(eidInfo.dieId);
     const uint32_t feId = eidInfo.funcId;
     ChannelPara para{};
@@ -275,7 +280,7 @@ HcclResult CheckDieValid(const char *funcName, const int32_t devLogicId, const u
         HcclResult::HCCL_E_PARA);
 
     CHK_PRT_RET(!dieEnableFlags[dieId],
-        HCCL_WARNING("[%s] failed, dieId[%u] is disable, devLogicId[%d].",
+        HCCL_ERROR("[%s] failed, dieId[%u] is disable, devLogicId[%d].",
             funcName, dieId, devLogicId),
         HcclResult::HCCL_E_PARA);
 

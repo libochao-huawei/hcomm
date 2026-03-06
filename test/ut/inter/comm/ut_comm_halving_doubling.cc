@@ -11,15 +11,12 @@
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
 #include <stdio.h>
-
 #include "hccl/base.h"
 #include <hccl/hccl_types.h>
-
 #include "comm_halving_doubling_pub.h"
 #include "sal.h"
 #include <vector>
 #include "comm_factory_pub.h"
-
 #include "llt_hccl_stub_pub.h"
 #include "llt_hccl_stub.h"
 #include "dlra_function.h"
@@ -27,6 +24,7 @@
 #include "dltdt_function.h"
 #include "profiler_manager.h"
 #include "network_manager_pub.h"
+
 using namespace std;
 using namespace hccl;
 
@@ -433,4 +431,3 @@ TEST_F(CommBinaryBlocksHDTest, ut_comm_B_B_H_D_init_1_rank)
         }
     }
 }
-

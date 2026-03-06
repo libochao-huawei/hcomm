@@ -10,6 +10,9 @@
 #ifndef HCCL_MC2_TYPE_H
 #define HCCL_MC2_TYPE_H
 
+#include <string>
+#include <unordered_map>
+#include <vector>
 #include "exception_util.h"
 #include "ccu_api_exception.h"
 #include "op_type.h"
@@ -25,6 +28,8 @@ constexpr uint32_t CCU_PARAM_NUM_MAX     = CCU_PARAM_NUM_PER_DIE * 2;
 constexpr uint32_t CCU_ONE_PARAM_SIZE    = 8;
 constexpr uint32_t CCU_TASK_NUM_MAX      = 64;
 constexpr uint32_t MAX_RANK_NUM          = 64; // 最大卡数
+constexpr uint32_t MAX_OP_NUM            = 8;  // MC2最大通信算子数
+
 
 constexpr uint32_t UNKNOWN_TILING_V1   = 3;     // 旧版本 MC2 Tiling version = 3
 constexpr uint32_t UNKNOWN_TILING_V2   = 100;   // 新版本 MC2 Tiling version = 100
@@ -220,6 +225,31 @@ struct KFCTaskV2 {
     uint64_t tilingData;               // 通信
 };
 
+struct HcclAiRMAWQ {
+    u32 jettyId;
+    u64 sqVA;
+    u32 wqeSize;
+    u32 sqDepth;
+    u64 headAddr; // AIV无依赖
+    u64 tailAddr; // AIV无依赖
+    u64 dbAddr;
+    u32 tp_id;
+    uint8_t rmtEid[16];
+    uint32_t rmtObjId; // rmtTokenID
+    uint32_t rmtTokenValue;
+    uint32_t localTokenId;
+};
+
+struct HcclAiRMACQ {
+    u32 jfcId;
+    u64 cqVA;
+    u32 cqeSize;
+    u32 cqDepth;
+    u64 headAddr;
+    u64 tailAddr;
+    u64 dbAddr;
+};
+
 struct HcclCombinOpParam {
     uint64_t workSpace; // client和server之间通信的地址
     uint64_t workSpaceSize; // client和server之间通信的空间大小
@@ -234,6 +264,12 @@ struct HcclCombinOpParam {
     uint64_t ckeAddr; // CKE寄存器其实地址
     uint64_t msAddr; // MS地址，预留
     uint64_t msSize; // 可写的MS个数，预留
+
+    uint32_t opType[MAX_OP_NUM];
+    uint8_t  algorithmType[MAX_OP_NUM];
+
+    HcclAiRMAWQ wq[MAX_RANK_NUM];
+    HcclAiRMACQ cq[MAX_RANK_NUM];
 };
 
 struct Mc2ServerCfg {
@@ -283,12 +319,12 @@ struct Mc2Tiling {
     }
 };
 
-struct Mc2InitTilingInner {   // 这个必须放到mc2tiling的最前面
-    uint32_t version;         // tiling结构体版本号,外部不可配置, 100开始
-    uint32_t mc2HcommCnt;     // 通信的次数
-    uint32_t offset[8];       // 每个通信的偏移
-    uint8_t  debugMode;       // 调测模式, 0表示关闭,1表示开启,外部可配置
-    uint8_t  preparePosition; // prepare消息发送的位置，0表示device，1表示host,外部可配置
+struct Mc2InitTilingInner {         // 这个必须放到mc2tiling的最前面
+    uint32_t version;               // tiling结构体版本号,外部不可配置, 100开始
+    uint32_t mc2HcommCnt;           // 通信的次数
+    uint32_t offset[MAX_OP_NUM];    // 每个通信的偏移
+    uint8_t  debugMode;             // 调测模式, 0表示关闭,1表示开启,外部可配置
+    uint8_t  preparePosition;       // prepare消息发送的位置，0表示device，1表示host,外部可配置
     char     reserved[22];
 };
 
@@ -297,7 +333,8 @@ struct Mc2CcTilingInner {
     uint8_t  skipBufferWindowCopy; // 跳过hbm到window间搬运 0不跳过，1跳过snd-window, 2跳过window-rcv
     uint8_t  stepSize;             // 通信步长，粗粒度融合时填0,
     uint8_t  version;              // 版本号
-    char     reserved[9];         // 保留字段
+    char     reserved[8];         // 保留字段
+    uint8_t  protocol;            // 协议类型 0:ubmemory 1:urma
     uint8_t  communicationEngine; // 用于标记使用AIV、CCU、AICPU做通信加速器，定义同通信域加速器配置 0:默认ccu 1:ccu 2:aiv
     uint8_t  srcDataType;          // 输入数据类型
     uint8_t  dstDataType;          // 输出数据类型

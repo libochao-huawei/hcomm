@@ -17,7 +17,7 @@ class CollBroadCastRingZerocopyExecutor : public CollBroadcastExecutor {
 public:
     CollBroadCastRingZerocopyExecutor(const HcclDispatcher dispatcher,
                                         std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollBroadCastRingZerocopyExecutor() = default;
+    ~CollBroadCastRingZerocopyExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

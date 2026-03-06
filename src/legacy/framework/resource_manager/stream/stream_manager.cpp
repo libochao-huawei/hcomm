@@ -36,7 +36,8 @@ Stream *StreamManager::GetSlave() const
         THROW<NotSupportException>(StringFormat("Unsupported OpMode: %s", opMode.Describe().c_str()));
     }
 
-    HCCL_INFO("[StreamManager::%s] end, opMode[%s].", __func__, opMode.Describe().c_str());
+    HCCL_INFO("[StreamManager::%s] end, opMode[%s], slave stream[%u].",
+        __func__, opMode.Describe().c_str(), stream->GetId());
     return stream;
 }
 
@@ -55,6 +56,8 @@ Stream *StreamManager::GetSlaveByIndex(u32 index) const
         THROW<NotSupportException>(StringFormat("Unsupported OpMode: %s", opMode.Describe().c_str()));
     }
     
+    HCCL_INFO("[StreamManager::%s] end, opMode[%s], slave stream[%u].",
+        __func__, opMode.Describe().c_str(), stream->GetId());
     return stream;
 }
 
@@ -73,12 +76,15 @@ Stream *StreamManager::GetMaster() const
         THROW<NotSupportException>(StringFormat("Unsupported OpMode: %s", opMode.Describe().c_str()));
     }
 
-    HCCL_INFO("[StreamManager::%s] end, opMode[%s].", __func__, opMode.Describe().c_str());
+    HCCL_INFO("[StreamManager::%s] end, opMode[%s], master stream[%u].",
+        __func__, opMode.Describe().c_str(), stream->GetId());
     return stream;
 }
 
 void StreamManager::CaptureSlaveStream(const Stream *masterStream, const Stream *slaveStream) const
 {
+    HCCL_RUN_INFO("[StreamManager][%s] masterStream[%u] slaveStream[%u]", __func__,
+              masterStream->GetId(), slaveStream->GetId());
     rtModel_t rtModel = nullptr;
     bool isCapture = false;
     u32 modelId = 0;
@@ -107,8 +113,8 @@ void StreamManager::CaptureSlaveStream(const Stream *masterStream, const Stream 
                 THROW<InternalException>(StringFormat("[StreamManager::%s] Adding the salveStream to the masterStream "
                     "failed, ret[%d]", __func__, ret));
             }
-            HCCL_INFO("[StreamManager::%s] Add stream[%u] to model[%u] success.",
-                __func__, slaveStream->GetId(), modelId);
+            HCCL_RUN_INFO("[StreamManager::%s] Add slaveStream[%u] to model[%u] success, masterStream[%u]",
+                __func__, slaveStream->GetId(), modelId, masterStream->GetId());
         }
     }
 }

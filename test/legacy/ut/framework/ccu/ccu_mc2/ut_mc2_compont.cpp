@@ -23,6 +23,9 @@
 #include "mc2_compont.h"
 #include "communicator_impl.h"
 #include "ccu_ins_preprocessor.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
+#include "internal_exception.h"
 #undef private
 #undef protected
 
@@ -91,7 +94,8 @@ TEST_F(Mc2CompontTest, should_success_when_calling_AllocCommResource_V2)
     MOCKER_CPP(&Mc2Compont::AllocV2).stubs();
     MOCKER_CPP(&Mc2Compont::GenerateAlgoTemplatesV2).stubs();
     MOCKER_CPP(&Mc2Compont::GenerateCcuServer).stubs();
-    EXPECT_NO_THROW(mc2Compont.AllocCommResource((void *)&mc2Tiling, nullptr));
+    void * commContext;
+    EXPECT_NO_THROW(mc2Compont.AllocCommResource((void *)&mc2Tiling, &commContext));
 }
 
 TEST_F(Mc2CompontTest, should_return_success_when_calling_Alloc)
@@ -100,7 +104,7 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_Alloc)
     MOCKER(CcuRep::GetTokenInfo).stubs().with(any(), any()).will(returnValue(1000));
     HcclCombinOpParam opParam;
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(&opParam)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x10000));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)0x10000));
 
     // then
     std::unique_ptr<CommunicatorImpl> comm = std::make_unique<CommunicatorImpl>();
@@ -110,8 +114,7 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_Alloc)
 
     void *commContext;
     // check
-    EXPECT_NO_THROW(mc2Compont.Alloc(&commContext));
-    EXPECT_NE(nullptr, mc2Compont.combinOpParamBuffer);
+    EXPECT_NO_THROW(mc2Compont.Alloc());
 }
 
 TEST_F(Mc2CompontTest, should_return_success_when_calling_AllocV2)
@@ -120,7 +123,7 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_AllocV2)
     MOCKER(CcuRep::GetTokenInfo).stubs().with(any(), any()).will(returnValue(1000));
     HcclCombinOpParam opParam;
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(&opParam)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x10000));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)0x10000));
 
     // then
     std::unique_ptr<CommunicatorImpl> comm = std::make_unique<CommunicatorImpl>();
@@ -141,8 +144,7 @@ TEST_F(Mc2CompontTest, should_return_success_when_calling_AllocV2)
     commConfigPtr->srcDataType = HcclDataType::HCCL_DATA_TYPE_FP32;
     commConfigPtr->dstDataType = HcclDataType::HCCL_DATA_TYPE_FP32;
 
-    EXPECT_NO_THROW(mc2Compont.AllocV2(&commContext));
-    EXPECT_NE(nullptr, mc2Compont.combinOpParamBuffer);
+    EXPECT_NO_THROW(mc2Compont.AllocV2());
 
     free(mc2TilingPtr);
 }
@@ -329,7 +331,9 @@ TEST_F(Mc2CompontTest, should_skip_GenerateAlgoTemplatesV2_when_has_cache)
     commConfigPtr->srcDataType = HcclDataType::HCCL_DATA_TYPE_FP32;
     commConfigPtr->dstDataType = HcclDataType::HCCL_DATA_TYPE_FP32;
  
+    HcclAlgoInfo hcclAlgoInfo;
     mc2Compont.algoTemplateMap[0x0000000004010408] = {};    // mock algo template sign cache
+    mc2Compont.algoInfoMap_[0x0000000004010408] = hcclAlgoInfo;    // mock algo template sign cache
  
     EXPECT_NO_THROW(mc2Compont.GenerateAlgoTemplatesV2(mc2TilingPtr, algoTemplateRequire));
  
@@ -406,7 +410,7 @@ TEST_F(Mc2CompontTest, test_MC2Orchestrate)
 
     CollAlgParams collAlgParams;
     std::shared_ptr<InsQueue> insQueue = std::make_shared<InsQueue>();
-    EXPECT_THROW(mc2Compont.MC2Orchestrate(collAlgParams, insQueue), InternalException);
+    EXPECT_THROW(mc2Compont.MC2Orchestrate(collAlgParams, insQueue, 0), InternalException);
 }
 
 TEST_F(Mc2CompontTest, test_MC2AllocCommRes)
@@ -441,7 +445,7 @@ TEST_F(Mc2CompontTest, test_MC2AllocCommRes)
 
     CollAlgParams collAlgParams;
     std::shared_ptr<InsQueue> insQueue = std::make_shared<InsQueue>();
-    EXPECT_THROW(mc2Compont.MC2AllocCommRes(collAlgParams, insQueue), InternalException); // mc2回退抛异常
+    EXPECT_THROW(mc2Compont.MC2AllocCommRes(collAlgParams, insQueue, 0), InternalException); // mc2回退抛异常
 }
 
 TEST_F(Mc2CompontTest, Ut_GetCcuMc2ServerNum_Expect)

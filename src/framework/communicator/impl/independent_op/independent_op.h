@@ -72,7 +72,7 @@ private:
     int32_t commEngine_ = -1;
     u32 threadNum_ = 0;
     u32 notifyNumPerThread_ = 0;
-    u64 cclBufferSize_;
+    u64 cclBufferSize_ = 0;
     std::string commId_;
     aclrtBinHandle binHandle_ = nullptr;
 
@@ -84,7 +84,7 @@ private:
     ChannelManager channelMgr_;
 
     bool isAicpuCommInit_ = false;
-    CommAicpuParam commAicpuParam_;
+    CommAicpuParam commAicpuParam_{};
 };
 
 }  // namespace hccl

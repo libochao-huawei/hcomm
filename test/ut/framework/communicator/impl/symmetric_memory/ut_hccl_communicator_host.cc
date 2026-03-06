@@ -84,9 +84,15 @@ TEST_F(HcclCommunicatorHostTest, Ut_InitSymmetricMemory_When_SuperPodNumGreaterT
 TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_Normal_Expect_ReturnIsTrue) {
     MOCKER_CPP(&SymmetricMemory::FindSymmetricWindow).stubs().will(returnValue(HCCL_SUCCESS));
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->realUserRank_ = 0;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910_93;
+    HcclResult ret = hcclCommunicator->InitSymmetricMemory();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(hcclCommunicator->symmetricMemoryAgent_, nullptr);
+    EXPECT_NE(hcclCommunicator->symmetricMemory_, nullptr);
     // 配置满足前置条件
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
-    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910_93;
     hcclCommunicator->deviceNumPerAggregation_ = 2;
     hcclCommunicator->multiModuleDiffDeviceNumMode_ = false;
 
@@ -95,59 +101,90 @@ TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_Normal_Expect_
     opParam.outputSymWindow = reinterpret_cast<void*>(0x2000);
     opParam.aicpuUnfoldMode = true;
 
-    bool ret = hcclCommunicator->IsSupportSymmetricMemory(HcclCMDType::HCCL_CMD_ALLGATHER, opParam);
-    EXPECT_EQ(ret, true);
+    bool retBool = hcclCommunicator->IsSupportSymmetricMemory(HcclCMDType::HCCL_CMD_ALLGATHER, opParam);
+    EXPECT_EQ(retBool, true);
     GlobalMockObject::verify();
 }
 
 TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_AicpuUnfoldIsFalse_Expect_ReturnIsFalse) {
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->realUserRank_ = 0;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910_93;
+    HcclResult ret = hcclCommunicator->InitSymmetricMemory();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(hcclCommunicator->symmetricMemoryAgent_, nullptr);
+    EXPECT_NE(hcclCommunicator->symmetricMemory_, nullptr);
     OpParam opParam;
     opParam.aicpuUnfoldMode = false;
-    bool ret = hcclCommunicator->IsSupportSymmetricMemory(HcclCMDType::HCCL_CMD_ALLGATHER, opParam);
-    EXPECT_EQ(ret, false);
+    bool retBool = hcclCommunicator->IsSupportSymmetricMemory(HcclCMDType::HCCL_CMD_ALLGATHER, opParam);
+    EXPECT_EQ(retBool, false);
 }
 
 TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_WorkFlowModeIsNotOpBase_Expect_ReturnIsFalse) {
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->realUserRank_ = 0;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910_93;
+    HcclResult ret = hcclCommunicator->InitSymmetricMemory();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(hcclCommunicator->symmetricMemoryAgent_, nullptr);
+    EXPECT_NE(hcclCommunicator->symmetricMemory_, nullptr);
     OpParam opParam;
     opParam.aicpuUnfoldMode = true;
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
-    bool ret = hcclCommunicator->IsSupportSymmetricMemory(HcclCMDType::HCCL_CMD_ALLGATHER, opParam);
-    EXPECT_EQ(ret, false);
+    bool retBool = hcclCommunicator->IsSupportSymmetricMemory(HcclCMDType::HCCL_CMD_ALLGATHER, opParam);
+    EXPECT_EQ(retBool, false);
 }
 
 TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_deviceTypeIsNot910_93_Expect_ReturnIsFalse) {
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->realUserRank_ = 0;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910B;
+    HcclResult ret = hcclCommunicator->InitSymmetricMemory();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
     OpParam opParam;
     opParam.aicpuUnfoldMode = true;
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
-    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910B;
-    bool ret = hcclCommunicator->IsSupportSymmetricMemory(HcclCMDType::HCCL_CMD_ALLGATHER, opParam);
-    EXPECT_EQ(ret, false);
+
+    bool retBool = hcclCommunicator->IsSupportSymmetricMemory(HcclCMDType::HCCL_CMD_ALLGATHER, opParam);
+    EXPECT_EQ(retBool, false);
 }
 
 TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_multiModuleDiffDeviceNumModeIsTrue_Expect_ReturnIsFalse) {
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->realUserRank_ = 0;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910_93;
+    HcclResult ret = hcclCommunicator->InitSymmetricMemory();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(hcclCommunicator->symmetricMemoryAgent_, nullptr);
+    EXPECT_NE(hcclCommunicator->symmetricMemory_, nullptr);
     OpParam opParam;
     opParam.aicpuUnfoldMode = true;
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
-    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910_93;
     hcclCommunicator->multiModuleDiffDeviceNumMode_ = true;
-    bool ret = hcclCommunicator->IsSupportSymmetricMemory(HcclCMDType::HCCL_CMD_ALLGATHER, opParam);
-    EXPECT_EQ(ret, false);
+    bool retBool = hcclCommunicator->IsSupportSymmetricMemory(HcclCMDType::HCCL_CMD_ALLGATHER, opParam);
+    EXPECT_EQ(retBool, false);
 }
 
 TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_FindSymmetricWindowReturnIsHCCL_E_NOT_FOUND_Expect_ReturnIsFalse) {
     MOCKER_CPP(&SymmetricMemory::FindSymmetricWindow).stubs().will(returnValue(HCCL_E_NOT_FOUND));
     std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->realUserRank_ = 0;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910_93;
+    HcclResult ret = hcclCommunicator->InitSymmetricMemory();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(hcclCommunicator->symmetricMemoryAgent_, nullptr);
+    EXPECT_NE(hcclCommunicator->symmetricMemory_, nullptr);
     OpParam opParam;
     opParam.aicpuUnfoldMode = true;
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
-    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910_93;
     hcclCommunicator->deviceNumPerAggregation_ = 2;
     hcclCommunicator->multiModuleDiffDeviceNumMode_ = false;
-    bool ret = hcclCommunicator->IsSupportSymmetricMemory(HcclCMDType::HCCL_CMD_ALLGATHER, opParam);
-    EXPECT_EQ(ret, false);
+    bool retBool = hcclCommunicator->IsSupportSymmetricMemory(HcclCMDType::HCCL_CMD_ALLGATHER, opParam);
+    EXPECT_EQ(retBool, false);
     GlobalMockObject::verify();
 }

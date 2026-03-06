@@ -487,7 +487,8 @@ TEST_F(CcuContextManagerTest, AGTest)
     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));;
     MOCKER(CcuDeviceManager::AllocCke).stubs().will(invoke(CtxMgrAllocCkeStub));
     MOCKER(CcuDeviceManager::AllocXn).stubs().will(invoke(CtxMgrAllocXnStub));
-
+    MOCKER_CPP(&CcuDeviceManager::GetCcuResourceSpaceTokenInfoForLocal).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP(&CcuDeviceManager::GetCcuResourceSpaceTokenInfo).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
     MOCKER(CcuDeviceManager::AllocResHandle).stubs().will(invoke(CtxMgrAllocResHandleStub));
     MOCKER(CcuDeviceManager::GetResource).stubs().will(invoke(CtxMgrGetResourceStub));
     MOCKER(CcuDeviceManager::ReleaseResHandle).stubs().will(invoke(CtxMgrReleaseResHandleStub));
@@ -662,7 +663,8 @@ TEST_F(CcuContextManagerTest, TestSharedRes)
     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));;
-
+    MOCKER_CPP(&CcuDeviceManager::GetCcuResourceSpaceTokenInfoForLocal).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP(&CcuDeviceManager::GetCcuResourceSpaceTokenInfo).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));
     MOCKER(CcuDeviceManager::AllocCke).stubs().will(invoke(CtxMgrAllocCkeStub));
     MOCKER(CcuDeviceManager::AllocXn).stubs().will(invoke(CtxMgrAllocXnStub));
 

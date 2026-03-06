@@ -646,6 +646,12 @@ bool Transport::GetIsUseAtomicWrite()
     return pimpl_->GetIsUseAtomicWrite();
 }
 
+HcclResult Transport::GetSpecificNotify(HcclSignalInfo& notifyInfo, bool& isValid, const std::string& notifyName)
+{
+    CHK_PTR_NULL(pimpl_);
+    return pimpl_->GetSpecificNotify(notifyInfo, isValid, notifyName);
+}
+
 HcclResult Transport::HcclBatchRead(const TransportDeviceNormalData &ibvData, struct MemDetails *localMems,
     struct MemDetails *remoteMems, u32 memNum, u64 &dbInfo)
 {
@@ -656,6 +662,11 @@ HcclResult Transport::HcclBatchRead(const TransportDeviceNormalData &ibvData, st
     HCCL_ERROR("[Transport][HcclBatchRead]Does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
+}
+
+HcclResult Transport::SetDeviceUnavailable(u32 deviceId)
+{
+    return MemNameRepository::GetInstance(deviceId)->SetDeviceUnavailable(true);
 }
 
 HcclResult Transport::HcclBatchWrite(const TransportDeviceNormalData &ibvData,

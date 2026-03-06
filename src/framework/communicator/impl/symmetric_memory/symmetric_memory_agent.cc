@@ -24,7 +24,8 @@ SymmetricMemoryAgent::SymmetricMemoryAgent(const std::unique_ptr<HcclSocketManag
       localVnicIp_(localVnicIp), rankInfoList_(rankInfoList), userRank_(userRank), rankSize_(rankInfoList.size()),
       useSuperPodMode_(useSuperPodMode), identifier_(identifier)
 {
-    if (rankSize_ >=2) {    // 当前数据交换算法使用超节点内大平面ring算法，需要和“左右”两边的rank建链
+    const int RANK_NUM=2;
+    if (rankSize_ >=RANK_NUM) {    // 当前数据交换算法使用超节点内大平面ring算法，需要和“左右”两边的rank建链
         leftRank_ = (userRank_ - 1 + rankSize_) % rankSize_;
         rightRank_ = (userRank_ + 1) % rankSize_;
     }
@@ -43,7 +44,8 @@ SymmetricMemoryAgent::~SymmetricMemoryAgent() {
 }
 
 HcclResult SymmetricMemoryAgent::Init() {
-    CHK_PRT_RET(rankSize_ < 2, HCCL_ERROR("[SymmetricMemoryAgent][Init] single rank communicator"), HCCL_E_PARA);
+    const int RANK_NUM=2;
+    CHK_PRT_RET(rankSize_ < RANK_NUM, HCCL_ERROR("[SymmetricMemoryAgent][Init] single rank communicator"), HCCL_E_PARA);
     CHK_RET(EstablishSockets());
     CHK_RET(InitRecvThread());
     return HCCL_SUCCESS;
@@ -210,7 +212,7 @@ void SymmetricMemoryAgent::DealWithRequest()
             if (!requestQueue_.empty()) {
                 Packet pkt = requestQueue_.front();
                 std::unique_lock<std::mutex> sockLock(socketMutex_);
-                HcclResult ret = mapRankIdconnectedSockets_[rightRank_]->Send((u8*)&pkt, PACKET_TOTAL_LEN);
+                HcclResult ret = mapRankIdconnectedSockets_[rightRank_]->Send(static_cast<void*>(&pkt), PACKET_TOTAL_LEN);
                 if (ret == HCCL_SUCCESS) {
                     requestQueue_.pop();
                 }else {

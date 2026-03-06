@@ -139,7 +139,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/pub_inc/new
     ${HCCL_CODE_ROOT}/src/platform/hccp/inc
     ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network
-    ${HCCL_CODE_ROOT}/src/platform/hccp/external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
     ${HCCL_CODE_ROOT}/src/pkg_inc
     ${HCCL_CODE_ROOT}/external_depends
 
@@ -295,8 +295,8 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
 
     ${THIRD_PARTY_NLOHMANN_PATH}
-    ${ASCEND_3RD_LIB_PATH}/json/include/
-    ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
+    ${CANN_3RD_LIB_PATH}/json/include/
+    ${CANN_3RD_LIB_PATH}/gtest/include/
 
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/aicpu
@@ -338,6 +338,8 @@ target_include_directories(hccl_llt  PRIVATE
     #next
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/aicpu
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank/comm_mems/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs

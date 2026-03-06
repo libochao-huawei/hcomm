@@ -144,7 +144,7 @@ HcclResult CollAlltoAllMeshAivSmallCountExecutor::GetAivExecParam(const OpParam&
     args.len = execMem.count;
     args.dataType = param.All2AllDataDes.sendType;
     args.unitSize = SIZE_TABLE[param.All2AllDataDes.sendType];
-
+    args.devType = static_cast<u32>(topoAttr_.deviceType);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollAlltoAllMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
@@ -203,9 +203,6 @@ HcclResult CollAlltoAllMeshAivSmallCountExecutor::KernelRun(const OpParam &param
     algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
-    if (aivClearEnable_) {
-        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
-    }
 
     // AllToAll pingpong 图模式走单算子归一流程 或者 单算子模式
     ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);

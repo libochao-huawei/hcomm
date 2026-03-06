@@ -254,8 +254,11 @@ HcclResult InsTempReduceMesh2D::LocalCopyFromInputToOutput(const TemplateDataPar
 HcclResult InsTempReduceMesh2D::GatherFromInput(const u32 slice, const u32 axis,
     const ResLinks &tempLinks, std::vector<InsQuePtr> &axisTempInsQues)
 {
-    HCCL_DEBUG("[InsTempReduceMesh2D] Gather from input start");
+    HCCL_DEBUG("[InsTempReduceMesh2D] Gather from input start.");
 
+    CHK_PRT_RET(axisTempInsQues.empty(),
+        HCCL_ERROR("[InsTempReduceMesh2D][GatherFromInput] axisTempInsQues is empty."), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(axisTempInsQues[0]);
     u64 sliceSize = sliceSize_[slice];
     u64 sliceScratchBaseOffset = sliceScratchBaseOffset_[slice];
 
@@ -284,7 +287,10 @@ HcclResult InsTempReduceMesh2D::GatherFromInput(const u32 slice, const u32 axis,
         DataSlice dstDataSlice(BufferType::SCRATCH, sliceScratchBaseOffset + axisRank * sliceSize, sliceSize);
         SlicesList recvSlicesList({srcDataSlice}, {dstDataSlice});
         DataInfo recvInfo(recvLink, recvSlicesList);
-
+        CHK_PRT_THROW(queIdx >= axisTempInsQues.size(),
+                      HCCL_ERROR("[InsTempReduceMesh2D] queIdx[%u] is bigger than axisTempInsQues size[%zu].", queIdx,
+                                 axisTempInsQues.size()),
+                      InvalidParamsException, "queIdx is invalid");
         CHK_PRT_RET(Recv(recvInfo, axisTempInsQues[queIdx], 0, true, DmaMode::PUT),
             HCCL_ERROR("[InsTempReduceMesh2D] Recv data failed"),
             HcclResult::HCCL_E_INTERNAL);

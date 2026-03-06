@@ -116,7 +116,7 @@ HcclResult TopoInfoExchangeDispather::PrepareResource(
     CHK_RET(topoInfoExchangeServer_->TopoInfoExchangeBase::Struct2Json(clusterInfo, basicJson));
     basicJson[PROP_STEP] = topoInfoExchangeServer_->TopoInfoExchangeBase::currentStep_;
     if (!failedAgentIdList.empty()) {
-        basicJson["fault_info"] = "Failed to connect agent[" + failedAgentIdList + "]";
+        basicJson["fault_info"] = "[" + failedAgentIdList + "]";
         basicJson["fault_type"] = static_cast<int>(TopoDetectResult::TOPO_CONNECT_FAILED);
     }
     rankTableJson_ = basicJson.dump();
@@ -214,15 +214,15 @@ HcclResult TopoInfoExchangeDispather::CloseEpollFd()
     return HCCL_SUCCESS;
 }
 
-HcclResult TopoInfoExchangeDispather::ProcessOneSendEvent(s32 epollFd, FdHandle &fdHanlde)
+HcclResult TopoInfoExchangeDispather::ProcessOneSendEvent(s32 epollFd, FdHandle &fdHandle)
 {
     std::unique_lock <std::mutex> lckForMap(fdHandleMapMutex_);
-    if (fdHandleToFdContextMap_.find(fdHanlde) == fdHandleToFdContextMap_.end()) {
-        HCCL_ERROR("[TopoInfoExchangeDispather][ProcessOneSendEvent]no fdhandle[%p]", fdHanlde);
+    if (fdHandleToFdContextMap_.find(fdHandle) == fdHandleToFdContextMap_.end()) {
+        HCCL_ERROR("[TopoInfoExchangeDispather][ProcessOneSendEvent]no fdhandle[%p]", fdHandle);
         stop_ = true;
         return HCCL_E_INTERNAL;
     }
-    auto ctx = &(fdHandleToFdContextMap_.at(fdHanlde));
+    auto ctx = &(fdHandleToFdContextMap_.at(fdHandle));
     if (ctx->txState.Send(ctx->socket) != 0) {
         HCCL_ERROR("[TopoInfoExchangeDispather][ProcessOneSendEvent]send data to rank[%u] failed.", ctx->txState.rankId);
         stop_ = true;
@@ -236,7 +236,7 @@ HcclResult TopoInfoExchangeDispather::ProcessOneSendEvent(s32 epollFd, FdHandle 
         ctlType = EPOLL_CTL_MOD;
     }
     // EPOLLOUT_LET_ONESHOT -> EPOLLOUT | EPOLLET | EPOLLONESHOT, 防止多个线程同时操作同一个fd（fd重复触发）
-    HcclResult ret = hrtRaCtlEventHandle(epollFds_, fdHanlde, ctlType, HcclEpollEvent::HCCL_EPOLLOUT_LET_ONESHOT);
+    HcclResult ret = hrtRaCtlEventHandle(epollFds_, fdHandle, ctlType, HcclEpollEvent::HCCL_EPOLLOUT_LET_ONESHOT);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[TopoInfoExchangeDispather][ProcessOneSendEvent]epoll_ctl delete/modify "\
             "failed, ctlType[%d]", ctlType);

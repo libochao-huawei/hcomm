@@ -512,34 +512,6 @@ namespace hccl
         return HCCL_E_NOT_SUPPORT;
     }
 
-    HcclResult HcclCommunicator::SetGroupMainStream(HcclRtStream sendRecvMainStream_){
-        return HCCL_E_NOT_SUPPORT;
-    }
-
-    HcclResult HcclCommunicator::CreateGroupSendNotifies(){
-        return HCCL_E_NOT_SUPPORT;
-    }
-
-    HcclResult HcclCommunicator::CreateGroupRecvNotifies(){
-        return HCCL_E_NOT_SUPPORT;
-    }
-
-    HcclResult HcclCommunicator::CreateGroupSendStreams(){
-        return HCCL_E_NOT_SUPPORT;
-    }
-
-    HcclResult HcclCommunicator::CreateGroupRecvStreams(){
-        return HCCL_E_NOT_SUPPORT;
-    }
-
-    HcclResult HcclCommunicator::GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte){
-        return HCCL_E_NOT_SUPPORT;
-    }
-
-    HcclResult HcclCommunicator::GroupSubstreamsSync(){
-        return HCCL_E_NOT_SUPPORT;
-    }
-
     u32 HcclCommunicator::GetLocalNicPort(NicType nicType)
     {
         return 0;
@@ -894,6 +866,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::BuildAiRmaInfoParam(const std::string &newTag, const std::string &algName, const HcclCMDType opType)
+    {
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::BuildAicpuOrderLaunchNotify()
     {
         return HCCL_SUCCESS;
@@ -1015,6 +992,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::CopyHostAirmaInfoToDeviceParam(const std::string &newTag, const HcclCMDType opType, const rtStream_t aiCpuStream)
+    {
+        return HCCL_SUCCESS;
+    }
+ 
     HcclResult HcclCommunicator::CopyHostOpResToDeviceParam(const std::string &newTag)
     {
         return HCCL_SUCCESS;
@@ -1022,7 +1004,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::BuildOpResParam(
         const std::string &algName, const AlgResourceResponse &algResource, const std::string &newTag,
-        const HcclCMDType opType)
+        const HcclCMDType opType, const rtStream_t aicpuStream)
     {
         return HCCL_SUCCESS;
     }
@@ -1626,5 +1608,10 @@ namespace hccl
     HcclResult HcclCommunicator::GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
     {
         return HCCL_SUCCESS;
+    }
+
+    bool HcclCommunicator::EnableAicpuUnfold()
+    {
+        return false;
     }
 }

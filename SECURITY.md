@@ -26,14 +26,16 @@
 | :--: | :----------: | :------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ | :-------------------------------------------- |
 | 依赖 |    不涉及    | cmake/third_party/makeself-fetch.cmake | https://gitcode.com/cann-src-third-party/makeself/releases/download/release-2.5.0-patch1.0/makeself-release-2.5.0-patch1.tar.gz | 从 gitcode 下载 makeself 源码，作为编译依赖   |
 | 依赖 |    不涉及    | cmake/third_party/json.cmake           | https://gitcode.com/cann-src-third-party/json/releases/download/v3.11.3/include.zip                                             | 从 gitcode 下载 json 源码，作为编译依赖       |
+| 依赖 |    不涉及    | cmake/third_party/openssl.cmake          |  https://gitcode.com/cann-src-third-party/openssl/releases/download/openssl-3.0.9/openssl-openssl-3.0.9.tar.gz                         | 从 gitcode 下载 openssl 源码，作为编译依赖 |
 | 依赖 |    不涉及    | cmake/third_party/gtest.cmake          | https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz                          | 从 gitcode 下载 googletest 源码，作为编译依赖 |
-| 依赖 |    不涉及    | cmake/third_party/pybind11.cmake       | https://gitcode.com/cann-src-third-party/pybind11/releases/download/v2.13.6/pybind11-2.13.6.tar.gz                              | 从 gitcode 下载 pybind11 源码，作为编译依赖   |
+| 依赖 |    不涉及    | cmake/third_party/mockcpp.cmake          |  https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h4/mockcpp-2.7.tar.gz                         | 从 gitcode 下载 mockcpp 源码，作为编译依赖 |
+| 依赖 |    不涉及    | cmake/third_party/protobuf.cmake          |  https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz                         | 从 gitcode 下载 protobuf 源码，作为编译依赖 |
 
 ---
 
 ## 端口声明
 
-HCCL 开放的端口、端口使用的传输层协议、认证方式以及用途等信息可参见[《CANN通信矩阵》](https://hiascend.com/document/redirect/CannCommunityCommMatrix)。
+HCCL 开放的端口、端口使用的传输层协议、认证方式以及用途等信息可参见[《CANN通信矩阵》](https://hiascend.com/document/redirect/CannCommunityCommMatrix)中的“HCCL”页签。
 
 ## 漏洞机制说明
 

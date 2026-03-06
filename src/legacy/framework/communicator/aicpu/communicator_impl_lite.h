@@ -185,12 +185,14 @@ public:
         return profilingReporterLite.get();
     }
 
-    HcclResult SendErrorMessageReportToHost(ErrorMessageReport & errMsgInfo);
-    u32 GetUserStreamId() {
+    HcclResult SendErrorMessageReportToHost(ErrorMessageReport &errMsgInfo);
+    u32 GetUserStreamId() const
+    {
         return userStreamId_;
     }
 
-    bool IsErrorReported() {
+    bool IsErrorReported() const
+    {
         return isErrorReported_;
     }
 
@@ -208,14 +210,14 @@ public:
     void RegisterProfCallBack();
 #endif
     void CheckOpExecStatus() const;
+    bool CheckNeedUpdateRes(HcclKernelParamLite *kernelParam);
     void UpdateCommParam(HcclKernelParamLite *kernelParam);
     void UpdateLocBuffer(HcclKernelParamLite *kernelParam);
-    void UpdateOpRes(HcclKernelParamLite *kernelParam);
+    void UpdateRes(HcclKernelParamLite *kernelParam);
     void UpdateTransports(HcclKernelParamLite *kernelParam);
     void UpdateHDCommnicate(HcclKernelParamLite *kernelParam);
     void CreateCollAlgComponentLite();
     void InitCurrentOp(HcclKernelParamLite *kernelParam);
-    void UpdateOffloadRes(HcclKernelParamLite *kernelParam);
     void UpdateUserStreamId(HcclKernelParamLite *kernelParam);
     std::shared_ptr<InsQueue> GetInsQueue(HcclKernelParamLite *kernelParam);
     void                      SetDfxOpInfo(uint64_t beginTime);
@@ -240,7 +242,7 @@ private:
 
     std::unique_ptr<CollAlgComponentLite>          algComponentLite{};
 
-    void RestoreOpRes(const string &opTag, const string &algName, u64 addr, u64 bufSize);
+    void RestoreOpRes(const string &opTag, const string &tagKey, u64 addr, u64 bufSize);
 
     void RestoreAllTransports(u64 addr, u64 bufSize);
     unique_ptr<HDCommunicateLite> kfcControlTransferH2D = std::make_unique<HDCommunicateLite>();
@@ -285,6 +287,8 @@ private:
     std::mutex aicpuMc2Mutex;
     u32 userStreamId_{0};
     bool isErrorReported_{false};
+
+    std::unordered_set<std::string> loadedOpSet{};
 };
 
 } // namespace Hccl

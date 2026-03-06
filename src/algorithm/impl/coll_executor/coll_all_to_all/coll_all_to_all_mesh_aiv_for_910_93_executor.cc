@@ -66,7 +66,7 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::CalcLevel0CommInfo(TransportMemT
 
 HcclResult CollAlltoAllMeshAivFor91093Executor::CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
-    // A3超节点内多机场景，block_num需要为偶数
+    // A3超节点内多机场景，numBlocks_需要为偶数
     numBlocks = (rankSize < MAX_NUM_BLOCKS ? rankSize + rankSize % NUM_BLOCKS_FACTOR_TWO : MAX_NUM_BLOCKS);
     u32 bestNumBlocks = numBlocks;
     u32 minNumBlocks = std::max((rankSize + MAX_TARGET_NUM - 1) / MAX_TARGET_NUM, NUM_BLOCKS_FACTOR_TWO);
@@ -117,7 +117,7 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::GetAivExecParam(const OpParam& p
     args.dataType = param.All2AllDataDes.sendType;
     args.unitSize = SIZE_TABLE[param.All2AllDataDes.sendType];
     args.reduceOp = param.reduceType;
-
+    args.devType = static_cast<u32>(topoAttr_.deviceType);
     HCCL_INFO("SPK [CollAlltoAllMeshAivFor91093Executor][GetAivExecParam], rank[%llu], rankSize[%llu], len[%llu],datatype[%llu], op[%llu]", args.rank, args.rankSize, args.len, args.dataType, args.reduceOp);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -208,15 +208,9 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::KernelRun(const OpParam &param, 
         if (topoArgs.serverNum == 1) {
             topoArgs.serverNum = TWO_SERVER_NUM;
         }
-        if (aivClearEnable_) {
-            ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
-        }
         ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);
     } else {
         algArgs.argsType = KernelArgsType::ARGS_TYPE_SUPERPOD;
-        if (aivClearEnable_) {
-            ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
-        }
         ExtraArgsV2 extraArgs;
         if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC) {
             for (u32 i = 0; i < localRankSize; i++) {

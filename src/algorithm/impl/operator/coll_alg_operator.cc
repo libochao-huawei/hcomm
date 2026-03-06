@@ -35,6 +35,7 @@ constexpr u64 HCCL_FFTS_CAPACITY = 65535; // FFTS+子图最大容量
 constexpr u32 AHC_MIN_SUBGROUP_SPLIT_DIVISOR = 2;
 constexpr u32 AHC_LEVEL0_GROUP_SIZE_THRESHOLD = 3;
 constexpr u32 SERVER_COUNT_THRESHOLD_FOR_MULTI_DETER_PIPELINE = 2;
+constexpr u32 MIN_STRICT_RANK_NUM = 3;
 
 CollAlgOperator::CollAlgOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
                                  HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher,
@@ -282,7 +283,7 @@ HcclResult CollAlgOperator::CalcIncreLinkRequest(const std::string& algName, con
     if (executor_.get() == nullptr) {
         executor_ = CollAlgExecRegistry::Instance().GetAlgExec(algName, dispatcher_, topoMatcher_);
         CHK_PRT_RET(executor_.get() == nullptr,
-            HCCL_ERROR("[BatchSendRecvOperator][CalcIncreLinkRequest]Fail to find executor for algName[%s]",
+            HCCL_ERROR("[CollAlgOperator][CalcIncreLinkRequest]Fail to find executor for algName[%s]",
             algName.c_str()), HCCL_E_PARA);
     }
     return executor_->CalcIncreLinkRequest(param, ranksHasLinked, resourceRequest, needIncreLink);
@@ -1030,9 +1031,12 @@ u32 CollAlgOperator::CalcOptimalIntraRingsize(u64 count, HcclDataType dataType, 
     }
     // --- 1. 带宽 & 基本参数 ---
     float bwHCCS, bwHBM, bwSIO;
-    CHK_RET(GetBandWidthPerNPU(0, userRankSize_, deviceNumPerAggregation_, bwHCCS));
-    CHK_RET(GetBandWidthPerNPU(2, userRankSize_, deviceNumPerAggregation_, bwHBM));
-    CHK_RET(GetBandWidthPerNPU(3, userRankSize_, deviceNumPerAggregation_, bwSIO));
+    constexpr u32 level0 = 0;
+    constexpr u32 level2 = 2;
+    constexpr u32 level3 = 3;
+    CHK_RET(GetBandWidthPerNPU(level0, userRankSize_, deviceNumPerAggregation_, bwHCCS));
+    CHK_RET(GetBandWidthPerNPU(level2, userRankSize_, deviceNumPerAggregation_, bwHBM));
+    CHK_RET(GetBandWidthPerNPU(level3, userRankSize_, deviceNumPerAggregation_, bwSIO));
     float latency = BASE_COMM_LATENCY / MULTIPLIER_MS2US;   // ms
     // --- 2. 数据总量 (GB) ---
     float baseSizeGB = static_cast<double>(count) * perDataSize / GB2B;
@@ -1081,6 +1085,17 @@ u32 CollAlgOperator::CalcOptimalIntraRingsize(u64 count, HcclDataType dataType, 
     }
     HCCL_INFO("level0RingSize:[%u], totalSize:[%lf]GB, level0RankSize[%u].", level0RingSize, totalSize, level0RankSize);
     return level0RingSize;
+}
+
+bool CollAlgOperator::IsNeedStrictMode(const OpParam& param)
+{
+    bool isStrictMode = (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_STRICT)
+                        && (param.DataDes.dataType == HCCL_DATA_TYPE_FP16 || param.DataDes.dataType == HCCL_DATA_TYPE_FP32 ||
+                            param.DataDes.dataType == HCCL_DATA_TYPE_BFP16 || param.DataDes.dataType == HCCL_DATA_TYPE_FP64)
+                        && (param.reduceType == HCCL_REDUCE_SUM || param.reduceType == HCCL_REDUCE_PROD)
+                        && userRankSize_ >= MIN_STRICT_RANK_NUM;
+
+    return isStrictMode;
 }
 
 }   // namespace hccl

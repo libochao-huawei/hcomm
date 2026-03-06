@@ -29,7 +29,7 @@ __aicore__ inline void AivAllReduceSmall910B::Process(GM_ADDR input, GM_ADDR out
     uint32_t dataOffset = (tag % 2 == 0) ? AIV_INIT_OFFSET : AIV_PING_PONG_SIZE;
     bool ifPingpong = (tag % 2 == 0);
 
-    if (block_idx == rank_) {
+    if (GetBlockIdx() == rank_) {
         __gm__ T *inputGM = (__gm__ T *)input;
         __gm__ T *cclGMSelf = (__gm__ T *)(GM_IN[rank_] + dataOffset);
         __gm__ T *outputGM = (__gm__ T *)output;
@@ -60,7 +60,7 @@ __aicore__ inline void AivAllReduceSmall910B::Process(GM_ADDR input, GM_ADDR out
         // 卡内同步
         Record1vN(tag, CommPattern::intraRank, AivNotifyType::DataSignal, 0, ifPingpong);
     } else {
-        __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[block_idx] + dataOffset);
+        __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[GetBlockIdx()] + dataOffset);
         __gm__ T *outputGM = (__gm__ T *)output;
 
         GlobalTensor<T> cclGTOther;
@@ -69,7 +69,7 @@ __aicore__ inline void AivAllReduceSmall910B::Process(GM_ADDR input, GM_ADDR out
         outputGT.SetGlobalBuffer(outputGM, count);
 
         // 卡间同步
-        WaitNv1(tag, block_idx, AivNotifyType::DataSignal, 0, ifPingpong);
+        WaitNv1(tag, GetBlockIdx(), AivNotifyType::DataSignal, 0, ifPingpong);
         PipeBarrier<PIPE_ALL>();
 
         LocalTensor<T> localIn = inOutQue.AllocTensor<T>();

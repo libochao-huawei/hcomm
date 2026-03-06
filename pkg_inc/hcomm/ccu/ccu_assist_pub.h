@@ -7,6 +7,8 @@
 #ifndef CCU_CONTEXT_ASSIST_PUB_H
 #define CCU_CONTEXT_ASSIST_PUB_H
 
+#include <cstdint>
+
 namespace hcomm {
 namespace CcuRep {
 

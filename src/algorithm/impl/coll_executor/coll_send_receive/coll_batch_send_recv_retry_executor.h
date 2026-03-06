@@ -18,7 +18,7 @@ namespace hccl {
 class CollBatchSendRecvRetryExecutor : public CollBatchSendRecvExecutor {
 public:
     CollBatchSendRecvRetryExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollBatchSendRecvRetryExecutor() = default;
+    ~CollBatchSendRecvRetryExecutor() override = default;
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algResource) override;
     HcclResult CreatePairWiseList(HcclSendRecvItem *sendRecvInfo, u32 itemNum);
     virtual HcclResult GetPairWiseList(std::vector<std::vector<HcclSendRecvItem*>> &sendRecvPairList);

@@ -92,6 +92,8 @@ void MockCcuResources(const int32_t devLogicId, const CcuVersion ccuVersion)
         ccuResSpecs.resSpecs[dieId].pfeNum = 10;
 
         ccuResSpecs.resSpecs[dieId].resourceAddr = 0xE7FFBF800000;
+
+        ccuResSpecs.resSpecs[dieId].memInfoList[0].memVa = 0xE7FFBF800000;
     }
 }
 
@@ -116,6 +118,7 @@ void MockCcuNetworkDevice(const int32_t devLogicId)
         .stubs()
         .with(any())
         .will(returnValue(eidInfoListStbu));
+    MOCKER(HraGetRtpEnable).stubs().with(any()).will(returnValue(true));
 
     MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue((void*)0x12345678));
     std::pair<uint32_t, uint32_t> fakeDieFuncPair = std::make_pair(1, 4);

@@ -16,7 +16,7 @@ class CollAlignedAllGatherDoubleRingFor91093Executor : public CollAllGatherRingF
 public:
     explicit CollAlignedAllGatherDoubleRingFor91093Executor(const HcclDispatcher dispatcher,
         std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAlignedAllGatherDoubleRingFor91093Executor() = default;
+    ~CollAlignedAllGatherDoubleRingFor91093Executor() override = default;
 
 private:
     /* *************** 算法编排 *************** */

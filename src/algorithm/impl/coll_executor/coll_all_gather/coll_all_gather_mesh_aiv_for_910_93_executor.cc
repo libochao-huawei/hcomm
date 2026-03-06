@@ -127,7 +127,7 @@ HcclResult CollAllGatherMeshAivFor91093Executor::GetAivExecParam(const OpParam& 
     args.dataType = param.DataDes.dataType;
     args.unitSize = SIZE_TABLE[param.DataDes.dataType];
     args.reduceOp = param.reduceType;
-
+    args.devType = static_cast<u32>(topoAttr_.deviceType);
     HCCL_INFO("SPK [CollAllGatherMeshAivFor91093Executor][GetAivExecParam], rank[%llu], rankSize[%llu], len[%llu],datatype[%llu], op[%llu]",
         args.rank, args.rankSize, args.len, args.dataType, args.reduceOp);
 
@@ -218,9 +218,6 @@ HcclResult CollAllGatherMeshAivFor91093Executor::KernelRun(const OpParam &param,
     algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
-    if (aivClearEnable_) {
-        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
-    }
 
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);
 

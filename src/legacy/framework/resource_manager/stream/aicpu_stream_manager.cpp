@@ -31,7 +31,7 @@ void AicpuStreamManager::AllocStreams(u32 num)
     }
     streams.resize(num);
     for (int i = size; i < static_cast<int>(num); i++) {
-        streams[i] = std::make_unique<Stream>(true);
+        streams[i] = std::make_unique<Stream>(true, false);
         stream_pointers.push_back(streams[i].get());
     }
 }
@@ -68,12 +68,14 @@ std::vector<char> AicpuStreamManager::GetPackedData()
 void AicpuStreamManager::AllocFreeStream()
 {
     if (freeStream  == nullptr) {
-        freeStream = std::make_unique<Stream>(false);
+        freeStream = std::make_unique<Stream>(false, false);
     }
 }
 
 HcclResult AicpuStreamManager::CaptureFreeStream(const Stream *mainStream, const Stream *slaveStream) const
 {
+    HCCL_RUN_INFO("[AicpuStreamManager][%s] mainStream[%u] slaveStream[%u]",
+        __func__, mainStream->GetId(), slaveStream->GetId());
     rtModel_t rtModel = nullptr;
     bool isCapture = false;
     u32 modelId = 0;
@@ -82,8 +84,8 @@ HcclResult AicpuStreamManager::CaptureFreeStream(const Stream *mainStream, const
         CHK_PTR_NULL(rtModel);
         CHK_RET(GetModelId(rtModel, modelId));
         CHK_RET(AddStreamToModel(slaveStream->GetPtr(), rtModel));
-        HCCL_INFO("[AicpuStreamManager::%s] Add freeStream[%u] to model[%u] success.",
-            __func__, slaveStream->GetId(), modelId);
+        HCCL_RUN_INFO("[AicpuStreamManager][%s] Add freeStream[%u] to model[%u] success, mainStream[%u]",
+            __func__, slaveStream->GetId(), modelId, mainStream->GetId());
     }
     return HCCL_SUCCESS;
 }

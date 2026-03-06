@@ -106,7 +106,7 @@ __aicore__ inline void AivReduceScatterDeterSmall910B::Process(GM_ADDR input, GM
     int64_t count = len;
     int64_t allCount = count * rankSize_;
     int64_t blockNumPerGroup = rankSize_; 
-    int64_t x = block_idx % blockNumPerGroup;  // x means target rank
+    int64_t x = GetBlockIdx() % blockNumPerGroup;  // x means target rank
     int64_t flagOffsetBasic = seperateOffset + BASE_FLAG_OFFSET * AIV_REDUCE_SCATTER_DETER_910B_SMALLDATA;
  
     uint32_t flagOffsetBase = ((tag % 2 == 0) ? 0 : 6 * rankSize_ * FLAG_SIZE) + flagOffsetBasic;
@@ -120,10 +120,10 @@ __aicore__ inline void AivReduceScatterDeterSmall910B::Process(GM_ADDR input, GM
     int64_t flagOffset1st = flagOffsetBase + x * FLAG_SIZE;
     int64_t flagOffset2st = flagOffsetBase + (rankSize_ + x) * FLAG_SIZE;
     // 第一组 先从input拷贝到cclbuffer
-    if (block_idx < blockNumPerGroup) {
+    if (GetBlockIdx() < blockNumPerGroup) {
         CpGM2GM(cclGMSelf + x * count, inputGM + x * count, count);
         PipeBarrier<PIPE_ALL>();
-        SetSignalValue((__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetBase + block_idx * FLAG_SIZE), localSetTensor, tag);
+        SetSignalValue((__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetBase + GetBlockIdx() * FLAG_SIZE), localSetTensor, tag);
     }
     // 第二组 等待第一组完成，拷贝cclbuffer到cllbuffer后半部分, 并进行reduce
     else {
@@ -134,7 +134,7 @@ __aicore__ inline void AivReduceScatterDeterSmall910B::Process(GM_ADDR input, GM
     }
     // 第一组 拷贝cclbuffer到output
     PipeBarrier<PIPE_ALL>();
-    if (block_idx < blockNumPerGroup) {
+    if (GetBlockIdx() < blockNumPerGroup) {
         int64_t flagOffsetLast = flagOffsetBase + (rankSize_ + rankSize_ - 1) * FLAG_SIZE;
         if (rankSize_ >= DETERMINISTIC_RANKSIZE) {
             if (rankSize_ < 5) {
@@ -158,7 +158,7 @@ __aicore__ inline void AivReduceScatterDeterSmall910B::ProcessSingleRanksizeCore
     int64_t count = len;
     int64_t allCount = count * rankSize_;
     int64_t blockNumPerGroup = rankSize_;
-    int64_t x = block_idx % blockNumPerGroup;
+    int64_t x = GetBlockIdx() % blockNumPerGroup;
     int64_t flagOffsetBasic = seperateOffset + BASE_FLAG_OFFSET * AIV_REDUCE_SCATTER_DETER_910B_SMALLDATA;
 
     uint32_t flagOffsetBase = ((tag % 2 == 0) ? 0 : 6 * rankSize_ * FLAG_SIZE) + flagOffsetBasic;
@@ -175,7 +175,7 @@ __aicore__ inline void AivReduceScatterDeterSmall910B::ProcessSingleRanksizeCore
     // 先从input拷贝到cclbuffer
     CpGM2GM(cclGMSelf + x * count, inputGM + x * count, count);
     PipeBarrier<PIPE_ALL>();
-    SetSignalValue((__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetBase + block_idx * FLAG_SIZE), localSetTensor, tag);
+    SetSignalValue((__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetBase + GetBlockIdx() * FLAG_SIZE), localSetTensor, tag);
 
     // 拷贝cclbuffer到cllbuffer后半部分, 并进行reduce
     WaitSignalValue((__gm__ int32_t *)(GM_OUT[x] + flagOffsetBase + rank_ * FLAG_SIZE), localCheckTensor, tag);

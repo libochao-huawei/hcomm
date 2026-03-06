@@ -112,15 +112,20 @@ void PreemptPortManager::PreemptPortInRange(const std::shared_ptr<Socket> &liste
         }
     }
     // 所有端口范围内的端口都已经被占用，没有可用的端口，抢占监听失败
-    RPT_INPUT_ERR(true, "EJ0003", std::vector<std::string>({"reason"}),
-        std::vector<std::string>({"The IP address and ports have been bound already."}));
+    std::string errormessage = "The IP address " + ipAddr +
+                              " add port " + std::to_string(usePort) + " have already been bound.";
+    RPT_INPUT_ERR(true, "EI0019", std::vector<std::string>({"reason"}),
+        std::vector<std::string>({errormessage}));
     std::string portRangeStr = GetRangeStr(portRange);
     HCCL_ERROR("[PreemptPortManager::%s] Complete polling of socket port range:%s", __func__, portRangeStr.c_str());
     HCCL_ERROR("[PreemptPortManager::%s] All ports in socket port range are bound already. "
         "no available port to listen. Please check the ports status, or change the port range to listen on.", __func__);
-    HCCL_ERROR("NOTICE: Users need to make sure ports in HCCL_HOST_SOCKET_PORT_RANGE are available for HCCL."
+    NicType nicType = listenSocket->GetNicType();
+    std::string envName = nicType == NicType::HOST_NIC_TYPE ? 
+        "HCCL_HOST_SOCKET_PORT_RANGE" : "HCCL_NPU_SOCKET_PORT_RANGE";
+    HCCL_ERROR("NOTICE: Users need to make sure ports in %s are available for HCCL."
         "Please double check whether the port are used by others unexpected process. "
-        "The port ranges size should also be enough when running multi-process HCCL.");
+        "The port ranges size should also be enough when running multi-process HCCL.", envName.c_str());
     HCCL_ERROR("NOTICE: The host port range size is not suggested to be smaller than the process number"
         " on current rank.");
     THROW<InvalidParamsException>("No available port to listen");

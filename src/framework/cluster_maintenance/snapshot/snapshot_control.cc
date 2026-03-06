@@ -12,6 +12,7 @@
 #include "adapter_rts_common.h"
 #include "adapter_hccp_common.h"
 #include "externalinput.h"
+#include "transport_pub.h"
 
 namespace hccl {
 
@@ -256,6 +257,7 @@ HcclResult SnapshotControl::Recovery()
     // set device status to stopped, need to skip device operations
     CHK_RET(MarkInvalidComms());
     CHK_RET(SetStatus(SnapshotStatus::RESTORE_SNAPSHOT));
+    CHK_RET(Transport::SetDeviceUnavailable(deviceLogicId_));
     CHK_RET(ResetInitState());
     HCCL_INFO("[SnapshotControl][PostProcess] snapshot recovery success, devId[%d], devPhyId[%u].",
         deviceLogicId_, devicePhyId_);

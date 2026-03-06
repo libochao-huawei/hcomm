@@ -1,3 +1,13 @@
+# -----------------------------------------------------------------------------------------------------------
+# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# -----------------------------------------------------------------------------------------------------------
+
 set(BASIC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 
 set(TLV_DIR ${BASIC_PATH}/rdma_agent/adapter/tlv)
@@ -25,7 +35,7 @@ target_compile_definitions(ra_adp PRIVATE
 target_include_directories(ra_adp PRIVATE
     ${BASIC_PATH}/external_depends/inc/driver
     ${BASIC_PATH}/external_depends/inc/log
-    ${BASIC_PATH}/external_depends/rdma-core/include
+    ${RDMA_CORE_INCLUDE_DIR}
     ${BASIC_PATH}/inc/network
     ${BASIC_PATH}/inc/private/network
     ${BASIC_PATH}/rdma_agent/inc

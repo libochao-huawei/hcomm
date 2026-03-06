@@ -82,7 +82,7 @@ void SSL_free(SSL *ssl);
 
 SSL *SSL_new(SSL_CTX *ctx);
 
-int SSL_get_error(const SSL *s, int ret_code);
+int SSL_get_error(const SSL *s, int retCode);
 
 int SSL_set_fd(SSL *s, int fd);
 
@@ -130,72 +130,72 @@ void X509_free(X509 *buf);
 
 void X509_STORE_CTX_trusted_stack(X509_STORE_CTX *ctx, STACK_OF(X509) *sk);
 
-int tls_get_user_config(unsigned int save_mode, unsigned int chipId, const char *name,
-    unsigned char *buf, unsigned int *buf_size);
+int tls_get_user_config(unsigned int saveMode, unsigned int chipId, const char *name,
+    unsigned char *buf, unsigned int *bufSize);
 
-void tls_get_enable_info(unsigned int save_mode, unsigned int chipId, unsigned char *buf, unsigned int buf_size);
+void TlsGetEnableInfo(unsigned int saveMode, unsigned int chipId, unsigned char *buf, unsigned int bufSize);
 
-int rs_ssl_get_crl_data(struct rs_cb *rscb, FILE* fp, struct tls_cert_manage_info *mng_info, X509_CRL *crl);
+int rs_ssl_get_crl_data(struct rs_cb *rscb, FILE* fp, struct TlsCertManageInfo *mngInfo, X509_CRL *crl);
 
-int rs_get_pridata(struct rs_cb *rscb, struct RsSecPara *rs_para, struct tls_cert_mng_info *mng_info);
+int rs_get_pridata(struct rs_cb *rscb, struct RsSecPara *rsPara, struct tls_cert_mng_info *mngInfo);
 
-int rs_ssl_put_certs(struct rs_cb *rscb, struct tls_cert_mng_info *mng_info, struct RsCerts *certs,
-    struct tls_ca_new_certs *new_certs, struct CertFile *file_name);
+int rs_ssl_put_certs(struct rs_cb *rscb, struct tls_cert_mng_info *mngInfo, struct RsCerts *certs,
+    struct tls_ca_new_certs *newCerts, struct CertFile *fileName);
 
 #define SLEEP_TIME 500000
 #define rs_ut_msg(fmt, args...)	fprintf(stderr, "\t>>>>> " fmt, ##args)
 
-int try_again;
-struct RsQpCb qp_cb_tmp2;
-const char *s_tmp = "suc";
-struct RsConnInfo *g_conn_info;
+int tryAgain;
+struct RsQpCb qpCbTmp2;
+const char *sTmp = "suc";
+struct RsConnInfo *gConnInfo;
 
-int RsAllocConnNode(struct RsConnInfo **conn, unsigned short server_port);
+int RsAllocConnNode(struct RsConnInfo **conn, unsigned short serverPort);
 int RsGetConnInfo(struct RsConnCb *connCb, struct SocketConnectInfo *conn,
     struct RsConnInfo **connInfo, unsigned int serverPort);
-int RsGetRsCb(unsigned int phyId, struct rs_cb **rs_cb);
-int rs_qp_exp_create(struct RsQpCb *qp_cb);
-int RsNotifyMrListAdd(struct RsQpCb *qp_cb, char *buf);
-void RsEpollRecvHandle(struct RsQpCb *qp_cb, char *buf, int size);
-void RsDrvPollCqHandle(struct RsQpCb *qp_cb);
-int rs_create_cq(struct RsQpCb *qp_cb);
-int RsQpStateModify(struct RsQpCb *qp_cb);
-void RsEpollEventInHandle(struct rs_cb *rs_cb, struct epoll_event *events);
-void RsEpollEventHandleOne(struct rs_cb *rs_cb, struct epoll_event *events);
-int RsMrInfoSync(struct RsMrCb *mr_cb);
+int RsGetRsCb(unsigned int phyId, struct rs_cb **rsCb);
+int RsQpExpCreate(struct RsQpCb *qpCb);
+int RsNotifyMrListAdd(struct RsQpCb *qpCb, char *buf);
+void RsEpollRecvHandle(struct RsQpCb *qpCb, char *buf, int size);
+void RsDrvPollCqHandle(struct RsQpCb *qpCb);
+int RsCreateCq(struct RsQpCb *qpCb);
+int RsQpStateModify(struct RsQpCb *qpCb);
+void RsEpollEventInHandle(struct rs_cb *rsCb, struct epoll_event *events);
+void RsEpollEventHandleOne(struct rs_cb *rsCb, struct epoll_event *events);
+int RsMrInfoSync(struct RsMrCb *mrCb);
 int RsDrvGetGidIndex(struct RsRdevCb *rdevCb, struct ibv_port_attr *attr, int *idx);
 void RsEpollCtl(int epollfd, int op, int fd, int state);
-int rs_socket_connect(struct RsConnInfo *conn);
-int rs_post_recv_stub(struct ibv_qp *qp, struct ibv_recv_wr *wr,
-				struct ibv_recv_wr **bad_wr);
-int RsDrvGetRandomNum(int *rand_num);
+int RsSocketConnect(struct RsConnInfo *conn);
+int RsPostRecvStub(struct ibv_qp *qp, struct ibv_recv_wr *wr,
+				struct ibv_recv_wr **badWr);
+int RsDrvGetRandomNum(int *randNum);
 void RsSocketTagSync(struct RsConnInfo *conn);
 int RsSocketStateInit(unsigned int chipId, struct RsConnInfo *conn, uint32_t sslEnable, struct rs_cb *rscb);
-int RsFindSockets(struct RsConnInfo *conn_tmp, struct SocketFdData conn[],
+int RsFindSockets(struct RsConnInfo *connTmp, struct SocketFdData conn[],
                     int num, int role);
 int RsAllocClientConnNode(struct RsConnCb *connCb, enum RsConnRole role,
-                    struct RsConnInfo **conn, struct SocketConnectInfo *socket_conn, int server_port);
-uint32_t RsSocketVnic2nodeid(uint32_t ip_addr);
-int roce_set_tsqp_depth(const char *dev_name, unsigned int rdevIndex, unsigned int temp_depth,
-    unsigned int *qp_num, unsigned int *sq_depth);
-int roce_get_tsqp_depth(const char *dev_name, unsigned int rdevIndex, unsigned int *temp_depth,
-    unsigned int *qp_num, unsigned int *sq_depth);
-int RsSocketNodeid2vnic(uint32_t node_id, uint32_t *ip_addr);
-int RsServerValidAsyncInit(unsigned int chipId, struct RsConnInfo *conn, struct SocketWlistInfoT *white_list_expect);
+                    struct RsConnInfo **conn, struct SocketConnectInfo *socketConn, int serverPort);
+uint32_t RsSocketVnic2nodeid(uint32_t ipAddr);
+int roce_set_tsqp_depth(const char *devName, unsigned int rdevIndex, unsigned int tempDepth,
+    unsigned int *qpNum, unsigned int *sqDepth);
+int roce_get_tsqp_depth(const char *devName, unsigned int rdevIndex, unsigned int *tempDepth,
+    unsigned int *qpNum, unsigned int *sqDepth);
+int RsSocketNodeid2vnic(uint32_t nodeId, uint32_t *ipAddr);
+int RsServerValidAsyncInit(unsigned int chipId, struct RsConnInfo *conn, struct SocketWlistInfoT *whiteListExpect);
 extern int RsConnectBindClient(int fd, struct RsConnInfo *conn);
-extern void RsSocketGetBindByChip(unsigned int chipId, bool *bind_ip);
+extern void RsSocketGetBindByChip(unsigned int chipId, bool *bindIp);
 extern int RsInitRscbCfg(struct rs_cb *rscb);
 extern void RsDeinitRscbCfg(struct rs_cb *rscb);
 extern int RsSocketCloseFd(int fd);
 extern int RsFindWhiteList(struct RsConnCb *connCb, struct RsIpAddrInfo *serverIp, struct RsWhiteList **whiteList);
-extern int RsFindWhiteListNode(struct RsWhiteList *rs_socket_white_list,
-    struct SocketWlistInfoT *white_list_expect, int family, struct RsWhiteListInfo **white_list_node);
+extern int RsFindWhiteListNode(struct RsWhiteList *rsSocketWhiteList,
+    struct SocketWlistInfoT *whiteListExpect, int family, struct RsWhiteListInfo **whiteListNode);
 extern int RsServerSendWlistCheckResult(struct RsConnInfo *conn, bool flag);
-extern uint32_t rs_generate_ue_info(uint32_t die_id, uint32_t func_id);
-extern uint32_t rs_generate_dev_index(uint32_t dev_cnt, uint32_t die_id, uint32_t func_id);
-extern int rs_net_adapt_api_init(void);
+extern uint32_t RsGenerateUeInfo(uint32_t dieId, uint32_t funcId);
+extern uint32_t RsGenerateDevIndex(uint32_t devCnt, uint32_t dieId, uint32_t funcId);
+extern int RsNetAdaptApiInit(void);
 
-long unsigned int stub_calloc(long unsigned int num, long unsigned int size)
+long unsigned int StubCalloc(long unsigned int num, long unsigned int size)
 {
 	static int hit = 0;
 	if (hit == 1) {
@@ -205,32 +205,32 @@ long unsigned int stub_calloc(long unsigned int num, long unsigned int size)
 	return malloc(num * size);
 }
 
-int stub_ibv_get_cq_event(struct ibv_comp_channel *channel, struct ibv_cq **cq, void **cq_context)
+int StubIbvGetCqEvent(struct ibv_comp_channel *channel, struct ibv_cq **cq, void **cqContext)
 {
 	*cq = NULL;
 	return 0;
 }
 
-struct RsWhiteListInfo g_white_list_node_tmp = {0};
-int stub_rs_find_white_list_node(struct RsWhiteList *rs_socket_white_list,
-    struct SocketWlistInfoT *white_list_expect, int family, struct RsWhiteListInfo **white_list_node)
+struct RsWhiteListInfo gWhiteListNodeTmp = {0};
+int StubRsFindWhiteListNode(struct RsWhiteList *rsSocketWhiteList,
+    struct SocketWlistInfoT *whiteListExpect, int family, struct RsWhiteListInfo **whiteListNode)
 {
-	*white_list_node = &g_white_list_node_tmp;
+	*whiteListNode = &gWhiteListNodeTmp;
 	return 0;
 }
 
-int rs_post_send_stub(struct ibv_qp *qp, struct ibv_send_wr *wr,
-				struct ibv_send_wr **bad_wr);
+int RsPostSendStub(struct ibv_qp *qp, struct ibv_send_wr *wr,
+				struct ibv_send_wr **badWr);
 
-int rs_qp_info_sync(struct RsQpCb *qp_cb);
-int RsCreateEpoll(struct rs_cb *rs_cb);
-int RsGetMrcb(struct RsQpCb *qp_cb, uint64_t addr, struct RsMrCb **mr_cb, struct RsListHead *mr_list);
+int RsQpInfoSync(struct RsQpCb *qpCb);
+int RsCreateEpoll(struct rs_cb *rsCb);
+int RsGetMrcb(struct RsQpCb *qpCb, uint64_t addr, struct RsMrCb **mrCb, struct RsListHead *mrList);
 
 void* RsEpollHandle();
 int memcpy_s(void * dest, size_t destMax, const void * src, size_t count);
 int memset_s(void * dest, size_t destMax, int c, size_t count);
 
-void tc_rs_init2()
+void TcRsInit2()
 {
 	int ret;
 	struct RsInitConfig cfg = {0};
@@ -284,12 +284,12 @@ void tc_rs_init2()
 	return;
 }
 
-void tc_rs_deinit2()
+void TcRsDeinit2()
 {
 	int ret;
-	uint32_t dev_id = 0;
+	uint32_t devId = 0;
 	struct RsInitConfig cfg;
-	struct rs_cb *rs_cb = NULL;
+	struct rs_cb *rsCb = NULL;
 
 	/* resource prepare... */
 	cfg.hccpMode = NETWORK_OFFLINE;
@@ -305,7 +305,7 @@ void tc_rs_deinit2()
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsDev2rscb(dev_id, &rs_cb, false);
+	ret = RsDev2rscb(devId, &rsCb, false);
 	EXPECT_INT_EQ(ret, 0);
 
 	mocker((stub_fn_t)write, 20, 1);
@@ -331,98 +331,98 @@ void tc_rs_deinit2()
 	return;
 }
 
-void tc_rs_rdev_init()
+void TcRsRdevInit()
 {
 	int ret;
 	unsigned int rdevIndex = 0;
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 10;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 10;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_NE(ret, 0);
 
-	rdev_info.phyId = 0;
+	rdevInfo.phyId = 0;
 
 	mocker((stub_fn_t)RsGetRsCb, 20, 1);
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)calloc, 20, NULL);
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)pthread_mutex_init, 20, 1);
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)ibv_get_device_list, 10, -1);
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)ibv_exp_query_notify, 20, 1);
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)ibv_alloc_pd, 20, 0);
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)ibv_reg_mr, 20, 0);
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 }
 
-void tc_rs_socket_init()
+void TcRsSocketInit()
 {
 	int ret;
 	int i;
-	unsigned int vnic_ip[8] = {0};
+	unsigned int vnicIp[8] = {0};
 
 	ret = RsSocketInit(NULL, 0);
 	EXPECT_INT_EQ(ret, -22);
 
-	ret = RsSocketInit(vnic_ip, 8);
+	ret = RsSocketInit(vnicIp, 8);
 	EXPECT_INT_EQ(ret, 0);
 
 	return;
 }
 
 extern __thread struct rs_cb *gRsCb;
-void tc_rs_socket_deinit()
+void TcRsSocketDeinit()
 {
 	int ret;
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
-	struct rs_cb g_rs_cb_tmp = {0};
-	gRsCb = &g_rs_cb_tmp;
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rs_cb gRsCbTmp = {0};
+	gRsCb = &gRsCbTmp;
 
 	mocker((stub_fn_t)RsDev2rscb, 20, 1);
-	ret = RsSocketDeinit(rdev_info);
+	ret = RsSocketDeinit(rdevInfo);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
-	rdev_info.family = 3;
-	ret = RsSocketDeinit(rdev_info);
+	rdevInfo.family = 3;
+	ret = RsSocketDeinit(rdevInfo);
 	EXPECT_INT_NE(ret, 0);
 
-	rdev_info.phyId = 10;
-	ret = RsSocketDeinit(rdev_info);
+	rdevInfo.phyId = 10;
+	ret = RsSocketDeinit(rdevInfo);
 	EXPECT_INT_NE(ret, 0);
 	gRsCb = NULL;
 }
 
-void tc_rs_rdev_deinit()
+void TcRsRdevDeinit()
 {
 	int ret;
 	unsigned int rdevIndex = 00;
@@ -434,61 +434,61 @@ void tc_rs_rdev_deinit()
 	EXPECT_INT_NE(ret, 0);
 }
 
-void tc_rs_socket_listen_start2()
+void TcRsSocketListenStart2()
 {
 	int ret;
-	uint32_t dev_id = 0;
+	uint32_t devId = 0;
 	struct RsInitConfig cfg = {0};
-	struct SocketListenInfo listen_node[2] = {0};
-	struct rs_cb *rs_cb;
+	struct SocketListenInfo listenNode[2] = {0};
+	struct rs_cb *rsCb;
 
 	/* resource prepare... */
 	cfg.hccpMode = NETWORK_OFFLINE;
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
-	listen_node[0].phyId = 0;
-	listen_node[0].family = AF_INET;
-    listen_node[0].localIp.addr.s_addr = inet_addr("127.0.0.1");
+	listenNode[0].phyId = 0;
+	listenNode[0].family = AF_INET;
+    listenNode[0].localIp.addr.s_addr = inet_addr("127.0.0.1");
 	mocker((stub_fn_t)calloc, 10, NULL);
-	listen_node[0].port = 16666;
-	ret = RsSocketListenStart(listen_node, 1);
+	listenNode[0].port = 16666;
+	ret = RsSocketListenStart(listenNode, 1);
 	mocker_clean();
 
 	mocker((stub_fn_t)socket, 10, -1);
-	listen_node[0].port = 16666;
-	ret = RsSocketListenStart(listen_node, 1);
+	listenNode[0].port = 16666;
+	ret = RsSocketListenStart(listenNode, 1);
 	mocker_clean();
 
 	mocker((stub_fn_t)socket, 10, 0);
 	mocker((stub_fn_t)setsockopt, 10, -1);
-	listen_node[0].port = 16666;
-        ret = RsSocketListenStart(listen_node, 1);
+	listenNode[0].port = 16666;
+        ret = RsSocketListenStart(listenNode, 1);
         mocker_clean();
 
-	listen_node[0].family = AF_INET;
-    listen_node[0].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	listenNode[0].family = AF_INET;
+    listenNode[0].localIp.addr.s_addr = inet_addr("127.0.0.3");
 	mocker((stub_fn_t)bind, 10, 1);
-	listen_node[0].port = 16666;
-	ret = RsSocketListenStart(listen_node, 1);
+	listenNode[0].port = 16666;
+	ret = RsSocketListenStart(listenNode, 1);
 	EXPECT_INT_NE(ret, 1);
 	mocker_clean();
 
 	mocker((stub_fn_t)listen, 10, -1);
-	listen_node[0].port = 16666;
-	ret = RsSocketListenStart(listen_node, 1);
+	listenNode[0].port = 16666;
+	ret = RsSocketListenStart(listenNode, 1);
 	EXPECT_INT_NE(ret, -1);
 	mocker_clean();
 
 	/* twice listen but first failed */
-	struct SocketListenInfo listen_twice[2] = {0};
-	listen_twice[0].localIp.addr.s_addr  = inet_addr("127.0.0.4");
-	listen_twice[1].phyId = 1;
-	listen_twice[0].family = AF_INET;
-	listen_twice[1].family = AF_INET;
-	listen_twice[0].port = 16666;
-	listen_twice[1].port = 16666;
-	ret = RsSocketListenStart(listen_twice, 2);
+	struct SocketListenInfo listenTwice[2] = {0};
+	listenTwice[0].localIp.addr.s_addr  = inet_addr("127.0.0.4");
+	listenTwice[1].phyId = 1;
+	listenTwice[0].family = AF_INET;
+	listenTwice[1].family = AF_INET;
+	listenTwice[0].port = 16666;
+	listenTwice[1].port = 16666;
+	ret = RsSocketListenStart(listenTwice, 2);
 	mocker_clean();
 
 	/* resource free... */
@@ -498,19 +498,19 @@ void tc_rs_socket_listen_start2()
 	return;
 }
 
-void tc_rs_socket_batch_connect2()
+void TcRsSocketBatchConnect2()
 {
 	int ret;
-	uint32_t dev_id = 0;
+	uint32_t devId = 0;
 	struct RsInitConfig cfg = {0};
-	struct SocketConnectInfo conn_node[2] = {0};
-	struct RsConnInfo conn_socket_err;
+	struct SocketConnectInfo connNode[2] = {0};
+	struct RsConnInfo connSocketErr;
 
 	gRsCb = malloc(sizeof(struct rs_cb));
 	gRsCb->hccpMode = 1;
-	conn_socket_err.state = 1;
+	connSocketErr.state = 1;
 	mocker((stub_fn_t)socket, 10, -1);
-	ret = RsSocketStateReset(0, &conn_socket_err, gRsCb->sslEnable, gRsCb);
+	ret = RsSocketStateReset(0, &connSocketErr, gRsCb->sslEnable, gRsCb);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 	free(gRsCb);
@@ -518,16 +518,16 @@ void tc_rs_socket_batch_connect2()
 
 	gRsCb = malloc(sizeof(struct rs_cb));
 	gRsCb->hccpMode = 0;
-	conn_socket_err.state = 1;
+	connSocketErr.state = 1;
 	mocker((stub_fn_t)socket, 10, 1);
-	ret = RsSocketStateReset(0, &conn_socket_err, gRsCb->sslEnable, gRsCb);
+	ret = RsSocketStateReset(0, &connSocketErr, gRsCb->sslEnable, gRsCb);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	memset(gRsCb, 0, sizeof(struct rs_cb));
-	conn_socket_err.state = 4;
+	connSocketErr.state = 4;
 	mocker((stub_fn_t)RsSocketTagSync, 10, -1);
-	ret = RsSocketConnectAsync(&conn_socket_err, gRsCb);
+	ret = RsSocketConnectAsync(&connSocketErr, gRsCb);
 	mocker_clean();
 	free(gRsCb);
 	gRsCb = NULL;
@@ -536,23 +536,23 @@ void tc_rs_socket_batch_connect2()
 	gRsCb->hccpMode = 1;
 	gRsCb->connCb.wlistEnable = 1;
 	gRsCb->sslEnable = 1;
-	conn_socket_err.state = 7;
+	connSocketErr.state = 7;
 	mocker((stub_fn_t)RsSocketRecv, 1, -11);
-	ret = RsSocketConnectAsync(&conn_socket_err, gRsCb);
+	ret = RsSocketConnectAsync(&connSocketErr, gRsCb);
 	mocker_clean();
 	mocker((stub_fn_t)RsSocketRecv, 1, 0);
 	mocker((stub_fn_t)SSL_shutdown, 1, 0);
 	mocker((stub_fn_t)SSL_free, 1, 0);
-	ret = RsSocketConnectAsync(&conn_socket_err, gRsCb);
+	ret = RsSocketConnectAsync(&connSocketErr, gRsCb);
 	mocker_clean();
 	free(gRsCb);
 	gRsCb = NULL;
 
 	gRsCb = malloc(sizeof(struct rs_cb));
 	gRsCb->hccpMode = 1;
-	conn_socket_err.state = 1;
+	connSocketErr.state = 1;
 	mocker((stub_fn_t)RsSocketStateInit, 10, -1);
-	ret = RsSocketConnectAsync(&conn_socket_err, gRsCb);
+	ret = RsSocketConnectAsync(&connSocketErr, gRsCb);
 	EXPECT_INT_EQ(ret, -1);
 	mocker_clean();
 	free(gRsCb);
@@ -560,10 +560,10 @@ void tc_rs_socket_batch_connect2()
 
 	gRsCb = malloc(sizeof(struct rs_cb));
 	gRsCb->hccpMode = 1;
-	conn_socket_err.state = 1;
+	connSocketErr.state = 1;
 	mocker((stub_fn_t)socket, 10, 0);
 	mocker((stub_fn_t)connect, 10, -1);
-	ret = RsSocketStateReset(0, &conn_socket_err, 0, gRsCb);
+	ret = RsSocketStateReset(0, &connSocketErr, 0, gRsCb);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 	free(gRsCb);
@@ -571,10 +571,10 @@ void tc_rs_socket_batch_connect2()
 
 	gRsCb = malloc(sizeof(struct rs_cb));
 	gRsCb->hccpMode = 1;
-	conn_socket_err.state = 1;
+	connSocketErr.state = 1;
 	mocker((stub_fn_t)connect, 10, -1);
 	mocker((stub_fn_t)RsSocketTagSync, 10, 0);
-	ret = RsSocketStateInit(0, &conn_socket_err, 0, gRsCb);
+	ret = RsSocketStateInit(0, &connSocketErr, 0, gRsCb);
 	free(gRsCb);
 	gRsCb = NULL;
 	EXPECT_INT_NE(ret, 0);
@@ -582,11 +582,11 @@ void tc_rs_socket_batch_connect2()
 
 	gRsCb = malloc(sizeof(struct rs_cb));
 	gRsCb->hccpMode = 1;
-	conn_socket_err.state = 1;
+	connSocketErr.state = 1;
     mocker((stub_fn_t)connect, 10, 0);
 	mocker((stub_fn_t)getsockname, 10, 0);
 	mocker((stub_fn_t)RsSocketTagSync, 10, 0);
-    ret = RsSocketStateInit(0, &conn_socket_err, 0, gRsCb);
+    ret = RsSocketStateInit(0, &connSocketErr, 0, gRsCb);
 	free(gRsCb);
 	gRsCb = NULL;
     EXPECT_INT_EQ(ret, 0);
@@ -597,29 +597,29 @@ void tc_rs_socket_batch_connect2()
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
-	conn_node[0].phyId = 0;
+	connNode[0].phyId = 0;
 
 	mocker((stub_fn_t)calloc, 10, NULL);
-	conn_node[0].port = 16666;
-	ret = RsSocketBatchConnect(conn_node, 1);
+	connNode[0].port = 16666;
+	ret = RsSocketBatchConnect(connNode, 1);
 	mocker_clean();
 
 	mocker((stub_fn_t)RsAllocClientConnNode, 10, 1);
-	conn_node[0].port = 16666;
-	ret = RsSocketBatchConnect(conn_node, 1);
+	connNode[0].port = 16666;
+	ret = RsSocketBatchConnect(connNode, 1);
 	mocker_clean();
 
     rs_ut_msg("--------RsSocketBatchConnect--------\n");
 
-    conn_node[0].phyId = 0;
-    conn_node[0].family = AF_INET;
-    strcpy(conn_node[0].tag, "1234");
-    conn_node[1].phyId = 0;
-    conn_node[1].family = AF_INET6;
-    strcpy(conn_node[1].tag, "5678");
-	conn_node[0].port = 16666;
-	conn_node[1].port = 16666;
-    ret = RsSocketBatchConnect(conn_node, 2);
+    connNode[0].phyId = 0;
+    connNode[0].family = AF_INET;
+    strcpy(connNode[0].tag, "1234");
+    connNode[1].phyId = 0;
+    connNode[1].family = AF_INET6;
+    strcpy(connNode[1].tag, "5678");
+	connNode[0].port = 16666;
+	connNode[1].port = 16666;
+    ret = RsSocketBatchConnect(connNode, 2);
 
 	/* resource free... */
 	ret = RsDeinit(&cfg);
@@ -628,17 +628,17 @@ void tc_rs_socket_batch_connect2()
 	return;
 }
 
-void tc_rs_set_tsqp_depth_abnormal()
+void TcRsSetTsqpDepthAbnormal()
 {
 	int ret;
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
-	unsigned int temp_depth = 8;
-	unsigned int qp_num;
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	unsigned int tempDepth = 8;
+	unsigned int qpNum;
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 	struct RsInitConfig cfg = {0};
 	cfg.chipId = 0;
 	cfg.hccpMode = NETWORK_OFFLINE;
@@ -646,30 +646,30 @@ void tc_rs_set_tsqp_depth_abnormal()
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsSetTsqpDepth(129, rdevIndex, temp_depth, &qp_num);
+	ret = RsSetTsqpDepth(129, rdevIndex, tempDepth, &qpNum);
 	EXPECT_INT_EQ(ret, -EINVAL);
 
-	ret = RsSetTsqpDepth(phyId, rdevIndex, 1, &qp_num);
+	ret = RsSetTsqpDepth(phyId, rdevIndex, 1, &qpNum);
 	EXPECT_INT_EQ(ret, -EINVAL);
 
-	ret = RsSetTsqpDepth(phyId, rdevIndex, temp_depth, NULL);
+	ret = RsSetTsqpDepth(phyId, rdevIndex, tempDepth, NULL);
 	EXPECT_INT_EQ(ret, -EINVAL);
 
 	mocker((stub_fn_t)DlDrvGetLocalDevIdByHostDevId, 10, 1);
-	ret = RsSetTsqpDepth(phyId, rdevIndex, temp_depth, &qp_num);
+	ret = RsSetTsqpDepth(phyId, rdevIndex, tempDepth, &qpNum);
 	EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
 
 	mocker((stub_fn_t)RsRdev2rdevCb, 10, 1);
-	ret = RsSetTsqpDepth(phyId, rdevIndex, temp_depth, &qp_num);
+	ret = RsSetTsqpDepth(phyId, rdevIndex, tempDepth, &qpNum);
 	EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
 
 	mocker((stub_fn_t)roce_set_tsqp_depth, 10, 1);
-	ret = RsSetTsqpDepth(phyId, rdevIndex, temp_depth, &qp_num);
+	ret = RsSetTsqpDepth(phyId, rdevIndex, tempDepth, &qpNum);
 	EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
 
@@ -681,17 +681,17 @@ void tc_rs_set_tsqp_depth_abnormal()
 	return;
 }
 
-void tc_rs_get_tsqp_depth_abnormal()
+void TcRsGetTsqpDepthAbnormal()
 {
 	int ret;
 	unsigned int phyId = 0;
 	unsigned int rdevIndex = 0;
-	unsigned int temp_depth = 8;
-	unsigned int qp_num;
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	unsigned int tempDepth = 8;
+	unsigned int qpNum;
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 	struct RsInitConfig cfg = {0};
 	cfg.chipId = 0;
 	cfg.hccpMode = NETWORK_OFFLINE;
@@ -699,27 +699,27 @@ void tc_rs_get_tsqp_depth_abnormal()
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsGetTsqpDepth(129, rdevIndex, &temp_depth, &qp_num);
+	ret = RsGetTsqpDepth(129, rdevIndex, &tempDepth, &qpNum);
 	EXPECT_INT_EQ(ret, -EINVAL);
 
-	ret = RsGetTsqpDepth(phyId, rdevIndex, &temp_depth, NULL);
+	ret = RsGetTsqpDepth(phyId, rdevIndex, &tempDepth, NULL);
 	EXPECT_INT_EQ(ret, -EINVAL);
 
 	mocker((stub_fn_t)DlDrvGetLocalDevIdByHostDevId, 10, 1);
-	ret = RsGetTsqpDepth(phyId, rdevIndex, &temp_depth, &qp_num);
+	ret = RsGetTsqpDepth(phyId, rdevIndex, &tempDepth, &qpNum);
 	EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
 
 	mocker((stub_fn_t)RsRdev2rdevCb, 10, 1);
-	ret = RsGetTsqpDepth(phyId, rdevIndex, &temp_depth, &qp_num);
+	ret = RsGetTsqpDepth(phyId, rdevIndex, &tempDepth, &qpNum);
 	EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
 
 	mocker((stub_fn_t)roce_get_tsqp_depth, 10, 1);
-	ret = RsGetTsqpDepth(phyId, rdevIndex, &temp_depth, &qp_num);
+	ret = RsGetTsqpDepth(phyId, rdevIndex, &tempDepth, &qpNum);
 	EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
 
@@ -731,7 +731,7 @@ void tc_rs_get_tsqp_depth_abnormal()
 	return;
 }
 
-int stub_RsIbvQueryQp(struct ibv_qp *qp, struct ibv_qp_attr *attr, int attr_mask, struct ibv_qp_init_attr *init_attr)
+int stub_RsIbvQueryQp(struct ibv_qp *qp, struct ibv_qp_attr *attr, int attrMask, struct ibv_qp_init_attr *initAttr)
 {
 	if (attr == NULL) {
 		return -EINVAL;
@@ -740,161 +740,161 @@ int stub_RsIbvQueryQp(struct ibv_qp *qp, struct ibv_qp_attr *attr, int attr_mask
 	return 0;
 }
 
-void tc_rs_qp_create2()
+void TcRsQpCreate2()
 {
 	int ret;
-	uint32_t dev_id = 0;
+	uint32_t devId = 0;
 	uint32_t flag = 0;
 	unsigned int rdevIndex = 0;
 	struct RsInitConfig cfg = {0};
 	struct RsQpResp resp = {0};
-	struct RsQpCb *qp_cb_t;
+	struct RsQpCb *qpCbT;
 
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
-	struct RsQpNorm qp_norm = {0};
-	qp_norm.flag = flag;
-	qp_norm.qpMode = 1;
-	qp_norm.isExp = 1;
+	struct RsQpNorm qpNorm = {0};
+	qpNorm.flag = flag;
+	qpNorm.qpMode = 1;
+	qpNorm.isExp = 1;
 
-	qp_cb_t = calloc(1, sizeof(struct RsQpCb));
-	rs_ut_msg("____qp_cb_t:%p\n", qp_cb_t);
+	qpCbT = calloc(1, sizeof(struct RsQpCb));
+	rs_ut_msg("____qp_cb_t:%p\n", qpCbT);
 
 	/* resource prepare... */
 	cfg.hccpMode = NETWORK_OFFLINE;
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
 	mocker((stub_fn_t)calloc, 10, NULL);
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)ibv_create_comp_channel, 10, NULL);
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)RsDrvCreateCq, 10, 1);
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)RsDrvQpCreate, 10, 1);
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)ibv_req_notify_cq, 10, 1);
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
-	struct RsQpCb qp_cb_abnormal;
-	struct RsRdevCb rdev_cb_abnormal;
-	struct rs_cb rs_cb_abnormal;
-	struct ibv_qp ib_qp_abnormal;
-	rdev_cb_abnormal.rs_cb = &rs_cb_abnormal;
-	qp_cb_abnormal.rdevCb = &rdev_cb_abnormal;
-	qp_cb_abnormal.ibQp = &ib_qp_abnormal;
+	struct RsQpCb qpCbAbnormal;
+	struct RsRdevCb rdevCbAbnormal;
+	struct rs_cb rsCbAbnormal;
+	struct ibv_qp ibQpAbnormal;
+	rdevCbAbnormal.rsCb = &rsCbAbnormal;
+	qpCbAbnormal.rdevCb = &rdevCbAbnormal;
+	qpCbAbnormal.ibQp = &ibQpAbnormal;
 	mocker((stub_fn_t)memset_s, 10, 1);
-	ret = RsQpStateModify(&qp_cb_abnormal);
+	ret = RsQpStateModify(&qpCbAbnormal);
 	EXPECT_INT_NE(ret, 1);
 	mocker_clean();
 
 	mocker_invoke(RsIbvQueryQp, stub_RsIbvQueryQp, 10);
-	ret = RsQpStateModify(&qp_cb_abnormal);
+	ret = RsQpStateModify(&qpCbAbnormal);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)memset_s, 10, 1);
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)ibv_exp_create_qp, 10, NULL);
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)ibv_query_qp, 10, 1);
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)ibv_modify_qp, 10, 1);
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)ibv_query_port, 10, 1);
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)RsDrvGetGidIndex, 10, 1);
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)RsDrvGetGidIndex, 20, 0);
 	mocker((stub_fn_t)ibv_query_gid, 20, 1);
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)memcpy_s, 10, 1);
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker_ret((stub_fn_t)memset_s , 0, 1, 0);
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker_ret((stub_fn_t)memset_s , 0, 0, 1);
-        ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+        ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
         EXPECT_INT_EQ(ret, -ESAFEFUNC);
         mocker_clean();
 
 	mocker((stub_fn_t)RsDrvGetRandomNum, 10, -1);
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_EQ(ret, -1);
 	mocker_clean();
 
 	mocker((stub_fn_t)open, 10, -1);
-        ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+        ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
         EXPECT_INT_EQ(ret, -EFILEOPER);
         mocker_clean();
 
 	mocker((stub_fn_t)read, 10, -1);
 	mocker((stub_fn_t)close, 10, -1);
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_EQ(ret, -EFILEOPER);
 	mocker_clean();
 
 	/* resource free... */
-	ret = RsRdevDeinit(dev_id, NOTIFY, rdevIndex);
+	ret = RsRdevDeinit(devId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 	ret = RsDeinit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
     rs_ut_msg("!!!!!!tc_rs_qp_create2: RsDeinit\n");
-	free(qp_cb_t);
+	free(qpCbT);
 
 	return;
 }
 
-void tc_rs_epoll_ops2()
+void TcRsEpollOps2()
 {
 	int ret;
-	uint32_t dev_id = 0;
+	uint32_t devId = 0;
 	unsigned int rdevIndex = 0;
 	int flag = 0; /* RC */
 	struct RsQpResp resp = {0};
@@ -903,18 +903,18 @@ void tc_rs_epoll_ops2()
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-	struct RsSocketCloseInfoT sock_close[2] = {0};
-	struct SocketFdData socket_info[3] = {0};
-    struct rs_cb *rs_cb;
+	struct RsSocketCloseInfoT sockClose[2] = {0};
+	struct SocketFdData socketInfo[3] = {0};
+    struct rs_cb *rsCb;
 
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 0;
 	cfg.hccpMode = NETWORK_OFFLINE;
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
-    ret = RsDev2rscb(dev_id, &rs_cb, false);
+    ret = RsDev2rscb(devId, &rsCb, false);
     EXPECT_INT_EQ(ret, 0);
-    rs_cb->connCb.wlistEnable = 0;
+    rsCb->connCb.wlistEnable = 0;
 
 	listen[0].phyId = 0;
 	listen[0].family = AF_INET;
@@ -944,189 +944,189 @@ void tc_rs_epoll_ops2()
 	usleep(SLEEP_TIME);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].tag[0] = 1;
-	socket_info[i].tag[1] = 2;
-	socket_info[i].tag[2] = 3;
-	socket_info[i].tag[3] = 4;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].tag[0] = 1;
+	socketInfo[i].tag[1] = 2;
+	socketInfo[i].tag[2] = 3;
+	socketInfo[i].tag[3] = 4;
 
-	try_again = 10;
+	tryAgain = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
         	usleep(30000);
-		try_again--;
-	} while(ret != 1 && try_again);
+		tryAgain--;
+	} while(ret != 1 && tryAgain);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
- 	struct RsQpNorm qp_norm = {0};
-	qp_norm.flag = flag;
-	qp_norm.qpMode = 1;
-	qp_norm.isExp = 1;
+ 	struct RsQpNorm qpNorm = {0};
+	qpNorm.flag = flag;
+	qpNorm.qpMode = 1;
+	qpNorm.isExp = 1;
 
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RsQpCreate: qpn %d, ret:%d\n", resp.qpn, ret);
 
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, resp.qpn, socketInfo[i].fd);
 	rs_ut_msg("***RsQpConnectAsync: %d****\n", ret);
 
 	usleep(SLEEP_TIME);
 
-	struct SocketConnectInfo conn_ctl;
-	conn_ctl.phyId = 0;
-	conn_ctl.family = AF_INET;
-	conn_ctl.localIp.addr.s_addr = inet_addr("127.0.0.3");
-	conn_ctl.remoteIp.addr.s_addr = inet_addr("127.0.0.3");
-	memset(conn_ctl.tag, 0, 128);
-	strcpy(conn_ctl.tag, "abcde");
-	conn_ctl.port = 16666;
-	ret = RsSocketBatchConnect(&conn_ctl, 1);
+	struct SocketConnectInfo connCtl;
+	connCtl.phyId = 0;
+	connCtl.family = AF_INET;
+	connCtl.localIp.addr.s_addr = inet_addr("127.0.0.3");
+	connCtl.remoteIp.addr.s_addr = inet_addr("127.0.0.3");
+	memset(connCtl.tag, 0, 128);
+	strcpy(connCtl.tag, "abcde");
+	connCtl.port = 16666;
+	ret = RsSocketBatchConnect(&connCtl, 1);
 
 	usleep(SLEEP_TIME);
 	usleep(SLEEP_TIME);
 
-	struct SocketFdData info_ctl;
-	info_ctl.phyId = 0;
-	info_ctl.family = AF_INET;
-	info_ctl.localIp.addr.s_addr = inet_addr("127.0.0.3");
-	info_ctl.remoteIp.addr.s_addr = inet_addr("127.0.0.3");
-	memset(info_ctl.tag, 0, 128);
-	strcpy(info_ctl.tag, "abcde");
+	struct SocketFdData infoCtl;
+	infoCtl.phyId = 0;
+	infoCtl.family = AF_INET;
+	infoCtl.localIp.addr.s_addr = inet_addr("127.0.0.3");
+	infoCtl.remoteIp.addr.s_addr = inet_addr("127.0.0.3");
+	memset(infoCtl.tag, 0, 128);
+	strcpy(infoCtl.tag, "abcde");
 
-	try_again = 10;
+	tryAgain = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &info_ctl, 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &infoCtl, 1);
 		usleep(30000);
-		try_again--;
-	} while (ret != 1 && try_again);
+		tryAgain--;
+	} while (ret != 1 && tryAgain);
 
-	struct RsQpResp resp_ctl = {0};
-	qp_norm.flag = flag;
-	qp_norm.qpMode = 1;
-	qp_norm.isExp = 1;
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp_ctl);
+	struct RsQpResp respCtl = {0};
+	qpNorm.flag = flag;
+	qpNorm.qpMode = 1;
+	qpNorm.isExp = 1;
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &respCtl);
     EXPECT_INT_EQ(ret, 0);
 
 	mocker((stub_fn_t)RsEpollCtl, 10, -2);
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp_ctl.qpn, info_ctl.fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, respCtl.qpn, infoCtl.fd);
 	mocker_clean();
 
 	mocker((stub_fn_t)RsSocketSend, 10, -1);
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp_ctl.qpn, info_ctl.fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, respCtl.qpn, infoCtl.fd);
 	mocker_clean();
 
-	ret = RsQpDestroy(dev_id, rdevIndex, resp_ctl.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, respCtl.qpn);
 
 /* ===RsEpollEventInHandle ut begin --- accept fail=== */
 	struct epoll_event events;
-	struct rs_cb *rs_cb_t;
+	struct rs_cb *rsCbT;
 	struct RsRdevCb *rdevCb;
-	struct RsListenInfo *listen_info, *listen_info2;
+	struct RsListenInfo *listenInfo, *listenInfo2;
 
-	ret = RsDev2rscb(0, &rs_cb_t, false);
+	ret = RsDev2rscb(0, &rsCbT, false);
 
-	RS_LIST_GET_HEAD_ENTRY(listen_info, listen_info2, &rs_cb_t->connCb.listenList, list, struct RsListenInfo);
-	for(; (&listen_info->list) != &rs_cb_t->connCb.listenList;
-            listen_info = listen_info2, listen_info2 = list_entry(listen_info2->list.next, struct RsListenInfo, list)) {
-		events.data.fd = listen_info->listenFd;
+	RS_LIST_GET_HEAD_ENTRY(listenInfo, listenInfo2, &rsCbT->connCb.listenList, list, struct RsListenInfo);
+	for(; (&listenInfo->list) != &rsCbT->connCb.listenList;
+            listenInfo = listenInfo2, listenInfo2 = list_entry(listenInfo2->list.next, struct RsListenInfo, list)) {
+		events.data.fd = listenInfo->listenFd;
 	}
 	events.events = EPOLLIN;
 	mocker((stub_fn_t)accept, 10, -1);
-	RsEpollEventInHandle(rs_cb_t, &events);
-	RsEpollEventInHandle(rs_cb_t, &events);
-	RsEpollEventInHandle(rs_cb_t, &events);
+	RsEpollEventInHandle(rsCbT, &events);
+	RsEpollEventInHandle(rsCbT, &events);
+	RsEpollEventInHandle(rsCbT, &events);
 	mocker_clean();
 
 	mocker((stub_fn_t)calloc, 10, NULL);
-	struct RsConnCb con_cb_node;
-	ret = RsAllocConnNode(&con_cb_node, 16666);
+	struct RsConnCb conCbNode;
+	ret = RsAllocConnNode(&conCbNode, 16666);
 	EXPECT_INT_EQ(ret, -12);
 
 	mocker((stub_fn_t)accept, 1, 9900999);
 	mocker((stub_fn_t)RsAllocConnNode, 1, -1);
-	RsEpollEventInHandle(rs_cb_t, &events);
+	RsEpollEventInHandle(rsCbT, &events);
 	mocker_clean();
 
 	/* poll cq */
-	struct RsQpCb *qp_cb_t, *qp_cb_t2;
-	ret = RsGetRdevCb(rs_cb, rdevIndex, &rdevCb);
-	RS_LIST_GET_HEAD_ENTRY(qp_cb_t, qp_cb_t2, &rdevCb->qpList, list, struct RsQpCb);
-	for(; (&qp_cb_t->list) != &rdevCb->qpList;               \
-            qp_cb_t = qp_cb_t2, qp_cb_t2 = list_entry(qp_cb_t2->list.next, struct RsQpCb, list)){
-		events.data.fd = qp_cb_t->channel->fd;
+	struct RsQpCb *qpCbT, *qpCbT2;
+	ret = RsGetRdevCb(rsCb, rdevIndex, &rdevCb);
+	RS_LIST_GET_HEAD_ENTRY(qpCbT, qpCbT2, &rdevCb->qpList, list, struct RsQpCb);
+	for(; (&qpCbT->list) != &rdevCb->qpList;               \
+            qpCbT = qpCbT2, qpCbT2 = list_entry(qpCbT2->list.next, struct RsQpCb, list)){
+		events.data.fd = qpCbT->channel->fd;
 	}
-	RsEpollEventInHandle(rs_cb_t, &events);
+	RsEpollEventInHandle(rsCbT, &events);
 
 	/* qp info message, RsSocketRecv = 0 error ! */
-	ret = RsQpn2qpcb(dev_id, rdevIndex, resp.qpn, &qp_cb_t);
+	ret = RsQpn2qpcb(devId, rdevIndex, resp.qpn, &qpCbT);
 	EXPECT_INT_EQ(ret, 0);
-	if (qp_cb_t->connInfo == NULL) {
+	if (qpCbT->connInfo == NULL) {
 		return;
 	}
-	int fd_tmp = qp_cb_t->connInfo->connfd;
-	qp_cb_t->connInfo->connfd = 99999;
+	int fdTmp = qpCbT->connInfo->connfd;
+	qpCbT->connInfo->connfd = 99999;
 	mocker((stub_fn_t)RsSocketRecv, 1, 0);
-	events.data.fd = qp_cb_t->connInfo->connfd;
-	RsEpollEventInHandle(rs_cb_t, &events);
-	qp_cb_t->connInfo->connfd = fd_tmp;
+	events.data.fd = qpCbT->connInfo->connfd;
+	RsEpollEventInHandle(rsCbT, &events);
+	qpCbT->connInfo->connfd = fdTmp;
 	mocker_clean();
 
 	events.events = EPOLLOUT;
-	RsEpollEventHandleOne(rs_cb_t, &events);
+	RsEpollEventHandleOne(rsCbT, &events);
 
 	mocker((stub_fn_t)pthread_detach, 1, 1);
-	RsEpollHandle(rs_cb_t);
+	RsEpollHandle(rsCbT);
 	mocker_clean();
 
-	int epollfd_t = rs_cb_t->connCb.epollfd;
-	int eventfd_t = rs_cb_t->connCb.eventfd;
+	int epollfdT = rsCbT->connCb.epollfd;
+	int eventfdT = rsCbT->connCb.eventfd;
 	mocker((stub_fn_t)epoll_create, 1, 1);
 	mocker((stub_fn_t)eventfd, 1, -1);
 
-	ret = RsCreateEpoll(rs_cb_t);
+	ret = RsCreateEpoll(rsCbT);
 	EXPECT_INT_NE(ret, 0);
-	rs_cb_t->connCb.epollfd = epollfd_t;
-	rs_cb_t->connCb.eventfd = eventfd_t;
+	rsCbT->connCb.epollfd = epollfdT;
+	rsCbT->connCb.eventfd = eventfdT;
 	mocker_clean();
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].tag[0] = 1;
-	socket_info[i].tag[1] = 2;
-	socket_info[i].tag[2] = 3;
-	socket_info[i].tag[3] = 4;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].tag[0] = 1;
+	socketInfo[i].tag[1] = 2;
+	socketInfo[i].tag[2] = 3;
+	socketInfo[i].tag[3] = 4;
 
-	int try_again = 10;
+	int tryAgain = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
         	usleep(30000);
-		try_again--;
-	} while (ret != 1 && try_again);
+		tryAgain--;
+	} while (ret != 1 && tryAgain);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	qp_norm.flag = flag;
-	qp_norm.qpMode = 1;
-	qp_norm.isExp = 1;
+	qpNorm.flag = flag;
+	qpNorm.qpMode = 1;
+	qpNorm.isExp = 1;
 
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp2);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp2);
     EXPECT_INT_EQ(ret, 0);
 
 	rs_ut_msg("RsQpCreate: qpn2 %d, ret:%d\n", resp2.qpn, ret);
 
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp2.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, resp2.qpn, socketInfo[i].fd);
 
 	usleep(SLEEP_TIME);
 
@@ -1138,34 +1138,34 @@ void tc_rs_epoll_ops2()
         EXPECT_INT_NE(ret, 0);
         mocker_clean();
 
-        struct SocketListenInfo listen_ctl;
-        listen_ctl.phyId = 0;
-        listen_ctl.localIp.addr.s_addr = inet_addr("127.0.0.9");
-		listen_ctl.port = 16666;
+        struct SocketListenInfo listenCtl;
+        listenCtl.phyId = 0;
+        listenCtl.localIp.addr.s_addr = inet_addr("127.0.0.9");
+		listenCtl.port = 16666;
         mocker((stub_fn_t)RsEpollCtl, 10, -1);
-        ret = RsSocketListenStart(&listen_ctl, 1);
+        ret = RsSocketListenStart(&listenCtl, 1);
         mocker_clean();
 
 	usleep(SLEEP_TIME);
 
-	struct rs_cb rs_cb_ctl;
+	struct rs_cb rsCbCtl;
 	mocker((stub_fn_t)RsEpollCtl, 10, -1);
-	ret = RsCreateEpoll(&rs_cb_ctl);
+	ret = RsCreateEpoll(&rsCbCtl);
 	mocker_clean();
 
-	ret = RsQpDestroy(dev_id, rdevIndex, resp2.qpn);
-	ret = RsQpDestroy(dev_id, rdevIndex, resp.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, resp2.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, resp.qpn);
 
-	sock_close[0].fd = socket_info[0].fd;
-	ret = RsSocketBatchClose(0, &sock_close[0], 1);
+	sockClose[0].fd = socketInfo[0].fd;
+	ret = RsSocketBatchClose(0, &sockClose[0], 1);
 
-	sock_close[1].fd = socket_info[1].fd;
-	ret = RsSocketBatchClose(0, &sock_close[1], 1);
+	sockClose[1].fd = socketInfo[1].fd;
+	ret = RsSocketBatchClose(0, &sockClose[1], 1);
 	/* ------Resource CLEAN-------- */
 	listen[0].port = 16666;
 	ret = RsSocketListenStop(&listen[0], 1);
 
-	ret = RsRdevDeinit(dev_id, NOTIFY, rdevIndex);
+	ret = RsRdevDeinit(devId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
 	ret = RsDeinit(&cfg);
@@ -1175,16 +1175,16 @@ void tc_rs_epoll_ops2()
 	return;
 }
 
-int stub_rs_epoll_ctl(int epollfd, int op, int fd, int state)
+int StubRsEpollCtl(int epollfd, int op, int fd, int state)
 {
 	if (op == EPOLL_CTL_ADD) return 0;
 	return 1;
 }
 
-void tc_rs_qp_connect_async2()
+void TcRsQpConnectAsync2()
 {
 	int ret;
-	uint32_t dev_id = 0;
+	uint32_t devId = 0;
 	unsigned int rdevIndex = 0;
 	int flag = 0; /* RC */
 	struct RsQpResp resp = {0};
@@ -1193,18 +1193,18 @@ void tc_rs_qp_connect_async2()
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-	struct RsSocketCloseInfoT sock_close[2] = {0};
-	struct SocketFdData socket_info[3] = {0};
-    struct rs_cb *rs_cb;
+	struct RsSocketCloseInfoT sockClose[2] = {0};
+	struct SocketFdData socketInfo[3] = {0};
+    struct rs_cb *rsCb;
 
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 0;
 	cfg.hccpMode = NETWORK_OFFLINE;
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
-    ret = RsDev2rscb(dev_id, &rs_cb, false);
+    ret = RsDev2rscb(devId, &rsCb, false);
     EXPECT_INT_EQ(ret, 0);
-    rs_cb->connCb.wlistEnable = 0;
+    rsCb->connCb.wlistEnable = 0;
 
 	listen[0].phyId = 0;
 	listen[0].family = AF_INET;
@@ -1229,119 +1229,119 @@ void tc_rs_qp_connect_async2()
 	usleep(SLEEP_TIME);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].tag[0] = 1;
-	socket_info[i].tag[1] = 2;
-	socket_info[i].tag[2] = 3;
-	socket_info[i].tag[3] = 4;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].tag[0] = 1;
+	socketInfo[i].tag[1] = 2;
+	socketInfo[i].tag[2] = 3;
+	socketInfo[i].tag[3] = 4;
 
-	int try_again = 10;
+	int tryAgain = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
         	usleep(30000);
-		try_again--;
-	} while (ret != 1 && try_again);
+		tryAgain--;
+	} while (ret != 1 && tryAgain);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].tag[0] = 1;
-	socket_info[i].tag[1] = 2;
-	socket_info[i].tag[2] = 3;
-	socket_info[i].tag[3] = 4;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].tag[0] = 1;
+	socketInfo[i].tag[1] = 2;
+	socketInfo[i].tag[2] = 3;
+	socketInfo[i].tag[3] = 4;
 
 	mocker((stub_fn_t)RsFindSockets, 10, 2);
-	ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 2);
+	ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 2);
 	mocker_clean();
 
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
- 	struct RsQpNorm qp_norm = {0};
-	qp_norm.flag = flag;
-	qp_norm.qpMode = 1;
-	qp_norm.isExp = 1;
+ 	struct RsQpNorm qpNorm = {0};
+	qpNorm.flag = flag;
+	qpNorm.qpMode = 1;
+	qpNorm.isExp = 1;
 
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
     EXPECT_INT_EQ(ret, 0);
 
 	rs_ut_msg("RsQpCreate: qpn %d, ret:%d\n", resp.qpn, ret);
 
-	mocker_invoke(RsEpollCtl, stub_rs_epoll_ctl, 10);
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp.qpn, socket_info[i].fd);
+	mocker_invoke(RsEpollCtl, StubRsEpollCtl, 10);
+	ret = RsQpConnectAsync(devId, rdevIndex, resp.qpn, socketInfo[i].fd);
 	mocker_clean();
 
-	struct RsQpCb *qp_cb;
-	ret = RsQpn2qpcb(dev_id, rdevIndex, resp.qpn, &qp_cb);
+	struct RsQpCb *qpCb;
+	ret = RsQpn2qpcb(devId, rdevIndex, resp.qpn, &qpCb);
 	EXPECT_INT_EQ(ret, 0);
-	qp_cb->state = RS_QP_STATUS_DISCONNECT;
+	qpCb->state = RS_QP_STATUS_DISCONNECT;
 
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, resp.qpn, socketInfo[i].fd);
 	rs_ut_msg("***RsQpConnectAsync: %d****\n", ret);
 
 	usleep(SLEEP_TIME);
 
 /* ===RsQpConnectAsync ut begin === */
-	struct RsQpCb *qp_cb_t;
+	struct RsQpCb *qpCbT;
 
-	ret = RsQpn2qpcb(dev_id, rdevIndex, resp.qpn, &qp_cb_t);
+	ret = RsQpn2qpcb(devId, rdevIndex, resp.qpn, &qpCbT);
 	EXPECT_INT_EQ(ret, 0);
-	int state_tmp = qp_cb_t->state;
-	qp_cb_t->state = RS_QP_STATUS_CONNECTED;
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp.qpn, socket_info[i].fd);
+	int stateTmp = qpCbT->state;
+	qpCbT->state = RS_QP_STATUS_CONNECTED;
+	ret = RsQpConnectAsync(devId, rdevIndex, resp.qpn, socketInfo[i].fd);
 	EXPECT_INT_NE(ret, 0);
-	qp_cb_t->state = state_tmp;
+	qpCbT->state = stateTmp;
 
 /* ===RsQpConnectAsync ut end === */
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].tag[0] = 1;
-	socket_info[i].tag[1] = 2;
-	socket_info[i].tag[2] = 3;
-	socket_info[i].tag[3] = 4;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].tag[0] = 1;
+	socketInfo[i].tag[1] = 2;
+	socketInfo[i].tag[2] = 3;
+	socketInfo[i].tag[3] = 4;
 
-	try_again = 10;
+	tryAgain = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
         	usleep(30000);
-		try_again--;
-	} while (ret != 1 && try_again);
+		tryAgain--;
+	} while (ret != 1 && tryAgain);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp2);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp2);
     EXPECT_INT_EQ(ret, 0);
 
 	rs_ut_msg("RsQpCreate: qpn2 %d, ret:%d\n", resp2.qpn, ret);
 
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp2.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, resp2.qpn, socketInfo[i].fd);
 
 	usleep(SLEEP_TIME);
 
-	ret = RsQpDestroy(dev_id, rdevIndex, resp2.qpn);
-	ret = RsQpDestroy(dev_id, rdevIndex, resp.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, resp2.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, resp.qpn);
 
-	sock_close[0].fd = socket_info[0].fd;
-	ret = RsSocketBatchClose(0, &sock_close[0], 1);
+	sockClose[0].fd = socketInfo[0].fd;
+	ret = RsSocketBatchClose(0, &sockClose[0], 1);
 
-	sock_close[1].fd = socket_info[1].fd;
-	ret = RsSocketBatchClose(0, &sock_close[1], 1);
+	sockClose[1].fd = socketInfo[1].fd;
+	ret = RsSocketBatchClose(0, &sockClose[1], 1);
 
 	/* ------Resource CLEAN-------- */
 	listen[0].port = 16666;
 	ret = RsSocketListenStop(&listen[0], 1);
 
-	ret = RsRdevDeinit(dev_id, NOTIFY, rdevIndex);
+	ret = RsRdevDeinit(devId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
 	ret = RsDeinit(&cfg);
@@ -1351,10 +1351,10 @@ void tc_rs_qp_connect_async2()
 	return;
 }
 
-void tc_rs_send_wr2()
+void TcRsSendWr2()
 {
 	int ret;
-	uint32_t dev_id = 0;
+	uint32_t devId = 0;
 	unsigned int rdevIndex = 0;
 	int flag = 0; /* RC */
 	struct RsQpResp resp = {0};
@@ -1363,18 +1363,18 @@ void tc_rs_send_wr2()
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-	struct RsSocketCloseInfoT sock_close[2] = {0};
-	struct SocketFdData socket_info[3] = {0};
-    struct rs_cb *rs_cb;
+	struct RsSocketCloseInfoT sockClose[2] = {0};
+	struct SocketFdData socketInfo[3] = {0};
+    struct rs_cb *rsCb;
 
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 0;
 	cfg.hccpMode = NETWORK_OFFLINE;
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
-    ret = RsDev2rscb(dev_id, &rs_cb, false);
+    ret = RsDev2rscb(devId, &rsCb, false);
     EXPECT_INT_EQ(ret, 0);
-    rs_cb->connCb.wlistEnable = 0;
+    rsCb->connCb.wlistEnable = 0;
 
 	listen[0].phyId = 0;
 	listen[0].family = AF_INET;
@@ -1398,41 +1398,41 @@ void tc_rs_send_wr2()
 	usleep(SLEEP_TIME);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].tag[0] = 1;
-	socket_info[i].tag[1] = 2;
-	socket_info[i].tag[2] = 3;
-	socket_info[i].tag[3] = 4;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].tag[0] = 1;
+	socketInfo[i].tag[1] = 2;
+	socketInfo[i].tag[2] = 3;
+	socketInfo[i].tag[3] = 4;
 
-	try_again = 10;
+	tryAgain = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
         	usleep(30000);
-		try_again--;
-	} while (ret != 1 && try_again);
+		tryAgain--;
+	} while (ret != 1 && tryAgain);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
- 	struct RsQpNorm qp_norm = {0};
-	qp_norm.flag = flag;
-	qp_norm.qpMode = 1;
-	qp_norm.isExp = 1;
+ 	struct RsQpNorm qpNorm = {0};
+	qpNorm.flag = flag;
+	qpNorm.qpMode = 1;
+	qpNorm.isExp = 1;
 
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RsQpCreate: qpn %d, ret:%d\n", resp.qpn, ret);
 
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, resp.qpn, socketInfo[i].fd);
 	rs_ut_msg("***RsQpConnectAsync: %d****\n", ret);
 
 	usleep(SLEEP_TIME);
@@ -1442,45 +1442,45 @@ void tc_rs_send_wr2()
 /* === rs_send_async ut end === */
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].tag[0] = 1;
-	socket_info[i].tag[1] = 2;
-	socket_info[i].tag[2] = 3;
-	socket_info[i].tag[3] = 4;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].tag[0] = 1;
+	socketInfo[i].tag[1] = 2;
+	socketInfo[i].tag[2] = 3;
+	socketInfo[i].tag[3] = 4;
 
-	try_again = 10;
+	tryAgain = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
         	usleep(30000);
-		try_again--;
-	} while (ret != 1 && try_again);
+		tryAgain--;
+	} while (ret != 1 && tryAgain);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp2);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp2);
 	EXPECT_INT_EQ(ret, 0);
 
 	rs_ut_msg("RsQpCreate: qpn2 %d, ret:%d\n", resp2.qpn, ret, 1);
 
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp2.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, resp2.qpn, socketInfo[i].fd);
 
 	usleep(SLEEP_TIME);
 
-	ret = RsQpDestroy(dev_id, rdevIndex, resp2.qpn);
-	ret = RsQpDestroy(dev_id, rdevIndex, resp.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, resp2.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, resp.qpn);
 
-	sock_close[0].fd = socket_info[0].fd;
-	ret = RsSocketBatchClose(0, &sock_close[0], 1);
+	sockClose[0].fd = socketInfo[0].fd;
+	ret = RsSocketBatchClose(0, &sockClose[0], 1);
 
-	sock_close[1].fd = socket_info[1].fd;
-	ret = RsSocketBatchClose(0, &sock_close[1], 1);
+	sockClose[1].fd = socketInfo[1].fd;
+	ret = RsSocketBatchClose(0, &sockClose[1], 1);
 
 	/* ------Resource CLEAN-------- */
 	listen[0].port = 16666;
 	ret = RsSocketListenStop(&listen[0], 1);
 
-	ret = RsRdevDeinit(dev_id, NOTIFY, rdevIndex);
+	ret = RsRdevDeinit(devId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
 	ret = RsDeinit(&cfg);
@@ -1490,10 +1490,10 @@ void tc_rs_send_wr2()
 	return;
 }
 
-void tc_rs_get_gid_index2()
+void TcRsGetGidIndex2()
 {
 	int ret;
-	uint32_t dev_id = 0;
+	uint32_t devId = 0;
 	uint32_t qpMode = 1;
 	unsigned int rdevIndex = 0;
 	int flag = 0; /* RC */
@@ -1503,18 +1503,18 @@ void tc_rs_get_gid_index2()
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-	struct RsSocketCloseInfoT sock_close[2] = {0};
-	struct SocketFdData socket_info[3] = {0};
-    struct rs_cb *rs_cb;
+	struct RsSocketCloseInfoT sockClose[2] = {0};
+	struct SocketFdData socketInfo[3] = {0};
+    struct rs_cb *rsCb;
 
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 0;
 	cfg.hccpMode = NETWORK_OFFLINE;
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
-    ret = RsDev2rscb(dev_id, &rs_cb, false);
+    ret = RsDev2rscb(devId, &rsCb, false);
     EXPECT_INT_EQ(ret, 0);
-    rs_cb->connCb.wlistEnable = 0;
+    rsCb->connCb.wlistEnable = 0;
 
 	listen[0].phyId = 0;
 	listen[0].family = AF_INET;
@@ -1538,41 +1538,41 @@ void tc_rs_get_gid_index2()
 	usleep(1000);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].tag[0] = 1;
-	socket_info[i].tag[1] = 2;
-	socket_info[i].tag[2] = 3;
-	socket_info[i].tag[3] = 4;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].tag[0] = 1;
+	socketInfo[i].tag[1] = 2;
+	socketInfo[i].tag[2] = 3;
+	socketInfo[i].tag[3] = 4;
 
-	try_again = 10;
+	tryAgain = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
         	usleep(30000);
-		try_again--;
-	} while (ret != 1 && try_again);
+		tryAgain--;
+	} while (ret != 1 && tryAgain);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	struct RsQpNorm qp_norm = {0};
-	qp_norm.flag = flag;
-	qp_norm.qpMode = qpMode;
-	qp_norm.isExp = 1;
+	struct RsQpNorm qpNorm = {0};
+	qpNorm.flag = flag;
+	qpNorm.qpMode = qpMode;
+	qpNorm.isExp = 1;
 
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RsQpCreate: qpn %d, ret:%d\n", resp.qpn, ret);
 
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, resp.qpn, socketInfo[i].fd);
 	rs_ut_msg("***RsQpConnectAsync: %d****\n", ret);
 
 	usleep(SLEEP_TIME);
@@ -1580,9 +1580,9 @@ void tc_rs_get_gid_index2()
 	/* ===rs_get_gid_index ut begin=== */
 	struct ibv_port_attr attr = {0};
 	int index;
-	struct rs_cb *rs_cb_t;
+	struct rs_cb *rsCbT;
 	struct RsRdevCb rdevCb = {0};
-	ret = RsDev2rscb(0, &rs_cb_t, false);
+	ret = RsDev2rscb(0, &rsCbT, false);
 	attr.gid_tbl_len = 3;
 	rdevCb.ibPort = 0;
 
@@ -1614,45 +1614,45 @@ void tc_rs_get_gid_index2()
 	/* ===rs_get_gid_index ut end=== */
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].tag[0] = 1;
-	socket_info[i].tag[1] = 2;
-	socket_info[i].tag[2] = 3;
-	socket_info[i].tag[3] = 4;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].tag[0] = 1;
+	socketInfo[i].tag[1] = 2;
+	socketInfo[i].tag[2] = 3;
+	socketInfo[i].tag[3] = 4;
 
-	try_again = 10;
+	tryAgain = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
         	usleep(30000);
-		try_again--;
-	} while (ret != 1 && try_again);
+		tryAgain--;
+	} while (ret != 1 && tryAgain);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp2);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp2);
 	EXPECT_INT_EQ(ret, 0);
 
 	rs_ut_msg("RsQpCreate: qpn2 %d, ret:%d\n", resp2.qpn, ret);
 
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp2.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, resp2.qpn, socketInfo[i].fd);
 
 	usleep(SLEEP_TIME);
 
-	ret = RsQpDestroy(dev_id, rdevIndex, resp2.qpn);
-	ret = RsQpDestroy(dev_id, rdevIndex, resp.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, resp2.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, resp.qpn);
 
-	sock_close[0].fd = socket_info[0].fd;
-	ret = RsSocketBatchClose(0, &sock_close[0], 1);
+	sockClose[0].fd = socketInfo[0].fd;
+	ret = RsSocketBatchClose(0, &sockClose[0], 1);
 
-	sock_close[1].fd = socket_info[1].fd;
-	ret = RsSocketBatchClose(0, &sock_close[1], 1);
+	sockClose[1].fd = socketInfo[1].fd;
+	ret = RsSocketBatchClose(0, &sockClose[1], 1);
 
 	/* ------Resource CLEAN-------- */
 	listen[0].port = 16666;
 	ret = RsSocketListenStop(&listen[0], 1);
 
-	ret = RsRdevDeinit(dev_id, NOTIFY, rdevIndex);
+	ret = RsRdevDeinit(devId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
 	ret = RsDeinit(&cfg);
@@ -1662,10 +1662,10 @@ void tc_rs_get_gid_index2()
 	return;
 }
 
-void tc_rs_mr_abnormal2()
+void TcRsMrAbnormal2()
 {
 	int ret;
-	uint32_t dev_id = 0;
+	uint32_t devId = 0;
 	unsigned int rdevIndex = 0;
 	int flag = 0; /* RC */
 	uint32_t qpMode = 1;
@@ -1675,25 +1675,25 @@ void tc_rs_mr_abnormal2()
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-	struct RsSocketCloseInfoT sock_close[2] = {0};
-	struct SocketFdData socket_info[3] = {0};
-    struct rs_cb *rs_cb;
+	struct RsSocketCloseInfoT sockClose[2] = {0};
+	struct SocketFdData socketInfo[3] = {0};
+    struct rs_cb *rsCb;
 
-	struct RsMrCb *mr_cb_normal;
-	ret = RsCallocMr(0, &mr_cb_normal);
+	struct RsMrCb *mrCbNormal;
+	ret = RsCallocMr(0, &mrCbNormal);
 	EXPECT_INT_EQ(ret, -EINVAL);
 
-	struct RsQpCb *qp_cb_normal;
-	ret = RsCallocQpcb(0, &qp_cb_normal);
+	struct RsQpCb *qpCbNormal;
+	ret = RsCallocQpcb(0, &qpCbNormal);
 	EXPECT_INT_EQ(ret, -EINVAL);
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 0;
 	cfg.hccpMode = NETWORK_OFFLINE;
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
-    ret = RsDev2rscb(dev_id, &rs_cb, false);
+    ret = RsDev2rscb(devId, &rsCb, false);
     EXPECT_INT_EQ(ret, 0);
-    rs_cb->connCb.wlistEnable = 0;
+    rsCb->connCb.wlistEnable = 0;
 
 	listen[0].phyId = 0;
 	listen[0].family = AF_INET;
@@ -1717,135 +1717,135 @@ void tc_rs_mr_abnormal2()
 	usleep(10000);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].tag[0] = 1;
-	socket_info[i].tag[1] = 2;
-	socket_info[i].tag[2] = 3;
-	socket_info[i].tag[3] = 4;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].tag[0] = 1;
+	socketInfo[i].tag[1] = 2;
+	socketInfo[i].tag[2] = 3;
+	socketInfo[i].tag[3] = 4;
 
-	try_again = 100;
+	tryAgain = 100;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
         	usleep(300000);
-		try_again--;
-	} while(ret != 1 && try_again);
+		tryAgain--;
+	} while(ret != 1 && tryAgain);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	struct RsQpNorm qp_norm = {0};
-	qp_norm.flag = flag;
-	qp_norm.qpMode = qpMode;
-	qp_norm.isExp = 1;
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	struct RsQpNorm qpNorm = {0};
+	qpNorm.flag = flag;
+	qpNorm.qpMode = qpMode;
+	qpNorm.isExp = 1;
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_EQ(ret, 0);
 
 	rs_ut_msg("RsQpCreate: qpn %d, ret:%d\n", resp.qpn, ret);
 
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, resp.qpn, socketInfo[i].fd);
 	rs_ut_msg("***RsQpConnectAsync: %d****\n", ret);
 
 	usleep(SLEEP_TIME);
 
 	/* ===RsMrInfoSync ut begin=== */
 	void *addr;
-	struct RsMrCb *mr_cb;
+	struct RsMrCb *mrCb;
 	addr = malloc(RS_TEST_MEM_SIZE);
-	struct RdmaMrRegInfo mr_reg_info = {0};
-	mr_reg_info.addr = addr;
-	mr_reg_info.len = RS_TEST_MEM_SIZE;
-	mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
-	int try_num = 3;
+	struct RdmaMrRegInfo mrRegInfo = {0};
+	mrRegInfo.addr = addr;
+	mrRegInfo.len = RS_TEST_MEM_SIZE;
+	mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
+	int tryNum = 3;
 	do {
-		ret = RsMrReg(dev_id, rdevIndex, resp.qpn, &mr_reg_info);
+		ret = RsMrReg(devId, rdevIndex, resp.qpn, &mrRegInfo);
 		EXPECT_INT_EQ(ret, 0);
 		if (0 == ret)
 			break;
 		rs_ut_msg("MR REG1: qpn %d, ret:%d\n", resp.qpn, ret);
-		try_num--;
+		tryNum--;
 		usleep(3000);
-	} while(try_num && (-EAGAIN == ret));
+	} while(tryNum && (-EAGAIN == ret));
 	EXPECT_INT_EQ(ret, 0);
 
-	struct RsQpCb *qp_cb_t;
-	ret = RsQpn2qpcb(dev_id, rdevIndex, resp.qpn, &qp_cb_t);
+	struct RsQpCb *qpCbT;
+	ret = RsQpn2qpcb(devId, rdevIndex, resp.qpn, &qpCbT);
 	EXPECT_INT_EQ(ret, 0);
-	ret = RsGetMrcb(qp_cb_t, addr, &mr_cb, &qp_cb_t->mrList);
-	if (mr_cb->qpCb->connInfo == NULL) {
+	ret = RsGetMrcb(qpCbT, addr, &mrCb, &qpCbT->mrList);
+	if (mrCb->qpCb->connInfo == NULL) {
 		free(addr);
 		return;
 	}
-	int connfd_tmp = mr_cb->qpCb->connInfo->connfd;
-	mr_cb->qpCb->connInfo->connfd = RS_FD_INVALID;
-	mr_cb->state = 0;
-	ret = RsMrInfoSync(mr_cb);
-	mr_cb->qpCb->connInfo->connfd = connfd_tmp;
+	int connfdTmp = mrCb->qpCb->connInfo->connfd;
+	mrCb->qpCb->connInfo->connfd = RS_FD_INVALID;
+	mrCb->state = 0;
+	ret = RsMrInfoSync(mrCb);
+	mrCb->qpCb->connInfo->connfd = connfdTmp;
 
-	int state_tmp2 = mr_cb->state;
-	mr_cb->state = 0;
+	int stateTmp2 = mrCb->state;
+	mrCb->state = 0;
 	mocker((stub_fn_t)RsSocketSend, 20, 0);
-	ret = RsMrInfoSync(mr_cb);
+	ret = RsMrInfoSync(mrCb);
 	EXPECT_INT_NE(ret, 0);
-	mr_cb->state = state_tmp2;
+	mrCb->state = stateTmp2;
 
 	mocker_clean();
 
 	/* ===RsQpDestroy ut begin=== */
-	ret = RsQpDestroy(dev_id, rdevIndex, resp.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, resp.qpn);
 	/* ===RsQpDestroy ut end=== */
 
-	ret = RsMrDereg(dev_id, rdevIndex, resp.qpn, addr);
+	ret = RsMrDereg(devId, rdevIndex, resp.qpn, addr);
 	free(addr);
 	/* ===RsMrInfoSync ut end=== */
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].tag[0] = 1;
-	socket_info[i].tag[1] = 2;
-	socket_info[i].tag[2] = 3;
-	socket_info[i].tag[3] = 4;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].tag[0] = 1;
+	socketInfo[i].tag[1] = 2;
+	socketInfo[i].tag[2] = 3;
+	socketInfo[i].tag[3] = 4;
 
-	try_again = 10;
+	tryAgain = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
         	usleep(30000);
-		try_again--;
-	} while (ret != 1 && try_again);
+		tryAgain--;
+	} while (ret != 1 && tryAgain);
 	rs_ut_msg("%s [server]socket_info[1].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp2);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp2);
 	EXPECT_INT_EQ(ret, 0);
 
 	rs_ut_msg("RsQpCreate: qpn2 %d, ret:%d\n", resp2.qpn, ret);
 
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp2.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, resp2.qpn, socketInfo[i].fd);
 
 	usleep(SLEEP_TIME);
 
-	ret = RsQpDestroy(dev_id, rdevIndex, resp2.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, resp2.qpn);
 
-	sock_close[0].fd = socket_info[0].fd;
-	ret = RsSocketBatchClose(0, &sock_close[0], 1);
+	sockClose[0].fd = socketInfo[0].fd;
+	ret = RsSocketBatchClose(0, &sockClose[0], 1);
 
-	sock_close[1].fd = socket_info[1].fd;
-	ret = RsSocketBatchClose(0, &sock_close[1], 1);
+	sockClose[1].fd = socketInfo[1].fd;
+	ret = RsSocketBatchClose(0, &sockClose[1], 1);
 
 	/* ------Resource CLEAN-------- */
 	listen[0].port = 16666;
 	ret = RsSocketListenStop(&listen[0], 1);
 
-	ret = RsRdevDeinit(dev_id, NOTIFY, rdevIndex);
+	ret = RsRdevDeinit(devId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
 	ret = RsDeinit(&cfg);
@@ -1861,10 +1861,10 @@ int stub_halGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoType, 
 	return 0;
 }
 
-void tc_rs_socket_ops2()
+void TcRsSocketOps2()
 {
 	int ret;
-	uint32_t dev_id = 0;
+	uint32_t devId = 0;
 	unsigned int rdevIndex = 0;
 	int flag = 0; /* RC */
 	struct RsQpResp resp = {0};
@@ -1874,32 +1874,32 @@ void tc_rs_socket_ops2()
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-	struct RsSocketCloseInfoT sock_close[2] = {0};
-	struct SocketFdData socket_info[3] = {0};
-    struct SocketWlistInfoT white_list;
-    struct rs_cb *rs_cb;
+	struct RsSocketCloseInfoT sockClose[2] = {0};
+	struct SocketFdData socketInfo[3] = {0};
+    struct SocketWlistInfoT whiteList;
+    struct rs_cb *rsCb;
 
 	ret = RsSocketVnic2nodeid(0);
 	EXPECT_INT_EQ(ret, 0);
 
-	struct SocketFdData conn_server;
-	conn_server.localIp.addr.s_addr = 1;
-	RsSocketsServeripConverter(&conn_server, 1, 1);
+	struct SocketFdData connServer;
+	connServer.localIp.addr.s_addr = 1;
+	RsSocketsServeripConverter(&connServer, 1, 1);
 
-	ret = RsGetSockets(0, &conn_server, 1);
+	ret = RsGetSockets(0, &connServer, 1);
 	EXPECT_INT_NE(ret, 0);
 
-	struct RsConnInfo conn_tmp;
-	conn_tmp.state = 0;
-	conn_tmp.serverIp.family = AF_INET;
-	conn_tmp.serverIp.binAddr.addr.s_addr = 2;
+	struct RsConnInfo connTmp;
+	connTmp.state = 0;
+	connTmp.serverIp.family = AF_INET;
+	connTmp.serverIp.binAddr.addr.s_addr = 2;
 
-	conn_tmp.state = 0;
-	conn_server.localIp.addr.s_addr = 1;
-	conn_tmp.serverIp.family = AF_INET;
-	conn_tmp.serverIp.binAddr.addr.s_addr = 1;
-	memset(conn_server.tag, 0, sizeof(conn_server.tag));
-	memset(conn_tmp.tag, 1, sizeof(conn_tmp.tag));
+	connTmp.state = 0;
+	connServer.localIp.addr.s_addr = 1;
+	connTmp.serverIp.family = AF_INET;
+	connTmp.serverIp.binAddr.addr.s_addr = 1;
+	memset(connServer.tag, 0, sizeof(connServer.tag));
+	memset(connTmp.tag, 1, sizeof(connTmp.tag));
 
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 1;
@@ -1918,9 +1918,9 @@ void tc_rs_socket_ops2()
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
-    ret = RsDev2rscb(dev_id, &rs_cb, false);
+    ret = RsDev2rscb(devId, &rsCb, false);
     EXPECT_INT_EQ(ret, 0);
-    rs_cb->connCb.wlistEnable = 0;
+    rsCb->connCb.wlistEnable = 0;
 
 	listen[0].phyId = 0;
 	listen[0].family = AF_INET;
@@ -1929,7 +1929,7 @@ void tc_rs_socket_ops2()
 	ret = RsSocketListenStart(&listen[0], 1);
 
 	usleep(SLEEP_TIME);
-    strcpy(white_list.tag, "1234");
+    strcpy(whiteList.tag, "1234");
 
 	conn[0].phyId = 0;
 	conn[0].family = AF_INET;
@@ -1943,135 +1943,135 @@ void tc_rs_socket_ops2()
 	ret = RsSocketBatchConnect(&conn[0], 1);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].tag[0] = 1;
-	socket_info[i].tag[1] = 2;
-	socket_info[i].tag[2] = 3;
-	socket_info[i].tag[3] = 4;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].tag[0] = 1;
+	socketInfo[i].tag[1] = 2;
+	socketInfo[i].tag[2] = 3;
+	socketInfo[i].tag[3] = 4;
 
 	{
 		/* ===RsGetSockets ut begin=== */
 		struct RsConnCb *connCb;
-		struct RsConnInfo *conn_tmp, *conn_tmp2;
-		int state_tmp = 0;
-		ret = RsDev2conncb(dev_id, &connCb);
-		RS_LIST_GET_HEAD_ENTRY(conn_tmp, conn_tmp2, &connCb->clientConnList, list, struct RsConnInfo);
-		for(; (&conn_tmp->list) != &connCb->clientConnList;
-            conn_tmp = conn_tmp2, conn_tmp2 = list_entry(conn_tmp2->list.next, struct RsConnInfo, list)) {
-			if (conn_tmp->serverIp.binAddr.addr.s_addr == socket_info[i].localIp.addr.s_addr) {
-				state_tmp = conn_tmp->state;
+		struct RsConnInfo *connTmp, *connTmp2;
+		int stateTmp = 0;
+		ret = RsDev2conncb(devId, &connCb);
+		RS_LIST_GET_HEAD_ENTRY(connTmp, connTmp2, &connCb->clientConnList, list, struct RsConnInfo);
+		for(; (&connTmp->list) != &connCb->clientConnList;
+            connTmp = connTmp2, connTmp2 = list_entry(connTmp2->list.next, struct RsConnInfo, list)) {
+			if (connTmp->serverIp.binAddr.addr.s_addr == socketInfo[i].localIp.addr.s_addr) {
+				stateTmp = connTmp->state;
 				break;
 			}
 		}
-		rs_ut_msg("ori state:%d\n", state_tmp);
-		conn_tmp->state = RS_CONN_STATE_INIT;
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
-		conn_tmp->state = state_tmp;
+		rs_ut_msg("ori state:%d\n", stateTmp);
+		connTmp->state = RS_CONN_STATE_INIT;
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
+		connTmp->state = stateTmp;
 		mocker_clean();
 
 		/* wrong server ip address */
-		socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.4");
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
-		socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+		socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.4");
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
+		socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
 
-		rs_ut_msg("conn_tmp->state:%d\n", conn_tmp->state);
-		conn_tmp->state = RS_CONN_STATE_CONNECTED;
+		rs_ut_msg("conn_tmp->state:%d\n", connTmp->state);
+		connTmp->state = RS_CONN_STATE_CONNECTED;
 		mocker((stub_fn_t)send, 10, SOCK_CONN_TAG_SIZE);
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
-		conn_tmp->state = state_tmp;
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
+		connTmp->state = stateTmp;
 		mocker_clean();
 
-		conn_tmp->state = RS_CONN_STATE_TIMEOUT;
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
-		conn_tmp->state = state_tmp;
+		connTmp->state = RS_CONN_STATE_TIMEOUT;
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
+		connTmp->state = stateTmp;
 		mocker_clean();
 
-		conn_tmp->state = RS_CONN_STATE_TAG_SYNC;
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
-		conn_tmp->state = state_tmp;
+		connTmp->state = RS_CONN_STATE_TAG_SYNC;
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
+		connTmp->state = stateTmp;
 		mocker_clean();
 	}
 
-	try_again = 10;
+	tryAgain = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
         	usleep(30000);
-		try_again--;
-	} while (ret != 1 && try_again);
+		tryAgain--;
+	} while (ret != 1 && tryAgain);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	struct RsQpNorm qp_norm = {0};
-	qp_norm.flag = flag;
-	qp_norm.qpMode = qpMode;
-	qp_norm.isExp = 1;
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	struct RsQpNorm qpNorm = {0};
+	qpNorm.flag = flag;
+	qpNorm.qpMode = qpMode;
+	qpNorm.isExp = 1;
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RsQpCreate: qpn %d, ret:%d\n", resp.qpn, ret);
 
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, resp.qpn, socketInfo[i].fd);
 	rs_ut_msg("***RsQpConnectAsync: %d****\n", ret);
 
 	usleep(SLEEP_TIME);
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].tag[0] = 1;
-	socket_info[i].tag[1] = 2;
-	socket_info[i].tag[2] = 3;
-	socket_info[i].tag[3] = 4;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].tag[0] = 1;
+	socketInfo[i].tag[1] = 2;
+	socketInfo[i].tag[2] = 3;
+	socketInfo[i].tag[3] = 4;
 
-	try_again = 10;
+	tryAgain = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
         	usleep(30000);
-		try_again--;
-	} while (ret != 1 && try_again);
+		tryAgain--;
+	} while (ret != 1 && tryAgain);
 	rs_ut_msg("[server]socket_info[1].fd:%d, status:%d\n",
-		socket_info[i].fd, socket_info[i].status);
+		socketInfo[i].fd, socketInfo[i].status);
 
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp2);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp2);
 	EXPECT_INT_EQ(ret, 0);
 	rs_ut_msg("RsQpCreate: qpn2 %d, ret:%d\n", resp2.qpn, ret);
 
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp2.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, resp2.qpn, socketInfo[i].fd);
 
 	usleep(SLEEP_TIME);
 
-	ret = RsQpDestroy(dev_id, rdevIndex, resp2.qpn);
-	ret = RsQpDestroy(dev_id, rdevIndex, resp.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, resp2.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, resp.qpn);
 
-	sock_close[0].fd = socket_info[0].fd;
-	ret = RsSocketBatchClose(0, &sock_close[0], 1);
+	sockClose[0].fd = socketInfo[0].fd;
+	ret = RsSocketBatchClose(0, &sockClose[0], 1);
 
-	sock_close[1].fd = socket_info[1].fd;
-	ret = RsSocketBatchClose(0, &sock_close[1], 1);
+	sockClose[1].fd = socketInfo[1].fd;
+	ret = RsSocketBatchClose(0, &sockClose[1], 1);
 
 	/* ------Resource CLEAN-------- */
 	listen[0].port = 16666;
 	ret = RsSocketListenStop(&listen[0], 1);
 
-	struct RsConnInfo conn_send_inc;
+	struct RsConnInfo connSendInc;
 	mocker((stub_fn_t)send, 10, -1);
-	RsSocketTagSync(&conn_send_inc);
+	RsSocketTagSync(&connSendInc);
 	mocker_clean();
 
 	mocker(RsDrvSocketSend, 10, -EAGAIN);
-	RsSocketTagSync(&conn_send_inc);
+	RsSocketTagSync(&connSendInc);
 	mocker_clean();
 
-	ret = RsRdevDeinit(dev_id, NOTIFY, rdevIndex);
+	ret = RsRdevDeinit(devId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 	cfg.chipId = 0;
 	ret = RsDeinit(&cfg);
@@ -2081,10 +2081,10 @@ void tc_rs_socket_ops2()
 	return;
 }
 
-void tc_rs_socket_close2()
+void TcRsSocketClose2()
 {
 	int ret;
-	uint32_t dev_id = 0;
+	uint32_t devId = 0;
 	unsigned int rdevIndex = 0;
 	int flag = 0; /* RC */
 	struct RsQpResp resp = {0};
@@ -2094,9 +2094,9 @@ void tc_rs_socket_close2()
 	struct RsInitConfig cfg = {0};
 	struct SocketListenInfo listen[2] = {0};
 	struct SocketConnectInfo conn[2] = {0};
-	struct RsSocketCloseInfoT sock_close[2] = {0};
-	struct SocketFdData socket_info[3] = {0};
-    struct rs_cb *rs_cb;
+	struct RsSocketCloseInfoT sockClose[2] = {0};
+	struct SocketFdData socketInfo[3] = {0};
+    struct rs_cb *rsCb;
 
 	/* +++++Resource Prepare+++++ */
 	cfg.chipId = 0;
@@ -2104,9 +2104,9 @@ void tc_rs_socket_close2()
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
-    ret = RsDev2rscb(dev_id, &rs_cb, false);
+    ret = RsDev2rscb(devId, &rsCb, false);
     EXPECT_INT_EQ(ret, 0);
-    rs_cb->connCb.wlistEnable = 0;
+    rsCb->connCb.wlistEnable = 0;
 
 	usleep(SLEEP_TIME);
 
@@ -2132,95 +2132,95 @@ void tc_rs_socket_close2()
 	usleep(SLEEP_TIME);
 
 	i = 0;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].tag[0] = 1;
-	socket_info[i].tag[1] = 2;
-	socket_info[i].tag[2] = 3;
-	socket_info[i].tag[3] = 4;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].remoteIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].tag[0] = 1;
+	socketInfo[i].tag[1] = 2;
+	socketInfo[i].tag[2] = 3;
+	socketInfo[i].tag[3] = 4;
 
-	try_again = 10;
+	tryAgain = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_CLIENT, &socketInfo[i], 1);
         	usleep(30000);
-		try_again--;
-	} while (ret != 1 && try_again);
+		tryAgain--;
+	} while (ret != 1 && tryAgain);
 	rs_ut_msg("%s [client]socket_info[0].fd:%d, status:%d\n",
-		__func__, socket_info[i].fd, socket_info[i].status);
+		__func__, socketInfo[i].fd, socketInfo[i].status);
 
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	struct RsQpNorm qp_norm = {0};
-	qp_norm.flag = flag;
-	qp_norm.qpMode = qpMode;
-	qp_norm.isExp = 1;
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	struct RsQpNorm qpNorm = {0};
+	qpNorm.flag = flag;
+	qpNorm.qpMode = qpMode;
+	qpNorm.isExp = 1;
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	rs_ut_msg("RsQpCreate: qpn %d, ret:%d\n", resp.qpn, ret);
 
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, resp.qpn, socketInfo[i].fd);
 	rs_ut_msg("***RsQpConnectAsync: %d****\n", ret);
 
 	usleep(SLEEP_TIME);
 
 	i = 1;
-	socket_info[i].family = AF_INET;
-	socket_info[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
-	socket_info[i].tag[0] = 1;
-	socket_info[i].tag[1] = 2;
-	socket_info[i].tag[2] = 3;
-	socket_info[i].tag[3] = 4;
+	socketInfo[i].family = AF_INET;
+	socketInfo[i].localIp.addr.s_addr = inet_addr("127.0.0.3");
+	socketInfo[i].tag[0] = 1;
+	socketInfo[i].tag[1] = 2;
+	socketInfo[i].tag[2] = 3;
+	socketInfo[i].tag[3] = 4;
 
-	try_again = 10;
+	tryAgain = 10;
 	do {
-		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socket_info[i], 1);
+		ret = RsGetSockets(RS_CONN_ROLE_SERVER, &socketInfo[i], 1);
         	usleep(30000);
-		try_again--;
-	} while (ret != 1 && try_again);
+		tryAgain--;
+	} while (ret != 1 && tryAgain);
 	rs_ut_msg("[server]socket_info[1].fd:%d, status:%d\n",
-		socket_info[i].fd, socket_info[i].status);
+		socketInfo[i].fd, socketInfo[i].status);
 
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp2);
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp2);
 	rs_ut_msg("RsQpCreate: qpn2 %d, ret:%d\n", resp2.qpn, ret);
 
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp2.qpn, socket_info[i].fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, resp2.qpn, socketInfo[i].fd);
 
 	usleep(1000);
 
-	ret = RsQpDestroy(dev_id, rdevIndex, resp.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, resp.qpn);
 
-	sock_close[0].fd = socket_info[0].fd;
-	ret = RsSocketBatchClose(0, &sock_close[0], 1);
+	sockClose[0].fd = socketInfo[0].fd;
+	ret = RsSocketBatchClose(0, &sockClose[0], 1);
 	usleep(SLEEP_TIME);
 
-	ret = RsQpConnectAsync(dev_id, rdevIndex, resp2.qpn, socket_info[1].fd);
+	ret = RsQpConnectAsync(devId, rdevIndex, resp2.qpn, socketInfo[1].fd);
 
 	void* addr;
 	addr = malloc(RS_TEST_MEM_SIZE);
-	struct RdmaMrRegInfo mr_reg_info = {0};
-	mr_reg_info.addr = addr;
-	mr_reg_info.len = RS_TEST_MEM_SIZE;
-	mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
-	ret = RsMrReg(dev_id, rdevIndex, resp2.qpn, &mr_reg_info);
+	struct RdmaMrRegInfo mrRegInfo = {0};
+	mrRegInfo.addr = addr;
+	mrRegInfo.len = RS_TEST_MEM_SIZE;
+	mrRegInfo.access = RS_ACCESS_LOCAL_WRITE;
+	ret = RsMrReg(devId, rdevIndex, resp2.qpn, &mrRegInfo);
 	EXPECT_INT_EQ(ret, 0);
 	free(addr);
 
-	sock_close[1].fd = socket_info[1].fd;
-	ret = RsSocketBatchClose(0, &sock_close[1], 1);
+	sockClose[1].fd = socketInfo[1].fd;
+	ret = RsSocketBatchClose(0, &sockClose[1], 1);
 
-	ret = RsQpDestroy(dev_id, rdevIndex, resp2.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, resp2.qpn);
 
 	/* ------Resource CLEAN-------- */
 	listen[0].port = 16666;
 	ret = RsSocketListenStop(&listen[0], 1);
 
-	ret = RsRdevDeinit(dev_id, NOTIFY, rdevIndex);
+	ret = RsRdevDeinit(devId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
 	ret = RsDeinit(&cfg);
@@ -2230,122 +2230,122 @@ void tc_rs_socket_close2()
 	return;
 
 }
-void tc_rs_abnormal2()
+void TcRsAbnormal2()
 {
 	int ret;
-	uint32_t dev_id = 0;
+	uint32_t devId = 0;
 	uint32_t rdevIndex = 0;
-	uint32_t err_dev_id = 10;
+	uint32_t errDevId = 10;
 	struct RsInitConfig cfg = {0};
 	struct RsQpResp resp = {0};
 	uint32_t qpMode = 1;
-	struct RsQpCb *qp_cb = NULL;
+	struct RsQpCb *qpCb = NULL;
 	char buf[64] = {0};
 	uint32_t *cmd;
-	struct ibv_cq *ib_send_cq_t, *ib_recv_cq_t;
-	unsigned int total_size = 2;
-	unsigned int cur_size = 1;
+	struct ibv_cq *ibSendCqT, *ibRecvCqT;
+	unsigned int totalSize = 2;
+	unsigned int curSize = 1;
 	bool flag = true;
-	char *buf_tmp = NULL;
+	char *bufTmp = NULL;
 
 	/* resource prepare... */
 	cfg.hccpMode = NETWORK_OFFLINE;
 	ret = RsInit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 
-	struct rdev rdev_info = {0};
-	rdev_info.phyId = 0;
-	rdev_info.family = AF_INET;
-	rdev_info.localIp.addr.s_addr = inet_addr("127.0.0.1");
+	struct rdev rdevInfo = {0};
+	rdevInfo.phyId = 0;
+	rdevInfo.family = AF_INET;
+	rdevInfo.localIp.addr.s_addr = inet_addr("127.0.0.1");
 
-	ret = RsRdevInit(rdev_info, NOTIFY, &rdevIndex);
+	ret = RsRdevInit(rdevInfo, NOTIFY, &rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
-	struct RsQpNorm qp_norm = {0};
-	qp_norm.flag = flag;
-	qp_norm.qpMode = qpMode;
-	qp_norm.isExp = 1;
-	ret = RsQpCreate(dev_id, rdevIndex, qp_norm, &resp);
+	struct RsQpNorm qpNorm = {0};
+	qpNorm.flag = flag;
+	qpNorm.qpMode = qpMode;
+	qpNorm.isExp = 1;
+	ret = RsQpCreate(devId, rdevIndex, qpNorm, &resp);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsQpn2qpcb(dev_id, rdevIndex, resp.qpn, &qp_cb);
+	ret = RsQpn2qpcb(devId, rdevIndex, resp.qpn, &qpCb);
 	EXPECT_INT_EQ(ret, 0);
 
 	mocker((stub_fn_t)calloc, 10, NULL);
-	ret = RsNotifyMrListAdd(qp_cb, buf);
+	ret = RsNotifyMrListAdd(qpCb, buf);
 	mocker_clean();
 
 	mocker((stub_fn_t)memcpy_s, 10, 1);
-	ret = RsNotifyMrListAdd(qp_cb, buf);
+	ret = RsNotifyMrListAdd(qpCb, buf);
 	mocker_clean();
 
 	cmd = (uint32_t *)buf;
 	*cmd = RS_CMD_QP_INFO;
 	mocker((stub_fn_t)memcpy_s, 10, 1);
-	RsEpollRecvHandle(qp_cb, buf, 64);
+	RsEpollRecvHandle(qpCb, buf, 64);
 	mocker_clean();
 
 	mocker((stub_fn_t)RsQpStateModify, 10, 1);
-	RsEpollRecvHandle(qp_cb, buf, 64);
+	RsEpollRecvHandle(qpCb, buf, 64);
 	mocker_clean();
 
 	*cmd = RS_CMD_MR_INFO;
 	mocker((stub_fn_t)calloc, 10, NULL);
-	RsEpollRecvHandle(qp_cb, buf, 64);
+	RsEpollRecvHandle(qpCb, buf, 64);
 	mocker_clean();
 
 	mocker((stub_fn_t)memcpy_s, 10, 1);
-	RsEpollRecvHandle(qp_cb, buf, 64);
+	RsEpollRecvHandle(qpCb, buf, 64);
 	mocker_clean();
 
 	/* unknown cmd */
 	*cmd = RS_CMD_QP_INFO + 444;
-	RsEpollRecvHandle(qp_cb, buf, 64);
+	RsEpollRecvHandle(qpCb, buf, 64);
 
 	mocker((stub_fn_t)memcpy_s, 10, 1);
-	RsEpollRecvHandleRemain(qp_cb, total_size, cur_size, flag, buf_tmp);
+	RsEpollRecvHandleRemain(qpCb, totalSize, curSize, flag, bufTmp);
 	mocker_clean();
 	mocker((stub_fn_t)ibv_create_cq, 10, NULL);
-	ib_send_cq_t = qp_cb->ibSendCq;
-	ib_recv_cq_t = qp_cb->ibRecvCq;
-	ret = RsDrvCreateCq(qp_cb, 0);
+	ibSendCqT = qpCb->ibSendCq;
+	ibRecvCqT = qpCb->ibRecvCq;
+	ret = RsDrvCreateCq(qpCb, 0);
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker_ret((stub_fn_t)ibv_create_cq , 1, NULL, 0);
 	mocker((stub_fn_t)ibv_destroy_cq, 10, 0);
-	ret = RsDrvCreateCq(qp_cb, 0);
-	qp_cb->ibSendCq = ib_send_cq_t;
-	qp_cb->ibRecvCq = ib_recv_cq_t;
+	ret = RsDrvCreateCq(qpCb, 0);
+	qpCb->ibSendCq = ibSendCqT;
+	qpCb->ibRecvCq = ibRecvCqT;
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker_ret((stub_fn_t)ibv_create_cq , 1, NULL, 0);
 	mocker((stub_fn_t)ibv_destroy_cq, 10, 0);
-	ret = RsDrvCreateCq(qp_cb, 0);
-	qp_cb->ibSendCq = ib_send_cq_t;
-	qp_cb->ibRecvCq = ib_recv_cq_t;
+	ret = RsDrvCreateCq(qpCb, 0);
+	qpCb->ibSendCq = ibSendCqT;
+	qpCb->ibRecvCq = ibRecvCqT;
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker_ret((stub_fn_t)RsIbvExpCreateCq , 1, NULL, 0);
 	mocker((stub_fn_t)ibv_destroy_cq, 10, 0);
-	ret = RsDrvCreateCq(qp_cb, 1);
-	qp_cb->ibSendCq = ib_send_cq_t;
-	qp_cb->ibRecvCq = ib_recv_cq_t;
+	ret = RsDrvCreateCq(qpCb, 1);
+	qpCb->ibSendCq = ibSendCqT;
+	qpCb->ibRecvCq = ibRecvCqT;
 	EXPECT_INT_NE(ret, 0);
 	mocker_clean();
 
 	mocker((stub_fn_t)RsIbvQueryQp, 10, 1);
-	RsQpStateModify(qp_cb);
+	RsQpStateModify(qpCb);
 	mocker_clean();
 
 	mocker((stub_fn_t)ibv_modify_qp, 10, 1);
-	RsQpStateModify(qp_cb);
+	RsQpStateModify(qpCb);
 	mocker_clean();
 
 	mocker_ret((stub_fn_t)ibv_modify_qp , 0, 1, 0);
-	RsQpStateModify(qp_cb);
+	RsQpStateModify(qpCb);
 	mocker_clean();
 
 	mocker((stub_fn_t)pthread_mutex_lock, 10, 1);
@@ -2354,35 +2354,35 @@ void tc_rs_abnormal2()
 	(void)pthread_mutex_unlock(NULL);
 	mocker_clean();
 
-	RsDrvPollCqHandle(qp_cb);
+	RsDrvPollCqHandle(qpCb);
 
-	mocker_invoke((stub_fn_t)ibv_get_cq_event, stub_ibv_get_cq_event, 10);
-	ib_send_cq_t = qp_cb->ibSendCq;
-	qp_cb->ibSendCq = NULL;
+	mocker_invoke((stub_fn_t)ibv_get_cq_event, StubIbvGetCqEvent, 10);
+	ibSendCqT = qpCb->ibSendCq;
+	qpCb->ibSendCq = NULL;
 
 	/* reach end ? */
 	mocker((stub_fn_t)ibv_req_notify_cq, 10, 0);
 	mocker((stub_fn_t)ibv_poll_cq, 10, 0);
-	RsDrvPollCqHandle(qp_cb);
+	RsDrvPollCqHandle(qpCb);
 	mocker_clean();
 
-	mocker_invoke((stub_fn_t)ibv_get_cq_event, stub_ibv_get_cq_event, 10);
+	mocker_invoke((stub_fn_t)ibv_get_cq_event, StubIbvGetCqEvent, 10);
 	mocker((stub_fn_t)ibv_req_notify_cq, 10, 1);
-	RsDrvPollCqHandle(qp_cb);
+	RsDrvPollCqHandle(qpCb);
 	mocker_clean();
 
-	mocker_invoke((stub_fn_t)ibv_get_cq_event, stub_ibv_get_cq_event, 10);
+	mocker_invoke((stub_fn_t)ibv_get_cq_event, StubIbvGetCqEvent, 10);
 	mocker((stub_fn_t)ibv_poll_cq, 10, -1);
-	RsDrvPollCqHandle(qp_cb);
+	RsDrvPollCqHandle(qpCb);
 	mocker_clean();
 
-	qp_cb->ibSendCq = ib_send_cq_t;
+	qpCb->ibSendCq = ibSendCqT;
 
 	/* resource free... */
-	ret = RsQpDestroy(dev_id, rdevIndex, resp.qpn);
+	ret = RsQpDestroy(devId, rdevIndex, resp.qpn);
 	EXPECT_INT_EQ(ret, 0);
 
-	ret = RsRdevDeinit(dev_id, NOTIFY, rdevIndex);
+	ret = RsRdevDeinit(devId, NOTIFY, rdevIndex);
 	EXPECT_INT_EQ(ret, 0);
 
 	ret = RsDeinit(&cfg);
@@ -2391,36 +2391,36 @@ void tc_rs_abnormal2()
 	return;
 }
 
-struct RsConnInfo g_conn = {0};
+struct RsConnInfo gConn = {0};
 
 int stub_RsFd2conn(int fd, struct RsConnInfo **conn)
 {
 
-    *conn = &g_conn;
+    *conn = &gConn;
     return 0;
 }
 
-void tc_rs_socket_nodeid2vnic()
+void TcRsSocketNodeid2vnic()
 {
     int ret;
     ret = RsSocketNodeid2vnic(0, NULL);
     EXPECT_INT_EQ(-EINVAL, ret);
 }
 
-void tc_rs_server_valid_async_init()
+void TcRsServerValidAsyncInit()
 {
     int ret;
     struct RsConnInfo conn;
-    struct SocketWlistInfoT white_list_expect;
+    struct SocketWlistInfoT whiteListExpect;
     conn.state = 7;
     strcpy(conn.tag, "1234");
     conn.clientIp.family = AF_INET;
     conn.clientIp.binAddr.addr.s_addr = 16;
-    ret = RsServerValidAsyncInit(0, &conn, &white_list_expect);
+    ret = RsServerValidAsyncInit(0, &conn, &whiteListExpect);
     EXPECT_INT_EQ(0, ret);
 }
 
-void tc_rs_connect_handle()
+void TcRsConnectHandle()
 {
     int ret;
     struct RsInitConfig cfg;
@@ -2453,42 +2453,42 @@ void tc_rs_connect_handle()
     return;
 }
 
-int replace_rs_qpn2qpcb(unsigned int phyId, unsigned int rdevIndex, uint32_t qpn, struct RsQpCb **qp_cb)
+int ReplaceRsQpn2qpcb(unsigned int phyId, unsigned int rdevIndex, uint32_t qpn, struct RsQpCb **qpCb)
 {
-	static struct RsQpCb a_qp_cb;
-	*qp_cb = &a_qp_cb;
+	static struct RsQpCb aQpCb;
+	*qpCb = &aQpCb;
 	return 0;
 }
 
-void tc_rs_get_qp_context()
+void TcRsGetQpContext()
 {
-	void *qp, *send_cq, *recv_cq;
-	RsGetQpContext(RS_MAX_DEV_NUM, 0, 0, &qp, &send_cq, &recv_cq);
+	void *qp, *sendCq, *recvCq;
+	RsGetQpContext(RS_MAX_DEV_NUM, 0, 0, &qp, &sendCq, &recvCq);
 
 	mocker(RsQpn2qpcb, 1, -1);
-	RsGetQpContext(0, 0, 0, &qp, &send_cq, &recv_cq);
+	RsGetQpContext(0, 0, 0, &qp, &sendCq, &recvCq);
 	mocker_clean();
 
-	mocker_invoke(RsQpn2qpcb, replace_rs_qpn2qpcb, 1);
-	RsGetQpContext(0, 0, 0, &qp, &send_cq, &recv_cq);
+	mocker_invoke(RsQpn2qpcb, ReplaceRsQpn2qpcb, 1);
+	RsGetQpContext(0, 0, 0, &qp, &sendCq, &recvCq);
 	mocker_clean();
 }
 
-void tc_tls_abnormal1()
+void TcTlsAbnormal1()
 {
     int ret;
-    uint32_t dev_id = 0;
+    uint32_t devId = 0;
     int flag = 0; /* RC */
     uint32_t qpn, qpn2;
     int i;
     struct RsInitConfig cfg = {0};
     struct SocketListenInfo listen[2] = {0};
     struct SocketConnectInfo conn[2] = {0};
-    struct RsSocketCloseInfoT sock_close[2] = {0};
-    struct SocketFdData socket_info[3] = {0};
-    struct SocketWlistInfoT white_list;
-    white_list.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
-    white_list.connLimit = 1;
+    struct RsSocketCloseInfoT sockClose[2] = {0};
+    struct SocketFdData socketInfo[3] = {0};
+    struct SocketWlistInfoT whiteList;
+    whiteList.remoteIp.addr.s_addr = inet_addr("127.0.0.1");
+    whiteList.connLimit = 1;
 
     cfg.chipId = 0;
     cfg.hccpMode = NETWORK_OFFLINE;
@@ -2499,20 +2499,20 @@ void tc_tls_abnormal1()
     mocker_invoke((stub_fn_t)RsFd2conn, stub_RsFd2conn, 10);
     mocker((stub_fn_t)SSL_write, 10, -1);
     mocker((stub_fn_t)SSL_get_error, 10, 2);
-    RsDrvSocketSend(socket_info[0].fd, "1", 1, 0);
+    RsDrvSocketSend(socketInfo[0].fd, "1", 1, 0);
     mocker_clean();
 
     mocker_invoke((stub_fn_t)RsFd2conn, stub_RsFd2conn, 10);
     mocker((stub_fn_t)SSL_read, 10, -1);
     mocker((stub_fn_t)SSL_get_error, 10, 2);
-    RsDrvSocketRecv(socket_info[1].fd, "1", 1, 0);
+    RsDrvSocketRecv(socketInfo[1].fd, "1", 1, 0);
     mocker_clean();
 
     mocker((stub_fn_t)RsFd2conn, 10, -1);
-    RsDrvSocketRecv(socket_info[1].fd, "1", 1, 0);
+    RsDrvSocketRecv(socketInfo[1].fd, "1", 1, 0);
     mocker_clean();
     gRsCb->sslEnable = 0;
-    RsDrvSocketRecv(socket_info[1].fd, "1", 1, 0);
+    RsDrvSocketRecv(socketInfo[1].fd, "1", 1, 0);
 
     mocker((stub_fn_t)fcntl, 10, -1);
     ret = RsSetFdNonblock(-1);
@@ -2523,51 +2523,51 @@ void tc_tls_abnormal1()
     ret = RsSetFdNonblock(-1);
     EXPECT_INT_EQ(ret, -EFILEOPER);
 
-    struct RsConnInfo conn_ssl;
-    conn_ssl.ssl = NULL;
-    conn_ssl.clientIp.family = AF_INET;
+    struct RsConnInfo connSsl;
+    connSsl.ssl = NULL;
+    connSsl.clientIp.family = AF_INET;
     mocker((stub_fn_t)SSL_do_handshake, 10, -1);
-    ret = RsSocketSslConnect(&conn_ssl, gRsCb);
+    ret = RsSocketSslConnect(&connSsl, gRsCb);
     EXPECT_INT_EQ(ret, -EAGAIN);
     mocker_clean();
 
     mocker((stub_fn_t)SSL_get_verify_result, 10, -1);
-    ret = RsSocketSslConnect(&conn_ssl, gRsCb);
+    ret = RsSocketSslConnect(&connSsl, gRsCb);
     EXPECT_INT_EQ(ret, -EINVAL);
     mocker_clean();
 
     mocker((stub_fn_t)fcntl, 10, -1);
-    ret = RsSocketStateReset(0, &conn_ssl, 1, gRsCb);
+    ret = RsSocketStateReset(0, &connSsl, 1, gRsCb);
     EXPECT_INT_EQ(ret, -ESYSFUNC);
     mocker_clean();
 
     mocker((stub_fn_t)SSL_set_fd, 10, -1);
-    ret = RsSocketStateConnected(&conn_ssl, 1, gRsCb);
+    ret = RsSocketStateConnected(&connSsl, 1, gRsCb);
     EXPECT_INT_EQ(ret, -EINVAL);
     mocker_clean();
 
     mocker((stub_fn_t)SSL_do_handshake, 10, -1);
-    ret = RsSocketStateSslFdBind(&conn_ssl, 1, gRsCb);
+    ret = RsSocketStateSslFdBind(&connSsl, 1, gRsCb);
     EXPECT_INT_EQ(ret, -EAGAIN);
     mocker_clean();
 
-    conn_ssl.state = RS_CONN_STATE_SSL_BIND_FD;
-    ret = RsSocketConnectAsync(&conn_ssl, gRsCb);
+    connSsl.state = RS_CONN_STATE_SSL_BIND_FD;
+    ret = RsSocketConnectAsync(&connSsl, gRsCb);
     EXPECT_INT_EQ(ret, 0);
 
-    struct RsAcceptInfo ssl_info;
+    struct RsAcceptInfo sslInfo;
     mocker((stub_fn_t)SSL_do_handshake, 10, -1);
-    RsDoSslHandshake(&ssl_info, gRsCb);
+    RsDoSslHandshake(&sslInfo, gRsCb);
     mocker_clean();
 
     mocker((stub_fn_t)SSL_do_handshake, 10, -1);
     mocker((stub_fn_t)SSL_get_error, 10, SSL_ERROR_WANT_WRITE);
-    RsDoSslHandshake(&ssl_info, gRsCb);
+    RsDoSslHandshake(&sslInfo, gRsCb);
     mocker_clean();
 
     mocker((stub_fn_t)SSL_do_handshake, 10, -1);
     mocker((stub_fn_t)SSL_get_error, 10, SSL_ERROR_WANT_READ);
-    RsDoSslHandshake(&ssl_info, gRsCb);
+    RsDoSslHandshake(&sslInfo, gRsCb);
     mocker_clean();
 
     mocker((stub_fn_t)calloc, 10, 0);
@@ -2575,7 +2575,7 @@ void tc_tls_abnormal1()
     EXPECT_INT_EQ(ret, -ENOMEM);
 
     mocker((stub_fn_t)SSL_new, 10, 0);
-    ret = RsDrvSslBindFd(&conn_ssl, 1);
+    ret = RsDrvSslBindFd(&connSsl, 1);
     EXPECT_INT_EQ(ret, -ENOMEM);
     mocker_clean();
 
@@ -2591,52 +2591,52 @@ void tc_tls_abnormal1()
     EXPECT_INT_EQ(ret, -EFAULT);
     mocker_clean();
 
-    struct tls_cert_mng_info mng_info;
-    struct rs_cb err_rscb;
+    struct tls_cert_mng_info mngInfo;
+    struct rs_cb errRscb;
 	struct RsCerts certs;
-	struct tls_ca_new_certs new_certs[RS_SSL_NEW_CERT_CB_NUM];
-    err_rscb.chipId = 0;
-    mng_info.cert_count = 0;
-    mng_info.total_cert_len = 100;
-    ret = rs_ssl_put_certs(&err_rscb, &mng_info, &certs, &new_certs, NULL);
+	struct tls_ca_new_certs newCerts[RS_SSL_NEW_CERT_CB_NUM];
+    errRscb.chipId = 0;
+    mngInfo.cert_count = 0;
+    mngInfo.total_cert_len = 100;
+    ret = rs_ssl_put_certs(&errRscb, &mngInfo, &certs, &newCerts, NULL);
     EXPECT_INT_EQ(ret, -EINVAL);
     mocker_clean();
 
     mocker((stub_fn_t)X509_STORE_new, 10, 0);
-    ret = rs_ssl_check_cert_chain(&mng_info, &certs);
+    ret = rs_ssl_check_cert_chain(&mngInfo, &certs);
     EXPECT_INT_EQ(ret, -ENOMEM);
     mocker_clean();
 
     mocker((stub_fn_t)X509_STORE_CTX_new, 10, 0);
-    ret = rs_ssl_check_cert_chain(&mng_info, &certs);
+    ret = rs_ssl_check_cert_chain(&mngInfo, &certs);
     EXPECT_INT_EQ(ret, -ENOMEM);
     mocker_clean();
 
     int rs_ssl_verify_cert_chain(X509_STORE_CTX *ctx, X509_STORE *store,
-        struct RsCerts *certs, STACK_OF(X509) *cert_chain, struct tls_cert_mng_info *mng_info);
+        struct RsCerts *certs, STACK_OF(X509) *certChain, struct tls_cert_mng_info *mngInfo);
     mocker((stub_fn_t)rs_ssl_verify_cert_chain, 10, -1);
-    ret = rs_ssl_check_cert_chain(&mng_info, &certs);
+    ret = rs_ssl_check_cert_chain(&mngInfo, &certs);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 
     mocker((stub_fn_t)rs_ssl_verify_cert_chain, 10, -1);
-    ret = rs_ssl_check_cert_chain(&mng_info, &certs);
+    ret = rs_ssl_check_cert_chain(&mngInfo, &certs);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 
-    X509 *tls_load_cert(const uint8_t *inbuf, uint32_t buf_len, int type);
+    X509 *tls_load_cert(const uint8_t *inbuf, uint32_t bufLen, int type);
     mocker((stub_fn_t)tls_load_cert, 10, 0);
-    ret = rs_ssl_check_cert_chain(&mng_info, &certs);
+    ret = rs_ssl_check_cert_chain(&mngInfo, &certs);
     EXPECT_INT_EQ(ret, -EINVAL);
     mocker_clean();
 
     mocker((stub_fn_t)X509_STORE_CTX_init, 10, 0);
-    ret = rs_ssl_check_cert_chain(&mng_info, &certs);
+    ret = rs_ssl_check_cert_chain(&mngInfo, &certs);
     EXPECT_INT_EQ(ret, -EINVAL);
     mocker_clean();
 
     mocker((stub_fn_t)X509_verify_cert, 10, 0);
-    ret = rs_ssl_check_cert_chain(&mng_info, &certs);
+    ret = rs_ssl_check_cert_chain(&mngInfo, &certs);
     EXPECT_INT_EQ(ret, -EINVAL);
     mocker_clean();
 
@@ -2661,27 +2661,27 @@ void tc_tls_abnormal1()
     EXPECT_INT_EQ(ret, 0);
 
     mocker((stub_fn_t)calloc, 10, 0);
-    err_rscb.skidSubjectCb = NULL;
-    ret = rs_ssl_skid_get_from_chain(&err_rscb, NULL, NULL, NULL);
+    errRscb.skidSubjectCb = NULL;
+    ret = rs_ssl_skid_get_from_chain(&errRscb, NULL, NULL, NULL);
     EXPECT_INT_EQ(ret, -ENOMEM);
     mocker_clean();
 
-    mng_info.cert_count = 2;
+    mngInfo.cert_count = 2;
     mocker((stub_fn_t)BIO_new_mem_buf, 10, 0);
-    ret = rs_ssl_skid_get_from_chain(&err_rscb, &mng_info, &certs, &new_certs);
+    ret = rs_ssl_skid_get_from_chain(&errRscb, &mngInfo, &certs, &newCerts);
     EXPECT_INT_EQ(ret, -EINVAL);
     mocker_clean();
 
     mocker((stub_fn_t)tls_get_user_config, 10, -1);
-    ret = rs_ssl_init(&err_rscb);
+    ret = rs_ssl_init(&errRscb);
     EXPECT_INT_EQ(ret, -1);
     mocker_clean();
 
-	mng_info.ky_len = RS_SSL_PRI_LEN + 1;
+	mngInfo.ky_len = RS_SSL_PRI_LEN + 1;
 	mocker((stub_fn_t)rs_get_pridata, 10, 0);
-	ret = rs_get_pk(&err_rscb, &mng_info, NULL);
+	ret = rs_get_pk(&errRscb, &mngInfo, NULL);
 	EXPECT_INT_EQ(ret, -EINVAL);
-	mng_info.ky_len = 0;
+	mngInfo.ky_len = 0;
 	mocker_clean();
 
     ret = RsDeinit(&cfg);
@@ -2689,54 +2689,54 @@ void tc_tls_abnormal1()
     rs_ut_msg("!!!!!!tc_tls_abnormal1: RsDeinit\n");
 }
 
-int stub_dl_hal_get_chip_info_910_93(unsigned int dev_id, halChipInfo *chip_info)
+int StubDlHalGetChipInfo91093(unsigned int devId, halChipInfo *chipInfo)
 {
-    strcpy(chip_info->name, "910_93xx");
+    strcpy(chipInfo->name, "910_93xx");
 
     return 0;
 }
 
-void tc_rs_socket_get_bind_by_chip()
+void TcRsSocketGetBindByChip()
 {
 	unsigned int chipId = 0;
-	bool bind_ip = false;
+	bool bindIp = false;
 
 	mocker((stub_fn_t)DlDrvDeviceGetIndexByPhyId, 1, -1);
-	RsSocketGetBindByChip(chipId, &bind_ip);
+	RsSocketGetBindByChip(chipId, &bindIp);
 	mocker_clean();
 
 	mocker((stub_fn_t)DlDrvDeviceGetIndexByPhyId, 1, 0);
 	mocker((stub_fn_t)DlHalGetDeviceInfo, 1, -2);
-	RsSocketGetBindByChip(chipId, &bind_ip);
+	RsSocketGetBindByChip(chipId, &bindIp);
 	mocker_clean();
 
 	mocker((stub_fn_t)DlDrvDeviceGetIndexByPhyId, 1, 0);
 	mocker((stub_fn_t)DlHalGetDeviceInfo, 1, 0);
 	mocker((stub_fn_t)DlHalGetChipInfo, 1, -2);
-	RsSocketGetBindByChip(chipId, &bind_ip);
+	RsSocketGetBindByChip(chipId, &bindIp);
 	mocker_clean();
 
 	mocker(DlDrvDeviceGetIndexByPhyId, 1, 0);
 	mocker(DlHalGetDeviceInfo, 1, 0);
-	mocker_invoke(DlHalGetChipInfo, stub_dl_hal_get_chip_info_910_93, 100);
-	RsSocketGetBindByChip(chipId, &bind_ip);
-	EXPECT_INT_EQ(bind_ip, true);
+	mocker_invoke(DlHalGetChipInfo, StubDlHalGetChipInfo91093, 100);
+	RsSocketGetBindByChip(chipId, &bindIp);
+	EXPECT_INT_EQ(bindIp, true);
 	mocker_clean();
 }
 
-int stub_rs_get_conn_info(struct RsConnCb *connCb, struct SocketConnectInfo *conn,
-    struct RsConnInfo **conn_info, int server_port)
+int StubRsGetConnInfo(struct RsConnCb *connCb, struct SocketConnectInfo *conn,
+    struct RsConnInfo **connInfo, int serverPort)
 {
-    (*conn_info) = g_conn_info;
+    (*connInfo) = gConnInfo;
 
     return 0;
 }
 
-void tc_rs_socket_batch_abort()
+void TcRsSocketBatchAbort()
 {
     struct SocketConnectInfo conn[1] = { 0 };
     gRsCb = malloc(sizeof(struct rs_cb));
-    g_conn_info = malloc(sizeof(struct RsConnInfo));
+    gConnInfo = malloc(sizeof(struct RsConnInfo));
     int ret = 0;
 
     mocker_clean();
@@ -2749,13 +2749,13 @@ void tc_rs_socket_batch_abort()
     mocker_clean();
     mocker(pthread_mutex_lock, 10, 0);
     mocker(pthread_mutex_unlock, 10, 0);
-    mocker_invoke(RsGetConnInfo, stub_rs_get_conn_info, 1);
+    mocker_invoke(RsGetConnInfo, StubRsGetConnInfo, 1);
     mocker(setsockopt, 1, -1);
     mocker(RsSocketCloseFd, 1, -1);
 
-    g_conn_info->state = 2;
-    g_conn_info->list.prev = &g_conn_info->list;
-    g_conn_info->list.next = &g_conn_info->list;
+    gConnInfo->state = 2;
+    gConnInfo->list.prev = &gConnInfo->list;
+    gConnInfo->list.next = &gConnInfo->list;
     ret = RsSocketBatchAbort(conn, 1);
     EXPECT_INT_EQ(ret, -1);
 
@@ -2765,13 +2765,13 @@ void tc_rs_socket_batch_abort()
 
 int *stub__errno_location()
 {
-    static int err_no = 0;
+    static int errNo = 0;
 
-    err_no = EAGAIN;
-    return &err_no;
+    errNo = EAGAIN;
+    return &errNo;
 }
 
-void tc_rs_socket_send_and_recv_log_test()
+void TcRsSocketSendAndRecvLogTest()
 {
     int ret = 0;
 
@@ -2826,60 +2826,60 @@ void tc_rs_socket_send_and_recv_log_test()
     gRsCb = NULL;
 }
 
-void stub_hccp_time_max_interval(struct timeval *end_time, struct timeval *start_time, float *msec)
+void StubHccpTimeMaxInterval(struct timeval *endTime, struct timeval *startTime, float *msec)
 {
     *msec = 90001.0;
 }
 
-void stub_HccpTimeInterval(struct timeval *end_time, struct timeval *start_time, float *msec)
+void stub_HccpTimeInterval(struct timeval *endTime, struct timeval *startTime, float *msec)
 {
     *msec = 5001.0;
 }
 
-void tc_rs_tcp_recv_tag_in_handle()
+void TcRsTcpRecvTagInHandle()
 {
-    struct RsListenInfo listen_info = {0};
-    struct RsConnInfo conn_tmp = {0};
-    struct RsIpAddrInfo remote_ip = {0};
-    struct rs_cb *rs_cb = NULL;
-    struct RsAcceptInfo accept_info = {0};
+    struct RsListenInfo listenInfo = {0};
+    struct RsConnInfo connTmp = {0};
+    struct RsIpAddrInfo remoteIp = {0};
+    struct rs_cb *rsCb = NULL;
+    struct RsAcceptInfo acceptInfo = {0};
     int ret = 0;
 
     mocker_clean();
     mocker(recv, 1, 0);
-    ret = RsTcpRecvTagInHandle(&listen_info, 0, &conn_tmp, &remote_ip);
+    ret = RsTcpRecvTagInHandle(&listenInfo, 0, &connTmp, &remoteIp);
     EXPECT_INT_EQ(ret, -ESOCKCLOSED);
 
     mocker_clean();
     mocker(recv, 1, 1);
-    mocker_invoke(HccpTimeInterval, stub_hccp_time_max_interval, 1);
-    ret = RsTcpRecvTagInHandle(&listen_info, 0, &conn_tmp, &remote_ip);
+    mocker_invoke(HccpTimeInterval, StubHccpTimeMaxInterval, 1);
+    ret = RsTcpRecvTagInHandle(&listenInfo, 0, &connTmp, &remoteIp);
     EXPECT_INT_EQ(ret, -ETIME);
 
     mocker_clean();
     mocker(recv, 1, 256);
     mocker_invoke(HccpTimeInterval, stub_HccpTimeInterval, 1);
-    ret = RsTcpRecvTagInHandle(&listen_info, 0, &conn_tmp, &remote_ip);
+    ret = RsTcpRecvTagInHandle(&listenInfo, 0, &connTmp, &remoteIp);
     EXPECT_INT_EQ(ret, 0);
 
     mocker_clean();
     mocker(RsTcpRecvTagInHandle, 1, 1);
     mocker(close, 1, 1);
-    RsEpollEventTcpListenInHandle(rs_cb, &listen_info, 1, &remote_ip);
+    RsEpollEventTcpListenInHandle(rsCb, &listenInfo, 1, &remoteIp);
 
     mocker_clean();
     mocker(RsTcpRecvTagInHandle, 1, 0);
     mocker(RsWlistCheckConnAdd, 1, 1);
-    RsEpollEventTcpListenInHandle(rs_cb, &listen_info, 1, &remote_ip);
+    RsEpollEventTcpListenInHandle(rsCb, &listenInfo, 1, &remoteIp);
     mocker_clean();
 
     mocker((stub_fn_t)SSL_read, 10, -1);
     mocker_invoke(HccpTimeInterval, stub_HccpTimeInterval, 1);
-    RsSslRecvTagInHandle(&accept_info, &conn_tmp);
+    RsSslRecvTagInHandle(&acceptInfo, &connTmp);
     mocker_clean();
 }
 
-void tc_rs_server_valid_async_abnormal()
+void TcRsServerValidAsyncAbnormal()
 {
     struct RsConnInfo conn = {0};
     struct RsConnCb connCb = {0};
@@ -2895,7 +2895,7 @@ void tc_rs_server_valid_async_abnormal()
     mocker_clean();
 }
 
-void tc_rs_server_valid_async_abnormal_01()
+void TcRsServerValidAsyncAbnormal01()
 {
     struct RsConnInfo conn = {0};
     struct RsConnCb connCb = {0};
@@ -2905,18 +2905,18 @@ void tc_rs_server_valid_async_abnormal_01()
     mocker(RsFindWhiteList, 1, 0);
     mocker(pthread_mutex_lock, 1, 0);
     mocker(pthread_mutex_unlock, 1, 0);
-	mocker_invoke((stub_fn_t)RsFindWhiteListNode, stub_rs_find_white_list_node, 1);
+	mocker_invoke((stub_fn_t)RsFindWhiteListNode, StubRsFindWhiteListNode, 1);
     mocker(RsServerSendWlistCheckResult, 1, -1);
     RsServerValidAsync(0, &connCb, &conn);
     mocker_clean();
 }
 
-void tc_rs_net_api_init_fail()
+void TcRsNetApiInitFail()
 {
     int ret = 0;
 
-	mocker(rs_net_adapt_api_init, 1, -1);
-    ret = rs_net_api_init();
+	mocker(RsNetAdaptApiInit, 1, -1);
+    ret = RsNetApiInit();
     EXPECT_INT_EQ(-1, ret);
 	mocker_clean();
 }

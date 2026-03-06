@@ -379,7 +379,7 @@ HcclResult ExecutorBase::Prepare(void *inputMemPtr, DeviceMem &cclInMem, DeviceM
     const Stream &stream, std::vector<Stream> &subStreams,
     std::vector<std::shared_ptr<LocalNotify>> &meshSignal, std::vector<std::shared_ptr<LocalNotify>> &meshSignalAux,
     GroupSlicesInfo &grouSlicesInfo, const HcclReduceOp reductionOp, u32 all2allOffset, const HcclDataType dataType,
-    bool isNeedSpaceBorrow, bool reverseMemUsage)
+    bool isNeedSpaceBorrow, bool reverseMemUsage, bool isA3CrossNode)
 {
     (void) inputMemPtr;
     (void) all2allOffset;
@@ -1080,4 +1080,12 @@ HcclResult ExecutorBase::GetNslbAdjInfo(const u32 rank, const u32 rankSize,
     (void) nslbAdjInfo;
     return HCCL_SUCCESS;
 }
+
+HcclResult ExecutorBase::GetHcclOffsetDstRanksMap(std::unordered_map<uint64_t, std::vector<uint32_t>>& hcclOffsetDstRanksMap) const
+{
+    UNUSED_PARAM(hcclOffsetDstRanksMap);
+    HCCL_ERROR("[ExecutorBase][GetHcclOffsetDstRanksMap] not supported for current template!");
+    return HCCL_E_NOT_SUPPORT;
+}
+
 }  // namespace hccl

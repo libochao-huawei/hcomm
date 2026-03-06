@@ -210,9 +210,6 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_broadcast_int8_t", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_INT8},
     {"aiv_broadcast_uint8_t", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_UINT8},
     {"aiv_broadcast_bfloat16_t", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_BFP16},
-    // 同步
-    {"hccl_aiv_sync", HcclCMDType::HCCL_CMD_INVALID, HcclDataType::HCCL_DATA_TYPE_RESERVED},
-    {"hccl_aiv_sync_cn", HcclCMDType::HCCL_CMD_INVALID, HcclDataType::HCCL_DATA_TYPE_RESERVED, KernelArgsType::ARGS_TYPE_SIMPLE},
 };
 
 extern "C" {
@@ -255,7 +252,6 @@ extern "C" {
     extern void aiv_broadcast_int8_t(KERNEL_ARGS_DEF);
     extern void aiv_broadcast_uint8_t(KERNEL_ARGS_DEF);
     extern void aiv_broadcast_bfloat16_t(KERNEL_ARGS_DEF);
-    extern void hccl_aiv_sync(KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_half(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_int16_t(EXTERN_KERNEL_ARGS_DEF);
     extern void aiv_all_to_all_uint16_t(EXTERN_KERNEL_ARGS_DEF);
@@ -373,7 +369,6 @@ std::unordered_map<const char*, aivFunc> aivFuncMap = {
     {"aiv_broadcast_int8_t", aiv_broadcast_int8_t},
     {"aiv_broadcast_uint8_t", aiv_broadcast_uint8_t},
     {"aiv_broadcast_bfloat16_t", aiv_broadcast_bfloat16_t},
-    {"hccl_aiv_sync", hccl_aiv_sync},
 };
 
 std::unordered_map<const char*, aivFuncExtra> aivFuncExtraMap = {
@@ -542,7 +537,7 @@ HcclResult ExecuteKernelLaunchImpl(const AivOpArgs &opArgs, const AivTopoArgs &t
     }
 
     s32 tag = resourceArgs.aivTag;
-    block_num = resourceArgs.numBlocks;
+    numBlocks_ = resourceArgs.numBlocks;
     block_idx = 0;
 
     checker::MemLayout::Global()->InitBlockMem(resourceArgs.numBlocks);

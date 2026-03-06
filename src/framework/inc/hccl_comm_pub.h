@@ -252,6 +252,7 @@ public:
         HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
     HcclResult HcclCalcNumBlocks(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
         std::string &algName, u32 &numBlocks);
+    
     HcclResult HcclGetAlgExecParam(const std::string &tag, u64 count, void *inputPtr, void *outputPtr,
         HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op, 
         void *&commContext, u64 &len, u32 aivCoreLimit);
@@ -323,6 +324,7 @@ public:
     HcclResult SetDeterministicConfig(const u8 deterministic);  // 设置确定性计算配置
     HcclResult SetAivModeConfig(const bool aivMode);  // 设置aiv模式配置
     HcclResult SetOnlyAivModeConfig(const bool isOnlyAiv);
+    HcclResult GetOnlyAivModeConfig(bool &isOnlyAiv);
     HcclResult SetAicpuUnfoldConfig(const bool aicpuUnfold);  // 设置aicpu配置
     HcclResult SetExecTimeOutConfig(const s32 execTimeOut);  // 设置HCCL执行超时时间
     HcclResult SetAlgoConfig(const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoMap);  //设置HCCL_ALGO
@@ -336,6 +338,7 @@ public:
     HcclResult GetCommRankTable(RankTable_t &rankTable);    // 逆向解析获取RankTable_t参数
     HcclResult SetQpQosAttr(u32 trafficClass, u32 serviceLevel); // 设置TC/SL配置
     HcclResult SetHcclQos(u32 hcclQos);
+    u32 GetHcclQos();
 
     std::shared_ptr<struct hcclKernelPlanner> planner {nullptr}; //for group
     void* barrierSendBuf;
@@ -403,14 +406,6 @@ public:
     // for group
     HcclResult SetGroupMode(bool isGroup);
     bool GetGroupMode();
-    HcclResult SetSendIndex(u32 index);
-    HcclResult SetRecvIndex(u32 index);
-    HcclResult SetBufferSliceNum(u32 bufferSliceNum);
-    HcclResult SetNSend(u32 nSend);
-    HcclResult SetNRecv(u32 nRecv);
-    HcclResult GroupPrepareStreamAndNotify(HcclRtStream sendRecvMainStream);
-    HcclResult GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte);
-    HcclResult GroupSubstreamsSync();
     HcclResult RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle);
     HcclResult DeregisterWindow(CommSymWindow winHandle);
     HcclResult GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
@@ -447,6 +442,7 @@ private:
     CommAicpuParam commAicpuParam_;
     aclrtBinHandle binHandle_ = nullptr;
     DevType devType_ = DevType::DEV_TYPE_COUNT;
+    u32 hcclQos_;
 #ifndef CCL_KERNEL_AICPU
     // 独立算子专用成员变量
     IndependentOp independentOp_;
@@ -455,7 +451,6 @@ private:
         std::unique_ptr<CollComm> collComm_{nullptr};
     #endif
 #endif
-
 };
 }  // namespace hccl
 

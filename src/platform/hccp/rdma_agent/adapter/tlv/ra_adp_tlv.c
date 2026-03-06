@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include <stdlib.h>
 #include <errno.h>
@@ -20,7 +20,7 @@
 struct RsTlvOps {
     int (*tlvInit)(unsigned int phyId, unsigned int *bufferSize);
     int (*tlvDeinit)(unsigned int phyId);
-    int (*tlvRequest)(struct TlvRequestMsgHead *head, char *data);
+    int (*tlvRequest)(struct TlvRequestMsgHead *head, char *dataIn, char *dataOut, unsigned int *bufferSize);
 };
 
 struct RsTlvOps gRaRsTlvOps = {
@@ -28,6 +28,13 @@ struct RsTlvOps gRaRsTlvOps = {
     .tlvDeinit = RsTlvDeinit,
     .tlvRequest = RsTlvRequest,
 };
+
+int RaRsTlvInitV1(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
+{
+    hccp_warn("Tlv init is not support in this version.");
+    *opResult = -ENOTSUPP;
+    return 0;
+}
 
 int RaRsTlvInit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
@@ -61,11 +68,15 @@ int RaRsTlvDeinit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcv
 
 int RaRsTlvRequest(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
+    union OpTlvRequestData *dataOut = (union OpTlvRequestData *)(outBuf + sizeof(struct MsgHead));
     union OpTlvRequestData *dataIn = (union OpTlvRequestData *)(inBuf + sizeof(struct MsgHead));
 
     HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpTlvRequestData), sizeof(struct MsgHead), rcvBufLen, opResult);
 
-    *opResult = gRaRsTlvOps.tlvRequest(&dataIn->txData.head, dataIn->txData.data);
+    *opResult = gRaRsTlvOps.tlvRequest(&dataIn->txData.head, dataIn->txData.data, dataOut->rxData.recvData,
+            &dataOut->rxData.recvBytes);
+
+    CHK_PRT_RETURN(*opResult == -EUSERS, hccp_warn("tlv request unsuccessful"), 0);
     if (*opResult != 0) {
         hccp_err("tlv_request failed ret[%d]", *opResult);
     }

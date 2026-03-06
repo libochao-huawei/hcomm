@@ -34,7 +34,7 @@ CtxMgrImp::~CtxMgrImp()
     if (initializedFlag_) {
         HCCL_INFO("[CtxMgrImp]~CtxMgrImp: deviceLogicId[%d], free addr[%p]", deviceLogicId_, instructionLoadDevMem_);
         if (instructionLoadDevMem_ != nullptr) {
-            HrtFree(instructionLoadDevMem_);
+            DECTOR_TRY_CATCH("CtxMgrImp", HrtFree(instructionLoadDevMem_));
             instructionLoadDevMem_ = nullptr;
         }
         ctxGroupMap_.clear();
@@ -387,7 +387,7 @@ HcclResult CtxMgrImp::InstantiationTranslator(uint16_t dieId)
     // 获取ccu token信息
     uint64_t tokenId = 0;
     uint64_t tokenValue = 0;
-    ret = CcuDeviceManager::GetCcuResourceSpaceTokenInfo(deviceLogicId_, dieId, tokenId, tokenValue);
+    ret = CcuDeviceManager::GetCcuResourceSpaceTokenInfoForLocal(deviceLogicId_, dieId, tokenId, tokenValue);
     if (ret != HcclResult::HCCL_SUCCESS) {
         THROW<CcuApiException>("Failed to get ccu resource space token info. deviceLogicId = %d, dieId = %u, ret = %d",
                                deviceLogicId_, dieId, ret);
@@ -664,7 +664,8 @@ void CtxMgrImp::LoadInstruction(CcuRep::CcuInstrInfo &instrInfo, uint32_t dieId)
         }
         HCCL_INFO("[CtxMgrImp]LoadInstruction: deviceLogicId[%d], instrNum[%u]", deviceLogicId_, instrNum);
         // rt接口申请device内存
-        instructionLoadDevMem_ = HrtMalloc(instrNum * sizeof(CcuInstr), RT_MEMORY_HBM);
+        instructionLoadDevMem_ = HrtMalloc(instrNum * sizeof(CcuInstr),
+										   static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
     }
 
     // rt接口memcpySync

@@ -1288,6 +1288,12 @@ HcclResult hcclComm::SetOnlyAivModeConfig(const bool isOnlyAiv)
     return HCCL_SUCCESS;
 }
 
+HcclResult hcclComm::GetOnlyAivModeConfig(bool &isOnlyAiv)
+{
+    isOnlyAiv = communicator_->GetConfigIsOnlyAivMode();
+    return HCCL_SUCCESS;
+}
+
 HcclResult hcclComm::SetAicpuUnfoldConfig(const bool aicpuUnfold)
 {
     CHK_RET(communicator_->SetAicpuUnfoldConfig(aicpuUnfold));
@@ -1458,55 +1464,6 @@ HcclResult hcclComm::SetGroupMode(bool isGroup){
 bool hcclComm::GetGroupMode(){
     return isGroupMode_;
 }
- 
-HcclResult hcclComm::SetSendIndex(u32 index){
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->SetSendIndex(index));
-    return HCCL_SUCCESS;
-}
- 
-HcclResult hcclComm::SetRecvIndex(u32 index){
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->SetRecvIndex(index));
-    return HCCL_SUCCESS;
-}
- 
-HcclResult hcclComm::SetBufferSliceNum(u32 bufferSliceNum){
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->SetBufferSliceNum(bufferSliceNum));
-    return HCCL_SUCCESS;
-}
- 
-HcclResult hcclComm::SetNSend(u32 nSend){
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->SetNSend(nSend));
-    return HCCL_SUCCESS;
-}
- 
-HcclResult hcclComm::SetNRecv(u32 nRecv){
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->SetNRecv(nRecv));
-    return HCCL_SUCCESS;
-}
- 
-HcclResult hcclComm::GroupPrepareStreamAndNotify(HcclRtStream sendRecvMainStream){
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->GroupPrepareStreamAndNotify(sendRecvMainStream));
-    return HCCL_SUCCESS;
-}
- 
-HcclResult hcclComm::GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte){
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->GroupSyncMainstream(sendIdx2Byte, recvIdx2Byte));
-    return HCCL_SUCCESS;
-}
- 
-HcclResult hcclComm::GroupSubstreamsSync(){
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->GroupSubstreamsSync());
-    return HCCL_SUCCESS;
-}
- 
 
 HcclResult hcclComm::GetKFCWorkSpace(void **addr, uint64_t *size)
 {
@@ -1529,21 +1486,31 @@ HcclResult hcclComm::SetHcclQos(u32 hcclQos)
     if (hcclQos == HCCL_COMM_QOS_CONFIG_NOT_SET) {
         HCCL_INFO("[SetHcclQos]The QoS do not use the config configuration. "
                   "It will use environment variables to configure. QoS[%u]", EnvConfig::HCCL_QOS_DEFAULT);
+        hcclQos_ = EnvConfig::HCCL_QOS_DEFAULT;
         communicator_->SetHcclQos(EnvConfig::HCCL_QOS_DEFAULT);
         return HCCL_SUCCESS;
     }
 
-    // 若设置的hcclQos不在有效范围内，则报错
+    // 若设置的hcclQos不在有效范围内，则使用默认值
     if (hcclQos < EnvConfig::HCCL_QOS_MIN || hcclQos > EnvConfig::HCCL_QOS_MAX) {
-        HCCL_ERROR("[SetHcclQos]hcclQos is invalid. except[%u, %u], actual[%u]",
-                   EnvConfig::HCCL_QOS_MIN, EnvConfig::HCCL_QOS_MAX, hcclQos);
-        return HCCL_E_PARA;
+        HCCL_INFO("[SetHcclQos]hcclQos is invalid, expect[%u, %u], actual[%u]. "
+                  "It will use the default value. QoS[%u]", EnvConfig::HCCL_QOS_MIN, EnvConfig::HCCL_QOS_MAX, hcclQos,
+                   EnvConfig::HCCL_QOS_DEFAULT);
+        hcclQos_ = EnvConfig::HCCL_QOS_DEFAULT;
+        communicator_->SetHcclQos(EnvConfig::HCCL_QOS_DEFAULT);
+        return HCCL_SUCCESS;
     }
 
     HCCL_INFO("[SetHcclQos] hcclQos[%u]", hcclQos);
+    hcclQos_ = hcclQos;
     communicator_->SetHcclQos(hcclQos);
 
     return HCCL_SUCCESS;
+}
+
+u32 hcclComm::GetHcclQos()
+{
+    return hcclQos_;
 }
 
 HcclResult hcclComm::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)

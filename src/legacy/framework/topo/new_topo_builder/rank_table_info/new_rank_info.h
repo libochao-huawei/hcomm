@@ -20,7 +20,8 @@
 #include "control_plane.h"
 namespace Hccl {
 constexpr unsigned int MAX_VALUE_DEVICEID = 64;
-constexpr unsigned int MAX_VALUE_DEVICEPORT = 65536;   
+constexpr unsigned int DEFAULT_VALUE_DEVICEPORT = 60001;
+constexpr unsigned int MAX_VALUE_DEVICEPORT = 65535;
 constexpr unsigned int MIN_VALUE_DEVICEPORT = 1;
 constexpr unsigned int MAX_LEVEL_lIST  = 8; 
 class NewRankInfo{
@@ -32,7 +33,7 @@ public:
     u32                        deviceId{0};
     u32                        localId{0};
     u32                        replacedLocalId{0};
-    u32                        devicePort{MAX_VALUE_DEVICEPORT};
+    u32                        devicePort{DEFAULT_VALUE_DEVICEPORT};
     std::vector<RankLevelInfo> rankLevelInfos{};
     ControlPlane               controlPlane{};
     std::string                Describe() const;

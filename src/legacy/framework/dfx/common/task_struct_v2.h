@@ -9,6 +9,9 @@
  */
 #ifndef TS_TASK_STRUCT_V2_H
 #define TS_TASK_STRUCT_V2_H
+
+#include <cstdint>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */

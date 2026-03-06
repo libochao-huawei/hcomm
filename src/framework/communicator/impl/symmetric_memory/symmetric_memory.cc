@@ -35,12 +35,13 @@ public:
         HCCL_ERROR("[%s] === VA Allocator Dump (Total: %zu) ===", tag, totalSize_);
         size_t freeSum = 0;
         int i = 0;
+        constexpr double kPercentageMultiplier = 100.0;
         for (auto &block : freeList_) {
             HCCL_ERROR("  Block[%d]: offset %zu (0x%zx) -> size %zu (0x%zx) | end: %zu", 
                 i++, block.offset, block.offset, block.size, block.size, block.offset + block.size);
             freeSum += block.size;
         }
-        HCCL_ERROR("  Total Free: %zu (%.2f%%)", freeSum, (double)freeSum / totalSize_ * 100.0);
+        HCCL_ERROR("  Total Free: %zu (%.2f%%)", freeSum, static_cast<double>(freeSum) / totalSize_ * kPercentageMultiplier);
         HCCL_ERROR("==========================================");
     }
 
@@ -194,6 +195,7 @@ SymmetricMemory::~SymmetricMemory()
     }
     windowMap_.clear();
     sortedWindows_.clear();
+    importAddrs_.clear();
 
     if (heapBase_) {
         if (aclrtReleaseMemAddress(heapBase_) != ACL_SUCCESS) {
@@ -216,7 +218,8 @@ HcclResult SymmetricMemory::Init()
     CHK_SMART_PTR_NULL(vaAllocator_);
     CHK_SMART_PTR_NULL(symmetricMemoryAgent_);
 
-    CHK_PRT_RET(rankSize_ < 2, HCCL_ERROR("[SymmetricMemory][Init] single rank communicator"), HCCL_E_PARA);
+    isSingleRank_ = (rankSize_ == 1);
+    CHK_PRT_RET(isSingleRank_, HCCL_INFO("[SymmetricMemory][Init] single rank communicator"), HCCL_SUCCESS);
     CHK_PRT_RET(stride_ == 0, HCCL_ERROR("[SymmetricMemory][Init] invalid stride: 0"), HCCL_E_PARA);
 
     size_t free = 0;
@@ -236,7 +239,7 @@ HcclResult SymmetricMemory::Init()
     CHK_PRT_RET(stride_ % granularity_ != 0,
         HCCL_ERROR("[SymmetricMemory][Init] Stride %llu is not a multiple of granularity %zu.", stride_, granularity_), HCCL_E_PARA);
 
-    size_t totalHeapSize = (size_t)stride_ * rankSize_;    // 每个rank都预留一个总大小为 totalHeapSize 的VA空间。
+    size_t totalHeapSize = static_cast<size_t>(stride_ * rankSize_); // 每个rank都预留一个总大小为 totalHeapSize 的VA空间。
     void* hintPtr = reinterpret_cast<void*>(targetStartTB);
 
     if (aclrtReserveMemAddressNoUCMemory(&heapBase_, totalHeapSize, 0, hintPtr, 0) != ACL_SUCCESS) {
@@ -266,7 +269,7 @@ HcclResult SymmetricMemory::GetAllRankPid()
     }
     HCCL_INFO("[SymmetricMemory][GetAllRankPid] Local pid: %d.", localPid);
 
-    CHK_RET(symmetricMemoryAgent_->ExchangeInfo((void*)&localPid, (void*)remoteShareablePids.data(), sizeof(localPid)));
+    CHK_RET(symmetricMemoryAgent_->ExchangeInfo(static_cast<void*>(&localPid), static_cast<void*>(remoteShareablePids.data()), sizeof(localPid)));
 
     std::string pidStr;
     for (u32 i = 0; i < remoteShareablePids.size(); i++) {
@@ -319,8 +322,8 @@ HcclResult SymmetricMemory::AddSymmetricWindow(std::shared_ptr<SymmetricWindow> 
     sortedWindows_.push_back(win);
     std::sort(sortedWindows_.begin(), sortedWindows_.end(), 
         [](const std::shared_ptr<SymmetricWindow>& a, const std::shared_ptr<SymmetricWindow>& b) {
-            return ((uintptr_t)a->userVa < (uintptr_t)b->userVa) || 
-                (((uintptr_t)a->userVa == (uintptr_t)b->userVa) && (a->userSize < b->userSize));
+            return (reinterpret_cast<uintptr_t>(a->userVa) < reinterpret_cast<uintptr_t>(b->userVa)) || 
+                ((reinterpret_cast<uintptr_t>(a->userVa) == reinterpret_cast<uintptr_t>(b->userVa)) && (a->userSize < b->userSize));
     });
 
     windowMap_[win->devWin] = win;
@@ -402,6 +405,11 @@ HcclResult SymmetricMemory::GetMemoryInfo(void* ptr, size_t size, void** baseUse
 HcclResult SymmetricMemory::RegisterSymmetricMem(void* ptr, size_t size, void** devWin)
 {
     CHK_RET(EnsureInit());
+    if (isSingleRank_) {
+        HCCL_INFO("[SymmetricMemory][RegisterSymmetricMem] single rank communicator");
+        CHK_RET(hrtMalloc(devWin, sizeof(SymmetricWindow)));
+        return HCCL_SUCCESS;
+    }
     CHK_PTR_NULL(devWin);
     void* baseUserVa = nullptr;
     size_t baseVaSize = 0;
@@ -471,8 +479,10 @@ INTERNAL_ERROR:
 HcclResult SymmetricMemory::DeregisterSymmetricMem(void* devWin)
 {
     HcclResult ret = HCCL_SUCCESS;
-    if (devWin == nullptr) {
-        HCCL_INFO("[SymmetricMemory] DeregisterSymmetricMem sucessed devWin[nullptr]");
+    CHK_PTR_NULL(devWin);
+    if (isSingleRank_) {
+        HCCL_INFO("[SymmetricMemory][DeregisterSymmetricMem] single rank communicator");
+        CHK_RET(hrtFree(devWin));
         return ret;
     }
 
@@ -486,31 +496,33 @@ HcclResult SymmetricMemory::DeregisterSymmetricMem(void* devWin)
         if (paMapInfo->refCount == 1) {
             for (u32 i = 0; i < rankSize_; i++) {
                 void* virPtr = static_cast<uint8_t*>(heapBase_) + (stride_ * i) + (*it)->alignedHeapOffset;
-                aclrtDrvMemHandle handle;
-                aclError aclRet = aclrtMemRetainAllocationHandle(virPtr, &handle);
-                if (aclRet != ACL_SUCCESS) {
-                    HCCL_ERROR("[SymmetricMemory][DeregisterSymmetricMem] MemRetainAllocationHandle failed for ptr[%p], rank[%u], ret[%d].", virPtr, i, aclRet);
-                    ret = HCCL_E_DRV;
+                if (importAddrs_.find(virPtr) == importAddrs_.end()) {
+                    HCCL_ERROR("[SymmetricMemory][DeregisterSymmetricMem] Get paHandle failed for ptr[%p], rank[%u].", virPtr, i);
+                    ret = HCCL_E_INTERNAL;
                     continue;
                 }
+                aclrtDrvMemHandle handle = importAddrs_[virPtr];
                 HCCL_INFO("[SymmetricMemory][DeregisterSymmetricMem] Start to UnmapMem virPtr[%p], handle[%p], rank[%u].", virPtr, handle, i);
-                aclRet = aclrtUnmapMem(virPtr);
+                aclError aclRet = aclrtUnmapMem(virPtr);
                 if (aclRet != ACL_SUCCESS) {
                     HCCL_ERROR("[SymmetricMemory][DeregisterSymmetricMem] Failed to unmap mem for rank %u at va %p, ret[%d].", i, virPtr, aclRet);
                     ret = HCCL_E_DRV;
                 }
                 aclRet = aclrtFreePhysical(handle);
                 if (aclRet != ACL_SUCCESS) {
-                    HCCL_ERROR("[SymmetricMemory][DeregisterSymmetricMem] FreePhysical handle[%p] failed, ret[%d], rank[%u].", handle, aclRet, i);
+                    HCCL_ERROR("[SymmetricMemory][DeregisterSymmetricMem] Free Physical handle[%p] failed, ret[%d], rank[%u].", handle, aclRet, i);
                     ret = HCCL_E_DRV;
                 }
+                importAddrs_.erase(virPtr);
             }
             vaAllocator_->Release((*it)->alignedHeapOffset, (*it)->alignedSize);
             paMappingMap_.erase((*it)->paHandle);
         } else {
+            CHK_PRT_RET(aclrtFreePhysical((*it)->paHandle) != ACL_SUCCESS, 
+                HCCL_ERROR("[SymmetricMemory][DeregisterSymmetricMem] Free Physical handle[%p] failed.", (*it)->paHandle), HCCL_E_DRV);
             paMapInfo->refCount--;
         }
-        
+
         it = sortedWindows_.erase(it);
         windowMap_.erase(devWin);
         CHK_RET(hrtFree(devWin));
@@ -525,6 +537,7 @@ HcclResult SymmetricMemory::FindSymmetricWindow(void* ptr, size_t size, void** w
     CHK_PTR_NULL(ptr);
     CHK_PTR_NULL(win);
     CHK_PTR_NULL(offset);
+    CHK_PRT_RET(isSingleRank_, HCCL_DEBUG("[SymmetricMemory][FindSymmetricWindow] single rank communicator"), HCCL_E_NOT_FOUND);
     uintptr_t userVaStart = reinterpret_cast<uintptr_t>(ptr);
     uintptr_t userVaEnd = userVaStart + size;
 
@@ -551,13 +564,13 @@ HcclResult SymmetricMemory::RegisterInternal(aclrtDrvMemHandle &paHandle, size_t
     aclrtMemFabricHandle shareableHandle;
     if(paMappingMap_[paHandle]->refCount == 1) {
         if (aclrtMemExportToShareableHandleV2(paHandle, 0, 
-            ACL_MEM_SHARE_HANDLE_TYPE_FABRIC, (void*)&shareableHandle) != ACL_SUCCESS) {
+            ACL_MEM_SHARE_HANDLE_TYPE_FABRIC, static_cast<void*>(&shareableHandle)) != ACL_SUCCESS) {
             HCCL_ERROR("[SymmetricMemory][RegisterInternal] Failed to export shareable handle. offset: %zu, size: %zu",
                 offset, mapSize);
             return HCCL_E_DRV;
         }
 
-        if(aclrtMemSetPidToShareableHandleV2((void*)&shareableHandle, ACL_MEM_SHARE_HANDLE_TYPE_FABRIC,
+        if(aclrtMemSetPidToShareableHandleV2(static_cast<void*>(&shareableHandle), ACL_MEM_SHARE_HANDLE_TYPE_FABRIC,
             remoteShareablePids.data(), remoteShareablePids.size()) != ACL_SUCCESS) {
             HCCL_ERROR("[SymmetricMemory][RegisterInternal] Failed to aclrtMemSetPidToShareableHandleV2");
             return HCCL_E_DRV;
@@ -570,7 +583,7 @@ HcclResult SymmetricMemory::RegisterInternal(aclrtDrvMemHandle &paHandle, size_t
     ShareableInfo shareableInfo{offset, mapSize, shareableHandle};
     std::vector<ShareableInfo> remoteShareableInfos(rankSize_);
 
-    CHK_RET(symmetricMemoryAgent_->ExchangeInfo((void*)&shareableInfo, (void*)remoteShareableInfos.data(), sizeof(ShareableInfo)));
+    CHK_RET(symmetricMemoryAgent_->ExchangeInfo(static_cast<void*>(&shareableInfo), static_cast<void*>(remoteShareableInfos.data()), sizeof(ShareableInfo)));
     for (u32 i = 0; i < rankSize_; i++) {
         if (remoteShareableInfos[i].offset != offset || remoteShareableInfos[i].size != mapSize) {
             HCCL_ERROR("[SymmetricMemory][RegisterInternal] rank[%u]:[offset: %llu, mapSize: %llu] is not equal to "
@@ -587,7 +600,7 @@ HcclResult SymmetricMemory::RegisterInternal(aclrtDrvMemHandle &paHandle, size_t
             void* targetVa = static_cast<uint8_t*>(heapBase_) + (stride_ * i) + offset;
             if (i == rank_) {
                 importedHandle = paHandle;
-            } else if (aclrtMemImportFromShareableHandleV2((void*)&(remoteShareableInfos[i].handle), ACL_MEM_SHARE_HANDLE_TYPE_FABRIC, 0,
+            } else if (aclrtMemImportFromShareableHandleV2(static_cast<void*>(&remoteShareableInfos[i].handle), ACL_MEM_SHARE_HANDLE_TYPE_FABRIC, 0,
                 &importedHandle) != ACL_SUCCESS) {
                 HCCL_ERROR("[SymmetricMemory][RegisterInternal] Failed to import handle from rank %u.", i);
                 goto MAP_ERROR;
@@ -597,6 +610,7 @@ HcclResult SymmetricMemory::RegisterInternal(aclrtDrvMemHandle &paHandle, size_t
                 HCCL_ERROR("[SymmetricMemory][RegisterInternal] Failed to map mem for rank %u at va %p.", i, targetVa);
                 goto MAP_ERROR;
             }
+            importAddrs_.insert({targetVa, importedHandle});
             HCCL_INFO("[SymmetricMemory][RegisterInternal] success to Mapmem for rank %u at va %p to handle[%p].", i, targetVa, importedHandle);
         }
     }
