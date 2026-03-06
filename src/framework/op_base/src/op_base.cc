@@ -246,6 +246,116 @@ HcclResult HcclGetCommAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
     return HCCL_SUCCESS;
 }
 
+HcclResult GetDeviceCollComm(const s32 rank, HcclCommConfig *config, const s32 logicDeviceId,
+    HcclComm &comm)
+{
+    //给当前线程添加名字
+    SetThreadName("Hccl_GetDeviceCollComm");
+
+    CHK_PRT_RET(hrtSetDevice(logicDeviceId) != HCCL_SUCCESS,
+        HCCL_ERROR("[GetDeviceCollComm] set fail logicDeviceId[%d]", logicDeviceId), HCCL_E_INTERNAL);
+
+    HcclComm newComm;
+    HcclResult ret = HcclCommInitCollComm(rank, &comm, config, &newComm);
+    if (ret != HCCL_SUCCESS || newComm == nullptr) {
+        newComm = nullptr;
+        HcclCommDestroyV2(comm);
+        comm = nullptr;
+        HCCL_ERROR("[GetDeviceCollComm] rank[%d] Get device coll comm failed!", rank);
+        CHK_PRT_RET(hrtResetDevice(logicDeviceId) != HCCL_SUCCESS,
+            HCCL_ERROR("[GetDeviceCollComm] reset fail logicDeviceId[%d]", logicDeviceId), HCCL_E_INTERNAL);
+        return ret;
+    }
+    comm = newComm;
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetCollCommAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
+{
+    // 入参校验
+    CHK_PRT_RET(ndev == 0, HCCL_ERROR("[HcclGetCollCommAll] ndev is invalid, ndev[%u]", ndev), HCCL_E_PARA);
+    CHK_PTR_NULL(comms);
+    CHK_PTR_NULL(devices);
+
+    //给当前线程添加名字
+    SetThreadName("Hccl_GetCollCommAll");
+
+    CHK_PRT_RET(hrtSetDevice(devices[0]) != HCCL_SUCCESS,
+        HCCL_ERROR("[HcclGetCollCommAll] set fail devices[0][%d]", devices[0]), HCCL_E_INTERNAL);
+
+    constexpr HcclCommConfig *config = nullptr;
+    std::vector<std::unique_ptr<std::thread>> threads(ndev);
+    for (uint32_t rankId = 0; rankId < ndev; rankId++) {
+        threads[rankId].reset(new (std::nothrow) std::thread(&GetDeviceCollComm, rankId, config,
+            devices[rankId], std::ref(comms[rankId])));
+        CHK_PRT_RET(!threads[rankId], HCCL_ERROR("[HcclGetCollCommAll]threads[%u] reset failed ", rankId), HCCL_E_INTERNAL);
+    }
+    for (uint32_t i = 0; i < ndev; i++) {
+        threads[i]->join();
+    }
+
+    // 如果任何一个通信域转换失败，将所有已经成功创建的通信域销毁
+    bool isFailed = false;
+    for (uint32_t i = 0; i < ndev; ++i) {
+        if (comms[i] == nullptr) {
+            HCCL_ERROR("[HcclGetCollCommAll] rank[%u] get comm failed!", i);
+            isFailed = true;
+            break;
+        }
+    }
+    if (isFailed) {
+        for (uint32_t i = 0; i < ndev; ++i) {
+            if (comms[i] != nullptr) {
+                (void)HcclCommDestroy(comms[i]);
+            }
+        }
+        return HCCL_E_INTERNAL;
+    }
+
+    CHK_PRT_RET(hrtResetDevice(devices[0]) != HCCL_SUCCESS,
+        HCCL_ERROR("[HcclGetCollCommAll] reset fail devices[0][%d]", devices[0]), HCCL_E_INTERNAL);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCollCommInitAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
+{
+    HcclUs startut = TIME_NOW();
+    std::string devicesStr;
+    for (size_t i = 0; i < ndev; ++i) {
+        std::string deviceStr = std::to_string(devices[i]);
+        devicesStr += deviceStr;
+        if (i != ndev - 1) {
+            devicesStr += " ";
+        }
+    }
+    HCCL_RUN_INFO("Entry-HcclCollCommInitAll V910_95, ndev:[%u], devices:[%s].", ndev, devicesStr.c_str());
+
+    std::future<HcclResult> threadResult;
+    std::unique_ptr<std::thread> getCommThread;
+    getCommThread.reset(new (std::nothrow) std::thread(
+        [=, &threadResult]() { threadResult = std::async(std::launch::async, HcclGetCollCommAll, ndev, devices, comms); }));
+    CHK_PRT_RET(!getCommThread, HCCL_ERROR("[HcclCollCommInitAll]thread reset failed "), HCCL_E_INTERNAL);
+    getCommThread->join();
+
+    HcclResult ret = threadResult.get();
+    if (ret != HCCL_SUCCESS) {
+        for (uint32_t i = 0; i < ndev; ++i) {
+            if (comms[i] != nullptr) {
+                (void)HcclCommDestroy(comms[i]);
+                comms[i] = nullptr;
+            }
+        }
+        HCCL_ERROR("HcclCollCommInitAll failed! threadResult[%d]", ret);
+        return ret;
+    }
+    s32 deviceLogicId = HcclGetThreadDeviceId();
+    s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
+    HCCL_RUN_INFO("HcclCollCommInitAll success, take time [%lld]us, deviceLogicId[%d], devPhyId[%d].", DURATION_US(TIME_NOW() - startut),
+                  deviceLogicId, devPhyId);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclCommInitAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
 {
     HcclUs startut = TIME_NOW();
@@ -268,30 +378,7 @@ HcclResult HcclCommInitAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         CHK_RET(HcclCommInitAllV2(ndev, devices, comms));
-        std::vector<HcclComm> hcclComms;
-        for (uint32_t rankId = 0; rankId < ndev; rankId++) {
-            constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
-            HcclComm newComm;
-            HcclResult ret = HcclCommInitCollComm(rankId, &comms[rankId], config, &newComm);
-            if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm failed. Destroy comv2");
-                for (uint32_t i = 0; i < rankId; i++) {
-                    CHK_RET(HcclCommDestroy(hcclComms[i]));
-                    comms[i] = nullptr;
-                }
-
-                for (uint32_t i = rankId; i < ndev; i++) {
-                    CHK_RET(HcclCommDestroyV2(comms[i]));
-                    comms[i] = nullptr;
-                }
-                return ret;
-            }
-            hcclComms.push_back(newComm);
-        }
-
-        for (uint32_t i = 0; i < ndev; i++) {
-            comms[i] = hcclComms[i];
-        }
+        CHK_RET(HcclCollCommInitAll(ndev, devices, comms));
         return HCCL_SUCCESS;
     }());
 #endif
