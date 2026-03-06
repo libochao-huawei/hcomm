@@ -24,7 +24,7 @@
 #include "aicpu_operator_pub.h"
 
 namespace hccl {
-constexpr u32 MAX_REMOTE_MEM_NUM = 256;
+constexpr u32 MAX_REMOTE_MEM_NUM = 512;
 
 using RemoteRmaBufferMgr = RmaBufferMgr<BufferKey<uintptr_t, u64>, void*>; // (addr, size) handle 
 class HcclOneSidedConn {

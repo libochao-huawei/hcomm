@@ -52,7 +52,6 @@ constexpr u32 LOCAL_NOTIFY_NUM = static_cast<u32>(AicpuLocalNotify::LOCAL_NOTIFY
 static_assert(LOCAL_NOTIFY_NUM == AICPU_OP_NOTIFY_MAX_NUM, "AICPU notify max count not match");
 
 constexpr size_t HCCL_MEM_DESC_STR_LEN = HCCL_MEM_DESC_LENGTH + 1 - (sizeof(u32) * 2);
-constexpr u32 MAX_COMM_MEM_BIND_COUNT = 256;
 
 class HcclOneSidedService : public IHcclOneSidedService {
 public:
