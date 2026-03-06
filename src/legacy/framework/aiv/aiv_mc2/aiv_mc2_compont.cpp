@@ -115,7 +115,7 @@ void AivMc2Compont::GenerateAivMemoryCommContext(HcclCombinOpParam &combinOpPara
     }
 }
 
-void AivMc2Compont::GenerateAivUrmaCommContext(HcclCombinOpParam &combinOpParam)
+void AivMc2Compont::GenerateAivUrmaCommContext(HcclCombinOpParam &combinOpParam) const
 {
     HCCL_INFO("[AivMc2Compont][GenerateAivMemoryCommContext] aiv urma");
     auto collService = dynamic_cast<CollServiceDeviceMode *>(comm->GetCollService());
