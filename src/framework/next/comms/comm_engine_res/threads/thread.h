@@ -68,6 +68,7 @@ public:
     virtual std::string &GetUniqueId() = 0;
     virtual uint32_t GetNotifyNum() const = 0;
     virtual LocalNotify *GetNotify(uint32_t index) const = 0;
+    virtual HcclResult SupplementNotify(uint32_t notifyNum) = 0;
 
     // A3 Stream & A5 Stream
     virtual bool IsDeviceA5() const = 0;
