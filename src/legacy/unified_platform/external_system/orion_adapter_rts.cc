@@ -515,7 +515,7 @@ void HrtIpcSetMemoryName(void *ptr, char_t *name, u64 ptrMaxLen, u32 nameMaxLen)
 void HrtIpcDestroyMemoryName(const char_t *name)
 {
     CHECK_NULLPTR(name, "[HrtIpcDestroyMemoryName] name is nullptr!");
-    rtError_t ret = rtIpcDestroyMemoryName(reinterpret_cast<const char *>(name));
+    aclError ret = aclrtIpcMemClose(reinterpret_cast<const char *>(name));
     HCCL_INFO("Call rtIpcDestroyMemoryName, return[%d], para: name[%s].", ret, name);
     if (ret != RT_ERROR_NONE) {
         string msg = StringFormat("[Destroy][IpcMemoryName]errNo[0x%016llx] "
@@ -544,7 +544,7 @@ void HrtIpcCloseMemory(const void *ptr)
 {
     HCCL_INFO("[HrtIpcCloseMemory] ptr[%p].", ptr);
     CHECK_NULLPTR(ptr, "[HrtIpcCloseMemory] ptr is nullptr!");
-    rtError_t ret = rtIpcCloseMemory(ptr);
+    aclError ret = aclrtIpcMemClose(reinterpret_cast<const char *>(ptr));
     if (ret != RT_ERROR_NONE) {
         string msg = StringFormat("[Close][IpcMemory]errNo[0x%016llx] "
                    "rtClose ipc memory failed. return[%d], para: ptr[%p].",
@@ -1255,9 +1255,12 @@ HcclResult HrtMemPrefetchToDevice(void *devPtr, uint64_t len)
 {
     HCCL_INFO("[HrtMemPrefetchToDevice] devPtr[%p], len[%llu].", devPtr, len);
     CHECK_NULLPTR(devPtr, "[HrtMemPrefetchToDevice] devPtr is nullptr!");
-    int ret = rtMemPrefetchToDevice(devPtr, len, HrtGetDevice());
-    if (ret != 0) {
-        HCCL_ERROR("rtMemPrefetchToDevice fail ret=%d, devPtr=%p, len=%llu.", ret, devPtr, len);
+    CHK_PRT_RET(aclrtMemP2PMap == nullptr, HCCL_ERROR("aclrtMemP2PMap is nullptr, "
+            "Does not support this interface."), HCCL_E_RUNTIME);
+	aclError ret = aclrtMemP2PMap(devPtr, static_cast<size_t>(len), HrtGetDevice(), 0);
+    HCCL_INFO("Call [HrtMemPrefetchToDevice]aclrtMemP2PMap ret = %d", ret);
+    if (ret != ACL_SUCCESS) {
+        HCCL_ERROR("aclrtMemP2PMap fail ret = %d", ret);
         return HCCL_E_RUNTIME;
     }
     return HCCL_SUCCESS;
