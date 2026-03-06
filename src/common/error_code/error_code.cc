@@ -36,14 +36,14 @@ const std::string hcomm_g_msg = R"(
       "Arglist": "remote_rankid, base_information, task_information, group_rank_content",
       "suggestion": {
         "Possible Cause": "1. An exception occurs during the execution on some NPUs in the cluster. As a result, collective communication operation failed.2. The execution speed on some NPU in the cluster is too slow to complete a communication operation within the timeout interval. (The default timeout interval is 1800s, You can set the interval by using HCCL_EXEC_TIMEOUT.)3. The number of training samples of each NPU is inconsistent.4. Packet loss or other connectivity problems occur on the communication link.",
-        "Solution": "1. If this error is reported on part of these ranks, check other ranks to see whether other errors have been reported earlier.2. If this error is reported for all ranks, check whether the error reporting time is consistent (the maximum difference must not exceed 1800s). If not, locate the cause or set the HCCL_EXEC_TIMEOUT environment variable to a larger value. 3. Ensure that the number of training samples of each NPU is consistent. 4. Check whether the completion queue element (CQE) of the error exists in the plog(grep -rn 'error cqe'). If so, check the network connection status. For details about the troubleshooting method, search for the keyword "EI0002" on https://www.hiascend.com/en/document/."
+        "Solution": "1. If this error is reported on part of these ranks, check other ranks to see whether other errors have been reported earlier.2. If this error is reported for all ranks, check whether the error reporting time is consistent (the maximum difference must not exceed 1800s). If not, locate the cause or set the HCCL_EXEC_TIMEOUT environment variable to a larger value. 3. Ensure that the number of training samples of each NPU is consistent. 4. Check whether the completion queue element (CQE) of the error exists in the plog(grep -rn 'error cqe'). If so, check the network connection status. For details about the troubleshooting method, search for the keyword \"EI0002\" on https://www.hiascend.com/en/document/."
       }
     },
     {
       "errClass": "HCCL Errors",
       "errTitle": "Invalid_Argument_Collective_Communication_Operator",
       "ErrCode": "EI0003",
-      "ErrMessage": "Failed to verify parameters of operator %s (operator name). Value %s for parmeter %s is invalid. The expected value is %s.
+      "ErrMessage": "Failed to verify parameters of operator %s (operator name). Value %s for parameter %s is invalid. The expected value is %s.",
       "Arglist": "ccl_op,value,parameter,expect",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -98,7 +98,7 @@ const std::string hcomm_g_msg = R"(
       "errClass": "HCCL Errors",
       "errTitle": "Package_Error_Incorrect_HCCL_Version",
       "ErrCode": "EI0008",
-      "ErrMessage": "The HCCL versions are inconsisten. The local version is %s, while the remote version is %s.",
+      "ErrMessage": "The HCCL versions are inconsistent. The local version is %s, while the remote version is %s.",
       "Arglist": "local_version, remote_version",
       "suggestion": {
         "Possible Cause": "N/A",
@@ -113,10 +113,7 @@ const std::string hcomm_g_msg = R"(
       "Arglist": "device_id,reason",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "Use the following hccn_tool commands to check whether the port link is down. (The scope of i represents the number of NPUs of each node. 8 is used as an example.) "\
-                    "1. for i in {0..7}; do hccn_tool -i $i -optical -g; done | grep present: Check whether the optical module is in position. "\
-                    "2. for i in {0..7}; do hccn_tool -i $i -ip -g; done. Check whether the IP address is configured. "\
-                    "3. for i in {0..7}; do hccn_tool -i $i -lldp -g: Check whether the switch is connected."
+        "Solution": "Use the following hccn_tool commands to check whether the port link is down. (The scope of i represents the number of NPUs of each node. 8 is used as an example.) 1. for i in {0..7}; do hccn_tool -i $i -optical -g; done | grep present: Check whether the optical module is in position. 2. for i in {0..7}; do hccn_tool -i $i -ip -g; done. Check whether the IP address is configured. 3. for i in {0..7}; do hccn_tool -i $i -lldp -g: Check whether the switch is connected."
       }
     },
     {

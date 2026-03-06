@@ -27,7 +27,6 @@ public:
     u64          beginTime_;
     u64          endTime_;
     void        *comm_;
-    u32          mainStreamId_;
 
 public:
     std::string Describe() const

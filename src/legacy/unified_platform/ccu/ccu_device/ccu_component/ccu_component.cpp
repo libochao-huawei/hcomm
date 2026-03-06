@@ -153,22 +153,32 @@ static HcclResult FindOneUsableEid(const uint32_t devLogicId, const uint8_t dieI
 
     std::string name;
     bool findFlag = false;
-    // 当前结论，除仅包含UBOE的FE外
-    // 其他eid均支持源与目标eid一致时应用环回
-    // 故当前版本选择首个可用eid即可
+    u32 devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+    auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
+    // 当前结论，需要选择可以申请到Tp handle的eid
     for (auto &eidInfo : eidInfoList) {
         if (eidInfo.dieId != dieId) {
             continue;
         }
 
-        feId = eidInfo.funcId;
-        ipAddr = eidInfo.ipAddress;
-        name = eidInfo.name;
-        findFlag = true;
+        const RdmaHandle rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, eidInfo.ipAddress);
+        const bool rtpEnable = rdmaHandleMgr.GetRtpEnable(rdmaHandle);
+
+        if (rtpEnable) {
+            feId = eidInfo.funcId;
+            ipAddr = eidInfo.ipAddress;
+            name = eidInfo.name;
+            HCCL_RUN_INFO("[%s] rtpEnable[%d] dieId[%u] choose:"
+                "name[%s] feId[%u] ipAddr[%s], devLogicId[%u]",
+                __func__, rtpEnable, dieId, name.c_str(), feId,
+                ipAddr.Describe().c_str(), devLogicId);
+            findFlag = true;
+            break;
+        }
     }
 
     if (!findFlag) {
-        HCCL_WARNING("[CcuComponent][%s] dieId[%u] doesn't have usable func ID, "
+        HCCL_RUN_INFO("[CcuComponent][%s] dieId[%u] doesn't have usable func ID, "
             "devLogicId[%u].", __func__, dieId, devLogicId);
         return HcclResult::HCCL_E_INTERNAL;
     }
