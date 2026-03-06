@@ -49,6 +49,9 @@ HcclResult CcuTempBroadcastMesh1DMem2Mem::GenExtIns(const TempFuncs          &te
                                                               const ResLinks           &tempLinks,
                                                               std::vector<InsQuePtr>   &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempBroadcastMesh1DTwoShotMem2Mem] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     opMode_   = tempFuncs.opMode; // 传递opMode，是opbase还是offload
     buffInfo_ = templateDataParams.buffInfo;
     CcuInstructionBroadcastMesh1DMem2Mem ccuIns;
