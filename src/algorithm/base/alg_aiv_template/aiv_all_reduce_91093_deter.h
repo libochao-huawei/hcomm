@@ -325,8 +325,7 @@ __aicore__ inline void sk_all_reduce_deter(SUPERKERNEL_ARGS_DEF)
     
     op.InitSuperKernel(hiddenInput, false);
     // 每张卡的CCLBuffer大小为bufferSize, 平均分给ranksize*2块，每块的大小为avgBufferCount
-    uint64_t totalCount = (op.len_ * op.unitSize_ + ATOMIC_FLAG_SIZE) / ATOMIC_FLAG_SIZE * ATOMIC_FLAG_SIZE / op.unitSize_;
-    uint64_t avgBufferCount = totalCount /op.rankSize_;
+    uint64_t avgBufferCount = op.len_ /op.rankSize_;
     uint64_t halfBufferCount = avgBufferCount * op.rankSize_;
    
     if (op.dataType_ == HcclDataType::HCCL_DATA_TYPE_INT8) {
