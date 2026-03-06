@@ -14,6 +14,7 @@
 #include "endpoint_pair.h"
 #include "hccl_res.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器
+#include "env_config/env_config.h"
 
 using namespace hcomm;
 
@@ -76,7 +77,7 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
 }
 
 
-HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
+HcclResult MyRank::BatchCreateSockets(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs)
 {
     CHK_PTR_NULL(channelDescs);
@@ -98,7 +99,7 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
         RankPair* rankPair = nullptr;
         CHK_RET(rankPairMgr_->Get(rankIdPair, rankPair));
         CHK_PTR_NULL(rankPair);
-        CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));
+        CHK_RET(rankPair->GetEndpointPair(engine, endpointDescPair, endpointPair));
         CHK_PTR_NULL(endpointPair);
 
         Hccl::Socket* socket = nullptr;
@@ -154,6 +155,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
     std::vector<HcclMem> memVec;
     CHK_SMART_PTR_NULL(commMems_);
     CHK_RET(commMems_->GetMemoryHandles(memVec));
+    std::unordered_map<RankPair*, std::unordered_map<hcomm::EndpointPair*, u32>> reuseChannelIdxMap{};
 
     for (uint32_t i = 0; i < channelNum; ++i) {
         // 参数检查
@@ -208,14 +210,23 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         RankPair* rankPair = nullptr;
         CHK_RET(rankPairMgr_->Get(rankIdPair, rankPair));
         CHK_PTR_NULL(rankPair);
-        CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));
+        CHK_RET(rankPair->GetEndpointPair(engine, endpointDescPair, endpointPair));
         CHK_PTR_NULL(endpointPair);
 
-        ret = endpointPair->CreateChannel(epHandle, engine, &hcommDescs[i], channelHandles + i);
+        if (reuseChannelIdxMap.find(rankPair) == reuseChannelIdxMap.end()) {
+            std::unordered_map<hcomm::EndpointPair*, u32> endpointPair2Idx{};
+            endpointPair2Idx.emplace(endpointPair, 0);
+            reuseChannelIdxMap.emplace(rankPair, endpointPair2Idx);
+        } else if (reuseChannelIdxMap[rankPair].find(endpointPair) == reuseChannelIdxMap[rankPair].end()) {
+            reuseChannelIdxMap[rankPair].emplace(endpointPair, 0);
+        }
+        u32& reuseIdx = reuseChannelIdxMap[rankPair][endpointPair];
+        ret = endpointPair->CreateChannel(epHandle, engine, reuseIdx, &hcommDescs[i], channelHandles + i);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] failed to create channel, channelIndex[%u], remoteRank[%u], engine[%d]",
-                __func__, i + 1, remoteRank, engine),
+            HCCL_ERROR("[%s] failed to create channel, channelIndex[%u], remoteRank[%u], engine[%d], reuseIndex[%u]",
+                __func__, i + 1, remoteRank, engine, reuseIdx),
             ret);
+        reuseIdx++;
 
         HCCL_INFO("[%s][%u/%u] channel created successfully, remoteRank[%u], channelHandle[%p]",
             __func__, i + 1, channelNum, remoteRank, channelHandles[i]);
@@ -226,54 +237,54 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
 
 HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, ChannelHandle *channelHandles, uint32_t channelNum)
 {
-    // TODO: 从环境变量里面拿 timeoutSec
-    constexpr uint32_t timeoutSec = 120;
-    constexpr auto timeout = std::chrono::seconds(timeoutSec);
+    auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
     auto startTime = std::chrono::steady_clock::now();
 
-    HCCL_INFO("[%s] start connecting channels, channelNum[%u], timeout[%u]sec",
-        __func__, channelNum, timeoutSec);
+    HCCL_INFO("[%s] start connecting channels, channelNum[%u], timeout[%lld]sec",
+        __func__, channelNum, timeout);
 
     std::vector<int32_t> statusVec(channelNum, 0);
     int32_t* statusList = statusVec.data();
     uint32_t retryCount = 0;
-    while (true) {
-        HcclResult ret = HcommChannelGetStatus(channelHandles, channelNum, statusList);
+    for (uint32_t i = 0; i < channelNum; ++i) {
+        while (true) {
+            HcclResult ret = HcommChannelGetStatus(channelHandles + i, 1, statusList + i);
 
-        // 卫语句：先处理异常情况
+            // 卫语句：先处理异常情况
 
-        // 1. 检查超时
-        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            // 1. 检查超时
+            if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - startTime).count();
+                HCCL_ERROR("[%s] channel connect timeout after %lld sec, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
+                    __func__, timeout, channelNum, elapsed, retryCount);
+                logger::ChannelLogger::PrintChannelErrorDetails(rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed);
+                return HCCL_E_TIMEOUT;
+            }
+
+            // 2. 处理重试（去除频繁的重试日志，一秒可能重试上千次）
+            if (ret == HCCL_E_AGAIN) {
+                retryCount++;
+                continue;
+            }
+
+            // 3. 处理失败
+            if (ret != HCCL_SUCCESS) {
+                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - startTime).count();
+                HCCL_ERROR("[%s] channel connect failed, channelNum[%u], ret[%d], elapsed[%lld]ms, retryCount[%u]",
+                    __func__, channelNum, ret, elapsed, retryCount);
+                logger::ChannelLogger::PrintChannelErrorDetails(rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed);
+                return ret;
+            }
+
+            // 4. 正常情况：所有通道连接成功
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime).count();
-            HCCL_ERROR("[%s] channel connect timeout after %u sec, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
-                __func__, timeoutSec, channelNum, elapsed, retryCount);
-            logger::ChannelLogger::PrintChannelErrorDetails(rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed);
-            return HCCL_E_TIMEOUT;
+            HCCL_INFO("[%s] all channels connected successfully, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
+                __func__, channelNum, elapsed, retryCount);
+            break;
         }
-
-        // 2. 处理重试（去除频繁的重试日志，一秒可能重试上千次）
-        if (ret == HCCL_E_AGAIN) {
-            retryCount++;
-            continue;
-        }
-
-        // 3. 处理失败
-        if (ret != HCCL_SUCCESS) {
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - startTime).count();
-            HCCL_ERROR("[%s] channel connect failed, channelNum[%u], ret[%d], elapsed[%lld]ms, retryCount[%u]",
-                __func__, channelNum, ret, elapsed, retryCount);
-            logger::ChannelLogger::PrintChannelErrorDetails(rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed);
-            return ret;
-        }
-
-        // 4. 正常情况：所有通道连接成功
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::steady_clock::now() - startTime).count();
-        HCCL_INFO("[%s] all channels connected successfully, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
-            __func__, channelNum, elapsed, retryCount);
-        break;
     }
     return HCCL_SUCCESS;
 }
@@ -294,7 +305,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
 
     std::vector<HcommChannelDesc> hcommDescs(channelNum);
 
-    CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
+    CHK_RET(BatchCreateSockets(engine, channelDescs, channelNum, commTag, hcommDescs));
     CHK_RET(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
 
