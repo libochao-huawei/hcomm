@@ -306,7 +306,7 @@ TEST(CollServiceDefaultImplTest, test_base_register_offload_buf)
 {
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER(HrtIpcSetMemoryName).stubs();
     MOCKER(HrtDevMemAlignWithPage).stubs();
@@ -336,7 +336,7 @@ TEST(CollServiceDefaultImplTest, test_base_register_offload_buf)
     HcclCommConfigInit(&config);
     commParams.myRank = 1;
     commParams.rankSize = 4;
-    commParams.devType = DevType::DEV_TYPE_910_95;
+    commParams.devType = DevType::DEV_TYPE_950;
     comm.rankGraph = make_unique<RankGraph>(0);
     comm.rankGraph->peers_[0] = make_shared<NetInstance::Peer>(0, 0, 0, 0);
     comm.Init(commParams, RankTable4p, config);
@@ -390,7 +390,7 @@ TEST(CollServiceDefaultImplTest, test_calc_coll_offload_op_res_with_hccl_success
 
     CollAlgComponentBuilder collAlgComponentBuilder;
     std::shared_ptr<CollAlgComponent> collAlgComponent = collAlgComponentBuilder.SetRankGraph(&virtTopo)
-                                   .SetDevType(DevType::DEV_TYPE_910_95)
+                                   .SetDevType(DevType::DEV_TYPE_950)
                                    .SetMyRank(myRank)
                                    .SetRankSize(rankSize)
                                    .Build();
@@ -405,7 +405,7 @@ TEST(CollServiceDefaultImplTest, test_calc_coll_offload_op_res_with_hccl_success
 
 class FakeCollAlgComponent : public CollAlgComponent {
 public:
-    FakeCollAlgComponent() : CollAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1){};
+    FakeCollAlgComponent() : CollAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1){};
     HcclResult Orchestrate(
         const CollAlgOperator &op, const CollAlgParams &params, const string &algName, InsQuePtr queue) override
     {
@@ -421,7 +421,7 @@ public:
 
 class FakeCollAlgComponentWithError : public CollAlgComponent {
 public:
-    FakeCollAlgComponentWithError() : CollAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1)
+    FakeCollAlgComponentWithError() : CollAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1)
     {}
     HcclResult Orchestrate(
         const CollAlgOperator &op, const CollAlgParams &params, const string &algName, InsQuePtr queue) override
@@ -717,7 +717,7 @@ TEST(CollServiceDefaultImplTest, Test_RecoverTransport)
     CollServiceDefaultImpl collServiceDefaultImpl(comm.get());
  
     MOCKER_CPP(&RdmaHandleManager::GetDieAndFuncId).stubs().will(returnValue(make_pair<uint32_t,uint32_t>(0,0)));
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     
     vector<LinkData> links;

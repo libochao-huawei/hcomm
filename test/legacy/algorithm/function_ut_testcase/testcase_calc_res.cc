@@ -63,7 +63,7 @@ TEST_F(CollAlgComponentTest, CalcResTest)
 
     CollAlgComponentBuilder collAlgComponentBuilder;
     std::shared_ptr<CollAlgComponent> collAlgComponent = collAlgComponentBuilder.SetRankGraph(&virtTopo)
-                                                             .SetDevType(DevType::DEV_TYPE_910_95)
+                                                             .SetDevType(DevType::DEV_TYPE_950)
                                                              .SetMyRank(myRank)
                                                              .SetRankSize(rankSize)
                                                              .Build();
@@ -93,7 +93,7 @@ TEST_F(CollAlgComponentTest, SelectorOffloadTest)
 
     CollAlgComponentBuilder collAlgComponentBuilder;
     std::shared_ptr<CollAlgComponent> collAlgComponent = collAlgComponentBuilder.SetRankGraph(&virtTopo)
-                                                             .SetDevType(DevType::DEV_TYPE_910_95)
+                                                             .SetDevType(DevType::DEV_TYPE_950)
                                                              .SetMyRank(myRank)
                                                              .SetRankSize(rankSize)
                                                              .Build();
@@ -131,7 +131,7 @@ TEST_F(CollAlgComponentTest, SelectorMc2Test)
 
     CollAlgComponentBuilder collAlgComponentBuilder;
     std::shared_ptr<CollAlgComponent> collAlgComponent = collAlgComponentBuilder.SetRankGraph(&virtTopo)
-                                                             .SetDevType(DevType::DEV_TYPE_910_95)
+                                                             .SetDevType(DevType::DEV_TYPE_950)
                                                              .SetMyRank(myRank)
                                                              .SetRankSize(rankSize)
                                                              .Build();
@@ -173,7 +173,7 @@ TEST_F(CollAlgComponentTest, SelectorMc2Test2D)
 
     CollAlgComponentBuilder collAlgComponentBuilder;
     std::shared_ptr<CollAlgComponent> collAlgComponent = collAlgComponentBuilder.SetRankGraph(&virtTopo)
-                                                             .SetDevType(DevType::DEV_TYPE_910_95)
+                                                             .SetDevType(DevType::DEV_TYPE_950)
                                                              .SetMyRank(myRank)
                                                              .SetRankSize(rankSize)
                                                              .Build();

@@ -748,7 +748,7 @@ TEST_F(CcuInsPreprocessorTest, RecoverCcuTransportCtx_test1)
     CcuTransport *ccuTrans;
     MOCKER_CPP(&CcuTransportGroupMgr::PrepareCreate).stubs().with(any(), any()).will(returnValue(group));
     MOCKER_CPP(&CcuTransportMgr::PrepareCreate).stubs().with(any(), outBound(ccuTrans)).will(returnValue(HcclResult::HCCL_SUCCESS));
-     MOCKER(&HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+     MOCKER(&HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
     CommunicatorImpl *communicator;
     CcuInsPreprocessor preprocessor(communicator);
     bool transportStatus = true;

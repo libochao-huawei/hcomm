@@ -63,7 +63,7 @@ protected:
         MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
         MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
         MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
-        MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+        MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
     }
 
     virtual void TearDown()
@@ -779,7 +779,7 @@ TEST_F(CollServiceAiCpuImplTest, test_init_LoadWithOpBasedMode)
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
     MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
     MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
 
     // 资源初始化
     MOCKER_CPP(&CcuInsPreprocessor::Preprocess).stubs().with().will(ignoreReturnValue());
@@ -870,7 +870,7 @@ TEST_F(CollServiceAiCpuImplTest, test_init_LoadWithOpBasedMode)
     CollAlgOpReq collAlgOpReq;
     collAlgOpReq.algName = "testAlg";
     collAlgOpReq.resReq.primQueueNum = 1;
-    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
     MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::Orchestrate,
                        HcclResult(CollAlgComponent::*)(const CollAlgOperator &op, const CollAlgParams &params,
                                                        const string &algName, InsQuePtr queue))
@@ -944,12 +944,12 @@ TEST_F(CollServiceAiCpuImplTest, test_GetSnapShotDynamicBuf)
     u32 utCntCke = 3;
 
     CollServiceAiCpuImpl service(&comm);
-    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
     MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::GetCollAlgOpReq)
         .stubs()
         .with(any(), any())
         .will(returnValue(collAlgOpReq));
-    comm.collAlgComponent = make_shared<CollAlgComponent>(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    comm.collAlgComponent = make_shared<CollAlgComponent>(nullptr, DevType::DEV_TYPE_950, 0, 1);
     CollOperator op;
     BinaryStream bs{};
 
@@ -1005,7 +1005,7 @@ TEST_F(CollServiceAiCpuImplTest, test_LoadWithOffloadMode_Success)
     CollAlgOpReq collAlgOpReq;
     collAlgOpReq.algName = "testAlg";
     collAlgOpReq.resReq.primQueueNum = 1;
-    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
     MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::GetCollAlgOpReq)
         .stubs()
         .with(any(), any())

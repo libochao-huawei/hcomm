@@ -61,7 +61,7 @@ protected:
         checkerOpParam.opType = CheckerOpType::ALLTOALLVC;
         checkerOpParam.tag = "AllToAllVC";
         checkerOpParam.opMode = opMode;
-        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
         checkerOpParam.All2AllDataDes.sendType = CheckerDataType::DATA_TYPE_FP16;
         checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_FP16;
         checkerOpParam.All2AllDataDes.sendCountMatrix = GenerateSendCountMatrix(dataCount, rankNum);
