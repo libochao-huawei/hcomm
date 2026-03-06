@@ -23,26 +23,31 @@ HcclResult CollCommAicpuMgr::AcquireCollCommAicpu()
 
 HcclResult CollCommAicpuMgr::InitAicpuIndOp(CommAicpuParam *commAicpuParam) 
 {
+    CHK_PTR_NULL(collCommAicpu_);
     return collCommAicpu_->InitAicpuIndOp(commAicpuParam);
 }
 
 HcclResult CollCommAicpuMgr::InitThreads(ThreadMgrAicpuParam *param)
 {
+    CHK_PTR_NULL(collCommAicpu_);
     return collCommAicpu_->InitThreads(param);
 }
 
 HcclResult CollCommAicpuMgr::AllocChannelResource(HcclChannelUrmaRes *commParam)
 {
+    CHK_PTR_NULL(collCommAicpu_);
     return collCommAicpu_->AllocChannelResource(commParam);
 }
 
 HcclResult CollCommAicpuMgr::NotifyFree(NotifyMgrAicpuParam *param)
 {
+    CHK_PTR_NULL(collCommAicpu_);
     return collCommAicpu_->NotifyFree(param);
 }
 
 HcclResult CollCommAicpuMgr::NotifyAlloc(NotifyMgrAicpuParam *param)
 {
+    CHK_PTR_NULL(collCommAicpu_);
     return collCommAicpu_->NotifyAlloc(param);
 }
 
