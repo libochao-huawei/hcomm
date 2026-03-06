@@ -329,7 +329,7 @@ HcclResult HcclCollCommInitAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
             devicesStr += " ";
         }
     }
-    HCCL_RUN_INFO("Entry-HcclCollCommInitAll V910_95, ndev:[%u], devices:[%s].", ndev, devicesStr.c_str());
+    HCCL_RUN_INFO("Entry-HcclCollCommInitAll, ndev:[%u], devices:[%s].", ndev, devicesStr.c_str());
 
     std::future<HcclResult> threadResult;
     std::unique_ptr<std::thread> getCommThread;
@@ -1250,7 +1250,9 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(*comm);
+            CHK_PTR_NULL(hcclComm);
             void* commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
             void* subCommV2 = nullptr;
             CHK_RET(HcclCreateSubCommConfigV2(&commV2, rankNum, rankIds, subCommId, subCommRankId, config, &subCommV2));
             char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
