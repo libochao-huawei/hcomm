@@ -51,7 +51,7 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Host_When_Normal_Expect_Re
 
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
 
     AicpuTsThread aicpuThread(StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY);
@@ -156,7 +156,7 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_When_Normal_Expect_
 
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     
     AicpuTsThread aicpuThread(StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY);
@@ -168,7 +168,7 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_When_Normal_Expect_
     GlobalMockObject::verify(); 
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(GetRunSideIsDevice)
         .stubs()
@@ -219,7 +219,7 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_When_RtsqA5IsNormal
 
      MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
 
     AicpuTsThread mainDevThread(mainStr);

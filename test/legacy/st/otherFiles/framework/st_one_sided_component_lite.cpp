@@ -57,7 +57,7 @@ TEST_F(OneSidedComponentLiteTest, test_Orchestrate_should_failed)
     MemTransportLiteMgr transportLiteMgr{nullptr};
     CollAlgInfo collAlgInfo{OpMode::OPBASE, "tag"};
     RmtDataBufferMgr rmtDataBufferMgr{&transportLiteMgr, &collAlgInfo};
-    OneSidedComponentLite oneSidedComponentLite{0, 1, DevType::DEV_TYPE_910_95, 0, &connectedLinkMgr,
+    OneSidedComponentLite oneSidedComponentLite{0, 1, DevType::DEV_TYPE_950, 0, &connectedLinkMgr,
     &rmtDataBufferMgr};
 
     HcclAicpuOpLite aiCpuOpLite{};
@@ -71,7 +71,7 @@ TEST_F(OneSidedComponentLiteTest, test_Orchestrate_should_success)
     MemTransportLiteMgr transportLiteMgr{nullptr};
     CollAlgInfo collAlgInfo{OpMode::OPBASE, "tag"};
     RmtDataBufferMgr rmtDataBufferMgr{&transportLiteMgr, &collAlgInfo};
-    OneSidedComponentLite oneSidedComponentLite{0, 1, DevType::DEV_TYPE_910_95, 0, &connectedLinkMgr,
+    OneSidedComponentLite oneSidedComponentLite{0, 1, DevType::DEV_TYPE_950, 0, &connectedLinkMgr,
     &rmtDataBufferMgr};
 
     std::shared_ptr<InsQueue> insQueue = std::make_shared<InsQueue>();

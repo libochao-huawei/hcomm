@@ -62,7 +62,7 @@ TEST_F(ReduceScatter2DCCUTest, reducescatter2d_ccu_case_test_2_mul_2_rank)
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -85,7 +85,7 @@ TEST_F(ReduceScatter2DCCUTest, reducescatter2d_ccu_case_test_3_mul_3_rank)
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -108,7 +108,7 @@ TEST_F(ReduceScatter2DCCUTest, reducescatter2d_ccu_case_test_3_mul_4_rank)
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -131,7 +131,7 @@ TEST_F(ReduceScatter2DCCUTest, reducescatter2d_ccu_case_test_4_mul_4_rank)
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -154,7 +154,7 @@ TEST_F(ReduceScatter2DCCUTest, reducescatter2d_ccu_case_test_4_mul_3_rank)
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 1000;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -177,7 +177,7 @@ TEST_F(ReduceScatter2DCCUTest, reducescatter2d_ccu_case_test_4_mul_2_rank)
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -200,7 +200,7 @@ TEST_F(ReduceScatter2DCCUTest, reducescatter2d_ccu_case_test_5_mul_7_rank)
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -223,7 +223,7 @@ TEST_F(ReduceScatter2DCCUTest, reducescatter2d_ccu_mem2mem_case_test_2_mul_2_ran
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 1024 * 128;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -246,7 +246,7 @@ TEST_F(ReduceScatter2DCCUTest, reducescatter2d_ccu_mem2mem_case_test_2_mul_4_ran
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MIN;
     checkerOpParam.DataDes.count = 101;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -269,7 +269,7 @@ TEST_F(ReduceScatter2DCCUTest, reducescatter2d_ccu_mem2mem_case_test_4_mul_4_ran
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
@@ -292,7 +292,7 @@ TEST_F(ReduceScatter2DCCUTest, reducescatter2d_ccu_mem2mem_case_test_5_mul_7_ran
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 1024 * 64;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
@@ -316,7 +316,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
@@ -339,7 +339,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
@@ -362,7 +362,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
@@ -385,7 +385,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
@@ -408,7 +408,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
@@ -431,7 +431,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
@@ -454,7 +454,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
@@ -477,7 +477,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 2 * 512 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
@@ -500,7 +500,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 2 * 513 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
@@ -523,7 +523,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 2 * 515 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
@@ -546,7 +546,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 2 * 768 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
@@ -569,7 +569,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 2 * 769 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
@@ -592,7 +592,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
@@ -615,7 +615,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_failed_
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
@@ -640,7 +640,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_parallel_opbase_2x2_int16_sum
     checkerOpParam.DataDes.count = 200;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuReduceScatterParallelMesh1DNHR";
  
     Checker checker;
@@ -662,7 +662,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_parallel_opbase_2x2_fp32_min_
     checkerOpParam.DataDes.count = 200;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MIN;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuReduceScatterParallelMesh1DNHR";
  
     Checker checker;
@@ -684,7 +684,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_parallel_offload_2x2_int16_su
     checkerOpParam.DataDes.count = 200;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuReduceScatterParallelMesh1DNHR";
  
     Checker checker;
@@ -706,7 +706,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_parallel_offload_2x2_fp32_min
     checkerOpParam.DataDes.count = 200;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MIN;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuReduceScatterParallelMesh1DNHR";
  
     Checker checker;

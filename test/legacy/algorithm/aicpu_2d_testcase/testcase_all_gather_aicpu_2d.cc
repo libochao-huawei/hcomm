@@ -63,7 +63,7 @@ TEST_F(AllGatherAicpu2DTest, allgather_aicpu_case_test_2_mul_2_rank)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherMesh2D";
 
     Checker checker;
@@ -85,7 +85,7 @@ TEST_F(AllGatherAicpu2DTest, allgather_aicpu_case_test_2_mul_2_rank_offload)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherMesh2D";
 
     Checker checker;
@@ -107,7 +107,7 @@ TEST_F(AllGatherAicpu2DTest, allgather_aicpu_case_test_2_mul_2_rank_offload_0)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 0;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherMesh2D";
 
     Checker checker;
@@ -128,7 +128,7 @@ TEST_F(AllGatherAicpu2DTest, allgather_aicpu_case_test_2_mul_2_rank_big_data)
     checkerOpParam.tag = "AllGather";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherMesh2D";
     for (u64 i = 2; i < 4 * 1024 * 1024 * 1024; i *= 4) {
         Checker checker;
@@ -153,7 +153,7 @@ TEST_F(AllGatherAicpu2DTest, allgather_aicpu_case_test_2_mul_2_rank_small_data)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 1;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherMesh2D";
 
     Checker checker;
@@ -175,7 +175,7 @@ TEST_F(AllGatherAicpu2DTest, allgather_aicpu_case_test_2_mul_2_rank_small_data_0
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 0;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherMesh2D";
 
     Checker checker;
@@ -197,7 +197,7 @@ TEST_F(AllGatherAicpu2DTest, allgather_aicpu_case_test_3_mul_3_rank)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherMesh2D";
 
     Checker checker;
@@ -219,7 +219,7 @@ TEST_F(AllGatherAicpu2DTest, allgather_aicpu_case_test_4_mul_4_rank)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 9;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherMesh2D";
 
     Checker checker;
