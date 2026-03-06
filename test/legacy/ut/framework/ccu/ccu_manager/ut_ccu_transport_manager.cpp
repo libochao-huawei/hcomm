@@ -160,6 +160,8 @@ void MockCcuTransportMgrDevs()
 
 TEST_F(CcuTransportMgrTest, Ut_PrepareCreate_When_InterfaceOk_Expect_Return_Ok)
 {
+    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
+    MOCKER(HrtFree).stubs().will(returnValue(static_cast<void*>(0)));
     const uint32_t baseIpAddrInt = 100;
     const uint32_t linkNum = 4;
     const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
@@ -217,7 +219,9 @@ TEST_F(CcuTransportMgrTest, Ut_PrepareCreate_When_InterfaceOk_Expect_Return_Ok)
 
 TEST_F(CcuTransportMgrTest, Ut_PrepareCreateFailAndFallback_When_InterfaceUnavailable_Expect_Return_Unavailable)
 {
+    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
     MOCKER(CcuCreateTransport).stubs().will(returnValue(HcclResult::HCCL_E_UNAVAIL));
+    MOCKER(HrtFree).stubs().will(returnValue(static_cast<void*>(0)));
 
     const uint32_t baseIpAddrInt = 100;
     const uint32_t linkNum = 4;
@@ -260,6 +264,8 @@ TEST_F(CcuTransportMgrTest, Ut_PrepareCreateFailAndFallback_When_InterfaceUnavai
 
 TEST_F(CcuTransportMgrTest, Ut_CleanAndResume_When_InterfaceOk_Expect_Return_Ok)
 {
+    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
+    MOCKER(HrtFree).stubs().will(returnValue(static_cast<void*>(0)));
     const uint32_t baseIpAddrInt = 100;
     const uint32_t linkNum = 4;
     const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
@@ -315,6 +321,8 @@ TEST_F(CcuTransportMgrTest, Ut_CleanAndResume_When_InterfaceOk_Expect_Return_Ok)
 
 TEST_F(CcuTransportMgrTest, Ut_CleanAndResumeFailed_When_InterfaceError_Expect_Return_Throw)
 {
+    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
+    MOCKER(HrtFree).stubs().will(returnValue(static_cast<void*>(0)));
     const uint32_t baseIpAddrInt = 100;
     const uint32_t linkNum = 4;
     const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
@@ -368,6 +376,8 @@ TEST_F(CcuTransportMgrTest, Ut_CleanAndResumeFailed_When_InterfaceError_Expect_R
 
 TEST_F(CcuTransportMgrTest, Ut_RecoverTransports_When_InterfaceOk_Expect_Return_Ok)
 {
+    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
+    MOCKER(HrtFree).stubs().will(returnValue(static_cast<void*>(0)));
     const uint32_t baseIpAddrInt = 100;
     const uint32_t linkNum = 4;
     const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
@@ -428,6 +438,8 @@ TEST_F(CcuTransportMgrTest, Ut_RecoverTransports_When_InterfaceOk_Expect_Return_
 
 TEST_F(CcuTransportMgrTest, Ut_RecoverTransportsFailed_When_RecoverMsgError_Expect_Throw)
 {
+    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<u32>(0)));
+    MOCKER(HrtFree).stubs().will(returnValue(static_cast<void*>(0)));
     const uint32_t baseIpAddrInt = 100;
     const uint32_t linkNum = 4;
     const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
