@@ -27,13 +27,13 @@ bool CcuRepWaitGroup::Translate(CcuInstr *&instr, uint16_t &instrId, const Trans
     this->instrId = instrId;
     translated    = true;
 
-    u32 cntCkeId;
- 	HcclResult ret = transportGroup.GetCntCkeId(semIndex, cntCkeId);
- 	if (ret != HcclResult::HCCL_SUCCESS) {
- 	  	string msg = StringFormat("[Translate]rt get CntCkeId failed. "
- 	  	                            "semIndex[%u], cntCkeId[%u] return[%d].", semIndex, cntCkeId, ret);
- 	  	MACRO_THROW(CcuApiException, msg);
- 	}
+    u32 cntCkeId = 0;
+    HcclResult ret = transportGroup.GetCntCkeId(semIndex, cntCkeId);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        string msg = StringFormat("[Translate]rt get CntCkeId failed. "
+                                    "semIndex[%u], cntCkeId[%u] return[%d].", semIndex, cntCkeId, ret);
+        MACRO_THROW(CcuApiException, msg);
+    }
     // 需要profiling的使用SetCKEInstr, 否则使用ClearCKEInstr
     if (isProfiling) {
         SetCKEInstr(instr++, 0, 0, cntCkeId, mask, 1);

@@ -59,7 +59,7 @@ DevType HrtGetDeviceType()
     if (iter == SOC_VER_CONVERT.end()) {
         string msg = StringFormat("[Get][DeviceType]errNo[0x%016llx] rtGetSocVersion get "
                    "illegal chipver, chip_ver[%s], return[%d].",
-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), targetChipVerStr.c_str());
+                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), targetChipVerStr.c_str(), iter);
         MACRO_THROW(RuntimeApiException, msg);
     }
 
@@ -108,7 +108,7 @@ void HrtGetSocVer(std::string &socName)
         HCCL_ERROR("[Get][SocVer]errNo[0x%016llx] rtGet deviceVer failed.",
                    HCCL_ERROR_CODE((HcclResult::HCCL_E_RUNTIME)));
         throw RuntimeApiException("call rtGetSocVersion failed. ");
-        }
+    }
     socName = socNamePtr;
 }
 
@@ -285,7 +285,7 @@ const std::unordered_map<uint64_t, HcclMainboardId> rtMainboardIdToHcclMainboard
  */
 HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainboardId)
 {
-    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%d].", deviceLogicId);
+    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%u].", deviceLogicId);
     constexpr int32_t moduleType = DEV_MODULE_TYPE::MODULE_TYPE_SYSTEM;
     constexpr aclrtDevAttr infoType = aclrtDevAttr::ACL_DEV_ATTR_MAINBOARD_ID;
     constexpr uint64_t BITS_5 = 5;
@@ -558,7 +558,6 @@ void HrtIpcSetMemoryPid(const char_t *name, int pid)
     CHECK_NULLPTR(name, "[HrtIpcSetMemoryPid] name is nullptr!");
     aclError ret = aclrtIpcMemSetImportPid(name, &pid, 1);
     HCCL_INFO("Call aclrtIpcMemSetImportPid, return value[%d], pid[%d], name[%s].", ret, pid, name);
-    CHECK_NULLPTR(name, "[HrtIpcSetMemoryPid] name is nullptr!");
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[Set][IpcMemoryPid]errNo[0x%016llx] "
                    "rtSet ipc memory pid fail. return[%d], pid[%d], name[%s].",
@@ -599,7 +598,6 @@ void HrtDevMemAlignWithPage(void *ptr, u64 size, void *&ipcPtr, u64 &ipcSize, u6
     HCCL_INFO("[HrtDevMemAlignWithPage] ptr[%p], size[%llu], ipcPtr[%p], ipcSize[%llu], ipcOff[%llu].",
         ptr, size, ipcPtr, ipcSize, ipcOff);
     CHECK_NULLPTR(ptr, "[HrtDevMemAlignWithPage] ptr is nullptr!");
-    CHECK_NULLPTR(ipcPtr, "[HrtDevMemAlignWithPage] ipcPtr is nullptr!");
     aclrtPtrAttributes memAttr = HrtPointerGetAttributes(ptr);
 
     HCCL_INFO("[HrtDevMemAlignWithPage]get pageSize[%u].", memAttr.pageSize);
@@ -969,7 +967,7 @@ void HrtCntNotifyWaitWithTimeOut(const aclrtCntNotify inCntNotify, const aclrtSt
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("Call rtCntNotifyWaitWithTimeout failed. return[%d], inCntNotify[%p], streamPtr[%p], "
                     "mode[%d], value[%u], timeout[%u], isClear[%s].", 
-                    inCntNotify, streamPtr, mode, value, timeout, isClear);
+                    ret, inCntNotify, streamPtr, mode, value, timeout, isClear);
         THROW<RuntimeApiException>(msg);
     }
 }
@@ -1056,7 +1054,7 @@ u32 HrtStreamGetCqId(const aclrtStream ptr)
 
 void HrtCcuLaunch(rtCcuTaskInfo_t &taskInfo, aclrtStream const streamPtr)
 {
-    HCCL_INFO("[HrtCcuLaunch] taskInfo[%d], streamPtr[%p].", taskInfo, streamPtr);
+    HCCL_INFO("[HrtCcuLaunch] taskInfo[%p], streamPtr[%p].", &taskInfo, streamPtr);
     CHECK_NULLPTR(streamPtr, "[HrtCcuLaunch] streamPtr is nullptr!");
     auto ret = rtCCULaunch(&taskInfo, streamPtr);
     if (ret != RT_ERROR_NONE) {
