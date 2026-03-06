@@ -348,6 +348,10 @@ HcclResult InsTempAlltoAllMesh::Run(const TempFuncs &tempFuncs, const RankSliceI
 {
     (void) tempFuncs;
     (void) sliceInfoVec;
+    if (tempInsQues.size() == 0) {
+        HCCL_ERROR("[CcuTempAlltoAllMesh1D] tempInsQues.size() is zero.");
+        return HcclResult::HCCL_E_PARA;
+    }
     dmaMode_ = DmaMode::PUT;
     buffInfo_ = buffInfo;
     u32 totalStep = CalcStepNum();
@@ -355,11 +359,6 @@ HcclResult InsTempAlltoAllMesh::Run(const TempFuncs &tempFuncs, const RankSliceI
     std::unordered_map<u32, UsrData> sendSliceInfoMap;
     std::unordered_map<u32, UsrData> recvSliceInfoMap;
     CHK_RET(CalcSendRecvAllSliceInfo(sendSliceInfoMap, recvSliceInfoMap));
-    if (tempInsQues.size() == 0) {
-        HCCL_ERROR("[CcuTempAlltoAllMesh1D] tempInsQues.size() is zero.");
-        return HcclResult::HCCL_E_PARA;
-    }
-
     std::vector<InsQuePtr> localCopyQues;
     if (tempInsQues.size() > 1) {
         localCopyQues.push_back(tempInsQues[0]);
