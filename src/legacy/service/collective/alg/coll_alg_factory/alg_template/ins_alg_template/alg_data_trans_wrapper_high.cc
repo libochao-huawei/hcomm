@@ -101,8 +101,8 @@ HcclResult MultiSendCounter(const MultiDataInfo &sendInfo, std::vector<InsQuePtr
                 HcclResult::HCCL_E_INTERNAL);
 
     CHK_PRT_RET((sendInfo.links_.size() != queues.size()) || (sendInfo.slices_.size() != queues.size()),
-                HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiSendCounter: invalid input with link num [%u], "
-                           "slice num [%u], queue num [%u].",
+                HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiSendCounter: invalid input with link num [%zu], "
+                           "slice num [%zu], queue num [%zu].",
                            sendInfo.links_.size(), sendInfo.slices_.size(), queues.size()),
                 HcclResult::HCCL_E_INTERNAL);
 
@@ -131,8 +131,8 @@ HcclResult MultiRecvCounter(const MultiDataInfo &recvInfo, std::vector<InsQuePtr
                 HcclResult::HCCL_E_INTERNAL);
 
     CHK_PRT_RET((recvInfo.links_.size() != queues.size()) || (recvInfo.slices_.size() != queues.size()),
-                HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiRecvCounter: invalid input with link num [%u], "
-                           "slice num [%u], queue num [%u].",
+                HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiRecvCounter: invalid input with link num [%zu], "
+                           "slice num [%zu], queue num [%zu].",
                            recvInfo.links_.size(), recvInfo.slices_.size(), queues.size()),
                 HcclResult::HCCL_E_INTERNAL);
 
@@ -162,8 +162,8 @@ HcclResult MultiSendRecvCounter(const MultiSendRecvInfo &sendRecvInfo, std::vect
                 HcclResult::HCCL_E_INTERNAL);
 
     CHK_PRT_RET((sendRecvInfo.txRxLinks_.size() != queues.size()) || (sendRecvInfo.txRxSlices_.size() != queues.size()),
-                HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiSendRecvCounter: invalid input with link num [%u], "
-                           "slice num [%u], queue num [%u].",
+                HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiSendRecvCounter: invalid input with link num [%zu], "
+                           "slice num [%zu], queue num [%zu].",
                            sendRecvInfo.txRxLinks_.size(), sendRecvInfo.txRxSlices_.size(), queues.size()),
                 HcclResult::HCCL_E_INTERNAL);
 
@@ -194,8 +194,8 @@ HcclResult MultiSendReduceCounter(const MultiDataReduceInfo &sendInfo, std::vect
 
     CHK_PRT_RET(
         (sendInfo.links_.size() != queues.size()) || (sendInfo.slices_.size() != queues.size()),
-        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiSendReduceCounter: invalid input with link num [%u], "
-                   "slice num [%u], queue num [%u].",
+        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiSendReduceCounter: invalid input with link num [%zu], "
+                   "slice num [%zu], queue num [%zu].",
                    sendInfo.links_.size(), sendInfo.slices_.size(), queues.size()),
         HcclResult::HCCL_E_INTERNAL);
 
@@ -226,8 +226,8 @@ HcclResult MultiRecvReduceCounter(const MultiDataReduceInfo &recvInfo, std::vect
 
     CHK_PRT_RET(
         (recvInfo.links_.size() != queues.size()) || (recvInfo.slices_.size() != queues.size()),
-        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiRecvReduceCounter: invalid input with link num [%u], "
-                   "slice num [%u], queue num [%u].",
+        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiRecvReduceCounter: invalid input with link num [%zu], "
+                   "slice num [%zu], queue num [%zu].",
                    recvInfo.links_.size(), recvInfo.slices_.size(), queues.size()),
         HcclResult::HCCL_E_INTERNAL);
 
@@ -258,8 +258,8 @@ HcclResult MultiSendRecvReduceCounter(const MultiSendRecvReduceInfo &sendRecvInf
 
     CHK_PRT_RET(
         (sendRecvInfo.txRxLinks_.size() != queues.size()) || (sendRecvInfo.txRxSlices_.size() != queues.size()),
-        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiSendRecvReduceCounter: invalid input with link num [%u], "
-                   "slice num [%u], queue num [%u].",
+        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiSendRecvReduceCounter: invalid input with link num [%zu], "
+                   "slice num [%zu], queue num [%zu].",
                    sendRecvInfo.txRxLinks_.size(), sendRecvInfo.txRxSlices_.size(), queues.size()),
         HcclResult::HCCL_E_INTERNAL);
 
@@ -286,7 +286,7 @@ HcclResult SendThruMultiLinks(const std::vector<DataInfo> &sendInfo, std::vector
     CHK_PRT_RET(
         sendInfo.size() != queues.size(),
         HCCL_ERROR(
-            "[InsCollAlgFactory] [AlgDataTrans] SendThruMultiLinks: sendInfo size [%u] is non-equal to queue num [%u].",
+            "[InsCollAlgFactory] [AlgDataTrans] SendThruMultiLinks: sendInfo size [%zu] is non-equal to queue num [%zu].",
             sendInfo.size(), queues.size()),
         HcclResult::HCCL_E_INTERNAL);
 
@@ -393,8 +393,8 @@ HcclResult SendRecvThruMultiLinks(const std::vector<SendRecvInfo> &sendRecvInfo,
 
     CHK_PRT_RET(
         sendRecvInfo.size() != queues.size(),
-        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] SendRecvThruMultiLinks: invalid input with recvInfo size [%u], "
-                   "queue num [%u].",
+        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] SendRecvThruMultiLinks: invalid input with recvInfo size [%zu], "
+                   "queue num [%zu].",
                    sendRecvInfo.size(), queues.size()),
         HcclResult::HCCL_E_INTERNAL);
 
@@ -450,8 +450,8 @@ HcclResult SendReduceThruMultiLinks(const std::vector<DataReduceInfo> &sendReduc
     }
 
     CHK_PRT_RET(sendReduceInfo.size() != queues.size(),
-                HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] SendReduceThruMultiLinks: sendReduceInfo size [%u] is "
-                           "non-equal to queue num [%u].",
+                HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] SendReduceThruMultiLinks: sendReduceInfo size [%zu] is "
+                           "non-equal to queue num [%zu].",
                            sendReduceInfo.size(), queues.size()),
                 HcclResult::HCCL_E_INTERNAL);
 
@@ -506,8 +506,8 @@ HcclResult RecvReduceThruMultiLinks(const std::vector<DataReduceInfo> &recvReduc
     CHK_PRT_RET(
         recvReduceInfo.size() != queues.size(),
         HCCL_ERROR(
-            "[InsCollAlgFactory] [AlgDataTrans] RecvReduceThruMultiLinks: invalid input with recvReduceInfo size [%u], "
-            "queue num [%u].",
+            "[InsCollAlgFactory] [AlgDataTrans] RecvReduceThruMultiLinks: invalid input with recvReduceInfo size [%zu], "
+            "queue num [%zu].",
             recvReduceInfo.size(), queues.size()),
         HcclResult::HCCL_E_INTERNAL);
 
