@@ -263,7 +263,7 @@ std::vector<uint64_t> CcuContextReduceScatterMesh2D::GeneArgs(const CcuTaskArg &
     uint64_t outputAddr  = taskArg->outputAddr_;
     uint64_t tokenInfo   = taskArg->token_;
     uint64_t outputSize  = taskArg->outputSize_;
-    uint64_t offset      = taskArg->offSet_;
+    uint64_t offset      = taskArg->offset_;
     uint64_t yAxisOffset = taskArg->xAxisSize_;
     uint64_t xAxisSize   = taskArg->xAxisSize_;
     uint64_t yAxisSize   = taskArg->yAxisSize_;
