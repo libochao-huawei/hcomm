@@ -36,7 +36,7 @@ private:
     CcuRep::Variable input_;
     std::vector<CcuRep::Variable> output_;
     std::vector<CcuRep::Variable> token_;
-    CcuRep::Variable mySliceOffSet_;
+    CcuRep::Variable mySliceOffset_;
     GroupOpSize groupOpSize_;
 };
 }// namespace Hccl

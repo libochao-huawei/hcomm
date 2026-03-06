@@ -642,14 +642,14 @@ HcclResult SendRecvExecutor::PayLoadMR(AscendMrInfo* putMRInfo, AscendMrInfo* re
         "is different from remoteMR. LocalMR size is [%u], remoteMR size is[%u].", putMRInfo->size, remoteMRInfo->size),
         HCCL_E_PARA);
     u64 remainingSize = putMRInfo->size;
-    u64 offSet = 0;
+    u64 offset = 0;
     u64 byteChunkSize = 0;
     u64 localAddr = 0;
     u64 remoteAddr = 0;
     bool isLastSlice = false;
     while (remainingSize > 0) {
-        localAddr = putMRInfo->addr + offSet;
-        remoteAddr = remoteMRInfo->addr + offSet;
+        localAddr = putMRInfo->addr + offset;
+        remoteAddr = remoteMRInfo->addr + offset;
         byteChunkSize = remainingSize > MAX_RDMA_WQE_SIZE ? MAX_RDMA_WQE_SIZE : remainingSize;
         isLastSlice = remainingSize > MAX_RDMA_WQE_SIZE ? false : true;
         struct SgList list = {};
@@ -670,7 +670,7 @@ HcclResult SendRecvExecutor::PayLoadMR(AscendMrInfo* putMRInfo, AscendMrInfo* re
 
         CHK_RET(MultiWqeOneDoorBellSend(isLastMRtoPut && isLastSlice, wrNum, wr));
         remainingSize -= byteChunkSize;
-        offSet += byteChunkSize;
+        offset += byteChunkSize;
     }
     return HCCL_SUCCESS;
 }
@@ -731,14 +731,14 @@ HcclResult SendRecvExecutor::ProcessRCQ(AscendMrInfo* lastMRInfo)
     HcclResult ret = HCCL_SUCCESS;
     u64 remainingSize = lastMRInfo->size;
     u64 localAddr = lastMRInfo->addr;
-    u64 offSet = 0;
+    u64 offset = 0;
     while (remainingSize > MAX_RDMA_WQE_SIZE) {
         remainingSize -= MAX_RDMA_WQE_SIZE;
-        offSet += MAX_RDMA_WQE_SIZE;
+        offset += MAX_RDMA_WQE_SIZE;
     }
     std::vector<struct RecvWrlistData> recvWrVec(1);
     recvWrVec[0].wrId = localAddr;
-    recvWrVec[0].memList.addr = localAddr + offSet;
+    recvWrVec[0].memList.addr = localAddr + offset;
     recvWrVec[0].memList.len = remainingSize;
     recvWrVec[0].memList.lkey = lastMRInfo->key;
 
