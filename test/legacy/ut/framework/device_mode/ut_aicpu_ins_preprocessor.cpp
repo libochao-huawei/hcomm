@@ -67,6 +67,7 @@ protected:
 
 TEST_F(AicpuInsPreprocessorTest, should_no_throw_when_calling_isAicpuResExisted)
 {
+    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
     CommunicatorImpl comm;
     AicpuInsPreprocessor aicpuInsPreprocessor(&comm);
     EXPECT_THROW(aicpuInsPreprocessor.IsAicpuResExisted("test"), NullPtrException);
@@ -78,6 +79,7 @@ TEST_F(AicpuInsPreprocessorTest, should_no_throw_when_calling_isAicpuResExisted)
 
 TEST_F(AicpuInsPreprocessorTest, should_no_throw_when_calling_getAicpuResBuffer)
 {
+    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
     CommunicatorImpl comm;
     AicpuInsPreprocessor aicpuInsPreprocessor(&comm);
     EXPECT_THROW(aicpuInsPreprocessor.GetAicpuResBuffer("test"), NullPtrException);
@@ -125,6 +127,7 @@ TEST_F(AicpuInsPreprocessorTest, should_no_throw_when_calling_batchBuildTranspor
 
 TEST_F(AicpuInsPreprocessorTest, should_no_throw_when_calling_packResAndCopyToDev)
 {
+    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER_CPP(&AicpuInsPreprocessor::PackOpData).stubs().with(any(), any(), any()).will(returnValue(std::vector<char>{'1'}));
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
 
@@ -139,6 +142,7 @@ TEST_F(AicpuInsPreprocessorTest, should_no_throw_when_calling_packResAndCopyToDe
 
 TEST_F(AicpuInsPreprocessorTest, test_AllocAlltoallVOpMem)
 {
+    MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
     HcclKernelLaunchParam param;
     CommunicatorImpl comm;
     comm.InitNotifyManager();
