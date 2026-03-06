@@ -66,7 +66,6 @@ HcclResult InsTempAllReduceMesh1DOneShot::GenExtIns(const TempFuncs &tempFuncs, 
     HCCL_INFO("[InsTempAllReduceMesh1DOneShot][Run] AllReduceMesh1DOneShot begin: rank[%d] start", myRank_);
 
     opMode_              = tempFuncs.opMode;
-
     queNum_ = tempVTopo_[0].size();
     CHK_PRT_RET(queNum_ != tempInsQues.size(),
                 HCCL_ERROR("[CollAlgFactory] [InsTempAllReduceMesh1DOneShot] Rank [%d], requiredQue Error.", myRank_),
