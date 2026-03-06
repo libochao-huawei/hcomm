@@ -130,7 +130,6 @@ HrtRaUbJettyCreatedOutParam CcuJetty::GetJettyedOutParam() const
     return outParam_;
 }
 
-<<<<<<< HEAD
 void CcuJetty::GetJettyInfo(ConnJettyInfo& connJettyInfo)
 {
     if (isCreated_ && outParam_.handle != 0) {
@@ -140,10 +139,6 @@ void CcuJetty::GetJettyInfo(ConnJettyInfo& connJettyInfo)
 
 HcclResult CcuJetty::Clean()
 {
-=======
-HcclResult CcuJetty::Clean()
-{
->>>>>>> 2aeaf9ec... update
     TRY_CATCH_RETURN(
         if (isCreated_ && outParam_.handle != 0) {
             HrtRaUbDestroyJetty(outParam_.handle);
