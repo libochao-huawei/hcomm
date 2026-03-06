@@ -584,6 +584,11 @@ HcclResult TransportIbverbs::CreateOneQp(
     if (useAicpu || qpMode_ == QPMode::NORMAL) {
         bool isWorkFlowLib = (workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
         CHK_RET(ConstructQpAttrs(qpMode, attrs, machinePara_.queueDepthAttr, isWorkFlowLib));
+        bool isA3Aicpu = machinePara_.isAicpuModeEn && (machinePara_.deviceType == DevType::DEV_TYPE_910_93);
+        if (isA3Aicpu && workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && qpMode == OPBASE_QP_MODE_EXT) {
+            attrs.qpAttr.cap.max_send_wr = machinePara_.queueDepthAttr.sqDepth == INVALID_UINT ? AICPU_SQ_CQ_DEPTH : attrs.qpAttr.cap.max_send_wr;
+            attrs.cqAttr.sendCqDepth = machinePara_.queueDepthAttr.sendCqDepth == INVALID_UINT ? AICPU_SQ_CQ_DEPTH : attrs.cqAttr.sendCqDepth;
+        }
         // A3 aicpu图模式使用单个qp, qp深度为socket数量*128
         bool isAicpuLib = machinePara_.isAicpuModeEn &&
                             (machinePara_.deviceType == DevType::DEV_TYPE_910_93) &&
@@ -608,6 +613,10 @@ HcclResult TransportIbverbs::CreateOneQp(
         return HCCL_E_PARA;
     } else {
         CHK_RET(ConstructQpAttrs(qpMode, attrs, machinePara_.queueDepthAttr));
+        if (machinePara_.deviceType == DevType::DEV_TYPE_910_93 && !machinePara_.isAicpuModeEn && workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && qpMode == OPBASE_QP_MODE_EXT) {
+            attrs.qpAttr.cap.max_send_wr = machinePara_.queueDepthAttr.sqDepth == INVALID_UINT ? HOST_SQ_CQ_DEPTH : attrs.qpAttr.cap.max_send_wr;
+            attrs.cqAttr.sendCqDepth = machinePara_.queueDepthAttr.sendCqDepth == INVALID_UINT ? HOST_SQ_CQ_DEPTH : attrs.cqAttr.sendCqDepth;
+        }
         if (UseMultiQp()) {
             MultiQpAdjustQpCapacity(attrs);
         }
