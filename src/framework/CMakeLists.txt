@@ -97,6 +97,13 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank/comm_mems/
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank_pairs
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx/profiling
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx/profiling/aicpu
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx/profiling/host
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx/taskException
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx/taskException/aicpu
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx/taskException/host
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/aicpu/
@@ -794,7 +801,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/framework/next/comms/endpoints/
         ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
         ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator/aicpu
-        
+        ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx
     )
 
     target_include_directories(ccl_kernel PRIVATE

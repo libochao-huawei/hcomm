@@ -63,6 +63,12 @@ HcclResult HcommEngineCtxDestroy(CommEngine engine, void *ctx);
 
 HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size);
 
+namespace hccl {
+    class HcclDfxOpInfo;
+}
+//TODO:C函数
+HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, hccl::HcclDfxOpInfo dfxOpInfo);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

@@ -1,3 +1,11 @@
+/*
+ * @Author: c15029001705 caiyifan2@huawei.com
+ * @Date: 2026-03-03 12:03:58
+ * @LastEditors: c15029001705 caiyifan2@huawei.com
+ * @LastEditTime: 2026-03-04 10:18:55
+ * @FilePath: \hcomm_profiling\src\framework\next\coll_comms\communicator\aicpu\coll_comm_aicpu.cc
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
@@ -16,8 +24,16 @@
 #include "ub_transport_lite_impl.h"
 #include "notify_manager.h"
 #include "aicpu_hccl_def.h"
+#include "kfc.h"
+#include "dlhal_function_v2.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
+
+HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel,
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // TODO: 临时，该接口头文件还没定
+
+HcclResult __attribute__((weak)) HcommThreadRegisterDfx(ThreadHandle thread,
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // TODO: 临时，该接口头文件还没定
 
 HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
@@ -39,7 +55,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
     CHK_RET(hrtSetlocalDeviceType(topoInfo_.deviceType));
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(topoInfo_.devicePhyId, &devId_));
-    
+    dfx_.Init(devId_, identifier_);
     if (commAicpuParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
         EXECEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
@@ -50,6 +66,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
     }
+    CHK_RET(Hccl::DlHalFunctionV2::GetInstance().DlHalFunctionInit());
 
     indOpCommInitialized_ = true;
     
@@ -92,12 +109,18 @@ HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
     for (size_t i = 0; i < threadNum; ++i) {
         threadArray[i] = reinterpret_cast<ThreadHandle>(outThreads[i].get());  // 拷贝裸指针
         HCCL_INFO("[CollCommAicpu][%s] threadArray[%u] = [%lu]", __func__, i, threadArray[i]);
+        CHK_RET(RegisterThreadAddDfxTaskInfo(threadArray[i]));
     }
     threads_.insert(threads_.end(), std::make_move_iterator(outThreads.begin()),
         std::make_move_iterator(outThreads.end()));
     HCCL_INFO("[CollCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
         __func__, hcomId.c_str(), threadNum);
     return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::RegisterThreadAddDfxTaskInfo(ThreadHandle thread) 
+{
+ 	return HcommThreadRegisterDfx(thread, dfx_->GetCallBack());
 }
 
 HcclResult CollCommAicpu::AllocChannelResource(HcclChannelUrmaRes *commParam)
@@ -114,7 +137,6 @@ HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
 {
     HCCL_INFO("[CollCommAicpu][%s] commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
         __func__, commParam->uniqueIdAddr, commParam->uniqueIdSize);
-
     for (u32 index = 0; index < commParam->listNum; index++) {
         std::vector<char> data(commParam->singleUniqueIdSize);
 
@@ -137,6 +159,9 @@ HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
         // 恢复出的channelHandle回填到commParam中
         ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
         channelList[index] = channelHandle;
+        CHK_RET(RegisterChannelAddDfxTaskInfo(channelHandle));
+        
+        HcclCommDfxLite::AddChannelRemoteRankId(identifier_, channelHandle, commParam->remoteRankId[index]);
         HCCL_INFO("[CollCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
             __func__, index, currentSrcAddr, commParam->singleUniqueIdSize, channelHandle);
     }
@@ -161,6 +186,10 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
     ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
 
     return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::RegisterChannelAddDfxTaskInfo(ChannelHandle channel) {
+    return HcommChannelRegisterDfx(channel, dfx_.GetCallback());
 }
 
 HcclResult CollCommAicpu::NotifyFree(NotifyMgrAicpuParam *param)
@@ -226,5 +255,25 @@ HcclResult CollCommAicpu::NotifyAlloc(NotifyMgrAicpuParam *param)
 
     HCCL_INFO("[CollCommAicpu][%s] comm identifier[%s], alloc notifys num[%u] success",
         __func__, hcomId.c_str(), notifyNum);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::SendErrorMessageReportToHost(Hccl::ErrorMessageReport& errMsgInfo)
+{
+    CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
+    CHK_RET(kfcStatusTransferD2H_->Put(sizeof(Hccl::KfcStatus) + sizeof(Hccl::KfcErrType), sizeof(errMsgInfo),
+        reinterpret_cast<uint8_t *>(&errMsgInfo)));
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::RegisterProfCallBack()
+{
+    if (MsprofRegisterCallback != nullptr) {
+        HCCL_INFO("RegisterProfCallBack not null");
+        int32_t ret = MsprofRegisterCallback(AICPU, &DeviceCommandHandle);
+        CHK_PRT_RET((ret != 0), HCCL_ERROR("[%s] failed. ret = [%d]", __func__, ret), HCCL_E_PARA);
+    } else {
+        HCCL_INFO("RegisterProfCallBack is null");
+    }
     return HCCL_SUCCESS;
 }
