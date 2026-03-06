@@ -159,7 +159,7 @@ void CcuTempAllGatherMeshDetour1D::ProcessLinks(std::vector<LinkData> &links, co
 }
 
 void CcuTempAllGatherMeshDetour1D::GetAddrInfo(const TempFuncs &tempFuncs, const RankSliceInfo &sliceInfoVec,
-    uint64_t &inputAddr, uint64_t &outputAddr, uint64_t &offSet)
+    uint64_t &inputAddr, uint64_t &outputAddr, uint64_t &offset)
 {
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
@@ -170,18 +170,18 @@ void CcuTempAllGatherMeshDetour1D::GetAddrInfo(const TempFuncs &tempFuncs, const
         }
         if (tempFuncs.isBottom) {
             outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType());
-            // 需要加上UserOUt的偏移，包含了loop偏移和rank偏移
-            offSet = tempFuncs.usrData.usrOutSlices[myRank_].GetOffset();
+            // 需要加上 UserOUt 的偏移，包含了 loop 偏移和 rank 偏移
+            offset = tempFuncs.usrData.usrOutSlices[myRank_].GetOffset();
         } else {
             outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
-            // 从inBuff获取数据，只需要加上rank偏移
-            offSet = sliceInfoVec[myRank_][0].offset;
+            // 从 inBuff 获取数据，只需要加上 rank 偏移
+            offset = sliceInfoVec[myRank_][0].offset;
         }
     } else {
         // 图模式没有 tempFuncs.usrData，直接通过 buffInfo_ 获取输入输出地址
         inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff + tempFuncs.usrData.usrInSlices[0].GetOffset();
         outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
-        offSet = tempFuncs.usrData.usrOutSlices[myRank_].GetOffset();
+        offset = tempFuncs.usrData.usrOutSlices[myRank_].GetOffset();
     }
 
     return;
@@ -191,9 +191,11 @@ HcclResult CcuTempAllGatherMeshDetour1D::Run(const TempFuncs &tempFuncs, const R
                                           const BuffInfo &buffInfo, const ResLinks &tempLinks,
                                           std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempAllGatherMeshDetour1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     opMode_ = tempFuncs.opMode;
     buffInfo_ = buffInfo;
-
     CcuInstructionAllGatherMeshDetour1D ccuInsAllGatherMeshDetour1D;
 
     std::vector<uint64_t> dimSize;
@@ -201,8 +203,8 @@ HcclResult CcuTempAllGatherMeshDetour1D::Run(const TempFuncs &tempFuncs, const R
 
     uint64_t inputAddr;
     uint64_t outputAddr;
-    uint64_t offSet;
-    GetAddrInfo(tempFuncs, sliceInfoVec, inputAddr, outputAddr, offSet);
+    uint64_t offset;
+    GetAddrInfo(tempFuncs, sliceInfoVec, inputAddr, outputAddr, offset);
 
     std::vector<LinkData> links;
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;  // 获取本rank需要处理的数据量
@@ -215,13 +217,13 @@ HcclResult CcuTempAllGatherMeshDetour1D::Run(const TempFuncs &tempFuncs, const R
     ProcessLinks(links, tempLinks);
 
     ccuInsAllGatherMeshDetour1D.InitDetourInfo(
-        static_cast<uint32_t>(myRank_), inputAddr, outputAddr, token, offSet, tailOffset, tailSize, loopIterNum,
+        static_cast<uint32_t>(myRank_), inputAddr, outputAddr, token, offset, tailOffset, tailSize, loopIterNum,
         lengths_, singleTransportSize_, detourPathNum_, pathNumPerPeer_, op_, tempVTopo_);
 
     HCCL_INFO("[CcuTempAllGatherMeshDetour1D] Run Init: myRank_[%d], dimSize[%llu], inputAddr[%llu],outputAddr[%llu],"\
 "sliceSize[%llu], baseOffset[%llu], tailOffset[%llu], tailSize[%llu], loopIterNum[%llu],"\
 "singleTransportSize[%llu], detourPathNum[%u], pathNumPerPeer[%u], links.size[%llu]",
-        myRank_, dimSize[0], inputAddr, outputAddr, sliceSize, offSet, tailOffset, tailSize, loopIterNum,
+        myRank_, dimSize[0], inputAddr, outputAddr, sliceSize, offset, tailOffset, tailSize, loopIterNum,
         singleTransportSize_, detourPathNum_, pathNumPerPeer_, links.size());
 
     ccuInsAllGatherMeshDetour1D.SetLinks(links);
