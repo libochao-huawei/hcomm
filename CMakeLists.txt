@@ -149,12 +149,21 @@ elseif(BUILD_OPEN_PROJECT)
         )
         add_dependencies(sign_cann_hcomm_compat generate_device_hccp_package)
 
-        add_custom_target(generate_device_hccd_package
-            COMMAND cd ${HCCD_TAR_DIR} && ls && tar czf ../cann-hccd-compat.tar.gz lib64
-            DEPENDS hccd
-            COMMENT "Creating cann-hccd-compat.tar.gz"
+        pack_targets_and_files(
+            OUTPUT_TARGET "generate_device_hccd_package"
+            OUTPUT "cann-hccd-compat.tar.gz"
+            TARGETS hccd
+            FILES ${HCCD_TAR_DIR}/
+            MANIFEST "hccd_compat_bin_hash.cfg"
         )
         add_dependencies(generate_device_hccd_package hccd)
+
+        # add_custom_target(generate_device_hccd_package
+        #     COMMAND cd ${HCCD_TAR_DIR} && ls && tar czf ../cann-hccd-compat.tar.gz lib64
+        #     DEPENDS hccd
+        #     COMMENT "Creating cann-hccd-compat.tar.gz"
+        # )
+        # add_dependencies(generate_device_hccd_package hccd)
 
         sign_file(
             INPUT "cann-hccd-compat.tar.gz"
@@ -165,12 +174,22 @@ elseif(BUILD_OPEN_PROJECT)
         add_dependencies(sign_cann_hccd_compat generate_device_hccd_package)
 
         if(KERNEL_MODE)
-            add_custom_target(generate_device_aicpu_package
-                COMMAND cd ${CCL_KERNEL_TAR_DIR} && ls && tar czf ../aicpu_hcomm.tar.gz aicpu_kernels_device
-                DEPENDS ccl_kernel
-                COMMENT "Creating aicpu_hcomm.tar.gz"
+            # add_custom_target(generate_device_aicpu_package
+            #     COMMAND cd ${CCL_KERNEL_TAR_DIR} && ls && tar czf ../aicpu_hcomm.tar.gz aicpu_kernels_device
+            #     DEPENDS ccl_kernel
+            #     COMMENT "Creating aicpu_hcomm.tar.gz"
+            # )
+            # add_dependencies(generate_device_aicpu_package ccl_kernel)
+
+            pack_targets_and_files(
+                OUTPUT_TARGET "generate_device_aicpu_package"
+                OUTPUT "aicpu_hcomm.tar.gz"
+                TARGETS ccl_kernel
+                FILES ${CCL_KERNEL_TAR_DIR}/
+                MANIFEST "aicpu_hcomm_bin_hash.cfg"
             )
             add_dependencies(generate_device_aicpu_package ccl_kernel)
+
             sign_file(
                 INPUT "aicpu_hcomm.tar.gz"
                 CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml"
