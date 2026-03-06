@@ -417,7 +417,7 @@ void CcuErrorHandler::GenErrorInfoRemWaitGroup(const ErrorInfoBase &baseInfo, sh
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                           = static_pointer_cast<CcuRepWaitGroup>(repBase);
-    u32 cntCkeId;
+    u32 cntCkeId = 0;
     HcclResult ret = HcclResult::HCCL_SUCCESS;
     ret = rep->transportGroup.GetCntCkeId(rep->semIndex, cntCkeId);
     if (ret != HcclResult::HCCL_SUCCESS) {
