@@ -543,13 +543,14 @@ void *HrtIpcOpenMemory(const char_t *name)
 
 void HrtIpcCloseMemory(const void *ptr)
 {
+    HCCL_INFO("[HrtIpcCloseMemory] ptr[%p].", ptr);
+    CHECK_NULLPTR(ptr, "[HrtIpcCloseMemory] ptr is nullptr!");
     aclError ret = aclrtIpcMemClose(reinterpret_cast<const char *>(ptr));
-    HCCL_INFO("Call aclrtIpcMemClose, return[%d], para: name[%s]", ret, reinterpret_cast<const char *>(ptr));
-    if (ret != ACL_SUCCESS) {
-        HCCL_ERROR("[Close][IpcMemory]errNo[0x%016llx] "
-                   "rtClose ipc memory fail, return[%d]. para: ptr[%p]",
+    if (ret != RT_ERROR_NONE) {
+        string msg = StringFormat("[Close][IpcMemory]errNo[0x%016llx] "
+                   "rtClose ipc memory failed. return[%d], para: ptr[%p].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr);
-        throw RuntimeApiException(StringFormat("call aclrtIpcMemClose failed, ptr=%p", ptr));
+        MACRO_THROW(RuntimeApiException, msg);
     }
 }
 
