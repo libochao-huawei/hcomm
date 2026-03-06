@@ -37,6 +37,8 @@
 #include "rs_ping.h"
 #include "ra_rs_err.h"
 #include "rs_drv_rdma.h"
+#include "rs_ub_tp.h"
+#include "rs_ub_dfx.h"
 #include "rs_ub.h"
 #include "stub/verbs_exp.h"
 #include "tls.h"
