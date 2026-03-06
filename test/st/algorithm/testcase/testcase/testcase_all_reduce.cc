@@ -1955,7 +1955,6 @@ TEST_F(AllReduceTest, allreduce_A3_AllReducemidcountExecutor)
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
 
-
 TEST_F(AllReduceTest, AllReduceOrderPreservedFor91093Executor1)
 {
     RankTable_For_LLT gen;
