@@ -706,7 +706,7 @@ HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHan
     RPT_INPUT_ERR(ret == HCCP_ELINKDOWN,
         "EI0009",
         vector<string>({"device_id", "reason"}),
-        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down."})
+        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down"})
     );
 #ifndef HCCD
     vector<HcclIpAddress> deviceIp;
@@ -738,11 +738,10 @@ HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rd
         init_info.enabled2mbLite);
 
     s32 ret = DlRaFunction::GetInstance().dlRaRdmaInitWithAttr(init_info, rdevInfo, &rdmaHandle);
-
     RPT_INPUT_ERR(ret == HCCP_ELINKDOWN,
         "EI0009",
         vector<string>({"device_id", "reason"}),
-        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down."})
+        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down"})
     );
     CHK_PRT_CONT(ret == HCCP_ELINKDOWN, 
         HCCL_ERROR("[%s][%s]rdma init failed because RoCE link status is down, please check the network adapter configuration.",
@@ -783,11 +782,10 @@ HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev
     }
 
     s32 ret = DlRaFunction::GetInstance().dlRaRdmaInitWithBackupAttr(&init_info, &rdevInfo, &backupRdevInfo, &rdmaHandle);
-
     RPT_INPUT_ERR(ret == HCCP_ELINKDOWN,
         "EI0009",
         vector<string>({"device_id", "reason"}),
-        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down."})
+        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down"})
     );
     CHK_PRT_CONT(ret == HCCP_ELINKDOWN, 
         HCCL_ERROR("[%s][%s]rdma init failed because RoCE link status is down, please check the network adapter configuration.",
