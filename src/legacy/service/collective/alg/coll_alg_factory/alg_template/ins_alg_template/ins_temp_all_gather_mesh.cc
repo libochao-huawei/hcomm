@@ -67,7 +67,7 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
 
     CHK_PRT_RET((majorQueNum_ + 1) != tempInsQues.size(),
         HCCL_ERROR("[InsTempAllGatherMesh1D] RunAllGather Rank [%d], requiredQueNum [%u] not equals to "
-                   "templateQueNum [%u].",
+                   "templateQueNum [%zu].",
                    myRank_, (majorQueNum_ + 1), tempInsQues.size()),
         HcclResult::HCCL_E_INTERNAL);
 
