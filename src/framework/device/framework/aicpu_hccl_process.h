@@ -20,6 +20,7 @@
 #include "hdc_pub.h"
 #include "stream_pub.h"
 #include "aicpu_launch_manager.h"
+#include "aicpu_ts_thread.h"
 
 class AicpuHcclProcess {
 public:

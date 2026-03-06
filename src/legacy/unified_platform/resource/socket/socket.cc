@@ -15,16 +15,18 @@
 
 namespace Hccl {
 
-constexpr u32 MAX_TRANSFER_SIZE         = 3 * 1024;
+constexpr u32 MAX_TRANSFER_SIZE         = 1024 * 1024;
 constexpr u32 MAX_LOG_TIMEOUT_MS        = 30000;
 constexpr u32 ONE_MILLISECOND_OF_USLEEP = 1000;
 constexpr u32 AUTO_LISTEN_PORT          = 0;
 
 Socket::~Socket()
 {
+    HCCL_INFO("[Socket::~Socket] START.");
     if (!isDestroyed) {
         DECTOR_TRY_CATCH("Socket", this->Destroy());
     }
+    HCCL_INFO("[Socket::~Socket] SUCCESS.");
 }
 
 void Socket::Listen()
@@ -114,9 +116,11 @@ bool Socket::ISend(void *data, u64 size, u64& compSize) const
 
 void Socket::Destroy()
 {
+    HCCL_INFO("[Socket::%s] START Stopping listen and closing.", __func__);
     isDestroyed = true;
     StopListen();
     Close();
+    HCCL_INFO("[Socket::%s] SUCCESS.", __func__);
 }
 
 void Socket::Close()

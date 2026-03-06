@@ -172,6 +172,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/device/utils
     ${HCCL_CODE_ROOT}/src/framework/device/framework
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves
 
     # framework/next
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
@@ -260,6 +261,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/device/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/

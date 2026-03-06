@@ -73,7 +73,7 @@ typedef struct {
     uint32_t notifyNum;
 
     // exchangeAllMems = True 就不需要 memHandle 了
-    bool exchangeAllMems;
+    bool exchangeAllMems{false};
     void **memHandles;
     uint32_t memHandleNum;
  
@@ -94,7 +94,7 @@ typedef struct {
 
     HcommSocket socket;
     // socket 监听指定端口号（源/目的端口号）
-    uint16_t port;
+    uint16_t port{0};
 } HcommChannelDesc;
  
 #ifdef __cplusplus

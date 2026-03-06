@@ -36,6 +36,7 @@
 #include "dtype_common.h"
 #include "aicpu_one_side_service.h"
 #include "coll_batch_write_executor.h"
+#include "aicpu_res_package_helper.h"
 
 using namespace hccl;
 using namespace HcclApi;
@@ -621,8 +622,8 @@ HcclResult AicpuHcclProcess::AicpuIndOpChannelInit(HcclIndOpChannelRemoteResV3 *
     CHK_PRT_RET(!hcclCommAicpu, HCCL_ERROR("%s hcclCommAicpu is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
     HcclResult ret = hcclCommAicpu->AllocChannelResource(commParam);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpChannelInit]errNo[0x%016llx] Failed to init channels group[%s]",
-        HCCL_ERROR_CODE(ret), group.c_str()), ret);
+        HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpChannelInit]errNo[0x%016llx] Failed to init channels",
+        HCCL_ERROR_CODE(ret)), ret);
     AicpuReleaseCommbyGroup(group);
     return HCCL_SUCCESS;
 }

@@ -37,10 +37,13 @@ public:
     // 基于内存描述，导入获得内存
     virtual HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) = 0;
  
-    // 关闭内存
+    // 关闭内存导入
     virtual HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) = 0;
 
-    virtual HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) = 0;
+    virtual HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
+    {
+        return HCCL_E_NOT_SUPPORT;
+    }
  
     RdmaHandle rdmaHandle_{nullptr};
 };

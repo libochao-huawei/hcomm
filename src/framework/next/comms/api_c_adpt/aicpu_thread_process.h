@@ -8,16 +8,17 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ENGINE_AICPU_INTERFACE_H
-#define ENGINE_AICPU_INTERFACE_H
 
-#include <cstdint>
+#ifndef __AICPU_THREAD_PROCESS_H__
+#define __AICPU_THREAD_PROCESS_H__
 
-extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *args);
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInitInternal(void *args);
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadDestroyInternal(void *args);
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpNotify(void *args);
-}
-
-#endif // CHANNEL_AICPU_INTERFACE_H
+#include "common.h"
+#include "channel_param.h"
+#include "aicpu_launch_manager.h"
+#include "aicpu_init_param.h"
+class AicpuIndopProcess {
+public:
+    ~AicpuIndopProcess() = default;
+    static HcclResult AicpuIndOpChannelInit(HcclChannelUrmaRes *commParam);
+};
+#endif // __AICPU_THREAD_PROCESS_H__
