@@ -251,14 +251,14 @@ void HrtStreamSetMode(HcclRtStream streamPtr, const uint64_t stmMode)
 
 HcclResult HrtGetDeviceInfo(uint32_t deviceLogicId, int32_t moduleType, aclrtDevAttr infoType, int64_t &val)
 {
-    HCCL_INFO("[HrtGetDeviceInfo]deviceLogicId[%u], moduleType[%d], infoType[%d], val[%ld].",
+    HCCL_INFO("[HrtGetDeviceInfo]deviceLogicId[%u], moduleType[%d], infoType[%d], val[%lld].",
                 deviceLogicId, moduleType, infoType, val);
     if(moduleType != DEV_MODULE_TYPE::MODULE_TYPE_SYSTEM)
     {
         THROW<NotSupportException>(StringFormat("[hrtGetDeviceInfo]Unsupported moduleType[%d].", moduleType));
     }
     aclError ret = aclrtGetDeviceInfo(deviceLogicId, infoType, reinterpret_cast<int64_t *>(&val));
-    HCCL_INFO("Call HrtGetDeviceInfo return[%d]. val[%ld].", ret, val);
+    HCCL_INFO("Call HrtGetDeviceInfo return[%d]. val[%lld].", ret, val);
     if (ret != ACL_SUCCESS) {
         HCCL_ERROR("[HrtGetDeviceInfo]errNo[0x%016llx] rt get device info failed, "
                    "deviceLogicId=%u, moduleType=%d, infoType=%d",
@@ -321,7 +321,7 @@ HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainbo
     constexpr uint64_t MASK_7 = 0x7;
     int64_t val = 0;
     CHK_RET(HrtGetDeviceInfo(deviceLogicId, moduleType, infoType, val));
-    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%u] val[%ld].", deviceLogicId, val);
+    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%u] val[%lld].", deviceLogicId, val);
     CHK_PRT_RET(val < 0, HCCL_ERROR("[HrtGetMainboardId]val[%lld] < 0", val), HCCL_E_RUNTIME);
     uint64_t mainboardId = (static_cast<uint64_t>(val) >> BITS_5) & MASK_7; // 提取val的5-7位，判断整机形态
     auto it = rtMainboardIdToHcclMainboardId.find(mainboardId);
@@ -681,7 +681,6 @@ void HrtFreeHost(void *hostPtr)
 
 aclrtNotify HrtNotifyCreate(s32 deviceLogicId)
 {
-    HCCL_INFO("[HrtNotifyCreate] deviceLogicId[%d].", deviceLogicId);
     aclrtNotify ptr = nullptr;
     // aclrtCreateNotify 中通过 aclrtGetDevice 获取 deviceId，所以要求当前线程设置过 setDevice
     aclError  ret = aclrtCreateNotify(&ptr, ACL_NOTIFY_DEFAULT);
@@ -812,7 +811,8 @@ void HrtNotifyWaitWithTimeOut(RtNotify_t notifyPtr, aclrtStream streamPtr, uint3
     aclError ret = aclrtWaitAndResetNotify(notifyPtr, streamPtr, timeOut);
     HCCL_INFO("Call aclrtWaitAndResetNotify, return value[%d].", ret);
     if (ret != ACL_SUCCESS) {
-        string msg = StringFormat("call aclrtWaitAndResetNotify failed. notifyPtr=%p, streamPtr=%p, return=%d.", notifyPtr, streamPtr, ret);
+        string msg = StringFormat("call aclrtWaitAndResetNotify failed. notifyPtr=%p, streamPtr=%p, timeout=%u, return=%d.",
+                                notifyPtr, streamPtr, timeout, ret);
         MACRO_THROW(RuntimeApiException, msg);
     }
 }
@@ -1254,6 +1254,7 @@ void HrtWriteValue(u64 addr, u32 piVal, const aclrtStream streamPtr)
 
 void HrtDeviceAbortRegCallBack(aclrtDeviceTaskAbortCallback callback, void *args)
 {
+    CHECK_NULLPTR(args, "[HrtDeviceAbortRegCallBack] args is nullptr!");
     aclError ret = aclrtSetDeviceTaskAbortCallback("HCCL", callback, args);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("call rtSetTaskAbortCallBack failed. ret=[%d].", ret);
