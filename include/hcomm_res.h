@@ -18,7 +18,7 @@ extern "C" {
 #endif  // __cplusplus
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommEndpointCreate(const EndpointDesc *endPoint, EndpointHandle *endpointHandle);
+extern HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle);

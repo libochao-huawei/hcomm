@@ -12,7 +12,7 @@
 #define HCCL_RANKGRAPH_H
 
 #include "hccl_res.h"
-
+#include <string>
 
 #ifdef __cplusplus
 extern "C" {
