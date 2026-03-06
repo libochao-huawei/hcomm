@@ -207,8 +207,9 @@ HcclResult AicpuIndopProcess::AicpuGetCommAll(std::vector<std::pair<std::string,
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, std::string &commTag)
+HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, std::string commTag)
 {
+    CHK_PTR_NULL(aicpuDfxInfo);
     // 获取device侧的通信域
     CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(commTag);
     CHK_PRT_RET(!collCommAicpuMgr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, commTag.c_str()), HCCL_E_PTR);

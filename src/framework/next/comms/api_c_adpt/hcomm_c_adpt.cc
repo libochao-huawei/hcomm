@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <mutex>
+#include <cstring>
 
 #include "hccl_api.h"
 #include "hcomm_res.h"
@@ -666,50 +667,46 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
 
 HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, HcclDfxOpInfo dfxOpInfo)
 {
-    // // 申请host侧内存
-    // hccl::HostMem hostPackBuf = hccl::HostMem::alloc(sizeof(dfxOpInfo));
-    // CHK_PTR_NULL(hostPackBuf.ptr());
     
-    // // 申请device侧内存
-    // hccl::DeviceMem devicePackBuf = hccl::DeviceMem::alloc(sizeof(dfxOpInfo));
-    // CHK_PTR_NULL(devicePackBuf.ptr());
-
-    // // 将host侧保存的dfxOpInfo拷贝到device侧内存中
-    // CHK_RET(hrtMemSyncCopy(devicePackBuf.ptr(),
-    //     sizeof(dfxOpInfo),
-    //     hostPackBuf.ptr(),
-    //     sizeof(dfxOpInfo),
-    //     HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
-
-    // // 创建局部流
-    // hccl::Stream localStream(hccl::StreamType::STREAM_TYPE_ONLINE);
-    // constexpr u32 aicpuStreamMode = 1;
-    // CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
-
-    // // 下kernel
-    // std::string kernelName = "RunAicpuDfxOpInfoInitV2";
-
-    // struct InitTask {
-    //     u64 context;
-    //     std::string commTag;
-    // }
+    // 申请device侧内存
+    hccl::DeviceMem devicePackBuf = hccl::DeviceMem::alloc(sizeof(dfxOpInfo));
+    CHK_PTR_NULL(devicePackBuf.ptr());
     
-    // InitTask customInitTask = {0};
-    // customInitTask.context = reinterpret_cast<u64>(devicePackBuf.ptr());
-    // customInitTask.commTag = commTag;
+    // 将dfxOpInfo信息传递给device侧
+    CHK_RET(hrtMemSyncCopy(devicePackBuf.ptr(),
+        sizeof(dfxOpInfo),
+        &dfxOpInfo,
+        sizeof(dfxOpInfo),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
 
-    // CHK_RET(hccl::AicpuAclKernelLaunch(localStream.ptr(),
-    //     reinterpret_cast<void *>(&customInitTask),  
-    //     sizeof(customInitTask),  
-    //     binHandle,              // 这里需要通讯域提供一个方法获取 binHandle
-    //     kernelName,
-    //     true,
-    //     NOTIFY_DEFAULT_WAIT_TIME));
+    // 创建局部流
+    hccl::Stream localStream(hccl::StreamType::STREAM_TYPE_ONLINE);
+    constexpr u32 aicpuStreamMode = 1;
+    CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
 
-    // CHK_RET(
-    //     hcclStreamSynchronize(localStream.ptr(), hccl::CommConfiger::GetInstance().GetCommConfigExecTimeOut(commTag)));
+    // 下kernel
+    std::string kernelName = "RunAicpuDfxOpInfoInitV2";
 
-    // HCCL_INFO("[%s] channel kernel launch success.", __func__);
+    struct InitTask {
+        u64 context;
+        char commTag[256];
+    }
+    
+    InitTask customInitTask = {0};
+    customInitTask.context = reinterpret_cast<u64>(devicePackBuf.ptr());
+    strcpy(customInitTask.commTag, commTag.c_str());
+    CHK_RET(hccl::AicpuAclKernelLaunch(localStream.ptr(),
+        reinterpret_cast<void *>(&customInitTask),  
+        sizeof(customInitTask),  
+        binHandle,            
+        kernelName,
+        true,
+        NOTIFY_DEFAULT_WAIT_TIME));
+
+    CHK_RET(
+        hcclStreamSynchronize(localStream.ptr(), hccl::CommConfiger::GetInstance().GetCommConfigExecTimeOut(commTag)));
+
+    HCCL_INFO("[%s] channel kernel launch success.", __func__);
 
     return HCCL_SUCCESS;
 }

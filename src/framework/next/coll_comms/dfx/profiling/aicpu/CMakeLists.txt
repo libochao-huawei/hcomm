@@ -9,6 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
 hcclCommProfilingLite.cc
+aicpu_ts_urma_dfx_kernel.cc
 )
 
 target_sources(hcomm PRIVATE
