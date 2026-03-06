@@ -61,7 +61,7 @@ aclError aclrtSetDeviceTaskAbortCallback(const char *regName, aclrtDeviceTaskAbo
 
 aclError aclrtCreateEventWithFlag(aclrtEvent *event, uint32_t flag)
 {
-    event = reinterpret_cast<aclrtEvent>(0x123);
+    *event = reinterpret_cast<aclrtEvent>(0x123);
     return aclrtCreateEvent(event);
 }
 
