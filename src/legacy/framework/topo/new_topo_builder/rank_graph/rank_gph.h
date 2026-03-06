@@ -68,10 +68,10 @@ public:
     HcclResult GetTopoType(const u32 netLayer, const u32 topoInstId, TopoType &topoType) const;
     HcclResult GetRanksByTopoInst(const u32 netLayer, const u32 topoInstId, std::vector<u32> &ranks, u32 &rankNum) const;
 
-    HcclResult GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num);
-    HcclResult GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
+    HcclResult GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num) const;
+    HcclResult GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc) const;
     HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc* endPointDesc, EndpointAttr endpointAttr,
-                                     uint32_t infoLen, void* info);
+                                     uint32_t infoLen, void* info) const;
 
     // 创建子虚拟拓扑
     std::unique_ptr<RankGraph> CreateSubRankGraph(const std::vector<u32> &rankIds) const; // 外部接口传入类型为u32
