@@ -109,7 +109,7 @@ const std::string hcomm_g_msg = R"(
       "errClass": "HCCL Errors",
       "errTitle": "Communication_Error_Initialize_Transport",
       "ErrCode": "EI0009",
-      "ErrMessage": "Device %d transport init error. Reason: %s.",
+      "ErrMessage": "Device %s transport init error. Reason: %s.",
       "Arglist": "device_id,reason",
       "suggestion": {
         "Possible Cause": "N/A",
