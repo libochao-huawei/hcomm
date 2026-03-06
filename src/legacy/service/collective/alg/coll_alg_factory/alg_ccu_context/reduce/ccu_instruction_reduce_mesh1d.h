@@ -60,13 +60,11 @@ public:
     uint64_t inputAddr_;
     uint64_t outputAddr_;
     uint64_t token_;
-
     uint64_t inputSliceStride_;
     uint64_t outputSliceStride_;
     uint64_t repeatNum_;
     uint64_t inputRepeatStride_;
     uint64_t outputRepeatStride_;
-
     uint64_t normalSliceSize_;
     uint64_t lastSliceSize_;
     uint64_t repeatNumVar_;
@@ -84,6 +82,11 @@ public:
               uint64_t inputRepeatStride, uint64_t outputRepeatStride, uint64_t normalSliceSize, uint64_t lastSliceSize,
               uint64_t repeatNumVar)
     {
+        u32 maxDimNum = 1;
+        if (tempVTopo.size() != maxDimNum) {
+            THROW<InvalidParamsException>(StringFormat(
+                "[CcuInstructionReduceMesh1D] tempVTopo size is not 1, size is [%zu].", tempVTopo.size()));
+        }
         dimSize_.push_back(tempVTopo[0].size());
         rankId_ = rankId;
         rootId_ = rootId;

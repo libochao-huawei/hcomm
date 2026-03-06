@@ -85,6 +85,11 @@ public:
               uint64_t outputSliceStride, uint64_t inputRepeatStride, uint64_t outputRepeatStride,
               uint64_t normalSliceSize, uint64_t lastSliceSize, uint64_t mySliceSize, uint64_t isInputOutputEqual)
     {
+        u32 maxDimNum = 1;
+        if (tempVTopo.size() != maxDimNum) {
+            THROW<InvalidParamsException>(StringFormat(
+                "[CcuInstructionAllReduceMesh1D] tempVTopo size is not 1, size is [%zu].", tempVTopo.size()));
+        }
         dimSize_.push_back(tempVTopo[0].size());
         rankId_             = rankId;
         op_                 = op;
