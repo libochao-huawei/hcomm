@@ -498,7 +498,7 @@ static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const Tas
     comm.GetMirrorTaskManager().AddTaskInfo(taskInfo);
 }
 
-void CommunicatorImpl::FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams)
+void CommunicatorImpl::FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams) const
 {
     std::vector<uint64_t> args;
     CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, args);
@@ -2932,7 +2932,7 @@ HcclResult CommunicatorImpl::AcceleratorFallback()
 HcclResult CommunicatorImpl::GetCacheMap(AivOpCacheArgs& opCacheParam , std::shared_ptr<InsQueue>& tempInsQue)
 {
     if (hcclCacheMap_.size() > CACHEMAP_MAXSIZE) {
-        size_t clearCount = CACHEMAP_MAXSIZE * CACHEMAP_CLEARPERCENT;
+        size_t clearCount = static_cast<size_t>(CACHEMAP_MAXSIZE * CACHEMAP_CLEARPERCENT);
         for (auto it = hcclCacheMap_.begin(); clearCount > 0 && it != hcclCacheMap_.end(); clearCount--) {
             it = hcclCacheMap_.erase(it);
         }
