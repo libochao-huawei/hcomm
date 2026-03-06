@@ -745,8 +745,8 @@ int32_t HcommChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(
     return HCCL_SUCCESS;
 }
 
-int32_t HcommThreadRegisterDfx(ThreadHandle *thread, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback) {
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback) {
+    Thread *threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
     CHK_RET(threadPtr->SetAddTaskInfoCallback(callback));
     return HCCL_SUCCESS;

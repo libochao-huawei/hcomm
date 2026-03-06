@@ -16,6 +16,8 @@
 #include <unordered_map>
 #include "buffer.h"
 #include "common.h"
+#include "op_mode.h"
+#include "task_info.h"
 
 namespace hccl {
 using RankId = u32;
