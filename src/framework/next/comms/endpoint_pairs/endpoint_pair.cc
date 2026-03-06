@@ -36,11 +36,15 @@ HcclResult EndpointPair::GetSocket(const std::string &socketTag, Hccl::Socket*& 
     return HCCL_SUCCESS;
 }
 
-HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, 
+HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels)
 {
-    CHK_RET(HcommChannelCreate(endpointHandle, engine, channelDescs, 1, channels));
-    channelHandles_.push_back(channels[0]);
+    if (channelHandles_.size() <= reuseIdx) {
+        CHK_RET(HcommChannelCreate(endpointHandle, engine, channelDescs, 1, channels));
+        channelHandles_.push_back(channels[0]);
+        return HCCL_SUCCESS;
+    }
+    channels[0] = channelHandles_[reuseIdx];
     return HCCL_SUCCESS;
 }
 
