@@ -89,6 +89,10 @@
     <file_info value="json" copy_type="delivery" src_path="build" dst_path="built-in/data/op/aicpu" install_path="opp/built-in/op_impl/aicpu/config" install_type="all" install_mod="440">
         <file value="ccl_kernel.json"/>
     </file_info>
+    <file_info value="aicpu_custom" copy_type="delivery" src_path="build" dst_path="built-in/data/op/aicpu" install_path="opp/built-in/op_impl/aicpu/kernel" install_type="all" install_mod="550">
+        <file value="libaicpu_custom.so" file_type="shared"/>
+        <file value="libaicpu_custom.json"/>
+    </file_info>
     <file_info value="json" copy_type="delivery" src_path="build" dst_path="built-in/data/op/dpu" install_path="opp/built-in/op_impl/dpu" install_type="all" install_mod="440">
         <file value="libccl_dpu.json"/>
     </file_info>

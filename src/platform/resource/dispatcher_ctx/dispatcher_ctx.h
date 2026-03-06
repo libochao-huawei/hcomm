@@ -40,6 +40,7 @@ class DispatcherCtx {
         HcclResult SetWaitTimeOut(u32 waitTimeOut);
         FftsCounterCallBack GetInitTaskCallback() const;
         FftsCounterCallBack GetLaunchTaskCallback() const;
+        HcclResult SetDispatcherHcclQos(u32 hcclQos);
 
     private:
         CtxDispatcherType dispatcherType_;

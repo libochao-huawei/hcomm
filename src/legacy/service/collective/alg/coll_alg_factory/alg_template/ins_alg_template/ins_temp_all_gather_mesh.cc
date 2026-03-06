@@ -63,38 +63,25 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
     tempAlgParams_ = tempAlgParams;
     tempLinks_ = tempLinks;
 
-    majorQueNum_ = tempVTopo_[0].size() - 1;
-
-    CHK_PRT_RET((majorQueNum_ + 1) != tempInsQues.size(),
+    CHK_PRT_RET(tempInsQues.size() != tempVTopo_[0].size(),
         HCCL_ERROR("[InsTempAllGatherMesh1D] RunAllGather Rank [%d], requiredQueNum [%u] not equals to "
                    "templateQueNum [%u].",
-                   myRank_, (majorQueNum_ + 1), tempInsQues.size()),
+                   myRank_, tempVTopo_[0].size(), tempInsQues.size()),
         HcclResult::HCCL_E_INTERNAL);
 
-    // queue arrangement
-    std::vector<InsQuePtr> mainInsQues;
-    for (u32 queIdx = 0; queIdx < majorQueNum_; queIdx++) {
-        mainInsQues.push_back(tempInsQues[queIdx * queNumPerNeighbor_]);
-    }
-
-    std::vector<InsQuePtr> localInsQues;
-    localInsQues.push_back(tempInsQues[0]);
-    localInsQues.push_back(tempInsQues[tempInsQues.size() - 1]);
+    CHK_RET(LocalCopyToScratch(tempInsQues[0]));
 
     // semaphore sync
-    CHK_RET(PreSyncInterQueues(localInsQues));
+    CHK_RET(PreSyncInterQueues(tempInsQues));
 
-    // Local Copy from Input to Output for OPBASE
-    CHK_RET(LocalDataCopy(tempInsQues));
-
-    // semaphore sync
-    CHK_RET(PreSyncInterQueues(mainInsQues));
+    // Local Copy from Input to Output
+    CHK_RET(LocalCopyToUsrOut(tempInsQues[0]));
 
     // locate myRank in tempVTopo -> algRank
     u32 myAlgRank;
     CHK_RET(GetAlgRank(myRank_, tempVTopo_[0], myAlgRank));
 
-    // run Mesh
+    // run Mesh 使用第1至rankSize条queue
     CHK_PRT_RET(
         RunMesh(myAlgRank, tempVTopo_[0], tempInsQues) != HcclResult::HCCL_SUCCESS,
         HCCL_ERROR("[InsTempAllGatherMesh1D] Rank [%d], unable to run mesh algorithm.", myRank_),
@@ -106,7 +93,33 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult InsTempAllGatherMesh1D::LocalDataCopy(std::vector<InsQuePtr> &tempInsQues)
+HcclResult InsTempAllGatherMesh1D::LocalCopyToUsrOut(InsQuePtr tempInsQue)
+{
+    if (tempAlgParams_.buffInfo.inBuffType == tempAlgParams_.buffInfo.outBuffType) {
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    u32 myAlgRank;
+    CHK_RET(GetAlgRank(myRank_, tempVTopo_[0], myAlgRank));
+    for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
+        const u64 inBaseOff  = tempAlgParams_.buffInfo.inBuffBaseOff  + rpt * tempAlgParams_.inputRepeatStride;
+        const u64 outBaseOff = tempAlgParams_.buffInfo.outBuffBaseOff + rpt * tempAlgParams_.outputRepeatStride;
+
+        const u64 inOff = tempAlgParams_.inputSliceStride * myAlgRank + inBaseOff;
+        const u64 outOff = tempAlgParams_.outputSliceStride * myAlgRank + outBaseOff;
+
+        DataSlice src(tempAlgParams_.buffInfo.inBuffType, inOff, tempAlgParams_.sliceSize);
+        DataSlice dst(tempAlgParams_.buffInfo.outBuffType, outOff, tempAlgParams_.sliceSize);
+        HCCL_INFO("[InsTempAllGatherMesh1D] in:%s -> out:%s", src.Describe().c_str(), dst.Describe().c_str());
+
+        auto ins = std::make_unique<InsLocalCopy>(src, dst);
+        tempInsQue->Append(std::move(ins));
+    }
+    return HcclResult::HCCL_SUCCESS;
+
+}
+
+HcclResult InsTempAllGatherMesh1D::LocalCopyToScratch(InsQuePtr tempInsQue)
 {
     u32 myAlgRank;
     CHK_RET(GetAlgRank(myRank_, tempVTopo_[0], myAlgRank));
@@ -124,64 +137,18 @@ HcclResult InsTempAllGatherMesh1D::LocalDataCopy(std::vector<InsQuePtr> &tempIns
             HCCL_INFO("[InsTempAllGatherMesh1D] in:%s -> scratch:%s", src.Describe().c_str(), dst.Describe().c_str());
 
             auto ins = std::make_unique<InsLocalCopy>(src, dst);
-            tempInsQues[0]->Append(std::move(ins));
-        }
-    }
-
-    if (tempAlgParams_.buffInfo.inBuffType == tempAlgParams_.buffInfo.outBuffType) {
-        return HcclResult::HCCL_SUCCESS;
-    }
-
-    for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
-        const u64 inBaseOff  = tempAlgParams_.buffInfo.inBuffBaseOff  + rpt * tempAlgParams_.inputRepeatStride;
-        const u64 outBaseOff = tempAlgParams_.buffInfo.outBuffBaseOff + rpt * tempAlgParams_.outputRepeatStride;
-
-        const u64 inOff = tempAlgParams_.inputSliceStride * myAlgRank + inBaseOff;
-        const u64 outOff = tempAlgParams_.outputSliceStride * myAlgRank + outBaseOff;
-
-        DataSlice src(tempAlgParams_.buffInfo.inBuffType, inOff, tempAlgParams_.sliceSize);
-        DataSlice dst(tempAlgParams_.buffInfo.outBuffType, outOff, tempAlgParams_.sliceSize);
-        HCCL_INFO("[InsTempAllGatherMesh1D] in:%s -> out:%s", src.Describe().c_str(), dst.Describe().c_str());
-
-        auto ins = std::make_unique<InsLocalCopy>(src, dst);
-        tempInsQues[tempInsQues.size() - 1]->Append(std::move(ins));
-    }
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult InsTempAllGatherMesh1D::PostLocalCopy(std::vector<InsQuePtr> &tempInsQues)
-{
-    for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
-        const u64 outBaseOff = tempAlgParams_.buffInfo.outBuffBaseOff + rpt * tempAlgParams_.outputRepeatStride;
-        const u64 scratchRepeatStride = tempAlgParams_.sliceSize * tempRankSize_;
-        const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff + rpt * scratchRepeatStride;
-
-        for (auto rank : tempVTopo_[0]) {
-            if (rank == myRank_) {
-                continue;
-            }
-            u32 algRank = 0;
-            CHK_RET(GetAlgRank(rank, tempVTopo_[0], algRank));
-            // 只拷贝step1的对端
-            u64 scratchOffset = scratchBase + tempAlgParams_.sliceSize * algRank;
-            u64 outOffset = tempAlgParams_.outputSliceStride * algRank + outBaseOff;
-
-            DataSlice usrInSlice = DataSlice(tempAlgParams_.buffInfo.scratBuffType, scratchOffset,
-                tempAlgParams_.sliceSize);
-            DataSlice usrOutSlice = DataSlice(tempAlgParams_.buffInfo.outBuffType, outOffset,
-                tempAlgParams_.sliceSize);
-
-            std::unique_ptr<Instruction> insLocalCopy = std::make_unique<InsLocalCopy>(usrInSlice, usrOutSlice);
-            tempInsQues[0]->Append(std::move(insLocalCopy));
+            tempInsQue->Append(std::move(ins));
         }
     }
     return HcclResult::HCCL_SUCCESS;
+
 }
 
 HcclResult InsTempAllGatherMesh1D::RunMesh(const u32 myAlgRank, const std::vector<RankId> &vTopo,
                                            std::vector<InsQuePtr> &tempInsQues)
 {
     for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
+        const u64 inBaseOff = tempAlgParams_.buffInfo.inBuffBaseOff + rpt * tempAlgParams_.inputRepeatStride;
         const u64 outBaseOff = tempAlgParams_.buffInfo.outBuffBaseOff + rpt * tempAlgParams_.outputRepeatStride;
         const u64 scratchRepeatStride = tempAlgParams_.sliceSize * tempRankSize_;
         const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff + rpt * scratchRepeatStride;
@@ -196,28 +163,30 @@ HcclResult InsTempAllGatherMesh1D::RunMesh(const u32 myAlgRank, const std::vecto
                 HCCL_ERROR("[InsTempAllGatherMesh1D] connectedRank does not exist");
                 return HcclResult::HCCL_E_PARA;
             }
-            CHK_PRT_RET(queIdx >= tempInsQues.size() || tempLinks_.at(connectedRank).empty(),
+            CHK_PRT_RET(queIdx + 1 >= tempInsQues.size() || tempLinks_.at(connectedRank).empty(),
                 HCCL_ERROR("[InsTempAllGatherMesh1D] queIdx=%u, tempInsQues.size=%u, connectedRank=%d, tempLinks_.size=%u",
                            queIdx, tempInsQues.size(), connectedRank, tempLinks_.size()),
                 HcclResult::HCCL_E_INTERNAL);
 
-            InsQuePtr currQue = tempInsQues[queIdx];
+            InsQuePtr currQue = tempInsQues[queIdx + 1];
             LinkData &neighborLinkData = tempLinks_.at(connectedRank)[0];
 
             BufferType writeType = (opMode_ == OpMode::OPBASE) ?
-                tempAlgParams_.buffInfo.scratBuffType : tempAlgParams_.buffInfo.outBuffType;
+                tempAlgParams_.buffInfo.scratBuffType : tempAlgParams_.buffInfo.inBuffType;
 
+            u64 txInOffset = tempAlgParams_.inputSliceStride * myAlgRank + inBaseOff;
             u64 txOutOffset = tempAlgParams_.outputSliceStride * myAlgRank + outBaseOff;
             u64 txScratchOffset = scratchBase + tempAlgParams_.sliceSize * myAlgRank;
             u64 txDstOffset = (opMode_ == OpMode::OPBASE) ? txScratchOffset : txOutOffset;
 
+            u64 rxInOffset = tempAlgParams_.inputSliceStride * connectedAlgRank + inBaseOff;
             u64 rxOutOffset = tempAlgParams_.outputSliceStride * connectedAlgRank + outBaseOff;
             u64 rxScratchOffset = scratchBase + tempAlgParams_.sliceSize * connectedAlgRank;
-            u64 rxSrcOffset = (opMode_ == OpMode::OPBASE) ? rxScratchOffset : rxOutOffset;
+            u64 rxSrcOffset = (opMode_ == OpMode::OPBASE) ? rxScratchOffset : rxInOffset;
 
-            vector<DataSlice> txSrcSlices{ DataSlice(tempAlgParams_.buffInfo.outBuffType, txOutOffset,
+            vector<DataSlice> txSrcSlices{ DataSlice(tempAlgParams_.buffInfo.inBuffType, txInOffset,
                                                      tempAlgParams_.sliceSize) };
-            vector<DataSlice> txDstSlices{ DataSlice(writeType, txDstOffset, tempAlgParams_.sliceSize) };
+            vector<DataSlice> txDstSlices{ DataSlice(writeType,  txDstOffset, tempAlgParams_.sliceSize) };
             vector<DataSlice> rxSrcSlices{ DataSlice(writeType, rxSrcOffset, tempAlgParams_.sliceSize) };
             vector<DataSlice> rxDstSlices{ DataSlice(tempAlgParams_.buffInfo.outBuffType, rxOutOffset,
                                                      tempAlgParams_.sliceSize) };

@@ -50,6 +50,7 @@ HcclResult IndependentOp::SetIndependentOpConfig(const CommConfig &commConfig, c
     commAicpuParam_.kfcStatusTransferD2HParams = kfcStatusTransferD2HParams;
     commAicpuParam_.userRank = topoAttr.userRank;
     commAicpuParam_.userRankSize = topoAttr.userRankSize;
+    CHK_PRT(channelMgr_.SetHcclQos(commConfig.GetConfigHcclQos()));
     HCCL_INFO("[IndependentOp][%s] Hcom[%s] threadNum[%u], notifyPerThread[%u], cclBufferSize[%llu], deviceLogicId[%u], "
         "devicePhyId[%u], deviceType[%u], userRank[%u], userRankSize[%u]", __func__, commId_.c_str(), threadNum_, notifyNumPerThread_,
         cclBufferSize_, commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId,

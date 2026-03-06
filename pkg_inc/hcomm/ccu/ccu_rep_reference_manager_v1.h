@@ -22,8 +22,9 @@
 namespace hcomm {
 namespace CcuRep {
 
-constexpr uint16_t FUNC_ARG_MAX            = 32;
-constexpr uint16_t FUNC_NEST_MAX           = 8;
+// 支持自定义算子CCU开发资源管理优化，减少预留资源数量，避免xn耗尽
+constexpr uint16_t FUNC_ARG_MAX            = 1;
+constexpr uint16_t FUNC_NEST_MAX           = 1;
 constexpr uint16_t FUNC_CALL_LAYER_INVALID = 0xFFFF;
 
 class CcuRepReferenceManager {

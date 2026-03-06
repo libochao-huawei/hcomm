@@ -89,26 +89,26 @@ HcclResult HcclSocket::Listen()
         ret = NetworkManager::GetInstance(localDeviceLogicId_).StartVnic(localIp_, localPort_);
         errormessage = "The IP address " + std::string(localIp_.GetReadableIP()) +
                                 " add port " + std::to_string(localPort_) + " have already been bound.";
-        RPT_INPUT_ERR(true, "EI0019", std::vector<std::string>({"reason"}),
+        RPT_INPUT_ERR(ret == HCCL_E_UNAVAIL, "EI0019", std::vector<std::string>({"reason"}),
             std::vector<std::string>({errormessage}));
     } else if (socketType_ == NicType::DEVICE_NIC_TYPE) {
         bool rdmaFlag = !GetExternalInputHcclIsTcpMode();
         HCCL_DEBUG("[%s]StartNic localDeviceLogicId_[%d], localIp_[%s], localPort_[%u], rdmaFlag[%d], "
             "socketType_[%d], backupIp_[%s]", __func__, localDeviceLogicId_, localIp_.GetReadableIP(),
             localPort_, rdmaFlag, socketType_, backupIp_.GetReadableIP());
-        errormessage = "The IP address " + std::string(localIp_.GetReadableIP()) +
-                                " add port " + std::to_string(localPort_) + " have already been bound.";
-        RPT_INPUT_ERR(true, "EI0020", std::vector<std::string>({"reason"}),
-            std::vector<std::string>({errormessage}));
         // 如果是backup，传入额外的rdev信息
         ret = NetworkManager::GetInstance(localDeviceLogicId_).StartNic(localIp_, localPort_, rdmaFlag, backupIp_);
+        errormessage = "The IP address " + std::string(localIp_.GetReadableIP()) +
+                                " add port " + std::to_string(localPort_) + " have already been bound.";
+        RPT_INPUT_ERR(ret == HCCL_E_UNAVAIL, "EI0020", std::vector<std::string>({"reason"}),
+            std::vector<std::string>({errormessage}));
     } else {
         SocketHandle hostSocketHandle;
         ret = NetworkManager::GetInstance(localDeviceLogicId_).StartHostNetAndListen(
             localIp_, hostSocketHandle, localPort_, false);
         errormessage = "The IP address " + std::string(localIp_.GetReadableIP()) +
                                 " add port " + std::to_string(localPort_) + " have already been bound.";
-        RPT_INPUT_ERR(true, "EI0019", std::vector<std::string>({"reason"}),
+        RPT_INPUT_ERR(ret == HCCL_E_UNAVAIL, "EI0019", std::vector<std::string>({"reason"}),
             std::vector<std::string>({errormessage}));
     }
     std::stringstream tmpMsgstream;

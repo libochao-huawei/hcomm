@@ -153,6 +153,12 @@ HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJetty
     attr.ub.tokenValue       = in.tokenValue;
     attr.ub.tokenIdHandle   = reinterpret_cast<void *>(in.tokenIdHandle);
     attr.ub.flag.value        = 0;
+    /* errTime配置值：0-31
+       0-7代表芯片配置值b00:128ms
+       8-15代表芯片配置值b01:1s
+       16-23代表芯片配置值b10:8s
+       24-31代表芯片配置值b11:64s
+    */
     attr.ub.errTimeout       = 0;
     // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
     attr.ub.priority          = 2;
@@ -235,6 +241,12 @@ HcclResult HccpUbCreateJettyAsync(const CtxHandle ctxhandle, const HrtRaUbCreate
     attr.ub.tokenValue       = in.tokenValue;
     attr.ub.tokenIdHandle   = reinterpret_cast<void *>(in.tokenIdHandle);
     attr.ub.flag.value        = 0;
+    /* errTime配置值：0-31
+       0-7代表芯片配置值b00:128ms
+       8-15代表芯片配置值b01:1s
+       16-23代表芯片配置值b10:8s
+       24-31代表芯片配置值b11:64s
+    */
     attr.ub.errTimeout       = 0;
     // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
     attr.ub.priority          = 2;

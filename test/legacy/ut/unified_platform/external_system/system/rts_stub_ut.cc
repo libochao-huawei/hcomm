@@ -61,6 +61,7 @@ aclError aclrtSetDeviceTaskAbortCallback(const char *regName, aclrtDeviceTaskAbo
 
 aclError aclrtCreateEventWithFlag(aclrtEvent *event, uint32_t flag)
 {
+    event = reinterpret_cast<aclrtEvent>(0x123);
     return aclrtCreateEvent(event);
 }
 
@@ -226,7 +227,7 @@ aclError aclrtMallocWithCfg(void **devPtr, size_t size, aclrtMemMallocPolicy pol
     return ACL_SUCCESS;
 }
 
-rtError_t rtIpcDestroyMemoryName(const char_t *name)
+aclError aclrtIpcMemClose(const char_t *name)
 {
     return RT_ERROR_NONE;
 }
@@ -236,19 +237,9 @@ aclError aclrtIpcMemGetExportKey(void *devPtr, size_t size, char *key, size_t le
     return ACL_SUCCESS;
 }
 
-rtError_t rtIpcCloseMemory(const char_t *name)
-{
-    return RT_ERROR_NONE;
-}
-
 aclError aclrtIpcMemImportByKey(void **devPtr, const char *key, uint64_t flag)
 {
     return ACL_SUCCESS;
-}
-
-rtError_t rtIpcCloseMemory(const void *ptr)
-{
-    return RT_ERROR_NONE;
 }
 
 aclError aclrtIpcMemSetImportPid(const char *key, int32_t *pid, size_t num)
@@ -349,6 +340,7 @@ aclError aclrtNotifyGetExportKey(aclrtNotify notify, char *key, size_t len, uint
 
 aclError aclrtGetNotifyId(aclrtNotify notify, uint32_t *notifyId)
 {
+    notify = reinterpret_cast<aclrtNotify>(0x123);
     return ACL_SUCCESS;
 }
 
@@ -476,7 +468,7 @@ rtError_t rtGetCntNotifyId(aclrtCntNotify inCntNotify, uint32_t *const notifyId)
 
 aclError aclrtCntNotifyDestroy(aclrtCntNotify cntNotify)
 {
-	return RT_ERROR_NONE;
+	return ACL_SUCCESS;
 }
 
 // rtError_t rtCntNotifyRecord(
@@ -637,7 +629,7 @@ rtError_t rtSetXpuDevice(rtXpuDevType devType, const uint32_t devId)
     return RT_ERROR_NONE;
 }
 
-rtError_t rtMemPrefetchToDevice(void *devPtr, uint64_t len, int32_t devId)
+aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t flags)
 {
-    return RT_ERROR_NONE;
+	return ACL_SUCCESS;
 }
