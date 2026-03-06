@@ -455,20 +455,22 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
     if (opParams.opType == OpType::ALLTOALLV && params.insType != CcuInstType::CCU_ALLTOALLV_MESH_1D_DIRECT) {
         return false;
     }
+
+    uint64_t beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    UpdateProfStat();
+    auto dfxOpInfo = std::make_shared<DfxOpInfo>();
+    CovertToCurrentCollOperator(id, opParams, OpMode::OPBASE);
+    dfxOpInfo->op_           = *GetCurrentCollOperator();
+    dfxOpInfo->tag_          = OpTypeToString(dfxOpInfo->op_.opType);
+    dfxOpInfo->algType_      = AlgType::MESH;
+    dfxOpInfo->commIndex_    = GetIdIndex();
+    dfxOpInfo->comm_         = this;
+    dfxOpInfo->beginTime_    = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    dfxOpInfo->commId_       = id;
+ 	dfxOpInfo->opIndex_      = opIndex;
+    GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);
+
     if (enableProfilingEnv) {
-        uint64_t beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-        UpdateProfStat();
-        auto dfxOpInfo = std::make_shared<DfxOpInfo>();
-        CovertToCurrentCollOperator(id, opParams, OpMode::OPBASE);
-        dfxOpInfo->op_           = *GetCurrentCollOperator();
-        dfxOpInfo->tag_          = OpTypeToString(dfxOpInfo->op_.opType);
-        dfxOpInfo->algType_      = AlgType::MESH;
-        dfxOpInfo->commIndex_    = GetIdIndex();
-        dfxOpInfo->comm_         = this;
-        dfxOpInfo->beginTime_    = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-        dfxOpInfo->commId_       = id;
- 	    dfxOpInfo->opIndex_      = opIndex;
-        GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);
         ExecuteFastCcuLaunch(opParams, stream, params);
         ReportProfInfo(beginTime, opParams.staticShape, true);
     } else {
@@ -531,6 +533,9 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
     auto &opbaseStream = GetStreamManager().opbase;
     auto  mStream      = params.isSlave ? opbaseStream->GetSlave(slaveIndex)->GetPtr() : stream;
     u32   streamNum    = params.count.size();
+    
+    // 下发head算子执行计数器task
+    collService->AddCountTask(true);
     if (streamNum > 1) {
         timeout = notifyTimeoutCfg.GetNotifyTimeout();
         mStreamId = params.isSlave ? opbaseStream->GetSlave(slaveIndex++)->GetId() : HrtGetStreamId(mStream);
@@ -609,6 +614,8 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
             HrtReduceAsync(dst, scratchSize, src, scratchSize, rtReduceOp, rtDataType, stream);
         }       
     }
+    // 下发Tail算子执行计数器task
+    collService->AddCountTask(false);
 
     slaveIndex = 0;
     collOpIndex++;
