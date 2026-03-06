@@ -21,7 +21,7 @@
 #include "host/host_cpu_roce_channel.h"
 #include "hccl_comm_pub.h"
 #include "op_base.h"
-#include "hcomm_data_utils.h"
+#include "../hcomm_data_utils.h"
 
 
 using namespace hccl;

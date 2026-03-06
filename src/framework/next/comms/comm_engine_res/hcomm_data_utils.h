@@ -13,7 +13,7 @@
 
 #include "dtype_common.h"
 
-bool IsDevice950(DevType type)
+inline bool IsDevice950(DevType type)
 {
     return type == DevType::DEV_TYPE_910_95;
 }
