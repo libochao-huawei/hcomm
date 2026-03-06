@@ -24,9 +24,8 @@ __attribute__((visibility("default"))) uint32_t RunAicpuDfxOpInfoInitV2(void *ar
         std::string commTag;
     };
     InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
+    CHK_PRT_RET(ctxArgs == nullptr, HCCL_ERROR("[%s]ctxArgs is null.", __func__), HCCL_E_PARA);
     HcclDfxOpInfo *dfxOpInfo = reinterpret_cast<HcclDfxOpInfo *>(ctxArgs->context);
-
-
     return AicpuIndopProcess::AicpuDfxOpInfoInit(dfxOpInfo, ctxArgs->commTag);
 }
 }
