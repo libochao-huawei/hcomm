@@ -11,7 +11,7 @@
 #ifndef ENGINE_CTXS_H
 #define ENGINE_CTXS_H
 
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "independent_op_context_manager.h"
 #include <functional>
 #include <unordered_map>

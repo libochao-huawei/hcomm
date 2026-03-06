@@ -14,7 +14,7 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "hccl_mem.h"
 #include "stream_pub.h"
 #include "hccl_communicator.h"
