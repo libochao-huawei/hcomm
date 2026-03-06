@@ -76,12 +76,10 @@ public:
         }
 
         dimSize_.push_back(tempVTopo[0].size());
-
         rankId_              = rankId;
         op_                  = op;
         rmtReduceWithMyRank_ = rmtReduceWithMyRank;
         tempVTopo_           = tempVTopo;
-
         inputAddr_   = inputAddr;
         outputAddr_  = outputAddr;
         scratchAddr_ = scratchAddr;
@@ -126,12 +124,16 @@ private:
     CollAlgOperator                  op_;
     bool                             rmtReduceWithMyRank_{true};
     std::vector<std::vector<RankId>> tempVTopo_;
-
     uint64_t inputAddr_{0};
     uint64_t outputAddr_{0};
     uint64_t scratchAddr_{0};
     uint64_t sliceSize_{0};
     uint64_t token_{0};
+<<<<<<< HEAD:src/legacy/service/collective/alg/coll_alg_factory/alg_ccu_context/reduce_scatter/ccu_instruction_reduce_scatter_mesh1d_2die.h
+=======
+    RankGroup             rankGroup_;
+    std::vector<LinkData> links_;
+>>>>>>> d4d299c4... 2026.3 code check:src/legacy/service/collective/alg/coll_alg_factory/alg_ccu_context/ccu_instruction_reduce_scatter_mesh1d_2die.h
 };
 
 } // namespace Hccl
