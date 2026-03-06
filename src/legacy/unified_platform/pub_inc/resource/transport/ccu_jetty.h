@@ -56,7 +56,8 @@ public:
         TRY_CATCH_RETURN(tmp->Initialize());
         ccuJetty = std::move(tmp);
         return HcclResult::HCCL_SUCCESS;
-}
+    }
+
 private:
     void Initialize() {
         devLogicId_ = HrtGetDevice();
