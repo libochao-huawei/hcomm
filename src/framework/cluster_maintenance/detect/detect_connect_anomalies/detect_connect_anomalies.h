@@ -102,7 +102,7 @@ private:
     HcclResult processWhiteList(const HcclIpAddress &ipAddr, HcclIpAddress &localIpAddr, std::shared_ptr<HcclSocket> socket, NicType nicType);
     HcclResult WaitForDectect();
     HcclResult ProcessDetectionResults();
-    std::string FormatDetectMessage(const std::string &localServerId, s32 localDeviceId, const DetectInfo &detectInfo, bool hasError);
+    std::string FormatDetectMessage(const std::string &localServerId, s32 localDeviceId, const DetectInfo &detectInfo);
     void ThreadDestroy();
     ~DetectConnectionAnomalies() = default;
     DetectConnectionAnomalies() = default;
