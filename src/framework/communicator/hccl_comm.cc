@@ -1526,7 +1526,7 @@ HcclResult hcclComm::GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHan
     return HCCL_SUCCESS;
 }
 
-aclrtBinHandle hcclComm::GetCommBinHandle(){
+aclrtBinHandle hcclComm::GetBinHandle(){
     return binHandle_;
 }
 
