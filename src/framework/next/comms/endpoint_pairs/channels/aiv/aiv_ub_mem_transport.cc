@@ -30,7 +30,7 @@ HcclResult AivUbMemTransport::Init()
         Hccl::LocalIpcRmaBuffer *localIpcRmaBuffer = reinterpret_cast<Hccl::LocalIpcRmaBuffer *>(channelDesc_.memHandles[i]);
         localRmaBufferVec_.push_back(localIpcRmaBuffer);
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag;
-        std::string tag = localRmaBuffer->GetBuf()->GetMemTag();
+        std::string tag = localIpcRmaBuffer->GetBuf()->GetMemTag();
         CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
         HCCL_INFO("[AivUbMemTransport][Init] memHandleNum[%d] memTag[%s]", i, memTag.data());
         localUserMemTag_.push_back(memTag);
