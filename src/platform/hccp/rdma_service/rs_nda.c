@@ -25,14 +25,49 @@
 
 RS_ATTRI_VISI_DEF int RsNdaGetDirectFlag(unsigned int phyId, unsigned int rdevIndex, int *directFlag)
 {
+    struct ibv_device_attr_extend extDevAttr = {0};
     struct RsRdevCb *rdevCb = NULL;
     int ret = 0;
 
     ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
     CHK_PRT_RETURN(ret != 0, hccp_err("RsQueryRdevCb phyId:%u rdevIndex:%u ret:%d", phyId, rdevIndex, ret), ret);
 
+    if (rdevCb->ibCtxEx == NULL) {
+        *directFlag = DIRECT_FLAG_NOTSUPP;
+        return ret;
+    }
+
+    ret = RsNdaIbvQueryDeviceExtend(rdevCb->ibCtxEx, &extDevAttr);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsNdaIbvQueryDeviceExtend failed, phyId:%u rdevIndex:%u ret:%d",
+        phyId, rdevIndex, ret), ret);
+
+    if ((extDevAttr.ext_cap & IBV_EXTEND_DEV_NDA) == 0) {
+        *directFlag = DIRECT_FLAG_NOTSUPP;
+        return ret;
+    }
+
     *directFlag = rdevCb->directFlag;
     return ret;
+}
+
+STATIC int RsNdaGetDirectFlagByDevAttr(struct ibv_device_attr *deviceAttr)
+{
+    unsigned int directFlagVendorPartIdList[] = {
+        RS_VENDOR_PART_ID_0230, RS_VENDOR_PART_ID_0231, RS_VENDOR_PART_ID_0232
+    };
+    unsigned int i;
+
+    if (deviceAttr->vendor_id != RS_VENDOR_ID_19E5) {
+        return DIRECT_FLAG_PCIE;
+    }
+
+    for (i = 0; i < sizeof(directFlagVendorPartIdList) / sizeof(directFlagVendorPartIdList[0]); i++) {
+        if (deviceAttr->vendor_part_id == directFlagVendorPartIdList[i]) {
+            return DIRECT_FLAG_UB;
+        }
+    }
+
+    return DIRECT_FLAG_PCIE;
 }
 
 STATIC int RsGetNdaPcieDbCb(struct RsNdaCb *ndaCb, uint64_t hva, struct NdaPcieDbCb **ndaDbCb)
@@ -189,8 +224,8 @@ STATIC void *RsNdaDbMmapHostVa(struct RsNdaCb *ndaCb, struct doorbell_map_desc *
 {
     uint64_t alignHva = AlignDown(desc->hva, (uint64_t)RA_RS_4K_PAGE_SIZE);
     uint64_t alignSize = AlignUp(desc->size, (uint64_t)RA_RS_4K_PAGE_SIZE);
+    unsigned int logicId = gRsCb->logicId;
     struct NdaPcieDbCb *ndaDbCb = NULL;
-    unsigned int logicId = 0;
     void *dbDva = NULL;
     int ret = 0;
 
@@ -200,14 +235,10 @@ STATIC void *RsNdaDbMmapHostVa(struct RsNdaCb *ndaCb, struct doorbell_map_desc *
         return (void *)(uintptr_t)ndaDbCb->dva;
     }
 
-    ret = DlDrvDeviceGetIndexByPhyId(gRsCb->chipId, &logicId);
-    CHK_PRT_RETURN(ret != 0, hccp_err("get logicId failed, chipId:%u, ret:%d", gRsCb->chipId, ret), NULL);
-
     ndaDbCb = (struct NdaPcieDbCb *)calloc(1, sizeof(struct NdaPcieDbCb));
     CHK_PRT_RETURN(ndaDbCb == NULL, hccp_err("ndaDbCb calloc failed"), NULL);
 
-    ret = DlHalHostRegister((void *)(uintptr_t)alignHva, alignSize, HOST_IO_MAP_DEV, logicId,
-        &dbDva);
+    ret = DlHalHostRegister((void *)(uintptr_t)alignHva, alignSize, HOST_IO_MAP_DEV, logicId, &dbDva);
     if (ret != 0) {
         hccp_err("register host failed, chipId:%u logicId:%u ret:%d alignHva:0x%llx",
             gRsCb->chipId, logicId, ret, alignHva);
@@ -237,8 +268,8 @@ STATIC void *RsNdaDbMmapUbRes(struct RsNdaCb *ndaCb, struct doorbell_map_desc *d
     struct NdaUbResMapPrivInfo resMapIn = {0};
     struct res_map_info_out resInfoOut = {0};
     struct res_map_info_in resInfoIn = {0};
+    unsigned int logicId = gRsCb->logicId;
     struct NdaUbDbCb *ndaGuidCb = NULL;
-    unsigned int logicId = 0;
     int ret = 0;
 
     ret = RsGetNdaUbDbCb(ndaCb, desc->ub_res.guid_l, desc->ub_res.guid_h, &ndaGuidCb);
@@ -246,9 +277,6 @@ STATIC void *RsNdaDbMmapUbRes(struct RsNdaCb *ndaCb, struct doorbell_map_desc *d
         ndaGuidCb->refCnt++;
         return (void *)(uintptr_t)ndaGuidCb->dva;
     }
-
-    ret = DlDrvDeviceGetIndexByPhyId(gRsCb->chipId, &logicId);
-    CHK_PRT_RETURN(ret != 0, hccp_err("get logicId failed, chipId:%u, ret:%d", gRsCb->chipId, ret), NULL);
 
     ndaGuidCb = (struct NdaUbDbCb *)calloc(1, sizeof(struct NdaUbDbCb));
     CHK_PRT_RETURN(ndaGuidCb == NULL, hccp_err("ndaGuidCb calloc failed"), NULL);
@@ -298,8 +326,8 @@ STATIC void *RsNdaDbMmap(struct doorbell_map_desc *desc)
 STATIC int RsNdaDbUnmapHostVa(struct RsNdaCb *ndaCb, void *ptr, struct doorbell_map_desc *desc)
 {
     uint64_t alignHva = AlignDown(desc->hva, (uint64_t)RA_RS_4K_PAGE_SIZE);
+    unsigned int logicId = gRsCb->logicId;
     struct NdaPcieDbCb *ndaDbCb = NULL;
-    unsigned int logicId = 0;
     int ret = 0;
 
     ret = RsGetNdaPcieDbCb(ndaCb, alignHva, &ndaDbCb);
@@ -311,17 +339,11 @@ STATIC int RsNdaDbUnmapHostVa(struct RsNdaCb *ndaCb, void *ptr, struct doorbell_
         return ret;
     }
 
-    ret = DlDrvDeviceGetIndexByPhyId(gRsCb->chipId, &logicId);
-    if (ret != 0) {
-        hccp_err("get logicId failed, chipId:%u, ret:%d", gRsCb->chipId, ret);
-        goto free_db_cb;
-    }
     ret = DlHalHostUnRegisterEx((void *)(uintptr_t)alignHva, logicId, HOST_IO_MAP_DEV);
     if (ret != 0) {
         hccp_err("DlHalHostUnRegisterEx failed, chipId:%u logicId:%u ret:%d", gRsCb->chipId, logicId, ret);
     }
 
-free_db_cb:
     RsListDel(&ndaDbCb->list);
     free(ndaDbCb);
     ndaDbCb = NULL;
@@ -332,8 +354,8 @@ STATIC int RsNdaDbUnmapUbRes(struct RsNdaCb *ndaCb, void *ptr, struct doorbell_m
 {
     struct NdaUbResMapPrivInfo resMapIn = {0};
     struct res_map_info_in resInfoIn = {0};
+    unsigned int logicId = gRsCb->logicId;
     struct NdaUbDbCb *ndaGuidCb = NULL;
-    unsigned int logicId = 0;
     int ret = 0;
 
     ret = RsGetNdaUbDbCb(ndaCb, desc->ub_res.guid_l, desc->ub_res.guid_h, &ndaGuidCb);
@@ -345,11 +367,6 @@ STATIC int RsNdaDbUnmapUbRes(struct RsNdaCb *ndaCb, void *ptr, struct doorbell_m
         return ret;
     }
 
-    ret = DlDrvDeviceGetIndexByPhyId(gRsCb->chipId, &logicId);
-    if (ret != 0) {
-        hccp_err("get logicId failed, chipId:%u, ret:%d", gRsCb->chipId, ret);
-        goto free_guid_cb;
-    }
     RsNdaMapPrivPrepare(desc, &resMapIn);
     resInfoIn.target_proc_type = PROCESS_CP1;
     resInfoIn.res_type = RES_ADDR_TYPE_NDA_URMA_DB;
@@ -361,7 +378,6 @@ STATIC int RsNdaDbUnmapUbRes(struct RsNdaCb *ndaCb, void *ptr, struct doorbell_m
         hccp_err("DlHalResAddrUnmapV2 failed, chipId:%u logicId:%u ret:%d", gRsCb->chipId, logicId, ret);
     }
 
-free_guid_cb:
     RsListDel(&ndaGuidCb->list);
     free(ndaGuidCb);
     ndaGuidCb = NULL;
@@ -385,7 +401,7 @@ STATIC int RsNdaDbUnmap(void *ptr, struct doorbell_map_desc *desc)
     }
 }
 
-void RsNdaCbInitCb(struct RsNdaCb *ndaCb)
+STATIC void RsNdaCbInitCb(struct RsNdaCb *ndaCb)
 {
     ndaCb->ndaPcieCb.ibvExOps.alloc = RsNdaPcieAlloc;
     ndaCb->ndaPcieCb.ibvExOps.free = RsNdaPcieFree;
@@ -411,13 +427,12 @@ int RsInitNdaCb(struct RsRdevCb *rdevCb)
     int count = 0;
     int ret = 0;
 
+    rdevCb->directFlag = RsNdaGetDirectFlagByDevAttr(&rdevCb->deviceAttr);
+
     rdevCb->ibCtxEx = RsNdaIbvOpenExtend(rdevCb->ibCtx);
     if (rdevCb->ibCtxEx == NULL) {
-        rdevCb->directFlag = DIRECT_FLAG_NOTSUPP;
         return 0;
     }
-
-    rdevCb->directFlag = RsNdaGetDirectFlagByVendorId(rdevCb->deviceAttr.vendor_id);
 
     count = __sync_fetch_and_add(&rdevCb->rsCb->ndaCbRefCnt, 1);
     if (count > 0) {
@@ -638,6 +653,7 @@ STATIC int RsNdaQpCreateEx(struct RsQpCb *qpCb, struct ibv_qp_init_attr_extend *
 
 nda_init_qp_err:
     (void)RsNdaIbvDestroyQpExtend(rdevCb->ibCtxEx, qpCb->ibQpEx);
+    qpCb->ibQpEx = NULL;
     return ret;
 }
 
@@ -709,6 +725,7 @@ RS_ATTRI_VISI_DEF int RsNdaQpDestroy(unsigned int phyId, unsigned int rdevIndex,
     if (ret != 0) {
         hccp_err("qp:%u destroy extend failed, ret:%d", qpn, ret);
     }
+    qpCb->ibQpEx = NULL;
 
     pthread_mutex_destroy(&qpCb->qpMutex);
 
