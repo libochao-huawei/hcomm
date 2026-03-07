@@ -16,7 +16,7 @@
 #include "sal.h"
 #include "dlprof_func.h"
 #include "user_remote_mem_getter.h"
-#include "exception_utils.h"
+#include "exception_util.h"
 
 namespace Hccl {
 constexpr u32    FINISH_MSG_SIZE             = 128;
