@@ -14,10 +14,7 @@
 #include "types.h"
 #include "hccl_types.h"
 #include "orion_adapter_rts.h"
-#include "ccu_device_manager.h"
 #include "global_mirror_tasks.h"
-#include "ccu_dfx.h"
-#include "ccu_task_param.h"
 #include "hccl_common_v2.h"
 #include "error_message_v2.h"
 #include "orion_adapter_hccp.h"
@@ -43,41 +40,9 @@ private:
     static std::string GetGroupRankInfo(const Hccl::TaskInfo& taskInfo);
     static void ProcessException(rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo);
     static void PrintTaskContextInfo(uint32_t deviceId, uint32_t streamId, uint32_t taskId);
-    static void ProcessCcuMC2Exception(rtExceptionInfo_t* exceptionInfo);
-    static std::vector<Hccl::CcuTaskParam> GetMC2AlgTaskParam(const Hccl::TaskInfo& taskInfo);
-    static void ProcessCcuException(rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo);
- 	static void PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, const Hccl::TaskInfo& taskInfo);
-    static void PrintCcuErrorLog(const std::vector<Hccl::CcuErrorInfo>& errorInfos, const Hccl::TaskInfo& taskInfo);
-    static void ProcessAivException(rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo);
-    static void PrintAivPreviousTaskException(rtExceptionInfo_t* exceptionInfo);
 
-    static std::string GetCcuErrorMsgByType(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgLoop(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgMission(const Hccl::CcuErrorInfo& ccuErrorInfo);
-    static std::string GetCcuErrorMsgDefault(const Hccl::CcuErrorInfo& ccuErrorInfo);
-    static std::string GetCcuErrorMsgLoopGroup(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgLocPostSem(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgLocWaitSem(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgRemPostSem(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgRemWaitSem(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgRemPostVar(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgRemWaitGroup(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgPostSharedVar(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgPostSharedSem(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgRead(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgWrite(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgLocalCpy(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgLocalReduce(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgBufRead(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgBufWrite(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgBufLocRead(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgBufLocWrite(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuErrorMsgBufReduce(const Hccl::CcuErrorInfo& ccuErrorInfo, const Hccl::TaskInfo& taskInfo);
-    static RankId GetRankIdByChannelId(uint16_t channelId, const Hccl::TaskInfo& taskInfo);
     static void PrintGroupErrorMessage(Hccl::ErrorMessageReport &errorMessage, Hccl::TaskInfo &exceptionTaskInfo, string &groupRankContent, string &stageErrInfo);
     static void PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessageReport &errorMessage, string &stageErrInfo);
-    static std::pair<Hccl::IpAddress, Hccl::IpAddress> GetAddrPairByChannelId(uint16_t channelId, const Hccl::TaskInfo& taskInfo);
-    static std::string GetCcuLenErrorMsg(const uint64_t len);
 
 private:
     uint32_t devId_; // 当前设备id
