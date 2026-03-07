@@ -254,7 +254,7 @@ HcclResult AlignedAllGatherDoubleRing::PrepareRunMainStream(u32 ringIndex, Strea
 
 HcclResult AlignedAllGatherDoubleRing::RunAllStreams(const u32 step, const u32 rankSize,
     std::vector<TxMemoryInfo> &mainTxMems, std::vector<RxMemoryInfo> &mainRxMems,
-    std::vector<TxMemoryInfo> &subTxMems, std::vector<RxMemoryInfo> &subRxMems,
+    const std::vector<TxMemoryInfo> &subTxMems, std::vector<RxMemoryInfo> &subRxMems,
     std::vector<DeviceMem> &mainLocalSrcMems, std::vector<DeviceMem> &mainLocalDstMems,
     std::vector<DeviceMem> &subLocalSrcMems, std::vector<DeviceMem> &subLocalDstMems)
 {
