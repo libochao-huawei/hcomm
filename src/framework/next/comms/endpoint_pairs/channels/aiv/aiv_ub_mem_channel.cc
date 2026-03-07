@@ -83,4 +83,15 @@ HcclResult AivUbMemChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag
 {
     return transport_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
+
+HcclResult AivUbMemChannel::Clean()
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult AivUbMemChannel::Resume()
+{
+    return HCCL_SUCCESS;
+}
+
 }
