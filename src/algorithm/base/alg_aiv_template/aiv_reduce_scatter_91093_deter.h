@@ -116,9 +116,8 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
         for (uint32_t i = 0; i < numTargets; i++) {
             uint64_t localSendOffset = len * targetRanks[i];
             uint64_t localRecvOffset = avgBufferCount * targetRanks[i];
-            CpGM2GM(cclGMSelf + localRecvOffset + curBlockOffset, inputGM + localSendOffset + curOffset + curBlockOffset, curCount);
-
             PipeBarrier<PIPE_ALL>();
+            CpGM2GM(cclGMSelf + localRecvOffset + curBlockOffset, inputGM + localSendOffset + curOffset + curBlockOffset, curCount);
         }
        
         PipeBarrier<PIPE_ALL>();
@@ -177,6 +176,7 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
                     WaitSyncFlag(curTag, flagAddrSelf_, 1, x + multipleTemp, pingpong);
                 }
 
+                PipeBarrier<PIPE_ALL>();
                 CpGM2GM<T>(cclGMSelf + halfBufferCount + avgBufferCount * target, cclGMSelf + halfBufferCount + avgBufferCount * x, 
                             curGroupCount, true, reduceOp_);
                 PipeBarrier<PIPE_ALL>();
@@ -191,10 +191,13 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
         if (case1 || case2){
             int64_t waitBlock = GetDeterministicRank(numReduce);
             WaitSyncFlag(curTag, flagAddrSelf_, 1, waitBlock, pingpong);
+            PipeBarrier<PIPE_ALL>();
             CpGM2GM(outputGM + curOffset + curBlockOffset, cclGMSelf + halfBufferCount + curBlockOffset, curCount);
         }
 
         // 尾同步 
+        PipeBarrier<PIPE_ALL>();
+        BatchRecordWait(curTag, buffersOut, AivNotifyType::Done);
         if(bufferLoopNum > 1){
             PipeBarrier<PIPE_ALL>();
             SyncAll(syncGlobalSecond, workLocal, numBlocks_);
