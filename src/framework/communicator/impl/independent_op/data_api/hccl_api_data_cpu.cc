@@ -664,9 +664,11 @@ int32_t HcommChannelFence(ChannelHandle channel)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclDfxRegOpInfo(HcclComm comm, HcclDfxOpInfo dfxOpInfo)
+HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
 {
     HCCL_INFO("[%s] START.", __func__);
+    CHK_PRT_RET(hcclDfxOpInfo == nullptr,  HCCL_ERROR("[%s] hcclDfxOpInfo is null", __func__), HCCL_E_PTR);
+    HcclDfxOpInfo *dfxOpInfo = static_cast<HcclDfxOpInfo*>(hccldfxOpInfo);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
@@ -679,15 +681,15 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, HcclDfxOpInfo dfxOpInfo)
     //单算子模式，覆盖opTag
     bool opBased = true;
     if (opBased) {
-        dfxOpInfo.opTag = hcclComm->GetIdentifier();
+        dfxOpInfo->opTag = hcclComm->GetIdentifier();
     }
-    dfxOpInfo.myRank = collComm->GetMyRankId();//opType
-    dfxOpInfo.tag_ = Hccl::OpTypeToString(Hccl::OP_TYPE_MAP.at(dfxOpInfo.opType));//opType
-    dfxOpInfo.index_ = 0;
-    dfxOpInfo.beginTime_ = hrtMsprofSysCycleTime();
+    dfxOpInfo->myRank = collComm->GetMyRankId();//opType
+    dfxOpInfo->tag_ = Hccl::OpTypeToString(Hccl::OP_TYPE_MAP.at(dfxOpInfo->opType));//opType
+    dfxOpInfo->index_ = 0;
+    dfxOpInfo->beginTime_ = hrtMsprofSysCycleTime();
     //HcclDfxOpInfo转为DfxOpInfo
     auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
-    dfxOpInfoOnce = ConvertToDfxOpInfo(dfxOpInfo);
+    dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
     
     HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
     CHK_PTR_NULL(hcclCommDfx);
@@ -697,7 +699,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, HcclDfxOpInfo dfxOpInfo)
     mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
    
    // 下发device侧
-    HcommDfxKernelLaunch(hcclComm->GetIdentifier(), hcclComm->GetBinHandle(), dfxOpInfo);
+    HcommDfxKernelLaunch(hcclComm->GetIdentifier(), hcclComm->GetBinHandle(), *dfxOpInfo);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 
@@ -725,7 +727,7 @@ HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, ThreadHandle thread)
+HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, uint64_t thread)
 {
     HCCL_INFO("[%s] START.", __func__);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
