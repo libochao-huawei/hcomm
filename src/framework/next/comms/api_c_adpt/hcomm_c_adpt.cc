@@ -324,7 +324,7 @@ HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle
     }
     // 通过安全的内存拷贝将主机内存数据传输到设备内存
     CHK_RET(hrtMemSyncCopy(remoteRankList.ptr(), listNum * sizeof(u32), remoteRankIdList.data(), 
-            listNum * sizeof(u32),HcclRtMemcpyKind::HCCL_MEMCPY_HOST_TO_DEVICE));
+            listNum * sizeof(u32), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     channelParam.remoteRankList = static_cast<u32 *>(remoteRankList.ptr());
     // 创建局部流
     hccl::Stream localStream(hccl::StreamType::STREAM_TYPE_ONLINE);
