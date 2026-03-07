@@ -16,29 +16,29 @@ void SetCollopDataDes(Hccl::CollOperator& collOp, const HcclDfxOpInfo& dfxOpInfo
     if (collOp.opType == Hccl::OpType::ALLGATHERV) {
         collOp.vDataDes.counts = dfxOpInfo.vDataDes.counts;
         collOp.vDataDes.displs = dfxOpInfo.vDataDes.displs;
-        collOp.vDataDes.dataType = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.vDataDes.dataType);
+        collOp.vDataDes.dataType = Hccl::DATA_TYPE_MAP.at(static_cast<HcclCMDType>(dfxOpInfo.vDataDes.dataType));
     } else if (collOp.opType == Hccl::OpType::ALLTOALL) {
-        collOp.all2AllDataDes.sendType  = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.all2AllDataDes.sendType);
-        collOp.all2AllDataDes.recvType  = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.all2AllDataDes.recvType);
+        collOp.all2AllDataDes.sendType  = Hccl::DATA_TYPE_MAP.at(static_cast<HcclCMDType>(dfxOpInfo.all2AllDataDes.sendType));
+        collOp.all2AllDataDes.recvType  = Hccl::DATA_TYPE_MAP.at(static_cast<HcclCMDType>(dfxOpInfo.all2AllDataDes.recvType));
         collOp.all2AllDataDes.sendCount = dfxOpInfo.all2AllDataDes.sendCount;
         collOp.all2AllDataDes.recvCount = dfxOpInfo.all2AllDataDes.recvCount;
     } else if (collOp.opType == Hccl::OpType::ALLTOALLV) {
-        collOp.all2AllVDataDes.sendType  = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.all2AllVDataDes.sendType);
-        collOp.all2AllVDataDes.recvType  = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.all2AllVDataDes.recvType);
+        collOp.all2AllVDataDes.sendType  = Hccl::DATA_TYPE_MAP.at(static_cast<HcclCMDType>(dfxOpInfo.all2AllVDataDes.sendType));
+        collOp.all2AllVDataDes.recvType  = Hccl::DATA_TYPE_MAP.at(static_cast<HcclCMDType>(dfxOpInfo.all2AllVDataDes.recvType));
         collOp.all2AllVDataDes.sendCounts = dfxOpInfo.all2AllVDataDes.sendCounts;
         collOp.all2AllVDataDes.recvCounts = dfxOpInfo.all2AllVDataDes.recvCounts;
         collOp.all2AllVDataDes.sdispls = dfxOpInfo.all2AllVDataDes.sdispls;
         collOp.all2AllVDataDes.rdispls = dfxOpInfo.all2AllVDataDes.rdispls;
     } else if (collOp.opType == Hccl::OpType::ALLTOALLVC) {
-        collOp.all2AllVCDataDes.sendType  = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.all2AllVCDataDes.sendType);
-        collOp.all2AllVCDataDes.recvType  = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.all2AllVCDataDes.recvType);
+        collOp.all2AllVCDataDes.sendType  = Hccl::DATA_TYPE_MAP.at(static_cast<HcclCMDType>(dfxOpInfo.all2AllVCDataDes.sendType));
+        collOp.all2AllVCDataDes.recvType  = Hccl::DATA_TYPE_MAP.at(static_cast<HcclCMDType>(dfxOpInfo.all2AllVCDataDes.recvType));
         collOp.all2AllVCDataDes.sendCountMatrix = dfxOpInfo.all2AllVCDataDes.sendCountMatrix;
     } else if (collOp.opType == Hccl::OpType::BATCHSENDRECV) {
         collOp.batchSendRecvDataDes.itemNum = dfxOpInfo.batchSendRecvDataDes.itemNum;
         collOp.batchSendRecvDataDes.sendRecvItemsPtr = static_cast<void *>(dfxOpInfo.batchSendRecvDataDes.sendRecvItemsPtr);
     } else {
         collOp.dataDes.dataCount = dfxOpInfo.dataDes.dataCount;
-        collOp.dataDes.dataType = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.dataDes.dataType);
+        collOp.dataDes.dataType = Hccl::DATA_TYPE_MAP.at(static_cast<HcclCMDType>(dfxOpInfo.dataDes.dataType));
         collOp.dataDes.strideCount = dfxOpInfo.dataDes.dataCount;
     }
 }
@@ -48,10 +48,10 @@ std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpIn
     auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
     Hccl::CollOperator collOp{};
     collOp.opMode = dfxOpInfo.opMode; 
-    collOp.opType = Hccl::OP_TYPE_MAP.at(dfxOpInfo.opType);
-    collOp.reduceOp = Hccl::REDUCE_OP_MAP.at(dfxOpInfo.reduceOp);
-    collOp.dataType = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.dataType);
-    collOp.outputDataType = Hccl::DATA_TYPE_MAP.at(dfxOpInfo.outputType);
+    collOp.opType = Hccl::OP_TYPE_MAP.at(static_cast<HcclCMDType>(dfxOpInfo.opType));
+    collOp.reduceOp = Hccl::REDUCE_OP_MAP.at(static_cast<HcclReduceOp>(dfxOpInfo.reduceOp));
+    collOp.dataType = Hccl::DATA_TYPE_MAP.at(static_cast<HcclDataType>(dfxOpInfo.dataType));
+    collOp.outputDataType = Hccl::DATA_TYPE_MAP.at(static_cast<HcclDataType>(dfxOpInfo.outputType));
     collOp.dataCount = dfxOpInfo.dataCount;
     collOp.root = dfxOpInfo.root;
     collOp.staticAddr = dfxOpInfo.staticAddr;
