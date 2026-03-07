@@ -60,7 +60,7 @@ extern HcclResult HcommProfilingReportKernelStartTask(uint64_t thread);
  * @return HcclResult 执行结果状态码
  * @note Device侧
  */
-extern HcclResult HcommProfilingReportKernelEndTask(uint64_t thread);
+extern HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupname);
 
 
 #ifdef __cplusplus
