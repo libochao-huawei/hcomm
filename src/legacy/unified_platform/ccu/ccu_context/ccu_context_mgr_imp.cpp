@@ -115,16 +115,16 @@ HcclResult CtxMgrImp::AllocRes(CcuCtxGroup &ctxGroup, CcuResPack &resPack)
 HcclResult CtxMgrImp::ReleaseRes(CcuCtxGroup &ctxGroup) const
 {
     // 获取本次编排Ctx多对应的资源信息
-    CcuResPack resPack;
-    CHK_RET(ctxGroup.ctxs[0]->GetResPack(resPack));
-    HCCL_INFO("[CtxMgrImp:%s]cur resPack count[%u], resHandle[%u], handle size[%u]",  __func__, resPack.count, resPack.GetId(), resPack.handles.size());
-    if(resPack.count > 0) {
-        resPack.count--;
+    CcuResPack *resPack = ctxGroup.ctxs[0]->GetResPack();
+    CHK_PTR_NULL(resPack);
+    HCCL_INFO("[CtxMgrImp:%s]cur resPack count[%u], resHandle[%u], handle size[%u]",  __func__, resPack->count, resPack->GetId(), resPack->handles.size());
+    if(resPack->count > 0) {
+        resPack->count--;
     }
 
     // 释放资源
-    if (resPack.count == 0) {
-        for (CcuResHandle resHandle : resPack.handles) {
+    if (resPack->count == 0) {
+        for (CcuResHandle resHandle : resPack->handles) {
             HCCL_INFO("[CtxMgrImp]ReleaseRes: deviceLogicId[%d], resHandle[%p]", deviceLogicId_, resHandle);
             CHK_RET(CcuDeviceManager::ReleaseResHandle(deviceLogicId_, resHandle));
         }
@@ -439,12 +439,12 @@ HcclResult CtxMgrImp::InstantiationTranslator(uint16_t dieId)
 HcclResult CtxMgrImp::TransRepResToPhyRes(CcuCtxGroup &ctxGroup) const
 {
     // 获取ctxGroup中CCU物理资源句柄
-    CcuResPack resPack;
-    CHK_RET(ctxGroup.ctxs[0]->GetResPack(resPack));
+    CcuResPack *resPack = ctxGroup.ctxs[0]->GetResPack();
+    CHK_PTR_NULL(resPack);
 
     // 获取通信域当前所持有的资源
     CcuResRepository totalResRepository;
-    CHK_RET(GetResPackTotalResRepository(resPack, totalResRepository));
+    CHK_RET(GetResPackTotalResRepository(*resPack, totalResRepository));
 
     // 遍历ctxGroup, 将每个ctx的虚拟资源进行合并
     CcuRepResource totalRepRes = GetTotalCcuRepResource(ctxGroup);

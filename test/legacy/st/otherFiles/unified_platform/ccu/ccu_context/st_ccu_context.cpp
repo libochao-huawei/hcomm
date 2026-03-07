@@ -633,7 +633,7 @@ void CreateTaskShareRes(CcuContextTestSharesRes& ctx, std::pair<uint64_t, uint64
     ctx.SetCcuInstrInfo(instrInfo);
     CcuTaskArgSharedRes taskArg;
     std::vector<CcuTaskParam> tmp;
-    auto ret = ctx->GeneTaskParam(taskArg, tmp);
+    auto ret = ctx.GeneTaskParam(taskArg, tmp);
     if (ret != HcclResult::HCCL_SUCCESS) {
         THROW<CcuApiException>("GeneTaskParam is failed!");
     }
