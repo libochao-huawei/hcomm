@@ -2493,4 +2493,40 @@ HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memType
     HCCL_INFO("tlv request success, tlv module type[%u], message type[%u]", tlv_module_type, send_msg.type);
     return HCCL_SUCCESS;
 }
+
+HcclResult HrtRaGetEidByIp(RdmaHandle handle, const vector<IpAddress>& ipV4AddrList, vector<IpAddress>& eidAddrList)
+{
+    size_t ipV4AddrListSize = ipV4AddrList.size();
+    unsigned int num = ipV4AddrListSize;
+    IpInfo ipInfoList[num] = {};
+    for (size_t i = 0; i < num; i++) {
+        auto ipAddress = ipV4AddrList.at(i);
+        ipInfoList[i].family = ipAddress.GetFamily();
+        ipInfoList[i].ip                 = IpAddressToHccpIpAddr(ipAddress);
+    }
+
+    union HccpEid eidList[num] = {};
+    // TODO 接口是否有问题？确认eidList不用引用？ --熊哲
+    s32 ret = RaGetEidByIp(&handle, ipInfoList, eidList, &num);
+    if (ret != 0) {
+        string msg = StringFormat("call RaGetEidByIp failed, error code =%d.", ret);
+        THROW<NetworkApiException>(msg);
+    }
+
+    if (num != ipV4AddrList.size()) {
+        HCCL_ERROR("call RaGetEidByIp failed, The number of ipInfoList and eidList is inconsistent, "
+                   "ipV4AddrList size =%d, eidList size =%d",
+            ipV4AddrList.size(),
+            num);
+        return HCCL_E_INTERNAL;
+    }
+
+    for (unsigned int i = 0; i < num; i++) {
+        IpAddress eidAddr = HccpEidToIpAddress(eidList[i]);
+        eidAddrList.push_back(eidAddr);
+    }
+    HCCL_INFO("[HrtRaGetEidByIp] success, eidAddrList size=%u", eidAddrList.size());
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl
