@@ -58,17 +58,17 @@ std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpIn
     collOp.staticShape = dfxOpInfo.staticShape;
     collOp.numBlocksLimit = dfxOpInfo.numBlocksLimit;
     SetCollopDataDes(collOp, dfxOpInfo);
-    collOp.inputMem = std::shared_ptr<Buffer>(
-        reinterpret_cast<uintptr_t>(inputMemPtr),
-        static_cast<std::size_t>(inputMemSize)
+    collOp.inputMem = std::make_shared<Hccl::Buffer>(
+        reinterpret_cast<uintptr_t>(dfxOpInfo.inputMemPtr),
+        static_cast<std::size_t>(dfxOpInfo.inputMemSize)
     );
-    collOp.outputMem = std::shared_ptr<Buffer>(
-        reinterpret_cast<uintptr_t>(outputMemPtr),
-        static_cast<std::size_t>(outputMemSize)
+    collOp.outputMem = std::make_shared<Hccl::Buffer>(
+        reinterpret_cast<uintptr_t>(dfxOpInfo.outputMemPtr),
+        static_cast<std::size_t>(dfxOpInfo.outputMemSize)
     );
-    collOp.scratchMem = std::shared_ptr<Buffer>(
-        reinterpret_cast<uintptr_t>(scratchMemPtr),
-        static_cast<std::size_t>(scratchMemSize)
+    collOp.scratchMem = std::make_shared<Hccl::Buffer>(
+        reinterpret_cast<uintptr_t>(dfxOpInfo.scratchMemPtr),
+        static_cast<std::size_t>(dfxOpInfo.scratchMemSize)
     );
     dfxOpInfoOnce->op_= std::move(collOp);
     dfxOpInfoOnce->tag_ = dfxOpInfo.tag_;

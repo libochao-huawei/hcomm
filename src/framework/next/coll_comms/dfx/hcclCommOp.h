@@ -47,7 +47,7 @@ public:
     void*               inputMemPtr;
     u64                 inputMemSize;
     void*               outputMemPtr;
-    u64                 outpuMemSize;
+    u64                 outputMemSize;
     void*               scratchMemPtr;
     u64                 scratchMemSize;
     //task_exception
