@@ -31,6 +31,7 @@
 #define RS_MIN_TEMPTH_DEPTH 8
 #define RS_MAX_TEMPTH_DEPTH 4096
 #define RS_MR_STATE_SYNCED  1
+#define RS_VENDOR_ID_19E5 0x19E5
 
 struct RsQpLenInfo {
     uint32_t cmd;

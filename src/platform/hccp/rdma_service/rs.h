@@ -165,7 +165,7 @@ RS_ATTRI_VISI_DEF int RsTypicalRegisterMr(unsigned int phyId, unsigned int rdevI
 RS_ATTRI_VISI_DEF int RsRemapMr(unsigned int phyId, unsigned int rdevIndex, struct MemRemapInfo memList[],
     unsigned int memNum);
 RS_ATTRI_VISI_DEF int RsTypicalDeregisterMr(unsigned int phyId, unsigned int devIndex, unsigned long long addr);
-RS_ATTRI_VISI_DEF int RsDeregisterMr(void *mrHandle);
+RS_ATTRI_VISI_DEF int RsDeregisterMr(unsigned int phyId, unsigned int rdevIndex, void *mrHandle);
 
 enum RsSendFlags {
     RS_SEND_FENCE  = 1 << 0,
