@@ -18,7 +18,7 @@ HcclCommDfx::HcclCommDfx() {
 }
 
 HcclResult HcclCommDfx::Init(u32 deviceId, const std::string comTag) {
-    HCCL_INFO("[HcclCommDfx][Init] Init begin")
+    HCCL_INFO("[HcclCommDfx][Init] Init begin");
     HCCL_INFO("[%s]deviceId[%u], comTag[%s]", __func__, deviceId, comTag.c_str());
     deviceId_ = deviceId;
     commTag_ = comTag;
@@ -35,7 +35,7 @@ HcclResult HcclCommDfx::Init(u32 deviceId, const std::string comTag) {
     setAddTaskCallback_ = [this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
         return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle);
     };
-    HCCL_INFO("[HcclCommDfx][Init] Init success")
+    HCCL_INFO("[HcclCommDfx][Init] Init success");
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 
