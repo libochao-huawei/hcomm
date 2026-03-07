@@ -16,6 +16,8 @@
 #include "ub_transport_lite_impl.h"
 #include "notify_manager.h"
 #include "aicpu_hccl_def.h"
+#include "ns_recovery/aicpu/ns_recovery_func_lite.h"
+#include "../../../../../legacy/framework/communicator/aicpu/daemon/aicpu_daemon_service.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
 
@@ -50,11 +52,43 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
     }
+    nsRecoveryLitePtr_ = std::make_shared<NsRecoveryLite>(kfcControlTransferH2D_, kfcStatusTransferD2H_);
 
     indOpCommInitialized_ = true;
+    InitBackGroundThread();
     
     HCCL_RUN_INFO("%s group[%s] success!, deviceLogicId[%u], devicePhyId[%u], deviceType[%u]",
          __func__, identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::InitBackGroundThread()
+{
+    static bool backGroundInit = false;
+    if (backGroundInit) {
+        HCCL_INFO("[%s]identifier[%s], backGroundInit[%d], skip", __func__, identifier_.c_str(), backGroundInit);
+        return HCCL_SUCCESS;
+    }
+    backGroundInit = true;
+
+    static auto commandToBackGroud = Hccl::CommandToBackGroud::Default;
+    static auto daemonServiceRun = [](void *info) {
+        Hccl::AicpuDaemonService::GetInstance().ServiceRun(info);
+    };
+    static auto daemonServiceStop = [](void *info) {
+        Hccl::AicpuDaemonService::GetInstance().ServiceStop(info);
+    };
+
+    // 注册守护进程函数
+    Hccl::AicpuDaemonService::GetInstance().Register(&NsRecoveryFuncLite::GetInstance());
+
+    // 启动背景线程
+    if (Hccl::StartMC2MaintenanceThread != nullptr) {
+        Hccl::StartMC2MaintenanceThread(daemonServiceRun, &commandToBackGroud, daemonServiceStop, &commandToBackGroud);
+        HCCL_RUN_INFO("[%s]start BackGround thread success.", __func__);
+    } else {
+        HCCL_WARNING("[%s]StartMC2MaintenanceThread func is nullptr", __func__);
+    }
     return HCCL_SUCCESS;
 }
 
@@ -227,4 +261,28 @@ HcclResult CollCommAicpu::NotifyAlloc(NotifyMgrAicpuParam *param)
     HCCL_INFO("[CollCommAicpu][%s] comm identifier[%s], alloc notifys num[%u] success",
         __func__, hcomId.c_str(), notifyNum);
     return HCCL_SUCCESS;
+}
+
+std::string CollCommAicpu::GetIdentifier()
+{
+    return identifier_;
+}
+u32 CollCommAicpu::GetDevPhyId()
+{
+    return topoInfo_.devicePhyId;
+}
+
+std::vector<std::shared_ptr<Thread>> CollCommAicpu::GetThreads()
+{
+    return threads_;
+}
+
+void CollCommAicpu::CleanUbTransportMap()
+{
+    ubTransportMap_.clear();
+}
+
+hccl::NsRecoveryLitePtr CollCommAicpu::GetNsRecoveryLitePtr()
+{
+    return nsRecoveryLitePtr_;
 }

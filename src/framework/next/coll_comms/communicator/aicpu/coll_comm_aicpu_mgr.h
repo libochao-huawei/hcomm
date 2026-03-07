@@ -24,6 +24,7 @@ public:
     bool IsUsed();
     void SetUsed(bool used);
     void SetOldA5Comm(void *oldA5Comm);
+    CollCommAicpu* GetCollCommAicpu() { return collCommAicpu_.get(); }
 private:
     void* oldA5Comm_{nullptr};
     std::shared_ptr<CollCommAicpu> collCommAicpu_{nullptr};

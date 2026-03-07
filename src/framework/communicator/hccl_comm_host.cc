@@ -25,6 +25,9 @@
 #include "comm_configer.h"
 #include "launch_aicpu.h"
 #include "launch_device.h"
+#include "../../legacy/framework/communicator/hdc.h"
+#include "../../legacy/framework/communicator/aicpu/kfc.h"
+#include "sal_pub.h"
 
 namespace hccl
 {
@@ -296,14 +299,26 @@ namespace hccl
         }
   
         CHK_RET(hrtGetDevice(&(commAicpuParam_.deviceLogicId)));
-    
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(commAicpuParam_.deviceLogicId), commAicpuParam_.devicePhyId));
-      
         CHK_RET(hrtGetDeviceType(devType_));
         commAicpuParam_.deviceType = static_cast<u32>(devType_);
 
+        // kfc初始化
+        std::shared_ptr<Hccl::HDCommunicate> kfcControlTransferH2D{nullptr};
+        std::shared_ptr<Hccl::HDCommunicate> kfcStatusTransferD2H{nullptr};
+        EXECEPTION_CATCH((kfcControlTransferH2D = std::make_shared<Hccl::HDCommunicate>(commAicpuParam_.deviceLogicId, 
+            Hccl::HCCLV2_HDC_TYPE_H2D, sizeof(Hccl::KfcCommand))), return HCCL_E_PTR);
+        CHK_RET(kfcControlTransferH2D->Init());
+        EXECEPTION_CATCH((kfcStatusTransferD2H = std::make_shared<Hccl::HDCommunicate>(commAicpuParam_.deviceLogicId, 
+            Hccl::HCCLV2_HDC_TYPE_D2H, sizeof(Hccl::KfcExecStatus))), return HCCL_E_PTR);
+        CHK_RET(kfcStatusTransferD2H->Init());
+        Hccl::HDCommunicateParams h2dParams = kfcControlTransferH2D->GetCommunicateParams();
+        Hccl::HDCommunicateParams d2hParams = kfcStatusTransferD2H->GetCommunicateParams();
+        memcpy(&commAicpuParam_.kfcControlTransferH2DParams, &h2dParams, sizeof(hccl::HDCommunicateParams));
+        memcpy(&commAicpuParam_.kfcStatusTransferD2HParams, &d2hParams, sizeof(hccl::HDCommunicateParams));
+
+        // json表解析
         std::string jsonPath;
-      
         CHK_RET(GetKernelFilePath(jsonPath));
         jsonPath += "ccl_kernel.json";
    
@@ -322,6 +337,7 @@ namespace hccl
         return HCCL_E_PTR);
 
         CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
+        collComm_->SetKfcControlTransfer(kfcControlTransferH2D, kfcStatusTransferD2H);
         return HCCL_SUCCESS;
     }
 
@@ -382,6 +398,24 @@ namespace hccl
     CollComm* hcclComm::GetCollComm() 
     {
         return collComm_!= nullptr ? collComm_.get() : nullptr;
+    }
+
+    HcclResult hcclComm::Resume()
+    {
+        #ifndef CCL_KERNEL_AICPU
+            #ifndef HCCD
+                CHK_RET(collComm_->Resume());
+                return HCCL_SUCCESS;
+            #endif
+        #endif
+        
+        CHK_RET(communicator_->Resume());
+        return HCCL_SUCCESS;
+    }
+    HcclResult hcclComm::GetCommStatus(HcclCommStatus &status)
+    {
+        status = collComm_->GetCommStatus();
+        return HCCL_SUCCESS;
     }
 
 } // namespace hccl

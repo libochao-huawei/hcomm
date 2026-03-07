@@ -109,12 +109,12 @@ int32_t ProcessTaskAbortHandleCallback(int32_t deviceLogicId, aclrtDeviceTaskAbo
 
 TaskAbortHandler::TaskAbortHandler()
 {
-    HrtDeviceAbortRegCallBack(ProcessTaskAbortHandleCallback, static_cast<void *>(&commVector));
+    // HrtDeviceAbortRegCallBack(ProcessTaskAbortHandleCallback, static_cast<void *>(&commVector));
 }
 
 TaskAbortHandler::~TaskAbortHandler()
 {
-    DECTOR_TRY_CATCH("TaskAbortHandler", HrtDeviceAbortRegCallBack(nullptr, nullptr));
+    // DECTOR_TRY_CATCH("TaskAbortHandler", HrtDeviceAbortRegCallBack(nullptr, nullptr));
 }
 
 TaskAbortHandler &TaskAbortHandler::GetInstance()

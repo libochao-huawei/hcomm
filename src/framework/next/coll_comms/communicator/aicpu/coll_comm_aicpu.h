@@ -24,6 +24,7 @@
 #include "aicpu_launch_manager.h"
 #include "channel_param.h"
 #include "hdc_pub.h"
+#include "ns_recovery/aicpu/ns_recovery_lite.h"
 
 using namespace hccl;
 class CollCommAicpu {
@@ -34,13 +35,23 @@ public:
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
 
+    std::string GetIdentifier();
+    u32 GetDevPhyId();
+    std::vector<std::shared_ptr<Thread>> GetThreads();
+    void CleanUbTransportMap();
+
+    // N秒快恢
+    hccl::NsRecoveryLitePtr GetNsRecoveryLitePtr();
+    
 private:
+    HcclResult InitBackGroundThread();
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
     u32 devId_;
+
     //通用的通道
-    std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D_{nullptr};
-    std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H_{nullptr};
+    hccl::HDCommunicatePtr kfcControlTransferH2D_{nullptr};
+    hccl::HDCommunicatePtr kfcStatusTransferD2H_{nullptr};
 
     std::string identifier_;
     bool indOpCommInitialized_{ false }; // 独立算子流程通信域是否初始化
@@ -49,6 +60,9 @@ private:
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
     // A5 独立算子
     std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
+
+    // N秒快恢相关
+    hccl::NsRecoveryLitePtr nsRecoveryLitePtr_{nullptr};
 };
 
 
