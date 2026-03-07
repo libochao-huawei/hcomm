@@ -21,7 +21,7 @@ HcclCommDfxLite::HcclCommDfxLite() {
 
 // HcclCommDfxLite初始化流程 - 修改为返回HcclResult类型
 HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
-    HCCL_INFO("[HcclCommDfxLite][Init] Init begin")
+    HCCL_INFO("[HcclCommDfxLite][Init] Init begin");
     HCCL_INFO("[%s]deviceId[%u], commTag[%s]", __func__, deviceId, commTag.c_str());
     deviceId_ = deviceId;
     commTag_ = commTag;
@@ -37,7 +37,7 @@ HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
     addTaskCallback_ = [this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
         return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle);
     };
-    HCCL_INFO("[HcclCommDfxLite][Init] Init success")
+    HCCL_INFO("[HcclCommDfxLite][Init] Init success");
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 
