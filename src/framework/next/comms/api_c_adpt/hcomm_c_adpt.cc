@@ -319,9 +319,9 @@ HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle
     channelParam.singleUniqueIdSize = totalListNum / hostPackBuffers.size();
     hccl::DeviceMem remoteRankList = hccl::DeviceMem::alloc(listNum * sizeof(u32));
     CHK_PTR_NULL(remoteRankList.ptr());
-    std::vector<u32> remoteRankList(listNum);
+    std::vector<u32> remoteRankIdList(listNum);
     for( u32 i = 0; i < listNum; ++i) {
-        CHK_RET(hccl::HcclCommDfx::GetChannelRemoteRankId(commTag, hostChannelHandles[i], remoteRankList[i]));
+        CHK_RET(hccl::HcclCommDfx::GetChannelRemoteRankId(commTag, hostChannelHandles[i], remoteRankIdList[i]));
     }
     // 通过安全的内存拷贝将主机内存数据传输到设备内存
     CHK_RET(hrtMemSyncCopy(remoteRankList.ptr(), listNum * sizeof(u32), remoteRankIdList.data(), 
