@@ -647,7 +647,8 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
         strcpy_s(dfxOpInfo->opTag, 256, hcclComm->GetIdentifier().c_str());
     }
     dfxOpInfo->myRank = collComm->GetMyRankId();
-    strcpy_s(dfxOpInfo->tag_, 256, Hccl::OpTypeToString(Hccl::OP_TYPE_MAP.at(dfxOpInfo->opType)).c_str());
+    strcpy_s(dfxOpInfo->tag_, 256, Hccl::OpTypeToString(Hccl::OP_TYPE_MAP.at(static_cast<HcclCMDType>(dfxOpInfo->opType))).c_str());
+
     dfxOpInfo->index_ = 0;
     dfxOpInfo->beginTime_ = hrtMsprofSysCycleTime();
     //HcclDfxOpInfo转为DfxOpInfo
