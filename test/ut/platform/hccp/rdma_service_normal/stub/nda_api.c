@@ -52,6 +52,11 @@ int ibv_close_extend(struct ibv_context_extend *context)
     return 0;
 }
 
+int ibv_query_device_extend(struct ibv_context_extend *context, struct ibv_device_attr_extend *ext_dev_attr)
+{
+    return 0;
+}
+
 struct ibv_qp_extend *ibv_create_qp_extend(struct ibv_context_extend *context,
     struct ibv_qp_init_attr_extend *qp_init_attr)
 {
