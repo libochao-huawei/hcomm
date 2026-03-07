@@ -15,6 +15,7 @@
 #include "hccl_res.h"
 #include "kfc.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器
+#include "../comms/api_c_adpt/hcomm_c_adpt.h"
 
 using namespace hcomm;
 
