@@ -42,7 +42,7 @@ private:
     std::mutex hdcShmLock_;
 };
 
-using NsRecoveryLite = std::shared_ptr<NsRecoveryLite>;
+using NsRecoveryLitePtr = std::shared_ptr<NsRecoveryLite>;
 
 }
 
