@@ -317,11 +317,6 @@ HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle
     channelParam.uniqueIdSize = totalListNum;
     channelParam.singleUniqueIdSize = totalListNum / hostPackBuffers.size();
     hccl::DeviceMem remoteRankList = hccl::DeviceMem::alloc(listNum * sizeof(u32));
-    /*for( u32 i = 0; i < listNum; ++i) {
-        u32 remoteRankId {0};
-        CHK_RET(hccl::HcclCommDfx::GetChannelRemoteRankId(commTag, hostChannelHandles[i], remoteRankId));
-        static_cast<u32*>(remoteRankList.ptr())[i] = remoteRankId;
-    }*/
     CHK_PTR_NULL(remoteRankList.ptr());
     std::vector<u32> remoteRankList(listNum);
     for( u32 i = 0; i < listNum; ++i) {
