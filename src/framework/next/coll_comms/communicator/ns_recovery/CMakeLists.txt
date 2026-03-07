@@ -10,6 +10,7 @@
 
 set(src_list
     task_abort_handler.cc
+    ns_recovery.cc
 )
 
 target_sources(hcomm PRIVATE
