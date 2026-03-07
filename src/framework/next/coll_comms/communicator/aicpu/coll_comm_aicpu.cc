@@ -19,6 +19,8 @@
 #include "kfc.h"
 #include "dlhal_function_v2.h"
 #include "profiling_command_handle_lite.h"
+#include "aicpu_daemon_service.h"
+#include "hcclCommTaskExceptionLite.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
 
@@ -248,6 +250,36 @@ HcclResult CollCommAicpu::NotifyAlloc(NotifyMgrAicpuParam *param)
 
     HCCL_INFO("[CollCommAicpu][%s] comm identifier[%s], alloc notifys num[%u] success",
         __func__, hcomId.c_str(), notifyNum);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::InitBackGroundThread()
+{
+    static bool backGroundInit = false;
+    if (backGroundInit) {
+        HCCL_INFO("[%s]identifier[%s], backGroundInit[%d], skip", __func__, identifier_.c_str(), backGroundInit);
+        return HCCL_SUCCESS;
+    }
+    backGroundInit = true;
+
+    static auto commandToBackGroud = Hccl::CommandToBackGroud::Default;
+    static auto daemonServiceRun = [](void *info) {
+        Hccl::AicpuDaemonService::GetInstance().ServiceRun(info);
+    };
+    static auto daemonServiceStop = [](void *info) {
+        Hccl::AicpuDaemonService::GetInstance().ServiceStop(info);
+    };
+
+    // 注册守护进程函数
+    Hccl::AicpuDaemonService::GetInstance().Register(&hcomm::HcclCommTaskExceptionLite::GetInstance());
+
+    // 启动背景线程
+    if (Hccl::StartMC2MaintenanceThread != nullptr) {
+        Hccl::StartMC2MaintenanceThread(daemonServiceRun, &commandToBackGroud, daemonServiceStop, &commandToBackGroud);
+        HCCL_RUN_INFO("[%s]start BackGround thread success.", __func__);
+    } else {
+        HCCL_WARNING("[%s]StartMC2MaintenanceThread func is nullptr", __func__);
+    }
     return HCCL_SUCCESS;
 }
 
