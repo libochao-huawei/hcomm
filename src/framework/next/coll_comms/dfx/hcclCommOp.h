@@ -44,9 +44,12 @@ public:
     u64                 dataCount{0};
     u32                 root = INVALID_VALUE_RANKID;
     u32                 numBlocksLimit{0};
-    std::shared_ptr<Hccl::Buffer> inputMem{nullptr};
-    std::shared_ptr<Hccl::Buffer> outputMem{nullptr};
-    std::shared_ptr<Hccl::Buffer> scratchMem{nullptr};
+    void*               inputMemPtr;
+    u64                 inputMemSize;
+    void*               outputMemPtr;
+    u64                 outpuMemSize;
+    void*               scratchMemPtr;
+    u64                 scratchMemSize;
     //task_exception
     u32          notifyId{0}; //host wait device notifyId
     union {
