@@ -118,7 +118,7 @@ HcclResult CollCommAicpu::RegisterThreadAddDfxTaskInfo(ThreadHandle thread)
     int32_t ret = HcommThreadRegisterDfx(thread, dfx_.GetCallback());
     if (ret != 0) {
         HCCL_ERROR("[CollCommAicpu][RegisterThreadAddDfxTaskInfo] HcommThreadRegisterDfx failed, ret[%d]", ret);
-        return HCCL_E_FAIL;
+        return HCCL_E_PTR;
     }
  	return HCCL_SUCCESS;
 } 
