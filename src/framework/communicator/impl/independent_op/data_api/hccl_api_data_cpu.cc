@@ -617,9 +617,11 @@ int32_t HcommBatchModeEnd(const char *batchTag)
 }
 
 int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback) {
+    HCCL_INFO("[HcommThreadRegisterDfx] Init begin");
     Thread *threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
     CHK_RET(threadPtr->SetAddTaskInfoCallback(callback));
+    HCCL_INFO("[HcommThreadRegisterDfx] Init success");
     return HCCL_SUCCESS;
 }
 

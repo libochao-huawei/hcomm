@@ -14,13 +14,15 @@
 namespace hccl {
 ReadWriteLockBase HcclCommDfxLite::baseLockLite_; // 基类锁成员
 ReadWriteLock HcclCommDfxLite::rwLockLite_(HcclCommDfxLite::baseLockLite_); // 读写锁
-
+std::unordered_map<std::string,std::unordered_map<u64, u32> > HcclCommDfxLite::channelRemoteRankIdLite_;
 // HcclCommDfxLite构造函数实现
 HcclCommDfxLite::HcclCommDfxLite() {
 }
 
 // HcclCommDfxLite初始化流程 - 修改为返回HcclResult类型
 HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
+    HCCL_INFO("[HcclCommDfxLite][Init] Init begin")
+    HCCL_INFO("[%s]deviceId[%u], commTag[%s]", __func__, deviceId, commTag.c_str());
     deviceId_ = deviceId;
     commTag_ = commTag;
     // 1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
@@ -35,7 +37,7 @@ HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
     addTaskCallback_ = [this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
         return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle);
     };
-    HCCL_INFO("[%s]deviceId[%u], commTag[%s]", __func__, deviceId, commTag.c_str());
+    HCCL_INFO("[HcclCommDfxLite][Init] Init success")
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 
