@@ -193,6 +193,11 @@ static void DlHalApiInit(void)
     gHalOps.dlHalResAddrUnmapV2 = (drvError_t (*)(unsigned int devId, struct res_map_info_in *resInfoIn))
         AscendHalDlsym(gHalApiHandle, "halResAddrUnmapV2");
 
+    gHalOps.dlHalMemRegUbSegment = (drvError_t (*)(uint32_t devId, uint64_t va, uint64_t size))
+        AscendHalDlsym(gHalApiHandle, "halMemRegUbSegment");
+
+    gHalOps.dlHalMemUnRegUbSegment = (drvError_t (*)(uint32_t devId, uint64_t va, uint64_t size))
+        AscendHalDlsym(gHalApiHandle, "halMemUnRegUbSegment");
     return;
 }
 
@@ -613,4 +618,18 @@ int DlHalResAddrUnmapV2(unsigned int devId, struct res_map_info_in *resInfoIn)
     DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalResAddrUnmapV2, "dlHalResAddrUnmapV2");
 
     return gHalOps.dlHalResAddrUnmapV2(devId, resInfoIn);
+}
+
+int DlHalMemRegUbSegment(uint32_t devId, uint64_t va, uint64_t size)
+{
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalMemRegUbSegment, "dlHalMemRegUbSegment");
+
+    return gHalOps.dlHalMemRegUbSegment(devId, va, size);
+}
+
+int DlHalMemUnRegUbSegment(uint32_t devId, uint64_t va, uint64_t size)
+{
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalMemUnRegUbSegment, "dlHalMemUnRegUbSegment");
+
+    return gHalOps.dlHalMemUnRegUbSegment(devId, va, size);
 }
