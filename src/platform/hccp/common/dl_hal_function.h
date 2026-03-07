@@ -104,6 +104,8 @@ struct DlHalOps {
     drvError_t (*dlHalResAddrMapV2)(unsigned int devId, struct res_map_info_in *resInfoIn,
         struct res_map_info_out *resInfoOut);
     drvError_t (*dlHalResAddrUnmapV2)(unsigned int devId, struct res_map_info_in *resInfoIn);
+    drvError_t (*dlHalMemRegUbSegment)(uint32_t devId, uint64_t va, uint64_t size);
+    drvError_t (*dlHalMemUnRegUbSegment)(uint32_t devid, uint64_t va, uint64_t size);
 };
 
 int DlHalInit(void);
@@ -185,5 +187,7 @@ int DlHalEschedWaitEvent(uint32_t devId, uint32_t grpId,uint32_t threadId, int32
     struct event_info *event);
 int DlHalResAddrMapV2(unsigned int devId, struct res_map_info_in *resInfoIn, struct res_map_info_out *resInfoOut);
 int DlHalResAddrUnmapV2(unsigned int devId, struct res_map_info_in *resInfoIn);
+int DlHalMemRegUbSegment(uint32_t devId, uint64_t va, uint64_t size);
+int DlHalMemUnRegUbSegment(uint32_t devId, uint64_t va, uint64_t size);
 
 #endif  // __DL_HAL_FUNCTION_H__

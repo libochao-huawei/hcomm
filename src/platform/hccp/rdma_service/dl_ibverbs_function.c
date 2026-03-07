@@ -35,6 +35,7 @@ struct RsIbverbsOps gIbverbsOps = {
     .rsIbvGetCqEvent = ibv_get_cq_event,
     .rsIbvDestroyCq = ibv_destroy_cq,
     .rsIbvModifyQp = ibv_modify_qp,
+    .rsIbvQueryDevice = ibv_query_device,
     .rsIbvQueryPort = ibv_query_port,
     .rsIbvQueryGid = ibv_query_gid,
     .rsIbvCloseDevice = ibv_close_device,
@@ -86,6 +87,10 @@ struct RsHrnOps gHrnOps = {
 STATIC int RsContextOpsApiInit(void)
 {
 #ifndef CA_CONFIG_LLT
+    gIbverbsOps.rsIbvQueryDevice = (int (*)(struct ibv_context*, struct ibv_device_attr *))
+        HccpDlsym(gIbverbsApiHandle, "ibv_query_device");
+    DL_API_RET_IS_NULL_CHECK(gIbverbsOps.rsIbvQueryDevice, "ibv_query_device");
+
     gIbverbsOps.rsIbvQueryPort = (int (*)(struct ibv_context*, uint8_t, struct ibv_port_attr*))
         HccpDlsym(gIbverbsApiHandle, "ibv_query_port");
     DL_API_RET_IS_NULL_CHECK(gIbverbsOps.rsIbvQueryPort, "ibv_query_port");
@@ -794,6 +799,17 @@ int RsIbvModifyQp(struct ibv_qp *qp, struct ibv_qp_attr *attr, int attrMask)
 #endif
     }
     return gIbverbsOps.rsIbvModifyQp(qp, attr, attrMask);
+}
+
+int RsIbvQueryDevice(struct ibv_context *context, struct ibv_device_attr *deviceAttr)
+{
+    if (gIbverbsOps.rsIbvQueryDevice == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rs_ibv_query_device is null");
+        return -EINVAL;
+#endif
+    }
+    return gIbverbsOps.rsIbvQueryDevice(context, deviceAttr);
 }
 
 int RsIbvQueryPort(struct ibv_context *context, uint8_t portNum, struct ibv_port_attr *portAttr)
