@@ -402,19 +402,19 @@ namespace hccl
 
     HcclResult hcclComm::Resume()
     {
-        #ifndef CCL_KERNEL_AICPU
-            #ifndef HCCD
-                CHK_RET(collComm_->Resume());
-                return HCCL_SUCCESS;
-            #endif
-        #endif
+        if (IsCommunicatorV2()) {
+            CHK_RET(collComm_->Resume());
+        } else {
+            CHK_RET(communicator_->Resume());
+        }
         
-        CHK_RET(communicator_->Resume());
         return HCCL_SUCCESS;
     }
     HcclResult hcclComm::GetCommStatus(HcclCommStatus &status)
     {
-        status = collComm_->GetCommStatus();
+        if (IsCommunicatorV2()) {
+            status = collComm_->GetCommStatus();
+        }
         return HCCL_SUCCESS;
     }
 
