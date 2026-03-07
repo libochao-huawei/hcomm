@@ -497,6 +497,7 @@ struct SensorNode {
 struct RsRdevCb {
     struct rs_cb *rsCb;
     unsigned int rdevIndex;
+    struct ibv_device_attr deviceAttr;
     struct RsIpAddrInfo localIp;
     int devNum;
     const char *devName;
