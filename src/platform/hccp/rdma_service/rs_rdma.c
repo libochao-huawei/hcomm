@@ -27,6 +27,7 @@
 #include "rs_inner.h"
 #include "rs_rdma_inner.h"
 #include "rs_epoll.h"
+#include "dl_hal_function.h"
 #include "dl_ibverbs_function.h"
 #include "rs_drv_socket.h"
 #include "rs_drv_rdma.h"
@@ -633,6 +634,24 @@ RS_ATTRI_VISI_DEF int RsMrDereg(unsigned int phyId, unsigned int rdevIndex, unsi
     return 0;
 }
 
+STATIC int RsMemRegisterUbSegment(struct RsRdevCb *rdevCb, unsigned int chipId, uint64_t addr, unsigned long long len)
+{
+    if (rdevCb->deviceAttr.vendor_id == RS_UB_VENDOR_ID) {
+        return DlHalMemRegUbSegment(chipId, addr, len);
+    }
+
+    return 0;
+}
+
+STATIC int RsMemUnRegisterUbSegment(struct RsRdevCb *rdevCb, unsigned int chipId, uint64_t addr, unsigned long long len)
+{
+    if (rdevCb->deviceAttr.vendor_id == RS_UB_VENDOR_ID) {
+        return DlHalMemUnRegUbSegment(chipId, addr, len);
+    }
+
+    return 0;
+}
+
 RS_ATTRI_VISI_DEF int RsRegisterMr(unsigned int phyId, unsigned int rdevIndex, struct RdmaMrRegInfo *mrRegInfo,
     void **mrHandle)
 {
@@ -658,11 +677,18 @@ RS_ATTRI_VISI_DEF int RsRegisterMr(unsigned int phyId, unsigned int rdevIndex, s
     CHK_PRT_RETURN(ret || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
         chipId, ret), ret);
 
+    ret = RsMemRegisterUbSegment(rdevCb, chipId, (uint64_t)(uintptr_t)mrRegInfo->addr, mrRegInfo->len);
+    if (ret != 0) {
+        hccp_warn("RsMemRegisterUbSegment failed, vendor_id[0x%x] addr[0x%llx] len[%llu]",
+            rdevCb->deviceAttr.vendor_id, (uint64_t)(uintptr_t)mrRegInfo->addr, mrRegInfo->len);
+        goto mem_reg_err;
+    }
+
     *mrHandle = (void *)RsDrvMrReg(rdevCb->ibPd, mrRegInfo->addr, mrRegInfo->len, mrRegInfo->access);
     if (*mrHandle == NULL) {
-        hccp_warn("rs_drv_mr_reg addr is NULL len[%lld] access[%d] unsuccessful ", mrRegInfo->len,
+        hccp_warn("rs_drv_mr_reg addr is NULL len[%llu] access[%d] unsuccessful ", mrRegInfo->len,
             mrRegInfo->access);
-        goto reg_err;
+        goto mr_reg_err;
     }
 
     rsMrHandle = (struct ibv_mr *)*mrHandle;
@@ -671,7 +697,9 @@ RS_ATTRI_VISI_DEF int RsRegisterMr(unsigned int phyId, unsigned int rdevIndex, s
 
     hccp_info("rs_register_mr succ");
     return ret;
-reg_err:
+mr_reg_err:
+    (void)RsMemUnRegisterUbSegment(rdevCb, chipId, (uint64_t)(uintptr_t)mrRegInfo->addr, mrRegInfo->len);
+mem_reg_err:
     mrRegInfo->lkey = 0;
 
     return 0;
