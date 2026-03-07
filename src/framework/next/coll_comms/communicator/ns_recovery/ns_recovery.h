@@ -12,6 +12,7 @@
 #define NS_RECOVERY_H
 
 #include "hccl_res.h"
+#include <string>
 
 namespace hccl {
 
