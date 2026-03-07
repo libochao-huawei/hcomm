@@ -115,8 +115,7 @@ HcclResult CtxMgrImp::AllocRes(CcuCtxGroup &ctxGroup, CcuResPack &resPack)
 HcclResult CtxMgrImp::ReleaseRes(CcuCtxGroup &ctxGroup) const
 {
     // 获取本次编排Ctx多对应的资源信息
-    CcuResPack resPack;
-    CHK_RET(ctxGroup.ctxs[0]->GetResPack(resPack));
+    CcuResPack *resPack = ctxGroup.ctxs[0]->GetResPack();
     HCCL_INFO("[CtxMgrImp:%s]cur resPack count[%u], resHandle[%u], handle size[%u]",  __func__, resPack.count, resPack.GetId(), resPack.handles.size());
     if(resPack.count > 0) {
         resPack.count--;
@@ -439,8 +438,7 @@ HcclResult CtxMgrImp::InstantiationTranslator(uint16_t dieId)
 HcclResult CtxMgrImp::TransRepResToPhyRes(CcuCtxGroup &ctxGroup) const
 {
     // 获取ctxGroup中CCU物理资源句柄
-    CcuResPack resPack;
-    CHK_RET(ctxGroup.ctxs[0]->GetResPack(resPack));
+    CcuResPack *resPack = ctxGroup.ctxs[0]->GetResPack();
 
     // 获取通信域当前所持有的资源
     CcuResRepository totalResRepository;
