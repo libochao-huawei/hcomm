@@ -200,6 +200,8 @@ struct RaQpHandle {
 
 struct RaMrHandle {
     uint64_t addr;
+    uint64_t va;
+    uint64_t size;
 };
 
 enum GetIfaddrsVersion {

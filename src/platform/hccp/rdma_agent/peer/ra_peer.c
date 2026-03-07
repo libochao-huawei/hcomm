@@ -590,20 +590,28 @@ int RaPeerMrDereg(struct RaQpHandle *qpPeer, struct MrInfoT *info)
 
 int RaPeerRegisterMr(struct RaRdmaHandle *rdmaPeer, struct MrInfoT *info, void **mrHandle)
 {
-    int ret;
     struct RdmaMrRegInfo mrRegInfo = {0};
+    struct RaMrHandle *mrPeer = NULL;
+    int ret;
+
+    mrPeer = (struct RaMrHandle *)calloc(1, sizeof(struct RaMrHandle));
+    CHK_PRT_RETURN(mrPeer == NULL, hccp_err("[ra_peer_register_mr]mrPeer calloc failed phyId(%u)",
+        phyId), -ENOMEM);
 
     mrRegInfo.addr = info->addr;
     mrRegInfo.len = info->size;
     mrRegInfo.access = info->access;
 
     RsSetCtx(rdmaPeer->rdevInfo.phyId);
-    ret = RsRegisterMr(rdmaPeer->rdevInfo.phyId, rdmaPeer->rdevIndex, &mrRegInfo, mrHandle);
+    ret = RsRegisterMr(rdmaPeer->rdevInfo.phyId, rdmaPeer->rdevIndex, &mrRegInfo, &mrPeer->addr);
     if (ret) {
         hccp_err("[ra_peer_register_mr]rs_register_mr failed ret(%d)", ret);
     }
     info->lkey = mrRegInfo.lkey;
     info->rkey = mrRegInfo.rkey;
+    mrPeer->va = info->addr;
+    mrPeer->size = info->size;
+    *mrHandle = mrPeer;
     return ret;
 }
 
@@ -612,10 +620,13 @@ int RaPeerDeregisterMr(struct RaRdmaHandle *rdmaPeer, void *mrHandle)
     int ret;
 
     RsSetCtx(rdmaPeer->rdevInfo.phyId);
-    ret = RsDeregisterMr(mrHandle);
-    if (ret) {
+    ret = RsDeregisterMr(rdmaPeer->rdevInfo.phyId, rdmaPeer->rdevIndex, mrHandle);
+    if (ret != 0) {
         hccp_err("[ra_peer_deregister_mr]rs_deregister_mr failed ret(%d)", ret);
     }
+
+    free(mrHandle);
+    mrHandle = NULL;
     return ret;
 }
 
