@@ -4524,10 +4524,10 @@ void TcRsRegisterMr()
 	EXPECT_INT_EQ(0, ret);
 	mocker_clean();
 
-	ret =  RsDeregisterMr(mrHandle);
+	ret =  RsDeregisterMr(phyId, rdevIndex, mrHandle);
 	EXPECT_INT_EQ(0, ret);
 
-	ret =  RsDeregisterMr(NULL);
+	ret =  RsDeregisterMr(phyId, rdevIndex, NULL);
 	EXPECT_INT_NE(0, ret);
 
 	ret = RsRdevDeinit(phyId, NOTIFY, rdevIndex);
