@@ -7,14 +7,17 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+
+#include "orion_adapter_rts.h"
 #include "runtime_api_exception.h"
 #include "exception_util.h"
-#include "orion_adapter_rts.h"
 #include "invalid_params_exception.h"
 #include "log.h"
 #include "acl/acl_rt.h"
 #include "driver/ascend_hal.h"
 #include "not_support_exception.h"
+#include "adapter_error_manager_pub.h"
+
 
 using namespace std;
 namespace Hccl {
@@ -382,12 +385,16 @@ void *HrtMalloc(u64 size, aclrtMemType_t memType)
     ret = aclrtMallocWithCfg(&devPtr, size, static_cast<aclrtMemMallocPolicy>(memType), &cfg);
     HCCL_INFO("Call aclrtMallocWithCfg, return value[%d] size[%llu] devPtr[%p], moudleId: HCCL.", ret, size, devPtr);
     if (ret == ACL_ERROR_RT_MEMORY_ALLOCATION) {
+        RPT_INPUT_ERR(true, "EI0007", std::vector<std::string>({"resource_type", "resource_info"}),
+                            std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size)}));
         HCCL_ERROR("[Malloc][Mem]errNo[0x%016llx] aclrtMallocWithCfg failed, "
                    "Reason: out of memory, return[%d], para: devPtrAddr[%p], size[%llu]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, devPtr, size);
         throw RuntimeApiException(StringFormat("call HrtMalloc failed, size=0x%llu", size));
     }
     if (ret != ACL_SUCCESS) {
+        RPT_INPUT_ERR(true, "EI0007", std::vector<std::string>({"resource_type", "resource_info"}),
+                            std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size)}));
         HCCL_ERROR("[Malloc][Mem]errNo[0x%016llx] aclrtMallocWithCfg failed, "
                    "return[%d], para: devPtrAddr[%p], size[%llu]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, devPtr, size);
@@ -494,13 +501,13 @@ void HrtIpcSetMemoryName(void *ptr, char_t *name, u64 ptrMaxLen, u32 nameMaxLen)
 
 void HrtIpcDestroyMemoryName(const char_t *name)
 {
-    rtError_t ret = rtIpcDestroyMemoryName(reinterpret_cast<const char *>(name));
-    HCCL_INFO("Call rtIpcDestroyMemoryName, return[%d], para: name[%s]", ret, name);
-    if (ret != RT_ERROR_NONE) {
+    aclError ret = aclrtIpcMemClose(reinterpret_cast<const char *>(name));
+    HCCL_INFO("Call aclrtIpcMemClose, return[%d], para: name[%s]", ret, reinterpret_cast<const char *>(name));
+    if (ret != ACL_SUCCESS) {
         HCCL_ERROR("[Destroy][IpcMemoryName]errNo[0x%016llx] "
                    "rtDestroy Ipc memory name fail. return[%d], para: name[%s]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, name);
-        throw RuntimeApiException(StringFormat("call rtIpcDestroyMemoryName failed, name=%s", name));
+        throw RuntimeApiException(StringFormat("call aclrtIpcMemClose failed, name=%s", name));
     }
 }
 
@@ -519,12 +526,13 @@ void *HrtIpcOpenMemory(const char_t *name)
 
 void HrtIpcCloseMemory(const void *ptr)
 {
-    rtError_t ret = rtIpcCloseMemory(ptr);
-    if (ret != RT_ERROR_NONE) {
+    aclError ret = aclrtIpcMemClose(reinterpret_cast<const char *>(ptr));
+    HCCL_INFO("Call aclrtIpcMemClose, return[%d], para: name[%s]", ret, reinterpret_cast<const char *>(ptr));
+    if (ret != ACL_SUCCESS) {
         HCCL_ERROR("[Close][IpcMemory]errNo[0x%016llx] "
                    "rtClose ipc memory fail, return[%d]. para: ptr[%p]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr);
-        throw RuntimeApiException(StringFormat("call rtIpcMemClose failed, ptr=%p", ptr));
+        throw RuntimeApiException(StringFormat("call aclrtIpcMemClose failed, ptr=%p", ptr));
     }
 }
 
@@ -592,6 +600,8 @@ void *HrtMallocHost(u64 size)
     HCCL_INFO("Call aclrtMallocHostWithCfg, return value[%d], para: hostPtr[%p], size[%llu], moudleId: HCCL.", ret,
               hostPtr, size);
     if (ret != ACL_SUCCESS) {
+        RPT_INPUT_ERR(true, "EI0007", std::vector<std::string>({"resource_type", "resource_info"}),
+                            std::vector<std::string>({"HostMemory", std::string("size:") + std::to_string(size)}));
         HCCL_ERROR("[Malloc][Host]errNo[0x%016llx] rt malloc host fail. return[%d], "
                    "para: size[%llu].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, size);
@@ -1106,9 +1116,12 @@ HcclResult HrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode)
 
 HcclResult HrtMemPrefetchToDevice(void *devPtr, uint64_t len)
 {
-    int ret = rtMemPrefetchToDevice(devPtr, len, HrtGetDevice());
-    if (ret != 0) {
-        HCCL_ERROR("rtMemPrefetchToDevice fail ret = %d", ret);
+    CHK_PRT_RET(aclrtMemP2PMap == nullptr, HCCL_ERROR("aclrtMemP2PMap is nullptr, "
+            "Does not support this interface."), HCCL_E_RUNTIME);
+	aclError ret = aclrtMemP2PMap(devPtr, static_cast<size_t>(len), HrtGetDevice(), 0);
+    HCCL_INFO("Call [HrtMemPrefetchToDevice]aclrtMemP2PMap ret = %d", ret);
+    if (ret != ACL_SUCCESS) {
+        HCCL_ERROR("aclrtMemP2PMap fail ret = %d", ret);
         return HCCL_E_RUNTIME;
     }
     return HCCL_SUCCESS;

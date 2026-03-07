@@ -117,6 +117,7 @@ void MockCcuNetworkDevice(const int32_t devLogicId)
         .stubs()
         .with(any())
         .will(returnValue(eidInfoListStbu));
+    MOCKER(HraGetRtpEnable).stubs().with(any()).will(returnValue(true));
 
     MOCKER_CPP(&RdmaHandleManager::GetByIp).stubs().will(returnValue((void*)0x12345678));
     std::pair<uint32_t, uint32_t> fakeDieFuncPair = std::make_pair(1, 4);
