@@ -213,15 +213,18 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, st
     // 获取device侧的通信域
     CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(commTag);
     CHK_PRT_RET(!collCommAicpuMgr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, commTag.c_str()), HCCL_E_PTR);
+
     CollCommAicpu* collComm = collCommAicpuMgr->GetCollCommAicpu();
+    CHK_PTR_NULL(collComm);
 
     // HcclDfxOpInfo 转为DfxOpInfo
-    auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
-    dfxOpInfoOnce = ConvertToDfxOpInfo(*aicpuDfxInfo);
-    
+    std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfoOnce = ConvertToDfxOpInfo(*aicpuDfxInfo);
+
     // 注册
     HcclCommDfxLite* hcclCommDfxLite = collComm->GetHcclCommDfxLite();
+    CHK_PTR_NULL(hcclCommDfxLite);
     Hccl::MirrorTaskManager* mirrorTaskMgr = hcclCommDfxLite->GetMirrorTaskManager();
+    CHK_PTR_NULL(mirrorTaskMgr);
     mirrorTaskMgr->SetCurrDfxOpInfo(dfxOpInfoOnce);
 
     return HCCL_SUCCESS;

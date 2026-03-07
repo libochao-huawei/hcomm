@@ -318,11 +318,14 @@ HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle
     channelParam.uniqueIdSize = totalListNum;
     channelParam.singleUniqueIdSize = totalListNum / hostPackBuffers.size();
     hccl::DeviceMem remoteRankList = hccl::DeviceMem::alloc(listNum * sizeof(u32));
+    CHK_PTR_NULL(remoteRankList.ptr());
+    std::vector<u32> remoteRankList(listNum);
     for( u32 i = 0; i < listNum; ++i) {
-        u32 remoteRankId {0};
-        CHK_RET(hccl::HcclCommDfx::GetChannelRemoteRankId(commTag, hostChannelHandles[i], remoteRankId));
-        static_cast<u32*>(remoteRankList.ptr())[i] = remoteRankId;
+        CHK_RET(hccl::HcclCommDfx::GetChannelRemoteRankId(commTag, hostChannelHandles[i], remoteRankList[i]));
     }
+    // 通过安全的内存拷贝将主机内存数据传输到设备内存
+    CHK_RET(hrtMemSyncCopy(remoteRankList.ptr(), listNum * sizeof(u32), remoteRankIdList.data(), 
+            listNum * sizeof(u32), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     channelParam.remoteRankList = static_cast<u32 *>(remoteRankList.ptr());
     // 创建局部流
     hccl::Stream localStream(hccl::StreamType::STREAM_TYPE_ONLINE);
@@ -665,7 +668,7 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, HcclDfxOpInfo dfxOpInfo)
+HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, hccl::HcclDfxOpInfo dfxOpInfo)
 {
     
     // 申请device侧内存

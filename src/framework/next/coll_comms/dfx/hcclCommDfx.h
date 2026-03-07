@@ -51,14 +51,13 @@ public:
         return setAddTaskCallback_;
     }
 private:
-    u32 deviceId_;
     std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;  // 使用原始指针，不管理生命周期TODO
     std::unique_ptr<HcclCommProfiling> profiling_;
     static std::unordered_map<std::string,std::unordered_map<u64, u32> > channelRemoteRankId_;
     static ReadWriteLockBase baseLock_; // 基类锁成员
     static ReadWriteLock rwLock_; // 读写锁
     std::string commTag_;
-    u32 deviceId_;
+    u32 deviceId_{0};
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> setAddTaskCallback_;
 };
 

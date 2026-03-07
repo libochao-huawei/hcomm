@@ -79,13 +79,22 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
         CHK_PTR_NULL(engineResMgr);
         ret = engineResMgr->HcclThreadAcquire(engine, threadNum, notifyNumPerThread, threads, threadId);
         auto hcclCommDfxCallback = collComm->GetDfxCallback();
- 	    for (u32 num = 0; num < threadNum; threadNum++) {
-            int hret = HcommThreadRegisterDfx(&threads[num], hcclCommDfxCallback);
-            if (hret != HCCL_SUCCESS) {
-                HCCL_ERROR("[HcclThreadAcquire] HcclThreadAcquire  HcommThreadRegisterDfx failed ");
-                return HCCL_E_PTR;
+        if (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU) {
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[%s] Failed to create threads for engine[%d], threadNum[%u], notifyNumPerThread[%u]",
+                            __func__, engine, threadNum, notifyNumPerThread);
+                return ret;
             }
- 	    }
+            return HCCL_SUCCESS;
+        } else {
+            for (u32 num = 0; num < threadNum; ++threadNum) {
+                int hret = HcommThreadRegisterDfx(threads[num], hcclCommDfxCallback);
+                if (hret != HCCL_SUCCESS) {
+                    HCCL_ERROR("[HcclThreadAcquire] HcclThreadAcquire  HcommThreadRegisterDfx failed ");
+                    return HCCL_E_PTR;
+                }
+ 	        }
+        }
     }
     else {
         auto& engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
@@ -129,7 +138,7 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
         CHK_PTR_NULL(engineResMgr);
         ret = engineResMgr->HcclThreadAcquireWithStream(engine, stream, notifyNum, thread);
         auto hcclCommDfxCallback = collComm->GetDfxCallback();
-        int hret = HcommThreadRegisterDfx(thread, hcclCommDfxCallback);
+        int hret = HcommThreadRegisterDfx(*thread, hcclCommDfxCallback);
         if (hret != 0) {
             HCCL_ERROR("[HcclThreadAcquire] HcclThreadAcquire  HcommThreadRegisterDfx failed");
             return HCCL_E_PTR;
