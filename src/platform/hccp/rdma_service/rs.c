@@ -900,6 +900,7 @@ STATIC int RsGetHostRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb, uns
 
 STATIC int RsGetIbCtxAndRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb, unsigned int *rdevIndex)
 {
+    struct ibv_device_attr deviceAttr = {0};
     struct ibv_context *ibCtxTmp = NULL;
     int gidIndex = -1;
     int ret;
@@ -915,11 +916,19 @@ STATIC int RsGetIbCtxAndRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb,
             } else {
                 ret = RsGetDevRdevIndex(rdevCb, rdevIndex, i);
             }
-            if (ret) {
+            if (ret != 0) {
                 hccp_err("get index failed, ret:%d", ret);
                 RsIbvCloseDevice(ibCtxTmp);
                 return ret;
             }
+            ret = RsIbvQueryDevice(ibCtxTmp, &deviceAttr);
+            if (ret != 0) {
+                hccp_err("query device failed, ret:%d", ret);
+                RsIbvCloseDevice(ibCtxTmp);
+                return ret;
+            }
+            (void)memcpy_s(&rdevCb->deviceAttr, sizeof(struct ibv_device_attr), &deviceAttr,
+                sizeof(struct ibv_device_attr));
             rdevCb->ibCtx = ibCtxTmp;
             return 0;
         } else if (ret == -EEXIST) {
