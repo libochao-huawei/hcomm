@@ -44,7 +44,7 @@ HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
 
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
         std::string tag = buffer->GetMemTag();
-        CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), HCCL_RES_TAG_MAX_LEN));
+        CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
         bufferInfos.emplace_back(
             buffer->GetAddr(),
             static_cast<uint32_t>(buffer->GetSize()),
