@@ -693,9 +693,10 @@ HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHa
     struct InitTask {
         u64 context;
         char commTag[256];
-    }
+    };
+
     
-    InitTask customInitTask = {0};
+    InitTask customInitTask = {0, ""};
     customInitTask.context = reinterpret_cast<u64>(devicePackBuf.ptr());
     strcpy(customInitTask.commTag, commTag.c_str());
     CHK_RET(hccl::AicpuAclKernelLaunch(localStream.ptr(),
