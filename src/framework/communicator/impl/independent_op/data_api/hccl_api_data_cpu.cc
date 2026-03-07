@@ -681,10 +681,10 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     //单算子模式，覆盖opTag
     bool opBased = true;
     if (opBased) {
-        dfxOpInfo->opTag = hcclComm->GetIdentifier();
+        strcpy_s(dfxOpInfo->opTag, 256, hcclComm->GetIdentifier().c_str());
     }
-    dfxOpInfo->myRank = collComm->GetMyRankId();//opType
-    dfxOpInfo->tag_ = Hccl::OpTypeToString(Hccl::OP_TYPE_MAP.at(dfxOpInfo->opType));//opType
+    dfxOpInfo->myRank = collComm->GetMyRankId();
+    strcpy_s(dfxOpInfo->tag_, 256, Hccl::OpTypeToString(Hccl::OP_TYPE_MAP.at(dfxOpInfo->opType)).c_str());
     dfxOpInfo->index_ = 0;
     dfxOpInfo->beginTime_ = hrtMsprofSysCycleTime();
     //HcclDfxOpInfo转为DfxOpInfo

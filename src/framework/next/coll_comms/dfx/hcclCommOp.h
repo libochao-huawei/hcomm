@@ -22,64 +22,63 @@
 namespace hccl {
 using RankId = u32;
 
-class HcclDfxOpInfo {
-public:
+struct HcclDfxOpInfo {
     //DfxOpInfo_base
-    std::string         tag_;
-    Hccl::AlgType       algType_;
+    char                tag_[256];
     u32                 index_{0};
     u64                 beginTime_{0};
     u64                 endTime_{0};
     //CollOperator
-    std::string         opTag;
+    char                opTag[256];
     bool                staticAddr{false};
     bool                staticShape{false};
     RankId              myRank;
     //baseCollOperator
-    Hccl::OpMode        opMode;
-    HcclCMDType         opType = HcclCMDType::HCCL_CMD_INVALID;
-    HcclReduceOp        reduceOp = HcclReduceOp::HCCL_REDUCE_RESERVED;
-    HcclDataType        dataType;
-    HcclDataType        outputType;
+    u32                 opMode{0};
+    u32                 opType{0};//通过map找dfxopinfo
+    u32                 reduceOp{0};
+    u32                 dataType{0};
+    u32                 outputType{0};
     u64                 dataCount{0};
     u32                 root = INVALID_VALUE_RANKID;
     u32                 numBlocksLimit{0};
-    void*               inputMemPtr;
-    u64                 inputMemSize;
-    void*               outputMemPtr;
-    u64                 outputMemSize;
-    void*               scratchMemPtr;
-    u64                 scratchMemSize;
+    void*               inputMemPtr{nullptr};
+    u64                 inputMemSize{0};
+    void*               outputMemPtr{nullptr};
+    u64                 outputMemSize{0};
+    void*               scratchMemPtr{nullptr};
+    u64                 scratchMemSize{0};
     //task_exception
     u32          notifyId{0}; //host wait device notifyId
     union {
         struct {
             u64 dataCount{0};
-            HcclDataType dataType;
-            HcclDataType dataOutputType;
+            u32 dataType{0};
+            u32 dataOutputType{0};
+            u64 strideCount{0};
         } dataDes;
         struct {
             void* counts;
             void* displs;
-            HcclDataType dataType;
+            u32 dataType{0};
         } vDataDes;
         struct {
-            HcclDataType sendType;
-            HcclDataType recvType;
+            u32 sendType{0};
+            u32 recvType{0};
             u64 sendCount{0};
             u64 recvCount{0};
         } all2AllDataDes;
         struct {
-            HcclDataType sendType;
-            HcclDataType recvType;
+            u32 sendType{0};
+            u32 recvType{0};
             void* sendCounts;
             void* recvCounts;
             void* sdispls;
             void* rdispls;
         } all2AllVDataDes;
         struct {
-            HcclDataType sendType;
-            HcclDataType recvType;
+            u32 sendType{0};
+            u32 recvType{0};
             void* sendCountMatrix;
         } all2AllVCDataDes;
         struct {
@@ -87,14 +86,6 @@ public:
             u32 itemNum{0};
         } batchSendRecvDataDes;
     };
-
-public:
-    std::string Describe() const
-    {
-        return Hccl::StringFormat(
-            "DfxOpInfo: [tag:[%s], algType:[%u], index:[%u], beginTime:[%llu], endTime:[%llu]",
-             tag_.c_str(), algType_, index_, beginTime_, endTime_);
-    }
 };
 
 void SetCollopDataDes(Hccl::CollOperator& collOp, const HcclDfxOpInfo& dfxOpInfo);
