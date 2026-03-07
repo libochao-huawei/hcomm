@@ -44,7 +44,7 @@ public:
     hccl::NsRecoveryLitePtr GetNsRecoveryLitePtr();
     
 private:
-    HcclResult InitBackgroundThread();
+    HcclResult InitBackGroundThread();
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
     u32 devId_;

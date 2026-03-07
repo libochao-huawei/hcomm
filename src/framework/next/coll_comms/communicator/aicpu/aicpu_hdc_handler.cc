@@ -34,7 +34,7 @@ Hccl::KfcCommand AicpuHdcHandler::GetKfcCommand()
     return cmd;
 }
 
-void AicpuHdcHandler::SetKfcExecStatus(KfcStatus state, KfcErrType errorCode) const
+void AicpuHdcHandler::SetKfcExecStatus(Hccl::KfcStatus state, Hccl::KfcErrType errorCode) const
 {
     Hccl::KfcExecStatus status;
     status.kfcStatus = state;

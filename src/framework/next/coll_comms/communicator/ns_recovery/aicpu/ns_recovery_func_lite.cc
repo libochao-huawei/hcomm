@@ -10,7 +10,6 @@
 #include "ns_recovery_func_lite.h"
 #include "kfc.h"
 #include "sal_pub.h"
-#include "coll_comm_lite_mgr.h"
 #include "ns_recovery_lite.h"
 #include "aicpu_indop_process.h"
 
