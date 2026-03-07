@@ -243,7 +243,8 @@ STATIC int RsGetChipLogicId(unsigned int chipId, enum NetworkMode hccpMode, unsi
 {
     int ret = 0;
 
-    ret = DlDrvDeviceGetIndexByPhyId(chipId, logicId);
+    hccp_err("DlDrvDeviceGetIndexByPhyId chipId[%u]", 13U);
+    ret = DlDrvDeviceGetIndexByPhyId(13, logicId);
     CHK_PRT_RETURN(ret != 0, hccp_err("hal get logicId failed, chipId[%u], ret[%d]", chipId, ret), -ENODEV);
 
     return 0;
@@ -800,6 +801,7 @@ STATIC int RsGetIbCtxAndRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb,
                 RsIbvCloseDevice(ibCtxTmp);
                 return ret;
             }
+            hccp_run_info("vendorId:0x%x, vendor_part_id:0x%x", rdevCb->deviceAttr.vendor_id, rdevCb->deviceAttr.vendor_part_id);
             rdevCb->ibCtx = ibCtxTmp;
             return 0;
         } else if (ret == -EEXIST) {
