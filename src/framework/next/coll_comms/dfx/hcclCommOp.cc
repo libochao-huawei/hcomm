@@ -43,9 +43,6 @@ void SetCollopDataDes(Hccl::CollOperator& collOp, const HcclDfxOpInfo& dfxOpInfo
     }
 }
 
-std::shared_ptr<Hccl::Buffer> CreateBufferShared(const Hccl::Buffer* buffer) {
-    return buffer ? std::make_shared<Hccl::Buffer>(buffer->GetAddr(), buffer->GetSize()) : nullptr;
-}
 
 std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpInfo) {
     auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
@@ -61,9 +58,18 @@ std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpIn
     collOp.staticShape = dfxOpInfo.staticShape;
     collOp.numBlocksLimit = dfxOpInfo.numBlocksLimit;
     SetCollopDataDes(collOp, dfxOpInfo);
-    collOp.inputMem = CreateBufferShared(dfxOpInfo.inputMem.get());
-    collOp.outputMem = CreateBufferShared(dfxOpInfo.outputMem.get());
-    collOp.scratchMem = CreateBufferShared(dfxOpInfo.scratchMem.get());
+    collOp.inputMem = std::shared_ptr<Buffer>(
+        reinterpret_cast<uintptr_t>(inputMemPtr),
+        static_cast<std::size_t>(inputMemSize)
+    );
+    collOp.outputMem = std::shared_ptr<Buffer>(
+        reinterpret_cast<uintptr_t>(outputMemPtr),
+        static_cast<std::size_t>(outputMemSize)
+    );
+    collOp.scratchMem = std::shared_ptr<Buffer>(
+        reinterpret_cast<uintptr_t>(scratchMemPtr),
+        static_cast<std::size_t>(scratchMemSize)
+    );
     dfxOpInfoOnce->op_= std::move(collOp);
     dfxOpInfoOnce->tag_ = dfxOpInfo.tag_;
     dfxOpInfoOnce->algType_ = dfxOpInfo.algType_;
