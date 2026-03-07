@@ -44,7 +44,7 @@ public:
     CcuSharedResource                           &GetImportRes();
 
     void        SetResPack(CcuResPack &resPack);
-    HcclResult GetResPack(CcuResPack &resPack) const;
+    CcuResPack* GetResPack() const;
     void        SetInstrId(uint32_t instrId);
     uint32_t    GetInstrId() const;
     uint32_t    GetInstrCount();
