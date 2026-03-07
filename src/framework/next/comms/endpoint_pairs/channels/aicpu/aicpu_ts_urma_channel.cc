@@ -247,5 +247,24 @@ HcclResult AicpuTsUrmaChannel::H2DResPack(std::vector<char>& buffer)
     return HCCL_SUCCESS;
 }
 
+HcclResult AicpuTsUrmaChannel::Clean()
+{
+    commonRes_.connVec.clear();
+    connections_.clear();
+    memTransport_.reset();
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuTsUrmaChannel::Resume()
+{
+    BuildConnection();
+    BuildUbMemTransport();
+    ChannelStatus status = GetStatus();
+    CHK_PRT_RET(status == ChannelStatus::FAILED, HCCL_ERROR("%s failed, status[%d]", __func__, status), HCCL_E_NETWORK);
+    CHK_PRT_RET(status == ChannelStatus::SOCKET_TIMEOUT, HCCL_ERROR("%s timeout, status[%d]", __func__, status), HCCL_E_TIMEOUT);
+    CHK_PRT_RET(status == ChannelStatus::READY, HCCL_INFO("%s success, status[%d]", __func__, status), HCCL_SUCCESS);
+    return HCCL_SUCCESS;
+}
 
 } // namespace hcomm

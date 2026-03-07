@@ -8,8 +8,47 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "coll_comm_mgr.h"
+#include "ns_recovery/task_abort_handler.h"
 
 namespace hccl {
 
+CollCommMgr* CollCommMgr::instance_ = nullptr;
+static std::once_flag instanceFlag;
+
+CollCommMgr* CollCommMgr::GetInstance() 
+{
+    std::call_once(instanceFlag, [&] {
+        instance_ = new CollCommMgr();
+    });
+    return instance_;
+}
+
+CollCommMgr::CollCommMgr()
+{
+}
+CollCommMgr::~CollCommMgr()
+{
+}
+
+void CollCommMgr::RegisteCollComm(CollComm* collComm)
+{
+    allCollComms_[collComm->GetCollCommName()] = collComm;
+
+    // 注册到需要的地方
+    HcclTaskAbortHandler::GetInstance().Register(collComm);
+}
+
+void CollCommMgr::UnRegisteCollComm(CollComm* collComm)
+{
+    allCollComms_.erase(collComm->GetCollCommName());
+
+    // 从通信域里面注销
+    HcclTaskAbortHandler::GetInstance().UnRegister(collComm);
+}
+
+std::unordered_map<std::string, CollComm*> CollCommMgr::GetAllCollComms()
+{
+    return allCollComms_;
+}
 
 }

@@ -227,6 +227,14 @@ typedef enum {
     HCCL_CMD_BARRIER,
     HCCL_CMD_MAX
 } HcclCMDType;
+
+typedef enum {
+    HCCL_COMM_READY = 0,
+    HCCL_COMM_SUSPENDING = 1,
+    HCCL_COMM_UNKNOWN = 254,
+    HCCL_COMM_RESERVED = 255
+} HcclCommStatus;
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

@@ -7,30 +7,15 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef RANK_PAIR_MGR_H
-#define RANK_PAIR_MGR_H
 
-#include <unordered_map>
-#include <mutex>
-#include "rank_pair.h"
+#ifndef HCCL_DAEMON_FUNC_NEXT_H
+#define HCCL_DAEMON_FUNC_NEXT_H
 
 namespace hccl {
-
-using ChannelTable = std::unordered_map<RankIdPair, std::unordered_map<EndpointDescPair, std::vector<ChannelHandle>>>;
-
-class RankPairMgr {
+class DaemonFunc {
 public:
-    RankPairMgr(){};
-
-    ~RankPairMgr() = default;
-
-    HcclResult Get(RankIdPair rankIdPair, RankPair*& out);
-    ChannelTable GetChannelTable();
-
-private:
-    std::unordered_map<RankIdPair, std::unique_ptr<RankPair>> rankPairMap_{};
+    virtual ~DaemonFunc() = default;
+    virtual void Call() = 0;
 };
-
-} // namespace hccl
-
-#endif // RANK_PAIR_MGR_H
+} // namespace Hccl
+#endif // HCCL_DAEMON_FUNC_NEXT_H
