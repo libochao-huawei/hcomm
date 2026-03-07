@@ -23,6 +23,7 @@ namespace hccl {
 		aclrtBinHandle binHandle, const std::string &kernelName, bool isInitTask, u16 timeOut,
 		void *tilingDataPtr, u32 tilingDataSize);
     HcclResult GetKernelFilePath(std::string &binaryPath);
+    HcclResult GetCustomKernelFilePath(std::string &binaryPath);
 }
 
 #endif // LAUNCH_AICPU_H
