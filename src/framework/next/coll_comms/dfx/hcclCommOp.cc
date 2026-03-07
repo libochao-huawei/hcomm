@@ -47,7 +47,7 @@ void SetCollopDataDes(Hccl::CollOperator& collOp, const HcclDfxOpInfo& dfxOpInfo
 std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpInfo) {
     auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
     Hccl::CollOperator collOp{};
-    collOp.opMode = static<Hccl::OpMode::Value>(dfxOpInfo.opMode); 
+    collOp.opMode = static_cast<Hccl::OpMode::Value>(dfxOpInfo.opMode); 
     collOp.opType = Hccl::OP_TYPE_MAP.at(static_cast<HcclCMDType>(dfxOpInfo.opType));
     collOp.reduceOp = Hccl::REDUCE_OP_MAP.at(static_cast<HcclReduceOp>(dfxOpInfo.reduceOp));
     collOp.dataType = Hccl::DATA_TYPE_MAP.at(static_cast<HcclDataType>(dfxOpInfo.dataType));
@@ -72,7 +72,7 @@ std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpIn
     );
     dfxOpInfoOnce->op_= std::move(collOp);
     dfxOpInfoOnce->tag_ = dfxOpInfo.tag_;
-    dfxOpInfoOnce->algType_ = Hccl::AlgType::Mesh;
+    dfxOpInfoOnce->algType_ = Hccl::AlgType::MESH;
     dfxOpInfoOnce->index_ = dfxOpInfo.index_;
     dfxOpInfoOnce->beginTime_ = dfxOpInfo.beginTime_;
     return dfxOpInfoOnce;
