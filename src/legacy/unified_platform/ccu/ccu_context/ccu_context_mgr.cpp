@@ -28,9 +28,10 @@ namespace Hccl {
 HcclResult CcuCtxMgr::AllocRes(s32 deviceLogicId, CcuCtxGroup &ctxGroup, CcuResPack &resPack)
 {
     TRY_CATCH_RETURN(
+        HCCL_INFO("[AllocRes] Input params: deviceLogicId[%d], ctxGroup size[%u]", deviceLogicId, ctxGroup.ctxs.size());
         // 入参校验拦截
         CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
-                    HCCL_ERROR("[CcuCtxMgr][AllocRes]deviceLogicId[%d] error", deviceLogicId),
+                    HCCL_ERROR("[CcuCtxMgr][AllocRes]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
                     HcclResult::HCCL_E_PARA);
 
         CHK_PRT_RET(ctxGroup.ctxs.size() == 0, HCCL_ERROR("[CcuCtxMgr][AllocRes]ctxs size is zero"),
@@ -90,9 +91,10 @@ HcclResult CcuCtxMgr::GetTaskParam(s32 deviceLogicId, CcuTaskArg &ccuTaskArg, co
                                    std::vector<std::vector<CcuTaskParam>> &taskParam)
 {
     TRY_CATCH_RETURN(
+        HCCL_INFO("[GetTaskParam] Input params: deviceLogicId[%d], executorId[%llu]", deviceLogicId, executorId);
         // 入参校验拦截
         CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
-                    HCCL_ERROR("[CcuCtxMgr][GetTaskParam]deviceLogicId[%d] error", deviceLogicId),
+                    HCCL_ERROR("[CcuCtxMgr][GetTaskParam]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
                     HcclResult::HCCL_E_PARA);
 
         taskParam = CtxMgrImp::GetInstance(deviceLogicId).GetTaskParam(ccuTaskArg, executorId);
@@ -171,9 +173,10 @@ HcclResult CcuCtxMgr::GetProfilingInfo(s32 deviceLogicId, CcuTaskArg &ccuTaskArg
                                        std::vector<std::vector<CcuProfilingInfo>> &profilingInfo)
 {
     TRY_CATCH_RETURN(
+        HCCL_INFO("[GetProfilingInfo] Input params: deviceLogicId[%d], entityId[%llu]", deviceLogicId, entityId);
         // 入参校验拦截
         CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
-                    HCCL_ERROR("[CcuCtxMgr][GetProfilingInfo]deviceLogicId[%d] error", deviceLogicId),
+                    HCCL_ERROR("[CcuCtxMgr][GetProfilingInfo]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
                     HcclResult::HCCL_E_PARA);
 
         profilingInfo = CtxMgrImp::GetInstance(deviceLogicId).GetProfilingInfo(ccuTaskArg, entityId);

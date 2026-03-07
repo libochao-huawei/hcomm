@@ -213,8 +213,9 @@ void CollServiceBase::WaitOpbasedTransportReady() const
         if (comm->GetMemTransportManager()->IsAllOpbasedTransportReady()) {
             break;
         }
-        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {  
             string timeoutMsg = StringFormat("WaitOpbasedTransportReady timeout, commId[%s].", comm->GetId().c_str());
+            RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}), std::vector<std::string>({timeoutMsg}));
             HCCL_ERROR(timeoutMsg.c_str());
             comm->GetMemTransportManager()->DumpNotReadyTransportsOpbased();
             THROW<InternalException>(timeoutMsg);
@@ -237,6 +238,7 @@ void CollServiceBase::WaitOffloadTransportReady(const std::string &opTag) const
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             string timeoutMsg = StringFormat("WaitOffloadTransportReady timeout, opTag[%s] commId[%s].", opTag.c_str(),
                                              comm->GetId().c_str());
+            RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}), std::vector<std::string>({timeoutMsg}));
             HCCL_ERROR(timeoutMsg.c_str());
             comm->GetMemTransportManager()->DumpNotReadyTransportsOffload(opTag);
             THROW<InternalException>(timeoutMsg);
@@ -264,6 +266,8 @@ void CollServiceBase::WaitTransportReady(const std::string &opTag) const
             }
         }
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}),
+                            std::vector<std::string>({"WaitTransportReady timeout, SOCKET_TIMEOUT."}));
             THROW<InternalException>("WaitTransportReady timeout, opTag[%s] commId[%s].", opTag.c_str(),
                                      comm->GetId().c_str());
         }
@@ -363,7 +367,6 @@ void CollServiceBase::SaveMirrorDfxOpInfo()
     dfxOpInfo->algType_ = AlgType::MESH;
     dfxOpInfo->index_ = comm->GetIdIndex();
     dfxOpInfo->comm_ = comm;
-    dfxOpInfo->mainStreamId_ = comm->GetStreamManager().GetMaster()->GetId();
     dfxOpInfo->beginTime_ = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
     comm->GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);

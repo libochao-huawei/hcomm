@@ -17,13 +17,9 @@
 #include "notify_manager.h"
 #include "aicpu_hccl_def.h"
 #include "coll_comm_lite_mgr.h"
+#include "../../../../../legacy/framework/communicator/aicpu/daemon/aicpu_daemon_service.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
-
-CollCommAicpu::~CollCommAicpu()
-{
-    CollCommLiteMgr::GetInstance()->UnRegisteCollComm(this);
-}
 
 HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
@@ -69,22 +65,22 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 HcclResult CollCommAicpu::InitBackgroundThread()
 {
     HCCL_INFO("InitBackgroundThread:: start");
-    static auto commandToBackGroud = CommandToBackGroud::Default;
+    static auto commandToBackGroud = Hccl::CommandToBackGroud::Default;
     HCCL_INFO("InitBackgroundThread:: gen daemon service run func");
     static auto daemonServiceRun = [](void *info) {
-        AicpuDaemonService::GetInstance().ServiceRun(info);
+        Hccl::AicpuDaemonService::GetInstance().ServiceRun(info);
     };
     HCCL_INFO("InitBackgroundThread:: gen daemon service stop func");
     static auto daemonServiceStop = [](void *info) {
-        AicpuDaemonService::GetInstance().ServiceStop(info);
+        Hccl::AicpuDaemonService::GetInstance().ServiceStop(info);
     };
 
     // 注册守护进程函数
-    AicpuDaemonService::GetInstance().Register(&NsRecoveryFuncLite::GetInstance());
+    Hccl::AicpuDaemonService::GetInstance().Register(&NsRecoveryFuncLite::GetInstance());
 
     // 启动背景线程
-    if (StartMC2MaintenanceThread != nullptr) {
-        StartMC2MaintenanceThread(daemonServiceRun, &commandToBackGroud, daemonServiceStop, &commandToBackGroud);
+    if (Hccl::StartMC2MaintenanceThread != nullptr) {
+        Hccl::StartMC2MaintenanceThread(daemonServiceRun, &commandToBackGroud, daemonServiceStop, &commandToBackGroud);
         HCCL_INFO("[InitBackgroundThread] start BackGround thread success.");
     } else {
         HCCL_WARNING("Aicpu api StartMC2MaintenanceThread func is nullptr");

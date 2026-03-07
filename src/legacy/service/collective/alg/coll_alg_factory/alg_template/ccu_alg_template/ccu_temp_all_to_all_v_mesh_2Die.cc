@@ -116,7 +116,7 @@ HcclResult CcuTempAlltoAllVMesh2Die::Run(const TempFuncs &tempFuncs, const RankS
         HCCL_ERROR("[CcuTempAlltoAllVMesh2Die][Run] tempInsQues is empty."), HcclResult::HCCL_E_INTERNAL);
 
     CHK_PRT_RET(op_.inputMem == nullptr || op_.outputMem == nullptr,
-        HCCL_ERROR("[CcuTempAlltoAllVMesh2Die][Run] Rank[%d] inputmem[%#llx] or outputmem[%#llx] is null", myRank_,
+        HCCL_ERROR("[CcuTempAlltoAllVMesh2Die][Run] Rank[%d] inputmem[%p] or outputmem[%p] is null", myRank_,
             op_.inputMem.get(), op_.outputMem.get()), HcclResult::HCCL_E_PTR);
 
     uint64_t inputAddr = op_.inputMem == nullptr ? 0 : op_.inputMem->GetAddr();

@@ -43,16 +43,20 @@ void SetCurrentBlock(CcuRepContext* context, std::shared_ptr<CcuRep::CcuRepBlock
     context->SetCurrentBlock(repBlock);
 }
 
-Variable CreateVariable(CcuRepContext* context)
+HcclResult CreateVariable(CcuRepContext* context, Variable &variable)
 {
+    HCCL_INFO("[CreateVariable] Input params: context[%p]", context);
     if (context == nullptr) {
-        THROW<CcuApiException>("context is nullptr");
+        HCCL_ERROR("context is nullptr");
+        return HCCL_E_PTR;
     }
     auto ctx = dynamic_cast<CcuContext*>(context);
     if (ctx == nullptr) {
-        THROW<CcuApiException>("Invalid context");
+        HCCL_ERROR("Invalid context");
+        return HCCL_E_PTR;
     }
-    return ctx->CreateVariable();
+    variable = ctx->CreateVariable();
+    return HCCL_SUCCESS;
 }
 
 }; // namespace CcuRep

@@ -12,7 +12,7 @@
 #define NS_RECOVERY_FUNC_LITE_H
 
 #include "coll_comm_aicpu.h"
-#include "aicpu/daemon/daemon_func.h"
+#include "../../../../../../legacy/framework/communicator/aicpu/daemon/daemon_func.h"
 
 namespace hccl {
 
@@ -61,7 +61,7 @@ MAKE_ENUM(APP_ABORT_STAUTS,
  * @note N秒快恢device侧的处理
  */
 
-class NsRecoveryFuncLite : public DaemonFunc {
+class NsRecoveryFuncLite : public Hccl::DaemonFunc {
 public:
     static NsRecoveryFuncLite &GetInstance();
     virtual void Call() override;

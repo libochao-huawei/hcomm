@@ -1777,7 +1777,7 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
             void *commV2 = nullptr;
-            HcclCommInitRootInfoConfigV2(nRanks, rootInfo, rank, config, &commV2);
+            CHK_RET(HcclCommInitRootInfoConfigV2(nRanks, rootInfo, rank, config, &commV2));
             CHK_PRT(HcomSetGroupTopoInfo(config->hcclCommName, nRanks));
             const char *indOp = getenv("HCCL_INDEPENDENT_OP");
             if (indOp == nullptr || strcmp(indOp, "") == 0) {

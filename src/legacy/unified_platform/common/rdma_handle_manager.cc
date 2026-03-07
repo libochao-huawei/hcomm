@@ -209,7 +209,7 @@ std::pair<uint32_t, uint32_t> RdmaHandleManager::GetDieAndFuncId(RdmaHandle rdma
     std::lock_guard<std::mutex> lock(managerMutex);
     
     if (rdmaHandle == nullptr) {
-        THROW<InvalidParamsException>("[RdmaHandleManager][GetJfcHandle]rdmaHandle is nullptr, please check input.");
+        THROW<InvalidParamsException>("[RdmaHandleManager][GetDieAndFuncId]rdmaHandle is nullptr, please check input.");
     }
 
     if (DieAndFuncIdMap.find(rdmaHandle) != DieAndFuncIdMap.end()) {
@@ -218,6 +218,23 @@ std::pair<uint32_t, uint32_t> RdmaHandleManager::GetDieAndFuncId(RdmaHandle rdma
 
     DieAndFuncIdMap[rdmaHandle] = HraGetDieAndFuncId(rdmaHandle);
     return DieAndFuncIdMap[rdmaHandle];
+}
+
+bool RdmaHandleManager::GetRtpEnable(RdmaHandle rdmaHandle)
+{
+    std::lock_guard<std::mutex> lock(managerMutex);
+
+    if (rdmaHandle == nullptr) {
+        THROW<InvalidParamsException>("[RdmaHandleManager][GetRtpEnable]rdmaHandle is nullptr, please check input.");
+    }
+
+    if (RtpEnableMap.find(rdmaHandle) != RtpEnableMap.end()) {
+        return RtpEnableMap[rdmaHandle];
+    }
+
+    RtpEnableMap[rdmaHandle] = HraGetRtpEnable(rdmaHandle);
+    HCCL_RUN_INFO("[%s] GetRtpEnable return[%d]", __func__, RtpEnableMap[rdmaHandle]);
+    return RtpEnableMap[rdmaHandle];
 }
 
 std::pair<TokenIdHandle, uint32_t> RdmaHandleManager::GetTokenIdInfo(RdmaHandle rdmaHandle, const BufferKey<uintptr_t, u64> &bufKey)
@@ -268,6 +285,7 @@ void RdmaHandleManager::DestroyAll()
 
     rdmaHandleMap.clear();
     DieAndFuncIdMap.clear();
+    RtpEnableMap.clear();
     jfcHandleMap.clear();
     netWorkModeMap.clear();
 }

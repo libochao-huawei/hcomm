@@ -36,7 +36,7 @@ public:
                         const CcuTransportGroup &transportGroup);
     CcuContext() = default;
     ~CcuContext() override;
-    void            Init();
+    HcclResult      Init();
 
     CcuResReq                                    GetResourceRequest();
     CcuRepResource                              &GetResource();
@@ -44,18 +44,16 @@ public:
     CcuSharedResource                           &GetImportRes();
 
     void        SetResPack(CcuResPack &resPack);
-    CcuResPack &GetResPack() const;
+    HcclResult GetResPack(CcuResPack &resPack) const;
     void        SetInstrId(uint32_t instrId);
     uint32_t    GetInstrId() const;
     uint32_t    GetInstrCount();
     void        SetCcuInstrInfo(const CcuRep::CcuInstrInfo &instrInfo);
 
-    std::vector<CcuTaskParam> GeneTaskParam(const CcuTaskArg &arg);
+    HcclResult GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams);
     // ccu profiling相关接口
-    std::vector<CcuProfilingInfo> GetCcuProfilingInfo(const CcuTaskArg &arg);
+    HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
 
-    // 该友元函数用于在context类外创建Variable并被context内的资源管理器管理
-    friend CcuRep::Variable CcuRep::CreateVariable(CcuRep::CcuRepContext* context);
     std::vector<CcuTransport *> GetCcuTransports() const
     {
         return transports;
@@ -199,6 +197,8 @@ private:
     void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport*> &transportsIn, DataType dataType,
                          DataType outputDataType, ReduceOp opType);
     void DumpCcuProfilingInfo(const std::vector<CcuProfilingInfo> &ccuProfilingInfo) const;
+    // 该友元函数用于在context类外创建Variable并被context内的资源管理器管理
+    friend HcclResult CcuRep::CreateVariable(CcuRep::CcuRepContext* context, CcuRep::Variable &variable);
 
 protected:
     std::vector<CcuTransport*>            transports;

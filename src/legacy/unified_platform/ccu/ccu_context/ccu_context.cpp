@@ -46,50 +46,50 @@ CcuContext::~CcuContext()
     HCCL_DEBUG("~CcuContext");
 }
 
-void CcuContext::Init()
+HcclResult CcuContext::Init()
 {
-    Algorithm();
+    TRY_CATCH_RETURN(Algorithm());
+    return HCCL_SUCCESS;
 }
 
-std::vector<CcuTaskParam> CcuContext::GeneTaskParam(const CcuTaskArg &arg)
+HcclResult CcuContext::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParam)
 {
     auto args    = GeneArgs(arg);
     auto agrsNum = args.size();
     if (agrsNum != loadArgIndex) {
-        THROW<CcuApiException>("Args number does not match the Load instruction, agrsNum = %d, loadArgInstr= %u",
-                               agrsNum, loadArgIndex);
+        HCCL_ERROR("Args number does not match the Load instruction, agrsNum = %d, loadArgInstr= %u",agrsNum, loadArgIndex);
+        return HCCL_E_PARA;
     }
 
     // 如果agrs数量超过sqe arg的最大数量，则返回多个TaskParam，前面几个只从sqe中加载args;
     // args数量大于等于0、小于等于最大值时，返回1个TaskParam
     uint32_t seqNum
         = (agrsNum / CCU_SQE_ARGS_LEN) + ((agrsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (agrsNum == 0 ? 1 : 0);
-    std::vector<CcuTaskParam> taskParams(seqNum);
+    taskParam.resize(seqNum);
     for (uint32_t index = 0; index < seqNum; index++) {
-        taskParams[index].dieId       = GetDieId();
-        taskParams[index].missionId   = GetMissionId();
-        taskParams[index].instStartId = instrInfo.missionStartInstrId + index * CCU_SQE_ARGS_LEN;
-        taskParams[index].key         = GetMissionKey();
-        taskParams[index].argSize     = CCU_SQE_ARGS_LEN;
+        taskParam[index].dieId       = GetDieId();
+        taskParam[index].missionId   = GetMissionId();
+        taskParam[index].instStartId = instrInfo.missionStartInstrId + index * CCU_SQE_ARGS_LEN;
+        taskParam[index].key         = GetMissionKey();
+        taskParam[index].argSize     = CCU_SQE_ARGS_LEN;
         if (index == seqNum - 1) {
-            taskParams[index].instCnt = instrInfo.missionInstrCount - index * CCU_SQE_ARGS_LEN;
-            std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::end(args), std::begin(taskParams[index].args));
+            taskParam[index].instCnt = instrInfo.missionInstrCount - index * CCU_SQE_ARGS_LEN;
+            std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::end(args), std::begin(taskParam[index].args));
         } else {
-            taskParams[index].instCnt = CCU_SQE_ARGS_LEN;
+            taskParam[index].instCnt = CCU_SQE_ARGS_LEN;
             std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::begin(args) + (index + 1) * CCU_SQE_ARGS_LEN,
-                      std::begin(taskParams[index].args));
+                      std::begin(taskParam[index].args));
         }
 
         HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
-                  taskParams[index].dieId, taskParams[index].missionId, taskParams[index].instStartId,
-                  taskParams[index].instCnt, taskParams[index].argSize);
-        for (uint32_t i = 0; i < taskParams[index].argSize; i++) {
+                  taskParam[index].dieId, taskParam[index].missionId, taskParam[index].instStartId,
+                  taskParam[index].instCnt, taskParam[index].argSize);
+        for (uint32_t i = 0; i < taskParam[index].argSize; i++) {
             if (i == TOKEN_VALUE_INDEX) { continue; }
-            HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, taskParams[index].args[i]);
+            HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, taskParam[index].args[i]);
         }
     }
-
-    return taskParams;
+    return HCCL_SUCCESS;
 }
 
 void CcuContext::AllocGoResource(uint32_t parallelDim, uint32_t msPerLoop)
@@ -1050,14 +1050,19 @@ void CcuContext::SetResPack(CcuResPack &resPack)
     resPack_ = &resPack;
 }
 
-CcuResPack &CcuContext::GetResPack() const
+HcclResult CcuContext::GetResPack(CcuResPack &resPack) const
 {
-    CHECK_NULLPTR(resPack_, "[CcuContext::GetResPack]resPack_ is nullptr!");
-    return *resPack_;
+    if (resPack_ == nullptr) {
+        HCCL_ERROR("[CcuContext::GetResPack]resPack_ is nullptr!");
+        return HCCL_E_PTR;
+    }
+    resPack = *resPack_;
+    return HCCL_SUCCESS;
 }
 
 void CcuContext::SetInstrId(uint32_t instrId)
 {
+    HCCL_INFO("[SetInstrId] Input params: instrId[%u]", instrId);
     instrInfo.startInstrId = instrId;
 }
 
@@ -1079,6 +1084,8 @@ uint32_t CcuContext::GetInstrCount()
 
 void CcuContext::SetCcuInstrInfo(const CcuRep::CcuInstrInfo &instrInfo)
 {
+    HCCL_INFO("[SetCcuInstrInfo] Input params: instrVec size[%u], startInstrId[%u], instrCount[%u], missionStartInstrId[%u], missionInstrCount[%u]", 
+        instrInfo.instrVec.size(), instrInfo.startInstrId, instrInfo.instrCount, instrInfo.missionStartInstrId, instrInfo.missionInstrCount);
     this->instrInfo = instrInfo;
 }
 
@@ -1242,7 +1249,7 @@ void CcuContext::AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransp
  * variable/maskSignal等资源变量Id，一定要在获取ccu profiling时才获取；
  * 原因：在创建context Rep时，其资源Id属于虚拟资源；翻译时，才会绑定固定的物理资源。
  */
-std::vector<CcuProfilingInfo> CcuContext::GetCcuProfilingInfo(const CcuTaskArg &arg)
+HcclResult CcuContext::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo)
 {
     HCCL_INFO("[GetCcuProfilingInfo] Enter.");
     std::vector<CcuProfilingInfo> allCcuProfilingInfos;
@@ -1259,13 +1266,15 @@ std::vector<CcuProfilingInfo> CcuContext::GetCcuProfilingInfo(const CcuTaskArg &
             continue;
         }
         if (count >= GetWaiteCkeProfilingReps().size()) {
-            THROW<CcuApiException>("count[%d] out of range[0, %u], cache size(%u).", count, GetWaiteCkeProfilingReps().size(), ccuProfilingCache.size());
+            HCCL_ERROR("count[%d] out of range[0, %u], cache size(%u).", count, GetWaiteCkeProfilingReps().size(), ccuProfilingCache.size());
+            return HCCL_E_INTERNAL;
         }
         auto waitCkeRep = GetWaiteCkeProfilingReps()[count];
         profInfo.instrId = waitCkeRep->StartInstrId();
         if (profInfo.ckeId == INVALID_CKE_ID) { // localWait Rep
             if (waitCkeRep.get() == nullptr) {
-                THROW<CcuApiException>("[GetCcuProfilingInfo] localWaitRep is nullptr.");
+                HCCL_ERROR("[GetCcuProfilingInfo] localWaitRep is nullptr.");
+                return HCCL_E_PTR;
             }
             auto localWaitRep = dynamic_cast<CcuRep::CcuRepLocWaitSem*>(waitCkeRep.get());
             profInfo.ckeId = localWaitRep->GetSemId();
@@ -1280,7 +1289,8 @@ std::vector<CcuProfilingInfo> CcuContext::GetCcuProfilingInfo(const CcuTaskArg &
     std::unordered_map<uint16_t, uint32_t> varId2ArgIndexMap;
     for (auto &iter : lgProfInfo.loadRep2ArgIdxMap) {
         if (iter.first.get() == nullptr) {
-            THROW<CcuApiException>("[GetCcuProfilingInfo] loadRep is nullptr.");
+            HCCL_ERROR("[GetCcuProfilingInfo] loadRep is nullptr.");
+            return HCCL_E_PTR;
         }
         auto loadRep = dynamic_cast<CcuRep::CcuRepLoadArg*>(iter.first.get());
         varId2ArgIndexMap[loadRep->GetVarId()] = iter.second;
@@ -1290,7 +1300,8 @@ std::vector<CcuProfilingInfo> CcuContext::GetCcuProfilingInfo(const CcuTaskArg &
     std::unordered_map<uint16_t, uint16_t> varId2VarIdMap;
     for (auto &iter : lgProfInfo.assignProfilingReps) {
         if (iter.get() == nullptr) {
-            THROW<CcuApiException>("[GetCcuProfilingInfo] assignRep is nullptr.");
+            HCCL_ERROR("[GetCcuProfilingInfo] assignRep is nullptr.");
+            return HCCL_E_PTR;
         }
         auto assignRep = dynamic_cast<CcuRep::CcuRepAssign*>(iter.get());
         varId2VarIdMap[assignRep->varB.Id()] = assignRep->varA.Id();
@@ -1322,7 +1333,8 @@ std::vector<CcuProfilingInfo> CcuContext::GetCcuProfilingInfo(const CcuTaskArg &
         }
     }
     DumpCcuProfilingInfo(allCcuProfilingInfos);
-    return allCcuProfilingInfos;
+    allCcuProfilingInfo = allCcuProfilingInfos;
+    return HCCL_SUCCESS;
 }
 
 void CcuContext::DumpCcuProfilingInfo(const std::vector<CcuProfilingInfo> &ccuProfilingInfo) const

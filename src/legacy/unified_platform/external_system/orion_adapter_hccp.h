@@ -511,6 +511,7 @@ HrtRaUbSendWrRespParam HrtRaUbPostSend(JettyHandle jettyHandle, HrtRaUbSendWrReq
 void                   HrtRaUbPostNops(JettyHandle jettyHandle, JettyHandle remoteJettyHandle, const u32 numNop);
 
 std::pair<uint32_t, uint32_t> HraGetDieAndFuncId(RdmaHandle handle);
+bool HraGetRtpEnable(RdmaHandle handle);
 
 struct HRaInfo {
     HrtNetworkMode mode;
@@ -551,10 +552,8 @@ RequestHandle RaSocketCloseOneAsync(RaSocketCloseParam &in);
 RequestHandle RaSocketListenOneStartAsync(RaSocketListenParam &in);
 RequestHandle RaSocketListenOneStopAsync(RaSocketListenParam &in);
 
-RequestHandle HrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u32 size,
-    unsigned long long &sentSize);
-RequestHandle HrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u32 size,
-    unsigned long long &recvSize);
+RequestHandle HrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u32 size, unsigned long long &sentSize);
+RequestHandle HrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u32 size, unsigned long long &recvSize);
 
 RequestHandle RaUbLocalMemRegAsync(RdmaHandle handle, const HrtRaUbLocMemRegParam &in,
     vector<char_t> &out, void* &lmemHandle);
