@@ -236,6 +236,8 @@ HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId) const
 {
     CHK_PTR_NULL(pImpl_);
     CHK_RET(pImpl_->NotifyWait(notifyId));
+
+    CHK_RET(ReportNotifyWaitTask(notifyId));
     return HCCL_SUCCESS;
 }
 
@@ -243,7 +245,21 @@ HcclResult AicpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
 {
     CHK_PTR_NULL(pImpl_);
     CHK_RET(pImpl_->NotifyRecordLoc(notifyId));
+
+    CHK_RET(ReportNotifyWaitTask(notifyId));
     return HCCL_SUCCESS;
+}
+
+HcclResult AicpuTsThread::LocalNotifyRecord(ThreadHandle dstThread, uint32_t dstNotifyIdx) const
+{
+    HCCL_ERROR("[AicpuTsThread][%s]not support", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyIdx, uint32_t timeOut) const
+{
+    HCCL_ERROR("[AicpuTsThread][%s]not support", __func__);
+    return HCCL_E_NOT_SUPPORT;
 }
 
 HcclResult AicpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByte) const
@@ -252,7 +268,9 @@ HcclResult AicpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByt
     // No need to check nullptr for dst & src
     uint64_t dstAddr = reinterpret_cast<uint64_t>(dst);
     uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
-    return pImpl_->SdmaCopy(dstAddr, srcAddr, sizeByte);
+    CHK_RET(pImpl_->SdmaCopy(dstAddr, srcAddr, sizeByte));
+    CHK_RET(ReportLocalCopyTask(dst, src, sizeByte));
+    return HCCL_SUCCESS;
 }
 
 HcclResult AicpuTsThread::LocalReduce(
@@ -264,7 +282,9 @@ HcclResult AicpuTsThread::LocalReduce(
     uint64_t srcAddr = reinterpret_cast<uint64_t>(src);
     uint32_t dataTypeRaw = static_cast<uint32_t>(dataType);
     uint32_t reduceOpRaw = static_cast<uint32_t>(reduceOp);
-    return pImpl_->SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw);
+    CHK_RET(pImpl_->SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw));
+    CHK_RET(ReportLocalReduceTask(dst, src, sizeByte, dataType, reduceOp));
+    return HCCL_SUCCESS;
 }
 
 // Private functions

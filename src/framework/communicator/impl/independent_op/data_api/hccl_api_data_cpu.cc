@@ -28,21 +28,6 @@
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
-const std::unordered_map<HcclDataType, aclDataType> hccl2rtDataTypeMap = { 
-    {HCCL_DATA_TYPE_INT8, ACL_INT8}, 
-    {HCCL_DATA_TYPE_INT16, ACL_INT16}, 
-    {HCCL_DATA_TYPE_INT32, ACL_INT32}, 
-    {HCCL_DATA_TYPE_FP16, ACL_FLOAT16}, 
-    {HCCL_DATA_TYPE_FP32, ACL_FLOAT}, 
-    {HCCL_DATA_TYPE_BFP16, ACL_BF16}, 
-}; 
- 
- 
-const std::unordered_map<HcclReduceOp, aclrtReduceKind> hccl2rtReduceOpMap = { 
-    {HCCL_REDUCE_SUM, ACL_RT_MEMCPY_SDMA_AUTOMATIC_SUM}, 
-    {HCCL_REDUCE_MAX, ACL_RT_MEMCPY_SDMA_AUTOMATIC_MAX}, 
-    {HCCL_REDUCE_MIN, ACL_RT_MEMCPY_SDMA_AUTOMATIC_MIN}, 
-};
 
 void AddThread(ThreadHandle thread) {
     g_threadLaunchCtx.AddThread(thread);
@@ -68,24 +53,18 @@ int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
 
-    HcclBuf srcBuf{const_cast<void *>(src), len, nullptr};
-    HcclBuf dstBuf{dst, len, nullptr};
-    Stream *stream = GetStream(thread);
-    CHK_PTR_NULL(stream);
-
     if (threadPtr->IsDeviceA5()) {
-        if (len == 0 || src == dst) { 
-            HCCL_DEBUG("count is 0 or src == dst, return success."); 
-            return HCCL_SUCCESS; 
-        }
+        CHK_RET(threadPtr->LocalCopy(dst, src, len));
+    } else {
+        HcclBuf srcBuf{const_cast<void *>(src), len, nullptr};
+        HcclBuf dstBuf{dst, len, nullptr};
+        Stream *stream = GetStream(thread);
+        CHK_PTR_NULL(stream);
 
-        CHK_RET(hrtMemAsyncCopy(dst, len, src, len,
-                                HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE, stream->ptr()));
-        return HCCL_SUCCESS;
+        HcclResult ret = HcclLocalCopy(stream, &dstBuf, &srcBuf);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
+            __func__, thread, dst, src, len), ret);
     }
-
-    HcclResult ret = HcclLocalCopy(stream, &dstBuf, &srcBuf);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, thread, dst, src, len), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -93,7 +72,8 @@ int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, 
 int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t count,
     HcommDataType dataType, HcommReduceOp reduceOp)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].", __func__, thread, dst, src, count, dataType, reduceOp);
+    HCCL_INFO("[%s] START. thread[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
+        __func__, thread, dst, src, count, dataType, reduceOp);
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
@@ -106,34 +86,20 @@ int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src
 
     uint64_t len = count * SIZE_TABLE[dataType];
 
-    HcclBuf srcBuf{const_cast<void *>(src), len, nullptr};
-    HcclBuf dstBuf{dst, len, nullptr};
-    HcclReduceInfo reduceInfo{static_cast<HcclDataType>(dataType), static_cast<HcclReduceOp>(reduceOp)};
-    Stream *stream = GetStream(thread);
-    CHK_PTR_NULL(stream);
-
     if (threadPtr->IsDeviceA5()) {
-        auto dataTypeIt = hccl2rtDataTypeMap.find(reduceInfo.dataType);
-        if (dataTypeIt == hccl2rtDataTypeMap.end()) {
-            HCCL_ERROR("[HcommLocalReduceOnThread]data type[%s] is not supported",
-                       GetDataTypeEnumStr(reduceInfo.dataType).c_str());
-            return HCCL_E_PARA;
-        }
-        
-        auto reduceOpIt = hccl2rtReduceOpMap.find(reduceInfo.reduceOp);
-        if (reduceOpIt == hccl2rtReduceOpMap.end()) {
-            HCCL_ERROR("[HcommLocalReduceOnThread]reduceOp[%s] is not supported",
-                       GetReduceOpEnumStr(reduceInfo.reduceOp).c_str());
-            return HCCL_E_PARA;
-        }
+        CHK_RET(threadPtr->LocalReduce(dst, src, len, dataType, reduceOp));
+    } else {
+        HcclBuf srcBuf{const_cast<void *>(src), len, nullptr};
+        HcclBuf dstBuf{dst, len, nullptr};
+        HcclReduceInfo reduceInfo{static_cast<HcclDataType>(dataType), static_cast<HcclReduceOp>(reduceOp)};
+        Stream *stream = GetStream(thread);
+        CHK_PTR_NULL(stream);
 
-        CHK_RET(hrtReduceAsync(dst, len, src, len,
-                               reduceOpIt->second, dataTypeIt->second, stream->ptr()));
-        return HCCL_SUCCESS;
+        HcclResult ret = HcclLocalCopyReduce(stream, &dstBuf, &srcBuf, reduceInfo);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] FAIL. thread[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
+            __func__, thread, dst, src, count, dataType, reduceOp), ret);
     }
-
-    HcclResult ret = HcclLocalCopyReduce(stream, &dstBuf, &srcBuf, reduceInfo);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].", __func__, thread, dst, src, count, dataType, reduceOp), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -147,23 +113,22 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
 
-    Stream *stream = GetStream(thread);
-    CHK_PTR_NULL(stream);
-
-    LocalNotify *notify = GetNotify(dstThread, dstNotifyIdx);
-    CHK_PTR_NULL(notify);
-
     if (threadPtr->IsDeviceA5()) {
-        HcclResult ret = notify->Post(*stream);
+        HcclResult ret = threadPtr->LocalNotifyRecord(dstThread, dstNotifyIdx);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dstThread[0x%llx], notifyIdx[%u].",
             __func__, thread, dstThread, dstNotifyIdx), ret);
-        HCCL_INFO("[%s] SUCCESS.", __func__);
-        return HCCL_SUCCESS;
+    } else {
+        Stream *stream = GetStream(thread);
+        CHK_PTR_NULL(stream);
+
+        LocalNotify *notify = GetNotify(dstThread, dstNotifyIdx);
+        CHK_PTR_NULL(notify);
+
+        HcclResult ret = HcclLocalNotifyRecord(stream, notify);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dstThread[0x%llx], notifyIdx[%u].",
+            __func__, thread, dstThread, dstNotifyIdx), ret);
     }
 
-    HcclResult ret = HcclLocalNotifyRecord(stream, notify);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dstThread[0x%llx], notifyIdx[%u].",
-        __func__, thread, dstThread, dstNotifyIdx), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -177,22 +142,20 @@ int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, u
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
 
-    Stream *stream = GetStream(thread);
-    CHK_PTR_NULL(stream);
-    LocalNotify *notify = GetNotify(thread, notifyIdx);
-    CHK_PTR_NULL(notify);
-
     if (threadPtr->IsDeviceA5()) {
-        HcclResult ret = notify->Wait(*stream, timeOut);
+        HcclResult ret = threadPtr->LocalNotifyWait(notifyIdx, timeOut);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeOut[%u].",
             __func__, thread, notifyIdx, timeOut), ret);
-        HCCL_INFO("[%s] SUCCESS.", __func__);
-        return HCCL_SUCCESS;
-    }
+    } else {
+        Stream *stream = GetStream(thread);
+        CHK_PTR_NULL(stream);
+        LocalNotify *notify = GetNotify(thread, notifyIdx);
+        CHK_PTR_NULL(notify);
 
-    HcclResult ret = HcclLocalNotifyWait(stream, notify, timeOut);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeOut[%u].",
-        __func__, thread, notifyIdx, timeOut), ret);
+        HcclResult ret = HcclLocalNotifyWait(stream, notify, timeOut);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeOut[%u].",
+            __func__, thread, notifyIdx, timeOut), ret);
+    }
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }

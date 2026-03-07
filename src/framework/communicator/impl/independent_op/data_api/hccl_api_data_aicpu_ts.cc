@@ -67,7 +67,8 @@ int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, 
         CHK_PTR_NULL(stream);
         ret = HcclLocalCopy(stream, &dstBuf, &srcBuf);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, thread, dst, src, len), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
+        __func__, thread, dst, src, len), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
