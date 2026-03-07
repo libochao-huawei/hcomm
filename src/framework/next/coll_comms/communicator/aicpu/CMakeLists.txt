@@ -12,7 +12,7 @@ set(src_list
     aicpu_indop_process.cc
     coll_comm_aicpu_mgr.cc
     coll_comm_aicpu.cc
-    aicpu_hdc_hander.cc
+    aicpu_hdc_handler.cc
 )
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))

@@ -11,7 +11,7 @@
 #ifndef HCCL_AICPU_HDC_HANDLER_H
 #define HCCL_AICPU_HDC_HANDLER_H
 
-#include "hdc_lite.h"
+#include "hdc_pub.h"
 #include "kfc.h"
 
 namespace hccl {
@@ -27,7 +27,7 @@ public:
 private:
     HDCommunicatePtr h2dTransfer_{nullptr};
     HDCommunicatePtr d2hTransfer_{nullptr};
-    KfcCommand         lastCmd_{Hccl::KfcCommand::NONE};
+    Hccl::KfcCommand         lastCmd_{Hccl::KfcCommand::NONE};
 };
 
 }

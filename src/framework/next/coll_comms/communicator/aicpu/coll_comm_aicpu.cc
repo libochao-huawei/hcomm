@@ -16,7 +16,7 @@
 #include "ub_transport_lite_impl.h"
 #include "notify_manager.h"
 #include "aicpu_hccl_def.h"
-#include "coll_comm_lite_mgr.h"
+#include "ns_recovery/aicpu/ns_recovery_func_lite.h"
 #include "../../../../../legacy/framework/communicator/aicpu/daemon/aicpu_daemon_service.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
@@ -62,15 +62,19 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     return HCCL_SUCCESS;
 }
 
-HcclResult CollCommAicpu::InitBackgroundThread()
+HcclResult CollCommAicpu::InitBackGroundThread()
 {
-    HCCL_INFO("InitBackgroundThread:: start");
+    static bool backGroundInit = false;
+    if (backGroundInit) {
+        HCCL_INFO("[%s]identifier[%s], backGroundInit[%d], skip", __func__, identifier_.c_str(), backGroundInit);
+        return HCCL_SUCCESS;
+    }
+    backGroundInit = true;
+
     static auto commandToBackGroud = Hccl::CommandToBackGroud::Default;
-    HCCL_INFO("InitBackgroundThread:: gen daemon service run func");
     static auto daemonServiceRun = [](void *info) {
         Hccl::AicpuDaemonService::GetInstance().ServiceRun(info);
     };
-    HCCL_INFO("InitBackgroundThread:: gen daemon service stop func");
     static auto daemonServiceStop = [](void *info) {
         Hccl::AicpuDaemonService::GetInstance().ServiceStop(info);
     };
@@ -81,11 +85,11 @@ HcclResult CollCommAicpu::InitBackgroundThread()
     // 启动背景线程
     if (Hccl::StartMC2MaintenanceThread != nullptr) {
         Hccl::StartMC2MaintenanceThread(daemonServiceRun, &commandToBackGroud, daemonServiceStop, &commandToBackGroud);
-        HCCL_INFO("[InitBackgroundThread] start BackGround thread success.");
+        HCCL_RUN_INFO("[%s]start BackGround thread success.", __func__);
     } else {
-        HCCL_WARNING("Aicpu api StartMC2MaintenanceThread func is nullptr");
+        HCCL_WARNING("[%s]StartMC2MaintenanceThread func is nullptr", __func__);
     }
-    HCCL_INFO("InitBackgroundThread::end");
+    return HCCL_SUCCESS;
 }
 
 HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)

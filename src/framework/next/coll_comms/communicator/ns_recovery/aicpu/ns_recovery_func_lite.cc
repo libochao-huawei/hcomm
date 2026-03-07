@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include "ns_resume_lite.h"
+#include "ns_recovery_func_lite.h"
 #include "kfc.h"
 #include "sal_pub.h"
 #include "coll_comm_lite_mgr.h"
