@@ -207,7 +207,7 @@ HcclResult AicpuIndopProcess::AicpuGetCommAll(std::vector<std::pair<std::string,
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, std::string &commTag)
+HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, std::string commTag)
 {
     CHK_PTR_NULL(aicpuDfxInfo);
     // 获取device侧的通信域
