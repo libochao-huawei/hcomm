@@ -262,6 +262,7 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
                     WaitSyncFlag(curTag, flagAddrSelf_, 1, x + multipleTemp, pingpong);
                 }
 
+                PipeBarrier<PIPE_ALL>();
                 CpGM2GM<T>(cclGMSelf + halfBufferCount + dataNum * target, cclGMSelf + halfBufferCount + dataNum * x, 
                             dataNum, true, reduceOp_);
                 PipeBarrier<PIPE_ALL>();
