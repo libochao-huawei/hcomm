@@ -314,8 +314,8 @@ namespace hccl
         CHK_RET(kfcStatusTransferD2H->Init());
         Hccl::HDCommunicateParams h2dParams = kfcControlTransferH2D->GetCommunicateParams();
         Hccl::HDCommunicateParams d2hParams = kfcStatusTransferD2H->GetCommunicateParams();
-        memcpy_s(&commAicpuParam_.kfcControlTransferH2DParams, &h2dParams, sizeof(hccl::HDCommunicateParams));
-        memcpy_s(&commAicpuParam_.kfcStatusTransferD2HParams, &d2hParams, sizeof(hccl::HDCommunicateParams));
+        memcpy(&commAicpuParam_.kfcControlTransferH2DParams, &h2dParams, sizeof(hccl::HDCommunicateParams));
+        memcpy(&commAicpuParam_.kfcStatusTransferD2HParams, &d2hParams, sizeof(hccl::HDCommunicateParams));
 
         // json表解析
         std::string jsonPath;
