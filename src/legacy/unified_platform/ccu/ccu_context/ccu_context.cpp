@@ -1050,14 +1050,9 @@ void CcuContext::SetResPack(CcuResPack &resPack)
     resPack_ = &resPack;
 }
 
-HcclResult CcuContext::GetResPack(CcuResPack &resPack) const
+CcuResPack* CcuContext::GetResPack() const
 {
-    if (resPack_ == nullptr) {
-        HCCL_ERROR("[CcuContext::GetResPack]resPack_ is nullptr!");
-        return HCCL_E_PTR;
-    }
-    resPack = *resPack_;
-    return HCCL_SUCCESS;
+    return resPack_;
 }
 
 void CcuContext::SetInstrId(uint32_t instrId)
