@@ -792,7 +792,7 @@ HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommProfilingReportKernelStartTask(ThreadHandle thread)
+HcclResult HcommProfilingReportKernelStartTask(uint64_t thread)
 {
     HCCL_INFO("[%s] START.", __func__);
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
@@ -808,7 +808,7 @@ HcclResult HcommProfilingReportKernelStartTask(ThreadHandle thread)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommProfilingReportKernelEndTask(ThreadHandle thread, const char* groupname)
+HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupname)
 {
     HCCL_INFO("[%s] START.", __func__);
     CHK_PTR_NULL(groupname);
