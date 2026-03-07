@@ -274,3 +274,5 @@ TEST_M(RS, TcRsNdaQpCreateEx);
 TEST_M(RS, TcRsNdaUbAllocFailed);
 TEST_M(RS, TcRsNdaDbMmapHostVa);
 TEST_M(RS, TcRsNdaDbMmapUbRes);
+TEST_M(RS, TcRsNdaCqCreateFailed);
+TEST_M(RS, TcRsNdaCqCreate);
