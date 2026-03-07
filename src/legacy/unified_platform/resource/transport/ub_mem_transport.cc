@@ -16,6 +16,7 @@
 #include "sal.h"
 #include "dlprof_func.h"
 #include "user_remote_mem_getter.h"
+#include "exception_utils.h"
 
 namespace Hccl {
 constexpr u32    FINISH_MSG_SIZE             = 128;
@@ -28,6 +29,10 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
       locCntNotifyRes(locCntNotifyRes1)
 {
     HCCL_INFO("source: %s", locCntNotifyRes.Describe().c_str());
+    HcclResult result = FillTagVec();
+    CHK_RET_THROW(InternalException,
+        StringFormat("[UbMemTransport][UbMemTransport] failed to construct UbMemTransport."),
+        result = HCCL_SUCCESS);
 }
 
 UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
@@ -37,6 +42,10 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
       locCntNotifyRes(locCntNotifyRes1)
 {
     HCCL_INFO("source: %s", locCntNotifyRes.Describe().c_str());
+    HcclResult result = FillTagVec();
+    CHK_RET_THROW(InternalException,
+        StringFormat("[UbMemTransport][UbMemTransport] failed to construct UbMemTransport."),
+        result = HCCL_SUCCESS);
 }
 
 HcclResult UbMemTransport::FillTagVec()
@@ -56,7 +65,7 @@ HcclResult UbMemTransport::FillTagVec()
         } else {
             std::string tag = localRmaBuffer->GetBuf()->GetMemTag();
             CHK_PTR_NULL(localRmaBuffer->GetBuf());
-            CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), HCCL_RES_TAG_MAX_LEN));
+            CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
             HCCL_INFO("[UbMemTransport][FillTagVec] memHandleNum[%d] memTag[%s]", index, memTag.data());
         }
         localUserMemTag_.push_back(memTag);

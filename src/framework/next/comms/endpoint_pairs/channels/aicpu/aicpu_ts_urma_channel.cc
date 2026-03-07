@@ -151,8 +151,6 @@ HcclResult AicpuTsUrmaChannel::BuildUbMemTransport()
         ),
         return HCCL_E_PTR
     );
-    CHK_PTR_NULL(memTransport_);
-    CHK_RET(memTransport_->FillTagVec());
     return HCCL_SUCCESS;
 }
 
