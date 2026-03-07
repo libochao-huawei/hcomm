@@ -71,6 +71,13 @@ DevUbCtpConnection::DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddr
     tpProtocol = TpProtocol::CTP;
 }
 
+DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+                                       const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
+{
+    tpProtocol = TpProtocol::UBOE;
+}
+
 std::vector<char> DevUbConnection::GetUniqueId() const
 {
     BinaryStream binaryStream;

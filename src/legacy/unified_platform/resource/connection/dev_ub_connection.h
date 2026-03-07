@@ -176,6 +176,12 @@ public:
                        const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL);
 };
 
+class DevUbUboeConnection : public DevUbConnection {
+public:
+    DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+                      const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL);
+};
+
 std::vector<DevUbConnection *> GetStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns);
 
 bool IfNeedUpdatingUbCi(const std::vector<DevUbConnection *> &ubConns);
