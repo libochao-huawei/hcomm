@@ -12,7 +12,7 @@
 #define CHANNEL_FACTORY_H
 #include <memory>
 #include "hccl/hccl_rank_graph.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "interface_channel.h"
 
 namespace Hccl {
