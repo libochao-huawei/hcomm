@@ -92,7 +92,7 @@ DevBuffer *CollServiceAiCpuImpl::OpBasedCollProcess(CollOperator &op, const std:
         WaitOffloadTransportReady(op.opTag);
     }
 
-    u32 bsrRemoteRanksHashValue;
+    u32 bsrRemoteRanksHashValue = 0;
     if (op.opType == OpType::BATCHSENDRECV) {
         bsrRemoteRanksHashValue = GetRemoteRankIdsHashValue(op);
     }
@@ -902,6 +902,15 @@ HcclResult CollServiceAiCpuImpl::ClearOpLoadedInfo(const std::string &opTag)
 
 u32 CollServiceAiCpuImpl::GetRemoteRankIdsHashValue(const CollOperator &op)
 {
+    if (op.batchSendRecvDataDes.sendRecvItemsPtr == nullptr) {
+        HCCL_ERROR("[GetRemoteRankIdsHashValue] sendRecvItemsPtr is nullptr");
+        return HCCL_E_INTERNAL;
+    }
+
+    if (op.batchSendRecvDataDes.itemNum == 0) {
+        HCCL_ERROR("[GetRemoteRankIdsHashValue] itemNum is 0");
+        return HCCL_E_INTERNAL;
+    }
     vector<RankId> tempRankIds;
     HcclSendRecvItem* itemPtr = reinterpret_cast<HcclSendRecvItem *>(op.batchSendRecvDataDes.sendRecvItemsPtr);
     u32 itemNum = op.batchSendRecvDataDes.itemNum;
