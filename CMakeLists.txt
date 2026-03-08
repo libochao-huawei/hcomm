@@ -163,6 +163,7 @@ elseif(BUILD_OPEN_PROJECT)
             TARGETS hccd
             FILES ${HCCD_TAR_LIBS}
             MANIFEST "bin_hash.cfg"
+            TAR_ROOT_DIR "lib64"
         )
         add_dependencies(generate_device_hccd_package hccd)
         sign_file(
@@ -184,6 +185,7 @@ elseif(BUILD_OPEN_PROJECT)
                 TARGETS ccl_kernel
                 FILES ${CCL_KERNEL_TAR_LIBS}
                 MANIFEST "bin_hash.cfg"
+                TAR_ROOT_DIR "aicpu_kernels_device"
             )
             add_dependencies(generate_device_aicpu_package ccl_kernel)
             sign_file(
