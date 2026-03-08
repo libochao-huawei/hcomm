@@ -904,12 +904,12 @@ u32 CollServiceAiCpuImpl::GetRemoteRankIdsHashValue(const CollOperator &op)
 {
     if (op.batchSendRecvDataDes.sendRecvItemsPtr == nullptr) {
         HCCL_ERROR("[GetRemoteRankIdsHashValue] sendRecvItemsPtr is nullptr");
-        return 0;
+        return HCCL_E_INTERNAL;
     }
 
     if (op.batchSendRecvDataDes.itemNum == 0) {
         HCCL_ERROR("[GetRemoteRankIdsHashValue] itemNum is 0");
-        return 0;
+        return HCCL_E_INTERNAL;
     }
     vector<RankId> tempRankIds;
     HcclSendRecvItem* itemPtr = reinterpret_cast<HcclSendRecvItem *>(op.batchSendRecvDataDes.sendRecvItemsPtr);
