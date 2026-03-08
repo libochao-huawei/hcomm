@@ -160,9 +160,9 @@ elseif(BUILD_OPEN_PROJECT)
         pack_targets_and_files(
             OUTPUT_TARGET "generate_device_hccd_package"
             OUTPUT "cann-hccd-compat.tar.gz"
-            TARGETS hccd
             FILES ${HCCD_TAR_LIBS}
             MANIFEST "bin_hash.cfg"
+            TAR_ROOT_DIR "lib64"
         )
         add_dependencies(generate_device_hccd_package hccd)
         sign_file(
@@ -181,9 +181,9 @@ elseif(BUILD_OPEN_PROJECT)
             pack_targets_and_files(
                 OUTPUT_TARGET "generate_device_aicpu_package"
                 OUTPUT "aicpu_hcomm.tar.gz"
-                TARGETS ccl_kernel
                 FILES ${CCL_KERNEL_TAR_LIBS}
                 MANIFEST "bin_hash.cfg"
+                TAR_ROOT_DIR "aicpu_kernels_device"
             )
             add_dependencies(generate_device_aicpu_package ccl_kernel)
             sign_file(
