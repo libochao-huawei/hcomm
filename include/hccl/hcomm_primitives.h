@@ -263,20 +263,6 @@ extern int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channe
 extern int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len);
 
 /**
- * @brief 单边写操作
- * @param[in] thread 线程句柄
- * @param[in] channel 通道句柄
- * @param[out] dst 目标内存地址
- * @param[in] src 源内存地址
- * @param[in] len 数据长度（字节）
- * @return int32_t 执行结果状态码
- * @note 当前在A5上主要支持
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
- */
-extern int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
-
-/**
  * @brief 带通知的单边写操作
  * @param[in] channel 通道句柄
  * @param[out] dst 目标内存地址
@@ -292,22 +278,6 @@ extern int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const v
     uint64_t len, uint32_t remoteNotifyIdx);
 
 /**
- * @brief 带通知的单边写操作
- * @param[in] thread 线程句柄
- * @param[in] channel 通道句柄
- * @param[out] dst 目标内存地址
- * @param[in] src 源内存地址
- * @param[in] len 数据长度（字节）
- * @param[in] notifyIdx 远端通知索引
- * @return int32_t 执行结果状态码
- * @note 当前在A5上主要支持
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
- */
-extern int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
-    uint64_t len, uint32_t remoteNotifyIdx);
- 
-/**
  * @brief 单边读操作
  * @param[in] channel 通道句柄
  * @param[out] dst 目标内存地址
@@ -318,20 +288,6 @@ extern int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandl
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len);
-
-/**
- * @brief 单边读操作
- * @param[in] thread 线程句柄
- * @param[in] channel 通道句柄
- * @param[out] dst 目标内存地址
- * @param[in] src 源内存地址
- * @param[in] len 数据长度（字节）
- * @return int32_t 执行结果状态码
- * @note 当前在A5上主要支持
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
- */
-extern int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
 
 /** @} */  // 数据读写相关
 
@@ -491,17 +447,6 @@ extern int32_t HcommFlush();
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommChannelFence(ChannelHandle channel);
-
-/**
- * @brief 通信通道级内存屏障操作
- * @param[in] thread 线程句柄
- * @param[in] channel 通道句柄
- * @return int32_t 执行结果状态码
- * @note 当前在A5上主要支持
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
- */
-extern int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel);
 
 /**
  * @brief 在指定线程上发起一个服务执行请求（异步，调用成功仅表示请求已发送，不代表服务执行完成。需要和 HcommThreadNotifyWaitOnThread 配合使用）
