@@ -516,6 +516,7 @@ struct RsRdevCb {
 
     pthread_mutex_t rdevMutex;
 
+    struct ibv_device_attr deviceAttr;
     struct ibv_mr *notifyMr;
     struct ibv_pd *ibPd;
     struct ibv_context *ibCtx;
