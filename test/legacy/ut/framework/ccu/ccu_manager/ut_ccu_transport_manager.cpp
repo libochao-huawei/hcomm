@@ -478,6 +478,7 @@ TEST_F(CcuTransportMgrTest, Ut_RecoverTransportsFailed_When_RecoverMsgError_Expe
 
 TEST_F(CcuTransportMgrTest, Ut_Clean_And_Destory_Success_When_InterfaceOk_Expect_Return_Ok)
 {
+    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
     const uint32_t baseIpAddrInt = 100;
     const uint32_t linkNum = 4;
     const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
@@ -486,7 +487,6 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_And_Destory_Success_When_InterfaceOk_Expect
     MockCcuTransportMgrDevs();
     ReqHandleResult result = ReqHandleResult::COMPLETED;
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
-    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
 
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
@@ -601,6 +601,7 @@ ReqHandleResult HrtRaGetAsyncReqResult_Uncompleted_CCU(RequestHandle &reqHandle)
 
 TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_1)
 {
+    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
     const uint32_t baseIpAddrInt = 100;
     const uint32_t linkNum = 4;
     const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
@@ -608,7 +609,6 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     auto commImpl = MockCommImpl();
     MockCcuTransportMgrDevs();
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(invoke(HrtRaGetAsyncReqResult_Uncompleted_CCU));
-    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
 
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
@@ -687,6 +687,7 @@ int RaCtxQpDestroyBatchAsync_no_delete_CCU(void *ctx_handle, void*qp_handle[], u
 
 TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_2)
 {
+    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
     const uint32_t baseIpAddrInt = 100;
     const uint32_t linkNum = 4;
     const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
@@ -694,7 +695,6 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     auto commImpl = MockCommImpl();
     MockCcuTransportMgrDevs();
     ReqHandleResult result = ReqHandleResult::COMPLETED;
-    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
     MOCKER(&RaCtxQpDestroyBatchAsync).stubs().with().will(invoke(RaCtxQpDestroyBatchAsync_no_delete_CCU));
 
@@ -775,6 +775,7 @@ int RaCtxQpDestroyBatchAsync_return_false_CCU(void *ctx_handle, void*qp_handle[]
 
 TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_3)
 {
+    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
     const uint32_t baseIpAddrInt = 100;
     const uint32_t linkNum = 4;
     const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
@@ -782,7 +783,6 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     auto commImpl = MockCommImpl();
     MockCcuTransportMgrDevs();
     ReqHandleResult result = ReqHandleResult::COMPLETED;
-    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
     MOCKER(&RaCtxQpDestroyBatchAsync).stubs().with().will(invoke(RaCtxQpDestroyBatchAsync_return_false_CCU));
 
@@ -863,6 +863,7 @@ int RaCtxQpDestroyBatchAsync_num_false_CCU(void *ctx_handle, void*qp_handle[], u
 
 TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_4)
 {
+    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
     const uint32_t baseIpAddrInt = 100;
     const uint32_t linkNum = 4;
     const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
@@ -870,7 +871,6 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     auto commImpl = MockCommImpl();
     MockCcuTransportMgrDevs();
     ReqHandleResult result = ReqHandleResult::COMPLETED;
-    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
     MOCKER(&RaCtxQpDestroyBatchAsync).stubs().with().will(invoke(RaCtxQpDestroyBatchAsync_num_false_CCU));
 
@@ -951,13 +951,13 @@ ReqHandleResult HrtRaGetAsyncReqResult_TimeOut_CCU(RequestHandle &reqHandle) {
 
 TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_5)
 {
+    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
     const uint32_t baseIpAddrInt = 100;
     const uint32_t linkNum = 4;
     const auto &links = MockMultiLinkData(baseIpAddrInt, linkNum);
     const auto &link = links[0];
     auto commImpl = MockCommImpl();
     MockCcuTransportMgrDevs();
-    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(invoke(HrtRaGetAsyncReqResult_TimeOut_CCU));
 
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
