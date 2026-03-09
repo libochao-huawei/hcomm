@@ -17,7 +17,6 @@
 #include "device_capacity.h"
 #include "comm.h"
 #include "coll_alg_utils.h"
-#include "search_path.h"
 
 namespace hccl {
 constexpr s32 COMM_MAX_DEVICE_ID = 31;
