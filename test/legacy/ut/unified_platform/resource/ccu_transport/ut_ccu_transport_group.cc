@@ -332,7 +332,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_003)
     RdmaHandle rdmaHandle = new int(1);
     u32 jettyNum = 1;   // 当前迭代，jettyNum默认为1
     u32 sqSize = 128;   // 当前迭代，默认使用MS，故sqSize固定为128。sqSize就是jetty深度
-    u32 cntCkeId;
+    u32 cntCkeId = 0;
     
     
     MOCKER(CcuDeviceManager::AllocXn).defaults().will(returnValue(HcclResult::HCCL_SUCCESS));
