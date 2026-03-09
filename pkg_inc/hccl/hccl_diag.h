@@ -24,14 +24,14 @@ extern "C" {
  * @return HcclResult 执行结果状态码
  * @note host侧
  */
-extern HcclResult HcclDfxRegOpInfo(HcclComm comm, HcclDfxOpInfo dfxOpInfo);
+extern HcclResult HcclDfxRegOpInfo(HcclComm comm, void* dfxOpInfo);
 /**
  * @brief 算子上报性能数据（开始时间戳）
  * @param[in] beginTime 算子开始执行的时间戳
  * @return HcclResult 执行结果状态码
  * @note host侧
  */
-extern HcclResult HcclProfilingReportOp(HcclComm comm, unit64_t beginTime);
+extern HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime);
 
 /**
  * @brief kernel上报
@@ -41,7 +41,9 @@ extern HcclResult HcclProfilingReportOp(HcclComm comm, unit64_t beginTime);
  * @return HcclResult 执行结果状态码
  * @note host侧
  */
-extern HcclResult HcclReportAicpuKernel(HcclComm comm, unit64_t beginTime, ThreadHandle thread);
+extern HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, uint64_t thread);
+
+extern uint64_t HcommGetProfilingSysCycleTime();
 
 #ifdef __cplusplus
 }

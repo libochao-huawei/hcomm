@@ -48,6 +48,10 @@ public:
     // Local Data Plane Functions
     virtual HcclResult LocalNotifyRecord(uint32_t notifyId) const = 0;
     virtual HcclResult LocalNotifyWait(uint32_t notifyId) const = 0;
+
+    virtual HcclResult LocalNotifyRecord(ThreadHandle dstThread, uint32_t dstNotifyIdx) const = 0;
+    virtual HcclResult LocalNotifyWait(uint32_t notifyIdx, uint32_t timeOut) const = 0;
+
     virtual HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const = 0;
     virtual HcclResult LocalReduce(
         void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const = 0;
@@ -62,9 +66,16 @@ public:
  	std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetCallback() {
  	         return callback_;
  	}
+protected:
+    HcclResult ReportNotifyWaitTask(u64 notifyId) const;
+    HcclResult ReportNotifyRecordTask(u64 notifyId) const;
+    HcclResult ReportLocalCopyTask(void *dst, const void *src, uint64_t sizeByte) const;
+    HcclResult ReportLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
+        HcommReduceOp reduceOp) const;
+
 private:
     std::unordered_map<CommEngine, ThreadHandle> threadHandleMap_; // CPU_TS上的ThreadHandle与其他引擎上的ThreadHandle的映射
-    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u32)> callback_;
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback_; // 上报task信息的回调函数
 };
 
 inline Stream *GetStream(uint64_t thread)

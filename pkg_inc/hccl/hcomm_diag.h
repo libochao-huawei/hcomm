@@ -13,7 +13,7 @@
 
 #include <cstddef>
 #include <hccl/hccl_types.h>
-#include "thread.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,21 +46,21 @@ extern HcclResult HcommRegOpTaskException(const char* commId, HcommGetOpInfoCall
  * @return HcclResult 执行结果状态码
  * @note Device侧
  */
-extern HcclResult HcommProfilingReportDeviceOp(uint64_t groupname);
+extern HcclResult HcommProfilingReportDeviceOp(const char* groupname);
 /**
  * @brief 上报内核启动任务事件
  * @param[in] thread 线程上下文
  * @return HcclResult 执行结果状态码
  * @note Device侧
  */
-extern HcclResult HcommProfilingReportKernelStartTask(ThreadHandle thread);
+extern HcclResult HcommProfilingReportKernelStartTask(uint64_t thread);
 /**
  * @brief 上报内核结束任务事件
  * @param[in] thread 线程上下文
  * @return HcclResult 执行结果状态码
  * @note Device侧
  */
-extern HcclResult HcommProfilingReportKernelEndTask(ThreadHandle thread);
+extern HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupname);
 
 
 #ifdef __cplusplus

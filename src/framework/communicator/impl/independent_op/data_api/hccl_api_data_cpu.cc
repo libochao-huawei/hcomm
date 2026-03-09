@@ -14,7 +14,6 @@
 #include "new/hccl_primitive_remote.h"
 #include "thread.h"
 #include "launch_context.h"
-
 #include "adapter_hal_pub.h"
 #include "adapter_rts.h"
 #include "op_base_v2.h"
@@ -24,24 +23,11 @@
 #include "dlprof_function.h"
 #include "hcomm_c_adpt.h"
 #include "hcclCommOp.h"
+#include "adapter_prof.h"
+#include "task_info.h"
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
-const std::unordered_map<HcclDataType, aclDataType> hccl2rtDataTypeMap = { 
-    {HCCL_DATA_TYPE_INT8, ACL_INT8}, 
-    {HCCL_DATA_TYPE_INT16, ACL_INT16}, 
-    {HCCL_DATA_TYPE_INT32, ACL_INT32}, 
-    {HCCL_DATA_TYPE_FP16, ACL_FLOAT16}, 
-    {HCCL_DATA_TYPE_FP32, ACL_FLOAT}, 
-    {HCCL_DATA_TYPE_BFP16, ACL_BF16}, 
-}; 
- 
- 
-const std::unordered_map<HcclReduceOp, aclrtReduceKind> hccl2rtReduceOpMap = { 
-    {HCCL_REDUCE_SUM, ACL_RT_MEMCPY_SDMA_AUTOMATIC_SUM}, 
-    {HCCL_REDUCE_MAX, ACL_RT_MEMCPY_SDMA_AUTOMATIC_MAX}, 
-    {HCCL_REDUCE_MIN, ACL_RT_MEMCPY_SDMA_AUTOMATIC_MIN}, 
-};
 
 void AddThread(ThreadHandle thread) {
     g_threadLaunchCtx.AddThread(thread);
@@ -67,24 +53,18 @@ int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
 
-    HcclBuf srcBuf{const_cast<void *>(src), len, nullptr};
-    HcclBuf dstBuf{dst, len, nullptr};
-    Stream *stream = GetStream(thread);
-    CHK_PTR_NULL(stream);
-
     if (threadPtr->IsDeviceA5()) {
-        if (len == 0 || src == dst) { 
-            HCCL_DEBUG("count is 0 or src == dst, return success."); 
-            return HCCL_SUCCESS; 
-        }
+        CHK_RET(threadPtr->LocalCopy(dst, src, len));
+    } else {
+        HcclBuf srcBuf{const_cast<void *>(src), len, nullptr};
+        HcclBuf dstBuf{dst, len, nullptr};
+        Stream *stream = GetStream(thread);
+        CHK_PTR_NULL(stream);
 
-        CHK_RET(hrtMemAsyncCopy(dst, len, src, len,
-                                HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE, stream->ptr()));
-        return HCCL_SUCCESS;
+        HcclResult ret = HcclLocalCopy(stream, &dstBuf, &srcBuf);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
+            __func__, thread, dst, src, len), ret);
     }
-
-    HcclResult ret = HcclLocalCopy(stream, &dstBuf, &srcBuf);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, thread, dst, src, len), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -92,7 +72,8 @@ int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, 
 int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t count,
     HcommDataType dataType, HcommReduceOp reduceOp)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].", __func__, thread, dst, src, count, dataType, reduceOp);
+    HCCL_INFO("[%s] START. thread[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
+        __func__, thread, dst, src, count, dataType, reduceOp);
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
@@ -105,34 +86,20 @@ int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src
 
     uint64_t len = count * SIZE_TABLE[dataType];
 
-    HcclBuf srcBuf{const_cast<void *>(src), len, nullptr};
-    HcclBuf dstBuf{dst, len, nullptr};
-    HcclReduceInfo reduceInfo{static_cast<HcclDataType>(dataType), static_cast<HcclReduceOp>(reduceOp)};
-    Stream *stream = GetStream(thread);
-    CHK_PTR_NULL(stream);
-
     if (threadPtr->IsDeviceA5()) {
-        auto dataTypeIt = hccl2rtDataTypeMap.find(reduceInfo.dataType);
-        if (dataTypeIt == hccl2rtDataTypeMap.end()) {
-            HCCL_ERROR("[HcommLocalReduceOnThread]data type[%s] is not supported",
-                       GetDataTypeEnumStr(reduceInfo.dataType).c_str());
-            return HCCL_E_PARA;
-        }
-        
-        auto reduceOpIt = hccl2rtReduceOpMap.find(reduceInfo.reduceOp);
-        if (reduceOpIt == hccl2rtReduceOpMap.end()) {
-            HCCL_ERROR("[HcommLocalReduceOnThread]reduceOp[%s] is not supported",
-                       GetReduceOpEnumStr(reduceInfo.reduceOp).c_str());
-            return HCCL_E_PARA;
-        }
+        CHK_RET(threadPtr->LocalReduce(dst, src, len, dataType, reduceOp));
+    } else {
+        HcclBuf srcBuf{const_cast<void *>(src), len, nullptr};
+        HcclBuf dstBuf{dst, len, nullptr};
+        HcclReduceInfo reduceInfo{static_cast<HcclDataType>(dataType), static_cast<HcclReduceOp>(reduceOp)};
+        Stream *stream = GetStream(thread);
+        CHK_PTR_NULL(stream);
 
-        CHK_RET(hrtReduceAsync(dst, len, src, len,
-                               reduceOpIt->second, dataTypeIt->second, stream->ptr()));
-        return HCCL_SUCCESS;
+        HcclResult ret = HcclLocalCopyReduce(stream, &dstBuf, &srcBuf, reduceInfo);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] FAIL. thread[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
+            __func__, thread, dst, src, count, dataType, reduceOp), ret);
     }
-
-    HcclResult ret = HcclLocalCopyReduce(stream, &dstBuf, &srcBuf, reduceInfo);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].", __func__, thread, dst, src, count, dataType, reduceOp), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -146,23 +113,22 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
 
-    Stream *stream = GetStream(thread);
-    CHK_PTR_NULL(stream);
-
-    LocalNotify *notify = GetNotify(dstThread, dstNotifyIdx);
-    CHK_PTR_NULL(notify);
-
     if (threadPtr->IsDeviceA5()) {
-        HcclResult ret = notify->Post(*stream);
+        HcclResult ret = threadPtr->LocalNotifyRecord(dstThread, dstNotifyIdx);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dstThread[0x%llx], notifyIdx[%u].",
             __func__, thread, dstThread, dstNotifyIdx), ret);
-        HCCL_INFO("[%s] SUCCESS.", __func__);
-        return HCCL_SUCCESS;
+    } else {
+        Stream *stream = GetStream(thread);
+        CHK_PTR_NULL(stream);
+
+        LocalNotify *notify = GetNotify(dstThread, dstNotifyIdx);
+        CHK_PTR_NULL(notify);
+
+        HcclResult ret = HcclLocalNotifyRecord(stream, notify);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dstThread[0x%llx], notifyIdx[%u].",
+            __func__, thread, dstThread, dstNotifyIdx), ret);
     }
 
-    HcclResult ret = HcclLocalNotifyRecord(stream, notify);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dstThread[0x%llx], notifyIdx[%u].",
-        __func__, thread, dstThread, dstNotifyIdx), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -176,22 +142,20 @@ int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, u
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
 
-    Stream *stream = GetStream(thread);
-    CHK_PTR_NULL(stream);
-    LocalNotify *notify = GetNotify(thread, notifyIdx);
-    CHK_PTR_NULL(notify);
-
     if (threadPtr->IsDeviceA5()) {
-        HcclResult ret = notify->Wait(*stream, timeOut);
+        HcclResult ret = threadPtr->LocalNotifyWait(notifyIdx, timeOut);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeOut[%u].",
             __func__, thread, notifyIdx, timeOut), ret);
-        HCCL_INFO("[%s] SUCCESS.", __func__);
-        return HCCL_SUCCESS;
-    }
+    } else {
+        Stream *stream = GetStream(thread);
+        CHK_PTR_NULL(stream);
+        LocalNotify *notify = GetNotify(thread, notifyIdx);
+        CHK_PTR_NULL(notify);
 
-    HcclResult ret = HcclLocalNotifyWait(stream, notify, timeOut);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeOut[%u].",
-        __func__, thread, notifyIdx, timeOut), ret);
+        HcclResult ret = HcclLocalNotifyWait(stream, notify, timeOut);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], notifyIdx[%u], timeOut[%u].",
+            __func__, thread, notifyIdx, timeOut), ret);
+    }
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -616,9 +580,11 @@ int32_t HcommBatchModeEnd(const char *batchTag)
 }
 
 int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback) {
+    HCCL_INFO("[HcommThreadRegisterDfx] Init begin");
     Thread *threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
     CHK_RET(threadPtr->SetAddTaskInfoCallback(callback));
+    HCCL_INFO("[HcommThreadRegisterDfx] Init success");
     return HCCL_SUCCESS;
 }
 
@@ -661,15 +627,16 @@ int32_t HcommChannelFence(ChannelHandle channel)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclDfxRegOpInfo(HcclComm comm, HcclDfxOpInfo dfxOpInfo)
+HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
 {
-    HCCL_INFO("[HcclDfxRegOpInfo] start");
+    HCCL_INFO("[%s] START.", __func__);
+    CHK_PRT_RET(hcclDfxOpInfo == nullptr,  HCCL_ERROR("[%s] hcclDfxOpInfo is null", __func__), HCCL_E_PTR);
+    HcclDfxOpInfo *dfxOpInfo = static_cast<HcclDfxOpInfo*>(hcclDfxOpInfo);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
     if (!hcclComm->IsCommunicatorV2()) {
         HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
-
         return HCCL_E_NOT_SUPPORT;
     }
     hccl::CollComm* collComm = hcclComm->GetCollComm();
@@ -677,16 +644,16 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, HcclDfxOpInfo dfxOpInfo)
     //单算子模式，覆盖opTag
     bool opBased = true;
     if (opBased) {
-        dfxOpInfo.opTag = hcclComm->GetIdentifier();
+        strcpy_s(dfxOpInfo->opTag, 256, hcclComm->GetIdentifier().c_str());
     }
-    dfxOpInfo.myRank = collComm->GetMyRankId();//opType
-    dfxOpInfo.tag_ = Hccl::OpTypeToString(Hccl::OP_TYPE_MAP.at(dfxOpInfo.opType));//opType
-    dfxOpInfo.index_ = 0;
-    // dfxOpInfo.beginTime_ = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-    dfxOpInfo.beginTime_ = 0;
+    dfxOpInfo->myRank = collComm->GetMyRankId();
+    strcpy_s(dfxOpInfo->tag_, 256, Hccl::OpTypeToString(Hccl::OP_TYPE_MAP.at(static_cast<HcclCMDType>(dfxOpInfo->opType))).c_str());
+
+    dfxOpInfo->index_ = 0;
+    dfxOpInfo->beginTime_ = hrtMsprofSysCycleTime();
     //HcclDfxOpInfo转为DfxOpInfo
     auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
-    dfxOpInfoOnce = ConvertToDfxOpInfo(dfxOpInfo);
+    dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
     
     HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
     CHK_PTR_NULL(hcclCommDfx);
@@ -696,65 +663,69 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, HcclDfxOpInfo dfxOpInfo)
     mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
    
    // 下发device侧
-    HcommDfxKernelLaunch(hcclComm->GetIdentifier(), hcclComm->GetBinHandle(), dfxOpInfo);
-    HCCL_INFO("[HcclDfxRegOpInfo] end");
+    HcommDfxKernelLaunch(hcclComm->GetIdentifier(), hcclComm->GetBinHandle(), *dfxOpInfo);
+    HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 
 }
 
 
 
-HcclResult HcclProfilingReportOp(HcclComm comm, u64 beginTime)
-{
-    CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
-    auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
-    CHK_PTR_NULL(hcclComm);
-    hccl::CollComm* collComm = hcclComm->GetCollComm();
-    CHK_PTR_NULL(collComm);
-    HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
-    CHK_PTR_NULL(hcclCommDfx);
-    //单算子模式暂时默认true
-    hcclCommDfx->ReportOp(beginTime, true, true);
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcclReportAicpuKernel(HcclComm comm, u64 beginTime, ThreadHandle thread)
+HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime)
 {
     HCCL_INFO("[%s] START.", __func__);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
-    u32 taskId = 0;
-    u32 streamId =0 ;
-    // u32 remoteRankId = 0;
-    //填充taskId和streamId
-    Hccl::HrtGetTaskIdAndStreamID(taskId, streamId);
-
-    //填入remoteRankId
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
     if (!hcclComm->IsCommunicatorV2()) {
         HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
-
         return HCCL_E_NOT_SUPPORT;
     }
     hccl::CollComm* collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
     HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
     CHK_PTR_NULL(hcclCommDfx);
-    // remoteRankId = collComm->GetMyRankId();//todo::查表拿chanelhandle,才能拿到
+    //单算子模式暂时默认true
+    hcclCommDfx->ReportOp(beginTime, true, true);
+    HCCL_INFO("[%s] SUCCESS.", __func__);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, uint64_t thread)
+{
+    HCCL_INFO("[%s] START.", __func__);
+    CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
+    u32 taskId = 0;
+    u32 streamId = 0;
+    u32 remoteRankId = -1;
+    //填充taskId和streamId
+    Hccl::HrtGetTaskIdAndStreamID(taskId, streamId);
+
+    //填入remoteRankId
+    auto hcclComm = static_cast<hccl::hcclComm*>(comm);
+    CHK_PTR_NULL(hcclComm);
+    if (!hcclComm->IsCommunicatorV2()) {
+        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+    CHK_PTR_NULL(hcclCommDfx);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
-    // auto *const streamPtr = static_cast<Hccl::Stream *>(threadPtr->GetStream());
-    // CHK_PRT_RET(streamPtr == nullptr,  HCCL_ERROR("[%s] streamPtr is null", __func__), HCCL_E_PTR); 
-    // Hccl::TaskParam taskParam {};
-    // taskParam.beginTime = beginTime;
-    // taskParam.taskType = Hccl::TaskParamType::TASK_AICPU_KERNEL;
-    // taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    Stream *stream = GetStream(thread);
+    CHK_PTR_NULL(stream);
+    Hccl::TaskParam taskParam {};
+    taskParam.beginTime = beginTime;
+    taskParam.taskType = Hccl::TaskParamType::TASK_AICPU_KERNEL;
+    taskParam.endTime = hrtMsprofSysCycleTime();
  
-    // shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId, remoteRankId, taskParam,
-    //     hcclCommDfx->GetMirrorTaskManager().GetCurrDfxOpInfo(), streamPtr->GetIsMaster);
+    std::shared_ptr<Hccl::TaskInfo> taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId, remoteRankId, taskParam,
+        hcclCommDfx->GetMirrorTaskManager()->GetCurrDfxOpInfo(), stream->IsMainStream());
  
-    // hcclCommDfx->GetMirrorTaskManager().AddTaskInfo(taskInfo);
+    hcclCommDfx->GetMirrorTaskManager()->AddTaskInfo(taskInfo);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }

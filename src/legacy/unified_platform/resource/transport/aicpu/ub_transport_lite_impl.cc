@@ -423,7 +423,7 @@ void UbTransportLiteImpl::ProfilingProcess(const RmaBufferLite &loc, const Buffe
     taskParam.taskPara.DMA.dmaOp    = dmaOp;
     taskParam.taskPara.DMA.locEid = GetLocEid();
     taskParam.taskPara.DMA.rmtEid = GetRmtEid();
-        if (callback_ != nullptr) {
+    if (callback_ != nullptr) {
         callback_(stream.GetSqId(), taskId, taskParam);
     }
 
@@ -506,7 +506,7 @@ void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufferLite &loc, const
     taskParam.taskPara.Reduce.dataType = DataTypeToHcclDataType(reduceIn.dataType);
     taskParam.taskPara.Reduce.locEid   = GetLocEid();
  	taskParam.taskPara.Reduce.rmtEid   = GetRmtEid();
-        if (callback_ != nullptr) {
+    if (callback_ != nullptr) {
         callback_(stream.GetSqId(), taskId, taskParam);
     }
 

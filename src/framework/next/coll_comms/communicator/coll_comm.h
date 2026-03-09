@@ -21,6 +21,8 @@
 #include "comm_mem_manager.h"
 #include "channel_manager.h"
 #include "hcclCommDfx.h"
+#include "rank_graph_v2.h"
+
 namespace hccl {
 /**
  * @note 职责：集合通信通信域上下文管理，包括RankGraph和本rank信息资源等内容。
@@ -35,30 +37,12 @@ public:
     // 初始化通信域
     HcclResult Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config);
 
-    inline RankGraph* GetRankGraph() {
-        return rankgraph_ != nullptr ? rankgraph_.get() : nullptr;
-    }
-
-    inline CommEngineResMgr* GetCommEngineResMgr() {
-        return commEngineResMgr_!= nullptr ? commEngineResMgr_.get() : nullptr;
-    }
-
-    inline ContextManager* GetContextManager() {
-        return contextMgr_ != nullptr ? contextMgr_.get() : nullptr;
-    }
-
-    inline CommMemMgr* GetCommMemMgr() {
-        return commMemMgr_ != nullptr ? commMemMgr_.get() : nullptr;
-    }
-
-    inline ChannelManager* GetChannelManager() {
-        return channelMgr_ != nullptr ? channelMgr_.get() : nullptr;
-    }
-
-    void *GetCommunicatorV2()
-    {
-        return comm_;
-    }
+    inline RankGraph* GetRankGraph() { return rankgraph_.get(); }
+    inline CommEngineResMgr* GetCommEngineResMgr() { return commEngineResMgr_.get(); }
+    inline ContextManager* GetContextManager() { return contextMgr_.get(); }
+    inline CommMemMgr* GetCommMemMgr() { return commMemMgr_.get(); }
+    inline ChannelManager* GetChannelManager() { return channelMgr_.get(); }
+    void *GetCommunicatorV2() { return comm_; }
     
     // 获取MyRank
     MyRank* GetMyRank() const { return myRank_.get(); }
@@ -70,9 +54,7 @@ public:
     uint32_t GetRankSize() const;
 
     // 获取HcclCommDfx
-    HcclCommDfx* GetHcclCommDfx() {
- 	    return hcclCommDfx_ != nullptr ? hcclCommDfx_.get() : nullptr;
- 	}
+    HcclCommDfx* GetHcclCommDfx() { return hcclCommDfx_.get(); }
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetDfxCallback() {
         if (hcclCommDfx_ == nullptr) {
             HCCL_ERROR("[CollComm]CollComm DfxCallBack failed. hcclCommDfx is nullptr");
@@ -86,8 +68,7 @@ private:
     std::string commId_;
     CommConfig config_{};
     ManagerCallbacks callbacks_; 
-    
-   
+
     std::unique_ptr<RankGraph> rankgraph_{nullptr};
     std::unique_ptr<CommEngineResMgr> commEngineResMgr_{nullptr};
     std::unique_ptr<ContextManager>  contextMgr_{nullptr};
