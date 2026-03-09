@@ -216,7 +216,7 @@ HcclResult BroadCastOperator::SelectAlgfor91093(const OpParam& param, std::strin
         (param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_1_MB * deviceNumPerAggregation_);
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_) && !retryEnable_; // 涉及ROCE平面
-
+        
     if (isAivMode_) {
         algName = "BroadcastMeshAivExecutor";
     } else if (multiModuleDiffDeviceNumMode_ || multiSuperPodDiffServerNumMode_) {
@@ -234,6 +234,17 @@ HcclResult BroadCastOperator::SelectAlgfor91093(const OpParam& param, std::strin
     } else {
         algName = "BroadCastComm";
     }
+
+    // isAivMode_ = topoMatcher_->GetAivModeConfig()
+    //         && IsSupportAIVCopy(param.DataDes.dataType)
+    //         && (serverNum_ == 1) && (param.count * sizeof(param.dataType) <= HCCL_MID_COUNT_16_MB);
+    isAivMode_ = topoMatcher_->GetAivModeConfig()
+            && IsSupportAIVCopy(param.DataDes.dataType)
+            && (serverNum_ == 1);
+    if (isAivMode_) {
+        algName = "BroadcastMeshAivExecutor";
+    }
+   
     HCCL_INFO("[SelectAlgfor91093] broadcast SelectAlgfor91093 is algName [%s]", algName.c_str());
     return HCCL_SUCCESS;
 }
