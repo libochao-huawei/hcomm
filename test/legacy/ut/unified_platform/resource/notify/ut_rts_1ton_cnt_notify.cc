@@ -33,8 +33,6 @@ protected:
 
     virtual void SetUp()
     {
-        MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
-        MOCKER(HrtMalloc).stubs().will(returnValue(static_cast<void*>(0)));
         MOCKER(HrtStreamGetMode).stubs().will(returnValue(static_cast<u64>(0)));
         std::cout << "A Test case in Rts1ToNCntNotifyTest SetUP" << std::endl;
     }
