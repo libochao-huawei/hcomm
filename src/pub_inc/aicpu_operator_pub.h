@@ -406,7 +406,7 @@ struct ErrorMessageReport {
     s32 stage = 0;
     u32 rankId = 0;
     u32 rankSize = 0;
-    AlgType algType;
+    std::string algType;
     hccl::TaskType taskType = hccl::TaskType::TASK_SDMA;
     uint64_t count = 0;
     uint64_t dstAddr = 0;
