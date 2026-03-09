@@ -195,6 +195,22 @@ install(TARGETS  ccl_dpu
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
 )
 
+add_library(topoaddrinfo SHARED
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/hal.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/topo.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/host_rdma.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/pcie_nic.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/eid_util.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/rootinfo_types.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/rankinfo.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/product_card.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/product_server.c
+)
+
+target_link_libraries(topoaddrinfo PRIVATE
+    -ldl
+)
+
 # 需要链接的库，后需增加
 IF (NOT DEFINED ENV{HCCL_LOCAL_BUILD})
 target_link_libraries(hccl_v2 PRIVATE
