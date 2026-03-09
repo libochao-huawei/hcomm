@@ -31,7 +31,7 @@ enum class NotifyRecordOpType {
     Others
 };
 
-NotifyRecordOpType GetNotifyRecordOpType(const ThreadEntity &srcEnt, const ThreadEntity &dstEnt) {
+inline NotifyRecordOpType GetNotifyRecordOpType(const ThreadEntity &srcEnt, const ThreadEntity &dstEnt) {
     if (srcEnt.type == THREAD_TYPE_TS &&
         dstEnt.type == THREAD_TYPE_TS) {
         return NotifyRecordOpType::AicpuTs_to_AicpuTs;
@@ -45,7 +45,7 @@ NotifyRecordOpType GetNotifyRecordOpType(const ThreadEntity &srcEnt, const Threa
     return NotifyRecordOpType::Others;
 }
 
-HcclResult RecordAicpuTsToAicpuTs(const ThreadEntity &srcEnt, const ThreadEntity &dstEnt, uint32_t dstNotifyIdx) {
+inline HcclResult RecordAicpuTsToAicpuTs(const ThreadEntity &srcEnt, const ThreadEntity &dstEnt, uint32_t dstNotifyIdx) {
     auto *const threadPtr = reinterpret_cast<AicpuTsThread *>(srcEnt.threadObjAddr);
     CHK_PTR_NULL(threadPtr);
     auto *const dstThreadPtr = reinterpret_cast<AicpuTsThread *>(dstEnt.threadObjAddr);
@@ -66,7 +66,7 @@ HcclResult RecordAicpuTsToAicpuTs(const ThreadEntity &srcEnt, const ThreadEntity
     return HCCL_SUCCESS;
 }
 
-HcclResult RecordAicpuTsToCpu(const ThreadEntity &srcEnt, const ThreadEntity &dstEnt, uint32_t dstNotifyIdx) {
+inline HcclResult RecordAicpuTsToCpu(const ThreadEntity &srcEnt, const ThreadEntity &dstEnt, uint32_t dstNotifyIdx) {
     auto *const threadPtr = reinterpret_cast<AicpuTsThread *>(srcEnt.threadObjAddr);
     CHK_PTR_NULL(threadPtr);
     if (!threadPtr->IsDeviceA5()) {
@@ -82,7 +82,7 @@ HcclResult RecordAicpuTsToCpu(const ThreadEntity &srcEnt, const ThreadEntity &ds
     return HCCL_SUCCESS;
 }
 
-HcclResult RecordCpuToAicpuTs(const ThreadEntity &srcEnt, const ThreadEntity &dstEnt, uint32_t dstNotifyIdx) {
+inline HcclResult RecordCpuToAicpuTs(const ThreadEntity &srcEnt, const ThreadEntity &dstEnt, uint32_t dstNotifyIdx) {
     const ThreadHandle srcHdl = reinterpret_cast<ThreadHandle>(&srcEnt);
     const ThreadHandle dstHdl = reinterpret_cast<ThreadHandle>(&dstEnt);
     RecordServiceArgs tempRecordArgs = {
@@ -94,7 +94,7 @@ HcclResult RecordCpuToAicpuTs(const ThreadEntity &srcEnt, const ThreadEntity &ds
     return HCCL_SUCCESS;
 }
 
-HcclResult WaitAicpuTs(const ThreadEntity &ent, uint32_t dstNotifyIdx, uint32_t timeOut) {
+inline HcclResult WaitAicpuTs(const ThreadEntity &ent, uint32_t dstNotifyIdx, uint32_t timeOut) {
     auto *const threadPtr = reinterpret_cast<AicpuTsThread *>(ent.threadObjAddr);
     CHK_PTR_NULL(threadPtr);
 
@@ -113,7 +113,7 @@ HcclResult WaitAicpuTs(const ThreadEntity &ent, uint32_t dstNotifyIdx, uint32_t 
     return HCCL_SUCCESS;
 }
 
-HcclResult WaitCpu(const ThreadEntity &ent, uint32_t notifyIdx, uint32_t timeOut) {
+inline HcclResult WaitCpu(const ThreadEntity &ent, uint32_t notifyIdx, uint32_t timeOut) {
     const ThreadHandle hdl = reinterpret_cast<ThreadHandle>(&ent);
     WaitServiceArgs tempWaitArgs = {
         .threadHandle = hdl,
