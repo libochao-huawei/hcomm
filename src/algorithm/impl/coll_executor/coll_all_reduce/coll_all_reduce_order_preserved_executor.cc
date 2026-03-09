@@ -124,7 +124,7 @@ void CollAllReduceOrderPreservedExecutor::CalcSizePerBlock(const OpParam &param,
     sizePerBlock_ = AlgTemplateBase::RoundUpWithDivisor(sizePerBlock_, HCCL_MIN_SLICE_ALIGN);
 }
 
-void CollAllReduceOrderPreservedExecutor::CalGroupSlices(const OpParam &param, ExecMem &execMem)
+void CollAllReduceOrderPreservedExecutor::CalGroupSlices(const OpParam &param, const ExecMem &execMem)
 {   
     groupSize_.clear();
     u64 sizeRemain = execMem.count * SIZE_TABLE[param.DataDes.dataType];
@@ -244,7 +244,7 @@ HcclResult CollAllReduceOrderPreservedExecutor::RunAllGatherLevel0(const OpParam
 }
 
 HcclResult CollAllReduceOrderPreservedExecutor::RunAllGatherLevel1(const OpParam &param, ExecMem &execMem,
-    SubCommInfo &level0CommInfo)
+    const SubCommInfo &level0CommInfo)
 {
     u32 commIndex = level0CommInfo.localRank;
     CHK_RET(CheckCommSize(COMM_LEVEL1, commIndex + 1));
