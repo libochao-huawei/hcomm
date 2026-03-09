@@ -85,9 +85,9 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
 
     for (uint32_t i = 0; i < threadNum; ++i) {
         usedNotifyNum_ += notifyNumPerThread;
-        std::shared_ptr<Thread> newThread;
+        Thread *newThread = nullptr;
         CHK_RET(HcommThreadGet(threads[i], newThread));
-        newThreads.emplace_back(std::move(newThread));
+        newThreads.emplace_back(newThread);
         threadHandles_.emplace_back(threads[i]);
     }
 
