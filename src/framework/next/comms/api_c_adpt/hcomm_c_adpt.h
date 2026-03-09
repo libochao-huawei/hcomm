@@ -68,5 +68,4 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
 }
 #endif // __cplusplus
 HcclResult HcommThreadGet(const ThreadHandle thread, std::shared_ptr<hccl::Thread> &handle);
-
 #endif
