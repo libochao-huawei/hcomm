@@ -1292,6 +1292,11 @@ HcclResult CcuContext::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Cc
     }
 
     HCCL_INFO("[GetCcuProfilingInfo] create varId2VarIdMap start. size=%lu", lgProfInfo.assignProfilingReps.size());
+
+    if (lgProfInfo.lgProfilingReps.size() % 2 !=0) {
+        THROW<CcuApiException>("[GetCcuProfilingInfo] lgProfilingReps size is not even: %lu", lgProfInfo.lgProfilingReps.size());
+    }
+
     std::unordered_map<uint16_t, uint16_t> varId2VarIdMap;
     for (auto &iter : lgProfInfo.assignProfilingReps) {
         if (iter.get() == nullptr) {
@@ -1320,6 +1325,9 @@ HcclResult CcuContext::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Cc
 
         if (parallelParam != 0) {
             HCCL_INFO("[GetCcuProfilingInfo] collect lg, residual start i=%lu", i);
+            if (i + 1 >= lgProfInfo.lgProfilingReps.size()) {
+                THROW<CcuApiException>("[GetCcuProfilingInfo] Index out of range: i=%lu, size=%lu", i + 1, lgProfInfo.lgProfilingReps.size());
+            }
             uint64_t residual = GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo[i].residual.Id());
             uint64_t repeatNum = CcuRep::ParseRepeatNumFromParallelParam(parallelParam);
             lgProfInfo.ccuProfilingInfos[i].dataSize = repeatNum * moConfig.memSlice + residual;
