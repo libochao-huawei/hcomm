@@ -75,7 +75,7 @@ extern HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNu
  * @endcode
  * @return HcclResult 执行结果状态码
  */
-extern HcclResult HcommThreadResGetInfo(ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void *info);
+extern HcclResult HcommThreadResGetInfo(ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void **info);
 
 #ifdef __cplusplus
 }
