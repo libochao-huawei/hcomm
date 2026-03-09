@@ -57,10 +57,7 @@ bool IsSupportReduce(HcommDataType dataType, HcommReduceOp op)
 namespace {
 bool IsDevice950(DevType type)
 {
-    return type != DevType::DEV_TYPE_910 && type != DevType::DEV_TYPE_310P3
-        && type != DevType::DEV_TYPE_910B && type != DevType::DEV_TYPE_310P1
-        && type != DevType::DEV_TYPE_910_93 && type != DevType::DEV_TYPE_NOSOC
-        && type != DevType::DEV_TYPE_COUNT;
+    return type == DevType::DEV_TYPE_910_95;
 }
 }  // namespace
 
@@ -518,9 +515,9 @@ int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *d
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
         __func__, thread, channel, dst, src, len);
 
+    (void)thread;
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
-    (void)thread;
 
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
