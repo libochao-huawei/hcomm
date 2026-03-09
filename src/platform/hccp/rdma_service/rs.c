@@ -915,8 +915,15 @@ STATIC int RsGetIbCtxAndRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb,
             } else {
                 ret = RsGetDevRdevIndex(rdevCb, rdevIndex, i);
             }
-            if (ret) {
+            if (ret != 0) {
                 hccp_err("get index failed, ret:%d", ret);
+                RsIbvCloseDevice(ibCtxTmp);
+                return ret;
+            }
+            ret = RsIbvQueryDevice(ibCtxTmp, &rdevCb->deviceAttr);
+            hccp_run_info("vendor id:%u", rdevCb->deviceAttr.vendor_id);
+            if (ret != 0) {
+                hccp_err("query device failed, ret:%d", ret);
                 RsIbvCloseDevice(ibCtxTmp);
                 return ret;
             }
