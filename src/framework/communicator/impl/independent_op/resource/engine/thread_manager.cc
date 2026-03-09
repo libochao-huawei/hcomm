@@ -81,22 +81,21 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
     CHK_RET(HcommThreadAlloc(engine, threadNum, notifyNumPerThread, threads));
     std::vector<std::shared_ptr<Thread>> newThreads;
     newThreads.reserve(threadNum);
-    HcclResult ret = HCCL_E_INTERNAL;
-
     for (uint32_t i = 0; i < threadNum; ++i) {
         usedNotifyNum_ += notifyNumPerThread;
-        std::shared_ptr<Thread> newThread;
+        std::shared_ptr<Thread> newThread = nullptr;
         CHK_RET(HcommThreadGet(threads[i], newThread));
-        newThreads.emplace_back(std::move(newThread));
+        newThreads.emplace_back(newThread);
         threadHandles_.emplace_back(threads[i]);
     }
 
     // thread资源 AICPU侧展开
     std::unique_ptr<ThreadHandle[]> hostHandle;
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
+        HcclResult ret = HCCL_SUCCESS;
         if (!callbacks_.getAicpuCommState()) {
             HCCL_INFO("ThreadMgr::HcclAllocThreadRes kernelLaunchAicpuCommInit start");
-            HcclResult ret = callbacks_.kernelLaunchAicpuCommInit();
+            ret = callbacks_.kernelLaunchAicpuCommInit();
             CHK_PRT_RET(ret != HCCL_SUCCESS, 
                 HCCL_ERROR("[%s] kernelLaunchAicpuCommInit failed, return [%d].", __func__, ret), ret);
             callbacks_.setAicpuCommState(true);
