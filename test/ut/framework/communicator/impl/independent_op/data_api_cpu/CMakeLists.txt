@@ -10,6 +10,12 @@
 set(src_to_test_list
     main.cc
     ut_cpu_HcommChannelNotifyRecordOnThread.cc
+    ut_cpu_HcommChannelNotifyWaitOnThread.cc
+    ut_cpu_HcommWriteNbiOnThread.cc
+    ut_cpu_HcommWriteWithNotifyNbiOnThread.cc
+    ut_cpu_HcommReadNbiOnThread.cc
+    ut_cpu_HcommFenceOnThread.cc
+    ut_cpu_HcommChannelFenceOnThread.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_cpu.cc
     ${HCCL_LLT_ROOT}/ut/stub/legacy/llt_stub_host_cpu_roce_channel.cc
 )
