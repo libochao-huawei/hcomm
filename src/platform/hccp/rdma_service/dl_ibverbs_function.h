@@ -114,6 +114,8 @@ int RsRoceGetRoceDevData(const char *devName, struct roce_dev_data *rdevData);
 
 DL_ATTRI_VISI_DEF void RsApiDeinit(void);
 DL_ATTRI_VISI_DEF int RsApiInit(void);
+int RsRoceUserApiInit(void);
+int RsIbverbsApiInit(void);
 void RsIbvFreeDeviceList(struct ibv_device **list);
 void RsIbvAckCqEvents(struct ibv_cq *cq, unsigned int nevents);
 const char *RsIbvGetDeviceName(struct ibv_device *device);
