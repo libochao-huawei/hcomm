@@ -595,8 +595,8 @@ void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId
     for (const auto&pair: newNetInstance->topoInsts_){
         uint32_t topoInstId = pair.first;
         if (pair.second == nullptr) {
-            HCCL_WARNING("topoInst of newNetInstance is nullptr");
-            continue;
+            THROW<InvalidParamsException>(
+                    StringFormat("[SubRankGraph][AddNewLink] topoInst of newNetInstance is nullptr, topoInstId[%u]", topoInstId));
         }
         auto topoType = pair.second->topoType;
         HCCL_DEBUG("[SubRankGraph] topoInstId[%u] topoType[%d]", topoInstId, topoType);
