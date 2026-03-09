@@ -103,7 +103,7 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
         EXECEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(newThreads.size()),
             return HCCL_E_PTR);
         HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunch start");
-        ret = AicpuLaunchMgr::ThreadKernelLaunch(newThreads, commId_, hostHandle, binHandle_);
+        ret = AicpuLaunchMgr::ThreadKernelLaunchForComm(newThreads, commId_, hostHandle, binHandle_);
         HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunch end");
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[ThreadMgr][HcclThreadAcquire] AiCpuKernelLaunch failed, return [%d].", ret), ret);
@@ -241,7 +241,7 @@ HcclResult ThreadMgr::ThreadExportToCommEngineAicpu(uint32_t threadNum, const Th
         std::unique_ptr<ThreadHandle[]> aicpuHandle;
         EXECEPTION_CATCH(aicpuHandle = std::make_unique<ThreadHandle[]>(hostThreads.size()),
                          return HCCL_E_PTR);
-        HcclResult ret = AicpuLaunchMgr::ThreadKernelLaunch(hostThreads, commId_, aicpuHandle, binHandle_);
+        HcclResult ret = AicpuLaunchMgr::ThreadKernelLaunchForComm(hostThreads, commId_, aicpuHandle, binHandle_);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
                     HCCL_ERROR("[ThreadMgr][HcclThreadExportToCommEngine] AiCpuKernelLaunch failed, return [%d].", ret), ret);
         for (size_t i = 0; i < hostThreads.size(); ++i) {
