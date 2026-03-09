@@ -249,6 +249,7 @@ HcclResult HcclGetCommAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
 HcclResult GetDeviceCollComm(const s32 rank, HcclCommConfig *config, const s32 logicDeviceId,
     HcclComm &comm)
 {
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU)) 
     //给当前线程添加名字
     SetThreadName("Hccl_GetDeviceCollComm");
 
@@ -267,6 +268,7 @@ HcclResult GetDeviceCollComm(const s32 rank, HcclCommConfig *config, const s32 l
         return ret;
     }
     comm = newComm;
+#endif
     return HCCL_SUCCESS;
 }
 
@@ -276,7 +278,7 @@ HcclResult HcclGetCollCommAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
     CHK_PRT_RET(ndev == 0, HCCL_ERROR("[HcclGetCollCommAll] ndev is invalid, ndev[%u]", ndev), HCCL_E_PARA);
     CHK_PTR_NULL(comms);
     CHK_PTR_NULL(devices);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU)) 
     //给当前线程添加名字
     SetThreadName("Hccl_GetCollCommAll");
 
@@ -314,12 +316,13 @@ HcclResult HcclGetCollCommAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
 
     CHK_PRT_RET(hrtResetDevice(devices[0]) != HCCL_SUCCESS,
         HCCL_ERROR("[HcclGetCollCommAll] reset fail devices[0][%d]", devices[0]), HCCL_E_INTERNAL);
-
+#endif
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclCollCommInitAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
 {
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU)) 
     HcclUs startut = TIME_NOW();
     std::string devicesStr;
     for (size_t i = 0; i < ndev; ++i) {
@@ -352,6 +355,7 @@ HcclResult HcclCollCommInitAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
     s32 deviceLogicId = HcclGetThreadDeviceId();
     HCCL_RUN_INFO("HcclCollCommInitAll success, take time [%lld]us, deviceLogicId[%d].", DURATION_US(TIME_NOW() - startut),
                   deviceLogicId);
+#endif
     return HCCL_SUCCESS;
 }
 
@@ -3173,8 +3177,8 @@ HcclResult HcclCommDestroyWrapper(struct hcclAsyncJob* job_){
         if (iter != opBaseHcom.opGroup2CommMap.end()) {
             EXECEPTION_CATCH(opBaseHcom.opGroup2CommMap.erase(group), return HCCL_E_MEMORY);
         } else {
-                HCCL_ERROR("[HcclCommDestroy] comm is not exist, comm=%p, group=%s, deviceLogicId=%d", comm, group.c_str(), deviceLogicId);
-                return HCCL_E_PARA;
+            HCCL_ERROR("[HcclCommDestroy] comm is not exist, comm=%p, group=%s, deviceLogicId=%d", comm, group.c_str(), deviceLogicId);
+            return HCCL_E_PARA;
         }
         CHK_RET(HcclCommDestroyV2(commV2));
         return HCCL_SUCCESS;
@@ -5189,7 +5193,7 @@ HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, CommSymWindo
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetCcuTaskInfoLegacy(HcclComm comm, void *tilingData, void *ccuTaskGroup)
+HcclResult HcclGetCcuTaskInfo(HcclComm comm, void *tilingData, void *ccuTaskGroup)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(tilingData);
