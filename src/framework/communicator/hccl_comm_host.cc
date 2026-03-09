@@ -322,6 +322,7 @@ namespace hccl
         return HCCL_E_PTR);
 
         CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
+        HCCL_ERROR("collComm_->Init");
         return HCCL_SUCCESS;
     }
 
