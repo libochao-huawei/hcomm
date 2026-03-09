@@ -2188,7 +2188,7 @@ RS_ATTRI_VISI_DEF int RsSetQpAttrQos(unsigned int phyId, unsigned int rdevIndex,
 
     RS_QP_PARA_CHECK(phyId);
     ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
-    CHK_PRT_RETURN(ret || qpCb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
+    CHK_PRT_RETURN(ret != 0 || qpCb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
 
     qpCb->qosAttr.tc = attr->tc;
     qpCb->qosAttr.sl = attr->sl;
@@ -2205,7 +2205,7 @@ RS_ATTRI_VISI_DEF int RsSetQpAttrTimeout(unsigned int phyId, unsigned int rdevIn
 
     RS_QP_PARA_CHECK(phyId);
     ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
-    CHK_PRT_RETURN(ret || qpCb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
+    CHK_PRT_RETURN(ret != 0 || qpCb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
 
     qpCb->timeout = *timeout;
 
@@ -2221,7 +2221,7 @@ RS_ATTRI_VISI_DEF int RsSetQpAttrRetryCnt(unsigned int phyId, unsigned int rdevI
 
     RS_QP_PARA_CHECK(phyId);
     ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
-    CHK_PRT_RETURN(ret || qpCb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
+    CHK_PRT_RETURN(ret != 0 || qpCb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
 
     qpCb->retryCnt = *retryCnt;
 
