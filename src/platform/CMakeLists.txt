@@ -235,6 +235,7 @@ add_subdirectory(task)
 add_subdirectory(ping_mesh)
 add_subdirectory(typical)
 add_subdirectory(hccp)
+add_subdirectory(rankinfo)
 
 add_dependencies(hccl_plf json)
 

@@ -1,0 +1,532 @@
+/**
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+#include "hal.h"
+#include <stdio.h>
+#include <dlfcn.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <net/if_arp.h>
+#include <errno.h>
+#include <syslog.h>
+#include <stdarg.h>
+
+#define DRIVER_DRFAULT_INSTALL_PATH "/usr/local/Ascend"
+#define DRIVER_TOPO_FILE_DIR_PATH "driver/topo/950"
+#define MAX_TOPO_FILENAME_LEN   (64)
+
+enum dcmi_main_cmd {
+    DCMI_MAIN_CMD_DVPP = 0,
+    DCMI_MAIN_CMD_ISP,
+    DCMI_MAIN_CMD_TS_GROUP_NUM,
+    DCMI_MAIN_CMD_CAN,
+    DCMI_MAIN_CMD_UART,
+    DCMI_MAIN_CMD_UPGRADE = 5,
+    DCMI_MAIN_CMD_UFS,
+    DCMI_MAIN_CMD_OS_POWER,
+    DCMI_MAIN_CMD_LP,
+    DCMI_MAIN_CMD_MEMORY,
+    DCMI_MAIN_CMD_RECOVERY,
+    DCMI_MAIN_CMD_TS,
+    DCMI_MAIN_CMD_CHIP_INF,
+    DCMI_MAIN_CMD_QOS,
+    DCMI_MAIN_CMD_SOC_INFO,
+    DCMI_MAIN_CMD_HCCS = 16,
+    DCMI_MAIN_CMD_TEMP = 50,
+    DCMI_MAIN_CMD_SVM = 51,
+    DCMI_MAIN_CMD_VDEV_MNG,
+    DCMI_MAIN_CMD_SIO = 56,
+    DCMI_MAIN_CMD_DEVICE_SHARE = 0x8001,
+    DCMI_MAIN_CMD_MAX
+};
+
+typedef enum {
+    DCMI_CHIP_INFO_SUB_CMD_CHIP_ID,
+    DCMI_CHIP_INFO_SUB_CMD_SPOD_INFO,
+    DCMI_CHIP_INFO_SUB_CMD_MAX = 0xFF,
+}DCMI_CHIP_INFO_SUB_CMD;
+
+
+
+static int (*dcmi_init)(void);
+static int (*dcmi_get_card_id_device_id_from_logicid)(int *card_id, int *device_id, int logic_id);
+static int (*dcmi_get_urma_device_cnt)(int card_id, int device_id, unsigned int *dev_cnt);
+static int (*dcmiv2_get_urma_device_cnt)(int npu_id, unsigned int *dev_cnt);
+
+static int (*dcmi_get_eid_list_by_urma_dev_index)(int card_id, int device_id,
+                                                  int urma_dev_index,
+                                                  dcmi_urma_eid_info_t* eid_list,
+                                                  int* eid_cnt);
+
+static int (*dcmiv2_get_eid_list_by_urma_dev_index)(int npu_id,
+                                                    int urma_dev_index,
+                                                    dcmi_urma_eid_info_t* eid_list,
+                                                    int* eid_cnt);
+
+static int (*dcmiv2_get_mainboard_id)(int npu_id, unsigned int* mainboard_id);
+
+static int (*dcmiv2_get_device_pcie_info)(int npu_id, struct dcmi_pcie_info_all* pcie_info);
+
+static int (*dcmiv2_get_device_info)(int npu_id, enum dcmi_main_cmd main_cmd, unsigned int sub_cmd, void *buf, unsigned int*size);
+
+static int (*dcmi_get_device_phyid_from_logicid)(unsigned int logic_id, unsigned int* phy_id);
+
+static int (*dcmi_get_device_logicid_from_phyid)(unsigned int phy_id, unsigned int* logic_id);
+
+static int (*vsprintf_s)(char *strDest, size_t destMax, const char *format, va_list argList);
+static int (*memcpy_s)(void *dest, size_t dest_size, const void *src, size_t count);
+static int (*memset_s)(void *dest, size_t dest_size, int c, size_t count);
+static int (*strcpy_s)(char *dest, size_t dest_size, const char *src);
+static int (*strncpy_s)(char *dest, size_t dest_size, const char *src, size_t count);
+static int (*strcat_s)(char *dest, size_t dest_size, const char *src);
+
+int load_dcmi()
+{
+    static void* dcmi = NULL;
+    if (dcmi != NULL) {
+        return 0;
+    }
+    if(dcmi == NULL) {
+        dcmi=dlopen("libdcmi.so", RTLD_LAZY);
+    }
+    if(dcmi == NULL) {
+        printf("load dcmi lib failed\n");
+        return -1;
+    }
+    dcmi_init = dlsym(dcmi, "dcmi_init");
+    if(dcmi_init == NULL) {
+        printf("load dcmi_init failed\n");
+        return -1;
+    }
+    dcmi_get_card_id_device_id_from_logicid = dlsym(dcmi, "dcmi_get_card_id_device_id_from_logicid");
+    if(dcmi_get_card_id_device_id_from_logicid == NULL) {
+        printf("load dcmi_get_card_id_device_id_from_logicid failed\n");
+        return -1;
+    }
+    dcmi_get_urma_device_cnt = dlsym(dcmi, "dcmi_get_urma_device_cnt");
+    if(dcmi_get_urma_device_cnt == NULL) {
+        printf("load dcmi_get_urma_device_cnt failed\n");
+        return -1;
+    }
+    dcmiv2_get_urma_device_cnt = dlsym(dcmi, "dcmiv2_get_urma_device_cnt");
+    if(dcmiv2_get_urma_device_cnt == NULL) {
+        printf("load dcmiv2_get_urma_device_cnt failed\n");
+        return -1;
+    }
+    dcmi_get_eid_list_by_urma_dev_index = dlsym(dcmi, "dcmi_get_eid_list_by_urma_dev_index");
+    if(dcmi_get_eid_list_by_urma_dev_index == NULL) {
+        printf("load dcmi_get_eid_list_by_urma_dev_index failed\n");
+        return -1;
+    }
+    dcmiv2_get_eid_list_by_urma_dev_index = dlsym(dcmi, "dcmiv2_get_eid_list_by_urma_dev_index");
+    if(dcmiv2_get_eid_list_by_urma_dev_index == NULL) {
+        printf("load dcmiv2_get_eid_list_by_urma_dev_index failed\n");
+        return -1;
+    }
+    dcmiv2_get_mainboard_id = dlsym(dcmi, "dcmiv2_get_mainboard_id");
+    if(dcmiv2_get_mainboard_id == NULL) {
+        printf("load dcmiv2_get_mainboard_id failed\n");
+        return -1;
+    }
+    dcmiv2_get_device_pcie_info = dlsym(dcmi, "dcmiv2_get_device_pcie_info");
+    if(dcmiv2_get_device_pcie_info == NULL) {
+        printf("load dcmiv2_get_device_pcie_info failed\n");
+        return -1;
+    }
+    dcmiv2_get_device_info = dlsym(dcmi, "dcmiv2_get_device_info");
+    if(dcmiv2_get_device_info == NULL) {
+        printf("load dcmi_get_device_info failed\n");
+        return -1;
+    }
+    dcmi_get_device_phyid_from_logicid = dlsym(dcmi, "dcmi_get_device_phyid_from_logicid");
+    if(dcmi_get_device_phyid_from_logicid == NULL) {
+        printf("load dcmi_get_device_phyid_from_logicid failed\n");
+        return -1;
+    }
+    dcmi_get_device_logicid_from_phyid = dlsym(dcmi, "dcmi_get_device_logicid_from_phyid");
+    if(dcmi_get_device_logicid_from_phyid == NULL) {
+        printf("load dcmi_get_device_logicid_from_phyid failed\n");
+        return -1;
+    }
+
+    static void * securec = NULL;
+    if(securec == NULL) {
+        securec=dlopen("libsecurec.so", RTLD_LAZY);
+    }
+    if(securec == NULL) {
+        printf("load securec lib failed\n");
+        return -1;
+    }
+    vsprintf_s = dlsym(securec, "vsprintf_s");
+    if(vsprintf_s == NULL) {
+        printf("load vsprintf_s failed\n");
+        return -1;
+    }
+    memcpy_s = dlsym(securec, "memcpy_s");
+    if(memcpy_s == NULL) {
+        printf("load memcpy_s failed\n");
+        return -1;
+    }
+    memset_s = dlsym(securec, "memset_s");
+    if(memset_s == NULL) {
+        printf("load memset_s failed\n");
+        return -1;
+    }
+    strcpy_s = dlsym(securec, "strcpy_s");
+    if(strcpy_s == NULL) {
+        printf("load strcpy_s failed\n");
+        return -1;
+    }
+    strncpy_s = dlsym(securec, "strncpy_s");
+    if (strncpy_s == NULL) {
+        return -1;
+    }
+    strcat_s = dlsym(securec, "strcat_s");
+    if(strcat_s == NULL) {
+        printf("load strcat_s failed\n");
+        return -1;
+    }
+    (void)dcmi_init(); //  dcmi_init可能已经调用过了
+    return 0;
+}
+
+
+int hal_get_mainboard_id(int phy_id, unsigned int* mainboard_id)
+{
+    int ret = load_dcmi();
+    if (ret != 0) {
+        return ret;
+    }
+    unsigned int logic_id = 0;
+    ret = dcmi_get_device_logicid_from_phyid(phy_id, &logic_id);
+    if (ret != 0) {
+        return ret;
+    }
+    return dcmiv2_get_mainboard_id(logic_id, mainboard_id);
+}
+
+errno_t hal_sprintf_s(char *strDest, size_t destMax, const char *format, ...)
+{
+    int ret = load_dcmi();
+    if (ret != 0) {
+        return ret;
+    }
+    va_list args;
+    va_start(args, format);
+    ret = vsprintf_s(strDest, destMax, format, args);
+    va_end(args);
+    return ret;
+}
+
+errno_t hal_memcpy_s(void *dest, size_t destMax, const void* src, size_t count)
+{
+    int ret = load_dcmi();
+    if (ret != 0) {
+        return ret;
+    }
+    return memcpy_s(dest, destMax, src, count);
+}
+
+errno_t hal_memset_s(void *dest, size_t destMax, int c, size_t count)
+{
+    int ret = load_dcmi();
+    if (ret != 0) {
+        return ret;
+    }
+    return memset_s(dest, destMax, c, count);
+}
+
+errno_t hal_strcpy_s(char *strDest, size_t destMax, const char *src)
+{
+    int ret = load_dcmi();
+    if (ret != 0) {
+        return ret;
+    }
+    return strcpy_s(strDest, destMax, src);
+}
+
+errno_t hal_strncpy_s(char *strDest, size_t destMax, const char *src, size_t count)
+{
+    int ret = load_dcmi();
+    if (ret != 0) {
+        return ret;
+    }
+    return strncpy_s(strDest, destMax, src, count);
+}
+
+errno_t hal_strcat_s(char *strDest, size_t destMax, const char *src)
+{
+    int ret = load_dcmi();
+    if (ret != 0) {
+        return ret;
+    }
+    return strcat_s(strDest, destMax, src);
+}
+
+int get_server_id(char* server_id, size_t len) {
+    int sock_fd;
+    struct ifconf ifc;
+    struct ifreq ifr[16];
+    int if_count, i;
+
+    if ((sock_fd =  socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        return -1;
+    }
+
+    ifc.ifc_len = sizeof(ifr);
+    ifc.ifc_buf = (char*)ifr;
+    if (ioctl(sock_fd, SIOCGIFCONF, &ifc) < 0) {
+        close(sock_fd);
+        return -1;
+    }
+
+    if_count = ifc.ifc_len / sizeof(struct ifreq);
+    for (i = 0; i < if_count; ++i) {
+        if (strcmp(ifr[i].ifr_name, "lo") == 0) {
+            continue;
+        }
+        if (ioctl(sock_fd, SIOCGIFHWADDR, &ifr[i]) < 0) {
+            continue;
+        }
+        if (ifr[i].ifr_hwaddr.sa_family != ARPHRD_ETHER) {
+            continue;
+        }
+        unsigned char *mac = (unsigned char*)ifr[i].ifr_hwaddr.sa_data;
+        snprintf(server_id, len, "%02X%02X%02X%02X%02X%02X",
+                mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+        close(sock_fd);
+        return 0;
+    }
+    close(sock_fd);
+    return -1;
+}
+
+int hal_get_eid_list_by_phy_id(int phy_id, dcmi_urma_eid_info_t* eid_list, size_t* eid_cnt)
+{
+    int ret = load_dcmi();
+    if (ret != 0) {
+        return ret;
+    }
+    unsigned int logic_id = 0;
+    ret = dcmi_get_device_logicid_from_phyid(phy_id, &logic_id);
+    if (ret != 0) {
+        return ret;
+    }
+    unsigned int dev_cnt = 0;
+    ret = dcmiv2_get_urma_device_cnt((int)logic_id, &dev_cnt);
+    if (ret != 0) {
+        return ret;
+    }
+    size_t eid_current_cnt = 0;
+    size_t eid_space_left = (*eid_cnt);
+    for (size_t i = 0; i < dev_cnt; ++i) {
+        int left = (int)eid_space_left;
+        ret = dcmiv2_get_eid_list_by_urma_dev_index((int)logic_id, i, &eid_list[eid_current_cnt], &left);
+        if (ret != 0) {
+            continue;
+        }
+        eid_space_left -= left;
+        eid_current_cnt += left;
+    }
+    (*eid_cnt) = eid_current_cnt;
+    return 0;
+}
+
+int HalGetUBEntityList(int phy_id, UEList *ueList)
+{
+    int ret = load_dcmi();
+    if (ret != 0) {
+        return ret;
+    }
+    unsigned int logic_id = 0;
+    ret = dcmi_get_device_logicid_from_phyid(phy_id, &logic_id);
+    if (ret != 0) {
+        return ret;
+    }
+    ret = dcmiv2_get_urma_device_cnt((int)logic_id, &ueList->ueNum);
+    if (ret != 0) {
+        return ret;
+    }
+    for (size_t i = 0; i < ueList->ueNum; ++i) {
+        int num = MAX_EID_PER_UE;
+        ret = dcmiv2_get_eid_list_by_urma_dev_index((int)logic_id, i,
+        ueList->ueList[i].eidList, &num);
+        if (ret != 0) {
+            continue;
+        }
+        ueList->ueList[i].eidNum = (unsigned int)num;
+    }
+    return 0;
+}
+
+int hal_get_device_pcie_info(int phy_id, struct dcmi_pcie_info_all *pcie_info)
+{
+    int ret = load_dcmi();
+    if (ret != 0) {
+        return ret;
+    }
+    unsigned int logic_id = 0;
+    ret = dcmi_get_device_logicid_from_phyid(phy_id, &logic_id);
+    if (ret != 0) {
+        return ret;
+    }
+    return dcmiv2_get_device_pcie_info(logic_id, pcie_info);
+}
+
+int hal_get_spod_info(int phy_id, struct dcmi_spod_info *sp_info)
+{
+    int ret = load_dcmi();
+    if (ret != 0) {
+        return ret;
+    }
+    unsigned int logic_id = 0;
+    ret = dcmi_get_device_logicid_from_phyid(phy_id, &logic_id);
+    if (ret != 0) {
+        return ret;
+    }
+    unsigned int buf_size = sizeof(struct dcmi_spod_info);
+    return dcmiv2_get_device_info(logic_id, DCMI_MAIN_CMD_CHIP_INF, DCMI_CHIP_INFO_SUB_CMD_SPOD_INFO, sp_info, &buf_size);
+}
+
+int hal_get_npu_count()
+{
+#define MAX_NPU_COUNT (64)
+#define MAX_DAVINCI_DEV_LEN (64)
+    int count = 0;
+    for (int i = 0; i < MAX_NPU_COUNT; ++i) {
+        char davinci_dev[MAX_DAVINCI_DEV_LEN] = {0};
+        hal_sprintf_s(davinci_dev, sizeof(davinci_dev), "/dev/davinci%d", i);
+        if (access(davinci_dev, F_OK) == 0) {
+            count++;
+        }
+    }
+    return count;
+}
+
+int hal_get_phyid_from_logicid(unsigned int logic_id, unsigned int* phy_id)
+{
+    load_dcmi();
+    return dcmi_get_device_phyid_from_logicid(logic_id, phy_id);
+}
+
+int hal_get_logicid_from_phyid(unsigned int phy_id, unsigned int* logic_id)
+{
+    load_dcmi();
+    return dcmi_get_device_logicid_from_phyid(phy_id, logic_id);
+}
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_LINE_LENGTH 256          // 每行最大长度
+#define TARGET_KEY "Driver_Install_Path_Param"  // 要查找的key
+
+// 去除字符串首尾的空白字符
+static char* trim_whitespace(char *str) {
+    char *end;
+
+    // 去除开头空格
+    while(isspace((unsigned char)*str)){
+        str++;
+    }
+    // 如果字符串全是空格，返回空字符串
+    if(*str == 0) {
+        return str;
+    }
+
+    // 去除结尾空格
+    end = str + strlen(str) - 1;
+    while(end > str && isspace((unsigned char)*end)) {
+        end--;
+    }
+    // 添加字符串结束符
+    end[1] = '\0';
+    return str;
+}
+
+/**
+ * @brief 解析ascend_install.info文件，获取指定key的value
+ * @param value_buf 存储结果的缓冲区
+ * @param buf_size 缓冲区大小
+ * @return 成功返回0，失败返回非0值
+ *         -1: 文件打开失败
+ *         -2: 内存分配失败
+ *         -3: 未找到指定key
+ *         -4: 缓冲区太小
+ */
+int hal_get_driver_install_path(char *value_buf, size_t buf_size) {
+    FILE *fp = NULL;
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    int ret = -3;  // 默认未找到key
+
+    // 参数合法性检查
+    if (value_buf == NULL || buf_size == 0) {
+        fprintf(stderr, "Invalid buffer parameters\n");
+        return -4;
+    }
+
+    // 初始化缓冲区
+    value_buf[0] = '\0';
+
+    // 打开文件
+    fp = fopen("/etc/ascend_install.info", "r");
+    if (fp == NULL) {
+        perror("Failed to open file /etc/ascend_install.info");
+        return -1;
+    }
+
+    // 逐行读取文件
+    while ((read = getline(&line, &len, fp)) != -1) {
+        // 去除换行符
+        char *newline = strchr(line, '\n');
+        if (newline) *newline = '\0';
+
+        // 查找等号位置
+        char *equal_sign = strchr(line, '=');
+        if (equal_sign == NULL) {
+            continue;  // 跳过没有等号的行
+        }
+
+        // 分割key和value
+        *equal_sign = '\0';
+        char *key = trim_whitespace(line);
+        char *value = trim_whitespace(equal_sign + 1);
+
+        // 匹配目标key
+        if (strcmp(key, TARGET_KEY) == 0) {
+            // 检查缓冲区大小
+            if (strlen(value) + 1 > buf_size) {
+                ret = -4;
+                break;
+            }
+
+            // 复制value到缓冲区
+            strncpy(value_buf, value, buf_size);
+            value_buf[buf_size - 1] = '\0';  // 确保字符串结束
+            ret = 0;
+            break;
+        }
+    }
+
+    // 释放资源
+    if (line) {
+        free(line);
+    }
+    if (fp) {
+        fclose(fp);
+    }
+    return ret;
+}
