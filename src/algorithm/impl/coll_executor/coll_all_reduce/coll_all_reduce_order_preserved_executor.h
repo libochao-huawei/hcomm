@@ -29,7 +29,7 @@ private:
     HcclResult CalcLevel1CommInfo(TransportMemType inputType, TransportMemType outputType,
         std::vector<LevelNSubCommTransport>& opTransport) override;
     HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
-    void CalGroupSlices(const OpParam &param, ExecMem &execMem);
+    void CalGroupSlices(const OpParam &param, const ExecMem &execMem);
     void CalcSizePerBlock(const OpParam &param, ExecMem &execMem);
 
     /* *************** 算法编排 *************** */
@@ -38,7 +38,7 @@ private:
     HcclResult RunReduceScatterLevel0(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
     HcclResult RunReduceScatterLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
     HcclResult RunAllGatherLevel0(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
-    HcclResult RunAllGatherLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
+    HcclResult RunAllGatherLevel1(const OpParam &param, ExecMem &execMem, const SubCommInfo &level0CommInfo);
 
     u64 sizePerBlock_{0};        // 单块数据的大小
     std::vector<u64> groupSize_; // input切分每块数据的大小
