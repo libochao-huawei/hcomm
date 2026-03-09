@@ -17,7 +17,7 @@
 #include "driver/ascend_hal.h"
 #include "not_support_exception.h"
 #include "adapter_error_manager_pub.h"
-
+#include "dlrts_function_v2.h"
 
 using namespace std;
 namespace Hccl {
@@ -25,7 +25,10 @@ namespace Hccl {
 static constexpr int32_t RT_NOT_SUPPORT = 207000;
 HcclResult HrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode);
 constexpr u32 TOKEN_ID_RIGHT_SHIF = 8; // URMA_TOKEN_ID_RIGHT_SHIF，因URMA配置原因需要右移8位
-
+namespace {
+    constexpr char RT_SET_XPU_DEVICE[] = "rtSetXpuDevice";
+    constexpr char RT_RESET_XPU_DEVICE[] = "rtResetXpuDevice";
+}
 const std::unordered_map<std::string, DevType> SOC_VER_CONVERT{{"Ascend310P1", DevType::DEV_TYPE_V51_310_P1},
                                                                {"Ascend310P3", DevType::DEV_TYPE_V51_310_P3},
                                                                {"Ascend910", DevType::DEV_TYPE_910A},
@@ -159,6 +162,32 @@ u32 HrtGetDeviceCount()
         throw RuntimeApiException("call rtDeviceReset failed. ");
     }
     return count;
+}
+
+constexpr char RTS_SO_NAME[] = "libruntime.so";
+DlRtsFunctionV2<RTS_SO_NAME> g_dlRts;
+HcclResult HrtResetXpuDevice(uint32_t devType, const uint32_t devId)
+{
+    static auto funcPtr = reinterpret_cast<rtError_t(*)(uint32_t, const uint32_t)>(g_dlRts.Handle<RT_RESET_XPU_DEVICE>());
+    CHK_PTR_NULL(funcPtr);
+    rtError_t ret = funcPtr(devType, devId);
+    if (ret != RT_ERROR_NONE) {
+        HCCL_ERROR("[%s] reset xpu device failed, devType[%u],devId[%u],return[%d]", __func__, devType, devId, ret);
+        return HCCL_E_RUNTIME;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtSetXpuDevice(uint32_t devType, const uint32_t devId)
+{
+    static auto funcPtr = reinterpret_cast<rtError_t(*)(uint32_t, const uint32_t)>(g_dlRts.Handle<RT_SET_XPU_DEVICE>());
+    CHK_PTR_NULL(funcPtr);
+    rtError_t ret = funcPtr(devType, devId);
+    if (ret != RT_ERROR_NONE) {
+        HCCL_ERROR("[%s] set xpu device failed, devType[%u],devId[%u],return[%d]", __func__, devType, devId, ret);
+        return HCCL_E_RUNTIME;
+    }
+    return HCCL_SUCCESS;
 }
 
 s32 HrtGetStreamId(aclrtStream ptr)
