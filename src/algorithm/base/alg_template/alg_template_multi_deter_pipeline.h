@@ -127,8 +127,8 @@ protected:
     u64 memSliceSize_ = 0;
     u64 blockSize_ = 0;
     u64 bufferSize_ = 0;
-    HcclReduceOp reductionOp_;
-    HcclDataType dataType_;
+    HcclReduceOp reductionOp_ = HcclReduceOp::HCCL_REDUCE_RESERVED;
+    HcclDataType dataType_ = HcclDataType::HCCL_DATA_TYPE_RESERVED;
 
     std::vector<Stream> subStreams_;
     u32 subStreamNum_ = 0;

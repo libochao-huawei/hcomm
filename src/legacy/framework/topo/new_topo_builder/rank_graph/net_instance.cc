@@ -451,7 +451,7 @@ PlaneId NetInstance::Fabric::GetPlaneId() const
     return planeId_;
 }
 
-NodeId NetInstance::Fabric::GenerateNodeId(FabricId fabricId)
+NodeId NetInstance::Fabric::GenerateNodeId(FabricId fabricId) const
 {
     return (static_cast<u64>(fabricId) | static_cast<u64>(1) << 32); // 第32位为1 + netplaneId
 }

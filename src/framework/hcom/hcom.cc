@@ -4017,8 +4017,9 @@ HcclResult GetDeterministic(DevType devType, u8 geDetOption, u8 &deterministic)
         } else if(hcclDeterministicEnv == "TRUE") {
             deterministic = DETERMINISTIC_ENABLE;
         } else if(hcclDeterministicEnv == "STRICT") {
-            CHK_PRT_RET(devType != DevType::DEV_TYPE_910B, HCCL_ERROR("ParserHcclDeterministic: "
-                "reduce order preservation is not supported for devType[%d]", devType), HCCL_E_NOT_SUPPORT);
+            CHK_PRT_RET(devType != DevType::DEV_TYPE_910B && devType != DevType::DEV_TYPE_910_93,
+                HCCL_ERROR("ParserHcclDeterministic: reduce order preservation is not supported for devType[%d]", devType),
+                HCCL_E_NOT_SUPPORT);
             deterministic = DETERMINISTIC_STRICT;
         } else {
             HCCL_ERROR("[GetDeterministic] HCCL_DETERMINISTIC is set to [%s], which is incorrect. Please check",
@@ -4030,8 +4031,9 @@ HcclResult GetDeterministic(DevType devType, u8 geDetOption, u8 &deterministic)
         if (geDetOption == 1) {
             deterministic = DETERMINISTIC_ENABLE;
         } else if (geDetOption == 2) {
-            CHK_PRT_RET(devType != DevType::DEV_TYPE_910B, HCCL_ERROR("ParserHcclDeterministic: "
-                "reduce order preservation is not supported for devType[%d]", devType), HCCL_E_NOT_SUPPORT);
+            CHK_PRT_RET(devType != DevType::DEV_TYPE_910B && devType != DevType::DEV_TYPE_910_93,
+                HCCL_ERROR("ParserHcclDeterministic: reduce order preservation is not supported for devType[%d]", devType),
+                HCCL_E_NOT_SUPPORT);
             deterministic = DETERMINISTIC_STRICT;
         }
     }

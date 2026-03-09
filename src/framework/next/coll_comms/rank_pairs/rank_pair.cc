@@ -24,7 +24,8 @@ HcclResult RankPair::GetEndpointPair(const EndpointDescPair &epDescPair, hcomm::
 
 hcomm::EpChannelList RankPair::GetEpChannelList()
 {
-    return endpointPairMgr_->GetEpChannelList();
+    auto epChannelList = endpointPairMgr_->GetEpChannelList();
+    return epChannelList;
 }
 
 } // namespace hccl

@@ -179,9 +179,9 @@ static HcclResult HcclMemRempRoce(NetDevContext *netDevCtx, const HcclMem *memAr
         BufferKey<uintptr_t, u64> searchKey(reinterpret_cast<uintptr_t>(memInfo.addr), 1U);
         auto bufferIter = localRmaBufferMgr->Find(searchKey);
         if (!bufferIter.first) {
-            HCCL_INFO("[HcclMemRempRoce]Memory addr[%p] size[%llu] has not been registered.", memInfo.addr,
+            HCCL_ERROR("[HcclMemRempRoce]Memory addr[%p] size[%llu] has not been registered.", memInfo.addr,
             memInfo.size);
-            continue;
+            return HCCL_E_PARA;
         }
 
         // 计算需要注册的内存大小

@@ -74,7 +74,7 @@ private:
     void AllocOpMemAlltoAllVC(const CollOperator &op);
     void AllocOpMemAlltoAllV(const CollOperator &op);
     void AllocOpMemBatchSendRecv(const CollOperator &op);
-    u32 GetRemoteRankIdsHashValue(const CollOperator &op);
+    u32 GetRemoteRankIdsHashValue(const CollOperator &op) const;
 
     std::set<LinkData> availableLinks;
     std::unordered_map<std::string, std::shared_ptr<DevBuffer>>

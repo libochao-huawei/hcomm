@@ -10,6 +10,7 @@
 
 
 #include "hccl_comm_pub.h"
+#include "hccl_communicator.h"
  
 namespace hccl {
 HcclResult hcclComm::RegistTaskAbortHandler() const
