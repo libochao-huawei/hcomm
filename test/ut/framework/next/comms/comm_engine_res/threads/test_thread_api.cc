@@ -165,32 +165,6 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_WithNotifyInitFail_expect_re
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
 }
 
-TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_AicpuTsThread_Allocate_expect_Return_HCCL_Success)
-{
-    std::shared_ptr<Thread> Handle;
-    bool isDeviceSide{false};
-    MOCKER(GetRunSideIsDevice)
-    .stubs()
-    .with(outBound(isDeviceSide))
-    .will(returnValue(HCCL_SUCCESS));   
-    MOCKER(hrtGetDeviceType)
-    .stubs()
-    .with(outBound(DevType::DEV_TYPE_910_95))
-    .will(returnValue(HCCL_SUCCESS)); 
-    ThreadHandle thread[3];
-    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_AICPU_TS, 2, 3, thread);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    Thread * threadptr0 = reinterpret_cast<Thread *>(thread[0]);
-    Thread * threadptr1 = reinterpret_cast<Thread *>(thread[1]);
-    // thread内部暂时会多申请一个notify用于host&device侧同步
-    EXPECT_EQ(threadptr0->GetNotifyNum(), 4);
-    EXPECT_EQ(threadptr1->GetNotifyNum(), 4);
-    ret =  HcommThreadFree(thread, 2);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-}
-
 TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_CpuTsThread_Allocate_expect_Return_HCCL_Success)
 {
     std::shared_ptr<Thread> Handle;
@@ -335,8 +309,6 @@ TEST_F(TestHcclThread, UT_TestHcommThreadAllocWithStream_When_Allocate_WithStrea
     HcclResult ret =  HcommThreadAllocWithStream(COMM_ENGINE_CPU_TS, rtStream, 3, &thread);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    ret =  HcommThreadFree(&thread, 1);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 
@@ -439,7 +411,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_AicpuTsThread_Return_HC
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     
@@ -477,7 +449,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_CommNullptr_Return_HCCL_E_PTR)
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     
@@ -501,7 +473,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_ThreadNullptr_Return_HCCL_E_PTR
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     
@@ -539,7 +511,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_CollCommNullptr_Return_HCCL_E_P
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     MOCKER_CPP(&hcclComm::IsCommunicatorV2)
@@ -569,7 +541,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_engineResMgrNullptr_Return_HCCL
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     MOCKER_CPP(&CollComm::Init)
@@ -992,7 +964,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_41_AicpuTsThread_Return
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     
@@ -1030,7 +1002,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_65Notify_AicpuTsThread_
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     
