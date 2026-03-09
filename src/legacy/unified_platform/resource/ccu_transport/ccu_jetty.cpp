@@ -19,7 +19,8 @@ namespace Hccl {
 HcclResult CcuCreateJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
     std::unique_ptr<CcuJetty> &ccuJetty)
 {
-    HCCL_INFO("[CcuCreateJetty] ipaddr[%s], jettyInfo[%s], ccuJetty[%p].", ipAddr, jettyInfo.ToString().c_str(), ccuJetty.get());
+    HCCL_INFO("[CcuCreateJetty] ipaddr[%s], jettyInfo[%s], ccuJetty[%p].",
+                ipAddr.Describe().c_str(), jettyInfo.ToString().c_str(), ccuJetty.get());
     return CcuJetty::Create(ipAddr, jettyInfo, ccuJetty);
 }
 
