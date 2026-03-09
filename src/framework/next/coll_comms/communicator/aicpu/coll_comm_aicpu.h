@@ -37,7 +37,7 @@ public:
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
-    u32 devId_;
+    u32 devId_{0};
     //通用的通道
     std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D_{nullptr};
     std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H_{nullptr};
@@ -51,5 +51,4 @@ private:
     std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
 };
 
-
-#endif // __COLL_COMM_AICPU_MGR_H__
+#endif // __COLL_COMM_AICPU_H__
