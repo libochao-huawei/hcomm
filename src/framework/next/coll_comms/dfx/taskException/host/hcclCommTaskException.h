@@ -15,14 +15,15 @@
 #include "hccl_types.h"
 #include "orion_adapter_rts.h"
 #include "global_mirror_tasks.h"
-#include "hccl_common_v2.h"
+#include "hccl_common.h"
 #include "error_message_v2.h"
 #include "orion_adapter_hccp.h"
 #include "rdma_handle_manager.h"
-#include "coll_comm_mgr.h"
+
 
 namespace hcomm {
-using GetAicpuTaskExceptionCallBack = std::function<Hccl::ErrorMessageReport()>; 
+using RdmaHandle = void*;
+using GetAicpuTaskExceptionCallBackHcomm = std::function<Hccl::ErrorMessageReport()>; 
 class TaskExceptionHost {
 public:
     // 构造函数使用初始化列表初始化devId_
@@ -30,7 +31,6 @@ public:
     ~TaskExceptionHost();
 
     // 获取设备ID
-    int GetDeviceId() const { return devId_; }
     void        Register() const;                                // 向rts注册异常处理方法
     void        UnRegister() const;                              // 向rts注销异常处理方法
     static void Process(rtExceptionInfo_t *exceptionInfo); // 处理异常信息
@@ -41,8 +41,8 @@ private:
     static void ProcessException(rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo);
     static void PrintTaskContextInfo(uint32_t deviceId, uint32_t streamId, uint32_t taskId);
 
-    static void PrintGroupErrorMessage(Hccl::ErrorMessageReport &errorMessage, Hccl::TaskInfo &exceptionTaskInfo, string &groupRankContent, string &stageErrInfo);
-    static void PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessageReport &errorMessage, string &stageErrInfo);
+    static void PrintGroupErrorMessage(Hccl::ErrorMessageReport &errorMessage, Hccl::TaskInfo &exceptionTaskInfo, std::string &groupRankContent, std::string &stageErrInfo);
+    static void PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessageReport &errorMessage, std::string &stageErrInfo);
 
 private:
     uint32_t devId_; // 当前设备id
@@ -69,7 +69,7 @@ private:
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-extern void RegisterGetAicpuTaskExceptionCallBackV2(s32 streamId, u32 deviceLogicId, Hccl::GetAicpuTaskExceptionCallBack p1);
+extern void RegisterGetAicpuTaskExceptionCallBackV2(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBackHcomm p1);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

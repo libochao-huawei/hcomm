@@ -7,23 +7,19 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-
+#include "hcclCommTaskException.h"
 #include <memory>
-#include "task_exception_handler.h"
-#include "task_"
 #include "log.h"
-#include "communicator_impl.h"
-#include "coll_service_device_mode.h"
+#include "coll_comm.h"
 #include "acl/acl_rt.h"
 #include "orion_adapter_hccp.h"
 #include <adapter_error_manager_pub.h>
+#include"op_type.h"
 
 namespace hcomm {
 
 using namespace std;
-using namespace CcuRep;
 
-constexpr uint32_t AIV_FLAG_UB_ALIGN_SIZE=32; //aiv flag对齐规则
 constexpr uint32_t TASK_CONTEXT_SIZE = 50;
 constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失败时打印前序task信息的长度限制
 constexpr int BYTE = 8; // 一字节的位数
@@ -32,17 +28,17 @@ constexpr uint64_t CCU_MSG_256MB_LEN = 256 * 1024 * 1024; // CCU消息长度不�
 std::array<TaskExceptionHost *, MAX_MODULE_DEVICE_NUM> TaskExceptionHostManager::handlers_;
 
 std::mutex g_communicatorCallbackMapMutexV2;
-array<map<s32, GetAicpuTaskExceptionCallBack>, MAX_MODULE_DEVICE_NUM> g_communicatorCallbackMapV2;
+array<map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM> g_communicatorCallbackMapV2;
 std::mutex g_commHadCallbackArrayMutexV2;
 array<bool, MAX_MODULE_DEVICE_NUM> g_commHadCallbackArrayV2 = {false};
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-void RegisterGetAicpuTaskExceptionCallBackV2(s32 streamId, u32 deviceLogicId, Hccl::GetAicpuTaskExceptionCallBack p1)
+void RegisterGetAicpuTaskExceptionCallBackV2(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBackHcomm p1)
 {
-    lock_guard<mutex> lock(Hccl::g_communicatorCallbackMapMutexV2);
-    Hccl::g_communicatorCallbackMapV2[deviceLogicId].emplace(streamId, p1);
+    lock_guard<mutex> lock(g_communicatorCallbackMapMutexV2);
+    g_communicatorCallbackMapV2[deviceLogicId].emplace(streamId, p1);
     return;
 }
 #ifdef __cplusplus
@@ -131,16 +127,16 @@ void PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
 void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
 {
     //Task Exception 入口，使用宏捕获执行间异常
-    const auto curTask = GlobalMirrorTasks::Instance().GetTaskInfo(
+    const auto curTask = Hccl::GlobalMirrorTasks::Instance().GetTaskInfo(
     exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
-    bool isIndOp_ = true；
-    if (isIndOp_) {
+    bool isIndOp_ = curTask->dfxOpInfo_->isIndOp_;
+    if (!isIndOp_) {
         HCCL_INFO("Start to the old process");
-        TaskExceptionHandler::process(exceptionInfo);
+        // TaskExceptionHandler::process(exceptionInfo);
         return;  
     }
     HCCL_INFO("Start to the new process");
-    TRY_CATCH_PRINT_ERROR(
+    // TRY_CATCH_PRINT_ERROR(
         if (exceptionInfo == nullptr) {
             HCCL_ERROR("Exception process failed, rtExceptionInfo is nullptr.");
             return;
@@ -154,18 +150,18 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
         }
 
         ProcessException(exceptionInfo, *curTask); 
-    );
+    // );
 }
 
-string TaskExceptionHost::GetGroupRankInfo(const TaskInfo& taskInfo)
+std::string TaskExceptionHost::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
 {
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
         HCCL_ERROR("[TaskInfo][%s]TaskInfo communicator is nullptr.", __func__);
         return "";
     }
-    const Hccl::CommunicatorImpl* communicator = static_cast<Hccl::CommunicatorImpl*>(taskInfo.dfxOpInfo_->comm_);
+    hccl::CollComm *communicator = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
     return Hccl::StringFormat("group:[%s], rankSize[%u], rankId[%d]",
-        communicator->GetId().c_str(), communicator->GetRankSize(), communicator->GetMyRank());
+        communicator->GetMyRankId(), communicator->GetRankSize(), communicator->GetMyRank());
 }
 
 void TaskExceptionHost::ProcessException(rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo)
@@ -225,9 +221,9 @@ void TaskExceptionHost::PrintTaskContextInfo(uint32_t deviceId, uint32_t streamI
         "NotifyRecord:NR(rank,id), NotifyWait:NW(rank,id), SendNotify:SN(rank,id), "
         "WriteWithNotify:WN(rank,id), WriteReduceWithNotify:WRN(rank,id)]:");
 
-    string taskContextInfo = "";
+    std::string taskContextInfo = "";
     for (auto it = taskContext.rbegin(); it != taskContext.rend(); ++it) {
-        string conciseInfo = (*it)->GetConciseBaseInfo();
+        std::string conciseInfo = (*it)->GetConciseBaseInfo();
         conciseInfo += ",";
 
         if (taskContextInfo.size() + conciseInfo.size() >= TASK_CONTEXT_INFO_SIZE) {
@@ -262,7 +258,7 @@ inline void PrintGroupErrorLog(const std::string &stageErrInfo, const std::strin
 }
 
 void TaskExceptionHost::PrintGroupErrorMessage(Hccl::ErrorMessageReport &errorMessage, Hccl::TaskInfo &exceptionTaskInfo,
-    string &groupRankContent, string &stageErrInfo)
+    std::string &groupRankContent, std::string &stageErrInfo)
 {
     groupRankContent += "group:[";
     groupRankContent += std::string(errorMessage.group);
@@ -286,7 +282,7 @@ const std::map<HcclReduceOp, std::string> HCOM_REDUCE_OP_STR_MAP{
     {HcclReduceOp::HCCL_REDUCE_RESERVED, "invalid"}
 };
 
-inline std::string GetReduceOpEnumStr(HcclReduceOp reduceOp)
+inline std::string GetReduceOpEnumStr2(HcclReduceOp reduceOp)
 {
     auto iter = HCOM_REDUCE_OP_STR_MAP.find(reduceOp);
     if (iter == HCOM_REDUCE_OP_STR_MAP.end()) {
@@ -315,7 +311,7 @@ const std::map<HcclDataType, std::string> HCOM_DATA_TYPE_STR_MAP{
     {HcclDataType::HCCL_DATA_TYPE_RESERVED, "reserved"}
 };
 
-inline std::string GetDataTypeEnumStr(HcclDataType dataType)
+inline std::string GetDataTypeEnumStr2(HcclDataType dataType)
 {
     auto iter = HCOM_DATA_TYPE_STR_MAP.find(dataType);
     if (iter == HCOM_DATA_TYPE_STR_MAP.end()) {
@@ -328,30 +324,30 @@ inline std::string GetDataTypeEnumStr(HcclDataType dataType)
 inline std::string GetDataTypeEnumStr(u32 dataType)
 {
     auto hcclDataType = static_cast<HcclDataType>(dataType);
-    return GetDataTypeEnumStr(hcclDataType);
+    return GetDataTypeEnumStr2(hcclDataType);
 }
 inline std::string GetOpTypeEnumStr(u32 opType)
 {
- 	OpType hcclOpType = static_cast<OpType::Value>(opType);
+ 	Hccl::OpType hcclOpType = static_cast<Hccl::OpType::Value>(opType);
  	return hcclOpType.Describe();
 }
  	 
 
-void TaskExceptionHost::PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessageReport &errorMessage, string &stageErrInfo)
+void TaskExceptionHost::PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessageReport &errorMessage, std::string &stageErrInfo)
 {
-    stringstream opDataStr;
+    std::stringstream opDataStr;
     opDataStr << "src" << "[0x"
             << std::hex << errorMessage.srcAddr << "], dst[0x"
             << std::hex << errorMessage.dstAddr << "], ";
 
-    string opStr;
+    std::string opStr;
     if (errorMessage.reduceType != HcclReduceOp::HCCL_REDUCE_RESERVED) {
         opStr += "reduceType[";
-        opStr += GetReduceOpEnumStr(static_cast<HcclReduceOp>(errorMessage.reduceType));
+        opStr += GetReduceOpEnumStr2(static_cast<HcclReduceOp>(errorMessage.reduceType));
         opStr += "], ";
     }
 
-    string opDataContent;
+    std::string opDataContent;
     opDataContent += "deviceId:[";
     opDataContent += std::to_string(deviceId);
     opDataContent += "], index[";
@@ -369,7 +365,7 @@ void TaskExceptionHost::PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessage
     return;
 }
 
-void ReportErrorMsg(const Hccl::TaskInfo &exceptionTaskInfo, const string &groupRankContent, const Hccl::ErrorMessageReport &errorMessage, const rtExceptionInfo_t *exceptionInfo)
+void ReportErrorMsg(const Hccl::TaskInfo &exceptionTaskInfo, const std::string &groupRankContent, const Hccl::ErrorMessageReport &errorMessage, const rtExceptionInfo_t *exceptionInfo)
 {
     HCCL_INFO("[ReportErrorMsg] start");
     if (exceptionTaskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
@@ -419,18 +415,18 @@ void GetTaskParam(Hccl::TaskParam &taskParam, const Hccl::ErrorMessageReport &er
 void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
 {
     Hccl::ErrorMessageReport errorMessage;
-    unique_lock<std::mutex> lock(Hccl::g_commHadCallbackArrayMutexV2);
-    if (Hccl::g_commHadCallbackArrayV2[exceptionInfo->deviceid]) {
+    unique_lock<std::mutex> lock(g_commHadCallbackArrayMutexV2);
+    if (g_commHadCallbackArrayV2[exceptionInfo->deviceid]) {
         // 防止同一个device上出现通信主流和kernel流均出现task exception时runtime调用两次callback
         // HDC通道信息不是读清，防止aicpu task exception重复上报
         HCCL_WARNING("aicpu error message been reported. deviceid[%u]", exceptionInfo->deviceid);
         return;
     }
     lock.unlock();
-    if (Hccl::g_communicatorCallbackMapV2[exceptionInfo->deviceid].find(exceptionInfo->streamid) !=\
-        Hccl::g_communicatorCallbackMapV2[exceptionInfo->deviceid].end()) {
+    if (g_communicatorCallbackMapV2[exceptionInfo->deviceid].find(exceptionInfo->streamid) !=\
+        g_communicatorCallbackMapV2[exceptionInfo->deviceid].end()) {
         // 找到对应的通信域，并调用回调函数从HDC通道获取AICPU异常信息
-        errorMessage = (Hccl::g_communicatorCallbackMapV2[exceptionInfo->deviceid])[exceptionInfo->streamid]();
+        errorMessage = (g_communicatorCallbackMapV2[exceptionInfo->deviceid])[exceptionInfo->streamid]();
         if (strlen(errorMessage.tag) > 0) {
             std::string groupRankContent;
             u32 streamId = static_cast<u32>(errorMessage.streamId);
@@ -449,7 +445,7 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
             HCCL_ERROR("%sTask from HCCL run failed.", stageErrInfo.c_str());
             // 防止tag字符串过长， 信息分开打印
             PrintBaseErrorLog(stageErrInfo, exceptionTaskInfo.GetBaseInfo());
-            PrintParaErrorLog(stageErrInfo, exceptionTaskInfo.GetParaInfo(), tag);
+            PrintParaErrorLog(stageErrInfo, exceptionTaskInfo.GetParaInfo());
             PrintGroupErrorMessage(errorMessage, exceptionTaskInfo, groupRankContent, stageErrInfo);
             PrintOpDataErrorMessage(exceptionInfo->deviceid, errorMessage, stageErrInfo);
             HCCL_ERROR("errorMessage taskType[%s], rtCqErrorType[%u], rtCqErrorCode[%u]. ", errorMessage.taskType.Describe().c_str(), (u32)errorMessage.rtCqErrorType, errorMessage.rtCqErrorCode);
@@ -469,7 +465,7 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
             ReportErrorMsg(exceptionTaskInfo, groupRankContent, errorMessage, exceptionInfo);
 
             lock.lock();
-            Hccl::g_commHadCallbackArrayV2[exceptionInfo->deviceid] = true;
+            g_commHadCallbackArrayV2[exceptionInfo->deviceid] = true;
         } else {
             HCCL_WARNING("PrintAicpuErrorMessage No Vaild errorMessage!");
         }
