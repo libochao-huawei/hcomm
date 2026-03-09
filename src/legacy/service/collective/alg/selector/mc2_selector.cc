@@ -144,7 +144,7 @@ SelectorStatus Mc2Selector::SelectDefaultAicpuAlgo(const CollAlgOperator &op,con
 }
 
 SelectorStatus Mc2Selector::SelectCcuMsAlgo(const CollAlgOperator &op, CollAlgParams &params,
-                                   std::string &primQueueGenName)
+                                   std::string &primQueueGenName) const
 {
     // 校验 algConfig 是否为空
     if (params.algConfig.empty()) {
