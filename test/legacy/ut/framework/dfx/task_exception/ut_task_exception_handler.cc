@@ -91,6 +91,7 @@ TEST_F(TaskExceptionHandlerTest, TestConstructorAndDestructor)
 
 TEST_F(TaskExceptionHandlerTest, TestRegisterAndUnRegister)
 {
+    MOCKER(HrtRegTaskFailCallbackByModule).stubs().will(returnValue(static_cast<void*>(0)));
     TaskExceptionHandler *instance = TaskExceptionHandlerManager::GetHandler(0);
     instance->Register();
     instance->UnRegister();

@@ -357,7 +357,7 @@ TEST_F(AdapterRtsTest, HcclStreamSynchronize_streamPtrIsNull_return_nok)
 TEST_F(AdapterRtsTest, HrtMalloc_return_ok)
 {
     // Given
-    void *fakeDevPtr = nullptr;
+    void *fakeDevPtr = reinterpret_cast<void*>(0x123);
     MOCKER(aclrtMallocWithCfg).stubs().with(outBoundP(&fakeDevPtr, sizeof(fakeDevPtr))).will(returnValue(ACL_SUCCESS));
 
     // when
@@ -603,7 +603,7 @@ TEST_F(AdapterRtsTest, HrtDevMemAlignWithPage_pagesize_zero)
     MOCKER(HrtPointerGetAttributes).stubs().with(any()).will(returnValue(ptrAttr));
 
     // when
-    void *ptr     = nullptr;
+    void *ptr     = reinterpret_cast<void*>(0x123);
     u64   size    = 64;
     void *ipcPtr  = nullptr;
     u64   ipcSize = 64;
@@ -637,7 +637,7 @@ TEST_F(AdapterRtsTest, HrtDevMemAlignWithPage_return_nok)
     MOCKER(aclrtPointerGetAttributes).stubs().will(returnValue(1));
 
     // then
-    void *ptr     = nullptr;
+    void *ptr     = reinterpret_cast<void*>(0x123);
     u64   size    = 64;
     void *ipcPtr  = nullptr;
     u64   ipcSize = 64;
