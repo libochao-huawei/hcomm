@@ -397,7 +397,7 @@ __aicore__ inline void AivCrossNode91093Base::InitDeter(GM_ADDR buffOut0, GM_ADD
     usedBlockNum_ = numBlocks;
     numBlocks_ = numBlocks;
     pingpongOffset = 0;
-    blockGroup_ = rankSize_;
+    blockGroup_ = numBlocks_;
     commAddr_ = buffOut1;
 
     InitSetCheckClearArgsTensor();
