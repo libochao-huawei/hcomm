@@ -541,7 +541,7 @@ int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *d
 
 int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", __func__, thread, channel, remoteNotifyIdx);
+    HCCL_INFO("[HcommChannelNotifyRecordOnThread] START. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", thread, channel, remoteNotifyIdx);
 
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
@@ -561,8 +561,8 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
 
         ret = HcclRemoteNotifyRecord(stream, reinterpret_cast<void *>(channel), remoteNotifyIdx);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", __func__, thread, channel, remoteNotifyIdx), ret);
-    HCCL_INFO("[%s] SUCCESS.", __func__);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcommChannelNotifyRecordOnThread] FAIL. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", thread, channel, remoteNotifyIdx), ret);
+    HCCL_INFO("[HcommChannelNotifyRecordOnThread] SUCCESS.");
     return HCCL_SUCCESS;
 }
 
@@ -601,6 +601,8 @@ HcclResult CommFence(ThreadHandle thread, ChannelHandle channel) // 控制前后
 
     return HcclRemoteFence(stream, reinterpret_cast<void *>(channel), false);
 }
+
+// 批量下发设置接口
 
 int32_t HcommSetLaunchMode(const char *launchTag, HcommLaunchMode mode)
 {
