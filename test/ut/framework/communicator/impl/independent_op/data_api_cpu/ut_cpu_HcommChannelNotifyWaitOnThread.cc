@@ -20,13 +20,13 @@
 
 using namespace hccl;
 
-class UtCpuHcommChannelNotifyRecordOnThread : public testing::Test
+class UtCpuHcommChannelNotifyWaitOnThread : public testing::Test
 {
 protected:
     virtual void SetUp() override
     {
         threadOnHost.stream_.reset(new (std::nothrow) Stream());
-        MOCKER(&HcclRemoteNotifyRecord).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER(&HcclRemoteNotifyWait).stubs().will(returnValue(HCCL_SUCCESS));
     }
 
     virtual void TearDown() override
@@ -42,6 +42,7 @@ protected:
     hcomm::HostCpuRoceChannel channelOnHost{epHandle, channelDesc};
     ChannelHandle channel = reinterpret_cast<ChannelHandle>(&channelOnHost);
     uint32_t notifyIdx = 0;
+    uint32_t timeout = 10000;  // in ms
     int32_t res{HCCL_E_RESERVED};
     DevType t950 = DevType::DEV_TYPE_910_95;
     DevType t910C = DevType::DEV_TYPE_910_93;
@@ -49,64 +50,64 @@ protected:
 
 // 950
 
-TEST_F(UtCpuHcommChannelNotifyRecordOnThread, Ut_HcommChannelNotifyRecordOnThread_When_950_Normal_Expect_ReturnIsHCCL_SUCCESS)
+TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_When_950_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
     MOCKER(&hrtGetDeviceType).stubs().with(outBound(t950)).will(returnValue(HCCL_SUCCESS));
-    res = HcommChannelNotifyRecordOnThread(thread, channel, notifyIdx);
+    res = HcommChannelNotifyWaitOnThread(thread, channel, notifyIdx, timeout);
     EXPECT_EQ(res, HCCL_SUCCESS);
 }
 
-TEST_F(UtCpuHcommChannelNotifyRecordOnThread, Ut_HcommChannelNotifyRecordOnThread_When_950_Thread_IsNull_Expect_ReturnIsHCCL_SUCCESS)
+TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_When_950_Thread_IsNull_Expect_ReturnIsHCCL_SUCCESS)
 {
     MOCKER(&hrtGetDeviceType).stubs().with(outBound(t950)).will(returnValue(HCCL_SUCCESS));
     // On 950, thread is not used, so it could be nullptr.
-    res = HcommChannelNotifyRecordOnThread(0, channel, notifyIdx);
+    res = HcommChannelNotifyWaitOnThread(0, channel, notifyIdx, timeout);
     EXPECT_EQ(res, HCCL_SUCCESS);
 }
 
-TEST_F(UtCpuHcommChannelNotifyRecordOnThread, Ut_HcommChannelNotifyRecordOnThread_When_950_Channel_IsNull_Expect_ReturnIsHCCL_E_PTR)
+TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_When_950_Channel_IsNull_Expect_ReturnIsHCCL_E_PTR)
 {
     MOCKER(&hrtGetDeviceType).stubs().with(outBound(t950)).will(returnValue(HCCL_SUCCESS));
-    res = HcommChannelNotifyRecordOnThread(thread, 0, notifyIdx);
+    res = HcommChannelNotifyWaitOnThread(thread, 0, notifyIdx, timeout);
     EXPECT_EQ(res, HCCL_E_PTR);
 }
 
-TEST_F(UtCpuHcommChannelNotifyRecordOnThread, Ut_HcommChannelNotifyRecordOnThread_When_950_NotifyRecord_Fails_Expect_ErrorCodePropagated)
+TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_When_950_NotifyWait_Fails_Expect_ErrorCodePropagated)
 {
     MOCKER(&hrtGetDeviceType).stubs().with(outBound(t950)).will(returnValue(HCCL_SUCCESS));
-    MOCKER(&hcomm::HostCpuRoceChannel::NotifyRecord).stubs().will(returnValue(HCCL_E_INTERNAL));
-    res = HcommChannelNotifyRecordOnThread(thread, channel, notifyIdx);
+    MOCKER(&hcomm::HostCpuRoceChannel::NotifyWait).stubs().will(returnValue(HCCL_E_INTERNAL));
+    res = HcommChannelNotifyWaitOnThread(thread, channel, notifyIdx, timeout);
     EXPECT_EQ(res, HCCL_E_INTERNAL);
 }
 
 // 910C
 
-TEST_F(UtCpuHcommChannelNotifyRecordOnThread, Ut_HcommChannelNotifyRecordOnThread_When_910C_Normal_Expect_ReturnIsHCCL_SUCCESS)
+TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_When_910C_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
     MOCKER(&hrtGetDeviceType).stubs().with(outBound(t910C)).will(returnValue(HCCL_SUCCESS));
-    res = HcommChannelNotifyRecordOnThread(thread, channel910C, notifyIdx);
+    res = HcommChannelNotifyWaitOnThread(thread, channel910C, notifyIdx, timeout);
     EXPECT_EQ(res, HCCL_SUCCESS);
 }
 
-TEST_F(UtCpuHcommChannelNotifyRecordOnThread, Ut_HcommChannelNotifyRecordOnThread_When_910C_Thread_IsNull_Expect_ReturnIsHCCL_E_PTR)
+TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_When_910C_Thread_IsNull_Expect_ReturnIsHCCL_E_PTR)
 {
     MOCKER(&hrtGetDeviceType).stubs().with(outBound(t910C)).will(returnValue(HCCL_SUCCESS));
-    res = HcommChannelNotifyRecordOnThread(0, channel910C, notifyIdx);
+    res = HcommChannelNotifyWaitOnThread(0, channel910C, notifyIdx, timeout);
     EXPECT_EQ(res, HCCL_E_PTR);
 }
 
-TEST_F(UtCpuHcommChannelNotifyRecordOnThread, Ut_HcommChannelNotifyRecordOnThread_When_910C_GetStream_IsNull_Expect_ReturnIsHCCL_E_PTR)
+TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_When_910C_GetStream_IsNull_Expect_ReturnIsHCCL_E_PTR)
 {
     MOCKER(&hrtGetDeviceType).stubs().with(outBound(t910C)).will(returnValue(HCCL_SUCCESS));
     threadOnHost.stream_.reset();
-    res = HcommChannelNotifyRecordOnThread(thread, channel910C, notifyIdx);
+    res = HcommChannelNotifyWaitOnThread(thread, channel910C, notifyIdx, timeout);
     EXPECT_EQ(res, HCCL_E_PTR);
 }
 
-TEST_F(UtCpuHcommChannelNotifyRecordOnThread, Ut_HcommChannelNotifyRecordOnThread_When_910C_NotifyRecord_Fails_Expect_ErrorCodePropagated)
+TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_When_910C_NotifyWait_Fails_Expect_ErrorCodePropagated)
 {
     MOCKER(&hrtGetDeviceType).stubs().with(outBound(t910C)).will(returnValue(HCCL_SUCCESS));
-    MOCKER(&HcclRemoteNotifyRecord).stubs().will(returnValue(HCCL_E_INTERNAL));
-    res = HcommChannelNotifyRecordOnThread(thread, channel910C, notifyIdx);
+    MOCKER(&HcclRemoteNotifyWait).stubs().will(returnValue(HCCL_E_INTERNAL));
+    res = HcommChannelNotifyWaitOnThread(thread, channel910C, notifyIdx, timeout);
     EXPECT_EQ(res, HCCL_E_INTERNAL);
 }
