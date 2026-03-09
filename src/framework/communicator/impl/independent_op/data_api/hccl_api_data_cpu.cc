@@ -541,7 +541,7 @@ int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *d
 
 int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", __func__, thread, channel, remoteNotifyIdx);
+    HCCL_INFO("[HcommChannelNotifyRecordOnThread] START. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", thread, channel, remoteNotifyIdx);
 
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
@@ -561,8 +561,8 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
 
         ret = HcclRemoteNotifyRecord(stream, reinterpret_cast<void *>(channel), remoteNotifyIdx);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", __func__, thread, channel, remoteNotifyIdx), ret);
-    HCCL_INFO("[%s] SUCCESS.", __func__);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcommChannelNotifyRecordOnThread] FAIL. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", thread, channel, remoteNotifyIdx), ret);
+    HCCL_INFO("[HcommChannelNotifyRecordOnThread] SUCCESS.");
     return HCCL_SUCCESS;
 }
 
@@ -593,21 +593,6 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
     return HCCL_SUCCESS;
 }
 
-HcclResult CommFence(ThreadHandle thread, ChannelHandle channel) // 控制前后的任务保序
-{
-    HCCL_DEBUG("[CommFence] thread[0x%llx], channel[0x%llx].", thread, channel);
-    Stream *stream = GetStream(thread);
-    CHK_PTR_NULL(stream);
-
-    return HcclRemoteFence(stream, reinterpret_cast<void *>(channel), false);
-}
-
-int32_t HcommSetLaunchMode(const char *launchTag, HcommLaunchMode mode)
-{
-    HCCL_DEBUG("HcommSetLaunchMode launchTag[%s]", launchTag);
-    return g_threadLaunchCtx.SetLaunchMode(launchTag, mode);
-}
-
 int32_t HcommBatchModeStart(const char *batchTag)
 {
     return HcommSetLaunchMode(batchTag, HCOMM_LAUNCH_MODE_BATCH);
@@ -616,6 +601,21 @@ int32_t HcommBatchModeStart(const char *batchTag)
 int32_t HcommBatchModeEnd(const char *batchTag)
 {
     return HcommSetLaunchMode(batchTag, HCOMM_LAUNCH_MODE_EAGER);
+}
+
+int32_t HcommSetLaunchMode(const char *launchTag, HcommLaunchMode mode)
+{
+    HCCL_DEBUG("HcommSetLaunchMode launchTag[%s]", launchTag);
+    return g_threadLaunchCtx.SetLaunchMode(launchTag, mode);
+}
+
+HcclResult CommFence(ThreadHandle thread, ChannelHandle channel) // 控制前后的任务保序
+{
+    HCCL_DEBUG("[CommFence] thread[0x%llx], channel[0x%llx].", thread, channel);
+    Stream *stream = GetStream(thread);
+    CHK_PTR_NULL(stream);
+
+    return HcclRemoteFence(stream, reinterpret_cast<void *>(channel), false);
 }
 
 int32_t HcommAcquireComm(const char* commId)
