@@ -27,6 +27,8 @@ public:
     u64          beginTime_;
     u64          endTime_;
     void        *comm_;
+    bool         isIndOp_;
+    
 
 public:
     std::string Describe() const
