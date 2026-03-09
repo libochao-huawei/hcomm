@@ -672,14 +672,9 @@ HcclResult HcommThreadAllocWithConfig(CommEngine engine, uint32_t threadNum, con
         }
 
         void* deviceHandle;
-        if (engine == COMM_ENGINE_AICPU) {
-            hccl::ThreadEntity threadEntity;
+        if (engine == COMM_ENGINE_AICPU && type == THREAD_TYPE_CPU) {
             hccl::CpuThread* cpuThread = dynamic_cast<hccl::CpuThread*>(hostHandle.get());
-            cpuThread->GetThreadEntity(&threadEntity);
-            uint32_t threadSize = sizeof(hccl::ThreadEntity) + threadEntity.notifyNum * sizeof(hccl::NotifyEntity);
-            aclrtMalloc(&deviceHandle, threadSize, ACL_MEM_MALLOC_NORMAL_ONLY); // TODO: 内存释放
-
-            aclrtMemcpy(deviceHandle, threadSize, &threadEntity, threadSize, ACL_MEMCPY_HOST_TO_DEVICE);
+            cpuThread->GetThreadEntity(deviceHandle);
             threads[i] = reinterpret_cast<ThreadHandle>(deviceHandle); // 越界风险
         } else {
             threads[i] = reinterpret_cast<ThreadHandle>(hostHandle.get()); // 越界风险

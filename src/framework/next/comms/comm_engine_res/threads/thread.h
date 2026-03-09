@@ -38,7 +38,7 @@ public:
     virtual std::string &GetUniqueId() = 0;
     virtual uint32_t GetNotifyNum() const = 0;
     virtual LocalNotify *GetNotify(uint32_t index) const = 0;
-    virtual HcclResult GetThreadEntity(ThreadEntity* threadEntity) const {
+    virtual HcclResult GetThreadEntity(void* threadEntity) {
         return HCCL_E_NOT_SUPPORT;
     };
 

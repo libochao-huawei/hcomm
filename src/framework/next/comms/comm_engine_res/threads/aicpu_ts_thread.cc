@@ -199,12 +199,13 @@ LocalNotify *AicpuTsThread::GetNotify(uint32_t index) const
     return notifys_[index].get();
 }
 
-HcclResult AicpuTsThread::GetThreadEntity(ThreadEntity *threadEntity) const
+HcclResult AicpuTsThread::GetThreadEntity(void *threadEntity)
 {
     CHK_PTR_NULL(threadEntity);
-    threadEntity->type = THREAD_TYPE_TS;
-    threadEntity->engine = COMM_ENGINE_AICPU_TS;
-    // threadEntity->threadObjAddr = reinterpret_cast<uint64_t>(this);
+    ThreadEntity *entity = reinterpret_cast<ThreadEntity *>(threadEntity);
+    entity->type = THREAD_TYPE_TS;
+    entity->engine = COMM_ENGINE_AICPU_TS;
+    // entity->threadObjAddr = reinterpret_cast<uint64_t>(this);
     return HcclResult();
 }
 

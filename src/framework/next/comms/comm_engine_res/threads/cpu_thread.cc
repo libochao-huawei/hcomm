@@ -54,15 +54,15 @@ HcclResult CpuThread::PrepareDpuKernelResource(aclrtFuncHandle &funcHandle)
         return HCCL_E_OPEN_FILE_FAILURE;
     }
 
-    // 创建dpustream
-    if (aclrtCreateStreamWithConfig(&dpuStream_, 0, ACL_STREAM_FAST_LAUNCH) != ACL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::%s] Create Local Stream Failed", __func__);
-        return HCCL_E_INTERNAL;
-    }
-
     // 查找核函数
     if (aclrtBinaryGetFunction(binHandle, "RunDpuRpcSrvLaunchNew", &funcHandle) != ACL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::%s] Get Function Failed", __func__);
+        return HCCL_E_INTERNAL;
+    }
+
+    // 创建dpustream
+    if (aclrtCreateStreamWithConfig(&dpuStream_, 0, ACL_STREAM_FAST_LAUNCH) != ACL_SUCCESS) {
+        HCCL_ERROR("[CommunicatorImpl::%s] Create Local Stream Failed", __func__);
         return HCCL_E_INTERNAL;
     }
 
@@ -89,6 +89,8 @@ HcclResult CpuThread::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
                                       &placeHolderArrays, placeHolderNum)
         != ACL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::%s] Launch Dpu Kernel Failed", __func__);
+        aclrtDestroyStream(dpuStream_);
+        Hccl::rtResetXpuDevice(Hccl::RT_DEV_TYPE_DPU, 0);
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;
@@ -107,14 +109,13 @@ HcclResult CpuThread::Init()
     serviceScheduler_ = std::make_unique<ServiceScheduler>();
     CHK_RET(serviceScheduler_->Init());
     // 注册recordService和waitService
-    serviceScheduler_->ServiceRegister(RecordService, &recordServiceHandle_);
-    serviceScheduler_->ServiceRegister(WaitService, &waitServiceHandle_);
+    CHK_RET(serviceScheduler_->ServiceRegister(RecordService, &recordServiceHandle_));
+    CHK_RET(serviceScheduler_->ServiceRegister(WaitService, &waitServiceHandle_));
 
     s32 devId = 0;
     CHK_RET(hrtGetDevice(&devId));
     hostArgsTemp.deviceId = devId;
 
-    //--------------------------------------------------------------------------------
     // 设置XPU
     HCCL_INFO("[CommunicatorImpl::%s] Switch to Dpu Ctx", __func__);
     if (aclrtGetCurrentContext(&npuContext_) != ACL_SUCCESS) {
@@ -141,20 +142,65 @@ HcclResult CpuThread::Init()
     HCCL_INFO("[CommunicatorImpl::%s] Switch to Npu Ctx", __func__);
     if (ACL_SUCCESS != aclrtSetCurrentContext(npuContext_)) {
         HCCL_ERROR("[CommunicatorImpl::%s] Reset Current Ctx Failed", __func__);
+        aclrtDestroyStream(dpuStream_);
+        Hccl::rtResetXpuDevice(Hccl::RT_DEV_TYPE_DPU, 0);
         return HCCL_E_INTERNAL;
     }
 
     HCCL_INFO("[CommunicatorImpl::%s] Launch Dpu Kernel End", __func__);
+    isInit_ = true;
     return HCCL_SUCCESS;
 };
 
 HcclResult CpuThread::DeInit()
 {
+    if (!isInit_) {
+        return HCCL_SUCCESS;
+    }
+    aclrtFree(deviceHandle_);
+    CHK_RET(DestroyDpuKernelResource());
     return HCCL_SUCCESS;
 };
 
 CpuThread::~CpuThread() {
+    (void)DeInit();
 };
+
+HcclResult CpuThread::DestroyDpuKernelResource()
+{
+    // 终止Dpu Kernel的TaskRun
+    if (!isInit_) {
+        return HCCL_SUCCESS;
+    }
+
+    // 终止ServiceScheduler
+    serviceScheduler_->StopService();
+
+    // 切换回 dpu ctx
+    if (ACL_SUCCESS != aclrtSetCurrentContext(dpuContext_)) {
+        HCCL_ERROR("set dpu Ctx Failed");
+        return HCCL_E_RUNTIME;
+    }
+    // 销毁局部流
+    HCCL_INFO("Destroy Stream");
+    if (aclrtDestroyStreamForce(dpuStream_) != ACL_SUCCESS) {
+        HCCL_ERROR("Destroy Stream Failed");
+        return HCCL_E_RUNTIME;
+    }
+    // reset DPU kernel 线程
+    HCCL_INFO("Start to reset DPU device");
+    if (Hccl::rtResetXpuDevice(Hccl::RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
+        HCCL_ERROR("ResetXpuDevice Failed");
+        return HCCL_E_RUNTIME;
+    }
+    // 切回 npu ctx
+    if (ACL_SUCCESS != aclrtSetCurrentContext(npuContext_)) {
+        HCCL_ERROR("set npu Ctx Failed");
+        return HCCL_E_RUNTIME;
+    }
+
+    return HCCL_SUCCESS;
+}
 
 HcclResult CpuThread::ServiceRegister(ThreadService serviceCb, ThreadServiceHandle* serviceHandle)
 {
@@ -166,25 +212,47 @@ HcclResult CpuThread::ServiceUnregister(ThreadServiceHandle serviceHandle)
 };
 HcclResult CpuThread::KernelRun()
 {
-    //
+    CHK_PTR_NULL(serviceScheduler_);
     return serviceScheduler_->ServiceRun();
 }
 
-HcclResult CpuThread::GetThreadEntity(ThreadEntity* threadEntity) const
+HcclResult CpuThread::GetThreadEntity(void* threadEntity)
 {
-    CHK_PTR_NULL(threadEntity);
-    threadEntity->type = THREAD_TYPE_CPU;
-    threadEntity->engine = COMM_ENGINE_AICPU;
-    threadEntity->cpuRes.sendQueue = serviceScheduler_->GetSendQueue()->GetQueueInfo();
-    threadEntity->cpuRes.recordService = recordServiceHandle_;
-    threadEntity->cpuRes.waitService = waitServiceHandle_;
-    threadEntity->notifyNum = notifyNum_;
+    // CHK_PTR_NULL(threadEntity);
+    if (!isInit_) {
+        HCCL_ERROR("CpuThread not initialized");
+        return HCCL_E_PARA;
+    }
+
+    size_t totalSize = sizeof(ThreadEntity) + notifyNum_ * sizeof(NotifyEntity);
+    ThreadEntity* entity = reinterpret_cast<ThreadEntity*>(new char[totalSize]);
+    entity->type = THREAD_TYPE_CPU;
+    entity->engine = COMM_ENGINE_AICPU;
+    entity->cpuRes.sendQueue = serviceScheduler_->GetSendQueue()->GetQueueInfo();
+    entity->cpuRes.recordService = recordServiceHandle_;
+    entity->cpuRes.waitService = waitServiceHandle_;
+    entity->notifyNum = notifyNum_;
     for (size_t i = 0; i < notifys_.size(); i++)
     {
-        threadEntity->notifies[i].type = NOTIFY_TYPE_DEVICE_MEM;
-        threadEntity->notifies[i].identifier = notifys_[i]->GetIdentifier();
+        entity->notifies[i].type = NOTIFY_TYPE_DEVICE_MEM;
+        entity->notifies[i].identifier = notifys_[i]->GetIdentifier();
     }
-    return HCCL_SUCCESS; 
+
+    aclError ret = aclrtMalloc(&threadEntity, totalSize, ACL_MEM_MALLOC_NORMAL_ONLY);
+    if (ret != ACL_SUCCESS) {
+        HCCL_ERROR("Failed to allocate memory for thread entity");
+        return HCCL_E_INTERNAL;
+    }
+    ret = aclrtMemcpy(threadEntity, totalSize, entity, totalSize, ACL_MEMCPY_HOST_TO_DEVICE);
+    if (ret != ACL_SUCCESS) {
+        HCCL_ERROR("Failed to copy thread entity to device");
+        aclrtFree(threadEntity);
+        delete[] reinterpret_cast<char*>(entity);
+        return HCCL_E_INTERNAL;
+    }
+    deviceHandle_ = threadEntity; // 保存device侧地址，方便后续使用
+    delete[] reinterpret_cast<char*>(entity);
+    return HCCL_SUCCESS;
 }
 
 MemNotify *CpuThread::GetMemNotify(uint32_t notifyIndex)
