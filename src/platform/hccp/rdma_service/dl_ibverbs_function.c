@@ -247,7 +247,7 @@ STATIC void RsCloseIbverbsSo(void)
     return;
 }
 
-int RsIbverbsApiInit(void)
+STATIC int RsIbverbsApiInit(void)
 {
 #ifndef CA_CONFIG_LLT
     int ret;
@@ -422,7 +422,7 @@ STATIC int RsRoceUserDrvApiInit(void)
     return 0;
 }
 
-int RsRoceUserApiInit(void)
+STATIC int RsRoceUserApiInit(void)
 {
     enum SoType type = SO_TYPE_INVALID;
     int ret = 0;
