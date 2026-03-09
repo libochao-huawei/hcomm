@@ -262,6 +262,7 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
                     WaitSyncFlag(curTag, flagAddrSelf_, 1, x + multipleTemp, pingpong);
                 }
 
+                PipeBarrier<PIPE_ALL>();
                 CpGM2GM<T>(cclGMSelf + halfBufferCount + dataNum * target, cclGMSelf + halfBufferCount + dataNum * x, 
                             dataNum, true, reduceOp_);
                 PipeBarrier<PIPE_ALL>();
@@ -287,6 +288,8 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
         }
 
         // 尾同步 
+        PipeBarrier<PIPE_ALL>();
+        BatchRecordWait(curTag, buffersOut, AivNotifyType::Done);
         if (bufferLoopNum > 1){
             PipeBarrier<PIPE_ALL>();
             SyncAll(syncGlobalSecond, workLocal, numBlocks_);
