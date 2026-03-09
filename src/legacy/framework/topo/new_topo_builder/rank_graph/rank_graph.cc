@@ -584,19 +584,19 @@ void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId
                                       oldLink.GetLinkProtocols(), oldLink.GetLinkDirection(), oldLink.GetHop());
 
     newNetInstance->AddLink(link);
-    if (newSourceIface != nullptr) 
-    {
+    if (newSourceIface != nullptr) {
         newNetInstance->UpdateTopoInst(newSourceIface->GetTopoInstId(), newSourceIface->GetTopoType(), srcNewRankId);
     }
-    if (newTargetIface != nullptr)
-    {
+
+    if (newTargetIface != nullptr) {
         newNetInstance->UpdateTopoInst(newTargetIface->GetTopoInstId(), newTargetIface->GetTopoType(), dstNewRankId);
     }
     
     for (const auto&pair: newNetInstance->topoInsts_){
         uint32_t topoInstId = pair.first;
-        if(pair.second==nullptr){
-            HCCL_ERROR("topoInst of newNetInstance is nullptr");
+        if (pair.second == nullptr) {
+            HCCL_WARNING("topoInst of newNetInstance is nullptr");
+            continue;
         }
         auto topoType = pair.second->topoType;
         HCCL_DEBUG("[SubRankGraph] topoInstId[%u] topoType[%d]", topoInstId, topoType);
