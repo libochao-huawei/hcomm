@@ -946,21 +946,25 @@ int32_t HcommRequestServiceOnThread(ThreadHandle dstThreadHandle, ThreadServiceH
     const uint64_t headIdx = *reinterpret_cast<uint64_t *>(queueInfo.headIdxAddr);
     const uint64_t tailIdx = *reinterpret_cast<uint64_t *>(queueInfo.tailIdxAddr);
     const uint64_t capacity = queueInfo.capacity;
-    const uint64_t numEmptySlot = (tailIdx + capacity - headIdx) % capacity;
-    if (numEmptySlot == 0) {
+    const uint64_t nextTail = (tailIdx + 1) % capacity;
+    if (nextTail == headIdx) {
         HCCL_ERROR("[%s] FAIL. thread[0x%llx]'s send queue is full. headIdx[%llu], tailIdx[%llu], capacity[%llu].",
             __func__, dstThreadHandle, headIdx, tailIdx, capacity);
         return HCCL_E_INTERNAL;
     }
-    HCCL_INFO("[%s] thread[0x%llx]'s send queue has [%llu] empty slots. headIdx[%llu], tailIdx[%llu], capacity[%llu].",
-        __func__, dstThreadHandle, numEmptySlot, headIdx, tailIdx, capacity);
+    HCCL_INFO("[%s] thread[0x%llx]'s send queue is not full. headIdx[%llu], tailIdx[%llu], capacity[%llu].",
+        __func__, dstThreadHandle, headIdx, tailIdx, capacity);
 
     // serviceArgsPtrOnHeap will be freed by CpuThread on Host after processing the service request.
     void *const serviceArgsPtrOnHeap = malloc(argsSizeByte);
     CHK_PTR_NULL(serviceArgsPtrOnHeap);
     errno_t cpyRet = memcpy_s(serviceArgsPtrOnHeap, argsSizeByte, args, argsSizeByte);
-    CHK_PRT_RET(cpyRet != EOK, HCCL_ERROR("[%s] FAIL. memcpy_s args from stack[0x%llx] to heap[0x%llx] failed, errno[%d].",
-        __func__, args, serviceArgsPtrOnHeap, cpyRet), HCCL_E_INTERNAL);
+    if (cpyRet != EOK) {
+        free(serviceArgsPtrOnHeap);
+        HCCL_ERROR("[%s] FAIL. memcpy_s args from stack[0x%llx] to heap[0x%llx] failed, errno[%d].",
+            __func__, args, serviceArgsPtrOnHeap, cpyRet);
+        return HCCL_E_INTERNAL;
+    }
     HCCL_INFO("[%s] Copy args from stack[0x%llx] to heap[0x%llx] SUCCESS.", __func__, args, serviceArgsPtrOnHeap);
 
     // Push service request to thread entity's send queue
