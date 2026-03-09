@@ -439,7 +439,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_AicpuTsThread_Return_HC
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     
@@ -477,7 +477,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_CommNullptr_Return_HCCL_E_PTR)
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     
@@ -501,7 +501,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_ThreadNullptr_Return_HCCL_E_PTR
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     
@@ -539,7 +539,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_CollCommNullptr_Return_HCCL_E_P
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     MOCKER_CPP(&hcclComm::IsCommunicatorV2)
@@ -569,7 +569,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_engineResMgrNullptr_Return_HCCL
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     MOCKER_CPP(&CollComm::Init)
@@ -992,7 +992,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_41_AicpuTsThread_Return
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     
@@ -1030,7 +1030,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_65Notify_AicpuTsThread_
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     
