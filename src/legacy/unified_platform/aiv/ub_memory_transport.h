@@ -113,7 +113,7 @@ private:
     void     ReleaseRes();
     void     SendMemInfo();
     void     RecvMemInfo();
-    void     RecvingMemInfo();
+    void     RecvMemProcess();
     void     BufferPack(BinaryStream &binaryStream);
     void     RmtBufferUnpackProc(BinaryStream &binaryStream);
     void     SendName();
