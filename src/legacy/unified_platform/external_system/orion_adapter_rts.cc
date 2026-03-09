@@ -308,7 +308,7 @@ HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainbo
 
 aclrtStream HrtStreamCreateWithFlags(uint32_t priority, uint32_t flag)
 {
-    HCCL_INFO("[HrtStreamCreateWithFlags] priority[%d], flags[%u].", priority, flag);
+    HCCL_INFO("[HrtStreamCreateWithFlags] priority[%u], flags[%u].", priority, flag);
     aclrtStream ptr = nullptr;
     aclError ret = aclrtCreateStreamWithConfig(&ptr, priority, flag);
     HCCL_INFO("Call rtGetStreamId return value[%d]. Params: flags[%u].", ret, flag);
@@ -397,7 +397,7 @@ void *HrtMalloc(u64 size, aclrtMemType_t memType)
         string msg = StringFormat("[Malloc][Mem]errNo[0x%016llx] aclrtMallocWithCfg failed, "
                    "Reason: out of memory, return[%d], para: devPtrAddr[%p], size[%llu]",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, devPtr, size);
-        MACRO_THROW(RuntimeApiException, msg);;
+        MACRO_THROW(RuntimeApiException, msg);
     }
     if (ret != ACL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0007", std::vector<std::string>({"resource_type", "resource_info"}),
@@ -518,7 +518,7 @@ void HrtIpcDestroyMemoryName(const char_t *name)
     CHECK_NULLPTR(name, "[HrtIpcDestroyMemoryName] name is nullptr!");
     aclError ret = aclrtIpcMemClose(reinterpret_cast<const char *>(name));
     HCCL_INFO("Call aclrtIpcMemClose, return[%d], para: name[%s]", ret, reinterpret_cast<const char *>(name));
-    if (ret != RT_ERROR_NONE) {
+    if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[Destroy][IpcMemoryName]errNo[0x%016llx] "
                    "rtDestroy Ipc memory name fail. return[%d], para: name[%s].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, name);
@@ -640,7 +640,9 @@ void *HrtMallocHost(u64 size)
 void HrtFreeHost(void *hostPtr)
 {
     HCCL_INFO("[HrtFreeHost] hostPtr[%p].", hostPtr);
-    CHECK_NULLPTR(hostPtr, "[HrtFreeHost] hostPtr is nullptr!");
+    if (hostPtr == nullptr) {
+        return;
+    }
     aclError ret = aclrtFreeHost(hostPtr);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[Free][Host]errNo[0x%016llx] rt free host fail. return[%d], "
@@ -716,7 +718,7 @@ u64 HrtNotifyGetAddr(RtNotify_t notifyHandle)
 {
     HCCL_INFO("[HrtNotifyGetAddr] notifyHandle[%p].", notifyHandle);
     CHECK_NULLPTR(notifyHandle, "[HrtNotifyGetAddr] notifyHandle is nullptr!");
-    uint64_t  addr;
+    uint64_t  addr = 0;
     rtError_t ret = rtGetNotifyAddress(notifyHandle, &addr);
     if (ret != RT_ERROR_NONE) {
         string msg = StringFormat("[rtGetNotifyAddress]rt get notify address failed. "
@@ -1028,7 +1030,7 @@ u32 HrtStreamGetSqId(const aclrtStream ptr)
 {
     HCCL_INFO("[HrtStreamGetSqId] ptr[%p].", ptr);
     CHECK_NULLPTR(ptr, "[HrtStreamGetSqId] ptr is nullptr!");
-    u32       sqId;
+    u32       sqId = 0;
     rtError_t ret = rtStreamGetSqid(ptr, &sqId);
     if (ret != RT_ERROR_NONE) {
         string msg = StringFormat("Call rtStreamGetSqid failed. return[%d], ptr[%p], sqId[%u].", ret, ptr, sqId);
@@ -1041,8 +1043,8 @@ u32 HrtStreamGetCqId(const aclrtStream ptr)
 {
     HCCL_INFO("[HrtStreamGetCqId] ptr[%p].", ptr);
     CHECK_NULLPTR(ptr, "[HrtStreamGetCqId] ptr is nullptr!");
-    u32 cqId;
-    u32 logicCqId;
+    u32 cqId = 0;
+    u32 logicCqId = 0;
     rtError_t ret = rtStreamGetCqid(ptr, &cqId, &logicCqId);
     if (ret != RT_ERROR_NONE) {
         string msg = StringFormat("Call rtStreamGetCqid failed. return[%d], ptr[%p], cqId[%u], logicCqId[%u].", 
@@ -1238,9 +1240,8 @@ HcclResult HrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode)
     CHECK_NULLPTR(mode, "[HrtThreadExchangeCaptureMode] mode is nullptr!");
     aclError ret = aclmdlRICaptureThreadExchangeMode(mode);
     if (ret == ACL_ERROR_RT_FEATURE_NOT_SUPPORT) {
-        HCCL_ERROR("[HrtThreadExchangeCaptureMode] errNo[0x%016llx] "
-            "rtThreadExchangeCaptureMode not support!, ret=%d, mode=%p.",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, mode);
+        HCCL_WARNING("[HrtThreadExchangeCaptureMode] rtThreadExchangeCaptureMode not support!, ret=%d, mode=%p.",
+                        ret, mode);
         return HCCL_E_NOT_SUPPORT;
     } else {
         CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[HrtThreadExchangeCaptureMode]rtThreadExchangeCaptureMode "
