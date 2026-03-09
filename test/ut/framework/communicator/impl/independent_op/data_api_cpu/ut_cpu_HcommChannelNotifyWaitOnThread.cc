@@ -11,6 +11,7 @@
 #include "gtest/gtest.h"
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
+#include "hcomm_primitives.h"
 #include "new/hccl_primitive_remote.h"
 
 #define private public
@@ -26,7 +27,6 @@ protected:
     virtual void SetUp() override
     {
         threadOnHost.stream_.reset(new (std::nothrow) Stream());
-        MOCKER(&HcclRemoteNotifyWait).stubs().will(returnValue(HCCL_SUCCESS));
     }
 
     virtual void TearDown() override
@@ -53,6 +53,7 @@ protected:
 TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_When_950_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
     MOCKER(&hrtGetDeviceType).stubs().with(outBound(t950)).will(returnValue(HCCL_SUCCESS));
+    MOCKER(&hcomm::HostCpuRoceChannel::NotifyWait).stubs().will(returnValue(HCCL_SUCCESS));
     res = HcommChannelNotifyWaitOnThread(thread, channel, notifyIdx, timeout);
     EXPECT_EQ(res, HCCL_SUCCESS);
 }
@@ -60,6 +61,7 @@ TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_Wh
 TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_When_950_Thread_IsNull_Expect_ReturnIsHCCL_SUCCESS)
 {
     MOCKER(&hrtGetDeviceType).stubs().with(outBound(t950)).will(returnValue(HCCL_SUCCESS));
+    MOCKER(&hcomm::HostCpuRoceChannel::NotifyWait).stubs().will(returnValue(HCCL_SUCCESS));
     // On 950, thread is not used, so it could be nullptr.
     res = HcommChannelNotifyWaitOnThread(0, channel, notifyIdx, timeout);
     EXPECT_EQ(res, HCCL_SUCCESS);
@@ -85,6 +87,7 @@ TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_Wh
 TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_When_910C_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
     MOCKER(&hrtGetDeviceType).stubs().with(outBound(t910C)).will(returnValue(HCCL_SUCCESS));
+    MOCKER(&HcclRemoteNotifyWait).stubs().will(returnValue(HCCL_SUCCESS));
     res = HcommChannelNotifyWaitOnThread(thread, channel910C, notifyIdx, timeout);
     EXPECT_EQ(res, HCCL_SUCCESS);
 }

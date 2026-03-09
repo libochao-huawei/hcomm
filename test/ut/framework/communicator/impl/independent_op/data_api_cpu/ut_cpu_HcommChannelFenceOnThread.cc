@@ -11,6 +11,7 @@
 #include "gtest/gtest.h"
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
+#include "hcomm_primitives.h"
 
 #include "host_cpu_roce_channel.h"
 
@@ -27,7 +28,7 @@ protected:
     }
 
     // thread is unused by HcommChannelFenceOnThread, any value is acceptable.
-    ThreadHandle thread = reinterpret_cast<ThreadHandle>(0x01);
+    ThreadHandle thread = static_cast<ThreadHandle>(0x01);
     EndpointHandle epHandle = reinterpret_cast<void *>(0x01);
     HcommChannelDesc channelDesc{};
     hcomm::HostCpuRoceChannel channelOnHost{epHandle, channelDesc};
@@ -42,6 +43,7 @@ protected:
 TEST_F(UtCpuHcommChannelFenceOnThread, Ut_HcommChannelFenceOnThread_When_950_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
     MOCKER(&hrtGetDeviceType).stubs().with(outBound(t950)).will(returnValue(HCCL_SUCCESS));
+    MOCKER(&hcomm::HostCpuRoceChannel::ChannelFence).stubs().will(returnValue(HCCL_SUCCESS));
     res = HcommChannelFenceOnThread(thread, channel);
     EXPECT_EQ(res, HCCL_SUCCESS);
 }
@@ -49,6 +51,7 @@ TEST_F(UtCpuHcommChannelFenceOnThread, Ut_HcommChannelFenceOnThread_When_950_Nor
 TEST_F(UtCpuHcommChannelFenceOnThread, Ut_HcommChannelFenceOnThread_When_950_Thread_IsNull_Expect_ReturnIsHCCL_SUCCESS)
 {
     MOCKER(&hrtGetDeviceType).stubs().with(outBound(t950)).will(returnValue(HCCL_SUCCESS));
+    MOCKER(&hcomm::HostCpuRoceChannel::ChannelFence).stubs().will(returnValue(HCCL_SUCCESS));
     // thread is cast to void — nullptr is acceptable.
     res = HcommChannelFenceOnThread(0, channel);
     EXPECT_EQ(res, HCCL_SUCCESS);

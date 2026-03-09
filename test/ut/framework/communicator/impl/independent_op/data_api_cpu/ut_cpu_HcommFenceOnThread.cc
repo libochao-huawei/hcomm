@@ -11,7 +11,9 @@
 #include "gtest/gtest.h"
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
-#include "op_base_v2.h"
+#include "hcomm_primitives.h"
+
+#include "op_base.h"
 
 using namespace hccl;
 
@@ -26,7 +28,7 @@ protected:
     }
 
     // thread is unused by HcommFenceOnThread, any value is acceptable.
-    ThreadHandle thread = reinterpret_cast<ThreadHandle>(0x01);
+    ThreadHandle thread = static_cast<ThreadHandle>(0x01);
     int32_t res{HCCL_E_RESERVED};
 };
 
