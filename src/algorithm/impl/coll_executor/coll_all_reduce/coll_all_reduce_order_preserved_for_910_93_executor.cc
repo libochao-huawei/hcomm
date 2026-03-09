@@ -57,7 +57,7 @@ HcclResult CollAllReduceOrderPreservedFor91093Executor::CalcStreamNum(u32& strea
     u32 rankIdxInPod = 0;
     CHK_RET(topoMatcher_->GetLocalSuperPodRankSize(topoAttr_.userRank, devNumInlocalPod, rankIdxInPod));
     // all2allStreamNum条流给alltoall
-    u32 all2allStreamNum = std::min(devNumInlocalPod - 1, DEVICE_EIGHT);
+    u32 all2allStreamNum = std::min(devNumInlocalPod, DEVICE_EIGHT);
     // reduceStreamNum主流分给alltoall，从流给LocalReduce使用
     u32 reduceStreamNum = std::min(CalReduceStreamNum(devNumInlocalPod) - 1, DEVICE_FOUR);
     // level2StreamNum超节点间reducescatter

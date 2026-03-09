@@ -98,14 +98,12 @@ public:
     static constexpr uint16_t CCUBUFFER_DIE_ID_BIT = 0x8000; // bit15 表示MS所在的IO Die id
 };
 
-
 class CcuBuf : public CcuVirRes {
 public:
     explicit CcuBuf(CcuRepContext *context = nullptr);
     uint16_t Id() const override;
     static constexpr uint16_t CCUBUFFER_DIE_ID_BIT = 0x8000; // bit15 表示MS所在的IO Die id
 };
-
 
 class Executor : public CcuVirRes {
 public:
@@ -121,7 +119,6 @@ public:
     Address  addr;
     Variable token;
 };
-
 
 /*------------------将Memory改为LocalAddr与RemoteAddr------------------------*/
 class LocalAddr {
@@ -158,7 +155,6 @@ public:
     void SetMask(uint32_t compeletedMask);
     uint32_t mask{1};
 };
-
 
 };     // namespace CcuRep
 };     // namespace hcomm
