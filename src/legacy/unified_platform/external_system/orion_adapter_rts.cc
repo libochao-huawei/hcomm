@@ -816,7 +816,7 @@ void HrtNotifyWaitWithTimeOut(RtNotify_t notifyPtr, aclrtStream streamPtr, uint3
     HCCL_INFO("Call aclrtWaitAndResetNotify, return value[%d].", ret);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("call aclrtWaitAndResetNotify failed. notifyPtr=%p, streamPtr=%p, timeout=%u, return=%d.",
-                                notifyPtr, streamPtr, timeout, ret);
+                                notifyPtr, streamPtr, timeOut, ret);
         MACRO_THROW(RuntimeApiException, msg);
     }
 }

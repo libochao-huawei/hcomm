@@ -488,6 +488,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_And_Destory_Success_When_InterfaceOk_Expect
     MockCcuTransportMgrDevs();
     ReqHandleResult result = ReqHandleResult::COMPLETED;
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
+    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
 
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
@@ -609,6 +610,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     auto commImpl = MockCommImpl();
     MockCcuTransportMgrDevs();
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(invoke(HrtRaGetAsyncReqResult_Uncompleted_CCU));
+    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
 
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
@@ -694,6 +696,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     auto commImpl = MockCommImpl();
     MockCcuTransportMgrDevs();
     ReqHandleResult result = ReqHandleResult::COMPLETED;
+    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
     MOCKER(&RaCtxQpDestroyBatchAsync).stubs().with().will(invoke(RaCtxQpDestroyBatchAsync_no_delete_CCU));
 
@@ -781,6 +784,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     auto commImpl = MockCommImpl();
     MockCcuTransportMgrDevs();
     ReqHandleResult result = ReqHandleResult::COMPLETED;
+    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
     MOCKER(&RaCtxQpDestroyBatchAsync).stubs().with().will(invoke(RaCtxQpDestroyBatchAsync_return_false_CCU));
 
@@ -868,6 +872,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     auto commImpl = MockCommImpl();
     MockCcuTransportMgrDevs();
     ReqHandleResult result = ReqHandleResult::COMPLETED;
+    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
     MOCKER(&RaCtxQpDestroyBatchAsync).stubs().with().will(invoke(RaCtxQpDestroyBatchAsync_num_false_CCU));
 
@@ -954,6 +959,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     const auto &link = links[0];
     auto commImpl = MockCommImpl();
     MockCcuTransportMgrDevs();
+    MOCKER(HrtGetNotifyID).stubs().with().will(returnValue(static_cast<u32>(0)));
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(invoke(HrtRaGetAsyncReqResult_TimeOut_CCU));
 
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
