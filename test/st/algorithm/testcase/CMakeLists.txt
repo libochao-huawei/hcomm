@@ -171,10 +171,22 @@ target_compile_definitions(hccl_alg_test PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
 )
 
+# 查找gtest库
+find_library(GTEST_LIB gtest
+    PATHS
+    ${THIRD_PARTY_PATH}/gtest_shared/lib
+    ${THIRD_PARTY_PATH}/gtest_shared/lib64
+    ${ASCEND_CANN_PACKAGE_PATH}/opensdk/opensdk/gtest_shared/lib64
+    ${ASCEND_CANN_PACKAGE_PATH}/../../latest/opensdk/opensdk/gtest_shared/lib64
+    NO_DEFAULT_PATH
+)
+if(NOT GTEST_LIB)
+    message(FATAL_ERROR "gtest library not found! Please run: bash build_third_party.sh")
+endif()
+message(STATUS "Found gtest: ${GTEST_LIB}")
 target_link_libraries(hccl_alg_test PRIVATE
     -Wl,--no-as-needed
-    -Wl,--no-as-needed
-    ${THIRD_PARTY_PATH}/gtest_shared/lib/libgtest.so
+    ${GTEST_LIB}
     pthread
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
 )
