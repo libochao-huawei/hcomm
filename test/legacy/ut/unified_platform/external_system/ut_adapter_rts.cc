@@ -299,7 +299,7 @@ TEST_F(AdapterRtsTest, HrtGetStreamId_return_nok)
 TEST_F(AdapterRtsTest, HrtStreamGetMode_return_nok)
 {
     // Given
-    MOCKER(aclrtStreamGetId).stubs().will(returnValue(1));
+    MOCKER(aclrtGetStreamAttribute).stubs().will(returnValue(1));
     HcclRtStream ptr = reinterpret_cast<HcclRtStream>(0x123);
 
     // then
@@ -309,6 +309,7 @@ TEST_F(AdapterRtsTest, HrtStreamGetMode_return_nok)
 TEST_F(AdapterRtsTest, HrtStreamSetMode_streamPtrIsNull_return_nok)
 {
     // Given
+    MOCKER(aclrtSetStreamAttribute).stubs().will(returnValue(1));
     HcclRtStream ptr = reinterpret_cast<HcclRtStream>(0x123);
     // then
     EXPECT_THROW(HrtStreamSetMode(ptr, 3), RuntimeApiException);
@@ -350,6 +351,7 @@ TEST_F(AdapterRtsTest, HcclStreamSynchronize_streamPtrIsNull_return_nok)
 {
     // Given
     HcclRtStream ptr = reinterpret_cast<HcclRtStream>(0x123);
+    MOCKER(aclrtSynchronizeStreamWithTimeout).stubs().will(returnValue(1));
     // then
     EXPECT_THROW(HcclStreamSynchronize(ptr), RuntimeApiException);
 }

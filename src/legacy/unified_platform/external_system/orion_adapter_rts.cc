@@ -1092,7 +1092,7 @@ void HrtCcuLaunch(rtCcuTaskInfo_t &taskInfo, aclrtStream const streamPtr)
     auto ret = rtCCULaunch(&taskInfo, streamPtr);
     if (ret != RT_ERROR_NONE) {
         string msg = StringFormat("Call rtCCULaunch failed. return[%d], taskInfo[%p], streamPtr[%p].", 
-                                ret, taskInfo, streamPtr);
+                                ret, &taskInfo, streamPtr);
         THROW<RuntimeApiException>(msg);
     }
 }
@@ -1258,7 +1258,6 @@ void HrtWriteValue(u64 addr, u32 piVal, const aclrtStream streamPtr)
 
 void HrtDeviceAbortRegCallBack(aclrtDeviceTaskAbortCallback callback, void *args)
 {
-    CHECK_NULLPTR(args, "[HrtDeviceAbortRegCallBack] args is nullptr!");
     aclError ret = aclrtSetDeviceTaskAbortCallback("HCCL", callback, args);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("call rtSetTaskAbortCallBack failed. ret=[%d].", ret);
