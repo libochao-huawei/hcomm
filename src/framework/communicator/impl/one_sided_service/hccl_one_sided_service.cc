@@ -701,6 +701,8 @@ HcclResult HcclOneSidedService::InitIsUsedRdmaMap(bool& needInitNic, bool& needI
         } else {
             needRegIpcMem_ = true;
         }
+        HCCL_DEBUG("[HcclOneSidedService][InitIsUsedRdmaMap]localRankId[%u], remoteRankId[%u], isUseRdma[%s]",
+            localRankInfo_.userRank, remoteRankId, isUseRdma ? "true" : "false");
     }
     needInitNic = needRegRoceMem_;
     needInitVnic = needRegIpcMem_;
