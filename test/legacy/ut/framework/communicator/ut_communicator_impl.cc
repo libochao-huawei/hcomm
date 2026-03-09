@@ -558,7 +558,6 @@ TEST_F(CommunicatorImplTest, initvittualtopo_check_fail)
 TEST_F(CommunicatorImplTest, should_return_success_when_normal_calling_new_init_with_two_parameters_new)
 {
     MOCKER(HrtFreeHost).stubs().with().will(returnValue(static_cast<void*>(0)));
-    MOCKER(HrtDeviceAbortRegCallBack).stubs().with().will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
     MOCKER(HrtOpenTsdProcess).stubs().with(any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));
@@ -1114,7 +1113,6 @@ TEST_F(CommunicatorImplTest, RecoverComm_StdException)
     SnapShotComm snapShotComm;
     u32 step = 0;
     const char *filePath = "test";
-    MOCKER(HrtDeviceAbortRegCallBack).stubs().with().will(returnValue(static_cast<void*>(0)));
     MOCKER_CPP(&CommunicatorImpl::TryInitCcuFeature).stubs().with(any()).will(ignoreReturnValue());
     HcclResult result = fakeComm.RecoverComm(snapShotComm, step, filePath);
     EXPECT_EQ(result, HcclResult::HCCL_E_INTERNAL);
