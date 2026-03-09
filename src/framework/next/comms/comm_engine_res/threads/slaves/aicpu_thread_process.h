@@ -8,16 +8,22 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ENGINE_AICPU_INTERFACE_H
-#define ENGINE_AICPU_INTERFACE_H
 
-#include <cstdint>
+#ifndef __AICPU_THREAD_PROCESS_H__
+#define __AICPU_THREAD_PROCESS_H__
 
-extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *args);
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpNotify(void *args);
-__attribute__((visibility("default"))) uint32_t RunAicpuThreadInit(void *args);
-__attribute__((visibility("default"))) uint32_t RunAicpuThreadDestroy(void *args);
-}
+#include "common.h"
+#include "aicpu_launch_manager.h"
+#include "aicpu_ts_thread.h"
 
-#endif // CHANNEL_AICPU_INTERFACE_H
+class AicpuThreadProcess {
+public:
+    ~AicpuThreadProcess() = default;
+    static HcclResult InitThreads(ThreadMgrAicpuParam *param);
+    static HcclResult AicpuThreadInit(ThreadMgrAicpuParam *param);
+    static HcclResult AicpuThreadDestroy(ThreadMgrAicpuParam *param);
+private:
+    static std::mutex mutex_;
+    static std::vector<std::shared_ptr<hccl::Thread>> threads_;
+};
+#endif // __AICPU_THREAD_PROCESS_H__
