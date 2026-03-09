@@ -2349,7 +2349,7 @@ HcclResult HcclGetRawCommHandle(const char *commName, HcclComm *commHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetCcuTaskInfo(HcclComm comm, void *tilingData, void *ccuTaskGroup)
+HcclResult HcclGetCcuTaskInfoLegacy(HcclComm comm, void *tilingData, void *ccuTaskGroup)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(tilingData);
