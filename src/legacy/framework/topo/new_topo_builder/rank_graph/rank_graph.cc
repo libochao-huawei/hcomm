@@ -324,7 +324,7 @@ HcclResult RankGraph::GetRanksByTopoInst(
     return HCCL_SUCCESS;
 }
 
-HcclResult RankGraph::GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num)
+HcclResult RankGraph::GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num) const
 {
     auto peer = GetPeer(myRank_);
     if (peer == nullptr) {
@@ -375,7 +375,7 @@ EndpointLocType AddrPositionToEndpointLoc(AddrPosition pos) {
     }
 }
 
-HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t* descNum, EndpointDesc* endpointDesc)
+HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t* descNum, EndpointDesc* endpointDesc) const
 {
     auto peer = GetPeer(myRank_);
     CHK_PTR_NULL(peer);
@@ -422,10 +422,10 @@ HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint3
 }
 
 HcclResult RankGraph::GetEndpointInfo(uint32_t rankId,
-                                      const EndpointDesc* endpointDesc,
+                                      const EndpointDesc *endpointDesc,
                                       EndpointAttr endpointAttr,
                                       uint32_t infoLen,
-                                      void* info)
+                                      void *info) const
 {
     if (endpointDesc == nullptr || info == nullptr) {
         HCCL_ERROR("[GetEndpointInfo] Invalid parameter");

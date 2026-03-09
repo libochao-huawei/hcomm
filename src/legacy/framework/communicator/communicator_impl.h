@@ -560,7 +560,7 @@ private:
     bool taskExceptionEnv{true}; // 默认HCCL_DFS_CONFIG="task_exception:on" 且默认on下不开启快速下发
     bool enableProfilingEnv{false};
     bool TryFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream);
-    void FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams);
+    void FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams) const;
     void ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream, CachedCCUParams &params);
 
     void OpAcceleratorStateFallback(); // 算子粒度加速模式状态回退
