@@ -37,6 +37,7 @@ template<typename T>
 __aicore__ inline void AivAllGatherBig910B::ClearFlag(uint32_t flagOffsetBase)
 {
     // 用10个flag
+    
     uint32_t flagOffsetCount = flagOffsetBase;
     __gm__ int32_t *ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetBase + rank_ * FLAG_SIZE);
     if (GetBlockIdx() < rankSize_ && GetBlockIdx() == rank_) {
