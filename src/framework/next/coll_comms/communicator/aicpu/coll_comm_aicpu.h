@@ -47,8 +47,7 @@ private:
     HcclResult InitBackGroundThread();
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
-    u32 devId_;
-
+    u32 devId_{0};
     //通用的通道
     hccl::HDCommunicatePtr kfcControlTransferH2D_{nullptr};
     hccl::HDCommunicatePtr kfcStatusTransferD2H_{nullptr};
@@ -65,5 +64,4 @@ private:
     hccl::NsRecoveryLitePtr nsRecoveryLitePtr_{nullptr};
 };
 
-
-#endif // __COLL_COMM_AICPU_MGR_H__
+#endif // __COLL_COMM_AICPU_H__

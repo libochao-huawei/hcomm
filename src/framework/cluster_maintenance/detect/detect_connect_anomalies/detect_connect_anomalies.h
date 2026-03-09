@@ -93,11 +93,11 @@ private:
     HcclResult DelWhiteList(HcclIpAddress &localIpAddr, 
         std::vector<struct SocketWlistInfo> whiteListInfos, std::shared_ptr<HcclSocket> socket);
     HcclResult GetStatus(struct ErrInfo errInfo, std::shared_ptr<HcclSocket> &clientSocket);
-    HcclResult Connect(struct ErrInfo errInfo, std::shared_ptr<HcclSocket> &tempSocket);
+    HcclResult Connect(struct ErrInfo errInfo, std::shared_ptr<HcclSocket> &clientSocket);
     HcclResult CreateDetectVnicLinks(struct ErrInfo errInfo);
     HcclResult CreateDetectNicLinks(struct ErrInfo errInfo);
     HcclResult CreateClients(struct ErrInfo errInfo, std::vector<std::unique_ptr<std::thread>> &linkClientThreads);
-    HcclResult ConstructErrorInfo(std::shared_ptr<HcclSocket> &tempSocket, RankInfo &localRankInfo, RankInfo &remoteRankInfo);
+    HcclResult ConstructErrorInfo(std::shared_ptr<HcclSocket> &clientSocket, RankInfo &localRankInfo, RankInfo &remoteRankInfo);
     HcclResult CreateClient(struct ErrInfo errInfo);
     HcclResult processWhiteList(const HcclIpAddress &ipAddr, HcclIpAddress &localIpAddr, std::shared_ptr<HcclSocket> socket, NicType nicType);
     HcclResult WaitForDectect();

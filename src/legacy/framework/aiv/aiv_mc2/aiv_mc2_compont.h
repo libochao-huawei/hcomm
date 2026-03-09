@@ -34,7 +34,7 @@ private:
     void FillCollOperatorV2(const Mc2CcTilingInner &config) const;
 private:
     void GenerateAivMemoryCommContext(HcclCombinOpParam &combinOpParam);
- 	void GenerateAivUrmaCommContext(HcclCombinOpParam &combinOpParam);
+ 	void GenerateAivUrmaCommContext(HcclCombinOpParam &combinOpParam) const;
 
     CommunicatorImpl          *comm;
     std::shared_ptr<DevBuffer> workspaceBuffer{nullptr};
