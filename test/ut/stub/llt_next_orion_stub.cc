@@ -1898,3 +1898,8 @@ HcclResult HcclCommDestroyV2(HcclComm comm)
 {
     return HCCL_SUCCESS;
 }
+
+HcclResult HcommFLushV2()
+{
+    return HCCL_SUCCESS;
+}
