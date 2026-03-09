@@ -155,7 +155,7 @@ HcclResult HcclNetDevGetBusAddrV2(HcclDeviceId dstDevId, HcclAddress *busAddr)
 {
     (void)dstDevId;
     (void)busAddr;
-    HCCL_ERROR("HcclNetDevGetBusAddrV2: failed to get bus address for device[%d], busAddr[%p].", dstDevId, busAddr);
+    HCCL_WARNING("HcclNetDevGetBusAddrV2: failed to get bus address for device[%d], busAddr[%p].", dstDevId, busAddr);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -164,6 +164,6 @@ HcclResult HcclNetDevGetNicAddrV2(int32_t devicePhyId, HcclAddress **addr, uint3
     (void)devicePhyId;
     (void)addr;
     (void)addrNum;
-    HCCL_ERROR("HcclNetDevGetNicAddrV2: failed to get NIC address for devicePhyId[%d], addr[%p], addrNum[%p].", devicePhyId, addr, addrNum);
+    HCCL_WARNING("HcclNetDevGetNicAddrV2: failed to get NIC address for devicePhyId[%d], addr[%p], addrNum[%p].", devicePhyId, addr, addrNum);
     return HCCL_E_NOT_SUPPORT;
 }

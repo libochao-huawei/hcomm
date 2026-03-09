@@ -375,6 +375,7 @@ TEST_F(InsRulesTest, Interpret_local_post_to)
     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
     MOCKER(HrtNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
 
     RtsNotify *nullLocalNotify = nullptr;
 
@@ -1654,6 +1655,7 @@ TEST_F(InsRulesTest, Interpret_aiv_instruction)
 {
     MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
+    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER_CPP(&CommunicatorImpl::ExecAlgSelect).stubs().will(ignoreReturnValue());
     CommunicatorImpl comm;
     CollServiceDeviceMode collService{&comm};
