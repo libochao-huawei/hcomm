@@ -25,14 +25,15 @@
 #include "launch_aicpu.h"
 #include "comm_configer.h"
 #include "endpoint_map.h"
-#include "endpoint_map.h"
+#include "launch_device.h"
 
 namespace hcomm {
 static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
 static std::unordered_map<ChannelHandle, ChannelHandle> g_ChannelD2HMap;
 static std::unordered_map<ThreadHandle, std::shared_ptr<hccl::Thread>> g_ThreadMap;
-
+static aclrtBinHandle g_BinHandle;
 static std::mutex g_ChannelMapMtx;
+static std::mutex g_BinHandleMtx;
 }  // namespace hcomm
 
 namespace hcomm {
@@ -82,6 +83,26 @@ static inline HcclResult WithChannelByHandleLocked(ChannelHandle inHandle, Func 
 
 using namespace hcomm;
 static HcommEndpointMap g_EndpointMap;
+
+static HcclResult EnsureKernelBinLoaded(CommEngine engine) {
+    if (engine != COMM_ENGINE_AICPU && engine != COMM_ENGINE_AICPU_TS) {
+        HCCL_INFO("[%s] engine[%d] kernel loading not required", __func__, engine);
+        return HCCL_SUCCESS;
+    }
+    std::lock_guard<std::mutex> lock(hcomm::g_BinHandleMtx);
+    if (g_BinHandle != nullptr) {
+        return HCCL_SUCCESS;
+    }
+    std::string jsonPath;
+    CHK_RET(hccl::GetKernelFilePath(jsonPath));
+    jsonPath += "ccl_kernel.json";
+
+    HcclResult ret = hccl::LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, g_BinHandle);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[EnsureKernelBinLoaded] load aicpu file fail, path[%s]", jsonPath.c_str()),
+                ret);
+    return HCCL_SUCCESS;
+}
 
 HcclResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
 {
@@ -512,87 +533,40 @@ HcclResult HcommChannelGetUserRemoteMem(ChannelHandle channelHandle, CommMem **r
     });
 }
 
-HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads)
-{
+HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads) {
     CHK_PTR_NULL(threads);
+    HCCL_INFO("[%s] ThreadAcquire begin. engine[%d], threadNum[%u], notifyPerThread[%u], threads[%p]",
+        __func__, engine, threadNum, notifyNumPerThread, threads);
 
-    HCCL_INFO("[%s]ThreadAcquire begin. need threadNum[%u], notifyPerThread[%u]",
-        __func__,
-        threadNum,
-        notifyNumPerThread);
-    if (threadNum <= 0 || threadNum > hccl::HCOMM_THREADNUM_MAX_NUM) {
-        HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.ThreadNum %u.threadNum range (0 , %u]", threadNum, hccl::HCOMM_THREADNUM_MAX_NUM);
-        return HCCL_E_PARA;
-    }
+    // 1. 参数校验
+    CHK_RET(hccl::ValidateThreadParams(threadNum, notifyNumPerThread));
 
-    if (notifyNumPerThread < 0 || notifyNumPerThread > hccl::HCOMM_NOTIFY_MAX_NUM) {
-        HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.notifyNumPerThread is %u,notifyNumPerThread range [0 , %u]", notifyNumPerThread, hccl::HCOMM_NOTIFY_MAX_NUM);
-        return HCCL_E_PARA;
-    }
-
+    // 2. 获取引擎对应的类型
     hccl::NotifyLoadType notifyLoadType;
     hccl::StreamType streamType;
-    CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
-    CHK_RET(CommEngineToStreamType(engine, streamType));
+    CHK_RET(hccl::CommEngineToNotifyLoadType(engine, notifyLoadType));
+    CHK_RET(hccl::CommEngineToStreamType(engine, streamType));
 
-    HcclResult ret = HCCL_SUCCESS;
-    for (uint32_t i = 0; i < threadNum; ++i) {
-        std::shared_ptr<hccl::Thread> handle;
-        HCCL_INFO("[%s] Thread notifyLoadType[%u], streamType[%u]",
-            __func__,
-            static_cast<int32_t>(notifyLoadType),
-            static_cast<int32_t>(streamType));
-        ret = CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, handle);
-        if (ret != HCCL_SUCCESS ) {
-            HCCL_ERROR("[HcommThreadAlloc] Failed to create thread index %u", i);
-            if (i != 0) {
-                CHK_RET(HcommThreadFree(threads, i));
-            }
-            return ret;
-        }
-        ret = handle->Init();
-        if (ret != HCCL_SUCCESS ) {
-            HCCL_ERROR("[HcommThreadAlloc] Failed to init thread index %u", i);
-            if (i != 0) {
-                CHK_RET(HcommThreadFree(threads, i));
-            }
-            return ret;
-        }
-        threads[i] = reinterpret_cast<ThreadHandle>(handle.get());
-        hcomm::g_ThreadMap.emplace(threads[i], handle);
-    }
+    // 3. 创建线程
+    std::vector<std::shared_ptr<hccl::Thread>> newThreads;
+    hccl::ThreadCreateParams params(engine, threadNum, notifyNumPerThread, notifyLoadType, streamType);
+    CHK_RET(hccl::CreateAndInitThreads(params, newThreads));
 
-    HCCL_INFO("[HcommThreadAlloc] ThreadAcquire done: engine[%d] threadNum[%u],"
-              "notifyPerThread[%u]", engine, threadNum, notifyNumPerThread);
+    // 4. 插入全局映射表
+    CHK_RET(hccl::SaveThreads(newThreads));
+
+    // 5. 储存线程句柄
+    CHK_RET(EnsureKernelBinLoaded(engine));
+    CHK_RET(hccl::StoreThreadHandles(newThreads, threads, engine, g_BinHandle));
+
+    HCCL_INFO("[HcommThreadAlloc] ThreadAcquire done: engine[%d] threadNum[%u], notifyPerThread[%u]",
+              engine, threadNum, notifyNumPerThread);
     return HCCL_SUCCESS;
 }
 
 HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum)
 {
-    if (threads == nullptr) {
-        HCCL_ERROR("[HcommThreadfree] threads is null.");
-        return HCCL_E_PARA;
-    }
-
-    // 不允许空释放
-    if (threadNum == 0) {
-        HCCL_ERROR("[HcommThreadfree] threadNum is 0, nothing to free.");
-        return HCCL_E_PARA;
-    }
-
-    HCCL_INFO("[HcommThreadfree] begin to free %u threads", threadNum);
-
-    for (uint32_t i = 0; i < threadNum; ++i) {
-        auto handleIter = hcomm::g_ThreadMap.find(threads[i]);
-        if (handleIter == hcomm::g_ThreadMap.end()) {
-            HCCL_ERROR("[%s] failed to find thread[0x%llx].", __func__, threads[i]);
-            return HcclResult::HCCL_E_NOT_FOUND;
-        }
-        hcomm::g_ThreadMap.erase(threads[i]);
-    }
-
-    HCCL_INFO("[HcommThreadfree] all threads freed successfully");
-    return HCCL_SUCCESS;
+    return hccl::FreeThreads(threads, threadNum, g_BinHandle);
 }
 
 HcclResult HcommThreadAllocWithStream(CommEngine engine,
