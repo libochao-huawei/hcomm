@@ -21,14 +21,14 @@ namespace hcomm {
 
 using namespace std;
 
-constexpr u32 MAX_MDOUBLE_DEVICE_NUM_V2 = 65;
+constexpr u32 MAX_MODULE_DEVICE_NUM_V2 = 65;
 constexpr uint32_t TASK_CONTEXT_SIZE = 50;
 constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失败时打印前序task信息的长度限制
 
 std::mutex g_communicatorCallbackMapMutexV2;
-array<map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM> g_communicatorCallbackMapV2;
+array<map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM_V2> g_communicatorCallbackMapV2;
 std::mutex g_commHadCallbackArrayMutexV2;
-array<bool, MAX_MODULE_DEVICE_NUM> g_commHadCallbackArrayV2 = {false};
+array<bool, MAX_MODULE_DEVICE_NUM_V2> g_commHadCallbackArrayV2 = {false};
 
 
 TaskExceptionHost::~TaskExceptionHost()
@@ -36,21 +36,22 @@ TaskExceptionHost::~TaskExceptionHost()
     (void)UnRegister();
 }
 
-HcclResult TaskExceptionHost::Register() const
+HcclResult TaskExceptionHost::Register()
 {
-    CHK_PRT_RET(isRegistered_, HCCL_DEBUG("[%s]has been registered, skip", __func__], HCCL_SUCCESS));
+    CHK_PRT_RET(isRegistered_, HCCL_DEBUG("[%s]has been registered, skip", __func__), HCCL_SUCCESS);
     aclError ret = aclrtSetExceptionInfoCallback(Process);
-    CHK_PRT_RET(ret != ACL_SUCCESS,HCCL_ERROR("[%s]aclrtSetExceptionInfoCallback failed, ret = [%d]", __func__, ret), HCCL_E_RUNTIME);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[%s]aclrtSetExceptionInfoCallback failed, ret = [%u]", __func__, ret), HCCL_E_RUNTIME);
     isRegistered_ = true;
-    HCCL_INFO("[TaskExceptionHost]exception process func registered.");
+    HCCL_INFO("[TaskExceptionHost] registered success.");
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskExceptionHost::UnRegister() const
+HcclResult TaskExceptionHost::UnRegister()
 {
     aclError ret = aclrtSetExceptionInfoCallback(nullptr);
     CHK_PRT_RET(ret != ACL_SUCCESS,
-        HCCL_ERROR("[%s]aclrtSetExceptionInfoCallback failed, ret[%d]", __func__, ret), HCCL_E_RUNTIME);
+        HCCL_ERROR("[%s]aclrtSetExceptionInfoCallback failed, ret[%u]", __func__, ret), HCCL_E_RUNTIME);
     isRegistered_ = false;
     HCCL_INFO("[TaskExceptionHost]%s success.", __func__);
     return HCCL_SUCCESS;
@@ -59,29 +60,30 @@ HcclResult TaskExceptionHost::UnRegister() const
 TaskExceptionHost *TaskExceptionHostManager::GetHandler(size_t devId)
 {
     // 检查 devId 是否越界
-    if (devId >= MAX_MODULE_DEVICE_NUM) {
+    if (devId >= MAX_MODULE_DEVICE_NUM_V2) {
         HCCL_ERROR("[TaskExceptionHost][GetInstance] deviceLogicID[%lu] is invalid", devId);
         return nullptr;
     }
 
-    static TaskExceptionHost handlers_[MAX_MDOUBLE_DEVICE_NUM_V2];
-    return handlers_[devId];
+    static TaskExceptionHost handlers_[MAX_MODULE_DEVICE_NUM_V2];
+    return &handlers_[devId];
 }
 TaskExceptionHostManager::TaskExceptionHostManager() {}
 
 TaskExceptionHostManager::~TaskExceptionHostManager(){}
 
-void TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBackHcomm callBack)
+void TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId,
+    GetAicpuTaskExceptionCallBackHcomm p1)
 {
    lock_guard<mutex> lock(g_communicatorCallbackMapMutexV2);
-   g_communicatorCallbackMapMutexV2[deviceLogicId].emplace(streamId, p1);
+   g_communicatorCallbackMapV2[deviceLogicId].emplace(streamId, p1);
    return ;
 }
 
 
-HcclResult TaskExceptionHostManager::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
+HcclResult TaskExceptionHost::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
 {
-    HCCL_INFO("[PrintUbRegisters] start, devLogicId[%d], rdmaHandle[%p]", devLogicId, rdmaHandle);
+    HCCL_INFO("[PrintUbRegister] start, devLogicId[%d], rdmaHandle[%p]", devLogicId, rdmaHandle);
     Hccl::AuxInfoIn in;
     in.cqe.status = 0xffffffff; // 0xffffffff代表查询所有寄存器
     in.auxInfoInType = Hccl::AuxInfoInType::AUX_INFO_IN_TYPE_CQE;
@@ -129,15 +131,15 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
         return;
     }
 
-    if (curTask->dfxOpInfo == nullptr) {
+    if (curTask->dfxOpInfo_ == nullptr) {
         HCCL_ERROR("[%s]fail, dfxOpInfo is nullptr", __func__);
         return;
     }
 
-    bool isIndOp_ = curTask->dfxOpInfo_->isIndOp_;
-    if (!isIndOp_) {
+    bool isIndop_ = curTask->dfxOpInfo_->isIndop_;
+    if (!isIndop_) {
         HCCL_INFO("Start to the old process");
-        Hccl::TaskExceptionHandler::process(exceptionInfo);
+        Hccl::TaskExceptionHandler::Process(exceptionInfo);
     } else {
         HCCL_INFO("Start to the new process");
         ProcessException(exceptionInfo, *curTask);
@@ -178,11 +180,11 @@ void TaskExceptionHost::ProcessException(rtExceptionInfo_t* exceptionInfo, const
 
 void TaskExceptionHost::PrintTaskContextInfo(uint32_t deviceId, uint32_t streamId, uint32_t taskId)
 {
-    Hccl::TaskQueue *queue = nullptr;
+    Hccl::TaskInfoQueue *queue = nullptr;
     try {
         queue = Hccl::GlobalMirrorTasks::Instance().GetQueue(deviceId, streamId);
-    } catch (const std::exception &e) {
-        HCCL_ERROR("Exception task not found. deviceId[%u], streamId[%u], taskId[%u].", deviceId, streamId, taskId);
+    } catch (Hccl::HcclException &e) {
+        HCCL_ERROR("Exception task queue  not found. deviceId[%u], streamId[%u].", deviceId, streamId);
         return ;
     }
 
@@ -205,7 +207,7 @@ void TaskExceptionHost::PrintTaskContextInfo(uint32_t deviceId, uint32_t streamI
     for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskItorPtr != *queue->Begin(); ++i, --(*taskItorPtr)) {
         if ((**taskItorPtr)->taskId_ > taskId) {
             HCCL_ERROR("[%s]prev taskId[%u]is bigger than err taskId[%u], traversal end.",
-                __func__ deviceId, streamId, taskId);
+                __func__, (**taskItorPtr)->taskId_, taskId);
             break;
         }
         if ((**taskItorPtr)->taskId_ != taskId) {
@@ -366,7 +368,7 @@ void TaskExceptionHost::PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessage
 void ReportErrorMsg(const Hccl::TaskInfo &exceptionTaskInfo, const std::string &groupRankContent,
     const Hccl::ErrorMessageReport &errorMessage, const rtExceptionInfo_t *exceptionInfo)
 {
-    HCCL_INFO("[ReportErrorMsg] start");
+    HCCL_RUN_INFO("[ReportErrorMsg] start, taskType[%d]", exceptionTaskInfo.taskParam_.taskType);
     if (exceptionTaskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
         HCCL_ERROR("[ReportErrorMsg] EI0002");
         RPT_INPUT_ERR(true,
@@ -444,8 +446,8 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
             dfxOpInfo->algType_ = errorMessage.algType;
             Hccl::TaskInfo exceptionTaskInfo(streamId, errorMessage.taskId, errorMessage.remoteUserRank, taskParam, dfxOpInfo);
             auto logKeywordL2 = exceptionTaskInfo.taskParam_.taskType ==
-                Hccl::TaskParamType::TASK_NOTIFY_WAIT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
-            auto stageErrInfo = "[" + LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + LOG_KEYWORDS_AICPU + "]";
+                Hccl::TaskParamType::TASK_NOTIFY_WAIT ? Hccl::LOG_KEYWORDS_TIMEOUT : Hccl::LOG_KEYWORDS_RUN_FAILED;
+            auto stageErrInfo = "[" + Hccl::LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + Hccl::LOG_KEYWORDS_AICPU + "]";
             HCCL_ERROR("%sTask from HCCL run failed.", stageErrInfo.c_str());
             // 防止tag字符串过长， 信息分开打印
             PrintBaseErrorLog(stageErrInfo, exceptionTaskInfo.GetBaseInfo());

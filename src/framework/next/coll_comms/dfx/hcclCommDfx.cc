@@ -57,13 +57,13 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl
 // HcclCommDfx接口实现 - 修改为返回HcclResult类型
 HcclResult HcclCommDfx::ReportAllTasks(bool cachedReq) {
     CHK_PTR_NULL(profiling_);
-    profiling_->ReportAllTasks(cachedReq);
+    EXECEPTION_CATCH(profiling_->ReportAllTasks(cachedReq), return HCCL_E_PTR);
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommDfx::ReportOp(u64 beginTime, bool cachedReq, bool opbased) {
     CHK_PTR_NULL(profiling_);
-    profiling_->ReportOp(beginTime, cachedReq, opbased);
+    EXECEPTION_CATCH(profiling_->ReportOp(beginTime, cachedReq, opbased), return HCCL_E_PTR);
     return HCCL_SUCCESS;
 }
 

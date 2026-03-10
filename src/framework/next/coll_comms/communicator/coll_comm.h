@@ -22,7 +22,7 @@
 #include "channel_manager.h"
 #include "hcclCommDfx.h"
 #include "rank_graph_v2.h"
-#include "error_message.h"
+#include "error_message_v2.h"
 
 namespace hccl {
 /**
@@ -74,7 +74,7 @@ public:
         }
         return hcclCommDfx_->GetCallback();
     }
-    const std::string& GetCommId() const {return commId_;})
+    const std::string& GetCommId() const {return commId_;}
     HcclResult GetHDCommunicate(
         HDCommunicateParams &kfcControlTransferH2DParams, HDCommunicateParams &kfcStatusTransferD2HParams);
     void RegisterAicpuTaskExceptionCallback(u32 streamId);

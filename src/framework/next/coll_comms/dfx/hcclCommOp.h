@@ -48,9 +48,9 @@ struct HcclDfxOpInfo {
     void*               scratchMemPtr{nullptr};
     u64                 scratchMemSize{0};
     //task_exception
-    u32                 cpuTsThread{0};
-    u32                 cpuWaitAicpuNotifyIdx{0};
-    u32                 cpuWaitAicpuNotifyId{0};
+    u64                 cpuTsThread{0}; // host侧算子主流的threadhandle
+    u32                 cpuWaitAicpuNotifyIdx{0}; // host wait device notifyIdx
+    u32                 cpuWaitAicpuNotifyId{0}; // host wait device notifyId
 };
 
 std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpInfo);
