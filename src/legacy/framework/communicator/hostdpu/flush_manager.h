@@ -18,7 +18,7 @@
 namespace Hccl {
 
 constexpr int MAX_TIME_VALUE = 30000;
-#define ROCE_WR_FLUSH ((ibv_wr_opcode)0x40)
+#define ROCE_WR_FLUSH (static_cast<ibv_wr_opcode>(0x40))
 
 class FlushManager {
 public:

@@ -7,9 +7,9 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include "task_abort_handler.h"
 #include <algorithm>
-#include "pthread.h"
+#include <mutex>
+#include "task_abort_handler.h"
 #include "log.h"
 
 namespace Hccl {
@@ -84,7 +84,7 @@ int32_t ProcessTaskAbortHandleCallback(int32_t deviceLogicId, aclrtDeviceTaskAbo
     HcclUs startut = std::chrono::steady_clock::now();
     CHK_PTR_NULL(args);
     auto &commVector = *(static_cast<std::vector<HcclCommunicator *> *>(args));
-    HCCL_INFO("[NsRecovery][Callback] ProcessTaskAbortHandleCallback begin, deviceLogicId [%u], stage [%d], commVector "
+    HCCL_INFO("[NsRecovery][Callback] ProcessTaskAbortHandleCallback begin, deviceLogicId [%d], stage [%d], commVector "
               "size [%lu]",
               deviceLogicId, stage, commVector.size());
     const std::chrono::seconds localtimeout = std::chrono::seconds(timeout);
