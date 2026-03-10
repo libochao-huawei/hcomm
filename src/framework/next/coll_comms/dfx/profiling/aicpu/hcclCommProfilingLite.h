@@ -14,10 +14,6 @@
 #include "types.h"
 
 namespace hccl {
-typedef struct
-{
-    int id;
-} HcclOpInfo;
 
 class HcclCommProfilingLite {
 public:
@@ -25,10 +21,10 @@ public:
     HcclCommProfilingLite(Hccl::DevId deviceId, Hccl::MirrorTaskManager* mirrorTaskManager);
     
     // 上报所有任务
-    void ReportAllTasks();
+    void ReportAllTasks(const std::string& group, u32 ranksize);
     
     // 上报算子信息（包装ProfilingHandlerLite::GetInstance().ReportHcclOpInfo）
-    void ReportHcclOpInfo(const HcclOpInfo& hcclOpInfo);
+    // void ReportHcclOpInfo(const HcclOpInfo& hcclOpInfo); // TODO: 暂未使用
     
     // 更新Profiling统计
     void UpdateProfStat();

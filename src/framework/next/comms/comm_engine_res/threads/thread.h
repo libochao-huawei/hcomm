@@ -32,7 +32,8 @@ constexpr u32 HCOMM_THREADNUM_MAX_NUM = 1000;
  */
 class Thread {
 public:
-    virtual ~Thread() = default;
+    thread() { HCCL_RUN_INFO("Thread() %p", this); }
+    virtual ~Thread() { HCCL_RUN_INFO("~Thread() %p", this); };
     virtual HcclResult Init() = 0;
     virtual HcclResult DeInit() = 0;
     virtual std::string &GetUniqueId() = 0;

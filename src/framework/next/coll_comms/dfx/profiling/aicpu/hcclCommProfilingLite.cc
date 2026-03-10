@@ -20,16 +20,16 @@ HcclCommProfilingLite::HcclCommProfilingLite(Hccl::DevId deviceId, Hccl::MirrorT
 }
 
 // HcclCommProfilingLite任务上报
-void HcclCommProfilingLite::ReportAllTasks() {
+void HcclCommProfilingLite::ReportAllTasks(const std::string& group, u32 ranksize) {
     if (profilingReporterLite_) {
-        profilingReporterLite_->ReportAllTasks();
+        profilingReporterLite_->ReportAllTasks(group, ranksize);
     }
 }
 
 // HcclCommProfilingLite::ReportHcclOpInfo实现
-void HcclCommProfilingLite::ReportHcclOpInfo(const HcclOpInfo& hcclOpInfo) {
-    //Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(hcclOpInfo);todo:输入不一致
-}
+// void HcclCommProfilingLite::ReportHcclOpInfo(const DfxOpInfo& hcclOpInfo) {
+//     Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(hcclOpInfo);todo:输入不一致
+// }
 
 // HcclCommProfilingLite::UpdateProfStat实现
 void HcclCommProfilingLite::UpdateProfStat() {
