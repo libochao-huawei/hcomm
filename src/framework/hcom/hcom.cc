@@ -35,6 +35,7 @@
 #include "topoinfo_ranktableOffline.h"
 #include "mmpa_api.h"
 #include "hccl_tbe_task.h"
+#include "hcom_pub.h"
 #include "hcom_private_v2.h"
 #include "comm_topo_desc.h"
 #include "hcom_common.h"
@@ -2909,7 +2910,7 @@ __attribute__((constructor)) void CallBackInit()
         HcomDestroyOneDeviceHeterog);
 }
 
-HcclResult GetGroupNameByOpBaseHcom(s64 opBaseHcom, char **groupname) 
+HcclResult HcomGetGroupNameByOpBase(s64 opBaseHcom, char **groupname) 
 {   
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     *groupname = const_cast<char *>(hcclComm->GetIdentifier().c_str());
