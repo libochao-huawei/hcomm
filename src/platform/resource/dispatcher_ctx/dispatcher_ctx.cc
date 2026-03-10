@@ -136,4 +136,13 @@ namespace hccl {
         *dispatcher = pDispatcher;
         return HCCL_SUCCESS;
     }
+
+    HcclResult DispatcherCtx::SetDispatcherHcclQos(u32 hcclQos)
+    {
+        HCCL_INFO("SetDispatcherHcclQos hcclQos = %u", hcclQos);
+        CHK_PTR_NULL(dispatcher_);
+        auto aiCpuDispatcher = static_cast<DispatcherAiCpu*>(dispatcher_);
+        aiCpuDispatcher->SetHcclQos(hcclQos);
+        return HCCL_SUCCESS;
+    }
 }

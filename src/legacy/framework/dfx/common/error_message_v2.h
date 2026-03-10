@@ -29,6 +29,8 @@ struct ErrorMessageReport {
     u32 rankSize = 0;
     AlgType algType;
     TaskParamType taskType = TaskParamType::TASK_SDMA;
+    DfxLinkType linkType;
+ 	std::size_t size;
     uint64_t count = 0;
     uint64_t dstAddr = 0;
     uint64_t srcAddr = 0;
@@ -38,6 +40,8 @@ struct ErrorMessageReport {
 
     Eid locEid{};
     Eid rmtEid{};
+    uint64_t taskDstAddr = 0;
+    uint64_t taskSrcAddr = 0;
 
     uint8_t  rtCqErrorType = 0;
     uint32_t rtCqErrorCode = 0;

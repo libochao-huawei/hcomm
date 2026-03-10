@@ -211,7 +211,7 @@ static HcclResult doLaunches(HcclComm comm)
                                     taskColl.recvType, taskColl.comm, taskColl.stream);
                     break;
                 case HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V:
-                    HcclReduceScatterVInner(const_cast<void *>(taskColl.sendbuff), (const void *)(taskColl.sendCounts), taskColl.sdispls, const_cast<void *>(taskColl.recvbuff), taskColl.recvCount, 
+                    HcclReduceScatterVInner(const_cast<void *>(taskColl.sendbuff), taskColl.sendCounts, taskColl.sdispls, const_cast<void *>(taskColl.recvbuff), taskColl.recvCount, 
                                         taskColl.sendType, taskColl.op, taskColl.comm, taskColl.stream);
                     break;
                 default:

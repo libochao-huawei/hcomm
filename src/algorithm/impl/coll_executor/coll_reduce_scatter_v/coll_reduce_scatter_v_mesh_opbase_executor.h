@@ -41,7 +41,7 @@ private:
     bool IsHugeData(const u64 curSize, const OpParam &param) override;
     HcclResult RunReduceScattervLevel0SingleModule(const OpParam &param, ExecMem &execMem,SubCommInfo &level0CommInfo);
     HcclResult RunReduceScattervLevel0(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
-    HcclResult RunReduceScattervLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
+    HcclResult RunReduceScattervLevel1(const OpParam &param, ExecMem &execMem, const SubCommInfo &level0CommInfo);
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
 };
 

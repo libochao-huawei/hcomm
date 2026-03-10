@@ -1443,7 +1443,7 @@ HcclResult HcclDevMemAcquireV2(HcclComm comm, const char *memTag, uint64_t *size
         char tmpMemTag[MAX_MEM_TAG_SIZE];
         s32 ret = strcpy_s(tmpMemTag, MAX_MEM_TAG_SIZE, memTag);
         if (ret != EOK) {
-            HCCL_ERROR("[HcclDevMemAcquire] strcpy_s memTag failed! result %u, the memTag len must be less than %u", ret, MAX_MEM_TAG_SIZE);
+            HCCL_ERROR("[HcclDevMemAcquire] strcpy_s memTag failed! result %d, the memTag len must be less than %u", ret, MAX_MEM_TAG_SIZE);
             return HCCL_E_PARA;
         }
         memTagStr = std::string(tmpMemTag);
@@ -1573,8 +1573,13 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
     std::shared_ptr<RankInfoDetect> rankInfoDetectAgent = std::make_shared<RankInfoDetect>();
     RankTableInfo rankTable{};
     HcclResult ret = RootInfoDetect(rankInfoDetectAgent, nRanks, rank, rootHandle, rankTable);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", 
-        __func__, HCCL_ERROR_CODE(ret));rankTable.Dump(), ret);
+    if (ret != HCCL_SUCCESS) {
+        RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
+                            std::vector<std::string>({"RootInfoDetect failed."}));
+        HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", __func__, HCCL_ERROR_CODE(ret));
+        rankTable.Dump();
+        return ret;
+    }
     
     // 打印ranktable
     rankTable.Dump();
@@ -1686,8 +1691,13 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
     RankTableInfo rankTable{};
     std::shared_ptr<RankInfoDetect> rankInfoDetectAgent = std::make_shared<RankInfoDetect>();
     HcclResult ret = RootInfoDetect(rankInfoDetectAgent, nRanks, rank, rootHandle, rankTable);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] errNo[0x%016llx] RankInfoDetect failed.", __func__, HCCL_ERROR_CODE(ret));rankTable.Dump(), ret);
+    if (ret != HCCL_SUCCESS) {
+        RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
+                            std::vector<std::string>({"RootInfoDetect failed."}));
+        HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", __func__, HCCL_ERROR_CODE(ret));
+        rankTable.Dump();
+        return ret;
+    }
     
     // 打印ranktable
     rankTable.Dump();
@@ -1931,7 +1941,7 @@ HcclResult HcclSendV2(
     u32 modelId = 0;
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
-    const std::string tag = "Send_" + communicator->GetId();
+    const std::string tag = "SendRecv_" + communicator->GetId();
     
     CHK_RET(HcomCheckDataTypeV2(dataType));
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
@@ -1991,7 +2001,7 @@ HcclResult HcclRecvV2(
     u32 modelId = 0;
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
-    const std::string tag = "Recv_" + communicator->GetId();
+    const std::string tag = "SendRecv_" + communicator->GetId();
     
     CHK_RET(HcomCheckDataTypeV2(dataType));
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
@@ -2339,7 +2349,7 @@ HcclResult HcclGetRawCommHandle(const char *commName, HcclComm *commHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetCcuTaskInfo(HcclComm comm, void *tilingData, void *ccuTaskGroup)
+HcclResult HcclGetCcuTaskInfoLegacy(HcclComm comm, void *tilingData, void *ccuTaskGroup)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(tilingData);

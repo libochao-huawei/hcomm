@@ -47,22 +47,32 @@ void TaskExceptionHandlerLite::Register() const
     TaskExceptionFunc::GetInstance().RegisterCallback(Process);
 }
 
-void GetErrMsgInfo(std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &errMsgInfo, const rtLogicCqReport_t* exceptionInfo) {
+void GetUbErrMsgInfo(std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &errMsgInfo, const rtLogicCqReport_t* exceptionInfo) {
     if (taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_UB) {
         errMsgInfo.locEid = taskInfo->taskParam_.taskPara.DMA.locEid;
         errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.DMA.rmtEid;
         errMsgInfo.ubCqeStatus = exceptionInfo->errorCode & 0xFF;
+        errMsgInfo.linkType = taskInfo->taskParam_.taskPara.DMA.linkType;
+ 	    errMsgInfo.size = taskInfo->taskParam_.taskPara.DMA.size;
+        errMsgInfo.taskSrcAddr = reinterpret_cast<u64>(taskInfo->taskParam_.taskPara.DMA.src);
+        errMsgInfo.taskDstAddr = reinterpret_cast<u64>(taskInfo->taskParam_.taskPara.DMA.dst);
     } else if (taskInfo->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
         || taskInfo->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
         errMsgInfo.locEid = taskInfo->taskParam_.taskPara.Reduce.locEid;
         errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.Reduce.rmtEid;
         errMsgInfo.ubCqeStatus = exceptionInfo->errorCode & 0xFF;
+        errMsgInfo.linkType = taskInfo->taskParam_.taskPara.Reduce.linkType;
+ 	    errMsgInfo.size = taskInfo->taskParam_.taskPara.Reduce.size;
+        errMsgInfo.taskSrcAddr = reinterpret_cast<u64>(taskInfo->taskParam_.taskPara.Reduce.src);
+        errMsgInfo.taskDstAddr = reinterpret_cast<u64>(taskInfo->taskParam_.taskPara.Reduce.dst);
     }
+    errMsgInfo.rtCqErrorType = exceptionInfo->errorType;
+    errMsgInfo.rtCqErrorCode = exceptionInfo->errorCode;
 }
 
-HcclResult GenerateErrorMessageReport(CommunicatorImplLite *aicpuComm, std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &errMsgInfo, const rtLogicCqReport_t* exceptionInfo)
+HcclResult GenerateErrorMessageReport(const CommunicatorImplLite *aicpuComm, std::shared_ptr<TaskInfo> taskInfo, ErrorMessageReport &errMsgInfo, const rtLogicCqReport_t* exceptionInfo)
 {
     // 获取需要上报的关键信息
     errMsgInfo.remoteUserRank = taskInfo->remoteRank_;
@@ -101,10 +111,8 @@ HcclResult GenerateErrorMessageReport(CommunicatorImplLite *aicpuComm, std::shar
     memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag), taskInfo->dfxOpInfo_->op_.opTag.c_str(), taskInfo->dfxOpInfo_->op_.opTag.size());
     memcpy_s(errMsgInfo.group, sizeof(errMsgInfo.group), aicpuComm->GetId().c_str(), aicpuComm->GetId().size());
 
-    GetErrMsgInfo(taskInfo, errMsgInfo, exceptionInfo);
+    GetUbErrMsgInfo(taskInfo, errMsgInfo, exceptionInfo);
 
-    errMsgInfo.rtCqErrorType = exceptionInfo->errorType;
-    errMsgInfo.rtCqErrorCode = exceptionInfo->errorCode;
     return HCCL_SUCCESS;
 }
 
@@ -169,7 +177,7 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
 
     aicpuSqe.u.aicpu_record.fault_task_id = 0xffffffff;
 
-    HCCL_ERROR("[SendTaskExceptionByMBox] exceptionInfo errorType[%u], errorCode[%u]", (u32)exceptionInfo->errorType, exceptionInfo->errorCode);
+    HCCL_ERROR("[SendTaskExceptionByMBox] exceptionInfo errorType[%u], errorCode[%u]", static_cast<u32>(exceptionInfo->errorType), exceptionInfo->errorCode);
     if (exceptionInfo->errorType == 1) { // ub类型为1
         aicpuSqe.u.aicpu_record.ret_code = SwitchUBCqeErrCodeToTsErrCode(exceptionInfo->errorCode & 0xFF);
     } else {
@@ -293,7 +301,7 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
     if (curTask->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY || curTask->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
         || curTask->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE || curTask->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
         || curTask->taskParam_.taskType == TaskParamType::TASK_UB) {
-        HCCL_ERROR("[TaskExceptionHandlerLite] ubCqeStatus[%u]", (u32)(exceptionInfo->errorCode & 0xFF));
+        HCCL_ERROR("[TaskExceptionHandlerLite] ubCqeStatus[%u]", static_cast<u32>(exceptionInfo->errorCode & 0xFF));
     }
     PrintEid(curTask);
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, base information is %s.", curTask->GetBaseInfo().c_str());

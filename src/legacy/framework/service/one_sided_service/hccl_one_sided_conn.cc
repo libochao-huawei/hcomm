@@ -75,7 +75,9 @@ void HcclOneSidedConn::WaitOneSidedTransportReady()
             break;
         }
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            THROW<InternalException>("WaitOpbasedTransportReady timeout.");
+            RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}),
+                            std::vector<std::string>({"WaitOneSidedTransportReady timeout, SOCKET_TIMEOUT."}));
+            THROW<InternalException>("WaitOneSidedTransportReady timeout.");
         }
     }
 }

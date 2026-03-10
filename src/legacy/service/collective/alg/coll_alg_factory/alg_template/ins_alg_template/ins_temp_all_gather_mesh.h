@@ -42,8 +42,8 @@ public:
         return tempRankSize_;
     }
 private:
-    HcclResult LocalDataCopy(std::vector<InsQuePtr> &tempInsQues);
-    HcclResult PostLocalCopy(std::vector<InsQuePtr> &tempInsQues);
+    HcclResult LocalCopyToScratch(InsQuePtr tempInsQue);
+    HcclResult LocalCopyToUsrOut(InsQuePtr tempInsQue);
     HcclResult RunMesh(const u32 myAlgRank, const std::vector<RankId> &vTopo, std::vector<InsQuePtr> &tempInsQues);
 
     u32 majorQueNum_       = 0;

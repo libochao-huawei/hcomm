@@ -15,7 +15,6 @@
 #include "transport_pub.h"
 #include "hccl_api.h"
 #include "aicpu_operator_pub.h"
-#include "hccl_types.h"
 
 // 独立算子同步资源
 struct HcclChannelP2p {
@@ -25,6 +24,7 @@ struct HcclChannelP2p {
     HcclSignalInfo localIpcSignal[LINK_P2P_MAX_NUM];    // localnotify
     HcclSignalInfo remoteIpcSignal[LINK_P2P_MAX_NUM];
     hccl::TransportAttr transportAttr;
+    u32 qos;
 };
  
 struct HcclChannelRoce {
