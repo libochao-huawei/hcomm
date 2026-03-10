@@ -20,7 +20,6 @@
 #include "task_info.h"
 
 namespace hccl {
-using RankId = u32;
 
 struct HcclDfxOpInfo {
     //DfxOpInfo_base
@@ -28,6 +27,7 @@ struct HcclDfxOpInfo {
     u32                 index_{0};
     u64                 beginTime_{0};
     u64                 endTime_{0};
+    u64                 ranksize_{0};
     //CollOperator
     char                opTag[256];
     bool                staticAddr{false};
@@ -41,7 +41,6 @@ struct HcclDfxOpInfo {
     u32                 outputType{0};
     u64                 dataCount{0};
     u32                 root = INVALID_VALUE_RANKID;
-    u32                 numBlocksLimit{0};
     void*               inputMemPtr{nullptr};
     u64                 inputMemSize{0};
     void*               outputMemPtr{nullptr};
@@ -49,49 +48,11 @@ struct HcclDfxOpInfo {
     void*               scratchMemPtr{nullptr};
     u64                 scratchMemSize{0};
     //task_exception
-    u32          notifyId{0}; //host wait device notifyId
-    union {
-        struct {
-            u64 dataCount{0};
-            u32 dataType{0};
-            u32 dataOutputType{0};
-            u64 strideCount{0};
-        } dataDes;
-        struct {
-            void* counts;
-            void* displs;
-            u32 dataType{0};
-        } vDataDes;
-        struct {
-            u32 sendType{0};
-            u32 recvType{0};
-            u64 sendCount{0};
-            u64 recvCount{0};
-        } all2AllDataDes;
-        struct {
-            u32 sendType{0};
-            u32 recvType{0};
-            void* sendCounts;
-            void* recvCounts;
-            void* sdispls;
-            void* rdispls;
-        } all2AllVDataDes;
-        struct {
-            u32 sendType{0};
-            u32 recvType{0};
-            void* sendCountMatrix;
-        } all2AllVCDataDes;
-        struct {
-            HcclSendRecvItem* sendRecvItemsPtr;
-            u32 itemNum{0};
-        } batchSendRecvDataDes;
-    };
+    u32                 notifyId{0}; //host wait device notifyId
 };
 
-void SetCollopDataDes(Hccl::CollOperator& collOp, const HcclDfxOpInfo& dfxOpInfo);
-std::shared_ptr<Hccl::Buffer> CreateBufferShared(const Hccl::Buffer* buffer);
 std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpInfo);
-HcclResult HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback);
 
 }
+int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback);
 #endif

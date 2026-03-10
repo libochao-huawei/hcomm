@@ -13,11 +13,14 @@ namespace hccl {
 
 ReadWriteLockBase HcclCommDfx::baseLock_;
 ReadWriteLock HcclCommDfx::rwLock_(HcclCommDfx::baseLock_);
+std::unordered_map<std::string, std::unordered_map<u64, u32>> HcclCommDfx::channelRemoteRankId_;
 
 HcclCommDfx::HcclCommDfx() {
 }
 
 HcclResult HcclCommDfx::Init(u32 deviceId, const std::string comTag) {
+    HCCL_INFO("[HcclCommDfx][Init] Init begin");
+    HCCL_INFO("[HcclCommDfx][Init] deviceId[%u], comTag[%s]", deviceId,comTag.c_str());
     deviceId_ = deviceId;
     commTag_ = comTag;
     // 1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
@@ -26,13 +29,14 @@ HcclResult HcclCommDfx::Init(u32 deviceId, const std::string comTag) {
     }
     
     // 2. 创建Profiling管理类
-    EXECEPTION_CATCH(profiling_ = std::make_unique<HcclCommProfiling>(deviceId_), return HCCL_E_PTR);
+    EXECEPTION_CATCH(profiling_ = std::make_unique<HcclCommProfiling>(deviceId_, mirrorTaskManager_.get()), return HCCL_E_PTR);
     
     // 3. 注册回调到单例
     // RegisterProfilingCallback();
     setAddTaskCallback_ = [this](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
         return this->AddTaskInfoCallback(streamId, taskId, taskParam, handle);
     };
+    HCCL_INFO("[HcclCommDfx][Init] Init success");
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 
@@ -47,22 +51,21 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl
     EXECEPTION_CATCH(taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
         remoteRankId, taskParam, mirrorTaskManager_->GetCurrDfxOpInfo()), return HCCL_E_PTR);
     EXECEPTION_CATCH(mirrorTaskManager_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
+    HCCL_INFO("[HcclCommDfx][AddTaskInfoCallback] taskInfo:[%s]", taskInfo->Describe().c_str());
     return HCCL_SUCCESS;
 }
 
 // HcclCommDfx接口实现 - 修改为返回HcclResult类型
 HcclResult HcclCommDfx::ReportAllTasks(bool cachedReq) {
-    if (profiling_) {
-        profiling_->ReportAllTasks(cachedReq);
-    }
-    return HCCL_E_PTR; // profiling_为空返回指针错误码
+    CHK_PTR_NULL(profiling_);
+    EXECEPTION_CATCH(profiling_->ReportAllTasks(cachedReq), return HCCL_E_PTR);
+    return HCCL_SUCCESS; // profiling_为空返回指针错误码
 }
 
 HcclResult HcclCommDfx::ReportOp(u64 beginTime, bool cachedReq, bool opbased) {
-    if (profiling_) {
-        profiling_->ReportOp(beginTime, cachedReq, opbased);
-    }
-    return HCCL_E_PTR; // profiling_为空返回指针错误码
+    CHK_PTR_NULL(profiling_);
+    EXECEPTION_CATCH(profiling_->ReportOp(beginTime, cachedReq, opbased), return HCCL_E_PTR);
+    return HCCL_SUCCESS; // profiling_为空返回指针错误码
 }
 
 // void HcclCommDfx::CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
@@ -72,10 +75,9 @@ HcclResult HcclCommDfx::ReportOp(u64 beginTime, bool cachedReq, bool opbased) {
 // }
 
 HcclResult HcclCommDfx::UpdateProfStat() {
-    if (profiling_) {
+    CHK_PTR_NULL(profiling_);
         profiling_->UpdateProfStat();
-    }
-    return HCCL_E_PTR; // profiling_为空返回指针错误码
+    return HCCL_SUCCESS; // profiling_为空返回指针错误码
 }
 
 Hccl::MirrorTaskManager* HcclCommDfx::GetMirrorTaskManager() const {
