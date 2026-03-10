@@ -25,7 +25,7 @@ void AicpuDaemonService::ServiceRun(void *info)
 {
     HCCL_INFO("Start back ground thread");
     auto commandToBackGroud = static_cast<CommandToBackGroud *>(info);
-    while (true) {
+    while (!needBreak) {
         if (*commandToBackGroud == CommandToBackGroud::Stop) {
             HCCL_INFO("Back ground thread returned");
             break;

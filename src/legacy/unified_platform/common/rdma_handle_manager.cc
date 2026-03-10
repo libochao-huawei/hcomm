@@ -272,7 +272,7 @@ void RdmaHandleManager::DestroyAll()
                 if (j == RDMA_HANDLE_INDEX && handleIter.second != nullptr) {
                     DECTOR_TRY_CATCH("rdma handle deinit", HrtRaRdmaDeInit(handleIter.second, netWorkModeMap[handleIter.second]));
                 }
-                if (j == UB_HANDLE_INDEX && handleIter.second != nullptr) {
+                if (j == UB_HANDLE_INDEX && handleIter.second != nullptr && tokenInfoMap[handleIter.second] != nullptr) {
                     if (tokenInfoMap[handleIter.second] != nullptr) {
                         DECTOR_TRY_CATCH("token id handle destroy", tokenInfoMap[handleIter.second]->Destroy());
                     }
