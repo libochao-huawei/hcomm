@@ -91,7 +91,7 @@ protected:
     HcclResult AHCAlgSelect(AlgTypeLevel1 &algType, std::vector<std::vector<std::vector<u32>>> &globalSubGroups,
         std::map<AHCConcOpType, TemplateType> &ahcAlgOption, AHCAlgSelectParam &ahcAlgSelectParam);
     HcclResult AHCAlgOptionSelect(AlgTypeLevel1 &algType, std::vector<std::vector<std::vector<u32>>> &globalSubGroups,
-        std::map<AHCConcOpType, TemplateType> &ahcAlgOption, AHCAlgSelectParam &ahcAlgSelectParam);
+        std::map<AHCConcOpType, TemplateType> &ahcAlgOption, const AHCAlgSelectParam &ahcAlgSelectParam);
 
     bool IsNeedStrictMode(const OpParam& param);
     bool CheckStrictCondition(const OpParam& param);
