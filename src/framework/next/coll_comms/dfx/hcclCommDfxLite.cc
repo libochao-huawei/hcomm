@@ -58,17 +58,17 @@ HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const 
 }
 
 // HcclCommDfxLite接口实现 - 修改为返回HcclResult类型
-HcclResult HcclCommDfxLite::ReportAllTasks() {
+HcclResult HcclCommDfxLite::ReportAllTasks(const std::string& group, u32 ranksize) {
     CHK_SMART_PTR_NULL(profilingImpl_);
-    profilingImpl_->ReportAllTasks();
+    profilingImpl_->ReportAllTasks(group, ranksize);
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommDfxLite::ReportHcclOpInfo(const HcclOpInfo& hcclOpInfo) {
-    CHK_SMART_PTR_NULL(profilingImpl_);
-    profilingImpl_->ReportHcclOpInfo(hcclOpInfo);
-    return HCCL_SUCCESS;
-}
+// HcclResult HcclCommDfxLite::ReportHcclOpInfo(const DfxOpInfo& hcclOpInfo) {
+//     CHK_SMART_PTR_NULL(profilingImpl_);
+//     profilingImpl_->ReportHcclOpInfo(hcclOpInfo);
+//     return HCCL_SUCCESS;
+// }
 
 HcclResult HcclCommDfxLite::UpdateProfStat() {
     CHK_SMART_PTR_NULL(profilingImpl_);

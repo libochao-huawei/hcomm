@@ -338,6 +338,7 @@ public:
     HcclResult GetCommRankTable(RankTable_t &rankTable);    // 逆向解析获取RankTable_t参数
     HcclResult SetQpQosAttr(u32 trafficClass, u32 serviceLevel); // 设置TC/SL配置
     HcclResult SetHcclQos(u32 hcclQos);
+    u32 GetHcclQos();
 
     std::shared_ptr<struct hcclKernelPlanner> planner {nullptr}; //for group
     void* barrierSendBuf;
@@ -441,6 +442,7 @@ private:
     CommAicpuParam commAicpuParam_;
     aclrtBinHandle binHandle_ = nullptr;
     DevType devType_ = DevType::DEV_TYPE_COUNT;
+    u32 hcclQos_;
 #ifndef CCL_KERNEL_AICPU
     // 独立算子专用成员变量
     IndependentOp independentOp_;

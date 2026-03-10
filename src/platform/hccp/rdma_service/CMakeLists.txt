@@ -30,6 +30,8 @@ set(rs_list
     ctx/rs_ctx.c
     ctx/rs_esched.c
     ctx/rs_ub.c
+    ctx/rs_ub_dfx.c
+    ctx/rs_ub_tp.c
     ctx/product/ascend910_95/rs_ub_jetty.c
     ctx/product/ascend910_95/rs_ub_jfc.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/dl_hal_function.c

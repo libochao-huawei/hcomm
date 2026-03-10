@@ -23,7 +23,6 @@
 #include "task_exception_handler.h"
 #include "aicpu/launch_device.h"
 #include "exception_util.h"
-#include "invalid_params_exception.h"
 #include "runtime_api_exception.h"
 
 namespace Hccl {
@@ -900,7 +899,7 @@ HcclResult CollServiceAiCpuImpl::ClearOpLoadedInfo(const std::string &opTag)
     return HCCL_SUCCESS;
 }
 
-u32 CollServiceAiCpuImpl::GetRemoteRankIdsHashValue(const CollOperator &op)
+u32 CollServiceAiCpuImpl::GetRemoteRankIdsHashValue(const CollOperator &op) const
 {
     vector<RankId> tempRankIds;
     HcclSendRecvItem* itemPtr = reinterpret_cast<HcclSendRecvItem *>(op.batchSendRecvDataDes.sendRecvItemsPtr);

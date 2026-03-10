@@ -67,17 +67,17 @@ DevType MakeEnumToDevType(int makeEnum)
     return DevType::DEV_TYPE_NOSOC;
 }
 
-typedef HcclResult (*HcomCreateGroupCallback)(const std::string &, const std::vector<u32> &);
-typedef bool (*HcomCallBackGroupIsInit)(HcomInfo &);
-typedef HcclResult (*HcomDestroyGroupCallback)(const std::string &);
-typedef HcclResult (*HcomDestroyCallback)(HcomInfo &);
+using HcomCreateGroupCallback = HcclResult (*)(const std::string &, const std::vector<u32> &);
+using HcomCallBackGroupIsInit = bool (*)(HcomInfo &);
+using HcomDestroyGroupCallback = HcclResult (*)(const std::string &);
+using HcomDestroyCallback = HcclResult (*)(HcomInfo &);
 HcomCreateGroupCallback g_hcomCreateGroupCallback = nullptr;
 HcomCallBackGroupIsInit g_hcomCallBackGroupIsInit = nullptr;
 HcomDestroyGroupCallback g_hcomDestroyGroupCallback = nullptr;
 HcomDestroyCallback g_hcomDestroyCallback = nullptr;
 
-typedef HcclResult (*HcomSetGroupTopoInfoPtr)(const char *, uint32_t);
-typedef void (*HcomUnsetGroupTopoInfoPtr)(const char *);
+using HcomSetGroupTopoInfoPtr = HcclResult (*)(const char *, uint32_t);
+using HcomUnsetGroupTopoInfoPtr = void (*)(const char *);
 HcomSetGroupTopoInfoPtr g_hcomSetGroupTopoInfo = nullptr;
 HcomUnsetGroupTopoInfoPtr g_hcomUnsetGroupTopoInfo = nullptr;
 
@@ -605,7 +605,7 @@ HcclResult HcomFlushBackloggedGroups()
     HCCL_INFO("HcomFlushBackloggedGroups");
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     std::unique_lock<std::mutex> backGroupParaLock(g_backloggedGroupLock);
-    typedef map<string, std::vector<u32>>::iterator ITER;
+    using ITER = map<string, std::vector<u32>>::iterator;
     for (ITER iter = g_backloggedGroup.begin(); iter != g_backloggedGroup.end();) {
         HCCL_INFO("HcomFlushBackloggedGroups[%s], rank[%u]", iter->first.c_str(), hcomInfo.params.rank);
         if (std::count(iter->second.begin(), iter->second.end(), hcomInfo.params.rank)) {

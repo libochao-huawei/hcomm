@@ -127,7 +127,7 @@ HcclResult ReduceScatterPlantLocalReduce::RunAsync(const u32 rank, const u32 ran
 
     // All2All主流（主流）通知LocalReduce主流开始准备执行,
     // All2All需要rankSize条流，其中主流完成LocalCopy&第一个A2A任务，因此主从同步需要rankSize-2个任务。lRMainStreamId_需要-2
-    all2allSubStreamNum_ = std::min(rankSize, DEVICE_EIGHT) - 2;
+    all2allSubStreamNum_ = isA3CrossNode_ ? std::min(rankSize, DEVICE_EIGHT) - 1 : rankSize - 2;
     lRMainStreamId_ = all2allSubStreamNum_;
 
     CHK_RET(AlgTemplateBase::ExecEmptyTask(inputMem_, outputMem_, stream_, dispatcher_));
@@ -259,7 +259,7 @@ HcclResult ReduceScatterPlantLocalReduce::RunAlltoAll(const std::vector<LINK> &l
 HcclResult ReduceScatterPlantLocalReduce::RunGroupAlltoAll(const std::vector<LINK> &links, u32 groupId,
     const MemBlockInfo& memBlockInfo)
 {
-    constexpr u32 numInGroup = 8;
+    constexpr u32 numInGroup = DEVICE_EIGHT;
     u32 numOfGroups = (rankSize_ + numInGroup - 1) / numInGroup;
 
     // 本卡优先拷贝同号位数据

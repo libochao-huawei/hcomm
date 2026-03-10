@@ -25,9 +25,12 @@
 #include "ut_dispatch.h"
 #include "stub/ibverbs.h"
 #include "rs.h"
+#include "rs_ub_tp.h"
+#include "rs_ub_dfx.h"
 #include "rs_ub.h"
 #include "rs_ccu.h"
 #include "rs_ctx.h"
+#include "rs_common_inner.h"
 #include "rs_inner.h"
 #include "rs_ctx_inner.h"
 #include "tc_ut_rs_ub.h"
@@ -1199,8 +1202,10 @@ void TcRsUbCtxJfcCreateFail()
     struct RsUbDevCb devCb = {0};
     struct CtxCqAttr attr = {0};
     struct CtxCqInfo info = {0};
+    struct rs_cb rsCb = {0};
     int ret = 0;
 
+    devCb.rscb = &rsCb;
     attr.ub.mode = JFC_MODE_STARS_POLL;
     mocker(RsUbCtxJfcCreateExt, 1, -1);
     ret = RsUbCtxJfcCreate(&devCb, &attr, &info);

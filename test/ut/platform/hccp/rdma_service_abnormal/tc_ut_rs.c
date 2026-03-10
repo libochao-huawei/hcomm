@@ -26,11 +26,13 @@
 #include "stub/ibverbs.h"
 #include "hccp_common.h"
 #include "rs.h"
+#include "rs_common_inner.h"
 #include "rs_inner.h"
 #include "rs_ping_inner.h"
 #include "rs_ping.h"
 #include "rs_drv_rdma.h"
 #include "rs_drv_socket.h"
+#include "rs_socket.h"
 #include "ra_rs_err.h"
 #include "tc_ut_rs.h"
 #include "stub/verbs_exp.h"
@@ -222,7 +224,6 @@ int StubRsFindWhiteListNode(struct RsWhiteList *rsSocketWhiteList,
 int RsPostSendStub(struct ibv_qp *qp, struct ibv_send_wr *wr,
 				struct ibv_send_wr **badWr);
 
-int RsQpInfoSync(struct RsQpCb *qpCb);
 int RsCreateEpoll(struct rs_cb *rsCb);
 int RsGetMrcb(struct RsQpCb *qpCb, uint64_t addr, struct RsMrCb **mrCb, struct RsListHead *mrList);
 

@@ -19,7 +19,7 @@ namespace hccl {
 class HcclCommProfiling {
 public:
     // 构造函数
-    HcclCommProfiling(u32  deviceId);
+    HcclCommProfiling(u32  deviceId, Hccl::MirrorTaskManager* mirrorTaskManager);
     
     // 上报所有任务
     void ReportAllTasks(bool cachedReq = false);
@@ -37,7 +37,7 @@ public:
     Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
     
 private:
-    std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;
+    Hccl::MirrorTaskManager* mirrorTaskManager_;
     std::unique_ptr<Hccl::ProfilingReporter> profilingReporter_;
 };
 }// namespace hccl
