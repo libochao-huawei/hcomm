@@ -429,6 +429,11 @@ HcclResult MyRank::Clean()
         }
     }
 
+    if (channelList.empty()) {
+        HCCL_INFO("[NsRecovery][Clean] Channel list empty, No need to clean!");
+        return HcclResult::HCCL_SUCCESS;
+    }
+
     auto ret = HcommChannelClean(channelList.data(), channelList.size());
     if (ret != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[NsRecovery][Clean] MyRank::Clean failed!");
@@ -486,6 +491,11 @@ HcclResult MyRank::Resume()
         for (const auto& endPointPair : rankPair.second) {
             channelList.insert(channelList.end(), endPointPair.second.begin(), endPointPair.second.end());
         }
+    }
+
+    if (channelList.empty()) {
+        HCCL_INFO("[NsRecovery][Clean] Resume list empty, No need to clean!");
+        return HcclResult::HCCL_SUCCESS;
     }
 
     auto ret = HcommChannelResume(channelList.data(), channelList.size());

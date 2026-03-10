@@ -12,6 +12,8 @@
 #include "exception_handler.h"
 #include "rank_graph_v2.h"
 #include "coll_comm_mgr.h"
+#include "kfc.h"
+#include "dlhal_function.h"
 
 namespace hccl {
 CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, const ManagerCallbacks& callbacks)
@@ -29,6 +31,7 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
 {
     EXCEPTION_HANDLE_BEGIN
 
+    CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
     EXECEPTION_CATCH(rankgraph_ = std::make_unique<RankGraphV2>(rankGraph), return HCCL_E_PTR);
     uint32_t rankNum = 0;
     CHK_PTR_NULL(rankgraph_);
@@ -51,6 +54,8 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
         opExpansionMode = config->hcclOpExpansionMode;
     }
     CHK_RET(myRank_->Init(cclBuffer, opExpansionMode, rankNum));
+
+    CHK_RET(InitHDCommunicate());
     
     CollCommMgr::GetInstance()->RegisteCollComm(this); 
     commStatus_ = HcclCommStatus::HCCL_COMM_READY;
@@ -62,6 +67,35 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
 uint32_t CollComm::GetMyRankId() const
 {
     return rankId_;
+}
+
+HcclResult CollComm::InitHDCommunicate()
+{
+    // 初始化aicpu进程host-device共享内存
+    EXECEPTION_CATCH((kfcControlTransferH2D_ = 
+        std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_H2D, sizeof(Hccl::KfcCommand))),
+        return HCCL_E_PTR);
+    CHK_RET(kfcControlTransferH2D_->InitHost());
+
+    EXECEPTION_CATCH((kfcStatusTransferD2H_ = 
+        std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_D2H, sizeof(Hccl::KfcExecStatus))),
+        return HCCL_E_PTR);
+    CHK_RET(kfcStatusTransferD2H_->InitHost());
+
+    myRank_->SetKfcControlTransfer(kfcControlTransferH2D_, kfcStatusTransferD2H_);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollComm::GetHDCommunicate(
+    HDCommunicateParams &kfcControlTransferH2DParams, HDCommunicateParams &kfcStatusTransferD2HParams)
+{
+    CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
+    CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
+    kfcControlTransferH2DParams = kfcControlTransferH2D_->GetCommunicateParams();
+    kfcStatusTransferD2HParams = kfcStatusTransferD2H_->GetCommunicateParams();
+    HCCL_INFO("%s success, group[%s]", __func__, commId_.c_str());
+    return HCCL_SUCCESS;
 }
 
 std::string CollComm::GetCollCommName()
