@@ -11,6 +11,7 @@
 #ifndef HCCP_NDA_H
 #define HCCP_NDA_H
 
+#include <sys/uio.h>
 #include <infiniband/verbs.h>
 #include <stdint.h>
 #include "hccp_common.h"
@@ -21,7 +22,7 @@ extern "C" {
 
 struct NdaOps {
     void *(*alloc)(size_t size);
-    void (free)(void *ptr);
+    void (*free)(void *ptr);
 
     int (*memset_s)(void *dst, int value, size_t count);
     int (*memcpy_s)(void *dst, size_t dstSize, void *src, size_t srcSize);
@@ -45,13 +46,6 @@ struct queueBuf {
     uint32_t entryCnt;
     uint32_t entrySize;
 };
-
-#ifndef _SYS_UIO_H
-struct iovec {
-    void *iov_base;
-    size_t iov_len;
-};
-#endif // _SYS_UIO_H
 
 struct queueInfo {
     struct queueBuf qBuf;

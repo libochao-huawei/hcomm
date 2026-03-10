@@ -13,6 +13,7 @@
 #include "securec.h"
 #include "dl_hal_function.h"
 #include "dl_ibverbs_function.h"
+#include "dl_nda_function.h"
 #include "dl_urma_function.h"
 #include "dl_ccu_function.h"
 #include "dl_net_function.h"
