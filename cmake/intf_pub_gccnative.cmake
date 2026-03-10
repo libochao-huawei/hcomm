@@ -43,8 +43,8 @@ add_library(intf_pub INTERFACE)
 target_link_libraries(intf_pub INTERFACE
     $<BUILD_INTERFACE:intf_pub_base>
     -Wl,--whole-archive
-    $<$<BOOL:${ENABLE_TEST}>:${ASCEND_3RD_LIB_PATH}/mockcpp_shared/lib/libmockcpp.a>
-    $<$<BOOL:${ENABLE_TEST}>:${ASCEND_3RD_LIB_PATH}/gtest_shared/lib/libgtest.so>
+    $<BOOL:${ENABLE_TEST}>:${ASCEND_3RD_LIB_PATH}/mockcpp/lib/libmockcpp.a>
+    $<BOOL:${ENABLE_TEST}>:${ASCEND_3RD_LIB_PATH}/gtest/lib/libgtest.so>
     -Wl,--no-whole-archive
     -Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib
 )
