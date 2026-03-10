@@ -1984,7 +1984,7 @@ HcclResult HcclSendV2(
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllGatherVV2:success,take time: " +
+        std::string endInfo = "HcclSendV2:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(hcclSendStackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }
@@ -2044,7 +2044,7 @@ HcclResult HcclRecvV2(
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllGatherVV2:success,take time: " +
+        std::string endInfo = "HcclRecvV2:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(hcclRecvStackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }
@@ -2107,7 +2107,7 @@ HcclResult HcclReduceScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount,
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllGatherVV2:success,take time: " +
+        std::string endInfo = "HcclReduceScatterV2:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(stackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }
@@ -2202,7 +2202,7 @@ HcclResult HcclReduceScatterVV2(void *sendBuf, void *sendCounts, void *sendDispl
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllGatherVV2:success,take time: " +
+        std::string endInfo = "HcclReduceScatterVV2:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(stackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }
@@ -2259,7 +2259,7 @@ HcclResult HcclBatchSendRecvV2(HcclSendRecvItem *sendRecvInfo, uint32_t itemNum,
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllGatherVV2:success,take time: " +
+        std::string endInfo = "HcclBatchSendRecvV2:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(stackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }
