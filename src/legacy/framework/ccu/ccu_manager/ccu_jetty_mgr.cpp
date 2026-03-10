@@ -19,6 +19,7 @@
 namespace Hccl {
 
 constexpr uint32_t CCU_DEFAULT_REQUEST_SQ_SIZE = 128;
+constexpr uint32_t CCU_CLOS_REQUEST_SQ_SIZE = 16;  // CLOS场景的默认SQ大小
 constexpr uint32_t CCU_DEFAULT_REQUEST_CHANNEL_NUM = 1;
 constexpr uint32_t CCU_DEFAULT_REQUEST_JETTY_NUM = 0; // 申请数量为0时，由平台层决定提供数量
 
@@ -48,8 +49,11 @@ HcclResult CcuJettyMgr::PrepareCreate(const std::vector<LinkData> &links)
         }
 
         const auto &locAddr = link.GetLocalAddr();
+        // 根据 LinkData 的 fullmesh 字段选择不同的 sqSize
+        uint32_t sqSize = link.GetFullmesh() ? CCU_DEFAULT_REQUEST_SQ_SIZE : CCU_CLOS_REQUEST_SQ_SIZE;
         ResourceBatch *batchPtr = nullptr;
-        auto ret = GetAvailableBatch(locAddr, batchPtr);
+        // 这里仅使用locAddr作为batchKey，是因为不会存在相同locAddr但不同资源的场景（不同locAddr必然不同资源），如果后续有更复杂的场景再调整key设计
+        auto ret = GetAvailableBatch(locAddr, batchPtr, sqSize);
         CHK_PRT_RET(ret == HcclResult::HCCL_E_UNAVAIL,
             HCCL_WARNING("[CcuJettyMgr][%s] failed to alloc ccu channels, ccu resources "
                 "are unavaialble, locAddr[%s], devLogicId[%d].",
@@ -74,7 +78,7 @@ HcclResult CcuJettyMgr::PrepareCreate(const std::vector<LinkData> &links)
 }
 
 // 当前以locAddr为粒度调用，根据locAddr可以找到已申请的批次，如果资源充足则复用，不足则按新批次申请资源
-HcclResult CcuJettyMgr::GetAvailableBatch(const BatchKey &batchKey, ResourceBatch *&batchPtr)
+HcclResult CcuJettyMgr::GetAvailableBatch(const BatchKey &batchKey, ResourceBatch *&batchPtr, uint32_t sqSize)
 {
     // 当前以locAddr作为batchKey，不同本端不能复用资源
     if (FindAvailableBatch(batchKey, batchPtr)) {
@@ -82,15 +86,22 @@ HcclResult CcuJettyMgr::GetAvailableBatch(const BatchKey &batchKey, ResourceBatc
     }
     // 已有的资源不足，需要新增资源，获取的channel数量可能超过申请数量
     const CcuChannelPara channelPara{batchKey, CCU_DEFAULT_REQUEST_CHANNEL_NUM,
-            CCU_DEFAULT_REQUEST_JETTY_NUM, CCU_DEFAULT_REQUEST_SQ_SIZE};
+            CCU_DEFAULT_REQUEST_JETTY_NUM, sqSize};  // 使用传入的sqSize参数
+    HCCL_INFO("[CcuJettyMgr][%s] try to alloc ccu channels with channelPara[channelNum=%u, jettyNum=%u, sqSize=%u], "
+        "locAddr[%s], devLogicId[%d].", __func__, channelPara.channelNum, channelPara.jettyNum,
+        channelPara.sqSize, batchKey.Describe().c_str(), devLogicId_);
     std::vector<CcuChannelInfo> channelInfos;
     auto ret = CcuAllocChannels(devLogicId_, channelPara, channelInfos);
+    // 如果资源不足，平台层返回不可用错误，需要上层感知不可用进行降级处理
     CHK_PRT_RET(ret == HcclResult::HCCL_E_UNAVAIL,
         HCCL_WARNING("[CcuJettyMgr][%s] failed to alloc ccu channels, ccu resources "
-            "are unavaialble, locAddr[%s] devLogicId[%d].", __func__,
-            batchKey.Describe().c_str(), devLogicId_),
-        ret);
-    CHK_RET(ret);
+            "are unavaialble, locAddr[%s], sqSize[%u], devLogicId[%d].", __func__,
+            batchKey.Describe().c_str(), sqSize, devLogicId_), ret);
+    // 其他错误直接返回错误码
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[CcuJettyMgr][%s] failed to alloc ccu channels, ccu resources "
+            "are unavaialble, locAddr[%s], sqSize[%u], devLogicId[%d].", __func__,
+            batchKey.Describe().c_str(), sqSize, devLogicId_), ret);
     // 如果新增资源保存失败，手动释放避免泄露
     ret = CreateAndSaveNewBatch(batchKey, channelInfos, batchPtr);
     if (ret != HcclResult::HCCL_SUCCESS) {

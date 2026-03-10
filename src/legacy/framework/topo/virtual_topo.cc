@@ -41,6 +41,7 @@ LinkData::LinkData(vector<char> &data)
     binaryStream >> writable;
     binaryStream >> hop;
     binaryStream >> localDieId_;
+    binaryStream >> fullmesh;
 
     u32 offset;
     u32 addrSize;
@@ -79,6 +80,7 @@ std::vector<char> LinkData::GetUniqueId() const
     binaryStream << writable;
     binaryStream << hop;
     binaryStream << localDieId_;
+    binaryStream << fullmesh;
 
     vector<char> result;
     binaryStream.Dump(result);
