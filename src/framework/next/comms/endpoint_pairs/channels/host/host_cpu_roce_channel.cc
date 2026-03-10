@@ -86,10 +86,8 @@ HcclResult HostCpuRoceChannel::BuildNotify()
     return HCCL_SUCCESS;
 }
 
-// NotifyRecord使用的内存
 HcclResult HostCpuRoceChannel::BuildBuffer()
 {
-    // TODO: 追加构造NotifyRecord使用的LocalRdmaRmaBuffer，使用malloc创建Host侧内存
     bufferNum_ = localRmaBuffers_.size();
     return HCCL_SUCCESS;
 }
@@ -471,7 +469,7 @@ HcclResult HostCpuRoceChannel::PrepareNotifyWrResource(
     const uint64_t len, const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifyRecordWr) const
 {
     if (remoteNotifyIdx >= remoteDpuNotifyIds_.size()) {
-        HCCL_ERROR("[HostCpuRoceChannel::%s] remoteNotifyIdx[%u] out of the range of remoteDpuNotifyIds_[%u].",
+        HCCL_ERROR("[HostCpuRoceChannel::%s] remoteNotifyIdx[%u] out of the range of remoteDpuNotifyIds_[%zu].",
                    __func__, remoteNotifyIdx, remoteDpuNotifyIds_.size());
         return HCCL_E_PARA;
     }
@@ -483,9 +481,9 @@ HcclResult HostCpuRoceChannel::PrepareNotifyWrResource(
                 HCCL_E_ROCE_CONNECT);
 
     // 构造send_WR
-    notifyRecordWr.sg_list->addr                 = localRmaBuffers_[0]->GetBufferInfo().first + len; // 本端起始地址
-    notifyRecordWr.sg_list->length               = len / 2;                                          // 取的本端长度
-    notifyRecordWr.sg_list->lkey                 = localRmaBuffers_[0]->GetLkey();                               // 本端的访问秘钥
+    notifyRecordWr.sg_list->addr                 = localRmaBuffers_[0]->GetBufferInfo().first; // 本端起始地址
+    notifyRecordWr.sg_list->length               = 0;                                          // 取的本端长度
+    notifyRecordWr.sg_list->lkey                 = localRmaBuffers_[0]->GetLkey();             // 本端的访问秘钥
     notifyRecordWr.opcode       = IBV_WR_RDMA_WRITE_WITH_IMM;
     notifyRecordWr.send_flags   = IBV_SEND_SIGNALED;
     notifyRecordWr.imm_data     = dpuNotifyId;
@@ -497,10 +495,8 @@ HcclResult HostCpuRoceChannel::PrepareNotifyWrResource(
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx) const
+HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
 {
-    uint64_t bufferBlockSize = localRmaBuffers_[0]->GetBufferInfo().second / 2;
-
     // 补充rq中消耗的rqe
     // 1. 准备recv_WR
     CHK_RET(IbvPostRecv());
@@ -510,7 +506,7 @@ HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx) cons
     struct ibv_send_wr *sendbadWr = nullptr;
     struct ibv_sge sgList {};
     notifyRecordWr.sg_list      = &sgList;
-    CHK_RET(PrepareNotifyWrResource(bufferBlockSize, remoteNotifyIdx, notifyRecordWr));
+    CHK_RET(PrepareNotifyWrResource(MEM_BLOCK_SIZE, remoteNotifyIdx, notifyRecordWr));
 
     std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
     CHK_PRT_RET(qpInfo.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__), HCCL_E_ROCE_CONNECT);
@@ -533,7 +529,12 @@ HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx) cons
                    "badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
             __func__, ret, sendbadWr->wr_id, sendbadWr->sg_list->addr, sendbadWr->wr.rdma.remote_addr, sendbadWr->wr.ud.remote_qpn),
         HCCL_E_NETWORK);
-    HCCL_INFO("[HostCpuRoceChannel::NotifyRecord] NotifyRecord end");
+    if (wqeNum_ == UINT32_MAX) {
+        HCCL_ERROR("[HostCpuRoceChannel::%s] wqeNum_ has reached the maximum value of uint32_t.", __func__);
+        return HCCL_E_INTERNAL;
+    }
+    wqeNum_++;
+    HCCL_INFO("[HostCpuRoceChannel::NotifyRecord] NotifyRecord end, wqeNum_=%u", wqeNum_);
     return HCCL_SUCCESS;
 }
 
@@ -542,7 +543,7 @@ HcclResult HostCpuRoceChannel::NotifyWait(const uint32_t localNotifyIdx, const u
     HCCL_INFO("[HostCpuRoceChannel::NotifyWait] NotifyWait start");
 
     if (localNotifyIdx >= localDpuNotifyIds_.size()) {
-        HCCL_ERROR("[HostCpuRoceChannel::%s] localNotifyIdx[%u] out of the range of localDpuNotifyIds_[%u].",
+        HCCL_ERROR("[HostCpuRoceChannel::%s] localNotifyIdx[%u] out of the range of localDpuNotifyIds_[%zu].",
             __func__, localNotifyIdx, localDpuNotifyIds_.size());
         return HCCL_E_PARA;
     }
@@ -552,18 +553,10 @@ HcclResult HostCpuRoceChannel::NotifyWait(const uint32_t localNotifyIdx, const u
     struct ibv_wc wc{};
     std::lock_guard<std::mutex> lock(cq_mutex);
     std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
-    if (qpInfo.empty()) {
-        HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__);
-        return HCCL_E_ROCE_CONNECT;
-    }
-    if (qpInfo[0].recvCq == nullptr) {
-        HCCL_INFO("[HostCpuRoceChannel::NotifyWait] recvCq is null");
-        return HCCL_E_INTERNAL;
-    }
-    if (qpInfo[0].recvCq->context == nullptr) {
-        HCCL_INFO("[HostCpuRoceChannel::NotifyWait] recvCq->context is null");
-        return HCCL_E_INTERNAL;
-    }
+    CHK_PRT_RET(qpInfo.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__), HCCL_E_ROCE_CONNECT);
+    CHK_PRT_RET(qpInfo[0].recvCq == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] recvCq is null", __func__), HCCL_E_INTERNAL);
+    CHK_PRT_RET(qpInfo[0].qp == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] qp is null", __func__), HCCL_E_INTERNAL);
+    CHK_PRT_RET(qpInfo[0].recvCq->context == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] recvCq->context is null", __func__), HCCL_E_INTERNAL);
 
     HCCL_INFO("[HostCpuRoceChannel::NotifyWait] poll recvCq = %p, localNotifyIdx = %u, notifyId = %u.",
         qpInfo[0].recvCq, localNotifyIdx, dpuNotifyId);
@@ -600,7 +593,7 @@ HcclResult HostCpuRoceChannel::PrepareWriteWrResource(const void *dst, const voi
     const uint32_t remoteNotifyIdx, struct ibv_send_wr &writeWithNotifyWr) const
 {
     if (remoteNotifyIdx >= remoteDpuNotifyIds_.size()) {
-        HCCL_ERROR("[HostCpuRoceChannel::%s] remoteNotifyIdx[%u] out of the range of remoteDpuNotifyIds_[%u].",
+        HCCL_ERROR("[HostCpuRoceChannel::%s] remoteNotifyIdx[%u] out of the range of remoteDpuNotifyIds_[%zu].",
             __func__, remoteNotifyIdx, remoteDpuNotifyIds_.size());
         return HCCL_E_PARA;
     }
@@ -632,7 +625,7 @@ HcclResult HostCpuRoceChannel::PrepareWriteWrResource(const void *dst, const voi
 }
 
 HcclResult HostCpuRoceChannel::WriteWithNotify(
-    void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx) const
+    void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx)
 {
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
@@ -673,7 +666,12 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
                    "badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
             __func__, ret, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr, badWr->wr.ud.remote_qpn),
         HCCL_E_NETWORK);
-    HCCL_INFO("[HostCpuRoceChannel::WriteWithNotify] WriteWithNotify end");
+    if (wqeNum_ == UINT32_MAX) {
+        HCCL_ERROR("[HostCpuRoceChannel::%s] wqeNum_ has reached the maximum value of uint32_t.", __func__);
+        return HCCL_E_INTERNAL;
+    }
+    wqeNum_++;
+    HCCL_INFO("[HostCpuRoceChannel::WriteWithNotify] WriteWithNotify end, wqeNum_=%u", wqeNum_);
     return HCCL_SUCCESS;
 }
 
@@ -687,26 +685,43 @@ HcclResult HostCpuRoceChannel::Read(void *dst, const void *src, const uint64_t l
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult HostCpuRoceChannel::ChannelFence() const
+HcclResult HostCpuRoceChannel::ChannelFence()
 {
-    struct ibv_wc wc{};
-    int wcNum = 2;
-    std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
-    if (qpInfo.empty()) {
-        HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__);
-        return HCCL_E_ROCE_CONNECT;
-    }
+    std::lock_guard<std::mutex> lock(sendCq_mutex);
+    HCCL_INFO("[HostCpuRoceChannel::%s] ChannelFence start, wqeNum_=%u", __func__, wqeNum_);
+    CHK_PRT_RET(wqeNum_ == 0, HCCL_INFO("[HostCpuRoceChannel::%s] no need to fence since no wqenum.", __func__), HCCL_SUCCESS);
+    std::vector<struct ibv_wc> wc(wqeNum_);
+    const std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
+    CHK_PRT_RET(qpInfo.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__), HCCL_E_ROCE_CONNECT);
+    CHK_PRT_RET(qpInfo[0].sendCq == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] sendCq is null", __func__), HCCL_E_INTERNAL);
+    CHK_PRT_RET(qpInfo[0].qp == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] qp is null", __func__), HCCL_E_INTERNAL);
+    CHK_PRT_RET(qpInfo[0].sendCq->context == nullptr, HCCL_ERROR("[HostCpuRoceChannel::%s] sendCq->context is null", __func__), HCCL_E_INTERNAL);
 
     auto timeout = std::chrono::milliseconds(FENCE_TIMEOUT_MS);
     auto startTime = std::chrono::steady_clock::now();
     while (true) {
-        auto actualNum = ibv_poll_cq(qpInfo[0].recvCq, wcNum, &wc);
-        CHK_PRT_RET(wc.status != IBV_WC_SUCCESS,
-            HCCL_ERROR("[HostCpuRoceChannel][%s] ibv_poll_cq return wc.status is [%d].",
-            __func__, wc.status), HCCL_E_NETWORK);
+        auto actualNum = ibv_poll_cq(qpInfo[0].sendCq, wqeNum_, wc.data());
+        if (actualNum < 0) {
+            HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq failed. actualNum: %d.", __func__, actualNum);
+            return HCCL_E_NETWORK;
+        }
 
-        if (actualNum == wcNum) {
-            break;
+        uint32_t actualNum32 = static_cast<uint32_t>(actualNum);
+        if (actualNum32 > wqeNum_) {
+            HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq polled more completions (%d) than expected (%u).",
+                __func__, actualNum32, wqeNum_);
+            return HCCL_E_INTERNAL;
+        } else if (actualNum32 > 0) {
+            for (uint32_t i = 0; i < actualNum32; i++) {
+                if (wc[i].status != IBV_WC_SUCCESS) {
+                    HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq error. wc[%u] status: %d.", __func__, i, wc[i].status);
+                    return HCCL_E_NETWORK;
+                }
+            }
+            wqeNum_ -= actualNum32; // 减去已经完成的数量，继续等待剩余的完成
+            if (wqeNum_ == 0) {
+                break; // 所有的wqe都已经完成，退出循环
+            }
         }
 
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
@@ -715,6 +730,7 @@ HcclResult HostCpuRoceChannel::ChannelFence() const
         }
     }
 
+    wqeNum_ = 0; // 所有的wqe都已经完成，重置计数器
     return HCCL_SUCCESS;
 }
 
