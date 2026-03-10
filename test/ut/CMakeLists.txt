@@ -171,6 +171,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/device/common
     ${HCCL_CODE_ROOT}/src/framework/device/utils
     ${HCCL_CODE_ROOT}/src/framework/device/framework
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
 
     # framework/next
