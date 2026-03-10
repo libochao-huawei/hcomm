@@ -56,6 +56,8 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 
     indOpCommInitialized_ = true;
     InitBackGroundThread();
+
+    isCommReady_ = true;
     
     HCCL_RUN_INFO("%s group[%s] success!, deviceLogicId[%u], devicePhyId[%u], deviceType[%u]",
          __func__, identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType);
@@ -275,6 +277,11 @@ u32 CollCommAicpu::GetDevPhyId()
 std::vector<std::shared_ptr<Thread>> CollCommAicpu::GetThreads()
 {
     return threads_;
+}
+
+bool CollCommAicpu::IsCommReady() const
+{
+    return isCommReady_;
 }
 
 void CollCommAicpu::CleanUbTransportMap()

@@ -25,8 +25,6 @@
 #include "comm_configer.h"
 #include "launch_aicpu.h"
 #include "launch_device.h"
-#include "../../legacy/framework/communicator/hdc.h"
-#include "../../legacy/framework/communicator/aicpu/kfc.h"
 #include "sal_pub.h"
 
 namespace hccl
@@ -302,7 +300,7 @@ namespace hccl
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(commAicpuParam_.deviceLogicId), commAicpuParam_.devicePhyId));
         CHK_RET(hrtGetDeviceType(devType_));
         commAicpuParam_.deviceType = static_cast<u32>(devType_);
-        
+
         // json表解析
         std::string jsonPath;
         CHK_RET(GetKernelFilePath(jsonPath));
@@ -324,7 +322,7 @@ namespace hccl
 
         CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
         CHK_RET(collComm_->GetHDCommunicate(commAicpuParam_.kfcControlTransferH2DParams,
-            commAicpuParam_.kfcStatusTransferD2HParams);
+            commAicpuParam_.kfcStatusTransferD2HParams));
         return HCCL_SUCCESS;
     }
 

@@ -24,14 +24,6 @@ void NsRecoveryLite::ResetErrorReported()
 {
     isErrorReported_ = false;
 }
-void NsRecoveryLite::SetIsCommReady(bool flag)
-{
-    isCommReady_ = flag;
-}
-bool NsRecoveryLite::IsCommReady() const
-{
-    return isCommReady_;
-}
 void NsRecoveryLite::SetNeedClean(bool flag)
 {
     needClean_ = flag;

@@ -26,7 +26,7 @@ void NsRecoveryFuncLite::Call()
     AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo);
     for (auto &commInfo : aicpuCommInfo) {
         CollCommAicpu* deviceComm = commInfo.second->GetCollCommAicpu();
-        if (!deviceComm->GetNsRecoveryLitePtr()->IsCommReady()) {
+        if (!deviceComm->IsCommReady()) {
             continue;
         }
         HandleStopLaunch(deviceComm);

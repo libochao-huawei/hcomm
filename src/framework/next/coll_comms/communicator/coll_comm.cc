@@ -54,6 +54,9 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
         opExpansionMode = config->hcclOpExpansionMode;
     }
     CHK_RET(myRank_->Init(cclBuffer, opExpansionMode, rankNum));
+    s32 deviceId = 0;
+    CHK_RET(hrtGetDevice(&deviceId));
+    CHK_RET(hrtGetDevice(&deviceLogicId_));
 
     CHK_RET(InitHDCommunicate());
     
@@ -71,7 +74,7 @@ uint32_t CollComm::GetMyRankId() const
 
 HcclResult CollComm::InitHDCommunicate()
 {
-    // 初始化aicpu进程host-device共享内存
+    // 初始化aicpu进程 host-device 共享内存
     EXECEPTION_CATCH((kfcControlTransferH2D_ = 
         std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_H2D, sizeof(Hccl::KfcCommand))),
         return HCCL_E_PTR);
@@ -81,8 +84,7 @@ HcclResult CollComm::InitHDCommunicate()
         std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_D2H, sizeof(Hccl::KfcExecStatus))),
         return HCCL_E_PTR);
     CHK_RET(kfcStatusTransferD2H_->InitHost());
-
-    myRank_->SetKfcControlTransfer(kfcControlTransferH2D_, kfcStatusTransferD2H_);
+    return HCCL_SUCCESS;
 
     return HCCL_SUCCESS;
 }
@@ -101,12 +103,6 @@ HcclResult CollComm::GetHDCommunicate(
 std::string CollComm::GetCollCommName()
 {
     return commId_;
-}
-
-void CollComm::SetKfcControlTransfer(std::shared_ptr<Hccl::HDCommunicate> kfcControlTransferH2D, 
-        std::shared_ptr<Hccl::HDCommunicate> kfcStatusTransferD2H)
-{
-    myRank_->SetKfcControlTransfer(kfcControlTransferH2D, kfcStatusTransferD2H);
 }
 
 HcclCommStatus CollComm::GetCommStatus()

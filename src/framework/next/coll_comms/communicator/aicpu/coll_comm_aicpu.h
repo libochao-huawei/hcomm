@@ -25,6 +25,7 @@
 #include "channel_param.h"
 #include "hdc_pub.h"
 #include "ns_recovery/aicpu/ns_recovery_lite.h"
+#include <atomic>
 
 using namespace hccl;
 class CollCommAicpu {
@@ -40,6 +41,8 @@ public:
     std::vector<std::shared_ptr<Thread>> GetThreads();
     void CleanUbTransportMap();
 
+    bool IsCommReady() const;
+
     // N秒快恢
     hccl::NsRecoveryLitePtr GetNsRecoveryLitePtr();
     
@@ -51,6 +54,8 @@ private:
     //通用的通道
     hccl::HDCommunicatePtr kfcControlTransferH2D_{nullptr};
     hccl::HDCommunicatePtr kfcStatusTransferD2H_{nullptr};
+
+    std::atomic<bool> isCommReady_{false};
 
     std::string identifier_;
     bool indOpCommInitialized_{ false }; // 独立算子流程通信域是否初始化
