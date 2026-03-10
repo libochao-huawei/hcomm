@@ -22,7 +22,3 @@
 
 using namespace hccl;
 
-void TaskExceptionHandler::DumpAivPrintWorkSpace(const std::shared_ptr<std::deque<TaskInfo>> &taskQue)
-{
-    return;
-}

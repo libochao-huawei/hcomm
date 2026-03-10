@@ -1187,7 +1187,6 @@ bool TaskExceptionHandler::DealExceptionTask(rtExceptionInfo *exceptionInfo)
     if (exceptionTaskInfo.isAlgInfo){
         PrintTaskAivBuffer(queIt);
         PrintTaskAivInfo(queIt);
-        DumpAivPrintWorkSpace(queIt);
     }else if(exceptionTaskInfo.taskType == TaskType::TASK_NOTIFY_WAIT) { 
         queIt->pop_back();
         // 只在出错task为NotifyWait时打印前序task序列
