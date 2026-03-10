@@ -1941,7 +1941,7 @@ HcclResult HcclSendV2(
     u32 modelId = 0;
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
-    const std::string tag = "Send_" + communicator->GetId();
+    const std::string tag = "SendRecv_" + communicator->GetId();
     
     CHK_RET(HcomCheckDataTypeV2(dataType));
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
@@ -2001,7 +2001,7 @@ HcclResult HcclRecvV2(
     u32 modelId = 0;
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
-    const std::string tag = "Recv_" + communicator->GetId();
+    const std::string tag = "SendRecv_" + communicator->GetId();
     
     CHK_RET(HcomCheckDataTypeV2(dataType));
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
@@ -2349,7 +2349,7 @@ HcclResult HcclGetRawCommHandle(const char *commName, HcclComm *commHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetCcuTaskInfoLegacy(HcclComm comm, void *tilingData, void *ccuTaskGroup)
+HcclResult HcclGetCcuTaskInfo(HcclComm comm, void *tilingData, void *ccuTaskGroup)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(tilingData);

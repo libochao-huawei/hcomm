@@ -10,10 +10,7 @@
 
 #include "ccu_res_batch_allocator.h"
 
-#include <array>
 #include <memory>
-#include <utility>
-#include <iterator>
 #include <algorithm>
 
 #include "hccl_common.h"
@@ -571,38 +568,22 @@ void CcuResBatchAllocator::ReleaseBlockResource(std::unique_ptr<CcuResRepository
     }
 }
 
-using ResTypeResInfo = std::pair<ResType, std::vector<ResInfo>*>;
-static auto EraseReverse(std::vector<ResInfo>& vec,
-                         std::vector<ResInfo>::reverse_iterator it)
-    -> std::vector<ResInfo>::reverse_iterator
+using ResTypeResInfo = std::pair<ResType, std::vector<ResInfo>&>;
+static HcclResult DoReleaseNonBlockTypeRes(int32_t devLogicId, uint8_t dieId,
+    const std::array<ResTypeResInfo, NON_BLOCK_TYPE_NUM> &infoParas)
 {
-    return std::vector<ResInfo>::reverse_iterator(
-        vec.erase(std::next(it).base())
-    );
-}
-
-static HcclResult DoReleaseNonBlockTypeRes(
-    int32_t devLogicId, uint8_t dieId,
-    std::array<ResTypeResInfo, NON_BLOCK_TYPE_NUM>& infoParas)
-{
-    CcuComponent& ccuComponent = CcuComponent::GetInstance(devLogicId);
-
+    CcuComponent &ccuComponent = CcuComponent::GetInstance(devLogicId);
     for (auto& infos : infoParas) {
-        const ResType resType = infos.first;
-        std::vector<ResInfo>* resInfosPtr = infos.second;
-        if (resInfosPtr == nullptr || resInfosPtr->empty()) {
-            continue;
-        }
-        std::vector<ResInfo>& resInfos = *resInfosPtr;
-        // 倒序删除，减少vector元素移动
-        for (auto it = resInfos.rbegin(); it != resInfos.rend(); ) {
-            const uint32_t num = it->num;
+        const ResType resType = std::get<0>(infos);
+        std::vector<ResInfo> &resInfos= std::get<1>(infos);
+        const uint32_t reqSize = resInfos.size();
+        for (uint32_t i = 0; i < reqSize; i++) {
+            const uint32_t num = resInfos[i].num;
             if (num == 0) {
-                it = EraseReverse(resInfos, it);
                 continue;
             }
 
-            const uint32_t startId = it->startId;
+            const uint32_t startId = resInfos[i].startId;
             auto ret = ccuComponent.ReleaseRes(dieId, resType, startId, num);
             if (ret != HcclResult::HCCL_SUCCESS) {
                 HCCL_ERROR("[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
@@ -611,28 +592,28 @@ static HcclResult DoReleaseNonBlockTypeRes(
                 return ret;
             }
 
-            it = EraseReverse(resInfos, it);
+            resInfos.erase(resInfos.begin() + i);
         }
     }
     return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult CcuResBatchAllocator::ReleaseNonBlockTypeRes(
-    std::unique_ptr<CcuResRepository>& resRepoPtr) const
+    std::unique_ptr<CcuResRepository> &resRepoPtr) const
 {
     for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
         if (!dieEnableFlags_[dieId]) {
             continue;
         }
 
-        std::array<ResTypeResInfo, NON_BLOCK_TYPE_NUM> infoParas = {{
-            {ResType::LOOP, &resRepoPtr->loopEngine[dieId]},
-            {ResType::MS,   &resRepoPtr->ms[dieId]},
-            {ResType::CKE,  &resRepoPtr->cke[dieId]},
-            {ResType::XN,   &resRepoPtr->continuousXn[dieId]},
-            {ResType::XN,   &resRepoPtr->xn[dieId]},
-            {ResType::GSA,  &resRepoPtr->gsa[dieId]}
-        }};
+        const std::array<ResTypeResInfo, NON_BLOCK_TYPE_NUM> infoParas = {
+            std::make_pair(ResType::LOOP, std::ref(resRepoPtr->loopEngine[dieId])),
+            std::make_pair(ResType::MS, std::ref(resRepoPtr->ms[dieId])),
+            std::make_pair(ResType::CKE, std::ref(resRepoPtr->cke[dieId])),
+            std::make_pair(ResType::XN, std::ref(resRepoPtr->continuousXn[dieId])),
+            std::make_pair(ResType::XN, std::ref(resRepoPtr->xn[dieId])),
+            std::make_pair(ResType::GSA, std::ref(resRepoPtr->gsa[dieId]))
+        };
     
         CHK_RET(DoReleaseNonBlockTypeRes(devLogicId_, dieId, infoParas));
     }
