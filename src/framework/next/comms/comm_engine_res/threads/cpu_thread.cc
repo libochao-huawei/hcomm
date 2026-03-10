@@ -216,7 +216,7 @@ HcclResult CpuThread::KernelRun()
     return serviceScheduler_->ServiceRun();
 }
 
-HcclResult CpuThread::GetThreadEntity(void* threadEntity)
+HcclResult CpuThread::GetThreadEntity(void* &threadEntity)
 {
     // CHK_PTR_NULL(threadEntity);
     if (!isInit_) {

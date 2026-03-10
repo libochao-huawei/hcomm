@@ -661,8 +661,8 @@ HcclResult HcommThreadAllocWithConfig(CommEngine engine, uint32_t threadNum, con
             return ret;
         }
 
-        void* deviceHandle;
         if (engine == COMM_ENGINE_AICPU && type == THREAD_TYPE_CPU) {
+            void* deviceHandle{};
             hccl::CpuThread* cpuThread = dynamic_cast<hccl::CpuThread*>(hostHandle.get());
             cpuThread->GetThreadEntity(deviceHandle);
             threads[i] = reinterpret_cast<ThreadHandle>(deviceHandle); // 越界风险

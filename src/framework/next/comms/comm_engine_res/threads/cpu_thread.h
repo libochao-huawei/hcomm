@@ -209,7 +209,7 @@ public:
     HcclResult ServiceRegister(ThreadService serviceCb, ThreadServiceHandle* serviceHandle);
     HcclResult ServiceUnregister(ThreadServiceHandle service);
     HcclResult KernelRun();
-    HcclResult GetThreadEntity(void* threadEntity) override;
+    HcclResult GetThreadEntity(void* &threadEntity) override;
     MemNotify* GetMemNotify(uint32_t notifyIndex);
     uint32_t GetNotifyNum() const override;
 
