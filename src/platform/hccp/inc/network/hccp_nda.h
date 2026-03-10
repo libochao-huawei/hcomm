@@ -11,6 +11,7 @@
 #ifndef HCCP_NDA_H
 #define HCCP_NDA_H
 
+#include <sys/uio.h>
 #include <infiniband/verbs.h>
 #include <stdint.h>
 #include "hccp_common.h"
@@ -21,10 +22,10 @@ extern "C" {
 
 struct NdaOps {
     void *(*alloc)(size_t size);
-    void (free)(void *ptr);
+    void (*free)(void *ptr);
 
     int (*memset_s)(void *dst, int value, size_t count);
-    int (*memcpy_s)(void *dst, size_t dstSize, void *src, size_t srcSize);
+    int (*memcpy_s)(void *dst, size_t dstSize, void *src, size_t srcSize, uint32_t direct);
 };
 
 enum {
@@ -36,6 +37,7 @@ enum {
 struct NdaCqInitAttr {
     struct ibv_cq_init_attr_ex attr;
 
+    uint32_t cqCapFlag;
     uint32_t dmaMode;
     struct NdaOps *ops;
 };
@@ -45,13 +47,6 @@ struct queueBuf {
     uint32_t entryCnt;
     uint32_t entrySize;
 };
-
-#ifndef _SYS_UIO_H
-struct iovec {
-    void *iov_base;
-    size_t iov_len;
-};
-#endif // _SYS_UIO_H
 
 struct queueInfo {
     struct queueBuf qBuf;
@@ -68,6 +63,7 @@ struct NdaCqInfo {
 struct NdaQpInitAttr {
     struct ibv_qp_init_attr attr;
 
+    uint32_t qpCapFlag;
     uint32_t dmaMode;
     struct NdaOps *ops;
 };
@@ -82,6 +78,13 @@ enum {
     DIRECT_FLAG_NOTSUPP = 0,
     DIRECT_FLAG_PCIE = 1,
     DIRECT_FLAG_UB = 2,
+};
+
+enum {
+    MEMCPY_DIR_HOST_TO_HOST = 0,
+    MEMCPY_DIR_HOST_TO_DEVICE,
+    MEMCPY_DIR_DEVICE_TO_HOST,
+    MEMCPY_DIR_DEVICE_TO_DEVICE,
 };
 
 /**
