@@ -28,7 +28,6 @@
 #include "endpoint_map.h"
 #include "hcclCommDfx.h"
 #include "hcclCommOp.h"
-#include "hcclCommOpDfx.h"
 #include "../hcomm_res_mgr.h"
 #include "exception_handler.h"
 #include "param_check_pub.h"
