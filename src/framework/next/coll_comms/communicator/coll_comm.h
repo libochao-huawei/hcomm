@@ -22,6 +22,7 @@
 #include "channel_manager.h"
 #include "hcclCommDfx.h"
 #include "rank_graph_v2.h"
+#include "error_message.h"
 
 namespace hccl {
 /**
@@ -43,7 +44,6 @@ public:
     inline CommMemMgr* GetCommMemMgr() { return commMemMgr_.get(); }
     inline ChannelManager* GetChannelManager() { return channelMgr_.get(); }
     void *GetCommunicatorV2() { return comm_; }
-    
     // 获取MyRank
     MyRank* GetMyRank() const { return myRank_.get(); }
     
@@ -74,11 +74,14 @@ public:
         }
         return hcclCommDfx_->GetCallback();
     }
-    const std::string& GetCommId() const {return commId_;}
+    const std::string& GetCommId() const {return commId_;})
     HcclResult GetHDCommunicate(
-    HDCommunicateParams &kfcControlTransferH2DParams, HDCommunicateParams &kfcStatusTransferD2HParams);
+        HDCommunicateParams &kfcControlTransferH2DParams, HDCommunicateParams &kfcStatusTransferD2HParams);
+    void RegisterAicpuTaskExceptionCallback(u32 streamId);
+    Hccl::ErrorMessageReport GetAicpuTaskException();
 private:
-    HcclResult InitHDCommunicate();     
+    HcclResult InitHDCommunicate();   
+    HcclResult InitTaskExceptionHandler();
     void* comm_{nullptr};
     uint32_t rankId_{};
     std::string commId_;

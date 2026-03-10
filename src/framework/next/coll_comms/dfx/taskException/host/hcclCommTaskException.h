@@ -15,7 +15,6 @@
 #include "hccl_types.h"
 #include "orion_adapter_rts.h"
 #include "global_mirror_tasks.h"
-#include "hccl_common.h"
 #include "error_message_v2.h"
 #include "orion_adapter_hccp.h"
 #include "rdma_handle_manager.h"
@@ -26,13 +25,11 @@ using RdmaHandle = void*;
 using GetAicpuTaskExceptionCallBackHcomm = std::function<Hccl::ErrorMessageReport()>; 
 class TaskExceptionHost {
 public:
-    // 构造函数使用初始化列表初始化devId_
-    explicit TaskExceptionHost(int deviceId);
+    TaskExceptionHost() = default;
     ~TaskExceptionHost();
 
-    // 获取设备ID
-    void        Register() const;                                // 向rts注册异常处理方法
-    void        UnRegister() const;                              // 向rts注销异常处理方法
+    HcclResult        Register() ;                                // 向rts注册异常处理方法
+    HcclResult        UnRegister() ;                              // 向rts注销异常处理方法
     static void Process(rtExceptionInfo_t *exceptionInfo); // 处理异常信息
     static void PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo);
 
@@ -44,14 +41,17 @@ private:
     static void PrintGroupErrorMessage(Hccl::ErrorMessageReport &errorMessage, Hccl::TaskInfo &exceptionTaskInfo, std::string &groupRankContent, std::string &stageErrInfo);
     static void PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessageReport &errorMessage, std::string &stageErrInfo);
 
+    static HcclResult PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle);
+
 private:
-    uint32_t devId_; // 当前设备id
+    bool isRegistered_ {false};
 };
 
 class TaskExceptionHostManager {
 public:
     // 获取指定位置的异常处理器
     static TaskExceptionHost *GetHandler(size_t devId);
+    static void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBackHcomm callBack);
 
 private:
     TaskExceptionHostManager();
@@ -60,24 +60,7 @@ private:
     // 私有拷贝构造函数和赋值运算符，防止对象被拷贝
     TaskExceptionHostManager(const TaskExceptionHostManager &)            = delete;
     TaskExceptionHostManager &operator=(const TaskExceptionHostManager &) = delete;
-
-private:
-    // 全局静态数组，存储异常处理器指针
-    static std::array<TaskExceptionHost *, MAX_MODULE_DEVICE_NUM> handlers_;
 };
-
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
-extern void RegisterGetAicpuTaskExceptionCallBackV2(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBackHcomm p1);
-#ifdef __cplusplus
-}
-#endif // __cplusplus
-
-const std::string LOG_KEYWORDS_TIMEOUT = "Timeout";                       // 算子执行阶段超时
-const std::string LOG_KEYWORDS_RUN_FAILED = "RunFailed";                  // 算子执行阶段失败，如SDMA ERROR
-const std::string LOG_KEYWORDS_TASK_EXEC = "TaskExecStage";               // 算子执行阶段异常
-const std::string LOG_KEYWORDS_AICPU = "AICPU";
-} // namespace Hccl
+} // namespace hccl
 
 #endif // HCCL_TASK_EXCEPTION_HANDLER_H

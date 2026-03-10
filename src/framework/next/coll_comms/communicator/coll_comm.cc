@@ -12,6 +12,7 @@
 #include "exception_handler.h"
 #include "kfc.h"
 #include "dlhal_function.h"
+#include "hcclCommTaskException.h"
 
 namespace hccl {
 CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, const ManagerCallbacks& callbacks)
@@ -60,6 +61,7 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
         EXECEPTION_CATCH(hcclCommDfx_ = std::make_unique<HcclCommDfx>(), return HCCL_E_PTR);
  	}
  	CHK_RET(hcclCommDfx_->Init(deviceLogicId_, commId_));
+    CHK_RET(InitTaskExceptionHandler());
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
@@ -93,6 +95,36 @@ HcclResult CollComm::GetHDCommunicate(
     kfcStatusTransferD2HParams = kfcStatusTransferD2H_->GetCommunicateParams();
     HCCL_INFO("%s success, group[%s]", __func__, commId_.c_str());
     return HCCL_SUCCESS;
+}
+
+HcclResult CollComm::InitTaskExceptionHandler()
+{
+    hcomm::TaskExceptionHost* handler = hcomm::TaskExceptionHostManager::GetHandler(static_cast<size_t>(deviceLogicId_));
+    CHK_PTR_NULL(handler);
+    CHK_RET(handler->Register);
+    return HCCL_SUCCESS;
+}
+
+void RegisterAicpuTaskExceptionCallback(u32 streamId)
+{
+    HCCL_INFO("[%s] start, commId streamId[%u]", __func__, commId.c_str(), streamId);
+    auto getAicpuTaskExceptionCallBack = [this]() {return this->GetAicpuTaskException();};
+    hcomm::TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallback(streamId, deviceLogicId_,
+        getAicpuTaskExceptionCallBack);
+    return ;
+}
+
+Hccl::ErrorMessageReport GetAicpuTaskException()
+{
+    Hccl::ErrorMessageReport errorMessage;
+    CHK_PRT_RET(kfcStatusTransferD2H == nullptr, HCCL_ERROR("[%s]fail, d2h is nullptr", __func__), errorMessage);
+    
+    HcclResult ret = kfcStatusTransferD2H->Get(sizeof(Hccl::KfcStatus) + sizeof(Hccl::kfcErrType),
+       sizeof(errorMessage),reinterpret_cast<uint8_t *>(&errorMessage));
+   
+    CHK_PRT_RET(ret != HCCL_SUCCESS , HCCL_ERROR("[%s]fail, group [%s], ret[%d]", __func__, commId.c_str() ,ret), errorMessage);
+    HCCL_INFO("[%s]group[%s] success", __func__, commId_.c_str())
+   return errorMessage;
 }
 
 }  // namespace hccl
