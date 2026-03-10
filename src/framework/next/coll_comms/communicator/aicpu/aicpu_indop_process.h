@@ -24,11 +24,15 @@ public:
     static HcclResult AicpuIndOpThreadInit(ThreadMgrAicpuParam *param);
     static HcclResult AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param);
     static HcclResult AicpuIndOpCommInit(CommAicpuParam *commAicpuParam);
-    static HcclResult AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, std::string commTag);
+    static HcclResult AicpuDfxOpInfoInit(hccl::HcclDfxOpInfo *aicpuDfxInfo, const std::string& commTag);
 
     static HcclResult AcquireAicpuCommMgr(const std::string &group, CollCommAicpuMgr **aicpuCommMgrPtr);
     static CollCommAicpuMgr *AicpuGetCommMgrbyGroup(const std::string &group);
     static void AicpuReleaseCommMgrbyGroup(const std::string &group);
     static HcclResult AicpuGetCommAll(std::vector<std::pair<std::string, CollCommAicpuMgr *>> &aicpuCommInfo);
+
+    static HcclResult ProfilingReportDeviceOp(const std::string &group);
+    static HcclResult ReportotAllTasks(const std::string &group);
+    static HcclResult UpdateTasks(const std::string &group);
 };
 #endif // __AICPU_INDOP_PROCESS_H__

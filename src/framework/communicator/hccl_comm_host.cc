@@ -322,6 +322,8 @@ namespace hccl
         return HCCL_E_PTR);
 
         CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
+        CHK_RET(collComm_->GetHDCommunicate(commAicpuParam_.kfcControlTransferH2DParams,
+            commAicpuParam_.kfcStatusTransferD2HParams));
         return HCCL_SUCCESS;
     }
 
