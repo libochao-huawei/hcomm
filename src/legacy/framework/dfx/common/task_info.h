@@ -32,6 +32,7 @@ public:
     bool         isIndop_{false};
     std::string  groupName_;
     u32          rankSize_{0};
+    u32          cpuWaitAicpuNotifiyId_{0};
 
 public:
     std::string Describe() const
