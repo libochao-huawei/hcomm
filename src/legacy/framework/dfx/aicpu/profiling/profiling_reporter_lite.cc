@@ -40,6 +40,33 @@ void ProfilingReporterLite::Init() const
 *  *(*(*QUEUE.Begin())) = taskInfo;
 *  taskInfo.push_back((*(*((*currQueue).Begin())));
 */
+void ProfilingReporterLite::ReportAllTasks(const std::string& group, u32 ranksize)
+{
+    std::vector<TaskInfo> taskInfo;
+    for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
+        u32                               streamId  = it->first;
+        Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second;
+        if (currQueue == nullptr || currQueue->Begin() == nullptr || (*(*(currQueue->Begin()))) == nullptr) {
+            HCCL_WARNING("[ProfilingReporterLite][ReportAllTasks] currQueue is nullptr, continue to next task.");
+            continue;
+        }
+        // 不论首次是否打印，都手动将首个task打印一遍
+        if (lastPoses_.find(streamId) == lastPoses_.end()) {
+            lastPoses_[streamId] = currQueue->Begin();
+        }
+        if (currQueue->Tail() == nullptr) {
+            continue;
+        }
+        auto endPos = currQueue->Tail();
+        for (auto iter = lastPoses_[streamId]; (*(iter)) != (*(endPos)); ++(*(iter))) {
+            TaskInfo task = (*(*(*iter)));
+            taskInfo.push_back(task);
+        }
+        lastPoses_[streamId] = endPos;
+    }
+    ProfilingHandlerLite::GetInstance().ReportHcclTaskDetails(taskInfo, group, ranksize);
+}
+
 void ProfilingReporterLite::ReportAllTasks()
 {
     std::vector<TaskInfo> taskInfo;

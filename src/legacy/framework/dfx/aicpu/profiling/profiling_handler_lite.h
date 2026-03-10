@@ -51,7 +51,9 @@ public:
     static ProfilingHandlerLite &GetInstance();
     void                         Init() const;
     void                         ReportHcclOpInfo(const DfxOpInfo &opInfo) const;
+    void                         ReportHcclOpInfo(const DfxOpInfo &opInfo, const std::string& groupNameOp) const;
     void                         ReportHcclTaskDetails(const std::vector<TaskInfo> &taskInfo) const;
+    void                         ReportHcclTaskDetails(const std::vector<TaskInfo> &taskInfo, cosnt std::string& group, u32 ranksize) const;
     void                         ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo) const;
     void                         UpdateProfSwitch();
     void                         SetProL0On(bool val);
@@ -70,6 +72,7 @@ private:
     uint64_t GetProfHashId(const char *name, uint32_t len) const;
     void DumpTaskDetails(const MsprofAicpuHcclTaskInfo& taskDetailsInfos, const TaskInfo &taskInfo) const;
     void GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcclTaskInfo &taskDetailsInfos) const;
+    void GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcclTaskInfo &taskDetailsInfos, const std::string& group, u32 ranksize) const;
 
 private:
     static ProfilingHandlerLite instance_;

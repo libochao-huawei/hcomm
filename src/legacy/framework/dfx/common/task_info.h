@@ -28,7 +28,10 @@ public:
     u64          endTime_;
     void        *comm_;
     bool         isIndOp_;
-    
+    u32          mainStreamId_;
+    bool         isIndop_{false};
+    std::string  groupName_;
+    u32          rankSize_{0};
 
 public:
     std::string Describe() const
