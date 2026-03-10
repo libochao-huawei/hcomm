@@ -23,22 +23,22 @@ CUSTOM_OPTION="-DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR}"
 FULL_MODE="false"  # 新增变量，用于控制是否全量构建
 KERNEL="false"  # 新增变量，用于控制是否只编译 ccl_kernel.so
 DO_NOT_CLEAN="false" # 是否清理
-CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
+CANN_3RD_LIB_PATH="${ASCEND_3RD_LIB_PATH:-${CURRENT_DIR}/third_party}"
 CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
 BUILD_AARCH="false"
 CUSTOM_SIGN_SCRIPT="${CURRENT_DIR}/scripts/sign/community_sign_build.py"
 ENABLE_SIGN="false"
 VERSION_INFO="8.5.0"
 
-BUILD_FWK_HLT="false"
-MOCK_FWK_HLT="0"
+BUILD_BUILD_HW_LT="false"
+MOCK_BUILD_HW_LT="0"
 
 BUILD_CB_TEST="false"
 
 ENABLE_UT="off"
 ENABLE_ST="off"
 CMAKE_BUILD_TYPE="Debug"
-ASCEND_3RD_LIB_PATH="${CURRENT_DIR}/output/third_party"
+ASCEND_3RD_LIB_PATH="${ASCEND_3RD_LIB_PATH:-${CURRENT_DIR}/output/third_party}"
 HCOMM_LIB_NAME="libhcomm.so"
 INSTALL_XML_FILE="${CURRENT_DIR}/scripts/package/module/ascend/CommLib.xml"
 ORION_HCCL_V2="<file value=\"libhccl_v2.so\" file_type=\"shared\" release_type=\"debug\"/>"
