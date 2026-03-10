@@ -18,12 +18,6 @@
 #include "reduce_op.h"
 #include "hccp_tlv.h"
 
-enum class TlsStatus : int{
-    UNKNOWN = -1, // 不支持查询
-    DISABLE = 0, //  未使能
-    ENABLE,      //  使能
-};
-
 namespace Hccl {
 using namespace std;
 constexpr u32 DEFAULT_INIT_PHY_ID  = 0;
@@ -88,6 +82,12 @@ HcclResult HrtRaTlvRequest(void* tlv_handle, u32 tlv_module_type, u32 tlv_ccu_ms
 void HrtRaTlvDeInit(void* tlv_handle);
 
 u32 HrtRaGetInterfaceVersion(u32 phyId, u32 interfaceOpcode);
+
+enum class TlsStatus : int{
+    UNKNOWN = -1, // 不支持查询
+    DISABLE = 0, //  未使能
+    ENABLE,      //  使能
+};
 
 HcclResult HrtRaGetTlsStatus(struct RaInfo *info, TlsStatus &tlsStatus);
 
