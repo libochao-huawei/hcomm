@@ -2045,6 +2045,7 @@ RequestHandle RaUbGetTpInfoAsync(const RdmaHandle rdmaHandle, const RaUbGetTpInf
     struct GetTpCfg cfg{};
     cfg.flag.bs.rtp = tpProtocol == TpProtocol::TP ? 1 : 0;
     cfg.flag.bs.ctp = tpProtocol == TpProtocol::CTP ? 1 : 0;
+    cfg.flag.bs.uboe = tpProtocol == TpProtocol::UBOE ? 1 : 0;
     cfg.transMode = TransportModeT::CONN_RM; // 当前只使用RM Jetty
     cfg.localEid = IpAddressToHccpEid(locAddr);
     HCCL_INFO("RaUbGetTpInfoAsync cfg.localEid=%s", HccpEidDesc(cfg.localEid).c_str());
@@ -2492,4 +2493,41 @@ HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memType
     HCCL_INFO("tlv request success, tlv module type[%u], message type[%u]", tlv_module_type, send_msg.type);
     return HCCL_SUCCESS;
 }
+
+HcclResult HrtRaGetEidByIp(RdmaHandle handle, const vector<IpAddress>& ipV4AddrList, vector<IpAddress>& eidAddrList)
+{
+    HCCL_INFO("[HrtRaGetEidByIp] begain, ipV4AddrList size=%u", ipV4AddrList.size());
+    size_t ipV4AddrListSize = ipV4AddrList.size();
+    unsigned int num = ipV4AddrListSize;
+    IpInfo ipInfoList[num] = {};
+    for (size_t i = 0; i < num; i++) {
+        auto ipAddress = ipV4AddrList.at(i);
+        HCCL_INFO("[HrtRaGetEidByIp] ipV4AddrList[%d][%s]", i, ipAddress.Describe().c_str());
+        ipInfoList[i].family = ipAddress.GetFamily();
+        ipInfoList[i].ip                 = IpAddressToHccpIpAddr(ipAddress);
+    }
+
+    union HccpEid eidList[num] = {};
+    s32 ret = RaGetEidByIp(handle, ipInfoList, eidList, &num);
+    if (ret != 0) {
+        string msg = StringFormat("call RaGetEidByIp failed, error code =%d.", ret);
+        THROW<NetworkApiException>(msg);
+    }
+
+    if (num != ipV4AddrList.size()) {
+        HCCL_ERROR("call RaGetEidByIp failed, The number of ipInfoList and eidList is inconsistent, "
+                   "ipV4AddrList size =%d, eidList size =%d",
+            ipV4AddrList.size(),
+            num);
+        return HCCL_E_INTERNAL;
+    }
+
+    for (unsigned int i = 0; i < num; i++) {
+        IpAddress eidAddr = HccpEidToIpAddress(eidList[i]);
+        eidAddrList.push_back(eidAddr);
+    }
+    HCCL_INFO("[HrtRaGetEidByIp] success, eidAddrList size=%u", eidAddrList.size());
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl
