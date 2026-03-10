@@ -247,9 +247,7 @@ function make_ut_gov() {
     mkdir -p ${CURRENT_DIR}/cov
     lcov -c -d ${BUILD_DIR}/test/ut/ -o cov/all.info
     lcov -r cov/all.info */src/platform/hccp/external_depends/* -o cov/tmp.info
-    lcov -e cov/all.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
-    # LCOV_COMMAND="lcov -r cov/tmp.info ${CURRENT_DIR}src/* -o cov/coverage.info" && ${LCOV_COMMAND}
-    # lcov -r cov/tmp.info "/usr/*" "${OUTPUT_PATH}/*" "${BASEPATH}/test/*" "${ASCEND_INSTALL_PATH}/*" "${CANN_3RD_LIB_PATH}/*" -o cov/coverage.info
+    lcov -e cov/all.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/framework/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
 
     cd ${CURRENT_DIR}/cov
     genhtml coverage.info
@@ -542,7 +540,7 @@ cd ${BUILD_DIR}
 
 if [ "${ENABLE_UT}" == "on" ]; then
     build_ut
-    # make_ut_gov
+    make_ut_gov
 elif [ -n "${TEST}" ];then
     build_test
 elif [ "${KERNEL}" == "true" ]; then
