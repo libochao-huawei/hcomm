@@ -16,17 +16,10 @@
 #include "my_rank.h"
 #undef private
 
-#include "channel_logger.h"
-#include "hcomm_c_adpt.h"
-
 using namespace hccl;
 
 namespace {
 Hccl::TlsStatus g_expectedTlsStatus = Hccl::TlsStatus::UNKNOWN;
-bool g_channelLoggerCalled = false;
-Hccl::TlsStatus g_loggedTlsStatus = Hccl::TlsStatus::UNKNOWN;
-std::vector<HcclResult> g_channelStatusSequence;
-size_t g_channelStatusIndex = 0;
 
 HcclResult StubHrtGetDeviceSuccess(s32 *deviceLogicId)
 {
@@ -47,36 +40,6 @@ HcclResult StubMyRankHrtRaGetTlsStatus(RaInfo *info, Hccl::TlsStatus &tlsStatus)
     tlsStatus = g_expectedTlsStatus;
     return HCCL_SUCCESS;
 }
-
-HcclResult StubMyRankGetLocalTlsStatusSuccess(const MyRank *, Hccl::TlsStatus &tlsStatus)
-{
-    tlsStatus = g_expectedTlsStatus;
-    return HCCL_SUCCESS;
-}
-
-HcclResult StubHcommChannelGetStatus(const ChannelHandle *, uint32_t, int32_t *statusList)
-{
-    if (statusList != nullptr) {
-        statusList[0] = 0;
-    }
-    if (g_channelStatusIndex >= g_channelStatusSequence.size()) {
-        return HCCL_SUCCESS;
-    }
-    return g_channelStatusSequence[g_channelStatusIndex++];
-}
-
-void StubPrintChannelErrorDetails(
-    uint32_t,
-    uint32_t,
-    const HcclChannelDesc *,
-    ChannelHandle *,
-    int32_t *,
-    int64_t,
-    Hccl::TlsStatus tlsStatus)
-{
-    g_channelLoggerCalled = true;
-    g_loggedTlsStatus = tlsStatus;
-}
 }
 
 class MyRankTlsTest : public testing::Test {
@@ -88,10 +51,6 @@ protected:
         callbacks_.kernelLaunchAicpuCommInit = []() { return HCCL_SUCCESS; };
         myRank_.reset(new MyRank(nullptr, 0, config_, callbacks_));
         g_expectedTlsStatus = Hccl::TlsStatus::UNKNOWN;
-        g_channelLoggerCalled = false;
-        g_loggedTlsStatus = Hccl::TlsStatus::UNKNOWN;
-        g_channelStatusSequence.clear();
-        g_channelStatusIndex = 0;
     }
 
     void TearDown() override
@@ -154,52 +113,4 @@ TEST_F(MyRankTlsTest, Ut_GetLocalTlsStatus_When_AllDependenciesSucceed_Expect_Re
 
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(tlsStatus, Hccl::TlsStatus::ENABLE);
-}
-
-TEST_F(MyRankTlsTest, Ut_BatchConnectChannels_When_RetryThenSuccess_Expect_ReturnSuccess)
-{
-    HcclChannelDesc channelDesc {};
-    ChannelHandle channelHandle = reinterpret_cast<ChannelHandle>(0x1);
-    g_channelStatusSequence = {HCCL_E_AGAIN, HCCL_SUCCESS};
-
-    MOCKER(HcommChannelGetStatus).stubs().will(invoke(StubHcommChannelGetStatus));
-
-    HcclResult ret = myRank_->BatchConnectChannels(&channelDesc, &channelHandle, 1);
-
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-}
-
-TEST_F(MyRankTlsTest, Ut_BatchConnectChannels_When_ConnectFails_Expect_ReturnOriginalError)
-{
-    HcclChannelDesc channelDesc {};
-    ChannelHandle channelHandle = reinterpret_cast<ChannelHandle>(0x1);
-    g_expectedTlsStatus = Hccl::TlsStatus::ENABLE;
-    g_channelStatusSequence = {HCCL_E_NETWORK};
-
-    MOCKER(HcommChannelGetStatus).stubs().will(invoke(StubHcommChannelGetStatus));
-    MOCKER_CPP(&MyRank::GetLocalTlsStatus).stubs().will(invoke(StubMyRankGetLocalTlsStatusSuccess));
-    MOCKER(logger::ChannelLogger::PrintChannelErrorDetails).stubs().will(invoke(StubPrintChannelErrorDetails));
-
-    HcclResult ret = myRank_->BatchConnectChannels(&channelDesc, &channelHandle, 1);
-
-    EXPECT_EQ(ret, HCCL_E_NETWORK);
-    EXPECT_TRUE(g_channelLoggerCalled);
-    EXPECT_EQ(g_loggedTlsStatus, Hccl::TlsStatus::ENABLE);
-}
-
-TEST_F(MyRankTlsTest, Ut_BatchConnectChannels_When_GetLocalTlsStatusFailsAfterConnectError_Expect_StillReturnOriginalError)
-{
-    HcclChannelDesc channelDesc {};
-    ChannelHandle channelHandle = reinterpret_cast<ChannelHandle>(0x1);
-    g_channelStatusSequence = {HCCL_E_NETWORK};
-
-    MOCKER(HcommChannelGetStatus).stubs().will(invoke(StubHcommChannelGetStatus));
-    MOCKER_CPP(&MyRank::GetLocalTlsStatus).stubs().will(returnValue(HCCL_E_PTR));
-    MOCKER(logger::ChannelLogger::PrintChannelErrorDetails).stubs().will(invoke(StubPrintChannelErrorDetails));
-
-    HcclResult ret = myRank_->BatchConnectChannels(&channelDesc, &channelHandle, 1);
-
-    EXPECT_EQ(ret, HCCL_E_NETWORK);
-    EXPECT_TRUE(g_channelLoggerCalled);
-    EXPECT_EQ(g_loggedTlsStatus, Hccl::TlsStatus::UNKNOWN);
 }

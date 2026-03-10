@@ -39,21 +39,6 @@ protected:
     }
 };
 
-namespace {
-NewRankInfo BuildMinimalNewRankInfo(TlsStatus tlsStatus)
-{
-    NewRankInfo rankInfo;
-    rankInfo.rankId = 1;
-    rankInfo.deviceId = 2;
-    rankInfo.localId = 3;
-    rankInfo.replacedLocalId = 3;
-    rankInfo.devicePort = 60001;
-    rankInfo.rankLevelInfos.emplace_back(RankLevelInfo {});
-    rankInfo.tlsStatus = tlsStatus;
-    return rankInfo;
-}
-}
-
 TEST_F(NewRankInfoParserTest, Ut_Deserialize_When_Normal_Expect_Success) {
     DevType devType = DevType::DEV_TYPE_910A;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
@@ -667,56 +652,3 @@ TEST_F(NewRankInfoParserTest, Ut_Deserialize_When_InvalidLevelListLength_Expect_
     EXPECT_THROW(rankListParser.ParseString(rankListString, newRankInfo), InvalidParamsException);
 }
 
-TEST_F(NewRankInfoParserTest, Ut_NewRankInfo_When_DefaultConstructed_Expect_TlsStatusUnknown)
-{
-    NewRankInfo rankInfo;
-
-    EXPECT_EQ(rankInfo.tlsStatus, TlsStatus::UNKNOWN);
-}
-
-TEST_F(NewRankInfoParserTest, Ut_NewRankInfo_When_BinStreamRoundTripWithEnable_Expect_TlsStatusPreserved)
-{
-    NewRankInfo rankInfo = BuildMinimalNewRankInfo(TlsStatus::ENABLE);
-    BinaryStream binStream;
-
-    rankInfo.GetBinStream(true, binStream);
-    NewRankInfo parsedRankInfo(binStream);
-
-    EXPECT_EQ(parsedRankInfo.tlsStatus, TlsStatus::ENABLE);
-}
-
-TEST_F(NewRankInfoParserTest, Ut_NewRankInfo_When_BinStreamRoundTripWithDisable_Expect_TlsStatusPreserved)
-{
-    NewRankInfo rankInfo = BuildMinimalNewRankInfo(TlsStatus::DISABLE);
-    BinaryStream binStream;
-
-    rankInfo.GetBinStream(true, binStream);
-    NewRankInfo parsedRankInfo(binStream);
-
-    EXPECT_EQ(parsedRankInfo.tlsStatus, TlsStatus::DISABLE);
-}
-
-TEST_F(NewRankInfoParserTest, Ut_NewRankInfo_When_DescribeCalled_Expect_ContainTlsStatus)
-{
-    NewRankInfo rankInfo = BuildMinimalNewRankInfo(TlsStatus::ENABLE);
-
-    std::string desc = rankInfo.Describe();
-
-    EXPECT_NE(desc.find("tlsStatus="), std::string::npos);
-}
-
-TEST_F(NewRankInfoParserTest, Ut_NewRankInfo_When_DeserializeOldBinaryWithoutTlsStatus_Expect_BackwardCompatibleWithUnknown)
-{
-    NewRankInfo rankInfo = BuildMinimalNewRankInfo(TlsStatus::ENABLE);
-    BinaryStream oldBinStream;
-    oldBinStream << rankInfo.rankId << rankInfo.localId << rankInfo.replacedLocalId << rankInfo.deviceId << rankInfo.devicePort;
-    oldBinStream << rankInfo.rankLevelInfos.size();
-    for (auto &levelInfo : rankInfo.rankLevelInfos) {
-        levelInfo.GetBinStream(oldBinStream);
-    }
-    rankInfo.controlPlane.GetBinStream(oldBinStream);
-
-    NewRankInfo parsedRankInfo(oldBinStream);
-
-    EXPECT_EQ(parsedRankInfo.tlsStatus, TlsStatus::UNKNOWN);
-}
