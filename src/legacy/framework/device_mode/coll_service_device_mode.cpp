@@ -152,15 +152,10 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
             return;
         } 
         SaveMirrorDfxOpInfo();
-        // 下发head算子执行计数器task
-        AddCountTask(true);
 
         // translate
         Interpreter interpreter(*comm);
         interpreter.Submit(*insQueue);
-
-        // 下发tail算子执行计数器task
-        AddCountTask(false);
     } 
     HCCL_INFO("[CollServiceDeviceMode::%s] end.", __func__);
 }

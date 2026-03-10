@@ -540,8 +540,6 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
     auto  mStream      = params.isSlave ? opbaseStream->GetSlave(slaveIndex)->GetPtr() : stream;
     u32   streamNum    = params.count.size();
     
-    // 下发head算子执行计数器task
-    collService->AddCountTask(true);
     if (streamNum > 1) {
         timeout = notifyTimeoutCfg.GetNotifyTimeout();
         mStreamId = params.isSlave ? opbaseStream->GetSlave(slaveIndex++)->GetId() : HrtGetStreamId(mStream);
@@ -620,8 +618,6 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
             HrtReduceAsync(dst, scratchSize, src, scratchSize, rtReduceOp, rtDataType, stream);
         }       
     }
-    // 下发Tail算子执行计数器task
-    collService->AddCountTask(false);
 
     slaveIndex = 0;
     collOpIndex++;
