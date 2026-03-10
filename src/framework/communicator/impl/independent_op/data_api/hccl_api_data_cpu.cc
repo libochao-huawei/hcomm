@@ -651,9 +651,23 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
 
     dfxOpInfo->index_ = 0;
     dfxOpInfo->beginTime_ = hrtMsprofSysCycleTime();
+
+    LocalNotify *notify = GetNotify(dfxOpInfo->cpuTsThread, dfxOpInfo->cpuWaitAicpuNotifyIdx);
+    CHK_PRT_RET(!notify, HCCL_ERROR("[%s]GetNotify null, thread[%llu], notifyIdx[%u]",
+        __func__, dfxOpInfo->cpuTsThread, dfxOpInfo->cpuWaitAicpuNotifyIdx), HCCL_E_PTR);
+    dfxOpInfo->cpuWaitAicpuNotifyId = notify->notifyId_;
+
+    Stream *cpuTsStream = GetStream(dfxOpInfo->cpuTsThread);
+    CHK_PTR_NULL(cpuTsStream);
+
     //HcclDfxOpInfo转为DfxOpInfo
     auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
     dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
+    dfxOpInfoOnce->comm_ = static_cast<void*>(collComm);
+    dfxOpInfoOnce->isIndop_ = true;
+    dfxOpInfoOnce->groupName_ = collComm->GetCommId();
+    dfxOpInfoOnce->rankSize_ = collComm->GetRankSize();
+    dfxOpInfoOnce->mainStreamId_ = cpuTsStream->id();
     
     HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
     CHK_PTR_NULL(hcclCommDfx);
@@ -673,7 +687,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
 
 HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime)
 {
-    HCCL_INFO("[%s] START.", __func__);
+    HCCL_INFO("[%s] START, comm[%p].", __func__, comm);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
@@ -685,21 +699,23 @@ HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime)
     CHK_PTR_NULL(collComm);
     HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
     CHK_PTR_NULL(hcclCommDfx);
+    HCCL_INFO("[%s] Test, comm[%p], hcclCommDfx[%p] GetMirrorTaskManager[%p].", __func__, comm, hcclCommDfx, hcclCommDfx->GetMirrorTaskManager());
     //单算子模式暂时默认true
-    hcclCommDfx->ReportOp(beginTime, true, true);
+    CHK_RET(hcclCommDfx->ReportAllTasks(true));
+    CHK_RET(hcclCommDfx->ReportOp(beginTime, true, true));
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, uint64_t thread)
 {
-    HCCL_INFO("[%s] START.", __func__);
+    HCCL_INFO("[%s] START, comm[%p].", __func__, comm);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     u32 taskId = 0;
     u32 streamId = 0;
     u32 remoteRankId = -1;
     //填充taskId和streamId
-    Hccl::HrtGetTaskIdAndStreamID(taskId, streamId);
+    EXECEPTION_CATCH(Hccl::HrtGetTaskIdAndStreamID(taskId, streamId), return HCCL_E_INTERNAL);
 
     //填入remoteRankId
     auto hcclComm = static_cast<hccl::hcclComm*>(comm);
@@ -713,8 +729,6 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, uint64_t thr
     HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
     CHK_PTR_NULL(hcclCommDfx);
 
-    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
-    CHK_PTR_NULL(threadPtr);
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
     Hccl::TaskParam taskParam {};
@@ -722,6 +736,7 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, uint64_t thr
     taskParam.taskType = Hccl::TaskParamType::TASK_AICPU_KERNEL;
     taskParam.endTime = hrtMsprofSysCycleTime();
  
+    CHK_PTR_NULL(hcclCommDfx->GetMirrorTaskManager());
     std::shared_ptr<Hccl::TaskInfo> taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId, remoteRankId, taskParam,
         hcclCommDfx->GetMirrorTaskManager()->GetCurrDfxOpInfo(), stream->IsMainStream());
  
