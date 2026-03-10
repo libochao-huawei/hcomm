@@ -76,6 +76,7 @@ else()
         GIT_TAG ${TRACY_GIT_TAG}
         GIT_SHALLOW TRUE
         TLS_VERIFY OFF
+        DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}
         DOWNLOAD_NO_PROGRESS TRUE
         SOURCE_DIR ${TRACY_SRC_PATH}
         # 只编译 TracyClient.cpp 成静态库，不编译 Tracy GUI 或工具链
