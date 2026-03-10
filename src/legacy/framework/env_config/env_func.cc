@@ -792,7 +792,7 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
             }
         }
     }
-    DfsConfig config{.taskExceptionEnable = taskExceptionEnable};
+    DfsConfig config{taskExceptionEnable};
     HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG task_exception set by environment to [%d]", config.taskExceptionEnable);
     return config;
 }
