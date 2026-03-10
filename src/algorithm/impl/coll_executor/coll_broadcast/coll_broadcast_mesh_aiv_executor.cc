@@ -30,7 +30,7 @@ HcclResult CollBroadcastMeshAivExecutor::CalcStreamNum(u32& streamNum)
  
 HcclResult CollBroadcastMeshAivExecutor::CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport)
 {
-    TransportMemType inputType
+    TransportMemType inputType;
     if (GetWorkflowMode() != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
         inputType = TransportMemType::AIV_INPUT;
     } else {
