@@ -22,7 +22,6 @@ extern "C" __aicore__ void sk_allgather(SUPERKERNEL_LITE_ARGS_DEF) {
     } else if (devType == DEV_TYPE_910B) {
         return sk_all_gather_910b_bigdata(SUPERKERNEL_ARGS_CALL);
     }
-
 }
 
 #endif  /* AIV_AG_SUPERKERNEL_H */

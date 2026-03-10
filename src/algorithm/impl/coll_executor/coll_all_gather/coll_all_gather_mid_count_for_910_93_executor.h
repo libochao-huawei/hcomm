@@ -31,7 +31,7 @@ private:
     u64 CalcLoopMaxCount(const u64 cclBuffSize, const u32 unitSize) override;
     u64 CalcDstMemOffset(const OpParam &param, u64 inputMemSize) const;
     HcclResult PrepareL2DataSlices(const OpParam &param, const SubCommInfo &level1CommInfo, const SubCommInfo &level2CommInfo,
-        u64 inputMemSize, std::vector<Slice> &dataSlices);
+        u64 inputMemSize, std::vector<Slice> &dataSlices) const;
     HcclResult RunLevel2ByNHR(const OpParam &param, ExecMem &execMem, SubCommInfo  &level1CommInfo, SubCommInfo &level2CommInfo);
     HcclResult PrepareL1DataSlices(const OpParam &param, const SubCommInfo &level1CommInfo, const SubCommInfo &level2CommInfo,
         u64 inputMemSize, u32 moduleId, std::vector<Slice> &dataSlices);
