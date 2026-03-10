@@ -236,9 +236,8 @@ HcclResult AicpuIndopProcess::ProfilingReportDeviceOp(const std::string &group)
     CHK_PTR_NULL(hcclCommDfxLite);
     Hccl::MirrorTaskManager* mirrorTaskMgr = hcclCommDfxLite->GetMirrorTaskManager();
     CHK_PTR_NULL(mirrorTaskMgr);
-    mirrorTaskMgr->SetCurrDfxOpInfo(dfxOpInfoOnce);
     CHK_RET(AicpuIndopProcess::ReportAllTasks(group));
-    EXECEPTION_CATCH(Hccl::ProfilingHandlerLite::GetInstance().ReportHCCLOpInfo(*mirrorTaskMgr->GetCurrDfxOpInfo(), group),
+    EXECEPTION_CATCH(Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgr->GetCurrDfxOpInfo(), group),
         return HCCL_E_INTERNAL);
     return HCCL_SUCCESS;
 }
