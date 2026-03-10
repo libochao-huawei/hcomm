@@ -115,22 +115,22 @@ void AivMc2Compont::GenerateAivMemoryCommContext(HcclCombinOpParam &combinOpPara
     }
 }
 
-void AivMc2Compont::GenerateAivUrmaCommContext(HcclCombinOpParam &combinOpParam)
+void AivMc2Compont::GenerateAivUrmaCommContext(HcclCombinOpParam &combinOpParam) const
 {
-    HCCL_INFO("[AivMc2Compont][GenerateAivMemoryCommContext] aiv urma");
+    HCCL_INFO("[AivMc2Compont][GenerateAivUrmaCommContext] aiv urma");
     auto collService = dynamic_cast<CollServiceDeviceMode *>(comm->GetCollService());
     auto links = comm->GetFullMeshLinks();
     if (links.empty()) {
-        THROW<InvalidParamsException>(StringFormat("AivMc2Compont::GenerateCommContext links is empty"));
+        THROW<InvalidParamsException>(StringFormat("AivMc2Compont::GenerateAivUrmaCommContext links is empty"));
     }
     auto localBuffer = comm->GetLocalRmaBufManager().Get(comm->GetId(), links[0].GetLocalPort(), BufferType::SCRATCH);
-    CHECK_NULLPTR(localBuffer, "[AivMc2Compont::GenerateCommContext] localBuffer is nullptr!");
+    CHECK_NULLPTR(localBuffer, "[AivMc2Compont::GenerateAivUrmaCommContext] localBuffer is nullptr!");
     uint64_t localBufferSize = static_cast<uint64_t>(localBuffer->GetBuf()->GetSize());
     uint64_t localBufferAddr = static_cast<uint64_t>(localBuffer->GetBuf()->GetAddr());
     AddCclBuffer(combinOpParam, localBufferSize, localBufferAddr, comm->GetMyRank());
     for (auto &link : links) {
         auto rmtBuffer = comm->GetMemTransportManager()->GetUrmaDirectTransport(link)->GetRmtRmaBuffer(2);
-        CHECK_NULLPTR(rmtBuffer, "[AivMc2Compont::GenerateCommContext] rmtBuffer is nullptr!");
+        CHECK_NULLPTR(rmtBuffer, "[AivMc2Compont::GenerateAivUrmaCommContext] rmtBuffer is nullptr!");
         uint64_t rmtBufferSize = static_cast<uint64_t>(rmtBuffer->GetSize());
         uint64_t rmtBufferAddr = static_cast<uint64_t>(rmtBuffer->GetAddr());
         AddCclBuffer(combinOpParam, rmtBufferSize, rmtBufferAddr, link.GetRemoteRankId());
@@ -140,24 +140,24 @@ void AivMc2Compont::GenerateAivUrmaCommContext(HcclCombinOpParam &combinOpParam)
     for (size_t i = 0; i < wqs.size(); i++) {
         combinOpParam.wq[links[i].GetRemoteRankId()] = wqs[i];
     }
-    HCCL_INFO("[AivMc2Compont][GenerateCommContext] wq info:");
+    HCCL_INFO("[AivMc2Compont][GenerateAivUrmaCommContext] wq info:");
     for (auto& wq : wqs) {
-        HCCL_INFO("[AivMc2Compont][GenerateCommContext]jettyId[%u], sqVA[%llx], wqeSize[%u], sqDepth[%u], "
+        HCCL_INFO("[AivMc2Compont][GenerateAivUrmaCommContext]jettyId[%u], sqVA[%llx], wqeSize[%u], sqDepth[%u], "
                   "headAddr[%llx], tailAddr[%llx], dbAddr[%llx], tp_id[%u]", wq.jettyId, wq.sqVA, wq.wqeSize, 
                   wq.sqDepth, wq.headAddr, wq.tailAddr, wq.dbAddr, wq.tp_id);
         for (size_t i = 0; i < 16; i++) { // 遍历rmtEid
-            HCCL_INFO("[AivMc2Compont][GenerateCommContext]rmtEid[%llu][%u]", i, wq.rmtEid[i]);
+            HCCL_INFO("[AivMc2Compont][GenerateAivUrmaCommContext]rmtEid[%llu][%u]", i, wq.rmtEid[i]);
         }
-        HCCL_INFO("[AivMc2Compont][GenerateCommContext]rmtObjId[%u]", wq.rmtObjId);
+        HCCL_INFO("[AivMc2Compont][GenerateAivUrmaCommContext]rmtObjId[%u]", wq.rmtObjId);
     }
 
     auto cqs = collService->GetAivInsPreprocessor()->GetCqs();
     for (size_t i = 0; i < cqs.size(); i++) {
         combinOpParam.cq[links[i].GetRemoteRankId()] = cqs[i];
     }
-    HCCL_INFO("[AivMc2Compont][GenerateCommContext] cq info:");
+    HCCL_INFO("[AivMc2Compont][GenerateAivUrmaCommContext] cq info:");
     for (auto& cq : cqs) {
-        HCCL_INFO("[AivMc2Compont][GenerateCommContext]jfcId[%u], cqVA[%llx], cqeSize[%u], cqDepth[%u], headAddr[%llx], "
+        HCCL_INFO("[AivMc2Compont][GenerateAivUrmaCommContext]jfcId[%u], cqVA[%llx], cqeSize[%u], cqDepth[%u], headAddr[%llx], "
                   "tailAddr[%llx], dbAddr[%llx]", cq.jfcId, cq.cqVA, cq.cqeSize, cq.cqDepth, cq.headAddr, 
                   cq.tailAddr, cq.dbAddr);
     }

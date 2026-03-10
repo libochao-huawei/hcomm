@@ -72,5 +72,4 @@ private:
     HcclCommDfxLite dfx_;
 };
 
-
-#endif // __COLL_COMM_AICPU_MGR_H__
+#endif // __COLL_COMM_AICPU_H__

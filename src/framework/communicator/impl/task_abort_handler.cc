@@ -10,7 +10,6 @@
 
 #include "task_abort_handler.h"
 #include "sal_pub.h"
-#include "pthread.h"
 #include "hccl_comm_pub.h"
 #include "hccl_communicator.h"
 #include "adapter_rts_common.h"

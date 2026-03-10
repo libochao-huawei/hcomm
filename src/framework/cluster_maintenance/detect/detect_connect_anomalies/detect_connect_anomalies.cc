@@ -128,18 +128,15 @@ HcclResult DetectConnectionAnomalies::ProcessDetectionResults()
     if (recvErrorInfoMap_.size() >= 1) {
         for (const auto& detectInfo : recvErrorInfoMap_) {
             std::string localServerIdStr(detectInfo.second.localServerId);
-            std::string eventInfo = FormatDetectMessage(localServerIdStr, detectInfo.second.localDeviceId, detectInfo.second, true);
+            std::string eventInfo = FormatDetectMessage(localServerIdStr, detectInfo.second.localDeviceId, detectInfo.second);
             HCCL_ERROR("%s", eventInfo.c_str());
             errMsg += "\n" + eventInfo;
         }
         HCCL_ERROR("%s", GET_SOCKET_TIMEOUT_REASON_WITH_EVENT.c_str());
         errMsg += "\n" + GET_SOCKET_TIMEOUT_REASON_WITH_EVENT;
     } else {
-        const auto& firstDetectInfo = recvErrorInfoMap_.begin()->second;
-        std::string localServerIdStr(firstDetectInfo.localServerId);
-        std::string eventInfo = FormatDetectMessage(localServerIdStr, firstDetectInfo.localDeviceId, firstDetectInfo, false);
-        HCCL_ERROR("%s", eventInfo.c_str());
-        errMsg = eventInfo;
+        errMsg = "This node detects no exception event. The possible cause is that the behaviors of different ranks are inconsistent. The possible causes are as follows:";
+        HCCL_ERROR("%s", errMsg.c_str());
         HCCL_ERROR("%s", GET_SOCKET_TIMEOUT_REASON_WITHOUT_EVENT.c_str());
         errMsg += "\n" + GET_SOCKET_TIMEOUT_REASON_WITHOUT_EVENT;
     }
@@ -554,21 +551,15 @@ HcclResult DetectConnectionAnomalies::CreateClients(struct ErrInfo errInfo, std:
     return HCCL_SUCCESS;
 }
 
-std::string DetectConnectionAnomalies::FormatDetectMessage(const std::string &localServerId, s32 localDeviceId, const DetectInfo &detectInfo, bool hasError)
+std::string DetectConnectionAnomalies::FormatDetectMessage(const std::string &localServerId, s32 localDeviceId, const DetectInfo &detectInfo)
 {
-    if (hasError) {
-        return std::string("This node (server ") + 
-            localServerId  + ", device ID " + std::to_string(localDeviceId) +
-            ") detects that srcRank (server " + detectInfo.localServerId + 
-            ", device ID " + std::to_string(detectInfo.localDeviceId) + 
-            ") fails to connect to dstRank (server " + detectInfo.remoteServerId +
-            ", device ID " + std::to_string(detectInfo.remoteDeviceId) + 
-            "). Continue to analyze the fault based on the logs of srcRank and dstRank.";
-    } else {
-        return std::string("This node (server ") +
-            localServerId + ", device ID " + std::to_string(localDeviceId) +
-            ") detects no exception event. The possible cause is that the behaviors of different ranks are inconsistent. The possible causes are as follows:";
-    }
+    return std::string("This node (server ") + 
+        localServerId  + ", device ID " + std::to_string(localDeviceId) +
+        ") detects that srcRank (server " + detectInfo.localServerId +
+        ", device ID " + std::to_string(detectInfo.localDeviceId) +
+        ") fails to connect to dstRank (server " + detectInfo.remoteServerId +
+        ", device ID " + std::to_string(detectInfo.remoteDeviceId) +
+        "). Continue to analyze the fault based on the logs of srcRank and dstRank.";
 }
 
 void DetectConnectionAnomalies::ThreadDestroy()

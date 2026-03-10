@@ -260,10 +260,10 @@ void CcuContextAllGatherNHR1D::DoRepeatSendRecvSlices(const u32 &toRank, CcuRep:
     CcuTransport           *sendTransport = transports[indexMap_[toRank]];
     const CcuRep::Variable &sliceSize     = axisId_ == 0 ? die0Size_ : die1Size_;
     repeatTimeflag_                       = 0;
-
-    CCU_WHILE(repeatNum_ != UINT64_MAX)
+    tmpCopyRepeatNum_ = repeatNum_;
+    CCU_WHILE(tmpCopyRepeatNum_ != UINT64_MAX)
     {
-        repeatNum_ += constVar1_;
+        tmpCopyRepeatNum_ += constVar1_;
         CCU_IF(repeatTimeflag_ == 1)
         {
             src.addr += inputRepeatStride_;

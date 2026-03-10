@@ -348,6 +348,51 @@ out:
     return 0;
 }
 
+int RsFd2conn(int fd, struct RsConnInfo **conn)
+{
+    struct RsConnInfo *connTmp = NULL;
+    struct RsConnInfo *connTmp2 = NULL;
+    struct RsListHead *head = NULL;
+    struct rs_cb *rsCb = NULL;
+
+    if (gRsCb != NULL) {
+        rsCb = gRsCb;
+    } else {
+        hccp_err("g_rs_cb is NULL");
+        return -ENODEV;
+    }
+
+    RS_PTHREAD_MUTEX_LOCK(&rsCb->connCb.connMutex);
+    head = &rsCb->connCb.serverConnList;
+    RS_LIST_GET_HEAD_ENTRY(connTmp, connTmp2, head, list, struct RsConnInfo);
+    for (; &connTmp->list != head;
+        connTmp = connTmp2, connTmp2 = list_entry(connTmp2->list.next, struct RsConnInfo, list)) {
+        if (connTmp->connfd == fd) {
+            *conn = connTmp;
+            RS_PTHREAD_MUTEX_ULOCK(&rsCb->connCb.connMutex);
+            return 0;
+        }
+    }
+
+    head = &rsCb->connCb.clientConnList;
+    RS_LIST_GET_HEAD_ENTRY(connTmp, connTmp2, head, list, struct RsConnInfo);
+    for (; &connTmp->list != head;
+        connTmp = connTmp2, connTmp2 = list_entry(connTmp2->list.next, struct RsConnInfo, list)) {
+        if (connTmp->connfd == fd) {
+            *conn = connTmp;
+            RS_PTHREAD_MUTEX_ULOCK(&rsCb->connCb.connMutex);
+            return 0;
+        }
+    }
+
+    RS_PTHREAD_MUTEX_ULOCK(&rsCb->connCb.connMutex);
+
+    hccp_warn("cannot find conn node for fd:%d!", fd);
+    *conn = NULL;
+
+    return -ENODEV;
+}
+
 int RsDrvSocketSend(int fd, const void *data, uint64_t size, int flags)
 {
     int ret = 0;

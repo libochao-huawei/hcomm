@@ -23,7 +23,7 @@ public:
 protected:
 
     /* *************** 算法编排 *************** */
-    u64 CalcSendLoopMaxCount(const u32 unitSize);
+    u64 CalcSendLoopMaxCount(const u32 unitSize) const;
     u64 CalcRecvLoopMaxCount(const u32 unitSize);
     HcclResult ProcessSendStreamDataSlice(Stream& stream, u32 sendStreamId, bool needStreamSync, bool retryEnable);
     HcclResult ProcessRecvStreamDataSlice(Stream& stream, u32 recvStreamId, bool needStreamSync, bool retryEnable);
@@ -61,7 +61,7 @@ private:
 
     HcclResult MainPostSubWait(Stream& mainStream);
     HcclResult MainWaitSubPost(Stream& mainStream);
-    HcclResult SubNotifyMain(Stream& stream, u32 streamId);
+    HcclResult SubNotifyMain(Stream& stream, u32 streamId) const;
     HcclResult MainPostSubWaitSmall(Stream& mainStream, Stream& subStream);
     HcclResult MainWaitSubPostSmall(Stream& mainStream, Stream& subStream);
 

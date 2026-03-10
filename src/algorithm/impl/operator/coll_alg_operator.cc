@@ -985,7 +985,7 @@ HcclResult CollAlgOperator::AHCAlgSelect(AlgTypeLevel1 &algType, std::vector<std
 }
 
 HcclResult CollAlgOperator::AHCAlgOptionSelect(AlgTypeLevel1 &algType, std::vector<std::vector<std::vector<u32>>> &globalSubGroups,
-    std::map<AHCConcOpType, TemplateType> &ahcAlgOption, AHCAlgSelectParam &ahcAlgSelectParam)
+    std::map<AHCConcOpType, TemplateType> &ahcAlgOption, const AHCAlgSelectParam &ahcAlgSelectParam)
 {
     (void) algType;
     (void) ahcAlgSelectParam;
@@ -1096,6 +1096,27 @@ bool CollAlgOperator::IsNeedStrictMode(const OpParam& param)
                         && userRankSize_ >= MIN_STRICT_RANK_NUM;
 
     return isStrictMode;
+}
+
+bool CollAlgOperator::CheckStrictCondition(const OpParam& param)
+{
+    CHK_PRT_RET(multiModuleDiffDeviceNumMode_ || multiSuperPodDiffDeviceNumMode_ || multiSuperPodDiffServerNumMode_, 
+        HCCL_ERROR("[CollAlgOperator][CheckStrictCondition] DETERMINISTIC_STRICT mode not support asymmetrical topo."),
+        false);
+
+    CHK_PRT_RET(param.reduceType == HCCL_REDUCE_PROD, 
+        HCCL_ERROR("[CollAlgOperator][CheckStrictCondition] DETERMINISTIC_STRICT mode not support PROD."),
+        false);
+
+    CHK_PRT_RET(param.DataDes.dataType == HCCL_DATA_TYPE_FP64, 
+        HCCL_ERROR("[CollAlgOperator][CheckStrictCondition] DETERMINISTIC_STRICT mode not support FP64."),
+        false);
+
+    CHK_PRT_RET(GetExternalInputInterHccsDisable(), 
+        HCCL_ERROR("[CollAlgOperator][CheckStrictCondition] DETERMINISTIC_STRICT mode not support HCCS disable."),
+        false);
+
+    return true;
 }
 
 }   // namespace hccl

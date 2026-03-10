@@ -77,12 +77,13 @@ u64 CollAllGatherMidCountFor91093Executor::CalcLoopMaxCount(const u64 cclBuffSiz
 
 u64 CollAllGatherMidCountFor91093Executor::CalcDstMemOffset(const OpParam &param, u64 inputMemSize) const
 {
+    (void) param;
     return topoAttr_.userRank * inputMemSize;
 }
 
 HcclResult CollAllGatherMidCountFor91093Executor::PrepareL2DataSlices(const OpParam &param,
     const SubCommInfo &level1CommInfo, const SubCommInfo &level2CommInfo, u64 inputMemSize,
-    std::vector<Slice> &dataSlices)
+    std::vector<Slice> &dataSlices) const
 {
     const u32 level1RankSize  = level1CommInfo.localRankSize;
     const u32 level1RankIndex = level1CommInfo.localRank;
