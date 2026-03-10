@@ -53,7 +53,7 @@ extern HcclResult HcommProfilingReportDeviceOp(const char* groupname);
  * @return HcclResult 执行结果状态码
  * @note Device侧
  */
-extern HcclResult HcommProfilingReportKernelStartTask(uint64_t thread);
+extern HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* groupname);
 /**
  * @brief 上报内核结束任务事件
  * @param[in] thread 线程上下文
