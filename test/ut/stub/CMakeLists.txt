@@ -337,6 +337,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
     #next
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms

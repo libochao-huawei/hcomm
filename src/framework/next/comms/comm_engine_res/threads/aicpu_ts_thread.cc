@@ -199,7 +199,7 @@ LocalNotify *AicpuTsThread::GetNotify(uint32_t index) const
     return notifys_[index].get();
 }
 
-HcclResult AicpuTsThread::GetThreadEntity(void *threadEntity)
+HcclResult AicpuTsThread::GetThreadEntity(void* &threadEntity)
 {
     CHK_PTR_NULL(threadEntity);
     ThreadEntity *entity = reinterpret_cast<ThreadEntity *>(threadEntity);
