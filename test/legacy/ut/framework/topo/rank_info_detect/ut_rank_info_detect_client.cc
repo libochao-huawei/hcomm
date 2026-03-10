@@ -93,6 +93,45 @@ protected:
     SocketHandle socketHandle;
 };
 
+namespace {
+TlsStatus g_expectedTlsStatus = TlsStatus::UNKNOWN;
+
+HcclResult StubHrtRaGetTlsStatus(RaInfo *info, TlsStatus &tlsStatus)
+{
+    EXPECT_NE(info, nullptr);
+    EXPECT_EQ(info->phyId, 0U);
+    tlsStatus = g_expectedTlsStatus;
+    return HCCL_SUCCESS;
+}
+
+HcclResult StubGetLocalTlsStatusSuccess(const RankInfoDetectClient *, TlsStatus &tlsStatus)
+{
+    tlsStatus = g_expectedTlsStatus;
+    return HCCL_SUCCESS;
+}
+
+NewRankInfo BuildRankInfoForTls(u32 rankId, TlsStatus tlsStatus)
+{
+    NewRankInfo rankInfo {};
+    rankInfo.rankId = rankId;
+    rankInfo.localId = rankId;
+    rankInfo.replacedLocalId = rankId;
+    rankInfo.rankLevelInfos.emplace_back(RankLevelInfo {});
+    rankInfo.tlsStatus = tlsStatus;
+    return rankInfo;
+}
+
+void BuildRankTableForTls(RankTableInfo &rankTable, const std::vector<TlsStatus> &tlsStatusList)
+{
+    rankTable.version = "2.0";
+    rankTable.rankCount = tlsStatusList.size();
+    rankTable.ranks.clear();
+    for (u32 idx = 0; idx < tlsStatusList.size(); ++idx) {
+        rankTable.ranks.emplace_back(BuildRankInfoForTls(idx, tlsStatusList[idx]));
+    }
+}
+}
+
 TEST_F(RankInfoDetectClientTest, Ut_CheckStatus_When_Normal_Expect_Success)
 {
     MOCKER_CPP(&Socket::GetStatus)
@@ -189,4 +228,133 @@ TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_Normal_Expect_Success)
     MOCKER_CPP(&RankInfoDetectClient::VerifyRankTable).stubs().will(ignoreReturnValue());
 
     EXPECT_NO_THROW(rankInfoDetectClient_->RecvRankTable());
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_GetLocalTlsStatus_When_HrtRaGetTlsStatusSuccess_Expect_ReturnSuccessAndTlsStatusUpdated)
+{
+    TlsStatus tlsStatus = TlsStatus::UNKNOWN;
+    g_expectedTlsStatus = TlsStatus::ENABLE;
+
+    MOCKER(Hccl::HrtRaGetTlsStatus).stubs().will(invoke(StubHrtRaGetTlsStatus));
+
+    HcclResult ret = rankInfoDetectClient_->GetLocalTlsStatus(tlsStatus);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(tlsStatus, TlsStatus::ENABLE);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_GetLocalTlsStatus_When_HrtRaGetTlsStatusFails_Expect_ReturnSameError)
+{
+    TlsStatus tlsStatus = TlsStatus::UNKNOWN;
+
+    MOCKER(Hccl::HrtRaGetTlsStatus).stubs().will(returnValue(HCCL_E_NETWORK));
+
+    HcclResult ret = rankInfoDetectClient_->GetLocalTlsStatus(tlsStatus);
+
+    EXPECT_EQ(ret, HCCL_E_NETWORK);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_ConstructSingleRank_When_GetLocalTlsStatusSuccess_Expect_LocalRankTableContainTlsStatus)
+{
+    RankTableInfo localRankTable;
+    g_expectedTlsStatus = TlsStatus::ENABLE;
+    MOCKER_CPP(&RankInfoDetectClient::GetLocalTlsStatus).stubs().will(invoke(StubGetLocalTlsStatusSuccess));
+
+    rankInfoDetectClient_->ConstructSingleRank(localRankTable);
+
+    ASSERT_EQ(localRankTable.ranks.size(), 1U);
+    EXPECT_EQ(localRankTable.ranks[0].tlsStatus, TlsStatus::ENABLE);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_ConstructSingleRank_When_GetLocalTlsStatusFails_Expect_ConstructContinueWithUnknownTlsStatus)
+{
+    RankTableInfo localRankTable;
+    MOCKER_CPP(&RankInfoDetectClient::GetLocalTlsStatus).stubs().will(returnValue(HCCL_E_NETWORK));
+
+    rankInfoDetectClient_->ConstructSingleRank(localRankTable);
+
+    ASSERT_EQ(localRankTable.ranks.size(), 1U);
+    EXPECT_EQ(localRankTable.ranks[0].tlsStatus, TlsStatus::UNKNOWN);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_ConstructRankTable_When_GetLocalTlsStatusSuccess_Expect_FirstRankContainTlsStatus)
+{
+    rankInfoDetectClient_->rankSize_ = 2;
+    RankTableInfo localRankTable;
+    std::string testJsonPath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/rank_info_detect/rootInfo.json"};
+
+    MOCKER(realpath)
+        .stubs()
+        .with(any(), outBoundP(const_cast<char*>(testJsonPath.c_str()), testJsonPath.size() + 1))
+        .will(returnValue(const_cast<char*>(testJsonPath.c_str())));
+    g_expectedTlsStatus = TlsStatus::DISABLE;
+    MOCKER_CPP(&RankInfoDetectClient::GetLocalTlsStatus).stubs().will(invoke(StubGetLocalTlsStatusSuccess));
+
+    rankInfoDetectClient_->ConstructRankTable(localRankTable);
+
+    ASSERT_FALSE(localRankTable.ranks.empty());
+    EXPECT_EQ(localRankTable.ranks[0].tlsStatus, TlsStatus::DISABLE);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_GenerateTlsStatusStr_When_MultipleRanks_Expect_CommaSeparatedRankList)
+{
+    std::string tlsStatusStr;
+    std::vector<u32> tlsStatusRanks {0, 2, 5};
+
+    rankInfoDetectClient_->GenerateTlsStatusStr(tlsStatusStr, tlsStatusRanks);
+
+    EXPECT_EQ(tlsStatusStr, "0,2,5");
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_AllRanksEnable_Expect_ReturnSuccess)
+{
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::ENABLE});
+
+    HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_AllRanksDisable_Expect_ReturnSuccess)
+{
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::DISABLE, TlsStatus::DISABLE});
+
+    HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_EnableAndDisableMixed_Expect_ReturnParaError)
+{
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::DISABLE});
+
+    HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
+
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_KnownConsistentAndUnknownExists_Expect_ReturnSuccess)
+{
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::UNKNOWN});
+
+    HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_KnownInconsistentAndUnknownExists_Expect_ReturnParaError)
+{
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::DISABLE, TlsStatus::UNKNOWN});
+
+    HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
+
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyRankTable_When_TlsConsistencyCheckFails_Expect_ThrowInvalidParamsException)
+{
+    rankInfoDetectClient_->rankSize_ = 2;
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::DISABLE});
+
+    EXPECT_THROW(rankInfoDetectClient_->VerifyRankTable(), InvalidParamsException);
 }
