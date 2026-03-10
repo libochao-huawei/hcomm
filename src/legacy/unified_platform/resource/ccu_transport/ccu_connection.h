@@ -132,5 +132,11 @@ public:
         const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys);
 };
 
+class CcuUboeConnection : public CcuConnection {
+public:
+    CcuUboeConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
+        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys);
+};
+
 } // namespace Hccl
 #endif // HCCL_CCU_CONNECTION_H

@@ -66,7 +66,7 @@ TEST_F(RdmaHandleManagerTest, rdma_handle_manager_get_and_create)
     PortData           localPortData(0, basePortType, 0, IpAddress());
 
     // when
-    auto res = RdmaHandleManager::GetInstance().Get(devicePhyId, localPortData);
+    auto res = RdmaHandleManager::GetInstance().Get(devicePhyId, localPortData, LinkProtocol::UB_CTP);
 
     // then
     EXPECT_EQ(rdmaHandle, res);
@@ -80,8 +80,8 @@ TEST_F(RdmaHandleManagerTest, rdma_handle_manager_get_twice)
     PortData           localPortData(0, basePortType, 0, IpAddress());
 
     // when
-    auto res1 = RdmaHandleManager::GetInstance().Get(devicePhyId, localPortData);
-    auto res2 = RdmaHandleManager::GetInstance().Get(devicePhyId, localPortData);
+    auto res1 = RdmaHandleManager::GetInstance().Get(devicePhyId, localPortData, LinkProtocol::UB_CTP);
+    auto res2 = RdmaHandleManager::GetInstance().Get(devicePhyId, localPortData, LinkProtocol::UB_CTP);
 
     // then
     EXPECT_EQ(res1, res2);

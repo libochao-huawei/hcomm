@@ -712,3 +712,8 @@ int RaCtxQpDestroyBatchAsync(void *ctx_handle, void*qp_handle[], unsigned int *n
 {
     return 0;
 }
+
+int RaGetEidByIp(void *ctxHandle, struct IpInfo ip[], union HccpEid eid[], unsigned int *num)
+{
+    return 0;
+}
