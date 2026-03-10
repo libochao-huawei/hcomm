@@ -439,7 +439,7 @@ HcclResult CollBatchSendRecvGroupExecutor::CalcRecvSlicesSmall()
     return HCCL_SUCCESS;
 }
 
-HcclResult CollBatchSendRecvGroupExecutor::SubNotifyMain(Stream& stream, u32 streamId)
+HcclResult CollBatchSendRecvGroupExecutor::SubNotifyMain(Stream& stream, u32 streamId) const
 {
     CHK_RET(LocalNotify::Post(stream, dispatcher_, algResResp_->notifiesMain[streamId], PROF_STAGE_0));
     CHK_RET(LocalNotify::Wait(stream, dispatcher_, algResResp_->notifiesAux[streamId], PROF_STAGE_0));
@@ -612,7 +612,7 @@ HcclResult CollBatchSendRecvGroupExecutor::ProcessRecvDataSliceSmall(Stream& str
 }
 
 
-u64 CollBatchSendRecvGroupExecutor::CalcSendLoopMaxCount(const u32 unitSize)
+u64 CollBatchSendRecvGroupExecutor::CalcSendLoopMaxCount(const u32 unitSize) const
 {
     // 中转内存单次最多能够接受的input count
     u64 maxCountPerLoop = bufferSliceSize_ / unitSize;

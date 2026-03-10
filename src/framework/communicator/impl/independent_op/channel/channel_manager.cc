@@ -303,6 +303,8 @@ HcclResult ChannelManager::ParseChannelRemoteDataToMem(const OpCommTransport &op
         if (!transportRequest.isUsedRdma) {
             // sdma -> P2P
             CHK_RET(BuildOpRemoteChannelP2pResParam(tempLink, channelParam.remoteResV2[linkIdx]));
+            channelParam.remoteResV2[linkIdx].channelP2p.qos =  hcclQos_;
+            HCCL_INFO("[ChannelManager] [ParseChannelRemoteDataToMem] hcclQos[%u]", channelParam.remoteResV2[linkIdx].channelP2p.qos);
         } else {
             // rdma -> roce
             CHK_RET(BuildOpRemoteChannelRoceResParam(tempLink, channelParam.remoteResV2[linkIdx]));
@@ -768,6 +770,13 @@ HcclResult ChannelManager::ReleaseChannel()
         }
     }
     channelLinks_.clear();
+    return HCCL_SUCCESS;
+}
+
+HcclResult ChannelManager::SetHcclQos(u32 hcclQos)
+{
+    HCCL_INFO("[ChannelManager] [SetHcclQos] hcclQos[%u]", hcclQos);
+    hcclQos_ = hcclQos;
     return HCCL_SUCCESS;
 }
 } // namespace hccl

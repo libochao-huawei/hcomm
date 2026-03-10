@@ -45,7 +45,7 @@ namespace hccl
         HcclResult RunLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo,
                              SubCommInfo &level1CommInfo);
         HcclResult RunLevel0(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo,
-                             SubCommInfo &level1CommInfo);
+                             const SubCommInfo &level1CommInfo);
     };
 
 } // namespace hccl

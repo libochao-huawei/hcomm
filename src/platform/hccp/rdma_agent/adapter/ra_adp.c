@@ -22,6 +22,7 @@
 #include "ra_hdc_rdma_notify.h"
 #include "ra_hdc_rdma.h"
 #include "ra_hdc_socket.h"
+#include "ra_hdc_ping.h"
 #include "ra_rs_comm.h"
 #include "ra_hdc_tlv.h"
 #include "ra_rs_err.h"
@@ -30,6 +31,7 @@
 #ifdef CONFIG_TLV
 #include "ra_adp_tlv.h"
 #endif
+#include "ra_adp_ping.h"
 #include "ra_adp_socket.h"
 #include "ra_hdc_ctx.h"
 #include "ra_hdc_async_ctx.h"
@@ -91,15 +93,6 @@ struct RsOps {
         unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct LiteMemAttrResp *resp);
     int (*getLiteConnectedInfo)(
         unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct LiteConnectedInfoResp *resp);
-    int (*pingInit)(struct PingInitAttr *attr, struct PingInitInfo *info, unsigned int *devIndex);
-    int (*pingTargetAdd)(struct RaRsDevInfo *rdev, struct PingTargetInfo *target);
-    int (*pingTaskStart)(struct RaRsDevInfo *rdev, struct PingTaskAttr *attr);
-    int (*pingGetResults)(struct RaRsDevInfo *rdev, struct PingTargetCommInfo target[],
-        unsigned int *num, struct PingResultInfo result[]);
-    int (*pingTaskStop)(struct RaRsDevInfo *rdev);
-    int (*pingTargetDel)(struct RaRsDevInfo *rdev, struct PingTargetCommInfo target[],
-        unsigned int *num);
-    int (*pingDeinit)(struct RaRsDevInfo *rdev);
     int (*getCqeErrInfoNum)(unsigned int phyId, unsigned int rdevIdx, unsigned int *num);
     int (*getCqeErrInfoList)(unsigned int phyId, unsigned int rdevIdx, struct CqeErrInfo *info,
         unsigned int *num);
@@ -144,13 +137,6 @@ struct RsOps gRaRsOps = {
     .getLiteConnectedInfo = RsGetLiteConnectedInfo,
     .getLiteMemAttr = RsGetLiteMemAttr,
     .getLiteSupport = RsGetLiteSupport,
-    .pingInit = RsPingInit,
-    .pingTargetAdd = RsPingTargetAdd,
-    .pingTaskStart = RsPingTaskStart,
-    .pingGetResults = RsPingGetResults,
-    .pingTaskStop = RsPingTaskStop,
-    .pingTargetDel = RsPingTargetDel,
-    .pingDeinit = RsPingDeinit,
     .getCqeErrInfoNum = RsGetCqeErrInfoNum,
     .getCqeErrInfoList = RsGetCqeErrInfoList,
     .getTlsEnable = RsGetTlsEnable,
@@ -1369,144 +1355,6 @@ STATIC int RaRsGetLiteMemAttr(char *inBuf, char *outBuf, int *outLen, int *opRes
         (void *)&liteMemAttrOut->rxData.resp);
     if (*opResult != 0) {
         hccp_err("get_lite_mem_attr failed ret[%d].", *opResult);
-    }
-
-    return 0;
-}
-
-STATIC int RaRsPingInit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
-{
-    union OpPingInitData *pingDataOut = (union OpPingInitData *)(outBuf + sizeof(struct MsgHead));
-    union OpPingInitData *pingData = (union OpPingInitData *)(inBuf + sizeof(struct MsgHead));
-
-    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpPingInitData), sizeof(struct MsgHead), rcvBufLen, opResult);
-
-    *opResult = gRaRsOps.pingInit(&pingData->txData.attr, &pingDataOut->rxData.info,
-        &pingDataOut->rxData.devIndex);
-    if (*opResult != 0) {
-        hccp_err("ping_init failed ret[%d].", *opResult);
-    }
-    // only negative return value will be parsed
-    if (*opResult > 0) {
-        *opResult = -*opResult;
-    }
-
-    return 0;
-}
-
-STATIC int RaRsPingTargetAdd(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
-{
-    union OpPingAddData *pingData = (union OpPingAddData *)(inBuf + sizeof(struct MsgHead));
-
-    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpPingAddData), sizeof(struct MsgHead), rcvBufLen, opResult);
-
-    *opResult = gRaRsOps.pingTargetAdd(&pingData->txData.rdev, &pingData->txData.target);
-    if (*opResult != 0) {
-        hccp_err("ping_target_add failed ret[%d].", *opResult);
-    }
-    // only negative return value will be parsed
-    if (*opResult > 0) {
-        *opResult = -*opResult;
-    }
-
-    return 0;
-}
-
-STATIC int RaRsPingTaskStart(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
-{
-    union OpPingStartData *pingData = (union OpPingStartData *)(inBuf + sizeof(struct MsgHead));
-
-    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpPingStartData), sizeof(struct MsgHead), rcvBufLen, opResult);
-
-    *opResult = gRaRsOps.pingTaskStart(&pingData->txData.rdev, &pingData->txData.attr);
-    if (*opResult != 0) {
-        hccp_err("ping_task_start failed ret[%d].", *opResult);
-    }
-    // only negative return value will be parsed
-    if (*opResult > 0) {
-        *opResult = -*opResult;
-    }
-
-    return 0;
-}
-
-STATIC int RaRsPingGetResults(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
-{
-    union OpPingResultsData *pingDataOut = (union OpPingResultsData *)(outBuf + sizeof(struct MsgHead));
-    union OpPingResultsData *pingData = (union OpPingResultsData *)(inBuf + sizeof(struct MsgHead));
-
-    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpPingResultsData), sizeof(struct MsgHead), rcvBufLen, opResult);
-    HCCP_CHECK_PARAM_LEN_RET_HOST(pingData->txData.num, 0, RA_MAX_PING_TARGET_NUM, opResult);
-
-    *opResult = gRaRsOps.pingGetResults(&pingData->txData.rdev, pingData->txData.target,
-        &pingData->txData.num, pingDataOut->rxData.target);
-    // caller needs to retry, degrade log level
-    if (*opResult == -EAGAIN) {
-        hccp_warn("ping_get_results unsuccessful, ret[%d].", *opResult);
-    } else if (*opResult != 0) {
-        hccp_err("ping_get_results failed, ret[%d].", *opResult);
-    }
-    // only negative return value will be parsed
-    if (*opResult > 0) {
-        *opResult = -*opResult;
-        return 0;
-    }
-    pingDataOut->rxData.num = pingData->txData.num;
-
-    return 0;
-}
-
-STATIC int RaRsPingTaskStop(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
-{
-    union OpPingStopData *pingData = (union OpPingStopData *)(inBuf + sizeof(struct MsgHead));
-
-    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpPingStopData), sizeof(struct MsgHead), rcvBufLen, opResult);
-
-    *opResult = gRaRsOps.pingTaskStop(&pingData->txData.rdev);
-    if (*opResult != 0) {
-        hccp_err("ping_task_stop failed ret[%d].", *opResult);
-    }
-    // only negative return value will be parsed
-    if (*opResult > 0) {
-        *opResult = -*opResult;
-    }
-
-    return 0;
-}
-
-STATIC int RaRsPingTargetDel(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
-{
-    union OpPingDelData *pingData = (union OpPingDelData *)(inBuf + sizeof(struct MsgHead));
-
-    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpPingDelData), sizeof(struct MsgHead), rcvBufLen, opResult);
-    HCCP_CHECK_PARAM_LEN_RET_HOST(pingData->txData.num, 0, RA_MAX_PING_TARGET_NUM, opResult);
-
-    *opResult = gRaRsOps.pingTargetDel(&pingData->txData.rdev, pingData->txData.target,
-        &pingData->txData.num);
-    if (*opResult != 0) {
-        hccp_err("ping_target_del failed ret[%d].", *opResult);
-    }
-    // only negative return value will be parsed
-    if (*opResult > 0) {
-        *opResult = -*opResult;
-    }
-
-    return 0;
-}
-
-STATIC int RaRsPingDeinit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
-{
-    union OpPingDeinitData *pingData = (union OpPingDeinitData *)(inBuf + sizeof(struct MsgHead));
-
-    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpPingDeinitData), sizeof(struct MsgHead), rcvBufLen, opResult);
-
-    *opResult = gRaRsOps.pingDeinit(&pingData->txData.rdev);
-    if (*opResult != 0) {
-        hccp_err("ping_deinit failed ret[%d].", *opResult);
-    }
-    // only negative return value will be parsed
-    if (*opResult > 0) {
-        *opResult = -*opResult;
     }
 
     return 0;

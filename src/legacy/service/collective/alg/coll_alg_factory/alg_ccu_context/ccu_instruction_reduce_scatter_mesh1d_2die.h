@@ -151,9 +151,9 @@ private:
     CcuInstType instType_ = CcuInstType::CCU_REDUCE_SCATTER_MESH_1D_2DIE;
 
     std::vector<uint64_t>            dimSize_;
-    u32                              rankId_;
+    u32                              rankId_{0};
     CollAlgOperator                  op_;
-    bool                             rmtReduceWithMyRank_;
+    bool                             rmtReduceWithMyRank_{true};
     std::vector<std::vector<RankId>> tempVTopo_;
 
     uint64_t inputAddr_{0};

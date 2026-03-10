@@ -1955,7 +1955,6 @@ TEST_F(AllReduceTest, allreduce_A3_AllReducemidcountExecutor)
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
 
-
 TEST_F(AllReduceTest, AllReduceOrderPreservedFor91093Executor1)
 {
     RankTable_For_LLT gen;
@@ -1990,7 +1989,7 @@ TEST_F(AllReduceTest, AllReduceOrderPreservedFor91093Executor2)
     CheckerOpParam checkerOpParam;
     checkerOpParam.opType = CheckerOpType::ALLREDUCE;
     checkerOpParam.tag = "AllREDUCE";
-    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
     checkerOpParam.DataDes.count = 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;

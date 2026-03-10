@@ -27,7 +27,6 @@ extern "C" __aicore__ void sk_allreduce(SUPERKERNEL_LITE_ARGS_DEF) {
             return sk_all_reduce_910b_smalldata_graph(SUPERKERNEL_ARGS_CALL);
         }
     }
-
 }
  
  

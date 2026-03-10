@@ -103,7 +103,7 @@ function build_package(){
 function build_device(){
     cmake_config
     log "Info: build_device"
-    TARGET_LIST="hccp_service.bin rs ccl_kernel_plf ccl_kernel_plf_a ccl_kernel"
+    TARGET_LIST="hccp_service.bin rs ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json aicpu_custom"
     echo "TARGET_LIST=${TARGET_LIST}"
     PKG_TARGET_LIST="generate_device_hccp_package generate_device_aicpu_package"
     echo "PKG_TARGET_LIST=${PKG_TARGET_LIST}"
@@ -186,7 +186,7 @@ function build_test() {
 function build_kernel() {
     cmake_config
     log "Info: build_kernel"
-    build ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json
+    build ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json aicpu_custom
 }
 
 function mk_dir() {
@@ -579,6 +579,14 @@ elif [ "${FULL_MODE}" == "true" ]; then
     build_package
     rm -rf ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
 else
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
+    cd ..
+    mkdir -p ${BUILD_DEVICE_DIR}
+    cd ${BUILD_DEVICE_DIR}
+    CURRENT_CUSTOM_OPTION="${CUSTOM_OPTION}"
+    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=ON -DKERNEL_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device -DUSE_ALOG=0 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN} -DVERSION_INFO=${VERSION_INFO}"
+    build_kernel
+    cd .. & cd ${BUILD_DIR}
+    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
     build_package
+    rm -rf ${BUILD_DEVICE_DIR}
 fi

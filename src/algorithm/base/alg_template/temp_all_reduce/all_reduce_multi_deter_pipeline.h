@@ -33,7 +33,7 @@ protected:
     HcclResult GetRemoteCclbufferDeviceMem(u32 inputSliceIndex, LINK link,
         u32 outputSliceIndex, DeviceMem &remoteMem) override;
     HcclResult GetLocalUserDeviceMem(u32 rankIdInAllRanks, DeviceMem &localMem, bool isUserIn);
-    HcclResult GetLocalUserInDeviceMem(u32 rankIdInAllRanks, DeviceMem &locaMem) override;
+    HcclResult GetLocalUserInDeviceMem(u32 rankIdInAllRanks, DeviceMem &localMem) override;
     HcclResult GetLocalUserOutDeviceMem(u32 rankIdInAllRanks, DeviceMem &localMem) override;
     HcclResult GetLocalInCclbufferDeviceMem(u32 rankIdInAllRanks, DeviceMem &localMem, bool ifUseLastSize) override;
     HcclResult GetLocalOutCclbufferDeviceMem(u32 rankIdInAllRanks, DeviceMem &localMem, bool ifUseLastSize) override;

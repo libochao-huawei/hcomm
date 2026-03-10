@@ -13,6 +13,7 @@
 #include "config.h"
 #include "externalinput_pub.h"
 #include "env_config.h"
+#include "search_path.h"
 
 using namespace std;
 

@@ -14,10 +14,13 @@
 #include "hcomm_res_defs.h"
 #include "hccl/hccl_res.h"
 #include "mem_host_pub.h"
+#include "thread.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
+
+HcclResult HcommResMgrInit(uint32_t devPhyId);
 
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
 
@@ -66,6 +69,5 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
 #ifdef __cplusplus
 }
 #endif // __cplusplus
-
-
+HcclResult HcommThreadGet(const ThreadHandle thread, std::shared_ptr<hccl::Thread> &handle);
 #endif

@@ -696,16 +696,24 @@ void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankCo
     }
 }
 
-void GetNotifyInfo(TaskParam &taskParam, const ErrorMessageReport &errorMessage) {
+void GetTaskParam(TaskParam &taskParam, const ErrorMessageReport &errorMessage) {
     if (errorMessage.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
         taskParam.taskPara.Notify.notifyID = errorMessage.notifyId;
         taskParam.taskPara.Notify.value = errorMessage.notifyValue;
     } else if (errorMessage.taskType == TaskParamType::TASK_UB_REDUCE_INLINE || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
         taskParam.taskPara.Reduce.notifyID = errorMessage.notifyId;
         taskParam.taskPara.Reduce.notifyValue = errorMessage.notifyValue;
+        taskParam.taskPara.Reduce.src = reinterpret_cast<void *>(errorMessage.taskSrcAddr);
+ 	    taskParam.taskPara.Reduce.dst = reinterpret_cast<void *>(errorMessage.taskDstAddr);
+ 	    taskParam.taskPara.Reduce.linkType = errorMessage.linkType;
+ 	    taskParam.taskPara.Reduce.size = errorMessage.size;
     } else if (errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE || errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY) {
         taskParam.taskPara.DMA.notifyID = errorMessage.notifyId;
         taskParam.taskPara.DMA.notifyValue = errorMessage.notifyValue;
+        taskParam.taskPara.DMA.src = reinterpret_cast<void *>(errorMessage.taskSrcAddr);
+ 	    taskParam.taskPara.DMA.dst = reinterpret_cast<void *>(errorMessage.taskDstAddr);
+ 	    taskParam.taskPara.DMA.linkType = errorMessage.linkType;
+ 	    taskParam.taskPara.DMA.size = errorMessage.size;
     }
 }
 
@@ -730,7 +738,7 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
             TaskParam taskParam{};
             taskParam.taskType = errorMessage.taskType;
 
-            GetNotifyInfo(taskParam, errorMessage);
+            GetTaskParam(taskParam, errorMessage);
 
             std::shared_ptr<DfxOpInfo> dfxOpInfo = std::make_shared<DfxOpInfo>();
             dfxOpInfo->tag_ = std::string(errorMessage.tag);
@@ -744,13 +752,13 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
             PrintParaErrorLog(stageErrInfo, exceptionTaskInfo.GetParaInfo());
             PrintGroupErrorMessage(errorMessage, exceptionTaskInfo, groupRankContent, stageErrInfo);
             PrintOpDataErrorMessage(exceptionInfo->deviceid, errorMessage, stageErrInfo);
-            HCCL_ERROR("errorMessage taskType[%s], rtCqErrorType[%u], rtCqErrorCode[%u]. ", errorMessage.taskType.Describe().c_str(), (u32)errorMessage.rtCqErrorType, errorMessage.rtCqErrorCode);
+            HCCL_ERROR("errorMessage taskType[%s], rtCqErrorType[%u], rtCqErrorCode[%u]. ", errorMessage.taskType.Describe().c_str(), static_cast<u32>(errorMessage.rtCqErrorType), errorMessage.rtCqErrorCode);
 
             // 打印UB DFX寄存器信息
             if (errorMessage.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY || errorMessage.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
  	            || errorMessage.taskType == TaskParamType::TASK_UB_INLINE_WRITE || errorMessage.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
                 || errorMessage.taskType == TaskParamType::TASK_UB) {
- 	            HCCL_ERROR("errorMessage ubCqeStatus[%u], localEid[%s], remoteEid[%s]. ", (u32)errorMessage.ubCqeStatus, errorMessage.locEid.Describe().c_str(), errorMessage.rmtEid.Describe().c_str());
+ 	            HCCL_ERROR("errorMessage ubCqeStatus[%u], localEid[%s], remoteEid[%s]. ", static_cast<u32>(errorMessage.ubCqeStatus), errorMessage.locEid.Describe().c_str(), errorMessage.rmtEid.Describe().c_str());
                 auto reverseAddr = IpAddress(errorMessage.locEid);
                 auto addr = IpAddress(reverseAddr.GetReverseEid());
                 u32 devPhyId = HrtGetDevicePhyIdByIndex(exceptionInfo->deviceid);

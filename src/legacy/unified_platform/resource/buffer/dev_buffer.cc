@@ -28,7 +28,7 @@ DevBuffer::DevBuffer(std::size_t allocSize) : Buffer(allocSize), selfOwned(true)
         THROW<InternalException>(msg);
     }
     addr_ = reinterpret_cast<uintptr_t>(HrtMalloc(allocSize,
-												  static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH)));
+												  static_cast<u32>(ACL_MEM_TYPE_HIGH_BAND_WIDTH)));
 }
 
 std::shared_ptr<DevBuffer> DevBuffer::Create(uintptr_t devAddr, std::size_t devSize)

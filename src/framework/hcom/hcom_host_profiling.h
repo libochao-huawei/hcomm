@@ -15,6 +15,7 @@
 #include <securec.h>
 #include <arpa/inet.h>
 #include "acl/acl_rt.h"
+#include "hccl_res.h"
 
 #ifdef __cplusplus
 extern "C" {

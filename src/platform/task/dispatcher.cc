@@ -1311,6 +1311,7 @@ HcclResult DispatcherPub::StreamSync(Stream &stream)
 
 void DispatcherPub::SetHcclQos(u32 hcclQos)
 {
+    HCCL_INFO("[DispatcherPub] [SetHcclQos] hcclQos = %u", hcclQos);
     // 按区间映射HCCL QOS到SDMA QOS
     if (hcclQos >= HCCL_QOS_MIN && hcclQos <= HCCL_QOS_LEVEL_1_LIMIT) {
         hcclQos_ = SDMA_QOS_LOW;

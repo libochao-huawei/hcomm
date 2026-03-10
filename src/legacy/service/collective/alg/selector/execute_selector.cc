@@ -62,7 +62,7 @@ ExecuteSelector &ExecuteSelector::SetOpConfig(OpExecuteConfig opConfig)
     return *this;
 }
 
-AlgorithmType ExecuteSelector::GetAlgorithmTypeForMC2CCU(const std::string& name)
+AlgorithmType ExecuteSelector::GetAlgorithmTypeForMC2CCU(const std::string& name) const
 {
     Mc2Selector mc2Selector;
     return mc2Selector.GetAlgorithmTypeForMC2CCU(name);
