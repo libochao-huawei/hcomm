@@ -51,7 +51,19 @@ public:
     uint32_t GetMyRankId() const;
     
     // 获取Rank数量
-    uint32_t GetRankSize() const;
+    uint32_t GetRankSize() {
+        if(rankgraph_ == nullptr){
+            HCCL_ERROR("[CollComm]get ranksize failed");
+            return 0;
+        }
+        uint32_t rankSize{0};
+        HcclResult ret = rankgraph_->GetRankSize(&rankSize);
+        if(ret != 0){
+            HCCL_ERROR("[CollComm]get ranksize failed");
+            return 0;
+        }
+        return rankSize;
+    }
 
     // 获取HcclCommDfx
     HcclCommDfx* GetHcclCommDfx() { return hcclCommDfx_.get(); }
@@ -62,12 +74,17 @@ public:
         }
         return hcclCommDfx_->GetCallback();
     }
+    const std::string& GetCommId() const {return commId_;}
+    HcclResult GetHDCommunicate(
+    HDCommunicateParams &kfcControlTransferH2DParams, HDCommunicateParams &kfcStatusTransferD2HParams);
 private:
+    HcclResult InitHDCommunicate();     
     void* comm_{nullptr};
     uint32_t rankId_{};
     std::string commId_;
     CommConfig config_{};
     ManagerCallbacks callbacks_; 
+    s32 deviceLogicId_{0};
 
     std::unique_ptr<RankGraph> rankgraph_{nullptr};
     std::unique_ptr<CommEngineResMgr> commEngineResMgr_{nullptr};
@@ -82,6 +99,9 @@ private:
     std::size_t size_{0};
     HcclMemType memType_{HcclMemType::HCCL_MEM_TYPE_DEVICE};
     HcclCommDfx dfx_;
+
+    std::shared_ptr<HDCommunicate> kfcControlTransferH2D_{nullptr};
+    std::shared_ptr<HDCommunicate> kfcStatusTransferD2H_{nullptr};
 };
 }  // namespace hccl
 

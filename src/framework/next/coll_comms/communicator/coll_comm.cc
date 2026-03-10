@@ -10,6 +10,8 @@
 #include "coll_comm.h"
 // #include "rank_graphs/rank_graph.h"
 #include "exception_handler.h"
+#include "kfc.h"
+#include "dlhal_function.h"
 
 namespace hccl {
 CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, const ManagerCallbacks& callbacks)
@@ -25,6 +27,7 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
 {
     EXCEPTION_HANDLE_BEGIN
 
+    CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
     EXECEPTION_CATCH(rankgraph_ = std::make_unique<RankGraphV2>(rankGraph), return HCCL_E_PTR);
     uint32_t rankNum = 0;
     CHK_PTR_NULL(rankgraph_);
@@ -49,11 +52,14 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
     CHK_RET(myRank_->Init(cclBuffer, opExpansionMode, rankNum));
     s32 deviceId = 0;
     CHK_RET(hrtGetDevice(&deviceId));
+    CHK_RET(hrtGetDevice(&deviceLogicId_));
+
+    CHK_RET(InitHDCommunicate());
 
  	if (!hcclCommDfx_) {
         EXECEPTION_CATCH(hcclCommDfx_ = std::make_unique<HcclCommDfx>(), return HCCL_E_PTR);
  	}
- 	CHK_RET(hcclCommDfx_->Init(deviceId, commId_));
+ 	CHK_RET(hcclCommDfx_->Init(deviceLogicId_, commId_));
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
@@ -61,6 +67,32 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
 uint32_t CollComm::GetMyRankId() const
 {
     return rankId_;
+}
+
+HcclResult CollComm::InitHDCommunicate()
+{
+    // 初始化aicpu进程 host-device 共享内存
+    EXECEPTION_CATCH((kfcControlTransferH2D_ = 
+        std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_H2D, sizeof(Hccl::KfcCommand))),
+        return HCCL_E_PTR);
+    CHK_RET(kfcControlTransferH2D_->InitHost());
+
+    EXECEPTION_CATCH((kfcStatusTransferD2H_ = 
+        std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_D2H, sizeof(Hccl::KfcExecStatus))),
+        return HCCL_E_PTR);
+    CHK_RET(kfcStatusTransferD2H_->InitHost());
+    retrun HCCL_SUCCESS;
+}
+
+HcclResult CollComm::GetHDCommunicate(
+    HDCommunicateParams &kfcControlTransferH2DParams, HDCommunicateParams &kfcStatusTransferD2HParams)
+{
+    CHK_SMART_PTR_NULL(kfcControlTransferH2DParams);
+    CHK_SMART_PTR_NULL(kfcStatusTransferD2HParams);
+    kfcControlTransferH2DParams = kfcControlTransferH2D_->GetCommunicateParams();
+    kfcStatusTransferD2HParams = kfcStatusTransferD2H_->GetCommunicateParams();
+    HCCL_INFO("%s success, group[%s]", __func__, commId_.c_str());
+    retrun HCCL_SUCCESS;
 }
 
 }  // namespace hccl
