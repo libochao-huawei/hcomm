@@ -22,9 +22,9 @@
 using namespace hccl;
 
 namespace {
-TlsStatus g_expectedTlsStatus = TlsStatus::UNKNOWN;
+Hccl::TlsStatus g_expectedTlsStatus = Hccl::TlsStatus::UNKNOWN;
 bool g_channelLoggerCalled = false;
-TlsStatus g_loggedTlsStatus = TlsStatus::UNKNOWN;
+Hccl::TlsStatus g_loggedTlsStatus = Hccl::TlsStatus::UNKNOWN;
 std::vector<HcclResult> g_channelStatusSequence;
 size_t g_channelStatusIndex = 0;
 
@@ -40,7 +40,7 @@ HcclResult StubHrtGetDevicePhyIdByIndexSuccess(u32, u32 &devicePhyId, bool)
     return HCCL_SUCCESS;
 }
 
-HcclResult StubMyRankHrtRaGetTlsStatus(RaInfo *info, TlsStatus &tlsStatus)
+HcclResult StubMyRankHrtRaGetTlsStatus(RaInfo *info, Hccl::TlsStatus &tlsStatus)
 {
     EXPECT_NE(info, nullptr);
     EXPECT_EQ(info->phyId, 8U);
@@ -48,7 +48,7 @@ HcclResult StubMyRankHrtRaGetTlsStatus(RaInfo *info, TlsStatus &tlsStatus)
     return HCCL_SUCCESS;
 }
 
-HcclResult StubMyRankGetLocalTlsStatusSuccess(const MyRank *, TlsStatus &tlsStatus)
+HcclResult StubMyRankGetLocalTlsStatusSuccess(const MyRank *, Hccl::TlsStatus &tlsStatus)
 {
     tlsStatus = g_expectedTlsStatus;
     return HCCL_SUCCESS;
@@ -72,7 +72,7 @@ void StubPrintChannelErrorDetails(
     ChannelHandle *,
     int32_t *,
     int64_t,
-    TlsStatus tlsStatus)
+    Hccl::TlsStatus tlsStatus)
 {
     g_channelLoggerCalled = true;
     g_loggedTlsStatus = tlsStatus;
@@ -87,9 +87,9 @@ protected:
         callbacks_.setAicpuCommState = [](bool) {};
         callbacks_.kernelLaunchAicpuCommInit = []() { return HCCL_SUCCESS; };
         myRank_.reset(new MyRank(nullptr, 0, config_, callbacks_));
-        g_expectedTlsStatus = TlsStatus::UNKNOWN;
+        g_expectedTlsStatus = Hccl::TlsStatus::UNKNOWN;
         g_channelLoggerCalled = false;
-        g_loggedTlsStatus = TlsStatus::UNKNOWN;
+        g_loggedTlsStatus = Hccl::TlsStatus::UNKNOWN;
         g_channelStatusSequence.clear();
         g_channelStatusIndex = 0;
     }
@@ -107,7 +107,7 @@ protected:
 
 TEST_F(MyRankTlsTest, Ut_GetLocalTlsStatus_When_HrtGetDeviceFails_Expect_ReturnSameError)
 {
-    TlsStatus tlsStatus = TlsStatus::UNKNOWN;
+    Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
 
     MOCKER(hrtGetDevice).stubs().will(returnValue(HCCL_E_RUNTIME));
 
@@ -118,7 +118,7 @@ TEST_F(MyRankTlsTest, Ut_GetLocalTlsStatus_When_HrtGetDeviceFails_Expect_ReturnS
 
 TEST_F(MyRankTlsTest, Ut_GetLocalTlsStatus_When_HrtGetDevicePhyIdByIndexFails_Expect_ReturnSameError)
 {
-    TlsStatus tlsStatus = TlsStatus::UNKNOWN;
+    Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
 
     MOCKER(hrtGetDevice).stubs().will(invoke(StubHrtGetDeviceSuccess));
     MOCKER(hrtGetDevicePhyIdByIndex).stubs().will(returnValue(HCCL_E_RUNTIME));
@@ -130,7 +130,7 @@ TEST_F(MyRankTlsTest, Ut_GetLocalTlsStatus_When_HrtGetDevicePhyIdByIndexFails_Ex
 
 TEST_F(MyRankTlsTest, Ut_GetLocalTlsStatus_When_HrtRaGetTlsStatusFails_Expect_ReturnSameError)
 {
-    TlsStatus tlsStatus = TlsStatus::UNKNOWN;
+    Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
 
     MOCKER(hrtGetDevice).stubs().will(invoke(StubHrtGetDeviceSuccess));
     MOCKER(hrtGetDevicePhyIdByIndex).stubs().will(invoke(StubHrtGetDevicePhyIdByIndexSuccess));
@@ -143,8 +143,8 @@ TEST_F(MyRankTlsTest, Ut_GetLocalTlsStatus_When_HrtRaGetTlsStatusFails_Expect_Re
 
 TEST_F(MyRankTlsTest, Ut_GetLocalTlsStatus_When_AllDependenciesSucceed_Expect_ReturnSuccessAndTlsStatusUpdated)
 {
-    TlsStatus tlsStatus = TlsStatus::UNKNOWN;
-    g_expectedTlsStatus = TlsStatus::ENABLE;
+    Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
+    g_expectedTlsStatus = Hccl::TlsStatus::ENABLE;
 
     MOCKER(hrtGetDevice).stubs().will(invoke(StubHrtGetDeviceSuccess));
     MOCKER(hrtGetDevicePhyIdByIndex).stubs().will(invoke(StubHrtGetDevicePhyIdByIndexSuccess));
@@ -153,7 +153,7 @@ TEST_F(MyRankTlsTest, Ut_GetLocalTlsStatus_When_AllDependenciesSucceed_Expect_Re
     HcclResult ret = myRank_->GetLocalTlsStatus(tlsStatus);
 
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(tlsStatus, TlsStatus::ENABLE);
+    EXPECT_EQ(tlsStatus, Hccl::TlsStatus::ENABLE);
 }
 
 TEST_F(MyRankTlsTest, Ut_BatchConnectChannels_When_RetryThenSuccess_Expect_ReturnSuccess)
@@ -173,7 +173,7 @@ TEST_F(MyRankTlsTest, Ut_BatchConnectChannels_When_ConnectFails_Expect_ReturnOri
 {
     HcclChannelDesc channelDesc {};
     ChannelHandle channelHandle = reinterpret_cast<ChannelHandle>(0x1);
-    g_expectedTlsStatus = TlsStatus::ENABLE;
+    g_expectedTlsStatus = Hccl::TlsStatus::ENABLE;
     g_channelStatusSequence = {HCCL_E_NETWORK};
 
     MOCKER(HcommChannelGetStatus).stubs().will(invoke(StubHcommChannelGetStatus));
@@ -184,7 +184,7 @@ TEST_F(MyRankTlsTest, Ut_BatchConnectChannels_When_ConnectFails_Expect_ReturnOri
 
     EXPECT_EQ(ret, HCCL_E_NETWORK);
     EXPECT_TRUE(g_channelLoggerCalled);
-    EXPECT_EQ(g_loggedTlsStatus, TlsStatus::ENABLE);
+    EXPECT_EQ(g_loggedTlsStatus, Hccl::TlsStatus::ENABLE);
 }
 
 TEST_F(MyRankTlsTest, Ut_BatchConnectChannels_When_GetLocalTlsStatusFailsAfterConnectError_Expect_StillReturnOriginalError)
@@ -201,5 +201,5 @@ TEST_F(MyRankTlsTest, Ut_BatchConnectChannels_When_GetLocalTlsStatusFailsAfterCo
 
     EXPECT_EQ(ret, HCCL_E_NETWORK);
     EXPECT_TRUE(g_channelLoggerCalled);
-    EXPECT_EQ(g_loggedTlsStatus, TlsStatus::UNKNOWN);
+    EXPECT_EQ(g_loggedTlsStatus, Hccl::TlsStatus::UNKNOWN);
 }

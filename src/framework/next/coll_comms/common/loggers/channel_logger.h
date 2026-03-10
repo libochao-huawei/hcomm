@@ -94,7 +94,7 @@ public:
         ChannelHandle channelHandle,
         int32_t status,
         uint64_t elapsedMs,
-        TlsStatus tlsStatus);
+        Hccl::TlsStatus tlsStatus);
 
     /**
      * @brief 打印 Channel 错误详情（批量）
@@ -116,7 +116,7 @@ public:
         ChannelHandle* channelHandles,
         int32_t* statusList,
         int64_t elapsedMs,
-        TlsStatus tlsStatus);
+        Hccl::TlsStatus tlsStatus);
 
 private:
     // 私有构造函数（静态工具类）

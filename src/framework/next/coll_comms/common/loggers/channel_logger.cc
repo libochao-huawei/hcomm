@@ -96,7 +96,7 @@ void ChannelLogger::PrintErrorInfo(
     ChannelHandle channelHandle,
     int32_t status,
     uint64_t elapsedMs,
-    TlsStatus tlsStatus)
+    Hccl::TlsStatus tlsStatus)
 {
     // 复用 FormatEndpointAddresses()
     std::string localAddr, remoteAddr;
@@ -104,10 +104,10 @@ void ChannelLogger::PrintErrorInfo(
     std::string statusStr = ChannelStatusUtils::ToString(status);
     std::string tlsStatusStr = "UNKNOWN";
     switch (tlsStatus) {
-        case TlsStatus::ENABLE:
+        case Hccl::TlsStatus::ENABLE:
             tlsStatusStr = "ENABLE";
             break;
-        case TlsStatus::DISABLE:
+        case Hccl::TlsStatus::DISABLE:
             tlsStatusStr = "DISABLE";
             break;
         default:
@@ -135,7 +135,7 @@ void ChannelLogger::PrintChannelErrorDetails(
     ChannelHandle* channelHandles,
     int32_t* statusList,
     int64_t elapsedMs,
-    TlsStatus tlsStatus)
+    Hccl::TlsStatus tlsStatus)
 {
     // 打印错误详情表格（只打印异常状态的 Channel）
     PrintErrorTableHeader(localRank);
