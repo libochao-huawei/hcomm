@@ -18,6 +18,7 @@
 extern "C" {
 #endif
 
+#pragma pack(1)
 struct TpAttr {
     uint8_t retryTimesInit : 3; // corresponding bitmap bit: 0
     uint8_t at : 5; // corresponding bitmap bit: 1
@@ -33,6 +34,7 @@ struct TpAttr {
     uint8_t ttl; // corresponding bitmap bit: 11
     uint8_t reserved[78];
 };
+ #pragma pack()
 
 struct GetTpCfg {
     union GetTpCfgFlag flag;
