@@ -40,9 +40,9 @@ CcuTempAllReduceNHRMem2Mem1D::~CcuTempAllReduceNHRMem2Mem1D()
 HcclResult CcuTempAllReduceNHRMem2Mem1D::CalcRes(AlgTempResReq &tempResReq)
 {
     tempResReq.queNum = 1;
-    tempResReq.streamNum = tempResReq.queNum + 1;
+    tempResReq.streamNum = tempResReq.queNum;
     HCCL_DEBUG("[CalcRes] tempResReq.queNum[%u]", tempResReq.queNum);
-    u32 linkNum = 2;
+    u32 linkNum = 1;
     linkNumBtwPeers_ = linkNum;
     CHK_RET(CalcResLinksMesh(myRank_, tempRankSize_, tempVTopo_, linkNumBtwPeers_, tempResReq));
     return HcclResult::HCCL_SUCCESS;
@@ -106,7 +106,7 @@ HcclResult CcuTempAllReduceNHRMem2Mem1D::SplitDataFor2Dies(uint64_t dataCount, c
 
 HcclResult CcuTempAllReduceNHRMem2Mem1D::ProcessNHRStepInfo(std::vector<NHRStepInfo> &stepInfoVector, RankGroup &rankGroup,
                                                     std::map<u32, u32> &indexMap, std::vector<LinkData> &linksDie0,
-                                                    std::vector<LinkData> &linksDie1, const ResLinks &tempLinks)
+                                                    std::vector<LinkData> &linksDie1, const ResLinks &tempLinks, uint32_t axisSize)
 {
     u32 nSteps = GetNHRStepNum(tempRankSize_) * 2; // 分为RS和AG两次NHR
     for (u32 step = 0; step < nSteps; step++) {
@@ -116,26 +116,18 @@ HcclResult CcuTempAllReduceNHRMem2Mem1D::ProcessNHRStepInfo(std::vector<NHRStepI
         if (indexMap.count(stepInfo.fromRank) == 0) {
             u32 fromRankIdx = virtRankId2RankId(stepInfo.fromRank);
             indexMap[stepInfo.fromRank] = linksDie0.size();
-            
-            for (LinkData linkData: tempLinks.at(fromRankIdx)) {
-                if (linkData.GetLocalDieId() == 0) {
-                    linksDie0.push_back(linkData);
-                } else {
-                    linksDie1.push_back(linkData);
-                }
+            linksDie0.push_back(tempLinks.at(fromRankIdx)[0]);
+            if (axisSize > 1) {
+                linksDie1.push_back(tempLinks.at(fromRankIdx)[1]);
             }
             rankGroup.AddRank(fromRankIdx);
         }
         if (indexMap.count(stepInfo.toRank) == 0) {
             u32 toRankIdx = virtRankId2RankId(stepInfo.toRank);
             indexMap[stepInfo.toRank] = linksDie0.size();
-
-            for (LinkData linkData: tempLinks.at(toRankIdx)) {
-                if (linkData.GetLocalDieId() == 0) {
-                    linksDie0.push_back(linkData);
-                } else {
-                    linksDie1.push_back(linkData);
-                }
+            linksDie0.push_back(tempLinks.at(toRankIdx)[0]);
+            if (axisSize > 1) {
+                linksDie1.push_back(tempLinks.at(toRankIdx)[1]);
             }
             rankGroup.AddRank(toRankIdx);
         }
@@ -160,20 +152,25 @@ HcclResult CcuTempAllReduceNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, T
         HCCL_INFO("[CcuTempAllReduceNHRMem2Mem1D] dataCount == 0, Template Run Ends.");
         return HCCL_SUCCESS;
     }
+    uint32_t axisSize  = tempLinks.begin()->second.size();
 
     uint64_t die0Size = 0;
     uint64_t die1Size = 0;
-    SplitDataFor2Dies(dataCount, tempLinks, die0Size, die1Size);
+    if (axisSize == 1) {
+        die0Size = tempAlgParams.sliceSize;
+    } else {
+        SplitDataFor2Dies(dataCount, tempLinks, die0Size, die1Size);
+    }
+    RankSliceInfo die0SliceInfoVec;
+    RankSliceInfo die1SliceInfoVec;
+    CHK_RET(CalcSlice(die0Size, die0SliceInfoVec));
+    CHK_RET(CalcSlice(die1Size, die1SliceInfoVec));
     uint64_t inputAddr = BufferTypeToAddr(tempAlgParams.buffInfo.inBuffType) + tempAlgParams.buffInfo.inBuffBaseOff;
     uint64_t outputAddr = BufferTypeToAddr(tempAlgParams.buffInfo.outBuffType) + tempAlgParams.buffInfo.outBuffBaseOff;
     uint64_t repeatNum = tempAlgParams.repeatNum;
     uint64_t token;
     CHK_RET(GetToken(op_, token));
 
-    RankSliceInfo die0SliceInfoVec;
-    CHK_RET(CalcSlice(die0Size, die0SliceInfoVec));
-    RankSliceInfo die1SliceInfoVec;
-    CHK_RET(CalcSlice(die1Size, die1SliceInfoVec));
 
     HCCL_INFO("[CcuTempAllReduceNHRMem2Mem1D] dimSize[%llu], die0Size[%llu], die1Size[%llu], inputAddr[%llu],"\
         "outputAddr[%llu], repeatNum[%llu], die0Slicesize[%llu], die1Slicesize[%llu], die0LastSlicesize[%llu],"\
@@ -188,15 +185,11 @@ HcclResult CcuTempAllReduceNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, T
     std::map<u32, u32> indexMap;
     std::vector<NHRStepInfo> stepInfoVector;
     
-    CHK_RET(ProcessNHRStepInfo(stepInfoVector, rankGroup, indexMap, linksDie0, linksDie1, tempLinks));
-    uint32_t axisSize = 2;
-    if (die0Size == 0 || die1Size == 0) {
-        axisSize = 1;
-    }
+    CHK_RET(ProcessNHRStepInfo(stepInfoVector, rankGroup, indexMap, linksDie0, linksDie1, tempLinks, axisSize));
 
     std::unique_ptr<CcuInsGroup> insGroupPtr = std::make_unique<CcuInsGroup>();
 
-    for (uint32_t axisId = 0; axisId < 2; axisId++) {  // 2个die上各一个mission
+    for (uint32_t axisId = 0; axisId < axisSize; axisId++) {  // 2个die上各一个mission
         if ((axisId == 0 && die0Size == 0) || (axisId == 1 && die1Size == 0)) {
             continue;
         }
