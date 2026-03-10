@@ -112,8 +112,7 @@ HcclResult HcclCommTaskExceptionLite::GetThreadCqe(hccl::Thread* thread, rtLogic
     cqeQueryInput.cqeAddr = reinterpret_cast<uint8_t *>(streamReport);
     
     cqeStatus = CqReportRecv(cqeQueryInput, cqeException);
-    if (cqeStatus == dfx::CqeStatus::kCqeInnerError)
-    {
+    if (cqeStatus == dfx::CqeStatus::kCqeInnerError) {
         HCCL_ERROR("[%s]CqReportRecv fail, CqeQueryInput:%s", __func__, cqeQueryInput.Tostring().c_str());
         return HCCL_E_INTERNAL;
     }
