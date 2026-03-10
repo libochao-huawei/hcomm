@@ -25,7 +25,7 @@ struct NdaOps {
     void (*free)(void *ptr);
 
     int (*memset_s)(void *dst, int value, size_t count);
-    int (*memcpy_s)(void *dst, size_t dstSize, void *src, size_t srcSize);
+    int (*memcpy_s)(void *dst, size_t dstSize, void *src, size_t srcSize, uint32_t direct);
 };
 
 enum {
@@ -34,9 +34,17 @@ enum {
     QBUF_DMA_MODE_MAX = 2,
 };
 
+enum {
+    MEMCPY_DIRECT_HOST_TO_HOST = 0,
+    MEMCPY_DIRECT_HOST_TO_DEVICE,
+    MEMCPY_DIRECT_DEVICE_TO_HOST,
+    MEMCPY_DIRECT_DEVICE_TO_DEVICE,
+};
+
 struct NdaCqInitAttr {
     struct ibv_cq_init_attr_ex attr;
 
+    uint32_t cqCapFlag;
     uint32_t dmaMode;
     struct NdaOps *ops;
 };
@@ -62,6 +70,7 @@ struct NdaCqInfo {
 struct NdaQpInitAttr {
     struct ibv_qp_init_attr attr;
 
+    uint32_t qpCapFlag;
     uint32_t dmaMode;
     struct NdaOps *ops;
 };
