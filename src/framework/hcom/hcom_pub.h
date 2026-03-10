@@ -158,6 +158,16 @@ HcclResult GetModuleInfo(DevType devType, const std::vector<hccl::RankInfo_t> &r
 HcclResult GetDeterministic(DevType devType, u8 geDetOption, u8 &deterministic);
 // end
 
+// hcom.h内使用的非包间接口
+HcclResult HcomGetLocalRankSize(const char *group, u32 *localRankSize);
+HcclResult HcomGetLocalRankId(const char *group, u32 *localRankId);
+HcclResult HcomGetWorldRankFromGroupRank(const char *group, u32 groupRank, u32 *worldRank);
+HcclResult HcomGetGroupRankFromWorldRank(u32 worldRank, const char *group, u32 *groupRank);
+extern HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32 *IdxList);
+extern HcclResult HcomSetGradFusionBySize(const char *group, u32 segmentNum, const float *sizeList);
+HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **hcclDumpInfo, s32 *len);
+// end
+
 HcclResult GenerateCclOpTag(const std::string &opType, const int64_t &hcomComm,
     std::string& group, std::string &sTag);
 
