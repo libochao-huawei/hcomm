@@ -92,7 +92,7 @@ HcclResult TopoinfoRanktablePartition::GenerateSubSuperPodId(hccl::RankTable_t &
         podGroupClusters[rankInfo.originalSuperPodId].emplace_back(&rankInfo);
     }
     std::set<std::string> superPodIdSet;
-    std::map<std::string, std::pair<u32, u32>> superPodIdRanges; // ��¼ÿ���߼����ڵ��rank id��Χ
+    std::map<std::string, std::pair<u32, u32>> superPodIdRanges; // 记录每个逻辑超节点的rank id范围
     for (auto& subCluster : podGroupClusters) {
         auto& subClusterInfo = subCluster.second;
         if (subClusterInfo.size() <= 1) {
@@ -101,26 +101,26 @@ HcclResult TopoinfoRanktablePartition::GenerateSubSuperPodId(hccl::RankTable_t &
         u32 groupId = 0;
         superPodIdSet.insert(subCluster.first);
         RankInfo_t preRank = *(subClusterInfo[0]);
-        superPodIdRanges[preRank.superPodId] = {preRank.rankId, preRank.rankId}; // ��ʼ����Χ
+        superPodIdRanges[preRank.superPodId] = {preRank.rankId, preRank.rankId}; // 初始化范围
         for (u32 i = 1; i < subClusterInfo.size(); ++i) {
             RankInfo_t& curRank = *(subClusterInfo[i]);
-            // ��ǰ��curRank����һ��preRank��rankId�������������µ��߼����ڵ�ID
+            // 当前的curRank和上一个preRank的rankId不连续，分配新的逻辑超节点ID
             if (curRank.rankId != preRank.rankId + 1) {
                 std::string newSuperPodId = curRank.originalSuperPodId + "_HCCLSPLIT_" + std::to_string(groupId);
                 curRank.superPodId = newSuperPodId;
                 groupId++;
-                superPodIdRanges[curRank.superPodId] = {curRank.rankId, curRank.rankId}; // ��ʼ���µķ�Χ
+                superPodIdRanges[curRank.superPodId] = {curRank.rankId, curRank.rankId}; // 初始化新的范围
             } else {
-                // ͬһ��subͨ��������rankԭʼ�߼����ڵ���һ�µ�
-                // rankId���� ��һ��rank��superPodId�����Ѿ����·��䣬��Ҫ���µ�ǰsuperPodIdΪ��һ��rank��
+                // 同一个sub通信域两个rank原始逻辑超节点是一致的	 
+                // rankId连续 上一个rank的superPodId可能已经重新分配，需要更新当前superPodId为上一个rank的
                 curRank.superPodId = preRank.superPodId;
-                superPodIdRanges[curRank.superPodId].second = curRank.rankId; // �������rank id
+                superPodIdRanges[curRank.superPodId].second = curRank.rankId; // 更新最大rank id
             }
             superPodIdSet.insert(curRank.superPodId);
             preRank = curRank;
         }
     }
-    // ��ӡÿ���߼����ڵ��rank id��Χ��ֻ��ӡ����_HCCLSPLIT_���߼����ڵ�
+    // 打印每个逻辑超节点的rank id范围，只打印包含_HCCLSPLIT_的逻辑超节点
     for (const auto& entry : superPodIdRanges) {
         auto superPodId = entry.first;
         if (superPodId.find("_HCCLSPLIT_") != std::string::npos) {
