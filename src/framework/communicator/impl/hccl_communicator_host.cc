@@ -8454,6 +8454,7 @@ namespace hccl
                                    ret, binPath, optionType, cpuKernelMode),
                         ret);
         } else {
+            HCCL_INFO("[LoadCustomFile]custom switch is not open, skip load custom file.");
             binHandle = nullptr;
             HCCL_RUN_WARNING("[LoadCustomFile]custom switch is not open, please confirm the switch.");
         }
