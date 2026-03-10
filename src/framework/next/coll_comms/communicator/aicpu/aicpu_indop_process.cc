@@ -203,6 +203,23 @@ HcclResult AicpuIndopProcess::AicpuGetCommAll(std::vector<std::pair<std::string,
     return HCCL_SUCCESS;
 }
 
+HcclResult AicpuIndopProcess::AicpuDestroyCommbyGroup(const std::string &group)
+{
+    auto iter = g_commAicpuInfo.commMgrMap.find(group);
+    if (iter == g_commAicpuInfo.commMgrMap.end()) {
+        HCCL_ERROR("[AicpuIndopProcess][%s]group[%s] is not exist", __func__, group.c_str());
+        return HCCL_E_PARA;
+    }
+
+    if (iter->second->IsUsed() == true) {
+        HCCL_ERROR("[AicpuIndopProcess][%s]comm group [%s] has been used.", __func__, group.c_str());
+        return HCCL_E_INTERNAL;
+    }
+    g_commAicpuInfo.commMgrMap.erase(group);
+    HCCL_INFO("[AicpuIndopProcess][%s]Destroy comm group [%s] success.", __func__, group.c_str());
+    return HCCL_SUCCESS;
+}
+
 HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(hccl::HcclDfxOpInfo *aicpuDfxInfo, const std::string& commTag)
 {
     CHK_PTR_NULL(aicpuDfxInfo);

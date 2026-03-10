@@ -26,6 +26,8 @@
 #include "hdc_pub.h"
 #include "hcclCommDfxLite.h"
 #include "error_message_v2.h"
+#include "kfc.h"
+#include "aicpu_hdc.h"
 
 using namespace hccl;
 class CollCommAicpu {
@@ -46,6 +48,10 @@ public:
     HcclResult SendErrorMessageReportToHost(Hccl::ErrorMessageReport& errMsgInfo);
     HcclResult RegisterProfCallBack();
     HcclCommDfxLite* GetHcclCommDfxLite() { return &dfx_; };
+
+    // h2d - d2h通道信息交互
+    HcclResult BackGroundGetCmd(Hccl::KfcCommand &command);
+    HcclResult BackGroundSetStatus(Hccl::KfcStatus state);
 
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
