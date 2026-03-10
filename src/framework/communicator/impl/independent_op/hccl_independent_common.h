@@ -11,11 +11,45 @@
 #ifndef HCCL_INDEPENDENT_COMMON_H
 #define HCCL_INDEPENDENT_COMMON_H
 
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "hccl_common.h"
+#include "hcomm_res_defs.h"
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
+
+typedef enum {
+    RANK_GRAPH_RESERVED = -1,
+    RANK_GRAPH_910_93 = 0,
+    RANK_GRAPH_910_95 = 1,
+} GraphType;
+
+typedef enum {
+    NOTIFY_TYPE_RESERVED = -1,
+    NOTIFY_TYPE_RTS_NOTIFY = 0,
+    NOTIFY_TYPE_RTS_EVENT = 1,
+    NOTIFY_TYPE_DEVICE_MEM = 2,
+} NotifyType;
+
+typedef uint64_t NotifyHandle;
+
+typedef union {
+    struct {
+        uint64_t requireShare : 1;
+        uint64_t rsvd : 63;
+    };
+    uint64_t value;
+} HcclRegMemAttr;
+
+typedef struct {
+    HcclMemType type;
+    void *addr;
+    u64 size;
+} CommBuffer;
+
+extern HcclResult HcclGetNotifyNumInThread(HcclComm comm, ThreadHandle thread,
+    CommEngine engine, uint32_t *notifyNum);
+
 constexpr u32 NOTIFY_MAX_NUM = 2048;
 inline bool IsValidCommEngine(CommEngine engine)
 {
