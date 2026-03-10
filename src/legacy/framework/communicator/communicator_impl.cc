@@ -780,8 +780,8 @@ HcclResult CommunicatorImpl::CheckCommStatus()
 HcclResult CommunicatorImpl::AllocCollOpResource(const CollOpParams &opParams, void **addr)
 {
     try {
-        if (opParams.commEngine != HcclAccelerator::AICPU && opParams.commEngine != HcclAccelerator::AICPU_TS) {
-            HCCL_ERROR("[CommunicatorImpl][%s]It's support aicpu unfold on mc2. input is %s", __func__, opParams.commEngine.Describe().c_str());
+        if (opParams.commEngine != HcclAccelerator::AICPU_TS) {
+            HCCL_ERROR("[CommunicatorImpl][%s] Only AICPU_TS is supported for aicpu unfold on mc2. input is %s", __func__, opParams.commEngine.Describe().c_str());
  	        return HCCL_E_NOT_SUPPORT;
  	    }
         CHK_RET(CheckCommStatus());
