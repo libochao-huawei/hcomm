@@ -56,6 +56,7 @@ public:
             remoteAddr_ = targetConnIface->GetAddr();
             localDieId_ = srcConnIface->GetLocalDieId();
             hop = path.links[0].GetHop();
+            fullmesh = true;  // 单链路场景，标识为fullmesh
         } else if (path.links.size() == MAX_LINK_PATH_NUM) {
             auto link0 = path.links[0];
             auto link1 = path.links[1];
@@ -78,8 +79,10 @@ public:
                 is not euqal to targetConnIface.portGroupSize[%u]", static_cast<u32>(portGroupSize),
                 static_cast<u32>(tgtPortGroupSize));
             }
+            fullmesh = false;  // 多链路场景，非fullmesh
         } else {
             HCCL_ERROR("[LinkData][Constructor]path.links.size()[%u] is invalid", path.links.size());
+            fullmesh = false;  // 无效场景，默认为false
         }
         direction = path.direction;
 
@@ -96,7 +99,7 @@ public:
         return type == rhs.type && linkProtocol_ == rhs.linkProtocol_ && localRankId_ == rhs.localRankId_
                && remoteRankId_ == rhs.remoteRankId_ && localAddr_ == rhs.localAddr_
                && remoteAddr_ == rhs.remoteAddr_ && hop == rhs.hop && direction == rhs.direction
-               && portGroupSize == rhs.portGroupSize;
+               && portGroupSize == rhs.portGroupSize && fullmesh == rhs.fullmesh;
     }
 
     bool operator!=(const LinkData &rhs) const
@@ -155,6 +158,12 @@ public:
             return false;
         }
         if (rhs.portGroupSize < portGroupSize) {
+            return false;
+        }
+        if (fullmesh < rhs.fullmesh) {
+            return true;
+        }
+        if (rhs.fullmesh < fullmesh) {
             return false;
         }
         if (localPortId_ < rhs.localPortId_) {
@@ -260,6 +269,11 @@ public:
         return writable;
     };
 
+    bool GetFullmesh() const
+    {
+        return fullmesh;
+    };
+
 private:
     PortDeploymentType type;
     LinkProtocol       linkProtocol_;
@@ -275,6 +289,7 @@ private:
     LinkDirection      direction;
     u32                localDieId_{};
     u8                 portGroupSize{1};
+    bool               fullmesh{false};  // 标识是否为全互联单链路场景
 };
 } // namespace Hccl
 
@@ -293,9 +308,11 @@ public:
         auto localAddrHash    = hash<Hccl::IpAddress>{}(linkData.GetLocalAddr());
         auto remoteAddrHash   = hash<Hccl::IpAddress>{}(linkData.GetRemoteAddr());
         auto portGrpSizeHash  = hash<uint8_t>{}(linkData.GetPortGroupSize());
+        auto fullmeshHash     = hash<bool>{}(linkData.GetFullmesh());
 
         return Hccl::HashCombine({typeHash, linkProtoHash, localRankIdHash, remoteRankIdHash,
-            localPortIdHash, remotePortIdHash, localAddrHash, remoteAddrHash, portGrpSizeHash});
+            localPortIdHash, remotePortIdHash, localAddrHash, remoteAddrHash, portGrpSizeHash,
+            fullmeshHash});
     }
 };
 } // namespace std
