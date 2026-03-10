@@ -2564,6 +2564,8 @@ namespace hccl
             outputSize += counts[i] * perDataSize;
         }
 
+        bool isCapture = StreamIsCapture(stream);
+
         OpParam opParam;
         opParam.tag = tag;
         opParam.inputPtr = const_cast<void *>(sendBuf);
@@ -2577,6 +2579,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.isCapture = isCapture;
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.opType = HcclCMDType::HCCL_CMD_ALLGATHER_V;
 
