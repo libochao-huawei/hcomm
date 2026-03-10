@@ -63,23 +63,6 @@
 
 #include "../../../legacy/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
 
-#include "../../../legacy/framework/resource_manager/socket/socket_manager.h"
-
-#include "tp_manager.h"
-#include "inner_net_dev_manager.h"
-#include "hccp_hdc_manager.h"
-#include "hccp_peer_manager.h"
-#include "hccp_tlv_hdc_manager.h"
-#include "ccu_driver_handle.h"
-#include "rdma_handle_manager.h"
-#include "socket_handle_manager.h"
-#include "host_socket_handle_manager.h"
-
-#include "ccu_context_mgr_imp.h"
-#include "../../../legacy/unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
-#include "ccu_component.h"
-#include "../../../legacy/unified_platform/ccu/ccu_device/ccu_res_specs.h"
-
 namespace Hccl {
 
 void *HrtMalloc(u64 size, aclrtMemType_t memType)
@@ -165,6 +148,9 @@ std::size_t HashCombine(std::initializer_list<std::size_t> hashItem)
     return res;
 }
  
+ 
+ 
+
 
 DevBuffer::DevBuffer(uintptr_t devAddr, std::size_t devSize) : Buffer(devSize), selfOwned(false)
 {
@@ -1252,135 +1238,6 @@ std::unique_ptr<Serializable> LocalIpcRmaBuffer::GetExchangeDto()
 
 void LocalIpcRmaBuffer::Grant(u32 pid)
 {
-}
-
-SocketManager::SocketManager(u32 localRank, u32 devicePhyId, u32 deviceLogicId, const std::string &socketTag)
-{
-}
-
-void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
-{
-}
-
-SocketManager::~SocketManager()
-{
-}
-
-Socket *SocketManager::GetConnectedSocket(SocketConfig &socketConfig) const
-{
-    return nullptr;
-}
-
-
-HccpTlvHdcManager &HccpTlvHdcManager::GetInstance()
-{
-    static HccpTlvHdcManager HccpTlvHdcManager;
-    return HccpTlvHdcManager;
-}
-
-HccpTlvHdcManager::HccpTlvHdcManager()
-{
-}
-
-HccpTlvHdcManager::~HccpTlvHdcManager()
-{
-}
-
-CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)
-{
-    static CcuComponent ccuComponent;
-    return ccuComponent;
-}
-
-CcuComponent::~CcuComponent()
-{
-}
-
-CcuResSpecifications &CcuResSpecifications::GetInstance(const int32_t deviceLogicId)
-{
-    static CcuResSpecifications ccuResSpecification;
-    return ccuResSpecification;
-}
-
-HcclResult CcuResSpecifications::GetGsaNum(const uint8_t dieId, uint32_t &gsaNum) const
-{
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuResSpecifications::GetInstructionNum(const uint8_t dieId, uint32_t &instrNum) const
-{
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HccpPeerManager &HccpPeerManager::GetInstance()
-{
-    static HccpPeerManager hccpPeerManager;
-    return hccpPeerManager;
-}
-
-HccpPeerManager::~HccpPeerManager()
-{
-}
-
-HcclResult CcuResSpecifications::GetXnNum(const uint8_t dieId, uint32_t &xnNum) const
-{
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuResSpecifications::GetLoopEngineNum(const uint8_t dieId, uint32_t &loopNum) const
-{
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuResSpecifications::GetMissionNum(const uint8_t dieId, uint32_t &missionNum) const
-{
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult CcuResSpecifications::GetMsNum(const uint8_t dieId, uint32_t &msNum) const
-{
-    return HcclResult::HCCL_SUCCESS;
-}
-
-CtxMgrImp &CtxMgrImp::GetInstance(s32 deviceLogicId)
-{
-    static CtxMgrImp contextManager;
-    return contextManager;
-}
-
-CtxMgrImp::CtxMgrImp()
-{
-}
-
-CtxMgrImp::~CtxMgrImp()
-{
-}
-
-InnerNetDevManager &InnerNetDevManager::GetInstance()
-{
-    static InnerNetDevManager instance;
-    return instance;
-}
-
-InnerNetDev::~InnerNetDev()
-{
-}
-
-CcuResBatchAllocator &CcuResBatchAllocator::GetInstance(const int32_t deviceLogicId)
-{
-    static CcuResBatchAllocator ccuResBatchAllocator;
-    return ccuResBatchAllocator;
-}
-
-HcclResult CcuResSpecifications::GetCkeNum(const uint8_t dieId, uint32_t &ckeNum) const
-{
-    return HcclResult::HCCL_SUCCESS;
-}
-
-TpManager& TpManager::GetInstance(const int32_t deviceLogicId)
-{
-    static TpManager tpManager;
-    return tpManager;
 }
 
 }  // namespace Hccl

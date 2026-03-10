@@ -808,7 +808,7 @@ TEST_F(OpbaseTestV2, HcclGetRawCommHandle)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(OpbaseTestV2, HcclGetCcuTaskInfoLegacy_OK)
+TEST_F(OpbaseTestV2, HcclGetCcuTaskInfo_OK)
 {
     Hccl::CommParams commParams;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm_1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
@@ -819,11 +819,11 @@ TEST_F(OpbaseTestV2, HcclGetCcuTaskInfoLegacy_OK)
     void *ccuTaskGroup = static_cast<void*>(&a);
     void *fusionArgs = static_cast<void*>(&a);
     MOCKER_CPP(&HcclCommunicator::GetCcuTaskInfo).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
-    HcclResult ret = HcclGetCcuTaskInfoLegacy(comm, fusionArgs, ccuTaskGroup);
+    HcclResult ret = HcclGetCcuTaskInfo(comm, fusionArgs, ccuTaskGroup);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(OpbaseTestV2, HcclGetCcuTaskInfoLegacy_ERR)
+TEST_F(OpbaseTestV2, HcclGetCcuTaskInfo_ERR)
 {
     Hccl::CommParams commParams;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm_1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
@@ -833,7 +833,7 @@ TEST_F(OpbaseTestV2, HcclGetCcuTaskInfoLegacy_ERR)
     void *ccuTaskGroup = static_cast<void*>(&a);
     void *fusionArgs = static_cast<void*>(&a);
     MOCKER_CPP(&HcclCommunicator::GetCcuTaskInfo).stubs().with(any(), any()).will(returnValue(HCCL_E_INTERNAL));
-    HcclResult ret = HcclGetCcuTaskInfoLegacy(comm, fusionArgs, ccuTaskGroup);
+    HcclResult ret = HcclGetCcuTaskInfo(comm, fusionArgs, ccuTaskGroup);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
 
