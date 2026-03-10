@@ -54,7 +54,7 @@ private:
     HcclResult RegisterThreadAddDfxTaskInfo(ThreadHandle thread);
     HcclResult InitBackGroundThread();
 
-    u32 devId_;
+    u32 devId_{0};
     //通用的通道
     std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D_{nullptr};
     std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H_{nullptr};

@@ -11,6 +11,8 @@
 #include "aicpu_indop_process.h"
 #include "coll_comm_aicpu_mgr.h"
 #include "hcclCommOp.h"
+#include "hcclCommDfxLite.h"
+
 using namespace hccl;
 
 namespace {
@@ -69,12 +71,6 @@ HcclResult AicpuIndopProcess::AcquireAicpuCommMgr(const std::string &group, Coll
     // 创建aicpu通信域
     CHK_RET(aicpuCommMgr->AcquireCollCommAicpu());
 
-    if (UNLIKELY(!aicpuCommMgr)) {
-        HCCL_ERROR("[%s]errNo[0x%016llx] aicpuComm is nullptr", __func__, HCCL_ERROR_CODE(HCCL_E_PTR));
-        rwlock.writeUnlock();
-        return HCCL_E_PTR;
-    }
-
     // 将新实例加入映射表
     g_commAicpuInfo.commMgrMap[group] = aicpuCommMgr;
     *aicpuCommMgrPtr = aicpuCommMgr.get();
@@ -87,7 +83,7 @@ HcclResult AicpuIndopProcess::AicpuIndOpThreadInit(ThreadMgrAicpuParam *param)
 {
     std::string group = param->hcomId;
     CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
-    CHK_PRT_RET(!collCommAicpuMgr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
+    CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
     HcclResult ret = collCommAicpuMgr->InitThreads(param);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[AicpuIndopProcess][AicpuIndOpThreadInit]errNo[0x%016llx] Failed to init threads group[%s]",
@@ -161,7 +157,7 @@ HcclResult AicpuIndopProcess::AicpuIndOpChannelInit(HcclChannelUrmaRes *commPara
 
     std::string group = commParam->hcomId;
     CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
-    CHK_PRT_RET(!collCommAicpuMgr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
+    CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
 
     HcclResult ret = collCommAicpuMgr->AllocChannelResource(commParam);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -178,7 +174,7 @@ HcclResult AicpuIndopProcess::AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param)
 {
     std::string group = param->hcomId;
     CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
-    CHK_PRT_RET(!collCommAicpuMgr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
+    CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
 
     HcclResult ret = HCCL_E_INTERNAL;
     if (param->freeFlag) {
@@ -207,14 +203,12 @@ HcclResult AicpuIndopProcess::AicpuGetCommAll(std::vector<std::pair<std::string,
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, std::string commTag)
+HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(hccl::HcclDfxOpInfo *aicpuDfxInfo, const std::string commTag)
 {
     CHK_PTR_NULL(aicpuDfxInfo);
     // 获取device侧的通信域
-    CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(commTag);
-    CHK_PRT_RET(!collCommAicpuMgr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, commTag.c_str()), HCCL_E_PTR);
-
-    CollCommAicpu* collComm = collCommAicpuMgr->GetCollCommAicpu();
+    CHK_PTR_NULL(g_hcclComm);
+    CollCommAicpu* collComm = g_hcclComm->GetCollCommAicpu();
     CHK_PTR_NULL(collComm);
 
     // HcclDfxOpInfo 转为DfxOpInfo
@@ -227,5 +221,48 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, st
     CHK_PTR_NULL(mirrorTaskMgr);
     mirrorTaskMgr->SetCurrDfxOpInfo(dfxOpInfoOnce);
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuIndopProcess::ProfilingReportDeviceOp(const std::string &group)
+{
+    HCCL_INFO("ProfilingReportDeviceOp group:%s", group.c_str());
+    // 获取device侧的通信域
+    CHK_PTR_NULL(g_hcclComm);
+    CollCommAicpu* collCommAicpu = g_hcclComm->GetCollCommAicpu();
+    CHK_PTR_NULL(collCommAicpu);
+    // 注册
+    HcclCommDfxLite* hcclCommDfxLite = collCommAicpu->GetHcclCommDfxLite();
+    CHK_PTR_NULL(hcclCommDfxLite);
+    Hccl::MirrorTaskManager* mirrorTaskMgr = hcclCommDfxLite->GetMirrorTaskManager();
+    CHK_PTR_NULL(mirrorTaskMgr);
+    mirrorTaskMgr->SetCurrDfxOpInfo(dfxOpInfoOnce);
+    CHK_RET(AicpuIndopProcess::ReportotAllTasks(group));
+    EXECEPTION_CATCH(Hccl::ProfilingHandlerLite::GetInstance()->ReportDeviceOp(*mirrorTaskMgr->GetCurrDfxOpInfo(), group),
+        return HCCL_E_INTERNAL);
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuIndopProcess::ReportotAllTasks(const std::string &group)
+{
+    CHK_PTR_NULL(g_hcclComm);
+    CollCommAicpu* collCommAicpu = g_hcclComm->GetCollCommAicpu();
+    CHK_PTR_NULL(collCommAicpu);
+    // 注册
+    HcclCommDfxLite* hcclCommDfxLite = collCommAicpu->GetHcclCommDfxLite();
+    CHK_PTR_NULL(hcclCommDfxLite);
+    const HcclTopoInfo& hcclTopoInfo = collCommAicpu->GetTopoInfo();
+
+    CHK_RET(hcclCommDfxLite->ReportotAllTasks(group, hcclTopoInfo.userRankSize));
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuIndopProcess::UpdateTasks(const std::string &group)
+{
+    CHK_PTR_NULL(g_hcclComm);
+    CollCommAicpu* collCommAicpu = g_hcclComm->GetCollCommAicpu();
+    CHK_PTR_NULL(collCommAicpu);
+    HcclCommDfxLite* hcclCommDfxLite = collCommAicpu->GetHcclCommDfxLite();
+    CHK_RET(hcclCommDfxLite->UpdateProfStat());
     return HCCL_SUCCESS;
 }
