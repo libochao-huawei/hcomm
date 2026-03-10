@@ -110,8 +110,11 @@ HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, Hccl
     RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
                   std::vector<std::string>({"HcclAllReduceInner", "nullptr", "recvBuf", "non-null pointer"}));
     CHK_PTR_NULL(recvBuf);
-
-    HCCLV2_FUNC_RUN(HcclAllReduceV2(sendBuf, recvBuf, count, dataType, op, comm, stream));
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+        CHK_RET(HcclAllReduceV2(sendBuf, recvBuf, count, dataType, op, hcclComm->GetCommunicatorV2(), stream));
+        return HCCL_SUCCESS;
+    }());
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);
     StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
@@ -194,8 +197,11 @@ HcclResult HcclBarrier(HcclComm comm, aclrtStream stream)
     s32 threadID = SalGetTid();
     ProfilingManagerPub::SetThreadCaptureStatus(threadID, isCapture);
     uint64_t beginTime = hrtMsprofSysCycleTime();
-
-    HCCLV2_FUNC_RUN(HcclBarrierV2(comm, stream));
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+        CHK_RET(HcclBarrierV2(hcclComm->GetCommunicatorV2(), stream));
+        return HCCL_SUCCESS;
+    }());
 
     // Allreduce入参定义
     HcclDataType dataType = HCCL_DATA_TYPE_FP32;
