@@ -28,7 +28,7 @@ HcclResult HcclCommDfx::Init(u32 deviceId, const std::string comTag) {
     }
     
     // 2. 创建Profiling管理类
-    EXECEPTION_CATCH(profiling_ = std::make_unique<HcclCommProfiling>(deviceId_), return HCCL_E_PTR);
+    EXECEPTION_CATCH(profiling_ = std::make_unique<HcclCommProfiling>(deviceId_, mirrorTaskManager_.get()), return HCCL_E_PTR);
     
     // 3. 注册回调到单例
     // RegisterProfilingCallback();
