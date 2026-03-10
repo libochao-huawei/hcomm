@@ -15,6 +15,11 @@
 #include "hccp_ctx.h"
 #include "rs_ctx_inner.h"
 
+#define TP_ATTR_SIP_MASK 0x4
+#define TP_ATTR_DIP_MASK 0x8
+#define TP_ATTR_SMAC_MASK 0x10
+#define TP_ATTR_DMAC_MASK 0x20
+
 int RsUbGetTpInfoList(struct RsUbDevCb *devCb, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
     unsigned int *num);
 int RsUbGetTpAttr(struct RsUbDevCb *devCb, unsigned int *attrBitmap, const uint64_t tpHandle,

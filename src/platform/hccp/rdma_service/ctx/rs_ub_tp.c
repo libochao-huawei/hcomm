@@ -82,6 +82,18 @@ int RsUbSetTpAttr(struct RsUbDevCb *devCb, const unsigned int attrBitmap, const 
     uint8_t tpAttrCnt = 0;
     int ret;
 
+    if ((attrBitmap & TP_ATTR_SIP_MASK) && (attrBitmap & TP_ATTR_SMAC_MASK)) {
+        ret = rsUrmaGetSmac(devCb->urmaCtx, attr->sma);
+        CHK_PRT_RETURN(ret != 0, hccp_err("rsUrmaGetSmac failed, attrBitmap:%u ret:%d errno:%d",
+            attrBitmap, ret, errno), ret);
+    }
+
+    if ((attrBitmap & TP_ATTR_DIP_MASK) && (attrBitmap & TP_ATTR_DMAC_MASK)) {
+        ret = rsUrmaGetDmac(devCb->urmaCtx, attr->dip, attr->dma);
+        CHK_PRT_RETURN(ret != 0, hccp_err("rsUrmaGetDmac failed, attrBitmap:%u ret:%d errno:%d",
+            attrBitmap, ret, errno), ret);
+    }
+
     tpAttrCnt = RsGetBitmapCount(attrBitmap);
     ret = RsUrmaSetTpAttr(devCb->urmaCtx, tpHandle, tpAttrCnt, attrBitmap,
         (urma_tp_attr_value_t *)attr);
