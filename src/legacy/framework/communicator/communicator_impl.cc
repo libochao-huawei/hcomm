@@ -74,6 +74,7 @@ constexpr const char* DPUTAG = "DPUTAG";
 constexpr u64 INDEPENDENT_OP_BUFFER_SIZE_TIMES = 2; //自定义算子buffer倍数
 constexpr uint8_t DEVICE_SIGNAL_SECOND = 2;
 constexpr uint8_t DEVICE_SIGNAL_THIRD = 3;
+constexpr uint32_t TEMP_DEV_TYPE_DPU = 0; // 临时适配，后续rts接口上库之后使用rts的定义
 
 struct DpuKernelLaunchParam {
     u64         memorySize;
@@ -498,7 +499,7 @@ static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const Tas
     comm.GetMirrorTaskManager().AddTaskInfo(taskInfo);
 }
 
-void CommunicatorImpl::FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams)
+void CommunicatorImpl::FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams) const
 {
     std::vector<uint64_t> args;
     CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, args);
@@ -939,7 +940,12 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         SnapShotParser::GetInstance().SetIsNeedLoadOp(false);
         if (rankSize == 1) {
             HCCL_WARNING("[CommunicatorImpl][%s] ranksize == 1, enter SingleRankProc", __func__);
+            TraceStartInfo(HrtGetStreamId(stream), opParams, OpMode::OFFLOAD);
+            TraceOpInfo(opParams);
+            HcclUs startut = std::chrono::steady_clock::now();
             SingleRankProc(opParams, stream);
+            HcclUs endut = std::chrono::steady_clock::now();
+            TraceEndInfo(startut, endut, opParams);
             return HcclResult::HCCL_SUCCESS;
         }
         uint64_t beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
@@ -1351,10 +1357,7 @@ void CommunicatorImpl::InitDataBufferManager()
         scratchBufSize = scratchBufSize * HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE;
     }
     // 如果是自定义算子流程，cclBufferSize的大小为2倍
-    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if (indOp != nullptr && strcmp(indOp, "1") == 0) {
-        scratchBufSize = scratchBufSize * INDEPENDENT_OP_BUFFER_SIZE_TIMES;
-    }
+    scratchBufSize = scratchBufSize * INDEPENDENT_OP_BUFFER_SIZE_TIMES;
     cclBufferSize = scratchBufSize;
 
     // aiv mc2预埋1M，并不暴露在内部算子执行逻辑里
@@ -2399,7 +2402,7 @@ HcclResult CommunicatorImpl::DestroyDpuKernelResource()
     }
     // reset DPU kernel 线程
     HCCL_INFO("Start to reset DPU device");
-    if (rtResetXpuDevice(RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
+    if (HrtResetXpuDevice(TEMP_DEV_TYPE_DPU, 0) != HCCL_SUCCESS) {
         HCCL_ERROR("ResetXpuDevice Failed");
         return HCCL_E_RUNTIME;
     }
@@ -2932,7 +2935,7 @@ HcclResult CommunicatorImpl::AcceleratorFallback()
 HcclResult CommunicatorImpl::GetCacheMap(AivOpCacheArgs& opCacheParam , std::shared_ptr<InsQueue>& tempInsQue)
 {
     if (hcclCacheMap_.size() > CACHEMAP_MAXSIZE) {
-        size_t clearCount = CACHEMAP_MAXSIZE * CACHEMAP_CLEARPERCENT;
+        size_t clearCount = static_cast<size_t>(CACHEMAP_MAXSIZE * CACHEMAP_CLEARPERCENT);
         for (auto it = hcclCacheMap_.begin(); clearCount > 0 && it != hcclCacheMap_.end(); clearCount--) {
             it = hcclCacheMap_.erase(it);
         }
@@ -3184,7 +3187,7 @@ HcclResult CommunicatorImpl::InitAndLaunchDpuKernel()
         HCCL_ERROR("[CommunicatorImpl::%s] Get Npu Ctx Failed", __func__);
         return HCCL_E_INTERNAL;
     }
-    if (rtSetXpuDevice(RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
+    if (HrtSetXpuDevice(TEMP_DEV_TYPE_DPU, 0) != HCCL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::%s] Switch to Dpu Ctx Failed", __func__);
         return HCCL_E_INTERNAL;
     }

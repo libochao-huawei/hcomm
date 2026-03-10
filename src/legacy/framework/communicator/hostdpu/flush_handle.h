@@ -54,7 +54,7 @@ private:
 
     // 初始化方法
     HcclResult GetRdmaHandle(IpAddress ip, u32 devPhyId, void **rdmaHandle) const;
-    HcclResult GetLbMax(void *rdevHandle, int *lbMax);
+    HcclResult GetLbMax(int *lbMax);
     HcclResult AllocateDeviceMemory();
     HcclResult AllocateHostMemory();
     HcclResult CreateLoopbackQp();
