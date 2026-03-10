@@ -11,6 +11,7 @@
 #define TASK_INFO_H
 #include <string>
 #include <memory>
+#include <unordered_map>
 #include "task_param.h"
 #include "coll_operator.h"
 
@@ -27,13 +28,31 @@ public:
     u64          beginTime_;
     u64          endTime_;
     void        *comm_;
-
 public:
     std::string Describe() const
     {
         return StringFormat(
             "DfxOpInfo: [collOperator:[%s], tag:[%s], algType:[%u], index:[%u], beginTime:[%llu], endTime:[%llu]",
             CollOpToString(op_).c_str(), tag_.c_str(), algType_, index_, beginTime_, endTime_);
+    }
+    void StrToAlg(const std::string& inputStr)
+    {
+        static const std::unordered_map<std::string, AlgType> strToAlg={
+            {"NOT_SPECIFIED",AlgType::NOT_SPECIFIED},
+            {"RING",AlgType::RING},
+            {"MULTI_RING",AlgType::MULTI_RING},
+            {"MESH",AlgType::MESH},
+            {"RECURSIVE_HD",AlgType::RECURSIVE_HD},
+            {"BINARY_HD",AlgType::BINARY_HD},
+            {"PAIR_WISE",AlgType::PAIR_WISE},
+            {"INVALID_VAL",AlgType::INVALID_VAL}
+        };
+        auto it = strToAlg.find(inputStr);
+        algType_ = AlgType::MESH;
+        if(it != strToAlg.end())
+        {
+            algType_ = it->second;
+        }
     }
 };
 
