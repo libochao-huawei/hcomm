@@ -14,6 +14,10 @@
 #include "hccl_api.h"
 
 #include <string>
+#include <memory>
+#include <vector>
+#include <unordered_map>
+#include <mutex>
 
 namespace hccl {
 
@@ -102,15 +106,14 @@ public:
             return HCCL_E_RUNTIME;
         }
         addr_ = reinterpret_cast<uint64_t>(mem);
-        void* headPtr;
-        void* tailPtr;
+        void* headPtr{};
+        void* tailPtr{};
         ret = aclrtMalloc(&headPtr, sizeof(uint64_t), ACL_MEM_MALLOC_HUGE_ONLY);
         if (ret != 0) {
             HCCL_ERROR("aclrtMalloc for head failed");
             aclrtFree(mem);
             return HCCL_E_RUNTIME;
         }
-        void* tailPtr = nullptr;
         ret = aclrtMalloc(&tailPtr, sizeof(uint64_t), ACL_MEM_MALLOC_HUGE_ONLY);
         if (ret != 0) {
             HCCL_ERROR("aclrtMalloc for tail failed");
