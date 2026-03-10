@@ -150,6 +150,7 @@ target_include_directories(hccl_alg_test PRIVATE
     ${HCOMM_COMMON_INCLUDE_LIST}
     ${HCOMM_LEGACY_INCLUDE_LIST}
     ${ASCEND_CANN_INCLUDE_LIST}
+    ${HCOMM_PLATFORM_INCLUDE_LIST}
 )
 
 target_compile_options(hccl_alg_test PRIVATE
@@ -171,22 +172,10 @@ target_compile_definitions(hccl_alg_test PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
 )
 
-# 查找gtest库
-find_library(GTEST_LIB gtest
-    PATHS
-    ${THIRD_PARTY_PATH}/gtest_shared/lib
-    ${THIRD_PARTY_PATH}/gtest_shared/lib64
-    ${ASCEND_CANN_PACKAGE_PATH}/opensdk/opensdk/gtest_shared/lib64
-    ${ASCEND_CANN_PACKAGE_PATH}/../../latest/opensdk/opensdk/gtest_shared/lib64
-    NO_DEFAULT_PATH
-)
-if(NOT GTEST_LIB)
-    message(FATAL_ERROR "gtest library not found! Please run: bash build_third_party.sh")
-endif()
-message(STATUS "Found gtest: ${GTEST_LIB}")
 target_link_libraries(hccl_alg_test PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
     -Wl,--no-as-needed
-    ${GTEST_LIB}
+    -Wl,--no-as-needed
     pthread
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
 )
