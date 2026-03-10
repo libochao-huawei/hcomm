@@ -1,12 +1,12 @@
 /**
-Â * Copyright (c) 2025 Huawei Technologies Co., Ltd.
-Â * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
-Â * CANN Open Software License Agreement Version 2.0 (the "License").
-Â * Please refer to the License for details. You may not use this file except in compliance with the \.
-Â * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-Â * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
-Â * See LICENSE in the root of the software repository for the full text of the License.
-Â */
+?* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+?* This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+?* CANN Open Software License Agreement Version 2.0 (the "License").
+?* Please refer to the License for details. You may not use this file except in compliance with the License.
+?* THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+?* INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+?* See LICENSE in the root of the software repository for the full text of the License.
+?*/
 
 #include "topoinfo_ranktable_partition.h"
 
@@ -92,7 +92,7 @@ HcclResult TopoinfoRanktablePartition::GenerateSubSuperPodId(hccl::RankTable_t &
         podGroupClusters[rankInfo.originalSuperPodId].emplace_back(&rankInfo);
     }
     std::set<std::string> superPodIdSet;
-    std::map<std::string, std::pair<u32, u32>> superPodIdRanges; // è®°å½•æ¯ä¸ªé€»è¾‘è¶…èŠ‚ç‚¹çš„rank idèŒƒå›´
+    std::map<std::string, std::pair<u32, u32>> superPodIdRanges; // ¼ÇÂ¼Ã¿¸öÂß¼­³¬½ÚµãµÄrank id·¶Î§
     for (auto& subCluster : podGroupClusters) {
         auto& subClusterInfo = subCluster.second;
         if (subClusterInfo.size() <= 1) {
@@ -101,7 +101,7 @@ HcclResult TopoinfoRanktablePartition::GenerateSubSuperPodId(hccl::RankTable_t &
         u32 groupId = 0;
         superPodIdSet.insert(subCluster.first);
         RankInfo_t preRank = *(subClusterInfo[0]);
-        superPodIdRanges[preRank.superPodId] = {preRank.rankId, preRank.rankId}; // ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½Î§
+        superPodIdRanges[preRank.superPodId] = {preRank.rankId, preRank.rankId}; // ³õÊ¼»¯·¶Î§
         for (u32 i = 1; i < subClusterInfo.size(); ++i) {
             RankInfo_t& curRank = *(subClusterInfo[i]);
             // ï¿½ï¿½Ç°ï¿½ï¿½curRankï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½preRankï¿½ï¿½rankIdï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Âµï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½Úµï¿½ID
