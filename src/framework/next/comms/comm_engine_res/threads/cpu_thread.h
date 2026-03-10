@@ -18,6 +18,7 @@
 #include "thread.h"
 #include "acl/acl_rt.h"
 #include "ascend_hal.h"
+#include "utils/service_scheduler.h"
 #define SVM_REGISTER_FLAG_WITH_ACCESS_VA (1ULL << 0ULL)
 #define SVM_MEM_READ (0x1 << 0)
 #define SVM_MEM_WRITE (0x1 << 1)
