@@ -53,7 +53,7 @@ public:
     void                         ReportHcclOpInfo(const DfxOpInfo &opInfo) const;
     void                         ReportHcclOpInfo(const DfxOpInfo &opInfo, const std::string& groupNameOp) const;
     void                         ReportHcclTaskDetails(const std::vector<TaskInfo> &taskInfo) const;
-    void                         ReportHcclTaskDetails(const std::vector<TaskInfo> &taskInfo, cosnt std::string& group, u32 ranksize) const;
+    void                         ReportHcclTaskDetails(const std::vector<TaskInfo> &taskInfo, const std::string& group, u32 ranksize) const;
     void                         ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo) const;
     void                         UpdateProfSwitch();
     void                         SetProL0On(bool val);

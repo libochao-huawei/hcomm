@@ -81,18 +81,18 @@ HcclResult CollComm::InitHDCommunicate()
         std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_D2H, sizeof(Hccl::KfcExecStatus))),
         return HCCL_E_PTR);
     CHK_RET(kfcStatusTransferD2H_->InitHost());
-    retrun HCCL_SUCCESS;
+    return HCCL_SUCCESS;
 }
 
 HcclResult CollComm::GetHDCommunicate(
     HDCommunicateParams &kfcControlTransferH2DParams, HDCommunicateParams &kfcStatusTransferD2HParams)
 {
-    CHK_SMART_PTR_NULL(kfcControlTransferH2DParams);
-    CHK_SMART_PTR_NULL(kfcStatusTransferD2HParams);
+    CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
+    CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
     kfcControlTransferH2DParams = kfcControlTransferH2D_->GetCommunicateParams();
     kfcStatusTransferD2HParams = kfcStatusTransferD2H_->GetCommunicateParams();
     HCCL_INFO("%s success, group[%s]", __func__, commId_.c_str());
-    retrun HCCL_SUCCESS;
+    return HCCL_SUCCESS;
 }
 
 }  // namespace hccl

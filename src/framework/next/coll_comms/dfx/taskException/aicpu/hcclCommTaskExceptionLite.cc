@@ -113,7 +113,7 @@ HcclResult HcclCommTaskExceptionLite::GetThreadCqe(hccl::Thread* thread, rtLogic
     
     cqeStatus = CqReportRecv(cqeQueryInput, cqeException);
     if (cqeStatus == dfx::CqeStatus::kCqeInnerError) {
-        HCCL_ERROR("[%s]CqReportRecv fail, CqeQueryInput:%s", __func__, cqeQueryInput.Tostring().c_str());
+        HCCL_ERROR("[%s]CqReportRecv fail, CqeQueryInput:%s", __func__, cqeQueryInput.ToString().c_str());
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;

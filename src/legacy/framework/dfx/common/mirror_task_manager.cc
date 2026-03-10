@@ -18,7 +18,7 @@ MirrorTaskManager::MirrorTaskManager(u32 devId, GlobalMirrorTasks *globalMirrorT
 
 void MirrorTaskManager::RegFullyCallBack(std::function<void(const std::string&, u32)> callBack)
 {
-    fullyCallBack_ = callBack;
+    fullyNewCallBack_ = callBack;
     return;
 }
 
@@ -54,12 +54,12 @@ void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
     }
 
     if(taskInfo->dfxOpInfo_->isIndop_ == true) {
-        if (queueTaskNum[taskInfo->streamId_] == static_cast<u32>(queueMap_[TaskInfo->streamId_]->Capacity())) {
+        if (queueTaskNum[taskInfo->streamId_] == static_cast<u32>(queueMap_[taskInfo->streamId_]->Capacity())) {
             fullyNewCallBack_(taskInfo->dfxOpInfo_->groupName_, taskInfo->dfxOpInfo_->rankSize_);
             queueTaskNum[taskInfo->streamId_]=0;
         }
     } else {
-        if (queueTaskNum[taskInfo->streamId_] == static_cast<u32>(queueMap_[TaskInfo->streamId_]->Capacity())) {
+        if (queueTaskNum[taskInfo->streamId_] == static_cast<u32>(queueMap_[taskInfo->streamId_]->Capacity())) {
             fullyCallBack_();
             queueTaskNum[taskInfo->streamId_]=0;
         }
