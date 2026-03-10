@@ -69,6 +69,21 @@ void *HrtMalloc(u64 size, aclrtMemType_t memType)
 {
     return (void*)0x12345678;
 }
+
+void HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, aclrtMemcpyKind kind)
+{
+    return;
+}
+
+rtError_t rtResetXpuDevice(rtXpuDevType devType, int32_t devId)
+{
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtSetXpuDevice(rtXpuDevType devType, int32_t devId)
+{
+    return RT_ERROR_NONE;
+}
  
 RdmaHandleManager::RdmaHandleManager()
 {
