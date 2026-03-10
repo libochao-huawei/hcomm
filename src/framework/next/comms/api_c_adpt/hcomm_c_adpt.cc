@@ -28,6 +28,9 @@
 #include "endpoint_map.h"
 #include "hcclCommDfx.h"
 #include "hcclCommOp.h"
+#include "hcclCommOpDfx.h"
+#include "../hcomm_res_mgr.h"
+#include "exception_handler.h"
 
 namespace hcomm {
 static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;

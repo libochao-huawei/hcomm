@@ -155,7 +155,7 @@ void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo> &ta
     }
 }
 
-void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcclTaskInfo &taskDetailsInfos, const std::string& group, u32 ranksize) const 
+void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcclTaskInfo &taskDetailsInfos, const std::string& group, u32 rankSize) const 
 {
     std::string nameInfo = GetProfTaskOpNameV2(it.taskParam_.taskType);
     taskDetailsInfos.itemId = GetProfHashId(nameInfo.c_str(), nameInfo.length());

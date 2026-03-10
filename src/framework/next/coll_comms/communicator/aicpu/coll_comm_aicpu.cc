@@ -277,7 +277,7 @@ HcclResult CollCommAicpu::InitBackGroundThread()
     };
 
     // 注册守护进程函数
-    CHK_RET(hcomm::HcclCommTaskExceptionLite::Init(devId_));
+    CHK_RET(hcomm::HcclCommTaskExceptionLite::GetInstance::Init(devId_));
     Hccl::AicpuDaemonService::GetInstance().Register(&hcomm::HcclCommTaskExceptionLite::GetInstance());
 
     // 启动背景线程

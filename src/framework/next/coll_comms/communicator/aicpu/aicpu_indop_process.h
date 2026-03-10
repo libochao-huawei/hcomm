@@ -33,6 +33,6 @@ public:
 
     static HcclResult ProfilingReportDeviceOp(const std::string &group);
     static HcclResult ReportotAllTasks(const std::string &group);
-    static HcclResult UpdateTasks(const std::string &group);
+    static HcclResult UpdateTask(const std::string &group);
 };
 #endif // __AICPU_INDOP_PROCESS_H__
