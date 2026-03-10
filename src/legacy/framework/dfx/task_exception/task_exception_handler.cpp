@@ -19,7 +19,7 @@
 #include "acl/acl_rt.h"
 #include "orion_adapter_hccp.h"
 #include <adapter_error_manager_pub.h>
-#include "hccl_comm_v2.h"
+#include "hccl_common_v2.h"
 
 namespace Hccl {
 
