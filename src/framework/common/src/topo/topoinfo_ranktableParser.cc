@@ -380,6 +380,10 @@ HcclResult TopoInfoRanktableParser::GetJsonArrayMemberProperty(const nlohmann::j
         if (optionalProp) {
             HCCL_WARNING("json object index[%u] has no property called %s", index, propName);
         } else {
+            RPT_INPUT_ERR(true,
+                "EI0017",
+                std::vector<std::string>({"config"}),
+                std::vector<std::string>({std::string(propName)}));
             HCCL_ERROR("json object index[%u] has no property called %s", index, propName);
         }
         return HCCL_E_NOT_FOUND;
