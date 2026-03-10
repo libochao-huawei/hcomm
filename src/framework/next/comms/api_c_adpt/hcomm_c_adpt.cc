@@ -699,7 +699,7 @@ HcclResult HcommThreadGet(const ThreadHandle thread, std::shared_ptr<hccl::Threa
 {
     auto it = hcomm::g_ThreadMap.find(thread);
     if (it == hcomm::g_ThreadMap.end()) {
-        HCCL_ERROR("[%s] failed. thread[0x%llx] not found.", __func__, thread);
+        HCCL_ERROR("[%s] failed. thread[%lu] not found.", __func__, thread);
         return HCCL_E_NOT_FOUND;
     }
     handle = it->second;
