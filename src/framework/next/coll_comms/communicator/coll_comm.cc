@@ -105,4 +105,26 @@ HcclResult CollComm::InitTaskExceptionHandler()
     return HCCL_SUCCESS;
 }
 
+void RegisterAicpuTaskExceptionCallback(u32 streamId)
+{
+    HCCL_INFO("[%s] start, commId streamId[%u]", __func__, commId.c_str(), streamId);
+    auto getAicpuTaskExceptionCallBack = [this]() {return this->GetAicpuTaskException();};
+    hcomm::TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallback(streamId, deviceLogicId_,
+        getAicpuTaskExceptionCallBack);
+    return ;
+}
+
+Hccl::ErrorMessageReport GetAicpuTaskException()
+{
+    Hccl::ErrorMessageReport errorMessage;
+    CHK_PRT_RET(kfcStatusTransferD2H == nullptr, HCCL_ERROR("[%s]fail, d2h is nullptr", __func__), errorMessage);
+    
+    HcclResult ret = kfcStatusTransferD2H->Get(sizeof(Hccl::KfcStatus) + sizeof(Hccl::kfcErrType),
+       sizeof(errorMessage),reinterpret_cast<uint8_t *>(&errorMessage));
+   
+    CHK_PRT_RET(ret != HCCL_SUCCESS , HCCL_ERROR("[%s]fail, group [%s], ret[%d]", __func__, commId.c_str() ,ret), errorMessage);
+    HCCL_INFO("[%s]group[%s] success", __func__, commId_.c_str())
+   return errorMessage;
+}
+
 }  // namespace hccl

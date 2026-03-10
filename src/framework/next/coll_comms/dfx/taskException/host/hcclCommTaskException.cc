@@ -71,6 +71,13 @@ TaskExceptionHostManager::TaskExceptionHostManager() {}
 
 TaskExceptionHostManager::~TaskExceptionHostManager(){}
 
+void TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBackHcomm callBack)
+{
+   lock_guard<mutex> lock(g_communicatorCallbackMapMutexV2);
+   g_communicatorCallbackMapMutexV2[deviceLogicId].emplace(streamId, p1);
+   return ;
+}
+
 
 HcclResult TaskExceptionHostManager::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
 {

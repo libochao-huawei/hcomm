@@ -50,7 +50,8 @@ private:
 class TaskExceptionHostManager {
 public:
     // 获取指定位置的异常处理器
-    TaskExceptionHost *GetHandler(size_t devId);
+    static TaskExceptionHost *GetHandler(size_t devId);
+    static void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBackHcomm callBack);
 
 private:
     TaskExceptionHostManager();
