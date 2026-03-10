@@ -25,6 +25,7 @@
 #include "hcclCommOp.h"
 #include "adapter_prof.h"
 #include "task_info.h"
+#include "hccl_diag.h"
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
@@ -631,9 +632,10 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
 {
     HCCL_INFO("[%s] START.", __func__);
     CHK_PRT_RET(hcclDfxOpInfo == nullptr,  HCCL_ERROR("[%s] hcclDfxOpInfo is null", __func__), HCCL_E_PTR);
-    HcclDfxOpInfo *dfxOpInfo = static_cast<HcclDfxOpInfo*>(hcclDfxOpInfo);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
-    auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+    HcclDfxOpInfo *dfxOpInfo = static_cast<HcclDfxOpInfo*>(hcclDfxOpInfo);
+    CHK_PTR_NULL(dfxOpInfo);
+    auto hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
     if (!hcclComm->IsCommunicatorV2()) {
         HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
@@ -659,6 +661,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
 
     Stream *cpuTsStream = GetStream(dfxOpInfo->cpuTsThread);
     CHK_PTR_NULL(cpuTsStream);
+    collComm->RegisterAicpuTaskExceptionCallback(cpuTsStream->id());
 
     //HcclDfxOpInfo转为DfxOpInfo
     auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
