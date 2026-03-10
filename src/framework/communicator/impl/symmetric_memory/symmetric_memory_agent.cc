@@ -16,6 +16,7 @@ using namespace std;
 
 const string STR_IPC_MEM_EXCHANGE = "Exchange_Info";
 constexpr u32 USLEEP_ONE_THOUSAND = 1000;
+constexpr u32 RING_RANK_SIZE_MIN = 2;
 
 SymmetricMemoryAgent::SymmetricMemoryAgent(const std::unique_ptr<HcclSocketManager> &socketManager, u32 devicePhyId,
     s32 deviceLogicId, const HcclIpAddress &localVnicIp, const std::vector<RankInfo> &rankInfoList, u32 userRank,
@@ -24,8 +25,7 @@ SymmetricMemoryAgent::SymmetricMemoryAgent(const std::unique_ptr<HcclSocketManag
       localVnicIp_(localVnicIp), rankInfoList_(rankInfoList), userRank_(userRank), rankSize_(rankInfoList.size()),
       useSuperPodMode_(useSuperPodMode), identifier_(identifier)
 {
-    const int RANK_NUM=2;
-    if (rankSize_ >=RANK_NUM) {    // 当前数据交换算法使用超节点内大平面ring算法，需要和“左右”两边的rank建链
+    if (rankSize_ >= RING_RANK_SIZE_MIN) {    // 当前数据交换算法使用超节点内大平面ring算法，需要和“左右”两边的rank建链
         leftRank_ = (userRank_ - 1 + rankSize_) % rankSize_;
         rightRank_ = (userRank_ + 1) % rankSize_;
     }
@@ -44,8 +44,7 @@ SymmetricMemoryAgent::~SymmetricMemoryAgent() {
 }
 
 HcclResult SymmetricMemoryAgent::Init() {
-    const int RANK_NUM=2;
-    CHK_PRT_RET(rankSize_ < RANK_NUM, HCCL_ERROR("[SymmetricMemoryAgent][Init] single rank communicator"), HCCL_E_PARA);
+    CHK_PRT_RET(rankSize_ < RING_RANK_SIZE_MIN, HCCL_ERROR("[SymmetricMemoryAgent][Init] single rank communicator"), HCCL_E_PARA);
     CHK_RET(EstablishSockets());
     CHK_RET(InitRecvThread());
     return HCCL_SUCCESS;

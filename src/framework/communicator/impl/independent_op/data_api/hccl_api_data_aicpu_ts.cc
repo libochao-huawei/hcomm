@@ -624,7 +624,7 @@ int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t
     return HCCL_E_NOT_SUPPORT;
 }
 
-int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, const uint32_t remoteNotifyIdx)
+int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx)
 {
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", __func__, thread, channel, remoteNotifyIdx);
 
@@ -653,7 +653,7 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
     return HCCL_SUCCESS;
 }
 
-int32_t HcommChannelNotifyRecord(ChannelHandle channel, const uint32_t remoteNotifyIdx)
+int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx)
 {
     HCCL_DEBUG("[%s] channel[0x%llx], remoteNotifyIdx[%u].", __func__, channel, remoteNotifyIdx);
     return HCCL_E_NOT_SUPPORT;

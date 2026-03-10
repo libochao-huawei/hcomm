@@ -543,7 +543,6 @@ HcclResult TransportManager::PrepareTaskLists(HcclSendRecvItem *sendRecvItemsPtr
             u32 remoteRank = singleSubCommTransport.transportRequests[i].remoteUserRank;
             bool isSender = senderSet.count(remoteRank);
             bool isReceiver = receiverSet.count(remoteRank);
-            
             if (isSender && (!isReceiver || remoteRank < userRank_)) {
                 senderList.emplace_back(std::make_pair(remoteRank, i));
             } else if (isReceiver) {
