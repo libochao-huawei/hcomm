@@ -25,7 +25,7 @@ TpMgr& TpMgr::GetInstance(const uint32_t devicePhyId)
 
     uint32_t devPhyId = devicePhyId;
     if (devPhyId >= MAX_MODULE_DEVICE_NUM) {
-        HCCL_WARNING("[TpMgr][%s] use the backup device, devPhyId[%u] should be "
+        HCCL_WARNING("[CcuPfeCfgMgr][%s] use the backup device, devPhyId[%u] should be "
             "less than %u.", __func__, devPhyId, MAX_MODULE_DEVICE_NUM);
         devPhyId = MAX_MODULE_DEVICE_NUM; // 使用备份设备
     }
