@@ -43,7 +43,6 @@ public:
     inline CommMemMgr* GetCommMemMgr() { return commMemMgr_.get(); }
     inline ChannelManager* GetChannelManager() { return channelMgr_.get(); }
     void *GetCommunicatorV2() { return comm_; }
-    
     // 获取MyRank
     MyRank* GetMyRank() const { return myRank_.get(); }
     
@@ -78,7 +77,8 @@ public:
     HcclResult GetHDCommunicate(
     HDCommunicateParams &kfcControlTransferH2DParams, HDCommunicateParams &kfcStatusTransferD2HParams);
 private:
-    HcclResult InitHDCommunicate();     
+    HcclResult InitHDCommunicate();   
+    HcclResult InitTaskExceptionHandler();
     void* comm_{nullptr};
     uint32_t rankId_{};
     std::string commId_;

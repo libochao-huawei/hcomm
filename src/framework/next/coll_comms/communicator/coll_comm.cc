@@ -12,6 +12,7 @@
 #include "exception_handler.h"
 #include "kfc.h"
 #include "dlhal_function.h"
+#include "hcclCommTaskException.h"
 
 namespace hccl {
 CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, const ManagerCallbacks& callbacks)
@@ -60,6 +61,7 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
         EXECEPTION_CATCH(hcclCommDfx_ = std::make_unique<HcclCommDfx>(), return HCCL_E_PTR);
  	}
  	CHK_RET(hcclCommDfx_->Init(deviceLogicId_, commId_));
+    CHK_RET(InitTaskExceptionHandler());
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
@@ -92,6 +94,14 @@ HcclResult CollComm::GetHDCommunicate(
     kfcControlTransferH2DParams = kfcControlTransferH2D_->GetCommunicateParams();
     kfcStatusTransferD2HParams = kfcStatusTransferD2H_->GetCommunicateParams();
     HCCL_INFO("%s success, group[%s]", __func__, commId_.c_str());
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollComm::InitTaskExceptionHandler()
+{
+    hcomm::TaskExceptionHost* handler = hcomm::TaskExceptionHostManager::GetHandler(static_cast<size_t>(deviceLogicId_));
+    CHK_PTR_NULL(handler);
+    CHK_RET(handler->Register);
     return HCCL_SUCCESS;
 }
 

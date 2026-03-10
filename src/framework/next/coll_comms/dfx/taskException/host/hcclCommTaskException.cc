@@ -14,56 +14,46 @@
 #include "acl/acl_rt.h"
 #include "orion_adapter_hccp.h"
 #include <adapter_error_manager_pub.h>
-#include"op_type.h"
+#include "op_type.h"
+#include "task_exception_handler.h"
 
 namespace hcomm {
 
 using namespace std;
 
+constexpr u32 MAX_MDOUBLE_DEVICE_NUM_V2 = 65;
 constexpr uint32_t TASK_CONTEXT_SIZE = 50;
 constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失败时打印前序task信息的长度限制
-constexpr int BYTE = 8; // 一字节的位数
-constexpr uint64_t CCU_MSG_256MB_LEN = 256 * 1024 * 1024; // CCU消息长度不能大于256MB
-
-std::array<TaskExceptionHost *, MAX_MODULE_DEVICE_NUM> TaskExceptionHostManager::handlers_;
 
 std::mutex g_communicatorCallbackMapMutexV2;
 array<map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM> g_communicatorCallbackMapV2;
 std::mutex g_commHadCallbackArrayMutexV2;
 array<bool, MAX_MODULE_DEVICE_NUM> g_commHadCallbackArrayV2 = {false};
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
-void RegisterGetAicpuTaskExceptionCallBackV2(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBackHcomm p1)
-{
-    lock_guard<mutex> lock(g_communicatorCallbackMapMutexV2);
-    g_communicatorCallbackMapV2[deviceLogicId].emplace(streamId, p1);
-    return;
-}
-#ifdef __cplusplus
-}
-#endif // __cplusplus
-
-TaskExceptionHost::TaskExceptionHost(int deviceId) : devId_(deviceId)
-{
-    Register();
-}
 
 TaskExceptionHost::~TaskExceptionHost()
 {
-    UnRegister();
+    (void)UnRegister();
 }
 
-void TaskExceptionHost::Register() const
+HcclResult TaskExceptionHost::Register() const
 {
-    Hccl::HrtRegTaskFailCallbackByModule(Process);
+    CHK_PRT_RET(isRegistered_, HCCL_DEBUG("[%s]has been registered, skip", __func__], HCCL_SUCCESS));
+    aclError ret = aclrtSetExceptionInfoCallback(Process);
+    CHK_PRT_RET(ret != ACL_SUCCESS,HCCL_ERROR("[%s]aclrtSetExceptionInfoCallback failed, ret = [%d]", __func__, ret), HCCL_E_RUNTIME);
+    isRegistered_ = true;
     HCCL_INFO("[TaskExceptionHost]exception process func registered.");
+    return HCCL_SUCCESS;
 }
 
-void TaskExceptionHost::UnRegister() const
+HcclResult TaskExceptionHost::UnRegister() const
 {
-    Hccl::HrtRegTaskFailCallbackByModule(nullptr);
+    aclError ret = aclrtSetExceptionInfoCallback(nullptr);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[%s]aclrtSetExceptionInfoCallback failed, ret[%d]", __func__, ret), HCCL_E_RUNTIME);
+    isRegistered_ = false;
+    HCCL_INFO("[TaskExceptionHost]%s success.", __func__);
+    return HCCL_SUCCESS;
 }
 
 TaskExceptionHost *TaskExceptionHostManager::GetHandler(size_t devId)
@@ -73,30 +63,18 @@ TaskExceptionHost *TaskExceptionHostManager::GetHandler(size_t devId)
         HCCL_ERROR("[TaskExceptionHost][GetInstance] deviceLogicID[%lu] is invalid", devId);
         return nullptr;
     }
-    // 如果对应位置的实例为空，则创建新实例
-    if (handlers_[devId] == nullptr) {
-        handlers_[devId] = new TaskExceptionHost(devId);
-    }
+
+    static TaskExceptionHost handlers_[MAX_MDOUBLE_DEVICE_NUM_V2];
     return handlers_[devId];
 }
-TaskExceptionHostManager::TaskExceptionHostManager()
-{    
-    handlers_.fill(nullptr);
-}
+TaskExceptionHostManager::TaskExceptionHostManager() {}
 
-TaskExceptionHostManager::~TaskExceptionHostManager()
-{
-    for (auto &instance : handlers_) {
-        if (instance != nullptr) {
-            delete instance;
-            instance = nullptr;
-        }
-    }
-}
+TaskExceptionHostManager::~TaskExceptionHostManager(){}
 
-void PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
+
+HcclResult TaskExceptionHostManager::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
 {
-    HCCL_INFO("[PrintUbRegisters] start");
+    HCCL_INFO("[PrintUbRegisters] start, devLogicId[%d], rdmaHandle[%p]", devLogicId, rdmaHandle);
     Hccl::AuxInfoIn in;
     in.cqe.status = 0xffffffff; // 0xffffffff代表查询所有寄存器
     in.auxInfoInType = Hccl::AuxInfoInType::AUX_INFO_IN_TYPE_CQE;
@@ -104,7 +82,8 @@ void PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
     Hccl::AuxInfoOut auxInfo;
     auto ret = Hccl::RaGetAuxInfo(rdmaHandle, in, auxInfo);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[PrintUbRegister]GetUbRegisterInfo failed.");
+        HCCL_ERROR("[PrintUbRegister]GetUbRegisterInfo failed, devLogicId[%d], rdmaHandle[%p]", devLogicId, rdmaHandle);
+        return ret;
     }
 
     uint16_t isAuxInfoExisted{false};
@@ -121,36 +100,41 @@ void PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
     if (!isAuxInfoExisted) {
         HCCL_ERROR("devLogicId[%d], all aux_info values are zero.", devLogicId);
     }
+    return HCCL_SUCCESS;
 }
     
 
 void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
 {
+    if (exceptionInfo == nullptr) {
+        HCCL_ERROR("[%s]fail, exceptionInfo is nullptr", __func__);
+        return;
+    }
+
     //Task Exception 入口，使用宏捕获执行间异常
     const auto curTask = Hccl::GlobalMirrorTasks::Instance().GetTaskInfo(
-    exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
+        exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
+
+    if (curTask == nullptr) {
+        // 未找到异常对应的TaskInfo
+        HCCL_ERROR("[%s]Exception task not found, deviceid:[%u], streamid:[%u], taskid:[%u]",
+            __func__, exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
+        return;
+    }
+
+    if (curTask->dfxOpInfo == nullptr) {
+        HCCL_ERROR("[%s]fail, dfxOpInfo is nullptr", __func__);
+        return;
+    }
+
     bool isIndOp_ = curTask->dfxOpInfo_->isIndOp_;
     if (!isIndOp_) {
         HCCL_INFO("Start to the old process");
-        // TaskExceptionHandler::process(exceptionInfo);
-        return;  
+        Hccl::TaskExceptionHandler::process(exceptionInfo);
+    } else {
+        HCCL_INFO("Start to the new process");
+        ProcessException(exceptionInfo, *curTask);
     }
-    HCCL_INFO("Start to the new process");
-    // TRY_CATCH_PRINT_ERROR(
-        if (exceptionInfo == nullptr) {
-            HCCL_ERROR("Exception process failed, rtExceptionInfo is nullptr.");
-            return;
-        }
-
-        if (curTask == nullptr) {
-            // 未找到异常对应的TaskInfo
-            HCCL_ERROR("Exception task not found. deviceId[%u], streamId[%u], taskId[%u].",
-                    exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
-            return;
-        }
-
-        ProcessException(exceptionInfo, *curTask); 
-    // );
 }
 
 std::string TaskExceptionHost::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
@@ -159,6 +143,7 @@ std::string TaskExceptionHost::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
         HCCL_ERROR("[TaskInfo][%s]TaskInfo communicator is nullptr.", __func__);
         return "";
     }
+
     hccl::CollComm *communicator = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
     return Hccl::StringFormat("group:[%s], rankSize[%u], rankId[%d]",
         communicator->GetMyRankId(), communicator->GetRankSize(), communicator->GetMyRank());
@@ -186,7 +171,14 @@ void TaskExceptionHost::ProcessException(rtExceptionInfo_t* exceptionInfo, const
 
 void TaskExceptionHost::PrintTaskContextInfo(uint32_t deviceId, uint32_t streamId, uint32_t taskId)
 {
-    auto queue = Hccl::GlobalMirrorTasks::Instance().GetQueue(deviceId, streamId);
+    Hccl::TaskQueue *queue = nullptr;
+    try {
+        queue = Hccl::GlobalMirrorTasks::Instance().GetQueue(deviceId, streamId);
+    } catch (const std::exception &e) {
+        HCCL_ERROR("Exception task not found. deviceId[%u], streamId[%u], taskId[%u].", deviceId, streamId, taskId);
+        return ;
+    }
+
     if (queue == nullptr) {
         // 未找到异常对应的TaskQueue
         HCCL_ERROR("Exception task queue not found. deviceId[%u], streamId[%u].", deviceId, streamId);
@@ -205,15 +197,13 @@ void TaskExceptionHost::PrintTaskContextInfo(uint32_t deviceId, uint32_t streamI
     vector<shared_ptr<Hccl::TaskInfo>> taskContext {};
     for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskItorPtr != *queue->Begin(); ++i, --(*taskItorPtr)) {
         if ((**taskItorPtr)->taskId_ > taskId) {
+            HCCL_ERROR("[%s]prev taskId[%u]is bigger than err taskId[%u], traversal end.",
+                __func__ deviceId, streamId, taskId);
             break;
         }
         if ((**taskItorPtr)->taskId_ != taskId) {
             taskContext.emplace_back(**taskItorPtr);
         }
-    }
-
-    if (taskContext.empty()) {
-        return;
     }
 
     HCCL_ERROR("[TaskExceptionHost]Task run failed, context sequence before error task is "
@@ -333,7 +323,8 @@ inline std::string GetOpTypeEnumStr(u32 opType)
 }
  	 
 
-void TaskExceptionHost::PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessageReport &errorMessage, std::string &stageErrInfo)
+void TaskExceptionHost::PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessageReport &errorMessage,
+    std::string &stageErrInfo)
 {
     std::stringstream opDataStr;
     opDataStr << "src" << "[0x"
@@ -365,7 +356,8 @@ void TaskExceptionHost::PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessage
     return;
 }
 
-void ReportErrorMsg(const Hccl::TaskInfo &exceptionTaskInfo, const std::string &groupRankContent, const Hccl::ErrorMessageReport &errorMessage, const rtExceptionInfo_t *exceptionInfo)
+void ReportErrorMsg(const Hccl::TaskInfo &exceptionTaskInfo, const std::string &groupRankContent,
+    const Hccl::ErrorMessageReport &errorMessage, const rtExceptionInfo_t *exceptionInfo)
 {
     HCCL_INFO("[ReportErrorMsg] start");
     if (exceptionTaskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
@@ -392,18 +384,21 @@ void ReportErrorMsg(const Hccl::TaskInfo &exceptionTaskInfo, const std::string &
             );
     }
 }
+
 void GetTaskParam(Hccl::TaskParam &taskParam, const Hccl::ErrorMessageReport &errorMessage) {
     if (errorMessage.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
         taskParam.taskPara.Notify.notifyID = errorMessage.notifyId;
         taskParam.taskPara.Notify.value = errorMessage.notifyValue;
-    } else if (errorMessage.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE || errorMessage.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
+    } else if (errorMessage.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE ||
+        errorMessage.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
         taskParam.taskPara.Reduce.notifyID = errorMessage.notifyId;
         taskParam.taskPara.Reduce.notifyValue = errorMessage.notifyValue;
         taskParam.taskPara.Reduce.src = reinterpret_cast<void *>(errorMessage.taskSrcAddr);
  	    taskParam.taskPara.Reduce.dst = reinterpret_cast<void *>(errorMessage.taskDstAddr);
  	    taskParam.taskPara.Reduce.linkType = errorMessage.linkType;
  	    taskParam.taskPara.Reduce.size = errorMessage.size;
-    } else if (errorMessage.taskType == Hccl::TaskParamType::TASK_UB_INLINE_WRITE || errorMessage.taskType == Hccl::TaskParamType::TASK_WRITE_WITH_NOTIFY) {
+    } else if (errorMessage.taskType == Hccl::TaskParamType::TASK_UB_INLINE_WRITE ||
+        errorMessage.taskType == Hccl::TaskParamType::TASK_WRITE_WITH_NOTIFY) {
         taskParam.taskPara.DMA.notifyID = errorMessage.notifyId;
         taskParam.taskPara.DMA.notifyValue = errorMessage.notifyValue;
         taskParam.taskPara.DMA.src = reinterpret_cast<void *>(errorMessage.taskSrcAddr);
@@ -412,6 +407,7 @@ void GetTaskParam(Hccl::TaskParam &taskParam, const Hccl::ErrorMessageReport &er
  	    taskParam.taskPara.DMA.size = errorMessage.size;
     }
 }
+
 void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
 {
     Hccl::ErrorMessageReport errorMessage;
@@ -440,7 +436,8 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
             dfxOpInfo->tag_ = tag;
             dfxOpInfo->algType_ = errorMessage.algType;
             Hccl::TaskInfo exceptionTaskInfo(streamId, errorMessage.taskId, errorMessage.remoteUserRank, taskParam, dfxOpInfo);
-            auto logKeywordL2 = exceptionTaskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
+            auto logKeywordL2 = exceptionTaskInfo.taskParam_.taskType ==
+                Hccl::TaskParamType::TASK_NOTIFY_WAIT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
             auto stageErrInfo = "[" + LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + LOG_KEYWORDS_AICPU + "]";
             HCCL_ERROR("%sTask from HCCL run failed.", stageErrInfo.c_str());
             // 防止tag字符串过长， 信息分开打印
@@ -448,13 +445,17 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
             PrintParaErrorLog(stageErrInfo, exceptionTaskInfo.GetParaInfo());
             PrintGroupErrorMessage(errorMessage, exceptionTaskInfo, groupRankContent, stageErrInfo);
             PrintOpDataErrorMessage(exceptionInfo->deviceid, errorMessage, stageErrInfo);
-            HCCL_ERROR("errorMessage taskType[%s], rtCqErrorType[%u], rtCqErrorCode[%u]. ", errorMessage.taskType.Describe().c_str(), (u32)errorMessage.rtCqErrorType, errorMessage.rtCqErrorCode);
+            HCCL_ERROR("errorMessage taskType[%s], rtCqErrorType[%u], rtCqErrorCode[%u]. ",
+                errorMessage.taskType.Describe().c_str(), (u32)errorMessage.rtCqErrorType, errorMessage.rtCqErrorCode);
 
             // 打印UB DFX寄存器信息
-            if (errorMessage.taskType == Hccl::TaskParamType::TASK_WRITE_WITH_NOTIFY || errorMessage.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
- 	            || errorMessage.taskType == Hccl::TaskParamType::TASK_UB_INLINE_WRITE || errorMessage.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE
-                || errorMessage.taskType == Hccl::TaskParamType::TASK_UB) {
-                HCCL_ERROR("errorMessage ubCqeStatus[%u], localEid[%s], remoteEid[%s]. ", (u32)errorMessage.ubCqeStatus, errorMessage.locEid.Describe().c_str(), errorMessage.rmtEid.Describe().c_str());
+            if (errorMessage.taskType == Hccl::TaskParamType::TASK_WRITE_WITH_NOTIFY ||
+                errorMessage.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY ||
+                errorMessage.taskType == Hccl::TaskParamType::TASK_UB_INLINE_WRITE ||
+                errorMessage.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE ||
+                errorMessage.taskType == Hccl::TaskParamType::TASK_UB) {
+                HCCL_ERROR("errorMessage ubCqeStatus[%u], localEid[%s], remoteEid[%s]. ", (u32)errorMessage.ubCqeStatus,
+                errorMessage.locEid.Describe().c_str(), errorMessage.rmtEid.Describe().c_str());
                 auto reverseAddr = Hccl::IpAddress(errorMessage.locEid);
                 auto addr = Hccl::IpAddress(reverseAddr.GetReverseEid());
                 u32 devPhyId = Hccl::HrtGetDevicePhyIdByIndex(exceptionInfo->deviceid);

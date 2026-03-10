@@ -143,10 +143,14 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
         CHK_RET(aicpuComm->SendErrorMessageReportToHost(errMsgInfo));
 
         // 2) send mbox to tsfw
-        u32 notifyId = 0; // TODO: 获取notify方式待定
-        CHK_RET(SendTaskExceptionByMBox(notifyId, 0, exceptionInfo));
-        aicpuComm->SetErrorReported(true);
-    }
+        if(curTask->dfxOpInfo == nullptr) {
+            HCCL_ERROR("[%s]dfxOpInfo is nullptr. devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
+                __func__, devId_, exceptionInfo.sqId, sqeId);
+        } else {
+            u32 notifyId = curTask->dfxOpInfo->cpuWaitNotifyId_;
+            CHK_RET(SendTaskExceptionByMBox(notifyId, 0, exceptionInfo));
+            aicpuComm->SetErrorReported(true);
+        }
 
     HCCL_ERROR("[HcclCommTaskExceptionLite][%s]Task from HCCL run failed.", __func__);
     if (curTask->taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
