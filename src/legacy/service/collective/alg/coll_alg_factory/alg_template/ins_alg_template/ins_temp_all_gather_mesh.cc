@@ -65,8 +65,13 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
 
     CHK_PRT_RET(tempInsQues.size() != tempVTopo_[0].size(),
         HCCL_ERROR("[InsTempAllGatherMesh1D] RunAllGather Rank [%d], requiredQueNum [%u] not equals to "
+<<<<<<< HEAD
                    "templateQueNum [%u].",
                    myRank_, tempVTopo_[0].size(), tempInsQues.size()),
+=======
+                   "templateQueNum [%zu].",
+                   myRank_, (majorQueNum_ + 1), tempInsQues.size()),
+>>>>>>> 10d335cb... test rebase
         HcclResult::HCCL_E_INTERNAL);
 
     CHK_RET(LocalCopyToScratch(tempInsQues[0]));
