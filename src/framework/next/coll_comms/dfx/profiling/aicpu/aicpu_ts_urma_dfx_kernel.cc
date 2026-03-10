@@ -21,12 +21,11 @@ __attribute__((visibility("default"))) uint32_t RunAicpuDfxOpInfoInitV2(void *ar
     CHK_PRT_RET(args == nullptr, HCCL_ERROR("[%s]args is null.", __func__), HCCL_E_PARA);
     struct InitTask {
         u64 context;
-        std::string commTag;
+        char commTag[256];
     };
     InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
+    CHK_PRT_RET(ctxArgs == nullptr, HCCL_ERROR("[%s]ctxArgs is null.", __func__), HCCL_E_PARA);
     HcclDfxOpInfo *dfxOpInfo = reinterpret_cast<HcclDfxOpInfo *>(ctxArgs->context);
-
-
     return AicpuIndopProcess::AicpuDfxOpInfoInit(dfxOpInfo, ctxArgs->commTag);
 }
 }

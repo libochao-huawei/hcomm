@@ -1,11 +1,3 @@
-/*
- * @Author: c15029001705 caiyifan2@huawei.com
- * @Date: 2026-03-03 10:53:53
- * @LastEditors: c15029001705 caiyifan2@huawei.com
- * @LastEditTime: 2026-03-04 19:47:48
- * @FilePath: \hcomm_profiling\src\framework\next\coll_comms\dfx\hcclCommDfxLite.cc
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
@@ -22,8 +14,7 @@
 namespace hccl {
 ReadWriteLockBase HcclCommDfxLite::baseLockLite_; // 基类锁成员
 ReadWriteLock HcclCommDfxLite::rwLockLite_(HcclCommDfxLite::baseLockLite_); // 读写锁
-std::unordered_map<std::string, std::unordered_map<u64, u32>> HcclCommDfxLite::channelRemoteRankIdLite_;
-
+std::unordered_map<std::string,std::unordered_map<u64, u32> > HcclCommDfxLite::channelRemoteRankIdLite_;
 // HcclCommDfxLite构造函数实现
 HcclCommDfxLite::HcclCommDfxLite() {
 }
@@ -31,7 +22,7 @@ HcclCommDfxLite::HcclCommDfxLite() {
 // HcclCommDfxLite初始化流程 - 修改为返回HcclResult类型
 HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
     HCCL_INFO("[HcclCommDfxLite][Init] Init begin");
-    HCCL_INFO("[HcclCommDfxLite][Init] deviceId[%u], commTag[%s]", deviceId,commTag.c_str());
+    HCCL_INFO("[%s]deviceId[%u], commTag[%s]", __func__, deviceId, commTag.c_str());
     deviceId_ = deviceId;
     commTag_ = commTag;
     // 1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
@@ -62,7 +53,7 @@ HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const 
     EXECEPTION_CATCH(taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId,
         remoteRankId, taskParam, mirrorTaskManager_->GetCurrDfxOpInfo()), return HCCL_E_PTR);
     EXECEPTION_CATCH(mirrorTaskManager_->AddTaskInfo(taskInfo), return HCCL_E_PTR);
-    HCCL_INFO("[HcclCommDfxLite][AddTaskInfoCallback] taskInfo:[%s]", taskInfo->Describe().c_str());
+    HCCL_INFO("[%s]taskInfo: %s", __func__, taskInfo->Describe().c_str());
     return HCCL_SUCCESS;
 }
 

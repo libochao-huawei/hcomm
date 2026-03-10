@@ -37,9 +37,47 @@ void ProfilingHandlerLite::Init() const
 {
 }
 
+void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo, const std::string& groupNameOp) const
+{
+    if (!GetProfL0State()) {
+        return;
+    }
+    HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] ReportHcclOpInfo start.");
+    MsprofAicpuHCCLOPInfo hcclOpInfo {};
+    if (aicpu::GetTaskAndStreamId == nullptr) {
+        HCCL_WARNING("[ProfilingHandlerLite][ReportHcclOpInfo] GetTaskAndStreamId is nullptr.");
+        return;
+    }
+    uint64_t taskId   = 0U;
+    uint32_t streamId = 0;
+    if (aicpu::GetTaskAndStreamId(taskId, streamId) != aicpu::status_t::AICPU_ERROR_NONE) {
+        THROW<InternalException>("[ProfilingHandler] Failed to get task id and stream id.");
+    }
+    hcclOpInfo.algType  = GetProfHashId(opInfo.algType_.Describe().c_str(), opInfo.algType_.Describe().length());
+    if (taskId > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
+        THROW<InvalidParamsException>("[ProfilingHandler] taskId is larger than u32.");
+    }
+    hcclOpInfo.taskId   = static_cast<uint32_t>(taskId);
+    hcclOpInfo.streamId = streamId;
+    hcclOpInfo.count = opInfo.op_.dataCount;
+    hcclOpInfo.dataType = opInfo.op_.dataType;
+
+    hcclOpInfo.groupName = GetProfHashId(groupNameOp.c_str(), groupNameOp.length());
+
+    HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] relay:%u, retry:%u, dataType:%s, algType:%u, count:%llu, "
+              "groupName:%lu, ranksize:%u, taskId:%u, streamId:%u",
+              hcclOpInfo.relay, hcclOpInfo.retry, DataTypeToSerialString(hcclOpInfo.dataType).c_str(), hcclOpInfo.algType, hcclOpInfo.count,
+              hcclOpInfo.groupName, hcclOpInfo.ranksize, hcclOpInfo.taskId, hcclOpInfo.streamId);
+    // 信息上报
+    ReportAdditionInfo(MSPROF_REPORT_AICPU_HCCL_OP_INFO, ProfGetCurCpuTimestamp(), &hcclOpInfo,
+                       sizeof(MsprofAicpuHCCLOPInfo));
+    HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] ReportHcclOpInfo end.");
+}
+
 void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
 {
     if (!GetProfL0State()) {
+        HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] L0 = false.");
         return;
     }
     HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] ReportHcclOpInfo start.");
@@ -73,6 +111,28 @@ void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
     HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] ReportHcclOpInfo end.");
 }
 
+void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo> &taskInfo, const std::string& group, u32 ranksize) const
+{
+    if (!GetProfL1State()) {
+        return;
+    }
+    HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] ReporttHcclTaskDetails start.");
+    uint32_t                batchId = 0;
+    MsprofAicpuHcclTaskInfo taskDetailsInfos[HCCLINFO_REPORT_BATCH_NUM] {};
+    for (std::vector<Hccl::TaskInfo>::size_type i = 0; i < taskInfo.size(); i++) {
+        auto &taskDetailInfo = taskDetailsInfos[batchId++];
+        GetTaskDetailInfos(taskInfo[i], taskDetailInfo, group, ranksize);
+        DumpTaskDetails(taskDetailInfo, taskInfo[i]);
+        // 信息批量上报
+        if (batchId == HCCLINFO_REPORT_BATCH_NUM || i == taskInfo.size() - 1) {
+            ReportAdditionInfo(MSPROF_REPORT_AICPU_MC2_BATCH_HCCL_INFO, 0, taskDetailsInfos,
+                               sizeof(MsprofAicpuHcclTaskInfo) * batchId);
+            batchId = 0;
+            memset_s(taskDetailsInfos, sizeof(taskDetailsInfos), 0, sizeof(taskDetailsInfos));
+        }
+    }
+}
+
 void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo> &taskInfo) const
 {
     if (!GetProfL1State()) {
@@ -93,6 +153,52 @@ void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo> &ta
             memset_s(taskDetailsInfos, sizeof(taskDetailsInfos), 0, sizeof(taskDetailsInfos));
         }
     }
+}
+
+void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcclTaskInfo &taskDetailsInfos, const std::string& group, u32 ranksize) const 
+{
+    std::string nameInfo = GetProfTaskOpNameV2(it.taskParam_.taskType);
+    taskDetailsInfos.itemId = GetProfHashId(nameInfo.c_str(), nameInfo.length());
+    taskDetailsInfos.cclTag       = GetProfHashId(it.dfxOpInfo_->tag_.c_str(), it.dfxOpInfo_->tag_.length());
+    taskDetailsInfos.remoteRank   = it.remoteRank_;
+
+    taskDetailsInfos.groupName = GetProfHashId(group.c_str(), group.length());
+    taskDetailsInfos.rankSize     = rankSize;
+
+    taskDetailsInfos.localRank = it.dfxOpInfo_->op_.myRank;
+    taskDetailsInfos.stage        = 0;
+    if (it.taskParam_.taskType == TaskParamType::TASK_SDMA || it.taskParam_.taskType == TaskParamType::TASK_RDMA
+        || it.taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
+        || it.taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
+        || it.taskParam_.taskType == TaskParamType::TASK_UB) {
+        taskDetailsInfos.srcAddr  = static_cast<u64>(reinterpret_cast<uintptr_t>(it.taskParam_.taskPara.DMA.src));
+        taskDetailsInfos.dstAddr  = static_cast<u64>(reinterpret_cast<uintptr_t>(it.taskParam_.taskPara.DMA.dst));
+        taskDetailsInfos.dataSize = static_cast<u32>(it.taskParam_.taskPara.DMA.size);
+        taskDetailsInfos.notifyID = it.taskParam_.taskPara.DMA.notifyID;
+        taskDetailsInfos.linkType = static_cast<uint16_t>(it.taskParam_.taskPara.DMA.linkType);
+    } else if (it.taskParam_.taskType == TaskParamType::TASK_REDUCE_INLINE
+               || it.taskParam_.taskType == TaskParamType::TASK_REDUCE_TBE
+               || it.taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
+               || it.taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
+        taskDetailsInfos.srcAddr  = static_cast<u64>(reinterpret_cast<uintptr_t>(it.taskParam_.taskPara.Reduce.src));
+        taskDetailsInfos.dstAddr  = static_cast<u64>(reinterpret_cast<uintptr_t>(it.taskParam_.taskPara.Reduce.dst));
+        taskDetailsInfos.dataSize = static_cast<u32>(it.taskParam_.taskPara.Reduce.size);
+        taskDetailsInfos.notifyID = it.taskParam_.taskPara.Reduce.notifyID;
+        taskDetailsInfos.dataType = static_cast<uint16_t>(it.taskParam_.taskPara.Reduce.dataType);
+        taskDetailsInfos.linkType = static_cast<uint16_t>(it.taskParam_.taskPara.Reduce.linkType);
+        taskDetailsInfos.opType   = it.taskParam_.taskPara.Reduce.reduceOp;
+    } else if (it.taskParam_.taskType == TaskParamType::TASK_NOTIFY_RECORD
+               || it.taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
+        taskDetailsInfos.notifyID = it.taskParam_.taskPara.Notify.notifyID;
+    }
+    taskDetailsInfos.timeStamp         = ProfGetCurCpuTimestamp();
+    taskDetailsInfos.durationEstimated = 0;
+    taskDetailsInfos.taskId            = it.taskId_;
+    taskDetailsInfos.streamId          = it.streamId_;
+    taskDetailsInfos.planeID           = 0;
+    taskDetailsInfos.transportType     = static_cast<int32_t>(SimpleTaskType::UB);
+    taskDetailsInfos.role              = static_cast<uint32_t>(TaskRole::DST);
+    taskDetailsInfos.workFlowMode      = static_cast<uint32_t>(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
 }
 
 void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcclTaskInfo &taskDetailsInfos) const 
@@ -179,6 +285,7 @@ void ProfilingHandlerLite::ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo
         THROW<InvalidParamsException>("[ProfilingHandler] aicpuKernelTaskId is larger than u32.");
     }
     // aicpuKernelTaskId的高16位填到flagtask.aicpuTaskId，低16位填到flagtask.aicpuStreamId
+    HCCL_INFO("[ProfilingHandlerLite][kernelTask] aicpuKernelTaskId %lu. aicpuKernelStreamId %u", aicpuKernelTaskId, aicpuKernelStreamId);
     uint32_t aicpuKernelTaskIdLow32 = static_cast<uint32_t>(aicpuKernelTaskId);
     flagtask.aicpuTaskId = static_cast<uint16_t>(aicpuKernelTaskIdLow32 >> 16);
     flagtask.aicpuStreamId = static_cast<uint16_t>(aicpuKernelTaskIdLow32);

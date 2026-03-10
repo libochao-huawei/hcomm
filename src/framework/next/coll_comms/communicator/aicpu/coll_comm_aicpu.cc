@@ -1,11 +1,3 @@
-/*
- * @Author: c15029001705 caiyifan2@huawei.com
- * @Date: 2026-03-03 12:03:58
- * @LastEditors: c15029001705 caiyifan2@huawei.com
- * @LastEditTime: 2026-03-04 10:18:55
- * @FilePath: \hcomm_profiling\src\framework\next\coll_comms\communicator\aicpu\coll_comm_aicpu.cc
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
@@ -27,6 +19,8 @@
 #include "kfc.h"
 #include "dlhal_function_v2.h"
 #include "profiling_command_handle_lite.h"
+#include "aicpu_daemon_service.h"
+#include "hcclCommTaskExceptionLite.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
 
@@ -56,7 +50,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
     CHK_RET(hrtSetlocalDeviceType(topoInfo_.deviceType));
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(topoInfo_.devicePhyId, &devId_));
-    dfx_.Init(devId_, identifier_);
+    CHK_RET(dfx_.Init(devId_, identifier_));
     if (commAicpuParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
         EXECEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
@@ -121,8 +115,13 @@ HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
 
 HcclResult CollCommAicpu::RegisterThreadAddDfxTaskInfo(ThreadHandle thread) 
 {
- 	return HcommThreadRegisterDfx(thread, dfx_.GetCallback());
-}
+    int32_t ret = HcommThreadRegisterDfx(thread, dfx_.GetCallback());
+    if (ret != 0) {
+        HCCL_ERROR("[CollCommAicpu][RegisterThreadAddDfxTaskInfo] HcommThreadRegisterDfx failed, ret[%d]", ret);
+        return HCCL_E_PTR;
+    }
+ 	return HCCL_SUCCESS;
+} 
 
 HcclResult CollCommAicpu::AllocChannelResource(HcclChannelUrmaRes *commParam)
 {
@@ -161,8 +160,8 @@ HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
         ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
         channelList[index] = channelHandle;
         CHK_RET(RegisterChannelAddDfxTaskInfo(channelHandle));
-        
-        HcclCommDfxLite::AddChannelRemoteRankId(identifier_, channelHandle, commParam->remoteRankId[index]);
+        CHK_PTR_NULL(identifier_.c_str());
+        HcclCommDfxLite::AddChannelRemoteRankId(identifier_, channelHandle, commParam->remoteRankList[index]);
         HCCL_INFO("[CollCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
             __func__, index, currentSrcAddr, commParam->singleUniqueIdSize, channelHandle);
     }
@@ -256,6 +255,36 @@ HcclResult CollCommAicpu::NotifyAlloc(NotifyMgrAicpuParam *param)
 
     HCCL_INFO("[CollCommAicpu][%s] comm identifier[%s], alloc notifys num[%u] success",
         __func__, hcomId.c_str(), notifyNum);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::InitBackGroundThread()
+{
+    static bool backGroundInit = false;
+    if (backGroundInit) {
+        HCCL_INFO("[%s]identifier[%s], backGroundInit[%d], skip", __func__, identifier_.c_str(), backGroundInit);
+        return HCCL_SUCCESS;
+    }
+    backGroundInit = true;
+
+    static auto commandToBackGroud = Hccl::CommandToBackGroud::Default;
+    static auto daemonServiceRun = [](void *info) {
+        Hccl::AicpuDaemonService::GetInstance().ServiceRun(info);
+    };
+    static auto daemonServiceStop = [](void *info) {
+        Hccl::AicpuDaemonService::GetInstance().ServiceStop(info);
+    };
+
+    // 注册守护进程函数
+    Hccl::AicpuDaemonService::GetInstance().Register(&hcomm::HcclCommTaskExceptionLite::GetInstance());
+
+    // 启动背景线程
+    if (Hccl::StartMC2MaintenanceThread != nullptr) {
+        Hccl::StartMC2MaintenanceThread(daemonServiceRun, &commandToBackGroud, daemonServiceStop, &commandToBackGroud);
+        HCCL_RUN_INFO("[%s]start BackGround thread success.", __func__);
+    } else {
+        HCCL_WARNING("[%s]StartMC2MaintenanceThread func is nullptr", __func__);
+    }
     return HCCL_SUCCESS;
 }
 
