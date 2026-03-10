@@ -41,7 +41,7 @@ private:
     std::string GetTaskExceptionTaskInfo(u32 sqHead, SqeRingBuffer *sqeContextBuffer);
     void PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeContextBuffer); // 打印当前位置的前序task
     std::string GetTaskBriefsInfo(u32 idx, SqeRingBuffer *sqeContextBuffer);
-    void PrintTaskExceptionOpInfo(IndOpInfo& lastOpInfo);
+    void PrintTaskExceptionOpInfo(IndOpInfo& indOp);
 
     bool IsRepeatPrint(u32 streamId, u32 opIndex, u32 sqHead);
 

@@ -34,22 +34,22 @@ enum class HcclNetLayerlevel {
 };
 
 public:
-    HcclResult Init(const RankTable_t& rankTable, const HcclTopoAttr &topoAttr);
+    HcclResult Init(const RankTable_t& rankTable, const HcclTopoAttr &topoAttr) override;
     HcclResult Init(const HcclTopoAttr &topoAttr);
     HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink** linkList,
-        uint32_t* listSize);
-    HcclResult GetHeterogMode(HcclHeterogMode *mode) const;
+        uint32_t* listSize) override;
+    HcclResult GetHeterogMode(HcclHeterogMode *mode) const override;
     const RankInfo_t* FindRank(uint32_t rankId) const;
-    HcclResult GetRankGraphInfo(GraphType type, void **graph, uint32_t *len);
-    HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
-    HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType);
-    HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
-    HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
-    HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
+    HcclResult GetRankGraphInfo(GraphType type, void **graph, uint32_t *len) override;
+    HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum) override;
+    HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType) override;
+    HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum) override;
+    HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum) override;
+    HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize) override;
 
 private:
-    HcclResult DevTypeToCommProtocol(DevType &type, CommProtocol &protocol);
-    HcclResult BuildRankGraphInfo(const RankInfo_t &rankItem, const CommProtocol &protocol, RankGraphInfo &outInfo);
+    HcclResult DevTypeToCommProtocol(DevType &type, CommProtocol &protocol) const;
+    HcclResult BuildRankGraphInfo(const RankInfo_t &rankItem, const CommProtocol &protocol, RankGraphInfo &outInfo) const;
     CommProtocol GetCommProtocolFromRankInfo(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo, uint32_t netLayer);
     HcclResult InitRankInfo();
     HcclResult InitServerRankInfo();
@@ -57,9 +57,9 @@ private:
     HcclResult InitNetLayer();
     HcclResult InitGraphRankInfo();
     CommProtocol GetCommProtocolInSameServer(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo);
-    CommProtocol GetCommProtocolBetweenServers(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo);
-    bool NeedIgnoreEndPoints(CommProtocol srcProtocol, CommProtocol dstProtocol, CommProtocol linkProtocol);
-    void PrintLinksInfo(CommLink &link);
+    CommProtocol GetCommProtocolBetweenServers(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo) const;
+    bool NeedIgnoreEndPoints(CommProtocol srcProtocol, CommProtocol dstProtocol, CommProtocol linkProtocol) const;
+    void PrintLinksInfo(CommLink &link) const;
     bool IsRoceInSameServer(uint32_t netLayer, const RankInfo_t &srcInfo, const RankInfo_t &dstInfo);
     HcclResult InitHeterogMode();
     RankTable_t rankTable_;

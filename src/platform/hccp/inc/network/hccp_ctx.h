@@ -89,6 +89,42 @@ struct DevNotifyInfo {
     uint32_t resv[4U];
 };
 
+union TpTypeCap {
+    struct {
+        uint32_t rtp : 1;
+        uint32_t ctp : 1;
+        uint32_t utp : 1;
+        uint32_t reserved : 29;
+    } bs;
+    uint32_t value;
+};
+
+union TpFeature {
+    struct {
+        uint32_t rmMultiPath : 1;
+        uint32_t rcMultiPath : 1;
+        uint32_t reserved : 30;
+    } bs;
+    uint32_t value;
+};
+
+union TpTypeEn {
+    struct {
+        uint32_t rtp : 1;
+        uint32_t ctp : 1;
+        uint32_t utp : 1;
+        uint32_t reserved : 29;
+    } bs;
+    uint32_t value;
+};
+
+struct CtxSlInfo {
+    uint32_t SL;
+    union TpTypeEn tpType;
+};
+
+#define MAX_PRIORITY_CNT 16
+
 struct DevBaseAttr {
     uint32_t sqMaxDepth;
     uint32_t rqMaxDepth;
@@ -105,6 +141,12 @@ struct DevBaseAttr {
             uint32_t dieId;
             uint32_t chipId;
             uint32_t funcId;
+            union TpTypeCap rmTpCap;
+            union TpTypeCap rcTpCap;
+            union TpTypeCap umTpCap;
+            union TpFeature tpFeat;
+            struct CtxSlInfo priorityInfo[MAX_PRIORITY_CNT];
+            uint32_t resv0;
         } ub;
     };
 

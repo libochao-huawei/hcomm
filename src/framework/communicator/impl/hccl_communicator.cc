@@ -102,20 +102,6 @@ namespace hccl
         {HcclCMDType::HCCL_CMD_ALLTOALL, "AlltoAll"},
         {HcclCMDType::HCCL_CMD_BATCH_WRITE, "BatchWrite"}};
 
-    void HcclCommunicator::UnloadCustomKernel(void)
-    {
-        // 卸载自定义算子
-        // 请勿删除，该函数为用户自定义算子时使用，应释放句柄：UnloadBinary(binCustomHandle_);
-        return;
-    }
-
-    HcclResult HcclCommunicator::LoadCustomKernel(void)
-    {
-        // 加载自定义算子
-        // 请勿删除，该函数为用户自定义算子时使用，应加载句柄
-        return HCCL_SUCCESS;
-    }
-
     bool HcclCommunicator::IsEnableCustom()
     {
         return binCustomHandle_ != nullptr;

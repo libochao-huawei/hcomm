@@ -40,6 +40,7 @@ public:
     JfcHandle  GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jfcMode);
     JfcHandle  GetJfcHandleAndCqInfo(RdmaHandle rdmaHandle, CqCreateInfo& cqInfo, HrtUbJfcMode jfcMode);
     std::pair<uint32_t, uint32_t> GetDieAndFuncId(RdmaHandle rdmaHandle);
+    bool GetRtpEnable(RdmaHandle rdmaHandle);
 
     std::pair<TokenIdHandle, uint32_t> GetTokenIdInfo(RdmaHandle rdmaHandle, 
         const BufferKey<uintptr_t, u64> &bufKey = BufferKey<uintptr_t, u64>{0,0});
@@ -55,6 +56,8 @@ private:
     std::unordered_map<RdmaHandle, std::unordered_map<HrtUbJfcMode, JfcHandle, EnumClassHash>> jfcHandleMap;
 
     std::unordered_map<RdmaHandle, std::pair<uint32_t, uint32_t>> DieAndFuncIdMap;
+
+    std::unordered_map<RdmaHandle, bool> RtpEnableMap;
 
     std::unordered_map<RdmaHandle, std::unique_ptr<TokenInfoManager>> tokenInfoMap;
 

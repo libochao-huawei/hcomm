@@ -22,7 +22,7 @@ CommConfiger& CommConfiger::GetInstance()
  
 CommConfiger::CommConfiger() : initialized_(true) {}
  
-HcclResult CommConfiger::SetCommConfig(CommConfig commConf, const std::string& identifier)
+HcclResult CommConfiger::SetCommConfig(CommConfig config, const std::string& identifier)
 {
     std::lock_guard<std::mutex> lock(lock_);
     if (identifier.empty()) {
@@ -33,7 +33,7 @@ HcclResult CommConfiger::SetCommConfig(CommConfig commConf, const std::string& i
     if (commConfigIter != commConfigMap_.end()) {
         HCCL_WARNING("[CommConfiger][SetCommConfig]: commConfig of identifier[%s] is already existed.", identifier.c_str());
     }
-    commConfigMap_[identifier] = commConf;
+    commConfigMap_[identifier] = config;
     HCCL_INFO("[CommConfiger][SetCommConfig]: commConfig of identifier[%s]", identifier.c_str());
     return HCCL_SUCCESS;
 }

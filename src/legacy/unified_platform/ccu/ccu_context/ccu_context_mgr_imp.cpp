@@ -23,7 +23,6 @@
 #include "instruction.h"
 #include "ccu_assist.h"
 #include "dev_buffer.h"
-
 namespace Hccl {
 CtxMgrImp::CtxMgrImp()
 {
@@ -116,16 +115,16 @@ HcclResult CtxMgrImp::AllocRes(CcuCtxGroup &ctxGroup, CcuResPack &resPack)
 HcclResult CtxMgrImp::ReleaseRes(CcuCtxGroup &ctxGroup) const
 {
     // 获取本次编排Ctx多对应的资源信息
-
-    CcuResPack &resPack = ctxGroup.ctxs[0]->GetResPack();
-    HCCL_INFO("[CtxMgrImp:%s]cur resPack count[%u], resHandle[%u], handle size[%u]",  __func__, resPack.count, resPack.GetId(), resPack.handles.size());
-    if(resPack.count > 0) {
-        resPack.count--;
+    CcuResPack *resPack = ctxGroup.ctxs[0]->GetResPack();
+    CHK_PTR_NULL(resPack);
+    HCCL_INFO("[CtxMgrImp:%s]cur resPack count[%u], resHandle[%u], handle size[%u]",  __func__, resPack->count, resPack->GetId(), resPack->handles.size());
+    if(resPack->count > 0) {
+        resPack->count--;
     }
 
     // 释放资源
-    if (resPack.count == 0) {
-        for (CcuResHandle resHandle : resPack.handles) {
+    if (resPack->count == 0) {
+        for (CcuResHandle resHandle : resPack->handles) {
             HCCL_INFO("[CtxMgrImp]ReleaseRes: deviceLogicId[%d], resHandle[%p]", deviceLogicId_, resHandle);
             CHK_RET(CcuDeviceManager::ReleaseResHandle(deviceLogicId_, resHandle));
         }
@@ -190,7 +189,12 @@ std::vector<std::vector<CcuTaskParam>> CtxMgrImp::GetTaskParam(CcuTaskArg &ccuTa
     // 获取每个ctx的taskParam信息
     std::vector<std::vector<CcuTaskParam>> taskParam;
     for (auto &ctx : ctxGroupMap_[executorId].ctxs) {
-        taskParam.push_back(ctx->GeneTaskParam(ccuTaskArg));
+        std::vector<CcuTaskParam> tmp;
+        auto ret = ctx->GeneTaskParam(ccuTaskArg, tmp);
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            THROW<CcuApiException>("GeneTaskParam is failed. ret[%d]", ret);
+        }
+        taskParam.push_back(tmp);
     }
 
     return taskParam;
@@ -201,7 +205,7 @@ void CtxMgrImp::CtxInit(CcuCtxGroup &ctxGroup) const
 {
     for (auto &ctx : ctxGroup.ctxs) {
         // 初始化ctx
-        ctx->Init();
+        CHK_PRT_RET_NULL(ctx->Init(), HCCL_ERROR("Init failed"));
     }
     return;
 }
@@ -435,11 +439,12 @@ HcclResult CtxMgrImp::InstantiationTranslator(uint16_t dieId)
 HcclResult CtxMgrImp::TransRepResToPhyRes(CcuCtxGroup &ctxGroup) const
 {
     // 获取ctxGroup中CCU物理资源句柄
-    CcuResPack resPack = ctxGroup.ctxs[0]->GetResPack();
+    CcuResPack *resPack = ctxGroup.ctxs[0]->GetResPack();
+    CHK_PTR_NULL(resPack);
 
     // 获取通信域当前所持有的资源
     CcuResRepository totalResRepository;
-    CHK_RET(GetResPackTotalResRepository(resPack, totalResRepository));
+    CHK_RET(GetResPackTotalResRepository(*resPack, totalResRepository));
 
     // 遍历ctxGroup, 将每个ctx的虚拟资源进行合并
     CcuRepResource totalRepRes = GetTotalCcuRepResource(ctxGroup);
@@ -745,7 +750,12 @@ std::vector<std::vector<CcuProfilingInfo>> CtxMgrImp::GetProfilingInfo(CcuTaskAr
     // 获取每个ctx的profiling信息
     std::vector<std::vector<CcuProfilingInfo>> ccuProfilingInfo;
     for (auto &ctx : ctxGroupMap_[entityId].ctxs) {
-        ccuProfilingInfo.push_back(ctx->GetCcuProfilingInfo(ccuTaskArg));
+        std::vector<CcuProfilingInfo> tmp;
+        auto ret = ctx->GetCcuProfilingInfo(ccuTaskArg, tmp);
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            THROW<CcuApiException>("GetCcuProfilingInfo is failed. ret[%d]", ret);
+        }
+        ccuProfilingInfo.push_back(tmp);
     }
 
     return ccuProfilingInfo;

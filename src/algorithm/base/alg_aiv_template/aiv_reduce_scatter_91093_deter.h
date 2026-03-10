@@ -177,6 +177,7 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
                     WaitSyncFlag(curTag, flagAddrSelf_, 1, x + multipleTemp, pingpong);
                 }
 
+                PipeBarrier<PIPE_ALL>();
                 CpGM2GM<T>(cclGMSelf + halfBufferCount + avgBufferCount * target, cclGMSelf + halfBufferCount + avgBufferCount * x, 
                             curGroupCount, true, reduceOp_);
                 PipeBarrier<PIPE_ALL>();
@@ -191,6 +192,7 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
         if (case1 || case2){
             int64_t waitBlock = GetDeterministicRank(numReduce);
             WaitSyncFlag(curTag, flagAddrSelf_, 1, waitBlock, pingpong);
+            PipeBarrier<PIPE_ALL>();
             CpGM2GM(outputGM + curOffset + curBlockOffset, cclGMSelf + halfBufferCount + curBlockOffset, curCount);
         }
 
