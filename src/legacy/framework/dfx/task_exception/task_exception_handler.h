@@ -97,7 +97,7 @@ private:
 private:
     // 全局静态数组，存储异常处理器指针
     static constexpr u32 MAX_MODULE_DEVICE_NUMS = 65;
-    static std::array<TaskExceptionHandler *, MAX_MODULE_DEVICE_NUM> handlers_;
+    static std::array<TaskExceptionHandler *, MAX_MODULE_DEVICE_NUMS> handlers_;
 };
 
 #ifdef __cplusplus
