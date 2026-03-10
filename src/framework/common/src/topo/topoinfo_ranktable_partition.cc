@@ -92,7 +92,7 @@ HcclResult TopoinfoRanktablePartition::GenerateSubSuperPodId(hccl::RankTable_t &
         podGroupClusters[rankInfo.originalSuperPodId].emplace_back(&rankInfo);
     }
     std::set<std::string> superPodIdSet;
-    std::map<std::string, std::pair<u32, u32>> superPodIdRanges; // ��¼ÿ���߼����ڵ��rank id��Χ
+    std::map<std::string, std::pair<u32, u32>> superPodIdRanges; // 记录每个逻辑超节点的rank id范围
     for (auto& subCluster : podGroupClusters) {
         auto& subClusterInfo = subCluster.second;
         if (subClusterInfo.size() <= 1) {
