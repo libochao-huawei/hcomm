@@ -23,6 +23,11 @@
 #include "device_capacity.h"
 #include "hccl_api.h"
 #include "task_param.h"
+#include "sal_pub.h"
+#include "stream_lite.h"
+#include "task_info.h"
+#include "adapter_prof.h"
+#include "../../../../../legacy/framework/dfx/profiling/dlprof_function.h"
 
 namespace hccl {
 constexpr u32 HCOMM_NOTIFY_MAX_NUM = 64;
@@ -32,8 +37,7 @@ constexpr u32 HCOMM_THREADNUM_MAX_NUM = 1000;
  */
 class Thread {
 public:
-    Thread() { HCCL_RUN_INFO("Thread() %p", this); }
-    virtual ~Thread() { HCCL_RUN_INFO("~Thread() %p", this); };
+    Thread() = default;
     virtual HcclResult Init() = 0;
     virtual HcclResult DeInit() = 0;
     virtual std::string &GetUniqueId() = 0;
@@ -56,6 +60,8 @@ public:
     virtual HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const = 0;
     virtual HcclResult LocalReduce(
         void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const = 0;
+    virtual bool GetMaster() const = 0;
+    virtual void SetIsMaster(bool isMaster) = 0;
 
     HcclResult AddThreadHandleToMap(CommEngine commEngine, ThreadHandle threadHandle);
     Thread *FindThreadByCommEngine(CommEngine commEngine);
@@ -68,11 +74,16 @@ public:
  	         return callback_;
  	}
 protected:
-    HcclResult ReportNotifyWaitTask(u64 notifyId) const;
-    HcclResult ReportNotifyRecordTask(u64 notifyId) const;
-    HcclResult ReportLocalCopyTask(void *dst, const void *src, uint64_t sizeByte) const;
+    HcclResult ReportNotifyWaitTask(u64 notifyId, u64 beginTime, u32 taskId, u32 streamId) const;
+    HcclResult ReportHostNotifyWaitTask(u64 notifyId, u64 beginTime, bool isMaster) const;
+    HcclResult ReportNotifyRecordTask(u64 notifyId, u64 beginTime, u32 taskId, u32 streamId) const;
+    HcclResult ReportHostNotifyRecordTask(u64 notifyId, u64 beginTime, bool isMaster) const;
+    HcclResult ReportLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, u32 taskId,u32 streamId) const;
+    HcclResult ReportHostLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, bool isMaster) const;
     HcclResult ReportLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
-        HcommReduceOp reduceOp) const;
+        HcommReduceOp reduceOp, u64 beginTime, u32 taskId,u32 streamId) const;
+    HcclResult ReportHostLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
+        HcommReduceOp reduceOp, u64 beginTime, bool isMaster) const;
 
 private:
     std::unordered_map<CommEngine, ThreadHandle> threadHandleMap_; // CPU_TS上的ThreadHandle与其他引擎上的ThreadHandle的映射
