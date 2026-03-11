@@ -492,12 +492,12 @@ TEST_F(UbMemTransportTest, UbMemTransport_read_write_read_reduce_write_reduce)
  
     UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, callback);
 
-	EXPECT_THROW(transport.Read(locSlice, rmtSlice, stream), NotSupportException);
-	EXPECT_THROW(transport.Write(locSlice, rmtSlice, stream), NotSupportException);
+    transport.Read(locSlice, rmtSlice, stream);
+    transport.Write(locSlice, rmtSlice, stream);
 
     ReduceIn reduceIn(DataType::INT8, ReduceOp::MAX);
-	EXPECT_THROW(transport.ReadReduce(locSlice, rmtSlice, reduceIn, stream), NotSupportException);
-	EXPECT_THROW(transport.WriteReduce(locSlice, rmtSlice, reduceIn, stream), NotSupportException);
+    transport.ReadReduce(locSlice, rmtSlice, reduceIn, stream);
+    transport.WriteReduce(locSlice, rmtSlice, reduceIn, stream);
 }
 
 TEST_F(UbMemTransportTest, UbMemTransport_post_wait)
@@ -528,8 +528,9 @@ TEST_F(UbMemTransportTest, UbMemTransport_post_wait)
 
     std::unique_ptr<RemoteUbRmaBuffer> remoteUbRmaBuffer = std::make_unique<RemoteUbRmaBuffer>(rdmaHandle);
     transport.rmtNotifyVec.push_back(std::move(remoteUbRmaBuffer));
-	EXPECT_THROW(transport.Post(0, stream), NotSupportException);
-	transport.Wait(0, stream, 0);
+
+    transport.Post(0, stream);
+    transport.Wait(0, stream, 0);
 }
 
 TEST_F(UbMemTransportTest, UbMemTransport_write_with_notify_write_reduce_with_notify)
@@ -574,9 +575,8 @@ TEST_F(UbMemTransportTest, UbMemTransport_write_with_notify_write_reduce_with_no
     
     // normal notify
     withNotify.notifyType_ = TransportNotifyType::NORMAL;
-	EXPECT_THROW(transport.WriteWithNotify(locSlice, rmtSlice, withNotify, stream), NotSupportException);
-	// write empty case
-	EXPECT_THROW(transport.WriteWithNotify(emptyLocSlice, rmtSlice, withNotify, stream), NotSupportException);
+    transport.WriteWithNotify(locSlice, rmtSlice, withNotify, stream);
+    transport.WriteWithNotify(emptyLocSlice, rmtSlice, withNotify, stream); // write empty case
 
     ReduceIn reduceIn(DataType::INT8, ReduceOp::MAX);
 
@@ -585,20 +585,16 @@ TEST_F(UbMemTransportTest, UbMemTransport_write_with_notify_write_reduce_with_no
     transport.rmtCntNotifyVec.push_back(std::move(remoteUbRmaBuffer2));
     transport.rmtCntNotifyVec.push_back(std::move(remoteUbRmaBuffer3));
 
-	transport.WriteReduceWithNotify(locSlice, rmtSlice, reduceIn, withNotify, stream);
-	// write empty case
-	EXPECT_THROW(transport.WriteReduceWithNotify(emptyLocSlice, rmtSlice, reduceIn, withNotify, stream),
-				 NotSupportException);
+    transport.WriteReduceWithNotify(locSlice, rmtSlice, reduceIn, withNotify, stream);
+    transport.WriteReduceWithNotify(emptyLocSlice, rmtSlice, reduceIn, withNotify, stream); // write empty case
 
     // count notify
     withNotify.notifyType_ = TransportNotifyType::COUNT;
-	EXPECT_THROW(transport.WriteWithNotify(locSlice, rmtSlice, withNotify, stream), NotSupportException);
-	EXPECT_THROW(transport.WriteWithNotify(emptyLocSlice, rmtSlice, withNotify, stream), NotSupportException);
+    transport.WriteWithNotify(locSlice, rmtSlice, withNotify, stream);
+    transport.WriteWithNotify(emptyLocSlice, rmtSlice, withNotify, stream); // write empty case
 
-	transport.WriteReduceWithNotify(locSlice, rmtSlice, reduceIn, withNotify, stream);
-	// write empty case
-	EXPECT_THROW(transport.WriteReduceWithNotify(emptyLocSlice, rmtSlice, reduceIn, withNotify, stream),
-				 NotSupportException);
+    transport.WriteReduceWithNotify(locSlice, rmtSlice, reduceIn, withNotify, stream);
+    transport.WriteReduceWithNotify(emptyLocSlice, rmtSlice, reduceIn, withNotify, stream); // write empty case
 
     // invalid notify type
     withNotify.notifyType_ = TransportNotifyType::INVALID;

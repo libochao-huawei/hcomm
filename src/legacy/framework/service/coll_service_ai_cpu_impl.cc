@@ -21,10 +21,6 @@
 #include "alg_topo_package_helper.h"
 #include "dlprof_function.h"
 #include "task_exception_handler.h"
-#include "aicpu/launch_device.h"
-#include "exception_util.h"
-#include "runtime_api_exception.h"
-
 namespace Hccl {
 
 template <class T, class U> u16 CalcFieldOffset(T *target, U *base)
@@ -95,7 +91,7 @@ DevBuffer *CollServiceAiCpuImpl::OpBasedCollProcess(CollOperator &op, const std:
     if (op.opType == OpType::BATCHSENDRECV) {
         bsrRemoteRanksHashValue = GetRemoteRankIdsHashValue(op);
     }
-
+ 
     curTagKey = GetTagKey(op, req.algName, bsrRemoteRanksHashValue);
 
     auto it = collOpLoadedMap.find(curTagKey);
@@ -410,14 +406,23 @@ void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollO
 void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream, OpMode opMode)
 {
     param.kernel.op.userStreamId = stream.GetId();
-    aclrtLaunchKernelCfg cfg;
-	aclrtLaunchKernelAttr attr;
-	attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
-	auto timeoutCheck         = EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
-	attr.value.timeout = static_cast<u16>((timeoutCheck == 0) ? timeoutCheck : (timeoutCheck + 30)); // aicpu kernal超时时间: X+30s
-	cfg.numAttrs = 1;
-	cfg.attrs = &attr;
-    HCCL_INFO("[CollServiceAiCpuImpl][%s] args timeout[%u]s", __func__, attr.value.timeout);
+    rtHostInputInfo hostInputInfo;
+    hostInputInfo.addrOffset = KERNEL_PARAM_ADDR_OFFSET;
+    hostInputInfo.dataOffset = KERNEL_PARAM_DATA_OFFSET;
+
+    rtAicpuArgsEx_t args;
+    args.args                 = reinterpret_cast<void *>(&param);
+    args.argsSize             = sizeof(HcclKernelLaunchParam);
+    args.hostInputInfoPtr     = &hostInputInfo;
+    args.hostInputInfoNum     = 0;
+    args.kernelOffsetInfoPtr  = nullptr;
+    args.kernelOffsetInfoNum  = 0;
+    args.kernelNameAddrOffset = CalcFieldOffset(param.kernelName, &param);
+    args.soNameAddrOffset     = CalcFieldOffset(param.soName, &param);
+    args.isNoNeedH2DCopy      = false;
+    auto timeoutCheck         = EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
+    args.timeout              = static_cast<u16>((timeoutCheck == 0) ? timeoutCheck : (timeoutCheck + 30)); // aicpu kernal超时时间: X+30s
+    HCCL_INFO("[CollServiceAiCpuImpl][%s] args timeout[%u]s", __func__, args.timeout);
 
     AddPostToUserStream(stream);
     TaskParam taskParam {};
@@ -430,24 +435,18 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
 
     HCCL_INFO("[CollServiceAiCpuImpl][%s] param.soName: %s, param.kernelName: %s",
               __func__, param.soName, param.kernelName);
-	std::string jsonPath;
-    GetKernelFilePath(jsonPath);
-	jsonPath += "ccl_kernel.json";
-	aclrtBinHandle binHandle;
-	LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, binHandle);
-	aclrtFuncHandle funcHandle;
-	constexpr u32 numBlocks = 1;
-	aclError aclRet = aclrtBinaryGetFunction(binHandle, param.kernelName, &funcHandle);
-    if(aclRet != ACL_SUCCESS)
-    {
-        THROW<RuntimeApiException>(StringFormat("Call aclrtBinaryGetFunction failed, with ret[%d]", aclRet));
+    if (opMode == OpMode::OPBASE) {
+        HrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU_KFC, param.opName, 1, &args, nullptr,
+                                       comm->GetAicpuStreamManager().GetFreeStream()->GetPtr(), RT_KERNEL_USE_SPECIAL_TIMEOUT);
+        HCCL_INFO("[CollServiceAiCpuImpl][%s] param.kernel.algName: %s OPBASE mode "
+                "HrtAicpuKernelLaunchExWithArgs end!",
+                __func__, param.kernel.algName);
+    } else if (opMode == OpMode::OFFLOAD) {
+        HrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU_KFC, param.opName, 1, &args, nullptr, stream.GetPtr(), RT_KERNEL_USE_SPECIAL_TIMEOUT);
+        HCCL_INFO("[CollServiceAiCpuImpl][%s] param.kernel.algName: %s OFFLOAD mode "
+                "HrtAicpuKernelLaunchExWithArgs end!",
+                __func__, param.kernel.algName);
     }
-    auto& mStream = (opMode == OpMode::OPBASE) ? (*comm->GetAicpuStreamManager().GetFreeStream()) : stream;
-    std::string mode = (opMode == OpMode::OPBASE) ? "OPBASE" : "OFFLOAD";
-    HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, mStream.GetPtr(), &cfg,
-			&param.kernel, sizeof(HcclKernelParamLite));
-    HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s, %s mode "
-                "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName, mode.c_str());
     taskParam.taskType = TaskParamType::TASK_AICPU_KERNEL;
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 

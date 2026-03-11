@@ -18,7 +18,6 @@
 #include "ccu_dev_mgr.h"
 #include "orion_adapter_hccp.h"
 #include "local_ub_rma_buffer.h"
-#include <array>
 
 namespace Hccl {
 

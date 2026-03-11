@@ -104,7 +104,7 @@ HcclResult FlushHandle::AllocateHostMemory()
 HcclResult FlushHandle::AllocateDeviceMemory()
 {
     u64 bufferSize = FLUSH_BUFFER_SIZE;
-	deviceMem = HrtMalloc(bufferSize, static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
+    deviceMem = HrtMalloc(bufferSize, RT_MEMORY_HBM);
     if (deviceMem == nullptr) {
         HcclResult eRet = Destroy();
         HCCL_ERROR("[AllocateDeviceMemory]Failed to Allocate Device Memory. Destroy Flush code=%d", eRet);
