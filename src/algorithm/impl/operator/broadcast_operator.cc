@@ -203,7 +203,7 @@ HcclResult BroadCastOperator::SelectAlgfor91093(const OpParam& param, std::strin
 
     isAivMode_ = topoMatcher_->GetAivModeConfig()
             && IsSupportAIVCopy(param.DataDes.dataType)
-            && isAivSingleNode;
+            && (isAivSingleNode || (serverNum_ == 1 && !isOpbase));
 
     bool smallCountOptimSingleServer =
         (serverNum_ == 1) &&
@@ -233,16 +233,6 @@ HcclResult BroadCastOperator::SelectAlgfor91093(const OpParam& param, std::strin
         algName = "BroadCastRingFor91093Executor";
     } else {
         algName = "BroadCastComm";
-    }
-
-    // isAivMode_ = topoMatcher_->GetAivModeConfig()
-    //         && IsSupportAIVCopy(param.DataDes.dataType)
-    //         && (serverNum_ == 1) && (param.count * sizeof(param.dataType) <= HCCL_MID_COUNT_16_MB);
-    isAivMode_ = topoMatcher_->GetAivModeConfig()
-            && IsSupportAIVCopy(param.DataDes.dataType)
-            && (serverNum_ == 1);
-    if (isAivMode_) {
-        algName = "BroadcastMeshAivExecutor";
     }
    
     HCCL_INFO("[SelectAlgfor91093] broadcast SelectAlgfor91093 is algName [%s]", algName.c_str());
