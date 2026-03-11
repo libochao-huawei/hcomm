@@ -52,13 +52,17 @@ void ProfilingReporterLite::ReportAllTasks(const std::string& group, u32 ranksiz
         }
         // 不论首次是否打印，都手动将首个task打印一遍
         if (lastPoses_.find(streamId) == lastPoses_.end()) {
+            TaskInfo task = (*(*(*currQueue->Begin())));
+            taskInfo.push_back(task);
             lastPoses_[streamId] = currQueue->Begin();
         }
         if (currQueue->Tail() == nullptr) {
             continue;
         }
         auto endPos = currQueue->Tail();
-        for (auto iter = lastPoses_[streamId]; (*(iter)) != (*(endPos)); ++(*(iter))) {
+        auto iter = lastPoses_[streamId];
+        ++(*iter);
+        for (; (*(iter)) != (*(currQueue->End())); ++(*(iter))) {
             TaskInfo task = (*(*(*iter)));
             taskInfo.push_back(task);
         }
@@ -79,13 +83,17 @@ void ProfilingReporterLite::ReportAllTasks()
         }
         // 不论首次是否打印，都手动将首个task打印一遍
         if (lastPoses_.find(streamId) == lastPoses_.end()) {
+            TaskInfo task = (*(*(*currQueue->Begin())));
+            taskInfo.push_back(task);
             lastPoses_[streamId] = currQueue->Begin();
         }
         if (currQueue->Tail() == nullptr) {
             continue;
         }
         auto endPos = currQueue->Tail();
-        for (auto iter = lastPoses_[streamId]; (*(iter)) != (*(endPos)); ++(*(iter))) {
+        auto iter = lastPoses_[streamId];
+        ++(*iter);
+        for (; (*(iter)) != (*(currQueue->End())); ++(*(iter))) {
             TaskInfo task = (*(*(*iter)));
             taskInfo.push_back(task);
         }

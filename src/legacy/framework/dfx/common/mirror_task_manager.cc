@@ -74,8 +74,8 @@ void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
     queueMap_[taskInfo->streamId_]->Append(taskInfo);
     queueTaskNum[taskInfo->streamId_]++;
 
-    HCCL_INFO("[MirrorTaskManager][AddTaskInfo]add devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u]",
-              devId_, taskInfo->streamId_, taskInfo->taskId_);
+    HCCL_INFO("[MirrorTaskManager][AddTaskInfo]add devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u] queueMapsize[%u]",
+              devId_, taskInfo->streamId_, taskInfo->taskId_, queueMap_.size());
 
     return;
 }
