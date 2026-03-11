@@ -87,94 +87,75 @@ HcclResult CollAllReduceMidCountFor91093Executor::KernelRun(const OpParam &param
     CHK_RET(CheckCommSize(COMM_LEVEL2, COMM_INDEX_0 + 1));
     SubCommInfo level2CommInfo = GetSubCommInfo(COMM_LEVEL2, COMM_INDEX_0);
     
-    const u32 level1RankIndex = level1CommInfo.localRank;
-    const u32 level2RankIndex = level2CommInfo.localRank;
     const u32 level1RankSize = level1CommInfo.localRankSize;
     const u32 level2RankSize = level2CommInfo.localRankSize;
     u64 inputMemSize = execMem.count * unitSize;
+    const u32 SINGLERANK = 1;
 
-    if (DMAReduceFlag_) { //第一步，将数据从input内存拷贝到ccl内存的对应位置
+    if (DMAReduceFlag_) {
         DeviceMem srcMem = DeviceMem::create(static_cast<u8 *>(execMem.inputPtr), inputMemSize);
         DeviceMem dstMem = execMem.inputMem.range(0, inputMemSize);
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, const_cast<Stream&>(param.stream)));
         HCCL_DEBUG("copy from user in to ccl in.");
     }
 
-    // 超节点内做 reducescatter
-    u32 sliceNum = level1RankSize;
-    std::vector<Slice>  dataSlices ;
-    CHK_RET(AlgTemplateBase::PrepareSliceData(execMem.count, unitSize, sliceNum, 0, dataSlices));
+    u64 reduceAttr = GetReduceAttr(execMem.inputMem, execMem.outputMem, param.DataDes.dataType, param.reduceType);
 
-    const u64 hdSize = inputMemSize;
-    const u64 hdCount = execMem.count;
-    const u64 level1Offset = 0;
+    //step1:  run nhr ont shot in level1
+    if (level1RankSize > SINGLERANK) {
+        std::unique_ptr<AlgTemplateBase> level1tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_NHR_ONESHOT, dispatcher_);
+        CHK_SMART_PTR_NULL(level1tempAlg);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_NHR_ONESHOT in COMM_COMBINE_L1/COMM_LEVEL2", __func__);
+        HCCL_INFO("AllReduce mid count: using nhr algo intra-server.");
+        
+        CHK_RET(level1tempAlg->Prepare(reduceAttr));
+        level1tempAlg->CloseBarrier();
 
-    DeviceMem reducescatterInput = execMem.inputMem.range(level1Offset, hdSize);
-    DeviceMem reducescatterOutput = execMem.outputMem.range(level1Offset, hdSize);
-    CHK_SMART_PTR_NULL(reducescatterInput);
-    CHK_SMART_PTR_NULL(reducescatterOutput);
+        CHK_RET(level1tempAlg->Prepare(execMem.inputMem, execMem.outputMem, execMem.outputMem, execMem.count,
+            param.DataDes.dataType, param.stream, param.reduceType,
+            LEVEL0_BRIDGE_RANK_ID, std::vector<Slice>(0), 0));
 
-    u64 reduceAttrRS = GetReduceAttr(reducescatterInput, reducescatterOutput, param.DataDes.dataType, param.reduceType);
-    std::unique_ptr<AlgTemplateBase> level1RSTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-            TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
-    CHK_SMART_PTR_NULL(level1RSTempAlg);
-    CHK_RET(level1RSTempAlg->Prepare(reduceAttrRS, false));
+        CHK_RET(level1tempAlg->RegisterProfiler(
+            (level1RankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) +
+            level1CommInfo.localRank, PROF_STAGE_0, HCCL_EXEC_STEP_NOT_SET, param.stream));
+
+        CHK_RET(RunTemplate(level1tempAlg, level1CommInfo));
+    } 
+
+    // 数据回拷
+    if(level1RankSize > SINGLERANK && level2RankSize > SINGLERANK) {
+        DeviceMem srcMem = execMem.outputMem.range(0, inputMemSize);
+        DeviceMem dstMem = execMem.inputMem.range(0, inputMemSize);
+        CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, const_cast<Stream&>(param.stream)));  
+    }
     
-    CHK_RET(level1RSTempAlg->Prepare(reducescatterInput, reducescatterInput, reducescatterOutput, hdCount,
-        param.DataDes.dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, dataSlices, level1Offset));
-    CHK_RET(level1RSTempAlg->RegisterProfiler(
-        (level1RankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level1RankIndex,
-        PROF_STAGE_1, HCCL_EXEC_STEP_NOT_SET, param.stream));
-    CHK_RET(RunTemplate(level1RSTempAlg, level1CommInfo));
-    HCCL_INFO("CollAllReduce MidCount level1 ReduceScatter run success");
+    //step2:  run nhr ont shot in level2
+    if (level2RankSize > SINGLERANK) {
+        std::unique_ptr<AlgTemplateBase> level2tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_NHR_ONESHOT, dispatcher_);
+        CHK_SMART_PTR_NULL(level2tempAlg);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_NHR_ONESHOT in COMM_COMBINE_L1/COMM_LEVEL2", __func__);
+        HCCL_INFO("AllReduce mid count: using nhr algo intra-server.");
+        
+        CHK_RET(level2tempAlg->Prepare(reduceAttr));
+        level2tempAlg->CloseBarrier();
 
-    // RUN ALLREDUCE IN level2
-    DeviceMem allreduceInput = reducescatterInput.range(dataSlices[level1RankIndex].offset, dataSlices[level1RankIndex].size);
-    DeviceMem allreduceOutput = reducescatterOutput.range(dataSlices[level1RankIndex].offset, dataSlices[level1RankIndex].size);
-    CHK_SMART_PTR_NULL(allreduceInput);
-    CHK_SMART_PTR_NULL(allreduceOutput);
+        CHK_RET(level2tempAlg->Prepare(execMem.inputMem, execMem.outputMem, execMem.outputMem, execMem.count,
+            param.DataDes.dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, std::vector<Slice>(0), 0));
 
-    u64 reduceAttrAR = GetReduceAttr(allreduceInput, allreduceOutput, param.DataDes.dataType, param.reduceType);
-    u64 arCount = dataSlices[level1RankIndex].size / unitSize;
+        CHK_RET(level2tempAlg->RegisterProfiler(
+            (level2RankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) +
+            level2CommInfo.localRank, PROF_STAGE_1, HCCL_EXEC_STEP_NOT_SET, param.stream));
 
-    std::unique_ptr<AlgTemplateBase> level2ARTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-            TemplateType::TEMPLATE_ALL_REDUCE_NHR, dispatcher_);
-    CHK_SMART_PTR_NULL(level2ARTempAlg);
-    
-    CHK_RET(level2ARTempAlg->Prepare(reduceAttrAR));
-    CHK_RET(level2ARTempAlg->Prepare(allreduceInput, allreduceOutput, allreduceOutput, arCount,
-        param.DataDes.dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID,
-        std::vector<Slice>(0), dataSlices[level1RankIndex].offset + level1Offset));
-    CHK_RET(level2ARTempAlg->RegisterProfiler(
-        (level2RankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level2RankIndex,
-        PROF_STAGE_1, HCCL_EXEC_STEP_NOT_SET, param.stream));
-    CHK_RET(RunTemplate(level2ARTempAlg, level2CommInfo));
-    HCCL_INFO("CollAllReduce MidCount level2 AllReduce run success");
+        CHK_RET(RunTemplate(level2tempAlg, level2CommInfo));
+    }
 
-    // RUN ALLGATHER IN level1
-    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NHR in COMM_LEVEL1", __func__);
-    
-    DeviceMem allgatherInput = execMem.outputMem.range(level1Offset, hdSize);
-    DeviceMem allgatherOutput = execMem.outputMem.range(level1Offset, hdSize);
-   
-    std::unique_ptr<AlgTemplateBase> level1AGTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-            TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
-    CHK_SMART_PTR_NULL(level1AGTempAlg);
-
-    CHK_RET(level1AGTempAlg->Prepare(allgatherInput, allgatherOutput, allgatherOutput, arCount,
-        param.DataDes.dataType, param.stream,
-        HcclReduceOp::HCCL_REDUCE_RESERVED, LEVEL0_BRIDGE_RANK_ID, dataSlices, level1Offset));
-    CHK_RET(level1AGTempAlg->RegisterProfiler(
-        (level1RankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level1RankIndex,
-        PROF_STAGE_1, HCCL_EXEC_STEP_NOT_SET, param.stream));
-    CHK_RET(RunTemplate(level1AGTempAlg, level1CommInfo));
-    HCCL_INFO("CollAllReduce MidCount level1 AllGather run success");
- 
     if (DMAReduceFlag_) {
         DeviceMem srcMem = execMem.outputMem.range(0, inputMemSize);
         DeviceMem dstMem = DeviceMem::create(static_cast<u8 *>(execMem.outputPtr), inputMemSize);
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, const_cast<Stream&>(param.stream)));
+        HCCL_DEBUG("copy from ccl out to user out.");
     }
+
     HCCL_INFO("AllReduce mid count run success");
     return HCCL_SUCCESS;
 }
