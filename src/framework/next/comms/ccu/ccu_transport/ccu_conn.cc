@@ -48,17 +48,16 @@ CcuCtpConnection::CcuCtpConnection(const CommAddr &locAddr, const CommAddr &rmtA
 HcclResult CcuConnection::Init()
 {
     devLogicId_ = HcclGetThreadDeviceId();
-    uint32_t devPhyId{0};
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId_), devPhyId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId_), devPhyId_));
 
     EXCEPTION_HANDLE_BEGIN
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     Hccl::IpAddress ipAddr{};
     CHK_RET(CommAddrToIpAddress(locAddr_, ipAddr));
-    ctxHandle_ = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
+    ctxHandle_ = rdmaHandleMgr.GetByIp(devPhyId_, ipAddr);
 
     DevEidInfo eidInfo{};
-    CHK_RET(EidInfoMgr::GetInstance(devPhyId).GetEidInfoByAddr(locAddr_, eidInfo));
+    CHK_RET(EidInfoMgr::GetInstance(devPhyId_).GetEidInfoByAddr(locAddr_, eidInfo));
     dieId_ = static_cast<uint8_t>(eidInfo.dieId);
 
     EXCEPTION_HANDLE_END
@@ -207,7 +206,7 @@ HcclResult CcuConnection::GetTpInfo()
         return HcclResult::HCCL_E_PARA;
     }
 
-    HcclResult ret = TpMgr::GetInstance(devLogicId_)
+    HcclResult ret = TpMgr::GetInstance(devPhyId_)
         .GetTpInfo({locAddr_, rmtAddr_, tpProtocol_}, tpInfo_);
     if (ret == HcclResult::HCCL_E_AGAIN) {
         // 此处可能刷屏，非必要勿加日志
@@ -474,7 +473,7 @@ HcclResult CcuConnection::ReleaseConnRes()
     importJettyCtxs_.clear();
 
     if (tpInfo_.tpHandle != 0) { // tp handle 复用，只释放一次
-        (void)TpMgr::GetInstance(devLogicId_)
+        (void)TpMgr::GetInstance(devPhyId_)
             .ReleaseTpInfo({locAddr_, rmtAddr_, tpProtocol_}, tpInfo_);
         tpInfo_.tpHandle = 0;
     }

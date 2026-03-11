@@ -79,6 +79,12 @@ HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void *
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                HCCL_WARNING("[%s] is not supported in HCCL_INDEPENDENT_OP is set to 0.", __func__);
+                return HCCL_SUCCESS;
+            }
+
             hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
             CollComm* collComm = hcclComm->GetCollComm();
             CHK_PTR_NULL(collComm);
@@ -127,6 +133,12 @@ HcclResult HcclChannelGetRemoteMems(HcclComm comm, ChannelHandle channel, uint32
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                HCCL_WARNING("[%s] is not supported in HCCL_INDEPENDENT_OP is set to 0.", __func__);
+                return HCCL_SUCCESS;
+            }
+
             hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
             CollComm* collComm = hcclComm->GetCollComm();
             CHK_PTR_NULL(collComm);

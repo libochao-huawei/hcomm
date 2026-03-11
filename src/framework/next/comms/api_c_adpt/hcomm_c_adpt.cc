@@ -25,11 +25,7 @@
 #include "launch_aicpu.h"
 #include "comm_configer.h"
 #include "endpoint_map.h"
-
-#include "../hcomm_res_mgr.h"
-
-#include "param_check_pub.h"
-#include "exception_handler.h"
+#include "endpoint_map.h"
 
 namespace hcomm {
 static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
@@ -87,20 +83,7 @@ static inline HcclResult WithChannelByHandleLocked(ChannelHandle inHandle, Func 
 using namespace hcomm;
 static HcommEndpointMap g_EndpointMap;
 
-HcclResult HcommResMgrInit(uint32_t devPhyId)
-{
-    // 临时方案：触发统一平台层单例触发静态对象声明
-    // 内部流程触发各种单例声明，保证时序
-    EXCEPTION_HANDLE_BEGIN
-    HCCLV2_FUNC_RUN([&]() -> HcclResult {
-        (void)HcommResMgr::GetInstance(devPhyId);
-        return HcclResult::HCCL_SUCCESS;
-    }());
-    EXCEPTION_HANDLE_END
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult HcommEndpointGet_(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
+HcclResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
 {
     auto it = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(it == nullptr, HCCL_ERROR("[%s] endpoint not found in g_EndpointMap, endpointHandle[%p]",
@@ -112,6 +95,8 @@ HcclResult HcommEndpointGet_(EndpointHandle endpointHandle, void **endpoint)  //
 
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle)
 {
+    CHK_PTR_NULL(endpoint);
+    CHK_PTR_NULL(endpointHandle);
     if (endpoint->loc.locType != ENDPOINT_LOC_TYPE_DEVICE && endpoint->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
         HCCL_ERROR("[%s] Only support END_POINT_LOCATION_DEVICE AND END_POINT_LOCATION_HOST, but "
                    "endpoint->loc.locType is %d",
@@ -122,9 +107,17 @@ HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *end
 
     std::unique_ptr<Endpoint> endpointPtr = nullptr;
 
-    CHK_RET(Endpoint::CreateEndpoint(*endpoint, endpointPtr));
+    HcclResult ret = Endpoint::CreateEndpoint(*endpoint, endpointPtr);
+    if (ret != HCCL_SUCCESS){
+        HCCL_ERROR("call Endpoint::CreateEndpoint failed");
+        return ret;
+    }
     CHK_PTR_NULL(endpointPtr);
-    CHK_RET(endpointPtr->Init());
+    ret = endpointPtr->Init();
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("call endpointPtr->Init failed");
+        return ret;
+    }
 
     const EndpointHandle handle = reinterpret_cast<EndpointHandle>(endpointPtr.get());
     CHK_PTR_NULL(handle);
