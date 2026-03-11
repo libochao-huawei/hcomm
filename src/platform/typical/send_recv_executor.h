@@ -70,12 +70,13 @@ private:
     struct MrInfoT remoteWindowMem_{};
 
     struct MrInfoT localSyncMemPrepare_ = {};
-    stMrInfoT localSyncMemDone_ = {};one_;
- MrInfoT localSyncMemAck_ = {};ncMemAck_;
+    struct MrInfoT localSyncMemDone_ = {};
+    struct MrInfoT localSyncMemAck_ = {};
 
-    struct MrInfoT remoteSyncMemPreparMrInfoT remoteSyncMemDone_ = {};teSyncMemDone_;
-    struct MrInfoT remoteSyncMMrInfoT notifySrcMem_ = {};InfoT notifySrcMem_;
-
+    struct MrInfoT remoteSyncMemPrepare_ = {};
+    struct MrInfoT remoteSyncMemDone_ = {};
+    struct MrInfoT remoteSyncMemAck_ = {};
+    struct MrInfoT notifySrcMem_ = {};
     HcclRtSignal prepareNotify_ = nullptr;
     HcclRtSignal ackNotify_ = nullptr;
     HcclRtSignal doneNotify_ = nullptr;

@@ -39,7 +39,7 @@ union udma_jfr_flag {
 struct udma_u_jfr_cstm_cfg {
 	union udma_jfr_flag flag;
 	struct udma_u_que_cfg_ex idx_que = {};
-	studma_u_que_cfg_ex rq = {};x rq;
+	struct udma_u_que_cfg_ex rq = {};
 	uint32_t *sw_db;
 };
 

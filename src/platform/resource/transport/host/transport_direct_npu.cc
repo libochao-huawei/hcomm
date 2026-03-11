@@ -928,7 +928,7 @@ HcclResult TransportDirectNpu::RxData(UserMemType srcMemType, u64 srcOffset, voi
         u32 rfKey;
     };
     const std::string kernelName = "RunTransportRoceRx";
-    stApiParamDef apiParam = {};aram;
+    struct ApiParamDef apiParam = {};
     MemDetails inputMemDetails;
     MemDetails outputMemDetails;
     CHK_PRT(GetLocalMemDetails(UserMemType::INPUT_MEM, inputMemDetails));

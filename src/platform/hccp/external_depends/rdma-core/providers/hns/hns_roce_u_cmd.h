@@ -83,7 +83,7 @@ struct hns_roce_cq_data_plane_info {
 
 struct hns_roce_qp_data_plane_info {
     struct hns_roce_wq_data_plane_info sq = {};
-    sthns_roce_wq_data_plane_info rq = {};o rq;
+    struct hns_roce_wq_data_plane_info rq = {};
 };
 
 struct hns_roce_mr_remap_info {

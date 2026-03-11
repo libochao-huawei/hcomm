@@ -270,7 +270,7 @@ struct hns_roce_idx_que {
 
 struct hns_roce_srq {
     struct verbs_srq        verbs_srq;
- hns_roce_buf buf = {};f     buf;
+    struct hns_roce_buf buf = {};
     pthread_spinlock_t      lock;
     unsigned long           *wrid;
     unsigned int            srqn;
