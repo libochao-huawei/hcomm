@@ -50,6 +50,7 @@ public:
     bool GetMaster() const override;
     void SetIsMaster(bool isMaster) override;
 private:
+    bool isMaster_{false};
     struct HcclStreamInfo {
         s32 streamIds;
         uint32_t sqIds;

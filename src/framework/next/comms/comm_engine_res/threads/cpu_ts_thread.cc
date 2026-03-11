@@ -221,13 +221,14 @@ HcclResult CpuTsThread::LocalNotifyRecord(ThreadHandle dstThread, uint32_t dstNo
 
     HcclSignalInfo signalInfo;
     CHK_RET(dstNotify->GetNotifyData(signalInfo));
-    CHK_RET(ReportHostNotifyRecordTask(signalInfo.resId, beginTime, isMaser_));
+    CHK_RET(ReportHostNotifyRecordTask(signalInfo.resId, beginTime, isMaster_));
+    #endif
     return HCCL_SUCCESS;
 }
 
 HcclResult CpuTsThread::LocalNotifyWait(uint32_t notifyIdx, uint32_t timeOut) const
 {
-#ifdef CCL_KERNEL_AICPU
+    #ifndef CCL_KERNEL_AICPU
     u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     HCCL_INFO("[%s]notifyIdx[%u], timeOut[%u].", __func__, notifyIdx, timeOut);
     CHK_PRT_RET(!IsDeviceA5(), HCCL_ERROR("[CpuTsThread][%s]only support A5", __func__), HCCL_E_NOT_SUPPORT); // 只支持A5, 其他场景调用HcclLocalNotifyWait
@@ -243,13 +244,14 @@ HcclResult CpuTsThread::LocalNotifyWait(uint32_t notifyIdx, uint32_t timeOut) co
     
     HcclSignalInfo signalInfo;
     CHK_RET(notify->GetNotifyData(signalInfo));
-    CHK_RET(ReportHostNotifyWaitTask(signalInfo.resId, beginTime, isMaser_));
+    CHK_RET(ReportHostNotifyWaitTask(signalInfo.resId, beginTime, isMaster_));
+    #endif
     return HCCL_SUCCESS;
 }
 
 HcclResult CpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByte) const
 {
-#ifdef CCL_KERNEL_AICPU
+    #ifndef CCL_KERNEL_AICPU
     u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     HCCL_INFO("[%s]dst[%p], src[%p], sizeByte[%llu].", __func__, dst, src, sizeByte);
     CHK_PRT_RET(!IsDeviceA5(), HCCL_ERROR("[CpuTsThread][%s]only support A5", __func__), HCCL_E_NOT_SUPPORT); // 只支持A5, 其他场景调用HcclLocalCopy
@@ -264,14 +266,15 @@ HcclResult CpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByte)
     CHK_RET(hrtMemAsyncCopy(dst, sizeByte, src, sizeByte,
         HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE, stream->ptr()));
     
-    CHK_RET(ReportHostLocalCopyTask(dst, src, sizeByte, beginTime, isMaser_));
+    CHK_RET(ReportHostLocalCopyTask(dst, src, sizeByte, beginTime, isMaster_));
+    #endif
     return HCCL_SUCCESS;
 }
 
 HcclResult CpuTsThread::LocalReduce(
     void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const
 {
-#ifdef CCL_KERNEL_AICPU
+    #ifndef CCL_KERNEL_AICPU
     u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     HCCL_INFO("[%s]dst[%p], src[%p], sizeByte[%llu], dataType[%d], reduceOp[%d].",
         __func__, dst, src, sizeByte, dataType, reduceOp);
@@ -294,15 +297,16 @@ HcclResult CpuTsThread::LocalReduce(
     Stream *stream = GetStream();
     CHK_PTR_NULL(stream);
     CHK_RET(hrtReduceAsync(dst, sizeByte, src, sizeByte, reduceOpIt->second, dataTypeIt->second, stream->ptr()));
-    CHK_RET(ReportHostLocalReduceTask(dst, src, sizeByte, dataType, reduceOp,beginTime,isMaser_));
+    CHK_RET(ReportHostLocalReduceTask(dst, src, sizeByte, dataType, reduceOp, beginTime, isMaster_));
+    #endif
     return HCCL_SUCCESS;
 }
 bool CpuTsThread::GetMaster() const {
-    return isMaser_;
+    return isMaster_;
 }
 
-bool CpuTsThread::SetIsMaster(bool isMaser) {
-    isMaser_ = isMaser;
+void CpuTsThread::SetIsMaster(bool isMaster) {
+    isMaster_ = isMaster;
 }
 
 }  // namespace hccl

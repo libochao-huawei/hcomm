@@ -118,7 +118,7 @@ HcclResult AicpuTsThread::BuildComStreamInfo(const HcclStreamInfo &streamInfo, H
 
 HcclResult AicpuTsThread::InitStream(HcclStreamParam &streamParam)
 {
-#ifdef CCL_KERNEL_AICPU
+    #ifdef CCL_KERNEL_AICPU
     HcclStreamInfo &streamInfo = streamParam.streamInfo;
 
     static bool isCustom = false;
@@ -171,7 +171,7 @@ HcclResult AicpuTsThread::InitStream(HcclStreamParam &streamParam)
     ret = stream_->InitSqAndCqeContext(sqHead, sqTail, sqCqeContext);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("%s InitSqAndCqeContext failed", __func__), ret);
     HCCL_INFO("%s success, streamId[%d]", __func__, stream_->id());
-#endif
+    #endif
     return HCCL_SUCCESS;
 }
 
@@ -237,8 +237,9 @@ HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId) const
     u64 beginTime = ProfGetCurCpuTimestamp();
     CHK_PTR_NULL(pImpl_);
     void* streamLitePtr = GetStreamLitePtr();
-    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     CHK_PTR_NULL(streamLitePtr);
+    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
+    CHK_PTR_NULL(streamLite);
     u32 streamId = streamLite->GetId();
     Hccl::RtsqBase* rtsq = streamLite->GetRtsq();
     CHK_PTR_NULL(rtsq);
@@ -256,8 +257,9 @@ HcclResult AicpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
     u64 beginTime = ProfGetCurCpuTimestamp();
     CHK_PTR_NULL(pImpl_);
     void* streamLitePtr = GetStreamLitePtr();
-    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     CHK_PTR_NULL(streamLitePtr);
+    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
+    CHK_PTR_NULL(streamLite);
     u32 streamId = streamLite->GetId();
     Hccl::RtsqBase* rtsq = streamLite->GetRtsq();
     CHK_PTR_NULL(rtsq);
@@ -286,8 +288,9 @@ HcclResult AicpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByt
     u64 beginTime = ProfGetCurCpuTimestamp();
     CHK_PTR_NULL(pImpl_);
     void* streamLitePtr = GetStreamLitePtr();
-    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     CHK_PTR_NULL(streamLitePtr);
+    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
+    CHK_PTR_NULL(streamLite);
     u32 streamId = streamLite->GetId();
     Hccl::RtsqBase* rtsq = streamLite->GetRtsq();
     CHK_PTR_NULL(rtsq);
@@ -306,8 +309,9 @@ HcclResult AicpuTsThread::LocalReduce(
     u64 beginTime = ProfGetCurCpuTimestamp();
     CHK_PTR_NULL(pImpl_);
     void* streamLitePtr = GetStreamLitePtr();
-    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     CHK_PTR_NULL(streamLitePtr);
+    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
+    CHK_PTR_NULL(streamLite);
     u32 streamId = streamLite->GetId();
     Hccl::RtsqBase* rtsq = streamLite->GetRtsq();
     CHK_PTR_NULL(rtsq);
@@ -438,7 +442,7 @@ bool AicpuTsThread::GetMaster() const {
     return isMaster_;
 }
 
-void AicpuTsThread::SetIsMaster(bool isMaster) const {
+void AicpuTsThread::SetIsMaster(bool isMaster) {
     isMaster_ = isMaster;
 }
 
