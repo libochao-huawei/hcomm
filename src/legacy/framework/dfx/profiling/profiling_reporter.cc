@@ -7,11 +7,11 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- #include "profiling_reporter.h"
- #include "dlprof_function.h"
- #include "communicator_impl.h"
+#include "profiling_reporter.h"
+#include "dlprof_function.h"
+#include "communicator_impl.h"
 namespace Hccl {
-thread_local std::unordered_map<u32, std::shared_ptr<Queue<std::shared_ptr<TaskInfo>>::Iterator>> ProfilingReporter::lastPoses_;
+std::array<ProfilingReporter::lastPosesMap, MAX_MODULE_DEVICE_NUM> ProfilingReporter::allLastPoses_;
 ProfilingReporter::ProfilingReporter(MirrorTaskManager *mirrorTaskMgr, ProfilingHandler* profilingHandler) 
 {
     HCCL_INFO("[ProfilingReporter]ProfilingReporter Construct start.");
@@ -66,31 +66,31 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
 {
     HCCL_INFO("[ProfilingReporter]ProfilingReporter ReportAllTasks start.");
     std::lock_guard<std::mutex> lock(profMutex);
+    s32 deviceLogicId = HrtGetDevice();
+    auto& curLastPoses = allLastPoses_[deviceLogicId];
     for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
         u32  streamId     = it->first;
         Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second;
-        if (currQueue == nullptr || currQueue->Begin() == nullptr || (*(*(currQueue->Begin()))) == nullptr 
-            || currQueue->Tail() == nullptr) {
-            HCCL_WARNING("[ProfilingReporterLite][ReportAllTasks] currQueue is nullptr, continue to next task.");
+        if (currQueue == nullptr || currQueue->Begin() == nullptr || currQueue->Tail() == nullptr) {
+            HCCL_WARNING("[ProfilingReporter][ReportAllTasks] currQueue is nullptr, continue to next task.");
             continue;
         }
-        if (lastPoses_.find(streamId) == lastPoses_.end()&& currQueue->Begin() != nullptr) {
-            TaskInfo task = (*(*(*currQueue->Begin())));
-            profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
-                                                 task.taskParam_.endTime, task.isMaster_, cachedReq, true);
-            profilingHandler_->ReportHcclTaskDetails(task, cachedReq);
-            lastPoses_[streamId] = currQueue->Begin();
+        if (*(*(currQueue->Begin())) == nullptr) {
+            HCCL_WARNING("[ProfilingReporter][ReportAllTasks] (*(*(currQueue->Begin())) is nullptr, continue to next task.");
+            continue;
         }
-        auto endPos = currQueue->Tail();
-        auto iter = lastPoses_[streamId];
-        ++(*(iter));
-        for (; (*(iter)) != (*(currQueue->End())); ++(*(iter))) {//从iter下一个开始上报
+        if (curLastPoses.find(streamId) == curLastPoses.end() && currQueue->Begin() != nullptr) { // 是首个任务
+            curLastPoses[streamId] = currQueue->Begin();
+        }
+        
+        for (auto iter = curLastPoses[streamId]; (*(iter)) != (*(currQueue->End())); ++(*(iter))) {
             TaskInfo task = (*(*(*iter)));
+            HCCL_INFO("[ProfilingReporter] ReportTask, streamId = %u, taskId = %u", task.streamId_, task.taskId_);
             profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
                                                  task.taskParam_.endTime, task.isMaster_, cachedReq, true);
             profilingHandler_->ReportHcclTaskDetails(task, cachedReq);
         }
-        lastPoses_[streamId] = endPos;
+        curLastPoses[streamId] = currQueue->End();
     }
 
     HCCL_INFO("[ProfilingReporter]ProfilingReporter ReportAllTasks end.");
@@ -110,12 +110,14 @@ void ProfilingReporter::UpdateProfStat(void)
     }
     if (enableHcclL1_ != newEnableHcclL1) {
         enableHcclL1_ = newEnableHcclL1;
+        s32 deviceLogicId = HrtGetDevice();
+        auto curLastPoses = allLastPoses_[deviceLogicId];
         for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
             u32 streamId = it->first;
             if (it->second == nullptr) {
                 continue;
             }
-            lastPoses_[streamId] = it->second->Tail();
+            curLastPoses[streamId] = it->second->End();
         }
     }
     HCCL_INFO("[ProfilingReporter]ProfilingReporter UpdateProfStat end.");
