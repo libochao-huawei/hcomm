@@ -1932,6 +1932,17 @@ HcclResult HcclAllGatherVV2(void *sendBuf, uint64_t sendCount, void *recvBuf, vo
     return HCCL_SUCCESS;
 }
 
+HcclResult ValidateRank(uint32_t rank, Hccl::HcclCommunicator *communicator)
+{
+    u32 rankSize{};
+    CHK_RET(communicator->GetRankSize(&rankSize));
+    u32 rankId{INVALID_VALUE_RANKID};
+    CHK_RET(communicator->GetRankId(rankId));    
+    CHK_RET(HcomCheckUserRankV2(rankSize, rank));
+    CHK_PRT_RET(rankId == rank, HCCL_ERROR("same rank is not allowed"), HCCL_E_PARA);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclSendV2(
     void *sendBuf, uint64_t count, HcclDataType dataType, uint32_t destRank, HcclComm comm, aclrtStream stream)
 {
@@ -1944,6 +1955,8 @@ HcclResult HcclSendV2(
     const std::string tag = "SendRecv_" + communicator->GetId();
     
     CHK_RET(HcomCheckDataTypeV2(dataType));
+    CHK_RET(ValidateRank(destRank, communicator));
+    CHK_PRT_RET(rankId == destRank, HCCL_ERROR("same rank is not allowed when SEND"), HCCL_E_PARA);
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
     CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
@@ -1984,7 +1997,7 @@ HcclResult HcclSendV2(
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllGatherVV2:success,take time: " +
+        std::string endInfo = "HcclSendV2:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(hcclSendStackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }
@@ -2004,6 +2017,7 @@ HcclResult HcclRecvV2(
     const std::string tag = "SendRecv_" + communicator->GetId();
     
     CHK_RET(HcomCheckDataTypeV2(dataType));
+    CHK_RET(ValidateRank(srcRank, communicator));
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
     CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
@@ -2044,7 +2058,7 @@ HcclResult HcclRecvV2(
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllGatherVV2:success,take time: " +
+        std::string endInfo = "HcclRecvV2:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(hcclRecvStackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }
@@ -2107,7 +2121,7 @@ HcclResult HcclReduceScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount,
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllGatherVV2:success,take time: " +
+        std::string endInfo = "HcclReduceScatterV2:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(stackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }
@@ -2259,7 +2273,7 @@ HcclResult HcclBatchSendRecvV2(HcclSendRecvItem *sendRecvInfo, uint32_t itemNum,
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllGatherVV2:success,take time: " +
+        std::string endInfo = "HcclBatchSendRecvV2:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(stackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }
