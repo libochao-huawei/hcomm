@@ -32,7 +32,8 @@ public:
     explicit TopoInfoExtractor(HcclAlgoAttr &algoAttr, HcclTopoAttr &topoAttr, const TopoType topoType);
 #ifdef CCL_LLT
     TopoInfoExtractor(std::string identifier, u32 userRank, u32 userRankSize, TopoType topoType,
-        DevType deviceType, std::vector<RankInfo>& rankVector, u32 meshAggregationRankSize = 0,
+        DevType deviceType, std::vector<RankInfo>& rankVector, HcclAlgoAttr &algoAttr, HcclTopoAttr &topoAttr,
+        u32 meshAggregationRankSize = 0,
         bool isUsedRdmaLevel0 = false, bool isUsedInterHccsMode = false, bool multiModuleDiffDeviceNumMode = false,
         bool multiSuperPodDiffServerNumMode = false, bool multiSuperPodDiffDeviceNumMode = false,
         bool isDiffDeviceType = false, u32 gcdDeviceNumPerAggregation = 0);

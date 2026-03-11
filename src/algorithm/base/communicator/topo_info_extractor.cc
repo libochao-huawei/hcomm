@@ -43,7 +43,8 @@ TopoInfoExtractor::TopoInfoExtractor(HcclAlgoAttr &algoAttr, HcclTopoAttr &topoA
 #ifdef CCL_LLT
 // 为了适配老的LLT框架提供的构造函数
 TopoInfoExtractor::TopoInfoExtractor(std::string identifier, u32 userRank, u32 userRankSize, TopoType topoType,
-    DevType deviceType, std::vector<RankInfo>& rankVector, u32 meshAggregationRankSize,
+    DevType deviceType, std::vector<RankInfo>& rankVector, HcclAlgoAttr &algoAttr, HcclTopoAttr &topoAttr,
+    u32 meshAggregationRankSize,
     bool isUsedRdmaLevel0, bool isUsedInterHccsMode, bool multiModuleDiffDeviceNumMode, bool multiSuperPodDiffServerNumMode,
     bool multiSuperPodDiffDeviceNumMode, bool isDiffDeviceType, u32 gcdDeviceNumPerAggregation)
     : identifier_(identifier), userRank_(userRank), userRankSize_(userRankSize), topoType_(topoType),
@@ -56,7 +57,10 @@ TopoInfoExtractor::TopoInfoExtractor(std::string identifier, u32 userRank, u32 u
       isConfigAHC_(false),
       isConfigNULL_(false),
       CommPlaneVector_(COMM_LEVEL_RESERVED),
-      CommPlaneSubGroupVector_(COMM_LEVEL_RESERVED)
+      CommPlaneSubGroupVector_(COMM_LEVEL_RESERVED),
+      // ========== OXC 分层框架新增 ==========
+      algoAttr_(algoAttr),
+      topoAttr_(topoAttr)
 {};
 #endif
 
@@ -1176,7 +1180,11 @@ void TopoInfoExtractor::GetCommPlaneVector(std::vector<std::vector<std::vector<R
 void TopoInfoExtractor::InitAHCConfig(std::map<HcclCMDType, std::vector<HcclAlgoType>> &algoConfig)
 {
     for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
-        std::vector<HcclAlgoType> algoType = algoConfig[static_cast<HcclCMDType>(opType)];
+        auto iter = algoConfig.find(static_cast<HcclCMDType>(opType));
+        if (iter == algoConfig.end() || iter->second.size() <= HCCL_ALGO_LEVEL_1) {
+            continue;
+        }
+        const std::vector<HcclAlgoType> &algoType = iter->second;
         isConfigAHC_ = (algoType[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_AHC ||
                         algoType[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE);
         if (isConfigAHC_) {
@@ -1185,8 +1193,12 @@ void TopoInfoExtractor::InitAHCConfig(std::map<HcclCMDType, std::vector<HcclAlgo
         }
     }
 
-    for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {  //没配置算法的情况下默认会走AHC嘛？  给测试用
-        std::vector<HcclAlgoType> algoType = algoConfig[static_cast<HcclCMDType>(opType)];
+    for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
+        auto iter = algoConfig.find(static_cast<HcclCMDType>(opType));
+        if (iter == algoConfig.end() || iter->second.size() <= HCCL_ALGO_LEVEL_0) {
+            continue;
+        }
+        const std::vector<HcclAlgoType> &algoType = iter->second;
         isConfigNULL_ = algoType[HCCL_ALGO_LEVEL_0] == HcclAlgoType::HCCL_ALGO_TYPE_NULL;
         if (isConfigNULL_) {
             HCCL_INFO("[InitAHCConfig] set NULL alg, opType[%u]", opType);
