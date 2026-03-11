@@ -659,7 +659,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
     dfxOpInfoOnce->comm_ = static_cast<void*>(collComm);
     dfxOpInfoOnce->isIndop_ = true;
-    dfxOpInfoOnce->groupName_ = collComm->GetCommId();
+    dfxOpInfoOnce->op.opTag = collComm->GetCommId();
     dfxOpInfoOnce->mainStreamId_ = cpuTsStream->id();
     dfxOpInfoOnce->index_ = collComm->UpdateIndex();
     dfxOpInfoOnce->rankSize_ = collComm->GetRankSize();

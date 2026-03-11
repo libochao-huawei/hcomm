@@ -68,8 +68,7 @@ int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, 
         ret = HcclLocalCopy(stream, &dstBuf, &srcBuf);
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
-        __func__, thread, dst, src, len), ret);
-    HCCL_INFO("[%s] SUCCESS.", __func__);
+            __func__, thread, dst, src, len), ret);
     return HCCL_SUCCESS;
 }
 
@@ -648,6 +647,7 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
         CHK_PTR_NULL(ubTransportLitePtr);
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
+        HCCL_INFO("channel streamlite ptr %p.", streamLitePtr);
 
         EXECEPTION_CATCH(ubTransportLitePtr->Post(remoteNotifyIdx, *streamLitePtr), ret = HCCL_E_INTERNAL);
     } else {
@@ -815,7 +815,7 @@ HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupn
     //FlagTaskInfo Report
     Hccl::FlagTaskInfo flagTaskInfo;
     flagTaskInfo.streamId = streamLitePtr->GetId();
-    flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId();
+    flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId() - 1;
     flagTaskInfo.type = Hccl::MainStreamTaskType::TAIL;
     Hccl::ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
 
