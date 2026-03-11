@@ -74,7 +74,6 @@ struct ExternalInput {
     u32 rdmaServerLevel;
     u32 rdmaTimeOut;        // RDMA超时时间，配置范围5-24，默认值为20
     u32 rdmaRetryCnt;       // RDMA重传次数，配置范围1-7，默认值为7
-    u32 taskExceptionSwitch;    // task_exception_handler ctx子任务维度开关，默认0（关闭）
     u32 qpsPerConnection;   // 用于多QP散列场景下，指定两个rank之间的连接个数
     u32 multiQpThreshold;    // 多QP散列下，每个QP分担的数据量阈值，小于这个阈值则不切分多QP
     u32 retryMaxCnt;          // 重执行最大尝试次数，配置范围[0,60000]，默认值为3
@@ -134,7 +133,6 @@ struct ExternalInput {
         rdmaServerLevel = HCCL_RDMA_SL_DEFAULT;
         rdmaTimeOut = HCCL_RDMA_TIMEOUT_DEFAULT;
         rdmaRetryCnt = HCCL_RDMA_RETRY_CNT_DEFAULT;
-        taskExceptionSwitch = 0;
         qpsPerConnection = HCCL_QPS_PER_CONNECTION_DEFAULT;
         multiQpThreshold = HCCL_MULTI_QP_THRESHOLD_DEFAULT;
         retryMaxCnt = HCCL_RETRY_MAXCNT_DEFAULT;
@@ -230,8 +228,6 @@ HcclResult ParseCclBufferSize();
 HcclResult ParseDeterministic();
 
 HcclResult ParseHcclPiplineModeEnable();
-
-HcclResult ParseTaskExceptionSwitch();
 
 HcclResult ParseEntryLogEnable();
 

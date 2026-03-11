@@ -141,7 +141,7 @@ HcclResult DispatcherGraph::SignalTaskParaSave(HcclRtNotify signal, Stream &stre
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
     if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
+        callback_ != nullptr) {
         u64 notifyID;
         CHK_RET(GetNotifyDfxInfo(signal, userRank, offset, remoteUserRank, notifyID));
         hccl::TaskParaNotify para(notifyID, stage, remoteUserRank, (ctxIdx - 1));
@@ -249,7 +249,7 @@ HcclResult DispatcherGraph::MemcpyAsync(hccl::DeviceMem &dst, const hccl::Device
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
     if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
+        callback_ != nullptr) {
         hccl::TaskParaDMA para(src.ptr(), dst.ptr(), src.size(), inLinkType, remoteUserRank,
             hccl::RdmaType::RDMA_TYPE_RESERVED, (ctxIdx - 1));
         struct TaskPara taskPara;
@@ -300,7 +300,7 @@ HcclResult DispatcherGraph::ReduceAsync(const void *src, void *dst, u64 dataCoun
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
     if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
+        callback_ != nullptr) {
         hccl::TaskParaReduce para(src, dst, dataCount * SIZE_TABLE[datatype], redOp, datatype,
                 LinkType::LINK_ONCHIP, INVALID_VALUE_RANKID, (ctxIdx - 1));
         struct TaskPara taskPara;
@@ -348,7 +348,7 @@ HcclResult DispatcherGraph::InlineReduceAsync(const void *src, u64 dataCount, co
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
     if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
+        callback_ != nullptr) {
         hccl::TaskParaReduce para(src, dst, dataCount * SIZE_TABLE[datatype], redOp, datatype, inLinkType,
             remoteUserRank, (ctxIdx - 1));
         struct TaskPara taskPara;
@@ -397,7 +397,7 @@ HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct SendW
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
     if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
+        callback_ != nullptr) {
         hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.bufList[0].addr)),
                             reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dstAddr)),
                             wr.bufList[0].len, notifyID, hccl::LinkType::LINK_ROCE, RdmaType::RDMA_SEND_PAYLOAD,
@@ -448,7 +448,7 @@ HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct SendW
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
     if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
+        callback_ != nullptr) {
         hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.bufList[0].addr)),
                             reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dstAddr)),
                             wr.bufList[0].len, notifyID, hccl::LinkType::LINK_ROCE, RdmaType::RDMA_SEND_NOTIFY,
@@ -547,7 +547,7 @@ HcclResult DispatcherGraph::SetGraphTailVectorReduceDescSdma(void *devMem, const
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
     if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
+        callback_ != nullptr) {
         hccl::TaskParaDMA para(tailSrc, devMem, count, LinkType::LINK_ONCHIP, INVALID_VALUE_RANKID,
             hccl::RdmaType::RDMA_TYPE_RESERVED, (ctxIdx - 1));
         struct TaskPara taskPara;
@@ -586,7 +586,7 @@ HcclResult DispatcherGraph::SetGraphDescVectorReduce(const void *src, const void
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
     if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
+        callback_ != nullptr) {
         hccl::TaskParaReduce para(src, dst, count * SIZE_TABLE[dataType], redOp, dataType,
             LinkType::LINK_ONCHIP, INVALID_VALUE_RANKID, (ctxIdx - 1));
         struct TaskPara taskPara;
