@@ -211,6 +211,10 @@ target_link_libraries(topoaddrinfo PRIVATE
     -ldl
 )
 
+install(TARGETS  topoaddrinfo
+    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+)
+
 # 需要链接的库，后需增加
 IF (NOT DEFINED ENV{HCCL_LOCAL_BUILD})
 target_link_libraries(hccl_v2 PRIVATE
