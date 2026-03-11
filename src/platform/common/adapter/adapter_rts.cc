@@ -1014,8 +1014,7 @@ HcclResult hrtIpcSetMemoryName(void *ptr, u8 *name, u64 ptrMaxLen, u32 nameMaxLe
     CHK_PTR_NULL(ptr);
     CHK_PTR_NULL(name);
 #ifndef HCCD
-    // flag 预留字段填 0
-    aclError rtRet = aclrtIpcMemGetExportKey(ptr, ptrMaxLen, reinterpret_cast<char *>(name), nameMaxLen, 0UL);
+    aclError rtRet = aclrtIpcMemGetExportKey(ptr, ptrMaxLen, reinterpret_cast<char *>(name), nameMaxLen, 1UL);
 #else
     static auto funcPtr =
         (aclError(*)(void *, size_t, char *, size_t, uint64_t))g_dlAcl.Handle<ACL_RT_IPC_MEM_GET_EXPORT_KEY>();
