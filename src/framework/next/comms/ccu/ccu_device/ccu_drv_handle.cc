@@ -21,6 +21,8 @@
 #include "ccu_res_batch_allocator.h"
 #include "ccu_kernel_mgr.h"
 
+#include "adapter_rts.h"
+
 namespace hcomm {
 
 static HcclResult HccpRaTlvRequest(const TlvHandle tlvHandle,
@@ -47,9 +49,10 @@ static HcclResult HccpRaTlvRequest(const TlvHandle tlvHandle,
 HcclResult CcuDrvHandle::Init()
 {
     HCCL_RUN_INFO("[CcuDrvHandle][%s], deviceLogicId: %d", __func__, devLogicId_);
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId_), devPhyId_));
     // 初始化CCU平台层能力，有时序要求
     // 当前走进A5通信域，暂时不需要主动拉起
-    auto &tlvHdcMgr = HccpTlvHdcMgr::GetInstance(devLogicId_);
+    auto &tlvHdcMgr = HccpTlvHdcMgr::GetInstance(devPhyId_);
     CHK_RET(tlvHdcMgr.Init());
     tlvHandle_ = tlvHdcMgr.GetHandle();
     CHK_PTR_NULL(tlvHandle_);
