@@ -30,13 +30,27 @@ HcclResult UrmaEndpoint::Init()
         return HCCL_E_PARA;
     }
     Hccl::IpAddress ipAddr{};
-    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+    HcclResult ret = CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr);
+    if(ret!= HCCL_SUCCESS) {
+        HCCL_ERROR("call CommAddrToIpAddress failed");
+        return ret;
+    }
+
 
     u32 devPhyId;
     s32 deviceLogicId;
-    CHK_RET(hrtGetDevice(&deviceLogicId));
+    ret = hrtGetDevice(&deviceLogicId);
+    if(ret != HCCL_SUCCESS){
+        HCCL_ERROR("call hrtGetDevice failed, deviceLogicId[%d]", deviceLogicId);
+        return ret;
+    }
     Hccl::HccpHdcManager::GetInstance().Init(deviceLogicId);
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId));
+    ret = hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId);
+    if(ret!= HCCL_SUCCESS){
+        HCCL_ERROR("call hrtGetDevicePhyIdByIndex failed, deviceLogicId[%d], devPhyId[%u]",deviceLogicId, devPhyId);
+        return ret;
+    }
+
     if (endpointDesc_.loc.device.devPhyId != devPhyId){
         HCCL_WARNING("[UrmaEndpoint][%s] endpointDesc.loc.device.devPhyId[%u] incorrect", __func__, endpointDesc_.loc.device.devPhyId);
         endpointDesc_.loc.device.devPhyId = devPhyId;   // 当前endpointDesc.loc.device.devPhyId不准，暂时由查询的devPhyId赋值

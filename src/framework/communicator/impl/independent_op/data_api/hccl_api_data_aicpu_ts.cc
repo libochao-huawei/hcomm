@@ -750,3 +750,52 @@ int32_t HcommChannelFence(ChannelHandle channel)
     HCCL_DEBUG("[%s] channel[0x%llx].", __func__, channel);
     return HCCL_E_NOT_SUPPORT;
 }
+
+int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
+{
+    hccl::Thread *threadPtr = reinterpret_cast<hccl::Thread *>(thread);
+    CHK_PTR_NULL(threadPtr);
+
+    HCCL_INFO("[%s] START. thread[0x%llx].", __func__, thread);
+
+    if (threadPtr->IsDeviceA5()) {
+        HCCL_INFO("[%s] Running on A5.", __func__);
+        CHK_PRT(CommTaskLaunch(&thread, 1));
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        CHK_PTR_NULL(streamLitePtr);
+        auto *const rtsqPtr = streamLitePtr->GetRtsq();
+        CHK_PTR_NULL(rtsqPtr);
+
+        uint32_t head = 0;
+        uint32_t tail = 0;
+        uint32_t sqId = streamLitePtr->GetSqId();
+        EXECEPTION_CATCH(tail = rtsqPtr->QuerySqTail(), return HCCL_E_INTERNAL);
+        HCCL_INFO("[%s] aicpu stream sqid[%u] tail[%u]", __func__, sqId, tail);
+
+        u64 startUsec = GetCurAicpuTimestamp();
+        u64 lastUsec = startUsec;
+        constexpr uint64_t NANOSECOND_TO_SECOND = 1000000000U;
+        const uint64_t kPrintSqInterval = 30U;
+        do {
+            EXECEPTION_CATCH(head = rtsqPtr->QuerySqHead(), return HCCL_E_INTERNAL);
+            u64 curUsec = GetCurAicpuTimestamp();
+            if (curUsec - startUsec > NANOSECOND_TO_SECOND * timeout) {
+                HCCL_ERROR("[%s] timeout %us. curhead:%u, curtail:%u, sqId:%u",
+                    __func__, timeout, head, tail, sqId);
+                return HCCL_E_TIMEOUT;
+            }
+
+            // 等待下发阶段，每隔30s打印一次状态
+            if (curUsec - lastUsec > NANOSECOND_TO_SECOND * kPrintSqInterval) {
+                lastUsec = curUsec;
+                HCCL_RUN_INFO("[%s]Current state. sqid:%d, head:%u, tail:%u",
+                    __func__, sqId, head, tail);
+            }
+        } while (head != tail);
+        HCCL_INFO("[%s] SUCCESS. RTSQ's head[%u] == tail[%u].", __func__, head, tail);
+        return HCCL_SUCCESS;
+    }
+
+    HCCL_ERROR("[%s]Does not support this interface.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
