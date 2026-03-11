@@ -219,7 +219,7 @@ HcclResult HcclGetRawCollCommHandle(const char *commName, HcclComm *commHandle)
         HCCL_ERROR("[HcclGetRawCollCommHandle] commName [%s] not found, please check.", commName);
         return HCCL_E_PARA;
     }
-    *commHandle = static_cast<HcclComm>(opBaseHcom.opGroup2CommMap[commName]);
+    *commHandle = static_cast<HcclComm>(opBaseHcom.opGroup2CommMap[commName].get());
 #endif
     return HCCL_SUCCESS;
 }
