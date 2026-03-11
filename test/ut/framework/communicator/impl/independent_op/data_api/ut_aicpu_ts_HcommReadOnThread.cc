@@ -11,12 +11,15 @@
 #include "gtest/gtest.h"
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
+#include <cstring>
 #include "ub_transport_lite_impl.h"
 
 #define private public
 #include "aicpu_ts_thread.h"
 #include "aicpu_ts_thread_interface.h"
 #undef private
+
+#include "resource_entities.h"
 
 using namespace hccl;
 
@@ -32,6 +35,11 @@ protected:
         threadOnDevice.devType_ = DevType::DEV_TYPE_910_95;
         threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
         threadOnDevice.pImpl_->streamLiteVoidPtr_ = reinterpret_cast<void *>(0x123);
+
+        memset(&threadEntity_, 0, sizeof(threadEntity_));
+        threadEntity_.type = THREAD_TYPE_TS;
+        threadEntity_.engine = COMM_ENGINE_AICPU;
+        threadEntity_.threadObjAddr = reinterpret_cast<uint64_t>(&threadOnDevice);
     }
 
     virtual void TearDown() override
@@ -39,18 +47,17 @@ protected:
         GlobalMockObject::verify();
     }
 
-private:
-    private:
     AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
-    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
+    ThreadEntity threadEntity_{};
+    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadEntity_);
     uint64_t tempDst[6] = {0};
     uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
     void *dst = reinterpret_cast<void *>(tempDst);
     void *src = reinterpret_cast<void *>(tempSrc);
-    uint64_t len = sizeof(tempDst);std::vector<char> uniqueId;
+    uint64_t len = sizeof(tempDst);
+    std::vector<char> uniqueId;
     Hccl::UbTransportLiteImpl transportDev{uniqueId};
     ChannelHandle devHandle = reinterpret_cast<ChannelHandle>(&transportDev);
-    
 };
 
 TEST_F(UtAicpuTsHcommReadOnThreadTest, Ut_HcommReadOnThread_When_buffer_not_find_Expect_HCCL_E_INTERNAL)

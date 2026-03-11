@@ -51,6 +51,11 @@ inline HcclResult RecordAicpuTsToAicpuTs(const ThreadEntity &srcEnt, const Threa
     auto *const dstThreadPtr = reinterpret_cast<AicpuTsThread *>(dstEnt.threadObjAddr);
     CHK_PTR_NULL(dstThreadPtr);
 
+    if (dstNotifyIdx >= dstEnt.notifyNum) {
+        HCCL_ERROR("[%s] dstNotifyIdx[%u] is out of range, notifyNum[%u].", __func__, dstNotifyIdx, dstEnt.notifyNum);
+        return HCCL_E_PARA;
+    }
+
     if (threadPtr->IsDeviceA5()) {
         LocalNotify *const notifyPtr = dstThreadPtr->GetNotify(dstNotifyIdx);
         CHK_PTR_NULL(notifyPtr);
@@ -83,6 +88,12 @@ inline HcclResult RecordAicpuTsToCpu(const ThreadEntity &srcEnt, const ThreadEnt
 }
 
 inline HcclResult RecordCpuToAicpuTs(const ThreadEntity &srcEnt, const ThreadEntity &dstEnt, uint32_t dstNotifyIdx) {
+    auto *const dstThreadPtr = reinterpret_cast<AicpuTsThread *>(dstEnt.threadObjAddr);
+    CHK_PTR_NULL(dstThreadPtr);
+    if (!dstThreadPtr->IsDeviceA5()) {
+        HCCL_ERROR("[%s] CPU -> AICPU-TS is NOT supported on non-A5 device.", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
     const ThreadHandle srcHdl = reinterpret_cast<ThreadHandle>(&srcEnt);
     const ThreadHandle dstHdl = reinterpret_cast<ThreadHandle>(&dstEnt);
     RecordServiceArgs tempRecordArgs = {

@@ -33,7 +33,7 @@ struct TestServiceArgs {
     uint64_t param2;
 };
 
-class UtHostDpuHcommRequestServiceOnThread : public testing::Test
+class UtAicpuTsHcommRequestServiceOnThread : public testing::Test
 {
 protected:
     virtual void SetUp() override
@@ -78,7 +78,7 @@ protected:
 };
 
 // test_01: normal case - args copied to heap, enqueued, msgId incremented -> HCCL_SUCCESS
-TEST_F(UtHostDpuHcommRequestServiceOnThread,
+TEST_F(UtAicpuTsHcommRequestServiceOnThread,
     Ut_HcommRequestServiceOnThread_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
     ThreadHandle cpuHandle = reinterpret_cast<ThreadHandle>(&cpuBuf_.entity);
@@ -95,7 +95,7 @@ TEST_F(UtHostDpuHcommRequestServiceOnThread,
 }
 
 // test_02: dstThread = 0 (null) -> HCCL_E_PTR
-TEST_F(UtHostDpuHcommRequestServiceOnThread,
+TEST_F(UtAicpuTsHcommRequestServiceOnThread,
     Ut_HcommRequestServiceOnThread_When_DstThreadIsNull_Expect_ReturnIsHCCL_E_PTR)
 {
     res_ = HcommRequestServiceOnThread(0, kValidService, &testArgs_, sizeof(testArgs_));
@@ -103,7 +103,7 @@ TEST_F(UtHostDpuHcommRequestServiceOnThread,
 }
 
 // test_03: serviceHandle = 0 (null) -> HCCL_E_PTR
-TEST_F(UtHostDpuHcommRequestServiceOnThread,
+TEST_F(UtAicpuTsHcommRequestServiceOnThread,
     Ut_HcommRequestServiceOnThread_When_ServiceHandleIsNull_Expect_ReturnIsHCCL_E_PTR)
 {
     ThreadHandle cpuHandle = reinterpret_cast<ThreadHandle>(&cpuBuf_.entity);
@@ -112,7 +112,7 @@ TEST_F(UtHostDpuHcommRequestServiceOnThread,
 }
 
 // test_04: args = nullptr -> HCCL_E_PTR
-TEST_F(UtHostDpuHcommRequestServiceOnThread,
+TEST_F(UtAicpuTsHcommRequestServiceOnThread,
     Ut_HcommRequestServiceOnThread_When_ArgsIsNull_Expect_ReturnIsHCCL_E_PTR)
 {
     ThreadHandle cpuHandle = reinterpret_cast<ThreadHandle>(&cpuBuf_.entity);
@@ -121,7 +121,7 @@ TEST_F(UtHostDpuHcommRequestServiceOnThread,
 }
 
 // test_05: dstThread type = TS (unsupported) -> HCCL_E_NOT_SUPPORT
-TEST_F(UtHostDpuHcommRequestServiceOnThread,
+TEST_F(UtAicpuTsHcommRequestServiceOnThread,
     Ut_HcommRequestServiceOnThread_When_ThreadTypeIsTs_Expect_ReturnIsHCCL_E_NOT_SUPPORT)
 {
     SvcThreadEntityBuffer tsBuf;
@@ -135,7 +135,7 @@ TEST_F(UtHostDpuHcommRequestServiceOnThread,
 }
 
 // test_06: sendQueue full ((tail+1)%capacity == head) -> HCCL_E_INTERNAL
-TEST_F(UtHostDpuHcommRequestServiceOnThread,
+TEST_F(UtAicpuTsHcommRequestServiceOnThread,
     Ut_HcommRequestServiceOnThread_When_SendQueueIsFull_Expect_ReturnIsHCCL_E_INTERNAL)
 {
     // capacity=4, set head=0, tail=3: nextTail = (3+1)%4 = 0 = head -> full
@@ -148,7 +148,7 @@ TEST_F(UtHostDpuHcommRequestServiceOnThread,
 }
 
 // test_07: unregistered but non-null serviceHandle - message written normally -> HCCL_SUCCESS
-TEST_F(UtHostDpuHcommRequestServiceOnThread,
+TEST_F(UtAicpuTsHcommRequestServiceOnThread,
     Ut_HcommRequestServiceOnThread_When_UnregisteredService_Expect_ReturnIsHCCL_SUCCESS)
 {
     const ThreadServiceHandle unregisteredService = 0xABCD;
