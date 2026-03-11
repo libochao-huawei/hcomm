@@ -1369,14 +1369,10 @@ void TaskExceptionHandler::Callback(rtExceptionInfo *exceptionInfo)
         HCCL_WARNING("deviceID[%u] from exceptionInfo is bigger than maxDeviceNum[%u]",
         exceptionInfo->deviceid, maxDeviceNum),);
     SaluSleep(ONE_MILLISECOND_OF_USLEEP); // sleep 1ms，等待task被存入数据结构
-    HCCL_DEBUG("[TaskExceptionHandler][Callback]Task run failed, ffts+ task type:%d, TaskExceptionSwitch:%u",
-        exceptionInfo->expandInfo.type, GetExternalInputTaskExceptionSwitch());
+    HCCL_DEBUG("[TaskExceptionHandler][Callback]Task run failed, ffts+ task type:%d",
+        exceptionInfo->expandInfo.type);
     if (exceptionInfo->expandInfo.type == RT_EXCEPTION_FFTS_PLUS) {
-        if (GetExternalInputTaskExceptionSwitch() == 1) {
-            DealExceptionCtx(exceptionInfo);     // 子任务粒度
-        } else {
-            DealExceptionOp(exceptionInfo);      // 算子粒度
-        }
+        DealExceptionOp(exceptionInfo);      // 算子粒度
     } else {
         DealExceptionTask(exceptionInfo);
     }
@@ -1400,8 +1396,7 @@ HcclResult TaskExceptionHandler::Init()
     HCCL_INFO("get from RTS the max stream count[%u] the max task count[%u]", maxStrCount, maxTaskCount);
 
     if (GetExternalInputHcclEnableFfts() &&
-        GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1) {
+        GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
         for (std::vector<CtxInfo> &ctxInfoVector : ctxInfoArray) {
             ctxInfoVector.reserve(100); // vector预留100个ctxInfo空间
         }
@@ -1443,8 +1438,7 @@ HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 tas
     HCCL_INFO("[TaskExceptionHandler][%s]Save task info, streamId[%u], taskId[%u], taskType[%d]", __func__,
         streamID, taskID, taskType);
     if (GetExternalInputHcclEnableFfts() &&
-        GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && !IsOneSideTask(captureStreamID)) {
+        GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !IsOneSideTask(captureStreamID)) {
         std::unique_lock<std::mutex> lock(ctxInfoVectorMutex[deviceLogicId_]);  // 防止存入和读取冲突
         CtxInfo tmpCtxInfo(taskType, para);
         ctxInfoArray[deviceLogicId_].insert(ctxInfoArray[deviceLogicId_].end(), tmpCtxInfo);
@@ -1481,8 +1475,7 @@ HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 tas
     HCCL_INFO("[TaskExceptionHandler][%s]Save task info, streamId[%u], taskId[%u], taskType[%d]", __func__,
         streamID, taskID, taskType);
     if (GetExternalInputHcclEnableFfts() &&
-        GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && !IsOneSideTask(captureStreamID)) {
+        GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !IsOneSideTask(captureStreamID)) {
         std::unique_lock<std::mutex> lock(ctxInfoVectorMutex[deviceLogicId_]);  // 防止存入和读取冲突
         CtxInfo tmpCtxInfo(taskType, para);
         ctxInfoArray[deviceLogicId_].insert(ctxInfoArray[deviceLogicId_].end(), tmpCtxInfo);
@@ -1518,8 +1511,7 @@ HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 tas
     HCCL_INFO("[TaskExceptionHandler][%s]Save task info, streamId[%u], taskId[%u], taskType[%d]", __func__,
         streamID, taskID, taskType);
     if (GetExternalInputHcclEnableFfts() &&
-        GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && !IsOneSideTask(captureStreamID)) {
+        GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !IsOneSideTask(captureStreamID)) {
         std::unique_lock<std::mutex> lock(ctxInfoVectorMutex[deviceLogicId_]);  // 防止存入和读取冲突
         CtxInfo tmpCtxInfo(taskType, para);
         ctxInfoArray[deviceLogicId_].insert(ctxInfoArray[deviceLogicId_].end(), tmpCtxInfo);
@@ -1585,11 +1577,7 @@ HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 tas
     u32 index = 0;
     ProfilerBase::GetSubmittedOpCnt(index);
 
-    if (GetExternalInputTaskExceptionSwitch() == 1) {
-        CHK_RET(InsertOpCtxInfo(streamID, taskID, tag, algType, index));
-    } else {
-        CHK_RET(InsertOpMap(streamID, taskID, tag, algType, index));
-    }
+    CHK_RET(InsertOpMap(streamID, taskID, tag, algType, index));
     CHK_RET(InsertRankInfo(tag));
     CHK_RET(InsertOpData(tag));
     return HCCL_SUCCESS;

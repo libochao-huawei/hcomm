@@ -310,21 +310,6 @@ HcclResult InitEnvVarParam()
             ret),
         ret);
 
-    // 解析ffts+模式（子任务粒度）下task_exception_handler开关
-    ret = ParseTaskExceptionSwitch();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS,
-        "EI0001",
-        std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_DIAGNOSE_ENABLE), "HCCL_DIAGNOSE_ENABLE", "0 or 1."}));
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_DIAGNOSE_ENABLE failed. "
-                   "errorno[%d]",
-            LOG_KEYWORDS_INIT_GROUP.c_str(),
-            LOG_KEYWORDS_ENV_CONFIG.c_str(),
-            HCCL_ERROR_CODE(ret),
-            ret),
-        ret);
-
     // 解析Entry日志开关
     ret = ParseEntryLogEnable();
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
@@ -1368,31 +1353,6 @@ void SetProfConfig(u64 profConfig)
     HCCL_INFO("[%s]Set profConfig[%x]", __func__, profConfig);
 }
 
-HcclResult ParseTaskExceptionSwitch()
-{
-    // task_exception_handler调测开关，默认关闭 (0)
-    std::string taskExceptionSwitchEnv = GET_ENV(MM_ENV_HCCL_DIAGNOSE_ENABLE);
-    if (taskExceptionSwitchEnv == "EmptyString") {
-        HCCL_RUN_INFO("[HCCL_ENV] HCCL_DIAGNOSE_ENABLE set by default to [0]");
-        return HCCL_SUCCESS;
-    }
-    u32 taskExceptionSwitchConfig = 0;
-    bool isEnvLenValid = CheckEnvLen(taskExceptionSwitchEnv.c_str(), MAX_LEN_OF_DIGIT_ENV);
-    CHK_PRT_RET(!isEnvLenValid, HCCL_ERROR("[Parse][TaskExceptionSwitch]errNo[0x%016llx] Invalid" \
-        " HCCL_DIAGNOSE_ENABLE env len, len is bigger than [%u]. errorno[%d]",
-        HCCL_ERROR_CODE(HCCL_E_PARA), MAX_LEN_OF_DIGIT_ENV, HCCL_E_PARA), HCCL_E_PARA);
-    CHK_RET(IsAllDigit(taskExceptionSwitchEnv.c_str()));
-    CHK_RET(SalStrToULong(taskExceptionSwitchEnv.c_str(), HCCL_BASE_DECIMAL, taskExceptionSwitchConfig));
-    if ((taskExceptionSwitchConfig != 0) && (taskExceptionSwitchConfig != 1)) {
-        HCCL_ERROR("[Get][TaskExceptionSwitch]environmental digit variable error, taskExceptionSwitchConfig[%u]",
-            taskExceptionSwitchConfig);
-        return HCCL_E_PARA;
-    }
-    HCCL_RUN_INFO("[HCCL_ENV] HCCL_DIAGNOSE_ENABLE set by environment to [%u]", taskExceptionSwitchConfig);
-    g_externalInput.taskExceptionSwitch = taskExceptionSwitchConfig;
-    return HCCL_SUCCESS;
-}
-
 HcclResult ParseRdmaQpsPerConnection()
 {
     g_externalInput.qpsPerConnection = HCCL_QPS_PER_CONNECTION_DEFAULT;
@@ -1812,11 +1772,6 @@ const u32& GetExternalInputRdmaTimeOut()
 const u32& GetExternalInputRdmaRetryCnt()
 {
     return g_externalInput.rdmaRetryCnt;
-}
-
-const u32& GetExternalInputTaskExceptionSwitch()
-{
-    return g_externalInput.taskExceptionSwitch;
 }
 
 const u32& GetExternalInputIntraRoceSwitch()
