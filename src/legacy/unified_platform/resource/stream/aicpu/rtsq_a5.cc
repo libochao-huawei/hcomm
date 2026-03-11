@@ -165,7 +165,7 @@ void RtsqA5::LaunchTask()
     // 清空本地的locBuffer和sqeCnt数目
     pendingSqeCnt = 0;
     (void)memset_s(locBuf, rtsqSqeSize * perLaunchSqeCnt, 0, rtsqSqeSize * perLaunchSqeCnt); // locBuffer清零
-    HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqTail_[%u]", __func__, pendingSqeCnt, sqTail_);
+    HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqHead_[%u] sqTail_[%u]", __func__, pendingSqeCnt, sqHead_, sqTail_);
 }
 
 u8 *RtsqA5::GetCurrSqeBuffer()
