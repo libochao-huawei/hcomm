@@ -203,15 +203,33 @@ void HcomUnSetGroupTopoInfo(const char *group)
     return;
 }
 
+
+HcclResult HcclGetRawCollCommHandle(const char *commName, HcclComm *commHandle)
+{
+#if ((!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU)))
+    CHK_PTR_NULL(commName);
+    CHK_PTR_NULL(commHandle);
+    
+    HcclOpInfoCtx &opBaseHcom = GetHcclOpInfoCtx();
+    std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
+
+    HCCL_INFO("[HcclGetRawCollCommHandle] group:[%s]",commName);
+    auto iter = opBaseHcom.opGroup2CommMap.find(commName);
+    if (iter == opBaseHcom.opGroup2CommMap.end()) {
+        HCCL_ERROR("[HcclGetRawCollCommHandle] commName [%s] not found, please check.", commName);
+        return HCCL_E_PARA;
+    }
+    *commHandle = static_cast<HcclComm>(opBaseHcom.opGroup2CommMap[commName]);
+#endif
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle)
 {
     CHK_PTR_NULL(commHandle);
     CHK_PTR_NULL(group);
 #if ((!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU)))
-    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if (indOp == nullptr || strcmp(indOp, "") == 0) {
-        HCCLV2_FUNC_RUN(HcclGetRawCommHandle(group, commHandle));
-    }
+    HCCLV2_FUNC_RUN(HcclGetRawCollCommHandle(group, commHandle));
 #endif
     std::shared_ptr<hcclComm> hcclComm;
     s32 deviceLogicId = 0;
