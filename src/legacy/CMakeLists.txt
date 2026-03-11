@@ -207,6 +207,16 @@ add_library(topoaddrinfo SHARED
     ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/product_server.c
 )
 
+target_include_directories(topoaddrinfo PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/base/inc
+    ${HCCL_BASE_DIR}/src/pub_inc
+    ${HCCL_BASE_DIR}/include
+    ${HCCL_BASE_DIR}/inc/adapter
+    ${ASCEND_CANN_PACKAGE_PATH}/include/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+)
+
 target_link_libraries(topoaddrinfo PRIVATE
     dl
     c_sec
