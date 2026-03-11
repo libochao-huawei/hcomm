@@ -592,6 +592,13 @@ struct SendWrData {
 
     union {
         struct {
+            uint64_t wrId;
+            enum RaWrOpcode opcode;
+            unsigned int flags; /**< reference to ra_send_flags */
+            struct WrAuxInfo aux; /**< aux info */
+        } rdma;
+
+        struct {
             uint64_t userCtx;
             enum RaUbOpcode opcode; /**< refer to urma_opcode_t */
             union JfsWrFlag flags; /**< refer to urma_jfs_wr_flag_t */
