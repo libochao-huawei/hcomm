@@ -97,8 +97,12 @@ UbMemoryTransport::UBTransportStatus UbMemoryTransport::StateMachine()
             RecvMemInfo();
             ubStatus = UBTransportStatus::RECV_MEM_INFO;
             break;
-        // 预留状态机，当前方案未使用
         case UBTransportStatus::RECV_MEM_INFO:
+            RecvMemProcess();
+            ubStatus = UBTransportStatus::RECV_MEM_INFO_PROCESS;
+            break;
+        // 预留状态机，当前方案未使用
+        case UBTransportStatus::RECV_MEM_INFO_PROCESS:
             ubStatus = UBTransportStatus::SEND_NAME;
             break;
         case UBTransportStatus::SEND_NAME:
@@ -124,7 +128,7 @@ void UbMemoryTransport::SendMemInfo()
 
     std::vector<char> data;
     binaryStream.Dump(data);
-    socket->Send(reinterpret_cast<u8 *>(&data[0]), data.size());
+    socket->SendAsync(reinterpret_cast<u8 *>(&data[0]), data.size());
     exchangeDataSize = data.size();
     HCCL_INFO("[%s] finished", __func__);
 }
@@ -138,11 +142,14 @@ void UbMemoryTransport::HandshakeMsgPack(BinaryStream &binaryStream)
 
 void UbMemoryTransport::RecvMemInfo()
 {
-    vector<char> data(exchangeDataSize);
-    socket->Recv(reinterpret_cast<u8 *>(&data[0]), data.size());
-    HCCL_INFO("recv data, size=%llu, data=%s", data.size(), Bytes2hex(data.data(), data.size()).c_str());
+    recvDataMsg.resize(exchangeDataSize);
+    socket->RecvAsync(reinterpret_cast<u8 *>(&recvDataMsg[0]), recvDataMsg.size());
+    HCCL_INFO("recv data, size=%llu, data=%s", recvDataMsg.size(), Bytes2hex(recvDataMsg.data(), recvDataMsg.size()).c_str());
+}
 
-    BinaryStream binaryStream(data);
+void UbMemoryTransport::RecvMemProcess()
+{
+    BinaryStream binaryStream(recvDataMsg);
     HandshakeMsgUnpack(binaryStream);
     RmtBufferUnpackProc(binaryStream);
 }
