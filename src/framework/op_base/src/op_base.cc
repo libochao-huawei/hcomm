@@ -1951,6 +1951,17 @@ void HcclResetIfProfile()
 HcclResult HcclBroadcastInner(void *buf, uint64_t count, HcclDataType dataType, uint32_t root, HcclComm comm,
                          aclrtStream stream)
 {
+    // 入参合法性校验
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "stream", "non-null pointer"}));
+    CHK_PTR_NULL(stream);
+    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclBroadcastInner", "nullptr", "comm", "non-null pointer"}));
+    CHK_PTR_NULL(comm);
+    RPT_INPUT_ERR(buf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclBroadcastInner", "nullptr", "buf", "non-null pointer"}));
+    CHK_PTR_NULL(buf);
+    
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_BROADCAST;
@@ -1979,13 +1990,6 @@ HcclResult HcclBroadcastInner(void *buf, uint64_t count, HcclDataType dataType, 
 
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return broadcast success"), HCCL_SUCCESS);
 
-    // 入参合法性校验
-    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclBroadcastInner", "nullptr", "comm", "non-null pointer"}));
-    CHK_PTR_NULL(comm);
-    RPT_INPUT_ERR(buf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclBroadcastInner", "nullptr", "buf", "non-null pointer"}));
-    CHK_PTR_NULL(buf);
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclBroadcastV2(buf, count, dataType, root, comm, stream));
 #endif
@@ -2070,7 +2074,22 @@ HcclResult HcclBroadcastInner(void *buf, uint64_t count, HcclDataType dataType, 
 
 HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType,
                              HcclReduceOp op, HcclComm comm, aclrtStream stream)
-{
+{    
+    // 入参合法性校验
+    CHK_PRT_RET(recvCount == 0, HCCL_WARNING("input recvCount is 0, return ReduceScatter success"), HCCL_SUCCESS);
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "stream", "non-null pointer"}));
+    CHK_PTR_NULL(stream);
+    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclReduceScatterInner", "nullptr", "comm", "non-null pointer"}));
+    CHK_PTR_NULL(comm);
+    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclReduceScatterInner", "nullptr", "sendBuf", "non-null pointer"}));
+    CHK_PTR_NULL(sendBuf);
+    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclReduceScatterInner", "nullptr", "recvBuf", "non-null pointer"}));
+    CHK_PTR_NULL(recvBuf);
+
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_REDUCE_SCATTER;
@@ -2097,17 +2116,6 @@ HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCou
     }
     uint64_t beginTime = hrtMsprofSysCycleTime();
 
-    CHK_PRT_RET(recvCount == 0, HCCL_WARNING("input recvCount is 0, return ReduceScatter success"), HCCL_SUCCESS);
-    // 入参合法性校验
-    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclReduceScatterInner", "nullptr", "comm", "non-null pointer"}));
-    CHK_PTR_NULL(comm);
-    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclReduceScatterInner", "nullptr", "sendBuf", "non-null pointer"}));
-    CHK_PTR_NULL(sendBuf);
-    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclReduceScatterInner", "nullptr", "recvBuf", "non-null pointer"}));
-    CHK_PTR_NULL(recvBuf);
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclReduceScatterV2(sendBuf, recvBuf, recvCount, dataType, op, comm, stream));
 #endif
@@ -2181,6 +2189,26 @@ HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCou
 HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const void *sendDispls,
     void *recvBuf, uint64_t recvCount, HcclDataType dataType, HcclReduceOp op, HcclComm comm, aclrtStream stream)
 {
+    // 入参合法性校验
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "stream", "non-null pointer"}));
+    CHK_PTR_NULL(stream);
+    RPT_INPUT_ERR(sendCounts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclReduceScatterVInner", "nullptr", "sendCounts", "non-null pointer"}));
+    CHK_PTR_NULL(sendCounts);
+    RPT_INPUT_ERR(sendDispls == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclReduceScatterVInner", "nullptr", "sendDispls", "non-null pointer"}));
+    CHK_PTR_NULL(sendDispls);
+    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclReduceScatterVInner", "nullptr", "comm", "non-null pointer"}));
+    CHK_PTR_NULL(comm);
+
+    if (UNLIKELY(recvCount > 0 && recvBuf == nullptr)) {
+        RPT_INPUT_ERR(true, "EI0003",\
+        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclReduceScatterVInner", "nullptr", "recvBuf", "non-null pointer"}));
+        CHK_PTR_NULL(recvBuf);
+    }
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V;
@@ -2211,23 +2239,6 @@ HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const 
     ProfilingManagerPub::SetThreadCaptureStatus(threadID, isCapture);
     uint64_t beginTime = hrtMsprofSysCycleTime();
 
-    // 入参合法性校验
-    RPT_INPUT_ERR(sendCounts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclReduceScatterVInner", "nullptr", "sendCounts", "non-null pointer"}));
-    CHK_PTR_NULL(sendCounts);
-    RPT_INPUT_ERR(sendDispls == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclReduceScatterVInner", "nullptr", "sendDispls", "non-null pointer"}));
-    CHK_PTR_NULL(sendDispls);
-    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclReduceScatterVInner", "nullptr", "comm", "non-null pointer"}));
-    CHK_PTR_NULL(comm);
-
-    if (UNLIKELY(recvCount > 0 && recvBuf == nullptr)) {
-        RPT_INPUT_ERR(true, "EI0003",\
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclReduceScatterVInner", "nullptr", "recvBuf", "non-null pointer"}));
-        CHK_PTR_NULL(recvBuf);
-    }
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclReduceScatterVV2(sendBuf, const_cast<void*>(sendCounts), const_cast<void*>(sendDispls), recvBuf, recvCount, dataType, op, comm, stream));
 #endif
@@ -2347,6 +2358,10 @@ HcclResult CheckScatterInputPara(HcclComm comm, void *recvBuf)
 HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType, uint32_t root,
     HcclComm comm, aclrtStream stream)
 {
+    // 入参合法性校验
+    CHK_PRT_RET(recvCount == 0, HCCL_WARNING("input recvCount is 0, return scatter success"), HCCL_SUCCESS);
+    CHK_RET(CheckScatterInputPara(comm, recvBuf));
+    CHK_PTR_NULL(stream);
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_SCATTER;
@@ -2373,8 +2388,6 @@ HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, Hc
     }
     uint64_t beginTime = hrtMsprofSysCycleTime();
 
-    CHK_PRT_RET(recvCount == 0, HCCL_WARNING("input recvCount is 0, return scatter success"), HCCL_SUCCESS);
-    CHK_RET(CheckScatterInputPara(comm, recvBuf));
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclScatterV2(sendBuf, recvBuf, recvCount, dataType, root, comm, stream));
 #endif
@@ -2470,6 +2483,21 @@ HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, Hc
 HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclDataType dataType,
                          HcclComm comm, aclrtStream stream)
 {
+    // 入参合法性校验
+    CHK_PRT_RET(sendCount == 0, HCCL_WARNING("input sendCount is 0, return HcclAllGatherInner success"), HCCL_SUCCESS);
+    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAllGatherInner", "nullptr", "comm", "non-null pointer"}));
+    CHK_PTR_NULL(comm);
+    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAllGatherInner", "nullptr", "sendBuf", "non-null pointer"}));
+    CHK_PTR_NULL(sendBuf);
+    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAllGatherInner", "nullptr", "recvBuf", "non-null pointer"}));
+    CHK_PTR_NULL(recvBuf);
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "stream", "non-null pointer"}));
+    CHK_PTR_NULL(stream);
+
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_ALLGATHER;
@@ -2495,17 +2523,6 @@ HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, 
     }
     uint64_t beginTime = hrtMsprofSysCycleTime();
 
-    CHK_PRT_RET(sendCount == 0, HCCL_WARNING("input sendCount is 0, return HcclAllGatherInner success"), HCCL_SUCCESS);
-    // 入参合法性校验
-    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAllGatherInner", "nullptr", "comm", "non-null pointer"}));
-    CHK_PTR_NULL(comm);
-    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAllGatherInner", "nullptr", "sendBuf", "non-null pointer"}));
-    CHK_PTR_NULL(sendBuf);
-    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAllGatherInner", "nullptr", "recvBuf", "non-null pointer"}));
-    CHK_PTR_NULL(recvBuf);
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclAllGatherV2(sendBuf, recvBuf, sendCount, dataType, comm, stream));
 #endif
@@ -2569,6 +2586,26 @@ HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, 
 HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
     const void *recvCounts, const void *recvDispls, HcclDataType dataType, HcclComm comm, aclrtStream stream)
 {
+    // 入参合法性校验
+    RPT_INPUT_ERR(recvCounts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "recvCounts", "non-null pointer"}));
+    CHK_PTR_NULL(recvCounts);
+    RPT_INPUT_ERR(recvDispls == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "recvDispls", "non-null pointer"}));
+    CHK_PTR_NULL(recvDispls);
+    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "comm", "non-null pointer"}));
+    CHK_PTR_NULL(comm);
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "stream", "non-null pointer"}));
+    CHK_PTR_NULL(stream);
+    if (UNLIKELY(sendCount > 0 && sendBuf == nullptr)) {
+            RPT_INPUT_ERR(true, "EI0003",\
+            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+            std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "sendBuf", "non-null pointer"}));
+            CHK_PTR_NULL(sendBuf);
+    }
+
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_ALLGATHER_V;
@@ -2598,28 +2635,11 @@ HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
     ProfilingManagerPub::SetThreadCaptureStatus(threadID, isCapture);
     uint64_t beginTime = hrtMsprofSysCycleTime();
 
-    // 入参合法性校验
-    RPT_INPUT_ERR(recvCounts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "recvCounts", "non-null pointer"}));
-    CHK_PTR_NULL(recvCounts);
-    RPT_INPUT_ERR(recvDispls == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "recvDispls", "non-null pointer"}));
-    CHK_PTR_NULL(recvDispls);
-    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "comm", "non-null pointer"}));
-    CHK_PTR_NULL(comm);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "stream", "non-null pointer"}));
-    CHK_PTR_NULL(stream);
+
+
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclAllGatherVV2(sendBuf, sendCount, recvBuf, const_cast<void*>(recvCounts), const_cast<void*>(recvDispls), dataType, comm, stream));
 #endif
-    if (UNLIKELY(sendCount > 0 && sendBuf == nullptr)) {
-            RPT_INPUT_ERR(true, "EI0003",\
-            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-            std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "sendBuf", "non-null pointer"}));
-            CHK_PTR_NULL(sendBuf);
-    }
 
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);
@@ -2715,6 +2735,13 @@ HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
 HcclResult HcclSendInner(void* sendBuf, uint64_t count, HcclDataType dataType, uint32_t destRank,
                     HcclComm comm, aclrtStream stream)
 {
+    // 入参合法性校验
+    CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return HcclSendInner success"), HCCL_SUCCESS);
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(sendBuf);
+    CHK_PTR_NULL(stream);
+    CHK_RET(HcomCheckCount(count));
+
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_SEND;
@@ -2740,13 +2767,6 @@ HcclResult HcclSendInner(void* sendBuf, uint64_t count, HcclDataType dataType, u
     }
     uint64_t beginTime = hrtMsprofSysCycleTime();
 
-    CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return HcclSendInner success"), HCCL_SUCCESS);
-    // 入参合法性校验
-    CHK_PTR_NULL(comm);
-    CHK_PTR_NULL(sendBuf);
-    CHK_PTR_NULL(stream);
-
-    CHK_RET(HcomCheckCount(count));
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclSendV2(sendBuf, count, dataType, destRank, comm, stream));
 #endif
@@ -2809,6 +2829,13 @@ HcclResult HcclSendInner(void* sendBuf, uint64_t count, HcclDataType dataType, u
 HcclResult HcclRecvInner(void* recvBuf, uint64_t count, HcclDataType dataType, uint32_t srcRank,
                     HcclComm comm, aclrtStream stream)
 {
+    // 入参合法性校验
+    CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return HcclRecvInner success"), HCCL_SUCCESS);
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(recvBuf);
+    CHK_PTR_NULL(stream);
+    CHK_RET(HcomCheckCount(count));
+
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_RECEIVE;
@@ -2834,13 +2861,6 @@ HcclResult HcclRecvInner(void* recvBuf, uint64_t count, HcclDataType dataType, u
     }
     uint64_t beginTime = hrtMsprofSysCycleTime();
 
-    CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return HcclRecvInner success"), HCCL_SUCCESS);
-    // 入参合法性校验
-    CHK_PTR_NULL(comm);
-    CHK_PTR_NULL(recvBuf);
-    CHK_PTR_NULL(stream);
-
-    CHK_RET(HcomCheckCount(count));
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclRecvV2(recvBuf, count, dataType, srcRank, comm, stream));
 #endif
@@ -3283,31 +3303,7 @@ HcclResult HcclGetOpBasedMemSize(const HcclCMDType &opType, u64 &size,
 HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataType sendType, const void *recvBuf,
     uint64_t recvCount, HcclDataType recvType, HcclComm comm, aclrtStream stream)
 {
-     if (hcclGroupDepth > 0) {
-        struct hcclOpInfo info;
-        info.coll = HcclCMDType::HCCL_CMD_ALLTOALL;
-        info.sendbuff = sendBuf;
-        info.recvbuff = recvBuf;
-        info.sendCount = sendCount;
-        info.recvCount = recvCount;
-        info.sendType = sendType;
-        info.recvType = recvType;
-        info.comm = comm;
-        info.stream = stream;
-        CHK_RET(taskAppend(comm, info));
-        HCCL_INFO("[HcclAlltoAll] Finish taskAppend, sendCount [%d] sendType [%s] recvCount [%d] recvType [%s]", sendCount, GetDataTypeEnumStr(sendType).c_str(), recvCount, GetDataTypeEnumStr(recvType).c_str());
-	    return HCCL_SUCCESS;
-    }
-    HcclUs startut = TIME_NOW();
-    bool isCapture;
-    aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
-    uint64_t modelId = 0xFFFFFFFF;
-    CHK_PRT(GetCaptureInfo(stream, captureStatus, modelId, isCapture));
-    if (!isCapture) {
-        HcclSetIfProfile();
-    }
-
-    uint64_t beginTime = hrtMsprofSysCycleTime();
+    //入参校验
     CHK_PRT_RET(sendCount == 0 && recvCount == 0,
         HCCL_WARNING("sendCount and recvCount are both 0, return AllToAll success"), HCCL_SUCCESS);
     RPT_INPUT_ERR(sendBuf == nullptr, "EI0003",\
@@ -3333,6 +3329,33 @@ HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataTy
     CHK_PTR_NULL(comm);
     CHK_PRT_RET(sendBuf == recvBuf,
         HCCL_ERROR("[HcclAlltoAllInner] sendBuf and recvBuf cannot be same."), HCCL_E_PARA);
+
+    if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_ALLTOALL;
+        info.sendbuff = sendBuf;
+        info.recvbuff = recvBuf;
+        info.sendCount = sendCount;
+        info.recvCount = recvCount;
+        info.sendType = sendType;
+        info.recvType = recvType;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclAlltoAll] Finish taskAppend, sendCount [%d] sendType [%s] recvCount [%d] recvType [%s]", sendCount, GetDataTypeEnumStr(sendType).c_str(), recvCount, GetDataTypeEnumStr(recvType).c_str());
+	    return HCCL_SUCCESS;
+    }
+    HcclUs startut = TIME_NOW();
+    bool isCapture;
+    aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
+    uint64_t modelId = 0xFFFFFFFF;
+    CHK_PRT(GetCaptureInfo(stream, captureStatus, modelId, isCapture));
+    if (!isCapture) {
+        HcclSetIfProfile();
+    }
+
+    uint64_t beginTime = hrtMsprofSysCycleTime();
+
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclAlltoAllV2(sendBuf, sendCount, sendType, recvBuf, recvCount, recvType, comm, stream));
 #endif
@@ -3394,6 +3417,26 @@ HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const
                          const void *recvBuf, const void *recvCounts, const void *rdispls, HcclDataType recvType,
                          HcclComm comm, aclrtStream stream)
 {
+    // 入参校验
+    RPT_INPUT_ERR(sendCounts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAlltoAllVInner", "nullptr", "sendCounts", "non-null pointer"}));
+    CHK_PTR_NULL(sendCounts);
+    RPT_INPUT_ERR(sdispls == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAlltoAllVInner", "nullptr", "sdispls", "non-null pointer"}));
+    CHK_PTR_NULL(sdispls);
+    RPT_INPUT_ERR(recvCounts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAlltoAllVInner", "nullptr", "recvCounts", "non-null pointer"}));
+    CHK_PTR_NULL(recvCounts);
+    RPT_INPUT_ERR(rdispls == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAlltoAllVInner", "nullptr", "rdispls", "non-null pointer"}));
+    CHK_PTR_NULL(rdispls);
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAlltoAllVInner", "nullptr", "stream", "non-null pointer"}));
+    CHK_PTR_NULL(stream);
+    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAlltoAllVInner", "nullptr", "comm", "non-null pointer"}));
+    CHK_PTR_NULL(comm);
+
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_ALLTOALLV;
@@ -3421,24 +3464,6 @@ HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const
     }
     uint64_t beginTime = hrtMsprofSysCycleTime();
 
-    RPT_INPUT_ERR(sendCounts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAlltoAllVInner", "nullptr", "sendCounts", "non-null pointer"}));
-    CHK_PTR_NULL(sendCounts);
-    RPT_INPUT_ERR(sdispls == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAlltoAllVInner", "nullptr", "sdispls", "non-null pointer"}));
-    CHK_PTR_NULL(sdispls);
-    RPT_INPUT_ERR(recvCounts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAlltoAllVInner", "nullptr", "recvCounts", "non-null pointer"}));
-    CHK_PTR_NULL(recvCounts);
-    RPT_INPUT_ERR(rdispls == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAlltoAllVInner", "nullptr", "rdispls", "non-null pointer"}));
-    CHK_PTR_NULL(rdispls);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAlltoAllVInner", "nullptr", "stream", "non-null pointer"}));
-    CHK_PTR_NULL(stream);
-    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAlltoAllVInner", "nullptr", "comm", "non-null pointer"}));
-    CHK_PTR_NULL(comm);
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclAlltoAllVV2(sendBuf, sendCounts, sdispls, sendType, recvBuf, recvCounts, rdispls, recvType, comm, stream));
 #endif
@@ -3517,6 +3542,18 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
     HcclDataType sendType, const void *recvBuf, HcclDataType recvType,
     HcclComm comm, rtStream_t stream)
 {
+    // 参数校验
+    RPT_INPUT_ERR(sendCountMatrix == nullptr, "EI0003",\
+        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAlltoAllVCInner", "nullptr", "sendCountMatrix", "non-null pointer"}));
+    CHK_PTR_NULL(sendCountMatrix);
+    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclAlltoAllVCInner", "nullptr", "comm", "non-null pointer"}));
+    CHK_PTR_NULL(comm);
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclReduceInner", "nullptr", "stream", "non-null pointer"}));    
+    CHK_PTR_NULL(stream);
+
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_ALLTOALLVC;
@@ -3543,13 +3580,6 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
     ProfilingManagerPub::SetThreadCaptureStatus(threadID, isCapture);
     uint64_t beginTime = hrtMsprofSysCycleTime();
 
-    RPT_INPUT_ERR(sendCountMatrix == nullptr, "EI0003",\
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAlltoAllVCInner", "nullptr", "sendCountMatrix", "non-null pointer"}));
-    CHK_PTR_NULL(sendCountMatrix);
-    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAlltoAllVCInner", "nullptr", "comm", "non-null pointer"}));
-    CHK_PTR_NULL(comm);
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclAlltoAllVCV2(sendBuf, sendCountMatrix, sendType, recvBuf, recvType, comm, stream));
 #endif
@@ -3633,6 +3663,21 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
 HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType, HcclReduceOp op,
                       uint32_t root, HcclComm comm, aclrtStream stream)
 {
+    // 入参合法性校验
+    CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return reduce success"), HCCL_SUCCESS);
+    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclReduceInner", "nullptr", "comm", "non-null pointer"}));
+    CHK_PTR_NULL(comm);
+    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclReduceInner", "nullptr", "sendBuf", "non-null pointer"}));
+    CHK_PTR_NULL(sendBuf);
+    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclReduceInner", "nullptr", "recvBuf", "non-null pointer"}));
+    CHK_PTR_NULL(recvBuf);
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcclReduceInner", "nullptr", "stream", "non-null pointer"}));    
+    CHK_PTR_NULL(stream);
+
     if (hcclGroupDepth > 0) {
         struct hcclOpInfo info;
         info.coll = HcclCMDType::HCCL_CMD_REDUCE;
@@ -3657,17 +3702,6 @@ HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
     }
     uint64_t beginTime = hrtMsprofSysCycleTime();
 
-    CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return reduce success"), HCCL_SUCCESS);
-    // 入参合法性校验
-    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclReduceInner", "nullptr", "comm", "non-null pointer"}));
-    CHK_PTR_NULL(comm);
-    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclReduceInner", "nullptr", "sendBuf", "non-null pointer"}));
-    CHK_PTR_NULL(sendBuf);
-    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclReduceInner", "nullptr", "recvBuf", "non-null pointer"}));
-    CHK_PTR_NULL(recvBuf);
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclReduceV2(sendBuf, recvBuf, count, dataType, op, root, comm, stream));
 #endif
