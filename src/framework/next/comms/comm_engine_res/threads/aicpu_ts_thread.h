@@ -47,7 +47,8 @@ public:
 
     // Non-override functions
     HcclResult GetSqHeadAndTail(uint32_t& sqHead, uint32_t& sqTail);
-
+    bool GetMaster() const override;
+    void SetIsMaster(bool isMaster) override;
 private:
     struct HcclStreamInfo {
         s32 streamIds;
