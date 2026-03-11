@@ -23,6 +23,7 @@
 #include "task_param.h"
 #include "ins_queue.h"
 #include "coll_alg_params.h"
+#include "acl_rt.h"
 
 namespace Hccl {
 
@@ -106,6 +107,7 @@ private:
 
     void AllocQueueNotify(const InsQueue& insQueue) override;
     void AllocQNotifyForSingleQ(const InsQueue &insQueue) const override;
+    std::unordered_map<std::string, aclrtFuncHandle> ccacheFunctionHandle;
 };
 void InitAicpuLocBufLite(HcclAicpuLocBufLite &lite, u64 addr, u64 size, const string &desc);
 } // namespace Hccl
