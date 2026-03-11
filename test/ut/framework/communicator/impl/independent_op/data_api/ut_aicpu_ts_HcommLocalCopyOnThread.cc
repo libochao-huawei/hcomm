@@ -11,11 +11,14 @@
 #include "gtest/gtest.h"
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
+#include <cstring>
 
 #define private public
 #include "aicpu_ts_thread.h"
 #include "aicpu_ts_thread_interface.h"
 #undef private
+
+#include "resource_entities.h"
 
 using namespace hccl;
 
@@ -27,6 +30,11 @@ protected:
         MOCKER_CPP(&Hccl::IAicpuTsThread::SdmaCopy).stubs().will(returnValue(HCCL_SUCCESS));
         threadOnDevice.devType_ = DevType::DEV_TYPE_910_95;
         threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
+
+        memset(&threadEntity_, 0, sizeof(threadEntity_));
+        threadEntity_.type = THREAD_TYPE_TS;
+        threadEntity_.engine = COMM_ENGINE_AICPU;
+        threadEntity_.threadObjAddr = reinterpret_cast<uint64_t>(&threadOnDevice);
     }
 
     virtual void TearDown() override
@@ -35,7 +43,8 @@ protected:
     }
 
     AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
-    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
+    ThreadEntity threadEntity_{};
+    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadEntity_);
     uint64_t tempDst[6] = {0};
     uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
     void *dst = reinterpret_cast<void *>(tempDst);
