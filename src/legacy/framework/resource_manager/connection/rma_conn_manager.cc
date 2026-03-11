@@ -32,7 +32,7 @@ RmaConnManager::RmaConnManager(const CommunicatorImpl &comm)
 RmaConnManager::~RmaConnManager()
 {
     if (!isDestroyed) {
-        Destroy();
+        DECTOR_TRY_CATCH("RmaConnManager", Destroy());
     }
 }
 
