@@ -547,8 +547,9 @@ void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opI
     reporterData.data.hcclopInfo.algType  = GetProfHashId(opInfo.algType_.Describe().c_str(), opInfo.algType_.Describe().length());
     uint64_t groupName                     = GetProfHashId(opInfo.op_.opTag.c_str(), opInfo.op_.opTag.length());
     reporterData.data.hcclopInfo.groupName = groupName;
-    CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(opInfo.comm_);
-    u32 ranksize = commImp->GetRankSize();
+    // CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(opInfo.comm_);
+    // u32 ranksize = commImp->GetRankSize();
+    u32 ranksize = 2; // TODO: 待修改
     if (opInfo.op_.opType == OpType::ALLTOALLV) {
         u64 sendCount = 0;
         for (u64 i = 0; i < ranksize; i++) {

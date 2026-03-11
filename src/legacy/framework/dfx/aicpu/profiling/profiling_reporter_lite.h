@@ -20,6 +20,7 @@ public:
     virtual ~ProfilingReporterLite();
     void Init() const;
     void ReportAllTasks();
+    void ReportAllTasks(const std::string &group, u32 ranksize);
     void UpdateProfStat() const;
 
 private:
