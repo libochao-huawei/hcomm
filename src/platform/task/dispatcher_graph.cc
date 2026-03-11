@@ -140,21 +140,6 @@ HcclResult DispatcherGraph::SignalTaskParaSave(HcclRtNotify signal, Stream &stre
         taskPara.profilerType = ProfilerType::TASK_PROFILING;
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
-    if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
-        u64 notifyID;
-        CHK_RET(GetNotifyDfxInfo(signal, userRank, offset, remoteUserRank, notifyID));
-        hccl::TaskParaNotify para(notifyID, stage, remoteUserRank, (ctxIdx - 1));
-        struct TaskPara taskPara;
-        taskPara.stream = stream.ptr();
-        taskPara.isMainStream = stream.IsMainStream();
-        taskPara.beginTime = beginTime;
-        taskPara.notify = para;
-        taskPara.type = taskType;
-        taskPara.isFftsDispatcher = true;
-        taskPara.profilerType = ProfilerType::TASK_EXCEPTION;
-        callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
-    }
 
     return HCCL_SUCCESS;
 }
@@ -248,20 +233,6 @@ HcclResult DispatcherGraph::MemcpyAsync(hccl::DeviceMem &dst, const hccl::Device
         taskPara.profilerType = ProfilerType::TASK_PROFILING;
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
-    if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
-        hccl::TaskParaDMA para(src.ptr(), dst.ptr(), src.size(), inLinkType, remoteUserRank,
-            hccl::RdmaType::RDMA_TYPE_RESERVED, (ctxIdx - 1));
-        struct TaskPara taskPara;
-        taskPara.stream = stream.ptr();
-        taskPara.isMainStream = stream.IsMainStream();
-        taskPara.beginTime = beginTime;
-        taskPara.dma = para;
-        taskPara.type = TaskType::TASK_SDMA;
-        taskPara.isFftsDispatcher = true;
-        taskPara.profilerType = ProfilerType::TASK_EXCEPTION;
-        callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
-    }
     return HCCL_SUCCESS;
 }
 
@@ -299,21 +270,6 @@ HcclResult DispatcherGraph::ReduceAsync(const void *src, void *dst, u64 dataCoun
         taskPara.profilerType = ProfilerType::TASK_PROFILING;
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
-    if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
-        hccl::TaskParaReduce para(src, dst, dataCount * SIZE_TABLE[datatype], redOp, datatype,
-                LinkType::LINK_ONCHIP, INVALID_VALUE_RANKID, (ctxIdx - 1));
-        struct TaskPara taskPara;
-        taskPara.stream = stream.ptr();
-        taskPara.isMainStream = stream.IsMainStream();
-        taskPara.beginTime = beginTime;
-        taskPara.reduce = para;
-        taskPara.type = TaskType::TASK_REDUCE_INLINE;
-        taskPara.isFftsDispatcher = true;
-        taskPara.profilerType = ProfilerType::TASK_EXCEPTION;
-        callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
-    }
-
     return HCCL_SUCCESS;
 }
 
@@ -345,20 +301,6 @@ HcclResult DispatcherGraph::InlineReduceAsync(const void *src, u64 dataCount, co
         taskPara.type = TaskType::TASK_REDUCE_INLINE;
         taskPara.isFftsDispatcher = true;
         taskPara.profilerType = ProfilerType::TASK_PROFILING;
-        callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
-    }
-    if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
-        hccl::TaskParaReduce para(src, dst, dataCount * SIZE_TABLE[datatype], redOp, datatype, inLinkType,
-            remoteUserRank, (ctxIdx - 1));
-        struct TaskPara taskPara;
-        taskPara.stream = stream.ptr();
-        taskPara.isMainStream = stream.IsMainStream();
-        taskPara.beginTime = beginTime;
-        taskPara.reduce = para;
-        taskPara.type = TaskType::TASK_REDUCE_INLINE;
-        taskPara.isFftsDispatcher = true;
-        taskPara.profilerType = ProfilerType::TASK_EXCEPTION;
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
     return HCCL_SUCCESS;
@@ -396,22 +338,6 @@ HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct SendW
         taskPara.profilerType = ProfilerType::TASK_PROFILING;
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
-    if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
-        hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.bufList[0].addr)),
-                            reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dstAddr)),
-                            wr.bufList[0].len, notifyID, hccl::LinkType::LINK_ROCE, RdmaType::RDMA_SEND_PAYLOAD,
-                            ctxIdx);
-        struct TaskPara taskPara;
-        taskPara.stream = stream.ptr();
-        taskPara.isMainStream = stream.IsMainStream();
-        taskPara.beginTime = beginTime;
-        taskPara.dma = para;
-        taskPara.type = TaskType::TASK_RDMA;
-        taskPara.isFftsDispatcher = true;
-        taskPara.profilerType = ProfilerType::TASK_EXCEPTION;
-        callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
-    }
     return HCCL_SUCCESS;
 }
 
@@ -445,22 +371,6 @@ HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct SendW
         taskPara.type = TaskType::TASK_RDMA;
         taskPara.isFftsDispatcher = true;
         taskPara.profilerType = ProfilerType::TASK_PROFILING;
-        callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
-    }
-    if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
-        hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.bufList[0].addr)),
-                            reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dstAddr)),
-                            wr.bufList[0].len, notifyID, hccl::LinkType::LINK_ROCE, RdmaType::RDMA_SEND_NOTIFY,
-                            ctxIdx);
-        struct TaskPara taskPara;
-        taskPara.stream = stream.ptr();
-        taskPara.isMainStream = stream.IsMainStream();
-        taskPara.beginTime = beginTime;
-        taskPara.dma = para;
-        taskPara.type = TaskType::TASK_RDMA;
-        taskPara.isFftsDispatcher = true;
-        taskPara.profilerType = ProfilerType::TASK_EXCEPTION;
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
     return HCCL_SUCCESS;
@@ -546,20 +456,6 @@ HcclResult DispatcherGraph::SetGraphTailVectorReduceDescSdma(void *devMem, const
         taskPara.profilerType = ProfilerType::TASK_PROFILING;
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
-    if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
-        hccl::TaskParaDMA para(tailSrc, devMem, count, LinkType::LINK_ONCHIP, INVALID_VALUE_RANKID,
-            hccl::RdmaType::RDMA_TYPE_RESERVED, (ctxIdx - 1));
-        struct TaskPara taskPara;
-        taskPara.stream = stream.ptr();
-        taskPara.isMainStream = stream.IsMainStream();
-        taskPara.beginTime = beginTime;
-        taskPara.dma = para;
-        taskPara.type = TaskType::TASK_SDMA;
-        taskPara.isFftsDispatcher = true;
-        taskPara.profilerType = ProfilerType::TASK_EXCEPTION;
-        callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
-    }
     return HCCL_SUCCESS;
 }
 
@@ -583,20 +479,6 @@ HcclResult DispatcherGraph::SetGraphDescVectorReduce(const void *src, const void
         taskPara.type = TaskType::TASK_REDUCE_TBE;
         taskPara.isFftsDispatcher = true;
         taskPara.profilerType = ProfilerType::TASK_PROFILING;
-        callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
-    }
-    if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
-        hccl::TaskParaReduce para(src, dst, count * SIZE_TABLE[dataType], redOp, dataType,
-            LinkType::LINK_ONCHIP, INVALID_VALUE_RANKID, (ctxIdx - 1));
-        struct TaskPara taskPara;
-        taskPara.stream = stream.ptr();
-        taskPara.isMainStream = stream.IsMainStream();
-        taskPara.beginTime = beginTime;
-        taskPara.reduce = para;
-        taskPara.type = TaskType::TASK_REDUCE_TBE;
-        taskPara.isFftsDispatcher = true;
-        taskPara.profilerType = ProfilerType::TASK_EXCEPTION;
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
     return HCCL_SUCCESS;
