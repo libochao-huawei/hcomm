@@ -138,6 +138,8 @@ using QpInfo = struct QpInfoDef {
     struct ibv_comp_channel *recvChannel;
     s32 flag = 0;
     s32 qpMode = 0;
+    u32 trafficClass;
+    u32 serviceLevel;
     QpInfoDef() : rdmaHandle(nullptr), qpHandle(nullptr), qp(nullptr), context(nullptr), sendCq(nullptr),
         recvCq(nullptr), srq(nullptr), srqCq(nullptr), srqContext(nullptr),
         sendChannel(nullptr), recvChannel(nullptr) {}
