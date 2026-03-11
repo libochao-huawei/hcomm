@@ -971,6 +971,7 @@ TEST_F(OpbaseTestV2, HcclSendV2)
     uint32_t destRank = 1;
     HcclDataType dataType = HCCL_DATA_TYPE_INT8;
     Hccl::CommParams commParams;
+    commParams.rankSize = 2;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     aclrtStream stream = (void *)0x1000000;
@@ -994,6 +995,7 @@ TEST_F(OpbaseTestV2, HcclSendV2_With_Log)
     uint32_t destRank = 1;
     HcclDataType dataType = HCCL_DATA_TYPE_INT8;
     Hccl::CommParams commParams;
+    commParams.rankSize = 2;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     aclrtStream stream = (void *)0x1000000;
@@ -1015,6 +1017,7 @@ TEST_F(OpbaseTestV2, HcclRecvV2)
     uint32_t srcRank = 1;
     HcclDataType dataType = HCCL_DATA_TYPE_INT8;
     Hccl::CommParams commParams;
+    commParams.rankSize = 2;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     aclrtStream stream = (void *)0x1000000;
@@ -1038,6 +1041,7 @@ TEST_F(OpbaseTestV2, HcclRecvV2_With_Log)
     uint32_t srcRank = 1;
     HcclDataType dataType = HCCL_DATA_TYPE_INT8;
     Hccl::CommParams commParams;
+    commParams.rankSize = 2;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     aclrtStream stream = (void *)0x1000000;
