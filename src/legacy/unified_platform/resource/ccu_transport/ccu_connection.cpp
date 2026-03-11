@@ -41,6 +41,13 @@ CcuCtpConnection::CcuCtpConnection(const IpAddress &locAddr, const IpAddress &rm
     tpProtocol = TpProtocol::CTP;
 }
 
+CcuUboeConnection::CcuUboeConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
+    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys)
+{
+    tpProtocol = TpProtocol::UBOE;
+}
+
 HcclResult CcuConnection::Init()
 {
     TRY_CATCH_RETURN(

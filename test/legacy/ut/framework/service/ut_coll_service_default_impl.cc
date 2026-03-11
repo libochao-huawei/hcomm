@@ -413,7 +413,7 @@ TEST_F(CollServiceDefaultImplTest, test_base_register_offload_buf)
     LocalIpcRmaBuffer localRmaBuf(devBuf);
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .will(returnValue(dynamic_cast<LocalRmaBuffer *>(&localRmaBuf)));
 
@@ -547,7 +547,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_op_based_mode)
     LocalIpcRmaBuffer localRmaBuf(devBuf);
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .will(returnValue(dynamic_cast<LocalRmaBuffer *>(&localRmaBuf)));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
@@ -640,7 +640,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode)
     LocalIpcRmaBuffer localRmaBuf(devBuf);
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .will(returnValue(dynamic_cast<LocalRmaBuffer *>(&localRmaBuf)));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
@@ -829,7 +829,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode_with_task)
     LocalIpcRmaBuffer localRmaBuf(devBuf);
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .will(returnValue(dynamic_cast<LocalRmaBuffer *>(&localRmaBuf)));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
