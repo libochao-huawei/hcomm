@@ -106,6 +106,11 @@ public:
     u32 GetConfigHcclQos() const;
     u64 GetConfigSymmetricMemoryStride() const;
 
+    // 并行平面信息配置
+    void SetNetPlaneInfo(u32 netPlaneId, u32 netPlaneNum);
+    u32 GetNetPlaneId() const;
+    u32 GetNetPlaneNum() const;
+
 private:
     void InitAlgoConfig();
     void InitRetryEnable();
@@ -148,6 +153,9 @@ private:
     std::string bufferName_;    // CCL buffer名称
     u32 hcclQos_;
     u64 symmetricMemoryStride_; // 对称内存预留VA大小，单位GB
+    // 并行平面信息
+    u32 netPlaneId_{0};        // 当前 rank 所属的并行平面 ID
+    u32 netPlaneNum_{0};       // 总的并行平面数量
 };
 }
 #endif /* HCCL_COMM_CONFIG_PUB_H */

@@ -350,6 +350,85 @@ extern HcclResult HcclRankGraphGetRanksByTopoInst(HcclComm comm, uint32_t netLay
 extern HcclResult HcclGetHeterogMode(HcclComm comm, HcclHeterogMode *mode);
 
 /**
+ * @brief OXC 模式类型枚举
+ * @note 描述通信域是否启用 OXC 分层通信模式
+ */
+typedef enum {
+    HCCL_OXC_MODE_NONE = 0,        ///< 非 OXC 模式（传统模式）
+    HCCL_OXC_MODE_STANDARD = 1,    ///< OXC 标准模式（启用分层通信）
+} HcclOxcMode;
+
+/**
+ * @brief 检查通信域是否为 OXC 模式
+ * @param[in] comm 通信域句柄
+ * @param[out] oxcMode 返回的 OXC 模式类型
+ * @return HcclResult 执行结果状态码
+ * @note 该接口用于查询当前通信域是否启用 OXC 分层通信特性
+ * @code {.c}
+ * // 使用示例：检查是否为 OXC 模式
+ * HcclOxcMode mode;
+ * HcclResult ret = HcclIsOxcMode(comm, &mode);
+ * if (ret == HCCL_SUCCESS) {
+ *     if (mode == HCCL_OXC_MODE_STANDARD) {
+ *         printf("OXC 标准模式已启用\n");
+ *     } else {
+ *         printf("非 OXC 模式\n");
+ *     }
+ * }
+ * @endcode
+ */
+extern HcclResult HcclIsOxcMode(HcclComm comm, HcclOxcMode *oxcMode);
+
+/**
+ * @brief 获取 OXC 组内通信平面的 rank 列表
+ * @param[in] comm 通信域句柄
+ * @param[out] ranks 组内平面的 rank ID 列表
+ * @param[out] rankNum rank 列表数量
+ * @return HcclResult 执行结果状态码
+ * @note 该接口返回 OXC 模式下当前 rank 所在组的内通信平面（LAYERED_LEVEL1）的所有 rank
+ * @warning 重要约束：
+ * 1、返回的ranks内存由库内管理，调用者严禁释放
+ * 2、应及时复制返回的ranks数据，同一通信域重复调用可能使前次结果失效
+ * 3、仅在 OXC 模式下有效，非 OXC 模式返回 HCCL_E_NOT_SUPPORT
+ *
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
+ */
+extern HcclResult HcclGetOxcIntraPlaneRanks(HcclComm comm, uint32_t **ranks, uint32_t *rankNum);
+
+/**
+ * @brief 获取 OXC 组间通信平面的 rank 列表
+ * @param[in] comm 通信域句柄
+ * @param[out] ranks 组间平面的 rank ID 列表
+ * @param[out] rankNum rank 列表数量
+ * @return HcclResult 执行结果状态码
+ * @note 该接口返回 OXC 模式下组间通信平面（LAYERED_LEVEL2）的所有 rank
+ * @warning 重要约束：
+ * 1、返回的ranks内存由库内管理，调用者严禁释放
+ * 2、应及时复制返回的ranks数据，同一通信域重复调用可能使前次结果失效
+ * 3、仅在 OXC 模式下有效，非 OXC 模式返回 HCCL_E_NOT_SUPPORT
+ *
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
+ */
+extern HcclResult HcclGetOxcInterPlaneRanks(HcclComm comm, uint32_t **ranks, uint32_t *rankNum);
+
+/**
+ * @brief 获取 OXC 分组信息
+ * @param[in] comm 通信域句柄
+ * @param[out] groupId 当前 rank 所属的分组 ID
+ * @param[out] groupSize 当前分组的 rank 数量
+ * @param[out] groupNum 总分组数量
+ * @return HcclResult 执行结果状态码
+ * @note 该接口返回 OXC 模式下的分组信息，包括：
+ *       - groupId: 当前 rank 所属的组 ID（0 ~ groupNum-1）
+ *       - groupSize: 每个组的 rank 数量（假设均匀分布）
+ *       - groupNum: 总的分组数量
+ * @warning 仅在 OXC 模式下有效，非 OXC 模式返回 HCCL_E_NOT_SUPPORT
+ *
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
+ */
+extern HcclResult HcclGetOxcGroupInfo(HcclComm comm, uint32_t *groupId, uint32_t *groupSize, uint32_t *groupNum);
+
+/**
  * @brief 根据layer获取通信域所有endpoint信息
  * @param[in] comm 通信域句柄
  * @param[in] layer 通信网络层次

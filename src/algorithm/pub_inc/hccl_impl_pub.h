@@ -66,6 +66,10 @@ using HcclAlgoAttr = struct HcclAlgoAttrDef {
     WorkMode commWorkMode;
     std::map<HcclCMDType, std::vector<HcclAlgoType>> commAlgoConfig;
 
+    // ========== OXC 分层框架新增字段 ==========
+    HcclAlgoType intraAlgType;  // 组内通信算法 (HD/NB/NHR/Ring)
+    HcclAlgoType interAlgType;  // 组间通信算法 (HD/NB/NHR/MTR/Ring)
+
     HcclAlgoAttrDef()
         : isHaveCpuRank(false),
         inlineReduceSwitchOn(true),
@@ -74,7 +78,9 @@ using HcclAlgoAttr = struct HcclAlgoAttrDef {
         identifier(""),
         collectiveId(""),
         nicDeployment(NICDeployment::NIC_DEPLOYMENT_DEVICE),
-        commWorkMode(WorkMode::HCCL_MODE_NORMAL)
+        commWorkMode(WorkMode::HCCL_MODE_NORMAL),
+        intraAlgType(HcclAlgoType::HCCL_ALGO_TYPE_RING),
+        interAlgType(HcclAlgoType::HCCL_ALGO_TYPE_RING)
     {
         SetDefaultAlgo();
     }
@@ -91,12 +97,12 @@ struct HcclTopoAttr {
     u32 serverNum;                   // 集群中总的服务器数
     u32 superPodNum;                 // 集群中总的超节点数
     u32 moduleNum;                   // 集群中的总的module数
-    u32 deviceNumPerServer;          // 服务器上的Device数量
+    u32 deviceNumPerServer;           // 服务器上的Device数量
     u32 deviceNumPerAggregation;     // 每个module中的Device数量
-    bool multiModuleDiffDeviceNumMode; // 每个module内的设备数是否相等，如果不相同即为多module不同卡模式 （走大RING环）
-    bool multiSuperPodDiffServerNumMode; // 每个超节点内的server数是否相等
+    bool multiModuleDiffDeviceNumMode; // 每个module内的设备数是否相等，如果不相同即为多module不同卡模式（走大RING环）
+    bool multiSuperPodDiffServerNumMode; // 毿个超节点内的server数是否相等
     bool multiSuperPodDiffDeviceNumMode; // 每个超节点内的总rank数是否相等
-    
+
     bool isDiffDeviceType;
     u32 gcdDeviceNumPerAggregation;
 
@@ -105,9 +111,9 @@ struct HcclTopoAttr {
     bool isSingleMeshAggregation;
     bool isAllRankSamePlane;         // 通信域所有Rank是否在同一平面
 
-    u32 userRank;                    // 通信域 RankID
+    u32 userRank;                    // 通信域的 RankID
     u32 realUserRank;
-    u32 userRankSize;                // 通信域的 Rank数量
+    u32 userRankSize;                // 通信域的Rank数量
     std::vector<RankInfo> rankInfoList; // world group内rank的信息, 按照rank id递增依次排列
 
     u32 devicePhyId;
@@ -128,7 +134,15 @@ struct HcclTopoAttr {
     u32 localNicPort;
     bool isNeedInitNic;      // 是否需要初始化Nic，心跳使用
     bool isARSDoubleRing;
-    
+
+    // ========== OXC 分层框架新增字段 ==========
+    u32 netPlaneNum;      // 并行平面数（OXC平面数）
+    u32 groupSize;        // 分组大小（>1时启用分层）
+    u32 netPlaneId;        // 当rank所属的网络平面ID
+    u32 groupId;          // 当前rank所属的分组ID
+    bool isCalcForAHC;    // AHC计算标记
+    bool isCalcForLayer;    // 分层计算标记
+
     HcclTopoAttr()
         : serverNum(0),
         superPodNum(0),
@@ -163,7 +177,13 @@ struct HcclTopoAttr {
         isSupportHccsAndSio(false),
         localNicPort(0),
         isNeedInitNic(false),
-        isARSDoubleRing(true)
+        isARSDoubleRing(true),
+        netPlaneNum(1),
+        groupSize(0),
+        netPlaneId(0),
+        groupId(0),
+        isCalcForAHC(false),
+        isCalcForLayer(false)
     {}
 };
 

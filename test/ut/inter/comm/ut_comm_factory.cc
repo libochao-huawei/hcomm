@@ -134,9 +134,11 @@ TEST_F(CommFactoryTest, ut_init)
     HcclNetOpenDev(&nicPortCtx[0], NicType::DEVICE_NIC_TYPE, 0, 0, rank_vector[userRank].nicIp[0]);
     netDevCtxMap.insert(std::make_pair(rank_vector[userRank].nicIp[0], nicPortCtx[0]));
 
+    HcclAlgoAttr algoAttr;
+    HcclTopoAttr topoAttr;
     std::shared_ptr<TopoInfoExtractor> topoInfoExt;
     topoInfoExt.reset(new TopoInfoExtractor(collective_id_tmp, userRank, user_rank_size,
-        TopoType::TOPO_TYPE_4P_MESH, DevType::DEV_TYPE_910, rank_vector));
+        TopoType::TOPO_TYPE_4P_MESH, DevType::DEV_TYPE_910, rank_vector, algoAttr, topoAttr));
 
     comm_factory.reset(new CommFactory(collective_id_tmp, userRank, user_rank_size, dispatcher, nullptr, netDevCtxMap, topoInfoExt, true, TopoType::TOPO_TYPE_4P_MESH,
         DevType::DEV_TYPE_910, rank_vector));
@@ -192,9 +194,11 @@ TEST_F(CommFactoryTest, ut_create_comm)
     std::map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap;
     netDevCtxMap.insert(make_pair(localIPs, portCtx));
 
+    HcclAlgoAttr algoAttr;
+    HcclTopoAttr topoAttr;
     std::shared_ptr<TopoInfoExtractor> topoInfoExt;
     topoInfoExt.reset(new TopoInfoExtractor(collective_id_tmp, userRank, user_rank_size,
-        TopoType::TOPO_TYPE_COMMON, DevType::DEV_TYPE_910, rank_vector));
+        TopoType::TOPO_TYPE_COMMON, DevType::DEV_TYPE_910, rank_vector, algoAttr, topoAttr));
 
     CommFactory* comm_factory = new CommFactory(collective_id_tmp, userRank, user_rank_size, dispatcher, nullptr, netDevCtxMap, topoInfoExt, true,
         TopoType::TOPO_TYPE_COMMON, DevType::DEV_TYPE_910, rank_vector);
@@ -296,9 +300,11 @@ TEST_F(CommFactoryTest, ut_create_comm_ranksize_7)
     HcclNetOpenDev(&nicPortCtx[0], NicType::VNIC_TYPE, rank_vector[userRank].devicePhyId, rank_vector[userRank].devicePhyId, rank_vector[userRank].nicIp[0]);
     netDevCtxMap.insert(std::make_pair(rank_vector[userRank].nicIp[0], nicPortCtx[0]));
 
+    HcclAlgoAttr algoAttr_2;
+    HcclTopoAttr topoAttr_2;
     std::shared_ptr<TopoInfoExtractor> topoInfoExt_2;
     topoInfoExt_2.reset(new TopoInfoExtractor(collective_id_tmp, userRank, user_rank_size,
-        TopoType::TOPO_TYPE_COMMON, DevType::DEV_TYPE_910, rank_vector, 0, true));
+        TopoType::TOPO_TYPE_COMMON, DevType::DEV_TYPE_910, rank_vector, algoAttr_2, topoAttr_2, 0, true));
     std::map<HcclCMDType, std::vector<HcclAlgoType>> algoConfig;
     
     for(u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
@@ -343,9 +349,11 @@ TEST_F(CommFactoryTest, ut_create_comm_ranksize_7)
     HcclNetOpenDev(&nicPortCtx[1], NicType::VNIC_TYPE, rank_vector[userRank].devicePhyId, rank_vector[userRank].devicePhyId, rank_vector[userRank].nicIp[0]);
     netDevCtxMap.insert(std::make_pair(rank_vector[userRank].nicIp[0], nicPortCtx[1]));
 
+    HcclAlgoAttr algoAttr_5;
+    HcclTopoAttr topoAttr_5;
     std::shared_ptr<TopoInfoExtractor> topoInfoExt_5;
     topoInfoExt_5.reset(new TopoInfoExtractor(collective_id_tmp, userRank, user_rank_size,
-        TopoType::TOPO_TYPE_COMMON, DevType::DEV_TYPE_910, rank_vector, 0, true));
+        TopoType::TOPO_TYPE_COMMON, DevType::DEV_TYPE_910, rank_vector, algoAttr_5, topoAttr_5, 0, true));
 
     ret = topoInfoExt_5->Init(algoConfig);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -400,9 +408,11 @@ TEST_F(CommFactoryTest, ut_init_with_err_input)
     netDevCtxMap.insert(std::make_pair(rank_vector[userRank].nicIp[0], nicPortCtx[0]));
     std::shared_ptr<CommFactory> comm_factory_0 = nullptr;
 
+    HcclAlgoAttr algoAttr_0;
+    HcclTopoAttr topoAttr_0;
     std::shared_ptr<TopoInfoExtractor> topoInfoExt_0;
     topoInfoExt_0.reset(new TopoInfoExtractor(collective_id_tmp, userRank, user_rank_size,
-        TopoType::TOPO_TYPE_RESERVED, DevType::DEV_TYPE_910, rank_vector));
+        TopoType::TOPO_TYPE_RESERVED, DevType::DEV_TYPE_910, rank_vector, algoAttr_0, topoAttr_0));
 
     comm_factory_0.reset(new CommFactory(collective_id_tmp, userRank, user_rank_size, dispatcher, nullptr, netDevCtxMap, topoInfoExt_0, true,
         TopoType::TOPO_TYPE_RESERVED, DevType::DEV_TYPE_910, rank_vector));
@@ -412,9 +422,11 @@ TEST_F(CommFactoryTest, ut_init_with_err_input)
 
     std::shared_ptr<CommFactory> comm_factory_1 = nullptr;
 
+    HcclAlgoAttr algoAttr_1;
+    HcclTopoAttr topoAttr_1;
     std::shared_ptr<TopoInfoExtractor> topoInfoExt_1;
     topoInfoExt_1.reset(new TopoInfoExtractor(collective_id_tmp, userRank, user_rank_size,
-        TopoType::TOPO_TYPE_8P_RING, DevType::DEV_TYPE_910, rank_vector));
+        TopoType::TOPO_TYPE_8P_RING, DevType::DEV_TYPE_910, rank_vector, algoAttr_1, topoAttr_1));
     topoInfoExt_1->meshAggregationRankSize_ = MESH_AGGREGATION_RANK_SIZE_910;
     comm_factory_1.reset(new CommFactory(collective_id_tmp, userRank, user_rank_size, dispatcher, nullptr, netDevCtxMap, topoInfoExt_1, true,
         TopoType::TOPO_TYPE_8P_RING, DevType::DEV_TYPE_910, rank_vector));
@@ -425,9 +437,11 @@ TEST_F(CommFactoryTest, ut_init_with_err_input)
 
     std::shared_ptr<CommFactory> comm_factory_2 = nullptr;
 
+    HcclAlgoAttr algoAttr_2;
+    HcclTopoAttr topoAttr_2;
     std::shared_ptr<TopoInfoExtractor> topoInfoExt_2;
     topoInfoExt_2.reset(new TopoInfoExtractor(collective_id_tmp, userRank, user_rank_size,
-        TopoType::TOPO_TYPE_4P_RING, DevType::DEV_TYPE_910, rank_vector));
+        TopoType::TOPO_TYPE_4P_RING, DevType::DEV_TYPE_910, rank_vector, algoAttr_2, topoAttr_2));
     topoInfoExt_2->meshAggregationRankSize_ = MESH_AGGREGATION_RANK_SIZE_910;
     comm_factory_2.reset(new CommFactory(collective_id_tmp, userRank, user_rank_size, dispatcher, nullptr, netDevCtxMap, topoInfoExt_2, true,
         TopoType::TOPO_TYPE_4P_RING, DevType::DEV_TYPE_910, rank_vector));
@@ -467,9 +481,11 @@ TEST_F(CommFactoryTest, ut_init_with_err_topo)
     netDevCtxMap.insert(std::make_pair(rank_vector[userRank].nicIp[0], nicPortCtx[0]));
     std::shared_ptr<CommFactory> comm_factory = nullptr;
 
+    HcclAlgoAttr algoAttr_topo;
+    HcclTopoAttr topoAttr_topo;
     std::shared_ptr<TopoInfoExtractor> topoInfoExt;
     topoInfoExt.reset(new TopoInfoExtractor(collective_id_tmp, userRank, user_rank_size,
-        TopoType::TOPO_TYPE_RESERVED, DevType::DEV_TYPE_910, rank_vector));
+        TopoType::TOPO_TYPE_RESERVED, DevType::DEV_TYPE_910, rank_vector, algoAttr_topo, topoAttr_topo));
     topoInfoExt->meshAggregationRankSize_ = MESH_AGGREGATION_RANK_SIZE_910;
     comm_factory.reset(new CommFactory(collective_id_tmp, userRank, user_rank_size, dispatcher, nullptr, netDevCtxMap, topoInfoExt, true,
         TopoType::TOPO_TYPE_RESERVED, DevType::DEV_TYPE_910, rank_vector));
@@ -510,9 +526,11 @@ TEST_F(CommFactoryTest, ut_init_with_err_rank_size)
     netDevCtxMap.insert(std::make_pair(rank_vector[userRank].nicIp[0], nicPortCtx[0]));
     std::shared_ptr<CommFactory> comm_factory = nullptr;
 
+    HcclAlgoAttr algoAttr_rank;
+    HcclTopoAttr topoAttr_rank;
     std::shared_ptr<TopoInfoExtractor> topoInfoExt;
     topoInfoExt.reset(new TopoInfoExtractor(collective_id_tmp, userRank, user_rank_size,
-        TopoType::TOPO_TYPE_8P_RING, DevType::DEV_TYPE_910, rank_vector, 0, true));
+        TopoType::TOPO_TYPE_8P_RING, DevType::DEV_TYPE_910, rank_vector, algoAttr_rank, topoAttr_rank, 0, true));
     topoInfoExt->meshAggregationRankSize_ = MESH_AGGREGATION_RANK_SIZE_910;
     comm_factory.reset(new CommFactory(collective_id_tmp, userRank, user_rank_size, dispatcher, nullptr, netDevCtxMap, topoInfoExt, true,
         TopoType::TOPO_TYPE_8P_RING, DevType::DEV_TYPE_910, rank_vector));
@@ -689,9 +707,11 @@ TEST_F(CommFactoryTest, ut_create_comm_suppod)
     rank_vector.push_back(tmp_para_2);
     rank_vector.push_back(tmp_para_3);
 
+    HcclAlgoAttr algoAttr_suppod;
+    HcclTopoAttr topoAttr_suppod;
     std::shared_ptr<TopoInfoExtractor> topoInfoExt;
     topoInfoExt.reset(new TopoInfoExtractor(collective_id_tmp, userRank, user_rank_size,
-        TopoType::TOPO_TYPE_NP_DOUBLE_RING, DevType::DEV_TYPE_910_93, rank_vector));
+        TopoType::TOPO_TYPE_NP_DOUBLE_RING, DevType::DEV_TYPE_910_93, rank_vector, algoAttr_suppod, topoAttr_suppod));
 
     CommFactory* comm_factory = new CommFactory(collective_id_tmp, userRank, user_rank_size, dispatcher, nullptr,  netDevCtxMap, topoInfoExt, true,
         TopoType::TOPO_TYPE_NP_DOUBLE_RING, DevType::DEV_TYPE_910_93, rank_vector,
@@ -754,9 +774,11 @@ TEST_F(CommFactoryTest, ut_create_commmesh_combined_1server_16p)
     std::map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap;
     netDevCtxMap.insert(make_pair(rank_vector[0].nicIp[0], portCtx));
 
+    HcclAlgoAttr algoAttr_mesh;
+    HcclTopoAttr topoAttr_mesh;
     std::shared_ptr<TopoInfoExtractor> topoInfoExt;
     topoInfoExt.reset(new TopoInfoExtractor(collective_id_tmp, userRank, user_rank_size,
-        TopoType::TOPO_TYPE_COMMON, DevType::DEV_TYPE_910B, rank_vector));
+        TopoType::TOPO_TYPE_COMMON, DevType::DEV_TYPE_910B, rank_vector, algoAttr_mesh, topoAttr_mesh));
 
     CommFactory* comm_factory = new CommFactory(collective_id_tmp, userRank, user_rank_size, dispatcher, nullptr,  netDevCtxMap, topoInfoExt, false,
         TopoType::TOPO_TYPE_COMMON, DevType::DEV_TYPE_910B, rank_vector);

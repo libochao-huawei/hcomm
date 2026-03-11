@@ -324,6 +324,32 @@ extern HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle);
  */
 extern HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
 
+/**
+ * @brief Get the net plane ID of this comm.
+ *
+ * @param comm A pointer identifying the communication resource based on.
+ * @param netPlaneId A pointer identifying the net plane ID.
+ * @return HcclResult
+ * @retval HCCL_SUCCESS Success.
+ * @retval HCCL_E_PTR comm or netPlaneId is null pointer.
+ * @retval HCCL_E_PARA Parameter error.
+ * @retval HCCL_E_NOT_SUPPORT NetPlane info not initialized.
+ */
+extern HcclResult HcclGetNetPlaneId(HcclComm comm, uint32_t *netPlaneId) HCOMM_WEAK_SYMBOL;
+
+/**
+ * @brief Get the total number of net planes in the cluster.
+ *
+ * @param comm A pointer identifying the communication resource based on.
+ * @param netPlaneNum A pointer identifying the total number of net planes.
+ * @return HcclResult
+ * @retval HCCL_SUCCESS Success.
+ * @retval HCCL_E_PTR comm or netPlaneNum is null pointer.
+ * @retval HCCL_E_PARA Parameter error.
+ * @retval HCCL_E_NOT_SUPPORT NetPlane info not initialized.
+ */
+extern HcclResult HcclGetNetPlaneNum(HcclComm comm, uint32_t *netPlaneNum) HCOMM_WEAK_SYMBOL;
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

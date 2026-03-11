@@ -75,6 +75,11 @@ using RankInfo_t = struct tagRankInfo {
     s32 bindDeviceId = INVALID_INT;     // 绑定的device id
     TlsStatus tlsStatus = TlsStatus::UNKNOWN; // TLS开关状态
     std::string originalSuperPodId;     // 划分逻辑超节点前的原超节点ID，来源为用户配置
+
+    // 并行平面信息
+    u32 netPlaneId = 0;           // 当前 rank 的并行平面 ID
+    u32 netPlaneNum = 1;          // 当前通信域的总并行平面数量
+    u32 groupId = INVALID_UINT;   // 组 ID（用于 AHC 算法分组）
 };
 
 // 对外的ranktable格式

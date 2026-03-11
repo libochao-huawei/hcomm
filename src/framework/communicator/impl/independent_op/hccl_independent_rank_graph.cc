@@ -502,6 +502,218 @@ HcclResult CommGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t 
     HCCL_RUN_INFO("[%s] success, group[%s], rankNum[%u]", __func__, hcclComm->GetIdentifier().c_str(), *rankNum);
     return HCCL_SUCCESS;
 }
+
+HcclResult HcclGetNetPlaneId(HcclComm comm, uint32_t *netPlaneId)
+{
+    // 步骤1：入参合法性校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(netPlaneId);
+
+    // 步骤2：类型转换
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
+
+    // 步骤3：获取并行平面信息
+    u32 tmpNetPlaneId = 0;
+    CHK_RET(hcclComm->GetNetPlaneId(tmpNetPlaneId));
+    *netPlaneId = tmpNetPlaneId;
+
+    // 步骤4：关键状态记录
+    HCCL_INFO("[OXC][%s] success, comm[%s], netPlaneId[%u]",
+              __func__, hcclComm->GetIdentifier().c_str(), *netPlaneId);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetNetPlaneNum(HcclComm comm, uint32_t *netPlaneNum)
+{
+    // 步骤1：入参合法性校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(netPlaneNum);
+
+    // 步骤2：类型转换
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
+
+    // 步骤3：获取并行平面信息
+    u32 tmpNetPlaneNum = 0;
+    CHK_RET(hcclComm->GetNetPlaneNum(tmpNetPlaneNum));
+    *netPlaneNum = tmpNetPlaneNum;
+
+    // 步骤4：关键状态记录
+    HCCL_INFO("[OXC][%s] success, comm[%s], netPlaneNum[%u]",
+              __func__, hcclComm->GetIdentifier().c_str(), *netPlaneNum);
+
+    return HCCL_SUCCESS;
+}
+
+/**
+ * @brief 检查通信域是否为 OXC 模式
+ */
+HcclResult HcclIsOxcMode(HcclComm comm, HcclOxcMode *oxcMode)
+{
+    // 步骤1：入参合法性校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(oxcMode);
+
+    // 步骤2：类型转换
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
+
+    // 步骤3：检查 OXC 模式
+    // 判断标准：netPlaneNum > 1 表示启用了 OXC 并行平面特性
+    u32 netPlaneNum = 0;
+    HcclResult ret = hcclComm->GetNetPlaneNum(netPlaneNum);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[OXC][%s] Failed to get netPlaneNum, ret[%d]", __func__, ret);
+        return ret;
+    }
+
+    // 步骤4：设置 OXC 模式
+    if (netPlaneNum > 1) {
+        *oxcMode = HCCL_OXC_MODE_STANDARD;
+        HCCL_INFO("[OXC][%s] OXC standard mode enabled, comm[%s], netPlaneNum[%u]",
+                  __func__, hcclComm->GetIdentifier().c_str(), netPlaneNum);
+    } else {
+        *oxcMode = HCCL_OXC_MODE_NONE;
+        HCCL_INFO("[OXC][%s] OXC mode not enabled, comm[%s], netPlaneNum[%u]",
+                  __func__, hcclComm->GetIdentifier().c_str(), netPlaneNum);
+    }
+
+    return HCCL_SUCCESS;
+}
+
+/**
+ * @brief 获取 OXC 组内通信平面的 rank 列表
+ */
+HcclResult HcclGetOxcIntraPlaneRanks(HcclComm comm, uint32_t **ranks, uint32_t *rankNum)
+{
+    // 步骤1：入参合法性校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(ranks);
+    CHK_PTR_NULL(rankNum);
+
+    // 步骤2：类型转换
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
+
+    // 步骤3：检查 OXC 模式
+    u32 netPlaneNum = 0;
+    HcclResult ret = hcclComm->GetNetPlaneNum(netPlaneNum);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[OXC][%s] Failed to get netPlaneNum, ret[%d]", __func__, ret);
+        return ret;
+    }
+
+    if (netPlaneNum <= 1) {
+        HCCL_WARNING("[OXC][%s] OXC mode not enabled, netPlaneNum[%u]", __func__, netPlaneNum);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    // 步骤4：获取 netLayer=1 的 rank 列表（对应 OXC 组内通信平面）
+    // 注意：在 OXC 模式下，netLayer=1 映射到 COMM_LAYERED_LEVEL1
+    ret = HcclRankGraphGetRanksByLayer(comm, 1, ranks, rankNum);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[OXC][%s] Failed to get intra-plane ranks, ret[%d]", __func__, ret);
+        return ret;
+    }
+
+    HCCL_INFO("[OXC][%s] success, comm[%s], intra-plane rankNum[%u]",
+              __func__, hcclComm->GetIdentifier().c_str(), *rankNum);
+
+    return HCCL_SUCCESS;
+}
+
+/**
+ * @brief 获取 OXC 组间通信平面的 rank 列表
+ */
+HcclResult HcclGetOxcInterPlaneRanks(HcclComm comm, uint32_t **ranks, uint32_t *rankNum)
+{
+    // 步骤1：入参合法性校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(ranks);
+    CHK_PTR_NULL(rankNum);
+
+    // 步骤2：类型转换
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
+
+    // 步骤3：检查 OXC 模式
+    u32 netPlaneNum = 0;
+    HcclResult ret = hcclComm->GetNetPlaneNum(netPlaneNum);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[OXC][%s] Failed to get netPlaneNum, ret[%d]", __func__, ret);
+        return ret;
+    }
+
+    if (netPlaneNum <= 1) {
+        HCCL_WARNING("[OXC][%s] OXC mode not enabled, netPlaneNum[%u]", __func__, netPlaneNum);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    // 步骤4：获取 netLayer=2 的 rank 列表（对应 OXC 组间通信平面）
+    // 注意：在 OXC 模式下，netLayer=2 映射到 COMM_LAYERED_LEVEL2
+    ret = HcclRankGraphGetRanksByLayer(comm, 2, ranks, rankNum);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[OXC][%s] Failed to get inter-plane ranks, ret[%d]", __func__, ret);
+        return ret;
+    }
+
+    HCCL_INFO("[OXC][%s] success, comm[%s], inter-plane rankNum[%u]",
+              __func__, hcclComm->GetIdentifier().c_str(), *rankNum);
+
+    return HCCL_SUCCESS;
+}
+
+/**
+ * @brief 获取 OXC 分组信息
+ */
+HcclResult HcclGetOxcGroupInfo(HcclComm comm, uint32_t *groupId, uint32_t *groupSize, uint32_t *groupNum)
+{
+    // 步骤1：入参合法性校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(groupId);
+    CHK_PTR_NULL(groupSize);
+    CHK_PTR_NULL(groupNum);
+
+    // 步骤2：类型转换
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(comm);
+
+    // 步骤3：检查 OXC 模式
+    u32 netPlaneNum = 0;
+    HcclResult ret = hcclComm->GetNetPlaneNum(netPlaneNum);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[OXC][%s] Failed to get netPlaneNum, ret[%d]", __func__, ret);
+        return ret;
+    }
+
+    if (netPlaneNum <= 1) {
+        HCCL_WARNING("[OXC][%s] OXC mode not enabled, netPlaneNum[%u]", __func__, netPlaneNum);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    // 步骤4：获取 netPlaneId（当前 rank 所在的并行平面 ID，即 groupId）
+    u32 netPlaneId = 0;
+    ret = hcclComm->GetNetPlaneId(netPlaneId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[OXC][%s] Failed to get netPlaneId, ret[%d]", __func__, ret);
+        return ret;
+    }
+
+    // 步骤5：获取总 rank 数
+    u32 totalRankSize = 0;
+    ret = hcclComm->GetRankSize(totalRankSize);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[OXC][%s] Failed to get rankSize, ret[%d]", __func__, ret);
+        return ret;
+    }
+
+    // 步骤6：计算分组信息
+    *groupId = netPlaneId;
+    *groupNum = netPlaneNum;
+    *groupSize = (totalRankSize + netPlaneNum - 1) / netPlaneNum; // 向上取整
+
+    HCCL_INFO("[OXC][%s] success, comm[%s], groupId[%u], groupSize[%u], groupNum[%u]",
+              __func__, hcclComm->GetIdentifier().c_str(), *groupId, *groupSize, *groupNum);
+
+    return HCCL_SUCCESS;
+}
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

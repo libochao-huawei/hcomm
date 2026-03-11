@@ -33,6 +33,11 @@ enum CommPlane {
     COMM_LEVEL1_LOGICAL, //环间
     COMM_ARS, //超节点内给ARS使用
     COMM_COMBINE_L1,    //超节点打平通信域
+
+    // ========== OXC 分层框架新增通信平面 ==========
+    COMM_LAYERED_LEVEL1,    // OXC 组内通信平面 (inner)
+    COMM_LAYERED_LEVEL2,    // OXC 组间通信平面 (cross)
+
     COMM_LEVEL_RESERVED,
 };
 
