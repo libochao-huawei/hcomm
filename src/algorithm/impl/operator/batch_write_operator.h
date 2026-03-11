@@ -22,7 +22,7 @@ public:
                        std::unique_ptr<TopoMatcher> &topoMatcher):
                        CollAlgOperator(algConfigurator, cclBufferManager, dispatcher, topoMatcher,
                                        HcclCMDType::HCCL_CMD_BATCH_WRITE) {}
-    ~BatchWriteOperator() = default;
+    ~BatchWriteOperator() override = default;
 };
 }
 

@@ -864,7 +864,7 @@ __aicore__ inline void AivCrossNode91093Base::SyncAllCycle(AivNotifyType notifyT
     if (ifSyncCore) {
         LocalMultiWaitRecord(1, notifyType, blockGroup, false);
     } 
-    LocalWait(2, notifyType, true);
+    LocalWait(IDX_2, notifyType, true);
 }
 
 __aicore__ inline void AivCrossNode91093Base::ClearCycle()
@@ -876,7 +876,7 @@ __aicore__ inline void AivCrossNode91093Base::ClearCycle()
         SyncAllCycle(AivNotifyType::ClearACK, blockGroup_, GetBlockIdx()==0);
         pipe_barrier(PIPE_ALL);
         ClearGM();
-        Barrier(buffersOut, 2);
+        Barrier(buffersOut, IDX_2);
         pipe_barrier(PIPE_ALL);
     }
     SyncAllCycle(AivNotifyType::ClearDataSingal, numBlocks_, GetBlockIdx()==0);
@@ -892,7 +892,7 @@ __aicore__ inline void AivCrossNode91093Base::GetTargetBuffer(bool isOpBase)
     // 准备参数，buffer地址
     for (uint32_t i = 0; i < numTargets; i++) {
         uint32_t targetRank = targetRanks[i];
-        DataCopy(bufferArgsTensor[i * 4], bufferArgsGT[2 * targetRank], 4); // buffersIn buffersOut
+        DataCopy(bufferArgsTensor[i * IDX_4], bufferArgsGT[2 * targetRank], 4); // buffersIn buffersOut
     }
 
     SyncFunc<HardEvent::MTE2_S>();

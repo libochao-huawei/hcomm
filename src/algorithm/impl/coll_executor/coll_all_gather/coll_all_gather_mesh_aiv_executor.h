@@ -19,7 +19,7 @@ class CollAllGatherMeshAivExecutor : public CollAllGatherExecutor {
 public:
     CollAllGatherMeshAivExecutor(const HcclDispatcher dispatcher,
                                                std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherMeshAivExecutor() = default;
+    ~CollAllGatherMeshAivExecutor() override = default;
  
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
     HcclResult GetAivExecParam(const OpParam& param, AlgResourceResponse& algRes, AivSuperKernelArgs &args) override;
