@@ -20,7 +20,7 @@ class ReduceOperator : public CollAlgOperator {
 public:
     ReduceOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
         HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~ReduceOperator();
+    ~ReduceOperator() override;
 
     // 算法选择
     HcclResult SelectAlg(const std::string &tag, const OpParam &param, std::string &algName, std::string &newTag);
