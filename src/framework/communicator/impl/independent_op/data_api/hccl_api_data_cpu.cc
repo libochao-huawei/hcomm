@@ -643,7 +643,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     }
     hccl::CollComm* collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
-    dfxOpInfo->beginTime = hrtMsprofSysCycleTime();
+    dfxOpInfo->beginTime_ = hrtMsprofSysCycleTime();
 
     LocalNotify *notify = GetNotify(dfxOpInfo->cpuTsThread, dfxOpInfo->cpuWaitAicpuNotifyIdx);
     CHK_PRT_RET(!notify, HCCL_ERROR("[%s]GetNotify null, thread[%llu], notifyIdx[%u]",
@@ -659,14 +659,14 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
     dfxOpInfoOnce->comm_ = static_cast<void*>(collComm);
     dfxOpInfoOnce->isIndop_ = true;
-    dfxOpInfoOnce->op.opTag = collComm->GetCommId();
+    dfxOpInfoOnce->groupName_ = collComm->GetCommId();
     dfxOpInfoOnce->mainStreamId_ = cpuTsStream->id();
     dfxOpInfoOnce->index_ = collComm->UpdateIndex();
     dfxOpInfoOnce->rankSize_ = collComm->GetRankSize();
     //单算子模式，覆盖opTag
     bool opBased = true;
     if (opBased) {
-        dfxOpInfoOnce->op_.opTag = hcclComm->GetIdentifier();
+        dfxOpInfoOnce->op_.opTag = collComm->GetCommId();
     }
     dfxOpInfoOnce->op_.myRank = static_cast<Hccl::RankId>(collComm->GetMyRankId());
 

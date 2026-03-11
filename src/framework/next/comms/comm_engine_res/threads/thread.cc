@@ -145,7 +145,7 @@ HcclResult Thread::ReportHostNotifyWaitTask(u64 notifyId, u64 beginTime, bool is
     u32 taskId = 0;
     u32 streamId = 0;
     hrtGetTaskIdAndStreamID(taskId, streamId);
-    taskParam.endTime                = Hccl::DlProfFunction::GetInstance.dlMsprofSysCycleTime();
+    taskParam.endTime                = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     HCCL_INFO("[ReportHostNotifyWaitTask] time is %llu", taskParam.endTime);
     CHK_PTR_NULL(callback_);
     CHK_RET(callback_(streamId, taskId, taskParam, INVALID_U64));
@@ -180,7 +180,7 @@ HcclResult Thread::ReportNotifyRecordTask(u64 notifyId, u64 beginTime, u32 taskI
     return HCCL_SUCCESS;
 }
 
-HcclResult Thread::ReportHostNotifyRecordTask(u64 notifyId, u64 beginTime, u32 taskId, bool isMaster) const
+HcclResult Thread::ReportHostNotifyRecordTask(u64 notifyId, u64 beginTime, bool isMaster) const
 {
 #ifndef CCL_KERNEL_AICPU
     Hccl::TaskParam taskParam{};
@@ -192,7 +192,7 @@ HcclResult Thread::ReportHostNotifyRecordTask(u64 notifyId, u64 beginTime, u32 t
     u32 taskId = 0;
     u32 streamId = 0;
     hrtGetTaskIdAndStreamID(taskId, streamId);
-    taskParam.endTime                = Hccl::DlProfFunction::GetInstance.dlMsprofSysCycleTime();
+    taskParam.endTime                = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     HCCL_INFO("[ReportHostNotifyRecordTask] time is %llu", taskParam.endTime);
     CHK_PTR_NULL(callback_);
     CHK_RET(callback_(streamId, taskId, taskParam, INVALID_U64));
@@ -203,7 +203,7 @@ HcclResult Thread::ReportHostNotifyRecordTask(u64 notifyId, u64 beginTime, u32 t
 }
 
 
-HcclResult Thread::ReportHostLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, bool isMaster) const;
+HcclResult Thread::ReportHostLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, bool isMaster) const
 {
 #ifndef CCL_KERNEL_AICPU
     Hccl::TaskParam taskParam{};
@@ -228,11 +228,11 @@ HcclResult Thread::ReportHostLocalCopyTask(void *dst, const void *src, uint64_t 
     return HCCL_SUCCESS;
 }
 
-HcclResult Thread::ReportLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, u32 taskId,u32 streamId) const;
+HcclResult Thread::ReportLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, u32 taskId,u32 streamId) const
 {
     Hccl::TaskParam taskParam{};
     taskParam.taskType              = Hccl::TaskParamType::TASK_SDMA;
-    taskParam.beginTime             = begin;
+    taskParam.beginTime             = beginTime;
     taskParam.taskPara.DMA.src      = src;
     taskParam.taskPara.DMA.dst      = dst;
     taskParam.taskPara.DMA.size     = sizeByte;
@@ -256,7 +256,7 @@ HcclResult Thread::ReportLocalCopyTask(void *dst, const void *src, uint64_t size
 
 
 HcclResult Thread::ReportLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
-    HcommReduceOp reduceOp, u64 beginTime, u32 taskId,u32 streamId) const;
+    HcommReduceOp reduceOp, u64 beginTime, u32 taskId,u32 streamId) const
 {
     Hccl::TaskParam taskParam{};
     taskParam.taskType = Hccl::TaskParamType::TASK_REDUCE_INLINE;
@@ -284,7 +284,7 @@ HcclResult Thread::ReportLocalReduceTask(void *dst, const void *src, uint64_t si
 }
 
 HcclResult Thread::ReportHostLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
-    HcommReduceOp reduceOp, u64 beginTime, bool isMaster) const;
+    HcommReduceOp reduceOp, u64 beginTime, bool isMaster) const
 {
 #ifndef CCL_KERNEL_AICPU
     Hccl::TaskParam taskParam{};

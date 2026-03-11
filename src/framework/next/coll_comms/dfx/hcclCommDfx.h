@@ -32,7 +32,7 @@ public:
     HcclResult Init(u32 deviceId, const std::string comTag);
     
     // 注册回调函数
-    HcclResult AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle);
+    HcclResult AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u32 handle);
     
     // 获取MirrorTaskManager
     Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
