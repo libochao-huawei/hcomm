@@ -13,6 +13,10 @@
 #include "local_notify_impl.h"
 #include "llt_hccl_stub_rank_graph.h"
 
+#include <thread>
+#include <atomic>
+#include <chrono>
+
 class TestCpuThread : public BaseInit {
 public:
     void SetUp() override {
@@ -24,74 +28,162 @@ public:
     }
 };
 
-TEST_F(TestCpuThread, Ut_MsgQueue_Init_On_Normal_Expect_Return_HCCL_SUCCESS)
+TEST_F(TestCpuThread, Ut_MemNotify_When_Normal_Alloc_Wait_Expect_Success)
 {
+    MemNotify memNotify;
+
+    // Mock for Alloc (non-PCIe path)
+    MOCKER(hrtGetDevice)
+        .stubs()
+        .with(outBound(0))
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtHalGetDeviceInfo)
+        .stubs()
+        .with(0, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, outBoundPointee(0LL))
+        .will(returnValue(HCCL_SUCCESS));
+
+    void* mockHostVa = reinterpret_cast<void*>(0x1234);
+    MOCKER(malloc)
+        .stubs()
+        .with(sizeof(uint8_t))
+        .will(returnValue(mockHostVa));
+
+    void* mockDeviceVa = reinterpret_cast<void*>(0x5678);
+    MOCKER(aclrtHostRegister)
+        .stubs()
+        .with(mockHostVa, sizeof(uint8_t), ACL_HOST_REGISTER_MAPPED, outBoundPointee(mockDeviceVa))
+        .will(returnValue(ACL_SUCCESS));
+
+    HcclResult ret = memNotify.Alloc();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // Mock for Wait - simulate flag already set
+    MOCKER(hrtGetDevice)
+        .stubs()
+        .with(outBound(0))
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtHalGetDeviceInfo)
+        .stubs()
+        .with(0, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, outBoundPointee(0LL))
+        .will(returnValue(HCCL_SUCCESS));
+
+    // Set the flag manually before calling Wait
+    *reinterpret_cast<uint8_t*>(mockHostVa) = 1;
+
+    ret = memNotify.Wait();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(TestCpuThread, Ut_MemNotify_When_Wait_Timeout_Expect_Fail)
+{
+    MemNotify memNotify;
+
+    // Mock for Alloc (non-PCIe path)
+    MOCKER(hrtGetDevice)
+        .stubs()
+        .with(outBound(0))
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtHalGetDeviceInfo)
+        .stubs()
+        .with(0, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, outBoundPointee(0LL))
+        .will(returnValue(HCCL_SUCCESS));
+
+    void* mockHostVa = reinterpret_cast<void*>(0x5678);
+    MOCKER(malloc)
+        .stubs()
+        .with(sizeof(uint8_t))
+        .will(returnValue(mockHostVa));
+
+    void* mockDeviceVa = reinterpret_cast<void*>(0x9ABC);
+    MOCKER(aclrtHostRegister)
+        .stubs()
+        .with(mockHostVa, sizeof(uint8_t), ACL_HOST_REGISTER_MAPPED, outBoundPointee(mockDeviceVa))
+        .will(returnValue(ACL_SUCCESS));
+
+    HcclResult ret = memNotify.Alloc();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // Mock for Wait - flag not set, should timeout
+    MOCKER(hrtGetDevice)
+        .stubs()
+        .with(outBound(0))
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtHalGetDeviceInfo)
+        .stubs()
+        .with(0, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, outBoundPointee(0LL))
+        .will(returnValue(HCCL_SUCCESS));
+
+    // Ensure flag is 0
+    *reinterpret_cast<uint8_t*>(mockHostVa) = 0;
+
+    ret = memNotify.Wait();
+    EXPECT_EQ(ret, HCCL_E_TIMEOUT);
+}
+
+TEST_F(TestCpuThread, Ut_MemNotify_When_PCIE_Alloc_Wait_Expect_Success)
+{
+    MemNotify memNotify;
+
+    // Mock for Alloc (PCIe path)
+    MOCKER(hrtGetDevice)
+        .stubs()
+        .with(outBound(0))
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtHalGetDeviceInfo)
+        .stubs()
+        .with(0, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, outBoundPointee(1LL))
+        .will(returnValue(HCCL_SUCCESS));
+
+    void* mockDeviceVa = reinterpret_cast<void*>(0x1000);
     MOCKER(aclrtMalloc)
         .stubs()
+        .with(outBoundPointee(mockDeviceVa), sizeof(uint8_t) + 4096ULL, ACL_MEM_MALLOC_HUGE_ONLY)
         .will(returnValue(ACL_SUCCESS));
+
+    uint64_t mockAccessVa = 0xABCD;
+    MOCKER(halSvmRegister)
+        .stubs()
+        .with(0, any(), sizeof(uint8_t), SVM_REGISTER_FLAG_WITH_ACCESS_VA, outBoundPointee(mockAccessVa))
+        .will(returnValue(0));
+
+    HcclResult ret = memNotify.Alloc();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // Mock for Wait - simulate device flag set
+    MOCKER(hrtGetDevice)
+        .stubs()
+        .with(outBound(0))
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtHalGetDeviceInfo)
+        .stubs()
+        .with(0, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, outBoundPointee(1LL))
+        .will(returnValue(HCCL_SUCCESS));
+
+    // Mock aclrtMemcpy to return flag = 1
     MOCKER(aclrtMemcpy)
         .stubs()
-        .will(returnValue(ACL_SUCCESS));
-    MOCKER(aclrtFree)
-        .stubs()
-        .will(returnValue(ACL_SUCCESS));
-    MsgQueue msgQueue;
-    HcclResult ret = msgQueue.Init(1024);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-}
+        .with(any(), sizeof(uint8_t), mockDeviceVa, sizeof(uint8_t), ACL_MEMCPY_DEVICE_TO_HOST)
+        .will(do {
+            uint8_t* dst = (uint8_t*)arg0;
+            *dst = 1;
+            return ACL_ERROR_NONE;
+        });
 
-TEST_F(TestCpuThread, Ut_MsgQueue_Push_And_Pop_On_Normal_Expect_Return_HCCL_SUCCESS)
-{
-    MOCKER(aclrtMalloc)
-        .stubs()
-        .will(Invoke([](void **devPtr, size_t size, uint32_t flag) {
-            *devPtr = malloc(size);
-            return ACL_SUCCESS;
-        }));
+    // Mock reset memcpy
     MOCKER(aclrtMemcpy)
-        .stubs()
-        .will(Invoke([](void *dst, size_t destMax, const void *src, size_t count, aclrtMemcpyKind kind) {
-            memcpy(dst, src, count);
-            return ACL_SUCCESS;
-        }));
-    MOCKER(aclrtFree)
-        .stubs()
-        .will(Invoke([](void *devPtr) {
-            free(devPtr);
-            return ACL_SUCCESS;
-        }));
-    MsgQueue msgQueue;
-    HcclResult ret = msgQueue.Init(1024);
+        .expects(least(1))
+        .with(mockDeviceVa, sizeof(uint8_t), any(), sizeof(uint8_t), ACL_MEMCPY_HOST_TO_DEVICE)
+        .will(returnValue(ACL_ERROR_NONE));
+
+    ret = memNotify.Wait();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    ThreadMsgEntity entity;
-    entity.msgId = 1;
-    entity.serviceHandle = 2;
-    entity.args = nullptr;
-    entity.argsSizeByte = 0;
-    ret = msgQueue.push(entity);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    ThreadMsgEntity poppedEntity;
-    ret = msgQueue.pop(poppedEntity);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(poppedEntity.msgId, entity.msgId);
-    EXPECT_EQ(poppedEntity.serviceHandle, entity.serviceHandle);
-    EXPECT_EQ(poppedEntity.args, entity.args);
-    EXPECT_EQ(poppedEntity.argsSizeByte, entity.argsSizeByte);
 }
-
-TEST_F(TestCpuThread, Ut_MsgQueue_Pop_While_Empty_Expect_Return_ERROR)
-{
-
-}
-
-TEST_F(TestCpuThread, Ut_MsgQueue_Push_While_Full_Expect_Return_ERROR)
-{
-
-}
-
-
 
 // Helper that prepares mocks and returns a CpuThread already initialized successfully.
 static CpuThread CreateInitCpuThread() {
