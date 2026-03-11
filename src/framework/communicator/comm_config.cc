@@ -128,7 +128,7 @@ HcclResult CommConfig::CheckMagicWord(const CommConfigHandle &config)
     if (config.info.magicWord != COMM_CONFIG_MAGIC_WORD) {
         RPT_INPUT_ERR(true,
             "EI0003",
-            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+            std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
             std::vector<std::string>({"HcclCommInitRootInfoConfig",
                 std::to_string(config.info.magicWord),
                 "magic word",
@@ -195,7 +195,7 @@ HcclResult CommConfig::SetConfigByVersion(const CommConfigHandle &config)
         // 版本大于等于7，支持配置AclGraph使能/去使能
         RPT_INPUT_ERR(config.aclGraphZeroCopyEnable > 1,
             "EI0003",
-            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+            std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
             std::vector<std::string>({"HcclCommInitRootInfoConfig",
                 std::to_string(config.aclGraphZeroCopyEnable),
                 "aclGraphZeroCopy",
@@ -240,7 +240,7 @@ HcclResult CommConfig::SetConfigBufferSize(const CommConfigHandle &config)
     } else if (config.bufferSize < HCCL_CCL_COMM_BUFFER_MIN) {
         RPT_INPUT_ERR(true,
             "EI0003",
-            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+            std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
             std::vector<std::string>({"HcclCommInitRootInfoConfig",
                 std::to_string(config.bufferSize),
                 "hcclBufferSize",
@@ -268,7 +268,7 @@ HcclResult CommConfig::SetConfigDeterministic(const CommConfigHandle &config)
     } else if (config.deterministic > DETERMINISTIC_STRICT) {
         RPT_INPUT_ERR(true,
             "EI0003",
-            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+            std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
             std::vector<std::string>({"HcclCommInitRootInfoConfig",
                 std::to_string(config.deterministic),
                 "hcclDeterministic",
@@ -286,7 +286,7 @@ HcclResult CommConfig::SetConfigDeterministic(const CommConfigHandle &config)
             if (deviceType != DevType::DEV_TYPE_910B) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
                     std::vector<std::string>({"HcclCommInitRootInfoConfig",
                         std::to_string(config.deterministic),
                         "hcclDeterministic",
