@@ -168,6 +168,7 @@ HcclResult ThreadMgr::HcclThreadAcquireWithStream(CommEngine engine,
     std::shared_ptr<CpuTsThread> handle;
     EXECEPTION_CATCH(handle = std::make_shared<CpuTsThread>(stream, notifyNum, notifyLoadType), return HCCL_E_PTR);
     CHK_RET(handle->Init());
+    handle->SetIsMaster(true);
 
     // 返回第一个句柄
     std::lock_guard<std::mutex> lock(mainThreadMutex_);

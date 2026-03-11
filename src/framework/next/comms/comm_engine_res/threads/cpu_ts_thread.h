@@ -44,8 +44,11 @@ public:
     HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const override;
     HcclResult LocalReduce(
         void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const override;
+    bool GetMaster() const override;
+    void SetIsMaster(bool isMaster) override;
 
 private:
+    bool isMaser_{false};
     struct HcclStreamInfo {
         s32 streamIds;
         uint32_t sqIds;
