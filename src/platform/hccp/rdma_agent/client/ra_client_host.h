@@ -46,6 +46,7 @@ struct RaSocketOps {
 struct RaRdmaOps {
     int (*raRdevInit)(
         struct RaRdmaHandle *rdmaHandle, unsigned int notifyType, struct rdev rdevInfo, unsigned int *rdevIndex);
+    int (*raNdaGetDirectFlag)(struct RaRdmaHandle *rdmaHandle, int *directFlag);
     int (*raRdevGetPortStatus)(struct RaRdmaHandle *rdmaHandle, enum PortStatus *status);
     int (*raGetLbMax)(struct RaRdmaHandle *rdmaHandle, int *lbMax);
     int (*raRdevDeinit)(struct RaRdmaHandle *rdmaHandle, unsigned int notifyType);
@@ -61,6 +62,8 @@ struct RaRdmaOps {
     int (*raTypicalQpCreate)(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode, struct TypicalQp *qpInfo,
         void **qpHandle);
     int (*raLoopbackQpCreate)(struct RaRdmaHandle *rdevHandle, struct LoopbackQpPair *qpPair, void **qpHandle);
+    int (*raNdaQpCreate)(struct RaRdmaHandle *rdmaHandle, struct NdaQpInitAttr *attr, struct NdaQpInfo *info,
+        void **qpHandle);
     int (*raQpDestroy)(struct RaQpHandle *handle);
     int (*raTypicalQpModify)(struct RaQpHandle *handle, struct TypicalQp *localQpInfo,
         struct TypicalQp *remoteQpInfo);
