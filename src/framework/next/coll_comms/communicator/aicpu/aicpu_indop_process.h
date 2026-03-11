@@ -28,5 +28,7 @@ public:
     static HcclResult AcquireAicpuCommMgr(const std::string &group, CollCommAicpuMgr **aicpuCommMgrPtr);
     static CollCommAicpuMgr *AicpuGetCommMgrbyGroup(const std::string &group);
     static void AicpuReleaseCommMgrbyGroup(const std::string &group);
+
+    static HcclResult AicpuGetCommAll(std::vector<std::pair<std::string, CollCommAicpuMgr *>> &aicpuCommInfo);
 };
 #endif // __AICPU_INDOP_PROCESS_H__

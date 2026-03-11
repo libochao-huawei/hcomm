@@ -7,33 +7,29 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef COLL_COMM_MGR_H
-#define COLL_COMM_MGR_H
 
-#include <unordered_set>
-#include <memory>
-#include <mutex>
-#include <vector>
-#include "coll_comm.h"
+#ifndef HCCL_AICPU_HDC_HANDLER_H
+#define HCCL_AICPU_HDC_HANDLER_H
+
+#include "hdc_pub.h"
+#include "kfc.h"
 
 namespace hccl {
-/**
- * @note 职责：实现多个集合通信通信域上下文的创建、销毁管理，及多通信域资源、信息的共享等。
- */
-class CollCommMgr {
-private:
-    CollCommMgr();
-    ~CollCommMgr();
 
+class AicpuHdcHandler {
 public:
-    static CollCommMgr *GetInstance();
-    void RegisteCollComm(CollComm* collComm);
-    void UnRegisteCollComm(CollComm* collComm);
-    std::unordered_map<std::string, CollComm*> GetAllCollComms();
+    AicpuHdcHandler(const HDCommunicatePtr &h2dTransfer, const HDCommunicatePtr &d2hTransfer);
+    ~AicpuHdcHandler() = default;
+
+    Hccl::KfcCommand GetKfcCommand();
+    void SetKfcExecStatus(Hccl::KfcStatus state, Hccl::KfcErrType errorCode) const;
 
 private:
-    static CollCommMgr* instance_;
-    std::unordered_map<std::string, CollComm*> allCollComms_;
+    HDCommunicatePtr h2dTransfer_{nullptr};
+    HDCommunicatePtr d2hTransfer_{nullptr};
+    Hccl::KfcCommand         lastCmd_{Hccl::KfcCommand::NONE};
 };
+
 }
-#endif // COLL_COMM_MGR_H
+
+#endif // HCCL_AICPU_HDC_HANDLER_H

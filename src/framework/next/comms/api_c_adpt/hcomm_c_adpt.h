@@ -63,6 +63,10 @@ HcclResult HcommEngineCtxDestroy(CommEngine engine, void *ctx);
 
 HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size);
 
+HcclResult HcommChannelClean(const ChannelHandle *channelList, uint32_t channelNum);
+
+HcclResult HcommChannelResume(const ChannelHandle *channelList, uint32_t channelNum);
+ 
 #ifdef __cplusplus
 }
 #endif // __cplusplus

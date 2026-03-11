@@ -7,9 +7,10 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+
 set(src_list
-    coll_comm.cc
-    coll_comm_mgr.cc
+    task_abort_handler.cc
+    ns_recovery.cc
 )
 
 target_sources(hcomm PRIVATE
@@ -17,10 +18,3 @@ target_sources(hcomm PRIVATE
 )
 
 add_subdirectory(aicpu)
-add_subdirectory(ns_recovery)
-
-target_include_directories(hcomm PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/ns_recovery
-)
-
-
