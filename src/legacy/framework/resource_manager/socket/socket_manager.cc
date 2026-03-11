@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <mutex>
+#include <set>
 #include "socket_manager.h"
 #include "socket_handle_manager.h"
 #include "communicator_impl.h"
@@ -15,6 +16,7 @@
 #include "exception_util.h"
 #include "stl_util.h"
 #include "preempt_port_manager.h"
+#include "socket_exception.h"
 
 namespace Hccl {
 
@@ -128,18 +130,33 @@ void SocketManager::ServerInitAll(const vector<LinkData> &links, u32 &linstenPor
     }
 
     auto &serverSocketMap = SocketManager::GetServerSocketMap();
-    for(uint32_t i = 0; i < links.size() ; i++)
-    {
+    std::set<PortData> newPorts;
+    bool useOld = false;  // 旧段口抢占过，就沿用旧端口
+    for(uint32_t i = 0; i < links.size(); i++) {
         LinkData link = links[i];
         auto localPort = link.GetLocalPort();
+        auto iter = serverSocketMap.find(localPort);
+        if (iter != serverSocketMap.end()) {
+            linstenPort = serverSocketMap[localPort]->GetListenPort();  
+            useOld = true;
+        } else {
+            newPorts.insert(localPort);
+        }
+    }
+
+    for(auto it = newPorts.begin(); it != newPorts.end(); ++it)
+    {
+        auto localPort = *it;
         SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
         IpAddress ipAddress = localPort.GetAddr();
         auto serverSocket = std::make_shared<Socket>(hccpSocketHandle, ipAddress, linstenPort, ipAddress, "server", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
-        if (i == 0) { // 首个链接抢占，其余继承
-            PreemptPortManager::GetInstance(deviceLogicId_).ListenPreempt(serverSocket, listenPortRanges, linstenPort);
+        if (!useOld && it == newPorts.begin()) { // 首个链接抢占，其余继承
+            std::string failMsg = "Failed to preempt the port, please check the env variable HCCL_NPU_SOCKET_PORT_RANGE";
+            TRY_CATCH_THROW(SocketException, failMsg,
+                            PreemptPortManager::GetInstance(deviceLogicId_).ListenPreempt(serverSocket, listenPortRanges, linstenPort));
             HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the preempt port %u", __func__, deviceLogicId_, linstenPort);
         } else {
-            serverSocket->Listen();
+            serverSocket->Listen(linstenPort);
         }
         serverSocketMap[localPort] = std::move(serverSocket);
     }
