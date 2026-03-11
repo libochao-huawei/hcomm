@@ -22,6 +22,11 @@ void MirrorTaskManager::RegFullyCallBack(std::function<void()> callBack)
     return;
 }
 
+OpMode MirrorTaskManager::GetOpMode() const
+{
+    return opMode_;
+}
+
 QueueType MirrorTaskManager::GetQueueType() const
 {
     if(currDfxOpInfo_ == nullptr) {
