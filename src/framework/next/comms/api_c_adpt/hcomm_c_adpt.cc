@@ -100,19 +100,6 @@ HcclResult HcommResMgrInit(uint32_t devPhyId)
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult HcommResMgrInit(uint32_t devPhyId)
-{
-    // 临时方案：触发统一平台层单例触发静态对象声明
-    // 内部流程触发各种单例声明，保证时序
-    EXCEPTION_HANDLE_BEGIN
-    HCCLV2_FUNC_RUN([&]() -> HcclResult {
-        (void)HcommResMgr::GetInstance(devPhyId);
-        return HcclResult::HCCL_SUCCESS;
-    }());
-    EXCEPTION_HANDLE_END
-    return HcclResult::HCCL_SUCCESS;
-}
-
 HcclResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
 {
     auto it = g_EndpointMap.GetEndpoint(endpointHandle);
