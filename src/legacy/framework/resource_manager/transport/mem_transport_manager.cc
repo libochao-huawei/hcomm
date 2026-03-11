@@ -611,15 +611,12 @@ BaseMemTransport *MemTransportManager::RecoverOpbasedMemTransport(const LinkData
     }
 
     // 握手消息定义，包括 通信算子数目，rankTable CRC，通信步骤字段
-    RecoverInfoData recoverInfoData;
-    recoverInfoData.collOpIndex = comm->GetCollOpIndex();
-    recoverInfoData.crcValue = crcValue;
-    recoverInfoData.step = comm->GetStep();
-    RecoverInfo     recoverInfo(recoverInfoData, comm->GetMyRank());
+    CollOperator op{};
+    op.opTag = std::to_string(comm->GetCollOpIndex()) + "_" + std::to_string(crcValue) + "_" + std::to_string(comm->GetStep());
     auto accelerator = comm->GetOpExecuteConfig().accState;
     HCCL_INFO("[MemTransportManager::CreateOpbasedMemTransport] accelerator[%s]", accelerator.Describe().c_str());
     attr.opAcceState = accelerator;
-    attr.handshakeMsg = recoverInfo.GetUniqueId();
+    attr.handshakeMsg = op.GetUniqueId();
 
     SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, comm->GetEstablishLinkSocketTag());
     auto         socket = comm->GetSocketManager().GetConnectedSocket(socketConfig);
@@ -683,15 +680,12 @@ BaseMemTransport *MemTransportManager::RecoverOffloadMemTransport(const std::str
         }
     }
     // 握手消息定义，包括 通信算子数目，rankTable CRC，通信步骤字段
-    RecoverInfoData recoverInfoData;
-    recoverInfoData.collOpIndex = comm->GetCollOpIndex();
-    recoverInfoData.crcValue = crcValue;
-    recoverInfoData.step = comm->GetStep();
-    RecoverInfo     recoverInfo(recoverInfoData, comm->GetMyRank());
+    CollOperator op{};
+    op.opTag = std::to_string(comm->GetCollOpIndex()) + "_" + std::to_string(crcValue) + "_" + std::to_string(comm->GetStep());
     auto accelerator = comm->GetOpExecuteConfig().accState;
     HCCL_INFO("[MemTransportManager::CreateOpbasedMemTransport] accelerator[%s]", accelerator.Describe().c_str());
     attr.opAcceState = accelerator;
-    attr.handshakeMsg = recoverInfo.GetUniqueId();
+    attr.handshakeMsg = op.GetUniqueId();
 
     SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, comm->GetEstablishLinkSocketTag());
     auto         socket = comm->GetSocketManager().GetConnectedSocket(socketConfig);
@@ -776,9 +770,6 @@ bool MemTransportManager::IsAllOpbasedTransportRecoveredReady()
             ++linkIt;
         } else {
             HCCL_INFO("linkData[%s], status[%s].", linkIt->first.Describe().c_str(), status.Describe().c_str());
-            // 校验通信域一致性
-            RecoverInfo(opTagOpbasedMap[linkIt->first]->GetLocalHandshakeMsg())
-                .Check(opTagOpbasedMap[linkIt->first]->GetRmtHandshakeMsg());
             linkIt = newOpbasedTransports.erase(linkIt);
         }
     }
@@ -807,9 +798,6 @@ bool MemTransportManager::IsAllOffloadTransportRecoveredReady(const std::string 
         } else {
             HCCL_INFO("opTag[%s] linkData[%s] status[%s]", opTag.c_str(), linkIt->first.Describe().c_str(),
                       status.Describe().c_str());
-            // 校验通信域一致性
-            RecoverInfo(opTagOffloadMap[opTag][linkIt->first]->GetLocalHandshakeMsg())
-                .Check(opTagOffloadMap[opTag][linkIt->first]->GetRmtHandshakeMsg());
             linkIt = newOffloadTransports[opTag].erase(linkIt);
         }
     }
