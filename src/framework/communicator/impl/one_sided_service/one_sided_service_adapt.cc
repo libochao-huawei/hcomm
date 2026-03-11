@@ -142,8 +142,13 @@ HcclResult HcclRegisterMem(HcclComm comm, u32 remoteRank, int type,
         RPT_INPUT_ERR(desc == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcclRegisterMem", "nullptr", "memory description", "non-null pointer"}));
         CHK_PTR_NULL(desc);
-
-        HCCLV2_FUNC_RUN(HcclRegisterMemV2(comm, remoteRank, type, addr, size, desc));
+        HCCLV2_FUNC_RUN([&]() -> HcclResult {
+            hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclRegisterMemV2(commV2, remoteRank, type, addr, size, desc));
+            return HCCL_SUCCESS;
+        }());
         u32 localRank = INVALID_VALUE_RANKID;
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         CHK_RET(hcclComm->GetUserRank(localRank));
@@ -193,8 +198,13 @@ HcclResult HcclDeregisterMem(HcclComm comm, HcclMemDesc* desc)
         RPT_INPUT_ERR(desc == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcclDeregisterMem", "nullptr", "memory description", ""}));
         CHK_PTR_NULL(desc);
-
-        HCCLV2_FUNC_RUN(HcclDeregisterMemV2(comm, desc));
+        HCCLV2_FUNC_RUN([&]() -> HcclResult {
+            hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclDeregisterMemV2(commV2, desc));
+            return HCCL_SUCCESS;
+        }());
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         std::string commIdentifier = hcclComm->GetIdentifier();
         HCCL_RUN_INFO("Entry-%s:comm[%s], memDescPtr[%p]", __func__, commIdentifier.c_str(), desc);
@@ -252,8 +262,13 @@ HcclResult HcclExchangeMemDesc(HcclComm comm, u32 remoteRank, HcclMemDescs* loca
             LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
             timeout),
         HCCL_E_PARA);
-
-        HCCLV2_FUNC_RUN(HcclExchangeMemDescV2(comm, remoteRank, local, timeout, remote, actualNum));
+        HCCLV2_FUNC_RUN([&]() -> HcclResult {
+            hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclExchangeMemDescV2(commV2, remoteRank, local, timeout, remote, actualNum));
+            return HCCL_SUCCESS;
+        }());
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         std::string commIdentifier = hcclComm->GetIdentifier();
         HCCL_RUN_INFO("Entry-%s:comm[%s], remoteRank[%u], localMemDescPtr[%p], timeout[%d s], remoteMemDescPtr[%p], "
@@ -295,8 +310,13 @@ HcclResult HcclEnableMemAccess(HcclComm comm, HcclMemDesc* remoteMemDesc, HcclMe
         std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
         std::vector<std::string>({"HcclEnableMemAccess", "nullptr", "remoteMem Param error", "non-null pointer"}));
     CHK_PTR_NULL(remoteMem);
-
-        HCCLV2_FUNC_RUN(HcclEnableMemAccessV2(comm, remoteMemDesc, remoteMem));
+        HCCLV2_FUNC_RUN([&]() -> HcclResult {
+            hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclEnableMemAccessV2(commV2, remoteMemDesc, remoteMem));
+            return HCCL_SUCCESS;
+        }());
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         std::string commIdentifier = hcclComm->GetIdentifier();
         HCCL_RUN_INFO("Entry-%s:comm[%s], remoteMemDescPtr[%p], remoteMemPtr[%p]", __func__, commIdentifier.c_str(), remoteMemDesc,
@@ -327,8 +347,13 @@ HcclResult HcclDisableMemAccess(HcclComm comm, HcclMemDesc* remoteMemDesc)
         std::vector<std::string>(
             {"HcclEnableMemAccess", "nullptr", "remote memory description", "non-null pointer"}));
     CHK_PTR_NULL(remoteMemDesc);
-
-        HCCLV2_FUNC_RUN(HcclDisableMemAccessV2(comm, remoteMemDesc));
+        HCCLV2_FUNC_RUN([&]() -> HcclResult {
+            hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclDisableMemAccessV2(commV2, remoteMemDesc));
+            return HCCL_SUCCESS;
+        }());
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         std::string commIdentifier = hcclComm->GetIdentifier();
         HCCL_RUN_INFO("Entry-%s:comm[%s], remoteMemDescPtr[%p]", __func__, commIdentifier.c_str(), remoteMemDesc);
@@ -396,7 +421,13 @@ inline static HcclResult HcclBatchParaCheck(HcclBatchData &paraData, std::string
 HcclResult HcclBatchPut(HcclComm comm, u32 remoteRank, HcclOneSideOpDesc* desc, u32 descNum, rtStream_t stream)
 {
     EXCEPTION_HANDLE_BEGIN
-        HCCLV2_FUNC_RUN(HcclBatchPutV2(comm, remoteRank, desc, descNum, stream));
+        HCCLV2_FUNC_RUN([&]() -> HcclResult {
+            hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclBatchPutV2(commV2, remoteRank, desc, descNum, stream));
+            return HCCL_SUCCESS;
+        }());
         HcclOneSidedSetIfProfile();
         HcclUs startut = TIME_NOW();
         uint64_t beginTime = hrtMsprofSysCycleTime();
@@ -432,7 +463,13 @@ HcclResult HcclBatchPut(HcclComm comm, u32 remoteRank, HcclOneSideOpDesc* desc, 
 HcclResult HcclBatchGet(HcclComm comm, u32 remoteRank, HcclOneSideOpDesc* desc, u32 descNum, rtStream_t stream)
 {
     EXCEPTION_HANDLE_BEGIN
-        HCCLV2_FUNC_RUN(HcclBatchGetV2(comm, remoteRank, desc, descNum, stream));
+        HCCLV2_FUNC_RUN([&]() -> HcclResult {
+            hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclBatchGetV2(commV2, remoteRank, desc, descNum, stream));
+            return HCCL_SUCCESS;
+        }());
         HcclOneSidedSetIfProfile();
         HcclUs startut = TIME_NOW();
         uint64_t beginTime = hrtMsprofSysCycleTime();
