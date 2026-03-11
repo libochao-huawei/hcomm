@@ -369,13 +369,10 @@ void CcuTransportMgr::RecoverTransportsConnect()
         }
 
         // 握手消息定义，包括 通信算子数目，rankTable CRC，通信步骤字段
-        RecoverInfoData recoverInfoData;
-        recoverInfoData.collOpIndex = comm->GetCollOpIndex();
-        recoverInfoData.crcValue    = crcValue;
-        recoverInfoData.step        = comm->GetStep();
-        RecoverInfo recoverInfo(recoverInfoData, comm->GetMyRank());
+        CollOperator op{};
+        op.opTag = std::to_string(comm->GetCollOpIndex()) + "_" + std::to_string(crcValue) + "_" + std::to_string(comm->GetStep());
         transport->SetLocalOpAcceState(accelerator);
-        transport->SetHandshakeMsg(recoverInfo.GetUniqueId());
+        transport->SetHandshakeMsg(op.GetUniqueId());
         HCCL_INFO("[CcuTransportMgr::%s] transport=[%s]", __func__, transport->Describe().c_str());
         HCCL_INFO("[CcuTransportMgr::%s] links=[%s]", __func__, pair.second.Describe().c_str());
     }
@@ -409,9 +406,6 @@ void CcuTransportMgr::WaitTransportsRecoverReady(vector<std::pair<CcuTransport*,
                 ++transIter;
                 continue;
             }
-
-            RecoverInfo((*transIter).first->GetLocalHandshakeMsg())
-                .Check((*transIter).first->GetRmtHandshakeMsg());
             transIter = transports.erase(transIter);
         }
 
