@@ -19,15 +19,20 @@
     - 单元测试执行时间 < 1 秒/用例
     - 避免不必要的资源分配
     - 及时释放资源
+    - 明确被测试对象范围，不做过度测试，不对系统函数和其他组件函数进行功能测试
 
 4. 覆盖率目标
 
     - 行覆盖率 ≥ 80%
     - 函数覆盖率 ≥ 85%
 
+    > 尽可能做到逻辑覆盖，重点覆盖异常场景
+
 ## 2. 测试组织规范
 
 ### 2.1 测试目录结构
+
+**基本规范**：`test/ut` 目录下的测试文件路径，应当与 `src` 目录下的被测试源码文件路径保持一致
 
 ```
 test/
@@ -41,28 +46,8 @@ test/
 |   |   └── resource
 |   ├── stub
 |   └── depends
-├── st/algorithm
-|   ├── testcase
-|   └── utils
 └── CMakeLists.txt
 ```
-
-### 2.2 大型测试的拆分
-
-1. 按功能模块拆分：同一功能模块的测试集中在一个目录
-
-2. 按测试类型拆分：
-
-    - 正常流程测试
-    - 异常流程测试
-    - 边界条件测试
-    - 性能测试
-
-3. 按测试复杂度拆分：
-
-    - 基础功能测试（BasicTest）
-    - 集成功能测试（IntegrationTest）
-    - 性能测试（ProfTest）
 
 ## 3. 命名规则
 
@@ -78,10 +63,10 @@ test/
     测试 HCCL 对外提供的公开接口，如 `HcclAllReduce()`，建议一个接口对应一个测试文件，文件名中包含完整接口名称，不改变大小写，格式如下：
 
     ```
-    ut_被测接口名_API_test.cc
+    ut_被测接口名_api_test.cc
 
     // 示例
-    ut_HcclAllReduce_API_test.cc
+    ut_HcclAllReduce_api_test.cc
     ```
 
 2. 文件级别测试
@@ -133,7 +118,7 @@ test/
 1. 公开接口测试
 
     ```c++
-    // 如：ut_HcclReduce_API_test
+    // 如：ut_HcclReduce_api_test.cc
     class HcclReduceApiTest : public ::testing::Test {};
     ```
 
@@ -161,6 +146,8 @@ HCCL 测试用例变量命名规范与业务代码保持一致：
 3. 函数局部变量名：首字母小写、驼峰。如：`HcclComm hcclComm = nullptr;`
 
 ## 4. 测试类设计规范
+
+使用测试类封装公共逻辑：
 
 ```c++
 class ExampleTest : public ::testing::Test {
