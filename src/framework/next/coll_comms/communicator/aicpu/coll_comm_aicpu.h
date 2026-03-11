@@ -39,12 +39,13 @@ public:
     std::string GetIdentifier();
     u32 GetDevPhyId();
     std::vector<std::shared_ptr<Thread>> GetThreads();
-    void CleanUbTransportMap();
 
     bool IsCommReady() const;
 
     // N秒快恢
     hccl::NsRecoveryLitePtr GetNsRecoveryLitePtr();
+    HcclResult Clean();
+    HcclResult Resume(HcclChannelUrmaRes *commParam);
     
 private:
     HcclResult InitBackGroundThread();
@@ -63,7 +64,7 @@ private:
     std::vector<std::shared_ptr<Thread>> threads_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
     // A5 独立算子
-    std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
+    std::unordered_map<ChannelHandle, std::shared_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
 
     // N秒快恢相关
     hccl::NsRecoveryLitePtr nsRecoveryLitePtr_{nullptr};

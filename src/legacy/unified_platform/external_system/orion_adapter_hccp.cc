@@ -1746,7 +1746,6 @@ std::vector<HrtDevEidInfo> HrtRaGetDevEidInfoList(const HRaInfo &raInfo)
 
 ReqHandleResult HrtRaGetAsyncReqResult(RequestHandle &reqHandle)
 {
-    HCCL_INFO("[HrtRaGetAsyncReqResult] Input params: reqHandle=0x%llx", reqHandle);
     if (reqHandle == 0) {
         HCCL_ERROR("[%s] failed, reqHandle is 0.params: reqHandle=0x%llx", __func__, reqHandle);
         return ReqHandleResult::INVALID_PARA;

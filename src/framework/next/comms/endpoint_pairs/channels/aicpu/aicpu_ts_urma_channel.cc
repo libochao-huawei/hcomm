@@ -247,11 +247,32 @@ HcclResult AicpuTsUrmaChannel::H2DResPack(std::vector<char>& buffer)
     return HCCL_SUCCESS;
 }
 
+HcclResult AicpuTsUrmaChannel::PackConnData(std::vector<char> &data)
+{
+    std::vector<Hccl::ModuleData> dataVec;
+    dataVec.resize(Hccl::AicpuResMgrType::__COUNT__);
+
+    Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM;
+    CHK_RET(SetModuleDataName(dataVec[resType], "UbMemTransport"));
+
+    std::vector<char> result;
+    Hccl::BinaryStream      binaryStream;
+    binaryStream << memTransport_->PackConnData();
+    binaryStream.Dump(result);
+
+    dataVec[resType].data = result;
+
+    Hccl::AicpuResPackageHelper helper;
+    data = helper.GetPackedData(dataVec);
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult AicpuTsUrmaChannel::Clean()
 {
     commonRes_.connVec.clear();
     connections_.clear();
-    memTransport_.reset();
+    memTransport_->SetConnVec({});
 
     return HCCL_SUCCESS;
 }
@@ -259,7 +280,8 @@ HcclResult AicpuTsUrmaChannel::Clean()
 HcclResult AicpuTsUrmaChannel::Resume()
 {
     BuildConnection();
-    BuildUbMemTransport();
+    memTransport_->SetConnVec(commonRes_.connVec);
+
     ChannelStatus status = GetStatus();
     CHK_PRT_RET(status == ChannelStatus::FAILED, HCCL_ERROR("%s failed, status[%d]", __func__, status), HCCL_E_NETWORK);
     CHK_PRT_RET(status == ChannelStatus::SOCKET_TIMEOUT, HCCL_ERROR("%s timeout, status[%d]", __func__, status), HCCL_E_TIMEOUT);

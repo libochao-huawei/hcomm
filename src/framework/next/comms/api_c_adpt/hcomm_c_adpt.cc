@@ -83,7 +83,7 @@ static inline HcclResult WithChannelByHandleLocked(ChannelHandle inHandle, Func 
 using namespace hcomm;
 static HcommEndpointMap g_EndpointMap;
 
-HcclResult HcommEndpointGet_(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
+HcclResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
 {
     auto it = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(it == nullptr, HCCL_ERROR("[%s] endpoint not found in g_EndpointMap, endpointHandle[%p]",
@@ -95,6 +95,8 @@ HcclResult HcommEndpointGet_(EndpointHandle endpointHandle, void **endpoint)  //
 
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle)
 {
+    CHK_PTR_NULL(endpoint);
+    CHK_PTR_NULL(endpointHandle);
     if (endpoint->loc.locType != ENDPOINT_LOC_TYPE_DEVICE && endpoint->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
         HCCL_ERROR("[%s] Only support END_POINT_LOCATION_DEVICE AND END_POINT_LOCATION_HOST, but "
                    "endpoint->loc.locType is %d",
@@ -105,9 +107,17 @@ HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *end
 
     std::unique_ptr<Endpoint> endpointPtr = nullptr;
 
-    CHK_RET(Endpoint::CreateEndpoint(*endpoint, endpointPtr));
+    HcclResult ret = Endpoint::CreateEndpoint(*endpoint, endpointPtr);
+    if (ret != HCCL_SUCCESS){
+        HCCL_ERROR("call Endpoint::CreateEndpoint failed");
+        return ret;
+    }
     CHK_PTR_NULL(endpointPtr);
-    CHK_RET(endpointPtr->Init());
+    ret = endpointPtr->Init();
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("call endpointPtr->Init failed");
+        return ret;
+    }
 
     const EndpointHandle handle = reinterpret_cast<EndpointHandle>(endpointPtr.get());
     CHK_PTR_NULL(handle);
@@ -604,6 +614,57 @@ HcclResult HcommThreadAllocWithStream(CommEngine engine,
     return HCCL_SUCCESS;
 }
 
+HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx)
+{
+    if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
+        || engine == COMM_ENGINE_CCU) {
+        *ctx = malloc(size);
+        CHK_PTR_NULL(*ctx);
+        CHK_SAFETY_FUNC_RET(memset_s(*ctx, size, 0, size));
+    } else if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS
+        || engine == COMM_ENGINE_AIV) {
+        CHK_RET(hrtMalloc(ctx, size));
+    } else {
+        HCCL_ERROR("[%s] not support engine type[%d]", __func__, engine);
+        return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommEngineCtxDestroy(CommEngine engine, void *ctx)
+{
+    CHK_PTR_NULL(ctx);
+    if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
+        || engine == COMM_ENGINE_CCU) {
+        free(ctx);
+    } else if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS
+        || engine == COMM_ENGINE_AIV) {
+        CHK_RET(hrtFree(ctx));
+    } else {
+        HCCL_ERROR("[%s] invalid engine[%d]", __func__, engine);
+        return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size)
+{
+    if (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU
+        || engine == COMM_ENGINE_AIV) {
+        // 从Host内存拷贝到Device Context内存上
+        CHK_RET(hrtMemSyncCopy(reinterpret_cast<uint8_t*>(dstCtx), size, srcCtx, size,
+            HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+    } else if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
+        || engine == COMM_ENGINE_CCU) {
+        CHK_SAFETY_FUNC_RET(memcpy_s(reinterpret_cast<uint8_t*>(dstCtx), size, srcCtx, size));
+    } else {
+        HCCL_ERROR("[%s]copy engine ctx failed, Unsupported engine[%d]", __func__, engine);
+        return HCCL_E_PARA;
+    }
+    HCCL_INFO("[%s]copy engine ctx success, engine[%d]", __func__, engine);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcommChannelClean(const ChannelHandle *channelList, uint32_t listNum)
 {
     CHK_PTR_NULL(channelList);
@@ -690,53 +751,85 @@ HcclResult HcommChannelResume(const ChannelHandle *channelList, uint32_t channel
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx)
+HcclResult HcommChannelUpdateKernelLaunch(ChannelHandle* const deviceChannelHandles, const ChannelHandle* const hostChannelHandles, uint32_t listNum,
+    const std::string &commTag, aclrtBinHandle binHandle)
 {
-    if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
-        || engine == COMM_ENGINE_CCU) {
-        *ctx = malloc(size);
-        CHK_PTR_NULL(*ctx);
-        CHK_SAFETY_FUNC_RET(memset_s(*ctx, size, 0, size));
-    } else if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS
-        || engine == COMM_ENGINE_AIV) {
-        CHK_RET(hrtMalloc(ctx, size));
-    } else {
-        HCCL_ERROR("[%s] not support engine type[%d]", __func__, engine);
-        return HCCL_E_PARA;
-    }
-    return HCCL_SUCCESS;
-}
+    HCCL_RUN_INFO("[%s] listNum[%u], commTag[%s]", __func__, listNum, commTag.c_str());
+    std::vector<std::vector<char>> hostPackBuffers(listNum);
+    HcclChannelUrmaRes channelParam{};
+    CHK_SAFETY_FUNC_RET(memset_s(&channelParam, sizeof(channelParam), 0, sizeof(channelParam)));
 
-HcclResult HcommEngineCtxDestroy(CommEngine engine, void *ctx)
-{
-    CHK_PTR_NULL(ctx);
-    if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
-        || engine == COMM_ENGINE_CCU) {
-        free(ctx);
-    } else if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS
-        || engine == COMM_ENGINE_AIV) {
-        CHK_RET(hrtFree(ctx));
-    } else {
-        HCCL_ERROR("[%s] invalid engine[%d]", __func__, engine);
-        return HCCL_E_PARA;
+    // 获取到host侧序列化的地址
+    uint32_t totalListNum = 0;
+    for (uint32_t index = 0; index < listNum; index++) {
+        auto aicpuTsUrmaChannel = reinterpret_cast<hcomm::AicpuTsUrmaChannel *>(hostChannelHandles[index]);
+        CHK_PRT(aicpuTsUrmaChannel->PackConnData(hostPackBuffers[index]));
+        totalListNum += hostPackBuffers[index].size();
     }
-    return HCCL_SUCCESS;
-}
+    HCCL_INFO("[%s] totalListNum[%llu]", __func__, totalListNum);
 
-HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size)
-{
-    if (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU
-        || engine == COMM_ENGINE_AIV) {
-        // 从Host内存拷贝到Device Context内存上
-        CHK_RET(hrtMemSyncCopy(reinterpret_cast<uint8_t*>(dstCtx), size, srcCtx, size,
-            HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
-    } else if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
-        || engine == COMM_ENGINE_CCU) {
-        CHK_SAFETY_FUNC_RET(memcpy_s(reinterpret_cast<uint8_t*>(dstCtx), size, srcCtx, size));
-    } else {
-        HCCL_ERROR("[%s]copy engine ctx failed, Unsupported engine[%d]", __func__, engine);
-        return HCCL_E_PARA;
-    }
-    HCCL_INFO("[%s]copy engine ctx success, engine[%d]", __func__, engine);
+    // 分配连续的host内存，将序列化的地址放入其中
+    hccl::HostMem hostPackBuf = hccl::HostMem::alloc(totalListNum);
+    CHK_PTR_NULL(hostPackBuf.ptr());
+    CHK_RET(CombineHostMemory(hostPackBuffers, hostPackBuf));
+    hccl::DeviceMem devicePackBuf = hccl::DeviceMem::alloc(totalListNum);
+    CHK_PTR_NULL(devicePackBuf.ptr());
+
+    // 将host侧序列化内容拷贝到device侧内存中
+    CHK_RET(hrtMemSyncCopy(devicePackBuf.ptr(),
+        totalListNum,
+        hostPackBuf.ptr(),
+        totalListNum,
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+
+    // channelParam资源参数填充
+    s32 sRet = strncpy_s(channelParam.hcomId, HCOMID_MAX_LENGTH, commTag.c_str(), HCOMID_MAX_LENGTH - 1);
+    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[%s] str copy fail. return[%d]", __func__, sRet), HCCL_E_INTERNAL);
+
+    channelParam.channelList = deviceChannelHandles;
+    channelParam.listNum = listNum;
+    channelParam.uniqueIdAddr = static_cast<void *>(devicePackBuf.ptr());
+    channelParam.uniqueIdSize = totalListNum;
+    channelParam.singleUniqueIdSize = totalListNum / hostPackBuffers.size();
+
+    // 创建局部流
+    hccl::Stream localStream(hccl::StreamType::STREAM_TYPE_ONLINE);
+    constexpr u32 aicpuStreamMode = 1;
+    CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
+
+    // 下kernel
+    std::string kernelName = "RunAicpuIndOpChannelUpdateV2";
+    struct InitTask {
+        u64 context;
+        bool isCustom;
+    };
+    // 拷贝channelParam到device
+    hccl::DeviceMem addr = hccl::DeviceMem::alloc(sizeof(channelParam));
+    CHK_PTR_NULL(addr.ptr());
+
+    CHK_RET(hrtMemSyncCopy(addr.ptr(),
+        sizeof(channelParam),
+        &channelParam,
+        sizeof(channelParam),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+
+    InitTask customInitTask = {0};
+    customInitTask.context = reinterpret_cast<u64>(addr.ptr());
+    customInitTask.isCustom = false;
+    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
+                    std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
+    CHK_RET(hccl::AicpuAclKernelLaunch(localStream.ptr(),
+        reinterpret_cast<void *>(&customInitTask),
+        sizeof(customInitTask),
+        binHandle,
+        kernelName,
+        true,
+        timeOut));
+
+    CHK_RET(
+        hcclStreamSynchronize(localStream.ptr(), hccl::CommConfiger::GetInstance().GetCommConfigExecTimeOut(commTag)));
+
+    HCCL_INFO("[%s] channel update kernel launch success.", __func__);
+
     return HCCL_SUCCESS;
 }

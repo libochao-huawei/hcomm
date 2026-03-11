@@ -21,6 +21,7 @@
 #include "engine_ctxs/engine_ctxs.h"
 #include "endpoint_mgr.h"
 #include "communicator/ns_recovery/ns_recovery.h"
+#include "hdc_pub.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 

@@ -43,7 +43,7 @@ private:
     HcclResult GetAllGatherStepInfo(u32 step, u32 nSteps, NHRStepInfo &stepInfo);
     HcclResult ProcessNHRStepInfo(std::vector<NHRStepInfo> &stepInfoVector, RankGroup &rankGroup,
                                 std::map<u32, u32> &indexMap, std::vector<LinkData> &linksDie0,
-                                std::vector<LinkData> &linksDie1, const ResLinks &tempLinks);
+                                std::vector<LinkData> &linksDie1, const ResLinks &tempLinks, uint32_t axisSize);
     HcclResult SplitDataFor2Dies(uint64_t dataCount, const ResLinks &tempLinks,
                                 uint64_t &die0Size, uint64_t &die1Size) const;
     uint32_t virtRankId2RankId(const u32 virtRankId);

@@ -311,6 +311,10 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         }
 
         CHK_RET(HcommChannelKernelLaunch(channelHandles, hostChannelHandleList, channelNum, commTag, binHandle_));
+
+        NsRecoveryData data{channelHandles, hostChannelHandleList, channelNum, commTag};
+        nsRecoveryDatas_[engine].push_back(data);
+        
         return HCCL_SUCCESS;
     }
 
@@ -323,9 +327,6 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
             channelNum * sizeof(ChannelHandle)));
         return HCCL_SUCCESS;
     }
-
-    NsRecoveryData data{channelHandles, hostChannelHandleList, channelNum, commTag};
-    nsRecoveryDatas_[engine].push_back(data);
 
     HCCL_ERROR("[MyRank][%s] unsupported comm engine[%d].", __func__, engine);
     return HCCL_E_NOT_SUPPORT;
@@ -374,8 +375,8 @@ HcclResult MyRank::ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMe
     return HCCL_SUCCESS;
 }
 
-void MyRank::SetKfcControlTransfer(std::shared_ptr<Hccl::HDCommunicate> kfcControlTransferH2D, 
-        std::shared_ptr<Hccl::HDCommunicate> kfcStatusTransferD2H)
+void MyRank::SetKfcControlTransfer(std::shared_ptr<HDCommunicate> kfcControlTransferH2D, 
+        std::shared_ptr<HDCommunicate> kfcStatusTransferD2H)
 {
     kfcControlTransferH2D_ = kfcControlTransferH2D;
     kfcStatusTransferD2H_ = kfcStatusTransferD2H;

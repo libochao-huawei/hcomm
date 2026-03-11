@@ -85,8 +85,6 @@ HcclResult CollComm::InitHDCommunicate()
         return HCCL_E_PTR);
     CHK_RET(kfcStatusTransferD2H_->InitHost());
     return HCCL_SUCCESS;
-
-    return HCCL_SUCCESS;
 }
 
 HcclResult CollComm::GetHDCommunicate(
@@ -149,11 +147,13 @@ HcclResult CollComm::Resume()
     }
     
     HCCL_INFO("[NsRecovery][Resume] start to Resume.");
-    if (myRank_) {
-        myRank_->Resume();
-    } else {
-        HCCL_WARNING("[NsRecovery][Resume] myRank nullptr, no need to resume.");
+    CHK_SMART_PTR_NULL(myRank_);
+    auto ret = myRank_->Resume();
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[NsRecovery][Resume] %s failed!", __func__);
+        return ret;
     }
+
     commStatus_ = HcclCommStatus::HCCL_COMM_READY;
     isCleaned_ = false;
     HCCL_INFO("[NsRecovery][Resume] Resume success.");

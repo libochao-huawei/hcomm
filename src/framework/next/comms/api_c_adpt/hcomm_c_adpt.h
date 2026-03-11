@@ -21,7 +21,7 @@ extern "C" {
 
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
 
-HcclResult HcommEndpointGet_(const EndpointHandle endpointHandle, void **endpoint);
+HcclResult HcommEndpointGet(const EndpointHandle endpointHandle, void **endpoint);
 
 HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle);
 
@@ -66,6 +66,9 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
 HcclResult HcommChannelClean(const ChannelHandle *channelList, uint32_t channelNum);
 
 HcclResult HcommChannelResume(const ChannelHandle *channelList, uint32_t channelNum);
+
+HcclResult HcommChannelUpdateKernelLaunch(ChannelHandle* const deviceChannelHandles, const ChannelHandle* const hostChannelHandles, uint32_t listNum,
+    const std::string &commTag, aclrtBinHandle binHandle);
  
 #ifdef __cplusplus
 }

@@ -188,8 +188,8 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
     std::vector<char> transpUniqueId;
     binaryStream >> transpUniqueId;
 
-    std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
-    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
+    std::shared_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
+    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_shared<Hccl::UbTransportLiteImpl>(transpUniqueId)),
         return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(ubTransportLiteImpl);
 
@@ -284,12 +284,56 @@ bool CollCommAicpu::IsCommReady() const
     return isCommReady_;
 }
 
-void CollCommAicpu::CleanUbTransportMap()
-{
-    ubTransportMap_.clear();
-}
-
 hccl::NsRecoveryLitePtr CollCommAicpu::GetNsRecoveryLitePtr()
 {
     return nsRecoveryLitePtr_;
+}
+
+HcclResult CollCommAicpu::Clean()
+{
+    for (auto& transPort : ubTransportMap_) {
+        CHK_RET(transPort.second->Clean());
+    }
+    HCCL_INFO("CollCommAicpu::Clean() finished");
+    
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
+{
+    HCCL_INFO("[CollCommAicpu][%s] deviceLogicId[%d], devicePhyId[%u], deviceType[%d], commParam->channelList[%p], "
+              "commParam->listNum[%u], commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
+              __func__, topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType, commParam->channelList,
+              commParam->listNum, commParam->uniqueIdAddr, commParam->uniqueIdSize);
+
+    for (u32 index = 0; index < commParam->listNum; index++) {
+        std::vector<char> data(commParam->singleUniqueIdSize);
+
+        // 计算地址块的偏移
+        u8* currentSrcAddr = reinterpret_cast<u8*>(commParam->uniqueIdAddr) + index * commParam->singleUniqueIdSize;
+        CHK_SAFETY_FUNC_RET(memcpy_s(data.data(), data.size(), currentSrcAddr, commParam->singleUniqueIdSize));
+
+        // 反序列化得到device侧transport对象
+        Hccl::AicpuResPackageHelper helper;
+        auto dataVec = helper.ParsePackedData(data);
+
+        Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM; // todo 待修改
+        if (static_cast<u32>(resType) >= dataVec.size()) {
+            HCCL_ERROR("[CollCommAicpu][%s] fail, resType[%d], dataVec size[%u]", __func__, resType, dataVec.size());
+            return HCCL_E_PARA;
+        }
+
+        // 拿到device的channel句柄
+        ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
+        if (!ubTransportMap_.count(channelList[index])) {
+            HCCL_ERROR("[CollCommAicpu][%s] fail, resType[%d], current ChannelHandle nullptr", __func__, resType);
+            continue;
+        }
+        auto transPortPtr = ubTransportMap_[channelList[index]];
+        transPortPtr->Resume(dataVec[resType].data);
+        HCCL_INFO("[CollCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
+            __func__, index, currentSrcAddr, commParam->singleUniqueIdSize, channelList[index]);
+    }
+
+    return HCCL_SUCCESS;
 }

@@ -61,7 +61,7 @@ void NsRecoveryFuncLite::HandleClean(CollCommAicpu *deviceComm)
         return;
     }
     HCCL_INFO("[NsRecovery][BackGround] received KfcCommand[NS_CLEAN]");
-    deviceComm->CleanUbTransportMap();
+    CHK_RET(deviceComm->Clean());
     StreamClean(deviceComm);
     deviceComm->GetNsRecoveryLitePtr()->SetNeedClean(false);
     deviceComm->GetNsRecoveryLitePtr()->BackGroundSetStatus(Hccl::KfcStatus::CLEAN_DONE);

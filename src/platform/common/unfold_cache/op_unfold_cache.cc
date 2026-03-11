@@ -1,10 +1,10 @@
-/*
- * This program is free software, you can redistribute it and/or modify it.
+/**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -120,6 +120,27 @@ namespace hccl {
             cacheHashMap_.erase(iter);
         } else { // cache entry不存在
             HCCL_INFO("[OpUnfoldCache][ClearEntry] not find cache entry for key [%s]", key.GetKeyString().c_str());
+        }
+
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult OpUnfoldCache::ClearEntryForAlltoallv() {
+        // 清理所有与alltoallv类算子相关的cache entry
+        for (CacheHashMap::iterator iter = cacheHashMap_.begin(); iter != cacheHashMap_.end();) {
+            // 先备份iter的下一个位置 (使用std::next避免修改iter本身)
+            CacheHashMap::iterator nextIter = std::next(iter);
+
+            // 清理alltoallv类算子的cache entry
+            const HcclCMDType opType = iter->first.opType;
+            if (opType == HcclCMDType::HCCL_CMD_ALLTOALLV || opType == HcclCMDType::HCCL_CMD_ALLTOALLVC) {
+                CHK_RET(ClearEntry(iter->first));
+            }
+            
+            // 注意: ClearEntry后不能再访问iter (已经从cacheHashMap_中被erase了)
+
+            // 推进iter到下一个位置
+            iter = nextIter;
         }
 
         return HCCL_SUCCESS;
