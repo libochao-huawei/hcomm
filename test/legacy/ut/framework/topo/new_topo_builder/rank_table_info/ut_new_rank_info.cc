@@ -651,4 +651,3 @@ TEST_F(NewRankInfoParserTest, Ut_Deserialize_When_InvalidLevelListLength_Expect_
 
     EXPECT_THROW(rankListParser.ParseString(rankListString, newRankInfo), InvalidParamsException);
 }
-

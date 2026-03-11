@@ -348,7 +348,8 @@ HcclResult RankInfoDetectClient::GetLocalTlsStatus(TlsStatus &tlsStatus) const
     struct RaInfo raInfo;
     raInfo.mode = NetworkMode::NETWORK_OFFLINE;
     raInfo.phyId = devPhyId_;
-    return HrtRaGetTlsStatus(&raInfo, tlsStatus);
+    CHK_RET(HrtRaGetTlsStatus(&raInfo, tlsStatus));
+    return HCCL_SUCCESS;
 }
 
 void RankInfoDetectClient::GenerateTlsStatusStr(
