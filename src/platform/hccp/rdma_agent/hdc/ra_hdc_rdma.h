@@ -20,7 +20,7 @@
 
 union OpRdevInitData {
     struct {
-        struct rdev rdevInfo;
+        struct rdev rdevInfo = {};
         unsigned int rsvd;
     } txData;
 
@@ -32,8 +32,8 @@ union OpRdevInitData {
 
 union OpRdevInitWithBackupData {
     struct {
-        struct rdev rdevInfo;
-        struct rdev backupRdevInfo;
+        struct rdev rdevInfo = {};
+        strdev backupRdevInfo = {};Info;
         unsigned int rsvd;
     } txData;
 
@@ -118,7 +118,7 @@ union OpQpCreateWithAttrsData {
     struct {
         unsigned int phyId;
         unsigned int rdevIndex;
-        struct QpExtAttrs extAttrs;
+        struct QpExtAttrs extAttrs = {};
     } txData;
 
     struct {
@@ -133,7 +133,7 @@ union OpAiQpCreateData {
     struct {
         unsigned int phyId;
         unsigned int rdevIndex;
-        struct QpExtAttrs extAttrs;
+        struct QpExtAttrs extAttrs = {};
     } txData;
 
     struct {
@@ -161,7 +161,7 @@ union OpAiQpCreateWithAttrsData {
         unsigned int dbIndex;          // index of db
         unsigned long long aiScqAddr; // refer to struct ibv_cq *scq
         unsigned long long aiRcqAddr; // refer to struct ibv_cq *rcq
-        struct AiDataPlaneInfo dataPlaneInfo;
+        struct AiDataPlaneInfo dataPlaneInfo = {};
         unsigned int rsvd[32U];
     } rxData;
 };
@@ -227,8 +227,8 @@ union OpTypicalQpModifyData {
     struct {
         unsigned int phyId;
         unsigned int rdevIndex;
-        struct TypicalQp localQpInfo;
-        struct TypicalQp remoteQpInfo;
+        struct TypicalQp localQpInfo = {};
+        stTypicalQp remoteQpInfo = {};Info;
         unsigned int rsvd[RA_RSVD_NUM_4];
     } txData;
 
@@ -271,7 +271,7 @@ union OpMrRegData {
         unsigned int phyId;
         unsigned int rdevIndex;
         unsigned int qpn;
-        struct RdmaMrRegAttr mrRegAttr;
+        struct RdmaMrRegAttr mrRegAttr = {};
     } txData;
 
     struct {
@@ -299,7 +299,7 @@ union OpTypicalMrRegData {
     struct {
         unsigned int phyId;
         unsigned int rdevIndex;
-        struct RdmaMrRegAttr mrRegAttr;
+        struct RdmaMrRegAttr mrRegAttr = {};
     } txData;
 
     struct {
@@ -349,7 +349,7 @@ union OpSendWrData {
     } txData;
 
     struct {
-        struct SendWrRsp wrRsp;
+        struct SendWrRsp wrRsp = {};
         unsigned int rsvd[RA_RSVD_NUM_50];
     } rxData;
 };
@@ -440,7 +440,7 @@ union OpSetQpAttrQosData {
         unsigned int phyId;
         unsigned int rdevIndex;
         unsigned int qpn;
-        struct QosAttr qosAttr;
+        struct QosAttr qosAttr = {};
     } txData;
 
     struct {

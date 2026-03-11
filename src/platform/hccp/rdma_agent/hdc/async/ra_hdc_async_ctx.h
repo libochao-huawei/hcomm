@@ -19,7 +19,7 @@ union OpGetTpInfoListData {
     struct {
         unsigned int phyId;
         unsigned int devIndex;
-        struct GetTpCfg cfg;
+        struct GetTpCfg cfg = {};
         unsigned int num;
         uint32_t resv[4U];
     } txData;
@@ -46,7 +46,7 @@ union OpGetTpAttrData {
     } txData;
 
     struct {
-        struct TpAttr attr;
+        struct TpAttr attr = {};
         uint32_t attrBitmap;
         uint32_t resv[4U];
     } rxData;
@@ -63,7 +63,7 @@ union OpSetTpAttrData {
         unsigned int devIndex;
         uint32_t attrBitmap;
         uint64_t tpHandle;
-        struct TpAttr attr;
+        struct TpAttr attr = {};
         uint32_t resv[4U];
     } txData;
 

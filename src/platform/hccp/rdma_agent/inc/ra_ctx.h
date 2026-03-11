@@ -18,9 +18,9 @@
 struct RaCtxHandle {
     enum ProtocolTypeT protocol;
     struct RaCtxOps *ctxOps;
-    struct CtxInitAttr attr;
+    struct CtxInitAttr attr = {};
     unsigned int devIndex;
-    struct DevBaseAttr devAttr;
+    struct DevBaseAttr devAttr = {};
     union {
         struct {
             pthread_mutex_t devMutex;
@@ -38,7 +38,7 @@ struct RaLmemHandle {
 };
 
 struct RaRmemHandle {
-    struct MemKey key;
+    struct MemKey key = {};
     unsigned long long addr;
 };
 
@@ -47,8 +47,8 @@ struct RaCtxQpHandle {
     unsigned int phyId;
     unsigned int devIndex;
     enum ProtocolTypeT protocol;
-    struct QpCreateAttr qpAttr;
-    struct QpCreateInfo qpInfo;
+    struct QpCreateAttr qpAttr = {};
+    struct QpCreateInfo qpInfo = {};
     struct RaCtxHandle *ctxHandle;
 };
 
@@ -57,7 +57,7 @@ struct RaCtxRemQpHandle {
     unsigned int phyId;
     unsigned int devIndex;
     enum ProtocolTypeT protocol;
-    struct QpKey qpKey; // only for rdma
+    struct QpKey qpKey = {}; // only for rdma
 };
 
 struct RaChanHandle {

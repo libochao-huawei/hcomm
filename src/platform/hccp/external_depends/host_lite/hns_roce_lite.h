@@ -189,7 +189,7 @@ struct hns_roce_lite_wq {
 };
 
 struct hns_roce_lite_context {
-    struct rdma_lite_context    lite_ctx;
+    struct rdma_lite_context lite_ctx = {};
     struct {
         struct hns_roce_lite_qp     **table; /* 参见struct hns_roce_lite_qp的定义 */
         int                         refcnt;
@@ -211,30 +211,29 @@ struct hns_roce_lite_context {
 };
 
 struct hns_roce_lite_cq {
-    struct rdma_lite_cq         lite_cq;
+    struct rdma_lite_cq lite_cq = {};
     u32                         depth;      /* 创建的CQ深度 */
     u32                         flags;      /* 是否支持Record DB，1:支持，0:不支持 */
     u32                         cqe_size;   /* CQE大小 */
     u32                         cqn;        /* CQ编号 */
     pthread_spinlock_t          lock;
     u32                         cons_index;
-    struct rdma_lite_host_buf   swdb_buf;
-    struct rdma_lite_host_buf   cq_buf;
+    struct rdma_lite_host_buf swdb_buf = {};
+    strurdma_lite_host_buf cq_buf = {};uf;
     struct list_head            list_sq;
     struct list_head            list_rq;
 };
 
 struct hns_roce_lite_qp {
-    struct rdma_lite_qp             lite_qp;
-    struct rdma_lite_host_buf       buf;
-    struct rdma_lite_host_buf       sdb_buf;
-    struct rdma_lite_host_buf       rdb_buf;
+    struct rdma_lite_qp lite_qp = {};
+    srdma_lite_host_buf buf = {};  buf;
+    strdma_lite_host_buf sdb_buf = {};_buf;
+    strrdma_lite_host_buf rdb_buf = {};buf;
     u32                             max_inline_data;
     int                             buf_size;
     u32                             sq_signal_bits;
-    struct hns_roce_lite_wq         sq;
-    struct hns_roce_lite_wq         rq;
-    struct hns_roce_lite_sge_ex     sge;
+    struct hns_roce_lite_wq sq = {};
+    struct hnshns_roce_lite_wq rq = {};  struct hns_roce_lite_sge_ex     sge;
     u32                             next_sge;
     int                             port_num;
     int                             sl;

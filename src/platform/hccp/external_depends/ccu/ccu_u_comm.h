@@ -146,7 +146,7 @@ struct ccu_baseinfo {
     // get from chip
     unsigned int            missionKey;
     void                    *resourceAddr;
-    struct ccu_data_caps    caps;
+    struct ccu_data_caps caps = {};
     unsigned int            chn_jetty_map;
 };
 
@@ -190,19 +190,19 @@ struct ccu_mission_kill_info {
 };
 
 union ccu_data_type_union {
-    struct ccu_data_byte8   byte8;
-    struct ccu_data_byte32  byte32;
-    struct ccu_data_byte64  byte64;
-    struct ccu_baseinfo     baseinfo;
+    struct ccu_data_byte8 byte8 = {};
+    struct ccu_data_byte32 byte32 = {};
+    struct ccu_data_byte64 byte64 = {};
+    struct ccu_baseinfo baseinfo = {};
     /* ccu_insinfo 只支持set时，传入一个元素，不支持循环配置 */
-    struct ccu_insinfo      insinfo;
-    struct ccu_dieinfo      dieinfo;
+    struct ccu_insinfo insinfo = {};
+    struct ccu_dieinfo dieinfo = {};
     enum ccu_version_e      version;
-    struct ccu_tif_split_size tif_split_info;
-    struct ccu_high_perf_xn high_perf_xn;
-    struct ccu_xn_total_cnt xn_total_cnt;
+    struct ccu_tif_split_size tif_split_info = {};
+    struct ccu_high_perf_xn high_perf_xn = {};
+    struct ccu_xn_total_cnt xn_total_cnt = {};
     unsigned int tranm_ntf_hval;
-    struct ccu_mission_kill_info  mission_info;
+    struct ccu_mission_kill_info mission_info = {};
 };
 
 struct ccu_data {
@@ -214,7 +214,7 @@ struct ccu_data {
 
 union ccu_data_union {
     char raw[CCU_DATA_MAX_SIZE];    /* 对外呈现是一个字符数组，内部转换成对应类型ccu_data */
-    struct ccu_data data_info;
+    struct ccu_data data_info = {};
 };
 
 struct channel_info_in {
@@ -246,8 +246,8 @@ struct ccu_u_info {
     unsigned int ms_id;         /* ccu ms id */
     unsigned int missionKey;    /* mision sqe secure key */
     void *resourceAddr;         /* ccu resource addr va */
-    struct ccu_data_caps caps;  /* ccu caps, get from ccu regs */
-    struct ccu_version version;
+    struct ccu_data_caps caps = {};  /* ccu caps, get from ccu regs */
+    struct ccu_version version = {};
 };
 
 #define MEM_BITMAP_NUM 64U

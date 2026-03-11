@@ -38,7 +38,7 @@ union OpSocketInitData {
 
 union OpSocketDeinitData {
     struct {
-        struct rdev rdevInfo;
+        struct rdev rdevInfo = {};
         unsigned int rsvd;
     } txData;
 
@@ -125,7 +125,7 @@ union OpSocketRecvData {
 
 union OpWlistData {
     struct {
-        struct rdev rdevInfo;
+        struct rdev rdevInfo = {};
         struct SocketWlistInfoT wlist[MAX_WLIST_NUM_V1];
         unsigned int num;
     } txData;

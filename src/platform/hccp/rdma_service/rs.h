@@ -141,7 +141,7 @@ struct RsQpConnPara {
 
 struct RsBackupInfo {
     bool backupFlag;
-    struct rdev rdevInfo;
+    struct rdev rdevInfo = {};
 };
 
 #define RS_HEARTBEAT_TIME (1000.0 * 60) // ms

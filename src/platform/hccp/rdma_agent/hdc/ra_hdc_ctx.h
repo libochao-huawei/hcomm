@@ -49,12 +49,12 @@ union OpGetDevEidInfoListData {
 
 union OpCtxInitData {
     struct {
-        struct CtxInitAttr attr;
+        struct CtxInitAttr attr = {};
         unsigned int rsvd;
     } txData;
 
     struct {
-        struct DevBaseAttr devAttr;
+        struct DevBaseAttr devAttr = {};
         unsigned int devIndex;
         unsigned int rsvd;
     } rxData;
@@ -132,12 +132,12 @@ union OpLmemRegInfoData {
     struct {
         unsigned int phyId;
         unsigned int devIndex;
-        struct MemRegAttrT memAttr;
+        struct MemRegAttrT memAttr = {};
         unsigned int rsvd;
     } txData;
 
     struct {
-        struct MemRegInfoT memInfo;
+        struct MemRegInfoT memInfo = {};
         unsigned int rsvd;
     } rxData;
 };
@@ -159,12 +159,12 @@ union OpRmemImportInfoData {
     struct {
         unsigned int phyId;
         unsigned int devIndex;
-        struct MemImportAttrT memAttr;
+        struct MemImportAttrT memAttr = {};
         unsigned int rsvd;
     } txData;
 
     struct {
-        struct MemImportInfoT memInfo;
+        struct MemImportInfoT memInfo = {};
         unsigned int rsvd;
     } rxData;
 };
@@ -212,12 +212,12 @@ union OpCtxCqCreateData {
     struct {
         unsigned int phyId;
         unsigned int devIndex;
-        struct CtxCqAttr attr;
+        struct CtxCqAttr attr = {};
         uint32_t resv[4U];
     } txData;
 
     struct {
-        struct CtxCqInfo info;
+        struct CtxCqInfo info = {};
         uint32_t resv[4U];
     } rxData;
 };
@@ -239,12 +239,12 @@ union OpCtxQpCreateData {
     struct {
         unsigned int phyId;
         unsigned int devIndex;
-        struct CtxQpAttr qpAttr;
+        struct CtxQpAttr qpAttr = {};
         unsigned int rsvd[RA_RSVD_NUM_3];
     } txData;
 
     struct {
-        struct QpCreateInfo qpInfo;
+        struct QpCreateInfo qpInfo = {};
         unsigned int rsvd[RA_RSVD_NUM_3];
     } rxData;
 };
@@ -266,14 +266,14 @@ union OpCtxQpImportData {
     struct {
         unsigned int phyId;
         unsigned int devIndex;
-        struct QpKey key;
-        struct RaRsJettyImportAttr attr;
+        struct QpKey key = {};
+        struct RaRsJettyImportAttr attr = {};
         unsigned int rsvd[RA_RSVD_NUM_3];
     } txData;
 
     struct {
         unsigned int remJettyId; // only for ub
-        struct RaRsJettyImportInfo info;
+        struct RaRsJettyImportInfo info = {};
         unsigned int rsvd[RA_RSVD_NUM_3];
     } rxData;
 };
@@ -297,8 +297,8 @@ union OpCtxQpBindData {
         unsigned int devIndex;
         unsigned int id; // local qpn(rdma) or local jetty_id(udma)
         unsigned int remId; // only for UB, equivalent to rem_jetty_id
-        struct QpKey localQpKey;
-        struct QpKey remoteQpKey;
+        struct QpKey localQpKey = {};
+        stQpKey remoteQpKey = {};pKey;
         unsigned int rsvd[RA_RSVD_NUM_6];
     } txData;
 
@@ -322,7 +322,7 @@ union OpCtxQpUnbindData {
 
 union OpCtxBatchSendWrData {
     struct {
-        struct WrlistBaseInfo baseInfo;
+        struct WrlistBaseInfo baseInfo = {};
         unsigned int sendNum;
         struct BatchSendWrData wrData[MAX_CTX_WR_NUM];
     } txData;
@@ -349,12 +349,12 @@ union OpCtxUpdateCiData {
 union OpCustomChannelData {
     struct {
         unsigned int phyId;
-        struct CustomChanInfoIn info;
+        struct CustomChanInfoIn info = {};
         unsigned int rsvd[64U];
     } txData;
 
     struct {
-        struct CustomChanInfoOut info;
+        struct CustomChanInfoOut info = {};
         unsigned int rsvd[64U];
     } rxData;
 };
@@ -377,11 +377,11 @@ union OpCtxGetAuxInfoData {
     struct {
         unsigned int phyId;
         unsigned int devIndex;
-        struct HccpAuxInfoIn info;
+        struct HccpAuxInfoIn info = {};
     } txData;
 
     struct {
-        struct HccpAuxInfoOut info;
+        struct HccpAuxInfoOut info = {};
     } rxData;
 };
 

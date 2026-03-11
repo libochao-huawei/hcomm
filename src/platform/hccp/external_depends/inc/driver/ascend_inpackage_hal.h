@@ -533,7 +533,7 @@ struct prof_sample_ops {
 
 struct prof_sample_register_para {
     unsigned int sub_chan_num;              /* multi-instance */
-    struct prof_sample_ops ops;
+    struct prof_sample_ops ops = {};
 };
 
 /**

@@ -92,7 +92,7 @@ HcclResult TransportDeviceP2p::GetNotifyAddr(s32 deviceId, const HcclSignalInfo 
     unsigned int drvDevid = 0;
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(static_cast<uint32_t>(deviceId), &drvDevid));
 
-    res_addr_info resInfo;
+    res_addr_info resInfo = {};
     resInfo.id = signalInfo.tsId;
     resInfo.target_proc_type = PROCESS_CP1;
     resInfo.res_type = RES_ADDR_TYPE_STARS_NOTIFY_RECORD;

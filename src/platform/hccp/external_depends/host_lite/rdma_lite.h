@@ -39,21 +39,21 @@ struct rdma_lite_host_buf {
 };
 
 struct rdma_lite_mem_pool {
-    struct rdma_lite_host_buf host_buf;
+    struct rdma_lite_host_buf host_buf = {};
     u32                       offset;
     u32                       used_size;
 };
 
 struct rdma_lite_context {
-    struct dev_cap_info cap; // 设备能力
+    struct dev_cap_info cap = {}; // 设备能力
 };
 
 struct rdma_lite_mem_attr {
-    struct rdma_lite_device_mem_attr mem_data;
+    struct rdma_lite_device_mem_attr mem_data = {};
 };
 
 struct rdma_lite_cq_attr {
-    struct rdma_lite_device_cq_attr device_cq_attr;
+    struct rdma_lite_device_cq_attr device_cq_attr = {};
     u32                             mem_idx;
 };
 
@@ -91,13 +91,13 @@ struct rdma_lite_qp_cap {
 };
 
 struct rdma_lite_qp_attr {
-    struct rdma_lite_device_qp_attr         device_qp_attr;
+    struct rdma_lite_device_qp_attr device_qp_attr = {};
     struct rdma_lite_cq        *send_cq;        // QP SQ关联的CQ
     struct rdma_lite_cq        *recv_cq;        // QP RQ关联的CQ
     enum rdma_lite_qp_type     qp_type;         // QP的服务类型
     enum rdma_lite_qp_state    qp_state;        // QP的状态位
     int                        sq_sig_all;      // QP SQ的WR是否需要产生CQE标记，1：产生，0：不产生
-    struct rdma_lite_qp_cap    cap;             // QP SQ&RQ的能力
+    struct rdma_lite_qp_cap cap = {};             // QP SQ&RQ的能力
     int                        qp_mode;         // 指示哪种类型的QP，定义如下：
                                                 // NOR_QP_MODE       = 0
                                                 // GDR_TMPL_QP_MODE  = 1
@@ -196,8 +196,8 @@ struct rdma_lite_wc_ext {
 };
 
 struct rdma_lite_wc_v2 {
-    struct rdma_lite_wc         wc;
-    struct rdma_lite_wc_ext     ext;
+    struct rdma_lite_wc wc = {};
+    struct rdma_lite_wc_ext ext = {};
 };
 
 struct rdma_lite_sge {
@@ -263,8 +263,8 @@ struct lite_db_info {
 
 struct rdma_lite_post_send_resp {
     union {
-        struct lite_wqe_info wqe_tmp; // wqe template info
-        struct lite_db_info  db;      // doorbell info
+        struct lite_wqe_info wqe_tmp = {}; // wqe template info
+        struct lite_db_info db = {};      // doorbell info
     };
 };
 

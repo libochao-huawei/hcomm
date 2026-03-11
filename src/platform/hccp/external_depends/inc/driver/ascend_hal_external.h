@@ -401,8 +401,8 @@ struct event_info_priv {
 };
 
 struct event_info {
-    struct event_info_common comm;
-    struct event_info_priv priv;
+    struct event_info_common comm = {};
+    struct event_info_priv priv = {};
 };
 
 #define EVENT_SUMMARY_RSV 3

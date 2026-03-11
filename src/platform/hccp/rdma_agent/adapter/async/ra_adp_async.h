@@ -29,7 +29,7 @@ struct RaHdcOpSec {
 struct RaHdcAsyncInfo {
     HDC_SESSION hdcSession;
     pthread_mutex_t sendMutex;
-    struct RaHdcOpSec opSec;
+    struct RaHdcOpSec opSec = {};
     struct RaHdcThreadPool *pool;
 };
 

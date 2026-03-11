@@ -132,7 +132,7 @@ private:
 
     EpollEventInfo sendEpollEventInfo_{};
     // recv有waitAny的需求，故采用共享epoll的方式
-    static EpollEventInfo gRecvEpollEventInfo;
+    static EpollEventInfo gRecvEpollEventInfo = {};
     static std::unordered_map<s32, FdHandle> gFdToFdhandleMap;
     static std::unordered_map<FdHandle, TransportHeterog *> gFdhandleToTransportMap;
 };

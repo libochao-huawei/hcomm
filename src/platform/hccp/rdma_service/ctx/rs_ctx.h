@@ -19,17 +19,17 @@
 
 struct RsCtxQpInfo {
     uint32_t id; // qpn(rdma) or jetty_id(udma)
-    struct QpKey key;
+    struct QpKey key = {};
 };
 
 struct RsJettyImportAttr {
-    struct QpKey key;
-    struct RaRsJettyImportAttr attr;
+    struct QpKey key = {};
+    struct RaRsJettyImportAttr attr = {};
 };
 
 struct RsJettyImportInfo {
     unsigned int remJettyId;
-    struct RaRsJettyImportInfo info;
+    struct RaRsJettyImportInfo info = {};
 };
 
 int RsGetChipProtocol(unsigned int chipId, enum NetworkMode hccpMode, enum ProtocolTypeT *protocol,

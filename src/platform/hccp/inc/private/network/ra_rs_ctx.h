@@ -19,7 +19,7 @@
 #define MAX_INLINE_SIZE 64
 
 struct MemRegAttrT {
-    struct HccpMemInfo mem;
+    struct HccpMemInfo mem = {};
     union {
         struct {
             int access; /**< refer to enum mem_mr_access_flags */
@@ -35,7 +35,7 @@ struct MemRegAttrT {
 };
 
 struct MemRegInfoT {
-    struct MemKey key;
+    struct MemKey key = {};
     union {
         struct {
             uint32_t lkey;
@@ -50,7 +50,7 @@ struct MemRegInfoT {
 };
 
 struct MemImportAttrT {
-    struct MemKey key;
+    struct MemKey key = {};
 
     union {
         struct {
@@ -144,7 +144,7 @@ struct CtxQpAttr {
             uint8_t errTimeout; /**< the timeout to report error. Range: [0-31] */
             union {
                 struct {
-                    struct JettyQueCfgEx sq; /**< specify sq buffer config, required when cstm_flag.bs.sq_cstm specified */
+                    struct JettyQueCfgEx sq = {}; /**< specify sq buffer config, required when cstm_flag.bs.sq_cstm specified */
                     bool piType; /**< false: op mode, true: async mode */
                     union CstmJfsFlag cstmFlag; /**< refer to union udma_jfs_flag */
                     uint32_t sqebbNum; /**< required when cstm_flag.bs.sq_cstm specified */
@@ -166,7 +166,7 @@ struct RaRsJettyImportAttr {
     enum JettyGrpPolicy policy;
     enum TargetType type;
     union ImportJettyFlag flag;
-    struct JettyImportExpCfg expImportCfg; /**< only valid on mode JETTY_IMPORT_MODE_EXP */
+    struct JettyImportExpCfg expImportCfg = {}; /**< only valid on mode JETTY_IMPORT_MODE_EXP */
     uint32_t tpType;
     uint32_t resv[15U];
 };
@@ -210,7 +210,7 @@ struct BatchSendWrData {
             uint64_t wrId;
             enum RaWrOpcode opcode;
             unsigned int flags; /**< reference to ra_send_flags */
-            struct WrAuxInfo aux;
+            struct WrAuxInfo aux = {};
         } rdma;
 
         struct {
@@ -218,8 +218,8 @@ struct BatchSendWrData {
             enum RaUbOpcode opcode;
             union JfsWrFlag flags;
             uint64_t remJetty;
-            struct HdcWrNotifyInfo notifyInfo;
-            struct WrReduceInfo reduceInfo;
+            struct HdcWrNotifyInfo notifyInfo = {};
+            struct WrReduceInfo reduceInfo = {};
         } ub;
     };
 

@@ -20,21 +20,21 @@
 
 union OpPingInitData {
     struct {
-        struct PingInitAttr attr;
+        struct PingInitAttr attr = {};
         uint32_t reserved[RA_RSVD_NUM_4];
     } txData;
 
     struct {
         unsigned int devIndex;
-        struct PingInitInfo info;
+        struct PingInitInfo info = {};
         uint32_t reserved[RA_RSVD_NUM_4];
     } rxData;
 };
 
 union OpPingAddData {
     struct {
-        struct RaRsDevInfo rdev;
-        struct PingTargetInfo target;
+        struct RaRsDevInfo rdev = {};
+        struct PingTargetInfo target = {};
         uint32_t reserved[RA_RSVD_NUM_4];
     } txData;
 
@@ -45,8 +45,8 @@ union OpPingAddData {
 
 union OpPingStartData {
     struct {
-        struct RaRsDevInfo rdev;
-        struct PingTaskAttr attr;
+        struct RaRsDevInfo rdev = {};
+        struct PingTaskAttr attr = {};
         uint32_t reserved[RA_RSVD_NUM_4];
     } txData;
 

@@ -29,7 +29,7 @@ struct RaRequestHandle {
     void *privData;
     void *privHandle;
 
-    struct RaListHead list;
+    struct RaListHead list = {};
 };
 
 struct RaAsyncOpHandle {

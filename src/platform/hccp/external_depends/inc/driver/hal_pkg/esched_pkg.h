@@ -88,8 +88,8 @@ struct esched_table_op_next_table {
 struct esched_table_entry {
     enum esched_table_op_type op;
     union {
-        struct esched_table_op_send_event send_event;
-        struct esched_table_op_next_table next_table;
+        struct esched_table_op_send_event send_event = {};
+        struct esched_table_op_next_table next_table = {};
     };
 };
 

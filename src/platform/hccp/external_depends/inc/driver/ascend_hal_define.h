@@ -760,7 +760,7 @@ struct drvMem2D {
 };
 
 struct drvMem2DAsync {
-    struct drvMem2D copy2dInfo;
+    struct drvMem2D copy2dInfo = {};
     struct DMA_ADDR *dmaAddr;
 };
 
@@ -770,8 +770,8 @@ struct MEMCPY2D {
                             /**< DEVMM_MEMCPY2D_ASYNC_DESTROY: memcpy2d async destroy */
     unsigned int resv;
     union {
-        struct drvMem2D copy2d;
-        struct drvMem2DAsync copy2dAsync;
+        struct drvMem2D copy2d = {};
+        struct drvMem2DAsync copy2dAsync = {};
     };
 };
 
@@ -920,7 +920,7 @@ struct drv_mem_location {
 
 struct drv_mem_access_desc {
     drv_mem_access_type type;
-    struct drv_mem_location location;
+    struct drv_mem_location location = {};
     unsigned int rsv[2];
 };
 
@@ -1138,7 +1138,7 @@ struct halAsyncDmaOutputPara {
             uint32_t size;  /* wqe size */
             uint8_t *wqe;
         };
-        struct DMA_ADDR dma_addr;
+        struct DMA_ADDR dma_addr = {};
     };
 };
 
@@ -1235,7 +1235,7 @@ struct ufs_io_record
     /* the following is additional record fields.only timeout IOs will record them.In normal record, they are 0 */
     UINT32 latency;
     UINT32 data_len; /* the data volume of IO */
-    struct utp_upiu_header head; /* UPIU header */
+    struct utp_upiu_header head = {}; /* UPIU header */
     UINT8 cdb[UFS_CDB_SIZE];
 };
 /*=============================== UFS feature END ===============================*/

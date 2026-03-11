@@ -69,15 +69,12 @@ private:
     struct MrInfoT localWindowMem_{};
     struct MrInfoT remoteWindowMem_{};
 
-    struct MrInfoT localSyncMemPrepare_;
-    struct MrInfoT localSyncMemDone_;
-    struct MrInfoT localSyncMemAck_;
+    struct MrInfoT localSyncMemPrepare_ = {};
+    stMrInfoT localSyncMemDone_ = {};one_;
+ MrInfoT localSyncMemAck_ = {};ncMemAck_;
 
-    struct MrInfoT remoteSyncMemPrepare_;
-    struct MrInfoT remoteSyncMemDone_;
-    struct MrInfoT remoteSyncMemAck_;
-
-    struct MrInfoT notifySrcMem_;
+    struct MrInfoT remoteSyncMemPreparMrInfoT remoteSyncMemDone_ = {};teSyncMemDone_;
+    struct MrInfoT remoteSyncMMrInfoT notifySrcMem_ = {};InfoT notifySrcMem_;
 
     HcclRtSignal prepareNotify_ = nullptr;
     HcclRtSignal ackNotify_ = nullptr;
@@ -89,7 +86,7 @@ private:
     SyncMode notifyWaitMode_;
     u32 wqePerDoorBell_ = 10;
 
-    struct MrInfoT remoteNotifyValueMem_;
+    struct MrInfoT remoteNotifyValueMem_ = {};
 };
 }  // namespace hccl
 

@@ -1196,8 +1196,8 @@ struct hal_component_id_cfg {
 };
 
 typedef struct {
-    struct hal_soc_stress_cfg cfg;
-    struct hal_component_id_cfg component_cfg;
+    struct hal_soc_stress_cfg cfg = {};
+    struct hal_component_id_cfg component_cfg = {};
     unsigned char resv[HAL_LPM_SOC_STRESS_RESV_LEN]; /* reserve, write 0 */
 } HAL_LP_SET_STRESS_TEST_STRU;
 
@@ -2844,11 +2844,11 @@ struct MemUbTokenInfo {
 
 struct MemInfo {
     union {
-        struct MemPhyInfo phy_info;
-        struct MemAddrInfo addr_info;
-        struct MemNumaInfo numa_info;
-        struct MemSvmGrpInfo grp_info;
-        struct MemUbTokenInfo ub_token_info;
+        struct MemPhyInfo phy_info = {};
+        struct MemAddrInfo addr_info = {};
+        struct MemNumaInfo numa_info = {};
+        struct MemSvmGrpInfo grp_info = {};
+        struct MemUbTokenInfo ub_token_info = {};
     };
 };
 
@@ -4047,7 +4047,7 @@ typedef struct drv_hwts_task_response {
 struct hwts_ts_task {
     unsigned int mailbox_id;
     volatile unsigned long long serial_no;
-    struct hwts_ts_kernel kernel_info;
+    struct hwts_ts_kernel kernel_info = {};
 };
 
 typedef enum hwts_task_status {

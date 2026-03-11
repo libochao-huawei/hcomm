@@ -108,12 +108,12 @@ static inline void RaListDel(struct RaListHead *entry)
 
 struct RaBackupInfo {
     bool backupFlag;
-    struct rdev rdevInfo;
+    struct rdev rdevInfo = {};
 };
 
 struct RaCqeErrInfo {
     pthread_mutex_t mutex;
-    struct CqeErrInfo info;
+    struct CqeErrInfo info = {};
 };
 
 enum RdmaLiteThreadStatus {
@@ -125,12 +125,12 @@ enum RdmaLiteThreadStatus {
 
 struct RaRdmaHandle {
     unsigned int rdevIndex;
-    struct rdev rdevInfo;
-    struct RaBackupInfo backupInfo;
+    struct rdev rdevInfo = {};
+    struct RaBackupInfo backupInfo = {};
     struct RaRdmaOps *rdmaOps;
     int supportLite;
     struct rdma_lite_context *liteCtx;
-    struct RaListHead qpList;
+    struct RaListHead qpList = {};
     pthread_mutex_t rdevMutex;
     pthread_mutex_t cqeErrCntMutex;
     unsigned int cqeErrCnt;
@@ -178,13 +178,13 @@ struct RaQpHandle {
     struct LiteMrInfo localMr[RA_MR_MAX_NUM];
     struct LiteMrInfo remMr[RA_MR_MAX_NUM];
     pthread_mutex_t qpMutex;
-    struct RaCqeErrInfo cqeErrInfo;
+    struct RaCqeErrInfo cqeErrInfo = {};
     int dbIndex;
     unsigned int sendWrNum;
     unsigned int pollCqeNum;
     unsigned int recvWrNum;
     unsigned int pollRecvCqeNum;
-    struct RaListHead list;
+    stRaListHead list = {};list;
     struct RaRdmaHandle *rdmaHandle;
     struct rdma_lite_wc *liteWc;
     unsigned int memIdx;

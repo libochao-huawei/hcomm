@@ -32,7 +32,7 @@
 struct RaHdcServer {
     HDC_SERVER hdcServer;
     HDC_SESSION hdcSession;
-    struct RaHdcOpSec opSec;
+    struct RaHdcOpSec opSec = {};
 };
 
 struct RaHdcInitPara {

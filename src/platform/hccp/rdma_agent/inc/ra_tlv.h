@@ -15,7 +15,7 @@
 
 struct RaTlvHandle {
     struct RaTlvOps *tlvOps;
-    struct TlvInitInfo initInfo;
+    struct TlvInitInfo initInfo = {};
     unsigned int bufferSize;
     pthread_mutex_t mutex;
 };

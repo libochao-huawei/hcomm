@@ -59,16 +59,16 @@ struct RsPingCqInfo {
 
 struct RsPingLocalQpCb {
     struct ibv_comp_channel *channel;
-    struct RsPingCqInfo sendCq;
-    struct RsPingCqInfo recvCq;
+    struct RsPingCqInfo sendCq = {};
+    stRsPingCqInfo recvCq = {};cvCq;
 
     uint32_t qkey;
     struct ibv_qp_cap qpCap;
     uint32_t udpSport;
     struct ibv_qp *ibQp;
 
-    struct RsPingMrCb sendMrCb;
-    struct RsPingMrCb recvMrCb;
+    struct RsPingMrCb sendMrCb = {};
+    stRsPingMrCb recvMrCb = {};MrCb;
 };
 
 enum RsPingPongTargetState {
@@ -100,16 +100,16 @@ struct RsPingTimestamp {
 struct RsPingPayloadHeader {
     int version;
     enum RsPingType type;
-    struct PingQpInfo server;
-    struct PingQpInfo target;
-    struct RsPingTimestamp timestamp;
+    struct PingQpInfo server = {};
+    stPingQpInfo target = {};rget;
+    struct RsPingTimestamp timestamp = {};
     uint32_t taskId;
     uint8_t reserved[42U];
     uint16_t magic;
 };
 
 struct RsPongTargetInfo {
-    struct PingQpInfo qpInfo;
+    struct PingQpInfo qpInfo = {};
     union {
         struct ibv_ah *ah;
         urma_target_jetty_t *importTjetty;
@@ -117,7 +117,7 @@ struct RsPongTargetInfo {
 
     enum RsPingPongTargetState state;
 
-    struct RsListHead list;
+    struct RsListHead list = {};
     uint64_t uuid;
 };
 
@@ -134,14 +134,14 @@ struct RsPingTargetInfo {
     enum RsPingPongTargetState state;
 
     pthread_mutex_t tripMutex;
-    struct PingResultSummary resultSummary;
+    struct PingResultSummary resultSummary = {};
 
-    struct RsListHead list;
+    stRsListHead list = {};list;
     uint64_t uuid;
 };
 
 struct RsPingRdevCb {
-    struct RsIpAddrInfo ip;
+    struct RsIpAddrInfo ip = {};
     const char *devName;
     unsigned char ibPort;
     union ibv_gid gid;
@@ -176,19 +176,19 @@ struct RsPingJfcInfo {
 
 struct RsPingLocalJettyCb {
     urma_jfce_t *jfce;
-    struct RsPingJfcInfo sendJfc;
-    struct RsPingJfcInfo recvJfc;
+    struct RsPingJfcInfo sendJfc = {};
+    stRsPingJfcInfo recvJfc = {};vJfc;
 
     uint32_t tokenValue;
     urma_jfr_t *jfr;
     urma_jetty_t *jetty;
 
-    struct RsPingSegCb sendSegCb;
-    struct RsPingSegCb recvSegCb;
+    struct RsPingSegCb sendSegCb = {};
+    stRsPingSegCb recvSegCb = {};egCb;
 };
 
 struct RsPingUdevCb {
-    struct HccpDevEidInfo eidInfo;
+    struct HccpDevEidInfo eidInfo = {};
     urma_device_t *urmaDev;
     urma_context_t *urmaCtx;
 };
@@ -201,36 +201,35 @@ struct RsPingCtxCb {
     int threadStatus;
 
     pthread_mutex_t pingMutex;
-    struct RsListHead pingList;
+ RsListHead pingList = {}; pingList;
     unsigned int pingNum;
 
-    pthread_mutex_t pongMutex;
-    struct RsListHead pongList;
+    pthread_mutex_t pongMutRsListHead pongList = {};tHead pongList;
     unsigned int pongNum;
 
-    struct PingLocalCommInfo commInfo;
+    struct PingLocalCommInfo commInfo = {};
     unsigned int logicDevid;
     unsigned int initCnt;
 
     unsigned int devIndex;
     pthread_mutex_t devMutex;
     union {
-        struct RsPingRdevCb rdevCb;
-        struct RsPingUdevCb udevCb;
+        struct RsPingRdevCb rdevCb = {};
+        struct RsPingUdevCb udevCb = {};
     };
 
     union {
-        struct RsPingLocalQpCb pingQp;
-        struct RsPingLocalJettyCb pingJetty;
+        struct RsPingLocalQpCb pingQp = {};
+        struct RsPingLocalJettyCb pingJetty = {};
     };
 
     union {
-        struct RsPingLocalQpCb pongQp;
-        struct RsPingLocalJettyCb pongJetty;
+        struct RsPingLocalQpCb pongQp = {};
+        stRsPingLocalJettyCb pongJetty = {};etty;
     };
 
     int taskStatus;
-    struct PingTaskAttr taskAttr;
+    struct PingTaskAttr taskAttr = {};
     unsigned int taskId;
 };
 

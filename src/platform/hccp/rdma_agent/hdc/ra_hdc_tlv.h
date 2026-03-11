@@ -53,7 +53,7 @@ union OpTlvDeinitData {
 
 union OpTlvRequestData {
     struct {
-        struct TlvRequestMsgHead head;
+        struct TlvRequestMsgHead head = {};
         char data[MAX_TLV_MSG_DATA_LEN];
     } txData;
 

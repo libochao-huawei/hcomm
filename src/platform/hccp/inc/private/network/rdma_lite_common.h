@@ -32,8 +32,8 @@ struct rdma_lite_device_cq_attr {
     unsigned int                flags;      // 是否支持Record DB，1:支持，0:不支持
     unsigned int                cqe_size;   // CQE大小
     unsigned int                cqn;        // CQ编号
-    struct rdma_lite_device_buf    cq_buf;     // CQ buf的Device侧VA和 len
-    struct rdma_lite_device_buf    swdb_buf;   // CQ软件DB的Device侧VA 和 len
+    struct rdma_lite_device_buf cq_buf = {};     // CQ buf的Device侧VA和 len
+    strucrdma_lite_device_buf swdb_buf = {};f;   // CQ软件DB的Device侧VA 和 len
 };
 
 struct rdma_lite_device_mem_attr {
@@ -50,7 +50,7 @@ struct rdma_lite_device_wqe {
     int                     offset;
     unsigned int            wrid_len;
     unsigned int            shift; /* wq size is 2^shift */
-    struct rdma_lite_device_buf     db_buf;
+    struct rdma_lite_device_buf db_buf = {};
 };
 
 struct rdma_lite_device_sge {
@@ -64,10 +64,9 @@ struct rdma_lite_device_qp_attr {
     unsigned int                        next_sge;
     int                                 qp_info;
     unsigned int                        qpn;
-    struct rdma_lite_device_buf     qp_buf;
-    struct rdma_lite_device_wqe                 sq;
-    struct rdma_lite_device_wqe                 rq;
-    struct rdma_lite_device_sge                 sge;
+    structrdma_lite_device_buf qp_buf = {};;
+    struct rdma_lite_device_wqe sq = {};
+    struct rdma_lite_drdma_lite_device_wqe rq = {}; rdma_lite_device_sge sge = {};
 };
 
 struct roce_mem_cq_qp_attr {

@@ -31,7 +31,7 @@ struct RsUbDevCb {
     urma_context_t *urmaCtx;
     urma_device_t *urmaDev;
     unsigned int index;
-    struct DevBaseAttr devAttr;
+    struct DevBaseAttr devAttr = {};
 
     unsigned int cqeErrCnt;
     pthread_mutex_t cqeErrCntMutex;
@@ -45,29 +45,26 @@ struct RsUbDevCb {
     unsigned int tokenIdCnt;
     unsigned int lsegCnt;
     unsigned int rsegCnt;
-    struct RsListHead asyncEventList;
-    struct RsListHead jfceList;
-    struct RsListHead jfcList;
-    struct RsListHead jettyList;
-    struct RsListHead rjettyList;
-    struct RsListHead tokenIdList;
-    struct RsListHead lsegList;
-    struct RsListHead rsegList;
-    struct RsListHead list;
+    struct RsListHead asyncEventList = {};
+    stRsListHead jfceList = {};List;
+ RsListHead jfcList = {};d jfcList;
+    struct RsListHead jettyLiRsListHead rjettyList = {};ead rjettyList;
+    struct RsListHead tokeRsListHead lsegList = {};RsListHead lsegList;
+    struct RsListHRsListHead list = {};  struct RsListHead list;
 };
 
 struct RsCtxAsyncEventCb {
     struct RsUbDevCb *devCb;
     urma_async_event_t asyncEvent;
-    unsigned int resId;
-    struct RsListHead list;
+    uRsListHead list = {};d;
+    struct RsListHead list = {};
 };
 
 struct RsCtxJfceCb {
     struct RsUbDevCb *devCb;
     uint64_t jfceAddr; // urma_jfce_t *
-    union DataPlaneCstmFlag dataPlaneFlag;
-    struct RsListHead list;
+    union DataPlaneRsListHead list = {};neFlag;
+    stRsListHead list = {};list;
 };
 
 struct RsCtxJfcCb {
@@ -76,9 +73,8 @@ struct RsCtxJfcCb {
     enum JfcMode jfcType;
     uint32_t depth;
     uint32_t jfcId;
-    uint64_t bufAddr;
-    uint64_t swdbAddr;
-    struct RsListHead list;
+    uint64_t bufRsListHead list = {};_t swdbAddr;
+ RsListHead list = {};Head list;
     struct {
         bool valid;
         uint32_t cqeFlag;
@@ -87,7 +83,7 @@ struct RsCtxJfcCb {
 
 struct RsCrErrInfo {
     pthread_mutex_t mutex;
-    struct CrErrInfo info;
+    struct CrErrInfo info = {};
 };
 
 struct RsCtxJettyCb {
@@ -109,7 +105,7 @@ struct RsCtxJettyCb {
     uint8_t errTimeout;
     union {
         struct {
-            struct JettyQueCfgEx sq;
+            struct JettyQueCfgEx sq = {};
             bool piType;
             union CstmJfsFlag cstmFlag;
             uint32_t sqebbNum;
@@ -126,29 +122,27 @@ struct RsCtxJettyCb {
     pthread_mutex_t mutex;
     uint32_t lastPi;
     struct CtxQpShareInfo *qpShareInfoAddr;
-    struct RsCrErrInfo crErrInfo;
+    struct RsCrErrInfo crErrInfo = {};
     struct RsListHead list;
 };
 
 struct RsTokenIdCb {
-    struct RsUbDevCb *devCb;
-    urma_token_id_t *tokenId;
+    struct RsUbDevCb *devRsListHead list = {};en_id_t *tokenId;
     struct RsListHead list;
 };
 
 struct RsCtxRemJettyCb {
     struct RsUbDevCb *devCb;
     urma_target_jetty_t *tjetty;
-    struct QpKey jettyKey;
+    struct QpKey jettyKey = {};
     enum JettyImportMode mode;
     unsigned int tokenValue;
     enum JettyGrpPolicy policy;
     enum TargetType type;
     union ImportJettyFlag flag;
     uint32_t tpType;
-    struct JettyImportExpCfg expImportCfg;
-    unsigned int state;
-    struct RsListHead list;
+    struct JettyImportExpCfg expImportCfg = {};
+    unsigned int staRsListHead list = {};sListHead list;
 };
 
 struct RsSegInfo {
@@ -160,11 +154,10 @@ struct RsSegInfo {
 struct RsSegCb {
     struct RsUbDevCb *devCb;
 
-    struct RsSegInfo segInfo;
+    struct RsSegInfo segInfo = {};
     uint32_t state;
 
-    urma_token_t tokenValue;
-    urma_target_seg_t *segment;
+    urma_token_t tokenVRsListHead list = {};arget_seg_t *segment;
 
     struct RsListHead list;
 };
