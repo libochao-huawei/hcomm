@@ -151,6 +151,7 @@ void CommunicatorImpl::InitCommResource(const CommParams &commParams)
     InitHostDeviceSyncNotifyManager();
     InitUbMemoryTransportMgr();
     CollAlgComponentInit(); // 初始化算法组件
+    RegisterAicpuKernel();
     InitCollService();
     InitTraceManager();
     DlProfFunction::GetInstance().DlProfFunctionInit();
@@ -247,6 +248,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitHostDeviceSyncNotifyManager();
             InitUbMemoryTransportMgr();
             CollAlgComponentInit();
+            RegisterAicpuKernel();
             InitCollService();
             InitTraceManager();
             InitHDCommunicate();
@@ -297,6 +299,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             AppendLocalDieIdForLinks();
             InitUbMemoryTransportMgr();
             CollAlgComponentInit();
+            RegisterAicpuKernel();
             InitCollService();
             DlProfFunction::GetInstance().DlProfFunctionInit();
             InitMirrorTaskManager();
@@ -1507,7 +1510,7 @@ void CommunicatorImpl::InitCcuSuperFastLoad()
 
     enableProfilingEnv = hostApiState || nodeState || l0State || l1State || l2State;
 
-    HCCL_RUN_INFO("taskExceptionEnv[%d], enableProfilingEnv: hostApiState[%d] nodeState[%d] l0State[%d] l1State[%d] l2State[%d]",
+    HCCL_INFO("taskExceptionEnv[%d], enableProfilingEnv: hostApiState[%d] nodeState[%d] l0State[%d] l1State[%d] l2State[%d]",
     taskExceptionEnv, hostApiState, nodeState, l0State, l1State, l2State);
 }
 
@@ -2133,6 +2136,7 @@ HcclResult CommunicatorImpl::RecoverComm(SnapShotComm &snapShotComm, u32 stepPar
             InitHostDeviceSyncNotifyManager();
             InitUbMemoryTransportMgr();
             CollAlgComponentInit();
+            RegisterAicpuKernel();
             InitCollService();
             SelectCollService();
             InitTraceManager();
@@ -2196,6 +2200,7 @@ HcclResult CommunicatorImpl::RecoverComm(const SnapShotSubComm &snapShotSubComm,
             InitHostDeviceSyncNotifyManager();
             InitUbMemoryTransportMgr();
             CollAlgComponentInit();
+            RegisterAicpuKernel();
             InitCollService();
             SelectCollService();
             InitTraceManager();
@@ -2369,6 +2374,12 @@ MirrorTaskManager &CommunicatorImpl::GetMirrorTaskManager() const
 CommunicatorImpl::~CommunicatorImpl()
 {
     HCCL_INFO("[~CommunicatorImpl] start CommunicatorImpl destroy, commId[%s]", id.c_str());
+    if(isRegisterAicpuKernel)
+    {
+        (void)aclrtBinaryUnLoad(aicpuBinHandle);
+        aicpuFuncMap.clear();
+        isRegisterAicpuKernel = false;
+    }
     (void)NotifyAicpuDestroyComm();
     ccuDrvHandle = nullptr;
 
@@ -3119,6 +3130,7 @@ HcclResult CommunicatorImpl::PrepareDpuKernelResource(aclrtFuncHandle &funcHandl
     option.value.cpuKernelMode = 1; // 0 ：仅需要加载json，1 ：加载cpu so & json，2: LoadFromData
     options.numOpt  = 1;
     options.options = &option;
+    // todo存在一样的问题，未使用aclrtBinaryUnLoad接口销毁handle
     if (aclrtBinaryLoadFromFile(realPath, &options, &binHandle) != ACL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::%s] load binary from file error.", __func__);
         return HCCL_E_OPEN_FILE_FAILURE;
@@ -3865,6 +3877,39 @@ ErrorMessageReport CommunicatorImpl::GetAicpuTaskException()
     }
     HCCL_INFO("[CommunicatorImpl::GetAicpuTaskException] end");
     return errorMessage;
+}
+
+void CommunicatorImpl::RegisterAicpuKernel()
+{
+    if(isRegisterAicpuKernel)
+    {
+        HCCL_WARNING("[CommunicatorImpl::%s] has registered aicpu kernel, skip register again.", __func__);
+        return;
+    }
+    HCCL_INFO("[CommunicatorImpl::%s] start.", __func__);
+    std::string jsonPath;
+    GetKernelFilePath(jsonPath);
+    jsonPath += "ccl_kernel.json";
+    aclrtBinHandle binHandle;
+    LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, aicpuBinHandle);
+    isRegisterAicpuKernel = true;
+    HCCL_INFO("[CommunicatorImpl::%s] end, jsonPath[%s]", __func__, jsonPath.c_str());
+
+}
+
+aclrtFuncHandle CommunicatorImpl::GetAicpuKernelFuncHandle(const char *kernelName) const
+{
+    aclrtFuncHandle funcHandle;
+    if (aicpuFuncMap.find(kernelName) != aicpuFuncMap.end()) {
+        funcHandle = aicpuFuncMap[kernelName];
+    } else {
+        aclError aclRet = aclrtBinaryGetFunction(aicpuBinHandle, kernelName, &funcHandle);
+        if (aclRet != ACL_SUCCESS) {
+            THROW<RuntimeApiException>(StringFormat("Call aclrtBinaryGetFunction failed, with ret[%d]", aclRet));
+        }
+        aicpuFuncMap[kernelName] = funcHandle;
+    }
+    return funcHandle;
 }
 
 } // namespace Hccl
