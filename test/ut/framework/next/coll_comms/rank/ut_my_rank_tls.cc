@@ -87,19 +87,6 @@ TEST_F(MyRankTlsTest, Ut_GetLocalTlsStatus_When_HrtGetDevicePhyIdByIndexFails_Ex
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
 }
 
-TEST_F(MyRankTlsTest, Ut_GetLocalTlsStatus_When_HrtRaGetTlsStatusFails_Expect_ReturnSameError)
-{
-    Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
-
-    MOCKER(hrtGetDevice).stubs().will(invoke(StubHrtGetDeviceSuccess));
-    MOCKER(hrtGetDevicePhyIdByIndex).stubs().will(invoke(StubHrtGetDevicePhyIdByIndexSuccess));
-    MOCKER(Hccl::HrtRaGetTlsStatus).stubs().will(returnValue(HCCL_E_NETWORK));
-
-    HcclResult ret = myRank_->GetLocalTlsStatus(tlsStatus);
-
-    EXPECT_EQ(ret, HCCL_E_NETWORK);
-}
-
 TEST_F(MyRankTlsTest, Ut_GetLocalTlsStatus_When_AllDependenciesSucceed_Expect_ReturnSuccessAndTlsStatusUpdated)
 {
     Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;

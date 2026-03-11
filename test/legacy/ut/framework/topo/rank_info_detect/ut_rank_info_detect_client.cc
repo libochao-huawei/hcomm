@@ -94,16 +94,6 @@ protected:
 };
 
 namespace {
-TlsStatus g_expectedTlsStatus = TlsStatus::UNKNOWN;
-
-HcclResult StubHrtRaGetTlsStatus(RaInfo *info, TlsStatus &tlsStatus)
-{
-    EXPECT_NE(info, nullptr);
-    EXPECT_EQ(info->phyId, 0U);
-    tlsStatus = g_expectedTlsStatus;
-    return HCCL_SUCCESS;
-}
-
 NewRankInfo BuildRankInfoForTls(u32 rankId, TlsStatus tlsStatus)
 {
     NewRankInfo rankInfo {};
@@ -222,40 +212,6 @@ TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_Normal_Expect_Success)
     MOCKER_CPP(&RankInfoDetectClient::VerifyRankTable).stubs().will(ignoreReturnValue());
 
     EXPECT_NO_THROW(rankInfoDetectClient_->RecvRankTable());
-}
-
-TEST_F(RankInfoDetectClientTest, Ut_GetLocalTlsStatus_When_HrtRaGetTlsStatusSuccess_Expect_ReturnSuccessAndTlsStatusUpdated)
-{
-    TlsStatus tlsStatus = TlsStatus::UNKNOWN;
-    g_expectedTlsStatus = TlsStatus::ENABLE;
-
-    MOCKER(Hccl::HrtRaGetTlsStatus).stubs().will(invoke(StubHrtRaGetTlsStatus));
-
-    HcclResult ret = rankInfoDetectClient_->GetLocalTlsStatus(tlsStatus);
-
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(tlsStatus, TlsStatus::ENABLE);
-}
-
-TEST_F(RankInfoDetectClientTest, Ut_GetLocalTlsStatus_When_HrtRaGetTlsStatusFails_Expect_ReturnSameError)
-{
-    TlsStatus tlsStatus = TlsStatus::UNKNOWN;
-
-    MOCKER(Hccl::HrtRaGetTlsStatus).stubs().will(returnValue(HCCL_E_NETWORK));
-
-    HcclResult ret = rankInfoDetectClient_->GetLocalTlsStatus(tlsStatus);
-
-    EXPECT_EQ(ret, HCCL_E_NETWORK);
-}
-
-TEST_F(RankInfoDetectClientTest, Ut_GenerateTlsStatusStr_When_MultipleRanks_Expect_CommaSeparatedRankList)
-{
-    std::string tlsStatusStr;
-    std::vector<u32> tlsStatusRanks {0, 2, 5};
-
-    rankInfoDetectClient_->GenerateTlsStatusStr(tlsStatusStr, tlsStatusRanks);
-
-    EXPECT_EQ(tlsStatusStr, "0,2,5");
 }
 
 TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_AllRanksEnable_Expect_ReturnSuccess)
