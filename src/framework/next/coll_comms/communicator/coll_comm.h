@@ -80,8 +80,10 @@ public:
     void RegisterAicpuTaskExceptionCallback(u32 streamId);
     Hccl::ErrorMessageReport GetAicpuTaskException();
 private:
+    HcclResult DestroyAicpuComm();
     HcclResult InitHDCommunicate();   
     HcclResult InitTaskExceptionHandler();
+
     void* comm_{nullptr};
     uint32_t rankId_{};
     std::string commId_;

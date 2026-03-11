@@ -22,6 +22,7 @@ CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, co
 CollComm::~CollComm()
 {
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
+    (void)DestroyAicpuComm();
 }
 
 HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config)
@@ -63,6 +64,36 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
  	CHK_RET(hcclCommDfx_->Init(deviceLogicId_, commId_));
     CHK_RET(InitTaskExceptionHandler());
     EXCEPTION_HANDLE_END
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollComm::DestroyAicpuComm()
+{
+    if (callbacks_.getAicpuCommState()) {
+        CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
+        CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
+
+        Hccl::KfcCommand opCmd = Hccl::KfcCommand::DESTROY_AICPU_COMM;
+        CHK_RET(kfcControlTransferH2D_->Put(0, sizeof(KfcCommand), reinterpret_cast<uint8_t *>(&opCmd)));
+        HCCL_RUN_INFO("[%s]group[%s] send KfcCommand[%d] success", __func__, commId_.c_str(), opCmd);
+
+        Hccl::KfcExecStatus opInfo;
+        constexpr u32 WAIT_CMD_TIMEOUT = 10 * 1000; // 最大等待10秒
+        auto timeout = std::chrono::milliseconds(WAIT_CMD_TIMEOUT);
+        auto startTime = std::chrono::steady_clock::now();
+
+        while (true) {
+            CHK_RET(kfcStatusTransferD2H_->Get(0, sizeof(KfcExecStatus), reinterpret_cast<uint8_t *>(&opInfo)));
+            if (opInfo.kfcStatus == Hccl::KfcStatus::DESTROY_AICPU_COMM_DONE) {
+                HCCL_RUN_INFO("[%s]get KfcStatus[%d] success", __func__, opInfo.kfcStatus);
+                return HCCL_SUCCESS;
+            } else if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+                HCCL_ERROR("[%s]timeout, maxTime[%u ms] and get the opExecStatus is [%u].",
+                    __func__, WAIT_CMD_TIMEOUT, opInfo.kfcStatus);
+                return HCCL_E_TIMEOUT;
+            }
+        }
+    }
     return HCCL_SUCCESS;
 }
 

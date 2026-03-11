@@ -16,11 +16,11 @@
 #include "ub_transport_lite_impl.h"
 #include "notify_manager.h"
 #include "aicpu_hccl_def.h"
-#include "kfc.h"
 #include "dlhal_function_v2.h"
 #include "profiling_command_handle_lite.h"
 #include "aicpu_daemon_service.h"
 #include "hcclCommTaskExceptionLite.h"
+#include "coll_comm_aicpu_destroy_func.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
 
@@ -279,6 +279,7 @@ HcclResult CollCommAicpu::InitBackGroundThread()
     // 注册守护进程函数
     CHK_RET(hcomm::HcclCommTaskExceptionLite::GetInstance().Init(devId_));
     Hccl::AicpuDaemonService::GetInstance().Register(&hcomm::HcclCommTaskExceptionLite::GetInstance());
+    Hccl::AicpuDaemonService::GetInstance().Register(&hccl::CollCommAicpuDestroyFunc::GetInstance());
 
     // 启动背景线程
     if (Hccl::StartMC2MaintenanceThread != nullptr) {
@@ -287,6 +288,25 @@ HcclResult CollCommAicpu::InitBackGroundThread()
     } else {
         HCCL_WARNING("[%s]StartMC2MaintenanceThread func is nullptr", __func__);
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::BackGroundGetCmd(Hccl::KfcCommand &command)
+{
+    Hccl::KfcCommand cmd;
+    CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
+    HcclResult ret = kfcControlTransferH2D_->Get(0, sizeof(Hccl::KfcCommand), reinterpret_cast<uint8_t *>(&cmd));
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]fail, group[%s]", __func__, identifier_.c_str()), ret);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::BackGroundSetStatus(Hccl::KfcStatus state)
+{
+    Hccl::KfcExecStatus status;
+    status.kfcStatus = state;
+    HCCL_INFO("[%s]group[%s], state[%u]", __func__, identifier_.c_str(), state);
+    HcclResult ret = kfcStatusTransferD2H_->Put(0, sizeof(status.kfcStatus), reinterpret_cast<uint8_t *>(&status));
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]fail, group[%s]", __func__, identifier_.c_str()), ret);
     return HCCL_SUCCESS;
 }
 
