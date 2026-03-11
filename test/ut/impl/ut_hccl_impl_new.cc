@@ -314,7 +314,7 @@ TEST_F(HcclImplTest, ut_SelectAlg_when_broadcast_910C_Expect_ReturnIs_BroadcastM
     MOCKER_CPP(&HcclCommunicator::InitRaResource)
     .stubs()
     .with(any())
-    .will(returnValue(HCCL_SUCCESS))
+    .will(returnValue(HCCL_SUCCESS));
 
     ret = implBase->Init(params, rankTable);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -347,6 +347,6 @@ TEST_F(HcclImplTest, ut_SelectAlg_when_broadcast_910C_Expect_ReturnIs_BroadcastM
     const HcclDispatcher dispatcher = implBase->implAlg_->dispatcher_;
     std::unique_ptr<BroadCastOperator> operation(new (std::nothrow) BroadCastOperator(algConfigurator.get(), cclBufferManager, dispatcher, topoMatcher));
     ret = operation->SelectAlg("", opParam, algName, newTag);
-    ExPECT_TRUE(algName == "BroadcastMeshAivExecutor");
+    EXPECT_TRUE(algName == "BroadcastMeshAivExecutor");
     operation = nullptr;
 }
