@@ -234,7 +234,6 @@ HcclResult BroadCastOperator::SelectAlgfor91093(const OpParam& param, std::strin
     } else {
         algName = "BroadCastComm";
     }
-   
     HCCL_INFO("[SelectAlgfor91093] broadcast SelectAlgfor91093 is algName [%s]", algName.c_str());
     return HCCL_SUCCESS;
 }
