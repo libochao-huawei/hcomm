@@ -208,13 +208,13 @@ HcclResult HcomCheckAlltoAllVExternalMem(const void *sendBuf, const void *sendCo
 
     if (hasSend) {
         RPT_INPUT_ERR(sendBuf == nullptr, "EI0003",\
-            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+            std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
             std::vector<std::string>({"HcomCheckAlltoAllVExternalMem", "nullptr", "sendBuf", "not nullptr"}));
         CHK_PTR_NULL(sendBuf);
     }
     if (hasRecv) {
         RPT_INPUT_ERR(recvBuf == nullptr, "EI0003",\
-            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+            std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
             std::vector<std::string>({"HcomCheckAlltoAllVExternalMem", "nullptr", "recvBuf", "not nullptr"}));
         CHK_PTR_NULL(recvBuf);
     }
@@ -247,13 +247,13 @@ HcclResult HcomCheckAlltoAllVCExternalMem(const void *sendBuf, const void *sendC
     }
     if (hasSend) {
         RPT_INPUT_ERR(sendBuf == nullptr, "EI0003",\
-            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+            std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
             std::vector<std::string>({"HcomCheckAlltoAllVCExternalMem", "nullptr", "sendBuf", "not nullptr"}));
         CHK_PTR_NULL(sendBuf);
     }
     if (hasRecv) {
         RPT_INPUT_ERR(recvBuf == nullptr, "EI0003",\
-            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+            std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
             std::vector<std::string>({"HcomCheckAlltoAllVCExternalMem", "nullptr", "recvBuf", "not nullptr"}));
         CHK_PTR_NULL(recvBuf);
     }
@@ -310,7 +310,7 @@ HcclResult HcomCheckReductionOp(const std::string& callerOpName, const HcclReduc
             }
             supportedOpsStr += GetReduceOpEnumStr(supportedOp);
         }
-        RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
             std::vector<std::string>({ callerOpName, GetReduceOpEnumStr(op), "op", supportedOpsStr }));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] Op:[%s] not supported",
             LOG_KEYWORDS_TASK_EXEC.c_str(),
@@ -327,7 +327,7 @@ HcclResult HcomCheckReduceDataType(const HcclDataType dataType, const HcclReduce
     if ((deviceType == DevType::DEV_TYPE_910B) || (deviceType == DevType::DEV_TYPE_910_93)) {
         if ((op == HCCL_REDUCE_PROD) &&
         ((dataType == HCCL_DATA_TYPE_INT16) || (dataType == HCCL_DATA_TYPE_BFP16))) {
-            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
                 std::vector<std::string>({
                 "HcomCheckReduceDataType",
                 GetDataTypeEnumStr(dataType),
@@ -345,7 +345,7 @@ HcclResult HcomCheckReduceDataType(const HcclDataType dataType, const HcclReduce
         }
     } else if (deviceType == DevType::DEV_TYPE_910) {
         if (dataType == HCCL_DATA_TYPE_INT16) {
-            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
                 std::vector<std::string>({
                 "HcomCheckReduceDataType",
                 GetDataTypeEnumStr(dataType),
@@ -361,7 +361,7 @@ HcclResult HcomCheckReduceDataType(const HcclDataType dataType, const HcclReduce
         }
     } else if (deviceType == DevType::DEV_TYPE_310P3) {
         if (dataType == HcclDataType::HCCL_DATA_TYPE_INT16 && op != HcclReduceOp::HCCL_REDUCE_SUM) {
-            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+            RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
                 std::vector<std::string>({
                 "HcomCheckReduceDataType",
                 GetReduceOpEnumStr(op),
@@ -394,7 +394,7 @@ HcclResult HcomCheckOpParam(const char *tag, const u64 count, const HcclDataType
     const void *stream)
 {
     HcclResult ret = HcomCheckGroupName(group);
-    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({tag, group, "group", "non-empty string with only letters, dights, and underscores"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] group name is invalid",
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
@@ -408,7 +408,7 @@ HcclResult HcomCheckOpParam(const char *tag, const u64 count, const HcclDataType
 {
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
 
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({tag, "nullptr", "stream", "non-null device stream pointer"}));
     CHK_PTR_NULL(stream);
 
@@ -418,19 +418,19 @@ HcclResult HcomCheckOpParam(const char *tag, const u64 count, const HcclDataType
 HcclResult HcomCheckOpParam(const char *tag, const u64 count, const HcclDataType dataType)
 {
     HcclResult ret = HcomCheckTag(tag);
-    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomCheckTag", tag, "tag", "supported operation name (e.g., \"AllReduce\", \"AllGather\")"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] tag is invalid",
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
     ret = HcomCheckCount(count);
-    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({tag, std::to_string(count), "count", "positive integer (>=1)"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] count is out of range",
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
     ret = HcomCheckDataType(dataType);
-    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({tag, GetDataTypeEnumStr(dataType), "dataType", "valid data type (e.g., HCCL_DATA_TYPE_FP32, HCCL_DATA_TYPE_INT64)"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] dataType is invalid",
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
