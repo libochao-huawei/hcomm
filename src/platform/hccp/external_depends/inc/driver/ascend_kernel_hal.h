@@ -442,7 +442,7 @@ typedef int (*get_otsd_cfg)(int dev_id, struct qos_otsd_config_type *cfg);
 
 struct qos_master_node {
     char name[MAX_QOS_MASTER_NODE_NAME_LEN]; /* master name */
-    struct qos_master_config_type cfg; /* master qos config */
+    struct qos_master_config_type cfg = {}; /* master qos config */
     set_qos_cfg set;            /* set qos config handler */
     get_qos_cfg get;            /* get qos config handler */
     set_allow_cfg set_allow;    /* if support cfg qos allow, can't be null */
@@ -554,7 +554,7 @@ struct esched_addr_desc {
 
 struct esched_cq_phase_head {
     u32 addr_width; /* 0: 32 bit, 1: 64 bit */
-    struct esched_addr_desc head;
+    struct esched_addr_desc head = {};
     u64 overlay_value; /* when a register is written, the value must be superimposed. */
     u64 phase_mask; /* when the software notifies the hardware, the value of bits in the mask needs to be
                        incremented to notify the hardware when the queue flips. surport 1bit */
@@ -566,13 +566,13 @@ struct esched_cq_phase {
     u8 *mask; /* len is cqe_size */
     u8 init_value;
     u8 ring_step;
-    struct esched_cq_phase_head phase_head;
+    struct esched_cq_phase_head phase_head = {};
 };
 
 struct esched_cq_ptr {
     u32 addr_width; /* 0: 32 bit, 1: 64 bit */
-    struct esched_addr_desc head;
-    struct esched_addr_desc tail;
+    struct esched_addr_desc head = {};
+    stesched_addr_desc tail = {};tail;
 };
 
 struct esched_raw_data_cq {
@@ -584,8 +584,8 @@ struct esched_raw_data_cq {
     u32 cq_depth;
     u32 cqe_size;
     union {
-        struct esched_cq_phase cq_phase;
-        struct esched_cq_ptr cq_ptr;
+        struct esched_cq_phase cq_phase = {};
+        struct esched_cq_ptr cq_ptr = {};
     };
 };
 
@@ -602,7 +602,7 @@ struct esched_table_raw_data {
     u32 raw_data_key_mask_len;
     u32 endian_type; /* 0: little endian, 1: big endian */
     union {
-        struct esched_raw_data_cq cq_data;
+        struct esched_raw_data_cq cq_data = {};
     };
 };
 
@@ -930,7 +930,7 @@ struct prof_kernel_sample_ops {
 struct prof_kernel_sample_register_para {
     struct module *owner;                   /* THIS_MODULE */
     unsigned int sub_chan_num;              /* 多实例 */
-    struct prof_kernel_sample_ops ops;
+    struct prof_kernel_sample_ops ops = {};
     int host_pid;                         /* host采集进程pid, 0：表示内核模块采集；非0：表示AICPU进程采集 */
     int rsv[4];
 };
@@ -1287,7 +1287,7 @@ struct trs_chan_sq_trace {
     u32 sq_tail;
 
     u32 chan_id;
-    struct trs_chan_type types;
+    struct trs_chan_type types = {};
     /* Content from sqe */
     u32 type;
     u32 task_id;
@@ -1301,7 +1301,7 @@ struct trs_chan_cq_trace {
     u32 round;
 
     u32 chan_id;
-    struct trs_chan_type types;
+    struct trs_chan_type types = {};
     /* Content from sqe */
     u32 task_id;
     u32 sq_id;
@@ -1327,10 +1327,10 @@ struct trs_chan_para {
     u32 msg[SQCQ_INFO_LENGTH]; /* send to ts */
     u32 ext_msg_len;
     void *ext_msg;
-    struct trs_chan_type types;
-    struct trs_chan_sq_para sq_para;
-    struct trs_chan_cq_para cq_para;
-    struct trs_chan_ops ops;
+    struct trs_chan_type types = {};
+    struct trs_chan_sq_para sq_para = {};
+    struct trs_chan_cq_para cq_para = {};
+    struct trs_chan_ops ops = {};
 };
 
 struct trs_chan_send_para {

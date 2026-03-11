@@ -28,18 +28,18 @@ struct QpCap {
 
 union PingQpAttr {
     struct {
-        struct CqExtAttr cqAttr;
+        struct CqExtAttr cqAttr = {};
         struct {
-            struct QpCap cap;
+            struct QpCap cap = {};
             uint32_t udpSport;
             uint32_t reserved[4U];
         } qpAttr;
         uint32_t reserved[4U];
     } rdma;
     struct {
-        struct CqExtAttr cqAttr;
+        struct CqExtAttr cqAttr = {};
         struct {
-            struct QpCap cap;
+            struct QpCap cap = {};
             uint32_t tokenValue; /**< refer to urma_token_t */
             uint32_t reserved[3U];
         } qpAttr;
@@ -56,19 +56,19 @@ struct PingLocalCommInfo {
         struct {
             uint32_t flowLabel;
             uint8_t hopLimit;
-            struct QosAttr qosAttr;
+            struct QosAttr qosAttr = {};
             uint32_t udpSport;
             uint32_t reserved[7U];
         } rdma;
         struct {
-            struct QosAttr qosAttr;
+            struct QosAttr qosAttr = {};
             uint32_t reserved[7U];
         } ub;
     };
 };
 
 union PingDev {
-    struct rdev rdma;
+    struct rdev rdma = {};
     struct {
         union HccpEid eid;
         uint32_t eidIndex;
@@ -79,7 +79,7 @@ struct PingInitAttr {
     int version;
     int mode;
     union PingDev dev;
-    struct PingLocalCommInfo commInfo;
+    struct PingLocalCommInfo commInfo = {};
     union PingQpAttr client;
     union PingQpAttr server;
     uint32_t bufferSize;
@@ -124,9 +124,9 @@ struct PingBufferInfo {
 
 struct PingInitInfo {
     int version;
-    struct PingQpInfo client;
-    struct PingQpInfo server;
-    struct PingBufferInfo result;
+    struct PingQpInfo client = {};
+    struct PingQpInfo server = {};
+    struct PingBufferInfo result = {};
     uint32_t reserved[32U];
 };
 
@@ -149,14 +149,14 @@ struct PingTargetCommInfo {
         union HccpIpAddr ip;
         union HccpEid eid;
     };
-    struct PingQpInfo qpInfo;
+ PingQpInfo qpInfo = {};fo qpInfo;
 };
 
 struct PingTargetInfo {
     int version;
-    struct PingLocalCommInfo localInfo;
-    struct PingTargetCommInfo remoteInfo;
-    struct PingPayloadInfo payload;
+    struct PingLocalCommInfo localInfo = {};
+    struct PingTargetCommInfo remoteInfo = {};
+    struct PingPayloadInfo payload = {};
     uint32_t reserved[16U];
 };
 
@@ -169,7 +169,7 @@ enum PingResultState {
 
 struct PingResultSummary {
     int version;
-    struct PingTaskAttr taskAttr;
+    struct PingTaskAttr taskAttr = {};
 
     uint32_t rttMin; /**< tv_usec */
     uint32_t rttMax; /**< tv_usec */
@@ -185,12 +185,12 @@ struct PingResultSummary {
 
 struct PingResultInfo {
     enum PingResultState state;
-    struct PingResultSummary summary;
+    struct PingResultSummary summary = {};
 };
 
 struct PingTargetResult {
-    struct PingTargetCommInfo remoteInfo;
-    struct PingResultInfo result;
+    struct PingTargetCommInfo remoteInfo = {};
+    struct PingResultInfo result = {};
 };
 
 /**

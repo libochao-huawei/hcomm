@@ -232,14 +232,14 @@ struct LiteMrInfo {
 };
 
 struct LiteRdevCapResp {
-    struct dev_cap_info cap;
+    struct dev_cap_info cap = {};
     unsigned char reserved[HOST_LITE_RESERVED];
 };
 
 struct LiteQpCqAttrResp {
-    struct rdma_lite_device_qp_attr qpData;
-    struct rdma_lite_device_cq_attr sendCqData;
-    struct rdma_lite_device_cq_attr recvCqData;
+    struct rdma_lite_device_qp_attr qpData = {};
+    struct rdma_lite_device_cq_attr sendCqData = {};
+    strdma_lite_device_cq_attr recvCqData = {};Data;
     unsigned char reserved[HOST_LITE_RESERVED];
 };
 
@@ -247,19 +247,19 @@ struct LiteConnectedInfoResp {
     unsigned int state;
     struct LiteMrInfo localMr[RA_MR_MAX_NUM];
     struct LiteMrInfo remMr[RA_MR_MAX_NUM];
-    struct QosAttr qosAttr;
+    struct QosAttr qosAttr = {};
     unsigned char reserved[HOST_LITE_RESERVED];
 };
 
 struct LiteMemAttrResp {
-    struct rdma_lite_device_mem_attr memData;
+    struct rdma_lite_device_mem_attr memData = {};
     unsigned char reserved[HOST_LITE_RESERVED];
 };
 
 struct RsQpNormWithAttrs {
     int isExp;
     int isExt;
-    struct QpExtAttrs extAttrs;
+    struct QpExtAttrs extAttrs = {};
     unsigned int aiOpSupport;
 };
 
@@ -274,7 +274,7 @@ struct RsQpRespWithAttrs {
     // below cq related info valid when data_plane_flag.bs.cq_cstm was 1
     unsigned long long aiScqAddr; // refer to struct ibv_cq *scq
     unsigned long long aiRcqAddr; // refer to struct ibv_cq *rcq
-    struct AiDataPlaneInfo dataPlaneInfo;
+    struct AiDataPlaneInfo dataPlaneInfo = {};
 };
 
 struct RsQpResp {

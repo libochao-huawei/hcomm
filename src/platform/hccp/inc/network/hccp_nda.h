@@ -48,7 +48,7 @@ struct queueBuf {
 };
 
 struct queueInfo {
-    struct queueBuf qBuf;
+    struct queueBuf qBuf = {};
     struct iovec dbrPiVa;
     struct iovec dbrCiVa;
     struct iovec dbHwVa;
@@ -56,7 +56,7 @@ struct queueInfo {
 
 struct NdaCqInfo {
     struct ibv_cq *cq;
-    struct queueInfo cqInfo;
+    struct queueInfo cqInfo = {};
 };
 
 struct NdaQpInitAttr {
@@ -68,8 +68,8 @@ struct NdaQpInitAttr {
 
 struct NdaQpInfo {
     struct ibv_qp *qp;
-    struct queueInfo sqInfo;
-    struct queueInfo rqInfo;
+    struct queueInfo sqInfo = {};
+    struct queueInfo rqInfo = {};
 };
 
 enum {

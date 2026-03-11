@@ -162,7 +162,7 @@ struct hns_roce_buf {
 };
 
 struct hns_roce_mem_pool {
-    struct hns_roce_buf  roce_buf;
+    struct hns_roce_buf roce_buf = {};
     unsigned int         used_size;
 };
 
@@ -180,7 +180,7 @@ enum hns_roce_db_type {
 
 struct hns_roce_db_page {
     struct hns_roce_db_page *prev, *next;
-    struct hns_roce_buf buf;
+    strhns_roce_buf buf = {};buf;
     unsigned int        num_db;
     unsigned int        use_cnt;
     unsigned long       *bitmap;
@@ -204,7 +204,7 @@ enum hns_roce_buf_type {
 
 struct hns_roce_context {
     struct verbs_context        ibv_ctx;
-    struct verbs_context_exp    ibv_ctx_exp;
+    struct verbs_context_exp ibv_ctx_exp = {};
     void                *uar;
     void                *dwqe_page;
     pthread_spinlock_t      uar_lock;
@@ -245,7 +245,7 @@ struct hns_roce_pd {
 
 struct hns_roce_cq {
     struct verbs_cq         verbs_cq;
-    struct hns_roce_buf     buf;
+  hns_roce_buf buf = {};     buf;
     pthread_spinlock_t      lock;
     unsigned int            cqn;
     unsigned int            cq_depth;
@@ -260,7 +260,7 @@ struct hns_roce_cq {
 };
 
 struct hns_roce_idx_que {
-    struct hns_roce_buf     buf;
+    struct hns_roce_buf buf = {};
     int             buf_size;
     int             entry_sz;
     unsigned long           *bitmap;
@@ -270,7 +270,7 @@ struct hns_roce_idx_que {
 
 struct hns_roce_srq {
     struct verbs_srq        verbs_srq;
-    struct hns_roce_buf     buf;
+    struct hns_roce_buf buf = {};
     pthread_spinlock_t      lock;
     unsigned long           *wrid;
     unsigned int            srqn;
@@ -281,7 +281,7 @@ struct hns_roce_srq {
     int             tail;
     unsigned int            *db;
     unsigned short          counter;
-    struct hns_roce_idx_que     idx_que;
+    struct hns_roce_idx_que idx_que = {};
 };
 
 struct hns_roce_wq {
@@ -339,20 +339,20 @@ struct hns_roce_dfx_context {
 
 struct hns_roce_qp {
     struct ibv_qp           ibv_qp;
-    struct hns_roce_buf     buf;
+hns_roce_buf buf = {};uf     buf;
     unsigned int            max_inline_data;
     int             buf_size;
     unsigned int            sq_signal_bits;
-    struct hns_roce_wq      sq;
-    struct hns_roce_wq      rq;
+    struct hns_roce_wq sq = {};
+    struct hns_roce_wq rq = {};
     unsigned int            *rdb;
     unsigned int            *sdb;
-    struct hns_roce_sge_ex      sge;
+    struct hns_roce_sge_ex sge = {};
     unsigned int            next_sge;
     int             port_num;
     int             sl;
 
-    struct hns_roce_rinl_buf    rq_rinl_buf;
+    struct hns_roce_rinl_buf rq_rinl_buf = {};
     unsigned int            flags;
     struct list_node        rcq_list;
     struct list_node        scq_list;
@@ -364,8 +364,8 @@ struct hns_roce_qp {
 
     int                             gdr_enabled;
     enum hns_roce_buf_type          buf_type;
-    struct ibv_exp_gdr_share_sq     gdr_share_sq;
-    struct ibv_exp_gdr_temp_wqe     gdr_temp_wqe;
+    struct ibv_exp_gdr_share_sq gdr_share_sq = {};
+    struct ibv_exp_gdr_temp_wqe gdr_temp_wqe = {};
 };
 
 #define MAC_LEN        6
@@ -384,7 +384,7 @@ struct hns_roce_av {
 
 struct hns_roce_ah {
     struct ibv_ah           ibv_ah;
-    struct hns_roce_av      av;
+    struct hns_roce_av av = {};
 };
 
 struct hns_roce_u_hw {

@@ -55,7 +55,7 @@ struct hns_roce_qpc_attr_val {
 
 struct hns_roce_qpc_attr {
     unsigned int qpn;
-    struct hns_roce_qpc_attr_val attr_val;
+    struct hns_roce_qpc_attr_val attr_val = {};
     unsigned int attr_mask;
 };
 
@@ -82,8 +82,8 @@ struct hns_roce_cq_data_plane_info {
 };
 
 struct hns_roce_qp_data_plane_info {
-    struct hns_roce_wq_data_plane_info sq;
-    struct hns_roce_wq_data_plane_info rq;
+    struct hns_roce_wq_data_plane_info sq = {};
+    struct hns_roce_wq_data_plane_info rq = {};
 };
 
 struct hns_roce_mr_remap_info {

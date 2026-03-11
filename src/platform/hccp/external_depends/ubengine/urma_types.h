@@ -383,7 +383,7 @@ typedef struct urma_context {
     urma_eid_t eid;           /* [Public] eid of urma device. */
     uint32_t eid_index;
     uint32_t uasid;           /* [Public] uasid of current process. */
-    struct urma_ref ref;      /* [Private] reference count of urma context. */
+    struct urma_ref ref = {};      /* [Private] reference count of urma context. */
 } urma_context_t;
 
 typedef struct urma_eid_info {
@@ -399,7 +399,7 @@ typedef struct urma_jfce_cfg {
 typedef struct urma_jfce {
     urma_context_t *urma_ctx; /* [Private] point to urma context. */
     int fd;                   /* [Private] fd of completed event. */
-    struct urma_ref ref;      /* [Private] reference count of urma context. */
+    struct urma_ref ref = {};      /* [Private] reference count of urma context. */
 } urma_jfce_t;
 
 typedef union urma_jfc_flag {

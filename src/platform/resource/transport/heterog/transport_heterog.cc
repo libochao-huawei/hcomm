@@ -295,7 +295,7 @@ HcclResult TransportHeterog::PrepareSocketInfo(s32 type, s32 linkNum, const stri
         }
 
         HCCL_INFO("link[%d] tag[%s]", i, tag.c_str());
-        SocketInfoT tmpInfo;
+        SocketInfoT tmpInfo = {};
         tmpInfo.socketHandle = nicSocketHandle_;
         tmpInfo.fdHandle = nullptr;
         tmpInfo.remoteIp.addr = peerAddr.addr;

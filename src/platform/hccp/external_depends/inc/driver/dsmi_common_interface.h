@@ -310,7 +310,7 @@ struct dsmi_uds_info {
 
 struct dsmi_fault_info {
     union {
-        struct dsmi_uds_info uds_info;
+        struct dsmi_uds_info uds_info = {};
     } fault_t;
 };
 
@@ -423,16 +423,16 @@ struct dmp_rsp_message_stru {
 
 struct dmp_message_stru {
     union {
-        struct dmp_req_message_stru req;
-        struct dmp_rsp_message_stru rsp;
+        struct dmp_req_message_stru req = {};
+        struct dmp_rsp_message_stru rsp = {};
     } data;
 };
 
 struct passthru_message_stru {
     unsigned int src_len;
     unsigned int rw_flag; /**< 0 read ,1 write */
-    struct dmp_message_stru src_message;
-    struct dmp_message_stru dest_message;
+    struct dmp_message_stru src_message = {};
+    stdmp_message_stru dest_message = {};sage;
 };
 
 struct dsmi_board_info_stru {
@@ -531,7 +531,7 @@ struct dsmi_lpm_feature_switch {
     unsigned int feature_switch;
 	union{
 		unsigned int data[LOAD_AWA_PARA_MAX]; // 结构体对齐8 * unint32_t
-		struct load_awa_feature_para load_awa_feature_para;
+		struct load_awa_feature_para load_awa_feature_para = {};
 	} switch_para;
 };
 
@@ -571,8 +571,8 @@ struct component_id_cfg {
 };
 
 typedef struct lpm_soc_stress_dsmi_cfg_in {
-    struct soc_stress_cfg cfg;
-    struct component_id_cfg component_cfg;
+    struct soc_stress_cfg cfg = {};
+    struct component_id_cfg component_cfg = {};
     unsigned char resv[LPM_SOC_STRESS_RESV_LEN];
 } DSMI_LP_SET_STRESS_TEST_STRU;
 
@@ -948,7 +948,7 @@ typedef struct  dsmi_can_config_stru {
     DSMI_CAN_TX_FIFO_QUEUE_MODE mode_txfq;                  /**< Tx Event FIFO work mode */
     unsigned int element_num_sidf;                          /**< Standard ID Filter quantity */
     unsigned int element_num_xidf;                          /**< Extended ID Filter quantity */
-    struct global_filter_stru global_filter;                /**< Global Filter */
+    struct global_filter_stru global_filter = {};                /**< Global Filter */
     unsigned int xid_and_mask;                              /**< Extended ID AND Mask */
     unsigned int echo_skb_max;                              /**< Local socket buffer quantity */
     unsigned int poll_weight;                               /**< napi poll weight */
@@ -1614,9 +1614,9 @@ struct dsmi_media_resource {
 
 struct dsmi_create_vdev_res_stru {
     char name[DSMI_VDEV_RES_NAME_LEN];
-    struct dsmi_base_resource base;
-    struct dsmi_computing_configurable computing;
-    struct dsmi_media_resource media;
+    struct dsmi_base_resource base = {};
+    struct dsmi_computing_configurable computing = {};
+    struct dsmi_media_resource media = {};
 };
 
 struct dsmi_create_vdev_result {
@@ -1636,23 +1636,23 @@ struct dsmi_vdev_query_info {
     unsigned int vfid;
     unsigned int reserved; /* There was a redundant member before and reserved is for compatibleness. */
     unsigned long long container_id;
-    struct dsmi_base_resource base;
-    struct dsmi_computing_resource computing;
-    struct dsmi_media_resource media;
+    struct dsmi_base_resource base = {};
+    struct dsmi_computing_resource computing = {};
+    stdsmi_media_resource media = {};edia;
 };
 
 /* for single search */
 struct dsmi_vdev_query_stru {
     unsigned int vdev_id;
-    struct dsmi_vdev_query_info query_info;
+    struct dsmi_vdev_query_info query_info = {};
 };
 
 struct dsmi_soc_free_resource {
     unsigned int vfg_num;
     unsigned int vfg_bitmap;
     struct dsmi_base_resource base;
-    struct dsmi_computing_resource computing;
-    struct dsmi_media_resource media;
+    stdsmi_computing_resource computing = {};ting;
+ dsmi_media_resource media = {};rce media;
 };
 
 struct dsmi_soc_total_resource {
@@ -1661,8 +1661,7 @@ struct dsmi_soc_total_resource {
     unsigned int vfg_num;
     unsigned int vfg_bitmap;
     struct dsmi_base_resource base;
-    struct dsmi_computing_resource computing;
-    struct dsmi_media_resource media;
+    struct dsmi_computing_resource computidsmi_media_resource media = {};resource media;
 };
 
 /* for compute group ratio */
@@ -1799,8 +1798,8 @@ enum dsmi_event_type {
 struct dsmi_event {
     enum dsmi_event_type type;
     union {
-        struct dms_fault_event dms_event;
-        struct sec_event_info sec_event;
+        struct dms_fault_event dms_event = {};
+        struct sec_event_info sec_event = {};
     } event_t;
 };
 

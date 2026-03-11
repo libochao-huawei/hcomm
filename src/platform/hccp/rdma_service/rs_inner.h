@@ -221,7 +221,7 @@ struct RsSecPara {
  * mr_cb also used to sync to remote
  */
 struct RsMrCb {
-    struct RsMrInfo mrInfo;   /* MUST be the first element */
+    struct RsMrInfo mrInfo = {};   /* MUST be the first element */
 
     uint64_t wrId;
     uint32_t state;
@@ -229,7 +229,7 @@ struct RsMrCb {
     struct ibv_mr *ibMr;
     struct RsRdevCb *devCb;
     struct RsQpCb *qpCb;
-    struct RsListHead list;
+    struct RsListHead list = {};
 };
 
 struct RsQpInfo {
@@ -240,7 +240,7 @@ struct RsQpInfo {
     int psn;
     int gidIdx;
     union ibv_gid gid;
-    struct RsMrInfo notifyMr;
+    struct RsMrInfo notifyMr = {};
 };
 
 enum RsConnState {
@@ -263,8 +263,8 @@ enum RsConnState {
 };
 
 struct RsConnInfo {
-    struct RsIpAddrInfo serverIp;
-    struct RsIpAddrInfo clientIp;
+    struct RsIpAddrInfo serverIp = {};
+    stRsIpAddrInfo clientIp = {};ntIp;
     uint16_t port;
     int scopeId;
 
@@ -284,9 +284,9 @@ struct RsConnInfo {
     uint32_t tagSyncTime;
     uint32_t tagEintrTime;
 
-    struct SocketErrInfo errInfo;
+    struct SocketErrInfo errInfo = {};
 
-    struct RsListHead list;
+    stRsListHead list = {};list;
 };
 
 enum ListenFdState {
@@ -295,8 +295,8 @@ enum ListenFdState {
 };
 
 struct RsListenInfo {
-    struct RsIpAddrInfo serverIpAddr;
-    struct RsIpAddrInfo clientIpAddr;
+    struct RsIpAddrInfo serverIpAddr = {};
+ RsIpAddrInfo clientIpAddr = {};entIpAddr;
     uint16_t sockPort;
 
     int listenFd;
@@ -304,52 +304,42 @@ struct RsListenInfo {
     int counter;
 
     int lastAcceptErrno; /* last accept errno, avoid log flush */
-    struct SocketErrInfo errInfo;
+    stSocketErrInfo errInfo = {};Info;
 
     bool acceptCreditFlag;
     pthread_mutex_t acceptCreditMutex;
     enum ListenFdState fdState;
     unsigned int acceptCreditLimit;
 
-    struct RsListHead list;
+ RsListHead list = {};Head list;
 };
 
-struct RsAcceptInfo {
-    struct RsIpAddrInfo serverIpAddr;
-    struct RsIpAddrInfo clientIpAddr;
+struct RsAcceptInfRsIpAddrInfo serverIpAddr = {};o serverIpAddr;
+    stRsIpAddrInfo clientIpAddr = {};Addr;
     uint16_t sockPort;
     int connFd;
     SSL *ssl;
-    uint32_t state;
-
-    struct RsListHead list;
+    uint32_t statRsListHead list = {};sListHead list;
 };
 
-struct RsWhiteList {
-    struct RsIpAddrInfo serverIp;
-    struct RsListHead whiteList;
-    struct RsListHead list;
+struct RsWhiRsIpAddrInfo serverIp = {};IpAddrInfo serverIp;
+    struct RsListHead whRsListHead list = {};uct RsListHead list;
 };
 
-struct RsWhiteListInfo {
-    struct RsIpAddrInfo clientIp;
+struct RsWhRsIpAddrInfo clientIp = {};ct RsIpAddrInfo clientIp;
     unsigned int connLimit;
-    char tag[SOCK_CONN_TAG_SIZE];
-    struct RsListHead list;
+    char tag[SOCK_CORsListHead list = {};  struct RsListHead list;
 };
 
-struct RsHeterogTcpFdInfo {
-    int fd;
-    struct RsListHead list;
+struct RsHeterogTcpFdRsListHead list = {};d;
+    struct RsListHead list = {};
 };
 
 struct RsCqeErrInfo {
     pthread_mutex_t mutex;
-    struct CqeErrInfo info;
+    struct CqeErrInfo info = {};
 };
-
-struct RsConnCb {
-    struct RsIpAddrInfo localIpAddr;
+RsIpAddrInfo localIpAddr = {};
     unsigned int wlistEnable;
     int eventfd;
     int epollfd;
@@ -357,13 +347,12 @@ struct RsConnCb {
 
     pthread_mutex_t connMutex;
     struct rs_cb *rscb;
-    struct SocketErrInfo epollErrInfo;
+ SocketErrInfo epollErrInfo = {};llErrInfo;
 
-    struct RsListHead listenList;
-    struct RsListHead serverAcceptList;
-    struct RsListHead serverConnList;
-    struct RsListHead clientConnList;
-    struct RsListHead whiteList;
+    structRsListHead serverAcceptList = {};struct RsListHead serverAcceptList;
+    strucRsListHead clientConnList = {};t;
+    RsListHead whiteList = {};entConnList;
+    stRsListHead whiteList = {};List;
 };
 
 struct RsQpCb {
@@ -392,8 +381,8 @@ struct RsQpCb {
     int sqIndex;
     int dbIndex;
     int qpMode;
-    struct RsQpInfo qpInfoLo;
-    struct RsQpInfo qpInfoRem;
+    struct RsQpInfo qpInfoLo = {};
+    stRsQpInfo qpInfoRem = {};oRem;
 
     struct RsConnInfo *connInfo;
     int state;
@@ -402,12 +391,10 @@ struct RsQpCb {
     char qpMrBuf[RS_BUF_SIZE];
     unsigned int remainSize;
 
-    pthread_mutex_t qpMutex;
-
-    int mrNum;
-    struct RsListHead list;
-    struct RsListHead mrList;
-    struct RsListHead remMrList;
+    ptRsListHead list = {};Mutex;
+RsListHead mrList = {};  struct RsListHead list;
+ RsListHead mrList = {};ad mrList;
+    struct RsListHead remMrList = {};
     int isExp;
 
     uint32_t sendLen;
@@ -417,14 +404,14 @@ struct RsQpCb {
     struct event_summary *sendEvent;
     struct event_summary *recvEvent;
 
-    struct QosAttr qosAttr;
+    struct QosAttr qosAttr = {};
 
     unsigned int timeout;
     unsigned int retryCnt;
 
-    struct LiteQpCqAttrResp qpResp;
+    struct LiteQpCqAttrResp qpResp = {};
 
-    struct LiteMemAttrResp memResp;
+    struct LiteMemAttrResp memResp = {};
     int memAlign; // 0,1:4KB, 2:2MB
     uint32_t udpSport;
 
@@ -432,7 +419,7 @@ struct RsQpCb {
     unsigned int grpId;
     unsigned int cqCstmFlag;
 
-    struct RsCqeErrInfo cqeErrInfo;
+    struct RsCqeErrInfo cqeErrInfo = {};
 };
 
 struct RsCqCreateAttr {
@@ -496,8 +483,8 @@ struct SensorNode {
 
 struct RsRdevCb {
     struct rs_cb *rsCb;
-    unsigned int rdevIndex;
-    struct RsIpAddrInfo localIp;
+    RsIpAddrInfo localIp = {};x;
+ RsIpAddrInfo localIp = {};o localIp;
     int devNum;
     const char *devName;
     int pollCqeNum;
@@ -519,17 +506,15 @@ struct RsRdevCb {
     struct ibv_device_attr deviceAttr;
     struct ibv_mr *notifyMr;
     struct ibv_pd *ibPd;
-    struct ibv_context *ibCtx;
-    struct ibv_device **devList;
+    struct ibv_cRsListHead qpList = {}; struct ibv_device **devList;
 
-    struct RsListHead qpList;
-    struct RsListHead typicalMrList;
-    struct RsListHead list;
+    struct RsRsListHead list = {};
+    struct RsListHead typicalMrLiRsListHead list = {};sListHead list;
 
     int supportLite;
     struct {
         bool backupFlag;
-        struct rdev rdevInfo;
+        struct rdev rdevInfo = {};
         struct ibv_context *ibCtx;
     } backupInfo;
 };
@@ -548,9 +533,9 @@ struct RsNslbCb {
 struct RsTlvCb {
     unsigned int phyId;	
     pthread_mutex_t mutex;	
-    struct TlvBufInfo bufInfo;	
+    struct TlvBufInfo bufInfo = {};	
     bool initFlag;	
-    struct RsNslbCb nslbCb;	
+    struct RsNslbCb nslbCb = {};	
 };
 
 /*
@@ -572,23 +557,21 @@ struct rs_cb {
     SSL_CTX *clientSslCtx;
     struct RsCertSkidSubjectCb *skidSubjectCb;
 
-    int connFlag;
-    struct RsConnCb connCb;
+    int connFRsListHead rdevList = {};nnCb connCb;
 
-    unsigned int devCnt;
-    struct RsListHead rdevList;
-    struct RsListHead heterogTcpFdList;
+    unsigned intRsListHead rdevList = {};RsListHead rdevList;
+    stRsListHead heterogTcpFdList = {};List;
 
-    struct RsPingCtxCb pingCb;
+    struct RsPingCtxCb pingCb = {};
 
-    struct RsTlvCb tlvCb;
+    struct RsTlvCb tlvCb = {};
 
     char buf[RS_BUF_SIZE];
-    struct ProcessRsSign pRsSign;
+    struct ProcessRsSign pRsSign = {};
 
     unsigned long long notifyVaBase;
     unsigned long long notifySize;
-    struct SensorNode sensorNode;
+    struct SensorNode sensorNode = {};
 
     void (*tcpRecvCallback)(const void *fdHandle);
     const void **fdMap;

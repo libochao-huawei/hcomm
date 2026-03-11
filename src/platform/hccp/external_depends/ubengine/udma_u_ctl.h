@@ -38,14 +38,14 @@ union udma_jfr_flag {
 
 struct udma_u_jfr_cstm_cfg {
 	union udma_jfr_flag flag;
-	struct udma_u_que_cfg_ex idx_que;
-	struct udma_u_que_cfg_ex rq;
+	struct udma_u_que_cfg_ex idx_que = {};
+	struct udma_u_que_cfg_ex rq = {};
 	uint32_t *sw_db;
 };
 
 struct udma_u_jfr_cfg_ex {
 	urma_jfr_cfg_t base_cfg;
-	struct udma_u_jfr_cstm_cfg cstm_cfg;
+	struct udma_u_jfr_cstm_cfg cstm_cfg = {};
 };
 
 union udma_jfs_flag {
@@ -61,7 +61,7 @@ union udma_jfs_flag {
 
 struct udma_u_jfs_cstm_cfg {
 	union udma_jfs_flag flag;
-	struct udma_u_que_cfg_ex sq;
+	struct udma_u_que_cfg_ex sq = {};
 	uint32_t tgid;
 };
 
@@ -74,7 +74,7 @@ enum udma_u_jetty_type {
 struct udma_u_jfs_cfg_ex {
 	uint32_t id;
 	urma_jfs_cfg_t base_cfg;
-	struct udma_u_jfs_cstm_cfg cstm_cfg;
+	struct udma_u_jfs_cstm_cfg cstm_cfg = {};
 	enum udma_u_jetty_type jetty_type;
 	bool pi_type;
 	uint32_t sqebb_num;
@@ -82,8 +82,8 @@ struct udma_u_jfs_cfg_ex {
 
 struct udma_u_jetty_cfg_ex {
 	urma_jetty_cfg_t base_cfg;
-	struct udma_u_jfr_cstm_cfg jfr_cstm; /* control noshare jfr of jetty */
-	struct udma_u_jfs_cstm_cfg jfs_cstm; /* control jfs of jetty */
+	struct udma_u_jfr_cstm_cfg jfr_cstm = {}; /* control noshare jfr of jetty */
+	studma_u_jfs_cstm_cfg jfs_cstm = {};cstm; /* control jfs of jetty */
 	enum udma_u_jetty_type jetty_type;
 	bool pi_type;
 	uint32_t sqebb_num;
@@ -114,7 +114,7 @@ struct udma_u_jfc_ccu_cfg {
 
 struct udma_u_lock_jfc_cfg {
 	urma_jfc_cfg_t base_cfg;
-	struct udma_u_jfc_ccu_cfg ccu_cfg;
+	struct udma_u_jfc_ccu_cfg ccu_cfg = {};
 };
 
 struct udma_u_jfs_wr_ex {

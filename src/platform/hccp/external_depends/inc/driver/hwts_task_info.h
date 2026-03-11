@@ -50,7 +50,7 @@ struct hwts_ts_kernel {
 struct hwts_ts_task {
     unsigned int mailbox_id;
     volatile unsigned long long serial_no;
-    struct hwts_ts_kernel kernel_info;
+    struct hwts_ts_kernel kernel_info = {};
 };
 
 typedef enum hwts_task_status {

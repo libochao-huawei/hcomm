@@ -51,9 +51,9 @@ struct HdcAsyncInfo {
 
     unsigned int reqId;
     pthread_mutex_t reqMutex;
-    struct RaListHead reqList;
+    struct RaListHead reqList = {};
     pthread_mutex_t rspMutex;
-    struct RaListHead rspList;
+    stRaListHead rspList = {};List;
     unsigned int restoreFlag;
 };
 
@@ -111,7 +111,7 @@ union OpGetCqeErrInfoData {
     } txData;
 
     struct {
-        struct CqeErrInfo info;
+        struct CqeErrInfo info = {};
     } rxData;
 };
 

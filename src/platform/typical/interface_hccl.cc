@@ -33,7 +33,7 @@ constexpr u32 QP_QUEUE_DEPTH_MAX = 32768;
 constexpr u32 QP_QUEUE_DEPTH_MIN = 128;
 struct MrInfoT AscendMrInfo2MrInfo(AscendMrInfo* ascendMrInfo)
 {
-    struct MrInfoT innerMrInfo;
+    struct MrInfoT innerMrInfo = {};
     innerMrInfo.addr = reinterpret_cast<void*>(ascendMrInfo->addr);
     innerMrInfo.size = ascendMrInfo->size;
     innerMrInfo.lkey = ascendMrInfo->key;
@@ -45,7 +45,7 @@ HcclResult hcclCreateAscendQP(AscendQPInfo* ascendQPInfo)
     s32 deviceLogicId = 0;
     CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     CHK_PTR_NULL(ascendQPInfo);
-    struct TypicalQp qpInfo;
+    struct TypicalQp qpInfo = {};
     CHK_RET(TypicalQpManager::GetInstance().CreateQp(qpInfo));
     ascendQPInfo->qpn = qpInfo.qpn;
     ascendQPInfo->gidIdx = qpInfo.gidIdx;
@@ -78,7 +78,7 @@ HcclResult hcclCreateAscendQPWithAttr(AscendQPInfo* ascendQPInfo)
     CHK_RET(CheckDepth(ascendQPInfo->scq_depth));
     CHK_RET(CheckDepth(ascendQPInfo->rq_depth));
     CHK_RET(CheckDepth(ascendQPInfo->rcq_depth));
-    struct TypicalQp qpInfo;
+    struct TypicalQp qpInfo = {};
     QpConfigInfo qpConfigInfo{ascendQPInfo->sq_depth, ascendQPInfo->rq_depth, ascendQPInfo->scq_depth, ascendQPInfo->rcq_depth};
     CHK_RET(TypicalQpManager::GetInstance().CreateQp(qpInfo, qpConfigInfo));
     ascendQPInfo->qpn = qpInfo.qpn;
@@ -123,7 +123,7 @@ HcclResult hcclModifyAscendQPEx(AscendQPInfo* localQPInfo, AscendQPInfo* remoteQ
         HCCL_ERROR("[hcclModifyAscendQPEx]The value of tc[%u] is not a multiple of 4.",
         qpQos->tc), HCCL_E_PARA);    
 
-    struct TypicalQp localQp;
+    struct TypicalQp localQp = {};
     localQp.qpn = localQPInfo->qpn;
     localQp.gidIdx = localQPInfo->gidIdx;
     for (uint32_t i = 0; i < GID_LENGTH; i++) {
@@ -133,7 +133,7 @@ HcclResult hcclModifyAscendQPEx(AscendQPInfo* localQPInfo, AscendQPInfo* remoteQ
     localQp.sl = qpQos->sl;
     localQp.tc = qpQos->tc;
 
-    struct TypicalQp remoteQp;
+    struct TypicalQp remoteQp = {};
     remoteQp.qpn = remoteQPInfo->qpn;
     remoteQp.gidIdx = remoteQPInfo->gidIdx;
     for (uint32_t i = 0; i < GID_LENGTH; i++) {
@@ -149,7 +149,7 @@ HcclResult hcclDestroyAscendQP(AscendQPInfo* ascendQPInfo)
     s32 deviceLogicId = 0;
     CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     CHK_PTR_NULL(ascendQPInfo);
-    struct TypicalQp qpInfo;
+    struct TypicalQp qpInfo = {};
     qpInfo.qpn = ascendQPInfo->qpn;
     qpInfo.gidIdx = ascendQPInfo->gidIdx;
     for (uint32_t i = 0; i < GID_LENGTH; i++) {

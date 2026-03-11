@@ -35,10 +35,10 @@ enum {
 };
 
 struct LiteSendWr {
-    struct SendWr wr;
+    struct SendWr wr = {};
     union {
-        struct WrAuxInfo aux;
-        struct WrExtInfo ext;
+        struct WrAuxInfo aux = {};
+        struct WrExtInfo ext = {};
     };
 };
 
@@ -62,7 +62,7 @@ union OpLiteRdevCapData {
     } txData;
 
     struct {
-        struct LiteRdevCapResp resp;
+        struct LiteRdevCapResp resp = {};
     } rxData;
 };
 
@@ -74,7 +74,7 @@ union OpLiteQpCqAttrData {
     } txData;
 
     struct {
-        struct LiteQpCqAttrResp resp;
+        struct LiteQpCqAttrResp resp = {};
     } rxData;
 };
 
@@ -86,7 +86,7 @@ union OpLiteMemAttrData {
     } txData;
 
     struct {
-        struct LiteMemAttrResp resp;
+        struct LiteMemAttrResp resp = {};
     } rxData;
 };
 
@@ -98,7 +98,7 @@ union OpLiteConnectedInfoData {
     } txData;
 
     struct {
-        struct LiteConnectedInfoResp resp;
+        struct LiteConnectedInfoResp resp = {};
     } rxData;
 };
 

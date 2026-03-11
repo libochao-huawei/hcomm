@@ -85,7 +85,7 @@ struct MemKey {
 struct DevNotifyInfo {
     uint64_t va;
     uint64_t size;
-    struct MemKey key;
+    struct MemKey key = {};
     uint32_t resv[4U];
 };
 
@@ -132,7 +132,7 @@ struct DevBaseAttr {
     uint32_t rqMaxSge;
     union {
         struct {
-            struct DevNotifyInfo globalNotifyInfo;
+            struct DevNotifyInfo globalNotifyInfo = {};
         } rdma;
 
         struct {
@@ -192,7 +192,7 @@ union RegSegFlag {
 };
 
 struct MemRegAttr {
-    struct HccpMemInfo mem;
+    struct HccpMemInfo mem = {};
     union {
         struct {
             int access; /**< refer to enum mem_mr_access_flags */
@@ -208,7 +208,7 @@ struct MemRegAttr {
 };
 
 struct MemRegInfo {
-    struct MemKey key;
+    struct MemKey key = {};
     union {
         struct {
             uint32_t lkey;
@@ -223,8 +223,8 @@ struct MemRegInfo {
 };
 
 struct MrRegInfoT {
-    struct MemRegAttr in;
-    struct MemRegInfo out;
+    struct MemRegAttr in = {};
+    struct MemRegInfo out = {};
 };
 
 union ImportSegFlag {
@@ -240,7 +240,7 @@ union ImportSegFlag {
 };
 
 struct MemImportAttr {
-    struct MemKey key;
+    struct MemKey key = {};
 
     union {
         struct {
@@ -266,8 +266,8 @@ struct MemImportInfo {
 };
 
 struct MrImportInfoT {
-    struct MemImportAttr in;
-    struct MemImportInfo out;
+    struct MemImportAttr in = {};
+    struct MemImportInfo out = {};
 };
 
 struct HccpTokenId {
@@ -323,8 +323,8 @@ struct CqCreateInfo {
 };
 
 struct CqInfoT {
-    struct CqCreateAttr in;
-    struct CqCreateInfo out;
+    struct CqCreateAttr in = {};
+    struct CqCreateInfo out = {};
 };
 
 union DataPlaneCstmFlag {
@@ -430,7 +430,7 @@ struct QpCreateAttr {
             uint8_t errTimeout; /**< the timeout to report error. Range: [0-31] */
             union {
                 struct {
-                    struct JettyQueCfgEx sq; /**< specify sq buffer config, required when cstm_flag.bs.sq_cstm specified */
+                    struct JettyQueCfgEx sq = {}; /**< specify sq buffer config, required when cstm_flag.bs.sq_cstm specified */
                     bool piType; /**< false: op mode, true: async mode */
                     union CstmJfsFlag cstmFlag; /**< refer to union udma_jfs_flag */
                     uint32_t sqebbNum; /**< required when cstm_flag.bs.sq_cstm specified */
@@ -462,7 +462,7 @@ struct CtxQpShareInfo {
 };
 
 struct QpCreateInfo {
-    struct QpKey key; /**< for modify qp or import & bind jetty*/
+    struct QpKey key = {}; /**< for modify qp or import & bind jetty*/
     union {
         struct {
             uint32_t qpn;
@@ -555,7 +555,7 @@ struct JettyImportExpCfg {
 };
 
 struct QpImportAttr {
-    struct QpKey key; /**< for RDMA, save key on rem_qp_handle for bind to modify qp */
+    struct QpKey key = {}; /**< for RDMA, save key on rem_qp_handle for bind to modify qp */
     union {
         struct {
             enum JettyImportMode mode;
@@ -563,7 +563,7 @@ struct QpImportAttr {
             enum JettyGrpPolicy policy; /**< refer to urma_jetty_grp_policy_t */
             enum TargetType type; /**< refer to urma_target_type */
             union ImportJettyFlag flag; /**< refer to urma_import_jetty_flag_t */
-            struct JettyImportExpCfg expImportCfg; /**< only valid on mode JETTY_IMPORT_MODE_EXP */
+            struct JettyImportExpCfg expImportCfg = {}; /**< only valid on mode JETTY_IMPORT_MODE_EXP */
             uint32_t tpType; /**< refer to urma_tp_type_t */
         } ub;
     };
@@ -581,8 +581,8 @@ struct QpImportInfo {
 };
 
 struct QpImportInfoT {
-    struct QpImportAttr in;
-    struct QpImportInfo out;
+    struct QpImportAttr in = {};
+    struct QpImportInfo out = {};
 };
 
 struct WrSgeList {
@@ -647,7 +647,7 @@ struct SendWrData {
             uint64_t wrId;
             enum RaWrOpcode opcode;
             unsigned int flags; /**< reference to ra_send_flags */
-            struct WrAuxInfo aux; /**< aux info */
+            struct WrAuxInfo aux = {}; /**< aux info */
         } rdma;
 
         struct {
@@ -655,8 +655,8 @@ struct SendWrData {
             enum RaUbOpcode opcode; /**< refer to urma_opcode_t */
             union JfsWrFlag flags; /**< refer to urma_jfs_wr_flag_t */
             void *remQpHandle; /**< resv for RM use */
-            struct WrNotifyInfo notifyInfo; /**< required for opcode RA_UB_OPC_WRITE_NOTIFY */
-            struct WrReduceInfo reduceInfo; /**<reduce is enabled when reduce_en is set to true */
+            struct WrNotifyInfo notifyInfo = {}; /**< required for opcode RA_UB_OPC_WRITE_NOTIFY */
+            struct WrReduceInfo reduceInfo = {}; /**<reduce is enabled when reduce_en is set to true */
         } ub;
     };
 
@@ -679,9 +679,9 @@ struct UbPostInfo {
 
 struct SendWrResp {
     union {
-        struct WqeInfoT wqeTmp; /**< wqe template info used for V80 offload */
-        struct DbInfo db; /**< doorbell info used for V71 and V80 opbase */
-        struct UbPostInfo doorbellInfo; /**< doorbell info used for UB */
+        struct WqeInfoT wqeTmp = {}; /**< wqe template info used for V80 offload */
+        struct DbInfo db = {}; /**< doorbell info used for V71 and V80 opbase */
+        struct UbPostInfo doorbellInfo = {}; /**< doorbell info used for UB */
         uint8_t resv[384U]; /**< resv for write value doorbell info */
     };
 };

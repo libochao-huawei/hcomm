@@ -171,7 +171,7 @@ struct RdevInitInfo {
 };
 
 struct SocketInitInfoT {
-    struct rdev rdevInfo;
+    struct rdev rdevInfo = {};
     int scopeId;
 };
 
@@ -353,17 +353,17 @@ struct SendWrlistData {
     unsigned long long dstAddr; /**< destination address */
     unsigned int op; /**< operations of RDMA supported:RDMA_WRITE:0, RDMA_READ:4 */
     int sendFlags; /**< reference to ra_send_flags */
-    struct SgList memList; /**< list of sg */
+    struct SgList memList = {}; /**< list of sg */
 };
 
 struct SendWrlistDataExt {
     unsigned long long dstAddr; /**< destination address */
     unsigned int op; /**< operations of RDMA supported:RDMA_WRITE:0, RDMA_READ:4 */
     int sendFlags; /**< reference to ra_send_flags */
-    struct SgList memList; /**< list of sg */
+    struct SgList memList = {}; /**< list of sg */
     union {
-        struct WrAuxInfo aux; /**< aux info */
-        struct WrExtInfo ext; /**< ext info */
+        struct WrAuxInfo aux = {}; /**< aux info */
+        struct WrExtInfo ext = {}; /**< ext info */
     };
 };
 
@@ -376,8 +376,8 @@ struct SendWrV2 {
     uint32_t op; /**< operations of RDMA supported:RDMA_WRITE:0 */
     int sendFlag; /**< reference to ra_send_flags */
     union {
-        struct WrAuxInfo aux; /**< aux info */
-        struct WrExtInfo ext; /**< ext info */
+        struct WrAuxInfo aux = {}; /**< aux info */
+        struct WrExtInfo ext = {}; /**< ext info */
     };
 };
 
@@ -388,13 +388,13 @@ struct WrInfo {
     uint32_t immData;              /**< imm data */
     uint64_t wrId;                 /**< user assigned work request ID */
     uint64_t dstAddr;              /**< destination address */
-    struct SgList memList;        /**< sg info */
-    struct WrAuxInfo aux;         /**< aux info */
+    struct SgList memList = {};        /**< sg info */
+    struct WrAuxInfo aux = {};    /**< aux info */
 };
 
 struct RecvWrlistData {
     uint64_t wrId; /**< user assigned work request ID */
-    struct SgList memList; /**< list of sg */
+    struct SgList memList = {}; /**< list of sg */
 };
 
 /**
@@ -445,8 +445,8 @@ struct DbInfo {
  */
 struct SendWrRsp {
     union {
-        struct WqeInfoT wqeTmp; /**< wqe template info */
-        struct DbInfo db; /**< doorbell info */
+        struct WqeInfoT wqeTmp = {}; /**< wqe template info */
+        struct DbInfo db = {}; /**< doorbell info */
     };
 };
 
@@ -458,7 +458,7 @@ struct IfaddrInfo {
 struct InterfaceInfo {
     int family;
     int scopeId;
-    struct IfaddrInfo ifaddr; /* Address and netmask of interface */
+    struct IfaddrInfo ifaddr = {}; /* Address and netmask of interface */
     char ifname[MAX_INTERFACE_NAME_LEN]; /* Name of interface */
 };
 
@@ -562,10 +562,10 @@ struct AiDataPlaneCq {
 };
 
 struct AiDataPlaneInfo {
-    struct AiDataPlaneWq sq;
-    struct AiDataPlaneWq rq;
-    struct AiDataPlaneCq scq;
-    struct AiDataPlaneCq rcq;
+    struct AiDataPlaneWq sq = {};
+    struct AiDataPlaneWq rq = {}; /* receive work queue */
+    struct AiDataPlaneCq scq = {};
+    struct AiDataPlaneCq rcq = {}; /* receive completion queue */
     unsigned int reserved[8U];
 };
 
@@ -589,7 +589,7 @@ enum {
 struct QpExtAttrs {
     int qpMode;
     // cq attr
-    struct CqExtAttr cqAttr;
+    struct CqExtAttr cqAttr = {};
     // qp attr
     struct ibv_qp_init_attr qpAttr;
     // version control and reserved
@@ -608,7 +608,7 @@ struct AiQpInfo {
     // below cq related info valid when data_plane_flag.bs.cq_cstm was 1
     unsigned long long aiScqAddr; // refer to struct ibv_cq *scq
     unsigned long long aiRcqAddr; // refer to struct ibv_cq *rcq
-    struct AiDataPlaneInfo dataPlaneInfo;
+    struct AiDataPlaneInfo dataPlaneInfo = {};
 };
 
 struct TypicalQp {
@@ -648,8 +648,8 @@ struct SocketErrInfo {
 };
 
 struct ServerSocketErrInfo {
-    struct SocketErrInfo epollWait;
-    struct SocketErrInfo accept;
+    struct SocketErrInfo epollWait = {};
+    struct SocketErrInfo accept = {}; /* accept info */
 };
 
 enum SaveSnapshotAction {

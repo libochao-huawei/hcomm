@@ -125,8 +125,8 @@ struct DMA_PHY_ADDR {
 
 struct DMA_ADDR {
     union {
-        struct DMA_PHY_ADDR phyAddr;
-        struct DMA_OFFSET_ADDR offsetAddr;
+        struct DMA_PHY_ADDR phyAddr = {};
+        struct DMA_OFFSET_ADDR offsetAddr = {};
     };
     unsigned int fixed_size; /**< Output: the actual conversion size */
     unsigned int virt_id;    /**< store logic id for destroy addr */
