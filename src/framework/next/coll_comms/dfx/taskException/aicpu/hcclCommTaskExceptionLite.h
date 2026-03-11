@@ -31,16 +31,19 @@ private:
     HcclResult ProcessCqe(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo);
     HcclResult HandleExceptionCqe();
     HcclResult GetThreadCqe(hccl::Thread* thread, rtLogicCqReport_t &cqeException, CqeStatus &cqeStatus);
-    HcclResult GenerateErrorMessageReport(CollCommAicpu *aicpuComm, const Hccl::TaskInfo* taskInfo,
+    HcclResult GenerateErrorMessageReport(CollCommAicpu *aicpuComm, const Hccl::TaskInfo& taskInfo,
         const rtLogicCqReport_t &exceptionInfo, Hccl::ErrorMessageReport &errMsgInfo);
-    void GetErrMsgInfo(const Hccl::TaskInfo* taskInfo, Hccl::ErrorMessageReport &errMsgInfo,
+    void GetErrMsgInfo(const Hccl::TaskInfo& taskInfo, Hccl::ErrorMessageReport &errMsgInfo,
         const rtLogicCqReport_t &exceptionInfo);
     HcclResult SendTaskExceptionByMBox(const u32 notifyId, const u32 tsId, const rtLogicCqReport_t &exceptionInfo);
     uint16_t SwitchUBCqeErrCodeToTsErrCode(u32 cqeErrCode);
     uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode);
     HcclResult PrintTaskContextInfo(u32 sqId, u32 taskId);
-    std::string GetGroupRankInfo(const Hccl::TaskInfo& taskInfo);
-    void PrintEid(const Hccl::TaskInfo* taskInfo);
+    std::string GetGroupInfo(const Hccl::TaskInfo& taskInfo);
+    std::string GetOpDataInfo(const Hccl::TaskInfo& taskInfo);
+
+    void PrintEid(const Hccl::TaskInfo& taskInfo);
+    std::string GetBaseInfo(const Hccl::TaskInfo& taskInfo);
 
     bool initFlag_{false};
     bool stopCall_{false};

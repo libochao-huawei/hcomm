@@ -643,7 +643,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     }
     hccl::CollComm* collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
-    dfxOpInfo->beginTime_ = hrtMsprofSysCycleTime();
+    dfxOpInfo->beginTime = hrtMsprofSysCycleTime();
 
     LocalNotify *notify = GetNotify(dfxOpInfo->cpuTsThread, dfxOpInfo->cpuWaitAicpuNotifyIdx);
     CHK_PRT_RET(!notify, HCCL_ERROR("[%s]GetNotify null, thread[%llu], notifyIdx[%u]",
@@ -662,7 +662,6 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     dfxOpInfoOnce->groupName_ = collComm->GetCommId();
     dfxOpInfoOnce->mainStreamId_ = cpuTsStream->id();
     dfxOpInfoOnce->index_ = collComm->UpdateIndex();
-    dfxOpInfoOnce->tag_ = Hccl::OpTypeToString(Hccl::OP_TYPE_MAP.at(static_cast<HcclCMDType>(dfxOpInfo->opType)));
     dfxOpInfoOnce->rankSize_ = collComm->GetRankSize();
     //单算子模式，覆盖opTag
     bool opBased = true;
@@ -678,14 +677,12 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     CHK_PTR_NULL(mirrorTaskManage);
     mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
    
-   // 下发device侧
-    HcommDfxKernelLaunch(hcclComm->GetIdentifier(), hcclComm->GetBinHandle(), *dfxOpInfo);
+    // 下发device侧
+    CHK_RET(HcommDfxKernelLaunch(hcclComm->GetIdentifier(), hcclComm->GetBinHandle(), *dfxOpInfo));
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 
 }
-
-
 
 HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime)
 {

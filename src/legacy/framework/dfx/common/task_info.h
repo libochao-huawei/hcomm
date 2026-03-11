@@ -21,7 +21,7 @@ constexpr u32 INVALID_VALUE_RANKID = 0xFFFFFFFF; // rank id非法值
 class DfxOpInfo {
 public:
     CollOperator op_;
-    std::string  tag_;
+    std::string  tag_; // 实际是opType
     AlgType      algType_;
     u32          index_;
     u64          beginTime_;
@@ -29,6 +29,7 @@ public:
     void        *comm_;
     u32          mainStreamId_;
     bool         isIndop_{false};
+    std::string  algTag_;
     std::string  groupName_;
     u32          rankSize_{0};
     u32          cpuWaitAicpuNotifyId_{0};
