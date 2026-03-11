@@ -200,10 +200,11 @@ HcclResult BroadCastOperator::SelectAlgfor91093(const OpParam& param, std::strin
 
     // 单机仅支持单算子
     bool isAivSingleNode = (serverNum_ == 1) && isSingleMeshAggregation_ && isOpbase && isCCLBufferGE16M;
-
+    bool isOnlyAiv = topoMatcher_->GetIsOnlyAivConfig();
     isAivMode_ = topoMatcher_->GetAivModeConfig()
             && IsSupportAIVCopy(param.DataDes.dataType)
-            && (isAivSingleNode || (serverNum_ == 1 && !isOpbase));
+            && (isAivSingleNode || (serverNum_ == 1 && !isOpbase 
+                && (isOnlyAiv || (param.count * sizeof(param.dataType) <= HCCL_MID_COUNT_16_MB))));
 
     bool smallCountOptimSingleServer =
         (serverNum_ == 1) &&
@@ -216,7 +217,7 @@ HcclResult BroadCastOperator::SelectAlgfor91093(const OpParam& param, std::strin
         (param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_1_MB * deviceNumPerAggregation_);
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_) && !retryEnable_; // 涉及ROCE平面
-    
+
     if (isAivMode_) {
         algName = "BroadcastMeshAivExecutor";
     } else if (multiModuleDiffDeviceNumMode_ || multiSuperPodDiffServerNumMode_) {
