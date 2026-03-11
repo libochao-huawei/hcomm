@@ -159,6 +159,8 @@ TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquire_When_Alloced_Notify_Mor
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 }
 
+
+
 // -----CommGetNotifyNumInThread接口host侧用例-------
 TEST_F(HcclIndependentOpEngineTest, Ut_CommGetNotifyNumInThread_When_Alloced_And_Get_Notify_Success)
 {
@@ -261,4 +263,66 @@ TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadExportToCommEngine_When_Engine_
     threadMgr->HcclThreadAcquireWithStream(CommEngine::COMM_ENGINE_CPU, nullptr, 1, threads);
     ret = HcclThreadExportToCommEngine(comm, 1, threads, CommEngine::COMM_ENGINE_AICPU_TS, exportedThreads);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+// -----HcclThreadAcquireWithConfig接口host侧用例-------
+TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquireWithConfig_When_Param_Is_Invalid_Expect_Para_Error)
+{
+    ThreadHandle threads[2] = {0};
+    ThreadConfig config = {1};
+    ThreadType type = THREAD_TYPE_TS;
+
+    HcclResult ret = HcclThreadAcquireWithConfig(nullptr, CommEngine::COMM_ENGINE_CPU_TS, 2, type, config, threads);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    ret = HcclThreadAcquireWithConfig(comm, CommEngine::COMM_ENGINE_CPU_TS, 2, type, config, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    ret = HcclThreadAcquireWithConfig(comm, CommEngine::COMM_ENGINE_RESERVED, 2, type, config, threads);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquireWithConfig_When_Alloced_Threads_Morethan_Quota_Expect_Unavailable)
+{
+    bool isDeviceSide = false;
+    MOCKER(GetRunSideIsDevice)
+        .stubs()
+        .with(outBound(isDeviceSide))
+        .will(returnValue(HCCL_SUCCESS));
+
+    ThreadHandle threads[39] = {0};
+    ThreadConfig config = {1};
+    ThreadType type = THREAD_TYPE_TS;
+
+    HcclResult ret = HcclThreadAcquireWithConfig(comm, CommEngine::COMM_ENGINE_CPU_TS, 39, type, config, threads);
+    EXPECT_EQ(ret, HCCL_E_UNAVAIL);
+}
+
+TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquireWithConfig_When_Alloced_Notify_Morethan_Quota_Expect_Unavailable)
+{
+    ThreadHandle threads[1] = {0};
+    ThreadConfig config = {64};
+    ThreadType type = THREAD_TYPE_TS;
+
+    HcclResult ret = HcclThreadAcquireWithConfig(comm, CommEngine::COMM_ENGINE_CPU_TS, 1, type, config, threads);
+    EXPECT_EQ(ret, HCCL_E_UNAVAIL);
+}
+
+TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquireWithConfig_When_Normal_Expect_Success)
+{
+    bool isDeviceSide = false;
+    MOCKER(GetRunSideIsDevice)
+        .stubs()
+        .with(outBound(isDeviceSide))
+        .will(returnValue(HCCL_SUCCESS));
+
+    ThreadHandle threads[2] = {0};
+    ThreadConfig config = {2};
+    ThreadType type = THREAD_TYPE_TS;
+
+    HcclResult ret = HcclThreadAcquireWithConfig(comm, CommEngine::COMM_ENGINE_CPU_TS, 2, type, config, threads);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    for (int i = 0; i < 2; i++) {
+        EXPECT_NE(threads[i], 0);
+    }
 }
