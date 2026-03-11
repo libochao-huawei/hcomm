@@ -226,7 +226,7 @@ aclError aclrtMallocWithCfg(void **devPtr, size_t size, aclrtMemMallocPolicy pol
     return ACL_SUCCESS;
 }
 
-aclError aclrtIpcMemClose(const char_t *name)
+rtError_t rtIpcDestroyMemoryName(const char_t *name)
 {
     return RT_ERROR_NONE;
 }
@@ -236,9 +236,19 @@ aclError aclrtIpcMemGetExportKey(void *devPtr, size_t size, char *key, size_t le
     return ACL_SUCCESS;
 }
 
+rtError_t rtIpcCloseMemory(const char_t *name)
+{
+    return RT_ERROR_NONE;
+}
+
 aclError aclrtIpcMemImportByKey(void **devPtr, const char *key, uint64_t flag)
 {
     return ACL_SUCCESS;
+}
+
+rtError_t rtIpcCloseMemory(const void *ptr)
+{
+    return RT_ERROR_NONE;
 }
 
 aclError aclrtIpcMemSetImportPid(const char *key, int32_t *pid, size_t num)
@@ -466,7 +476,7 @@ rtError_t rtGetCntNotifyId(aclrtCntNotify inCntNotify, uint32_t *const notifyId)
 
 aclError aclrtCntNotifyDestroy(aclrtCntNotify cntNotify)
 {
-	return ACL_SUCCESS;
+	return RT_ERROR_NONE;
 }
 
 // rtError_t rtCntNotifyRecord(
@@ -627,7 +637,7 @@ rtError_t rtSetXpuDevice(rtXpuDevType devType, const uint32_t devId)
     return RT_ERROR_NONE;
 }
 
-aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t flags)
+rtError_t rtMemPrefetchToDevice(void *devPtr, uint64_t len, int32_t devId)
 {
-	return ACL_SUCCESS;
+    return RT_ERROR_NONE;
 }
