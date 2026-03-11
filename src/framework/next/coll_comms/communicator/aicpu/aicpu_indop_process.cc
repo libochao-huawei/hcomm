@@ -192,3 +192,11 @@ HcclResult AicpuIndopProcess::AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param)
     AicpuReleaseCommMgrbyGroup(group);
     return HCCL_SUCCESS;
 }
+
+HcclResult AicpuIndopProcess::AicpuGetCommAll(std::vector<std::pair<std::string, CollCommAicpuMgr *>> &aicpuCommInfo)
+{
+    for (auto &kv : g_commAicpuInfo.commMgrMap) {
+        aicpuCommInfo.push_back({kv.first, kv.second.get()});
+    }
+    return HCCL_SUCCESS;
+}

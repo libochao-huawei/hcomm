@@ -33,6 +33,9 @@ public:
 
     HcclResult H2DResPack(std::vector<char>& buffer);
 
+    virtual HcclResult Clean() override;
+    virtual HcclResult Resume() override;
+
 private:
     HcclResult ParseInputParam();
     HcclResult BuildAttr();

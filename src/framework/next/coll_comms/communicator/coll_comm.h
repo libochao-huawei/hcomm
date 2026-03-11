@@ -20,6 +20,7 @@
 #include "independent_op_context_manager.h"
 #include "comm_mem_manager.h"
 #include "channel_manager.h"
+
 namespace hccl {
 /**
  * @note 职责：集合通信通信域上下文管理，包括RankGraph和本rank信息资源等内容。
@@ -68,14 +69,27 @@ public:
     // 获取Rank数量
     uint32_t GetRankSize() const;
 
+    std::string GetCollCommName();
+    
+    // Todo:在这里做N秒快恢
+    HcclCommStatus GetCommStatus();
+    HcclResult Suspend();
+    HcclResult Clean();
+    HcclResult Resume();
+
+    HcclResult GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams, HDCommunicateParams &kfcStatusTransferD2HParams);
+
 private:
+    HcclResult InitHDCommunicate();
+
     void* comm_{nullptr};
     uint32_t rankId_{};
     std::string commId_;
     CommConfig config_{};
-    ManagerCallbacks callbacks_; 
+    HcclCommStatus commStatus_{HcclCommStatus::HCCL_COMM_UNKNOWN};
+    ManagerCallbacks callbacks_;
+    s32 deviceLogicId_{0};
     
-   
     std::unique_ptr<RankGraph> rankgraph_{nullptr};
     std::unique_ptr<CommEngineResMgr> commEngineResMgr_{nullptr};
     std::unique_ptr<ContextManager>  contextMgr_{nullptr};
@@ -87,6 +101,12 @@ private:
     uintptr_t   addr_{0};
     std::size_t size_{0};
     HcclMemType memType_{HcclMemType::HCCL_MEM_TYPE_DEVICE};
+
+    // NS recover
+    bool isCleaned_{false};
+
+    std::shared_ptr<HDCommunicate> kfcControlTransferH2D_{nullptr};
+    std::shared_ptr<HDCommunicate> kfcStatusTransferD2H_{nullptr};
 };
 }  // namespace hccl
 

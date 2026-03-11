@@ -34,4 +34,13 @@ HcclResult EndpointPairMgr::Get(const EndpointDescPair &endpointDescPair, Endpoi
     return HCCL_SUCCESS;
 }
 
+EpChannelList EndpointPairMgr::GetEpChannelList()
+{
+    EpChannelList epChannelList;
+    for (const auto& endpointPair: endpointPairMap_) {
+        epChannelList[endpointPair.first] = endpointPair.second->GetChannelHandles();
+    }
+    return epChannelList;
+}
+
 } // namespace hcomm
