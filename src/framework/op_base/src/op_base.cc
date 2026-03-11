@@ -2611,15 +2611,16 @@ HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
-#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcclAllGatherVV2(sendBuf, sendCount, recvBuf, const_cast<void*>(recvCounts), const_cast<void*>(recvDispls), dataType, comm, stream));
-#endif
     if (UNLIKELY(sendCount > 0 && sendBuf == nullptr)) {
             RPT_INPUT_ERR(true, "EI0003",\
             std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
             std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "sendBuf", "non-null pointer"}));
             CHK_PTR_NULL(sendBuf);
     }
+
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclAllGatherVV2(sendBuf, sendCount, recvBuf, const_cast<void*>(recvCounts), const_cast<void*>(recvDispls), dataType, comm, stream));
+#endif
 
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);
