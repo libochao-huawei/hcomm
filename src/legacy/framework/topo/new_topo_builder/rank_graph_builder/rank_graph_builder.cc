@@ -349,8 +349,7 @@ void RankGraphBuilder::SetEndpointDesc()
                 HcclResult ret = GetCommAddr(desc.commAddr, iface->GetAddr());
                 CHK_PRT_THROW(ret != HCCL_SUCCESS, HCCL_ERROR("[RankGraphBuilder::%s] fail", __func__), InternalException, "GetCommAddr fail" );
 
-                auto it = protocolMap.find(protocol);
-                desc.protocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
+                desc.protocol = LinkProtocolToCommProtocol(protocol);
                 desc.loc.locType = AddrPositionToEndpointLoc(iface->GetPos());
 
                 HCCL_INFO("[RankGraphBuilder::SetEndpointDesc] local type[%d] protocol[%d]",
