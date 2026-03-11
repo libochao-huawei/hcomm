@@ -52,12 +52,12 @@ HcclResult CcuContext::Init()
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuContext::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParam)
+HcclResult CcuContext::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams)
 {
     auto args    = GeneArgs(arg);
     auto agrsNum = args.size();
     if (agrsNum != loadArgIndex) {
-        HCCL_ERROR("Args number does not match the Load instruction, agrsNum = %d, loadArgInstr= %u",agrsNum, loadArgIndex);
+        HCCL_ERROR("Args number does not match the Load instruction, agrsNum = %lu, loadArgInstr= %u", agrsNum, loadArgIndex);
         return HCCL_E_PARA;
     }
 
@@ -65,28 +65,28 @@ HcclResult CcuContext::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskP
     // args数量大于等于0、小于等于最大值时，返回1个TaskParam
     uint32_t seqNum
         = (agrsNum / CCU_SQE_ARGS_LEN) + ((agrsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (agrsNum == 0 ? 1 : 0);
-    taskParam.resize(seqNum);
+    taskParams.resize(seqNum);
     for (uint32_t index = 0; index < seqNum; index++) {
-        taskParam[index].dieId       = GetDieId();
-        taskParam[index].missionId   = GetMissionId();
-        taskParam[index].instStartId = instrInfo.missionStartInstrId + index * CCU_SQE_ARGS_LEN;
-        taskParam[index].key         = GetMissionKey();
-        taskParam[index].argSize     = CCU_SQE_ARGS_LEN;
+        taskParams[index].dieId       = GetDieId();
+        taskParams[index].missionId   = GetMissionId();
+        taskParams[index].instStartId = instrInfo.missionStartInstrId + index * CCU_SQE_ARGS_LEN;
+        taskParams[index].key         = GetMissionKey();
+        taskParams[index].argSize     = CCU_SQE_ARGS_LEN;
         if (index == seqNum - 1) {
-            taskParam[index].instCnt = instrInfo.missionInstrCount - index * CCU_SQE_ARGS_LEN;
-            std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::end(args), std::begin(taskParam[index].args));
+            taskParams[index].instCnt = instrInfo.missionInstrCount - index * CCU_SQE_ARGS_LEN;
+            std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::end(args), std::begin(taskParams[index].args));
         } else {
-            taskParam[index].instCnt = CCU_SQE_ARGS_LEN;
+            taskParams[index].instCnt = CCU_SQE_ARGS_LEN;
             std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::begin(args) + (index + 1) * CCU_SQE_ARGS_LEN,
-                      std::begin(taskParam[index].args));
+                      std::begin(taskParams[index].args));
         }
 
         HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
-                  taskParam[index].dieId, taskParam[index].missionId, taskParam[index].instStartId,
-                  taskParam[index].instCnt, taskParam[index].argSize);
-        for (uint32_t i = 0; i < taskParam[index].argSize; i++) {
+                  taskParams[index].dieId, taskParams[index].missionId, taskParams[index].instStartId,
+                  taskParams[index].instCnt, taskParams[index].argSize);
+        for (uint32_t i = 0; i < taskParams[index].argSize; i++) {
             if (i == TOKEN_VALUE_INDEX) { continue; }
-            HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, taskParam[index].args[i]);
+            HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, taskParams[index].args[i]);
         }
     }
     return HCCL_SUCCESS;
@@ -1261,7 +1261,7 @@ HcclResult CcuContext::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Cc
             continue;
         }
         if (count >= GetWaiteCkeProfilingReps().size()) {
-            HCCL_ERROR("count[%d] out of range[0, %u], cache size(%u).", count, GetWaiteCkeProfilingReps().size(), ccuProfilingCache.size());
+            HCCL_ERROR("count[%u] out of range[0, %u], cache size(%u).", count, GetWaiteCkeProfilingReps().size(), ccuProfilingCache.size());
             return HCCL_E_INTERNAL;
         }
         auto waitCkeRep = GetWaiteCkeProfilingReps()[count];
