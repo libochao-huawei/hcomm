@@ -1944,6 +1944,14 @@ HcclResult HcclSendV2(
     const std::string tag = "SendRecv_" + communicator->GetId();
     
     CHK_RET(HcomCheckDataTypeV2(dataType));
+    u32 rankSize{};
+    CHK_RET(communicator->GetRankSize(rankSize));
+    u32 rankId{};
+    CHK_RET(communicator->GetRankId(rankId));    
+    CHK_RET(HcomCheckUserRankV2(rankSize, destRank));
+    CHK_PRT_RET(rankId == destRank, 
+                HCCL_ERROR("same rank is not allowed when SEND"),
+                HCCL_E_PARA);
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
     CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
@@ -2004,6 +2012,14 @@ HcclResult HcclRecvV2(
     const std::string tag = "SendRecv_" + communicator->GetId();
     
     CHK_RET(HcomCheckDataTypeV2(dataType));
+    u32 rankSize{};
+    CHK_RET(communicator->GetRankSize(rankSize));
+    u32 rankId{};
+    CHK_RET(communicator->GetRankId(rankId));    
+    CHK_RET(HcomCheckUserRankV2(rankSize, srcRank));
+    CHK_PRT_RET(rankId == srcRank, 
+                HCCL_ERROR("same rank is not allowed when RECV"),
+                HCCL_E_PARA);
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
     CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 

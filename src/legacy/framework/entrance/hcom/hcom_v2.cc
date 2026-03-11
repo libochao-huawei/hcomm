@@ -101,7 +101,9 @@ HcclResult HcomAllGatherV2(const char *tag, void *inputPtr, void *outputPtr, u64
     
     /* 通信域 */
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
     CHK_RET(HcomCheckOpParamV2(tag, inputCount, dataType, group, stream));
 
     /* 入参的正确性由HCCL确保 */
