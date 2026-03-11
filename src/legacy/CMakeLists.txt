@@ -196,19 +196,20 @@ install(TARGETS  ccl_dpu
 )
 
 add_library(topoaddrinfo SHARED
-    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/hal.c
-    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/topo.c
-    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/host_rdma.c
-    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/pcie_nic.c
-    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/eid_util.c
-    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/rootinfo_types.c
-    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/rankinfo.c
-    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/product_card.c
-    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/product_server.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/hal.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/topo.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/host_rdma.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/pcie_nic.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/eid_util.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/rootinfo_types.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/rankinfo.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/product_card.c
+    ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/product_server.c
 )
 
 target_link_libraries(topoaddrinfo PRIVATE
-    -ldl
+    dl
+    c_sec
 )
 
 install(TARGETS  topoaddrinfo
