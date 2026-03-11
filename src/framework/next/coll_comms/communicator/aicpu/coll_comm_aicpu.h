@@ -52,6 +52,7 @@ public:
     // h2d - d2h通道信息交互
     HcclResult BackGroundGetCmd(Hccl::KfcCommand &command);
     HcclResult BackGroundSetStatus(Hccl::KfcStatus state);
+    u32 UpdateIndex();
 
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
@@ -76,6 +77,8 @@ private:
     // dfx
     bool isErrorReported_{false}; // 是否上报了taskException信息
     HcclCommDfxLite dfx_;
+    u32 index_{0};
+
 };
 
 #endif // __COLL_COMM_AICPU_H__

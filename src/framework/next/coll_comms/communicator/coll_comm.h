@@ -79,6 +79,8 @@ public:
         HDCommunicateParams &kfcControlTransferH2DParams, HDCommunicateParams &kfcStatusTransferD2HParams);
     void RegisterAicpuTaskExceptionCallback(u32 streamId);
     Hccl::ErrorMessageReport GetAicpuTaskException();
+    uint32_t UpdateIndex();
+
 private:
     HcclResult DestroyAicpuComm();
     HcclResult InitHDCommunicate();   
@@ -90,6 +92,8 @@ private:
     CommConfig config_{};
     ManagerCallbacks callbacks_; 
     s32 deviceLogicId_{0};
+    uint32_t index_{0};
+
 
     std::unique_ptr<RankGraph> rankgraph_{nullptr};
     std::unique_ptr<CommEngineResMgr> commEngineResMgr_{nullptr};

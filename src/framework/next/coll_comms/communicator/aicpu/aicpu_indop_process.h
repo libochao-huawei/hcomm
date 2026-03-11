@@ -17,6 +17,7 @@
 #include "aicpu_launch_manager.h"
 #include "aicpu_init_param.h"
 #include "coll_comm_aicpu_mgr.h"
+#include "hccl_diag.h"
 class AicpuIndopProcess {
 public:
     ~AicpuIndopProcess() = default;
@@ -24,7 +25,7 @@ public:
     static HcclResult AicpuIndOpThreadInit(ThreadMgrAicpuParam *param);
     static HcclResult AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param);
     static HcclResult AicpuIndOpCommInit(CommAicpuParam *commAicpuParam);
-    static HcclResult AicpuDfxOpInfoInit(hccl::HcclDfxOpInfo *aicpuDfxInfo, const std::string& commTag);
+    static HcclResult AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, const std::string& commTag);
 
     static HcclResult AcquireAicpuCommMgr(const std::string &group, CollCommAicpuMgr **aicpuCommMgrPtr);
     static CollCommAicpuMgr *AicpuGetCommMgrbyGroup(const std::string &group);

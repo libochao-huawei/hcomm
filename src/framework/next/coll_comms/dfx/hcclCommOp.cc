@@ -37,9 +37,7 @@ std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpIn
     );
 
     dfxOpInfoOnce->op_= std::move(collOp);
-    dfxOpInfoOnce->tag_ = dfxOpInfo.tag_;
     dfxOpInfoOnce->algType_ = Hccl::AlgType::MESH;
-    dfxOpInfoOnce->index_ = dfxOpInfo.index_;
     dfxOpInfoOnce->beginTime_ = dfxOpInfo.beginTime_;
     dfxOpInfoOnce->cpuWaitAicpuNotifyId_ = dfxOpInfo.cpuWaitAicpuNotifyId;
     return dfxOpInfoOnce;

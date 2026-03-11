@@ -329,3 +329,8 @@ HcclResult CollCommAicpu::RegisterProfCallBack()
     }
     return HCCL_SUCCESS;
 }
+
+u32 CollCommAicpu::UpdateIndex()
+{
+    return index_+=1;
+}

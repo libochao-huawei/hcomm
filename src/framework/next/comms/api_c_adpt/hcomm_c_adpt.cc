@@ -670,7 +670,7 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, hccl::HcclDfxOpInfo dfxOpInfo)
+HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, HcclDfxOpInfo dfxOpInfo)
 {
     
     // 申请device侧内存
