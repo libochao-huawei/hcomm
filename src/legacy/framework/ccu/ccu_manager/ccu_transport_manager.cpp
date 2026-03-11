@@ -33,7 +33,7 @@ CcuTransportMgr::CcuTransportMgr(const CommunicatorImpl &comm, const int32_t dev
 CcuTransportMgr::~CcuTransportMgr()
 {
     if (!isDestroyed) {
-        Destroy();
+        DECTOR_TRY_CATCH("CcuTransportMgr", Destroy());
     }
 }
 
