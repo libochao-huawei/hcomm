@@ -59,7 +59,7 @@ RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto, const string 
 void RemoteIpcRmaBuffer::Close() const
 {
     if (isOpened) {
-        HrtIpcCloseMemory(ipcName);
+        HrtIpcCloseMemory(ipcPtr);
     }
 }
 
