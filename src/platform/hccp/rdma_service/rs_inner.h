@@ -339,7 +339,7 @@ struct RsCqeErrInfo {
     pthread_mutex_t mutex;
     struct CqeErrInfo info = {};
 };
-RsIpAddrInfo localIpAddr = {};ruct RsIpAddrInfo localIpAddr;
+RsIpAddrInfo localIpAddr = {};
     unsigned int wlistEnable;
     int eventfd;
     int epollfd;
@@ -394,7 +394,7 @@ struct RsQpCb {
     ptRsListHead list = {};Mutex;
 RsListHead mrList = {};  struct RsListHead list;
  RsListHead mrList = {};ad mrList;
-    struct RsListHead remMrList;
+    struct RsListHead remMrList = {};
     int isExp;
 
     uint32_t sendLen;
@@ -560,7 +560,7 @@ struct rs_cb {
     int connFRsListHead rdevList = {};nnCb connCb;
 
     unsigned intRsListHead rdevList = {};RsListHead rdevList;
-    struct RsListHead heterogTcpFdList;
+    stRsListHead heterogTcpFdList = {};List;
 
     struct RsPingCtxCb pingCb = {};
 

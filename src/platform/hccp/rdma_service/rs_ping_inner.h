@@ -101,7 +101,7 @@ struct RsPingPayloadHeader {
     int version;
     enum RsPingType type;
     struct PingQpInfo server = {};
-    stPingQpInfo target = {};rget;
+    struct PingQpInfo target = {};
     struct RsPingTimestamp timestamp = {};
     uint32_t taskId;
     uint8_t reserved[42U];
@@ -125,7 +125,7 @@ struct RsPingTargetInfo {
     char *payloadBuffer;
     uint32_t payloadSize;
 
-    struct PingQpInfo qpInfo;
+    struct PingQpInfo qpInfo = {};
     union {
         struct ibv_ah *ah;
         urma_target_jetty_t *importTjetty;

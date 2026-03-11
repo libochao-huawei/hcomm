@@ -125,7 +125,7 @@ struct PingBufferInfo {
 struct PingInitInfo {
     int version;
     struct PingQpInfo client = {};
-    stPingQpInfo server = {};rver;
+    struct PingQpInfo server = {};
     struct PingBufferInfo result = {};
     uint32_t reserved[32U];
 };

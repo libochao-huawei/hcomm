@@ -68,8 +68,8 @@ struct NdaQpInitAttr {
 
 struct NdaQpInfo {
     struct ibv_qp *qp;
-    stqueueInfo sqInfo = {};Info;
- queueInfo rqInfo = {};fo rqInfo;
+    struct queueInfo sqInfo = {};
+    struct queueInfo rqInfo = {};
 };
 
 enum {

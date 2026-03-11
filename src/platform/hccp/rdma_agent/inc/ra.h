@@ -150,7 +150,7 @@ struct RaRdmaHandle {
 
 struct RaSocketHandle {
     int scopeId;
-    struct rdev rdevInfo;
+    struct rdev rdevInfo = {};
     struct RaSocketOps *socketOps;
     uint64_t closeCnt;      // record the number of ra_socket_batch_close function calls
     uint64_t connectCnt;    // record the number of ra_socket_batch_connect function calls

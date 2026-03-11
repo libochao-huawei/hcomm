@@ -149,7 +149,7 @@ union OpAiQpCreateWithAttrsData {
     struct {
         unsigned int phyId;
         unsigned int rdevIndex;
-        struct QpExtAttrs extAttrs;
+        struct QpExtAttrs extAttrs = {};
     } txData;
 
     struct {

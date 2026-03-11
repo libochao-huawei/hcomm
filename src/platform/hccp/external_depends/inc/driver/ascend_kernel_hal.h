@@ -1327,7 +1327,7 @@ struct trs_chan_para {
     u32 msg[SQCQ_INFO_LENGTH]; /* send to ts */
     u32 ext_msg_len;
     void *ext_msg;
-    struct trs_chan_type types;
+    struct trs_chan_type types = {};
     struct trs_chan_sq_para sq_para = {};
     struct trs_chan_cq_para cq_para = {};
     struct trs_chan_ops ops = {};

@@ -123,12 +123,12 @@ struct RsCtxJettyCb {
     uint32_t lastPi;
     struct CtxQpShareInfo *qpShareInfoAddr;
     struct RsCrErrInfo crErrInfo = {};
-    struct RsListHead list;
+    struct RsListHead list = {};
 };
 
 struct RsTokenIdCb {
     struct RsUbDevCb *devRsListHead list = {};en_id_t *tokenId;
-    struct RsListHead list;
+    stRsListHead list = {};list;
 };
 
 struct RsCtxRemJettyCb {
@@ -159,7 +159,7 @@ struct RsSegCb {
 
     urma_token_t tokenVRsListHead list = {};arget_seg_t *segment;
 
-    struct RsListHead list;
+ RsListHead list = {};Head list;
 };
 
 struct UdmaVaInfo {

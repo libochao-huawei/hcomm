@@ -1132,7 +1132,7 @@ HcclResult NetworkManager::InitRDMA(u32 devicePhysicID, const HcclIpAddress &ipA
         ret = HrtRaRdmaGetHandle(devicePhysicID, rdmaHandle);
     } else {
         if (!ipAddrBackup.IsInvalid()) {
-            struct rdev nicRdevInfoback;
+            struct rdev nicRdevInfoback = {};
             CHK_RET(hrtGetPairDevicePhyId(devicePhysicID, nicRdevInfoback.phyId));
             nicRdevInfoback.family = ipAddrBackup.GetFamily();
             nicRdevInfoback.localIp.addr = ipAddrBackup.GetBinaryAddress().addr;
@@ -1187,7 +1187,7 @@ void NetworkManager::GetNetworkMode(NetworkMode &netMode) const
 
 HcclResult NetworkManager::InitDeviceSocket(u32 devicePhysicID, const HcclIpAddress &ipAddr, SocketHandle &socketHandle)
 {
-    struct rdev nicRdevInfo;
+    struct rdev nicRdevInfo = {};
     nicRdevInfo.phyId = devicePhysicID;
     nicRdevInfo.family = ipAddr.GetFamily();
     nicRdevInfo.localIp.addr = ipAddr.GetBinaryAddress().addr;

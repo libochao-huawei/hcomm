@@ -136,7 +136,7 @@ union OpWlistData {
 
 union OpWlistDataV2 {
     struct {
-        struct rdev rdevInfo;
+        struct rdev rdevInfo = {};
         unsigned int num;
         struct SocketWlistInfoT wlist[MAX_WLIST_NUM];
     } txData;

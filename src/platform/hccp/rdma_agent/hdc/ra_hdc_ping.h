@@ -57,7 +57,7 @@ union OpPingStartData {
 
 union OpPingResultsData {
     struct {
-        struct RaRsDevInfo rdev;
+        struct RaRsDevInfo rdev = {};
         unsigned int num;
         struct PingTargetCommInfo target[RA_MAX_PING_TARGET_NUM];
         uint32_t reserved[RA_RSVD_NUM_4];
@@ -72,7 +72,7 @@ union OpPingResultsData {
 
 union OpPingDelData {
     struct {
-        struct RaRsDevInfo rdev;
+        struct RaRsDevInfo rdev = {};
         unsigned int num;
         struct PingTargetCommInfo target[RA_MAX_PING_TARGET_NUM];
         uint32_t reserved[RA_RSVD_NUM_4];

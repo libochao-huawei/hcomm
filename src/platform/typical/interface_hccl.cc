@@ -123,7 +123,7 @@ HcclResult hcclModifyAscendQPEx(AscendQPInfo* localQPInfo, AscendQPInfo* remoteQ
         HCCL_ERROR("[hcclModifyAscendQPEx]The value of tc[%u] is not a multiple of 4.",
         qpQos->tc), HCCL_E_PARA);    
 
-    struct TypicalQp localQp;
+    struct TypicalQp localQp = {};
     localQp.qpn = localQPInfo->qpn;
     localQp.gidIdx = localQPInfo->gidIdx;
     for (uint32_t i = 0; i < GID_LENGTH; i++) {
@@ -149,7 +149,7 @@ HcclResult hcclDestroyAscendQP(AscendQPInfo* ascendQPInfo)
     s32 deviceLogicId = 0;
     CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     CHK_PTR_NULL(ascendQPInfo);
-    struct TypicalQp qpInfo;
+    struct TypicalQp qpInfo = {};
     qpInfo.qpn = ascendQPInfo->qpn;
     qpInfo.gidIdx = ascendQPInfo->gidIdx;
     for (uint32_t i = 0; i < GID_LENGTH; i++) {

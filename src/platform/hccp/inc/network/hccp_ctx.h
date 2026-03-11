@@ -240,7 +240,7 @@ union ImportSegFlag {
 };
 
 struct MemImportAttr {
-    struct MemKey key;
+    struct MemKey key = {};
 
     union {
         struct {

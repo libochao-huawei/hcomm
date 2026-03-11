@@ -377,7 +377,7 @@ struct SendWrV2 {
     int sendFlag; /**< reference to ra_send_flags */
     union {
         struct WrAuxInfo aux = {}; /**< aux info */
-        stWrExtInfo ext = {}; ext; /**< ext info */
+        struct WrExtInfo ext = {}; /**< ext info */
     };
 };
 
@@ -388,13 +388,13 @@ struct WrInfo {
     uint32_t immData;              /**< imm data */
     uint64_t wrId;                 /**< user assigned work request ID */
     uint64_t dstAddr;              /**< destination address */
-    struct SgList memList;        /**< sg info */
-    stWrAuxInfo aux = {}; aux;         /**< aux info */
+    struct SgList memList = {};        /**< sg info */
+    struct WrAuxInfo aux = {};    /**< aux info */
 };
 
 struct RecvWrlistData {
     uint64_t wrId; /**< user assigned work request ID */
-    struct SgList memList; /**< list of sg */
+    struct SgList memList = {}; /**< list of sg */
 };
 
 /**
@@ -563,9 +563,9 @@ struct AiDataPlaneCq {
 
 struct AiDataPlaneInfo {
     struct AiDataPlaneWq sq = {};
-    stAiDataPlaneWq rq = {};q rq;
+    struct AiDataPlaneWq rq = {}; /* receive work queue */
     struct AiDataPlaneCq scq = {};
-    stAiDataPlaneCq rcq = {}; rcq;
+    struct AiDataPlaneCq rcq = {}; /* receive completion queue */
     unsigned int reserved[8U];
 };
 
@@ -649,7 +649,7 @@ struct SocketErrInfo {
 
 struct ServerSocketErrInfo {
     struct SocketErrInfo epollWait = {};
-    stSocketErrInfo accept = {};cept;
+    struct SocketErrInfo accept = {}; /* accept info */
 };
 
 enum SaveSnapshotAction {
