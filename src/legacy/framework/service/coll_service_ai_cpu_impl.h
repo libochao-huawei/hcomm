@@ -23,6 +23,7 @@
 #include "task_param.h"
 #include "ins_queue.h"
 #include "coll_alg_params.h"
+#include "acl/acl_rt.h"
 
 namespace Hccl {
 
@@ -39,7 +40,7 @@ public:
     HcclResult GetSnapShotDynamicBuf(CollOperator &op, BinaryStream &buf) override;
 
     void Resume() override;
-    
+
     HcclResult AllocCollOpResource(CollOperator &op, const std::string &opAlgTag, void **addr) override;
 
     void ReLoadWithOpBasedMode(CollOperator &op) override;
@@ -56,10 +57,10 @@ private:
     void SetHcclKernelLaunchParam(HcclKernelLaunchParam &param, CommunicatorImpl *comm, bool isLaunch = true);
     void SetDeviceEnvConfigParam(HcclKernelLaunchParam &param) const;
     void AicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream, OpMode opMode);
-    void AicpuKernelEntranceLaunch(Stream &stream, const CollOperator &op, const string &algName, 
+    void AicpuKernelEntranceLaunch(Stream &stream, const CollOperator &op, const string &algName,
                                    const DevBuffer *mem);
     void AicpuUpdateCommLaunch(Stream &stream, const DevBuffer *mem);
-    HcclResult AicpuMc2CommResourcePrepare(const CollOperator &op, const string &algName, const DevBuffer *mem, 
+    HcclResult AicpuMc2CommResourcePrepare(const CollOperator &op, const string &algName, const DevBuffer *mem,
                                    const std::string &opAlgTag, void **addr);
 
     void AllocQueueNotify(std::vector<std::tuple<QId, QId, u32>> &queueNotifyReq) const;
@@ -79,7 +80,7 @@ private:
     std::set<LinkData> availableLinks;
     std::unordered_map<std::string, std::shared_ptr<DevBuffer>>
         collOpLoadedMap; // 集合通信算子资源加载到device侧的内存
-    std::unordered_map<std::string, std::shared_ptr<DevBuffer>> 
+    std::unordered_map<std::string, std::shared_ptr<DevBuffer>>
         aicpuMc2CommResourceMap_;
     std::vector<std::shared_ptr<DevBuffer>> sendCountsMem{};
     std::vector<std::shared_ptr<DevBuffer>> recvCountsMem{};
@@ -106,6 +107,7 @@ private:
 
     void AllocQueueNotify(const InsQueue& insQueue) override;
     void AllocQNotifyForSingleQ(const InsQueue &insQueue) const override;
+    std::unordered_map<std::string, aclrtFuncHandle> ccacheFunctionHandle;
 };
 void InitAicpuLocBufLite(HcclAicpuLocBufLite &lite, u64 addr, u64 size, const string &desc);
 } // namespace Hccl
