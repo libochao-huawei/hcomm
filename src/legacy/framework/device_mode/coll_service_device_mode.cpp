@@ -81,7 +81,8 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
 {
     HCCL_INFO("[CollServiceDeviceMode::%s] start.", __func__);
     // AIV aclgrah 流程
-    if (comm->GetOpExecuteConfig().accState == AcceleratorState::AIV) {
+    if (comm->GetOpExecuteConfig().accState == AcceleratorState::AIV 
+    || comm->GetOpExecuteConfig().accState == AcceleratorState::AIV_ONLY) {
         HandleAclGraphFirstOpAivBuff(stream->GetPtr());
     }
  
@@ -90,7 +91,8 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
  
     RegisterOpbasedStream(std::move(stream));
  
-    if(comm->GetOpExecuteConfig().accState == AcceleratorState::AIV){
+    if (comm->GetOpExecuteConfig().accState == AcceleratorState::AIV 
+    || comm->GetOpExecuteConfig().accState == AcceleratorState::AIV_ONLY) {
         auto  insQueue = make_shared<InsQueue>();
  
         AivOpCacheArgs opCacheParam{comm->GetCurAlgName(), op.dataCount, op.dataType, op.opType, op.reduceOp, op.root, op.numBlocksLimit, op.outputDataType,{},{}};
