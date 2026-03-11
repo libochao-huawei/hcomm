@@ -470,8 +470,12 @@ else()
     )
 endif()
 
-add_dependencies(ccl_kernel_plf json hccl_legacy)
-add_dependencies(hccd json hccl_legacy)
+add_dependencies(ccl_kernel_plf json)
+add_dependencies(hccd json)
+if(BUILD_OPEN_PROJECT)
+    add_dependencies(ccl_kernel_plf hccl_legacy)
+    add_dependencies(hccd hccl_legacy)
+endif()
 
 target_compile_definitions(ccl_kernel_plf PRIVATE
     $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
