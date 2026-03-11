@@ -49,9 +49,8 @@ extern uint64_t HcommGetProfilingSysCycleTime();
 
 struct HcclDfxOpInfo {
     //DfxOpInfo_base
-    u32                 index_{0}; // 算子index，需要增加赋值，host和aicpu分别计数，计数值存在通信域内
-    u64                 beginTime_{0};
-    u64                 endTime_{0};
+    u64                 beginTime{0};
+    u64                 endTime{0};
     //CollOperator
     bool                staticAddr{false};
     bool                staticShape{false};

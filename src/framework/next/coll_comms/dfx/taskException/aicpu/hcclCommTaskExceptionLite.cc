@@ -139,7 +139,7 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
     if (!aicpuComm->IsErrorReported()) {
         // 1) errorMessage上报
         Hccl::ErrorMessageReport errMsgInfo{};
-        CHK_RET(GenerateErrorMessageReport(aicpuComm, curTask.get(), exceptionInfo, errMsgInfo));
+        CHK_RET(GenerateErrorMessageReport(aicpuComm, *curTask, exceptionInfo, errMsgInfo));
         CHK_RET(aicpuComm->SendErrorMessageReportToHost(errMsgInfo));
 
         // 2) send mbox to tsfw
@@ -152,63 +152,71 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
             aicpuComm->SetErrorReported(true);
         }
     }
-    HCCL_ERROR("[HcclCommTaskExceptionLite][%s]Task from HCCL run failed.", __func__);
+
+    // 1. 打印task信息
+    HCCL_ERROR("[TaskException][AICPU]Task run failed, base information is %s, %s",
+        GetBaseInfo(*curTask).c_str(), curTask->GetParaInfo().c_str());
+    // 2. UB任务打印EID信息
+    PrintEid(*curTask);
+    // 3. 打印group信息
+    HCCL_ERROR("[TaskException][AICPU]Task run failed, groupRank information is %s.", GetGroupInfo(*curTask).c_str());
+    // 4. 打印算子信息
+    HCCL_ERROR("[TaskException][AICPU]Task run failed, opData information is %s.", GetOpDataInfo(*curTask).c_str());
+    // 5. notify wait超时场景，打印前序task序列
     if (curTask->taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
         CHK_RET(PrintTaskContextInfo(exceptionInfo.sqId, sqeId));
     }
-
-    HCCL_ERROR("[HcclCommTaskExceptionLite]taskType[%u], errorCode[%u], ubCqeStatus[%u]",
-        curTask->taskParam_.taskType, exceptionInfo.errorCode, exceptionInfo.errorCode & 0xFF);
-
-    PrintEid(curTask.get());
-    HCCL_ERROR("[HcclCommTaskExceptionLite]Task run failed, base information is %s.", curTask->GetBaseInfo().c_str());
-    HCCL_ERROR("[HcclCommTaskExceptionLite]Task run failed, para information is %s.", curTask->GetParaInfo().c_str());
-    HCCL_ERROR("[HcclCommTaskExceptionLite]Task run failed, groupRank information is %s.",
-        GetGroupRankInfo(*curTask).c_str());
-    HCCL_ERROR("[HcclCommTaskExceptionLite]Task run failed, opData information is %s.", curTask->GetOpInfo().c_str());
     return HCCL_SUCCESS;
 }
 
+std::string HcclCommTaskExceptionLite::GetBaseInfo(const Hccl::TaskInfo& taskInfo)
+{
+    CHK_PRT_RET(taskInfo.dfxOpInfo_ == nullptr, HCCL_ERROR("[%s]TaskInfo dfxOpInfo is nullptr.", __func__), "");
+
+    return Hccl::StringFormat("streamID(sqId):[%u], taskID(sqeId):[%u], taskType:[%s]",
+        taskInfo.streamId_, taskInfo.taskId_, taskInfo.taskParam_.taskType.Describe().c_str());
+}
+
 HcclResult HcclCommTaskExceptionLite::GenerateErrorMessageReport(CollCommAicpu *aicpuComm,
-    const Hccl::TaskInfo* taskInfo, const rtLogicCqReport_t &exceptionInfo, Hccl::ErrorMessageReport &errMsgInfo)
+    const Hccl::TaskInfo& taskInfo, const rtLogicCqReport_t &exceptionInfo, Hccl::ErrorMessageReport &errMsgInfo)
 {
     // 获取需要上报的关键信息
-    errMsgInfo.remoteUserRank = taskInfo->remoteRank_;
-    errMsgInfo.streamId = taskInfo->streamId_;
-    errMsgInfo.taskId = taskInfo->taskId_;
+    errMsgInfo.remoteUserRank = taskInfo.remoteRank_;
+    errMsgInfo.streamId = taskInfo.streamId_;
+    errMsgInfo.taskId = taskInfo.taskId_;
     errMsgInfo.rankId = aicpuComm->GetTopoInfo().userRank;
     errMsgInfo.rankSize = aicpuComm->GetTopoInfo().userRankSize;
-    errMsgInfo.algType = taskInfo->dfxOpInfo_ == nullptr ?
-        static_cast<Hccl::AlgType>(Hccl::AlgType::MESH) : taskInfo->dfxOpInfo_->algType_;
-    errMsgInfo.opIndex = taskInfo->dfxOpInfo_ == nullptr ? 0 : taskInfo->dfxOpInfo_->index_;
-    errMsgInfo.opType = taskInfo->dfxOpInfo_->op_.opType;
-    errMsgInfo.count = taskInfo->dfxOpInfo_->op_.dataCount;
-    errMsgInfo.dataType = taskInfo->dfxOpInfo_->op_.dataType;
-    errMsgInfo.srcAddr = static_cast<u64>(taskInfo->dfxOpInfo_->op_.inputMem->GetAddr());
-    errMsgInfo.dstAddr = static_cast<u64>(taskInfo->dfxOpInfo_->op_.outputMem->GetAddr());
-    errMsgInfo.taskType = taskInfo->taskParam_.taskType;
+    errMsgInfo.algType = taskInfo.dfxOpInfo_ == nullptr ?
+        static_cast<Hccl::AlgType>(Hccl::AlgType::MESH) : taskInfo.dfxOpInfo_->algType_;
+    errMsgInfo.opIndex = taskInfo.dfxOpInfo_ == nullptr ? 0 : taskInfo.dfxOpInfo_->index_;
+    errMsgInfo.opType = taskInfo.dfxOpInfo_->op_.opType;
+    errMsgInfo.count = taskInfo.dfxOpInfo_->op_.dataCount;
+    errMsgInfo.dataType = taskInfo.dfxOpInfo_->op_.dataType;
+    errMsgInfo.srcAddr = static_cast<u64>(taskInfo.dfxOpInfo_->op_.inputMem->GetAddr());
+    errMsgInfo.dstAddr = static_cast<u64>(taskInfo.dfxOpInfo_->op_.outputMem->GetAddr());
+    errMsgInfo.taskType = taskInfo.taskParam_.taskType;
 
-    if (taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
-        errMsgInfo.notifyId = taskInfo->taskParam_.taskPara.Notify.notifyID;
-        errMsgInfo.notifyValue = taskInfo->taskParam_.taskPara.Notify.value;
-    } else if (taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE
-        || taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
-        errMsgInfo.notifyId = taskInfo->taskParam_.taskPara.Reduce.notifyID;
-        errMsgInfo.notifyValue = taskInfo->taskParam_.taskPara.Reduce.notifyValue;
-    } else if (taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_UB_INLINE_WRITE
-        || taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_WITH_NOTIFY) {
-        errMsgInfo.notifyId = taskInfo->taskParam_.taskPara.DMA.notifyID;
-        errMsgInfo.notifyValue = taskInfo->taskParam_.taskPara.DMA.notifyValue;
+    if (taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
+        errMsgInfo.notifyId = taskInfo.taskParam_.taskPara.Notify.notifyID;
+        errMsgInfo.notifyValue = taskInfo.taskParam_.taskPara.Notify.value;
+    } else if (taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE
+        || taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
+        errMsgInfo.notifyId = taskInfo.taskParam_.taskPara.Reduce.notifyID;
+        errMsgInfo.notifyValue = taskInfo.taskParam_.taskPara.Reduce.notifyValue;
+    } else if (taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_UB_INLINE_WRITE
+        || taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_WITH_NOTIFY) {
+        errMsgInfo.notifyId = taskInfo.taskParam_.taskPara.DMA.notifyID;
+        errMsgInfo.notifyValue = taskInfo.taskParam_.taskPara.DMA.notifyValue;
     }
 
-    if (taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE
-        || taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
-        || taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_REDUCE_INLINE) {
-        errMsgInfo.reduceType = taskInfo->taskParam_.taskPara.Reduce.reduceOp;
+    if (taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE
+        || taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
+        || taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_REDUCE_INLINE) {
+        errMsgInfo.reduceType = taskInfo.taskParam_.taskPara.Reduce.reduceOp;
     }
 
     CHK_SAFETY_FUNC_RET(memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag),
-        taskInfo->dfxOpInfo_->op_.opTag.c_str(), taskInfo->dfxOpInfo_->op_.opTag.size()));
+        taskInfo.dfxOpInfo_->op_.opTag.c_str(), taskInfo.dfxOpInfo_->op_.opTag.size()));
     CHK_SAFETY_FUNC_RET(memcpy_s(errMsgInfo.group, sizeof(errMsgInfo.group),
         aicpuComm->GetIdentifier().c_str(), aicpuComm->GetIdentifier().size()));
 
@@ -219,28 +227,28 @@ HcclResult HcclCommTaskExceptionLite::GenerateErrorMessageReport(CollCommAicpu *
     return HCCL_SUCCESS;
 }
 
-void HcclCommTaskExceptionLite::GetErrMsgInfo(const Hccl::TaskInfo* taskInfo, Hccl::ErrorMessageReport &errMsgInfo,
+void HcclCommTaskExceptionLite::GetErrMsgInfo(const Hccl::TaskInfo& taskInfo, Hccl::ErrorMessageReport &errMsgInfo,
     const rtLogicCqReport_t &exceptionInfo)
 {
-    if (taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_WITH_NOTIFY ||
-        taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_UB_INLINE_WRITE ||
-        taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_UB) {
-        errMsgInfo.locEid = taskInfo->taskParam_.taskPara.DMA.locEid;
-        errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.DMA.rmtEid;
+    if (taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_WITH_NOTIFY ||
+        taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_UB_INLINE_WRITE ||
+        taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_UB) {
+        errMsgInfo.locEid = taskInfo.taskParam_.taskPara.DMA.locEid;
+        errMsgInfo.rmtEid = taskInfo.taskParam_.taskPara.DMA.rmtEid;
         errMsgInfo.ubCqeStatus = exceptionInfo.errorCode & 0xFF;
-        errMsgInfo.linkType = taskInfo->taskParam_.taskPara.DMA.linkType;
- 	    errMsgInfo.size = taskInfo->taskParam_.taskPara.DMA.size;
-        errMsgInfo.taskSrcAddr = reinterpret_cast<u64>(taskInfo->taskParam_.taskPara.DMA.src);
-        errMsgInfo.taskDstAddr = reinterpret_cast<u64>(taskInfo->taskParam_.taskPara.DMA.dst);
-    } else if (taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE ||
-        taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
-        errMsgInfo.locEid = taskInfo->taskParam_.taskPara.Reduce.locEid;
-        errMsgInfo.rmtEid = taskInfo->taskParam_.taskPara.Reduce.rmtEid;
+        errMsgInfo.linkType = taskInfo.taskParam_.taskPara.DMA.linkType;
+ 	    errMsgInfo.size = taskInfo.taskParam_.taskPara.DMA.size;
+        errMsgInfo.taskSrcAddr = reinterpret_cast<u64>(taskInfo.taskParam_.taskPara.DMA.src);
+        errMsgInfo.taskDstAddr = reinterpret_cast<u64>(taskInfo.taskParam_.taskPara.DMA.dst);
+    } else if (taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE ||
+        taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
+        errMsgInfo.locEid = taskInfo.taskParam_.taskPara.Reduce.locEid;
+        errMsgInfo.rmtEid = taskInfo.taskParam_.taskPara.Reduce.rmtEid;
         errMsgInfo.ubCqeStatus = exceptionInfo.errorCode & 0xFF;
-        errMsgInfo.linkType = taskInfo->taskParam_.taskPara.Reduce.linkType;
- 	    errMsgInfo.size = taskInfo->taskParam_.taskPara.Reduce.size;
-        errMsgInfo.taskSrcAddr = reinterpret_cast<u64>(taskInfo->taskParam_.taskPara.Reduce.src);
-        errMsgInfo.taskDstAddr = reinterpret_cast<u64>(taskInfo->taskParam_.taskPara.Reduce.dst);
+        errMsgInfo.linkType = taskInfo.taskParam_.taskPara.Reduce.linkType;
+ 	    errMsgInfo.size = taskInfo.taskParam_.taskPara.Reduce.size;
+        errMsgInfo.taskSrcAddr = reinterpret_cast<u64>(taskInfo.taskParam_.taskPara.Reduce.src);
+        errMsgInfo.taskDstAddr = reinterpret_cast<u64>(taskInfo.taskParam_.taskPara.Reduce.dst);
     }
 
     errMsgInfo.rtCqErrorType = exceptionInfo.errorType;
@@ -346,7 +354,7 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(u32 sqId, u32 taskId)
         }
     }
 
-    HCCL_ERROR("[HcclCommTaskExceptionLite]Task run failed, context sequence before error task is "
+    HCCL_ERROR("[TaskException][AICPU]Task run failed, context sequence before error task is "
         "[SDMA:M(rank), RDMA:RS(rank,id), SendPayload:SP(rank), InlineReduce:IR(rank), Reduce:R(rank), "
         "NotifyRecord:NR(rank,id), NotifyWait:NW(rank,id), SendNotify:SN(rank,id), "
         "WriteWithNotify:WN(rank,id), WriteReduceWithNotify:WRN(rank,id)]:");
@@ -357,41 +365,58 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(u32 sqId, u32 taskId)
         conciseInfo += ",";
 
         if (taskContextInfo.size() + conciseInfo.size() >= TASK_CONTEXT_INFO_SIZE) {
-            HCCL_ERROR("[HcclCommTaskExceptionLite]%s", taskContextInfo.c_str());
+            HCCL_ERROR("[TaskException][AICPU]%s", taskContextInfo.c_str());
             taskContextInfo = "";
         }
 
         taskContextInfo += conciseInfo;
     }
-    HCCL_ERROR("[HcclCommTaskExceptionLite]%s end.", taskContextInfo.c_str());
+    HCCL_ERROR("[TaskException][AICPU]%s end.", taskContextInfo.c_str());
     return HCCL_SUCCESS;
 }
 
-std::string HcclCommTaskExceptionLite::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
+std::string HcclCommTaskExceptionLite::GetGroupInfo(const Hccl::TaskInfo& taskInfo)
 {
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
         HCCL_ERROR("[%s]TaskInfo communicator is nullptr.", __func__);
         return "";
     }
     CollCommAicpu* aicpuComm = static_cast<CollCommAicpu*>(taskInfo.dfxOpInfo_->comm_);
-    return Hccl::StringFormat("group:[%s], rankSize[%u], localRank[%d], remoteRank[%u]",
- 	    aicpuComm->GetIdentifier().c_str(), aicpuComm->GetTopoInfo().userRankSize, aicpuComm->GetTopoInfo().userRank,
-        taskInfo.remoteRank_);
+    return Hccl::StringFormat("group:[%s], rankSize:[%u], localRank:[%d]",
+ 	    aicpuComm->GetIdentifier().c_str(), aicpuComm->GetTopoInfo().userRankSize, aicpuComm->GetTopoInfo().userRank);
 }
 
-void HcclCommTaskExceptionLite::PrintEid(const Hccl::TaskInfo* taskInfo)
+std::string HcclCommTaskExceptionLite::GetOpDataInfo(const Hccl::TaskInfo& taskInfo)
 {
-    if (taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE ||
-        taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
-        HCCL_ERROR("[HcclCommTaskExceptionLite][%s]Error UB link info: localEid[%s], remoteEid[%s].", __func__,
-            taskInfo->taskParam_.taskPara.Reduce.locEid.Describe().c_str(),
-            taskInfo->taskParam_.taskPara.Reduce.rmtEid.Describe().c_str());
-    } else if (taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_UB_INLINE_WRITE ||
-        taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_WITH_NOTIFY ||
-        taskInfo->taskParam_.taskType == Hccl::TaskParamType::TASK_UB) {
-        HCCL_ERROR("[HcclCommTaskExceptionLite][%s]Error UB link info: localEid[%s], remoteEid[%s].", __func__,
-            taskInfo->taskParam_.taskPara.DMA.locEid.Describe().c_str(),
-            taskInfo->taskParam_.taskPara.DMA.rmtEid.Describe().c_str());
+    if (taskInfo.dfxOpInfo_ == nullptr) {
+        HCCL_ERROR("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
+        return "";
+    }
+
+    const auto &opInfo = taskInfo.dfxOpInfo_;
+    return Hccl::StringFormat("index[%u], opType[%s], count[%llu], reduceType[%s], src[0x%llx], dst[0x%llx], dataType[%s]",
+        opInfo->index_,
+        opInfo->op_.opType.Describe().c_str(),
+        opInfo->op_.dataCount,
+        opInfo->op_.reduceOp.Describe().c_str(),
+        opInfo->op_.inputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.inputMem->GetAddr()),
+        opInfo->op_.outputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.outputMem->GetAddr()),
+        opInfo->op_.dataType.Describe().c_str());
+}
+
+void HcclCommTaskExceptionLite::PrintEid(const Hccl::TaskInfo& taskInfo)
+{
+    if (taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_UB_REDUCE_INLINE ||
+        taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY) {
+        HCCL_ERROR("[TaskException][AICPU][%s]Error UB link info: localEid[%s], remoteEid[%s].", __func__,
+            taskInfo.taskParam_.taskPara.Reduce.locEid.Describe().c_str(),
+            taskInfo.taskParam_.taskPara.Reduce.rmtEid.Describe().c_str());
+    } else if (taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_UB_INLINE_WRITE ||
+        taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_WRITE_WITH_NOTIFY ||
+        taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_UB) {
+        HCCL_ERROR("[TaskException][AICPU][%s]Error UB link info: localEid[%s], remoteEid[%s].", __func__,
+            taskInfo.taskParam_.taskPara.DMA.locEid.Describe().c_str(),
+            taskInfo.taskParam_.taskPara.DMA.rmtEid.Describe().c_str());
     }
 }
 }
