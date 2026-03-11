@@ -476,6 +476,7 @@ __aicore__ inline void AivCrossNode91093Base::Init(GM_ADDR buffOut0, GM_ADDR buf
         CalCountAndBlockOffset(perRankBufferCount, blockNumPerGroup, blockIdxInGroup, padCount, countMid, blockOffsetMid);
         uint64_t remainLen = len % perRankBufferCount;
         CalCountAndBlockOffset(remainLen, blockNumPerGroup, blockIdxInGroup, padCount, countTail, blockOffsetTail);
+        blockOffsetTail = blockOffsetMid;
     }
     flagOffsetInGroup = blockIdxInGroup * FLAG_SIZE;
     CalCountAndBlockOffset(len, blockNumPerGroup, blockIdxInGroup, padCount, countPerCore, blockOffset);
