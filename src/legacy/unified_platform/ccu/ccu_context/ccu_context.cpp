@@ -52,12 +52,12 @@ HcclResult CcuContext::Init()
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuContext::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParam)
+HcclResult CcuContext::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams)
 {
     auto args    = GeneArgs(arg);
     auto agrsNum = args.size();
     if (agrsNum != loadArgIndex) {
-        HCCL_ERROR("Args number does not match the Load instruction, agrsNum = %d, loadArgInstr= %u",agrsNum, loadArgIndex);
+        HCCL_ERROR("Args number does not match the Load instruction, agrsNum = %lu, loadArgInstr= %u", agrsNum, loadArgIndex);
         return HCCL_E_PARA;
     }
 
@@ -65,7 +65,7 @@ HcclResult CcuContext::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskP
     // args数量大于等于0、小于等于最大值时，返回1个TaskParam
     uint32_t seqNum
         = (agrsNum / CCU_SQE_ARGS_LEN) + ((agrsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (agrsNum == 0 ? 1 : 0);
-    taskParam.resize(seqNum);
+    taskParams.resize(seqNum);
     for (uint32_t index = 0; index < seqNum; index++) {
         taskParam[index].dieId       = GetDieId();
         taskParam[index].missionId   = GetMissionId();
@@ -1261,7 +1261,7 @@ HcclResult CcuContext::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Cc
             continue;
         }
         if (count >= GetWaiteCkeProfilingReps().size()) {
-            HCCL_ERROR("count[%d] out of range[0, %u], cache size(%u).", count, GetWaiteCkeProfilingReps().size(), ccuProfilingCache.size());
+            HCCL_ERROR("count[%u] out of range[0, %u], cache size(%u).", count, GetWaiteCkeProfilingReps().size(), ccuProfilingCache.size());
             return HCCL_E_INTERNAL;
         }
         auto waitCkeRep = GetWaiteCkeProfilingReps()[count];

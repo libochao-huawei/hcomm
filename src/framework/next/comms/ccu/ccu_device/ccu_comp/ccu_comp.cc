@@ -854,7 +854,7 @@ HcclResult CcuComponent::ReleaseAllTpInfos()
         }
         const auto &commAddr = dieIdIter->second.second;
         const GetTpInfoParam tpParam = {commAddr, commAddr, LOOP_JETTY_PROTOCOL};
-        (void)TpMgr::GetInstance(devLogicId_).ReleaseTpInfo(tpParam, tpInfo);
+        (void)TpMgr::GetInstance(devPhyId_).ReleaseTpInfo(tpParam, tpInfo);
         item.second.tpHandle = 0; // 清理handle，避免重复释放
     }
     tpInfoMap_.clear();
