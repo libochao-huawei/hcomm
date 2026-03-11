@@ -32,6 +32,7 @@ public:
 
     std::shared_ptr<DfxOpInfo> GetCurrDfxOpInfo() const;
     TaskInfoQueue             *GetQueue(u32 streamId) const;
+    OpMode                     GetOpMode() const;
 
 public:
     std::unordered_map<u32, TaskInfoQueue *>::iterator Begin();
