@@ -10,7 +10,7 @@
 
 #include <errno.h>
 #include "securec.h"
-#include "ra_rs_err.h"
+#include "user_log.h"
 #include "ra_ctx_comm.h"
 
 int RaCtxPrepareLmemRegister(struct MrRegInfoT *lmemInfo, struct MemRegAttrT *memAttr)
