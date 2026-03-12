@@ -259,11 +259,14 @@ void CcuTransportMgr::Clean()
         if (linkTransPair.second == nullptr) {
             continue;
         }
-        auto partInfo = linkTransPair.second->GetJettyInfo();
-        for (auto& jettyInfo : partInfo) {
+        auto partDeleteInfo = linkTransPair.second->GetDeleteJettyInfo();
+        for (auto& jettyInfo : partDeleteInfo) {
             if (jettyInfo.localJetty != 0) {
                 batchDeleteJettyInfo.deleteJettyList[jettyInfo.rdmaHandle].insert(jettyInfo.localJetty);
             }
+        }
+        auto partUnimportInfo = linkTransPair.second->GetUnimportJettyInfo();
+        for (auto& jettyInfo : partUnimportInfo) {
             if (jettyInfo.remoteJetty != 0) {
                 batchDeleteJettyInfo.unimportJettyList[jettyInfo.rdmaHandle].insert(jettyInfo.remoteJetty);
             }
