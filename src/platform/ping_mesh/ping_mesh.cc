@@ -350,7 +350,6 @@ inline HcclResult RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, 
     initAttr.version = 0; // 暂时无用，默认给0
     initAttr.mode = NETWORK_OFFLINE; // net work mode 枚举值
     initAttr.ub.phyId = deviceId;
-    HCCL_INFO("Input Eid %s", ipAddr.GetEid().Describe().c_str());
     if (eidmap.find(ipAddr.GetEid()) == eidmap.end()) {
         HCCL_ERROR("eidmap don't have input Eid,Input Eid %s", ipAddr.GetEid().Describe().c_str());
         return HCCL_E_NOT_FOUND;
