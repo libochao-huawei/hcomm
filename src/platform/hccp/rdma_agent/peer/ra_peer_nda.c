@@ -30,3 +30,39 @@ int RaPeerNdaGetDirectFlag(struct RaRdmaHandle *rdmaHandle, int *directFlag)
     }
     return ret;
 }
+
+int RaPeerNdaQpCreate(struct RaRdmaHandle *rdmaHandle, struct NdaQpInitAttr *attr, struct NdaQpInfo *info,
+    void **qpHandle)
+{
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    struct RaQpHandle *qpPeer = NULL;
+    struct RsQpResp qpResp = {0};
+    int ret = 0;
+
+    qpPeer = (struct RaQpHandle *)calloc(1, sizeof(struct RaQpHandle));
+    CHK_PRT_RETURN(qpPeer == NULL, hccp_err("[create][RaNdaQp]qpPeer calloc failed"), -ENOMEM);
+
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsNdaQpCreate(phyId, rdmaHandle->rdevIndex, attr, info, &qpResp);
+    RaPeerMutexUnlock(phyId);
+    if (ret != 0) {
+        hccp_err("[create][RaNdaQp]RsNdaQpCreate failed ret:%d", ret);
+        goto nda_qp_create_err;
+    }
+    qpPeer->phyId = phyId;
+    qpPeer->qpn = qpResp.qpn;
+    qpPeer->psn = qpResp.psn;
+    qpPeer->gidIdx = qpResp.gidIdx;
+    qpPeer->rdevIndex = rdmaHandle->rdevIndex;
+    qpPeer->rdmaHandle = rdmaHandle;
+    qpPeer->rdmaOps = rdmaHandle->rdmaOps;
+
+    *qpHandle = qpPeer;
+    return ret;
+
+nda_qp_create_err:
+    free(qpPeer);
+    qpPeer = NULL;
+    return ret;
+}

@@ -14,5 +14,7 @@
 #include "ra_comm.h"
 
 int RaPeerNdaGetDirectFlag(struct RaRdmaHandle *rdmaHandle, int *directFlag);
+int RaPeerNdaQpCreate(struct RaRdmaHandle *rdmaHandle, struct NdaQpInitAttr *attr, struct NdaQpInfo *info,
+    void **qpHandle);
 
 #endif // RA_PEER_NDA_H

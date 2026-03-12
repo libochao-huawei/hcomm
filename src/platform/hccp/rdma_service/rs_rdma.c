@@ -2559,7 +2559,7 @@ RS_ATTRI_VISI_DEF int RsGetLbMax(unsigned int phyId, unsigned int rdevIndex, int
     return RsRoceGetQpNum(rdevCb->ibCtx, lbMax);
 }
 
-STATIC int RsBuildUpQpcb(struct RsCqContext *cqContext, struct ibv_qp_init_attr *qpInitAttr,
+int RsBuildUpQpcb(struct RsCqContext *cqContext, struct ibv_qp_init_attr *qpInitAttr,
     struct RsQpCb **qpCb)
 {
     int ret;

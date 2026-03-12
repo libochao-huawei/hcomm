@@ -17,6 +17,7 @@
 #include <infiniband/verbs.h>
 #include <infiniband/driver.h>
 #include "hccp_common.h"
+#include "hccp_nda.h"
 #include "user_log.h"
 #include "ra_rs_comm.h"
 
@@ -300,6 +301,8 @@ RS_ATTRI_VISI_DEF int RsCqCreate(unsigned int phyId, unsigned int rdevIndex, str
 RS_ATTRI_VISI_DEF int RsCqDestroy(unsigned int phyId, unsigned int rdevIndex, struct CqAttr *attr);
 RS_ATTRI_VISI_DEF int RsNormalQpCreate(unsigned int phyId, unsigned int rdevIndex,
     struct ibv_qp_init_attr *qpInitAttr, struct RsQpResp *qpResp, void **qp);
+RS_ATTRI_VISI_DEF int RsNdaQpCreate(unsigned int phyId, unsigned int rdevIndex, struct NdaQpInitAttr *attr,
+    struct NdaQpInfo *info, struct RsQpResp *qpResp);
 RS_ATTRI_VISI_DEF int RsNormalQpDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn);
 RS_ATTRI_VISI_DEF int RsSetQpAttrQos(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn,
     struct QosAttr *attr);
