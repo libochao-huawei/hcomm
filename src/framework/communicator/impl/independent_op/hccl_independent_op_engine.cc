@@ -85,7 +85,6 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
                             __func__, engine, threadNum, notifyNumPerThread);
                 return ret;
             }
-            return HCCL_SUCCESS;
         } else {
             for (u32 num = 0; num < threadNum; ++threadNum) {
                 int hret = HcommThreadRegisterDfx(threads[num], hcclCommDfxCallback);
@@ -95,6 +94,18 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
                 }
  	        }
         }
+        Mc2CommInfo mc2CommInfo;
+        mc2CommInfo.FreeStreamId = 0;
+        mc2CommInfo.streamsId = threadId;
+        mc2CommInfo.groupname = commId;
+        mc2CommInfo.myRankId = collComm->GetHcclCommDfx();
+        mc2CommInfo.rankSize = collComm->GetRankSize();
+        CHK_PTR_NULL(collComm->GetParentRankId(mc2CommInfo.parentRankId));
+        HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+        CHK_PTR_NULL(hcclCommDfx);
+        hcclCommDfx->ReportMc2CommInfo(mc2CommInfo);
+        return HCCL_SUCCESS;
+
     }
     else {
         auto& engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
@@ -143,6 +154,20 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
             HCCL_ERROR("[HcclThreadAcquire] HcclThreadAcquire  HcommThreadRegisterDfx failed");
             return HCCL_E_PTR;
         }
+        Thread *threadPtr = reinterpret_cast<Thread *>(*thread);
+        CHK_PTR_NULL(thread);
+        Stream *stream = threadPtr->GetStream();
+        CHK_PTR_NULL(stream);
+        Mc2CommInfo mc2CommInfo;
+        mc2CommInfo.FreeStreamId = 0;
+        mc2CommInfo.streamsId.push_back(static_cast<u32>(stream->id()));
+        mc2CommInfo.groupname = commId;
+        mc2CommInfo.myRankId = collComm->GetHcclCommDfx();
+        mc2CommInfo.rankSize = collComm->GetRankSize();
+        CHK_PTR_NULL(collComm->GetParentRankId(mc2CommInfo.parentRankId));
+        HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+        CHK_PTR_NULL(hcclCommDfx);
+        hcclCommDfx->ReportMc2CommInfo(mc2CommInfo);
     }
     else {
         auto& engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();

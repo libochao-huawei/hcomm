@@ -31,12 +31,12 @@ void HcclCommProfiling::ReportOp(uint64_t beginTime, bool cachedReq, bool opbase
     }
 }
 
-// HcclCommProfiling::CallReportMc2CommInfo实现
-// void HcclCommProfiling::CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
-//     if (profilingReporter_) {
-//         profilingReporter_->CallReportMc2CommInfo(mc2CommInfo);
-//     }
-// }
+void HcclCommProfiling::ReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
+    if (profilingReporter_) {
+        profilingReporter_->ReportMc2CommInfo(mc2CommInfo.FreeStreamId, mc2CommInfo.streamsId, 
+            mc2CommInfo.groupname, mc2CommInfo.myRankId, mc2CommInfo.rankSize, mc2CommInfo.parentRankId);
+    }
+}
 
 // HcclCommProfiling::UpdateProfStat实现
 void HcclCommProfiling::UpdateProfStat() {

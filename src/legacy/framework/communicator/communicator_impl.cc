@@ -3870,4 +3870,8 @@ ErrorMessageReport CommunicatorImpl::GetAicpuTaskException()
     return errorMessage;
 }
 
+u32 CommunicatorImpl::GetRankInParentComm() {
+    return static_cast<u32>(rankInParentComm);
+}
+
 } // namespace Hccl

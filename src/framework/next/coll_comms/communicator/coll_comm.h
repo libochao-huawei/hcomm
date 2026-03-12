@@ -23,6 +23,7 @@
 #include "hcclCommDfx.h"
 #include "rank_graph_v2.h"
 #include "error_message_v2.h"
+#include "../../../../legacy/include/hccl_communicator.h"
 
 namespace hccl {
 /**
@@ -79,6 +80,12 @@ public:
         HDCommunicateParams &kfcControlTransferH2DParams, HDCommunicateParams &kfcStatusTransferD2HParams);
     void RegisterAicpuTaskExceptionCallback(u32 streamId);
     Hccl::ErrorMessageReport GetAicpuTaskException();
+    HcclResult GetParentRankId(u32& parentRankId) {
+        Hccl::HcclCommunicator* comV2 = static_cast<Hccl::HcclCommunicator*>(comm_);
+        CHK_PTR_NULL(comV2);
+        parentRankId = comV2->GetRankInParentComm();
+        return HCCL_SUCCESS;
+    }
     uint32_t UpdateIndex();
 
 private:

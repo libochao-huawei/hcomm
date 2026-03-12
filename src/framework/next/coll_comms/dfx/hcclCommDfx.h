@@ -40,7 +40,7 @@ public:
     // Profiling相关接口（直接暴露，不通过GetProfilingImpl）
     HcclResult ReportAllTasks(bool cachedReq);
     HcclResult ReportOp(u64 beginTime, bool cachedReq, bool opbased);
-    // void CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo);
+    void ReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo);
     HcclResult UpdateProfStat();
     
     // 将remoteRankId添加到channelRemoteRankId_表中

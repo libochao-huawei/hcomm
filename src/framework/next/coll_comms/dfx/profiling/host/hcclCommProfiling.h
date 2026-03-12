@@ -16,6 +16,15 @@
 #include "types.h"
 
 namespace hccl {
+    struct Mc2CommInfo {
+        u32 FreeStreamId;
+        std::vector<u32> streamsId;
+        std::string groupname;
+        u32 myRankId;
+        u32 rankSize;
+        u32 parentRankId;
+    };
+    
 class HcclCommProfiling {
 public:
     // 构造函数
@@ -28,7 +37,7 @@ public:
     void ReportOp(uint64_t beginTime, bool cachedReq, bool opbased);
     
     // 上报MC2通信信息
-    //void CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo);
+    void ReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo);
     
     // 更新Profiling统计
     void UpdateProfStat();
