@@ -16,14 +16,66 @@
 #include "rs.h"
 
 #define RS_VENDOR_ID_19E5 0x19E5
+#define RS_NDA_4K 4096
 
-static inline int rsNdaGetDirectFlagByVendorId(uint32_t vendorId)
+struct NdaDbCb {
+    uint64_t hva;
+    uint64_t dva;
+    uint32_t refCnt;
+    uint32_t resv;
+
+    struct RsListHead list;
+};
+
+struct NdaGuidCb {
+    uint64_t guidL;
+    uint64_t guidH;
+    uint64_t dva;
+    uint16_t guidIdx;
+    uint16_t resv;
+    uint32_t refCnt;
+
+    struct RsListHead list;
+};
+
+union DbUbResInfo {
+    struct {
+        uint32_t dbIdx : 12;
+        uint32_t guidIdx : 16;
+        uint32_t resv : 4;
+    };
+    uint32_t resId;
+};
+
+// 底软没有提供这个结构体
+struct ascend_nda_res_map_in {
+    unsigned long long guid_l;
+    unsigned long long guid_h;
+    unsigned int db_idx;
+    unsigned int db_num;
+    unsigned int resv[8];
+};
+
+static inline int RsNdaGetDirectFlagByVendorId(uint32_t vendorId)
 {
     return (vendorId == RS_VENDOR_ID_19E5) ? DIRECT_FLAG_UB : DIRECT_FLAG_PCIE;
 }
 
+static inline unsigned int RsNdaGenerateResId(uint32_t dbIdx, uint16_t guidIdx)
+{
+    union DbUbResInfo resInfo = {0};
+    resInfo.dbIdx = dbIdx;
+    resInfo.guidIdx = guidIdx;
+
+    return resInfo.resId;
+}
+
+RS_ATTRI_VISI_DEF int RsNdaGetDirectFlag(unsigned int phyId, unsigned int rdevIndex, int *directFlag);
 RS_ATTRI_VISI_DEF int RsNdaCqCreate(unsigned int phyId, unsigned int rdevIndex, struct NdaCqInitAttr *attr, 
     struct NdaCqInfo *info, void **ibvCqExt);
 RS_ATTRI_VISI_DEF int RsNdaCqDestroy(unsigned int phyId, unsigned int rdevIndex, void *ibvCqExt);
+RS_ATTRI_VISI_DEF int RsNdaQpCreate(unsigned int phyId, unsigned int rdevIndex, struct NdaQpInitAttr *attr,
+    struct NdaQpInfo *info, struct RsQpResp *qpResp);
+RS_ATTRI_VISI_DEF int RsNdaQpDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn);
 
 #endif // RS_NDA_H
