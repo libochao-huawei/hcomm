@@ -63,7 +63,8 @@ HcclResult HrtRaGetTlsStatus(struct RaInfo *info, TlsStatus &tlsStatus)
     u32 tlsVersion = 0;
     s32 versionRet = RaGetInterfaceVersion(info->phyId, GET_TLS_ENABLE_OPCODE, &tlsVersion);
     if (versionRet != 0 || tlsVersion < GET_TLS_ENABLE_VERSION) {
-        HCCL_WARNING("this package does not support RaGetTlsEnable for device, please change new package");
+        HCCL_WARNING("[HrtRaGetTlsStatus] this package does not support RaGetTlsEnable for device,"
+            "please change new package. ret[%d], tlsVersion[%u].", versionRet, tlsVersion);
         return HCCL_E_NOT_SUPPORT;
     }
 

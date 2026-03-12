@@ -59,8 +59,7 @@ HcclResult MyRank::GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const
     RaInfo info{};
     info.mode = NetworkMode::NETWORK_OFFLINE;
     info.phyId = devicePhyId;
-    CHK_RET(Hccl::HrtRaGetTlsStatus(&info, tlsStatus));
-    return HCCL_SUCCESS;
+    return Hccl::HrtRaGetTlsStatus(&info, tlsStatus);
 }
 
 HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum)

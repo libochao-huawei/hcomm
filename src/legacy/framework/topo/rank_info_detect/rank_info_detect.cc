@@ -158,6 +158,7 @@ void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2
 
     // 网卡使能
     HccpPeerManager::GetInstance().Init(devLogicId_);
+    HccpHdcManager::GetInstance().Init(devLogicId_);
 
     // 获取LocalHostIP
     hostIp_ = GetBootstrapIp(devPhyId_);
