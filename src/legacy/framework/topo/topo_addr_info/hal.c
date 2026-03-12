@@ -119,18 +119,13 @@ int load_dcmi()
 }
 
 
-int hal_get_mainboard_id(int phy_id, unsigned int* mainboard_id)
+int hal_get_mainboard_id(int phyId, unsigned int* mainboardId)
 {
-    int ret = load_dcmi();
-    if (ret != 0) {
-        return ret;
+    unsigned int logicId = 0;
+    if (hal_get_logicid_from_phyid((unsigned int)phyId, &logicId) != 0) {
+        return -1;
     }
-    unsigned int logic_id = 0;
-    ret = dcmi_get_device_logicid_from_phyid(phy_id, &logic_id);
-    if (ret != 0) {
-        return ret;
-    }
-    return dcmiv2_get_mainboard_id(logic_id, mainboard_id);
+    return dcmiv2_get_mainboard_id(logicId, mainboardId);
 }
 
 
@@ -173,55 +168,45 @@ int get_server_id(char* server_id, size_t len) {
     return -1;
 }
 
-int hal_get_eid_list_by_phy_id(int phy_id, dcmi_urma_eid_info_t* eid_list, size_t* eid_cnt)
+int hal_get_eid_list_by_phy_id(int phyId, dcmi_urma_eid_info_t* eidList, size_t* eidCnt)
 {
-    int ret = load_dcmi();
-    if (ret != 0) {
-        return ret;
-    }
-    unsigned int logic_id = 0;
-    ret = dcmi_get_device_logicid_from_phyid(phy_id, &logic_id);
-    if (ret != 0) {
-        return ret;
+    unsigned int logicId = 0;
+    if (hal_get_logicid_from_phyid((unsigned int)phyId, &logicId) != 0) {
+        return -1;
     }
     unsigned int dev_cnt = 0;
-    ret = dcmiv2_get_urma_device_cnt((int)logic_id, &dev_cnt);
+    int ret = dcmiv2_get_urma_device_cnt((int)logicId, &dev_cnt);
     if (ret != 0) {
         return ret;
     }
     size_t eid_current_cnt = 0;
-    size_t eid_space_left = (*eid_cnt);
+    size_t eid_space_left = (*eidCnt);
     for (size_t i = 0; i < dev_cnt; ++i) {
         int left = (int)eid_space_left;
-        ret = dcmiv2_get_eid_list_by_urma_dev_index((int)logic_id, i, &eid_list[eid_current_cnt], &left);
+        ret = dcmiv2_get_eid_list_by_urma_dev_index((int)logicId, i, &eidList[eid_current_cnt], &left);
         if (ret != 0) {
             continue;
         }
         eid_space_left -= left;
         eid_current_cnt += left;
     }
-    (*eid_cnt) = eid_current_cnt;
+    (*eidCnt) = eid_current_cnt;
     return 0;
 }
 
-int HalGetUBEntityList(int phy_id, UEList *ueList)
+int HalGetUBEntityList(int phyId, UEList *ueList)
 {
-    int ret = load_dcmi();
-    if (ret != 0) {
-        return ret;
+    unsigned int logicId = 0;
+    if (hal_get_logicid_from_phyid((unsigned int)phyId, &logicId) != 0) {
+        return -1;
     }
-    unsigned int logic_id = 0;
-    ret = dcmi_get_device_logicid_from_phyid(phy_id, &logic_id);
-    if (ret != 0) {
-        return ret;
-    }
-    ret = dcmiv2_get_urma_device_cnt((int)logic_id, &ueList->ueNum);
+    int ret = dcmiv2_get_urma_device_cnt((int)logicId, &ueList->ueNum);
     if (ret != 0) {
         return ret;
     }
     for (size_t i = 0; i < ueList->ueNum; ++i) {
         int num = MAX_EID_PER_UE;
-        ret = dcmiv2_get_eid_list_by_urma_dev_index((int)logic_id, i,
+        ret = dcmiv2_get_eid_list_by_urma_dev_index((int)logicId, i,
         ueList->ueList[i].eidList, &num);
         if (ret != 0) {
             continue;
@@ -231,33 +216,23 @@ int HalGetUBEntityList(int phy_id, UEList *ueList)
     return 0;
 }
 
-int hal_get_device_pcie_info(int phy_id, struct dcmi_pcie_info_all *pcie_info)
+int hal_get_device_pcie_info(int phyId, struct dcmi_pcie_info_all* pcieInfo)
 {
-    int ret = load_dcmi();
-    if (ret != 0) {
-        return ret;
+    unsigned int logicId = 0;
+    if (hal_get_logicid_from_phyid((unsigned int)phyId, &logicId) != 0) {
+        return -1;
     }
-    unsigned int logic_id = 0;
-    ret = dcmi_get_device_logicid_from_phyid(phy_id, &logic_id);
-    if (ret != 0) {
-        return ret;
-    }
-    return dcmiv2_get_device_pcie_info(logic_id, pcie_info);
+    return dcmiv2_get_device_pcie_info(logicId, pcieInfo);
 }
 
-int hal_get_spod_info(int phy_id, struct dcmi_spod_info *sp_info)
+int hal_get_spod_info(int phyId, struct dcmi_spod_info* spodInfo)
 {
-    int ret = load_dcmi();
-    if (ret != 0) {
-        return ret;
+    unsigned int logicId = 0;
+    if (hal_get_logicid_from_phyid((unsigned int)phyId, &logicId) != 0) {
+        return -1;
     }
-    unsigned int logic_id = 0;
-    ret = dcmi_get_device_logicid_from_phyid(phy_id, &logic_id);
-    if (ret != 0) {
-        return ret;
-    }
-    unsigned int buf_size = sizeof(struct dcmi_spod_info);
-    return dcmiv2_get_device_info(logic_id, DCMI_MAIN_CMD_CHIP_INF, DCMI_CHIP_INFO_SUB_CMD_SPOD_INFO, sp_info, &buf_size);
+    unsigned int bufSize = sizeof(struct dcmi_spod_info);
+    return dcmiv2_get_device_info(logicId, DCMI_MAIN_CMD_CHIP_INF, DCMI_CHIP_INFO_SUB_CMD_SPOD_INFO, spodInfo, &bufSize);
 }
 
 int hal_get_npu_count()
@@ -275,16 +250,20 @@ int hal_get_npu_count()
     return count;
 }
 
-int hal_get_phyid_from_logicid(unsigned int logic_id, unsigned int* phy_id)
+int hal_get_phyid_from_logicid(unsigned int logicId, unsigned int* phyId)
 {
-    load_dcmi();
-    return dcmi_get_device_phyid_from_logicid(logic_id, phy_id);
+    if (load_dcmi() != 0) {
+        return -1;
+    }
+    return dcmi_get_device_phyid_from_logicid(logicId, phyId);
 }
 
-int hal_get_logicid_from_phyid(unsigned int phy_id, unsigned int* logic_id)
+int hal_get_logicid_from_phyid(unsigned int phyId, unsigned int* logicId)
 {
-    load_dcmi();
-    return dcmi_get_device_logicid_from_phyid(phy_id, logic_id);
+    if (load_dcmi() != 0) {
+        return -1;
+    }
+    return dcmi_get_device_logicid_from_phyid(phyId, logicId);
 }
 
 
@@ -370,7 +349,9 @@ int hal_get_driver_install_path(char *value_buf, size_t buf_size) {
             }
 
             // 复制value到缓冲区
-            strcpy_s(value_buf, buf_size, value);
+            if (strcpy_s(value_buf, buf_size, value)) {
+                break;
+            }
             value_buf[buf_size - 1] = '\0';  // 确保字符串结束
             ret = 0;
             break;

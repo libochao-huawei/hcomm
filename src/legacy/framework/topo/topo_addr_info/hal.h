@@ -46,7 +46,7 @@ typedef struct {
     unsigned int ueNum;
 }UEList;
 
-int HalGetUBEntityList(int phy_id, UEList *ueList);
+int HalGetUBEntityList(int phyId, UEList *ueList);
 
 struct dcmi_pcie_info_all {
 unsigned int venderid; //厂商ID
@@ -80,19 +80,19 @@ struct dcmi_spod_info {
 #define MAIN_BOARD_ID_POD         (0x07)
 #define MAIN_BOARD_ID_POD_2D      (0x03)
 
-int hal_get_eid_list_by_phy_id(int phy_id, dcmi_urma_eid_info_t* eid_list, size_t* eid_cnt);
+int hal_get_eid_list_by_phy_id(int phyId, dcmi_urma_eid_info_t* eidList, size_t* eidCnt);
 
-int hal_get_mainboard_id(int phy_id, unsigned int* mainboard_id);
+int hal_get_mainboard_id(int phyId, unsigned int* mainboardId);
 
-int hal_get_device_pcie_info(int phy_id, struct dcmi_pcie_info_all* pcie_info);
+int hal_get_device_pcie_info(int phyId, struct dcmi_pcie_info_all* pcieInfo);
 
-int hal_get_spod_info(int phy_id, struct dcmi_spod_info* spod_info);
+int hal_get_spod_info(int phyId, struct dcmi_spod_info* spodInfo);
 
 int hal_get_npu_count();
 
-int hal_get_phyid_from_logicid(unsigned int logic_id, unsigned int* phy_id);
+int hal_get_phyid_from_logicid(unsigned int logicId, unsigned int* phyId);
 
-int hal_get_logicid_from_phyid(unsigned int phy_id, unsigned int* logic_id);
+int hal_get_logicid_from_phyid(unsigned int phyId, unsigned int* logicId);
 
 int get_server_id(char* server_id, size_t buf_size);
 

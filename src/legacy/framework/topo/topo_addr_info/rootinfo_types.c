@@ -37,9 +37,15 @@ char* AddrToString(const Addr* addr)
         if (ret != 0) {
             break;
         }
-        (void)strcat_s(ports, MAX_PORTS_STR_LEN, port);
+        ret = strcat_s(ports, MAX_PORTS_STR_LEN, port);
+        if (ret != 0) {
+            break;
+        }
         if (i != addr->port_count - 1) {
-            (void)strcat_s(ports, MAX_PORTS_STR_LEN, ",");
+            ret = strcat_s(ports, MAX_PORTS_STR_LEN, ",");
+            if (ret != 0) {
+                break;
+            }
         }
     }
     ret = sprintf_s(buf, max_buffer_size,
@@ -93,7 +99,10 @@ char* NetLayerToString(const NetLayer *layer)
         if(addr == NULL) {
             continue;
         }
-        strcat_s(addr_list, max_buffer_size, addr);
+        if (strcat_s(addr_list, max_buffer_size, addr) != 0) {
+            free(addr);
+            break;
+        }
         if (i != layer->addr_count - 1) {
             if (strcat_s(addr_list, max_buffer_size, ",") != 0) {
                 free(addr);
@@ -226,8 +235,7 @@ int AddrAddPort(Addr *addr, const char* port)
     if (addr->port_count >= (MAX_PORT_NUM - 1)) {
         return -1;
     }
-    (void)strcpy_s(addr->ports[addr->port_count++], MAX_PORT_LEN, port);
-    return 0;
+    return strcpy_s(addr->ports[addr->port_count++], MAX_PORT_LEN, port);
 }
 
 char* RankToString(const Rank* rank)
@@ -237,9 +245,15 @@ char* RankToString(const Rank* rank)
     char* level_list = (char*)malloc(max_buf_size);
     for (int i = 0; i < rank->level_count; ++i) {
         char *layer = NetLayerToString(&rank->level_list[i]);
-        (void)strcat_s(level_list, max_buf_size, layer);
+        if (strcat_s(level_list, max_buf_size, layer) != 0) {
+            free(layer);
+            break;
+        }
         if (i != (rank->level_count - 1)) {
-            (void)strcat_s(level_list, max_buf_size, ", ");
+            if (strcat_s(level_list, max_buf_size, ", ") != 0) {
+                free(layer);
+                break;
+            }
         }
         free(layer);
     }

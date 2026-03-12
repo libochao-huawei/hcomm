@@ -67,24 +67,6 @@ int TopoAddrInfoGetTopoFilePath(int phyId, char* filePath, size_t bufSize)
     return TopoGetFilePath(mainboard_id, filePath, bufSize);
 }
 
-static void DumpFile(char* rankInfo, size_t bufSize)
-{
-    char dumpFile[MAX_DUMP_FILE_LEN] = {0};
-    if (strcpy_s(dumpFile, sizeof(dumpFile), getenv("RANKINFO_DUMP_FILE")) != 0) {
-        return;
-    }
-    FILE* fp = fopen(dumpFile, "w+");
-    if (fp == NULL) {
-        return;
-    }
-    int ret = fwrite(rankInfo, 1, bufSize, fp);
-    if (ret < 0) {
-        fclose(fp);
-        return;
-    }
-    fclose(fp);
-}
-
 static int PassThrough(char *rankInfo, size_t *bufSize)
 {
     FILE *fp = fopen(DEFUALT_RANKINFO_FILE_PATH, "r");
@@ -129,6 +111,5 @@ int TopoAddrInfoGet(int phyId, char* rankInfo, size_t *bufSize)
       ||(mainboard_id == MAIN_BOARD_ID_SERVER_TYPE1)) {
         ret = ServerGetRootinfo(phyId, mainboard_id, rankInfo, bufSize);
     }
-    DumpFile(rankInfo, *bufSize);
     return 0;
 }

@@ -151,8 +151,8 @@ int ServerGetRootinfo(int npu_id, unsigned mainboard_id, void *buf, size_t *len)
         free(rootinfo_buf);
         return -1;
     }
-    (void)strcpy_s(buf, *len, rootinfo_buf);
+    errno_t ret = strcpy_s(buf, *len, rootinfo_buf);
     (*len) = strlen(buf);
     free(rootinfo_buf);
-    return RET_OK;
+    return ret;
 }
