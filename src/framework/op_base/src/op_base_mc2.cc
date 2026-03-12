@@ -136,7 +136,6 @@ HcclResult HcclCreateOpResCtxInner(HcclComm comm, uint8_t opType, HcclDataType s
         return HCCL_E_NOT_SUPPORT;
     }
 
-    HcclUs startut = TIME_NOW();
     uint64_t streamMode = 0; //streamMode未使用，固定传0
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     string commIdentifier = hcclComm->GetIdentifier();
