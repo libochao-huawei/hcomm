@@ -187,6 +187,7 @@ HcclResult CreateCommConfig(uint32_t rank, HcclCommConfig *config, HcclComm *com
     if (errorFlag) {
         HCCL_ERROR("[Init][CreateCommConfig]CreateCommConfig failed,  rank[%u],"\
             "return[0x%016llx]", rank, HCCL_ERROR_CODE(ret));
+        (void)HcclCommDestroyV2(opbasedCommInfoV2.pComm.get());
         *comm = nullptr;
         return ret;
     }
@@ -257,6 +258,7 @@ HcclResult CreateCommConfigRootInfo(uint32_t rank, const HcclCommConfig *config,
     if (errorFlag) {
         HCCL_ERROR("[Init][%s]CreateCommConfigRootInfo failed return[0x%016llx]", __func__, 
             HCCL_ERROR_CODE(ret));
+        (void)HcclCommDestroyV2(opbasedCommInfoV2.pComm.get());
         *comm = nullptr;
         return ret;
     }
@@ -352,6 +354,7 @@ HcclResult HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, Hcc
         HCCL_ERROR("[Init][%s]HcclCommInitClusterInfoV2 failed, clusterInfo[%s], rank[%u], deviceLogicId[%d], devPhyId[%d],"\
             "return[0x%016llx]", __func__, clusterInfo, rank,
             deviceLogicId, devPhyId, HCCL_ERROR_CODE(ret));
+        (void)HcclCommDestroyV2(opbasedCommInfoV2.pComm.get());
         *comm = nullptr;
         return ret;
     }
@@ -627,6 +630,17 @@ HcclResult HcclCommDestroyV2(HcclComm comm)
         return HCCL_E_AGAIN;
     }
     std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
+    if (commId == opbasedCommInfoV2.commParams.commId && opbasedCommInfoV2.pComm != nullptr) {
+        // 通信域销毁，更新子通信域ccu使用情况
+        opbasedCommInfoV2.ccuStatus.RemoveCommId(opbasedCommInfoV2.pComm->GetId());
+        for (auto iterGroup : opbasedCommInfoV2.hcclGroupMap) {
+            opbasedCommInfoV2.ccuStatus.RemoveCommId(iterGroup.first);
+        }
+        opbasedCommInfoV2.pComm = nullptr;
+        opbasedCommInfoV2.status = DeviceStatus::DEVICE_IDLE;
+    }
+    // 通信域销毁，更新ccu使用情况
+    opbasedCommInfoV2.ccuStatus.RemoveCommId(commId);
     auto iter = opbasedCommInfoV2.hcclGroupMap.find(commId);
     if (iter != opbasedCommInfoV2.hcclGroupMap.end()) {
         // 这里做的其实是兜底销毁，增加channel与engineCtx部分的销毁，解除依赖，搬家到hcomm中实现，同时优先级降低。
@@ -639,17 +653,6 @@ HcclResult HcclCommDestroyV2(HcclComm comm)
             comm, commId.c_str(), deviceLogicId);
         return HCCL_E_PARA;
     }
-    if (commId == opbasedCommInfoV2.commParams.commId && opbasedCommInfoV2.pComm != nullptr) {
-        // 通信域销毁，更新子通信域ccu使用情况
-        opbasedCommInfoV2.ccuStatus.RemoveCommId(opbasedCommInfoV2.pComm->GetId());
-        for (auto iterGroup : opbasedCommInfoV2.hcclGroupMap) {
-            opbasedCommInfoV2.ccuStatus.RemoveCommId(iterGroup.first);
-        }
-        opbasedCommInfoV2.pComm = nullptr;
-        opbasedCommInfoV2.status = DeviceStatus::DEVICE_IDLE;
-    }
-    // 通信域销毁，更新ccu使用情况
-    opbasedCommInfoV2.ccuStatus.RemoveCommId(commId);
     lock.unlock();
 
     s32 deviceLogicId = HcclGetThreadDeviceId();
@@ -929,6 +932,7 @@ HcclResult HcclCreateSubCommConfigV2(const HcclComm *comm, uint32_t rankNum, uin
         HCCL_ERROR("[Init][%s]HcclCreateSubCommConfigV2 failed, deviceLogicId[%d], devPhyId[%d],"\
             "return[0x%016llx]", __func__,
             logicDevId, devPhyId, HCCL_ERROR_CODE(ret));
+        (void)HcclCommDestroyV2(subCommunicator.get());
         *subComm = nullptr;
         return ret;
     }
@@ -1701,6 +1705,7 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
  	    HCCL_ERROR("[Init][%s]HcclCommInitClusterInfoV2 failed, rankNum[%s], rank[%u], logicDevId[%d], rootInfo identifier[%s],"\
  	        "return[0x%016llx]", __func__, nRanks, rank,
  	        logicDevId, identifier.c_str(), HCCL_ERROR_CODE(ret));
+        (void)HcclCommDestroyV2(opbasedCommInfoV2.pComm.get());
  	    *comm = nullptr;
  	    return ret;
  	}
