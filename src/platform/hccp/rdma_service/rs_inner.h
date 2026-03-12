@@ -610,6 +610,7 @@ int RsGetHccpMode(unsigned int chipId);
 int RsDev2conncb(uint32_t chipId, struct RsConnCb **connCb);
 int RsDev2rscb(uint32_t chipId, struct rs_cb **rsCb, bool initFlag);
 int RsQpn2qpcb(unsigned int phyId, unsigned int rdevIndex, uint32_t qpn, struct RsQpCb **qpCb);
+int RsQueryRdevCb(unsigned int phyId, unsigned int rdevIndex, struct RsRdevCb **rdevCb);
 int RsRdev2rdevCb(unsigned int chipId, unsigned int rdevIndex, struct RsRdevCb **rdevCb);
 int RsGetRdevCb(struct rs_cb *rsCb, unsigned int rdevIndex, struct RsRdevCb **rdevCb);
 void RsAccpetListNodeFree(struct rs_cb *rscb);
