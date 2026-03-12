@@ -300,6 +300,13 @@ TEST_F(RankGraphTest, ut_CreateSubRankGraph_When_Normal_Expect_SUCCESS) {
     EXPECT_EQ(2, subRankGraph->GetLocalInstSize(2));
 }
 
+TEST_F(RankGraphTest, ut_CreateSubRankGraph1p_When_Normal_Expect_SUCCESS) {
+    auto rankGraph = create4pRankGraph(myRank);
+    vector<u32> subRankIds = {0};
+    std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(subRankIds);
+    EXPECT_EQ(1, subRankGraph->GetLocalInstSize(0));
+}
+
 TEST_F(RankGraphTest, ut_GetEndpointNum_When_Normal_Expect_SUCCESS)
 {
     auto rankGraph = create4pRankGraph(myRank);
