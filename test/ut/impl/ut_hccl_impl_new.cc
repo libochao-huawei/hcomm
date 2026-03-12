@@ -342,6 +342,7 @@ TEST_F(HcclImplTest, ut_SelectAlg_when_broadcast_910C_Expect_ReturnIs_BroadcastM
     std::string algName;
     std::string newTag;
     std::unique_ptr<TopoMatcher> &topoMatcher = implBase->implAlg_->topoMatcher_;
+    SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
     topoMatcher->SetAivModeConfig(true);
     CCLBufferManager &cclBufferManager = implBase->implAlg_->cclBufferManager_;
     const HcclDispatcher dispatcher = implBase->implAlg_->dispatcher_;
