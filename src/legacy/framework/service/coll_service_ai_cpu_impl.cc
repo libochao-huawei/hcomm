@@ -23,7 +23,6 @@
 #include "task_exception_handler.h"
 #include "aicpu/launch_device.h"
 #include "exception_util.h"
-#include "invalid_params_exception.h"
 #include "runtime_api_exception.h"
 
 namespace Hccl {
@@ -452,7 +451,7 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     taskParam.taskType = TaskParamType::TASK_AICPU_KERNEL;
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
-    SaveDfxTaskInfo(taskParam, -1, mStream.GetIsMaster());
+    SaveDfxTaskInfo(taskParam, -1, mStream.IsMaster());
     AddWaitToUserStream(stream);
 }
 
@@ -505,7 +504,7 @@ void CollServiceAiCpuImpl::AddPostToUserStream(const Stream &stream)
     taskParam.taskPara.Notify.notifyID = postNotify->GetId();
     taskParam.taskPara.Notify.value = 1;
  
-    SaveDfxTaskInfo(taskParam, -1, stream.GetIsMaster());
+    SaveDfxTaskInfo(taskParam, -1, stream.IsMaster());
 }
 
 void CollServiceAiCpuImpl::AddWaitToUserStream(const Stream &stream)
@@ -526,7 +525,7 @@ void CollServiceAiCpuImpl::AddWaitToUserStream(const Stream &stream)
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     taskParam.taskPara.Notify.notifyID = waitNotify->GetId();
     taskParam.taskPara.Notify.value = 1;
-    SaveDfxTaskInfo(taskParam, -1, stream.GetIsMaster());
+    SaveDfxTaskInfo(taskParam, -1, stream.IsMaster());
 }
 
 void CollServiceAiCpuImpl::AllocWorkStream(u32 primQueueNum) const
@@ -900,7 +899,7 @@ HcclResult CollServiceAiCpuImpl::ClearOpLoadedInfo(const std::string &opTag)
     return HCCL_SUCCESS;
 }
 
-u32 CollServiceAiCpuImpl::GetRemoteRankIdsHashValue(const CollOperator &op)
+u32 CollServiceAiCpuImpl::GetRemoteRankIdsHashValue(const CollOperator &op) const
 {
     vector<RankId> tempRankIds;
     HcclSendRecvItem* itemPtr = reinterpret_cast<HcclSendRecvItem *>(op.batchSendRecvDataDes.sendRecvItemsPtr);

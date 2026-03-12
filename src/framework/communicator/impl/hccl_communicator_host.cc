@@ -4091,7 +4091,7 @@ namespace hccl
         cacheInfo.newTag = newTag;
 
         if (hcclCacheMap_.size() > CACHEMAP_MAXSIZE) {
-            size_t clearCount = CACHEMAP_MAXSIZE * CACHEMAP_CLEARPERCENT;
+            size_t clearCount = static_cast<size_t>(CACHEMAP_MAXSIZE * CACHEMAP_CLEARPERCENT);
             for (auto it = hcclCacheMap_.begin(); clearCount > 0 && it != hcclCacheMap_.end(); clearCount--) {
                 it = hcclCacheMap_.erase(it);
             }

@@ -18,7 +18,6 @@
 #include "hccl_mem.h"
 #include "aicpu/launch_device.h"
 #include "exception_util.h"
-#include "invalid_params_exception.h"
 #include "runtime_api_exception.h"
 #include "env_config.h"
 

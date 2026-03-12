@@ -86,6 +86,11 @@ std::unique_ptr<CcuContext> CcuInsPreprocessor::CreateCcuCtx(const CcuInstructio
         return nullptr;
     }
 
+    // 排序links, 使用RemoteRankId排序, 确保相同的通信模式每次生成的LinkGroup顺序一致, 避免重复创建TransportGroup
+    std::sort(links.begin(), links.end(), [](const LinkData &a, const LinkData &b) {
+        return a.GetRemoteRankId() < b.GetRemoteRankId();
+    });
+
     vector<LinkInfo> linkInfos{};
     linkInfos.resize(links.size());
     std::transform(links.begin(), links.end(), linkInfos.begin(), [](const LinkData& link)

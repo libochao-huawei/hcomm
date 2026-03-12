@@ -74,6 +74,7 @@ constexpr const char* DPUTAG = "DPUTAG";
 constexpr u64 INDEPENDENT_OP_BUFFER_SIZE_TIMES = 2; //自定义算子buffer倍数
 constexpr uint8_t DEVICE_SIGNAL_SECOND = 2;
 constexpr uint8_t DEVICE_SIGNAL_THIRD = 3;
+constexpr uint32_t TEMP_DEV_TYPE_DPU = 0; // 临时适配，后续rts接口上库之后使用rts的定义
 
 struct DpuKernelLaunchParam {
     u64         memorySize;
@@ -498,7 +499,7 @@ static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const Tas
     comm.GetMirrorTaskManager().AddTaskInfo(taskInfo);
 }
 
-void CommunicatorImpl::FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams)
+void CommunicatorImpl::FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams) const
 {
     std::vector<uint64_t> args;
     CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, args);
@@ -575,7 +576,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
                 params.taskParams[i + 1].beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
                 SuperFastLoad(ccuParams + params.count[i], slave->GetPtr(), params.count[i + 1]);
                 params.taskParams[i + 1].endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-                FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[i + 1], slave->GetIsMaster());
+                FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[i + 1], slave->IsMaster());
             }
             else{
                 SuperFastLoad(ccuParams + params.count[i], slave->GetPtr(), params.count[i + 1]);
@@ -779,8 +780,8 @@ HcclResult CommunicatorImpl::CheckCommStatus()
 HcclResult CommunicatorImpl::AllocCollOpResource(const CollOpParams &opParams, void **addr)
 {
     try {
-        if (opParams.commEngine != HcclAccelerator::AICPU && opParams.commEngine != HcclAccelerator::AICPU_TS) {
-            HCCL_ERROR("[CommunicatorImpl][%s]It's support aicpu unfold on mc2. input is %s", __func__, opParams.commEngine.Describe().c_str());
+        if (opParams.commEngine != HcclAccelerator::AICPU_TS) {
+            HCCL_ERROR("[CommunicatorImpl][%s] Only AICPU_TS is supported for aicpu unfold on mc2. input is %s", __func__, opParams.commEngine.Describe().c_str());
  	        return HCCL_E_NOT_SUPPORT;
  	    }
         CHK_RET(CheckCommStatus());
@@ -2404,7 +2405,7 @@ HcclResult CommunicatorImpl::DestroyDpuKernelResource()
     }
     // reset DPU kernel 线程
     HCCL_INFO("Start to reset DPU device");
-    if (rtResetXpuDevice(RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
+    if (HrtResetXpuDevice(TEMP_DEV_TYPE_DPU, 0) != HCCL_SUCCESS) {
         HCCL_ERROR("ResetXpuDevice Failed");
         return HCCL_E_RUNTIME;
     }
@@ -2937,7 +2938,7 @@ HcclResult CommunicatorImpl::AcceleratorFallback()
 HcclResult CommunicatorImpl::GetCacheMap(AivOpCacheArgs& opCacheParam , std::shared_ptr<InsQueue>& tempInsQue)
 {
     if (hcclCacheMap_.size() > CACHEMAP_MAXSIZE) {
-        size_t clearCount = CACHEMAP_MAXSIZE * CACHEMAP_CLEARPERCENT;
+        size_t clearCount = static_cast<size_t>(CACHEMAP_MAXSIZE * CACHEMAP_CLEARPERCENT);
         for (auto it = hcclCacheMap_.begin(); clearCount > 0 && it != hcclCacheMap_.end(); clearCount--) {
             it = hcclCacheMap_.erase(it);
         }
@@ -3189,7 +3190,7 @@ HcclResult CommunicatorImpl::InitAndLaunchDpuKernel()
         HCCL_ERROR("[CommunicatorImpl::%s] Get Npu Ctx Failed", __func__);
         return HCCL_E_INTERNAL;
     }
-    if (rtSetXpuDevice(RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
+    if (HrtSetXpuDevice(TEMP_DEV_TYPE_DPU, 0) != HCCL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::%s] Switch to Dpu Ctx Failed", __func__);
         return HCCL_E_INTERNAL;
     }
