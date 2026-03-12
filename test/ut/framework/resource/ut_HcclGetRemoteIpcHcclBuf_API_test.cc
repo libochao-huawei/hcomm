@@ -37,13 +37,19 @@ bool GetCommResourceStub(void *&commContext)
     return true;
 }
 
+HcclResult GetRemoteCCLBufStub(uint32_t remoteRank, void **addr, uint64_t *size)
+{
+    *addr = reinterpret_cast<void *>(0x12345678);
+    *size = 0;
+    return HCCL_SUCCESS;
+}
+
 TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
     void *addr = nullptr;
     uint64_t size = 0;
-    void *addr_res = reinterpret_cast<void *>(0x12345678);
 
-    MOCKER_CPP(&HcclCommunicator::GetRemoteCCLBuf).stubs().with(any(), outBound(addr_res), any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::GetRemoteCCLBuf).stubs().will(invoke(GetRemoteCCLBufStub));
 
     HcclResult ret = HcclGetRemoteIpcHcclBuf(comm, 1, &addr, &size);
     EXPECT_EQ(ret, HCCL_SUCCESS);
