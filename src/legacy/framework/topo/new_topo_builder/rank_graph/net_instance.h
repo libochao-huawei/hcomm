@@ -107,7 +107,7 @@ public:
         std::set<u32> GetLevels() const;
         NetInstancePtr   GetNetInstance(u32 level) const;
         std::map<std::string, IpAddress> GetPortAddrMapLayer0() const;
-        void SetPortPortAddrMapLayer0(std::unordered_map<std::string, IpAddress> portAddrMap);
+        void SetPortPortAddrMapLayer0(std::map<std::string, IpAddress> portAddrMap);
         std::string   Describe() const override;
     private:
         RankId                   rankId_;

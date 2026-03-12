@@ -256,10 +256,10 @@ void RankGraphBuilder::AddTopoDescFabricInfo()
     HCCL_INFO("[RankGraphBuilder][AddTopoDescFabricInfo] Successfully completed fabric link construction");
 }
 
-std::map<PlaneId, FabricId> GetFabricsFromAddrInfo(std::vector<AddressInfo> rankAddrs)
+std::map<PlaneId, FabricId> GetFabricsFromAddrInfo(const std::vector<AddressInfo>& rankAddrs)
 {
     std::map<PlaneId, FabricId> planeId2FabricId;
-    for (auto addrInfo : rankAddrs) {
+    for (const auto& addrInfo : rankAddrs) {
         if (planeId2FabricId.count(addrInfo.planeId) == 0) {
             FabricId fabId = planeId2FabricId.size();
             planeId2FabricId[addrInfo.planeId] = fabId;
@@ -488,7 +488,7 @@ void RankGraphBuilder::UpdateTopoInstForMyRankOnly()
 }
 
 std::vector<std::shared_ptr<NetInstance::ConnInterface>> ConstructConnIFromPhyTopoConnIAndPortMap(
-        std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, std::unordered_map<std::string, IpAddress> portAddrMap, 
+        std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, const std::map<std::string, IpAddress>& portAddrMap, 
         const TopoType topoType, const u32 topoInstId) {
     std::vector<std::shared_ptr<NetInstance::ConnInterface>> netConnIFaces;
     std::set<string> phyPorts = phyConnIFace->GetPorts();
