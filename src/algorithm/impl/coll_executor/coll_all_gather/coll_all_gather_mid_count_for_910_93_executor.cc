@@ -85,6 +85,7 @@ HcclResult CollAllGatherMidCountFor91093Executor::PrepareL2DataSlices(const OpPa
     const SubCommInfo &level1CommInfo, const SubCommInfo &level2CommInfo, u64 inputMemSize,
     std::vector<Slice> &dataSlices) const
 {
+    (void) param;
     const u32 level1RankSize  = level1CommInfo.localRankSize;
     const u32 level1RankIndex = level1CommInfo.localRank;
     const u32 level2RankSize  = level2CommInfo.localRankSize;
@@ -135,6 +136,7 @@ HcclResult CollAllGatherMidCountFor91093Executor::PrepareL1DataSlices(const OpPa
     const SubCommInfo &level1CommInfo, const SubCommInfo &level2CommInfo,
     u64 inputMemSize, u32 moduleId, std::vector<Slice> &dataSlices)
 {
+    (void) level2CommInfo;
     u32 unitSize = 0;
     CHK_RET(SalGetDataTypeSize(param.GetDataType(), unitSize));
     const u32 level1RankSize  = level1CommInfo.localRankSize;
