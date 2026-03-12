@@ -174,8 +174,9 @@ TEST_F(OneSidedSt, ut_exception_handler)
     HcclRankLinkInfo localRankInfo{};
     RankTable_t rankTable{};
     map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap{};
+    const unordered_set<u32> enableP2PRankIds;
 
-    iHcclOneSidedService.Config(dispatcher, localRankInfo, &rankTable);
+    iHcclOneSidedService.Config(dispatcher, localRankInfo, &rankTable, enableP2PRankIds);
 }
 
 HcclResult st_rma_buffer_mgr_test()
@@ -4058,8 +4059,9 @@ TEST_F(OneSidedSt, ut_one_sided_service_prepare_fail)
     RankInfo_t rankInfo;
     rankTable.rankList.push_back(rankInfo);
     map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap{};
+    const unordered_set<u32> enableP2PRankIds;
 
-    service->Config(dispatcher, localRankInfo, &rankTable);
+    service->Config(dispatcher, localRankInfo, &rankTable, enableP2PRankIds);
 
     std::string commIdentifier("test");
     HcclPrepareConfig config;
