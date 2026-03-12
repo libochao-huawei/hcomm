@@ -70,7 +70,7 @@ target_include_directories(rs PRIVATE
     ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/inc/driver
+    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/nda
 
     # HCCP Legacy
@@ -86,6 +86,7 @@ if(NOT BUILD_OPEN_PROJECT)
     target_include_directories(rs PRIVATE
         ${TOP_DIR}/drivers/network/tls_adp
         ${TOP_DIR}/runtime/pkg_inc/base
+        ${TOP_DIR}/driver/driver/pkg_inc/
     )
 endif()
 
