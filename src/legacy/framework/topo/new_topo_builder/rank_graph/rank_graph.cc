@@ -584,8 +584,13 @@ void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId
                                       oldLink.GetLinkProtocols(), oldLink.GetLinkDirection(), oldLink.GetHop());
 
     newNetInstance->AddLink(link);
-    newNetInstance->UpdateTopoInst(newSourceIface->GetTopoInstId(), newSourceIface->GetTopoType(), srcNewRankId);
-    newNetInstance->UpdateTopoInst(newTargetIface->GetTopoInstId(), newTargetIface->GetTopoType(), dstNewRankId);
+    if (newSourceIface != nullptr) {
+        newNetInstance->UpdateTopoInst(newSourceIface->GetTopoInstId(), newSourceIface->GetTopoType(), srcNewRankId);
+    }
+    if (newTargetIface != nullptr) {
+        newNetInstance->UpdateTopoInst(newTargetIface->GetTopoInstId(), newTargetIface->GetTopoType(), dstNewRankId);
+    }
+    
     for (const auto&pair: newNetInstance->topoInsts_){
         uint32_t topoInstId = pair.first;
         if(pair.second==nullptr){
