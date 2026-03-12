@@ -197,39 +197,7 @@ void Mc2Compont::Alloc()
 
 void Mc2Compont::AllocV2()
 {
-    inputMem = std::make_shared<DevBuffer>(dataCount * DataTypeSizeGet(DataType::INT64) * comm->GetRankSize());
-    HCCL_INFO("[Mc2Compont][AllocV2]inputMem addr[%p] size = [%llu]", inputMem->GetAddr(), inputMem->GetSize());
-    for(uint32_t i = 0; i < MAX_OP_NUM; i++) {
-        combinOpParam.opType[i] = 0;
-        combinOpParam.algorithmType[i] = 0;
-    }
-    if (ccuResourceAlloced) {
-        return;
-    }
-
-    constexpr uint32_t comSyncNum      = 2; // 每轮同步使用2个同步信号
-    uint32_t           comParamBufSize = CCU_TASK_NUM_MAX * CCU_PARAM_NUM_MAX * CCU_ONE_PARAM_SIZE ;
-    uint32_t           comSyncBufSize  = CCU_TASK_NUM_MAX * comSyncNum * CCU_ONE_PARAM_SIZE ;
-    workspaceBuffer                    = std::make_shared<DevBuffer>(MC2_WORKSPACE_SIZE);
-    comParamBuffer                     = std::make_shared<DevBuffer>(comParamBufSize);
-    comSyncBuffer                      = std::make_shared<DevBuffer>(comSyncBufSize);
-
-    combinOpParam.workSpace     = static_cast<uint64_t>(workspaceBuffer->GetAddr());
-    combinOpParam.workSpaceSize = MC2_WORKSPACE_SIZE;
-    combinOpParam.rankId        = comm->GetMyRank();
-    combinOpParam.rankDim       = comm->GetRankSize();
-    combinOpParam.xnAddr        = static_cast<uint64_t>(comParamBuffer->GetAddr());
-    combinOpParam.ckeAddr       = static_cast<uint64_t>(comSyncBuffer->GetAddr());
-    // add cclbuffer info
-    if (comm->GetCclBuffer() == nullptr) {
-        THROW<Hccl::InternalException>(StringFormat("Cannot get CCL Buffer to fill window!"));
-    }
-    combinOpParam.winSize = static_cast<uint64_t>(comm->GetCclBuffer()->GetSize());
-    combinOpParam.windowsOut[0] = static_cast<uint64_t>(comm->GetCclBuffer()->GetAddr());
-    ccuResourceAlloced = true;
-
-    tokenInfo    = CcuRep::GetTokenInfo(static_cast<uint64_t>(workspaceBuffer->GetAddr()),
-                                        static_cast<uint64_t>(workspaceBuffer->GetSize()));
+    Alloc();
 }
 
 void Mc2Compont::MC2Orchestrate(const CollAlgParams& params, std::shared_ptr<InsQueue>& insQueue, uint8_t commEngine) const
@@ -650,13 +618,13 @@ uint64_t Mc2Compont::GetTemplateSignatureV2(const Mc2CcTilingInner &config) cons
     return templateSignature;
 }
 
-void Mc2Compont::FillCollOperatorV2(const Mc2CcTilingInner &config)
+void Mc2Compont::FillCollOperator(const OpType &opType, const ReduceOp &reduceOp, const DataType &dataType, const DataType &outputDataType) 
 {
     CollOpParams opParams;
-    opParams.opType         = MC2OpType(static_cast<AicpuComType>(config.opType));
-    opParams.reduceOp       = MC2ReduceType(static_cast<HcclReduceOp>(config.reduceType));
-    opParams.dataType       = MC2DataType(static_cast<HcclDataType>(config.srcDataType));
-    opParams.outputDataType = MC2DataType(static_cast<HcclDataType>(config.dstDataType));
+    opParams.opType         = opType;
+    opParams.reduceOp       = reduceOp;
+    opParams.dataType       = dataType;
+    opParams.outputDataType = outputDataType;
     opParams.count          = dataCount;
     opParams.sendBuf        = reinterpret_cast<void *>(inputMem->GetAddr());
     opParams.recvBuf        = reinterpret_cast<void *>(inputMem->GetAddr());
@@ -683,45 +651,25 @@ void Mc2Compont::FillCollOperatorV2(const Mc2CcTilingInner &config)
         opParams.all2AllVDataDes.sdispls = reinterpret_cast<void *>(&displs[0]);
         opParams.all2AllVDataDes.rdispls = reinterpret_cast<void *>(&displs[0]);
     }
-
     comm->CovertToCurrentCollOperator(opTag, opParams, OpMode::OPBASE);
 }
 
 void Mc2Compont::FillCollOperator(const Mc2CommConfig &config)
 {
-    CollOpParams opParams;
-    opParams.opType         = MC2OpType(static_cast<AicpuComType>(config.opType));
-    opParams.reduceOp       = MC2ReduceType(static_cast<HcclReduceOp>(config.reduceType));
-    opParams.dataType       = MC2DataType(static_cast<HcclDataType>(config.dataType));
-    opParams.outputDataType = MC2DataType(static_cast<HcclDataType>(config.outputDataType));
-    opParams.count          = dataCount;
-    opParams.sendBuf        = reinterpret_cast<void *>(inputMem->GetAddr());
-    opParams.recvBuf        = reinterpret_cast<void *>(inputMem->GetAddr());
-    if (opParams.opType == OpType::ALLTOALL) {
-        opParams.all2AllDataDes.sendType  = opParams.dataType;
-        opParams.all2AllDataDes.recvType  = opParams.outputDataType;
-        opParams.all2AllDataDes.sendCount = dataCount;
-        opParams.all2AllDataDes.recvCount = dataCount;
-    }
-    std::string opTag       = comm->GetId();
+    OpType opType = MC2OpType(static_cast<AicpuComType>(config.opType));
+    ReduceOp reduceOp = MC2ReduceType(static_cast<HcclReduceOp>(config.reduceType));
+    DataType dataType = MC2DataType(static_cast<HcclDataType>(config.dataType));
+    DataType outputDataType = MC2DataType(static_cast<HcclDataType>(config.outputDataType));
+    FillCollOperator(opType, reduceOp, dataType, outputDataType);
+}
 
-    if (opParams.opType == OpType::ALLTOALLV) {
-        opParams.all2AllVDataDes.sendType = opParams.dataType;
-        opParams.all2AllVDataDes.recvType = opParams.outputDataType;
-        dataCounts.resize(comm->GetRankSize());
-        displs.resize(comm->GetRankSize());
-        u64 countSum = 0;
-        for (u32 i = 0; i < comm->GetRankSize(); i++) {
-            dataCounts.at(i) = 1;
-            displs.at(i) = countSum++;
-        }
-        opParams.all2AllVDataDes.sendCounts = reinterpret_cast<void *>(&dataCounts[0]);
-        opParams.all2AllVDataDes.recvCounts = reinterpret_cast<void *>(&dataCounts[0]);
-        opParams.all2AllVDataDes.sdispls = reinterpret_cast<void *>(&displs[0]);
-        opParams.all2AllVDataDes.rdispls = reinterpret_cast<void *>(&displs[0]);
-    }
-
-    comm->CovertToCurrentCollOperator(opTag, opParams, OpMode::OPBASE);
+void Mc2Compont::FillCollOperatorV2(const Mc2CcTilingInner &config)
+{
+    OpType opType = MC2OpType(static_cast<AicpuComType>(config.opType));
+    ReduceOp reduceOp = MC2ReduceType(static_cast<HcclReduceOp>(config.reduceType));
+    DataType dataType = MC2DataType(static_cast<HcclDataType>(config.srcDataType));
+    DataType outputDataType = MC2DataType(static_cast<HcclDataType>(config.dstDataType));
+    FillCollOperator(opType, reduceOp, dataType, outputDataType);
 }
 
 void Mc2Compont::SaveMc2DfxTaskInfo(const CcuTaskParam& ccuTaskParam, uint64_t execId) const

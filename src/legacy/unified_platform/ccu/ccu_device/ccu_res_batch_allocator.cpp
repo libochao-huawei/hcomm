@@ -120,14 +120,12 @@ HcclResult CcuResBatchAllocator::PreAllocBlockRes()
                 "will not pre-allocate block resource.", __func__, devLogicId, i);
             continue;
         }
-
         uint32_t blockNum = GetPreAllocatedMaxBlockNum(i);
         const std::array<std::pair<ResType, uint32_t>, BLOCK_RES_TYPE_NUM> blockResReqs = {
             std::make_pair(ResType::LOOP, blockNum * resStrategys[i].loopNum),
             std::make_pair(ResType::MS, blockNum * resStrategys[i].msNum),
             std::make_pair(ResType::CKE, blockNum * resStrategys[i].ckeNum),
         };
-
         for (auto &resReq : blockResReqs) {
             const uint32_t reqNum = resReq.second;
             if (reqNum == 0) {
@@ -136,7 +134,6 @@ HcclResult CcuResBatchAllocator::PreAllocBlockRes()
                     devLogicId, i, resReq.first.Describe().c_str());
                 continue;
             }
-
             vector<ResInfo> tempResInfos;
             auto ret = ccuComponent.AllocRes(i, resReq.first, reqNum, true, tempResInfos);
             if (ret != HcclResult::HCCL_SUCCESS) {
@@ -145,11 +142,14 @@ HcclResult CcuResBatchAllocator::PreAllocBlockRes()
                     __func__, devLogicId, i, resReq.first.Describe().c_str(), reqNum);
                 return ret;
             }
-
             const bool AxDie0MsFlag = (isAX && i == 0 && resReq.first == ResType::MS);
-
             vector<BlockInfo> tempBlocks;
             const uint32_t startId = tempResInfos[0].startId;
+            if (blockNum == 0) {
+                HCCL_ERROR("[CcuResBatchAllocator][%s] failed, devLogicId[%d] dieId[%u], "
+                           "the blockNum is zero.", __func__, devLogicId, i);
+                return HcclResult::HCCL_E_INTERNAL;
+            }
             for (uint32_t k = 0; k < blockNum; k++) {
                 BlockInfo blockInfo;
                 blockInfo.id        = k;
@@ -164,7 +164,6 @@ HcclResult CcuResBatchAllocator::PreAllocBlockRes()
             resBlocks[i].emplace_back(tempBlocks);
         }
     }
-
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -253,6 +252,9 @@ static HcclResult HandleBlockRes(const uintptr_t handleKey, const uint32_t num,
     const uint32_t blockSize, std::vector<BlockInfo> &blocks,
     std::vector<ResInfo> &resInfos)
 {
+    if (blockSize == 0) {
+        return HcclResult::HCCL_E_INTERNAL;
+    }
     uint32_t blockNum     = 1 + (num - 1) / blockSize;
     uint32_t blockMaxSize = blocks.size();
     uint32_t blockStartId = blockMaxSize;
@@ -469,6 +471,9 @@ HcclResult CcuResBatchAllocator::TryAllocResHandle(const uintptr_t handleKey,
 static void ReleaseBlockRes(const uint32_t blockSize, std::vector<BlockInfo> &blocks,
     std::vector<ResInfo> &resInfos)
 {
+    if (blockSize == 0) {  // 除零保护
+        return;
+    }
     uint32_t startId = resInfos[0].startId;
     uint32_t num     = resInfos[0].num;
     uint32_t startBlockId = (startId - blocks[0].startId) / blockSize;
