@@ -794,8 +794,8 @@ HcclResult RecordService(void *args, uint64_t argsSizeByte)
 
     hccl::LocalNotify *const dstNotifyPtr = dstAicpuTsThread->GetNotify(dstNotifyIdx);
     if (dstNotifyPtr == nullptr) {
-        HCCL_ERROR("[%s] FAIL. dstAicpuTsThread->GetNotify failed for dstNotifyIdx[%u].", __func__, dstNotifyIdx);
-        return HCCL_E_PARA;
+        HCCL_ERROR("[%s] FAIL. dstNotifyIdx[%u] is nullptr.", __func__, dstNotifyIdx);
+        return HCCL_E_PTR;
     }
     HcclSignalInfo notifyInfo{};
     CHK_RET(dstNotifyPtr->GetNotifyData(notifyInfo));
@@ -831,8 +831,8 @@ HcclResult WaitService(void *args, uint64_t argsSizeByte)
 
     hccl::MemNotify *const memNotify = cpuThread->GetMemNotify(notifyIdx);
     if (memNotify == nullptr) {
-        HCCL_ERROR("[%s] FAIL. cpuThread->GetMemNotify failed for notifyIdx[%u].", __func__, notifyIdx);
-        return HCCL_E_PARA;
+        HCCL_ERROR("[%s] FAIL. notifyIdx[%u] is nullptr", __func__, notifyIdx);
+        return HCCL_E_PTR;
     }
     CHK_RET(memNotify->Wait());
 
