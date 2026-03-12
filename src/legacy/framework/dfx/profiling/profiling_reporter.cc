@@ -135,5 +135,13 @@ void ProfilingReporter::CallReportMc2CommInfo(const Stream &kfcStream, Stream &s
 {
     profilingHandler_->ReportHcclMC2CommInfo(kfcStream, stream, aicpuStreams, id, myRank, rankSize, rankInParentComm);
 }
+
+void ProfilingReporter::CallReportMc2CommInfo(const u32 kfcStreamId,
+                                            const std::vector<u32> &aicpuStreamsId, const std::string &id,
+                                            RankId myRank, u32 rankSize, RankId rankInParentComm) const
+{
+    profilingHandler_->ReportHcclMC2CommInfo(kfcStreamId, aicpuStreamsId, id,
+                                            myRank, rankSize, rankInParentComm);
+}
  
 } // namespace Hccl

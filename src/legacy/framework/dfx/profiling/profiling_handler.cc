@@ -935,6 +935,36 @@ void ProfilingHandler::ReportHcclMC2CommInfo(const Stream &kfcStream, Stream &st
     }
 }
 
+void ReportHcclMC2CommInfo(const u32 kfcStreamId,
+                           const std::vector<u32> &aicpuStreamsId, const std::string &id,
+                                RankId myRank, u32 rankSize, RankId rankInParentComm)
+{
+    ProfilingDeviceCommResInfo hcclMc2Info;
+    hcclMc2Info.groupName = GetProfHashId(id.c_str(),id.length());
+    hcclMc2Info.rankSize = rankSize;
+    hcclMc2Info.rankId = myRank;
+    hcclMc2Info.usrRankId = rankInParentComm;
+    hcclMc2Info.aicpuKfcStreamId = static_cast<uint32_t>(kfcStreamId);
+    hcclMc2Info.reserve = 0;
+    
+    const uint32_t ONCE_REPORT_STREAM_NUM_MAX = 8;
+    uint32_t reportId = 0;
+    for(uint32_t streamIndex = 0; streamIndex < aicpuStreamsId.size(); streamIndex++) {
+        HCCL_INFO("streamIndex:[%u], reportId:[%d], streamId:[%u]", streamIndex, reportId, aicpuStreamsId[streamIndex]);
+        hcclMc2Info.commStreamIds[reportId++] = aicpuStreamsId[streamIndex];
+        if (reportId == ONCE_REPORT_STREAM_NUM_MAX) {
+            hcclMc2Info.commStreamSize = reportId;
+            ReportHcclMC2CommInfo(DlProfFunction::GetInstance().dlMsprofSysCycleTime(), &hcclMc2Info, sizeof(hcclMc2Info));
+            reportId = 0;
+        }
+    }
+    if (reportId > 0) {
+        hcclMc2Info.commStreamSize = reportId;
+        ReportHcclMC2CommInfo(DlProfFunction::GetInstance().dlMsprofSysCycleTime(), &hcclMc2Info,
+        sizeof(hcclMc2Info));
+        reportId = 0;
+    }
+}
 void ProfilingHandler::ReportMc2AddtionInfo(uint64_t timeStamp, const void *data, int len)
 {
     MsprofAdditionalInfo reporterData{};
