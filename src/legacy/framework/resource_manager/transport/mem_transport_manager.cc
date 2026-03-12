@@ -60,9 +60,7 @@ std::vector<RmaConnection *> MemTransportManager::GetConnVec(const std::string &
     return result;
 }
 
-void MemTransportManager::CreateOpbasedUbMemTransport(BaseMemTransport::CommonLocRes &locRes,
-                                               BaseMemTransport::Attribution &attr, const LinkData &linkData,
-                                               const Socket &socket)
+void MemTransportManager::CreateMemTransportResource(const LinkData &linkData)
 {
     auto topicIdCntNotifyVecMap = comm->GetConnLocalCntNotifyManager().GetTopicIdCntNotifyMap(linkData.GetLocalPort());
     CntNotifyResHelper                tool;
@@ -72,6 +70,13 @@ void MemTransportManager::CreateOpbasedUbMemTransport(BaseMemTransport::CommonLo
 
     // DFX：注册transportCallBack, 用于信息保存
     auto transportCallBack = MemTransportCallback(linkData, comm->GetMirrorTaskManager());
+}
+
+void MemTransportManager::CreateOpbasedUbMemTransport(BaseMemTransport::CommonLocRes &locRes,
+                                                BaseMemTransport::Attribution &attr, const LinkData &linkData,
+                                                const Socket &socket)
+{
+    CreateMemTransportResource(linkData);
     auto ubMemTransport = make_unique<UbMemTransport>(locRes, attr, linkData, socket, rdmaHandle, locCntNotifyRes,
         transportCallBack);
     opTagOpbasedMap[linkData] = std::move(ubMemTransport);
@@ -81,14 +86,8 @@ void MemTransportManager::CreateOffloadUbMemTransport(const string &opTag, BaseM
                                                BaseMemTransport::Attribution &attr, const LinkData &linkData,
                                                const Socket &socket)
 {
-    auto topicIdCntNotifyVecMap = comm->GetConnLocalCntNotifyManager().GetTopicIdCntNotifyMap(linkData.GetLocalPort());
-    CntNotifyResHelper                tool;
-    BaseMemTransport::LocCntNotifyRes locCntNotifyRes = tool.GetCntNotifyRes(topicIdCntNotifyVecMap);
-    HCCL_INFO("locCntNotifyRes=%s, linkData=%s", locCntNotifyRes.Describe().c_str(), linkData.Describe().c_str());
-    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
-
-    // DFX：注册transportCallBack, 用于信息保存
-    auto transportCallBack = MemTransportCallback(linkData, comm->GetMirrorTaskManager());
+ 
+    CreateMemTransportResource(linkData);
     auto ubMemTransport = make_unique<UbMemTransport>(locRes, attr, linkData, socket, rdmaHandle, locCntNotifyRes,
         transportCallBack);
     opTagOffloadMap[opTag][linkData] = std::move(ubMemTransport);
@@ -840,14 +839,7 @@ void MemTransportManager::CreateOneSidedUbMemTransport(BaseMemTransport::CommonL
                                                BaseMemTransport::Attribution &attr, const LinkData &linkData,
                                                const Socket &socket)
 {
-    auto topicIdCntNotifyVecMap = comm->GetConnLocalCntNotifyManager().GetTopicIdCntNotifyMap(linkData.GetLocalPort());
-    CntNotifyResHelper                tool;
-    BaseMemTransport::LocCntNotifyRes locCntNotifyRes = tool.GetCntNotifyRes(topicIdCntNotifyVecMap);
-    HCCL_INFO("locCntNotifyRes=%s, linkData=%s", locCntNotifyRes.Describe().c_str(), linkData.Describe().c_str());
-    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
-
-    // DFX：注册transportCallBack, 用于信息保存
-    auto transportCallBack = MemTransportCallback(linkData, comm->GetMirrorTaskManager());
+    CreateMemTransportResource(linkData);
     auto ubMemTransport = make_unique<UbMemTransport>(locRes, attr, linkData, socket, rdmaHandle, locCntNotifyRes,
         transportCallBack);
     HCCL_INFO("[CreateOneSidedUbMemTransport] Add oneSidedMap");

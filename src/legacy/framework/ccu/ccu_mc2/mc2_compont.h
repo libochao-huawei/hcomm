@@ -50,6 +50,7 @@ private:
     void     GenerateAlgoTemplatesV2(const Mc2InitTilingInner *mc2TilingPtr, std::unordered_set<uint64_t> &algoTemplateRequire);
     void     FillCollOperator(const Mc2CommConfig &config);
     void     FillCollOperatorV2(const Mc2CcTilingInner &config);
+    void     FillCollOperator(const OpType &opType, const ReduceOp &reduceOp, const DataType &dataType, const DataType &outputDataType);
     uint64_t GetTemplateSignature(const Mc2CommConfig &config) const;
     uint64_t GetTemplateSignatureV2(const Mc2CcTilingInner &config) const;
     void     SaveMc2DfxTaskInfo(const CcuTaskParam& ccuTaskParam, uint64_t execId) const;
