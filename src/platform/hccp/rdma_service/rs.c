@@ -34,6 +34,7 @@
 #include "ssl_adp.h"
 #include "rs_socket.h"
 #include "dl_ibverbs_function.h"
+#include "dl_nda_function.h"
 #include "dl_hal_function.h"
 #include "rs_drv_rdma.h"
 #include "file_opt.h"
@@ -915,8 +916,14 @@ STATIC int RsGetIbCtxAndRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb,
             } else {
                 ret = RsGetDevRdevIndex(rdevCb, rdevIndex, i);
             }
-            if (ret) {
+            if (ret != 0) {
                 hccp_err("get index failed, ret:%d", ret);
+                RsIbvCloseDevice(ibCtxTmp);
+                return ret;
+            }
+            ret = RsIbvQueryDevice(ibCtxTmp, &rdevCb->deviceAttr);
+            if (ret != 0) {
+                hccp_err("query device failed, ret:%d", ret);
                 RsIbvCloseDevice(ibCtxTmp);
                 return ret;
             }
@@ -1057,6 +1064,8 @@ STATIC int RsRdevCbInit(struct rdev rdevInfo, struct RsRdevCb *rdevCb, struct rs
         hccp_err("rs_get_sq_depth_and_qp_max_num failed, ret[%d], rdevIndex[%u]", ret, *rdevIndex);
         goto unmmap_ai_db;
     }
+
+    rdevCb->ibCtxEx = RsNdaIbvOpenExtend(rdevCb->ibCtx);
 
     return 0;
 
@@ -1333,6 +1342,8 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
 #endif
 
     RsIbvDeallocPd(rdevCb->ibPd);
+
+    (void)RsNdaIbvCloseExtend(rdevCb->ibCtxEx);
 
     RsIbvCloseDevice(rdevCb->ibCtx);
 

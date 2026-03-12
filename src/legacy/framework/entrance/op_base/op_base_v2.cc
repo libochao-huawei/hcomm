@@ -1443,7 +1443,7 @@ HcclResult HcclDevMemAcquireV2(HcclComm comm, const char *memTag, uint64_t *size
         char tmpMemTag[MAX_MEM_TAG_SIZE];
         s32 ret = strcpy_s(tmpMemTag, MAX_MEM_TAG_SIZE, memTag);
         if (ret != EOK) {
-            HCCL_ERROR("[HcclDevMemAcquire] strcpy_s memTag failed! result %u, the memTag len must be less than %u", ret, MAX_MEM_TAG_SIZE);
+            HCCL_ERROR("[HcclDevMemAcquire] strcpy_s memTag failed! result %d, the memTag len must be less than %u", ret, MAX_MEM_TAG_SIZE);
             return HCCL_E_PARA;
         }
         memTagStr = std::string(tmpMemTag);
@@ -1941,7 +1941,7 @@ HcclResult HcclSendV2(
     u32 modelId = 0;
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
-    const std::string tag = "Send_" + communicator->GetId();
+    const std::string tag = "SendRecv_" + communicator->GetId();
     
     CHK_RET(HcomCheckDataTypeV2(dataType));
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
@@ -1984,7 +1984,7 @@ HcclResult HcclSendV2(
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllGatherVV2:success,take time: " +
+        std::string endInfo = "HcclSendV2:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(hcclSendStackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }
@@ -2001,7 +2001,7 @@ HcclResult HcclRecvV2(
     u32 modelId = 0;
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
-    const std::string tag = "Recv_" + communicator->GetId();
+    const std::string tag = "SendRecv_" + communicator->GetId();
     
     CHK_RET(HcomCheckDataTypeV2(dataType));
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), count, dataType, stream), tag.c_str());
@@ -2044,7 +2044,7 @@ HcclResult HcclRecvV2(
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllGatherVV2:success,take time: " +
+        std::string endInfo = "HcclRecvV2:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(hcclRecvStackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }
@@ -2107,7 +2107,7 @@ HcclResult HcclReduceScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount,
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllGatherVV2:success,take time: " +
+        std::string endInfo = "HcclReduceScatterV2:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(stackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }
@@ -2202,7 +2202,7 @@ HcclResult HcclReduceScatterVV2(void *sendBuf, void *sendCounts, void *sendDispl
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllGatherVV2:success,take time: " +
+        std::string endInfo = "HcclReduceScatterVV2:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(stackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }
@@ -2259,7 +2259,7 @@ HcclResult HcclBatchSendRecvV2(HcclSendRecvItem *sendRecvInfo, uint32_t itemNum,
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllGatherVV2:success,take time: " +
+        std::string endInfo = "HcclBatchSendRecvV2:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(stackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }

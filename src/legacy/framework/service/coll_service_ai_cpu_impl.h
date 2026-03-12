@@ -76,7 +76,8 @@ private:
     void AllocOpMemAlltoAllVC(const CollOperator &op);
     void AllocOpMemAlltoAllV(const CollOperator &op);
     void AllocOpMemBatchSendRecv(const CollOperator &op);
-    u32 GetRemoteRankIdsHashValue(const CollOperator &op);
+
+    u32 GetRemoteRankIdsHashValue(const CollOperator &op) const;
     u64 CalcOpDynamicDataSize(const CollOperator &op, const OpType &opType, const u32 &rankSize);
     HcclResult FillBatchSendRecvData(const CollOperator &op);
     HcclResult FillAllToAllvData(const CollOperator &op);

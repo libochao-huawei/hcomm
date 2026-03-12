@@ -94,6 +94,7 @@ protected:
         std::map<AHCConcOpType, TemplateType> &ahcAlgOption, const AHCAlgSelectParam &ahcAlgSelectParam);
 
     bool IsNeedStrictMode(const OpParam& param);
+    bool CheckStrictCondition(const OpParam& param);
 
     AlgType algType_;    // 算法类型
     TopoType topoType_;

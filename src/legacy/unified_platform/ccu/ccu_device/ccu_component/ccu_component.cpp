@@ -163,7 +163,6 @@ static HcclResult FindOneUsableEid(const uint32_t devLogicId, const uint8_t dieI
 
         const RdmaHandle rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, eidInfo.ipAddress);
         const bool rtpEnable = rdmaHandleMgr.GetRtpEnable(rdmaHandle);
-
         if (rtpEnable) {
             feId = eidInfo.funcId;
             ipAddr = eidInfo.ipAddress;

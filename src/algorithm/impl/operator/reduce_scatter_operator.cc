@@ -408,16 +408,13 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
                 && !multiModuleDiffDeviceNumMode_;
 
     if (IsNeedStrictMode(param)) {
-        if (multiModuleDiffDeviceNumMode_ || multiSuperPodDiffDeviceNumMode_ || multiSuperPodDiffServerNumMode_ 
-            || param.reduceType == HCCL_REDUCE_PROD || param.DataDes.dataType == HCCL_DATA_TYPE_FP64
-            || GetExternalInputInterHccsDisable()) {
-            HCCL_ERROR("[ReduceScatterOperator][SelectAlgfor91093] not support DETERMINISTIC_STRICT mode.");
-            return HCCL_E_NOT_SUPPORT;
-        } else {
-            algName = "ReduceScatterOrderPreservedFor91093Executor";
-            HCCL_INFO("[SelectAlgfor91093] reduce_scatter SelectAlgfor91093 algName [%s].", algName.c_str());
-            return HCCL_SUCCESS;
-        }
+        CHK_PRT_RET(!CheckStrictCondition(param), 
+            HCCL_ERROR("[ReduceScatterOperator][SelectAlgfor91093] not support DETERMINISTIC_STRICT mode."),
+            HCCL_E_NOT_SUPPORT);
+
+        algName = "ReduceScatterOrderPreservedFor91093Executor";
+        HCCL_INFO("[SelectAlgfor91093] reduce_scatter SelectAlgfor91093 algName [%s].", algName.c_str());
+        return HCCL_SUCCESS;
     }
 
     if (isSupportAivDeter) {

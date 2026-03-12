@@ -29,6 +29,7 @@
 #include "stub_ssl.h"
 #endif
 #include "ascend_hal_external.h"
+#include "ibv_extend.h"
 #ifndef HNS_ROCE_LLT
 #include "dlog_pub.h"
 #endif
@@ -516,10 +517,12 @@ struct RsRdevCb {
 
     pthread_mutex_t rdevMutex;
 
+    struct ibv_device_attr deviceAttr;
     struct ibv_mr *notifyMr;
     struct ibv_pd *ibPd;
     struct ibv_context *ibCtx;
     struct ibv_device **devList;
+    struct ibv_context_extend *ibCtxEx;
 
     struct RsListHead qpList;
     struct RsListHead typicalMrList;

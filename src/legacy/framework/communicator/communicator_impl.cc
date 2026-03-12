@@ -74,6 +74,7 @@ constexpr const char* DPUTAG = "DPUTAG";
 constexpr u64 INDEPENDENT_OP_BUFFER_SIZE_TIMES = 2; //自定义算子buffer倍数
 constexpr uint8_t DEVICE_SIGNAL_SECOND = 2;
 constexpr uint8_t DEVICE_SIGNAL_THIRD = 3;
+constexpr uint32_t TEMP_DEV_TYPE_DPU = 0; // 临时适配，后续rts接口上库之后使用rts的定义
 
 struct DpuKernelLaunchParam {
     u64         memorySize;
@@ -498,7 +499,7 @@ static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const Tas
     comm.GetMirrorTaskManager().AddTaskInfo(taskInfo);
 }
 
-void CommunicatorImpl::FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams)
+void CommunicatorImpl::FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams) const
 {
     std::vector<uint64_t> args;
     CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, args);
@@ -779,8 +780,8 @@ HcclResult CommunicatorImpl::CheckCommStatus()
 HcclResult CommunicatorImpl::AllocCollOpResource(const CollOpParams &opParams, void **addr)
 {
     try {
-        if (opParams.commEngine != HcclAccelerator::AICPU && opParams.commEngine != HcclAccelerator::AICPU_TS) {
-            HCCL_ERROR("[CommunicatorImpl][%s]It's support aicpu unfold on mc2. input is %s", __func__, opParams.commEngine.Describe().c_str());
+        if (opParams.commEngine != HcclAccelerator::AICPU_TS) {
+            HCCL_ERROR("[CommunicatorImpl][%s] Only AICPU_TS is supported for aicpu unfold on mc2. input is %s", __func__, opParams.commEngine.Describe().c_str());
  	        return HCCL_E_NOT_SUPPORT;
  	    }
         CHK_RET(CheckCommStatus());
@@ -939,7 +940,12 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         SnapShotParser::GetInstance().SetIsNeedLoadOp(false);
         if (rankSize == 1) {
             HCCL_WARNING("[CommunicatorImpl][%s] ranksize == 1, enter SingleRankProc", __func__);
+            TraceStartInfo(HrtGetStreamId(stream), opParams, OpMode::OFFLOAD);
+            TraceOpInfo(opParams);
+            HcclUs startut = std::chrono::steady_clock::now();
             SingleRankProc(opParams, stream);
+            HcclUs endut = std::chrono::steady_clock::now();
+            TraceEndInfo(startut, endut, opParams);
             return HcclResult::HCCL_SUCCESS;
         }
         uint64_t beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
@@ -1325,7 +1331,7 @@ void CommunicatorImpl::InitRankGraph(const RankTableInfo &ranktable)
 HcclResult CommunicatorImpl::InitDeviceListenPort(u32 &linstenPort) const
 {
     std::vector<LinkData> fullLinks = GetFullMeshLinks();
-    GetSocketManager().ServerInitAll(fullLinks, linstenPort);
+    TRY_CATCH_RETURN(GetSocketManager().ServerInitAll(fullLinks, linstenPort));
     return HCCL_SUCCESS;
 }
 
@@ -2399,7 +2405,7 @@ HcclResult CommunicatorImpl::DestroyDpuKernelResource()
     }
     // reset DPU kernel 线程
     HCCL_INFO("Start to reset DPU device");
-    if (rtResetXpuDevice(RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
+    if (HrtResetXpuDevice(TEMP_DEV_TYPE_DPU, 0) != HCCL_SUCCESS) {
         HCCL_ERROR("ResetXpuDevice Failed");
         return HCCL_E_RUNTIME;
     }
@@ -2448,34 +2454,37 @@ HcclResult CommunicatorImpl::WaitDpuKernelThreadTerminate()
 
 HcclResult CommunicatorImpl::NotifyAicpuDestroyComm()
 {
-    if (isAicpuKernelLaunched) {
-        if (kfcControlTransferH2D != nullptr) {
-            KfcCommand opCmd = KfcCommand::DESTROY_AICPU_COMM;
-            HCCL_INFO("[NotifyAicpuDestroyComm] send KfcCommand[%d] begin, which is DESTROY_AICPU_COMM.", opCmd);
-            CHK_RET(kfcControlTransferH2D->Put(0, sizeof(KfcCommand), reinterpret_cast<uint8_t *>(&opCmd)));
-            HCCL_INFO("[NotifyAicpuDestroyComm] send KfcCommand[%d] success, which is DESTROY_AICPU_COMM.", opCmd);
-            KfcExecStatus opInfo;
-            auto          timeout   = std::chrono::milliseconds(WAIT_CMD_TIMEOUT);
-            auto          startTime = std::chrono::steady_clock::now();
-            while (true) {
-                CHK_RET(kfcStatusTransferD2H->Get(0, sizeof(KfcExecStatus), reinterpret_cast<uint8_t *>(&opInfo)));
-                if (opInfo.kfcStatus == KfcStatus::DESTROY_AICPU_COMM_DONE) {
-                    HCCL_INFO("[NotifyAicpuDestroyComm] get KfcStatus[%d], which is DESTROY_AICPU_COMM_DONE",
-                               opInfo.kfcStatus);
-                    return HcclResult::HCCL_SUCCESS;
-                } else {
-                    if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-                        HCCL_WARNING("[NotifyAicpuDestroyComm] Wait suspend response status timeout[%u ms] and get the "
-                                     "opExecStatus is [%u].",
-                                     WAIT_CMD_TIMEOUT, opInfo.kfcStatus);
+    if (!isAicpuKernelLaunched) {
+        HCCL_WARNING("[%s] isAicpuKernelLaunched is false", __func__);
+        return HcclResult::HCCL_SUCCESS;
+    }
 
-                        return HcclResult::HCCL_E_TIMEOUT;
-                    }
-                    continue;
-                }
-            }
+    if (kfcControlTransferH2D == nullptr) {
+        HCCL_WARNING("[%s] kfcControlTransferH2D is null", __func__);
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    KfcCommand opCmd = KfcCommand::DESTROY_AICPU_COMM;
+    HCCL_INFO("[%s] send KfcCommand[%d] begin, which is DESTROY_AICPU_COMM.", __func__, opCmd);
+    CHK_RET(kfcControlTransferH2D->Put(0, sizeof(KfcCommand), reinterpret_cast<uint8_t *>(&opCmd)));
+    HCCL_INFO("[%s] send KfcCommand[%d] success, which is DESTROY_AICPU_COMM.", __func__, opCmd);
+    KfcExecStatus opInfo;
+    auto          timeout   = std::chrono::milliseconds(WAIT_CMD_TIMEOUT);
+    auto          startTime = std::chrono::steady_clock::now();
+    while (true) {
+        CHK_RET(kfcStatusTransferD2H->Get(0, sizeof(KfcExecStatus), reinterpret_cast<uint8_t *>(&opInfo)));
+        if (opInfo.kfcStatus == KfcStatus::DESTROY_AICPU_COMM_DONE) {
+            HCCL_INFO("[%s] get KfcStatus[%d], which is DESTROY_AICPU_COMM_DONE", __func__, opInfo.kfcStatus);
+            return HcclResult::HCCL_SUCCESS;
+        }
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            HCCL_WARNING("[%s] Wait suspend response status timeout[%u ms] and get the "
+                            "opExecStatus is [%u].", __func__,
+                            WAIT_CMD_TIMEOUT, opInfo.kfcStatus);
+            return HcclResult::HCCL_E_TIMEOUT;
         }
     }
+
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -2932,7 +2941,7 @@ HcclResult CommunicatorImpl::AcceleratorFallback()
 HcclResult CommunicatorImpl::GetCacheMap(AivOpCacheArgs& opCacheParam , std::shared_ptr<InsQueue>& tempInsQue)
 {
     if (hcclCacheMap_.size() > CACHEMAP_MAXSIZE) {
-        size_t clearCount = CACHEMAP_MAXSIZE * CACHEMAP_CLEARPERCENT;
+        size_t clearCount = static_cast<size_t>(CACHEMAP_MAXSIZE * CACHEMAP_CLEARPERCENT);
         for (auto it = hcclCacheMap_.begin(); clearCount > 0 && it != hcclCacheMap_.end(); clearCount--) {
             it = hcclCacheMap_.erase(it);
         }
@@ -3184,7 +3193,7 @@ HcclResult CommunicatorImpl::InitAndLaunchDpuKernel()
         HCCL_ERROR("[CommunicatorImpl::%s] Get Npu Ctx Failed", __func__);
         return HCCL_E_INTERNAL;
     }
-    if (rtSetXpuDevice(RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
+    if (HrtSetXpuDevice(TEMP_DEV_TYPE_DPU, 0) != HCCL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::%s] Switch to Dpu Ctx Failed", __func__);
         return HCCL_E_INTERNAL;
     }

@@ -825,6 +825,11 @@ int ibv_dereg_mr(struct ibv_mr *mr)
 	return 0;
 }
 
+int ibv_query_device(struct ibv_context *context, struct ibv_device_attr *device_attr)
+{
+    return 0;
+}
+
 #undef ibv_query_port
 /**
  * ibv_query_port - Get port properties

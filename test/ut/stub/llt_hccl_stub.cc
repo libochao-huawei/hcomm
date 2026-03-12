@@ -5408,13 +5408,13 @@ const char *aclrtGetSocName()
     return "Ascend910";
 }
 
-ACL_FUNC_VISIBILITY aclError aclsysGetVersionStr(char* pkgNname, char* versionStr) 
+extern "C" ACL_FUNC_VISIBILITY aclError aclsysGetVersionStr(char* pkgNname, char* versionStr)
 {
     sal_memcpy(versionStr, sizeof("8.5.0"), "8.5.0", sizeof("8.5.0"));
-    return ACL_SUCCESS; 
+    return ACL_SUCCESS;
 }
 
-ACL_FUNC_VISIBILITY aclError aclsysGetVersionNum(char* pkgNname, int32_t* versionNum)
+extern "C" ACL_FUNC_VISIBILITY aclError aclsysGetVersionNum(char* pkgNname, int32_t* versionNum)
 {
     *versionNum = 80500;
     return ACL_SUCCESS;
