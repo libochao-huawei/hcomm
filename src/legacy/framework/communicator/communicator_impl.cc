@@ -2375,11 +2375,11 @@ MirrorTaskManager &CommunicatorImpl::GetMirrorTaskManager() const
 CommunicatorImpl::~CommunicatorImpl()
 {
     HCCL_INFO("[~CommunicatorImpl] start CommunicatorImpl destroy, commId[%s]", id.c_str());
-    if(isRegisterAicpuKernel)
+    if(isRegisterAicpuKernel_)
     {
-        (void)aclrtBinaryUnLoad(aicpuBinHandle);
-        aicpuFuncMap.clear();
-        isRegisterAicpuKernel = false;
+        (void)aclrtBinaryUnLoad(aicpuBinHandle_);
+        aicpuFuncMap_.clear();
+        isRegisterAicpuKernel_ = false;
     }
     (void)NotifyAicpuDestroyComm();
     ccuDrvHandle = nullptr;
@@ -3881,7 +3881,7 @@ ErrorMessageReport CommunicatorImpl::GetAicpuTaskException()
 
 void CommunicatorImpl::RegisterAicpuKernel()
 {
-    if(isRegisterAicpuKernel)
+    if(isRegisterAicpuKernel_)
     {
         HCCL_WARNING("[CommunicatorImpl::%s] has registered aicpu kernel, skip register again.", __func__);
         return;
@@ -3890,8 +3890,8 @@ void CommunicatorImpl::RegisterAicpuKernel()
     std::string jsonPath;
     GetKernelFilePath(jsonPath);
     jsonPath += "ccl_kernel.json";
-    LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, aicpuBinHandle);
-    isRegisterAicpuKernel = true;
+    LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, aicpuBinHandle_);
+    isRegisterAicpuKernel_ = true;
     HCCL_INFO("[CommunicatorImpl::%s] end, jsonPath[%s]", __func__, jsonPath.c_str());
 }
 
@@ -3899,14 +3899,14 @@ aclrtFuncHandle CommunicatorImpl::GetAicpuKernelFuncHandle(const char *kernelNam
 {
     aclrtFuncHandle funcHandle;
     auto kernelNameStr = std::string(kernelName);
-    if (aicpuFuncMap.find(kernelNameStr) != aicpuFuncMap.end()) {
-        funcHandle = aicpuFuncMap[kernelNameStr];
+    if (aicpuFuncMap_.find(kernelNameStr) != aicpuFuncMap_.end()) {
+        funcHandle = aicpuFuncMap_[kernelNameStr];
     } else {
-        aclError aclRet = aclrtBinaryGetFunction(aicpuBinHandle, kernelName, &funcHandle);
+        aclError aclRet = aclrtBinaryGetFunction(aicpuBinHandle_, kernelName, &funcHandle);
         if (aclRet != ACL_SUCCESS) {
             THROW<RuntimeApiException>(StringFormat("Call aclrtBinaryGetFunction failed, with ret[%d]", aclRet));
         }
-        aicpuFuncMap[kernelNameStr] = funcHandle;
+        aicpuFuncMap_[kernelNameStr] = funcHandle;
     }
     return funcHandle;
 }

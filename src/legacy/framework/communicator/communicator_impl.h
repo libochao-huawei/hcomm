@@ -489,9 +489,9 @@ private:
     CollOpParams                               curOpParams; // 当前算子参数
     std::map<std::pair<OpType, string>, std::pair<AcceleratorState, string>> 
         opAcceStateCache{}; // opType + algName --> acceleratorState + newAlgName
-    aclrtBinHandle aicpuBinHandle;
-    bool isRegisterAicpuKernel = false; // 表示aicpuBinHandle已经获取成功
-    std::unordered_map<std::string, aclrtFuncHandle> aicpuFuncMap;
+    aclrtBinHandle aicpuBinHandle_{nullptr};
+    bool isRegisterAicpuKernel_{false}; // 表示aicpuBinHandle已经获取成功
+    std::unordered_map<std::string, aclrtFuncHandle> aicpuFuncMap_;
 
     void InitCommonData(const CommParams &commParams);
     void InitCommonDataNotInitDevType(const CommParams &commParams, const HcclCommConfig &commConfig);
