@@ -349,7 +349,8 @@ int hal_get_driver_install_path(char *value_buf, size_t buf_size) {
             }
 
             // 复制value到缓冲区
-            if (strcpy_s(value_buf, buf_size, value)) {
+            errno_t ret = strcpy_s(value_buf, buf_size, value);
+            if (ret != 0) {
                 break;
             }
             value_buf[buf_size - 1] = '\0';  // 确保字符串结束

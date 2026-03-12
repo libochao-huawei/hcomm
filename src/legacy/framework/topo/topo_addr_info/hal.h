@@ -98,10 +98,6 @@ int get_server_id(char* server_id, size_t buf_size);
 
 int hal_get_driver_install_path(char *value_buf, size_t buf_size);
 
-#ifndef errno_t
-typedef int errno_t;
-#endif
-
 #ifdef __cplusplus
 }
 #endif
