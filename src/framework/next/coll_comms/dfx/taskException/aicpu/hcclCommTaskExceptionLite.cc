@@ -406,7 +406,7 @@ std::string HcclCommTaskExceptionLite::GetOpDataInfo(const Hccl::TaskInfo& taskI
     }
 
     const auto &opInfo = taskInfo.dfxOpInfo_;
-    return Hccl::StringFormat("index[%u], algTag[%s], count[%llu], reduceType[%s], src[0x%llx], dst[0x%llx], dataType[%s]",
+    return Hccl::StringFormat("opIndex[%u], algTag[%s], count[%llu], reduceType[%s], src[0x%llx], dst[0x%llx], dataType[%s]",
         opInfo->index_,
         opInfo->algTag_.c_str(),
         opInfo->op_.dataCount,
