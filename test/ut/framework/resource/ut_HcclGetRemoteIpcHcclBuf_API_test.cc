@@ -20,7 +20,7 @@ public:
     void SetUp() override
     {
         BaseInit::SetUp();
-        UT_USE_RANK_TABLE_910_1SERVER_1RANK;
+        UT_USE_RANK_TABLE_910_1SERVER_2RANK;
         UT_COMM_CREATE_DEFAULT(comm);
     }
     void TearDown() override
@@ -57,5 +57,14 @@ TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_ParamIsNullp
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     ret = HcclGetRemoteIpcHcclBuf(comm, 1, &addr, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_RemoteRankIsInvalid_Expect_ReturnIsHCCL_E_PTR)
+{
+    void *addr = nullptr;
+    uint64_t size = 0;
+    
+    HcclResult ret = HcclGetRemoteIpcHcclBuf(comm, 16, &addr, &size);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
