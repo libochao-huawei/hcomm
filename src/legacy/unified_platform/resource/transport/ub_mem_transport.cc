@@ -418,9 +418,17 @@ TransportStatus UbMemTransport::GetStatus()
             break;
         case UbStatus::SOCKET_OK:
             if (IsResReady()) {
-                ubStatus = UbStatus::SEND_DATA;
-                SendExchangeData();
+                ubStatus = UbStatus::SEND_SIZE;
+                SendDataSize();
             }
+            break;
+        case UbStatus::SEND_SIZE:
+            RecvDataSize();
+            ubStatus = UbStatus::RECV_SIZE;
+            break;
+        case UbStatus::RECV_SIZE:
+            SendExchangeData();
+            ubStatus = UbStatus::SEND_DATA;
             break;
         case UbStatus::SEND_DATA:
             RecvExchangeData();
@@ -454,7 +462,7 @@ TransportStatus UbMemTransport::GetStatus()
     return baseStatus;
 }
 
-void UbMemTransport::SendExchangeData()
+void UbMemTransport::SendDataSize()
 {
     notifyNum    = commonLocRes.notifyVec.size(); // 需要交换的notify数量
     bufferNum    = commonLocRes.bufferVec.size(); // 需要交换的buffer数量
@@ -475,10 +483,26 @@ void UbMemTransport::SendExchangeData()
     ConnVecPack(binaryStream);
 
     binaryStream.Dump(sendData);
+    u32 sendSize = sendData.size();
+
+    // 发送数据包尺寸
+    socket->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
+    HCCL_INFO("[UbMemTransport::%s] Send size[%u] of data success. [%zu] bytes sent.",
+        __func__, sendSize, sizeof(sendSize));
+}
+
+void UbMemTransport::RecvDataSize()
+{
+    // 接收数据包尺寸
+    socket->RecvAsync(reinterpret_cast<u8 *>(&exchangeDataSize), sizeof(exchangeDataSize));
+    HCCL_INFO("[UbMemTransport::%s] Receive size[%u] of data success. [%zu] bytes received.",
+        __func__, exchangeDataSize, sizeof(exchangeDataSize));
+}
+
+void UbMemTransport::SendExchangeData()
+{
     socket->SendAsync(reinterpret_cast<u8 *>(sendData.data()), sendData.size());
-    exchangeDataSize = sendData.size();
- 
-    HCCL_INFO("send data %s, size=%llu", GetLinkDescInfo().c_str(), exchangeDataSize);
+    HCCL_INFO("send data %s, size=%llu", GetLinkDescInfo().c_str(), sendData.size());
 }
 
 void UbMemTransport::RecvExchangeData()
@@ -569,12 +593,9 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
     u32 rmtNum;
     binaryStream >> rmtNum;
 
+    // 允许本端和远端交换内存数量不一致
     HCCL_INFO("unpack %s %s, locNum=%u, rmtNum=%u", type.Describe().c_str(), GetLinkDescInfo().c_str(), locNum,
                rmtNum);
-    if (rmtNum != locNum) {
-        MACRO_THROW(InvalidParamsException,
-                    StringFormat("%s, locNum=%u is not equal to rmtNum=%u", type.Describe().c_str(), locNum, rmtNum));
-    }
 
     for (u32 i = 0; i < rmtNum; i++) {
         u32 pos;

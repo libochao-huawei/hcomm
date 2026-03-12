@@ -258,6 +258,8 @@ TEST_F(UbMemTransportTest, UbMemTransport_get_status)
 
     UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
 
+    MOCKER_CPP(&UbMemTransport::SendDataSize).stubs().will(ignoreReturnValue());
+    MOCKER_CPP(&UbMemTransport::RecvDataSize).stubs();
     MOCKER_CPP(&UbMemTransport::SendExchangeData).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&UbMemTransport::RecvExchangeData).stubs();
     MOCKER_CPP(&UbMemTransport::RecvDataProcess).stubs().will(returnValue(true));
@@ -282,6 +284,14 @@ TEST_F(UbMemTransportTest, UbMemTransport_get_status)
     MOCKER(RaGetOneSocket).stubs()
         .with(any(), any())
         .will(returnValue(fakeParam));
+
+    transStatus = transport.GetStatus();
+    EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
+    EXPECT_EQ(transport.ubStatus, UbMemTransport::UbStatus::SEND_SIZE);
+
+    transStatus = transport.GetStatus();
+    EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
+    EXPECT_EQ(transport.ubStatus, UbMemTransport::UbStatus::RECV_SIZE);
 
     transStatus = transport.GetStatus();
     EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
@@ -313,6 +323,8 @@ TEST_F(UbMemTransportTest, UbMemTransport_get_status)
     transport.socket = &fakeSocket;
     GlobalMockObject::verify();
 
+    MOCKER_CPP(&UbMemTransport::SendDataSize).stubs().will(ignoreReturnValue());
+    MOCKER_CPP(&UbMemTransport::RecvDataSize).stubs();
     MOCKER_CPP(&UbMemTransport::SendExchangeData).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&UbMemTransport::RecvExchangeData).stubs();
     MOCKER_CPP(&UbMemTransport::RecvDataProcess).stubs().will(returnValue(false));
@@ -324,6 +336,14 @@ TEST_F(UbMemTransportTest, UbMemTransport_get_status)
         .will(returnValue(fakeParam));
 
     // 不需要发送finish
+    transStatus = transport.GetStatus();
+    EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
+    EXPECT_EQ(transport.ubStatus, UbMemTransport::UbStatus::SEND_SIZE);
+
+    transStatus = transport.GetStatus();
+    EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
+    EXPECT_EQ(transport.ubStatus, UbMemTransport::UbStatus::RECV_SIZE);
+
     transStatus = transport.GetStatus();
     EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
     EXPECT_EQ(transport.ubStatus, UbMemTransport::UbStatus::SOCKET_OK);
