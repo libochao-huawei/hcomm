@@ -20,6 +20,7 @@
 #include "ra_rs_comm.h"
 #include "ra_rs_err.h"
 #include "rs.h"
+#include "ra_peer_nda.h"
 #include "ra_peer.h"
 
 #define PAGE_SHIFT              12
@@ -866,11 +867,14 @@ STATIC int RaPeerSingleQpDestroy(struct RaQpHandle *qpPeer)
 
 int RaPeerQpDestroy(struct RaQpHandle *qpPeer)
 {
-    if (qpPeer->loopbackQpHandle == NULL) {
+    if (qpPeer->loopbackQpHandle != NULL) {
+        RaPeerLoopbackQpDestroy(qpPeer);
+        return 0;
+    } else if (qpPeer->directFlag != DIRECT_FLAG_NOTSUPP) {
+        return RaPeerNdaQpDestroy(qpPeer);
+    } else {
         return RaPeerSingleQpDestroy(qpPeer);
     }
-
-    RaPeerLoopbackQpDestroy(qpPeer);
 
     return 0;
 }

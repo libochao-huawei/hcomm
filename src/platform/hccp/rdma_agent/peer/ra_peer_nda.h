@@ -15,6 +15,9 @@
 #include "ra_comm.h"
 
 int RaPeerNdaGetDirectFlag(struct RaRdmaHandle *rdmaHandle, int *directFlag);
+int RaPeerNdaQpCreate(struct RaRdmaHandle *rdmaHandle, struct NdaQpInitAttr *attr, struct NdaQpInfo *info,
+    void **qpHandle);
+int RaPeerNdaQpDestroy(struct RaQpHandle *qpPeer);
 
 int RaPeerNdaCqCreate(struct RaRdmaHandle *rdmaHandle, struct NdaCqInitAttr *attr, struct NdaCqInfo *info,
     void **cqHandle);
