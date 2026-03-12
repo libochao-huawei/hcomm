@@ -614,6 +614,7 @@ HcclResult HcomDestroyGroup(const char *group)
         [&]() -> HcclResult {
             hcomInfo.hcomGroupMap.erase(group);
             CHK_RET(HcomDestroyGroupImplV2(group));
+            return HCCL_SUCCESS;
         }());
 #endif
     if (hcomInfo.pComm == nullptr &&
