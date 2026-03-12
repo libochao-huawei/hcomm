@@ -438,7 +438,7 @@ void NetInstance::Peer::AddNetInstance(const std::shared_ptr<NetInstance> &netIn
 
 void NetInstance::Peer::SetPortPortAddrMapLayer0(std::map<std::string, IpAddress> portAddrMap)
 {
-    portAddrMapLayer0_ = portAddrMap;
+    portAddrMapLayer0_ = std::move(portAddrMap);
 }
 
 std::map<std::string, IpAddress> NetInstance::Peer::GetPortAddrMapLayer0() const
