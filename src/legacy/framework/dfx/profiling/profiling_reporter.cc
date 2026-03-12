@@ -39,12 +39,21 @@ void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbase
     std::shared_ptr<DfxOpInfo> opInfo = mirrorTaskMgr_->GetCurrDfxOpInfo();
     if (opInfo == nullptr) {
         THROW<InternalException>("[ProfilingReporter]ProfilingReporter reportOp failed, opInfo is nullptr.");
+        HCCL_ERROR("[ProfilingReporter]ProfilingReporter reportOp failed, opInfo is nullptr.");
+        return;
     }
     uint64_t endTime   = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     OpType   opType    = opInfo->op_.opType;
-    CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(opInfo->comm_);
-    CHECK_NULLPTR(commImp, "[ProfilingReporter::ReportOp] commImp is nullptr!");
-    bool isAiCpu = commImp->GetOpAiCpuTSFeatureFlag();
+    bool isAiCpu = false;
+    // 新老流程判断
+    if (opInfo->isIndop_ == true) {
+        // TODO:暂时默认true
+        isAiCpu = true;
+    } else {
+        CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(opInfo->comm_);
+        CHECK_NULLPTR(commImp, "[]commImp is nullptr!");
+        isAiCpu = commImp->GetOpAiCpuTSFeatureFlag();
+    }
     // 上报op信息
     opInfo->endTime_ = endTime;
     profilingHandler_->ReportHcclOp(*opInfo, cachedReq);
