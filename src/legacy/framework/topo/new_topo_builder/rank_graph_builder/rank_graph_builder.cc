@@ -489,7 +489,7 @@ void RankGraphBuilder::UpdateTopoInstForMyRankOnly()
 }
 
 std::vector<std::shared_ptr<NetInstance::ConnInterface>> ConstructConnIFromPhyTopoConnIAndPortMap(
-        std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, std::unordered_map<std::string, IpAddress> portAddrMap, 
+        std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, std::map<std::string, IpAddress> portAddrMap, 
         const TopoType topoType, const u32 topoInstId) {
     std::vector<std::shared_ptr<NetInstance::ConnInterface>> netConnIFaces;
     std::set<string> phyPorts = phyConnIFace->GetPorts();
