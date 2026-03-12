@@ -294,25 +294,17 @@ static char* trim_whitespace(char *str) {
  * @brief 解析ascend_install.info文件，获取指定key的value
  * @param value_buf 存储结果的缓冲区
  * @param buf_size 缓冲区大小
- * @return 成功返回0，失败返回非0值
- *         -1: 文件打开失败
- *         -2: 内存分配失败
- *         -3: 未找到指定key
- *         -4: 缓冲区太小
+ * @return 成功返回0，失败返回-1值
  */
 int hal_get_driver_install_path(char *value_buf, size_t buf_size) {
     FILE *fp = NULL;
     char *line = NULL;
     size_t len = 0;
     ssize_t read;
-    int ret = -3;  // 默认未找到key
-
     // 参数合法性检查
     if (value_buf == NULL || buf_size == 0) {
-        fprintf(stderr, "Invalid buffer parameters\n");
-        return -4;
+        return -1;
     }
-
     // 初始化缓冲区
     value_buf[0] = '\0';
 
@@ -344,17 +336,14 @@ int hal_get_driver_install_path(char *value_buf, size_t buf_size) {
         if (strcmp(key, TARGET_KEY) == 0) {
             // 检查缓冲区大小
             if (strlen(value) + 1 > buf_size) {
-                ret = -4;
                 break;
             }
-
             // 复制value到缓冲区
             errno_t ret = strcpy_s(value_buf, buf_size, value);
             if (ret != 0) {
                 break;
             }
-            value_buf[buf_size - 1] = '\0';  // 确保字符串结束
-            ret = 0;
+            value_buf[buf_size - 1] = '\0';
             break;
         }
     }
@@ -366,5 +355,11 @@ int hal_get_driver_install_path(char *value_buf, size_t buf_size) {
     if (fp) {
         fclose(fp);
     }
-    return ret;
+    if (strlen(value_buf) == 0) {
+        // 默认值兜底
+        if (strcpy_s(value_buf, buf_size, DRIVER_DRFAULT_INSTALL_PATH) != 0) {
+            return -1;
+        }
+    }
+    return 0;
 }
