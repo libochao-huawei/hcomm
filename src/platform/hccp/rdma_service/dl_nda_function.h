@@ -39,5 +39,8 @@ const char *RsNdaIbvExtendGetVersion(uint32_t *major, uint32_t *minor, uint32_t 
 int RsNdaIbvExtendCheckVersion(uint32_t driverMajor, uint32_t driverMinor, uint32_t driverPatch);
 struct ibv_context_extend *RsNdaIbvOpenExtend(struct ibv_context *context);
 int RsNdaIbvCloseExtend(struct ibv_context_extend *context);
+struct ibv_qp_extend *RsNdaCreateQpExtend(struct ibv_context_extend *context,
+    struct ibv_qp_init_attr_extend *qpInitAttr);
+int RsNdaIbvDestroyQpExtend(struct ibv_context_extend *context, struct ibv_qp_extend *qpExtend);
 
 #endif // DL_NDA_FUNCTION_H
