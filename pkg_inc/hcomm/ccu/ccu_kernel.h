@@ -40,11 +40,20 @@
 #include "ccu_loopgroupcall_v1.h"
 #include "ccu_assist_pub.h"
 
+#include "ccu_data_res.h"
+
 using CcuKernelHandle = uint64_t;
 
 namespace hcomm {
 
 class CcuKernel : public CcuRep::CcuRepContext {
+
+// todo：新接口，后续调整
+public:
+    CcuResult VariableCreate(CcuVarHandle *varHandle);
+    CcuResult VariableAssign(CcuVarHandle varHandle, uint64_t immediate);
+    CcuResult VariableAddVarToVar(CcuVarHandle resVar, CcuVarHandle varA, CcuVarHandle varB);
+
 public:
     explicit CcuKernel(const CcuKernelArg &arg);
     CcuKernel() = default;
@@ -68,10 +77,9 @@ public:
     // 该友元函数用于在context类外创建Variable并被context内的资源管理器管理
     friend CcuRep::Variable CcuRep::CreateVariable(CcuRep::CcuRepContext *context);
 
-protected:
-    // 子类实现
-    virtual HcclResult Algorithm() = 0;
-    virtual std::vector<uint64_t> GeneArgs(const CcuTaskArg &arg) = 0;
+    // // 子类实现
+    // virtual HcclResult Algorithm() = 0;
+    // virtual std::vector<uint64_t> GeneArgs(const CcuTaskArg &arg) = 0;
 
     // 使用channel中的Variable
     HcclResult CreateVariable(const ChannelHandle channel, uint32_t varIndex, CcuRep::Variable *var) const;
@@ -167,10 +175,14 @@ private:
 
     CcuSharedResource exportedRes_{};
     CcuSharedResource importedRes_{};
+
+    std::unordered_map<CcuVarHandle, CcuRep::Variable> ccuVarMap_{};
 };
 
 // kernel构造函数的lambda函数
 using KernelCreator = std::function<std::unique_ptr<hcomm::CcuKernel>(const CcuKernelArg&)>;
+
+using KernelCreatorCStyle = std::function<CcuResult>(const CcuKernelArg&)>;
 
 } // namespace hcomm
 

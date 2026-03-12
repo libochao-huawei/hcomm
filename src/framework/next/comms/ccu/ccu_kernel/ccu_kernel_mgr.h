@@ -37,6 +37,22 @@ public:
     HcclResult UnRegister(const CcuKernelHandle kernelHandle);
     CcuKernel *GetKernel(const CcuKernelHandle kernelHandle);
 
+    HcclResult SetCurrentKernel(std::unique_ptr<CcuKernel> ccuKernel) {
+        // todo: 移动位置
+        currKernel = std::move(ccuKernel);
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    CcuKernel *GetCurrentKernel() {
+        // todo: 移动位置
+        return currKernel.get();
+    }
+
+    CcuResult RegisterCStyle(
+        CcuResPack &resPack, CcuInsHandle ccuInsHandle,
+        char *kernelFuncName, void *ccuKernelFunc, void *kernelArg
+        CcuKernelHandle &kernelHandle);
+
 private:
     explicit CcuKernelMgr() = default;
     ~CcuKernelMgr();
@@ -51,6 +67,8 @@ private:
 
 private:
     HcclResult AllocRes(std::unique_ptr<CcuKernel> &kernel, CcuResPack &resPack);
+
+    CcuResult AllocResCStyle(CcuResPack &resPack);
 
     HcclResult InstantiationTranslator(const uint16_t dieId);
     HcclResult TransRepSequenceToMicrocode(const std::vector<CcuKernel *> &kernels,
@@ -71,6 +89,8 @@ private:
     std::unordered_map<uint16_t, std::unordered_map<uint16_t, std::shared_ptr<CcuRepTranslator>>> translators;
     std::unordered_map<uint16_t, std::unordered_map<uint16_t, std::shared_ptr<CcuRepReferenceManager>>> referenceMgrs;
     CcuTranslatResPack translatorResPack{};
+
+    std::unique_ptr<CcuKernel> currKernel{nullptr};
 };
 }; // namespace hcomm
 
