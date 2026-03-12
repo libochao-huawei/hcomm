@@ -12,6 +12,7 @@
    - wheel >= 0.34.0
    - gcc >= 7.3.0
    - cmake >= 3.16.0
+   - pkg-config >= 0.29.1
    - ccache（可选，用于提高二次编译速度）
 
 2. 安装社区版CANN Toolkit包
@@ -63,6 +64,7 @@ git clone https://gitcode.com/cann/hcomm.git
 | mockcpp-patch | 2.7-h4                 | [mockcpp-2.7_py3.patch](https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h4/mockcpp-2.7_py3.patch)                                                                                   |
 | abseil-cpp    | 20250127.0             | [abseil-cpp-20250127.0.tar.gz](https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20250127.0/abseil-cpp-20250127.0.tar.gz)                                                               |
 | protobuf      | 25.1                   | [protobuf-25.1.tar.gz](https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz)                                                                                      |
+| rdma-core      | v42.7-h1                   | [rdma-core-42.7.tar.gz](https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.tar.gz.gz)                                                                                      |
 
 ### 源码编译
 
