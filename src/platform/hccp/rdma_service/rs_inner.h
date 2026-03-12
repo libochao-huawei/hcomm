@@ -372,6 +372,7 @@ struct RsQpCb {
     struct RsRdevCb *rdevCb;
     struct ibv_pd *ibPd;
     struct ibv_qp *ibQp;
+    struct ibv_qp_extend *ibQpEx;
 
     int eqNum;
     struct ibv_comp_channel *channel;
