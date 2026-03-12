@@ -90,7 +90,19 @@ HcclResult OpParamsChecker::CheckOpDataTypeMC2(const Mc2CommConfig &config)
     OpType opType           = MC2OpType(static_cast<AicpuComType>(config.opType));
     DataType inputDataType  = MC2DataType(static_cast<HcclDataType>(config.dataType));
     DataType outputDataType = MC2DataType(static_cast<HcclDataType>(config.outputDataType));
+    return CheckMC2OpDataType(opType, inputDataType, outputDataType);
+}
 
+HcclResult OpParamsChecker::CheckOpDataTypeMC2V2(const Mc2CcTilingInner &config)
+{
+    OpType opType           = MC2OpType(static_cast<AicpuComType>(config.opType));
+    DataType inputDataType  = MC2DataType(static_cast<HcclDataType>(config.srcDataType));
+    DataType outputDataType = MC2DataType(static_cast<HcclDataType>(config.dstDataType));
+    return CheckMC2OpDataType(opType, inputDataType, outputDataType);
+}
+
+HcclResult CheckMC2OpDataType(const OpType &opType, const DataType &inputDataType, const DataType &outputDataType)
+{
     // 支持算子情况检验
     auto iter = opDataTypeSupportMapMC2.find(opType);
     if (iter == opDataTypeSupportMapMC2.end()) {
@@ -105,65 +117,6 @@ HcclResult OpParamsChecker::CheckOpDataTypeMC2(const Mc2CommConfig &config)
      *      高精度模式，当inputDataType==outputDataType时，可选类型为FP32、FP16、BF16、INT16、INT32，暂不支持UINT8；
      *      低精度模式，当inputDataType!=outputDataType时，inputDataType可选范围HIF8、E4M3、E5M2、INT8；outputDataType可选范围FP32、FP16、BF16；
      * 非Reduce算子：任意数据类型，inputDataType==outputDataType即可。
-     */
-    bool checkResult = false;
-    if (opType == OpType::REDUCESCATTER || opType == OpType::ALLREDUCE){
-        if (inputDataType == outputDataType){
-            checkResult = dataTypeMC2HighP.test(static_cast<int>(inputDataType));
-            if (!checkResult){
-                ReportInputDataTypeMC2HighPErrMsg(__func__, opType, inputDataType);
-                std::string msg = StringFormat("[OpParamsChecker::%s] opType [%s] not support data type [%s].",
-                                  __func__, opType.Describe().c_str(), inputDataType.Describe().c_str());
-                THROW<InvalidParamsException>(msg);
-            }
-        } else {
-            checkResult = inputDataTypeMC2LowP.test(static_cast<int>(inputDataType));
-            if (!checkResult){
-                ReportInputDataTypeMC2LowPErrMsg(__func__, opType, inputDataType);
-                std::string msg = StringFormat("[OpParamsChecker::%s] Mc2LowP InputDataType[%s] != OutputDataType[%s] for OpType[%s], not support input data type [%s].",
-                                  __func__, inputDataType.Describe().c_str(), outputDataType.Describe().c_str(), opType.Describe().c_str(), inputDataType.Describe().c_str());
-                THROW<InvalidParamsException>(msg);
-            }
-            checkResult = OutputDataTypeMC2LowP.test(static_cast<int>(outputDataType));
-            if (!checkResult){
-                ReportOutputDataTypeMC2LowPErrMsg(__func__, opType, outputDataType);
-                std::string msg = StringFormat("[OpParamsChecker::%s] Mc2LowP InputDataType[%s] != OutputDataType[%s] for OpType[%s], not support output data type [%s].",
-                                  __func__, inputDataType.Describe().c_str(), outputDataType.Describe().c_str(), opType.Describe().c_str(), outputDataType.Describe().c_str());
-                THROW<InvalidParamsException>(msg);
-            }
-        }
-    } else {
-        if (inputDataType != outputDataType) {
-            ReportDataTypeNotTheSameErrMsg(__func__, opType, inputDataType, outputDataType);
-            std::string msg = StringFormat("[OpParamsChecker::%s] DataType[%s] != OutputDataType[%s] for OpType[%s].",
-                              __func__, inputDataType.Describe().c_str(),
-                              outputDataType.Describe().c_str(), opType.Describe().c_str());
-            THROW<InvalidParamsException>(msg);
-        }
-    }
-    return HcclResult::HCCL_SUCCESS;
-}
-
-HcclResult OpParamsChecker::CheckOpDataTypeMC2V2(const Mc2CcTilingInner &config)
-{
-    OpType opType           = MC2OpType(static_cast<AicpuComType>(config.opType));
-    DataType inputDataType  = MC2DataType(static_cast<HcclDataType>(config.srcDataType));
-    DataType outputDataType = MC2DataType(static_cast<HcclDataType>(config.dstDataType));
-
-    // 支持算子情况检验
-    auto iter = opDataTypeSupportMapMC2.find(opType);
-    if (iter == opDataTypeSupportMapMC2.end()) {
-        ReportOpTypeErrMsg(__func__, opType);
-        std::string msg = StringFormat("[OpParamsChecker::%s] unsupported opType [%s].",
-                          __func__, opType.Describe().c_str());
-        THROW<InvalidParamsException>(msg);
-    }
-
-    /* CCU数据类型校验规则
-     * Reduce算子：
-     *      高精度模式，当dataType==outputDataType时，可选类型为FP32、FP16、BF16、UINT8、INT16、INT32；
-     *      低精度模式，当dataType!=outputDataType时，dataType可选范围HIF8、E4M3、E5M2、INT8；outputDataType可选范围FP32、FP16、BF16；
-     * 非Reduce算子：任意数据类型，dataType==outputDataType即可。
      */
     bool checkResult = false;
     if (opType == OpType::REDUCESCATTER || opType == OpType::ALLREDUCE){
