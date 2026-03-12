@@ -17,6 +17,7 @@ set(rdma_agent_utest_list
     stub/devdrv_runtime_api.c
     stub/rs_tlv.c
     stub/rs_ctx.c
+    stub/rs_nda.c
     tc_rdma_agent.c
     tc_ra_ping.c
     tc_ra_peer.c
@@ -36,6 +37,7 @@ set(rdma_agent_utest_list
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client/ra_init.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client/ra_socket.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client/ra_tlv.c
+    ${SRC_DIR}/src/platform/hccp/rdma_agent/client/ra_nda.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client/async/ra_comm.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client/async/ra_ctx.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/client/async/ra_socket.c
@@ -58,6 +60,7 @@ set(rdma_agent_utest_list
     ${SRC_DIR}/src/platform/hccp/rdma_agent/peer/ra_peer.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/peer/ra_peer_socket.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/peer/ra_peer_ctx.c
+    ${SRC_DIR}/src/platform/hccp/rdma_agent/peer/ra_peer_nda.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/comm/ra_comm.c
     ${SRC_DIR}/src/platform/hccp/rdma_agent/comm/ctx/ra_ctx_comm.c
     ${SRC_DIR}/src/platform/hccp/common/dl_hal_function.c
