@@ -220,12 +220,10 @@ STATIC int RsPthreadMutexInit(struct rs_cb *rscb, struct RsInitConfig *cfg)
     CHK_PRT_RETURN(ret, hccp_err("rscb mutex_init failed ret %d!, normal ret 0", ret), -ESYSFUNC);
     ret = pthread_mutex_init(&rscb->connCb.connMutex, NULL);
     if (ret) {
-        hccp_err("conn_cb mutex_init failed ret %d, normal ret 0!", ret);
-        err = pthread_mutex_destroy(&rscb->mutex);
-        hccp_dbg("pthread destroy ret %d", err);
+        err = pthread_mutex_destroy(&rscb->mutex);	 
+        hccp_dbg("pthread destroy ret %d", err); 
         return -ESYSFUNC;
     }
-
     hccp_info("mutex init ok");
 
     RS_INIT_LIST_HEAD(&rscb->connCb.listenList);
@@ -414,8 +412,8 @@ RS_ATTRI_VISI_DEF int RsInit(struct RsInitConfig *cfg)
     ret = RsInitRscbCfg(rscb);
     if (ret != 0) {
         hccp_err("rs init rscb configure failed,ret:%d", ret);
-        pthread_mutex_destroy(&rscb->mutex);
-        pthread_mutex_destroy(&rscb->connCb.connMutex);
+        pthread_mutex_destroy(&rscb->mutex);	 
+        pthread_mutex_destroy(&rscb->connCb.connMutex); 
         goto pthread_mutex_err;
     }
 
@@ -798,6 +796,7 @@ STATIC int RsGetIbCtxAndRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb,
                 RsIbvCloseDevice(ibCtxTmp);
                 return ret;
             }
+            hccp_run_info("[xzdebug]vendorId: %u", rdevCb->deviceAttr.vendor_id);
             rdevCb->ibCtx = ibCtxTmp;
             return 0;
         } else if (ret == -EEXIST) {
