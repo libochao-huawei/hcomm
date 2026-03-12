@@ -463,7 +463,6 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
     }
 
     uint64_t beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-    UpdateProfStat();
     auto dfxOpInfo = std::make_shared<DfxOpInfo>();
     CovertToCurrentCollOperator(id, opParams, OpMode::OPBASE);
     dfxOpInfo->op_           = *GetCurrentCollOperator();
@@ -477,6 +476,7 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
     GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);
 
     if (enableProfilingEnv) {
+        UpdateProfStat();
         ExecuteFastCcuLaunch(opParams, stream, params);
         ReportProfInfo(beginTime, opParams.staticShape, true);
     } else {
