@@ -279,7 +279,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException/aicpu
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException/host
     ${HCCL_CODE_ROOT}/src/framework/device/framework
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/slaves
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/device/
     ${HCCL_CODE_ROOT}/src/framework/dfx/task_exception
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/task_exception
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/common
