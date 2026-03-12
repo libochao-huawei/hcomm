@@ -1112,6 +1112,16 @@ TEST_F(OpbaseTestV2, HcclReduceScatterV2_With_Log)
     EnvConfig::GetInstance().logCfg.entryLogEnable.value = false;
 }
 
+void SetupCommInfoV2(const std::map<std::string, HcclGroupParamsV2> hcclGroupMap_={},const Hccl::CommParams commParams_,
+    bool isUsed_ = true,std::shared_ptr<Hccl::HcclCommunicator> pComm_ = nullptr)
+{
+    auto& commInfo = CommManager::GetInstance(0).GetCommInfoV2();
+    commInfo.hcclGroupMap = hcclGroupMap_;
+    commInfo.commParams = commParams_;
+    commInfo.isUsed = isUsed_;
+    commInfo.pComm = pComm_;
+}
+
 TEST_F(OpbaseTestV2, HcclGetRawCommHandle)
 {
     string commName = "hccl_world_group";
@@ -1120,11 +1130,12 @@ TEST_F(OpbaseTestV2, HcclGetRawCommHandle)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm_1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
     hcclGroupParamsV2.pComm = hcclComm_1;
     std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{ "hccl_world_group", hcclGroupParamsV2}};
-    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    // CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
     
-    CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
-    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
-    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    // CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
+    // CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+    // CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    SetupCommInfoV2(hcclGroupMap,commParams,true,hcclComm_1);
     MOCKER(HrtGetDevice).stubs().with(any()).will(returnValue(0));
 
     HcclComm commHandle;
@@ -1170,12 +1181,13 @@ TEST_F(OpbaseTestV2, HcclSnapshotSave_err)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm_1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
     hcclGroupParamsV2.pComm = hcclComm_1;
     std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{ "hccl_world_group", hcclGroupParamsV2}};
-    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    // CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
     
-    CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
-    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
-    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    // CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
+    // CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+    // CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
     CommManager::GetInstance(0).GetCommInfoV2().step = 0;
+    SetupCommInfoV2(hcclGroupMap,commParams,true,hcclComm_1);
     MOCKER(HrtGetDevice).stubs().with(any()).will(returnValue(0));
 
     uint32_t step = 0;
@@ -1195,11 +1207,12 @@ TEST_F(OpbaseTestV2, HcclSnapshotSave_err2)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm_1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
     hcclGroupParamsV2.pComm = hcclComm_1;
     std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{ "hccl_world_group", hcclGroupParamsV2}};
-    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    // CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
     
-    CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
-    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
-    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    // CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
+    // CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+    // CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    SetupCommInfoV2(hcclGroupMap,commParams,true,hcclComm_1);
     CommManager::GetInstance(0).GetCommInfoV2().step = 1;
     MOCKER(HrtGetDevice).stubs().with(any()).will(returnValue(0));
 
@@ -1223,11 +1236,12 @@ TEST_F(OpbaseTestV2, HcclSnapshotRecoverAllComms_OK)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm_1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
     hcclGroupParamsV2.pComm = hcclComm_1;
     std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{ "hccl_world_group", hcclGroupParamsV2}};
-    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    // CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
     
-    CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
-    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
-    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    // CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
+    // CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+    // CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    SetupCommInfoV2(hcclGroupMap,commParams,true,hcclComm_1);
     CommManager::GetInstance(0).GetCommInfoV2().step = 0;
     MOCKER(HrtGetDevice).stubs().with(any()).will(returnValue(0));
 
@@ -1277,11 +1291,12 @@ TEST_F(OpbaseTestV2, HcclSnapshotGetBufSize_OK)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm_1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
     hcclGroupParamsV2.pComm = hcclComm_1;
     std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{ "hccl_world_group", hcclGroupParamsV2}};
-    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    // CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
     
-    CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
-    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
-    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    // CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
+    // CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+    // CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    SetupCommInfoV2(hcclGroupMap,commParams,true,hcclComm_1);
     CommManager::GetInstance(0).GetCommInfoV2().step = 0;
     MOCKER(HrtGetDevice).stubs().with(any()).will(returnValue(0));
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue(devType));
@@ -1303,10 +1318,11 @@ TEST_F(OpbaseTestV2, HcclSnapshotGetBufSize_HCCL_SUCCESS)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm_1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
     hcclGroupParamsV2.pComm = hcclComm_1;
     std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{ "hccl_world_group", hcclGroupParamsV2}};
-    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
-    CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
-    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
-    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    // CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    // CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
+    // CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+    // CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    SetupCommInfoV2(hcclGroupMap,commParams,true,hcclComm_1);
     CommManager::GetInstance(0).GetCommInfoV2().step = 0;
 
     uint32_t step = 0;
@@ -1347,11 +1363,12 @@ TEST_F(OpbaseTestV2, HcclCreateSubCommConfigV2)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm_1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
     hcclGroupParamsV2.pComm = hcclComm_1;
     std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{ "hccl_world_group", hcclGroupParamsV2}};
-    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    // CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
     
-    CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
-    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
-    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    // CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
+    // CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+    // CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    SetupCommInfoV2(hcclGroupMap,commParams,true,hcclComm_1);
     MOCKER(HrtGetDevice).stubs().with(any()).will(returnValue(0));
 
     HcclGroupParamsV2 groupParamsV2Tem;
@@ -1391,11 +1408,12 @@ TEST_F(OpbaseTestV2, HcclCreateSubCommConfigV2_IDEL)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm_1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
     hcclGroupParamsV2.pComm = hcclComm_1;
     std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{ "hccl_world_group", hcclGroupParamsV2}};
-    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    // CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
     
-    CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
-    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
-    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    // CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
+    // CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+    // CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    SetupCommInfoV2(hcclGroupMap,commParams,true,hcclComm_1);
     CommManager::GetInstance(0).GetCommInfoV2().status = DeviceStatus::DEVICE_IDLE;
     MOCKER(HrtGetDevice).stubs().with(any()).will(returnValue(0));
 
@@ -1440,11 +1458,12 @@ TEST_F(OpbaseTestV2, HcclCreateSubCommConfigV2_Invalided_Config)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm_1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
     hcclGroupParamsV2.pComm = hcclComm_1;
     std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{ "hccl_world_group", hcclGroupParamsV2}};
-    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    // CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
     
-    CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
-    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
-    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    // CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
+    // CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+    // CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm_1;
+    SetupCommInfoV2(hcclGroupMap,commParams,true,hcclComm_1);
     CommManager::GetInstance(0).GetCommInfoV2().status = DeviceStatus::DEVICE_IDLE;
     MOCKER(HrtGetDevice).stubs().with(any()).will(returnValue(0));
 
@@ -1476,11 +1495,12 @@ TEST_F(OpbaseTestV2, HcclCommInitClusterInfoMemConfigV2_err)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     hcclGroupParamsV2.pComm = hcclComm;
     std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{ "hccl_world_group", hcclGroupParamsV2}};
-    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    // CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
     
-    CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
-    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
-    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm;
+    // CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
+    // CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+    // CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm;
+    SetupCommInfoV2(hcclGroupMap,commParams,true,hcclComm);
     // 打桩GetCommInfoV2。
     CommManager::GetInstance(0).GetCommInfoV2().commParams.commId = "hccl_world_group";
 
@@ -1509,11 +1529,12 @@ TEST_F(OpbaseTestV2, HcclCommInitClusterInfoMemConfigV2_err_2)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     hcclGroupParamsV2.pComm = hcclComm;
     std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{ "hccl_world_group", hcclGroupParamsV2}};
-    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    // CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
     
-    CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
-    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
-    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm;
+    // CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
+    // CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+    // CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm;
+    SetupCommInfoV2(hcclGroupMap,commParams,true,hcclComm);
     // 打桩GetCommInfoV2。
     CommManager::GetInstance(0).GetCommInfoV2().commParams.commId = "hccl_world_group";
 
@@ -1544,11 +1565,12 @@ TEST_F(OpbaseTestV2, HcclCommInitClusterInfoMemConfigV2_err_3)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     hcclGroupParamsV2.pComm = hcclComm;
     std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{ "hccl_world_group", hcclGroupParamsV2}};
-    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    // CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
     
-    CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
-    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
-    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm;
+    // CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
+    // CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+    // CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm;
+    SetupCommInfoV2(hcclGroupMap,commParams,true,hcclComm);
     // 打桩GetCommInfoV2。
     CommManager::GetInstance(0).GetCommInfoV2().commParams.commId = "hccl_world_group";
 
@@ -1579,10 +1601,11 @@ TEST_F(OpbaseTestV2, HcclCommInitClusterInfoMemConfigV2)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     hcclGroupParamsV2.pComm = hcclComm;
     std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{ "hccl_world_group", hcclGroupParamsV2}};
-    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
-    CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
-    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
-    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm;
+    // CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    // CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
+    // CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+    // CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm;
+    SetupCommInfoV2(hcclGroupMap,commParams,true,hcclComm);
     // 打桩GetCommInfoV2。
     CommManager::GetInstance(0).GetCommInfoV2().commParams.commId = "hccl_world_group";
 
@@ -1613,11 +1636,12 @@ TEST_F(OpbaseTestV2, HcclCommDestroyV2)  // 放最后
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     hcclGroupParamsV2.pComm = hcclComm;
     std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{ "hccl_world_group", hcclGroupParamsV2}};
-    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    // CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
     
-    CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
-    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
-    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm;
+    // CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
+    // CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+    // CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm;
+    SetupCommInfoV2(hcclGroupMap,commParams,true,hcclComm);
     // 打桩GetCommInfoV2。
     CommManager::GetInstance(0).GetCommInfoV2().commParams.commId = "hccl_world_group";
 
@@ -1658,11 +1682,12 @@ TEST_F(OpbaseTestV2, HcclCommDestroyV2_3)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     hcclGroupParamsV2.pComm = hcclComm;
     std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{ "hccl_world_group", hcclGroupParamsV2}};
-    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    // CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
     
-    CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
-    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
-    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm;
+    // CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
+    // CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+    // CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm;
+    SetupCommInfoV2(hcclGroupMap,commParams,true,hcclComm);
     // 打桩GetCommInfoV2。
     CommManager::GetInstance(0).GetCommInfoV2().commParams.commId = "hccl_world_group";
 
@@ -1743,11 +1768,12 @@ TEST_F(OpbaseTestV2, Ut_HcclCommInitClusterInfoConfigV2_When_InputValue_Expect_R
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     hcclGroupParamsV2.pComm = hcclComm;
     std::map<std::string, HcclGroupParamsV2> hcclGroupMap = {{ "hccl_world_group", hcclGroupParamsV2}};
-    CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
+    // CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
     
-    CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
-    CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
-    CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm;
+    // CommManager::GetInstance(0).GetCommInfoV2().commParams = commParams;
+    // CommManager::GetInstance(0).GetCommInfoV2().isUsed = true;
+    // CommManager::GetInstance(0).GetCommInfoV2().pComm = hcclComm;
+    SetupCommInfoV2(hcclGroupMap,commParams,true,hcclComm);
     CommManager::GetInstance(0).GetCommInfoV2().status = DeviceStatus::DEVICE_RECOVERED;
     CommManager::GetInstance(0).GetCommInfoV2().pComm->pimpl.get()->id = worldgroup;
 

@@ -27,7 +27,6 @@ public:
     u64          beginTime_;
     u64          endTime_;
     void        *comm_;
-
 public:
     std::string Describe() const
     {
