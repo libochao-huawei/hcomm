@@ -481,22 +481,33 @@ int32_t CcuConnection::GetDevLogicId() const
     return devLogicId;
 }
 
-std::vector<ConnJettyInfo> CcuConnection::GetJettyInfo()
+std::vector<ConnJettyInfo> CcuConnection::GetDeleteJettyInfo()
 {
-    std::vector<ConnJettyInfo> connJettyInfos;
+    std::vector<ConnJettyInfo> connDeleteJettyInfos;
     ConnJettyInfo jettyInfo;
-    for (size_t i = 0; i < jettyNum; i++) {
-        if (ccuJettys_[i] != nullptr) {
-            ccuJettys_[i]->GetJettyInfo(jettyInfo);
+    for (auto &ccuJetty : ccuJettys_) {
+        if (ccuJetty != nullptr) {
+            ccuJetty->GetJettyInfo(jettyInfo);
             jettyInfo.rdmaHandle = rdmaHandle;
-            if (importJettyCtxs[i].outParam.handle != 0) {
-                jettyInfo.remoteJetty = importJettyCtxs[i].outParam.handle;
-                importJettyCtxs[i].outParam.handle = 0;
-            }
-            connJettyInfos.push_back(jettyInfo);
+            connDeleteJettyInfos.push_back(jettyInfo);
         }
     }
     return connJettyInfos;
+}
+
+std::vector<ConnJettyInfo> CcuConnection::GetUnimportJettyInfo()
+{
+    std::vector<ConnJettyInfo> connUnimportJettyInfos;
+    ConnJettyInfo jettyInfo;
+    for (auto &item : importJettyCtxs) {
+        if (item.outParam.handle != 0) {
+            jettyInfo.remoteJetty = item.outParam.handle;
+            jettyInfo.rdmaHandle = rdmaHandle;
+            item.outParam.handle = 0;
+            connUnimportJettyInfos.push_back(jettyInfo);
+        }
+    }
+    return connUnimportJettyInfos;
 }
 
 void CcuConnection::Clean()

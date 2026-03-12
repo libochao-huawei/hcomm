@@ -139,7 +139,8 @@ public:
     TransStatus GetStatus();
     std::string Describe() const;
     HcclResult  Clean();
-    std::vector<ConnJettyInfo> GetJettyInfo();
+    std::vector<ConnJettyInfo> GetDeleteJettyInfo();
+    std::vector<ConnJettyInfo> GetUnimportJettyInfo();
 
 private:
     // 保存transport中需要使用的cke，xn等ccu资源
