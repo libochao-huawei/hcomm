@@ -11,8 +11,12 @@
 #ifndef RA_PEER_NDA_H
 #define RA_PEER_NDA_H
 
+#include "hccp_nda.h"
 #include "ra_comm.h"
 
 int RaPeerNdaGetDirectFlag(struct RaRdmaHandle *rdmaHandle, int *directFlag);
+int RaPeerNdaQpCreate(struct RaRdmaHandle *rdmaHandle, struct NdaQpInitAttr *attr, struct NdaQpInfo *info,
+    void **qpHandle);
+int RaPeerNdaQpDestroy(struct RaQpHandle *qpPeer);
 
 #endif // RA_PEER_NDA_H
