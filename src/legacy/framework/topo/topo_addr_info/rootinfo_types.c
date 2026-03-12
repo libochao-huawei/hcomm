@@ -32,13 +32,13 @@ char* AddrToString(const Addr* addr)
             break;
         }
         char port[MAX_PORT_LEN] = {0};
-        sprintf_s(port, sizeof(port), "\"%s\"" , addr->ports[i]);
+        (void)sprintf_s(port, sizeof(port), "\"%s\"" , addr->ports[i]);
         hal_strcat_s(ports, MAX_PORTS_STR_LEN, port);
         if (i != addr->port_count - 1) {
             hal_strcat_s(ports, MAX_PORTS_STR_LEN, ",");
         }
     }
-    sprintf_s(buf, max_buffer_size,
+    (void)sprintf_s(buf, max_buffer_size,
         "{\"addr_type\": \"%s\", \"addr\": \"%s\", \"plane_id\": \"%s\", \"ports\": [%s]}",
         addr->addr_type, addr->addr, addr->plane_id, ports);
     return buf;
@@ -49,12 +49,12 @@ void NetLayerInit(NetLayer *layer, int level, const char* layer_id)
     memset_s(layer, sizeof(NetLayer), 0, sizeof(NetLayer));
     layer->net_layer = level;
     layer->addr_count = 0;
-    hal_strcpy_s(layer->net_instance_id, sizeof(layer->net_instance_id), layer_id);
+    (void)strcpy_s(layer->net_instance_id, sizeof(layer->net_instance_id), layer_id);
 }
 
 void NetLayerSetNetType(NetLayer *layer, const char* net_type)
 {
-    hal_strcpy_s(layer->net_type, sizeof(layer->net_type), net_type);
+    (void)strcpy_s(layer->net_type, sizeof(layer->net_type), net_type);
 }
 
 void NetLayerAddAddr(NetLayer *layer, const Addr *addr)
@@ -62,7 +62,7 @@ void NetLayerAddAddr(NetLayer *layer, const Addr *addr)
     if(layer->addr_count >= MAX_ADDR_NUM) {
         return;
     }
-    memcpy_s(&layer->rank_addr_list[layer->addr_count], sizeof(Addr), addr, sizeof(Addr));
+    (void)memcpy_s(&layer->rank_addr_list[layer->addr_count], sizeof(Addr), addr, sizeof(Addr));
     layer->addr_count++;
 }
 
@@ -85,9 +85,9 @@ char* NetLayerToString(const NetLayer *layer)
         if(addr == NULL) {
             continue;
         }
-        hal_strcat_s(addr_list, max_buffer_size, addr);
+        strcat_s(addr_list, max_buffer_size, addr);
         if (i != layer->addr_count - 1) {
-            hal_strcat_s(addr_list, max_buffer_size, ",");
+            strcat_s(addr_list, max_buffer_size, ",");
         }
         free(addr);
     }
@@ -109,7 +109,7 @@ char* RankListToString(const RootInfo *rootinfo)
     memset_s(buf, max_buffer_size, 0, max_buffer_size);
     for(int i = 0; i < rootinfo->rank_count; i++) {
         char *rank = RankToString(&rootinfo->ranks[i]);
-        hal_strcat_s(buf, max_buffer_size, rank);
+        strcat_s(buf, max_buffer_size, rank);
         if (i != rootinfo->rank_count - 1) {
             hal_strcat_s(buf, max_buffer_size, ",");
         }
@@ -155,7 +155,7 @@ char *RootInfoToString(const RootInfo *rootinfo)
 void RootInfoInit(RootInfo *rootinfo)
 {
     memset_s(rootinfo, sizeof(RootInfo), 0, sizeof(RootInfo));
-    hal_strcpy_s(rootinfo->version, sizeof(rootinfo->version), "2.0");
+    strcpy_s(rootinfo->version, sizeof(rootinfo->version), "2.0");
     rootinfo->rank_count = 0;
 }
 
@@ -176,20 +176,20 @@ void AddrInit(Addr *addr)
 void AddrSetEID(Addr *addr, const dcmi_urma_eid_t *eid)
 {
     for (int i = 0; i < DCMI_URMA_EID_SIZE; i++) {
-        sprintf_s(&addr->addr[i*2], 3, "%02x", eid->raw[i]);
+        sprintf_s(&addr->addr[i*2], MAX_NET_ADDR_LEN - (i*2), "%02x", eid->raw[i]);
     }
-    hal_strcpy_s(addr->addr_type, sizeof(addr->addr_type), "EID");
+    (void)strcpy_s(addr->addr_type, sizeof(addr->addr_type), "EID");
 }
 
 void AddrSetIP(Addr* addr, const char* ip)
 {
-    hal_strcpy_s(addr->addr, sizeof(addr->addr), ip);
-    hal_strcpy_s(addr->addr_type, sizeof(addr->addr_type), "IPV4");
+    (void)strcpy_s(addr->addr, sizeof(addr->addr), ip);
+    (void)strcpy_s(addr->addr_type, sizeof(addr->addr_type), "IPV4");
 }
 
 void AddrSetPlaneId(Addr *addr, const char* plane_id)
 {
-    hal_strcpy_s(addr->plane_id, sizeof(addr->plane_id), plane_id);
+    (void)strcpy_s(addr->plane_id, sizeof(addr->plane_id), plane_id);
 }
 
 int AddrAddPort(Addr *addr, const char* port)
@@ -197,7 +197,7 @@ int AddrAddPort(Addr *addr, const char* port)
     if (addr->port_count >= (MAX_PORT_NUM - 1)) {
         return -1;
     }
-    hal_strcpy_s(addr->ports[addr->port_count++], MAX_PORT_LEN, port);
+    (void)strcpy_s(addr->ports[addr->port_count++], MAX_PORT_LEN, port);
     return 0;
 }
 
@@ -208,14 +208,14 @@ char* RankToString(const Rank* rank)
     char* level_list = (char*)malloc(max_buf_size);
     for (int i = 0; i < rank->level_count; ++i) {
         char *layer = NetLayerToString(&rank->level_list[i]);
-        (void)hal_strcat_s(level_list, max_buf_size, layer);
+        (void)strcat_s(level_list, max_buf_size, layer);
         if (i != (rank->level_count - 1)) {
-            (void)hal_strcat_s(level_list, max_buf_size, ", ");
+            (void)strcat_s(level_list, max_buf_size, ", ");
         }
         free(layer);
     }
-    sprintf_s(buf, max_buf_size, "{\"device_id\": %d, \"local_id\": %d, \"level_list\": [%s]}",
-                  rank->device_id, rank->local_id, level_list);
+    (void)sprintf_s(buf, max_buf_size, "{\"device_id\": %d, \"local_id\": %d, \"level_list\": [%s]}",
+                   rank->device_id, rank->local_id, level_list);
     free(level_list);
     return buf;
 }

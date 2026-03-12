@@ -63,11 +63,6 @@ static int (*dcmi_get_card_id_device_id_from_logicid)(int *card_id, int *device_
 static int (*dcmi_get_urma_device_cnt)(int card_id, int device_id, unsigned int *dev_cnt);
 static int (*dcmiv2_get_urma_device_cnt)(int npu_id, unsigned int *dev_cnt);
 
-static int (*dcmi_get_eid_list_by_urma_dev_index)(int card_id, int device_id,
-                                                  int urma_dev_index,
-                                                  dcmi_urma_eid_info_t* eid_list,
-                                                  int* eid_cnt);
-
 static int (*dcmiv2_get_eid_list_by_urma_dev_index)(int npu_id,
                                                     int urma_dev_index,
                                                     dcmi_urma_eid_info_t* eid_list,
@@ -93,65 +88,26 @@ int load_dcmi()
         dcmi=dlopen("libdcmi.so", RTLD_LAZY);
     }
     if(dcmi == NULL) {
-        printf("load dcmi lib failed\n");
         return -1;
     }
     dcmi_init = dlsym(dcmi, "dcmiv2_init");
-    if(dcmi_init == NULL) {
-        printf("load dcmi_init failed\n");
-        return -1;
-    }
     dcmi_get_card_id_device_id_from_logicid = dlsym(dcmi, "dcmi_get_card_id_device_id_from_logicid");
-    if(dcmi_get_card_id_device_id_from_logicid == NULL) {
-        printf("load dcmi_get_card_id_device_id_from_logicid failed\n");
-        return -1;
-    }
     dcmi_get_urma_device_cnt = dlsym(dcmi, "dcmi_get_urma_device_cnt");
-    if(dcmi_get_urma_device_cnt == NULL) {
-        printf("load dcmi_get_urma_device_cnt failed\n");
-        return -1;
-    }
     dcmiv2_get_urma_device_cnt = dlsym(dcmi, "dcmiv2_get_urma_device_cnt");
-    if(dcmiv2_get_urma_device_cnt == NULL) {
-        printf("load dcmiv2_get_urma_device_cnt failed\n");
-        return -1;
-    }
-    dcmi_get_eid_list_by_urma_dev_index = dlsym(dcmi, "dcmi_get_eid_list_by_urma_dev_index");
-    if(dcmi_get_eid_list_by_urma_dev_index == NULL) {
-        printf("load dcmi_get_eid_list_by_urma_dev_index failed\n");
-        return -1;
-    }
     dcmiv2_get_eid_list_by_urma_dev_index = dlsym(dcmi, "dcmiv2_get_eid_list_by_urma_dev_index");
-    if(dcmiv2_get_eid_list_by_urma_dev_index == NULL) {
-        printf("load dcmiv2_get_eid_list_by_urma_dev_index failed\n");
-        return -1;
-    }
     dcmiv2_get_mainboard_id = dlsym(dcmi, "dcmiv2_get_mainboard_id");
-    if(dcmiv2_get_mainboard_id == NULL) {
-        printf("load dcmiv2_get_mainboard_id failed\n");
-        return -1;
-    }
     dcmiv2_get_device_pcie_info = dlsym(dcmi, "dcmiv2_get_device_pcie_info");
-    if(dcmiv2_get_device_pcie_info == NULL) {
-        printf("load dcmiv2_get_device_pcie_info failed\n");
-        return -1;
-    }
     dcmiv2_get_device_info = dlsym(dcmi, "dcmiv2_get_device_info");
-    if(dcmiv2_get_device_info == NULL) {
-        printf("load dcmi_get_device_info failed\n");
-        return -1;
-    }
     dcmi_get_device_phyid_from_logicid = dlsym(dcmi, "dcmi_get_device_phyid_from_logicid");
-    if(dcmi_get_device_phyid_from_logicid == NULL) {
-        printf("load dcmi_get_device_phyid_from_logicid failed\n");
-        return -1;
-    }
     dcmi_get_device_logicid_from_phyid = dlsym(dcmi, "dcmi_get_device_logicid_from_phyid");
-    if(dcmi_get_device_logicid_from_phyid == NULL) {
-        printf("load dcmi_get_device_logicid_from_phyid failed\n");
+
+    if ((dcmi_init == NULL) || (dcmi_get_card_id_device_id_from_logicid == NULL)
+     || (dcmi_get_urma_device_cnt == NULL) ||(dcmiv2_get_urma_device_cnt == NULL)
+     || (dcmiv2_get_eid_list_by_urma_dev_index == NULL) || (dcmiv2_get_mainboard_id == NULL)
+     || (dcmiv2_get_device_pcie_info ==NULL) || (dcmiv2_get_device_info == NULL)
+     || (dcmi_get_device_phyid_from_logicid == NULL) || (dcmi_get_device_logicid_from_phyid == NULL)) {
         return -1;
     }
-
     (void)dcmi_init(); //  dcmi_init可能已经调用过了
     return 0;
 }
@@ -171,10 +127,12 @@ int hal_get_mainboard_id(int phy_id, unsigned int* mainboard_id)
     return dcmiv2_get_mainboard_id(logic_id, mainboard_id);
 }
 
+
+#define MAX_IFREQ_NUM (16)
 int get_server_id(char* server_id, size_t len) {
     int sock_fd;
     struct ifconf ifc;
-    struct ifreq ifr[16];
+    struct ifreq ifr[MAX_IFREQ_NUM];
     int if_count, i;
 
     if ((sock_fd =  socket(AF_INET, SOCK_DGRAM, 0)) < 0) {

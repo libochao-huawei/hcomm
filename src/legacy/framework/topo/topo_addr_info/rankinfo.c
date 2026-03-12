@@ -19,6 +19,9 @@
 #include "product_card.h"
 #include "product_server.h"
 
+#define MAX_DUMP_FILE_LEN (256)
+#define DEFUALT_RANKINFO_FILE_PATH "/etc/hccl_rootinfo.json"
+
 int TopoAddrInfoGetSize(int phyId, size_t* size)
 {
     if (size == NULL) {
@@ -66,24 +69,25 @@ int TopoAddrInfoGetTopoFilePath(int phyId, char* filePath, size_t bufSize)
 
 static void DumpFile(char* rankInfo, size_t bufSize)
 {
-    char* dumpFile = getenv("RANKINFO_DUMP_FILE");
-    if (dumpFile != NULL) {
-        FILE* fp = fopen(dumpFile, "w+");
-        if (fp == NULL) {
-            return;
-        }
-        int ret = fwrite(rankInfo, 1, bufSize, fp);
-        if (ret < 0) {
-            fclose(fp);
-            return;
-        }
-        fclose(fp);
+    char dump_file[MAX_DUMP_FILE_LEN] = {0};
+    if (strcpy_s(dump_file, sizeof(dump_file), getenv("RANKINFO_DUMP_FILE")) != 0) {
+        return
     }
+    FILE* fp = fopen(dumpFile, "w+");
+    if (fp == NULL) {
+        return;
+    }
+    int ret = fwrite(rankInfo, 1, bufSize, fp);
+    if (ret < 0) {
+        fclose(fp);
+        return;
+    }
+    fclose(fp);
 }
 
 static int PassThrough(char *rankInfo, size_t *bufSize)
 {
-    FILE *fp = fopen("/etc/hccl_rootinfo.json", "r");
+    FILE *fp = fopen(DEFUALT_RANKINFO_FILE_PATH, "r");
     if (fp == NULL) {
         return -1;
     }

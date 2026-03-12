@@ -145,12 +145,12 @@ int ServerGetRootinfo(int npu_id, unsigned mainboard_id, void *buf, size_t *len)
     if (rootinfo_buf == NULL) {
         return -1;
     }
-    if (*len < strlen(rootinfo_buf)) {
-        *len = strlen(rootinfo_buf);
+    if ((*len) < strlen(rootinfo_buf)) {
+        (*len) = strlen(rootinfo_buf);
         free(rootinfo_buf);
         return -1;
     }
-    hal_strcpy_s(buf, *len, rootinfo_buf);
+    (void)strcpy_s(buf, *len, rootinfo_buf);
     (*len) = strlen(buf);
     free(rootinfo_buf);
     return RET_OK;
