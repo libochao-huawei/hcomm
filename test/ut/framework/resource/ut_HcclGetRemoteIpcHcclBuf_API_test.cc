@@ -37,7 +37,7 @@ bool GetCommResourceStub(void *&commContext)
     return true;
 }
 
-HcclResult GetRemoteCCLBufStub(uint32_t remoteRank, void **addr, uint64_t *size)
+HcclResult GetRemoteCCLBufStub(uint64_t remoteRank, void **addr, uint64_t *size)
 {
     *addr = reinterpret_cast<void *>(0x12345678);
     *size = 0;
