@@ -201,6 +201,7 @@ struct RaQpHandle {
     unsigned int bpCnt; // only valid in RDMA Lite scenario
     struct RaLoopbackInfo *loopbackInfo;
     struct RaQpHandle *loopbackQpHandle;
+    int directFlag;
 };
 
 struct RaMrHandle {
