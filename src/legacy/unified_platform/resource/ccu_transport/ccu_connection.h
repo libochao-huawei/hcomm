@@ -47,7 +47,8 @@ public:
         return ccuJettys_;
     }
     void     Clean();
-    std::vector<ConnJettyInfo> GetJettyInfo();
+    std::vector<ConnJettyInfo> GetDeleteJettyInfo();
+    std::vector<ConnJettyInfo> GetUnimportJettyInfo();
 
 protected:
     TpProtocol tpProtocol{TpProtocol::INVALID};
