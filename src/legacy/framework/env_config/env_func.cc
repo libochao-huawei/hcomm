@@ -26,6 +26,27 @@
 
 namespace Hccl {
 
+const std::map<std::string, HcclAlgoType> HCCL_ALGO_TYPE_MAP = {
+    {"null", HcclAlgoType::HCCL_ALGO_TYPE_NULL},
+    {"ring", HcclAlgoType::HCCL_ALGO_TYPE_RING},
+    {"pipeline", HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE},
+    {"fullmesh", HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH},
+    {"H-D_R", HcclAlgoType::HCCL_ALGO_TYPE_HDR},
+    {"pairwise", HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE},
+    {"NHR", HcclAlgoType::HCCL_ALGO_TYPE_NHR},
+    {"NB", HcclAlgoType::HCCL_ALGO_TYPE_NB},
+    {"NA", HcclAlgoType::HCCL_ALGO_TYPE_NA},
+    {"NHR_V1", HcclAlgoType::HCCL_ALGO_TYPE_NHR_V1},
+    {"AHC", HcclAlgoType::HCCL_ALGO_TYPE_AHC},
+};
+
+const std::map<std::string, u32> HCCL_ALGO_LEVEL_MAP = {
+    {"level0", HCCL_ALGO_LEVEL_0},
+    {"level1", HCCL_ALGO_LEVEL_1},
+    {"level2", HCCL_ALGO_LEVEL_2},
+    {"level3", HCCL_ALGO_LEVEL_3},
+};
+
 /*----------------------------- cast functions -------------------------*/
 
 bool CastBin2Bool(const std::string &s)
@@ -272,34 +293,14 @@ static void ParseAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlgoTyp
 
     std::string orginalLevel = algoLevel.substr(0, found);
     std::string orginalAlgo  = algoLevel.substr(found + 1);
-
-    const std::map<std::string, u32> hcclAlgoLevelMap = {{"level0", HCCL_ALGO_LEVEL_0},
-                                                         {"level1", HCCL_ALGO_LEVEL_1},
-                                                         {"level2", HCCL_ALGO_LEVEL_2},
-                                                         {"level3", HCCL_ALGO_LEVEL_3}};
-
-    const std::map<std::string, HcclAlgoType> hcclAlgoTypeMap = {
-        {"null", HcclAlgoType::HCCL_ALGO_TYPE_NULL},
-        {"ring", HcclAlgoType::HCCL_ALGO_TYPE_RING},
-        {"pipeline", HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE},
-        {"fullmesh", HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH},
-        {"H-D_R", HcclAlgoType::HCCL_ALGO_TYPE_HDR},
-        {"pairwise", HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE},
-        {"NHR", HcclAlgoType::HCCL_ALGO_TYPE_NHR},
-        {"NB", HcclAlgoType::HCCL_ALGO_TYPE_NB},
-        {"NA", HcclAlgoType::HCCL_ALGO_TYPE_NA},
-        {"NHR_V1", HcclAlgoType::HCCL_ALGO_TYPE_NHR_V1},
-        {"AHC", HcclAlgoType::HCCL_ALGO_TYPE_AHC},
-    };
-
-    auto iterAlgoLevel = hcclAlgoLevelMap.find(orginalLevel);
-    if (iterAlgoLevel == hcclAlgoLevelMap.end()) {
+    auto iterAlgoLevel = HCCL_ALGO_LEVEL_MAP.find(orginalLevel);
+    if (iterAlgoLevel == HCCL_ALGO_LEVEL_MAP.end()) {
         THROW<InvalidParamsException>(
             StringFormat("algo config is invalid, level %s is not supported.", orginalLevel.c_str()));
     }
 
-    auto iterAlgoType = hcclAlgoTypeMap.find(orginalAlgo);
-    if (iterAlgoType == hcclAlgoTypeMap.end()) {
+    auto iterAlgoType = HCCL_ALGO_TYPE_MAP.find(orginalAlgo);
+    if (iterAlgoType == HCCL_ALGO_TYPE_MAP.end()) {
         THROW<InvalidParamsException>(
             StringFormat("algo config is invalid, algo %s is not supported.", orginalAlgo.c_str()));
     }
@@ -406,36 +407,14 @@ HcclResult ParserHcclAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlg
 
     std::string orginalLevel = algoLevel.substr(0, found);
     std::string orginalAlgo = algoLevel.substr(found + 1);
-
-    const std::map<std::string, u32> hcclAlgoLevelMap = {
-        {"level0", HCCL_ALGO_LEVEL_0},
-        {"level1", HCCL_ALGO_LEVEL_1},
-        {"level2", HCCL_ALGO_LEVEL_2},
-        {"level3", HCCL_ALGO_LEVEL_3}
-    };
-
-    const std::map<std::string, HcclAlgoType> hcclAlgoTypeMap = {
-        {"null", HcclAlgoType::HCCL_ALGO_TYPE_NULL},
-        {"ring", HcclAlgoType::HCCL_ALGO_TYPE_RING},
-        {"pipeline", HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE},
-        {"fullmesh", HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH},
-        {"H-D_R", HcclAlgoType::HCCL_ALGO_TYPE_HDR},
-        {"pairwise", HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE},
-        {"NHR", HcclAlgoType::HCCL_ALGO_TYPE_NHR},
-        {"NB", HcclAlgoType::HCCL_ALGO_TYPE_NB},
-        {"NA", HcclAlgoType::HCCL_ALGO_TYPE_NA},
-        {"NHR_V1", HcclAlgoType::HCCL_ALGO_TYPE_NHR_V1},
-        {"AHC", HcclAlgoType::HCCL_ALGO_TYPE_AHC},
-    };
-
-    auto iterAlgoLevel = hcclAlgoLevelMap.find(orginalLevel);
-    if (iterAlgoLevel == hcclAlgoLevelMap.end()) {
+    auto iterAlgoLevel = HCCL_ALGO_LEVEL_MAP.find(orginalLevel);
+    if (iterAlgoLevel == HCCL_ALGO_LEVEL_MAP.end()) {
         HCCL_ERROR("[Parser][HcclAlgoLevel] algo config is invalid, level %s is not supported.", orginalLevel.c_str());
         return HCCL_E_PARA;
     }
 
-    auto iterAlgoType = hcclAlgoTypeMap.find(orginalAlgo);
-    if (iterAlgoType == hcclAlgoTypeMap.end()) {
+    auto iterAlgoType = HCCL_ALGO_TYPE_MAP.find(orginalAlgo);
+    if (iterAlgoType == HCCL_ALGO_TYPE_MAP.end()) {
         HCCL_ERROR("[Parser][HcclAlgoLevel] algo config is invalid, algo %s is not supported.", orginalAlgo.c_str());
         return HCCL_E_PARA;
     }
