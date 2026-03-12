@@ -41,9 +41,10 @@ typedef struct rule {
 }UBEntityRule;
 
 static const UBEntityRule g_ubrules[] = {
-    {MAIN_BOARD_ID_SERVER_TYPE1, PRODUCT_MESH_LEVEL, 0, 3, {4,5,6,7}, 4},
-    {MAIN_BOARD_ID_SERVER_TYPE1, PRODUCT_MESH_LEVEL, 1, 2, {5,6}, 2},
-    {MAIN_BOARD_ID_SERVER_8PMESH, PRODUCT_MESH_LEVEL, 1, 2, {0,1,2,3,4,5,6,7}, 8},
+    {MAIN_BOARD_ID_SERVER_TYPE1, PRODUCT_CLOS_LEVEL, 0, 3, {4,5,6,7}, 4},
+    {MAIN_BOARD_ID_SERVER_TYPE1, PRODUCT_CLOS_LEVEL, 1, 2, {5,6}, 2},
+    //使用1 die上,fe 3出clos, fe3包含8个口
+    {MAIN_BOARD_ID_SERVER_8PMESH, PRODUCT_CLOS_LEVEL, 1, 3, {1,2,3,4,5,6,7,8}, 8},
 };
 
 
@@ -73,7 +74,8 @@ static int ProcessLayerMesh(NetLayer *layer, UEList *ueList, struct dcmi_spod_in
             AddrSetEID(&addr, &ueList->ueList[i].eidList[j].eid);
             char port[MAX_PORT_LEN] = {0};
             char planeId[MAX_PLANE_ID_LEN] = {0};
-            sprintf_s(port, MAX_PORT_LEN, "%d/%d", meshDie, phyPortId);
+            // topo中端口从0开始编，CNA中需要规避全0，从1开始
+            sprintf_s(port, MAX_PORT_LEN, "%d/%d", meshDie, (phyPortId - 1));
             sprintf_s(planeId, sizeof(planeId), "plane_%d", meshDie);
             AddrAddPort(&addr, port);
             AddrSetPlaneId(&addr, planeId);

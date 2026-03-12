@@ -21,7 +21,7 @@
 #define PRODUCT_CARD_ROCE_LEVEL (3)
 #define PRODUCT_CARD_ROCE_LEVEL_INSTANCE_ID "cluster"
 #define MAX_CARD_ROOTINFO_LEN (2048)
-#define MAX_MESH_PROT_ID (9)
+#define MAX_MESH_PORT_ID (9)
 #define CARD_4P_MESH_NUM (4)
 
 int GetCardRankInfoLen(size_t *len)
@@ -68,7 +68,7 @@ static int ProcessLayerMesh(int npu_id, NetLayer *layer, dcmi_urma_eid_info_t *e
     hal_get_eid_list_by_phy_id(npu_id, eid_list, &eid_cnt);
     for (size_t i = 0; i < eid_cnt; i++) {
         int portId = UrmaEidGetPortId(&eid_list[i].eid);
-        if (portId > MAX_MESH_PROT_ID) {
+        if (portId > MAX_MESH_PORT_ID) {
             continue;
         }
         int dieId = UrmaEidGetDieId(&eid_list[i].eid);
