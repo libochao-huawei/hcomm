@@ -36,9 +36,11 @@
 #include "tls.h"
 #include "hccp_common.h"
 #include "hccp_ping.h"
+#include "hccp_nda.h"
 #include "rs_rdma_inner.h"
 #include "rs_common_inner.h"
 #include "rs_ping_inner.h"
+#include "rs_nda.h"
 #include "rs.h"
 #include "rs_list.h"
 
@@ -371,6 +373,7 @@ struct RsQpCb {
     struct RsRdevCb *rdevCb;
     struct ibv_pd *ibPd;
     struct ibv_qp *ibQp;
+    struct ibv_qp_extend *ibQpEx;
 
     int eqNum;
     struct ibv_comp_channel *channel;
@@ -601,6 +604,13 @@ struct rs_cb {
     unsigned int grpId;
     pid_t hostPid;
     bool grpSetupFlag;
+
+    struct ibv_extend_ops ibvExOps;
+    struct NdaOps ndaOps;
+    pthread_mutex_t ndaMutex;
+    struct RsListHead ndaDbHostList;
+    struct RsListHead ndaDbGuidList;
+    uint16_t ndaDbGuidCnt;
 };
 
 extern __thread struct rs_cb *gRsCb;
