@@ -486,13 +486,15 @@ std::vector<ConnJettyInfo> CcuConnection::GetJettyInfo()
     std::vector<ConnJettyInfo> connJettyInfos;
     ConnJettyInfo jettyInfo;
     for (size_t i = 0; i < jettyNum; i++) {
-        ccuJettys_[i]->GetJettyInfo(jettyInfo);
-        jettyInfo.rdmaHandle = rdmaHandle;
-        if (importJettyCtxs[i].outParam.handle != 0) {
-            jettyInfo.remoteJetty = importJettyCtxs[i].outParam.handle;
-            importJettyCtxs[i].outParam.handle = 0;
+        if (ccuJettys_[i] != nullptr) {
+            ccuJettys_[i]->GetJettyInfo(jettyInfo);
+            jettyInfo.rdmaHandle = rdmaHandle;
+            if (importJettyCtxs[i].outParam.handle != 0) {
+                jettyInfo.remoteJetty = importJettyCtxs[i].outParam.handle;
+                importJettyCtxs[i].outParam.handle = 0;
+            }
+            connJettyInfos.push_back(jettyInfo);
         }
-        connJettyInfos.push_back(jettyInfo);
     }
     return connJettyInfos;
 }
