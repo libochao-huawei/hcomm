@@ -71,6 +71,7 @@ target_include_directories(rs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/inc/driver
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/inc/driver/hal_pkg
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/nda
 
     # HCCP Legacy
