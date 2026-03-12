@@ -10,34 +10,98 @@
 
 message("Build third party library rdma-core")
 set(RDMA_CORE_NAME "rdma-core")
-set(ROOT_BUILD_PATH "${CMAKE_BINARY_DIR}")
+set(RDMA_CORE_VERSION "42.7")
+set(RDMA_CORE_URL "https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.tar.gz")
+set(RDMA_CORE_PATCH_URL "https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.patch")
+set(ROOT_BUILD_PATH "${CMAKE_SOURCE_DIR}/third_party")
 set(RDMA_CORE_SEARCH_PATHS "${CANN_3RD_LIB_PATH}/${RDMA_CORE_NAME}")
 set(RDMA_CORE_ROOT_DIR ${ROOT_BUILD_PATH}/rdma-core)
-set(RDMA_CORE_SRC_DIR ${ROOT_BUILD_PATH}/rdma-core-42.7)
-set(RDMA_CORE_BUILD_DIR ${ROOT_BUILD_PATH}/rdma-core/build)
+set(RDMA_CORE_ARCHIVE rdma-core-${RDMA_CORE_VERSION}.tar.gz)
+set(RDMA_CORE_ARCHIVE_PATH "${ROOT_BUILD_PATH}/${RDMA_CORE_ARCHIVE}")
+set(RDMA_CORE_PATCH "${ROOT_BUILD_PATH}/rdma-core-${RDMA_CORE_VERSION}.patch")
+set(RDMA_CORE_SRC_DIR "${ROOT_BUILD_PATH}/rdma-core-${RDMA_CORE_VERSION}")
+set(RDMA_CORE_BUILD_DIR "${ROOT_BUILD_PATH}/rdma-core-build")
+
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
 
+if(DEFINED CANN_3RD_LIB_PATH AND CANN_3RD_LIB_PATH)
+    set(RDMA_CORE_ARCHIVE_PATH "${CANN_3RD_LIB_PATH}/${RDMA_CORE_ARCHIVE}")
+endif()
 if(EXISTS ${RDMA_CORE_SEARCH_PATHS})
     set(RDMA_CORE_SRC_DIR ${RDMA_CORE_SEARCH_PATHS})
     message(STATUS "Successfully copied ${RDMA_CORE_SEARCH_PATHS} to ${ROOT_BUILD_PATH}.")
 else()
-    set(RDMA_CORE_URL "https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.tar.gz")
-    set(RDMA_CORE_PATCH_URL "https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.patch")
-    file(DOWNLOAD ${RDMA_CORE_PATCH_URL} ${ROOT_BUILD_PATH}/rdma-core-42.7.patch)
-    file(DOWNLOAD ${RDMA_CORE_URL} ${ROOT_BUILD_PATH}/rdma-core-42.7.tar.gz
-        EXPECTED_HASH SHA256=aa935de1fcd07c42f7237b0284b5697b1ace2a64f2bcfca3893185bc91b8c74d
-    )
-    execute_process(
-        COMMAND tar -zxf rdma-core-42.7.tar.gz
-        WORKING_DIRECTORY ${ROOT_BUILD_PATH}
-    )
-    execute_process(
-        COMMAND patch -p1  -i ${ROOT_BUILD_PATH}/rdma-core-42.7.patch
-        WORKING_DIRECTORY ${RDMA_CORE_SRC_DIR}
-    )
-    message(STATUS "downloading ${RDMA_CORE_URL} to ${RDMA_CORE_ROOT_DIR}")
+    if(NOT EXISTS "${RDMA_CORE_SRC_DIR}/CMakeLists.txt")
+        message(STATUS "rdma-core not found, starting download and setup...")
+
+        # -------------------------- downloading src --------------------------
+        if(NOT EXISTS "${RDMA_CORE_ARCHIVE_PATH}")
+            message(STATUS "Downloading rdma-core ${RDMA_CORE_VERSION}...")
+            file(DOWNLOAD
+                ${RDMA_CORE_URL}
+                ${RDMA_CORE_ARCHIVE_PATH}
+                EXPECTED_HASH SHA256=aa935de1fcd07c42f7237b0284b5697b1ace2a64f2bcfca3893185bc91b8c74d
+                STATUS DOWNLOAD_STATUS
+                SHOW_PROGRESS
+            )
+
+            list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
+            if(NOT STATUS_CODE EQUAL 0)
+                list(GET DOWNLOAD_STATUS 1 ERROR_MSG)
+                file(REMOVE "${RDMA_CORE_ARCHIVE_PATH}")
+                message(FATAL_ERROR "Failed to download rdma-core: ${ERROR_MSG}")
+            endif()
+        else()
+            message(STATUS "rdma-core archive already exists, skipping download")
+        endif()
+
+        # -------------------------- dowloading patch --------------------------
+        if(NOT EXISTS "${RDMA_CORE_PATCH}")
+            message(STATUS "Downloading rdma-core patch...")
+            file(DOWNLOAD
+                ${RDMA_CORE_PATCH_URL}
+                ${RDMA_CORE_PATCH}
+                STATUS DOWNLOAD_STATUS
+                SHOW_PROGRESS
+            )
+
+            list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
+            if(NOT STATUS_CODE EQUAL 0)
+                list(GET DOWNLOAD_STATUS 1 ERROR_MSG)
+                file(REMOVE "${RDMA_CORE_PATCH}")
+                message(FATAL_ERROR "Failed to download patch: ${ERROR_MSG}")
+            endif()
+        else()
+            message(STATUS "rdma-core patch already exists, skipping download")
+        endif()
+
+        # -------------------------- Extracting --------------------------
+        message(STATUS "Extracting rdma-core...")
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E tar -zxf "${RDMA_CORE_ARCHIVE_PATH}"
+            WORKING_DIRECTORY "${ROOT_BUILD_PATH}"
+            RESULT_VARIABLE TAR_RESULT
+        )
+        if(NOT TAR_RESULT EQUAL 0)
+            message(FATAL_ERROR "Failed to extract rdma-core archive")
+        endif()
+
+        # -------------------------- patching --------------------------
+        message(STATUS "Applying rdma-core patch...")
+        execute_process(
+            COMMAND patch -p1 -i "${RDMA_CORE_PATCH}"
+            WORKING_DIRECTORY "${RDMA_CORE_SRC_DIR}"
+            RESULT_VARIABLE PATCH_RESULT
+        )
+        if(NOT PATCH_RESULT EQUAL 0)
+            message(FATAL_ERROR "Failed to apply rdma-core patch")
+        endif()
+
+    else()
+        message(STATUS "rdma-core source already prepared, skipping download/extract/patch")
+    endif()
 endif()
 execute_process(
     COMMAND ${CMAKE_COMMAND}
