@@ -27,6 +27,19 @@
 const u64 RANKTABLE_FILE_MAX_SIZE = 1024ULL * 1024 * 1024;
 u64 GetFileSize(const std::string& path);
 
+using HcclGroupParamsTem = struct TagHcclGroupParamsInfoTem {
+    /* * group的基本构建信息，节点数及本节点在group中的编号、
+    本节点在worldgroup中的编号、group的所有ranks */
+    u32 worldRank;                /* * 用于标识world内不同节点 */
+    u32 groupRank;                /* * 用于标识group内不同节点 */
+    u32 serverNum;                /* * 用于标识group内服务器总数 */
+    u32 totalRanks;              /* * 用于指示group内的节点总数, rank范围[0, totalRanks-1] */
+    std::vector<u32> groupRanks;  // 内部存储wordrankid，其下标表示groupid
+    void* pSubComm;
+    u32 refCounter = 0;
+    bool destroyFlag = false;
+}
+
 using HcclGroupParamsV2 = struct TagHcclGroupParamsInfoV2 {
     /* * group的基本构建信息，节点数及本节点在group中的编号、
     本节点在worldgroup中的编号、group的所有ranks */
@@ -106,6 +119,8 @@ HcclResult HcomDestroyGroupImplV2(const std::string &group);
 HcclResult HcomGetWorldRankFromGroupRankV2(const char *group, u32 groupRank, u32 *worldRank);
 HcclResult HcomGetGroupRankFromWorldRankV2(u32 worldRank, const char *group, u32 *groupRank);
 HcclResult HcomGetRankSizeV2(const char *group, u32 *rankSize);
+HcclResult HcomGetCommV2(void **comm);
+HcclResult HcommGetGroupParamsV2(const char *group, void* groupParams, void **commV2);
 HcclResult HcomInitByFileV2(const char *rankTablePath, const char *identify);
 HcclResult HcomInitByStringV2(const char *rankTableM, const char *identify);
 HcclResult CallSingletons();
