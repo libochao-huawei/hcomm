@@ -11,6 +11,7 @@
 #define AICPU_TS_URMA_CHANNEL_H
 
 #include "../channel.h"
+#include "../../sockets/socket_mgr.h"
 
 // Orion
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
@@ -40,6 +41,7 @@ private:
     HcclResult BuildNotify();
     HcclResult BuildBuffer();
     HcclResult BuildUbMemTransport();
+    HcclResult BuildSocket();
 
     HcclResult PackOpData(std::vector<char> &data);
 
@@ -64,6 +66,7 @@ private:
     std::vector<std::unique_ptr<Hccl::DevUbConnection>>         connections_{};
     std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
+    std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
 };
 
 } // namespace hcomm
