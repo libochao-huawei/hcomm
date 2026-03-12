@@ -167,6 +167,23 @@ TEST_F(CollServiceAiCpuImplTest, Ut_SetHcclKernelLaunchParam_When_Op_BATCHSENDRE
     comm.rankGraph->AddPeer(peer0);
     comm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(comm);
     comm.cclBuffer = DevBuffer::Create(0x100, 10);
+    
+    CollOperator op;
+    op.opTag = "testTag";
+    op.opType = OpType::BATCHSENDRECV;
+    op.dataType = DataType::FP32;
+    op.dataCount = 3;
+    op.batchSendRecvDataDes.itemNum = 2;
+    HcclSendRecvItem hcclSendRecvItem[2];
+    // 初始化每个 HcclSendRecvItem
+    for (u32 i = 0; i < 2; ++i) {
+        hcclSendRecvItem[i].sendRecvType = HcclSendRecvType::HCCL_SEND;
+        hcclSendRecvItem[i].count = 10;
+        hcclSendRecvItem[i].dataType = HcclDataType::HCCL_DATA_TYPE_FP32;
+        hcclSendRecvItem[i].remoteRank = i;
+    }
+    op.batchSendRecvDataDes.sendRecvItemsPtr = &hcclSendRecvItem[0];
+
 
     CollServiceAiCpuImpl service(&comm);
     service.counterBuf = DevBuffer::Create(0x100, 10);
