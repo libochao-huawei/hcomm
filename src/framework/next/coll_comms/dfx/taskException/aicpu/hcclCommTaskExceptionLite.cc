@@ -154,27 +154,26 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
     }
 
     // 1. 打印task信息
-    HCCL_ERROR("[TaskException][AICPU]Task run failed, base information is %s, %s",
+    HCCL_ERROR("[TaskException][AICPU]base information is %s, %s",
         GetBaseInfo(*curTask).c_str(), curTask->GetParaInfo().c_str());
     // 2. UB任务打印EID信息
     PrintEid(*curTask);
     // 3. 打印group信息
-    HCCL_ERROR("[TaskException][AICPU]Task run failed, groupRank information is %s.", GetGroupInfo(*curTask).c_str());
-    // 4. 打印算子信息
-    HCCL_ERROR("[TaskException][AICPU]Task run failed, opData information is %s.", GetOpDataInfo(*curTask).c_str());
-    // 5. notify wait超时场景，打印前序task序列
-    if (curTask->taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
-        CHK_RET(PrintTaskContextInfo(exceptionInfo.sqId, sqeId));
+    HCCL_ERROR("[TaskException][AICPU]group information is %s.", GetGroupInfo(*curTask).c_str());
+    // 4. 打印算子信息和task序列
+    if (curTask->taskParam_.taskType != Hccl::TaskParamType::TASK_NOTIFY_WAIT) { // 非notify场景，仅打印算子信息
+        HCCL_ERROR("[TaskException][AICPU]opData information is %s.", GetOpDataInfo(*curTask).c_str());
+    } else {
+        CHK_RET(PrintTaskContextInfo(exceptionInfo.sqId, sqeId)); // notify场景打印算子信息和task序列
     }
     return HCCL_SUCCESS;
 }
 
 std::string HcclCommTaskExceptionLite::GetBaseInfo(const Hccl::TaskInfo& taskInfo)
 {
-    CHK_PRT_RET(taskInfo.dfxOpInfo_ == nullptr, HCCL_ERROR("[%s]TaskInfo dfxOpInfo is nullptr.", __func__), "");
-
-    return Hccl::StringFormat("streamID(sqId):[%u], taskID(sqeId):[%u], taskType:[%s]",
-        taskInfo.streamId_, taskInfo.taskId_, taskInfo.taskParam_.taskType.Describe().c_str());
+    u32 opIndex = (taskInfo.dfxOpInfo_ == nullptr) ? INVALID_UINT : taskInfo.dfxOpInfo_->index_;
+    return Hccl::StringFormat("streamID(sqId):[%u], taskID(sqeId):[%u], taskType:[%s], opIndex[%u]",
+        taskInfo.streamId_, taskInfo.taskId_, taskInfo.taskParam_.taskType.Describe().c_str(), opIndex);
 }
 
 HcclResult HcclCommTaskExceptionLite::GenerateErrorMessageReport(CollCommAicpu *aicpuComm,
@@ -354,29 +353,32 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(u32 sqId, u32 taskId)
         }
     }
 
-    HCCL_ERROR("[TaskException][AICPU]Task run failed, context sequence before error task is "
+    HCCL_ERROR("[TaskException][AICPU]context sequence before error task is "
         "[SDMA:M(rank), RDMA:RS(rank,id), SendPayload:SP(rank), InlineReduce:IR(rank), Reduce:R(rank), "
         "NotifyRecord:NR(rank,id), NotifyWait:NW(rank,id), SendNotify:SN(rank,id), "
         "WriteWithNotify:WN(rank,id), WriteReduceWithNotify:WRN(rank,id)]:");
 
     std::string taskContextInfo = "";
-    u32 lastOpIndex = (*taskContext.rbegin())->dfxOpInfo_ == nullptr ?
-        INVALID_UINT : (*taskContext.rbegin())->dfxOpInfo_->index_;
-    u32 curOpIndex = INVALID_UINT;
-    for (auto it = taskContext.rbegin(); it != taskContext.rend(); ++it) {
-        std::string conciseInfo = (*it)->GetConciseBaseInfo();
-        conciseInfo += ",";
-        curOpIndex = (*it)->dfxOpInfo_ == nullptr ? INVALID_UINT : (*it)->dfxOpInfo_->index_;
-
-        if (taskContextInfo.size() + conciseInfo.size() >= TASK_CONTEXT_INFO_SIZE || lastOpIndex != curOpIndex) {
-            HCCL_ERROR("[TaskException][AICPU]OP(%u): %s", lastOpIndex, taskContextInfo.c_str());
-            taskContextInfo = "";
-            lastOpIndex = curOpIndex;
+    Hccl::TaskInfo* lastTask = taskContext[0].get();
+    for (u32 i = 0; i < taskContext.size(); ++i) {
+        if (taskContext[i] == nullptr || taskContext[i]->dfxOpInfo_ == nullptr) {
+            HCCL_ERROR("[%s]taskContext nullptr, taskContext[%u]=%p", __func__, i, taskContext[i]);
+            continue;
         }
+        std::string conciseInfo = taskContext[i]->GetConciseBaseInfo();
+        conciseInfo += ",";
 
+        if (taskContextInfo.size() + conciseInfo.size() >= TASK_CONTEXT_INFO_SIZE || // 1. 字符串超过一定长度时，打印一次
+            lastTask->dfxOpInfo_->index_ != taskContext[i]->dfxOpInfo_->index_ ||    // 2. 不同算子，新起一行打印
+            i + 1 == taskContext.size()) {                                           // 3. 遍历到最后一个task，打印一次
+            HCCL_ERROR("[TaskException][AICPU]opData information is %s.", GetOpDataInfo(*lastTask).c_str());
+            HCCL_ERROR("[TaskException][AICPU]task sequence is OP(%u): %s", lastTask->dfxOpInfo_->index_, taskContextInfo.c_str());
+            taskContextInfo = "";
+            lastTask = taskContext[i].get();
+        }
         taskContextInfo += conciseInfo;
     }
-    HCCL_ERROR("[TaskException][AICPU]OP(%u): %s end.", curOpIndex, taskContextInfo.c_str());
+    HCCL_ERROR("[TaskException][AICPU]task sequence end.");
     return HCCL_SUCCESS;
 }
 
