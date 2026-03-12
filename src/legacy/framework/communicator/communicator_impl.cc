@@ -576,7 +576,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
                 params.taskParams[i + 1].beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
                 SuperFastLoad(ccuParams + params.count[i], slave->GetPtr(), params.count[i + 1]);
                 params.taskParams[i + 1].endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-                FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[i + 1], slave->GetIsMaster());
+                FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[i + 1], slave->IsMaster());
             }
             else{
                 SuperFastLoad(ccuParams + params.count[i], slave->GetPtr(), params.count[i + 1]);
