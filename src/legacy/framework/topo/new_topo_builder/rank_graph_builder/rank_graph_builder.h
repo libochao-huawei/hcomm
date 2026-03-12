@@ -58,10 +58,10 @@ private:
     std::shared_ptr<NetInstance> CreateNetInstance(const RankLevelInfo &levelInfo);
 };
 
-std::map<PlaneId, FabricId> GetFabricsFromAddrInfo(std::vector<AddressInfo> rankAddrs);
+std::map<PlaneId, FabricId> GetFabricsFromAddrInfo(const std::vector<AddressInfo>& rankAddrs);
 std::vector<shared_ptr<PhyTopo::Link>> GetPeer2NetPhyLinks(u32 netLayer, LocalId localId);
 std::vector<std::shared_ptr<NetInstance::ConnInterface>> ConstructConnIFromPhyTopoConnIAndPortMap(
-    std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, std::map<std::string, IpAddress> portAddrMap, const TopoType topoType, const u32 topoInstId);
+    std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, const std::map<std::string, IpAddress>& portAddrMap, const TopoType topoType, const u32 topoInstId);
 std::vector<shared_ptr<NetInstance::Link>> ConstructLinks(shared_ptr<NetInstance::Peer> srcPeer, 
     shared_ptr<NetInstance::Peer> dstPeer, std::vector<std::shared_ptr<NetInstance::ConnInterface>> sourceIfaces,
     std::vector<std::shared_ptr<NetInstance::ConnInterface>> targetIfaces, shared_ptr<PhyTopo::Link> phyLink);
