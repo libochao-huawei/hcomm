@@ -28,6 +28,7 @@ set(rs_ut_normal_list
     tc_ut_rs_tlv.c
     tc_ut_rs_ctx.c
     tc_ut_rs_ub.c
+    tc_ut_rs_nda.c
     ${SRC_DIR}/test/ut/platform/hccp/stub/crypto/encrypt.c
     ${SRC_DIR}/test/ut/platform/hccp/stub/crypto/kmc_crypt.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_drv_rdma.c
@@ -36,6 +37,7 @@ set(rs_ut_normal_list
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_ping_inner.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_rdma.c
+    ${SRC_DIR}/src/platform/hccp/rdma_service/rs_nda.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_epoll.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_drv_socket.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_socket.c
