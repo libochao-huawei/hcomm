@@ -67,11 +67,12 @@ HcclResult HcclCommDfx::ReportOp(u64 beginTime, bool cachedReq, bool opbased) {
     return HCCL_SUCCESS;
 }
 
-// void HcclCommDfx::CallReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
-//     if (profiling_) {
-//         profiling->CallReportMc2CommInfo(mc2CommInfo);
-//     }
-// }
+//TODO: 返回值Mc2要改
+void HcclCommDfx::ReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
+    if (profiling_) {
+        profiling->CallReportMc2CommInfo(mc2CommInfo);
+    }
+}
 
 HcclResult HcclCommDfx::UpdateProfStat() {
     CHK_PTR_NULL(profiling_);
