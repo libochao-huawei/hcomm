@@ -1269,6 +1269,12 @@ HcclResult hcclComm::SetOnlyAivModeConfig(const bool isOnlyAiv)
     return HCCL_SUCCESS;
 }
 
+HcclResult hcclComm::GetOnlyAivModeConfig(bool &isOnlyAiv)
+{
+    isOnlyAiv = communicator_->GetConfigIsOnlyAivMode();
+    return HCCL_SUCCESS;
+}
+
 HcclResult hcclComm::SetAicpuUnfoldConfig(const bool aicpuUnfold)
 {
     CHK_RET(communicator_->SetAicpuUnfoldConfig(aicpuUnfold));
