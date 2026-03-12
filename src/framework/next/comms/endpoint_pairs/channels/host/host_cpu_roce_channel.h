@@ -15,13 +15,13 @@
 #include "../channel.h"
 #include "enum_factory.h"
 #include "hccl_common.h"
+#include "../../sockets/socket_mgr.h"
 
 // Orion
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
 #include "../../../../../../legacy/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
 #include "remote_rma_buffer.h"
 #include "host_rdma_connection.h"
-// #include "base_mem_transport.h"
 
 namespace hcomm {
 
@@ -51,11 +51,10 @@ public:
 
 private:
     HcclResult ParseInputParam();
-    // HcclResult BuildAttr();
     HcclResult BuildConnection();
     HcclResult BuildNotify();
     HcclResult BuildBuffer();
-
+    HcclResult BuildSocket();
 
     HcclResult CheckSocketStatus();
     HcclResult CreateQp();
@@ -78,6 +77,9 @@ private:
     HcclResult PrepareNotifyWrResource(const uint64_t len, const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifyRecordWr) const;
     HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
                                       struct ibv_send_wr &writeWithNotifyWr) const;
+
+    HcclResult FindLocalBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
+    HcclResult FindRemoteBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
 
     // 入参
     EndpointHandle endpointHandle_;
@@ -102,6 +104,7 @@ private:
     std::vector<std::unique_ptr<Hccl::RemoteRdmaRmaBuffer>> rmtRmaBuffers_{};
     ExchangeRdmaConnDto rmtConnDto_;
     std::vector<std::unique_ptr<HcclMem>> remoteMems{};
+    std::unique_ptr<SocketMgr> socketMgr_{nullptr};
 
     std::mutex cq_mutex;
 };
