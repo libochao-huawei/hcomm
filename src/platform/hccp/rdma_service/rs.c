@@ -34,6 +34,7 @@
 #include "ssl_adp.h"
 #include "rs_socket.h"
 #include "dl_ibverbs_function.h"
+#include "dl_nda_function.h"
 #include "dl_hal_function.h"
 #include "rs_drv_rdma.h"
 #include "file_opt.h"
@@ -1064,6 +1065,8 @@ STATIC int RsRdevCbInit(struct rdev rdevInfo, struct RsRdevCb *rdevCb, struct rs
         goto unmmap_ai_db;
     }
 
+    rdevCb->ibCtxEx = RsNdaIbvOpenExtend(rdevCb->ibCtx);
+
     return 0;
 
 unmmap_ai_db:
@@ -1339,6 +1342,8 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
 #endif
 
     RsIbvDeallocPd(rdevCb->ibPd);
+
+    (void)RsNdaIbvCloseExtend(rdevCb->ibCtxEx);
 
     RsIbvCloseDevice(rdevCb->ibCtx);
 
