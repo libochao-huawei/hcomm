@@ -24,6 +24,7 @@
 #include "ra_hdc_rdma.h"
 #include "ra_hdc_socket.h"
 #include "ra_peer.h"
+#include "ra_peer_nda.h"
 #include "ra_peer_socket.h"
 #include "ra_rs_comm.h"
 #include "ra_rs_err.h"
@@ -76,6 +77,7 @@ struct RaSocketOps gRaPeerSocketOps = {
 struct RaRdmaOps gRaHdcRdmaOps = {
     .raRdevInit = RaHdcRdevInit,
     .raRdevGetPortStatus = RaHdcRdevGetPortStatus,
+    .raNdaGetDirectFlag = NULL,
     .raGetLbMax = NULL,
     .raRdevDeinit = RaHdcRdevDeinit,
     .raSetTsqpDepth = RaHdcSetTsqpDepth,
@@ -126,6 +128,7 @@ struct RaRdmaOps gRaHdcRdmaOps = {
 struct RaRdmaOps gRaPeerRdmaOps = {
     .raRdevInit = RaPeerRdevInit,
     .raRdevGetPortStatus = NULL,
+    .raNdaGetDirectFlag = RaPeerNdaGetDirectFlag,
     .raGetLbMax = RaPeerGetLbMax,
     .raRdevDeinit = RaPeerRdevDeinit,
     .raSetTsqpDepth = RaPeerSetTsqpDepth,
