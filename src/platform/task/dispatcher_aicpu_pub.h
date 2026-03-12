@@ -182,7 +182,7 @@ private:
 
     // Launch context用于算子展开的动态缓存
     // 注意: cachePtr_初始化为空, needAddSqe_初始化为false, 即暂无算子展开的动态缓存
-    OpUnfoldKey key_ = {}; // 当前展开算子的标识符
+    OpUnfoldKey key_; // 当前展开算子的标识符
     OpUnfoldCache *cachePtr_ = nullptr; // 算子展开的动态缓存
     std::vector<OpUnfoldMemRange> userInputMemRanges_; // 当前算子展开执行时, 通信域内各rank分配的user input memory range
     std::vector<OpUnfoldMemRange> userOutputMemRanges_; // 当前算子展开执行时, 通信域内各rank分配的user output memory range
