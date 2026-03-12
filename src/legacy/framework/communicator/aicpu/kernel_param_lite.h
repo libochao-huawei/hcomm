@@ -60,19 +60,19 @@ struct HcclDeviceEnvConfigLite {
 struct BatchSendRecvDataDes {
     u32 itemNum;
     HcclSendRecvItem batchSendRecvItem[];
-}
+};
 
 struct AllToAllvDataDes {
     u8 sendType;
     u8 recvType;
     u64 sendRecvInfos[];
-}
+};
 
 struct AllToAllvcDataDes {
     u8 sendType;
     u8 recvType;
     u64 sendCountMatrix[];
-}
+};
 
 struct HcclKernelParamLite {
     uint64_t                  binaryResAddr{0};
