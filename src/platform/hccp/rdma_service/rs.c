@@ -343,11 +343,14 @@ STATIC int RsPthreadMutexInit(struct rs_cb *rscb, struct RsInitConfig *cfg)
     ret = pthread_mutex_init(&rscb->mutex, NULL);
     CHK_PRT_RETURN(ret, hccp_err("rscb mutex_init failed ret %d!, normal ret 0", ret), -ESYSFUNC);
     ret = pthread_mutex_init(&rscb->connCb.connMutex, NULL);
-    if (ret) {
+    if (ret != 0) {
         hccp_err("conn_cb mutex_init failed ret %d, normal ret 0!", ret);
-        err = pthread_mutex_destroy(&rscb->mutex);
-        hccp_dbg("pthread destroy ret %d", err);
-        return -ESYSFUNC;
+        goto conn_mutex_err;
+    }
+    ret = pthread_mutex_init(&rscb->ndaMutex, NULL);
+    if (ret != 0) {
+        hccp_err("nda mutex_init failed ret %d, normal ret 0!", ret);
+        goto nda_mutex_err;
     }
 
     hccp_info("mutex init ok");
@@ -361,6 +364,14 @@ STATIC int RsPthreadMutexInit(struct rs_cb *rscb, struct RsInitConfig *cfg)
     RS_INIT_LIST_HEAD(&rscb->heterogTcpFdList);
     rscb->connCb.wlistEnable = cfg->whiteListStatus;
     return 0;
+
+nda_mutex_err:
+    err = pthread_mutex_destroy(&rscb->connCb.connMutex);
+    hccp_dbg("pthread destroy ret %d", err);
+conn_mutex_err:
+    err = pthread_mutex_destroy(&rscb->mutex);
+    hccp_dbg("pthread destroy ret %d", err);
+    return -ESYSFUNC;
 }
 
 STATIC int RsGetChipLogicId(unsigned int chipId, enum NetworkMode hccpMode, unsigned int *logicId)
@@ -538,9 +549,7 @@ RS_ATTRI_VISI_DEF int RsInit(struct RsInitConfig *cfg)
     ret = RsInitRscbCfg(rscb);
     if (ret != 0) {
         hccp_err("rs init rscb configure failed,ret:%d", ret);
-        pthread_mutex_destroy(&rscb->mutex);
-        pthread_mutex_destroy(&rscb->connCb.connMutex);
-        goto pthread_mutex_err;
+        goto init_rscb_err;
     }
 
     rscb->fdMap = calloc(1, sizeof(void*) * RS_MAX_FD_NUM);
@@ -566,9 +575,12 @@ getifaddrs_err:
     rscb->fdMap = NULL;
 
 fd_map_err:
+    RsDeinitRscbCfg(rscb);
+
+init_rscb_err:
     pthread_mutex_destroy(&rscb->mutex);
     pthread_mutex_destroy(&rscb->connCb.connMutex);
-    RsDeinitRscbCfg(rscb);
+    pthread_mutex_destroy(&rscb->ndaMutex);
 
 pthread_mutex_err:
     free(rscb);
@@ -922,6 +934,7 @@ STATIC int RsGetIbCtxAndRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb,
                 RsIbvCloseDevice(ibCtxTmp);
                 return ret;
             }
+            hccp_run_info("[xzdebug]vendorId: %u", rdevCb->deviceAttr.vendor_id);
             rdevCb->ibCtx = ibCtxTmp;
             return 0;
         } else if (ret == -EEXIST) {
@@ -1992,6 +2005,7 @@ STATIC void RsDeinitFreeRscb(struct rs_cb *rscb)
 #endif
     pthread_mutex_destroy(&rscb->mutex);
     pthread_mutex_destroy(&rscb->connCb.connMutex);
+    pthread_mutex_destroy(&rscb->ndaMutex);
     RsDestroyEpoll(rscb);
 
 #ifdef CUSTOM_INTERFACE
