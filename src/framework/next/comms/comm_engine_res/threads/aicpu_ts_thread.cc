@@ -430,12 +430,8 @@ HcclResult AicpuTsThread::GetSqHeadAndTail(uint32_t& sqHead, uint32_t& sqTail)
     uint32_t sqIds{0};
     CHK_RET(pImpl_->GetSqId(sqIds));
 
-    HCCL_INFO("[AicpuTsThread::%s] START. devId=%u, sqId=%u.", __func__, devId_, sqIds);
-
     CHK_RET(QuerySqStatusByType(devId_, sqIds, DRV_SQCQ_PROP_SQ_TAIL, sqTail));
     CHK_RET(QuerySqStatusByType(devId_, sqIds, DRV_SQCQ_PROP_SQ_HEAD, sqHead));
-
-    HCCL_INFO("[AicpuTsThread::%s] SUCCESS. sqHead=%u, sqTail=%u.", __func__, sqHead, sqTail);
 #endif
     return HCCL_SUCCESS;
 }
