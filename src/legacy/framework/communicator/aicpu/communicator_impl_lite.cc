@@ -300,7 +300,7 @@ void CommunicatorImplLite::UpdateDynamicOpData(HcclKernelParamLite *kernelParam)
         kernelParam->op.algOperator.batchSendRecvDataDes.itemNum = batchSendRecvDataPtr->itemNum;
         kernelParam->op.algOperator.batchSendRecvDataDes.sendRecvItemsPtr = batchSendRecvDataPtr->batchSendRecvItem;
         HcclSendRecvItem* itemPtr = reinterpret_cast<HcclSendRecvItem *>(kernelParam->op.algOperator.batchSendRecvDataDes.sendRecvItemsPtr);
-        for (u32 i = 0; i < kernelParam->op.algOperator.batchSendRecvDataDes.sendRecvItemsPtr; i++) {
+        for (u32 i = 0; i < kernelParam->op.algOperator.batchSendRecvDataDes.itemNum; i++) {
             HCCL_INFO("[CommunicatorImplLite][UpdataDynamicOpData] batchSendRecvDataDes remoteRank[%u]", (itemPtr + i)->remoteRank);
         }
     } else if (kernelParam->op.algOperator.opType == OpType::ALLTOALLV) {
@@ -319,11 +319,11 @@ void CommunicatorImplLite::UpdateDynamicOpData(HcclKernelParamLite *kernelParam)
                 *(static_cast<const u64 *>(kernelParam->op.algOperator.all2AllVDataDes.recvCounts) + i));
         }
     } else if (kernelParam->op.algOperator.opType == OpType::ALLTOALLVC) {
-        sturct AllToAllvcDataDes* alltoallvcDataPtr = 
+        struct AllToAllvcDataDes* alltoallvcDataPtr = 
             reinterpret_cast<struct AllToAllvcDataDes *>(dynamicDataPtr);
         kernelParam->op.algOperator.all2AllVCDataDes.sendType = static_cast<DataType::Value>(alltoallvcDataPtr->sendType);
         kernelParam->op.algOperator.all2AllVCDataDes.recvType = static_cast<DataType::Value>(alltoallvcDataPtr->recvType);
-        kernelParam->op.algOperator.all2AllVDataDes.sendCountMatrix = static_cast<void *>(alltoallvcDataPtr->sendCountMatrix);
+        kernelParam->op.algOperator.all2AllVCDataDes.sendCountMatrix = static_cast<void *>(alltoallvcDataPtr->sendCountMatrix);
     }
 }
 
