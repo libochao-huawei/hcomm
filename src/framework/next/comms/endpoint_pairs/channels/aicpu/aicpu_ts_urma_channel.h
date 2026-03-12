@@ -14,6 +14,7 @@
 
 // Orion
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
+#include "../../../../../../legacy/framework/resource_manager/socket/socket_manager.h"
 #include "../../../../../../legacy/unified_platform/pub_inc/buffer_key.h"
 #include "rma_connection.h"
 #include "ub_mem_transport.h"
@@ -40,6 +41,7 @@ private:
     HcclResult BuildNotify();
     HcclResult BuildBuffer();
     HcclResult BuildUbMemTransport();
+    HcclResult BuildSocket();
 
     HcclResult PackOpData(std::vector<char> &data);
 
@@ -64,6 +66,7 @@ private:
     std::vector<std::unique_ptr<Hccl::DevUbConnection>>         connections_{};
     std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
+    std::unique_ptr<Hccl::SocketManager>                        socketMgr_;
 };
 
 } // namespace hcomm

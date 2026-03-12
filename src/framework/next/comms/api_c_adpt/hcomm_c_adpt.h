@@ -47,8 +47,6 @@ HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t list
 
 HcclResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
 
-HcclResult HcommChannelGetUserRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
-
 HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
 
 HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, uint32_t listNum,
@@ -70,6 +68,9 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
 // C函数
 HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, HcclDfxOpInfo dfxOpInfo);
 HcclResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHandles, uint32_t *memHandleNum);
+
+HcclResult HcommCollectiveChannelCreate(EndpointHandle endpointHandle, CommEngine engine, 
+    HcommChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *channels);
 
 #ifdef __cplusplus
 }

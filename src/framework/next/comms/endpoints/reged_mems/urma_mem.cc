@@ -45,7 +45,7 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
         EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, mem.type, memTag)),
             return HCCL_E_PTR);
 
-        if(strcmp(memTag, "HcclBuffer") == 0) {
+        if (memTag && (strcmp(memTag, "HcclBuffer") == 0)) {
             EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr)),
                 return HCCL_E_PTR);
         }
@@ -87,7 +87,7 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
     CHK_PTR_NULL(this->localUbRmaBufferMgr_);
 
     Hccl::LocalUbRmaBuffer* buffer = static_cast<Hccl::LocalUbRmaBuffer*>(memHandle);
-
+    CHK_PTR_NULL(buffer);
     auto bufferInfo = buffer->GetBufferInfo();
 
     // 从LocalRamBuffer计数器删除
