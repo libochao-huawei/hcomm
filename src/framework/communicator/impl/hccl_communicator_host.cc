@@ -2502,6 +2502,8 @@ namespace hccl
             return HCCL_E_UNAVAIL;
         }
 
+        bool isCapture = StreamIsCapture(stream);
+
         Stream streamObj(stream);
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
@@ -2521,6 +2523,7 @@ namespace hccl
         opParam.DataDes.dataType = dataType;
         opParam.reduceType = HcclReduceOp::HCCL_REDUCE_RESERVED;
         opParam.stream = streamObj;
+        opParam.isCapture = isCapture;
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
@@ -2561,6 +2564,8 @@ namespace hccl
             outputSize += counts[i] * perDataSize;
         }
 
+        bool isCapture = StreamIsCapture(stream);
+
         OpParam opParam;
         opParam.tag = tag;
         opParam.inputPtr = const_cast<void *>(sendBuf);
@@ -2574,6 +2579,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.isCapture = isCapture;
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.opType = HcclCMDType::HCCL_CMD_ALLGATHER_V;
 
@@ -2704,7 +2710,7 @@ namespace hccl
         CHK_RET(CheckSuspendingStatus());
         if (userRankSize_ == 1) {
             // rankSize为1时，退化为AllGather
-            return AllGather(tag, inputPtr, outputPtr, inputCount, dataType, stream);
+            return AllGatherOutPlace(tag, inputPtr, outputPtr, inputCount, dataType, stream);
         }
 
         if (!IsAtomicInit()) {
