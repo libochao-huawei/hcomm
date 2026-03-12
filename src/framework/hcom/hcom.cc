@@ -175,7 +175,7 @@ HcclResult HcomInitByString(const char *rankTableM, const char *identify, WorkMo
             Hccl::RankId rank = static_cast<Hccl::RankId>(myRank);
             void *commV2 = nullptr;
             CHK_RET(HcomGetCommV2(&commV2));
-            CHK_RET(HcclCommInitCollComm(rank, &commV2, hcomInfo.pComm));
+            CHK_RET(HcomInitCollComm(rank, &commV2, hcomInfo.pComm));
             return HCCL_SUCCESS;
         }());
 
