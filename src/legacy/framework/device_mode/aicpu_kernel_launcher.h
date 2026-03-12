@@ -28,7 +28,7 @@ public:
     void AicpuKernelLaunch(const Stream &stream, const string &algName) const;
 
 private:
-    const CommunicatorImpl *comm;
+    CommunicatorImpl *comm;
 
     void SetOpbaseBufferParam(HcclKernelLaunchParam &param, CollOperator &op) const;
     void SetOffloadBufferParam(HcclKernelLaunchParam &param, CollOperator &op) const;
