@@ -9,6 +9,7 @@
  */
 
 #include "i_hccl_one_sided_service.h"
+#include <unordered_set>
 
 namespace hccl {
 using namespace std;
@@ -21,7 +22,7 @@ IHcclOneSidedService::IHcclOneSidedService(unique_ptr<HcclSocketManager> &socket
 }
 
 HcclResult IHcclOneSidedService::Config(const HcclDispatcher &dispatcher, const HcclRankLinkInfo &localRankInfo,
-    const RankTable_t *rankTable, std::string identifier, bool isStandardCard)
+    const RankTable_t *rankTable, std::unordered_set<u32> enableP2PRankIds, std::string identifier, bool isStandardCard)
 {
     CHK_PTR_NULL(dispatcher);
     CHK_PTR_NULL(rankTable);
@@ -32,6 +33,7 @@ HcclResult IHcclOneSidedService::Config(const HcclDispatcher &dispatcher, const 
     rankTable_ = rankTable;
     identifier_ = identifier;
     isStandardCard_ = isStandardCard;
+    enableP2PRankIds_ = enableP2PRankIds;
 
     return HCCL_SUCCESS;
 }
