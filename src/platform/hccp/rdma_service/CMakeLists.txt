@@ -77,8 +77,8 @@ target_include_directories(rs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/ctx/product
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ccu
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/net_adapt
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ubengine
     ${URMA_INCLUDE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ubengine
 )
 
 if(NOT BUILD_OPEN_PROJECT)
