@@ -34,4 +34,7 @@ struct RsQpLenInfo {
     uint32_t cmd;
     uint32_t len;
 };
+
+int RsQueryRdevCb(unsigned int phyId, unsigned int rdevIndex, struct RsRdevCb **rdevCb);
+
 #endif // RS_RDMA_H
