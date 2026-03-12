@@ -152,8 +152,7 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
             return;
         } 
         SaveMirrorDfxOpInfo();
-
-        // translate
+            // translate
         Interpreter interpreter(*comm);
         interpreter.Submit(*insQueue);
     } 
