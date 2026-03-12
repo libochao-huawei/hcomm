@@ -21,8 +21,8 @@ extern "C" {
 #endif
 
 struct NdaOps {
-    void *(*alloc)(size_t size);
-    void (*free)(void *ptr);
+    void *(*alloc)(size_t);
+    void (*free)(void *);
 
     void (*memset_s)(void *dst, int value, size_t count);
     int (*memcpy_s)(void *dst, size_t dstSize, void *src, size_t srcSize, uint32_t direct);
