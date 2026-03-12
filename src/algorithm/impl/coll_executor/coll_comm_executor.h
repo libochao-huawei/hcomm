@@ -46,7 +46,7 @@ public:
         const std::vector<std::vector<Slice>> multRingsSliceZero, Stream stream,
         s32 profStage, const u64 baseOffset = 0, const HcomCollOpInfo *opInfo = nullptr,
         const std::vector<std::vector<Slice>> multRingsUserMemSlice = std::vector<std::vector<Slice>> (0),
-        const CommPlane leveIndex = COMM_LEVEL0);
+        const CommPlane levelIndex = COMM_LEVEL0);
 
     HcclResult MultiRingReduceScatterConcurrent(const std::string &tag, DeviceMem inputMem,DeviceMem outputMem,
         const u64 count, const HcclDataType dataType, const HcclReduceOp reductionOp,

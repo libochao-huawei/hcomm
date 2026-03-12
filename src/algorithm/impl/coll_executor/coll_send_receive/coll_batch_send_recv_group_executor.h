@@ -18,7 +18,7 @@ namespace hccl {
 class CollBatchSendRecvGroupExecutor : public CollBatchSendRecvExecutor {
 public:
     CollBatchSendRecvGroupExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollBatchSendRecvGroupExecutor() = default;
+    ~CollBatchSendRecvGroupExecutor() override = default;
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algResource) override;
 protected:
 
@@ -56,7 +56,7 @@ private:
     HcclResult RunTasksBig(OpParam& param);
     HcclResult RunLoopSmall(OpParam& param);
     HcclResult CalcStreamNum(u32& streamNum) override;
-    HcclResult isGroupBigCount(HcclSendRecvItem *sendRecvInfo, u32 itemNum, bool& isSmall);
+    HcclResult isGroupBigCount(HcclSendRecvItem *sendRecvInfo, u32 itemNum, bool& isBig);
     HcclResult CalcBufferSliceSize();
 
     HcclResult MainPostSubWait(Stream& mainStream);

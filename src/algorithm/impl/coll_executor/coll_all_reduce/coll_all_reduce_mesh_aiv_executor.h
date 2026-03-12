@@ -18,7 +18,7 @@ namespace hccl {
 class CollAllReduceMeshAivExecutor : public CollAllReduceExecutor {
 public:
     CollAllReduceMeshAivExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllReduceMeshAivExecutor() = default;
+    ~CollAllReduceMeshAivExecutor() override = default;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
     HcclResult GetAivExecParam(const OpParam& param, AlgResourceResponse& algRes, AivSuperKernelArgs &args) override;
