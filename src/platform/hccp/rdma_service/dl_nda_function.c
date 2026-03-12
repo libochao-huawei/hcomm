@@ -23,8 +23,8 @@ struct RsNdaOps gNdaOps = {
     .rsNdaIbvExtendCheckVersion = ibv_extend_check_version,
     .rsNdaIbvOpenExtend = ibv_open_extend,
     .rsNdaIbvCloseExtend = ibv_close_extend,
-    .rsNdaCreateQpExtend = ibv_create_qp_extend,
-    .rsNdaCreateCqExtend = ibv_create_cq_extend,
+    .rsNdaIbvCreateQpExtend = ibv_create_qp_extend,
+    .rsNdaIbvCreateCqExtend = ibv_create_cq_extend,
     .rsNdaIbvDestroyQpExtend = ibv_destroy_qp_extend,
     .rsNdaIbvDestroyCqExtend = ibv_destroy_cq_extend,
 };
@@ -45,12 +45,12 @@ STATIC int RsNdaIbvApiInit(void)
     gNdaOps.rsNdaIbvCloseExtend = (int (*)(struct ibv_context_extend *))
         HccpDlsym(gRoceNdaApiHandle, "ibv_close_extend");
     DL_API_RET_IS_NULL_CHECK(gNdaOps.rsNdaIbvCloseExtend, "ibv_close_extend");
-    gNdaOps.rsNdaCreateQpExtend = (struct ibv_qp_extend* (*)(struct ibv_context_extend *,
+    gNdaOps.rsNdaIbvCreateQpExtend = (struct ibv_qp_extend* (*)(struct ibv_context_extend *,
         struct ibv_qp_init_attr_extend *)) HccpDlsym(gRoceNdaApiHandle, "ibv_create_qp_extend");
-    DL_API_RET_IS_NULL_CHECK(gNdaOps.rsNdaCreateQpExtend, "ibv_create_qp_extend");
-    gNdaOps.rsNdaCreateCqExtend = (struct ibv_cq_extend* (*)(struct ibv_context_extend *,
+    DL_API_RET_IS_NULL_CHECK(gNdaOps.rsNdaIbvCreateQpExtend, "ibv_create_qp_extend");
+    gNdaOps.rsNdaIbvCreateCqExtend = (struct ibv_cq_extend* (*)(struct ibv_context_extend *,
         struct ibv_cq_init_attr_extend *)) HccpDlsym(gRoceNdaApiHandle, "ibv_create_cq_extend");
-    DL_API_RET_IS_NULL_CHECK(gNdaOps.rsNdaCreateCqExtend, "ibv_create_cq_extend");
+    DL_API_RET_IS_NULL_CHECK(gNdaOps.rsNdaIbvCreateCqExtend, "ibv_create_cq_extend");
     gNdaOps.rsNdaIbvDestroyQpExtend = (int (*)(struct ibv_context_extend *,
         struct ibv_qp_extend *)) HccpDlsym(gRoceNdaApiHandle, "ibv_destroy_qp_extend");
     DL_API_RET_IS_NULL_CHECK(gNdaOps.rsNdaIbvDestroyQpExtend, "ibv_destroy_qp_extend");
@@ -65,7 +65,7 @@ STATIC int RsOpenNdaSo(void)
 {
 #ifndef CA_CONFIG_LLT
     if (gRoceNdaApiHandle == NULL) {
-        gRoceNdaApiHandle = HccpDlopen("libibv_extend.so", RTLD_NOW);
+        gRoceNdaApiHandle = HccpDlopen("libibv_extend.so", RTLD_NOW | RTLD_GLOBAL);
         if (gRoceNdaApiHandle != NULL) {
             return 0;
         }
@@ -162,13 +162,13 @@ int RsNdaIbvCloseExtend(struct ibv_context_extend *context)
 struct ibv_cq_extend *RsNdaIbvCreateCqExtend(struct ibv_context_extend *context,
     struct ibv_cq_init_attr_extend *cqInitAttr)
 {
-    if (gNdaOps.rsNdaCreateCqExtend == NULL) {
+    if (gNdaOps.rsNdaIbvCreateCqExtend == NULL) {
 #ifndef CA_CONFIG_LLT
-        hccp_err("rsNdaCreateCqExtend is null");
+        hccp_err("rsNdaIbvCreateCqExtend is null");
         return NULL;
 #endif
     }
-    return gNdaOps.rsNdaCreateCqExtend(context, cqInitAttr);
+    return gNdaOps.rsNdaIbvCreateCqExtend(context, cqInitAttr);
 }
 
 int RsNdaIbvDestroyCqExtend(struct ibv_context_extend *context, void *ibvCqExt)
@@ -182,4 +182,27 @@ int RsNdaIbvDestroyCqExtend(struct ibv_context_extend *context, void *ibvCqExt)
 #endif
     }
     return gNdaOps.rsNdaIbvDestroyCqExtend(context, cqExtend);
+}
+
+struct ibv_qp_extend *RsNdaIbvCreateQpExtend(struct ibv_context_extend *context,
+    struct ibv_qp_init_attr_extend *qpInitAttr)
+{
+    if (gNdaOps.rsNdaIbvCreateQpExtend == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rsNdaIbvCreateQpExtend is null");
+        return NULL;
+#endif
+    }
+    return gNdaOps.rsNdaIbvCreateQpExtend(context, qpInitAttr);
+}
+
+int RsNdaIbvDestroyQpExtend(struct ibv_context_extend *context, struct ibv_qp_extend *qpExtend)
+{
+    if (gNdaOps.rsNdaIbvDestroyQpExtend == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rsNdaIbvDestroyQpExtend is null");
+        return -EINVAL;
+#endif
+    }
+    return gNdaOps.rsNdaIbvDestroyQpExtend(context, qpExtend);
 }
