@@ -16,6 +16,7 @@
 #include "topo.h"
 #include "host_rdma.h"
 #include "eid_util.h"
+#include "securec.h"
 
 #define MAX_SERVER_ROOTINFO_LEN (2048)
 #define PRODUCT_MESH_LEVEL (0)

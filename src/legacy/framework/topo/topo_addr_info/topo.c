@@ -75,7 +75,7 @@ int GetTopoFilePathFromFile(const char* filePath, char* topoFilePath, size_t buf
     // 6. 提取匹配到的路径值
     int start = match[1].rm_so;
     int len = match[1].rm_eo - match[1].rm_so;
-    int ret = hal_strncpy_s(topoFilePath, bufSize, fileBuf + start, len);
+    int ret = strncpy_s(topoFilePath, bufSize, fileBuf + start, len);
     topoFilePath[len] = '\0'; // 确保字符串以'\0'结尾
     // 7. 释放临时资源（仅保留result作为返回值）
     regfree(&regex);

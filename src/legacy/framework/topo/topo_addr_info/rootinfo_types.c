@@ -22,11 +22,11 @@ char* AddrToString(const Addr* addr)
 {
     const size_t max_buffer_size = 102400;
     char* buf = (char*)malloc(max_buffer_size);
+    errno_t ret = 0;
     if(buf == NULL) {
         return NULL;
     }
     memset_s(buf, max_buffer_size, 0, max_buffer_size);
-    errno_t ret
     char ports[MAX_PORTS_STR_LEN] = {0};
     for(int i = 0; i < addr->port_count; i++) {
         if(i > (MAX_PORT_NUM - 1)) {

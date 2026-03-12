@@ -71,7 +71,7 @@ static void DumpFile(char* rankInfo, size_t bufSize)
 {
     char dumpFile[MAX_DUMP_FILE_LEN] = {0};
     if (strcpy_s(dumpFile, sizeof(dumpFile), getenv("RANKINFO_DUMP_FILE")) != 0) {
-        return
+        return;
     }
     FILE* fp = fopen(dumpFile, "w+");
     if (fp == NULL) {

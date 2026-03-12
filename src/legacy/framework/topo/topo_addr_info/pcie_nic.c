@@ -60,7 +60,7 @@ static int get_abs_path(const char* path, char* abs_path, size_t abs_path_len)
     if (p == NULL) {
         return -1;
     }
-    return hal_strcpy_s(abs_path, abs_path_len, resolved_path);
+    return strcpy_s(abs_path, abs_path_len, resolved_path);
 }
 
 /**
