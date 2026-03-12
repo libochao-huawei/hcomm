@@ -477,18 +477,18 @@ HcclResult HcomGetCommV2(void **comm)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommGetGroupParamsV2(const char *group, void* groupParams, void **commV2);
+HcclResult HcommGetGroupParamsV2(const char *group, void* groupParams, void **commV2)
 {
     HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
     HcclGroupParamsV2 &groupParamsV2 = hcomCommInfoV2.hcclGroupMap[group];
-    HcclGroupParamsTem *groupParamsTem = static_cast<HcclGroupParamsTem>(groupParams);
-    groupParamsTem.worldRank = groupParamsV2.worldRank;
-    groupParamsTem.groupRank = groupParamsV2.groupRank;
-    groupParamsTem.serverNum = groupParamsV2.serverNum;
-    groupParamsTem.totalRanks = groupParamsV2.totalRanks;
-    groupParamsTem.groupRanks = groupParamsV2.groupRanks;
-    groupParamsTem.refCounter = groupParamsV2.refCounter;
-    groupParamsTem.destroyFlag = groupParamsV2.destroyFlag;
+    HcclGroupParamsTem *groupParamsTem = static_cast<HcclGroupParamsTem*>(groupParams);
+    groupParamsTem->worldRank = groupParamsV2.worldRank;
+    groupParamsTem->groupRank = groupParamsV2.groupRank;
+    groupParamsTem->serverNum = groupParamsV2.serverNum;
+    groupParamsTem->totalRanks = groupParamsV2.totalRanks;
+    groupParamsTem->groupRanks = groupParamsV2.groupRanks;
+    groupParamsTem->refCounter = groupParamsV2.refCounter;
+    groupParamsTem->destroyFlag = groupParamsV2.destroyFlag;
     CHK_PTR_NULL(groupParamsV2.pComm);
     *commV2 = static_cast<Hccl::HcclCommunicator*>(groupParamsV2.pComm.get());
     HCCL_INFO("[HcommGetGroupParamsV2] success. group[%s]", group);
