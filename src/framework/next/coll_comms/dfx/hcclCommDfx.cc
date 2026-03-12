@@ -70,7 +70,7 @@ HcclResult HcclCommDfx::ReportOp(u64 beginTime, bool cachedReq, bool opbased) {
 //TODO: 返回值Mc2要改
 void HcclCommDfx::ReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
     if (profiling_) {
-        profiling->CallReportMc2CommInfo(mc2CommInfo);
+        profiling_->ReportMc2CommInfo(mc2CommInfo);
     }
 }
 
