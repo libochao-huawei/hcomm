@@ -935,9 +935,9 @@ void ProfilingHandler::ReportHcclMC2CommInfo(const Stream &kfcStream, Stream &st
     }
 }
 
-void ReportHcclMC2CommInfo(const u32 kfcStreamId,
-                           const std::vector<u32> &aicpuStreamsId, const std::string &id,
-                                RankId myRank, u32 rankSize, RankId rankInParentComm)
+void ProfilingHandler::ReportHcclMC2CommInfo(const u32 kfcStreamId,
+                                            const std::vector<u32> &aicpuStreamsId, const std::string &id,
+                                            RankId myRank, u32 rankSize, RankId rankInParentComm)
 {
     ProfilingDeviceCommResInfo hcclMc2Info;
     hcclMc2Info.groupName = GetProfHashId(id.c_str(),id.length());
@@ -954,13 +954,13 @@ void ReportHcclMC2CommInfo(const u32 kfcStreamId,
         hcclMc2Info.commStreamIds[reportId++] = aicpuStreamsId[streamIndex];
         if (reportId == ONCE_REPORT_STREAM_NUM_MAX) {
             hcclMc2Info.commStreamSize = reportId;
-            ReportHcclMC2CommInfo(DlProfFunction::GetInstance().dlMsprofSysCycleTime(), &hcclMc2Info, sizeof(hcclMc2Info));
+            ReportMc2AddtionInfo(DlProfFunction::GetInstance().dlMsprofSysCycleTime(), &hcclMc2Info, sizeof(hcclMc2Info));
             reportId = 0;
         }
     }
     if (reportId > 0) {
         hcclMc2Info.commStreamSize = reportId;
-        ReportHcclMC2CommInfo(DlProfFunction::GetInstance().dlMsprofSysCycleTime(), &hcclMc2Info,
+        ReportMc2AddtionInfo(DlProfFunction::GetInstance().dlMsprofSysCycleTime(), &hcclMc2Info,
         sizeof(hcclMc2Info));
         reportId = 0;
     }
