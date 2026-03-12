@@ -101,18 +101,18 @@ static HcclResult GetDieIdByChannels(const std::vector<ChannelHandle> &channels,
 
 HcclResult CcuKernel::Init()
 {
-    // 根据channels 0 判断dieId
-    // 当前默认给的所有channelhandle都属于一个die
-    uint32_t dieId{0};
-    CHK_RET(GetDieIdByChannels(channels_, dieId));
-    CHK_PRT_RET(dieId >= CCU_MAX_IODIE_NUM,
-        HCCL_ERROR("[CcuKernel][%s] failed, dieId[%u] should be less than [%u].",
-            __func__, dieId, CCU_MAX_IODIE_NUM),
-        HcclResult::HCCL_E_PARA);
+    // // 根据channels 0 判断dieId
+    // // 当前默认给的所有channelhandle都属于一个die
+    // uint32_t dieId{0};
+    // CHK_RET(GetDieIdByChannels(channels_, dieId));
+    // CHK_PRT_RET(dieId >= CCU_MAX_IODIE_NUM,
+    //     HCCL_ERROR("[CcuKernel][%s] failed, dieId[%u] should be less than [%u].",
+    //         __func__, dieId, CCU_MAX_IODIE_NUM),
+    //     HcclResult::HCCL_E_PARA);
 
-    SetDieId(dieId);
-    CHK_RET(Algorithm());
-    return HcclResult::HCCL_SUCCESS;
+    // SetDieId(dieId);
+    // CHK_RET(Algorithm());
+    // return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams)
@@ -556,6 +556,57 @@ void CcuKernel::SetCcuInstrInfo(const CcuRep::CcuInstrInfo &instrInfo)
 CcuRep::Variable CcuKernel::CreateVariable()
 {
     return CreateResAssist(res_.variable);
+}
+
+template<typename HandleType, typename ResourceType>
+static CcuResult GetResourceByHandle(
+    std::unordered_map<HandleType, ResourceType> &resourceMap, 
+    HandleType handle, ResourceType*& resource, const char* resourceType)
+{
+    auto iter = resourceMap.find(handle);
+    if (iter == resourceMap.end()) {
+        HCCL_ERROR("[%s] failed to find %s by handle: 0x%llx", __func__, resourceType, handle);
+        return CcuResult::CCU_E_NOT_FOUND;
+    }
+    resource = &iter->second;
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuKernel::GetVariableByHandle(CcuVarHandle varHandle, CcuRep::Variable*& variable)
+{
+    return GetResourceByHandle(ccuVarMap_, varHandle, variable, "variable");
+}
+
+CcuResult CcuKernel::VariableCreate(CcuVarHandle *varHandle)
+{
+    const auto &var = CreateResAssist(res_.variable);
+    CcuVarHandle handle = ccuVarMap_.size(); // todo: 当前简单化生成 handle
+    ccuVarMap_.emplace(handle, var);
+    *varHandle = handle;
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuKernel::VariableAssign(CcuVarHandle varHandle, uint64_t immediate)
+{
+    CcuRep::Variable variable{};
+    CHK_CCU_RET(GetVariableByHandle(varHandle, &variable));
+    // todo: need try catch
+    // 通过符号重载实现，内部记录rep
+    variable = immediate;
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuKernel::VariableAddVarToVar(CcuVarHandle varHandle, CcuVarHandle varA, CcuVarHandle varB)
+{
+    CcuRep::Variable resVar{}, leftVar{}, rightVar{};
+    CHK_CCU_RET(GetVariableByHandle(varHandle, &resVar));
+    CHK_CCU_RET(GetVariableByHandle(varA, &leftVar));
+    CHK_CCU_RET(GetVariableByHandle(varB, &rightVar));
+
+    // todo: need try catch
+    // 通过符号重载实现，内部记录rep
+    resVar = leftVar + rightVar;
+    return CcuResult::CCU_SUCCESS;
 }
 
 CcuRep::Variable CcuKernel::CreateContinuousVariable()

@@ -87,6 +87,28 @@ HcclResult CcuKernelMgr::Register(std::unique_ptr<CcuKernel> kernel,
     return HcclResult::HCCL_SUCCESS;
 }
 
+CcuResult CcuKernelMgr::RegisterCStyle(
+    CcuResPack &resPack, CcuInsHandle ccuInsHandle,
+    char *kernelFuncName, void *ccuKernelFunc, void *kernelArg
+    CcuKernelHandle &kernelHandle)
+{
+    std::unique_lock<std::mutex> lock(kernelMapMutex_);
+    
+    currKernel = std::make_unique<CcuKernel>();
+
+    auto creator = *static_cast<hcomm::KernelCreatorCStyle *>(kernelCreator);
+    const auto& arg = *static_cast<const hcomm::CcuKernelArg *>(kernelArg);
+    CHK_CCU_RET(creator(arg));
+
+    CHK_CCU_RET(AllocResCStyle(resPack));
+
+    kernelId_++;
+    kernelMap_[kernelId_] = std::move(currKernel);
+
+    kernelHandle = kernelId_;
+    return HcclResult::HCCL_SUCCESS;
+}
+
 static void DumpResReqInfo(const CcuResReq &totalRes)
 {
     for (uint32_t i = 0; i < CCU_MAX_IODIE_NUM; i++) {
@@ -265,6 +287,28 @@ HcclResult CcuKernelMgr::AllocRes(std::unique_ptr<CcuKernel> &kernel, CcuResPack
 
     // 资源从respack转移至kernel
     LoadRes(kernel, resPack);
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+CcuResult CcuKernelMgr::AllocResCStyle(CcuResPack &resPack)
+{
+    CHK_RET(InstantiationTranslator(currkernel->GetDieId()));
+
+    CcuResReq leftRes{};
+    GetResNumFromResPack(resPack, leftRes);
+
+    const CcuResReq &resReq = currkernel->GetResourceRequest();
+    if (!CheckResIfAvailable(leftRes, resReq)) {
+        HCCL_WARNING("[CcuKernelMgr][%s] resource is not enough.", __func__);
+        return HcclResult::HCCL_E_UNAVAIL;
+    }
+
+    // 申请指令空间资源
+    CHK_RET(AllocInstrRes(currkernel, devLogicId_));
+
+    // 资源从respack转移至kernel
+    LoadRes(currkernel, resPack);
 
     return HcclResult::HCCL_SUCCESS;
 }
