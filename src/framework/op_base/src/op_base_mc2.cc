@@ -371,6 +371,14 @@ HcclResult HcclGetRemoteIpcHcclBuf(HcclComm comm, uint64_t remoteRank, void **ad
     }
 
     CHK_RET(hcclComm->GetRemoteCCLBuf(remoteRank, addr, size));
+    if (*addr == nullptr) {
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET(hcclComm->GetUserRank(localRank));
+        HCCL_ERROR("[%s]comm[%s] get remote CCL buffer fail, ret is nullptr. Possible reasons:"
+            "The selected AlgConfig has not create link between localRank[%u] to remoteRank[%llu].",
+            __func__, hcclComm->GetIdentifier().c_str(), localRank, remoteRank);
+        return HCCL_E_PTR;
+    }
 
     return HCCL_SUCCESS;
 }
