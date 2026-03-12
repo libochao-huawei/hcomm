@@ -178,7 +178,7 @@ HcclResult AicpuTsThread::InitStream(HcclStreamParam &streamParam)
 HcclResult AicpuTsThread::InitStreamLite(HcclStreamInfo &streamParam, uint32_t hostPhyId)
 {
     EXECEPTION_CATCH(pImpl_ = std::make_unique<Hccl::IAicpuTsThread>(), return HCCL_E_PTR);
-    pImpl_->StreamLiteInit(streamParam.streamIds, streamParam.sqIds, hostPhyId, streamParam.cqIds); // 在aicpu侧查询cqe时，需要使用logicCqids，而不是cqIds
+    pImpl_->StreamLiteInit(streamParam.streamIds, streamParam.sqIds, hostPhyId, streamParam.logicCqids); // 在aicpu侧查询cqe时，需要使用logicCqids，而不是cqIds
     return HCCL_SUCCESS;
 }
 

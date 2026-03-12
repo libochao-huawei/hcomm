@@ -66,8 +66,9 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 
     indOpCommInitialized_ = true;
     CHK_RET(InitBackGroundThread());
-    HCCL_RUN_INFO("%s group[%s] success!, deviceLogicId[%u], devicePhyId[%u], deviceType[%u]",
-         __func__, identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType);
+    HCCL_RUN_INFO("[%s]success, group[%s], deviceLogicId[%u], devicePhyId[%u], deviceType[%u], rankSize[%u] "\
+        "userRank[%u], devId[%u]", __func__, identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId,
+        topoInfo_.deviceType, topoInfo_.userRankSize, topoInfo_.userRank, devId_);
     return HCCL_SUCCESS;
 }
 
@@ -291,9 +292,8 @@ HcclResult CollCommAicpu::InitBackGroundThread()
     return HCCL_SUCCESS;
 }
 
-HcclResult CollCommAicpu::BackGroundGetCmd(Hccl::KfcCommand &command)
+HcclResult CollCommAicpu::BackGroundGetCmd(Hccl::KfcCommand &cmd)
 {
-    Hccl::KfcCommand cmd;
     CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
     HcclResult ret = kfcControlTransferH2D_->Get(0, sizeof(Hccl::KfcCommand), reinterpret_cast<uint8_t *>(&cmd));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]fail, group[%s]", __func__, identifier_.c_str()), ret);

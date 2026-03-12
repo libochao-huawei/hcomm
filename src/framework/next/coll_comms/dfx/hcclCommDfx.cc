@@ -40,7 +40,7 @@ HcclResult HcclCommDfx::Init(u32 deviceId, const std::string comTag) {
 }
 
 // 回调注册实现
-HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u32 handle) {
+HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
     CHK_SMART_PTR_NULL(mirrorTaskManager_);
     u32 remoteRankId = INVALID_UINT;
     if (handle != INVALID_U64) {
