@@ -557,7 +557,7 @@ void CollServiceAiCpuImpl::AllocOpMem(const CollOperator &op)
     HCCL_INFO("[AllocOpMem] op.opType[%d]", op.opType);
 }
 
-u64 CollServiceAicpuImpl::CalcOpDynamicDataSize(const CollOperator &op, const OpType &opType, const u32 &rankSize)
+u64 CollServiceAiCpuImpl::CalcOpDynamicDataSize(const CollOperator &op, const OpType &opType, const u32 &rankSize)
 {
     u64 dynamicDataSize = 0ULL;
     switch (opType) {
@@ -565,7 +565,7 @@ u64 CollServiceAicpuImpl::CalcOpDynamicDataSize(const CollOperator &op, const Op
             dynamicDataSize = sizeof(struct BatchSendRecvDataDes) + op.batchSendRecvDataDes.itemNum * sizeof(HcclSendRecvItem);
             break;
         case OpType::ALLTOALLV:
-            dynamicDataSize = sizeof(struct AllToAllDataDes) + rankSize * ALLTOALL_INFO_SIZE * sizeof(u64);
+            dynamicDataSize = sizeof(struct AllToAllvDataDes) + rankSize * ALLTOALL_INFO_SIZE * sizeof(u64);
             break;
         case OpType::ALLTOALLVC:
             dynamicDataSize = sizeof(struct AllToAllvcDataDes) + rankSize * rankSize * sizeof(u64);
@@ -902,7 +902,7 @@ HcclResult CollServiceAiCpuImpl::FillAllToAllvcData (const CollOperator &op)
         return HCCL_E_PARA;
     }
     Buffer dynamicDataMem = kernelParamBuf_.get()->Range(sizeof(struct HcclKernelParamLite), dynamicDataSize);
-    struct AllToAllvDataDes *alltoallvDataPtr = reinterpret_cast<struct AllToAllvDataDes *>(dynamicDataMem.GetAddr());
+    struct AllToAllvDataDes *alltoallvcDataPtr = reinterpret_cast<struct AllToAllvDataDes *>(dynamicDataMem.GetAddr());
     alltoallvcDataPtr->sendType = static_cast<u8>(op.all2AllVCDataDes.sendType);
     alltoallvcDataPtr->recvType = static_cast<u8>(op.all2AllVCDataDes.recvType);
     u32 rankSize = comm->GetRankSize();
