@@ -43,8 +43,8 @@ typedef struct rule {
 static const UBEntityRule g_ubrules[] = {
     {MAIN_BOARD_ID_SERVER_TYPE1, PRODUCT_CLOS_LEVEL, 0, 3, {4,5,6,7}, 4},
     {MAIN_BOARD_ID_SERVER_TYPE1, PRODUCT_CLOS_LEVEL, 1, 2, {5,6}, 2},
-    //使用1 die上,fe 3出clos, fe3包含8个口
-    {MAIN_BOARD_ID_SERVER_8PMESH, PRODUCT_CLOS_LEVEL, 1, 3, {1,2,3,4,5,6,7,8}, 8},
+    //使用0 die上的fe 3出clos, fe3包含8个口
+    {MAIN_BOARD_ID_SERVER_8PMESH, PRODUCT_CLOS_LEVEL, 0, 3, {1,2,3,4,5,6,7,8}, 8},
 };
 
 
