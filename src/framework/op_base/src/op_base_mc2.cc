@@ -147,13 +147,19 @@ HcclResult HcclCreateOpResCtxInner(HcclComm comm, uint8_t opType, HcclDataType s
         HCCL_RUN_WARNING("MC2 using share CCLbuffer[%s], potential conflict with coll communicator", cclBufferName.c_str());
     }
 
+    HCCL_RUN_INFO("[HcclCreateOpResCtxInner] 11111");
+
     // 根据streamMode创建aicpuStream
     rtStream_t aicpuStream{};
     CHK_RET(hcclComm->Mc2AiCpuStreamAllocAndGet(streamMode, aicpuStream));
 
+    HCCL_RUN_INFO("[HcclCreateOpResCtxInner] 22222");
+
     char stackLogBuffer[LOG_TMPBUF_SIZE];
     u32 localRank = INVALID_VALUE_RANKID;
     CHK_RET(hcclComm->GetUserRank(localRank));
+
+    HCCL_RUN_INFO("[HcclCreateOpResCtxInner] 33333");
 
     /* 接口交互信息日志 */
     if (GetExternalInputHcclEnableEntryLog()) {
@@ -167,12 +173,16 @@ HcclResult HcclCreateOpResCtxInner(HcclComm comm, uint8_t opType, HcclDataType s
 
     CHK_RET(HcclMc2ComOpResCtx(comm, opType, srcDataType, dstDataType, reduceType, count, algConfig, commEngine, aicpuStream));
 
+    HCCL_RUN_INFO("[HcclCreateOpResCtxInner] 44444");
+
     // 获取 commContext
     hcclComm->GetCommResource(*opResCtx);
     if (*opResCtx == nullptr) {
         HCCL_ERROR("[%s] GetCommResource failed, opResCtx is nullptr, commIdentifier[%s]", __func__, commIdentifier.c_str());
         return HCCL_E_INTERNAL;
     }
+
+    HCCL_RUN_INFO("[HcclCreateOpResCtxInner] 55555");
 
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
@@ -371,6 +381,14 @@ HcclResult HcclGetRemoteIpcHcclBuf(HcclComm comm, uint64_t remoteRank, void **ad
     }
 
     CHK_RET(hcclComm->GetRemoteCCLBuf(remoteRank, addr, size));
+    if (*addr == nullptr) {
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET(hcclComm->GetUserRank(localRank));
+        HCCL_ERROR("[%s]comm[%s] get remote CCL buffer fail, ret is nullptr. Possible reasons:"
+            "The selected AlgConfig has not create link between localRank[%u] to remoteRank[%llu].",
+            __func__, hcclComm->GetIdentifier().c_str(), localRank, remoteRank);
+        return HCCL_E_PTR;
+    }
 
     return HCCL_SUCCESS;
 }
