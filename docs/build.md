@@ -12,6 +12,7 @@
    - wheel >= 0.34.0
    - gcc >= 7.3.0
    - cmake >= 3.16.0
+   - pkg-config >= 0.29.1
    - ccache（可选，用于提高二次编译速度）
 
 2. 安装社区版CANN Toolkit包
