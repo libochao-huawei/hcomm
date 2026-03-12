@@ -75,6 +75,7 @@ private:
     BaseMemTransport *CreateOffloadMemTransport(const std::string &opTag, const LinkData &linkData);
     BaseMemTransport *CreateUrmaDirectTransport(const LinkData &linkData);
 
+    void CreateMemTransportResource(const LinkData &linkData);
     void CreateOpbasedUbMemTransport(BaseMemTransport::CommonLocRes &locRes,
                               BaseMemTransport::Attribution &attr, const LinkData &linkData, const Socket &socket);
     void CreateOffloadUbMemTransport(const string &opTag, BaseMemTransport::CommonLocRes &locRes,

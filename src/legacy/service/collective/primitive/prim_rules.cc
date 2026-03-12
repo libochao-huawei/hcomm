@@ -210,16 +210,8 @@ inline vector<unique_ptr<Instruction>> PrimRecvInWriteMode(const PrimRecv &recv)
 
 inline vector<unique_ptr<Instruction>> PrimSendReduceInReadModeWithInlineReduce(const PrimSendReduce &sendReduce)
 {
-    vector<unique_ptr<Instruction>> instructions(InsArraySize::TWO);
-    RankId                          remote = sendReduce.GetRemoteRank();
-    const LinkData                  link   = sendReduce.GetLink();
-    u32                             index  = 0;
-
-    instructions[index++] = make_unique<InsPostReady>(remote, link);
-    instructions[index++] = make_unique<InsWaitFin>(remote, link);
-    AppendInsPostFinAck(remote, link, instructions);
-
-    return instructions;
+    // 二者当前没有差异
+    return PrimSendReduceInReadModeWithoutInlineReduce(sendReduce);
 }
 
 inline vector<unique_ptr<Instruction>> PrimSendReduceInWriteWithNotifyModeWithInlineReduce(

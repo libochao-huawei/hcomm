@@ -27,6 +27,7 @@ class OpParamsChecker {
 public:
     static HcclResult CheckOpDataTypeOpbase(const CollOpParams &opParams, bool ccuEnable, bool isDevUsed, bool isAiv);
     static HcclResult CheckOpDataTypeOffload(const CollOpParams &opParams, bool ccuEnable, bool isDevUsed, bool isAiv = false);
+    static HcclResult CheckMC2OpDataType(const OpType &opType, const DataType &inputDataType, const DataType &outputDataType);
     static HcclResult CheckOpDataTypeMC2(const Mc2CommConfig &config);
     static HcclResult CheckOpDataTypeMC2V2(const Mc2CcTilingInner &config);
 
