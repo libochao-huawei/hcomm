@@ -38,6 +38,10 @@ using namespace hccl;
 const uint32_t HCCL_CHANNEL_VERSION_ONE = 1;
 HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, hccl::hcclComm *hcclComm)
 {
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    CommConfig* commConfig = collComm->GetCommConfig();
+    CHK_PTR_NULL(commConfig);
     channelDescFinal.remoteRank = channelDesc.remoteRank;
     channelDescFinal.channelProtocol   = channelDesc.channelProtocol;
     channelDescFinal.localEndpoint  = channelDesc.localEndpoint;
@@ -58,13 +62,8 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
             channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum;
             channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaRetryCnt() : channelDesc.roceAttr.retryCnt;
             channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTimeOut() : channelDesc.roceAttr.retryInterval;
-
-            hccl::CollComm* collComm = hcclComm->GetCollComm();
-            CHK_PTR_NULL(collComm);
-            CommConfig* CommConfig = collComm->GetCommConfig();
-            CHK_PTR_NULL(CommConfig);
-            channelDescFinal.roceAttr.tc = (CommConfig->GetConfigTrafficClass() == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTrafficClass() : CommConfig->GetConfigTrafficClass();
-            channelDescFinal.roceAttr.sl = (CommConfig->GetConfigServiceLevel() == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaServerLevel() : CommConfig->GetConfigServiceLevel();
+            channelDescFinal.roceAttr.tc = (commConfig->GetConfigTrafficClass() == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTrafficClass() : commConfig->GetConfigTrafficClass();
+            channelDescFinal.roceAttr.sl = (commConfig->GetConfigServiceLevel() == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaServerLevel() : commConfig->GetConfigServiceLevel();
             HCCL_INFO("[%s]queueNum[%u], retryCnt[%u], retryInterval[%u], tc[%u], sl[%u]", __func__,
                 channelDescFinal.roceAttr.queueNum, channelDescFinal.roceAttr.retryCnt, channelDescFinal.roceAttr.retryInterval,
                 channelDescFinal.roceAttr.tc, channelDescFinal.roceAttr.sl);
