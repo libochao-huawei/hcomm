@@ -58,6 +58,10 @@ public:
     {
         return comm_;
     }
+
+    inline CommConfig* GetCommConfig() {
+        return &config_;
+    }
     
     // 获取MyRank
     MyRank* GetMyRank() const { return myRank_.get(); }

@@ -36,7 +36,7 @@ using namespace hccl;
  */
 
 const uint32_t HCCL_CHANNEL_VERSION_ONE = 1;
-HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal)
+HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, hccl::hcclComm *hcclComm)
 {
     if (channelDesc.header.size < channelDescFinal.header.size) {
         // 需要前向兼容HcclChannelDesc，末尾部分字段不支持处理
@@ -76,8 +76,13 @@ HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannel
                 channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum;
                 channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaRetryCnt() : channelDesc.roceAttr.retryCnt;
                 channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTimeOut() : channelDesc.roceAttr.retryInterval;
-                channelDescFinal.roceAttr.tc = (channelDesc.roceAttr.tc == 0xFF) ? EnvConfig::GetExternalInputRdmaTrafficClass() : channelDesc.roceAttr.tc;
-                channelDescFinal.roceAttr.sl = (channelDesc.roceAttr.sl == 0xFF) ? EnvConfig::GetExternalInputRdmaServerLevel() : channelDesc.roceAttr.sl;
+
+                hccl::CollComm* collComm = hcclComm->GetCollComm();
+                CHK_PTR_NULL(collComm);
+                CommConfig* CommConfig = collComm->GetCommConfig()
+                CHK_PTR_NULL(CommConfig);
+                channelDescFinal.roceAttr.tc = (CommConfig->GetConfigTrafficClass() == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTrafficClass() : CommConfig->GetConfigTrafficClass();
+                channelDescFinal.roceAttr.sl = (CommConfig->GetConfigServiceLevel() == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaServerLevel() : CommConfig->GetConfigServiceLevel();
                 HCCL_INFO("[%s]queueNum[%u], retryCnt[%u], retryInterval[%u], tc[%u], sl[%u]", __func__,
                     channelDescFinal.roceAttr.queueNum, channelDescFinal.roceAttr.retryCnt, channelDescFinal.roceAttr.retryInterval,
                     channelDescFinal.roceAttr.tc, channelDescFinal.roceAttr.sl);
@@ -149,7 +154,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
     for (uint32_t idx = 0; idx < channelNum; idx++) {
         HcclChannelDesc channelDescFinal;
         HcclChannelDescInit(&channelDescFinal, 1);
-        ret = ProcessHcclResPackReq(channelDescs[idx], channelDescFinal);
+        ret = ProcessHcclResPackReq(channelDescs[idx], channelDescFinal, hcclComm);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[%s] Failed check channelDesc, channelDesc idx[%u], group[%s], engine[%d], "
                 "channelNum[%llu], ret[%d]", __func__, idx, hcclComm->GetIdentifier().c_str(),

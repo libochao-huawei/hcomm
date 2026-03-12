@@ -322,6 +322,11 @@ namespace hccl
         return HCCL_E_PTR);
 
         CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
+        CommConfig* CommConfig = collComm_->GetCommConfig();
+        if (CommConfig != nullptr) {
+            CHK_RET(CommConfig->SetConfigTrafficClass(config->hcclRdmaTrafficClass));
+            CHK_RET(CommConfig->SetConfigServiceLevel(config->hcclRdmaServiceLevel));
+        }
         return HCCL_SUCCESS;
     }
 
