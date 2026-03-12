@@ -38,7 +38,7 @@ using HcclGroupParamsTem = struct TagHcclGroupParamsInfoTem {
     void* pSubComm;
     u32 refCounter = 0;
     bool destroyFlag = false;
-}
+};
 
 using HcclGroupParamsV2 = struct TagHcclGroupParamsInfoV2 {
     /* * group的基本构建信息，节点数及本节点在group中的编号、
