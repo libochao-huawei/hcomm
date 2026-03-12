@@ -543,8 +543,10 @@ void CollServiceAiCpuImpl::AllocOpMem(const CollOperator &op)
     u64 kernelParamSize = sizeof(HcclKernelParamLite) + dynamicDataSize;
     if (kernelParamBuf_ == nullptr) {
         kernelParamBuf_ = make_shared<HostBuffer>(KERNEL_PARAM_BUF_SIZE);
-        HCCL_ERROR("[CollServiceAiCpuImpl][AllocOpMem] Alloc kernelParamBuf failed !");
-        THROW<InternalException>(StringFormat("[CollServiceAiCpuImpl][AllocOpMem] Alloc kernelParamBuf failed len"));
+        if (kernelParamBuf_ == nullptr) {
+            HCCL_ERROR("[CollServiceAiCpuImpl][AllocOpMem] Alloc kernelParamBuf failed !");
+            THROW<InternalException>(StringFormat("[CollServiceAiCpuImpl][AllocOpMem] Alloc kernelParamBuf failed len"));
+        }
     }
 
     if (kernelParamBuf_ != nullptr && kernelParamSize > kernelParamBuf_.get()->GetSize()) {

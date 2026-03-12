@@ -24,8 +24,8 @@ namespace Hccl {
 
 constexpr int KERNEL_SUCCESS_CODE = 0;
 constexpr int KERNEL_ERROR_CODE   = 1;
-constexpr int ALLTOALLV_DATA_INDEX_2 = 2;
-constexpr int ALLTOALLV_DATA_INDEX_3 = 3;
+constexpr int ALLTOALLV_DATA_INDEX_2 = 2; // sdispls在sendRecvInfos数组中的偏移
+constexpr int ALLTOALLV_DATA_INDEX_3 = 3; // rdispls在sendRecvInfos数组中的偏移
 
 int CommunicatorImplLite::LoadWithOpBasedMode(HcclKernelParamLite *kernelParam)
 {
@@ -301,7 +301,7 @@ void CommunicatorImplLite::UpdateDynamicOpData(HcclKernelParamLite *kernelParam)
         kernelParam->op.algOperator.batchSendRecvDataDes.sendRecvItemsPtr = batchSendRecvDataPtr->batchSendRecvItem;
         HcclSendRecvItem* itemPtr = reinterpret_cast<HcclSendRecvItem *>(kernelParam->op.algOperator.batchSendRecvDataDes.sendRecvItemsPtr);
         for (u32 i = 0; i < kernelParam->op.algOperator.batchSendRecvDataDes.itemNum; i++) {
-            HCCL_INFO("[CommunicatorImplLite][UpdataDynamicOpData] batchSendRecvDataDes remoteRank[%u]", (itemPtr + i)->remoteRank);
+            HCCL_INFO("[CommunicatorImplLite][UpdateDynamicOpData] batchSendRecvDataDes remoteRank[%u]", (itemPtr + i)->remoteRank);
         }
     } else if (kernelParam->op.algOperator.opType == OpType::ALLTOALLV) {
         struct AllToAllvDataDes* alltoallvDataPtr = 
@@ -314,7 +314,7 @@ void CommunicatorImplLite::UpdateDynamicOpData(HcclKernelParamLite *kernelParam)
         kernelParam->op.algOperator.all2AllVDataDes.sdispls = static_cast<void *>(static_cast<u64 *>(alltoallvDataPtr->sendRecvInfos) + ALLTOALLV_DATA_INDEX_2 * rankSize);
         kernelParam->op.algOperator.all2AllVDataDes.rdispls = static_cast<void *>(static_cast<u64 *>(alltoallvDataPtr->sendRecvInfos) + ALLTOALLV_DATA_INDEX_3 * rankSize);
         for (u32 i = 0; i < rankSize; i++) {
-            HCCL_INFO("[CommunicatorImplLite][UpdataDynamicOpData] alltoallv sendCounts[%llu], recvCounts[%llu]", 
+            HCCL_INFO("[CommunicatorImplLite][UpdateDynamicOpData] alltoallv sendCounts[%llu], recvCounts[%llu]", 
                 *(static_cast<const u64 *>(kernelParam->op.algOperator.all2AllVDataDes.sendCounts) + i), 
                 *(static_cast<const u64 *>(kernelParam->op.algOperator.all2AllVDataDes.recvCounts) + i));
         }
