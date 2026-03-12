@@ -151,6 +151,8 @@ public:
     void Init();
     void ReportHcclMC2CommInfo(const Stream &kfcStream, Stream &stream, const std::vector<Stream *> &aicpuStreams,
                                const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm);
+    void ReportHcclMC2CommInfo(const u32 kfcStreamId, const std::vector<u32> &aicpuStreamsId, const std::string &id,
+                                RankId myRank, u32 rankSize, RankId rankInParentComm);
 
 private:
     explicit ProfilingHandler();
