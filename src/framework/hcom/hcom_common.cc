@@ -212,7 +212,7 @@ HcclResult HcomInitCollComm(uint32_t rank, void **commV2, HcclCommPtr &comm)
     void *rankGraph = nullptr;
     CHK_RET(HcclGetRankGraphV2(commV2, &rankGraph));
     constexpr HcclCommConfig *config = nullptr;
-    CHK_RET(hcclCommPtr->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName, config));
+    CHK_RET(comm->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName, config));
     CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
     HCCL_RUN_INFO("[%s] success, take time [%lld]us.", __func__, DURATION_US(TIME_NOW() - startut));
 #endif
