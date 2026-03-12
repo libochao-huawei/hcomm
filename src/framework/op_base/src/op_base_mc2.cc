@@ -136,7 +136,6 @@ HcclResult HcclCreateOpResCtxInner(HcclComm comm, uint8_t opType, HcclDataType s
         return HCCL_E_NOT_SUPPORT;
     }
 
-    HcclUs startut = TIME_NOW();
     uint64_t streamMode = 0; //streamMode未使用，固定传0
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     string commIdentifier = hcclComm->GetIdentifier();
@@ -147,13 +146,19 @@ HcclResult HcclCreateOpResCtxInner(HcclComm comm, uint8_t opType, HcclDataType s
         HCCL_RUN_WARNING("MC2 using share CCLbuffer[%s], potential conflict with coll communicator", cclBufferName.c_str());
     }
 
+    HCCL_RUN_INFO("[HcclCreateOpResCtxInner] 11111");
+
     // 根据streamMode创建aicpuStream
     rtStream_t aicpuStream{};
     CHK_RET(hcclComm->Mc2AiCpuStreamAllocAndGet(streamMode, aicpuStream));
 
+    HCCL_RUN_INFO("[HcclCreateOpResCtxInner] 22222");
+
     char stackLogBuffer[LOG_TMPBUF_SIZE];
     u32 localRank = INVALID_VALUE_RANKID;
     CHK_RET(hcclComm->GetUserRank(localRank));
+
+    HCCL_RUN_INFO("[HcclCreateOpResCtxInner] 33333");
 
     /* 接口交互信息日志 */
     if (GetExternalInputHcclEnableEntryLog()) {
@@ -167,6 +172,8 @@ HcclResult HcclCreateOpResCtxInner(HcclComm comm, uint8_t opType, HcclDataType s
 
     CHK_RET(HcclMc2ComOpResCtx(comm, opType, srcDataType, dstDataType, reduceType, count, algConfig, commEngine, aicpuStream));
 
+    HCCL_RUN_INFO("[HcclCreateOpResCtxInner] 44444");
+
     // 获取 commContext
     hcclComm->GetCommResource(*opResCtx);
     if (*opResCtx == nullptr) {
@@ -174,14 +181,7 @@ HcclResult HcclCreateOpResCtxInner(HcclComm comm, uint8_t opType, HcclDataType s
         return HCCL_E_INTERNAL;
     }
 
-    if (GetExternalInputHcclEnableEntryLog()) {
-        HcclUs endut = TIME_NOW();
-        /* 关键状态记录 */
-        std::string endInfo = "MC2 create resource take time ["
-                              + std::to_string(DURATION_US(endut - startut).count()) + "]us, localRank["
-                              + std::to_string(localRank) + "] " + std::string(stackLogBuffer);
-        CHK_RET(hcclComm->SaveTraceInfo(endInfo));
-    }
+    HCCL_RUN_INFO("[HcclCreateOpResCtxInner] 55555");
 
     return HCCL_SUCCESS;
 }
@@ -371,6 +371,14 @@ HcclResult HcclGetRemoteIpcHcclBuf(HcclComm comm, uint64_t remoteRank, void **ad
     }
 
     CHK_RET(hcclComm->GetRemoteCCLBuf(remoteRank, addr, size));
+    if (*addr == nullptr) {
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET(hcclComm->GetUserRank(localRank));
+        HCCL_ERROR("[%s]comm[%s] get remote CCL buffer fail, ret is nullptr. Possible reasons:"
+            "The selected AlgConfig has not create link between localRank[%u] to remoteRank[%llu].",
+            __func__, hcclComm->GetIdentifier().c_str(), localRank, remoteRank);
+        return HCCL_E_PTR;
+    }
 
     return HCCL_SUCCESS;
 }
