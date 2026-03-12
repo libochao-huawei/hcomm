@@ -2528,7 +2528,7 @@ RS_ATTRI_VISI_DEF int RsGetQpContext(unsigned int phyId, unsigned int rdevIndex,
     return 0;
 }
 
-STATIC int RsQueryRdevCb(unsigned int phyId, unsigned int rdevIndex, struct RsRdevCb **rdevCb)
+int RsQueryRdevCb(unsigned int phyId, unsigned int rdevIndex, struct RsRdevCb **rdevCb)
 {
     int ret;
     unsigned int chipId;
