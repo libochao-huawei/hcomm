@@ -14,3 +14,5 @@ add_library(topoaddrinfo SHARED
     product_card.c
     product_server.c
 )
+
+target_link_libraries(topoaddrinfo PRIVATE c_sec dl)

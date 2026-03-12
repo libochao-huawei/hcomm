@@ -84,8 +84,8 @@ int get_nics(nic *nics, size_t *nic_len)
         if (strcmp(entry->d_name, "lo") == 0) {
             continue;
         }
-        errno_t ret = sprintf_s(nics[loop].path, MAX_NIC_PATH, "/sys/class/net/%s", entry->d_name);
-        if (ret != 0) {
+        int ret = sprintf_s(nics[loop].path, MAX_NIC_PATH, "/sys/class/net/%s", entry->d_name);
+        if (ret < 0) {
             break;
         }
         get_abs_path(nics[loop].path, nics[loop].pcie_path, MAX_NIC_PATH);
@@ -101,8 +101,8 @@ static int GetPcieNics(NPU* npu, size_t pos, size_t npu_count)
     char dev_path[MAX_NIC_PATH] = {0};
     char abs_path[MAX_NIC_PATH] = {0};
     size_t abs_path_len = sizeof(abs_path);
-    errno_t ret = sprintf_s(dev_path, sizeof(dev_path), "/sys/bus/pci/devices/%s", npu[pos].bus_id);
-    if (ret != 0) {
+    int ret = sprintf_s(dev_path, sizeof(dev_path), "/sys/bus/pci/devices/%s", npu[pos].bus_id);
+    if (ret < 0) {
         return -1;
     }
     get_abs_path(dev_path, abs_path, abs_path_len);
@@ -142,9 +142,9 @@ static void InitNpus(NPU *npu, size_t npu_count)
         npu[i].id = i;
         struct dcmi_pcie_info_all pcie_info;
         hal_get_device_pcie_info(i, &pcie_info);
-        errno_t ret = sprintf_s(npu[i].bus_id, MAX_PCIE_BUS_ID_LEN, "%04x:%02x:%02x.%x", 
+        int ret = sprintf_s(npu[i].bus_id, MAX_PCIE_BUS_ID_LEN, "%04x:%02x:%02x.%x", 
                                 pcie_info.domain, pcie_info.bdf_busid, pcie_info.bdf_deviceid, pcie_info.bdf_funcid);
-        if (ret != 0) {
+        if (ret < 0) {
             break;
         }
     }

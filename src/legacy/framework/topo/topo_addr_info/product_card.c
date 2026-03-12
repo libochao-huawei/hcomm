@@ -59,8 +59,8 @@ static int ProcessLayerMesh(int npu_id, NetLayer *layer, dcmi_urma_eid_info_t *e
     char net_instance_id[MAX_INSTANCE_ID_LEN] = {0};
     get_server_id(server_id, sizeof(server_id));
     // 标卡没4个NPU一组， 可分多组， 标卡机头无单独的server id，因此使用mac地址作为server id 和组ID组合起来作为mesh域的ID
-    errno_t ret = sprintf_s(net_instance_id, sizeof(net_instance_id), "%s_%d", server_id, (npu_id / CARD_4P_MESH_NUM));
-    if (ret != 0) {
+    int ret = sprintf_s(net_instance_id, sizeof(net_instance_id), "%s_%d", server_id, (npu_id / CARD_4P_MESH_NUM));
+    if (ret < 0) {
         return -1;
     }
     NetLayerInit(layer, 0, net_instance_id);
@@ -77,9 +77,9 @@ static int ProcessLayerMesh(int npu_id, NetLayer *layer, dcmi_urma_eid_info_t *e
         AddrSetEID(&addr, &eid_list[i].eid);
         char port[MAX_PORT_LEN] = {0};
         char planeId[MAX_PLANE_ID_LEN] = {0};
-        errno_t ret1 = sprintf_s(port, MAX_PORT_LEN, "%d/%d", dieId, portId);
-        errno_t ret2 = sprintf_s(planeId, MAX_PORT_LEN, "plane_%d", dieId);
-        if (ret1 != 0 || ret2 != 0) {
+        int ret1 = sprintf_s(port, MAX_PORT_LEN, "%d/%d", dieId, portId);
+        int ret2 = sprintf_s(planeId, MAX_PORT_LEN, "plane_%d", dieId);
+        if (ret1 < 0 || ret2 < 0) {
             break;
         }
         AddrAddPort(&addr, port);

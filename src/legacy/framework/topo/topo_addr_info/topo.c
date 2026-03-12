@@ -120,7 +120,7 @@ int TopoGetFilePath(unsigned mainboard_id, char* buf_size, size_t buf_len)
     if (0 != hal_get_driver_install_path(driver_install_path, MAX_DRIVER_INSTALL_PATH)) {
         return -1;
     }
-    errno_t ret = -1;
+    int ret = -1;
     switch(mainboard_id)
     {
         case MAIN_BOARD_ID_CARD_NOMESH:
@@ -143,5 +143,8 @@ int TopoGetFilePath(unsigned mainboard_id, char* buf_size, size_t buf_len)
         default:
             break;
     }
-    return ret;
+    if (ret < 0) {
+        return -1;
+    }
+    return 0;
 }

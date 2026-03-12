@@ -22,7 +22,7 @@ char* AddrToString(const Addr* addr)
 {
     const size_t max_buffer_size = 102400;
     char* buf = (char*)malloc(max_buffer_size);
-    errno_t ret = 0;
+    int ret = 0;
     if(buf == NULL) {
         return NULL;
     }
@@ -34,16 +34,16 @@ char* AddrToString(const Addr* addr)
         }
         char port[MAX_PORT_LEN] = {0};
         ret = sprintf_s(port, sizeof(port), "\"%s\"" , addr->ports[i]);
-        if (ret != 0) {
+        if (ret < 0) {
             break;
         }
-        ret = strcat_s(ports, MAX_PORTS_STR_LEN, port);
-        if (ret != 0) {
+        errno_t r = strcat_s(ports, MAX_PORTS_STR_LEN, port);
+        if (r != 0) {
             break;
         }
         if (i != addr->port_count - 1) {
-            ret = strcat_s(ports, MAX_PORTS_STR_LEN, ",");
-            if (ret != 0) {
+            r = strcat_s(ports, MAX_PORTS_STR_LEN, ",");
+            if (r != 0) {
                 break;
             }
         }
@@ -51,7 +51,7 @@ char* AddrToString(const Addr* addr)
     ret = sprintf_s(buf, max_buffer_size,
         "{\"addr_type\": \"%s\", \"addr\": \"%s\", \"plane_id\": \"%s\", \"ports\": [%s]}",
         addr->addr_type, addr->addr, addr->plane_id, ports);
-    if (ret != 0) {
+    if (ret < 0) {
         free(buf);
         buf = NULL;
     }
@@ -111,12 +111,12 @@ char* NetLayerToString(const NetLayer *layer)
         }
         free(addr);
     }
-    errno_t ret = sprintf_s(buf, max_buffer_size,
+    int ret = sprintf_s(buf, max_buffer_size,
         "{\"net_layer\": %d, \"net_instance_id\": \"%s\", \"net_type\": \"%s\",\"net_attr\":\"%s\","
         "\"rank_addr_list\": [%s]}",
         layer->net_layer, layer->net_instance_id, layer->net_type, layer->net_attr, addr_list);
     free(addr_list);
-    if (ret != 0) {
+    if (ret < 0) {
         free(buf);
         buf = NULL;
     }
@@ -175,12 +175,12 @@ char *RootInfoToString(const RootInfo *rootinfo)
     }
     memset_s(buf, max_buffer_size, 0, max_buffer_size);
     char *rank_list = RankListToString(rootinfo);
-    errno_t ret = sprintf_s(buf, max_buffer_size,
+    int  ret = sprintf_s(buf, max_buffer_size,
         "{\"version\": \"%s\", \"topo_file_path\": \"%s\","
         "\"rank_count\": %d, \"rank_list\": [%s]}",
         rootinfo->version, rootinfo->topo_file_path, rootinfo->rank_count, rank_list);
     free(rank_list);
-    if (ret != 0) {
+    if (ret < 0) {
         free(buf);
         buf = NULL;
     }
@@ -211,8 +211,8 @@ void AddrInit(Addr *addr)
 void AddrSetEID(Addr *addr, const dcmi_urma_eid_t *eid)
 {
     for (int i = 0; i < DCMI_URMA_EID_SIZE; i++) {
-        errno_t ret = sprintf_s(&addr->addr[i*2], MAX_NET_ADDR_LEN - (i*2), "%02x", eid->raw[i]);
-        if (ret != 0) {
+        int ret = sprintf_s(&addr->addr[i*2], MAX_NET_ADDR_LEN - (i*2), "%02x", eid->raw[i]);
+        if (ret < 0) {
             return;
         }
     }
@@ -257,10 +257,10 @@ char* RankToString(const Rank* rank)
         }
         free(layer);
     }
-    errno_t ret = sprintf_s(buf, max_buf_size, "{\"device_id\": %d, \"local_id\": %d, \"level_list\": [%s]}",
+    int ret = sprintf_s(buf, max_buf_size, "{\"device_id\": %d, \"local_id\": %d, \"level_list\": [%s]}",
                    rank->device_id, rank->local_id, level_list);
     free(level_list);
-    if (ret != 0) {
+    if (ret < 0) {
         free(buf);
         buf = NULL;
     }
