@@ -98,9 +98,9 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
         mc2CommInfo.FreeStreamId = 0;
         mc2CommInfo.streamsId = threadId;
         mc2CommInfo.groupname = commId;
-        mc2CommInfo.myRankId = collComm->GetHcclCommDfx();
+        mc2CommInfo.myRankId = collComm->GetMyRankId();
         mc2CommInfo.rankSize = collComm->GetRankSize();
-        CHK_PTR_NULL(collComm->GetParentRankId(mc2CommInfo.parentRankId));
+        CHK_RET(collComm->GetParentRankId(mc2CommInfo.parentRankId));
         HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
         CHK_PTR_NULL(hcclCommDfx);
         hcclCommDfx->ReportMc2CommInfo(mc2CommInfo);
@@ -162,9 +162,9 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
         mc2CommInfo.FreeStreamId = 0;
         mc2CommInfo.streamsId.push_back(static_cast<u32>(stream->id()));
         mc2CommInfo.groupname = commId;
-        mc2CommInfo.myRankId = collComm->GetHcclCommDfx();
+        mc2CommInfo.myRankId = collComm->GetMyRankId();
         mc2CommInfo.rankSize = collComm->GetRankSize();
-        CHK_PTR_NULL(collComm->GetParentRankId(mc2CommInfo.parentRankId));
+        CHK_RET(collComm->GetParentRankId(mc2CommInfo.parentRankId));
         HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
         CHK_PTR_NULL(hcclCommDfx);
         hcclCommDfx->ReportMc2CommInfo(mc2CommInfo);
