@@ -69,8 +69,8 @@ int TopoAddrInfoGetTopoFilePath(int phyId, char* filePath, size_t bufSize)
 
 static void DumpFile(char* rankInfo, size_t bufSize)
 {
-    char dump_file[MAX_DUMP_FILE_LEN] = {0};
-    if (strcpy_s(dump_file, sizeof(dump_file), getenv("RANKINFO_DUMP_FILE")) != 0) {
+    char dumpFile[MAX_DUMP_FILE_LEN] = {0};
+    if (strcpy_s(dumpFile, sizeof(dumpFile), getenv("RANKINFO_DUMP_FILE")) != 0) {
         return
     }
     FILE* fp = fopen(dumpFile, "w+");

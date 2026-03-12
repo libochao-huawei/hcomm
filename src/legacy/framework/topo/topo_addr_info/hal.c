@@ -10,6 +10,10 @@
 #include "hal.h"
 #include <stdio.h>
 #include <dlfcn.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -18,8 +22,10 @@
 #include <net/if_arp.h>
 #include <errno.h>
 #include <syslog.h>
-#include <stdarg.h>
 #include "securec.h"
+
+#define MAX_LINE_LENGTH 256          // 每行最大长度
+#define TARGET_KEY "Driver_Install_Path_Param"  // 要查找的key
 
 #define DRIVER_DRFAULT_INSTALL_PATH "/usr/local/Ascend"
 #define DRIVER_TOPO_FILE_DIR_PATH "driver/topo/950"
@@ -281,13 +287,6 @@ int hal_get_logicid_from_phyid(unsigned int phy_id, unsigned int* logic_id)
     return dcmi_get_device_logicid_from_phyid(phy_id, logic_id);
 }
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-
-#define MAX_LINE_LENGTH 256          // 每行最大长度
-#define TARGET_KEY "Driver_Install_Path_Param"  // 要查找的key
 
 // 去除字符串首尾的空白字符
 static char* trim_whitespace(char *str) {
