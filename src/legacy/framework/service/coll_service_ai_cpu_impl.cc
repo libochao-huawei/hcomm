@@ -902,7 +902,7 @@ HcclResult CollServiceAiCpuImpl::FillAllToAllvcData (const CollOperator &op)
         return HCCL_E_PARA;
     }
     Buffer dynamicDataMem = kernelParamBuf_.get()->Range(sizeof(struct HcclKernelParamLite), dynamicDataSize);
-    struct AllToAllvDataDes *alltoallvcDataPtr = reinterpret_cast<struct AllToAllvDataDes *>(dynamicDataMem.GetAddr());
+    struct AllToAllvcDataDes *alltoallvcDataPtr = reinterpret_cast<struct AllToAllvcDataDes *>(dynamicDataMem.GetAddr());
     alltoallvcDataPtr->sendType = static_cast<u8>(op.all2AllVCDataDes.sendType);
     alltoallvcDataPtr->recvType = static_cast<u8>(op.all2AllVCDataDes.recvType);
     u32 rankSize = comm->GetRankSize();
