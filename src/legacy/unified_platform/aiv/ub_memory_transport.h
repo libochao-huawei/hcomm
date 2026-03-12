@@ -19,7 +19,7 @@
 namespace Hccl {
 class UbMemoryTransport {
 public:
-    MAKE_ENUM(UBTransportStatus, INIT, SOCKET_OK, SEND_MEM_INFO, RECV_MEM_INFO, SEND_NAME, RECV_NAME, CONNECT_FAILED,
+    MAKE_ENUM(UBTransportStatus, INIT, SOCKET_OK, SEND_MEM_INFO, RECV_MEM_INFO, RECV_MEM_INFO_PROCESS, SEND_NAME, RECV_NAME, CONNECT_FAILED,
               SOCKET_TIMEOUT, READY)
 
     UbMemoryTransport(const std::shared_ptr<Buffer> cclBuffer, const std::shared_ptr<Buffer> aivTagBuffer, 
@@ -88,6 +88,7 @@ private:
     UBTransportStatus     ubStatus{UBTransportStatus::INIT};
     vector<char> rmtHandshakeMsg{0}; // 远端握手消息
     vector<char> localHandshakeMsg{0};
+    vector<char> recvDataMsg{0};
     AcceleratorState                         rmtOpAcceState{AcceleratorState::AIV};
     AcceleratorState                         locOpAcceState{AcceleratorState::AIV};
 
@@ -112,6 +113,7 @@ private:
     void     ReleaseRes();
     void     SendMemInfo();
     void     RecvMemInfo();
+    void     RecvMemProcess();
     void     BufferPack(BinaryStream &binaryStream);
     void     RmtBufferUnpackProc(BinaryStream &binaryStream);
     void     SendName();

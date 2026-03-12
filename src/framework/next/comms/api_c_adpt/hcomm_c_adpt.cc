@@ -10,7 +10,7 @@
 #include <mutex>
 #include <cstring>
 
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "hcomm_res.h"
 #include "hcomm_res_defs.h"
 #include "log.h"

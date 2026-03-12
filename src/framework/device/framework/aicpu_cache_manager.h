@@ -101,10 +101,15 @@ private:
     // aicpu cache
     OpUnfoldCache *opUnfoldCachePtr_ = nullptr;
 
+    // 对于第一次可能被cache的alltoallv算子 (不一定是第一个alltoallv, 因为MC2/RDMA/inplace场景下一定不会被cache, 无需计算下列metadata)
+    // 记录 是否已计算过alltoallvMetadata_ (sdmaDataBlockSize, hcclInputMemRanges, notifyIdRankRflagMap, signalAddrRankRflagMap)
+    // 记录 是否已初始化过alltoallvMetadata_ (hcclOffsetDstRanksIdxMap)
+    bool isCalcAlltoallvMetadata_ = false;
+    bool isInitAlltoallvMetadata_ = false;
+
     // alltoallv类型算子的metadata (alltoallv/alltoallvc均视为alltoallv类型算子, 只是对上提供的接口不同, 但实际算法编排都相同)
     // 注意: 给定通信域下可能会有多个alltoallv的cache entry (e.g., opType=alltoallv/alltoallvc, workflowType=单算子/图模式), 但不影响AlltoallvMetadata
     // 注意: 每个通信域下的HcclCommAicpu是互相独立的, 因此只需要在这里维护metadata, 并在alltoallv第一次出现时计算, 后续可直接复用
-    bool isFirstAlltoallv_ = true; // 是否为本通信域第一次可能被cache的alltoallv算子 (不一定是第一个alltoallv, 因为MC2/RDMA/inplace场景下一定不会被cache, 无需计算下列metadata)
     AlltoallvMetadata alltoallvMetadata_; // 当前通信域下所有alltoallv cache entry共享一个AlltoallvMetadata (只由HCCL_BUFFSIZE和通信域拓扑决定, 与OpUnfoldCacheKey相关字段无关)
 };
 
