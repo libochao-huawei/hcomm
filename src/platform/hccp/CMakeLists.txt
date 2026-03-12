@@ -26,7 +26,7 @@ add_executable(hccp_service.bin  hccp_service/main.c hccp_service/param.c
 target_include_directories(hccp_service.bin PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/hccp_service
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/driver
+${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/log
     ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/host_lite

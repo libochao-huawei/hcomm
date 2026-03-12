@@ -49,7 +49,7 @@ target_include_directories(ra PRIVATE
     # rdma头文件
     ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/inc/driver
+${ASCEND_CANN_PACKAGE_PATH}/include/driver/
 
     # HCCP Legacy
     ${CMAKE_CURRENT_SOURCE_DIR}/async
