@@ -14,7 +14,7 @@
 #include <mutex>
 #include <memory>
 
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "ip_address.h"
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
 

@@ -21,7 +21,7 @@
 #include "acl/acl_rt.h"
 #include "adapter_hal_pub.h"
 #include "device_capacity.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 
 namespace hccl {
 constexpr u32 HCOMM_NOTIFY_MAX_NUM = 64;
