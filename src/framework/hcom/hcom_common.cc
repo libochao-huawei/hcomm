@@ -212,7 +212,7 @@ HcclResult HcomInitCollComm(uint32_t rank, void **commV2, HcclCommPtr &comm)
     void *rankGraph = nullptr;
     CHK_RET(HcclGetRankGraphV2(commV2, &rankGraph));
     constexpr HcclCommConfig *config = nullptr;
-    CHK_RET(hcclCommPtr->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName, config));
+    CHK_RET(comm->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName, config));
     CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
     HCCL_RUN_INFO("[%s] success, take time [%lld]us.", __func__, DURATION_US(TIME_NOW() - startut));
 #endif
@@ -487,7 +487,7 @@ HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds)
             void *commV2 = nullptr;
             CHK_RET(HcommGetGroupParamsV2(group, static_cast<void *>(&groupParams), &commV2));
             Hccl::RankId rank = static_cast<Hccl::RankId>(groupParams.groupRank);
-            CHK_RET(HcclCommInitCollComm(rank, &commV2, hcomInfo.pComm));
+            CHK_RET(HcomInitCollComm(rank, &commV2, hcomInfo.pComm));
             hcomInfo.hcomGroupMap.insert(std::make_pair(group, groupParams));
             return HCCL_SUCCESS;
         }());
@@ -614,6 +614,7 @@ HcclResult HcomDestroyGroup(const char *group)
         [&]() -> HcclResult {
             hcomInfo.hcomGroupMap.erase(group);
             CHK_RET(HcomDestroyGroupImplV2(group));
+            return HCCL_SUCCESS;
         }());
 #endif
     if (hcomInfo.pComm == nullptr &&
@@ -1464,7 +1465,7 @@ HcclResult HcomInitByFile(const char *rankTablePath, const char *identify)
             Hccl::RankId rank = static_cast<Hccl::RankId>(myRank);
             void *commV2 = nullptr;
             CHK_RET(HcomGetCommV2(&commV2));
-            CHK_RET(HcclCommInitCollComm(rank, &commV2, hcomInfo.pComm));
+            CHK_RET(HcomInitCollComm(rank, &commV2, hcomInfo.pComm));
             return HCCL_SUCCESS;
         }());
 #endif
