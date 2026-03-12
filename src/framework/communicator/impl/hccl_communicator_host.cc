@@ -479,7 +479,7 @@ namespace hccl
         HCCL_DEBUG("[%s]hcclRankLinkInfo_ userRank[%u], devicePhyId[%u], ip[%s], port[%u]", __func__,
                    hcclRankLinkInfo_.userRank, hcclRankLinkInfo_.devicePhyId, hcclRankLinkInfo_.ip.GetReadableIP(),
                    hcclRankLinkInfo_.port);
-        CHK_RET(oneSideService_->Config(dispatcher_, hcclRankLinkInfo_, &rankTable, identifier_, isStandardCard_));
+        CHK_RET(oneSideService_->Config(dispatcher_, hcclRankLinkInfo_, &rankTable, enableP2PRankIds_, identifier_, isStandardCard_));
         return HCCL_SUCCESS;
     }
 
@@ -1290,19 +1290,22 @@ namespace hccl
             uint32_t localRankServerId = 0;
             uint32_t remoteRankServerId = 0;
             rtError_t ret = rtGetServerIDBySDID(rankInfoList_[realUserRank_].superDeviceId, &localRankServerId);
-            CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[InitPreResource]rtGetServerIDBySDID failed sdid[0x%08x], serverID[%u], ret[%u]",
+            CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Init][PreResource]rtGetServerIDBySDID failed sdid[0x%08x], serverID[%u], ret[%u]",
                 rankInfoList_[realUserRank_].superDeviceId, localRankServerId, ret), HCCL_E_RUNTIME);
             for (size_t index = 0; index < rankInfoList_.size(); ++index)
             {
                 const RankInfo &rankInfo = rankInfoList_[index];
+                HCCL_INFO("TEST1 userRank[%u], worldRank[%u], localRank[%u], index[%u], devPhyId[%u], realUserRank_[%u], userRank_[%u]",
+                    rankInfo.userRank, rankInfo.worldRank, rankInfo.localRank, index, rankInfo.devicePhyId, realUserRank_, userRank_);
                 ret = rtGetServerIDBySDID(rankInfo.superDeviceId, &remoteRankServerId);
-                CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[InitPreResource]rtGetServerIDBySDID failed sdid[0x%08x], serverID[%u], ret[%u]",
+                CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Init][PreResource]rtGetServerIDBySDID failed sdid[0x%08x], serverID[%u], ret[%u]",
                     rankInfo.superDeviceId, remoteRankServerId, ret), HCCL_E_RUNTIME);
                 if (serverId_ != rankInfo.serverId && localRankServerId == remoteRankServerId) {
                     enableP2PDevices_.push_back(rankInfo.devicePhyId);
-                    HCCL_INFO("[InitPreResource]localDevicePhyId[%u] needs to enable enablep2p for remoteDevicePhyId[%u], " \
+                    enableP2PRankIds_.insert(rankInfo.userRank);
+                    HCCL_INFO("[Init][PreResource]localRankID[%u]-localDevicePhyId[%u] needs to enablep2p with remoteRankId[%u]-remoteDevicePhyId[%u], " \
                         "and localServerId[%s], localServerIdBySDID[%u], remoteServerId[%s], remoteServerIdBySDID[%u]",
-                        rankInfoList_[realUserRank_].devicePhyId, rankInfo.devicePhyId,
+                        realUserRank_, rankInfoList_[realUserRank_].devicePhyId, rankInfo.userRank, rankInfo.devicePhyId,
                         serverId_.c_str(), localRankServerId, rankInfo.serverId.c_str(), remoteRankServerId);
                 }
             }
@@ -1317,9 +1320,19 @@ namespace hccl
         for (u32 i = 0; i < iterServ->second.size(); i++) {
             if (iterServ->second[i].deviceInfo.devicePhyId != HOST_DEVICE_ID) {
                 enableP2PDevices_.push_back(iterServ->second[i].deviceInfo.devicePhyId);
+                enableP2PRankIds_.insert(iterServ->second[i].rankId);
+                HCCL_INFO("[Init][PreResource]In the current server[%s], userRank[%u]-localuserRank[%u]-realUserRank[%u]-localrealUserRank[%u]-localDevicePhyId[%u] needs to enableP2P " \
+                    "with remoteRankId[%u]-remoteDevicePhyId[%u], remotelocalRank[%u], userRanklocalRank[%u], realUserRanklocalRank[%u]",
+                    serverId_.c_str(), userRank_, iterServ->second[userRank_].rankId, realUserRank_,
+                    iterServ->second[realUserRank_].rankId, iterServ->second[realUserRank_].deviceInfo.devicePhyId,
+                    iterServ->second[i].rankId, iterServ->second[i].deviceInfo.devicePhyId, iterServ->second[i].localRank,
+                    iterServ->second[userRank_].localRank, iterServ->second[realUserRank_].localRank);
             }
         }
-        HCCL_DEBUG("[Init][PreResource]Current deviceType[%d], isStandardCard[%s]", deviceType_, isStandardCard_ ? "true" : "false");
+        for(auto it = enableP2PRankIds_.begin(); it != enableP2PRankIds_.end();++it){
+            HCCL_INFO("TEST2 rankid[%u]", *it);
+        }
+        HCCL_INFO("[Init][PreResource]Current deviceType[%d], isStandardCard[%s]", deviceType_, isStandardCard_ ? "true" : "false");
         if (deviceType_ != DevType::DEV_TYPE_310P3 && !isStandardCard_) {
             HcclResult ret = P2PMgmtPub::EnableP2P(enableP2PDevices_);
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][PreResource]Enable P2P Failed, deviceLogicId[%d], ret[%u]", deviceLogicId_, ret), ret);
