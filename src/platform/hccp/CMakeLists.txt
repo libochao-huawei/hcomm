@@ -13,6 +13,7 @@ if (DEVICE_MODE)
 endif()
 add_subdirectory(rdma_agent)
 add_subdirectory(rdma_service)
+#null
 
 if (NOT DEVICE_MODE)
     return()
