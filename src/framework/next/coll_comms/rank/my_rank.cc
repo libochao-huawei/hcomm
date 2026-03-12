@@ -14,6 +14,7 @@
 #include "endpoint_pair.h"
 #include "hccl_res.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器
+#include "channel_process.h"
 
 using namespace hcomm;
 
@@ -238,7 +239,7 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
     int32_t* statusList = statusVec.data();
     uint32_t retryCount = 0;
     while (true) {
-        HcclResult ret = HcommChannelGetStatus(channelHandles, channelNum, statusList);
+        HcclResult ret = ChannelProcess::ChannelGetStatus(channelHandles, channelNum, statusList);
 
         // 卫语句：先处理异常情况
 
@@ -308,7 +309,8 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
             callbacks_.setAicpuCommState(true);
         }
 
-        CHK_RET(HcommChannelKernelLaunch(channelHandles, hostChannelHandleList, channelNum, commTag, binHandle_));
+        CHK_RET(ChannelProcess::ChannelKernelLaunchForComm(channelHandles, hostChannelHandleList, 
+            channelNum, commTag, binHandle_));
         return HCCL_SUCCESS;
     }
 
@@ -360,7 +362,7 @@ HcclResult MyRank::ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMe
     CHK_PTR_NULL(memTag);
     CHK_PTR_NULL(memNum);
 
-    CHK_RET(HcommChannelGetUserRemoteMem(channel, remoteMem, memTag, memNum));
+    CHK_RET(ChannelProcess::ChannelGetUserRemoteMem(channel, remoteMem, memTag, memNum));
     // 添加空指针检查，防止返回的指针为空
     if (*memNum > 0) {
         CHK_PTR_NULL(*remoteMem);

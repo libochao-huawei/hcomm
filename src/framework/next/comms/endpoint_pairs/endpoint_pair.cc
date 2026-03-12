@@ -12,12 +12,13 @@
 #include "socket_config.h"
 #include "hcomm_c_adpt.h"
 #include "orion_adpt_utils.h"
+#include "channel_process.h"
 
 namespace hcomm {
 
 EndpointPair::~EndpointPair() 
 {
-    (void)HcommChannelDestroy(channelHandles_.data(), channelHandles_.size());
+    (void)ChannelProcess::ChannelDestroy(channelHandles_.data(), channelHandles_.size());
 }
 
 HcclResult EndpointPair::Init()
@@ -39,7 +40,7 @@ HcclResult EndpointPair::GetSocket(const std::string &socketTag, Hccl::Socket*& 
 HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, 
         HcommChannelDesc *channelDescs, ChannelHandle *channels)
 {
-    CHK_RET(HcommChannelCreate(endpointHandle, engine, channelDescs, 1, channels));
+    CHK_RET(HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels));
     channelHandles_.push_back(channels[0]);
     return HCCL_SUCCESS;
 }
