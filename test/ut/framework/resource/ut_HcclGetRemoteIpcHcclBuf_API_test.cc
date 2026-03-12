@@ -20,10 +20,12 @@ public:
     void SetUp() override
     {
         BaseInit::SetUp();
-        UT_USE_1SERVER_2RANK_AS_DEFAULT;
+        UT_USE_RANK_TABLE_910_1SERVER_1RANK;
+        UT_COMM_CREATE_DEFAULT(comm);
     }
     void TearDown() override
     {
+        Ut_Comm_Destroy(comm);
         BaseInit::TearDown();
         GlobalMockObject::verify();
     }
@@ -37,7 +39,6 @@ bool GetCommResourceStub(void *&commContext)
 
 TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
-    UT_COMM_CREATE_DEFAULT(comm);
     void *addr = nullptr;
     uint64_t size = 0;
     void *addr_res = reinterpret_cast<void *>(0x12345678);
@@ -46,13 +47,11 @@ TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_Normal_Expec
 
     HcclResult ret = HcclGetRemoteIpcHcclBuf(comm, 1, &addr, &size);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    Ut_Comm_Destroy(comm);
     GlobalMockObject::verify();
 }
 
 TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_ParamIsNullptr_Expect_ReturnIsHCCL_E_PTR)
 {
-    UT_COMM_CREATE_DEFAULT(comm);
     void *addr = nullptr;
     uint64_t size = 0;
     
@@ -64,16 +63,13 @@ TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_ParamIsNullp
 
     ret = HcclGetRemoteIpcHcclBuf(comm, 1, &addr, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
-    Ut_Comm_Destroy(comm);
 }
 
 TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_RemoteRankIsInvalid_Expect_ReturnIsHCCL_E_PTR)
 {
-    UT_COMM_CREATE_DEFAULT(comm);
     void *addr = nullptr;
     uint64_t size = 0;
     
     HcclResult ret = HcclGetRemoteIpcHcclBuf(comm, 16, &addr, &size);
     EXPECT_EQ(ret, HCCL_E_PTR);
-    Ut_Comm_Destroy(comm);
 }
