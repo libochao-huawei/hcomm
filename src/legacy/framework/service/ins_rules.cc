@@ -681,7 +681,7 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
 
     // launch ccu task
     LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig);
-    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.GetIsMaster());
+    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.IsMaster());
 
     // launch LocalWaitFrom on stream
     RtsCntNotify *cntNotifyNTo1 = comm.GetCcuStreamSyncNotifyManager().GetRtsNTo1CntNotify(stream.GetId());
@@ -709,7 +709,7 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
 
         // launch ccu task
         LaunchCcuTasks(ccuParams[ccuProfIdx], slave, taskParam, taskConfig);
-        ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[ccuProfIdx], comm, taskParam, slave->GetIsMaster());
+        ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[ccuProfIdx], comm, taskParam, slave->IsMaster());
 
         // launch localPostTo on extra streams
         cntNotifyNTo1->PostBits(bitValue, *slave);
@@ -752,7 +752,7 @@ static void SubmitCcuTasks(const CcuInstruction &ccuInstruction, CommunicatorImp
     
     //esl 2die适配，先申请从流再启动task
     LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig);
-    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.GetIsMaster());
+    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.IsMaster());
     FastLoadSaveParams(ccuInstruction, comm, taskConfig, stream, ccuParams, ccuProfilingInfo);
 }
 

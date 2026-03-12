@@ -2523,6 +2523,7 @@ namespace hccl
         opParam.DataDes.dataType = dataType;
         opParam.reduceType = HcclReduceOp::HCCL_REDUCE_RESERVED;
         opParam.stream = streamObj;
+        opParam.isCapture = isCapture;
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
         opParam.isCapture = isCapture;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
