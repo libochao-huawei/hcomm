@@ -16,6 +16,7 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
+#include <map>
 #include <utility>
 
 #include "graph.h"
@@ -104,7 +105,7 @@ public:
         DeviceId      GetDeviceId() const;
         std::set<u32> GetLevels() const;
         NetInstancePtr   GetNetInstance(u32 level) const;
-        std::unordered_map<std::string, IpAddress> GetPortAddrMapLayer0() const;
+        std::map<std::string, IpAddress> GetPortAddrMapLayer0() const;
         void SetPortPortAddrMapLayer0(std::unordered_map<std::string, IpAddress> portAddrMap);
         std::string   Describe() const override;
     private:
@@ -113,7 +114,7 @@ public:
         LocalId                  replacedLocalId_;
         DeviceId                 deviceId_;
         std::set<u32>            netLayers_;
-        std::unordered_map<std::string, IpAddress> portAddrMapLayer0_{}; // layer0 层端口与IpAddress的映射。
+        std::map<std::string, IpAddress> portAddrMapLayer0_{}; // layer0 层端口与IpAddress的映射。
         std::vector<NetInstancePtr> netInsts_; // 下标为level，约束：level从0递增
     };
 
