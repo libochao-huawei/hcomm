@@ -1540,7 +1540,7 @@ HcclResult NetworkManager::PsWorkerRaInit(u32 devId, const HcclIpAddress &ipAddr
         CHK_RET(HrtRaInit(&config));
     }
 
-    strdev nicRdevInfo = {};Info;
+    struct rdev nicRdevInfo = {};
     nicRdevInfo.phyId = devicePhyId;
     nicRdevInfo.family = ipAddr.GetFamily();
     nicRdevInfo.localIp.addr = ipAddr.GetBinaryAddress().addr;

@@ -2986,7 +2986,7 @@ HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT ke
         }
         return HCCL_SUCCESS;
     }
-    stRaInfo raInfo = {};Info;
+    struct RaInfo raInfo = {};
     raInfo.mode = networkMode;
     raInfo.phyId = devicePhyId;
 

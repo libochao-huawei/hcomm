@@ -133,7 +133,7 @@ HcclResult hcclModifyAscendQPEx(AscendQPInfo* localQPInfo, AscendQPInfo* remoteQ
     localQp.sl = qpQos->sl;
     localQp.tc = qpQos->tc;
 
-    stTypicalQp remoteQp = {};teQp;
+    struct TypicalQp remoteQp = {};
     remoteQp.qpn = remoteQPInfo->qpn;
     remoteQp.gidIdx = remoteQPInfo->gidIdx;
     for (uint32_t i = 0; i < GID_LENGTH; i++) {

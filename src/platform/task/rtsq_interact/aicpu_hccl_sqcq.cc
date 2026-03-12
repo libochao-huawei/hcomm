@@ -361,7 +361,7 @@ HcclResult DeviceQuery(const uint32_t devId, const uint32_t step, const uint32_t
         size_t ackCount = sizeof(ts_ctrl_msg_body_t);
         queryIn.type = OP_QUERY_ABORT_STATUS;
         queryIn.u.query_task_info.choice = APP_ABORT_STS_QUERY_BY_PID;
-        sttsdrv_ctrl_msg para = {};para;
+        struct tsdrv_ctrl_msg para = {};
         para.tsid = 0;
         para.msg_len = sizeof(ts_ctrl_msg_body_t);
         para.msg = static_cast<void*>(&queryIn);
