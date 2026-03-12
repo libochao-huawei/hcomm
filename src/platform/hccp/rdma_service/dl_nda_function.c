@@ -183,3 +183,36 @@ int RsNdaIbvDestroyCqExtend(struct ibv_context_extend *context, void *ibvCqExt)
     }
     return gNdaOps.rsNdaIbvDestroyCqExtend(context, cqExtend);
 }
+
+struct ibv_qp_extend *RsNdaCreateQpExtend(struct ibv_context_extend *context,
+    struct ibv_qp_init_attr_extend *qpInitAttr)
+{
+    if (context == NULL) {
+        hccp_err("context is null");
+        return NULL;
+    }
+
+    if (gNdaOps.rsNdaCreateQpExtend == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rsNdaCreateQpExtend is null");
+        return NULL;
+#endif
+    }
+    return gNdaOps.rsNdaCreateQpExtend(context, qpInitAttr);
+}
+
+int RsNdaIbvDestroyQpExtend(struct ibv_context_extend *context, struct ibv_qp_extend *qpExtend)
+{
+    if (context == NULL) {
+        hccp_err("context is null");
+        return -EINVAL;
+    }
+
+    if (gNdaOps.rsNdaIbvDestroyQpExtend == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rsNdaIbvDestroyQpExtend is null");
+        return -EINVAL;
+#endif
+    }
+    return gNdaOps.rsNdaIbvDestroyQpExtend(context, qpExtend);
+}

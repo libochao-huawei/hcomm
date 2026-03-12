@@ -202,10 +202,17 @@ static void DlHalApiInit(void)
     gHalOps.dlDrvMemGetAttribute = (DVresult (*)(DVdeviceptr vptr, struct DVattribute *attr))
         AscendHalDlsym(gHalApiHandle, "drvMemGetAttribute");
 
+<<<<<<< HEAD
     gHalOps.dlHalHostRegister = (drvError_t (*)(void *srcPtr, uint64_t size, uint32_t flag, uint32_t devId, void **dstPtr))
         AscendHalDlsym(gHalApiHandle, "halHostRegister");
 
     gHalOps.dlHalHostUnregister = (drvError_t (*)(void *src_ptr, uint32_t devid))
+=======
+    gHalOps.dlHalHostRegister = (drvError_t (*)(void *srcPtr, UINT64 size, UINT32 flag, UINT32 devId, void **dstPtr))
+        AscendHalDlsym(gHalApiHandle, "halHostRegister");
+
+    gHalOps.dlHalHostUnregister = (drvError_t (*)(void *src_ptr, UINT32 devid))
+>>>>>>> 2d357718 (HCCP support RaNdaQpCreate)
         AscendHalDlsym(gHalApiHandle, "halHostUnregister");
     return;
 }
