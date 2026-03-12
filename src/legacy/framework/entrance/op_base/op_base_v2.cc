@@ -1674,6 +1674,17 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
  	    CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
  	        HCCL_ERROR("[%s]SetCommAcceleratorV2 failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
  	        errorFlag = true);
+        u32 deviceListenPort = DEFAULT_VALUE_DEVICEPORT;
+        ret = opbasedCommInfoV2.pComm->InitDeviceListenPort(deviceListenPort);
+        CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
+            HCCL_ERROR("[%s]InitDeviceListenPort failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+            
+        ret = RootInfoUpdate(rankInfoDetectAgent, deviceListenPort, rootHandle, rankTable);
+        CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
+            HCCL_ERROR("[%s]RootInfoUpdate failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+        
  	    // 保存通信域
  	    HcclGroupParamsV2 params;
  	    params.pComm = opbasedCommInfoV2.pComm;
