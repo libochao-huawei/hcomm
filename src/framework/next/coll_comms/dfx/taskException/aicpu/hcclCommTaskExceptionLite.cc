@@ -216,7 +216,7 @@ HcclResult HcclCommTaskExceptionLite::GenerateErrorMessageReport(CollCommAicpu *
     }
 
     CHK_SAFETY_FUNC_RET(memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag),
-        taskInfo.dfxOpInfo_->op_.opTag.c_str(), taskInfo.dfxOpInfo_->op_.opTag.size()));
+        taskInfo.dfxOpInfo_->algTag_.c_str(), taskInfo.dfxOpInfo_->algTag_.size()));
     CHK_SAFETY_FUNC_RET(memcpy_s(errMsgInfo.group, sizeof(errMsgInfo.group),
         aicpuComm->GetIdentifier().c_str(), aicpuComm->GetIdentifier().size()));
 
@@ -360,18 +360,23 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(u32 sqId, u32 taskId)
         "WriteWithNotify:WN(rank,id), WriteReduceWithNotify:WRN(rank,id)]:");
 
     std::string taskContextInfo = "";
+    u32 lastOpIndex = (*taskContext.rbegin())->dfxOpInfo_ == nullptr ?
+        INVALID_UINT : (*taskContext.rbegin())->dfxOpInfo_->index_;
+    u32 curOpIndex = INVALID_UINT;
     for (auto it = taskContext.rbegin(); it != taskContext.rend(); ++it) {
         std::string conciseInfo = (*it)->GetConciseBaseInfo();
         conciseInfo += ",";
+        curOpIndex = (*it)->dfxOpInfo_ == nullptr ? INVALID_UINT : (*it)->dfxOpInfo_->index_;
 
-        if (taskContextInfo.size() + conciseInfo.size() >= TASK_CONTEXT_INFO_SIZE) {
-            HCCL_ERROR("[TaskException][AICPU]%s", taskContextInfo.c_str());
+        if (taskContextInfo.size() + conciseInfo.size() >= TASK_CONTEXT_INFO_SIZE || lastOpIndex != curOpIndex) {
+            HCCL_ERROR("[TaskException][AICPU]OP(%u): %s", lastOpIndex, taskContextInfo.c_str());
             taskContextInfo = "";
+            lastOpIndex = curOpIndex;
         }
 
         taskContextInfo += conciseInfo;
     }
-    HCCL_ERROR("[TaskException][AICPU]%s end.", taskContextInfo.c_str());
+    HCCL_ERROR("[TaskException][AICPU]OP(%u): %s end.", curOpIndex, taskContextInfo.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -394,9 +399,9 @@ std::string HcclCommTaskExceptionLite::GetOpDataInfo(const Hccl::TaskInfo& taskI
     }
 
     const auto &opInfo = taskInfo.dfxOpInfo_;
-    return Hccl::StringFormat("index[%u], opType[%s], count[%llu], reduceType[%s], src[0x%llx], dst[0x%llx], dataType[%s]",
+    return Hccl::StringFormat("index[%u], algTag[%s], count[%llu], reduceType[%s], src[0x%llx], dst[0x%llx], dataType[%s]",
         opInfo->index_,
-        opInfo->op_.opType.Describe().c_str(),
+        opInfo->algTag_.c_str(),
         opInfo->op_.dataCount,
         opInfo->op_.reduceOp.Describe().c_str(),
         opInfo->op_.inputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.inputMem->GetAddr()),

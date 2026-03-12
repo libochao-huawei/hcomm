@@ -295,10 +295,8 @@ namespace hccl
             return HCCL_E_PARA;
         }
   
-        CHK_RET(hrtGetDevice(&(commAicpuParam_.deviceLogicId)));
-    
+        CHK_RET(hrtGetDevice(&(commAicpuParam_.deviceLogicId)));    
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(commAicpuParam_.deviceLogicId), commAicpuParam_.devicePhyId));
-      
         CHK_RET(hrtGetDeviceType(devType_));
         commAicpuParam_.deviceType = static_cast<u32>(devType_);
 
@@ -324,6 +322,11 @@ namespace hccl
         CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
         CHK_RET(collComm_->GetHDCommunicate(commAicpuParam_.kfcControlTransferH2DParams,
             commAicpuParam_.kfcStatusTransferD2HParams));
+        commAicpuParam_.userRank = collComm_->GetMyRankId();
+        commAicpuParam_.userRankSize = collComm_->GetRankSize();
+        HCCL_INFO("[%s]success, commId[%s], deviceLogicId[%u], devicePhyId[%u], devType[%u], userRank[%u], userRankSize[%u]",
+            __func__, collComm_->GetCommId().c_str(), commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId,
+            commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize);
         return HCCL_SUCCESS;
     }
 
