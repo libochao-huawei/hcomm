@@ -522,6 +522,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_Resume_When_Normal_Expect_Success)
     comm.InitMemTransportManager();
     comm.InitMirrorTaskManager();
     comm.myRank = 0;
+    comm.devLogicId = 0;
     comm.id = "testTag";
     comm.currentCollOperator = make_unique<CollOperator>();
     comm.GetCurrentCollOperator()->opMode = OpMode::OPBASE;
