@@ -34,7 +34,7 @@ struct TpAttr {
     uint8_t ttl; // corresponding bitmap bit: 11
     uint8_t reserved[78];
 };
-#pragma pack()
+ #pragma pack()
 
 struct GetTpCfg {
     union GetTpCfgFlag flag;
