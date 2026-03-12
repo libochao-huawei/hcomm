@@ -21,6 +21,7 @@ extern "C" {
 #include "gtest/gtest.h"
 #include "tc_ut_rs_ub.h"
 #include "tc_ut_rs_ctx.h"
+#include "tc_ut_rs_nda.h"
 
 using namespace std;
 
@@ -266,3 +267,4 @@ TEST_M(RS, TcRsRetryTimeoutExceptionCheck);
 TEST_M(RS, TcRsSetQpLbValue);
 TEST_M(RS, TcRsGetQpLbValue);
 TEST_M(RS, TcRsGetLbMax);
+TEST_M(RS, TcRsNdaGetDirectFlag);
