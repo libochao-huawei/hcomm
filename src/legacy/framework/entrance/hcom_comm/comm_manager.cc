@@ -477,7 +477,7 @@ HcclResult HcomGetCommV2(void **comm)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommGetGroupParamsV2(const char *group, void* groupParams, void **commV2);
+HcclResult HcommGetGroupParamsV2(const char *group, void* groupParams, void **commV2)
 {
     HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
     HcclGroupParamsV2 &groupParamsV2 = hcomCommInfoV2.hcclGroupMap[group];
