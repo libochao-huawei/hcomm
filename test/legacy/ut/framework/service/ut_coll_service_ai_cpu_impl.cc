@@ -171,6 +171,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_SetHcclKernelLaunchParam_When_Op_BATCHSENDRE
     CollServiceAiCpuImpl service(&comm);
     service.counterBuf = DevBuffer::Create(0x100, 10);
     service.devBatchSendRecvItemBufs = DevBuffer::Create(0x100, 10);
+    EXPECT_NO_THROW(service.AllocOpMem(op));
     EXPECT_NO_THROW(service.SetHcclKernelLaunchParam(param, &comm));
 }
 
