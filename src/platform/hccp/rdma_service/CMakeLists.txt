@@ -18,6 +18,7 @@ set(rs_list
     rs_ping_roce.c
     rs_socket.c
     rs_rdma.c
+    rs_nda.c
     rs_drv_rdma.c
     rs_drv_socket.c
     dl_ibverbs_function.c
