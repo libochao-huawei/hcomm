@@ -21,7 +21,6 @@
 #include "hccp.h"
 #include "ra_comm.h"
 #include "ra_rs_err.h"
-#include "dsmi_common_interface.h"
 
 #define RA_QP_TX_DEPTH         32767
 #define TC_TLV_HDC_MSG_SIZE    (32 * 1024)
@@ -102,9 +101,6 @@ static DLLEXPORT drvError_t stub_drvHdcGetMsgBuffer(struct drvHdcMsg *msg, int i
     *pLen = gDrvRecvMsgLen;
     return 0;
 }
-
-extern int DsmiGetDeviceIpAddress(int deviceId, int portType, int portId, ip_addr_t *ipAddress,
-                               ip_addr_t *maskAddress);
 
 DLLEXPORT drvError_t drvGetDevNum(unsigned int *numDev);
 
