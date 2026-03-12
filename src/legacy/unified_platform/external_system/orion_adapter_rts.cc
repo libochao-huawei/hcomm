@@ -1145,8 +1145,6 @@ HcclResult HrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode)
 
 HcclResult HrtMemPrefetchToDevice(void *devPtr, uint64_t len)
 {
-    CHK_PRT_RET(aclrtMemP2PMap == nullptr, HCCL_ERROR("aclrtMemP2PMap is nullptr, "
-            "Does not support this interface."), HCCL_E_RUNTIME);
 	aclError ret = aclrtMemP2PMap(devPtr, static_cast<size_t>(len), HrtGetDevice(), 0);
     HCCL_INFO("Call [HrtMemPrefetchToDevice]aclrtMemP2PMap ret = %d", ret);
     if (ret != ACL_SUCCESS) {
