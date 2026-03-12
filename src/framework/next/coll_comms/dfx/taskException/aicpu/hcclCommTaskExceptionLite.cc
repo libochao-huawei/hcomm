@@ -14,6 +14,7 @@
 #include "task_scheduler_error.h"
 #include "task_struct_v2.h"
 #include "dlhal_function_v2.h"
+#include "read_write_lock.h"
 
 namespace hcomm {
 constexpr u32 RT_SDMA_COMPERR = 0x9; // A3 sdma error类型为0x9时，表示写拷贝发生超时代答，或者数据搬移时地址译码错误
@@ -65,6 +66,9 @@ void HcclCommTaskExceptionLite::Call()
 
 HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
 {
+    ReadWriteLockBase &commAicpuMapMutex = AicpuIndopProcess::AicpuGetCommMutex();
+    ReadWriteLock rwlock(commAicpuMapMutex);
+    rwlock.readLock();
     std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
     CHK_RET(AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo));
 
@@ -90,6 +94,7 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
             }
         }
     }
+    rwlock.readUnlock();
     return HCCL_SUCCESS;
 }
 
