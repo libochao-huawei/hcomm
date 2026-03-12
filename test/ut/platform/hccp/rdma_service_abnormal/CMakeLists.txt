@@ -34,6 +34,9 @@ set(rs_ut_abnormal_list
     ${CTX_DIR}/rs_ping_urma.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_ping_inner.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs.c
+    ${SRC_DIR}/src/platform/hccp/rdma_service/rs_nda.c
+    ${SRC_DIR}/src/platform/hccp/rdma_service/rs_comm.c
+    ${SRC_DIR}/src/platform/hccp/rdma_service/rs_drv_sensor.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_drv_rdma.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_epoll.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_drv_socket.c
