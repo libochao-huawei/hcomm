@@ -46,6 +46,15 @@ public:
     virtual HcclResult GetMaxTransPortDataSize(u64 &maxTransPortDataSize) const;
     virtual HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit);
 
+    // 辅助方法
+    void CreateRankGroupFromTopo(RankGroup &rankGroup, size_t topoIndex) const;
+    void CreateRankGroupsFrom2DTopo(RankGroup &rankGroupX, RankGroup &rankGroupY) const;
+    virtual uint32_t virtRankId2RankId(const uint32_t virtRankId);
+    virtual HcclResult GetStepInfo(u32 step, u32 nSteps, NHRStepInfo &stepInfo);
+    virtual HcclResult GetReduceScatterStepInfo(u32 step, NHRStepInfo &stepInfo);
+    virtual HcclResult GetAllGatherStepInfo(u32 step, u32 nSteps, NHRStepInfo &stepInfo);
+    virtual HcclResult ProcessNHRStepInfo(std::vector<NHRStepInfo> &stepInfoVector, RankGroup &rankGroup, std::map<u32, u32> &indexMap, std::vector<LinkData> &linksDie0, std::vector<LinkData> &linksDie1, const ResLinks &tempLinks, uint32_t axisSize);
+
     void SetCollOp(const CollAlgOperator &op);
     void SetDmaMode(const DmaMode dmaMode);
     void SetDataType(const DataType &dataType);

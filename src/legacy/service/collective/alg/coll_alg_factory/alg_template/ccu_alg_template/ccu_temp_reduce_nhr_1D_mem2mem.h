@@ -29,23 +29,17 @@ public:
     {
         return StringFormat("Template of Reduce ccu nhr 1D mem2mem with tempRankSize [%u].", tempRankSize_);
     }
-
-    HcclResult GenExtIns(const TempFuncs &tempFuncs, TemplateDataParams &tempAlgParams,
-                         const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues);
     HcclResult CalcRes(AlgTempResReq &tempResReq) override;
-    uint64_t GetMaxSliceSize() const;
     void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
+    uint64_t GetMaxSliceSize() const override;
+    HcclResult GenExtIns(const TempFuncs &tempFuncs, TemplateDataParams &tempAlgParams,
+                         const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues) override;
 
 private:
     HcclResult CalcSlice(const u64 dataSize, RankSliceInfo &sliceInfoVec);
-    HcclResult GetStepInfo(u32 step, u32 nSteps, NHRStepInfo &stepInfo);
-    HcclResult GetReduceScatterStepInfo(u32 step, NHRStepInfo &stepInfo);
-    HcclResult GetAllGatherStepInfo(u32 step, u32 nSteps, NHRStepInfo &stepInfo);
-    uint32_t virtRankId2RankId(const u32 virtRankId);
     ReduceOp reduceOp_;
     DataType dataType_;
 };
 
 } // namespace Hccl
-
-#endif // HCCLV2_CCU_TEMP_ALL_REDUCE_MESH_1D_MEM2MEM_H_
+#endif // HCCLV2_CCU_TEMP_REDUCE_NHR_1D_MEM2MEM_H_
