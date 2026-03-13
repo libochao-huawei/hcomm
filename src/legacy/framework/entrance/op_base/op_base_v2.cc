@@ -1575,7 +1575,7 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
     HcclResult ret = RootInfoDetect(rankInfoDetectAgent, nRanks, rank, rootHandle, rankTable);
     if (ret != HCCL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
-                            std::vector<std::string>({"RootInfoDetect failed."}));
+                            std::vector<std::string>({"RootInfoDetect failed"}));
         HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", __func__, HCCL_ERROR_CODE(ret));
         rankTable.Dump();
         return ret;
@@ -1693,7 +1693,7 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
     HcclResult ret = RootInfoDetect(rankInfoDetectAgent, nRanks, rank, rootHandle, rankTable);
     if (ret != HCCL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
-                            std::vector<std::string>({"RootInfoDetect failed."}));
+                            std::vector<std::string>({"RootInfoDetect failed"}));
         HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", __func__, HCCL_ERROR_CODE(ret));
         rankTable.Dump();
         return ret;
@@ -1904,8 +1904,8 @@ HcclResult HcclAllGatherVV2(void *sendBuf, uint64_t sendCount, void *recvBuf, vo
         HCCL_INFO("[%s] output[%llu] is equal to zero", __func__, output);
         return HCCL_SUCCESS;
     }
-    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-    std::vector<std::string>({"HcclReduceScatterVV2", "recvBuf", "nullptr", "please check recvBuf"}));
+    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
+    std::vector<std::string>({"HcclAllGatherVV2", "nullptr", "recvBuf", "not nullptr"}));
     CHK_PTR_NULL(recvBuf);
     // opParams组装
     Hccl::CollOpParams opParams;
@@ -2177,8 +2177,8 @@ HcclResult HcclReduceScatterVV2(void *sendBuf, void *sendCounts, void *sendDispl
         HCCL_INFO("[%s] inputCount[%llu] is equal to zero", __func__, inputCount);
         return HCCL_SUCCESS;
     }
-    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-    std::vector<std::string>({"HcclReduceScatterVV2", "sendBuf", "nullptr", "please check sendBuf"}));
+    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
+    std::vector<std::string>({"HcclReduceScatterVV2", "nullptr", "sendBuf", "not nullptr"}));
     CHK_PTR_NULL(sendBuf);
     if (op == HCCL_REDUCE_PROD) {
         HCCL_ERROR("[Check][ReductionOp] Op:[HCCL_REDUCE_PROD] not supported");
