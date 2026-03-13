@@ -52,6 +52,5 @@ private:
     static ReadWriteLock rwLockLite_; // 读写锁
 };
 
-
 }
 #endif

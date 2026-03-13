@@ -665,15 +665,12 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
     dfxOpInfoOnce->comm_ = static_cast<void*>(collComm);
     dfxOpInfoOnce->isIndop_ = true;
-    dfxOpInfoOnce->groupName_ = collComm->GetCommId(); // TODO:二次赋值，可替代
+    dfxOpInfoOnce->groupName_ = collComm->GetCommId(); 
     dfxOpInfoOnce->mainStreamId_ = cpuTsStream->id();
     dfxOpInfoOnce->opIndex_ = collComm->UpdateIndex();
     dfxOpInfoOnce->rankSize_ = collComm->GetRankSize();
-    //单算子模式，覆盖opTag
-    bool opBased = true;
-    if (opBased) {
-        dfxOpInfoOnce->op_.opTag = collComm->GetCommId();
-    }
+    //单算子模式，暂时覆盖opTag
+    dfxOpInfoOnce->op_.opTag = collComm->GetCommId();
     dfxOpInfoOnce->op_.myRank = static_cast<Hccl::RankId>(collComm->GetMyRankId());
 
     HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();

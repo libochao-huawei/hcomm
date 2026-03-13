@@ -41,7 +41,6 @@ HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
     return HCCL_SUCCESS; // 初始化成功返回成功码
 }
 
-
 HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle)
 {
     CHK_SMART_PTR_NULL(mirrorTaskManager_);

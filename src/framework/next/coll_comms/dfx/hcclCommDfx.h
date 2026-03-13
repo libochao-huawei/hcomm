@@ -62,8 +62,6 @@ private:
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> setAddTaskCallback_;
 };
 
-
-
-}
+} // namesapce hccl
 
 #endif

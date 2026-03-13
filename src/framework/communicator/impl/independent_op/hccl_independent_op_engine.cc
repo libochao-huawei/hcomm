@@ -160,7 +160,7 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
             return HCCL_E_PTR;
         }
         Thread *threadPtr = reinterpret_cast<Thread *>(*thread);
-        CHK_PTR_NULL(thread);
+        CHK_PTR_NULL(threadPtr);
         Stream *stream = threadPtr->GetStream();
         CHK_PTR_NULL(stream);
         Mc2CommInfo mc2CommInfo;
