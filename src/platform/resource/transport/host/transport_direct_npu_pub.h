@@ -119,7 +119,7 @@ protected:
     HcclResult GetAiQpInfo(std::vector<HcclQpInfoV2> &aiQpInfo) override;
 
     std::vector<QpHandle> qpHandles_;
-    struct AiQpInfo aiQpInfo_;
+    struct AiQpInfo aiQpInfo_ = {};
     std::vector<AiQpInfo> aiQpInfos_;
     u32 qpsPerConnection_;
 

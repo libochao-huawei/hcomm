@@ -100,12 +100,6 @@ HcclResult GlobalMemRegMgr::Reg(const HcclMem* mem, void** memRecordHandle)
         HCCL_ERROR("[GlobalMemRegMgr][Reg] The size of mem[%p] to register is 0.", mem),
         HCCL_E_PARA);
 
-    // 进程粒度最多注册MAX_GLOBAL_MEM_REG_COUNT块独立的内存，若超过则报错退出
-    CHK_PRT_RET(memRecordSet_.size() == MAX_GLOBAL_MEM_REG_COUNT,
-        HCCL_ERROR("[GlobalMemRegMgr][Reg] The number of memory registered in the process has reached the maximum"
-                   " value[%u]. Cannot register more memories.", MAX_GLOBAL_MEM_REG_COUNT),
-        HCCL_E_UNAVAIL);
-
     GlobalMemRecord newRecord(mem);
     const auto memInfo = newRecord.PrintInfo();
     std::unique_lock<std::mutex> lock(lock_);

@@ -875,7 +875,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::CheckDataType(const HcclDataType dataType, bool needReduce)
     {
-        const vector<string> infoTitle({"ccl_op", "parameter", "value", "tips"});
+        const vector<string> infoTitle({"ccl_op", "value", "parameter", "expect"});
         if (needReduce) {
             if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
                 if ((dataType == HCCL_DATA_TYPE_INT64) || (dataType == HCCL_DATA_TYPE_BFP16)) {
@@ -1067,7 +1067,7 @@ namespace hccl
                 ((dataType == HCCL_DATA_TYPE_INT16) || (dataType == HCCL_DATA_TYPE_BFP16))) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
                     std::vector<std::string>({"CheckReduceDataType",
                         GetDataTypeEnumStr(dataType),
                         "dataType",
@@ -1087,7 +1087,7 @@ namespace hccl
             if (dataType == HCCL_DATA_TYPE_INT16) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
                     std::vector<std::string>({"CheckReduceDataType",
                         GetDataTypeEnumStr(dataType),
                         "dataType",
@@ -1104,7 +1104,7 @@ namespace hccl
             if (dataType == HcclDataType::HCCL_DATA_TYPE_INT16 && op != HcclReduceOp::HCCL_REDUCE_SUM) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
                     std::vector<std::string>({"CheckReduceDataType",
                         GetReduceOpEnumStr(op),
                         "op",

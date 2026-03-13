@@ -68,6 +68,7 @@ inline Hccl::CollOpParams GetHcclOpParams(void *inputPtr, void *outputPtr, u64 c
     opParams.sendBuf = inputPtr;
     opParams.recvBuf = outputPtr;
     opParams.count = count;
+    opParams.staticShape = true;
     if (dataType != HcclDataType::HCCL_DATA_TYPE_RESERVED) {
         opParams.dataType = HcclDataTypeToDataType(dataType);
     } else {

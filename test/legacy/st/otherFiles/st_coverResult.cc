@@ -1174,7 +1174,7 @@ TEST(ConnLocalNotifyManagerTest, apply_for_ub_notify_ok)
     MOCKER(HrtNotifyGetAddr).stubs().will(returnValue((u64)0));
     MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(1));
     MOCKER(HrtGetSocVer).stubs();
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
     RankId fakeLocalRankID = 1;
     RankId fakeRemoteRankID = 4;
@@ -1328,7 +1328,7 @@ TEST(DevCapabilityTest, test_dev_cap_v82)
         {DataType::UINT16, true},  {DataType::UINT32, true},   {DataType::FP64, false},   {DataType::BFP16, true},
         {DataType::INT128, false}, {DataType::BF16_SAT, true},
     };
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
 
     DevCapability &devCap = DevCapability::GetInstance();
@@ -1348,7 +1348,7 @@ TEST(DevCapabilityTest, test_dev_cap_v82)
 TEST(NotifyFixedValueTest, notify_fixed_value_get_addr_and_size)
 {
     // Given
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
     void *fakeAddr = new int[1];
     MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(fakeAddr));
@@ -1497,7 +1497,7 @@ TEST(CommunicatorImplTest, should_success_when_comm_LoadOpbasedCollOp_ccu)
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
     MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
     MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
 
     // 资源初始化
     MOCKER_CPP(&CcuInsPreprocessor::Preprocess).stubs().with().will(ignoreReturnValue());
@@ -1578,7 +1578,7 @@ TEST(CommunicatorImplTest, should_success_when_comm_LoadOpbasedCollOp_ccu)
     CollAlgOpReq collAlgOpReq;
     collAlgOpReq.algName = "testAlg";
     collAlgOpReq.resReq.primQueueNum = 1;
-    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
     MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::Orchestrate,
                        HcclResult(CollAlgComponent::*)(const CollAlgOperator &op, const CollAlgParams &params,
                                                        const string &algName, InsQuePtr queue))
@@ -1625,7 +1625,7 @@ TEST(CommunicatorImplTest, should_success_when_comm_LoadOpbasedCollOp_aicpu)
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
     MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
     MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
 
     // 资源初始化
     MOCKER_CPP(&CcuInsPreprocessor::Preprocess).stubs().with().will(ignoreReturnValue());
@@ -1706,7 +1706,7 @@ TEST(CommunicatorImplTest, should_success_when_comm_LoadOpbasedCollOp_aicpu)
     CollAlgOpReq collAlgOpReq;
     collAlgOpReq.algName = "testAlg";
     collAlgOpReq.resReq.primQueueNum = 1;
-    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
     MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::Orchestrate,
                        HcclResult(CollAlgComponent::*)(const CollAlgOperator &op, const CollAlgParams &params,
                                                        const string &algName, InsQuePtr queue))

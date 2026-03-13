@@ -135,7 +135,7 @@ HcclResult CreateCommConfig(uint32_t rank, HcclCommConfig *config, HcclComm *com
     bool devUsed = false;
     bool isWorldGroup = true;
     Hccl::CommParams commParams{commId, static_cast<Hccl::RankId>(rank), 0,
-        static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_910_95, devUsed, isWorldGroup};
+        static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_950, devUsed, isWorldGroup};
 
     shared_ptr<HcclCommConfig> hcclConf;
     EXECEPTION_CATCH((hcclConf = make_shared<HcclCommConfig>()), return HCCL_E_PTR);
@@ -188,7 +188,7 @@ HcclResult CreateCommConfigRootInfo(uint32_t rank, const HcclCommConfig *config,
     bool devUsed = false;
     bool isWorldGroup = true;
     Hccl::CommParams commParams{identifier, static_cast<Hccl::RankId>(rank), 0,
-        static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_910_95, devUsed, isWorldGroup};
+        static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_950, devUsed, isWorldGroup};
 
     shared_ptr<HcclCommConfig> hcclConf;
     EXECEPTION_CATCH((hcclConf = make_shared<HcclCommConfig>()), return HCCL_E_PTR);
@@ -282,7 +282,7 @@ HcclResult HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, Hcc
     bool devUsed = false;
     bool isWorldGroup = true;
     Hccl::CommParams commParams{commId, static_cast<Hccl::RankId>(rank), 0,
-        static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_910_95, devUsed, isWorldGroup};
+        static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_950, devUsed, isWorldGroup};
     opbasedCommInfoV2.pComm.reset(new (std::nothrow) Hccl::HcclCommunicator(commParams));
     CHK_PTR_NULL(opbasedCommInfoV2.pComm);
     auto res = opbasedCommInfoV2.pComm->Init(ranktableM);
@@ -838,7 +838,7 @@ HcclResult HcclCreateSubCommConfigV2(const HcclComm *comm, uint32_t rankNum, uin
 
     /* 创建子通信域 */
     Hccl::CommParams commParams{subCommIdStr, static_cast<Hccl::RankId>(subCommRankId),
-        rankNum, opbasedCommInfoV2.commParams.myRank, Hccl::DevType::DEV_TYPE_910_95};
+        rankNum, opbasedCommInfoV2.commParams.myRank, Hccl::DevType::DEV_TYPE_950};
     CheckHcclDeterministic(config->hcclDeterministic);
     // 默认全都开启确定性计算
     config->hcclDeterministic = 1;
@@ -1575,7 +1575,7 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
     HcclResult ret = RootInfoDetect(rankInfoDetectAgent, nRanks, rank, rootHandle, rankTable);
     if (ret != HCCL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
-                            std::vector<std::string>({"RootInfoDetect failed."}));
+                            std::vector<std::string>({"RootInfoDetect failed"}));
         HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", __func__, HCCL_ERROR_CODE(ret));
         rankTable.Dump();
         return ret;
@@ -1588,7 +1588,7 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
     bool devUsed = false;
     bool isWorldGroup = true;
     Hccl::CommParams commParams{identifier, static_cast<Hccl::RankId>(rank), nRanks,
-        static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_910_95, devUsed, isWorldGroup};
+        static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_950, devUsed, isWorldGroup};
     opbasedCommInfoV2.pComm.reset(new (std::nothrow) Hccl::HcclCommunicator(commParams));
     opbasedCommInfoV2.commParams = commParams;
 
@@ -1693,7 +1693,7 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
     HcclResult ret = RootInfoDetect(rankInfoDetectAgent, nRanks, rank, rootHandle, rankTable);
     if (ret != HCCL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
-                            std::vector<std::string>({"RootInfoDetect failed."}));
+                            std::vector<std::string>({"RootInfoDetect failed"}));
         HCCL_ERROR("[%s] errNo[0x%016llx] RootInfoDetect failed.", __func__, HCCL_ERROR_CODE(ret));
         rankTable.Dump();
         return ret;
@@ -1904,8 +1904,8 @@ HcclResult HcclAllGatherVV2(void *sendBuf, uint64_t sendCount, void *recvBuf, vo
         HCCL_INFO("[%s] output[%llu] is equal to zero", __func__, output);
         return HCCL_SUCCESS;
     }
-    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-    std::vector<std::string>({"HcclReduceScatterVV2", "recvBuf", "nullptr", "please check recvBuf"}));
+    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
+    std::vector<std::string>({"HcclAllGatherVV2", "nullptr", "recvBuf", "not nullptr"}));
     CHK_PTR_NULL(recvBuf);
     // opParams组装
     Hccl::CollOpParams opParams;
@@ -2177,8 +2177,8 @@ HcclResult HcclReduceScatterVV2(void *sendBuf, void *sendCounts, void *sendDispl
         HCCL_INFO("[%s] inputCount[%llu] is equal to zero", __func__, inputCount);
         return HCCL_SUCCESS;
     }
-    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-    std::vector<std::string>({"HcclReduceScatterVV2", "sendBuf", "nullptr", "please check sendBuf"}));
+    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
+    std::vector<std::string>({"HcclReduceScatterVV2", "nullptr", "sendBuf", "not nullptr"}));
     CHK_PTR_NULL(sendBuf);
     if (op == HCCL_REDUCE_PROD) {
         HCCL_ERROR("[Check][ReductionOp] Op:[HCCL_REDUCE_PROD] not supported");
@@ -2636,7 +2636,7 @@ HcclResult HcclSnapshotGetBufSize(uint32_t step, uint32_t *size)
     // 校验DevType
     HCCL_INFO("[%s] start", __func__);
     Hccl::DevType devType = HrtGetDeviceType();
-    if (devType != DevType::DEV_TYPE_910_95) {
+    if (devType != DevType::DEV_TYPE_950) {
         HCCL_INFO("[%s] Get buffer size not support in this device type[%d]", __func__, devType);
         return HCCL_E_NOT_SUPPORT;
     }
