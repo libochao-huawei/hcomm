@@ -338,6 +338,7 @@ target_include_directories(hccl_llt  PRIVATE
 
     #next
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/aicpu
