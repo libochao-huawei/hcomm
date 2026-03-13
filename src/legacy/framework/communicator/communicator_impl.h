@@ -50,6 +50,7 @@
 #include "hccl_aiv_utils.h"
 #include "error_message_v2.h"
 #include "hccp.h"
+#include "aicpu/launch_device.h"
 
 namespace Hccl {
 
@@ -377,6 +378,7 @@ public:
     std::string GetTopoFilePath() const;
     std::vector<LinkData> GetFullMeshLinks() const;
     ErrorMessageReport GetAicpuTaskException();
+    aclrtFuncHandle GetAicpuKernelFuncHandle(const char *kernelName) const;
 private:
     std::string                                id;
     static std::atomic<u32>                    globalIndex; // 全局通信域唯一一个index, 对应锁保护
@@ -488,6 +490,7 @@ private:
     CollOpParams                               curOpParams; // 当前算子参数
     std::map<std::pair<OpType, string>, std::pair<AcceleratorState, string>> 
         opAcceStateCache{}; // opType + algName --> acceleratorState + newAlgName
+    AicpuBinaryHolder aicpuKernelHolder_;
 
     void InitCommonData(const CommParams &commParams);
     void InitCommonDataNotInitDevType(const CommParams &commParams, const HcclCommConfig &commConfig);
@@ -523,6 +526,7 @@ private:
     void ConvertCollOperatorMem(const CollOpParams &opParams, u64 size);
     void CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize) const;
     void ConvertCollOperatorMemV(const CollOpParams &opParams);
+    void RegisterAicpuKernel();
 
     // dpu相关
     void InitHccpPeer() const;           // 拉起peer模式HCCP进程

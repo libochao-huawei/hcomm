@@ -77,6 +77,7 @@ protected:
         comm.InitMemTransportManager();
         comm.devLogicId = 0;  // InitMirrorTaskManager依赖此字段
         comm.InitMirrorTaskManager();
+        comm.RegisterAicpuKernel();
         comm.myRank = 0;
         comm.id = "testTag";
         std::shared_ptr<Buffer> buffer = DevBuffer::Create(0x100, 10);
@@ -521,7 +522,9 @@ TEST_F(CollServiceAiCpuImplTest, Ut_Resume_When_Normal_Expect_Success)
     comm.InitStreamManager();
     comm.InitMemTransportManager();
     comm.InitMirrorTaskManager();
+    comm.RegisterAicpuKernel();
     comm.myRank = 0;
+    comm.devLogicId = 0;
     comm.id = "testTag";
     comm.currentCollOperator = make_unique<CollOperator>();
     comm.GetCurrentCollOperator()->opMode = OpMode::OPBASE;
@@ -594,6 +597,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_LoadWithOpBasedMode_When_Normal_Expect_Succe
     comm.InitMemTransportManager();
     comm.devLogicId = 0;
     comm.InitMirrorTaskManager();
+    comm.RegisterAicpuKernel();
     comm.myRank = 0;
     comm.id = "testTag";
     std::shared_ptr<Buffer> buffer = DevBuffer::Create(0x100, 10);
@@ -687,6 +691,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_LoadWithOpBasedMode_When_Loop_Expect_Success
     comm.InitMemTransportManager();
     comm.devLogicId = 0;
     comm.InitMirrorTaskManager();
+    comm.RegisterAicpuKernel();
     comm.myRank = 0;
     comm.id = "testTag";
     std::shared_ptr<Buffer> buffer = DevBuffer::Create(0x100, 10);
@@ -846,6 +851,7 @@ TEST_F(CollServiceAiCpuImplTest, test_LoadWithOffloadMode_Success)
     comm.InitMemTransportManager();
     comm.devLogicId = 0;
     comm.InitMirrorTaskManager();
+    comm.RegisterAicpuKernel();
     comm.myRank = 0;
     comm.id = "testTag";
     std::shared_ptr<Buffer> buffer = DevBuffer::Create(0x100, 10);
