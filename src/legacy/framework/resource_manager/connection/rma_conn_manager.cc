@@ -188,23 +188,23 @@ void RmaConnManager::GetDeleteJettys(BatchDeleteJettyInfo &batchDeleteJettyInfo)
         for (auto &linkDataConnPair : connPair.second) {
             if (linkDataConnPair.second != nullptr) {
                 ubConn = dynamic_cast<DevUbConnection*>(linkDataConnPair.second.get());
-                if (ubConn) {
-                    const auto& rdmaHandle = ubConn->GetRdmaHandle();
-                    auto& remoteJettyHandle = ubConn->GetRemoteJettyHandle();
-                    if (rdmaHandle && remoteJettyHandle != 0) {
-                        batchDeleteJettyInfo.unimportJettyList[rdmaHandle].insert(remoteJettyHandle);
-                        remoteJettyHandle = 0;
-                    }
-
-                    ubConn->ReleaseTp();
-
-                    auto& jettyHandle = ubConn->GetJettyHandle();
-                    if (jettyHandle != 0) {
-                        batchDeleteJettyInfo.deleteJettyList[rdmaHandle].insert(jettyHandle);
-                        jettyHandle = 0;
-                    }  
-                    linkDataConnPair.second = nullptr;
+                if (ubConn == nullptr) {
+                    continue;
                 }
+
+                const auto& rdmaHandle = ubConn->GetRdmaHandle();
+                auto& remoteJettyHandle = ubConn->GetRemoteJettyHandle();
+                if (rdmaHandle && remoteJettyHandle != 0) {
+                    batchDeleteJettyInfo.unimportJettyList[rdmaHandle].insert(remoteJettyHandle);
+                    remoteJettyHandle = 0;
+                }
+                ubConn->ReleaseTp();
+                auto& jettyHandle = ubConn->GetJettyHandle();
+                if (jettyHandle != 0) {
+                    batchDeleteJettyInfo.deleteJettyList[rdmaHandle].insert(jettyHandle);
+                    jettyHandle = 0;
+                }  
+                linkDataConnPair.second = nullptr;
             }
         }
     }

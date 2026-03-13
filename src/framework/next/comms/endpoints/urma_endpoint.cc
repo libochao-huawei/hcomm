@@ -36,7 +36,6 @@ HcclResult UrmaEndpoint::Init()
         return ret;
     }
 
-
     u32 devPhyId;
     s32 deviceLogicId;
     ret = hrtGetDevice(&deviceLogicId);
