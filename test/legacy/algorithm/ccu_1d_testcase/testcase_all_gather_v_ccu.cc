@@ -67,7 +67,7 @@ TEST_F(AllGatherVCCUTest, all_gather_v_ccu_case_test_2rank)
     checkerOpParam.opType = CheckerOpType::ALLGATHER_V;
     checkerOpParam.tag = "AllGatherV";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
@@ -95,7 +95,7 @@ TEST_F(AllGatherVCCUTest, all_gather_v_ccu_case_test_4rank)
     checkerOpParam.opType = CheckerOpType::ALLGATHER_V;
     checkerOpParam.tag = "AllGatherV";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
@@ -136,7 +136,7 @@ TEST_F(AllGatherVCCUTest, allgather_v_ccu_case_test_4rank_auto_test)
     CheckerOpParam checkerOpParam;
     checkerOpParam.opType = CheckerOpType::ALLGATHER_V;
     checkerOpParam.tag = "AllGatherV";
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherVMesh1D";
 
     u64 randomNumbersIdx = 0;
