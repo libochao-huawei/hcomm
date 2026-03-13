@@ -194,11 +194,11 @@ HcclResult InsV2AlltoAllVSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate
     tempAlgParams.inputRepeatStride = 0;
     tempAlgParams.outputRepeatStride = 0;
 
-    TempFuncs tempFuncs;
-    tempFuncs.opMode = opMode_;
+    TempFuncs tempFuncs;  
     tempFuncs.enableCounterNotify = IsEnableCounterNotify();
     tempFuncs.isForepart = true;
     tempFuncs.isBottom = true;
+    tempFuncs.opMode = opMode_;
 
     u64 maxDataSizePerLoop = 0;
     u64 transportBoundDataSize = UB_MAX_DATA_SIZE;

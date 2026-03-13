@@ -97,10 +97,10 @@ HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchest
 
     AlgTempResReq tempResReq;
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("V2ReduceScatter_[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcResDetour(rankGraph, tempResReq));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("V2ReduceScatter_[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcRes(tempResReq));
     }
 
@@ -223,10 +223,10 @@ HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes
 
     AlgTempResReq tempResReq;
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("Algorithm: Reducescatter. [%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
         CHK_RET(tempAlg.CalcResDetour(rankGraph, tempResReq));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("Algorithm: Reducescatter. [%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
         CHK_RET(tempAlg.CalcRes(tempResReq));
     }
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, tempResReq.links, algResReq.levelRankPairs));
@@ -254,10 +254,10 @@ HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes
 
     AlgTempResReq tempResReq;
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("V2ReduceScatter_Offload_[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcResDetour(rankGraph, tempResReq));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("V2ReduceScatter_Offload_[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcRes(tempResReq));
     }
     resReq.requiredScratchMemSize = UB_MAX_DATA_SIZE;

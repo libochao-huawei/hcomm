@@ -96,7 +96,7 @@ HcclResult InsAllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(c
     }
 
     CHK_RET(InitQueue(tempResReq.queNum, requiredQue_));
-    HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], template [%s], requiredQue Num [%u].", myRank_,
+    HCCL_DEBUG("Allgather_[InsCollAlgFactory] Rank[%d], template [%s], requiredQue Num [%u].", myRank_,
                tempAlg.Describe().c_str(), tempResReq.queNum);
 
     CHK_RET(PrepResLinks(myRank_, rankGraph, linkPriority_, tempResReq.links, tempResLinks_));
@@ -105,10 +105,10 @@ HcclResult InsAllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(c
     dataSize_             = dataCount_ * dataSizePerVolume;
 
     if (opMode_ == OpMode::OFFLOAD) {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], Generating Instruction Queues in OFFLOAD Mode for HOST.", myRank_);
+        HCCL_DEBUG("Allgather_[InsCollAlgFactory] Rank[%d], Generating Instruction Queues in OFFLOAD Mode for HOST.", myRank_);
         CHK_RET(GenInsQues4Offload(tempAlg));
     } else { // OPBASE
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], Generating Instruction Queues in OPBASE Mode for HOST.", myRank_);
+        HCCL_DEBUG("Allgather_[InsCollAlgFactory] Rank[%d], Generating Instruction Queues in OPBASE Mode for HOST.", myRank_);
         CHK_RET(GenInsQues4Opbase(tempAlg));
     }
 
@@ -130,10 +130,10 @@ HcclResult InsAllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes(const
     // calculate required insQues and prepare queue
     AlgTempResReq tempResReq;
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("Algorithm: Allgather. [%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
         CHK_RET(tempAlg.CalcResDetour(rankGraph, tempResReq));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("Algorithm: Allgather. [%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
         CHK_RET(tempAlg.CalcRes(tempResReq));
     }
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, tempResReq.links, algResReq.levelRankPairs));
@@ -163,10 +163,10 @@ HcclResult InsAllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(c
 
     tempAlg.SetDmaMode(dmaMode_);
     tempAlg.SetCollOp(op);  // CCU template需要传递op信息
+    virtRankMap_ = topoInfo.virtRankMap[0];
 
     HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], Init insAlgTemplate with rankSize [%u] and dmaMode [%s].", myRank_,
                rankSize_, dmaMode_.Describe().c_str());
-    virtRankMap_ = topoInfo.virtRankMap[0];
 
     // calculate required insQues and prepare queue
     AlgTempResReq tempResReq;
@@ -178,7 +178,7 @@ HcclResult InsAllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(c
     }
 
     CHK_RET(InitQueue(tempResReq.queNum, requiredQue_));
-    HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], template [%s], requiredQue Num [%u].", myRank_,
+    HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], template [%s], requiredQue Num [%u] for AICPU.", myRank_,
                tempAlg.Describe().c_str(), tempResReq.queNum);
 
     CHK_RET(PrepResLinks(myRank_, tempResReq.links, linkMgr, tempResLinks_));
@@ -268,7 +268,7 @@ HcclResult InsAllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::GenInsQues4Op
         static_cast<u64>(floor(maxTmpMemSize_ / (rankSize_ * dataSizePerVolume)) * dataSizePerVolume);
     u64 transportBoundDataSize = UB_MAX_DATA_SIZE;
     scratchInputMemSize = min(scratchInputMemSize, transportBoundDataSize);
-    HCCL_INFO("[CollAlgFactory] maxTmpMemSize_ [%u]", maxTmpMemSize_);
+    HCCL_INFO("Allgather_[CollAlgFactory] maxTmpMemSize_ [%u]", maxTmpMemSize_);
     CHK_PRT_RET(scratchInputMemSize == 0,
                 HCCL_ERROR("[CollAlgFactory] Rank [%d], Invalid input maxTmpMemSize [%u].", myRank_, maxTmpMemSize_),
                 HcclResult::HCCL_E_PARA);
@@ -280,7 +280,7 @@ HcclResult InsAllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::GenInsQues4Op
     buffInfo.outBuffBaseOff = 0;
 
     u64 sendRecvTimes = (dataSize_ / scratchInputMemSize) + ((dataSize_ % scratchInputMemSize) == 0 ? 0 : 1);
-    HCCL_DEBUG("[CollAlgFactory] Rank [%d], sendRecvTimes [%u].", myRank_, sendRecvTimes);
+    HCCL_DEBUG("Allgather_[CollAlgFactory] Rank [%d], sendRecvTimes [%u].", myRank_, sendRecvTimes);
 
     for (u64 idx = 0; idx < sendRecvTimes; idx++) {
         u64 currDataSize = (idx == (sendRecvTimes - 1)) ? (dataSize_ - idx * scratchInputMemSize) : scratchInputMemSize;

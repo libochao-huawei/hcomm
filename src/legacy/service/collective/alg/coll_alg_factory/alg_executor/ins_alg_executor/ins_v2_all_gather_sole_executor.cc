@@ -78,10 +78,10 @@ HcclResult InsV2AllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::GetTemplate
     const RankGraph *rankGraph, std::shared_ptr<InsAlgTemplate> &algTemplate, AlgTempResReq &tempResReq) const
 {
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("V2AllGather_[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcResDetour(rankGraph, tempResReq));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("V2AllGather_[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcRes(tempResReq));
     }
     return HcclResult::HCCL_SUCCESS;
@@ -92,10 +92,10 @@ HcclResult InsV2AllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::GetTemplate
     ConnectedLinkMgr *linkMgr, std::shared_ptr<InsAlgTemplate> &algTemplate, AlgTempResReq &tempResReq) const
 {
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("V2AllGather_[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcResDetour(linkMgr, tempResReq));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("V2AllGather_[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcRes(tempResReq));
     }
     return HcclResult::HCCL_SUCCESS;
@@ -170,18 +170,18 @@ HcclResult InsV2AllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate
     dataSize_ = dataCount_ * dataSizePerVolume;
 
     TemplateDataParams tempAlgParams;
+    tempAlgParams.inputRepeatStride = 0;
+    tempAlgParams.outputRepeatStride = 0;
     tempAlgParams.buffInfo.inBuffType = BufferType::INPUT;
     tempAlgParams.buffInfo.outBuffType = BufferType::OUTPUT;
     tempAlgParams.buffInfo.scratBuffType = BufferType::SCRATCH;
-    tempAlgParams.repeatNum = 1;  // 不需要重复
-    tempAlgParams.inputRepeatStride = 0;
-    tempAlgParams.outputRepeatStride = 0;
+    tempAlgParams.repeatNum = 1;  // 不需要重复 
 
     TempFuncs tempFuncs;
-    tempFuncs.opMode = opMode_;
-    tempFuncs.enableCounterNotify = IsEnableCounterNotify();
     tempFuncs.isForepart = true;
     tempFuncs.isBottom = true;
+    tempFuncs.opMode = opMode_;
+    tempFuncs.enableCounterNotify = IsEnableCounterNotify();
 
     u64 maxDataSizePerLoop = 0;
     u64 transportBoundDataSize = UB_MAX_DATA_SIZE;  // algTemplate->CalcLoopMaxCount();
@@ -241,12 +241,12 @@ HcclResult InsV2AllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes(
     CHK_RET(GetTemplateResRequest(rankGraph, algTemplate, tempResReq));
 
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, tempResReq.links, algResReq.levelRankPairs));
-    algResReq.topoInfo.UpdateSingleLevelTopo(virtRanks_, virtRankMap_, vTopo_);
-    algResReq.primQueueNum = tempResReq.streamNum;
+    algResReq.topoInfo.UpdateSingleLevelTopo(virtRanks_, virtRankMap_, vTopo_);   
     algResReq.queueNotifys = tempResReq.queNotifys;
+    algResReq.primQueueNum = tempResReq.streamNum;
     algResReq.localWaitGroupCntNotify = tempResReq.localWaitGroupCntNotify;
     algResReq.localBcastPostCntNotify = tempResReq.localBcastPostCntNotify;
-    HCCL_DEBUG("[%s] Rank[%d], requiredQueNum [%u].", __func__, myRank_, algResReq.primQueueNum);
+    HCCL_DEBUG("V2AllGather_[%s] Rank[%d], requiredQueNum [%u].", __func__, myRank_, algResReq.primQueueNum);
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, tempResReq.links, algResReq.links));
 
     return HcclResult::HCCL_SUCCESS;

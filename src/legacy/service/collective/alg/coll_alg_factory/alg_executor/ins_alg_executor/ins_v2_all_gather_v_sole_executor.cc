@@ -76,10 +76,10 @@ HcclResult InsV2AllGatherVSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrat
 
     AlgTempResReq tempResReq;
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("V2AllGatherV_[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcResDetour(rankGraph, tempResReq));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("V2AllGatherV_[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcRes(tempResReq));
     }
 
@@ -130,18 +130,18 @@ HcclResult InsV2AllGatherVSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrat
     dataSize_ = dataCount_ * dataSizePerVolume;
 
     TemplateDataParams tempAlgParams;
-    tempAlgParams.buffInfo.inBuffType = BufferType::INPUT;
-    tempAlgParams.buffInfo.outBuffType = BufferType::OUTPUT;
-    tempAlgParams.buffInfo.scratBuffType = BufferType::SCRATCH;
     tempAlgParams.repeatNum = 1;  // 不需要重复
     tempAlgParams.inputRepeatStride = 0;
     tempAlgParams.outputRepeatStride = 0;
+    tempAlgParams.buffInfo.inBuffType = BufferType::INPUT;
+    tempAlgParams.buffInfo.outBuffType = BufferType::OUTPUT;
+    tempAlgParams.buffInfo.scratBuffType = BufferType::SCRATCH;
 
     TempFuncs tempFuncs;
-    tempFuncs.opMode = opMode_;
-    tempFuncs.enableCounterNotify = IsEnableCounterNotify();
     tempFuncs.isForepart = true;
     tempFuncs.isBottom = true;
+    tempFuncs.opMode = opMode_;
+    tempFuncs.enableCounterNotify = IsEnableCounterNotify();
 
     u64 maxDataSizePerLoop = 0;
     u64 transportBoundDataSize;
@@ -240,8 +240,10 @@ HcclResult InsV2AllGatherVSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcResOff
 
     AlgTempResReq tempResReq;
     if (enableDetour_) {
+        HCCL_DEBUG("V2AllGatherV_CalcRes with detouring enabled.");
         CHK_RET(tempAlg.CalcResDetour(rankGraph, tempResReq));
     } else {
+        HCCL_DEBUG("V2AllGatherV_CalcRes with detouring disabled.");
         CHK_RET(tempAlg.CalcRes(tempResReq));
     }
 
