@@ -706,6 +706,8 @@ ACL_FUNC_VISIBILITY aclError aclrtSnapShotProcessGetStateImpl(aclrtProcessState 
 ACL_FUNC_VISIBILITY aclError aclsysGetVersionStrImpl(char *pkgNname, char *versionStr);
 
 ACL_FUNC_VISIBILITY aclError aclsysGetVersionNumImpl(char *pkgNname, int32_t *versionNum);
+
+ACL_FUNC_VISIBILITY aclError aclmdlRIDestroyRegisterCallback(aclmdlRI modelRI, aclrtCallback func, void *userData);
 #ifdef __cplusplus
 }
 #endif

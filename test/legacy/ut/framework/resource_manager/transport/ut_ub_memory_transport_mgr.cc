@@ -124,7 +124,7 @@ TEST_F(UbMemoryTransportMgrTest, should_return_success_when_calling_TransportsCo
     MOCKER_CPP(&Socket::GetAsyncStatus).stubs().will(returnValue((SocketStatus)SocketStatus::OK));
     MOCKER_CPP(&UbMemoryTransport::SendMemInfo).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&UbMemoryTransport::RecvMemInfo).stubs().will(ignoreReturnValue());
-
+    MOCKER_CPP(&UbMemoryTransport::RecvMemProcess).stubs().will(ignoreReturnValue());
     u64 res = 1;
     MOCKER(&CheckCollOperator).stubs().with().will(ignoreReturnValue());
     MOCKER(&HrtGetDevicePhyIdByIndex).stubs().with().will(returnValue(1));

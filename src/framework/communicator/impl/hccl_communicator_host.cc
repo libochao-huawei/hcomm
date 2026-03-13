@@ -52,6 +52,7 @@
 #include "comm_topo_desc.h"
 #include "rt_external.h"
 #include "externalinput.h"
+#include "aclgraph_callback.h"
 
 using namespace std;
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -187,6 +188,7 @@ namespace hccl
         AlgWrap::GetInstance().UnregisterAlgCallBack(identifier_);
         DetectConnectionAnomalies::GetInstance(deviceLogicId_).Deinit();
         UnRegisterToCommConfiger();
+        AclgraphCallback::GetInstance().CleanCaptureRes(this);
 
         if (zeroCopyAclGraph_ != nullptr) {
             zeroCopyAclGraph_ = nullptr;
@@ -2502,6 +2504,8 @@ namespace hccl
             return HCCL_E_UNAVAIL;
         }
 
+        bool isCapture = StreamIsCapture(stream);
+
         Stream streamObj(stream);
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
@@ -2522,6 +2526,7 @@ namespace hccl
         opParam.reduceType = HcclReduceOp::HCCL_REDUCE_RESERVED;
         opParam.stream = streamObj;
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
+        opParam.isCapture = isCapture;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.opType = HcclCMDType::HCCL_CMD_ALLGATHER;
@@ -2561,6 +2566,8 @@ namespace hccl
             outputSize += counts[i] * perDataSize;
         }
 
+        bool isCapture = StreamIsCapture(stream);
+
         OpParam opParam;
         opParam.tag = tag;
         opParam.inputPtr = const_cast<void *>(sendBuf);
@@ -2574,6 +2581,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.isCapture = isCapture;
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.opType = HcclCMDType::HCCL_CMD_ALLGATHER_V;
 
@@ -2704,7 +2712,7 @@ namespace hccl
         CHK_RET(CheckSuspendingStatus());
         if (userRankSize_ == 1) {
             // rankSize为1时，退化为AllGather
-            return AllGather(tag, inputPtr, outputPtr, inputCount, dataType, stream);
+            return AllGatherOutPlace(tag, inputPtr, outputPtr, inputCount, dataType, stream);
         }
 
         if (!IsAtomicInit()) {
@@ -4296,6 +4304,9 @@ namespace hccl
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
+        if (opParam.isCapture) {
+            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+        }
         bool needIncreLink = false;
         // aiv算法不需要申请host和device侧的从流
         bool selectAivAlg = algDesc.isAivMode;
@@ -4562,6 +4573,9 @@ namespace hccl
             CHK_RET(RecordOpPara(opType, opParam));
             CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+        }
+        if (opParam.isCapture) {
+            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
         if (resMap_.find(newTag) == resMap_.end()) {

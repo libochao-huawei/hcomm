@@ -402,7 +402,6 @@ HcclResult AlltoAllFullMeshSymmetricMemory::RunSDMA(HcclOpMetaInfoDef &opMeta)
         CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, sdmaSubStream_));
     }
 
-    
     HCCL_INFO("[AlltoAllFullMeshSymmetricMemory][RunSDMA] finished.");
     return HCCL_SUCCESS;
 }

@@ -14,7 +14,8 @@
 #include <unordered_map>
 #include <memory>
 #include <mutex>
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
+#include "hccl_independent_common.h"
 #include "aicpu_ts_thread.h"
 #include "cpu_ts_thread.h"
 #include "log.h"
