@@ -130,6 +130,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
 {
     HCCL_RUN_INFO("Entry-%s", __func__);
     HcclUs startut = TIME_NOW();
+    u64 beginTime =  Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     EXCEPTION_HANDLE_BEGIN
     HCCL_INFO("[%s] ChannelAcquire begin, channelNum[%u], engine[%d]", __func__, channelNum, engine);
 
@@ -179,7 +180,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
             CHK_PTR_NULL(hcclCommDfx);
             std::string kernelName = "RunAicpuIndOpChannelInitV2";
-            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commTag, kernelName, SalgetTid()));
+            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commTag, kernelName, SalGetTid()));
             HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel success");
         }
     } else {
