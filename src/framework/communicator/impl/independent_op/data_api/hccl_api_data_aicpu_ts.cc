@@ -17,6 +17,7 @@
 
 #include "ub_transport_lite_impl.h"
 #include "device/framework/aicpu_hccl_process.h"
+#include "hccl_api_data_aicpu_ts.h"
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
@@ -760,7 +761,6 @@ int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
 
     if (threadPtr->IsDeviceA5()) {
         HCCL_INFO("[%s] Running on A5.", __func__);
-        CHK_PRT(CommTaskLaunch(&thread, 1));
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
         auto *const rtsqPtr = streamLitePtr->GetRtsq();
