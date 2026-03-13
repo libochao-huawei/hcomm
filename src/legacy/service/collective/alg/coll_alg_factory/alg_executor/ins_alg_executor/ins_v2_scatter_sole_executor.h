@@ -38,10 +38,10 @@ public:
 
 private:
     HcclResult InitCommInfo(const RankGraph *rankGraph);
-    HcclResult InitCommInfo(const AlgTopoInfo &topoInfo);
-    HcclResult CreateTemplates(std::shared_ptr<InsAlgTemplate> &algTemplatePtr);
+    HcclResult InitCommInfo(const AlgTopoInfo &topoInfo);   
     HcclResult GetTemplateResRequest(
         const RankGraph *rankGraph, std::shared_ptr<InsAlgTemplate> &algTemplate, AlgTempResReq &tempResReq) const;
+    HcclResult CreateTemplates(std::shared_ptr<InsAlgTemplate> &algTemplatePtr);
     HcclResult GetTemplateResRequest(
         ConnectedLinkMgr *linkMgr, std::shared_ptr<InsAlgTemplate> &algTemplate, AlgTempResReq &tempResReq) const;
     HcclResult OrchestrateLoop(std::shared_ptr<InsAlgTemplate> algTemplate);

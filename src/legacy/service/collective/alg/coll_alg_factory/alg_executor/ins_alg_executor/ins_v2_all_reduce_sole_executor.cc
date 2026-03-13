@@ -77,10 +77,10 @@ HcclResult InsV2AllReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::GetTemplate
     const RankGraph *rankGraph, std::shared_ptr<InsAlgTemplate> &algTemplate, AlgTempResReq &tempResReq) const
 {
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("V2AllReduce_[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcResDetour(rankGraph, tempResReq));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("V2AllReduce_[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcRes(tempResReq));
     }
     return HcclResult::HCCL_SUCCESS;
@@ -211,10 +211,10 @@ HcclResult InsV2AllReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate
     dataSize_ = dataCount_ * dataSizePerVolume;
 
     TemplateDataParams tempAlgParams;
+    tempAlgParams.repeatNum = 1;  // 不需要重复
     tempAlgParams.buffInfo.inBuffType = BufferType::INPUT;
     tempAlgParams.buffInfo.outBuffType = BufferType::OUTPUT;
     tempAlgParams.buffInfo.scratBuffType = BufferType::SCRATCH;
-    tempAlgParams.repeatNum = 1;  // 不需要重复
     tempAlgParams.inputRepeatStride = 0;
     tempAlgParams.outputRepeatStride = 0;
     

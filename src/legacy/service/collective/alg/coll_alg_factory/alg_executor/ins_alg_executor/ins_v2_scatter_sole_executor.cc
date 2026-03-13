@@ -84,10 +84,10 @@ HcclResult InsV2ScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::GetTemplateRe
     const RankGraph *rankGraph, std::shared_ptr<InsAlgTemplate> &algTemplate, AlgTempResReq &tempResReq) const
 {
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("V2Scatter_[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcResDetour(rankGraph, tempResReq));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("V2Scatter_[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcRes(tempResReq));
     }
     return HcclResult::HCCL_SUCCESS;

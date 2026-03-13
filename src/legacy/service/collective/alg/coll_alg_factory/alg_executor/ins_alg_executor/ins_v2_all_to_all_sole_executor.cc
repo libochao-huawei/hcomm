@@ -189,12 +189,12 @@ HcclResult InsV2AlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::OrchestrateL
     dataSize_ = dataCount_ * dataSizePerVolume;
 
     TemplateDataParams tempAlgParams;
-    tempAlgParams.buffInfo.inBuffType = BufferType::INPUT;
-    tempAlgParams.buffInfo.outBuffType = BufferType::OUTPUT;
-    tempAlgParams.buffInfo.scratBuffType = BufferType::SCRATCH;
     tempAlgParams.repeatNum = 1;  // 不需要重复
     tempAlgParams.inputRepeatStride = 0;
     tempAlgParams.outputRepeatStride = 0;
+    tempAlgParams.buffInfo.inBuffType = BufferType::INPUT;
+    tempAlgParams.buffInfo.outBuffType = BufferType::OUTPUT;
+    tempAlgParams.buffInfo.scratBuffType = BufferType::SCRATCH;   
 
     TempFuncs tempFuncs;
     tempFuncs.opMode = opMode_;
