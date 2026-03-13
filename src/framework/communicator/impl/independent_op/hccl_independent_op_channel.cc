@@ -128,11 +128,6 @@ HcclResult HcclChannelGetRemoteMems(HcclComm comm, ChannelHandle channel, uint32
             auto myRank = collComm->GetMyRank();
             CHK_PTR_NULL(myRank);
             CHK_RET(myRank->ChannelGetRemoteMem(channel, remoteMems, memTags, memNum));
-            
-            CHK_PRT_RET(
-                (*memNum > MEM_NUM_MAX), HCCL_ERROR("[%s]Invalid memNum, memNum[%u], max memNum[%u]",
-                __func__, *memNum, MEM_NUM_MAX), HCCL_E_PARA
-            );
             return HCCL_SUCCESS;
         }());
 #endif
