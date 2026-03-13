@@ -34,6 +34,12 @@ HcclResult Channel::CreateChannel(
                     return HCCL_E_PARA);
                 break;
             }
+            if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_CTP || 
+                channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_TP) {
+                EXECEPTION_CATCH(channelPtr = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc),
+                    return HCCL_E_PARA);
+                break;
+            }
             HCCL_ERROR("[Channel][%s] CommEngine[COMM_ENGINE_CPU] not support", __func__);
             return HCCL_E_NOT_SUPPORT;
         case COMM_ENGINE_CPU_TS:
