@@ -13,6 +13,7 @@
 #include "mirror_task_manager.h"
 #include "profiling_handler.h"
 #include "queue.h"
+#include "hccl_common_v2.h"
 namespace Hccl {
 class ProfilingReporter {
 public:
@@ -32,8 +33,9 @@ private:
     MirrorTaskManager                              *mirrorTaskMgr_{nullptr};
     bool                                            enableHcclL1_{false};
     /* lastposes是更新单前轮次profiling上报的最后位置记录 */
-    /* 修改静态:多通信域场景下,更新lastpose位置时需要全局（进程）粒度刷新，而不是当前按照通信域粒度刷新 */
-    static thread_local std::unordered_map<u32,  std::shared_ptr<Queue<std::shared_ptr<TaskInfo>>::Iterator>> lastPoses_;
+    /* lastposes按设备粒度进行维护 */
+    using lastPosesMap = std::unordered_map<u32,  std::shared_ptr<Queue<std::shared_ptr<TaskInfo>>::Iterator>>;
+    static std::array<lastPosesMap, MAX_MODULE_DEVICE_NUM> allLastPoses_;
     ProfilingHandler*                               profilingHandler_{nullptr};
     std::mutex profMutex;
 };
