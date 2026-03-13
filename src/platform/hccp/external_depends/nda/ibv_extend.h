@@ -11,14 +11,13 @@
 #ifndef IBV_EXTEND_H
 #define IBV_EXTEND_H
 
-#include <sys/uio.h>
 #include <infiniband/verbs.h>
 #include <stdint.h>
 
 #define IBV_EXTEND_VERSION_MAJOR 2
-#define IBV_EXTEND_VERSION_MINOR 1
+#define IBV_EXTEND_VERSION_MINOR 3
 #define IBV_EXTEND_VERSION_PATCH 0
-#define IBV_EXTEND_VERSION_STRING "2.1.0"
+#define IBV_EXTEND_VERSION_STRING "2.3.0"
 
 enum queue_buf_dma_mode {
     QU_BUF_DMA_MODE_DEFAULT = 0,
@@ -78,6 +77,11 @@ struct ibv_extend_ops {
     int (*db_unmap)(void *ptr, struct doorbell_map_desc *desc);
 };
 
+struct iov_addr_desc {
+    void *iov_base;
+    size_t iov_len;
+};
+
 struct queue_buf {
     uint64_t base;
     uint32_t entry_cnt;
@@ -86,9 +90,9 @@ struct queue_buf {
 
 struct queue_info {
     struct queue_buf qbuf;
-    struct iovec dbr_pi_va;
-    struct iovec dbr_ci_va;
-    struct iovec db_hw_va;
+    struct iov_addr_desc dbr_pi_va;
+    struct iov_addr_desc dbr_ci_va;
+    struct iov_addr_desc db_hw_va;
 };
 
 struct ibv_qp_extend {
@@ -187,7 +191,7 @@ struct ibv_context_extend_ops {
     int (*destroy_cq)(struct ibv_cq_extend *cq_extend);
     int (*destroy_srq)(struct ibv_srq_extend *srq_extend);
 
-    int (*query_device)(struct ibv_context_extend *context,
+    int (*query_device)(struct ibv_context *context,
                         struct ibv_device_attr_extend *ext_dev_attr);
 };
 
