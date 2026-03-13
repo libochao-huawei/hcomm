@@ -16,9 +16,25 @@
 #include "instruction.h"
 #include "ins_queue.h"
 #include "coll_operator.h"
+#include "ccu_rank_group.h"
 
 namespace Hccl {
 using InsQuePtr = std::shared_ptr<InsQueue>;
+
+// 定义NHRStepInfo结构体
+struct NHRStepInfo {
+    u32 step = 0;
+    u32 myRank = 0;
+    u32 nSlices;
+    u32 toRank = 0;
+    u32 fromRank = 0;
+    std::vector<u32> txSliceIdxs;
+    std::vector<u32> rxSliceIdxs;
+
+    NHRStepInfo() : nSlices(0)
+    {
+    }
+};
 
 class CcuAlgTemplateBase {
 public:
@@ -45,6 +61,15 @@ public:
     virtual  u32 CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType);
     virtual HcclResult GetMaxTransPortDataSize(u64 &maxTransPortDataSize) const;
     virtual HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit);
+
+    // 辅助方法
+    void CreateRankGroupFromTopo(RankGroup &rankGroup, size_t topoIndex) const;
+    void CreateRankGroupsFrom2DTopo(RankGroup &rankGroupX, RankGroup &rankGroupY) const;
+    virtual uint32_t virtRankId2RankId(const uint32_t virtRankId);
+    virtual HcclResult GetStepInfo(u32 step, u32 nSteps, NHRStepInfo &stepInfo);
+    virtual HcclResult GetReduceScatterStepInfo(u32 step, NHRStepInfo &stepInfo);
+    virtual HcclResult GetAllGatherStepInfo(u32 step, u32 nSteps, NHRStepInfo &stepInfo);
+    virtual HcclResult ProcessNHRStepInfo(std::vector<NHRStepInfo> &stepInfoVector, RankGroup &rankGroup, std::map<u32, u32> &indexMap, std::vector<LinkData> &linksDie0, std::vector<LinkData> &linksDie1, const ResLinks &tempLinks, uint32_t axisSize);
 
     void SetCollOp(const CollAlgOperator &op);
     void SetDmaMode(const DmaMode dmaMode);
