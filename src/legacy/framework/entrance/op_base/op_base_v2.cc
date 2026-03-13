@@ -1702,7 +1702,7 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
  	} while (0);
  	
  	if (errorFlag) {
- 	    HCCL_ERROR("[Init][%s]HcclCommInitClusterInfoV2 failed, rankNum[%s], rank[%u], logicDevId[%d], rootInfo identifier[%s],"\
+ 	    HCCL_ERROR("[Init][%s]HcclCommInitClusterInfoV2 failed, rankNum[%u], rank[%u], logicDevId[%d], rootInfo identifier[%s],"\
  	        "return[0x%016llx]", __func__, nRanks, rank,
  	        logicDevId, identifier.c_str(), HCCL_ERROR_CODE(ret));
         (void)HcclCommDestroyV2(opbasedCommInfoV2.pComm.get());
