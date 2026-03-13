@@ -394,39 +394,25 @@ void HcclOneSidedService::SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &pa
 
 void HcclOneSidedService::OneSidedAicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream) const
 {
-    std::string jsonPath;
-    GetKernelFilePath(jsonPath);
-	jsonPath += "ccl_kernel.json";
-	aclrtBinHandle binHandle;
-	LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0,
-		binHandle);
-	aclrtFuncHandle funcHandle;
-	aclError aclRet = aclrtBinaryGetFunction(binHandle, param.kernelName, &funcHandle);
-    if(aclRet != ACL_SUCCESS)
-    {
-        THROW<RuntimeApiException>(StringFormat("Call aclrtBinaryGetFunction failed, with ret[%d]", aclRet));
-    }
-	constexpr u32 numBlocks = 1;
-
-	aclrtLaunchKernelCfg cfg;
-	aclrtLaunchKernelAttr attr;
+    const aclrtFuncHandle funcHandle = comm_->GetAicpuKernelFuncHandle(param.kernelName);
+    constexpr u32 numBlocks = 1;
+    aclrtLaunchKernelCfg cfg;
+    aclrtLaunchKernelAttr attr;
     attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
     auto timeoutCheck         = EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
     // aicpu kernal超时时间: X+30s
     attr.value.timeout = static_cast<u16>((timeoutCheck == 0) ? timeoutCheck : (timeoutCheck + 30));
-	cfg.numAttrs = 1;
-	cfg.attrs = &attr;
-
+    cfg.numAttrs = 1;
+    cfg.attrs = &attr;
     AddPostToUserStream(stream);
-
     HCCL_INFO("[HcclOneSidedService::AicpuKernelLaunch] param.soName: %s, param.kernelName: %s", param.soName,
               param.kernelName);
-
-	HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, comm_->GetAicpuStreamManager().GetFreeStream()->GetPtr(),
-		&cfg, &param.kernel, sizeof(HcclKernelParamLite));
+    HrtAicpuLaunchKernelWithHostArgs(
+        funcHandle, numBlocks,
+        comm_->GetAicpuStreamManager().GetFreeStream()->GetPtr(), &cfg,
+        &param.kernel, sizeof(HcclKernelParamLite));
     HCCL_INFO("[HcclOneSidedService][AicpuKernelLaunch] param.kernel.algName: %s HrtAicpuLaunchKernelWithHostArgs end!",
               param.kernel.algName);
-
     AddWaitToUserStream(stream);
 }
 
