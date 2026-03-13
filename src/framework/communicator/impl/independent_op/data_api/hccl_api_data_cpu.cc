@@ -709,7 +709,7 @@ HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, uint64_t thread, char* kernelName)
+HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char* kernelName)
 {
     HCCL_INFO("[%s] START, comm[%p].", __func__, comm);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
