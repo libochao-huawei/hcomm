@@ -635,9 +635,8 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     if (l0State == false || l1State == false) {
         HCCL_INFO("[HcclDfxRegOpInfo] profiling State is down l0State %d l1State %d", l0State, l1State);
     }
-
     u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-    HCCL_INFO("[%s] START.", __func__);
+
     CHK_PRT_RET(hcclDfxOpInfo == nullptr,  HCCL_ERROR("[%s] hcclDfxOpInfo is null", __func__), HCCL_E_PTR);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     HcclDfxOpInfo *dfxOpInfo = static_cast<HcclDfxOpInfo*>(hcclDfxOpInfo);
@@ -686,13 +685,9 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
    
     // 下发device侧
     HcommDfxKernelLaunch(hcclComm->GetIdentifier(),hcclComm->GetBinHandle(), *dfxOpInfo);
-    HCCL_INFO("[HcclThreadAcquire] ReportDfxOpKernel begin");
     const std::string KernelName = "RunAicpuDfxOpInfoInitV2";
     CHK_RET(hcclCommDfx->ReportKernel(beginTime, hcclComm->GetIdentifier(), KernelName, SalGetTid()));
-    HCCL_INFO("[HcclThreadAcquire] ReportDfxOpKernel end");
-    HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
-
 }
 
 HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime)
