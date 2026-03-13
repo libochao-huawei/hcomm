@@ -630,6 +630,12 @@ int32_t HcommChannelFence(ChannelHandle channel)
 
 HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
 {
+    bool l0State = Hccl::ProfilingHandler::GetInstance().GetHcclL0State();
+    bool l1State = Hccl::ProfilingHandler::GetInstance().GetHcclL1State();
+    if (l0State == false || l1State == false) {
+        HCCL_INFO("[HcclDfxRegOpInfo] profiling State is down l0State %d l1State %d", l0State, l1State);
+    }
+
     u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     HCCL_INFO("[%s] START.", __func__);
     CHK_PRT_RET(hcclDfxOpInfo == nullptr,  HCCL_ERROR("[%s] hcclDfxOpInfo is null", __func__), HCCL_E_PTR);

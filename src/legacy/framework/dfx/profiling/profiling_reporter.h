@@ -13,8 +13,9 @@
 #include "mirror_task_manager.h"
 #include "profiling_handler.h"
 #include "queue.h"
-#include "hccl_common_v2.h"
+
 namespace Hccl {
+constexpr u32 REPORTER_MAX_MODULE_DEVICE_NUM = 65;
 class ProfilingReporter {
 public:
     ProfilingReporter(MirrorTaskManager *mirrorTaskMgr, ProfilingHandler *profilingHandler);
@@ -37,7 +38,7 @@ private:
     /* lastposes是更新单前轮次profiling上报的最后位置记录 */
     /* lastposes按设备粒度进行维护 */
     using lastPosesMap = std::unordered_map<u32,  std::shared_ptr<Queue<std::shared_ptr<TaskInfo>>::Iterator>>;
-    static std::array<lastPosesMap, MAX_MODULE_DEVICE_NUM> allLastPoses_;
+    static std::array<lastPosesMap, REPORTER_MAX_MODULE_DEVICE_NUM> allLastPoses_;
     ProfilingHandler*                               profilingHandler_{nullptr};
     std::mutex profMutex;
 };
