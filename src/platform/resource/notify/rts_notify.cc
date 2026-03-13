@@ -198,7 +198,7 @@ HcclResult RtsNotify::UpdateNotifyInfo()
         
     DevType devType_ = DevType::DEV_TYPE_COUNT;
     CHK_RET(hrtGetDeviceType(devType_));
-    if (devType_ == DevType::DEV_TYPE_910_95) {
+    if (devType_ == DevType::DEV_TYPE_950) {
         s32 deviceLogicId;
         CHK_RET(hrtGetDevice(&deviceLogicId));
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devId));
@@ -228,7 +228,7 @@ HcclResult RtsNotify::InitAndVerifySingleSignal()
         return HCCL_SUCCESS;
     }
 
-    drvResIdKey resInfo;
+    drvResIdKey resInfo = {};
     resInfo.ruDevId = devId;
     resInfo.tsId = tsId;
     resInfo.resType = DRV_NOTIFY_ID;

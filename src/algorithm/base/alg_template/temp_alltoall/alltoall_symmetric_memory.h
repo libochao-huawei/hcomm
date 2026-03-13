@@ -51,25 +51,25 @@ private:
     HcclResult SetPostSyncTasks(u32 roundIdx);
 
     Stream mainStream_;
-    u32 userRank_;
-    u32 userRankSize_;
-    u32 podStartRank_;  // 表示一个pod内起始的userRankId
-    u32 podEndRank_; // 表示一个pod内结束的userRankId
+    u32 userRank_ = 0;
+    u32 userRankSize_ = 0;
+    u32 podStartRank_ = 0;  // 表示一个pod内起始的userRankId
+    u32 podEndRank_ = 0; // 表示一个pod内结束的userRankId
     std::vector<LINK> links_;
-    const ZCopySendRecvInfo* sendRecvInfoPtr_;
-    u32 devNumInlocalPod_;
-    u32 rankIdxInPod_;
-    bool isSuPodAsym_;
-    HcclCMDType opType_;
+    const ZCopySendRecvInfo* sendRecvInfoPtr_ = nullptr;
+    u32 devNumInlocalPod_ = 0;
+    u32 rankIdxInPod_ = 0;
+    bool isSuPodAsym_ = false;
+    HcclCMDType opType_ = HcclCMDType::HCCL_CMD_MAX;
     bool islocalCpyDone_ = false;
 
     DeviceMem userInput_;
     DeviceMem userOutput_;
-    HcclWorkflowMode workMode_;
+    HcclWorkflowMode workMode_ = HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED;
     u64 sdmaDataBlockSize_ = 0;
 
     std::unordered_map<u32, ReadDataBlock> subStreamReadInfo_; // 从流当前接收长度和接收到的本地偏移
-    u32 sdmaConcurrentNum_; // 分组mesh-每组group的ranksize
+    u32 sdmaConcurrentNum_ = 0; // 分组mesh-每组group的ranksize
     std::vector<std::vector<std::pair<u32,u32>>> partialCommRankSet_;  // 参与通信的rank组合, 第0、1、2个vector分别存放左、右、中的rank
     u64 commRounds_ = 0; // 每个rank分组fullmesh后需要通信的轮次
 

@@ -9,6 +9,7 @@
  */
  
 #include "../../../hccl_api_base_test.h"
+#include "hcomm_res.h"
 #include "hcomm_c_adpt.h"
 #include "local_notify_impl.h"
 #include "aicpu_launch_manager.h"
@@ -83,7 +84,7 @@ TEST_F(TestHcclThread, UT_When_DeviceSide_ResourceAllocateFail_expect_return_Hcc
     .will(returnValue(HCCL_SUCCESS));   
     MOCKER(hrtGetDeviceType)
     .stubs()
-    .with(outBound(DevType::DEV_TYPE_910_95))
+    .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread[3];
     HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_AICPU_TS, 2, 3, thread);
@@ -102,7 +103,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_ThreadIsNullptr_Allocate_exp
     .will(returnValue(HCCL_SUCCESS));   
     MOCKER(hrtGetDeviceType)
     .stubs()
-    .with(outBound(DevType::DEV_TYPE_910_95))
+    .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
 
     uint64_t* thread=nullptr;
@@ -121,7 +122,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_WithUnsupportedEngine_expect
     .will(returnValue(HCCL_SUCCESS));   
     MOCKER(hrtGetDeviceType)
     .stubs()
-    .with(outBound(DevType::DEV_TYPE_910_95))
+    .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread[3];
     HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_AIV , 2, 3, thread);
@@ -138,7 +139,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_Thread_Allocate_0Num_expect_
     .will(returnValue(HCCL_SUCCESS));   
     MOCKER(hrtGetDeviceType)
     .stubs()
-    .with(outBound(DevType::DEV_TYPE_910_95))
+    .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread[3];
     HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_AIV , 0, 3, thread);
@@ -155,7 +156,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_WithNotifyInitFail_expect_re
     .will(returnValue(HCCL_SUCCESS));   
     MOCKER(hrtGetDeviceType)
     .stubs()
-    .with(outBound(DevType::DEV_TYPE_910_95))
+    .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     MOCKER(hrtNotifyGetOffset)
     .stubs()
@@ -163,32 +164,6 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_WithNotifyInitFail_expect_re
     ThreadHandle thread[3];
     HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_AICPU_TS, 2, 3, thread);
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
-}
-
-TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_AicpuTsThread_Allocate_expect_Return_HCCL_Success)
-{
-    std::shared_ptr<Thread> Handle;
-    bool isDeviceSide{false};
-    MOCKER(GetRunSideIsDevice)
-    .stubs()
-    .with(outBound(isDeviceSide))
-    .will(returnValue(HCCL_SUCCESS));   
-    MOCKER(hrtGetDeviceType)
-    .stubs()
-    .with(outBound(DevType::DEV_TYPE_910_95))
-    .will(returnValue(HCCL_SUCCESS)); 
-    ThreadHandle thread[3];
-    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_AICPU_TS, 2, 3, thread);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    Thread * threadptr0 = reinterpret_cast<Thread *>(thread[0]);
-    Thread * threadptr1 = reinterpret_cast<Thread *>(thread[1]);
-    // thread内部暂时会多申请一个notify用于host&device侧同步
-    EXPECT_EQ(threadptr0->GetNotifyNum(), 4);
-    EXPECT_EQ(threadptr1->GetNotifyNum(), 4);
-    ret =  HcommThreadFree(thread, 2);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
 }
 
 TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_CpuTsThread_Allocate_expect_Return_HCCL_Success)
@@ -201,7 +176,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_CpuTsThread_Allocate_expect_
     .will(returnValue(HCCL_SUCCESS));   
     MOCKER(hrtGetDeviceType)
     .stubs()
-    .with(outBound(DevType::DEV_TYPE_910_95))
+    .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread[3];
     HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, 2, 3, thread);
@@ -227,7 +202,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_Allocate_MAXThreadNum_expect
     .will(returnValue(HCCL_SUCCESS));   
     MOCKER(hrtGetDeviceType)
     .stubs()
-    .with(outBound(DevType::DEV_TYPE_910_95))
+    .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread;
     HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, hccl::HCOMM_THREADNUM_MAX_NUM + 1, 0, &thread);
@@ -244,7 +219,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_Allocate_MaxNotifyNum_expect
     .will(returnValue(HCCL_SUCCESS));   
     MOCKER(hrtGetDeviceType)
     .stubs()
-    .with(outBound(DevType::DEV_TYPE_910_95))
+    .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread;
     HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, 1, hccl::HCOMM_NOTIFY_MAX_NUM + 1, &thread);
@@ -261,7 +236,7 @@ TEST_F(TestHcclThread, Ut_HcommThreadFree_When_expect_Return_HCCL_Success)
     .will(returnValue(HCCL_SUCCESS));   
     MOCKER(hrtGetDeviceType)
     .stubs()
-    .with(outBound(DevType::DEV_TYPE_910_95))
+    .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread[2];
     HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, 2, 3, thread);
@@ -287,7 +262,7 @@ TEST_F(TestHcclThread, Ut_HcommThreadFree_When_ThreadNum_Is_0_expect_Return_HCCL
     .will(returnValue(HCCL_SUCCESS));   
     MOCKER(hrtGetDeviceType)
     .stubs()
-    .with(outBound(DevType::DEV_TYPE_910_95))
+    .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread[2];
     HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, 2, 3, thread);
@@ -312,7 +287,7 @@ TEST_F(TestHcclThread, Ut_HcommThreadFree_When_ThreadNullptr_expect_Return_HCCL_
     .will(returnValue(HCCL_SUCCESS));   
     MOCKER(hrtGetDeviceType)
     .stubs()
-    .with(outBound(DevType::DEV_TYPE_910_95))
+    .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle* thread = nullptr;
     HcclResult ret =  HcommThreadFree(thread, 0);
@@ -335,8 +310,6 @@ TEST_F(TestHcclThread, UT_TestHcommThreadAllocWithStream_When_Allocate_WithStrea
     HcclResult ret =  HcommThreadAllocWithStream(COMM_ENGINE_CPU_TS, rtStream, 3, &thread);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    ret =  HcommThreadFree(&thread, 1);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 
@@ -398,7 +371,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_CpuTsThread_Return_HCCL
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -429,7 +402,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_AicpuTsThread_Return_HC
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -439,7 +412,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_AicpuTsThread_Return_HC
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     
@@ -467,7 +440,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_CommNullptr_Return_HCCL_E_PTR)
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -477,7 +450,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_CommNullptr_Return_HCCL_E_PTR)
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     
@@ -491,7 +464,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_ThreadNullptr_Return_HCCL_E_PTR
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -501,7 +474,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_ThreadNullptr_Return_HCCL_E_PTR
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     
@@ -529,7 +502,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_CollCommNullptr_Return_HCCL_E_P
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -539,7 +512,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_CollCommNullptr_Return_HCCL_E_P
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     MOCKER_CPP(&hcclComm::IsCommunicatorV2)
@@ -559,7 +532,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_engineResMgrNullptr_Return_HCCL
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -569,7 +542,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_engineResMgrNullptr_Return_HCCL
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     MOCKER_CPP(&CollComm::Init)
@@ -600,7 +573,7 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_Normal_Return_HCCL_Succe
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -642,7 +615,7 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_CommNullptr_Return_HCCL_
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -684,7 +657,7 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_notifyNumNullptr_Return_
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -725,7 +698,7 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_CollCommNullptr_Return_H
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -747,7 +720,7 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_engineResMgrNullptr_Retu
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -785,7 +758,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquireWithStream_When_Acquire_CpuTsThread_R
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -820,7 +793,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquireWithStream_When_CommNullptr_Return_HC
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -841,7 +814,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquireWithStream_When_threadNullptr_Return_
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -862,7 +835,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquireWithStream_When_rtStreamNullptr_Retur
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -881,7 +854,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquireWithStream_When_CollcommNullptr_Retur
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -913,7 +886,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquireWithStream_When_engineResMgrNullptr_R
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -982,7 +955,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_41_AicpuTsThread_Return
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -992,7 +965,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_41_AicpuTsThread_Return
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     
@@ -1020,7 +993,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_65Notify_AicpuTsThread_
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -1030,7 +1003,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_65Notify_AicpuTsThread_
     MOCKER_CPP(&hcclComm::GetAicpuCommState)
         .stubs()
         .will(returnValue(true));  
-    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunch)
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
         .stubs()
         .will(returnValue(0));  
     
@@ -1052,4 +1025,95 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_65Notify_AicpuTsThread_
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
     ret =  HcclThreadAcquire(comm, COMM_ENGINE_AICPU_TS, 1, 65, &thread);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
+}
+
+TEST_F(TestHcclThread, Ut_HcommThreadResGetInfo_When_Normal_Expect_Return_HCCL_Success)
+{
+    MOCKER(hrtGetDeviceType)
+        .stubs()
+        .with(outBound(DevType::DEV_TYPE_950))
+        .will(returnValue(HCCL_SUCCESS));
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+        .stubs()
+        .with(outBound(isDeviceSide))
+        .will(returnValue(HCCL_SUCCESS));   
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;;
+    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 0);
+    ThreadHandle thread;
+    void* comm = static_cast<HcclComm>(hcclCommPtr.get());
+    ret =  HcclThreadAcquire(comm, COMM_ENGINE_CPU_TS, 1, 2, &thread);
+    EXPECT_EQ(ret, 0);
+
+    ThreadResTypeStream stream;
+    ret = HcommThreadResGetInfo(thread, ThreadResType::THREAD_RES_TYPE_STREAM, sizeof(ThreadResTypeStream), &stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(TestHcclThread, Ut_HcommThreadResGetInfo_When_threadNotFound_Return_HCCL_E_NOT_FOUND)
+{
+    ThreadHandle thread;
+    ThreadResTypeStream stream;
+    HcclResult ret = HcommThreadResGetInfo(thread, ThreadResType::THREAD_RES_TYPE_STREAM, sizeof(ThreadResTypeStream), &stream);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+}
+
+TEST_F(TestHcclThread, Ut_HcommThreadResGetInfo_When_restypeNotSupport_Return_HCCL_E_NOT_SUPPORT)
+{
+    std::shared_ptr<Thread> Handle;
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+    .stubs()
+    .with(outBound(isDeviceSide))
+    .will(returnValue(HCCL_SUCCESS));   
+    MOCKER(hrtGetDeviceType)
+    .stubs()
+    .with(outBound(DevType::DEV_TYPE_950))
+    .will(returnValue(HCCL_SUCCESS)); 
+    ThreadHandle thread[2];
+    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_CCU, 2, 3, thread);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ThreadResTypeStream stream;
+    ret = HcommThreadResGetInfo(thread[0], ThreadResType::THREAD_RES_TYPE_INVALID, sizeof(ThreadResTypeStream), &stream);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+
+    ret =  HcommThreadFree(thread, 2);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(TestHcclThread, Ut_HcommThreadResGetInfo_When_infoLenMismatch_Return_HCCL_E_PARA)
+{
+    std::shared_ptr<Thread> Handle;
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+    .stubs()
+    .with(outBound(isDeviceSide))
+    .will(returnValue(HCCL_SUCCESS));   
+    MOCKER(hrtGetDeviceType)
+    .stubs()
+    .with(outBound(DevType::DEV_TYPE_950))
+    .will(returnValue(HCCL_SUCCESS)); 
+    ThreadHandle thread[2];
+    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_CCU, 2, 3, thread);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ThreadResTypeStream stream;
+    ret = HcommThreadResGetInfo(thread[0], ThreadResType::THREAD_RES_TYPE_STREAM, 1, &stream);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    ret =  HcommThreadFree(thread, 2);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }

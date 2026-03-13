@@ -17,7 +17,7 @@ class CollReduceScatterDeterPipelineExecutor : public CollReduceScatterExecutor 
 public:
     explicit CollReduceScatterDeterPipelineExecutor(const HcclDispatcher dispatcher,
         std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceScatterDeterPipelineExecutor() = default;
+    ~CollReduceScatterDeterPipelineExecutor() override = default;
 
 private:
     void ParseParam(const OpParam& param) override;

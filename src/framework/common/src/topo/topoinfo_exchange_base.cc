@@ -87,7 +87,7 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfoMsg(std::shared_ptr<HcclSocket> 
     HcclResult ret = socket->Recv(reinterpret_cast<char *>(&msgLen), sizeof(msgLen));
     if (ret == HCCL_E_TIMEOUT) {
         errormessage = "Receiving message from the root node timed out. Check whether node " + std::string(socket->GetRemoteIp().GetReadableIP()) +
-                               " reports an error.";
+                               " reports an error";
         RPT_INPUT_ERR(true,
             "EI0015",
             std::vector<std::string>({"error_reason"}),
@@ -136,7 +136,7 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfoMsg(std::shared_ptr<HcclSocket> 
     bool isRoot = (localHostIp == GetExternalInputMasterInfo().serverIp &&
         logicDevId == static_cast<s32>(GetExternalInputMasterInfo().serverDeviceId));
     errormessage = "No rank in the communicator can connect to the root node within the timeout period. List of unconnected ranks: " + 
-                   std::string(jClusterJson["fault_info"].dump().c_str()) + ".";
+                   std::string(jClusterJson["fault_info"].dump().c_str());
     if (!isRoot && jClusterJson.find("fault_type") != jClusterJson.end() &&
         jClusterJson.find("fault_info") != jClusterJson.end()) {
         RPT_INPUT_ERR(true,
@@ -165,7 +165,7 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfo(std::shared_ptr<HcclSocket> soc
         auto ret = socket->Recv(reinterpret_cast<char *>(&identify), sizeof(identify));
         if (ret == HCCL_E_TIMEOUT) {
             errormessage = "Receiving message from the root node timed out. Check whether node " + std::string(socket->GetRemoteIp().GetReadableIP()) +
-                            " reports an error.";
+                            " reports an error";
             RPT_INPUT_ERR(true,
                 "EI0015",
                 std::vector<std::string>({"error_reason"}),
@@ -189,7 +189,7 @@ HcclResult TopoInfoExchangeBase::RecvClusterJson(std::shared_ptr<HcclSocket> soc
     HcclResult ret = socket->Recv(reinterpret_cast<char *>(&msgLen), sizeof(msgLen));
     if (ret == HCCL_E_TIMEOUT) {
         errormessage = "Receiving message from the root node timed out. Check whether node " + std::string(socket->GetRemoteIp().GetReadableIP()) +
-            " reports an error.";
+            " reports an error";
         RPT_INPUT_ERR(true,
             "EI0015",
             std::vector<std::string>({"error_reason"}),
@@ -214,7 +214,7 @@ HcclResult TopoInfoExchangeBase::RecvClusterJson(std::shared_ptr<HcclSocket> soc
     ret = socket->Recv(recvMsgBuf, msgLen);
     if (ret == HCCL_E_TIMEOUT) {
         errormessage = "Receiving message from the root node timed out. Check whether node " + std::string(socket->GetRemoteIp().GetReadableIP()) +
-            " reports an error.";
+            " reports an error";
         RPT_INPUT_ERR(true,
             "EI0015",
             std::vector<std::string>({"error_reason"}),

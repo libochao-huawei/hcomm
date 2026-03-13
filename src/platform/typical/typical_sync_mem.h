@@ -45,7 +45,7 @@ private:
     HcclResult FreeAllSyncMem();
 
     RdmaHandle rdmaHandle_ = nullptr;
-    struct MrInfoT notifySrcMrInfo_;
+    struct MrInfoT notifySrcMrInfo_{};
     MrHandle notifySrcMrHandle_;
     std::mutex syncMemMapMutex_;
     DeviceMem srcDevMem_;

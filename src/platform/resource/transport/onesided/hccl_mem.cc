@@ -214,7 +214,7 @@ HcclResult HcclMemReg(HcclNetDev netDev, const HcclMem *mem, HcclBuf *buf)
 
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {return HcclMemRegV2(netDev, mem, buf);}
+    if (devType == DevType::DEV_TYPE_950) {return HcclMemRegV2(netDev, mem, buf);}
 
     NetDevContext *netDevCtx = static_cast<NetDevContext *>(netDev);
     if (netDevCtx->GetNicType() == NicType::VNIC_TYPE) {
@@ -233,7 +233,7 @@ HcclResult HcclMemDereg(const HcclBuf *buf)
 
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {return HcclMemDeregV2(buf);}
+    if (devType == DevType::DEV_TYPE_950) {return HcclMemDeregV2(buf);}
 
     RmaBuffer *rmaBuffer = static_cast<RmaBuffer *>(buf->handle);
     NetDevContext *netDevCtx = static_cast<NetDevContext *>(const_cast<void *>(rmaBuffer->GetNetDevCtx()));
@@ -270,7 +270,7 @@ HcclResult HcclMemExport(HcclBuf *buf, char **outDesc, uint64_t *outDescLen)
 
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {return HcclMemExportV2(buf, outDesc, outDescLen);}
+    if (devType == DevType::DEV_TYPE_950) {return HcclMemExportV2(buf, outDesc, outDescLen);}
 
     RmaBuffer *rmaBuffer = static_cast<RmaBuffer *>(buf->handle);
     if (rmaBuffer->GetRmaType() == RmaType::IPC_RMA) {
@@ -329,7 +329,7 @@ HcclResult HcclMemImport(const char *description, uint32_t descLen, bool isRemot
 
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {return HcclMemImportV2(description, descLen, isRemote, outBuf, netDevCtx);}
+    if (devType == DevType::DEV_TYPE_950) {return HcclMemImportV2(description, descLen, isRemote, outBuf, netDevCtx);}
 
     std::string tempDesc = std::string(description, descLen);
     u8 rmaType = static_cast<unsigned char>(description[0]);
@@ -382,7 +382,7 @@ HcclResult HcclMemClose(HcclBuf *buf)
 
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {return HcclMemCloseV2(buf);}
+    if (devType == DevType::DEV_TYPE_950) {return HcclMemCloseV2(buf);}
 
      if (rmaBuffer->GetRmaType() == RmaType::IPC_RMA) {
         HCCL_INFO("[HcclMemClose][Ipc] CloseMem");

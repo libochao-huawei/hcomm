@@ -5481,6 +5481,11 @@ aclError aclrtGetMemInfo(aclrtMemAttr attr, size_t *free, size_t *total)
     return ACL_SUCCESS;
 }
 
+aclError aclmdlRIDestroyRegisterCallback(aclmdlRI modelRI, aclrtCallback func, void *ptr)
+{
+    return ACL_SUCCESS;
+}
+
 /**
  * @brief 获取HCCL算子的二进制文件路径
  *

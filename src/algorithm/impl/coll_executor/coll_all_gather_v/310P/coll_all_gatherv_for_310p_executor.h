@@ -21,7 +21,7 @@ class CollAllGatherVFor310PExecutor : public CollAllGatherVExecutor {
 
 public:
     explicit CollAllGatherVFor310PExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherVFor310PExecutor() = default;
+    ~CollAllGatherVFor310PExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */
