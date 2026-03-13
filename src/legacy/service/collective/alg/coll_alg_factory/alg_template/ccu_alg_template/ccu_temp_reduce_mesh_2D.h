@@ -31,10 +31,10 @@ public:
     }
 
     HcclResult CalcRes(AlgTempResReq &tempResReq) override;
-    HcclResult Run(const TempFuncs &tempFuncs, const RankSliceInfo &sliceInfoVec, const BuffInfo &buffInfo,
-                            const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues) override;
     HcclResult CalcSliceInfo(const AllignInfo &allignInfo, const u64 dataSize, RankSliceInfo &sliceInfoVec) override;
     void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
+    HcclResult Run(const TempFuncs &tempFuncs, const RankSliceInfo &sliceInfoVec, const BuffInfo &buffInfo,
+                            const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues) override;
 
 private:
     ReduceOp reduceOp_;
@@ -43,7 +43,5 @@ private:
     std::vector<LinkData> linksX_;
     std::vector<LinkData> linksY_;
 };
-
 } // namespace Hccl
-
 #endif // HCCLV2_CCU_TEMP_REDUCE_MESH_2D_H_

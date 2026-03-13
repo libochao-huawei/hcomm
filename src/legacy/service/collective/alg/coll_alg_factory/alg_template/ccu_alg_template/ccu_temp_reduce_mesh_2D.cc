@@ -86,11 +86,10 @@ HcclResult CcuTempReduceMesh2D::CalcSliceInfo(const AllignInfo &allignInfo, cons
 {
     (void)allignInfo;
     SliceInfo basicSlice;
-    basicSlice.offset = 0;
     basicSlice.size = dataSize;
+    basicSlice.offset = 0;
     std::vector<SliceInfo> singleRankSliceInfoVector{basicSlice};
     sliceInfoVec.resize(tempRankSize_, singleRankSliceInfoVector);
-
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -121,17 +120,10 @@ HcclResult CcuTempReduceMesh2D::Run(const TempFuncs &tempFuncs, const RankSliceI
 
     RankGroup rankGroupX;
     RankGroup rankGroupY;
-    for (auto &peer : tempVTopo_[0]) {
-        rankGroupX.AddRank(peer);
-    }
-
-    for (auto &peer : tempVTopo_[1]) {
-        rankGroupY.AddRank(peer);
-    }
+    CreateRankGroupsFrom2DTopo(rankGroupX, rankGroupY);
 
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_); // tempRankSize_ 就是rank数量
-
     // 只传userIn的起始位置，不带偏移，偏移已在offSet中包含
     uint64_t inputAddr;
     // userOut 的位置，需要带上偏移
@@ -139,16 +131,16 @@ HcclResult CcuTempReduceMesh2D::Run(const TempFuncs &tempFuncs, const RankSliceI
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
             // 从 UserIn 获取数据
-            inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType())
-                + tempFuncs.usrData.usrInSlices[0].GetOffset();
+            inputAddr = tempFuncs.usrData.usrInSlices[0].GetOffset()
+                + BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType());
         } else {
             // 从 inBuff 获取数据
             inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         }
         if (tempFuncs.isBottom) {
             // 把数据写入 UserOut
-            outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType())
-                + tempFuncs.usrData.usrOutSlices[0].GetOffset();
+            outputAddr = tempFuncs.usrData.usrOutSlices[0].GetOffset() 
+                + BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType());
         } else {
             // 把数据写入 outBuff
             outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
@@ -158,11 +150,11 @@ HcclResult CcuTempReduceMesh2D::Run(const TempFuncs &tempFuncs, const RankSliceI
         inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
     }
+    uint64_t token;
+    CHK_RET(GetToken(op_, token));
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;
     // 自己需要 reduce 的数据基于userIn的起始位置的偏移
     uint64_t offSet = 0;
-    uint64_t token;
-    CHK_RET(GetToken(op_, token));
     std::vector<uint32_t> dimId;
     dimId.emplace_back(myRank_ % dimSize_[0]);
     dimId.emplace_back(myRank_ / dimSize_[0]); // dimId里面放本rank在拓扑图上的位置

@@ -112,20 +112,14 @@ HcclResult CcuTempReduceMeshMem2Mem2D::GenExtIns(const TempFuncs          &tempF
 
     RankGroup rankGroupX;
     RankGroup rankGroupY;
-    for (auto &peer : tempVTopo_[0]) {
-        rankGroupX.AddRank(peer);
-    }
+    CreateRankGroupsFrom2DTopo(rankGroupX, rankGroupY);
 
-    for (auto &peer : tempVTopo_[1]) {
-        rankGroupY.AddRank(peer);
-    }
-
+    uint64_t token;
+    CHK_RET(GetToken(op_, token));
     uint64_t inputAddr  = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
     uint64_t outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
 
     uint64_t sliceSize = templateDataParams.sliceSize; // 获取本rank需要处理的数据量
-    uint64_t token;
-    CHK_RET(GetToken(op_, token));
     std::vector<uint32_t> dimId;
     dimId.emplace_back(myRank_ % dimSize_[0]);
     dimId.emplace_back(myRank_ / dimSize_[0]); // dimId里面放本rank在拓扑图上的位置

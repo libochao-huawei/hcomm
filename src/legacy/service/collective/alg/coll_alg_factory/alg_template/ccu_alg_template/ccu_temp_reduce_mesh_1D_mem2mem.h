@@ -29,19 +29,16 @@ public:
     {
         return StringFormat("Template of Reduce ccu mesh 1D mem2mem with tempRankSize [%u].", tempRankSize_);
     }
-
     HcclResult CalcRes(AlgTempResReq &tempResReq) override;
+    void       InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
+
     HcclResult GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &templateDataParams, const ResLinks &tempLinks,
                    std::vector<InsQuePtr> &tempInsQues);
-    void       InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
     HcclResult GenExtIns(const RankGraph *rankGraph, const TemplateInfo &tmpInfo,
                          const std::vector<InsQuePtr> &tempInsQues) const;
-
 private:
     ReduceOp reduceOp_;
     DataType dataType_;
 };
-
 } // namespace Hccl
-
 #endif // HCCLV2_CCU_TEMP_REDUCE_MESH_1D_MEM2MEM_H_
