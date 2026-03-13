@@ -58,7 +58,7 @@ public:
         for (uint32_t rank = startRank; rank < startRank + curCoreRankNum; rank++) {
             WaitFlag(rank_, (rank + rankSize_) / FLAG_SIZE, tag);
         }
-    }
+    }   
     uint64_t coreOffset;
     int32_t curTag;
     uint64_t curCount;
@@ -73,7 +73,7 @@ __aicore__ inline void AivAllGatherV2Mesh1D(EXTERN_KERNEL_ARGS_DEF_V2)
     if (block_idx == 0 && tag >> AIV_TAG_MOVE_RIGHT_BITS == 1 && (tag & LOW_16_BITS) == 1) {
         op.BarrierForFirstOP();
     }
-    SyncAll<true>();
+	SyncAll<true>();
 
     op.Process(len, tag, outputSliceStride);
     // 执行barrier全同步
@@ -106,28 +106,28 @@ __aicore__ inline void AivAllGatherV2Mesh1DSuperKernel(SUPERKERNEL_ARGS_DEF)
 
 __aicore__ inline void sk_ag_mesh_1d(SUPERKERNEL_ARGS_DEF)
 {
-#ifdef HCCL_DTYPE_INT8
+    #ifdef HCCL_DTYPE_INT8
         AivAllGatherV2Mesh1DSuperKernel<int8_t> (SUPERKERNEL_ARGS_CALL);
-#elif defined HCCL_DTYPE_UINT8
+    #elif defined HCCL_DTYPE_UINT8
         AivAllGatherV2Mesh1DSuperKernel<uint8_t> (SUPERKERNEL_ARGS_CALL);
-#elif defined HCCL_DTYPE_INT16
+    #elif defined HCCL_DTYPE_INT16
         AivAllGatherV2Mesh1DSuperKernel<int16_t> (SUPERKERNEL_ARGS_CALL);
-#elif defined HCCL_DTYPE_UINT16
+    #elif defined HCCL_DTYPE_UINT16
         AivAllGatherV2Mesh1DSuperKernel<uint16_t> (SUPERKERNEL_ARGS_CALL);
-#elif defined HCCL_DTYPE_INT32
+    #elif defined HCCL_DTYPE_INT32
         AivAllGatherV2Mesh1DSuperKernel<int32_t> (SUPERKERNEL_ARGS_CALL);
-#elif defined HCCL_DTYPE_UINT32
+    #elif defined HCCL_DTYPE_UINT32
         AivAllGatherV2Mesh1DSuperKernel<uint32_t> (SUPERKERNEL_ARGS_CALL);
-#elif defined HCCL_DTYPE_FP16
+    #elif defined HCCL_DTYPE_FP16
         AivAllGatherV2Mesh1DSuperKernel<half> (SUPERKERNEL_ARGS_CALL);
-#elif defined HCCL_DTYPE_FP32
+    #elif defined HCCL_DTYPE_FP32
         AivAllGatherV2Mesh1DSuperKernel<float> (SUPERKERNEL_ARGS_CALL);
-#elif defined HCCL_DTYPE_BFP16
+    #elif defined HCCL_DTYPE_BFP16
         AivAllGatherV2Mesh1DSuperKernel<bfloat16_t> (SUPERKERNEL_ARGS_CALL);
-#elif defined HCCL_DTYPE_INT64
+    #elif defined HCCL_DTYPE_INT64
         AivAllGatherV2Mesh1DSuperKernel<int64_t> (SUPERKERNEL_ARGS_CALL);
-#elif defined HCCL_DTYPE_UINT64
+    #elif defined HCCL_DTYPE_UINT64
         AivAllGatherV2Mesh1DSuperKernel<uint64_t> (SUPERKERNEL_ARGS_CALL);
-#else
-#endif
+    #else
+    #endif
 }
