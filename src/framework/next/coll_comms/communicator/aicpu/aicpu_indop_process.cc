@@ -239,6 +239,14 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, co
     dfxOpInfoOnce->index_ = collComm->UpdateIndex();
     dfxOpInfoOnce->comm_ = reinterpret_cast<void *>(collComm);
     dfxOpInfoOnce->isIndop_ = true;
+    dfxOpInfoOnce->groupName_ = collComm->GetIdentifier();
+    dfxOpInfoOnce->rankSize_ = collComm->GetTopoInfo().userRankSize;
+    //单算子模式，覆盖opTag
+    bool opBased = true;
+    if (opBased){
+        dfxOpInfoOnce->op_.opTag = collComm->GetIdentifier();
+    }
+    dfxOpInfoOnce->op_.myRank = static_cast<HCCL::RankID>(collComm->GetTopoInfo().userRank);
 
     // 注册
     HcclCommDfxLite* hcclCommDfxLite = collComm->GetHcclCommDfxLite();
@@ -263,7 +271,7 @@ HcclResult AicpuIndopProcess::ProfilingReportDeviceOp(const std::string &group)
     Hccl::MirrorTaskManager* mirrorTaskMgr = hcclCommDfxLite->GetMirrorTaskManager();
     CHK_PTR_NULL(mirrorTaskMgr);
     CHK_RET(AicpuIndopProcess::ReportAllTasks(group));
-    EXECEPTION_CATCH(Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgr->GetCurrDfxOpInfo(), group),
+    EXECEPTION_CATCH(Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgr->GetCurrDfxOpInfo()),
         return HCCL_E_INTERNAL);
     return HCCL_SUCCESS;
 }
@@ -276,9 +284,9 @@ HcclResult AicpuIndopProcess::ReportAllTasks(const std::string &group)
     // 注册
     HcclCommDfxLite* hcclCommDfxLite = collCommAicpu->GetHcclCommDfxLite();
     CHK_PTR_NULL(hcclCommDfxLite);
-    const HcclTopoInfo& hcclTopoInfo = collCommAicpu->GetTopoInfo();
+    // const HcclTopoInfo& hcclTopoInfo = collCommAicpu->GetTopoInfo();
 
-    CHK_RET(hcclCommDfxLite->ReportAllTasks(group, hcclTopoInfo.userRankSize));
+    CHK_RET(hcclCommDfxLite->ReportAllTasks());
     return HCCL_SUCCESS;
 }
 
