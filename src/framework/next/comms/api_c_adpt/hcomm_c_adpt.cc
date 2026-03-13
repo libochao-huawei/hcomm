@@ -16,7 +16,6 @@
 #include "hcomm_c_adpt.h"
 #include "../endpoints/endpoint.h"
 #include "../endpoint_pairs/channels/channel.h"
-#include "thread.h"
 #include "aicpu_ts_thread.h"
 #include "cpu_ts_thread.h"
 #include "aicpu_ts_urma_channel.h"
@@ -25,7 +24,11 @@
 #include "launch_aicpu.h"
 #include "comm_configer.h"
 #include "endpoint_map.h"
-#include "endpoint_map.h"
+
+#include "../hcomm_res_mgr.h"
+
+#include "param_check_pub.h"
+#include "exception_handler.h"
 
 namespace hcomm {
 static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
@@ -581,7 +584,6 @@ HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum)
     }
 
     HCCL_INFO("[HcommThreadfree] begin to free %u threads", threadNum);
-
     for (uint32_t i = 0; i < threadNum; ++i) {
         auto handleIter = hcomm::g_ThreadMap.find(threads[i]);
         if (handleIter == hcomm::g_ThreadMap.end()) {
@@ -604,7 +606,6 @@ HcclResult HcommThreadAllocWithStream(CommEngine engine,
     std::shared_ptr<hccl::Thread> handle;
     EXECEPTION_CATCH(handle = std::make_shared<hccl::CpuTsThread>(stream, notifyNum, notifyLoadType), return HCCL_E_PTR);
     CHK_RET(handle->Init());
- 
     // 返回第一个句柄
     *thread = reinterpret_cast<ThreadHandle>(handle.get());
     hcomm::g_ThreadMap.emplace(*thread , handle);
@@ -613,7 +614,7 @@ HcclResult HcommThreadAllocWithStream(CommEngine engine,
         "notifyNum[%u]",  engine, stream, notifyNum);
     return HCCL_SUCCESS;
 }
-
+ 
 HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx)
 {
     if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
@@ -662,5 +663,43 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
         return HCCL_E_PARA;
     }
     HCCL_INFO("[%s]copy engine ctx success, engine[%d]", __func__, engine);
+    return HCCL_SUCCESS;
+}
+HcclResult HcommThreadResGetInfo(ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void **info)
+{
+    CHK_PTR_NULL(info);
+    auto it = hcomm::g_ThreadMap.find(thread);
+    if (it == hcomm::g_ThreadMap.end()) {
+        HCCL_ERROR("[%s] failed. thread[0x%llx] not found.", __func__, thread);
+        return HCCL_E_NOT_FOUND;
+    }
+    std::shared_ptr<hccl::Thread> threadPtr = it->second;
+    CHK_PTR_NULL(threadPtr);
+    if (resType == ThreadResType::THREAD_RES_TYPE_STREAM) {
+        if (infoLen != sizeof(ThreadResTypeStream)) {
+            HCCL_ERROR("[%s] failed. infoLen[%u] is mismatch sizeof(ThreadResTypeStream)[%zu]", 
+                       __func__, infoLen, sizeof(ThreadResTypeStream));
+            return HCCL_E_PARA;
+        }
+        CHK_PTR_NULL(threadPtr->GetStream());
+        ThreadResTypeStream stream = threadPtr->GetStream()->ptr();
+        CHK_PTR_NULL(stream);
+        *static_cast<ThreadResTypeStream *>(info) = stream;
+    } else {
+        HCCL_ERROR("[%s] failed. resType[%d] is not supported.", __func__, static_cast<int32_t>(resType));
+        return HCCL_E_NOT_SUPPORT;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommThreadGet(const ThreadHandle thread, std::shared_ptr<hccl::Thread> &handle)
+{
+    auto it = hcomm::g_ThreadMap.find(thread);
+    if (it == hcomm::g_ThreadMap.end()) {
+        HCCL_ERROR("[%s] failed. thread[%lu] not found.", __func__, thread);
+        return HCCL_E_NOT_FOUND;
+    }
+    handle = it->second;
+    CHK_PTR_NULL(handle);
     return HCCL_SUCCESS;
 }

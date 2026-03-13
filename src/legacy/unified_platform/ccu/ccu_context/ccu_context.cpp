@@ -67,26 +67,26 @@ HcclResult CcuContext::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskP
         = (agrsNum / CCU_SQE_ARGS_LEN) + ((agrsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (agrsNum == 0 ? 1 : 0);
     taskParams.resize(seqNum);
     for (uint32_t index = 0; index < seqNum; index++) {
-        taskParams[index].dieId       = GetDieId();
-        taskParams[index].missionId   = GetMissionId();
-        taskParams[index].instStartId = instrInfo.missionStartInstrId + index * CCU_SQE_ARGS_LEN;
-        taskParams[index].key         = GetMissionKey();
-        taskParams[index].argSize     = CCU_SQE_ARGS_LEN;
+        taskParam[index].dieId       = GetDieId();
+        taskParam[index].missionId   = GetMissionId();
+        taskParam[index].instStartId = instrInfo.missionStartInstrId + index * CCU_SQE_ARGS_LEN;
+        taskParam[index].key         = GetMissionKey();
+        taskParam[index].argSize     = CCU_SQE_ARGS_LEN;
         if (index == seqNum - 1) {
-            taskParams[index].instCnt = instrInfo.missionInstrCount - index * CCU_SQE_ARGS_LEN;
-            std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::end(args), std::begin(taskParams[index].args));
+            taskParam[index].instCnt = instrInfo.missionInstrCount - index * CCU_SQE_ARGS_LEN;
+            std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::end(args), std::begin(taskParam[index].args));
         } else {
-            taskParams[index].instCnt = CCU_SQE_ARGS_LEN;
+            taskParam[index].instCnt = CCU_SQE_ARGS_LEN;
             std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::begin(args) + (index + 1) * CCU_SQE_ARGS_LEN,
-                      std::begin(taskParams[index].args));
+                      std::begin(taskParam[index].args));
         }
 
         HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
-                  taskParams[index].dieId, taskParams[index].missionId, taskParams[index].instStartId,
-                  taskParams[index].instCnt, taskParams[index].argSize);
-        for (uint32_t i = 0; i < taskParams[index].argSize; i++) {
+                  taskParam[index].dieId, taskParam[index].missionId, taskParam[index].instStartId,
+                  taskParam[index].instCnt, taskParam[index].argSize);
+        for (uint32_t i = 0; i < taskParam[index].argSize; i++) {
             if (i == TOKEN_VALUE_INDEX) { continue; }
-            HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, taskParams[index].args[i]);
+            HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, taskParam[index].args[i]);
         }
     }
     return HCCL_SUCCESS;
