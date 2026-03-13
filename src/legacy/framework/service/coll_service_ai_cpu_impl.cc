@@ -430,20 +430,10 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
 
     HCCL_INFO("[CollServiceAiCpuImpl][%s] param.soName: %s, param.kernelName: %s",
               __func__, param.soName, param.kernelName);
-	std::string jsonPath;
-    GetKernelFilePath(jsonPath);
-	jsonPath += "ccl_kernel.json";
-	aclrtBinHandle binHandle;
-	LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, binHandle);
-	aclrtFuncHandle funcHandle;
-	constexpr u32 numBlocks = 1;
-	aclError aclRet = aclrtBinaryGetFunction(binHandle, param.kernelName, &funcHandle);
-    if(aclRet != ACL_SUCCESS)
-    {
-        THROW<RuntimeApiException>(StringFormat("Call aclrtBinaryGetFunction failed, with ret[%d]", aclRet));
-    }
+    const aclrtFuncHandle funcHandle = comm->GetAicpuKernelFuncHandle(param.kernelName);
     auto& mStream = (opMode == OpMode::OPBASE) ? (*comm->GetAicpuStreamManager().GetFreeStream()) : stream;
     std::string mode = (opMode == OpMode::OPBASE) ? "OPBASE" : "OFFLOAD";
+    constexpr u32 numBlocks = 1;
     HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, mStream.GetPtr(), &cfg,
 			&param.kernel, sizeof(HcclKernelParamLite));
     HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s, %s mode "
