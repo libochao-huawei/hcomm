@@ -88,11 +88,11 @@ HcclResult CcuTempReduceNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, Temp
     uint32_t axisSize = tempLinks.begin()->second.size();
 
     uint32_t myVirtRankId = tempVirtRankMap_[myRank_];
+    uint64_t inputAddr = BufferTypeToAddr(tempAlgParams.buffInfo.inBuffType) + tempAlgParams.buffInfo.inBuffBaseOff;
+    uint64_t outputAddr = BufferTypeToAddr(tempAlgParams.buffInfo.outBuffType) + tempAlgParams.buffInfo.outBuffBaseOff;
     uint64_t DataCount = (tempAlgParams.sliceSize / DataTypeSizeGet(dataType_));
     uint64_t die0Size = DataCount / axisSize * DataTypeSizeGet(dataType_);
     uint64_t die1Size = tempAlgParams.sliceSize - die0Size;
-    uint64_t inputAddr = BufferTypeToAddr(tempAlgParams.buffInfo.inBuffType) + tempAlgParams.buffInfo.inBuffBaseOff;
-    uint64_t outputAddr = BufferTypeToAddr(tempAlgParams.buffInfo.outBuffType) + tempAlgParams.buffInfo.outBuffBaseOff;
     uint64_t repeatNum = tempAlgParams.repeatNum;
     uint64_t token;
     CHK_RET(GetToken(op_, token));

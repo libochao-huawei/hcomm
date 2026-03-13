@@ -80,17 +80,17 @@ HcclResult CcuTempBroadcastNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, T
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);
 
-    uint32_t axisSize = tempLinks.begin()->second.size();
-    uint32_t myVirtRankId = tempVirtRankMap_[myRank_];
-    uint64_t DataCount = (tempAlgParams.sliceSize / DataTypeSizeGet(dataType_));
-    uint64_t die0Size = DataCount / axisSize * DataTypeSizeGet(dataType_);
-    uint64_t die1Size = tempAlgParams.sliceSize - die0Size;
-    uint64_t inputAddr = BufferTypeToAddr(tempAlgParams.buffInfo.inBuffType) + tempAlgParams.buffInfo.inBuffBaseOff;
-    uint64_t outputAddr = BufferTypeToAddr(tempAlgParams.buffInfo.outBuffType) + tempAlgParams.buffInfo.outBuffBaseOff;
-    uint64_t repeatNum = tempAlgParams.repeatNum;
-    uint64_t die0SliceSize = die0Size / tempRankSize_;
+    uint32_t axisSize            = tempLinks.begin()->second.size();
+    uint32_t myVirtRankId        = tempVirtRankMap_[myRank_];
+    uint64_t DataCount           = (tempAlgParams.sliceSize / DataTypeSizeGet(dataType_));
+    uint64_t die0Size            = DataCount / axisSize * DataTypeSizeGet(dataType_);
+    uint64_t die1Size            = tempAlgParams.sliceSize - die0Size;
+    uint64_t inputAddr           = BufferTypeToAddr(tempAlgParams.buffInfo.inBuffType) + tempAlgParams.buffInfo.inBuffBaseOff;
+    uint64_t outputAddr          = BufferTypeToAddr(tempAlgParams.buffInfo.outBuffType) + tempAlgParams.buffInfo.outBuffBaseOff;
+    uint64_t repeatNum           = tempAlgParams.repeatNum;
+    uint64_t die0SliceSize       = die0Size / tempRankSize_;
     uint64_t die0LastSliceSize   = die0Size % tempRankSize_ + die0SliceSize;
-    uint64_t die1SliceSize = die1Size / tempRankSize_;
+    uint64_t die1SliceSize       = die1Size / tempRankSize_;
     uint64_t die1LastSliceSize   = die1Size % tempRankSize_ + die1SliceSize;
     uint64_t token;              
     CHK_RET(GetToken(op_, token));

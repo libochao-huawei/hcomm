@@ -14,13 +14,13 @@
 #include <map>
 #include <string>
 #include <hccl/hccl_types.h>
+#include "template_utils.h"
 #include "reduce_op.h"
 #include "hccl/base.h"
 #include "types/types.h"
 #include "string_util.h"
 #include "env_config.h"
 #include "data_type.h"
-#include "template_utils.h"
 #include "ccu_alg_template_base.h"
 #include "ccu_instruction_all_reduce_mesh1d.h"
 #include "ccu_alg_template_base.h"
@@ -48,7 +48,6 @@ public:
     void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
 
 private:
-    HcclResult CalcInputOutputAddr(const TempFuncs &tempFuncs, uint64_t &inputAddr, uint64_t &outputAddr);
     HcclResult PrepareLinks(const ResLinks &tempLinks, std::vector<LinkData> &links) const;
     HcclResult PrepareRankGroup(RankGroup &rankGroup);
 

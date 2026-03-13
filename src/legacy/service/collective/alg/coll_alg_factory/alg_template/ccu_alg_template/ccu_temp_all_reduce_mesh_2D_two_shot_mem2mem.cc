@@ -97,51 +97,6 @@ HcclResult CcuTempAllReduceMeshTwoShotMem2Mem2D::CalcRes(AlgTempResReq &tempResR
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuTempAllReduceMeshTwoShotMem2Mem2D::GetBufferAddr(const TempFuncs &tempFuncs, uint64_t &inputAddr,
-                                                               uint64_t &outputAddr)
-{
-    uint64_t inputBaseAddr;
-    uint64_t outputBaseAddr;
-    uint64_t inputOffSet;
-    uint64_t outputOffSet;
-
-    if (opMode_ == OpMode::OPBASE) {
-        if (tempFuncs.isForepart) {
-            // 从 UserIn 获取数据, 添加 loop 偏移
-            inputBaseAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType());
-            inputOffSet = tempFuncs.usrData.usrInSlices[0].GetOffset();
-        } else {
-            // 从 inBuff 获取数据, 添加 inBuffBaseOff
-            inputBaseAddr = BufferTypeToAddr(buffInfo_.inBuffType);
-            inputOffSet = buffInfo_.inBuffBaseOff;
-        }
-        if (tempFuncs.isBottom) {
-            // 把数据写入 UserOut, 添加 loop 偏移
-            outputBaseAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType());
-            outputOffSet = tempFuncs.usrData.usrOutSlices[0].GetOffset();
-        } else {
-            // 把数据写入 outBuff, 添加 outBuffBaseOff
-            outputBaseAddr = BufferTypeToAddr(buffInfo_.outBuffType);
-            outputOffSet = buffInfo_.outBuffBaseOff;
-        }
-    } else {
-        // 图模式没有 tempFuncs.usrData，直接通过 buffInfo_ 获取输入输出地址
-        inputBaseAddr = BufferTypeToAddr(buffInfo_.inBuffType);
-        inputOffSet = buffInfo_.inBuffBaseOff + tempFuncs.usrData.usrInSlices[0].GetOffset();
-        outputBaseAddr = BufferTypeToAddr(buffInfo_.outBuffType);
-        outputOffSet = buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
-    }
-
-    HCCL_INFO("[GetBufferAddr] inputBaseAddr[%llu], inputOffSet[%llu], outputBaseAddr[%llu], outputOffSet[%llu]",
-              inputBaseAddr, inputOffSet, outputBaseAddr, outputOffSet);
-
-    inputAddr  = inputBaseAddr + inputOffSet;
-    outputAddr = outputBaseAddr + outputOffSet;
-
-    HCCL_INFO("[GetBufferAddr] inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
-    return HcclResult::HCCL_SUCCESS;
-}
-
 HcclResult CcuTempAllReduceMeshTwoShotMem2Mem2D::PrepareLinks(const ResLinks &tempLinks)
 {
     HCCL_INFO("[CcuTempAllReduceMeshTwoShotMem2Mem2D] PrepareLinks Starts.");
@@ -200,15 +155,16 @@ HcclResult CcuTempAllReduceMeshTwoShotMem2Mem2D::Run(const TempFuncs &tempFuncs,
 
     u32 xDimSize = dimSize_[0];
     u32 yDimSize = dimSize_[1];
-    HCCL_INFO("[Run] xDimSize[%u], yDimSize[%u]", xDimSize, yDimSize);
+    HCCL_INFO("[CcuTempAllReduceMeshTwoShotMem2Mem2D][Run] xDimSize[%u], yDimSize[%u]", xDimSize, yDimSize);
 
     CHK_RET(PrepareLinks(tempLinks));
     CHK_RET(PrepareRankGroups());
     // 计算 buffer 地址信息
     uint64_t inputAddr;
     uint64_t outputAddr;
-    CHK_RET(GetBufferAddr(tempFuncs, inputAddr, outputAddr));
-    HCCL_INFO("[Run] inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
+    uint64_t offSet;
+    CHK_RET(GetAddrInfo(tempFuncs, inputAddr, outputAddr, offSet));
+    HCCL_INFO("[CcuTempAllReduceMeshTwoShotMem2Mem2D][Run] inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
 
     // 计算切分信息：
     uint64_t normalRankDataSize  = sliceInfoVec[0][0].size;
@@ -217,7 +173,7 @@ HcclResult CcuTempAllReduceMeshTwoShotMem2Mem2D::Run(const TempFuncs &tempFuncs,
         = (normalRankDataCount / (xDimSize + yDimSize)) * xDimSize * DataTypeSizeGet(dataType_);
     uint64_t normalRankYSliceSize = normalRankDataSize - normalRankXSliceSize;
 
-    HCCL_INFO("[Run] normalRankDataSize[%llu] normalRankXSliceSize[%llu], normalRankYSliceSize[%llu]",
+    HCCL_INFO("[CcuTempAllReduceMeshTwoShotMem2Mem2D][Run] normalRankDataSize[%llu] normalRankXSliceSize[%llu], normalRankYSliceSize[%llu]",
               normalRankDataSize, normalRankXSliceSize, normalRankYSliceSize);
 
     // 计算尾块信息
@@ -226,7 +182,7 @@ HcclResult CcuTempAllReduceMeshTwoShotMem2Mem2D::Run(const TempFuncs &tempFuncs,
     uint64_t lastRankXSliceSize = (lastRankDataCount / (xDimSize + yDimSize)) * xDimSize * DataTypeSizeGet(dataType_);
     uint64_t lastRankYSliceSize = lastRankDataSize - lastRankXSliceSize;
 
-    HCCL_INFO("[Run] lastRankDataSize[%llu] lastRankXSliceSize[%llu], lastRankYSliceSize[%llu]", lastRankDataSize,
+    HCCL_INFO("[CcuTempAllReduceMeshTwoShotMem2Mem2D][Run] lastRankDataSize[%llu] lastRankXSliceSize[%llu], lastRankYSliceSize[%llu]", lastRankDataSize,
               lastRankXSliceSize, lastRankYSliceSize);
 
     uint64_t token;

@@ -33,8 +33,8 @@ public:
 
     HcclResult Run(const TempFuncs &tempFuncs, const RankSliceInfo &sliceInfoVec, const BuffInfo &buffInfo,
                          const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues) override;
-    HcclResult CalcRes(AlgTempResReq &tempResReq) override;
     HcclResult CalcSliceInfo(const AllignInfo &allignInfo, const u64 dataSize, RankSliceInfo &sliceInfoVec) override;
+    HcclResult CalcRes(AlgTempResReq &tempResReq) override;
     // init reduceInfo
     void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
 
@@ -42,8 +42,8 @@ private:
     ReduceOp reduceOp_;
     DataType dataType_;
     std::vector<uint64_t> dimSize_;
-    std::vector<LinkData> linksX_;
     std::vector<LinkData> linksY_;
+    std::vector<LinkData> linksX_;
 };
 
 } // namespace Hccl

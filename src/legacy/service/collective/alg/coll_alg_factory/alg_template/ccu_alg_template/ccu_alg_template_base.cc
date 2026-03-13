@@ -170,6 +170,43 @@ uint64_t CcuAlgTemplateBase::BufferTypeToAddr(const BufferType bufferType)
     }
 }
 
+HcclResult CcuAlgTemplateBase::AddRanksToGroup(const std::vector<std::vector<RankId>> &tempVTopo, RankGroup &rankGroupX, RankGroup &rankGroupY) const
+{
+    for (auto &peer : tempVTopo[0]) {
+        rankGroupX.AddRank(peer);
+    }
+
+    for (auto &peer : tempVTopo[1]) {
+        rankGroupY.AddRank(peer);
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult CcuAlgTemplateBase::GetAddrInfo(const TempFuncs &tempFuncs, uint64_t &inputAddr, uint64_t &outputAddr, uint64_t &offSet)
+{
+    if (opMode_ == OpMode::OPBASE) {
+        if (tempFuncs.isForepart) {
+            inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType())
+                + tempFuncs.usrData.usrInSlices[0].GetOffset();
+            offSet = tempFuncs.usrData.usrOutSlices[0].GetOffset();
+        } else {
+            inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
+            offSet = sliceInfoVec[myRank_][0].offset;
+        }
+        if (tempFuncs.isBottom) {
+            outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType())
+                + tempFuncs.usrData.usrOutSlices[0].GetOffset();
+        } else {
+            outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
+        }
+    } else {    // 图模式
+        inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
+        outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
+        offSet = tempFuncs.usrData.usrOutSlices[0].GetOffset();
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult CcuAlgTemplateBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {   
     (void) numBlocks;
