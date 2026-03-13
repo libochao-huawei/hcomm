@@ -84,14 +84,14 @@ public:
         return HCCL_SUCCESS;
     };
 
-    HcclResult pop(ThreadMsgEntity &entity) {
+    HcclResult Pop(ThreadMsgEntity &entity) {
         if (!initialized_) {
             return HCCL_E_PARA;
         }
 
         // 检查队列是否为空
         bool isEmpty = false;
-        CHK_RET(empty(isEmpty));
+        CHK_RET(Empty(isEmpty));
         if (isEmpty) {
             return HCCL_E_AGAIN;  // 队列为空
         }
@@ -134,7 +134,7 @@ public:
         return HCCL_SUCCESS;
     }
 
-    HcclResult push(const ThreadMsgEntity &entity) {
+    HcclResult Push(const ThreadMsgEntity &entity) {
         if (!initialized_) {
             HCCL_ERROR("[MsgQueue::%s] MsgQueue not initialized", __func__);
             return HCCL_E_PARA;
@@ -142,7 +142,7 @@ public:
 
         // 检查队列是否为满
         bool isFull = false;
-        CHK_RET(full(isFull));
+        CHK_RET(Full(isFull));
         if (isFull) {
             HCCL_ERROR("[MsgQueue::%s] MsgQueue is full", __func__);
             return HCCL_E_AGAIN;  // 队列为满
@@ -185,7 +185,7 @@ public:
         }
         return HCCL_SUCCESS;
     };
-    HcclResult empty(bool &isEmpty) {
+    HcclResult Empty(bool &isEmpty) {
         uint64_t head, tail;
         aclError ret = aclrtMemcpy(&head, sizeof(uint64_t), reinterpret_cast<void*>(head_), sizeof(uint64_t), ACL_MEMCPY_DEVICE_TO_HOST);
         if (ret != ACL_ERROR_NONE) {
@@ -205,7 +205,7 @@ public:
         return HCCL_SUCCESS;
     };
 
-    HcclResult full(bool &isFull) {
+    HcclResult Full(bool &isFull) {
         uint64_t head, tail;
         aclError ret = aclrtMemcpy(&head, sizeof(uint64_t), reinterpret_cast<void*>(head_), sizeof(uint64_t), ACL_MEMCPY_DEVICE_TO_HOST);
         if (ret != ACL_ERROR_NONE) {

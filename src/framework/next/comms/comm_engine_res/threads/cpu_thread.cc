@@ -28,19 +28,19 @@ HcclResult CpuThread::PrepareDpuKernelResource(aclrtFuncHandle &funcHandle)
         jsonPath = getPath;
     } else {
         jsonPath = "/usr/local/Ascend/cann/";
-        HCCL_WARNING("[CommunicatorImpl::%s] ENV:ASCEND_HOME_PATH is not set", __func__);
+        HCCL_WARNING("[CpuThread::%s] ENV:ASCEND_HOME_PATH is not set", __func__);
     }
 
     jsonPath += "/opp/built-in/op_impl/dpu/";
-    HCCL_DEBUG("[CommunicatorImpl::%s] kernel folder path[%s]", __func__, jsonPath.c_str());
+    HCCL_DEBUG("[CpuThread::%s] kernel folder path[%s]", __func__, jsonPath.c_str());
 
     // cpuKernelMode为1时，json命名需与so命名保持一致， 即libccl_dpu.json与libccl_dpu.so
     jsonPath += "libccl_dpu.json";
     char realPath[PATH_MAX] = {0};
     CHK_PRT_RET(realpath(jsonPath.c_str(), realPath) == nullptr,
-        HCCL_ERROR("[CommunicatorImpl::%s]: %s is not a valid real path, err[%d]", __func__, jsonPath.c_str(), errno),
+        HCCL_ERROR("[CpuThread::%s]: %s is not a valid real path, err[%d]", __func__, jsonPath.c_str(), errno),
         HCCL_E_INTERNAL);
-    HCCL_INFO("[CommunicatorImpl::%s] realPath: %s", __func__, realPath);
+    HCCL_INFO("[CpuThread::%s] realPath: %s", __func__, realPath);
 
     aclrtBinHandle         binHandle;
     aclrtBinaryLoadOptions options;
@@ -50,19 +50,24 @@ HcclResult CpuThread::PrepareDpuKernelResource(aclrtFuncHandle &funcHandle)
     options.numOpt  = 1;
     options.options = &option;
     if (aclrtBinaryLoadFromFile(realPath, &options, &binHandle) != ACL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::%s] load binary from file error.", __func__);
+        HCCL_ERROR("[CpuThread::%s] load binary from file error.", __func__);
         return HCCL_E_OPEN_FILE_FAILURE;
     }
 
     // 查找核函数
     if (aclrtBinaryGetFunction(binHandle, "RunDpuRpcSrvLaunchNew", &funcHandle) != ACL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::%s] Get Function Failed", __func__);
+        HCCL_ERROR("[CpuThread::%s] Get Function Failed", __func__);
+        return HCCL_E_INTERNAL;
+    }
+
+    if (aclrtBinaryUnload(binHandle) != ACL_SUCCESS) {
+        HCCL_ERROR("[CpuThread::%s] Unload Binary Failed", __func__);
         return HCCL_E_INTERNAL;
     }
 
     // 创建dpustream
     if (aclrtCreateStreamWithConfig(&dpuStream_, 0, ACL_STREAM_FAST_LAUNCH) != ACL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::%s] Create Local Stream Failed", __func__);
+        HCCL_ERROR("[CpuThread::%s] Create Local Stream Failed", __func__);
         return HCCL_E_INTERNAL;
     }
 
@@ -72,7 +77,7 @@ HcclResult CpuThread::PrepareDpuKernelResource(aclrtFuncHandle &funcHandle)
 HcclResult CpuThread::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
 {
     // 下发
-    HCCL_INFO("[CommunicatorImpl::%s] Launch Dpu Kernel", __func__);
+    HCCL_INFO("[CpuThread::%s] Launch Dpu Kernel", __func__);
     aclrtLaunchKernelCfg  cfg;
     aclrtLaunchKernelAttr kernelAttr;
     kernelAttr.id            = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
@@ -88,9 +93,9 @@ HcclResult CpuThread::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     if (aclrtLaunchKernelWithHostArgs(funcHandle, numBlocks, dpuStream_, &cfg, &hostArgsTemp, argsSize,
                                       &placeHolderArrays, placeHolderNum)
         != ACL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::%s] Launch Dpu Kernel Failed", __func__);
+        HCCL_ERROR("[CpuThread::%s] Launch Dpu Kernel Failed", __func__);
         aclrtDestroyStream(dpuStream_);
-        Hccl::rtResetXpuDevice(Hccl::RT_DEV_TYPE_DPU, 0);
+        Hccl::HrtResetXpuDevice(0, 0);
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;
@@ -117,17 +122,17 @@ HcclResult CpuThread::Init()
     hostArgsTemp.deviceId = devId;
 
     // 设置XPU
-    HCCL_INFO("[CommunicatorImpl::%s] Switch to Dpu Ctx", __func__);
+    HCCL_INFO("[CpuThread::%s] Switch to Dpu Ctx", __func__);
     if (aclrtGetCurrentContext(&npuContext_) != ACL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::%s] Get Npu Ctx Failed", __func__);
+        HCCL_ERROR("[CpuThread::%s] Get Npu Ctx Failed", __func__);
         return HCCL_E_INTERNAL;
     }
-    if (Hccl::rtSetXpuDevice(Hccl::RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::%s] Switch to Dpu Ctx Failed", __func__);
+    if (Hccl::HrtSetXpuDevice(0, 0) != ACL_SUCCESS) {
+        HCCL_ERROR("[CpuThread::%s] Switch to Dpu Ctx Failed", __func__);
         return HCCL_E_INTERNAL;
     }
     if (aclrtGetCurrentContext(&dpuContext_) != ACL_SUCCESS) {
-        HCCL_ERROR("[CommunicatorImpl::%s] Get Dpu Ctx Failed", __func__);
+        HCCL_ERROR("[CpuThread::%s] Get Dpu Ctx Failed", __func__);
         return HCCL_E_INTERNAL;
     }
 
@@ -139,15 +144,15 @@ HcclResult CpuThread::Init()
     CHK_RET(LaunchDpuKernel(funcHandle));
 
     // 切换回当前Ctx
-    HCCL_INFO("[CommunicatorImpl::%s] Switch to Npu Ctx", __func__);
+    HCCL_INFO("[CpuThread::%s] Switch to Npu Ctx", __func__);
     if (ACL_SUCCESS != aclrtSetCurrentContext(npuContext_)) {
-        HCCL_ERROR("[CommunicatorImpl::%s] Reset Current Ctx Failed", __func__);
+        HCCL_ERROR("[CpuThread::%s] Reset Current Ctx Failed", __func__);
         aclrtDestroyStream(dpuStream_);
-        Hccl::rtResetXpuDevice(Hccl::RT_DEV_TYPE_DPU, 0);
+        Hccl::HrtResetXpuDevice(0, 0);
         return HCCL_E_INTERNAL;
     }
 
-    HCCL_INFO("[CommunicatorImpl::%s] Launch Dpu Kernel End", __func__);
+    HCCL_INFO("[CpuThread::%s] Launch Dpu Kernel End", __func__);
     isInit_ = true;
     return HCCL_SUCCESS;
 };
@@ -189,7 +194,7 @@ HcclResult CpuThread::DestroyDpuKernelResource()
     }
     // reset DPU kernel 线程
     HCCL_INFO("Start to reset DPU device");
-    if (Hccl::rtResetXpuDevice(Hccl::RT_DEV_TYPE_DPU, 0) != ACL_SUCCESS) {
+    if (Hccl::HrtResetXpuDevice(0, 0) != ACL_SUCCESS) {
         HCCL_ERROR("ResetXpuDevice Failed");
         return HCCL_E_RUNTIME;
     }
@@ -218,7 +223,6 @@ HcclResult CpuThread::KernelRun()
 
 HcclResult CpuThread::GetThreadEntity(void* &threadEntity)
 {
-    // CHK_PTR_NULL(threadEntity);
     if (!isInit_) {
         HCCL_ERROR("CpuThread not initialized");
         return HCCL_E_PARA;

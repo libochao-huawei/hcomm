@@ -75,14 +75,14 @@ void HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, acl
     return;
 }
 
-rtError_t rtResetXpuDevice(rtXpuDevType devType, int32_t devId)
+HcclResult rtResetXpuDevice(uint32_t devType, const uint32_t devId)
 {
-    return RT_ERROR_NONE;
+    return HCCL_SUCCESS;
 }
 
-rtError_t rtSetXpuDevice(rtXpuDevType devType, int32_t devId)
+HcclResult rtSetXpuDevice(uint32_t devType, const uint32_t devId)
 {
-    return RT_ERROR_NONE;
+    return HCCL_SUCCESS;
 }
  
 RdmaHandleManager::RdmaHandleManager()
