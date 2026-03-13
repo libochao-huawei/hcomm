@@ -395,18 +395,7 @@ void HcclOneSidedService::SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &pa
 
 void HcclOneSidedService::OneSidedAicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream) const
 {
-    std::string jsonPath;
-    GetKernelFilePath(jsonPath);
-	jsonPath += "ccl_kernel.json";
-	aclrtBinHandle binHandle;
-	LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0,
-		binHandle);
-	aclrtFuncHandle funcHandle;
-	aclError aclRet = aclrtBinaryGetFunction(binHandle, param.kernelName, &funcHandle);
-    if(aclRet != ACL_SUCCESS)
-    {
-        THROW<RuntimeApiException>(StringFormat("Call aclrtBinaryGetFunction failed, with ret[%d]", aclRet));
-    }
+	const aclrtFuncHandle funcHandle = comm_->GetAicpuKernelFuncHandle(param.kernelName);
 	constexpr u32 numBlocks = 1;
 
 	aclrtLaunchKernelCfg cfg;
