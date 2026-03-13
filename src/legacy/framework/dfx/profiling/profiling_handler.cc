@@ -210,12 +210,8 @@ void ProfilingHandler::GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportDat
     std::string cclTag             = taskInfo.dfxOpInfo_->tag_;
     hcclReportData.profInfo.cclTag = GetProfHashId(cclTag.c_str(), cclTag.length());
     uint64_t groupName = GetProfHashId(taskInfo.dfxOpInfo_->op_.opTag.c_str(), taskInfo.dfxOpInfo_->op_.opTag.length());
-    if (taskInfo.dfxOpInfo_->comm_ != nullptr) {
-        HCCL_ERROR("[ProfilingHandler]taskInfo.dfxOpInfo_->comm_ is not nullptr");
-        return ;
-    }
-    if (taskInfo.dfxOpInfo_->comm_ != nullptr) {
-        HCCL_ERROR("[ProfilingHandler]taskInfo.dfxOpInfo_->comm_ is not nullptr");
+    if (taskInfo.dfxOpInfo_->comm_ == nullptr) {
+        HCCL_ERROR("[ProfilingHandler]taskInfo.dfxOpInfo_->comm_ is nullptr");
         return ;
     }
     if (taskInfo.dfxOpInfo_->isIndop_ == true) {
@@ -223,6 +219,10 @@ void ProfilingHandler::GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportDat
         hcclReportData.profInfo.rankSize = taskInfo.dfxOpInfo_->rankSize_;
     } else {
         CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(taskInfo.dfxOpInfo_->comm_);
+        if (commImp == nullptr) {
+            HCCL_ERROR("[ProfilingHandler]commImp is  nullptr");
+            return ;
+        }
         hcclReportData.profInfo.groupName         = groupName;
         hcclReportData.profInfo.rankSize          = commImp->GetRankSize();
     }
