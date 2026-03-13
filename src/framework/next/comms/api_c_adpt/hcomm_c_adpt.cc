@@ -710,7 +710,9 @@ HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHa
     
     InitTask customInitTask = {0, ""};
     customInitTask.context = reinterpret_cast<u64>(devicePackBuf.ptr());
-    strcpy(customInitTask.commTag, commTag.c_str());
+    s32 sRet = strncpy_s(customInitTask.commTag, TAG_MAX_LENGTH, commTag.c_str(), TAG_MAX_LENGTH - 1);
+    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[%s] str copy fail. return[%d]", __func__, sRet), HCCL_E_INTERNAL);
+
     CHK_RET(hccl::AicpuAclKernelLaunch(localStream.ptr(),
         reinterpret_cast<void *>(&customInitTask),  
         sizeof(customInitTask),  

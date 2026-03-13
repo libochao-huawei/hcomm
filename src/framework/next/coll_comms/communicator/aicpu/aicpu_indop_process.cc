@@ -284,7 +284,6 @@ HcclResult AicpuIndopProcess::ReportAllTasks(const std::string &group)
     // 注册
     HcclCommDfxLite* hcclCommDfxLite = collCommAicpu->GetHcclCommDfxLite();
     CHK_PTR_NULL(hcclCommDfxLite);
-    // const HcclTopoInfo& hcclTopoInfo = collCommAicpu->GetTopoInfo();
 
     CHK_RET(hcclCommDfxLite->ReportAllTasks());
     return HCCL_SUCCESS;

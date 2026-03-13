@@ -64,12 +64,6 @@ HcclResult HcclCommDfxLite::ReportAllTasks() {
     return HCCL_SUCCESS;
 }
 
-// HcclResult HcclCommDfxLite::ReportHcclOpInfo(const DfxOpInfo& hcclOpInfo) {
-//     CHK_SMART_PTR_NULL(profilingImpl_);
-//     profilingImpl_->ReportHcclOpInfo(hcclOpInfo);
-//     return HCCL_SUCCESS;
-// }
-
 HcclResult HcclCommDfxLite::UpdateProfStat() {
     CHK_SMART_PTR_NULL(profilingImpl_);
     profilingImpl_->UpdateProfStat();

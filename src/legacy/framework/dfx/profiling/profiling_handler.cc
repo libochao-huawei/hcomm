@@ -593,7 +593,6 @@ void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opI
               DataTypeToSerialString(reporterData.data.hcclopInfo.dataType).c_str(), reporterData.data.hcclopInfo.algType,
               reporterData.data.hcclopInfo.groupName, reporterData.data.hcclopInfo.count);
     s32 ret = DlProfFunction::GetInstance().dlMsprofReportCompactInfo(1, &reporterData, sizeof(MsprofCompactInfo));
-    HCCL_INFO("[ProfilingHandler][ReportHcclOpInfo], return value[%d]", ret);
     if(ret != 0){
          THROW<InternalException>("[ProfilingHandler] Call dlMsprofReportCompactInfo failed, return[%d]", ret);
     }

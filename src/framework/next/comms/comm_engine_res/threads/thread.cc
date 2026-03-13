@@ -116,15 +116,6 @@ HcclResult Thread::ReportNotifyWaitTask(u64 notifyId, u64 beginTime, u32 taskId,
     taskParam.beginTime                = beginTime;
     taskParam.taskPara.Notify.notifyID = notifyId;
     taskParam.taskPara.Notify.value    = 1;
-
-    // Hccl::StreamLite* streamLite = static_cast<Hccl::StreamLite *>(GetStreamLitePtr());
-    // CHK_PTR_NULL(streamLite);
-    // u32 streamId = streamLite->GetId();
-
-    // Hccl::RtsqBase* rtsqBase = streamLite->GetRtsq();
-    // CHK_PTR_NULL(rtsqBase);
-
-    // u32 taskId = rtsqBase->GetTaskId();
     taskParam.endTime                = ProfGetCurCpuTimestamp();
     CHK_PTR_NULL(callback_);
     CHK_RET(callback_(streamId, taskId, taskParam, INVALID_U64));
@@ -164,14 +155,6 @@ HcclResult Thread::ReportNotifyRecordTask(u64 notifyId, u64 beginTime, u32 taskI
     taskParam.beginTime                = beginTime;
     taskParam.taskPara.Notify.notifyID = notifyId;
     taskParam.taskPara.Notify.value    = 1;
-
-    // Hccl::StreamLite* streamLite = static_cast<Hccl::StreamLite *>(GetStreamLitePtr());
-    // CHK_PTR_NULL(streamLite);
-    // u32 streamId = streamLite->GetId();
-
-    // Hccl::RtsqBase* rtsqBase = streamLite->GetRtsq();
-    // CHK_PTR_NULL(rtsqBase);
-    // u32 taskId = rtsqBase->GetTaskId();
     taskParam.endTime  = ProfGetCurCpuTimestamp();
     CHK_PTR_NULL(callback_);
     CHK_RET(callback_(streamId, taskId, taskParam, INVALID_U64));
@@ -239,14 +222,6 @@ HcclResult Thread::ReportLocalCopyTask(void *dst, const void *src, uint64_t size
     taskParam.taskPara.DMA.notifyID = INVALID_U64;
     taskParam.taskPara.DMA.linkType = Hccl::DfxLinkType::ONCHIP;
     taskParam.taskPara.DMA.dmaOp    = Hccl::DmaOp::HCCL_DMA_READ;
-
-    // Hccl::StreamLite* streamLite = static_cast<Hccl::StreamLite *>(GetStreamLitePtr());
-    // CHK_PTR_NULL(streamLite);
-    // u32 streamId = streamLite->GetId();
-
-    // Hccl::RtsqBase* rtsqBase = streamLite->GetRtsq();
-    // CHK_PTR_NULL(rtsqBase);
-    // u32 taskId = rtsqBase->GetTaskId();
     taskParam.endTime  = ProfGetCurCpuTimestamp();
     CHK_RET(callback_(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[Thread][%s] streamId[%u], taskId[%u], src[%p], dst[%p], len[%llu] %s", __func__, streamId, taskId,
@@ -268,15 +243,6 @@ HcclResult Thread::ReportLocalReduceTask(void *dst, const void *src, uint64_t si
     taskParam.taskPara.Reduce.linkType = Hccl::DfxLinkType::ONCHIP;
     taskParam.taskPara.Reduce.dataType = static_cast<HcclDataType>(dataType);
     taskParam.taskPara.Reduce.reduceOp = static_cast<HcclReduceOp>(reduceOp);
-
-    // Hccl::StreamLite* streamLite = static_cast<Hccl::StreamLite *>(GetStreamLitePtr());
-    // CHK_PTR_NULL(streamLite);
-
-    // u32 streamId = streamLite->GetId();
-
-    // Hccl::RtsqBase* rtsqBase = streamLite->GetRtsq();
-    // CHK_PTR_NULL(rtsqBase);
-    // u32 taskId = rtsqBase->GetTaskId();
     CHK_RET(callback_(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[Thread][%s] streamId[%u], taskId[%u], src[%p], dst[%p], len[%llu], dataType[%d], reduceOp[%d], %s",
         __func__, streamId, taskId, src, dst, sizeByte, dataType, reduceOp, taskParam.Describe().c_str());
