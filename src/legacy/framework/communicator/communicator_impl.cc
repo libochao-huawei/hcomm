@@ -150,6 +150,7 @@ void CommunicatorImpl::InitCommResource(const CommParams &commParams)
     InitHostDeviceSyncNotifyManager();
     InitUbMemoryTransportMgr();
     CollAlgComponentInit(); // 初始化算法组件
+    RegisterAicpuKernel();
     InitCollService();
     InitTraceManager();
     DlProfFunction::GetInstance().DlProfFunctionInit();
@@ -246,6 +247,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitHostDeviceSyncNotifyManager();
             InitUbMemoryTransportMgr();
             CollAlgComponentInit();
+            RegisterAicpuKernel();
             InitCollService();
             InitTraceManager();
             InitHDCommunicate();
@@ -296,6 +298,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             AppendLocalDieIdForLinks();
             InitUbMemoryTransportMgr();
             CollAlgComponentInit();
+            RegisterAicpuKernel();
             InitCollService();
             DlProfFunction::GetInstance().DlProfFunctionInit();
             InitMirrorTaskManager();
@@ -1506,7 +1509,7 @@ void CommunicatorImpl::InitCcuSuperFastLoad()
 
     enableProfilingEnv = hostApiState || nodeState || l0State || l1State || l2State;
 
-    HCCL_RUN_INFO("taskExceptionEnv[%d], enableProfilingEnv: hostApiState[%d] nodeState[%d] l0State[%d] l1State[%d] l2State[%d]",
+    HCCL_INFO("taskExceptionEnv[%d], enableProfilingEnv: hostApiState[%d] nodeState[%d] l0State[%d] l1State[%d] l2State[%d]",
     taskExceptionEnv, hostApiState, nodeState, l0State, l1State, l2State);
 }
 
@@ -2132,6 +2135,7 @@ HcclResult CommunicatorImpl::RecoverComm(SnapShotComm &snapShotComm, u32 stepPar
             InitHostDeviceSyncNotifyManager();
             InitUbMemoryTransportMgr();
             CollAlgComponentInit();
+            RegisterAicpuKernel();
             InitCollService();
             SelectCollService();
             InitTraceManager();
@@ -2195,6 +2199,7 @@ HcclResult CommunicatorImpl::RecoverComm(const SnapShotSubComm &snapShotSubComm,
             InitHostDeviceSyncNotifyManager();
             InitUbMemoryTransportMgr();
             CollAlgComponentInit();
+            RegisterAicpuKernel();
             InitCollService();
             SelectCollService();
             InitTraceManager();
@@ -3867,6 +3872,16 @@ ErrorMessageReport CommunicatorImpl::GetAicpuTaskException()
     }
     HCCL_INFO("[CommunicatorImpl::GetAicpuTaskException] end");
     return errorMessage;
+}
+
+void CommunicatorImpl::RegisterAicpuKernel()
+{
+    aicpuKernelHolder_.Load();
+}
+
+aclrtFuncHandle CommunicatorImpl::GetAicpuKernelFuncHandle(const char *kernelName) const
+{
+    return aicpuKernelHolder_.GetAicpuKernelFuncHandle(kernelName);
 }
 
 } // namespace Hccl
