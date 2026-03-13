@@ -56,6 +56,5 @@ target_sources(legacy_alg_function_ut_testcase
     gen_ccu_task_node_utils.cc
     testcase_ccu_revamp_parallel.cc
     testcase_ccu_revamp_bilateral.cc
-    testcase_calc_res.cc
     testcase_selector.cc
 )

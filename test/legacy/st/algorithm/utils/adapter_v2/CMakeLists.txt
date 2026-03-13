@@ -21,11 +21,6 @@ set (include_list
     // 第三方
     ${THIRD_PARTY_PATH}/json/include
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
-
-    # ${HCOMM_CODE_ROOT}/pub_inc
-    # ${TOP_DIR}/abl/adump/inc/adump
-    # ${TOP_DIR}/metadef/inc/external/
-    # ${TOP_DIR}/metadef/pkg_inc
 )
 
 set (adapter_v2_src_list
