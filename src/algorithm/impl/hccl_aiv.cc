@@ -440,7 +440,7 @@ s8* GetStubFunc(HcclCMDType cmdType, HcclDataType dataType, KernelArgsType argsT
         static_cast<int>(argsType));
 }
 
-HcclResult RegisterBinaryKernel(const char* funcName, const aclrtBinHandle binHandle, const s8* stubFunc)
+HcclResult RegisterBinaryKernel(const char* funcName, const aclrtBinHandle binHandle, s8* stubFunc)
 {
     if (stubFunc == nullptr) {
         return HCCL_E_PARA;
