@@ -75,6 +75,26 @@ public:
         return ccuTaskArg->GetCtxSignature();
     }
 
+    virtual std::vector<LinkData> GetLinks() const
+    {
+        return links_;
+    }
+
+    virtual void SetLinks(std::vector<LinkData> &links)
+    {
+        links_ = links;
+    }
+
+    virtual RankGroup GetRankGroup() const
+    {
+        return rankGroup_;
+    }
+
+    virtual void SetRankGroup(RankGroup &rankGroup)
+    {
+        rankGroup_ = rankGroup;
+    }
+
     virtual void Translate(std::vector<std::vector<CcuTaskParam>> &taskParam) const;
 
     virtual CcuInstType                 GetInstType() const       = 0;
@@ -86,6 +106,8 @@ public:
 
 protected:
     u64 execId{0};
+    RankGroup rankGroup_;
+    std::vector<LinkData> links_;
 
 private:
     u32 cntCkeNum{0};
