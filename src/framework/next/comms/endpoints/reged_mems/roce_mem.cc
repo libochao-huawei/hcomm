@@ -9,7 +9,7 @@
  */
 #include "endpoint_pair.h"
 #include "hccl_common.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "log.h"
 #include "roce_mem.h"
 #include "endpoint.h"

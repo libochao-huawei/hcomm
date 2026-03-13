@@ -936,8 +936,8 @@ void ProfilingHandler::ReportHcclMC2CommInfo(const Stream &kfcStream, Stream &st
 }
 
 void ProfilingHandler::ReportHcclMC2CommInfo(const u32 kfcStreamId,
-                                            const std::vector<u32> &aicpuStreamsId, const std::string &id,
-                                            RankId myRank, u32 rankSize, RankId rankInParentComm)
+                            const std::vector<u32> &aicpuStreamsId, const std::string &id,
+                            RankId myRank, u32 rankSize, RankId rankInParentComm)
 {
     ProfilingDeviceCommResInfo hcclMc2Info;
     hcclMc2Info.groupName = GetProfHashId(id.c_str(),id.length());

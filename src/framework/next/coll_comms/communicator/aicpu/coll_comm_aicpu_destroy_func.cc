@@ -9,6 +9,7 @@
  */
 #include "coll_comm_aicpu_destroy_func.h"
 #include "aicpu_indop_process.h"
+#include "read_write_lock.h"
 
 namespace hccl {
 CollCommAicpuDestroyFunc &CollCommAicpuDestroyFunc::GetInstance()
@@ -32,8 +33,13 @@ void CollCommAicpuDestroyFunc::Call()
 
 HcclResult CollCommAicpuDestroyFunc::Process()
 {
+    ReadWriteLockBase &commAicpuMapMutex = AicpuIndopProcess::AicpuGetCommMutex();
+    ReadWriteLock rwlock(commAicpuMapMutex);
+    rwlock.readLock();
+
     std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
     CHK_RET(AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo));
+    std::vector<CollCommAicpu *> destroyComm;
 
     for (auto &commInfo : aicpuCommInfo) {
         CollCommAicpu *aicpuComm = commInfo.second->GetCollCommAicpu();
@@ -45,10 +51,17 @@ HcclResult CollCommAicpuDestroyFunc::Process()
             continue;
         }
         HCCL_RUN_INFO("[%s]Recv DESTROY_AICPU_COMM cmd, group[%s]", __func__, aicpuComm->GetIdentifier().c_str());
-        CHK_RET(aicpuComm->BackGroundSetStatus(Hccl::KfcStatus::DESTROY_AICPU_COMM_DONE));
-        CHK_RET(AicpuIndopProcess::AicpuDestroyCommbyGroup(aicpuComm->GetIdentifier().c_str()));
-        HCCL_RUN_INFO("[%s]group[%s] destroy success", __func__, aicpuComm->GetIdentifier().c_str());
+        destroyComm.push_back(aicpuComm);
     }
+    rwlock.readUnlock();
+
+    rwlock.writeLock();
+    for (CollCommAicpu *comm: destroyComm) {
+        CHK_RET(comm->BackGroundSetStatus(Hccl::KfcStatus::DESTROY_AICPU_COMM_DONE));
+        CHK_RET(AicpuIndopProcess::AicpuDestroyCommbyGroup(comm->GetIdentifier().c_str()));
+        HCCL_RUN_INFO("[%s]group[%s] destroy success", __func__, comm->GetIdentifier().c_str());
+    }
+    rwlock.readUnlock();
     return HCCL_SUCCESS;
 }
 }  // namespace hccl

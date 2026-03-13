@@ -21,7 +21,6 @@
 #include "acl/acl_rt.h"
 #include "adapter_hal_pub.h"
 #include "device_capacity.h"
-#include "hccl_api.h"
 #include "task_param.h"
 #include "sal_pub.h"
 #include "stream_lite.h"

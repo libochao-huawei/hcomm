@@ -810,6 +810,10 @@ uninstall_run() {
         new_echo "INFO" "uninstall ${hcomm_install_path_param} ${hcomm_install_type}"
         log "INFO" "uninstall ${hcomm_install_path_param} ${hcomm_install_type}"
 
+        # delete after toolkit upgraded
+        chmod u+w "$upgrade_default_dir/script"
+        sed -i '/libascend_kms\.so/d' "$upgrade_default_dir/script/filelist.csv"
+
         bash "$upgrade_default_dir/script/run_hcomm_uninstall.sh" "uninstall" "${hcomm_input_install_path}" "${hcomm_install_type}" "${is_quiet}" \
             "${is_docker_install}" "${docker_root}" "${is_recreate_softlink}" "$pkg_version_dir"
         if [ $? -eq 0 ]; then

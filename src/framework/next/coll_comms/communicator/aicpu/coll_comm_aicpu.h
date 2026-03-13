@@ -50,7 +50,7 @@ public:
     HcclCommDfxLite* GetHcclCommDfxLite() { return &dfx_; };
 
     // h2d - d2h通道信息交互
-    HcclResult BackGroundGetCmd(Hccl::KfcCommand &command);
+    HcclResult BackGroundGetCmd(Hccl::KfcCommand &cmd);
     HcclResult BackGroundSetStatus(Hccl::KfcStatus state);
     u32 UpdateIndex();
 

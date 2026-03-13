@@ -388,7 +388,7 @@ get_addrs:
     CHK_PRT_RETURN(interfaceInfos == NULL, hccp_err("[check][ip]calloc for interface_infos failed"), -EINVAL);
 
     ret = RaGetIfaddrs(&config, interfaceInfos, &num);
-    if (ret || (num == 0)) {
+    if (ret != 0 || (num == 0)) {
         hccp_err("[check][ip]ra_get_ifaddrs for interface_infos failed, ret(%d), num(%u)", ret, num);
         free(interfaceInfos);
         return -EINVALIDIP;
@@ -407,7 +407,7 @@ get_addrs:
         }
 
         ret = strncmp(interfaceIp, localIp, MAX_IP_LEN - 1);
-        if (!ret) {
+        if (ret == 0) {
             free(interfaceInfos);
             return 0;
         }
