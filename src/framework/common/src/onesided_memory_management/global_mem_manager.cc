@@ -21,8 +21,24 @@ GlobalMemRegMgr::~GlobalMemRegMgr()
 
 GlobalMemRegMgr& GlobalMemRegMgr::GetInstance()
 {
-    static GlobalMemRegMgr instance;
-    return instance;
+    // reserve 1 instance for invalid deviceid and host
+    static GlobalMemRegMgr instance[MAX_MODULE_DEVICE_NUM + 1];
+    s32 deviceLogicID = 0;
+
+    HcclResult hcclRet = hrtGetDeviceRefresh(&deviceLogicID);
+    if (hcclRet != HCCL_SUCCESS) {
+        HCCL_RUN_WARNING("GlobalMemRegMgr::GetInstance hrtGetDeviceRefresh failed, ret[%d], "
+            "return reserve instance", hcclRet);
+        return instance[MAX_MODULE_DEVICE_NUM];
+    }
+
+    if (static_cast<u32>(deviceLogicID) >= MAX_MODULE_DEVICE_NUM || deviceLogicID <= HOST_DEVICE_ID) {
+        HCCL_RUN_WARNING("[Get][Instance]deviceLogicID[%d] is invalid, return reserve instance", deviceLogicID);
+        return instance[MAX_MODULE_DEVICE_NUM];
+    }
+
+    HCCL_INFO("GlobalMemRegMgr::GetInstance deviceLogicID[%d].", deviceLogicID);
+    return instance[deviceLogicID];
 }
 
 HcclResult GlobalMemRegMgr::Destroy()
