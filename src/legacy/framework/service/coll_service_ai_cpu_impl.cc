@@ -452,7 +452,7 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     taskParam.taskType = TaskParamType::TASK_AICPU_KERNEL;
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
-    SaveDfxTaskInfo(taskParam, -1, mStream.GetIsMaster());
+    SaveDfxTaskInfo(taskParam, -1, mStream.IsMaster());
     AddWaitToUserStream(stream);
 }
 
@@ -505,7 +505,7 @@ void CollServiceAiCpuImpl::AddPostToUserStream(const Stream &stream)
     taskParam.taskPara.Notify.notifyID = postNotify->GetId();
     taskParam.taskPara.Notify.value = 1;
  
-    SaveDfxTaskInfo(taskParam, -1, stream.GetIsMaster());
+    SaveDfxTaskInfo(taskParam, -1, stream.IsMaster());
 }
 
 void CollServiceAiCpuImpl::AddWaitToUserStream(const Stream &stream)
@@ -526,7 +526,7 @@ void CollServiceAiCpuImpl::AddWaitToUserStream(const Stream &stream)
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     taskParam.taskPara.Notify.notifyID = waitNotify->GetId();
     taskParam.taskPara.Notify.value = 1;
-    SaveDfxTaskInfo(taskParam, -1, stream.GetIsMaster());
+    SaveDfxTaskInfo(taskParam, -1, stream.IsMaster());
 }
 
 void CollServiceAiCpuImpl::AllocWorkStream(u32 primQueueNum) const
