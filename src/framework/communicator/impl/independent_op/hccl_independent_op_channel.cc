@@ -128,23 +128,12 @@ HcclResult HcclChannelGetRemoteMems(HcclComm comm, ChannelHandle channel, uint32
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
-            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-            if (indOp == nullptr || strcmp(indOp, "") == 0) {
-                HCCL_WARNING("[%s] is not supported in HCCL_INDEPENDENT_OP is set to 0.", __func__);
-                return HCCL_SUCCESS;
-            }
-
             hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
             CollComm* collComm = hcclComm->GetCollComm();
             CHK_PTR_NULL(collComm);
             auto myRank = collComm->GetMyRank();
             CHK_PTR_NULL(myRank);
             CHK_RET(myRank->ChannelGetRemoteMem(channel, remoteMems, memTags, memNum));
-            
-            CHK_PRT_RET(
-                (*memNum > MEM_NUM_MAX), HCCL_ERROR("[%s]Invalid memNum, memNum[%u], max memNum[%u]",
-                __func__, *memNum, MEM_NUM_MAX), HCCL_E_PARA
-            );
             return HCCL_SUCCESS;
         }());
 #endif
