@@ -32,9 +32,9 @@ using CollAlgOpCreator = std::function<CollAlgOperator *(AlgConfigurator* algCon
     HcclDispatcher, std::unique_ptr<TopoMatcher> &)>;
 
 template <typename P> static CollAlgOperator *DefaultOpCreator(AlgConfigurator* algConfigurator,
-                                                               const CCLBufferManager &cclBufferManager,
+                                                               CCLBufferManager &cclBufferManager,
                                                                HcclDispatcher dispatcher,
-                                                               const std::unique_ptr<TopoMatcher> &topoMatcher)
+                                                               std::unique_ptr<TopoMatcher> &topoMatcher)
 {
     static_assert(std::is_base_of<CollAlgOperator, P>::value, "CollAlgOp type must derived from Hccl::CollAlgOperator");
     return new (std::nothrow) P(algConfigurator, cclBufferManager, dispatcher, topoMatcher);

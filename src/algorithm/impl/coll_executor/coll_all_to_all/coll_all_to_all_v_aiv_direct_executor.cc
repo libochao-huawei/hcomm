@@ -50,7 +50,7 @@ HcclResult CollRunAlltoAllAivDirect::CalcLevel1CommInfo(TransportMemType inputTy
     return HCCL_SUCCESS;
 }
 
-HcclResult CollRunAlltoAllAivDirect::CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType)
+HcclResult CollRunAlltoAllAivDirect::CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType) const
 {
     inputType = TransportMemType::CCL_INPUT;
     outputType = TransportMemType::CCL_OUTPUT;
