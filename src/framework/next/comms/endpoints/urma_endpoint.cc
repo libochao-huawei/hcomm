@@ -88,6 +88,7 @@ HcclResult UrmaEndpoint::ServerSocketListen()
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(endpointDesc_.loc.device.devPhyId), type, 0, ipaddr);
 
+    Hccl::SocketHandle socketHandle = Hccl::SocketHandleManager::GetInstance().Create(endpointDesc_.loc.device.devPhyId, localPort);
     auto &serverSocketMap = UrmaEndpoint::GetServerSocketMap();
 
     if (serverSocketMap.find(localPort) != serverSocketMap.end()){
@@ -95,7 +96,6 @@ HcclResult UrmaEndpoint::ServerSocketListen()
         return HCCL_SUCCESS;
     }
     
-    Hccl::SocketHandle socketHandle = Hccl::SocketHandleManager::GetInstance().Create(endpointDesc_.loc.device.devPhyId, localPort);
 
     HCCL_INFO("[UrmaEndpoint][%s] socketHandle[%p] devicePhyId[%u] localPort[%s]", 
         __func__, 
