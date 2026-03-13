@@ -71,7 +71,7 @@ void DevCapability::Init(DevType givenDevType)
         Load910ACap();
     } else if (devType == DevType::DEV_TYPE_910A3 || devType == DevType::DEV_TYPE_910A2) {
         Load910A3Cap();
-    } else if (devType == DevType::DEV_TYPE_910_95) {
+    } else if (devType == DevType::DEV_TYPE_950) {
         LoadV82Cap();
     } else {
         throw NotSupportException(StringFormat("we don't support %s now.", devType.Describe().c_str()));

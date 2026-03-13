@@ -60,7 +60,7 @@ protected:
 
 TEST_F(SelectorTest, TestAutoSelectorOneTimesFour)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
     VirtualTopoStub virtTopo(0);
     string rankTable = "test";
@@ -157,7 +157,7 @@ TEST_F(SelectorTest, TestAutoSelectorOneTimesFour)
 
 TEST_F(SelectorTest, TestAutoSelectorOneTimesFourCcuSchedule)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
     VirtualTopoStub virtTopo(0);
     string rankTable = "test";
@@ -237,7 +237,7 @@ TEST_F(SelectorTest, TestAutoSelectorOneTimesFourCcuSchedule)
 
 TEST_F(SelectorTest, TopoInit91095TwoTimesTwoALLGATHERV)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
     VirtualTopoStub virtTopo(0);
     string rankTable = "test";
@@ -261,7 +261,7 @@ TEST_F(SelectorTest, TopoInit91095TwoTimesTwoALLGATHERV)
 
 TEST_F(SelectorTest, TestAutoSelectorOneTimesFourAiv)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
     VirtualTopoStub virtTopo(0);
     string rankTable = "test";
@@ -339,7 +339,7 @@ TEST_F(SelectorTest, TestAutoSelectorOneTimesFourAiv)
 
 TEST_F(SelectorTest, TestAutoSelectorTwoTimesTwo)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
     VirtualTopoStub virtTopo(0);
     string rankTable = "test";
@@ -430,7 +430,7 @@ TEST_F(SelectorTest, TestAutoSelectorTwoTimesTwo)
 
 TEST_F(SelectorTest, TestAutoSelectorTwoTimesTwoCcuSchedule)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
     VirtualTopoStub virtTopo(0);
     string rankTable = "test";
@@ -454,7 +454,7 @@ TEST_F(SelectorTest, TestAutoSelectorTwoTimesTwoCcuSchedule)
 
 TEST_F(SelectorTest, TestAutoSelectorTwoTimesTwoAicpu)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
     VirtualTopoStub virtTopo(0);
     string rankTable = "test";
@@ -574,7 +574,7 @@ TEST_F(SelectorTest, TestAutoSelectorTwoTimesTwoAicpu)
 
 TEST_F(SelectorTest, TestAutoSelectorTwoServerTimesTwoDefault)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     VirtualTopoStub virtTopo(0);
     string rankTable = "test";
     virtTopo.TopoInit91095TwoServerTimesTwo(rankTable);
@@ -658,7 +658,7 @@ TEST_F(SelectorTest, TestAutoSelectorTwoServerTimesTwoDefault)
 
 TEST_F(SelectorTest, TestAutoSelectorTwoPodFourTwoAndTwoTwoFirstPod)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     VirtualTopoStub virtTopo(0);
     u32 myRank = 0;
     string rankTable = "test";
@@ -699,7 +699,7 @@ TEST_F(SelectorTest, TestAutoSelectorTwoPodFourTwoAndTwoTwoFirstPod)
 
 TEST_F(SelectorTest, TestAutoSelectorTwoPodFourTwoAndTwoTwoSecondPod)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     VirtualTopoStub virtTopo(9);
     u32 myRank = 9;
     string rankTable = "test";
@@ -742,7 +742,7 @@ TEST_F(SelectorTest, TestAutoSelectorTwoPodFourTwoAndTwoTwoSecondPod)
 
 TEST_F(SelectorTest, TestAutoSelectorTwoPodIrregularEightAndIrregularFourFirstPod)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     VirtualTopoStub virtTopo(0);
     u32 myRank = 0;
     string rankTable = "test";
@@ -783,7 +783,7 @@ TEST_F(SelectorTest, TestAutoSelectorTwoPodIrregularEightAndIrregularFourFirstPo
 
 TEST_F(SelectorTest, TestAutoSelectorTwoPodIrregularEightAndIrregularFourSecondPod)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     VirtualTopoStub virtTopo(9);
     u32 myRank = 9;
     string rankTable = "test";
@@ -825,7 +825,7 @@ TEST_F(SelectorTest, TestAutoSelectorTwoPodIrregularEightAndIrregularFourSecondP
 
 TEST_F(SelectorTest, TestAutoSelectorTwoPodFourTwoAndThreeFirstPod)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     VirtualTopoStub virtTopo(0);
     u32 myRank = 0;
     string rankTable = "test";
@@ -866,7 +866,7 @@ TEST_F(SelectorTest, TestAutoSelectorTwoPodFourTwoAndThreeFirstPod)
 
 TEST_F(SelectorTest, TestAutoSelectorTwoPodFourTwoAndThreeSecondPod)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     VirtualTopoStub virtTopo(9);
     u32 myRank = 9;
     string rankTable = "test";
@@ -908,7 +908,7 @@ TEST_F(SelectorTest, TestAutoSelectorTwoPodFourTwoAndThreeSecondPod)
 
 TEST_F(SelectorTest, TestAutoSelectorTwoPodThreeTwoAndThreeFirstPod)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     VirtualTopoStub virtTopo(0);
     u32 myRank = 0;
     string rankTable = "test";
@@ -950,7 +950,7 @@ TEST_F(SelectorTest, TestAutoSelectorTwoPodThreeTwoAndThreeFirstPod)
 
 TEST_F(SelectorTest, TestAutoSelectorTwoPodThreeTwoAndThreeSecondPod)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     VirtualTopoStub virtTopo(8);
     u32 myRank = 8;
     string rankTable = "test";
@@ -994,7 +994,7 @@ TEST_F(SelectorTest, TestAutoSelectorTwoPodThreeTwoAndThreeSecondPod)
 
 TEST_F(SelectorTest, TestAutoSelectorTwoPodTwoTwoAndTwoTwoFirstPod)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     VirtualTopoStub virtTopo(0);
     u32 myRank = 0;
     string rankTable = "test";

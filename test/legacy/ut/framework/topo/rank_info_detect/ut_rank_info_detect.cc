@@ -66,7 +66,7 @@ protected:
         MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<DevId>(0)));
         MOCKER(HrtRaInit).stubs().with(any()).will(ignoreReturnValue());
         MOCKER(HrtRaDeInit).stubs().with(any()).will(ignoreReturnValue());
-        MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+        MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
         std::vector<std::pair<std::string, IpAddress>> hostIfInfos;
         hostIfInfos.push_back(std::make_pair("lo", IpAddress("127.0.0.1")));
         MOCKER(HrtGetHostIf).stubs().with(any()).will(returnValue(hostIfInfos));

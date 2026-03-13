@@ -466,7 +466,7 @@ TEST_F(HcclCommunicatorTest, Ut_GetLocalCclBuffer_When_Normal_Expect_OK)
 {
     void *bufAddr = reinterpret_cast<void *>(0x12345678);
     MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(bufAddr));
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
  
     shared_ptr<DevBuffer> cclBuf = std::make_shared<DevBuffer>(10);
     GenRankTableFile1Ser8Dev();

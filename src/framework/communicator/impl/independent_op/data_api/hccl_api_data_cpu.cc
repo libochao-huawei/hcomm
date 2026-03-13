@@ -494,7 +494,7 @@ int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle chann
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
         CHK_PTR_NULL(hostCpuRoceChannelPtr);
         ret = hostCpuRoceChannelPtr->WriteWithNotify(dst, src, len, remoteNotifyIdx);
@@ -552,7 +552,7 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
         CHK_PTR_NULL(hostCpuRoceChannelPtr);
         ret = hostCpuRoceChannelPtr->NotifyRecord(remoteNotifyIdx);
@@ -589,7 +589,7 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
         CHK_PTR_NULL(hostCpuRoceChannelPtr);
         ret = hostCpuRoceChannelPtr->NotifyWait(localNotifyIdx, timeout);

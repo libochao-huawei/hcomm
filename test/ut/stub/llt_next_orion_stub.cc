@@ -306,7 +306,7 @@ u32 HrtGetDevicePhyIdByIndex(s32 deviceLogicId)
 
 DevType HrtGetDeviceType()
 {
-    return DevType::DEV_TYPE_910_95;
+    return DevType::DEV_TYPE_950;
 }
 
 RdmaHandle HrtRaRdmaInit(HrtNetworkMode netMode, RaInterface &in)

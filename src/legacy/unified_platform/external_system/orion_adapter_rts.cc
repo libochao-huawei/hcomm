@@ -52,7 +52,7 @@ DevType HrtGetDeviceType()
     HCCL_INFO("[HrtGetDeviceType]targetChipVerStr = %s.", targetChipVerStr.c_str());
     if (targetChipVerStr.find("Ascend950") != std::string::npos) {
         HCCL_INFO("[HrtGetDeviceType]DeviceType = DevType::DEV_TYPE_950.");
-        return DevType::DEV_TYPE_910_95;
+        return DevType::DEV_TYPE_950;
     }
 
     auto iter = SOC_VER_CONVERT.find(targetChipVerStr);
@@ -650,7 +650,7 @@ void HrtNotifyDestroy(RtNotify_t ptr)
 
 void HrtIpcSetNotifyName(RtNotify_t ptr, char_t *name, uint32_t len)
 {
-    if (HrtGetDeviceType() == DevType::DEV_TYPE_910_95) {
+    if (HrtGetDeviceType() == DevType::DEV_TYPE_950) {
         return;
     }
     aclError ret = aclrtNotifyGetExportKey(ptr, name, len, 0UL);
