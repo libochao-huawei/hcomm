@@ -420,7 +420,7 @@ HcclResult hrtHalSensorNodeRegister(uint32_t devId, uint64_t *handle)
     constexpr uint32_t HCCL_ASSERT_EVENT_MASK = 0xE00; // 当前仅使能 bit 9-B
     constexpr uint32_t  HCCL_DEASSERT_EVENT_MASK = 0x0; // 0x09/0x0A/0x0B 使能为通知事件
     // 构造 Sensor Node 注册参数
-    halSensorNodeCfg cfg;
+    halSensorNodeCfg cfg = {};
     cfg.NodeType = HAL_DMS_DEV_TYPE_HCCP;
     cfg.SensorType = SAFTY_STATE_SENSOR_TYTPE;
     cfg.AssertEventMask = HCCL_ASSERT_EVENT_MASK;
