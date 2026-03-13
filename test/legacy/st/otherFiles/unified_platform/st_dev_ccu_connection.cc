@@ -40,7 +40,7 @@ protected:
 
     virtual void SetUp()
     {
-        MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType::DEV_TYPE_910_95));
+        MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType::DEV_TYPE_950));
         MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<DevId>(0)));
         MOCKER(HrtRaUbCreateJetty).stubs().with(any(), any()).will(returnValue(HrtRaUbJettyCreatedOutParam()));
         MOCKER(HraGetDieAndFuncId).stubs().with(any()).will(returnValue(std::pair<uint32_t, uint32_t>(0, 0)));

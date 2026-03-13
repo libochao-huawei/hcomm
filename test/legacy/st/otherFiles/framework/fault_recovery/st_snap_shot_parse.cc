@@ -81,7 +81,7 @@ TEST_F(SnapShotParserTest, SerializeCommonInfoTest) {
     Snapshot snapShot;
     
     // 创建示例输入参数
-    CommParams commParams("test_comm_id", 0, 4, 0, DevType::DEV_TYPE_910_95, false, true);
+    CommParams commParams("test_comm_id", 0, 4, 0, DevType::DEV_TYPE_950, false, true);
     HcclCommConfig config;
     strcpy(config.reserved, "test_reserved");
     config.hcclBufferSize = 1024;
@@ -172,7 +172,7 @@ TEST_F(SnapShotParserTest, SerializeSubCommInfoTest) {
         // 初始化快照解析器实例
     SnapShotParser& parser = SnapShotParser::GetInstance();
     // 创建示例输入参数
-    CommParams commParams("test_comm_id", 0, 4, 0, DevType::DEV_TYPE_910_95, false, true);
+    CommParams commParams("test_comm_id", 0, 4, 0, DevType::DEV_TYPE_950, false, true);
     HcclCommConfig config;
     strcpy(config.reserved, "test_reserved");
     config.hcclBufferSize = 1024;
@@ -370,7 +370,7 @@ TEST_F(SnapShotParserTest, DeSerializeSubCommInfoTest2) {
     SnapShotParser& parser = SnapShotParser::GetInstance();
     
     // 创建示例输入参数
-    CommParams commParams("test_comm_id", 0, 4, 0, DevType::DEV_TYPE_910_95, false, true);
+    CommParams commParams("test_comm_id", 0, 4, 0, DevType::DEV_TYPE_950, false, true);
     HcclCommConfig config; 
     strcpy(config.reserved, "t");
     config.hcclBufferSize = 1024;

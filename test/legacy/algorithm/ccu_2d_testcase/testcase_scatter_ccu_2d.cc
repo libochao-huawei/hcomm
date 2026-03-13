@@ -62,7 +62,7 @@ TEST_F(Scatter2DCCUTest, scatter2d_ccu_case_test_2_mul_2_rank)
     checkerOpParam.opType = CheckerOpType::SCATTER;
     checkerOpParam.tag = "Scatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -86,7 +86,7 @@ TEST_F(Scatter2DCCUTest, scatter2d_ccu_case_test_3_mul_3_rank)
     checkerOpParam.opType = CheckerOpType::SCATTER;
     checkerOpParam.tag = "Scatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -110,7 +110,7 @@ TEST_F(Scatter2DCCUTest, scatter2d_ccu_case_test_3_mul_3_rank_512k_count)
     checkerOpParam.opType = CheckerOpType::SCATTER;
     checkerOpParam.tag = "Scatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 512 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -134,7 +134,7 @@ TEST_F(Scatter2DCCUTest, scatter2d_ccu_case_test_3_mul_4_rank)
     checkerOpParam.opType = CheckerOpType::SCATTER;
     checkerOpParam.tag = "Scatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -158,7 +158,7 @@ TEST_F(Scatter2DCCUTest, scatter2d_ccu_case_test_4_mul_4_rank)
     checkerOpParam.opType = CheckerOpType::SCATTER;
     checkerOpParam.tag = "Scatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -181,7 +181,7 @@ TEST_F(Scatter2DCCUTest, scatter2d_ccu_case_test_4_mul_3_rank)
     checkerOpParam.opType = CheckerOpType::SCATTER;
     checkerOpParam.tag = "Scatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 1000;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -205,7 +205,7 @@ TEST_F(Scatter2DCCUTest, scatter2d_ccu_case_test_4_mul_2_rank)
     checkerOpParam.opType = CheckerOpType::SCATTER;
     checkerOpParam.tag = "Scatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -229,7 +229,7 @@ TEST_F(Scatter2DCCUTest, scatter2d_ccu_case_test_5_mul_7_rank)
     checkerOpParam.opType = CheckerOpType::SCATTER;
     checkerOpParam.tag = "Scatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -253,7 +253,7 @@ TEST_F(Scatter2DCCUTest, scatter2d_ccu_case_test_2_mul_2_rank_1count)
     checkerOpParam.opType = CheckerOpType::SCATTER;
     checkerOpParam.tag = "Scatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 1;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.root = 3;
@@ -277,7 +277,7 @@ TEST_F(Scatter2DCCUTest, scatter2d_ccu_case_test_8_mul_8_rank_overBuffSize_count
     checkerOpParam.opType = CheckerOpType::SCATTER;
     checkerOpParam.tag = "Scatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = (2 * 1024 * 1024) / sizeof(CheckerDataType::DATA_TYPE_UINT16) + 1;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_UINT16;
     checkerOpParam.root = 56;
@@ -302,7 +302,7 @@ TEST_F(Scatter2DCCUTest, scatter2d_ccu_case_test_5_mul_7_rank_overBuffSize_count
     checkerOpParam.opType = CheckerOpType::SCATTER;
     checkerOpParam.tag = "Scatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = (2 * 1024 * 1024) / sizeof(CheckerDataType::DATA_TYPE_FP8E5M2);
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP8E5M2;
     checkerOpParam.root = 6;
@@ -325,7 +325,7 @@ TEST_F(Scatter2DCCUTest, scatter_ccu_case_test_4rank_OPBASE_0count_parallel)
     checkerOpParam.opType = CheckerOpType::SCATTER;
     checkerOpParam.tag = "scatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 0;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_UINT16;
     checkerOpParam.root = 0;
@@ -346,7 +346,7 @@ TEST_F(Scatter2DCCUTest, scatter_ccu_case_test_4rank_OPBASE_4count_parallel)
     checkerOpParam.opType = CheckerOpType::SCATTER;
     checkerOpParam.tag = "scatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 4;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.root = 1;
@@ -367,7 +367,7 @@ TEST_F(Scatter2DCCUTest, scatter_ccu_case_test_4rank_OPBASE_100count_parallel)
     checkerOpParam.opType = CheckerOpType::SCATTER;
     checkerOpParam.tag = "scatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
     checkerOpParam.root = 1;
@@ -388,7 +388,7 @@ TEST_F(Scatter2DCCUTest, scatter_ccu_mem2mem_opbase_512_int32_parallel)
     checkerOpParam.opType = CheckerOpType::SCATTER;
     checkerOpParam.tag = "scatter";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 512;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_UINT64;
     checkerOpParam.root = 1;
