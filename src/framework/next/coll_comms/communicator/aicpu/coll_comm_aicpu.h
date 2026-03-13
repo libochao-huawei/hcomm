@@ -54,6 +54,9 @@ public:
     HcclResult BackGroundSetStatus(Hccl::KfcStatus state);
     u32 UpdateIndex();
 
+    bool GetIsReady() { return isReady_; }
+    void SetIsReady(bool flag);
+
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
@@ -67,7 +70,7 @@ private:
     std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H_{nullptr};
 
     std::string identifier_;
-    bool indOpCommInitialized_{ false }; // 独立算子流程通信域是否初始化
+    bool isReady_{ false }; // 独立算子流程通信域是否初始化
     HcclTopoInfo topoInfo_;
     std::vector<std::shared_ptr<Thread>> threads_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
