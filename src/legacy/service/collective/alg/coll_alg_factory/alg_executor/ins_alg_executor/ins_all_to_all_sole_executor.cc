@@ -76,8 +76,10 @@ HcclResult InsAlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcResOffload
     // calculate required insQueues and prepare queue
     AlgTempResReq tempResReq;
     if (enableDetour_) {
+        HCCL_DEBUG("[InsCollAlgFactory] [InsAlltoAllSoleExecutor], CalcRes with detouring enabled.");
         CHK_RET(tempAlg.CalcResDetour(rankGraph, tempResReq));
     } else {
+        HCCL_DEBUG("[InsCollAlgFactory] [InsAlltoAllSoleExecutor], CalcRes with detouring disabled.");
         CHK_RET(tempAlg.CalcRes(tempResReq));
     }
 
@@ -144,10 +146,10 @@ HcclResult InsAlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(co
     // calculate required insQues and prepare queue
     AlgTempResReq tempResReq;
     if (enableDetour_) {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring enabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsAlltoAllSoleExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(tempAlg.CalcResDetour(rankGraph, tempResReq));
     } else {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring disabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsAlltoAllSoleExecutor] Rank[%d], CalcRes with detouring disabled.", myRank_);
         CHK_RET(tempAlg.CalcRes(tempResReq));
     }
 
@@ -194,10 +196,10 @@ HcclResult InsAlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(co
     // calculate required insQues and prepare queue
     AlgTempResReq tempResReq;
     if (enableDetour_) {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring enabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsAlltoAllSoleExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(tempAlg.CalcResDetour(linkMgr, tempResReq));
     } else {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring disabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsAlltoAllSoleExecutor] Rank[%d], CalcRes with detouring disabled.", myRank_);
         CHK_RET(tempAlg.CalcRes(tempResReq));
     }
 

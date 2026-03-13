@@ -56,8 +56,10 @@ HcclResult InsScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcResOffload(
     // calculate required insQueues and prepare queue
     AlgTempResReq tempResReq;
     if (enableDetour_) {
+        HCCL_DEBUG("[InsCollAlgFactory] [InsScatterSoleExecutor], CalcRes with detouring enabled.");
         CHK_RET(tempAlg.CalcResDetour(rankGraph, tempResReq));
     } else {
+        HCCL_DEBUG("[InsCollAlgFactory] [InsScatterSoleExecutor], CalcRes with detouring disabled.");
         CHK_RET(tempAlg.CalcRes(tempResReq));
     }
 
@@ -83,10 +85,10 @@ HcclResult InsScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes(const R
     // calculate required insQues and prepare queue
     AlgTempResReq tempResReq;
     if (enableDetour_) {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring enabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsScatterSoleExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(tempAlg.CalcResDetour(rankGraph, tempResReq));
     } else {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring disabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsScatterSoleExecutor] Rank[%d], CalcRes with detouring disabled.", myRank_);
         CHK_RET(tempAlg.CalcRes(tempResReq));
     }
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, tempResReq.links, algResReq.levelRankPairs));
@@ -94,7 +96,7 @@ HcclResult InsScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes(const R
     algResReq.queueNotifys = tempResReq.queNotifys;
     algResReq.localWaitGroupCntNotify = tempResReq.localWaitGroupCntNotify;
     algResReq.localBcastPostCntNotify = tempResReq.localBcastPostCntNotify;
-    HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], requiredQueNum [%u].", myRank_, algResReq.primQueueNum);
+    HCCL_DEBUG("[InsCollAlgFactory] [InsScatterSoleExecutor] Rank[%d], requiredQueNum [%u].", myRank_, algResReq.primQueueNum);
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, tempResReq.links, algResReq.links));
 
     return HcclResult::HCCL_SUCCESS;
@@ -132,7 +134,7 @@ HcclResult InsScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(con
     }
 
     CHK_RET(InitQueue(tempResReq.queNum, requiredQue_));
-    HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], template [%s], requiredQue Num [%u].", myRank_,
+    HCCL_DEBUG("[InsCollAlgFactory] [InsScatterSoleExecutor] Rank[%d], template [%s], requiredQue Num [%u].", myRank_,
                tempAlg.Describe().c_str(), tempResReq.queNum);
 
     CHK_RET(PrepResLinks(myRank_, rankGraph, linkPriority_, tempResReq.links, tempResLinks_));
@@ -148,10 +150,10 @@ HcclResult InsScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(con
         return HcclResult::HCCL_SUCCESS;
     }
     if (opMode_ == OpMode::OFFLOAD) {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], Generating Instruction Queues in OFFLOAD Mode for HOST.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsScatterSoleExecutor] Rank[%d], Generating Instruction Queues in OFFLOAD Mode for HOST.", myRank_);
         CHK_RET(GenInsQues4Offload(tempAlg));
     } else { // OPBASE
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], Generating Instruction Queues in OPBASE Mode for HOST.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsScatterSoleExecutor] Rank[%d], Generating Instruction Queues in OPBASE Mode for HOST.", myRank_);
         CHK_RET(GenInsQues4Opbase(tempAlg));
     }
     return HcclResult::HCCL_SUCCESS;
@@ -165,7 +167,7 @@ HcclResult InsScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(con
                                                                                  ConnectedLinkMgr      *linkMgr,
                                                                                  InsQuePtr              insQue)
 {
-    HCCL_INFO("[InsCollAlgFactory] [InsScatterSoleExecutor] AiCpu Orchestrate begins.");
+    HCCL_INFO("[InsCollAlgFactory] [InsScatterSoleExecutor] [InsScatterSoleExecutor] AiCpu Orchestrate begins.");
     // 参数校验和初始化
     CHK_RET(Init(op, params, insQue));
 
@@ -176,11 +178,11 @@ HcclResult InsScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(con
     dataTypeSize_ = DataTypeSizeGet(dataType_);
     dataSize_ = dataCount_ * dataTypeSize_;
     CHK_PRT_RET(dataTypeSize_ == 0,
-                HCCL_ERROR("[CollAlgFactory] Rank [%d], Invalid dataTypeSize_ [%u].", myRank_, dataTypeSize_),
+                HCCL_ERROR("Scatter_[CollAlgFactory] Rank [%d], Invalid dataTypeSize_ [%u].", myRank_, dataTypeSize_),
                 HcclResult::HCCL_E_INTERNAL);
 
     // 实例化算法模板类
-    HCCL_DEBUG("[InsScatterSoleExecutor] Rank[%d], Init insAlgTemplate with rankSize [%u] and dmaMode [%s].",
+    HCCL_DEBUG("Scatter_[InsScatterSoleExecutor] Rank[%d], Init insAlgTemplate with rankSize [%u] and dmaMode [%s].",
             myRank_, rankSize_, dmaMode_.Describe().c_str());
     InsAlgTemplate tempAlg(myRank_, rankSize_, vTopo_, virtRankMap_);
     tempAlg.SetDmaMode(dmaMode_);
@@ -190,10 +192,10 @@ HcclResult InsScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(con
     // 计算算法模板所需资源
     AlgTempResReq tempResReq;
     if (enableDetour_) {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring enabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsScatterSoleExecutor] Rank[%d], CalcRes with detouring enabled for Orchestrate.", myRank_);
         CHK_RET(tempAlg.CalcResDetour(linkMgr, tempResReq));
     } else {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring disabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsScatterSoleExecutor] Rank[%d], CalcRes with detouring disabled for Orchestrate.", myRank_);
         CHK_RET(tempAlg.CalcRes(tempResReq));
     }
 

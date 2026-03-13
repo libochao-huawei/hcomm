@@ -50,8 +50,10 @@ HcclResult InsReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcResOffload(c
     // calculate required insQueues and prepare queue
     AlgTempResReq tempResReq;
     if (enableDetour_) {
+        HCCL_DEBUG("[InsCollAlgFactory] [InsReduceSoleExecutor], CalcRes with detouring enabled.");
         CHK_RET(tempAlg.CalcResDetour(rankGraph, tempResReq));
     } else {
+        HCCL_DEBUG("[InsCollAlgFactory] [InsReduceSoleExecutor], CalcRes with detouring disabled.");
         CHK_RET(tempAlg.CalcRes(tempResReq));
     }
 
@@ -76,10 +78,10 @@ HcclResult InsReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes(const Ra
     // calculate required insQues and prepare queue
     AlgTempResReq tempResReq;
     if (enableDetour_) {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring enabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsReduceSoleExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(tempAlg.CalcResDetour(rankGraph, tempResReq));
     } else {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring disabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsReduceSoleExecutor] Rank[%d], CalcRes with detouring disabled.", myRank_);
         CHK_RET(tempAlg.CalcRes(tempResReq));
     }
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, tempResReq.links, algResReq.levelRankPairs));
@@ -87,7 +89,7 @@ HcclResult InsReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes(const Ra
     algResReq.queueNotifys = tempResReq.queNotifys;
     algResReq.localWaitGroupCntNotify = tempResReq.localWaitGroupCntNotify;
     algResReq.localBcastPostCntNotify = tempResReq.localBcastPostCntNotify;
-    HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], requiredQueNum [%u].", myRank_, algResReq.primQueueNum);
+    HCCL_DEBUG("[InsCollAlgFactory] [InsReduceSoleExecutor] Rank[%d], requiredQueNum [%u].", myRank_, algResReq.primQueueNum);
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, tempResReq.links, algResReq.links));
 
     return HcclResult::HCCL_SUCCESS;
@@ -109,11 +111,11 @@ HcclResult InsReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(cons
     dataTypeSize_ = DataTypeSizeGet(dataType_);
     dataSize_ = dataCount_ * dataTypeSize_;
     CHK_PRT_RET(dataTypeSize_ == 0,
-            HCCL_ERROR("[CollAlgFactory] Rank [%d], Invalid dataTypeSize_ [%u].", myRank_, dataTypeSize_),
+            HCCL_ERROR("Reduce_[CollAlgFactory] Rank [%d], Invalid dataTypeSize_ [%u].", myRank_, dataTypeSize_),
             HcclResult::HCCL_E_INTERNAL);
 
     // 实例化算法模板类
-    HCCL_DEBUG("[InsReduceSoleExecutor] Rank[%d], Init insAlgTemplate with rankSize [%u] and dmaMode [%s].",
+    HCCL_DEBUG("Reduce_[InsReduceSoleExecutor] Rank[%d], Init insAlgTemplate with rankSize [%u] and dmaMode [%s].",
             myRank_, rankSize_, dmaMode_.Describe().c_str());
     InsAlgTemplate tempAlg(myRank_, rankSize_, vTopo_, virtRankMap_);
     tempAlg.SetDmaMode(dmaMode_);
@@ -124,10 +126,10 @@ HcclResult InsReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(cons
     // 计算算法模板所需资源
     AlgTempResReq tempResReq;
     if (enableDetour_) {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring enabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsReduceSoleExecutor] Rank[%d], CalcRes with detouring enabled for Orchestrate.", myRank_);
         CHK_RET(tempAlg.CalcResDetour(rankGraph, tempResReq));
     } else {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring disabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsReduceSoleExecutor] Rank[%d], CalcRes with detouring disabled for Orchestrate.", myRank_);
         CHK_RET(tempAlg.CalcRes(tempResReq));
     }
     // 申请算法模板所需资源
@@ -152,7 +154,7 @@ HcclResult InsReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(cons
     const CollAlgOperator &op, const CollAlgParams   &params, ConnectedLinkMgr      *linkMgr,
     InsQuePtr              insQue)
 {
-    HCCL_INFO("[InsCollAlgFactory] [InsReduceSoleExecutor] AiCpu Orchestrate begins.");
+    HCCL_INFO("[InsCollAlgFactory] [InsReduceSoleExecutor] [InsReduceSoleExecutor] AiCpu Orchestrate begins.");
     // 参数校验和初始化
     CHK_RET(Init(op, params, insQue));
 
@@ -163,11 +165,11 @@ HcclResult InsReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(cons
     dataTypeSize_ = DataTypeSizeGet(dataType_);
     dataSize_ = dataCount_ * dataTypeSize_;
     CHK_PRT_RET(dataTypeSize_ == 0,
-                HCCL_ERROR("[CollAlgFactory] Rank [%d], Invalid dataTypeSize_ [%u].", myRank_, dataTypeSize_),
+                HCCL_ERROR("Reduce_[CollAlgFactory] Rank [%d], Invalid dataTypeSize_ [%u].", myRank_, dataTypeSize_),
                 HcclResult::HCCL_E_INTERNAL);
 
     // 实例化算法模板类
-    HCCL_DEBUG("[InsReduceSoleExecutor] Rank[%d], Init insAlgTemplate with rankSize [%u] and dmaMode [%s].",
+    HCCL_DEBUG("Reduce_[InsReduceSoleExecutor] Rank[%d], Init insAlgTemplate with rankSize [%u] and dmaMode [%s].",
         myRank_, rankSize_, dmaMode_.Describe().c_str());
     InsAlgTemplate tempAlg(myRank_, rankSize_, vTopo_, virtRankMap_);
     tempAlg.SetDmaMode(dmaMode_);
@@ -178,10 +180,10 @@ HcclResult InsReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(cons
     // 计算算法模板所需资源
     AlgTempResReq tempResReq;
     if (enableDetour_) {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring enabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsReduceSoleExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(tempAlg.CalcResDetour(linkMgr, tempResReq));
     } else {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring disabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsReduceSoleExecutor] Rank[%d], CalcRes with detouring disabled.", myRank_);
         CHK_RET(tempAlg.CalcRes(tempResReq));
     }
 
@@ -261,10 +263,10 @@ HcclResult InsReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::OrchestrateOpbas
     // 基本参数配置
     AllignInfo allignInfo = {enableAllign_, allignSize_, dataType_};
     TempFuncs tempFuncs;
-    tempFuncs.opMode              = opMode_;
-    tempFuncs.enableCounterNotify = IsEnableCounterNotify();
     tempFuncs.isForepart          = true; // Usr Buff to CCL Buff required
     tempFuncs.isBottom            = true; // CCL Buff to Usr Buff required
+    tempFuncs.opMode              = opMode_;
+    tempFuncs.enableCounterNotify = IsEnableCounterNotify();
 
     u64 outputCount = dataCount_;
     // 根据CCL Buffer 大小，计算出一轮中最多能输出多少数据

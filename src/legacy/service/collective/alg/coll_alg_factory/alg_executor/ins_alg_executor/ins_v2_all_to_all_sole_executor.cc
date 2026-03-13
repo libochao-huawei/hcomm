@@ -184,17 +184,17 @@ template <typename AlgTopoMatch, typename InsAlgTemplate>
 HcclResult InsV2AlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::OrchestrateLoop(
     std::shared_ptr<InsAlgTemplate> algTemplate)
 {
-    HCCL_INFO("[InsV2AlltoAllSoleExecutor][Orchestrate] Start, template[%s]", algTemplate->Describe().c_str());
     u32 dataSizePerVolume = DataTypeSizeGet(dataType_);
+    HCCL_INFO("[InsV2AlltoAllSoleExecutor][Orchestrate] Start, template[%s]", algTemplate->Describe().c_str());   
     dataSize_ = dataCount_ * dataSizePerVolume;
 
     TemplateDataParams tempAlgParams;
-    tempAlgParams.buffInfo.inBuffType = BufferType::INPUT;
-    tempAlgParams.buffInfo.outBuffType = BufferType::OUTPUT;
-    tempAlgParams.buffInfo.scratBuffType = BufferType::SCRATCH;
     tempAlgParams.repeatNum = 1;  // 不需要重复
     tempAlgParams.inputRepeatStride = 0;
-    tempAlgParams.outputRepeatStride = 0;
+    tempAlgParams.outputRepeatStride = 0;   
+    tempAlgParams.buffInfo.outBuffType = BufferType::OUTPUT;
+    tempAlgParams.buffInfo.scratBuffType = BufferType::SCRATCH;
+    tempAlgParams.buffInfo.inBuffType = BufferType::INPUT;   
 
     TempFuncs tempFuncs;
     tempFuncs.opMode = opMode_;

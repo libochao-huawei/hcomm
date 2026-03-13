@@ -84,11 +84,11 @@ HcclResult InsAllReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(c
     dataTypeSize_ = DataTypeSizeGet(dataType_);
     dataSize_ = dataCount_ * dataTypeSize_;
     CHK_PRT_RET(dataTypeSize_ == 0,
-                HCCL_ERROR("[CollAlgFactory] Rank [%d], Invalid dataTypeSize_ [%u].", myRank_, dataTypeSize_),
+                HCCL_ERROR("[CollAlgFactory] Rank [%d], Invalid dataTypeSize_ [%u] for AICPU.", myRank_, dataTypeSize_),
                 HcclResult::HCCL_E_INTERNAL);
 
     // 实例化算法模板类
-    HCCL_DEBUG("[InsAllReduceSoleExecutor] Rank[%d], Init insAlgTemplate with rankSize [%u] and dmaMode [%s].",
+    HCCL_DEBUG("[InsAllReduceSoleExecutor] Rank[%d], Init insAlgTemplate with rankSize [%u] and dmaMode [%s] for AICPU.",
             myRank_, rankSize_, dmaMode_.Describe().c_str());
     InsAlgTemplate tempAlg(myRank_, rankSize_, vTopo_, virtRankMap_);
     tempAlg.SetDmaMode(dmaMode_);
@@ -98,10 +98,10 @@ HcclResult InsAllReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(c
     // 计算算法模板所需资源
     AlgTempResReq tempResReq;
     if (enableDetour_) {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring enabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsAllReduceSoleExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(tempAlg.CalcResDetour(linkMgr, tempResReq));
     } else {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring disabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsAllReduceSoleExecutor] Rank[%d], CalcRes with detouring disabled.", myRank_);
         CHK_RET(tempAlg.CalcRes(tempResReq));
     }
 
@@ -168,7 +168,7 @@ HcclResult InsAllReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(c
     dataTypeSize_ = DataTypeSizeGet(dataType_);
     dataSize_ = dataCount_ * dataTypeSize_;
     CHK_PRT_RET(dataTypeSize_ == 0,
-            HCCL_ERROR("[CollAlgFactory] Rank [%d], Invalid dataTypeSize_ [%u].", myRank_, dataTypeSize_),
+            HCCL_ERROR("Allreduce_[CollAlgFactory] Rank [%d], Invalid dataTypeSize_ [%u].", myRank_, dataTypeSize_),
             HcclResult::HCCL_E_INTERNAL);
 
     // 实例化算法模板类
@@ -182,10 +182,10 @@ HcclResult InsAllReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(c
     // 计算算法模板所需资源
     AlgTempResReq tempResReq;
     if (enableDetour_) {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring enabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsAllReduceSoleExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(tempAlg.CalcResDetour(rankGraph, tempResReq));
     } else {
-        HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], CalcRes with detouring disabled.", myRank_);
+        HCCL_DEBUG("[InsCollAlgFactory] [InsAllReduceSoleExecutor] Rank[%d], CalcRes with detouring disabled.", myRank_);
         CHK_RET(tempAlg.CalcRes(tempResReq));
     }
     // 申请算法模板所需资源
@@ -219,10 +219,10 @@ HcclResult InsAllReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::OrchestrateCo
         buffInfo.inBuffType         = BufferType::INPUT;
         buffInfo.outBuffType        = BufferType::OUTPUT;
     } else {
-        buffInfo.inBuffType         = BufferType::SCRATCH;
-        buffInfo.outBuffType        = BufferType::SCRATCH;
         tempFuncs.isForepart          = true; // Usr Buff to CCL Buff required
-        tempFuncs.isBottom            = true; // CCL Buff to Usr Buff required    
+        tempFuncs.isBottom            = true; // CCL Buff to Usr Buff required   
+        buffInfo.inBuffType         = BufferType::SCRATCH;
+        buffInfo.outBuffType        = BufferType::SCRATCH;        
     }
     
     u64 outputCount = dataCount_;
