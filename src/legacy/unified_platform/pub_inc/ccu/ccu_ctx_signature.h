@@ -12,7 +12,9 @@
 #define HCCL_CCU_CTX_SIGNATURE_H
 
 #include <sstream>
+#include <iostream>
 #include <string>
+#include <ios>
 #include "hash_utils.h"
 #include "string_util.h"
 
