@@ -24,6 +24,37 @@
 #include "hccl/hccl_res.h"
 
 namespace hccl {
+
+struct ThreadCreateParams {
+    CommEngine engine;                    // 通信引擎类型
+    uint32_t threadNum;                    // 线程数量
+    uint32_t notifyNumPerThread;           // 每个线程的通知量数量
+    NotifyLoadType notifyLoadType;   // 通知量加载类型
+    StreamType streamType;           // 流类型
+    
+    // 默认构造函数
+    ThreadCreateParams() 
+        : engine(COMM_ENGINE_RESERVED)
+        , threadNum(0)
+        , notifyNumPerThread(0)
+        , notifyLoadType(NotifyLoadType::HOST_NOTIFY)
+        , streamType(StreamType::STREAM_TYPE_RESERVED) {
+    }
+
+    // 带参数的构造函数
+    ThreadCreateParams(CommEngine engine, 
+                       uint32_t tNum,
+                       uint32_t nNum,
+                       NotifyLoadType nType,
+                       StreamType sType)
+        : engine(engine)
+        , threadNum(tNum)
+        , notifyNumPerThread(nNum)
+        , notifyLoadType(nType)
+        , streamType(sType) {
+    }
+};
+
 constexpr u32 HCOMM_NOTIFY_MAX_NUM = 64;
 constexpr u32 HCOMM_THREADNUM_MAX_NUM = 1000;
 /**
@@ -82,5 +113,12 @@ HcclResult CreateThread(CommEngine engine, StreamType streamType, uint32_t notif
 HcclResult CommEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type);
 HcclResult CommHostEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type);
 HcclResult CommEngineToStreamType(CommEngine engine, StreamType &type);
+HcclResult ValidateThreadParams(uint32_t threadNum, uint32_t notifyNumPerThread);
+HcclResult SaveThreads(const std::vector<std::shared_ptr<hccl::Thread>> &newThreads);
+HcclResult CreateAndInitThreads(const ThreadCreateParams& params,
+    std::vector<std::shared_ptr<hccl::Thread>>& outThreads);
+HcclResult StoreThreadHandles(std::vector<std::shared_ptr<hccl::Thread>>& newThreads,
+    ThreadHandle* threads, CommEngine engine, aclrtBinHandle binHandle);
+HcclResult FreeThreads(const ThreadHandle *threads, uint32_t threadNum, aclrtBinHandle binHandle);
 }  // namespace hccl
 #endif  // THREAD_H

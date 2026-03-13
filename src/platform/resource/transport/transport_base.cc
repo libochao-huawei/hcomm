@@ -430,7 +430,7 @@ HcclResult TransportBase::ExchangeTgidMesg()
         "remote userrank[%u] pid[%d] sdid[%016llx] local rank[%u]", HCCL_ERROR_CODE(ret),
         machinePara_.remoteUserrank, sendInfo.pid, sendInfo.sdid, machinePara_.localUserrank), ret);
 
-    SuperPodInfo recvInfo;
+    SuperPodInfo recvInfo = {};
     ret = defaultSocket_->Recv(reinterpret_cast<u8*>(&recvInfo), sizeof(SuperPodInfo));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Exchange][TgidMesg]errNo[0x%016llx] In exchange tgid mesg, recv pid failed. "\

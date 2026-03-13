@@ -195,18 +195,11 @@ HcclAccelerator EnvAlgoConfig::GetHcclAccelerator() const
 // EnvLogConfig
 void EnvLogConfig::Parse()
 {
-    diagnoseEnable.Parse();
     entryLogEnable.Parse();
     cannVersion.Parse();
     dfsConfig.Parse();
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config diagnoseEnable[%d], entryLogEnable[%d], cannVersion[%s], dfsConfig[%d]",
-                  GetDiagnoseEnable(), GetEntryLogEnable(), GetCannVersion().c_str(),
-                  GetDfsConfig().taskExceptionEnable);
-}
-
-bool EnvLogConfig::GetDiagnoseEnable() const
-{
-    return diagnoseEnable.Get();
+    HCCL_RUN_INFO("[Init][EnvVarParam]Env config entryLogEnable[%d], cannVersion[%s], dfsConfig[%d]",
+                  GetEntryLogEnable(), GetCannVersion().c_str(), GetDfsConfig().taskExceptionEnable);
 }
 
 bool EnvLogConfig::GetEntryLogEnable() const

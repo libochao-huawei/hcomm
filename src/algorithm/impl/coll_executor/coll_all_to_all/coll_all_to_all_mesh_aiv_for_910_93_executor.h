@@ -18,7 +18,7 @@ namespace hccl {
 class CollAlltoAllMeshAivFor91093Executor : public CollAlltoAllExecutor {
 public:
     explicit CollAlltoAllMeshAivFor91093Executor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAlltoAllMeshAivFor91093Executor() = default;
+    ~CollAlltoAllMeshAivFor91093Executor() override = default;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
     HcclResult CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize = 0, HcclCMDType cmdType = HcclCMDType::HCCL_CMD_INVALID) override;

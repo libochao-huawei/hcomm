@@ -2795,7 +2795,7 @@ DLLEXPORT drvError_t halMemGetAddressRange(DVdeviceptr ptr, DVdeviceptr *pbase, 
 
 DLLEXPORT drvError_t halMemRegUbSegment(uint32_t devid, uint64_t va, uint64_t size);
 
-DLLEXPORT drvError_t halMemUnRegUbSegment(uint32_t devid, uint64_t va, uint64_t size);
+DLLEXPORT drvError_t halMemUnRegUbSegment(uint32_t devid, uint64_t va);
 
 struct MemPhyInfo {
 #ifndef __linux
