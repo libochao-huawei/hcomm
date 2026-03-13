@@ -212,6 +212,12 @@ function build_test() {
         && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_reduce_testcase/legacy_alg_ccu_reduce
     fi
 
+    if [ "${TEST_TASK_NAME}" == "legacy_ccu_2d_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
+        build legacy_alg_ccu_2d_testcase
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_2d_testcase/legacy_alg_ccu_2d_testcase
+    fi
+
     if [ "${TEST_TASK_NAME}" == "legacy_function_ut_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
         build legacy_alg_function_ut_testcase
         export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
@@ -473,6 +479,11 @@ while [[ $# -gt 0 ]]; do
     --legacy_aicpu_2d_testcase)
         TEST="partial"
         TEST_TASK_NAME="legacy_aicpu_2d_testcase"
+        shift
+        ;;
+    --legacy_ccu_2d_testcase)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_ccu_2d_testcase"
         shift
         ;;
     --legacy_ccu_1d_hf16p_testcase)
