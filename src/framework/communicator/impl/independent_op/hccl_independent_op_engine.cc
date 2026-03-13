@@ -102,7 +102,7 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
         } else {
             auto hcclCommDfxCallBack = collComm->GetDfxCallback();
             for (u32 num = 0; num < threadNum; ++num) {
-                int hert = HcommThreadRegisterDfx(threaDS[num],hcclCommDfxCallBack);
+                int hert = HcommThreadRegisterDfx(threads[num],hcclCommDfxCallBack);
                 if (hert != HCCL_SUCCESS) {
                     HCCL_INFO("[HcclThreaAciqure] ReportThreadAciqureKernel HcommThreadRegisterDfx failed");
                     return HCCL_E_PTR;

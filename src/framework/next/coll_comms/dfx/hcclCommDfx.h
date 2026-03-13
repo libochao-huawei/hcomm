@@ -50,6 +50,7 @@ public:
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetCallback() {
         return setAddTaskCallback_;
     }
+    HcclResult ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId);
 private:
     std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;  // 使用原始指针，不管理生命周期TODO
     std::unique_ptr<HcclCommProfiling> profiling_;

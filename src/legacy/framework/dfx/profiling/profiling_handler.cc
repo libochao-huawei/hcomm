@@ -211,11 +211,11 @@ void ProfilingHandler::GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportDat
     hcclReportData.profInfo.cclTag = GetProfHashId(cclTag.c_str(), cclTag.length());
     uint64_t groupName = GetProfHashId(taskInfo.dfxOpInfo_->op_.opTag.c_str(), taskInfo.dfxOpInfo_->op_.opTag.length());
     if (taskInfo.dfxOpInfo_->comm_ != nullptr) {
-        HCCL_ERROR("[ProfilingHandler]taskInfo.dfxOpInfo_->comm_ is not nullptr")
+        HCCL_ERROR("[ProfilingHandler]taskInfo.dfxOpInfo_->comm_ is not nullptr");
         return ;
     }
     if (taskInfo.dfxOpInfo_->comm_ != nullptr) {
-        HCCL_ERROR("[ProfilingHandler]taskInfo.dfxOpInfo_->comm_ is not nullptr")
+        HCCL_ERROR("[ProfilingHandler]taskInfo.dfxOpInfo_->comm_ is not nullptr");
         return ;
     }
     if (taskInfo.dfxOpInfo_->isIndop_ == true) {

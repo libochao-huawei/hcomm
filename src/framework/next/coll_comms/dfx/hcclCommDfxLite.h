@@ -31,7 +31,7 @@ public:
     Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
 
     // Profiling相关接口（直接暴露，不通过GetProfilingImpl）- 全部修改为返回HcclResult类型
-    HcclResult ReportAllTasks(const std::string& group, u32 ranksize);
+    HcclResult ReportAllTasks();
     HcclResult ReportHcclOpInfo(const Hccl::DfxOpInfo& hcclOpInfo);
     HcclResult UpdateProfStat();
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetCallback() {

@@ -21,7 +21,7 @@ public:
     HcclCommProfilingLite(Hccl::DevId deviceId, Hccl::MirrorTaskManager* mirrorTaskManager);
     
     // 上报所有任务
-    void ReportAllTasks(const std::string& group, u32 ranksize);
+    void ReportAllTasks();
     
     // 上报算子信息（包装ProfilingHandlerLite::GetInstance().ReportHcclOpInfo）
     // void ReportHcclOpInfo(const HcclOpInfo& hcclOpInfo); // TODO: 暂未使用

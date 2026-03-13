@@ -58,9 +58,9 @@ HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const 
 }
 
 // HcclCommDfxLite接口实现 - 修改为返回HcclResult类型
-HcclResult HcclCommDfxLite::ReportAllTasks(const std::string& group, u32 ranksize) {
+HcclResult HcclCommDfxLite::ReportAllTasks() {
     CHK_SMART_PTR_NULL(profilingImpl_);
-    profilingImpl_->ReportAllTasks(group, ranksize);
+    profilingImpl_->ReportAllTasks();
     return HCCL_SUCCESS;
 }
 

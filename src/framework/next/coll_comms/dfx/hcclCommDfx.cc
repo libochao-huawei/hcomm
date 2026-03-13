@@ -109,5 +109,10 @@ HcclResult HcclCommDfx::GetChannelRemoteRankId(const std::string& commTag, u64 h
     rwLock_.readUnlock();
     return HCCL_SUCCESS; // 查找成功补充返回成功码
 }
+HcclResult HcclCommDfx::ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId) {
+    CHK_PTR_NULL(profiling_);
+    profiling_->ReportKernel(beginTime, commTag, kernelName, threadId);
+    return HCCL_SUCCESS; 
+}
 
 }

@@ -630,7 +630,7 @@ int32_t HcommChannelFence(ChannelHandle channel)
 
 HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
 {
-    u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycelTime();
+    u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     HCCL_INFO("[%s] START.", __func__);
     CHK_PRT_RET(hcclDfxOpInfo == nullptr,  HCCL_ERROR("[%s] hcclDfxOpInfo is null", __func__), HCCL_E_PTR);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
@@ -679,7 +679,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
    
     // 下发device侧
-    HcommDfxKernelLaunch(hcclComm->GetIdentifier,hcclComm->GetBinHandle(), *dfxOpInfo);
+    HcommDfxKernelLaunch(hcclComm->GetIdentifier(),hcclComm->GetBinHandle(), *dfxOpInfo);
     HCCL_INFO("[HcclThreadAcquire] ReportDfxOpKernel begin");
     const std::string KernelName = "RunAicpuDfxOpInfoInitV2";
     CHK_RET(hcclCommDfx->ReportKernel(beginTime, hcclComm->GetIdentifier(), KernelName, SalGetTid()));
@@ -715,11 +715,6 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, uint64_t thr
 {
     HCCL_INFO("[%s] START, comm[%p].", __func__, comm);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
-    u32 taskId = 0;
-    u32 streamId = 0;
-    u32 remoteRankId = -1;
-    //填充taskId和streamId
-    EXECEPTION_CATCH(Hccl::HrtGetTaskIdAndStreamID(taskId, streamId), return HCCL_E_INTERNAL);
 
     //填入remoteRankId
     auto hcclComm = static_cast<hccl::hcclComm*>(comm);
@@ -734,7 +729,7 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, uint64_t thr
     CHK_PTR_NULL(hcclCommDfx);
 
     std::string kernelNameStr(kernelName);
-    uint32_t threadId = SetGetTid();
+    uint32_t threadId = SalGetTid();
     CHK_RET(hcclCommDfx->ReportKernel(beginTime, collComm->GetCommId(), kernelNameStr, threadId));
     HCCL_INFO("[HcclReportAicpuKernel] HcclReportAicpuKernel sucess");
     return HCCL_SUCCESS;
