@@ -681,7 +681,7 @@ HcclResult HcommThreadResGetInfo(ThreadHandle thread, ThreadResType resType, uin
         CHK_PTR_NULL(threadPtr->GetStream());
         ThreadResTypeStream stream = threadPtr->GetStream()->ptr();
         CHK_PTR_NULL(stream);
-        *info = static_cast<void*>(stream);
+        *info = stream;
     } else {
         HCCL_ERROR("[%s] failed. resType[%d] is not supported.", __func__, static_cast<int32_t>(resType));
         return HCCL_E_NOT_SUPPORT;
