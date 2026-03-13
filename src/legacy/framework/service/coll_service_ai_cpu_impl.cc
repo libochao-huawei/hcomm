@@ -91,7 +91,7 @@ DevBuffer *CollServiceAiCpuImpl::OpBasedCollProcess(CollOperator &op, const std:
         WaitOffloadTransportReady(op.opTag);
     }
 
-    u32 bsrRemoteRanksHashValue;
+    u32 bsrRemoteRanksHashValue = 0;
     if (op.opType == OpType::BATCHSENDRECV) {
         bsrRemoteRanksHashValue = GetRemoteRankIdsHashValue(op);
     }

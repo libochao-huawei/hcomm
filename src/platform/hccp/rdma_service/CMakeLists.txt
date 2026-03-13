@@ -117,6 +117,7 @@ target_compile_definitions(rs PRIVATE
 target_link_libraries(rs PRIVATE
     -Wl,--no-as-needed
     c_sec
+    crypto_static
     $<$<STREQUAL:${PRODUCT_SIDE},host>:unified_dlog>
     tls_adp
     -Wl,--as-needed

@@ -10,16 +10,11 @@
 
 #include "hccl_api_base_test.h"
 
-class HcclGetCommNameTest : public BaseInit {
+class HcclGetRankIdTest : public BaseInit {
 public:
     void SetUp() override {
         BaseInit::SetUp();
-        UT_USE_RANK_TABLE_910_1SERVER_1RANK;
-        // 将enableEntryLog默认返回为true
-        MOCKER(GetExternalInputHcclEnableEntryLog)
-            .stubs()
-            .with(any())
-            .will(returnValue(true));
+        UT_USE_1SERVER_1RANK_AS_DEFAULT;
     }
     void TearDown() override {
         BaseInit::TearDown();
@@ -27,28 +22,41 @@ public:
     }
 };
 
-TEST_F(HcclGetCommNameTest, Ut_HcclGetCommName_When_CommNameIsNull_Expect_ReturnIsHCCL_E_PTR)
+TEST_F(HcclGetRankIdTest, Ut_HcclGetRankId_WhenCommIsNull_Expect_ReturnIsHCCL_E_PTR)
 {
-}
+    Ut_Device_Set(0);
 
-TEST_F(HcclGetCommNameTest, Ut_HcclGetCommName_When_CommIsNull_Expect_ReturnIsHCCL_E_PTR)
-{
-    char *commName = new char[ROOTINFO_INDENTIFIER_MAX_LENGTH];
+    uint32_t rankId = 0;
 
-    HcclResult ret = HcclGetCommName(comm, commName);
-    EXPECT_EQ(ret, HCCL_E_PTR);
-
-    delete[] commName;
-}
-
-TEST_F(HcclGetCommNameTest, HcclGetCommName_When_InputNoInit_Expect_ReturnIsHCCL_E_PTR)
-{
-    char *commName = nullptr;
-
-    HcclResult ret = HcclGetCommName(&comm, commName);
+    HcclResult ret = HcclGetRankId(comm, &rankId);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(HcclGetCommNameTest, HcclGetCommName_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+TEST_F(HcclGetRankIdTest, Ut_HcclGetRankId_WhenRankIdIsNull_Expect_ReturnIsHCCL_E_PTR)
 {
+    int devId = 0;
+    int rankId = 0;
+
+    Ut_Comm_Create(comm, devId, rankTableFileName, rankId);
+    uint32_t *prankId = nullptr;
+
+    HcclResult ret = HcclGetRankId(comm, prankId);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    Ut_Comm_Destroy(comm);
+}
+
+TEST_F(HcclGetRankIdTest, Ut_HcclGetRankId_When_1Server2Rank_Expect_ReturnHCCL_SUCCESS)
+{
+    int devId = 0;
+    int _rankId = 0;
+
+    Ut_Comm_Create(comm, devId, rankTableFileName, _rankId);
+    uint32_t rankId = 0;
+
+    HcclResult ret = HcclGetRankId(comm, &rankId);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(_rankId, rankId);
+
+    Ut_Comm_Destroy(comm);
 }

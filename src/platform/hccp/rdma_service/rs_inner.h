@@ -21,9 +21,9 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/rsa.h>
-#include <crypto/x509.h>
-#include <crypto/evp.h>
-#include <crypto/asn1.h>
+#include <openssl/x509.h>
+#include <openssl/evp.h>
+#include <openssl/asn1.h>
 #include <openssl/x509v3.h>
 #else
 #include "stub_ssl.h"
