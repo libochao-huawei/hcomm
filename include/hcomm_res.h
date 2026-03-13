@@ -11,7 +11,7 @@
 #ifndef HCOMM_RES_H
 #define HCOMM_RES_H
  
-#include <hcomm_res_defs.h>
+#include "hcomm_res_defs.h"
  
 #ifdef __cplusplus
 extern "C" {
