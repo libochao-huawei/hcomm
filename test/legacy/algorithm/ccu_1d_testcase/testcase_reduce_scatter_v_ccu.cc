@@ -68,7 +68,7 @@ TEST_F(ReduceScatterVCCUTest, reduce_scatter_v_ccu_case_test_2rank)
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER_V;
     checkerOpParam.tag = "ReduceScatterV";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
@@ -97,7 +97,7 @@ TEST_F(ReduceScatterVCCUTest, reduce_scatter_v_ccu_case_test_2rank_2)
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER_V;
     checkerOpParam.tag = "ReduceScatterV";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
@@ -125,7 +125,7 @@ TEST_F(ReduceScatterVCCUTest, reduce_scatter_v_ccu_case_test_4rank)
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER_V;
     checkerOpParam.tag = "ReduceScatterV";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
@@ -153,7 +153,7 @@ TEST_F(ReduceScatterVCCUTest, reduce_scatter_v_ccu_case_test_8rank)
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER_V;
     checkerOpParam.tag = "ReduceScatterV";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
@@ -198,7 +198,7 @@ TEST_F(ReduceScatterVCCUTest, reduce_scatter_v_ccu_case_test_4rank_auto_test)
     CheckerOpParam checkerOpParam;
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER_V;
     checkerOpParam.tag = "ReduceScatterV";
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuReduceScatterVMesh1D";
 
     u64 randomNumbersIdx = 0;
@@ -274,7 +274,7 @@ TEST_F(ReduceScatterVCCUTest, reduce_scatter_v_mem2mem_ccu_case_test_4rank_auto_
     CheckerOpParam checkerOpParam;
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER_V;
     checkerOpParam.tag = "ReduceScatterV";
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuReduceScatterVMeshMem2Mem1D";
 
     u64 randomNumbersIdx = 0;

@@ -44,7 +44,7 @@ using namespace hccl;
 // DEV_TYPE_V71 对应 DevType::DEV_TYPE_V71
 // DEV_TYPE_V51_310_P1 对应 DevType::DEV_TYPE_310P1
 // DEV_TYPE_V81 对应 DevType::DEV_TYPE_V81
-// DEV_TYPE_910_95 对应 DevType::DEV_TYPE_910_95
+// DEV_TYPE_950 对应 DevType::DEV_TYPE_950
 // DEV_TYPE_NOSOC 对应 DevType::DEV_TYPE_NOSOC
 
 DevType MakeEnumToDevType(int makeEnum)
@@ -55,7 +55,7 @@ DevType MakeEnumToDevType(int makeEnum)
         {2, DevType::DEV_TYPE_910B},
         {3, DevType::DEV_TYPE_310P1},
         {4, DevType::DEV_TYPE_910_93},
-        {5, DevType::DEV_TYPE_910_95},
+        {5, DevType::DEV_TYPE_950},
         {6, DevType::DEV_TYPE_NOSOC}};
 
     auto it = makeEnumToDevType.find(makeEnum);
@@ -1459,9 +1459,9 @@ DevType HcomGetDeviceType()
 {
     DevType devType;
 	hrtGetDeviceType(devType);
-    if(devType == DevType::DEV_TYPE_910_95 ){
+    if(devType == DevType::DEV_TYPE_950 ){
         HcomGetDevTypeV2(devType);
-        HCCL_INFO("LaunchHcomKernel: devType is DEV_TYPE_910_95");
+        HCCL_INFO("LaunchHcomKernel: devType is DEV_TYPE_950");
         return MakeEnumToDevType(static_cast<int>(devType));
     }
 
@@ -1489,7 +1489,7 @@ HcclResult HcomCreateCommCCLbuffer(const char *group)
         HCCL_ERROR("[Get][HcomGetDevType]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
 
     DevType devType = HcomGetDeviceType();
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
         HCCL_INFO("HcomCreateCommCclBufV2 start.");
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
         HCCLV2_FUNC_RUN(HcomCreateCommCclBufV2(group));
@@ -1523,7 +1523,7 @@ HcclResult HcomGetInCCLbuffer(const char *group, void** buffer, u64 *size)
         HCCL_ERROR("[Get][HcomGetInCCLbuffer]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
 
     DevType devType = HcomGetDeviceType();
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
         HCCLV2_FUNC_RUN(HcomGetInCclBufV2(group, *buffer, *size));
 #endif
@@ -1556,7 +1556,7 @@ HcclResult HcomGetOutCCLbuffer(const char *group, void** buffer, u64 *size)
         HCCL_ERROR("[Get][HcomGetOutCCLbuffer]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
 
     DevType devType = HcomGetDeviceType();
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
         HCCLV2_FUNC_RUN(HcomGetOutCclBufV2(group, *buffer, *size));
 #endif

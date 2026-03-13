@@ -94,7 +94,7 @@ protected:
         checkerOpParam.All2AllDataDes.sendType = dataType;
         checkerOpParam.All2AllDataDes.recvType = dataType;
         checkerOpParam.All2AllDataDes.sendCount = dataCount;
-        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
         checkerOpParam.algName = "AivAlltoAllVMesh1D";
 
         GenAivAllToAllVParams(rankNum, dataCount, checkerOpParam.All2AllDataDes.sendCounts,

@@ -77,7 +77,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_1_rank_Paral
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
@@ -103,7 +103,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_2_rank_Paral
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 4096;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
@@ -129,7 +129,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_2_rank_Paral
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 1;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
@@ -155,7 +155,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_3_rank_Paral
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
     checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
@@ -180,7 +180,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_3_mul_3_rank_Paral
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
     checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
@@ -204,7 +204,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_4_rank_Paral
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 210 * 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
@@ -229,7 +229,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_8_rank_Paral
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
@@ -254,7 +254,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_2_rank_Paral
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 0;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
@@ -280,7 +280,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_3_mul_3_rank_Paral
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
@@ -306,7 +306,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_mul_2_rank_Paral
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 0;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
@@ -331,7 +331,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_Asymmetric_2pod_2m
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 1;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
 
     Checker checker;
@@ -354,7 +354,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_Asymmetric_2pod_2m
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MIN;
     checkerOpParam.DataDes.count = 200;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
 
     Checker checker;
@@ -377,7 +377,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, allreduce_aicpu_case_test_2_pod_Asymmetric_3
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
 
     Checker checker;
@@ -400,7 +400,7 @@ TEST_F(AllReduceAICPUMesh1dNHRTest, AllGatherParallel_asymmetric_opbase_6n6n9)
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllReduceParallelMesh1DNHR";
 
     Checker checker;
