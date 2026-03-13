@@ -44,6 +44,7 @@ QueueType MirrorTaskManager::GetQueueType() const
 
 void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
 {
+    HCCL_INFO("[MirrorTaskManager][AddTaskInfo]AddTaskInfo begin");
     if (UNLIKELY(taskInfo == nullptr)) {
         THROW<InternalException>(
             StringFormat("MirrorTaskManager::AddTaskInfo taskInfo is nullptr"));
@@ -56,21 +57,14 @@ void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
     if (queueMap_.find(taskInfo->streamId_) == queueMap_.end()) {
         QueueType queueType            = GetQueueType();
         queueMap_[taskInfo->streamId_] = &(globalMirrorTasks_->CreateQueue(devId_, taskInfo->streamId_, queueType));
-        queueTaskNum[taskInfo->streamId_]=0;
+        queueTaskNum[taskInfo->streamId_] = 0;
     }
 
-    if(taskInfo->dfxOpInfo_->isIndop_ == true) {
-        if (queueTaskNum[taskInfo->streamId_] == static_cast<u32>(queueMap_[taskInfo->streamId_]->Capacity())) {
-            fullyNewCallBack_(taskInfo->dfxOpInfo_->groupName_, taskInfo->dfxOpInfo_->rankSize_);
-            queueTaskNum[taskInfo->streamId_]=0;
-        }
-    } else {
-        if (queueTaskNum[taskInfo->streamId_] == static_cast<u32>(queueMap_[taskInfo->streamId_]->Capacity())) {
-            fullyCallBack_();
-            queueTaskNum[taskInfo->streamId_]=0;
-        }
+    if (queueTaskNum[taskInfo->streamId_] == static_cast<u32>(queueMap_[taskInfo->streamId_]->Capacity())) {
+        fullyCallBack_();
+        queueTaskNum[taskInfo->streamId_] = 0;
     }
-
+    
     queueMap_[taskInfo->streamId_]->Append(taskInfo);
     queueTaskNum[taskInfo->streamId_]++;
 
