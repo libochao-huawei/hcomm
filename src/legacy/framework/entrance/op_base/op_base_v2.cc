@@ -1443,7 +1443,7 @@ HcclResult HcclDevMemAcquireV2(HcclComm comm, const char *memTag, uint64_t *size
         char tmpMemTag[MAX_MEM_TAG_SIZE];
         s32 ret = strcpy_s(tmpMemTag, MAX_MEM_TAG_SIZE, memTag);
         if (ret != EOK) {
-            HCCL_ERROR("[HcclDevMemAcquire] strcpy_s memTag failed! result %u, the memTag len must be less than %u", ret, MAX_MEM_TAG_SIZE);
+            HCCL_ERROR("[HcclDevMemAcquire] strcpy_s memTag failed! result %d, the memTag len must be less than %u", ret, MAX_MEM_TAG_SIZE);
             return HCCL_E_PARA;
         }
         memTagStr = std::string(tmpMemTag);

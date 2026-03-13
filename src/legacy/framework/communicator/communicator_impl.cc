@@ -498,7 +498,7 @@ static void FastCcuLaunchSaveDfxTaskInfo(const CommunicatorImpl &comm, const Tas
     comm.GetMirrorTaskManager().AddTaskInfo(taskInfo);
 }
 
-void CommunicatorImpl::FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams)
+void CommunicatorImpl::FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams) const
 {
     std::vector<uint64_t> args;
     CcuContextAllToAllVMesh1D::RefreshArgs(opParams, rankSize, args);
@@ -2453,34 +2453,37 @@ HcclResult CommunicatorImpl::WaitDpuKernelThreadTerminate()
 
 HcclResult CommunicatorImpl::NotifyAicpuDestroyComm()
 {
-    if (isAicpuKernelLaunched) {
-        if (kfcControlTransferH2D != nullptr) {
-            KfcCommand opCmd = KfcCommand::DESTROY_AICPU_COMM;
-            HCCL_INFO("[NotifyAicpuDestroyComm] send KfcCommand[%d] begin, which is DESTROY_AICPU_COMM.", opCmd);
-            CHK_RET(kfcControlTransferH2D->Put(0, sizeof(KfcCommand), reinterpret_cast<uint8_t *>(&opCmd)));
-            HCCL_INFO("[NotifyAicpuDestroyComm] send KfcCommand[%d] success, which is DESTROY_AICPU_COMM.", opCmd);
-            KfcExecStatus opInfo;
-            auto          timeout   = std::chrono::milliseconds(WAIT_CMD_TIMEOUT);
-            auto          startTime = std::chrono::steady_clock::now();
-            while (true) {
-                CHK_RET(kfcStatusTransferD2H->Get(0, sizeof(KfcExecStatus), reinterpret_cast<uint8_t *>(&opInfo)));
-                if (opInfo.kfcStatus == KfcStatus::DESTROY_AICPU_COMM_DONE) {
-                    HCCL_INFO("[NotifyAicpuDestroyComm] get KfcStatus[%d], which is DESTROY_AICPU_COMM_DONE",
-                               opInfo.kfcStatus);
-                    return HcclResult::HCCL_SUCCESS;
-                } else {
-                    if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-                        HCCL_WARNING("[NotifyAicpuDestroyComm] Wait suspend response status timeout[%u ms] and get the "
-                                     "opExecStatus is [%u].",
-                                     WAIT_CMD_TIMEOUT, opInfo.kfcStatus);
+    if (!isAicpuKernelLaunched) {
+        HCCL_WARNING("[%s] isAicpuKernelLaunched is false", __func__);
+        return HcclResult::HCCL_SUCCESS;
+    }
 
-                        return HcclResult::HCCL_E_TIMEOUT;
-                    }
-                    continue;
-                }
-            }
+    if (kfcControlTransferH2D == nullptr) {
+        HCCL_WARNING("[%s] kfcControlTransferH2D is null", __func__);
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    KfcCommand opCmd = KfcCommand::DESTROY_AICPU_COMM;
+    HCCL_INFO("[%s] send KfcCommand[%d] begin, which is DESTROY_AICPU_COMM.", __func__, opCmd);
+    CHK_RET(kfcControlTransferH2D->Put(0, sizeof(KfcCommand), reinterpret_cast<uint8_t *>(&opCmd)));
+    HCCL_INFO("[%s] send KfcCommand[%d] success, which is DESTROY_AICPU_COMM.", __func__, opCmd);
+    KfcExecStatus opInfo;
+    auto          timeout   = std::chrono::milliseconds(WAIT_CMD_TIMEOUT);
+    auto          startTime = std::chrono::steady_clock::now();
+    while (true) {
+        CHK_RET(kfcStatusTransferD2H->Get(0, sizeof(KfcExecStatus), reinterpret_cast<uint8_t *>(&opInfo)));
+        if (opInfo.kfcStatus == KfcStatus::DESTROY_AICPU_COMM_DONE) {
+            HCCL_INFO("[%s] get KfcStatus[%d], which is DESTROY_AICPU_COMM_DONE", __func__, opInfo.kfcStatus);
+            return HcclResult::HCCL_SUCCESS;
+        }
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            HCCL_WARNING("[%s] Wait suspend response status timeout[%u ms] and get the "
+                            "opExecStatus is [%u].", __func__,
+                            WAIT_CMD_TIMEOUT, opInfo.kfcStatus);
+            return HcclResult::HCCL_E_TIMEOUT;
         }
     }
+
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -2937,7 +2940,7 @@ HcclResult CommunicatorImpl::AcceleratorFallback()
 HcclResult CommunicatorImpl::GetCacheMap(AivOpCacheArgs& opCacheParam , std::shared_ptr<InsQueue>& tempInsQue)
 {
     if (hcclCacheMap_.size() > CACHEMAP_MAXSIZE) {
-        size_t clearCount = CACHEMAP_MAXSIZE * CACHEMAP_CLEARPERCENT;
+        size_t clearCount = static_cast<size_t>(CACHEMAP_MAXSIZE * CACHEMAP_CLEARPERCENT);
         for (auto it = hcclCacheMap_.begin(); clearCount > 0 && it != hcclCacheMap_.end(); clearCount--) {
             it = hcclCacheMap_.erase(it);
         }
