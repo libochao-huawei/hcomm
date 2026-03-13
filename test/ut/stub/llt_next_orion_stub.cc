@@ -75,12 +75,12 @@ void HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, acl
     return;
 }
 
-HcclResult rtResetXpuDevice(uint32_t devType, const uint32_t devId)
+HcclResult HrtResetXpuDevice(uint32_t devType, const uint32_t devId)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult rtSetXpuDevice(uint32_t devType, const uint32_t devId)
+HcclResult HrtSetXpuDevice(uint32_t devType, const uint32_t devId)
 {
     return HCCL_SUCCESS;
 }

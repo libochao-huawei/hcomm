@@ -22,7 +22,6 @@
 #include "adapter_hal_pub.h"
 #include "device_capacity.h"
 #include "hccl/hccl_res.h"
-#include "hccl_api.h"
 #include "resource_entities.h"
 
 namespace hccl {

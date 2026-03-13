@@ -11,7 +11,7 @@
 #define SERVICE_SCHEDULER_H
 
 #include "hccl_res.h"
-#include "hccl_api.h"
+#include "hccl_independent_common.h"
 #include "resource_entities.h"
 #include "msg_queue.h"
 #include <memory>

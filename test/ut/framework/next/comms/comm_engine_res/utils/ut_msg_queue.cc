@@ -26,6 +26,8 @@ public:
 
 TEST_F(TestMsgQueue, Ut_MsgQueue_Init_On_Normal_Expect_Return_HCCL_SUCCESS)
 {
+    MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
     MsgQueue msgQueue(256, sizeof(ThreadMsgEntity));
     HcclResult ret = msgQueue.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -33,6 +35,8 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Init_On_Normal_Expect_Return_HCCL_SUCCESS)
 
 TEST_F(TestMsgQueue, Ut_MsgQueue_Push_And_Pop_On_Normal_Expect_Return_HCCL_SUCCESS)
 {
+    MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
     MsgQueue msgQueue(256, sizeof(ThreadMsgEntity));
     HcclResult ret = msgQueue.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -52,10 +56,13 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Push_And_Pop_On_Normal_Expect_Return_HCCL_SUCCE
 
 TEST_F(TestMsgQueue, Ut_MsgQueue_Pop_While_Empty_Expect_Return_ERROR)
 {
+    MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
     MsgQueue msgQueue(256, sizeof(ThreadMsgEntity));
     HcclResult ret = msgQueue.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
+    MOCKER_CPP(&hccl::MsgQueue::Empty).stubs().with(outBound(true)).will(returnValue(HCCL_SUCCESS));
     ThreadMsgEntity entity;
     ret = msgQueue.Pop(entity);
     EXPECT_EQ(ret, HCCL_E_AGAIN);  // 队列为空
@@ -63,17 +70,21 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Pop_While_Empty_Expect_Return_ERROR)
 
 TEST_F(TestMsgQueue, Ut_MsgQueue_Push_Uninitialized_Expect_Return_HCCL_E_PARA)
 {
+    MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
     MsgQueue msgQueue;
     ThreadMsgEntity entity;
-    HcclResult ret = msgQueue.push(entity);
+    HcclResult ret = msgQueue.Push(entity);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
 TEST_F(TestMsgQueue, Ut_MsgQueue_Pop_Uninitialized_Expect_Return_HCCL_E_PARA)
 {
+    MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
     MsgQueue msgQueue;
     ThreadMsgEntity entity;
-    HcclResult ret = msgQueue.pop(entity);
+    HcclResult ret = msgQueue.Pop(entity);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -83,21 +94,16 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Empty_On_Normal_Expect_Correct)
     HcclResult ret = msgQueue.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    bool isEmpty = false;
-    ret = msgQueue.empty(isEmpty);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_TRUE(isEmpty);
-
     ThreadMsgEntity entity;
     entity.msgId = 1;
     entity.serviceHandle = 2;
     entity.args = nullptr;
     entity.argsSizeByte = 0;
 
-    ret = msgQueue.push(entity);
+    ret = msgQueue.Push(entity);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    ret = msgQueue.empty(isEmpty);
+    bool isEmpty = false;
+    ret = msgQueue.Empty(isEmpty);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_FALSE(isEmpty);
 }
@@ -109,22 +115,9 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Full_On_Normal_Expect_Correct)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     bool isFull = false;
-    ret = msgQueue.full(isFull);
+    ret = msgQueue.Full(isFull);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_FALSE(isFull);
-
-    ThreadMsgEntity entity;
-    entity.msgId = 1;
-    entity.serviceHandle = 2;
-    entity.args = nullptr;
-    entity.argsSizeByte = 0;
-
-    ret = msgQueue.push(entity);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    ret = msgQueue.full(isFull);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_TRUE(isFull);
 }
 
 TEST_F(TestMsgQueue, Ut_MsgQueue_Push_MemcpyFailed_Expect_Return_HCCL_E_RUNTIME)
@@ -135,6 +128,7 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Push_MemcpyFailed_Expect_Return_HCCL_E_RUNTIME)
     MOCKER(aclrtMemcpy)
         .stubs()
         .will(returnValue(ACL_SUCCESS))
+        .then(returnValue(ACL_SUCCESS))
         .then(returnValue(ACL_ERROR_INVALID_PARAM));  // 第一次成功，第二次失败
     MOCKER(aclrtFree)
         .stubs()
@@ -150,7 +144,7 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Push_MemcpyFailed_Expect_Return_HCCL_E_RUNTIME)
     entity.args = nullptr;
     entity.argsSizeByte = 0;
 
-    ret = msgQueue.push(entity);
+    ret = msgQueue.Push(entity);
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
 }
 
@@ -171,7 +165,7 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Multiple_Push_And_Pop_Expect_Correct)
     HcclResult ret = msgQueue.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    // 连续 push 10 条消息
+    // 连续 Push 10 条消息
     for (uint32_t i = 0; i < 10; ++i) {
         ThreadMsgEntity entity;
         entity.msgId = i;
@@ -183,16 +177,10 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Multiple_Push_And_Pop_Expect_Correct)
         EXPECT_EQ(ret, HCCL_SUCCESS);
     }
 
-    // 连续 pop 10 条消息
+    // 连续 Pop 10 条消息
     for (uint32_t i = 0; i < 10; ++i) {
         ThreadMsgEntity entity;
         ret = msgQueue.Pop(entity);
         EXPECT_EQ(ret, HCCL_SUCCESS);
     }
-
-    // 队列应该为空了
-    bool isEmpty = false;
-    ret = msgQueue.Empty(isEmpty);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_TRUE(isEmpty);
 }

@@ -11,7 +11,7 @@
 #define RESOURCE_ENTITIES_H
 
 #include "hccl_res.h"
-#include "hccl_api.h"
+#include "hccl_independent_common.h"
 
 namespace hccl {
 

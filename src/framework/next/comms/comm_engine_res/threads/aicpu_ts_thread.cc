@@ -242,7 +242,7 @@ HcclResult AicpuTsThread::GetThreadEntity(void* &threadEntity)
     }
     entity.threadObjAddr = reinterpret_cast<uint64_t>(deviceThreadHandle_);
 
-    aclError ret = aclrtMalloc(&deviceHandle_, sizeof(ThreadEntity), ACL_MEM_MALLOC_NORMAL_ONLY);
+    ret = aclrtMalloc(&deviceHandle_, sizeof(ThreadEntity), ACL_MEM_MALLOC_NORMAL_ONLY);
     if (ret != ACL_SUCCESS) {
         HCCL_ERROR("Failed to allocate memory for thread entity");
         return HCCL_E_INTERNAL;

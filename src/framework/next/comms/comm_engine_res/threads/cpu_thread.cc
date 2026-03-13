@@ -60,7 +60,7 @@ HcclResult CpuThread::PrepareDpuKernelResource(aclrtFuncHandle &funcHandle)
         return HCCL_E_INTERNAL;
     }
 
-    if (aclrtBinaryUnload(binHandle) != ACL_SUCCESS) {
+    if (aclrtBinaryUnLoad(binHandle) != ACL_SUCCESS) {
         HCCL_ERROR("[CpuThread::%s] Unload Binary Failed", __func__);
         return HCCL_E_INTERNAL;
     }

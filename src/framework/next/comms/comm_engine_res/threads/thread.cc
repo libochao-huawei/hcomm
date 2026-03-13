@@ -152,7 +152,7 @@ HcclResult CreateAndInitThreads(const ThreadCreateParams& params,
         // 创建线程
         HcclResult ret = CreateThread(params.engine, params.streamType, 
                                       params.notifyNumPerThread, 
-                                      params.notifyLoadType, threadPtr);
+                                      params.notifyLoadType, ThreadType::THREAD_TYPE_TS, threadPtr);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] Failed to create thread at index %u, error: %d", 
             __func__, i, ret), ret);
 
