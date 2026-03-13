@@ -649,6 +649,12 @@ HcclResult HcommThreadAllocWithConfig(CommEngine engine, uint32_t threadNum, con
             hccl::CpuThread* cpuThread = dynamic_cast<hccl::CpuThread*>(hostHandle.get());
             cpuThread->GetThreadEntity(deviceHandle);
             threads[i] = reinterpret_cast<ThreadHandle>(deviceHandle); // 越界风险
+        } else if (engine == COMM_ENGINE_AICPU_TS && type == THREAD_TYPE_TS) {
+            void* deviceHandle{};
+            hccl::AicpuTsThread* aicpuTsThread = dynamic_cast<hccl::AicpuTsThread*>(hostHandle.get());
+            aicpuTsThread->GetThreadEntity(deviceHandle);
+            threads[i] = reinterpret_cast<ThreadHandle>(deviceHandle); // 越界风险
+            
         } else {
             threads[i] = reinterpret_cast<ThreadHandle>(hostHandle.get()); // 越界风险
         }

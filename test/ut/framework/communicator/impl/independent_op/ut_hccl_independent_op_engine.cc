@@ -269,7 +269,7 @@ TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadExportToCommEngine_When_Engine_
 TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquireWithConfig_When_Param_Is_Invalid_Expect_Para_Error)
 {
     ThreadHandle threads[2] = {0};
-    ThreadConfig config = {1};
+    ThreadConfig config;
     ThreadType type = THREAD_TYPE_TS;
 
     HcclResult ret = HcclThreadAcquireWithConfig(nullptr, CommEngine::COMM_ENGINE_CPU_TS, 2, type, config, threads);

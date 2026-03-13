@@ -35,10 +35,10 @@ public:
     HcclResult ServiceRun() {
         bool isEmpty = false;
         while (true) {
-            CHK_RET(sendQueue_->empty(isEmpty));
+            CHK_RET(sendQueue_->Empty(isEmpty));
             if (!isEmpty) {
                 ThreadMsgEntity entity{};
-                CHK_RET(sendQueue_->pop(entity));
+                CHK_RET(sendQueue_->Pop(entity));
                 CHK_RET(executeService(entity.serviceHandle, entity.args, entity.argsSizeByte));
             }
             // 退出机制 ？注册一个特殊的退出服务，收到这个服务时退出循环

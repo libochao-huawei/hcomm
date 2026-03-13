@@ -261,3 +261,21 @@ TEST_F(WaitServiceTest, Ut_WaitService_When_MemNotifyWaitFails_Expect_ReturnIsWa
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
 
+// temp 
+HcclResult TestService(void *args, uint64_t argsSizeByte)
+{
+    return HCCL_SUCCESS;
+}
+TEST_F(WaitServiceTest, Ut_TaskServiceRegister_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+{
+    MOCKER_CPP(&MemNotify::Wait)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    // HcclResult HcommThreadServiceRegister(ThreadHandle threadHandle, ThreadService service, ThreadServiceHandle *serviceHandle)
+    ThreadServiceHandle serviceHandle;
+    HcclResult ret = HcommThreadServiceRegister(threadHandle_, TestService, &serviceHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = HcommThreadServiceUnregister(threadHandle_, serviceHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}

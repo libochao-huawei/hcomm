@@ -193,25 +193,6 @@ HcclResult ThreadMgr::HcclThreadAcquireWithConfig(CommEngine engine, uint32_t th
     // 开始创建thread资源
     CHK_RET(HcommThreadAllocWithConfig(engine, threadNum, config, type, threads));
 
-    // for (uint32_t i = 0; i < threadNum; ++i) {
-    //     usedNotifyNum_ += notifyNumPerThread;
-    //     newThreads.emplace_back(std::move(handle));
-    // }
-
-    // threads_.reserve(threads_.size() + threadNum);
-    // auto threadsIt = threads_.end();
-    // threads_.insert(threads_.end(),
-    //                 std::make_move_iterator(newThreads.begin()),
-    //                 std::make_move_iterator(newThreads.end()));
-
-    // if (engine == COMM_ENGINE_AICPU) {
-    //     for (u32 i = 0; i < newThreads.size(); ++i, ++threadsIt) {
-    //         ThreadHandle cpuTsHandle = reinterpret_cast<ThreadHandle>((*threadsIt).get());
-    //         (*threadsIt)->AddThreadHandleToMap(engine, hostHandle[i]);
-    //         threadHandleOthersToCpu_[hostHandle[i]] = cpuTsHandle;
-    //     }
-    // }
-
     HCCL_INFO("[ThreadMgr][HcclThreadAcquire] Hcom[%s] HcclThreadAcquire done: engine[%d] threadNum[%u],"
         "notifyPerThread[%u]%s", commId_.c_str(), engine, threadNum, config.notifyNumPerThread,
         (engine == COMM_ENGINE_AICPU) ? " (AICPU token ready)" : "");

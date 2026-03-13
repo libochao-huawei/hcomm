@@ -46,6 +46,18 @@ HcclResult AicpuTsThread::DeInit()
     notifys_.clear();
     uniqueIdStr_ = std::string();
     devType_ = DevType::DEV_TYPE_COUNT;
+    if (deviceHandle_) {
+        if (aclrtFree(deviceHandle_) != ACL_SUCCESS) {
+            HCCL_ERROR("Failed to free device handle.");
+        }
+        deviceHandle_ = nullptr;
+    }
+    if (deviceThreadHandle_) {
+        if (aclrtFree(deviceThreadHandle_) != ACL_SUCCESS) {
+            HCCL_ERROR("Failed to free device thread handle.");
+        }
+        deviceThreadHandle_ = nullptr;
+    }
     return HCCL_SUCCESS;
 }
 
@@ -201,12 +213,51 @@ LocalNotify *AicpuTsThread::GetNotify(uint32_t index) const
 
 HcclResult AicpuTsThread::GetThreadEntity(void* &threadEntity)
 {
-    CHK_PTR_NULL(threadEntity);
-    ThreadEntity *entity = reinterpret_cast<ThreadEntity *>(threadEntity);
-    entity->type = THREAD_TYPE_TS;
-    entity->engine = COMM_ENGINE_AICPU_TS;
-    // entity->threadObjAddr = reinterpret_cast<uint64_t>(this);
-    return HcclResult();
+    if (deviceHandle_) {
+        if (aclrtFree(deviceHandle_) != ACL_SUCCESS) {
+            HCCL_ERROR("Failed to free device handle.");
+        }
+        deviceHandle_ = nullptr;
+    }
+    if (deviceThreadHandle_) {
+        if (aclrtFree(deviceThreadHandle_) != ACL_SUCCESS) {
+            HCCL_ERROR("Failed to free device thread handle.");
+        }
+        deviceThreadHandle_ = nullptr;
+    }
+    ThreadEntity entity;
+    entity.type = THREAD_TYPE_TS;
+    entity.engine = COMM_ENGINE_AICPU_TS;
+    aclError ret = aclrtMalloc(&deviceThreadHandle_, sizeof(AicpuTsThread), ACL_MEM_MALLOC_NORMAL_ONLY);
+    if (ret != ACL_SUCCESS) {
+        HCCL_ERROR("Failed to allocate memory for thread entity");
+        return HCCL_E_INTERNAL;
+    }
+    ret = aclrtMemcpy(deviceThreadHandle_, sizeof(AicpuTsThread), this, sizeof(AicpuTsThread), ACL_MEMCPY_HOST_TO_DEVICE);
+    if (ret != ACL_SUCCESS) {
+        HCCL_ERROR("Failed to copy thread entity to device");
+        aclrtFree(deviceThreadHandle_);
+        deviceThreadHandle_ = nullptr;
+        return HCCL_E_INTERNAL;
+    }
+    entity.threadObjAddr = reinterpret_cast<uint64_t>(deviceThreadHandle_);
+
+    aclError ret = aclrtMalloc(&deviceHandle_, sizeof(ThreadEntity), ACL_MEM_MALLOC_NORMAL_ONLY);
+    if (ret != ACL_SUCCESS) {
+        HCCL_ERROR("Failed to allocate memory for thread entity");
+        return HCCL_E_INTERNAL;
+    }
+    ret = aclrtMemcpy(deviceHandle_, sizeof(ThreadEntity), &entity, sizeof(ThreadEntity), ACL_MEMCPY_HOST_TO_DEVICE);
+    if (ret != ACL_SUCCESS) {
+        HCCL_ERROR("Failed to copy thread entity to device");
+        aclrtFree(deviceHandle_);
+        deviceHandle_ = nullptr;
+        aclrtFree(deviceThreadHandle_);
+        deviceThreadHandle_ = nullptr;
+        return HCCL_E_INTERNAL;
+    }
+    threadEntity = deviceHandle_; // 保存device侧地址，方便后续使用
+    return HCCL_SUCCESS;
 }
 
 bool AicpuTsThread::IsDeviceA5() const
