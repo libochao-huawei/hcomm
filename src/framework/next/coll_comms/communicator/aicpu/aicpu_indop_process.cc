@@ -149,9 +149,9 @@ void AicpuIndopProcess::AicpuReleaseCommMgrbyGroup(const std::string &group)
     rwlock.readUnlock();
 }
 
-ReadWriteLockBase& AicpuHcclProcess::AicpuGetCommMutex()
+ReadWriteLockBase& AicpuIndopProcess::AicpuGetCommMutex()
 {
-    return g_commAicpuInfo.commAicpuMapMutex;
+    return g_commAicpuInfo.commAicpuMgrMapMutex;
 }
 
 HcclResult AicpuIndopProcess::AicpuIndOpChannelInit(HcclChannelUrmaRes *commParam)
