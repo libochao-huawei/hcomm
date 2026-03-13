@@ -134,7 +134,7 @@ HcclResult CollAllGatherMidCountFor91093Executor::RunLevel2ByNHR(const OpParam &
 
 HcclResult CollAllGatherMidCountFor91093Executor::PrepareL1DataSlices(const OpParam &param, 
     const SubCommInfo &level1CommInfo, const SubCommInfo &level2CommInfo,
-    u64 inputMemSize, u32 moduleId, std::vector<Slice> &dataSlices)
+    u64 inputMemSize, u32 moduleId, std::vector<Slice> &dataSlices) const
 {
     (void) level2CommInfo;
     u32 unitSize = 0;

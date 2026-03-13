@@ -331,7 +331,7 @@ HcclResult CollRunAlltoAllDirectFullmesh::KernelRun(const OpParam &param, ExecMe
     if (topoAttr_.superPodNum > 1) {
         isSuPodAsym = (static_cast<bool>(topoAttr_.multiModuleDiffDeviceNumMode) || static_cast<bool>(topoAttr_.multiSuperPodDiffServerNumMode));
     } else {
-        isSuPodAsym = (topoMatcher_->GetExternalInputInterHccsDisable() || isA2MultiModule) && topoAttr_.multiModuleDiffDeviceNumMode;
+        isSuPodAsym = (static_cast<bool>(topoMatcher_->GetExternalInputInterHccsDisable()) || isA2MultiModule) && static_cast<bool>(topoAttr_.multiModuleDiffDeviceNumMode);
     }
 
     // 执行

@@ -56,7 +56,8 @@ HcclResult CollBatchSendRecvGroupExecutor::OrganizeRecvItemByStream()
     return HCCL_SUCCESS;
 }
 
-HcclResult CollBatchSendRecvGroupExecutor::isGroupBigCount(HcclSendRecvItem *sendRecvInfo, u32 itemNum, bool& isBig) {
+HcclResult CollBatchSendRecvGroupExecutor::isGroupBigCount(HcclSendRecvItem *sendRecvInfo, u32 itemNum, bool& isBig) const
+{
     CHK_PTR_NULL(sendRecvInfo);
 
     for (u32 i = 0; i < itemNum; i++) {
@@ -227,7 +228,7 @@ HcclResult CollBatchSendRecvGroupExecutor::RunTasksBig(OpParam& param)
 
 HcclResult CollBatchSendRecvGroupExecutor::RunLoopBig(OpParam& param)
 {
-    if (topoMatcher_->GetExternalInputHcclEnableFfts()) {
+    if (static_cast<bool>(topoMatcher_->GetExternalInputHcclEnableFfts())) {
         auto meta = HcclOpMetaInfo::GetOneForBatchSendRecv();
         CHK_RET(InitTask(dispatcher_, param.stream, meta.isEnableCache, meta.GetCacheKey()));
         // 多流子图前后需加空拷贝
@@ -258,7 +259,7 @@ HcclResult CollBatchSendRecvGroupExecutor::RunLoopBig(OpParam& param)
         }
     }
     CHK_RET(RunTasksBig(param));
-    if (topoMatcher_->GetExternalInputHcclEnableFfts()) {
+    if (static_cast<bool>(topoMatcher_->GetExternalInputHcclEnableFfts())) {
         // 多流子图前后需加空拷贝
         CHK_RET(AlgTemplateBase::ExecEmptyTask(algResResp_->cclInputMem, algResResp_->cclOutputMem, param.stream, dispatcher_));
         CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
@@ -480,7 +481,7 @@ HcclResult CollBatchSendRecvGroupExecutor::ProcessRecvStreamDataSlice(Stream& st
     LINK targetLink;
     CHK_RET(GetRecvTargetLink(slice.remoteRank, targetLink));
     if (topoAttr_.isDiffDeviceType || topoAttr_.superPodNum > 1 || 
-            (topoAttr_.moduleNum > 1 && topoMatcher_->GetExternalInputInterHccsDisable()) ||
+            (topoAttr_.moduleNum > 1 && static_cast<bool>(topoMatcher_->GetExternalInputInterHccsDisable())) ||
             (topoAttr_.deviceType == DevType::DEV_TYPE_910B && targetLink->GetLinkType() == LinkType::LINK_ROCE)) {
         u64 offset = bufferSliceSize_ * (slice.remoteRank % recvStreamNum_);
         execMem.outputMem = algResResp_->cclOutputMem.range(offset, slice.size);
@@ -619,7 +620,7 @@ u64 CollBatchSendRecvGroupExecutor::CalcSendLoopMaxCount(const u32 unitSize) con
     return maxCountPerLoop;
 }
 
-u64 CollBatchSendRecvGroupExecutor::CalcRecvLoopMaxCount(const u32 unitSize)
+u64 CollBatchSendRecvGroupExecutor::CalcRecvLoopMaxCount(const u32 unitSize) const
 {
     // 中转内存单次最多能够接受的output count
     u64 maxCountPerLoop = bufferSliceSize_ / unitSize;

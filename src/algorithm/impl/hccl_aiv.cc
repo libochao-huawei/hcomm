@@ -315,7 +315,7 @@ using AivExtraKernelArgsV2 = struct AivExtraKernelArgsV2Def {
     AivExtraKernelArgsV2Def(void** buffIn, void** buffOut, const void* input, const void* output, u32 rank,
         u32 rankSize, u64 len, u32 dataType, u32 reduceOp, u32 root, s32 tag, u32 numBlocks, bool isOpBase = true,
         u64 bufferSize = 200 * 1024 * 1024, s32 aivRdmaStep = -1, bool useAivRdmaSmall = false, u32 serverNum = 1,
-        u32 devType = 2, void* headCounterAddr = nullptr, void* tailCounterAddr = nullptr, void* addOneAddr = nullptr,
+        u32 devType = 2, const void* headCounterAddr = nullptr, const void* tailCounterAddr = nullptr, const void* addOneAddr = nullptr,
         u32 counterMemSize = 0, bool isEnableCounter = false, u32 deterministic = 0, u64 rmaInfo = 0,
         const ExtraArgsV2* extraArgsPtr = nullptr)
         : input(input), output(output), rank(rank), rankSize(rankSize), len(len), dataType(dataType),
@@ -436,11 +436,11 @@ HcclResult ReadBinFile(const string& fileName, string& buffer)
 s8* GetStubFunc(HcclCMDType cmdType, HcclDataType dataType, KernelArgsType argsType = KernelArgsType::ARGS_TYPE_SERVER)
 {
     return reinterpret_cast<s8*>(
-        (((static_cast<s64>(cmdType) << SIG_MOVE_LEFT_BITS) + static_cast<s64>(dataType)) << SIG_MOVE_LEFT_BITS) +
-        static_cast<s64>(argsType));
+        (((static_cast<int>(cmdType) << SIG_MOVE_LEFT_BITS) + static_cast<int>(dataType)) << SIG_MOVE_LEFT_BITS) +
+        static_cast<int>(argsType));
 }
 
-HcclResult RegisterBinaryKernel(const char* funcName, const aclrtBinHandle binHandle, s8* stubFunc)
+HcclResult RegisterBinaryKernel(const char* funcName, const aclrtBinHandle binHandle, const s8* stubFunc)
 {
     if (stubFunc == nullptr) {
         return HCCL_E_PARA;

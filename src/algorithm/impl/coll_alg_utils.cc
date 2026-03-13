@@ -15,7 +15,7 @@
 
 namespace hccl {
 
-bool IsAlgTypeLevel0Mesh(AlgTypeLevel0 &originalAlgTypeLevel0)
+bool IsAlgTypeLevel0Mesh(const AlgTypeLevel0 &originalAlgTypeLevel0)
 {
     return originalAlgTypeLevel0 == AlgTypeLevel0::ALG_LEVEL0_NP_MESH ||
            originalAlgTypeLevel0 == AlgTypeLevel0::ALG_LEVEL0_4P_MESH ||
@@ -389,7 +389,7 @@ bool ExecutorNoSupportDMAReduce(const std::string& algName)
     return (algName == "AllReduceComm") || (algName == "ReduceScatterComm");
 }
 
-bool ExecutorSupportInPlace(OpParam &param, const std::string& algName, bool retryEnable,
+bool ExecutorSupportInPlace(const OpParam &param, const std::string& algName, bool retryEnable,
     InplaceSupportRetryStatus &inPlaceSupportRetryStatus)
 {
     (void) param;

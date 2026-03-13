@@ -174,7 +174,7 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::InterServerHDOneshot(const Op
                 UserMemType::INPUT_MEM));
             CHK_RET(reducerInfo->run(dispatcher_, interLinks[peer], 0, src, src, src, 
                 const_cast<Stream&>(param.stream), DstMemType::RESULT_INPUT_MEM, UserMemType::INPUT_MEM));
-        } else if (interLinks[peer]->IsSpInlineReduce() && (INLINE_REDUCE_BITMASK & reduceAttr)) {
+        } else if (interLinks[peer]->IsSpInlineReduce() && static_cast<bool>((INLINE_REDUCE_BITMASK & reduceAttr))) {
             HCCL_INFO("[CollAllReduceSmallCountAivRdmaExecutor][InterServerHDOneshot] inter use SDMA");
             CHK_RET(senderInfo->run(interLinks[peer], sliceForWriteOffset, src, const_cast<Stream&>(param.stream),
                 UserMemType::INPUT_MEM));

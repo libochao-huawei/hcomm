@@ -43,10 +43,10 @@ public:
         std::vector<std::shared_ptr<LocalNotify>> &notifyMain, std::vector<std::shared_ptr<LocalNotify>> &notifySub) override;
 
     // AllReduceDeterPipeline
-    virtual HcclResult Prepare(HcomCollOpInfo *opInfo, DeviceMem &inBuffer, DeviceMem &outBuffer, const u64 count,
+    HcclResult Prepare(HcomCollOpInfo *opInfo, DeviceMem &inBuffer, DeviceMem &outBuffer, const u64 count,
         const std::vector<Slice> &slices, const SubCommInfo &level0CommInfo,
         const SubCommInfo &level1CommInfo, Stream &mainStream, std::vector<Stream> &subStream,
-        std::vector<std::shared_ptr<LocalNotify>> &notifyMain, std::vector<std::shared_ptr<LocalNotify>> &notifySub);
+        std::vector<std::shared_ptr<LocalNotify>> &notifyMain, std::vector<std::shared_ptr<LocalNotify>> &notifySub) override;
 protected:
     HcclResult MainWaitSub(u32 begin, u32 end);
     HcclResult SubRecordMain(u32 begin, u32 end);

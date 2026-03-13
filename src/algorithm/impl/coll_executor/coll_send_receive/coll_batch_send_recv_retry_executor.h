@@ -21,7 +21,7 @@ public:
     ~CollBatchSendRecvRetryExecutor() override = default;
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algResource) override;
     HcclResult CreatePairWiseList(HcclSendRecvItem *sendRecvInfo, u32 itemNum) override;
-    virtual HcclResult GetPairWiseList(std::vector<std::vector<HcclSendRecvItem*>> &sendRecvPairList);
+    HcclResult GetPairWiseList(std::vector<std::vector<HcclSendRecvItem*>> &sendRecvPairList) override;
 private:
     HcclResult CalcSendSlices(AlgResourceResponse& algRes, HcclSendRecvItem* sendRecvItem);
     HcclResult CalcRecvSlices(AlgResourceResponse& algRes, HcclSendRecvItem* sendRecvItem);
