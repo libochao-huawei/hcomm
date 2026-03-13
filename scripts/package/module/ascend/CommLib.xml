@@ -10,6 +10,7 @@
         <path value="$(TARGET_ENV)/pkg_inc/hccl" install_type="devel"/>
         <path value="$(TARGET_ENV)/pkg_inc/hcomm" install_type="devel"/>
         <path value="$(TARGET_ENV)/pkg_inc/hcomm/ccu" install_type="devel"/>
+        <path value="$(TARGET_ENV)/devlib/device"/>
         <path value="compat"/>
         <path value="opp"/>
         <path value="opp/built-in"/>
@@ -98,6 +99,9 @@
     </file_info>
     <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="lib64" install_path="opp/built-in/op_impl/dpu" install_type="all" install_mod="440">
         <file value="libccl_dpu.so" file_type="shared" install_softlink="$(TARGET_ENV)/lib64/libccl_dpu.so"/>
+    </file_info>
+    <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="lib64" install_path="devlib/device" install_type="all" install_mod="440">
+        <file value="libccl_kernel.so" file_type="shared"/>
     </file_info>
     <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="lib64" install_path="$(TARGET_ENV)/lib64" install_type="all" install_mod="440">
         <!-- hccl -->
