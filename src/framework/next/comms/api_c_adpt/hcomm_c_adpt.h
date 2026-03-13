@@ -73,5 +73,4 @@ HcclResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHan
 }
 #endif // __cplusplus
 
-
 #endif

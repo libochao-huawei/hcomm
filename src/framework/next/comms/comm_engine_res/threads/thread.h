@@ -60,6 +60,37 @@ struct ThreadCreateParams {
     }
 };
 
+
+struct ThreadCreateParams {
+    CommEngine engine;                    // 通信引擎类型
+    uint32_t threadNum;                    // 线程数量
+    uint32_t notifyNumPerThread;           // 每个线程的通知量数量
+    NotifyLoadType notifyLoadType;   // 通知量加载类型
+    StreamType streamType;           // 流类型
+    
+    // 默认构造函数
+    ThreadCreateParams() 
+        : engine(COMM_ENGINE_RESERVED)
+        , threadNum(0)
+        , notifyNumPerThread(0)
+        , notifyLoadType(NotifyLoadType::HOST_NOTIFY)
+        , streamType(StreamType::STREAM_TYPE_RESERVED) {
+    }
+
+    // 带参数的构造函数
+    ThreadCreateParams(CommEngine engine, 
+                       uint32_t tNum,
+                       uint32_t nNum,
+                       NotifyLoadType nType,
+                       StreamType sType)
+        : engine(engine)
+        , threadNum(tNum)
+        , notifyNumPerThread(nNum)
+        , notifyLoadType(nType)
+        , streamType(sType) {
+    }
+};
+
 constexpr u32 HCOMM_NOTIFY_MAX_NUM = 64;
 constexpr u32 HCOMM_THREADNUM_MAX_NUM = 1000;
 /**
@@ -153,5 +184,6 @@ HcclResult CreateAndInitThreads(const ThreadCreateParams& params,
 HcclResult StoreThreadHandles(std::vector<std::shared_ptr<hccl::Thread>>& newThreads,
     ThreadHandle* threads, CommEngine engine, aclrtBinHandle binHandle);
 HcclResult FreeThreads(const ThreadHandle *threads, uint32_t threadNum, aclrtBinHandle binHandle);
+HcclResult GetThread(const ThreadHandle thread, std::shared_ptr<hccl::Thread> &handle);
 }  // namespace hccl
 #endif  // THREAD_H

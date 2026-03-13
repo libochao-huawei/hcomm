@@ -279,6 +279,18 @@ HcclResult FreeThreads(const ThreadHandle *threads, uint32_t threadNum, aclrtBin
     HCCL_INFO("[%s] %u threads freed successfully.", __func__, threadNum);
     return HCCL_SUCCESS;
 }
+
+HcclResult GetThread(const ThreadHandle thread, std::shared_ptr<hccl::Thread> &handle)
+{
+    auto it = g_ThreadMap.find(thread);
+    if (it == g_ThreadMap.end()) {
+        HCCL_ERROR("[%s] failed. thread[%lu] not found.", __func__, thread);
+        return HCCL_E_NOT_FOUND;
+    }
+    handle = it->second;
+    CHK_PTR_NULL(handle);
+    return HCCL_SUCCESS;
+}
 #endif
 
 HcclResult Thread::AddThreadHandleToMap(CommEngine commEngine, ThreadHandle threadHandle)
