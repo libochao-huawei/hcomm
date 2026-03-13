@@ -16,7 +16,6 @@
 #include "hcomm_c_adpt.h"
 #include "../endpoints/endpoint.h"
 #include "../endpoint_pairs/channels/channel.h"
-#include "thread.h"
 #include "aicpu_ts_thread.h"
 #include "cpu_ts_thread.h"
 #include "aicpu_ts_urma_channel.h"
@@ -24,7 +23,6 @@
 #include "channel_param.h"
 #include "launch_aicpu.h"
 #include "comm_configer.h"
-#include "endpoint_map.h"
 #include "endpoint_map.h"
 
 namespace hcomm {
@@ -662,5 +660,43 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
         return HCCL_E_PARA;
     }
     HCCL_INFO("[%s]copy engine ctx success, engine[%d]", __func__, engine);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommThreadResGetInfo(ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void **info)
+{
+    auto it = hcomm::g_ThreadMap.find(thread);
+    if (it == hcomm::g_ThreadMap.end()) {
+        HCCL_ERROR("[%s] failed. thread[0x%llx] not found.", __func__, thread);
+        return HCCL_E_NOT_FOUND;
+    }
+    std::shared_ptr<hccl::Thread> threadPtr = it->second;
+    CHK_PTR_NULL(threadPtr);
+    if (resType == ThreadResType::THREAD_RES_TYPE_STREAM) {
+        if (infoLen != sizeof(ThreadResTypeStream)) {
+            HCCL_ERROR("[%s] failed. infoLen[%u] is mismatch sizeof(ThreadResTypeStream)[%zu]", 
+                       __func__, infoLen, sizeof(ThreadResTypeStream));
+            return HCCL_E_PARA;
+        }
+        CHK_PTR_NULL(threadPtr->GetStream());
+        ThreadResTypeStream stream = threadPtr->GetStream()->ptr();
+        CHK_PTR_NULL(stream);
+        *info = static_cast<void*>(stream);
+    } else {
+        HCCL_ERROR("[%s] failed. resType[%d] is not supported.", __func__, static_cast<int32_t>(resType));
+        return HCCL_E_NOT_SUPPORT;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommThreadGet(const ThreadHandle thread, std::shared_ptr<hccl::Thread> &handle)
+{
+    auto it = hcomm::g_ThreadMap.find(thread);
+    if (it == hcomm::g_ThreadMap.end()) {
+        HCCL_ERROR("[%s] failed. thread[%lu] not found.", __func__, thread);
+        return HCCL_E_NOT_FOUND;
+    }
+    handle = it->second;
+    CHK_PTR_NULL(handle);
     return HCCL_SUCCESS;
 }

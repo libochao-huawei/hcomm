@@ -26,7 +26,7 @@ namespace hccl {
 class ThreadMgr {
 public:
     ThreadMgr(uint32_t threadNum, uint32_t notifyNumPerThread, std::string commId, aclrtBinHandle binHandle, const ManagerCallbacks& callbacks);
-    ~ThreadMgr() = default;
+    ~ThreadMgr();
     HcclResult HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
         uint32_t notifyNumPerThread, ThreadHandle *threads, std::vector<uint32_t> &threadId);
     HcclResult HcclThreadAcquireWithStream(CommEngine engine,
@@ -49,6 +49,7 @@ private:
     u64 usedNotifyNum_ = 0;
     std::mutex threadMutex_;
     std::vector<std::shared_ptr<Thread>> threads_;
+    std::vector<ThreadHandle> threadHandles_;
 
     std::mutex mainThreadMutex_;
     std::map<rtStream_t, std::shared_ptr<Thread>> mainThread_;
