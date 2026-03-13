@@ -59,7 +59,7 @@ protected:
         checkerOpParam.opType = CheckerOpType::ALLTOALL;
         checkerOpParam.tag = "AllToAll";
         checkerOpParam.opMode = opMode;
-        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
         checkerOpParam.All2AllDataDes.sendCount = dataCount;
         checkerOpParam.All2AllDataDes.sendType = CheckerDataType::DATA_TYPE_FP16;
         checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_FP16;

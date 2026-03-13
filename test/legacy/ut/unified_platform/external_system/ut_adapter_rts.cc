@@ -1130,5 +1130,5 @@ TEST_F(AdapterRtsTest, HrtGetDeviceType_910_95_return_ok)
     DevType devType = HrtGetDeviceType();
 
     // then
-    EXPECT_EQ(devType, DevType::DEV_TYPE_910_95);
+    EXPECT_EQ(devType, DevType::DEV_TYPE_950);
 }

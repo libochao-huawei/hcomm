@@ -25,7 +25,7 @@ HcclResult TopoMatchMeshRing::MatchTopo(std::vector<std::vector<std::vector<Rank
                                         std::vector<std::vector<RankId>>              &virtRanks,
                                         std::vector<std::map<RankId, u32>>            &virtRankMap)
 {
-    CHK_PRT_RET(devType_ != DevType::DEV_TYPE_910_95,
+    CHK_PRT_RET(devType_ != DevType::DEV_TYPE_950,
         HCCL_ERROR("[CollAlgFactory] [TopoMatchMeshRing] Rank [%d], deviceType [%s] not supported yet.", myRank_,
                     DevTypeToString(devType_).c_str()),
         HcclResult::HCCL_E_PARA);

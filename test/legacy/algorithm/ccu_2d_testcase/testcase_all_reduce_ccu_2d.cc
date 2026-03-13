@@ -63,7 +63,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_2_mul_2_rank_Mesh2DOneShot)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMesh2DOneShot";
@@ -87,7 +87,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_2_mul_3_rank_Mesh2DOneShot)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMesh2DOneShot";
@@ -110,7 +110,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_2_mul_4_rank_Mesh2DOneShot)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMesh2DOneShot";
@@ -133,7 +133,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_2_mul_5_rank_Mesh2DOneShot)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMesh2DOneShot";
@@ -156,7 +156,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_2_mul_6_rank_Mesh2DOneShot)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMesh2DOneShot";
@@ -179,7 +179,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_3_mul_6_rank_Mesh2DOneShot)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMesh2DOneShot";
@@ -202,7 +202,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_3_mul_3_rank_Mesh2DOneShot)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMesh2DOneShot";
@@ -225,7 +225,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_4_mul_4_rank_Mesh2DOneShot)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMesh2DOneShot";
@@ -248,7 +248,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_5_mul_5_rank_Mesh2DOneShot)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMesh2DOneShot";
@@ -271,7 +271,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_6_mul_6_rank_Mesh2DOneShot)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMesh2DOneShot";
@@ -294,7 +294,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_7_mul_7_rank_Mesh2DOneShot)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMesh2DOneShot";
@@ -317,7 +317,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_2_mul_2_rank_Mesh2DTwoShot)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -340,7 +340,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_4_mul_4_rank_Mesh2DTwoShot)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -363,7 +363,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_2_mul_2_rank_Mesh2DOneShot_of
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMesh2DOneShot";
@@ -385,7 +385,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -406,7 +406,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -427,7 +427,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -448,7 +448,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 1 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -469,7 +469,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -490,7 +490,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -511,7 +511,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MIN;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -532,7 +532,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MIN;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -553,7 +553,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 511 * 1024 / 4;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -574,7 +574,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 767 * 1024 / 4;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -595,7 +595,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 1023 * 1024 / 4;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -616,7 +616,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 1024 * 1024 / 4;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -637,7 +637,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -658,7 +658,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -679,7 +679,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -700,7 +700,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
@@ -722,7 +722,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_2_mul_2_rank_MeshTwoShotMem2M
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
     checkerOpParam.algName = "CcuAllReduceMeshTwoShotMem2Mem2D";
@@ -747,7 +747,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_2_mul_5_rank_MeshTwoShotMem2M
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MIN;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.algName = "CcuAllReduceMeshTwoShotMem2Mem2D";
@@ -774,7 +774,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_6_mul_3_rank_MeshMem2Mem2D_Op
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
 
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 / sizeof(s32) + 1;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuAllReduceMeshTwoShotMem2Mem2D";
@@ -797,7 +797,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_7_mul_7_rank_MeshTwoShotMem2M
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 2 * 1024 / sizeof(s16) - 1;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
     checkerOpParam.algName = "CcuAllReduceMeshTwoShotMem2Mem2D";
@@ -820,7 +820,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_5_mul_3_rank_MeshTwoShotMem2M
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 4 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
     checkerOpParam.algName = "CcuAllReduceMeshTwoShotMem2Mem2D";
@@ -843,7 +843,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_5_mul_4_rank_MeshTwoShotMem2M
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MIN;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 4 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.algName = "CcuAllReduceMeshTwoShotMem2Mem2D";
@@ -867,7 +867,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_4_mul_5_rank_MeshTwoShotMem2M
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 4 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
     checkerOpParam.algName = "CcuAllReduceMeshTwoShotMem2Mem2D";
@@ -890,7 +890,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_4_mul_4_rank_MeshTwoShotMem2M
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 4 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuAllReduceMeshTwoShotMem2Mem2D";
@@ -913,7 +913,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_mem2mem_parallel_opbase_int16)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
     checkerOpParam.algName = "CcuAllReduceParallelMesh1DNHR";
@@ -936,7 +936,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_mem2mem_parallel_smalldata_int8)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MIN;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 1;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.algName = "CcuAllReduceParallelMesh1DNHR";
@@ -959,7 +959,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_mem2mem_parallel_2k_minus_1_fp16)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 2047;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
     checkerOpParam.algName = "CcuAllReduceParallelMesh1DNHR";
@@ -982,7 +982,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_mem2mem_parallel_zero_bp16)
     checkerOpParam.tag = "AllReduce";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 0;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
     checkerOpParam.algName = "CcuAllReduceParallelMesh1DNHR";

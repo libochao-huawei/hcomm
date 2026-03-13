@@ -79,7 +79,7 @@ protected:
         checkerOpParam.All2AllDataDes.recvType = sendType;
         checkerOpParam.All2AllDataDes.sendCount = dataCountPerRank;
 
-        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
         checkerOpParam.algName = "InsAlltoAllMesh2D";
 
         Checker checker;
