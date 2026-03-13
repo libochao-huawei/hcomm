@@ -218,10 +218,6 @@ TEST_F(HostRdmaConnectionTest, Ut_When_Call_GetStatus_Expect_Return_Ready)
 
 TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttr_Qos_TimeOut_RetryCnt_Success)
 {
-    DevType devType = DevType::DEV_TYPE_910_95;
-    MOCKER(hrtGetDeviceType).stubs()
-                            .with(outBound(devType))
-                            .will(returnValue(HCCL_SUCCESS));
     MOCKER(RaSetQpAttrQos).stubs()
                           .with(any(), any())
                           .will(returnValue(0));
@@ -249,10 +245,6 @@ TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttr_Qos_TimeOut_RetryCnt_Success)
 
 TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttrQos_Fail)
 {
-    DevType devType = DevType::DEV_TYPE_910_95;
-    MOCKER(hrtGetDeviceType).stubs()
-                            .with(outBound(devType))
-                            .will(returnValue(HCCL_SUCCESS));
     MOCKER(RaSetQpAttrQos).stubs()
                           .with(any(), any())
                           .will(returnValue(-1));
@@ -280,10 +272,6 @@ TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttrQos_Fail)
 
 TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttrTimeout_Fail)
 {
-    DevType devType = DevType::DEV_TYPE_910_95;
-    MOCKER(hrtGetDeviceType).stubs()
-                            .with(outBound(devType))
-                            .will(returnValue(HCCL_SUCCESS));
     MOCKER(RaSetQpAttrQos).stubs()
                           .with(any(), any())
                           .will(returnValue(0));
@@ -311,10 +299,6 @@ TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttrTimeout_Fail)
 
 TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttrRetryCnt_Fail)
 {
-    DevType devType = DevType::DEV_TYPE_910_95;
-    MOCKER(hrtGetDeviceType).stubs()
-                            .with(outBound(devType))
-                            .will(returnValue(HCCL_SUCCESS));
     MOCKER(RaSetQpAttrQos).stubs()
                           .with(any(), any())
                           .will(returnValue(0));
