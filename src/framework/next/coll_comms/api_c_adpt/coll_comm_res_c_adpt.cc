@@ -172,8 +172,16 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
                 "but commEngine is [%d].", __func__, hcclComm, opExpansionMode, engine);
             return HcclResult::HCCL_E_PARA;
         }
-
+        
         CHK_RET(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels));
+        if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
+            HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel start");
+            HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+            CHK_PTR_NULL(hcclCommDfx);
+            std::string kernelName = "RunAicpuIndOpChannelInitV2";
+            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commTag, kernelName, SalgetTid()));
+            HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel success");
+        }
     } else {
         auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
         ret = channelMgr.ChannelCommCreate(hcclComm->GetIdentifier(), engine,
