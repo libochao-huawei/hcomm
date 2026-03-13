@@ -34,7 +34,8 @@ public:
     MrInfoT        loopBackQpMrLocalInfo = {};
     LoopbackQpPair loopBackQpParam = {};
 
-    bool GetFlushOpcodeSupport() {
+    bool GetFlushOpcodeSupport() const
+    {
         return flushOpcodeSupport_;
     }
 
@@ -54,7 +55,7 @@ private:
 
     // 初始化方法
     HcclResult GetRdmaHandle(IpAddress ip, u32 devPhyId, void **rdmaHandle) const;
-    HcclResult GetLbMax(void *rdevHandle, int *lbMax);
+    HcclResult GetLbMax(void *rdevHandle, int *lbMax) const;
     HcclResult AllocateDeviceMemory();
     HcclResult AllocateHostMemory();
     HcclResult CreateLoopbackQp();

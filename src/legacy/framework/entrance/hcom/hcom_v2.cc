@@ -1211,7 +1211,7 @@ HcclResult HcclGetAlgExecParamV2(const std::string &tag, const char *group, u64 
 
     HcclOpType hcclOpType = static_cast<HcclOpType::Value>(opType);
     if (OP_TYPE_MAP.find(opType) == OP_TYPE_MAP.end()) {
-        HCCL_ERROR("[HcomGraphSelectAlgV2], not support opType[%u].", hcclOpType.Describe().c_str());
+        HCCL_ERROR("[HcomGraphSelectAlgV2], not support opType[%s].", hcclOpType.Describe().c_str());
         return HCCL_E_NOT_SUPPORT;
     }
     Hccl::OpType optype = OP_TYPE_MAP.at(opType);

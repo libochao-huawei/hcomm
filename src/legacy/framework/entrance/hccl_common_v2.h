@@ -40,10 +40,4 @@ enum class HcclTopoLevel {
     HCCL_TOPO_L1,
     HCCL_TOPO_MAX,
 };
-// #ifndef ORION_MODE
-// constexpr u32 SIZE_TABLE[HCCL_DATA_TYPE_RESERVED] = {sizeof(s8), sizeof(s16), sizeof(s32),
-//     2, sizeof(float), sizeof(s64), sizeof(u64), sizeof(u8), sizeof(u16), sizeof(u32),
-//     8, 2, 16, 2, 1, 1, 1, 1};
-// #endif
-
 #endif

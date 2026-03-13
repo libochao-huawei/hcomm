@@ -136,7 +136,7 @@ public:
     private:
         FabricId fabricId_;
         PlaneId planeId_;
-        NodeId GenerateNodeId(FabricId fabricId);
+        NodeId GenerateNodeId(FabricId fabricId) const;
     };
 
     class Link {

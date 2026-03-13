@@ -54,7 +54,7 @@ HcclResult FlushHandle::Init(IpAddress ip, u32 devPhyId)
     return HCCL_SUCCESS;
 }
 
-HcclResult FlushHandle::GetLbMax(void *rdevHandle, int *lbMax)
+HcclResult FlushHandle::GetLbMax(void *rdevHandle, int *lbMax) const
 {
     int ret = RaGetLbMax(rdevHandle, lbMax);
     if (ret != 0) {

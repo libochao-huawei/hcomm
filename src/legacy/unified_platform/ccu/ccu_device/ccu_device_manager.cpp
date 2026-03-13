@@ -97,7 +97,7 @@ HcclResult CcuSetTaskKillDone(const int32_t deviceLogicId)
 
 HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId)
 {
-    HCCL_INFO("[CcuCleanTaskKillState] Input params: deviceLogicId[%u]", deviceLogicId);
+    HCCL_INFO("[CcuCleanTaskKillState] Input params: deviceLogicId[%d]", deviceLogicId);
     // 入参校验拦截
     CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
         HCCL_ERROR("[CcuCleanTaskKillState]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
@@ -109,7 +109,7 @@ HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId)
 
 HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
 {
-    HCCL_INFO("[CcuCleanDieCkes] Input params: deviceLogicId[%u], dieId[%u]", deviceLogicId, dieId);
+    HCCL_INFO("[CcuCleanDieCkes] Input params: deviceLogicId[%d], dieId[%u]", deviceLogicId, dieId);
     // 入参校验拦截
     CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
         HCCL_ERROR("[CcuCleanDieCkes]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
