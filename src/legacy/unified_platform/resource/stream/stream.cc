@@ -68,7 +68,7 @@ u32 Stream::GetId() const
     return id;
 }
 
-bool Stream::GetIsMaster() const
+bool Stream::IsMaster() const
 {
     return isMaster_;
 }
