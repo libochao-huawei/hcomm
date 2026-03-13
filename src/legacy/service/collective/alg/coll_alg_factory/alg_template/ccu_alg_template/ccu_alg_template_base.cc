@@ -182,7 +182,7 @@ HcclResult CcuAlgTemplateBase::AddRanksToGroup(const std::vector<std::vector<Ran
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuAlgTemplateBase::GetAddrInfo(const TempFuncs &tempFuncs, uint64_t &inputAddr, uint64_t &outputAddr, uint64_t &offSet)
+HcclResult CcuAlgTemplateBase::GetAddrInfo(const TempFuncs &tempFuncs, uint64_t &inputAddr, uint64_t &outputAddr, const RankSliceInfo &sliceInfoVec, uint64_t &offSet)
 {
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {

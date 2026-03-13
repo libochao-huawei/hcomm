@@ -163,7 +163,7 @@ HcclResult CcuTempAllReduceMeshTwoShotMem2Mem2D::Run(const TempFuncs &tempFuncs,
     uint64_t inputAddr;
     uint64_t outputAddr;
     uint64_t offSet;
-    CHK_RET(GetAddrInfo(tempFuncs, inputAddr, outputAddr, offSet));
+    CHK_RET(GetAddrInfo(tempFuncs, inputAddr, outputAddr, sliceInfoVec, offSet));
     HCCL_INFO("[CcuTempAllReduceMeshTwoShotMem2Mem2D][Run] inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
 
     // 计算切分信息：

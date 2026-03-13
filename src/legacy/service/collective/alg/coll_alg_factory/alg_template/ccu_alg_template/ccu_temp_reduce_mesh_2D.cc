@@ -132,7 +132,7 @@ HcclResult CcuTempReduceMesh2D::Run(const TempFuncs &tempFuncs, const RankSliceI
     // userOut 的位置，需要带上偏移
     uint64_t outputAddr;
     uint64_t offSet;
-    CHK_RET(GetAddrInfo(tempFuncs, inputAddr, outputAddr, offSet));
+    CHK_RET(GetAddrInfo(tempFuncs, inputAddr, outputAddr, sliceInfoVec, offSet));
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;
     // 自己需要 reduce 的数据基于userIn的起始位置的偏移
     uint64_t token;

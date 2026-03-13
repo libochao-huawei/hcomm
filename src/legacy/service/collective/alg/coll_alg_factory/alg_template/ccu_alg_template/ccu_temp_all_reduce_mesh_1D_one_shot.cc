@@ -86,7 +86,7 @@ HcclResult CcuTempAllReduceMesh1DOneShot::Run(const TempFuncs &tempFuncs, const 
     uint64_t inputAddr;
     uint64_t outputAddr;
     uint64_t offSet;
-    CHK_RET(GetAddrInfo(tempFuncs, inputAddr, outputAddr, offSet));
+    CHK_RET(GetAddrInfo(tempFuncs, inputAddr, outputAddr, sliceInfoVec, offSet));
 
     std::vector<LinkData> links;
     CHK_RET(PrepareLinks(tempLinks, links));
