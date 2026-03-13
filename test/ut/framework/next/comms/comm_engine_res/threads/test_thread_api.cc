@@ -1139,7 +1139,7 @@ TEST_F(TestHcclThread, Ut_HcommThreadResGetInfo_When_infoLenMismatch_Return_HCCL
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     ThreadResTypeStream stream;
-    ret = HcommThreadResGetInfo(thread[0], ThreadResType::THREAD_RES_TYPE_INVALID, 1, &stream);
+    ret = HcommThreadResGetInfo(thread[0], ThreadResType::THREAD_RES_TYPE_STREAM, 1, &stream);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     ret =  HcommThreadFree(thread, 2);
