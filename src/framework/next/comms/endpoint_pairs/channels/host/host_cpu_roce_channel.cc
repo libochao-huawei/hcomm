@@ -80,7 +80,7 @@ HcclResult HostCpuRoceChannel::BuildConnection()
     qpInfo.trafficClass = channelDesc_.roceAttr.tc;
     qpInfo.retryCnt = channelDesc_.roceAttr.retryCnt;
     qpInfo.retryInterval = channelDesc_.roceAttr.retryInterval;
-    HCCL_INFO("[HostCpuRoceChannel::BuildConnection] QpInfo: serviceLevel[], trafficClass[], retryCnt[], retryInterval[].", 
+    HCCL_INFO("[HostCpuRoceChannel::BuildConnection] QpInfo: serviceLevel[%u], trafficClass[%u], retryCnt[%u], retryInterval[%u].", 
         qpInfo.serviceLevel, qpInfo.trafficClass, qpInfo.retryCnt, qpInfo.retryInterval);
     connections_.emplace_back(std::move(conn));
     connNum_ = connections_.size();
