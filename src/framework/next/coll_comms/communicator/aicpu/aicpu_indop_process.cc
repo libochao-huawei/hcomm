@@ -239,7 +239,7 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, co
 
     // HcclDfxOpInfo 转为DfxOpInfo
     std::shared_ptr<Hccl::DfxOpInfo> dfxOpInfoOnce = ConvertToDfxOpInfo(*aicpuDfxInfo);
-    dfxOpInfoOnce->index_ = collComm->UpdateIndex();
+    dfxOpInfoOnce->opIndex_ = collComm->UpdateIndex();
     dfxOpInfoOnce->comm_ = reinterpret_cast<void *>(collComm);
     dfxOpInfoOnce->isIndop_ = true;
     dfxOpInfoOnce->groupName_ = collComm->GetIdentifier();

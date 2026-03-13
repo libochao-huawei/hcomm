@@ -180,7 +180,7 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
 
 std::string HcclCommTaskExceptionLite::GetBaseInfo(const Hccl::TaskInfo& taskInfo)
 {
-    u32 opIndex = (taskInfo.dfxOpInfo_ == nullptr) ? INVALID_UINT : taskInfo.dfxOpInfo_->index_;
+    u32 opIndex = (taskInfo.dfxOpInfo_ == nullptr) ? INVALID_UINT : taskInfo.dfxOpInfo_->opIndex_;
     return Hccl::StringFormat("streamID(sqId):[%u], taskID(sqeId):[%u], taskType:[%s], opIndex[%u]",
         taskInfo.streamId_, taskInfo.taskId_, taskInfo.taskParam_.taskType.Describe().c_str(), opIndex);
 }
@@ -196,7 +196,7 @@ HcclResult HcclCommTaskExceptionLite::GenerateErrorMessageReport(CollCommAicpu *
     errMsgInfo.rankSize = aicpuComm->GetTopoInfo().userRankSize;
     errMsgInfo.algType = taskInfo.dfxOpInfo_ == nullptr ?
         static_cast<Hccl::AlgType>(Hccl::AlgType::MESH) : taskInfo.dfxOpInfo_->algType_;
-    errMsgInfo.opIndex = taskInfo.dfxOpInfo_ == nullptr ? 0 : taskInfo.dfxOpInfo_->index_;
+    errMsgInfo.opIndex = taskInfo.dfxOpInfo_ == nullptr ? 0 : taskInfo.dfxOpInfo_->opIndex_;
     errMsgInfo.opType = taskInfo.dfxOpInfo_->op_.opType;
     errMsgInfo.count = taskInfo.dfxOpInfo_->op_.dataCount;
     errMsgInfo.dataType = taskInfo.dfxOpInfo_->op_.dataType;
@@ -378,10 +378,10 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(u32 sqId, u32 taskId)
         conciseInfo += ",";
 
         if (taskContextInfo.size() + conciseInfo.size() >= TASK_CONTEXT_INFO_SIZE || // 1. 字符串超过一定长度时，打印一次
-            lastTask->dfxOpInfo_->index_ != taskContext[i]->dfxOpInfo_->index_ ||    // 2. 不同算子，新起一行打印
+            lastTask->dfxOpInfo_->opIndex_ != taskContext[i]->dfxOpInfo_->opIndex_ ||    // 2. 不同算子，新起一行打印
             i + 1 == taskContext.size()) {                                           // 3. 遍历到最后一个task，打印一次
             HCCL_ERROR("[TaskException][AICPU]opData information is %s.", GetOpDataInfo(*lastTask).c_str());
-            HCCL_ERROR("[TaskException][AICPU]task sequence is OP(%u): %s", lastTask->dfxOpInfo_->index_, taskContextInfo.c_str());
+            HCCL_ERROR("[TaskException][AICPU]task sequence is OP(%u): %s", lastTask->dfxOpInfo_->opIndex_, taskContextInfo.c_str());
             taskContextInfo = "";
             lastTask = taskContext[i].get();
         }
@@ -411,7 +411,7 @@ std::string HcclCommTaskExceptionLite::GetOpDataInfo(const Hccl::TaskInfo& taskI
 
     const auto &opInfo = taskInfo.dfxOpInfo_;
     return Hccl::StringFormat("opIndex[%u], algTag[%s], count[%llu], reduceType[%s], src[0x%llx], dst[0x%llx], dataType[%s]",
-        opInfo->index_,
+        opInfo->opIndex_,
         opInfo->algTag_.c_str(),
         opInfo->op_.dataCount,
         opInfo->op_.reduceOp.Describe().c_str(),

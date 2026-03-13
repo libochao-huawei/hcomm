@@ -662,7 +662,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     dfxOpInfoOnce->isIndop_ = true;
     dfxOpInfoOnce->groupName_ = collComm->GetCommId(); // TODO:二次赋值，可替代
     dfxOpInfoOnce->mainStreamId_ = cpuTsStream->id();
-    dfxOpInfoOnce->index_ = collComm->UpdateIndex();
+    dfxOpInfoOnce->opIndex_ = collComm->UpdateIndex();
     dfxOpInfoOnce->rankSize_ = collComm->GetRankSize();
     //单算子模式，覆盖opTag
     bool opBased = true;
