@@ -20,7 +20,7 @@ public:
     CollBatchSendRecvRetryExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
     ~CollBatchSendRecvRetryExecutor() override = default;
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algResource) override;
-    HcclResult CreatePairWiseList(HcclSendRecvItem *sendRecvInfo, u32 itemNum);
+    HcclResult CreatePairWiseList(HcclSendRecvItem *sendRecvInfo, u32 itemNum) override;
     virtual HcclResult GetPairWiseList(std::vector<std::vector<HcclSendRecvItem*>> &sendRecvPairList);
 private:
     HcclResult CalcSendSlices(AlgResourceResponse& algRes, HcclSendRecvItem* sendRecvItem);

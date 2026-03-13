@@ -282,7 +282,7 @@ u32 InplaceDataUnitSize(const HcclCMDType &opType, const OpParam &param)
         opType != HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V) {
         if (param.DataDes.dataType >= HCCL_DATA_TYPE_RESERVED) {
             HCCL_WARNING("[InplaceDataUnitSize] out of range[%d, %d]",
-                HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_RESERVED - 1);
+                HCCL_DATA_TYPE_INT8, static_cast<int>(HCCL_DATA_TYPE_RESERVED) - 1);
             return 0;
         }
         unitSize = SIZE_TABLE[param.DataDes.dataType];

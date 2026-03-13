@@ -62,8 +62,8 @@ private:
     HcclResult MainPostSubWait(Stream& mainStream);
     HcclResult MainWaitSubPost(Stream& mainStream);
     HcclResult SubNotifyMain(Stream& stream, u32 streamId) const;
-    HcclResult MainPostSubWaitSmall(Stream& mainStream, Stream& subStream);
-    HcclResult MainWaitSubPostSmall(Stream& mainStream, Stream& subStream);
+    HcclResult MainPostSubWaitSmall(Stream& mainStream, Stream& subStream) const;
+    HcclResult MainWaitSubPostSmall(Stream& mainStream, Stream& subStream) const;
 
 private:
 

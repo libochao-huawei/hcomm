@@ -168,7 +168,7 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::InterServerHDOneshot(const Op
         interLinks[peer]->RxAck(const_cast<Stream&>(param.stream));
         if (interLinks[peer]->IsSupportTransportWithReduce() && 
             ((interLinks[peer]->GetLinkType() == LinkType::LINK_STANDARD_ROCE) ||
-            (RDMA_REDUCE_BITMASK & reduceAttr))) {
+            static_cast<bool>((RDMA_REDUCE_BITMASK & reduceAttr)))) {
             HCCL_INFO("[CollAllReduceSmallCountAivRdmaExecutor][InterServerHDOneshot] inter use RDMA");
             CHK_RET(senderInfo->run(interLinks[peer], sliceForWriteOffset, src, const_cast<Stream&>(param.stream),
                 UserMemType::INPUT_MEM));

@@ -45,7 +45,7 @@ HcclResult CollAllReduceOrderPreservedFor91093Executor::CalcScratchMemSize(u64& 
     return HCCL_SUCCESS;
 }
 
-u32 CollAllReduceOrderPreservedFor91093Executor::CalReduceStreamNum(const u32& localRankSize)
+u32 CollAllReduceOrderPreservedFor91093Executor::CalReduceStreamNum(const u32& localRankSize) const
 {
     return (1 << static_cast<int>(std::floor(log2(localRankSize))));
 }
@@ -131,7 +131,7 @@ void CollAllReduceOrderPreservedFor91093Executor::CalcSizePerBlock(const OpParam
     sizePerBlock_ = AlgTemplateBase::RoundUpWithDivisor(sizePerBlock_, HCCL_MIN_SLICE_ALIGN);
 }
 
-void CollAllReduceOrderPreservedFor91093Executor::CalGroupSlices(const OpParam &param, ExecMem &execMem)
+void CollAllReduceOrderPreservedFor91093Executor::CalGroupSlices(const OpParam &param, const ExecMem &execMem)
 {   
     groupSize_.clear();
     u64 sizeRemain = execMem.count * SIZE_TABLE[param.DataDes.dataType];
@@ -252,8 +252,8 @@ HcclResult CollAllReduceOrderPreservedFor91093Executor::RunAllGatherLevel1(const
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAllReduceOrderPreservedFor91093Executor::RunAllGatherLevel2(const OpParam &param, ExecMem &execMem,
-    SubCommInfo &level1CommInfo)
+HcclResult CollAllReduceOrderPreservedFor91093Executor::RunAllGatherLevel2(const OpParam &param, const ExecMem &execMem,
+    const SubCommInfo &level1CommInfo)
 {
     CHK_RET(CheckCommSize(COMM_LEVEL2, COMM_INDEX_0 + 1));
     SubCommInfo level2CommInfo = GetSubCommInfo(COMM_LEVEL2, COMM_INDEX_0);
