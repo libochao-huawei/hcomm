@@ -53,6 +53,8 @@
 #include "rt_external.h"
 #include "externalinput.h"
 #include "aclgraph_callback.h"
+#include "adapter_hal.h"
+#include "dlhal_function.h"
 
 using namespace std;
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -8452,8 +8454,22 @@ namespace hccl
     HcclResult HcclCommunicator::LoadCustomFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
                                                 aclrtBinHandle &binHandle)
     {
+        constexpr s32 CUSTOM_OP_ENHANCE_DEV_VERSION = 0x72400; // MAJOR:0x07, MINOR:0x23, PATCH:0x18
         // 非910_93不支持custom kernel进程调用
         if (deviceType_ != DevType::DEV_TYPE_910_93) {
+            binHandle = nullptr;
+            HCCL_RUN_WARNING("[%s] custom kernel is not supported on device type[%d].", __func__, deviceType_);
+            return HCCL_SUCCESS;
+        }
+
+        // 校验是否为新版本驱动，旧版本驱动不支持配置hrtGetDeviceInfo，报错返回
+        s32 halAPIVersion = 0;
+        CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
+        CHK_RET(hrtHalGetAPIVersion(halAPIVersion));
+        HCCL_INFO("[%s]params: halAPIVersion[%d], CUSTOM_OP_ENHANCE_DEV_VERSION[%d]", __func__, halAPIVersion,
+            CUSTOM_OP_ENHANCE_DEV_VERSION);
+        if (halAPIVersion < CUSTOM_OP_ENHANCE_DEV_VERSION) {
+            binHandle = nullptr;
             HCCL_RUN_WARNING("[%s] custom kernel is not supported on device type[%d].", __func__, deviceType_);
             return HCCL_SUCCESS;
         }
