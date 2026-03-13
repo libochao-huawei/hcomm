@@ -87,6 +87,7 @@ target_link_libraries(hccl_v2_utest PRIVATE
     -lrt
     -ldl
     -pthread
+    topoaddrinfo
 )
 
 
