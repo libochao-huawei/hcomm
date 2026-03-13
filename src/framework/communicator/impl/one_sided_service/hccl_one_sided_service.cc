@@ -149,13 +149,6 @@ HcclResult HcclOneSidedService::ReMapMem(HcclMem *memInfoArray, u64 arraySize)
 HcclResult HcclOneSidedService::RegMem(void* addr, u64 size, HcclMemType type, RankId remoteRankId,
     HcclMemDesc &localMemDesc)
 {
-    constexpr u32 maxRegistedMem = 256;
-    if (registedMemCnt_ >= maxRegistedMem) {
-        HCCL_ERROR("[HcclOneSidedService][RegMem]The number of registered memory "\
-            "exceeds the upper limit[%u]", maxRegistedMem);
-        return HCCL_E_UNAVAIL;
-    }
-
     bool useRdma = true;
     if (isUsedRdmaMap_.find(remoteRankId) == isUsedRdmaMap_.end()) {
         CHK_RET(IsUsedRdma(remoteRankId, useRdma));
@@ -526,14 +519,6 @@ void HcclOneSidedService::BatchGet(RankId remoteRankId, const HcclOneSideOpDesc*
 // 绑定一块全局内存
 HcclResult HcclOneSidedService::BindMem(void* memRecordHandle, const std::string &commIdentifier)
 {
-    if (boundMemPtrSet_.size() == MAX_COMM_MEM_BIND_COUNT) {
-        // 进程粒度最多注册MAX_COMM_MEM_BIND_COUNT块独立的内存，报错退出
-        HCCL_ERROR("[HcclOneSidedService][BindMem] The number of memory bound in the comm has reached the maximum"
-                   " value[%u]. Cannot bind more memories.",
-            MAX_COMM_MEM_BIND_COUNT);
-        return HCCL_E_UNAVAIL;
-    }
-
     auto memRecordPtr = static_cast<GlobalMemRecord*>(memRecordHandle);
     CHK_RET(memRecordPtr->BindToComm(commIdentifier));
 
