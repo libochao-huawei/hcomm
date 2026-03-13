@@ -60,6 +60,7 @@ HcclResult HcclGetNotifyNumInThread(HcclComm comm, ThreadHandle thread,
 HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNum,
     uint32_t notifyNumPerThread, ThreadHandle *threads)
 {
+    u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     CHK_PRT_RET(threads == nullptr,  HCCL_ERROR("[%s] threads is null", __func__), HCCL_E_PTR);
     CHK_PRT_RET(!IsValidCommEngine(engine), 
@@ -78,21 +79,10 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
         CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
         CHK_PTR_NULL(engineResMgr);
         ret = engineResMgr->HcclThreadAcquire(engine, threadNum, notifyNumPerThread, threads, threadId);
-        auto hcclCommDfxCallback = collComm->GetDfxCallback();
-        if (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU) {
-            if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[%s] Failed to create threads for engine[%d], threadNum[%u], notifyNumPerThread[%u]",
-                            __func__, engine, threadNum, notifyNumPerThread);
-                return ret;
-            }
-        } else {
-            for (u32 num = 0; num < threadNum; ++threadNum) {
-                int hret = HcommThreadRegisterDfx(threads[num], hcclCommDfxCallback);
-                if (hret != HCCL_SUCCESS) {
-                    HCCL_ERROR("[HcclThreadAcquire] HcclThreadAcquire  HcommThreadRegisterDfx failed ");
-                    return HCCL_E_PTR;
-                }
- 	        }
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[%S] failed to create threads for engine[%d],threadsNum[%u], notifyNumperThread[%u]",
+            __func__, engine, threadNum, notifyNumPerThread);
+            return ret;
         }
         Mc2CommInfo mc2CommInfo;
         mc2CommInfo.FreeStreamId = 0;
@@ -104,6 +94,21 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
         HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
         CHK_PTR_NULL(hcclCommDfx);
         hcclCommDfx->ReportMc2CommInfo(mc2CommInfo);
+        if (engine == CommEngine::COMM_ENGINE_AICPU_TS || engine == CommEngine::COMM_ENGINE_AICPU) {
+            HCCL_INFO("[HcclThreaAciqure] ReportThreadAciqureKernel begin");
+            const std::string KernelName = "RunAicpuIndOpThreadInit";
+            CHK_RET(hcclCommDfx->ReportKernel(beginTime,commId,KernelName,SalGetTid()));
+            HCCL_INFO("[HcclThreaAciqure] ReportThreadAciqureKernel sucess");
+        } else {
+            auto hcclCommDfxCallBack = collComm->GetDfxCallback();
+            for (u32 num = 0; num < threadNum; ++num) {
+                int hert = HcommThreadRegisterDfx(threaDS[num],hcclCommDfxCallBack);
+                if (hert != HCCL_SUCCESS) {
+                    HCCL_INFO("[HcclThreaAciqure] ReportThreadAciqureKernel HcommThreadRegisterDfx failed");
+                    return HCCL_E_PTR;
+                }
+            }
+        }
         return HCCL_SUCCESS;
 
     }

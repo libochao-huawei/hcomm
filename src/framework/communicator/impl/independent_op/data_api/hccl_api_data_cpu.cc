@@ -630,6 +630,7 @@ int32_t HcommChannelFence(ChannelHandle channel)
 
 HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
 {
+    u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycelTime();
     HCCL_INFO("[%s] START.", __func__);
     CHK_PRT_RET(hcclDfxOpInfo == nullptr,  HCCL_ERROR("[%s] hcclDfxOpInfo is null", __func__), HCCL_E_PTR);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
@@ -678,7 +679,11 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
    
     // 下发device侧
-    CHK_RET(HcommDfxKernelLaunch(hcclComm->GetIdentifier(), hcclComm->GetBinHandle(), *dfxOpInfo));
+    HcommDfxKernelLaunch(hcclComm->GetIdentifier,hcclComm->GetBinHandle(), *dfxOpInfo);
+    HCCL_INFO("[HcclThreadAcquire] ReportDfxOpKernel begin");
+    const std::string KernelName = "RunAicpuDfxOpInfoInitV2";
+    CHK_RET(hcclCommDfx->ReportKernel(beginTime, hcclComm->GetIdentifier(), KernelName, SalGetTid()));
+    HCCL_INFO("[HcclThreadAcquire] ReportDfxOpKernel end");
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 
@@ -706,7 +711,7 @@ HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, uint64_t thread)
+HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, uint64_t thread, char* kernelName)
 {
     HCCL_INFO("[%s] START, comm[%p].", __func__, comm);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
@@ -728,18 +733,9 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, uint64_t thr
     HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
     CHK_PTR_NULL(hcclCommDfx);
 
-    Stream *stream = GetStream(thread);
-    CHK_PTR_NULL(stream);
-    Hccl::TaskParam taskParam {};
-    taskParam.beginTime = beginTime;
-    taskParam.taskType = Hccl::TaskParamType::TASK_AICPU_KERNEL;
-    taskParam.endTime = hrtMsprofSysCycleTime();
- 
-    CHK_PTR_NULL(hcclCommDfx->GetMirrorTaskManager());
-    std::shared_ptr<Hccl::TaskInfo> taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId, remoteRankId, taskParam,
-        hcclCommDfx->GetMirrorTaskManager()->GetCurrDfxOpInfo(), stream->IsMainStream());
- 
-    hcclCommDfx->GetMirrorTaskManager()->AddTaskInfo(taskInfo);
-    HCCL_INFO("[%s] SUCCESS.", __func__);
+    std::string kernelNameStr(kernelName);
+    uint32_t threadId = SetGetTid();
+    CHK_RET(hcclCommDfx->ReportKernel(beginTime, collComm->GetCommId(), kernelNameStr, threadId));
+    HCCL_INFO("[HcclReportAicpuKernel] HcclReportAicpuKernel sucess");
     return HCCL_SUCCESS;
 }

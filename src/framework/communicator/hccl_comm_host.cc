@@ -356,6 +356,7 @@ namespace hccl
     HcclResult hcclComm::KernelLaunchAicpuCommInit()
     {
         // 创建局部流
+        u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
         Stream localStream(StreamType::STREAM_TYPE_ONLINE);
         constexpr u32 aicpuStreamMode = 1;
         CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
@@ -369,7 +370,12 @@ namespace hccl
             sizeof(commAicpuParam_), binHandle_, kernelName, true, timeOut));
         HCCL_INFO("AicpuAclKernelLaunch end, hcclStreamSynchronize start");
         CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut("")));
-
+        HCCL_INFO("[KernelLaunchAicpuCommInit] ReportAicpuCommKernel begin");
+        CHK_PTR_NULL(collComm_);
+        HcclCommDfx* hcclComDfx = collComm_->GetHcclCommDfx();
+        CHK_PTR_NULL(hcclComDfx);
+        CHK_RET(hcclComDfx->ReportKernel(beginTime, identifier_, kernelName, SalGetTid));
+        HCCL_INFO("[KernelLaunchAicpuCommInit] ReportAicpuCommKernel end");
         // 打印增加初始化对应的参数
         HCCL_RUN_INFO("[%s] KernelLaunchAicpuCommInit Success", __func__);
         return HCCL_SUCCESS;
