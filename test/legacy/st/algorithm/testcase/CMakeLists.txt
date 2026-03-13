@@ -1,24 +1,4 @@
 set(include_list
-    # hccl inc目录
-    # ${TOP_DIR}/ace/comop/inc
-    # ${TOP_DIR}/ace/comop/inc/hccl
-    # ${TOP_DIR}/runtime/include/external
-    # ${TOP_DIR}/runtime/pkg_inc/runtime
-    # ${TOP_DIR}/runtime/pkg_inc/
-    # ${TOP_DIR}/runtime/pkg_inc/profiling
-    # ${TOP_DIR}/ace/npuruntime/inc
-    # ${TOP_DIR}/ace/npuruntime/inc/runtime
-    # ${TOP_DIR}/ace/npuruntime/inc/external
-    # ${TOP_DIR}/ace/npuruntime/acl/inc/external/
-    # ${TOP_DIR}/ace/npuruntime/acl/inc/external/acl
-    # ${TOP_DIR}/ace/comop/inc/external
-    # ${TOP_DIR}/ace/comop/inc/external/hccl
-    # ${TOP_DIR}/drivers/network/inc/network
-    # 
-    # ${TOP_DIR}/abl/msprof/inc
-    # ${TOP_DIR}/abl/slog/inc/toolchain
-    # ${TOP_DIR}/open_source/json/include
-
     ${UTILS_DIR}/adapter_v1/aiv
 
     ${legacy_common_include_list}

@@ -26,28 +26,6 @@ set(include_list
 
     ${HCOMM_CODE_LEGACY}/service/collective/primitive
 
-    # hccl inc目录
-    # ${TOP_DIR}/ace/comop/inc
-    # ${TOP_DIR}/ace/comop/inc/hccl
-    # ${TOP_DIR}/ace/comop/inc/external
-    # ${TOP_DIR}/ace/comop/inc/external/hccl
-
-    # inc目录下头文件
-    # ${TOP_DIR}/inc
-    # ${TOP_DIR}/inc/aicpu
-    # ${TOP_DIR}/inc/driver
-    # ${TOP_DIR}/metadef/inc/common/util/error_manager
-    # ${TOP_DIR}/metadef/inc
-    # ${TOP_DIR}/metadef/pkg_inc
-    # ${TOP_DIR}/ace/npuruntime/inc
-    # ${TOP_DIR}/ace/npuruntime/inc/external
-    # ${TOP_DIR}/ace/npuruntime/inc/runtime
-    # ${TOP_DIR}/abl/msprof/inc
-    # ${TOP_DIR}/abl/atrace/inc/utrace
-    # ${TOP_DIR}/abl/mmpa/inc/mmpa
-    # ${TOP_DIR}/drivers/network/inc
-    # ${TOP_DIR}/abl/mmpa/inc/mmpa
-
     ${ASCEND_CANN_INCLUDE_LIST}
 
     ${HCOMM_CODE_ALGORITHM}/base/inc

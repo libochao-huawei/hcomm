@@ -3,21 +3,6 @@ set (include_list
     ${HCOMM_CODE_LEGACY}/common
 
     ${UTILS_DIR}/adapter_v1/aiv
-    
-    #hccl相关
-    # ${TOP_DIR}/ace/comop/inc/external
-    # ${TOP_DIR}/ace/comop/inc
-    # ${TOP_DIR}/ace/comop/inc/hccl
-    # ${TOP_DIR}/ace/comop/inc/external/hccl
-    # ${TOP_DIR}/ace/npuruntime/inc
-    # ${TOP_DIR}/open_source/json/include
-    # ${TOP_DIR}/drivers/network/inc/network
-    # ${TOP_DIR}/runtime/include/external
-    # ${TOP_DIR}/runtime/pkg_inc/runtime
-    # ${TOP_DIR}/runtime/pkg_inc/
-    # ${TOP_DIR}/runtime/pkg_inc/profiling
-    # # libc_sec目录下的头文件
-    # ${TOP_DIR}/abl/slog/inc/toolchain
 
     ${legacy_service_include_list}
 
