@@ -161,7 +161,7 @@ protected:
     HcclIpAddress peerIp_;
     u32 peerPort_;
     u32 selfPort_;
-    struct InitStateMachine initSM_;
+    struct InitStateMachine initSM_{};
     std::atomic<ConnState> connState_{ ConnState::CONN_STATE_IDLE };
     const std::unique_ptr<LocklessRingMemoryAllocate<HcclMessageInfo>> &pMsgInfosMem_;
     const std::unique_ptr<LocklessRingMemoryAllocate<HcclRequestInfo>> &pReqInfosMem_;

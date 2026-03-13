@@ -54,6 +54,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/cluster_maintenance/recovery/operator_retry/
     ${HCCL_BASE_DIR}/framework/cluster_maintenance/detect/detect_connect_anomalies/
     ${HCCL_BASE_DIR}/framework/cluster_maintenance/snapshot/
+    ${HCCL_BASE_DIR}/framework/cluster_maintenance/aclgraph/
     ${HCCL_BASE_DIR}/framework/common/src/
     ${HCCL_BASE_DIR}/framework/common/src/host
     ${HCCL_BASE_DIR}/framework/common/src/config
@@ -92,6 +93,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/platform/inc/adapter
 
     ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
+    ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads/slaves/
     ${HCCL_BASE_DIR}/framework/next/coll_comms/
     ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank
@@ -801,6 +803,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/sockets/
         ${HCCL_BASE_DIR}/framework/next/comms/endpoints/
         ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
+        ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads/slaves/
         ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator/aicpu
         ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx
     )

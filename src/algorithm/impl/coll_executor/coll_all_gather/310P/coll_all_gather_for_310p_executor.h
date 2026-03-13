@@ -16,7 +16,7 @@ class CollAllGatherFor310PExecutor : public CollAllGatherExecutor {
 
 public:
     explicit CollAllGatherFor310PExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherFor310PExecutor() = default;
+    ~CollAllGatherFor310PExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

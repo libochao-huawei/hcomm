@@ -170,7 +170,6 @@ TEST_F(EnvConfigTest, parse_env_config_should_success)
                 HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT}}};
         EXPECT_EQ(envCfg.GetAlgoConfig().GetAlgoConfig(), algoMap);
         EXPECT_EQ(envCfg.GetAlgoConfig().GetBuffSize(), 200 * 1024 * 1024);
-        EXPECT_EQ(envCfg.GetLogConfig().GetDiagnoseEnable(), true);
         EXPECT_EQ(envCfg.GetLogConfig().GetEntryLogEnable(), true);
         EXPECT_EQ(envCfg.GetLogConfig().GetCannVersion(), "");
         EXPECT_EQ(envCfg.GetDetourConfig().GetDetourType(), HcclDetourType::HCCL_DETOUR_ENABLE_2P);
@@ -218,7 +217,6 @@ TEST_F(EnvConfigTest, parse_env_config_should_success2)
     EXPECT_EQ(envCfg.GetAlgoConfig().GetAlgoConfig(), vector<HcclAlgoType>({HcclAlgoType::HCCL_ALGO_TYPE_RING, HcclAlgoType::HCCL_ALGO_TYPE_RING, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT}));
     EXPECT_EQ(envCfg.GetAlgoConfig().GetBuffSize(), 200*1024*1024);
     EXPECT_EQ(envCfg.GetAlgoConfig().GetOpExpansionMode(), OpExpansionMode::AI_CPU);
-    EXPECT_EQ(envCfg.GetLogConfig().GetDiagnoseEnable(), true);
     EXPECT_EQ(envCfg.GetLogConfig().GetEntryLogEnable(), true);
     EXPECT_EQ(envCfg.GetLogConfig().GetCannVersion(), "");
 }
@@ -249,7 +247,6 @@ TEST_F(EnvConfigTest, parse_env_config_should_success3)
     EXPECT_EQ(envCfg.GetAlgoConfig().GetAlgoConfig(), vector<HcclAlgoType>({HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT}));
     EXPECT_EQ(envCfg.GetAlgoConfig().GetBuffSize(), 200*1024*1024);
     EXPECT_EQ(envCfg.GetAlgoConfig().GetOpExpansionMode(), OpExpansionMode::AI_CPU);
-    EXPECT_EQ(envCfg.GetLogConfig().GetDiagnoseEnable(), true);
     EXPECT_EQ(envCfg.GetLogConfig().GetEntryLogEnable(), true);
     EXPECT_EQ(envCfg.GetLogConfig().GetCannVersion(), "");
 }

@@ -23,7 +23,7 @@ constexpr u64 MAX_RDMA_WQE_SIZE = 2ULL * 1024 * 1024 * 1024; // RDMA最大WQE限
 
 struct MrInfoT AscendMrInfo2MrInfo(AscendMrInfo* ascendMrInfo)
 {
-    struct MrInfoT innerMrInfo;
+    struct MrInfoT innerMrInfo = {};
     innerMrInfo.addr = reinterpret_cast<void*>(ascendMrInfo->addr);
     innerMrInfo.size = ascendMrInfo->size;
     innerMrInfo.lkey = ascendMrInfo->key;

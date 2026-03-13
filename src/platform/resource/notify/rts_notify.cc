@@ -228,7 +228,7 @@ HcclResult RtsNotify::InitAndVerifySingleSignal()
         return HCCL_SUCCESS;
     }
 
-    drvResIdKey resInfo;
+    drvResIdKey resInfo = {};
     resInfo.ruDevId = devId;
     resInfo.tsId = tsId;
     resInfo.resType = DRV_NOTIFY_ID;

@@ -15,7 +15,7 @@ namespace hccl {
 class CollRunAlltoAllFullMeshSymmetricMemory : public CollAlltoAllExecutor {
 public:
     CollRunAlltoAllFullMeshSymmetricMemory(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollRunAlltoAllFullMeshSymmetricMemory() = default;
+    ~CollRunAlltoAllFullMeshSymmetricMemory() override = default;
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
 private:
     HcclResult CalcStreamNum(u32& streamNum) override;

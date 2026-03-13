@@ -223,7 +223,15 @@ elseif(BUILD_OPEN_PROJECT)
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.json
             DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
         )
+
+        add_custom_target(install_ccl_kernel DEPENDS
+            ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
+        )
+        install(FILES ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
+            DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+        )
         add_dependencies(install_tar hcomm)
+        add_dependencies(install_ccl_kernel hcomm)
     endif()
 
     install(FILES
