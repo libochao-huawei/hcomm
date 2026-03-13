@@ -76,6 +76,10 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
         CollCommAicpu *aicpuComm = commInfo.second->GetCollCommAicpu();
         CHK_PTR_NULL(aicpuComm);
 
+        if (aicpuComm->GetIsReady() == false) {
+            continue;
+        }
+
         const std::vector<std::shared_ptr<hccl::Thread>> threads = aicpuComm->GetAllThread();
         for (auto thread : threads) {
             rtLogicCqReport_t cqeException;

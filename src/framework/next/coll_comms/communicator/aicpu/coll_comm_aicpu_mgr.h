@@ -28,7 +28,7 @@ public:
     CollCommAicpu* GetCollCommAicpu() { return collCommAicpu_.get(); }
 private:
     void* oldA5Comm_{nullptr};
-    std::shared_ptr<CollCommAicpu> collCommAicpu_{nullptr};
+    std::unique_ptr<CollCommAicpu> collCommAicpu_{nullptr};
     ReadWriteLockBase isUsedMutex_;
     bool isUsed_{false};
 };

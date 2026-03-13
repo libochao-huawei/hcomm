@@ -29,7 +29,7 @@ HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel,
 
 HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
-    if (indOpCommInitialized_) {
+    if (isReady_) {
         HCCL_RUN_INFO("[CollCommAicpu][%s]Group[%s] already initialized, skip reinit", __func__,
             identifier_.c_str());
         return HCCL_SUCCESS;
@@ -61,12 +61,18 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     }
     CHK_RET(Hccl::DlHalFunctionV2::GetInstance().DlHalFunctionInit());
 
-    indOpCommInitialized_ = true;
+    isReady_ = true;
     CHK_RET(InitBackGroundThread());
     HCCL_RUN_INFO("[%s]success, group[%s], deviceLogicId[%u], devicePhyId[%u], deviceType[%u], rankSize[%u] "\
         "userRank[%u], devId[%u]", __func__, identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId,
         topoInfo_.deviceType, topoInfo_.userRankSize, topoInfo_.userRank, devId_);
     return HCCL_SUCCESS;
+}
+
+void CollCommAicpu::SetIsReady(bool flag)
+{
+    HCCL_INFO("[%s]group[%s], flag[%d]", __func__, identifier_.c_str(), flag);
+    isReady_ = flag;
 }
 
 HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)

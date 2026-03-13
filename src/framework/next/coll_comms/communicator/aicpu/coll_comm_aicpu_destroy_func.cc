@@ -39,29 +39,33 @@ HcclResult CollCommAicpuDestroyFunc::Process()
 
     std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
     CHK_RET(AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo));
-    std::vector<CollCommAicpu *> destroyComm;
+    std::vector<std::string> destroyComm;
 
     for (auto &commInfo : aicpuCommInfo) {
         CollCommAicpu *aicpuComm = commInfo.second->GetCollCommAicpu();
         CHK_PTR_NULL(aicpuComm);
+
+        if (aicpuComm->GetIsReady() == false) {
+            continue;
+        }
 
         Hccl::KfcCommand cmd = Hccl::KfcCommand::NONE;
         CHK_RET(aicpuComm->BackGroundGetCmd(cmd));
         if (cmd != Hccl::KfcCommand::DESTROY_AICPU_COMM) {
             continue;
         }
-        HCCL_RUN_INFO("[%s]Recv DESTROY_AICPU_COMM cmd, group[%s]", __func__, aicpuComm->GetIdentifier().c_str());
-        destroyComm.push_back(aicpuComm);
+        destroyComm.push_back(aicpuComm->GetIdentifier());
+        CHK_RET(aicpuComm->BackGroundSetStatus(Hccl::KfcStatus::DESTROY_AICPU_COMM_DONE));
+        HCCL_RUN_INFO("[%s]group[%s] Recv DESTROY_AICPU_COMM cmd and set DESTROY_AICPU_COMM_DONE",
+            __func__, aicpuComm->GetIdentifier().c_str());
     }
     rwlock.readUnlock();
 
     rwlock.writeLock();
-    for (CollCommAicpu *comm: destroyComm) {
-        CHK_RET(comm->BackGroundSetStatus(Hccl::KfcStatus::DESTROY_AICPU_COMM_DONE));
-        CHK_RET(AicpuIndopProcess::AicpuDestroyCommbyGroup(comm->GetIdentifier().c_str()));
-        HCCL_RUN_INFO("[%s]group[%s] destroy success", __func__, comm->GetIdentifier().c_str());
+    for (std::string& groupName : destroyComm) {
+        CHK_RET(AicpuIndopProcess::AicpuDestroyCommbyGroup(groupName));
     }
-    rwlock.readUnlock();
+    rwlock.writeUnlock();
     return HCCL_SUCCESS;
 }
 }  // namespace hccl
