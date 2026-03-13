@@ -391,7 +391,7 @@ TEST_F(PrimRulesTest, translate_send_link_p2p_dma_put_test)
 
 TEST_F(PrimRulesTest, translate_send_link_dev_net_ub_dma_default)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     DevCapability::GetInstance().isSupportWriteWithNotify = true;
     DevCapability::GetInstance().isSupportStarsPollNetCq = true;
     // Given
@@ -415,7 +415,7 @@ TEST_F(PrimRulesTest, translate_send_link_dev_net_ub_dma_default)
 
 TEST_F(PrimRulesTest, translate_send_link_dev_net_ub_dma_put)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     DevCapability::GetInstance().isSupportWriteWithNotify = true;
     DevCapability::GetInstance().isSupportStarsPollNetCq = true;
     // Given
@@ -815,7 +815,7 @@ TEST_F(PrimRulesTest, translate_group_send_recv_p2p_dma_default_or_get)
 
 TEST_F(PrimRulesTest, translate_group_send_recv_dev_net_ub)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     DevCapability::GetInstance().isSupportWriteWithNotify = true;
     DevCapability::GetInstance().isSupportStarsPollNetCq = true;
     // Given

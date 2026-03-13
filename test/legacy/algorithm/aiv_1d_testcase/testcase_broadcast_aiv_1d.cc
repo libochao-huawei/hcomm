@@ -58,7 +58,7 @@ protected:
         checkerOpParam.opType = CheckerOpType::BROADCAST;
         checkerOpParam.tag = "Broadcast";
         checkerOpParam.opMode = opMode;
-        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
         checkerOpParam.DataDes.count = dataCount;
         checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
         checkerOpParam.algName = algName;

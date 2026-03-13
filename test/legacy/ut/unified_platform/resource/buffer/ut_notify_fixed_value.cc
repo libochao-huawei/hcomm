@@ -46,7 +46,7 @@ TEST_F(NotifyFixedValueTest, notify_fixed_value_get_addr_and_size)
     // Given
     MOCKER(HrtGetDeviceType).
         stubs().
-        will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+        will(returnValue((DevType)DevType::DEV_TYPE_950));
  
     void* fakeAddr = nullptr;
     MOCKER(HrtMalloc)
