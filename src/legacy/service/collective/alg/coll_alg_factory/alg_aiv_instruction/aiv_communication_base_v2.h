@@ -106,30 +106,30 @@ uint32_t dataType, uint32_t reduceOp, uint32_t root, uint32_t tag, \
 uint64_t inputSliceStride, uint64_t outputSliceStride, uint64_t repeatNum, uint64_t inputRepeatStride, uint64_t outputRepeatStride, \
 bool isOpBase, \
 GM_ADDR headCountMem, \
-        GM_ADDR tailCountMem, GM_ADDR addOneMem, uint32_t counterMemSize, bool isEnableCounter
+GM_ADDR tailCountMem, GM_ADDR addOneMem, uint32_t counterMemSize, bool isEnableCounter
 
 #define EXTERN_KERNEL_ARGS_DEF_V2 \
-    KERNEL_ARGS_DEF, ExtraArgs extraArgs
+KERNEL_ARGS_DEF, ExtraArgs extraArgs
 
 #define KERNEL_ARGS_CALL \
 buffIn, \
 input, output, rank, sendRecvRemoteRank, rankSize, xRankSize, yRankSize, zRankSize, len, dataType, reduceOp, root, tag, \
 inputSliceStride, outputSliceStride, repeatNum, inputRepeatStride, outputRepeatStride, \
 isOpBase, \
-        headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter
+headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter
 
 #define EXTERN_KERNEL_ARGS_CALL \
-    KERNEL_ARGS_CALL, extraArgs
+KERNEL_ARGS_CALL, extraArgs
 
 #define KERNEL_CLASS_INIT \
 buffIn, input, output,\
+<<<<<<< HEAD
 rank, sendRecvRemoteRank, rankSize, xRankSize, yRankSize, zRankSize, len, dataType, reduceOp, root, \
+=======
+rank, rankSize, xRankSize, yRankSize, zRankSize, len, dataType, reduceOp, root, \
 inputSliceStride, outputSliceStride, repeatNum, inputRepeatStride, outputRepeatStride, \
-headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter
-
-#define SUPERKERNEL_LITE_ARGS_DEF \
-    uint64_t args_offset
-
+uint64_t args_offset
+ 
 #define SUPERKERNEL_LITE_ARGS_EXTRACT \
     GM_ADDR *param_base = (GM_ADDR *)get_para_base();\
     GM_ADDR hiddenInput = param_base[args_offset++];\
@@ -137,13 +137,13 @@ headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter
     GM_ADDR output = param_base[args_offset++]
 
 #define SUPERKERNEL_ARGS_DEF \
-    GM_ADDR hiddenInput, GM_ADDR input, GM_ADDR output
-
+GM_ADDR hiddenInput, GM_ADDR input, GM_ADDR output
+ 
 #define SUPERKERNEL_ARGS_CALL \
-    hiddenInput, input, output
-
+hiddenInput, input, output
+ 
 #define SUPERKERNEL_CLASS_INIT \
-    hiddenInput, input, output
+hiddenInput, input, output
 
 constexpr uint64_t AIV_FLAG_BUFFER_SIZE = 3 * 1024 * 1024; // aiv算子的flag区域大小
 constexpr uint64_t CLEAR_BUFFER_OFFSET = 1024 * 1024; // 用于清空的aiv buffer的偏移
@@ -187,8 +187,8 @@ public:
 
     __aicore__ inline void Init(GM_ADDR buffIn, uint64_t input, uint64_t output, uint32_t rank, uint32_t sendRecvRemoteRank, uint32_t rankSize, uint64_t xRankSize,  uint64_t yRankSize, uint64_t zRankSize,
                                 uint64_t len,
-                                uint32_t dataType, uint32_t reduceOp, uint32_t root,
-                                uint64_t inputSliceStride, uint64_t outputSliceStride, uint64_t repeatNum, uint64_t inputRepeatStride, uint64_t outputRepeatStride,
+                                uint32_t dataType, uint32_t reduceOp, uint32_t root, 
+                                uint64_t inputSliceStride, uint64_t outputSliceStride, uint64_t repeatNum, uint64_t inputRepeatStride, uint64_t outputRepeatStride, 
                                 GM_ADDR headCountMem,
                                 GM_ADDR tailCountMem, GM_ADDR addOneMem, uint32_t counterMemSize, bool isEnableCounter,
                                 bool useDoubleBuffer)
@@ -261,7 +261,7 @@ public:
         repeatNum_ = args->repeatNum;
         inputRepeatStride_ = args->inputRepeatStride;
         outputRepeatStride_ = args->outputRepeatStride;
-
+ 
         localOffset = (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
         multiOffset = MAX_NUM_BLOCKS * DOUBLE * FLAG_SIZE+ localOffset;
         pingpongOffset = multiOffset + DOUBLE * DOUBLE * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
@@ -349,11 +349,11 @@ public:
     __aicore__ inline void Record(uint32_t targetRank, uint64_t flag_offset, int32_t curTag);
 
     __aicore__ inline void Barrier(uint32_t step);
-
+ 
     __aicore__ inline void ClearFlag();
-
+ 
     __aicore__ inline void BlockSync();
-
+ 
     __aicore__ inline void ClearSyncBuf();
 
     GM_ADDR GM_IN[MAX_RANK_SIZE];
@@ -436,7 +436,7 @@ __aicore__ inline void AivCommBase::BarrierForFirstOP()
     if (GetBlockIdx() == 0) {
         pipe_barrier(PIPE_ALL);
         for (int i = 0; i < rankSize_; i++) {
-            uint64_t flag_offset = BASE_FLAG_OFFSET + i * FLAG_SIZE;
+			uint64_t flag_offset = BASE_FLAG_OFFSET + i * FLAG_SIZE;
             Record(rank_, flag_offset / UB_ALIGN_SIZE, DOUBLE);
         }
         pipe_barrier(PIPE_ALL);
@@ -486,15 +486,15 @@ __aicore__ inline void AivCommBase::BarrierAll()
     SyncAll<true>();
     int targetRank_ = GetBlockIdx();
     while (targetRank_ < rankSize_) {
-        uint64_t flag_offset = BASE_FLAG_OFFSET + rank_ * FLAG_SIZE;
+            uint64_t flag_offset = BASE_FLAG_OFFSET + rank_ * FLAG_SIZE;
         Record(targetRank_, flag_offset / UB_ALIGN_SIZE, 1);
         targetRank_ += block_num;
     }
     targetRank_ = GetBlockIdx();
     while (targetRank_ < rankSize_) {
         uint64_t flag_offset = BASE_FLAG_OFFSET + targetRank_ * FLAG_SIZE;
-        WaitFlag(rank_, flag_offset / UB_ALIGN_SIZE, 1);
-        Record(rank_, flag_offset / UB_ALIGN_SIZE, 0);
+            WaitFlag(rank_, flag_offset / UB_ALIGN_SIZE, 1);
+            Record(rank_, flag_offset / UB_ALIGN_SIZE, 0);
         targetRank_ += block_num;
     }
     SyncAll<true>();
@@ -535,13 +535,13 @@ template<typename T>
 __aicore__ inline void AivCommBase::SetAtomicOp(uint32_t atomicOp)
 {
     switch (atomicOp) {
-    case HcclReduceOp::HCCL_REDUCE_SUM:
+        case HcclReduceOp::HCCL_REDUCE_SUM:
         SetAtomicAdd<T>(); break;
-    case HcclReduceOp::HCCL_REDUCE_MAX:
+        case HcclReduceOp::HCCL_REDUCE_MAX:
         SetAtomicMax<T>(); break;
-    case HcclReduceOp::HCCL_REDUCE_MIN:
+        case HcclReduceOp::HCCL_REDUCE_MIN:
         SetAtomicMin<T>(); break;
-    default:
+        default:
         SetAtomicNone(); break;
     }
 }
@@ -704,68 +704,68 @@ __simd_vf__ inline void AivCommBase::AddVf(__ubuf__ T* dstPtr, __ubuf__ T* src0P
 }
 
 __aicore__ inline void AivCommBase::ClearFlag()
-{
-    // 用10个flag
-    __gm__ int32_t *ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_]);
-    __gm__ int32_t *emtpyGM = (__gm__ int32_t *)(GM_OUT[rank_] + CLEAR_BUFFER_OFFSET);
+    {
+        // 用10个flag
+        __gm__ int32_t *ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_]);
+        __gm__ int32_t *emtpyGM = (__gm__ int32_t *)(GM_OUT[rank_] + CLEAR_BUFFER_OFFSET);
         if (GetBlockIdx() == 0) {
-        CpGM2GM(ctrlFlagsGM, emtpyGM, BUFFER_AREA / sizeof(int32_t));
+            CpGM2GM(ctrlFlagsGM, emtpyGM, BUFFER_AREA / sizeof(int32_t));
+        }
     }
-}
-
-__aicore__ inline void AivCommBase::BlockSync()
-{
-    uint32_t flagOffset = SYNC_BUFFER_OFFSET + 2 * FLAG_SIZE * numBlocks_;
-    __gm__ int32_t *ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset);
+ 
+    __aicore__ inline void AivCommBase::BlockSync()
+    {
+        uint32_t flagOffset = SYNC_BUFFER_OFFSET + 2 * FLAG_SIZE * numBlocks_;
+        __gm__ int32_t *ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset);
         if (GetBlockIdx() == 0) {
             //通知其他核
-        pipe_barrier(PIPE_ALL);
+            pipe_barrier(PIPE_ALL);
             for (int i = 1; i < numBlocks_; i++) {
-            SetSignalValue(ctrlFlagsGM + i * FLAG_SIZE, localSetTensor, 1);
-        }
-        pipe_barrier(PIPE_ALL);
+                SetSignalValue(ctrlFlagsGM + i * FLAG_SIZE, localSetTensor, 1);
+            }
+            pipe_barrier(PIPE_ALL);
         } else {
             //接收通知并清零
-        WaitSignalValue(ctrlFlagsGM + GetBlockIdx() * FLAG_SIZE, localCheckTensor, 1);
+            WaitSignalValue(ctrlFlagsGM + GetBlockIdx() * FLAG_SIZE, localCheckTensor, 1);
             SetSignalValue(ctrlFlagsGM +  GetBlockIdx() * FLAG_SIZE, localSetTensor, 0);
-        pipe_barrier(PIPE_ALL);
+            pipe_barrier(PIPE_ALL);
+        }
     }
-}
+ 
+    __aicore__ inline void AivCommBase::ClearSyncBuf()
+    {
+        // 用10个flag
+        Barrier(1);
+        ClearFlag();
+        Barrier(DOUBLE);
+        BlockSync();
+    }
 
-__aicore__ inline void AivCommBase::ClearSyncBuf()
-{
-    // 用10个flag
-    Barrier(1);
-    ClearFlag();
-    Barrier(DOUBLE);
-    BlockSync();
-}
-
-__aicore__ inline void AivCommBase::Barrier(uint32_t step)
-{
-    // 用10个flag
-    uint32_t flagOffset = 2 * 1024 * 1024 - (step % 2 + 1) * FLAG_SIZE * rankSize_;
-    __gm__ int32_t *ctrlFlagsGM;
+    __aicore__ inline void AivCommBase::Barrier(uint32_t step)
+    {
+        // 用10个flag
+        uint32_t flagOffset = 2 * 1024 * 1024 - (step % 2 + 1) * FLAG_SIZE * rankSize_;
+        __gm__ int32_t *ctrlFlagsGM;
         if (GetBlockIdx() == 0) {
-        pipe_barrier(PIPE_ALL);
+            pipe_barrier(PIPE_ALL);
             for (int i = 1; i < rankSize_; i++) {
-            uint32_t targetRank = (rank_ + i) % rankSize_;
-            ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[targetRank] + flagOffset + rank_ * FLAG_SIZE);
-            SetSignalValue(ctrlFlagsGM, localSetTensor, 1);
-        }
-        pipe_barrier(PIPE_ALL);
+                uint32_t targetRank = (rank_ + i) % rankSize_; 
+                ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[targetRank] + flagOffset + rank_ * FLAG_SIZE);
+                SetSignalValue(ctrlFlagsGM, localSetTensor, 1);
+            }
+            pipe_barrier(PIPE_ALL);
             for (int i = 1; i < rankSize_; i++) {
-            uint32_t targetRank = (rank_ + i) % rankSize_;
-            ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset + targetRank * FLAG_SIZE);
-            WaitSignalValue(ctrlFlagsGM, localCheckTensor, 1);
-        }
-        pipe_barrier(PIPE_ALL);
+                uint32_t targetRank = (rank_ + i) % rankSize_; 
+                ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset + targetRank * FLAG_SIZE);
+                WaitSignalValue(ctrlFlagsGM, localCheckTensor, 1);
+            }
+            pipe_barrier(PIPE_ALL);
             for (int i = 1; i < rankSize_; i++) {
-            uint32_t targetRank = (rank_ + i) % rankSize_;
-            ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset + targetRank * FLAG_SIZE);
-            SetSignalValue(ctrlFlagsGM, localSetTensor, 0);
+                uint32_t targetRank = (rank_ + i) % rankSize_; 
+                ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset + targetRank * FLAG_SIZE);
+                SetSignalValue(ctrlFlagsGM, localSetTensor, 0);
+            }
         }
     }
-}
 
 #endif  /* AIV_COMMUNICATION_BASE_V2_H */
