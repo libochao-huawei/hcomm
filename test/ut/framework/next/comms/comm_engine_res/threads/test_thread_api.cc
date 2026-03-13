@@ -9,6 +9,7 @@
  */
  
 #include "../../../hccl_api_base_test.h"
+#include "hcomm_res.h"
 #include "hcomm_c_adpt.h"
 #include "local_notify_impl.h"
 #include "aicpu_launch_manager.h"
@@ -1052,4 +1053,95 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_65Notify_AicpuTsThread_
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
     ret =  HcclThreadAcquire(comm, COMM_ENGINE_AICPU_TS, 1, 65, &thread);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
+}
+
+TEST_F(TestHcclThread, Ut_HcommThreadResGetInfo_When_Normal_Expect_Return_HCCL_Success)
+{
+    MOCKER(hrtGetDeviceType)
+        .stubs()
+        .with(outBound(DevType::DEV_TYPE_910_95))
+        .will(returnValue(HCCL_SUCCESS));
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+        .stubs()
+        .with(outBound(isDeviceSide))
+        .will(returnValue(HCCL_SUCCESS));   
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;;
+    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 0);
+    ThreadHandle thread;
+    void* comm = static_cast<HcclComm>(hcclCommPtr.get());
+    ret =  HcclThreadAcquire(comm, COMM_ENGINE_CPU_TS, 1, 2, &thread);
+    EXPECT_EQ(ret, 0);
+
+    ThreadResTypeStream stream;
+    ret = HcommThreadResGetInfo(thread, ThreadResType::THREAD_RES_TYPE_STREAM, sizeof(ThreadResTypeStream), &stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(TestHcclThread, Ut_HcommThreadResGetInfo_When_threadNotFound_Return_HCCL_E_NOT_FOUND)
+{
+    ThreadHandle thread;
+    ThreadResTypeStream stream;
+    HcclResult ret = HcommThreadResGetInfo(thread, ThreadResType::THREAD_RES_TYPE_STREAM, sizeof(ThreadResTypeStream), &stream);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+}
+
+TEST_F(TestHcclThread, Ut_HcommThreadResGetInfo_When_restypeNotSupport_Return_HCCL_E_NOT_SUPPORT)
+{
+    std::shared_ptr<Thread> Handle;
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+    .stubs()
+    .with(outBound(isDeviceSide))
+    .will(returnValue(HCCL_SUCCESS));   
+    MOCKER(hrtGetDeviceType)
+    .stubs()
+    .with(outBound(DevType::DEV_TYPE_910_95))
+    .will(returnValue(HCCL_SUCCESS)); 
+    ThreadHandle thread[2];
+    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_CCU, 2, 3, thread);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ThreadResTypeStream stream;
+    ret = HcommThreadResGetInfo(thread[0], ThreadResType::THREAD_RES_TYPE_INVALID, sizeof(ThreadResTypeStream), &stream);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+
+    ret =  HcommThreadFree(thread, 2);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(TestHcclThread, Ut_HcommThreadResGetInfo_When_infoLenMismatch_Return_HCCL_E_PARA)
+{
+    std::shared_ptr<Thread> Handle;
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+    .stubs()
+    .with(outBound(isDeviceSide))
+    .will(returnValue(HCCL_SUCCESS));   
+    MOCKER(hrtGetDeviceType)
+    .stubs()
+    .with(outBound(DevType::DEV_TYPE_910_95))
+    .will(returnValue(HCCL_SUCCESS)); 
+    ThreadHandle thread[2];
+    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_CCU, 2, 3, thread);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ThreadResTypeStream stream;
+    ret = HcommThreadResGetInfo(thread[0], ThreadResType::THREAD_RES_TYPE_STREAM, 1, &stream);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    ret =  HcommThreadFree(thread, 2);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
