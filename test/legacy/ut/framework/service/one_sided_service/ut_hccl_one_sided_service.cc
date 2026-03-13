@@ -203,6 +203,7 @@ TEST_F(HcclOneSidedServiceTest, test_BatchGet_BatchPut)
     LinkData linkData1(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), RankIdA, RankIdB, 0, 1);
     StubCommunicatorImplTransMgr fakeCommA;
     fakeCommA.commExecuteConfig.accState = AcceleratorState::AICPU_TS;
+    fakeCommA.RegisterAicpuKernel();
     HcclOneSidedService oneSidedServiceA(fakeCommA);
     HcclMemDesc MemDescA;
     HcclMemDesc MemDescB;
