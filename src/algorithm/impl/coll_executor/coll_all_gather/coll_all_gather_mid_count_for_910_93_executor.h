@@ -32,7 +32,7 @@ private:
     u64 CalcDstMemOffset(const OpParam &param, u64 inputMemSize) const;
     HcclResult PrepareL2DataSlices(const OpParam &param, const SubCommInfo &level1CommInfo, const SubCommInfo &level2CommInfo,
         u64 inputMemSize, std::vector<Slice> &dataSlices) const;
-    HcclResult RunLevel2ByNHR(const OpParam &param, ExecMem &execMem, SubCommInfo  &level1CommInfo, SubCommInfo &level2CommInfo);
+    HcclResult RunLevel2ByNHR(const OpParam &param, ExecMem &execMem, SubCommInfo  &level1CommInfo, SubCommInfo &level2CommInfo) const;
     HcclResult PrepareL1DataSlices(const OpParam &param, const SubCommInfo &level1CommInfo, const SubCommInfo &level2CommInfo,
         u64 inputMemSize, u32 moduleId, std::vector<Slice> &dataSlices);
     HcclResult RunLevel1ByNHR(const OpParam &param, ExecMem &execMem, SubCommInfo  &level1CommInfo, SubCommInfo &level2CommInfo);

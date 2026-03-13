@@ -131,7 +131,7 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
     } else if (supportOnlyAiv && param.rankSize == 1) {
         HCCL_ERROR("[CollAlgOperator][SelectAlg] onlyaiv not support, please ensure rankNum is greater than one");
     }
-    
+
     // 兼容老接口
     if (limit.ifLimit) {
         CHK_RET(SelectAlg(tag, param, algName, newTag, limit));
@@ -998,7 +998,7 @@ HcclResult CollAlgOperator::AHCAlgSelect(AlgTypeLevel1 &algType, std::vector<std
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAlgOperator::AHCAlgOptionSelect(AlgTypeLevel1 &algType, std::vector<std::vector<std::vector<u32>>> &globalSubGroups,
+HcclResult CollAlgOperator::AHCAlgOptionSelect(const AlgTypeLevel1 &algType, std::vector<std::vector<std::vector<u32>>> &globalSubGroups,
     std::map<AHCConcOpType, TemplateType> &ahcAlgOption, const AHCAlgSelectParam &ahcAlgSelectParam)
 {
     (void) algType;

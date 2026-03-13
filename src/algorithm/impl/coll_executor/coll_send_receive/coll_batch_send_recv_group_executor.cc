@@ -302,7 +302,7 @@ HcclResult CollBatchSendRecvGroupExecutor::RunLoopSmall(OpParam& param)
 
     CHK_RET(ProcessDataSliceSmall(param));
 
-    if (topoMatcher_->GetExternalInputHcclEnableFfts()) {
+    if (static_cast<bool>(topoMatcher_->GetExternalInputHcclEnableFfts())) {
         // 多流子图前后需加空拷贝
         CHK_RET(AlgTemplateBase::ExecEmptyTask(algResResp_->cclInputMem,
             algResResp_->cclOutputMem, param.stream, dispatcher_));

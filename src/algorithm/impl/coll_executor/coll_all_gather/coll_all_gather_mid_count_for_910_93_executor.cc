@@ -103,7 +103,7 @@ HcclResult CollAllGatherMidCountFor91093Executor::PrepareL2DataSlices(const OpPa
 }
 
 HcclResult CollAllGatherMidCountFor91093Executor::RunLevel2ByNHR(const OpParam &param, ExecMem &execMem, 
-    SubCommInfo &level1CommInfo, SubCommInfo &level2CommInfo)
+    SubCommInfo &level1CommInfo, SubCommInfo &level2CommInfo) const
 {
     const u32 level2RankSize = level2CommInfo.localRankSize;
     const u32 multiSuperPodMode = 1;
