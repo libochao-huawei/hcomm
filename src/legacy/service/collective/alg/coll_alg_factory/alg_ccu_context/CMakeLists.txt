@@ -1,51 +1,20 @@
+# -----------------------------------------------------------------------------------------------------------
+# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# -----------------------------------------------------------------------------------------------------------
 target_sources(hccl_v2_native_alg_repo PRIVATE
         ccu_context_alg_base.cc
-        ccu_context_all_gather_mesh1d.cc
-        ccu_context_all_gather_mesh1d_detour.cc
-        ccu_context_all_gather_mesh1d_mem2mem.cc
-        ccu_context_all_gather_mesh2d.cc
-        ccu_context_all_gather_mesh2d_mem2mem.cc
-        ccu_context_reduce_scatter_mesh1d.cc
-        ccu_context_all_reduce_mesh1d.cc
-        ccu_context_all_reduce_mesh1d_one_shot.cc
-        ccu_context_all_to_all_mesh1d.cc
-        ccu_context_scatter_mesh2d.cc
-        ccu_context_reduce_mesh1d.cc
-        ccu_context_reduce_mesh1d_mem2mem.cc
-        ccu_context_reduce_nhr1d_mem2mem.cc
-        ccu_context_all_to_all_v_mesh1d.cc
-        ccu_context_all_to_all_v_mesh2d.cc
-        ccu_context_scatter_mesh1d.cc
-        ccu_context_broadcast_mesh1d.cc
-        ccu_context_broadcast_mesh1d_mem2mem.cc
-        ccu_context_reduce_scatter_mesh2d.cc
-        ccu_context_reduce_scatter_mesh2d_mem2mem.cc
-        ccu_context_broadcast_mesh2d.cc
-        ccu_context_broadcast_mesh2d_mem2mem.cc
-        ccu_context_broadcast_nhr1d_mem2mem.cc
-        ccu_context_all_to_all_mesh2d.cc
-        ccu_context_reduce_mesh2d.cc
-        ccu_context_reduce_mesh2d_mem2mem.cc
         ccu_context_utils.cc
-        ccu_context_all_reduce_mesh2d_one_shot.cc
-        ccu_context_all_reduce_mesh2d_two_shot.cc
-        ccu_context_all_reduce_mesh2d_two_shot_mem2mem.cc
-        ccu_context_all_reduce_mesh1d_detour.cc
-        ccu_context_reduce_scatter_mesh1d_detour.cc
-        ccu_context_reduce_scatter_mesh1d_mem2mem.cc
-        ccu_context_reduce_tail_block.cc
-        ccu_context_all_reduce_mesh1d_mem2mem.cc
-        ccu_context_half_alltoallv_mesh1d.cc
-        ccu_context_all_gather_mesh1d_mem2mem_with_stride.cc
-        ccu_context_all_gather_nhr1d_mem2mem.cc
-        ccu_context_all_gather_v_mesh1d.cc
-        ccu_context_reduce_scatter_v_mesh1d.cc
-        ccu_context_reduce_scatter_v_mesh1d_mem2mem.cc
-        ccu_context_all_reduce_nhr1d_mem2mem.cc
-        ccu_context_reduce_scatter_nhr1d_mem2mem.cc
-        ccu_context_scatter_nhr1d_mem2mem.cc
-        ccu_context_all_gather_mesh1d_2die.cc
-        ccu_context_all_to_all_mesh1d_2Die.cc
-        ccu_context_all_to_all_v_mesh2die.cc
-        ccu_context_reduce_scatter_mesh1d_2die.cc
 )
+add_subdirectory(all_gather)
+add_subdirectory(all_reduce)
+add_subdirectory(all_to_all)
+add_subdirectory(broadcast)
+add_subdirectory(reduce)
+add_subdirectory(reduce_scatter)
+add_subdirectory(scatter)
