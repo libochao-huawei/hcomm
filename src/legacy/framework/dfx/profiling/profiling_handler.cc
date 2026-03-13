@@ -124,24 +124,24 @@ void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginT
     reporterData.beginTime = beginTime;
     reporterData.endTime = endTime;
     reporterData.itemId = GetProfHashId(taskType.Describe().c_str(), taskType.Describe().length());
-
-    // 开关判断，订阅开关未开启时，不上报数据
-    if (taskType == TaskParamType::TASK_AICPU_KERNEL) {
-        return;
-    }
-    if (!ignoreLevel || (!enableHcclL1_ && !enableHcclL0_)) {
-        return;
-    }
-    if (!(!enableHcclL1_ && !enableHcclL0_) && cachedReq) {
-        std::lock_guard<std::mutex> lock(cachedTaskApiInfoMutex_);
-        cachedTaskApiInfo_.push(reporterData);
-        return;
-    }
-    // 数据上报
     HCCL_INFO("[ProfilingHandler]ReportHcclTaskApi, reporterData data is: level[%u], type[%u], threadId[%u], "
               "beginTime[%llu], endTime[%llu], itemId[%llu]",
               reporterData.level, reporterData.type, reporterData.threadId, reporterData.beginTime,
               reporterData.endTime, reporterData.itemId);
+    // 开关判断，订阅开关未开启时，不上报数据
+    if (taskType == TaskParamType::TASK_AICPU_KERNEL) {
+        return;
+    }
+    if ((ignoreLevel && !enableHcclL1_) || (!ignoreLevel && !enableHcclNode_)) {
+        if (cachedReq) {
+            HCCL_INFO("[ProfilingHandler] Cache ReportData");
+            std::lock_guard<std::mutex> lock(cachedTaskApiInfoMutex_);
+            cachedTaskApiInfo_.push(reporterData);
+            return;
+        }
+        return;
+    }
+    // 数据上报
     s32 ret = DlProfFunction::GetInstance().dlMsprofReportApi(1, &reporterData); 
     HCCL_INFO("Call MsprofReportApi, return value[%d]", ret);
     if(ret != 0){

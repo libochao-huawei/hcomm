@@ -42,7 +42,7 @@ public:
 
     u32 GetId() const;
 
-    bool GetIsMaster() const;
+    bool IsMaster() const;
 
     bool IsSelfOwned() const;
 
