@@ -31,26 +31,19 @@ public:
     }
 
     HcclResult GenExtIns(const TempFuncs &tempFuncs, TemplateDataParams &tempAlgParams,
-                         const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues);
+                         const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues) override;
     HcclResult CalcRes(AlgTempResReq &tempResReq) override;
-    uint64_t GetMaxSliceSize() const;
+    uint64_t GetMaxSliceSize() const override;
     void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
 
 private:
     HcclResult CalcSlice(const u64 dataSize, RankSliceInfo &sliceInfoVec);
-    HcclResult GetStepInfo(u32 step, u32 nSteps, NHRStepInfo &stepInfo);
-    HcclResult GetReduceScatterStepInfo(u32 step, NHRStepInfo &stepInfo);
-    HcclResult GetAllGatherStepInfo(u32 step, u32 nSteps, NHRStepInfo &stepInfo);
-    HcclResult ProcessNHRStepInfo(std::vector<NHRStepInfo> &stepInfoVector, RankGroup &rankGroup,
-                                std::map<u32, u32> &indexMap, std::vector<LinkData> &linksDie0,
-                                std::vector<LinkData> &linksDie1, const ResLinks &tempLinks, uint32_t axisSize);
     HcclResult SplitDataFor2Dies(uint64_t dataCount, const ResLinks &tempLinks,
                                 uint64_t &die0Size, uint64_t &die1Size) const;
-    uint32_t virtRankId2RankId(const u32 virtRankId);
     ReduceOp reduceOp_;
     DataType dataType_;
 };
 
 } // namespace Hccl
 
-#endif // HCCLV2_CCU_TEMP_ALL_REDUCE_MESH_1D_MEM2MEM_H_
+#endif // HCCLV2_CCU_TEMP_ALL_REDUCE_NHR_1D_MEM2MEM_H_

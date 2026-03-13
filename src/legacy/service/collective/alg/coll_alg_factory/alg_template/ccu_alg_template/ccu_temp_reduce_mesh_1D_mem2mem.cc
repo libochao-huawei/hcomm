@@ -64,9 +64,8 @@ HcclResult CcuTempReduceMeshMem2Mem1D::GenExtIns(const TempFuncs          &tempF
 
     uint32_t                                rankId    = myRank_;
     uint32_t                                rootId    = tempVirtRankMap_[rootId_];
-
-    const CollAlgOperator                  &op        = op_;
-    const std::vector<std::vector<RankId>> &tempVTopo = tempVTopo_;
+    const CollAlgOperator                   &op       = op_;
+    const std::vector<std::vector<RankId>>  &tempVTopo = tempVTopo_;
     uint64_t inputAddr          = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
     uint64_t outputAddr         = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
     uint64_t token;
@@ -74,9 +73,9 @@ HcclResult CcuTempReduceMeshMem2Mem1D::GenExtIns(const TempFuncs          &tempF
     uint64_t repeatNum          = templateDataParams.repeatNum;
     uint64_t inputRepeatStride  = templateDataParams.inputRepeatStride;
     uint64_t outputRepeatStride = templateDataParams.outputRepeatStride;
+    uint64_t repeatNumVar       = UINT64_MAX - repeatNum;
     uint64_t normalSliceSize    = templateDataParams.sliceSize;
     uint64_t lastSliceSize      = templateDataParams.tailSize;
-    uint64_t repeatNumVar       = UINT64_MAX - repeatNum;
 
     // 数据切分为sliceNum块，当数据量不能均匀切分时，后面smallDataSliceNum个数据块比前面bigDataSliceNum个数据块每块少1个数据
     uint64_t sliceNum   = tempRankSize_ - 1;
@@ -109,9 +108,7 @@ HcclResult CcuTempReduceMeshMem2Mem1D::GenExtIns(const TempFuncs          &tempF
     ccuIns.SetLinks(links);
  
     RankGroup rankGroup;
-    for (auto &peer : tempVTopo_[0]) {
-        rankGroup.AddRank(peer);
-    }
+    CreateRankGroupFromTopo(rankGroup, 0);
     u32 cntCkeNum = 4;
     ccuIns.SetCntCkeNum(cntCkeNum);
     ccuIns.SetRankGroup(rankGroup);

@@ -30,15 +30,12 @@ public:
         return StringFormat("Template of Reduce ccu mesh 1D, tempRankSize [%u].", 
                             tempRankSize_);
     }
-
     HcclResult CalcRes(AlgTempResReq &tempResReq) override;
+    void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
     HcclResult GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &templateDataParams, const ResLinks &tempLinks,
                    std::vector<InsQuePtr> &tempInsQues);
-    void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
-
     HcclResult GenExtIns(const RankGraph *rankGraph, const TemplateInfo &tmpInfo,
                          const std::vector<InsQuePtr> &tempInsQues) const;
-
 private:
     ReduceOp reduceOp_;
     DataType dataType_;

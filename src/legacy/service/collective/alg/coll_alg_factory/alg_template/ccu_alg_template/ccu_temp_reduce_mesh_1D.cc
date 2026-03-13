@@ -73,11 +73,11 @@ HcclResult CcuTempReduceMesh1D::GenExtIns(const TempFuncs &tempFuncs, const Temp
     uint64_t inputSliceStride   = templateDataParams.inputSliceStride;
     uint64_t outputSliceStride  = templateDataParams.outputSliceStride;
     uint64_t repeatNum          = templateDataParams.repeatNum;
+    uint64_t repeatNumVar       = UINT64_MAX - repeatNum;
     uint64_t inputRepeatStride  = templateDataParams.inputRepeatStride;
     uint64_t outputRepeatStride = templateDataParams.outputRepeatStride;
     uint64_t normalSliceSize    = templateDataParams.sliceSize;
     uint64_t lastSliceSize      = templateDataParams.tailSize;
-    uint64_t repeatNumVar       = UINT64_MAX - repeatNum;
 
     ccuIns.Init(rankId, rootId, op, tempVTopo, inputAddr, outputAddr, token, inputSliceStride, outputSliceStride, repeatNum,
                 inputRepeatStride, outputRepeatStride, normalSliceSize, lastSliceSize, repeatNumVar);
@@ -99,9 +99,7 @@ HcclResult CcuTempReduceMesh1D::GenExtIns(const TempFuncs &tempFuncs, const Temp
     ccuIns.SetLinks(links);
 
     RankGroup rankGroup;
-    for (auto &peer : tempVTopo_[0]) {
-        rankGroup.AddRank(peer);
-    }
+    CreateRankGroupFromTopo(rankGroup, 0);
     u32 cntCkeNum = 4;
     ccuIns.SetCntCkeNum(cntCkeNum);
     ccuIns.SetRankGroup(rankGroup);
