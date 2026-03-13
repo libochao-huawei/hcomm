@@ -211,6 +211,7 @@ target_link_libraries(hccl_v2 PRIVATE
     ra
     -Wl,--as-needed
     hccl_headers
+    topoaddrinfo
 )
 ENDIF ()
 
