@@ -1,0 +1,129 @@
+/**
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+#include "product_card.h"
+#include <string.h>
+#include <stdlib.h>
+#include <syslog.h>
+#include "securec.h"
+#include "rank_info_types.h"
+#include "hal.h"
+#include "topo.h"
+#include "host_rdma.h"
+#include "eid_util.h"
+
+#define PRODUCT_CARD_ROCE_LEVEL (3)
+#define PRODUCT_CARD_ROCE_LEVEL_INSTANCE_ID "cluster"
+#define MAX_CARD_ROOTINFO_LEN (2048)
+#define MAX_MESH_PORT_ID (9)
+#define CARD_4P_MESH_NUM (4)
+
+int GetCardRankInfoLen(size_t *len)
+{
+    (*len) = MAX_CARD_ROOTINFO_LEN;
+    return 0;
+}
+
+static  int ProcessRoceLayer(int npu_id, NetLayer* layer)
+{
+    char ip_addr[MAX_ADDR_LEN] = {0};
+    GetNpuHostRdmaIp(npu_id, ip_addr, sizeof(ip_addr));
+    if (strlen(ip_addr) == 0) {
+        return -1;
+    }
+    NetLayerInit(layer, PRODUCT_CARD_ROCE_LEVEL, PRODUCT_CARD_ROCE_LEVEL_INSTANCE_ID);
+    Addr addr;
+    memset_s(&addr, sizeof(Addr), 0x00, sizeof(Addr));
+    NetLayerSetNetType(layer, NET_TYPE_CLOS);
+    AddrSetIP(&addr, ip_addr);
+    errno_t ret = strcpy_s(addr.plane_id, MAX_PLANE_ID_LEN, "plane0");
+    AddrAddPort(&addr, "d2h");
+    return ret;
+}
+
+/**
+ *
+ */
+static int ProcessLayerMesh(int npu_id, NetLayer *layer, dcmi_urma_eid_info_t *eid_list, size_t eid_cnt)
+{
+    if (eid_cnt == 0) {
+        return -1;
+    }
+    char server_id[MAX_INSTANCE_ID_LEN] = {0};
+    char net_instance_id[MAX_INSTANCE_ID_LEN] = {0};
+    get_server_id(server_id, sizeof(server_id));
+    // 标卡没4个NPU一组， 可分多组， 标卡机头无单独的server id，因此使用mac地址作为server id 和组ID组合起来作为mesh域的ID
+    int ret = sprintf_s(net_instance_id, sizeof(net_instance_id), "%s_%d", server_id, (npu_id / CARD_4P_MESH_NUM));
+    if (ret < 0) {
+        return -1;
+    }
+    NetLayerInit(layer, 0, net_instance_id);
+    NetLayerSetNetType(layer, NET_TYPE_MESH);
+    hal_get_eid_list_by_phy_id(npu_id, eid_list, &eid_cnt);
+    for (size_t i = 0; i < eid_cnt; i++) {
+        int portId = UrmaEidGetPortId(&eid_list[i].eid);
+        if (portId > MAX_MESH_PORT_ID) {
+            continue;
+        }
+        int dieId = UrmaEidGetDieId(&eid_list[i].eid);
+        Addr addr;
+        memset_s(&addr, sizeof(Addr), 0x00, sizeof(Addr));
+        AddrSetEID(&addr, &eid_list[i].eid);
+        char port[MAX_PORT_LEN] = {0};
+        char planeId[MAX_PLANE_ID_LEN] = {0};
+        int ret1 = sprintf_s(port, MAX_PORT_LEN, "%d/%d", dieId, portId);
+        int ret2 = sprintf_s(planeId, MAX_PORT_LEN, "plane_%d", dieId);
+        if (ret1 < 0 || ret2 < 0) {
+            break;
+        }
+        AddrAddPort(&addr, port);
+        AddrSetPlaneId(&addr, planeId);
+        NetLayerAddAddr(layer, &addr);
+    }
+    return 0;
+}
+
+int GetCardRankInfo(int phyId, unsigned int mainboardId, void *buf, size_t* len)
+{
+    if (buf == NULL || len == NULL) {
+        return RET_NOK;
+    }
+    RootInfo rootinfo;
+    Rank rank;
+    NetLayer layer_mesh;
+    NetLayer layer_roce;
+    RootInfoInit(&rootinfo);
+    RankInit(&rank, phyId, phyId % 4);
+    TopoGetFilePath(mainboardId, rootinfo.topo_file_path, MAX_TOPO_PATH_LEN);
+
+    dcmi_urma_eid_info_t eid_list[MAX_EID_NUM] = {0};
+    size_t eid_cnt = MAX_EID_NUM;
+    hal_get_eid_list_by_phy_id(phyId, eid_list, &eid_cnt);
+    if (ProcessLayerMesh(phyId, &layer_mesh, eid_list, eid_cnt) == 0) {
+        RankAddNetLayer(&rank, &layer_mesh);
+    }
+    if (ProcessRoceLayer(phyId, &layer_roce) == 0) {
+        RankAddNetLayer(&rank, &layer_roce);
+    }
+
+    RootInfoAddRank(&rootinfo, &rank);
+    char* rootinfo_buf = RootInfoToString(&rootinfo);
+    if (rootinfo_buf == NULL) {
+        return -1;
+    }
+    if (*len < strlen(rootinfo_buf)) {
+        *len = strlen(rootinfo_buf);
+        free(rootinfo_buf);
+        return -1;
+    }
+    errno_t ret = strcpy_s(buf, *len, rootinfo_buf);
+    (*len) = strlen(buf);
+    free(rootinfo_buf);
+    return ret;
+}
