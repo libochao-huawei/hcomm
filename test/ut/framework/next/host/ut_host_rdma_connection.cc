@@ -230,8 +230,7 @@ TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttr_Qos_TimeOut_RetryCnt_Success)
     MOCKER(Hccl::HrtRaCreateQpWithCq).stubs()
                                      .with(any(), any(), any(), any(), any(), any(), any())
                                      .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs()
-                                        .will(returnValue(Hccl::SocketStatus::OK));
+    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
     RdmaHandle rdmaHandle = (void *)0x1000000;
     hcomm::HostRdmaConnection conn(fakeSocket, rdmaHandle);
     conn.Init();
@@ -257,8 +256,7 @@ TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttrQos_Fail)
     MOCKER(Hccl::HrtRaCreateQpWithCq).stubs()
                                      .with(any(), any(), any(), any(), any(), any(), any())
                                      .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs()
-                                        .will(returnValue(Hccl::SocketStatus::OK));
+    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
     RdmaHandle rdmaHandle = (void *)0x1000000;
     hcomm::HostRdmaConnection conn(fakeSocket, rdmaHandle);
     conn.Init();
@@ -284,8 +282,7 @@ TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttrTimeout_Fail)
     MOCKER(Hccl::HrtRaCreateQpWithCq).stubs()
                                      .with(any(), any(), any(), any(), any(), any(), any())
                                      .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs()
-                                        .will(returnValue(Hccl::SocketStatus::OK));
+    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
     RdmaHandle rdmaHandle = (void *)0x1000000;
     hcomm::HostRdmaConnection conn(fakeSocket, rdmaHandle);
     conn.Init();
@@ -311,8 +308,7 @@ TEST_F(HostRdmaConnectionTest, Ut_RaSetQpAttrRetryCnt_Fail)
     MOCKER(Hccl::HrtRaCreateQpWithCq).stubs()
                                      .with(any(), any(), any(), any(), any(), any(), any())
                                      .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs()
-                                        .will(returnValue(Hccl::SocketStatus::OK));
+    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
     RdmaHandle rdmaHandle = (void *)0x1000000;
     hcomm::HostRdmaConnection conn(fakeSocket, rdmaHandle);
     conn.Init();
