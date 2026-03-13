@@ -174,7 +174,7 @@ HcclResult CreateCommConfig(uint32_t rank, HcclCommConfig *config, HcclComm *com
         HcclGetRankSizeV2(*comm, &commParams.rankSize);
         opbasedCommInfoV2.commParams = commParams;
     
-        HcclGroupParamsV2 params;
+        HcclGroupParamsV2 params{};
         params.pComm = opbasedCommInfoV2.pComm;
         std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
         opbasedCommInfoV2.hcclGroupMap[commId] = params;
@@ -245,7 +245,7 @@ HcclResult CreateCommConfigRootInfo(uint32_t rank, const HcclCommConfig *config,
         HcclGetRankSizeV2(*comm, &commParams.rankSize);
         opbasedCommInfoV2.commParams = commParams;
 
-        HcclGroupParamsV2 params;
+        HcclGroupParamsV2 params{};
         params.pComm = opbasedCommInfoV2.pComm;
         std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
         opbasedCommInfoV2.hcclGroupMap[identifier] = params;
@@ -341,7 +341,7 @@ HcclResult HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, Hcc
         HcclGetRankSizeV2(*comm, &commParams.rankSize);
         opbasedCommInfoV2.commParams = commParams;
  	 
-        HcclGroupParamsV2 params;
+        HcclGroupParamsV2 params{};
         params.pComm = opbasedCommInfoV2.pComm;
         std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
         opbasedCommInfoV2.hcclGroupMap[commId] = params;
@@ -1690,7 +1690,7 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
             errorFlag = true);
         
  	    // 保存通信域
- 	    HcclGroupParamsV2 params;
+ 	    HcclGroupParamsV2 params{};
  	    params.pComm = opbasedCommInfoV2.pComm;
  	    std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
  	    opbasedCommInfoV2.hcclGroupMap[identifier] = params;
@@ -2572,7 +2572,7 @@ HcclResult HcclSnapshotRecoverAllComms(const char *clusterInfo, const char *chan
     HCCL_INFO("[%s] global group recover success.", __func__);
     opbasedCommInfoV2.commParams = savedSnapshotBuf->snapshot.snapShotComm.commParams;
 
-    HcclGroupParamsV2 params;
+    HcclGroupParamsV2 params{};
     params.pComm = opbasedCommInfoV2.pComm;
     opbasedCommInfoV2.hcclGroupMap[savedSnapshotBuf->snapshot.groupName] = params;
 
@@ -2592,7 +2592,7 @@ HcclResult HcclSnapshotRecoverAllComms(const char *clusterInfo, const char *chan
         CHK_RET(opbasedCommInfoV2.pComm->RecoverSubComm(static_cast<const void *>(snapShotSubComm), commImp, 
                 savedSnapshotBuf->snapShotPub.step));
         HCCL_INFO("[%s] sub group[%s] recover success.", __func__, groupName.c_str());
-        HcclGroupParamsV2 params;
+        HcclGroupParamsV2 params{};
         params.pComm = commImp;
         // 这里进行多线程后，加锁
         opbasedCommInfoV2.hcclGroupMap[groupName] = params;
