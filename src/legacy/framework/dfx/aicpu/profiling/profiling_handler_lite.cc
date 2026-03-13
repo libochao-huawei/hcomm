@@ -39,6 +39,10 @@ void ProfilingHandlerLite::Init() const
 
 void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
 {
+    if (!GetProfL0State()) {
+        HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] l0 is false.");
+        return;
+    }
     HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] ReportHcclOpInfo start.");
     MsprofAicpuHCCLOPInfo hcclOpInfo {};
     if (aicpu::GetTaskAndStreamId == nullptr) {
@@ -76,6 +80,10 @@ void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
 
 void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo> &taskInfo) const
 {
+    if (!GetProfL1State()) {
+        HCCL_INFO("[ProfilingHandlerLite][ReportHcclTaskDetails] l1 is false.");
+        return;
+    }
     HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] ReporttHcclTaskDetails start.");
     uint32_t                batchId = 0;
     MsprofAicpuHcclTaskInfo taskDetailsInfos[HCCLINFO_REPORT_BATCH_NUM] {};
@@ -162,6 +170,10 @@ void ProfilingHandlerLite::DumpTaskDetails(const MsprofAicpuHcclTaskInfo &taskDe
 
 void ProfilingHandlerLite::ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo) const
 {
+    if (!GetProfL0State()) {
+        HCCL_INFO("[ProfilingHandlerLite][ReportMainStreamTask] l0 is false.");
+        return;
+    }
     HCCL_INFO("[ProfilingHandlerLite][ReportMainStreamTask] ReportMainStreamTask start.");
     MsprofAicpuHcclMainStreamTask flagtask {};
     if(aicpu::GetTaskAndStreamId == nullptr){
