@@ -92,6 +92,7 @@ HcclResult CollComm::DestroyAicpuComm()
                     __func__, WAIT_CMD_TIMEOUT, opInfo.kfcStatus);
                 return HCCL_E_TIMEOUT;
             }
+            usleep(TEN_MILLISECOND_OF_USLEEP);
         }
     }
     return HCCL_SUCCESS;
