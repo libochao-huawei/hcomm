@@ -215,3 +215,127 @@ TEST_F(HostRdmaConnectionTest, Ut_When_Call_GetStatus_Expect_Return_Ready)
     std::cout << hostRdmaConnection.rdmaConnStatus_.Describe() << std::endl;
     EXPECT_EQ(hcomm::HostRdmaConnection::RdmaConnStatus::INIT, hostRdmaConnection.rdmaConnStatus_);
 }
+
+TEST_F(HostRdmaConnectionQpAttrTest, Ut_RaSetQpAttr_Qos_TimeOut_RetryCnt_Success)
+{
+    DevType devType = DevType::DEV_TYPE_910_95;
+    MOCKER(hrtGetDeviceType).stubs()
+                            .with(outBound(devType))
+                            .will(returnValue(HCCL_SUCCESS));
+    MOCKER(RaSetQpAttrQos).stubs()
+                          .with(any(), any())
+                          .will(returnValue(0));
+    MOCKER(RaSetQpAttrTimeout).stubs()
+                              .with(any(), any())
+                              .will(returnValue(0));
+    MOCKER(RaSetQpAttrRetryCnt).stubs()
+                               .with(any(), any())
+                               .will(returnValue(0));
+    MOCKER(Hccl::HrtRaCreateQpWithCq).stubs()
+                                     .with(any(), any(), any(), any(), any(), any(), any())
+                                     .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs()
+                                        .will(returnValue(Hccl::SocketStatus::OK));
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    hcomm::HostRdmaConnection conn(fakeSocket, rdmaHandle);
+    conn.Init();
+    conn.qpInfo_.trafficClass = 1;
+    conn.qpInfo_.serviceLevel = 2;
+    conn.qpInfo_.retryInterval = 10;
+    conn.qpInfo_.retryCnt = 3;
+    HcclResult ret = conn.CreateQp();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HostRdmaConnectionQpAttrTest, Ut_RaSetQpAttrQos_Fail)
+{
+    DevType devType = DevType::DEV_TYPE_910_95;
+    MOCKER(hrtGetDeviceType).stubs()
+                            .with(outBound(devType))
+                            .will(returnValue(HCCL_SUCCESS));
+    MOCKER(RaSetQpAttrQos).stubs()
+                          .with(any(), any())
+                          .will(returnValue(-1));
+    MOCKER(RaSetQpAttrTimeout).stubs()
+                              .with(any(), any())
+                              .will(returnValue(0));
+    MOCKER(RaSetQpAttrRetryCnt).stubs()
+                               .with(any(), any())
+                               .will(returnValue(0));
+    MOCKER(Hccl::HrtRaCreateQpWithCq).stubs()
+                                     .with(any(), any(), any(), any(), any(), any(), any())
+                                     .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs()
+                                        .will(returnValue(Hccl::SocketStatus::OK));
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    hcomm::HostRdmaConnection conn(fakeSocket, rdmaHandle);
+    conn.Init();
+    conn.qpInfo_.trafficClass = 1;
+    conn.qpInfo_.serviceLevel = 2;
+    conn.qpInfo_.retryInterval = 10;
+    conn.qpInfo_.retryCnt = 3;
+    HcclResult ret = conn.CreateQp();
+    EXPECT_EQ(ret, HCCL_E_NETWORK);
+}
+
+TEST_F(HostRdmaConnectionQpAttrTest, Ut_RaSetQpAttrTimeout_Fail)
+{
+    DevType devType = DevType::DEV_TYPE_910_95;
+    MOCKER(hrtGetDeviceType).stubs()
+                            .with(outBound(devType))
+                            .will(returnValue(HCCL_SUCCESS));
+    MOCKER(RaSetQpAttrQos).stubs()
+                          .with(any(), any())
+                          .will(returnValue(0));
+    MOCKER(RaSetQpAttrTimeout).stubs()
+                              .with(any(), any())
+                              .will(returnValue(-1));
+    MOCKER(RaSetQpAttrRetryCnt).stubs()
+                               .with(any(), any())
+                               .will(returnValue(0));
+    MOCKER(Hccl::HrtRaCreateQpWithCq).stubs()
+                                     .with(any(), any(), any(), any(), any(), any(), any())
+                                     .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs()
+                                        .will(returnValue(Hccl::SocketStatus::OK));
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    hcomm::HostRdmaConnection conn(fakeSocket, rdmaHandle);
+    conn.Init();
+    conn.qpInfo_.trafficClass = 1;
+    conn.qpInfo_.serviceLevel = 2;
+    conn.qpInfo_.retryInterval = 10;
+    conn.qpInfo_.retryCnt = 3;
+    HcclResult ret = conn.CreateQp();
+    EXPECT_EQ(ret, HCCL_E_NETWORK);
+}
+
+TEST_F(HostRdmaConnectionQpAttrTest, Ut_RaSetQpAttrRetryCnt_Fail)
+{
+    DevType devType = DevType::DEV_TYPE_910_95;
+    MOCKER(hrtGetDeviceType).stubs()
+                            .with(outBound(devType))
+                            .will(returnValue(HCCL_SUCCESS));
+    MOCKER(RaSetQpAttrQos).stubs()
+                          .with(any(), any())
+                          .will(returnValue(0));
+    MOCKER(RaSetQpAttrTimeout).stubs()
+                              .with(any(), any())
+                              .will(returnValue(0));
+    MOCKER(RaSetQpAttrRetryCnt).stubs()
+                               .with(any(), any())
+                               .will(returnValue(-1));
+    MOCKER(Hccl::HrtRaCreateQpWithCq).stubs()
+                                     .with(any(), any(), any(), any(), any(), any(), any())
+                                     .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs()
+                                        .will(returnValue(Hccl::SocketStatus::OK));
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    hcomm::HostRdmaConnection conn(fakeSocket, rdmaHandle);
+    conn.Init();
+    conn.qpInfo_.trafficClass = 1;
+    conn.qpInfo_.serviceLevel = 2;
+    conn.qpInfo_.retryInterval = 10;
+    conn.qpInfo_.retryCnt = 3;
+    HcclResult ret = conn.CreateQp();
+    EXPECT_EQ(ret, HCCL_E_NETWORK);
+}
