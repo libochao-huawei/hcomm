@@ -22,7 +22,6 @@ ProfilingReporter::ProfilingReporter(MirrorTaskManager *mirrorTaskMgr, Profiling
     mirrorTaskMgr_ = mirrorTaskMgr;
     mirrorTaskMgr_->RegFullyCallBack([this]() { ReportCallBackAllTasks(); });
     HCCL_INFO("[ProfilingReporter]ProfilingReporter Construct end.");
-    Init();
 }
 
 ProfilingReporter::~ProfilingReporter()

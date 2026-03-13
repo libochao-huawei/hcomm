@@ -210,9 +210,22 @@ void ProfilingHandler::GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportDat
     std::string cclTag             = taskInfo.dfxOpInfo_->tag_;
     hcclReportData.profInfo.cclTag = GetProfHashId(cclTag.c_str(), cclTag.length());
     uint64_t groupName = GetProfHashId(taskInfo.dfxOpInfo_->op_.opTag.c_str(), taskInfo.dfxOpInfo_->op_.opTag.length());
-    CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(taskInfo.dfxOpInfo_->comm_);
-    hcclReportData.profInfo.groupName         = groupName;
-    hcclReportData.profInfo.rankSize          = commImp->GetRankSize();
+    if (taskInfo.dfxOpInfo_->comm_ != nullptr) {
+        HCCL_ERROR("[ProfilingHandler]taskInfo.dfxOpInfo_->comm_ is not nullptr")
+        return ;
+    }
+    if (taskInfo.dfxOpInfo_->comm_ != nullptr) {
+        HCCL_ERROR("[ProfilingHandler]taskInfo.dfxOpInfo_->comm_ is not nullptr")
+        return ;
+    }
+    if (taskInfo.dfxOpInfo_->isIndop_ == true) {
+        hcclReportData.profInfo.groupName = groupName;
+        hcclReportData.profInfo.rankSize = taskInfo.dfxOpInfo_->rankSize_;
+    } else {
+        CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(taskInfo.dfxOpInfo_->comm_);
+        hcclReportData.profInfo.groupName         = groupName;
+        hcclReportData.profInfo.rankSize          = commImp->GetRankSize();
+    }
     hcclReportData.profInfo.workFlowMode      = static_cast<u32>(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
     hcclReportData.profInfo.planeID           = 0;
     hcclReportData.profInfo.stage             = 0;
@@ -547,9 +560,13 @@ void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opI
     reporterData.data.hcclopInfo.algType  = GetProfHashId(opInfo.algType_.Describe().c_str(), opInfo.algType_.Describe().length());
     uint64_t groupName                     = GetProfHashId(opInfo.op_.opTag.c_str(), opInfo.op_.opTag.length());
     reporterData.data.hcclopInfo.groupName = groupName;
-    // CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(opInfo.comm_);
-    // u32 ranksize = commImp->GetRankSize();
-    u32 ranksize = 2; // TODO: 待修改
+    u32 ranksize{0};
+    if(opInfo.isIndop_ == true) {
+        ranksize = opInfo.rankSize_;
+    } else {
+        CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(opInfo.comm_);
+        ranksize = commImp->GetRankSize();
+    }
     if (opInfo.op_.opType == OpType::ALLTOALLV) {
         u64 sendCount = 0;
         for (u64 i = 0; i < ranksize; i++) {
@@ -950,7 +967,8 @@ void ProfilingHandler::ReportHcclMC2CommInfo(const u32 kfcStreamId,
     const uint32_t ONCE_REPORT_STREAM_NUM_MAX = 8;
     uint32_t reportId = 0;
     for(uint32_t streamIndex = 0; streamIndex < aicpuStreamsId.size(); streamIndex++) {
-        HCCL_INFO("streamIndex:[%u], reportId:[%d], streamId:[%u]", streamIndex, reportId, aicpuStreamsId[streamIndex]);
+        HCCL_INFO("streamIndex:[%u], reportId:[%d], streamId:[%u] id [%s] hcclMC2Info.groupName:[%lu]", streamIndex, 
+            reportId, aicpuStreamsId[streamIndex], id.c_str(), hcclMc2Info.groupName);
         hcclMc2Info.commStreamIds[reportId++] = aicpuStreamsId[streamIndex];
         if (reportId == ONCE_REPORT_STREAM_NUM_MAX) {
             hcclMc2Info.commStreamSize = reportId;
