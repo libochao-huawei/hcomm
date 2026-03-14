@@ -13,7 +13,6 @@
 #include <memory>
 #include <string>
 #include "my_rank.h"
-// #include "rank_graphs/rank_graph.h"
 #include "rank_graph.h"
 #include "comm_config_pub.h"
 #include "comm_engine_res_manager.h"
@@ -53,13 +52,13 @@ public:
     
     // 获取Rank数量
     uint32_t GetRankSize() {
-        if(rankgraph_ == nullptr){
+        if (rankgraph_ == nullptr) {
             HCCL_ERROR("[CollComm]get ranksize failed");
             return 0;
         }
         uint32_t rankSize{0};
         HcclResult ret = rankgraph_->GetRankSize(&rankSize);
-        if(ret != 0){
+        if (ret != 0) {
             HCCL_ERROR("[CollComm]get ranksize failed");
             return 0;
         }
@@ -112,7 +111,6 @@ private:
     uintptr_t   addr_{0};
     std::size_t size_{0};
     HcclMemType memType_{HcclMemType::HCCL_MEM_TYPE_DEVICE};
-    HcclCommDfx dfx_;
 
     std::shared_ptr<HDCommunicate> kfcControlTransferH2D_{nullptr};
     std::shared_ptr<HDCommunicate> kfcStatusTransferD2H_{nullptr};

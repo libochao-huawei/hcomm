@@ -135,7 +135,7 @@ HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *end
     std::unique_ptr<Endpoint> endpointPtr = nullptr;
 
     HcclResult ret = Endpoint::CreateEndpoint(*endpoint, endpointPtr);
-    if (ret != HCCL_SUCCESS){
+    if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("call Endpoint::CreateEndpoint failed");
         return ret;
     }
@@ -355,7 +355,7 @@ HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle
     hccl::DeviceMem remoteRankList = hccl::DeviceMem::alloc(listNum * sizeof(u32));
     CHK_PTR_NULL(remoteRankList.ptr());
     std::vector<u32> remoteRankIdList(listNum);
-    for( u32 i = 0; i < listNum; ++i) {
+    for ( u32 i = 0; i < listNum; ++i) {
         CHK_RET(hccl::HcclCommDfx::GetChannelRemoteRankId(commTag, hostChannelHandles[i], remoteRankIdList[i]));
     }
     // 通过安全的内存拷贝将主机内存数据传输到设备内存
@@ -658,7 +658,6 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
 
 HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, HcclDfxOpInfo dfxOpInfo)
 {
-    
     // 申请device侧内存
     hccl::DeviceMem devicePackBuf = hccl::DeviceMem::alloc(sizeof(dfxOpInfo));
     CHK_PTR_NULL(devicePackBuf.ptr());
@@ -683,7 +682,6 @@ HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHa
         char commTag[256];
     };
 
-    
     InitTask customInitTask = {0, ""};
     customInitTask.context = reinterpret_cast<u64>(devicePackBuf.ptr());
     s32 sRet = strncpy_s(customInitTask.commTag, TAG_MAX_LENGTH, commTag.c_str(), TAG_MAX_LENGTH - 1);

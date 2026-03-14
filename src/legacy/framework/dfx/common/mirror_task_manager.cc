@@ -30,7 +30,7 @@ void MirrorTaskManager::RegFullyCallBack(std::function<void()> callBack)
 
 QueueType MirrorTaskManager::GetQueueType() const
 {
-    if(currDfxOpInfo_ == nullptr) {
+    if (currDfxOpInfo_ == nullptr) {
         THROW<InternalException>(
             StringFormat("MirrorTaskManager::GetQueueType currDfxOpInfo_ is nullptr!"));
     }
@@ -50,7 +50,7 @@ void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
             StringFormat("MirrorTaskManager::AddTaskInfo taskInfo is nullptr"));
     }
 
-    if(taskInfo->dfxOpInfo_ == nullptr) {
+    if (taskInfo->dfxOpInfo_ == nullptr) {
         taskInfo->dfxOpInfo_ = currDfxOpInfo_;
     }
 
@@ -64,7 +64,7 @@ void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
         fullyCallBack_();
         queueTaskNum[taskInfo->streamId_] = 0;
     }
-    
+
     queueMap_[taskInfo->streamId_]->Append(taskInfo);
     queueTaskNum[taskInfo->streamId_]++;
 

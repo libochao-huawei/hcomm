@@ -162,7 +162,7 @@ Hccl::ErrorMessageReport CollComm::GetAicpuTaskException()
 
 uint32_t CollComm::UpdateIndex()
 {
-    return index_+=1;
+    return index_ += 1;
 }
 
 }  // namespace hccl

@@ -21,13 +21,12 @@ HcclCommDfxLite::HcclCommDfxLite() {
 
 // HcclCommDfxLite初始化流程 - 修改为返回HcclResult类型
 HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
-    HCCL_INFO("[HcclCommDfxLite][Init] Init begin");
-    HCCL_INFO("[%s]deviceId[%u], commTag[%s]", __func__, deviceId, commTag.c_str());
+    HCCL_INFO("[HcclCommDfxLite][Init] Init begin deviceId[%u], commTag[%s]", deviceId, commTag.c_str());
     deviceId_ = deviceId;
     commTag_ = commTag;
-    // 1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
-        // 注意：实际实现中应该避免这种情况，CommunicatorImplLite应该传入已经存在的MirrorTaskManager
-        EXECEPTION_CATCH(mirrorTaskManager_ = std::make_unique<Hccl::MirrorTaskManager>(
+    /*1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
+    注意：实际实现中应该避免这种情况，CommunicatorImplLite应该传入已经存在的MirrorTaskManager*/
+    EXECEPTION_CATCH(mirrorTaskManager_ = std::make_unique<Hccl::MirrorTaskManager>(
             deviceId_, &Hccl::GlobalMirrorTasks::Instance(), true), return HCCL_E_PTR);
 
     // 2. 创建Profiling管理类
@@ -79,12 +78,12 @@ void HcclCommDfxLite::AddChannelRemoteRankId(const std::string& commTag, u64 han
 // 在channelRemoteRankIdLite_表中对remoteRankId进行查找
 HcclResult HcclCommDfxLite::GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId) {
     rwLockLite_.readLock();
-    if(channelRemoteRankIdLite_.find(commTag) == channelRemoteRankIdLite_.end()) {
+    if (channelRemoteRankIdLite_.find(commTag) == channelRemoteRankIdLite_.end()) {
         rwLockLite_.readUnlock();
         HCCL_ERROR("[HcclCommDfxLite]commTag:[%s] not found", commTag.c_str());
         return HCCL_E_PARA;
     }
-    if(channelRemoteRankIdLite_[commTag].find(handle) == channelRemoteRankIdLite_[commTag].end()) {
+    if (channelRemoteRankIdLite_[commTag].find(handle) == channelRemoteRankIdLite_[commTag].end()) {
         HCCL_ERROR("[HcclCommDfxLite]handle not found,commTag:[%s], handle:[%lu]", commTag.c_str(), handle);
         rwLockLite_.readUnlock();
         return HCCL_E_PARA;

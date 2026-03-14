@@ -245,7 +245,7 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, co
     dfxOpInfoOnce->rankSize_ = collComm->GetTopoInfo().userRankSize;
     //单算子模式，覆盖opTag
     bool opBased = true;
-    if (opBased){
+    if (opBased) {
         dfxOpInfoOnce->op_.opTag = collComm->GetIdentifier();
     }
     dfxOpInfoOnce->op_.myRank = static_cast<Hccl::RankId>(collComm->GetTopoInfo().userRank);

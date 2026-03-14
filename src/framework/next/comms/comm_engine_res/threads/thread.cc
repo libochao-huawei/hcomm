@@ -338,8 +338,6 @@ HcclResult Thread::ReportHostNotifyWaitTask(u64 notifyId, u64 beginTime, bool is
     return HCCL_SUCCESS;
 }
 
-
-
 HcclResult Thread::ReportNotifyRecordTask(u64 notifyId, u64 beginTime, u32 taskId, u32 streamId) const
 {
     Hccl::TaskParam taskParam{};
@@ -395,7 +393,7 @@ HcclResult Thread::ReportHostLocalCopyTask(void *dst, const void *src, uint64_t 
     u32 streamId = 0;
     hrtGetTaskIdAndStreamID(taskId, streamId);
     taskParam.endTime  = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-
+    CHK_PTR_NULL(callback_);
     CHK_RET(callback_(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[Thread][%s] streamId[%u], taskId[%u], src[%p], dst[%p], len[%llu] %s", __func__, streamId, taskId,
         src, dst, sizeByte, taskParam.Describe().c_str());
@@ -420,7 +418,6 @@ HcclResult Thread::ReportLocalCopyTask(void *dst, const void *src, uint64_t size
         src, dst, sizeByte, taskParam.Describe().c_str());
     return HCCL_SUCCESS;
 }
-
 
 HcclResult Thread::ReportLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
     HcommReduceOp reduceOp, u64 beginTime, u32 taskId,u32 streamId) const

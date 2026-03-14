@@ -80,7 +80,7 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
         CHK_PTR_NULL(engineResMgr);
         ret = engineResMgr->HcclThreadAcquire(engine, threadNum, notifyNumPerThread, threads, threadId);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[%S] failed to create threads for engine[%d],threadsNum[%u], notifyNumperThread[%u]",
+            HCCL_ERROR("[%s] failed to create threads for engine[%d],threadsNum[%u], notifyNumperThread[%u]",
             __func__, engine, threadNum, notifyNumPerThread);
             return ret;
         }
@@ -95,16 +95,17 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
         CHK_PTR_NULL(hcclCommDfx);
         hcclCommDfx->ReportMc2CommInfo(mc2CommInfo);
         if (engine == CommEngine::COMM_ENGINE_AICPU_TS || engine == CommEngine::COMM_ENGINE_AICPU) {
-            HCCL_INFO("[HcclThreaAciqure] ReportThreadAciqureKernel begin");
+            HCCL_INFO("[HcclThreadAciqure] ReportThreadAciqureKernel begin");
             const std::string KernelName = "RunAicpuIndOpThreadInit";
-            CHK_RET(hcclCommDfx->ReportKernel(beginTime,commId,KernelName,SalGetTid()));
-            HCCL_INFO("[HcclThreaAciqure] ReportThreadAciqureKernel sucess");
+            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commId, KernelName, SalGetTid()));
+            HCCL_INFO("[HcclThreadAciqure] ReportThreadAciqureKernel success");
         } else {
             auto hcclCommDfxCallBack = collComm->GetDfxCallback();
             for (u32 num = 0; num < threadNum; ++num) {
-                int hert = HcommThreadRegisterDfx(threads[num],hcclCommDfxCallBack);
+                int hert = HcommThreadRegisterDfx(threads[num], hcclCommDfxCallBack);
                 if (hert != HCCL_SUCCESS) {
-                    HCCL_INFO("[HcclThreaAciqure] ReportThreadAciqureKernel HcommThreadRegisterDfx failed");
+                    HCCL_ERROR("[HcclThreadAciqure] ReportThreadAciqureKernel HcommThreadRegisterDfx failed hert:[%d],num:[%d]",
+                        hert, num);
                     return HCCL_E_PTR;
                 }
             }
@@ -161,11 +162,11 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
         }
         Thread *threadPtr = reinterpret_cast<Thread *>(*thread);
         CHK_PTR_NULL(threadPtr);
-        Stream *stream = threadPtr->GetStream();
-        CHK_PTR_NULL(stream);
+        Stream *threadStream = threadPtr->GetStream();
+        CHK_PTR_NULL(threadStream);
         Mc2CommInfo mc2CommInfo;
         mc2CommInfo.FreeStreamId = 0;
-        mc2CommInfo.streamsId.push_back(static_cast<u32>(stream->id()));
+        mc2CommInfo.streamsId.push_back(static_cast<u32>(threadStream->id()));
         mc2CommInfo.groupname = commId;
         mc2CommInfo.myRankId = collComm->GetMyRankId();
         mc2CommInfo.rankSize = collComm->GetRankSize();

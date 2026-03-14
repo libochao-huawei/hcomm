@@ -17,8 +17,7 @@ std::unordered_map<std::string,std::unordered_map<u64, u32> > HcclCommDfx::chann
 HcclCommDfx::HcclCommDfx() {
 }
 
-HcclResult HcclCommDfx::Init(u32 deviceId, const std::string comTag) {
-    HCCL_INFO("[HcclCommDfx][Init] Init begin");
+HcclResult HcclCommDfx::Init(u32 deviceId, const std::string& comTag) {
     HCCL_INFO("[%s]deviceId[%u], comTag[%s]", __func__, deviceId, comTag.c_str());
     deviceId_ = deviceId;
     commTag_ = comTag;
@@ -94,17 +93,19 @@ void HcclCommDfx::AddChannelRemoteRankId(const std::string& commTag, u64 handle,
 // 在channelRemoteRankId_表中对remoteRankId进行查找（原有逻辑补充返回值）
 HcclResult HcclCommDfx::GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId) {
     rwLock_.readLock();
-    if(channelRemoteRankId_.find(commTag) == channelRemoteRankId_.end()) {
+    auto commIt = channelRemoteRankId_.find(commTag);
+    if (commIt == channelRemoteRankId_.end()) {
         rwLock_.readUnlock();
         HCCL_ERROR("[HcclCommDfx]commTag:[%s] not found", commTag.c_str());
         return HCCL_E_PARA;
     }
-    if(channelRemoteRankId_[commTag].find(handle) == channelRemoteRankId_[commTag].end()) {
+    auto handleIt = commIt->second.find(handle);
+    if (handleIt == commIt->second.end()) {
         HCCL_ERROR("[HcclCommDfx]handle not found,commTag:[%s],handle:[%lu]", commTag.c_str(), handle);
         rwLock_.readUnlock();
         return HCCL_E_PARA;
     }
-    remoteRankId = channelRemoteRankId_[commTag][handle];
+    remoteRankId = handleIt->second;
     rwLock_.readUnlock();
     return HCCL_SUCCESS; // 查找成功补充返回成功码
 }

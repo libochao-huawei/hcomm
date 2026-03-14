@@ -70,7 +70,7 @@ TaskExceptionHost *TaskExceptionHostManager::GetHandler(size_t devId)
 }
 TaskExceptionHostManager::TaskExceptionHostManager() {}
 
-TaskExceptionHostManager::~TaskExceptionHostManager(){}
+TaskExceptionHostManager::~TaskExceptionHostManager() {}
 
 void TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId,
     GetAicpuTaskExceptionCallBackHcomm p1)
@@ -330,7 +330,6 @@ inline std::string GetOpTypeEnumStr(u32 opType)
  	Hccl::OpType hcclOpType = static_cast<Hccl::OpType::Value>(opType);
  	return hcclOpType.Describe();
 }
- 	 
 
 void TaskExceptionHost::PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessageReport &errorMessage,
     std::string &stageErrInfo)

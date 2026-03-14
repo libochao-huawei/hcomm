@@ -62,7 +62,7 @@ void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
     hcclOpInfo.streamId = streamId;
     hcclOpInfo.count = opInfo.op_.dataCount;
     hcclOpInfo.dataType = opInfo.op_.dataType;
-    if(opInfo.isIndop_ == true) {
+    if (opInfo.isIndop_ == true) {
         hcclOpInfo.groupName = GetProfHashId(opInfo.groupName_.c_str(), opInfo.groupName_.length());
     } else {
         CommunicatorImplLite *commImp = static_cast<CommunicatorImplLite *>(opInfo.comm_);
@@ -108,7 +108,7 @@ void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcc
     taskDetailsInfos.itemId = GetProfHashId(nameInfo.c_str(), nameInfo.length());
     taskDetailsInfos.cclTag       = GetProfHashId(it.dfxOpInfo_->tag_.c_str(), it.dfxOpInfo_->tag_.length());
     taskDetailsInfos.remoteRank   = it.remoteRank_;
-    if(it.dfxOpInfo_->isIndop_ == true) {
+    if (it.dfxOpInfo_->isIndop_ == true) {
         taskDetailsInfos.groupName = GetProfHashId(it.dfxOpInfo_->groupName_.c_str(), it.dfxOpInfo_->groupName_.length());
         taskDetailsInfos.rankSize  = it.dfxOpInfo_->rankSize_;
         HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfosdfxOpInfo_->groupName_ %s", it.dfxOpInfo_->groupName_.c_str());
@@ -176,13 +176,13 @@ void ProfilingHandlerLite::ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo
     }
     HCCL_INFO("[ProfilingHandlerLite][ReportMainStreamTask] ReportMainStreamTask start.");
     MsprofAicpuHcclMainStreamTask flagtask {};
-    if(aicpu::GetTaskAndStreamId == nullptr){
+    if (aicpu::GetTaskAndStreamId == nullptr) {
         HCCL_WARNING("[ProfilingHandlerLite][ReportMainStreamTask] aicpu::GetTaskAndStreamId is nullptr.");
         return;
     }
     uint64_t aicpuKernelTaskId   = 0U;
     uint32_t aicpuKernelStreamId = 0;
-    if(aicpu::GetTaskAndStreamId(aicpuKernelTaskId, aicpuKernelStreamId) != aicpu::status_t::AICPU_ERROR_NONE){
+    if (aicpu::GetTaskAndStreamId(aicpuKernelTaskId, aicpuKernelStreamId) != aicpu::status_t::AICPU_ERROR_NONE) {
         THROW<InternalException>("[ProfilingHandler] Failed to get task id and stream id.");
     }
     // flagTaskInfo.taskId的高16位填到flagtask.taskId，低16位填到flagtask.streamId
