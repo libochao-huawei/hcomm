@@ -31,17 +31,17 @@ public:
     HcclResult Orchestrate(const AlgTopoInfo &topoInfo, const CollAlgOperator &op, const CollAlgParams &params,
         ConnectedLinkMgr *linkMgr, InsQuePtr insQue) override;
 
+    HcclResult CalcRes(const RankGraph *rankGraph, CollAlgResReq &algResReq) override;
+
     HcclResult CalcResOffload(
         const RankGraph *rankGraph, const u64 &dataSize, CollOffloadOpResReq &resReq) override;
 
-    HcclResult CalcRes(const RankGraph *rankGraph, CollAlgResReq &algResReq) override;
-
 private:
-    HcclResult InitCommInfo(const RankGraph *rankGraph);
-    HcclResult InitCommInfo(const AlgTopoInfo &topoInfo);
+    HcclResult InitCommInfo(const RankGraph *rankGraph);  
     HcclResult CreateTemplates(std::shared_ptr<InsAlgTemplate> &algTemplatePtr);
     HcclResult GetTemplateResRequest(
         const RankGraph *rankGraph, std::shared_ptr<InsAlgTemplate> &algTemplate, AlgTempResReq &tempResReq) const;
+    HcclResult InitCommInfo(const AlgTopoInfo &topoInfo);
     HcclResult GetTemplateResRequest(
         ConnectedLinkMgr *linkMgr, std::shared_ptr<InsAlgTemplate> &algTemplate, AlgTempResReq &tempResReq) const;
     HcclResult OrchestrateLoop(std::shared_ptr<InsAlgTemplate> algTemplate);
