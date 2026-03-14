@@ -28,19 +28,18 @@ class CcuKernelMgr {
 public:
     static CcuKernelMgr &GetInstance(const s32 deviceLogicId);
 
-    HcclResult Init();
-    HcclResult Deinit();
+    CcuResult Init();
+    CcuResult Deinit();
 
-    CcuResult Register(CcuResPack &resPack, char *kernelFuncName,
-        CcuKernelFunc ccuKernelFunc, CcuKernelArg kernelArg,
+    CcuResult CcuKernelMgr::Register(
+        CcuResPack &resPack, char *kernelFuncName,
+        void *ccuKernelFunc, void *kernelArg,
         CcuKernelHandle &kernelHandle);
 
     CcuResult Translate(const std::vector<CcuKernelHandle> &kernelHandles);
 
     CcuKernel *GetKernel(CcuKernelHandle kernelHandle);
     CcuResult UnRegister(CcuKernelHandle kernelHandle);
-
-    CcuKernel *GetCurrentKernel();
 
 private:
     explicit CcuKernelMgr() = default;
@@ -57,18 +56,18 @@ private:
 private:
     CcuResult AllocRes(CcuResPack &resPack);
 
-    HcclResult InstantiationTranslator(const uint16_t dieId);
-    HcclResult TransRepSequenceToMicrocode(const std::vector<CcuKernel *> &kernels,
+    CcuResult InstantiationTranslator(const uint16_t dieId);
+    CcuResult TransRepSequenceToMicrocode(const std::vector<CcuKernel *> &kernels,
         bool isFuncBlock);
-    HcclResult LoadInstruction(const CcuRep::CcuInstrInfo &instrInfo, const uint32_t dieId);
+    CcuResult LoadInstruction(const CcuRep::CcuInstrInfo &instrInfo, const uint32_t dieId);
 
-    HcclResult GetResPackTotalResRepository(const CcuTranslatResPack &resPack,
+    CcuResult GetResPackTotalResRepository(const CcuTranslatResPack &resPack,
         CcuResRepository &totalRes) const;
 
 private:
     bool initializedFlag_{false};
     int32_t devLogicId_{-1};
-    std::mutex kernelMapMutex_{};
+    std::mutex kernelMapMutex_;
     CcuKernelHandle kernelId_ = 0;
     std::unordered_map<CcuKernelHandle, std::unique_ptr<CcuKernel>> kernelMap_{};
     void *instructionLoadDevMem_{nullptr};
