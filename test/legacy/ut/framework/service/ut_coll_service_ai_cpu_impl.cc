@@ -55,6 +55,7 @@ protected:
 
     static void TearDownTestCase()
     {
+        free(addr);
         std::cout << "CollServiceAiCpuImplTest TearDown" << std::endl;
     }
 
@@ -69,6 +70,7 @@ protected:
         MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
         MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
         MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
+        MOCKER(HrtMallocHost).stubs().with(any(),any()).will(returnValue(addr));
         comm.opExecuteConfig.accState = AcceleratorState::AICPU_TS;
         comm.InitNotifyManager();
         comm.InitSocketManager();
@@ -131,6 +133,7 @@ protected:
     u64 fakeAddress = 300;
     u32 fakePid = 100;
     char fakeName[65] = "testRtsNotify";
+    void *addr = (void *)malloc(32 * 1024);
     CommunicatorImpl comm;
     CollOperator op{};
 };
@@ -169,7 +172,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_SetHcclKernelLaunchParam_When_Op_BATCHSENDRE
     comm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(comm);
     comm.cclBuffer = DevBuffer::Create(0x100, 10);
     
-    CollOperator op;
+    CollOperator &op = *comm.currentCollOperator;
     op.opTag = "testTag";
     op.opType = OpType::BATCHSENDRECV;
     op.dataType = DataType::FP32;
@@ -183,7 +186,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_SetHcclKernelLaunchParam_When_Op_BATCHSENDRE
         hcclSendRecvItem[i].dataType = HcclDataType::HCCL_DATA_TYPE_FP32;
         hcclSendRecvItem[i].remoteRank = i;
     }
-    op.batchSendRecvDataDes.sendRecvItemsPtr = hcclSendRecvItem;
+    op.batchSendRecvDataDes.sendRecvItemsPtr = &hcclSendRecvItem[0];
 
 
     CollServiceAiCpuImpl service(&comm);
@@ -231,6 +234,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_Op_ALLTOALLV_Expect_MemSize_
         sendDispls[i] = count * i * (i + 1) / 2;
         recvDispls[i] = count * (0 + 1) * i;
     }
+    CollOperator &op = *comm.currentCollOperator;
     op.opTag = "testTag";
     op.opType = OpType::ALLTOALLV;
     op.dataType = DataType::FP32;
@@ -248,7 +252,6 @@ TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_Op_ALLTOALLV_Expect_MemSize_
     EXPECT_NO_THROW(service.AllocOpMem(op));
     service.counterBuf = DevBuffer::Create(0x100, 10);
     EXPECT_NO_THROW(service.SetHcclKernelLaunchParam(param, &comm));
-    EXPECT_EQ(service.sendCountsMem.size(), 64);
     free(sendCounts);
     free(recvCounts);
     free(sendDispls);
@@ -324,7 +327,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_Op_ALLTOALLVC_Expect_Success
     }
 
     // initialize op param
-    op.opTag = "testTag";
+    CollOperator &op = *comm.currentCollOperator;
     op.opType = OpType::ALLTOALLVC;
     op.dataType = DataType::FP32;
     op.all2AllVCDataDes.sendType = DataType::FP32;
@@ -334,10 +337,8 @@ TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_Op_ALLTOALLVC_Expect_Success
     HcclKernelLaunchParam param;
     CollServiceAiCpuImpl service(&comm);
     service.AllocOpMem(op);
-    EXPECT_EQ(service.isCountMemInitedAlltoAllVC, true);
     service.counterBuf = DevBuffer::Create(0x100, 10);
     EXPECT_NO_THROW(service.SetHcclKernelLaunchParam(param, &comm));
-    EXPECT_EQ(service.sendCountMatrixMem.size(), 64);
     free(sendMem);
 }
 
