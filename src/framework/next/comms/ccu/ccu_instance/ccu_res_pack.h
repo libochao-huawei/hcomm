@@ -11,13 +11,13 @@
 #define CCU_RES_PACK_H
 
 #include "hccl_res.h"
-#include "ccu_dev_mgr_pub.h"
+#include "ccu_device_pub.h"
 
 namespace hcomm {
 
 class CcuResPack{
 public:
-    explicit CcuResPack(CcuEngine ccuEngine) : ccuEngine_(ccuEngine) {};
+    explicit CcuResPack(CcuInstanceType insType) : insType_(insType) {};
     ~CcuResPack();
 
     HcclResult Init();
@@ -32,9 +32,9 @@ private:
     CcuResPack &operator=(CcuResPack &&that) = delete;
 
     int32_t devLogicId_{0};
-    CcuResRepository resRepo_{};
+    CcuInstanceType insType_{CcuInstanceType::CCU_INVALID};
     CcuResHandle resHandle_{nullptr};
-    CcuEngine ccuEngine_{CcuEngine::INVALID};
+    CcuResRepository resRepo_{};
 };
 
 } // namespace hcomm

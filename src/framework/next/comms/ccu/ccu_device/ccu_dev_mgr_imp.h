@@ -11,7 +11,7 @@
 #ifndef CCU_DEV_MGR_IMP_H
 #define CCU_DEV_MGR_IMP_H
 
-#include "ccu_dev_mgr_pub.h"
+#include "ccu_device_pub.h"
 
 #include <string>
 
