@@ -17,8 +17,7 @@ std::unordered_map<std::string,std::unordered_map<u64, u32> > HcclCommDfx::chann
 HcclCommDfx::HcclCommDfx() {
 }
 
-HcclResult HcclCommDfx::Init(u32 deviceId, const std::string comTag) {
-    HCCL_INFO("[HcclCommDfx][Init] Init begin");
+HcclResult HcclCommDfx::Init(u32 deviceId, const std::string& comTag) {
     HCCL_INFO("[%s]deviceId[%u], comTag[%s]", __func__, deviceId, comTag.c_str());
     deviceId_ = deviceId;
     commTag_ = comTag;

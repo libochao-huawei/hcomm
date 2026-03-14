@@ -62,7 +62,7 @@ void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
     hcclOpInfo.streamId = streamId;
     hcclOpInfo.count = opInfo.op_.dataCount;
     hcclOpInfo.dataType = opInfo.op_.dataType;
-    if(opInfo.isIndop_ == true) {
+    if (opInfo.isIndop_ == true) {
         hcclOpInfo.groupName = GetProfHashId(opInfo.groupName_.c_str(), opInfo.groupName_.length());
     } else {
         CommunicatorImplLite *commImp = static_cast<CommunicatorImplLite *>(opInfo.comm_);
