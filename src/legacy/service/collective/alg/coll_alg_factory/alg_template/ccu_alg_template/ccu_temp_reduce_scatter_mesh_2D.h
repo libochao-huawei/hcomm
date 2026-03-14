@@ -39,11 +39,11 @@ public:
     void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
 
 private:
+    std::vector<uint64_t> dimSize_;
+    std::vector<LinkData> linksX_;
+    std::vector<LinkData> linksY_;
     ReduceOp reduceOp_;
     DataType dataType_;
-    std::vector<uint64_t> dimSize_;
-    std::vector<LinkData> linksY_;
-    std::vector<LinkData> linksX_;
 };
 
 } // namespace Hccl

@@ -31,10 +31,10 @@ public:
         return StringFormat("Template of Reduce ccu mesh mem2mem 2D with tempRankSize [%u].", tempRankSize_);
     }
 
+    void       InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
     HcclResult CalcRes(AlgTempResReq &tempResReq) override;
     HcclResult GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &templateDataParams,
                          const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues);
-    void       InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
 
 private:
     ReduceOp              reduceOp_;
