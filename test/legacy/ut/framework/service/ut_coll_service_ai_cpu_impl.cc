@@ -562,6 +562,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_Resume_When_Normal_Expect_Success)
     LinkData linkData(portType, 0, 1, 0, 1);
     service.connectionsBuilders.emplace(comm.GetId(), make_unique<ConnectionsBuilder>(comm));
     service.connectionsBuilders[comm.GetId()]->availableLinks.insert(linkData);
+    service.kernelParamBuf_ = make_shared<HostBuffer>(KERNEL_PARAM_BUF_SIZE);
     MOCKER_CPP(&RmaConnManager::BatchCreate).stubs();
     MOCKER_CPP(&MemTransportManager::BatchBuildOpbasedTransports).stubs().with(any());
     MOCKER_CPP(&MemTransportManager::IsAllOpbasedTransportReady).stubs().with().will(returnValue(true));
