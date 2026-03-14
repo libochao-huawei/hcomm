@@ -436,8 +436,8 @@ HcclResult ReadBinFile(const string& fileName, string& buffer)
 s8* GetStubFunc(HcclCMDType cmdType, HcclDataType dataType, KernelArgsType argsType = KernelArgsType::ARGS_TYPE_SERVER)
 {
     return reinterpret_cast<s8*>(
-        (((static_cast<int>(cmdType) << SIG_MOVE_LEFT_BITS) + static_cast<int>(dataType)) << SIG_MOVE_LEFT_BITS) +
-        static_cast<int>(argsType));
+        (((static_cast<s64>(cmdType) << SIG_MOVE_LEFT_BITS) + static_cast<s64>(dataType)) << SIG_MOVE_LEFT_BITS) +
+        static_cast<s64>(argsType));
 }
 
 HcclResult RegisterBinaryKernel(const char* funcName, const aclrtBinHandle binHandle, s8* stubFunc)
