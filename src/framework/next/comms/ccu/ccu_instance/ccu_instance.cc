@@ -11,7 +11,6 @@
 #include "ccu_instance.h"
 
 #include "log.h"
-#include "ccu_log.h"
 
 #include "hcom_common.h"
 #include "exception_handler.h"
@@ -41,38 +40,38 @@ CcuInstance::~CcuInstance()
     }
 }
 
-CcuResult CcuInstance::Init()
+HcclResult CcuInstance::Init()
 {
-    if (insType_ >= CcuInstanceType::CCU_UNUSED) {
+    if (insType_ == CcuInstanceType::CCU_INVALID) {
         HCCL_ERROR("[CcuInstance][%s] failed, CcuInstanceType[%d] is invalid.",
             __func__, insType_);
-        return CcuResult::CCU_E_PARA;
+        return HcclResult::HCCL_E_PARA;
     }
 
     devLogicId_ = HcclGetThreadDeviceId();
 
     if (!ccuDrvHandle_) {
-        CCU_CHK_RET(CcuInitFeature(devLogicId_, ccuDrvHandle_));
+        CHK_RET(CcuInitFeature(devLogicId_, ccuDrvHandle_));
     }
 
     if (!resPack_) {
         resPack_.reset(new (std::nothrow) CcuResPack(insType_));
-        CCU_CHK_PTR_NULL(resPack_);
-        CCU_CHK_RET(resPack_->Init());
+        CHK_PTR_NULL(resPack_);
+        CHK_RET(resPack_->Init());
     }
 
-    return CcuResult::CCU_SUCCESS;
+    return HcclResult::HCCL_SUCCESS;
 }
 
-CcuResult CcuInstance::Reset()
+HcclResult CcuInstance::ResetResPack()
 {
     if (!resPack_) {
-        return CcuResult::CCU_SUCCESS;
+        return HcclResult::HCCL_SUCCESS;
     }
 
     untranslatedKernelHandles_.clear();
-    CCU_CHK_RET(resPack_->Reset());
-    return CcuResult::CCU_SUCCESS;
+    CHK_RET(resPack_->Reset());
+    return HcclResult::HCCL_SUCCESS;
 }
 
 CcuResPack *CcuInstance::GetResPack()
@@ -80,11 +79,13 @@ CcuResPack *CcuInstance::GetResPack()
     return resPack_.get();
 }
 
-CcuResult CcuInstance::SaveKernel(const CcuKernelHandle kernelHandle)
+HcclResult CcuInstance::SaveCcuKernel(const CcuKernelHandle kernelHandle)
 {
+    EXCEPTION_HANDLE_BEGIN
     kernelHandles_.push_back(kernelHandle);
     untranslatedKernelHandles_.push_back(kernelHandle);
-    return CcuResult::CCU_SUCCESS;
+    EXCEPTION_HANDLE_END
+    return HcclResult::HCCL_SUCCESS;
 }
 
 const std::vector<CcuKernelHandle> &CcuInstance::GetUntranslatedKernels()

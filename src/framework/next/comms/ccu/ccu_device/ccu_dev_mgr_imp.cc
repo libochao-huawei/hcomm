@@ -10,7 +10,6 @@
 
 #include "ccu_dev_mgr_imp.h"
 
-#include "log.h"
 #include "hccl_res.h"
 #include "hccl_common.h"
 #include "eid_info_mgr.h"
@@ -21,66 +20,47 @@
 
 #include "adapter_rts.h"
 
-#include "ccu_types.h"
-#include "ccu_log.h"
-
 namespace hcomm {
 
 static std::unordered_map<int32_t, std::shared_ptr<CcuDrvHandle>> ccuDrvHandleMap;
 static std::mutex ccuDrvHandleMutex;
-static bool ccuDriverInitAaginFlag = false; // 记录每个进程CCU驱动是否重复拉起
 
-CcuResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle> &ccuDrvHandle)
+HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle> &ccuDrvHandle)
 {
-    if (devLogicId > static_cast<int32_t>(MAX_MODULE_DEVICE_NUM)) {
+    if (devLogicId >= static_cast<int32_t>(MAX_MODULE_DEVICE_NUM)) {
         HCCL_ERROR("[%s] failed, devLogicId[%d] is too large, should be less than %u.",
             __func__, devLogicId, MAX_MODULE_DEVICE_NUM);
-        return CcuResult::CCU_E_PARA;
+        return HcclResult::HCCL_E_PARA;
     }
 
     std::lock_guard<std::mutex> lock(ccuDrvHandleMutex);
-    // ccu驱动已重复拉起失败时，直接返回，在锁保护内返回
-    if (ccuDriverInitAaginFlag) {
-        return CcuResult::CCU_E_DRV_BUSY;
-    }
-
     auto iter = ccuDrvHandleMap.find(devLogicId);
     if (iter != ccuDrvHandleMap.end()) {
         ccuDrvHandle = iter->second;
         HCCL_RUN_INFO("[%s] devLogicId[%d] init ccu feature, handle[0x%llx].",
             __func__, devLogicId, ccuDrvHandle.get());
-        return CcuResult::CCU_SUCCESS;
+        return HcclResult::HCCL_SUCCESS;
     }
 
     std::shared_ptr<CcuDrvHandle> drvHandle = nullptr;
     drvHandle.reset(new (std::nothrow) CcuDrvHandle(devLogicId));
-    CCU_CHK_PTR_NULL(drvHandle);
-    auto ret = drvHandle->Init();
-    if (ret == CcuResult::CCU_E_DRV_BUSY) {
-        HCCL_RUN_WARNING("[%s] failed but passed, devLogicId[%d] ccu driver has been "
-            "inited by another process, this process will not try to init anymore.",
-            __func__, devLogicId);
-        ccuDriverInitAaginFlag = true; // 记录该进程ccu驱动已拉起失败
-        drvHandle = nullptr; // 主动置空触发资源销毁，控制释放时序
-        return ret;
-    }
-    CCU_CHK_RET(ret);
-
+    CHK_PTR_NULL(drvHandle);
+    CHK_RET(drvHandle->Init());
     ccuDrvHandleMap[devLogicId] = drvHandle;
     ccuDrvHandle = ccuDrvHandleMap[devLogicId];
     HCCL_RUN_INFO("[%s] devLogicId[%d] init ccu feature, handle[0x%llx].",
         __func__, devLogicId, ccuDrvHandle.get());
-    return CcuResult::CCU_SUCCESS;
+    return HcclResult::HCCL_SUCCESS;
 }
 
-CcuResult CcuDeinitFeature(const int32_t devLogicId)
+HcclResult CcuDeinitFeature(const int32_t devLogicId)
 {
     std::lock_guard<std::mutex> lock(ccuDrvHandleMutex);
     auto iter = ccuDrvHandleMap.find(devLogicId);
     if (iter == ccuDrvHandleMap.end()) {
         HCCL_INFO("[%s] passed, ccu feature was not inited, devLogicId[%d].",
             __func__, devLogicId);
-        return CcuResult::CCU_SUCCESS;
+        return HcclResult::HCCL_SUCCESS;
     }
 
     auto &ccuDrvHandle = ccuDrvHandleMap[devLogicId];
@@ -92,20 +72,14 @@ CcuResult CcuDeinitFeature(const int32_t devLogicId)
         ccuDrvHandleMap.erase(devLogicId);
     }
 
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult CcuGetDieEnableInfos(int32_t deviceLogicId, std::array<bool, CCU_MAX_IODIE_NUM> &enableInfos)
-{
-    enableInfos = CcuComponent::GetInstance(deviceLogicId).GetDieEnableFlags();
-    return CcuResult::CCU_SUCCESS;
+    return HcclResult::HCCL_SUCCESS;
 }
 
 // CCU设备管理对集合通信提供的接口
 CcuResult CcuAllocResHandleByInsType(int32_t deviceLogicId,
     CcuInstanceType ccuInsType, CcuResHandle &resHandle)
 {
-    if (ccuInsType >= CcuInstanceType::CCU_UNUSED) {
+    if (ccuInsType == CcuInstanceType::CCU_INVALID) {
         HCCL_ERROR("todo: add log");
         return CcuResult::CCU_E_PARA;
     }
@@ -114,7 +88,7 @@ CcuResult CcuAllocResHandleByInsType(int32_t deviceLogicId,
     if (!dieEnableFlags[0] && !dieEnableFlags[1]) {
         HCCL_ERROR("[%s] failed, all ccu dies are disable, devLogicId[%d].",
             __func__, deviceLogicId);
-        return CcuResult::CCU_E_INTERNAL;
+        return HcclResult::HCCL_E_INTERNAL;
     }
 
     CcuResReq resReq{};
@@ -150,17 +124,16 @@ CcuResult CcuAllocResHandleByInsType(int32_t deviceLogicId,
         }
     }
 
-    CCU_CHK_RET(CcuDevMgrImp::AllocResHandle(deviceLogicId, resReq, resHandle));
-
+    CHK_RET(CcuDevMgrImp::AllocResHandle(deviceLogicId, resReq, resHandle));
     HCCL_INFO("[%s] succeed, get res handle[%llx], devLogicId[%d]",
         __func__, resHandle, deviceLogicId);
-    return CcuResult::CCU_SUCCESS;
+    return HcclResult::HCCL_SUCCESS;
 }
 
-CcuResult CcuCheckResource(const int32_t deviceLogicId, const CcuResHandle resHandle, CcuResRepository &resRepo)
+HcclResult CcuCheckResource(const int32_t deviceLogicId, const CcuResHandle resHandle, CcuResRepository &resRepo)
 {
-    CCU_CHK_RET(CcuDevMgrImp::GetResource(deviceLogicId, resHandle, resRepo));
-    return CcuResult::CCU_SUCCESS;
+    CHK_RET(CcuDevMgrImp::GetResource(deviceLogicId, resHandle, resRepo));
+    return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult CcuReleaseResHandle(const int32_t deviceLogicId, const CcuResHandle resHandle)
