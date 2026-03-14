@@ -51,11 +51,11 @@ HcclResult CollAllGatherRingZerocopyExchangeExecutor::CalcExchangeCommInfo(std::
     TransportMemType outputType = TransportMemType::CCL_OUTPUT;
 
     CHK_RET(CalcCommPlaneInfo(tag_, commParaInfo, opTransport[COMM_COMBINE_ORDER], inputType, outputType));
-    LevelNSubCommTransport &commTransport = opTransport[COMM_COMBINE_ORDER];
-    for (u32 subCommIndex = 0; subCommIndex < commTransport.size(); subCommIndex++) {
-        for (auto &transportRequest : commTransport[subCommIndex].transportRequests) {
+    LevelNSubCommTransport &subCommTransport = opTransport[COMM_COMBINE_ORDER];
+    for (u32 subCommIndex = 0; subCommIndex < subCommTransport.size(); subCommIndex++) {
+        for (auto &transportRequest : subCommTransport[subCommIndex].transportRequests) {
             transportRequest.isUsedRdma = (topoAttr_.superPodNum > 1 ||
-                (topoMatcher_->GetExternalInputInterHccsDisable() && topoAttr_.serverNum > 1));
+                (static_cast<bool>(topoMatcher_->GetExternalInputInterHccsDisable()) && topoAttr_.serverNum > 1));
         }
     }
     return HCCL_SUCCESS;
