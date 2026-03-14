@@ -97,14 +97,15 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
         if (engine == CommEngine::COMM_ENGINE_AICPU_TS || engine == CommEngine::COMM_ENGINE_AICPU) {
             HCCL_INFO("[HcclThreaAciqure] ReportThreadAciqureKernel begin");
             const std::string KernelName = "RunAicpuIndOpThreadInit";
-            CHK_RET(hcclCommDfx->ReportKernel(beginTime,commId,KernelName,SalGetTid()));
-            HCCL_INFO("[HcclThreaAciqure] ReportThreadAciqureKernel sucess");
+            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commId, KernelName, SalGetTid()));
+            HCCL_INFO("[HcclThreaAciqure] ReportThreadAciqureKernel success");
         } else {
             auto hcclCommDfxCallBack = collComm->GetDfxCallback();
             for (u32 num = 0; num < threadNum; ++num) {
-                int hert = HcommThreadRegisterDfx(threads[num],hcclCommDfxCallBack);
+                int hert = HcommThreadRegisterDfx(threads[num], hcclCommDfxCallBack);
                 if (hert != HCCL_SUCCESS) {
-                    HCCL_INFO("[HcclThreaAciqure] ReportThreadAciqureKernel HcommThreadRegisterDfx failed");
+                    HCCL_ERROR("[HcclThreaAciqure] ReportThreadAciqureKernel HcommThreadRegisterDfx failed hert:[%d],num:[%d]",
+                        hert, num);
                     return HCCL_E_PTR;
                 }
             }

@@ -27,7 +27,7 @@ void CollCommAicpuDestroyFunc::Call()
     HcclResult ret = Process();
     if (ret != HCCL_SUCCESS) {
         stopCall_ = true;
-        HCCL_ERROR("[%s]Process fail, set stopCall_[%d]", __func__, stopCall_); // 函数调用失败，停止调用避免刷屏
+        HCCL_ERROR("[%s]Process fail, set stopCall_[%d] ret[%d]", __func__, stopCall_, ret);
     }
 }
 

@@ -8981,7 +8981,7 @@ namespace hccl
 
     aclrtBinHandle HcclCommunicator::GetBinHandle() {
         if (binHandle_ == nullptr) {
-            HCCL_ERROR("[HcclCommunicator][GetBinHandle] GetBinHandle binHandle failed.binHandel is nullptr");
+            HCCL_ERROR("[HcclCommunicator][GetBinHandle] GetBinHandle binHandle failed.binHandle is nullptr");
             return nullptr;
         }
         return binHandle_;

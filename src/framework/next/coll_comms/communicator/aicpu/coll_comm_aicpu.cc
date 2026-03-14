@@ -165,7 +165,6 @@ HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
         ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
         channelList[index] = channelHandle;
         CHK_RET(RegisterChannelAddDfxTaskInfo(channelHandle));
-        CHK_PTR_NULL(identifier_.c_str());
         HcclCommDfxLite::AddChannelRemoteRankId(identifier_, channelHandle, commParam->remoteRankList[index]);
         HCCL_INFO("[CollCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
             __func__, index, currentSrcAddr, commParam->singleUniqueIdSize, channelHandle);

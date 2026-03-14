@@ -580,7 +580,8 @@ int32_t HcommBatchModeEnd(const char *batchTag)
     return HcommSetLaunchMode(batchTag, HCOMM_LAUNCH_MODE_EAGER);
 }
 
-int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback) {
+int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback)
+{
     HCCL_INFO("[HcommThreadRegisterDfx] Init begin");
     Thread *threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
@@ -701,7 +702,8 @@ HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime)
     CHK_PTR_NULL(collComm);
     HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
     CHK_PTR_NULL(hcclCommDfx);
-    HCCL_INFO("[%s] Test, comm[%p], hcclCommDfx[%p] GetMirrorTaskManager[%p].", __func__, comm, hcclCommDfx, hcclCommDfx->GetMirrorTaskManager());
+    HCCL_INFO("[%s] Report All Tasks Info, comm[%p], hcclCommDfx[%p] GetMirrorTaskManager[%p].",
+        __func__, comm, hcclCommDfx, hcclCommDfx->GetMirrorTaskManager());
     //单算子模式暂时默认true
     CHK_RET(hcclCommDfx->ReportAllTasks(true));
     CHK_RET(hcclCommDfx->ReportOp(beginTime, true, true));
@@ -713,7 +715,7 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char* kernel
 {
     HCCL_INFO("[%s] START, comm[%p].", __func__, comm);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
-
+    CHK_PRT_RET(kernelName == nullptr,  HCCL_ERROR("[%s] kernelName is null", __func__), HCCL_E_PTR);
     //填入remoteRankId
     auto hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
