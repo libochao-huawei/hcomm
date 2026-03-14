@@ -89,6 +89,7 @@ private:
 
     // 当前CommEngineResMgr复用a3代码，为不影响a3流程，先将ccu资源管理放在MyRank
     std::unique_ptr<hcomm::CcuResContainer> ccuResContainer_{nullptr};
+    CcuInsHandle ccuInsHandle_{0};
 
     ManagerCallbacks callbacks_;
 
