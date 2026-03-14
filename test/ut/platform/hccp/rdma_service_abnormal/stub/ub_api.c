@@ -162,6 +162,16 @@ urma_status_t urma_query_device(urma_device_t *dev, urma_device_attr_t *dev_attr
 	return 0;
 }
 
+urma_status_t urma_get_smac(const urma_context_t *ctx, uint8_t *mac)
+{
+	return 0;
+}
+
+urma_status_t urma_get_dmac(const urma_context_t *ctx, const urma_net_addr_t *netaddr, uint8_t *mac)
+{
+	return 0;
+}
+
 /**
  * Create an urma context on the urma device.
  * @param[in] [Required] dev: urma device, by get_device apis.
