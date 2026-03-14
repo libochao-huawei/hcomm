@@ -82,7 +82,7 @@ target_include_directories(rs_ut_normal PRIVATE
     ${SRC_DIR}/src/platform/hccp/inc/private/network
     ${SRC_DIR}/src/platform/hccp/inc/network
     ${SRC_DIR}/src/platform/hccp/external_depends/inc
-    ${SRC_DIR}/src/platform/hccp/external_depends/inc/driver
+    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${SRC_DIR}/src/platform/hccp/external_depends/ubengine
     ${SRC_DIR}/src/platform/hccp/external_depends/net_adapt
     ${SRC_DIR}/src/platform/hccp/external_depends/ccu

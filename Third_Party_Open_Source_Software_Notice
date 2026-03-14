@@ -147,12 +147,6 @@ test/ut/depends/include/acl/acl_prof.h
 test/ut/depends/pkg_inc/runtime/runtime/mem.h
 test/ut/depends/include/acl/acl_tdt.h
 test/ut/depends/include/driver/ascend_hal_external.h
-src/platform/hccp/external_depends/inc/driver/hwts_task_info.h
-src/platform/hccp/external_depends/inc/driver/ascend_inpackage_hal.h
-src/platform/hccp/external_depends/inc/driver/ascend_hal_base.h
-src/platform/hccp/external_depends/inc/driver/ascend_hal_external.h
-src/platform/hccp/external_depends/inc/driver/ascend_hal_error.h
-src/platform/hccp/external_depends/inc/driver/ascend_hal.h
 
 Copyright notice(s):
 Copyright 2019-2020 Huawei Technologies Co., Ltd
