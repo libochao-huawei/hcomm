@@ -2014,6 +2014,7 @@ HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream
 
 HcclResult HcomSetAttachedStream(const char *group, u32 graphId, const rtStream_t *stream, s32 len)
 {
+    HCCLV2_FUNC_RUN(HcomSetAttachedStreamV2());
     if (group == nullptr) {
         group = HCCL_WORLD_GROUP;
     }
@@ -2155,6 +2156,7 @@ HcclResult HcomGetBandWidthPerNPU(u32 level, float *bandWidth)
 
 HcclResult HcomReleaseSubComms()
 {
+    HCCLV2_FUNC_RUN(HcomReleaseSubCommsV2());
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     if (hcomInfo.pComm) {
         CHK_RET(hcomInfo.pComm->ReleaseSubComms());
