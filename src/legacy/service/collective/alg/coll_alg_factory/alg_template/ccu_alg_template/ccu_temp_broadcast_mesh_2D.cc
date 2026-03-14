@@ -116,14 +116,8 @@ HcclResult CcuTempBroadcastMesh2D::Run(const TempFuncs &tempFuncs, const RankSli
 
     RankGroup rankGroupX;
     RankGroup rankGroupY;
-    for (auto &peer : tempVTopo_[0]) {
-        rankGroupX.AddRank(peer);
-    }
-
-    for (auto &peer : tempVTopo_[1]) {
-        rankGroupY.AddRank(peer);
-    }
-
+    AddRanksToGroup(tempVTopo_,rankGroupX,rankGroupY);
+    
     uint64_t inputAddr;
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {

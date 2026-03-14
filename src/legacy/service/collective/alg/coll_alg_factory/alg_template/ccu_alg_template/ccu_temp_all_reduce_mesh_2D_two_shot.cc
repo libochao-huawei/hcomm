@@ -94,49 +94,6 @@ HcclResult CcuTempAllReduceMesh2DTwoShot::CalcRes(AlgTempResReq &tempResReq)
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuTempAllReduceMesh2DTwoShot::GetBufferAddr(const TempFuncs &tempFuncs, uint64_t &inputAddr,
-                                                        uint64_t &outputAddr)
-{
-    uint64_t inputBaseAddr;
-    uint64_t outputBaseAddr;
-    uint64_t inputOffSet;
-    uint64_t outputOffSet;
-
-    if (opMode_ == OpMode::OPBASE) {
-        if (tempFuncs.isForepart) {
-            // 从 UserIn 获取数据, 添加 loop 偏移
-            inputBaseAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType());
-            inputOffSet = tempFuncs.usrData.usrInSlices[0].GetOffset();
-        } else {
-            // 从 inBuff 获取数据, 添加 inBuffBaseOff
-            inputBaseAddr = BufferTypeToAddr(buffInfo_.inBuffType);
-            inputOffSet = buffInfo_.inBuffBaseOff;
-        }
-        if (tempFuncs.isBottom) {
-            // 把数据写入 UserOut, 添加 loop 偏移
-            outputBaseAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType());
-            outputOffSet = tempFuncs.usrData.usrOutSlices[0].GetOffset();
-        } else {
-            // 把数据写入 outBuff, 添加 outBuffBaseOff
-            outputBaseAddr = BufferTypeToAddr(buffInfo_.outBuffType);
-            outputOffSet = buffInfo_.outBuffBaseOff;
-        }
-    } else {
-        // 图模式没有 tempFuncs.usrData，直接通过 buffInfo_ 获取输入输出地址
-        inputBaseAddr = BufferTypeToAddr(buffInfo_.inBuffType);
-        inputOffSet = buffInfo_.inBuffBaseOff + tempFuncs.usrData.usrInSlices[0].GetOffset();
-        outputBaseAddr = BufferTypeToAddr(buffInfo_.outBuffType);
-        outputOffSet = buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
-    }
-
-    inputAddr   = inputBaseAddr + inputOffSet;
-    outputAddr  = outputBaseAddr + outputOffSet;
-    HCCL_INFO("[GetBufferAddr] inputBaseAddr[%llu], inputOffSet[%llu], outputBaseAddr[%llu], outputOffSet[%llu]",
-               inputBaseAddr, inputOffSet, outputBaseAddr, outputOffSet);
-    HCCL_INFO("[GetBufferAddr] inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
-    return HcclResult::HCCL_SUCCESS;
-}
-
 HcclResult CcuTempAllReduceMesh2DTwoShot::PrepareLinks(const ResLinks &tempLinks)
 {
     HCCL_INFO("[CcuTempAllReduceMesh2DTwoShot] PrepareLinks Starts.");
@@ -176,10 +133,10 @@ HcclResult CcuTempAllReduceMesh2DTwoShot::PrepareRankGroups()
         rankGroupY_.AddRank(peer);
     }
     CHK_PRT_RET(rankGroupX_.GetRanks().size() <= 1 || rankGroupY_.GetRanks().size() <= 1,
-        HCCL_ERROR("[PrepareRankGroups] Rank[%d] RankGroupX size[%u] or RankGroupY size[%u] is not greater than 1. ",
+        HCCL_ERROR("[CcuTempAllReduceMesh2DTwoShot][PrepareRankGroups] Rank[%d] RankGroupX size[%u] or RankGroupY size[%u] is not greater than 1. ",
         myRank_, rankGroupX_.GetRanks().size(), rankGroupY_.GetRanks().size()),
         HcclResult::HCCL_E_PARA);
-    HCCL_INFO("[PrepareRankGroups] RankGroupX size[%u], RankGroupY size[%u].",
+    HCCL_INFO("[CcuTempAllReduceMesh2DTwoShot][PrepareRankGroups] RankGroupX size[%u], RankGroupY size[%u].",
         rankGroupX_.GetRanks().size(), rankGroupY_.GetRanks().size());
     return HcclResult::HCCL_SUCCESS;
 }
@@ -194,15 +151,16 @@ HcclResult CcuTempAllReduceMesh2DTwoShot::Run(const TempFuncs &tempFuncs, const 
 
     u32 xDimSize = dimSize_[0];
     u32 yDimSize = dimSize_[1];
-    HCCL_INFO("[Run] xDimSize[%u], yDimSize[%u]", xDimSize, yDimSize);
+    HCCL_INFO("[CcuTempAllReduceMesh2DTwoShot][Run] xDimSize[%u], yDimSize[%u]", xDimSize, yDimSize);
 
     CHK_RET(PrepareLinks(tempLinks));
     CHK_RET(PrepareRankGroups());
     // 计算 buffer 地址信息
     uint64_t inputAddr;
     uint64_t outputAddr;
-    CHK_RET(GetBufferAddr(tempFuncs, inputAddr, outputAddr));
-    HCCL_INFO("[Run] inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
+    uint64_t offSet;
+    CHK_RET(GetAddrInfo(tempFuncs, inputAddr, outputAddr, sliceInfoVec, offSet));
+    HCCL_INFO("[CcuTempAllReduceMesh2DTwoShot][Run] inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
 
     //计算切分信息：
     uint64_t normalRankDataSize = sliceInfoVec[0][0].size;
@@ -210,7 +168,7 @@ HcclResult CcuTempAllReduceMesh2DTwoShot::Run(const TempFuncs &tempFuncs, const 
     uint64_t normalRankXSliceSize = (normalRankDataCount / (xDimSize + yDimSize)) * xDimSize * DataTypeSizeGet(dataType_);
     uint64_t normalRankYSliceSize = normalRankDataSize - normalRankXSliceSize;
 
-    HCCL_INFO("[Run] normalRankDataSize[%llu] normalRankXSliceSize[%llu], normalRankYSliceSize[%llu]",
+    HCCL_INFO("[CcuTempAllReduceMesh2DTwoShot][Run] normalRankDataSize[%llu] normalRankXSliceSize[%llu], normalRankYSliceSize[%llu]",
         normalRankDataSize, normalRankXSliceSize, normalRankYSliceSize);
 
     // 计算尾块信息
