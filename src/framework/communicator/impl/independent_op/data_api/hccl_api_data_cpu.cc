@@ -662,8 +662,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     collComm->RegisterAicpuTaskExceptionCallback(cpuTsStream->id());
 
     //HcclDfxOpInfo转为DfxOpInfo
-    auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
-    dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
+    auto dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
     dfxOpInfoOnce->comm_ = static_cast<void*>(collComm);
     dfxOpInfoOnce->isIndop_ = true;
     dfxOpInfoOnce->groupName_ = collComm->GetCommId(); 
@@ -682,7 +681,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
    
     // 下发device侧
-    HcommDfxKernelLaunch(hcclComm->GetIdentifier(),hcclComm->GetBinHandle(), *dfxOpInfo);
+    CHK_RET(HcommDfxKernelLaunch(hcclComm->GetIdentifier(),hcclComm->GetBinHandle(), *dfxOpInfo));
     const std::string KernelName = "RunAicpuDfxOpInfoInitV2";
     CHK_RET(hcclCommDfx->ReportKernel(beginTime, hcclComm->GetIdentifier(), KernelName, SalGetTid()));
     return HCCL_SUCCESS;

@@ -49,30 +49,30 @@ extern uint64_t HcommGetProfilingSysCycleTime();
 
 struct HcclDfxOpInfo {
     //DfxOpInfo_base
-    u64                 beginTime{0};
-    u64                 endTime{0};
+    u64                 beginTime = 0;
+    u64                 endTime = 0;
     //CollOperator
-    bool                staticAddr{false};
-    bool                staticShape{false};
+    bool                staticAddr = false;
+    bool                staticShape = false;
     //baseCollOperator
-    u32                 opMode{0}; // 单算子和图模式
-    u32                 opType{0}; // 算子名称类型
-    u32                 reduceOp{0};
-    u32                 dataType{0};
-    u32                 outputType{0}; //暂不删除，考虑后续算子使用
-    u64                 dataCount{0};
+    u32                 opMode = 0; // 单算子和图模式
+    u32                 opType = 0; // 算子名称类型
+    u32                 reduceOp = 0;
+    u32                 dataType = 0;
+    u32                 outputType = 0; //暂不删除，考虑后续算子使用
+    u64                 dataCount = 0;
     u32                 root = INVALID_VALUE_RANKID;
-    void*               inputMemPtr{nullptr};
-    u64                 inputMemSize{0};
-    void*               outputMemPtr{nullptr};
-    u64                 outputMemSize{0};
-    void*               scratchMemPtr{nullptr};
-    u64                 scratchMemSize{0};
+    void*               inputMemPtr = nullptr;
+    u64                 inputMemSize = 0;
+    void*               outputMemPtr = nullptr;
+    u64                 outputMemSize = 0;
+    void*               scratchMemPtr = nullptr;
+    u64                 scratchMemSize = 0;
     //task_exception
-    u64                 cpuTsThread{0}; // host侧算子主流的threadhandle
-    u32                 cpuWaitAicpuNotifyIdx{0}; // host wait device notifyIdx
-    u32                 cpuWaitAicpuNotifyId{0}; // host wait device notifyId
-    char                algTag[HCOMM_ALG_TAG_LENGTH]{}; // 算法名 = "算子类型 + 通信域id + 选择的算法"
+    u64                 cpuTsThread = 0; // host侧算子主流的threadhandle
+    u32                 cpuWaitAicpuNotifyIdx = 0; // host wait device notifyIdx
+    u32                 cpuWaitAicpuNotifyId = 0; // host wait device notifyId
+    char                algTag[HCOMM_ALG_TAG_LENGTH]; // 算法名 = "算子类型 + 通信域id + 选择的算法"
 };
 
 #ifdef __cplusplus
