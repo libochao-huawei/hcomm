@@ -208,6 +208,9 @@ HcclResult HostRdmaConnection::ModifyQp()
         return HCCL_E_ROCE_CONNECT;
     }
 
+    HCCL_INFO("[HostRdmaConnection::ModifyQp] HostRdmaConnection qpInfo_: serviceLevel[%d], trafficClass[%d], retryCnt[%d], retryInterval[%d].", 
+            qpInfo_.serviceLevel, qpInfo_.trafficClass, qpInfo_.retryCnt, qpInfo_.retryInterval);
+
     struct TypicalQp localQp;
     struct TypicalQp rmtQp;
     localQp.sl = qpInfo_.serviceLevel;
