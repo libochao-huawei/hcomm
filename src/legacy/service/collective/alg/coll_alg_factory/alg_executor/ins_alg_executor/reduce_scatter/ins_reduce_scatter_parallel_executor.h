@@ -26,17 +26,15 @@ public:
         return "Instruction based Reduce Scatter Parallel Executor.";
     }
 
-    // HOST 接口
-    HcclResult Orchestrate(const RankGraph *rankGraph, const CollAlgOperator &op, const CollAlgParams &params,
-                          InsQuePtr insQue) override;
-    // AICPU 接口
-    HcclResult Orchestrate(const AlgTopoInfo &topoInfo, const CollAlgOperator &op, const CollAlgParams &params,
-                             ConnectedLinkMgr *linkMgr, InsQuePtr insQue) override;
-
+    HcclResult CalcRes(const RankGraph *rankGraph, CollAlgResReq &algResReq) override;
     HcclResult CalcResOffload(const RankGraph *rankGraph, const u64 &dataSize,
                               CollOffloadOpResReq &resReq) override;
-
-    HcclResult CalcRes(const RankGraph *rankGraph, CollAlgResReq &algResReq) override;
+    // HOST
+    HcclResult Orchestrate(const RankGraph *rankGraph, const CollAlgOperator &op, const CollAlgParams &params,
+                          InsQuePtr insQue) override;
+    // AICPU
+    HcclResult Orchestrate(const AlgTopoInfo &topoInfo, const CollAlgOperator &op, const CollAlgParams &params,
+                             ConnectedLinkMgr *linkMgr, InsQuePtr insQue) override;
 
 private:
     HcclResult GenInsQuesHost(InsAlgTemplate0 &tempAlgIntra, InsAlgTemplate1 &tempAlgInter);
@@ -48,24 +46,24 @@ private:
     HcclResult PrepareResForTemplate(const RankGraph *rankGraph, InsAlgTemplate0 &tempAlgIntra, InsAlgTemplate1 &tempAlgInter);
     HcclResult PrepareResForTemplate(ConnectedLinkMgr *linkMgr, InsAlgTemplate0 &tempAlgIntra, InsAlgTemplate1 &tempAlgInter);
 
+    const RankGraph *rankGraph_ = nullptr;
+
+    std::vector<std::vector<std::vector<RankId>>> vTopo_;
+    std::vector<std::vector<RankId>>              virtRanks_;
+    std::vector<std::map<RankId, u32>>            virtRankMap_; // map<virtRank, virtRankOrder>
+    
     u32 rankSizeLevel0_{0};
     u32 rankSizeLevel1_{0};
 
     uint64_t rankIdxLevel0_{0};
     uint64_t rankIdxLevel1_{0};
 
-    const RankGraph *rankGraph_ = nullptr;
-
-    std::vector<std::vector<RankId>>              virtRanks_;
-    std::vector<std::map<RankId, u32>>            virtRankMap_; // map<virtRank, virtRankOrder>
-    std::vector<std::vector<std::vector<RankId>>> vTopo_;
-
+    ResLinks               intraLinks_;
+    ResLinks               interLinks_;
     std::vector<InsQuePtr> requiredQue_;
     std::vector<InsQuePtr> intraQue_;
     std::vector<InsQuePtr> interQue_;
     std::vector<InsQuePtr> syncQueues_;
-    ResLinks               intraLinks_;
-    ResLinks               interLinks_;
 
     const RankGraph *rankGraphPtr_ = nullptr;
 };

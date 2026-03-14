@@ -60,17 +60,17 @@ private:
     u32 interLocalRoot_{0};  // server间算法root
 
     const RankGraph *rankGraph_ = nullptr;
-
-    std::vector<std::vector<std::vector<RankId>>> vTopo_;
-    std::vector<std::vector<RankId>> virtRanks_;
-    std::vector<std::map<RankId, u32>> virtRankMap_; // map<virtRank, virtRankOrder>
-
     std::vector<InsQuePtr> requiredQue_;
     std::vector<InsQuePtr> intraQue_;
     std::vector<InsQuePtr> interQue_;
     std::vector<InsQuePtr> syncQueues_;
     ResLinks               intraLinks_;
     ResLinks               interLinks_;
+
+    std::vector<std::vector<std::vector<RankId>>> vTopo_;
+    std::vector<std::map<RankId, u32>> virtRankMap_; // map<virtRank, virtRankOrder>
+    std::vector<std::vector<RankId>> virtRanks_;
+
 
     const RankGraph *rankGraphPtr_ = nullptr;
 };
