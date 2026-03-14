@@ -1246,3 +1246,57 @@ HcclResult HcclCommDestroyV2(HcclComm comm)
 {
     return HCCL_SUCCESS;
 }
+
+/**王建修改部分 */
+/*void LocalIpcRmaBuffer::Grant(u32 pid)
+{
+}
+
+}  // namespace Hccl
+
+HcclResult HcclCommDestroyV2(HcclComm comm)
+{
+    return HCCL_SUCCESS;
+}
+ */
+
+
+/**明聪修改部分 */
+/*void LocalIpcRmaBuffer::Grant(u32 pid)
+{
+}
+
+}  // namespace Hccl
+
+HcclResult HcclCommDestroyV2(HcclComm comm)
+{
+    return HCCL_SUCCESS;
+}
+ */
+
+
+/**俊廷修改部分 */
+/*void LocalIpcRmaBuffer::Grant(u32 pid)
+{
+}
+
+}  // namespace Hccl
+
+HcclResult HcclCommDestroyV2(HcclComm comm)
+{
+    return HCCL_SUCCESS;
+}
+ */
+
+/**蔡一凡修改部分 */
+/*void LocalIpcRmaBuffer::Grant(u32 pid)
+{
+}
+
+}  // namespace Hccl
+
+HcclResult HcclCommDestroyV2(HcclComm comm)
+{
+    return HCCL_SUCCESS;
+}
+ */
