@@ -62,6 +62,37 @@
 #include "base_config.h"
 
 #include "../../../legacy/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
+#include "task_info.h"
+
+#include <sstream>
+#include <iostream>
+#include <cstdint>
+#include <iomanip>
+#include <array>
+#include "rt_external.h"
+#include "adapter_rts_common.h"
+#include "externalinput_pub.h"
+#include "config_log.h"
+#include "sal_pub.h"
+#include "acl/error_codes/rt_error_codes.h"
+
+#include "dispatcher_task_types.h"
+#include "../../../legacy/framework/dfx/common/task_info.h"
+#include "../../../legacy/framework/dfx/common/mirror_task_manager.h"
+#include "../../../legacy/framework/dfx/common/global_mirror_tasks.h"
+#include "../../../legacy/framework/dfx/common/circular_queue.h"
+#include "../../../legacy/framework/dfx/profiling/profiling_handler.h"
+#include "../../../legacy/framework/dfx/profiling/profiling_reporter.h"
+#include "../../../legacy/framework/dfx/aicpu/profiling/profiling_handler_lite.h"
+#include "../../../legacy/framework/dfx/aicpu/profiling/profiling_reporter_lite.h"
+#include "../../../legacy/unified_platform/common/dlhal_function_v2.h"
+#include "../../../legacy/framework/dfx/profiling/dlhal_function.h"
+#include "../../../legacy/framework/communicator/aicpu/daemon/aicpu_daemon_service.h"
+#include "../.../../legacy/framework/dfx/task_exception/task_exception_handler.h"
+#include "../../../legacy/unified__platform/external_system/orion_adater_hccp.h"
+#include "../../../legacy/include/hccl_communicator.h"
+#include "acl/acl_rt.h"
+
 
 namespace Hccl {
 
@@ -381,9 +412,16 @@ u32 StreamLite::GetDevPhyId() const
 {
     return 2;
 }
+RtsqBase::RtsqBase(u32 devPhyId, u32 streamId, u32 sqId) : devPhyId_(devPhyId), streamId_(streamId), sqId_(sqId)
+{
+}
+void RtsqBase::Reset() {
+
+}
 RtsqBase *StreamLite::GetRtsq() const
 {
-    return nullptr;
+    RtsqBase *rtSq = new RtsqBase(1, 2, 3);
+    return rtSq;
 }
 
 
@@ -1247,10 +1285,22 @@ HcclResult HcclCommDestroyV2(HcclComm comm)
     return HCCL_SUCCESS;
 }
 
-/**王建修改部分 */
-/*void LocalIpcRmaBuffer::Grant(u32 pid)
+TaskInfo::TaskInfo(u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam,std::shared_ptr<DfxOpInfo> dfxOpInfo, bool isMaster)
+ : streamId_(streamId), taskId_(taskId), remoteRank_(remoteRank), taskParam_(taskParam), dfxOpInfo_(dfxOpInfo), isMaster_(isMaster)
+ {}
+
+std::string TaskInfo::Describe() const
 {
+    return "";
 }
+
+
+std::string TaskInfo::GetBaseInfo() const
+{
+    return "";
+}
+
+std::string TaskInfo::GetConciseBaseInfo() const
 
 }  // namespace Hccl
 
@@ -1370,7 +1420,17 @@ ProfilingHandler::ProfilingHandler()
 
 ProfilingHandler::~ProfilingHandler()
 {
+    return "";
 }
+
+std::string TaskInfo::GetParaInfo() const
+{
+    return "";
+}
+
+std::string TaskInfo::GetOpInfo() const
+{
+    return "";
 
 ProfilingHandler &ProfilingHandler::GetInstance()
 {
@@ -1851,4 +1911,5 @@ aclError aclrtSetExceptionInfoCallback(aclrtSetExceptionInfoCallback callback)
 u32 Hccl::HcclCommuincator::GetRankInParentComm()
 {
     return 0;
+>>>>>>> master
 }
