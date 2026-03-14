@@ -62,7 +62,9 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(Hccl::DlHalFunctionV2::GetInstance().DlHalFunctionInit());
 
     isReady_ = true;
-    CHK_RET(InitBackGroundThread());
+
+    static std::once_flag onceFlag;
+    std::call_once(onceFlag, [this]() { this->InitBackGroundThread();} );
     HCCL_RUN_INFO("[%s]success, group[%s], deviceLogicId[%u], devicePhyId[%u], deviceType[%u], rankSize[%u] "\
         "userRank[%u], devId[%u]", __func__, identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId,
         topoInfo_.deviceType, topoInfo_.userRankSize, topoInfo_.userRank, devId_);
@@ -277,15 +279,8 @@ HcclResult CollCommAicpu::NotifyAlloc(NotifyMgrAicpuParam *param)
     return HCCL_SUCCESS;
 }
 
-HcclResult CollCommAicpu::InitBackGroundThread()
+void CollCommAicpu::InitBackGroundThread()
 {
-    static bool backGroundInit = false;
-    if (backGroundInit) {
-        HCCL_INFO("[%s]identifier[%s], backGroundInit[%d], skip", __func__, identifier_.c_str(), backGroundInit);
-        return HCCL_SUCCESS;
-    }
-    backGroundInit = true;
-
     static auto commandToBackGroud = Hccl::CommandToBackGroud::Default;
     static auto daemonServiceRun = [](void *info) {
         Hccl::AicpuDaemonService::GetInstance().ServiceRun(info);
@@ -295,18 +290,17 @@ HcclResult CollCommAicpu::InitBackGroundThread()
     };
 
     // 注册守护进程函数
-    CHK_RET(hcomm::HcclCommTaskExceptionLite::GetInstance().Init(devId_));
+    hcomm::HcclCommTaskExceptionLite::GetInstance().Init(devId_);
     Hccl::AicpuDaemonService::GetInstance().Register(&hcomm::HcclCommTaskExceptionLite::GetInstance());
     Hccl::AicpuDaemonService::GetInstance().Register(&hccl::CollCommAicpuDestroyFunc::GetInstance());
 
     // 启动背景线程
     if (Hccl::StartMC2MaintenanceThread != nullptr) {
-        Hccl::StartMC2MaintenanceThread(daemonServiceRun, &commandToBackGroud, daemonServiceStop, &commandToBackGroud);
+        Hccl::StartMC2MaintenanceThread(daemonServiceRun, &commandToBackGround, daemonServiceStop, &commandToBackGround);
         HCCL_RUN_INFO("[%s]start BackGround thread success.", __func__);
     } else {
         HCCL_WARNING("[%s]StartMC2MaintenanceThread func is nullptr", __func__);
     }
-    return HCCL_SUCCESS;
 }
 
 HcclResult CollCommAicpu::BackGroundGetCmd(Hccl::KfcCommand &cmd)

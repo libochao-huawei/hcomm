@@ -20,20 +20,11 @@ std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpIn
     collOp.dataType = Hccl::HcclDataTypeToDataType(static_cast<HcclDataType>(dfxOpInfo.dataType));
     collOp.dataCount = dfxOpInfo.dataCount;
     collOp.root = dfxOpInfo.root;
-    collOp.staticAddr = dfxOpInfo.staticAddr;
-    collOp.staticShape = dfxOpInfo.staticShape;
-    collOp.inputMem = std::make_shared<Hccl::Buffer>(
-        reinterpret_cast<uintptr_t>(dfxOpInfo.inputMemPtr),
-        static_cast<std::size_t>(dfxOpInfo.inputMemSize)
-    );
-    collOp.outputMem = std::make_shared<Hccl::Buffer>(
-        reinterpret_cast<uintptr_t>(dfxOpInfo.outputMemPtr),
-        static_cast<std::size_t>(dfxOpInfo.outputMemSize)
-    );
-    collOp.scratchMem = std::make_shared<Hccl::Buffer>(
-        reinterpret_cast<uintptr_t>(dfxOpInfo.scratchMemPtr),
-        static_cast<std::size_t>(dfxOpInfo.scratchMemSize)
-    );
+    collOp.staticAddr = false;
+    collOp.staticShape = false;
+    collOp.inputMem = std::make_shared<Hccl::Buffer>(0, 0);
+    collOp.outputMem = std::make_shared<Hccl::Buffer>(0, 0);
+    collOp.scratchMem = std::make_shared<Hccl::Buffer>(0, 0);
 
     dfxOpInfoOnce->op_= std::move(collOp);
     dfxOpInfoOnce->algTag_ = dfxOpInfo.algTag;

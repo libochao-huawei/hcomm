@@ -27,7 +27,6 @@ public:
     u64          beginTime_;
     u64          endTime_;
     void        *comm_;
-    u32          mainStreamId_;
     bool         isIndop_{false};
     std::string  algTag_;
     std::string  groupName_;

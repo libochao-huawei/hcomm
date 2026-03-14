@@ -14,6 +14,7 @@ namespace Hccl {
 MirrorTaskManager::MirrorTaskManager(u32 devId, GlobalMirrorTasks *globalMirrorTasks, bool devUsed)
     : devId_(devId), globalMirrorTasks_(globalMirrorTasks), devUsed_(devUsed)
 {
+    currDfxOpInfo_ = std::make_shared<Hccl::DfxOpInfo>();
 }
 
 void MirrorTaskManager::RegFullyCallBack(std::function<void(const std::string&, u32)> callBack)
@@ -81,16 +82,20 @@ bool MirrorTaskManager::IsStaticGraphMode(const CollOperator &collOperator) cons
 
 void MirrorTaskManager::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
 {
+    if (dfxOpInfo == nullptr) {
+        HCCL_ERROR("[MirrorTaskManager][SetCurrDfxOpInfo]fail, dfxOpInfo is nullptr");
+        return;
+    }
     currDfxOpInfo_     = dfxOpInfo;
     isStaticGraphMode_ = IsStaticGraphMode(dfxOpInfo->op_);
     opMode_            = dfxOpInfo->op_.opMode;
-    HCCL_INFO("[MirrorTaskManager][SetCurrDfxOpInfo] SetCurrDfxOpInfo Succeed, currDfxOpInfo_[%p], this[%p] !", currDfxOpInfo_.get(), this);
+    HCCL_INFO("[MirrorTaskManager][SetCurrDfxOpInfo] Succeed, currDfxOpInfo_[%p], this[%p] !", currDfxOpInfo_.get(), this);
     return;
 }
 
 std::shared_ptr<DfxOpInfo> MirrorTaskManager::GetCurrDfxOpInfo() const
 {
-    HCCL_INFO("[MirrorTaskManager][GetCurrDfxOpInfo] SetCurrDfxOpInfo Succeed, currDfxOpInfo_[%p], this[%p] !", currDfxOpInfo_.get(), this);
+    HCCL_INFO("[MirrorTaskManager][GetCurrDfxOpInfo] Succeed, currDfxOpInfo_[%p], this[%p] !", currDfxOpInfo_.get(), this);
     return currDfxOpInfo_;
 }
 

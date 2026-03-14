@@ -652,21 +652,22 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     CHK_PTR_NULL(collComm);
     dfxOpInfo->beginTime = hrtMsprofSysCycleTime();
 
-    LocalNotify *notify = GetNotify(dfxOpInfo->cpuTsThread, dfxOpInfo->cpuWaitAicpuNotifyIdx);
-    CHK_PRT_RET(!notify, HCCL_ERROR("[%s]GetNotify null, thread[%llu], notifyIdx[%u]",
-        __func__, dfxOpInfo->cpuTsThread, dfxOpInfo->cpuWaitAicpuNotifyIdx), HCCL_E_PTR);
-    dfxOpInfo->cpuWaitAicpuNotifyId = notify->notifyId_;
+    if (dfxOpInfo->engine == COMM_ENGINE_AICPU_TS) {
+        LocalNotify *notify = GetNotify(dfxOpInfo->cpuTsThread, dfxOpInfo->cpuWaitAicpuNotifyIdx);
+        CHK_PRT_RET(!notify, HCCL_ERROR("[%s]GetNotify null, thread[%llu], notifyIdx[%u]",
+            __func__, dfxOpInfo->cpuTsThread, dfxOpInfo->cpuWaitAicpuNotifyIdx), HCCL_E_PTR);
+        dfxOpInfo->cpuWaitAicpuNotifyId = notify->notifyId_;
 
-    Stream *cpuTsStream = GetStream(dfxOpInfo->cpuTsThread);
-    CHK_PTR_NULL(cpuTsStream);
-    collComm->RegisterAicpuTaskExceptionCallback(cpuTsStream->id());
+        Stream *cpuTsStream = GetStream(dfxOpInfo->cpuTsThread);
+        CHK_PTR_NULL(cpuTsStream);
+        collComm->RegisterAicpuTaskExceptionCallback(cpuTsStream->id());
+    }
 
     //HcclDfxOpInfo转为DfxOpInfo
     auto dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
     dfxOpInfoOnce->comm_ = static_cast<void*>(collComm);
     dfxOpInfoOnce->isIndop_ = true;
     dfxOpInfoOnce->groupName_ = collComm->GetCommId(); 
-    dfxOpInfoOnce->mainStreamId_ = cpuTsStream->id();
     dfxOpInfoOnce->opIndex_ = collComm->UpdateIndex();
     dfxOpInfoOnce->rankSize_ = collComm->GetRankSize();
     //单算子模式，暂时覆盖opTag

@@ -42,13 +42,12 @@ HcclCommTaskExceptionLite::~HcclCommTaskExceptionLite()
     initFlag_ = false;
 }
 
-HcclResult HcclCommTaskExceptionLite::Init(u32 devId)
+void HcclCommTaskExceptionLite::Init(u32 devId)
 {
-    CHK_PRT_RET(initFlag_ == true, HCCL_DEBUG("%s has been initialized", __func__), HCCL_SUCCESS);
+    CHK_PRT_RET(initFlag_ == true, HCCL_DEBUG("%s has been initialized", __func__),);
     initFlag_ = true;
     devId_ = devId;
     HCCL_INFO("[%s]success, devId_[%u]", __func__, devId_);
-    return HCCL_SUCCESS;
 }
 
 void HcclCommTaskExceptionLite::Call()
