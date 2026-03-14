@@ -13,6 +13,7 @@ if (DEVICE_MODE)
 endif()
 add_subdirectory(rdma_agent)
 add_subdirectory(rdma_service)
+add_subdirectory(netco)
 
 if (NOT DEVICE_MODE)
     return()
@@ -98,10 +99,11 @@ if(DEVICE_MODE)
         COMMAND ${CMAKE_COMMAND} -E make_directory ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:rs> ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra_adp> ${HCCP_TAR_DIR}
+		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:net_co> ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hccp_service.bin> ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/lib/lib* ${HCCP_TAR_DIR}
         COMMAND chmod 750 ${HCCP_TAR_DIR}/lib*
         COMMAND chmod 750 ${HCCP_TAR_DIR}/hccp_service.bin
-        COMMENT "Copying rs ra_adp hccp_service.bin ascend_kms tls_adp to ${HCCP_TAR_DIR}"
+        COMMENT "Copying rs ra_adp net_co hccp_service.bin ascend_kms tls_adp to ${HCCP_TAR_DIR}"
     )
 endif()
