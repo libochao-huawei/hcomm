@@ -175,7 +175,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_SetHcclKernelLaunchParam_When_Op_BATCHSENDRE
     op.dataType = DataType::FP32;
     op.dataCount = 3;
     op.batchSendRecvDataDes.itemNum = 2;
-    HcclSendRecvItem hcclSendRecvItem[2];
+    HcclSendRecvItem *hcclSendRecvItem = (HcclSendRecvItem *)malloc(op.batchSendRecvDataDes.itemNum * sizeof(HcclSendRecvItem));
     // 初始化每个 HcclSendRecvItem
     for (u32 i = 0; i < 2; ++i) {
         hcclSendRecvItem[i].sendRecvType = HcclSendRecvType::HCCL_SEND;
@@ -183,7 +183,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_SetHcclKernelLaunchParam_When_Op_BATCHSENDRE
         hcclSendRecvItem[i].dataType = HcclDataType::HCCL_DATA_TYPE_FP32;
         hcclSendRecvItem[i].remoteRank = i;
     }
-    op.batchSendRecvDataDes.sendRecvItemsPtr = &hcclSendRecvItem[0];
+    op.batchSendRecvDataDes.sendRecvItemsPtr = hcclSendRecvItem;
 
 
     CollServiceAiCpuImpl service(&comm);
@@ -191,6 +191,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_SetHcclKernelLaunchParam_When_Op_BATCHSENDRE
     service.devBatchSendRecvItemBufs = DevBuffer::Create(0x100, 10);
     EXPECT_NO_THROW(service.AllocOpMem(op));
     EXPECT_NO_THROW(service.SetHcclKernelLaunchParam(param, &comm));
+    free(hcclSendRecvItem);
 }
 
 TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_Op_ALLTOALLV_Expect_MemSize_Right)
