@@ -11,7 +11,6 @@
 #ifndef HCOMM_CCU_INSTANCE_MGR_H
 #define HCOMM_CCU_INSTANCE_MGR_H
 
-#include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
 

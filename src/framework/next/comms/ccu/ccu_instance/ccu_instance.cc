@@ -63,7 +63,7 @@ HcclResult CcuInstance::Init()
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuInstance::Reset()
+HcclResult CcuInstance::ResetResPack()
 {
     if (!resPack_) {
         return HcclResult::HCCL_SUCCESS;
@@ -79,7 +79,7 @@ CcuResPack *CcuInstance::GetResPack()
     return resPack_.get();
 }
 
-HcclResult CcuInstance::SaveKernel(const CcuKernelHandle kernelHandle)
+HcclResult CcuInstance::SaveCcuKernel(const CcuKernelHandle kernelHandle)
 {
     EXCEPTION_HANDLE_BEGIN
     kernelHandles_.push_back(kernelHandle);

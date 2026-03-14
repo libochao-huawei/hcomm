@@ -15,12 +15,10 @@
 
 // todo: 需要适配资源不足
 
-#define HCCL_TO_CCU_RET(ret) static_cast<CcuResult>(ret)
-
 /* 检查函数返回值, 并返回指定错误码 */
 #define CCU_CHK_RET(call)                                 \
     do {                                              \
-        CcuResult ccuRet = HCCL_TO_CCU_RET(call);                        \
+        CcuResult ccuRet = call;                        \
         if (UNLIKELY(ccuRet != CCU_SUCCESS)) {                    \
             if (ccuRet == CCU_E_AGAIN) {                \
                 HCCL_WARNING("[%s]call trace: ccuRet -> %d", __func__, ccuRet); \
@@ -30,15 +28,5 @@
             return ccuRet;                               \
         }                                             \
     } while (0)
-
-#define CCU_CHK_PTR_NULL(ptr)                                                                               \
-    do {                                                                                                           \
-        if (UNLIKELY((ptr) == nullptr)) {                  \
-            HCCL_ERROR("[%s]errNo[0x%016llx]ptr [%s] is nullptr, return HCCL_E_PTR", \
-            __func__, HCCL_ERROR_CODE(HCCL_E_PTR), #ptr); \
-            return CCU_E_PTR;                                                                                     \
-        }                                                                                                          \
-    } while (0)
-
 
 #endif // CCU_LOG_H
