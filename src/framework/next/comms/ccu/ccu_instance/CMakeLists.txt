@@ -8,13 +8,12 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-add_subdirectory(ccu)
-
 set(src_list
-    hcomm_c_adpt.cc
-    endpoint_map.cc
+    ccu_res_pack.cc
+    ccu_instance.cc
+    ccu_instance_mgr.cc
 )
- 
+
 target_sources(hcomm PRIVATE
     ${src_list}
 )
