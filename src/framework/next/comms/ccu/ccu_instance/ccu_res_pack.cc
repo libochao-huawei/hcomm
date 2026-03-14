@@ -31,13 +31,13 @@ CcuResPack::~CcuResPack()
 HcclResult CcuResPack::Init()
 {
     devLogicId_ = HcclGetThreadDeviceId();
-    if (ccuEngine_ == CcuEngine::INVALID) {
+    if (insType_ == CcuInstanceType::CCU_INVALID) {
         HCCL_ERROR("[CcuResPack][%s] failed, error ccu engine type[%d].",
             __func__, static_cast<int32_t>(ccuEngine_));
         return HcclResult::HCCL_E_PARA;
     }
 
-    CHK_RET(CcuAllocEngineResHandle(devLogicId_, ccuEngine_, resHandle_));
+    CHK_RET(CcuAllocResHandleByInsType(devLogicId_, insType_, resHandle_));
     CHK_RET(Reset());
     return HcclResult::HCCL_SUCCESS;
 }

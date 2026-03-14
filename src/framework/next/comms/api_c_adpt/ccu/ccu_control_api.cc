@@ -1,0 +1,43 @@
+/**
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include "ccu_primitives.h"
+
+#include "hcom_common.h"
+
+#include "ccu_instance_mgr.h"
+
+CcuResult HcommCcuInsCreate(void *resDesc, CcuInsHandle *insHandle)
+{
+    CHK_PTR_NULL(resDesc);
+    CHK_PTR_NULL(insHandle);
+
+    // 当前该接口未对外提供，内部使用优先基于instance类型
+    auto *insType = static_cast<CcuInstanceType *>(resDesc);
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    CCU_CHK_RET(CcuInstanceMgr::GetInstance(devLogicId).Create(*insType, insHandle));
+
+    return CcuResult::CCU_SUCCESS;
+}
+
+/**
+ * @brief 关闭CCU特性，解初始化CCU平台层
+ *
+ * @param deviceLogicId 设备逻辑ID
+ * @return HcclResult 返回HcclResult类型的结果
+ * @note 资源不足时返回HCCL_E_UNAVIL，其余非HCCL_SUCCESS结果属于错误
+ */
+CcuResult HcommCcuInsDestroy(CcuInsHandle insHandle)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    CCU_CHK_RET(CcuInstanceMgr::GetInstance(devLogicId).Destroy(insHandle));
+
+    return CcuResult::CCU_SUCCESS;
+}
