@@ -692,6 +692,25 @@ out:
     return ConverReturnCode(RDMA_OP, ret);
 }
 
+HCCP_ATTRI_VISI_DEF int RaCtxGetTpInfoList(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num)
+{
+    struct RaCtxHandle *ctxHandleTmp = NULL;
+    int ret = 0;
+
+    CHK_PRT_RETURN(ctxHandle == NULL || cfg == NULL,
+        hccp_err("[get][RaTpInfo]ctx_handle or cfg is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+    CHK_PRT_RETURN(infoList == NULL || num == NULL,
+        hccp_err("[get][RaTpInfo]info_list or num is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+    CHK_PRT_RETURN(*num == 0 || *num > HCCP_MAX_TPID_INFO_NUM,
+        hccp_err("[get][RaTpInfo]*num(%u) is out of range[0, %d]", *num, HCCP_MAX_TPID_INFO_NUM),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
+    ret = RaPeerCtxGetTpInfoList(ctxHandleTmp, cfg, infoList, num);
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
 HCCP_ATTRI_VISI_DEF int RaCtxQpImport(void *ctxHandle, struct QpImportInfoT *qpInfo, void **remQpHandle)
 {
     struct RaCtxRemQpHandle *remQpHandleTmp = NULL;

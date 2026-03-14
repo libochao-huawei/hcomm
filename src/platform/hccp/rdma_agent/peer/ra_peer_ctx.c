@@ -383,6 +383,26 @@ int RaPeerCtxQpDestroy(struct RaCtxQpHandle *qpHandle)
     return ret;
 }
 
+int RaPeerCtxGetTpInfoList(struct RaCtxHandle *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num)
+{
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
+    int ret = 0;
+
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
+
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsGetTpInfoList(&devInfo, cfg, infoList, num);
+    RaPeerMutexUnlock(phyId);
+    if (ret != 0) {
+        hccp_err("[get][RaTpInfo]RsGetTpInfoList failed, ret[%d] phyId[%u]", ret, phyId);
+    }
+
+    return ret;
+}
+
 STATIC void RaPeerPrepareQpImport(struct QpImportInfoT *qpInfo, struct RsJettyImportAttr *importAttr)
 {
     struct RaRsJettyImportAttr *raRsImportAttr = NULL;

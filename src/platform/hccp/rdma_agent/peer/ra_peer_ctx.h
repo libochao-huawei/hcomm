@@ -12,6 +12,7 @@
 #define RA_PEER_CTX_H
 
 #include "hccp_ctx.h"
+#include "hccp_async_ctx.h"
 #include "ra_ctx.h"
 
 int RaPeerGetDevEidInfoNum(struct RaInfo info, unsigned int *num);
@@ -55,6 +56,9 @@ int RaPeerCtxQpCreate(struct RaCtxHandle *ctxHandle, struct QpCreateAttr *qpAttr
     struct QpCreateInfo *qpInfo, struct RaCtxQpHandle *qpHandle);
 
 int RaPeerCtxQpDestroy(struct RaCtxQpHandle *qpHandle);
+
+int RaPeerCtxGetTpInfoList(struct RaCtxHandle *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num);
 
 int RaPeerCtxQpImport(struct RaCtxHandle *ctxHandle, struct QpImportInfoT *qpInfo,
     struct RaCtxRemQpHandle *remQpHandle);
