@@ -191,11 +191,7 @@ std::string CollOpToString(const BaseCollOperator &collOp)
     if (it != descOpMap.end()) {
         return it->second.operator()(collOp);
     } else {
-        std::string msg = StringFormat(
-            "[BaseCollOperator][CollOpToString]Does not support this operator=%s, please check.",
-            collOp.opType.Describe().c_str()
-        );
-        MACRO_THROW(NotSupportException, msg);
+        return "unknown";
     }
 }
 
