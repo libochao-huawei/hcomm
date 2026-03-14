@@ -309,7 +309,7 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
         for (u32 i = 0; i < newThreads.size(); ++i, ++threadsIt) {
             ThreadHandle cpuTsHandle = reinterpret_cast<ThreadHandle>((*threadsIt).get());
             (*threadsIt)->AddThreadHandleToMap(engine, hostHandle[i]);
-            hostToDeviceThreadHandle_[hostHandle[i]] = cpuTsHandle;
+            threadHandleOthersToCpu_[hostHandle[i]] = cpuTsHandle;
         }
     }
 
