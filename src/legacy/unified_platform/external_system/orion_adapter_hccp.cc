@@ -1051,7 +1051,7 @@ RdmaHandle HrtRaUbCtxInit(const HrtRaUbCtxInitParam &in)
         string msg = StringFormat(
             "[Init][RaUbCtx]errNo[0x%016llx] ub ctx init fail, mode[%d], phyId[%u], addr[%s], ret[%d]",
             HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), in.mode, in.phyId, in.addr.GetIpStr().c_str(), ret);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_INFO("[HrtRaUbCtxInit] WENGZHUOHAO=%s", msg);
     }
     return handle;
 }

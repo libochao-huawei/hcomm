@@ -139,7 +139,6 @@ RdmaHandle RdmaHandleManager::GetByAddr(u32 devPhyId, const LinkProtoType &local
 RdmaHandle RdmaHandleManager::GetByIp(u32 devPhyId, const IpAddress &localIp)
 {
     std::lock_guard<std::mutex> lock(managerMutex);
-
     if (devPhyId > rdmaHandleMap.size() - 1) {
         HCCL_ERROR("[RdmaHandleManager][GetByIp]devPhyId[%u] is invalid, "
             "should be less than [%zu]", devPhyId, rdmaHandleMap.size());
