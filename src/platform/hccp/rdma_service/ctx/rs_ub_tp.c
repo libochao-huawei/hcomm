@@ -76,11 +76,53 @@ int RsUbGetTpAttr(struct RsUbDevCb *devCb, unsigned int *attrBitmap, const uint6
     return ret;
 }
 
+STATIC int RsConvertIpToNetAddr(const uint8_t ip[], urma_net_addr_t *addr)
+{
+    bool isIpv4 = true;
+    unsigned int i = 0;
+    int ret = 0;
+
+    for (i = 0; i < IPV4_MAP_START_IDX - 1; ++i) {
+        if (ip[i] != 0) {
+            isIpv4 = false;
+        }
+    }
+
+    if (isIpv4) {
+        addr->sin_family = AF_INET;
+        ret = memcpy_s(&addr->in4, sizeof(struct in_addr), &ip[IPV4_MAP_START_IDX], sizeof(struct in_addr));
+        CHK_PRT_RETURN(ret != 0, hccp_err("memcpy_s ip failed, ret:%d errno:%d", ret, errno), ret);
+    } else {
+        addr->sin_family = AF_INET6;
+        ret = memcpy_s(&addr->in6, sizeof(struct in6_addr), ip, sizeof(struct in6_addr));
+        CHK_PRT_RETURN(ret != 0, hccp_err("memcpy_s ip failed, ret:%d errno:%d", ret, errno), ret);
+    }
+
+    return ret;
+}
+
 int RsUbSetTpAttr(struct RsUbDevCb *devCb, const unsigned int attrBitmap, const uint64_t tpHandle,
     struct TpAttr *attr)
 {
+    urma_net_addr_t dip = {0};
     uint8_t tpAttrCnt = 0;
     int ret;
+
+    if ((attrBitmap & TP_ATTR_SIP_MASK) && (attrBitmap & TP_ATTR_SMAC_MASK)) {
+        ret = RsUrmaGetSmac(devCb->urmaCtx, attr->sma);
+        CHK_PRT_RETURN(ret != 0, hccp_err("RsUrmaGetSmac failed, attrBitmap:%u ret:%d errno:%d",
+            attrBitmap, ret, errno), -EOPENSRC);
+    }
+
+    if ((attrBitmap & TP_ATTR_DIP_MASK) && (attrBitmap & TP_ATTR_DMAC_MASK)) {
+        ret = RsConvertIpToNetAddr(attr->dip, &dip);
+        CHK_PRT_RETURN(ret != 0, hccp_err("RsConvertIpToNetAddr failed, attrBitmap:%u ret:%d",
+            attrBitmap, ret), ret);
+
+        ret = RsUrmaGetDmac(devCb->urmaCtx, &dip, attr->dma);
+        CHK_PRT_RETURN(ret != 0, hccp_err("RsUrmaGetDmac failed, attrBitmap:%u ret:%d errno:%d",
+            attrBitmap, ret, errno), -EOPENSRC);
+    }
 
     tpAttrCnt = RsGetBitmapCount(attrBitmap);
     ret = RsUrmaSetTpAttr(devCb->urmaCtx, tpHandle, tpAttrCnt, attrBitmap,
