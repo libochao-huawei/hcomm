@@ -108,7 +108,7 @@ void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcc
     taskDetailsInfos.itemId = GetProfHashId(nameInfo.c_str(), nameInfo.length());
     taskDetailsInfos.cclTag       = GetProfHashId(it.dfxOpInfo_->tag_.c_str(), it.dfxOpInfo_->tag_.length());
     taskDetailsInfos.remoteRank   = it.remoteRank_;
-    if(it.dfxOpInfo_->isIndop_ == true) {
+    if (it.dfxOpInfo_->isIndop_ == true) {
         taskDetailsInfos.groupName = GetProfHashId(it.dfxOpInfo_->groupName_.c_str(), it.dfxOpInfo_->groupName_.length());
         taskDetailsInfos.rankSize  = it.dfxOpInfo_->rankSize_;
         HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfosdfxOpInfo_->groupName_ %s", it.dfxOpInfo_->groupName_.c_str());

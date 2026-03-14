@@ -658,7 +658,6 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
 
 HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, HcclDfxOpInfo dfxOpInfo)
 {
-    
     // 申请device侧内存
     hccl::DeviceMem devicePackBuf = hccl::DeviceMem::alloc(sizeof(dfxOpInfo));
     CHK_PTR_NULL(devicePackBuf.ptr());
@@ -683,7 +682,6 @@ HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHa
         char commTag[256];
     };
 
-    
     InitTask customInitTask = {0, ""};
     customInitTask.context = reinterpret_cast<u64>(devicePackBuf.ptr());
     s32 sRet = strncpy_s(customInitTask.commTag, TAG_MAX_LENGTH, commTag.c_str(), TAG_MAX_LENGTH - 1);
