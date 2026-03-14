@@ -128,6 +128,7 @@ HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *end
 
     std::unique_ptr<Endpoint> endpointPtr = nullptr;
 
+    printf("LGC:10001!");
     HcclResult ret = Endpoint::CreateEndpoint(*endpoint, endpointPtr);
     if (ret != HCCL_SUCCESS){
         HCCL_ERROR("call Endpoint::CreateEndpoint failed");
