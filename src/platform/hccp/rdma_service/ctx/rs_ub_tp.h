@@ -15,6 +15,8 @@
 #include "hccp_ctx.h"
 #include "rs_ctx_inner.h"
 
+#define IPV4_MAP_START_IDX 12
+
 int RsUbGetTpInfoList(struct RsUbDevCb *devCb, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
     unsigned int *num);
 int RsUbGetTpAttr(struct RsUbDevCb *devCb, unsigned int *attrBitmap, const uint64_t tpHandle,
