@@ -55,7 +55,6 @@ protected:
 
     static void TearDownTestCase()
     {
-        free(addr);
         std::cout << "CollServiceAiCpuImplTest TearDown" << std::endl;
     }
 
