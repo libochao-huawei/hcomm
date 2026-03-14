@@ -72,6 +72,10 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
         return;
     }
     auto& curLastPoses = allLastPoses_[deviceLogicId];
+    if (mirrorTaskMgr_ == nullptr || profilingHandler_ == nullptr) {
+        HCCL_ERROR("[ProfilingReporter][ReportAllTasks] mirrorTaskMgr_[%p] or profilingHandler_[%p] is nullptr", mirrorTaskMgr_, profilingHandler_);
+        return;
+    }
     for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
         u32  streamId     = it->first;
         Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second;

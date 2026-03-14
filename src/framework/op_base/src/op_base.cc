@@ -1072,7 +1072,6 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
             "rankIds[%p] is nullptr xor subCommId[%llu] is invalid. " \
             "The two parameters should only be both valid or both invalid.",
             __func__, HCCL_ERROR_CODE(HCCL_E_PARA), rankIds, subCommId), HCCL_E_PARA);
-    CHK_RET(SubCommIsOneSidedComm(comm));
 
     HcclResult ret = HCCL_SUCCESS;
     // 入参合法性校验
@@ -1085,6 +1084,7 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
         std::vector<std::string>({"HcclCreateSubCommConfig", "nullptr", "config", "non-null pointer"}));
     CHK_SMART_PTR_NULL(config);
     CHK_SMART_PTR_NULL(comm);
+    CHK_RET(SubCommIsOneSidedComm(comm));
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
