@@ -31,9 +31,9 @@ public:
     CcuInstance(CcuInstanceType insType) : insType_(insType) {};
     ~CcuInstance();
     HcclResult Init();
-    HcclResult Reset();
+    HcclResult ResetResPack();
     CcuResPack *GetResPack();
-    HcclResult SaveKernel(CcuKernelHandle kernelHandle);
+    HcclResult SaveCcuKernel(CcuKernelHandle kernelHandle);
     const std::vector<CcuKernelHandle> &GetUntranslatedKernels();
 
 private:
