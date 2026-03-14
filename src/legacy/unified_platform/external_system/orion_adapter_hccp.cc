@@ -1040,10 +1040,11 @@ RdmaHandle HrtRaUbCtxInit(const HrtRaUbCtxInitParam &in)
     ctxInfo.phyId       = in.phyId;
     ctxInfo.ub.eidIndex = 0;
     HCCL_INFO("[HrtRaUbCtxInit] use eid[%s]", in.addr.Describe().c_str());
-    s32 sRet = memcpy_s(ctxInfo.ub.eid.raw, sizeof(ctxInfo.ub.eid.raw), in.addr.GetEid().raw, sizeof(in.addr.GetEid().raw));
-    if (sRet != EOK) {
-        MACRO_THROW(InternalException, StringFormat("[HrtRaUbCtxInit]memcpy_s failed. sRet[%d]", sRet));
-    }
+    // auto raw = in.addr.GetEid().raw;
+    // // s32 sRet = memcpy_s(ctxInfo.ub.eid.raw, sizeof(ctxInfo.ub.eid.raw), raw, sizeof(raw));
+    // // if (sRet != EOK) {
+    // //     MACRO_THROW(InternalException, StringFormat("[HrtRaUbCtxInit]memcpy_s failed. sRet[%d]", sRet));
+    // // }
 
     RdmaHandle handle;
     s32        ret = RaCtxInit(&initCfg, &ctxInfo, &handle);

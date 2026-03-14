@@ -139,7 +139,7 @@ RdmaHandle RdmaHandleManager::GetByAddr(u32 devPhyId, const LinkProtoType &local
 RdmaHandle RdmaHandleManager::GetByIp(u32 devPhyId, const IpAddress &localIp)
 {
     std::lock_guard<std::mutex> lock(managerMutex);
-
+    printf("LGC:10004!");
     if (devPhyId > rdmaHandleMap.size() - 1) {
         HCCL_ERROR("[RdmaHandleManager][GetByIp]devPhyId[%u] is invalid, "
             "should be less than [%zu]", devPhyId, rdmaHandleMap.size());
@@ -148,9 +148,12 @@ RdmaHandle RdmaHandleManager::GetByIp(u32 devPhyId, const IpAddress &localIp)
 
     // only support UB type
     RdmaHandle res = rdmaHandleMap[devPhyId][LinkProtoType::UB][localIp];
+    printf("LGC:10005!");
     if (res == nullptr) {
+        printf("LGC:10006!");
         HrtRaUbCtxInitParam in(HrtNetworkMode::HDC, devPhyId, localIp);
         res = HrtRaUbCtxInit(in);
+        printf("LGC:10007!");
         rdmaHandleMap[devPhyId][LinkProtoType::UB][localIp] = res;
         tokenInfoMap[res] = std::make_unique<TokenInfoManager>(devPhyId, res);
         HCCL_INFO("Create one rdmahandle [%p], devPhyId [%u], ipAddr [%s]",
