@@ -230,7 +230,7 @@ const std::string hcomm_g_msg = R"(
       "errClass": "HCCL Errors",
       "errTitle": "Communication_Error_Bind_IP_Port",
       "ErrCode": "EI0020",
-      "ErrMessage": "Failed to enable listening for the host network adapter socket. Reason: %s",
+      "ErrMessage": "Failed to enable listening for the NPU network adapter socket. Reason: %s",
       "Arglist": "reason",
       "suggestion": {
         "Possible Cause": "N/A",

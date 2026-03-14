@@ -98,36 +98,15 @@ HcclResult CcuTempAllReduceMesh1D::Run(const TempFuncs &tempFuncs, const RankSli
     dimSize.push_back(tempRankSize_);
     uint64_t inputAddr;
     uint64_t outputAddr;
+    uint64_t offSet;
+    CHK_RET(GetAddrInfo(tempFuncs, inputAddr, outputAddr, sliceInfoVec, offSet));
+
     if (op_.outputDataType == DataType::INVALID) {
         op_.outputDataType = op_.dataType;
     }
     CHK_RET(CheckCcuDataType());
-    if (opMode_ == OpMode::OPBASE) {
-        if (tempFuncs.isForepart) {
-            // 从 UserIn 获取数据
-            inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType())
-                + tempFuncs.usrData.usrInSlices[0].GetOffset();
-        } else {
-            // 从 inBuff 获取数据
-            inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
-        }
-        if (tempFuncs.isBottom) {
-            // 把数据写入 UserOut
-            outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType())
-                + tempFuncs.usrData.usrOutSlices[0].GetOffset();
-        } else {
-            // 把数据写入 outBuff
-            outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
-        }
-    } else {
-        // 图模式
-        inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
-        outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
-    }
-    HCCL_INFO("inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
 
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;  // 获取本rank需要处理的数据量
-    uint64_t offSet = sliceInfoVec[myRank_][0].offset;   // 自己需要 reduce 的数据基于 inputAddr 的偏移
     uint64_t token;
     CHK_RET(GetToken(op_, token));
     ccuInsAllReduceMesh1D.Init(static_cast<uint32_t>(myRank_), inputAddr, outputAddr, sliceSize, offSet, token, op_, tempVTopo_);

@@ -1,0 +1,5 @@
+target_sources(hccl_v2_native_alg_repo PRIVATE
+        ins_all_reduce_parallel_executor.cc
+        ins_all_reduce_sole_executor.cc
+        ins_v2_all_reduce_sole_executor.cc
+)

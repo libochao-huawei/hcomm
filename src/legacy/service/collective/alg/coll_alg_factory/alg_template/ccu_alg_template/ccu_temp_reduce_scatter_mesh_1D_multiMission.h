@@ -28,16 +28,16 @@ public:
 
     std::string Describe() const override
     {
-        return StringFormat("Template of Reduce Scatter ccu mesh 1D with tempRankSize [%u].", tempRankSize_);
+        return StringFormat("Template of Reduce Scatter ccu mesh 1D MultiMission with tempRankSize [%u].", tempRankSize_);
     }
 
     HcclResult Run(const TempFuncs &tempFuncs, const RankSliceInfo &sliceInfoVec, const BuffInfo &buffInfo,
                          const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues) override;
     HcclResult CalcRes(AlgTempResReq &tempResReq) override;
     HcclResult CalcSliceInfo(const AllignInfo &allignInfo, const u64 dataSize, RankSliceInfo &sliceInfoVec) override;
+    uint64_t GetMaxSliceSize() const;
     // init reduceInfo
     void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
-    uint64_t GetMaxSliceSize() const;
     HcclResult GenExtIns(const RankGraph *rankGraph, const TemplateInfo &tmpInfo,
         const std::vector<InsQuePtr> &tempInsQues) const;
 
