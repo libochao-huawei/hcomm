@@ -13,6 +13,7 @@
 #include "aicpu_launch_manager.h"
 #include "aicpu_operator_pub.h"
 #include "independent_op.h"
+#include "hcomm_c_adpt.h"
 
 namespace hccl {
 
@@ -126,6 +127,7 @@ HcclResult ThreadMgr::SupplementThread(CommEngine engine, uint32_t supplementThr
 {
     CHK_RET(CheckThreadNum(engine, supplementThreadNum, notifyNumPerThread));
     CHK_RET(HcommThreadAlloc(engine, supplementThreadNum, notifyNumPerThread, threads));
+    std::vector<std::shared_ptr<Thread>> newThreads;
     newThreads.reserve(supplementThreadNum);
 
     for (uint32_t i = 0; i < supplementThreadNum; ++i) {
