@@ -296,7 +296,7 @@ void CollCommAicpu::InitBackGroundThread()
 
     // 启动背景线程
     if (Hccl::StartMC2MaintenanceThread != nullptr) {
-        Hccl::StartMC2MaintenanceThread(daemonServiceRun, &commandToBackGround, daemonServiceStop, &commandToBackGround);
+        Hccl::StartMC2MaintenanceThread(daemonServiceRun, &commandToBackGroud, daemonServiceStop, &commandToBackGroud);
         HCCL_RUN_INFO("[%s]start BackGround thread success.", __func__);
     } else {
         HCCL_WARNING("[%s]StartMC2MaintenanceThread func is nullptr", __func__);
