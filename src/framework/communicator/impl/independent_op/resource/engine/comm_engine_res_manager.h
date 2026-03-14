@@ -24,6 +24,8 @@ public:
     CommEngineResMgr();
     HcclResult Init(uint32_t threadNum, uint32_t notifyNumPerThread, const std::string& commId,
         const aclrtBinHandle binHandle, const ManagerCallbacks& callbacks);
+    HcclResult HcclThreadAcquireV2(CommEngine engine, uint32_t threadNum,
+        uint32_t notifyNumPerThread, ThreadHandle *threads, std::vector<uint32_t> &threadId);
     HcclResult HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
         uint32_t notifyNumPerThread, ThreadHandle *threads, std::vector<uint32_t> &threadId);
     HcclResult HcclThreadAcquireWithStream(CommEngine engine,

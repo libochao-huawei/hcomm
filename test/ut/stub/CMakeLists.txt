@@ -103,6 +103,9 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/rank_graph.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/net_instance.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/virtual_topo.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/base_config.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_config.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_func.cc
 )
 
 set(hccl_list
