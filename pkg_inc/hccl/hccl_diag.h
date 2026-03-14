@@ -72,7 +72,7 @@ struct HcclDfxOpInfo {
     u64                 cpuTsThread{0}; // host侧算子主流的threadhandle
     u32                 cpuWaitAicpuNotifyIdx{0}; // host wait device notifyIdx
     u32                 cpuWaitAicpuNotifyId{0}; // host wait device notifyId
-    char                algTag[HCOMM_ALG_TAG_LENGTH]; // 算法名 = "算子类型 + 通信域id + 选择的算法"
+    char                algTag[HCOMM_ALG_TAG_LENGTH]{}; // 算法名 = "算子类型 + 通信域id + 选择的算法"
 };
 
 #ifdef __cplusplus

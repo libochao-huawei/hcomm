@@ -46,7 +46,7 @@ void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbase
     bool isAiCpu = false;
     // 新老流程判断
     if (opInfo->isIndop_ == true) {
-        // TODO:暂时默认true
+        // 暂时默认true
         isAiCpu = true;
     } else {
         CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(opInfo->comm_);

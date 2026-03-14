@@ -26,11 +26,6 @@ void HcclCommProfilingLite::ReportAllTasks() {
     }
 }
 
-// HcclCommProfilingLite::ReportHcclOpInfo实现
-// void HcclCommProfilingLite::ReportHcclOpInfo(const DfxOpInfo& hcclOpInfo) {
-//     Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(hcclOpInfo);todo:输入不一致
-// }
-
 // HcclCommProfilingLite::UpdateProfStat实现
 void HcclCommProfilingLite::UpdateProfStat() {
     if (profilingReporterLite_) {

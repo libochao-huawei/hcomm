@@ -786,7 +786,7 @@ HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
 
 HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* groupname)
 {
-    HCCL_INFO("[%s] start.", __func__);
+    HCCL_INFO("[%s] START, thread [%llu], groupname[%s].", __func__, thread, groupname);
     CHK_PTR_NULL(groupname);
     CHK_RET(AicpuIndopProcess::UpdateTask(groupname));
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
@@ -798,16 +798,14 @@ HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* grou
     flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId();
     flagTaskInfo.type = Hccl::MainStreamTaskType::HEAD;
     Hccl::ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
-    HCCL_INFO("[%s] TaskInfo taskId:[%u] streamId:[%u].", __func__, flagTaskInfo.taskId, flagTaskInfo.streamId);
-    HCCL_INFO("[%s] SUCCESS.", __func__);
+    HCCL_INFO("[%s] SUCCESS. TaskInfo taskId:[%u] streamId:[%u].", __func__, flagTaskInfo.taskId, flagTaskInfo.streamId);
     return HCCL_SUCCESS;
 }
 
 HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupname)
 {
-    HCCL_INFO("[%s] START.", __func__);
+    HCCL_INFO("[%s] START. thread [%llu], groupname[%s].", __func__, thread, groupname);
     CHK_PTR_NULL(groupname);
-    HCCL_INFO("[HcommProfilingReportKernelEndTask] HcommProfilingReportKernelEndTask start");
     Thread *const threadPtr = reinterpret_cast<Thread*>(thread);
     CHK_PRT_RET(threadPtr == nullptr, HCCL_ERROR("[%s] threadPtr is null", __func__), HCCL_E_PTR);
     auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());

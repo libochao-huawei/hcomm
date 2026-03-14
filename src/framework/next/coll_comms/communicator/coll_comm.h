@@ -107,8 +107,6 @@ private:
     std::unique_ptr<ContextManager>  contextMgr_{nullptr};
     std::unique_ptr<CommMemMgr> commMemMgr_{nullptr};
     std::unique_ptr<ChannelManager> channelMgr_{nullptr};
-    
-    //TODO
     std::shared_ptr<MyRank> myRank_{};
     std::unique_ptr<HcclCommDfx> hcclCommDfx_{nullptr};
     uintptr_t   addr_{0};

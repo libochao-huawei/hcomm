@@ -295,13 +295,11 @@ namespace hccl
             return HCCL_E_PARA;
         }
   
-        CHK_RET(hrtGetDevice(&(commAicpuParam_.deviceLogicId)));    
+        CHK_RET(hrtGetDevice(&(commAicpuParam_.deviceLogicId)));
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(commAicpuParam_.deviceLogicId), commAicpuParam_.devicePhyId));
         CHK_RET(hrtGetDeviceType(devType_));
         commAicpuParam_.deviceType = static_cast<u32>(devType_);
-
         std::string jsonPath;
-      
         CHK_RET(GetKernelFilePath(jsonPath));
         jsonPath += "ccl_kernel.json";
    

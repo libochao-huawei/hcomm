@@ -24,7 +24,7 @@ public:
     void ReportAllTasks();
     
     // 上报算子信息（包装ProfilingHandlerLite::GetInstance().ReportHcclOpInfo）
-    // void ReportHcclOpInfo(const HcclOpInfo& hcclOpInfo); // TODO: 暂未使用
+    // void ReportHcclOpInfo(const HcclOpInfo& hcclOpInfo); // 暂未使用
     
     // 更新Profiling统计
     void UpdateProfStat();
