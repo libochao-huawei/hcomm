@@ -322,7 +322,7 @@ void CollServiceAiCpuImpl::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param
         param.kernel.op.algOperator.sendRecvRemoteRank = op.sendRecvRemoteRank;
     }
     if (hcclRet != HCCL_SUCCESS) {
-        HCCL_ERROR("CollServiceAiCpuImpl][SetHcclKernelLaunchParam] fill op data failed!");
+        HCCL_ERROR("[CollServiceAiCpuImpl][SetHcclKernelLaunchParam] fill op data failed!");
         THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::SetHcclKernelLaunchParam, fill op data failed! ret [%d]", hcclRet));
     }
     param.kernel.op.sendRecvRemoteRank = op.sendRecvRemoteRank;
@@ -566,7 +566,7 @@ u64 CollServiceAiCpuImpl::CalcOpDynamicDataSize(const CollOperator &op, const Op
         default:
             break;
     }
-    HCCL_INFO("HcclCommunicator::CalcOpDynamicDataSize dynamicDataSize[%u]", dynamicDataSize);
+    HCCL_INFO("HcclCommunicator::CalcOpDynamicDataSize dynamicDataSize[%llu]", dynamicDataSize);
     return dynamicDataSize;
 }
 
