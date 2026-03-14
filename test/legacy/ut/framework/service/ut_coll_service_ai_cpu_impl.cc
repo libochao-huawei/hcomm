@@ -69,7 +69,6 @@ protected:
         MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
         MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
         MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
-        MOCKER(HrtMallocHost).stubs().with(any(),any()).will(returnValue(addr));
         comm.opExecuteConfig.accState = AcceleratorState::AICPU_TS;
         comm.InitNotifyManager();
         comm.InitSocketManager();
@@ -132,7 +131,6 @@ protected:
     u64 fakeAddress = 300;
     u32 fakePid = 100;
     char fakeName[65] = "testRtsNotify";
-    void *addr = (void *)malloc(32 * 1024);
     CommunicatorImpl comm;
     CollOperator op{};
 };
@@ -151,6 +149,8 @@ TEST_F(CollServiceAiCpuImplTest, Ut_SetHcclKernelLaunchParam_When_Op_DEBUGCASE_E
 TEST_F(CollServiceAiCpuImplTest, Ut_SetHcclKernelLaunchParam_When_Op_BATCHSENDRECV_Expect_OK)
 {
     MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
+    void *addr = (void *)malloc(32 * 1024);
+    MOCKER(HrtMallocHost).stubs().with(any(),any()).will(returnValue(addr));
     comm.InitHDCommunicate();
     HcclKernelLaunchParam param;
     comm.currentCollOperator->opType = OpType::BATCHSENDRECV;
@@ -194,11 +194,14 @@ TEST_F(CollServiceAiCpuImplTest, Ut_SetHcclKernelLaunchParam_When_Op_BATCHSENDRE
     EXPECT_NO_THROW(service.AllocOpMem(op));
     EXPECT_NO_THROW(service.SetHcclKernelLaunchParam(param, &comm));
     free(hcclSendRecvItem);
+    free(addr);
 }
 
 TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_Op_ALLTOALLV_Expect_MemSize_Right)
 {
     MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
+    void *addr = (void *)malloc(32 * 1024);
+    MOCKER(HrtMallocHost).stubs().with(any(),any()).will(returnValue(addr));
     comm.InitHDCommunicate();
     HcclKernelLaunchParam param;
     comm.rankSize = 4; 
@@ -255,6 +258,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_Op_ALLTOALLV_Expect_MemSize_
     free(recvCounts);
     free(sendDispls);
     free(recvDispls);
+    free(addr);
 }
 
 TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_BATCHSENDRECV_Expect_OK)
@@ -307,6 +311,8 @@ TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_BATCHSENDRECV_Expect_OK)
 TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_Op_ALLTOALLVC_Expect_Success)
 {
     MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
+    void *addr = (void *)malloc(32 * 1024);
+    MOCKER(HrtMallocHost).stubs().with(any(),any()).will(returnValue(addr));
     comm.InitHDCommunicate();
     comm.rankSize = 4;
     comm.currentCollOperator->opMode = OpMode::OFFLOAD;
@@ -339,6 +345,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_Op_ALLTOALLVC_Expect_Success
     service.counterBuf = DevBuffer::Create(0x100, 10);
     EXPECT_NO_THROW(service.SetHcclKernelLaunchParam(param, &comm));
     free(sendMem);
+    free(addr);
 }
 
 TEST_F(CollServiceAiCpuImplTest, Ut_InitAicpuLocBufLite_When_Before_SetHcclKernelLaunchParam_Expect_Success)
@@ -535,6 +542,8 @@ TEST_F(CollServiceAiCpuImplTest, Ut_RegisterCclBuffer_When_Normal_Expect_Success
 TEST_F(CollServiceAiCpuImplTest, Ut_Resume_When_Normal_Expect_Success)
 {
     CommunicatorImpl comm;
+    void *addr = (void *)malloc(32 * 1024);
+    MOCKER(HrtMallocHost).stubs().with(any(),any()).will(returnValue(addr));
     comm.InitNotifyManager();
     comm.InitSocketManager();
     comm.InitRmaConnManager();
@@ -576,6 +585,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_Resume_When_Normal_Expect_Success)
 
     service.connectionsBuilders.clear();
     EXPECT_NO_THROW(service.Resume());
+    free(addr);
 }
 
 TEST_F(CollServiceAiCpuImplTest, Ut_LoadWithOpBasedMode_When_Normal_Expect_Success)
