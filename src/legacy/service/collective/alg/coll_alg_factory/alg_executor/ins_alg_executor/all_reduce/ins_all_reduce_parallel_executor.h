@@ -39,7 +39,6 @@ public:
     HcclResult CalcRes(const RankGraph *rankGraph, CollAlgResReq &algResReq) override;
 
 private:
-    HcclResult CalcLocalRankSize();
     HcclResult GenInsQues(InsAlgTemplate0 &tempAlgIntra, InsAlgTemplate1 &tempAlgInter);
     void GenTemplateAlgParams0(const u64 dataOffset, const u64 dataCount, const u64 scratchOffset,TemplateDataParams &tempAlgParams) const;
     void GenTemplateAlgParams1(const u64 dataOffset, const u64 dataCount, const u64 scratchOffset,TemplateDataParams &tempAlgParams) const;
@@ -49,8 +48,8 @@ private:
     HcclResult PrepareResForTemplate(const RankGraph *rankGraph, InsAlgTemplate0 &tempAlgIntra, InsAlgTemplate1 &tempAlgInter);
     HcclResult PrepareResForTemplate(ConnectedLinkMgr *linkMgr, InsAlgTemplate0 &tempAlgIntra, InsAlgTemplate1 &tempAlgInter);
     
-    uint64_t rankSizeLevel0_{0};
-    uint64_t rankSizeLevel1_{0};
+    u32 rankSizeLevel0_{0};
+    u32 rankSizeLevel1_{0};
 
     std::vector<std::vector<RankId>>              virtRanks_;
     std::vector<std::map<RankId, u32>>            virtRankMap_; // map<virtRank, virtRankOrder>

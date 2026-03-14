@@ -39,7 +39,6 @@ public:
     HcclResult CalcRes(const RankGraph *rankGraph, CollAlgResReq &algResReq) override;
 
 private:
-    HcclResult CalcLocalRankSize();
     HcclResult GenInsQuesHost(InsAlgTemplate0 &tempAlgIntra, InsAlgTemplate1 &tempAlgInter);
     void GenTemplateAlgParamsIntra0(const u64 dataOffset, const u64 dataCountPerLoopAixs0, std::vector<u64> &scratchOffVec, TemplateDataParams &tempAlgParamsIntra0) const;
     void GenTemplateAlgParamsIntra1(const u64 dataOffset, const u64 dataCountPerLoopAixs1, std::vector<u64> &scratchOffVec, TemplateDataParams &tempAlgParamsIntra1) const;
@@ -49,8 +48,8 @@ private:
     HcclResult PrepareResForTemplate(const RankGraph *rankGraph, InsAlgTemplate0 &tempAlgIntra, InsAlgTemplate1 &tempAlgInter);
     HcclResult PrepareResForTemplate(ConnectedLinkMgr *linkMgr, InsAlgTemplate0 &tempAlgIntra, InsAlgTemplate1 &tempAlgInter);
 
-    uint64_t rankSizeLevel0_{0};
-    uint64_t rankSizeLevel1_{0};
+    u32 rankSizeLevel0_{0};
+    u32 rankSizeLevel1_{0};
 
     uint64_t rankIdxLevel0_{0};
     uint64_t rankIdxLevel1_{0};
