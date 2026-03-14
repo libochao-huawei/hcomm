@@ -48,7 +48,7 @@ private:
     std::vector<std::map<RankId, u32>>            virtRankMap_; // map<virtRank, virtRankOrder>
     std::vector<std::vector<std::vector<RankId>>> vTopo_;
 
-    std::vector<InsQuePtr> requiredQue_;
+    std::vector<InsQuePtr> reqQue_;
     std::vector<InsQuePtr> intraQue_;
     std::vector<InsQuePtr> interQue_;
     std::vector<InsQuePtr> syncQueues_;

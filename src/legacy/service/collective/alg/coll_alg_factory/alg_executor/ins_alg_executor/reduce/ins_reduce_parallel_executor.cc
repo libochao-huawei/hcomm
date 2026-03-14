@@ -53,10 +53,10 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
     AlgTempResReq resReqIntra;
     AlgTempResReq resReqInter;
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("[InsReduceParallelExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(intraTempAlg.CalcResDetour(rankGraph, resReqIntra));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("[InsReduceParallelExecutor] Rank[%d], CalcRes with detouring disabled.", myRank_);
         CHK_RET(intraTempAlg.CalcRes(resReqIntra));
     }
 
@@ -84,10 +84,10 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
     AlgTempResReq resReqIntra;
     AlgTempResReq resReqInter;
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("[InsReduceParallelExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(intraTempAlg.CalcResDetour(rankGraph, resReqIntra));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("[InsReduceParallelExecutor] Rank[%d], CalcRes with detouring disabled.", myRank_);
         CHK_RET(intraTempAlg.CalcRes(resReqIntra));
     }
     CHK_RET(interTempAlg.CalcRes(resReqInter));
@@ -196,26 +196,26 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
     AlgTempResReq resReqIntra;
     AlgTempResReq resReqInter;
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("[%s] Rank[%d], detouring enabled.", __func__, myRank_);
         CHK_RET(tempAlgIntra.CalcResDetour(rankGraph, resReqIntra));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("[%s] Rank[%d], detouring disabled.", __func__, myRank_);
         CHK_RET(tempAlgIntra.CalcRes(resReqIntra));
     }
     CHK_RET(tempAlgInter.CalcRes(resReqInter));
 
     // 申请算法模板所需资源
     if(!(resReqIntra.queNum > 0 && resReqInter.queNum > 0)) {
-        HCCL_ERROR("resReqIntra.queNum and resReqInter.queNum must larger than 0.");
+        HCCL_ERROR("[InsReduceParallelExecutor]resReqIntra.queNum and resReqInter.queNum must larger than 0.");
         return HcclResult::HCCL_E_INTERNAL;
     }
     u32 totalQueueNum = resReqIntra.queNum + resReqInter.queNum;
-    CHK_RET(InitQueue(totalQueueNum, requiredQue_));
-    for(u32 i = 0 ; i < requiredQue_.size(); i++) {
+    CHK_RET(InitQueue(totalQueueNum, reqQue_));
+    for(u32 i = 0 ; i < reqQue_.size(); i++) {
         if (i < resReqIntra.queNum) {
-            intraQue_.push_back(requiredQue_[i]);
+            intraQue_.push_back(reqQue_[i]);
         } else {
-            interQue_.push_back(requiredQue_[i]);
+            interQue_.push_back(reqQue_[i]);
         }
     }
     syncQueues_.emplace_back(intraQue_[0]);
@@ -235,26 +235,25 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
     AlgTempResReq resReqIntra;
     AlgTempResReq resReqInter;
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detour enabled", __func__, myRank_);
         CHK_RET(tempAlgIntra.CalcResDetour(linkMgr, resReqIntra));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
         CHK_RET(tempAlgIntra.CalcRes(resReqIntra));
     }
     CHK_RET(tempAlgInter.CalcRes(resReqInter));
 
     // 申请算法模板所需资源
     if(!(resReqIntra.queNum > 0 && resReqInter.queNum > 0)) {
-        HCCL_ERROR("resReqIntra.queNum and resReqInter.queNum must larger than 0.");
+        HCCL_ERROR("[InsReduceParallelExecutor]resReqIntra.queNum and resReqInter.queNum must > 0.");
         return HcclResult::HCCL_E_INTERNAL;
     }
     u32 totalQueueNum = resReqIntra.queNum + resReqInter.queNum;
-    CHK_RET(InitQueue(totalQueueNum, requiredQue_));
-    for(u32 i = 0 ; i < requiredQue_.size(); i++) {
+    CHK_RET(InitQueue(totalQueueNum, reqQue_));
+    for(u32 i = 0 ; i < reqQue_.size(); i++) {
         if (i < resReqIntra.queNum) {
-            intraQue_.push_back(requiredQue_[i]);
+            intraQue_.push_back(reqQue_[i]);
         } else {
-            interQue_.push_back(requiredQue_[i]);
+            interQue_.push_back(reqQue_[i]);
         }
     }
     syncQueues_.emplace_back(intraQue_[0]);
@@ -290,13 +289,13 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
 
     tempAlgIntra.SetDmaMode(dmaMode_);
     tempAlgIntra.InitReduceInfo(redOp_, dataType_);
-    tempAlgIntra.SetCollOp(op);
     tempAlgIntra.SetRoot(intraLocalRoot_);
+    tempAlgIntra.SetCollOp(op);
 
     tempAlgInter.SetDmaMode(dmaMode_);
     tempAlgInter.InitReduceInfo(redOp_, dataType_);
-    tempAlgInter.SetCollOp(op);
     tempAlgInter.SetRoot(interLocalRoot_);
+    tempAlgInter.SetCollOp(op);
 
     // 计算算法模板所需资源
     CHK_RET(PrepareResForTemplate(linkMgr, tempAlgIntra, tempAlgInter));
@@ -327,8 +326,8 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
     InsAlgTemplate1 tempAlgInter(myRank_, interLocalRankSize_, vTopo_[1], virtRankMap_[1]); //server间算法，比如nhr
 
     tempAlgIntra.SetDmaMode(dmaMode_);
-    tempAlgIntra.InitReduceInfo(redOp_, dataType_);
     tempAlgIntra.SetCollOp(op);
+    tempAlgIntra.InitReduceInfo(redOp_, dataType_);
     tempAlgIntra.SetRoot(intraLocalRoot_);
 
     tempAlgInter.SetDmaMode(dmaMode_);
@@ -374,15 +373,13 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
 
     u32 loopTimes = dataCount_ / maxCountPerLoop + ((dataCount_ % maxCountPerLoop == 0) ? 0 : 1);
 
-    TemplateDataParams tempAlgParamsIntra0;
-    TemplateDataParams tempAlgParamsInter0;
-    TemplateDataParams tempAlgParamsInter1;
-    TemplateDataParams tempAlgParamsIntra1;
+    TemplateDataParams tempAlgParamsIntra0, tempAlgParamsInter0;
+    TemplateDataParams tempAlgParamsInter1, tempAlgParamsIntra1;
     TempFuncs tempFuncs;
     tempFuncs.opMode = opMode_;
     tempFuncs.enableCounterNotify = false;
-    tempFuncs.isForepart = true;
     tempFuncs.isBottom = true;
+    tempFuncs.isForepart = true;
     for (u32 loopIndex = 0; loopIndex < loopTimes; loopIndex++) {
         u64 currCount = (loopIndex == loopTimes - 1) ? (dataCount_ - loopIndex * maxCountPerLoop) : maxCountPerLoop;
         u64 dataCountPerLoopAixs0 = static_cast<u64>(dataSplitSize[0] * currCount);

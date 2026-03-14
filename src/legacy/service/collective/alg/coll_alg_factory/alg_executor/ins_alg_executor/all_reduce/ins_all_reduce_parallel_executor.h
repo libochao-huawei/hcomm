@@ -26,17 +26,16 @@ public:
         return "Instruction based All Reduce Parallel Executor.";
     }
 
+    HcclResult CalcResOffload(const RankGraph *rankGraph, const u64 &dataSize,
+                              CollOffloadOpResReq &resReq) override;
+
+    HcclResult CalcRes(const RankGraph *rankGraph, CollAlgResReq &algResReq) override;
     // HOST 接口
     HcclResult Orchestrate(const RankGraph *rankGraph, const CollAlgOperator &op, const CollAlgParams &params,
                           InsQuePtr insQue) override;
     // AICPU 接口
     HcclResult Orchestrate(const AlgTopoInfo &topoInfo, const CollAlgOperator &op, const CollAlgParams &params,
                              ConnectedLinkMgr *linkMgr, InsQuePtr insQue) override;
-
-    HcclResult CalcResOffload(const RankGraph *rankGraph, const u64 &dataSize,
-                              CollOffloadOpResReq &resReq) override;
-
-    HcclResult CalcRes(const RankGraph *rankGraph, CollAlgResReq &algResReq) override;
 
 private:
     HcclResult GenInsQues(InsAlgTemplate0 &tempAlgIntra, InsAlgTemplate1 &tempAlgInter);
