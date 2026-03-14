@@ -256,6 +256,7 @@
         <file value="librs.so" file_type="shared"/>
         <file value="libra_peer.so" file_type="shared"/>
         <file value="libtls_adp.so" file_type="shared"/>
+		<file value="libnet_co.so" file_type="shared"/>
         <!-- python -->
         <file value="hccl-0.1.0-py3-none-any.whl" file_type="whl"/>
     </file_info>
