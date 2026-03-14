@@ -281,8 +281,7 @@ HcclResult CollCommAicpu::NotifyAlloc(NotifyMgrAicpuParam *param)
 
 void CollCommAicpu::InitBackGroundThread()
 {
-    static std::once_flag backGroundInit;
-    static auto commandToBackGround = Hccl::CommandToBackGroud::Default;
+    static auto commandToBackGroud = Hccl::CommandToBackGroud::Default;
     static auto daemonServiceRun = [](void *info) {
         Hccl::AicpuDaemonService::GetInstance().ServiceRun(info);
     };
