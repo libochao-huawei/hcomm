@@ -22,7 +22,7 @@ extern "C" {
  */
 typedef enum {
     CCU_SUCCESS = 0,               /**< success */
-    CCU_E_PARA = 1,                /**< parameter error */
+    CCU_PARA = 1,                /**< parameter error */
     CCU_E_PTR = 2,                 /**< empty pointer */
     CCU_E_MEMORY = 3,              /**< memory error */
     CCU_E_INTERNAL = 4,            /**< internal error */
@@ -59,58 +59,15 @@ typedef enum {
     CCU_E_GSA_UNAVAIL,
 
     CCU_E_TRANSLATE_FAILED,
-    CCU_E_ALREADY_BOUND,
-    CCU_E_LOOP_BODY_UNDEFINED,
 
     CCU_E_RESERVED                 /**< reserved */
 } CcuResult;
 
-
-/**
- * @brief CCU condition type for conditional jump
- */
-typedef enum {
-    CCU_CONDITION_EQ = 0,
-    CCU_CONDITION_NE = 1,
-} CcuConditionType;
-
-typedef uint64_t CcuLoop;
-typedef uint64_t CcuLoopGroup;
-typedef uint64_t CcuLoopExecutors;
-
-typedef struct {
-    uint64_t addrOffset;
-    uint64_t loopIterNum;
-} CcuLoopConfig;
-
-typedef struct {
-    uint64_t addrOffset;
-    uint64_t bufferOffset;
-    uint64_t eventOffset;
-    uint64_t repeatNum;
-    uint64_t repeatLoopIdx;
-} CcuLoopGroupConfig;
-
-
 typedef uint64_t CcuInsHandle;
 
-typedef uint64_t CcuKernelHandle;
+// typedef uint64_t CcuKernelHanlde; // todo: 需要放开
 
 typedef uint64_t CcuVariableHandle;
-
-typedef uint64_t CcuAddressHandle;
-
-typedef uint64_t CcuEventHandle;
-
-typedef uint64_t CcuBufferHandle;
-
-typedef uint64_t CcuLocalAddrHandle;
-
-typedef uint64_t CcuRemoteAddrHandle;
-
-typedef void *CcuKernelArg;
-
-typedef CcuResult (*CcuKernelFunc)(CcuKernelArg arg);
 
 #ifdef __cplusplus
 }

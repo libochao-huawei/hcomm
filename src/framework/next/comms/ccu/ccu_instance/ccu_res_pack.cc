@@ -10,7 +10,6 @@
 
 #include "ccu_res_pack.h"
 
-#include "ccu_log.h"
 #include "hcom_common.h"
 
 namespace hcomm {
@@ -33,15 +32,12 @@ HcclResult CcuResPack::Init()
 {
     devLogicId_ = HcclGetThreadDeviceId();
     if (insType_ == CcuInstanceType::CCU_INVALID) {
-        HCCL_ERROR("[CcuResPack][%s] failed, error ccu instance type[%d].",
-            __func__, static_cast<int32_t>(insType_));
+        HCCL_ERROR("[CcuResPack][%s] failed, error ccu engine type[%d].",
+            __func__, static_cast<int32_t>(ccuEngine_));
         return HcclResult::HCCL_E_PARA;
     }
 
-    auto ret = CcuAllocResHandleByInsType(devLogicId_, insType_, resHandle_);
-    // todo: 需要整改
-    CHK_RET(static_cast<HcclResult>(ret));
-
+    CHK_RET(CcuAllocResHandleByInsType(devLogicId_, insType_, resHandle_));
     CHK_RET(Reset());
     return HcclResult::HCCL_SUCCESS;
 }

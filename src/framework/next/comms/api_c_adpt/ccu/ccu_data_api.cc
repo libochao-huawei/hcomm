@@ -8,24 +8,16 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include "ccu_data_api.h"
 
-#ifndef CCU_DATA_API_IMPL_H
-#define CCU_DATA_API_IMPL_H
+#include "ccu_log.h"
+#include "ccu_data_api_impl.h"
 
-#include "ccu_types.h"
+CcuResult CcuVariableCreate(CcuVariable* variable)
+{
+    CcuVariableHandle varHandle{0};
+    CCU_CHK_RET(CcuVariableCreateImpl(&varHandle));
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
-
-extern CcuResult CcuVariableCreateImpl(CcuVariableHandle *var);
-
-extern CcuResult CcuVariableAssignImpl(CcuVariableHandle resVar, uint64_t immediate);
-
-extern CcuResult CcuVariableAddVarToVarImpl(CcuVariableHandle resVar, CcuVariableHandle varA, CcuVariableHandle varB);
-
-#ifdef __cplusplus
+    variable->handle = varHandle;
+    return CcuResult::CCU_SUCCESS;
 }
-#endif // __cplusplus
-
-#endif // CCU_DATA_API_IMPL_H
