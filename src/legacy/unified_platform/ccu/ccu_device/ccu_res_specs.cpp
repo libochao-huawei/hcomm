@@ -26,8 +26,7 @@ CcuResSpecifications &CcuResSpecifications::GetInstance(const int32_t deviceLogi
             "devLogicId should be less than %u.", MAX_MODULE_DEVICE_NUM));
     }
 
-    ccuResSpecifications[deviceLogicId].Init(deviceLogicId);
-
+    ccuResSpecifications[deviceLogicId].devLogicId = deviceLogicId;
     return ccuResSpecifications[deviceLogicId];
 }
 
@@ -37,7 +36,6 @@ void CcuResSpecifications::Init(int32_t deviceLogicId)
         return;
     }
 
-    devLogicId = deviceLogicId;
     if (Init_() != HcclResult::HCCL_SUCCESS) {
         devPhyId = MAX_MODULE_DEVICE_NUM;
         ccuVersion = CcuVersion::CCU_INVALID;
