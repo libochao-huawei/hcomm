@@ -25,7 +25,7 @@
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
 
 HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel,
-    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // TODO: 临时，该接口头文件还没定
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // 临时，该接口头文件还没定
 
 HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
@@ -153,7 +153,7 @@ HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
         Hccl::AicpuResPackageHelper helper;
         auto dataVec = helper.ParsePackedData(data);
 
-        Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM; // todo 待修改
+        Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM; // 待修改
         if (static_cast<u32>(resType) >= dataVec.size()) {
             HCCL_ERROR("[CollCommAicpu][%s] fail, resType[%d], dataVec size[%u]", __func__, resType, dataVec.size());
             return HCCL_E_PARA;

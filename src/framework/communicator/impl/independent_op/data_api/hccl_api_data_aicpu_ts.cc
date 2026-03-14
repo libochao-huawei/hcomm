@@ -24,6 +24,7 @@
 #include "profiling_handler_lite.h"
 #include "hcclCommOp.h"
 #include "hcomm_diag.h"
+#include "hccl_api_data_aicpu_ts.h"
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
@@ -777,6 +778,54 @@ int32_t HcommChannelFence(ChannelHandle channel)
     return HCCL_E_NOT_SUPPORT;
 }
 
+int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
+{
+    hccl::Thread *threadPtr = reinterpret_cast<hccl::Thread *>(thread);
+    CHK_PTR_NULL(threadPtr);
+
+    HCCL_INFO("[%s] START. thread[0x%llx].", __func__, thread);
+
+    if (threadPtr->IsDeviceA5()) {
+        HCCL_INFO("[%s] Running on A5.", __func__);
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        CHK_PTR_NULL(streamLitePtr);
+        auto *const rtsqPtr = streamLitePtr->GetRtsq();
+        CHK_PTR_NULL(rtsqPtr);
+
+        uint32_t head = 0;
+        uint32_t tail = 0;
+        uint32_t sqId = streamLitePtr->GetSqId();
+        EXECEPTION_CATCH(tail = rtsqPtr->QuerySqTail(), return HCCL_E_INTERNAL);
+        HCCL_INFO("[%s] aicpu stream sqid[%u] tail[%u]", __func__, sqId, tail);
+
+        u64 startUsec = GetCurAicpuTimestamp();
+        u64 lastUsec = startUsec;
+        constexpr uint64_t NANOSECOND_TO_SECOND = 1000000000U;
+        const uint64_t kPrintSqInterval = 30U;
+        do {
+            EXECEPTION_CATCH(head = rtsqPtr->QuerySqHead(), return HCCL_E_INTERNAL);
+            u64 curUsec = GetCurAicpuTimestamp();
+            if (curUsec - startUsec > NANOSECOND_TO_SECOND * timeout) {
+                HCCL_ERROR("[%s] timeout %us. curhead:%u, curtail:%u, sqId:%u",
+                    __func__, timeout, head, tail, sqId);
+                return HCCL_E_TIMEOUT;
+            }
+
+            // 等待下发阶段，每隔30s打印一次状态
+            if (curUsec - lastUsec > NANOSECOND_TO_SECOND * kPrintSqInterval) {
+                lastUsec = curUsec;
+                HCCL_RUN_INFO("[%s]Current state. sqid:%d, head:%u, tail:%u",
+                    __func__, sqId, head, tail);
+            }
+        } while (head != tail);
+        HCCL_INFO("[%s] SUCCESS. RTSQ's head[%u] == tail[%u].", __func__, head, tail);
+        return HCCL_SUCCESS;
+    }
+
+    HCCL_ERROR("[%s]Does not support this interface.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
 HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
     HCCL_INFO("[%s] START.", __func__);
     CHK_PTR_NULL(groupname);
@@ -786,7 +835,7 @@ HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
 
 HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* groupname)
 {
-    HCCL_INFO("[%s] start.", __func__);
+    HCCL_INFO("[%s] START, thread [%llu], groupname[%s].", __func__, thread, groupname);
     CHK_PTR_NULL(groupname);
     CHK_RET(AicpuIndopProcess::UpdateTask(groupname));
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
@@ -798,16 +847,14 @@ HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* grou
     flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId();
     flagTaskInfo.type = Hccl::MainStreamTaskType::HEAD;
     Hccl::ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
-    HCCL_INFO("[%s] TaskInfo taskId:[%u] streamId:[%u].", __func__, flagTaskInfo.taskId, flagTaskInfo.streamId);
-    HCCL_INFO("[%s] SUCCESS.", __func__);
+    HCCL_INFO("[%s] SUCCESS. TaskInfo taskId:[%u] streamId:[%u].", __func__, flagTaskInfo.taskId, flagTaskInfo.streamId);
     return HCCL_SUCCESS;
 }
 
 HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupname)
 {
-    HCCL_INFO("[%s] START.", __func__);
+    HCCL_INFO("[%s] START. thread [%llu], groupname[%s].", __func__, thread, groupname);
     CHK_PTR_NULL(groupname);
-    HCCL_INFO("[HcommProfilingReportKernelEndTask] HcommProfilingReportKernelEndTask start");
     Thread *const threadPtr = reinterpret_cast<Thread*>(thread);
     CHK_PRT_RET(threadPtr == nullptr, HCCL_ERROR("[%s] threadPtr is null", __func__), HCCL_E_PTR);
     auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
@@ -817,8 +864,8 @@ HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupn
     flagTaskInfo.streamId = streamLitePtr->GetId();
     flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId() - 1;
     flagTaskInfo.type = Hccl::MainStreamTaskType::TAIL;
+    
     Hccl::ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
-
     CHK_RET(AicpuIndopProcess::ReportAllTasks(groupname));
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
