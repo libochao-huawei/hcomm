@@ -29,6 +29,8 @@ struct RsUrmaOps gUrmaOps = {
     .rsUrmaFreeEidList = urma_free_eid_list,
     .rsUrmaQueryDevice = urma_query_device,
     .rsUrmaGetEidByIp = urma_get_eid_by_ip,
+    .rsUrmaGetSmac = urma_get_smac,
+    .rsUrmaGetDmac = urma_get_dmac,
     .rsUrmaCreateContext = urma_create_context,
     .rsUrmaDeleteContext = urma_delete_context,
     .rsUrmaCreateJfr = urma_create_jfr,
@@ -128,6 +130,14 @@ STATIC int RsUrmaDeviceApiInit(void)
     gUrmaOps.rsUrmaGetEidByIp = (urma_status_t (*)(const urma_context_t *, const urma_net_addr_t *, urma_eid_t *))
         HccpDlsym(gUrmaApiHandle, "urma_get_eid_by_ip");
     DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaGetEidByIp, "urma_get_eid_by_ip");
+
+    gUrmaOps.rsUrmaGetSmac = (urma_status_t (*)(const urma_context_t *, uint8_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_get_smac");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaGetSmac, "urma_get_smac");
+
+    gUrmaOps.rsUrmaGetDmac = (urma_status_t (*)(const urma_context_t *, const urma_net_addr_t *, uint8_t *))
+        HccpDlsym(gUrmaApiHandle, "urma_get_dmac");
+    DL_API_RET_IS_NULL_CHECK(gUrmaOps.rsUrmaGetDmac, "urma_get_dmac");
 
     gUrmaOps.rsUrmaCreateContext = (urma_context_t *(*)(urma_device_t *, uint32_t))
         HccpDlsym(gUrmaApiHandle, "urma_create_context");
@@ -561,6 +571,28 @@ int RsUrmaGetEidByIp(const urma_context_t *ctx, const urma_net_addr_t *netAddr, 
 #endif
     }
     return gUrmaOps.rsUrmaGetEidByIp(ctx, netAddr, eid);
+}
+
+int RsUrmaGetSmac(const urma_context_t *ctx, uint8_t *mac)
+{
+    if (gUrmaOps.rsUrmaGetSmac == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rsUrmaGetSmac is null");
+        return -EINVAL;
+#endif
+    }
+    return gUrmaOps.rsUrmaGetSmac(ctx, mac);
+}
+
+int RsUrmaGetDmac(const urma_context_t *ctx, const urma_net_addr_t *netaddr, uint8_t *mac)
+{
+    if (gUrmaOps.rsUrmaGetDmac == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rsUrmaGetDmac is null");
+        return -EINVAL;
+#endif
+    }
+    return gUrmaOps.rsUrmaGetDmac(ctx, netaddr, mac);
 }
 
 urma_context_t *RsUrmaCreateContext(urma_device_t *dev, uint32_t eidIndex)

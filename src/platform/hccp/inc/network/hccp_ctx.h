@@ -545,6 +545,31 @@ struct HccpTpInfo {
     uint32_t resv;
 };
 
+#pragma pack(1)
+struct TpAttr {
+    uint8_t retryTimesInit : 3; // corresponding bitmap bit: 0
+    uint8_t at : 5; // corresponding bitmap bit: 1
+    uint8_t sip[16U]; // corresponding bitmap bit: 2
+    uint8_t dip[16U]; // corresponding bitmap bit: 3
+    uint8_t sma[6U]; // corresponding bitmap bit: 4
+    uint8_t dma[6U]; // corresponding bitmap bit: 5
+    uint16_t vlanId : 12; // corresponding bitmap bit: 6
+    uint8_t vlanEn : 1; // corresponding bitmap bit: 7
+    uint8_t dscp : 6; // corresponding bitmap bit: 8
+    uint8_t atTimes : 5; // corresponding bitmap bit: 9
+    uint8_t sl : 4; // corresponding bitmap bit: 10
+    uint8_t ttl; // corresponding bitmap bit: 11
+    uint8_t reserved[78];
+};
+#pragma pack()
+
+struct GetTpCfg {
+    union GetTpCfgFlag flag;
+    enum TransportModeT transMode;
+    union HccpEid localEid;
+    union HccpEid peerEid;
+};
+
 struct JettyImportExpCfg {
     uint64_t tpHandle;
     uint64_t peerTpHandle;
@@ -1012,6 +1037,46 @@ HCCP_ATTRI_VISI_DEF int RaCtxQpQueryBatch(void *qpHandle[], struct JettyAttr att
  * @retval #non-zero Failure
 */
 HCCP_ATTRI_VISI_DEF int RaCtxQpDestroy(void *qpHandle);
+
+/**
+ * @ingroup libudma
+ * @brief get tp info list
+ * @param ctxHandle [IN] ctx handle
+ * @param cfg [IN] get tp cfg
+ * @param infoList [IN/OUT] corresponding tp info list
+ * @param num [IN/OUT] size of infoList, max num is HCCP_MAX_TPID_INFO_NUM
+ * @see RaCtxInit
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaCtxGetTpInfoList(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num);
+
+/**
+ * @ingroup libudma
+ * @brief get tp attr
+ * @param ctxHandle [IN] ctx handle
+ * @param tpHandle [IN] see struct tp_info
+ * @param attrBitmap [IN/OUT] see struct TpAttr
+ * @param attr [IN/OUT] see struct TpAttr
+ * @see RaCtxGetTpInfoList
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaCtxGetTpAttr(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr);
+
+/**
+ * @ingroup libudma
+ * @brief set tp attr
+ * @param ctxHandle [IN] ctx handle
+ * @param tpHandle [IN] see struct tp_info
+ * @param attrBitmap [IN] see struct TpAttr
+ * @param attr [IN] see struct TpAttr
+ * @see RaCtxGetTpInfoList
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaCtxSetTpAttr(void *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, struct TpAttr *attr);
 
 /**
  * @ingroup librdma
