@@ -398,7 +398,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/common
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/profiling
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/
-    ${HCCL_CODE_ROOT}/src/legacy/framework/resourcr_manager/stream
+    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/stream
     ${HCCL_CODE_ROOT}/src/legacy/interface/
 
 )
