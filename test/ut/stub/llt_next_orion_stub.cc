@@ -62,6 +62,37 @@
 #include "base_config.h"
 
 #include "../../../legacy/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
+#include "task_info.h"
+
+#include <sstream>
+#include <iostream>
+#include <cstdint>
+#include <iomanip>
+#include <array>
+#include "rt_external.h"
+#include "adapter_rts_common.h"
+#include "externalinput_pub.h"
+#include "config_log.h"
+#include "sal_pub.h"
+#include "acl/error_codes/rt_error_codes.h"
+
+#include "dispatcher_task_types.h"
+#include "../../../legacy/framework/dfx/common/task_info.h"
+#include "../../../legacy/framework/dfx/common/mirror_task_manager.h"
+#include "../../../legacy/framework/dfx/common/global_mirror_tasks.h"
+#include "../../../legacy/framework/dfx/common/circular_queue.h"
+#include "../../../legacy/framework/dfx/profiling/profiling_handler.h"
+#include "../../../legacy/framework/dfx/profiling/profiling_reporter.h"
+#include "../../../legacy/framework/dfx/aicpu/profiling/profiling_handler_lite.h"
+#include "../../../legacy/framework/dfx/aicpu/profiling/profiling_reporter_lite.h"
+#include "../../../legacy/unified_platform/common/dlhal_function_v2.h"
+#include "../../../legacy/framework/dfx/profiling/dlprof_function.h"
+#include "../../../legacy/framework/communicator/aicpu/daemon/aicpu_daemon_service.h"
+#include "../../../legacy/framework/dfx/task_exception/task_exception_handler.h"
+#include "../../../legacy/unified_platform/external_system/orion_adapter_hccp.h"
+#include "../../../legacy/include/hccl_communicator.h"
+#include "acl/acl_rt.h"
+
 
 namespace Hccl {
 
@@ -286,14 +317,6 @@ std::unique_ptr<RankTableInfo> RankGraphBuilder::GetRankTableInfo()
 {
     return nullptr;
 }
- 
-
-HcclResult HcclCommDestroyV2(HcclComm comm)
-{
-    return HCCL_SUCCESS;
-}
-
-
 
 s32 HrtGetDevice()
 {
@@ -381,9 +404,16 @@ u32 StreamLite::GetDevPhyId() const
 {
     return 2;
 }
+RtsqBase::RtsqBase(u32 devPhyId, u32 streamId, u32 sqId) : devPhyId_(devPhyId), streamId_(streamId), sqId_(sqId)
+{
+}
+void RtsqBase::Reset() {
+
+}
 RtsqBase *StreamLite::GetRtsq() const
 {
-    return nullptr;
+    RtsqBase *rtSq = new RtsqBase(1, 2, 3);
+    return rtSq;
 }
 
 
@@ -1238,6 +1268,628 @@ std::unique_ptr<Serializable> LocalIpcRmaBuffer::GetExchangeDto()
 
 void LocalIpcRmaBuffer::Grant(u32 pid)
 {
+}
+
+TaskInfo::TaskInfo(u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam,std::shared_ptr<DfxOpInfo> dfxOpInfo, bool isMaster)
+ : streamId_(streamId), taskId_(taskId), remoteRank_(remoteRank), taskParam_(taskParam), dfxOpInfo_(dfxOpInfo), isMaster_(isMaster)
+ {}
+
+std::string TaskInfo::Describe() const
+{
+    return "";
+}
+
+
+std::string TaskInfo::GetBaseInfo() const
+{
+    return "";
+}
+
+std::string TaskInfo::GetConciseBaseInfo() const
+{
+    return "";
+}
+
+GlobalMirrorTasks GlobalMirrorTasks::ins_;
+
+GlobalMirrorTasks::GlobalMirrorTasks()
+{
+    
+}
+
+GlobalMirrorTasks::~GlobalMirrorTasks()
+{
+    
+}
+
+GlobalMirrorTasks &GlobalMirrorTasks::Instance()
+{
+    static GlobalMirrorTasks instance;
+    return instance;
+}
+
+u32 GlobalMirrorTasks::DevSize() const
+{
+    return 0;
+}
+
+TaskInfoQueue *GlobalMirrorTasks::GetQueue(u32 devId, u32 streamId) const
+{
+    static CircularQueue<std::shared_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
+    return &queue;
+}
+
+
+void GlobalMirrorTasks::DestroyQueue(u32 devId, u32 streamId)
+{
+   
+}
+
+std::shared_ptr<TaskInfo> GlobalMirrorTasks::GetTaskInfo(u32 devId, u32 streamId, u32 taskId) const
+{
+
+    return nullptr;
+}
+
+
+MirrorTaskManager::MirrorTaskManager(u32 devId, GlobalMirrorTasks *globalMirrorTasks, bool devUsed)
+    : devId_(devId), globalMirrorTasks_(globalMirrorTasks), devUsed_(devUsed)
+{
+    
+}
+
+void MirrorTaskManager::RegFullyCallBack(std::function<void(const std::string&, u32)> callBack)
+{
+   
+}
+
+void MirrorTaskManager::RegFullyCallBack(std::function<void()> callBack)
+{
+    
+}
+
+void MirrorTaskManager::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
+{
+    
+}
+
+bool MirrorTaskManager::IsStaticGraphMode(const CollOperator &collOperator) const
+{
+    return false;
+}
+
+void MirrorTaskManager::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
+{
+   
+}
+
+std::shared_ptr<DfxOpInfo> MirrorTaskManager::GetCurrDfxOpInfo() const
+{
+   return nullptr;
+}
+
+TaskInfoQueue *MirrorTaskManager::GetQueue(u32 streamId) const
+{
+   
+}
+
+std::unordered_map<u32, TaskInfoQueue *>::iterator MirrorTaskManager::Begin()
+{
+    static std::unordered_map<u32, TaskInfoQueue *>queueMap;
+    return queueMap.begin();
+}
+
+std::unordered_map<u32, TaskInfoQueue *>::iterator MirrorTaskManager::End()
+{
+    static std::unordered_map<u32, TaskInfoQueue *>queueMap;
+    return queueMap.end();
+}
+
+MirrorTaskManager::~MirrorTaskManager()
+{
+}
+
+ProfilingHandler::ProfilingHandler()
+{
+    
+}
+
+ProfilingHandler::~ProfilingHandler()
+{
+}
+
+std::string TaskInfo::GetParaInfo() const
+{
+    return "";
+}
+
+std::string TaskInfo::GetOpInfo() const
+{
+    return "";
+}
+
+ProfilingHandler &ProfilingHandler::GetInstance()
+{
+    static ProfilingHandler instance;
+    return instance;
+}
+
+void ProfilingHandler::Init()
+{
+    
+}
+
+// 回调注册
+int32_t ProfilingHandler::CommandHandleWrapper(uint32_t rtType, void *data, uint32_t len)
+{
+    return 0;
+}
+
+// 接口预留，暂时不实现
+// 函数入参，因为静态检查先删除注释：kernelType kerType, uint64_t beginTime, uint64_t endTime, bool cachedReq
+void ProfilingHandler::ReportKernel() const
+{
+}
+
+void ProfilingHandler::ReportHostApi(OpType opType, uint64_t beginTime, uint64_t endTime, bool cachedReq, bool isAiCpu)
+{
+    
+}
+
+void ProfilingHandler::ReportHcclOp(const DfxOpInfo &opInfo, bool cachedReq)
+{
+   
+}
+
+void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginTime, uint64_t endTime, bool isMasterStream, bool cachedReq, bool ignoreLevel)
+{
+    
+}
+
+void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cachedReq)
+{
+    
+}
+
+void ProfilingHandler::CallAddtionInfo(HCCLReportData &hcclReportData) const
+{
+    
+}
+
+void ProfilingHandler::GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const
+{
+    
+}
+
+void ProfilingHandler::DumpHCCLReportData(const TaskInfo &taskInfo, const HCCLReportData &hcclReportData) const
+{
+   
+}
+
+void ProfilingHandler::ReportCcuInfo(const TaskInfo &taskInfo) const
+{
+    
+}
+
+void ProfilingHandler::GetCcuTaskInfo(const TaskInfo &taskInfo, const CcuProfilingInfo &info) const
+{
+  
+}
+
+void ProfilingHandler::GetCcuGroupInfo(const TaskInfo &taskInfo, const CcuProfilingInfo &info) const
+{
+    
+}
+
+void ProfilingHandler::DumpCcuGroupInfo(const MsprofCcuGroupInfo &ccuGroupInfo) const
+{
+    
+}
+
+void ProfilingHandler::GetCcuWaitSignalInfo(const TaskInfo &taskInfo, const CcuProfilingInfo &info) const
+{
+    
+}
+
+void ProfilingHandler::ReportAclApi(uint32_t cmdType, uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId) const
+{
+   
+}
+
+void ProfilingHandler::ReportNodeApi(uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId)
+{
+   
+}
+
+void ProfilingHandler::ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemId, uint32_t threadId)
+{
+   
+}
+
+void ProfilingHandler::ReportHcclOpApi(uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId) const
+{
+    
+}
+
+void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opInfo, uint32_t threadId)
+{
+   
+}
+
+void ProfilingHandler::ReportAdditionInfo(uint32_t type, uint64_t timeStamp, void *data, uint32_t len) const
+{
+    
+}
+
+int32_t ProfilingHandler::CommandHandle(uint32_t rtType, void *data, uint32_t len) const
+{
+   
+    return 0;
+}
+
+void ProfilingHandler::StartSubscribe(uint64_t profconfig)
+{
+   
+}
+
+void ProfilingHandler::StartHostApiSubscribe()
+{
+   
+}
+
+void ProfilingHandler::CallProfRegHostApi() const
+{
+    
+}
+
+void ProfilingHandler::ReportStoragedCompactInfo()
+{
+   
+}
+
+void ProfilingHandler::ReportMc2AddtionInfo()
+{
+   
+}
+
+void ProfilingHandler::StartTaskApiSubscribe()
+{
+   
+}
+
+void ProfilingHandler::CallProfRegTaskTypeApi() const
+{
+    
+}
+
+void ProfilingHandler::ReportStoragedTaskApi()
+{
+    
+}
+
+void ProfilingHandler::StartHostHcclOpSubscribe() {
+   
+}
+
+void ProfilingHandler::CallProfRegHcclOpApi() const
+{
+   
+}
+
+void ProfilingHandler::StartAddtionInfoSubscribe()
+{
+   
+}
+
+void ProfilingHandler::ReportStoragedAdditionInfo()
+{
+    
+}
+
+void ProfilingHandler::StartL2Subscribe()
+{
+    
+}
+
+void ProfilingHandler::ProfilingHandler::StopSubscribe()
+{
+    
+}
+
+bool ProfilingHandler::GetHostApiState() const
+{
+    return false;
+}
+bool ProfilingHandler::GetHcclNodeState() const
+{
+    return false;
+}
+bool ProfilingHandler::GetHcclL0State() const
+{
+    return false;
+}
+
+bool ProfilingHandler::GetHcclL1State() const
+{
+    return false;
+}
+
+bool ProfilingHandler::GetHcclL2State() const
+{
+    return false;
+}
+
+uint64_t ProfilingHandler::GetProfHashId(const char *name, uint32_t len) const
+{
+   
+    return 0;
+}
+
+void ProfilingHandler::ReportHcclMC2CommInfo(const Stream &kfcStream, Stream &stream, 
+                                             const std::vector<Stream *> &aicpuStreams, const std::string &id, 
+                                             RankId myRank, u32 rankSize, RankId rankInParentComm)
+{
+    
+}
+
+void ProfilingHandler::ReportHcclMC2CommInfo(const u32 kfcStreamId,
+                            const std::vector<u32> &aicpuStreamsId, const std::string &id,
+                            RankId myRank, u32 rankSize, RankId rankInParentComm)
+{
+    
+}
+void ProfilingHandler::ReportMc2AddtionInfo(uint64_t timeStamp, const void *data, int len)
+{
+   
+}
+ProfilingHandlerLite ProfilingHandlerLite::instance_;
+
+ProfilingHandlerLite::ProfilingHandlerLite()
+{
+}
+
+ProfilingHandlerLite::~ProfilingHandlerLite()
+{
+}
+
+ProfilingHandlerLite &ProfilingHandlerLite::GetInstance()
+{
+    static ProfilingHandlerLite instance;
+    return instance;
+}
+
+void ProfilingHandlerLite::Init() const
+{
+}
+
+void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
+{
+   
+}
+
+void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo> &taskInfo) const
+{
+    
+}
+
+void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcclTaskInfo &taskDetailsInfos) const 
+{
+
+}
+
+void ProfilingHandlerLite::DumpTaskDetails(const MsprofAicpuHcclTaskInfo &taskDetailsInfos, const TaskInfo &taskInfo) const
+{
+   
+}
+
+void ProfilingHandlerLite::ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo) const
+{
+   
+}
+
+void ProfilingHandlerLite::ReportAdditionInfo(uint32_t type, uint64_t timeStamp, const void *data, int len) const
+{
+  
+}
+
+void ProfilingHandlerLite::UpdateProfSwitch()
+{
+    
+}
+
+bool ProfilingHandlerLite::IsProfOn(uint64_t feature) const
+{
+
+    return false;
+}
+
+bool ProfilingHandlerLite::IsProfSwitchOn(ProfilingLevel level)
+{
+
+    return false;
+}
+
+bool ProfilingHandlerLite::IsL1fromOffToOn()
+{
+ 
+    return false;
+}
+
+void ProfilingHandlerLite::SetProL1On(bool val)
+{
+
+}
+ 
+void ProfilingHandlerLite::SetProL0On(bool val)
+{
+
+}
+
+bool ProfilingHandlerLite::GetProfL0State() const
+{
+
+    return true;
+}
+bool ProfilingHandlerLite::GetProfL1State() const
+{
+
+    return true;
+}
+
+uint64_t ProfilingHandlerLite::GetProfHashId(const char *name, uint32_t len) const
+{
+    return 0;
+}
+
+ProfilingReporter::ProfilingReporter(MirrorTaskManager *mirrorTaskMgr, ProfilingHandler* profilingHandler)
+: mirrorTaskMgr_(mirrorTaskMgr), profilingHandler_(profilingHandler)
+{}
+
+ProfilingReporter::~ProfilingReporter()
+{}
+
+void ProfilingReporter::Init() const
+{}
+
+void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) const
+{}
+
+void ProfilingReporter::ReportCallBackAllTasks(bool cachedReq)
+{}
+
+void ProfilingReporter::ReportAllTasks(bool cachedReq)
+{}
+
+/* 中途打开profiling开关 */
+void ProfilingReporter::UpdateProfStat()
+{}
+
+void ProfilingReporter::CallReportMc2CommInfo(const Stream &kfcStream, Stream &stream, const std::vector<Stream *> &aicpuStreams,
+                                   const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm) const
+{}
+
+void ProfilingReporter::CallReportMc2CommInfo(const u32 kfcStreamId,
+                                            const std::vector<u32> &aicpuStreamsId, const std::string &id,
+                                            RankId myRank, u32 rankSize, RankId rankInParentComm) const
+{}
+
+std::array<ProfilingReporter::lastPosesMap, 65> ProfilingReporter::allLastPoses_{};
+
+ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManager *mirrorTaskMgr, ProfilingHandlerLite *profilingHandlerLite, bool isIndop)
+    : mirrorTaskMgr_(mirrorTaskMgr), profilingHandlerLite_(profilingHandlerLite)
+{}
+
+ProfilingReporterLite::~ProfilingReporterLite()
+{}
+
+void ProfilingReporterLite::Init() const
+{}
+
+void ProfilingReporterLite::ReportAllTasks()
+{}
+
+void ProfilingReporterLite::UpdateProfStat() const
+{}
+
+DlHalFunctionV2::DlHalFunctionV2() : handle_(nullptr)
+{}
+
+DlHalFunctionV2::~DlHalFunctionV2()
+{}
+
+DlHalFunctionV2 &DlHalFunctionV2::GetInstance()
+{
+    static DlHalFunctionV2 instance;
+    return instance;
+}
+
+HcclResult DlHalFunctionV2::DlHalFunctionInit()
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult DlHalFunctionV2::DlHalFunctionEschedInit()
+{
+    return HCCL_SUCCESS;
+}
+
+DlProfFunction::DlProfFunction() :handle_(nullptr)
+{
+    DlProfFunctionStubInit();
+}
+
+DlProfFunction::~DlProfFunction()
+{}
+
+static uint64_t MsprofSysCycleTimeStub()
+{
+    HCCL_WARNING("Entry MsprofSysCycleTimeStub");
+    return 0;
+}
+
+void DlProfFunction::DlProfFunctionStubInit()
+{
+    dlMsprofSysCycleTime = static_cast<uint64_t(*)(void)>(MsprofSysCycleTimeStub);
+}
+DlProfFunction &DlProfFunction::GetInstance()
+{
+    static DlProfFunction instance;
+    return instance;
+}
+
+HcclResult DlProfFunction::DlProfFunctionInit()
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult DlProfFunction::DlProfFunctionInterInit()
+{
+    return HCCL_SUCCESS;
+}
+
+AicpuDaemonService &AicpuDaemonService::GetInstance()
+{
+    static AicpuDaemonService instance;
+    return instance;
+}
+
+void AicpuDaemonService::ServiceRun(void *info) 
+{}
+
+void AicpuDaemonService::ServiceStop(void *info) const
+{}
+
+void AicpuDaemonService::Register(DaemonFunc *daemonFunc)
+{}
+
+void AicpuDaemonService::Break()
+{}
+
+std::mutex AicpuDaemonService::mutexForFuncs_;
+
+void TaskExceptionHandler::Process(rtExceptionInfo_t *expectionInfo)
+{}
+
+void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *expectionInfo)
+{}
+
+std::array<TaskExceptionHandler *, 65> TaskExceptionHandlerManager::handlers_;
+
+HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInfoOut &auxInfoOut)
+{
+    return HCCL_SUCCESS;
+}
+
+extern "C" {
+aclError aclrtSetExceptionInfoCallback(aclrtExceptionInfoCallback callback) 
+{
+    return ACL_ERROR_NONE;
+}
+}
+
+u32 Hccl::HcclCommunicator::GetRankInParentComm()
+{
+    return 0;
 }
 
 }  // namespace Hccl

@@ -14,6 +14,7 @@
 #include "hcomm_res_defs.h"
 #include "hccl/hccl_res.h"
 #include "mem_host_pub.h"
+#include "hccl_diag.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,6 +64,9 @@ HcclResult HcommEngineCtxDestroy(CommEngine engine, void *ctx);
 
 HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size);
 
+
+// C函数
+HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, HcclDfxOpInfo dfxOpInfo);
 HcclResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHandles, uint32_t *memHandleNum);
 
 #ifdef __cplusplus
