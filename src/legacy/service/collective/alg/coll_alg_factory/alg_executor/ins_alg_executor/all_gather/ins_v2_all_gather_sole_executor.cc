@@ -65,6 +65,7 @@ template <typename AlgTopoMatch, typename InsAlgTemplate>
 HcclResult InsV2AllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CreateTemplates(
     std::shared_ptr<InsAlgTemplate> &algTemplatePtr)
 {
+    HCCL_DEBUG("[InsV2AllGatherSoleExecutor][CreateTemplates]");
     algTemplatePtr = std::make_shared<InsAlgTemplate>(myRank_, rankSize_, vTopo_, virtRankMap_);
     CHK_PTR_NULL(algTemplatePtr);  // 检查是否成功分配内存
     algTemplatePtr->SetDmaMode(dmaMode_);

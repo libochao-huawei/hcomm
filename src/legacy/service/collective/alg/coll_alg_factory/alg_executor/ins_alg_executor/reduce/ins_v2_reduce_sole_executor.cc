@@ -79,10 +79,10 @@ HcclResult InsV2ReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::GetTemplateRes
     const RankGraph *rankGraph, std::shared_ptr<InsAlgTemplate> &algTemplate, AlgTempResReq &tempResReq) const
 {
     if (enableDetour_) {
-        HCCL_DEBUG("[InsV2ReduceSoleExecutor][GetTemplateResRequest] [%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("[InsV2ReduceSoleExecutor] [%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcResDetour(rankGraph, tempResReq));
     } else {
-        HCCL_DEBUG("[InsV2ReduceSoleExecutor][GetTemplateResRequest] [%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("[InsV2ReduceSoleExecutor] [%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcRes(tempResReq));
     }
     return HcclResult::HCCL_SUCCESS;
@@ -154,13 +154,13 @@ HcclResult InsV2ReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::OrchestrateLoo
     tempAlgParams.buffInfo.outBuffType = BufferType::OUTPUT;
     tempAlgParams.buffInfo.scratBuffType = BufferType::SCRATCH;
     tempAlgParams.repeatNum = 1;  // 不需要重复
-    tempAlgParams.inputRepeatStride = 0;
     tempAlgParams.outputRepeatStride = 0;
+    tempAlgParams.inputRepeatStride = 0;
 
     TempFuncs tempFuncs;
     tempFuncs.opMode = opMode_;
-    tempFuncs.enableCounterNotify = IsEnableCounterNotify();
     tempFuncs.isForepart = true;
+    tempFuncs.enableCounterNotify = IsEnableCounterNotify();
     tempFuncs.isBottom = true;
 
     u64 maxDataSizePerLoop = 0;
@@ -191,8 +191,8 @@ HcclResult InsV2ReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::OrchestrateLoo
     u64 loopTimes = dataCount_ / maxDataCountPerLoop + static_cast<u64>(dataCount_ % maxDataCountPerLoop != 0);
     for (u64 loop = 0; loop < loopTimes; loop++) {
         u64 currDataCount = (loop == loopTimes - 1) ? dataCount_ - processedDataCount : maxDataCountPerLoop;
-        tempAlgParams.buffInfo.inBuffBaseOff = processedDataCount * dataTypeSize_;
         tempAlgParams.buffInfo.outBuffBaseOff = processedDataCount * dataTypeSize_;
+        tempAlgParams.buffInfo.inBuffBaseOff = processedDataCount * dataTypeSize_;
         tempAlgParams.sliceSize = currDataCount * dataTypeSize_;
         tempAlgParams.tailSize = tempAlgParams.sliceSize;
 
@@ -220,10 +220,10 @@ HcclResult InsV2ReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes(
     CHK_RET(GetTemplateResRequest(rankGraph, algTemplate, tempResReq));
 
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, tempResReq.links, algResReq.levelRankPairs));
-    algResReq.topoInfo.UpdateSingleLevelTopo(virtRanks_, virtRankMap_, vTopo_);
-    algResReq.primQueueNum = tempResReq.streamNum;
+    algResReq.topoInfo.UpdateSingleLevelTopo(virtRanks_, virtRankMap_, vTopo_);   
     algResReq.queueNotifys = tempResReq.queNotifys;
     algResReq.localWaitGroupCntNotify = tempResReq.localWaitGroupCntNotify;
+    algResReq.primQueueNum = tempResReq.streamNum;
     algResReq.localBcastPostCntNotify = tempResReq.localBcastPostCntNotify;
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, tempResReq.links, algResReq.links));
 

@@ -46,9 +46,9 @@ private:
         ConnectedLinkMgr *linkMgr, std::shared_ptr<InsAlgTemplate> &algTemplate, AlgTempResReq &tempResReq) const;
     HcclResult OrchestrateLoop(std::shared_ptr<InsAlgTemplate> algTemplate);
 
-    std::vector<RankId> virtRanks_;
-    std::map<RankId, u32> virtRankMap_;
     std::vector<std::vector<RankId>> vTopo_;
+    std::vector<RankId> virtRanks_;
+    std::map<RankId, u32> virtRankMap_;  
     ResLinks tempResLinks_;
     std::vector<InsQuePtr> tempInsQue_;
 };

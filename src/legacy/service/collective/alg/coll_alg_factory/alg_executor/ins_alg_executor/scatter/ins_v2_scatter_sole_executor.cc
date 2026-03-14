@@ -70,6 +70,7 @@ template <typename AlgTopoMatch, typename InsAlgTemplate>
 HcclResult InsV2ScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CreateTemplates(
     std::shared_ptr<InsAlgTemplate> &algTemplatePtr)
 {
+    HCCL_DEBUG("[InsV2ScatterSoleExecutor][CreateTemplates]");
     algTemplatePtr = std::make_shared<InsAlgTemplate>(myRank_, rankSize_, vTopo_, virtRankMap_);
     CHK_PTR_NULL(algTemplatePtr);  // 检查是否成功分配内存
     algTemplatePtr->SetDmaMode(dmaMode_);
@@ -98,10 +99,10 @@ HcclResult InsV2ScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::GetTemplateRe
     ConnectedLinkMgr *linkMgr, std::shared_ptr<InsAlgTemplate> &algTemplate, AlgTempResReq &tempResReq) const
 {
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("[InsV2ScatterSoleExecutor] [%s] Rank[%d]. CalcRes with detouring enabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcResDetour(linkMgr, tempResReq));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("[InsV2ScatterSoleExecutor] [%s] Rank[%d]. CalcRes with detouring disabled.", __func__, myRank_);
         CHK_RET(algTemplate->CalcRes(tempResReq));
     }
     return HcclResult::HCCL_SUCCESS;
@@ -165,10 +166,10 @@ HcclResult InsV2ScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::OrchestrateLo
     HCCL_INFO("[InsV2ScatterSoleExecutor][OrchestrateOpbase] Start, template[%s]", algTemplate->Describe().c_str());
     u32 dataSizePerVolume = DataTypeSizeGet(dataType_);
     dataSize_ = dataCount_ * dataSizePerVolume;
-    TemplateDataParams tempAlgParams;
-    tempAlgParams.buffInfo.inBuffType = BufferType::INPUT;
+    TemplateDataParams tempAlgParams;    
     tempAlgParams.buffInfo.outBuffType = BufferType::OUTPUT;
     tempAlgParams.buffInfo.scratBuffType = BufferType::SCRATCH;
+    tempAlgParams.buffInfo.inBuffType = BufferType::INPUT;
     tempAlgParams.repeatNum = 1;  // 不需要重复
     tempAlgParams.inputRepeatStride = 0;
     tempAlgParams.outputRepeatStride = 0;
@@ -177,10 +178,10 @@ HcclResult InsV2ScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::OrchestrateLo
     tempAlgParams.outputSliceStride = 0;  // 每张卡的数据间隔为算子输入大小
 
     TempFuncs tempFuncs;
+    tempFuncs.isBottom = true;
     tempFuncs.opMode = opMode_;
     tempFuncs.enableCounterNotify = IsEnableCounterNotify();
-    tempFuncs.isForepart = true;
-    tempFuncs.isBottom = true;
+    tempFuncs.isForepart = true;   
 
     u64 maxDataSizePerLoop = 0;
     u64 transportBoundDataSize = UB_MAX_DATA_SIZE;  // algTemplate->CalcLoopMaxCount();

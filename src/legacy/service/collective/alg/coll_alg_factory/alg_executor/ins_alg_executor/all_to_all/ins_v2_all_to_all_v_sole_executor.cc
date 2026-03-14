@@ -107,8 +107,10 @@ HcclResult InsV2AlltoAllVSoleExecutor<AlgTopoMatch, InsAlgTemplate>::GetTemplate
     const RankGraph *rankGraph, std::shared_ptr<InsAlgTemplate> &algTemplate, AlgTempResReq &tempResReq) const
 {
     if (enableDetour_) {
+        HCCL_DEBUG("[InsV2AlltoAllVSoleExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(algTemplate->CalcResDetour(rankGraph, tempResReq));
     } else {
+        HCCL_DEBUG("[InsV2AlltoAllVSoleExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(algTemplate->CalcRes(tempResReq));
     }
 
@@ -120,8 +122,10 @@ HcclResult InsV2AlltoAllVSoleExecutor<AlgTopoMatch, InsAlgTemplate>::GetTemplate
     ConnectedLinkMgr *linkMgr, std::shared_ptr<InsAlgTemplate> &algTemplate, AlgTempResReq &tempResReq) const
 {
     if (enableDetour_) {
+        HCCL_INFO("[InsV2AlltoAllVSoleExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(algTemplate->CalcResDetour(linkMgr, tempResReq));
     } else {
+        HCCL_INFO("[InsV2AlltoAllVSoleExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(algTemplate->CalcRes(tempResReq));
     }
     return HcclResult::HCCL_SUCCESS;
@@ -186,10 +190,10 @@ HcclResult InsV2AlltoAllVSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate
     u32 dataSizePerVolume = DataTypeSizeGet(dataType_);
     dataSize_ = dataCount_ * dataSizePerVolume;
 
-    TemplateDataParams tempAlgParams;
-    tempAlgParams.buffInfo.inBuffType = BufferType::INPUT;
+    TemplateDataParams tempAlgParams; 
     tempAlgParams.buffInfo.outBuffType = BufferType::OUTPUT;
     tempAlgParams.buffInfo.scratBuffType = BufferType::SCRATCH;
+    tempAlgParams.buffInfo.inBuffType = BufferType::INPUT;
     tempAlgParams.repeatNum = 1;  // 不需要重复
     tempAlgParams.inputRepeatStride = 0;
     tempAlgParams.outputRepeatStride = 0;
@@ -260,9 +264,9 @@ HcclResult InsV2AlltoAllVSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes(
     CHK_RET(GetTemplateResRequest(rankGraph, algTemplate, tempResReq));
 
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, tempResReq.links, algResReq.levelRankPairs));
-    algResReq.topoInfo.UpdateSingleLevelTopo(virtRanks_, virtRankMap_, vTopo_);
-    algResReq.primQueueNum = tempResReq.streamNum;
+    algResReq.topoInfo.UpdateSingleLevelTopo(virtRanks_, virtRankMap_, vTopo_);   
     algResReq.queueNotifys = tempResReq.queNotifys;
+    algResReq.primQueueNum = tempResReq.streamNum;
     algResReq.localWaitGroupCntNotify = tempResReq.localWaitGroupCntNotify;
     algResReq.localBcastPostCntNotify = tempResReq.localBcastPostCntNotify;
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, tempResReq.links, algResReq.links));

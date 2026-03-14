@@ -59,6 +59,7 @@ template <typename AlgTopoMatch, typename InsAlgTemplate>
 HcclResult InsV2ReduceScatterVSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CreateTemplates(
     std::shared_ptr<InsAlgTemplate> &algTemplatePtr)
 {
+    HCCL_DEBUG("[InsV2ReduceScatterVSoleExecutor][CreateTemplates]");
     algTemplatePtr = std::make_shared<InsAlgTemplate>(myRank_, rankSize_, vTopo_, virtRankMap_);
     CHK_PTR_NULL(algTemplatePtr);
     algTemplatePtr->SetDmaMode(dmaMode_);
@@ -118,6 +119,10 @@ HcclResult InsV2ReduceScatterVSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orches
     } else {
         CHK_RET(algTemplate->CalcRes(tempResReq));
     }
+    HCCL_DEBUG("[InsV2ReduceScatterVSoleExecutor][Orchestrate] Rank[%d], template [%s], requiredQue Num [%u].",
+        myRank_,
+        algTemplate->Describe().c_str(),
+        tempResReq.queNum);
     CHK_RET(InitQueue(tempResReq.queNum, tempInsQue_));
     CHK_RET(PrepResLinks(myRank_, tempResReq.links, linkMgr, tempResLinks_));
     CHK_RET(OrchestrateLoop(algTemplate));
@@ -224,7 +229,7 @@ HcclResult InsV2ReduceScatterVSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRe
     algResReq.queueNotifys = tempResReq.queNotifys;
     algResReq.localWaitGroupCntNotify = tempResReq.localWaitGroupCntNotify;
     algResReq.localBcastPostCntNotify = tempResReq.localBcastPostCntNotify;
-    HCCL_DEBUG("[%s] Rank[%d], requiredQueNum [%u].", __func__, myRank_, algResReq.primQueueNum);
+    HCCL_INFO("[%s] Rank[%d], requiredQueNum [%u].", __func__, myRank_, algResReq.primQueueNum);
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, tempResReq.links, algResReq.links));
 
     return HcclResult::HCCL_SUCCESS;
@@ -256,10 +261,10 @@ HcclResult InsV2ReduceScatterVSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRe
 }
 
 #ifndef CCL_KERNEL_AICPU
-INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCESCATTERV, CcuReduceScatterVMesh1D, InsV2ReduceScatterVSoleExecutor,
-    TopoMatchMesh, CcuTempReduceScatterVMesh1D);
 INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCESCATTERV, CcuReduceScatterVMeshMem2Mem1D, InsV2ReduceScatterVSoleExecutor,
     TopoMatchMesh, CcuTempReduceScatterVMeshMem2Mem1D);
+INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCESCATTERV, CcuReduceScatterVMesh1D, InsV2ReduceScatterVSoleExecutor,
+    TopoMatchMesh, CcuTempReduceScatterVMesh1D);
 #endif
 
 }  // namespace Hccl

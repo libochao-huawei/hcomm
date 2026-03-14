@@ -47,12 +47,12 @@ private:
         ConnectedLinkMgr *linkMgr, std::shared_ptr<InsAlgTemplate> &algTemplate, AlgTempResReq &tempResReq) const;
     HcclResult OrchestrateLoop(std::shared_ptr<InsAlgTemplate> algTemplate);
     HcclResult CreateTemplates(std::shared_ptr<InsAlgTemplate> &algTemplatePtr);
-
-    std::vector<RankId> virtRanks_;
+    
     std::map<RankId, u32> virtRankMap_;
     std::vector<std::vector<RankId>> vTopo_;
     ResLinks tempResLinks_;
     std::vector<InsQuePtr> tempInsQue_;
+    std::vector<RankId> virtRanks_;
 };
 }  // namespace Hccl
 

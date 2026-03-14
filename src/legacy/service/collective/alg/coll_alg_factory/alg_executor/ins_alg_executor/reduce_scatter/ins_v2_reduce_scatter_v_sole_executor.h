@@ -20,7 +20,7 @@ public:
 
     std::string Describe() const override
     {
-        return "Instruction based Reduce Scatter Seq Executor.";
+        return "Instruction based Reduce Scatter V Seq Executor.";
     }
 
     // HOST 接口
@@ -42,9 +42,9 @@ private:
     HcclResult OrchestrateLoop(std::shared_ptr<InsAlgTemplate> algTemplate);
 
     std::vector<RankId> virtRanks_;
-    std::map<RankId, u32> virtRankMap_;
-    std::vector<std::vector<RankId>> vTopo_;
+    std::map<RankId, u32> virtRankMap_;  
     ResLinks tempResLinks_;
+    std::vector<std::vector<RankId>> vTopo_;
     std::vector<InsQuePtr> tempInsQue_;
 };
 } // namespace Hccl

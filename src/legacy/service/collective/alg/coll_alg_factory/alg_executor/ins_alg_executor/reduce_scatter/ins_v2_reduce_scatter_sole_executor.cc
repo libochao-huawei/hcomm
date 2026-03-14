@@ -49,11 +49,11 @@ template <typename AlgTopoMatch, typename InsAlgTemplate>
 HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::InitCommInfo(const AlgTopoInfo &topoInfo)
 {
     CHK_PRT_RET(topoInfo.vTopo.empty(),
-        HCCL_ERROR("[InsV2ReduceSoleExecutor][InitCommInfo] vTopo size is invalid"), HCCL_E_PARA);
+        HCCL_ERROR("[InsV2ReduceScatterSoleExecutor][InitCommInfo] vTopo size is invalid"), HCCL_E_PARA);
     CHK_PRT_RET(topoInfo.virtRankMap.empty(),
-        HCCL_ERROR("[InsV2ReduceSoleExecutor][InitCommInfo] virtRankMap size is invalid"), HCCL_E_PARA);
+        HCCL_ERROR("[InsV2ReduceScatterSoleExecutor][InitCommInfo] virtRankMap size is invalid"), HCCL_E_PARA);
     CHK_PRT_RET(topoInfo.virtRanks.empty(),
-        HCCL_ERROR("[InsV2ReduceSoleExecutor][InitCommInfo] virtRanks size is invalid"), HCCL_E_PARA);
+        HCCL_ERROR("[InsV2ReduceScatterSoleExecutor][InitCommInfo] virtRanks size is invalid"), HCCL_E_PARA);
     vTopo_ = topoInfo.vTopo[0];              // 本通信域内的通信平面
     virtRankMap_ = topoInfo.virtRankMap[0];  // 本通信域内的 rank 映射表
     virtRanks_ = topoInfo.virtRanks[0];      // 本通信域内的 rank 集合
@@ -64,6 +64,7 @@ template <typename AlgTopoMatch, typename InsAlgTemplate>
 HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CreateTemplates(
     std::shared_ptr<InsAlgTemplate> &algTemplatePtr)
 {
+    HCCL_DEBUG("[InsV2ReduceScatterSoleExecutor][CreateTemplates]");
     algTemplatePtr = std::make_shared<InsAlgTemplate>(myRank_, rankSize_, vTopo_, virtRankMap_);
     CHK_PTR_NULL(algTemplatePtr);
     algTemplatePtr->SetDmaMode(dmaMode_);
@@ -170,9 +171,9 @@ HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchest
         HCCL_ERROR("[InsV2ReduceScatterSoleExecutor][OrchestrateOpbase] maxDataCountPerLoop is 0"), HCCL_E_INTERNAL);
     // 这里处理的数据量，是单次循环所处理的总数据量，包括两个数据片，每一半stream处理一个数据片
     TempFuncs tempFuncs;
+    tempFuncs.isForepart = true;
     tempFuncs.opMode = opMode_;
     tempFuncs.enableCounterNotify = IsEnableCounterNotify();
-    tempFuncs.isForepart = true;
     tempFuncs.isBottom = true;
     // maxDataCountPerLoop是一次循环所处理的一片数据量大小
     u64 processedDataCount = 0;

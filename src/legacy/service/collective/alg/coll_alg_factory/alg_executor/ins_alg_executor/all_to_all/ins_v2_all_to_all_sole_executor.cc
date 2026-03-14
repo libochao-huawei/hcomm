@@ -199,27 +199,27 @@ HcclResult InsV2AlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::OrchestrateL
     TempFuncs tempFuncs;
     tempFuncs.opMode = opMode_;
     tempFuncs.enableCounterNotify = IsEnableCounterNotify();
-    tempFuncs.isForepart = true;
     tempFuncs.isBottom = true;
+    tempFuncs.isForepart = true;
 
     u64 maxDataSizePerLoop = 0;
-    u64 transportBoundDataSize = UB_MAX_DATA_SIZE;
+    u64 transportBoundDataSize_ = UB_MAX_DATA_SIZE;
     u32 templateScratchMultiplier = algTemplate->CalcScratchMultiple(BufferType::INPUT, BufferType::OUTPUT);
     if (templateScratchMultiplier != 0) {
         u64 scratchBoundDataSize = maxTmpMemSize_ / templateScratchMultiplier;
-        maxDataSizePerLoop = std::min(transportBoundDataSize, scratchBoundDataSize);
+        maxDataSizePerLoop = std::min(transportBoundDataSize_, scratchBoundDataSize);
     } else {
-        maxDataSizePerLoop = transportBoundDataSize;
+        maxDataSizePerLoop = transportBoundDataSize_;
     }
 
     // 先将cclBuffer切块，看每一块大小
     u64 scratchDataCountPerLoopPerRank = maxDataSizePerLoop / dataTypeSize_ / rankSize_;
     HCCL_DEBUG("[InsV2AlltoAllSoleExecutor][OrchestrateLoop] maxTmpMemSize_[%llu], templateScratchMultiplier[%llu], maxDataSizePerLoop[%llu], "
-              "transportBoundDataSize[%llu], scratchDataCountPerLoopPerRank[%llu]",
+              "transportBoundDataSize_[%llu], scratchDataCountPerLoopPerRank[%llu]",
         maxTmpMemSize_,
         templateScratchMultiplier,
         maxDataSizePerLoop,
-        transportBoundDataSize,
+        transportBoundDataSize_,
         scratchDataCountPerLoopPerRank);
     CHK_PRT_RET(scratchDataCountPerLoopPerRank == 0,
         HCCL_ERROR("[InsV2AlltoAllSoleExecutor][OrchestrateLoop] scratchDataCountPerLoopPerRank is 0"),
@@ -265,12 +265,12 @@ HcclResult InsV2AlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes(
     AlgTempResReq tempResReq;
     CHK_RET(GetTemplateResRequest(rankGraph, algTemplate, tempResReq));
 
-    CHK_RET(CalcLinkInfo(myRank_, rankGraph, tempResReq.links, algResReq.levelRankPairs));
-    algResReq.topoInfo.UpdateSingleLevelTopo(virtRanks_, virtRankMap_, vTopo_);
+    CHK_RET(CalcLinkInfo(myRank_, rankGraph, tempResReq.links, algResReq.levelRankPairs));   
     algResReq.primQueueNum = tempResReq.streamNum;
     algResReq.queueNotifys = tempResReq.queNotifys;
-    algResReq.localWaitGroupCntNotify = tempResReq.localWaitGroupCntNotify;
+    algResReq.topoInfo.UpdateSingleLevelTopo(virtRanks_, virtRankMap_, vTopo_);   
     algResReq.localBcastPostCntNotify = tempResReq.localBcastPostCntNotify;
+    algResReq.localWaitGroupCntNotify = tempResReq.localWaitGroupCntNotify;
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, tempResReq.links, algResReq.links));
 
     return HcclResult::HCCL_SUCCESS;

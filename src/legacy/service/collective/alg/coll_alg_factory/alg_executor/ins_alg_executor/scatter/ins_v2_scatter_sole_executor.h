@@ -49,8 +49,8 @@ private:
     std::vector<RankId> virtRanks_;
     std::map<RankId, u32> virtRankMap_;
     std::vector<std::vector<RankId>> vTopo_;
-    ResLinks tempResLinks_;
     std::vector<InsQuePtr> tempInsQue_;
+    ResLinks tempResLinks_;
 };
 }  // namespace Hccl
 
