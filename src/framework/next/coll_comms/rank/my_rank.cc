@@ -299,7 +299,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     CHK_RET(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
     // 添加初始化时进行填表
-    for (u32 i = 0; i < channelNum; ++i){
+    for (u32 i = 0; i < channelNum; ++i) {
         CHK_RET(CheckChannelParam(engine,channelDescs[i],i));
         u32 remoteRank = channelDescs[i].remoteRank;
         HcclCommDfx::AddChannelRemoteRankId(commTag, hostChannelHandleList[i], remoteRank);

@@ -135,7 +135,7 @@ HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *end
     std::unique_ptr<Endpoint> endpointPtr = nullptr;
 
     HcclResult ret = Endpoint::CreateEndpoint(*endpoint, endpointPtr);
-    if (ret != HCCL_SUCCESS){
+    if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("call Endpoint::CreateEndpoint failed");
         return ret;
     }
@@ -355,7 +355,7 @@ HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle
     hccl::DeviceMem remoteRankList = hccl::DeviceMem::alloc(listNum * sizeof(u32));
     CHK_PTR_NULL(remoteRankList.ptr());
     std::vector<u32> remoteRankIdList(listNum);
-    for( u32 i = 0; i < listNum; ++i) {
+    for ( u32 i = 0; i < listNum; ++i) {
         CHK_RET(hccl::HcclCommDfx::GetChannelRemoteRankId(commTag, hostChannelHandles[i], remoteRankIdList[i]));
     }
     // 通过安全的内存拷贝将主机内存数据传输到设备内存

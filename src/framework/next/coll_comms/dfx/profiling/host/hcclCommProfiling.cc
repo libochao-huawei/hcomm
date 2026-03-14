@@ -18,7 +18,8 @@ HcclResult HcclCommProfiling::ReportKernel(uint64_t beginTime, const std::string
     uint64_t cmdItemId = Hccl::DlProfFunction::GetInstance().dlMsprofStr2Id(kernelName.c_str(), kernelName.length());
     EXECEPTION_CATCH(Hccl::ProfilingHandler::GetInstance().ReportNodeApi(beginTime, endTime, cmdItemId, threadId), return HCCL_E_PTR);
     EXECEPTION_CATCH(Hccl::ProfilingHandler::GetInstance().ReportNodeBasicInfo(endTime, cmdItemId, threadId), return HCCL_E_PTR);
-    HCCL_INFO("[HcclCommProfiling][ReportKernel] beginTime %lu endTime%lu kernelName%s commTag%s threadId%u", beginTime, endTime, kernelName.c_str(), commTag.c_str(), threadId);
+    HCCL_INFO("[HcclCommProfiling][ReportKernel] beginTime [%llu] endTime[%llu] kernelName[%s] commTag[%s] threadId[%u]",
+            beginTime, endTime, kernelName.c_str(), commTag.c_str(), threadId);
     return HCCL_SUCCESS;
 }
 

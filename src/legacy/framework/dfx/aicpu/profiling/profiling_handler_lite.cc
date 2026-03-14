@@ -176,13 +176,13 @@ void ProfilingHandlerLite::ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo
     }
     HCCL_INFO("[ProfilingHandlerLite][ReportMainStreamTask] ReportMainStreamTask start.");
     MsprofAicpuHcclMainStreamTask flagtask {};
-    if(aicpu::GetTaskAndStreamId == nullptr){
+    if (aicpu::GetTaskAndStreamId == nullptr) {
         HCCL_WARNING("[ProfilingHandlerLite][ReportMainStreamTask] aicpu::GetTaskAndStreamId is nullptr.");
         return;
     }
     uint64_t aicpuKernelTaskId   = 0U;
     uint32_t aicpuKernelStreamId = 0;
-    if(aicpu::GetTaskAndStreamId(aicpuKernelTaskId, aicpuKernelStreamId) != aicpu::status_t::AICPU_ERROR_NONE){
+    if (aicpu::GetTaskAndStreamId(aicpuKernelTaskId, aicpuKernelStreamId) != aicpu::status_t::AICPU_ERROR_NONE) {
         THROW<InternalException>("[ProfilingHandler] Failed to get task id and stream id.");
     }
     // flagTaskInfo.taskId的高16位填到flagtask.taskId，低16位填到flagtask.streamId

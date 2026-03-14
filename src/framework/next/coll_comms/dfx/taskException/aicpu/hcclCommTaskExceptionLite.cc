@@ -152,7 +152,7 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
         CHK_RET(aicpuComm->SendErrorMessageReportToHost(errMsgInfo));
 
         // 2) send mbox to tsfw
-        if(curTask->dfxOpInfo_ == nullptr) {
+        if (curTask->dfxOpInfo_ == nullptr) {
             HCCL_ERROR("[%s]dfxOpInfo is nullptr. devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
                 __func__, devId_, exceptionInfo.sqId, sqeId);
         } else {

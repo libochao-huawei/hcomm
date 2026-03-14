@@ -29,7 +29,7 @@ public:
     explicit HcclCommDfx();
     
     // 初始化DFX系统
-    HcclResult Init(u32 deviceId, const std::string comTag);
+    HcclResult Init(u32 deviceId, const std::string& comTag);
     
     // 注册回调函数
     HcclResult AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle);

@@ -118,7 +118,7 @@ HcclResult AicpuTsThread::BuildComStreamInfo(const HcclStreamInfo &streamInfo, H
 
 HcclResult AicpuTsThread::InitStream(HcclStreamParam &streamParam)
 {
-    #ifdef CCL_KERNEL_AICPU
+#ifdef CCL_KERNEL_AICPU
     HcclStreamInfo &streamInfo = streamParam.streamInfo;
 
     static bool isCustom = false;
@@ -171,7 +171,7 @@ HcclResult AicpuTsThread::InitStream(HcclStreamParam &streamParam)
     ret = stream_->InitSqAndCqeContext(sqHead, sqTail, sqCqeContext);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("%s InitSqAndCqeContext failed", __func__), ret);
     HCCL_INFO("%s success, streamId[%d]", __func__, stream_->id());
-    #endif
+#endif
     return HCCL_SUCCESS;
 }
 

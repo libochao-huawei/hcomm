@@ -18,7 +18,7 @@ ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManager    *mirrorTaskMgr
     }
     mirrorTaskMgr_        = mirrorTaskMgr;
     profilingHandlerLite_ = profilingHandlerLite;
-    if(isIndop == false) {
+    if (isIndop == false) {
         mirrorTaskMgr_->RegFullyCallBack([this]() {
             ReportAllTasks();
         });
