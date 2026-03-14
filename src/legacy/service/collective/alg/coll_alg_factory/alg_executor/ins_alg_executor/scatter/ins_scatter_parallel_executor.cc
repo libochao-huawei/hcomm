@@ -229,7 +229,7 @@ HcclResult InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempl
     }
     u32 totalQueueNum = resReqIntra.queNum + resReqInter.queNum;
     CHK_RET(InitQueue(totalQueueNum, requiredQue_));
-    for(u32 idx = 0 ; idx < requiredQue_.size(); i++) {
+    for(u32 idx = 0 ; idx < requiredQue_.size(); idx++) {
         if (idx < resReqIntra.queNum) {
             intraQue_.push_back(requiredQue_[idx]);
         } else {
