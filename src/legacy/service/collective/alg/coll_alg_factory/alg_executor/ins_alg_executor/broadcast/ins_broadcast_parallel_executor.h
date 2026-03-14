@@ -39,7 +39,6 @@ public:
 
 private:
     void GetParallelDataSplit(std::vector<float> &splitDataSize) const;
-    HcclResult CalcLocalRankSize();
     HcclResult CalcLocalRoot();
     // Host
     HcclResult PrepareResForTemplate(const RankGraph *rankGraph, InsAlgTemplate0 &tempAlgIntra, 

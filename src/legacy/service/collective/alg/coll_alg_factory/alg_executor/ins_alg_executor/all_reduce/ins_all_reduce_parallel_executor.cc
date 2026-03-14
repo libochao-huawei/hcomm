@@ -52,7 +52,7 @@ HcclResult InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     // Topo Match
     AlgTopoMatch topoMatch(myRank_, rankSize_, rankGraph, devType_);
     CHK_RET(topoMatch.MatchTopo(vTopo_, virtRanks_, virtRankMap_));
-    CHK_RET(CalcLocalRankSize());
+    CHK_RET(CalcLocalRankSize(myRank_, virtRanks_, rankSizeLevel0_, rankSizeLevel1_));
     InsAlgTemplate0 intraTempAlg(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);
     InsAlgTemplate1 interTempAlg(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);
 
@@ -86,7 +86,7 @@ HcclResult InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     AlgTopoMatch topoMatch(myRank_, rankSize_, rankGraph, devType_);
     CHK_RET(topoMatch.MatchTopo(vTopo_, virtRanks_, virtRankMap_));
     algResReq.topoInfo.UpdateMultiLevelTopo(virtRanks_, virtRankMap_, vTopo_);
-    CHK_RET(CalcLocalRankSize());
+    CHK_RET(CalcLocalRankSize(myRank_, virtRanks_, rankSizeLevel0_, rankSizeLevel1_));
 
     // instantiate a template
     InsAlgTemplate0 intraTempAlg(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);
@@ -178,24 +178,6 @@ void InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     splitDataSize.push_back(splitData);
     return;
 }
-
-template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1>
-HcclResult InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1>::CalcLocalRankSize()
-{
-    uint64_t virtRanks_2 = 2;
-    CHK_PRT_RET(virtRanks_.size() < virtRanks_2,
-        HCCL_ERROR("[CalcLocalRankSize] virtRanks level num is smaller than 2."),
-        HcclResult::HCCL_E_INTERNAL);
-
-    rankSizeLevel0_ = virtRanks_.at(0).size();
-    rankSizeLevel1_ = virtRanks_.at(1).size();
-
-    HCCL_INFO("[CalcLocalRankSize] localRankSize: myRank[%d] rankSizeLevel0_[%u] rankSizeLevel1_[%u]",
-        myRank_,
-        rankSizeLevel0_,
-        rankSizeLevel1_);
-    return HcclResult::HCCL_SUCCESS;
-};
 
 template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1>
 HcclResult InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1>::PrepareResForTemplate(
@@ -328,7 +310,7 @@ HcclResult InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     vTopo_ = topoInfo.vTopo;              // 本通信域内的通信平面
     virtRankMap_ = topoInfo.virtRankMap;  // 本通信域内的 rank 映射表
     virtRanks_ = topoInfo.virtRanks;      // 本通信域内的 rank 集合
-    CHK_RET(CalcLocalRankSize());
+    CHK_RET(CalcLocalRankSize(myRank_, virtRanks_, rankSizeLevel0_, rankSizeLevel1_));
 
     // 实例化算法模板类
     InsAlgTemplate0 tempAlgIntra(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);  // server内算法，比如mesh
@@ -366,7 +348,7 @@ HcclResult InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     AlgTopoMatch topoMatch(myRank_, rankSize_, rankGraph, devType_);
     CHK_RET(topoMatch.MatchTopo(vTopo_, virtRanks_, virtRankMap_));
 
-    CHK_RET(CalcLocalRankSize());
+    CHK_RET(CalcLocalRankSize(myRank_, virtRanks_, rankSizeLevel0_, rankSizeLevel1_));
 
     // 实例化算法模板类
     InsAlgTemplate0 tempAlgIntra(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);  // server内算法，比如mesh

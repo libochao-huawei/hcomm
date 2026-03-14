@@ -39,7 +39,6 @@ public:
     HcclResult CalcRes(const RankGraph *rankGraph, CollAlgResReq &algResReq) override;
 
 private:
-    HcclResult CalcLocalRankSize();
     HcclResult GenInsQuesHost(InsAlgTemplate0 &tempAlgIntra, InsAlgTemplate1 &tempAlgInter);
     void GenTemplateAlgParamsIntra0(const u64 dataOffset, const u64 dataCountPerLoopAixs0, const u64 scratchOffset, TemplateDataParams &tempAlgParamsIntra0) const;
     void GenTemplateAlgParamsIntra1(const u64 dataOffset, const u64 dataCountPerLoopAixs1, const u64 scratchOffset, TemplateDataParams &tempAlgParamsIntra1) const;

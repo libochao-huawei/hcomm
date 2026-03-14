@@ -42,7 +42,6 @@ private:
     void GetParallelDataSplitRate(std::vector<float> &splitDataSize) const;
     HcclResult PrepareResForTemplate(const RankGraph *rankGraph, InsAlgTemplate0 &tempAlgIntra, InsAlgTemplate1 &tempAlgInter);
     HcclResult PrepareResForTemplate(ConnectedLinkMgr *linkMgr, InsAlgTemplate0 &tempAlgIntra, InsAlgTemplate1 &tempAlgInter);
-    HcclResult CalcLocalRankSize();
     HcclResult CalcLocalRoot();
 
     std::vector<std::vector<RankId>>              virtRanks_;

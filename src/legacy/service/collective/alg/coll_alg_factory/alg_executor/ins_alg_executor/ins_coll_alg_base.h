@@ -101,6 +101,12 @@ protected:
 
     // link prepare
     HcclResult SetLinkPrty(const std::vector<BasePortType> &linkPriority);
+    
+    HcclResult GetParallelNotifyReq(const u32 primQueueNum, 
+                                    std::vector<std::tuple<QId, QId, u32>> &queueNotifys) const;
+    HcclResult CalcLocalRankSize(const RankId myRank,
+                                const std::vector<std::vector<RankId>> &virtRanks, 
+                                uint64_t &rankSizeLevel0, uint64_t &rankSizeLevel1) const;
     LinkReq GetSeqLinksUnion(const LinkReq &linkReq0, const LinkReq &linkReq1) const;
 
     CollAlgOperator                  op_;
