@@ -27,6 +27,8 @@
 namespace Hccl {
 
 constexpr u32 MAX_ALLTOALLV_MEM_NUM = 64;
+constexpr u32 ALLTOALL_INFO_SIZE = 4;
+constexpr u32 KERNEL_PARAM_BUF_SIZE = 32 * 1024;
 
 class CollServiceAiCpuImpl : public CollServiceBase {
 public:
@@ -75,6 +77,10 @@ private:
     void AllocOpMemAlltoAllV(const CollOperator &op);
     void AllocOpMemBatchSendRecv(const CollOperator &op);
     u32 GetRemoteRankIdsHashValue(const CollOperator &op) const;
+    u64 CalcOpDynamicDataSize(const CollOperator &op, const OpType &opType, const u32 &rankSize);
+    HcclResult FillBatchSendRecvData(const CollOperator &op);
+    HcclResult FillAllToAllvData(const CollOperator &op);
+    HcclResult FillAllToAllvcData(const CollOperator &op);
 
     std::set<LinkData> availableLinks;
     std::unordered_map<std::string, std::shared_ptr<DevBuffer>>
@@ -93,6 +99,8 @@ private:
     u32 index{0};
     u32 indexAlltoAllVC{0};
     std::string curTagKey{};
+    std::shared_ptr<HostBuffer> kernelParamBuf_;
+    u32 dynamicDataSize{0};
 
     std::vector<char> PackOpData(const std::string &opTag, const CollAlgOpReq &req) const;
     std::vector<char> PackAllTransportData() const;
