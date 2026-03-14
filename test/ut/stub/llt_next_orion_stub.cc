@@ -1278,13 +1278,6 @@ void LocalIpcRmaBuffer::Grant(u32 pid)
 {
 }
 
-}  // namespace Hccl
-
-HcclResult HcclCommDestroyV2(HcclComm comm)
-{
-    return HCCL_SUCCESS;
-}
-
 TaskInfo::TaskInfo(u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam,std::shared_ptr<DfxOpInfo> dfxOpInfo, bool isMaster)
  : streamId_(streamId), taskId_(taskId), remoteRank_(remoteRank), taskParam_(taskParam), dfxOpInfo_(dfxOpInfo), isMaster_(isMaster)
  {}
@@ -1330,7 +1323,7 @@ u32 GlobalMirrorTasks::DevSize() const
 
 TaskInfoQueue *GlobalMirrorTasks::GetQueue(u32 devId, u32 streamId) const
 {
-    static CircularQueue<std::shared_ptr<TaskInfo> queue(MAX_CIRCULAR_QUEUE_LENGTH);
+    static CircularQueue<std::shared_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
     return &queue;
 }
 
@@ -1380,7 +1373,7 @@ void MirrorTaskManager::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
 
 std::shared_ptr<DfxOpInfo> MirrorTaskManager::GetCurrDfxOpInfo() const
 {
-   return null;
+   return nullptr;
 }
 
 TaskInfoQueue *MirrorTaskManager::GetQueue(u32 streamId) const
@@ -1411,7 +1404,6 @@ ProfilingHandler::ProfilingHandler()
 
 ProfilingHandler::~ProfilingHandler()
 {
-    return "";
 }
 
 std::string TaskInfo::GetParaInfo() const
@@ -1792,7 +1784,7 @@ void ProfilingReporter::CallReportMc2CommInfo(const u32 kfcStreamId,
 std::array<ProfilingReporter::lastPosesMap, 65> ProfilingReporter::allLastPoses_{};
 
 ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManager *mirrorTaskMgr, ProfilingHandlerLite *profilingHandlerLite, bool isIndop)
-    : mirrorTaskMgr_(mirrorTaskMgr), profilingHandlerLite_(profilingHandlerLite), isIndop_(isIndop)
+    : mirrorTaskMgr_(mirrorTaskMgr), profilingHandlerLite_(profilingHandlerLite)
 {}
 
 ProfilingReporterLite::~ProfilingReporterLite()
@@ -1801,58 +1793,64 @@ ProfilingReporterLite::~ProfilingReporterLite()
 void ProfilingReporterLite::Init() const
 {}
 
-void ProfilingReporterLite::ReporterAllTasks()
+void ProfilingReporterLite::ReportAllTasks()
 {}
 
 void ProfilingReporterLite::UpdateProfStat() const
 {}
 
-DlHalFuntionV2::DlHalFuntionV2() : handle_(nullptr)
+DlHalFunctionV2::DlHalFunctionV2() : handle_(nullptr)
 {}
 
-DlHalFuntionV2::~DlHalFuntionV2()
+DlHalFunctionV2::~DlHalFunctionV2()
 {}
 
-DlHalFuntionV2 &DlHalFuntionV2::GetInstance()
+DlHalFunctionV2 &DlHalFunctionV2::GetInstance()
 {
-    static DlHalFuntionV2 instance;
+    static DlHalFunctionV2 instance;
     return instance;
 }
 
-HcclResult DlHalFuntionV2::DlHalFunctionInit()
+HcclResult DlHalFunctionV2::DlHalFunctionInit()
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult DlHalFuntionV2::DlHalFunctionEschedInit()
+HcclResult DlHalFunctionV2::DlHalFunctionEschedInit()
 {
     return HCCL_SUCCESS;
 }
 
-DlProfFuntion::DlProfFuntion() :handle_(nullptr)
+DlProfFunction::DlProfFunction() :handle_(nullptr)
 {
     DlProfFunctionStubInit();
 }
 
-DlProfFuntion::~DlProfFuntion()
+DlProfFunction::~DlProfFunction()
 {}
 
-void DlProfFuntion::DlProfFunctionStubInit()
+static uint64_t MsprofSysCycleTimeStub()
 {
-    dlMsprofSysCycleTime = static_cast<uint64_t(*)(void)>;
+    HCCL_WARNING("Entry MsprofSysCycleTimeStub");
+    return 0;
 }
-DlProfFuntion &DlProfFuntion::GetInstance()
+
+void DlProfFunction::DlProfFunctionStubInit()
 {
-    static DlProfFuntion instance;
+    dlMsprofSysCycleTime = static_cast<uint64_t(*)(void)>(MsprofSysCycleTimeStub);
+}
+DlProfFunction &DlProfFunction::GetInstance()
+{
+    static DlProfFunction instance;
     return instance;
 }
 
-HcclResult DlProfFuntion::DlProfFunctionInit()
+HcclResult DlProfFunction::DlProfFunctionInit()
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult DlProfFuntion::DlProfFunctionInterInit()
+HcclResult DlProfFunction::DlProfFunctionInterInit()
 {
     return HCCL_SUCCESS;
 }
@@ -1883,22 +1881,28 @@ void TaskExceptionHandler::Process(rtExceptionInfo_t *expectionInfo)
 void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *expectionInfo)
 {}
 
-std::array<TaskExceptionHandler *, 65> TaskExceptionHandlerMangager::handlers_;
+std::array<TaskExceptionHandler *, 65> TaskExceptionHandlerManager::handlers_;
 
-HcclResult RaGetAuxInfoCallBack(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInfoOut &auxInfoOut)
+HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInfoOut &auxInfoOut)
 {
     return HCCL_SUCCESS;
 }
 
 extern "C" {
-aclError aclrtSetExceptionInfoCallback(aclrtSetExceptionInfoCallback callback) 
+aclError aclrtSetExceptionInfoCallback(aclrtExceptionInfoCallback callback) 
 {
     return ACL_ERROR_NONE;
 }
 }
 
-u32 Hccl::HcclCommuincator::GetRankInParentComm()
+u32 Hccl::HcclCommunicator::GetRankInParentComm()
 {
     return 0;
->>>>>>> master
+}
+
+}  // namespace Hccl
+
+HcclResult HcclCommDestroyV2(HcclComm comm)
+{
+    return HCCL_SUCCESS;
 }
