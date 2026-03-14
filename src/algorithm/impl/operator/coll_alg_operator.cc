@@ -119,18 +119,18 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
     std::string &algName, AlgDesc &algDesc, std::string &newTag)
 {
     bool isOnlyAiv = topoMatcher_->GetIsOnlyAivConfig();
-    bool supportOnlyAiv = isOnlyAiv && (param.opType == HcclCMDType::HCCL_CMD_ALLGATHER || 
-                                        param.opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER ||
-                                        param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV ||
-                                        param.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC ||
-                                        param.opType == HcclCMDType::HCCL_CMD_ALLTOALL ||
-                                        param.opType == HcclCMDType::HCCL_CMD_ALLREDUCE);
-    if (!supportOnlyAiv) {
-        HCCL_ERROR("[CollAlgOperator][SelectAlg] opType[%s] currently do not support onlyaiv",
-            GetCMDTypeEnumStr(param.opType).c_str());
-    } else if (supportOnlyAiv && param.rankSize == 1) {
-        HCCL_ERROR("[CollAlgOperator][SelectAlg] onlyaiv not support, please ensure rankNum is greater than one");
-    }
+    bool supportOnlyAiv = (param.opType == HcclCMDType::HCCL_CMD_ALLGATHER || 
+                               param.opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER ||
+                               param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV ||
+                               param.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC ||
+                               param.opType == HcclCMDType::HCCL_CMD_ALLTOALL ||
+                               param.opType == HcclCMDType::HCCL_CMD_ALLREDUCE);
+    CHK_PRT_RET(isOnlyAiv && !supportOnlyAiv,
+            HCCL_ERROR("[CollAlgOperator][SelectAlg] opType[%s] currently do not support onlyaiv",
+                GetCMDTypeEnumStr(param.opType).c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(isOnlyAiv && param.rankSize == 1 && supportOnlyAiv,
+            HCCL_ERROR("[CollAlgOperator][SelectAlg] onlyaiv not support, please ensure rankNum is greater than one"),
+                HCCL_E_NOT_SUPPORT);
 
     // 兼容老接口
     if (limit.ifLimit) {
