@@ -21,7 +21,7 @@ namespace hcomm {
 class HcclCommTaskExceptionLite : public Hccl::DaemonFunc {
 public:
     static HcclCommTaskExceptionLite &GetInstance();
-    HcclResult Init(u32 devId);
+    void Init(u32 devId);
     void Call() override;
 
 private:
