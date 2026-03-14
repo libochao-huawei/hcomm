@@ -20,9 +20,9 @@ typedef struct TagNetCoIpPortArg {
 } NetCoIpPortArg;
 
 #ifdef CA_CONFIG_LLT
-void *Net_CoInitFactory(int epollfd, NetCoIpPortArg ipPortArg);
-void NET_CoDestruct(void *co);
-unsigned int NET_CoFdEventDispatch(void *co, int fd, unsigned int curEvents);
-int NET_CoTblAddUpd(void *netco_handle, unsigned int type, char *data, unsigned int data_len);
+void *NetCoInitFactory(int epollfd, NetCoIpPortArg ipPortArg);
+void NetCoDestruct(void *co);
+unsigned int NetCoFdEventDispatch(void *co, int fd, unsigned int curEvents);
+int NetCoTblAddUpd(void *netcoHandle, unsigned int type, char *data, unsigned int data_len);
 #endif
 #endif // NETCO_API_H
