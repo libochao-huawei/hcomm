@@ -104,9 +104,8 @@ HcclResult ThreadMgr::SupplementNotify(CommEngine engine, uint32_t notifyNumPerT
 
         EXECEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(threads.size()),
             return HCCL_E_PTR);
-        HCCL_INFO("ThreadMgr::SupplementNotify ThreadKernelLaunchForComm start");
-        ret = AicpuLaunchMgr::ThreadKernelLaunchForComm(newThreads, commId_, hostHandle, binHandle_);
-        HCCL_INFO("ThreadMgr::SupplementNotify ThreadKernelLaunchForComm end");
+        HCCL_INFO("ThreadMgr::SupplementNotify ThreadKernelLaunch start");
+        HCCL_INFO("ThreadMgr::SupplementNotify ThreadKernelLaunch end");
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[ThreadMgr][SupplementNotify] AiCpuKernelLaunch failed, return [%d].", ret), ret);
     }
@@ -151,9 +150,8 @@ HcclResult ThreadMgr::SupplementThread(CommEngine engine, uint32_t supplementThr
 
         EXECEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(newThreads.size()),
             return HCCL_E_PTR);
-        HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunchForComm start");
-        ret = AicpuLaunchMgr::ThreadKernelLaunchForComm(newThreads, commId_, hostHandle, binHandle_);
-        HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunchForComm end");
+        HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunch start");
+        HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunch end");
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[ThreadMgr][HcclThreadAcquire] AiCpuKernelLaunch failed, return [%d].", ret), ret);
     }
@@ -311,7 +309,7 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
         for (u32 i = 0; i < newThreads.size(); ++i, ++threadsIt) {
             ThreadHandle cpuTsHandle = reinterpret_cast<ThreadHandle>((*threadsIt).get());
             (*threadsIt)->AddThreadHandleToMap(engine, hostHandle[i]);
-            hostToDeviceThreadHandle_[hostHandle[i]] = cpuTsHandle;
+            threadHandleOthersToCpu_[hostHandle[i]] = cpuTsHandle;
         }
     }
 
