@@ -111,11 +111,14 @@ void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcc
     if (it.dfxOpInfo_->isIndop_ == true) {
         taskDetailsInfos.groupName = GetProfHashId(it.dfxOpInfo_->groupName_.c_str(), it.dfxOpInfo_->groupName_.length());
         taskDetailsInfos.rankSize  = it.dfxOpInfo_->rankSize_;
-        HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfosdfxOpInfo_->groupName_ %s", it.dfxOpInfo_->groupName_.c_str());
-    } else {
+        HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfos groupName_ %s, rankSize[%u]",
+            it.dfxOpInfo_->groupName_.c_str(), taskDetailsInfos.rankSize);
+    } else if (it.dfxOpInfo_->comm_ != nullptr) {
         CommunicatorImplLite *commImp = static_cast<CommunicatorImplLite *>(it.dfxOpInfo_->comm_);
         taskDetailsInfos.groupName = GetProfHashId(commImp->GetId().c_str(), commImp->GetId().length());
         taskDetailsInfos.rankSize     = commImp->GetRankSize();
+        HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfos groupName_ %s, rankSize[%u]",
+            it.dfxOpInfo_->groupName_.c_str(), taskDetailsInfos.rankSize);
     }
     taskDetailsInfos.localRank = it.dfxOpInfo_->op_.myRank;
     taskDetailsInfos.stage        = 0;
