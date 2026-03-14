@@ -121,5 +121,6 @@ HcclResult CreateAndInitThreads(const ThreadCreateParams& params,
 HcclResult StoreThreadHandles(std::vector<std::shared_ptr<hccl::Thread>>& newThreads,
     ThreadHandle* threads, CommEngine engine, aclrtBinHandle binHandle);
 HcclResult FreeThreads(const ThreadHandle *threads, uint32_t threadNum, aclrtBinHandle binHandle);
+HcclResult GetThread(const ThreadHandle thread, std::shared_ptr<hccl::Thread> &handle);
 }  // namespace hccl
 #endif  // THREAD_H
