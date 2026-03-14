@@ -13,6 +13,7 @@
 #include "aicpu_launch_manager.h"
 #include "aicpu_operator_pub.h"
 #include "independent_op.h"
+#include "hcomm_c_adpt.h"
 
 namespace hccl {
 
@@ -126,6 +127,7 @@ HcclResult ThreadMgr::SupplementThread(CommEngine engine, uint32_t supplementThr
 {
     CHK_RET(CheckThreadNum(engine, supplementThreadNum, notifyNumPerThread));
     CHK_RET(HcommThreadAlloc(engine, supplementThreadNum, notifyNumPerThread, threads));
+    std::vector<std::shared_ptr<Thread>> newThreads;
     newThreads.reserve(supplementThreadNum);
 
     for (uint32_t i = 0; i < supplementThreadNum; ++i) {
@@ -139,9 +141,10 @@ HcclResult ThreadMgr::SupplementThread(CommEngine engine, uint32_t supplementThr
     // thread资源 AICPU侧展开
     std::unique_ptr<ThreadHandle[]> hostHandle;
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
+        HcclResult ret = HCCL_SUCCESS;
         if (!callbacks_.getAicpuCommState()) {
             HCCL_INFO("ThreadMgr::HcclAllocThreadRes kernelLaunchAicpuCommInit start");
-            HcclResult ret = callbacks_.kernelLaunchAicpuCommInit();
+            ret = callbacks_.kernelLaunchAicpuCommInit();
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[%s] kernelLaunchAicpuCommInit failed, return [%d].", __func__, ret), ret);
             callbacks_.setAicpuCommState(true);
