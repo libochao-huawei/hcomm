@@ -1289,14 +1289,147 @@ HcclResult HcclCommDestroyV2(HcclComm comm)
  */
 
 /**蔡一凡修改部分 */
-/*void LocalIpcRmaBuffer::Grant(u32 pid)
+ProfilingReporter::ProfilingReporter(MirrorTaskManager *mirrorTaskMgr, ProfilingHandler* profilingHandler)
+: mirrorTaskMgr_(mirrorTaskMgr), profilingHandler_(profilingHandler)
+{}
+
+ProfilingReporter::~ProfilingReporter()
+{}
+
+void ProfilingReporter::Init() const
+{}
+
+void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) const
+{}
+
+void ProfilingReporter::ReportCallBackAllTasks(bool cachedReq)
+{}
+
+void ProfilingReporter::ReportAllTasks(bool cachedReq)
+{}
+
+/* 中途打开profiling开关 */
+void ProfilingReporter::UpdateProfStat()
+{}
+
+void ProfilingReporter::CallReportMc2CommInfo(const Stream &kfcStream, Stream &stream, const std::vector<Stream *> &aicpuStreams,
+                                   const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm) const
+{}
+
+void ProfilingReporter::CallReportMc2CommInfo(const u32 kfcStreamId,
+                                            const std::vector<u32> &aicpuStreamsId, const std::string &id,
+                                            RankId myRank, u32 rankSize, RankId rankInParentComm) const
+{}
+
+std::array<ProfilingReporter::lastPosesMap, 65> ProfilingReporter::allLastPoses_{};
+
+ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManager *mirrorTaskMgr, ProfilingHandlerLite *profilingHandlerLite, bool isIndop)
+    : mirrorTaskMgr_(mirrorTaskMgr), profilingHandlerLite_(profilingHandlerLite), isIndop_(isIndop)
+{}
+
+ProfilingReporterLite::~ProfilingReporterLite()
+{}
+
+void ProfilingReporterLite::Init() const
+{}
+
+void ProfilingReporterLite::ReporterAllTasks()
+{}
+
+void ProfilingReporterLite::UpdateProfStat() const
+{}
+
+DlHalFuntionV2::DlHalFuntionV2() : handle_(nullptr)
+{}
+
+DlHalFuntionV2::~DlHalFuntionV2()
+{}
+
+DlHalFuntionV2 &DlHalFuntionV2::GetInstance()
 {
+    static DlHalFuntionV2 instance;
+    return instance;
 }
 
-}  // namespace Hccl
-
-HcclResult HcclCommDestroyV2(HcclComm comm)
+HcclResult DlHalFuntionV2::DlHalFunctionInit()
 {
     return HCCL_SUCCESS;
 }
- */
+
+HcclResult DlHalFuntionV2::DlHalFunctionEschedInit()
+{
+    return HCCL_SUCCESS;
+}
+
+DlProfFuntion::DlProfFuntion() :handle_(nullptr)
+{
+    DlProfFunctionStubInit();
+}
+
+DlProfFuntion::~DlProfFuntion()
+{}
+
+void DlProfFuntion::DlProfFunctionStubInit()
+{
+    dlMsprofSysCycleTime = static_cast<uint64_t(*)(void)>;
+}
+DlProfFuntion &DlProfFuntion::GetInstance()
+{
+    static DlProfFuntion instance;
+    return instance;
+}
+
+HcclResult DlProfFuntion::DlProfFunctionInit()
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult DlProfFuntion::DlProfFunctionInterInit()
+{
+    return HCCL_SUCCESS;
+}
+
+AicpuDaemonService &AicpuDaemonService::GetInstance()
+{
+    static AicpuDaemonService instance;
+    return instance;
+}
+
+void AicpuDaemonService::ServiceRun(void *info) 
+{}
+
+void AicpuDaemonService::ServiceStop(void *info) const
+{}
+
+void AicpuDaemonService::Register(DaemonFunc *daemonFunc)
+{}
+
+void AicpuDaemonService::Break()
+{}
+
+std::mutex AicpuDaemonService::mutexForFuncs_;
+
+void TaskExceptionHandler::Process(rtExceptionInfo_t *expectionInfo)
+{}
+
+void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *expectionInfo)
+{}
+
+std::array<TaskExceptionHandler *, 65> TaskExceptionHandlerMangager::handlers_;
+
+HcclResult RaGetAuxInfoCallBack(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInfoOut &auxInfoOut)
+{
+    return HCCL_SUCCESS;
+}
+
+extern "C" {
+aclError aclrtSetExceptionInfoCallback(aclrtSetExceptionInfoCallback callback) 
+{
+    return ACL_ERROR_NONE;
+}
+}
+
+u32 Hccl::HcclCommuincator::GetRankInParentComm()
+{
+    return 0;
+}
