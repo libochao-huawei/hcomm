@@ -1014,6 +1014,46 @@ HCCP_ATTRI_VISI_DEF int RaCtxQpQueryBatch(void *qpHandle[], struct JettyAttr att
 HCCP_ATTRI_VISI_DEF int RaCtxQpDestroy(void *qpHandle);
 
 /**
+ * @ingroup libudma
+ * @brief get tp info list
+ * @param ctxHandle [IN] ctx handle
+ * @param cfg [IN] get tp cfg
+ * @param infoList [IN/OUT] corresponding tp info list
+ * @param num [IN/OUT] size of infoList, max num is HCCP_MAX_TPID_INFO_NUM
+ * @see RaCtxInit
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaCtxGetTpInfoList(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num);
+
+/**
+ * @ingroup libudma
+ * @brief get tp attr
+ * @param ctxHandle [IN] ctx handle
+ * @param tpHandle [IN] see struct tp_info
+ * @param attrBitmap [IN/OUT] see struct TpAttr
+ * @param attr [IN/OUT] see struct TpAttr
+ * @see RaCtxGetTpInfoList
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaCtxGetTpAttr(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr);
+
+/**
+ * @ingroup libudma
+ * @brief set tp attr
+ * @param ctxHandle [IN] ctx handle
+ * @param tpHandle [IN] see struct tp_info
+ * @param attrBitmap [IN] see struct TpAttr
+ * @param attr [IN] see struct TpAttr
+ * @see RaCtxGetTpInfoList
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaCtxSetTpAttr(void *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, struct TpAttr *attr);
+
+/**
  * @ingroup librdma
  * @ingroup libudma
  * @brief import jetty/prepare rem_qp_handle for modify qp
