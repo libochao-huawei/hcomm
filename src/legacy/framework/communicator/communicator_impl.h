@@ -380,7 +380,9 @@ public:
     std::string GetTopoFilePath() const;
     std::vector<LinkData> GetFullMeshLinks() const;
     ErrorMessageReport GetAicpuTaskException();
+    u32 GetRankInParentComm();
     aclrtFuncHandle GetAicpuKernelFuncHandle(const char *kernelName) const;
+
 private:
     std::string                                id;
     static std::atomic<u32>                    globalIndex; // 全局通信域唯一一个index, 对应锁保护
