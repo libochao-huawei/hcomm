@@ -11,7 +11,12 @@
 #ifndef HCOMM_CCU_KERNEL_H
 #define HCOMM_CCU_KERNEL_H
 
+#include <cstdint>
 #include <functional>
+#include <array>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "ccu_kernel_signature.h"
 #include "ccu_kernel_arg.h"

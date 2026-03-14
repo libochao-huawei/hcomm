@@ -8,6 +8,8 @@
 #ifndef CCU_OPERATOR
 #define CCU_OPERATOR
 
+#include <stdexcept>
+
 namespace hcomm {
 namespace CcuRep {
 
@@ -32,7 +34,7 @@ public:
     void Check() const
     {
         // Hccl::THROW<Hccl::CcuApiException>("Invalid Arithmetic Operator");
-        throw "Invalid Arithmetic Operator";
+        throw std::runtime_error("Invalid Arithmetic Operator");
     }
 
     CcuArithmeticOperatorType type{CcuArithmeticOperatorType::INVALID};
@@ -50,7 +52,7 @@ public:
     void Check() const
     {
         // Hccl::THROW<Hccl::CcuApiException>("Invalid Relational Operator");
-        throw "Invalid Relational Operator";
+        throw std::runtime_error("Invalid Relational Operator");
     }
 
     CcuRelationalOperatorType type{CcuRelationalOperatorType::INVALID};

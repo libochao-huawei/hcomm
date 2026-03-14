@@ -11,6 +11,8 @@
 #ifndef CCU_COMMON_H
 #define CCU_COMMON_H
 
+#include <cstdint>
+
 namespace hcomm {
 
 constexpr uint8_t CCU_MAX_IODIE_NUM = 2;
