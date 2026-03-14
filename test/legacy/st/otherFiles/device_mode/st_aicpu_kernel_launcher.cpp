@@ -66,7 +66,7 @@ TEST(AicpuKernelLauncherTest, test_SetHcclKernelLaunchParam_offload)
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
     MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
     MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
     std::pair<u32, u32> pair(0, 1);
     MOCKER(HrtUbDevQueryToken).stubs().with(any(), any()).will(returnValue(pair));
     void* temp = nullptr;
@@ -137,7 +137,7 @@ TEST(AicpuKernelLauncherTest, test_SetHcclKernelLaunchParam_opbase)
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
     MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
     MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
     std::pair<u32, u32> pair(0, 1);
     MOCKER(HrtUbDevQueryToken).stubs().with(any(), any()).will(returnValue(pair));
     void* temp = nullptr;

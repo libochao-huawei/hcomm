@@ -61,7 +61,7 @@ protected:
         MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
         MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
         MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
-        MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+        MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
     }
  
     virtual void TearDown()
@@ -203,6 +203,7 @@ TEST_F(HcclOneSidedServiceTest, test_BatchGet_BatchPut)
     LinkData linkData1(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), RankIdA, RankIdB, 0, 1);
     StubCommunicatorImplTransMgr fakeCommA;
     fakeCommA.commExecuteConfig.accState = AcceleratorState::AICPU_TS;
+    fakeCommA.RegisterAicpuKernel();
     HcclOneSidedService oneSidedServiceA(fakeCommA);
     HcclMemDesc MemDescA;
     HcclMemDesc MemDescB;

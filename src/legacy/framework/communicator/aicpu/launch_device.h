@@ -10,18 +10,28 @@
 #ifndef LEGACY_LAUNCH_DEVICE_H
 #define LEGACY_LAUNCH_DEVICE_H
 
-#include "hccl/base.h"
-#include "hccl_types.h"
+#include <array>
+#include <unordered_map>
 #include "acl/acl_rt.h"
-
+#include "kernel_param_lite.h"
 namespace Hccl {
 
 void LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
     aclrtBinHandle& binHandle);
-void AicpuAclKernelLaunch(const rtStream_t stm, void *addr, u32 size,
-                                  aclrtBinHandle binHandle, const std::string &kernelName, bool isInitTask, u16 timeOut,
-                                  void *tilingDataPtr, u32 tilingDataSize);
 void GetKernelFilePath(std::string &binaryPath);
+class AicpuBinaryHolder
+{
+    public:
+        AicpuBinaryHolder();
+        ~AicpuBinaryHolder() noexcept ;
+        void Load();
+        void Unload();
+        // 调用前请检查是否Load期间有注册对应的kernelName funcHandle
+        aclrtFuncHandle GetAicpuKernelFuncHandle(const char *kernelName) const;
+    private:
+        aclrtBinHandle handle_;
+        bool loaded_;
+        std::unordered_map<std::string, aclrtFuncHandle> aicpuFuncMap_;
+};
 }
-
 #endif // LEGACY_LAUNCH_DEVICE_H

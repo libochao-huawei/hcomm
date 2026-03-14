@@ -62,6 +62,8 @@ HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx);
 HcclResult HcommEngineCtxDestroy(CommEngine engine, void *ctx);
 
 HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size);
+ 
+HcclResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHandles, uint32_t *memHandleNum);
 
 HcclResult HcommChannelClean(const ChannelHandle *channelList, uint32_t channelNum);
 
@@ -69,7 +71,7 @@ HcclResult HcommChannelResume(const ChannelHandle *channelList, uint32_t channel
 
 HcclResult HcommChannelUpdateKernelLaunch(ChannelHandle* const deviceChannelHandles, const ChannelHandle* const hostChannelHandles, uint32_t listNum,
     const std::string &commTag, aclrtBinHandle binHandle);
- 
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

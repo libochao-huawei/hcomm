@@ -44,7 +44,7 @@ public:
 private:
 
     bool isOpen{false};
-    drvIpcNotifyInfo drvinfo;
+    drvIpcNotifyInfo drvinfo{};
 };
 
 }

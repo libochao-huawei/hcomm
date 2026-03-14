@@ -62,7 +62,7 @@ public:
     HcclResult Resume();
 
 private:
-    HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
+    HcclResult BatchCreateSockets(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs);
     HcclResult BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles);

@@ -513,7 +513,7 @@ TEST_F(CcuContextManagerTest, AGTest)
         .will(returnValue(HcclResult::HCCL_SUCCESS));
 
     MOCKER(HrtMemcpy).stubs();
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
     BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
     LinkData linkData(portType, 0, 1, 0, 1);
@@ -682,7 +682,7 @@ TEST_F(CcuContextManagerTest, TestSharedRes)
         .will(returnValue(HcclResult::HCCL_SUCCESS));
 
     MOCKER(HrtMemcpy).stubs();
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
     BasePortType portType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
     LinkData linkData(portType, 0, 1, 0, 1);

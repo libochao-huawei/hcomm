@@ -103,6 +103,9 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/rank_graph.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/net_instance.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/virtual_topo.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/base_config.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_config.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_func.cc
 )
 
 set(hccl_list
@@ -154,6 +157,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/detect/detect_connect_anomalies/
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/recovery/operator_retry
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/snapshot
+    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/aclgraph
     ${HCCL_CODE_ROOT}/src/framework/common/src/host
     ${HCCL_CODE_ROOT}/src/framework/common/src/config
     ${HCCL_CODE_ROOT}/src/framework/common/src/task
@@ -337,6 +341,7 @@ target_include_directories(hccl_llt  PRIVATE
 
     #next
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/aicpu

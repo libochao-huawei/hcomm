@@ -111,6 +111,7 @@ void CommunicatorImplLite::CreateCollAlgComponentLite()
 
 void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
 {
+    opIndex = kernelParam->comm.opIndex;
     uint64_t beginTime = ProfGetCurCpuTimestamp();
     profilingReporterLite->UpdateProfStat();
     UpdateCommParam(kernelParam);
@@ -130,7 +131,7 @@ void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
     if (insQueue == nullptr) {
         THROW<NullPtrException>(StringFormat("CommunicatorImplLite::UnfoldOpBase insQueue is nullptr."));
     }
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         HCCL_INFO("CommunicatorImplLite::UnfoldOpBase DevType is DEV_TYPE_950.");
         insExecutor->ExecuteV82(*insQueue);
         profilingReporterLite->ReportAllTasks();
@@ -436,13 +437,18 @@ void CommunicatorImplLite::InitCurrentOp(HcclKernelParamLite *kernelParam)
 
 void CommunicatorImplLite::SetDfxOpInfo(uint64_t beginTime)
 {
+    u64 size = 4;
     auto dfxopInfo           = std::make_shared<DfxOpInfo>();
     dfxopInfo->op_           = currentOp;
     dfxopInfo->tag_          = currentOp.opTag;
     dfxopInfo->algType_      = AlgType::MESH; // 暂时
-    dfxopInfo->index_        = idIndex_;
+    dfxopInfo->commIndex_    = idIndex_;
     dfxopInfo->beginTime_    = beginTime;
     dfxopInfo->comm_         = this;
+    dfxopInfo->commId_       = commId;
+ 	dfxopInfo->opIndex_      = opIndex;
+ 	dfxopInfo->headOpCounterAddr_ = opCounterAddr + size;
+ 	dfxopInfo->tailOpCounterAddr_ = opCounterAddr + size * 2;
     CHECK_NULLPTR(streamLiteMgr->GetMaster(), "[SetDfxOpInfo]master stream is nullptr!");
     mirrorTaskMgr->SetCurrDfxOpInfo(dfxopInfo);
 }

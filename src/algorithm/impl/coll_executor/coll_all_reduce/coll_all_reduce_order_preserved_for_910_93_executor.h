@@ -35,10 +35,10 @@ private:
     /* *************** 算法编排 *************** */
     bool IsHugeData(const u64 curSize) override;
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
-    HcclResult RunReduceScatterLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
-    HcclResult RunReduceScatterLevel2(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
-    HcclResult RunAllGatherLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
-    HcclResult RunAllGatherLevel2(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
+    HcclResult RunReduceScatterLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level1CommInfo);
+    HcclResult RunReduceScatterLevel2(const OpParam &param, ExecMem &execMem, SubCommInfo &level1CommInfo);
+    HcclResult RunAllGatherLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level1CommInfo);
+    HcclResult RunAllGatherLevel2(const OpParam &param, ExecMem &execMem, SubCommInfo &level1CommInfo);
 
     u64 sizePerBlock_{0};        // 单块数据的大小
     std::vector<u64> groupSize_; // input切分每块数据的大小

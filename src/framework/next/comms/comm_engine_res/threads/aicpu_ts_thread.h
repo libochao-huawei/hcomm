@@ -27,6 +27,9 @@ public:
     std::string &GetUniqueId() override;
     uint32_t GetNotifyNum() const override;
     LocalNotify *GetNotify(uint32_t index) const override;
+    HcclResult GetStreamIdAndNotifyByUniqueId(s32 &streamId, u32 &notifyNum, std::string &notifyDesc);
+    HcclResult SupplementNotify(uint32_t notifyNum) override;
+    HcclResult SupplementNotify(u32 notifyNum, const std::string &notifyDesc);
 
     // A3 Stream & A5 Stream
     bool IsDeviceA5() const override;
@@ -61,6 +64,7 @@ private:
     HcclResult InitStream(HcclStreamParam &streamParam);
     HcclResult HostInit();
     HcclResult DeviceInit();
+    std::string &UpdateUniqueId();
 #ifdef CCL_KERNEL_AICPU
     HcclResult BuildComStreamInfo(const HcclStreamInfo &streamInfo, HcclComStreamInfo &comStreamInfo) const;
 #endif

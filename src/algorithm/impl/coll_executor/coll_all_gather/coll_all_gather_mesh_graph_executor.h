@@ -15,7 +15,7 @@ namespace hccl {
 class CollAllGatherMeshGraphExecutor : public CollAllGatherExecutor {
 public:
     explicit CollAllGatherMeshGraphExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherMeshGraphExecutor() = default;
+    ~CollAllGatherMeshGraphExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

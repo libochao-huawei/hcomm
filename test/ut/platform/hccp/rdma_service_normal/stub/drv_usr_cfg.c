@@ -9,7 +9,6 @@
  */
 
 #include <sys/types.h>
-#include "ascend_inpackage_hal.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -257,11 +256,6 @@ int NetCommGetSelfHome(char *userNamePath, unsigned int pathLen)
 }
 
 int get_tls_config_path(char *user_name_path, unsigned int path_len)
-{
-    return 0;
-}
-
-drvError_t drvBindHostPid(struct drvBindHostpidInfo info)
 {
     return 0;
 }

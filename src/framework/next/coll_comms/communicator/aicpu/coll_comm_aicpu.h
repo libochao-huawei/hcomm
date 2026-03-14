@@ -63,6 +63,7 @@ private:
     HcclTopoInfo topoInfo_;
     std::vector<std::shared_ptr<Thread>> threads_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
+    std::unordered_map<s32, Thread*> streamIdToThreadMap_;
     // A5 独立算子
     std::unordered_map<ChannelHandle, std::shared_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
 
