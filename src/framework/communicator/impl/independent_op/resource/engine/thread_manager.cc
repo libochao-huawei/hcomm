@@ -21,6 +21,16 @@ ThreadMgr::ThreadMgr(uint32_t threadNum, uint32_t notifyNumPerThread, std::strin
     aclrtBinHandle binHandle, const ManagerCallbacks& callbacks) : threadNum_(threadNum), notifyNumPerThread_(notifyNumPerThread), 
     commId_(commId), binHandle_(binHandle), callbacks_(callbacks){}
 
+ThreadMgr::~ThreadMgr() {
+ 	if (threadHandles_.empty()) {
+ 	    return;
+ 	}
+ 	HcclResult ret = HcommThreadFree(threadHandles_.data(), threadHandles_.size());
+ 	if (ret != HCCL_SUCCESS) {
+ 	  	HCCL_ERROR("[ThreadMgr]failed to free thread, ret[%d]", ret);
+ 	}
+}
+
 uint64_t ThreadMgr::GetMaxNotifyTotal()
 {
     // 如果没设定最大值，设置一下
@@ -112,29 +122,18 @@ HcclResult ThreadMgr::SupplementNotify(CommEngine engine, uint32_t notifyNumPerT
     return HCCL_SUCCESS;
 }
 
-HcclResult ThreadMgr::SupplementThread(CommEngine engine, uint32_t supplementThreadNum, uint32_t notifyNumPerThread)
+HcclResult ThreadMgr::SupplementThread(CommEngine engine, uint32_t supplementThreadNum, uint32_t notifyNumPerThread, ThreadHandle *threads)
 {
     CHK_RET(CheckThreadNum(engine, supplementThreadNum, notifyNumPerThread));
-    NotifyLoadType notifyLoadType;
-    StreamType streamType;
-    CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
-    CHK_RET(CommEngineToStreamType(engine, streamType));
-    std::vector<std::shared_ptr<Thread>> newThreads;
+    CHK_RET(HcommThreadAlloc(engine, supplementThreadNum, notifyNumPerThread, threads));
     newThreads.reserve(supplementThreadNum);
-    HcclResult ret = HCCL_E_INTERNAL;
 
     for (uint32_t i = 0; i < supplementThreadNum; ++i) {
-        std::shared_ptr<Thread> handle;
-        HCCL_INFO("[ThreadMgr][%s] Hcom[%s] AicpuTsThread notifyLoadType[%u], streamType[%u]",
-                __func__, commId_.c_str(), static_cast<int32_t>(notifyLoadType), static_cast<int32_t>(streamType));
-        CHK_RET(CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, handle));
-        ret = handle->Init();
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[ThreadMgr][HcclThreadAcquire] Failed to init thread index %u", i);
-            return ret;
-        }
         usedNotifyNum_ += notifyNumPerThread;
-        newThreads.emplace_back(std::move(handle));
+        std::shared_ptr<Thread> newThread = nullptr;
+ 	  	CHK_RET(hccl::GetThread(threads[i], newThread));
+ 	  	newThreads.emplace_back(newThread);
+ 	  	threadHandles_.emplace_back(threads[i]); 
     }
 
     // thread资源 AICPU侧展开
@@ -208,7 +207,7 @@ HcclResult ThreadMgr::HcclThreadAcquireV2(CommEngine engine, uint32_t threadNum,
     if (threadVec.size() < threadNum) {
         u32 supplementThreadNum = threadNum - threadVec.size();
         // 调用补充函数，如果engine是COMM_ENGINE_AICPU_TS、COMM_ENGINE_AICPU，需要去device恢复
-        CHK_RET(SupplementThread(engine, supplementThreadNum, notifyNumPerThread));
+        CHK_RET(SupplementThread(engine, supplementThreadNum, notifyNumPerThread, threads));
     }
 
     // 3、返回threadHandle和id

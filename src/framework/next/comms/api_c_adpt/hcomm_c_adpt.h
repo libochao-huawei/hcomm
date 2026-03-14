@@ -14,6 +14,7 @@
 #include "hcomm_res_defs.h"
 #include "hccl/hccl_res.h"
 #include "mem_host_pub.h"
+#include "thread.h"
 
 #ifdef __cplusplus
 extern "C" {
