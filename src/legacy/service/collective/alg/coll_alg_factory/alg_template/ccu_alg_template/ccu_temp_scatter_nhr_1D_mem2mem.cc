@@ -112,7 +112,7 @@ HcclResult CcuTempScatterNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, Tem
 
     std::vector<LinkData>    linksDie0;
     std::vector<LinkData>    linksDie1;
-    RankGroup                rankGroup;
+    RankGroup                scatterRankGroup;
     std::map<u32, u32>       indexMap;
     std::vector<NHRStepInfo> stepInfoVector;
     u32                      nSteps = GetNHRStepNum(tempRankSize_);
@@ -127,7 +127,7 @@ HcclResult CcuTempScatterNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, Tem
             if (axisSize > 1) {
                 linksDie1.push_back(tempLinks.at(fromRankIdx)[1]);
             }
-            rankGroup.AddRank(fromRankIdx);
+            scatterRankGroup.AddRank(fromRankIdx);
         }
         if (indexMap.count(stepInfo.toRank) == 0 && stepInfo.txSliceIdxs.size() > 0) {
             u32 toRankIdx             = virtRankId2RankId(stepInfo.toRank);
@@ -136,10 +136,10 @@ HcclResult CcuTempScatterNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, Tem
             if (axisSize > 1) {
                 linksDie1.push_back(tempLinks.at(toRankIdx)[1]);
             }
-            rankGroup.AddRank(toRankIdx);
+            scatterRankGroup.AddRank(toRankIdx);
         }
     }
-    rankGroup.AddRank(myRank_);
+    scatterRankGroup.AddRank(myRank_);
 
     std::unique_ptr<CcuInsGroup> insGroupPtr = std::make_unique<CcuInsGroup>();
     for (uint32_t axisId = 0; axisId < axisSize; axisId++) { // 2个die上各一个mission
@@ -156,7 +156,7 @@ HcclResult CcuTempScatterNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, Tem
             myVirtRankId, myRank_, repeatNum, inputAddr, outputAddr, inputSliceStride, outputSliceStride,
             inputRepeatStride, outputRepeatStride, die0Size, die1Size, repeatNumVar);
         ccuInstruction.SetLinks(axisId == 0 ? linksDie0 : linksDie1);
-        ccuInstruction.SetRankGroup(rankGroup);
+        ccuInstruction.SetRankGroup(scatterRankGroup);
         ccuInstruction.SetCntCkeNum(5); // 每个transport用5个CKE
         insGroupPtr->Append(std::move(std::make_unique<CcuInstructionScatterNHR1D>(ccuInstruction)));
     }
