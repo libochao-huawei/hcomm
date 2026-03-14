@@ -1301,17 +1301,10 @@ std::string TaskInfo::GetBaseInfo() const
 }
 
 std::string TaskInfo::GetConciseBaseInfo() const
-
-}  // namespace Hccl
-
-HcclResult HcclCommDestroyV2(HcclComm comm)
 {
-    return HCCL_SUCCESS;
+    return "";
 }
- */
 
-
-/**明聪修改部分 */
 GlobalMirrorTasks GlobalMirrorTasks::ins_;
 
 GlobalMirrorTasks::GlobalMirrorTasks()
@@ -1411,8 +1404,6 @@ MirrorTaskManager::~MirrorTaskManager()
 {
 }
 
-
-/**俊廷修改部分 */
 ProfilingHandler::ProfilingHandler()
 {
     
@@ -1431,6 +1422,7 @@ std::string TaskInfo::GetParaInfo() const
 std::string TaskInfo::GetOpInfo() const
 {
     return "";
+}
 
 ProfilingHandler &ProfilingHandler::GetInstance()
 {
@@ -1765,9 +1757,6 @@ uint64_t ProfilingHandlerLite::GetProfHashId(const char *name, uint32_t len) con
     return 0;
 }
 
- */
-
-/**蔡一凡修改部分 */
 ProfilingReporter::ProfilingReporter(MirrorTaskManager *mirrorTaskMgr, ProfilingHandler* profilingHandler)
 : mirrorTaskMgr_(mirrorTaskMgr), profilingHandler_(profilingHandler)
 {}
