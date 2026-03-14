@@ -78,7 +78,7 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
         CHK_PTR_NULL(collComm);
         CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
         CHK_PTR_NULL(engineResMgr);
-        ret = engineResMgr->HcclThreadAcquire(engine, threadNum, notifyNumPerThread, threads, threadId);
+        ret = engineResMgr->HcclThreadAcquireV2(engine, threadNum, notifyNumPerThread, threads, threadId);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[%s] failed to create threads for engine[%d],threadsNum[%u], notifyNumperThread[%u]",
             __func__, engine, threadNum, notifyNumPerThread);
