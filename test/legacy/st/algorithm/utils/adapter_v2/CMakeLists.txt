@@ -19,6 +19,7 @@ set (include_list
     ${ASCEND_CANN_INCLUDE_LIST}
 
     // 第三方
+    ${CMAKE_BINARY_DIR}/rdma-core/build/include
     ${THIRD_PARTY_PATH}/json/include
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
 )
