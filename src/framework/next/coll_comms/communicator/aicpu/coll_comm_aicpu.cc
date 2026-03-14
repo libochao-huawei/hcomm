@@ -286,7 +286,7 @@ HcclResult CollCommAicpu::InitBackGroundThread()
     }
     backGroundInit = true;
 
-    static auto commandToBackGround = Hccl::CommandToBackGroud::Default;
+    static auto commandToBackGroud = Hccl::CommandToBackGroud::Default;
     static auto daemonServiceRun = [](void *info) {
         Hccl::AicpuDaemonService::GetInstance().ServiceRun(info);
     };
