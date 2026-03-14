@@ -16,7 +16,6 @@ public:
     CcuOperator(lhsT lhs, rhsT rhs) : lhs(lhs), rhs(rhs)
     {
     }
-
     lhsT lhs;
     rhsT rhs;
 };
@@ -30,7 +29,6 @@ public:
     {
         Check();
     }
-
     void Check() const
     {
         // todo: 需要处理错误处理
