@@ -31,11 +31,14 @@ typedef void* EndpointHandle;
  * @enum HcclMemType
  * @brief 内存类型枚举定义
  */
+#ifndef HCCL_MEM_TYPE_DEFINED
+#define HCCL_MEM_TYPE_DEFINED
 typedef enum {
     HCCL_MEM_TYPE_DEVICE, ///< 设备侧内存（如NPU等）
     HCCL_MEM_TYPE_HOST,   ///< 主机侧内存
     HCCL_MEM_TYPE_NUM     ///< 内存类型数量
 } HcclMemType;
+#endif
 
 typedef struct{
     int32_t devPhyId;
@@ -96,6 +99,14 @@ typedef struct {
     // socket 监听指定端口号（源/目的端口号）
     uint16_t port;
 } HcommChannelDesc;
+
+// 支持获取的底层资源类型
+typedef enum {
+    THREAD_RES_TYPE_INVALID = -1,
+    THREAD_RES_TYPE_STREAM = 0,
+} ThreadResType;
+    
+typedef aclrtStream ThreadResTypeStream;
  
 #ifdef __cplusplus
 }

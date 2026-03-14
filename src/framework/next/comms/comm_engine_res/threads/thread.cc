@@ -298,4 +298,16 @@ Thread *Thread::FindThreadByCommEngine(CommEngine commEngine)
 
     return nullptr;
 }
+
+HcclResult GetThread(const ThreadHandle thread, std::shared_ptr<hccl::Thread> &handle)
+{
+    auto it = g_ThreadMap.find(thread);
+    if (it == g_ThreadMap.end()) {
+        HCCL_ERROR("[%s] failed. thread[%lu] not found.", __func__, thread);
+        return HCCL_E_NOT_FOUND;
+    }
+    handle = it->second;
+    CHK_PTR_NULL(handle);
+    return HCCL_SUCCESS;
+}
 }  // namespace hccl
