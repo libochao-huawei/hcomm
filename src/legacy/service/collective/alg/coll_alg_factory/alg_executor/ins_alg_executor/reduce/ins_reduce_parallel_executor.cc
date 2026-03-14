@@ -45,7 +45,7 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
     // Topo Match
     AlgTopoMatch topoMatch(myRank_, rankSize_, rankGraph, devType_);
     CHK_RET(topoMatch.MatchTopo(vTopo_, virtRanks_, virtRankMap_));
-    CHK_RET(CalcLocalRankSize());
+    CHK_RET(CalcLocalRankSize(myRank_, virtRanks_, intraLocalRankSize_, interLocalRankSize_));
     InsAlgTemplate0 intraTempAlg(myRank_, intraLocalRankSize_, vTopo_[0], virtRankMap_[0]);
     InsAlgTemplate1 interTempAlg(myRank_, interLocalRankSize_, vTopo_[1], virtRankMap_[1]);
 
@@ -53,10 +53,10 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
     AlgTempResReq resReqIntra;
     AlgTempResReq resReqInter;
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("[InsReduceParallelExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(intraTempAlg.CalcResDetour(rankGraph, resReqIntra));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("[InsReduceParallelExecutor] Rank[%d], CalcRes with detouring disabled.", myRank_);
         CHK_RET(intraTempAlg.CalcRes(resReqIntra));
     }
 
@@ -74,7 +74,7 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
     AlgTopoMatch topoMatch(myRank_, rankSize_, rankGraph, devType_);
     CHK_RET(topoMatch.MatchTopo(vTopo_, virtRanks_, virtRankMap_));
     algResReq.topoInfo.UpdateMultiLevelTopo(virtRanks_, virtRankMap_, vTopo_);
-    CHK_RET(CalcLocalRankSize());
+    CHK_RET(CalcLocalRankSize(myRank_, virtRanks_, intraLocalRankSize_, interLocalRankSize_));
 
     // instantiate a template
     InsAlgTemplate0 intraTempAlg(myRank_, intraLocalRankSize_, vTopo_[0], virtRankMap_[0]);
@@ -84,10 +84,10 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
     AlgTempResReq resReqIntra;
     AlgTempResReq resReqInter;
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("[InsReduceParallelExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(intraTempAlg.CalcResDetour(rankGraph, resReqIntra));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("[InsReduceParallelExecutor] Rank[%d], CalcRes with detouring disabled.", myRank_);
         CHK_RET(intraTempAlg.CalcRes(resReqIntra));
     }
     CHK_RET(interTempAlg.CalcRes(resReqInter));
@@ -173,22 +173,6 @@ void InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1>::
 }
 
 template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1>
-HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1>::CalcLocalRankSize()
-{
-    uint64_t virtRanks_2 = 2;
-    CHK_PRT_RET(virtRanks_.size() < virtRanks_2,
-        HCCL_ERROR("[CalcLocalRankSize] virtRanks level num is smaller than 2."),
-        HcclResult::HCCL_E_INTERNAL);
-
-    intraLocalRankSize_ = virtRanks_.at(0).size();
-    interLocalRankSize_ = virtRanks_.at(1).size();
-
-    HCCL_INFO("[CalcLocalRankSize] localRankSize: myRank[%d] intraLocalRankSize[%u] interLocalRankSize[%u]",
-        myRank_, intraLocalRankSize_, interLocalRankSize_);
-    return HcclResult::HCCL_SUCCESS;
-};
-
-template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1>
 HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1>::CalcLocalRoot()
 {
     CHK_PRT_RET(root_ >= rankSize_,
@@ -212,26 +196,26 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
     AlgTempResReq resReqIntra;
     AlgTempResReq resReqInter;
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("[%s] Rank[%d], detouring enabled.", __func__, myRank_);
         CHK_RET(tempAlgIntra.CalcResDetour(rankGraph, resReqIntra));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
+        HCCL_DEBUG("[%s] Rank[%d], detouring disabled.", __func__, myRank_);
         CHK_RET(tempAlgIntra.CalcRes(resReqIntra));
     }
     CHK_RET(tempAlgInter.CalcRes(resReqInter));
 
     // 申请算法模板所需资源
     if(!(resReqIntra.queNum > 0 && resReqInter.queNum > 0)) {
-        HCCL_ERROR("resReqIntra.queNum and resReqInter.queNum must larger than 0.");
+        HCCL_ERROR("[InsReduceParallelExecutor]resReqIntra.queNum and resReqInter.queNum must larger than 0.");
         return HcclResult::HCCL_E_INTERNAL;
     }
     u32 totalQueueNum = resReqIntra.queNum + resReqInter.queNum;
-    CHK_RET(InitQueue(totalQueueNum, requiredQue_));
-    for(u32 i = 0 ; i < requiredQue_.size(); i++) {
+    CHK_RET(InitQueue(totalQueueNum, reqQue_));
+    for(u32 i = 0 ; i < reqQue_.size(); i++) {
         if (i < resReqIntra.queNum) {
-            intraQue_.push_back(requiredQue_[i]);
+            intraQue_.push_back(reqQue_[i]);
         } else {
-            interQue_.push_back(requiredQue_[i]);
+            interQue_.push_back(reqQue_[i]);
         }
     }
     syncQueues_.emplace_back(intraQue_[0]);
@@ -251,26 +235,25 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
     AlgTempResReq resReqIntra;
     AlgTempResReq resReqInter;
     if (enableDetour_) {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
+        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detour enabled", __func__, myRank_);
         CHK_RET(tempAlgIntra.CalcResDetour(linkMgr, resReqIntra));
     } else {
-        HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring disabled.", __func__, myRank_);
         CHK_RET(tempAlgIntra.CalcRes(resReqIntra));
     }
     CHK_RET(tempAlgInter.CalcRes(resReqInter));
 
     // 申请算法模板所需资源
     if(!(resReqIntra.queNum > 0 && resReqInter.queNum > 0)) {
-        HCCL_ERROR("resReqIntra.queNum and resReqInter.queNum must larger than 0.");
+        HCCL_ERROR("[InsReduceParallelExecutor]resReqIntra.queNum and resReqInter.queNum must > 0.");
         return HcclResult::HCCL_E_INTERNAL;
     }
     u32 totalQueueNum = resReqIntra.queNum + resReqInter.queNum;
-    CHK_RET(InitQueue(totalQueueNum, requiredQue_));
-    for(u32 i = 0 ; i < requiredQue_.size(); i++) {
+    CHK_RET(InitQueue(totalQueueNum, reqQue_));
+    for(u32 i = 0 ; i < reqQue_.size(); i++) {
         if (i < resReqIntra.queNum) {
-            intraQue_.push_back(requiredQue_[i]);
+            intraQue_.push_back(reqQue_[i]);
         } else {
-            interQue_.push_back(requiredQue_[i]);
+            interQue_.push_back(reqQue_[i]);
         }
     }
     syncQueues_.emplace_back(intraQue_[0]);
@@ -297,7 +280,7 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
     virtRanks_ = topoInfo.virtRanks;       // 本通信域内的 rank 集合
 
     // 计算localRankSize和localRoot
-    CHK_RET(CalcLocalRankSize());
+    CHK_RET(CalcLocalRankSize(myRank_, virtRanks_, intraLocalRankSize_, interLocalRankSize_));
     CHK_RET(CalcLocalRoot());
 
     // 实例化算法模板类
@@ -306,13 +289,13 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
 
     tempAlgIntra.SetDmaMode(dmaMode_);
     tempAlgIntra.InitReduceInfo(redOp_, dataType_);
-    tempAlgIntra.SetCollOp(op);
     tempAlgIntra.SetRoot(intraLocalRoot_);
+    tempAlgIntra.SetCollOp(op);
 
     tempAlgInter.SetDmaMode(dmaMode_);
     tempAlgInter.InitReduceInfo(redOp_, dataType_);
-    tempAlgInter.SetCollOp(op);
     tempAlgInter.SetRoot(interLocalRoot_);
+    tempAlgInter.SetCollOp(op);
 
     // 计算算法模板所需资源
     CHK_RET(PrepareResForTemplate(linkMgr, tempAlgIntra, tempAlgInter));
@@ -335,7 +318,7 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
     CHK_RET(topoMatch.MatchTopo(vTopo_, virtRanks_, virtRankMap_));
 
     // 计算localRankSize和localRoot
-    CHK_RET(CalcLocalRankSize());
+    CHK_RET(CalcLocalRankSize(myRank_, virtRanks_, intraLocalRankSize_, interLocalRankSize_));
     CHK_RET(CalcLocalRoot());
 
     // 实例化算法模板类
@@ -343,8 +326,8 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
     InsAlgTemplate1 tempAlgInter(myRank_, interLocalRankSize_, vTopo_[1], virtRankMap_[1]); //server间算法，比如nhr
 
     tempAlgIntra.SetDmaMode(dmaMode_);
-    tempAlgIntra.InitReduceInfo(redOp_, dataType_);
     tempAlgIntra.SetCollOp(op);
+    tempAlgIntra.InitReduceInfo(redOp_, dataType_);
     tempAlgIntra.SetRoot(intraLocalRoot_);
 
     tempAlgInter.SetDmaMode(dmaMode_);
@@ -390,15 +373,13 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
 
     u32 loopTimes = dataCount_ / maxCountPerLoop + ((dataCount_ % maxCountPerLoop == 0) ? 0 : 1);
 
-    TemplateDataParams tempAlgParamsIntra0;
-    TemplateDataParams tempAlgParamsInter0;
-    TemplateDataParams tempAlgParamsInter1;
-    TemplateDataParams tempAlgParamsIntra1;
+    TemplateDataParams tempAlgParamsIntra0, tempAlgParamsInter0;
+    TemplateDataParams tempAlgParamsInter1, tempAlgParamsIntra1;
     TempFuncs tempFuncs;
     tempFuncs.opMode = opMode_;
     tempFuncs.enableCounterNotify = false;
-    tempFuncs.isForepart = true;
     tempFuncs.isBottom = true;
+    tempFuncs.isForepart = true;
     for (u32 loopIndex = 0; loopIndex < loopTimes; loopIndex++) {
         u64 currCount = (loopIndex == loopTimes - 1) ? (dataCount_ - loopIndex * maxCountPerLoop) : maxCountPerLoop;
         u64 dataCountPerLoopAixs0 = static_cast<u64>(dataSplitSize[0] * currCount);
