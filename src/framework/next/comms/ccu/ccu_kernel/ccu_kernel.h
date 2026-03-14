@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCOMM_CCU_KERNEL_H
-#define HCOMM_CCU_KERNEL_H
+#ifndef HCOMM_CCU_KERNEL_NEW_H
+#define HCOMM_CCU_KERNEL_NEW_H
 
 #include <cstdint>
 #include <functional>
@@ -51,7 +51,6 @@ namespace hcomm {
 
 class CcuKernel : public CcuRep::CcuRepContext {
 public:
-    explicit CcuKernel(const CcuKernelArg &arg);
     CcuKernel() = default;
     ~CcuKernel() override;
     HcclResult Init();
@@ -75,8 +74,8 @@ public:
 
 protected:
     // 子类实现
-    virtual HcclResult Algorithm() = 0;
-    virtual std::vector<uint64_t> GeneArgs(const CcuTaskArg &arg) = 0;
+    // virtual HcclResult Algorithm() = 0;
+    // virtual std::vector<uint64_t> GeneArgs(const CcuTaskArg &arg) = 0;
 
     // 使用channel中的Variable
     HcclResult CreateVariable(const ChannelHandle channel, uint32_t varIndex, CcuRep::Variable *var) const;
@@ -154,9 +153,6 @@ private:
     CcuRep::Address CreateAddress();
     CcuRep::LocalAddr CreateLocalAddr(const CcuRep::Variable &token);
 
-protected:
-    std::vector<ChannelHandle> channels_;
-
 private:
     template <typename T> T CreateResAssist(std::array<std::vector<T>, CCU_MAX_IODIE_NUM> &resRecord);
     template <typename T> std::vector<T> CreateBlockResAssist(const uint32_t count,
@@ -165,6 +161,8 @@ private:
 private:
     CcuRepResource    res_{};
     CcuResRepository  resRepo_{};
+
+    std::vector<ChannelHandle> channels_;
 
     CcuRep::CcuInstrInfo instrInfo_{};
 
@@ -175,8 +173,8 @@ private:
 };
 
 // kernel构造函数的lambda函数
-using KernelCreator = std::function<std::unique_ptr<hcomm::CcuKernel>(const CcuKernelArg&)>;
+using KernelCreator = std::function<CcuResult(const CcuKernelArg &)>;
 
 } // namespace hcomm
 
-#endif // HCOMM_CCU_KERNEL_H 
+#endif // HCOMM_CCU_KERNEL_NEW_H
