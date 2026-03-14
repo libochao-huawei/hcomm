@@ -14,6 +14,7 @@
 #include "new/hccl_primitive_remote.h"
 #include "thread.h"
 #include "launch_context.h"
+#include "hccl_api_data_common.h"
 
 #include "ub_transport_lite_impl.h"
 #include "device/framework/aicpu_hccl_process.h"
@@ -27,16 +28,12 @@ bool IsBatchLaunchMode() {
 }
 
 void AddThread(ThreadHandle thread) {
-    g_threadLaunchCtx.AddThread(thread);
+    hccl::dataapi::AddThreadCommon(g_threadLaunchCtx, thread);
 }
 
 bool IsSupportReduce(HcommDataType dataType, HcommReduceOp op)
 {
-    bool checkDataType =
-        (dataType == HCOMM_DATA_TYPE_FP32 || dataType == HCOMM_DATA_TYPE_FP16 || dataType == HCOMM_DATA_TYPE_INT8 ||
-        dataType == HCOMM_DATA_TYPE_INT16 || dataType == HCOMM_DATA_TYPE_INT32 || dataType == HCOMM_DATA_TYPE_BFP16);
-    bool checkReduceType = (op == HCOMM_REDUCE_SUM || op == HCOMM_REDUCE_MAX || op == HCOMM_REDUCE_MIN);
-    return checkDataType && checkReduceType;
+    return hccl::dataapi::IsSupportReduceCommon(dataType, op);
 }
  
 
@@ -200,15 +197,7 @@ int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uin
 
 HcclResult CommTaskPrepare(char *key, uint32_t keyLen) // host ffts+使用
 {
-    std::string keyStr = "temp_key";
-    if (key != nullptr && keyLen != 0) {
-        keyStr = std::string(key, keyLen);
-        HCCL_DEBUG("[CommTaskPrepare]key[%s], keyLen[%u]", key, keyLen);
-    } else {
-        HCCL_DEBUG("[CommTaskPrepare]disable cache, key[0x%llx], keyLen[%u]", key, keyLen);
-    }
-
-    return HcclTaskPrepare(const_cast<char_t*>(keyStr.c_str()), keyStr.length());
+    return hccl::dataapi::CommTaskPrepareCommon(key, keyLen);
 }
 
 HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum) // host ffts+或aicpu stars使用"
@@ -230,14 +219,7 @@ HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum) // host fft
         return HCCL_SUCCESS;
     }
 
-    std::vector<hccl::Stream> streams;
-    for (uint32_t i = 0; i < threadNum; i++) {
-        hccl::Stream *stream = GetStream(threads[i]);
-        CHK_PTR_NULL(stream);
-        streams.push_back(*stream);
-    }
-
-    return HcclTaskLaunch(streams.data(), threadNum);
+    return hccl::dataapi::CommTaskLaunchByStreamsCommon(threads, threadNum);
 }
 
 namespace {
@@ -698,27 +680,22 @@ int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, u
 
 HcclResult CommFence(ThreadHandle thread, ChannelHandle channel) // 控制前后的任务保序
 {
-    HCCL_DEBUG("[CommFence] thread[0x%llx], channel[0x%llx].", thread, channel);
-    Stream *stream = GetStream(thread);
-    CHK_PTR_NULL(stream);
-
-    return HcclRemoteFence(stream, reinterpret_cast<void *>(channel), false);
+    return hccl::dataapi::CommFenceCommon(thread, channel);
 }
 
 int32_t HcommSetLaunchMode(const char *launchTag, HcommLaunchMode mode)
 {
-    HCCL_DEBUG("HcommSetLaunchMode launchTag[%s]", launchTag);
-    return g_threadLaunchCtx.SetLaunchMode(launchTag, mode);
+    return hccl::dataapi::HcommSetLaunchModeCommon(g_threadLaunchCtx, launchTag, mode);
 }
 
 int32_t HcommBatchModeStart(const char *batchTag)
 {
-    return HcommSetLaunchMode(batchTag, HCOMM_LAUNCH_MODE_BATCH);
+    return hccl::dataapi::HcommBatchModeStartCommon(g_threadLaunchCtx, batchTag);
 }
 
 int32_t HcommBatchModeEnd(const char *batchTag)
 {
-    return HcommSetLaunchMode(batchTag, HCOMM_LAUNCH_MODE_EAGER);
+    return hccl::dataapi::HcommBatchModeEndCommon(g_threadLaunchCtx, batchTag);
 }
 
 int32_t HcommAcquireComm(const char* commId)
