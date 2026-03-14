@@ -289,7 +289,7 @@ HCCP_ATTRI_VISI_DEF int RaSetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uin
     int ret;
 
     CHK_PRT_RETURN(ctxHandle == NULL || attr == NULL || reqHandle == NULL,
-        hccp_err("[get][ra_tp_attr]ctx_handle or attr or req_handle or attr is NULL"),
+        hccp_err("[set][ra_tp_attr]ctx_handle or attr or req_handle or attr is NULL"),
         ConverReturnCode(RDMA_OP, -EINVAL));
 
     ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
