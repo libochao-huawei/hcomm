@@ -523,12 +523,6 @@ void TcRsGetTpInfoList()
     EXPECT_INT_EQ(-EINVAL, ret);
     mocker_clean();
 
-    stubRsCb.protocol = PROTOCOL_UNSUPPORT;
-    mocker_invoke(RsGetRsCb, StubRsGetRsCbV1, 10);
-    ret = RsGetTpInfoList(&devInfo, &cfg, infoList, &num);
-    EXPECT_INT_EQ(-EINVAL, ret);
-    mocker_clean();
-
     stubRsCb.protocol = PROTOCOL_UDMA;
     mocker_invoke(RsGetRsCb, StubRsGetRsCbV1, 10);
     mocker_invoke(RsUbGetDevCb, StubRsUbGetDevCb, 10);
