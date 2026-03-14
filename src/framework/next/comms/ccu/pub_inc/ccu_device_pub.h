@@ -8,12 +8,13 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef CCU_DEV_MGR_PUB_H
-#define CCU_DEV_MGR_PUB_H
+#ifndef CCU_DEVICE_PUB_H
+#define CCU_DEVICE_PUB_H
 
 #include <memory>
 #include <vector>
 
+#include "ccu_primitives.h"
 #include "ccu_res_repo.h"
 #include "ccu_drv_handle.h"
 
@@ -22,8 +23,6 @@
 #include "hccl_rank_graph.h"
 
 namespace hcomm {
-
-MAKE_ENUM(CcuEngine, CCU_MS, CCU_SCHE);
 
 using CcuResHandle = void *;
 
@@ -80,7 +79,7 @@ HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle
 HcclResult CcuDeinitFeature(const int32_t devLogicId);
 
 /**
- * @brief 按加速引擎模式申请批量资源
+ * @brief 按CCU实体模式申请批量资源
  *
  * @param deviceLogicId 设备逻辑ID
  * @param ccuEngine CCU通信引擎类型
@@ -88,8 +87,8 @@ HcclResult CcuDeinitFeature(const int32_t devLogicId);
  * @return HcclResult 返回HcclResult类型的结果
  * @note 资源不足时返回HCCL_E_UNAVIL，其余非HCCL_SUCCESS结果属于错误
  */
-HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
-    const CcuEngine ccuEngine, CcuResHandle &resHandle);
+HcclResult CcuAllocResHandleByInsType(int32_t deviceLogicId,
+    CcuInstanceType ccuInsType, CcuResHandle &resHandle);
 
 /**
  * @brief 根据资源句柄查看对应资源信息
@@ -173,4 +172,4 @@ HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId);
 HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId);
 
 }; // namespace hcomm
-#endif // CCU_DEV_MGR_PUB_H
+#endif // CCU_DEVICE_PUB_H
