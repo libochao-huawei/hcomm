@@ -9,8 +9,8 @@
 # -----------------------------------------------------------------------------------------------------------
 
 set(src_list
-    ccu_control_api.cc
     ccu_data_api_impl.cc
+    ccu_data_api.cc
 )
 
 target_sources(hcomm PRIVATE

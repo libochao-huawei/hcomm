@@ -18,7 +18,6 @@
 #include "env_config/env_config.h"
 #include "channel_process.h"
 #include "ccu_primitives.h"
-#include "ccu_log.h"
 
 using namespace hcomm;
 
@@ -57,8 +56,9 @@ MyRank::~MyRank()
     // 析构有时序要求
     rankPairMgr_ = nullptr; // 内部会销毁channel，可能需要返还endpoint与ccu资源
     endpointMgr_ = nullptr; // 内部会销毁endpoint，可能需要返回ccu资源
+    ccuResContainer_ = nullptr;  // 内部清理CCU资源，关闭CCU通道
 
-    if (ccuInsHandle_ != 0) {  // 内部清理CCU资源，关闭CCU通道
+    if (ccuInsHandle_ != 0) {
         (void)HcommCcuInsDestroy(ccuInsHandle_);
     }
 
@@ -91,10 +91,10 @@ inline CcuInstanceType OpExpansionModeToCcuInstanceType(uint32_t opExpansionMode
     }
 
     if (opExpansionMode == CCU_MS_MODE) {
-        return CcuInstanceType::CCU_MS;
+        return CcuEngine::CCU_MS;
     }
     
-    return CcuInstanceType::CCU_INVALID;
+    return CcuEngine::INVALID;
 }
 
 HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum)
@@ -115,13 +115,15 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
 
     // 仅自定义算子ccu流程初始化资源
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if ((indOp != nullptr && strcmp(indOp, "") != 0) && ccuInsHandle_ != 0 && rankNum != 1) {
+    if ((indOp != nullptr && strcmp(indOp, "") != 0) && !ccuResContainer_ && rankNum != 1) {
+        ccuResContainer_.reset(new (std::nothrow)CcuResContainer(opExpansionMode_));
+        CHK_PTR_NULL(ccuResContainer_);
+        CHK_RET(ccuResContainer_->Init());
+
         // 以下为ccu新接口流程
         auto ccuInsType = OpExpansionModeToCcuInstanceType(opExpansionMode_);
         void *resDesc = static_cast<void *>(&ccuInsType);
-        // todo: 需要处理可能越界转换
-        auto ret = HcommCcuInsCreate(resDesc, &ccuInsHandle_);
-        CHK_RET(static_cast<HcclResult>(ret));
+        CHK_CCU_RET(HcommCcuInsCreate(resDesc, &ccuInsHandle_));
     }
 
     // 创建端点管理器
@@ -313,10 +315,10 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         hcommDescs[i].memHandles = memHandleVec.data();
         hcommDescs[i].memHandleNum = memHandleVec.size();
 
-        std::vector<std::unique_ptr<CommMemHandle>> commMemHandles{};
+        std::vector<MemHandle> commMemHandleVec{};
         if (engine != COMM_ENGINE_CPU) {
-            CHK_RET(commMems_->SetMemHandles(channelDescs[i].memHandles, memHandleVec, commMemHandles));
-            hcommDescs[i].memHandles = reinterpret_cast<void**>(commMemHandles.data());
+            CHK_RET(commMems_->SetMemHandles(channelDescs[i].memHandles, memHandleVec, commMemHandleVec));
+            hcommDescs[i].memHandles = commMemHandleVec.data();
         }
 
         hcomm::EndpointPair* endpointPair = nullptr;
@@ -343,6 +345,11 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         }
         u32& reuseIdx = reuseChannelIdxMap[rankPair][engine][endpointPair];
         ret = endpointPair->CreateChannel(epHandle, engine, reuseIdx, &hcommDescs[i], channelHandles + i);
+        if (ret == HCCL_E_TIMEOUT || ret == HCCL_E_INTERNAL) {
+            Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
+            CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
+                HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
+        }
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to create channel, channelIndex[%u], remoteRank[%u], engine[%d], reuseIndex[%u]",
                 __func__, i + 1, remoteRank, engine, reuseIdx),

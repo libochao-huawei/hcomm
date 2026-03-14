@@ -27,7 +27,7 @@ CcuInstanceMgr::~CcuInstanceMgr()
 
 CcuInstanceMgr &CcuInstanceMgr::GetInstance(const int32_t deviceLogicId)
 {
-    static CcuInstanceMgr instanceMgrs[MAX_MODULE_DEVICE_NUM + 1];
+    static CcuInstanceMgr instanceMgrs[MAX_MODULE_DEVICE_NUM];
 
     int32_t devLogicId = deviceLogicId;
     if (devLogicId < 0 || static_cast<uint32_t>(devLogicId) >= MAX_MODULE_DEVICE_NUM) {
@@ -68,7 +68,7 @@ CcuResult CcuInstanceMgr::Create(
     std::unique_ptr<CcuInstance> instance{nullptr};
     EXECEPTION_CATCH(
         instance = std::make_unique<CcuInstance>(insType),
-        return CcuResult::CCU_E_PTR);
+        return HCCL_E_PTR);
 
     CCU_CHK_RET(instance->Init());
 
