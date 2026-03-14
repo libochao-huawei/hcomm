@@ -435,6 +435,53 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_AicpuTsThread_Return_HC
     EXPECT_EQ(ret, 0);
 }
 
+TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_AicpuTsThread_Reuse_Return_HCCL_Success)
+{
+    MOCKER(hrtGetDeviceType)
+        .stubs()
+        .with(outBound(DevType::DEV_TYPE_950))
+        .will(returnValue(HCCL_SUCCESS));
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+        .stubs()
+        .with(outBound(isDeviceSide))
+        .will(returnValue(HCCL_SUCCESS));  
+    MOCKER_CPP(&hcclComm::GetAicpuCommState)
+        .stubs()
+        .will(returnValue(true));  
+    MOCKER_CPP(&AicpuLaunchMgr::ThreadKernelLaunchForComm)
+        .stubs()
+        .will(returnValue(0));  
+    
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;;
+    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 0);
+    ThreadHandle thread;
+    void* comm = static_cast<HcclComm>(hcclCommPtr.get());
+    ret =  HcclThreadAcquire(comm, COMM_ENGINE_AICPU_TS, 2, 3, &thread);
+    EXPECT_EQ(ret, 0);
+
+    ret =  HcclThreadAcquire(comm, COMM_ENGINE_AICPU_TS, 3, 3, &thread);
+    EXPECT_EQ(ret, 0);
+
+    ret =  HcclThreadAcquire(comm, COMM_ENGINE_AICPU_TS, 3, 4, &thread);
+    EXPECT_EQ(ret, 0);
+
+    ret =  HcclThreadAcquire(comm, COMM_ENGINE_AICPU_TS, 4, 5, &thread);
+    EXPECT_EQ(ret, 0);
+}
+
 TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_CommNullptr_Return_HCCL_E_PTR)
 {
     MOCKER(hrtGetDeviceType)
@@ -608,6 +655,61 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_Normal_Return_HCCL_Succe
     ret =  HcclGetNotifyNumInThread(comm, thread[0], COMM_ENGINE_CPU_TS, &notifyNum);
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(notifyNum, 3);
+}
+
+TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_Normal_Reuse_Return_HCCL_Success)
+{
+    MOCKER(hrtGetDeviceType)
+        .stubs()
+        .with(outBound(DevType::DEV_TYPE_950))
+        .will(returnValue(HCCL_SUCCESS));
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+        .stubs()
+        .with(outBound(isDeviceSide))
+        .will(returnValue(HCCL_SUCCESS));  
+
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;;
+    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 0);
+    ThreadHandle thread[2];
+    void* comm = static_cast<HcclComm>(hcclCommPtr.get());
+    ret =  HcclThreadAcquire(comm, COMM_ENGINE_CPU_TS, 2, 3, thread);
+    EXPECT_EQ(ret, 0);
+    Thread * threadptr0 = reinterpret_cast<Thread *>(thread[0]);
+    EXPECT_EQ(threadptr0->GetNotifyNum(), 3);
+
+    ret =  HcclThreadAcquire(comm, COMM_ENGINE_CPU_TS, 3, 3, thread);
+    EXPECT_EQ(ret, 0);
+    threadptr0 = reinterpret_cast<Thread *>(thread[1]);
+    EXPECT_EQ(threadptr0->GetNotifyNum(), 3);
+
+    ret =  HcclThreadAcquire(comm, COMM_ENGINE_CPU_TS, 3, 4, thread);
+    EXPECT_EQ(ret, 0);
+    threadptr0 = reinterpret_cast<Thread *>(thread[2]);
+    EXPECT_EQ(threadptr0->GetNotifyNum(), 4);
+
+    ret =  HcclThreadAcquire(comm, COMM_ENGINE_CPU_TS, 4, 5, thread);
+    EXPECT_EQ(ret, 0);
+    threadptr0 = reinterpret_cast<Thread *>(thread[3]);
+    EXPECT_EQ(threadptr0->GetNotifyNum(), 5);
+
+
+    uint32_t notifyNum;
+    ret =  HcclGetNotifyNumInThread(comm, thread[0], COMM_ENGINE_CPU_TS, &notifyNum);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(notifyNum, 5);
 }
 
 TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_CommNullptr_Return_HCCL_E_PTR)

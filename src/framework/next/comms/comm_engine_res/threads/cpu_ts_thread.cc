@@ -9,6 +9,7 @@
  */
 
 #include "cpu_ts_thread.h"
+#include "types/dev_type.h"
 
 namespace hccl {
 
@@ -75,7 +76,11 @@ std::string &CpuTsThread::GetUniqueId()
     if (!uniqueIdStr_.empty()) {
         return uniqueIdStr_;
     }
+    return UpdateUniqueId();
+}
 
+std::string &CpuTsThread::UpdateUniqueId()
+{
     // 序列化信息
     uniqueIdStr_ = std::string();
     std::ostringstream oss;
@@ -86,14 +91,18 @@ std::string &CpuTsThread::GetUniqueId()
     oss.write(reinterpret_cast<const char_t *>(&notifyNum_), sizeof(notifyNum_));
 
     // 临时申请一条流，用于在device侧资源展开时initStream
-    streamDevice_.reset(new (std::nothrow) Stream(streamType));
+    if (streamDevice_ == nullptr) {
+        streamDevice_.reset(new (std::nothrow) Stream(streamType));
+    }
     if (streamDevice_ == nullptr) {
         HCCL_ERROR("[CpuTsThread][%s]reset stream failed, stream type[%d]",__func__, streamType);
         return uniqueIdStr_;
     }
 
     uint64_t size = sizeof(SqCqeContext);
-    sqCqeContext_ = DeviceMem::alloc(size);
+    if (sqCqeContext_.ptr() == nullptr) {
+        sqCqeContext_ = DeviceMem::alloc(size);
+    }
     if (sqCqeContext_.ptr() == nullptr) {
         HCCL_ERROR("[CpuTsThread][%s]alloc mem failed, mem size[%llu]",__func__, size);
         return uniqueIdStr_;
@@ -118,17 +127,17 @@ std::string &CpuTsThread::GetUniqueId()
         HcclSignalInfo notifyInfo;
         ret = notifys_[idx]->GetNotifyData(notifyInfo);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[AicpuTsThread][GetUniqueId]GetNotifyData failed, ret[%d]", ret);
+            HCCL_ERROR("[AicpuTsThread][UpdateUniqueId]GetNotifyData failed, ret[%d]", ret);
             uniqueIdStr_ = std::string();
             return uniqueIdStr_;
         }
-        HCCL_INFO("[AicpuTsThread][GetUniqueId]get local notify data success, resId[%u], tsId:%d, devId[%u]",
+        HCCL_INFO("[AicpuTsThread][UpdateUniqueId]get local notify data success, resId[%u], tsId:%d, devId[%u]",
             notifyInfo.resId,
             notifyInfo.tsId,
             notifyInfo.devId);
         oss.write(reinterpret_cast<const char_t *>(&notifyInfo), sizeof(notifyInfo));
     }
-    HCCL_DEBUG("[AicpuTsThread][GetUniqueId] stream[%p], notifyNum[%u]", stream_->ptr(), notifyNum_);
+    HCCL_DEBUG("[AicpuTsThread][UpdateUniqueId] stream[%p], notifyNum[%u]", stream_->ptr(), notifyNum_);
 
     uniqueIdStr_ = oss.str();
     return uniqueIdStr_;
@@ -190,4 +199,28 @@ HcclResult CpuTsThread::LocalReduce(
     return HCCL_E_NOT_SUPPORT;
 }
 
+HcclResult CpuTsThread::SupplementNotify(uint32_t notifyNum)
+{
+    if (streamType_ == StreamType::STREAM_TYPE_DEVICE || notifyLoadType_ == NotifyLoadType::DEVICE_NOTIFY) {
+        HCCL_ERROR("[%s]Does not support this interface.", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    u32 currentNotifyNum = notifyNum_;
+    notifyNum_ += notifyNum;
+    notifys_.reserve(notifyNum_);
+    for (uint32_t idx = currentNotifyNum; idx < notifyNum_; idx++) {
+        notifys_.emplace_back(nullptr);
+        notifys_[idx].reset(new (std::nothrow) LocalNotify());
+        CHK_SMART_PTR_NULL(notifys_[idx]);
+        CHK_RET(notifys_[idx]->Init(notifyLoadType_));
+        if (devType_ != DevType::DEV_TYPE_950) {
+            CHK_RET(notifys_[idx]->SetIpc());
+        }
+    }
+
+    uniqueIdStr_.clear();
+    UpdateUniqueId();
+    return HCCL_SUCCESS;
+}
 }  // namespace hccl
