@@ -100,7 +100,6 @@ public:
         return instType_;
     }
 
-
     virtual void Translate(std::vector<std::vector<CcuTaskParam>> &taskParam) const;
 
     virtual std::unique_ptr<CcuCtxArg>  GetCtxArg() const         = 0;
