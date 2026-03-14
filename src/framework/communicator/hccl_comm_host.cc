@@ -25,6 +25,7 @@
 #include "comm_configer.h"
 #include "launch_aicpu.h"
 #include "launch_device.h"
+#include "sal_pub.h"
 
 namespace hccl
 {
@@ -296,14 +297,12 @@ namespace hccl
         }
   
         CHK_RET(hrtGetDevice(&(commAicpuParam_.deviceLogicId)));
-    
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(commAicpuParam_.deviceLogicId), commAicpuParam_.devicePhyId));
-      
         CHK_RET(hrtGetDeviceType(devType_));
         commAicpuParam_.deviceType = static_cast<u32>(devType_);
 
+        // json表解析
         std::string jsonPath;
-      
         CHK_RET(GetKernelFilePath(jsonPath));
         jsonPath += "ccl_kernel.json";
    
@@ -322,6 +321,8 @@ namespace hccl
         return HCCL_E_PTR);
 
         CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
+        CHK_RET(collComm_->GetHDCommunicate(commAicpuParam_.kfcControlTransferH2DParams,
+            commAicpuParam_.kfcStatusTransferD2HParams));
         return HCCL_SUCCESS;
     }
 
@@ -382,6 +383,24 @@ namespace hccl
     CollComm* hcclComm::GetCollComm() 
     {
         return collComm_!= nullptr ? collComm_.get() : nullptr;
+    }
+
+    HcclResult hcclComm::Resume()
+    {
+        if (IsCommunicatorV2()) {
+            CHK_RET(collComm_->Resume());
+        } else {
+            CHK_RET(communicator_->Resume());
+        }
+        
+        return HCCL_SUCCESS;
+    }
+    HcclResult hcclComm::GetCommStatus(HcclCommStatus &status)
+    {
+        if (IsCommunicatorV2()) {
+            status = collComm_->GetCommStatus();
+        }
+        return HCCL_SUCCESS;
     }
 
 } // namespace hccl

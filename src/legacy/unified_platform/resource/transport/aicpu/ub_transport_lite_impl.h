@@ -71,6 +71,9 @@ public:
 
     HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const;
 
+    HcclResult Clean();
+    HcclResult Resume(std::vector<char> &uniqueId);
+
 private:
     u32 notifyNum{0};
     u32 bufferNum{0};
@@ -118,8 +121,8 @@ private:
 
     std::vector<std::unique_ptr<NotifyLite>> locNotifyVec;
 
+    // N秒快恢需要清理的两个资源
     std::vector<std::vector<char>> connUniqueIdVec;
-
     std::vector<RmaConnLite *> connVec;
 
     std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback_{nullptr};

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -7,25 +7,10 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include "rank_pair.h"
 
-namespace hccl {
+#include "ns_recovery.h"
 
-HcclResult RankPair::Init()
+namespace hccl 
 {
-    EXECEPTION_CATCH(endpointPairMgr_ = std::make_unique<hcomm::EndpointPairMgr>(), return HCCL_E_PTR);
-    return HCCL_SUCCESS;
-}
- 
-HcclResult RankPair::GetEndpointPair(CommEngine engine, const EndpointDescPair &epDescPair, hcomm::EndpointPair*& out)
-{
-    return endpointPairMgr_->Get(engine, epDescPair, out);
-}
 
-hcomm::EpChannelList RankPair::GetEpChannelList()
-{
-    auto epChannelList = endpointPairMgr_->GetEpChannelList();
-    return epChannelList;
 }
-
-} // namespace hccl
