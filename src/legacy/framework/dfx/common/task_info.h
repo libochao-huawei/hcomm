@@ -26,7 +26,7 @@ public:
     u32          commIndex_;
     u64          beginTime_;
     u64          endTime_;
-    void        *comm_;
+    void        *comm_{nullptr};
     bool         isIndop_{false};
     std::string  algTag_;
     std::string  groupName_;
