@@ -65,12 +65,6 @@ template <typename T> std::vector<T> CcuKernel::CreateBlockResAssist(
     return block;
 }
 
-CcuKernel::CcuKernel(const CcuKernelArg &arg)
-{
-    HCCL_INFO("Construct CcuKernel: %s", arg.GetKernelSignature().GetData().c_str());
-    channels_ = arg.channels;
-}
-
 CcuKernel::~CcuKernel()
 {
 }
@@ -111,82 +105,85 @@ static HcclResult GetDieIdByChannels(const std::vector<ChannelHandle> &channels,
     return HcclResult::HCCL_SUCCESS;
 }
 
+// todo: 需要整改成rep处理结束后
 HcclResult CcuKernel::Init()
 {
     // 根据channels 0 判断dieId
     // 当前默认给的所有channelhandle都属于一个die
-    uint32_t dieId{0};
-    CHK_RET(GetDieIdByChannels(channels_, dieId));
-    CHK_PRT_RET(dieId >= CCU_MAX_IODIE_NUM,
-        HCCL_ERROR("[CcuKernel][%s] failed, dieId[%u] should be less than [%u].",
-            __func__, dieId, CCU_MAX_IODIE_NUM),
-        HcclResult::HCCL_E_PARA);
+    // uint32_t dieId{0};
+    // CHK_RET(GetDieIdByChannels(channels_, dieId));
+    // CHK_PRT_RET(dieId >= CCU_MAX_IODIE_NUM,
+    //     HCCL_ERROR("[CcuKernel][%s] failed, dieId[%u] should be less than [%u].",
+    //         __func__, dieId, CCU_MAX_IODIE_NUM),
+    //     HcclResult::HCCL_E_PARA);
 
-    SetDieId(dieId);
-    CHK_RET(Algorithm());
-    // 生成SQE粒度profiling信息
-    AddSqeProfiling();
+    // SetDieId(dieId);
+    // CHK_RET(Algorithm());
+    // todo: 生成SQE粒度profiling信息
+    // AddSqeProfiling();
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams)
-{
-    auto args    = GeneArgs(arg);
-    auto agrsNum = args.size();
-    if (agrsNum != loadArgIndex_) {
-        HCCL_ERROR("[CcuKernel][%s] failed, args number does not match the Load instruction, "
-            "agrsNum = %d, loadArgInstr= %u", __func__, agrsNum, loadArgIndex_);
-        return HcclResult::HCCL_E_INTERNAL;
-    }
+// todo: 需要整改成算法生成sqe
 
-    if (instrInfo_.missionInstrCount == 0 || instrInfo_.instrVec.empty()) {
-        HCCL_ERROR("[CcuKernel][%s] failed, mission instructions are empty, "
-            "the kernel is not been translated yet.", __func__);
-        return HcclResult::HCCL_E_INTERNAL;
-    }
+// HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams)
+// {
+//     auto args    = GeneArgs(arg);
+//     auto agrsNum = args.size();
+//     if (agrsNum != loadArgIndex_) {
+//         HCCL_ERROR("[CcuKernel][%s] failed, args number does not match the Load instruction, "
+//             "agrsNum = %d, loadArgInstr= %u", __func__, agrsNum, loadArgIndex_);
+//         return HcclResult::HCCL_E_INTERNAL;
+//     }
 
-    // 如果agrs数量超过sqe arg的最大数量，则返回多个TaskParam，前面几个只从sqe中加载args;
-    // args数量大于等于0、小于等于最大值时，返回1个TaskParam
-    const uint32_t seqNum
-        = (agrsNum / CCU_SQE_ARGS_LEN) + ((agrsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (agrsNum == 0 ? 1 : 0);
+//     if (instrInfo_.missionInstrCount == 0 || instrInfo_.instrVec.empty()) {
+//         HCCL_ERROR("[CcuKernel][%s] failed, mission instructions are empty, "
+//             "the kernel is not been translated yet.", __func__);
+//         return HcclResult::HCCL_E_INTERNAL;
+//     }
 
-    const uint32_t preMissonSqeInsCnt = (seqNum - 1) * CCU_SQE_ARGS_LEN;
-    if (instrInfo_.missionInstrCount < preMissonSqeInsCnt) {
-        HCCL_ERROR("[CcuKernel][%s] failed, missionInstrCount[%u] should be greater "
-            "than preMissonSqeInsCnt[%u].", __func__, instrInfo_.missionInstrCount,
-            preMissonSqeInsCnt);
-        return HcclResult::HCCL_E_INTERNAL;
-    }
+//     // 如果agrs数量超过sqe arg的最大数量，则返回多个TaskParam，前面几个只从sqe中加载args;
+//     // args数量大于等于0、小于等于最大值时，返回1个TaskParam
+//     const uint32_t seqNum
+//         = (agrsNum / CCU_SQE_ARGS_LEN) + ((agrsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (agrsNum == 0 ? 1 : 0);
 
-    taskParams.resize(seqNum);
-    for (uint32_t index = 0; index < seqNum; index++) {
-        taskParams[index].dieId       = GetDieId();
-        taskParams[index].missionId   = GetMissionId();
-        taskParams[index].instStartId = instrInfo_.missionStartInstrId + index * CCU_SQE_ARGS_LEN;
-        taskParams[index].key         = GetMissionKey();
-        taskParams[index].argSize     = CCU_SQE_ARGS_LEN;
-        if (index == seqNum - 1) {
-            // index 由计算得出，相乘结果不会溢出
-            const uint32_t preMissionInsCnt = index * CCU_SQE_ARGS_LEN;
-            taskParams[index].instCnt = instrInfo_.missionInstrCount - preMissionInsCnt;
-            std::copy(std::begin(args) + preMissionInsCnt, std::end(args), std::begin(taskParams[index].args));
-        } else {
-            taskParams[index].instCnt = CCU_SQE_ARGS_LEN;
-            std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::begin(args) + (index + 1) * CCU_SQE_ARGS_LEN,
-                      std::begin(taskParams[index].args));
-        }
+//     const uint32_t preMissonSqeInsCnt = (seqNum - 1) * CCU_SQE_ARGS_LEN;
+//     if (instrInfo_.missionInstrCount < preMissonSqeInsCnt) {
+//         HCCL_ERROR("[CcuKernel][%s] failed, missionInstrCount[%u] should be greater "
+//             "than preMissonSqeInsCnt[%u].", __func__, instrInfo_.missionInstrCount,
+//             preMissonSqeInsCnt);
+//         return HcclResult::HCCL_E_INTERNAL;
+//     }
 
-        HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
-                  taskParams[index].dieId, taskParams[index].missionId, taskParams[index].instStartId,
-                  taskParams[index].instCnt, taskParams[index].argSize);
-        for (uint32_t i = 0; i < taskParams[index].argSize; i++) {
-            if (i == TOKEN_VALUE_INDEX) { continue; }
-            HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, taskParams[index].args[i]);
-        }
-    }
+//     taskParams.resize(seqNum);
+//     for (uint32_t index = 0; index < seqNum; index++) {
+//         taskParams[index].dieId       = GetDieId();
+//         taskParams[index].missionId   = GetMissionId();
+//         taskParams[index].instStartId = instrInfo_.missionStartInstrId + index * CCU_SQE_ARGS_LEN;
+//         taskParams[index].key         = GetMissionKey();
+//         taskParams[index].argSize     = CCU_SQE_ARGS_LEN;
+//         if (index == seqNum - 1) {
+//             // index 由计算得出，相乘结果不会溢出
+//             const uint32_t preMissionInsCnt = index * CCU_SQE_ARGS_LEN;
+//             taskParams[index].instCnt = instrInfo_.missionInstrCount - preMissionInsCnt;
+//             std::copy(std::begin(args) + preMissionInsCnt, std::end(args), std::begin(taskParams[index].args));
+//         } else {
+//             taskParams[index].instCnt = CCU_SQE_ARGS_LEN;
+//             std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::begin(args) + (index + 1) * CCU_SQE_ARGS_LEN,
+//                       std::begin(taskParams[index].args));
+//         }
 
-    return HcclResult::HCCL_SUCCESS;
-}
+//         HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
+//                   taskParams[index].dieId, taskParams[index].missionId, taskParams[index].instStartId,
+//                   taskParams[index].instCnt, taskParams[index].argSize);
+//         for (uint32_t i = 0; i < taskParams[index].argSize; i++) {
+//             if (i == TOKEN_VALUE_INDEX) { continue; }
+//             HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, taskParams[index].args[i]);
+//         }
+//     }
+
+//     return HcclResult::HCCL_SUCCESS;
+// }
 
 HcclResult CcuKernel::CreateVariable(const ChannelHandle channel, uint32_t varIndex, CcuRep::Variable *var) const
 {

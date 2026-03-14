@@ -58,7 +58,7 @@ HcclResult CcuDeinitFeature(const int32_t devLogicId)
     std::lock_guard<std::mutex> lock(ccuDrvHandleMutex);
     auto iter = ccuDrvHandleMap.find(devLogicId);
     if (iter == ccuDrvHandleMap.end()) {
-        HCCL_INFO("[%s] passed, ccu feature was not be inited, devLogicId[%d].",
+        HCCL_INFO("[%s] passed, ccu feature was not inited, devLogicId[%d].",
             __func__, devLogicId);
         return HcclResult::HCCL_SUCCESS;
     }
@@ -76,9 +76,14 @@ HcclResult CcuDeinitFeature(const int32_t devLogicId)
 }
 
 // CCU设备管理对集合通信提供的接口
-HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
-    const CcuEngine ccuEngine, CcuResHandle &resHandle)
+CcuResult CcuAllocResHandleByInsType(int32_t deviceLogicId,
+    CcuInstanceType ccuInsType, CcuResHandle &resHandle)
 {
+    if (ccuInsType == CcuInstanceType::CCU_INVALID) {
+        HCCL_ERROR("todo: add log");
+        return CcuResult::CCU_E_PARA;
+    }
+
     auto dieEnableFlags = CcuComponent::GetInstance(deviceLogicId).GetDieEnableFlags();
     if (!dieEnableFlags[0] && !dieEnableFlags[1]) {
         HCCL_ERROR("[%s] failed, all ccu dies are disable, devLogicId[%d].",
@@ -92,7 +97,7 @@ HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
             continue;
         }
 
-        if (ccuEngine == CcuEngine::CCU_MS) {
+        if (ccuInsType == CcuInstanceType::CCU_MS) {
             resReq.loopEngineReq[dieId] = 0;
             resReq.blockLoopEngineReq[dieId] = 8 * 8 * 2;
             resReq.msReq[dieId] = 0;
@@ -120,7 +125,8 @@ HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
     }
 
     CHK_RET(CcuDevMgrImp::AllocResHandle(deviceLogicId, resReq, resHandle));
-    HCCL_INFO("[%s] succeed, get res handle[%llx], devLogicId[%d]", __func__, resHandle, deviceLogicId);
+    HCCL_INFO("[%s] succeed, get res handle[%llx], devLogicId[%d]",
+        __func__, resHandle, deviceLogicId);
     return HcclResult::HCCL_SUCCESS;
 }
 

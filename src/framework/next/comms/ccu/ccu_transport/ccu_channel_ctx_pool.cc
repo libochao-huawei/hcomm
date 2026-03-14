@@ -12,7 +12,7 @@
 
 #include <unordered_set>
 
-#include "ccu_dev_mgr_pub.h"
+#include "ccu_device_pub.h"
 #include "orion_adpt_utils.h"
 
 namespace hcomm {

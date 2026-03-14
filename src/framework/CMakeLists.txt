@@ -124,6 +124,7 @@ set(hccl_include_list
 
     ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_transport/
     ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_kernel
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_instance/
 )
 
 target_include_directories(hcomm PRIVATE
@@ -144,6 +145,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../pkg_inc/
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
         ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
+        ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu_new
         ${HCCL_BASE_DIR}/platform/common
         ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
         ${HCCL_BASE_DIR}/platform/legacy/inc
