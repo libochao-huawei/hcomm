@@ -26,7 +26,7 @@ add_executable(hccp_service.bin  hccp_service/main.c hccp_service/param.c
 target_include_directories(hccp_service.bin PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/hccp_service
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/driver
+    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/log
     ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/host_lite
@@ -42,6 +42,12 @@ target_include_directories(hccp_service.bin PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/include/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/tsd
 )
+
+if(NOT BUILD_OPEN_PROJECT)
+    target_include_directories(hccp_service.bin PRIVATE
+        ${TOP_DIR}/driver/driver/pkg_inc/
+    )
+endif()
 
 # c_sec、mmpa、unified_dlog动态库搜索路径
 target_link_directories(hccp_service.bin PRIVATE

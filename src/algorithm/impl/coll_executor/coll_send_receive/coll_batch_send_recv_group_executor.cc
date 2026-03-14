@@ -101,7 +101,6 @@ HcclResult CollBatchSendRecvGroupExecutor::Orchestrate(OpParam& param, AlgResour
         CHK_RET(CalcRecvSlices());
 
         CHK_RET(RunLoopBig(param));
-        
     } else {
         // 不用按照streamId入队
         CHK_RET(CalcSendSlicesSmall());
@@ -483,7 +482,6 @@ HcclResult CollBatchSendRecvGroupExecutor::ProcessRecvStreamDataSlice(Stream& st
     if (topoAttr_.isDiffDeviceType || topoAttr_.superPodNum > 1 || 
             (topoAttr_.moduleNum > 1 && topoMatcher_->GetExternalInputInterHccsDisable()) ||
             (topoAttr_.deviceType == DevType::DEV_TYPE_910B && targetLink->GetLinkType() == LinkType::LINK_ROCE)) {
-        
         u64 offset = bufferSliceSize_ * (slice.remoteRank % recvStreamNum_);
         execMem.outputMem = algResResp_->cclOutputMem.range(offset, slice.size);
         HcclResult ret = RecvKernelRun(stream, execMem, slice.remoteRank, retryEnable);

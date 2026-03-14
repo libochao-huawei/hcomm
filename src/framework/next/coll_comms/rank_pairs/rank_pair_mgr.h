@@ -16,7 +16,7 @@
 
 namespace hccl {
 
-using ChannelTable = std::unordered_map<RankIdPair, std::unordered_map<EndpointDescPair, std::vector<ChannelHandle>>>;
+using ChannelTable = std::unordered_map<RankIdPair, hcomm::EpChannelList>;
 
 class RankPairMgr {
 public:

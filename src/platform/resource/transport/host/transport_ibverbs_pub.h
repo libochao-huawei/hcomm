@@ -74,7 +74,7 @@ enum class WqeType {
 };
 
 using WqeInfo = struct TagWqeInfo {
-    struct SendWrlistDataExt wqeData;
+    struct SendWrlistDataExt wqeData{};
     u64 wqeType;
     u64 wqeDataOffset;
     u32 notifyId;
@@ -92,7 +92,7 @@ struct CombineQpHandle {
 };
 
 struct CombineQpInfo {
-    struct AiQpInfo aiQpInfo;
+    struct AiQpInfo aiQpInfo{};
     u32 preWrOpcode = INVALID_UINT; // 记录这个qp内最后一次下发的wr的opcode
     CombineQpInfo() {};
     CombineQpInfo(struct AiQpInfo& aiQpInfo) : aiQpInfo(aiQpInfo) {};
@@ -333,7 +333,7 @@ protected:
     std::vector<CombineQpHandle> combineQpHandles_;
     std::vector<CombineQpHandle> multiCombineQpHandles_;
 
-    CombineQpInfo combineAiQpInfo_;
+    CombineQpInfo combineAiQpInfo_{};
     std::vector<CombineQpInfo> combineAiQpInfos_;
     u32 qpsPerConnection_;
     u32 notifySize_;

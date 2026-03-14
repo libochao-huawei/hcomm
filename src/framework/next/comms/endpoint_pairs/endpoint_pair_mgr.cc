@@ -12,11 +12,11 @@
 
 namespace hcomm {
 
-HcclResult EndpointPairMgr::Get(const EndpointDescPair &endpointDescPair, EndpointPair*& out)
+HcclResult EndpointPairMgr::Get(CommEngine engine, const EndpointDescPair &endpointDescPair, EndpointPair*& out)
 {
-    auto iterPtr = endpointPairMap_.find(endpointDescPair);
-    if (iterPtr != endpointPairMap_.end()) {
-        out = iterPtr->second.get();
+    if (endpointPairMap_.find(engine) != endpointPairMap_.end() &&
+        endpointPairMap_[engine].find(endpointDescPair) != endpointPairMap_[engine].end()) {
+        out = endpointPairMap_[engine][endpointDescPair].get();
         return HCCL_SUCCESS;
     }
  
@@ -29,18 +29,22 @@ HcclResult EndpointPairMgr::Get(const EndpointDescPair &endpointDescPair, Endpoi
     CHK_RET(endpointPair->Init());
  
     out = endpointPair.get();
-    endpointPairMap_.emplace(endpointDescPair, std::move(endpointPair));
+    endpointPairMap_[engine].emplace(endpointDescPair, std::move(endpointPair));
 
     return HCCL_SUCCESS;
 }
 
-EpChannelList EndpointPairMgr::GetEpChannelList()
+EpChannelMap EndpointPairMgr::GetEpChannelMap()
 {
-    EpChannelList epChannelList;
-    for (const auto& endpointPair: endpointPairMap_) {
-        epChannelList[endpointPair.first] = endpointPair.second->GetChannelHandles();
+    EpChannelMap epChannelMap;
+    for (const auto& commEnginItem: endpointPairMap_) {
+        std::unordered_map<EndpointDescPair, std::vector<ChannelHandle>> channelList;
+        for (const auto& endpointPair : commEnginItem.second) {
+            channelList[endpointPair.first] = endpointPair.second->GetChannelHandles();
+        }
+        epChannelMap[commEnginItem.first] = channelList;
     }
-    return epChannelList;
+    return epChannelMap;
 }
 
 } // namespace hcomm

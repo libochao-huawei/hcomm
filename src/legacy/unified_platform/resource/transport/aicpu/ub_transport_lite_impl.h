@@ -72,7 +72,7 @@ public:
     HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const;
 
     HcclResult Clean();
-    HcclResult Resume(const std::vector<char> &uniqueId);
+    HcclResult Resume(std::vector<char> &uniqueId);
 
 private:
     u32 notifyNum{0};

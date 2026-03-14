@@ -18,7 +18,7 @@ namespace hccl {
 class AllGatherVMeshAivExecutor : public CollAllGatherVExecutor {
 public:
     AllGatherVMeshAivExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~AllGatherVMeshAivExecutor() = default;
+    ~AllGatherVMeshAivExecutor() override = default;
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
 
 private:

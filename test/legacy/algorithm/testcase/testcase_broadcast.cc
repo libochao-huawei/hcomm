@@ -60,7 +60,7 @@ protected:
         checkerOpParam.opType = CheckerOpType::BROADCAST;
         checkerOpParam.tag = "broadcast";
         checkerOpParam.opMode = opMode;
-        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
         checkerOpParam.DataDes.count = dataCount;
         checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
         checkerOpParam.root = root;
@@ -249,7 +249,7 @@ TEST_F(BroadcastTest, BroadcastMesh1DNHR_server_two_two_test)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "Broadcast";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.root = 0;
@@ -271,7 +271,7 @@ TEST_F(BroadcastTest, BroadcastMesh1DNHR_server_two_eight_test)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "Broadcast";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
     checkerOpParam.root = 0;
@@ -293,7 +293,7 @@ TEST_F(BroadcastTest, BroadcastMesh1DNHR_server_eight_eight_test)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "Broadcast";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.root = 0;
@@ -315,7 +315,7 @@ TEST_F(BroadcastTest, BroadcastMesh1DNHR_diagonal_root_test)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "Broadcast";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
     checkerOpParam.root = 31;
@@ -337,7 +337,7 @@ TEST_F(BroadcastTest, BroadcastMesh1DNHR_random_root_test)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "Broadcast";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
     checkerOpParam.root = 11;
@@ -359,7 +359,7 @@ TEST_F(BroadcastTest, BroadcastMesh1DNHR_one_count_test)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "Broadcast";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 1;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.root = 5;
@@ -381,7 +381,7 @@ TEST_F(BroadcastTest, BroadcastMesh1DNHR_bigdata_test)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "Broadcast";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 2 * 200 * 1024 * 1024 + 1;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.root = 11;
@@ -403,7 +403,7 @@ TEST_F(BroadcastTest, BroadcastMesh1DNHR_offload)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "Broadcast";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.root = 3;

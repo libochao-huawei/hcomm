@@ -14,7 +14,7 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "hccl_mem.h"
 #include "stream_pub.h"
 #include "hccl_communicator.h"
@@ -136,7 +136,7 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine, NotifyType notifyType, uint32_t notifyNum,
+HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine, ::NotifyType notifyType, uint32_t notifyNum,
     NotifyHandle **notifyHandleList)
 {
     CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PARA);
@@ -151,12 +151,12 @@ HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine, NotifyType noti
 
     if (commEngine == CommEngine::COMM_ENGINE_CPU || commEngine == CommEngine::COMM_ENGINE_CPU_TS
         || commEngine == CommEngine::COMM_ENGINE_CCU) {
-        if (notifyType != NotifyType:: NOTIFY_TYPE_RTS_NOTIFY) {
+        if (notifyType != ::NOTIFY_TYPE_RTS_NOTIFY) {
             HCCL_ERROR("[%s] commEngine[%u] and notifyType[%u] are mismatch",  __func__, commEngine, notifyType);
             return HCCL_E_PARA;
         }
     } else {
-        if (notifyType != NotifyType:: NOTIFY_TYPE_DEVICE_MEM) {
+        if (notifyType != ::NOTIFY_TYPE_DEVICE_MEM) {
             HCCL_ERROR("[%s] commEngine[%u] and notifyType[%u] are mismatch",  __func__, commEngine, notifyType);
             return HCCL_E_PARA;
         }

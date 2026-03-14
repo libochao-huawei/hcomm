@@ -214,7 +214,7 @@ TEST_F(TaskInfoTest, test_get_op_info)
 {
     TaskInfo taskInfo = InitTaskInfo();
 
-    taskInfo.dfxOpInfo_->index_ = 3;
+    taskInfo.dfxOpInfo_->commIndex_ = 3;
     taskInfo.dfxOpInfo_->op_.dataCount = 0xaaaabbbbcccc;
     taskInfo.dfxOpInfo_->op_.reduceOp = ReduceOp::SUM;
     taskInfo.dfxOpInfo_->op_.dataType = DataType::UINT64;

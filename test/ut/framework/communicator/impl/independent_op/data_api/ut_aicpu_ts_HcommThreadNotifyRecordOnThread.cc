@@ -36,10 +36,10 @@ protected:
     virtual void SetUp() override
     {
         MOCKER_CPP(&Hccl::IAicpuTsThread::NotifyRecordLoc).stubs().will(returnValue(HCCL_SUCCESS));
-        threadOnDevice.devType_ = DevType::DEV_TYPE_910_95;
+        threadOnDevice.devType_ = DevType::DEV_TYPE_950;
         threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
         InitNotifies(threadOnDevice);
-        dstThreadOnDevice.devType_ = DevType::DEV_TYPE_910_95;
+        dstThreadOnDevice.devType_ = DevType::DEV_TYPE_950;
         dstThreadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
         InitNotifies(dstThreadOnDevice);
     }

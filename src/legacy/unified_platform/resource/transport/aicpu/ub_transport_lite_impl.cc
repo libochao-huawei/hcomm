@@ -668,9 +668,11 @@ HcclResult UbTransportLiteImpl::Clean()
 
     // 清理wqe
     ClearConnOut();
+
+    return HCCL_SUCCESS;
 }
 
-HcclResult UbTransportLiteImpl::Resume(const std::vector<char> &uniqueId)
+HcclResult UbTransportLiteImpl::Resume(std::vector<char> &uniqueId)
 {
     BinaryStream binaryStream(uniqueId);
     u32          theType;
@@ -680,6 +682,8 @@ HcclResult UbTransportLiteImpl::Resume(const std::vector<char> &uniqueId)
     std::vector<char> connUniqueIds;
     binaryStream >> connUniqueIds;
     ParseConnVec(connUniqueIds);
+
+    return HCCL_SUCCESS;
 }
 
 } // namespace Hccl

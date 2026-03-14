@@ -91,7 +91,7 @@ TEST_F(TaskExceptionHandlerLiteTest, test_process_when_task_more_than_50)
     GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
     MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);  // diveceId 0
     shared_ptr<DfxOpInfo> dfxOpInfo = make_shared<DfxOpInfo>();
-    dfxOpInfo->index_ = 3;
+    dfxOpInfo->commIndex_ = 3;
     dfxOpInfo->op_.dataCount = 0xff;
     dfxOpInfo->op_.reduceOp = ReduceOp::MAX;
     dfxOpInfo->op_.dataType = DataType::FP8E4M3;

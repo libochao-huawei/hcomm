@@ -458,7 +458,7 @@ STATIC int MsgHeadCheck(struct MsgHead *sendRcvHead, unsigned int opcode, int rs
 
     ret = (sendRcvHead->opcode != opcode) || (sendRcvHead->msgDataLen != msgDataLen);
 
-    return (ret ? -EPERM : 0);
+    return (ret != 0 ? -EPERM : 0);
 }
 
 int RaHdcProcessMsg(unsigned int opcode, unsigned int phyId, char *data, unsigned int dataSize)

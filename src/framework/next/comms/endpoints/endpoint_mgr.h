@@ -17,6 +17,7 @@
 #include <mutex>
 #include "endpoint.h"
 #include "../endpoint_pairs/endpoint_pair.h"
+#include "hccl_mem_defs.h"
 
 namespace hcomm {
 /**

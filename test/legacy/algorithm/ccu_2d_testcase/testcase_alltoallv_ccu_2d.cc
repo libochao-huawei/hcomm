@@ -88,7 +88,7 @@ TEST_F(All2AllCCUV2DTest, all2all2d_ccu_case_test_2_mul_2_rank)
     GenAllToAllVParams(rankNum, 268435456, checkerOpParam.All2AllDataDes.sendCounts,
         checkerOpParam.All2AllDataDes.sdispls, checkerOpParam.All2AllDataDes.recvCounts, checkerOpParam.All2AllDataDes.rdispls);
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllVMesh2D";
 
     Checker checker;
@@ -118,7 +118,7 @@ TEST_F(All2AllCCUV2DTest, all2all2d_ccu_case_test_2_mul_2_rank_count1)
     GenAllToAllVParams(rankNum, 1, checkerOpParam.All2AllDataDes.sendCounts,
         checkerOpParam.All2AllDataDes.sdispls, checkerOpParam.All2AllDataDes.recvCounts, checkerOpParam.All2AllDataDes.rdispls);
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllVMesh2D";
 
     Checker checker;
@@ -149,7 +149,7 @@ TEST_F(All2AllCCUV2DTest, all2all2d_ccu_case_test_3_mul_3_rank)
     GenAllToAllVParams(rankNum, 100, checkerOpParam.All2AllDataDes.sendCounts,
         checkerOpParam.All2AllDataDes.sdispls, checkerOpParam.All2AllDataDes.recvCounts, checkerOpParam.All2AllDataDes.rdispls);
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllVMesh2D";
 
     Checker checker;
@@ -179,7 +179,7 @@ TEST_F(All2AllCCUV2DTest, all2all2d_ccu_case_test_2_mul_3_rank)
     GenAllToAllVParams(rankNum, 100, checkerOpParam.All2AllDataDes.sendCounts,
         checkerOpParam.All2AllDataDes.sdispls, checkerOpParam.All2AllDataDes.recvCounts, checkerOpParam.All2AllDataDes.rdispls);
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllVMesh2D";
 
     Checker checker;
@@ -210,7 +210,7 @@ TEST_F(All2AllCCUV2DTest, all2all2d_ccu_case_test_2_mul_3_rank_twoloop)
     GenAllToAllVParams(rankNum, 600000, checkerOpParam.All2AllDataDes.sendCounts,
         checkerOpParam.All2AllDataDes.sdispls, checkerOpParam.All2AllDataDes.recvCounts, checkerOpParam.All2AllDataDes.rdispls);
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllVMesh2D";
 
     Checker checker;
@@ -241,7 +241,7 @@ TEST_F(All2AllCCUV2DTest, all2all2d_ccu_case_test_2_mul_3_rank_threeloop)
     GenAllToAllVParams(rankNum, 1200000, checkerOpParam.All2AllDataDes.sendCounts,
         checkerOpParam.All2AllDataDes.sdispls, checkerOpParam.All2AllDataDes.recvCounts, checkerOpParam.All2AllDataDes.rdispls);
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllVMesh2D";
 
     Checker checker;

@@ -23,7 +23,7 @@
 #include "comm.h"
 #include "topoinfo_struct.h"
 #include "transport_heterog_def.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "comm_config_pub.h"
 #include "transport_manager.h"
 #include "independent_op.h"
