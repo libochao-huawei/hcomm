@@ -86,10 +86,10 @@
 #include "../../../legacy/framework/dfx/aicpu/profiling/profiling_handler_lite.h"
 #include "../../../legacy/framework/dfx/aicpu/profiling/profiling_reporter_lite.h"
 #include "../../../legacy/unified_platform/common/dlhal_function_v2.h"
-#include "../../../legacy/framework/dfx/profiling/dlhal_function.h"
+#include "../../../legacy/framework/dfx/profiling/dlprof_function.h"
 #include "../../../legacy/framework/communicator/aicpu/daemon/aicpu_daemon_service.h"
-#include "../.../../legacy/framework/dfx/task_exception/task_exception_handler.h"
-#include "../../../legacy/unified__platform/external_system/orion_adater_hccp.h"
+#include "../../../legacy/framework/dfx/task_exception/task_exception_handler.h"
+#include "../../../legacy/unified_platform/external_system/orion_adapter_hccp.h"
 #include "../../../legacy/include/hccl_communicator.h"
 #include "acl/acl_rt.h"
 
