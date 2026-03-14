@@ -10,7 +10,6 @@
 
 #include "ccu_res_pack.h"
 
-#include "ccu_log.h"
 #include "hcom_common.h"
 
 namespace hcomm {
@@ -29,28 +28,28 @@ CcuResPack::~CcuResPack()
     resHandle_ = 0;
 }
 
-CcuResult CcuResPack::Init()
+HcclResult CcuResPack::Init()
 {
     devLogicId_ = HcclGetThreadDeviceId();
-    if (insType_ == CcuInstanceType::CCU_UNUSED) {
-        HCCL_ERROR("[CcuResPack][%s] failed, error ccu instance type[%d].",
-            __func__, static_cast<int32_t>(insType_));
-        return CcuResult::CCU_E_PARA;
+    if (insType_ == CcuInstanceType::CCU_INVALID) {
+        HCCL_ERROR("[CcuResPack][%s] failed, error ccu engine type[%d].",
+            __func__, static_cast<int32_t>(ccuEngine_));
+        return HcclResult::HCCL_E_PARA;
     }
 
-    CCU_CHK_RET(CcuAllocResHandleByInsType(devLogicId_, insType_, resHandle_));
-    CCU_CHK_RET(Reset());
-    return CcuResult::CCU_SUCCESS;
+    CHK_RET(CcuAllocResHandleByInsType(devLogicId_, insType_, resHandle_));
+    CHK_RET(Reset());
+    return HcclResult::HCCL_SUCCESS;
 }
 
-CcuResult CcuResPack::Reset()
+HcclResult CcuResPack::Reset()
 {
     if (!resHandle_) {
-        return CcuResult::CCU_SUCCESS;
+        return HcclResult::HCCL_SUCCESS;
     }
 
-    CCU_CHK_RET(CcuCheckResource(devLogicId_, resHandle_, resRepo_));
-    return CcuResult::CCU_SUCCESS;
+    CHK_RET(CcuCheckResource(devLogicId_, resHandle_, resRepo_));
+    return HcclResult::HCCL_SUCCESS;
 }
 
 CcuResRepository &CcuResPack::GetCcuResRepo()
