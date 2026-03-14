@@ -1635,7 +1635,7 @@ bool HraGetRtpEnable(RdmaHandle handle)
         const CtxSlInfo &priorityInfo = out.ub.priorityInfo[i];
         HCCL_RUN_INFO("[%s] priorityInfo[%d]: SL[%u] tpType[%u] rtp[%u]",
             __func__, i, priorityInfo.SL, priorityInfo.tpType.value, priorityInfo.tpType.bs.rtp);
-        if (priorityInfo.tpType.bs.rtp == 1 && priorityInfo.SL != 0) {
+        if (priorityInfo.tpType.bs.rtp == 1) {
             return true;
         }
     }
