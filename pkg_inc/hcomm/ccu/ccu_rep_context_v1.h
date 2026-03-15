@@ -23,6 +23,7 @@ constexpr uint16_t  CCU_MAX_CHANNEL_NUM     = 16;     // 最多16条link
 constexpr uint16_t  INVALID_CKE_ID          = 0xFFFF; // CKE ID非法值
 constexpr uint16_t  INVALID_VALUE_CHANNELID = 0xFFFF; // channel id非法值
 constexpr u64       INVALID_VALUE_NOTIFYID  = 0xFFFFFFFFFFFFFFFF; // NOTIFY id非法值
+constexpr s32 INVALID_RANKID = INT32_MAX;
 
 struct CcuProfilingInfo {
     std::string name;          // CCU任务名或微码名
@@ -74,8 +75,8 @@ public:
 
     // ccu profiling相关接口
     void AddProfiling(const ChannelHandle *channels, uint32_t channelNum);
-    void AddProfiling(const ChannelHandle *channels, uint32_t channelNum, DataType dataType, DataType outputDataType,
-                      ReduceOp opType);
+    void AddProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType, HcclDataType outputDataType,
+                      HcclReduceOp opType);
 
 protected:
     std::set<std::string> registeredLoop;
@@ -101,7 +102,7 @@ private:
     const std::vector<std::shared_ptr<CcuRepBase>> &GetWaiteCkeProfilingReps() const;
     void CollectProfilingReps(std::shared_ptr<CcuRep::CcuRepBase> rep);
 
-    void AddSqeProfiling(const CcuCtxArg &arg);
+    void AddSqeProfiling(const CcuKernelArg &arg);
     void AddProfiling(const std::string &name, uint32_t mask);
     void AddProfiling(const ChannelHandle channel, const std::string &name, uint32_t signalIndex, uint32_t mask);
     // void AddProfiling(const CcuTransportGroup &transportGroup, const std::string &name, uint32_t signalIndex, uint32_t mask);
