@@ -9,6 +9,7 @@
 
 #include <set>
 #include <string>
+#include <unordered_map>
 
 #include "hcomm_primitives.h"
 #include "ccu_rep_base_v1.h"
@@ -22,8 +23,10 @@ namespace CcuRep {
 constexpr uint16_t  CCU_MAX_CHANNEL_NUM     = 16;     // 最多16条link
 constexpr uint16_t  INVALID_CKE_ID          = 0xFFFF; // CKE ID非法值
 constexpr uint16_t  INVALID_VALUE_CHANNELID = 0xFFFF; // channel id非法值
-constexpr u64       INVALID_VALUE_NOTIFYID  = 0xFFFFFFFFFFFFFFFF; // NOTIFY id非法值
-constexpr s32 INVALID_RANKID = INT32_MAX;
+constexpr uint64_t       INVALID_VALUE_NOTIFYID  = 0xFFFFFFFFFFFFFFFF; // NOTIFY id非法值
+constexpr int32_t INVALID_RANKID = INT32_MAX;
+
+enum class CcuProfilinType { CCU_TASK_PROFILING, CCU_WAITCKE_PROFILING, CCU_LOOPGROUP_PROFILING, CCU_MAP_PROFILING };
 
 struct CcuProfilingInfo {
     std::string name;          // CCU任务名或微码名
