@@ -11,6 +11,7 @@
 #include "ccu_api_exception.h"
 #include "ccu_rep_assign_v1.h"
 #include "const_val.h"
+#include "task_param.h"
 namespace hcomm {
 namespace CcuRep {
 
@@ -38,8 +39,25 @@ void CcuRepContext::SetCurrentBlock(std::shared_ptr<CcuRep::CcuRepBlock> repBloc
     activeBlock = repBlock;
 }
 
+void CcuRepContext::CollectProfilingReps(std::shared_ptr<CcuRep::CcuRepBase> rep)
+{
+    if (rep->Type() == CcuRepType::ASSIGN) {
+        auto assignRep = dynamic_cast<CcuRepAssign *>(rep.get());
+        if (assignRep->subType == AssignSubType::VAR_TO_VAR) {
+            lgProfilingInfo.assignProfilingReps.push_back(rep);
+        }
+    } else if (CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK
+               && (rep->Type() == CcuRepType::LOC_WAIT_SEM || rep->Type() == CcuRepType::REM_WAIT_SEM
+                   || rep->Type() == CcuRepType::REM_WAIT_GROUP)) {
+        waitCkeProfilingReps.push_back(rep);
+    } else if (rep->Type() == CcuRepType::LOOPGROUP) {
+        allLgProfilingReps.push_back(rep);
+    }
+}
+
 void CcuRepContext::Append(std::shared_ptr<CcuRep::CcuRepBase> rep)
 {
+    CollectProfilingReps(rep);
     CurrentBlock()->Append(rep);
 }
 
@@ -99,6 +117,112 @@ void CcuRepContext::SetMissionKey(uint32_t missionKey)
 uint32_t CcuRepContext::GetMissionKey() const
 {
     return missionKey;
+}
+
+std::vector<CcuProfilingInfo> &CcuRepContext::GetProfilingInfo()
+{
+    return profilingInfo;
+}
+
+const std::vector<std::shared_ptr<CcuRepBase>> &CcuRepContext::GetWaiteCkeProfilingReps() const
+{
+    return waitCkeProfilingReps;
+}
+
+LoopGroupProfilingInfo &CcuRepContext::GetLGProfilingInfo()
+{
+    return lgProfilingInfo;
+}
+
+void CcuRepContext::AddSqeProfiling(const CcuKernelArg &arg)
+{
+    profilingInfo.clear();
+    // 生成SQE粒度profiling信息
+    ccuProfilingInfoCache.type      = CcuProfilinType::CCU_TASK_PROFILING;
+    ccuProfilingInfoCache.name      = arg.GetKernelSignature().Describe();
+    ccuProfilingInfoCache.dieId     = GetDieId();
+
+    profilingInfo.push_back(ccuProfilingInfoCache);
+}
+
+void CcuRepContext::AddProfiling(const std::string &name, uint32_t mask)
+{
+    ccuProfilingInfoCache.type  = CcuProfilinType::CCU_WAITCKE_PROFILING;
+    ccuProfilingInfoCache.name  = name;
+    ccuProfilingInfoCache.ckeId = INVALID_CKE_ID;
+    ccuProfilingInfoCache.mask  = mask;
+    (void)memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId), INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId));
+
+    profilingInfo.push_back(ccuProfilingInfoCache);
+}
+
+void CcuRepContext::AddProfiling(onst ChannelHandle channel, const std::string &name, uint32_t signalIndex, uint32_t mask)
+{
+    auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channel));
+
+    ccuProfilingInfoCache.type     = CcuProfilinType::CCU_WAITCKE_PROFILING;
+    ccuProfilingInfoCache.name     = name;
+    ccuProfilingInfoCache.ckeId    = channelImpl->GetLocCkeByIndex(signalIndex);
+    ccuProfilingInfoCache.mask     = mask;
+    (void)memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId), INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId));
+    ccuProfilingInfoCache.channelId[0] = transport.GetChannelId();
+
+    profilingInfo.push_back(ccuProfilingInfoCache);
+}
+
+// void CcuRepContext::AddProfiling(const CcuTransportGroup &transportGroup, const std::string &name, uint32_t signalIndex, uint32_t mask)
+// {
+//     ccuProfilingInfoCache.type     = CcuProfilinType::CCU_WAITCKE_PROFILING;
+//     ccuProfilingInfoCache.name     = name;
+//     ccuProfilingInfoCache.ckeId    = transportGroup.GetCntCkeId(signalIndex);
+//     ccuProfilingInfoCache.mask     = mask;
+
+//     (void)memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId), INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId));
+//     auto &transports = transportGroup.GetTransports();
+//     for (u32 i = 0; i < transports.size(); i++) {
+//         ccuProfilingInfoCache.channelId[i] = transports[i]->GetChannelId();
+//     }
+
+//     profilingInfo.push_back(ccuProfilingInfoCache);
+// }
+
+void CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t channelNum)
+{
+    ccuProfilingInfoCache.type           = CcuProfilinType::CCU_LOOPGROUP_PROFILING;
+    ccuProfilingInfoCache.name           = "GroupBroadcast";
+    ccuProfilingInfoCache.reduceOpType   = 0xFF; // 0xFF 无效值
+    ccuProfilingInfoCache.inputDataType  = 0xFF; // 0xFF 无效值
+    ccuProfilingInfoCache.outputDataType = 0xFF; // 0xFF 无效值
+    ccuProfilingInfoCache.missionId      = GetMissionId();
+ 
+    (void)memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId), INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId));
+    for (u32 i = 0; i < channelNum; i++) {
+        auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channels[i]));
+        ccuProfilingInfoCache.channelId[i] = channelImpl->GetChannelId();
+    }
+ 
+    lgProfilingInfo.ccuProfilingInfos.push_back(ccuProfilingInfoCache);
+    lgProfilingInfo.lgProfilingReps.push_back(allLgProfilingReps.back());
+}
+
+void CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t channelNum, DataType dataType,
+                                 DataType outputDataType, ReduceOp opType)
+{
+    ccuProfilingInfoCache.type           = CcuProfilinType::CCU_LOOPGROUP_PROFILING;
+    ccuProfilingInfoCache.name           = "GroupReduce";
+    ccuProfilingInfoCache.reduceOpType   = opType;
+    ccuProfilingInfoCache.inputDataType  = dataType;
+    ccuProfilingInfoCache.outputDataType = outputDataType;
+    ccuProfilingInfoCache.missionId      = GetMissionId();
+    
+    (void)memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId), INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId));
+    for (u32 i = 0; i < channelNum; i++) {
+        auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channels[i]));
+        ccuProfilingInfoCache.channelId[i] = channelImpl->GetChannelId();
+    }
+ 
+    lgProfilingInfo.ccuProfilingInfos.push_back(ccuProfilingInfoCache);
+    lgProfilingInfo.lgProfilingReps.push_back(allLgProfilingReps.back());
 }
 
 }; // namespace CcuRep
