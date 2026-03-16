@@ -61,7 +61,6 @@ int32_t ProcessTaskAbortHandleCallback(int32_t deviceLogicId, aclrtDeviceTaskAbo
             }
             CHK_RET(hcomm::CcuSetTaskKillDone(deviceLogicId));
         }
-        VbEsDGPGWymNGjzffn2hbxKc
     } else {
         if (stage == ACL_RT_DEVICE_TASK_ABORT_PRE) {
             for (size_t i = 0; i < commVector.size(); i++) {
