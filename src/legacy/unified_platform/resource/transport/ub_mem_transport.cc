@@ -56,12 +56,12 @@ HcclResult UbMemTransport::FillTagVec()
         return HCCL_E_PARA;
     }
     localUserMemTag_.reserve(bufferNum);
-    HCCL_INFO("bufferNum: %u", bufferNum);
+    HCCL_INFO("[UbMemTransport][FillTagVec] bufferNum[%u]", bufferNum);
     uint32_t index = 0;
     for (auto &localRmaBuffer : commonLocRes.bufferVec) {
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
         if (localRmaBuffer == nullptr) {
-            HCCL_WARNING("[UbMemTransport][FillTagVec] localRmaBuffer is nullptr. memHandleNum: %d", index);
+            HCCL_WARNING("[UbMemTransport][FillTagVec] localRmaBuffer is nullptr. memHandleNum[%d]", index);
         } else {
             std::string tag = localRmaBuffer->GetBuf()->GetMemTag();
             CHK_PTR_NULL(localRmaBuffer->GetBuf());
