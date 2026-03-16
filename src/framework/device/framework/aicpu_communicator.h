@@ -418,6 +418,30 @@ private:
     HcclResult PrepareSymmetricMemRanges(const AlgResourceResponse &algResource, uint64_t inputSize, uint64_t outputSize,
                                         std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges);
 
+    // 获取指定索引的算子信息
+    const AicpuOpInfo* GetOpInfoFromSqIdx(u32 sqIdx, SqeRingBuffer *sqeContextBuffer);
+    
+    // 判断是否需要打印当前行
+    bool ShouldPrintCurrentLine(const std::vector<std::string>& currentOpTasks, u32 maxTasksPerLine, u32 currentOpIndex, u32 newOpIndex, const std::string& currentOpTag, const std::string& newOpTag) const;
+    
+    // 打印算子数据信息
+    void PrintOpDataInfo(u32 sqIdx, SqeRingBuffer *sqeContextBuffer, bool isMonitor);
+    
+    // 打印task序列行
+    void PrintTaskLine(bool isMonitor, u32 lineNum, u32 totalPrinted, const std::string& taskLine) const;
+    
+    // 更新算子上下文
+    void UpdateOpContext(u32& opIndex, std::string& opTag, u32& lineCount, std::vector<std::string>& currentOpTasks, u32 newOpIndex, const std::string& newOpTag) const;
+    
+    // 准备下一行数据
+    void PrepareNextLine(u32 opIndex, u32& lineCount, std::vector<std::string>& currentOpTasks) const;
+    
+    // 拼接task列表为字符串
+    std::string ConcatTaskLine(const std::vector<std::string>& tasks) const;
+    
+    // 打印剩余未满行的tasks
+    void PrintRemainingTasks(bool isMonitor, u32 lineCount, u32 printedCount, const std::vector<std::string>& currentOpTasks) const;
+
     std::unordered_map<s32, u32> opExecIndexMap_;
 
     // 管理aicpu和custom进程共享的数据
