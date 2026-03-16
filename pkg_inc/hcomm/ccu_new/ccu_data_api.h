@@ -45,7 +45,7 @@ extern CcuResult CcuVariableCreate(CcuVariable* variable);
  * @note x
  * @warning
  */
-extern CcuResult CcuNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask);
+// extern CcuResult CcuNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask);
 
 /**
  * @brief 远端同步操作
@@ -55,7 +55,7 @@ extern CcuResult CcuNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx
  * @note x
  * @warning
  */
-extern CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
+// extern CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
 
 #ifdef __cplusplus
 }
