@@ -8,15 +8,12 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef DPU_THREAD_KERNEL_H
-#define DPU_THREAD_KERNEL_H
-
-#include <cstdint>
-#include <unordered_map>
-#include <string>
-#include <memory>
+#include "dpu_kernel_entrance.h"
+#include "log.h"
+#include "acl/acl_rt.h"
 #include "cpu_thread.h"
 
+using namespace hccl;
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunchNew(const uint64_t args)
 {
@@ -49,5 +46,3 @@ __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunchNew(const uint
     return HCCL_SUCCESS;
 }
 }
-
-#endif // DPU_THREAD_KERNEL_H
