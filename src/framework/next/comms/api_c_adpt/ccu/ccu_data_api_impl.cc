@@ -10,16 +10,17 @@
 
 #include "ccu_data_api_impl.h"
 
+#include "ccu_log.h"
 #include "hcom_common.h"
 
-#include "ccu_kernel_mgr_.h"
+#include "ccu_kernel_mgr.h"
 
 CcuResult CcuVariableCreateImpl(CcuVariableHandle *resVar)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = CcuKernelMgr_::GetInstance(devLogicId).GetCurrentKernel();
-    CHK_PTR_NULL(kernel);
-    CHK_CCU_RET(kernel->VariableCreate(resVar));
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->VariableCreate(resVar));
 
     return CcuResult::CCU_SUCCESS;
 }
@@ -27,9 +28,9 @@ CcuResult CcuVariableCreateImpl(CcuVariableHandle *resVar)
 CcuResult CcuVariableAssignImpl(CcuVariableHandle resVar, uint64_t immediate)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = CcuKernelMgr_::GetInstance(devLogicId).GetCurrentKernel();
-    CHK_PTR_NULL(kernel);
-    CHK_CCU_RET(kernel->VariableAssign(resVar, immediate));
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->VariableAssign(resVar, immediate));
     
     return CcuResult::CCU_SUCCESS;
 }
@@ -37,9 +38,9 @@ CcuResult CcuVariableAssignImpl(CcuVariableHandle resVar, uint64_t immediate)
 CcuResult CcuVariableAddVarToVarImpl(CcuVariableHandle resVar, CcuVariableHandle varA, CcuVariableHandle varB)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = CcuKernelMgr_::GetInstance(devLogicId).GetCurrentKernel();
-    CHK_PTR_NULL(kernel);
-    CHK_CCU_RET(kernel->VariableAddVarToVar(resVar, varA, varB));
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->VariableAddVarToVar(resVar, varA, varB));
     
     return CcuResult::CCU_SUCCESS;
 }
