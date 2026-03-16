@@ -35,6 +35,8 @@ HcclResult HcomGetWorkspaceMemSizeV2(
     const std::string &opType, u64 count, HcclDataType dataType, const char *group, u64 &memSize);
 HcclResult HcomSetWorkspaceResourceV2(
     const std::string &tag, const char *group, std::vector<rtStream_t> stream, void *memPtr, u64 maxSize);
+HcclResult HcomSetAttachedStreamV2();
+HcclResult HcomReleaseSubCommsV2();
 HcclResult HcomReduceScatterV2(const char *tag, void *inputPtr, void *outputPtr, u64 count, HcclDataType dataType,
     HcclReduceOp op, const char *group, rtStream_t &stream);
 HcclResult HcomReduceScatterVV2(const char *tag, void *sendBuf, void *sendCounts, void *sdispls, void *recvBuf,

@@ -1951,8 +1951,7 @@ HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream
     }
 
     std::shared_ptr<hccl::hcclComm> hcclComm;
-    DevType devType = HcomGetDeviceType();
-    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS && devType != DevType::DEV_TYPE_910_95) {
+    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
         /* 设定 workspace 内存资源 */
         CHK_RET(hcclComm->SetWorkspaceResource(tag, memPtr, maxSize, rtStream));
     }
@@ -1967,8 +1966,10 @@ HcclResult HcomSetAttachedStream(const char *group, u32 graphId, const rtStream_
     }
     std::shared_ptr<hccl::hcclComm> hcclComm = nullptr;
     std::vector<rtStream_t> rtStream(stream, stream + len);
-    DevType devType = HcomGetDeviceType();
-    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS && devType != DevType::DEV_TYPE_910_95) {
+
+    HCCLV2_FUNC_RUN(HcomSetAttachedStreamV2());
+
+    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
         CHK_RET(hcclComm->SetAttachedStream(graphId, rtStream));
     } else {
         // HcclCommBase 场景暂是不支持设置附属从流
@@ -2104,15 +2105,15 @@ HcclResult HcomGetBandWidthPerNPU(u32 level, float *bandWidth)
 
 HcclResult HcomReleaseSubComms()
 {
+    HCCLV2_FUNC_RUN(HcomReleaseSubCommsV2());
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
-    DevType devType = HcomGetDeviceType();
-    if (devType != DevType::DEV_TYPE_910_95 && hcomInfo.pComm) {
+    if (hcomInfo.pComm) {
         CHK_RET(hcomInfo.pComm->ReleaseSubComms());
     }
 
     auto iter = hcomInfo.hcomGroupMap.begin();
     while (iter != hcomInfo.hcomGroupMap.end()) {
-        if (devType != DevType::DEV_TYPE_910_95 && iter->second.pSubComm) {
+        if (iter->second.pSubComm) {
             CHK_RET(iter->second.pSubComm->ReleaseSubComms());
         }
         iter++;
@@ -2387,8 +2388,7 @@ HcclResult HcomUnloadTask(const char *group, const char *tag)
 {
     HCCLV2_FUNC_RUN(HcomUnloadTaskV2(group, tag));
     std::shared_ptr<hcclComm> hcclComm;
-    DevType devType = HcomGetDeviceType();
-    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS && devType != DevType::DEV_TYPE_910_95) {
+    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
         CHK_PRT_RET(hcclComm == nullptr, HCCL_WARNING("[UnloadAllTask]hcclComm is null, "\
         "please check if the initialize process is called."), HCCL_SUCCESS);
         HCCL_INFO("[UnloadTask]HcomUnloadTask: tag[%s]", tag);
@@ -2748,8 +2748,7 @@ HcclResult HcomClearAivSyncBuf(const char *group, bool aivClearEnable)
     HCCLV2_FUNC_RUN(HcomSetAivClearEnableV2(group, aivClearEnable));
     CHK_PTR_NULL(group);
     std::shared_ptr<hcclComm> hcclComm;
-    DevType devType = HcomGetDeviceType();
-    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS && devType != DevType::DEV_TYPE_910_95) {
+    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
         CHK_RET(hcclComm->SetClearAivSyncBuf(aivClearEnable));
     }
 
