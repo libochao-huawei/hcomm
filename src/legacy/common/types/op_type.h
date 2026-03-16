@@ -61,7 +61,7 @@ const std::map<HcclCMDType, Hccl::OpType> OP_TYPE_MAP = {
     {HcclCMDType::HCCL_CMD_BROADCAST, Hccl::OpType::BROADCAST},
     {HcclCMDType::HCCL_CMD_ALLGATHER_V, Hccl::OpType::ALLGATHERV},
     {HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V, Hccl::OpType::REDUCESCATTERV},
-    {HcclCMDType::HCCL_CMD_REDUCE, Hccl::OpType::REDUCE},  
+    {HcclCMDType::HCCL_CMD_REDUCE, Hccl::OpType::REDUCE},
     {HcclCMDType::HCCL_CMD_ALLTOALLVC, Hccl::OpType::ALLTOALLVC},
     {HcclCMDType::HCCL_CMD_SCATTER, Hccl::OpType::SCATTER},
 };
