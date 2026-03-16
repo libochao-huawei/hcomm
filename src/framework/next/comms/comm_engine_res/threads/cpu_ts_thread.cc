@@ -197,19 +197,6 @@ void CpuTsThread::LaunchTask() const
     return;
 }
 
-// Local Data Plane Functions
-HcclResult CpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
-{
-    HCCL_ERROR("[CpuTsThread][%s]not support", __func__);
-    return HCCL_E_NOT_SUPPORT;
-}
-
-HcclResult CpuTsThread::LocalNotifyWait(uint32_t notifyId) const
-{
-    HCCL_ERROR("[CpuTsThread][%s]not support", __func__);
-    return HCCL_E_NOT_SUPPORT;
-}
-
 HcclResult CpuTsThread::LocalNotifyRecord(ThreadHandle dstThread, uint32_t dstNotifyIdx) const
 {
 #ifndef CCL_KERNEL_AICPU
