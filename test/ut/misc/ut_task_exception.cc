@@ -25,6 +25,8 @@
 #include "externalinput.h"
 #include "aicpu_operator_pub.h"
 #include "alg_profiling.h"
+#include "task_exception.h"
+#include "aicpu_communicator.h"
 
 using namespace std;
 using namespace hccl;
@@ -799,3 +801,696 @@ TEST_F(TaskExceptionTest, St_DealExceptionTask_When_Comm_Has_Multi_Aiv_Expect_Pr
     GlobalMockObject::verify();
 }
 #endif
+
+// ==================== TaskException::PrintTaskExceptionTaskQue 测试用例 ====================
+
+/**
+ * @tc.name: ut_TaskException_PrintTaskExceptionTaskQue_SingleOp_LessThan50
+ * @tc.desc: 测试单个算子且task数小于50的场景
+ * @tc.type: FUNC
+ */
+TEST_F(TaskExceptionTest, ut_TaskException_PrintTaskExceptionTaskQue_SingleOp_LessThan50)
+{
+    TaskException taskException;
+    HcclResult ret = taskException.Init(0, 0, "test_group");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // Mock日志函数
+    MOCKER(HCCL_ERROR)
+        .stubs()
+        .will(defaultValue());
+    MOCKER(HCCL_RUN_INFO)
+        .stubs()
+        .will(defaultValue());
+
+    // 构造测试数据：注册30个task（单个算子）
+    IndOpInfo opInfo;
+    opInfo.opIndex = 1;
+    opInfo.callback = nullptr;
+    for (u32 i = 0; i < 30; i++) {
+        ret = taskException.RegisterOpInfo(reinterpret_cast<void*>(&opInfo), sizeof(opInfo));
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+    }
+
+    // 构造SqeRingBuffer（使用栈上内存）
+    SqeRingBuffer sqeContextBuffer;
+    memset(&sqeContextBuffer, 0, sizeof(sqeContextBuffer));
+    
+    // 初始化rtsDfxInfo
+    for (u32 i = 0; i < 30; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 0; // 都指向同一个opInfo
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+    }
+
+    // 初始化rtsMirrorBuffer
+    for (u32 i = 0; i < 30; i++) {
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+    }
+
+    // 调用PrintTaskExceptionTaskQue
+    taskException.PrintTaskExceptionTaskQue(0, &sqeContextBuffer);
+
+    GlobalMockObject::verify();
+}
+
+/**
+ * @tc.name: ut_TaskException_PrintTaskExceptionTaskQue_SingleOp_Equal50
+ * @tc.desc: 测试单个算子且task数等于50的场景
+ * @tc.type: FUNC
+ */
+TEST_F(TaskExceptionTest, ut_TaskException_PrintTaskExceptionTaskQue_SingleOp_Equal50)
+{
+    TaskException taskException;
+    HcclResult ret = taskException.Init(0, 0, "test_group");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // Mock日志函数
+    MOCKER(HCCL_ERROR)
+        .stubs()
+        .will(defaultValue());
+    MOCKER(HCCL_RUN_INFO)
+        .stubs()
+        .will(defaultValue());
+
+    // 构造测试数据：注册50个task
+    IndOpInfo opInfo;
+    opInfo.opIndex = 1;
+    opInfo.callback = nullptr;
+    for (u32 i = 0; i < 50; i++) {
+        ret = taskException.RegisterOpInfo(reinterpret_cast<void*>(&opInfo), sizeof(opInfo));
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+    }
+
+    // 构造SqeRingBuffer
+    SqeRingBuffer sqeContextBuffer;
+    memset(&sqeContextBuffer, 0, sizeof(sqeContextBuffer));
+    
+    for (u32 i = 0; i < 50; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 0;
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+    }
+
+    // 调用PrintTaskExceptionTaskQue
+    taskException.PrintTaskExceptionTaskQue(0, &sqeContextBuffer);
+
+    GlobalMockObject::verify();
+}
+
+/**
+ * @tc.name: ut_TaskException_PrintTaskExceptionTaskQue_SingleOp_MoreThan50
+ * @tc.desc: 测试单个算子且task数大于50的场景（需要切分多行）
+ * @tc.type: FUNC
+ */
+TEST_F(TaskExceptionTest, ut_TaskException_PrintTaskExceptionTaskQue_SingleOp_MoreThan50)
+{
+    TaskException taskException;
+    HcclResult ret = taskException.Init(0, 0, "test_group");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // Mock日志函数
+    MOCKER(HCCL_ERROR)
+        .stubs()
+        .will(defaultValue());
+    MOCKER(HCCL_RUN_INFO)
+        .stubs()
+        .will(defaultValue());
+
+    // 构造测试数据：注册120个task（超过50，需要切分）
+    IndOpInfo opInfo;
+    opInfo.opIndex = 1;
+    opInfo.callback = nullptr;
+    for (u32 i = 0; i < 120; i++) {
+        ret = taskException.RegisterOpInfo(reinterpret_cast<void*>(&opInfo), sizeof(opInfo));
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+    }
+
+    // 构造SqeRingBuffer
+    SqeRingBuffer sqeContextBuffer;
+    memset(&sqeContextBuffer, 0, sizeof(sqeContextBuffer));
+    
+    for (u32 i = 0; i < 120; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 0;
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+    }
+
+    // 调用PrintTaskExceptionTaskQue
+    taskException.PrintTaskExceptionTaskQue(0, &sqeContextBuffer);
+
+    GlobalMockObject::verify();
+}
+
+/**
+ * @tc.name: ut_TaskException_PrintTaskExceptionTaskQue_MultipleOps
+ * @tc.desc: 测试多个算子的场景（不同opIndex）
+ * @tc.type: FUNC
+ */
+TEST_F(TaskExceptionTest, ut_TaskException_PrintTaskExceptionTaskQue_MultipleOps)
+{
+    TaskException taskException;
+    HcclResult ret = taskException.Init(0, 0, "test_group");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // Mock日志函数
+    MOCKER(HCCL_ERROR)
+        .stubs()
+        .will(defaultValue());
+    MOCKER(HCCL_RUN_INFO)
+        .stubs()
+        .will(defaultValue());
+
+    // 构造测试数据：3个不同算子
+    u32 taskCount = 0;
+    
+    // 第一个算子：30个task
+    IndOpInfo opInfo1;
+    opInfo1.opIndex = 1;
+    opInfo1.callback = nullptr;
+    for (u32 i = 0; i < 30; i++) {
+        ret = taskException.RegisterOpInfo(reinterpret_cast<void*>(&opInfo1), sizeof(opInfo1));
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+    }
+    
+    // 第二个算子：40个task
+    IndOpInfo opInfo2;
+    opInfo2.opIndex = 2;
+    opInfo2.callback = nullptr;
+    for (u32 i = 0; i < 40; i++) {
+        ret = taskException.RegisterOpInfo(reinterpret_cast<void*>(&opInfo2), sizeof(opInfo2));
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+    }
+    
+    // 第三个算子：50个task
+    IndOpInfo opInfo3;
+    opInfo3.opIndex = 3;
+    opInfo3.callback = nullptr;
+    for (u32 i = 0; i < 50; i++) {
+        ret = taskException.RegisterOpInfo(reinterpret_cast<void*>(&opInfo3), sizeof(opInfo3));
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+    }
+
+    // 构造SqeRingBuffer
+    SqeRingBuffer sqeContextBuffer;
+    memset(&sqeContextBuffer, 0, sizeof(sqeContextBuffer));
+    
+    // 第一个算子（opIndex=1）
+    for (u32 i = 0; i < 30; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 0;
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+    }
+    
+    // 第二个算子（opIndex=2）
+    for (u32 i = 30; i < 70; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 1;
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_SDMA;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+    }
+    
+    // 第三个算子（opIndex=3）
+    for (u32 i = 70; i < 120; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 2;
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_NOTIFY_RECORD;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+    }
+
+    // 调用PrintTaskExceptionTaskQue
+    taskException.PrintTaskExceptionTaskQue(119, &sqeContextBuffer);
+
+    GlobalMockObject::verify();
+}
+
+/**
+ * @tc.name: ut_TaskException_PrintTaskExceptionTaskQue_Boundary_200
+ * @tc.desc: 测试边界情况：正好200个task
+ * @tc.type: FUNC
+ */
+TEST_F(TaskExceptionTest, ut_TaskException_PrintTaskExceptionTaskQue_Boundary_200)
+{
+    TaskException taskException;
+    HcclResult ret = taskException.Init(0, 0, "test_group");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // Mock日志函数
+    MOCKER(HCCL_ERROR)
+        .stubs()
+        .will(defaultValue());
+    MOCKER(HCCL_RUN_INFO)
+        .stubs()
+        .will(defaultValue());
+
+    // 构造测试数据：注册200个task（边界值）
+    IndOpInfo opInfo;
+    opInfo.opIndex = 1;
+    opInfo.callback = nullptr;
+    for (u32 i = 0; i < 200; i++) {
+        ret = taskException.RegisterOpInfo(reinterpret_cast<void*>(&opInfo), sizeof(opInfo));
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+    }
+
+    // 构造SqeRingBuffer
+    SqeRingBuffer sqeContextBuffer;
+    memset(&sqeContextBuffer, 0, sizeof(sqeContextBuffer));
+    
+    for (u32 i = 0; i < 200; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 0;
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+    }
+
+    // 调用PrintTaskExceptionTaskQue
+    taskException.PrintTaskExceptionTaskQue(199, &sqeContextBuffer);
+
+    GlobalMockObject::verify();
+}
+
+// ==================== HcclCommAicpu::PrintTaskExceptionTaskQue 测试用例 ====================
+
+/**
+ * @tc.name: ut_HcclCommAicpu_PrintTaskExceptionTaskQue_Monitor_SingleOp_LessThan50
+ * @tc.desc: 测试HcclCommAicpu::PrintTaskExceptionTaskQue - 监控模式，单算子，task数<50
+ * @tc.type: FUNC
+ */
+TEST_F(TaskExceptionTest, ut_HcclCommAicpu_PrintTaskExceptionTaskQue_Monitor_SingleOp_LessThan50)
+{
+    HcclCommAicpu hcclCommAicpu;
+    
+    // Mock日志函数
+    MOCKER(HCCL_ERROR)
+        .stubs()
+        .will(defaultValue());
+    MOCKER(HCCL_RUN_INFO)
+        .stubs()
+        .will(defaultValue());
+
+    // Mock GetTaskExceptionOpInfo
+    std::string mockOpInfo = "tag:test_op, group:test_group, isCustom:0, opLaunchIdx:1, opExecIdx:1, count:100, dataType:0, opType:0, rootId:0, dstAddr:0x1000, srcAddr:0x2000.";
+    MOCKER(hccl::HcclCommAicpu::GetTaskExceptionOpInfo)
+        .stubs()
+        .will(returnValue(mockOpInfo));
+
+    // 构造SqeRingBuffer：30个task
+    SqeRingBuffer sqeContextBuffer;
+    memset(&sqeContextBuffer, 0, sizeof(sqeContextBuffer));
+    
+    for (u32 i = 0; i < 30; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 0;
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+
+        sqeContextBuffer.rtsqSqeType[i] = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        sqeContextBuffer.addInfo[i] = 0;
+    }
+
+    // 调用PrintTaskExceptionTaskQue（isMonitor = true）
+    hcclCommAicpu.PrintTaskExceptionTaskQue(0, &sqeContextBuffer, true);
+
+    GlobalMockObject::verify();
+}
+
+/**
+ * @tc.name: ut_HcclCommAicpu_PrintTaskExceptionTaskQue_Exception_SingleOp_MoreThan50
+ * @tc.desc: 测试HcclCommAicpu::PrintTaskExceptionTaskQue - 异常模式，单算子，task数>50（需要切分）
+ * @tc.type: FUNC
+ */
+TEST_F(TaskExceptionTest, ut_HcclCommAicpu_PrintTaskExceptionTaskQue_Exception_SingleOp_MoreThan50)
+{
+    HcclCommAicpu hcclCommAicpu;
+    
+    // Mock日志函数
+    MOCKER(HCCL_ERROR)
+        .stubs()
+        .will(defaultValue());
+    MOCKER(HCCL_RUN_INFO)
+        .stubs()
+        .will(defaultValue());
+
+    // Mock GetTaskExceptionOpInfo
+    std::string mockOpInfo = "tag:test_op, group:test_group, isCustom:0, opLaunchIdx:1, opExecIdx:1, count:100, dataType:0, opType:0, rootId:0, dstAddr:0x1000, srcAddr:0x2000.";
+    MOCKER(hccl::HcclCommAicpu::GetTaskExceptionOpInfo)
+        .stubs()
+        .will(returnValue(mockOpInfo));
+
+    // 构造SqeRingBuffer：120个task
+    SqeRingBuffer sqeContextBuffer;
+    memset(&sqeContextBuffer, 0, sizeof(sqeContextBuffer));
+    
+    for (u32 i = 0; i < 120; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 0;
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+
+        sqeContextBuffer.rtsqSqeType[i] = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        sqeContextBuffer.addInfo[i] = 0;
+    }
+
+    // 调用PrintTaskExceptionTaskQue（isMonitor = false）
+    hcclCommAicpu.PrintTaskExceptionTaskQue(0, &sqeContextBuffer, false);
+
+    GlobalMockObject::verify();
+}
+
+/**
+ * @tc.name: ut_HcclCommAicpu_PrintTaskExceptionTaskQue_Monitor_MultipleOps_DifferentTags
+ * @tc.desc: 测试HcclCommAicpu::PrintTaskExceptionTaskQue - 监控模式，多算子，不同tag
+ * @tc.type: FUNC
+ */
+TEST_F(TaskExceptionTest, ut_HcclCommAicpu_PrintTaskExceptionTaskQue_Monitor_MultipleOps_DifferentTags)
+{
+    HcclCommAicpu hcclCommAicpu;
+    
+    // Mock日志函数
+    MOCKER(HCCL_ERROR)
+        .stubs()
+        .will(defaultValue());
+    MOCKER(HCCL_RUN_INFO)
+        .stubs()
+        .will(defaultValue());
+
+    // Mock GetTaskExceptionOpInfo - 返回不同tag的opInfo
+    int callCount = 0;
+    MOCKER(hccl::HcclCommAicpu::GetTaskExceptionOpInfo)
+        .stubs()
+        .with(any(), any())
+        .will(repeat()
+            .onCall(0)
+            .return(std::string("tag:allreduce, group:test_group, isCustom:0, opLaunchIdx:1, opExecIdx:1, count:100, dataType:0, opType:0, rootId:0, dstAddr:0x1000, srcAddr:0x2000."))
+            .onCall(30)
+            .return(std::string("tag:allgather, group:test_group, isCustom:0, opLaunchIdx:2, opExecIdx:2, count:100, dataType:0, opType:0, rootId:0, dstAddr:0x1000, srcAddr:0x2000."))
+            .onCall(70)
+            .return(std::string("tag:broadcast, group:test_group, isCustom:0, opLaunchIdx:3, opExecIdx:3, count:100, dataType:0, opType:0, rootId:0, dstAddr:0x1000, srcAddr:0x2000.")));
+
+    // 构造SqeRingBuffer：3个不同算子
+    SqeRingBuffer sqeContextBuffer;
+    memset(&sqeContextBuffer, 0, sizeof(sqeContextBuffer));
+    
+    // 第一个算子：30个task
+    for (u32 i = 0; i < 30; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 0;
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+
+        sqeContextBuffer.rtsqSqeType[i] = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        sqeContextBuffer.addInfo[i] = 0;
+    }
+    
+    // 第二个算子：40个task
+    for (u32 i = 30; i < 70; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 1;
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_SDMA;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+
+        sqeContextBuffer.rtsqSqeType[i] = RT_STARS_SQE_TYPE_SDMA;
+        sqeContextBuffer.addInfo[i] = 0;
+    }
+    
+    // 第三个算子：35个task
+    for (u32 i = 70; i < 105; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 2;
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_NOTIFY_RECORD;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+
+        sqeContextBuffer.rtsqSqeType[i] = RT_STARS_SQE_TYPE_NOTIFY_RECORD;
+        sqeContextBuffer.addInfo[i] = 0;
+    }
+
+    // 调用PrintTaskExceptionTaskQue（isMonitor = true）
+    hcclCommAicpu.PrintTaskExceptionTaskQue(104, &sqeContextBuffer, true);
+
+    GlobalMockObject::verify();
+}
+
+/**
+ * @tc.name: ut_HcclCommAicpu_PrintTaskExceptionTaskQue_Exception_MultipleOps_WithSplit
+ * @tc.desc: 测试HcclCommAicpu::PrintTaskExceptionTaskQue - 异常模式，多算子，单算子需要切分
+ * @tc.type: FUNC
+ */
+TEST_F(TaskExceptionTest, ut_HcclCommAicpu_PrintTaskExceptionTaskQue_Exception_MultipleOps_WithSplit)
+{
+    HcclCommAicpu hcclCommAicpu;
+    
+    // Mock日志函数
+    MOCKER(HCCL_ERROR)
+        .stubs()
+        .will(defaultValue());
+    MOCKER(HCCL_RUN_INFO)
+        .stubs()
+        .will(defaultValue());
+
+    // Mock GetTaskExceptionOpInfo
+    MOCKER(hccl::HcclCommAicpu::GetTaskExceptionOpInfo)
+        .stubs()
+        .with(any(), any())
+        .will(repeat()
+            .onCall(0)
+            .return(std::string("tag:allreduce_v2, group:test_group, isCustom:0, opLaunchIdx:1, opExecIdx:1, count:100, dataType:0, opType:0, rootId:0, dstAddr:0x1000, srcAddr:0x2000."))
+            .onCall(80)
+            .return(std::string("tag:allreduce_v3, group:test_group, isCustom:0, opLaunchIdx:2, opExecIdx:2, count:100, dataType:0, opType:0, rootId:0, dstAddr:0x1000, srcAddr:0x2000.")));
+
+    // 构造SqeRingBuffer：2个算子，每个算子需要切分
+    SqeRingBuffer sqeContextBuffer;
+    memset(&sqeContextBuffer, 0, sizeof(sqeContextBuffer));
+    
+    // 第一个算子：80个task（需要切分2行）
+    for (u32 i = 0; i < 80; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 0;
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+
+        sqeContextBuffer.rtsqSqeType[i] = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        sqeContextBuffer.addInfo[i] = 0;
+    }
+    
+    // 第二个算子：90个task（需要切分2行）
+    for (u32 i = 80; i < 170; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 1;
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_SDMA;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+
+        sqeContextBuffer.rtsqSqeType[i] = RT_STARS_SQE_TYPE_SDMA;
+        sqeContextBuffer.addInfo[i] = 0;
+    }
+
+    // 调用PrintTaskExceptionTaskQue（isMonitor = false）
+    hcclCommAicpu.PrintTaskExceptionTaskQue(0, &sqeContextBuffer, false);
+
+    GlobalMockObject::verify();
+}
+
+/**
+ * @tc.name: ut_HcclCommAicpu_PrintTaskExceptionTaskQue_Boundary_200Tasks
+ * @tc.desc: 测试HcclCommAicpu::PrintTaskExceptionTaskQue - 边界情况，正好200个task
+ * @tc.type: FUNC
+ */
+TEST_F(TaskExceptionTest, ut_HcclCommAicpu_PrintTaskExceptionTaskQue_Boundary_200Tasks)
+{
+    HcclCommAicpu hcclCommAicpu;
+    
+    // Mock日志函数
+    MOCKER(HCCL_ERROR)
+        .stubs()
+        .will(defaultValue());
+    MOCKER(HCCL_RUN_INFO)
+        .stubs()
+        .will(defaultValue());
+
+    // Mock GetTaskExceptionOpInfo
+    std::string mockOpInfo = "tag:test_op, group:test_group, isCustom:0, opLaunchIdx:1, opExecIdx:1, count:100, dataType:0, opType:0, rootId:0, dstAddr:0x1000, srcAddr:0x2000.";
+    MOCKER(hccl::HcclCommAicpu::GetTaskExceptionOpInfo)
+        .stubs()
+        .will(returnValue(mockOpInfo));
+
+    // 构造SqeRingBuffer：200个task（边界值）
+    SqeRingBuffer sqeContextBuffer;
+    memset(&sqeContextBuffer, 0, sizeof(sqeContextBuffer));
+    
+    for (u32 i = 0; i < 200; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 0;
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+
+        sqeContextBuffer.rtsqSqeType[i] = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        sqeContextBuffer.addInfo[i] = 0;
+    }
+
+    // 调用PrintTaskExceptionTaskQue
+    hcclCommAicpu.PrintTaskExceptionTaskQue(0, &sqeContextBuffer, false);
+
+    GlobalMockObject::verify();
+}
+
+/**
+ * @tc.name: ut_HcclCommAicpu_PrintTaskExceptionTaskQue_SameOpIndex_DifferentTags
+ * @tc.desc: 测试HcclCommAicpu::PrintTaskExceptionTaskQue - 同一opIndex但不同tag的场景
+ * @tc.type: FUNC
+ */
+TEST_F(TaskExceptionTest, ut_HcclCommAicpu_PrintTaskExceptionTaskQue_SameOpIndex_DifferentTags)
+{
+    HcclCommAicpu hcclCommAicpu;
+    
+    // Mock日志函数
+    MOCKER(HCCL_ERROR)
+        .stubs()
+        .will(defaultValue());
+    MOCKER(HCCL_RUN_INFO)
+        .stubs()
+        .will(defaultValue());
+
+    // Mock GetTaskExceptionOpInfo - 相同opIndex但不同tag
+    MOCKER(hccl::HcclCommAicpu::GetTaskExceptionOpInfo)
+        .stubs()
+        .with(any(), any())
+        .will(repeat()
+            .onCall(0)
+            .return(std::string("tag:allreduce_1, group:test_group, isCustom:0, opLaunchIdx:1, opExecIdx:1, count:100, dataType:0, opType:0, rootId:0, dstAddr:0x1000, srcAddr:0x2000."))
+            .onCall(30)
+            .return(std::string("tag:allreduce_2, group:test_group, isCustom:0, opLaunchIdx:1, opExecIdx:2, count:100, dataType:0, opType:0, rootId:0, dstAddr:0x1000, srcAddr:0x2000.")));
+
+    // 构造SqeRingBuffer：相同opIndex但不同tag
+    SqeRingBuffer sqeContextBuffer;
+    memset(&sqeContextBuffer, 0, sizeof(sqeContextBuffer));
+    
+    // 第一个tag：30个task
+    for (u32 i = 0; i < 30; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 0;
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+
+        sqeContextBuffer.rtsqSqeType[i] = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        sqeContextBuffer.addInfo[i] = 0;
+    }
+    
+    // 第二个tag：30个task
+    for (u32 i = 30; i < 60; i++) {
+        sqeContextBuffer.rtsDfxInfo[i].opRingBufferIdx = 0; // 相同的opRingBufferIdx
+        sqeContextBuffer.rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer.rtsDfxInfo[i].notifyId = i % 16;
+
+        uint8_t *sqeAddr = sqeContextBuffer.rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t *header = reinterpret_cast<rtStarsSqeHeader_t*>(sqeAddr);
+        header->type = RT_STARS_SQE_TYPE_SDMA;
+        header->taskId = i;
+        header->addr1Low = i;
+        header->addr1High = i >> 16;
+
+        sqeContextBuffer.rtsqSqeType[i] = RT_STARS_SQE_TYPE_SDMA;
+        sqeContextBuffer.addInfo[i] = 0;
+    }
+
+    // 调用PrintTaskExceptionTaskQue
+    hcclCommAicpu.PrintTaskExceptionTaskQue(0, &sqeContextBuffer, false);
+
+    GlobalMockObject::verify();
+}
