@@ -677,7 +677,7 @@ CcuSharedResource &CcuKernel::GetImportedRes()
  * variable/maskSignal等资源变量Id，一定要在获取ccu profiling时才获取；
  * 原因：在创建context Rep时，其资源Id属于虚拟资源；翻译时，才会绑定固定的物理资源。
  */
-HcclResult CcuContext::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo)
+HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo)
 {
     HCCL_INFO("[GetCcuProfilingInfo] Enter.");
     std::vector<CcuProfilingInfo> allCcuProfilingInfos;
@@ -688,7 +688,7 @@ HcclResult CcuContext::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Cc
     HCCL_INFO("[GetCcuProfilingInfo] Process sqe&waitcke profiling info start.");
     for (auto &profInfo : ccuProfilingCache) {
         profInfo.missionId = GetMissionId();
-        if (profInfo.type == CcuProfilinType::CCU_TASK_PROFILING) {
+        if (profInfo.type == hcomm::CcuProfilinType::CCU_TASK_PROFILING) {
             profInfo.instrId   = GetInstrId();
             allCcuProfilingInfos.push_back(profInfo);
             continue;
@@ -704,8 +704,8 @@ HcclResult CcuContext::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Cc
                 HCCL_ERROR("[GetCcuProfilingInfo] localWaitRep is nullptr.");
                 return HCCL_E_PTR;
             }
-            auto localWaitRep = dynamic_cast<CcuRep::CcuRepLocWaitSem*>(waitCkeRep.get());
-            profInfo.ckeId = localWaitRep->GetSemId();
+            auto localWaitRep = dynamic_cast<CcuRep::CcuRepLocWaitEvent*>(waitCkeRep.get());
+            profInfo.ckeId = localWaitRep->GetId();
         }
         allCcuProfilingInfos.push_back(profInfo);
         count++;

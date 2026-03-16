@@ -342,8 +342,8 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
         return HcclResult::HCCL_SUCCESS;
     }
 
-    std::vector<CcuProfilingInfo> allCcuProfilingInfo;
-    CHK_RET(GetCcuProfilingInfo(*ccuTaskArgs, allCcuProfilingInfo));
+    std::vector<hcomm::CcuProfilingInfo> allCcuProfilingInfo;
+    CHK_RET(kernel->GetCcuProfilingInfo(*ccuTaskArgs, allCcuProfilingInfo));
 
     CHK_RET(LaunchCcuTasks(ccuParams, streamPtr));
     EXCEPTION_HANDLE_END

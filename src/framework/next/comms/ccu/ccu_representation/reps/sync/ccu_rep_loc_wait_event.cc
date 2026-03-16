@@ -57,5 +57,10 @@ uint32_t CcuRepLocWaitEvent::GetMask()
     return event_.mask;
 }
 
+uint16_t CcuRepLocWaitEvent::GetId()
+{
+    return event_.Id();
+}
+
 }; // namespace CcuRep
 }; // namespace hcomm
