@@ -87,7 +87,7 @@ HcclResult CcuDeinitFeature(const int32_t devLogicId);
  * @return HcclResult 返回HcclResult类型的结果
  * @note 资源不足时返回HCCL_E_UNAVIL，其余非HCCL_SUCCESS结果属于错误
  */
-HcclResult CcuAllocResHandleByInsType(int32_t deviceLogicId,
+CcuResult CcuAllocResHandleByInsType(int32_t deviceLogicId,
     CcuInstanceType ccuInsType, CcuResHandle &resHandle);
 
 /**
