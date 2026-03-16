@@ -60,6 +60,9 @@ HcclResult InsTempAllGatherNHR::GenExtIns(const TempFuncs &tempFuncs,
     const ResLinks &tempLinks,
     std::vector<InsQuePtr> &tempInsQues)
 {
+    if (IsPcieLink(tempLinks)) {
+        dmaMode_ = DmaMode::GET;
+    }
     opMode_ = tempFuncs.opMode;
     tempAlgParams_ = tempAlgParams;
     tempLinks_ = tempLinks;
