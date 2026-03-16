@@ -79,7 +79,8 @@ HcclResult InsTempReduceScatterAicpuReduce::RunAlltoAllMesh(const TempFuncs &tem
         txDstSlices.push_back(currSendSliceDst);
         //recv
         DataSlice currRecvSliceSrc
-            = DataSlice(BufferType::INPUT, templateDataParams.sliceSize * u32(myRank_), templateDataParams.sliceSize);
+            = DataSlice(BufferType::SCRATCH, templateDataParams.inputSliceStride * u32(neighborRank),
+                        templateDataParams.sliceSize);
         DataSlice currRecvSliceDst
             = DataSlice(BufferType::SCRATCH, templateDataParams.inputSliceStride * u32(neighborRank) + templateDataParams.buffInfo.inBuffBaseOff,
                         templateDataParams.sliceSize);
@@ -89,7 +90,7 @@ HcclResult InsTempReduceScatterAicpuReduce::RunAlltoAllMesh(const TempFuncs &tem
         rxDstSlices.push_back(currRecvSliceDst);
         TxRxSlicesList sendRecvSlicesList({txSrcSlices, txDstSlices}, {rxSrcSlices, rxDstSlices});
         SendRecvInfo sendRecvInfo(sendRecvLinks, sendRecvSlicesList);
-        CHK_PRT_RET(SendRecv(sendRecvInfo, tempInsQues[queIdx], 0, true, DmaMode::PUT), HCCL_ERROR("[InsTempReduceScatterAicpuReduce] RunReduceScatter sendrecv failed"),
+        CHK_PRT_RET(SendRecv(sendRecvInfo, tempInsQues[queIdx], 0, true, dmaMode_), HCCL_ERROR("[InsTempReduceScatterAicpuReduce] RunReduceScatter sendrecv failed"),
                     HcclResult::HCCL_E_INTERNAL);
     }
     CHK_RET(PostSyncInterQueues(tempInsQues));
@@ -112,6 +113,11 @@ HcclResult InsTempReduceScatterAicpuReduce::GenExtIns(const TempFuncs &tempFuncs
                         const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
     HCCL_INFO("[InsTempReduceScatterAicpuReduce] Run start");
+    if (IsPcieLink(tempLinks)) {
+        dmaMode_ = DmaMode::GET;
+    } else {
+        dmaMode_ = DmaMode::PUT;
+    }
     if (tempVTopo_[0].size() == 1) {
         return HcclResult::HCCL_SUCCESS;
     }

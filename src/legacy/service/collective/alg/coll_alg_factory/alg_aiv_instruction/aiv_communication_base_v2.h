@@ -30,6 +30,22 @@ constexpr uint64_t LOCAL_FLAG_BUF_LEN = 1024;
 constexpr uint64_t AIV_TAG_MOVE_RIGHT_BITS = 16;
 constexpr uint64_t LOW_16_BITS = 0xFFFF;
 constexpr uint32_t AIV_FLAG_CLEAR_OFFSET = 1040 * 1024;
+constexpr uint32_t BATCH_SEND_RECV_ITEM_SIZE = 16; // 注意要和host侧的BATCH_SEND_RECV_ITEM_SIZE保持一致
+constexpr uint32_t DATA_TYPE_INT64 = 5;
+
+typedef enum {
+    HCCL_SEND = 0,
+    HCCL_RECV = 1,
+    HCCL_SEND_RECV_RESERVED
+} HcclSendRecvType;
+
+struct HcclSendRecvItemDevice {
+    uint32_t sendRecvType;
+    uint64_t bufAddr; // host侧直接把buf所在的地址传下来
+    uint64_t count;
+    uint32_t dataTypeSize;
+    uint32_t remoteRank;
+};
 
 struct ExtraArgsv2 {
     uint64_t sendCountMatrix[MAX_RANK_SIZE * MAX_RANK_SIZE] = {};
@@ -45,6 +61,8 @@ struct ExtraArgs {
     uint64_t sendDispls[MAX_RANK_SIZE] = {};
     uint64_t recvCounts[MAX_RANK_SIZE] = {};
     uint64_t recvDispls[MAX_RANK_SIZE] = {};
+    uint64_t itemNum = 0;
+    HcclSendRecvItemDevice sendRecvInfo[BATCH_SEND_RECV_ITEM_SIZE] = {};
 };
 
 using AivSuperKernelArgs = struct AivSuperKernelArgsDef {
@@ -83,7 +101,7 @@ enum class CommPattern {
 
 #define KERNEL_ARGS_DEF \
 GM_ADDR buffIn, \
-uint64_t input, uint64_t output, uint32_t rank, uint32_t rankSize, uint64_t xRankSize,  uint64_t yRankSize, uint64_t zRankSize, uint64_t len, \
+uint64_t input, uint64_t output, uint32_t rank, uint32_t sendRecvRemoteRank, uint32_t rankSize, uint64_t xRankSize,  uint64_t yRankSize, uint64_t zRankSize, uint64_t len, \
 uint32_t dataType, uint32_t reduceOp, uint32_t root, uint32_t tag, \
 uint64_t inputSliceStride, uint64_t outputSliceStride, uint64_t repeatNum, uint64_t inputRepeatStride, uint64_t outputRepeatStride, \
 bool isOpBase, \
@@ -95,7 +113,7 @@ KERNEL_ARGS_DEF, ExtraArgs extraArgs
 
 #define KERNEL_ARGS_CALL \
 buffIn, \
-input, output, rank, rankSize, xRankSize, yRankSize, zRankSize, len, dataType, reduceOp, root, tag, \
+input, output, rank, sendRecvRemoteRank, rankSize, xRankSize, yRankSize, zRankSize, len, dataType, reduceOp, root, tag, \
 inputSliceStride, outputSliceStride, repeatNum, inputRepeatStride, outputRepeatStride, \
 isOpBase, \
 headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter
@@ -105,7 +123,7 @@ KERNEL_ARGS_CALL, extraArgs
 
 #define KERNEL_CLASS_INIT \
 buffIn, input, output,\
-rank, rankSize, xRankSize, yRankSize, zRankSize, len, dataType, reduceOp, root, \
+rank, sendRecvRemoteRank, rankSize, xRankSize, yRankSize, zRankSize, len, dataType, reduceOp, root, \
 inputSliceStride, outputSliceStride, repeatNum, inputRepeatStride, outputRepeatStride, \
 headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter
 
@@ -155,6 +173,7 @@ constexpr uint64_t FLAG_FIVE_OFFSET = FLAG_SIZE * 4;
 
 constexpr uint64_t DOUBLE = 2;
 constexpr uint64_t FLAG_BUF_NUM = 3;
+constexpr uint64_t SRC_DST_DIVIDE = 2;
 
 // 当前每个kernel最多使用4组同步标记，这里预留6组
 constexpr uint32_t MAX_FLAG_SIZE_PER_KERNEL = AIV_FLAG_CLEAR_OFFSET - MAX_RANK_SIZE * FLAG_SIZE;
@@ -166,7 +185,7 @@ public:
     __aicore__ inline AivCommBase() {
     }
 
-    __aicore__ inline void Init(GM_ADDR buffIn, uint64_t input, uint64_t output, uint32_t rank, uint32_t rankSize, uint64_t xRankSize,  uint64_t yRankSize, uint64_t zRankSize,
+    __aicore__ inline void Init(GM_ADDR buffIn, uint64_t input, uint64_t output, uint32_t rank, uint32_t sendRecvRemoteRank, uint32_t rankSize, uint64_t xRankSize,  uint64_t yRankSize, uint64_t zRankSize,
                                 uint64_t len,
                                 uint32_t dataType, uint32_t reduceOp, uint32_t root, 
                                 uint64_t inputSliceStride, uint64_t outputSliceStride, uint64_t repeatNum, uint64_t inputRepeatStride, uint64_t outputRepeatStride, 
@@ -175,6 +194,7 @@ public:
                                 bool useDoubleBuffer)
     {
         rank_ = rank;
+        sendRecvRemoteRank_ = sendRecvRemoteRank;
         root_ = root;
         rankSize_ = rankSize;
         xRankSize_ = xRankSize;
@@ -209,6 +229,14 @@ public:
         localGetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_FOUR_OFFSET);
         localTagTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_FIVE_OFFSET);
         pipe.InitBuffer(inOutQue, 1, UB_MAX_DATA_SIZE);
+
+        pipe.InitBuffer(srcQue, 1, UB_MAX_DATA_SIZE / unitSize_ * unitSize_ / SRC_DST_DIVIDE);
+        pipe.InitBuffer(dstQue, 1, UB_MAX_DATA_SIZE / unitSize_ * unitSize_ / SRC_DST_DIVIDE);
+
+        isReduce64 = false;
+        if (dataType_ == DATA_TYPE_INT64) {
+            isReduce64 = true;
+        }
     }
 
     __aicore__ inline void Init(GM_ADDR hiddenInput, GM_ADDR input, GM_ADDR output)
@@ -250,6 +278,14 @@ public:
         localTagTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_FIVE_OFFSET);
         pipe.InitBuffer(inOutQue, 1, UB_MAX_DATA_SIZE);
 
+        pipe.InitBuffer(srcQue, 1, UB_MAX_DATA_SIZE / unitSize_ * unitSize_ / SRC_DST_DIVIDE);
+        pipe.InitBuffer(dstQue, 1, UB_MAX_DATA_SIZE / unitSize_ * unitSize_ / SRC_DST_DIVIDE);
+
+        isReduce64 = false;
+        if (dataType_ == DATA_TYPE_INT64) {
+            isReduce64 = true;
+        }
+
         if (args->clearEnable == 1) {
             ClearSyncBuf();
         }
@@ -288,9 +324,23 @@ public:
     template<typename T>
     __aicore__ inline void CpGM2GM(__gm__ T *outputGM, __gm__ T *inputGM, uint64_t count);
 
+    template<typename T>
+    __aicore__ inline void Reduce64(__gm__ T *outputGM, __gm__ T *inputGM, uint64_t count, uint32_t reduceOp);
+
+    template<typename T>
+    __aicore__ inline void Add64(const LocalTensor<T>& dstLocal, const LocalTensor<T>& srcLocal, const uint64_t count);
+
+    template<typename T>
+    static __simd_vf__ inline void AddVf(__ubuf__ T* dstPtr, __ubuf__ T* src0Ptr, __ubuf__ T* src1Ptr,
+        uint32_t count, uint16_t oneRepeatSize, uint16_t repeatTimes);
+
     __aicore__ inline void BarrierAll();
 
+    __aicore__ inline void SendRecvBarrierAll(uint32_t myRank, uint32_t remoteRank);
+
     __aicore__ inline void BarrierForFirstOP();
+
+    __aicore__ inline void SendRecvBarrierForFirstOP(uint32_t myRank, uint32_t remoteRank);
 
     __aicore__ inline void SyncCoreAll(int32_t curTag);
 
@@ -310,6 +360,7 @@ public:
     GM_ADDR GM_OUT[MAX_RANK_SIZE];
     uint64_t TOPO_[TOPO_LEN];
     uint32_t rank_;
+    uint32_t sendRecvRemoteRank_;
     uint32_t root_;
     uint32_t rankSize_;
     uint64_t xRankSize_;
@@ -345,12 +396,16 @@ public:
     GlobalTensor<int32_t> d2hGlobal;
 
     TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> inOutQue;
+    TQue<QuePosition::VECIN, 1> srcQue;
+    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> dstQue;
 
     uint32_t localOffset;
     uint32_t multiOffset;
     uint32_t pingpongOffset;
     uint32_t countOffset;
     uint32_t seperateOffset;
+
+    bool isReduce64;
 };
 
 
@@ -392,6 +447,27 @@ __aicore__ inline void AivCommBase::BarrierForFirstOP()
     }
 }
 
+// 为sendRecv单独设计
+__aicore__ inline void AivCommBase::SendRecvBarrierForFirstOP(uint32_t myRank, uint32_t remoteRank)
+{
+    if (GetBlockIdx() == 0) {
+        pipe_barrier(PIPE_ALL);
+        for (int i = 0; i < rankSize_; i++) {
+            if (i == myRank || i == remoteRank) {
+                uint64_t flag_offset = BASE_FLAG_OFFSET + i * FLAG_SIZE;
+                Record(rank_, flag_offset / UB_ALIGN_SIZE, DOUBLE);
+            }
+        }
+        pipe_barrier(PIPE_ALL);
+        for (int i = 0; i < rankSize_; i++) {
+            if (i == myRank || i == remoteRank) {
+                uint64_t flag_offset = BASE_FLAG_OFFSET + rank_ * FLAG_SIZE;
+                WaitFlag(i, flag_offset / UB_ALIGN_SIZE, DOUBLE);
+            }
+        }
+    }
+}
+
 __aicore__ inline void AivCommBase::SyncCoreAll(int32_t curTag)
 {
     pipe_barrier(PIPE_ALL);
@@ -419,6 +495,29 @@ __aicore__ inline void AivCommBase::BarrierAll()
             uint64_t flag_offset = BASE_FLAG_OFFSET + i * FLAG_SIZE;
             WaitFlag(rank_, flag_offset / UB_ALIGN_SIZE, 1);
             Record(rank_, flag_offset / UB_ALIGN_SIZE, 0);
+        }
+    }
+}
+
+// 为sendRecv单独设计
+__aicore__ inline void AivCommBase::SendRecvBarrierAll(uint32_t myRank, uint32_t remoteRank)
+{
+    SyncAll<true>();
+    if (GetBlockIdx() == 0) {
+        pipe_barrier(PIPE_ALL);
+        for (int i = 0; i < rankSize_; i++) {
+            if (i == myRank || i == remoteRank) {
+                uint64_t flag_offset = BASE_FLAG_OFFSET + rank_ * FLAG_SIZE;
+                Record(i, flag_offset / UB_ALIGN_SIZE, 1);
+            }
+        }
+        pipe_barrier(PIPE_ALL);
+        for (int i = 0; i < rankSize_; i++) {
+            if (i == myRank || i == remoteRank) {
+                uint64_t flag_offset = BASE_FLAG_OFFSET + i * FLAG_SIZE;
+                WaitFlag(rank_, flag_offset / UB_ALIGN_SIZE, 1);
+                Record(rank_, flag_offset / UB_ALIGN_SIZE, 0);
+            }
         }
     }
 }
@@ -491,6 +590,11 @@ __aicore__ inline void AivCommBase::CpGM2GM(__gm__ T *outputGM, __gm__ T *inputG
 template<typename T>
 __aicore__ inline void AivCommBase::CpGM2GM(__gm__ T *outputGM, __gm__ T *inputGM, uint64_t count, uint32_t atomicOp)
 {
+    if (isReduce64) {
+        Reduce64(outputGM, inputGM, count, atomicOp);
+        return;
+    }
+
     GlobalTensor<T> inputGT;
     inputGT.SetGlobalBuffer(inputGM, count);
     GlobalTensor<T> outputGT;
@@ -520,6 +624,82 @@ __aicore__ inline void AivCommBase::CpGM2GM(__gm__ T *outputGM, __gm__ T *inputG
     SetAtomicNone();
 
     return;
+}
+
+template<typename T>
+__aicore__ inline void AivCommBase::Reduce64(__gm__ T *outputGM, __gm__ T *inputGM, uint64_t count, uint32_t reduceOp)
+{
+    GlobalTensor<T> inputGT;
+    inputGT.SetGlobalBuffer(inputGM, count);
+    GlobalTensor<T> outputGT;
+    outputGT.SetGlobalBuffer(outputGM, count);
+
+    // ubuf一半用来存src数据，另一半用来存reduce的结果数据
+    uint64_t maxCountPerLoop = UB_MAX_DATA_SIZE / sizeof(T) / 2;
+    uint64_t curOffset = 0;
+    while (count > 0) {
+        uint64_t curCount = count > maxCountPerLoop ? maxCountPerLoop : count;
+
+        LocalTensor<T> localSrc = srcQue.AllocTensor<T>();
+        LocalTensor<T> localDst = dstQue.AllocTensor<T>();
+
+        // 将源数据和目标数据都搬入ubuf
+        DataCopyGM2UB(localSrc, inputGT[curOffset], curCount);
+        srcQue.EnQue(localSrc);
+        DataCopyGM2UB(localDst, outputGT[curOffset], curCount);
+        dstQue.EnQue(localDst);
+
+        // 将数据Reduce到output的ubuf上
+        if (reduceOp == HcclReduceOp::HCCL_REDUCE_SUM) {
+            Add64<T>(localDst, localSrc, curCount);
+        } else if (reduceOp == HcclReduceOp::HCCL_REDUCE_MAX) {
+            Max<T>(localDst, localSrc, localDst, curCount);
+        } else if (reduceOp == HcclReduceOp::HCCL_REDUCE_MIN) {
+            Min<T>(localDst, localSrc, localDst, curCount);
+        }
+
+        // 将数据搬出ubuf
+        LocalTensor<T> localOut = inOutQue.DeQue<T>();
+        DataCopyUB2GM(outputGT[curOffset], localOut, curCount);
+
+        // 释放内存
+        srcQue.FreeTensor(localSrc);
+        dstQue.FreeTensor(localDst);
+        dstQue.FreeTensor(localOut);
+
+        count -= curCount;
+        curOffset += curCount;
+    }
+
+    return;
+}
+
+template<typename T>
+__aicore__ inline void AivCommBase::Add64(const LocalTensor<T>& dstLocal, const LocalTensor<T>& srcLocal,
+                                          const uint64_t count)
+{
+    __ubuf__ T* dstPtr = (__ubuf__ T*)dstLocal.GetPhyAddr();
+    __ubuf__ T* srcPtr = (__ubuf__ T*)srcLocal.GetPhyAddr();
+
+    AddVf<T>(dstPtr, srcPtr, dstPtr, count, count, 1);
+}
+
+template<typename T>
+__simd_vf__ inline void AivCommBase::AddVf(__ubuf__ T* dstPtr, __ubuf__ T* src0Ptr, __ubuf__ T* src1Ptr,
+    uint32_t count, uint16_t oneRepeatSize, uint16_t repeatTimes)
+{
+    MicroAPI::RegTensor<T> vSrcReg0;
+    MicroAPI::RegTensor<T> vSrcReg1;
+    MicroAPI::RegTensor<T> vDstReg0;
+    MicroAPI::MaskReg maskReg;
+    maskReg = MicroAPI::UpdateMask<T>(count);
+    for (uint16_t i = 0; i < repeatTimes; i++) {
+        MicroAPI::LoadAlign(vSrcReg0, src0Ptr + i * oneRepeatSize);
+        MicroAPI::LoadAlign(vSrcReg1, src1Ptr + i * oneRepeatSize);
+        // Merging Mode模式
+        MicroAPI::Add(vDstReg0, vSrcReg0, vSrcReg1, maskReg);
+        MicroAPI::StoreAlign(dstPtr + i * oneRepeatSize, vDstReg0, maskReg);
+    }
 }
 
 __aicore__ inline void AivCommBase::ClearFlag()
