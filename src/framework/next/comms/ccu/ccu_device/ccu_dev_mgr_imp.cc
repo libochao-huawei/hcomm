@@ -20,6 +20,9 @@
 
 #include "adapter_rts.h"
 
+#include "ccu_types.h"
+#include "ccu_log.h"
+
 namespace hcomm {
 
 static std::unordered_map<int32_t, std::shared_ptr<CcuDrvHandle>> ccuDrvHandleMap;
@@ -88,7 +91,7 @@ CcuResult CcuAllocResHandleByInsType(int32_t deviceLogicId,
     if (!dieEnableFlags[0] && !dieEnableFlags[1]) {
         HCCL_ERROR("[%s] failed, all ccu dies are disable, devLogicId[%d].",
             __func__, deviceLogicId);
-        return HcclResult::HCCL_E_INTERNAL;
+        return CcuResult::CCU_E_INTERNAL;
     }
 
     CcuResReq resReq{};
@@ -124,10 +127,11 @@ CcuResult CcuAllocResHandleByInsType(int32_t deviceLogicId,
         }
     }
 
-    CHK_RET(CcuDevMgrImp::AllocResHandle(deviceLogicId, resReq, resHandle));
+    CCU_CHK_RET(CcuDevMgrImp::AllocResHandle(deviceLogicId, resReq, resHandle));
+
     HCCL_INFO("[%s] succeed, get res handle[%llx], devLogicId[%d]",
         __func__, resHandle, deviceLogicId);
-    return HcclResult::HCCL_SUCCESS;
+    return CcuResult::CCU_SUCCESS;
 }
 
 HcclResult CcuCheckResource(const int32_t deviceLogicId, const CcuResHandle resHandle, CcuResRepository &resRepo)
