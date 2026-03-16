@@ -144,7 +144,7 @@ void AicpuIndopProcess::AicpuReleaseCommMgrbyGroup(const std::string &group)
         rwlock.readUnlock();
         return;
     }
-    g_hcclComm = nullptr;
+    g_hcclComm = iter->second.get();
     iter->second->SetUsed(false);
     rwlock.readUnlock();
 }
