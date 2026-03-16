@@ -38,6 +38,8 @@ public:
     void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
 
 private:
+    HcclResult GetBufferAddr(const TempFuncs &tempFuncs, 
+         uint64_t &inputAddr, uint64_t &outputAddr);
     HcclResult PrepareLinks(const ResLinks &tempLinks);
     HcclResult PrepareRankGroups();
 

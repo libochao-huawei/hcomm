@@ -47,6 +47,7 @@ public:
     void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
 
 private:
+    void GetAddrInfo(const TempFuncs &tempFuncs, uint64_t &inputAddr, uint64_t &outputAddr);
     void CalcDetourOffset(uint64_t sliceSize, uint64_t &tailOffset, uint64_t &tailSize, uint64_t &iterNum);
     void ProcessLinks(std::vector<LinkData> &links, const ResLinks &tempLinks) const;
     ReduceOp reduceOp_;

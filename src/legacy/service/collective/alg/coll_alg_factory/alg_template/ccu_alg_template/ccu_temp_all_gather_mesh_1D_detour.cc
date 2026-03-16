@@ -163,22 +163,18 @@ void CcuTempAllGatherMeshDetour1D::GetAddrInfo(const TempFuncs &tempFuncs, const
 {
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
-            // 从 UserIn 获取数据
             inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType())
                 + tempFuncs.usrData.usrInSlices[0].GetOffset();
         } else {
-            // 从 inBuff 获取数据
             inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         }
         if (tempFuncs.isBottom) {
-            // 从 UserOut 获取数据
             outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType());
-            // 需要加上 UserOUt 的偏移，包含了 loop 偏移和 rank 偏移
+            // 需要加上UserOUt的偏移，包含了loop偏移和rank偏移
             offSet = tempFuncs.usrData.usrOutSlices[myRank_].GetOffset();
         } else {
-            // 把数据写入 outBuff
             outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
-            // 从 inBuff 获取数据，只需要加上 rank 偏移
+            // 从inBuff获取数据，只需要加上rank偏移
             offSet = sliceInfoVec[myRank_][0].offset;
         }
     } else {

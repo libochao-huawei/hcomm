@@ -94,6 +94,44 @@ HcclResult CcuTempAllReduceMesh2DTwoShot::CalcRes(AlgTempResReq &tempResReq)
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult CcuTempAllReduceMesh2DTwoShot::GetBufferAddr(const TempFuncs &tempFuncs, uint64_t &inputAddr, 
+                                                         uint64_t &outputAddr) 
+ { 
+    uint64_t inputBaseAddr;
+    uint64_t outputBaseAddr;
+    uint64_t inputOffSet;
+    uint64_t outputOffSet;
+    if (opMode_ == OpMode::OPBASE) {
+        if (tempFuncs.isForepart) {
+            inputBaseAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType());
+            inputOffSet   = tempFuncs.usrData.usrInSlices[0].GetOffset();
+        } else {
+            inputBaseAddr = BufferTypeToAddr(buffInfo_.inBuffType);
+            inputOffSet   = buffInfo_.inBuffBaseOff;
+        }
+        if (tempFuncs.isBottom) {
+            outputOffSet   = tempFuncs.usrData.usrOutSlices[0].GetOffset();
+            outputBaseAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType());
+        } else {
+            outputOffSet   = buffInfo_.outBuffBaseOff;
+            outputBaseAddr = BufferTypeToAddr(buffInfo_.outBuffType);
+        }
+    } else {
+        // 图模式没有 tempFuncs.usrData，直接通过 buffInfo_ 获取输入输出地址
+        inputBaseAddr  = BufferTypeToAddr(buffInfo_.inBuffType);
+        inputOffSet    = buffInfo_.inBuffBaseOff + tempFuncs.usrData.usrInSlices[0].GetOffset();
+        outputBaseAddr = BufferTypeToAddr(buffInfo_.outBuffType);
+        outputOffSet   = buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
+    }
+
+    inputAddr   = inputBaseAddr + inputOffSet;
+    outputAddr  = outputBaseAddr + outputOffSet;
+    HCCL_INFO("[GetBufferAddr] inputBaseAddr[%llu], inputOffSet[%llu], outputBaseAddr[%llu], outputOffSet[%llu]",
+               inputBaseAddr, inputOffSet, outputBaseAddr, outputOffSet);
+    HCCL_INFO("[GetBufferAddr] inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
+    return HcclResult::HCCL_SUCCESS;
+} 
+
 HcclResult CcuTempAllReduceMesh2DTwoShot::PrepareLinks(const ResLinks &tempLinks)
 {
     HCCL_INFO("[CcuTempAllReduceMesh2DTwoShot] PrepareLinks Starts.");
@@ -159,7 +197,7 @@ HcclResult CcuTempAllReduceMesh2DTwoShot::Run(const TempFuncs &tempFuncs, const 
     uint64_t inputAddr;
     uint64_t outputAddr;
     uint64_t offSet;
-    CHK_RET(GetAddrInfo(tempFuncs, inputAddr, outputAddr, sliceInfoVec, offSet));
+    CHK_RET(GetBufferAddr(tempFuncs, inputAddr, outputAddr));
     HCCL_INFO("[CcuTempAllReduceMesh2DTwoShot][Run] inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
 
     //计算切分信息：

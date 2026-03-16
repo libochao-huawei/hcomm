@@ -111,25 +111,20 @@ HcclResult CcuTempAllReduceMesh2DOneShot::GetBufferAddr(const TempFuncs &tempFun
 
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
-            // 从 UserIn 获取数据, 添加 loop偏移
             inputBaseAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType());
             inputOffSet   = tempFuncs.usrData.usrInSlices[0].GetOffset();
         } else {
-            // 从 inBuff 获取数据, 添加 inBuffBaseOff
             inputBaseAddr = BufferTypeToAddr(buffInfo_.inBuffType);
             inputOffSet   = buffInfo_.inBuffBaseOff;
         }
         if (tempFuncs.isBottom) {
-            // 把数据写入 UserOut, 添加 loop偏移
             outputBaseAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType());
             outputOffSet   = tempFuncs.usrData.usrOutSlices[0].GetOffset();
         } else {
-            // 把数据写入 outBuff, 添加 outBuffBaseOff
             outputBaseAddr = BufferTypeToAddr(buffInfo_.outBuffType);
             outputOffSet   = buffInfo_.outBuffBaseOff;
         }
     } else {
-        // 图模式
         outputBaseAddr = BufferTypeToAddr(buffInfo_.outBuffType);
         outputOffSet   = buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
         inputBaseAddr  = BufferTypeToAddr(buffInfo_.inBuffType);

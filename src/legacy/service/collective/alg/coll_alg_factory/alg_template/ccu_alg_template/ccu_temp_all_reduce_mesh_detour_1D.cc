@@ -165,6 +165,30 @@ void CcuTempAllReduceMeshDetour1D::ProcessLinks(std::vector<LinkData> &links, co
     return;
 }
 
+void CcuTempAllReduceMeshDetour1D::GetAddrInfo(const TempFuncs &tempFuncs, uint64_t &inputAddr, 
+     uint64_t &outputAddr) 
+{
+    if (opMode_ == OpMode::OPBASE) {
+        if (tempFuncs.isBottom) {
+            outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType())
+                + tempFuncs.usrData.usrOutSlices[0].GetOffset();
+        } else {
+            outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
+        }
+        if (tempFuncs.isForepart) {
+            inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType())
+                + tempFuncs.usrData.usrInSlices[0].GetOffset();
+        } else {
+            inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
+        }
+    } else {
+        inputAddr  = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
+        outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
+    }
+    HCCL_INFO("inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
+    return;
+} 
+
 HcclResult CcuTempAllReduceMeshDetour1D::Run(const TempFuncs &tempFuncs, const RankSliceInfo &sliceInfoVec,
                                           const BuffInfo &buffInfo, const ResLinks &tempLinks,
                                           std::vector<InsQuePtr> &tempInsQues)
@@ -178,7 +202,7 @@ HcclResult CcuTempAllReduceMeshDetour1D::Run(const TempFuncs &tempFuncs, const R
     uint64_t inputAddr;
     uint64_t outputAddr;
     uint64_t offSet;
-    CHK_RET(GetAddrInfo(tempFuncs, inputAddr, outputAddr, sliceInfoVec, offSet));
+    GetAddrInfo(tempFuncs, inputAddr, outputAddr);
 
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;  // 获取本rank需要处理的数据量
     uint64_t token;

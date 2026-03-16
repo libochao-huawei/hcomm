@@ -71,13 +71,11 @@ void CcuTempAllGatherMeshMem2Mem1D::GetAddrsAndOffset(const TempFuncs &tempFuncs
             inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType())
                 + tempFuncs.usrData.usrInSlices[0].GetOffset();
         } else {
-            // 从 inBuff 获取数据
             inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         }
         if (tempFuncs.isBottom) {
-            // 从 UserOut 获取数据
             outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType());
-            // 需要加上 UserOUt 的偏移，包含了 loop偏移和rank 偏移
+            // 需要加上 UserOUt 的偏移，包含了 loop 偏移和 rank 偏移
             offset = tempFuncs.usrData.usrOutSlices[myRank_].GetOffset();
         } else {
             outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;

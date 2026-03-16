@@ -13,7 +13,6 @@
 
 #include "const_val.h"
 #include "template_utils.h"
-#include "ccu_rank_group.h"
 #include "instruction.h"
 #include "ins_queue.h"
 #include "coll_operator.h"
@@ -47,7 +46,6 @@ public:
     virtual HcclResult GetMaxTransPortDataSize(u64 &maxTransPortDataSize) const;
     virtual HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit);
     virtual HcclResult AddRanksToGroup(const std::vector<std::vector<RankId>> &tempVTopo, RankGroup &rankGroupX, RankGroup &rankGroupY) const;
-    virtual HcclResult GetAddrInfo (const TempFuncs &tempFuncs, uint64_t &inputAddr, uint64_t &outputAddr, const RankSliceInfo &sliceInfoVec, uint64_t &offSet);
 
     void SetCollOp(const CollAlgOperator &op);
     void SetDmaMode(const DmaMode dmaMode);

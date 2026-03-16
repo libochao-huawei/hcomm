@@ -132,9 +132,26 @@ HcclResult CcuTempReduceMesh2D::Run(const TempFuncs &tempFuncs, const RankSliceI
     // userOut 的位置，需要带上偏移
     uint64_t outputAddr;
     uint64_t offSet;
-    CHK_RET(GetAddrInfo(tempFuncs, inputAddr, outputAddr, sliceInfoVec, offSet));
+    if (opMode_ == OpMode::OPBASE) {	 
+        if (tempFuncs.isForepart) {
+            inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType())
+                + tempFuncs.usrData.usrInSlices[0].GetOffset();
+        } else {
+            inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
+        }
+        if (tempFuncs.isBottom) {
+            outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType())
+                + tempFuncs.usrData.usrOutSlices[0].GetOffset();
+        } else {
+            outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
+        }
+    } else {
+        inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
+        outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
+    }
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;
     // 自己需要 reduce 的数据基于userIn的起始位置的偏移
+    uint64_t offSet = 0;
     uint64_t token;
     CHK_RET(GetToken(op_, token));
     std::vector<uint32_t> dimId;

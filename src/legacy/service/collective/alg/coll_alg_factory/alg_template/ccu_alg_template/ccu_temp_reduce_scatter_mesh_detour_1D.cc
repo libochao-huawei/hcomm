@@ -174,9 +174,10 @@ HcclResult CcuTempReduceScatterMeshDetour1D::Run(const TempFuncs &tempFuncs, con
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
             // 从UserIn获取数据
-            inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[myRank_].GetType());
             offSet = tempFuncs.usrData.usrInSlices[myRank_].GetOffset();
+            inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[myRank_].GetType());
         } else {
+            // 从inBuff获取数据，只需要加上rank偏移
             offSet = sliceInfoVec[myRank_][0].offset;
             inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         }
@@ -187,8 +188,8 @@ HcclResult CcuTempReduceScatterMeshDetour1D::Run(const TempFuncs &tempFuncs, con
             outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
         }
     } else {
-        offSet = tempFuncs.usrData.usrInSlices[myRank_].GetOffset();
-        inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
+        offSet     = tempFuncs.usrData.usrInSlices[myRank_].GetOffset();
+        inputAddr  = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
     }
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;  // 获取本rank需要处理的数据量

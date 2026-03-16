@@ -40,6 +40,7 @@ public:
 private:
     HcclResult PrepareLinks(const ResLinks &tempLinks);
     HcclResult PrepareRankGroups();
+    HcclResult GetBufferAddr(const TempFuncs &tempFuncs, uint64_t &inputAddr, uint64_t &outputAddr);
 
     // 内部计算用到的变量
     ReduceOp              reduceOp_;

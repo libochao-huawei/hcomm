@@ -85,8 +85,7 @@ HcclResult CcuTempAllReduceMesh1DOneShot::Run(const TempFuncs &tempFuncs, const 
 
     uint64_t inputAddr;
     uint64_t outputAddr;
-    uint64_t offSet;
-    CHK_RET(GetAddrInfo(tempFuncs, inputAddr, outputAddr, sliceInfoVec, offSet));
+    CHK_RET(CalcInputOutputAddr(tempFuncs, inputAddr, outputAddr));
 
     std::vector<LinkData> links;
     CHK_RET(PrepareLinks(tempLinks, links));
@@ -115,7 +114,33 @@ HcclResult CcuTempAllReduceMesh1DOneShot::Run(const TempFuncs &tempFuncs, const 
     HCCL_INFO("[CcuTempAllReduceMesh1DOneShot][Run] end");
     return HcclResult::HCCL_SUCCESS;
 }
-HcclResult CcuTempAllReduceMesh1DOneShot::PrepareLinks(const ResLinks &tempLinks, std::vector<LinkData> &links) const
+
+HcclResult CcuTempAllReduceMesh1DOneShot::CalcInputOutputAddr(const TempFuncs &tempFuncs, 
+     uint64_t &inputAddr, uint64_t &outputAddr) 
+{ 
+    HCCL_INFO("[CcuTempAllReduceMesh1DOneShot][CalcInputOutputAddr] start"); 
+    if (opMode_ == OpMode::OPBASE) {
+        if (tempFuncs.isBottom) {
+            outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType()) + tempFuncs.usrData.usrOutSlices[0].GetOffset();
+        } else {
+            outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
+        }
+        if (tempFuncs.isForepart) {
+            inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType()) + tempFuncs.usrData.usrInSlices[0].GetOffset();
+        } else {
+            inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
+        }
+    } else {
+        // 图模式
+        inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
+        outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
+    }
+    HCCL_INFO("[CcuTempAllReduceMesh1DOneShot][CalcInputOutputAddr] end, inputAddr[%llu], outputAddr[%llu]", 
+        inputAddr, outputAddr);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+ HcclResult CcuTempAllReduceMesh1DOneShot::PrepareLinks(const ResLinks &tempLinks, std::vector<LinkData> &links) const
 {
     for (auto &pair : tempLinks) {
         if (pair.second.empty()) {

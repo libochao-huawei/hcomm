@@ -48,6 +48,7 @@ public:
     void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
 
 private:
+    HcclResult CalcInputOutputAddr(const TempFuncs &tempFuncs, uint64_t &inputAddr, uint64_t &outputAddr);
     HcclResult PrepareLinks(const ResLinks &tempLinks, std::vector<LinkData> &links) const;
     HcclResult PrepareRankGroup(RankGroup &rankGroup);
 
