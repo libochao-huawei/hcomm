@@ -24,16 +24,7 @@ public:
     }
 };
 
-TEST_F(TestMsgQueue, Ut_MsgQueue_Init_On_Normal_Expect_Return_HCCL_SUCCESS)
-{
-    MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
-    MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
-    MsgQueue msgQueue(256, sizeof(ThreadMsgEntity));
-    HcclResult ret = msgQueue.Init();
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-}
-
-TEST_F(TestMsgQueue, Ut_MsgQueue_Push_And_Pop_On_Normal_Expect_Return_HCCL_SUCCESS)
+TEST_F(TestMsgQueue, Ut_When_MsgQueue_Push_And_Pop_On_Normal_Expect_Return_HCCL_SUCCESS)
 {
     MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
     MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
@@ -54,7 +45,7 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Push_And_Pop_On_Normal_Expect_Return_HCCL_SUCCE
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(TestMsgQueue, Ut_MsgQueue_Pop_While_Empty_Expect_Return_ERROR)
+TEST_F(TestMsgQueue, Ut_When_MsgQueue_Pop_While_Empty_Expect_Return_ERROR)
 {
     MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
     MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
@@ -68,7 +59,21 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Pop_While_Empty_Expect_Return_ERROR)
     EXPECT_EQ(ret, HCCL_E_AGAIN);  // 队列为空
 }
 
-TEST_F(TestMsgQueue, Ut_MsgQueue_Push_Uninitialized_Expect_Return_HCCL_E_PARA)
+TEST_F(TestMsgQueue, Ut_When_MsgQueue_Push_While_Full_Expect_Return_ERROR)
+{
+    MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
+    MsgQueue msgQueue(256, sizeof(ThreadMsgEntity));
+    HcclResult ret = msgQueue.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    MOCKER_CPP(&hccl::MsgQueue::Full).stubs().with(outBound(true)).will(returnValue(HCCL_SUCCESS));
+    ThreadMsgEntity entity;
+    ret = msgQueue.Push(entity);
+    EXPECT_EQ(ret, HCCL_E_AGAIN);  // 队列已满
+}
+
+TEST_F(TestMsgQueue, Ut_When_MsgQueue_Push_Or_Pop_Uninitialized_Expect_Return_HCCL_E_PARA)
 {
     MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
     MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
@@ -76,19 +81,11 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Push_Uninitialized_Expect_Return_HCCL_E_PARA)
     ThreadMsgEntity entity;
     HcclResult ret = msgQueue.Push(entity);
     EXPECT_EQ(ret, HCCL_E_PARA);
-}
-
-TEST_F(TestMsgQueue, Ut_MsgQueue_Pop_Uninitialized_Expect_Return_HCCL_E_PARA)
-{
-    MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
-    MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
-    MsgQueue msgQueue;
-    ThreadMsgEntity entity;
-    HcclResult ret = msgQueue.Pop(entity);
+    ret = msgQueue.Pop(entity);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-TEST_F(TestMsgQueue, Ut_MsgQueue_Empty_On_Normal_Expect_Correct)
+TEST_F(TestMsgQueue, Ut_When_MsgQueue_Empty_On_Normal_Expect_Correct)
 {
     MsgQueue msgQueue(256, sizeof(ThreadMsgEntity));
     HcclResult ret = msgQueue.Init();
