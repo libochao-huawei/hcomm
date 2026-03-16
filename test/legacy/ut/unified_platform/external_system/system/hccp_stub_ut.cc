@@ -712,3 +712,9 @@ int RaCtxQpDestroyBatchAsync(void *ctx_handle, void*qp_handle[], unsigned int *n
 {
     return 0;
 }
+
+int RaSocketGetVnicIpInfos(unsigned int phyId, enum IdType type, unsigned int ids[],
+    unsigned int num, struct IpInfo infos[])
+{
+    return 0;
+}

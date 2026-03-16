@@ -146,7 +146,12 @@ SelectorStatus BroadcastAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
                     primQueueGenName = "InsBroadcastMesh1DTwoShot";
                 }
             } else {
-                primQueueGenName = "InsBroadcastParallelMesh1DNHR";
+                if (topoInfo.level0PcieMix) {
+                    // 预留PCIE mix入口，如果要更新算法可以直接改
+                    primQueueGenName = "InsBroadcastParallelMesh1DNHR";
+                } else {
+                    primQueueGenName = "InsBroadcastParallelMesh1DNHR";
+                }
             }
         } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
             primQueueGenName = "InsBroadcastNHR";
