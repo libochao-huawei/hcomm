@@ -20,9 +20,12 @@ set(src_to_test_list
     comms/ccu/ut_CcuTransport_API_test.cc
     comms/comm_engine_res/threads/test_aicpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_cpu_ts_thread_class.cc
+    comms/comm_engine_res/threads/test_cpu_thread_class.cc
     comms/comm_engine_res/threads/test_thread_api.cc
-    coll_comms/rank/ut_my_rank.cc
+    comms/comm_engine_res/utils/ut_msg_queue.cc
+    comms/comm_engine_res/utils/ut_service_scheduler.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
+    coll_comms/rank/ut_my_rank.cc
     coll_comms/rank/ut_my_rank_tls.cc
 )
 
