@@ -53,27 +53,6 @@ public:
         // Do nothing
     };
 
-    // Local Data Plane Functions
-    HcclResult LocalNotifyRecord(uint32_t notifyId) const override {
-        return HCCL_E_NOT_SUPPORT;
-    };
-    HcclResult LocalNotifyWait(uint32_t notifyId) const override {
-        return HCCL_E_NOT_SUPPORT;
-    };
-    HcclResult LocalNotifyRecord(ThreadHandle dstThread, uint32_t dstNotifyIdx) const override {
-        return HCCL_E_NOT_SUPPORT;
-    };
-    HcclResult LocalNotifyWait(uint32_t notifyIdx, uint32_t timeOut) const override {
-        return HCCL_E_NOT_SUPPORT;
-    };
-    HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const override {
-        return HCCL_E_NOT_SUPPORT;
-    };
-    HcclResult LocalReduce(
-        void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const override {
-        return HCCL_E_NOT_SUPPORT;
-    };
-
     ~CpuThread();
 
     HcclResult ServiceRegister(ThreadService serviceCb, ThreadServiceHandle* serviceHandle);
