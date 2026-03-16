@@ -8454,39 +8454,8 @@ namespace hccl
     HcclResult HcclCommunicator::LoadCustomFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
                                                 aclrtBinHandle &binHandle)
     {
-        constexpr s32 CUSTOM_OP_ENHANCE_DEV_VERSION = 0x72400; // MAJOR:0x07, MINOR:0x23, PATCH:0x18
-        // 非910_93不支持custom kernel进程调用
-        if (deviceType_ != DevType::DEV_TYPE_910_93) {
-            binHandle = nullptr;
-            HCCL_RUN_WARNING("[%s] custom kernel is not supported on device type[%d].", __func__, deviceType_);
-            return HCCL_SUCCESS;
-        }
-
-        // 校验是否为新版本驱动，旧版本驱动不支持配置hrtGetDeviceInfo，报错返回
-        s32 halAPIVersion = 0;
-        CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
-        CHK_RET(hrtHalGetAPIVersion(halAPIVersion));
-        HCCL_INFO("[%s]params: halAPIVersion[%d], CUSTOM_OP_ENHANCE_DEV_VERSION[%d]", __func__, halAPIVersion,
-            CUSTOM_OP_ENHANCE_DEV_VERSION);
-        if (halAPIVersion < CUSTOM_OP_ENHANCE_DEV_VERSION) {
-            binHandle = nullptr;
-            HCCL_RUN_WARNING("[%s] custom kernel is not supported on device type[%d].", __func__, deviceType_);
-            return HCCL_SUCCESS;
-        }
-        s64 isOpenCustomSwitch = 0;
-        CHK_RET(hrtGetDeviceInfo(deviceLogicId_, HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM,
-                                 HcclRtDeviceInfoType::HCCL_INFO_TYPE_CUST_OP_ENHANCE, isOpenCustomSwitch));
-        if (isOpenCustomSwitch == 1) {
-            HcclResult ret = LoadBinaryFromFile(binPath, optionType, cpuKernelMode, binHandle);
-            CHK_PRT_RET(ret != HCCL_SUCCESS,
-                        HCCL_ERROR("[LoadCustomFile]errNo[0x%016llx]load custom file fail, path[%s] optionType[%u]"
-                                   "cpuKernelMode[%u].",
-                                   ret, binPath, optionType, cpuKernelMode),
-                        ret);
-        } else {
-            binHandle = nullptr;
-            HCCL_RUN_WARNING("[LoadCustomFile]custom switch is not open, please confirm the switch.");
-        }
+        binHandle = nullptr;
+        HCCL_INFO("[LoadCustomFile]binPath[%s], optionType[%u], cpuKernelMode[%u]", binPath, optionType, cpuKernelMode);
         return HCCL_SUCCESS;
     }
 
