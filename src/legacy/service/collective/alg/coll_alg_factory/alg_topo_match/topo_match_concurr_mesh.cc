@@ -27,7 +27,7 @@ HcclResult TopoMatchConcurrMesh::MatchTopo(std::vector<std::vector<RankId>> &vTo
     // 获取并校验当前通信层数
     std::set<u32> levelSet = rankGraph_->GetLevels(myRank_);
 
-    CHK_PRT_RET((levelSet.size() != 1),
+    CHK_PRT_RET((levelSet.size() == COMM_LEVEL_SIZE_0),
         HCCL_ERROR("[CollAlgFactory] [TopoMatchConcurrMesh] Rank [%d], Invalid virtual topo.", myRank_),
         HcclResult::HCCL_E_PARA);
     const NetInstance* netInstance = rankGraph_->GetNetInstanceByRankId(0, myRank_);
