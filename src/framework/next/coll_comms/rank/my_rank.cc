@@ -533,7 +533,7 @@ HcclResult MyRank::Resume()
         if (recoveryData.first == COMM_ENGINE_AICPU || recoveryData.first == COMM_ENGINE_AICPU_TS) {
             // KernelLaunch时会将CollCommAicpu下的ubTransportMap_链路恢复,只打包transport
             for (const auto& handleData : recoveryData.second) {
-                CHK_RET(HcommChannelKernelLaunch(handleData.channelHandles_, handleData.hostChannelHandleList_, 
+                CHK_RET(HcommChannelUpdateKernelLaunch(handleData.channelHandles_, handleData.hostChannelHandleList_, 
                 handleData.channelNum_, handleData.commTag_, binHandle_));
             }
         }

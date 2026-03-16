@@ -65,11 +65,11 @@ public:
     void SetIsReady(bool flag);
 
 private:
-    HcclResult InitBackGroundThread();
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
     HcclResult RegisterChannelAddDfxTaskInfo(ChannelHandle channel);
     HcclResult RegisterThreadAddDfxTaskInfo(ThreadHandle thread);
+    void InitBackGroundThread();
 
     u32 devId_{0};
     //通用的通道
