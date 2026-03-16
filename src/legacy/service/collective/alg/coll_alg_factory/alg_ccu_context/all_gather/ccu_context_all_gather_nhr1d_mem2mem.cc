@@ -137,7 +137,7 @@ void CcuContextAllGatherNHR1D::PostSync()
     uint16_t selfSignalId = rankId_ / BIT_NUM_PER_CKE;
     uint16_t selfBit      = 1 << (rankId_ % BIT_NUM_PER_CKE);
     for (auto &t : transports) {
-        RemotePost(*t, selfSignalId + signalNum_ * CKE_IDX_0, selfBit);
+        RemotePost(*t, selfSignalId + signalNum_ * CKE_IDX_0, selfBit, true);
     }
     std::vector<uint16_t> waitBitVector(signalNum_, 0);
     for (auto &pair : indexMap_) {
@@ -247,7 +247,7 @@ void CcuContextAllGatherNHR1D::DoRepeatAllGatherNHRSingleStep(const NHRStepInfo 
 if (nhrStepInfo.step + 1 != stepInfoVector_.size()){
     uint16_t selfSignalId = rankId_ / BIT_NUM_PER_CKE;
     uint16_t selfBit      = 1 << (rankId_ % BIT_NUM_PER_CKE);
-    RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit);
+    RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit, true);
     uint16_t recvSignalId = nhrStepInfo.fromRank / BIT_NUM_PER_CKE;
     uint16_t recvBit      = 1 << (nhrStepInfo.fromRank % BIT_NUM_PER_CKE);
     RemoteWait(*recvTransport, recvSignalId + signalNum_ * CKE_IDX_3, recvBit);
