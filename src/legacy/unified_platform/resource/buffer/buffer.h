@@ -13,7 +13,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <string>
-#include "hccl_mem_defs.h"
+#include "hccl_one_sided_data.h"
 #include "enum_factory.h"
 namespace Hccl {
 

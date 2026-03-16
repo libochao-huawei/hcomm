@@ -174,6 +174,11 @@ TEST_F(HcclCommunicatorTest, CollOperator_CollOpToString)
     }
 }
  
+TEST_F(HcclCommunicatorTest, should_return_false_when_calling_CollOpToString_with_unknown_type)
+{
+    CollOperator collOp;
+    EXPECT_THROW(CollOpToString(collOp), NotSupportException);
+}
 
 TEST_F(HcclCommunicatorTest, is_comm_ready_should_success)
 {

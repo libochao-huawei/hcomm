@@ -24,7 +24,7 @@ TaskInfo::TaskInfo(u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam
 
 std::string TaskInfo::Describe() const
 {
-    return StringFormat("TaskInfo[streamId(sqId):[%u], taskId(sqeId):[%u], remoteRank:[%u], taskParam:[%s], dftOpInfo:[%s], isMaster[%d]]",
+    return StringFormat("TaskInfo[streamId(sqId):[%u], taskId(sqeId):[%u], remoteRank:[%u], taskParam:[%s], dftOpInfo:[%s], isMaster[%u]]",
                         streamId_, taskId_, remoteRank_, taskParam_.Describe().c_str(), dfxOpInfo_->Describe().c_str(), isMaster_);
 }
 

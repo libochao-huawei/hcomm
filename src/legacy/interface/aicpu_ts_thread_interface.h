@@ -21,7 +21,7 @@ public:
 
     ~IAicpuTsThread();
 
-    void StreamLiteInit(uint32_t id, uint32_t sqIds, uint32_t phyId, uint32_t logicCqids);
+    void StreamLiteInit(uint32_t id, uint32_t sqIds, uint32_t phyId, uint32_t cqIds);
 
     void LaunchTask() const;
 

@@ -9,26 +9,9 @@
  */
 
 #include "cpu_ts_thread.h"
-#include "hccl_common.h"
-#include "adapter_rts.h"
 #include "types/dev_type.h"
 
 namespace hccl {
-const std::unordered_map<HcclDataType, aclDataType> hccl2rtDataTypeMap = { 
-    {HCCL_DATA_TYPE_INT8, ACL_INT8}, 
-    {HCCL_DATA_TYPE_INT16, ACL_INT16}, 
-    {HCCL_DATA_TYPE_INT32, ACL_INT32}, 
-    {HCCL_DATA_TYPE_FP16, ACL_FLOAT16}, 
-    {HCCL_DATA_TYPE_FP32, ACL_FLOAT}, 
-    {HCCL_DATA_TYPE_BFP16, ACL_BF16}, 
-}; 
- 
- 
-const std::unordered_map<HcclReduceOp, aclrtReduceKind> hccl2rtReduceOpMap = { 
-    {HCCL_REDUCE_SUM, ACL_RT_MEMCPY_SDMA_AUTOMATIC_SUM}, 
-    {HCCL_REDUCE_MAX, ACL_RT_MEMCPY_SDMA_AUTOMATIC_MAX}, 
-    {HCCL_REDUCE_MIN, ACL_RT_MEMCPY_SDMA_AUTOMATIC_MIN}, 
-};
 
 CpuTsThread::CpuTsThread(rtStream_t rtStream, uint32_t notifyNum, const NotifyLoadType notifyLoadType)
     : rtStream_(rtStream), notifyNum_(notifyNum), notifyLoadType_(notifyLoadType)
@@ -200,122 +183,20 @@ void CpuTsThread::LaunchTask() const
 // Local Data Plane Functions
 HcclResult CpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
 {
-    HCCL_ERROR("[CpuTsThread][%s]not support", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
-
 HcclResult CpuTsThread::LocalNotifyWait(uint32_t notifyId) const
 {
-    HCCL_ERROR("[CpuTsThread][%s]not support", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
-
-HcclResult CpuTsThread::LocalNotifyRecord(ThreadHandle dstThread, uint32_t dstNotifyIdx) const
-{
-    #ifndef CCL_KERNEL_AICPU
-    u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-    HCCL_INFO("[%s]dstThread[0x%llu], dstNotifyIdx[%u].", __func__, dstThread, dstNotifyIdx);
-    CHK_PRT_RET(!IsDeviceA5(), HCCL_ERROR("[CpuTsThread][%s]only support A5", __func__), HCCL_E_NOT_SUPPORT); // 只支持A5, 其他场景调用HcclLocalNotifyRecord
-
-    Stream *stream = GetStream();
-    CHK_PTR_NULL(stream);
-    Thread *const dstThreadPtr = reinterpret_cast<Thread *>(dstThread);
-    CHK_PTR_NULL(dstThreadPtr);
-    LocalNotify *dstNotify = dstThreadPtr->GetNotify(dstNotifyIdx);
-    CHK_PTR_NULL(dstNotify);
-
-    HcclResult ret = dstNotify->Post(*stream);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]fail, dstThread[0x%llx], dstNotifyIdx[%u].",
-        __func__, dstThread, dstNotifyIdx), ret);
-
-    HcclSignalInfo signalInfo;
-    CHK_RET(dstNotify->GetNotifyData(signalInfo));
-    CHK_RET(ReportHostNotifyRecordTask(signalInfo.resId, beginTime, isMaster_));
-    #endif
-    return HCCL_SUCCESS;
-}
-
-HcclResult CpuTsThread::LocalNotifyWait(uint32_t notifyIdx, uint32_t timeOut) const
-{
-    #ifndef CCL_KERNEL_AICPU
-    u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-    HCCL_INFO("[%s]notifyIdx[%u], timeOut[%u].", __func__, notifyIdx, timeOut);
-    CHK_PRT_RET(!IsDeviceA5(), HCCL_ERROR("[CpuTsThread][%s]only support A5", __func__), HCCL_E_NOT_SUPPORT); // 只支持A5, 其他场景调用HcclLocalNotifyWait
-
-    Stream *stream = GetStream();
-    CHK_PTR_NULL(stream);
-    LocalNotify *notify = GetNotify(notifyIdx);
-    CHK_PTR_NULL(notify);
-
-    HcclResult ret = notify->Wait(*stream, timeOut);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]fail, notifyIdx[%u], timeOut[%u].",
-        __func__, notifyIdx, timeOut), ret);
-    
-    HcclSignalInfo signalInfo;
-    CHK_RET(notify->GetNotifyData(signalInfo));
-    CHK_RET(ReportHostNotifyWaitTask(signalInfo.resId, beginTime, isMaster_));
-    #endif
-    return HCCL_SUCCESS;
-}
-
 HcclResult CpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByte) const
 {
-    #ifndef CCL_KERNEL_AICPU
-    u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-    HCCL_INFO("[%s]dst[%p], src[%p], sizeByte[%llu].", __func__, dst, src, sizeByte);
-    CHK_PRT_RET(!IsDeviceA5(), HCCL_ERROR("[CpuTsThread][%s]only support A5", __func__), HCCL_E_NOT_SUPPORT); // 只支持A5, 其他场景调用HcclLocalCopy
-
-    if (sizeByte == 0 || src == dst) {
-        HCCL_INFO("[CpuTsThread][%s]skip, dst[%p] equals src[%p] or len[%llu] equals 0", __func__, dst, src, sizeByte);
-        return HCCL_SUCCESS;
-    }
-
-    Stream *stream = GetStream();
-    CHK_PTR_NULL(stream);
-    CHK_RET(hrtMemAsyncCopy(dst, sizeByte, src, sizeByte,
-        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE, stream->ptr()));
-    
-    CHK_RET(ReportHostLocalCopyTask(dst, src, sizeByte, beginTime, isMaster_));
-    #endif
-    return HCCL_SUCCESS;
+    return HCCL_E_NOT_SUPPORT;
 }
-
 HcclResult CpuTsThread::LocalReduce(
     void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const
 {
-    #ifndef CCL_KERNEL_AICPU
-    u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-    HCCL_INFO("[%s]dst[%p], src[%p], sizeByte[%llu], dataType[%d], reduceOp[%d].",
-        __func__, dst, src, sizeByte, dataType, reduceOp);
-    CHK_PRT_RET(!IsDeviceA5(), HCCL_ERROR("[CpuTsThread][%s]only support A5", __func__), HCCL_E_NOT_SUPPORT); // 只支持A5, 其他场景调用HcclLocalCopyReduce
-
-    auto dataTypeIt = hccl2rtDataTypeMap.find(static_cast<HcclDataType>(dataType));
-    if (dataTypeIt == hccl2rtDataTypeMap.end()) {
-        HCCL_ERROR("[%s]data type[%s] is not supported", __func__,
-            GetDataTypeEnumStr(static_cast<HcclDataType>(dataType)).c_str());
-        return HCCL_E_PARA;
-    }
-    
-    auto reduceOpIt = hccl2rtReduceOpMap.find(static_cast<HcclReduceOp>(reduceOp));
-    if (reduceOpIt == hccl2rtReduceOpMap.end()) {
-        HCCL_ERROR("[%s]reduceOp[%s] is not supported", __func__,
-            GetReduceOpEnumStr(static_cast<HcclReduceOp>(reduceOp)).c_str());
-        return HCCL_E_PARA;
-    }
-
-    Stream *stream = GetStream();
-    CHK_PTR_NULL(stream);
-    CHK_RET(hrtReduceAsync(dst, sizeByte, src, sizeByte, reduceOpIt->second, dataTypeIt->second, stream->ptr()));
-    CHK_RET(ReportHostLocalReduceTask(dst, src, sizeByte, dataType, reduceOp, beginTime, isMaster_));
-    #endif
-    return HCCL_SUCCESS;
-}
-bool CpuTsThread::GetMaster() const {
-    return isMaster_;
-}
-
-void CpuTsThread::SetIsMaster(bool isMaster) {
-    isMaster_ = isMaster;
+    return HCCL_E_NOT_SUPPORT;
 }
 
 HcclResult CpuTsThread::SupplementNotify(uint32_t notifyNum)

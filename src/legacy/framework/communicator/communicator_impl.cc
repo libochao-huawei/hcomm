@@ -3885,10 +3885,6 @@ ErrorMessageReport CommunicatorImpl::GetAicpuTaskException()
     return errorMessage;
 }
 
-
-u32 CommunicatorImpl::GetRankInParentComm() {
-    return static_cast<u32>(rankInParentComm);
-}
 void CommunicatorImpl::RegisterAicpuKernel()
 {
     aicpuKernelHolder_.Load();

@@ -653,7 +653,6 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
         .taskType  = TaskParamType::TASK_CCU,
         .beginTime = 0,
         .endTime   = 0,
-        .isMaster = false,
         .taskPara  = {
             .Ccu = {
                 .dieId         = 0,
@@ -736,7 +735,6 @@ static void SubmitCcuTasks(const CcuInstruction &ccuInstruction, CommunicatorImp
         .taskType  = TaskParamType::TASK_CCU,
         .beginTime = 0,
         .endTime   = 0,
-        .isMaster = false,
         .taskPara  = {
             .Ccu = {
                 .dieId         = 0,
@@ -781,7 +779,6 @@ static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs
         .taskType  = TaskParamType::TASK_AIV,
         .beginTime = aivOpArgs.beginTime,
         .endTime   = DlProfFunction::GetInstance().dlMsprofSysCycleTime(),
-        .isMaster = false,
         .taskPara  = {
             .Aiv = {
                     .cmdType     = aivOpArgs.cmdType,

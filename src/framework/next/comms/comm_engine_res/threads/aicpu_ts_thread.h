@@ -40,20 +40,14 @@ public:
     // Local Data Plane Functions
     HcclResult LocalNotifyWait(uint32_t notifyId) const override;
     HcclResult LocalNotifyRecord(uint32_t notifyId) const override;
-
-    HcclResult LocalNotifyRecord(ThreadHandle dstThread, uint32_t dstNotifyIdx) const override;
-    HcclResult LocalNotifyWait(uint32_t notifyIdx, uint32_t timeOut) const override;
-
     HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const override;
     HcclResult LocalReduce(
         void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const override;
 
     // Non-override functions
     HcclResult GetSqHeadAndTail(uint32_t& sqHead, uint32_t& sqTail);
-    bool GetMaster() const override;
-    void SetIsMaster(bool isMaster) override;
+
 private:
-    bool isMaster_{false};
     struct HcclStreamInfo {
         s32 streamIds;
         uint32_t sqIds;

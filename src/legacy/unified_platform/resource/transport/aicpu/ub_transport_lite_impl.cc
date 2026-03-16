@@ -72,7 +72,7 @@ UbTransportLiteImpl::UbTransportLiteImpl(std::vector<char> &uniqueId)
     std::vector<char> locBufferUniqueIds;
     binaryStream >> locBufferUniqueIds;
     ParseLocBufferVec(locBufferUniqueIds, locBufferVec, RmaUbBufType::BUFFER);
-
+ 
     std::vector<char> rmtBufferUniqueIds;
     binaryStream >> rmtBufferUniqueIds;
     ParseRmtBufferVec(rmtBufferUniqueIds, rmtBufferVec, RmaUbBufType::BUFFER);
@@ -80,12 +80,6 @@ UbTransportLiteImpl::UbTransportLiteImpl(std::vector<char> &uniqueId)
     std::vector<char> connUniqueIds;
     binaryStream >> connUniqueIds;
     ParseConnVec(connUniqueIds);
-}
-
-HcclResult UbTransportLiteImpl::SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const TaskParam&, u64)> callback) {
-    CHK_PTR_NULL(callback);
-    newCallback_ = callback;
-    return HCCL_SUCCESS;
 }
 
 UbTransportLiteImpl::~UbTransportLiteImpl()
@@ -348,7 +342,7 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
 
     HCCL_INFO("UbTransportLiteImpl::Post notifyId[0x%llx], pi=%u", GetRmtNotifySliceLite(index).GetAddr(), connOut.pi);
  
-    if (callback_ == nullptr && newCallback_ == nullptr)
+    if (callback_ == nullptr)
     {
         HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
         return;
@@ -365,15 +359,8 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     taskParam.taskPara.DMA.dmaOp       = DmaOp::HCCL_DMA_WRITE;
     taskParam.taskPara.DMA.locEid      = GetLocEid();
     taskParam.taskPara.DMA.rmtEid      = GetRmtEid();
- 
-    if (callback_ != nullptr) {
-        callback_(stream.GetSqId(), taskId, taskParam);
-    }
 
-    if (newCallback_ != nullptr) {
-        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
-    }
-    
+    callback_(stream.GetSqId(), taskId, taskParam);
 }
 
 void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
@@ -382,7 +369,7 @@ void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
     auto notifyId = locNotifyVec[index]->GetId();
     BuildNotifyWaitTask(stream, notifyId);
 
-    if (callback_ == nullptr && newCallback_ == nullptr)
+    if (callback_ == nullptr)
     {
         HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
         return;
@@ -393,19 +380,13 @@ void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
     taskParam.beginTime                = ProfGetCurCpuTimestamp();
     taskParam.taskPara.Notify.notifyID = notifyId;
     taskParam.taskPara.Notify.value    = 1;
-    if (callback_ != nullptr) {
-        callback_(stream.GetSqId(), taskId, taskParam);
-    }
-
-    if (newCallback_ != nullptr) {
-        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
-    }
+    callback_(stream.GetSqId(), taskId, taskParam);
 }
 
 void UbTransportLiteImpl::ProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream,
                                            DmaOp dmaOp, u32 taskId)
 {
-    if (callback_ == nullptr && newCallback_ == nullptr)
+    if (callback_ == nullptr)
     {
         HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
         return;
@@ -423,13 +404,7 @@ void UbTransportLiteImpl::ProfilingProcess(const RmaBufferLite &loc, const Buffe
     taskParam.taskPara.DMA.dmaOp    = dmaOp;
     taskParam.taskPara.DMA.locEid = GetLocEid();
     taskParam.taskPara.DMA.rmtEid = GetRmtEid();
-    if (callback_ != nullptr) {
-        callback_(stream.GetSqId(), taskId, taskParam);
-    }
-
-    if (newCallback_ != nullptr) {
-        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
-    }
+    callback_(stream.GetSqId(), taskId, taskParam);
 }
 
 void UbTransportLiteImpl::Read(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)
@@ -487,7 +462,7 @@ HcclReduceOp ConvertReduceOpToHcclReduceOp(ReduceOp reduceOp)
 void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt,
                                                  const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
 {
-    if (callback_ == nullptr && newCallback_ == nullptr)
+    if (callback_ == nullptr)
     {
         HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
         return;
@@ -506,13 +481,7 @@ void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufferLite &loc, const
     taskParam.taskPara.Reduce.dataType = DataTypeToHcclDataType(reduceIn.dataType);
     taskParam.taskPara.Reduce.locEid   = GetLocEid();
  	taskParam.taskPara.Reduce.rmtEid   = GetRmtEid();
-    if (callback_ != nullptr) {
-        callback_(stream.GetSqId(), taskId, taskParam);
-    }
-
-    if (newCallback_ != nullptr) {
-        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
-    }
+    callback_(stream.GetSqId(), taskId, taskParam);
 }
 
 void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
@@ -590,7 +559,7 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
                                 GetRmtNotifySliceLite(withNotify.index_), stream, notifyData);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    if (callback_ == nullptr && newCallback_ == nullptr)
+    if (callback_ == nullptr)
     {
         HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
         return;
@@ -608,13 +577,7 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
     taskParam.taskPara.DMA.dmaOp    = DmaOp::HCCL_DMA_WRITE;
     taskParam.taskPara.DMA.locEid = GetLocEid();
     taskParam.taskPara.DMA.rmtEid = GetRmtEid();
-    if (callback_ != nullptr) {
-        callback_(stream.GetSqId(), taskId, taskParam);
-    }
-
-    if (newCallback_ != nullptr) {
-        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
-    }
+    callback_(stream.GetSqId(), taskId, taskParam);
 }
 
 void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
@@ -631,7 +594,7 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
                                       notifyData);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    if (callback_ == nullptr && newCallback_ == nullptr)
+    if (callback_ == nullptr)
     {
         HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
         return;
@@ -650,13 +613,7 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
     taskParam.taskPara.Reduce.dataType = DataTypeToHcclDataType(reduceIn.dataType);
     taskParam.taskPara.Reduce.locEid   = GetLocEid();
     taskParam.taskPara.Reduce.rmtEid   = GetRmtEid();
-    if (callback_ != nullptr) {
-        callback_(stream.GetSqId(), taskId, taskParam);
-    }
-
-    if (newCallback_ != nullptr) {
-        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
-    }
+    callback_(stream.GetSqId(), taskId, taskParam);
 }
 
 void UbTransportLiteImpl::BatchOneSidedRead(const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt,

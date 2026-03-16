@@ -13,17 +13,13 @@
 #include <memory>
 #include <string>
 #include "my_rank.h"
+// #include "rank_graphs/rank_graph.h"
 #include "rank_graph.h"
 #include "comm_config_pub.h"
 #include "comm_engine_res_manager.h"
 #include "independent_op_context_manager.h"
 #include "comm_mem_manager.h"
 #include "channel_manager.h"
-#include "hcclCommDfx.h"
-#include "rank_graph_v2.h"
-#include "error_message_v2.h"
-#include "../../../../legacy/include/hccl_communicator.h"
-
 namespace hccl {
 /**
  * @note 职责：集合通信通信域上下文管理，包括RankGraph和本rank信息资源等内容。
@@ -38,12 +34,31 @@ public:
     // 初始化通信域
     HcclResult Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config);
 
-    inline RankGraph* GetRankGraph() { return rankgraph_.get(); }
-    inline CommEngineResMgr* GetCommEngineResMgr() { return commEngineResMgr_.get(); }
-    inline ContextManager* GetContextManager() { return contextMgr_.get(); }
-    inline CommMemMgr* GetCommMemMgr() { return commMemMgr_.get(); }
-    inline ChannelManager* GetChannelManager() { return channelMgr_.get(); }
-    void *GetCommunicatorV2() { return comm_; }
+    inline RankGraph* GetRankGraph() {
+        return rankgraph_ != nullptr ? rankgraph_.get() : nullptr;
+    }
+
+    inline CommEngineResMgr* GetCommEngineResMgr() {
+        return commEngineResMgr_!= nullptr ? commEngineResMgr_.get() : nullptr;
+    }
+
+    inline ContextManager* GetContextManager() {
+        return contextMgr_ != nullptr ? contextMgr_.get() : nullptr;
+    }
+
+    inline CommMemMgr* GetCommMemMgr() {
+        return commMemMgr_ != nullptr ? commMemMgr_.get() : nullptr;
+    }
+
+    inline ChannelManager* GetChannelManager() {
+        return channelMgr_ != nullptr ? channelMgr_.get() : nullptr;
+    }
+
+    void *GetCommunicatorV2()
+    {
+        return comm_;
+    }
+    
     // 获取MyRank
     MyRank* GetMyRank() const { return myRank_.get(); }
     
@@ -51,69 +66,27 @@ public:
     uint32_t GetMyRankId() const;
     
     // 获取Rank数量
-    uint32_t GetRankSize() {
-        if (rankgraph_ == nullptr) {
-            HCCL_ERROR("[CollComm]get ranksize failed");
-            return 0;
-        }
-        uint32_t rankSize{0};
-        HcclResult ret = rankgraph_->GetRankSize(&rankSize);
-        if (ret != 0) {
-            HCCL_ERROR("[CollComm]get ranksize failed");
-            return 0;
-        }
-        return rankSize;
-    }
-
-    // 获取HcclCommDfx
-    HcclCommDfx* GetHcclCommDfx() { return hcclCommDfx_.get(); }
-    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetDfxCallback() {
-        if (hcclCommDfx_ == nullptr) {
-            HCCL_ERROR("[CollComm]CollComm DfxCallBack failed. hcclCommDfx is nullptr");
-            return nullptr;
-        }
-        return hcclCommDfx_->GetCallback();
-    }
-    const std::string& GetCommId() const {return commId_;}
-    HcclResult GetHDCommunicate(
-        HDCommunicateParams &kfcControlTransferH2DParams, HDCommunicateParams &kfcStatusTransferD2HParams);
-    void RegisterAicpuTaskExceptionCallback(u32 streamId);
-    Hccl::ErrorMessageReport GetAicpuTaskException();
-    HcclResult GetParentRankId(u32& parentRankId) {
-        Hccl::HcclCommunicator* comV2 = static_cast<Hccl::HcclCommunicator*>(comm_);
-        CHK_PTR_NULL(comV2);
-        parentRankId = comV2->GetRankInParentComm();
-        return HCCL_SUCCESS;
-    }
-    uint32_t UpdateIndex();
+    uint32_t GetRankSize() const;
 
 private:
-    HcclResult DestroyAicpuComm();
-    HcclResult InitHDCommunicate();   
-    HcclResult InitTaskExceptionHandler();
-
     void* comm_{nullptr};
     uint32_t rankId_{};
     std::string commId_;
     CommConfig config_{};
     ManagerCallbacks callbacks_; 
-    s32 deviceLogicId_{0};
-    uint32_t index_{0};
-
-
+    
+   
     std::unique_ptr<RankGraph> rankgraph_{nullptr};
     std::unique_ptr<CommEngineResMgr> commEngineResMgr_{nullptr};
     std::unique_ptr<ContextManager>  contextMgr_{nullptr};
     std::unique_ptr<CommMemMgr> commMemMgr_{nullptr};
     std::unique_ptr<ChannelManager> channelMgr_{nullptr};
+    
+    //TODO
     std::shared_ptr<MyRank> myRank_{};
-    std::unique_ptr<HcclCommDfx> hcclCommDfx_{nullptr};
     uintptr_t   addr_{0};
     std::size_t size_{0};
     HcclMemType memType_{HcclMemType::HCCL_MEM_TYPE_DEVICE};
-
-    std::shared_ptr<HDCommunicate> kfcControlTransferH2D_{nullptr};
-    std::shared_ptr<HDCommunicate> kfcStatusTransferD2H_{nullptr};
 };
 }  // namespace hccl
 

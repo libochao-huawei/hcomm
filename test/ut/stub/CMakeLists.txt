@@ -383,24 +383,6 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/loop
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/sync
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/translator
-
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling/aicpu
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling/host
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException/aicpu
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException/host
-    ${HCCL_CODE_ROOT}/src/framework/device/framework
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/slaves
-    ${HCCL_CODE_ROOT}/src/framework/dfx/task_exception
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/task_exception
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/common
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/profiling
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/
-    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/stream
-    ${HCCL_CODE_ROOT}/src/legacy/interface/
-
 )
 
 FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_CODE_ROOT}/src/legacy)

@@ -151,16 +151,14 @@ public:
     void Init();
     void ReportHcclMC2CommInfo(const Stream &kfcStream, Stream &stream, const std::vector<Stream *> &aicpuStreams,
                                const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm);
-    void ReportHcclMC2CommInfo(const u32 kfcStreamId, const std::vector<u32> &aicpuStreamsId, const std::string &id,
-                                RankId myRank, u32 rankSize, RankId rankInParentComm);
-    void ReportNodeApi(uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId);
-    void ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemId, uint32_t threadId);
+
 private:
     explicit ProfilingHandler();
 
     void ReportAclApi(uint32_t cmdType, uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId,
                             uint32_t threadId) const;
-
+    void ReportNodeApi(uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId);
+    void ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemId, uint32_t threadId);
     void ReportHcclOpApi(uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId) const;
     void ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opInfo, uint32_t threadId);
     void ReportAdditionInfo(uint32_t type, uint64_t timeStamp, void* data, uint32_t len) const;

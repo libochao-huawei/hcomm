@@ -44,7 +44,6 @@
         <file value="hccl_inner.h"/>
         <file value="hccl_ctrl_plane.h"/>
         <file value="hcomm_diag.h"/>
-        <file value="hccl_diag.h"/>
     </file_info>
     <file_info value="include" copy_type="source" src_path="hcomm/pkg_inc/hcomm/ccu" dst_path="pkg_inc/hcomm/ccu" install_path="$(TARGET_ENV)/pkg_inc/hcomm/ccu" install_type="devel" install_mod="440">
         <file value="ccu_assist_pub.h"/>

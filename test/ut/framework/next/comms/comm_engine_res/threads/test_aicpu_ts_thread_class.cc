@@ -197,7 +197,7 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_Host_When_hrtNotifyGetOffsetF
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
 }
 
-TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_When_IsNormal_Expect_Return_HCCL_SUCCESS)
+TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_When_RtsqA5IsNormal_Expect_Return_HCCL_SUCCESS)
 {
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -230,7 +230,17 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_When_IsNormal_Expec
     void *streamPtr = mainDevThread.GetStreamLitePtr();
     EXPECT_NE(nullptr, streamPtr);
 
-    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamPtr);
-    EXPECT_NE(nullptr, streamLite);
-    
+    ret = mainDevThread.LocalNotifyRecord(0);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+   
+    ret = mainDevThread.LocalNotifyWait(0);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    void *src = reinterpret_cast<void *>(0x2345);
+    void *dst = reinterpret_cast<void *>(0x2345);
+    uint64_t sizeByte = 8;
+    ret = mainDevThread.LocalCopy(dst, src, sizeByte);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ret = mainDevThread.LocalReduce(dst, src, sizeByte, HCOMM_DATA_TYPE_UINT64, HCOMM_REDUCE_SUM);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }

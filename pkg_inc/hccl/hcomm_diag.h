@@ -14,7 +14,6 @@
 #include <cstddef>
 #include <hccl/hccl_types.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -39,30 +38,6 @@ extern HcclResult HcommRegOpInfo(const char* commId, void* opInfo, size_t size);
  */
 typedef void (*HcommGetOpInfoCallback)(const void *opInfo, char *outPut, size_t size);
 extern HcclResult HcommRegOpTaskException(const char* commId, HcommGetOpInfoCallback callback);
-
-/**
- * @brief 上报device算子执行事件
- * @param[in] groupname 设备算子所属组名
- * @return HcclResult 执行结果状态码
- * @note Device侧
- */
-extern HcclResult HcommProfilingReportDeviceOp(const char* groupname);
-/**
- * @brief 上报内核启动任务事件
- * @param[in] thread 线程上下文
- * @return HcclResult 执行结果状态码
- * @note Device侧
- */
-extern HcclResult HcommProfilingReportKernelStartTask(uint64_t thread, const char* groupname);
-/**
- * @brief 上报内核结束任务事件
- * @param[in] thread 线程上下文
- * @return HcclResult 执行结果状态码
- * @note Device侧
- */
-extern HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupname);
-
-
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

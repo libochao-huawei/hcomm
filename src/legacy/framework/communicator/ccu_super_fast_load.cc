@@ -77,7 +77,6 @@ CachedCCUParams::CachedCCUParams(std::vector<std::vector<Hccl::CcuTaskParam>> &&
             .taskType = TaskParamType::TASK_CCU,
             .beginTime = 0,
             .endTime = 0,
-            .isMaster = false,
             .taskPara =
             {.Ccu = {.dieId = 0, .missionId = 0, .execMissionId = 0, .instrId = 0, .costumArgs = {0}, .executeId = 0}},
             .ccuDetailInfo = nullptr};
