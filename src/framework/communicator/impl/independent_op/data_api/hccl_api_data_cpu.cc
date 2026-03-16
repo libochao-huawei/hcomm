@@ -682,9 +682,12 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
    
     // 下发device侧
-    CHK_RET(HcommDfxKernelLaunch(hcclComm->GetIdentifier(),hcclComm->GetBinHandle(), *dfxOpInfo));
-    const std::string KernelName = "RunAicpuDfxOpInfoInitV2";
-    CHK_RET(hcclCommDfx->ReportKernel(beginTime, hcclComm->GetIdentifier(), KernelName, SalGetTid()));
+    if (dfxOpInfo->engine == COMM_ENGINE_AICPU_TS) {
+        CHK_RET(HcommDfxKernelLaunch(hcclComm->GetIdentifier(),hcclComm->GetBinHandle(), *dfxOpInfo));
+        const std::string KernelName = "RunAicpuDfxOpInfoInitV2";
+        CHK_RET(hcclCommDfx->ReportKernel(beginTime, hcclComm->GetIdentifier(), KernelName, SalGetTid()));
+    }
+
     return HCCL_SUCCESS;
 }
 
