@@ -3231,6 +3231,7 @@ HcclResult CommunicatorImpl::InitAndLaunchDpuKernel()
     }
 
     HCCL_INFO("[CommunicatorImpl::%s] Launch Dpu Kernel End", __func__);
+    isDpuKernelLaunched = true;
     return HCCL_SUCCESS;
 }
 
